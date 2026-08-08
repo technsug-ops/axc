@@ -5,6 +5,16 @@ import { useActionState, useMemo, useRef, useState } from "react";
 import { PackageCheck, TriangleAlert } from "lucide-react";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -148,7 +158,7 @@ export function MalKabulFormu({
   };
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form id="mal-kabul-formu" action={formAction} className="space-y-6">
       <input type="hidden" name="alimId" value={alimId} />
       <input type="hidden" name="veri" value={JSON.stringify(gonderilecek)} />
 
@@ -389,13 +399,52 @@ export function MalKabulFormu({
       </Card>
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          type="submit"
-          disabled={bekliyor || ozet.saglam + ozet.hasarli === 0}
-        >
-          <PackageCheck />
-          {bekliyor ? "Kaydediliyor..." : "Mal Kabulü Kaydet"}
-        </Button>
+        {/* Stok hareketi geri alınamaz — onay zorunlu (#6). */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              disabled={bekliyor || ozet.saglam + ozet.hasarli === 0}
+            >
+              <PackageCheck />
+              {bekliyor ? "Kaydediliyor..." : "Mal Kabulü Kaydet"}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Mal kabulü kaydedilsin mi?</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-2">
+                  <p>
+                    <strong>{ozet.saglam} adet sağlam</strong> ürün stoğa
+                    girecek
+                    {ozet.hasarli > 0 ? (
+                      <>
+                        , <strong>{ozet.hasarli} adet hasarlı</strong> stoğa
+                        girmeden kayda geçecek
+                      </>
+                    ) : null}
+                    .
+                  </p>
+                  <p>
+                    Stok hareketleri <strong>geri alınamaz</strong>. Yanlış bir
+                    giriş silinemez; düzeltmek için ters işaretli bir düzeltme
+                    kaydı gerekir.
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+              {/* Diyalog portal içinde açıldığı için düğmeyi forma
+                  form="..." ile bağlıyoruz; yoksa gönderim çalışmaz. */}
+              <Button type="submit" form="mal-kabul-formu" disabled={bekliyor}>
+                Evet, kaydet
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <Button type="button" variant="outline" asChild>
           <Link href={`/alimlar/${alimId}`}>Vazgeç</Link>
         </Button>

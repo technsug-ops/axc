@@ -211,5 +211,11 @@ export async function malKabulEt(
   revalidatePath(`/alimlar/${alimId}`);
   revalidatePath("/stok");
   revalidatePath("/urunler");
-  redirect(`/alimlar/${alimId}`);
+
+  // Sonucu detay sayfasında görünür şekilde bildir (#5) — sessiz başarı yasak.
+  const toplamSaglam = veri.satirlar.reduce((t, s) => t + s.saglam, 0);
+  const toplamHasarli = veri.satirlar.reduce((t, s) => t + s.hasarli, 0);
+  redirect(
+    `/alimlar/${alimId}?saglam=${toplamSaglam}&hasarli=${toplamHasarli}`,
+  );
 }

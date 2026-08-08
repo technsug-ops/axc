@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Baglanti } from "@/components/baglanti";
+import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -60,13 +62,10 @@ export default async function VaryantHareketleriSayfasi({
           {varyant.product.name}
           {varyant.name ? ` — ${varyant.name}` : ""}
         </h1>
-        <p className="text-muted-foreground text-sm">
-          <Link
-            href={`/urunler/${varyant.product.id}`}
-            className="underline underline-offset-4"
-          >
+        <p className="text-sm">
+          <Baglanti href={`/urunler/${varyant.product.id}`}>
             Ürün kartına git
-          </Link>
+          </Baglanti>
         </p>
       </div>
 
@@ -89,10 +88,22 @@ export default async function VaryantHareketleriSayfasi({
           <CardHeader>
             <CardTitle className="text-sm font-medium">Kodlar</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1 font-mono text-xs">
-            <div>SKU: {varyant.sku}</div>
-            <div>Axcali: {varyant.axcaliSku}</div>
-            <div>Barkod: {varyant.barcode ?? "—"}</div>
+          <CardContent className="space-y-2 text-xs">
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-muted-foreground">SKU:</span>
+              <KopyalanabilirKod deger={varyant.sku} etiket="SKU" />
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-muted-foreground">Axcali:</span>
+              <KopyalanabilirKod
+                deger={varyant.axcaliSku}
+                etiket="Axcali SKU"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-muted-foreground">Barkod:</span>
+              <KopyalanabilirKod deger={varyant.barcode} etiket="Barkod" />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -155,12 +166,11 @@ export default async function VaryantHareketleriSayfasi({
                       </TableCell>
                       <TableCell>
                         {hareket.purchaseItem?.purchase ? (
-                          <Link
+                          <Baglanti
                             href={`/alimlar/${hareket.purchaseItem.purchase.id}`}
-                            className="underline underline-offset-4"
                           >
                             {hareket.purchaseItem.purchase.code}
-                          </Link>
+                          </Baglanti>
                         ) : (
                           <span className="text-muted-foreground">
                             {hareket.note ?? "—"}

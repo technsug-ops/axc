@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PackageCheck } from "lucide-react";
 
+import { Baglanti } from "@/components/baglanti";
+import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,10 +23,12 @@ import { kalemToplamlari } from "@/lib/tutar";
 
 export default async function AlimDetaySayfasi({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ saglam?: string; hasarli?: string }>;
 }) {
-  const { id } = await params;
+  const [{ id }, kabulSonucu] = await Promise.all([params, searchParams]);
 
   const alim = await prisma.purchase.findUnique({
     where: { id },
@@ -96,9 +100,13 @@ export default async function AlimDetaySayfasi({
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">{alim.code}</h1>
-            <p className="text-muted-foreground text-sm">
-              {tarihFormatla(alim.purchasedAt)} · {alim.items.length} kalem
-            </p>
+            <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
+              <KopyalanabilirKod deger={alim.code} etiket="Sipariş no" />
+              <span>·</span>
+              <span>{tarihFormatla(alim.purchasedAt)}</span>
+              <span>·</span>
+              <span>{alim.items.length} kalem</span>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="text-sm">
@@ -115,6 +123,25 @@ export default async function AlimDetaySayfasi({
           </div>
         </div>
       </div>
+
+      {/* Mal kabul sonrası görünür onay (#5). */}
+      {kabulSonucu.saglam !== undefined ? (
+        <div
+          role="status"
+          className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-400"
+        >
+          Mal kabul kaydedildi:{" "}
+          <strong>{kabulSonucu.saglam} adet sağlam</strong> stoğa girdi
+          {Number(kabulSonucu.hasarli) > 0 ? (
+            <>
+              , <strong>{kabulSonucu.hasarli} adet hasarlı</strong> stoğa
+              girmeden kayda geçti
+            </>
+          ) : null}
+          . Alımın yeni durumu:{" "}
+          <strong>{alimDurumuEtiketi(alim.status)}</strong>.
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -171,20 +198,18 @@ export default async function AlimDetaySayfasi({
                   return (
                     <TableRow key={kalem.id}>
                       <TableCell>
-                        <Link
-                          href={`/urunler/${kalem.variant.productId}`}
-                          className="font-medium underline-offset-4 hover:underline"
-                        >
+                        <Baglanti href={`/urunler/${kalem.variant.productId}`}>
                           {kalem.variant.product.name}
-                        </Link>
+                        </Baglanti>
                         {kalem.variant.name ? (
                           <div className="text-muted-foreground text-xs">
                             {kalem.variant.name}
                           </div>
                         ) : null}
-                        <div className="text-muted-foreground font-mono text-xs">
-                          {kalem.variant.sku}
-                        </div>
+                        <KopyalanabilirKod
+                          deger={kalem.variant.sku}
+                          etiket="SKU"
+                        />
                         {kalem.damageNote ? (
                           <div className="text-destructive mt-1 text-xs whitespace-pre-line">
                             {kalem.damageNote}
