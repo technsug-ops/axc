@@ -13,10 +13,9 @@ listesiyle birlikte teslim edilir.
       _Karar 08.08.2026: depo aşamasına kadar telefonda detay sayfaları az
       kullanılacağı için acil değil._
 
-- [ ] **Raf konumu düzenleme ve pasife alma** — İlke #1
-      `/ayarlar/konumlar` satırlarında eylem düğmesi yok, çünkü bu özellik
-      hiç yazılmadı. Yanlış girilen bir raf kodu şu an düzeltilemiyor.
-      _Karar 08.08.2026: küçük iş, ama test önceliği nedeniyle ertelendi._
+- [x] ~~**Raf konumu düzenleme ve pasife alma** — İlke #1~~
+      _Tamamlandı 08.08.2026 (`d4cd8ad`): düzenleme sayfası, pasife alma,
+      kod değişikliğinde QR etiket uyarısı, mobil kart düzeni._
 
 ## Gözlem üzerine yapılacaklar
 
