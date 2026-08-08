@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { History, Package } from "lucide-react";
 
+import { Baglanti } from "@/components/baglanti";
+import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -54,6 +59,25 @@ export default async function StokSayfasi({
     0,
   );
 
+  function eylemler(varyant: (typeof varyantlar)[number]) {
+    return (
+      <>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/stok/${varyant.id}`}>
+            <History />
+            Hareketler
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/urunler/${varyant.product.id}`}>
+            <Package />
+            Ürün kartı
+          </Link>
+        </Button>
+      </>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -78,32 +102,29 @@ export default async function StokSayfasi({
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ürün</TableHead>
-                <TableHead>Varyant</TableHead>
-                <TableHead>Axcali SKU</TableHead>
-                <TableHead>Raf</TableHead>
-                <TableHead className="text-right">Mevcut stok</TableHead>
-                <TableHead>Son hareket</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {varyantlar.map((varyant) => {
-                const stok = stoklar.get(varyant.id) ?? 0;
-                const sonHareket = sonHareketler.get(varyant.id);
-
-                return (
+        <>
+          {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
+          <div className="hidden overflow-x-auto rounded-lg border md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ürün</TableHead>
+                  <TableHead>Varyant</TableHead>
+                  <TableHead>Axcali SKU</TableHead>
+                  <TableHead>Barkod</TableHead>
+                  <TableHead>Raf</TableHead>
+                  <TableHead className="text-right">Mevcut stok</TableHead>
+                  <TableHead>Son hareket</TableHead>
+                  <TableHead>Eylemler</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {varyantlar.map((varyant) => (
                   <TableRow key={varyant.id}>
                     <TableCell>
-                      <Link
-                        href={`/stok/${varyant.id}`}
-                        className="font-medium underline-offset-4 hover:underline"
-                      >
+                      <Baglanti href={`/stok/${varyant.id}`}>
                         {varyant.product.name}
-                      </Link>
+                      </Baglanti>
                       {varyant.product.brand ? (
                         <div className="text-muted-foreground text-xs">
                           {varyant.product.brand}
@@ -113,8 +134,17 @@ export default async function StokSayfasi({
                     <TableCell className="text-muted-foreground">
                       {varyant.name ?? "Varsayılan"}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {varyant.axcaliSku}
+                    <TableCell>
+                      <KopyalanabilirKod
+                        deger={varyant.axcaliSku}
+                        etiket="Axcali SKU"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <KopyalanabilirKod
+                        deger={varyant.barcode}
+                        etiket="Barkod"
+                      />
                     </TableCell>
                     <TableCell>
                       {varyant.location ? (
@@ -126,22 +156,89 @@ export default async function StokSayfasi({
                       )}
                     </TableCell>
                     <TableCell className="text-right text-base font-semibold">
-                      {stok}
+                      {stoklar.get(varyant.id) ?? 0}
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">
-                      {sonHareket ? tarihFormatla(sonHareket) : "—"}
+                      {sonHareketler.get(varyant.id)
+                        ? tarihFormatla(sonHareketler.get(varyant.id)!)
+                        : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        {eylemler(varyant)}
+                      </div>
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* ------------------------ TELEFON: KART ---------------------- */}
+          <div className="space-y-3 md:hidden">
+            {varyantlar.map((varyant) => (
+              <ListeKarti
+                key={varyant.id}
+                baslik={
+                  <Baglanti href={`/stok/${varyant.id}`}>
+                    {varyant.product.name}
+                  </Baglanti>
+                }
+                altBaslik={varyant.name ?? "Varsayılan varyant"}
+                alanlar={[
+                  {
+                    etiket: "Mevcut stok",
+                    deger: (
+                      <span className="text-base font-semibold">
+                        {stoklar.get(varyant.id) ?? 0}
+                      </span>
+                    ),
+                  },
+                  {
+                    etiket: "Raf",
+                    deger: varyant.location ? (
+                      <Badge variant="secondary">
+                        {varyant.location.code}
+                      </Badge>
+                    ) : (
+                      "—"
+                    ),
+                  },
+                  {
+                    etiket: "Axcali SKU",
+                    deger: (
+                      <KopyalanabilirKod
+                        deger={varyant.axcaliSku}
+                        etiket="Axcali SKU"
+                      />
+                    ),
+                  },
+                  {
+                    etiket: "Barkod",
+                    deger: (
+                      <KopyalanabilirKod
+                        deger={varyant.barcode}
+                        etiket="Barkod"
+                      />
+                    ),
+                  },
+                  {
+                    etiket: "Son hareket",
+                    deger: sonHareketler.get(varyant.id)
+                      ? tarihFormatla(sonHareketler.get(varyant.id)!)
+                      : "—",
+                  },
+                ]}
+                eylemler={eylemler(varyant)}
+              />
+            ))}
+          </div>
+        </>
       )}
 
       <p className="text-muted-foreground text-xs">
         Mevcut stok, stok defterindeki (StockMovement) hareketlerin
-        toplamıdır. Satır başlığına tıklayarak hareket geçmişini görebilirsiniz.
+        toplamıdır.
       </p>
     </div>
   );

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 
+import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,7 @@ import { tarihFormatla } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { varyantStoklari } from "@/lib/stok";
 
-import { SilButonu } from "./sil-butonu";
+import { SilButonu } from "../sil-butonu";
 
 export default async function UrunDetaySayfasi({
   params,
@@ -65,7 +66,11 @@ export default async function UrunDetaySayfasi({
                 Düzenle
               </Link>
             </Button>
-            <SilButonu urunId={urun.id} urunAdi={urun.name} />
+            <SilButonu
+              urunId={urun.id}
+              urunAdi={urun.name}
+              boyut="default"
+            />
           </div>
         </div>
       </div>
@@ -125,14 +130,20 @@ export default async function UrunDetaySayfasi({
                         </div>
                       ) : null}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {varyant.sku}
+                    <TableCell>
+                      <KopyalanabilirKod deger={varyant.sku} etiket="SKU" />
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {varyant.axcaliSku}
+                    <TableCell>
+                      <KopyalanabilirKod
+                        deger={varyant.axcaliSku}
+                        etiket="Axcali SKU"
+                      />
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {varyant.barcode ?? "—"}
+                    <TableCell>
+                      <KopyalanabilirKod
+                        deger={varyant.barcode}
+                        etiket="Barkod"
+                      />
                     </TableCell>
                     <TableCell>
                       {varyant.location ? (

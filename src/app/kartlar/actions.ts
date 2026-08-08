@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 
 export type KartDurumu = {
   hatalar?: string[];
+  basari?: string;
 };
 
 const kartSemasi = z.object({
@@ -199,5 +200,11 @@ export async function kartDurumDegistir(
   revalidatePath("/kartlar");
   revalidatePath(`/kartlar/${kartId}`);
   revalidatePath("/alimlar/yeni");
-  return {};
+
+  // Sessiz başarı yasak (#5) — sonucu kullanıcıya söyle.
+  return {
+    basari: kart.isActive
+      ? `"${kart.label}" pasife alındı, artık alım formunda seçilemez.`
+      : `"${kart.label}" tekrar aktif.`,
+  };
 }

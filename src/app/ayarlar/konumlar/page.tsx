@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { QrCode } from "lucide-react";
 
+import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,8 +78,11 @@ export default async function KonumlarSayfasi() {
                 <TableBody>
                   {konumlar.map((konum) => (
                     <TableRow key={konum.id}>
-                      <TableCell className="font-mono font-medium">
-                        {konum.code}
+                      <TableCell>
+                        <KopyalanabilirKod
+                          deger={konum.code}
+                          etiket="Raf kodu"
+                        />
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {konum.name ?? "—"}

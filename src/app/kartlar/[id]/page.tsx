@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 
+import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +19,7 @@ import { paraFormatla, tarihFormatla } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kalemToplamlari, toplamlariBirlestir } from "@/lib/tutar";
 
-import { KartDurumButonu } from "../durum-butonu";
+import { kartDurumDegistir } from "../actions";
 
 export default async function KartDetaySayfasi({
   params,
@@ -74,7 +75,11 @@ export default async function KartDetaySayfasi({
                 Düzenle
               </Link>
             </Button>
-            <KartDurumButonu kartId={kart.id} aktifMi={kart.isActive} />
+            <DurumDegistirButonu
+              kayitId={kart.id}
+              aktifMi={kart.isActive}
+              action={kartDurumDegistir}
+            />
           </div>
         </div>
       </div>

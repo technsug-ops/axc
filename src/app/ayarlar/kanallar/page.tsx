@@ -1,3 +1,5 @@
+import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
+import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -10,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { prisma } from "@/lib/prisma";
 
-import { DurumButonu } from "./durum-butonu";
+import { kanalHesabiDurumDegistir } from "./actions";
 import { KanalHesabiFormu } from "./kanal-hesabi-formu";
 
 export const metadata = { title: "Kanal Hesapları — Axcali ERP" };
@@ -81,8 +83,11 @@ export default async function KanalHesaplariSayfasi() {
                         {hesap.channel.name}
                       </TableCell>
                       <TableCell>{hesap.name}</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {hesap.code}
+                      <TableCell>
+                        <KopyalanabilirKod
+                          deger={hesap.code}
+                          etiket="Hesap kodu"
+                        />
                       </TableCell>
                       <TableCell>{hesap.defaultCurrency}</TableCell>
                       <TableCell className="text-right">
@@ -96,9 +101,10 @@ export default async function KanalHesaplariSayfasi() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <DurumButonu
-                          hesapId={hesap.id}
+                        <DurumDegistirButonu
+                          kayitId={hesap.id}
                           aktifMi={hesap.isActive}
+                          action={kanalHesabiDurumDegistir}
                         />
                       </TableCell>
                     </TableRow>

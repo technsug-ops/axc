@@ -1,6 +1,10 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Eye, Pencil, Plus } from "lucide-react";
 
+import { Baglanti } from "@/components/baglanti";
+import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
+import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +18,8 @@ import {
 import { paraFormatla } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
+import { kartDurumDegistir } from "./actions";
+
 export const metadata = { title: "Kredi Kartları — Axcali ERP" };
 
 export default async function KartlarSayfasi() {
@@ -21,6 +27,45 @@ export default async function KartlarSayfasi() {
     include: { _count: { select: { purchases: true } } },
     orderBy: [{ isActive: "desc" }, { label: "asc" }],
   });
+
+  function limitMetni(kart: (typeof kartlar)[number]) {
+    return kart.creditLimitAmount
+      ? paraFormatla(
+          kart.creditLimitAmount,
+          kart.creditLimitCurrency ?? kart.currency,
+        )
+      : "—";
+  }
+
+  function gunlerMetni(kart: (typeof kartlar)[number]) {
+    const kesim = kart.statementDay ?? "—";
+    const odeme = kart.dueDay ?? "—";
+    return `${kesim} / ${odeme}`;
+  }
+
+  function eylemler(kart: (typeof kartlar)[number]) {
+    return (
+      <>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/kartlar/${kart.id}`}>
+            <Eye />
+            Detay
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/kartlar/${kart.id}/duzenle`}>
+            <Pencil />
+            Düzenle
+          </Link>
+        </Button>
+        <DurumDegistirButonu
+          kayitId={kart.id}
+          aktifMi={kart.isActive}
+          action={kartDurumDegistir}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -46,70 +91,108 @@ export default async function KartlarSayfasi() {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Kart</TableHead>
-                <TableHead>Banka</TableHead>
-                <TableHead>Sahibi</TableHead>
-                <TableHead>Son 4</TableHead>
-                <TableHead className="text-right">Kesim</TableHead>
-                <TableHead className="text-right">Son ödeme</TableHead>
-                <TableHead className="text-right">Limit</TableHead>
-                <TableHead className="text-right">Alım</TableHead>
-                <TableHead>Durum</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {kartlar.map((kart) => (
-                <TableRow key={kart.id}>
-                  <TableCell>
-                    <Link
-                      href={`/kartlar/${kart.id}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {kart.label}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {kart.bankName ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {kart.holderName ?? "—"}
-                  </TableCell>
-                  <TableCell className="font-mono">
-                    •••• {kart.last4}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {kart.statementDay ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {kart.dueDay ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-right whitespace-nowrap">
-                    {kart.creditLimitAmount
-                      ? paraFormatla(
-                          kart.creditLimitAmount,
-                          kart.creditLimitCurrency ?? kart.currency,
-                        )
-                      : "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {kart._count.purchases}
-                  </TableCell>
-                  <TableCell>
-                    {kart.isActive ? (
+        <>
+          {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
+          <div className="hidden overflow-x-auto rounded-lg border md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Kart</TableHead>
+                  <TableHead>Banka</TableHead>
+                  <TableHead>Son 4</TableHead>
+                  <TableHead className="text-right">Kesim / Ödeme</TableHead>
+                  <TableHead className="text-right">Limit</TableHead>
+                  <TableHead className="text-right">Alım</TableHead>
+                  <TableHead>Durum</TableHead>
+                  <TableHead>Eylemler</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {kartlar.map((kart) => (
+                  <TableRow key={kart.id}>
+                    <TableCell>
+                      <Baglanti href={`/kartlar/${kart.id}`}>
+                        {kart.label}
+                      </Baglanti>
+                      {kart.holderName ? (
+                        <div className="text-muted-foreground text-xs">
+                          {kart.holderName}
+                        </div>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {kart.bankName ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      <KopyalanabilirKod
+                        deger={kart.last4}
+                        etiket="Son 4 hane"
+                      />
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      {gunlerMetni(kart)}
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      {limitMetni(kart)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {kart._count.purchases}
+                    </TableCell>
+                    <TableCell>
+                      {kart.isActive ? (
+                        <Badge variant="secondary">aktif</Badge>
+                      ) : (
+                        <Badge variant="outline">pasif</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-start gap-2">
+                        {eylemler(kart)}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* ------------------------ TELEFON: KART ---------------------- */}
+          <div className="space-y-3 md:hidden">
+            {kartlar.map((kart) => (
+              <ListeKarti
+                key={kart.id}
+                baslik={
+                  <Baglanti href={`/kartlar/${kart.id}`}>{kart.label}</Baglanti>
+                }
+                altBaslik={kart.bankName ?? undefined}
+                alanlar={[
+                  {
+                    etiket: "Son 4 hane",
+                    deger: (
+                      <KopyalanabilirKod
+                        deger={kart.last4}
+                        etiket="Son 4 hane"
+                      />
+                    ),
+                  },
+                  {
+                    etiket: "Durum",
+                    deger: kart.isActive ? (
                       <Badge variant="secondary">aktif</Badge>
                     ) : (
                       <Badge variant="outline">pasif</Badge>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                    ),
+                  },
+                  { etiket: "Kesim / Ödeme", deger: gunlerMetni(kart) },
+                  { etiket: "Limit", deger: limitMetni(kart) },
+                  { etiket: "Alım sayısı", deger: kart._count.purchases },
+                  { etiket: "Sahibi", deger: kart.holderName ?? "—" },
+                ]}
+                eylemler={eylemler(kart)}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

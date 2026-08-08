@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Eye, PackageCheck, Plus } from "lucide-react";
 
+import { Baglanti } from "@/components/baglanti";
+import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +52,37 @@ export default async function AlimlarSayfasi({
     orderBy: { purchasedAt: "desc" },
   });
 
+  function toplamMetni(alim: (typeof alimlar)[number]) {
+    const toplamlar = kalemToplamlari(alim.items);
+    if (!toplamlar.length) return "—";
+    return toplamlar
+      .map((t) => paraFormatla(t.tutar, t.paraBirimi))
+      .join(" + ");
+  }
+
+  function eylemler(alim: (typeof alimlar)[number]) {
+    const kabulEdilebilir =
+      alim.status !== "CANCELLED" && alim.status !== "RECEIVED";
+    return (
+      <>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/alimlar/${alim.id}`}>
+            <Eye />
+            Detay
+          </Link>
+        </Button>
+        {kabulEdilebilir ? (
+          <Button size="sm" asChild>
+            <Link href={`/alimlar/${alim.id}/mal-kabul`}>
+              <PackageCheck />
+              Mal Kabul
+            </Link>
+          </Button>
+        ) : null}
+      </>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -77,7 +111,6 @@ export default async function AlimlarSayfasi({
           placeholder="Sipariş numarasına göre ara..."
           className="max-w-xs min-w-44 flex-1"
         />
-        {/* Basit yerel select: GET formuyla en az sürtünmeli çözüm. */}
         <select
           name="durum"
           defaultValue={durumFiltresi}
@@ -115,61 +148,115 @@ export default async function AlimlarSayfasi({
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Sipariş no</TableHead>
-                <TableHead>Tarih</TableHead>
-                <TableHead>Kanal hesabı</TableHead>
-                <TableHead className="text-right">Kalem</TableHead>
-                <TableHead>Toplam</TableHead>
-                <TableHead>Kart</TableHead>
-                <TableHead>Durum</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {alimlar.map((alim) => (
-                <TableRow key={alim.id}>
-                  <TableCell>
-                    <Link
-                      href={`/alimlar/${alim.id}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {alim.code}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    {tarihFormatla(alim.purchasedAt)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {alim.channelAccount
-                      ? `${alim.channelAccount.channel.name} — ${alim.channelAccount.name}`
-                      : "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {alim.items.length}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    {kalemToplamlari(alim.items)
-                      .map((t) => paraFormatla(t.tutar, t.paraBirimi))
-                      .join(" + ") || "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {alim.creditCard
-                      ? `${alim.creditCard.label} (••${alim.creditCard.last4})`
-                      : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {alimDurumuEtiketi(alim.status)}
-                    </Badge>
-                  </TableCell>
+        <>
+          {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
+          <div className="hidden overflow-x-auto rounded-lg border md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sipariş no</TableHead>
+                  <TableHead>Tarih</TableHead>
+                  <TableHead>Kanal hesabı</TableHead>
+                  <TableHead className="text-right">Kalem</TableHead>
+                  <TableHead>Toplam</TableHead>
+                  <TableHead>Kart</TableHead>
+                  <TableHead>Durum</TableHead>
+                  <TableHead>Eylemler</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {alimlar.map((alim) => (
+                  <TableRow key={alim.id}>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <Baglanti href={`/alimlar/${alim.id}`}>
+                          {alim.code}
+                        </Baglanti>
+                        <KopyalanabilirKod
+                          deger={alim.code}
+                          etiket="Sipariş no"
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {tarihFormatla(alim.purchasedAt)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {alim.channelAccount
+                        ? `${alim.channelAccount.channel.name} — ${alim.channelAccount.name}`
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {alim.items.length}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {toplamMetni(alim)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {alim.creditCard
+                        ? `${alim.creditCard.label} (••${alim.creditCard.last4})`
+                        : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {alimDurumuEtiketi(alim.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        {eylemler(alim)}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* ------------------------ TELEFON: KART ---------------------- */}
+          <div className="space-y-3 md:hidden">
+            {alimlar.map((alim) => (
+              <ListeKarti
+                key={alim.id}
+                baslik={
+                  <Baglanti href={`/alimlar/${alim.id}`}>{alim.code}</Baglanti>
+                }
+                altBaslik={
+                  <KopyalanabilirKod deger={alim.code} etiket="Sipariş no" />
+                }
+                alanlar={[
+                  {
+                    etiket: "Tarih",
+                    deger: tarihFormatla(alim.purchasedAt),
+                  },
+                  {
+                    etiket: "Durum",
+                    deger: (
+                      <Badge variant="secondary">
+                        {alimDurumuEtiketi(alim.status)}
+                      </Badge>
+                    ),
+                  },
+                  { etiket: "Kalem", deger: alim.items.length },
+                  { etiket: "Toplam", deger: toplamMetni(alim) },
+                  {
+                    etiket: "Kanal hesabı",
+                    deger: alim.channelAccount
+                      ? `${alim.channelAccount.channel.name} — ${alim.channelAccount.name}`
+                      : "—",
+                  },
+                  {
+                    etiket: "Kart",
+                    deger: alim.creditCard
+                      ? `${alim.creditCard.label} (••${alim.creditCard.last4})`
+                      : "—",
+                  },
+                ]}
+                eylemler={eylemler(alim)}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

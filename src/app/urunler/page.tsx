@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Eye, Pencil, Plus } from "lucide-react";
 
+import { Baglanti } from "@/components/baglanti";
+import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +19,8 @@ import { tarihFormatla } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { urunStoklari } from "@/lib/stok";
 
+import { SilButonu } from "./sil-butonu";
+
 export const metadata = { title: "Ürünler — Axcali ERP" };
 
 export default async function UrunlerSayfasi({
@@ -29,15 +34,57 @@ export default async function UrunlerSayfasi({
   const urunler = await prisma.product.findMany({
     where: arama
       ? {
-          OR: [{ name: { contains: arama } }, { brand: { contains: arama } }],
+          OR: [
+            { name: { contains: arama } },
+            { brand: { contains: arama } },
+            { variants: { some: { sku: { contains: arama } } } },
+            { variants: { some: { axcaliSku: { contains: arama } } } },
+            { variants: { some: { barcode: { contains: arama } } } },
+          ],
         }
       : undefined,
-    include: { variants: { select: { id: true } } },
+    include: {
+      variants: {
+        select: {
+          id: true,
+          sku: true,
+          axcaliSku: true,
+          barcode: true,
+          isDefault: true,
+        },
+        orderBy: { isDefault: "desc" },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 
   // Stok hesabı tek yerde: src/lib/stok.ts (ledger toplamı).
   const stokHaritasi = await urunStoklari(urunler);
+
+  /** Listede gösterilecek kodlar ilk (varsayılan) varyanttan gelir. */
+  function anaVaryant(urun: (typeof urunler)[number]) {
+    return urun.variants[0];
+  }
+
+  function eylemler(urun: (typeof urunler)[number]) {
+    return (
+      <>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/urunler/${urun.id}`}>
+            <Eye />
+            Detay
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/urunler/${urun.id}/duzenle`}>
+            <Pencil />
+            Düzenle
+          </Link>
+        </Button>
+        <SilButonu urunId={urun.id} urunAdi={urun.name} />
+      </>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -57,12 +104,11 @@ export default async function UrunlerSayfasi({
         </Button>
       </div>
 
-      {/* GET formu: arama URL'e yazılır, sayfa paylaşılabilir/yer imlenebilir. */}
       <form action="/urunler" className="flex flex-wrap gap-2">
         <Input
           name="q"
           defaultValue={arama}
-          placeholder="Ürün adı veya markaya göre ara..."
+          placeholder="Ad, marka, SKU veya barkod ile ara..."
           className="max-w-sm min-w-48 flex-1"
         />
         <Button type="submit" variant="secondary">
@@ -82,55 +128,126 @@ export default async function UrunlerSayfasi({
           </p>
           <p className="text-muted-foreground mt-1 text-sm">
             {arama
-              ? "Farklı bir kelime deneyin."
+              ? "Farklı bir kelime, SKU veya barkod deneyin."
               : "Sağ üstteki Yeni Ürün düğmesiyle başlayın."}
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ürün</TableHead>
-                <TableHead>Marka</TableHead>
-                <TableHead className="text-right">Varyant</TableHead>
-                <TableHead className="text-right">Toplam stok</TableHead>
-                <TableHead>Oluşturma</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {urunler.map((urun) => (
-                <TableRow key={urun.id}>
-                  <TableCell>
-                    <Link
-                      href={`/urunler/${urun.id}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {urun.name}
-                    </Link>
-                    {!urun.isActive ? (
-                      <Badge variant="secondary" className="ml-2">
-                        pasif
-                      </Badge>
-                    ) : null}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {urun.brand ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {urun.variants.length}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {stokHaritasi.get(urun.id) ?? 0}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap">
-                    {tarihFormatla(urun.createdAt)}
-                  </TableCell>
+        <>
+          {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
+          <div className="hidden overflow-x-auto rounded-lg border md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ürün</TableHead>
+                  <TableHead>Marka</TableHead>
+                  <TableHead>Axcali SKU</TableHead>
+                  <TableHead>Barkod</TableHead>
+                  <TableHead className="text-right">Varyant</TableHead>
+                  <TableHead className="text-right">Toplam stok</TableHead>
+                  <TableHead>Oluşturma</TableHead>
+                  <TableHead>Eylemler</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {urunler.map((urun) => {
+                  const ana = anaVaryant(urun);
+                  return (
+                    <TableRow key={urun.id}>
+                      <TableCell>
+                        <Baglanti href={`/urunler/${urun.id}`}>
+                          {urun.name}
+                        </Baglanti>
+                        {!urun.isActive ? (
+                          <Badge variant="secondary" className="ml-2">
+                            pasif
+                          </Badge>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {urun.brand ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        <KopyalanabilirKod
+                          deger={ana?.axcaliSku}
+                          etiket="Axcali SKU"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <KopyalanabilirKod
+                          deger={ana?.barcode}
+                          etiket="Barkod"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {urun.variants.length}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {stokHaritasi.get(urun.id) ?? 0}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground whitespace-nowrap">
+                        {tarihFormatla(urun.createdAt)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-2">
+                          {eylemler(urun)}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* ------------------------ TELEFON: KART ---------------------- */}
+          <div className="space-y-3 md:hidden">
+            {urunler.map((urun) => {
+              const ana = anaVaryant(urun);
+              return (
+                <ListeKarti
+                  key={urun.id}
+                  baslik={
+                    <Baglanti href={`/urunler/${urun.id}`}>
+                      {urun.name}
+                    </Baglanti>
+                  }
+                  altBaslik={urun.brand ?? undefined}
+                  alanlar={[
+                    {
+                      etiket: "Axcali SKU",
+                      deger: (
+                        <KopyalanabilirKod
+                          deger={ana?.axcaliSku}
+                          etiket="Axcali SKU"
+                        />
+                      ),
+                    },
+                    {
+                      etiket: "Barkod",
+                      deger: (
+                        <KopyalanabilirKod
+                          deger={ana?.barcode}
+                          etiket="Barkod"
+                        />
+                      ),
+                    },
+                    { etiket: "Varyant", deger: urun.variants.length },
+                    {
+                      etiket: "Toplam stok",
+                      deger: (
+                        <span className="font-medium">
+                          {stokHaritasi.get(urun.id) ?? 0}
+                        </span>
+                      ),
+                    },
+                  ]}
+                  eylemler={eylemler(urun)}
+                />
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
