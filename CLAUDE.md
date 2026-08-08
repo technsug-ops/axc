@@ -14,6 +14,51 @@ yeniden yazmadan büyü.
   ters işaretli ADJUSTMENT ile yapılır.
 - Her üründe tam olarak bir isDefault=true varyant (uygulama katmanı garanti eder)
 
+## Kullanıcı Kolaylığı İlkeleri (KESİN KURALLAR)
+
+Kullanıcı yazılımcı değil, operasyoncudur. Her ekran, ilk kez gören
+birinin yardım almadan kullanabileceği kadar açık olmalıdır. Bu kurallar
+tercih değil, zorunluluktur:
+
+1. GÖRÜNÜR EYLEMLER: Bir kayıtta yapılabilecek işlemler (detay, düzenle,
+   sil/pasife al, mal kabul vb.) o kaydın satırında GÖRÜNÜR buton/ikon
+   olarak durur. Gizli tıklama alanına bel bağlanmaz.
+
+2. TIKLANABİLİR GÖRÜNÜR: Tıklanabilir her öğe tıklanabilir görünür
+   (link stili, hover, ikon). Düz metin gibi duran link yasaktır.
+
+3. KİMLİK KODLARI LİSTEDE: Bir kaydı tanımlayan kodlar (SKU, Axcali
+   SKU, barkod/EAN, sipariş no) detaya girmeden LİSTEDE görünür.
+   Mobilde yer darsa öncelik: ad > Axcali SKU > barkod.
+
+4. TIK-KOPYALA: Kod/kimlik niteliğindeki her değer (SKU, barkod,
+   sipariş no vb.) yanındaki ikonla tek tıkta panoya kopyalanır ve
+   "kopyalandı" onayı gösterir. Yeni eklenen her kod alanı bu bileşeni
+   kullanır.
+
+5. TÜRKÇE VE NET GERİ BİLDİRİM: Her işlem sonucu (başarı/hata) Türkçe
+   ve görünür bildirilir. Sessiz başarısızlık yasaktır — bir şey
+   olmadıysa NEDEN olmadığı ekranda yazar.
+
+6. YIKICI EYLEM = ONAY: Silme ve geri alınamaz işlemler her zaman
+   Türkçe onay diyaloğu ister.
+
+7. BARKOD HER YERDE: Kod girilebilen her alan USB okuyucu (Enter) ve
+   kamera okumayı destekler; manuel giriş yedek kalır.
+
+8. MOBİL EŞİT VATANDAŞ: Her yeni ekran telefonda da kullanılabilir
+   olmalı — depo aşamasında birincil cihaz telefon/tablet olacak.
+
+9. AZ TIKLA: Sık yapılan işlem (alım girme, mal kabul, ürün arama) en
+   az adımla tamamlanır. Bir bilgiye ulaşmak için detaya girmek
+   ZORUNLUYSA, o bilgi muhtemelen listede de olmalıdır.
+
+10. TUTARLILIK: Aynı işlem her ekranda aynı görünür ve aynı çalışır
+    (aynı ikonlar, aynı yerleşim, aynı davranış).
+
+YENİ EKRAN KONTROL LİSTESİ: Her yeni ekran tesliminde bu 10 maddeye
+uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklenir.
+
 ## İş sabitleri
 - 11 satış kanalı: Trendyol, Hepsiburada, Amazon, N11, Bim, A101,
   Teknosa, Mediamarkt, Vatan, Pazarama, PTTAvm
@@ -43,9 +88,8 @@ Bir faza ait olmayan özelliği o fazda EKLEME.
 - Migration, silme, reset gibi geri dönüşsüz işlerde MUTLAKA onay iste
 - Her tamamlanan aşamada commit + push (mesaj formatı: tip: Türkçe açıklama).
   Push öncesi .env sızıntısı kontrolü.
-- Barkod/kod girilebilen her yeni alan, hem USB okuyucu (klavye emülasyonu +
-  Enter) hem kamera okuma destekler. Manuel giriş her zaman yedek olarak kalır.
-  Ortak bileşen: `src/components/barkod-okuyucu.tsx` (zxing-wasm).
+- Barkod/kamera okuma ortak bileşeni: `src/components/barkod-okuyucu.tsx`
+  (zxing-wasm). Kuralın kendisi için bkz. Kullanıcı Kolaylığı İlkeleri #7.
 
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`
