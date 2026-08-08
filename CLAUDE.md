@@ -90,6 +90,10 @@ Bir faza ait olmayan özelliği o fazda EKLEME.
   Push öncesi .env sızıntısı kontrolü.
 - Barkod/kamera okuma ortak bileşeni: `src/components/barkod-okuyucu.tsx`
   (zxing-wasm). Kuralın kendisi için bkz. Kullanıcı Kolaylığı İlkeleri #7.
+- Arayüz değişikliği içeren her teslimde, dar viewport (mobil)
+  emülasyonunda temel etkileşim akışı test edilir: menü aç/kapa,
+  navigasyon, form gönderimi, diyalog açma. Sadece HTTP durum kontrolü
+  yeterli değildir.
 
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`
