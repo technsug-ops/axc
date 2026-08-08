@@ -230,12 +230,13 @@ export function AlimFormu({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="alim-kod">Sipariş no *</Label>
-              <Input
+              {/* Sipariş fişindeki barkod okutulabilir (#7). */}
+              <BarkodGirisi
                 id="alim-kod"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="ALM-2026-0001"
-                autoComplete="off"
+                onChange={setCode}
+                placeholder="ALM-2026-0001 (okutabilirsiniz)"
+                kameraBasligi="Sipariş barkodunu okut"
               />
             </div>
             <div className="space-y-2">

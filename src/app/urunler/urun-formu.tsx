@@ -338,24 +338,25 @@ export function UrunFormu({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor={`sku-${sira}`}>SKU *</Label>
-                  <Input
+                  <BarkodGirisi
                     id={`sku-${sira}`}
                     value={varyant.sku}
-                    onChange={(e) =>
-                      varyantGuncelle(sira, { sku: e.target.value })
-                    }
+                    onChange={(deger) => varyantGuncelle(sira, { sku: deger })}
                     placeholder="Sistem içi kod"
+                    kameraBasligi="SKU okut"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={`axcali-${sira}`}>Axcali SKU *</Label>
-                  <Input
+                  {/* Fiziğe yapıştırılan etiket kodu — okutulabilmeli (#7). */}
+                  <BarkodGirisi
                     id={`axcali-${sira}`}
                     value={varyant.axcaliSku}
-                    onChange={(e) =>
-                      varyantGuncelle(sira, { axcaliSku: e.target.value })
+                    onChange={(deger) =>
+                      varyantGuncelle(sira, { axcaliSku: deger })
                     }
                     placeholder="Etiket kodu"
+                    kameraBasligi="Axcali SKU etiketini okut"
                   />
                 </div>
                 <div className="space-y-2">
