@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { tarihFormatla } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { urunStoklari } from "@/lib/stok";
 
 export const metadata = { title: "Ürünler — Axcali ERP" };
 
@@ -35,25 +36,8 @@ export default async function UrunlerSayfasi({
     orderBy: { createdAt: "desc" },
   });
 
-  // Stok = hareketlerin toplamı (ledger). Henüz hareket olmadığı için 0 çıkar.
-  const varyantIdleri = urunler.flatMap((u) => u.variants.map((v) => v.id));
-  const hareketler = varyantIdleri.length
-    ? await prisma.stockMovement.groupBy({
-        by: ["variantId"],
-        where: { variantId: { in: varyantIdleri } },
-        _sum: { quantityDelta: true },
-      })
-    : [];
-  const stokHaritasi = new Map(
-    hareketler.map((h) => [h.variantId, h._sum.quantityDelta ?? 0]),
-  );
-
-  function toplamStok(varyantlar: { id: string }[]) {
-    return varyantlar.reduce(
-      (toplam, v) => toplam + (stokHaritasi.get(v.id) ?? 0),
-      0,
-    );
-  }
+  // Stok hesabı tek yerde: src/lib/stok.ts (ledger toplamı).
+  const stokHaritasi = await urunStoklari(urunler);
 
   return (
     <div className="space-y-6">
@@ -136,8 +120,8 @@ export default async function UrunlerSayfasi({
                   <TableCell className="text-right">
                     {urun.variants.length}
                   </TableCell>
-                  <TableCell className="text-right">
-                    {toplamStok(urun.variants)}
+                  <TableCell className="text-right font-medium">
+                    {stokHaritasi.get(urun.id) ?? 0}
                   </TableCell>
                   <TableCell className="text-muted-foreground whitespace-nowrap">
                     {tarihFormatla(urun.createdAt)}

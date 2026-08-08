@@ -42,8 +42,9 @@ enum StockMovementType {
 
 enum PurchaseStatus {
   DRAFT // taslak
-  ORDERED // sipariş verildi
-  RECEIVED // teslim alındı (stok girişi bu aşamada yazılır)
+  ORDERED // sipariş verildi, henüz hiçbir kalem gelmedi
+  PARTIALLY_RECEIVED // kalemlerin bir kısmı geldi (parçalı teslim)
+  RECEIVED // tüm kalemler tamamlandı (sağlam + hasarlı = beklenen)
   CANCELLED // iptal
 }
 
@@ -166,7 +167,8 @@ model Location {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  variants ProductVariant[]
+  variants       ProductVariant[]
+  stockMovements StockMovement[]
 
   @@index([isActive])
 }
@@ -344,8 +346,18 @@ model PurchaseItem {
   variantId  String
   variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
 
+  /// Beklenen (sipariş edilen) adet.
   quantity Int
 
+  /// HASARLI GELEN ADET — stoğa GİRMEZ, bu yüzden ledger'da karşılığı yoktur
+  /// ve burada sayaç olarak tutulur. Satıcıya iade ve tazminat süreci
+  /// sonraki fazlarda; şimdilik sadece sayı ve not saklanır.
+  damagedQuantity Int     @default(0)
+  damageNote      String? @db.Text
+
+  /// NOT: "gelen sağlam" adedi BİLEREK kolon olarak tutulmuyor.
+  /// Bu kaleme ait PURCHASE_IN hareketlerinin toplamından türetilir
+  /// (src/lib/stok.ts). Tek doğruluk kaynağı ledger'dır.
   unitCostAmount   Decimal  @db.Decimal(18, 4)
   unitCostCurrency Currency
 
@@ -386,6 +398,12 @@ model StockMovement {
   purchaseItemId String?
   purchaseItem   PurchaseItem? @relation(fields: [purchaseItemId], references: [id], onDelete: SetNull)
 
+  /// Malın hangi rafa girdiği (mal kabulde seçilir).
+  /// Varyantın güncel konumundan bağımsız olarak KAYIT ANINDAKİ rafı tutar;
+  /// ürün sonradan başka rafa taşınsa bile geçmiş bozulmaz.
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
   /// Giriş anındaki birim maliyet — ileride stok değerlemesi için saklanır.
   unitCostAmount   Decimal?  @db.Decimal(18, 4)
   unitCostCurrency Currency?
@@ -397,4 +415,5 @@ model StockMovement {
   @@index([variantId, occurredAt])
   @@index([type])
   @@index([purchaseItemId])
+  @@index([locationId])
 }

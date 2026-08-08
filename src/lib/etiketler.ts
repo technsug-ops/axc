@@ -18,3 +18,14 @@ export const ALIM_DURUMLARI = [
 export function alimDurumuEtiketi(durum: string): string {
   return ALIM_DURUMU[durum] ?? durum;
 }
+
+export const STOK_HAREKETI: Record<string, string> = {
+  INITIAL: "Açılış stoğu",
+  PURCHASE_IN: "Alım girişi",
+  ADJUSTMENT: "Düzeltme",
+  COUNT_CORRECTION: "Sayım farkı",
+};
+
+export function stokHareketiEtiketi(tip: string): string {
+  return STOK_HAREKETI[tip] ?? tip;
+}

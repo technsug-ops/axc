@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { tarihFormatla } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { varyantStoklari } from "@/lib/stok";
 
 import { SilButonu } from "./sil-butonu";
 
@@ -37,14 +38,8 @@ export default async function UrunDetaySayfasi({
 
   if (!urun) notFound();
 
-  const hareketler = await prisma.stockMovement.groupBy({
-    by: ["variantId"],
-    where: { variantId: { in: urun.variants.map((v) => v.id) } },
-    _sum: { quantityDelta: true },
-  });
-  const stokHaritasi = new Map(
-    hareketler.map((h) => [h.variantId, h._sum.quantityDelta ?? 0]),
-  );
+  // Stok hesabı tek yerde: src/lib/stok.ts (ledger toplamı).
+  const stokHaritasi = await varyantStoklari(urun.variants.map((v) => v.id));
 
   return (
     <div className="space-y-6">

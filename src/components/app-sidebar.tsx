@@ -42,7 +42,7 @@ type MenuOgesi = {
 const OPERASYON: MenuOgesi[] = [
   { baslik: "Ürünler", href: "/urunler", icon: Package, aktif: true },
   { baslik: "Alımlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
-  { baslik: "Stok", href: "#", icon: Boxes, aktif: false },
+  { baslik: "Stok", href: "/stok", icon: Boxes, aktif: true },
   { baslik: "Kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
 ];
 
