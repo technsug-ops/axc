@@ -1,0 +1,386 @@
+// ============================================================================
+//  AXCALI ERP — FAZ 1 ŞEMASI
+// ----------------------------------------------------------------------------
+//  Kapsam : Ürün/Varyant · Kanal & Kanal-SKU · Alım · Stok defteri · Kredi kartı
+//  Kapsam dışı (sonraki fazlar): satış/kâr, iade, hakediş, gider/muhasebe.
+//
+//  Bağlantı adresi prisma.config.ts içinden okunur (kaynak: .env -> DATABASE_URL).
+// ============================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ============================================================================
+//  ENUM'LAR
+// ============================================================================
+
+/// Desteklenen para birimleri. Yeni birim eklemek migration ister.
+enum Currency {
+  TRY
+  EUR
+}
+
+enum ChannelType {
+  MARKETPLACE // Trendyol, Hepsiburada, Amazon...
+  OWN_STORE // kendi siteniz
+}
+
+/// Stok defteri hareket tipleri.
+/// Not: SALE_OUT / RETURN_IN gibi tipler satış fazında eklenecek.
+enum StockMovementType {
+  INITIAL // açılış / devir stoğu
+  PURCHASE_IN // alımdan giriş
+  ADJUSTMENT // manuel düzeltme (işareti quantityDelta belirler)
+  COUNT_CORRECTION // sayım farkı
+}
+
+enum PurchaseStatus {
+  DRAFT // taslak
+  ORDERED // sipariş verildi
+  RECEIVED // teslim alındı (stok girişi bu aşamada yazılır)
+  CANCELLED // iptal
+}
+
+// ============================================================================
+//  ÜRÜN & VARYANT
+// ----------------------------------------------------------------------------
+//  KURAL: Her ürünün EN AZ bir varyantı vardır.
+//  Beden/renk gibi seçeneği olmayan ürünler için de tek bir "varsayılan
+//  varyant" (isDefault = true) açılır. Böylece stok/SKU/barkod her zaman
+//  aynı seviyede durur ve tüm sorgular tek bir yapı üzerinden çalışır.
+//
+//  UYGULAMA DÜZEYİNDE GARANTİ EDİLECEK: bir üründe isDefault = true olan
+//  tam olarak bir varyant bulunur. (MySQL'de kısmi unique index olmadığı
+//  için veritabanı seviyesinde zorlanamıyor.)
+// ============================================================================
+
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  description String? @db.Text
+  brand       String?
+
+  /// Sadece arayüz ipucu: false ise ürünün tek (varsayılan) varyantı vardır.
+  hasVariants Boolean @default(false)
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variants ProductVariant[]
+
+  @@index([name])
+  @@index([isActive])
+}
+
+/// Stok, SKU ve barkodun tutulduğu seviye. Ürün seviyesinde stok YOKTUR.
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// Sistem içi ana stok kodu. Kanal SKU'larından bağımsızdır.
+  sku     String  @unique
+  /// Üreticinin barkodu (EAN/GTIN). Bizim ürettiğimiz bir kod değildir.
+  barcode String? @unique
+
+  /// AXCALI SKU — firma-içi, ürünün fiziğine yapıştırılan etiket kodu.
+  /// ChannelSku (pazaryeri stok kodu) ile hiçbir ilgisi yoktur, bağımsızdır.
+  /// ZORUNLU ve benzersiz: etiketsiz varyant kaydı açılamaz.
+  /// Bu yüzden varyant oluşturan serviste kod üretimi (örn. AX00001234)
+  /// otomatik olmalı, yoksa her kayıtta elle kod uydurmak gerekir.
+  axcaliSku String @unique
+
+  /// Gösterim adı: "M / Kırmızı". Varsayılan varyantta boş bırakılabilir.
+  name      String?
+  isDefault Boolean @default(false)
+  isActive  Boolean @default(true)
+
+  /// Depodaki raf konumu (opsiyonel).
+  /// ŞU AN: varyant başına TEK konum — bilerek basit tutuldu.
+  /// İLERİDE çoklu konum gerekirse: bu iki alan kaldırılır, araya
+  /// VariantLocation (variantId, locationId, quantity) ara tablosu konur.
+  /// Location ve ProductVariant modellerinin geri kalanı değişmez.
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  options        VariantOption[]
+  channelSkus    ChannelSku[]
+  purchaseItems  PurchaseItem[]
+  stockMovements StockMovement[]
+
+  @@index([productId])
+  @@index([isActive])
+  @@index([locationId])
+}
+
+/// Varyant seçenekleri (Beden=M, Renk=Kırmızı).
+/// Serbest ad/değer çifti olduğu için ileride "Materyal", "Voltaj" gibi yeni
+/// seçenek türleri şema değişikliği gerektirmez.
+model VariantOption {
+  id        String         @id @default(cuid())
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  name  String // "Beden"
+  value String // "M"
+
+  @@unique([variantId, name])
+  @@index([name, value])
+}
+
+// ============================================================================
+//  DEPO KONUMU (RAF)
+// ----------------------------------------------------------------------------
+//  Amaç: ev mini deposundaki raf düzenini sisteme almak ve toplama (picking)
+//  ekranında "bu ürün hangi rafta" bilgisini gösterebilmek.
+//
+//  Şu an tek fiziksel depo var, o yüzden ayrı bir Warehouse modeli YOK.
+//  Model çoklu konuma zaten hazır: her raf bir Location satırıdır.
+//  İkinci bir depo gerekirse iki seçenek var, ikisi de mevcut veriyi bozmaz:
+//    a) kodlamayla ayırmak  -> "EV-A-03-2", "OFIS-B-01-1"
+//    b) Location'a nullable parentId self-relation ekleyip hiyerarşi kurmak
+//       (Depo > Koridor > Raf > Göz)
+// ============================================================================
+
+model Location {
+  id String @id @default(cuid())
+
+  /// Raf kodu: "A-03-2". Etiketlerde ve toplama listesinde bu görünür.
+  code String  @unique
+  /// İsteğe bağlı okunabilir ad: "Salon dolabı üst raf".
+  name String?
+
+  description String? @db.Text
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variants ProductVariant[]
+
+  @@index([isActive])
+}
+
+// ============================================================================
+//  KANAL & KANAL-SKU
+// ----------------------------------------------------------------------------
+//  Channel        = platform (Trendyol)
+//  ChannelAccount = o platformdaki BİR hesap/mağaza  -> çok hesap desteği
+//  ChannelSku     = bir varyantın belirli bir hesaptaki stok kodu
+// ============================================================================
+
+model Channel {
+  id   String      @id @default(cuid())
+  code String      @unique // TRENDYOL, HEPSIBURADA, AMAZON_DE
+  name String
+  type ChannelType @default(MARKETPLACE)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts ChannelAccount[]
+}
+
+/// Aynı kanalda birden fazla mağaza/hesap açılabilir.
+model ChannelAccount {
+  id        String  @id @default(cuid())
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Restrict)
+
+  code       String // kanal içinde benzersiz kısa kod
+  name       String // "Axcali TR Ana Mağaza"
+  externalId String? // pazaryerindeki satıcı/mağaza kimliği
+
+  /// Hesabın çalıştığı para birimi (TR mağazası TRY, DE mağazası EUR).
+  defaultCurrency Currency
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  channelSkus ChannelSku[]
+
+  @@unique([channelId, code])
+  @@index([channelId])
+}
+
+/// Bir varyantın belirli bir kanal hesabındaki karşılığı.
+model ChannelSku {
+  id               String         @id @default(cuid())
+  channelAccountId String
+  channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Cascade)
+  variantId        String
+  variant          ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  /// Kanalda kullanılan stok kodu (bizim sku ile aynı olmak zorunda değil).
+  channelSku        String
+  /// Pazaryerindeki ürün/listing kimliği.
+  externalListingId String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channelAccountId, channelSku])
+  @@unique([channelAccountId, variantId])
+  @@index([variantId])
+}
+
+// ============================================================================
+//  KREDİ KARTI
+// ----------------------------------------------------------------------------
+//  GÜVENLİK: Burada BİLEREK tam kart numarası, CVV ve son kullanma tarihi
+//  tutulmuyor. Bunları saklamak PCI-DSS kapsamına girer ve ciddi yükümlülük
+//  doğurur. Amaç "hangi kartla ödendi" bilgisini taşımak; son 4 hane yeter.
+// ============================================================================
+
+model CreditCard {
+  id         String  @id @default(cuid())
+  label      String // "Garanti Bonus ***4321"
+  bankName   String?
+  last4      String  @db.Char(4)
+  holderName String?
+
+  /// Kartın ekstre para birimi.
+  currency Currency
+
+  creditLimitAmount   Decimal?  @db.Decimal(18, 4)
+  creditLimitCurrency Currency?
+
+  /// Hesap kesim / son ödeme günü — ayın günü olarak (1-31).
+  /// "Faizsiz dönemi en uzun kart" seçiminin girdisi bunlardır:
+  /// alım tarihinden sonraki ilk kesim günü ne kadar uzaksa alım o kadar geç
+  /// ekstreye düşer, ödeme de dueDay kadar daha ertelenir.
+  /// Hesaplama sonraki fazda servis katmanına yazılacak; şema sadece veriyi taşır.
+  /// Opsiyonel: değeri girilmemiş kartlar bu sıralamaya alınmaz.
+  statementDay Int? // hesap kesim günü (1-31)
+  dueDay       Int? // son ödeme günü (1-31)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchases Purchase[]
+
+  @@index([isActive])
+}
+
+// ============================================================================
+//  ALIM (SATIN ALMA)
+// ----------------------------------------------------------------------------
+//  PARA BİRİMİ KURALI: Her parasal alanın hemen yanında kendi para birimi
+//  alanı vardır. Mal bedeli EUR, yurt içi kargo TRY olabilir; şema bunu
+//  varsayım yapmadan taşır.
+// ============================================================================
+
+model Purchase {
+  id     String         @id @default(cuid())
+  code   String         @unique // ALM-2026-0001
+  status PurchaseStatus @default(DRAFT)
+
+  /// Tedarikçi şimdilik serbest metin. Ayrı Supplier modeli sonraki fazda.
+  supplierName String?
+
+  purchasedAt DateTime
+  receivedAt  DateTime?
+
+  creditCardId String?
+  creditCard   CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+
+  goodsAmount   Decimal  @db.Decimal(18, 4)
+  goodsCurrency Currency
+
+  shippingAmount   Decimal?  @db.Decimal(18, 4)
+  shippingCurrency Currency?
+
+  taxAmount   Decimal?  @db.Decimal(18, 4)
+  taxCurrency Currency?
+
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items PurchaseItem[]
+
+  @@index([purchasedAt])
+  @@index([status])
+  @@index([creditCardId])
+}
+
+model PurchaseItem {
+  id         String         @id @default(cuid())
+  purchaseId String
+  purchase   Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  variantId  String
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  quantity Int
+
+  unitCostAmount   Decimal  @db.Decimal(18, 4)
+  unitCostCurrency Currency
+
+  stockMovements StockMovement[]
+
+  @@index([purchaseId])
+  @@index([variantId])
+}
+
+// ============================================================================
+//  STOK DEFTERİ (LEDGER)
+// ----------------------------------------------------------------------------
+//  Varyantta "mevcut stok" kolonu YOKTUR. Stok = hareketlerin toplamıdır:
+//      SELECT SUM(quantityDelta) FROM StockMovement WHERE variantId = ?
+//
+//  Kayıtlar değiştirilmez (updatedAt bilerek yok). Hatalı bir hareket
+//  silinmez; ters işaretli bir ADJUSTMENT ile düzeltilir. Böylece geçmiş
+//  her zaman yeniden üretilebilir kalır.
+//
+//  Depo/lokasyon kırılımı kapsam dışı. İleride eklenirse bu modele bir
+//  warehouseId kolonu gelir; mevcut yapı bozulmaz.
+// ============================================================================
+
+model StockMovement {
+  id        String         @id @default(cuid())
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  type StockMovementType
+
+  /// Pozitif = giriş, negatif = çıkış. Asla 0 olmamalı.
+  quantityDelta Int
+
+  occurredAt DateTime @default(now())
+
+  /// Hareketin kaynağı. Alım kaynaklı hareketlerde dolu olur.
+  /// Satış fazında SaleItem için ayrı bir nullable alan eklenecek.
+  purchaseItemId String?
+  purchaseItem   PurchaseItem? @relation(fields: [purchaseItemId], references: [id], onDelete: SetNull)
+
+  /// Giriş anındaki birim maliyet — ileride stok değerlemesi için saklanır.
+  unitCostAmount   Decimal?  @db.Decimal(18, 4)
+  unitCostCurrency Currency?
+
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([variantId, occurredAt])
+  @@index([type])
+  @@index([purchaseItemId])
+}
