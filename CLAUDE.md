@@ -31,7 +31,10 @@ Bu nedenle hiçbir firma/marka adı sistemin YAPISINA gömülmez.
   - **Firma SKU** — firmanın fiziksel etiket kodu
   - **Barkod (EAN)** — üretici kodu
   - **Kanal SKU** — pazaryeri kodu
-  - **Depo Konumu** — raf
+  - **Raf** (arayüz terimi; veri modelinde `Location`) — depo konumu için
+    operasyonda konuşulan doğal dil esas alınır.
+- Arayüz dili operasyonun konuşma dilidir; veri modeli dili teknik
+  olabilir. İkisi çelişirse arayüzde konuşma dili kazanır.
 - SaaS hazırlık kuralı: Yeni yazılan hiçbir özellik "tek firma" varsayımını
   DERİNLEŞTİRMEMELİ. Çok-kiracılılığı bugün kurmuyoruz ama onu ileride
   zorlaştıracak kısayollardan kaçınıyoruz. Şüpheli durumda kullanıcıya sor.
