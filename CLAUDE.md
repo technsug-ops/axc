@@ -48,6 +48,9 @@ tercih değil, zorunluluktur:
 
 8. MOBİL EŞİT VATANDAŞ: Her yeni ekran telefonda da kullanılabilir
    olmalı — depo aşamasında birincil cihaz telefon/tablet olacak.
+   Dokunulabilir her öğe telefonda en az 44×44 px olmalıdır. shadcn'in
+   `size="icon-sm"` (28px) ve `icon-xs` (24px) varyantları mobilde tek
+   başına kullanılmaz.
 
 9. AZ TIKLA: Sık yapılan işlem (alım girme, mal kabul, ürün arama) en
    az adımla tamamlanır. Bir bilgiye ulaşmak için detaya girmek
@@ -94,6 +97,9 @@ Bir faza ait olmayan özelliği o fazda EKLEME.
   emülasyonunda temel etkileşim akışı test edilir: menü aç/kapa,
   navigasyon, form gönderimi, diyalog açma. Sadece HTTP durum kontrolü
   yeterli değildir.
+  Projede tarayıcı otomasyonu YOK (karar 08.08.2026, Faz 4'te yeniden
+  değerlendirilecek). Bu doğrulamayı kullanıcı gerçek cihazda yapar;
+  teslim raporunda "mobil doğrulama kullanıcıda" satırı açıkça yazılır.
 
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`
