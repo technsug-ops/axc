@@ -1,4 +1,8 @@
+import Link from "next/link";
+import { QrCode } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -22,12 +26,20 @@ export default async function KonumlarSayfasi() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Raf Konumları</h1>
-        <p className="text-muted-foreground text-sm">
-          Depodaki raf kodlarını buradan tanımlarsınız. Ürün formundaki raf
-          seçimi bu listeden beslenir.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Raf Konumları</h1>
+          <p className="text-muted-foreground text-sm">
+            Depodaki raf kodlarını buradan tanımlarsınız. Ürün formundaki raf
+            seçimi bu listeden beslenir.
+          </p>
+        </div>
+        <Button variant="outline" asChild>
+          <Link href="/ayarlar/konumlar/etiketler">
+            <QrCode />
+            QR Etiketleri
+          </Link>
+        </Button>
       </div>
 
       <Card>

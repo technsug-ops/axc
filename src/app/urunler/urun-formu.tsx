@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
+import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -359,13 +360,15 @@ export function UrunFormu({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={`barkod-${sira}`}>Barkod (EAN)</Label>
-                  <Input
+                  {/* USB okuyucu (Enter) ve kamera ile okunabilir; elle de yazılabilir. */}
+                  <BarkodGirisi
                     id={`barkod-${sira}`}
                     value={varyant.barcode}
-                    onChange={(e) =>
-                      varyantGuncelle(sira, { barcode: e.target.value })
+                    onChange={(deger) =>
+                      varyantGuncelle(sira, { barcode: deger })
                     }
-                    placeholder="İsteğe bağlı"
+                    placeholder="Okutun veya elle yazın"
+                    kameraBasligi="Ürün barkodunu okut"
                   />
                 </div>
                 <div className="space-y-2">

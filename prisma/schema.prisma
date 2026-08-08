@@ -212,6 +212,7 @@ model ChannelAccount {
   updatedAt DateTime @updatedAt
 
   channelSkus ChannelSku[]
+  purchases   Purchase[]
 
   @@unique([channelId, code])
   @@index([channelId])
@@ -299,11 +300,23 @@ model Purchase {
   purchasedAt DateTime
   receivedAt  DateTime?
 
+  /// Alımın yapıldığı kanal hesabı (hesap başına alım limiti olduğu için önemli).
+  channelAccountId String?
+  channelAccount   ChannelAccount? @relation(fields: [channelAccountId], references: [id], onDelete: SetNull)
+
   creditCardId String?
   creditCard   CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
 
-  goodsAmount   Decimal  @db.Decimal(18, 4)
-  goodsCurrency Currency
+  /// Taksit sayısı. 1 = tek çekim.
+  installmentCount Int @default(1)
+
+  /// Mal bedeli özeti — OPSİYONEL.
+  /// Gerçek toplam her zaman kalemlerden (PurchaseItem) para birimi bazında
+  /// hesaplanır; bir alımda TRY ve EUR kalemler bir arada olabilir ve
+  /// birbirine ÇEVRİLMEZ. Bu alanlar sadece tek para birimli alımlarda
+  /// özet olarak doldurulur.
+  goodsAmount   Decimal?  @db.Decimal(18, 4)
+  goodsCurrency Currency?
 
   shippingAmount   Decimal?  @db.Decimal(18, 4)
   shippingCurrency Currency?
@@ -321,6 +334,7 @@ model Purchase {
   @@index([purchasedAt])
   @@index([status])
   @@index([creditCardId])
+  @@index([channelAccountId])
 }
 
 model PurchaseItem {

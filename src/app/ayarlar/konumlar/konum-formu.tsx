@@ -1,36 +1,55 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useState } from "react";
 import { Plus } from "lucide-react";
 
+import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { konumEkle, type KonumDurumu } from "./actions";
 
+const BOS = { code: "", name: "", description: "" };
+
 export function KonumFormu() {
   const [durum, formAction, bekliyor] = useActionState<KonumDurumu, FormData>(
     konumEkle,
     {},
   );
-  const formRef = useRef<HTMLFormElement>(null);
 
-  // Kayıt başarılıysa alanları temizle ki arka arkaya raf girmek kolay olsun.
-  useEffect(() => {
-    if (durum.basari) formRef.current?.reset();
-  }, [durum]);
+  const [alanlar, setAlanlar] = useState(BOS);
+
+  // Başarılı kayıttan sonra alanları temizle ki arka arkaya raf girmek kolay
+  // olsun. useActionState her dönüşte YENİ bir durum nesnesi verir; nesne
+  // kimliği değiştiğinde render sırasında state'i ayarlıyoruz.
+  // (React'in "adjusting state when a prop changes" kalıbı — useEffect içinde
+  // setState çağırmak zincirleme render üretirdi.)
+  const [sonDurum, setSonDurum] = useState(durum);
+  if (sonDurum !== durum) {
+    setSonDurum(durum);
+    if (durum.basari) setAlanlar(BOS);
+  }
+
+  function guncelle(degisim: Partial<typeof BOS>) {
+    setAlanlar((onceki) => ({ ...onceki, ...degisim }));
+  }
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-4">
+    <form action={formAction} className="space-y-4">
+      {/* Raf kodu kontrollü (barkod okuyucu için); değeri gizli alanla gider. */}
+      <input type="hidden" name="code" value={alanlar.code} />
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="konum-code">Raf kodu *</Label>
-          <Input
+          {/* Mevcut bir raf QR'ını okutup kodu doldurabilirsiniz. */}
+          <BarkodGirisi
             id="konum-code"
-            name="code"
-            placeholder="A-01"
-            autoComplete="off"
+            value={alanlar.code}
+            onChange={(deger) => guncelle({ code: deger })}
+            placeholder="A-01 (veya raf QR'ını okutun)"
+            kameraBasligi="Raf QR kodunu okut"
           />
         </div>
         <div className="space-y-2">
@@ -38,6 +57,8 @@ export function KonumFormu() {
           <Input
             id="konum-name"
             name="name"
+            value={alanlar.name}
+            onChange={(e) => guncelle({ name: e.target.value })}
             placeholder="Salon dolabı üst raf"
             autoComplete="off"
           />
@@ -48,6 +69,8 @@ export function KonumFormu() {
         <Input
           id="konum-description"
           name="description"
+          value={alanlar.description}
+          onChange={(e) => guncelle({ description: e.target.value })}
           placeholder="İsteğe bağlı"
           autoComplete="off"
         />

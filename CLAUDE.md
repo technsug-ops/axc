@@ -43,6 +43,9 @@ Bir faza ait olmayan özelliği o fazda EKLEME.
 - Migration, silme, reset gibi geri dönüşsüz işlerde MUTLAKA onay iste
 - Her tamamlanan aşamada commit + push (mesaj formatı: tip: Türkçe açıklama).
   Push öncesi .env sızıntısı kontrolü.
+- Barkod/kod girilebilen her yeni alan, hem USB okuyucu (klavye emülasyonu +
+  Enter) hem kamera okuma destekler. Manuel giriş her zaman yedek olarak kalır.
+  Ortak bileşen: `src/components/barkod-okuyucu.tsx` (zxing-wasm).
 
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`

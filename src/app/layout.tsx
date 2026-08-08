@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Link from "next/link";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -26,11 +27,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <AppSidebar />
             <SidebarInset>
               {/* Mobilde menüyü açan düğme burada; masaüstünde de kenar çubuğunu daraltır. */}
-              <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b px-4">
+              <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b px-4 print:hidden">
                 <SidebarTrigger />
-                <span className="font-semibold">Axcali ERP</span>
+                <Link
+                  href="/"
+                  className="font-semibold underline-offset-4 hover:underline"
+                >
+                  Axcali ERP
+                </Link>
               </header>
-              <main className="flex-1 p-4 md:p-6">{children}</main>
+              <main className="flex-1 p-4 md:p-6 print:p-0">{children}</main>
             </SidebarInset>
           </SidebarProvider>
         </TooltipProvider>

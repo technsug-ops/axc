@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Boxes, CreditCard, MapPin, Package, ShoppingCart } from "lucide-react";
+import {
+  Boxes,
+  CreditCard,
+  MapPin,
+  Package,
+  ShoppingCart,
+  Store,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -34,13 +41,24 @@ type MenuOgesi = {
 
 const OPERASYON: MenuOgesi[] = [
   { baslik: "Ürünler", href: "/urunler", icon: Package, aktif: true },
-  { baslik: "Alımlar", href: "#", icon: ShoppingCart, aktif: false },
+  { baslik: "Alımlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
   { baslik: "Stok", href: "#", icon: Boxes, aktif: false },
-  { baslik: "Kartlar", href: "#", icon: CreditCard, aktif: false },
+  { baslik: "Kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
 ];
 
 const AYARLAR: MenuOgesi[] = [
-  { baslik: "Raf Konumları", href: "/ayarlar/konumlar", icon: MapPin, aktif: true },
+  {
+    baslik: "Raf Konumları",
+    href: "/ayarlar/konumlar",
+    icon: MapPin,
+    aktif: true,
+  },
+  {
+    baslik: "Kanal Hesapları",
+    href: "/ayarlar/kanallar",
+    icon: Store,
+    aktif: true,
+  },
 ];
 
 export function AppSidebar() {
@@ -92,12 +110,18 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar>
+    <Sidebar className="print:hidden">
       <SidebarHeader className="px-4 py-3">
-        <span className="text-base font-semibold">Axcali ERP</span>
-        <span className="text-muted-foreground text-xs">
-          Çok kanallı operasyon
-        </span>
+        {/* Logo ana sayfaya döner. */}
+        <Link
+          href="/"
+          className="hover:bg-sidebar-accent -mx-2 flex flex-col rounded-md px-2 py-1 transition-colors"
+        >
+          <span className="text-base font-semibold">Axcali ERP</span>
+          <span className="text-muted-foreground text-xs">
+            Çok kanallı operasyon
+          </span>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         {grupCiz("Operasyon", OPERASYON)}

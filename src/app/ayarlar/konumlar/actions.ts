@@ -57,8 +57,9 @@ export async function konumEkle(
   }
 
   revalidatePath("/ayarlar/konumlar");
-  // Ürün formu statik derleniyor ve raf listesini buradan alıyor.
-  // Tazelemezsek yeni eklenen raf, üretimde açılır listede görünmez.
+  // Bu iki sayfa da statik derleniyor ve raf listesini buradan alıyor.
+  // Tazelemezsek yeni eklenen raf üretimde görünmez.
   revalidatePath("/urunler/yeni");
+  revalidatePath("/ayarlar/konumlar/etiketler");
   return { basari: `"${code}" rafı eklendi.` };
 }

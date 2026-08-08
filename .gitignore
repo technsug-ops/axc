@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# postinstall ile node_modules'ten kopyalanir (scripts/copy-zxing-wasm.mjs)
+/public/zxing_reader.wasm
