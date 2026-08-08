@@ -55,11 +55,17 @@ export function KopyalanabilirKod({
   deger,
   etiket,
   className,
+  sadeceIkon = false,
 }: {
   deger: string | null | undefined;
   /** Ekran okuyucu için: "SKU", "Barkod" gibi. */
   etiket: string;
   className?: string;
+  /**
+   * Değer zaten yanında yazıyorsa (ör. link olarak) metni tekrarlama,
+   * sadece kopyala ikonunu göster.
+   */
+  sadeceIkon?: boolean;
 }) {
   const [durum, setDurum] = useState<Durum>("bos");
   const zamanlayiciRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -77,7 +83,9 @@ export function KopyalanabilirKod({
 
   return (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
-      <span className="font-mono text-xs break-all">{deger}</span>
+      {sadeceIkon ? null : (
+        <span className="font-mono text-xs break-all">{deger}</span>
+      )}
 
       <button
         type="button"

@@ -168,13 +168,16 @@ export default async function AlimlarSayfasi({
                 {alimlar.map((alim) => (
                   <TableRow key={alim.id}>
                     <TableCell>
-                      <div className="space-y-1">
+                      {/* Kod link olarak zaten yazıyor; yanına sadece
+                          kopyala ikonu koyuyoruz, metin tekrarı olmasın. */}
+                      <div className="flex items-center gap-1">
                         <Baglanti href={`/alimlar/${alim.id}`}>
                           {alim.code}
                         </Baglanti>
                         <KopyalanabilirKod
                           deger={alim.code}
                           etiket="Sipariş no"
+                          sadeceIkon
                         />
                       </div>
                     </TableCell>
@@ -219,10 +222,16 @@ export default async function AlimlarSayfasi({
               <ListeKarti
                 key={alim.id}
                 baslik={
-                  <Baglanti href={`/alimlar/${alim.id}`}>{alim.code}</Baglanti>
-                }
-                altBaslik={
-                  <KopyalanabilirKod deger={alim.code} etiket="Sipariş no" />
+                  <span className="inline-flex items-center gap-1">
+                    <Baglanti href={`/alimlar/${alim.id}`}>
+                      {alim.code}
+                    </Baglanti>
+                    <KopyalanabilirKod
+                      deger={alim.code}
+                      etiket="Sipariş no"
+                      sadeceIkon
+                    />
+                  </span>
                 }
                 alanlar={[
                   {

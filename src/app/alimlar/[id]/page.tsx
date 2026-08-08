@@ -94,10 +94,16 @@ export default async function AlimDetaySayfasi({
         <GeriBaglanti href="/alimlar">Alımlar</GeriBaglanti>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">{alim.code}</h1>
+            <h1 className="flex items-center gap-2 text-2xl font-semibold">
+              {alim.code}
+              {/* Başlık zaten kodu yazıyor; sadece kopyala ikonu. */}
+              <KopyalanabilirKod
+                deger={alim.code}
+                etiket="Sipariş no"
+                sadeceIkon
+              />
+            </h1>
             <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
-              <KopyalanabilirKod deger={alim.code} etiket="Sipariş no" />
-              <span>·</span>
               <span>{tarihFormatla(alim.purchasedAt)}</span>
               <span>·</span>
               <span>{alim.items.length} kalem</span>
