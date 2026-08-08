@@ -1,6 +1,7 @@
 import Link from "next/link";
 import QRCode from "qrcode";
 
+import { GeriBaglanti } from "@/components/baglanti";
 import { prisma } from "@/lib/prisma";
 
 import { YazdirButonu } from "./yazdir-butonu";
@@ -39,12 +40,7 @@ export default async function RafEtiketleriSayfasi() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
-          <Link
-            href="/ayarlar/konumlar"
-            className="text-muted-foreground text-sm underline-offset-4 hover:underline"
-          >
-            ← Raf Konumları
-          </Link>
+          <GeriBaglanti href="/ayarlar/konumlar">Raf Konumları</GeriBaglanti>
           <h1 className="mt-1 text-2xl font-semibold">Raf Etiketleri</h1>
           <p className="text-muted-foreground text-sm">
             {etiketler.length} aktif raf. Yazdırıp raflara yapıştırın; QR

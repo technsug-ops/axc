@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PackageCheck } from "lucide-react";
 
-import { Baglanti } from "@/components/baglanti";
+import { Baglanti, GeriBaglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -91,12 +91,7 @@ export default async function AlimDetaySayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <Link
-          href="/alimlar"
-          className="text-muted-foreground text-sm underline-offset-4 hover:underline"
-        >
-          ← Alımlar
-        </Link>
+        <GeriBaglanti href="/alimlar">Alımlar</GeriBaglanti>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">{alim.code}</h1>

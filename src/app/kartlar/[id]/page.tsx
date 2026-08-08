@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 
+import { Baglanti, GeriBaglanti } from "@/components/baglanti";
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,12 +52,7 @@ export default async function KartDetaySayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <Link
-          href="/kartlar"
-          className="text-muted-foreground text-sm underline-offset-4 hover:underline"
-        >
-          ← Kredi Kartları
-        </Link>
+        <GeriBaglanti href="/kartlar">Kredi Kartları</GeriBaglanti>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="flex flex-wrap items-center gap-2 text-2xl font-semibold">
@@ -165,12 +161,9 @@ export default async function KartDetaySayfasi({
                   {kart.purchases.map((alim) => (
                     <TableRow key={alim.id}>
                       <TableCell>
-                        <Link
-                          href={`/alimlar/${alim.id}`}
-                          className="font-medium underline-offset-4 hover:underline"
-                        >
+                        <Baglanti href={`/alimlar/${alim.id}`}>
                           {alim.code}
-                        </Link>
+                        </Baglanti>
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {tarihFormatla(alim.purchasedAt)}

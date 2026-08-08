@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
 import { Geist } from "next/font/google";
+import { Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
@@ -29,10 +30,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               {/* Mobilde menüyü açan düğme burada; masaüstünde de kenar çubuğunu daraltır. */}
               <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b px-4 print:hidden">
                 <SidebarTrigger />
+                {/* İkon, başlığın tıklanabilir olduğunu gösteriyor (#2). */}
                 <Link
                   href="/"
-                  className="font-semibold underline-offset-4 hover:underline"
+                  className="hover:bg-accent inline-flex items-center gap-2 rounded-md px-2 py-1 font-semibold transition-colors"
                 >
+                  <Home className="size-4" />
                   Axcali ERP
                 </Link>
               </header>

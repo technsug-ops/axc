@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { GeriBaglanti } from "@/components/baglanti";
 import { prisma } from "@/lib/prisma";
 
 import { urunOlustur } from "../actions";
@@ -17,12 +16,7 @@ export default async function YeniUrunSayfasi() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <Link
-          href="/urunler"
-          className="text-muted-foreground text-sm underline-offset-4 hover:underline"
-        >
-          ← Ürünler
-        </Link>
+        <GeriBaglanti href="/urunler">Ürünler</GeriBaglanti>
         <h1 className="mt-1 text-2xl font-semibold">Yeni Ürün</h1>
       </div>
 

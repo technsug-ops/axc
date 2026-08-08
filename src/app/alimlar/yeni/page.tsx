@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { GeriBaglanti } from "@/components/baglanti";
 import { tarihGirdisi } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
@@ -35,12 +34,7 @@ export default async function YeniAlimSayfasi() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <Link
-          href="/alimlar"
-          className="text-muted-foreground text-sm underline-offset-4 hover:underline"
-        >
-          ← Alımlar
-        </Link>
+        <GeriBaglanti href="/alimlar">Alımlar</GeriBaglanti>
         <h1 className="mt-1 text-2xl font-semibold">Yeni Alım</h1>
       </div>
 

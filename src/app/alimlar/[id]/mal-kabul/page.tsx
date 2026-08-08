@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { GeriBaglanti } from "@/components/baglanti";
 import { Button } from "@/components/ui/button";
 import { tarihGirdisi } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -86,12 +87,7 @@ export default async function MalKabulSayfasi({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <Link
-          href={`/alimlar/${alim.id}`}
-          className="text-muted-foreground text-sm underline-offset-4 hover:underline"
-        >
-          ← {alim.code}
-        </Link>
+        <GeriBaglanti href={`/alimlar/${alim.id}`}>{alim.code}</GeriBaglanti>
         <h1 className="mt-1 text-2xl font-semibold">Mal Kabul</h1>
         <p className="text-muted-foreground text-sm">
           Gelen ürünleri sayın ve sağlam / hasarlı ayrımını yapın.

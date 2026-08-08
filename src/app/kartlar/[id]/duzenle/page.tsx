@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { GeriBaglanti } from "@/components/baglanti";
 import { prisma } from "@/lib/prisma";
 
 import { kartGuncelle } from "../../actions";
@@ -33,12 +33,7 @@ export default async function KartDuzenleSayfasi({
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <Link
-          href={`/kartlar/${kart.id}`}
-          className="text-muted-foreground text-sm underline-offset-4 hover:underline"
-        >
-          ← {kart.label}
-        </Link>
+        <GeriBaglanti href={`/kartlar/${kart.id}`}>{kart.label}</GeriBaglanti>
         <h1 className="mt-1 text-2xl font-semibold">Kartı Düzenle</h1>
       </div>
 

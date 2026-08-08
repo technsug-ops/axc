@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -23,5 +24,27 @@ export function Baglanti({
       )}
       {...props}
     />
+  );
+}
+
+/**
+ * "← Geri" bağlantısı. Tüm detay/form sayfalarında aynı görünür (#2, #10):
+ * ok ikonu + her zaman çizili alt çizgi.
+ */
+export function GeriBaglanti({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm underline decoration-current/40 underline-offset-4 transition-colors"
+    >
+      <ChevronLeft className="size-3.5 shrink-0" />
+      {children}
+    </Link>
   );
 }

@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { Baglanti } from "@/components/baglanti";
+import { Baglanti, GeriBaglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,12 +51,7 @@ export default async function VaryantHareketleriSayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <Link
-          href="/stok"
-          className="text-muted-foreground text-sm underline-offset-4 hover:underline"
-        >
-          ← Stok
-        </Link>
+        <GeriBaglanti href="/stok">Stok</GeriBaglanti>
         <h1 className="mt-1 text-2xl font-semibold">
           {varyant.product.name}
           {varyant.name ? ` — ${varyant.name}` : ""}

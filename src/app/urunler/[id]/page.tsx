@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 
+import { GeriBaglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,12 +46,7 @@ export default async function UrunDetaySayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <Link
-          href="/urunler"
-          className="text-muted-foreground text-sm underline-offset-4 hover:underline"
-        >
-          ← Ürünler
-        </Link>
+        <GeriBaglanti href="/urunler">Ürünler</GeriBaglanti>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">{urun.name}</h1>
