@@ -25,6 +25,18 @@ listesiyle birlikte teslim edilir.
       tereddüdü yaşanırsa formlara açık bildirim eklenecek.
       _Karar 08.08.2026: ihtiyaç doğarsa yapılacak, şimdi değil._
 
+## Faz 4'te yeniden değerlendirilecek
+
+- [ ] **Tarayıcı otomasyonu (Playwright)**
+      Şu an projede yok. Bu yüzden CLAUDE.md'deki "dar viewport etkileşim
+      testi" kuralını asistan tek başına uygulayamıyor; mobil doğrulamayı
+      kullanıcı gerçek cihazda yapıyor. Bu fiili durum 08.08.2026'da
+      resmileştirildi.
+      Playwright kurulursa menü aç/kapa, navigasyon, form gönderimi ve
+      diyalog akışları otomatik test edilebilir — mobil menü regresyonu
+      gibi hatalar teslimden önce yakalanır.
+      _Karar 08.08.2026: şimdilik yok, Faz 4'te tekrar bakılacak._
+
 ## Faz sırasına göre zaten planlı olanlar
 
 Bunlar eksik değil, sırası gelmedi (bkz. CLAUDE.md → Faz sırası):
