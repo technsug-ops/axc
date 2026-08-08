@@ -100,7 +100,7 @@ export default async function UrunDetaySayfasi({
                 <TableRow>
                   <TableHead>Varyant</TableHead>
                   <TableHead>SKU</TableHead>
-                  <TableHead>Axcali SKU</TableHead>
+                  <TableHead>Firma SKU</TableHead>
                   <TableHead>Barkod</TableHead>
                   <TableHead>Raf</TableHead>
                   <TableHead className="text-right">Stok</TableHead>
@@ -132,7 +132,7 @@ export default async function UrunDetaySayfasi({
                     <TableCell>
                       <KopyalanabilirKod
                         deger={varyant.axcaliSku}
-                        etiket="Axcali SKU"
+                        etiket="Firma SKU"
                       />
                     </TableCell>
                     <TableCell>

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 import { KonumDuzenleFormu } from "./konum-duzenle-formu";
 
-export const metadata = { title: "Rafı Düzenle — Axcali ERP" };
+export const metadata = { title: "Rafı Düzenle" };
 
 export default async function KonumDuzenleSayfasi({
   params,

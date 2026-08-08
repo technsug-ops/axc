@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  *  TIK-KOPYALA (Kullanıcı Kolaylığı İlkeleri #4)
  * ----------------------------------------------------------------------------
  *  Kod/kimlik niteliğindeki HER değer bu bileşenle gösterilir:
- *  SKU, Axcali SKU, barkod, sipariş no, raf kodu...
+ *  SKU, Firma SKU, barkod, sipariş no, raf kodu...
  *
  *  Panoya yazma iki yolla denenir:
  *   1) navigator.clipboard — modern yol, ama SADECE güvenli bağlantıda

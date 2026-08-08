@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { alimOlustur } from "../actions";
 import { AlimFormu, type HesapSecenegi, type KartSecenegi } from "../alim-formu";
 
-export const metadata = { title: "Yeni Alım — Axcali ERP" };
+export const metadata = { title: "Yeni Alım" };
 
 export default async function YeniAlimSayfasi() {
   const [hesapKayitlari, kartKayitlari] = await Promise.all([

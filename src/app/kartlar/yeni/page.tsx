@@ -3,7 +3,7 @@ import { GeriBaglanti } from "@/components/baglanti";
 import { kartOlustur } from "../actions";
 import { KartFormu } from "../kart-formu";
 
-export const metadata = { title: "Yeni Kart — Axcali ERP" };
+export const metadata = { title: "Yeni Kart" };
 
 export default function YeniKartSayfasi() {
   return (

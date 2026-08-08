@@ -239,7 +239,7 @@ export function UrunFormu({
             </div>
             <p className="text-muted-foreground text-xs">
               {varyantliMi
-                ? "Her varyantın kendi SKU, Axcali SKU, barkod ve raf bilgisi olur."
+                ? "Her varyantın kendi SKU, Firma SKU, barkod ve raf bilgisi olur."
                 : "Tek çeşit üründe arka planda otomatik bir varsayılan varyant oluşturulur; stok ve kodlar orada tutulur."}
             </p>
           </div>
@@ -347,7 +347,7 @@ export function UrunFormu({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`axcali-${sira}`}>Axcali SKU *</Label>
+                  <Label htmlFor={`axcali-${sira}`}>Firma SKU *</Label>
                   {/* Fiziğe yapıştırılan etiket kodu — okutulabilmeli (#7). */}
                   <BarkodGirisi
                     id={`axcali-${sira}`}
@@ -356,7 +356,7 @@ export function UrunFormu({
                       varyantGuncelle(sira, { axcaliSku: deger })
                     }
                     placeholder="Etiket kodu"
-                    kameraBasligi="Axcali SKU etiketini okut"
+                    kameraBasligi="Firma SKU etiketini okut"
                   />
                 </div>
                 <div className="space-y-2">

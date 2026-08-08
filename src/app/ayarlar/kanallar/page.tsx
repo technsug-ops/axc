@@ -15,7 +15,7 @@ import { prisma } from "@/lib/prisma";
 import { kanalHesabiDurumDegistir } from "./actions";
 import { KanalHesabiFormu } from "./kanal-hesabi-formu";
 
-export const metadata = { title: "Kanal Hesapları — Axcali ERP" };
+export const metadata = { title: "Kanal Hesapları" };
 
 export default async function KanalHesaplariSayfasi() {
   const [kanallar, hesaplar] = await Promise.all([

@@ -29,7 +29,7 @@ const varyantSemasi = z.object({
   /** Gösterim adı: "M / Kırmızı". Varyantsız üründe boş kalır. */
   ad: z.string().trim().max(191).optional(),
   sku: z.string().trim().min(1, "SKU zorunlu").max(191),
-  axcaliSku: z.string().trim().min(1, "Axcali SKU zorunlu").max(191),
+  axcaliSku: z.string().trim().min(1, "Firma SKU zorunlu").max(191),
   barcode: z.string().trim().max(191).optional(),
   locationId: z.string().optional(),
   secenekler: z.array(secenekSemasi).default([]),
@@ -64,7 +64,7 @@ function veritabaniHatasi(e: unknown): string {
       : "";
 
   if (kod === "P2002") {
-    return "Bu SKU, Axcali SKU veya barkod zaten kayıtlı. Değerleri kontrol edin.";
+    return "Bu SKU, Firma SKU veya barkod zaten kayıtlı. Değerleri kontrol edin.";
   }
   if (kod === "P2003" || kod === "P2014") {
     return "Bu kayıt başka kayıtlarla ilişkili olduğu için işlem yapılamadı.";
@@ -133,7 +133,7 @@ async function benzersizlikHatalari(
     .filter((b): b is string => Boolean(b));
 
   tekrarKontrol("SKU", skular);
-  tekrarKontrol("Axcali SKU", axcaliKodlari);
+  tekrarKontrol("Firma SKU", axcaliKodlari);
   tekrarKontrol("Barkod", barkodlar);
 
   // 2) Veritabanında başka bir ürüne ait mi
@@ -154,7 +154,7 @@ async function benzersizlikHatalari(
       hatalar.push(`SKU "${cakisan.sku}" başka bir üründe kullanılıyor.`);
     }
     if (axcaliKodlari.includes(cakisan.axcaliSku)) {
-      hatalar.push(`Axcali SKU "${cakisan.axcaliSku}" başka bir üründe kullanılıyor.`);
+      hatalar.push(`Firma SKU "${cakisan.axcaliSku}" başka bir üründe kullanılıyor.`);
     }
     if (cakisan.barcode && barkodlar.includes(cakisan.barcode)) {
       hatalar.push(`Barkod "${cakisan.barcode}" başka bir üründe kullanılıyor.`);

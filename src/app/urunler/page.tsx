@@ -21,7 +21,7 @@ import { urunStoklari } from "@/lib/stok";
 
 import { SilButonu } from "./sil-butonu";
 
-export const metadata = { title: "Ürünler — Axcali ERP" };
+export const metadata = { title: "Ürünler" };
 
 export default async function UrunlerSayfasi({
   searchParams,
@@ -141,7 +141,7 @@ export default async function UrunlerSayfasi({
                 <TableRow>
                   <TableHead>Ürün</TableHead>
                   <TableHead>Marka</TableHead>
-                  <TableHead>Axcali SKU</TableHead>
+                  <TableHead>Firma SKU</TableHead>
                   <TableHead>Barkod</TableHead>
                   <TableHead className="text-right">Varyant</TableHead>
                   <TableHead className="text-right">Toplam stok</TableHead>
@@ -170,7 +170,7 @@ export default async function UrunlerSayfasi({
                       <TableCell>
                         <KopyalanabilirKod
                           deger={ana?.axcaliSku}
-                          etiket="Axcali SKU"
+                          etiket="Firma SKU"
                         />
                       </TableCell>
                       <TableCell>
@@ -215,11 +215,11 @@ export default async function UrunlerSayfasi({
                   altBaslik={urun.brand ?? undefined}
                   alanlar={[
                     {
-                      etiket: "Axcali SKU",
+                      etiket: "Firma SKU",
                       deger: (
                         <KopyalanabilirKod
                           deger={ana?.axcaliSku}
-                          etiket="Axcali SKU"
+                          etiket="Firma SKU"
                         />
                       ),
                     },

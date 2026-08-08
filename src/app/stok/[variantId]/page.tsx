@@ -88,10 +88,10 @@ export default async function VaryantHareketleriSayfasi({
               <KopyalanabilirKod deger={varyant.sku} etiket="SKU" />
             </div>
             <div className="flex flex-wrap items-center gap-1">
-              <span className="text-muted-foreground">Axcali:</span>
+              <span className="text-muted-foreground">Firma SKU:</span>
               <KopyalanabilirKod
                 deger={varyant.axcaliSku}
-                etiket="Axcali SKU"
+                etiket="Firma SKU"
               />
             </div>
             <div className="flex flex-wrap items-center gap-1">

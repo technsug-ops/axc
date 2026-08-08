@@ -20,7 +20,7 @@ import { sonHareketTarihleri, varyantStoklari } from "@/lib/stok";
 
 import { StokArama } from "./stok-arama";
 
-export const metadata = { title: "Stok — Axcali ERP" };
+export const metadata = { title: "Stok" };
 
 export default async function StokSayfasi({
   searchParams,
@@ -110,7 +110,7 @@ export default async function StokSayfasi({
                 <TableRow>
                   <TableHead>Ürün</TableHead>
                   <TableHead>Varyant</TableHead>
-                  <TableHead>Axcali SKU</TableHead>
+                  <TableHead>Firma SKU</TableHead>
                   <TableHead>Barkod</TableHead>
                   <TableHead>Raf</TableHead>
                   <TableHead className="text-right">Mevcut stok</TableHead>
@@ -137,7 +137,7 @@ export default async function StokSayfasi({
                     <TableCell>
                       <KopyalanabilirKod
                         deger={varyant.axcaliSku}
-                        etiket="Axcali SKU"
+                        etiket="Firma SKU"
                       />
                     </TableCell>
                     <TableCell>
@@ -205,11 +205,11 @@ export default async function StokSayfasi({
                     ),
                   },
                   {
-                    etiket: "Axcali SKU",
+                    etiket: "Firma SKU",
                     deger: (
                       <KopyalanabilirKod
                         deger={varyant.axcaliSku}
-                        etiket="Axcali SKU"
+                        etiket="Firma SKU"
                       />
                     ),
                   },

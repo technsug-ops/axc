@@ -17,6 +17,31 @@ listesiyle birlikte teslim edilir.
       _Tamamlandı 08.08.2026 (`d4cd8ad`): düzenleme sayfası, pasife alma,
       kod değişikliğinde QR etiket uyarısı, mobil kart düzeni._
 
+## İlk zorunlu migration ile birlikte
+
+- [ ] **`axcaliSku` → `companySku` yeniden adlandırması**
+      Arayüzde her yerde "Firma SKU" yazıyor (09.08.2026), ama veritabanı
+      alanı hâlâ eski marka adını taşıyor. Tek başına bir migration açmaya
+      değmez; şema değişikliği gerektiren ilk işte birlikte yapılacak.
+      Etkilenecek yerler: `prisma/schema.prisma`, ürün ve alım action'ları,
+      ürün formu, arama sorguları.
+      _Karar 09.08.2026: adlandırma standardının son adımı._
+
+- [ ] **Veritabanı adı `axcali_erp`**
+      Bağlantı dizesindeki veritabanı adı da eski markayı taşıyor.
+      Yeniden adlandırmak veri taşıma gerektirir; yukarıdaki alan
+      adı değişikliğiyle aynı bakımda değerlendirilecek.
+
+## SaaS dönüşümü
+
+- [ ] **Çok-kiracılı (multi-tenant) mimari**
+      Sistem ileride satılabilir bir SaaS olacak. Bugün tek firma
+      varsayımıyla çalışıyoruz ama CLAUDE.md'deki adlandırma standardı
+      gereği bu varsayımı derinleştiren kısayollardan kaçınıyoruz.
+      Dönüşüm SaaS kararı netleşince planlanacak; kiracı (tenant) ayrımı,
+      veri izolasyonu ve kimlik doğrulama birlikte ele alınmalı.
+      _Karar 09.08.2026: bugün yapılmıyor, yön belli._
+
 ## Gözlem üzerine yapılacaklar
 
 - [ ] **Kayıt sonrası yeşil başarı bildirimi** — İlke #5

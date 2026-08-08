@@ -20,7 +20,7 @@ import { paraFormatla, tarihFormatla } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kalemToplamlari } from "@/lib/tutar";
 
-export const metadata = { title: "Alımlar — Axcali ERP" };
+export const metadata = { title: "Alımlar" };
 
 type AlimDurumKodu = (typeof ALIM_DURUMLARI)[number];
 

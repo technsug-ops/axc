@@ -11,12 +11,20 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { UYGULAMA } from "@/lib/uygulama";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
+/**
+ * Sekme başlıkları tek yerden yönetiliyor: alt sayfalar sadece kendi
+ * başlığını yazar ("Ürünler"), uygulama adını şablon ekler.
+ */
 export const metadata: Metadata = {
-  title: "Axcali ERP",
-  description: "Çok kanallı e-ticaret operasyon yönetimi",
+  title: {
+    default: UYGULAMA.ad,
+    template: `%s — ${UYGULAMA.ad}`,
+  },
+  description: UYGULAMA.slogan,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -46,7 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   className="hover:bg-accent inline-flex items-center gap-2 rounded-md px-2 py-2 font-semibold transition-colors"
                 >
                   <Home className="size-4" />
-                  Axcali ERP
+                  {UYGULAMA.ad}
                 </Link>
               </header>
               {/*

@@ -20,7 +20,7 @@ import { prisma } from "@/lib/prisma";
 
 import { kartDurumDegistir } from "./actions";
 
-export const metadata = { title: "Kredi Kartları — Axcali ERP" };
+export const metadata = { title: "Kredi Kartları" };
 
 export default async function KartlarSayfasi() {
   const kartlar = await prisma.creditCard.findMany({

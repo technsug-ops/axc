@@ -1,4 +1,4 @@
-# AXCALI ERP — Proje Anayasası
+# SELLIORA — Proje Anayasası
 
 ## Ne inşa ediyoruz
 Çok kanallı e-ticaret arbitraj operasyonu için ERP. Bugün: ~30 paket/gün,
@@ -14,6 +14,28 @@ yeniden yazmadan büyü.
   ters işaretli ADJUSTMENT ile yapılır.
 - Her üründe tam olarak bir isDefault=true varyant (uygulama katmanı garanti eder)
 
+## Adlandırma standardı (KESİN KURAL)
+
+Bu sistem ileride satılabilir bir SaaS olacak (çok-kiracılı dönüşüm SONRA).
+Bu nedenle hiçbir firma/marka adı sistemin YAPISINA gömülmez.
+
+- Alan adları, ekran başlıkları ve sistem metinleri hiçbir belirli
+  firmaya/markaya bağlı olamaz. Firma adları yalnızca VERİ olabilir
+  (ayar alanı değeri), YAPI olamaz.
+- Uygulama adı TEK sabitten okunur: `src/lib/uygulama.ts` → `UYGULAMA.ad`.
+  Sol menü markası, üst çubuk ve sekme başlıkları oradan beslenir; sekme
+  başlıkları `layout.tsx`'teki metadata şablonuyla otomatik eklenir.
+  Ad değişikliği tek satırlık iş olmalıdır.
+- Standart terimler:
+  - **SKU** — sistem içi kod
+  - **Firma SKU** — firmanın fiziksel etiket kodu
+  - **Barkod (EAN)** — üretici kodu
+  - **Kanal SKU** — pazaryeri kodu
+  - **Depo Konumu** — raf
+- SaaS hazırlık kuralı: Yeni yazılan hiçbir özellik "tek firma" varsayımını
+  DERİNLEŞTİRMEMELİ. Çok-kiracılılığı bugün kurmuyoruz ama onu ileride
+  zorlaştıracak kısayollardan kaçınıyoruz. Şüpheli durumda kullanıcıya sor.
+
 ## Kullanıcı Kolaylığı İlkeleri (KESİN KURALLAR)
 
 Kullanıcı yazılımcı değil, operasyoncudur. Her ekran, ilk kez gören
@@ -27,9 +49,9 @@ tercih değil, zorunluluktur:
 2. TIKLANABİLİR GÖRÜNÜR: Tıklanabilir her öğe tıklanabilir görünür
    (link stili, hover, ikon). Düz metin gibi duran link yasaktır.
 
-3. KİMLİK KODLARI LİSTEDE: Bir kaydı tanımlayan kodlar (SKU, Axcali
+3. KİMLİK KODLARI LİSTEDE: Bir kaydı tanımlayan kodlar (SKU, Firma
    SKU, barkod/EAN, sipariş no) detaya girmeden LİSTEDE görünür.
-   Mobilde yer darsa öncelik: ad > Axcali SKU > barkod.
+   Mobilde yer darsa öncelik: ad > Firma SKU > barkod.
 
 4. TIK-KOPYALA: Kod/kimlik niteliğindeki her değer (SKU, barkod,
    sipariş no vb.) yanındaki ikonla tek tıkta panoya kopyalanır ve
@@ -66,7 +88,9 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
 - 11 satış kanalı: Trendyol, Hepsiburada, Amazon, N11, Bim, A101,
   Teknosa, Mediamarkt, Vatan, Pazarama, PTTAvm
 - Bir kanalda birden fazla hesap olabilir (hesap başına alım limiti nedeniyle)
-- Üç kod rolü ayrıdır: sku (iç), axcaliSku (fiziksel etiket), barcode (EAN)
+- Üç kod rolü ayrıdır: SKU (sistem içi), Firma SKU (fiziksel etiket),
+  Barkod/EAN (üretici). Veritabanı alanı hâlâ `axcaliSku`; yeniden
+  adlandırması BEKLEYENLER.md'de.
 - Kanal başına varyantın ayrı ChannelSku'su olabilir
 - Kredi kartı seçim mantığı (ileride): limiti uygun + kesim günü en uzak
   + faizsiz maksimum taksit

@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- *  AXCALI ERP — SABİT VERİ (SEED)
+ *  SELLIORA — SABİT VERİ (SEED)
  * ----------------------------------------------------------------------------
  *  Ne yazar : Sadece pazaryeri kanallarını (Channel tablosu).
  *  Ne YAZMAZ: ChannelAccount (mağaza/hesap). Onlar size özel veridir; hangi

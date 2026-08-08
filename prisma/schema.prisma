@@ -1,5 +1,5 @@
 // ============================================================================
-//  AXCALI ERP — FAZ 1 ŞEMASI
+//  SELLIORA — FAZ 1 ŞEMASI
 // ----------------------------------------------------------------------------
 //  Kapsam : Ürün/Varyant · Kanal & Kanal-SKU · Alım · Stok defteri · Kredi kartı
 //  Kapsam dışı (sonraki fazlar): satış/kâr, iade, hakediş, gider/muhasebe.
@@ -91,7 +91,10 @@ model ProductVariant {
   /// Üreticinin barkodu (EAN/GTIN). Bizim ürettiğimiz bir kod değildir.
   barcode String? @unique
 
-  /// AXCALI SKU — firma-içi, ürünün fiziğine yapıştırılan etiket kodu.
+  /// FİRMA SKU — firmanın fiziğe yapıştırdığı etiket kodu.
+  /// NOT: Alan adı `axcaliSku` tarihsel bir kalıntıdır; arayüzde "Firma SKU"
+  /// olarak görünür. `companySku` yeniden adlandırması BEKLEYENLER.md'de,
+  /// ilk zorunlu migration'la birlikte yapılacak.
   /// ChannelSku (pazaryeri stok kodu) ile hiçbir ilgisi yoktur, bağımsızdır.
   /// ZORUNLU ve benzersiz: etiketsiz varyant kaydı açılamaz.
   /// Bu yüzden varyant oluşturan serviste kod üretimi (örn. AX00001234)
@@ -202,7 +205,7 @@ model ChannelAccount {
   channel   Channel @relation(fields: [channelId], references: [id], onDelete: Restrict)
 
   code       String // kanal içinde benzersiz kısa kod
-  name       String // "Axcali TR Ana Mağaza"
+  name       String // "TR Ana Mağaza"
   externalId String? // pazaryerindeki satıcı/mağaza kimliği
 
   /// Hesabın çalıştığı para birimi (TR mağazası TRY, DE mağazası EUR).

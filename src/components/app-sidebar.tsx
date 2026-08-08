@@ -23,6 +23,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { UYGULAMA } from "@/lib/uygulama";
 
 /**
  * Sol menü.
@@ -117,9 +118,9 @@ export function AppSidebar() {
           href="/"
           className="hover:bg-sidebar-accent -mx-2 flex flex-col rounded-md px-2 py-1 transition-colors"
         >
-          <span className="text-base font-semibold">Axcali ERP</span>
+          <span className="text-base font-semibold">{UYGULAMA.ad}</span>
           <span className="text-muted-foreground text-xs">
-            Çok kanallı operasyon
+            {UYGULAMA.slogan}
           </span>
         </Link>
       </SidebarHeader>

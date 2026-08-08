@@ -53,7 +53,7 @@ const VARYANT_SECIMI = {
   product: { select: { name: true, brand: true } },
 } as const;
 
-/** Serbest metin araması: ürün adı, SKU, Axcali SKU veya barkod. */
+/** Serbest metin araması: ürün adı, SKU, Firma SKU veya barkod. */
 export async function varyantAra(sorgu: string): Promise<VaryantSonucu[]> {
   const q = sorgu.trim();
   if (q.length < 2) return [];

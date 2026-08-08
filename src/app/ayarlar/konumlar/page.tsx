@@ -20,7 +20,7 @@ import { prisma } from "@/lib/prisma";
 import { konumDurumDegistir } from "./actions";
 import { KonumFormu } from "./konum-formu";
 
-export const metadata = { title: "Raf Konumları — Axcali ERP" };
+export const metadata = { title: "Raf Konumları" };
 
 export default async function KonumlarSayfasi() {
   const konumlar = await prisma.location.findMany({

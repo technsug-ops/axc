@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { urunOlustur } from "../actions";
 import { UrunFormu } from "../urun-formu";
 
-export const metadata = { title: "Yeni Ürün — Axcali ERP" };
+export const metadata = { title: "Yeni Ürün" };
 
 export default async function YeniUrunSayfasi() {
   const konumlar = await prisma.location.findMany({

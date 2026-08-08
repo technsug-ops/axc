@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 import { YazdirButonu } from "./yazdir-butonu";
 
-export const metadata = { title: "Raf Etiketleri — Axcali ERP" };
+export const metadata = { title: "Raf Etiketleri" };
 
 /**
  * Raf QR etiketleri — toplu yazdırma görünümü.
