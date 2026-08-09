@@ -18,6 +18,9 @@ listesiyle birlikte teslim edilir.
 ## İlk zorunlu migration ile birlikte
 
 - [ ] **`axcaliSku` → `companySku` yeniden adlandırması**
+      _09.08.2026: Faz 2 / Aşama 2 (kâr motoru) migration'ına binmesi
+      kararlaştırıldı. Migration `ALTER TABLE ... RENAME COLUMN` ile
+      elle yazılacak — Prisma'nın ürettiği DROP+ADD veri kaybettirir._
       Arayüzde her yerde "Firma SKU" yazıyor (09.08.2026), ama veritabanı
       alanı hâlâ eski marka adını taşıyor. Tek başına bir migration açmaya
       değmez; şema değişikliği gerektiren ilk işte birlikte yapılacak.
@@ -30,17 +33,18 @@ listesiyle birlikte teslim edilir.
       Yeniden adlandırmak veri taşıma gerektirir; yukarıdaki alan
       adı değişikliğiyle aynı bakımda değerlendirilecek.
 
-## Faz 3 öncesinde karara bağlanacak
+## Karara bağlandı — Faz 2 / Aşama 2'de uygulanacak
 
-- [ ] **İş saat dilimi sabitlemesi (Europe/Istanbul?)**
-      Şu an tarih biçimlendirmesi çalışma ortamının saat dilimini
-      kullanıyor (`src/i18n/request.ts`). Kullanıcı Almanya'da, operasyon
-      Türkiye'de — sabit bir iş saat dilimine geçmek tarihleri bir gün
-      kaydırabilir ve bu **finansal sonuç doğurur**: kart kesim günleri,
-      hakediş tarihleri, faizsiz dönem hesabı.
-      Faz 3 (hakediş + kart borcu takibi) başlamadan karara bağlanmalı.
-      _Karar 09.08.2026: i18n Paket 1'de bilinçli olarak ertelendi;
-      o paket görünümü değiştirmemeliydi._
+- [x] ~~**İş saat dilimi sabitlemesi**~~ → **`Europe/Istanbul` seçildi
+      (09.08.2026).** Kural CLAUDE.md → Teknoloji kurallarına yazıldı.
+      Uygulama Aşama 2 paketinde: `src/i18n/ayarlar.ts`'e sabit, hem
+      `request.ts` (gösterim) hem `tarihGirdisi()` ("bugün" üretimi) o
+      sabite bağlanacak.
+      _Mevcut veri kontrol edildi (`scripts/saat-dilimi-kontrol.ts`):
+      20 tarih alanından 2'si iki saat diliminde farklı gün gösteriyor,
+      ikisi de `createdAt` denetim damgası. İş tarihleri
+      (`purchasedAt`, `soldAt`, `occurredAt`) KAYMIYOR — tarih girdileri
+      UTC gece yarısı olarak saklandığı için iki dilimde de aynı gün._
 
 ## SaaS dönüşümü
 

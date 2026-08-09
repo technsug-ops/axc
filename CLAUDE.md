@@ -12,6 +12,12 @@ yeniden yazmadan büyü.
 - Parasal değerler: her zaman Decimal + currency (TRY|EUR). Asla Float.
 - Stok: ledger (StockMovement). Kayıt silinmez/değiştirilmez; düzeltme
   ters işaretli ADJUSTMENT ile yapılır.
+- **İŞ SAAT DİLİMİ: `Europe/Istanbul` — SABİT.** Kullanıcı Almanya'da ama
+  operasyon Türkiye'de. Kart kesim günü, hakediş ve kâr tarihleri İstanbul
+  gününe göre işler. Çalışma ortamının saat dilimi ASLA kullanılmaz
+  (`Intl.DateTimeFormat().resolvedOptions().timeZone` yasak). Hem GÖSTERİM
+  hem "bugün" ÜRETİMİ tek sabitten okunur: `src/i18n/ayarlar.ts`.
+  _Karar 09.08.2026._
 - Her üründe tam olarak bir isDefault=true varyant (uygulama katmanı garanti eder)
 
 ## Adlandırma standardı (KESİN KURAL)
@@ -152,6 +158,16 @@ zorlaştıracak şekilde yazılmıyor.
   ayrışma noktası budur.
 - Bu karar `ChannelType` yapısını **doğruluyor**: kanal mimarisine
   dokunulmaz, `WEBSITE` tipinin eklenmesi yeterli olacak.
+- **KDV KATEGORİDEN GELİR, SaaS'a hazırdır:** KDV oranı ürün ürün elle
+  girilmez; ürün bir kategoriye bağlanır, oran kategoriden okunur.
+  Kategoriler ve oranları **ayarlanabilir veridir** (sabit kod değil), bu
+  yüzden çok-kiracılı yapıda her müşteri kendi kategori/oran setini
+  kullanabilir. Aynı ilke kanal kesinti kuralları için de geçerli:
+  komisyon, ücret ve kargo tarifeleri veri olarak tutulur.
+  Çözüm sırası: **ürün istisnası > kategori oranı > varsayılan %20.**
+  Satış anında çözülen oran satış kaydına yazılır (snapshot) — oran
+  sonradan değişse eski satışların hesabı değişmez.
+  _Karar 09.08.2026._
 
 ## Çalışma kuralları
 - Her aşamada önce ne yapacağını KISACA söyle, onay al, sonra uygula
