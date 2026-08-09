@@ -585,7 +585,8 @@
     "kdvKargo": "Kargo KDV'si (indirilecek)",
     "kdvKesinti": "Kesinti KDV'si (indirilecek)",
     "kdvOdenecek": "Ödenecek KDV",
-    "hesaplanmaTarihi": "Hesaplandı: {tarih}"
+    "hesaplanmaTarihi": "Hesaplandı: {tarih}",
+    "desiIpucu": "örn. 3"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",

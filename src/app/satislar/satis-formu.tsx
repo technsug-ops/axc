@@ -380,7 +380,7 @@ export function SatisFormu({
                   value={desiMetni}
                   onChange={(e) => setDesiElle(e.target.value)}
                   inputMode="decimal"
-                  placeholder="0"
+                  placeholder={t("desiIpucu")}
                 />
                 <p className="text-muted-foreground text-xs">{t("desiNotu")}</p>
               </div>
