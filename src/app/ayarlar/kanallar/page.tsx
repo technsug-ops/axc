@@ -29,25 +29,27 @@ export default async function KanalHesaplariSayfasi() {
       orderBy: { name: "asc" },
     }),
     prisma.channelAccount.findMany({
-      include: { channel: { select: { name: true } }, _count: { select: { purchases: true } } },
+      include: {
+        channel: { select: { name: true } },
+        _count: { select: { purchases: true } },
+      },
       orderBy: [{ channelId: "asc" }, { code: "asc" }],
     }),
   ]);
 
+  const t = await getTranslations("KanalHesabi");
+  const ortak = await getTranslations("Ortak");
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Kanal Hesapları</h1>
-        <p className="text-muted-foreground text-sm">
-          Bir pazaryerinde birden fazla hesabınız olabilir (hesap başına alım
-          limiti nedeniyle). Alım girerken hangi hesaptan alındığını buradan
-          seçersiniz.
-        </p>
+        <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
+        <p className="text-muted-foreground text-sm">{t("aciklamaMetni")}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Yeni hesap</CardTitle>
+          <CardTitle>{t("yeniHesap")}</CardTitle>
         </CardHeader>
         <CardContent>
           <KanalHesabiFormu kanallar={kanallar} />
@@ -56,14 +58,16 @@ export default async function KanalHesaplariSayfasi() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Tanımlı hesaplar ({hesaplar.length})</CardTitle>
+          <CardTitle>
+            {t("tanimliHesaplar", { sayi: hesaplar.length })}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {hesaplar.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="font-medium">Henüz kanal hesabı tanımlanmamış.</p>
+              <p className="font-medium">{t("bosBaslik")}</p>
               <p className="text-muted-foreground mt-1 text-sm">
-                Alım girebilmek için en az bir hesap gerekiyor.
+                {t("bosIpucu")}
               </p>
             </div>
           ) : (
@@ -71,12 +75,14 @@ export default async function KanalHesaplariSayfasi() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Kanal</TableHead>
-                    <TableHead>Hesap</TableHead>
-                    <TableHead>Kod</TableHead>
-                    <TableHead>Para birimi</TableHead>
-                    <TableHead className="text-right">Alım</TableHead>
-                    <TableHead>Durum</TableHead>
+                    <TableHead>{t("kanal")}</TableHead>
+                    <TableHead>{t("hesap")}</TableHead>
+                    <TableHead>{ortak("kod")}</TableHead>
+                    <TableHead>{ortak("paraBirimi")}</TableHead>
+                    <TableHead className="text-right">
+                      {t("alimSutunu")}
+                    </TableHead>
+                    <TableHead>{ortak("durum")}</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -90,7 +96,7 @@ export default async function KanalHesaplariSayfasi() {
                       <TableCell>
                         <KopyalanabilirKod
                           deger={hesap.code}
-                          etiket="Hesap kodu"
+                          etiket={t("hesapKodu")}
                         />
                       </TableCell>
                       <TableCell>{hesap.defaultCurrency}</TableCell>
@@ -99,9 +105,9 @@ export default async function KanalHesaplariSayfasi() {
                       </TableCell>
                       <TableCell>
                         {hesap.isActive ? (
-                          <Badge variant="secondary">aktif</Badge>
+                          <Badge variant="secondary">{ortak("aktif")}</Badge>
                         ) : (
-                          <Badge variant="outline">pasif</Badge>
+                          <Badge variant="outline">{ortak("pasif")}</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right">

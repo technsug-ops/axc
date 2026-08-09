@@ -27,6 +27,8 @@ export default async function RafEtiketleriSayfasi() {
     orderBy: { code: "asc" },
   });
 
+  const t = await getTranslations("Raf");
+
   const etiketler = await Promise.all(
     konumlar.map(async (konum) => ({
       id: konum.id,
@@ -44,11 +46,12 @@ export default async function RafEtiketleriSayfasi() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
-          <GeriBaglanti href="/ayarlar/konumlar">Raf Konumları</GeriBaglanti>
-          <h1 className="mt-1 text-2xl font-semibold">Raf Etiketleri</h1>
+          <GeriBaglanti href="/ayarlar/konumlar">{t("baslik")}</GeriBaglanti>
+          <h1 className="mt-1 text-2xl font-semibold">
+            {t("etiketlerBasligi")}
+          </h1>
           <p className="text-muted-foreground text-sm">
-            {etiketler.length} aktif raf. Yazdırıp raflara yapıştırın; QR
-            içeriği raf kodudur.
+            {t("etiketlerOzeti", { sayi: etiketler.length })}
           </p>
         </div>
         <YazdirButonu />
@@ -56,16 +59,18 @@ export default async function RafEtiketleriSayfasi() {
 
       {etiketler.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center print:hidden">
-          <p className="font-medium">Aktif raf yok.</p>
+          <p className="font-medium">{t("aktifRafYok")}</p>
           <p className="text-muted-foreground mt-1 text-sm">
-            Önce{" "}
-            <Link
-              href="/ayarlar/konumlar"
-              className="underline underline-offset-4"
-            >
-              raf konumu ekleyin
-            </Link>
-            .
+            {t.rich("aktifRafYokIpucu", {
+              baglanti: (parca) => (
+                <Link
+                  href="/ayarlar/konumlar"
+                  className="underline underline-offset-4"
+                >
+                  {parca}
+                </Link>
+              ),
+            })}
           </p>
         </div>
       ) : (

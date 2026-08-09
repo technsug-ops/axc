@@ -88,6 +88,11 @@ const ornekler = [
   ["Kart", "gunNotu", {}, 'Kesim ve son ödeme günü, ileride "faizsiz dönemi en uzun kart" seçimini hesaplamak için kullanılacak. Ayın günü olarak girin (1-31).'],
   ["Kart", "kartlaYapilanAlimlar", { sayi: 3 }, "Bu kartla yapılan alımlar (3)"],
   ["Stok", "gecmisNotu", {}, 'Hareketler değiştirilmez ve silinmez. Hatalı bir giriş, ters yönde bir düzeltme kaydıyla giderilir. "Kim" sütunu çok kullanıcılı yapıyla (Faz 4) dolacak.'],
+  ["Raf", "kodIpucu", {}, "A-01 (veya raf QR'ını okutun)"],
+  ["Raf", "tanimliRaflar", { sayi: 7 }, "Tanımlı raflar (7)"],
+  ["Raf", "bagliKayitlar", { varyant: 2, hareket: 9 }, "2 varyant ve 9 stok hareketi bu rafa bağlı."],
+  ["Raf", "etiketlerOzeti", { sayi: 5 }, "5 aktif raf. Yazdırıp raflara yapıştırın; QR içeriği raf kodudur."],
+  ["KanalHesabi", "tanimliHesaplar", { sayi: 2 }, "Tanımlı hesaplar (2)"],
 ];
 
 let fark = 0;

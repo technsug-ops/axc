@@ -26,20 +26,24 @@ export default async function KonumDuzenleSayfasi({
 
   if (!konum) notFound();
 
+  const t = await getTranslations("Raf");
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <GeriBaglanti href="/ayarlar/konumlar">Raf Konumları</GeriBaglanti>
-        <h1 className="mt-1 text-2xl font-semibold">Rafı Düzenle</h1>
+        <GeriBaglanti href="/ayarlar/konumlar">{t("baslik")}</GeriBaglanti>
+        <h1 className="mt-1 text-2xl font-semibold">{t("rafiDuzenle")}</h1>
         <p className="text-muted-foreground text-sm">
-          {konum._count.variants} varyant ve {konum._count.stockMovements} stok
-          hareketi bu rafa bağlı.
+          {t("bagliKayitlar", {
+            varyant: konum._count.variants,
+            hareket: konum._count.stockMovements,
+          })}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Raf bilgileri</CardTitle>
+          <CardTitle>{t("rafBilgileri")}</CardTitle>
         </CardHeader>
         <CardContent>
           <KonumDuzenleFormu

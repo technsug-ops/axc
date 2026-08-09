@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,9 @@ export function KonumDuzenleFormu({
     {},
   );
 
+  const t = useTranslations("Raf");
+  const ortak = useTranslations("Ortak");
+
   const [alanlar, setAlanlar] = useState(baslangic);
 
   function guncelle(degisim: Partial<typeof baslangic>) {
@@ -37,36 +41,36 @@ export function KonumDuzenleFormu({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="duzenle-code">Raf kodu *</Label>
+          <Label htmlFor="duzenle-code">{t("rafKodu")} *</Label>
           <BarkodGirisi
             id="duzenle-code"
             value={alanlar.code}
             onChange={(deger) => guncelle({ code: deger })}
             placeholder="A-01"
-            kameraBasligi="Raf QR kodunu okut"
+            kameraBasligi={t("kameraBasligi")}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="duzenle-name">Ad</Label>
+          <Label htmlFor="duzenle-name">{ortak("ad")}</Label>
           <Input
             id="duzenle-name"
             name="name"
             value={alanlar.name}
             onChange={(e) => guncelle({ name: e.target.value })}
-            placeholder="Salon dolabı üst raf"
+            placeholder={t("adIpucu")}
             autoComplete="off"
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="duzenle-description">Açıklama</Label>
+        <Label htmlFor="duzenle-description">{ortak("aciklama")}</Label>
         <Input
           id="duzenle-description"
           name="description"
           value={alanlar.description}
           onChange={(e) => guncelle({ description: e.target.value })}
-          placeholder="İsteğe bağlı"
+          placeholder={ortak("istegeBagli")}
           autoComplete="off"
         />
       </div>
@@ -78,9 +82,10 @@ export function KonumDuzenleFormu({
           role="status"
           className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400"
         >
-          Raf kodunu değiştiriyorsunuz. Bu rafın basılı QR etiketi{" "}
-          <strong>{baslangic.code}</strong> içeriyor; kaydettikten sonra
-          etiketi yeniden basıp yapıştırmanız gerekir.
+          {t.rich("kodDegistiUyarisi", {
+            kod: baslangic.code,
+            kalin: (parca) => <strong>{parca}</strong>,
+          })}
         </p>
       ) : null}
 
@@ -99,10 +104,10 @@ export function KonumDuzenleFormu({
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={bekliyor}>
-          {bekliyor ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
+          {bekliyor ? ortak("kaydediliyor") : ortak("degisiklikleriKaydet")}
         </Button>
         <Button type="button" variant="outline" asChild>
-          <Link href="/ayarlar/konumlar">Vazgeç</Link>
+          <Link href="/ayarlar/konumlar">{ortak("vazgec")}</Link>
         </Button>
       </div>
     </form>

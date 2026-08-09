@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
@@ -17,6 +18,9 @@ export function KonumFormu() {
     konumEkle,
     {},
   );
+
+  const t = useTranslations("Raf");
+  const ortak = useTranslations("Ortak");
 
   const [alanlar, setAlanlar] = useState(BOS);
 
@@ -42,36 +46,36 @@ export function KonumFormu() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="konum-code">Raf kodu *</Label>
+          <Label htmlFor="konum-code">{t("rafKodu")} *</Label>
           {/* Mevcut bir raf QR'ını okutup kodu doldurabilirsiniz. */}
           <BarkodGirisi
             id="konum-code"
             value={alanlar.code}
             onChange={(deger) => guncelle({ code: deger })}
-            placeholder="A-01 (veya raf QR'ını okutun)"
-            kameraBasligi="Raf QR kodunu okut"
+            placeholder={t("kodIpucu")}
+            kameraBasligi={t("kameraBasligi")}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="konum-name">Ad</Label>
+          <Label htmlFor="konum-name">{ortak("ad")}</Label>
           <Input
             id="konum-name"
             name="name"
             value={alanlar.name}
             onChange={(e) => guncelle({ name: e.target.value })}
-            placeholder="Salon dolabı üst raf"
+            placeholder={t("adIpucu")}
             autoComplete="off"
           />
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="konum-description">Açıklama</Label>
+        <Label htmlFor="konum-description">{ortak("aciklama")}</Label>
         <Input
           id="konum-description"
           name="description"
           value={alanlar.description}
           onChange={(e) => guncelle({ description: e.target.value })}
-          placeholder="İsteğe bağlı"
+          placeholder={ortak("istegeBagli")}
           autoComplete="off"
         />
       </div>
@@ -97,7 +101,7 @@ export function KonumFormu() {
 
       <Button type="submit" disabled={bekliyor}>
         <Plus />
-        {bekliyor ? "Ekleniyor..." : "Raf Ekle"}
+        {bekliyor ? ortak("ekleniyor") : t("rafEkle")}
       </Button>
     </form>
   );

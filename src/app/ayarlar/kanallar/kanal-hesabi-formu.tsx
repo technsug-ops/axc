@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,9 @@ export function KanalHesabiFormu({ kanallar }: { kanallar: KanalSecenegi[] }) {
     FormData
   >(kanalHesabiEkle, {});
 
+  const t = useTranslations("KanalHesabi");
+  const ortak = useTranslations("Ortak");
+
   const [alanlar, setAlanlar] = useState(BOS);
 
   // Başarılı kayıttan sonra formu sıfırla. Render sırasında ayarlıyoruz;
@@ -54,13 +58,13 @@ export function KanalHesabiFormu({ kanallar }: { kanallar: KanalSecenegi[] }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="hesap-kanal">Kanal *</Label>
+          <Label htmlFor="hesap-kanal">{t("kanal")} *</Label>
           <Select
             value={alanlar.channelId}
             onValueChange={(d) => guncelle({ channelId: d })}
           >
             <SelectTrigger id="hesap-kanal" className="w-full">
-              <SelectValue placeholder="Pazaryeri seçin" />
+              <SelectValue placeholder={t("pazaryeriSecin")} />
             </SelectTrigger>
             <SelectContent>
               {kanallar.map((kanal) => (
@@ -73,12 +77,10 @@ export function KanalHesabiFormu({ kanallar }: { kanallar: KanalSecenegi[] }) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="hesap-para">Para birimi *</Label>
+          <Label htmlFor="hesap-para">{ortak("paraBirimi")} *</Label>
           <Select
             value={alanlar.paraBirimi}
-            onValueChange={(d) =>
-              guncelle({ paraBirimi: d as "TRY" | "EUR" })
-            }
+            onValueChange={(d) => guncelle({ paraBirimi: d as "TRY" | "EUR" })}
           >
             <SelectTrigger id="hesap-para" className="w-full">
               <SelectValue />
@@ -91,41 +93,39 @@ export function KanalHesabiFormu({ kanallar }: { kanallar: KanalSecenegi[] }) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="hesap-ad">Hesap adı *</Label>
+          <Label htmlFor="hesap-ad">{t("hesapAdi")} *</Label>
           <Input
             id="hesap-ad"
             name="name"
             value={alanlar.name}
             onChange={(e) => guncelle({ name: e.target.value })}
-            placeholder="Ana Mağaza"
+            placeholder={t("hesapAdiIpucu")}
             autoComplete="off"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="hesap-kod">Hesap kodu *</Label>
+          <Label htmlFor="hesap-kod">{t("hesapKodu")} *</Label>
           <Input
             id="hesap-kod"
             name="code"
             value={alanlar.code}
             onChange={(e) => guncelle({ code: e.target.value })}
-            placeholder="ANA"
+            placeholder={t("hesapKoduIpucu")}
             autoComplete="off"
           />
-          <p className="text-muted-foreground text-xs">
-            Kanal içinde benzersiz kısa kod.
-          </p>
+          <p className="text-muted-foreground text-xs">{t("kodNotu")}</p>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="hesap-dis-id">Pazaryeri satıcı kimliği</Label>
+        <Label htmlFor="hesap-dis-id">{t("saticiKimligi")}</Label>
         <Input
           id="hesap-dis-id"
           name="externalId"
           value={alanlar.externalId}
           onChange={(e) => guncelle({ externalId: e.target.value })}
-          placeholder="İsteğe bağlı"
+          placeholder={ortak("istegeBagli")}
           autoComplete="off"
         />
       </div>
@@ -151,7 +151,7 @@ export function KanalHesabiFormu({ kanallar }: { kanallar: KanalSecenegi[] }) {
 
       <Button type="submit" disabled={bekliyor}>
         <Plus />
-        {bekliyor ? "Ekleniyor..." : "Hesap Ekle"}
+        {bekliyor ? ortak("ekleniyor") : t("hesapEkle")}
       </Button>
     </form>
   );

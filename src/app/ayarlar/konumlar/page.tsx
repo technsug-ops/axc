@@ -32,13 +32,16 @@ export default async function KonumlarSayfasi() {
     include: { _count: { select: { variants: true } } },
   });
 
+  const t = await getTranslations("Raf");
+  const ortak = await getTranslations("Ortak");
+
   function eylemler(konum: (typeof konumlar)[number]) {
     return (
       <>
         <Button variant="outline" size="sm" asChild>
           <Link href={`/ayarlar/konumlar/${konum.id}/duzenle`}>
             <Pencil />
-            Düzenle
+            {ortak("duzenle")}
           </Link>
         </Button>
         <DurumDegistirButonu
@@ -54,23 +57,20 @@ export default async function KonumlarSayfasi() {
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Raf Konumları</h1>
-          <p className="text-muted-foreground text-sm">
-            Depodaki raf kodlarını buradan tanımlarsınız. Ürün formundaki ve
-            mal kabuldeki raf seçimi bu listeden beslenir.
-          </p>
+          <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
+          <p className="text-muted-foreground text-sm">{t("aciklamaMetni")}</p>
         </div>
         <Button variant="outline" asChild>
           <Link href="/ayarlar/konumlar/etiketler">
             <QrCode />
-            QR Etiketleri
+            {t("qrEtiketleri")}
           </Link>
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Yeni raf</CardTitle>
+          <CardTitle>{t("yeniRaf")}</CardTitle>
         </CardHeader>
         <CardContent>
           <KonumFormu />
@@ -79,14 +79,14 @@ export default async function KonumlarSayfasi() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Tanımlı raflar ({konumlar.length})</CardTitle>
+          <CardTitle>{t("tanimliRaflar", { sayi: konumlar.length })}</CardTitle>
         </CardHeader>
         <CardContent>
           {konumlar.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="font-medium">Henüz raf tanımlanmamış.</p>
+              <p className="font-medium">{t("bosBaslik")}</p>
               <p className="text-muted-foreground mt-1 text-sm">
-                Örnek kodlar: A-01, A-02, B-03
+                {t("bosIpucu")}
               </p>
             </div>
           ) : (
@@ -96,11 +96,13 @@ export default async function KonumlarSayfasi() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Kod</TableHead>
-                      <TableHead>Ad</TableHead>
-                      <TableHead className="text-right">Varyant</TableHead>
-                      <TableHead>Durum</TableHead>
-                      <TableHead>Eylemler</TableHead>
+                      <TableHead>{ortak("kod")}</TableHead>
+                      <TableHead>{ortak("ad")}</TableHead>
+                      <TableHead className="text-right">
+                        {t("varyantSutunu")}
+                      </TableHead>
+                      <TableHead>{ortak("durum")}</TableHead>
+                      <TableHead>{ortak("eylemler")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -109,7 +111,7 @@ export default async function KonumlarSayfasi() {
                         <TableCell>
                           <KopyalanabilirKod
                             deger={konum.code}
-                            etiket="Raf kodu"
+                            etiket={t("rafKodu")}
                           />
                         </TableCell>
                         <TableCell className="text-muted-foreground">
@@ -120,9 +122,9 @@ export default async function KonumlarSayfasi() {
                         </TableCell>
                         <TableCell>
                           {konum.isActive ? (
-                            <Badge variant="secondary">aktif</Badge>
+                            <Badge variant="secondary">{ortak("aktif")}</Badge>
                           ) : (
-                            <Badge variant="outline">pasif</Badge>
+                            <Badge variant="outline">{ortak("pasif")}</Badge>
                           )}
                         </TableCell>
                         <TableCell>
@@ -144,20 +146,23 @@ export default async function KonumlarSayfasi() {
                     baslik={
                       <KopyalanabilirKod
                         deger={konum.code}
-                        etiket="Raf kodu"
+                        etiket={t("rafKodu")}
                       />
                     }
                     altBaslik={konum.name ?? undefined}
                     alanlar={[
                       {
-                        etiket: "Durum",
+                        etiket: ortak("durum"),
                         deger: konum.isActive ? (
-                          <Badge variant="secondary">aktif</Badge>
+                          <Badge variant="secondary">{ortak("aktif")}</Badge>
                         ) : (
-                          <Badge variant="outline">pasif</Badge>
+                          <Badge variant="outline">{ortak("pasif")}</Badge>
                         ),
                       },
-                      { etiket: "Varyant", deger: konum._count.variants },
+                      {
+                        etiket: t("varyantSutunu"),
+                        deger: konum._count.variants,
+                      },
                     ]}
                     eylemler={eylemler(konum)}
                   />
@@ -166,11 +171,7 @@ export default async function KonumlarSayfasi() {
             </>
           )}
 
-          <p className="text-muted-foreground mt-3 text-xs">
-            Raflar silinmez, pasife alınır — varyantlar ve stok hareketleri
-            bu raflara referans veriyor olabilir. Pasif raf, seçim
-            listelerinde çıkmaz ama geçmiş kayıtlarda görünmeye devam eder.
-          </p>
+          <p className="text-muted-foreground mt-3 text-xs">{t("listeNotu")}</p>
         </CardContent>
       </Card>
     </div>
