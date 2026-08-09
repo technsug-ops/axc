@@ -1,6 +1,43 @@
 import { getRequestConfig } from "next-intl/server";
 
-import { BICIMLER, VARSAYILAN_DIL } from "./ayarlar";
+import { BICIMLER, VARSAYILAN_DIL, type Dil } from "./ayarlar";
+
+/**
+ * ============================================================================
+ *  SÖZLÜK YÜKLEME — ÜRETİMDE PAKETLENİR, GELİŞTİRMEDE DİSKTEN OKUNUR
+ * ----------------------------------------------------------------------------
+ *  SORUN: Turbopack, sözlük JSON'unu bir modül olarak paketleyip önbelleğe
+ *  alıyor. Dosyaya yeni anahtar eklendiğinde sıcak yenileme bu modülü
+ *  geçersiz kılmıyor; çalışan geliştirme sunucusu ESKİ sözlüğü sunmaya
+ *  devam ediyor ve ekran MISSING_MESSAGE ile patlıyor — halbuki anahtar
+ *  dosyada var. 09.08.2026'da iki kez yaşandı (Menu.satislar,
+ *  Ortak.urunEkle) ve her seferinde sunucuyu yeniden başlatmak gerekti.
+ *  Şablon literalli import'u statik import'a çevirmek de çözmedi; ölçüldü.
+ *
+ *  ÇÖZÜM: Geliştirmede sözlük her istekte DİSKTEN okunuyor — dosya
+ *  değişikliği anında görünür, yeniden başlatma gerekmez. Üretimde statik
+ *  import kullanılır: sözlük derleme anında pakete girer, disk erişimi ve
+ *  ayrıştırma maliyeti olmaz.
+ * ============================================================================
+ */
+const SOZLUKLER: Record<Dil, () => Promise<{ default: object }>> = {
+  tr: () => import("../../messages/tr.json"),
+  en: () => import("../../messages/en.json"),
+};
+
+async function sozlukYukle(dil: Dil): Promise<object> {
+  if (process.env.NODE_ENV === "development") {
+    const { readFile } = await import("node:fs/promises");
+    const { join } = await import("node:path");
+    const ham = await readFile(
+      join(process.cwd(), "messages", `${dil}.json`),
+      "utf8",
+    );
+    return JSON.parse(ham) as object;
+  }
+
+  return (await SOZLUKLER[dil]()).default;
+}
 
 /**
  * next-intl istek yapılandırması.
@@ -14,7 +51,7 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
-    messages: (await import(`../../messages/${locale}.json`)).default,
+    messages: await sozlukYukle(locale),
     formats: BICIMLER,
     /**
      * Saat dilimi bilinçli olarak çalışma ortamından alınıyor: mevcut
