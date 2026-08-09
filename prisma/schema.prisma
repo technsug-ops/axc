@@ -26,6 +26,26 @@ enum Currency {
   EUR
 }
 
+enum FeeScope {
+  PER_SALE // sipariş başına bir kez alınır (kalem sayısından bağımsız)
+  PER_ITEM // her satış kalemi için ayrı alınır
+}
+
+enum FeeBasis {
+  SALE_AMOUNT // tutarın yüzdesi
+  COMMISSION_AMOUNT // komisyon tutarının yüzdesi (komisyon KDV'si)
+  FIXED // sabit tutar
+}
+
+/// Kâr hesaplanabildi mi, hesaplanamadıysa NEDEN.
+/// Sıfır varsaymak yasak — hesaplanamayan kâr ekranda "hesaplanamadı" yazar.
+enum ProfitStatus {
+  CALCULATED
+  NO_COST // FIFO partisinde birim maliyet yok
+  CURRENCY_MISMATCH // maliyet ve satış para birimi farklı; kur çevrilmez
+  RULE_MISSING // komisyon oranı veya kargo tarifesi bulunamadı
+}
+
 enum ChannelType {
   MARKETPLACE // Trendyol, Hepsiburada, Amazon...
   OWN_STORE // kendi siteniz
@@ -72,12 +92,54 @@ model Product {
   hasVariants Boolean @default(false)
   isActive    Boolean @default(true)
 
+  /// KDV kategorisi. Boşsa varsayılan orana düşer ve ekranda
+  /// "kategori atanmamış" uyarısı görünür.
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  /// KDV İSTİSNASI — doluysa kategori oranını EZER. Normalde boştur.
+  /// Çözüm sırası: bu alan > kategori oranı > varsayılan %20.
+  vatRateOverride Decimal? @db.Decimal(5, 2)
+
+  /// Kargo desisi. ÜRÜN seviyesinde tutulur: varyantlar farklı olabilir
+  /// ama desi değişmez (karar 09.08.2026).
+  desi Decimal? @db.Decimal(9, 3)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   variants ProductVariant[]
 
   @@index([name])
+  @@index([isActive])
+  @@index([categoryId])
+}
+
+// ============================================================================
+//  KATEGORİ VE KDV
+// ----------------------------------------------------------------------------
+//  KDV oranı ürün ürün elle girilmez; üründen kategoriye, kategoriden orana
+//  gidilir. Kategoriler ve oranlar AYARLANABİLİR VERİDİR (sabit kod değil) —
+//  bu yüzden çok-kiracılı yapıda her müşteri kendi setini kullanabilir.
+//  Türkiye varsayılanları seed ile gelir: Genel %20, İndirimli %10,
+//  Süper İndirimli %1.
+// ============================================================================
+
+model Category {
+  id String @id @default(cuid())
+
+  name String @unique
+
+  /// KDV oranı YÜZDE olarak: 20, 10, 1
+  vatRate Decimal @db.Decimal(5, 2)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+
   @@index([isActive])
 }
 
@@ -93,14 +155,10 @@ model ProductVariant {
   barcode String? @unique
 
   /// FİRMA SKU — firmanın fiziğe yapıştırdığı etiket kodu.
-  /// NOT: Alan adı `axcaliSku` tarihsel bir kalıntıdır; arayüzde "Firma SKU"
-  /// olarak görünür. `companySku` yeniden adlandırması BEKLEYENLER.md'de,
-  /// ilk zorunlu migration'la birlikte yapılacak.
+  /// Arayüzde "Firma SKU" olarak görünür.
   /// ChannelSku (pazaryeri stok kodu) ile hiçbir ilgisi yoktur, bağımsızdır.
   /// ZORUNLU ve benzersiz: etiketsiz varyant kaydı açılamaz.
-  /// Bu yüzden varyant oluşturan serviste kod üretimi (örn. AX00001234)
-  /// otomatik olmalı, yoksa her kayıtta elle kod uydurmak gerekir.
-  axcaliSku String @unique
+  companySku String @unique
 
   /// Gösterim adı: "M / Kırmızı". Varsayılan varyantta boş bırakılabilir.
   name      String?
@@ -197,7 +255,107 @@ model Channel {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  accounts ChannelAccount[]
+  accounts     ChannelAccount[]
+  fees         ChannelFee[]
+  cargoTariffs CargoTariff[]
+}
+
+// ============================================================================
+//  KANAL KESİNTİ KURALLARI — SABİT KOD DEĞİL, VERİ
+// ----------------------------------------------------------------------------
+//  Komisyonun KENDİSİ burada değildir: oran ürün×pazaryeri bazında değişir ve
+//  ChannelSku'da tutulur. Burada komisyon ÜZERİNE gelen ve kanala özgü olan
+//  kesintiler var.
+//
+//  Seed (teyitli 09.08.2026):
+//    Hepsiburada  KOMISYON_KDV   PER_ITEM  COMMISSION_AMOUNT  %20
+//    Hepsiburada  ODEME_GIDERI   PER_SALE  SALE_AMOUNT        %0,8
+//    Hepsiburada  HIZMET_BEDELI  PER_SALE  FIXED              12,60 TRY
+//    Trendyol     SABIT_GIDER    PER_SALE  FIXED              13,19 TRY
+// ============================================================================
+
+model ChannelFee {
+  id        String  @id @default(cuid())
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  /// Bilinen kesintilerde sözlükten Türkçe adı çözülen kod.
+  /// Müşterinin eklediği özel kesintilerde `name` doldurulur ve o kullanılır —
+  /// böylece hem i18n kuralı hem SaaS ayarlanabilirliği korunur.
+  code String
+  name String?
+
+  scope FeeScope
+  basis FeeBasis
+
+  /// basis yüzde ise oran, sabit ise tutar dolu olur.
+  ///
+  /// ORAN BİRİMİ — TEK STANDART: yüzde olarak saklanır.
+  ///   %0,8  -> 0.80000
+  ///   %20   -> 20.00000
+  /// Motor kullanmadan önce 100'e böler. Bu belirsizlik 10 kat hata
+  /// sınıfının ta kendisidir; kar:dogrula her iki kesinti tipinde
+  /// birim testi yapar.
+  rate     Decimal?  @db.Decimal(9, 5)
+  amount   Decimal?  @db.Decimal(18, 4)
+  currency Currency?
+
+  /// Kural ne zamandan itibaren geçerli. Eski satışlar snapshot ile korunur.
+  validFrom DateTime
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channelId, code, validFrom])
+  @@index([channelId, isActive])
+}
+
+// ============================================================================
+//  KARGO TARİFESİ
+// ----------------------------------------------------------------------------
+//  Kargo firması SATIŞTA SEÇİLİR; varsayılan yoktur. Ücret kanal + firma +
+//  desi üçlüsünden okunur. Tarife tutarları KDV HARİÇTİR — üstüne %20 eklenir
+//  (kaynak tabloların başlığı bunu açıkça yazıyor).
+//
+//  Ürünün desisi kesirliyse YUKARI yuvarlanır (kargo firmalarının pratiği).
+// ============================================================================
+
+model CargoCarrier {
+  id   String @id @default(cuid())
+  code String @unique // ARAS, YURTICI, HEPSIJET...
+  name String
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tariffs CargoTariff[]
+  sales   Sale[]
+}
+
+model CargoTariff {
+  id        String       @id @default(cuid())
+  channelId String
+  channel   Channel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  carrierId String
+  carrier   CargoCarrier @relation(fields: [carrierId], references: [id], onDelete: Cascade)
+
+  /// Tam desi. Kaynak tablolar 1'er adım ilerliyor (0,1,2,...).
+  desi Int
+
+  /// KDV HARİÇ tutar.
+  amount   Decimal  @db.Decimal(18, 4)
+  currency Currency @default(TRY)
+
+  /// Tarifenin yürürlük tarihi (kaynak sayfa başlığından).
+  effectiveFrom DateTime
+
+  createdAt DateTime @default(now())
+
+  @@unique([channelId, carrierId, desi, effectiveFrom])
+  @@index([channelId, carrierId, desi])
 }
 
 /// Aynı kanalda birden fazla mağaza/hesap açılabilir.
@@ -238,6 +396,15 @@ model ChannelSku {
   channelSku        String
   /// Pazaryerindeki ürün/listing kimliği.
   externalListingId String?
+
+  /// KOMİSYON ORANI (%) — ürün×pazaryeri bazında farklıdır ve HAFTALIK
+  /// değişir (Trendyol Salı, Hepsiburada Çarşamba günceller). Bu yüzden
+  /// ürün kartında değil, kanal SKU'sunda tutulur. Satış formunda buradaki
+  /// oran ÖNERİLİR ama değiştirilebilir; satışa snapshot'lanan değer
+  /// formdaki son değerdir.
+  /// ORAN BİRİMİ: yüzde olarak saklanır (%12 -> 12.00). Motor 100'e böler.
+  commissionRate      Decimal?  @db.Decimal(5, 2)
+  commissionUpdatedAt DateTime?
 
   isActive Boolean @default(true)
 
@@ -469,13 +636,36 @@ model Sale {
   soldAt DateTime
   note   String?  @db.Text
 
+  // --- KARGO (satışta seçilir, snapshot'lanır) ---
+  cargoCarrierId String?
+  cargoCarrier   CargoCarrier? @relation(fields: [cargoCarrierId], references: [id], onDelete: SetNull)
+
+  /// Pakete giren toplam desi. Form varsayılanı Σ(ürün.desi × adet);
+  /// fiili tartım farklı çıkabildiği için elle değiştirilebilir.
+  cargoDesi Decimal? @db.Decimal(9, 3)
+
+  /// Tarifeden okunan KDV HARİÇ kargo ücreti (snapshot).
+  cargoAmount   Decimal?  @db.Decimal(18, 4)
+  cargoCurrency Currency?
+
+  // --- SATIŞ SEVİYESİ KÂR ---
+  /// Σ kalem NET − sipariş başına kesintiler (hizmet bedeli, sabit gider,
+  /// kargo). Bu kesintiler kalemlere bölünmez.
+  net1Amount     Decimal?      @db.Decimal(18, 4)
+  net2Amount     Decimal?      @db.Decimal(18, 4)
+  profitCurrency Currency?
+  profitStatus   ProfitStatus?
+  calculatedAt   DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   items SaleItem[]
+  fees  SaleFee[]
 
   @@index([channelAccountId])
   @@index([soldAt])
+  @@index([cargoCarrierId])
 }
 
 model SaleItem {
@@ -492,11 +682,61 @@ model SaleItem {
   unitPriceAmount   Decimal  @db.Decimal(18, 4)
   unitPriceCurrency Currency
 
+  // --- SATIŞ ANINDA ÇÖZÜLEN ORANLAR (snapshot) ---
+  /// Ürün istisnası > kategori oranı > varsayılan %20 ile çözülür.
+  vatRate Decimal? @db.Decimal(5, 2)
+
+  /// Kanal SKU'sundan önerilen, formda değiştirilebilen komisyon oranı.
+  commissionRate Decimal? @db.Decimal(5, 2)
+
+  // --- KALEM SEVİYESİ KÂR ---
+  /// satış − komisyon (+KDV'si) − maliyet − stopaj − KDV payı.
+  /// SİPARİŞ BAŞINA kesintiler buraya GİRMEZ; onlar satış seviyesindedir.
+  net1Amount   Decimal?      @db.Decimal(18, 4)
+  net2Amount   Decimal?      @db.Decimal(18, 4)
+  profitStatus ProfitStatus?
+
   /// Bu kalemin FIFO düşümleri. Kalem 5 adetse ve iki partiden düştüyse
   /// burada iki hareket olur (3 + 2). Kaydedilen adetlerin toplamı her
   /// zaman `quantity` kadardır.
   stockMovements StockMovement[]
+  fees           SaleFee[]
 
   @@index([saleId])
   @@index([variantId])
+}
+
+// ============================================================================
+//  KÂR KESİNTİ KALEMLERİ — SNAPSHOT
+// ----------------------------------------------------------------------------
+//  Detay ekranındaki "kesintiler kalem kalem" listesi buradan beslenir.
+//  Tek tabloda iki seviye:
+//    saleItemId DOLU  -> kalem kesintisi  (komisyon, maliyet, stopaj, KDV)
+//    saleItemId BOŞ   -> SİPARİŞ kesintisi (hizmet bedeli, sabit gider, kargo)
+//
+//  Snapshot'tır: oran veya tarife sonradan değişse eski satışın dökümü
+//  değişmez. Yeniden hesaplama ayrı ve bilinçli bir eylemdir.
+// ============================================================================
+
+model SaleFee {
+  id     String @id @default(cuid())
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  saleItemId String?
+  saleItem   SaleItem? @relation(fields: [saleItemId], references: [id], onDelete: Cascade)
+
+  /// Sözlükten Türkçe adı çözülen kod: KOMISYON, KOMISYON_KDV, ODEME_GIDERI,
+  /// HIZMET_BEDELI, SABIT_GIDER, KARGO, KARGO_KDV, STOPAJ, MALIYET,
+  /// ODENECEK_KDV
+  code String
+  name String?
+
+  amount   Decimal  @db.Decimal(18, 4)
+  currency Currency
+
+  createdAt DateTime @default(now())
+
+  @@index([saleId])
+  @@index([saleItemId])
 }

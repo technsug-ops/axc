@@ -43,7 +43,7 @@ export default async function UrunDuzenleSayfasi({
       id: v.id,
       ad: v.name ?? "",
       sku: v.sku,
-      axcaliSku: v.axcaliSku,
+      companySku: v.companySku,
       barcode: v.barcode ?? "",
       locationId: v.locationId ?? "",
       secenekler: v.options.map((o) => ({ ad: o.name, deger: o.value })),

@@ -132,7 +132,7 @@ export default async function VaryantHareketleriSayfasi({
                 {ortak("firmaSku")}:
               </span>
               <KopyalanabilirKod
-                deger={varyant.axcaliSku}
+                deger={varyant.companySku}
                 etiket={ortak("firmaSku")}
               />
             </div>

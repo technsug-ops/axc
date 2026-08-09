@@ -29,7 +29,7 @@ export type VaryantGirdisi = {
   id?: string;
   ad: string;
   sku: string;
-  axcaliSku: string;
+  companySku: string;
   barcode: string;
   locationId: string;
   secenekler: { ad: string; deger: string }[];
@@ -50,7 +50,7 @@ function bosVaryant(secenekliMi: boolean): VaryantGirdisi {
   return {
     ad: "",
     sku: "",
-    axcaliSku: "",
+    companySku: "",
     barcode: "",
     locationId: "",
     secenekler: secenekliMi ? [{ ad: "", deger: "" }] : [],
@@ -152,7 +152,7 @@ export function UrunFormu({
       id: v.id,
       ad: varyantliMi ? v.ad.trim() || secenekOzeti(v) : "",
       sku: v.sku,
-      axcaliSku: v.axcaliSku,
+      companySku: v.companySku,
       barcode: v.barcode,
       locationId: v.locationId,
       secenekler: varyantliMi
@@ -343,9 +343,9 @@ export function UrunFormu({
                   {/* Fiziğe yapıştırılan etiket kodu — okutulabilmeli (#7). */}
                   <BarkodGirisi
                     id={`axcali-${sira}`}
-                    value={varyant.axcaliSku}
+                    value={varyant.companySku}
                     onChange={(deger) =>
-                      varyantGuncelle(sira, { axcaliSku: deger })
+                      varyantGuncelle(sira, { companySku: deger })
                     }
                     placeholder={t("firmaSkuIpucu")}
                     kameraBasligi={t("firmaSkuKamera")}

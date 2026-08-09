@@ -41,7 +41,7 @@ function urunSemasiKur(t: Ceviri) {
     /** Gösterim adı: "M / Kırmızı". Varyantsız üründe boş kalır. */
     ad: z.string().trim().max(191).optional(),
     sku: z.string().trim().min(1, t("skuZorunlu")).max(191),
-    axcaliSku: z.string().trim().min(1, t("firmaSkuZorunlu")).max(191),
+    companySku: z.string().trim().min(1, t("firmaSkuZorunlu")).max(191),
     barcode: z.string().trim().max(191).optional(),
     locationId: z.string().optional(),
     secenekler: z.array(secenekSemasi).default([]),
@@ -116,7 +116,7 @@ function veriyiAyristir(
 }
 
 /**
- * Üç kodun da benzersiz olduğunu doğrular: sku, axcaliSku, barcode.
+ * Üç kodun da benzersiz olduğunu doğrular: sku, companySku, barcode.
  *
  * NOT: barcode dışındaki ikisi veritabanında zaten UNIQUE. Burada önceden
  * kontrol etmemizin sebebi, kullanıcıya çiğ bir veritabanı hatası yerine
@@ -142,7 +142,7 @@ async function benzersizlikHatalari(
   };
 
   const skular = varyantlar.map((v) => v.sku);
-  const axcaliKodlari = varyantlar.map((v) => v.axcaliSku);
+  const axcaliKodlari = varyantlar.map((v) => v.companySku);
   const barkodlar = varyantlar
     .map((v) => v.barcode)
     .filter((b): b is string => Boolean(b));
@@ -157,19 +157,19 @@ async function benzersizlikHatalari(
       ...(haricUrunId ? { productId: { not: haricUrunId } } : {}),
       OR: [
         { sku: { in: skular } },
-        { axcaliSku: { in: axcaliKodlari } },
+        { companySku: { in: axcaliKodlari } },
         ...(barkodlar.length ? [{ barcode: { in: barkodlar } }] : []),
       ],
     },
-    select: { sku: true, axcaliSku: true, barcode: true },
+    select: { sku: true, companySku: true, barcode: true },
   });
 
   for (const cakisan of cakisanlar) {
     if (skular.includes(cakisan.sku)) {
       hatalar.push(t("skuBaskaUrunde", { deger: cakisan.sku }));
     }
-    if (axcaliKodlari.includes(cakisan.axcaliSku)) {
-      hatalar.push(t("firmaSkuBaskaUrunde", { deger: cakisan.axcaliSku }));
+    if (axcaliKodlari.includes(cakisan.companySku)) {
+      hatalar.push(t("firmaSkuBaskaUrunde", { deger: cakisan.companySku }));
     }
     if (cakisan.barcode && barkodlar.includes(cakisan.barcode)) {
       hatalar.push(t("barkodBaskaUrunde", { deger: cakisan.barcode }));
@@ -187,7 +187,7 @@ async function benzersizlikHatalari(
 function varyantVerisi(v: UrunVerisi["varyantlar"][number], sira: number) {
   return {
     sku: v.sku,
-    axcaliSku: v.axcaliSku,
+    companySku: v.companySku,
     barcode: v.barcode || null,
     name: v.ad || null,
     isDefault: sira === 0,

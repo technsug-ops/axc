@@ -45,7 +45,7 @@ export default async function UrunlerSayfasi({
             { name: { contains: arama } },
             { brand: { contains: arama } },
             { variants: { some: { sku: { contains: arama } } } },
-            { variants: { some: { axcaliSku: { contains: arama } } } },
+            { variants: { some: { companySku: { contains: arama } } } },
             { variants: { some: { barcode: { contains: arama } } } },
           ],
         }
@@ -55,7 +55,7 @@ export default async function UrunlerSayfasi({
         select: {
           id: true,
           sku: true,
-          axcaliSku: true,
+          companySku: true,
           barcode: true,
           isDefault: true,
         },
@@ -178,7 +178,7 @@ export default async function UrunlerSayfasi({
                       </TableCell>
                       <TableCell>
                         <KopyalanabilirKod
-                          deger={ana?.axcaliSku}
+                          deger={ana?.companySku}
                           etiket={ortak("firmaSku")}
                         />
                       </TableCell>
@@ -227,7 +227,7 @@ export default async function UrunlerSayfasi({
                       etiket: ortak("firmaSku"),
                       deger: (
                         <KopyalanabilirKod
-                          deger={ana?.axcaliSku}
+                          deger={ana?.companySku}
                           etiket={ortak("firmaSku")}
                         />
                       ),

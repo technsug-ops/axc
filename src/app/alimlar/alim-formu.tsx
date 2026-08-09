@@ -417,7 +417,7 @@ export function AlimFormu({
                         {varyantEtiketi(varyant)}
                       </div>
                       <div className="text-muted-foreground truncate font-mono text-xs">
-                        {varyant.sku} · {varyant.axcaliSku}
+                        {varyant.sku} · {varyant.companySku}
                         {varyant.barcode ? ` · ${varyant.barcode}` : ""}
                       </div>
                     </div>

@@ -141,7 +141,7 @@ export default async function UrunDetaySayfasi({
                     </TableCell>
                     <TableCell>
                       <KopyalanabilirKod
-                        deger={varyant.axcaliSku}
+                        deger={varyant.companySku}
                         etiket={ortak("firmaSku")}
                       />
                     </TableCell>
@@ -219,7 +219,7 @@ export default async function UrunDetaySayfasi({
                     etiket: ortak("firmaSku"),
                     deger: (
                       <KopyalanabilirKod
-                        deger={varyant.axcaliSku}
+                        deger={varyant.companySku}
                         etiket={ortak("firmaSku")}
                       />
                     ),

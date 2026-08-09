@@ -41,7 +41,7 @@ export type KabulSatiri = {
   urunAdi: string;
   varyantAdi: string | null;
   sku: string;
-  axcaliSku: string;
+  companySku: string;
   barcode: string | null;
   beklenen: number;
   oncekiSaglam: number;
@@ -113,7 +113,7 @@ export function MalKabulFormu({
   function barkoddanArtir(kod: string) {
     const temiz = kod.trim();
     const satir = satirlar.find(
-      (s) => s.barcode === temiz || s.axcaliSku === temiz || s.sku === temiz,
+      (s) => s.barcode === temiz || s.companySku === temiz || s.sku === temiz,
     );
 
     if (!satir) {
@@ -249,7 +249,7 @@ export function MalKabulFormu({
                       {satir.varyantAdi ? ` — ${satir.varyantAdi}` : ""}
                     </div>
                     <div className="text-muted-foreground font-mono text-xs">
-                      {satir.sku} · {satir.axcaliSku}
+                      {satir.sku} · {satir.companySku}
                       {satir.barcode ? ` · ${satir.barcode}` : ""}
                     </div>
                   </div>

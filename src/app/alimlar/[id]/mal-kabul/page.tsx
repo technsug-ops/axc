@@ -71,7 +71,7 @@ export default async function MalKabulSayfasi({
       urunAdi: kalem.variant.product.name,
       varyantAdi: kalem.variant.name,
       sku: kalem.variant.sku,
-      axcaliSku: kalem.variant.axcaliSku,
+      companySku: kalem.variant.companySku,
       barcode: kalem.variant.barcode,
       beklenen: kalem.quantity,
       oncekiSaglam,

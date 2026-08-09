@@ -24,14 +24,14 @@ export type VaryantSonucu = {
   marka: string | null;
   varyantAdi: string | null;
   sku: string;
-  axcaliSku: string;
+  companySku: string;
   barcode: string | null;
 };
 
 const VARYANT_SECIMI = {
   id: true,
   sku: true,
-  axcaliSku: true,
+  companySku: true,
   barcode: true,
   name: true,
   product: { select: { name: true, brand: true } },
@@ -40,7 +40,7 @@ const VARYANT_SECIMI = {
 function varyantiOzetle(v: {
   id: string;
   sku: string;
-  axcaliSku: string;
+  companySku: string;
   barcode: string | null;
   name: string | null;
   product: { name: string; brand: string | null };
@@ -51,7 +51,7 @@ function varyantiOzetle(v: {
     marka: v.product.brand,
     varyantAdi: v.name,
     sku: v.sku,
-    axcaliSku: v.axcaliSku,
+    companySku: v.companySku,
     barcode: v.barcode,
   };
 }
@@ -66,7 +66,7 @@ export async function varyantAra(sorgu: string): Promise<VaryantSonucu[]> {
       isActive: true,
       OR: [
         { sku: { contains: q } },
-        { axcaliSku: { contains: q } },
+        { companySku: { contains: q } },
         { barcode: { contains: q } },
         { product: { name: { contains: q } } },
       ],
@@ -93,7 +93,7 @@ export async function varyantKodlaBul(
   const varyant = await prisma.productVariant.findFirst({
     where: {
       isActive: true,
-      OR: [{ barcode: temiz }, { axcaliSku: temiz }, { sku: temiz }],
+      OR: [{ barcode: temiz }, { companySku: temiz }, { sku: temiz }],
     },
     select: VARYANT_SECIMI,
   });

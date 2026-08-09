@@ -42,7 +42,7 @@ export default async function StokSayfasi({
       ? {
           OR: [
             { sku: { contains: arama } },
-            { axcaliSku: { contains: arama } },
+            { companySku: { contains: arama } },
             { barcode: { contains: arama } },
             { product: { name: { contains: arama } } },
           ],
@@ -143,7 +143,7 @@ export default async function StokSayfasi({
                     </TableCell>
                     <TableCell>
                       <KopyalanabilirKod
-                        deger={varyant.axcaliSku}
+                        deger={varyant.companySku}
                         etiket={ortak("firmaSku")}
                       />
                     </TableCell>
@@ -213,7 +213,7 @@ export default async function StokSayfasi({
                     etiket: ortak("firmaSku"),
                     deger: (
                       <KopyalanabilirKod
-                        deger={varyant.axcaliSku}
+                        deger={varyant.companySku}
                         etiket={ortak("firmaSku")}
                       />
                     ),

@@ -151,7 +151,7 @@ async function ucanUca() {
         variants: {
           create: {
             sku: `${ONEK}SKU`,
-            axcaliSku: `${ONEK}FSKU`,
+            companySku: `${ONEK}FSKU`,
             isDefault: true,
           },
         },
