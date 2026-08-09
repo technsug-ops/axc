@@ -55,7 +55,7 @@ for (const yol of dosyalar("src")) {
   // asagida ozel bir kontrolle karsilanmali.
   for (const [degisken] of adAlanlari) {
     const dinamik = new RegExp(`\\b${degisken}(?:\\.rich)?\\(\\s*[^"'\\s)]`, "g");
-    for (const _ of kaynak.matchAll(dinamik)) dinamikCagri++;
+    dinamikCagri += [...kaynak.matchAll(dinamik)].length;
   }
 }
 console.log(`1) Anahtar taramasi: ${kontrolEdilen} cagri kontrol edildi, ${eksik} eksik`);
