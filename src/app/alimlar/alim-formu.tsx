@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { HataOzeti } from "@/components/hata-ozeti";
@@ -89,14 +89,12 @@ export function AlimFormu({
   const t = useTranslations("Alim");
   const ortak = useTranslations("Ortak");
 
-  // --- Barkodla hızlı ekleme ---
-  const [barkod, setBarkod] = useState("");
+  // --- Kalem ekleme: TEK KUTU ---
+  // `sorgu` hem okutulan kodu hem elle yazılan aramayı taşır.
+  const [sorgu, setSorgu] = useState("");
   const [barkodAdedi, setBarkodAdedi] = useState("1");
   const [barkodMesaji, setBarkodMesaji] = useState<string | null>(null);
   const barkodRef = useRef<HTMLInputElement>(null);
-
-  // --- Arama ile ekleme ---
-  const [sorgu, setSorgu] = useState("");
   const [sonuclar, setSonuclar] = useState<VaryantSonucu[]>([]);
   const [araniyor, setAraniyor] = useState(false);
 
@@ -153,27 +151,31 @@ export function AlimFormu({
     });
   }
 
-  async function barkoddanEkle(kod: string) {
+  /** Enter (USB okuyucu) veya kamera: TAM eşleşen kodu doğrudan ekler. */
+  async function koddanEkle(kod: string) {
     const adet = Math.max(1, Math.trunc(Number(barkodAdedi) || 1));
     setBarkodMesaji(null);
 
     try {
       const varyant = await varyantKodlaBul(kod);
       if (!varyant) {
+        // Bulunamadıysa kutuyu TEMİZLEMİYORUZ: yazılan metin arama olarak
+        // kalsın, kullanıcı aşağıdaki sonuçlardan seçebilsin.
         setBarkodMesaji(ortak("kodBulunamadi", { kod }));
-      } else {
-        kalemEkle(varyant, adet);
-        setBarkodMesaji(
-          ortak("kalemEklendi", { urun: varyantEtiketi(varyant), adet }),
-        );
+        return;
       }
+
+      kalemEkle(varyant, adet);
+      setBarkodMesaji(
+        ortak("kalemEklendi", { urun: varyantEtiketi(varyant), adet }),
+      );
+      setSorgu("");
     } catch {
       setBarkodMesaji(ortak("aramaHatasi"));
+    } finally {
+      // Peş peşe okutma için kutuya geri dön.
+      barkodRef.current?.focus();
     }
-
-    setBarkod("");
-    // Peş peşe okutma için kutuya geri dön.
-    barkodRef.current?.focus();
   }
 
   function kalemGuncelle(sira: number, degisim: Partial<Kalem>) {
@@ -358,23 +360,28 @@ export function AlimFormu({
         </CardContent>
       </Card>
 
-      {/* ------------------------- KALEM EKLEME --------------------------- */}
+      {/* ---------------- KALEM EKLEME + KALEMLER (TEK KART) ---------------- */}
       <Card>
         <CardHeader>
-          <CardTitle>{ortak("kalemEkle")}</CardTitle>
+          <CardTitle>
+            {ortak("kalemlerBasligi", { sayi: kalemler.length })}
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
+          {/* TEK KUTU: okutma ve arama aynı alanda — satış formuyla aynı
+              düzen (#10). Okuyucu Enter gönderir → tam eşleşme doğrudan
+              eklenir; elle yazınca aşağıda sonuçlar çıkar. */}
           <div className="space-y-2">
-            <Label htmlFor="alim-barkod">{ortak("barkodlaEkle")}</Label>
+            <Label htmlFor="alim-ekle">{ortak("urunEkle")}</Label>
             <div className="flex flex-wrap items-start gap-2">
               <BarkodGirisi
-                id="alim-barkod"
+                id="alim-ekle"
                 className="min-w-56 flex-1"
-                value={barkod}
-                onChange={setBarkod}
-                onOkundu={barkoddanEkle}
+                value={sorgu}
+                onChange={setSorgu}
+                onOkundu={koddanEkle}
                 inputRef={barkodRef}
-                placeholder={ortak("barkodIpucu")}
+                placeholder={ortak("ekleIpucu")}
                 kameraBasligi={ortak("barkodKamera")}
               />
               <div className="w-24">
@@ -387,29 +394,12 @@ export function AlimFormu({
                 />
               </div>
             </div>
-            <p className="text-muted-foreground text-xs">
-              {ortak("barkodNotu")}
-            </p>
+            <p className="text-muted-foreground text-xs">{ortak("ekleNotu")}</p>
             {barkodMesaji ? (
               <p className="text-sm" role="status">
                 {barkodMesaji}
               </p>
             ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="alim-arama">{ortak("aramaEtiketi")}</Label>
-            <div className="relative">
-              <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-              <Input
-                id="alim-arama"
-                className="pl-9"
-                value={sorgu}
-                onChange={(e) => setSorgu(e.target.value)}
-                placeholder={ortak("aramaIpucuKalem")}
-                autoComplete="off"
-              />
-            </div>
             {araniyor ? (
               <p className="text-muted-foreground text-xs">
                 {ortak("araniyor")}
@@ -448,17 +438,7 @@ export function AlimFormu({
               </ul>
             ) : null}
           </div>
-        </CardContent>
-      </Card>
 
-      {/* --------------------------- KALEMLER ----------------------------- */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {ortak("kalemlerBasligi", { sayi: kalemler.length })}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
           {kalemler.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
               <p className="font-medium">{ortak("bosKalemBaslik")}</p>

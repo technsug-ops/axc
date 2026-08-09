@@ -34,7 +34,8 @@ for (const yol of dosyalar("src")) {
 
   // Bu dosyadaki değişken -> namespace eşlemesi
   const adAlanlari = new Map();
-  const desen = /(?:const\s+(\w+)\s*=\s*(?:await\s+)?(?:getTranslations|useTranslations)\(\s*"([^"]+)"\s*\))/g;
+  const desen =
+    /(?:const\s+(\w+)\s*=\s*(?:await\s+)?(?:getTranslations|useTranslations)\(\s*"([^"]+)"\s*\))/g;
   for (const e of kaynak.matchAll(desen)) adAlanlari.set(e[1], e[2]);
   if (adAlanlari.size === 0) continue;
 
@@ -54,11 +55,16 @@ for (const yol of dosyalar("src")) {
   // Bunlar taranamaz; gorunmez kalmasinlar diye sayiliyorlar. Her biri
   // asagida ozel bir kontrolle karsilanmali.
   for (const [degisken] of adAlanlari) {
-    const dinamik = new RegExp(`\\b${degisken}(?:\\.rich)?\\(\\s*[^"'\\s)]`, "g");
+    const dinamik = new RegExp(
+      `\\b${degisken}(?:\\.rich)?\\(\\s*[^"'\\s)]`,
+      "g",
+    );
     dinamikCagri += [...kaynak.matchAll(dinamik)].length;
   }
 }
-console.log(`1) Anahtar taramasi: ${kontrolEdilen} cagri kontrol edildi, ${eksik} eksik`);
+console.log(
+  `1) Anahtar taramasi: ${kontrolEdilen} cagri kontrol edildi, ${eksik} eksik`,
+);
 
 // --- 1b) Dinamik anahtarlar: kenar menu ------------------------------------
 // Menu etiketleri tMenu(oge.anahtar) diye cagriliyor; 1. adim bunlari
@@ -102,54 +108,198 @@ console.log(
 
 // --- 3) Parametreli metinlerin ciktisi --------------------------------------
 const ornekler = [
-  ["Raf", "kodZatenKayitli", { kod: "A-01" }, '"A-01" kodlu raf zaten kayıtlı.'],
-  ["KanalHesabi", "kodZatenVar", { kanal: "Trendyol", kod: "ANA" }, '"Trendyol" kanalında "ANA" kodlu hesap zaten var.'],
-  ["KanalHesabi", "eklendi", { kanal: "Trendyol", ad: "Ana Mağaza" }, '"Trendyol — Ana Mağaza" hesabı eklendi.'],
-  ["Kart", "pasifeAlindi", { etiket: "Bonus" }, '"Bonus" pasife alındı, artık alım formunda seçilemez.'],
-  ["Urun", "varyantHataKalibi", { sira: 2, mesaj: "SKU zorunlu" }, "2. varyant: SKU zorunlu"],
-  ["Urun", "formdaTekrar", { alan: "SKU", deger: "AX1" }, 'SKU "AX1" formda birden fazla varyantta kullanılmış.'],
-  ["Urun", "skuBaskaUrunde", { deger: "AX1" }, 'SKU "AX1" başka bir üründe kullanılıyor.'],
-  ["Alim", "kalemHataKalibi", { sira: 3, mesaj: "adet en az 1 olmalı" }, "3. kalem: adet en az 1 olmalı"],
-  ["Alim", "siparisNoZatenKayitli", { kod: "25-23" }, '"25-23" sipariş numarası zaten kayıtlı.'],
-  ["MalKabul", "fazlaGiris", { kalan: 1, girilen: 5 }, "Bir kalemde beklenenden fazla giriş var: kalan 1, girilen 5."],
+  [
+    "Raf",
+    "kodZatenKayitli",
+    { kod: "A-01" },
+    '"A-01" kodlu raf zaten kayıtlı.',
+  ],
+  [
+    "KanalHesabi",
+    "kodZatenVar",
+    { kanal: "Trendyol", kod: "ANA" },
+    '"Trendyol" kanalında "ANA" kodlu hesap zaten var.',
+  ],
+  [
+    "KanalHesabi",
+    "eklendi",
+    { kanal: "Trendyol", ad: "Ana Mağaza" },
+    '"Trendyol — Ana Mağaza" hesabı eklendi.',
+  ],
+  [
+    "Kart",
+    "pasifeAlindi",
+    { etiket: "Bonus" },
+    '"Bonus" pasife alındı, artık alım formunda seçilemez.',
+  ],
+  [
+    "Urun",
+    "varyantHataKalibi",
+    { sira: 2, mesaj: "SKU zorunlu" },
+    "2. varyant: SKU zorunlu",
+  ],
+  [
+    "Urun",
+    "formdaTekrar",
+    { alan: "SKU", deger: "AX1" },
+    'SKU "AX1" formda birden fazla varyantta kullanılmış.',
+  ],
+  [
+    "Urun",
+    "skuBaskaUrunde",
+    { deger: "AX1" },
+    'SKU "AX1" başka bir üründe kullanılıyor.',
+  ],
+  [
+    "Alim",
+    "kalemHataKalibi",
+    { sira: 3, mesaj: "adet en az 1 olmalı" },
+    "3. kalem: adet en az 1 olmalı",
+  ],
+  [
+    "Alim",
+    "siparisNoZatenKayitli",
+    { kod: "25-23" },
+    '"25-23" sipariş numarası zaten kayıtlı.',
+  ],
+  [
+    "MalKabul",
+    "fazlaGiris",
+    { kalan: 1, girilen: 5 },
+    "Bir kalemde beklenenden fazla giriş var: kalan 1, girilen 5.",
+  ],
   // Kesme isareti ICU'da kacis karakteridir; asagidakiler onu dogruluyor.
   ["Kart", "ayinGunu", { gun: 15 }, "Ayın 15'i"],
-  ["Kart", "toplamNotu", {}, "Para birimleri ayrı toplanır ve birbirine çevrilmez. Detaylı borç ve ekstre takibi Faz 3'te gelecek."],
-  ["Kart", "guvenlikNotu", {}, 'Güvenlik gereği tam kart numarası, CVV ve son kullanma tarihi İSTENMEZ ve saklanmaz. Amaç yalnızca "hangi kartla ödendi" bilgisini taşımak; bunun için son 4 hane yeterlidir.'],
-  ["Kart", "gunNotu", {}, 'Kesim ve son ödeme günü, ileride "faizsiz dönemi en uzun kart" seçimini hesaplamak için kullanılacak. Ayın günü olarak girin (1-31).'],
-  ["Kart", "kartlaYapilanAlimlar", { sayi: 3 }, "Bu kartla yapılan alımlar (3)"],
-  ["Stok", "gecmisNotu", {}, 'Hareketler değiştirilmez ve silinmez. Hatalı bir giriş, ters yönde bir düzeltme kaydıyla giderilir. "Kim" sütunu çok kullanıcılı yapıyla (Faz 4) dolacak.'],
+  [
+    "Kart",
+    "toplamNotu",
+    {},
+    "Para birimleri ayrı toplanır ve birbirine çevrilmez. Detaylı borç ve ekstre takibi Faz 3'te gelecek.",
+  ],
+  [
+    "Kart",
+    "guvenlikNotu",
+    {},
+    'Güvenlik gereği tam kart numarası, CVV ve son kullanma tarihi İSTENMEZ ve saklanmaz. Amaç yalnızca "hangi kartla ödendi" bilgisini taşımak; bunun için son 4 hane yeterlidir.',
+  ],
+  [
+    "Kart",
+    "gunNotu",
+    {},
+    'Kesim ve son ödeme günü, ileride "faizsiz dönemi en uzun kart" seçimini hesaplamak için kullanılacak. Ayın günü olarak girin (1-31).',
+  ],
+  [
+    "Kart",
+    "kartlaYapilanAlimlar",
+    { sayi: 3 },
+    "Bu kartla yapılan alımlar (3)",
+  ],
+  [
+    "Stok",
+    "gecmisNotu",
+    {},
+    'Hareketler değiştirilmez ve silinmez. Hatalı bir giriş, ters yönde bir düzeltme kaydıyla giderilir. "Kim" sütunu çok kullanıcılı yapıyla (Faz 4) dolacak.',
+  ],
   ["Raf", "kodIpucu", {}, "A-01 (veya raf QR'ını okutun)"],
   ["Raf", "tanimliRaflar", { sayi: 7 }, "Tanımlı raflar (7)"],
-  ["Raf", "bagliKayitlar", { varyant: 2, hareket: 9 }, "2 varyant ve 9 stok hareketi bu rafa bağlı."],
-  ["Raf", "etiketlerOzeti", { sayi: 5 }, "5 aktif raf. Yazdırıp raflara yapıştırın; QR içeriği raf kodudur."],
+  [
+    "Raf",
+    "bagliKayitlar",
+    { varyant: 2, hareket: 9 },
+    "2 varyant ve 9 stok hareketi bu rafa bağlı.",
+  ],
+  [
+    "Raf",
+    "etiketlerOzeti",
+    { sayi: 5 },
+    "5 aktif raf. Yazdırıp raflara yapıştırın; QR içeriği raf kodudur.",
+  ],
   ["KanalHesabi", "tanimliHesaplar", { sayi: 2 }, "Tanımlı hesaplar (2)"],
   ["Urunler", "varyantBasligi", { sira: 2 }, "2. varyant"],
   ["Urunler", "varsayilanEki", {}, " (varsayılan)"],
-  ["Urunler", "altBilgi", { marka: "Sony", tarih: "08.08.2026" }, "Sony · 08.08.2026 tarihinde eklendi"],
+  [
+    "Urunler",
+    "altBilgi",
+    { marka: "Sony", tarih: "08.08.2026" },
+    "Sony · 08.08.2026 tarihinde eklendi",
+  ],
   ["Urunler", "varyantlarBasligi", { sayi: 3 }, "Varyantlar (3)"],
   ["Alim", "durumEki", { durum: "Sipariş verildi" }, " — Sipariş verildi"],
   ["Alim", "taksitSayisi", { sayi: 6 }, "6 taksit"],
-  ["Ortak", "kalemEklendi", { urun: "Kulaklık", adet: 2 }, "Kulaklık eklendi (2 adet)."],
-  ["Ortak", "barkodIpucu", {}, "Okutun veya kodu yazıp Enter'a basın"],
-  ["Ortak", "aramaEtiketi", {}, "Ada / SKU'ya göre ara"],
-  ["Alim", "formNotu", {}, 'Yeni alım "Sipariş verildi" durumunda kaydedilir; mal kabul, alım detayından yapılır.'],
-  ["Alim", "detayNotu", {}, '"Sağlam" sütunu stok hareketlerinden hesaplanır. Hasarlı ürünler stoğa girmez; satıcıya iade ve tazminat süreci sonraki fazlarda gelecek. Yanlış bir giriş silinmez, ters yönde bir düzeltme kaydıyla giderilir.'],
-  ["MalKabul", "kodBulunamadi", { kod: "869" }, '"869" bu alımın kalemleri arasında bulunamadı.'],
-  ["MalKabul", "tamamiGirildi", { urun: "Kulaklık", kalan: 4 }, "Kulaklık: kalan 4 adedin tamamı girildi."],
-  ["MalKabul", "asimUyarisi", { girilen: 5, kalan: 3 }, "Girilen 5 adet, kalan 3 adedi aşıyor."],
-  ["MalKabul", "altNot", { kod: "ALM-1" }, "ALM-1 · Kısmi kabul yapabilirsiniz; kalan adetler için daha sonra tekrar mal kabul edersiniz."],
+  [
+    "Ortak",
+    "kalemEklendi",
+    { urun: "Kulaklık", adet: 2 },
+    "Kulaklık eklendi (2 adet).",
+  ],
+  ["Ortak", "ekleIpucu", {}, "Okut, kod yaz veya ürün ara…"],
+
+  [
+    "Alim",
+    "formNotu",
+    {},
+    'Yeni alım "Sipariş verildi" durumunda kaydedilir; mal kabul, alım detayından yapılır.',
+  ],
+  [
+    "Alim",
+    "detayNotu",
+    {},
+    '"Sağlam" sütunu stok hareketlerinden hesaplanır. Hasarlı ürünler stoğa girmez; satıcıya iade ve tazminat süreci sonraki fazlarda gelecek. Yanlış bir giriş silinmez, ters yönde bir düzeltme kaydıyla giderilir.',
+  ],
+  [
+    "MalKabul",
+    "kodBulunamadi",
+    { kod: "869" },
+    '"869" bu alımın kalemleri arasında bulunamadı.',
+  ],
+  [
+    "MalKabul",
+    "tamamiGirildi",
+    { urun: "Kulaklık", kalan: 4 },
+    "Kulaklık: kalan 4 adedin tamamı girildi.",
+  ],
+  [
+    "MalKabul",
+    "asimUyarisi",
+    { girilen: 5, kalan: 3 },
+    "Girilen 5 adet, kalan 3 adedi aşıyor.",
+  ],
+  [
+    "MalKabul",
+    "altNot",
+    { kod: "ALM-1" },
+    "ALM-1 · Kısmi kabul yapabilirsiniz; kalan adetler için daha sonra tekrar mal kabul edersiniz.",
+  ],
   ["Ortak", "kodKopyala", { etiket: "Barkod" }, "Barkod kodunu kopyala"],
-  ["Satis", "yetersizStok", { urun: "Telefon (SKU1)", istenen: 5, mevcut: 3 }, "Telefon (SKU1) için stok yetersiz: 5 adet istendi, 3 adet var. Satış kaydedilmedi."],
+  [
+    "Satis",
+    "yetersizStok",
+    { urun: "Telefon (SKU1)", istenen: 5, mevcut: 3 },
+    "Telefon (SKU1) için stok yetersiz: 5 adet istendi, 3 adet var. Satış kaydedilmedi.",
+  ],
   ["Satis", "digerKalemler", { urun: "Telefon", sayi: 2 }, "Telefon +2 kalem"],
-  ["Satis", "stokUyarisi", { urun: "Telefon", mevcut: 3, istenen: 5 }, "Telefon: stokta 3 adet var, 5 adet girdiniz."],
+  [
+    "Satis",
+    "stokUyarisi",
+    { urun: "Telefon", mevcut: 3, istenen: 5 },
+    "Telefon: stokta 3 adet var, 5 adet girdiniz.",
+  ],
   ["Satis", "mevcutStok", { adet: 4 }, "Stokta 4"],
-  ["Kamera", "acilamadi", {}, "Kamera açılamadı. Sayfa güvenli bağlantıda (https veya localhost) olmalı. Kodu elle yazabilirsiniz."],
+  [
+    "Kamera",
+    "acilamadi",
+    {},
+    "Kamera açılamadı. Sayfa güvenli bağlantıda (https veya localhost) olmalı. Kodu elle yazabilirsiniz.",
+  ],
 ];
 
 let fark = 0;
 for (const [adAlani, anahtar, degerler, beklenen] of ornekler) {
-  const t = createTranslator({ locale: "tr", messages: tr, namespace: adAlani });
+  const t = createTranslator({
+    locale: "tr",
+    messages: tr,
+    namespace: adAlani,
+  });
   const cikan = t(anahtar, degerler);
   if (cikan !== beklenen) {
     fark++;
@@ -165,4 +315,3 @@ console.log(
     ? "\nHEPSI TEMIZ"
     : "\nSORUN VAR",
 );
-
