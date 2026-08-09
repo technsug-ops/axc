@@ -81,6 +81,7 @@
   "StokHareketi": {
     "INITIAL": "Açılış stoğu",
     "PURCHASE_IN": "Alım girişi",
+    "SALE_OUT": "Satış çıkışı",
     "ADJUSTMENT": "Düzeltme",
     "COUNT_CORRECTION": "Sayım farkı"
   },

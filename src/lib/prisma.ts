@@ -38,6 +38,16 @@ function createPrismaClient(): PrismaClient {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
+/**
+ * İnteraktif transaction içindeki istemci:
+ *   await prisma.$transaction(async (tx) => { ... })
+ *
+ * Prisma 7'nin yeni `prisma-client` jeneratörü `TransactionClient` tipini dışa
+ * açmıyor; `$` ile başlayan yönetim metotlarını çıkararak türetiyoruz. Böylece
+ * transaction içinde çalışan yardımcılar hem `prisma` hem `tx` kabul edebilir.
+ */
+export type IslemIstemcisi = Omit<PrismaClient, `$${string}`>;
+
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }

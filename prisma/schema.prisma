@@ -36,6 +36,7 @@ enum ChannelType {
 enum StockMovementType {
   INITIAL // açılış / devir stoğu
   PURCHASE_IN // alımdan giriş
+  SALE_OUT // satıştan çıkış (quantityDelta negatif)
   ADJUSTMENT // manuel düzeltme (işareti quantityDelta belirler)
   COUNT_CORRECTION // sayım farkı
 }
@@ -120,6 +121,7 @@ model ProductVariant {
   options        VariantOption[]
   channelSkus    ChannelSku[]
   purchaseItems  PurchaseItem[]
+  saleItems      SaleItem[]
   stockMovements StockMovement[]
 
   @@index([productId])
@@ -218,6 +220,7 @@ model ChannelAccount {
 
   channelSkus ChannelSku[]
   purchases   Purchase[]
+  sales       Sale[]
 
   @@unique([channelId, code])
   @@index([channelId])
@@ -397,9 +400,25 @@ model StockMovement {
   occurredAt DateTime @default(now())
 
   /// Hareketin kaynağı. Alım kaynaklı hareketlerde dolu olur.
-  /// Satış fazında SaleItem için ayrı bir nullable alan eklenecek.
   purchaseItemId String?
   purchaseItem   PurchaseItem? @relation(fields: [purchaseItemId], references: [id], onDelete: SetNull)
+
+  /// Satış kaynaklı hareketlerde dolu olur (SALE_OUT).
+  saleItemId String?
+  saleItem   SaleItem? @relation(fields: [saleItemId], references: [id], onDelete: SetNull)
+
+  /// FIFO İZİ — bu ÇIKIŞ hangi GİRİŞ partisinden düştü.
+  /// Parti = pozitif quantityDelta'lı bir hareket (INITIAL, PURCHASE_IN,
+  /// pozitif ADJUSTMENT/COUNT_CORRECTION). Bir satış kalemi birden fazla
+  /// partiden düşebilir; o zaman parti başına AYRI bir SALE_OUT yazılır.
+  ///
+  /// Partide kalan miktar KOLON OLARAK TUTULMAZ; `quantityDelta` eksi
+  /// tüketimlerin toplamı diye türetilir (bkz. src/lib/stok.ts). Tek
+  /// doğruluk kaynağı ledger'dır — PurchaseItem'daki "gelen sağlam"
+  /// kararının aynısı.
+  sourceMovementId String?
+  sourceMovement   StockMovement?  @relation("FifoParti", fields: [sourceMovementId], references: [id], onDelete: Restrict)
+  tuketimler       StockMovement[] @relation("FifoParti")
 
   /// Malın hangi rafa girdiği (mal kabulde seçilir).
   /// Varyantın güncel konumundan bağımsız olarak KAYIT ANINDAKİ rafı tutar;
@@ -418,5 +437,66 @@ model StockMovement {
   @@index([variantId, occurredAt])
   @@index([type])
   @@index([purchaseItemId])
+  @@index([saleItemId])
+  @@index([sourceMovementId])
   @@index([locationId])
+}
+
+// ============================================================================
+//  SATIŞ
+// ----------------------------------------------------------------------------
+//  Alım tarafıyla bilerek simetrik: Sale/SaleItem ↔ Purchase/PurchaseItem.
+//  Bir pazaryeri siparişi tek numara altında birden çok ürün taşır; bu yüzden
+//  satış çok kalemlidir.
+//
+//  Satılan malın MALİYETİ burada tutulmaz — FIFO ile hangi partiden düştüyse
+//  o partinin maliyeti ilgili SALE_OUT hareketine yazılır. Kâr motoru (sonraki
+//  aşama) maliyeti oradan okur.
+// ============================================================================
+
+model Sale {
+  id String @id @default(cuid())
+
+  /// Pazaryerindeki sipariş numarası. Girilmesi zorunlu değil; girilirse
+  /// benzersizdir (MySQL'de NULL'lar tekrarlanabilir, bu bilinçli).
+  code String? @unique
+
+  /// Satış her zaman bir kanal hesabından yapılır — hangi pazaryerinin
+  /// hangi mağazasından satıldığı kâr ve hakediş hesabının temelidir.
+  channelAccountId String
+  channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
+
+  soldAt DateTime
+  note   String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items SaleItem[]
+
+  @@index([channelAccountId])
+  @@index([soldAt])
+}
+
+model SaleItem {
+  id     String @id @default(cuid())
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  quantity Int
+
+  /// Birim SATIŞ fiyatı. Maliyet burada değil, SALE_OUT hareketlerindedir.
+  unitPriceAmount   Decimal  @db.Decimal(18, 4)
+  unitPriceCurrency Currency
+
+  /// Bu kalemin FIFO düşümleri. Kalem 5 adetse ve iki partiden düştüyse
+  /// burada iki hareket olur (3 + 2). Kaydedilen adetlerin toplamı her
+  /// zaman `quantity` kadardır.
+  stockMovements StockMovement[]
+
+  @@index([saleId])
+  @@index([variantId])
 }

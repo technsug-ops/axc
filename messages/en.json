@@ -81,6 +81,7 @@
   "StokHareketi": {
     "INITIAL": "",
     "PURCHASE_IN": "",
+    "SALE_OUT": "",
     "ADJUSTMENT": "",
     "COUNT_CORRECTION": ""
   },

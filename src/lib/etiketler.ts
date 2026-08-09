@@ -55,6 +55,7 @@ export async function alimDurumEtiketleri(): Promise<
 const STOK_HAREKET_SIRASI: Record<StockMovementType, null> = {
   INITIAL: null,
   PURCHASE_IN: null,
+  SALE_OUT: null,
   ADJUSTMENT: null,
   COUNT_CORRECTION: null,
 };
@@ -70,6 +71,7 @@ export async function stokHareketEtiketleri(): Promise<
   return {
     INITIAL: tHareket("INITIAL"),
     PURCHASE_IN: tHareket("PURCHASE_IN"),
+    SALE_OUT: tHareket("SALE_OUT"),
     ADJUSTMENT: tHareket("ADJUSTMENT"),
     COUNT_CORRECTION: tHareket("COUNT_CORRECTION"),
   };

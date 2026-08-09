@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { prisma, type IslemIstemcisi } from "@/lib/prisma";
+
+import type { Currency } from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
@@ -104,8 +106,131 @@ export async function sonHareketTarihleri(
 }
 
 // ---------------------------------------------------------------------------
+//  FIFO — PARTİLER
+// ---------------------------------------------------------------------------
+
+/**
+ * Bir giriş partisi. Parti = pozitif quantityDelta'lı bir stok hareketi
+ * (INITIAL, PURCHASE_IN, pozitif ADJUSTMENT/COUNT_CORRECTION).
+ *
+ * `kalanAdet` KOLON DEĞİLDİR — girenden, o partiyi kaynak gösteren çıkışların
+ * toplamı düşülerek türetilir. Ledger tek doğruluk kaynağıdır.
+ */
+export type Parti = {
+  hareketId: string;
+  occurredAt: Date;
+  girenAdet: number;
+  kalanAdet: number;
+  /** Decimal string olarak taşınır; float'a çevrilmez. */
+  birimMaliyet: string | null;
+  birimMaliyetParaBirimi: Currency | null;
+  locationId: string | null;
+};
+
+/**
+ * Varyantın tüketilebilir partileri — EN ESKİ ÖNCE (FIFO sırası).
+ *
+ * Sadece PURCHASE_IN değil, POZİTİF olan her hareket partidir. Aksi hâlde
+ * açılış stoğu (INITIAL) veya elle düzeltmeyle girilen mal "stokta görünür
+ * ama satılamaz" olurdu ve negatif stok engeli yanlış yerden tetiklenirdi.
+ * Maliyeti olmayan partide `birimMaliyet` null kalır.
+ *
+ * Transaction içinde çağrılmalıdır (satışta `tx` geçilir); yoksa okuma ile
+ * yazma arasında başka bir satış araya girip aynı partiyi tüketebilir.
+ */
+export async function acikPartiler(
+  db: IslemIstemcisi,
+  variantId: string,
+): Promise<Parti[]> {
+  const girisler = await db.stockMovement.findMany({
+    where: { variantId, quantityDelta: { gt: 0 } },
+    orderBy: [{ occurredAt: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      occurredAt: true,
+      quantityDelta: true,
+      unitCostAmount: true,
+      unitCostCurrency: true,
+      locationId: true,
+    },
+  });
+
+  if (girisler.length === 0) return [];
+
+  const tuketimler = await db.stockMovement.groupBy({
+    by: ["sourceMovementId"],
+    where: { sourceMovementId: { in: girisler.map((g) => g.id) } },
+    _sum: { quantityDelta: true },
+  });
+
+  // Çıkışlar negatiftir; tüketilen adet toplamın mutlak değeridir.
+  const tuketilen = new Map<string, number>();
+  for (const grup of tuketimler) {
+    if (grup.sourceMovementId) {
+      tuketilen.set(
+        grup.sourceMovementId,
+        Math.abs(grup._sum.quantityDelta ?? 0),
+      );
+    }
+  }
+
+  return girisler
+    .map((giris) => ({
+      hareketId: giris.id,
+      occurredAt: giris.occurredAt,
+      girenAdet: giris.quantityDelta,
+      kalanAdet: giris.quantityDelta - (tuketilen.get(giris.id) ?? 0),
+      birimMaliyet: giris.unitCostAmount?.toString() ?? null,
+      birimMaliyetParaBirimi: giris.unitCostCurrency,
+      locationId: giris.locationId,
+    }))
+    .filter((parti) => parti.kalanAdet > 0);
+}
+
+// ---------------------------------------------------------------------------
 //  SAF HESAPLAR (veritabanına gitmez)
 // ---------------------------------------------------------------------------
+
+export type FifoPayi = { parti: Parti; adet: number };
+
+export type FifoSonucu =
+  | { yeterliMi: true; dagitim: FifoPayi[]; kalanPartiler: Parti[] }
+  | { yeterliMi: false; mevcut: number };
+
+/**
+ * İstenen adedi en eski partiden başlayarak dağıtır.
+ *
+ * Stok yetmiyorsa HİÇBİR dağıtım yapmaz, mevcut adedi bildirir — çağıran taraf
+ * satışı komple reddeder. Kısmî satış diye bir şey yok.
+ *
+ * `kalanPartiler` döner çünkü aynı satışta aynı varyant birden fazla kalemde
+ * geçebilir; ikinci kalem, birincinin tükettiği partileri tekrar tüketmemeli.
+ * Girdi dizisi DEĞİŞTİRİLMEZ.
+ */
+export function fifoDagit(partiler: Parti[], adet: number): FifoSonucu {
+  const mevcut = partiler.reduce((toplam, p) => toplam + p.kalanAdet, 0);
+  if (adet > mevcut) return { yeterliMi: false, mevcut };
+
+  const dagitim: FifoPayi[] = [];
+  const kalanPartiler: Parti[] = [];
+  let kalanIhtiyac = adet;
+
+  for (const parti of partiler) {
+    if (kalanIhtiyac === 0) {
+      kalanPartiler.push(parti);
+      continue;
+    }
+
+    const alinan = Math.min(parti.kalanAdet, kalanIhtiyac);
+    dagitim.push({ parti, adet: alinan });
+    kalanIhtiyac -= alinan;
+
+    const kalan = parti.kalanAdet - alinan;
+    if (kalan > 0) kalanPartiler.push({ ...parti, kalanAdet: kalan });
+  }
+
+  return { yeterliMi: true, dagitim, kalanPartiler };
+}
 
 export type KalemIlerlemesi = {
   beklenen: number;
