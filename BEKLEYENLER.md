@@ -30,6 +30,18 @@ listesiyle birlikte teslim edilir.
       Yeniden adlandırmak veri taşıma gerektirir; yukarıdaki alan
       adı değişikliğiyle aynı bakımda değerlendirilecek.
 
+## Faz 3 öncesinde karara bağlanacak
+
+- [ ] **İş saat dilimi sabitlemesi (Europe/Istanbul?)**
+      Şu an tarih biçimlendirmesi çalışma ortamının saat dilimini
+      kullanıyor (`src/i18n/request.ts`). Kullanıcı Almanya'da, operasyon
+      Türkiye'de — sabit bir iş saat dilimine geçmek tarihleri bir gün
+      kaydırabilir ve bu **finansal sonuç doğurur**: kart kesim günleri,
+      hakediş tarihleri, faizsiz dönem hesabı.
+      Faz 3 (hakediş + kart borcu takibi) başlamadan karara bağlanmalı.
+      _Karar 09.08.2026: i18n Paket 1'de bilinçli olarak ertelendi;
+      o paket görünümü değiştirmemeliydi._
+
 ## SaaS dönüşümü
 
 - [ ] **Çok-kiracılı (multi-tenant) mimari**

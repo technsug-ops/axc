@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
 
 import {
@@ -31,6 +32,9 @@ export function SilButonu({
   urunAdi: string;
   boyut?: "sm" | "default";
 }) {
+  const t = useTranslations("UrunSil");
+  const ortak = useTranslations("Ortak");
+
   const [durum, formAction, bekliyor] = useActionState<FormDurumu, FormData>(
     urunSil,
     {},
@@ -41,16 +45,17 @@ export function SilButonu({
       <AlertDialogTrigger asChild>
         <Button variant="outline" size={boyut}>
           <Trash2 />
-          Sil
+          {t("dugme")}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Ürünü silmek istiyor musunuz?</AlertDialogTitle>
+          <AlertDialogTitle>{t("baslik")}</AlertDialogTitle>
           <AlertDialogDescription>
-            <strong>{urunAdi}</strong> ve buna bağlı tüm varyantlar kalıcı
-            olarak silinir. Bu işlem geri alınamaz. Stok hareketi bulunan
-            ürünler silinemez.
+            {t.rich("aciklama", {
+              ad: urunAdi,
+              kalin: (parcalar) => <strong>{parcalar}</strong>,
+            })}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -68,11 +73,11 @@ export function SilButonu({
         ) : null}
 
         <AlertDialogFooter>
-          <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+          <AlertDialogCancel>{ortak("vazgec")}</AlertDialogCancel>
           <form action={formAction}>
             <input type="hidden" name="id" value={urunId} />
             <Button type="submit" variant="destructive" disabled={bekliyor}>
-              {bekliyor ? "Siliniyor..." : "Evet, sil"}
+              {bekliyor ? t("siliniyor") : t("onayla")}
             </Button>
           </form>
         </AlertDialogFooter>

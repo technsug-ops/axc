@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { History, Package } from "lucide-react";
 
@@ -20,7 +21,10 @@ import { sonHareketTarihleri, varyantStoklari } from "@/lib/stok";
 
 import { StokArama } from "./stok-arama";
 
-export const metadata = { title: "Stok" };
+export async function generateMetadata() {
+  const t = await getTranslations("Basliklar");
+  return { title: t("stok") };
+}
 
 export default async function StokSayfasi({
   searchParams,

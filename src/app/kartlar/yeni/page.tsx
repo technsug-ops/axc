@@ -1,9 +1,13 @@
+import { getTranslations } from "next-intl/server";
 import { GeriBaglanti } from "@/components/baglanti";
 
 import { kartOlustur } from "../actions";
 import { KartFormu } from "../kart-formu";
 
-export const metadata = { title: "Yeni Kart" };
+export async function generateMetadata() {
+  const t = await getTranslations("Basliklar");
+  return { title: t("yeniKart") };
+}
 
 export default function YeniKartSayfasi() {
   return (

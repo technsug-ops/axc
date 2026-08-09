@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Eye, PackageCheck, Plus } from "lucide-react";
 
@@ -20,7 +21,10 @@ import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { kalemToplamlari } from "@/lib/tutar";
 
-export const metadata = { title: "Alımlar" };
+export async function generateMetadata() {
+  const t = await getTranslations("Basliklar");
+  return { title: t("alimlar") };
+}
 
 type AlimDurumKodu = (typeof ALIM_DURUMLARI)[number];
 

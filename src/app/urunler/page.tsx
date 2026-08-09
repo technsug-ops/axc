@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Eye, Pencil, Plus } from "lucide-react";
 
@@ -21,7 +22,10 @@ import { urunStoklari } from "@/lib/stok";
 
 import { SilButonu } from "./sil-butonu";
 
-export const metadata = { title: "Ürünler" };
+export async function generateMetadata() {
+  const t = await getTranslations("Basliklar");
+  return { title: t("urunler") };
+}
 
 export default async function UrunlerSayfasi({
   searchParams,

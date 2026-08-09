@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
@@ -106,38 +107,50 @@ export async function varyantKodlaBul(
 //  ALIM OLUŞTURMA
 // ---------------------------------------------------------------------------
 
-const kalemSemasi = z.object({
-  variantId: z.string().min(1, "ürün seçilmeli"),
-  quantity: z
-    .number({ message: "adet sayı olmalı" })
-    .int("adet tam sayı olmalı")
-    .min(1, "adet en az 1 olmalı"),
-  unitCostAmount: z
-    .number({ message: "birim fiyat sayı olmalı" })
-    .min(0, "birim fiyat negatif olamaz"),
-  unitCostCurrency: z.enum(["TRY", "EUR"], {
-    message: "para birimi TRY veya EUR olmalı",
-  }),
-});
+/** Sözlükten çözülen çeviri işlevi. */
+type Ceviri = (
+  anahtar: string,
+  degerler?: Record<string, string | number>,
+) => string;
 
-const alimSemasi = z.object({
-  code: z.string().trim().min(1, "Sipariş no zorunlu").max(191),
-  purchasedAt: z.string().min(1, "Alım tarihi zorunlu"),
-  channelAccountId: z.string(),
-  creditCardId: z.string(),
-  installmentCount: z
-    .number({ message: "Taksit sayısı sayı olmalı" })
-    .int("Taksit sayısı tam sayı olmalı")
-    .min(1, "Taksit sayısı en az 1 olmalı")
-    .max(36, "Taksit sayısı en fazla 36 olabilir"),
-  supplierName: z.string().trim().max(191),
-  note: z.string().trim(),
-  kalemler: z.array(kalemSemasi).min(1, "En az bir kalem eklenmeli"),
-});
+/**
+ * Şema, mesajlar çözüldükten SONRA kurulur.
+ * Modül seviyesinde kurulamaz: getTranslations() istek kapsamlıdır.
+ */
+function alimSemasiKur(t: Ceviri) {
+  const kalemSemasi = z.object({
+    variantId: z.string().min(1, t("urunSecilmeli")),
+    quantity: z
+      .number({ message: t("adetSayiOlmali") })
+      .int(t("adetTamSayi"))
+      .min(1, t("adetEnAzBir")),
+    unitCostAmount: z
+      .number({ message: t("fiyatSayiOlmali") })
+      .min(0, t("fiyatNegatifOlamaz")),
+    unitCostCurrency: z.enum(["TRY", "EUR"], {
+      message: t("paraBirimiGecersiz"),
+    }),
+  });
 
-function hataMesaji(yol: PropertyKey[], mesaj: string): string {
+  return z.object({
+    code: z.string().trim().min(1, t("siparisNoZorunlu")).max(191),
+    purchasedAt: z.string().min(1, t("tarihZorunlu")),
+    channelAccountId: z.string(),
+    creditCardId: z.string(),
+    installmentCount: z
+      .number({ message: t("taksitSayiOlmali") })
+      .int(t("taksitTamSayi"))
+      .min(1, t("taksitEnAzBir"))
+      .max(36, t("taksitEnFazla36")),
+    supplierName: z.string().trim().max(191),
+    note: z.string().trim(),
+    kalemler: z.array(kalemSemasi).min(1, t("enAzBirKalem")),
+  });
+}
+
+function hataMesaji(yol: PropertyKey[], mesaj: string, t: Ceviri): string {
   if (yol[0] === "kalemler" && typeof yol[1] === "number") {
-    return `${yol[1] + 1}. kalem: ${mesaj}`;
+    return t("kalemHataKalibi", { sira: yol[1] + 1, mesaj });
   }
   return mesaj;
 }
@@ -146,20 +159,22 @@ export async function alimOlustur(
   _oncekiDurum: AlimDurumu,
   formData: FormData,
 ): Promise<AlimDurumu> {
+  const t = await getTranslations("Alim");
+
   const ham = formData.get("veri");
-  if (typeof ham !== "string") return { hatalar: ["Form verisi okunamadı."] };
+  if (typeof ham !== "string") return { hatalar: [t("formOkunamadi")] };
 
   let json: unknown;
   try {
     json = JSON.parse(ham);
   } catch {
-    return { hatalar: ["Form verisi bozuk."] };
+    return { hatalar: [t("formBozuk")] };
   }
 
-  const sonuc = alimSemasi.safeParse(json);
+  const sonuc = alimSemasiKur(t).safeParse(json);
   if (!sonuc.success) {
     return {
-      hatalar: sonuc.error.issues.map((i) => hataMesaji(i.path, i.message)),
+      hatalar: sonuc.error.issues.map((i) => hataMesaji(i.path, i.message, t)),
     };
   }
   const veri = sonuc.data;
@@ -169,12 +184,12 @@ export async function alimOlustur(
     where: { code: veri.code },
   });
   if (mevcut) {
-    return { hatalar: [`"${veri.code}" sipariş numarası zaten kayıtlı.`] };
+    return { hatalar: [t("siparisNoZatenKayitli", { kod: veri.code })] };
   }
 
   const tarih = new Date(veri.purchasedAt);
   if (Number.isNaN(tarih.getTime())) {
-    return { hatalar: ["Alım tarihi geçerli değil."] };
+    return { hatalar: [t("tarihGecersiz")] };
   }
 
   // Seçilen varyantlar gerçekten var mı?
@@ -183,7 +198,7 @@ export async function alimOlustur(
     where: { id: { in: varyantIdleri } },
   });
   if (bulunan !== varyantIdleri.length) {
-    return { hatalar: ["Kalemlerden biri artık mevcut değil, listeyi yenileyin."] };
+    return { hatalar: [t("kalemMevcutDegil")] };
   }
 
   // Özet alanları: SADECE tüm kalemler aynı para birimindeyse doldurulur.
@@ -233,10 +248,10 @@ export async function alimOlustur(
         ? String((e as { code: unknown }).code)
         : "";
     if (kod === "P2002") {
-      return { hatalar: ["Bu sipariş numarası zaten kayıtlı."] };
+      return { hatalar: [t("siparisNoCakisti")] };
     }
     console.error("[alim] beklenmeyen hata:", e);
-    return { hatalar: ["Alım kaydedilemedi, beklenmeyen bir hata oluştu."] };
+    return { hatalar: [t("kaydedilemedi")] };
   }
 
   revalidatePath("/alimlar");

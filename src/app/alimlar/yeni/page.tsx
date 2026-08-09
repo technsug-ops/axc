@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { GeriBaglanti } from "@/components/baglanti";
 import { tarihGirdisi } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
@@ -5,7 +6,10 @@ import { prisma } from "@/lib/prisma";
 import { alimOlustur } from "../actions";
 import { AlimFormu, type HesapSecenegi, type KartSecenegi } from "../alim-formu";
 
-export const metadata = { title: "Yeni Alım" };
+export async function generateMetadata() {
+  const t = await getTranslations("Basliklar");
+  return { title: t("yeniAlim") };
+}
 
 export default async function YeniAlimSayfasi() {
   const [hesapKayitlari, kartKayitlari] = await Promise.all([

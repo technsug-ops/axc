@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,10 @@ import { prisma } from "@/lib/prisma";
 import { kanalHesabiDurumDegistir } from "./actions";
 import { KanalHesabiFormu } from "./kanal-hesabi-formu";
 
-export const metadata = { title: "Kanal Hesapları" };
+export async function generateMetadata() {
+  const t = await getTranslations("Basliklar");
+  return { title: t("kanalHesaplari") };
+}
 
 export default async function KanalHesaplariSayfasi() {
   const [kanallar, hesaplar] = await Promise.all([

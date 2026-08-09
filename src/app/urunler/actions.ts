@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
@@ -18,83 +19,96 @@ export type FormDurumu = {
 //  ŞEMALAR (zod)
 // ---------------------------------------------------------------------------
 
-const secenekSemasi = z.object({
-  ad: z.string().trim().min(1, "seçenek adı boş olamaz").max(191),
-  deger: z.string().trim().min(1, "seçenek değeri boş olamaz").max(191),
-});
+/** Sözlükten çözülen çeviri işlevi (anahtarlar bugün serbest metin). */
+type Ceviri = (
+  anahtar: string,
+  degerler?: Record<string, string | number>,
+) => string;
 
-const varyantSemasi = z.object({
-  /** Düzenlemede mevcut varyantı işaret eder; yeni varyantta boştur. */
-  id: z.string().optional(),
-  /** Gösterim adı: "M / Kırmızı". Varyantsız üründe boş kalır. */
-  ad: z.string().trim().max(191).optional(),
-  sku: z.string().trim().min(1, "SKU zorunlu").max(191),
-  axcaliSku: z.string().trim().min(1, "Firma SKU zorunlu").max(191),
-  barcode: z.string().trim().max(191).optional(),
-  locationId: z.string().optional(),
-  secenekler: z.array(secenekSemasi).default([]),
-});
+/**
+ * Şema, mesajlar çözüldükten SONRA kurulur.
+ * Modül seviyesinde kurulamaz: getTranslations() istek kapsamlıdır.
+ */
+function urunSemasiKur(t: Ceviri) {
+  const secenekSemasi = z.object({
+    ad: z.string().trim().min(1, t("secenekAdiBos")).max(191),
+    deger: z.string().trim().min(1, t("secenekDegeriBos")).max(191),
+  });
 
-const urunSemasi = z.object({
-  ad: z.string().trim().min(1, "Ürün adı zorunlu").max(191),
-  marka: z.string().trim().max(191).optional(),
-  aciklama: z.string().trim().optional(),
-  varyantliMi: z.boolean(),
-  varyantlar: z.array(varyantSemasi).min(1, "En az bir varyant gerekli"),
-});
+  const varyantSemasi = z.object({
+    /** Düzenlemede mevcut varyantı işaret eder; yeni varyantta boştur. */
+    id: z.string().optional(),
+    /** Gösterim adı: "M / Kırmızı". Varyantsız üründe boş kalır. */
+    ad: z.string().trim().max(191).optional(),
+    sku: z.string().trim().min(1, t("skuZorunlu")).max(191),
+    axcaliSku: z.string().trim().min(1, t("firmaSkuZorunlu")).max(191),
+    barcode: z.string().trim().max(191).optional(),
+    locationId: z.string().optional(),
+    secenekler: z.array(secenekSemasi).default([]),
+  });
 
-type UrunVerisi = z.infer<typeof urunSemasi>;
+  return z.object({
+    ad: z.string().trim().min(1, t("urunAdiZorunlu")).max(191),
+    marka: z.string().trim().max(191).optional(),
+    aciklama: z.string().trim().optional(),
+    varyantliMi: z.boolean(),
+    varyantlar: z.array(varyantSemasi).min(1, t("enAzBirVaryant")),
+  });
+}
+
+type UrunVerisi = z.infer<ReturnType<typeof urunSemasiKur>>;
 
 // ---------------------------------------------------------------------------
 //  YARDIMCILAR
 // ---------------------------------------------------------------------------
 
 /** "varyantlar.1.sku" yolunu "2. varyant: SKU zorunlu" gibi okunur hale getirir. */
-function hataMesaji(yol: PropertyKey[], mesaj: string): string {
+function hataMesaji(yol: PropertyKey[], mesaj: string, t: Ceviri): string {
   if (yol[0] === "varyantlar" && typeof yol[1] === "number") {
-    return `${yol[1] + 1}. varyant: ${mesaj}`;
+    return t("varyantHataKalibi", { sira: yol[1] + 1, mesaj });
   }
   return mesaj;
 }
 
-function veritabaniHatasi(e: unknown): string {
+function veritabaniHatasi(e: unknown, t: Ceviri): string {
   const kod =
     typeof e === "object" && e !== null && "code" in e
       ? String((e as { code: unknown }).code)
       : "";
 
   if (kod === "P2002") {
-    return "Bu SKU, Firma SKU veya barkod zaten kayıtlı. Değerleri kontrol edin.";
+    return t("kodZatenKayitli");
   }
   if (kod === "P2003" || kod === "P2014") {
-    return "Bu kayıt başka kayıtlarla ilişkili olduğu için işlem yapılamadı.";
+    return t("iliskiliKayit");
   }
 
   console.error("[urun actions] beklenmeyen hata:", e);
-  return "Beklenmeyen bir veritabanı hatası oluştu.";
+  return t("beklenmeyenVeritabani");
 }
 
 /** Formdaki gizli JSON alanını okur ve doğrular. */
 function veriyiAyristir(
   formData: FormData,
+  t: Ceviri,
 ): { veri: UrunVerisi } | { hatalar: string[] } {
   const ham = formData.get("veri");
 
   if (typeof ham !== "string") {
-    return { hatalar: ["Form verisi okunamadı."] };
+    return { hatalar: [t("formOkunamadi")] };
   }
 
   let json: unknown;
   try {
     json = JSON.parse(ham);
   } catch {
-    return { hatalar: ["Form verisi bozuk."] };
+    return { hatalar: [t("formBozuk")] };
   }
 
-  const sonuc = urunSemasi.safeParse(json);
+  const sonuc = urunSemasiKur(t).safeParse(json);
   if (!sonuc.success) {
     return {
-      hatalar: sonuc.error.issues.map((i) => hataMesaji(i.path, i.message)),
+      hatalar: sonuc.error.issues.map((i) => hataMesaji(i.path, i.message, t)),
     };
   }
 
@@ -110,6 +124,7 @@ function veriyiAyristir(
  */
 async function benzersizlikHatalari(
   varyantlar: UrunVerisi["varyantlar"],
+  t: Ceviri,
   haricUrunId?: string,
 ): Promise<string[]> {
   const hatalar: string[] = [];
@@ -120,7 +135,7 @@ async function benzersizlikHatalari(
     for (const deger of degerler) {
       if (!deger) continue;
       if (gorulen.has(deger)) {
-        hatalar.push(`${alanAdi} "${deger}" formda birden fazla varyantta kullanılmış.`);
+        hatalar.push(t("formdaTekrar", { alan: alanAdi, deger }));
       }
       gorulen.add(deger);
     }
@@ -132,9 +147,9 @@ async function benzersizlikHatalari(
     .map((v) => v.barcode)
     .filter((b): b is string => Boolean(b));
 
-  tekrarKontrol("SKU", skular);
-  tekrarKontrol("Firma SKU", axcaliKodlari);
-  tekrarKontrol("Barkod", barkodlar);
+  tekrarKontrol(t("alanSku"), skular);
+  tekrarKontrol(t("alanFirmaSku"), axcaliKodlari);
+  tekrarKontrol(t("alanBarkod"), barkodlar);
 
   // 2) Veritabanında başka bir ürüne ait mi
   const cakisanlar = await prisma.productVariant.findMany({
@@ -151,13 +166,13 @@ async function benzersizlikHatalari(
 
   for (const cakisan of cakisanlar) {
     if (skular.includes(cakisan.sku)) {
-      hatalar.push(`SKU "${cakisan.sku}" başka bir üründe kullanılıyor.`);
+      hatalar.push(t("skuBaskaUrunde", { deger: cakisan.sku }));
     }
     if (axcaliKodlari.includes(cakisan.axcaliSku)) {
-      hatalar.push(`Firma SKU "${cakisan.axcaliSku}" başka bir üründe kullanılıyor.`);
+      hatalar.push(t("firmaSkuBaskaUrunde", { deger: cakisan.axcaliSku }));
     }
     if (cakisan.barcode && barkodlar.includes(cakisan.barcode)) {
-      hatalar.push(`Barkod "${cakisan.barcode}" başka bir üründe kullanılıyor.`);
+      hatalar.push(t("barkodBaskaUrunde", { deger: cakisan.barcode }));
     }
   }
 
@@ -188,11 +203,13 @@ export async function urunOlustur(
   _oncekiDurum: FormDurumu,
   formData: FormData,
 ): Promise<FormDurumu> {
-  const ayristirma = veriyiAyristir(formData);
+  const t = await getTranslations("Urun");
+
+  const ayristirma = veriyiAyristir(formData, t);
   if ("hatalar" in ayristirma) return ayristirma;
   const veri = ayristirma.veri;
 
-  const benzersizlik = await benzersizlikHatalari(veri.varyantlar);
+  const benzersizlik = await benzersizlikHatalari(veri.varyantlar, t);
   if (benzersizlik.length) return { hatalar: benzersizlik };
 
   let yeniUrunId: string;
@@ -217,7 +234,7 @@ export async function urunOlustur(
     });
     yeniUrunId = urun.id;
   } catch (e) {
-    return { hatalar: [veritabaniHatasi(e)] };
+    return { hatalar: [veritabaniHatasi(e, t)] };
   }
 
   revalidatePath("/urunler");
@@ -234,16 +251,18 @@ export async function urunGuncelle(
   _oncekiDurum: FormDurumu,
   formData: FormData,
 ): Promise<FormDurumu> {
+  const t = await getTranslations("Urun");
+
   const urunId = formData.get("id");
   if (typeof urunId !== "string" || !urunId) {
-    return { hatalar: ["Ürün kimliği bulunamadı."] };
+    return { hatalar: [t("kimlikBulunamadi")] };
   }
 
-  const ayristirma = veriyiAyristir(formData);
+  const ayristirma = veriyiAyristir(formData, t);
   if ("hatalar" in ayristirma) return ayristirma;
   const veri = ayristirma.veri;
 
-  const benzersizlik = await benzersizlikHatalari(veri.varyantlar, urunId);
+  const benzersizlik = await benzersizlikHatalari(veri.varyantlar, t, urunId);
   if (benzersizlik.length) return { hatalar: benzersizlik };
 
   const mevcutVaryantlar = await prisma.productVariant.findMany({
@@ -264,7 +283,7 @@ export async function urunGuncelle(
     if (hareketSayisi > 0) {
       return {
         hatalar: [
-          "Stok hareketi bulunan bir varyant silinemez. Miktar düzeltmesi ters yönde bir düzeltme kaydıyla yapılır.",
+          t("varyantSilinemez"),
         ],
       };
     }
@@ -330,7 +349,7 @@ export async function urunGuncelle(
       }
     });
   } catch (e) {
-    return { hatalar: [veritabaniHatasi(e)] };
+    return { hatalar: [veritabaniHatasi(e, t)] };
   }
 
   revalidatePath("/urunler");
@@ -346,9 +365,11 @@ export async function urunSil(
   _oncekiDurum: FormDurumu,
   formData: FormData,
 ): Promise<FormDurumu> {
+  const t = await getTranslations("Urun");
+
   const urunId = formData.get("id");
   if (typeof urunId !== "string" || !urunId) {
-    return { hatalar: ["Ürün kimliği bulunamadı."] };
+    return { hatalar: [t("kimlikBulunamadi")] };
   }
 
   // Stok hareketi olan ürün silinemez. Şu an hiç hareket yok ama kural
@@ -359,7 +380,7 @@ export async function urunSil(
   if (hareketSayisi > 0) {
     return {
       hatalar: [
-        "Bu ürünün stok hareketi var, silinemez. Kullanımdan kaldırmak için ürünü pasife alın.",
+        t("urunSilinemez"),
       ],
     };
   }
@@ -368,7 +389,7 @@ export async function urunSil(
     // Varyantlar ve seçenekleri şema gereği (onDelete: Cascade) birlikte silinir.
     await prisma.product.delete({ where: { id: urunId } });
   } catch (e) {
-    return { hatalar: [veritabaniHatasi(e)] };
+    return { hatalar: [veritabaniHatasi(e, t)] };
   }
 
   revalidatePath("/urunler");

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
@@ -11,24 +12,36 @@ export type MalKabulDurumu = {
   hatalar?: string[];
 };
 
-const satirSemasi = z.object({
-  purchaseItemId: z.string().min(1),
-  saglam: z
-    .number({ message: "sağlam adet sayı olmalı" })
-    .int("sağlam adet tam sayı olmalı")
-    .min(0, "sağlam adet negatif olamaz"),
-  hasarli: z
-    .number({ message: "hasarlı adet sayı olmalı" })
-    .int("hasarlı adet tam sayı olmalı")
-    .min(0, "hasarlı adet negatif olamaz"),
-  locationId: z.string(),
-  hasarNotu: z.string().trim().max(2000),
-});
+/** Sözlükten çözülen çeviri işlevi. */
+type Ceviri = (
+  anahtar: string,
+  degerler?: Record<string, string | number>,
+) => string;
 
-const kabulSemasi = z.object({
-  teslimTarihi: z.string().min(1, "Teslim tarihi zorunlu"),
-  satirlar: z.array(satirSemasi).min(1, "Kalem bulunamadı"),
-});
+/**
+ * Şema, mesajlar çözüldükten SONRA kurulur.
+ * Modül seviyesinde kurulamaz: getTranslations() istek kapsamlıdır.
+ */
+function kabulSemasiKur(t: Ceviri) {
+  const satirSemasi = z.object({
+    purchaseItemId: z.string().min(1),
+    saglam: z
+      .number({ message: t("saglamSayiOlmali") })
+      .int(t("saglamTamSayi"))
+      .min(0, t("saglamNegatifOlamaz")),
+    hasarli: z
+      .number({ message: t("hasarliSayiOlmali") })
+      .int(t("hasarliTamSayi"))
+      .min(0, t("hasarliNegatifOlamaz")),
+    locationId: z.string(),
+    hasarNotu: z.string().trim().max(2000),
+  });
+
+  return z.object({
+    teslimTarihi: z.string().min(1, t("teslimTarihiZorunlu")),
+    satirlar: z.array(satirSemasi).min(1, t("kalemBulunamadi")),
+  });
+}
 
 /**
  * MAL KABUL
@@ -42,20 +55,22 @@ export async function malKabulEt(
   _oncekiDurum: MalKabulDurumu,
   formData: FormData,
 ): Promise<MalKabulDurumu> {
+  const t = await getTranslations("MalKabul");
+
   const alimId = String(formData.get("alimId") ?? "");
-  if (!alimId) return { hatalar: ["Alım kimliği bulunamadı."] };
+  if (!alimId) return { hatalar: [t("alimKimligiBulunamadi")] };
 
   const ham = formData.get("veri");
-  if (typeof ham !== "string") return { hatalar: ["Form verisi okunamadı."] };
+  if (typeof ham !== "string") return { hatalar: [t("formOkunamadi")] };
 
   let json: unknown;
   try {
     json = JSON.parse(ham);
   } catch {
-    return { hatalar: ["Form verisi bozuk."] };
+    return { hatalar: [t("formBozuk")] };
   }
 
-  const sonuc = kabulSemasi.safeParse(json);
+  const sonuc = kabulSemasiKur(t).safeParse(json);
   if (!sonuc.success) {
     return { hatalar: sonuc.error.issues.map((i) => i.message) };
   }
@@ -63,27 +78,27 @@ export async function malKabulEt(
 
   const tarih = new Date(veri.teslimTarihi);
   if (Number.isNaN(tarih.getTime())) {
-    return { hatalar: ["Teslim tarihi geçerli değil."] };
+    return { hatalar: [t("teslimTarihiGecersiz")] };
   }
 
   const alim = await prisma.purchase.findUnique({
     where: { id: alimId },
     include: { items: true },
   });
-  if (!alim) return { hatalar: ["Alım bulunamadı."] };
+  if (!alim) return { hatalar: [t("alimBulunamadi")] };
 
   if (alim.status === "CANCELLED") {
-    return { hatalar: ["İptal edilmiş alım için mal kabul yapılamaz."] };
+    return { hatalar: [t("iptalEdilmisAlim")] };
   }
   if (alim.status === "RECEIVED") {
-    return { hatalar: ["Bu alımın tüm kalemleri zaten tamamlanmış."] };
+    return { hatalar: [t("zatenTamamlanmis")] };
   }
 
   // Girilen satırlar gerçekten bu alıma mı ait?
   const kalemHaritasi = new Map(alim.items.map((k) => [k.id, k]));
   for (const satir of veri.satirlar) {
     if (!kalemHaritasi.has(satir.purchaseItemId)) {
-      return { hatalar: ["Kalemlerden biri bu alıma ait değil."] };
+      return { hatalar: [t("kalemBuAlimaAitDegil")] };
     }
   }
 
@@ -106,13 +121,13 @@ export async function malKabulEt(
 
     if (girilen > kalan) {
       hatalar.push(
-        `Bir kalemde beklenenden fazla giriş var: kalan ${kalan}, girilen ${girilen}.`,
+        t("fazlaGiris", { kalan, girilen }),
       );
     }
   }
 
   if (toplamIslem === 0) {
-    hatalar.push("En az bir kalem için adet girmelisiniz.");
+    hatalar.push(t("enAzBirAdet"));
   }
   if (hatalar.length) return { hatalar };
 
@@ -125,7 +140,7 @@ export async function malKabulEt(
       where: { id: { in: rafIdleri } },
     });
     if (bulunan !== rafIdleri.length) {
-      return { hatalar: ["Seçilen raflardan biri artık mevcut değil."] };
+      return { hatalar: [t("rafMevcutDegil")] };
     }
   }
 
@@ -179,7 +194,7 @@ export async function malKabulEt(
     });
   } catch (e) {
     console.error("[mal kabul] beklenmeyen hata:", e);
-    return { hatalar: ["Mal kabul kaydedilemedi, beklenmeyen bir hata oluştu."] };
+    return { hatalar: [t("kaydedilemedi")] };
   }
 
   // Durumu yeniden hesapla (işlem sonrası güncel ledger ile).

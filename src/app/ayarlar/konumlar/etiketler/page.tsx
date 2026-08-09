@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import QRCode from "qrcode";
 
@@ -6,7 +7,10 @@ import { prisma } from "@/lib/prisma";
 
 import { YazdirButonu } from "./yazdir-butonu";
 
-export const metadata = { title: "Raf Etiketleri" };
+export async function generateMetadata() {
+  const t = await getTranslations("Basliklar");
+  return { title: t("rafEtiketleri") };
+}
 
 /**
  * Raf QR etiketleri — toplu yazdırma görünümü.

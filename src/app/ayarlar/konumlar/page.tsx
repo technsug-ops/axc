@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Pencil, QrCode } from "lucide-react";
 
@@ -20,7 +21,10 @@ import { prisma } from "@/lib/prisma";
 import { konumDurumDegistir } from "./actions";
 import { KonumFormu } from "./konum-formu";
 
-export const metadata = { title: "Raf Konumları" };
+export async function generateMetadata() {
+  const t = await getTranslations("Basliklar");
+  return { title: t("rafKonumlari") };
+}
 
 export default async function KonumlarSayfasi() {
   const konumlar = await prisma.location.findMany({

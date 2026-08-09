@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Eye, Pencil, Plus } from "lucide-react";
 
@@ -20,7 +21,10 @@ import { prisma } from "@/lib/prisma";
 
 import { kartDurumDegistir } from "./actions";
 
-export const metadata = { title: "Kredi Kartları" };
+export async function generateMetadata() {
+  const t = await getTranslations("Basliklar");
+  return { title: t("kartlar") };
+}
 
 export default async function KartlarSayfasi() {
   const kartlar = await prisma.creditCard.findMany({

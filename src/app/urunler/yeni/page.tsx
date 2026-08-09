@@ -1,10 +1,14 @@
+import { getTranslations } from "next-intl/server";
 import { GeriBaglanti } from "@/components/baglanti";
 import { prisma } from "@/lib/prisma";
 
 import { urunOlustur } from "../actions";
 import { UrunFormu } from "../urun-formu";
 
-export const metadata = { title: "Yeni Ürün" };
+export async function generateMetadata() {
+  const t = await getTranslations("Basliklar");
+  return { title: t("yeniUrun") };
+}
 
 export default async function YeniUrunSayfasi() {
   const konumlar = await prisma.location.findMany({

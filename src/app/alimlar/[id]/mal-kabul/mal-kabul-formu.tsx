@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PackageCheck, TriangleAlert } from "lucide-react";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
@@ -69,6 +70,9 @@ export function MalKabulFormu({
   konumlar: KonumSecenegi[];
   bugun: string;
 }) {
+  const tOnay = useTranslations("MalKabulOnay");
+  const tOrtak = useTranslations("Ortak");
+
   const [durum, formAction, bekliyor] = useActionState<
     MalKabulDurumu,
     FormData
@@ -412,34 +416,36 @@ export function MalKabulFormu({
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Mal kabulü kaydedilsin mi?</AlertDialogTitle>
+              <AlertDialogTitle>{tOnay("baslik")}</AlertDialogTitle>
               <AlertDialogDescription asChild>
                 <div className="space-y-2">
                   <p>
-                    <strong>{ozet.saglam} adet sağlam</strong> ürün stoğa
-                    girecek
-                    {ozet.hasarli > 0 ? (
-                      <>
-                        , <strong>{ozet.hasarli} adet hasarlı</strong> stoğa
-                        girmeden kayda geçecek
-                      </>
-                    ) : null}
+                    {tOnay.rich("saglamSatiri", {
+                      saglam: ozet.saglam,
+                      kalin: (p) => <strong>{p}</strong>,
+                    })}
+                    {ozet.hasarli > 0
+                      ? tOnay.rich("hasarliEki", {
+                          hasarli: ozet.hasarli,
+                          kalin: (p) => <strong>{p}</strong>,
+                        })
+                      : null}
                     .
                   </p>
                   <p>
-                    Stok hareketleri <strong>geri alınamaz</strong>. Yanlış bir
-                    giriş silinemez; düzeltmek için ters işaretli bir düzeltme
-                    kaydı gerekir.
+                    {tOnay.rich("geriAlinamaz", {
+                      kalin: (p) => <strong>{p}</strong>,
+                    })}
                   </p>
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+              <AlertDialogCancel>{tOrtak("vazgec")}</AlertDialogCancel>
               {/* Diyalog portal içinde açıldığı için düğmeyi forma
                   form="..." ile bağlıyoruz; yoksa gönderim çalışmaz. */}
               <Button type="submit" form="mal-kabul-formu" disabled={bekliyor}>
-                Evet, kaydet
+                {tOnay("onayla")}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

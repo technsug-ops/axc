@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
@@ -21,24 +22,39 @@ export type KartDurumu = {
   basari?: string;
 };
 
-const kartSemasi = z.object({
-  label: z.string().trim().min(1, "Kart etiketi zorunlu").max(191),
-  bankName: z.string().trim().max(191),
-  last4: z
-    .string()
-    .trim()
-    .regex(/^\d{4}$/, "Son 4 hane tam olarak 4 rakam olmalı"),
-  holderName: z.string().trim().max(191),
-  currency: z.enum(["TRY", "EUR"], {
-    message: "Para birimi TRY veya EUR olmalı",
-  }),
-  creditLimitAmount: z.string().trim(),
-  creditLimitCurrency: z.enum(["TRY", "EUR"], {
-    message: "Limit para birimi TRY veya EUR olmalı",
-  }),
-  statementDay: z.string().trim(),
-  dueDay: z.string().trim(),
-});
+/** Doğrulama mesajları; şema kurulmadan önce sözlükten çözülür. */
+type KartMesajlari = {
+  etiketZorunlu: string;
+  son4Gecersiz: string;
+  paraBirimiGecersiz: string;
+  limitParaBirimiGecersiz: string;
+  limitGecersiz: string;
+  kesimGunuGecersiz: string;
+  sonOdemeGunuGecersiz: string;
+};
+
+function kartSemasi(m: KartMesajlari) {
+  return z.object({
+    label: z.string().trim().min(1, m.etiketZorunlu).max(191),
+    bankName: z.string().trim().max(191),
+    last4: z
+      .string()
+      .trim()
+      .regex(/^\d{4}$/, m.son4Gecersiz),
+    holderName: z.string().trim().max(191),
+    currency: z.enum(["TRY", "EUR"], {
+      message: m.paraBirimiGecersiz,
+    }),
+    creditLimitAmount: z.string().trim(),
+    creditLimitCurrency: z.enum(["TRY", "EUR"], {
+      message: m.limitParaBirimiGecersiz,
+    }),
+    statementDay: z.string().trim(),
+    dueDay: z.string().trim(),
+  });
+}
+
+type KartVerisi = z.infer<ReturnType<typeof kartSemasi>>;
 
 /** "1.234,56" ya da "1234.56" kabul eder. Boşsa null döner. */
 function tutarAyristir(ham: string): number | null | "hatali" {
@@ -57,8 +73,25 @@ function gunAyristir(ham: string): number | null | "hatali" {
   return sayi;
 }
 
-function formuOku(formData: FormData) {
-  return kartSemasi.safeParse({
+/** Sözlükten mesajları çözüp şemayı kurar. */
+async function kartHazirla() {
+  const t = await getTranslations("Kart");
+
+  const mesajlar: KartMesajlari = {
+    etiketZorunlu: t("etiketZorunlu"),
+    son4Gecersiz: t("son4Gecersiz"),
+    paraBirimiGecersiz: t("paraBirimiGecersiz"),
+    limitParaBirimiGecersiz: t("limitParaBirimiGecersiz"),
+    limitGecersiz: t("limitGecersiz"),
+    kesimGunuGecersiz: t("kesimGunuGecersiz"),
+    sonOdemeGunuGecersiz: t("sonOdemeGunuGecersiz"),
+  };
+
+  return { t, mesajlar, sema: kartSemasi(mesajlar) };
+}
+
+function formuOku(sema: ReturnType<typeof kartSemasi>, formData: FormData) {
+  return sema.safeParse({
     label: String(formData.get("label") ?? ""),
     bankName: String(formData.get("bankName") ?? ""),
     last4: String(formData.get("last4") ?? ""),
@@ -84,20 +117,19 @@ type KartAlanlari = {
 };
 
 function alanlariHazirla(
-  veri: z.infer<typeof kartSemasi>,
+  veri: KartVerisi,
+  m: KartMesajlari,
 ): { alanlar: KartAlanlari } | { hatalar: string[] } {
   const hatalar: string[] = [];
 
   const limit = tutarAyristir(veri.creditLimitAmount);
-  if (limit === "hatali") hatalar.push("Limit geçerli bir tutar olmalı.");
+  if (limit === "hatali") hatalar.push(m.limitGecersiz);
 
   const kesim = gunAyristir(veri.statementDay);
-  if (kesim === "hatali")
-    hatalar.push("Hesap kesim günü 1 ile 31 arasında olmalı.");
+  if (kesim === "hatali") hatalar.push(m.kesimGunuGecersiz);
 
   const sonOdeme = gunAyristir(veri.dueDay);
-  if (sonOdeme === "hatali")
-    hatalar.push("Son ödeme günü 1 ile 31 arasında olmalı.");
+  if (sonOdeme === "hatali") hatalar.push(m.sonOdemeGunuGecersiz);
 
   if (hatalar.length) return { hatalar };
 
@@ -122,12 +154,14 @@ export async function kartOlustur(
   _oncekiDurum: KartDurumu,
   formData: FormData,
 ): Promise<KartDurumu> {
-  const sonuc = formuOku(formData);
+  const { t, mesajlar, sema } = await kartHazirla();
+
+  const sonuc = formuOku(sema, formData);
   if (!sonuc.success) {
     return { hatalar: sonuc.error.issues.map((i) => i.message) };
   }
 
-  const hazirlik = alanlariHazirla(sonuc.data);
+  const hazirlik = alanlariHazirla(sonuc.data, mesajlar);
   if ("hatalar" in hazirlik) return hazirlik;
 
   let yeniId: string;
@@ -139,7 +173,7 @@ export async function kartOlustur(
     yeniId = kart.id;
   } catch (e) {
     console.error("[kart] beklenmeyen hata:", e);
-    return { hatalar: ["Kart eklenemedi, beklenmeyen bir hata oluştu."] };
+    return { hatalar: [t("eklenemedi")] };
   }
 
   revalidatePath("/kartlar");
@@ -151,15 +185,17 @@ export async function kartGuncelle(
   _oncekiDurum: KartDurumu,
   formData: FormData,
 ): Promise<KartDurumu> {
-  const kartId = String(formData.get("id") ?? "");
-  if (!kartId) return { hatalar: ["Kart kimliği bulunamadı."] };
+  const { t, mesajlar, sema } = await kartHazirla();
 
-  const sonuc = formuOku(formData);
+  const kartId = String(formData.get("id") ?? "");
+  if (!kartId) return { hatalar: [t("kimlikBulunamadi")] };
+
+  const sonuc = formuOku(sema, formData);
   if (!sonuc.success) {
     return { hatalar: sonuc.error.issues.map((i) => i.message) };
   }
 
-  const hazirlik = alanlariHazirla(sonuc.data);
+  const hazirlik = alanlariHazirla(sonuc.data, mesajlar);
   if ("hatalar" in hazirlik) return hazirlik;
 
   try {
@@ -169,7 +205,7 @@ export async function kartGuncelle(
     });
   } catch (e) {
     console.error("[kart] beklenmeyen hata:", e);
-    return { hatalar: ["Kart güncellenemedi, beklenmeyen bir hata oluştu."] };
+    return { hatalar: [t("guncellenemedi")] };
   }
 
   revalidatePath("/kartlar");
@@ -186,11 +222,13 @@ export async function kartDurumDegistir(
   _oncekiDurum: KartDurumu,
   formData: FormData,
 ): Promise<KartDurumu> {
+  const t = await getTranslations("Kart");
+
   const kartId = String(formData.get("id") ?? "");
-  if (!kartId) return { hatalar: ["Kart kimliği bulunamadı."] };
+  if (!kartId) return { hatalar: [t("kimlikBulunamadi")] };
 
   const kart = await prisma.creditCard.findUnique({ where: { id: kartId } });
-  if (!kart) return { hatalar: ["Kart bulunamadı."] };
+  if (!kart) return { hatalar: [t("bulunamadi")] };
 
   await prisma.creditCard.update({
     where: { id: kartId },
@@ -204,7 +242,7 @@ export async function kartDurumDegistir(
   // Sessiz başarı yasak (#5) — sonucu kullanıcıya söyle.
   return {
     basari: kart.isActive
-      ? `"${kart.label}" pasife alındı, artık alım formunda seçilemez.`
-      : `"${kart.label}" tekrar aktif.`,
+      ? t("pasifeAlindi", { etiket: kart.label })
+      : t("aktiflestirildi", { etiket: kart.label }),
   };
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
@@ -10,29 +11,42 @@ export type KanalHesabiDurumu = {
   basari?: string;
 };
 
-const hesapSemasi = z.object({
-  channelId: z.string().trim().min(1, "Kanal seçilmeli"),
-  code: z
-    .string()
-    .trim()
-    .min(1, "Hesap kodu zorunlu")
-    .max(191, "Hesap kodu çok uzun"),
-  name: z
-    .string()
-    .trim()
-    .min(1, "Hesap adı zorunlu")
-    .max(191, "Hesap adı çok uzun"),
-  externalId: z.string().trim().max(191),
-  defaultCurrency: z.enum(["TRY", "EUR"], {
-    message: "Para birimi TRY veya EUR olmalı",
-  }),
-});
+/** Şema, mesajlar çözüldükten sonra kurulur (getTranslations istek kapsamlı). */
+function hesapSemasi(m: {
+  kanalSecilmeli: string;
+  kodZorunlu: string;
+  kodCokUzun: string;
+  adZorunlu: string;
+  adCokUzun: string;
+  paraBirimiGecersiz: string;
+}) {
+  return z.object({
+    channelId: z.string().trim().min(1, m.kanalSecilmeli),
+    code: z.string().trim().min(1, m.kodZorunlu).max(191, m.kodCokUzun),
+    name: z.string().trim().min(1, m.adZorunlu).max(191, m.adCokUzun),
+    externalId: z.string().trim().max(191),
+    defaultCurrency: z.enum(["TRY", "EUR"], {
+      message: m.paraBirimiGecersiz,
+    }),
+  });
+}
 
 export async function kanalHesabiEkle(
   _oncekiDurum: KanalHesabiDurumu,
   formData: FormData,
 ): Promise<KanalHesabiDurumu> {
-  const sonuc = hesapSemasi.safeParse({
+  const t = await getTranslations("KanalHesabi");
+
+  const sema = hesapSemasi({
+    kanalSecilmeli: t("kanalSecilmeli"),
+    kodZorunlu: t("kodZorunlu"),
+    kodCokUzun: t("kodCokUzun"),
+    adZorunlu: t("adZorunlu"),
+    adCokUzun: t("adCokUzun"),
+    paraBirimiGecersiz: t("paraBirimiGecersiz"),
+  });
+
+  const sonuc = sema.safeParse({
     channelId: String(formData.get("channelId") ?? ""),
     code: String(formData.get("code") ?? ""),
     name: String(formData.get("name") ?? ""),
@@ -48,7 +62,7 @@ export async function kanalHesabiEkle(
 
   const kanal = await prisma.channel.findUnique({ where: { id: channelId } });
   if (!kanal) {
-    return { hatalar: ["Seçilen kanal bulunamadı."] };
+    return { hatalar: [t("kanalBulunamadi")] };
   }
 
   // Kod, kanal içinde benzersiz (şemadaki @@unique([channelId, code])).
@@ -57,7 +71,7 @@ export async function kanalHesabiEkle(
   });
   if (mevcut) {
     return {
-      hatalar: [`"${kanal.name}" kanalında "${code}" kodlu hesap zaten var.`],
+      hatalar: [t("kodZatenVar", { kanal: kanal.name, kod: code })],
     };
   }
 
@@ -73,13 +87,13 @@ export async function kanalHesabiEkle(
     });
   } catch (e) {
     console.error("[kanal hesabi] beklenmeyen hata:", e);
-    return { hatalar: ["Hesap eklenemedi, beklenmeyen bir hata oluştu."] };
+    return { hatalar: [t("eklenemedi")] };
   }
 
   revalidatePath("/ayarlar/kanallar");
   // Alım formu hesap listesini buradan alıyor.
   revalidatePath("/alimlar/yeni");
-  return { basari: `"${kanal.name} — ${name}" hesabı eklendi.` };
+  return { basari: t("eklendi", { kanal: kanal.name, ad: name }) };
 }
 
 /** Hesap silinmez; alımlarla ilişkili olabilir. Sadece aktif/pasif yapılır. */
@@ -87,11 +101,13 @@ export async function kanalHesabiDurumDegistir(
   _oncekiDurum: KanalHesabiDurumu,
   formData: FormData,
 ): Promise<KanalHesabiDurumu> {
+  const t = await getTranslations("KanalHesabi");
+
   const id = String(formData.get("id") ?? "");
-  if (!id) return { hatalar: ["Hesap kimliği bulunamadı."] };
+  if (!id) return { hatalar: [t("kimlikBulunamadi")] };
 
   const hesap = await prisma.channelAccount.findUnique({ where: { id } });
-  if (!hesap) return { hatalar: ["Hesap bulunamadı."] };
+  if (!hesap) return { hatalar: [t("bulunamadi")] };
 
   await prisma.channelAccount.update({
     where: { id },
@@ -102,7 +118,7 @@ export async function kanalHesabiDurumDegistir(
   revalidatePath("/alimlar/yeni");
   return {
     basari: hesap.isActive
-      ? `"${hesap.name}" pasife alındı.`
-      : `"${hesap.name}" tekrar aktif.`,
+      ? t("pasifeAlindi", { ad: hesap.name })
+      : t("aktiflestirildi", { ad: hesap.name }),
   };
 }

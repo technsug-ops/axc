@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { GeriBaglanti } from "@/components/baglanti";
@@ -6,7 +7,10 @@ import { prisma } from "@/lib/prisma";
 
 import { KonumDuzenleFormu } from "./konum-duzenle-formu";
 
-export const metadata = { title: "Rafı Düzenle" };
+export async function generateMetadata() {
+  const t = await getTranslations("Basliklar");
+  return { title: t("rafiDuzenle") };
+}
 
 export default async function KonumDuzenleSayfasi({
   params,
