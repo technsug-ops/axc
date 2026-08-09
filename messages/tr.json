@@ -189,7 +189,7 @@
     "kdvIstisnasiNotu": "Normalde boş bırakın. Doldurulursa kategori oranını EZER; sadece istisna kapsamındaki ürünler için kullanın.",
     "desiEtiketi": "Desi",
     "desiNotu": "Kargo ücreti bu desiden hesaplanır. Varyantlar aynı desiyi paylaşır.",
-    "desiIpucu": "1,5",
+    "desiIpucu": "örn. 1,5",
     "kategoriAtanmamis": "Kategori atanmamış",
     "kategoriAtanmamisNotu": "Bu ürün bir kategoriye bağlı değil; KDV hesabında varsayılan %20 kullanılır. Doğru oran için kategori atayın.",
     "kdvOraniEtiketi": "KDV oranı",
