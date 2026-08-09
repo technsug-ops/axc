@@ -17,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { HataOzeti } from "@/components/hata-ozeti";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -166,19 +167,7 @@ export function MalKabulFormu({
       <input type="hidden" name="alimId" value={alimId} />
       <input type="hidden" name="veri" value={JSON.stringify(gonderilecek)} />
 
-      {durum.hatalar?.length ? (
-        <div
-          role="alert"
-          className="border-destructive/50 bg-destructive/10 text-destructive rounded-md border p-4 text-sm"
-        >
-          <p className="mb-2 font-medium">{tOrtak("kaydedilemedi")}</p>
-          <ul className="list-inside list-disc space-y-1">
-            {durum.hatalar.map((hata, i) => (
-              <li key={i}>{hata}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      <HataOzeti hatalar={durum.hatalar} />
 
       <Card>
         <CardHeader>

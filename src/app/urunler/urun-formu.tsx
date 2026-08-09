@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Plus, Trash2 } from "lucide-react";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
+import { HataOzeti } from "@/components/hata-ozeti";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -164,19 +165,7 @@ export function UrunFormu({
       {urunId ? <input type="hidden" name="id" value={urunId} /> : null}
       <input type="hidden" name="veri" value={JSON.stringify(gonderilecek)} />
 
-      {durum.hatalar?.length ? (
-        <div
-          role="alert"
-          className="border-destructive/50 bg-destructive/10 text-destructive rounded-md border p-4 text-sm"
-        >
-          <p className="mb-2 font-medium">{ortak("kaydedilemedi")}</p>
-          <ul className="list-inside list-disc space-y-1">
-            {durum.hatalar.map((hata, i) => (
-              <li key={i}>{hata}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      <HataOzeti hatalar={durum.hatalar} />
 
       {/* ------------------------------ ÜRÜN ------------------------------ */}
       <Card>

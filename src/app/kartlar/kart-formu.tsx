@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { HataOzeti } from "@/components/hata-ozeti";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -73,19 +74,7 @@ export function KartFormu({
       <input type="hidden" name="currency" value={paraBirimi} />
       <input type="hidden" name="creditLimitCurrency" value={limitParaBirimi} />
 
-      {durum.hatalar?.length ? (
-        <div
-          role="alert"
-          className="border-destructive/50 bg-destructive/10 text-destructive rounded-md border p-4 text-sm"
-        >
-          <p className="mb-2 font-medium">{ortak("kaydedilemedi")}</p>
-          <ul className="list-inside list-disc space-y-1">
-            {durum.hatalar.map((hata, i) => (
-              <li key={i}>{hata}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      <HataOzeti hatalar={durum.hatalar} />
 
       <Card>
         <CardHeader>
