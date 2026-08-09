@@ -19,6 +19,7 @@ import "dotenv/config";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { ChannelType } from "../src/generated/prisma/enums";
+import { karMotoruSeed } from "./seed-kar-motoru";
 
 const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
@@ -56,6 +57,10 @@ async function main() {
 
   const total = await prisma.channel.count();
   console.log(`Bitti. Veritabanındaki toplam kanal sayısı: ${total}`);
+
+  // Kâr motoru sabit verisi: KDV kategorileri, kanal kesintileri,
+  // kargo firmaları ve tarifeleri.
+  await karMotoruSeed(prisma);
 }
 
 main()
