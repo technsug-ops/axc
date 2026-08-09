@@ -4,6 +4,7 @@ import { Pencil } from "lucide-react";
 
 import { GeriBaglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,11 +63,7 @@ export default async function UrunDetaySayfasi({
                 Düzenle
               </Link>
             </Button>
-            <SilButonu
-              urunId={urun.id}
-              urunAdi={urun.name}
-              boyut="default"
-            />
+            <SilButonu urunId={urun.id} urunAdi={urun.name} boyut="default" />
           </div>
         </div>
       </div>
@@ -94,7 +91,8 @@ export default async function UrunDetaySayfasi({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto rounded-lg border">
+          {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
+          <div className="hidden overflow-x-auto rounded-lg border md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -157,6 +155,72 @@ export default async function UrunDetaySayfasi({
                 ))}
               </TableBody>
             </Table>
+          </div>
+
+          {/* ------------------------ TELEFON: KART ---------------------- */}
+          <div className="space-y-3 md:hidden">
+            {urun.variants.map((varyant) => (
+              <ListeKarti
+                key={varyant.id}
+                baslik={
+                  <span className="flex flex-wrap items-center gap-2">
+                    {varyant.name ?? "Varsayılan"}
+                    {varyant.isDefault ? (
+                      <Badge variant="outline">varsayılan</Badge>
+                    ) : null}
+                  </span>
+                }
+                altBaslik={
+                  varyant.options.length
+                    ? varyant.options
+                        .map((o) => `${o.name}: ${o.value}`)
+                        .join(" · ")
+                    : undefined
+                }
+                alanlar={[
+                  {
+                    etiket: "Stok",
+                    deger: (
+                      <span className="text-base font-semibold">
+                        {stokHaritasi.get(varyant.id) ?? 0}
+                      </span>
+                    ),
+                  },
+                  {
+                    etiket: "Raf",
+                    deger: varyant.location ? (
+                      <Badge variant="secondary">{varyant.location.code}</Badge>
+                    ) : (
+                      "—"
+                    ),
+                  },
+                  {
+                    etiket: "SKU",
+                    deger: (
+                      <KopyalanabilirKod deger={varyant.sku} etiket="SKU" />
+                    ),
+                  },
+                  {
+                    etiket: "Firma SKU",
+                    deger: (
+                      <KopyalanabilirKod
+                        deger={varyant.axcaliSku}
+                        etiket="Firma SKU"
+                      />
+                    ),
+                  },
+                  {
+                    etiket: "Barkod",
+                    deger: (
+                      <KopyalanabilirKod
+                        deger={varyant.barcode}
+                        etiket="Barkod"
+                      />
+                    ),
+                  },
+                ]}
+              />
+            ))}
           </div>
           <p className="text-muted-foreground mt-3 text-xs">
             Stok, bu varyantın tüm stok hareketlerinin toplamıdır. Alımlar mal

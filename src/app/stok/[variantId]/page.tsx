@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { Baglanti, GeriBaglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -89,10 +90,7 @@ export default async function VaryantHareketleriSayfasi({
             </div>
             <div className="flex flex-wrap items-center gap-1">
               <span className="text-muted-foreground">Firma SKU:</span>
-              <KopyalanabilirKod
-                deger={varyant.axcaliSku}
-                etiket="Firma SKU"
-              />
+              <KopyalanabilirKod deger={varyant.axcaliSku} etiket="Firma SKU" />
             </div>
             <div className="flex flex-wrap items-center gap-1">
               <span className="text-muted-foreground">Barkod:</span>
@@ -115,83 +113,157 @@ export default async function VaryantHareketleriSayfasi({
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tarih</TableHead>
-                    <TableHead>Tip</TableHead>
-                    <TableHead className="text-right">Adet</TableHead>
-                    <TableHead>Raf</TableHead>
-                    <TableHead>Kaynak</TableHead>
-                    <TableHead className="text-right">Birim maliyet</TableHead>
-                    <TableHead>Kim</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {hareketler.map((hareket) => (
-                    <TableRow key={hareket.id}>
-                      <TableCell className="whitespace-nowrap">
+            <>
+              {/* -------------------- MASAÜSTÜ: TABLO -------------------- */}
+              <div className="hidden overflow-x-auto rounded-lg border md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tarih</TableHead>
+                      <TableHead>Tip</TableHead>
+                      <TableHead className="text-right">Adet</TableHead>
+                      <TableHead>Raf</TableHead>
+                      <TableHead>Kaynak</TableHead>
+                      <TableHead className="text-right">
+                        Birim maliyet
+                      </TableHead>
+                      <TableHead>Kim</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {hareketler.map((hareket) => (
+                      <TableRow key={hareket.id}>
+                        <TableCell className="whitespace-nowrap">
+                          {tarihFormatla(hareket.occurredAt)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {stokHareketiEtiketi(hareket.type)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell
+                          className={
+                            hareket.quantityDelta < 0
+                              ? "text-destructive text-right font-medium"
+                              : "text-right font-medium"
+                          }
+                        >
+                          {hareket.quantityDelta > 0 ? "+" : ""}
+                          {hareket.quantityDelta}
+                        </TableCell>
+                        <TableCell>
+                          {hareket.location ? (
+                            <Badge variant="outline">
+                              {hareket.location.code}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {hareket.purchaseItem?.purchase ? (
+                            <Baglanti
+                              href={`/alimlar/${hareket.purchaseItem.purchase.id}`}
+                            >
+                              {hareket.purchaseItem.purchase.code}
+                            </Baglanti>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              {hareket.note ?? "—"}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          {hareket.unitCostAmount
+                            ? paraFormatla(
+                                hareket.unitCostAmount,
+                                hareket.unitCostCurrency ?? "TRY",
+                              )
+                            : "—"}
+                        </TableCell>
+                        {/* Kullanıcı/kimlik doğrulama Faz 4'te gelecek. */}
+                        <TableCell className="text-muted-foreground">
+                          —
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* --------------------- TELEFON: KART --------------------- */}
+              <div className="space-y-3 md:hidden">
+                {hareketler.map((hareket) => (
+                  <ListeKarti
+                    key={hareket.id}
+                    baslik={
+                      <span className="flex flex-wrap items-center gap-2">
                         {tarihFormatla(hareket.occurredAt)}
-                      </TableCell>
-                      <TableCell>
                         <Badge variant="secondary">
                           {stokHareketiEtiketi(hareket.type)}
                         </Badge>
-                      </TableCell>
-                      <TableCell
-                        className={
-                          hareket.quantityDelta < 0
-                            ? "text-destructive text-right font-medium"
-                            : "text-right font-medium"
-                        }
-                      >
-                        {hareket.quantityDelta > 0 ? "+" : ""}
-                        {hareket.quantityDelta}
-                      </TableCell>
-                      <TableCell>
-                        {hareket.location ? (
+                      </span>
+                    }
+                    alanlar={[
+                      {
+                        etiket: "Adet",
+                        deger: (
+                          <span
+                            className={
+                              hareket.quantityDelta < 0
+                                ? "text-destructive text-base font-semibold"
+                                : "text-base font-semibold"
+                            }
+                          >
+                            {hareket.quantityDelta > 0 ? "+" : ""}
+                            {hareket.quantityDelta}
+                          </span>
+                        ),
+                      },
+                      {
+                        etiket: "Raf",
+                        deger: hareket.location ? (
                           <Badge variant="outline">
                             {hareket.location.code}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {hareket.purchaseItem?.purchase ? (
+                          "—"
+                        ),
+                      },
+                      {
+                        etiket: "Kaynak",
+                        deger: hareket.purchaseItem?.purchase ? (
                           <Baglanti
                             href={`/alimlar/${hareket.purchaseItem.purchase.id}`}
                           >
                             {hareket.purchaseItem.purchase.code}
                           </Baglanti>
                         ) : (
-                          <span className="text-muted-foreground">
-                            {hareket.note ?? "—"}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        {hareket.unitCostAmount
+                          (hareket.note ?? "—")
+                        ),
+                      },
+                      {
+                        etiket: "Birim maliyet",
+                        deger: hareket.unitCostAmount
                           ? paraFormatla(
                               hareket.unitCostAmount,
                               hareket.unitCostCurrency ?? "TRY",
                             )
-                          : "—"}
-                      </TableCell>
-                      {/* Kullanıcı/kimlik doğrulama Faz 4'te gelecek. */}
-                      <TableCell className="text-muted-foreground">—</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                          : "—",
+                      },
+                      // Kullanıcı/kimlik doğrulama Faz 4'te gelecek.
+                      { etiket: "Kim", deger: "—" },
+                    ]}
+                  />
+                ))}
+              </div>
+            </>
           )}
 
           <p className="text-muted-foreground text-xs">
-            Hareketler değiştirilmez ve silinmez. Hatalı bir giriş, ters
-            yönde bir düzeltme kaydıyla giderilir. &quot;Kim&quot;
-            sütunu çok kullanıcılı yapıyla (Faz 4) dolacak.
+            Hareketler değiştirilmez ve silinmez. Hatalı bir giriş, ters yönde
+            bir düzeltme kaydıyla giderilir. &quot;Kim&quot; sütunu çok
+            kullanıcılı yapıyla (Faz 4) dolacak.
           </p>
         </CardContent>
       </Card>
