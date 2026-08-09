@@ -7,6 +7,7 @@ import { Plus, Trash2 } from "lucide-react";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { HataOzeti } from "@/components/hata-ozeti";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formGonderimi } from "@/lib/form-gonderimi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +28,11 @@ import {
   varyantKodlaBul,
   type VaryantSonucu,
 } from "../varyant-arama";
-import { varyantStoguGetir } from "./stok-sorgu";
+import {
+  kalemBilgisiGetir,
+  kargoSecenekleriGetir,
+  type KargoSecenegi,
+} from "./kalem-bilgisi";
 import { type SatisDurumu } from "./actions";
 
 export type HesapSecenegi = {
@@ -45,7 +50,19 @@ type Kalem = {
   unitPriceCurrency: "TRY" | "EUR";
   /** Kalem eklenirken okunan stok — uyarı için, doğrulama sunucuda. */
   stok: number | null;
+  /** Ürün desisi — toplam desi bundan hesaplanır. */
+  desi: number | null;
+  /** Çözülen KDV oranı (%) ve varsayılana düşülüp düşülmediği. */
+  kdvOrani: number;
+  kdvVarsayilan: boolean;
+  /** Kanal SKU'sundan önerilen oran; kullanıcı değiştirebilir. */
+  komisyonOrani: string;
+  /** Panel gerçeği — doluysa oran yok sayılır. */
+  komisyonTutari: string;
 };
+
+/** Radix Select bos deger kabul etmiyor; "kargo secilmedi" icin nobetci. */
+const KARGO_YOK = "__kargo_yok__";
 
 function varyantEtiketi(v: VaryantSonucu): string {
   const parcalar = [v.urunAdi];
@@ -91,6 +108,13 @@ export function SatisFormu({
   const [sonuclar, setSonuclar] = useState<VaryantSonucu[]>([]);
   const [araniyor, setAraniyor] = useState(false);
 
+  // --- kargo ---
+  // Desi kalemlerden hesaplanır ama elle değiştirilebilir; kullanıcı
+  // dokunduğu andan itibaren otomatik hesap devreye girmez.
+  const [desiElle, setDesiElle] = useState<string | null>(null);
+  const [cargoCarrierId, setCargoCarrierId] = useState("");
+  const [kargoSecenekleri, setKargoSecenekleri] = useState<KargoSecenegi[]>([]);
+
   /** Seçili kanal hesabının para birimi, yeni kalemler için varsayılan olur. */
   const varsayilanParaBirimi: "TRY" | "EUR" =
     hesaplar.find((h) => h.id === channelAccountId)?.paraBirimi ?? "TRY";
@@ -122,14 +146,15 @@ export function SatisFormu({
   }, [sorgu]);
 
   async function kalemEkle(varyant: VaryantSonucu, adet: number) {
-    // Stok bilgisi kalemin yanında görünsün ki kullanıcı formu doldururken
-    // yetersizliği fark etsin. ASIL engel sunucuda, transaction içinde (#5).
-    let stok: number | null = null;
+    // Stok, desi, KDV oranı ve komisyon oranı tek çağrıda gelir.
+    // Hepsi ÖNERİDİR; kullanıcı formda değiştirebilir.
+    let bilgi = null;
     try {
-      stok = await varyantStoguGetir(varyant.id);
+      bilgi = await kalemBilgisiGetir(varyant.id, channelAccountId);
     } catch {
-      stok = null;
+      bilgi = null;
     }
+    const stok = bilgi?.stok ?? null;
 
     setKalemler((onceki) => {
       const sira = onceki.findIndex((k) => k.variantId === varyant.id);
@@ -149,6 +174,14 @@ export function SatisFormu({
           unitPriceAmount: "",
           unitPriceCurrency: varsayilanParaBirimi,
           stok,
+          desi: bilgi?.desi ?? null,
+          kdvOrani: bilgi?.kdvOrani ?? 20,
+          kdvVarsayilan: bilgi?.kdvKaynagi === "VARSAYILAN",
+          komisyonOrani:
+            bilgi?.komisyonOrani !== null && bilgi?.komisyonOrani !== undefined
+              ? String(bilgi.komisyonOrani)
+              : "",
+          komisyonTutari: "",
         },
       ];
     });
@@ -200,13 +233,52 @@ export function SatisFormu({
     return [...harita.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [kalemler]);
 
+  /** Kalemlerden hesaplanan toplam desi. */
+  const hesaplananDesi = useMemo(
+    () => kalemler.reduce((t, k) => t + (k.desi ?? 0) * k.quantity, 0),
+    [kalemler],
+  );
+
+  /** Formdaki geçerli desi: kullanıcı dokunduysa onun değeri. */
+  const desiMetni =
+    desiElle ?? (hesaplananDesi > 0 ? String(hesaplananDesi) : "");
+  const desiSayi = Number(desiMetni.replace(",", ".")) || 0;
+
+  // Desi veya kanal hesabı değişince kargo fiyatları yeniden okunur.
+  useEffect(() => {
+    let iptal = false;
+
+    // setState doğrudan efekt gövdesinde çağrılmaz (React Compiler kuralı);
+    // erken çıkış da zamanlayıcının içinde yapılır — arama efektiyle aynı kalıp.
+    const zamanlayici = setTimeout(async () => {
+      if (!channelAccountId || desiSayi <= 0) {
+        if (!iptal) setKargoSecenekleri([]);
+        return;
+      }
+      try {
+        const liste = await kargoSecenekleriGetir(channelAccountId, desiSayi);
+        if (!iptal) setKargoSecenekleri(liste);
+      } catch {
+        if (!iptal) setKargoSecenekleri([]);
+      }
+    }, 250);
+    return () => {
+      iptal = true;
+      clearTimeout(zamanlayici);
+    };
+  }, [channelAccountId, desiSayi]);
+
   const gonderilecek = {
     code,
     soldAt,
     channelAccountId,
     note,
+    cargoCarrierId: cargoCarrierId || null,
+    cargoDesi: desiSayi > 0 ? desiSayi : null,
     kalemler: kalemler.map((k) => {
       const sayi = Number(k.unitPriceAmount.replace(",", "."));
+      const oran = Number(k.komisyonOrani.replace(",", "."));
+      const tutar = Number(k.komisyonTutari.replace(",", "."));
       return {
         variantId: k.variantId,
         quantity: k.quantity,
@@ -215,6 +287,13 @@ export function SatisFormu({
             ? sayi
             : null,
         unitPriceCurrency: k.unitPriceCurrency,
+        vatRate: k.kdvOrani,
+        commissionRate:
+          k.komisyonOrani.trim() !== "" && Number.isFinite(oran) ? oran : null,
+        commissionAmount:
+          k.komisyonTutari.trim() !== "" && Number.isFinite(tutar)
+            ? tutar
+            : null,
       };
     }),
   };
@@ -286,6 +365,77 @@ export function SatisFormu({
                   })}
                 </p>
               ) : null}
+            </div>
+          </div>
+
+          {/* ------------------------------ KARGO ------------------------------ */}
+          <div className="space-y-3 rounded-lg border p-4">
+            <div className="text-sm font-medium">{t("kargoBasligi")}</div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="satis-desi">{t("desiEtiketi")}</Label>
+                <Input
+                  id="satis-desi"
+                  value={desiMetni}
+                  onChange={(e) => setDesiElle(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="0"
+                />
+                <p className="text-muted-foreground text-xs">{t("desiNotu")}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="satis-kargo">{t("kargoFirmasi")}</Label>
+                <Select
+                  value={cargoCarrierId || KARGO_YOK}
+                  onValueChange={(d) =>
+                    setCargoCarrierId(d === KARGO_YOK ? "" : d)
+                  }
+                >
+                  <SelectTrigger id="satis-kargo" className="w-full">
+                    <SelectValue placeholder={t("kargoSecin")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={KARGO_YOK}>
+                      {t("kargoSecilmedi")}
+                    </SelectItem>
+                    {kargoSecenekleri.map((k, sira) => (
+                      <SelectItem
+                        key={k.carrierId}
+                        value={k.carrierId}
+                        disabled={!k.tasiyorMu}
+                      >
+                        {k.tasiyorMu ? (
+                          <span className="flex w-full items-center gap-2">
+                            <span>{k.ad}</span>
+                            <span className="font-medium">
+                              {bicim.para(k.kdvDahil ?? 0, "TRY")}
+                            </span>
+                            {/* En ucuz = ilk sıradaki; öneri dayatma değil. */}
+                            {sira === 0 ? (
+                              <Badge variant="secondary">
+                                {t("kargoOnerilen")}
+                              </Badge>
+                            ) : null}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            {k.ad} — {t("kargoTasimiyor")}
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-muted-foreground text-xs">
+                  {!channelAccountId
+                    ? t("kargoHesapYok")
+                    : desiSayi <= 0
+                      ? t("kargoDesiYok")
+                      : t("kargoNotu")}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -464,6 +614,7 @@ export function SatisFormu({
                       <Label htmlFor={`para-${sira}`}>
                         {ortak("paraBirimi")}
                       </Label>
+                      {/* KDV oranı ürünün kategorisinden geldi; sadece bilgi. */}
                       <Select
                         value={kalem.unitPriceCurrency}
                         onValueChange={(d) =>
@@ -482,6 +633,55 @@ export function SatisFormu({
                       </Select>
                     </div>
                   </div>
+
+                  {/* --- komisyon: oran ÖNERİLİR, tutar EZER --- */}
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label htmlFor={`komisyon-oran-${sira}`}>
+                        {t("komisyonOrani")}
+                      </Label>
+                      <Input
+                        id={`komisyon-oran-${sira}`}
+                        value={kalem.komisyonOrani}
+                        inputMode="decimal"
+                        placeholder="0"
+                        onChange={(e) =>
+                          kalemGuncelle(sira, { komisyonOrani: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`komisyon-tutar-${sira}`}>
+                        {t("komisyonTutari")}
+                      </Label>
+                      <Input
+                        id={`komisyon-tutar-${sira}`}
+                        value={kalem.komisyonTutari}
+                        inputMode="decimal"
+                        placeholder={ortak("istegeBagli")}
+                        onChange={(e) =>
+                          kalemGuncelle(sira, {
+                            komisyonTutari: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Badge variant="outline">
+                        {t("kdvOraniKisa", { oran: kalem.kdvOrani })}
+                      </Badge>
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    {t("komisyonNotu")}
+                  </p>
+
+                  {/* Sessiz varsayım olmasın: kategorisiz ürün %20'ye düşer. */}
+                  {kalem.kdvVarsayilan ? (
+                    <p className="text-amber-700 text-xs dark:text-amber-500">
+                      {t("varsayilanKdvNotu")}
+                    </p>
+                  ) : null}
 
                   {/* Erken uyarı; asıl engel sunucuda (#5). */}
                   {stokYetersiz ? (

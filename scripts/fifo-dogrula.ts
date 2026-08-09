@@ -188,13 +188,16 @@ async function ucanUca() {
       code: `${ONEK}SIP-1`,
       channelAccountId: hesap.id,
       soldAt: new Date("2026-03-01"),
-      note: null,
+      note: null,      cargoCarrierId: null,      cargoDesi: null,
       kalemler: [
         {
           variantId,
           quantity: 5,
           unitPriceAmount: "200",
           unitPriceCurrency: "TRY",
+          vatRate: 20,
+          commissionRate: null,
+          commissionAmount: 0,
         },
       ],
     });
@@ -244,13 +247,16 @@ async function ucanUca() {
         code: `${ONEK}SIP-2`,
         channelAccountId: hesap.id,
         soldAt: new Date("2026-03-02"),
-        note: null,
+        note: null,        cargoCarrierId: null,        cargoDesi: null,
         kalemler: [
           {
             variantId,
             quantity: 4,
             unitPriceAmount: "200",
             unitPriceCurrency: "TRY",
+            vatRate: 20,
+            commissionRate: null,
+            commissionAmount: 0,
           },
         ],
       });
@@ -289,19 +295,25 @@ async function ucanUca() {
         code: `${ONEK}SIP-3`,
         channelAccountId: hesap.id,
         soldAt: new Date("2026-03-03"),
-        note: null,
+        note: null,        cargoCarrierId: null,        cargoDesi: null,
         kalemler: [
           {
             variantId,
             quantity: 2,
             unitPriceAmount: "200",
             unitPriceCurrency: "TRY",
+            vatRate: 20,
+            commissionRate: null,
+            commissionAmount: 0,
           },
           {
             variantId,
             quantity: 2,
             unitPriceAmount: "210",
             unitPriceCurrency: "TRY",
+            vatRate: 20,
+            commissionRate: null,
+            commissionAmount: 0,
           },
         ],
       });
@@ -319,19 +331,25 @@ async function ucanUca() {
       code: `${ONEK}SIP-4`,
       channelAccountId: hesap.id,
       soldAt: new Date("2026-03-04"),
-      note: null,
+      note: null,      cargoCarrierId: null,      cargoDesi: null,
       kalemler: [
         {
           variantId,
           quantity: 2,
           unitPriceAmount: "200",
           unitPriceCurrency: "TRY",
+          vatRate: 20,
+          commissionRate: null,
+          commissionAmount: 0,
         },
         {
           variantId,
           quantity: 1,
           unitPriceAmount: "210",
           unitPriceCurrency: "TRY",
+          vatRate: 20,
+          commissionRate: null,
+          commissionAmount: 0,
         },
       ],
     });
@@ -354,7 +372,7 @@ async function ucanUca() {
         code: `${ONEK}SIP-1`,
         channelAccountId: hesap.id,
         soldAt: new Date("2026-03-05"),
-        note: null,
+        note: null,        cargoCarrierId: null,        cargoDesi: null,
         kalemler: [],
       });
     } catch (e) {

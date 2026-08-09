@@ -39,6 +39,10 @@ function satisSemasiKur(t: Ceviri) {
     unitPriceCurrency: z.enum(["TRY", "EUR"], {
       message: t("paraBirimiGecersiz"),
     }),
+    // Kâr hesabı için formdan gelen SON değerler (snapshot).
+    vatRate: z.number().min(0).max(100),
+    commissionRate: z.number().min(0).max(100).nullable(),
+    commissionAmount: z.number().min(0).nullable(),
   });
 
   return z.object({
@@ -47,6 +51,8 @@ function satisSemasiKur(t: Ceviri) {
     soldAt: z.string().min(1, t("tarihZorunlu")),
     channelAccountId: z.string().min(1, t("kanalHesabiZorunlu")),
     note: z.string().trim(),
+    cargoCarrierId: z.string().nullable(),
+    cargoDesi: z.number().min(0).nullable(),
     kalemler: z.array(kalemSemasi).min(1, t("enAzBirKalem")),
   });
 }
@@ -111,12 +117,17 @@ export async function satisOlustur(
       channelAccountId: veri.channelAccountId,
       soldAt: tarih,
       note: veri.note || null,
+      cargoCarrierId: veri.cargoCarrierId || null,
+      cargoDesi: veri.cargoDesi,
       kalemler: veri.kalemler.map((k) => ({
         variantId: k.variantId,
         quantity: k.quantity,
         // Decimal'e string olarak gider; float'a çevrilmez.
         unitPriceAmount: String(k.unitPriceAmount),
         unitPriceCurrency: k.unitPriceCurrency,
+        vatRate: k.vatRate,
+        commissionRate: k.commissionRate,
+        commissionAmount: k.commissionAmount,
       })),
     });
   } catch (e) {

@@ -1,3 +1,4 @@
+import { karHesapla, type KarGirdisi, type KarDurumu } from "@/lib/kar";
 import { prisma } from "@/lib/prisma";
 import { acikPartiler, fifoDagit, type Parti } from "@/lib/stok";
 
@@ -26,6 +27,14 @@ export type SatisKalemGirdisi = {
   quantity: number;
   unitPriceAmount: string;
   unitPriceCurrency: Currency;
+
+  // --- kâr hesabı için, formdan gelen SON değerler (snapshot) ---
+  /** Satış anında çözülen KDV oranı (%). */
+  vatRate: number;
+  /** Kanal SKU'sundan önerilen komisyon oranı (%). Tutar verilirse yok sayılır. */
+  commissionRate: number | null;
+  /** Panelde görülen komisyon TUTARI (KDV dahil). Doluysa oran kullanılmaz. */
+  commissionAmount: number | null;
 };
 
 export type SatisGirdisi = {
@@ -34,6 +43,11 @@ export type SatisGirdisi = {
   soldAt: Date;
   note: string | null;
   kalemler: SatisKalemGirdisi[];
+
+  // --- kargo (satışta seçilir, snapshot'lanır) ---
+  cargoCarrierId: string | null;
+  /** Pakete giren toplam desi — formdaki son değer. */
+  cargoDesi: number | null;
 };
 
 /** Stok yetmediğinde fırlatılır; transaction geri sarılır. */
@@ -150,9 +164,182 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
       }
     }
 
+    // ------------------------------------------------------------------
+    //  KÂR HESABI — aynı transaction içinde, satış anındaki oranlarla
+    // ------------------------------------------------------------------
+    //  Snapshot'tır: kategori oranı, komisyon oranı veya kargo tarifesi
+    //  sonradan değişse bu satışın hesabı DEĞİŞMEZ. Yeniden hesaplama
+    //  ayrı ve bilinçli bir eylemdir.
+    await karHesabiniYaz(tx, satis.id, girdi, planlar);
+
     return satis.id;
   });
 }
+
+/** Kanalın kesinti kuralları + kargo tarifesi + FIFO maliyetiyle kârı yazar. */
+async function karHesabiniYaz(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  saleId: string,
+  girdi: SatisGirdisi,
+  planlar: { kalem: SatisKalemGirdisi; dagitim: { parti: Parti; adet: number }[] }[],
+) {
+  const hesap = await tx.channelAccount.findUnique({
+    where: { id: girdi.channelAccountId },
+    select: { channelId: true },
+  });
+  if (!hesap) return;
+
+  const kurallar = await tx.channelFee.findMany({
+    where: {
+      channelId: hesap.channelId,
+      isActive: true,
+      validFrom: { lte: girdi.soldAt },
+    },
+    orderBy: { validFrom: "desc" },
+  });
+
+  // Aynı koddan birden fazla sürüm varsa en yenisi geçerlidir.
+  const gecerli = new Map<string, (typeof kurallar)[number]>();
+  for (const k of kurallar) if (!gecerli.has(k.code)) gecerli.set(k.code, k);
+
+  const komisyonKdvKurali = gecerli.get("KOMISYON_KDV");
+  const komisyonKdvOrani = komisyonKdvKurali?.rate
+    ? Number(komisyonKdvKurali.rate.toString())
+    : null;
+
+  const siparisKesintileri = [...gecerli.values()]
+    .filter((k) => k.scope === "PER_SALE")
+    .map((k) => ({
+      code: k.code,
+      basis: k.basis === "FIXED" ? ("FIXED" as const) : ("SALE_AMOUNT" as const),
+      rate: k.rate ? Number(k.rate.toString()) : null,
+      amount: k.amount ? Number(k.amount.toString()) : null,
+    }));
+
+  // --- kargo tarifesi ---
+  let kargoTarifesi: number | null = null;
+  let kargoTarifesiBulunamadi = false;
+  if (girdi.cargoCarrierId && girdi.cargoDesi !== null) {
+    const tamDesi = Math.max(0, Math.ceil(girdi.cargoDesi));
+    const tarife = await tx.cargoTariff.findFirst({
+      where: {
+        channelId: hesap.channelId,
+        carrierId: girdi.cargoCarrierId,
+        desi: tamDesi,
+      },
+      select: { amount: true },
+    });
+    if (tarife) kargoTarifesi = Number(tarife.amount.toString());
+    else kargoTarifesiBulunamadi = true;
+  }
+
+  // --- kalem maliyetleri FIFO dağıtımından ---
+  const kalemler: KarGirdisi["kalemler"] = planlar.map((plan) => {
+    let maliyet: number | null = 0;
+    let maliyetParaBirimi: Currency | null = null;
+
+    for (const pay of plan.dagitim) {
+      if (pay.parti.birimMaliyet === null) {
+        maliyet = null;
+        break;
+      }
+      maliyet = (maliyet ?? 0) + Number(pay.parti.birimMaliyet) * pay.adet;
+      maliyetParaBirimi = pay.parti.birimMaliyetParaBirimi;
+    }
+
+    return {
+      satisTutari: Number(plan.kalem.unitPriceAmount) * plan.kalem.quantity,
+      satisParaBirimi: plan.kalem.unitPriceCurrency,
+      maliyet,
+      maliyetParaBirimi,
+      kdvOrani: plan.kalem.vatRate,
+      komisyonTutari: plan.kalem.commissionAmount,
+      komisyonOrani: plan.kalem.commissionRate,
+    };
+  });
+
+  const sonuc = karHesapla({
+    kalemler,
+    komisyonKdvOrani,
+    siparisKesintileri,
+    kargoTarifesi,
+    kargoTarifesiBulunamadi,
+  });
+
+  const paraBirimi = girdi.kalemler[0]?.unitPriceCurrency ?? "TRY";
+
+  // --- satış seviyesi snapshot ---
+  await tx.sale.update({
+    where: { id: saleId },
+    data: {
+      cargoCarrierId: girdi.cargoCarrierId,
+      cargoDesi: girdi.cargoDesi === null ? null : String(girdi.cargoDesi),
+      cargoAmount: kargoTarifesi === null ? null : String(kargoTarifesi),
+      cargoCurrency: kargoTarifesi === null ? null : "TRY",
+      net1Amount: String(sonuc.net1),
+      net2Amount: String(sonuc.net2),
+      profitCurrency: paraBirimi,
+      profitStatus: sonuc.durum,
+      calculatedAt: girdi.soldAt,
+    },
+  });
+
+  // --- kalem seviyesi snapshot + kesinti satırları ---
+  const kalemKayitlari = await tx.saleItem.findMany({
+    where: { saleId },
+    orderBy: { id: "asc" },
+    select: { id: true, variantId: true, quantity: true },
+  });
+
+  for (const [i, plan] of planlar.entries()) {
+    // planlar ile kayıtlar aynı sırada oluşturuldu.
+    const kayit = kalemKayitlari[i];
+    if (!kayit) continue;
+    const kalemSonucu = sonuc.kalemler[i];
+
+    await tx.saleItem.update({
+      where: { id: kayit.id },
+      data: {
+        vatRate: String(plan.kalem.vatRate),
+        commissionRate:
+          plan.kalem.commissionRate === null
+            ? null
+            : String(plan.kalem.commissionRate),
+        net1Amount: String(kalemSonucu.net1),
+        net2Amount: String(kalemSonucu.net2),
+        profitStatus: kalemSonucu.durum,
+      },
+    });
+
+    for (const kesinti of kalemSonucu.kesintiler) {
+      if (kesinti.tutar === 0 && kesinti.code === "KOMISYON") continue;
+      await tx.saleFee.create({
+        data: {
+          saleId,
+          saleItemId: kayit.id,
+          code: kesinti.code,
+          amount: String(kesinti.tutar),
+          currency: paraBirimi,
+        },
+      });
+    }
+  }
+
+  // --- sipariş başına kesintiler (saleItemId boş) ---
+  for (const kesinti of sonuc.siparisKesintileri) {
+    await tx.saleFee.create({
+      data: {
+        saleId,
+        code: kesinti.code,
+        amount: String(kesinti.tutar),
+        currency: paraBirimi,
+      },
+    });
+  }
+}
+
+/** Ekranların kâr durumunu okurken kullandığı tip. */
+export type { KarDurumu };
 
 /**
  * Bir satış kaleminin FIFO düşümleri — detay ekranı için.

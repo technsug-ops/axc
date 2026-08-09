@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { Baglanti, GeriBaglanti } from "@/components/baglanti";
+import { KarBlogu, type KarBloguVerisi } from "@/components/kar-blogu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -32,10 +33,16 @@ export default async function SatisDetaySayfasi({
       items: {
         include: {
           variant: {
-            include: { product: { select: { id: true, name: true } } },
+            include: {
+              product: { select: { id: true, name: true, categoryId: true } },
+            },
           },
+          fees: { orderBy: { createdAt: "asc" } },
         },
       },
+      // Sipariş başına kesintiler: saleItemId BOŞ olanlar.
+      fees: { where: { saleItemId: null }, orderBy: { createdAt: "asc" } },
+      cargoCarrier: { select: { name: true } },
       channelAccount: { include: { channel: { select: { name: true } } } },
     },
   });
@@ -50,6 +57,38 @@ export default async function SatisDetaySayfasi({
   const dusumler = await kalemDusumleri(satis.items.map((k) => k.id));
   const toplamlar = satisKalemToplamlari(satis.items);
 
+  const sayi = (d: { toString(): string } | null) =>
+    d === null ? null : Number(d.toString());
+
+  const karVerisi: KarBloguVerisi = {
+    durum: satis.profitStatus,
+    paraBirimi: satis.profitCurrency ?? "TRY",
+    net1: sayi(satis.net1Amount),
+    net2: sayi(satis.net2Amount),
+    kalemler: satis.items.map((kalem) => ({
+      id: kalem.id,
+      baslik: kalem.variant.name
+        ? `${kalem.variant.product.name} — ${kalem.variant.name}`
+        : kalem.variant.product.name,
+      net1: sayi(kalem.net1Amount),
+      net2: sayi(kalem.net2Amount),
+      durum: kalem.profitStatus,
+      vatRate: sayi(kalem.vatRate),
+      kesintiler: kalem.fees.map((f) => ({
+        code: f.code,
+        tutar: Number(f.amount.toString()),
+      })),
+    })),
+    siparisKesintileri: satis.fees.map((f) => ({
+      code: f.code,
+      tutar: Number(f.amount.toString()),
+    })),
+    // Kategorisiz üründe motor varsayılan %20 kullanır; kullanıcı görsün.
+    varsayilanKdvKullanildi: satis.items.some(
+      (k) => sayi(k.vatRate) === 20 && k.variant.product.categoryId === null,
+    ),
+  };
+
   const bilgiler: { etiket: string; deger: string }[] = [
     { etiket: t("satisTarihi"), deger: bicim.tarih(satis.soldAt) },
     {
@@ -59,6 +98,12 @@ export default async function SatisDetaySayfasi({
     {
       etiket: ortak("adet"),
       deger: String(satis.items.reduce((toplam, k) => toplam + k.quantity, 0)),
+    },
+    {
+      etiket: t("kargoFirmasi"),
+      deger: satis.cargoCarrier
+        ? `${satis.cargoCarrier.name}${satis.cargoDesi ? ` — ${Number(satis.cargoDesi.toString())} desi` : ""}`
+        : t("kargoSecilmedi"),
     },
   ];
 
@@ -266,6 +311,8 @@ export default async function SatisDetaySayfasi({
           </Card>
         );
       })}
+
+      {satis.profitStatus !== null ? <KarBlogu veri={karVerisi} /> : null}
 
       <p className="text-muted-foreground text-xs">{t("detayNotu")}</p>
     </div>
