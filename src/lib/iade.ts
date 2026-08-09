@@ -1,0 +1,518 @@
+import { GENEL_KDV_ORANI, kdvAyir, type KarDurumu } from "@/lib/kar";
+import { prisma } from "@/lib/prisma";
+import { acikPartiler, fifoDagit, type Parti } from "@/lib/stok";
+
+import type { Currency, ReturnType } from "@/generated/prisma/enums";
+
+/**
+ * ============================================================================
+ *  İADE MOTORU
+ * ----------------------------------------------------------------------------
+ *  ORİJİNAL SATIŞ SNAPSHOT'I DEĞİŞMEZ. İadenin getirdiği her para hareketi
+ *  AYRI satır olarak yazılır; satış detayı "orijinal kâr + iade etkisi =
+ *  iade sonrası net" gösterir.
+ *
+ *  KESİNTİ İADESİ (teyitli 09.08.2026):
+ *    GERİ GELİR  : komisyon (KDV'si dahil — tek tutar olarak tutuluyor),
+ *                  %0,8 ödeme gideri, stopaj — hepsi ADET ORANINDA
+ *    GERİ GELMEZ : 12,60 hizmet bedeli, 13,19 sabit gider, GİDİŞ kargosu
+ *
+ *  ÜÇ SENARYO:
+ *    UNDELIVERED — müşteriye ulaşmadı. Gelir ve kesintiler geri gelir,
+ *                  mal stoğa döner. Gidiş kargosu yanar, ek kargo yok.
+ *    NORMAL      — aynısı + dönüş kargosu satıcı gideri.
+ *    DISPUTED    — itiraz KABUL edildi: satış AYAKTA kalır. Gelir düşmez,
+ *                  komisyon geri GELMEZ, mal stoğa GİRMEZ. Yalnızca
+ *                  katlanılan giderler yazılır (kargo, yeniden gönderim,
+ *                  ceza).
+ *
+ *  İŞARET KURALI: pozitif = satıcıya geri gelen, negatif = gider.
+ * ============================================================================
+ */
+
+/** Satışın iade edilebilir kalem bilgisi — hesap için gereken her şey. */
+export type IadeKalemGirdisi = {
+  /** Satıştaki toplam adet — oranlama paydası. */
+  satilanAdet: number;
+  /** İade edilen adet. */
+  iadeAdedi: number;
+  /** Stoğa dönen (sağlam) adet. Hasarlı olan buraya girmez. */
+  saglamAdet: number;
+
+  /** KDV DAHİL satış tutarı (kalemin tamamı). */
+  satisTutari: number;
+  /** KDV DAHİL toplam maliyet (kalemin tamamı). Bilinmiyorsa null. */
+  maliyet: number | null;
+  /** Kalemin KDV oranı (%) — satış anındaki snapshot. */
+  kdvOrani: number;
+
+  /** Satışta kesilen komisyon (KDV DAHİL, kalemin tamamı). */
+  komisyon: number;
+
+  /** Değişimde giden ürünün maliyeti (KDV DAHİL). Yoksa null. */
+  degisimMaliyeti: number | null;
+};
+
+export type IadeGirdisi = {
+  returnType: ReturnType;
+  kalemler: IadeKalemGirdisi[];
+
+  /** Satışta kesilen ödeme gideri (sipariş geneli, KDV DAHİL). */
+  odemeGideri: number;
+  /** Sipariş toplam tutarı — ödeme giderini kaleme paylaştırmak için. */
+  siparisToplami: number;
+
+  /** KDV DAHİL, satıcı gideri. */
+  iadeKargosu: number | null;
+  yenidenGonderimKargosu: number | null;
+  ceza: number | null;
+};
+
+export type IadeSatiri = { code: string; tutar: number };
+
+export type IadeSonucu = {
+  durum: KarDurumu;
+  /** Kalem başına satırlar — sırayla girdideki kalemlere karşılık gelir. */
+  kalemSatirlari: IadeSatiri[][];
+  /** İade geneli satırlar (kargo, ceza). */
+  genelSatirlar: IadeSatiri[];
+  /** Ödenecek KDV'deki DEĞİŞİM. Pozitif = daha fazla KDV ödenir. */
+  odenecekKdvDegisimi: number;
+  /** İadenin NET-1'e etkisi (KDV hariç bakış). */
+  net1Etkisi: number;
+  /** net1Etkisi − ödenecek KDV değişimi. */
+  net2Etkisi: number;
+};
+
+/**
+ * İade etkisini hesaplar. Veritabanına GİTMEZ; aynı girdiyle her zaman aynı
+ * çıktıyı üretir, bu yüzden `iade:dogrula` ile birebir sınanabilir.
+ */
+export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
+  // İtiraz kabul edilmişse satış ayakta: gelir ve kesintiler geri gelmez.
+  const geriGelir = girdi.returnType !== "DISPUTED";
+
+  const kalemSatirlari: IadeSatiri[][] = [];
+  let durum: KarDurumu = "CALCULATED";
+
+  // KDV bileşenlerindeki değişim — S6 VARSAYIMI (muhasebeci teyidi bekliyor):
+  // iade edilen kalemin KDV bileşenleri adet oranında TERS işlenir.
+  // Teyit sonrası değişirse SADECE bu blok düzeltilir.
+  let satisKdvIadesi = 0; // satış KDV'si azalır -> ödenecek KDV azalır
+  let komisyonKdvIptali = 0; // komisyon KDV indirimi iptal -> ödenecek artar
+  let odemeGideriKdvIptali = 0;
+  let kargoKdvIndirimi = 0; // iade kargoları indirilir -> ödenecek azalır
+
+  for (const kalem of girdi.kalemler) {
+    const satirlar: IadeSatiri[] = [];
+
+    if (kalem.satilanAdet <= 0) {
+      durum = "RULE_MISSING";
+      kalemSatirlari.push(satirlar);
+      continue;
+    }
+
+    // Kısmi iadede her şey ADET ORANINDA.
+    const oran = kalem.iadeAdedi / kalem.satilanAdet;
+    const saglamOran = kalem.saglamAdet / kalem.satilanAdet;
+
+    if (geriGelir) {
+      const kayipGelir = kalem.satisTutari * oran;
+      satirlar.push({ code: "KAYIP_GELIR", tutar: -kayipGelir });
+      satisKdvIadesi += kdvAyir(kayipGelir, kalem.kdvOrani);
+
+      const komisyonIade = kalem.komisyon * oran;
+      if (komisyonIade > 0) {
+        satirlar.push({ code: "KOMISYON_IADE", tutar: komisyonIade });
+        komisyonKdvIptali += kdvAyir(komisyonIade, GENEL_KDV_ORANI);
+      }
+
+      // Ödeme gideri sipariş genelidir; kalemin sipariş içindeki payı kadar.
+      if (girdi.odemeGideri > 0 && girdi.siparisToplami > 0) {
+        const pay =
+          girdi.odemeGideri *
+          ((kalem.satisTutari * oran) / girdi.siparisToplami);
+        satirlar.push({ code: "ODEME_GIDERI_IADE", tutar: pay });
+        odemeGideriKdvIptali += kdvAyir(pay, GENEL_KDV_ORANI);
+      }
+
+      // Stopaj: KDV hariç tutarın %1'i, adet oranında.
+      const stopajIade =
+        ((kalem.satisTutari * oran) / (1 + kalem.kdvOrani / 100)) * 0.01;
+      satirlar.push({ code: "STOPAJ_IADE", tutar: stopajIade });
+
+      // Maliyet SADECE stoğa dönen (sağlam) adet kadar geri gelir.
+      // Hasarlı mal stoğa girmez; maliyeti satıcıda kalır.
+      if (kalem.maliyet === null) {
+        durum = "NO_COST";
+      } else if (saglamOran > 0) {
+        satirlar.push({
+          code: "MALIYET_GERI",
+          tutar: kalem.maliyet * saglamOran,
+        });
+      }
+    }
+
+    // Değişim: yerine giden ürünün maliyeti her senaryoda giderdir.
+    if (kalem.degisimMaliyeti !== null && kalem.degisimMaliyeti > 0) {
+      satirlar.push({
+        code: "DEGISIM_MALIYET",
+        tutar: -kalem.degisimMaliyeti,
+      });
+    }
+
+    kalemSatirlari.push(satirlar);
+  }
+
+  // ------------------------- İADE GENELİ -------------------------
+  const genelSatirlar: IadeSatiri[] = [];
+
+  if (girdi.iadeKargosu !== null && girdi.iadeKargosu > 0) {
+    genelSatirlar.push({ code: "IADE_KARGO", tutar: -girdi.iadeKargosu });
+    kargoKdvIndirimi += kdvAyir(girdi.iadeKargosu, GENEL_KDV_ORANI);
+  }
+  if (
+    girdi.yenidenGonderimKargosu !== null &&
+    girdi.yenidenGonderimKargosu > 0
+  ) {
+    genelSatirlar.push({
+      code: "YENIDEN_GONDERIM_KARGO",
+      tutar: -girdi.yenidenGonderimKargosu,
+    });
+    kargoKdvIndirimi += kdvAyir(girdi.yenidenGonderimKargosu, GENEL_KDV_ORANI);
+  }
+  // Ceza pazaryeri kesintisidir; KDV'li bir hizmet bedeli değildir.
+  if (girdi.ceza !== null && girdi.ceza > 0) {
+    genelSatirlar.push({ code: "CEZA", tutar: -girdi.ceza });
+  }
+
+  const net1Etkisi =
+    kalemSatirlari.flat().reduce((t, s) => t + s.tutar, 0) +
+    genelSatirlar.reduce((t, s) => t + s.tutar, 0);
+
+  const odenecekKdvDegisimi =
+    -satisKdvIadesi +
+    komisyonKdvIptali +
+    odemeGideriKdvIptali -
+    kargoKdvIndirimi;
+
+  return {
+    durum,
+    kalemSatirlari,
+    genelSatirlar,
+    odenecekKdvDegisimi,
+    net1Etkisi,
+    net2Etkisi: net1Etkisi - odenecekKdvDegisimi,
+  };
+}
+
+// ---------------------------------------------------------------------------
+//  CEZA TARİFESİ ÖNERİSİ
+// ---------------------------------------------------------------------------
+
+/**
+ * Sipariş tutarına düşen ceza kademesini bulur.
+ * Kademesi yoksa null döner — ekran "elle girin" der, uydurma yapılmaz.
+ * (Hepsiburada'da 6.000 TL üstü böyle: pazaryeri "değişen oran" diyor.)
+ */
+export async function cezaOnerisi(
+  channelId: string,
+  siparisTutari: number,
+  tarih: Date,
+): Promise<number | null> {
+  const kademe = await prisma.penaltyTariff.findFirst({
+    where: {
+      channelId,
+      orderAmountUpTo: { gte: String(siparisTutari) },
+      effectiveFrom: { lte: tarih },
+    },
+    orderBy: [{ orderAmountUpTo: "asc" }, { effectiveFrom: "desc" }],
+    select: { amount: true },
+  });
+  return kademe ? Number(kademe.amount.toString()) : null;
+}
+
+// ---------------------------------------------------------------------------
+//  KAYIT — TEK TRANSACTION
+// ---------------------------------------------------------------------------
+
+export type IadeKaydiGirdisi = {
+  saleId: string;
+  code: string | null;
+  returnType: ReturnType;
+  occurredAt: Date;
+  note: string | null;
+  iadeKargosu: number | null;
+  yenidenGonderimKargosu: number | null;
+  ceza: number | null;
+  cezaNotu: string | null;
+  kalemler: {
+    saleItemId: string;
+    iadeAdedi: number;
+    saglamAdet: number;
+    hasarliAdet: number;
+    hasarNotu: string | null;
+    locationId: string | null;
+    /** Değişim ürünü — doluysa EXCHANGE_OUT hareketi oluşur. */
+    exchangeVariantId: string | null;
+  }[];
+};
+
+export class FazlaIadeHatasi extends Error {
+  constructor(
+    readonly saleItemId: string,
+    readonly kalan: number,
+    readonly girilen: number,
+  ) {
+    super("Fazla iade");
+    this.name = "FazlaIadeHatasi";
+  }
+}
+
+export class DegisimStokYokHatasi extends Error {
+  constructor(
+    readonly variantId: string,
+    readonly istenen: number,
+    readonly mevcut: number,
+  ) {
+    super("Değişim ürününde stok yok");
+    this.name = "DegisimStokYokHatasi";
+  }
+}
+
+/**
+ * İadeyi kaydeder: stok hareketleri, iade etkisi ve kesinti satırları
+ * TEK TRANSACTION içinde yazılır. Yarım iade kaydı oluşamaz.
+ */
+export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
+  return prisma.$transaction(async (tx) => {
+    const satis = await tx.sale.findUnique({
+      where: { id: girdi.saleId },
+      include: {
+        channelAccount: { select: { channelId: true } },
+        items: {
+          include: {
+            fees: true,
+            returnItems: { select: { quantity: true } },
+            stockMovements: {
+              where: { type: "SALE_OUT" },
+              select: {
+                quantityDelta: true,
+                unitCostAmount: true,
+                unitCostCurrency: true,
+              },
+            },
+          },
+        },
+        fees: { where: { saleItemId: null } },
+      },
+    });
+    if (!satis) throw new Error("Satış bulunamadı");
+
+    const kanalId = satis.channelAccount.channelId;
+    const paraBirimi: Currency = satis.profitCurrency ?? "TRY";
+
+    // --- girdi doğrulaması: daha önce iade edilen adetler düşülür ---
+    const kalemHaritasi = new Map(satis.items.map((k) => [k.id, k]));
+    for (const g of girdi.kalemler) {
+      const kalem = kalemHaritasi.get(g.saleItemId);
+      if (!kalem) throw new Error("İade edilen kalem bulunamadı");
+      const oncekiIade = kalem.returnItems.reduce((t, r) => t + r.quantity, 0);
+      const kalan = kalem.quantity - oncekiIade;
+      if (g.iadeAdedi > kalan) {
+        throw new FazlaIadeHatasi(g.saleItemId, kalan, g.iadeAdedi);
+      }
+    }
+
+    // --- ödeme gideri (sipariş geneli) ---
+    const odemeGideri = satis.fees
+      .filter((f) => f.code === "ODEME_GIDERI")
+      .reduce((t, f) => t + Number(f.amount.toString()), 0);
+    const siparisToplami = satis.items.reduce(
+      (t, k) => t + Number(k.unitPriceAmount.toString()) * k.quantity,
+      0,
+    );
+
+    // --- hesap girdisi ---
+    const hesapKalemleri: IadeKalemGirdisi[] = [];
+    // Değişim maliyetleri FIFO'dan okunacak; plan önce hesaplanır.
+    const degisimPlanlari = new Map<
+      string,
+      { parti: Parti; adet: number }[]
+    >();
+
+    for (const g of girdi.kalemler) {
+      const kalem = kalemHaritasi.get(g.saleItemId)!;
+
+      let maliyet: number | null = 0;
+      for (const h of kalem.stockMovements) {
+        if (h.unitCostAmount === null) {
+          maliyet = null;
+          break;
+        }
+        maliyet =
+          (maliyet ?? 0) +
+          Number(h.unitCostAmount.toString()) * Math.abs(h.quantityDelta);
+      }
+
+      const komisyon = kalem.fees
+        .filter((f) => f.code === "KOMISYON")
+        .reduce((t, f) => t + Number(f.amount.toString()), 0);
+
+      // --- değişim: yeni ürün FIFO'dan düşer ---
+      let degisimMaliyeti: number | null = null;
+      if (g.exchangeVariantId) {
+        const partiler = await acikPartiler(tx, g.exchangeVariantId);
+        const dagitim = fifoDagit(partiler, g.iadeAdedi);
+        if (!dagitim.yeterliMi) {
+          throw new DegisimStokYokHatasi(
+            g.exchangeVariantId,
+            g.iadeAdedi,
+            dagitim.mevcut,
+          );
+        }
+        degisimPlanlari.set(g.saleItemId, dagitim.dagitim);
+        degisimMaliyeti = dagitim.dagitim.reduce(
+          (t, p) => t + Number(p.parti.birimMaliyet ?? 0) * p.adet,
+          0,
+        );
+      }
+
+      hesapKalemleri.push({
+        satilanAdet: kalem.quantity,
+        iadeAdedi: g.iadeAdedi,
+        saglamAdet: g.saglamAdet,
+        satisTutari: Number(kalem.unitPriceAmount.toString()) * kalem.quantity,
+        maliyet,
+        kdvOrani: kalem.vatRate ? Number(kalem.vatRate.toString()) : 20,
+        komisyon,
+        degisimMaliyeti,
+      });
+    }
+
+    const sonuc = iadeEtkisiHesapla({
+      returnType: girdi.returnType,
+      kalemler: hesapKalemleri,
+      odemeGideri,
+      siparisToplami,
+      iadeKargosu: girdi.iadeKargosu,
+      yenidenGonderimKargosu: girdi.yenidenGonderimKargosu,
+      ceza: girdi.ceza,
+    });
+
+    // --- iade kaydı ---
+    const iade = await tx.return.create({
+      data: {
+        saleId: girdi.saleId,
+        code: girdi.code,
+        returnType: girdi.returnType,
+        occurredAt: girdi.occurredAt,
+        note: girdi.note,
+        returnCargoAmount:
+          girdi.iadeKargosu === null ? null : String(girdi.iadeKargosu),
+        reshipCargoAmount:
+          girdi.yenidenGonderimKargosu === null
+            ? null
+            : String(girdi.yenidenGonderimKargosu),
+        cargoCurrency:
+          girdi.iadeKargosu === null && girdi.yenidenGonderimKargosu === null
+            ? null
+            : "TRY",
+        penaltyAmount: girdi.ceza === null ? null : String(girdi.ceza),
+        penaltyCurrency: girdi.ceza === null ? null : "TRY",
+        penaltyNote: girdi.cezaNotu,
+        net1Amount: String(sonuc.net1Etkisi),
+        net2Amount: String(sonuc.net2Etkisi),
+        profitCurrency: paraBirimi,
+        profitStatus: sonuc.durum,
+        calculatedAt: girdi.occurredAt,
+      },
+      select: { id: true },
+    });
+
+    // --- kalemler + stok hareketleri ---
+    for (const [i, g] of girdi.kalemler.entries()) {
+      const kalem = kalemHaritasi.get(g.saleItemId)!;
+
+      const iadeKalemi = await tx.returnItem.create({
+        data: {
+          returnId: iade.id,
+          saleItemId: g.saleItemId,
+          variantId: kalem.variantId,
+          quantity: g.iadeAdedi,
+          soundQuantity: g.saglamAdet,
+          damagedQuantity: g.hasarliAdet,
+          damageNote: g.hasarNotu,
+          locationId: g.locationId,
+          exchangeVariantId: g.exchangeVariantId,
+        },
+        select: { id: true },
+      });
+
+      // SAĞLAM mal stoğa döner — ama itirazlı iadede ürün müşteride kalır.
+      if (girdi.returnType !== "DISPUTED" && g.saglamAdet > 0) {
+        await tx.stockMovement.create({
+          data: {
+            variantId: kalem.variantId,
+            type: "RETURN_IN",
+            quantityDelta: g.saglamAdet,
+            occurredAt: girdi.occurredAt,
+            returnItemId: iadeKalemi.id,
+            locationId: g.locationId,
+            // Maliyet satıştaki çıkış maliyetinden gelir.
+            unitCostAmount: kalem.stockMovements[0]?.unitCostAmount ?? null,
+            unitCostCurrency: kalem.stockMovements[0]?.unitCostCurrency ?? null,
+          },
+        });
+      }
+
+      // DEĞİŞİM: yerine giden ürün FIFO'dan düşer.
+      const degisim = degisimPlanlari.get(g.saleItemId);
+      if (degisim) {
+        for (const pay of degisim) {
+          await tx.stockMovement.create({
+            data: {
+              variantId: g.exchangeVariantId!,
+              type: "EXCHANGE_OUT",
+              quantityDelta: -pay.adet,
+              occurredAt: girdi.occurredAt,
+              returnItemId: iadeKalemi.id,
+              sourceMovementId: pay.parti.hareketId,
+              locationId: pay.parti.locationId,
+              unitCostAmount: pay.parti.birimMaliyet,
+              unitCostCurrency: pay.parti.birimMaliyetParaBirimi,
+            },
+          });
+        }
+      }
+
+      // --- kalem para satırları ---
+      for (const satir of sonuc.kalemSatirlari[i] ?? []) {
+        await tx.returnFee.create({
+          data: {
+            returnId: iade.id,
+            returnItemId: iadeKalemi.id,
+            code: satir.code,
+            amount: String(satir.tutar),
+            currency: paraBirimi,
+          },
+        });
+      }
+    }
+
+    // --- iade geneli para satırları ---
+    for (const satir of sonuc.genelSatirlar) {
+      await tx.returnFee.create({
+        data: {
+          returnId: iade.id,
+          code: satir.code,
+          amount: String(satir.tutar),
+          currency: paraBirimi,
+        },
+      });
+    }
+
+    void kanalId;
+    return iade.id;
+  });
+}

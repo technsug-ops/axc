@@ -11,7 +11,8 @@
     "postinstall": "prisma generate && node scripts/copy-zxing-wasm.mjs",
     "fifo:dogrula": "tsx scripts/fifo-dogrula.ts",
     "tarife:dogrula": "tsx scripts/tarife-dogrula.ts",
-    "kar:dogrula": "tsx scripts/kar-dogrula.ts"
+    "kar:dogrula": "tsx scripts/kar-dogrula.ts",
+    "iade:dogrula": "tsx scripts/iade-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
