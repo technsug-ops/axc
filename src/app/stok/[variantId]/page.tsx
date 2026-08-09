@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { Baglanti, GeriBaglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -13,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { stokHareketiEtiketi } from "@/lib/etiketler";
+import { stokHareketEtiketleri } from "@/lib/etiketler";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { varyantStogu } from "@/lib/stok";
@@ -36,6 +37,9 @@ export default async function VaryantHareketleriSayfasi({
   if (!varyant) notFound();
 
   const bicim = await bicimlendirici();
+  const t = await getTranslations("Stok");
+  const ortak = await getTranslations("Ortak");
+  const hareketEtiketleri = await stokHareketEtiketleri();
 
   const [stok, hareketler] = await Promise.all([
     varyantStogu(variantId),
@@ -54,14 +58,14 @@ export default async function VaryantHareketleriSayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <GeriBaglanti href="/stok">Stok</GeriBaglanti>
+        <GeriBaglanti href="/stok">{t("baslik")}</GeriBaglanti>
         <h1 className="mt-1 text-2xl font-semibold">
           {varyant.product.name}
           {varyant.name ? ` — ${varyant.name}` : ""}
         </h1>
         <p className="text-sm">
           <Baglanti href={`/urunler/${varyant.product.id}`}>
-            Ürün kartına git
+            {t("urunKartinaGit")}
           </Baglanti>
         </p>
       </div>
@@ -69,13 +73,13 @@ export default async function VaryantHareketleriSayfasi({
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Mevcut stok</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("mevcutStok")}</CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-semibold">{stok}</CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Raf</CardTitle>
+            <CardTitle className="text-sm font-medium">{ortak("raf")}</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">
             {varyant.location ? varyant.location.code : "—"}
@@ -83,20 +87,20 @@ export default async function VaryantHareketleriSayfasi({
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Kodlar</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("kodlar")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-xs">
             <div className="flex flex-wrap items-center gap-1">
-              <span className="text-muted-foreground">SKU:</span>
-              <KopyalanabilirKod deger={varyant.sku} etiket="SKU" />
+              <span className="text-muted-foreground">{ortak("sku")}:</span>
+              <KopyalanabilirKod deger={varyant.sku} etiket={ortak("sku")} />
             </div>
             <div className="flex flex-wrap items-center gap-1">
-              <span className="text-muted-foreground">Firma SKU:</span>
-              <KopyalanabilirKod deger={varyant.axcaliSku} etiket="Firma SKU" />
+              <span className="text-muted-foreground">{ortak("firmaSku")}:</span>
+              <KopyalanabilirKod deger={varyant.axcaliSku} etiket={ortak("firmaSku")} />
             </div>
             <div className="flex flex-wrap items-center gap-1">
-              <span className="text-muted-foreground">Barkod:</span>
-              <KopyalanabilirKod deger={varyant.barcode} etiket="Barkod" />
+              <span className="text-muted-foreground">{ortak("barkod")}:</span>
+              <KopyalanabilirKod deger={varyant.barcode} etiket={ortak("barkod")} />
             </div>
           </CardContent>
         </Card>
@@ -104,14 +108,14 @@ export default async function VaryantHareketleriSayfasi({
 
       <Card>
         <CardHeader>
-          <CardTitle>Hareket geçmişi ({hareketler.length})</CardTitle>
+          <CardTitle>{t("hareketGecmisi", { sayi: hareketler.length })}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {hareketler.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="font-medium">Henüz stok hareketi yok.</p>
+              <p className="font-medium">{t("hareketYokBaslik")}</p>
               <p className="text-muted-foreground mt-1 text-sm">
-                İlk giriş, bir alımın mal kabulü yapıldığında oluşur.
+                {t("hareketYokIpucu")}
               </p>
             </div>
           ) : (
@@ -121,15 +125,15 @@ export default async function VaryantHareketleriSayfasi({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Tarih</TableHead>
-                      <TableHead>Tip</TableHead>
-                      <TableHead className="text-right">Adet</TableHead>
-                      <TableHead>Raf</TableHead>
-                      <TableHead>Kaynak</TableHead>
+                      <TableHead>{t("sutunTarih")}</TableHead>
+                      <TableHead>{t("sutunTip")}</TableHead>
+                      <TableHead className="text-right">{t("sutunAdet")}</TableHead>
+                      <TableHead>{ortak("raf")}</TableHead>
+                      <TableHead>{t("sutunKaynak")}</TableHead>
                       <TableHead className="text-right">
-                        Birim maliyet
+                        {t("sutunBirimMaliyet")}
                       </TableHead>
-                      <TableHead>Kim</TableHead>
+                      <TableHead>{t("sutunKim")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -140,7 +144,7 @@ export default async function VaryantHareketleriSayfasi({
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary">
-                            {stokHareketiEtiketi(hareket.type)}
+                            {hareketEtiketleri[hareket.type]}
                           </Badge>
                         </TableCell>
                         <TableCell
@@ -202,13 +206,13 @@ export default async function VaryantHareketleriSayfasi({
                       <span className="flex flex-wrap items-center gap-2">
                         {bicim.tarih(hareket.occurredAt)}
                         <Badge variant="secondary">
-                          {stokHareketiEtiketi(hareket.type)}
+                          {hareketEtiketleri[hareket.type]}
                         </Badge>
                       </span>
                     }
                     alanlar={[
                       {
-                        etiket: "Adet",
+                        etiket: t("sutunAdet"),
                         deger: (
                           <span
                             className={
@@ -223,7 +227,7 @@ export default async function VaryantHareketleriSayfasi({
                         ),
                       },
                       {
-                        etiket: "Raf",
+                        etiket: ortak("raf"),
                         deger: hareket.location ? (
                           <Badge variant="outline">
                             {hareket.location.code}
@@ -233,7 +237,7 @@ export default async function VaryantHareketleriSayfasi({
                         ),
                       },
                       {
-                        etiket: "Kaynak",
+                        etiket: t("sutunKaynak"),
                         deger: hareket.purchaseItem?.purchase ? (
                           <Baglanti
                             href={`/alimlar/${hareket.purchaseItem.purchase.id}`}
@@ -245,7 +249,7 @@ export default async function VaryantHareketleriSayfasi({
                         ),
                       },
                       {
-                        etiket: "Birim maliyet",
+                        etiket: t("sutunBirimMaliyet"),
                         deger: hareket.unitCostAmount
                           ? bicim.para(
                               hareket.unitCostAmount,
@@ -254,7 +258,7 @@ export default async function VaryantHareketleriSayfasi({
                           : "—",
                       },
                       // Kullanıcı/kimlik doğrulama Faz 4'te gelecek.
-                      { etiket: "Kim", deger: "—" },
+                      { etiket: t("sutunKim"), deger: "—" },
                     ]}
                   />
                 ))}
@@ -262,11 +266,7 @@ export default async function VaryantHareketleriSayfasi({
             </>
           )}
 
-          <p className="text-muted-foreground text-xs">
-            Hareketler değiştirilmez ve silinmez. Hatalı bir giriş, ters yönde
-            bir düzeltme kaydıyla giderilir. &quot;Kim&quot; sütunu çok
-            kullanıcılı yapıyla (Faz 4) dolacak.
-          </p>
+          <p className="text-muted-foreground text-xs">{t("gecmisNotu")}</p>
         </CardContent>
       </Card>
     </div>

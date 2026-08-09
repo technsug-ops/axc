@@ -37,6 +37,48 @@
     "aramaEki": " — \"{arama}\" araması",
     "kayitSayisi": "{sayi} kayıt"
   },
+  "AlimDurumu": {
+    "DRAFT": "Taslak",
+    "ORDERED": "Sipariş verildi",
+    "PARTIALLY_RECEIVED": "Kısmen teslim alındı",
+    "RECEIVED": "Teslim alındı",
+    "CANCELLED": "İptal"
+  },
+  "StokHareketi": {
+    "INITIAL": "Açılış stoğu",
+    "PURCHASE_IN": "Alım girişi",
+    "ADJUSTMENT": "Düzeltme",
+    "COUNT_CORRECTION": "Sayım farkı"
+  },
+  "Stok": {
+    "baslik": "Stok",
+    "ozet": "{varyant} varyant · toplam {adet} adet",
+    "aramaIpucu": "Ürün adı, SKU veya barkod — okutabilirsiniz",
+    "kameraBasligi": "Stok sorgula",
+    "hareketler": "Hareketler",
+    "urunKarti": "Ürün kartı",
+    "bosAramaBaslik": "Aramaya uyan varyant yok.",
+    "bosAramaIpucu": "Farklı bir kod veya ad deneyin.",
+    "bosBaslik": "Henüz varyant yok.",
+    "bosIpucu": "Önce ürün ekleyin, sonra alım yapıp mal kabul edin.",
+    "mevcutStok": "Mevcut stok",
+    "sonHareket": "Son hareket",
+    "varsayilan": "Varsayılan",
+    "varsayilanVaryant": "Varsayılan varyant",
+    "listeNotu": "Mevcut stok, o varyantın tüm stok hareketlerinin toplamıdır.",
+    "urunKartinaGit": "Ürün kartına git",
+    "kodlar": "Kodlar",
+    "hareketGecmisi": "Hareket geçmişi ({sayi})",
+    "hareketYokBaslik": "Henüz stok hareketi yok.",
+    "hareketYokIpucu": "İlk giriş, bir alımın mal kabulü yapıldığında oluşur.",
+    "sutunTarih": "Tarih",
+    "sutunTip": "Tip",
+    "sutunAdet": "Adet",
+    "sutunKaynak": "Kaynak",
+    "sutunBirimMaliyet": "Birim maliyet",
+    "sutunKim": "Kim",
+    "gecmisNotu": "Hareketler değiştirilmez ve silinmez. Hatalı bir giriş, ters yönde bir düzeltme kaydıyla giderilir. \"Kim\" sütunu çok kullanıcılı yapıyla (Faz 4) dolacak."
+  },
   "Urunler": {
     "baslik": "Ürünler",
     "yeniUrun": "Yeni Ürün",

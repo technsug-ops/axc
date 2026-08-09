@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ALIM_DURUMLARI, alimDurumuEtiketi } from "@/lib/etiketler";
+import { ALIM_DURUMLARI, alimDurumEtiketleri } from "@/lib/etiketler";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { kalemToplamlari } from "@/lib/tutar";
@@ -41,6 +41,7 @@ export default async function AlimlarSayfasi({
   const arama = (q ?? "").trim();
   const durumFiltresi = (durum ?? "").trim();
   const bicim = await bicimlendirici();
+  const durumEtiketleri = await alimDurumEtiketleri();
 
   const alimlar = await prisma.purchase.findMany({
     where: {
@@ -97,7 +98,7 @@ export default async function AlimlarSayfasi({
             {alimlar.length} kayıt
             {arama ? ` — "${arama}" araması` : ""}
             {durumGecerliMi(durumFiltresi)
-              ? ` — ${alimDurumuEtiketi(durumFiltresi)}`
+              ? ` — ${durumEtiketleri[durumFiltresi]}`
               : ""}
           </p>
         </div>
@@ -125,7 +126,7 @@ export default async function AlimlarSayfasi({
           <option value="">Tüm durumlar</option>
           {ALIM_DURUMLARI.map((d) => (
             <option key={d} value={d}>
-              {alimDurumuEtiketi(d)}
+              {durumEtiketleri[d]}
             </option>
           ))}
         </select>
@@ -207,7 +208,7 @@ export default async function AlimlarSayfasi({
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {alimDurumuEtiketi(alim.status)}
+                        {durumEtiketleri[alim.status]}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -247,7 +248,7 @@ export default async function AlimlarSayfasi({
                     etiket: "Durum",
                     deger: (
                       <Badge variant="secondary">
-                        {alimDurumuEtiketi(alim.status)}
+                        {durumEtiketleri[alim.status]}
                       </Badge>
                     ),
                   },

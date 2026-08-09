@@ -34,6 +34,8 @@ export default async function StokSayfasi({
   const { q } = await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
+  const t = await getTranslations("Stok");
+  const ortak = await getTranslations("Ortak");
 
   const varyantlar = await prisma.productVariant.findMany({
     where: arama
@@ -70,13 +72,13 @@ export default async function StokSayfasi({
         <Button variant="outline" size="sm" asChild>
           <Link href={`/stok/${varyant.id}`}>
             <History />
-            Hareketler
+            {t("hareketler")}
           </Link>
         </Button>
         <Button variant="outline" size="sm" asChild>
           <Link href={`/urunler/${varyant.product.id}`}>
             <Package />
-            Ürün kartı
+            {t("urunKarti")}
           </Link>
         </Button>
       </>
@@ -86,10 +88,10 @@ export default async function StokSayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Stok</h1>
+        <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">
-          {varyantlar.length} varyant · toplam {toplamStok} adet
-          {arama ? ` — "${arama}" araması` : ""}
+          {t("ozet", { varyant: varyantlar.length, adet: toplamStok })}
+          {arama ? ortak("aramaEki", { arama }) : ""}
         </p>
       </div>
 
@@ -98,12 +100,10 @@ export default async function StokSayfasi({
       {varyantlar.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
           <p className="font-medium">
-            {arama ? "Aramaya uyan varyant yok." : "Henüz varyant yok."}
+            {arama ? t("bosAramaBaslik") : t("bosBaslik")}
           </p>
           <p className="text-muted-foreground mt-1 text-sm">
-            {arama
-              ? "Farklı bir kod veya ad deneyin."
-              : "Önce ürün ekleyin, sonra alım yapıp mal kabul edin."}
+            {arama ? t("bosAramaIpucu") : t("bosIpucu")}
           </p>
         </div>
       ) : (
@@ -113,14 +113,16 @@ export default async function StokSayfasi({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ürün</TableHead>
-                  <TableHead>Varyant</TableHead>
-                  <TableHead>Firma SKU</TableHead>
-                  <TableHead>Barkod</TableHead>
-                  <TableHead>Raf</TableHead>
-                  <TableHead className="text-right">Mevcut stok</TableHead>
-                  <TableHead>Son hareket</TableHead>
-                  <TableHead>Eylemler</TableHead>
+                  <TableHead>{ortak("urun")}</TableHead>
+                  <TableHead>{ortak("varyant")}</TableHead>
+                  <TableHead>{ortak("firmaSku")}</TableHead>
+                  <TableHead>{ortak("barkod")}</TableHead>
+                  <TableHead>{ortak("raf")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("mevcutStok")}
+                  </TableHead>
+                  <TableHead>{t("sonHareket")}</TableHead>
+                  <TableHead>{ortak("eylemler")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -137,18 +139,18 @@ export default async function StokSayfasi({
                       ) : null}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {varyant.name ?? "Varsayılan"}
+                      {varyant.name ?? t("varsayilan")}
                     </TableCell>
                     <TableCell>
                       <KopyalanabilirKod
                         deger={varyant.axcaliSku}
-                        etiket="Firma SKU"
+                        etiket={ortak("firmaSku")}
                       />
                     </TableCell>
                     <TableCell>
                       <KopyalanabilirKod
                         deger={varyant.barcode}
-                        etiket="Barkod"
+                        etiket={ortak("barkod")}
                       />
                     </TableCell>
                     <TableCell>
@@ -189,10 +191,10 @@ export default async function StokSayfasi({
                     {varyant.product.name}
                   </Baglanti>
                 }
-                altBaslik={varyant.name ?? "Varsayılan varyant"}
+                altBaslik={varyant.name ?? t("varsayilanVaryant")}
                 alanlar={[
                   {
-                    etiket: "Mevcut stok",
+                    etiket: t("mevcutStok"),
                     deger: (
                       <span className="text-base font-semibold">
                         {stoklar.get(varyant.id) ?? 0}
@@ -200,7 +202,7 @@ export default async function StokSayfasi({
                     ),
                   },
                   {
-                    etiket: "Raf",
+                    etiket: ortak("raf"),
                     deger: varyant.location ? (
                       <Badge variant="secondary">
                         {varyant.location.code}
@@ -210,25 +212,25 @@ export default async function StokSayfasi({
                     ),
                   },
                   {
-                    etiket: "Firma SKU",
+                    etiket: ortak("firmaSku"),
                     deger: (
                       <KopyalanabilirKod
                         deger={varyant.axcaliSku}
-                        etiket="Firma SKU"
+                        etiket={ortak("firmaSku")}
                       />
                     ),
                   },
                   {
-                    etiket: "Barkod",
+                    etiket: ortak("barkod"),
                     deger: (
                       <KopyalanabilirKod
                         deger={varyant.barcode}
-                        etiket="Barkod"
+                        etiket={ortak("barkod")}
                       />
                     ),
                   },
                   {
-                    etiket: "Son hareket",
+                    etiket: t("sonHareket"),
                     deger: sonHareketler.get(varyant.id)
                       ? bicim.tarih(sonHareketler.get(varyant.id)!)
                       : "—",
@@ -242,7 +244,7 @@ export default async function StokSayfasi({
       )}
 
       <p className="text-muted-foreground text-xs">
-        Mevcut stok, o varyantın tüm stok hareketlerinin toplamıdır.
+        {t("listeNotu")}
       </p>
     </div>
   );

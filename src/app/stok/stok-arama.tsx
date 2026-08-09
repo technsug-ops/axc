@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,8 @@ import { Button } from "@/components/ui/button";
  */
 export function StokArama({ baslangic }: { baslangic: string }) {
   const router = useRouter();
+  const t = useTranslations("Stok");
+  const ortak = useTranslations("Ortak");
   const [sorgu, setSorgu] = useState(baslangic);
 
   function ara(deger: string) {
@@ -27,15 +30,15 @@ export function StokArama({ baslangic }: { baslangic: string }) {
         value={sorgu}
         onChange={setSorgu}
         onOkundu={ara}
-        placeholder="Ürün adı, SKU veya barkod — okutabilirsiniz"
-        kameraBasligi="Stok sorgula"
+        placeholder={t("aramaIpucu")}
+        kameraBasligi={t("kameraBasligi")}
       />
       <Button type="button" variant="secondary" onClick={() => ara(sorgu)}>
-        Ara
+        {ortak("ara")}
       </Button>
       {baslangic ? (
         <Button type="button" variant="ghost" asChild>
-          <Link href="/stok">Temizle</Link>
+          <Link href="/stok">{ortak("temizle")}</Link>
         </Button>
       ) : null}
     </div>

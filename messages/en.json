@@ -37,6 +37,48 @@
     "aramaEki": "",
     "kayitSayisi": ""
   },
+  "AlimDurumu": {
+    "DRAFT": "",
+    "ORDERED": "",
+    "PARTIALLY_RECEIVED": "",
+    "RECEIVED": "",
+    "CANCELLED": ""
+  },
+  "StokHareketi": {
+    "INITIAL": "",
+    "PURCHASE_IN": "",
+    "ADJUSTMENT": "",
+    "COUNT_CORRECTION": ""
+  },
+  "Stok": {
+    "baslik": "",
+    "ozet": "",
+    "aramaIpucu": "",
+    "kameraBasligi": "",
+    "hareketler": "",
+    "urunKarti": "",
+    "bosAramaBaslik": "",
+    "bosAramaIpucu": "",
+    "bosBaslik": "",
+    "bosIpucu": "",
+    "mevcutStok": "",
+    "sonHareket": "",
+    "varsayilan": "",
+    "varsayilanVaryant": "",
+    "listeNotu": "",
+    "urunKartinaGit": "",
+    "kodlar": "",
+    "hareketGecmisi": "",
+    "hareketYokBaslik": "",
+    "hareketYokIpucu": "",
+    "sutunTarih": "",
+    "sutunTip": "",
+    "sutunAdet": "",
+    "sutunKaynak": "",
+    "sutunBirimMaliyet": "",
+    "sutunKim": "",
+    "gecmisNotu": ""
+  },
   "Urunler": {
     "baslik": "",
     "yeniUrun": "",

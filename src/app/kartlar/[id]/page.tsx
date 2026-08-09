@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { alimDurumuEtiketi } from "@/lib/etiketler";
+import { alimDurumEtiketleri } from "@/lib/etiketler";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { kalemToplamlari, toplamlariBirlestir } from "@/lib/tutar";
@@ -45,6 +45,7 @@ export default async function KartDetaySayfasi({
   if (!kart) notFound();
 
   const bicim = await bicimlendirici();
+  const durumEtiketleri = await alimDurumEtiketleri();
 
   // Para birimleri BİRBİRİNE ÇEVRİLMEZ; her biri ayrı toplanır.
   const kartToplamlari = toplamlariBirlestir(
@@ -185,7 +186,7 @@ export default async function KartDetaySayfasi({
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">
-                          {alimDurumuEtiketi(alim.status)}
+                          {durumEtiketleri[alim.status]}
                         </Badge>
                       </TableCell>
                     </TableRow>

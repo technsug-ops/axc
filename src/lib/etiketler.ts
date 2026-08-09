@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import type {
   PurchaseStatus,
   StockMovementType,
@@ -5,45 +7,70 @@ import type {
 
 /**
  * ============================================================================
- *  VERİTABANI ENUM DEĞERLERİNİN TÜRKÇE KARŞILIKLARI
+ *  VERİTABANI ENUM DEĞERLERİNİN EKRANDAKİ KARŞILIKLARI
  * ----------------------------------------------------------------------------
- *  Record<PurchaseStatus, string> tipi BİLEREK dar tutuldu: şemaya yeni bir
- *  durum eklenip buraya Türkçesi yazılmazsa proje DERLENMEZ.
+ *  Veritabanı değeri (ORDERED, PURCHASE_IN...) DEĞİŞMEZ — sadece ekranda
+ *  görünen etiket sözlükten gelir. "Veri çevrilmez" kuralıyla çelişmez:
+ *  burada çevrilen veri değil, verinin gösterimi.
  *
- *  Neden: Bu sözlük önce Record<string, string> idi ve etiket bulunamayınca
- *  ham enum değerini geri veriyordu. Şemaya PARTIALLY_RECEIVED eklendiğinde
- *  karşılığı unutuldu; arayüzde kullanıcıya "PARTIALLY_RECEIVED" göründü ve
- *  hiçbir yerde hata çıkmadı. Sessiz sızıntı bir daha olmasın diye tip
- *  daraltıldı ve yedek dönüş kaldırıldı.
+ *  Record<PurchaseStatus, ...> tipi BİLEREK dar: şemaya yeni bir durum
+ *  eklenip karşılığı yazılmazsa proje DERLENMEZ. Bu koruma, daha önce
+ *  PARTIALLY_RECEIVED'in ekranda ham enum olarak görünmesine yol açan
+ *  hatadan sonra eklendi; sözlüğe taşırken de korunuyor.
  * ============================================================================
  */
 
-export const ALIM_DURUMU: Record<PurchaseStatus, string> = {
-  DRAFT: "Taslak",
-  ORDERED: "Sipariş verildi",
-  PARTIALLY_RECEIVED: "Kısmen teslim alındı",
-  RECEIVED: "Teslim alındı",
-  CANCELLED: "İptal",
+/** Sıralama ve eksiksizlik denetimi. Değerler kullanılmıyor, anahtarlar önemli. */
+const ALIM_DURUM_SIRASI: Record<PurchaseStatus, null> = {
+  DRAFT: null,
+  ORDERED: null,
+  PARTIALLY_RECEIVED: null,
+  RECEIVED: null,
+  CANCELLED: null,
 };
+
+/** Alım listesi durum filtresi — sırası yukarıdaki tanımdan gelir. */
+export const ALIM_DURUMLARI = Object.keys(
+  ALIM_DURUM_SIRASI,
+) as PurchaseStatus[];
 
 /**
- * Alım listesi durum filtresi.
- * Sözlükten TÜRETİLİYOR — ikisi birbirinden ayrışamaz; yeni bir durum
- * eklendiğinde filtrede de kendiliğinden çıkar.
+ * Sunucu bileşenlerinde bir kez çağrılır, sonra senkron kullanılır:
+ *   const durumlar = await alimDurumEtiketleri();
+ *   {durumlar[alim.status]}
  */
-export const ALIM_DURUMLARI = Object.keys(ALIM_DURUMU) as PurchaseStatus[];
-
-export function alimDurumuEtiketi(durum: PurchaseStatus): string {
-  return ALIM_DURUMU[durum];
+export async function alimDurumEtiketleri(): Promise<
+  Record<PurchaseStatus, string>
+> {
+  const tDurum = await getTranslations("AlimDurumu");
+  return {
+    DRAFT: tDurum("DRAFT"),
+    ORDERED: tDurum("ORDERED"),
+    PARTIALLY_RECEIVED: tDurum("PARTIALLY_RECEIVED"),
+    RECEIVED: tDurum("RECEIVED"),
+    CANCELLED: tDurum("CANCELLED"),
+  };
 }
 
-export const STOK_HAREKETI: Record<StockMovementType, string> = {
-  INITIAL: "Açılış stoğu",
-  PURCHASE_IN: "Alım girişi",
-  ADJUSTMENT: "Düzeltme",
-  COUNT_CORRECTION: "Sayım farkı",
+const STOK_HAREKET_SIRASI: Record<StockMovementType, null> = {
+  INITIAL: null,
+  PURCHASE_IN: null,
+  ADJUSTMENT: null,
+  COUNT_CORRECTION: null,
 };
 
-export function stokHareketiEtiketi(tip: StockMovementType): string {
-  return STOK_HAREKETI[tip];
+export const STOK_HAREKET_TIPLERI = Object.keys(
+  STOK_HAREKET_SIRASI,
+) as StockMovementType[];
+
+export async function stokHareketEtiketleri(): Promise<
+  Record<StockMovementType, string>
+> {
+  const tHareket = await getTranslations("StokHareketi");
+  return {
+    INITIAL: tHareket("INITIAL"),
+    PURCHASE_IN: tHareket("PURCHASE_IN"),
+    ADJUSTMENT: tHareket("ADJUSTMENT"),
+    COUNT_CORRECTION: tHareket("COUNT_CORRECTION"),
+  };
 }

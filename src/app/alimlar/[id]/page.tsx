@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { alimDurumuEtiketi } from "@/lib/etiketler";
+import { alimDurumEtiketleri } from "@/lib/etiketler";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { kalemIlerlemesi, kalemTeslimAlinanlar } from "@/lib/stok";
@@ -52,6 +52,7 @@ export default async function AlimDetaySayfasi({
   if (!alim) notFound();
 
   const bicim = await bicimlendirici();
+  const durumEtiketleri = await alimDurumEtiketleri();
   const toplamlar = kalemToplamlari(alim.items);
 
   // Teslim alınan sağlam adetler ledger'dan gelir (src/lib/stok.ts).
@@ -125,7 +126,7 @@ export default async function AlimDetaySayfasi({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="text-sm">
-              {alimDurumuEtiketi(alim.status)}
+              {durumEtiketleri[alim.status]}
             </Badge>
             {kabulEdilebilir ? (
               <Button asChild>
@@ -154,7 +155,7 @@ export default async function AlimDetaySayfasi({
             </>
           ) : null}
           . Alımın yeni durumu:{" "}
-          <strong>{alimDurumuEtiketi(alim.status)}</strong>.
+          <strong>{durumEtiketleri[alim.status]}</strong>.
         </div>
       ) : null}
 
