@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
+import { kdvOraniniCoz } from "@/lib/kdv";
 import { varyantStoklari } from "@/lib/stok";
 
 import { SilButonu } from "../sil-butonu";
@@ -33,6 +34,7 @@ export default async function UrunDetaySayfasi({
   const urun = await prisma.product.findUnique({
     where: { id },
     include: {
+      category: { select: { name: true, vatRate: true } },
       variants: {
         include: { options: true, location: true },
         orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
@@ -45,6 +47,9 @@ export default async function UrunDetaySayfasi({
   const bicim = await bicimlendirici();
   const t = await getTranslations("Urunler");
   const ortak = await getTranslations("Ortak");
+
+  // KDV oranı tek yerden çözülür: ürün istisnası > kategori > varsayılan.
+  const kdv = kdvOraniniCoz(urun);
 
   // Stok hesabı tek yerde: src/lib/stok.ts (ledger toplamı).
   const stokHaritasi = await varyantStoklari(urun.variants.map((v) => v.id));
@@ -74,6 +79,40 @@ export default async function UrunDetaySayfasi({
           </div>
         </div>
       </div>
+
+      {/* KDV / desi özeti — hangi orandan hesaplandığı ve NEDEN açıkça yazar. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("kdvOraniEtiketi")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="text-sm">
+              %{kdv.oran}
+            </Badge>
+            <span className="text-muted-foreground text-sm">
+              {kdv.kaynak === "ISTISNA"
+                ? t("kdvKaynagiIstisna")
+                : kdv.kaynak === "KATEGORI"
+                  ? t("kdvKaynagiKategori", { ad: kdv.kategoriAdi ?? "" })
+                  : t("kdvKaynagiVarsayilan")}
+            </span>
+            <span className="text-muted-foreground text-sm">·</span>
+            <span className="text-muted-foreground text-sm">
+              {t("desiEtiketi")}:{" "}
+              {urun.desi ? Number(urun.desi.toString()) : "—"}
+            </span>
+          </div>
+          {kdv.kaynak === "VARSAYILAN" ? (
+            <p
+              role="status"
+              className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400"
+            >
+              {t("kategoriAtanmamisNotu")}
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
 
       {urun.description ? (
         <Card>

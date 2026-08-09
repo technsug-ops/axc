@@ -25,6 +25,8 @@ import type { FormDurumu } from "./actions";
 
 export type KonumSecenegi = { id: string; code: string; name: string | null };
 
+export type KategoriSecenegi = { id: string; ad: string; oran: string };
+
 export type VaryantGirdisi = {
   id?: string;
   ad: string;
@@ -39,6 +41,9 @@ export type UrunGirdisi = {
   ad: string;
   marka: string;
   aciklama: string;
+  kategoriId: string;
+  kdvIstisnasi: string;
+  desi: string;
   varyantliMi: boolean;
   varyantlar: VaryantGirdisi[];
 };
@@ -65,14 +70,19 @@ function secenekOzeti(varyant: VaryantGirdisi): string {
     .join(" / ");
 }
 
+/** Radix Select boş değer kabul etmiyor; "kategori yok" için nöbetçi. */
+const KATEGORI_YOK = "__kategori_yok__";
+
 export function UrunFormu({
   konumlar,
+  kategoriler,
   action,
   baslangic,
   urunId,
   gonderEtiketi,
 }: {
   konumlar: KonumSecenegi[];
+  kategoriler: KategoriSecenegi[];
   action: (durum: FormDurumu, formData: FormData) => Promise<FormDurumu>;
   baslangic?: UrunGirdisi;
   urunId?: string;
@@ -89,6 +99,11 @@ export function UrunFormu({
   const [ad, setAd] = useState(baslangic?.ad ?? "");
   const [marka, setMarka] = useState(baslangic?.marka ?? "");
   const [aciklama, setAciklama] = useState(baslangic?.aciklama ?? "");
+  const [kategoriId, setKategoriId] = useState(baslangic?.kategoriId ?? "");
+  const [kdvIstisnasi, setKdvIstisnasi] = useState(
+    baslangic?.kdvIstisnasi ?? "",
+  );
+  const [desi, setDesi] = useState(baslangic?.desi ?? "");
   const [varyantliMi, setVaryantliMi] = useState(
     baslangic?.varyantliMi ?? false,
   );
@@ -143,10 +158,21 @@ export function UrunFormu({
 
   // Sunucuya tek bir gizli alanla gidiyor: FormData'da dizi ayrıştırmak
   // kırılgan olduğu için varyantları JSON olarak gönderiyoruz.
+  /** "1,5" -> 1.5 · boş -> null */
+  function sayiyaCevir(deger: string): number | null {
+    const s = deger.trim().replace(",", ".");
+    if (s === "") return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+
   const gonderilecek = {
     ad,
     marka,
     aciklama,
+    kategoriId,
+    kdvIstisnasi: sayiyaCevir(kdvIstisnasi),
+    desi: sayiyaCevir(desi),
     varyantliMi,
     varyantlar: varyantlar.map((v) => ({
       id: v.id,
@@ -192,6 +218,64 @@ export function UrunFormu({
               />
             </div>
           </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="urun-kategori">{ortak("kategori")}</Label>
+              <Select
+                value={kategoriId || KATEGORI_YOK}
+                onValueChange={(d) =>
+                  setKategoriId(d === KATEGORI_YOK ? "" : d)
+                }
+              >
+                <SelectTrigger id="urun-kategori" className="w-full">
+                  <SelectValue placeholder={t("kategoriSecin")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={KATEGORI_YOK}>
+                    {t("kategoriYok")}
+                  </SelectItem>
+                  {kategoriler.map((k) => (
+                    <SelectItem key={k.id} value={k.id}>
+                      {k.ad} — %{k.oran}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* Sessiz varsayım olmasın: kategorisiz ürün %20'ye düşer. */}
+              {kategoriId === "" && kdvIstisnasi.trim() === "" ? (
+                <p className="text-amber-700 text-xs dark:text-amber-500">
+                  {t("kategoriAtanmamisNotu")}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="urun-kdv">{t("kdvIstisnasi")}</Label>
+              <Input
+                id="urun-kdv"
+                value={kdvIstisnasi}
+                onChange={(e) => setKdvIstisnasi(e.target.value)}
+                inputMode="decimal"
+                placeholder={ortak("istegeBagli")}
+              />
+              <p className="text-muted-foreground text-xs">
+                {t("kdvIstisnasiNotu")}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="urun-desi">{t("desiEtiketi")}</Label>
+              <Input
+                id="urun-desi"
+                value={desi}
+                onChange={(e) => setDesi(e.target.value)}
+                inputMode="decimal"
+                placeholder={t("desiIpucu")}
+              />
+              <p className="text-muted-foreground text-xs">{t("desiNotu")}</p>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="urun-aciklama">{ortak("aciklama")}</Label>
             <Textarea

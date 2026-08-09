@@ -15,7 +15,8 @@
     "rafiDuzenle": "Rafı Düzenle",
     "kanalHesaplari": "Kanal Hesapları",
     "satislar": "Satışlar",
-    "yeniSatis": "Yeni Satış"
+    "yeniSatis": "Yeni Satış",
+    "kategoriler": "KDV Kategorileri"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -87,7 +88,9 @@
     "sutunBirimFiyat": "Birim fiyat",
     "urunEkle": "Ürün ekle",
     "ekleIpucu": "Okut, kod yaz veya ürün ara…",
-    "ekleNotu": "Okutunca kalem doğrudan eklenir ve kutu yeniden odaklanır; yazınca aşağıda eşleşen ürünler çıkar. Aynı ürün tekrar okutulursa adedi artar."
+    "ekleNotu": "Okutunca kalem doğrudan eklenir ve kutu yeniden odaklanır; yazınca aşağıda eşleşen ürünler çıkar. Aynı ürün tekrar okutulursa adedi artar.",
+    "oran": "Oran",
+    "kategori": "Kategori"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",
@@ -179,7 +182,20 @@
     "tekCesitRozeti": "tek çeşit",
     "varsayilanVaryant": "Varsayılan",
     "varsayilanRozeti": "varsayılan",
-    "stokNotu": "Stok, bu varyantın tüm stok hareketlerinin toplamıdır. Alımlar mal kabul edildikçe artar."
+    "stokNotu": "Stok, bu varyantın tüm stok hareketlerinin toplamıdır. Alımlar mal kabul edildikçe artar.",
+    "kategoriSecin": "Kategori seçin",
+    "kategoriYok": "Kategori atanmadı",
+    "kdvIstisnasi": "KDV istisnası (%)",
+    "kdvIstisnasiNotu": "Normalde boş bırakın. Doldurulursa kategori oranını EZER; sadece istisna kapsamındaki ürünler için kullanın.",
+    "desiEtiketi": "Desi",
+    "desiNotu": "Kargo ücreti bu desiden hesaplanır. Varyantlar aynı desiyi paylaşır.",
+    "desiIpucu": "1,5",
+    "kategoriAtanmamis": "Kategori atanmamış",
+    "kategoriAtanmamisNotu": "Bu ürün bir kategoriye bağlı değil; KDV hesabında varsayılan %20 kullanılır. Doğru oran için kategori atayın.",
+    "kdvOraniEtiketi": "KDV oranı",
+    "kdvKaynagiIstisna": "ürün istisnası",
+    "kdvKaynagiKategori": "kategori: {ad}",
+    "kdvKaynagiVarsayilan": "varsayılan"
   },
   "UrunSil": {
     "dugme": "Sil",
@@ -469,7 +485,8 @@
     "kartlar": "Kartlar",
     "rafKonumlari": "Raf Konumları",
     "kanalHesaplari": "Kanal Hesapları",
-    "satislar": "Satışlar"
+    "satislar": "Satışlar",
+    "kategoriler": "KDV Kategorileri"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -534,5 +551,31 @@
     "elleDuzeltme": "Elle düzeltme",
     "detayNotu": "Her kalem, stoktaki en eski partiden başlayarak düşülür (FIFO). Bir kalem birden fazla partiden düşmüşse her parti ayrı satırda görünür ve kendi birim maliyetini taşır. Kâr hesabı sonraki aşamada bu maliyetleri kullanacak.",
     "digerKalemler": "{urun} +{sayi} kalem"
+  },
+  "Kategori": {
+    "adZorunlu": "Kategori adı zorunlu",
+    "adCokUzun": "Kategori adı çok uzun",
+    "oranSayiOlmali": "KDV oranı sayı olmalı",
+    "oranAralik": "KDV oranı 0 ile 100 arasında olmalı",
+    "adZatenVar": "\"{ad}\" adlı kategori zaten var.",
+    "eklenemedi": "Kategori eklenemedi, beklenmeyen bir hata oluştu.",
+    "kimlikBulunamadi": "Kategori kimliği bulunamadı.",
+    "bulunamadi": "Kategori bulunamadı.",
+    "guncellenemedi": "Kategori güncellenemedi, beklenmeyen bir hata oluştu.",
+    "eklendi": "\"{ad}\" kategorisi eklendi.",
+    "pasifeAlindi": "\"{ad}\" pasife alındı; artık ürün formunda seçilemez.",
+    "aktiflestirildi": "\"{ad}\" tekrar aktif.",
+    "baslik": "KDV Kategorileri",
+    "aciklamaMetni": "KDV oranı ürün ürün girilmez; ürün bir kategoriye bağlanır, oran buradan gelir. Oranı değiştirmek GEÇMİŞ satışları etkilemez — her satış kendi oranını kayıt anında saklar.",
+    "yeniKategori": "Yeni kategori",
+    "tanimliKategoriler": "Tanımlı kategoriler ({sayi})",
+    "bosBaslik": "Henüz kategori tanımlanmamış.",
+    "bosIpucu": "Örnek: Genel %20, İndirimli %10, Süper İndirimli %1",
+    "kdvOrani": "KDV oranı (%)",
+    "oranIpucu": "20",
+    "adIpucu": "Genel",
+    "urunSayisi": "Ürün",
+    "kategoriEkle": "Kategori Ekle",
+    "listeNotu": "Kategoriler silinmez, pasife alınır — ürünler ve geçmiş satışlar onlara bağlı olabilir. Pasif kategori ürün formunda çıkmaz ama mevcut ürünlerde görünmeye devam eder."
   }
 }

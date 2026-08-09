@@ -19,6 +19,17 @@ export default async function YeniUrunSayfasi() {
     orderBy: { code: "asc" },
   });
 
+  const kategoriKayitlari = await prisma.category.findMany({
+    where: { isActive: true },
+    orderBy: { vatRate: "desc" },
+    select: { id: true, name: true, vatRate: true },
+  });
+  const kategoriler = kategoriKayitlari.map((k) => ({
+    id: k.id,
+    ad: k.name,
+    oran: String(Number(k.vatRate.toString())),
+  }));
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
@@ -28,6 +39,7 @@ export default async function YeniUrunSayfasi() {
 
       <UrunFormu
         konumlar={konumlar}
+        kategoriler={kategoriler}
         action={urunOlustur}
         gonderEtiketi={t("urunuKaydet")}
       />

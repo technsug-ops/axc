@@ -51,6 +51,10 @@ function urunSemasiKur(t: Ceviri) {
     ad: z.string().trim().min(1, t("urunAdiZorunlu")).max(191),
     marka: z.string().trim().max(191).optional(),
     aciklama: z.string().trim().optional(),
+    kategoriId: z.string().optional(),
+    // KDV istisnası ve desi boş bırakılabilir; boşsa null yazılır.
+    kdvIstisnasi: z.number().min(0).max(100).nullable().optional(),
+    desi: z.number().min(0).nullable().optional(),
     varyantliMi: z.boolean(),
     varyantlar: z.array(varyantSemasi).min(1, t("enAzBirVaryant")),
   });
@@ -221,6 +225,15 @@ export async function urunOlustur(
         brand: veri.marka || null,
         description: veri.aciklama || null,
         hasVariants: veri.varyantliMi,
+        categoryId: veri.kategoriId || null,
+        vatRateOverride:
+          veri.kdvIstisnasi === null || veri.kdvIstisnasi === undefined
+            ? null
+            : String(veri.kdvIstisnasi),
+        desi:
+          veri.desi === null || veri.desi === undefined
+            ? null
+            : String(veri.desi),
         variants: {
           create: veri.varyantlar.map((v, sira) => ({
             ...varyantVerisi(v, sira),
@@ -298,6 +311,15 @@ export async function urunGuncelle(
           brand: veri.marka || null,
           description: veri.aciklama || null,
           hasVariants: veri.varyantliMi,
+          categoryId: veri.kategoriId || null,
+          vatRateOverride:
+            veri.kdvIstisnasi === null || veri.kdvIstisnasi === undefined
+              ? null
+              : String(veri.kdvIstisnasi),
+          desi:
+            veri.desi === null || veri.desi === undefined
+              ? null
+              : String(veri.desi),
         },
       });
 

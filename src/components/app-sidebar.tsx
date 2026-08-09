@@ -8,6 +8,7 @@ import {
   CreditCard,
   MapPin,
   Package,
+  Percent,
   Receipt,
   ShoppingCart,
   Store,
@@ -56,6 +57,12 @@ const AYARLAR: MenuOgesi[] = [
     anahtar: "rafKonumlari",
     href: "/ayarlar/konumlar",
     icon: MapPin,
+    aktif: true,
+  },
+  {
+    anahtar: "kategoriler",
+    href: "/ayarlar/kategoriler",
+    icon: Percent,
     aktif: true,
   },
   {

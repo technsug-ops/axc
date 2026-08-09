@@ -34,10 +34,26 @@ export default async function UrunDuzenleSayfasi({
 
   if (!urun) notFound();
 
+  const kategoriKayitlari = await prisma.category.findMany({
+    where: { isActive: true },
+    orderBy: { vatRate: "desc" },
+    select: { id: true, name: true, vatRate: true },
+  });
+  const kategoriler = kategoriKayitlari.map((k) => ({
+    id: k.id,
+    ad: k.name,
+    oran: String(Number(k.vatRate.toString())),
+  }));
+
   const baslangic: UrunGirdisi = {
     ad: urun.name,
     marka: urun.brand ?? "",
     aciklama: urun.description ?? "",
+    kategoriId: urun.categoryId ?? "",
+    kdvIstisnasi: urun.vatRateOverride
+      ? String(Number(urun.vatRateOverride.toString()))
+      : "",
+    desi: urun.desi ? String(Number(urun.desi.toString())) : "",
     varyantliMi: urun.hasVariants,
     varyantlar: urun.variants.map((v) => ({
       id: v.id,
@@ -59,6 +75,7 @@ export default async function UrunDuzenleSayfasi({
 
       <UrunFormu
         konumlar={konumlar}
+        kategoriler={kategoriler}
         action={urunGuncelle}
         baslangic={baslangic}
         urunId={urun.id}

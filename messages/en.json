@@ -15,7 +15,8 @@
     "rafiDuzenle": "",
     "kanalHesaplari": "",
     "satislar": "",
-    "yeniSatis": ""
+    "yeniSatis": "",
+    "kategoriler": ""
   },
   "Ortak": {
     "kapat": "",
@@ -87,7 +88,9 @@
     "sutunBirimFiyat": "",
     "urunEkle": "",
     "ekleIpucu": "",
-    "ekleNotu": ""
+    "ekleNotu": "",
+    "oran": "",
+    "kategori": ""
   },
   "AlimDurumu": {
     "DRAFT": "",
@@ -179,7 +182,20 @@
     "tekCesitRozeti": "",
     "varsayilanVaryant": "",
     "varsayilanRozeti": "",
-    "stokNotu": ""
+    "stokNotu": "",
+    "kategoriSecin": "",
+    "kategoriYok": "",
+    "kdvIstisnasi": "",
+    "kdvIstisnasiNotu": "",
+    "desiEtiketi": "",
+    "desiNotu": "",
+    "desiIpucu": "",
+    "kategoriAtanmamis": "",
+    "kategoriAtanmamisNotu": "",
+    "kdvOraniEtiketi": "",
+    "kdvKaynagiIstisna": "",
+    "kdvKaynagiKategori": "",
+    "kdvKaynagiVarsayilan": ""
   },
   "UrunSil": {
     "dugme": "",
@@ -469,7 +485,8 @@
     "kartlar": "",
     "rafKonumlari": "",
     "kanalHesaplari": "",
-    "satislar": ""
+    "satislar": "",
+    "kategoriler": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -534,5 +551,31 @@
     "elleDuzeltme": "",
     "detayNotu": "",
     "digerKalemler": ""
+  },
+  "Kategori": {
+    "adZorunlu": "",
+    "adCokUzun": "",
+    "oranSayiOlmali": "",
+    "oranAralik": "",
+    "adZatenVar": "",
+    "eklenemedi": "",
+    "kimlikBulunamadi": "",
+    "bulunamadi": "",
+    "guncellenemedi": "",
+    "eklendi": "",
+    "pasifeAlindi": "",
+    "aktiflestirildi": "",
+    "baslik": "",
+    "aciklamaMetni": "",
+    "yeniKategori": "",
+    "tanimliKategoriler": "",
+    "bosBaslik": "",
+    "bosIpucu": "",
+    "kdvOrani": "",
+    "oranIpucu": "",
+    "adIpucu": "",
+    "urunSayisi": "",
+    "kategoriEkle": "",
+    "listeNotu": ""
   }
 }
