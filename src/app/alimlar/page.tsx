@@ -22,8 +22,8 @@ import { prisma } from "@/lib/prisma";
 import { kalemToplamlari } from "@/lib/tutar";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("alimlar") };
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("alimlar") };
 }
 
 type AlimDurumKodu = (typeof ALIM_DURUMLARI)[number];

@@ -8,8 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { YazdirButonu } from "./yazdir-butonu";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("rafEtiketleri") };
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("rafEtiketleri") };
 }
 
 /**

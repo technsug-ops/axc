@@ -23,8 +23,8 @@ import { urunStoklari } from "@/lib/stok";
 import { SilButonu } from "./sil-butonu";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("urunler") };
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("urunler") };
 }
 
 export default async function UrunlerSayfasi({
@@ -35,6 +35,8 @@ export default async function UrunlerSayfasi({
   const { q } = await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
+  const t = await getTranslations("Urunler");
+  const ortak = await getTranslations("Ortak");
 
   const urunler = await prisma.product.findMany({
     where: arama
@@ -77,13 +79,13 @@ export default async function UrunlerSayfasi({
         <Button variant="outline" size="sm" asChild>
           <Link href={`/urunler/${urun.id}`}>
             <Eye />
-            Detay
+            {ortak("detay")}
           </Link>
         </Button>
         <Button variant="outline" size="sm" asChild>
           <Link href={`/urunler/${urun.id}/duzenle`}>
             <Pencil />
-            Düzenle
+            {ortak("duzenle")}
           </Link>
         </Button>
         <SilButonu urunId={urun.id} urunAdi={urun.name} />
@@ -95,16 +97,16 @@ export default async function UrunlerSayfasi({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Ürünler</h1>
+          <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
           <p className="text-muted-foreground text-sm">
-            {urunler.length} kayıt
-            {arama ? ` — "${arama}" araması` : ""}
+            {ortak("kayitSayisi", { sayi: urunler.length })}
+            {arama ? ortak("aramaEki", { arama }) : ""}
           </p>
         </div>
         <Button asChild>
           <Link href="/urunler/yeni">
             <Plus />
-            Yeni Ürün
+            {t("yeniUrun")}
           </Link>
         </Button>
       </div>
@@ -113,15 +115,15 @@ export default async function UrunlerSayfasi({
         <Input
           name="q"
           defaultValue={arama}
-          placeholder="Ad, marka, SKU veya barkod ile ara..."
+          placeholder={t("aramaIpucu")}
           className="max-w-sm min-w-48 flex-1"
         />
         <Button type="submit" variant="secondary">
-          Ara
+          {ortak("ara")}
         </Button>
         {arama ? (
           <Button type="button" variant="ghost" asChild>
-            <Link href="/urunler">Temizle</Link>
+            <Link href="/urunler">{ortak("temizle")}</Link>
           </Button>
         ) : null}
       </form>
@@ -129,12 +131,10 @@ export default async function UrunlerSayfasi({
       {urunler.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
           <p className="font-medium">
-            {arama ? "Aramaya uyan ürün yok." : "Henüz ürün eklenmemiş."}
+            {arama ? t("bosAramaBaslik") : t("bosBaslik")}
           </p>
           <p className="text-muted-foreground mt-1 text-sm">
-            {arama
-              ? "Farklı bir kelime, SKU veya barkod deneyin."
-              : "Sağ üstteki Yeni Ürün düğmesiyle başlayın."}
+            {arama ? t("bosAramaIpucu") : t("bosIpucu")}
           </p>
         </div>
       ) : (
@@ -144,14 +144,18 @@ export default async function UrunlerSayfasi({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ürün</TableHead>
-                  <TableHead>Marka</TableHead>
-                  <TableHead>Firma SKU</TableHead>
-                  <TableHead>Barkod</TableHead>
-                  <TableHead className="text-right">Varyant</TableHead>
-                  <TableHead className="text-right">Toplam stok</TableHead>
-                  <TableHead>Oluşturma</TableHead>
-                  <TableHead>Eylemler</TableHead>
+                  <TableHead>{ortak("urun")}</TableHead>
+                  <TableHead>{ortak("marka")}</TableHead>
+                  <TableHead>{ortak("firmaSku")}</TableHead>
+                  <TableHead>{ortak("barkod")}</TableHead>
+                  <TableHead className="text-right">
+                    {ortak("varyant")}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {t("sutunToplamStok")}
+                  </TableHead>
+                  <TableHead>{t("sutunOlusturma")}</TableHead>
+                  <TableHead>{ortak("eylemler")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -165,7 +169,7 @@ export default async function UrunlerSayfasi({
                         </Baglanti>
                         {!urun.isActive ? (
                           <Badge variant="secondary" className="ml-2">
-                            pasif
+                            {ortak("pasif")}
                           </Badge>
                         ) : null}
                       </TableCell>
@@ -175,13 +179,13 @@ export default async function UrunlerSayfasi({
                       <TableCell>
                         <KopyalanabilirKod
                           deger={ana?.axcaliSku}
-                          etiket="Firma SKU"
+                          etiket={ortak("firmaSku")}
                         />
                       </TableCell>
                       <TableCell>
                         <KopyalanabilirKod
                           deger={ana?.barcode}
-                          etiket="Barkod"
+                          etiket={ortak("barkod")}
                         />
                       </TableCell>
                       <TableCell className="text-right">
@@ -220,26 +224,26 @@ export default async function UrunlerSayfasi({
                   altBaslik={urun.brand ?? undefined}
                   alanlar={[
                     {
-                      etiket: "Firma SKU",
+                      etiket: ortak("firmaSku"),
                       deger: (
                         <KopyalanabilirKod
                           deger={ana?.axcaliSku}
-                          etiket="Firma SKU"
+                          etiket={ortak("firmaSku")}
                         />
                       ),
                     },
                     {
-                      etiket: "Barkod",
+                      etiket: ortak("barkod"),
                       deger: (
                         <KopyalanabilirKod
                           deger={ana?.barcode}
-                          etiket="Barkod"
+                          etiket={ortak("barkod")}
                         />
                       ),
                     },
-                    { etiket: "Varyant", deger: urun.variants.length },
+                    { etiket: ortak("varyant"), deger: urun.variants.length },
                     {
-                      etiket: "Toplam stok",
+                      etiket: t("sutunToplamStok"),
                       deger: (
                         <span className="font-medium">
                           {stokHaritasi.get(urun.id) ?? 0}

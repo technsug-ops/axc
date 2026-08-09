@@ -59,6 +59,9 @@ Tek dil Türkçe, ama metinler altyapıdan akar — koda gömülü kalmaz.
 - URL yönlendirmesi bugün YOK; rotalar dilden bağımsız. İngilizce
   eklenince `as-needed` kipine geçilir (Türkçe öneksiz, `/en/...` önekli),
   mevcut rotalar yine değişmez.
+- **Arayüz metni sözlükten gelir ve çevrilir; veritabanına yazılan veri
+  (notlar, kayıt açıklamaları) ÇEVRİLMEZ ve sözlüğe girmez.** Kayıtlar
+  yazıldıkları dilde kalıcıdır — karışık dilli ledger oluşmaz.
 - Devam eden geçiş: mevcut ekranlardaki metinler paket paket sözlüğe
   taşınıyor. Yeni yazılan hiçbir metin bu borca eklenmez.
 

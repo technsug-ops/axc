@@ -22,8 +22,8 @@ import { sonHareketTarihleri, varyantStoklari } from "@/lib/stok";
 import { StokArama } from "./stok-arama";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("stok") };
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("stok") };
 }
 
 export default async function StokSayfasi({

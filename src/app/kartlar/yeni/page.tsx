@@ -5,8 +5,8 @@ import { kartOlustur } from "../actions";
 import { KartFormu } from "../kart-formu";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("yeniKart") };
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("yeniKart") };
 }
 
 export default function YeniKartSayfasi() {

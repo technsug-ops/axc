@@ -8,8 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { KonumDuzenleFormu } from "./konum-duzenle-formu";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("rafiDuzenle") };
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("rafiDuzenle") };
 }
 
 export default async function KonumDuzenleSayfasi({

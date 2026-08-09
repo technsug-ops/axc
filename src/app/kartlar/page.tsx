@@ -22,8 +22,8 @@ import { prisma } from "@/lib/prisma";
 import { kartDurumDegistir } from "./actions";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("kartlar") };
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("kartlar") };
 }
 
 export default async function KartlarSayfasi() {

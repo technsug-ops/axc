@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { GeriBaglanti } from "@/components/baglanti";
 import { prisma } from "@/lib/prisma";
@@ -12,6 +13,7 @@ export default async function UrunDuzenleSayfasi({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations("Urunler");
 
   const [urun, konumlar] = await Promise.all([
     prisma.product.findUnique({
@@ -52,7 +54,7 @@ export default async function UrunDuzenleSayfasi({
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <GeriBaglanti href={`/urunler/${urun.id}`}>{urun.name}</GeriBaglanti>
-        <h1 className="mt-1 text-2xl font-semibold">Ürünü Düzenle</h1>
+        <h1 className="mt-1 text-2xl font-semibold">{t("urunuDuzenle")}</h1>
       </div>
 
       <UrunFormu
@@ -60,7 +62,7 @@ export default async function UrunDuzenleSayfasi({
         action={urunGuncelle}
         baslangic={baslangic}
         urunId={urun.id}
-        gonderEtiketi="Değişiklikleri Kaydet"
+        gonderEtiketi={t("degisiklikleriKaydet")}
       />
     </div>
   );

@@ -22,8 +22,8 @@ import { konumDurumDegistir } from "./actions";
 import { KonumFormu } from "./konum-formu";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("rafKonumlari") };
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("rafKonumlari") };
 }
 
 export default async function KonumlarSayfasi() {

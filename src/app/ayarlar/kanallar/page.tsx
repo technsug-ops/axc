@@ -17,8 +17,8 @@ import { kanalHesabiDurumDegistir } from "./actions";
 import { KanalHesabiFormu } from "./kanal-hesabi-formu";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("kanalHesaplari") };
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("kanalHesaplari") };
 }
 
 export default async function KanalHesaplariSayfasi() {

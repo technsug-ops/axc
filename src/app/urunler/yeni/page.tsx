@@ -6,11 +6,13 @@ import { urunOlustur } from "../actions";
 import { UrunFormu } from "../urun-formu";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("yeniUrun") };
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("yeniUrun") };
 }
 
 export default async function YeniUrunSayfasi() {
+  const t = await getTranslations("Urunler");
+
   const konumlar = await prisma.location.findMany({
     where: { isActive: true },
     select: { id: true, code: true, name: true },
@@ -20,14 +22,14 @@ export default async function YeniUrunSayfasi() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <GeriBaglanti href="/urunler">Ürünler</GeriBaglanti>
-        <h1 className="mt-1 text-2xl font-semibold">Yeni Ürün</h1>
+        <GeriBaglanti href="/urunler">{t("baslik")}</GeriBaglanti>
+        <h1 className="mt-1 text-2xl font-semibold">{t("yeniUrun")}</h1>
       </div>
 
       <UrunFormu
         konumlar={konumlar}
         action={urunOlustur}
-        gonderEtiketi="Ürünü Kaydet"
+        gonderEtiketi={t("urunuKaydet")}
       />
     </div>
   );

@@ -7,8 +7,8 @@ import { alimOlustur } from "../actions";
 import { AlimFormu, type HesapSecenegi, type KartSecenegi } from "../alim-formu";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("yeniAlim") };
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("yeniAlim") };
 }
 
 export default async function YeniAlimSayfasi() {
