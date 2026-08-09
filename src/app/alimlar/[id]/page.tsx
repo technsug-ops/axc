@@ -284,10 +284,10 @@ export default async function AlimDetaySayfasi({
           </div>
 
           <p className="text-muted-foreground text-xs">
-            &quot;Sağlam&quot; sütunu stok defterinden hesaplanır. Hasarlı
+            &quot;Sağlam&quot; sütunu stok hareketlerinden hesaplanır. Hasarlı
             ürünler stoğa girmez; satıcıya iade ve tazminat süreci sonraki
-            fazlarda gelecek. Yanlış bir giriş silinmez, ters işaretli bir
-            ADJUSTMENT kaydıyla düzeltilir.
+            fazlarda gelecek. Yanlış bir giriş silinmez, ters yönde bir
+            düzeltme kaydıyla giderilir.
           </p>
         </CardContent>
       </Card>

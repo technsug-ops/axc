@@ -264,7 +264,7 @@ export async function urunGuncelle(
     if (hareketSayisi > 0) {
       return {
         hatalar: [
-          "Stok hareketi bulunan bir varyant silinemez. Miktar düzeltmesi ters işaretli ADJUSTMENT kaydıyla yapılır.",
+          "Stok hareketi bulunan bir varyant silinemez. Miktar düzeltmesi ters yönde bir düzeltme kaydıyla yapılır.",
         ],
       };
     }

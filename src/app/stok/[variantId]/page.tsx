@@ -190,7 +190,7 @@ export default async function VaryantHareketleriSayfasi({
 
           <p className="text-muted-foreground text-xs">
             Hareketler değiştirilmez ve silinmez. Hatalı bir giriş, ters
-            işaretli bir ADJUSTMENT kaydıyla düzeltilir. &quot;Kim&quot;
+            yönde bir düzeltme kaydıyla giderilir. &quot;Kim&quot;
             sütunu çok kullanıcılı yapıyla (Faz 4) dolacak.
           </p>
         </CardContent>

@@ -159,9 +159,8 @@ export default async function UrunDetaySayfasi({
             </Table>
           </div>
           <p className="text-muted-foreground mt-3 text-xs">
-            Stok, hareket defterindeki (StockMovement) kayıtların toplamıdır.
-            Alım girişi Faz 1&apos;in sonraki aşamasında geleceği için şimdilik
-            hepsi 0 görünür.
+            Stok, bu varyantın tüm stok hareketlerinin toplamıdır. Alımlar mal
+            kabul edildikçe artar.
           </p>
         </CardContent>
       </Card>

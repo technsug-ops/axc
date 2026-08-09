@@ -237,8 +237,7 @@ export default async function StokSayfasi({
       )}
 
       <p className="text-muted-foreground text-xs">
-        Mevcut stok, stok defterindeki (StockMovement) hareketlerin
-        toplamıdır.
+        Mevcut stok, o varyantın tüm stok hareketlerinin toplamıdır.
       </p>
     </div>
   );

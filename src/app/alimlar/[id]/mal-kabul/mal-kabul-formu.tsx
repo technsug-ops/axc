@@ -391,8 +391,8 @@ export function MalKabulFormu({
               </div>
             </div>
             <p className="text-muted-foreground mt-2 text-xs">
-              Sağlam adet stoğa girer (PURCHASE_IN hareketi). Hasarlı adet
-              stoğa GİRMEZ, sadece kalemde kayda geçer.
+              Sağlam adet stoğa alım girişi olarak eklenir. Hasarlı adet stoğa
+              GİRMEZ, sadece kalemde kayda geçer.
             </p>
           </div>
         </CardContent>
