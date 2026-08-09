@@ -53,6 +53,8 @@ function satisSemasiKur(t: Ceviri) {
     note: z.string().trim(),
     cargoCarrierId: z.string().nullable(),
     cargoDesi: z.number().min(0).nullable(),
+    // Elle girilen KDV DAHIL kargo tutari; doluysa tarife kullanilmaz.
+    cargoAmountManual: z.number().min(0).nullable(),
     kalemler: z.array(kalemSemasi).min(1, t("enAzBirKalem")),
   });
 }
@@ -119,6 +121,7 @@ export async function satisOlustur(
       note: veri.note || null,
       cargoCarrierId: veri.cargoCarrierId || null,
       cargoDesi: veri.cargoDesi,
+      cargoAmountManual: veri.cargoAmountManual,
       kalemler: veri.kalemler.map((k) => ({
         variantId: k.variantId,
         quantity: k.quantity,

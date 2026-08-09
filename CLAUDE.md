@@ -116,6 +116,14 @@ tercih değil, zorunluluktur:
 10. TUTARLILIK: Aynı işlem her ekranda aynı görünür ve aynı çalışır
     (aynı ikonlar, aynı yerleşim, aynı davranış).
 
+11. YER TUTUCU DEĞER GİBİ GÖRÜNMEZ: Yer tutucu (placeholder) metin,
+    girilmiş bir değer sanılmamalıdır. Sayısal alanlarda yer tutucu
+    HER ZAMAN "örn. X" biçiminde yazılır ("1,5" değil "örn. 1,5";
+    "0" değil "örn. 3").
+    _09.08.2026'da aynı tuzağa iki kez düşüldü: kullanıcı ürün
+    kartındaki gri "1,5"i ve satış formundaki gri "0"ı girilmiş değer
+    sandı, boş alanı dolu zannedip sistemi hatalı sandı._
+
 YENİ EKRAN KONTROL LİSTESİ: Her yeni ekran tesliminde bu 10 maddeye
 uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklenir.
 

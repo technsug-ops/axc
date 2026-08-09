@@ -38,6 +38,8 @@ export type KarBloguVerisi = {
   siparisKesintileri: { code: string; tutar: number }[];
   /** Kalemlerden biri varsayılan %20'ye düştüyse uyarı gösterilir. */
   varsayilanKdvKullanildi: boolean;
+  /** Kargo hiç girilmemişse kâr, kargo gideri düşülmeden hesaplanmıştır. */
+  kargoGirilmedi: boolean;
 };
 
 export async function KarBlogu({ veri }: { veri: KarBloguVerisi }) {
@@ -83,6 +85,17 @@ export async function KarBlogu({ veri }: { veri: KarBloguVerisi }) {
                   ? t("durumCurrencyMismatch")
                   : t("durumRuleMissing")}
             </p>
+          </div>
+        ) : null}
+
+        {/* Kargo eksikse kâr olduğundan YÜKSEK görünür — sessiz kalmaz. */}
+        {veri.kargoGirilmedi ? (
+          <div
+            role="status"
+            className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400"
+          >
+            <p className="font-medium">{t("kargoGirilmedi")}</p>
+            <p className="mt-1">{t("kargoGirilmediNotu")}</p>
           </div>
         ) : null}
 

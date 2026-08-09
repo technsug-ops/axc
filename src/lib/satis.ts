@@ -48,6 +48,11 @@ export type SatisGirdisi = {
   cargoCarrierId: string | null;
   /** Pakete giren toplam desi — formdaki son değer. */
   cargoDesi: number | null;
+  /**
+   * Elle girilen KDV DAHİL kargo tutarı. Doluysa tarife kullanılmaz —
+   * komisyondaki oran/tutar ikilisinin aynısı: panel gerçeği kazanır.
+   */
+  cargoAmountManual: number | null;
 };
 
 /** Stok yetmediğinde fırlatılır; transaction geri sarılır. */
@@ -181,7 +186,10 @@ async function karHesabiniYaz(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   saleId: string,
   girdi: SatisGirdisi,
-  planlar: { kalem: SatisKalemGirdisi; dagitim: { parti: Parti; adet: number }[] }[],
+  planlar: {
+    kalem: SatisKalemGirdisi;
+    dagitim: { parti: Parti; adet: number }[];
+  }[],
 ) {
   const hesap = await tx.channelAccount.findUnique({
     where: { id: girdi.channelAccountId },
@@ -211,15 +219,22 @@ async function karHesabiniYaz(
     .filter((k) => k.scope === "PER_SALE")
     .map((k) => ({
       code: k.code,
-      basis: k.basis === "FIXED" ? ("FIXED" as const) : ("SALE_AMOUNT" as const),
+      basis:
+        k.basis === "FIXED" ? ("FIXED" as const) : ("SALE_AMOUNT" as const),
       rate: k.rate ? Number(k.rate.toString()) : null,
       amount: k.amount ? Number(k.amount.toString()) : null,
     }));
 
-  // --- kargo tarifesi ---
+  // --- kargo: ELLE GİRİLEN TUTAR TARİFEYİ EZER ---
+  // Panel gerçeği tarifeden sapabilir (anlaşmalı fiyat, ek bedel...).
   let kargoTarifesi: number | null = null;
   let kargoTarifesiBulunamadi = false;
-  if (girdi.cargoCarrierId && girdi.cargoDesi !== null) {
+  // `!= null` bilerek: undefined de null gibi ele alınır. Aksi hâlde eksik
+  // alan NaN üretip Decimal yazımını patlatıyordu (fifo:dogrula yakaladı).
+  if (girdi.cargoAmountManual != null) {
+    // Elle girilen tutar KDV DAHİL; motor KDV hariç bekliyor.
+    kargoTarifesi = girdi.cargoAmountManual / 1.2;
+  } else if (girdi.cargoCarrierId && girdi.cargoDesi != null) {
     const tamDesi = Math.max(0, Math.ceil(girdi.cargoDesi));
     const tarife = await tx.cargoTariff.findFirst({
       where: {
@@ -382,8 +397,7 @@ export async function kalemDusumleri(kalemIdleri: string[]) {
 }
 
 /** Tek bir FIFO düşümü — ekranların kullandığı satır tipi. */
-export type Dusum = Awaited<
-  ReturnType<typeof kalemDusumleri>
-> extends Map<string, (infer T)[]>
-  ? T
-  : never;
+export type Dusum =
+  Awaited<ReturnType<typeof kalemDusumleri>> extends Map<string, (infer T)[]>
+    ? T
+    : never;

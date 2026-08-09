@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 
 import { Baglanti, GeriBaglanti } from "@/components/baglanti";
 import { KarBlogu, type KarBloguVerisi } from "@/components/kar-blogu";
+
+import { YenidenHesapla } from "./yeniden-hesapla";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +59,15 @@ export default async function SatisDetaySayfasi({
   const dusumler = await kalemDusumleri(satis.items.map((k) => k.id));
   const toplamlar = satisKalemToplamlari(satis.items);
 
+  // Yeniden hesaplama diyaloğu için kargo firmaları.
+  const kargoFirmalari = (
+    await prisma.cargoCarrier.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    })
+  ).map((f) => ({ id: f.id, ad: f.name }));
+
   const sayi = (d: { toString(): string } | null) =>
     d === null ? null : Number(d.toString());
 
@@ -87,6 +98,8 @@ export default async function SatisDetaySayfasi({
     varsayilanKdvKullanildi: satis.items.some(
       (k) => sayi(k.vatRate) === 20 && k.variant.product.categoryId === null,
     ),
+    // Kargo hiç girilmemişse kâr kargo düşülmeden hesaplanmıştır.
+    kargoGirilmedi: satis.cargoAmount === null,
   };
 
   const bilgiler: { etiket: string; deger: string }[] = [
@@ -161,6 +174,37 @@ export default async function SatisDetaySayfasi({
                 {ortak("kalemlerBasligi", { sayi: satis.items.length })}
               </span>
             </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <YenidenHesapla
+              saleId={satis.id}
+              kalemler={satis.items.map((k) => ({
+                saleItemId: k.id,
+                baslik: k.variant.name
+                  ? `${k.variant.product.name} — ${k.variant.name}`
+                  : k.variant.product.name,
+                komisyonOrani: k.commissionRate
+                  ? String(Number(k.commissionRate.toString()))
+                  : "",
+                komisyonTutari: "",
+              }))}
+              kargoFirmalari={kargoFirmalari}
+              cargoCarrierId={satis.cargoCarrierId}
+              cargoDesi={
+                satis.cargoDesi
+                  ? String(Number(satis.cargoDesi.toString()))
+                  : ""
+              }
+              cargoAmount={
+                satis.cargoAmount
+                  ? String(
+                      Math.round(
+                        Number(satis.cargoAmount.toString()) * 1.2 * 100,
+                      ) / 100,
+                    )
+                  : ""
+              }
+            />
           </div>
           {toplamlar.length ? (
             <div className="flex flex-wrap gap-2">

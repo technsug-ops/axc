@@ -5,6 +5,7 @@ import { Eye, Plus } from "lucide-react";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
+import { NetKar } from "@/components/net-kar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -153,6 +154,7 @@ export default async function SatislarSayfasi({
                     {ortak("sutunBirimFiyat")}
                   </TableHead>
                   <TableHead>{ortak("tutar")}</TableHead>
+                  <TableHead className="text-right">{t("netKar")}</TableHead>
                   <TableHead>{ortak("eylemler")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -188,6 +190,13 @@ export default async function SatislarSayfasi({
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {tutarMetni(satis)}
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      <NetKar
+                        tutar={satis.net2Amount}
+                        paraBirimi={satis.profitCurrency}
+                        durum={satis.profitStatus}
+                      />
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
@@ -236,6 +245,16 @@ export default async function SatislarSayfasi({
                     deger: birimFiyatMetni(satis),
                   },
                   { etiket: ortak("tutar"), deger: tutarMetni(satis) },
+                  {
+                    etiket: t("netKar"),
+                    deger: (
+                      <NetKar
+                        tutar={satis.net2Amount}
+                        paraBirimi={satis.profitCurrency}
+                        durum={satis.profitStatus}
+                      />
+                    ),
+                  },
                   { etiket: ortak("kanalHesabi"), deger: hesapMetni(satis) },
                 ]}
                 eylemler={eylemler(satis)}

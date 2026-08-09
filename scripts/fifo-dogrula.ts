@@ -188,7 +188,10 @@ async function ucanUca() {
       code: `${ONEK}SIP-1`,
       channelAccountId: hesap.id,
       soldAt: new Date("2026-03-01"),
-      note: null,      cargoCarrierId: null,      cargoDesi: null,
+      note: null,
+      cargoCarrierId: null,
+      cargoDesi: null,
+      cargoAmountManual: null,
       kalemler: [
         {
           variantId,
@@ -247,7 +250,10 @@ async function ucanUca() {
         code: `${ONEK}SIP-2`,
         channelAccountId: hesap.id,
         soldAt: new Date("2026-03-02"),
-        note: null,        cargoCarrierId: null,        cargoDesi: null,
+        note: null,
+        cargoCarrierId: null,
+        cargoDesi: null,
+        cargoAmountManual: null,
         kalemler: [
           {
             variantId,
@@ -295,7 +301,10 @@ async function ucanUca() {
         code: `${ONEK}SIP-3`,
         channelAccountId: hesap.id,
         soldAt: new Date("2026-03-03"),
-        note: null,        cargoCarrierId: null,        cargoDesi: null,
+        note: null,
+        cargoCarrierId: null,
+        cargoDesi: null,
+        cargoAmountManual: null,
         kalemler: [
           {
             variantId,
@@ -331,7 +340,10 @@ async function ucanUca() {
       code: `${ONEK}SIP-4`,
       channelAccountId: hesap.id,
       soldAt: new Date("2026-03-04"),
-      note: null,      cargoCarrierId: null,      cargoDesi: null,
+      note: null,
+      cargoCarrierId: null,
+      cargoDesi: null,
+      cargoAmountManual: null,
       kalemler: [
         {
           variantId,
@@ -372,7 +384,10 @@ async function ucanUca() {
         code: `${ONEK}SIP-1`,
         channelAccountId: hesap.id,
         soldAt: new Date("2026-03-05"),
-        note: null,        cargoCarrierId: null,        cargoDesi: null,
+        note: null,
+        cargoCarrierId: null,
+        cargoDesi: null,
+        cargoAmountManual: null,
         kalemler: [],
       });
     } catch (e) {

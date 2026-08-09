@@ -113,6 +113,8 @@ export function SatisFormu({
   // dokunduğu andan itibaren otomatik hesap devreye girmez.
   const [desiElle, setDesiElle] = useState<string | null>(null);
   const [cargoCarrierId, setCargoCarrierId] = useState("");
+  /** Elle girilen KDV DAHİL kargo tutarı — doluysa tarife kullanılmaz. */
+  const [kargoTutariElle, setKargoTutariElle] = useState("");
   const [kargoSecenekleri, setKargoSecenekleri] = useState<KargoSecenegi[]>([]);
 
   /** Seçili kanal hesabının para birimi, yeni kalemler için varsayılan olur. */
@@ -275,6 +277,10 @@ export function SatisFormu({
     note,
     cargoCarrierId: cargoCarrierId || null,
     cargoDesi: desiSayi > 0 ? desiSayi : null,
+    cargoAmountManual: (() => {
+      const n = Number(kargoTutariElle.replace(",", "."));
+      return kargoTutariElle.trim() !== "" && Number.isFinite(n) ? n : null;
+    })(),
     kalemler: kalemler.map((k) => {
       const sayi = Number(k.unitPriceAmount.replace(",", "."));
       const oran = Number(k.komisyonOrani.replace(",", "."));
@@ -436,6 +442,23 @@ export function SatisFormu({
                       : t("kargoNotu")}
                 </p>
               </div>
+            </div>
+
+            {/* Panel gerçeği tarifeden sapabilir — komisyondaki oran/tutar
+                ikilisinin aynısı: tutar girilirse tarife kullanılmaz. */}
+            <div className="space-y-2">
+              <Label htmlFor="satis-kargo-tutar">{t("kargoTutariElle")}</Label>
+              <Input
+                id="satis-kargo-tutar"
+                value={kargoTutariElle}
+                onChange={(e) => setKargoTutariElle(e.target.value)}
+                inputMode="decimal"
+                placeholder={t("kargoTutariIpucu")}
+                className="max-w-xs"
+              />
+              <p className="text-muted-foreground text-xs">
+                {t("kargoTutariNotu")}
+              </p>
             </div>
           </div>
 
