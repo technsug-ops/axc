@@ -12,7 +12,13 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-sm text-card-foreground ring-1 ring-foreground/10 [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        // KENARLIK: shadcn varsayılanı `ring-foreground/10` idi — sabit %10
+        // opaklık, --border token'ını hiç kullanmıyordu. Bu yüzden temadaki
+        // kenarlık ayarı kartlara ulaşmıyor, kartın nerede başlayıp bittiği
+        // seçilemiyordu (kullanıcı geri bildirimi 09.08.2026). Artık token'a
+        // bağlı: kenarlık rengi tek yerden, globals.css'ten yönetiliyor ve
+        // kart, tablo, giriş alanı aynı çizgiyi kullanıyor (#10 tutarlılık).
+        "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-sm text-card-foreground ring-1 ring-border [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
         className
       )}
       {...props}

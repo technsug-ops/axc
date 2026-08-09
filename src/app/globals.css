@@ -63,8 +63,14 @@
     --accent: oklch(0.97 0 0);
     --accent-foreground: oklch(0.205 0 0);
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
+    /* KENARLIK KONTRASTI — bilerek shadcn varsayılanından koyu.
+       Açık temada kart zemini sayfayla aynı beyaz olduğu için kutunun
+       nerede başlayıp bittiğini SADECE kenarlık gösteriyor; varsayılan
+       0.922 bunun için fazla soluktu (kullanıcı geri bildirimi
+       09.08.2026). Giriş alanları bir tık daha koyu ki tıklanabilir
+       alanlar kart kenarlığından ayrışsın. */
+    --border: oklch(0.87 0 0);
+    --input: oklch(0.84 0 0);
     --ring: oklch(0.708 0 0);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
@@ -98,8 +104,10 @@
     --accent: oklch(0.269 0 0);
     --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
+    /* Koyu temada varsayılan %10 beyaz, koyu zeminde neredeyse görünmüyordu;
+       kartların sınırı seçilemiyordu. Bkz. açık temadaki not. */
+    --border: oklch(1 0 0 / 24%);
+    --input: oklch(1 0 0 / 32%);
     --ring: oklch(0.556 0 0);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
