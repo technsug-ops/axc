@@ -46,6 +46,13 @@ enum ProfitStatus {
   RULE_MISSING // komisyon oranı veya kargo tarifesi bulunamadı
 }
 
+/// İade türü — operasyonun üç gerçek senaryosu.
+enum ReturnType {
+  UNDELIVERED // teslim edilemeden döndü; gidiş kargosu zaten yandı
+  NORMAL // müşteri aldı, iade etti; dönüş kargosu satıcıda
+  DISPUTED // itiraz KABUL edildi; ürün müşteriye geri gitti, stoğa GİRMEZ
+}
+
 enum ChannelType {
   MARKETPLACE // Trendyol, Hepsiburada, Amazon...
   OWN_STORE // kendi siteniz
@@ -57,6 +64,8 @@ enum StockMovementType {
   INITIAL // açılış / devir stoğu
   PURCHASE_IN // alımdan giriş
   SALE_OUT // satıştan çıkış (quantityDelta negatif)
+  RETURN_IN // iadeden giriş — SAĞLAM gelen mal stoğa döner
+  EXCHANGE_OUT // değişimde giden yeni ürün (satış geliri YOK, maliyet var)
   ADJUSTMENT // manuel düzeltme (işareti quantityDelta belirler)
   COUNT_CORRECTION // sayım farkı
 }
@@ -180,6 +189,8 @@ model ProductVariant {
   channelSkus    ChannelSku[]
   purchaseItems  PurchaseItem[]
   saleItems      SaleItem[]
+  returnItems    ReturnItem[]      @relation("IadeVaryanti")
+  exchangeItems  ReturnItem[]      @relation("DegisimVaryanti")
   stockMovements StockMovement[]
 
   @@index([productId])
@@ -231,6 +242,7 @@ model Location {
   updatedAt DateTime @updatedAt
 
   variants       ProductVariant[]
+  returnItems    ReturnItem[]
   stockMovements StockMovement[]
 
   @@index([isActive])
@@ -255,9 +267,47 @@ model Channel {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  accounts     ChannelAccount[]
-  fees         ChannelFee[]
-  cargoTariffs CargoTariff[]
+  /// İtirazlı iadede ürün müşteriye geri gönderilirken kargoyu satıcı
+  /// öder mi? Trendyol: hayır · Hepsiburada: evet.
+  disputedReshipPaidBySeller Boolean @default(false)
+
+  accounts        ChannelAccount[]
+  fees            ChannelFee[]
+  cargoTariffs    CargoTariff[]
+  penaltyTariffs  PenaltyTariff[]
+}
+
+// ============================================================================
+//  CEZA TARİFESİ
+// ----------------------------------------------------------------------------
+//  Müşteri iadeyi "kusurlu/yanlış ürün" gerekçesiyle açar ve satıcının
+//  savunması REDDEDİLİRSE pazaryeri sipariş tutarına göre ceza keser.
+//
+//  Tutar ELLE girilir; bu tablo yalnızca ÖNERİ üretir (kargo tarifesi
+//  kalıbı). Oran kuralları kanala göre değişken ve kısmen belirsiz olduğu
+//  için dayatma yapılmaz.
+//
+//  Kademe okuma: orderAmountUpTo >= sipariş tutarı olan EN KÜÇÜK satır.
+//  Kademesi olmayan tutarda öneri çıkmaz, ekran "elle girin" der.
+// ============================================================================
+
+model PenaltyTariff {
+  id        String  @id @default(cuid())
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  /// Bu tutara KADAR olan siparişler bu kademeye girer.
+  orderAmountUpTo Decimal @db.Decimal(18, 4)
+
+  amount   Decimal  @db.Decimal(18, 4)
+  currency Currency @default(TRY)
+
+  effectiveFrom DateTime
+
+  createdAt DateTime @default(now())
+
+  @@unique([channelId, orderAmountUpTo, effectiveFrom])
+  @@index([channelId, orderAmountUpTo])
 }
 
 // ============================================================================
@@ -574,6 +624,10 @@ model StockMovement {
   saleItemId String?
   saleItem   SaleItem? @relation(fields: [saleItemId], references: [id], onDelete: SetNull)
 
+  /// İade kaynaklı hareketlerde dolu olur (RETURN_IN, EXCHANGE_OUT).
+  returnItemId String?
+  returnItem   ReturnItem? @relation(fields: [returnItemId], references: [id], onDelete: SetNull)
+
   /// FIFO İZİ — bu ÇIKIŞ hangi GİRİŞ partisinden düştü.
   /// Parti = pozitif quantityDelta'lı bir hareket (INITIAL, PURCHASE_IN,
   /// pozitif ADJUSTMENT/COUNT_CORRECTION). Bir satış kalemi birden fazla
@@ -605,6 +659,7 @@ model StockMovement {
   @@index([type])
   @@index([purchaseItemId])
   @@index([saleItemId])
+  @@index([returnItemId])
   @@index([sourceMovementId])
   @@index([locationId])
 }
@@ -660,8 +715,9 @@ model Sale {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items SaleItem[]
-  fees  SaleFee[]
+  items   SaleItem[]
+  fees    SaleFee[]
+  returns Return[]
 
   @@index([channelAccountId])
   @@index([soldAt])
@@ -701,6 +757,7 @@ model SaleItem {
   /// zaman `quantity` kadardır.
   stockMovements StockMovement[]
   fees           SaleFee[]
+  returnItems    ReturnItem[]
 
   @@index([saleId])
   @@index([variantId])
@@ -739,4 +796,134 @@ model SaleFee {
 
   @@index([saleId])
   @@index([saleItemId])
+}
+
+// ============================================================================
+//  İADE
+// ----------------------------------------------------------------------------
+//  ORİJİNAL SATIŞ SNAPSHOT'I SİLİNMEZ. İade etkisi AYRI satırlarla eklenir;
+//  satış detayı "orijinal kâr + iade etkisi = iade sonrası net" gösterir.
+//  Ledger felsefesinin kâr tarafındaki karşılığı budur.
+//
+//  ReturnFee neden SaleFee'den AYRI:
+//  Kâr yeniden hesaplama `SaleFee`yi silip yeniden yazıyor
+//  (src/lib/kar-yeniden.ts). İade satırları oraya konsaydı her yeniden
+//  hesapta sessizce uçardı. Ayrı tablo bunu YAPISAL olarak engelliyor.
+//
+//  KESİNTİ İADESİ (teyitli 09.08.2026):
+//    GERİ GELİR  : komisyon, komisyon KDV'si, %0,8 ödeme gideri, stopaj
+//                  (kısmi iadede hepsi ADET ORANINDA)
+//    GERİ GELMEZ : 12,60 hizmet bedeli, 13,19 sabit gider, gidiş kargosu
+// ============================================================================
+
+model Return {
+  id String @id @default(cuid())
+
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  /// Pazaryerindeki iade/talep numarası — opsiyonel.
+  code String?
+
+  returnType ReturnType
+  occurredAt DateTime
+  note       String?    @db.Text
+
+  /// Dönüş kargosu (müşteri → satıcı), KDV DAHİL. Satıcı gideri.
+  returnCargoAmount Decimal? @db.Decimal(18, 4)
+
+  /// Yeniden gönderim (satıcı → müşteri), KDV DAHİL.
+  /// İtirazlı iadede kanal politikasına bağlı; değişimde her zaman satıcıda.
+  reshipCargoAmount Decimal? @db.Decimal(18, 4)
+
+  cargoCurrency Currency?
+
+  /// CEZA — "kusurlu/yanlış ürün" itirazı reddedilirse pazaryeri keser.
+  /// Tarifeden ÖNERİLİR ama elle girilir (PenaltyTariff).
+  penaltyAmount   Decimal?  @db.Decimal(18, 4)
+  penaltyCurrency Currency?
+  penaltyNote     String?   @db.Text
+
+  /// İade SONRASI net — orijinal snapshot'a dokunmadan hesaplanır.
+  net1Amount     Decimal?      @db.Decimal(18, 4)
+  net2Amount     Decimal?      @db.Decimal(18, 4)
+  profitCurrency Currency?
+  profitStatus   ProfitStatus?
+  calculatedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items ReturnItem[]
+  fees  ReturnFee[]
+
+  @@index([saleId])
+  @@index([occurredAt])
+}
+
+model ReturnItem {
+  id       String @id @default(cuid())
+  returnId String
+  return   Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
+
+  saleItemId String
+  saleItem   SaleItem @relation(fields: [saleItemId], references: [id], onDelete: Restrict)
+
+  variantId String
+  variant   ProductVariant @relation("IadeVaryanti", fields: [variantId], references: [id], onDelete: Restrict)
+
+  /// İade edilen toplam adet. Kısmi iade mümkündür.
+  quantity Int
+
+  /// Sağlam gelen — RETURN_IN ile stoğa girer.
+  soundQuantity Int @default(0)
+
+  /// HASARLI gelen — stoğa GİRMEZ, sayaç olarak tutulur.
+  /// PurchaseItem.damagedQuantity ile aynı kalıp; tazminat süreci Faz 3.
+  damagedQuantity Int     @default(0)
+  damageNote      String? @db.Text
+
+  /// Sağlam mal hangi rafa girdi.
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  /// DEĞİŞİM: müşteriye yerine gönderilen varyant.
+  /// Doluysa EXCHANGE_OUT hareketi oluşur (gelir yok, maliyet var).
+  exchangeVariantId String?
+  exchangeVariant   ProductVariant? @relation("DegisimVaryanti", fields: [exchangeVariantId], references: [id], onDelete: SetNull)
+
+  stockMovements StockMovement[]
+  fees           ReturnFee[]
+
+  @@index([returnId])
+  @@index([saleItemId])
+  @@index([variantId])
+  @@index([locationId])
+  @@index([exchangeVariantId])
+}
+
+model ReturnFee {
+  id       String @id @default(cuid())
+  returnId String
+  return   Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
+
+  /// Doluysa kalem etkisi, boşsa İADE GENELİ (kargo, ceza).
+  returnItemId String?
+  returnItem   ReturnItem? @relation(fields: [returnItemId], references: [id], onDelete: Cascade)
+
+  /// Sözlükten Türkçe adı çözülen kod:
+  /// KOMISYON_IADE, KOMISYON_KDV_IADE, ODEME_GIDERI_IADE, STOPAJ_IADE,
+  /// KAYIP_GELIR, MALIYET_GERI, IADE_KARGO, YENIDEN_GONDERIM_KARGO,
+  /// CEZA, DEGISIM_MALIYET
+  code String
+  name String?
+
+  /// İşaret ANLAMLIDIR: pozitif = satıcıya geri gelen, negatif = gider.
+  amount   Decimal  @db.Decimal(18, 4)
+  currency Currency
+
+  createdAt DateTime @default(now())
+
+  @@index([returnId])
+  @@index([returnItemId])
 }

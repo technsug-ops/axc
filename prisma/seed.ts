@@ -20,6 +20,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { ChannelType } from "../src/generated/prisma/enums";
 import { karMotoruSeed } from "./seed-kar-motoru";
+import { iadeSeed } from "./seed-iade";
 
 const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
@@ -61,6 +62,9 @@ async function main() {
   // Kâr motoru sabit verisi: KDV kategorileri, kanal kesintileri,
   // kargo firmaları ve tarifeleri.
   await karMotoruSeed(prisma);
+
+  // Iade sabit verisi: kanal politikasi + ceza tarifeleri.
+  await iadeSeed(prisma);
 }
 
 main()

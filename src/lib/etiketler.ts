@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import type {
   PurchaseStatus,
+  ReturnType,
   StockMovementType,
 } from "@/generated/prisma/enums";
 
@@ -56,6 +57,8 @@ const STOK_HAREKET_SIRASI: Record<StockMovementType, null> = {
   INITIAL: null,
   PURCHASE_IN: null,
   SALE_OUT: null,
+  RETURN_IN: null,
+  EXCHANGE_OUT: null,
   ADJUSTMENT: null,
   COUNT_CORRECTION: null,
 };
@@ -72,7 +75,28 @@ export async function stokHareketEtiketleri(): Promise<
     INITIAL: tHareket("INITIAL"),
     PURCHASE_IN: tHareket("PURCHASE_IN"),
     SALE_OUT: tHareket("SALE_OUT"),
+    RETURN_IN: tHareket("RETURN_IN"),
+    EXCHANGE_OUT: tHareket("EXCHANGE_OUT"),
     ADJUSTMENT: tHareket("ADJUSTMENT"),
     COUNT_CORRECTION: tHareket("COUNT_CORRECTION"),
+  };
+}
+
+const IADE_TURU_SIRASI: Record<ReturnType, null> = {
+  UNDELIVERED: null,
+  NORMAL: null,
+  DISPUTED: null,
+};
+
+export const IADE_TURLERI = Object.keys(IADE_TURU_SIRASI) as ReturnType[];
+
+export async function iadeTuruEtiketleri(): Promise<
+  Record<ReturnType, string>
+> {
+  const tTur = await getTranslations("IadeTuru");
+  return {
+    UNDELIVERED: tTur("UNDELIVERED"),
+    NORMAL: tTur("NORMAL"),
+    DISPUTED: tTur("DISPUTED"),
   };
 }
