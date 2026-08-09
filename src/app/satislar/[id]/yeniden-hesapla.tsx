@@ -73,6 +73,7 @@ export function YenidenHesapla({
 }) {
   const t = useTranslations("Satis");
   const ortak = useTranslations("Ortak");
+  const tKesinti = useTranslations("Kesinti");
   const bicim = useBicim();
   const router = useRouter();
 
@@ -343,6 +344,38 @@ export function YenidenHesapla({
                 {t("onizlemeBekleniyor")}
               </p>
             )}
+
+            {/* Kesinti dökümü — NET'in NEDEN değiştiği görünsün.
+                Komisyonun sıfırlandığı gibi bir durum burada fark edilir. */}
+            {onizleme?.kesintiler?.length ? (
+              <dl className="mt-2 space-y-1 border-t pt-2 text-xs">
+                {[
+                  ...onizleme.kesintiler,
+                  ...(onizleme.siparisKesintileri ?? []),
+                ].map((k, i) => (
+                  <div key={i} className="flex justify-between gap-4">
+                    <dt
+                      className={
+                        k.code === "KOMISYON" && k.tutar === 0
+                          ? "text-amber-700 dark:text-amber-500"
+                          : "text-muted-foreground"
+                      }
+                    >
+                      {tKesinti.has(k.code) ? tKesinti(k.code) : k.code}
+                    </dt>
+                    <dd
+                      className={
+                        k.code === "KOMISYON" && k.tutar === 0
+                          ? "text-amber-700 whitespace-nowrap dark:text-amber-500"
+                          : "whitespace-nowrap"
+                      }
+                    >
+                      −{para(k.tutar)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
 
             {onizleme?.yeni && onizleme.yeni.durum !== "CALCULATED" ? (
               <Badge

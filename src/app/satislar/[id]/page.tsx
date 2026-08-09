@@ -178,16 +178,33 @@ export default async function SatisDetaySayfasi({
           <div className="flex flex-wrap items-center gap-2">
             <YenidenHesapla
               saleId={satis.id}
-              kalemler={satis.items.map((k) => ({
-                saleItemId: k.id,
-                baslik: k.variant.name
-                  ? `${k.variant.product.name} — ${k.variant.name}`
-                  : k.variant.product.name,
-                komisyonOrani: k.commissionRate
-                  ? String(Number(k.commissionRate.toString()))
-                  : "",
-                komisyonTutari: "",
-              }))}
+              kalemler={satis.items.map((k) => {
+                // Diyalog MEVCUT komisyonla açılmalı; boş açılırsa kullanıcı
+                // farkında olmadan komisyonu sıfırlar (09.08.2026'da oldu).
+                //
+                // Komisyon oran ile mi tutar ile mi girilmişti? commissionRate
+                // doluysa ORAN, boşsa TUTAR. Aslını koruyoruz: tutar her zaman
+                // oranı ezdiği için ikisini birden doldurmak oranı işlevsiz
+                // bırakırdı.
+                const oranVar = k.commissionRate !== null;
+                const komisyonKesintisi = k.fees.find(
+                  (f) => f.code === "KOMISYON",
+                );
+                const tutar = komisyonKesintisi
+                  ? Number(komisyonKesintisi.amount.toString())
+                  : 0;
+
+                return {
+                  saleItemId: k.id,
+                  baslik: k.variant.name
+                    ? `${k.variant.product.name} — ${k.variant.name}`
+                    : k.variant.product.name,
+                  komisyonOrani: oranVar
+                    ? String(Number(k.commissionRate!.toString()))
+                    : "",
+                  komisyonTutari: !oranVar && tutar > 0 ? String(tutar) : "",
+                };
+              })}
               kargoFirmalari={kargoFirmalari}
               cargoCarrierId={satis.cargoCarrierId}
               cargoDesi={
