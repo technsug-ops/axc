@@ -25,7 +25,8 @@ import {
   varyantKodlaBul,
   type VaryantSonucu,
 } from "../varyant-arama";
-import { type AlimDurumu } from "./actions";
+import { varyantStoguGetir } from "./stok-sorgu";
+import { type SatisDurumu } from "./actions";
 
 export type HesapSecenegi = {
   id: string;
@@ -33,18 +34,16 @@ export type HesapSecenegi = {
   paraBirimi: "TRY" | "EUR";
 };
 
-export type KartSecenegi = { id: string; etiket: string };
-
 type Kalem = {
   variantId: string;
   etiket: string;
   sku: string;
   quantity: number;
-  unitCostAmount: string;
-  unitCostCurrency: "TRY" | "EUR";
+  unitPriceAmount: string;
+  unitPriceCurrency: "TRY" | "EUR";
+  /** Kalem eklenirken okunan stok — uyarı için, doğrulama sunucuda. */
+  stok: number | null;
 };
-
-const SECIM_YOK = "__yok__";
 
 function varyantEtiketi(v: VaryantSonucu): string {
   const parcalar = [v.urunAdi];
@@ -52,40 +51,32 @@ function varyantEtiketi(v: VaryantSonucu): string {
   return parcalar.join(" — ");
 }
 
-export function AlimFormu({
+export function SatisFormu({
   hesaplar,
-  kartlar,
   action,
   bugun,
 }: {
   hesaplar: HesapSecenegi[];
-  kartlar: KartSecenegi[];
-  action: (durum: AlimDurumu, formData: FormData) => Promise<AlimDurumu>;
+  action: (durum: SatisDurumu, formData: FormData) => Promise<SatisDurumu>;
   bugun: string;
 }) {
-  const [durum, formAction, bekliyor] = useActionState<AlimDurumu, FormData>(
+  const [durum, formAction, bekliyor] = useActionState<SatisDurumu, FormData>(
     action,
     {},
   );
 
-  // Biçimlendirme dil altyapısından gelir (sunucudaki bicimlendirici() ile
-  // aynı yüzey).
   const bicim = useBicim();
+  const t = useTranslations("Satis");
+  const ortak = useTranslations("Ortak");
 
   // --- Başlık alanları ---
   const [code, setCode] = useState("");
-  const [purchasedAt, setPurchasedAt] = useState(bugun);
+  const [soldAt, setSoldAt] = useState(bugun);
   const [channelAccountId, setChannelAccountId] = useState("");
-  const [creditCardId, setCreditCardId] = useState("");
-  const [installmentCount, setInstallmentCount] = useState("1");
-  const [supplierName, setSupplierName] = useState("");
   const [note, setNote] = useState("");
 
   // --- Kalemler ---
   const [kalemler, setKalemler] = useState<Kalem[]>([]);
-
-  const t = useTranslations("Alim");
-  const ortak = useTranslations("Ortak");
 
   // --- Barkodla hızlı ekleme ---
   const [barkod, setBarkod] = useState("");
@@ -128,13 +119,22 @@ export function AlimFormu({
     };
   }, [sorgu]);
 
-  function kalemEkle(varyant: VaryantSonucu, adet: number) {
+  async function kalemEkle(varyant: VaryantSonucu, adet: number) {
+    // Stok bilgisi kalemin yanında görünsün ki kullanıcı formu doldururken
+    // yetersizliği fark etsin. ASIL engel sunucuda, transaction içinde (#5).
+    let stok: number | null = null;
+    try {
+      stok = await varyantStoguGetir(varyant.id);
+    } catch {
+      stok = null;
+    }
+
     setKalemler((onceki) => {
       const sira = onceki.findIndex((k) => k.variantId === varyant.id);
       if (sira >= 0) {
         // Aynı ürün tekrar okutulursa adet artar (peş peşe okutma akışı).
         return onceki.map((k, i) =>
-          i === sira ? { ...k, quantity: k.quantity + adet } : k,
+          i === sira ? { ...k, quantity: k.quantity + adet, stok } : k,
         );
       }
       return [
@@ -144,8 +144,9 @@ export function AlimFormu({
           etiket: varyantEtiketi(varyant),
           sku: varyant.sku,
           quantity: adet,
-          unitCostAmount: "",
-          unitCostCurrency: varsayilanParaBirimi,
+          unitPriceAmount: "",
+          unitPriceCurrency: varsayilanParaBirimi,
+          stok,
         },
       ];
     });
@@ -160,7 +161,7 @@ export function AlimFormu({
       if (!varyant) {
         setBarkodMesaji(ortak("kodBulunamadi", { kod }));
       } else {
-        kalemEkle(varyant, adet);
+        await kalemEkle(varyant, adet);
         setBarkodMesaji(
           ortak("kalemEklendi", { urun: varyantEtiketi(varyant), adet }),
         );
@@ -183,11 +184,11 @@ export function AlimFormu({
   const toplamlar = useMemo(() => {
     const harita = new Map<string, number>();
     for (const kalem of kalemler) {
-      const fiyat = Number(kalem.unitCostAmount.replace(",", "."));
+      const fiyat = Number(kalem.unitPriceAmount.replace(",", "."));
       if (!Number.isFinite(fiyat)) continue;
       harita.set(
-        kalem.unitCostCurrency,
-        (harita.get(kalem.unitCostCurrency) ?? 0) + fiyat * kalem.quantity,
+        kalem.unitPriceCurrency,
+        (harita.get(kalem.unitPriceCurrency) ?? 0) + fiyat * kalem.quantity,
       );
     }
     return [...harita.entries()].sort((a, b) => a[0].localeCompare(b[0]));
@@ -195,20 +196,19 @@ export function AlimFormu({
 
   const gonderilecek = {
     code,
-    purchasedAt,
+    soldAt,
     channelAccountId,
-    creditCardId,
-    installmentCount: Number(installmentCount),
-    supplierName,
     note,
     kalemler: kalemler.map((k) => {
-      const sayi = Number(k.unitCostAmount.replace(",", "."));
+      const sayi = Number(k.unitPriceAmount.replace(",", "."));
       return {
         variantId: k.variantId,
         quantity: k.quantity,
-        unitCostAmount:
-          k.unitCostAmount.trim() !== "" && Number.isFinite(sayi) ? sayi : null,
-        unitCostCurrency: k.unitCostCurrency,
+        unitPriceAmount:
+          k.unitPriceAmount.trim() !== "" && Number.isFinite(sayi)
+            ? sayi
+            : null,
+        unitPriceCurrency: k.unitPriceCurrency,
       };
     }),
   };
@@ -234,46 +234,45 @@ export function AlimFormu({
       {/* ----------------------------- BAŞLIK ----------------------------- */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("alimBilgileri")}</CardTitle>
+          <CardTitle>{t("satisBilgileri")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="alim-kod">{ortak("siparisNo")} *</Label>
-              {/* Sipariş fişindeki barkod okutulabilir (#7). */}
+              <Label htmlFor="satis-kod">{ortak("siparisNo")}</Label>
+              {/* Pazaryeri fişindeki barkod okutulabilir (#7). */}
               <BarkodGirisi
-                id="alim-kod"
+                id="satis-kod"
                 value={code}
                 onChange={setCode}
-                placeholder={t("kodIpucu")}
-                kameraBasligi={t("kodKamera")}
+                placeholder={t("siparisNoIpucu")}
+                kameraBasligi={t("siparisNoKamera")}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="alim-tarih">{t("alimTarihi")} *</Label>
-              <Input
-                id="alim-tarih"
-                type="date"
-                value={purchasedAt}
-                onChange={(e) => setPurchasedAt(e.target.value)}
-              />
+              <p className="text-muted-foreground text-xs">
+                {t("siparisNoNotu")}
+              </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="alim-hesap">{ortak("kanalHesabi")}</Label>
+              <Label htmlFor="satis-tarih">{t("satisTarihi")} *</Label>
+              <Input
+                id="satis-tarih"
+                type="date"
+                value={soldAt}
+                onChange={(e) => setSoldAt(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="satis-hesap">{ortak("kanalHesabi")} *</Label>
               <Select
-                value={channelAccountId || SECIM_YOK}
-                onValueChange={(d) =>
-                  setChannelAccountId(d === SECIM_YOK ? "" : d)
-                }
+                value={channelAccountId}
+                onValueChange={setChannelAccountId}
               >
-                <SelectTrigger id="alim-hesap" className="w-full">
+                <SelectTrigger id="satis-hesap" className="w-full">
                   <SelectValue placeholder={t("hesapSecin")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={SECIM_YOK}>
-                    {ortak("secilmedi")}
-                  </SelectItem>
                   {hesaplar.map((hesap) => (
                     <SelectItem key={hesap.id} value={hesap.id}>
                       {hesap.etiket}
@@ -296,71 +295,12 @@ export function AlimFormu({
                 </p>
               ) : null}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="alim-kart">{t("odenenKart")}</Label>
-              <Select
-                value={creditCardId || SECIM_YOK}
-                onValueChange={(d) => setCreditCardId(d === SECIM_YOK ? "" : d)}
-              >
-                <SelectTrigger id="alim-kart" className="w-full">
-                  <SelectValue placeholder={t("kartSecin")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={SECIM_YOK}>
-                    {ortak("secilmedi")}
-                  </SelectItem>
-                  {kartlar.map((kart) => (
-                    <SelectItem key={kart.id} value={kart.id}>
-                      {kart.etiket}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {kartlar.length === 0 ? (
-                <p className="text-muted-foreground text-xs">
-                  {t.rich("kartYokNotu", {
-                    baglanti: (parca) => (
-                      <Link
-                        href="/kartlar/yeni"
-                        className="underline underline-offset-4"
-                      >
-                        {parca}
-                      </Link>
-                    ),
-                  })}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="alim-taksit">{t("taksitSayisiEtiketi")}</Label>
-              <Input
-                id="alim-taksit"
-                value={installmentCount}
-                onChange={(e) => setInstallmentCount(e.target.value)}
-                inputMode="numeric"
-                placeholder="1"
-              />
-              <p className="text-muted-foreground text-xs">{t("taksitNotu")}</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="alim-tedarikci">{t("tedarikci")}</Label>
-              <Input
-                id="alim-tedarikci"
-                value={supplierName}
-                onChange={(e) => setSupplierName(e.target.value)}
-                placeholder={ortak("istegeBagli")}
-                autoComplete="off"
-              />
-            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="alim-not">{t("not")}</Label>
+            <Label htmlFor="satis-not">{ortak("aciklama")}</Label>
             <Textarea
-              id="alim-not"
+              id="satis-not"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
@@ -377,10 +317,10 @@ export function AlimFormu({
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="alim-barkod">{ortak("barkodlaEkle")}</Label>
+            <Label htmlFor="satis-barkod">{ortak("barkodlaEkle")}</Label>
             <div className="flex flex-wrap items-start gap-2">
               <BarkodGirisi
-                id="alim-barkod"
+                id="satis-barkod"
                 className="min-w-56 flex-1"
                 value={barkod}
                 onChange={setBarkod}
@@ -399,7 +339,9 @@ export function AlimFormu({
                 />
               </div>
             </div>
-            <p className="text-muted-foreground text-xs">{ortak("barkodNotu")}</p>
+            <p className="text-muted-foreground text-xs">
+              {ortak("barkodNotu")}
+            </p>
             {barkodMesaji ? (
               <p className="text-sm" role="status">
                 {barkodMesaji}
@@ -408,11 +350,11 @@ export function AlimFormu({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="alim-arama">{ortak("aramaEtiketi")}</Label>
+            <Label htmlFor="satis-arama">{ortak("aramaEtiketi")}</Label>
             <div className="relative">
               <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
-                id="alim-arama"
+                id="satis-arama"
                 className="pl-9"
                 value={sorgu}
                 onChange={(e) => setSorgu(e.target.value)}
@@ -421,7 +363,9 @@ export function AlimFormu({
               />
             </div>
             {araniyor ? (
-              <p className="text-muted-foreground text-xs">{ortak("araniyor")}</p>
+              <p className="text-muted-foreground text-xs">
+                {ortak("araniyor")}
+              </p>
             ) : null}
             {sonuclar.length ? (
               <ul className="divide-y rounded-md border">
@@ -443,8 +387,8 @@ export function AlimFormu({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        kalemEkle(varyant, 1);
+                      onClick={async () => {
+                        await kalemEkle(varyant, 1);
                         setSorgu("");
                       }}
                     >
@@ -475,93 +419,118 @@ export function AlimFormu({
               </p>
             </div>
           ) : (
-            kalemler.map((kalem, sira) => (
-              <div
-                key={kalem.variantId}
-                className="space-y-3 rounded-lg border p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium">{kalem.etiket}</div>
-                    <div className="text-muted-foreground font-mono text-xs">
-                      {kalem.sku}
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      setKalemler((onceki) =>
-                        onceki.filter((_, i) => i !== sira),
-                      )
-                    }
-                  >
-                    <Trash2 />
-                    {ortak("kaldir")}
-                  </Button>
-                </div>
+            kalemler.map((kalem, sira) => {
+              const stokYetersiz =
+                kalem.stok !== null && kalem.quantity > kalem.stok;
 
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor={`adet-${sira}`}>{ortak("adet")}</Label>
-                    <Input
-                      id={`adet-${sira}`}
-                      value={String(kalem.quantity)}
-                      inputMode="numeric"
-                      onChange={(e) =>
-                        kalemGuncelle(sira, {
-                          quantity: Math.max(
-                            1,
-                            Math.trunc(Number(e.target.value) || 1),
-                          ),
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`fiyat-${sira}`}>
-                      {ortak("sutunBirimFiyat")}
-                    </Label>
-                    <Input
-                      id={`fiyat-${sira}`}
-                      value={kalem.unitCostAmount}
-                      inputMode="decimal"
-                      placeholder={ortak("fiyatIpucu")}
-                      onChange={(e) =>
-                        kalemGuncelle(sira, { unitCostAmount: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`para-${sira}`}>
-                      {ortak("paraBirimi")}
-                    </Label>
-                    <Select
-                      value={kalem.unitCostCurrency}
-                      onValueChange={(d) =>
-                        kalemGuncelle(sira, {
-                          unitCostCurrency: d as "TRY" | "EUR",
-                        })
+              return (
+                <div
+                  key={kalem.variantId}
+                  className="space-y-3 rounded-lg border p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">{kalem.etiket}</div>
+                      <div className="text-muted-foreground font-mono text-xs">
+                        {kalem.sku}
+                      </div>
+                      {kalem.stok !== null ? (
+                        <div className="text-muted-foreground mt-1 text-xs">
+                          {kalem.stok > 0
+                            ? t("mevcutStok", { adet: kalem.stok })
+                            : t("stokYok")}
+                        </div>
+                      ) : null}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setKalemler((onceki) =>
+                          onceki.filter((_, i) => i !== sira),
+                        )
                       }
                     >
-                      <SelectTrigger id={`para-${sira}`} className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="TRY">TRY</SelectItem>
-                        <SelectItem value="EUR">EUR</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <Trash2 />
+                      {ortak("kaldir")}
+                    </Button>
                   </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label htmlFor={`adet-${sira}`}>{ortak("adet")}</Label>
+                      <Input
+                        id={`adet-${sira}`}
+                        value={String(kalem.quantity)}
+                        inputMode="numeric"
+                        onChange={(e) =>
+                          kalemGuncelle(sira, {
+                            quantity: Math.max(
+                              1,
+                              Math.trunc(Number(e.target.value) || 1),
+                            ),
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`fiyat-${sira}`}>
+                        {t("birimSatisFiyati")}
+                      </Label>
+                      <Input
+                        id={`fiyat-${sira}`}
+                        value={kalem.unitPriceAmount}
+                        inputMode="decimal"
+                        placeholder={ortak("fiyatIpucu")}
+                        onChange={(e) =>
+                          kalemGuncelle(sira, {
+                            unitPriceAmount: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`para-${sira}`}>
+                        {ortak("paraBirimi")}
+                      </Label>
+                      <Select
+                        value={kalem.unitPriceCurrency}
+                        onValueChange={(d) =>
+                          kalemGuncelle(sira, {
+                            unitPriceCurrency: d as "TRY" | "EUR",
+                          })
+                        }
+                      >
+                        <SelectTrigger id={`para-${sira}`} className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="TRY">TRY</SelectItem>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Erken uyarı; asıl engel sunucuda (#5). */}
+                  {stokYetersiz ? (
+                    <p className="text-destructive text-sm" role="alert">
+                      {t("stokUyarisi", {
+                        urun: kalem.etiket,
+                        mevcut: kalem.stok ?? 0,
+                        istenen: kalem.quantity,
+                      })}
+                    </p>
+                  ) : null}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
 
           {toplamlar.length ? (
             <div className="space-y-2 rounded-lg border p-4">
-              <div className="text-sm font-medium">{t("alimToplami")}</div>
+              <div className="text-sm font-medium">{t("satisToplami")}</div>
               <div className="flex flex-wrap gap-3">
                 {toplamlar.map(([paraBirimi, tutar]) => (
                   <div key={paraBirimi} className="rounded-md border px-3 py-2">
@@ -582,10 +551,10 @@ export function AlimFormu({
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={bekliyor || kalemler.length === 0}>
-          {bekliyor ? ortak("kaydediliyor") : t("alimiKaydet")}
+          {bekliyor ? ortak("kaydediliyor") : t("satisiKaydet")}
         </Button>
         <Button type="button" variant="outline" asChild>
-          <Link href="/alimlar">{ortak("vazgec")}</Link>
+          <Link href="/satislar">{ortak("vazgec")}</Link>
         </Button>
       </div>
       <p className="text-muted-foreground text-xs">{t("formNotu")}</p>

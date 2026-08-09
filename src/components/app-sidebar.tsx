@@ -8,6 +8,7 @@ import {
   CreditCard,
   MapPin,
   Package,
+  Receipt,
   ShoppingCart,
   Store,
 } from "lucide-react";
@@ -45,6 +46,7 @@ type MenuOgesi = {
 const OPERASYON: MenuOgesi[] = [
   { anahtar: "urunler", href: "/urunler", icon: Package, aktif: true },
   { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
+  { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
   { anahtar: "stok", href: "/stok", icon: Boxes, aktif: true },
   { anahtar: "kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
 ];

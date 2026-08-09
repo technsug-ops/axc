@@ -195,7 +195,7 @@ export default async function AlimDetaySayfasi({
       <Card>
         <CardHeader>
           <CardTitle>
-            {t("kalemlerBasligi", { sayi: alim.items.length })}
+            {ortak("kalemlerBasligi", { sayi: alim.items.length })}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -219,7 +219,7 @@ export default async function AlimDetaySayfasi({
                     {t("sutunKalan")}
                   </TableHead>
                   <TableHead className="text-right">
-                    {t("sutunBirimFiyat")}
+                    {ortak("sutunBirimFiyat")}
                   </TableHead>
                   <TableHead className="text-right">
                     {t("sutunSatirToplami")}
@@ -363,7 +363,7 @@ export default async function AlimDetaySayfasi({
                     ),
                   },
                   {
-                    etiket: t("sutunBirimFiyat"),
+                    etiket: ortak("sutunBirimFiyat"),
                     deger: bicim.para(
                       kalem.unitCostAmount,
                       kalem.unitCostCurrency,

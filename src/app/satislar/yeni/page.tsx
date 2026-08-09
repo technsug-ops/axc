@@ -1,0 +1,44 @@
+import { getTranslations } from "next-intl/server";
+
+import { GeriBaglanti } from "@/components/baglanti";
+import { tarihGirdisi } from "@/lib/bicim";
+import { prisma } from "@/lib/prisma";
+
+import { satisOlustur } from "../actions";
+import { SatisFormu, type HesapSecenegi } from "../satis-formu";
+
+export async function generateMetadata() {
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("yeniSatis") };
+}
+
+export default async function YeniSatisSayfasi() {
+  const t = await getTranslations("Satis");
+
+  const hesapKayitlari = await prisma.channelAccount.findMany({
+    where: { isActive: true },
+    include: { channel: { select: { name: true } } },
+    orderBy: [{ channelId: "asc" }, { name: "asc" }],
+  });
+
+  const hesaplar: HesapSecenegi[] = hesapKayitlari.map((h) => ({
+    id: h.id,
+    etiket: `${h.channel.name} — ${h.name}`,
+    paraBirimi: h.defaultCurrency,
+  }));
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div>
+        <GeriBaglanti href="/satislar">{t("baslik")}</GeriBaglanti>
+        <h1 className="mt-1 text-2xl font-semibold">{t("yeniSatis")}</h1>
+      </div>
+
+      <SatisFormu
+        hesaplar={hesaplar}
+        action={satisOlustur}
+        bugun={tarihGirdisi(new Date())}
+      />
+    </div>
+  );
+}

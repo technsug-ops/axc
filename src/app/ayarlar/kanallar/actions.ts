@@ -91,8 +91,10 @@ export async function kanalHesabiEkle(
   }
 
   revalidatePath("/ayarlar/kanallar");
-  // Alım formu hesap listesini buradan alıyor.
+  // Alım ve satış formları hesap listesini buradan alıyor; ikisi de
+  // statik üretiliyor, tazelenmezse yeni hesap listede görünmez.
   revalidatePath("/alimlar/yeni");
+  revalidatePath("/satislar/yeni");
   return { basari: t("eklendi", { kanal: kanal.name, ad: name }) };
 }
 
@@ -116,6 +118,7 @@ export async function kanalHesabiDurumDegistir(
 
   revalidatePath("/ayarlar/kanallar");
   revalidatePath("/alimlar/yeni");
+  revalidatePath("/satislar/yeni");
   return {
     basari: hesap.isActive
       ? t("pasifeAlindi", { ad: hesap.name })

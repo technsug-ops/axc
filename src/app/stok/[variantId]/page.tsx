@@ -50,10 +50,39 @@ export default async function VaryantHareketleriSayfasi({
         purchaseItem: {
           include: { purchase: { select: { id: true, code: true } } },
         },
+        saleItem: {
+          include: { sale: { select: { id: true, code: true } } },
+        },
       },
       orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
     }),
   ]);
+
+  /**
+   * Hareketin kaynağı: alım girişiyse alıma, satış çıkışıysa satışa link.
+   * Masaüstü tablosu ve mobil kart aynı işlevden beslenir; iki yerde
+   * ayrı yazılırsa biri güncellenip diğeri unutulur.
+   */
+  function kaynakHucresi(hareket: (typeof hareketler)[number]) {
+    if (hareket.purchaseItem?.purchase) {
+      return (
+        <Baglanti href={`/alimlar/${hareket.purchaseItem.purchase.id}`}>
+          {hareket.purchaseItem.purchase.code}
+        </Baglanti>
+      );
+    }
+
+    if (hareket.saleItem?.sale) {
+      // Satışın sipariş numarası olmayabilir; o zaman "Satış" yazar.
+      return (
+        <Baglanti href={`/satislar/${hareket.saleItem.sale.id}`}>
+          {hareket.saleItem.sale.code ?? t("satisKaynagi")}
+        </Baglanti>
+      );
+    }
+
+    return <span className="text-muted-foreground">{hareket.note ?? "—"}</span>;
+  }
 
   return (
     <div className="space-y-6">
@@ -73,13 +102,17 @@ export default async function VaryantHareketleriSayfasi({
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">{t("mevcutStok")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("mevcutStok")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-semibold">{stok}</CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">{ortak("raf")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {ortak("raf")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">
             {varyant.location ? varyant.location.code : "—"}
@@ -95,12 +128,20 @@ export default async function VaryantHareketleriSayfasi({
               <KopyalanabilirKod deger={varyant.sku} etiket={ortak("sku")} />
             </div>
             <div className="flex flex-wrap items-center gap-1">
-              <span className="text-muted-foreground">{ortak("firmaSku")}:</span>
-              <KopyalanabilirKod deger={varyant.axcaliSku} etiket={ortak("firmaSku")} />
+              <span className="text-muted-foreground">
+                {ortak("firmaSku")}:
+              </span>
+              <KopyalanabilirKod
+                deger={varyant.axcaliSku}
+                etiket={ortak("firmaSku")}
+              />
             </div>
             <div className="flex flex-wrap items-center gap-1">
               <span className="text-muted-foreground">{ortak("barkod")}:</span>
-              <KopyalanabilirKod deger={varyant.barcode} etiket={ortak("barkod")} />
+              <KopyalanabilirKod
+                deger={varyant.barcode}
+                etiket={ortak("barkod")}
+              />
             </div>
           </CardContent>
         </Card>
@@ -108,7 +149,9 @@ export default async function VaryantHareketleriSayfasi({
 
       <Card>
         <CardHeader>
-          <CardTitle>{t("hareketGecmisi", { sayi: hareketler.length })}</CardTitle>
+          <CardTitle>
+            {t("hareketGecmisi", { sayi: hareketler.length })}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {hareketler.length === 0 ? (
@@ -127,7 +170,9 @@ export default async function VaryantHareketleriSayfasi({
                     <TableRow>
                       <TableHead>{t("sutunTarih")}</TableHead>
                       <TableHead>{t("sutunTip")}</TableHead>
-                      <TableHead className="text-right">{t("sutunAdet")}</TableHead>
+                      <TableHead className="text-right">
+                        {t("sutunAdet")}
+                      </TableHead>
                       <TableHead>{ortak("raf")}</TableHead>
                       <TableHead>{t("sutunKaynak")}</TableHead>
                       <TableHead className="text-right">
@@ -166,19 +211,8 @@ export default async function VaryantHareketleriSayfasi({
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          {hareket.purchaseItem?.purchase ? (
-                            <Baglanti
-                              href={`/alimlar/${hareket.purchaseItem.purchase.id}`}
-                            >
-                              {hareket.purchaseItem.purchase.code}
-                            </Baglanti>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              {hareket.note ?? "—"}
-                            </span>
-                          )}
-                        </TableCell>
+                        <TableCell>{kaynakHucresi(hareket)}</TableCell>
+
                         <TableCell className="text-right whitespace-nowrap">
                           {hareket.unitCostAmount
                             ? bicim.para(
@@ -238,15 +272,7 @@ export default async function VaryantHareketleriSayfasi({
                       },
                       {
                         etiket: t("sutunKaynak"),
-                        deger: hareket.purchaseItem?.purchase ? (
-                          <Baglanti
-                            href={`/alimlar/${hareket.purchaseItem.purchase.id}`}
-                          >
-                            {hareket.purchaseItem.purchase.code}
-                          </Baglanti>
-                        ) : (
-                          (hareket.note ?? "—")
-                        ),
+                        deger: kaynakHucresi(hareket),
                       },
                       {
                         etiket: t("sutunBirimMaliyet"),

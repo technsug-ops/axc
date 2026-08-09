@@ -236,7 +236,7 @@ export function MalKabulFormu({
       <Card>
         <CardHeader>
           <CardTitle>
-            {t("kalemlerBasligi", { sayi: satirlar.length })}
+            {tOrtak("kalemlerBasligi", { sayi: satirlar.length })}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

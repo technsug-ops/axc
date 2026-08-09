@@ -204,9 +204,7 @@ export default async function StokSayfasi({
                   {
                     etiket: ortak("raf"),
                     deger: varyant.location ? (
-                      <Badge variant="secondary">
-                        {varyant.location.code}
-                      </Badge>
+                      <Badge variant="secondary">{varyant.location.code}</Badge>
                     ) : (
                       "—"
                     ),
@@ -243,9 +241,7 @@ export default async function StokSayfasi({
         </>
       )}
 
-      <p className="text-muted-foreground text-xs">
-        {t("listeNotu")}
-      </p>
+      <p className="text-muted-foreground text-xs">{t("listeNotu")}</p>
     </div>
   );
 }

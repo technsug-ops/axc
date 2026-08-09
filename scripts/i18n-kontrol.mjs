@@ -99,9 +99,9 @@ const ornekler = [
   ["Urunler", "varyantlarBasligi", { sayi: 3 }, "Varyantlar (3)"],
   ["Alim", "durumEki", { durum: "Sipariş verildi" }, " — Sipariş verildi"],
   ["Alim", "taksitSayisi", { sayi: 6 }, "6 taksit"],
-  ["Alim", "kalemEklendi", { urun: "Kulaklık", adet: 2 }, "Kulaklık eklendi (2 adet)."],
-  ["Alim", "barkodIpucu", {}, "Okutun veya kodu yazıp Enter'a basın"],
-  ["Alim", "aramaEtiketi", {}, "Ada / SKU'ya göre ara"],
+  ["Ortak", "kalemEklendi", { urun: "Kulaklık", adet: 2 }, "Kulaklık eklendi (2 adet)."],
+  ["Ortak", "barkodIpucu", {}, "Okutun veya kodu yazıp Enter'a basın"],
+  ["Ortak", "aramaEtiketi", {}, "Ada / SKU'ya göre ara"],
   ["Alim", "formNotu", {}, 'Yeni alım "Sipariş verildi" durumunda kaydedilir; mal kabul, alım detayından yapılır.'],
   ["Alim", "detayNotu", {}, '"Sağlam" sütunu stok hareketlerinden hesaplanır. Hasarlı ürünler stoğa girmez; satıcıya iade ve tazminat süreci sonraki fazlarda gelecek. Yanlış bir giriş silinmez, ters yönde bir düzeltme kaydıyla giderilir.'],
   ["MalKabul", "kodBulunamadi", { kod: "869" }, '"869" bu alımın kalemleri arasında bulunamadı.'],
@@ -109,6 +109,10 @@ const ornekler = [
   ["MalKabul", "asimUyarisi", { girilen: 5, kalan: 3 }, "Girilen 5 adet, kalan 3 adedi aşıyor."],
   ["MalKabul", "altNot", { kod: "ALM-1" }, "ALM-1 · Kısmi kabul yapabilirsiniz; kalan adetler için daha sonra tekrar mal kabul edersiniz."],
   ["Ortak", "kodKopyala", { etiket: "Barkod" }, "Barkod kodunu kopyala"],
+  ["Satis", "yetersizStok", { urun: "Telefon (SKU1)", istenen: 5, mevcut: 3 }, "Telefon (SKU1) için stok yetersiz: 5 adet istendi, 3 adet var. Satış kaydedilmedi."],
+  ["Satis", "digerKalemler", { urun: "Telefon", sayi: 2 }, "Telefon +2 kalem"],
+  ["Satis", "stokUyarisi", { urun: "Telefon", mevcut: 3, istenen: 5 }, "Telefon: stokta 3 adet var, 5 adet girdiniz."],
+  ["Satis", "mevcutStok", { adet: 4 }, "Stokta 4"],
   ["Kamera", "acilamadi", {}, "Kamera açılamadı. Sayfa güvenli bağlantıda (https veya localhost) olmalı. Kodu elle yazabilirsiniz."],
 ];
 

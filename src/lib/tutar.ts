@@ -37,10 +37,33 @@ export function kalemToplamlari(kalemler: ToplanabilirKalem[]): ParaToplami[] {
     .sort((a, b) => a.paraBirimi.localeCompare(b.paraBirimi));
 }
 
-/** Birden çok toplam listesini tek listede birleştirir (kart detayı için). */
-export function toplamlariBirlestir(
-  listeler: ParaToplami[][],
+type ToplanabilirSatisKalemi = {
+  quantity: number;
+  unitPriceAmount: { toString(): string } | number | string;
+  unitPriceCurrency: string;
+};
+
+/**
+ * Satış kalemlerini para birimine göre toplar.
+ *
+ * Alım kalemi `unitCost*`, satış kalemi `unitPrice*` alanlarını taşır —
+ * maliyet ile satış fiyatı isim düzeyinde de karışmasın diye ayrı. Toplama
+ * kuralı aynı: para birimleri çevrilmez.
+ */
+export function satisKalemToplamlari(
+  kalemler: ToplanabilirSatisKalemi[],
 ): ParaToplami[] {
+  return kalemToplamlari(
+    kalemler.map((k) => ({
+      quantity: k.quantity,
+      unitCostAmount: k.unitPriceAmount,
+      unitCostCurrency: k.unitPriceCurrency,
+    })),
+  );
+}
+
+/** Birden çok toplam listesini tek listede birleştirir (kart detayı için). */
+export function toplamlariBirlestir(listeler: ParaToplami[][]): ParaToplami[] {
   const harita = new Map<string, number>();
 
   for (const liste of listeler) {
