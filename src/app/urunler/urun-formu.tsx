@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, Trash2 } from "lucide-react";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
@@ -80,6 +81,9 @@ export function UrunFormu({
     {},
   );
 
+  const t = useTranslations("Urunler");
+  const ortak = useTranslations("Ortak");
+
   const [ad, setAd] = useState(baslangic?.ad ?? "");
   const [marka, setMarka] = useState(baslangic?.marka ?? "");
   const [aciklama, setAciklama] = useState(baslangic?.aciklama ?? "");
@@ -99,14 +103,14 @@ export function UrunFormu({
       setVaryantlar((onceki) =>
         onceki.map((v) => ({
           ...v,
-          secenekler: v.secenekler.length ? v.secenekler : [{ ad: "", deger: "" }],
+          secenekler: v.secenekler.length
+            ? v.secenekler
+            : [{ ad: "", deger: "" }],
         })),
       );
     } else {
       // Varyantsıza dönüş: tek satır kalır, seçenekler ve ad temizlenir.
-      setVaryantlar((onceki) => [
-        { ...onceki[0], ad: "", secenekler: [] },
-      ]);
+      setVaryantlar((onceki) => [{ ...onceki[0], ad: "", secenekler: [] }]);
     }
   }
 
@@ -165,7 +169,7 @@ export function UrunFormu({
           role="alert"
           className="border-destructive/50 bg-destructive/10 text-destructive rounded-md border p-4 text-sm"
         >
-          <p className="mb-2 font-medium">Kaydedilemedi:</p>
+          <p className="mb-2 font-medium">{ortak("kaydedilemedi")}</p>
           <ul className="list-inside list-disc space-y-1">
             {durum.hatalar.map((hata, i) => (
               <li key={i}>{hata}</li>
@@ -177,37 +181,37 @@ export function UrunFormu({
       {/* ------------------------------ ÜRÜN ------------------------------ */}
       <Card>
         <CardHeader>
-          <CardTitle>Ürün bilgileri</CardTitle>
+          <CardTitle>{t("urunBilgileri")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="urun-ad">Ürün adı *</Label>
+              <Label htmlFor="urun-ad">{t("urunAdi")} *</Label>
               <Input
                 id="urun-ad"
                 value={ad}
                 onChange={(e) => setAd(e.target.value)}
-                placeholder="Örn. Kablosuz Kulaklık"
+                placeholder={t("urunAdiIpucu")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="urun-marka">Marka</Label>
+              <Label htmlFor="urun-marka">{ortak("marka")}</Label>
               <Input
                 id="urun-marka"
                 value={marka}
                 onChange={(e) => setMarka(e.target.value)}
-                placeholder="Örn. Sony"
+                placeholder={t("markaIpucu")}
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="urun-aciklama">Açıklama</Label>
+            <Label htmlFor="urun-aciklama">{ortak("aciklama")}</Label>
             <Textarea
               id="urun-aciklama"
               value={aciklama}
               onChange={(e) => setAciklama(e.target.value)}
               rows={3}
-              placeholder="İsteğe bağlı"
+              placeholder={ortak("istegeBagli")}
             />
           </div>
         </CardContent>
@@ -216,31 +220,29 @@ export function UrunFormu({
       {/* ---------------------------- VARYANTLAR ---------------------------- */}
       <Card>
         <CardHeader>
-          <CardTitle>Varyantlar</CardTitle>
+          <CardTitle>{t("varyantlar")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label>Bu üründe beden/renk gibi varyant var mı?</Label>
+            <Label>{t("varyantSorusu")}</Label>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant={varyantliMi ? "outline" : "default"}
                 onClick={() => varyantModunuDegistir(false)}
               >
-                Hayır, tek çeşit
+                {t("tekCesitDugmesi")}
               </Button>
               <Button
                 type="button"
                 variant={varyantliMi ? "default" : "outline"}
                 onClick={() => varyantModunuDegistir(true)}
               >
-                Evet, varyantlı
+                {t("varyantliDugmesi")}
               </Button>
             </div>
             <p className="text-muted-foreground text-xs">
-              {varyantliMi
-                ? "Her varyantın kendi SKU, Firma SKU, barkod ve raf bilgisi olur."
-                : "Tek çeşit üründe arka planda otomatik bir varsayılan varyant oluşturulur; stok ve kodlar orada tutulur."}
+              {varyantliMi ? t("varyantliNotu") : t("tekCesitNotu")}
             </p>
           </div>
 
@@ -252,8 +254,8 @@ export function UrunFormu({
               {varyantliMi ? (
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">
-                    {sira + 1}. varyant
-                    {sira === 0 ? " (varsayılan)" : ""}
+                    {t("varyantBasligi", { sira: sira + 1 })}
+                    {sira === 0 ? t("varsayilanEki") : ""}
                   </span>
                   {varyantlar.length > 1 ? (
                     <Button
@@ -267,7 +269,7 @@ export function UrunFormu({
                       }
                     >
                       <Trash2 />
-                      Kaldır
+                      {t("kaldir")}
                     </Button>
                   ) : null}
                 </div>
@@ -275,7 +277,7 @@ export function UrunFormu({
 
               {varyantliMi ? (
                 <div className="space-y-2">
-                  <Label>Seçenekler</Label>
+                  <Label>{t("secenekler")}</Label>
                   {varyant.secenekler.map((secenek, secenekSira) => (
                     <div key={secenekSira} className="flex flex-wrap gap-2">
                       <Input
@@ -286,7 +288,7 @@ export function UrunFormu({
                             ad: e.target.value,
                           })
                         }
-                        placeholder="Beden"
+                        placeholder={t("secenekAdiIpucu")}
                       />
                       <Input
                         className="min-w-32 flex-1"
@@ -296,7 +298,7 @@ export function UrunFormu({
                             deger: e.target.value,
                           })
                         }
-                        placeholder="M"
+                        placeholder={t("secenekDegeriIpucu")}
                       />
                       {varyant.secenekler.length > 1 ? (
                         <Button
@@ -330,24 +332,26 @@ export function UrunFormu({
                     }
                   >
                     <Plus />
-                    Seçenek ekle
+                    {t("secenekEkle")}
                   </Button>
                 </div>
               ) : null}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor={`sku-${sira}`}>SKU *</Label>
+                  <Label htmlFor={`sku-${sira}`}>{ortak("sku")} *</Label>
                   <BarkodGirisi
                     id={`sku-${sira}`}
                     value={varyant.sku}
                     onChange={(deger) => varyantGuncelle(sira, { sku: deger })}
-                    placeholder="Sistem içi kod"
-                    kameraBasligi="SKU okut"
+                    placeholder={t("skuIpucu")}
+                    kameraBasligi={t("skuKamera")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`axcali-${sira}`}>Firma SKU *</Label>
+                  <Label htmlFor={`axcali-${sira}`}>
+                    {ortak("firmaSku")} *
+                  </Label>
                   {/* Fiziğe yapıştırılan etiket kodu — okutulabilmeli (#7). */}
                   <BarkodGirisi
                     id={`axcali-${sira}`}
@@ -355,12 +359,12 @@ export function UrunFormu({
                     onChange={(deger) =>
                       varyantGuncelle(sira, { axcaliSku: deger })
                     }
-                    placeholder="Etiket kodu"
-                    kameraBasligi="Firma SKU etiketini okut"
+                    placeholder={t("firmaSkuIpucu")}
+                    kameraBasligi={t("firmaSkuKamera")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`barkod-${sira}`}>Barkod (EAN)</Label>
+                  <Label htmlFor={`barkod-${sira}`}>{t("barkodEtiketi")}</Label>
                   {/* USB okuyucu (Enter) ve kamera ile okunabilir; elle de yazılabilir. */}
                   <BarkodGirisi
                     id={`barkod-${sira}`}
@@ -368,12 +372,12 @@ export function UrunFormu({
                     onChange={(deger) =>
                       varyantGuncelle(sira, { barcode: deger })
                     }
-                    placeholder="Okutun veya elle yazın"
-                    kameraBasligi="Ürün barkodunu okut"
+                    placeholder={t("barkodIpucu")}
+                    kameraBasligi={t("barkodKamera")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`konum-${sira}`}>Raf konumu</Label>
+                  <Label htmlFor={`konum-${sira}`}>{t("rafKonumu")}</Label>
                   <Select
                     value={varyant.locationId || KONUM_YOK}
                     onValueChange={(deger) =>
@@ -383,10 +387,12 @@ export function UrunFormu({
                     }
                   >
                     <SelectTrigger id={`konum-${sira}`} className="w-full">
-                      <SelectValue placeholder="Raf seçin" />
+                      <SelectValue placeholder={t("rafSecin")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={KONUM_YOK}>Raf atanmadı</SelectItem>
+                      <SelectItem value={KONUM_YOK}>
+                        {t("rafAtanmadi")}
+                      </SelectItem>
                       {konumlar.map((konum) => (
                         <SelectItem key={konum.id} value={konum.id}>
                           {konum.code}
@@ -402,14 +408,16 @@ export function UrunFormu({
 
           {konumlar.length === 0 ? (
             <p className="text-muted-foreground text-xs">
-              Henüz raf tanımlamamışsınız.{" "}
-              <Link
-                href="/ayarlar/konumlar"
-                className="underline underline-offset-4"
-              >
-                Raf konumları
-              </Link>{" "}
-              sayfasından ekleyebilirsiniz.
+              {t.rich("rafYokNotu", {
+                baglanti: (parca) => (
+                  <Link
+                    href="/ayarlar/konumlar"
+                    className="underline underline-offset-4"
+                  >
+                    {parca}
+                  </Link>
+                ),
+              })}
             </p>
           ) : null}
 
@@ -422,7 +430,7 @@ export function UrunFormu({
               }
             >
               <Plus />
-              Varyant ekle
+              {t("varyantEkle")}
             </Button>
           ) : null}
         </CardContent>
@@ -430,10 +438,12 @@ export function UrunFormu({
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={bekliyor}>
-          {bekliyor ? "Kaydediliyor..." : gonderEtiketi}
+          {bekliyor ? ortak("kaydediliyor") : gonderEtiketi}
         </Button>
         <Button type="button" variant="outline" asChild>
-          <Link href={urunId ? `/urunler/${urunId}` : "/urunler"}>Vazgeç</Link>
+          <Link href={urunId ? `/urunler/${urunId}` : "/urunler"}>
+            {ortak("vazgec")}
+          </Link>
         </Button>
       </div>
     </form>

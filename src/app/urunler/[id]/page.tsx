@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { Pencil } from "lucide-react";
 
 import { GeriBaglanti } from "@/components/baglanti";
@@ -42,6 +43,8 @@ export default async function UrunDetaySayfasi({
   if (!urun) notFound();
 
   const bicim = await bicimlendirici();
+  const t = await getTranslations("Urunler");
+  const ortak = await getTranslations("Ortak");
 
   // Stok hesabı tek yerde: src/lib/stok.ts (ledger toplamı).
   const stokHaritasi = await varyantStoklari(urun.variants.map((v) => v.id));
@@ -49,20 +52,22 @@ export default async function UrunDetaySayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <GeriBaglanti href="/urunler">Ürünler</GeriBaglanti>
+        <GeriBaglanti href="/urunler">{t("baslik")}</GeriBaglanti>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">{urun.name}</h1>
             <p className="text-muted-foreground text-sm">
-              {urun.brand ?? "Marka belirtilmemiş"} ·{" "}
-              {bicim.tarih(urun.createdAt)} tarihinde eklendi
+              {t("altBilgi", {
+                marka: urun.brand ?? t("markaBelirtilmemis"),
+                tarih: bicim.tarih(urun.createdAt),
+              })}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild>
               <Link href={`/urunler/${urun.id}/duzenle`}>
                 <Pencil />
-                Düzenle
+                {ortak("duzenle")}
               </Link>
             </Button>
             <SilButonu urunId={urun.id} urunAdi={urun.name} boyut="default" />
@@ -73,7 +78,7 @@ export default async function UrunDetaySayfasi({
       {urun.description ? (
         <Card>
           <CardHeader>
-            <CardTitle>Açıklama</CardTitle>
+            <CardTitle>{ortak("aciklama")}</CardTitle>
           </CardHeader>
           <CardContent className="text-muted-foreground text-sm whitespace-pre-line">
             {urun.description}
@@ -84,10 +89,10 @@ export default async function UrunDetaySayfasi({
       <Card>
         <CardHeader>
           <CardTitle>
-            Varyantlar ({urun.variants.length})
+            {t("varyantlarBasligi", { sayi: urun.variants.length })}
             {!urun.hasVariants ? (
               <Badge variant="secondary" className="ml-2">
-                tek çeşit
+                {t("tekCesitRozeti")}
               </Badge>
             ) : null}
           </CardTitle>
@@ -98,12 +103,12 @@ export default async function UrunDetaySayfasi({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Varyant</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Firma SKU</TableHead>
-                  <TableHead>Barkod</TableHead>
-                  <TableHead>Raf</TableHead>
-                  <TableHead className="text-right">Stok</TableHead>
+                  <TableHead>{ortak("varyant")}</TableHead>
+                  <TableHead>{ortak("sku")}</TableHead>
+                  <TableHead>{ortak("firmaSku")}</TableHead>
+                  <TableHead>{ortak("barkod")}</TableHead>
+                  <TableHead>{ortak("raf")}</TableHead>
+                  <TableHead className="text-right">{ortak("stok")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -112,10 +117,12 @@ export default async function UrunDetaySayfasi({
                     <TableCell>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium">
-                          {varyant.name ?? "Varsayılan"}
+                          {varyant.name ?? t("varsayilanVaryant")}
                         </span>
                         {varyant.isDefault ? (
-                          <Badge variant="outline">varsayılan</Badge>
+                          <Badge variant="outline">
+                            {t("varsayilanRozeti")}
+                          </Badge>
                         ) : null}
                       </div>
                       {varyant.options.length ? (
@@ -127,18 +134,21 @@ export default async function UrunDetaySayfasi({
                       ) : null}
                     </TableCell>
                     <TableCell>
-                      <KopyalanabilirKod deger={varyant.sku} etiket="SKU" />
+                      <KopyalanabilirKod
+                        deger={varyant.sku}
+                        etiket={ortak("sku")}
+                      />
                     </TableCell>
                     <TableCell>
                       <KopyalanabilirKod
                         deger={varyant.axcaliSku}
-                        etiket="Firma SKU"
+                        etiket={ortak("firmaSku")}
                       />
                     </TableCell>
                     <TableCell>
                       <KopyalanabilirKod
                         deger={varyant.barcode}
-                        etiket="Barkod"
+                        etiket={ortak("barkod")}
                       />
                     </TableCell>
                     <TableCell>
@@ -166,9 +176,9 @@ export default async function UrunDetaySayfasi({
                 key={varyant.id}
                 baslik={
                   <span className="flex flex-wrap items-center gap-2">
-                    {varyant.name ?? "Varsayılan"}
+                    {varyant.name ?? t("varsayilanVaryant")}
                     {varyant.isDefault ? (
-                      <Badge variant="outline">varsayılan</Badge>
+                      <Badge variant="outline">{t("varsayilanRozeti")}</Badge>
                     ) : null}
                   </span>
                 }
@@ -181,7 +191,7 @@ export default async function UrunDetaySayfasi({
                 }
                 alanlar={[
                   {
-                    etiket: "Stok",
+                    etiket: ortak("stok"),
                     deger: (
                       <span className="text-base font-semibold">
                         {stokHaritasi.get(varyant.id) ?? 0}
@@ -189,7 +199,7 @@ export default async function UrunDetaySayfasi({
                     ),
                   },
                   {
-                    etiket: "Raf",
+                    etiket: ortak("raf"),
                     deger: varyant.location ? (
                       <Badge variant="secondary">{varyant.location.code}</Badge>
                     ) : (
@@ -197,26 +207,29 @@ export default async function UrunDetaySayfasi({
                     ),
                   },
                   {
-                    etiket: "SKU",
-                    deger: (
-                      <KopyalanabilirKod deger={varyant.sku} etiket="SKU" />
-                    ),
-                  },
-                  {
-                    etiket: "Firma SKU",
+                    etiket: ortak("sku"),
                     deger: (
                       <KopyalanabilirKod
-                        deger={varyant.axcaliSku}
-                        etiket="Firma SKU"
+                        deger={varyant.sku}
+                        etiket={ortak("sku")}
                       />
                     ),
                   },
                   {
-                    etiket: "Barkod",
+                    etiket: ortak("firmaSku"),
+                    deger: (
+                      <KopyalanabilirKod
+                        deger={varyant.axcaliSku}
+                        etiket={ortak("firmaSku")}
+                      />
+                    ),
+                  },
+                  {
+                    etiket: ortak("barkod"),
                     deger: (
                       <KopyalanabilirKod
                         deger={varyant.barcode}
-                        etiket="Barkod"
+                        etiket={ortak("barkod")}
                       />
                     ),
                   },
@@ -224,10 +237,7 @@ export default async function UrunDetaySayfasi({
               />
             ))}
           </div>
-          <p className="text-muted-foreground mt-3 text-xs">
-            Stok, bu varyantın tüm stok hareketlerinin toplamıdır. Alımlar mal
-            kabul edildikçe artar.
-          </p>
+          <p className="text-muted-foreground mt-3 text-xs">{t("stokNotu")}</p>
         </CardContent>
       </Card>
     </div>

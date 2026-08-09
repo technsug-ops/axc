@@ -93,6 +93,10 @@ const ornekler = [
   ["Raf", "bagliKayitlar", { varyant: 2, hareket: 9 }, "2 varyant ve 9 stok hareketi bu rafa bağlı."],
   ["Raf", "etiketlerOzeti", { sayi: 5 }, "5 aktif raf. Yazdırıp raflara yapıştırın; QR içeriği raf kodudur."],
   ["KanalHesabi", "tanimliHesaplar", { sayi: 2 }, "Tanımlı hesaplar (2)"],
+  ["Urunler", "varyantBasligi", { sira: 2 }, "2. varyant"],
+  ["Urunler", "varsayilanEki", {}, " (varsayılan)"],
+  ["Urunler", "altBilgi", { marka: "Sony", tarih: "08.08.2026" }, "Sony · 08.08.2026 tarihinde eklendi"],
+  ["Urunler", "varyantlarBasligi", { sayi: 3 }, "Varyantlar (3)"],
 ];
 
 let fark = 0;
