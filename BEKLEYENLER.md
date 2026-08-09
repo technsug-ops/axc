@@ -46,6 +46,38 @@ listesiyle birlikte teslim edilir.
       (`purchasedAt`, `soldAt`, `occurredAt`) KAYMIYOR — tarih girdileri
       UTC gece yarısı olarak saklandığı için iki dilimde de aynı gün._
 
+## Canlıya geçiş ön şartları — ÜÇÜ DE ZORUNLU
+
+Bunlar tamamlanmadan gerçek veriyle canlıya geçilmez.
+_Karar 09.08.2026._
+
+- [ ] **Veri içe aktarma modülü (Excel/CSV)** — Faz 2 sonu
+      Kapsam:
+      1. Ürün + varyant listesi (kodlar, komisyon oranı, desi, raf dahil)
+      2. Açılış stoğu — `INITIAL` hareketi olarak, mümkünse maliyetli
+      3. Gerekirse açık alımlar
+      Çalışma biçimi: **şablon indirme → yükleme → satır satır doğrulama
+      → hata raporu** (hangi satır neden reddedildi). Yarım aktarma
+      olmamalı; ledger kuralları içe aktarmada da geçerli.
+      _SaaS: bu modül onboarding'in temeli — her yeni müşteri kendi
+      Excel'ini yükleyerek başlayacak._
+
+- [ ] **Dışa aktarma (Excel/CSV)** — içe aktarmayla AYNI pakette
+      İkisi aynı şablonu ve altyapıyı paylaşır, bu yüzden birlikte
+      yapılır.
+      1. Her ana liste ekranına "Excel/CSV indir" eylemi — ürünler,
+         alımlar, satışlar, stok, kartlar. **Mevcut filtre/aramayı
+         uygulayarak** indirir (ekranda ne görüyorsa onu).
+      2. `/ayarlar` altında "tüm veriyi dışa aktar" — tablo tablo tam
+         döküm.
+
+- [ ] **Otomatik veritabanı yedeği**
+      Zamanlanmış, saklama süreli. Hosting ortamına göre kurgulanacak;
+      Vercel + uzak MySQL mimarisinde nasıl yapılacağı o gün netleşir.
+      Ayrıca kullanıcının kendi indirebileceği yedek: `/ayarlar`'da
+      **"yedek al"** — tüm verinin tek dosyada dökümü + geri yükleme
+      yolu.
+
 ## SaaS dönüşümü
 
 - [ ] **Çok-kiracılı (multi-tenant) mimari**

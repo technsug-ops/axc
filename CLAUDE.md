@@ -168,6 +168,12 @@ zorlaştıracak şekilde yazılmıyor.
   Satış anında çözülen oran satış kaydına yazılır (snapshot) — oran
   sonradan değişse eski satışların hesabı değişmez.
   _Karar 09.08.2026._
+- **Canlıya geçiş ön şartı: veri içe aktarma modülü.** (Ayrıntı ve
+  diğer iki ön şart için bkz. BEKLEYENLER.md → Canlıya geçiş ön şartları.)
+- **VERİ SAHİPLİĞİ İLKESİ:** Müşteri verisini istediği an tam olarak
+  dışa aktarabilir. **Onboarding = içe aktar, offboarding = dışa aktar;
+  ikisi de birinci sınıf özelliktir**, sonradan eklenen eklenti değil.
+  _Karar 09.08.2026._
 
 ## Çalışma kuralları
 - Her aşamada önce ne yapacağını KISACA söyle, onay al, sonra uygula
