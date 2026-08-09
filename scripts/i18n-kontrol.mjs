@@ -102,7 +102,7 @@ const ornekler = [
   ["Alim", "kalemEklendi", { urun: "Kulaklık", adet: 2 }, "Kulaklık eklendi (2 adet)."],
   ["Alim", "barkodIpucu", {}, "Okutun veya kodu yazıp Enter'a basın"],
   ["Alim", "aramaEtiketi", {}, "Ada / SKU'ya göre ara"],
-  ["Alim", "formNotu", {}, 'Yeni alım "Sipariş verildi" durumunda kaydedilir. Mal kabul ve stok girişi Aşama 3\'te gelecek.'],
+  ["Alim", "formNotu", {}, 'Yeni alım "Sipariş verildi" durumunda kaydedilir; mal kabul, alım detayından yapılır.'],
   ["Alim", "detayNotu", {}, '"Sağlam" sütunu stok hareketlerinden hesaplanır. Hasarlı ürünler stoğa girmez; satıcıya iade ve tazminat süreci sonraki fazlarda gelecek. Yanlış bir giriş silinmez, ters yönde bir düzeltme kaydıyla giderilir.'],
   ["MalKabul", "kodBulunamadi", { kod: "869" }, '"869" bu alımın kalemleri arasında bulunamadı.'],
   ["MalKabul", "tamamiGirildi", { urun: "Kulaklık", kalan: 4 }, "Kulaklık: kalan 4 adedin tamamı girildi."],

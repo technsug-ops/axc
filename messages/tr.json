@@ -399,7 +399,7 @@
     "alimToplami": "Alım toplamı",
     "toplamNotu": "Para birimleri ayrı toplanır ve birbirine ÇEVRİLMEZ.",
     "alimiKaydet": "Alımı Kaydet",
-    "formNotu": "Yeni alım \"Sipariş verildi\" durumunda kaydedilir. Mal kabul ve stok girişi Aşama 3'te gelecek."
+    "formNotu": "Yeni alım \"Sipariş verildi\" durumunda kaydedilir; mal kabul, alım detayından yapılır."
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",
