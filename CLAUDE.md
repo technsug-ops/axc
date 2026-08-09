@@ -130,9 +130,24 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
 - Kredi kartı seçim mantığı (ileride): limiti uygun + kesim günü en uzak
   + faizsiz maksimum taksit
 - Stok toplama FIFO; raf konumu (Location) toplama ekranında gösterilir
-- İleriki fazlarda gelecek kanal kuralları: Hepsiburada komisyonuna +%20 KDV
-  ve %0,08 ödeme ücreti; Trendyol 13,29 TL sabit gider + Aras desi kargo.
-  İki net kâr rakamı hesaplanır: (1) stopaj düşülmüş, (2) stopaj+KDV düşülmüş.
+- **Kanal kesinti kuralları (teyitli 09.08.2026 — önceki değerler yanlıştı):**
+  - Hepsiburada: komisyona **+%20 KDV** · **%0,8 ödeme gideri** (sipariş
+    tutarının binde sekizi, 100 TL'de 80 kuruş) · **12,60 TL hizmet bedeli**
+    (sipariş başına). _Eski "%0,08" notu hatalıydı._
+  - Trendyol: **13,19 TL sabit gider, SİPARİŞ BAŞINA BİR KEZ** (kalem
+    sayısından bağımsız). Komisyonuna KDV eklenmez.
+    _Eski "13,29 TL" notu hatalıydı._
+  - Kargo: paket başına, desi bazlı tarifeden + %20 KDV. **Kargo firması
+    satışta seçilir** (tarife tablosunda 10+ firma).
+  - Komisyon oranı ürün×pazaryeri bazında farklıdır ve **haftalık değişir**
+    (Trendyol Salı, Hepsiburada Çarşamba günceller). Bu yüzden oran
+    ChannelSku seviyesinde tutulur ve satış anında kayda snapshot'lanır.
+  - **Stopaj: KDV hariç tutarın %1'i.** Matrah, ürünün KENDİ KDV oranı
+    düşülmüş tutardır (kategoriden gelir).
+  - **%15 gelir vergisi KULLANILMIYOR** — kullanıcı bu rakama itibar
+    etmiyor; hesaba katılmaz, ekranda gösterilmez.
+- İki net kâr rakamı hesaplanır: **NET-1** (stopaj düşülmüş),
+  **NET-2** (NET-1'den ödenecek KDV de düşülmüş).
 
 ## Faz sırası (sırayı atlama)
 - Faz 0 ✓: şema (tamamlandı)
