@@ -74,8 +74,6 @@ export function KartFormu({
       <input type="hidden" name="currency" value={paraBirimi} />
       <input type="hidden" name="creditLimitCurrency" value={limitParaBirimi} />
 
-      <HataOzeti hatalar={durum.hatalar} />
-
       <Card>
         <CardHeader>
           <CardTitle>{t("kartBilgileri")}</CardTitle>
@@ -210,6 +208,8 @@ export function KartFormu({
           <p className="text-muted-foreground text-xs">{t("gunNotu")}</p>
         </CardContent>
       </Card>
+
+      <HataOzeti hatalar={durum.hatalar} />
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={bekliyor}>

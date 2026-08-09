@@ -167,8 +167,6 @@ export function MalKabulFormu({
       <input type="hidden" name="alimId" value={alimId} />
       <input type="hidden" name="veri" value={JSON.stringify(gonderilecek)} />
 
-      <HataOzeti hatalar={durum.hatalar} />
-
       <Card>
         <CardHeader>
           <CardTitle>{t("teslimat")}</CardTitle>
@@ -398,6 +396,8 @@ export function MalKabulFormu({
           </div>
         </CardContent>
       </Card>
+
+      <HataOzeti hatalar={durum.hatalar} />
 
       <div className="flex flex-wrap gap-2">
         {/* Stok hareketi geri alınamaz — onay zorunlu (#6). */}

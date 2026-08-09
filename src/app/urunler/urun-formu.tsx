@@ -165,8 +165,6 @@ export function UrunFormu({
       {urunId ? <input type="hidden" name="id" value={urunId} /> : null}
       <input type="hidden" name="veri" value={JSON.stringify(gonderilecek)} />
 
-      <HataOzeti hatalar={durum.hatalar} />
-
       {/* ------------------------------ ÜRÜN ------------------------------ */}
       <Card>
         <CardHeader>
@@ -424,6 +422,8 @@ export function UrunFormu({
           ) : null}
         </CardContent>
       </Card>
+
+      <HataOzeti hatalar={durum.hatalar} />
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={bekliyor}>

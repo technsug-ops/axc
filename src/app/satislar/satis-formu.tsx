@@ -218,8 +218,6 @@ export function SatisFormu({
     <form action={formAction} className="space-y-6">
       <input type="hidden" name="veri" value={JSON.stringify(gonderilecek)} />
 
-      <HataOzeti hatalar={durum.hatalar} />
-
       {/* ----------------------------- BAŞLIK ----------------------------- */}
       <Card>
         <CardHeader>
@@ -537,6 +535,8 @@ export function SatisFormu({
           ) : null}
         </CardContent>
       </Card>
+
+      <HataOzeti hatalar={durum.hatalar} />
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={bekliyor || kalemler.length === 0}>
