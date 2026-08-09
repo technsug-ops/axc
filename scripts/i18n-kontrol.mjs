@@ -97,6 +97,19 @@ const ornekler = [
   ["Urunler", "varsayilanEki", {}, " (varsayılan)"],
   ["Urunler", "altBilgi", { marka: "Sony", tarih: "08.08.2026" }, "Sony · 08.08.2026 tarihinde eklendi"],
   ["Urunler", "varyantlarBasligi", { sayi: 3 }, "Varyantlar (3)"],
+  ["Alim", "durumEki", { durum: "Sipariş verildi" }, " — Sipariş verildi"],
+  ["Alim", "taksitSayisi", { sayi: 6 }, "6 taksit"],
+  ["Alim", "kalemEklendi", { urun: "Kulaklık", adet: 2 }, "Kulaklık eklendi (2 adet)."],
+  ["Alim", "barkodIpucu", {}, "Okutun veya kodu yazıp Enter'a basın"],
+  ["Alim", "aramaEtiketi", {}, "Ada / SKU'ya göre ara"],
+  ["Alim", "formNotu", {}, 'Yeni alım "Sipariş verildi" durumunda kaydedilir. Mal kabul ve stok girişi Aşama 3\'te gelecek.'],
+  ["Alim", "detayNotu", {}, '"Sağlam" sütunu stok hareketlerinden hesaplanır. Hasarlı ürünler stoğa girmez; satıcıya iade ve tazminat süreci sonraki fazlarda gelecek. Yanlış bir giriş silinmez, ters yönde bir düzeltme kaydıyla giderilir.'],
+  ["MalKabul", "kodBulunamadi", { kod: "869" }, '"869" bu alımın kalemleri arasında bulunamadı.'],
+  ["MalKabul", "tamamiGirildi", { urun: "Kulaklık", kalan: 4 }, "Kulaklık: kalan 4 adedin tamamı girildi."],
+  ["MalKabul", "asimUyarisi", { girilen: 5, kalan: 3 }, "Girilen 5 adet, kalan 3 adedi aşıyor."],
+  ["MalKabul", "altNot", { kod: "ALM-1" }, "ALM-1 · Kısmi kabul yapabilirsiniz; kalan adetler için daha sonra tekrar mal kabul edersiniz."],
+  ["Ortak", "kodKopyala", { etiket: "Barkod" }, "Barkod kodunu kopyala"],
+  ["Kamera", "acilamadi", {}, "Kamera açılamadı. Sayfa güvenli bağlantıda (https veya localhost) olmalı. Kodu elle yazabilirsiniz."],
 ];
 
 let fark = 0;

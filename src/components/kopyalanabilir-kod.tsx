@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Check, Copy, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -67,6 +68,8 @@ export function KopyalanabilirKod({
    */
   sadeceIkon?: boolean;
 }) {
+  const t = useTranslations("Ortak");
+
   const [durum, setDurum] = useState<Durum>("bos");
   const zamanlayiciRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -90,8 +93,8 @@ export function KopyalanabilirKod({
       <button
         type="button"
         onClick={kopyala}
-        title={`${etiket} kodunu kopyala`}
-        aria-label={`${etiket} kodunu kopyala`}
+        title={t("kodKopyala", { etiket })}
+        aria-label={t("kodKopyala", { etiket })}
         className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 shrink-0 items-center justify-center rounded transition-colors"
       >
         {durum === "kopyalandi" ? (
@@ -106,12 +109,12 @@ export function KopyalanabilirKod({
       {/* Yerinde onay — sessiz başarı/başarısızlık yasak (#5). */}
       {durum === "kopyalandi" ? (
         <span className="text-xs font-medium text-emerald-600" role="status">
-          kopyalandı
+          {t("kopyalandi")}
         </span>
       ) : null}
       {durum === "hata" ? (
         <span className="text-destructive text-xs font-medium" role="status">
-          kopyalanamadı
+          {t("kopyalanamadi")}
         </span>
       ) : null}
     </span>

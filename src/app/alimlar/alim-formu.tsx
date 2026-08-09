@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, Search, Trash2 } from "lucide-react";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
@@ -83,6 +84,9 @@ export function AlimFormu({
   // --- Kalemler ---
   const [kalemler, setKalemler] = useState<Kalem[]>([]);
 
+  const t = useTranslations("Alim");
+  const ortak = useTranslations("Ortak");
+
   // --- Barkodla hızlı ekleme ---
   const [barkod, setBarkod] = useState("");
   const [barkodAdedi, setBarkodAdedi] = useState("1");
@@ -154,13 +158,15 @@ export function AlimFormu({
     try {
       const varyant = await varyantKodlaBul(kod);
       if (!varyant) {
-        setBarkodMesaji(`"${kod}" koduna ait ürün bulunamadı.`);
+        setBarkodMesaji(t("kodBulunamadi", { kod }));
       } else {
         kalemEkle(varyant, adet);
-        setBarkodMesaji(`${varyantEtiketi(varyant)} eklendi (${adet} adet).`);
+        setBarkodMesaji(
+          t("kalemEklendi", { urun: varyantEtiketi(varyant), adet }),
+        );
       }
     } catch {
-      setBarkodMesaji("Arama sırasında bir hata oluştu.");
+      setBarkodMesaji(t("aramaHatasi"));
     }
 
     setBarkod("");
@@ -216,7 +222,7 @@ export function AlimFormu({
           role="alert"
           className="border-destructive/50 bg-destructive/10 text-destructive rounded-md border p-4 text-sm"
         >
-          <p className="mb-2 font-medium">Kaydedilemedi:</p>
+          <p className="mb-2 font-medium">{ortak("kaydedilemedi")}</p>
           <ul className="list-inside list-disc space-y-1">
             {durum.hatalar.map((hata, i) => (
               <li key={i}>{hata}</li>
@@ -228,23 +234,23 @@ export function AlimFormu({
       {/* ----------------------------- BAŞLIK ----------------------------- */}
       <Card>
         <CardHeader>
-          <CardTitle>Alım bilgileri</CardTitle>
+          <CardTitle>{t("alimBilgileri")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="alim-kod">Sipariş no *</Label>
+              <Label htmlFor="alim-kod">{ortak("siparisNo")} *</Label>
               {/* Sipariş fişindeki barkod okutulabilir (#7). */}
               <BarkodGirisi
                 id="alim-kod"
                 value={code}
                 onChange={setCode}
-                placeholder="ALM-2026-0001 (okutabilirsiniz)"
-                kameraBasligi="Sipariş barkodunu okut"
+                placeholder={t("kodIpucu")}
+                kameraBasligi={t("kodKamera")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="alim-tarih">Alım tarihi *</Label>
+              <Label htmlFor="alim-tarih">{t("alimTarihi")} *</Label>
               <Input
                 id="alim-tarih"
                 type="date"
@@ -254,7 +260,7 @@ export function AlimFormu({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="alim-hesap">Kanal hesabı</Label>
+              <Label htmlFor="alim-hesap">{ortak("kanalHesabi")}</Label>
               <Select
                 value={channelAccountId || SECIM_YOK}
                 onValueChange={(d) =>
@@ -262,10 +268,12 @@ export function AlimFormu({
                 }
               >
                 <SelectTrigger id="alim-hesap" className="w-full">
-                  <SelectValue placeholder="Hesap seçin" />
+                  <SelectValue placeholder={t("hesapSecin")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={SECIM_YOK}>Seçilmedi</SelectItem>
+                  <SelectItem value={SECIM_YOK}>
+                    {ortak("secilmedi")}
+                  </SelectItem>
                   {hesaplar.map((hesap) => (
                     <SelectItem key={hesap.id} value={hesap.id}>
                       {hesap.etiket}
@@ -275,29 +283,33 @@ export function AlimFormu({
               </Select>
               {hesaplar.length === 0 ? (
                 <p className="text-muted-foreground text-xs">
-                  Hiç kanal hesabı yok.{" "}
-                  <Link
-                    href="/ayarlar/kanallar"
-                    className="underline underline-offset-4"
-                  >
-                    Kanal Hesapları
-                  </Link>{" "}
-                  sayfasından ekleyin.
+                  {t.rich("hesapYokNotu", {
+                    baglanti: (parca) => (
+                      <Link
+                        href="/ayarlar/kanallar"
+                        className="underline underline-offset-4"
+                      >
+                        {parca}
+                      </Link>
+                    ),
+                  })}
                 </p>
               ) : null}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="alim-kart">Ödenen kart</Label>
+              <Label htmlFor="alim-kart">{t("odenenKart")}</Label>
               <Select
                 value={creditCardId || SECIM_YOK}
                 onValueChange={(d) => setCreditCardId(d === SECIM_YOK ? "" : d)}
               >
                 <SelectTrigger id="alim-kart" className="w-full">
-                  <SelectValue placeholder="Kart seçin" />
+                  <SelectValue placeholder={t("kartSecin")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={SECIM_YOK}>Seçilmedi</SelectItem>
+                  <SelectItem value={SECIM_YOK}>
+                    {ortak("secilmedi")}
+                  </SelectItem>
                   {kartlar.map((kart) => (
                     <SelectItem key={kart.id} value={kart.id}>
                       {kart.etiket}
@@ -307,20 +319,22 @@ export function AlimFormu({
               </Select>
               {kartlar.length === 0 ? (
                 <p className="text-muted-foreground text-xs">
-                  Aktif kart yok.{" "}
-                  <Link
-                    href="/kartlar/yeni"
-                    className="underline underline-offset-4"
-                  >
-                    Kart ekleyin
-                  </Link>
-                  .
+                  {t.rich("kartYokNotu", {
+                    baglanti: (parca) => (
+                      <Link
+                        href="/kartlar/yeni"
+                        className="underline underline-offset-4"
+                      >
+                        {parca}
+                      </Link>
+                    ),
+                  })}
                 </p>
               ) : null}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="alim-taksit">Taksit sayısı</Label>
+              <Label htmlFor="alim-taksit">{t("taksitSayisiEtiketi")}</Label>
               <Input
                 id="alim-taksit"
                 value={installmentCount}
@@ -328,31 +342,29 @@ export function AlimFormu({
                 inputMode="numeric"
                 placeholder="1"
               />
-              <p className="text-muted-foreground text-xs">
-                1 = tek çekim.
-              </p>
+              <p className="text-muted-foreground text-xs">{t("taksitNotu")}</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="alim-tedarikci">Tedarikçi</Label>
+              <Label htmlFor="alim-tedarikci">{t("tedarikci")}</Label>
               <Input
                 id="alim-tedarikci"
                 value={supplierName}
                 onChange={(e) => setSupplierName(e.target.value)}
-                placeholder="İsteğe bağlı"
+                placeholder={ortak("istegeBagli")}
                 autoComplete="off"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="alim-not">Not</Label>
+            <Label htmlFor="alim-not">{t("not")}</Label>
             <Textarea
               id="alim-not"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
-              placeholder="İsteğe bağlı"
+              placeholder={ortak("istegeBagli")}
             />
           </div>
         </CardContent>
@@ -361,11 +373,11 @@ export function AlimFormu({
       {/* ------------------------- KALEM EKLEME --------------------------- */}
       <Card>
         <CardHeader>
-          <CardTitle>Kalem ekle</CardTitle>
+          <CardTitle>{t("kalemEkle")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="alim-barkod">Barkodla ekle</Label>
+            <Label htmlFor="alim-barkod">{t("barkodlaEkle")}</Label>
             <div className="flex flex-wrap items-start gap-2">
               <BarkodGirisi
                 id="alim-barkod"
@@ -374,24 +386,20 @@ export function AlimFormu({
                 onChange={setBarkod}
                 onOkundu={barkoddanEkle}
                 inputRef={barkodRef}
-                placeholder="Okutun veya kodu yazıp Enter'a basın"
-                kameraBasligi="Ürün barkodunu okut"
+                placeholder={t("barkodIpucu")}
+                kameraBasligi={t("barkodKamera")}
               />
               <div className="w-24">
                 <Input
                   value={barkodAdedi}
                   onChange={(e) => setBarkodAdedi(e.target.value)}
                   inputMode="numeric"
-                  aria-label="Okutulan üründen kaç adet eklensin"
-                  placeholder="Adet"
+                  aria-label={t("adetEtiketi")}
+                  placeholder={t("adetIpucu")}
                 />
               </div>
             </div>
-            <p className="text-muted-foreground text-xs">
-              USB okuyucu kodun sonuna Enter gönderir; kalem eklenir ve kutu
-              yeniden odaklanır, peş peşe okutabilirsiniz. Aynı ürün tekrar
-              okutulursa adedi artar.
-            </p>
+            <p className="text-muted-foreground text-xs">{t("barkodNotu")}</p>
             {barkodMesaji ? (
               <p className="text-sm" role="status">
                 {barkodMesaji}
@@ -400,7 +408,7 @@ export function AlimFormu({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="alim-arama">Ada / SKU&apos;ya göre ara</Label>
+            <Label htmlFor="alim-arama">{t("aramaEtiketi")}</Label>
             <div className="relative">
               <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
@@ -408,12 +416,12 @@ export function AlimFormu({
                 className="pl-9"
                 value={sorgu}
                 onChange={(e) => setSorgu(e.target.value)}
-                placeholder="En az 2 karakter yazın"
+                placeholder={t("aramaIpucuKalem")}
                 autoComplete="off"
               />
             </div>
             {araniyor ? (
-              <p className="text-muted-foreground text-xs">Aranıyor...</p>
+              <p className="text-muted-foreground text-xs">{t("araniyor")}</p>
             ) : null}
             {sonuclar.length ? (
               <ul className="divide-y rounded-md border">
@@ -441,7 +449,7 @@ export function AlimFormu({
                       }}
                     >
                       <Plus />
-                      Ekle
+                      {ortak("ekle")}
                     </Button>
                   </li>
                 ))}
@@ -454,14 +462,16 @@ export function AlimFormu({
       {/* --------------------------- KALEMLER ----------------------------- */}
       <Card>
         <CardHeader>
-          <CardTitle>Kalemler ({kalemler.length})</CardTitle>
+          <CardTitle>
+            {t("kalemlerBasligi", { sayi: kalemler.length })}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {kalemler.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="font-medium">Henüz kalem eklenmedi.</p>
+              <p className="font-medium">{t("bosKalemBaslik")}</p>
               <p className="text-muted-foreground mt-1 text-sm">
-                Yukarıdan barkod okutarak veya arayarak ekleyin.
+                {t("bosKalemIpucu")}
               </p>
             </div>
           ) : (
@@ -488,13 +498,13 @@ export function AlimFormu({
                     }
                   >
                     <Trash2 />
-                    Kaldır
+                    {ortak("kaldir")}
                   </Button>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor={`adet-${sira}`}>Adet</Label>
+                    <Label htmlFor={`adet-${sira}`}>{t("adet")}</Label>
                     <Input
                       id={`adet-${sira}`}
                       value={String(kalem.quantity)}
@@ -510,19 +520,23 @@ export function AlimFormu({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`fiyat-${sira}`}>Birim fiyat</Label>
+                    <Label htmlFor={`fiyat-${sira}`}>
+                      {t("sutunBirimFiyat")}
+                    </Label>
                     <Input
                       id={`fiyat-${sira}`}
                       value={kalem.unitCostAmount}
                       inputMode="decimal"
-                      placeholder="0,00"
+                      placeholder={t("fiyatIpucu")}
                       onChange={(e) =>
                         kalemGuncelle(sira, { unitCostAmount: e.target.value })
                       }
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`para-${sira}`}>Para birimi</Label>
+                    <Label htmlFor={`para-${sira}`}>
+                      {ortak("paraBirimi")}
+                    </Label>
                     <Select
                       value={kalem.unitCostCurrency}
                       onValueChange={(d) =>
@@ -547,7 +561,7 @@ export function AlimFormu({
 
           {toplamlar.length ? (
             <div className="space-y-2 rounded-lg border p-4">
-              <div className="text-sm font-medium">Alım toplamı</div>
+              <div className="text-sm font-medium">{t("alimToplami")}</div>
               <div className="flex flex-wrap gap-3">
                 {toplamlar.map(([paraBirimi, tutar]) => (
                   <div key={paraBirimi} className="rounded-md border px-3 py-2">
@@ -560,9 +574,7 @@ export function AlimFormu({
                   </div>
                 ))}
               </div>
-              <p className="text-muted-foreground text-xs">
-                Para birimleri ayrı toplanır ve birbirine ÇEVRİLMEZ.
-              </p>
+              <p className="text-muted-foreground text-xs">{t("toplamNotu")}</p>
             </div>
           ) : null}
         </CardContent>
@@ -570,16 +582,13 @@ export function AlimFormu({
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={bekliyor || kalemler.length === 0}>
-          {bekliyor ? "Kaydediliyor..." : "Alımı Kaydet"}
+          {bekliyor ? ortak("kaydediliyor") : t("alimiKaydet")}
         </Button>
         <Button type="button" variant="outline" asChild>
-          <Link href="/alimlar">Vazgeç</Link>
+          <Link href="/alimlar">{ortak("vazgec")}</Link>
         </Button>
       </div>
-      <p className="text-muted-foreground text-xs">
-        Yeni alım &quot;Sipariş verildi&quot; durumunda kaydedilir. Mal kabul ve
-        stok girişi Aşama 3&apos;te gelecek.
-      </p>
+      <p className="text-muted-foreground text-xs">{t("formNotu")}</p>
     </form>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 import { Power, PowerOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ export function DurumDegistirButonu({
   aktifMi: boolean;
   action: (durum: Durum, formData: FormData) => Promise<Durum>;
 }) {
+  const t = useTranslations("Ortak");
+
   const [durum, formAction, bekliyor] = useActionState<Durum, FormData>(
     action,
     {},
@@ -35,18 +38,13 @@ export function DurumDegistirButonu({
     <div className="space-y-1">
       <form action={formAction}>
         <input type="hidden" name="id" value={kayitId} />
-        <Button
-          type="submit"
-          variant="outline"
-          size="sm"
-          disabled={bekliyor}
-        >
+        <Button type="submit" variant="outline" size="sm" disabled={bekliyor}>
           {aktifMi ? <PowerOff /> : <Power />}
           {bekliyor
-            ? "Kaydediliyor..."
+            ? t("kaydediliyor")
             : aktifMi
-              ? "Pasife al"
-              : "Aktifleştir"}
+              ? t("pasifeAl")
+              : t("aktiflestir")}
         </Button>
       </form>
 

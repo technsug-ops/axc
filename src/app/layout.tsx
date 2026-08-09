@@ -37,6 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const dil = await getLocale();
+  const ortak = await getTranslations("Ortak");
 
   return (
     <html lang={dil} className={cn("font-sans", geist.variable)}>
@@ -57,7 +58,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                   */}
                   <SidebarTrigger
                     variant="outline"
-                    aria-label="Menüyü aç"
+                    aria-label={ortak("menuyuAc")}
                     className="size-11 shrink-0 md:size-8"
                   />
                   <Link

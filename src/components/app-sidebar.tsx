@@ -35,28 +35,29 @@ import { UYGULAMA } from "@/lib/uygulama";
  */
 
 type MenuOgesi = {
-  baslik: string;
+  /** Menu sozlugundeki anahtar; etiket cizim aninda cozulur. */
+  anahtar: string;
   href: string;
   icon: typeof Package;
   aktif: boolean;
 };
 
 const OPERASYON: MenuOgesi[] = [
-  { baslik: "Ürünler", href: "/urunler", icon: Package, aktif: true },
-  { baslik: "Alımlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
-  { baslik: "Stok", href: "/stok", icon: Boxes, aktif: true },
-  { baslik: "Kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
+  { anahtar: "urunler", href: "/urunler", icon: Package, aktif: true },
+  { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
+  { anahtar: "stok", href: "/stok", icon: Boxes, aktif: true },
+  { anahtar: "kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
 ];
 
 const AYARLAR: MenuOgesi[] = [
   {
-    baslik: "Raf Konumları",
+    anahtar: "rafKonumlari",
     href: "/ayarlar/konumlar",
     icon: MapPin,
     aktif: true,
   },
   {
-    baslik: "Kanal Hesapları",
+    anahtar: "kanalHesaplari",
     href: "/ayarlar/kanallar",
     icon: Store,
     aktif: true,
@@ -66,6 +67,7 @@ const AYARLAR: MenuOgesi[] = [
 export function AppSidebar() {
   const pathname = usePathname();
   const t = useTranslations("Uygulama");
+  const tMenu = useTranslations("Menu");
 
   function grupCiz(baslik: string, ogeler: MenuOgesi[]) {
     return (
@@ -80,27 +82,27 @@ export function AppSidebar() {
 
               if (!oge.aktif) {
                 return (
-                  <SidebarMenuItem key={oge.baslik}>
+                  <SidebarMenuItem key={oge.anahtar}>
                     <SidebarMenuButton
                       disabled
                       className="cursor-not-allowed opacity-50"
                     >
                       <oge.icon />
-                      <span>{oge.baslik}</span>
+                      <span>{tMenu(oge.anahtar)}</span>
                     </SidebarMenuButton>
                     <SidebarMenuBadge className="text-muted-foreground">
-                      yakında
+                      {tMenu("yakinda")}
                     </SidebarMenuBadge>
                   </SidebarMenuItem>
                 );
               }
 
               return (
-                <SidebarMenuItem key={oge.baslik}>
+                <SidebarMenuItem key={oge.anahtar}>
                   <SidebarMenuButton asChild isActive={seciliMi}>
                     <Link href={oge.href}>
                       <oge.icon />
-                      <span>{oge.baslik}</span>
+                      <span>{tMenu(oge.anahtar)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -125,8 +127,8 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {grupCiz("Operasyon", OPERASYON)}
-        {grupCiz("Ayarlar", AYARLAR)}
+        {grupCiz(tMenu("operasyon"), OPERASYON)}
+        {grupCiz(tMenu("ayarlar"), AYARLAR)}
       </SidebarContent>
     </Sidebar>
   );

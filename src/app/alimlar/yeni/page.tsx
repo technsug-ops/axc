@@ -4,7 +4,11 @@ import { tarihGirdisi } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 
 import { alimOlustur } from "../actions";
-import { AlimFormu, type HesapSecenegi, type KartSecenegi } from "../alim-formu";
+import {
+  AlimFormu,
+  type HesapSecenegi,
+  type KartSecenegi,
+} from "../alim-formu";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");

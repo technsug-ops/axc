@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Camera, ScanLine } from "lucide-react";
 import { prepareZXingModule, readBarcodes } from "zxing-wasm/reader";
 
@@ -41,12 +42,7 @@ prepareZXingModule({
   overrides: { locateFile: () => "/zxing_reader.wasm" },
 });
 
-const DESTEKLENEN_FORMATLAR = [
-  "EAN13",
-  "EAN8",
-  "Code128",
-  "QRCode",
-] as const;
+const DESTEKLENEN_FORMATLAR = ["EAN13", "EAN8", "Code128", "QRCode"] as const;
 
 /** Kamera karesini çözümler; kod bulursa metnini döner. */
 async function kareyiCozumle(
@@ -91,6 +87,7 @@ function KameraDiyalogu({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const t = useTranslations("Kamera");
   const [hata, setHata] = useState<string | null>(null);
   const [hazir, setHazir] = useState(false);
 
@@ -107,9 +104,7 @@ function KameraDiyalogu({
       setHazir(false);
 
       if (!navigator.mediaDevices?.getUserMedia) {
-        setHata(
-          "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
-        );
+        setHata(t("desteklenmiyor"));
         return;
       }
 
@@ -122,17 +117,11 @@ function KameraDiyalogu({
       } catch (e) {
         const ad = e instanceof Error ? e.name : "";
         if (ad === "NotAllowedError" || ad === "SecurityError") {
-          setHata(
-            "Kamera izni verilmedi. Tarayıcı ayarlarından izin verebilir ya da kodu elle yazabilirsiniz.",
-          );
+          setHata(t("izinYok"));
         } else if (ad === "NotFoundError" || ad === "OverconstrainedError") {
-          setHata(
-            "Kullanılabilir bir kamera bulunamadı. Kodu elle yazabilirsiniz.",
-          );
+          setHata(t("bulunamadi"));
         } else {
-          setHata(
-            "Kamera açılamadı. Sayfa güvenli bağlantıda (https veya localhost) olmalı. Kodu elle yazabilirsiniz.",
-          );
+          setHata(t("acilamadi"));
         }
         return;
       }
@@ -176,17 +165,14 @@ function KameraDiyalogu({
       if (zamanlayici) clearInterval(zamanlayici);
       stream?.getTracks().forEach((track) => track.stop());
     };
-  }, [acik, onOkundu, onKapat]);
+  }, [acik, onOkundu, onKapat, t]);
 
   return (
     <Dialog open={acik} onOpenChange={(a) => !a && onKapat()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{baslik}</DialogTitle>
-          <DialogDescription>
-            Kodu kameranın ortasına getirin. Okunduğunda pencere kendiliğinden
-            kapanır.
-          </DialogDescription>
+          <DialogDescription>{t("yonerge")}</DialogDescription>
         </DialogHeader>
 
         {hata ? (
@@ -210,7 +196,7 @@ function KameraDiyalogu({
             </div>
             {!hazir ? (
               <div className="text-muted-foreground absolute inset-0 flex items-center justify-center text-sm">
-                Kamera açılıyor...
+                {t("aciliyor")}
               </div>
             ) : null}
           </div>

@@ -387,11 +387,11 @@ export function UrunFormu({
                     }
                   >
                     <SelectTrigger id={`konum-${sira}`} className="w-full">
-                      <SelectValue placeholder={t("rafSecin")} />
+                      <SelectValue placeholder={ortak("rafSecin")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={KONUM_YOK}>
-                        {t("rafAtanmadi")}
+                        {ortak("rafAtanmadi")}
                       </SelectItem>
                       {konumlar.map((konum) => (
                         <SelectItem key={konum.id} value={konum.id}>

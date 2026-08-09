@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { GeriBaglanti } from "@/components/baglanti";
 import { Button } from "@/components/ui/button";
@@ -35,18 +36,20 @@ export default async function MalKabulSayfasi({
 
   if (!alim) notFound();
 
+  const t = await getTranslations("MalKabul");
+
   const kapaliMi = alim.status === "CANCELLED" || alim.status === "RECEIVED";
   if (kapaliMi) {
     return (
       <div className="mx-auto max-w-2xl space-y-4">
-        <h1 className="text-2xl font-semibold">Mal kabul yapılamaz</h1>
+        <h1 className="text-2xl font-semibold">{t("yapilamazBaslik")}</h1>
         <p className="text-muted-foreground text-sm">
           {alim.status === "CANCELLED"
-            ? `${alim.code} iptal edilmiş.`
-            : `${alim.code} için tüm kalemler zaten tamamlanmış.`}
+            ? t("iptalEdilmis", { kod: alim.code })
+            : t("tamamlanmis", { kod: alim.code })}
         </p>
         <Button variant="outline" asChild>
-          <Link href={`/alimlar/${alim.id}`}>← Alım detayına dön</Link>
+          <Link href={`/alimlar/${alim.id}`}>{t("detayaDon")}</Link>
         </Button>
       </div>
     );
@@ -73,10 +76,7 @@ export default async function MalKabulSayfasi({
       beklenen: kalem.quantity,
       oncekiSaglam,
       oncekiHasarli: kalem.damagedQuantity,
-      kalan: Math.max(
-        0,
-        kalem.quantity - oncekiSaglam - kalem.damagedQuantity,
-      ),
+      kalan: Math.max(0, kalem.quantity - oncekiSaglam - kalem.damagedQuantity),
       // Varyantın kayıtlı rafı varsayılan gelir; kabulde değiştirilebilir.
       varsayilanLocationId: kalem.variant.locationId ?? "",
     };
@@ -88,10 +88,8 @@ export default async function MalKabulSayfasi({
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
         <GeriBaglanti href={`/alimlar/${alim.id}`}>{alim.code}</GeriBaglanti>
-        <h1 className="mt-1 text-2xl font-semibold">Mal Kabul</h1>
-        <p className="text-muted-foreground text-sm">
-          Gelen ürünleri sayın ve sağlam / hasarlı ayrımını yapın.
-        </p>
+        <h1 className="mt-1 text-2xl font-semibold">{t("baslik")}</h1>
+        <p className="text-muted-foreground text-sm">{t("aciklamaMetni")}</p>
       </div>
 
       <MalKabulFormu

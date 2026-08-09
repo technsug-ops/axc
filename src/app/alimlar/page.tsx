@@ -42,6 +42,8 @@ export default async function AlimlarSayfasi({
   const durumFiltresi = (durum ?? "").trim();
   const bicim = await bicimlendirici();
   const durumEtiketleri = await alimDurumEtiketleri();
+  const t = await getTranslations("Alim");
+  const ortak = await getTranslations("Ortak");
 
   const alimlar = await prisma.purchase.findMany({
     where: {
@@ -61,9 +63,7 @@ export default async function AlimlarSayfasi({
   function toplamMetni(alim: (typeof alimlar)[number]) {
     const toplamlar = kalemToplamlari(alim.items);
     if (!toplamlar.length) return "—";
-    return toplamlar
-      .map((t) => bicim.para(t.tutar, t.paraBirimi))
-      .join(" + ");
+    return toplamlar.map((t) => bicim.para(t.tutar, t.paraBirimi)).join(" + ");
   }
 
   function eylemler(alim: (typeof alimlar)[number]) {
@@ -74,14 +74,14 @@ export default async function AlimlarSayfasi({
         <Button variant="outline" size="sm" asChild>
           <Link href={`/alimlar/${alim.id}`}>
             <Eye />
-            Detay
+            {ortak("detay")}
           </Link>
         </Button>
         {kabulEdilebilir ? (
           <Button size="sm" asChild>
             <Link href={`/alimlar/${alim.id}/mal-kabul`}>
               <PackageCheck />
-              Mal Kabul
+              {t("malKabul")}
             </Link>
           </Button>
         ) : null}
@@ -93,19 +93,19 @@ export default async function AlimlarSayfasi({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Alımlar</h1>
+          <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
           <p className="text-muted-foreground text-sm">
-            {alimlar.length} kayıt
-            {arama ? ` — "${arama}" araması` : ""}
+            {ortak("kayitSayisi", { sayi: alimlar.length })}
+            {arama ? ortak("aramaEki", { arama }) : ""}
             {durumGecerliMi(durumFiltresi)
-              ? ` — ${durumEtiketleri[durumFiltresi]}`
+              ? t("durumEki", { durum: durumEtiketleri[durumFiltresi] })
               : ""}
           </p>
         </div>
         <Button asChild>
           <Link href="/alimlar/yeni">
             <Plus />
-            Yeni Alım
+            {t("yeniAlim")}
           </Link>
         </Button>
       </div>
@@ -114,16 +114,16 @@ export default async function AlimlarSayfasi({
         <Input
           name="q"
           defaultValue={arama}
-          placeholder="Sipariş numarasına göre ara..."
+          placeholder={t("aramaIpucu")}
           className="max-w-xs min-w-44 flex-1"
         />
         <select
           name="durum"
           defaultValue={durumFiltresi}
           className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-          aria-label="Duruma göre filtrele"
+          aria-label={t("durumFiltresiEtiketi")}
         >
-          <option value="">Tüm durumlar</option>
+          <option value="">{t("tumDurumlar")}</option>
           {ALIM_DURUMLARI.map((d) => (
             <option key={d} value={d}>
               {durumEtiketleri[d]}
@@ -131,11 +131,11 @@ export default async function AlimlarSayfasi({
           ))}
         </select>
         <Button type="submit" variant="secondary">
-          Filtrele
+          {ortak("filtrele")}
         </Button>
         {arama || durumFiltresi ? (
           <Button type="button" variant="ghost" asChild>
-            <Link href="/alimlar">Temizle</Link>
+            <Link href="/alimlar">{ortak("temizle")}</Link>
           </Button>
         ) : null}
       </form>
@@ -143,14 +143,10 @@ export default async function AlimlarSayfasi({
       {alimlar.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
           <p className="font-medium">
-            {arama || durumFiltresi
-              ? "Filtreye uyan alım yok."
-              : "Henüz alım kaydı yok."}
+            {arama || durumFiltresi ? t("bosFiltreBaslik") : t("bosBaslik")}
           </p>
           <p className="text-muted-foreground mt-1 text-sm">
-            {arama || durumFiltresi
-              ? "Filtreleri temizleyip tekrar deneyin."
-              : "Sağ üstteki Yeni Alım düğmesiyle başlayın."}
+            {arama || durumFiltresi ? t("bosFiltreIpucu") : t("bosIpucu")}
           </p>
         </div>
       ) : (
@@ -160,14 +156,14 @@ export default async function AlimlarSayfasi({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Sipariş no</TableHead>
-                  <TableHead>Tarih</TableHead>
-                  <TableHead>Kanal hesabı</TableHead>
-                  <TableHead className="text-right">Kalem</TableHead>
-                  <TableHead>Toplam</TableHead>
-                  <TableHead>Kart</TableHead>
-                  <TableHead>Durum</TableHead>
-                  <TableHead>Eylemler</TableHead>
+                  <TableHead>{ortak("siparisNo")}</TableHead>
+                  <TableHead>{ortak("tarih")}</TableHead>
+                  <TableHead>{ortak("kanalHesabi")}</TableHead>
+                  <TableHead className="text-right">{ortak("kalem")}</TableHead>
+                  <TableHead>{ortak("toplam")}</TableHead>
+                  <TableHead>{ortak("kart")}</TableHead>
+                  <TableHead>{ortak("durum")}</TableHead>
+                  <TableHead>{ortak("eylemler")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -182,7 +178,7 @@ export default async function AlimlarSayfasi({
                         </Baglanti>
                         <KopyalanabilirKod
                           deger={alim.code}
-                          etiket="Sipariş no"
+                          etiket={ortak("siparisNo")}
                           sadeceIkon
                         />
                       </div>
@@ -234,34 +230,34 @@ export default async function AlimlarSayfasi({
                     </Baglanti>
                     <KopyalanabilirKod
                       deger={alim.code}
-                      etiket="Sipariş no"
+                      etiket={ortak("siparisNo")}
                       sadeceIkon
                     />
                   </span>
                 }
                 alanlar={[
                   {
-                    etiket: "Tarih",
+                    etiket: ortak("tarih"),
                     deger: bicim.tarih(alim.purchasedAt),
                   },
                   {
-                    etiket: "Durum",
+                    etiket: ortak("durum"),
                     deger: (
                       <Badge variant="secondary">
                         {durumEtiketleri[alim.status]}
                       </Badge>
                     ),
                   },
-                  { etiket: "Kalem", deger: alim.items.length },
-                  { etiket: "Toplam", deger: toplamMetni(alim) },
+                  { etiket: ortak("kalem"), deger: alim.items.length },
+                  { etiket: ortak("toplam"), deger: toplamMetni(alim) },
                   {
-                    etiket: "Kanal hesabı",
+                    etiket: ortak("kanalHesabi"),
                     deger: alim.channelAccount
                       ? `${alim.channelAccount.channel.name} — ${alim.channelAccount.name}`
                       : "—",
                   },
                   {
-                    etiket: "Kart",
+                    etiket: ortak("kart"),
                     deger: alim.creditCard
                       ? `${alim.creditCard.label} (••${alim.creditCard.last4})`
                       : "—",

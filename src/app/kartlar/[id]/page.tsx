@@ -144,7 +144,9 @@ export default async function KartDetaySayfasi({
                   className="rounded-lg border px-4 py-2"
                 >
                   <div className="text-muted-foreground text-xs">
-                    {t("paraBirimiToplami", { paraBirimi: toplam.paraBirimi })}
+                    {ortak("paraBirimiToplami", {
+                      paraBirimi: toplam.paraBirimi,
+                    })}
                   </div>
                   <div className="text-lg font-semibold">
                     {bicim.para(toplam.tutar, toplam.paraBirimi)}

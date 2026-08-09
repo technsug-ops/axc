@@ -70,6 +70,7 @@ export function MalKabulFormu({
   konumlar: KonumSecenegi[];
   bugun: string;
 }) {
+  const t = useTranslations("MalKabul");
   const tOnay = useTranslations("MalKabulOnay");
   const tOrtak = useTranslations("Ortak");
 
@@ -110,26 +111,25 @@ export function MalKabulFormu({
   function barkoddanArtir(kod: string) {
     const temiz = kod.trim();
     const satir = satirlar.find(
-      (s) =>
-        s.barcode === temiz || s.axcaliSku === temiz || s.sku === temiz,
+      (s) => s.barcode === temiz || s.axcaliSku === temiz || s.sku === temiz,
     );
 
     if (!satir) {
-      setBarkodMesaji(`"${temiz}" bu alımın kalemleri arasında bulunamadı.`);
+      setBarkodMesaji(t("kodBulunamadi", { kod: temiz }));
     } else {
       const girdi = girdiler[satir.purchaseItemId];
       const girilenToplam = girdi.saglam + girdi.hasarli;
 
       if (girilenToplam >= satir.kalan) {
         setBarkodMesaji(
-          `${satir.urunAdi}: kalan ${satir.kalan} adedin tamamı girildi.`,
+          t("tamamiGirildi", { urun: satir.urunAdi, kalan: satir.kalan }),
         );
       } else if (hasarliModu) {
         girdiGuncelle(satir.purchaseItemId, { hasarli: girdi.hasarli + 1 });
-        setBarkodMesaji(`${satir.urunAdi} — HASARLI +1`);
+        setBarkodMesaji(t("hasarliArtti", { urun: satir.urunAdi }));
       } else {
         girdiGuncelle(satir.purchaseItemId, { saglam: girdi.saglam + 1 });
-        setBarkodMesaji(`${satir.urunAdi} — sağlam +1`);
+        setBarkodMesaji(t("saglamArtti", { urun: satir.urunAdi }));
       }
     }
 
@@ -171,7 +171,7 @@ export function MalKabulFormu({
           role="alert"
           className="border-destructive/50 bg-destructive/10 text-destructive rounded-md border p-4 text-sm"
         >
-          <p className="mb-2 font-medium">Kaydedilemedi:</p>
+          <p className="mb-2 font-medium">{tOrtak("kaydedilemedi")}</p>
           <ul className="list-inside list-disc space-y-1">
             {durum.hatalar.map((hata, i) => (
               <li key={i}>{hata}</li>
@@ -182,12 +182,12 @@ export function MalKabulFormu({
 
       <Card>
         <CardHeader>
-          <CardTitle>Teslimat</CardTitle>
+          <CardTitle>{t("teslimat")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="kabul-tarih">Teslim tarihi *</Label>
+              <Label htmlFor="kabul-tarih">{t("teslimTarihi")} *</Label>
               <Input
                 id="kabul-tarih"
                 type="date"
@@ -198,7 +198,7 @@ export function MalKabulFormu({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="kabul-barkod">Barkodla say</Label>
+            <Label htmlFor="kabul-barkod">{t("barkodlaSay")}</Label>
             <div className="flex flex-wrap items-start gap-2">
               <BarkodGirisi
                 id="kabul-barkod"
@@ -207,8 +207,8 @@ export function MalKabulFormu({
                 onChange={setBarkod}
                 onOkundu={barkoddanArtir}
                 inputRef={barkodRef}
-                placeholder="Okutun; her okutma 1 adet ekler"
-                kameraBasligi="Gelen ürünü okut"
+                placeholder={t("barkodIpucu")}
+                kameraBasligi={t("barkodKamera")}
               />
               <Button
                 type="button"
@@ -216,13 +216,13 @@ export function MalKabulFormu({
                 onClick={() => setHasarliModu((o) => !o)}
               >
                 <TriangleAlert />
-                {hasarliModu ? "HASARLI MODU AÇIK" : "Hasarlı modu"}
+                {hasarliModu ? t("hasarliModuAcik") : t("hasarliModu")}
               </Button>
             </div>
             <p className="text-muted-foreground text-xs">
-              Hasarlı modu kapalıyken okutma <strong>sağlam</strong> sayacını,
-              açıkken <strong>hasarlı</strong> sayacını artırır. Kalan adedi
-              aşarsa uyarır.
+              {t.rich("hasarliModuNotu", {
+                kalin: (parca) => <strong>{parca}</strong>,
+              })}
             </p>
             {barkodMesaji ? (
               <p className="text-sm" role="status">
@@ -235,7 +235,9 @@ export function MalKabulFormu({
 
       <Card>
         <CardHeader>
-          <CardTitle>Kalemler ({satirlar.length})</CardTitle>
+          <CardTitle>
+            {t("kalemlerBasligi", { sayi: satirlar.length })}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {satirlar.map((satir) => {
@@ -260,31 +262,35 @@ export function MalKabulFormu({
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs">
-                    <Badge variant="outline">beklenen {satir.beklenen}</Badge>
+                    <Badge variant="outline">
+                      {t("rozetBeklenen", { sayi: satir.beklenen })}
+                    </Badge>
                     <Badge variant="secondary">
-                      gelen {satir.oncekiSaglam}
+                      {t("rozetGelen", { sayi: satir.oncekiSaglam })}
                     </Badge>
                     {satir.oncekiHasarli > 0 ? (
                       <Badge variant="destructive">
-                        hasarlı {satir.oncekiHasarli}
+                        {t("rozetHasarli", { sayi: satir.oncekiHasarli })}
                       </Badge>
                     ) : null}
-                    <Badge variant={satir.kalan === 0 ? "secondary" : "default"}>
-                      kalan {satir.kalan}
+                    <Badge
+                      variant={satir.kalan === 0 ? "secondary" : "default"}
+                    >
+                      {t("rozetKalan", { sayi: satir.kalan })}
                     </Badge>
                   </div>
                 </div>
 
                 {satir.kalan === 0 ? (
                   <p className="text-muted-foreground text-sm">
-                    Bu kalem tamamlandı.
+                    {t("kalemTamamlandi")}
                   </p>
                 ) : (
                   <>
                     <div className="grid gap-3 sm:grid-cols-3">
                       <div className="space-y-2">
                         <Label htmlFor={`saglam-${satir.purchaseItemId}`}>
-                          Gelen sağlam
+                          {t("gelenSaglam")}
                         </Label>
                         <Input
                           id={`saglam-${satir.purchaseItemId}`}
@@ -302,7 +308,7 @@ export function MalKabulFormu({
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor={`hasarli-${satir.purchaseItemId}`}>
-                          Gelen hasarlı
+                          {t("gelenHasarli")}
                         </Label>
                         <Input
                           id={`hasarli-${satir.purchaseItemId}`}
@@ -320,7 +326,7 @@ export function MalKabulFormu({
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor={`raf-${satir.purchaseItemId}`}>
-                          Yerleştirilen raf
+                          {t("yerlestirilenRaf")}
                         </Label>
                         <Select
                           value={girdi.locationId || KONUM_YOK}
@@ -334,11 +340,11 @@ export function MalKabulFormu({
                             id={`raf-${satir.purchaseItemId}`}
                             className="w-full"
                           >
-                            <SelectValue placeholder="Raf seçin" />
+                            <SelectValue placeholder={tOrtak("rafSecin")} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value={KONUM_YOK}>
-                              Raf atanmadı
+                              {tOrtak("rafAtanmadi")}
                             </SelectItem>
                             {konumlar.map((k) => (
                               <SelectItem key={k.id} value={k.id}>
@@ -354,7 +360,7 @@ export function MalKabulFormu({
                     {girdi.hasarli > 0 ? (
                       <div className="space-y-2">
                         <Label htmlFor={`hasarnot-${satir.purchaseItemId}`}>
-                          Hasar notu
+                          {t("hasarNotu")}
                         </Label>
                         <Textarea
                           id={`hasarnot-${satir.purchaseItemId}`}
@@ -365,15 +371,14 @@ export function MalKabulFormu({
                               hasarNotu: e.target.value,
                             })
                           }
-                          placeholder="Kutu ezik, ekran çizik..."
+                          placeholder={t("hasarNotuIpucu")}
                         />
                       </div>
                     ) : null}
 
                     {asimVar ? (
                       <p className="text-destructive text-sm" role="alert">
-                        Girilen {girilen} adet, kalan {satir.kalan} adedi
-                        aşıyor.
+                        {t("asimUyarisi", { girilen, kalan: satir.kalan })}
                       </p>
                     ) : null}
                   </>
@@ -383,20 +388,23 @@ export function MalKabulFormu({
           })}
 
           <div className="rounded-lg border p-4">
-            <div className="text-sm font-medium">Bu teslimatta</div>
+            <div className="text-sm font-medium">{t("buTeslimatta")}</div>
             <div className="mt-2 flex flex-wrap gap-3">
               <div className="rounded-md border px-3 py-2">
-                <div className="text-muted-foreground text-xs">Sağlam</div>
+                <div className="text-muted-foreground text-xs">
+                  {t("saglam")}
+                </div>
                 <div className="text-lg font-semibold">{ozet.saglam}</div>
               </div>
               <div className="rounded-md border px-3 py-2">
-                <div className="text-muted-foreground text-xs">Hasarlı</div>
+                <div className="text-muted-foreground text-xs">
+                  {t("hasarli")}
+                </div>
                 <div className="text-lg font-semibold">{ozet.hasarli}</div>
               </div>
             </div>
             <p className="text-muted-foreground mt-2 text-xs">
-              Sağlam adet stoğa alım girişi olarak eklenir. Hasarlı adet stoğa
-              GİRMEZ, sadece kalemde kayda geçer.
+              {t("ozetNotu")}
             </p>
           </div>
         </CardContent>
@@ -411,7 +419,7 @@ export function MalKabulFormu({
               disabled={bekliyor || ozet.saglam + ozet.hasarli === 0}
             >
               <PackageCheck />
-              {bekliyor ? "Kaydediliyor..." : "Mal Kabulü Kaydet"}
+              {bekliyor ? tOrtak("kaydediliyor") : t("kaydet")}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -452,12 +460,11 @@ export function MalKabulFormu({
         </AlertDialog>
 
         <Button type="button" variant="outline" asChild>
-          <Link href={`/alimlar/${alimId}`}>Vazgeç</Link>
+          <Link href={`/alimlar/${alimId}`}>{tOrtak("vazgec")}</Link>
         </Button>
       </div>
       <p className="text-muted-foreground text-xs">
-        {alimKodu} · Kısmi kabul yapabilirsiniz; kalan adetler için daha sonra
-        tekrar mal kabul edersiniz.
+        {t("altNot", { kod: alimKodu })}
       </p>
     </form>
   );

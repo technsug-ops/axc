@@ -16,6 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getTranslations } from "next-intl/server";
+
 import { alimDurumEtiketleri } from "@/lib/etiketler";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
@@ -53,6 +55,8 @@ export default async function AlimDetaySayfasi({
 
   const bicim = await bicimlendirici();
   const durumEtiketleri = await alimDurumEtiketleri();
+  const t = await getTranslations("Alim");
+  const ortak = await getTranslations("Ortak");
   const toplamlar = kalemToplamlari(alim.items);
 
   // Teslim alınan sağlam adetler ledger'dan gelir (src/lib/stok.ts).
@@ -76,37 +80,37 @@ export default async function AlimDetaySayfasi({
   }));
 
   const bilgiler: { etiket: string; deger: string }[] = [
-    { etiket: "Alım tarihi", deger: bicim.tarih(alim.purchasedAt) },
+    { etiket: t("alimTarihi"), deger: bicim.tarih(alim.purchasedAt) },
     {
-      etiket: "Teslim alındı",
+      etiket: t("teslimAlindi"),
       deger: alim.receivedAt ? bicim.tarih(alim.receivedAt) : "—",
     },
     {
-      etiket: "Kanal hesabı",
+      etiket: ortak("kanalHesabi"),
       deger: alim.channelAccount
         ? `${alim.channelAccount.channel.name} — ${alim.channelAccount.name}`
         : "—",
     },
     {
-      etiket: "Ödenen kart",
+      etiket: t("odenenKart"),
       deger: alim.creditCard
         ? `${alim.creditCard.label} (•••• ${alim.creditCard.last4})`
         : "—",
     },
     {
-      etiket: "Taksit",
+      etiket: t("taksit"),
       deger:
         alim.installmentCount > 1
-          ? `${alim.installmentCount} taksit`
-          : "Tek çekim",
+          ? t("taksitSayisi", { sayi: alim.installmentCount })
+          : t("tekCekim"),
     },
-    { etiket: "Tedarikçi", deger: alim.supplierName ?? "—" },
+    { etiket: t("tedarikci"), deger: alim.supplierName ?? "—" },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <GeriBaglanti href="/alimlar">Alımlar</GeriBaglanti>
+        <GeriBaglanti href="/alimlar">{t("baslik")}</GeriBaglanti>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold">
@@ -114,14 +118,14 @@ export default async function AlimDetaySayfasi({
               {/* Başlık zaten kodu yazıyor; sadece kopyala ikonu. */}
               <KopyalanabilirKod
                 deger={alim.code}
-                etiket="Sipariş no"
+                etiket={ortak("siparisNo")}
                 sadeceIkon
               />
             </h1>
             <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
               <span>{bicim.tarih(alim.purchasedAt)}</span>
               <span>·</span>
-              <span>{alim.items.length} kalem</span>
+              <span>{t("kalemSayisi", { sayi: alim.items.length })}</span>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -132,7 +136,7 @@ export default async function AlimDetaySayfasi({
               <Button asChild>
                 <Link href={`/alimlar/${alim.id}/mal-kabul`}>
                   <PackageCheck />
-                  Mal Kabul Et
+                  {t("malKabulEt")}
                 </Link>
               </Button>
             ) : null}
@@ -146,22 +150,27 @@ export default async function AlimDetaySayfasi({
           role="status"
           className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-400"
         >
-          Mal kabul kaydedildi:{" "}
-          <strong>{kabulSonucu.saglam} adet sağlam</strong> stoğa girdi
-          {Number(kabulSonucu.hasarli) > 0 ? (
-            <>
-              , <strong>{kabulSonucu.hasarli} adet hasarlı</strong> stoğa
-              girmeden kayda geçti
-            </>
-          ) : null}
-          . Alımın yeni durumu:{" "}
-          <strong>{durumEtiketleri[alim.status]}</strong>.
+          {t.rich("kabulOzeti", {
+            saglam: kabulSonucu.saglam,
+            kalin: (parca) => <strong>{parca}</strong>,
+          })}
+          {Number(kabulSonucu.hasarli) > 0
+            ? t.rich("kabulHasarliEki", {
+                // Sayı > 0 ise değer zaten var; ?? "0" sadece tip içindir.
+                hasarli: kabulSonucu.hasarli ?? "0",
+                kalin: (parca) => <strong>{parca}</strong>,
+              })
+            : null}
+          {t.rich("kabulDurumEki", {
+            durum: durumEtiketleri[alim.status],
+            kalin: (parca) => <strong>{parca}</strong>,
+          })}
         </div>
       ) : null}
 
       <Card>
         <CardHeader>
-          <CardTitle>Alım bilgileri</CardTitle>
+          <CardTitle>{t("alimBilgileri")}</CardTitle>
         </CardHeader>
         <CardContent>
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -176,7 +185,7 @@ export default async function AlimDetaySayfasi({
           </dl>
           {alim.note ? (
             <div className="mt-4">
-              <div className="text-muted-foreground text-xs">Not</div>
+              <div className="text-muted-foreground text-xs">{t("not")}</div>
               <p className="text-sm whitespace-pre-line">{alim.note}</p>
             </div>
           ) : null}
@@ -185,7 +194,9 @@ export default async function AlimDetaySayfasi({
 
       <Card>
         <CardHeader>
-          <CardTitle>Kalemler ({alim.items.length})</CardTitle>
+          <CardTitle>
+            {t("kalemlerBasligi", { sayi: alim.items.length })}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
@@ -193,14 +204,26 @@ export default async function AlimDetaySayfasi({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ürün</TableHead>
-                  <TableHead>Raf</TableHead>
-                  <TableHead className="text-right">Beklenen</TableHead>
-                  <TableHead className="text-right">Sağlam</TableHead>
-                  <TableHead className="text-right">Hasarlı</TableHead>
-                  <TableHead className="text-right">Kalan</TableHead>
-                  <TableHead className="text-right">Birim fiyat</TableHead>
-                  <TableHead className="text-right">Satır toplamı</TableHead>
+                  <TableHead>{ortak("urun")}</TableHead>
+                  <TableHead>{ortak("raf")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("sutunBeklenen")}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {t("sutunSaglam")}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {t("sutunHasarli")}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {t("sutunKalan")}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {t("sutunBirimFiyat")}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {t("sutunSatirToplami")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -225,7 +248,7 @@ export default async function AlimDetaySayfasi({
                         <div>
                           <KopyalanabilirKod
                             deger={kalem.variant.sku}
-                            etiket="SKU"
+                            etiket={ortak("sku")}
                           />
                         </div>
                         {kalem.damageNote ? (
@@ -261,16 +284,13 @@ export default async function AlimDetaySayfasi({
                     </TableCell>
                     <TableCell className="text-right">
                       {ilerleme.tamamlandiMi ? (
-                        <Badge variant="secondary">tamam</Badge>
+                        <Badge variant="secondary">{t("tamamRozeti")}</Badge>
                       ) : (
                         <span className="font-medium">{ilerleme.kalan}</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
-                      {bicim.para(
-                        kalem.unitCostAmount,
-                        kalem.unitCostCurrency,
-                      )}
+                      {bicim.para(kalem.unitCostAmount, kalem.unitCostCurrency)}
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       {bicim.para(
@@ -299,12 +319,15 @@ export default async function AlimDetaySayfasi({
                     {kalem.variant.name ? (
                       <span>{kalem.variant.name}</span>
                     ) : null}
-                    <KopyalanabilirKod deger={kalem.variant.sku} etiket="SKU" />
+                    <KopyalanabilirKod
+                      deger={kalem.variant.sku}
+                      etiket={ortak("sku")}
+                    />
                   </span>
                 }
                 alanlar={[
                   {
-                    etiket: "Raf",
+                    etiket: ortak("raf"),
                     deger: kalem.variant.location ? (
                       <Badge variant="secondary">
                         {kalem.variant.location.code}
@@ -313,15 +336,15 @@ export default async function AlimDetaySayfasi({
                       "—"
                     ),
                   },
-                  { etiket: "Beklenen", deger: ilerleme.beklenen },
+                  { etiket: t("sutunBeklenen"), deger: ilerleme.beklenen },
                   {
-                    etiket: "Sağlam",
+                    etiket: t("sutunSaglam"),
                     deger: (
                       <span className="font-medium">{ilerleme.saglam}</span>
                     ),
                   },
                   {
-                    etiket: "Hasarlı",
+                    etiket: t("sutunHasarli"),
                     deger:
                       ilerleme.hasarli > 0 ? (
                         <span className="text-destructive font-medium">
@@ -332,22 +355,22 @@ export default async function AlimDetaySayfasi({
                       ),
                   },
                   {
-                    etiket: "Kalan",
+                    etiket: t("sutunKalan"),
                     deger: ilerleme.tamamlandiMi ? (
-                      <Badge variant="secondary">tamam</Badge>
+                      <Badge variant="secondary">{t("tamamRozeti")}</Badge>
                     ) : (
                       <span className="font-medium">{ilerleme.kalan}</span>
                     ),
                   },
                   {
-                    etiket: "Birim fiyat",
+                    etiket: t("sutunBirimFiyat"),
                     deger: bicim.para(
                       kalem.unitCostAmount,
                       kalem.unitCostCurrency,
                     ),
                   },
                   {
-                    etiket: "Satır toplamı",
+                    etiket: t("sutunSatirToplami"),
                     deger: bicim.para(
                       birim * kalem.quantity,
                       kalem.unitCostCurrency,
@@ -356,7 +379,7 @@ export default async function AlimDetaySayfasi({
                   ...(kalem.damageNote
                     ? [
                         {
-                          etiket: "Hasar notu",
+                          etiket: ortak("hasarNotu"),
                           deger: (
                             <span className="text-destructive whitespace-pre-line">
                               {kalem.damageNote}
@@ -377,7 +400,9 @@ export default async function AlimDetaySayfasi({
                 className="rounded-lg border px-4 py-2"
               >
                 <div className="text-muted-foreground text-xs">
-                  {toplam.paraBirimi} toplamı
+                  {ortak("paraBirimiToplami", {
+                    paraBirimi: toplam.paraBirimi,
+                  })}
                 </div>
                 <div className="text-lg font-semibold">
                   {bicim.para(toplam.tutar, toplam.paraBirimi)}
@@ -386,12 +411,7 @@ export default async function AlimDetaySayfasi({
             ))}
           </div>
 
-          <p className="text-muted-foreground text-xs">
-            &quot;Sağlam&quot; sütunu stok hareketlerinden hesaplanır. Hasarlı
-            ürünler stoğa girmez; satıcıya iade ve tazminat süreci sonraki
-            fazlarda gelecek. Yanlış bir giriş silinmez, ters yönde bir düzeltme
-            kaydıyla giderilir.
-          </p>
+          <p className="text-muted-foreground text-xs">{t("detayNotu")}</p>
         </CardContent>
       </Card>
     </div>
