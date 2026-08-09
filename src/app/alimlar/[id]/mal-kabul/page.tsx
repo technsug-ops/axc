@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { GeriBaglanti } from "@/components/baglanti";
 import { Button } from "@/components/ui/button";
-import { tarihGirdisi } from "@/lib/format";
+import { tarihGirdisi } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { kalemTeslimAlinanlar } from "@/lib/stok";
 

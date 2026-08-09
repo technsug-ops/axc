@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Boxes,
   CreditCard,
@@ -64,6 +65,7 @@ const AYARLAR: MenuOgesi[] = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const t = useTranslations("Uygulama");
 
   function grupCiz(baslik: string, ogeler: MenuOgesi[]) {
     return (
@@ -119,9 +121,7 @@ export function AppSidebar() {
           className="hover:bg-sidebar-accent -mx-2 flex flex-col rounded-md px-2 py-1 transition-colors"
         >
           <span className="text-base font-semibold">{UYGULAMA.ad}</span>
-          <span className="text-muted-foreground text-xs">
-            {UYGULAMA.slogan}
-          </span>
+          <span className="text-muted-foreground text-xs">{t("slogan")}</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>

@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { stokHareketiEtiketi } from "@/lib/etiketler";
-import { paraFormatla, tarihFormatla } from "@/lib/format";
+import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { varyantStogu } from "@/lib/stok";
 
@@ -34,6 +34,8 @@ export default async function VaryantHareketleriSayfasi({
   });
 
   if (!varyant) notFound();
+
+  const bicim = await bicimlendirici();
 
   const [stok, hareketler] = await Promise.all([
     varyantStogu(variantId),
@@ -134,7 +136,7 @@ export default async function VaryantHareketleriSayfasi({
                     {hareketler.map((hareket) => (
                       <TableRow key={hareket.id}>
                         <TableCell className="whitespace-nowrap">
-                          {tarihFormatla(hareket.occurredAt)}
+                          {bicim.tarih(hareket.occurredAt)}
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary">
@@ -175,7 +177,7 @@ export default async function VaryantHareketleriSayfasi({
                         </TableCell>
                         <TableCell className="text-right whitespace-nowrap">
                           {hareket.unitCostAmount
-                            ? paraFormatla(
+                            ? bicim.para(
                                 hareket.unitCostAmount,
                                 hareket.unitCostCurrency ?? "TRY",
                               )
@@ -198,7 +200,7 @@ export default async function VaryantHareketleriSayfasi({
                     key={hareket.id}
                     baslik={
                       <span className="flex flex-wrap items-center gap-2">
-                        {tarihFormatla(hareket.occurredAt)}
+                        {bicim.tarih(hareket.occurredAt)}
                         <Badge variant="secondary">
                           {stokHareketiEtiketi(hareket.type)}
                         </Badge>
@@ -245,7 +247,7 @@ export default async function VaryantHareketleriSayfasi({
                       {
                         etiket: "Birim maliyet",
                         deger: hareket.unitCostAmount
-                          ? paraFormatla(
+                          ? bicim.para(
                               hareket.unitCostAmount,
                               hareket.unitCostCurrency ?? "TRY",
                             )

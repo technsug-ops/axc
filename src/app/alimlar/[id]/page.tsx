@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { alimDurumuEtiketi } from "@/lib/etiketler";
-import { paraFormatla, tarihFormatla } from "@/lib/format";
+import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { kalemIlerlemesi, kalemTeslimAlinanlar } from "@/lib/stok";
 import { kalemToplamlari } from "@/lib/tutar";
@@ -51,6 +51,7 @@ export default async function AlimDetaySayfasi({
 
   if (!alim) notFound();
 
+  const bicim = await bicimlendirici();
   const toplamlar = kalemToplamlari(alim.items);
 
   // Teslim alınan sağlam adetler ledger'dan gelir (src/lib/stok.ts).
@@ -74,10 +75,10 @@ export default async function AlimDetaySayfasi({
   }));
 
   const bilgiler: { etiket: string; deger: string }[] = [
-    { etiket: "Alım tarihi", deger: tarihFormatla(alim.purchasedAt) },
+    { etiket: "Alım tarihi", deger: bicim.tarih(alim.purchasedAt) },
     {
       etiket: "Teslim alındı",
-      deger: alim.receivedAt ? tarihFormatla(alim.receivedAt) : "—",
+      deger: alim.receivedAt ? bicim.tarih(alim.receivedAt) : "—",
     },
     {
       etiket: "Kanal hesabı",
@@ -117,7 +118,7 @@ export default async function AlimDetaySayfasi({
               />
             </h1>
             <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
-              <span>{tarihFormatla(alim.purchasedAt)}</span>
+              <span>{bicim.tarih(alim.purchasedAt)}</span>
               <span>·</span>
               <span>{alim.items.length} kalem</span>
             </div>
@@ -265,13 +266,13 @@ export default async function AlimDetaySayfasi({
                       )}
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
-                      {paraFormatla(
+                      {bicim.para(
                         kalem.unitCostAmount,
                         kalem.unitCostCurrency,
                       )}
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
-                      {paraFormatla(
+                      {bicim.para(
                         birim * kalem.quantity,
                         kalem.unitCostCurrency,
                       )}
@@ -339,14 +340,14 @@ export default async function AlimDetaySayfasi({
                   },
                   {
                     etiket: "Birim fiyat",
-                    deger: paraFormatla(
+                    deger: bicim.para(
                       kalem.unitCostAmount,
                       kalem.unitCostCurrency,
                     ),
                   },
                   {
                     etiket: "Satır toplamı",
-                    deger: paraFormatla(
+                    deger: bicim.para(
                       birim * kalem.quantity,
                       kalem.unitCostCurrency,
                     ),
@@ -378,7 +379,7 @@ export default async function AlimDetaySayfasi({
                   {toplam.paraBirimi} toplamı
                 </div>
                 <div className="text-lg font-semibold">
-                  {paraFormatla(toplam.tutar, toplam.paraBirimi)}
+                  {bicim.para(toplam.tutar, toplam.paraBirimi)}
                 </div>
               </div>
             ))}

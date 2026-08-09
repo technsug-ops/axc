@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { tarihFormatla } from "@/lib/format";
+import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { urunStoklari } from "@/lib/stok";
 
@@ -30,6 +30,7 @@ export default async function UrunlerSayfasi({
 }) {
   const { q } = await searchParams;
   const arama = (q ?? "").trim();
+  const bicim = await bicimlendirici();
 
   const urunler = await prisma.product.findMany({
     where: arama
@@ -186,7 +187,7 @@ export default async function UrunlerSayfasi({
                         {stokHaritasi.get(urun.id) ?? 0}
                       </TableCell>
                       <TableCell className="text-muted-foreground whitespace-nowrap">
-                        {tarihFormatla(urun.createdAt)}
+                        {bicim.tarih(urun.createdAt)}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-2">

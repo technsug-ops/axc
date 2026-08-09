@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { paraFormatla } from "@/lib/format";
+import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 
 import { kartDurumDegistir } from "./actions";
@@ -28,9 +28,11 @@ export default async function KartlarSayfasi() {
     orderBy: [{ isActive: "desc" }, { label: "asc" }],
   });
 
+  const bicim = await bicimlendirici();
+
   function limitMetni(kart: (typeof kartlar)[number]) {
     return kart.creditLimitAmount
-      ? paraFormatla(
+      ? bicim.para(
           kart.creditLimitAmount,
           kart.creditLimitCurrency ?? kart.currency,
         )

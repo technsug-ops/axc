@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+/** Dil altyapısı: istek yapılandırması src/i18n/request.ts içinde. */
+const nextIntlIle = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   /**
@@ -19,4 +23,4 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.178.59"],
 };
 
-export default nextConfig;
+export default nextIntlIle(nextConfig);

@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { paraFormatla } from "@/lib/format";
+import { useBicim } from "@/lib/bicim-istemci";
 
 import {
   varyantAra,
@@ -66,6 +66,10 @@ export function AlimFormu({
     action,
     {},
   );
+
+  // Biçimlendirme dil altyapısından gelir (sunucudaki bicimlendirici() ile
+  // aynı yüzey).
+  const bicim = useBicim();
 
   // --- Başlık alanları ---
   const [code, setCode] = useState("");
@@ -551,7 +555,7 @@ export function AlimFormu({
                       {paraBirimi}
                     </div>
                     <div className="text-lg font-semibold">
-                      {paraFormatla(tutar, paraBirimi)}
+                      {bicim.para(tutar, paraBirimi)}
                     </div>
                   </div>
                 ))}

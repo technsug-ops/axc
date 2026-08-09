@@ -39,6 +39,29 @@ Bu nedenle hiçbir firma/marka adı sistemin YAPISINA gömülmez.
   DERİNLEŞTİRMEMELİ. Çok-kiracılılığı bugün kurmuyoruz ama onu ileride
   zorlaştıracak kısayollardan kaçınıyoruz. Şüpheli durumda kullanıcıya sor.
 
+## Çok dillilik / i18n (KESİN KURAL)
+
+Tek dil Türkçe, ama metinler altyapıdan akar — koda gömülü kalmaz.
+
+- **Kullanıcıya görünen her yeni metin sözlük dosyasından gelir.**
+  Koda gömülü metin yasak. Zod/sunucu hata mesajları, onay diyalogları,
+  sekme başlıkları ve ekran-okuyucu metinleri de buna dahildir.
+- **Her yeni ekran teslimi `i18n: ✓` kontrolü içerir.**
+- Sözlükler: `messages/tr.json` (kaynak) ve `messages/en.json` (boş
+  iskelet, ileride doldurulacak). Yeni anahtar ikisine birden eklenir.
+- Kütüphane: **next-intl**. Server Actions içinde `getTranslations()`,
+  sunucu bileşenlerinde `getTranslations()`, istemcide `useTranslations()`.
+- **Para/tarih/sayı biçimleri de dil altyapısından geçer.** Doğrudan
+  `Intl.*` veya elle biçimlendirme YASAK:
+  - Sunucu: `const bicim = await bicimlendirici();` → `bicim.para(...)`, `bicim.tarih(...)`
+  - İstemci: `const bicim = useBicim();`
+  - Para birimi VERİDEN gelir (TRY/EUR), dilden değil; kur çevirisi yapılmaz.
+- URL yönlendirmesi bugün YOK; rotalar dilden bağımsız. İngilizce
+  eklenince `as-needed` kipine geçilir (Türkçe öneksiz, `/en/...` önekli),
+  mevcut rotalar yine değişmez.
+- Devam eden geçiş: mevcut ekranlardaki metinler paket paket sözlüğe
+  taşınıyor. Yeni yazılan hiçbir metin bu borca eklenmez.
+
 ## Kullanıcı Kolaylığı İlkeleri (KESİN KURALLAR)
 
 Kullanıcı yazılımcı değil, operasyoncudur. Her ekran, ilk kez gören

@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { tarihFormatla } from "@/lib/format";
+import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { sonHareketTarihleri, varyantStoklari } from "@/lib/stok";
 
@@ -29,6 +29,7 @@ export default async function StokSayfasi({
 }) {
   const { q } = await searchParams;
   const arama = (q ?? "").trim();
+  const bicim = await bicimlendirici();
 
   const varyantlar = await prisma.productVariant.findMany({
     where: arama
@@ -160,7 +161,7 @@ export default async function StokSayfasi({
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">
                       {sonHareketler.get(varyant.id)
-                        ? tarihFormatla(sonHareketler.get(varyant.id)!)
+                        ? bicim.tarih(sonHareketler.get(varyant.id)!)
                         : "—"}
                     </TableCell>
                     <TableCell>
@@ -225,7 +226,7 @@ export default async function StokSayfasi({
                   {
                     etiket: "Son hareket",
                     deger: sonHareketler.get(varyant.id)
-                      ? tarihFormatla(sonHareketler.get(varyant.id)!)
+                      ? bicim.tarih(sonHareketler.get(varyant.id)!)
                       : "—",
                   },
                 ]}

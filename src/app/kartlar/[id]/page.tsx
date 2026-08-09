@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { alimDurumuEtiketi } from "@/lib/etiketler";
-import { paraFormatla, tarihFormatla } from "@/lib/format";
+import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { kalemToplamlari, toplamlariBirlestir } from "@/lib/tutar";
 
@@ -43,6 +43,8 @@ export default async function KartDetaySayfasi({
   });
 
   if (!kart) notFound();
+
+  const bicim = await bicimlendirici();
 
   // Para birimleri BİRBİRİNE ÇEVRİLMEZ; her biri ayrı toplanır.
   const kartToplamlari = toplamlariBirlestir(
@@ -103,7 +105,7 @@ export default async function KartDetaySayfasi({
           </CardHeader>
           <CardContent className="text-2xl font-semibold">
             {kart.creditLimitAmount
-              ? paraFormatla(
+              ? bicim.para(
                   kart.creditLimitAmount,
                   kart.creditLimitCurrency ?? kart.currency,
                 )
@@ -128,7 +130,7 @@ export default async function KartDetaySayfasi({
                     {toplam.paraBirimi} toplamı
                   </div>
                   <div className="text-lg font-semibold">
-                    {paraFormatla(toplam.tutar, toplam.paraBirimi)}
+                    {bicim.para(toplam.tutar, toplam.paraBirimi)}
                   </div>
                 </div>
               ))}
@@ -166,7 +168,7 @@ export default async function KartDetaySayfasi({
                         </Baglanti>
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        {tarihFormatla(alim.purchasedAt)}
+                        {bicim.tarih(alim.purchasedAt)}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {alim.channelAccount
@@ -178,7 +180,7 @@ export default async function KartDetaySayfasi({
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {kalemToplamlari(alim.items)
-                          .map((t) => paraFormatla(t.tutar, t.paraBirimi))
+                          .map((t) => bicim.para(t.tutar, t.paraBirimi))
                           .join(" + ") || "—"}
                       </TableCell>
                       <TableCell>

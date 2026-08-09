@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { tarihFormatla } from "@/lib/format";
+import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { varyantStoklari } from "@/lib/stok";
 
@@ -41,6 +41,8 @@ export default async function UrunDetaySayfasi({
 
   if (!urun) notFound();
 
+  const bicim = await bicimlendirici();
+
   // Stok hesabı tek yerde: src/lib/stok.ts (ledger toplamı).
   const stokHaritasi = await varyantStoklari(urun.variants.map((v) => v.id));
 
@@ -53,7 +55,7 @@ export default async function UrunDetaySayfasi({
             <h1 className="text-2xl font-semibold">{urun.name}</h1>
             <p className="text-muted-foreground text-sm">
               {urun.brand ?? "Marka belirtilmemiş"} ·{" "}
-              {tarihFormatla(urun.createdAt)} tarihinde eklendi
+              {bicim.tarih(urun.createdAt)} tarihinde eklendi
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

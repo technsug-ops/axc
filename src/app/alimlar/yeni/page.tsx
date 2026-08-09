@@ -1,5 +1,5 @@
 import { GeriBaglanti } from "@/components/baglanti";
-import { tarihGirdisi } from "@/lib/format";
+import { tarihGirdisi } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 
 import { alimOlustur } from "../actions";

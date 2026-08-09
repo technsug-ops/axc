@@ -6,12 +6,10 @@ listesiyle birlikte teslim edilir.
 
 ## Sonraki uygun pakette
 
-- [ ] **Detay sayfası tabloları mobilde karta dönsün** — İlke #8
-      Alım kalemleri, ürün varyantları ve stok hareketleri tabloları
-      telefonda hâlâ yatay kayıyor. Liste sayfaları (ürün / alım / kart /
-      stok) 08.08.2026'da karta çevrildi; detay sayfaları kaldı.
-      _Karar 08.08.2026: depo aşamasına kadar telefonda detay sayfaları az
-      kullanılacağı için acil değil._
+- [x] ~~**Detay sayfası tabloları mobilde karta dönsün** — İlke #8~~
+      _Tamamlandı 09.08.2026 (`e4c65b0`): alım kalemleri, ürün varyantları
+      ve stok hareketleri tabloları karta çevrildi; gerçek cihazda
+      kullanıcı tarafından doğrulandı._
 
 - [x] ~~**Raf konumu düzenleme ve pasife alma** — İlke #1~~
       _Tamamlandı 08.08.2026 (`d4cd8ad`): düzenleme sayfası, pasife alma,

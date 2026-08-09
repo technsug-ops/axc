@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ALIM_DURUMLARI, alimDurumuEtiketi } from "@/lib/etiketler";
-import { paraFormatla, tarihFormatla } from "@/lib/format";
+import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { kalemToplamlari } from "@/lib/tutar";
 
@@ -36,6 +36,7 @@ export default async function AlimlarSayfasi({
   const { q, durum } = await searchParams;
   const arama = (q ?? "").trim();
   const durumFiltresi = (durum ?? "").trim();
+  const bicim = await bicimlendirici();
 
   const alimlar = await prisma.purchase.findMany({
     where: {
@@ -56,7 +57,7 @@ export default async function AlimlarSayfasi({
     const toplamlar = kalemToplamlari(alim.items);
     if (!toplamlar.length) return "—";
     return toplamlar
-      .map((t) => paraFormatla(t.tutar, t.paraBirimi))
+      .map((t) => bicim.para(t.tutar, t.paraBirimi))
       .join(" + ");
   }
 
@@ -182,7 +183,7 @@ export default async function AlimlarSayfasi({
                       </div>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {tarihFormatla(alim.purchasedAt)}
+                      {bicim.tarih(alim.purchasedAt)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {alim.channelAccount
@@ -236,7 +237,7 @@ export default async function AlimlarSayfasi({
                 alanlar={[
                   {
                     etiket: "Tarih",
-                    deger: tarihFormatla(alim.purchasedAt),
+                    deger: bicim.tarih(alim.purchasedAt),
                   },
                   {
                     etiket: "Durum",
