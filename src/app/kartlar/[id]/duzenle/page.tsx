@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { GeriBaglanti } from "@/components/baglanti";
 import { prisma } from "@/lib/prisma";
@@ -12,6 +13,8 @@ export default async function KartDuzenleSayfasi({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations("Kart");
+  const ortak = await getTranslations("Ortak");
 
   const kart = await prisma.creditCard.findUnique({ where: { id } });
   if (!kart) notFound();
@@ -34,14 +37,14 @@ export default async function KartDuzenleSayfasi({
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <GeriBaglanti href={`/kartlar/${kart.id}`}>{kart.label}</GeriBaglanti>
-        <h1 className="mt-1 text-2xl font-semibold">Kartı Düzenle</h1>
+        <h1 className="mt-1 text-2xl font-semibold">{t("kartiDuzenle")}</h1>
       </div>
 
       <KartFormu
         action={kartGuncelle}
         baslangic={baslangic}
         kartId={kart.id}
-        gonderEtiketi="Değişiklikleri Kaydet"
+        gonderEtiketi={ortak("degisiklikleriKaydet")}
       />
     </div>
   );

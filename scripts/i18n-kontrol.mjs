@@ -81,6 +81,13 @@ const ornekler = [
   ["Alim", "kalemHataKalibi", { sira: 3, mesaj: "adet en az 1 olmalı" }, "3. kalem: adet en az 1 olmalı"],
   ["Alim", "siparisNoZatenKayitli", { kod: "25-23" }, '"25-23" sipariş numarası zaten kayıtlı.'],
   ["MalKabul", "fazlaGiris", { kalan: 1, girilen: 5 }, "Bir kalemde beklenenden fazla giriş var: kalan 1, girilen 5."],
+  // Kesme isareti ICU'da kacis karakteridir; asagidakiler onu dogruluyor.
+  ["Kart", "ayinGunu", { gun: 15 }, "Ayın 15'i"],
+  ["Kart", "toplamNotu", {}, "Para birimleri ayrı toplanır ve birbirine çevrilmez. Detaylı borç ve ekstre takibi Faz 3'te gelecek."],
+  ["Kart", "guvenlikNotu", {}, 'Güvenlik gereği tam kart numarası, CVV ve son kullanma tarihi İSTENMEZ ve saklanmaz. Amaç yalnızca "hangi kartla ödendi" bilgisini taşımak; bunun için son 4 hane yeterlidir.'],
+  ["Kart", "gunNotu", {}, 'Kesim ve son ödeme günü, ileride "faizsiz dönemi en uzun kart" seçimini hesaplamak için kullanılacak. Ayın günü olarak girin (1-31).'],
+  ["Kart", "kartlaYapilanAlimlar", { sayi: 3 }, "Bu kartla yapılan alımlar (3)"],
+  ["Stok", "gecmisNotu", {}, 'Hareketler değiştirilmez ve silinmez. Hatalı bir giriş, ters yönde bir düzeltme kaydıyla giderilir. "Kim" sütunu çok kullanıcılı yapıyla (Faz 4) dolacak.'],
 ];
 
 let fark = 0;

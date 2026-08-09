@@ -33,6 +33,8 @@ export default async function KartlarSayfasi() {
   });
 
   const bicim = await bicimlendirici();
+  const t = await getTranslations("Kart");
+  const ortak = await getTranslations("Ortak");
 
   function limitMetni(kart: (typeof kartlar)[number]) {
     return kart.creditLimitAmount
@@ -55,13 +57,13 @@ export default async function KartlarSayfasi() {
         <Button variant="outline" size="sm" asChild>
           <Link href={`/kartlar/${kart.id}`}>
             <Eye />
-            Detay
+            {ortak("detay")}
           </Link>
         </Button>
         <Button variant="outline" size="sm" asChild>
           <Link href={`/kartlar/${kart.id}/duzenle`}>
             <Pencil />
-            Düzenle
+            {ortak("duzenle")}
           </Link>
         </Button>
         <DurumDegistirButonu
@@ -77,24 +79,23 @@ export default async function KartlarSayfasi() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Kredi Kartları</h1>
-          <p className="text-muted-foreground text-sm">{kartlar.length} kart</p>
+          <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
+          <p className="text-muted-foreground text-sm">
+            {t("sayi", { sayi: kartlar.length })}
+          </p>
         </div>
         <Button asChild>
           <Link href="/kartlar/yeni">
             <Plus />
-            Yeni Kart
+            {t("yeniKart")}
           </Link>
         </Button>
       </div>
 
       {kartlar.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
-          <p className="font-medium">Henüz kart eklenmemiş.</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Alım girerken hangi kartla ödediğinizi seçebilmek için en az bir
-            kart gerekiyor.
-          </p>
+          <p className="font-medium">{t("bosBaslik")}</p>
+          <p className="text-muted-foreground mt-1 text-sm">{t("bosIpucu")}</p>
         </div>
       ) : (
         <>
@@ -103,14 +104,18 @@ export default async function KartlarSayfasi() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Kart</TableHead>
-                  <TableHead>Banka</TableHead>
-                  <TableHead>Son 4</TableHead>
-                  <TableHead className="text-right">Kesim / Ödeme</TableHead>
-                  <TableHead className="text-right">Limit</TableHead>
-                  <TableHead className="text-right">Alım</TableHead>
-                  <TableHead>Durum</TableHead>
-                  <TableHead>Eylemler</TableHead>
+                  <TableHead>{t("sutunKart")}</TableHead>
+                  <TableHead>{ortak("banka")}</TableHead>
+                  <TableHead>{t("son4")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("kesimOdeme")}
+                  </TableHead>
+                  <TableHead className="text-right">{ortak("limit")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("alimSutunu")}
+                  </TableHead>
+                  <TableHead>{ortak("durum")}</TableHead>
+                  <TableHead>{ortak("eylemler")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -132,7 +137,7 @@ export default async function KartlarSayfasi() {
                     <TableCell>
                       <KopyalanabilirKod
                         deger={kart.last4}
-                        etiket="Son 4 hane"
+                        etiket={t("son4Hane")}
                       />
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
@@ -146,9 +151,9 @@ export default async function KartlarSayfasi() {
                     </TableCell>
                     <TableCell>
                       {kart.isActive ? (
-                        <Badge variant="secondary">aktif</Badge>
+                        <Badge variant="secondary">{ortak("aktif")}</Badge>
                       ) : (
-                        <Badge variant="outline">pasif</Badge>
+                        <Badge variant="outline">{ortak("pasif")}</Badge>
                       )}
                     </TableCell>
                     <TableCell>
@@ -173,26 +178,26 @@ export default async function KartlarSayfasi() {
                 altBaslik={kart.bankName ?? undefined}
                 alanlar={[
                   {
-                    etiket: "Son 4 hane",
+                    etiket: t("son4Hane"),
                     deger: (
                       <KopyalanabilirKod
                         deger={kart.last4}
-                        etiket="Son 4 hane"
+                        etiket={t("son4Hane")}
                       />
                     ),
                   },
                   {
-                    etiket: "Durum",
+                    etiket: ortak("durum"),
                     deger: kart.isActive ? (
-                      <Badge variant="secondary">aktif</Badge>
+                      <Badge variant="secondary">{ortak("aktif")}</Badge>
                     ) : (
-                      <Badge variant="outline">pasif</Badge>
+                      <Badge variant="outline">{ortak("pasif")}</Badge>
                     ),
                   },
-                  { etiket: "Kesim / Ödeme", deger: gunlerMetni(kart) },
-                  { etiket: "Limit", deger: limitMetni(kart) },
-                  { etiket: "Alım sayısı", deger: kart._count.purchases },
-                  { etiket: "Sahibi", deger: kart.holderName ?? "—" },
+                  { etiket: t("kesimOdeme"), deger: gunlerMetni(kart) },
+                  { etiket: ortak("limit"), deger: limitMetni(kart) },
+                  { etiket: t("alimSayisi"), deger: kart._count.purchases },
+                  { etiket: t("sahibi"), deger: kart.holderName ?? "—" },
                 ]}
                 eylemler={eylemler(kart)}
               />

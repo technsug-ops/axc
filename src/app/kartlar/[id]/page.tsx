@@ -15,6 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getTranslations } from "next-intl/server";
+
 import { alimDurumEtiketleri } from "@/lib/etiketler";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
@@ -46,6 +48,8 @@ export default async function KartDetaySayfasi({
 
   const bicim = await bicimlendirici();
   const durumEtiketleri = await alimDurumEtiketleri();
+  const t = await getTranslations("Kart");
+  const ortak = await getTranslations("Ortak");
 
   // Para birimleri BİRBİRİNE ÇEVRİLMEZ; her biri ayrı toplanır.
   const kartToplamlari = toplamlariBirlestir(
@@ -60,10 +64,12 @@ export default async function KartDetaySayfasi({
           <div>
             <h1 className="flex flex-wrap items-center gap-2 text-2xl font-semibold">
               {kart.label}
-              {kart.isActive ? null : <Badge variant="outline">pasif</Badge>}
+              {kart.isActive ? null : (
+                <Badge variant="outline">{ortak("pasif")}</Badge>
+              )}
             </h1>
             <p className="text-muted-foreground text-sm">
-              {kart.bankName ?? "Banka belirtilmemiş"} · •••• {kart.last4}
+              {kart.bankName ?? t("bankaBelirtilmemis")} · •••• {kart.last4}
               {kart.holderName ? ` · ${kart.holderName}` : ""}
             </p>
           </div>
@@ -71,7 +77,7 @@ export default async function KartDetaySayfasi({
             <Button variant="outline" asChild>
               <Link href={`/kartlar/${kart.id}/duzenle`}>
                 <Pencil />
-                Düzenle
+                {ortak("duzenle")}
               </Link>
             </Button>
             <DurumDegistirButonu
@@ -86,23 +92,31 @@ export default async function KartDetaySayfasi({
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Hesap kesim</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("hesapKesim")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">
-            {kart.statementDay ? `Ayın ${kart.statementDay}'i` : "—"}
+            {kart.statementDay
+              ? t("ayinGunu", { gun: kart.statementDay })
+              : "—"}
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Son ödeme</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("sonOdeme")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">
-            {kart.dueDay ? `Ayın ${kart.dueDay}'i` : "—"}
+            {kart.dueDay ? t("ayinGunu", { gun: kart.dueDay }) : "—"}
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Limit</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {ortak("limit")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">
             {kart.creditLimitAmount
@@ -117,7 +131,9 @@ export default async function KartDetaySayfasi({
 
       <Card>
         <CardHeader>
-          <CardTitle>Bu kartla yapılan alımlar ({kart.purchases.length})</CardTitle>
+          <CardTitle>
+            {t("kartlaYapilanAlimlar", { sayi: kart.purchases.length })}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {kartToplamlari.length ? (
@@ -128,7 +144,7 @@ export default async function KartDetaySayfasi({
                   className="rounded-lg border px-4 py-2"
                 >
                   <div className="text-muted-foreground text-xs">
-                    {toplam.paraBirimi} toplamı
+                    {t("paraBirimiToplami", { paraBirimi: toplam.paraBirimi })}
                   </div>
                   <div className="text-lg font-semibold">
                     {bicim.para(toplam.tutar, toplam.paraBirimi)}
@@ -138,26 +154,25 @@ export default async function KartDetaySayfasi({
             </div>
           ) : null}
 
-          <p className="text-muted-foreground text-xs">
-            Para birimleri ayrı toplanır ve birbirine çevrilmez. Detaylı borç ve
-            ekstre takibi Faz 3&apos;te gelecek.
-          </p>
+          <p className="text-muted-foreground text-xs">{t("toplamNotu")}</p>
 
           {kart.purchases.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="font-medium">Bu kartla henüz alım yapılmamış.</p>
+              <p className="font-medium">{t("alimYok")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Sipariş no</TableHead>
-                    <TableHead>Tarih</TableHead>
-                    <TableHead>Kanal hesabı</TableHead>
-                    <TableHead className="text-right">Kalem</TableHead>
-                    <TableHead>Tutar</TableHead>
-                    <TableHead>Durum</TableHead>
+                    <TableHead>{ortak("siparisNo")}</TableHead>
+                    <TableHead>{ortak("tarih")}</TableHead>
+                    <TableHead>{ortak("kanalHesabi")}</TableHead>
+                    <TableHead className="text-right">
+                      {ortak("kalem")}
+                    </TableHead>
+                    <TableHead>{ortak("tutar")}</TableHead>
+                    <TableHead>{ortak("durum")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,6 +58,9 @@ export function KartFormu({
     {},
   );
 
+  const t = useTranslations("Kart");
+  const ortak = useTranslations("Ortak");
+
   const ilk = baslangic ?? BOS;
   const [paraBirimi, setParaBirimi] = useState<"TRY" | "EUR">(ilk.currency);
   const [limitParaBirimi, setLimitParaBirimi] = useState<"TRY" | "EUR">(
@@ -67,18 +71,14 @@ export function KartFormu({
     <form action={formAction} className="space-y-6">
       {kartId ? <input type="hidden" name="id" value={kartId} /> : null}
       <input type="hidden" name="currency" value={paraBirimi} />
-      <input
-        type="hidden"
-        name="creditLimitCurrency"
-        value={limitParaBirimi}
-      />
+      <input type="hidden" name="creditLimitCurrency" value={limitParaBirimi} />
 
       {durum.hatalar?.length ? (
         <div
           role="alert"
           className="border-destructive/50 bg-destructive/10 text-destructive rounded-md border p-4 text-sm"
         >
-          <p className="mb-2 font-medium">Kaydedilemedi:</p>
+          <p className="mb-2 font-medium">{ortak("kaydedilemedi")}</p>
           <ul className="list-inside list-disc space-y-1">
             {durum.hatalar.map((hata, i) => (
               <li key={i}>{hata}</li>
@@ -89,12 +89,12 @@ export function KartFormu({
 
       <Card>
         <CardHeader>
-          <CardTitle>Kart bilgileri</CardTitle>
+          <CardTitle>{t("kartBilgileri")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="kart-label">Kart etiketi *</Label>
+              <Label htmlFor="kart-label">{t("kartEtiketi")} *</Label>
               <Input
                 id="kart-label"
                 name="label"
@@ -104,7 +104,7 @@ export function KartFormu({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="kart-banka">Banka</Label>
+              <Label htmlFor="kart-banka">{ortak("banka")}</Label>
               <Input
                 id="kart-banka"
                 name="bankName"
@@ -114,7 +114,7 @@ export function KartFormu({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="kart-last4">Son 4 hane *</Label>
+              <Label htmlFor="kart-last4">{t("son4Hane")} *</Label>
               <Input
                 id="kart-last4"
                 name="last4"
@@ -126,7 +126,7 @@ export function KartFormu({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="kart-sahip">Kart sahibi</Label>
+              <Label htmlFor="kart-sahip">{t("kartSahibi")}</Label>
               <Input
                 id="kart-sahip"
                 name="holderName"
@@ -141,21 +141,19 @@ export function KartFormu({
             role="note"
             className="text-muted-foreground rounded-md border border-dashed p-3 text-xs"
           >
-            Güvenlik gereği tam kart numarası, CVV ve son kullanma tarihi
-            İSTENMEZ ve saklanmaz. Amaç yalnızca &quot;hangi kartla
-            ödendi&quot; bilgisini taşımak; bunun için son 4 hane yeterlidir.
+            {t("guvenlikNotu")}
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Ekstre ve limit</CardTitle>
+          <CardTitle>{t("ekstreVeLimit")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="kart-para">Kartın para birimi *</Label>
+              <Label htmlFor="kart-para">{t("kartParaBirimi")} *</Label>
               <Select
                 value={paraBirimi}
                 onValueChange={(d) => setParaBirimi(d as "TRY" | "EUR")}
@@ -171,7 +169,7 @@ export function KartFormu({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="kart-limit">Limit</Label>
+              <Label htmlFor="kart-limit">{ortak("limit")}</Label>
               <div className="flex gap-2">
                 <Input
                   id="kart-limit"
@@ -183,9 +181,7 @@ export function KartFormu({
                 />
                 <Select
                   value={limitParaBirimi}
-                  onValueChange={(d) =>
-                    setLimitParaBirimi(d as "TRY" | "EUR")
-                  }
+                  onValueChange={(d) => setLimitParaBirimi(d as "TRY" | "EUR")}
                 >
                   <SelectTrigger className="w-28">
                     <SelectValue />
@@ -199,7 +195,7 @@ export function KartFormu({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="kart-kesim">Hesap kesim günü</Label>
+              <Label htmlFor="kart-kesim">{t("kesimGunu")}</Label>
               <Input
                 id="kart-kesim"
                 name="statementDay"
@@ -211,7 +207,7 @@ export function KartFormu({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="kart-odeme">Son ödeme günü</Label>
+              <Label htmlFor="kart-odeme">{t("odemeGunu")}</Label>
               <Input
                 id="kart-odeme"
                 name="dueDay"
@@ -222,20 +218,18 @@ export function KartFormu({
               />
             </div>
           </div>
-          <p className="text-muted-foreground text-xs">
-            Kesim ve son ödeme günü, ileride &quot;faizsiz dönemi en uzun
-            kart&quot; seçimini hesaplamak için kullanılacak. Ayın günü olarak
-            girin (1-31).
-          </p>
+          <p className="text-muted-foreground text-xs">{t("gunNotu")}</p>
         </CardContent>
       </Card>
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={bekliyor}>
-          {bekliyor ? "Kaydediliyor..." : gonderEtiketi}
+          {bekliyor ? ortak("kaydediliyor") : gonderEtiketi}
         </Button>
         <Button type="button" variant="outline" asChild>
-          <Link href={kartId ? `/kartlar/${kartId}` : "/kartlar"}>Vazgeç</Link>
+          <Link href={kartId ? `/kartlar/${kartId}` : "/kartlar"}>
+            {ortak("vazgec")}
+          </Link>
         </Button>
       </div>
     </form>
