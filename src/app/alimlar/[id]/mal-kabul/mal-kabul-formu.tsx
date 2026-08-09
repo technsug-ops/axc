@@ -19,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { HataOzeti } from "@/components/hata-ozeti";
 import { Button } from "@/components/ui/button";
+import { formGonderimi } from "@/lib/form-gonderimi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -163,7 +164,11 @@ export function MalKabulFormu({
   };
 
   return (
-    <form id="mal-kabul-formu" action={formAction} className="space-y-6">
+    <form
+      id="mal-kabul-formu"
+      onSubmit={formGonderimi(formAction)}
+      className="space-y-6"
+    >
       <input type="hidden" name="alimId" value={alimId} />
       <input type="hidden" name="veri" value={JSON.stringify(gonderilecek)} />
 

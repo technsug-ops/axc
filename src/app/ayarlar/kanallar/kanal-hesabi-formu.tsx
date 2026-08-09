@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { formGonderimi } from "@/lib/form-gonderimi";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -51,7 +52,7 @@ export function KanalHesabiFormu({ kanallar }: { kanallar: KanalSecenegi[] }) {
   }
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form onSubmit={formGonderimi(formAction)} className="space-y-4">
       {/* Radix Select kontrollü; değerleri gizli alanlarla gönderiyoruz. */}
       <input type="hidden" name="channelId" value={alanlar.channelId} />
       <input type="hidden" name="defaultCurrency" value={alanlar.paraBirimi} />

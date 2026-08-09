@@ -8,6 +8,7 @@ import { Plus, Search, Trash2 } from "lucide-react";
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { HataOzeti } from "@/components/hata-ozeti";
 import { Button } from "@/components/ui/button";
+import { formGonderimi } from "@/lib/form-gonderimi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -215,7 +216,7 @@ export function AlimFormu({
   };
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form onSubmit={formGonderimi(formAction)} className="space-y-6">
       <input type="hidden" name="veri" value={JSON.stringify(gonderilecek)} />
 
       {/* ----------------------------- BAŞLIK ----------------------------- */}
@@ -386,7 +387,9 @@ export function AlimFormu({
                 />
               </div>
             </div>
-            <p className="text-muted-foreground text-xs">{ortak("barkodNotu")}</p>
+            <p className="text-muted-foreground text-xs">
+              {ortak("barkodNotu")}
+            </p>
             {barkodMesaji ? (
               <p className="text-sm" role="status">
                 {barkodMesaji}
@@ -408,7 +411,9 @@ export function AlimFormu({
               />
             </div>
             {araniyor ? (
-              <p className="text-muted-foreground text-xs">{ortak("araniyor")}</p>
+              <p className="text-muted-foreground text-xs">
+                {ortak("araniyor")}
+              </p>
             ) : null}
             {sonuclar.length ? (
               <ul className="divide-y rounded-md border">

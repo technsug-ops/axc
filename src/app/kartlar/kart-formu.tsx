@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { HataOzeti } from "@/components/hata-ozeti";
 import { Button } from "@/components/ui/button";
+import { formGonderimi } from "@/lib/form-gonderimi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,7 +70,7 @@ export function KartFormu({
   );
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form onSubmit={formGonderimi(formAction)} className="space-y-6">
       {kartId ? <input type="hidden" name="id" value={kartId} /> : null}
       <input type="hidden" name="currency" value={paraBirimi} />
       <input type="hidden" name="creditLimitCurrency" value={limitParaBirimi} />
