@@ -27,6 +27,7 @@ function dosyalar(kok) {
 // --- 1) Eksik anahtar taraması ---------------------------------------------
 let eksik = 0;
 let kontrolEdilen = 0;
+let dinamikCagri = 0;
 
 for (const yol of dosyalar("src")) {
   const kaynak = readFileSync(yol, "utf8");
@@ -48,8 +49,38 @@ for (const yol of dosyalar("src")) {
       }
     }
   }
+
+  // Degiskenle cagrilan anahtarlar -- ornek: tMenu(oge.anahtar).
+  // Bunlar taranamaz; gorunmez kalmasinlar diye sayiliyorlar. Her biri
+  // asagida ozel bir kontrolle karsilanmali.
+  for (const [degisken] of adAlanlari) {
+    const dinamik = new RegExp(`\\b${degisken}(?:\\.rich)?\\(\\s*[^"'\\s)]`, "g");
+    for (const _ of kaynak.matchAll(dinamik)) dinamikCagri++;
+  }
 }
 console.log(`1) Anahtar taramasi: ${kontrolEdilen} cagri kontrol edildi, ${eksik} eksik`);
+
+// --- 1b) Dinamik anahtarlar: kenar menu ------------------------------------
+// Menu etiketleri tMenu(oge.anahtar) diye cagriliyor; 1. adim bunlari
+// goremez. Menu ogesi eklenip sozluge yazilmayinca uygulama CALISMA ANINDA
+// patliyor (09.08.2026'da "Satislar" eklenirken oldu). Bu yuzden menu
+// anahtarlari kaynaktan okunup ayrica dogrulaniyor.
+const kenarMenu = readFileSync("src/components/app-sidebar.tsx", "utf8");
+const menuAnahtarlari = [...kenarMenu.matchAll(/anahtar:\s*"([^"]+)"/g)].map(
+  (e) => e[1],
+);
+// grupCiz(tMenu("...")) ile cagrilan grup basliklari zaten 1. adimda tarandi.
+let menuEksik = 0;
+for (const anahtar of menuAnahtarlari) {
+  if (tr.Menu?.[anahtar] === undefined) {
+    console.log(`EKSIK  Menu.${anahtar}   (src/components/app-sidebar.tsx)`);
+    menuEksik++;
+  }
+}
+console.log(
+  `1b) Dinamik anahtarlar: ${dinamikCagri} degiskenli cagri, ` +
+    `${menuAnahtarlari.length} menu anahtari kontrol edildi, ${menuEksik} eksik`,
+);
 
 // --- 2) tr / en yapi karsilastirmasi ----------------------------------------
 function anahtarlar(nesne, onek = "") {
@@ -130,7 +161,7 @@ for (const [adAlani, anahtar, degerler, beklenen] of ornekler) {
 console.log(`3) Parametreli metin: ${ornekler.length} ornek, ${fark} fark`);
 
 console.log(
-  eksik + trFazla.length + enFazla.length + fark === 0
+  eksik + menuEksik + trFazla.length + enFazla.length + fark === 0
     ? "\nHEPSI TEMIZ"
     : "\nSORUN VAR",
 );
