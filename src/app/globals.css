@@ -50,17 +50,26 @@
 :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
+    /* KART ZEMİNİ — bilerek sayfadan koyu.
+       shadcn varsayılanında kart da sayfa da saf beyazdı; kart bir yüzey
+       gibi durmuyor, sınırı yalnızca kenarlıktan anlaşılıyordu. Hafif gri
+       zemin kartı sayfadan ayırıyor, içindeki beyaz giriş alanları da
+       kartın üstünde okunur kalıyor (kullanıcı geri bildirimi 09.08.2026).
+       Koyu temada kart ZATEN sayfadan açık; orada zemin değişmiyor,
+       kenarlık koyulaşıyor. */
+    --card: oklch(0.97 0 0);
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
     --primary: oklch(0.205 0 0);
     --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
+    /* Kart zemini 0.97 oldu; bu yuzeyler kartin UZERINDE duruyor,
+       aynı tonda kalırlarsa kaybolurlar. Bir kademe koyu. */
+    --secondary: oklch(0.94 0 0);
     --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
+    --muted: oklch(0.94 0 0);
     --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
+    --accent: oklch(0.94 0 0);
     --accent-foreground: oklch(0.205 0 0);
     --destructive: oklch(0.577 0.245 27.325);
     /* KENARLIK KONTRASTI — bilerek shadcn varsayılanından koyu.
@@ -69,8 +78,8 @@
        0.922 bunun için fazla soluktu (kullanıcı geri bildirimi
        09.08.2026). Giriş alanları bir tık daha koyu ki tıklanabilir
        alanlar kart kenarlığından ayrışsın. */
-    --border: oklch(0.87 0 0);
-    --input: oklch(0.84 0 0);
+    --border: oklch(0.82 0 0);
+    --input: oklch(0.8 0 0);
     --ring: oklch(0.708 0 0);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
@@ -84,7 +93,7 @@
     --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.97 0 0);
     --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-border: var(--border);
     --sidebar-ring: oklch(0.708 0 0);
 }
 
@@ -106,8 +115,8 @@
     --destructive: oklch(0.704 0.191 22.216);
     /* Koyu temada varsayılan %10 beyaz, koyu zeminde neredeyse görünmüyordu;
        kartların sınırı seçilemiyordu. Bkz. açık temadaki not. */
-    --border: oklch(1 0 0 / 24%);
-    --input: oklch(1 0 0 / 32%);
+    --border: oklch(1 0 0 / 32%);
+    --input: oklch(1 0 0 / 40%);
     --ring: oklch(0.556 0 0);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
@@ -120,7 +129,7 @@
     --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.269 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-border: var(--border);
     --sidebar-ring: oklch(0.556 0 0);
 }
 
