@@ -14,7 +14,7 @@
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { FeeBasis, FeeScope } from "../src/generated/prisma/enums";
-import { tutarCoz, xlsxOku, type Sayfa } from "./seed-xlsx";
+import { tutarCoz, xlsxOku } from "./seed-xlsx";
 
 const TARIFE_DOSYASI = "veri/kargo-tarifeleri.xlsx";
 

@@ -110,6 +110,15 @@ _Karar 09.08.2026._
 
 ## Faz 4'te sıraya girecek
 
+- [ ] **Toplu sevkiyat optimizasyonu**
+      Günün bekleyen gönderilerini tek ekranda toplayıp sipariş başına en
+      ucuz firmayı öneren atama ekranı — *"4'ü X, 5'i Y, 1'i Z"* görünümü.
+      Toplama/paketleme akışıyla birlikte kurulacak.
+      **Tarife verisi ve öneri mantığı Katman 1'den hazır olacak**: kargo
+      tarifeleri (44.841 satır) ve satış formundaki "en ucuz firma önerisi"
+      Faz 2'de yazılıyor; bu ekran onları toplu işe uygular.
+      _Karar 09.08.2026._
+
 - [ ] **İlk entegrasyon: kendi web sitesi kanalı**
       Faz 4'te bağlanacak İLK kanal pazaryeri değil, kullanıcının kendi
       e-ticaret sitesidir (bkz. CLAUDE.md → Yol haritası notları).

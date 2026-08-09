@@ -189,6 +189,12 @@ zorlaştıracak şekilde yazılmıyor.
   dışa aktarabilir. **Onboarding = içe aktar, offboarding = dışa aktar;
   ikisi de birinci sınıf özelliktir**, sonradan eklenen eklenti değil.
   _Karar 09.08.2026._
+- **KARGO MALİYET ÖNERİSİ — satılabilir özellik.** Müşteriler kargo
+  firmasını genelde alışkanlıkla seçer; sistemin o desideki fiyatları
+  yan yana gösterip en ucuzu önermesi **doğrudan para tasarrufu vaadidir**.
+  SaaS'ta öne çıkarılacak. Tarife verisi ve öneri mantığı Faz 2'de kuruluyor;
+  Faz 4'teki toplu sevkiyat ekranı aynı mantığı toplu işe uygular.
+  _Karar 09.08.2026._
 
 ## Çalışma kuralları
 - Her aşamada önce ne yapacağını KISACA söyle, onay al, sonra uygula
