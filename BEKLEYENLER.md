@@ -72,6 +72,31 @@ listesiyle birlikte teslim edilir.
       gibi hatalar teslimden önce yakalanır.
       _Karar 08.08.2026: şimdilik yok, Faz 4'te tekrar bakılacak._
 
+## Faz 4'te sıraya girecek
+
+- [ ] **İlk entegrasyon: kendi web sitesi kanalı**
+      Faz 4'te bağlanacak İLK kanal pazaryeri değil, kullanıcının kendi
+      e-ticaret sitesidir (bkz. CLAUDE.md → Yol haritası notları).
+      **Platform kararı bekleniyor** (Shopify / WooCommerce / ikas);
+      Faz 3 sonuna kadar verilecek. Şemada `ChannelType`'a `WEBSITE`
+      eklenmesi yetecek, kanal mimarisi değişmeyecek.
+      _Karar 09.08.2026._
+
+- [ ] **Ürün görselleri**
+      Faz 4'te pazaryeri/site API'lerinden çekilecek. Erken ihtiyaç
+      doğarsa manuel yükleme öne alınabilir.
+      _Karar 09.08.2026._
+
+## Faz 3 tazminat migration'ına binecek
+
+- [ ] **Tedarikçi kartı (Supplier modeli)**
+      Bugün alımda tedarikçi **serbest metin** (`Purchase.supplierName`).
+      Faz 3'te hasarlı ürün iadesi ve tazminat takibi gelince tedarikçinin
+      kayıt olması gerekecek. O migration'a binecek; mevcut serbest metin
+      değerleri aynı gün Supplier kayıtlarına eşlenecek — geçmiş alımlar
+      tedarikçisiz kalmayacak.
+      _Karar 09.08.2026: ayrı migration açmaya değmez._
+
 ## Faz sırasına göre zaten planlı olanlar
 
 Bunlar eksik değil, sırası gelmedi (bkz. CLAUDE.md → Faz sırası):

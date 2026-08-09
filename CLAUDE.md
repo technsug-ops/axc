@@ -136,6 +136,23 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
 - Faz 4: pazaryeri API'leri + barkod + çoklu kullanıcı
 Bir faza ait olmayan özelliği o fazda EKLEME.
 
+## Yol haritası notları
+
+Alınmış yön kararları. Bugün uygulanmıyor, ama bugünkü işler bunları
+zorlaştıracak şekilde yazılmıyor.
+
+- **WEB SİTESİ KANALI:** Kullanıcı kendi e-ticaret sitesinde de satış
+  yapacak. Mimari karar: **Selliora mağaza OLMAZ, mağazayı yöneten beyin
+  olur.** Kendi site, `WEBSITE` tipinde 12. kanal olarak bağlanır (hazır
+  platform: Shopify/WooCommerce/ikas — platform kararı Faz 3 sonuna kadar
+  verilecek). Faz 4 entegrasyon sırasında web sitesi kanalı **1
+  NUMARADIR**; pazaryeri API'lerinden (Trendyol vb.) önce gelir.
+- **SaaS FEATURE:** "Kendi siteni bağla", SaaS'ta bir plan/feature kalemi
+  olarak konumlanacak — pazaryeri + kendi site tek stoktan yönetilir,
+  ayrışma noktası budur.
+- Bu karar `ChannelType` yapısını **doğruluyor**: kanal mimarisine
+  dokunulmaz, `WEBSITE` tipinin eklenmesi yeterli olacak.
+
 ## Çalışma kuralları
 - Her aşamada önce ne yapacağını KISACA söyle, onay al, sonra uygula
 - Şema değişikliği gerektiren işlerde migration'ı hemen çalıştırma;
