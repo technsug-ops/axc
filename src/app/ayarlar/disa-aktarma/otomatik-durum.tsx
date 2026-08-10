@@ -41,15 +41,24 @@ export async function OtomatikYedekDurumu() {
   try {
     const { list } = await import("@vercel/blob");
     const { blobs } = await list({ prefix: "yedek/" });
+
     yedekler = blobs
-      .map((b) => ({
-        url: b.url,
-        ad: b.pathname.replace(/^yedek\//, ""),
-        tarih: new Date(b.uploadedAt),
-        boyut: b.size,
-      }))
-      .sort((a, b) => b.tarih.getTime() - a.tarih.getTime())
-      .slice(0, 10);
+      .sort(
+        (a, b) =>
+          new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
+      )
+      .slice(0, 10)
+      .map((b) => {
+        const ad = b.pathname.replace(/^yedek\//, "");
+        return {
+          // Yedekler ÖZEL: blob adresi doğrudan okunamaz. İndirme kendi
+          // ucumuzdan geçer, depo jetonu tarayıcıya hiç gitmez.
+          url: `/api/yedek/indir?ad=${encodeURIComponent(ad)}`,
+          ad,
+          tarih: new Date(b.uploadedAt),
+          boyut: b.size,
+        };
+      });
   } catch {
     yedekler = [];
   }

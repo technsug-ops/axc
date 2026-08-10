@@ -74,7 +74,11 @@ export async function GET(istek: Request) {
     const icerik = yedegiMetneCevir(yedek);
 
     const { url } = await put(`${KLASOR}/selliora-${gun}.json`, icerik, {
-      access: "public",
+      // ÖZEL (private) — KAMUYA AÇIK DEĞİL.
+      // Bu dosyada satış, maliyet ve kâr rakamları AÇIK METİN duruyor.
+      // `public` olsaydı adresi ele geçiren herkes okuyabilirdi; adresin
+      // tahmin edilemez olması gizlilik sayılmaz.
+      access: "private",
       contentType: "application/json; charset=utf-8",
       // Aynı gün ikinci kez çalışırsa üzerine yazsın; gün başına tek dosya.
       addRandomSuffix: false,
