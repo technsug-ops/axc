@@ -25,12 +25,14 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { CikisButonu } from "@/components/cikis-butonu";
 import { UYGULAMA } from "@/lib/uygulama";
 
 /**
@@ -93,7 +95,7 @@ const AYARLAR: MenuOgesi[] = [
   },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ eposta }: { eposta?: string }) {
   const pathname = usePathname();
   const t = useTranslations("Uygulama");
   const tMenu = useTranslations("Menu");
@@ -159,6 +161,13 @@ export function AppSidebar() {
         {grupCiz(tMenu("operasyon"), OPERASYON)}
         {grupCiz(tMenu("ayarlar"), AYARLAR)}
       </SidebarContent>
+
+      {/* Kim olarak girildiği ve çıkış — her ekranda görünür (#1, #10). */}
+      {eposta ? (
+        <SidebarFooter className="px-2 py-2">
+          <CikisButonu eposta={eposta} />
+        </SidebarFooter>
+      ) : null}
     </Sidebar>
   );
 }

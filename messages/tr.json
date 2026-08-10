@@ -24,7 +24,8 @@
     "rapor": "Dönem raporu",
     "iceAktarma": "Veri içe aktarma",
     "kanalSku": "Kanal SKU ve komisyon",
-    "disaAktarma": "Dışa aktarma ve yedek"
+    "disaAktarma": "Dışa aktarma ve yedek",
+    "giris": "Giriş"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -1090,5 +1091,26 @@
     "yedekIndirBaglanti": "indir",
     "yedekBoyut": "{kb} KB",
     "otomatikNotu": "Otomatik yedek İŞ VERİSİNİN TAMAMINI içerir; yalnızca kargo tarife tablosu dışarıda bırakılır (seed ile yeniden üretilir, dosyanın içinde eksik olduğu yazar). Tam yedeği yukarıdaki düğmeden elle alabilirsiniz."
+  },
+  "Giris": {
+    "baslik": "Selliora",
+    "altBaslik": "Devam etmek için giriş yapın",
+    "eposta": "E-posta",
+    "epostaIpucu": "örn. ad@firma.com",
+    "parola": "Parola",
+    "girisYap": "Giriş yap",
+    "giriliyor": "Giriş yapılıyor…",
+    "cikis": "Çıkış",
+    "cikisYapildi": "Çıkış yapıldı.",
+    "hataliGiris": "E-posta veya parola hatalı.",
+    "epostaZorunlu": "E-posta girilmeli.",
+    "parolaZorunlu": "Parola girilmeli.",
+    "kullaniciYokBaslik": "Henüz kullanıcı yok",
+    "kullaniciYokMetin": "Sistemde hiç kullanıcı tanımlı değil. İlk kullanıcıyı sunucuda şu komutla açın: npm run kullanici:olustur",
+    "kurulumEksikBaslik": "Giriş yapılandırılmamış",
+    "kurulumEksikMetin": "OTURUM_SIRRI ortam değişkeni tanımlı değil. Bu değer olmadan giriş çalışmaz ve sistem güvenlik gereği kapalı kalır.",
+    "cikisOnayBaslik": "Çıkış yapılsın mı?",
+    "cikisOnayMetin": "Oturumunuz kapanacak ve yeniden giriş yapmanız gerekecek.",
+    "girisNotu": "Bu sistemde satış, maliyet ve kâr bilgileriniz duruyor. Parolanızı paylaşmayın."
   }
 }

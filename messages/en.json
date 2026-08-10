@@ -24,7 +24,8 @@
     "rapor": "",
     "iceAktarma": "",
     "kanalSku": "",
-    "disaAktarma": ""
+    "disaAktarma": "",
+    "giris": ""
   },
   "Ortak": {
     "kapat": "",
@@ -1090,5 +1091,26 @@
     "yedekIndirBaglanti": "",
     "yedekBoyut": "",
     "otomatikNotu": ""
+  },
+  "Giris": {
+    "baslik": "",
+    "altBaslik": "",
+    "eposta": "",
+    "epostaIpucu": "",
+    "parola": "",
+    "girisYap": "",
+    "giriliyor": "",
+    "cikis": "",
+    "cikisYapildi": "",
+    "hataliGiris": "",
+    "epostaZorunlu": "",
+    "parolaZorunlu": "",
+    "kullaniciYokBaslik": "",
+    "kullaniciYokMetin": "",
+    "kurulumEksikBaslik": "",
+    "kurulumEksikMetin": "",
+    "cikisOnayBaslik": "",
+    "cikisOnayMetin": "",
+    "girisNotu": ""
   }
 }

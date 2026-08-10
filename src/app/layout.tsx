@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
@@ -14,6 +16,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { OTURUM_CEREZI } from "@/lib/oturum-imza";
+import { oturumdakiKullanici } from "@/lib/oturum";
 import { UYGULAMA } from "@/lib/uygulama";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
@@ -39,6 +43,24 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const dil = await getLocale();
   const ortak = await getTranslations("Ortak");
 
+  /**
+   * İKİNCİ KAPI — İPTAL EDİLMİŞ OTURUMLAR.
+   *
+   * `proxy.ts` jetonun imzasına ve süresine bakar; veritabanına bakamaz
+   * (her istekte çalışıyor). İptal buradan işler: kullanıcı pasife
+   * alındıysa ya da parola değiştiği için `sessionVersion` arttıysa,
+   * jeton hâlâ geçerli imzalı olsa bile içeri alınmaz.
+   *
+   * Çerez VARSA ama kullanıcı çözülemiyorsa → çerezi silen /cikis yoluna
+   * gidilir. Çerez YOKSA hiçbir şey yapılmaz; giriş ekranı böyle çizilir
+   * ve sonsuz yönlendirme oluşmaz.
+   */
+  const cerezler = await cookies();
+  const oturumCerezi = cerezler.get(OTURUM_CEREZI)?.value;
+  const kullanici = await oturumdakiKullanici().catch(() => null);
+
+  if (oturumCerezi && !kullanici) redirect("/cikis");
+
   return (
     <html lang={dil} className={cn("font-sans", geist.variable)}>
       <body>
@@ -46,7 +68,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <NextIntlClientProvider>
           <TooltipProvider delayDuration={0}>
             <SidebarProvider>
-              <AppSidebar />
+              <AppSidebar eposta={kullanici?.email} />
               <SidebarInset>
                 <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b px-3 md:px-4 print:hidden">
                   {/*

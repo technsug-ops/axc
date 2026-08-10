@@ -1039,6 +1039,50 @@ model Expense {
 }
 
 // ============================================================================
+//  KULLANICI — TEK KULLANICILI GİRİŞ (Faz 3,5)
+// ----------------------------------------------------------------------------
+//  10.08.2026'da canlıya çıkınca ortaya çıktı: sistemde hiç giriş yoktu ve
+//  adres internete açıldı. Vercel'in ücretsiz koruması üretim adresini
+//  kapsamıyor, özel alan adını ise kendi tanımıyla hariç tutuyor; ücretlisi
+//  aylık 150 dolar. Bu yüzden kapı uygulamanın kendi içinde.
+//
+//  BURADA YETKİ (RBAC) YOK — bilerek. "Kim neyi görebilir" ayrımı tek
+//  kullanıcıda boş katmandır; Faz 4'te çoklu kullanıcıyla birlikte gelir.
+//  Bu model o gün rol alanı eklenerek büyür, yeniden yazılmaz.
+//
+//  PAROLA AÇIK SAKLANMAZ: yalnızca scrypt özeti ve tuzu tutulur.
+//  scrypt Node'un içinde olduğu için yeni bağımlılık gerekmedi.
+// ============================================================================
+
+model User {
+  id String @id @default(cuid())
+
+  email String @unique
+
+  /// scrypt özeti — biçim: `scrypt$N$r$p$tuz$ozet` (hepsi base64url).
+  /// Ayarlar özetin İÇİNDE durur ki ileride maliyet artırılsa eski
+  /// parolalar da doğrulanabilsin.
+  passwordHash String @db.Text
+
+  /// Görünen ad — üst çubukta ve çıkış menüsünde.
+  name String?
+
+  isActive Boolean @default(true)
+
+  /// Bu değer artırılınca O KULLANICININ tüm oturumları geçersiz olur.
+  /// "Her yerden çıkış yap" ve parola değişikliği bunu kullanır; jetonun
+  /// içinde taşındığı için doğrulama veritabanına gitmeden yapılabilir.
+  sessionVersion Int @default(1)
+
+  lastLoginAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+// ============================================================================
 //  TEDARİKÇİ · HAKEDİŞ · TAZMİNAT  (Faz 3)
 // ============================================================================
 
