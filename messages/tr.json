@@ -722,6 +722,23 @@
     "iadeSonrasiNet": "İade sonrası net",
     "iadeYok": "Bu satışta iade yok.",
     "iadeSayisi": "İade ({sayi})",
-    "kdvVarsayimNotu": "KDV etkisi muhasebeci teyidi bekleyen bir varsayımla hesaplanıyor: iade edilen kalemin KDV bileşenleri adet oranında ters işlenir."
+    "kdvVarsayimNotu": "KDV etkisi muhasebeci teyidi bekleyen bir varsayımla hesaplanıyor: iade edilen kalemin KDV bileşenleri adet oranında ters işlenir.",
+    "iadeKargosuNotu": "Gidiş kargosu satışta zaten düşüldü; buraya YALNIZ iade/dönüş kargosunu yazın.",
+    "kargoIpucu": "örn. 120",
+    "onizlemeBasligi": "İade etkisi önizlemesi",
+    "onizle": "Önizle",
+    "onizlemeBekleniyor": "Değerleri girip Önizle'ye basın.",
+    "onayBasligi": "İadeyi kaydet",
+    "onayAciklama": "Bu kayıt stok defterine yazılır ve GERİ ALINAMAZ. Sağlam adet stoğa girer, değişim ürünü stoktan düşer. Düzeltme gerekirse ters yönde bir stok düzeltmesi gerekir.",
+    "onayla": "Evet, kaydet",
+    "net1Etkisi": "İade etkisi — NET-1",
+    "net2Etkisi": "İade etkisi — NET-2",
+    "tamamiIade": "Tamamı iade edildi",
+    "tamamiIadeNotu": "Bu satışın tüm kalemleri iade edilmiş; yeni iade alınamaz.",
+    "iadeVar": "iade var",
+    "kalanYok": "kalan yok",
+    "iadeEdilebilirYok": "İade edilebilir kalem yok.",
+    "stokEtkisiYok": "Bu iade türünde ürün stoğa girmez.",
+    "hicKalemSecilmedi": "Hiç kalem seçilmedi — iade adedi girin."
   }
 }

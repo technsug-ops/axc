@@ -1,11 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { Eye, Plus } from "lucide-react";
+import { Eye, Plus, Undo2 } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { NetKar } from "@/components/net-kar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,6 +35,7 @@ export default async function SatislarSayfasi({
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
   const t = await getTranslations("Satis");
+  const tIade = await getTranslations("Iade");
   const ortak = await getTranslations("Ortak");
 
   const satislar = await prisma.sale.findMany({
@@ -44,9 +46,12 @@ export default async function SatislarSayfasi({
           variant: {
             include: { product: { select: { name: true } } },
           },
+          returnItems: { select: { quantity: true } },
         },
       },
       channelAccount: { include: { channel: { select: { name: true } } } },
+      // Rozet ve satır eylemi için: iade var mı, kalan var mı?
+      returns: { select: { id: true } },
     },
     orderBy: { soldAt: "desc" },
   });
@@ -83,14 +88,32 @@ export default async function SatislarSayfasi({
     return bicim.para(kalem.unitPriceAmount, kalem.unitPriceCurrency);
   }
 
+  /** Kalemlerden en az birinde iade edilebilir adet kaldı mı? */
+  function iadeKalanVar(satis: (typeof satislar)[number]) {
+    return satis.items.some((k) => {
+      const iadeEdilen = k.returnItems.reduce((t2, r) => t2 + r.quantity, 0);
+      return k.quantity - iadeEdilen > 0;
+    });
+  }
+
   function eylemler(satis: (typeof satislar)[number]) {
     return (
-      <Button variant="outline" size="sm" asChild>
-        <Link href={`/satislar/${satis.id}`}>
-          <Eye />
-          {ortak("detay")}
-        </Link>
-      </Button>
+      <>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/satislar/${satis.id}`}>
+            <Eye />
+            {ortak("detay")}
+          </Link>
+        </Button>
+        {iadeKalanVar(satis) ? (
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/satislar/${satis.id}/iade`}>
+              <Undo2 />
+              {tIade("iadeAl")}
+            </Link>
+          </Button>
+        ) : null}
+      </>
     );
   }
 
@@ -181,7 +204,14 @@ export default async function SatislarSayfasi({
                     <TableCell className="text-muted-foreground">
                       {hesapMetni(satis)}
                     </TableCell>
-                    <TableCell>{urunOzeti(satis)}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{urunOzeti(satis)}</span>
+                        {satis.returns.length ? (
+                          <Badge variant="outline">{tIade("iadeVar")}</Badge>
+                        ) : null}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right font-medium">
                       {adetToplami(satis)}
                     </TableCell>
@@ -215,9 +245,14 @@ export default async function SatislarSayfasi({
               <ListeKarti
                 key={satis.id}
                 baslik={
-                  <Baglanti href={`/satislar/${satis.id}`}>
-                    {urunOzeti(satis)}
-                  </Baglanti>
+                  <span className="flex flex-wrap items-center gap-2">
+                    <Baglanti href={`/satislar/${satis.id}`}>
+                      {urunOzeti(satis)}
+                    </Baglanti>
+                    {satis.returns.length ? (
+                      <Badge variant="outline">{tIade("iadeVar")}</Badge>
+                    ) : null}
+                  </span>
                 }
                 altBaslik={bicim.tarih(satis.soldAt)}
                 alanlar={[

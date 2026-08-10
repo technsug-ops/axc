@@ -208,6 +208,12 @@ zorlaştıracak şekilde yazılmıyor.
 - Her aşamada önce ne yapacağını KISACA söyle, onay al, sonra uygula
 - Şema değişikliği gerektiren işlerde migration'ı hemen çalıştırma;
   önce bildir
+- **Migration + `prisma generate` sonrası dev sunucusu MUTLAKA yeniden
+  başlatılır.** Çalışan sunucu üretilmiş Prisma istemcisini önbellekte
+  tutar; yeni alan/model "Unknown field ..." hatası verir. Kod doğru
+  olduğu hâlde ekran 500 döner ve hata koda aitmiş gibi görünür.
+  _09.08.2026'da üç kez yaşandı; teşhis her seferinde dev sunucusu
+  günlüğünden çıktı — tahmin etmeden önce kendi günlüğüne bak._
 - Kullanıcı vibe-coder: teknik jargonu az, Türkçe açıkla
 - Migration, silme, reset gibi geri dönüşsüz işlerde MUTLAKA onay iste
 - Her tamamlanan aşamada commit + push (mesaj formatı: tip: Türkçe açıklama).

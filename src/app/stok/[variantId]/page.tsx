@@ -40,6 +40,7 @@ export default async function VaryantHareketleriSayfasi({
   const t = await getTranslations("Stok");
   const ortak = await getTranslations("Ortak");
   const hareketEtiketleri = await stokHareketEtiketleri();
+  const tIade = await getTranslations("Iade");
 
   const [stok, hareketler] = await Promise.all([
     varyantStogu(variantId),
@@ -52,6 +53,11 @@ export default async function VaryantHareketleriSayfasi({
         },
         saleItem: {
           include: { sale: { select: { id: true, code: true } } },
+        },
+        returnItem: {
+          include: {
+            return: { select: { id: true, saleId: true, code: true } },
+          },
         },
       },
       orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
@@ -68,6 +74,15 @@ export default async function VaryantHareketleriSayfasi({
       return (
         <Baglanti href={`/alimlar/${hareket.purchaseItem.purchase.id}`}>
           {hareket.purchaseItem.purchase.code}
+        </Baglanti>
+      );
+    }
+
+    // İade/değişim hareketleri satışın iade bölümüne gider.
+    if (hareket.returnItem?.return) {
+      return (
+        <Baglanti href={`/satislar/${hareket.returnItem.return.saleId}`}>
+          {hareket.returnItem.return.code ?? tIade("baslik")}
         </Baglanti>
       );
     }

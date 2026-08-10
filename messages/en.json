@@ -722,6 +722,23 @@
     "iadeSonrasiNet": "",
     "iadeYok": "",
     "iadeSayisi": "",
-    "kdvVarsayimNotu": ""
+    "kdvVarsayimNotu": "",
+    "iadeKargosuNotu": "",
+    "kargoIpucu": "",
+    "onizlemeBasligi": "",
+    "onizle": "",
+    "onizlemeBekleniyor": "",
+    "onayBasligi": "",
+    "onayAciklama": "",
+    "onayla": "",
+    "net1Etkisi": "",
+    "net2Etkisi": "",
+    "tamamiIade": "",
+    "tamamiIadeNotu": "",
+    "iadeVar": "",
+    "kalanYok": "",
+    "iadeEdilebilirYok": "",
+    "stokEtkisiYok": "",
+    "hicKalemSecilmedi": ""
   }
 }

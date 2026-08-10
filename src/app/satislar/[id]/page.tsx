@@ -1,13 +1,17 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Undo2 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { Baglanti, GeriBaglanti } from "@/components/baglanti";
+import { IadeBlogu, type IadeGorunumu } from "@/components/iade-blogu";
 import { KarBlogu, type KarBloguVerisi } from "@/components/kar-blogu";
 
 import { YenidenHesapla } from "./yeniden-hesapla";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -40,11 +44,16 @@ export default async function SatisDetaySayfasi({
             },
           },
           fees: { orderBy: { createdAt: "asc" } },
+          returnItems: { select: { quantity: true } },
         },
       },
       // Sipariş başına kesintiler: saleItemId BOŞ olanlar.
       fees: { where: { saleItemId: null }, orderBy: { createdAt: "asc" } },
       cargoCarrier: { select: { name: true } },
+      returns: {
+        orderBy: { occurredAt: "asc" },
+        include: { fees: { orderBy: { createdAt: "asc" } } },
+      },
       channelAccount: { include: { channel: { select: { name: true } } } },
     },
   });
@@ -54,6 +63,7 @@ export default async function SatisDetaySayfasi({
   const bicim = await bicimlendirici();
   const t = await getTranslations("Satis");
   const ortak = await getTranslations("Ortak");
+  const tIade = await getTranslations("Iade");
 
   // Hangi kalem hangi partilerden düştü — ledger'dan (src/lib/satis.ts).
   const dusumler = await kalemDusumleri(satis.items.map((k) => k.id));
@@ -70,6 +80,26 @@ export default async function SatisDetaySayfasi({
 
   const sayi = (d: { toString(): string } | null) =>
     d === null ? null : Number(d.toString());
+
+  // Daha önce iade edilen adetler kalem bazında düşülür; hepsi iade
+  // edilmişse "İade Al" pasifleşir ve NEDENİ yazar (#1, #5).
+  const iadeKalanVar = satis.items.some((k) => {
+    const iadeEdilen = k.returnItems.reduce((t2, r) => t2 + r.quantity, 0);
+    return k.quantity - iadeEdilen > 0;
+  });
+
+  const iadeler: IadeGorunumu[] = satis.returns.map((i) => ({
+    id: i.id,
+    code: i.code,
+    returnType: i.returnType,
+    occurredAt: i.occurredAt,
+    net1: i.net1Amount ? Number(i.net1Amount.toString()) : null,
+    net2: i.net2Amount ? Number(i.net2Amount.toString()) : null,
+    satirlar: i.fees.map((f) => ({
+      code: f.code,
+      tutar: Number(f.amount.toString()),
+    })),
+  }));
 
   const karVerisi: KarBloguVerisi = {
     durum: satis.profitStatus,
@@ -176,6 +206,24 @@ export default async function SatisDetaySayfasi({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {iadeKalanVar ? (
+              <Button variant="outline" asChild>
+                <Link href={`/satislar/${satis.id}/iade`}>
+                  <Undo2 />
+                  {tIade("iadeAl")}
+                </Link>
+              </Button>
+            ) : (
+              // Buton kaybolmaz, PASİF olur ve nedeni yazar (#1, #5).
+              <Button
+                variant="outline"
+                disabled
+                title={tIade("tamamiIadeNotu")}
+              >
+                <Undo2 />
+                {tIade("tamamiIade")}
+              </Button>
+            )}
             <YenidenHesapla
               saleId={satis.id}
               kalemler={satis.items.map((k) => {
@@ -374,6 +422,13 @@ export default async function SatisDetaySayfasi({
       })}
 
       {satis.profitStatus !== null ? <KarBlogu veri={karVerisi} /> : null}
+
+      <IadeBlogu
+        iadeler={iadeler}
+        paraBirimi={satis.profitCurrency ?? "TRY"}
+        orijinalNet1={sayi(satis.net1Amount)}
+        orijinalNet2={sayi(satis.net2Amount)}
+      />
 
       <p className="text-muted-foreground text-xs">{t("detayNotu")}</p>
     </div>

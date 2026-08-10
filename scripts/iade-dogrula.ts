@@ -125,6 +125,67 @@ console.log("\n1) ÜÇ SENARYO");
 }
 
 // ===========================================================================
+console.log("\n1b) ALTIN SENARYO — JBL Partybox (kullanıcının Excel İade sayfası)");
+// ===========================================================================
+{
+  // Trendyol satışı: 7.835 · maliyet 5.749 · komisyon 822,68 · sabit 13,19
+  // Gidiş kargosu (107) satışta zaten kesildi — iadede GERİ GELMEZ.
+  // Trendyol'da ödeme gideri YOK (o bir Hepsiburada kalemi).
+  const IADE_KARGOSU = 120; // kullanıcı elle girer; dönüş bacağı
+  const jbl = iadeEtkisiHesapla({
+    returnType: "NORMAL",
+    kalemler: [
+      {
+        satilanAdet: 1,
+        iadeAdedi: 1,
+        saglamAdet: 1,
+        satisTutari: 7835,
+        maliyet: 5749,
+        kdvOrani: 20,
+        komisyon: 822.68,
+        degisimMaliyeti: null,
+      },
+    ],
+    odemeGideri: 0, // Trendyol
+    siparisToplami: 7835,
+    iadeKargosu: IADE_KARGOSU,
+    yenidenGonderimKargosu: null,
+    ceza: null,
+  });
+  const jk = jbl.kalemSatirlari[0];
+
+  yakin("JBL kayıp gelir", satir(jk, "KAYIP_GELIR"), -7835);
+  yakin("JBL komisyon iadesi (tam)", satir(jk, "KOMISYON_IADE"), 822.68);
+  yakin("JBL stopaj iadesi", satir(jk, "STOPAJ_IADE"), 65.29);
+  yakin("JBL maliyet geri", satir(jk, "MALIYET_GERI"), 5749);
+  yakin("JBL iade kargosu", satir(jbl.genelSatirlar, "IADE_KARGO"), -IADE_KARGOSU);
+
+  kontrol(
+    "JBL: Trendyol'da ödeme gideri satırı ÜRETİLMEZ",
+    satir(jk, "ODEME_GIDERI_IADE") === 0 &&
+      !jk.some((s) => s.code === "ODEME_GIDERI_IADE"),
+    jk.map((s) => s.code),
+  );
+  kontrol(
+    "JBL: 13,19 sabit gider GERİ GELMEZ",
+    ![...jk, ...jbl.genelSatirlar].some((s) => s.code.includes("SABIT")),
+  );
+  kontrol(
+    "JBL: gidiş kargosu (107) GERİ GELMEZ",
+    ![...jk, ...jbl.genelSatirlar].some(
+      (s) => s.tutar === 107 || s.tutar === -107,
+    ),
+  );
+
+  yakin(
+    "JBL net1 etkisi",
+    jbl.net1Etkisi,
+    -7835 + 822.68 + 65.29 + 5749 - IADE_KARGOSU,
+  );
+  kontrol("JBL: iade zarardır", jbl.net1Etkisi < 0, jbl.net1Etkisi);
+}
+
+// ===========================================================================
 console.log("\n2) KISMİ İADE — adet oranında");
 // ===========================================================================
 {
