@@ -242,14 +242,48 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
 
 - [ ] **Tazminat ekranı** — tedarikçiden alacak takibi (şema hazır)
 
-- [ ] **Kimlik standardı paketi** — SKU / alım numarası / raf kodu biçimi
-      Mevcut kayıtlar sorunu gösteriyor: `ewe`, `wew`, `25-23` gibi alım
-      kodları bilgi taşımıyor; raf kodları iki farklı yazımda (`a-01`, `a02`).
-      Öneri: otomatik SKU önerisi (değiştirilebilir), otomatik alım numarası
-      (elle girilemez), raf kodu biçim doğrulaması.
-      _Kullanıcının cevaplaması beklenen üç soru var: SKU biçimi tireli mi
-      bitişik mi · alım numarasında elle giriş kapansın mı · paket Faz 3'ün
-      içinde mi sonrasında mı._
+- [x] ~~**Kimlik standardı paketi — PARÇA 1 (temel)**~~ ✓ 10.08.2026
+      Kararlar: SKU tireli `OYU-LG-260707-01` · alım no `ALM-ER-260810-01`
+      sistem üretir, elle giriş kapalı · SKU = Firma SKU (aynı değer) ·
+      hareket görmüş üründe kod kilitli · paket Faz 3 ekranlarından ÖNCE.
+      Teslim: migration (Kategori.code, Supplier.code, Purchase.supplierOrderNo)
+      · `src/lib/kimlik.ts` motoru · `kimlik:dogrula` (54) ·
+      `migration:kontrol` harf bekçisi · kategori ekranında Kod alanı.
+
+- [ ] **Kimlik standardı — PARÇA 2 (tedarikçi ve alım numarası)**
+      TESPİT 10.08.2026: `supplierId` uygulama kodunda HİÇBİR YERDE
+      yazılmıyor. `Supplier` tablosu var ve migration eski adları taşımış,
+      ama alım formu tedarikçiyi hâlâ SERBEST METİN olarak alıyor
+      (`alim-formu.tsx` → `supplierName`). İlişki ölü duruyor; alım
+      numarası tedarikçi kodunu içerdiği için önce bu kurulmalı.
+      Kapsam: `/ayarlar/tedarikciler` ekranı · alım formunda seçim kutusu
+      + akış içi mini "yeni tedarikçi" diyaloğu (ad + kod, sayfadan
+      çıkmadan) · `supplierId` gerçekten yazılıyor · alım no üretimi,
+      kod alanı formdan kalkıyor · Tedarikçi sipariş no alanı ·
+      ürün seçiminde "önce ara, sonra yarat" (arama sonuçsuzken
+      "Yeni ürün oluştur" ikincil eylemi, YENİ SEKMEDE — yarım form
+      kaybolmasın).
+      _Tedarikçi ZORUNLU olacak; `ALM-GEN` arka kapısı bilerek yok._
+
+- [ ] **Kimlik standardı — PARÇA 3 (ürün kodları, raf, mükerrer koruması)**
+      SKU "Öner" düğmesi (SKU ve Firma SKU'yu AYNI değerle doldurur, `F-`
+      öneki yok) · hareket görmüş üründe iki kod da kilitli (ekranda VE
+      sunucuda) · raf kodu deseni `[A-Z]-\d{2}(-\d)?` · raf birleştirme
+      aracı (önizleme → onay → yaz; bugünkü atama taşınır, GEÇMİŞ stok
+      hareketleri ledger kuralı gereği olduğu gibi kalır) · kod çakışma
+      hatası eyleme dönük (barkod + SKU + Firma SKU: hangi üründe kayıtlı
+      + "Ürüne git" + "Bu ürüne alım ekle") · ürün formunda ad+marka
+      benzerlik sorusu (engel değil, sorgu) · içe aktarmada UYARI KANALI
+      (bugün sadece hata kanalı var; "benzer ürün mevcut" durduramaz).
+      _`enYakin()` (Levenshtein) `ice-aktarma/dogrula.ts` içinde var;
+      ortak modüle taşınacak — ürün formu içe aktarmanın içinden bir şey
+      çağırmamalı._
+
+- [ ] **Kimlik kodu türetme — mevcut kayıtlar**
+      Kategori ve tedarikçi kodları BOŞ doğdu (migration salt ekleme).
+      Ekranda "kod girilmemiş" uyarısı + "Öner" düğmesi var; çakışma
+      çıkarsa sessizce çözülmez, kullanıcıya sorulur. Canlıda 4 kategori
+      ve 2 tedarikçi için kod girilmesi bekleniyor.
 
 ## Faz sırasına göre zaten planlı olanlar
 

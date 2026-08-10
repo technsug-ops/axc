@@ -15,11 +15,14 @@ import {
   kategoriGuncelle,
   type KategoriDurumu,
 } from "./actions";
+import { KodAlani } from "./kod-alani";
 
 export type KategoriSatiriVerisi = {
   id: string;
   name: string;
   vatRate: string;
+  /** Kimlik kısaltması; girilmemişse null (SKU önerisi üretilemez). */
+  code: string | null;
   isActive: boolean;
   urunSayisi: number;
 };
@@ -43,6 +46,10 @@ export function KategoriSatiri({
     FormData
   >(kategoriGuncelle, {});
 
+  // Kod önerisi ada bakarak üretildiği için ad da denetimli alan olmalı.
+  const [ad, setAd] = useState(kategori.name);
+  const [kod, setKod] = useState(kategori.code ?? "");
+
   // Kayıt başarılıysa düzenleme kipinden çık.
   const [sonDurum, setSonDurum] = useState(durum);
   if (sonDurum !== durum) {
@@ -56,6 +63,20 @@ export function KategoriSatiri({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{kategori.name}</span>
+            {/* Kod bir KİMLİK: varsa göze çarpsın, yoksa eksikliği görünsün
+                — sessizce boş bir hücre bırakmak eksiği gizlerdi (#5). */}
+            {kategori.code ? (
+              <Badge variant="outline" className="font-mono">
+                {kategori.code}
+              </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+              >
+                {t("kodGirilmemis")}
+              </Badge>
+            )}
             <Badge variant="secondary">%{kategori.vatRate}</Badge>
             {kategori.isActive ? null : (
               <Badge variant="outline">{ortak("pasif")}</Badge>
@@ -101,7 +122,8 @@ export function KategoriSatiri({
           <Input
             id={`ad-${kategori.id}`}
             name="name"
-            defaultValue={kategori.name}
+            value={ad}
+            onChange={(e) => setAd(e.target.value)}
             autoComplete="off"
           />
         </div>
@@ -118,6 +140,14 @@ export function KategoriSatiri({
             defaultValue={kategori.vatRate}
             inputMode="decimal"
             autoComplete="off"
+          />
+        </div>
+        <div className="w-44">
+          <KodAlani
+            inputId={`kod-${kategori.id}`}
+            ad={ad}
+            deger={kod}
+            onDegisim={setKod}
           />
         </div>
         <Button type="submit" size="sm" disabled={bekliyor}>

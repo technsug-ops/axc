@@ -101,7 +101,8 @@
     "ekleIpucu": "",
     "ekleNotu": "",
     "oran": "",
-    "kategori": ""
+    "kategori": "",
+    "oner": ""
   },
   "AlimDurumu": {
     "DRAFT": "",
@@ -677,7 +678,15 @@
     "adIpucu": "",
     "urunSayisi": "",
     "kategoriEkle": "",
-    "listeNotu": ""
+    "listeNotu": "",
+    "kodIpucu": "",
+    "kodAciklama": "",
+    "kodGecersiz": "",
+    "kodZatenVar": "",
+    "kodGirilmemis": "",
+    "kodOnerilemedi": "",
+    "kodEksikBaslik": "",
+    "kodEksikMetin": ""
   },
   "Kesinti": {
     "MALIYET": "",

@@ -11,8 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { kategoriEkle, type KategoriDurumu } from "./actions";
+import { KodAlani } from "./kod-alani";
 
-const BOS = { name: "", vatRate: "" };
+const BOS = { name: "", vatRate: "", code: "" };
 
 export function KategoriFormu() {
   const [durum, formAction, bekliyor] = useActionState<
@@ -63,6 +64,15 @@ export function KategoriFormu() {
             placeholder={t("oranIpucu")}
             autoComplete="off"
           />
+        </div>
+        <div className="space-y-2">
+          <KodAlani
+            inputId="kategori-kod"
+            ad={alanlar.name}
+            deger={alanlar.code}
+            onDegisim={(kod) => setAlanlar((o) => ({ ...o, code: kod }))}
+          />
+          <p className="text-muted-foreground text-xs">{t("kodAciklama")}</p>
         </div>
       </div>
 

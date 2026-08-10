@@ -101,7 +101,8 @@
     "ekleIpucu": "Okut, kod yaz veya ürün ara…",
     "ekleNotu": "Okutunca kalem doğrudan eklenir ve kutu yeniden odaklanır; yazınca aşağıda eşleşen ürünler çıkar. Aynı ürün tekrar okutulursa adedi artar.",
     "oran": "Oran",
-    "kategori": "Kategori"
+    "kategori": "Kategori",
+    "oner": "Öner"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",
@@ -677,7 +678,15 @@
     "adIpucu": "Genel",
     "urunSayisi": "Ürün",
     "kategoriEkle": "Kategori Ekle",
-    "listeNotu": "Kategoriler silinmez, pasife alınır — ürünler ve geçmiş satışlar onlara bağlı olabilir. Pasif kategori ürün formunda çıkmaz ama mevcut ürünlerde görünmeye devam eder."
+    "listeNotu": "Kategoriler silinmez, pasife alınır — ürünler ve geçmiş satışlar onlara bağlı olabilir. Pasif kategori ürün formunda çıkmaz ama mevcut ürünlerde görünmeye devam eder.",
+    "kodIpucu": "örn. OYU",
+    "kodAciklama": "Otomatik SKU'nun ilk parçası. Oyuncak → OYU-LG-260707-01. İsteğe bağlı ama kodu olmayan kategoride SKU önerilemez.",
+    "kodGecersiz": "Kod yalnızca harflerden oluşur ve 2-4 harf olmalıdır. Örnek: OYU",
+    "kodZatenVar": "\"{kod}\" kodu \"{ad}\" kategorisinde kullanılıyor.",
+    "kodGirilmemis": "kod yok",
+    "kodOnerilemedi": "Ad harf içermediği için kod önerilemedi.",
+    "kodEksikBaslik": "{sayi} kategoride kod girilmemiş",
+    "kodEksikMetin": "Otomatik SKU önerisi kategori kodundan üretilir. Kodu olmayan kategorideki ürün için sistem kod öneremez — aşağıdan Düzenle ile girin."
   },
   "Kesinti": {
     "MALIYET": "Ürün maliyeti",

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import { harfleriKatla } from "@/lib/kimlik";
 import { prisma } from "@/lib/prisma";
 
 export type KategoriDurumu = {
@@ -16,6 +17,10 @@ type Ceviri = (
   degerler?: Record<string, string | number>,
 ) => string;
 
+/** Kod uzunluğu: 2 harf çok kısıtlı, 4'ten uzunu SKU'yu okunmaz yapar. */
+const KOD_EN_AZ = 2;
+const KOD_EN_COK = 4;
+
 function kategoriSemasiKur(t: Ceviri) {
   return z.object({
     name: z.string().trim().min(1, t("adZorunlu")).max(191, t("adCokUzun")),
@@ -23,6 +28,19 @@ function kategoriSemasiKur(t: Ceviri) {
       .number({ message: t("oranSayiOlmali") })
       .min(0, t("oranAralik"))
       .max(100, t("oranAralik")),
+    // Kod İSTEĞE BAĞLI: boş bırakılabilir, sadece SKU önerisi çalışmaz.
+    // Girilmişse harf denetiminden geçer.
+    code: z
+      .string()
+      .trim()
+      .refine(
+        (ham) =>
+          ham === "" ||
+          (/^\p{L}+$/u.test(ham) &&
+            harfleriKatla(ham).length >= KOD_EN_AZ &&
+            harfleriKatla(ham).length <= KOD_EN_COK),
+        { message: t("kodGecersiz") },
+      ),
   });
 }
 
@@ -30,6 +48,37 @@ function kategoriSemasiKur(t: Ceviri) {
 function oranaCevir(ham: FormDataEntryValue | null): number {
   const s = String(ham ?? "").trim().replace(",", ".");
   return s === "" ? NaN : Number(s);
+}
+
+/**
+ * Kodu saklama biçimine indirger: "oyu" -> "OYU", "İnd" -> "IND".
+ * Boş kod null olarak saklanır — boş metin DEĞİL. MySQL'de NULL benzersizlik
+ * kuralını tetiklemez; boş metin tetikler ve ikinci kodsuz kategori
+ * eklenemezdi.
+ */
+function koduNormalle(ham: string): string | null {
+  const katlanmis = harfleriKatla(ham);
+  return katlanmis === "" ? null : katlanmis;
+}
+
+/**
+ * Kod başka kategoride mi kullanılıyor?
+ * Çakışma SESSİZCE ÇÖZÜLMEZ (kod sonuna sayı eklenmez): hangi kategorinin
+ * o kodu tuttuğu söylenir, kararı kullanıcı verir.
+ */
+async function kodCakismasi(
+  t: Ceviri,
+  kod: string | null,
+  haricId?: string,
+): Promise<string | null> {
+  if (kod === null) return null;
+
+  const sahip = await prisma.category.findFirst({
+    where: { code: kod, ...(haricId ? { NOT: { id: haricId } } : {}) },
+    select: { name: true },
+  });
+
+  return sahip ? t("kodZatenVar", { kod, ad: sahip.name }) : null;
 }
 
 /** Kategori formu hem ekleme hem düzenleme için kullanılır. */
@@ -48,6 +97,7 @@ export async function kategoriEkle(
   const sonuc = kategoriSemasiKur(t).safeParse({
     name: String(formData.get("name") ?? ""),
     vatRate: oranaCevir(formData.get("vatRate")),
+    code: String(formData.get("code") ?? ""),
   });
   if (!sonuc.success) {
     return { hatalar: sonuc.error.issues.map((i) => i.message) };
@@ -60,9 +110,13 @@ export async function kategoriEkle(
   });
   if (mevcut) return { hatalar: [t("adZatenVar", { ad: veri.name })] };
 
+  const kod = koduNormalle(veri.code);
+  const kodHatasi = await kodCakismasi(t, kod);
+  if (kodHatasi) return { hatalar: [kodHatasi] };
+
   try {
     await prisma.category.create({
-      data: { name: veri.name, vatRate: String(veri.vatRate) },
+      data: { name: veri.name, vatRate: String(veri.vatRate), code: kod },
     });
   } catch (e) {
     console.error("[kategori] beklenmeyen hata:", e);
@@ -85,6 +139,7 @@ export async function kategoriGuncelle(
   const sonuc = kategoriSemasiKur(t).safeParse({
     name: String(formData.get("name") ?? ""),
     vatRate: oranaCevir(formData.get("vatRate")),
+    code: String(formData.get("code") ?? ""),
   });
   if (!sonuc.success) {
     return { hatalar: sonuc.error.issues.map((i) => i.message) };
@@ -100,10 +155,14 @@ export async function kategoriGuncelle(
   });
   if (cakisan) return { hatalar: [t("adZatenVar", { ad: veri.name })] };
 
+  const kod = koduNormalle(veri.code);
+  const kodHatasi = await kodCakismasi(t, kod, id);
+  if (kodHatasi) return { hatalar: [kodHatasi] };
+
   try {
     await prisma.category.update({
       where: { id },
-      data: { name: veri.name, vatRate: String(veri.vatRate) },
+      data: { name: veri.name, vatRate: String(veri.vatRate), code: kod },
     });
   } catch (e) {
     console.error("[kategori] beklenmeyen hata:", e);

@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { TriangleAlert } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -34,9 +35,16 @@ export default async function KategorilerSayfasi() {
     name: k.name,
     // Decimal -> "20.00" yerine "20" göster; oran okunur kalsın.
     vatRate: String(Number(k.vatRate.toString())),
+    code: k.code,
     isActive: k.isActive,
     urunSayisi: k._count.products,
   }));
+
+  // Kodu olmayan AKTİF kategoriler: o kategorideki ürüne SKU önerilemez.
+  // Sessizce beklemek yerine ekranda söylenir ve düzeltme yeri gösterilir.
+  const kodsuzSayi = kategoriler.filter(
+    (k) => k.isActive && k.code === null,
+  ).length;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -44,6 +52,18 @@ export default async function KategorilerSayfasi() {
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("aciklamaMetni")}</p>
       </div>
+
+      {kodsuzSayi > 0 ? (
+        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+          <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+            <TriangleAlert className="size-4 shrink-0" />
+            {t("kodEksikBaslik", { sayi: kodsuzSayi })}
+          </p>
+          <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+            {t("kodEksikMetin")}
+          </p>
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader>

@@ -148,6 +148,12 @@ model Category {
 
   name String @unique
 
+  /// KİMLİK KISALTMASI — otomatik SKU'nun ilk parçası (OYU-LG-260707-01).
+  /// Boş olabilir: mevcut kayıtlara kod türetilirken ÇAKIŞMA çıkarsa
+  /// sessizce çözülmez, boş bırakılır ve ekran kullanıcıya sorar.
+  /// Kod boşken o kategorideki ürün için SKU önerisi üretilemez.
+  code String? @unique
+
   /// KDV oranı YÜZDE olarak: 20, 10, 1
   vatRate Decimal @db.Decimal(5, 2)
 
@@ -545,6 +551,13 @@ model Purchase {
   supplierId   String?
   supplier     Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
+  /// TEDARİKÇİDEKİ SİPARİŞ NUMARASI — dış dünyanın kimliği.
+  /// `code` bizim kaydımızın kimliğidir ve sistem üretir; bu alan ise
+  /// tedarikçiye/pazaryerine "şu siparişte sorun var" derken söylediğiniz
+  /// numaradır ("439 744 418 4"). İkisi ayrı sorunun cevabı, karıştırılmaz.
+  /// Benzersiz DEĞİL: aynı sipariş numarası birden çok alıma bölünebilir.
+  supplierOrderNo String?
+
   purchasedAt DateTime
   receivedAt  DateTime?
 
@@ -583,6 +596,7 @@ model Purchase {
   @@index([status])
   @@index([creditCardId])
   @@index([channelAccountId])
+  @@index([supplierOrderNo])
 }
 
 model PurchaseItem {
@@ -1092,6 +1106,10 @@ model Supplier {
   id String @id @default(cuid())
 
   name String @unique
+
+  /// KİMLİK KISALTMASI — otomatik alım numarasının parçası (ALM-ER-260810-01).
+  /// Kategori kodundaki kural aynen geçerli: çakışmada boş kalır, sorulur.
+  code String? @unique
 
   /// Telefon / e-posta / kişi — serbest metin, tek alan yeter.
   contact String?
