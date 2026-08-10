@@ -18,7 +18,8 @@
     "kart:dogrula": "tsx scripts/kart-dogrula.ts",
     "baglanti:test": "tsx scripts/baglanti-testi.ts",
     "kullanici:olustur": "tsx scripts/kullanici-olustur.ts",
-    "oturum:dogrula": "tsx scripts/oturum-dogrula.ts"
+    "oturum:dogrula": "tsx scripts/oturum-dogrula.ts",
+    "el-kitabi:uret": "tsx scripts/el-kitabi-uret.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

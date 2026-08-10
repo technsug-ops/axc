@@ -25,7 +25,8 @@
     "iceAktarma": "",
     "kanalSku": "",
     "disaAktarma": "",
-    "giris": ""
+    "giris": "",
+    "elKitabi": ""
   },
   "Ortak": {
     "kapat": "",
@@ -503,7 +504,8 @@
     "veriAktarimi": "",
     "kanalSku": "",
     "kanalSkulari": "",
-    "veriDisari": ""
+    "veriDisari": "",
+    "elKitabi": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -1112,5 +1114,9 @@
     "cikisOnayBaslik": "",
     "cikisOnayMetin": "",
     "girisNotu": ""
+  },
+  "ElKitabi": {
+    "dosyaIndir": "",
+    "dosyaAdi": ""
   }
 }

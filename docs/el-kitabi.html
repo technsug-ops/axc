@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Selliora Kullanıcı El Kitabı</title>
+<style>
+html,body{margin:0;padding:0}
+body{background:#EEF2EE}
+@media (prefers-color-scheme:dark){body{background:#101613}}
+
+:root{
+  --zemin:#EEF2EE; --yuzey:#FFFFFF; --yuzey-2:#F6F9F6;
+  --murekkep:#14201C; --murekkep-2:#47564F; --murekkep-3:#6E7D75;
+  --cizgi:#D3DDD5; --cizgi-2:#E3EAE4;
+  --vurgu:#0F5C4A; --vurgu-yumusak:#DCEBE4;
+  --uyari:#8A5A00; --uyari-zemin:#FBF0D9;
+  --tehlike:#8A2A22; --tehlike-zemin:#FAE7E4; --iyi:#1B6B4A;
+  --golge:0 1px 2px rgba(20,32,28,.06),0 8px 24px -12px rgba(20,32,28,.18);
+  --serif:ui-serif,Georgia,"Iowan Old Style","Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --zemin:#101613; --yuzey:#161E1A; --yuzey-2:#1B2420;
+    --murekkep:#E2EAE5; --murekkep-2:#A9B8B0; --murekkep-3:#7E8E86;
+    --cizgi:#2A3630; --cizgi-2:#222D28;
+    --vurgu:#59BE9B; --vurgu-yumusak:#1A2E27;
+    --uyari:#E0AE5A; --uyari-zemin:#2C2415;
+    --tehlike:#E48F84; --tehlike-zemin:#2E1B18; --iyi:#5CBE92;
+    --golge:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --zemin:#101613; --yuzey:#161E1A; --yuzey-2:#1B2420;
+  --murekkep:#E2EAE5; --murekkep-2:#A9B8B0; --murekkep-3:#7E8E86;
+  --cizgi:#2A3630; --cizgi-2:#222D28;
+  --vurgu:#59BE9B; --vurgu-yumusak:#1A2E27;
+  --uyari:#E0AE5A; --uyari-zemin:#2C2415;
+  --tehlike:#E48F84; --tehlike-zemin:#2E1B18; --iyi:#5CBE92;
+  --golge:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+}
+.ek *{box-sizing:border-box}
+.ek{
+  background:var(--zemin); color:var(--murekkep);
+  font-family:var(--sans); font-size:16px; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.ek-kapak{
+  border-bottom:1px solid var(--cizgi);
+  background:repeating-linear-gradient(to bottom,transparent 0 27px,
+    color-mix(in srgb,var(--vurgu) 5%,transparent) 27px 54px),var(--yuzey);
+  padding:44px 24px 36px;
+}
+.ek-kapak-ic{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.ek-rozet{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--vurgu);display:flex;gap:10px;flex-wrap:wrap}
+.ek-rozet span::after{content:"·";margin-left:10px;color:var(--murekkep-3)}
+.ek-rozet span:last-child::after{content:""}
+.ek h1{font-family:var(--serif);font-size:clamp(2rem,5vw,3.2rem);line-height:1.06;
+  font-weight:600;letter-spacing:-.015em;margin:0;text-wrap:balance}
+.ek-kapak p{margin:0;max-width:62ch;font-size:1.05rem;color:var(--murekkep-2)}
+.ek-duzen{max-width:1180px;margin:0 auto;padding:0 24px 80px;display:grid;
+  grid-template-columns:1fr;gap:40px}
+@media (min-width:1000px){.ek-duzen{grid-template-columns:232px minmax(0,1fr);gap:56px;align-items:start}}
+.ek-toc{position:sticky;top:20px;padding-top:36px;display:none}
+@media (min-width:1000px){.ek-toc{display:block}}
+.ek-toc h2{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--murekkep-3);margin:0 0 12px;font-weight:600}
+.ek-toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.ek-toc a{display:grid;grid-template-columns:22px 1fr;gap:6px;padding:5px 8px 5px 0;
+  color:var(--murekkep-2);text-decoration:none;font-size:13.5px;border-radius:5px;line-height:1.35}
+.ek-toc a b{font-family:var(--mono);font-size:11px;color:var(--murekkep-3);font-weight:500;padding-top:2px}
+.ek-toc a:hover{color:var(--vurgu);background:var(--vurgu-yumusak)}
+.ek-toc a:hover b{color:var(--vurgu)}
+.ek-toc a:focus-visible{outline:2px solid var(--vurgu);outline-offset:2px}
+.ek-icerik{padding-top:36px;min-width:0;display:flex;flex-direction:column;gap:48px}
+.ek-icerik section{scroll-margin-top:20px;display:flex;flex-direction:column;gap:15px}
+.ek h2.bolum{font-family:var(--serif);font-size:clamp(1.45rem,3vw,1.9rem);line-height:1.15;
+  font-weight:600;letter-spacing:-.01em;margin:0;padding-bottom:11px;
+  border-bottom:2px solid var(--vurgu);display:flex;align-items:baseline;gap:14px;text-wrap:balance}
+.ek h2.bolum b{font-family:var(--mono);font-size:.74rem;color:var(--vurgu);font-weight:600;
+  letter-spacing:.1em;flex-shrink:0}
+.ek h3{font-family:var(--sans);font-size:1.05rem;font-weight:650;margin:10px 0 0;
+  letter-spacing:-.005em;text-wrap:balance}
+.ek p{margin:0;max-width:68ch}
+.ek-icerik ul{margin:0;padding-left:1.15rem;max-width:68ch;display:flex;flex-direction:column;gap:7px}
+.ek li::marker{color:var(--murekkep-3)}
+.ek strong{font-weight:650}
+.ek em{font-style:normal;background:var(--vurgu-yumusak);padding:0 .25em;border-radius:3px}
+.ek code{font-family:var(--mono);font-size:.855em;background:var(--yuzey-2);
+  border:1px solid var(--cizgi-2);padding:.08em .38em;border-radius:4px;white-space:nowrap}
+.ek a{color:var(--vurgu);text-underline-offset:3px}
+.ek-kart{background:var(--yuzey);border:1px solid var(--cizgi);border-radius:10px;
+  padding:20px 22px;display:flex;flex-direction:column;gap:11px;box-shadow:var(--golge)}
+.ek-not{border-left:3px solid var(--murekkep-3);background:var(--yuzey-2);padding:14px 18px;
+  border-radius:0 8px 8px 0;display:flex;flex-direction:column;gap:6px;max-width:70ch}
+.ek-not .etiket{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--murekkep-3);font-weight:600}
+.ek-not p{font-size:.94rem;color:var(--murekkep-2)}
+.ek-not.dikkat{border-left-color:var(--uyari);background:var(--uyari-zemin)}
+.ek-not.dikkat .etiket{color:var(--uyari)}
+.ek-not.dikkat p{color:var(--murekkep)}
+.ek-not.kritik{border-left-color:var(--tehlike);background:var(--tehlike-zemin)}
+.ek-not.kritik .etiket{color:var(--tehlike)}
+.ek-not.kritik p{color:var(--murekkep)}
+.ek-not.canli{border-left-color:var(--vurgu);background:var(--vurgu-yumusak)}
+.ek-not.canli .etiket{color:var(--vurgu)}
+.ek-not.canli p{color:var(--murekkep)}
+.ek-tablo{overflow-x:auto;border:1px solid var(--cizgi);border-radius:10px;background:var(--yuzey)}
+.ek table{border-collapse:collapse;width:100%;font-size:.92rem}
+.ek th,.ek td{text-align:left;padding:10px 15px;border-bottom:1px solid var(--cizgi-2);vertical-align:top}
+.ek thead th{background:var(--yuzey-2);font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--murekkep-3);font-weight:600;white-space:nowrap}
+.ek tbody tr:last-child td{border-bottom:none}
+.ek td.sayi{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.ek td.kod{font-family:var(--mono);font-size:.86rem;white-space:nowrap}
+.ek ol.adimlar{counter-reset:adim;list-style:none;padding-left:0;margin:0;
+  display:flex;flex-direction:column;gap:14px;max-width:68ch}
+.ek ol.adimlar>li{counter-increment:adim;display:grid;grid-template-columns:26px minmax(0,1fr);
+  gap:14px;align-items:start}
+.ek ol.adimlar>li::before{content:counter(adim);font-family:var(--mono);font-size:11px;
+  font-weight:600;color:var(--vurgu);background:var(--vurgu-yumusak);border-radius:50%;
+  width:26px;height:26px;display:grid;place-items:center;margin-top:1px}
+.ek .formul{font-family:var(--mono);font-size:.87rem;line-height:1.9;background:var(--yuzey-2);
+  border:1px solid var(--cizgi-2);border-radius:8px;padding:16px 18px;overflow-x:auto;
+  white-space:pre;color:var(--murekkep)}
+.ek .formul b{color:var(--vurgu);font-weight:600}
+.ek .izgara{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+.ek .izgara .ek-kart{gap:5px}
+.ek .ust{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--murekkep-3);font-weight:600}
+.ek .buyuk{font-family:var(--serif);font-size:1.2rem;line-height:1.25}
+.ek .izgara .ek-kart p{font-size:.9rem;color:var(--murekkep-2)}
+.ek .pul{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  padding:2px 7px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.ek .pul.yok{color:var(--murekkep-3)}
+.ek-dip{border-top:1px solid var(--cizgi);background:var(--yuzey);padding:26px 24px 36px}
+.ek-dip-ic{max-width:1180px;margin:0 auto;color:var(--murekkep-3);font-size:.87rem;
+  display:flex;flex-direction:column;gap:5px}
+@media print{
+  .ek-toc{display:none}
+  .ek-duzen{grid-template-columns:1fr}
+  .ek-kart,.ek-tablo{box-shadow:none}
+  .ek-icerik section{break-inside:avoid-page}
+}
+
+</style>
+</head>
+<body>
+
+<div class="ek">
+<header class="ek-kapak"><div class="ek-kapak-ic">
+  <div class="ek-rozet">
+    <span>Kullanıcı El Kitabı</span>
+    <span>10.08.2026 tarihli sistemden üretildi</span>
+    <span>1 kullanıcı · 6 ürün · 3 satış</span>
+  </div>
+  <h1>Selliora</h1>
+  <p>Çok kanallı e-ticaret operasyonunuzun tek defteri: ne aldınız, ne sattınız,
+  ne kadar kaldı. Bu kitap sıfırdan başlayan birinin sistemi yardımsız
+  kullanabilmesi için yazıldı.</p>
+</div></header>
+
+<div class="ek-duzen">
+<nav class="ek-toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol><li><a href="#dusunce"><b>01</b><span>Sistem nasıl düşünür</span></a></li><li><a href="#giris"><b>02</b><span>Giriş ve güvenlik</span></a></li><li><a href="#kurulum"><b>03</b><span>İlk kurulum</span></a></li><li><a href="#urun"><b>04</b><span>Ürünler ve stok</span></a></li><li><a href="#alim"><b>05</b><span>Alım ve mal kabul</span></a></li><li><a href="#satis"><b>06</b><span>Satış</span></a></li><li><a href="#iade"><b>07</b><span>İade</span></a></li><li><a href="#gider"><b>08</b><span>Giderler</span></a></li><li><a href="#rapor"><b>09</b><span>Dönem raporu</span></a></li><li><a href="#toplu"><b>10</b><span>Toplu veri aktarımı</span></a></li><li><a href="#yedek"><b>11</b><span>Yedek</span></a></li><li><a href="#sorun"><b>12</b><span>Bir şey ters giderse</span></a></li><li><a href="#sozluk"><b>13</b><span>Sözlük</span></a></li><li><a href="#yolda"><b>14</b><span>Henüz yok, yolda</span></a></li></ol></nav>
+<main class="ek-icerik">
+
+<section aria-label="Günlük iş">
+  <div class="ek-kart">
+    <div class="ust">Günlük iş — üç hareket</div>
+    <div class="izgara">
+      <div class="ek-kart"><div class="ust">Mal geldi</div>
+        <div class="buyuk">Alımlar → Mal kabul</div>
+        <p>Sağlam ve hasarlı adedi ayrı sayın, rafı seçin. Stok o an artar.</p></div>
+      <div class="ek-kart"><div class="ust">Satış oldu</div>
+        <div class="buyuk">Satışlar → Yeni satış</div>
+        <p>Kanal hesabı, ürün, adet, fiyat. Stok en eski partiden düşer, kâr anında hesaplanır.</p></div>
+      <div class="ek-kart"><div class="ust">Müşteri iade etti</div>
+        <div class="buyuk">Satış → İade Al</div>
+        <p>Türü seçin, sağlam geleni rafa alın. Komisyon ve stopaj geri gelir.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="dusunce">
+<h2 class="bolum"><b>01</b>Sistem nasıl düşünür</h2>
+<p>Selliora'yı kullanmak, birkaç temel kararı anlamakla kolaylaşıyor. Bu bölüm
+ekran anlatmıyor — sistemin kafasını anlatıyor.</p>
+
+<h3>Dört ayrı kod vardır ve karıştırılmaz</h3>
+<div class="ek-tablo"><table>
+<thead><tr><th>Kod</th><th>Kimin</th><th>Ne işe yarar</th></tr></thead>
+<tbody>
+<tr><td class="kod">SKU</td><td>Sizin</td><td>Sistem içi ana kod. Stok bunun üstünden döner.</td></tr>
+<tr><td class="kod">Firma SKU</td><td>Sizin</td><td>Ürünün üstüne yapıştırdığınız fiziksel etiket.</td></tr>
+<tr><td class="kod">Barkod (EAN)</td><td>Üreticinin</td><td>Kutunun üstünde basılı gelen kod.</td></tr>
+<tr><td class="kod">Kanal SKU</td><td>Pazaryerinin</td><td>Trendyol veya Hepsiburada'daki stok kodu.</td></tr>
+</tbody></table></div>
+
+<h3>Stok bir defterdir, silinmez</h3>
+<p>Stok sayısı bir kutuda tutulmuyor. Her giriş ve çıkış <em>hareket</em> olarak
+yazılıyor; stok, hareketlerin toplamı. Yazılan hareket <strong>hiçbir zaman
+silinmez veya değiştirilmez</strong> — yanlış varsa ters işaretli bir düzeltme
+hareketi eklenir.</p>
+<div class="ek-not"><div class="etiket">Neden böyle</div>
+<p>Muhasebe defterleri de böyle çalışır. "Dün stok kaçtı?" sorusu ancak geçmiş
+bozulmadığı zaman cevaplanabilir. Silinebilen bir kayıt, bir süre sonra kimsenin
+güvenmediği bir kayda dönüşür.</p></div>
+
+<h3>En eski parti önce satılır (FIFO)</h3>
+<p>Aynı ürünü farklı zamanlarda farklı fiyata almış olabilirsiniz. Her alım ayrı
+bir <em>parti</em>dir ve kendi maliyetini taşır. Satış olduğunda sistem
+<strong>en eski partiden</strong> düşer; kâr o partinin gerçek maliyetiyle
+hesaplanır — ortalama alınmaz.</p>
+
+<h3>İki kâr rakamı vardır</h3>
+<div class="formul">NET-1 = satış − maliyet − komisyon − stopaj − kargo − sabit kesintiler
+<b>NET-2 = NET-1 − ödenecek KDV</b></div>
+<p><strong>NET-1</strong> stopaj düşülmüş kârdır. <strong>NET-2</strong> ise
+devlete ödeyeceğiniz KDV de düşüldükten sonra cebinizde gerçekten kalan rakamdır.
+Listelerde NET-2 gösterilir, çünkü sorulan soru odur.</p>
+
+<h3>Genel gider ürün kârına karışmaz</h3>
+<div class="formul"><b>GERÇEK NET</b> = Σ NET-2 (iadeler dahil) − dönem giderleri</div>
+<div class="ek-not"><div class="etiket">Neden böyle</div>
+<p>Bir ürünü alıp almamaya karar verirken kirayı hesaba katarsanız, kararınızı
+zaten ödediğiniz bir masraf bozar. Ürün kararı brüt kârla verilir; kira ay
+sonunda topluca düşülür.</p></div>
+
+<h3>Para birimleri birbirine çevrilmez</h3>
+<p>Bir alımı avroyla, satışı lirayla yaptıysanız sistem kur uydurmaz — o satışın
+kârını <strong>hesaplamaz</strong> ve nedenini yazar. Uydurma bir rakam, boş bir
+hücreden daha tehlikelidir.</p>
+
+<h3>Saat İstanbul saatidir</h3>
+<p>Nerede olursanız olun, "bugün" Türkiye'nin günüdür. Ay raporu, kart kesim günü
+ve tarih varsayılanları buna göre çalışır.</p>
+</section>
+
+<section id="giris">
+<h2 class="bolum"><b>02</b>Giriş ve güvenlik</h2>
+<p>Sisteme e-posta ve parolanızla girersiniz. Giriş yapmadan hiçbir ekran açılmaz.</p>
+<ul>
+<li>Girdikten sonra <strong>sol menünün en altında</strong> e-postanız görünür. Orası aynı zamanda çıkış düğmesidir; onay ister.</li>
+<li>Oturum <strong>30 gün</strong> açık kalır.</li>
+<li>Bir adrese girmeye çalışıp giriş ekranına düşerseniz, giriş yapınca <strong>gitmek istediğiniz yere</strong> yönlendirilirsiniz.</li>
+</ul>
+<div class="ek-not dikkat"><div class="etiket">Dikkat</div>
+<p>Bu sistemde satış fiyatlarınız, maliyetleriniz, kâr marjlarınız ve
+tedarikçileriniz duruyor. Parolanızı kimseyle paylaşmayın — şu an herkes aynı
+yetkiyle giriyor, "sadece stok görsün" gibi bir ayrım yok.</p></div>
+<p>Parola değişince <strong>açık olan tüm oturumlar kapanır</strong> —
+telefonunuzda açık kalmış bir oturum varsa o da düşer.</p>
+</section>
+
+<section id="kurulum">
+<h2 class="bolum"><b>03</b>İlk kurulum</h2>
+<p>Boş bir sistemde bu sırayı izleyin. Sıra önemli: her adım bir sonrakinin
+malzemesini hazırlıyor.</p>
+<ol class="adimlar">
+<li><div><h3>Raf konumları</h3><p><strong>Ayarlar → Raf Konumları.</strong> Depodaki her rafa bir kod verin. Mal kabulde ve toplamada bu kodu göreceksiniz.</p></div></li>
+<li><div><h3>KDV kategorileri</h3><p><strong>Ayarlar → KDV Kategorileri.</strong> Ürünün KDV oranı buradan okunur — ürün ürün oran girmezsiniz.</p></div></li>
+<li><div><h3>Kanal hesapları</h3><p><strong>Ayarlar → Kanal Hesapları.</strong> Hangi pazaryerinde hangi mağazanız var. Aynı pazaryerinde birden fazla mağazanız olabilir.</p></div></li>
+<li><div><h3>Kredi kartları</h3><p><strong>Kartlar.</strong> Kart numarasının yalnızca <strong>son 4 hanesi</strong> saklanır — tam numara ve CVV hiçbir zaman istenmez.</p></div></li>
+<li><div><h3>Ürünler ve açılış stoğu</h3><p>Az ürününüz varsa tek tek girin. Listeniz varsa <strong>Ayarlar → Veri Aktarımı</strong> ile topluca yükleyin.</p></div></li>
+<li><div><h3>Kanal SKU ve komisyon oranları</h3><p><strong>Kanal SKU.</strong> <strong>Bu adımı atlamayın</strong> — atlanırsa satışların kârı hesaplanamaz.</p></div></li>
+</ol>
+
+<div class="ek-not canli"><div class="etiket">Sizin sisteminizde şu an</div>
+<p>2 raf · 4 KDV kategorisi ·
+3 kanal hesabı · 6 varyant ·
+1 kanal eşlemesi.</p></div>
+
+<h3>Tanımlı raflarınız</h3>
+<div class="ek-tablo"><table><thead><tr><th>Kod</th><th>Ad</th></tr></thead><tbody><tr><td><span class="kod">a-01</span></td><td>kapi yani</td></tr><tr><td><span class="kod">a02</span></td><td>kapi yani</td></tr></tbody></table></div>
+
+<h3>KDV kategorileriniz</h3>
+<div class="ek-tablo"><table><thead><tr><th>Kategori</th><th>KDV oranı</th></tr></thead><tbody><tr><td>Genel</td><td><span class="sayi">%20</span></td></tr><tr><td>Elektronik</td><td><span class="sayi">%20</span></td></tr><tr><td>İndirimli</td><td><span class="sayi">%10</span></td></tr><tr><td>Süper İndirimli</td><td><span class="sayi">%1</span></td></tr></tbody></table></div>
+
+<h3>Kanal hesaplarınız</h3>
+<div class="ek-tablo"><table><thead><tr><th>Hesap</th><th>Para birimi</th></tr></thead><tbody><tr><td>Trendyol — as</td><td>TRY</td></tr><tr><td>Trendyol — ask</td><td>TRY</td></tr><tr><td>Hepsiburada — HB2</td><td>TRY</td></tr></tbody></table></div>
+</section>
+
+<section id="urun">
+<h2 class="bolum"><b>04</b>Ürünler ve stok</h2>
+<h3>Ürün ve varyant</h3>
+<p>Her ürünün en az bir <em>varyantı</em> vardır. Bedeni veya rengi olmayan bir
+ürün için de tek bir varsayılan varyant açılır. Stok, SKU ve barkod her zaman
+varyant seviyesindedir — ürün seviyesinde stok yoktur.</p>
+<p>Tişörtün M ve L bedeni: <strong>bir ürün, iki varyant.</strong></p>
+
+<h3>Desi</h3>
+<p>Kargo ücreti desiye göre hesaplandığı için ürün kartına desi girilir. Satış
+formunda kargo tutarı bu desiden okunur; fiili tartım farklıysa satışta elle
+değiştirebilirsiniz.</p>
+
+<h3>Stok ekranı</h3>
+<ul>
+<li>Her varyantın güncel adedi ve rafı listede görünür.</li>
+<li><strong>Hareketler</strong> düğmesi o varyantın tüm geçmişini açar.</li>
+<li>Her hareket kaynağına bağlıdır — satırdaki bağlantı sizi ilgili alıma veya satışa götürür.</li>
+</ul>
+<div class="ek-not"><div class="etiket">Kısayol</div>
+<p>Kod girilen her alan barkod okuyucuyla çalışır. USB okuyucu kodu yazıp Enter'a
+basar; telefonda kamerayla da okutabilirsiniz.</p></div>
+</section>
+
+<section id="alim">
+<h2 class="bolum"><b>05</b>Alım ve mal kabul</h2>
+<p>Alım iki aşamalıdır: önce <strong>siparişi</strong> kaydedersiniz, mal gelince
+<strong>mal kabul</strong> yaparsınız. Stok, sipariş anında değil mal kabulde artar.</p>
+<h3>1. Alım girme</h3>
+<ul>
+<li><strong>Alımlar → Yeni alım.</strong> Tedarikçi, tarih, kart ve taksit sayısı.</li>
+<li>Her kalem için ürün, adet ve <strong>birim maliyet</strong> (KDV dahil).</li>
+<li>Para birimi kalem bazında seçilir.</li>
+</ul>
+<div class="ek-not dikkat"><div class="etiket">Dikkat</div>
+<p>Birim maliyeti boş bırakmayın. Maliyeti olmayan bir partiden satış yapıldığında
+sistem kârı hesaplayamaz. Sonradan düzeltmek şu an mümkün değil.</p></div>
+<h3>2. Mal kabul</h3>
+<ul>
+<li>Alım detayında <strong>Mal Kabul</strong> düğmesi.</li>
+<li><strong>Sağlam</strong> ve <strong>hasarlı</strong> adedi ayrı girilir. Yalnız sağlam olan stoğa girer.</li>
+<li>Malın hangi rafa girdiğini seçersiniz; bu bilgi hareketin üstünde kalıcı durur.</li>
+<li>Parçalı teslimat olabilir: bugün 3, yarın 2 kabul edersiniz.</li>
+</ul>
+</section>
+
+<section id="satis">
+<h2 class="bolum"><b>06</b>Satış</h2>
+<p><strong>Satışlar → Yeni satış.</strong> Bir satış her zaman bir kanal hesabına
+bağlıdır — hangi pazaryerinin hangi mağazasından satıldığı, kesintileri belirler.</p>
+<ol class="adimlar">
+<li><div><h3>Kanal hesabı ve sipariş numarası</h3><p>Sipariş numarası zorunlu değil ama girerseniz benzersiz olmalı.</p></div></li>
+<li><div><h3>Kalemler</h3><p>Ürünü arayın veya barkodunu okutun; fiyat KDV dahildir.</p></div></li>
+<li><div><h3>Kargo</h3><p>Firmayı seçin; ücret desiye göre tarifeden okunur. Farklıysa elle yazabilirsiniz.</p></div></li>
+<li><div><h3>Kaydet</h3><p>Stok en eski partiden düşer, kâr hesaplanır ve <strong>o anki hâliyle kayda yazılır.</strong></p></div></li>
+</ol>
+<div class="ek-not"><div class="etiket">Neden böyle</div>
+<p>Komisyon oranları haftalık değişiyor. Kâr satış anında kaydedildiği için, oran
+gelecek hafta değişse bile geçmiş satışın hesabı değişmez. Bilerek yeniden
+hesaplatmak isterseniz satış detayında <strong>Yeniden hesapla</strong> var.</p></div>
+
+<h3>Stoktan fazla satılamaz</h3>
+<p>Elinizde 3 varken 5 satmaya çalışırsanız kayıt <strong>reddedilir</strong> ve
+elinizde kaç olduğu ekranda yazar. Yarım kaydedilmiş satış oluşmaz.</p>
+
+<h3>Sizde tanımlı kanal kesintileri</h3>
+<p>Aşağıdakiler sisteminizde <strong>tanımlı olan</strong> kurallardır; kâr
+hesabında bunlar uygulanır. Komisyon oranı ürün bazında Kanal SKU'da tutulur ve
+bu tabloda görünmez.</p>
+<div class="ek-tablo"><table><thead><tr><th>Kanal</th><th>Kesinti</th><th>Değer</th><th>Kapsam</th></tr></thead><tbody><tr><td>Trendyol</td><td>Sabit gider</td><td>13.19 TRY</td><td>sipariş başına</td></tr><tr><td>Hepsiburada</td><td>Hizmet bedeli</td><td>12.6 TRY</td><td>sipariş başına</td></tr><tr><td>Hepsiburada</td><td>Komisyon KDV'si</td><td>%20</td><td>kalem başına</td></tr><tr><td>Hepsiburada</td><td>Ödeme gideri</td><td>%0.8</td><td>sipariş başına</td></tr></tbody></table></div>
+<p>Ayrıca her satışta <strong>stopaj</strong> kesilir: KDV hariç tutarın %1'i.
+Kargo, desi tarifesinden okunur ve üstüne %20 KDV eklenir.</p>
+
+<h3>Kargo firmalarınız</h3>
+<p>Aras Kargo · CEVA Lojistik · CEVA Tedarik · DHL · hepsiJET · hepsiJET XL · Horoz Lojistik · Kolay Gelsin · PTT Kargo · Sürat Kargo · TEX · Yurtiçi Kargo</p>
+</section>
+
+<section id="iade">
+<h2 class="bolum"><b>07</b>İade</h2>
+<p>Satış listesinde veya satış detayında <strong>İade Al</strong> düğmesi. Önce
+türü seçersiniz; tür, malın stoğa girip girmeyeceğini belirler.</p>
+<div class="ek-tablo"><table>
+<thead><tr><th>Tür</th><th>Ne oldu</th><th>Mal stoğa girer mi</th></tr></thead>
+<tbody>
+<tr><td><strong>Teslim edilemedi</strong></td><td>Müşteriye ulaşmadan geri döndü</td><td>Evet, sağlam gelense</td></tr>
+<tr><td><strong>Normal iade</strong></td><td>Müşteri aldı, iade etti</td><td>Evet, sağlam gelense</td></tr>
+<tr><td><strong>İtirazlı iade</strong></td><td>İtiraz kabul edildi, ürün müşteride kaldı</td><td><strong>Hayır</strong></td></tr>
+</tbody></table></div>
+
+<h3>Hangi kesinti geri gelir</h3>
+<div class="izgara">
+<div class="ek-kart"><div class="ust" style="color:var(--iyi)">Geri gelir</div>
+<p>Komisyon · komisyon KDV'si · ödeme gideri · stopaj. Kısmi iadede hepsi <strong>adet oranında</strong>.</p></div>
+<div class="ek-kart"><div class="ust" style="color:var(--tehlike)">Geri gelmez</div>
+<p>Hizmet bedeli · sabit gider · <strong>gidiş kargosu</strong>. Bunlar yandı.</p></div>
+</div>
+<div class="ek-not dikkat"><div class="etiket">Sık yapılan hata</div>
+<p>İade formundaki kargo alanına <strong>gidiş kargosunu yazmayın</strong>. O
+zaten satışta düşüldü. Buraya yalnızca iade/dönüş kargosunu yazın.</p></div>
+
+<h3>Ceza kademeleriniz</h3>
+<p>Pazaryeri ceza kestiyse tutarı siz girersiniz; sistem sipariş tutarına göre bir
+<strong>öneri</strong> gösterir. Kademesi olmayan tutarda öneri çıkmaz.</p>
+<div class="ek-tablo"><table><thead><tr><th>Kanal</th><th>Sipariş tutarı</th><th>Ceza</th></tr></thead><tbody><tr><td>Trendyol</td><td>149 ₺'ye kadar</td><td><span class="sayi">50 ₺</span></td></tr><tr><td></td><td>499 ₺'ye kadar</td><td><span class="sayi">100 ₺</span></td></tr><tr><td></td><td>999 ₺'ye kadar</td><td><span class="sayi">150 ₺</span></td></tr><tr><td></td><td>2999 ₺'ye kadar</td><td><span class="sayi">250 ₺</span></td></tr><tr><td></td><td>9999 ₺'ye kadar</td><td><span class="sayi">500 ₺</span></td></tr><tr><td></td><td>99999999 ₺'ye kadar</td><td><span class="sayi">1000 ₺</span></td></tr><tr><td>Hepsiburada</td><td>50 ₺'ye kadar</td><td><span class="sayi">10 ₺</span></td></tr><tr><td></td><td>200 ₺'ye kadar</td><td><span class="sayi">20 ₺</span></td></tr><tr><td></td><td>1000 ₺'ye kadar</td><td><span class="sayi">50 ₺</span></td></tr><tr><td></td><td>6000 ₺'ye kadar</td><td><span class="sayi">150 ₺</span></td></tr></tbody></table></div>
+
+<h3>Önizleme zorunludur</h3>
+<p><strong>Önizle</strong> düğmesi etkiyi satır satır gösterir; Kaydet düğmesi siz
+önizlemeyi görmeden açılmaz. Kaydettikten sonra orijinal kâr <strong>silinmez</strong>:
+her iade kendi tarihli bloğunda görünür, en altta iade sonrası net yazar.</p>
+</section>
+
+<section id="gider">
+<h2 class="bolum"><b>08</b>Giderler</h2>
+<p>Kira, maaş, sarf malzeme, abonelik, banka masrafı. <strong>Giderler → Yeni gider.</strong></p>
+<ul>
+<li>Tutar <strong>KDV dahil</strong> girilir.</li>
+<li>Kategoriyi seçince <strong>KDV oranı kendiliğinden gelir</strong>. Farklıysa değiştirin.</li>
+<li>Gerçek net'ten düşen kısım tutarın <strong>KDV hariç</strong> hâlidir; içindeki KDV muhasebeciniz için ayrı satırda gösterilir.</li>
+</ul>
+<div class="ek-not dikkat"><div class="etiket">Dikkat</div>
+<p><strong>KDV ödemenizi gider olarak girmeyin.</strong> NET-2 hesabı ödenecek
+KDV'yi zaten düşüyor; ikinci kez düşerdi. "Vergi" kategorisi damga vergisi, MTV
+gibi KDV dışı vergiler içindir.</p></div>
+
+<h3>Gider kategorileriniz</h3>
+<div class="ek-tablo"><table><thead><tr><th>Kategori</th><th>Tür</th><th>Varsayılan KDV</th></tr></thead><tbody><tr><td>Kira</td><td>Sabit</td><td><span class="sayi">%20</span></td></tr><tr><td>Maaş</td><td>Sabit</td><td><span class="sayi">%0</span></td></tr><tr><td>Muhasebe</td><td>Sabit</td><td><span class="sayi">%20</span></td></tr><tr><td>Abonelik</td><td>Sabit</td><td><span class="sayi">%20</span></td></tr><tr><td>Banka/komisyon</td><td>Değişken</td><td><span class="sayi">%20</span></td></tr><tr><td>Sarf malzeme</td><td>Değişken</td><td><span class="sayi">%20</span></td></tr><tr><td>Vergi</td><td>Değişken</td><td><span class="sayi">%0</span></td></tr><tr><td>Diğer</td><td>Değişken</td><td><span class="sayi">%20</span></td></tr></tbody></table></div>
+
+<h3>Her ay tekrar eden giderler</h3>
+<p><strong>Giderler → Tekrarlayan giderler.</strong> Kirayı bir kez şablon olarak
+tanımlarsınız, her ay tek dokunuşla eklersiniz. Sistem
+<strong>kendiliğinden kayıt üretmez</strong>. Aynı şablondan o ay zaten gider
+girilmişse düğme pasifleşir — kirayı ikinci kez girmiş olmazsınız.</p>
+</section>
+
+<section id="rapor">
+<h2 class="bolum"><b>09</b>Dönem raporu</h2>
+<p><strong>Rapor.</strong> "Bu ay gerçekte ne kazandım?" sorusunun cevabı burada.</p>
+<h3>Pencere seçimi</h3>
+<ul>
+<li><strong>Bu ay</strong> — ayın 1'inden bugüne.</li>
+<li><strong>Son 3 ay / Son 6 ay</strong> — bu ay dahil, o kadar takvim ayı geriye.</li>
+<li><strong>Özel aralık</strong> — iki tarih verirsiniz, bitiş günü dahildir.</li>
+</ul>
+<div class="formul">Satış geliri      satılan malın toplam tutarı
+Σ NET-1 / NET-2   brüt kâr, <b>iade etkileri dahil</b>
+Dönem giderleri   KDV hariç, net'ten düşen kısım
+<b>GERÇEK NET      Σ NET-2 − dönem giderleri</b></div>
+<div class="ek-not"><div class="etiket">Önemli ayrıntı</div>
+<p>Bir iade, <strong>iadenin yapıldığı aya</strong> yazılır — satışın ayına değil.
+Temmuz satışının Ağustos iadesi Ağustos'a düşer. Böylece kapanmış bir ayın raporu
+sonradan değişmez.</p></div>
+<h3>Kârı hesaplanamayan satışlar</h3>
+<p>Rapor bunları <strong>sessizce atlamaz</strong>: sarı bir kutuda sayısını,
+nedenini ve <strong>hangi satışlar olduğunu</strong> gösterir. Kayda tıklarsanız
+doğrudan o satışa gidersiniz, altında nasıl düzeltileceği yazar. Gelirleri toplama
+katılır, kârları katılmaz — sıfır sayılmazlar.</p>
+</section>
+
+<section id="toplu">
+<h2 class="bolum"><b>10</b>Toplu veri aktarımı</h2>
+<h3>İçe aktarma</h3>
+<ol class="adimlar">
+<li><div><h3>Şablonu indirin</h3><p>Şablon her indirdiğinizde <strong>sizin güncel verinizle</strong> üretilir: "Listeler" sayfasında geçerli kategori, raf ve kanal hesabı adları yazar.</p></div></li>
+<li><div><h3>Kipi seçin</h3><p><strong>Yalnız yeni ekle</strong> — var olan SKU dosyada geçerse dosya reddedilir.<br><strong>Var olanları güncelle</strong> — haftalık komisyon güncellemesi için budur.</p></div></li>
+<li><div><h3>Denetleyin, sonra yazın</h3><p><strong>Dosyayı denetle</strong> hiçbir şey yazmaz. Hata varsa satır satır listelenir; hata yoksa özet çıkar ve ancak ondan sonra yazma düğmesi belirir.</p></div></li>
+</ol>
+<div class="ek-not"><div class="etiket">Kural</div>
+<p><strong>Ya hepsi ya hiçi.</strong> 400 satırın 399'u kusursuz olsa bile, bir
+satır hatalıysa hiçbir şey yazılmaz. Yarım aktarılmış bir stok, hiç aktarılmamış
+stoktan daha kötüdür.</p></div>
+<ul>
+<li>Şablondaki gri italik <strong>örnek satırları silin</strong>.</li>
+<li>Kategori veya raf sistemde yoksa dosya reddedilir; benzer bir ad varsa önerilir.</li>
+<li>Açılış stoğunda <strong>aynı SKU birden çok satırda</strong> olabilir; her satır ayrı parti olur.</li>
+<li><strong>Kanal SKU sayfasını tek başına</strong> yükleyebilirsiniz.</li>
+</ul>
+<h3>Dışa aktarma</h3>
+<ul>
+<li>Ürünler, Alımlar, Satışlar, Stok ve Giderler ekranlarında <strong>Excel indir</strong> düğmesi <strong>ekrandaki filtreyi uygular</strong>.</li>
+<li><strong>Ayarlar → Dışa Aktarma</strong> altında tüm veri tek dosyada iner.</li>
+</ul>
+</section>
+
+<section id="yedek">
+<h2 class="bolum"><b>11</b>Yedek</h2>
+<div class="ek-tablo"><table>
+<thead><tr><th>Ne</th><th>Kim için</th><th>Ne zaman</th></tr></thead>
+<tbody>
+<tr><td>Tüm veri (Excel)</td><td>Siz, muhasebeciniz</td><td>İstediğiniz zaman</td></tr>
+<tr><td>Yedek (JSON)</td><td>Geri yükleme</td><td>Büyük bir değişiklikten önce</td></tr>
+<tr><td>Otomatik yedek</td><td>Sistem</td><td>Her gece, 30 gün saklanır</td></tr>
+</tbody></table></div>
+<p>Otomatik yedekler <strong>Ayarlar → Dışa Aktarma</strong> sayfasında tarih ve
+boyutlarıyla listelenir. Listede yedek görmüyorsanız bir sorun var demektir.</p>
+<div class="ek-not dikkat"><div class="etiket">Dikkat</div>
+<p>Yedek dosyasında satış, maliyet ve kâr bilgileriniz <strong>açık metin</strong>
+durur. İndirdiğiniz dosyayı güvenli bir yerde saklayın.</p></div>
+</section>
+
+<section id="sorun">
+<h2 class="bolum"><b>12</b>Bir şey ters giderse</h2>
+<p>Sistem sessiz kalmaz: bir şey olmadıysa <strong>neden olmadığı</strong> ekranda
+yazar. Aşağıda en sık görülenler.</p>
+<div class="ek-tablo"><table>
+<thead><tr><th>Ekranda gördüğünüz</th><th>Anlamı ve çözümü</th></tr></thead>
+<tbody>
+<tr><td><strong>kural eksik</strong></td><td>Komisyon oranı ya da kargo tarifesi bulunamadı. <strong>Kanal SKU</strong> ekranından oranı girin; mevcut satış için <strong>Yeniden hesapla</strong>.</td></tr>
+<tr><td><strong>maliyet yok</strong></td><td>Satılan mal, birim maliyeti girilmemiş bir partiden düştü. Sonradan düzeltmek şu an mümkün değil.</td></tr>
+<tr><td><strong>para birimi</strong></td><td>Maliyet ile satış farklı para biriminde. Kur çevrilmez.</td></tr>
+<tr><td><strong>Stokta yeterli ürün yok</strong></td><td>Satmaya çalıştığınız adet elinizdekinden fazla. Mal kabul yapmayı unutmuş olabilirsiniz.</td></tr>
+<tr><td><strong>Bu sipariş numarası zaten var</strong></td><td>Aynı siparişi ikinci kez giriyorsunuz.</td></tr>
+<tr><td><strong>satır 12: "X" bulunamadı</strong></td><td>Dosyadaki kategori/raf sistemde tanımlı değil. Şablonun "Listeler" sayfasındaki adları kullanın.</td></tr>
+</tbody></table></div>
+<div class="ek-not kritik"><div class="etiket">Yapmayın</div>
+<p>Bir stok hareketini "düzeltmek" için silmeye çalışmayın — zaten silinemez.
+Yanlış bir sayım varsa düzeltme hareketi girilir, geçmiş olduğu gibi kalır.</p></div>
+</section>
+
+<section id="sozluk">
+<h2 class="bolum"><b>13</b>Sözlük</h2>
+<div class="ek-tablo"><table>
+<thead><tr><th>Terim</th><th>Anlamı</th></tr></thead>
+<tbody>
+<tr><td><strong>Varyant</strong></td><td>Ürünün stok tutulan hâli. Tişörtün M bedeni bir varyanttır.</td></tr>
+<tr><td><strong>Parti</strong></td><td>Tek seferde giren, kendi maliyetini taşıyan stok.</td></tr>
+<tr><td><strong>FIFO</strong></td><td>"İlk giren ilk çıkar." Satışta en eski parti önce tükenir.</td></tr>
+<tr><td><strong>Stok hareketi</strong></td><td>Stoğu değiştiren her kayıt: alım girişi, satış çıkışı, iade girişi, düzeltme.</td></tr>
+<tr><td><strong>Raf</strong></td><td>Depodaki konum. Sistemde kod olarak tutulur.</td></tr>
+<tr><td><strong>Kanal</strong></td><td>Pazaryeri. Trendyol, Hepsiburada, Amazon…</td></tr>
+<tr><td><strong>Kanal hesabı</strong></td><td>O pazaryerindeki mağazanız.</td></tr>
+<tr><td><strong>Stopaj</strong></td><td>KDV hariç tutarın %1'i olarak kesilen vergi.</td></tr>
+<tr><td><strong>NET-1</strong></td><td>Stopaj düşülmüş kâr.</td></tr>
+<tr><td><strong>NET-2</strong></td><td>NET-1'den ödenecek KDV de düşülmüş kâr. Cebinizde kalan.</td></tr>
+<tr><td><strong>GERÇEK NET</strong></td><td>Σ NET-2 − dönem giderleri. Ayın gerçek sonucu.</td></tr>
+<tr><td><strong>Snapshot</strong></td><td>Bir rakamın o anki hâliyle kayda yazılması.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="yolda">
+<h2 class="bolum"><b>14</b>Henüz yok, yolda</h2>
+<p>Bunları sistemde <strong>aramayın</strong> — henüz yapılmadı.</p>
+<div class="ek-tablo"><table>
+<thead><tr><th>Özellik</th><th>Durum</th></tr></thead>
+<tbody>
+<tr><td>Hakediş takibi — "sattım, parayı ne zaman aldım?"</td><td><span class="pul yok">yapım aşamasında</span></td></tr>
+<tr><td>Kredi kartı borç ve limit ekranı</td><td><span class="pul yok">hesap hazır, ekran yok</span></td></tr>
+<tr><td>Tedarikçiden tazminat takibi</td><td><span class="pul yok">planlı</span></td></tr>
+<tr><td>Alım kaydını sonradan düzenleme</td><td><span class="pul yok">planlı</span></td></tr>
+<tr><td>Yedekten ekrandan geri yükleme</td><td><span class="pul yok">elle yapılıyor</span></td></tr>
+<tr><td>Birden çok kullanıcı ve yetki ayrımı</td><td><span class="pul yok">sonraki aşama</span></td></tr>
+<tr><td>Pazaryeri bağlantıları (otomatik sipariş çekme)</td><td><span class="pul yok">sonraki aşama</span></td></tr>
+</tbody></table></div>
+</section>
+
+</main>
+</div>
+
+<footer class="ek-dip"><div class="ek-dip-ic">
+<div><strong style="color:var(--murekkep)">Selliora Kullanıcı El Kitabı</strong> · 10.08.2026</div>
+<div>Bu belge sistemden ÜRETİLDİ. Kategori, raf, kanal hesabı ve kesinti listeleri
+o anki veritabanınızdan okunur — elle güncellenmez, sapmaz.</div>
+</div></footer>
+</div>
+</body>
+</html>

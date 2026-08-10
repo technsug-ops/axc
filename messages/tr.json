@@ -25,7 +25,8 @@
     "iceAktarma": "Veri içe aktarma",
     "kanalSku": "Kanal SKU ve komisyon",
     "disaAktarma": "Dışa aktarma ve yedek",
-    "giris": "Giriş"
+    "giris": "Giriş",
+    "elKitabi": "Kullanıcı El Kitabı"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -503,7 +504,8 @@
     "veriAktarimi": "Veri Aktarımı",
     "kanalSku": "Kanal SKU",
     "kanalSkulari": "Kanal SKU",
-    "veriDisari": "Dışa Aktarma"
+    "veriDisari": "Dışa Aktarma",
+    "elKitabi": "El Kitabı"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -1112,5 +1114,9 @@
     "cikisOnayBaslik": "Çıkış yapılsın mı?",
     "cikisOnayMetin": "Oturumunuz kapanacak ve yeniden giriş yapmanız gerekecek.",
     "girisNotu": "Bu sistemde satış, maliyet ve kâr bilgileriniz duruyor. Parolanızı paylaşmayın."
+  },
+  "ElKitabi": {
+    "dosyaIndir": "HTML olarak indir",
+    "dosyaAdi": "selliora-el-kitabi"
   }
 }

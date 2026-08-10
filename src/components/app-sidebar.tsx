@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   BarChart3,
+  BookOpen,
   Boxes,
   CreditCard,
   Download,
@@ -87,6 +88,7 @@ const AYARLAR: MenuOgesi[] = [
     icon: FileSpreadsheet,
     aktif: true,
   },
+  { anahtar: "elKitabi", href: "/el-kitabi", icon: BookOpen, aktif: true },
   {
     anahtar: "veriDisari",
     href: "/ayarlar/disa-aktarma",
