@@ -7,6 +7,7 @@ import {
   BarChart3,
   Boxes,
   CreditCard,
+  FileSpreadsheet,
   MapPin,
   Package,
   Percent,
@@ -73,6 +74,12 @@ const AYARLAR: MenuOgesi[] = [
     anahtar: "kanalHesaplari",
     href: "/ayarlar/kanallar",
     icon: Store,
+    aktif: true,
+  },
+  {
+    anahtar: "veriAktarimi",
+    href: "/ayarlar/ice-aktarma",
+    icon: FileSpreadsheet,
     aktif: true,
   },
 ];

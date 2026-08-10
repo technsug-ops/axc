@@ -1,0 +1,105 @@
+import { randomUUID } from "node:crypto";
+
+import { getTranslations } from "next-intl/server";
+
+import {
+  iceAktarmaDogrula,
+  type Kip,
+  type Ozet,
+  type SatirHatasi,
+} from "@/lib/ice-aktarma/dogrula";
+import { sablonMetinleri } from "@/lib/ice-aktarma/metinler";
+import { dosyayiOku } from "@/lib/ice-aktarma/oku";
+import { referansYukle } from "@/lib/ice-aktarma/referans";
+import { planiYaz, type YazimSonucu } from "@/lib/ice-aktarma/yaz";
+
+/**
+ * ============================================================================
+ *  YÜKLEME UÇ NOKTASI — ÖNİZLE, SONRA YAZ
+ * ----------------------------------------------------------------------------
+ *  NEDEN SERVER ACTION DEĞİL: Server Action gövdesi varsayılan 1 MB ile
+ *  sınırlı ve bu sınır yalnızca `experimental.serverActions.bodySizeLimit`
+ *  ile yükseltiliyor. Anayasa deneysel özellik kullanmayı yasaklıyor
+ *  (CLAUDE.md → Teknoloji kuralları), route handler'da böyle bir sınır yok.
+ *
+ *  NEDEN DOSYA İKİ KEZ GÖNDERİLİYOR: Önizleme ile yazım arasında sunucuda
+ *  durum tutulmuyor. Tarayıcı aynı dosyayı `yaz=1` ile ikinci kez gönderir ve
+ *  dosya BAŞTAN doğrulanır. Bu bir eksiklik değil, kasıtlı: arada başka bir
+ *  yerden aynı SKU açılmışsa yazım anında yakalanır — onayladığınız plan ile
+ *  yazılan plan aynı veriye bakar.
+ * ============================================================================
+ */
+export const dynamic = "force-dynamic";
+
+type Yanit =
+  | { durum: "HATA"; hatalar: SatirHatasi[]; eksikSutunlar: { sayfa: string; sutun: string }[] }
+  | { durum: "ONIZLEME"; ozet: Ozet }
+  | { durum: "YAZILDI"; sonuc: YazimSonucu }
+  | { durum: "COKTU"; mesaj: string };
+
+export async function POST(istek: Request) {
+  const t = await getTranslations("IceAktarma");
+
+  let form: FormData;
+  try {
+    form = await istek.formData();
+  } catch {
+    return yanitla({ durum: "COKTU", mesaj: t("okunamadi") }, 400);
+  }
+
+  const dosya = form.get("dosya");
+  if (!(dosya instanceof File) || dosya.size === 0) {
+    return yanitla({ durum: "COKTU", mesaj: t("dosyaYok") }, 400);
+  }
+
+  const kip: Kip = form.get("kip") === "GUNCELLE" ? "GUNCELLE" : "YALNIZ_YENI";
+  const yazilsinMi = form.get("yaz") === "1";
+
+  // --- 1) OKU ---
+  let okunan;
+  try {
+    const icerik = Buffer.from(await dosya.arrayBuffer());
+    okunan = await dosyayiOku(icerik, await sablonMetinleri());
+  } catch (e) {
+    console.error("[ice-aktarma] dosya okunamadi:", e);
+    return yanitla({ durum: "COKTU", mesaj: t("okunamadi") }, 400);
+  }
+
+  if (okunan.eksikSutunlar.length > 0) {
+    return yanitla({
+      durum: "HATA",
+      hatalar: [],
+      eksikSutunlar: okunan.eksikSutunlar,
+    });
+  }
+
+  // --- 2) DOĞRULA ---
+  const referans = await referansYukle();
+  const sonuc = iceAktarmaDogrula(okunan.veri, referans, kip, randomUUID);
+
+  if (sonuc.hatalar.length > 0) {
+    return yanitla({
+      durum: "HATA",
+      hatalar: sonuc.hatalar,
+      eksikSutunlar: [],
+    });
+  }
+
+  // --- 3) ÖNİZLEME (hiçbir şey yazılmadı) ---
+  if (!yazilsinMi) {
+    return yanitla({ durum: "ONIZLEME", ozet: sonuc.ozet });
+  }
+
+  // --- 4) YAZ — tek transaction ---
+  try {
+    const yazim = await planiYaz(sonuc.plan);
+    return yanitla({ durum: "YAZILDI", sonuc: yazim });
+  } catch (e) {
+    console.error("[ice-aktarma] yazim basarisiz:", e);
+    return yanitla({ durum: "COKTU", mesaj: t("beklenmeyenHata") }, 500);
+  }
+}
+
+function yanitla(govde: Yanit, kod = 200) {
+  return Response.json(govde, { status: kod });
+}
