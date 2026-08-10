@@ -7,6 +7,7 @@ import { AlimIptalButonu } from "./iptal-butonu";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
+import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,19 +83,9 @@ export default async function AlimlarSayfasi({
     const iptalli = alim.status === "CANCELLED";
     return (
       <>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/alimlar/${alim.id}`}>
-            <Eye />
-            {ortak("detay")}
-          </Link>
-        </Button>
+        <SatirEylemi href={`/alimlar/${alim.id}`} ikon={Eye} etiket={ortak("detay")} />
         {!iptalli ? (
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/alimlar/${alim.id}/duzenle`}>
-              <Pencil />
-              {ortak("duzenle")}
-            </Link>
-          </Button>
+          <SatirEylemi href={`/alimlar/${alim.id}/duzenle`} ikon={Pencil} etiket={ortak("duzenle")} />
         ) : null}
         {!iptalli ? (
           <AlimIptalButonu
@@ -104,12 +95,7 @@ export default async function AlimlarSayfasi({
           />
         ) : null}
         {kabulEdilebilir ? (
-          <Button size="sm" asChild>
-            <Link href={`/alimlar/${alim.id}/mal-kabul`}>
-              <PackageCheck />
-              {t("malKabul")}
-            </Link>
-          </Button>
+          <SatirEylemi href={`/alimlar/${alim.id}/mal-kabul`} ikon={PackageCheck} etiket={t("malKabul")} birincil />
         ) : null}
       </>
     );
@@ -240,9 +226,7 @@ export default async function AlimlarSayfasi({
                       </Badge>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        {eylemler(alim)}
-                      </div>
+                      <SatirEylemleri>{eylemler(alim)}</SatirEylemleri>
                     </TableCell>
                   </TableRow>
                 ))}

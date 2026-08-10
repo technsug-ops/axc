@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { EYLEM_SINIFI, EylemEtiketi } from "@/components/satir-eylemi";
 import { Button } from "@/components/ui/button";
 
 import { alimIptalEt, type AlimDurumu } from "./actions";
@@ -50,9 +51,16 @@ export function AlimIptalButonu({
 
   if (malKabulVar) {
     return (
-      <Button variant="outline" size="sm" disabled title={t("iptalEdilemez")}>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled
+        title={t("iptalEdilemez")}
+        aria-label={t("iptalEt")}
+        className={EYLEM_SINIFI}
+      >
         <Ban />
-        {t("iptalEt")}
+        <EylemEtiketi>{t("iptalEt")}</EylemEtiketi>
       </Button>
     );
   }
@@ -61,9 +69,15 @@ export function AlimIptalButonu({
     <div className="space-y-1">
       <AlertDialog open={acik} onOpenChange={setAcik}>
         <AlertDialogTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            title={t("iptalEt")}
+            aria-label={t("iptalEt")}
+            className={EYLEM_SINIFI}
+          >
             <Ban />
-            {t("iptalEt")}
+            <EylemEtiketi>{t("iptalEt")}</EylemEtiketi>
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>

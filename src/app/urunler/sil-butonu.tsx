@@ -5,6 +5,10 @@ import { useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
 
 import {
+  EYLEM_SINIFI,
+  EylemEtiketi,
+} from "@/components/satir-eylemi";
+import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
@@ -15,6 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 import { urunSil, type FormDurumu } from "./actions";
 
@@ -43,9 +48,22 @@ export function SilButonu({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="outline" size={boyut}>
+        <Button
+          variant="outline"
+          size={boyut}
+          title={t("dugme")}
+          aria-label={t("dugme")}
+          // Liste satırında diğer eylemlerle aynı ölçüde durur: telefonda
+          // 44px metinli, masaüstünde 32px kare ikon. Detay sayfasında
+          // (boyut="default") metin her zaman görünür.
+          className={cn(boyut === "sm" && EYLEM_SINIFI)}
+        >
           <Trash2 />
-          {t("dugme")}
+          {boyut === "sm" ? (
+            <EylemEtiketi>{t("dugme")}</EylemEtiketi>
+          ) : (
+            t("dugme")
+          )}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

@@ -6,6 +6,7 @@ import { ExcelIndir } from "@/components/excel-indir";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
+import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { NetKar } from "@/components/net-kar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -113,19 +114,9 @@ export default async function SatislarSayfasi({
   function eylemler(satis: (typeof satislar)[number]) {
     return (
       <>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/satislar/${satis.id}`}>
-            <Eye />
-            {ortak("detay")}
-          </Link>
-        </Button>
+        <SatirEylemi href={`/satislar/${satis.id}`} ikon={Eye} etiket={ortak("detay")} />
         {iadeKalanVar(satis) ? (
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/satislar/${satis.id}/iade`}>
-              <Undo2 />
-              {tIade("iadeAl")}
-            </Link>
-          </Button>
+          <SatirEylemi href={`/satislar/${satis.id}/iade`} ikon={Undo2} etiket={tIade("iadeAl")} />
         ) : null}
       </>
     );
@@ -245,7 +236,9 @@ export default async function SatislarSayfasi({
                     <TableCell className="text-muted-foreground">
                       {hesapMetni(satis)}
                     </TableCell>
-                    <TableCell>
+                    {/* Uzun metin SARILIR: hücre varsayılanı nowrap; tabloyu ekran
+                          dışına itip eylem düğmelerini görünmez yapıyordu. */}
+                    <TableCell className="max-w-[22rem] whitespace-normal">
                       <div className="flex flex-wrap items-center gap-2">
                         <span>{urunOzeti(satis)}</span>
                         {satis.returns.length ? (
@@ -270,9 +263,7 @@ export default async function SatislarSayfasi({
                       />
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        {eylemler(satis)}
-                      </div>
+                      <SatirEylemleri>{eylemler(satis)}</SatirEylemleri>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -6,6 +6,7 @@ import { Baglanti } from "@/components/baglanti";
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
+import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,18 +66,8 @@ export default async function KartlarSayfasi() {
   function eylemler(kart: (typeof kartlar)[number]) {
     return (
       <>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/kartlar/${kart.id}`}>
-            <Eye />
-            {ortak("detay")}
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/kartlar/${kart.id}/duzenle`}>
-            <Pencil />
-            {ortak("duzenle")}
-          </Link>
-        </Button>
+        <SatirEylemi href={`/kartlar/${kart.id}`} ikon={Eye} etiket={ortak("detay")} />
+        <SatirEylemi href={`/kartlar/${kart.id}/duzenle`} ikon={Pencil} etiket={ortak("duzenle")} />
         <DurumDegistirButonu
           kayitId={kart.id}
           aktifMi={kart.isActive}
@@ -176,9 +167,7 @@ export default async function KartlarSayfasi() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap items-start gap-2">
-                        {eylemler(kart)}
-                      </div>
+                      <SatirEylemleri>{eylemler(kart)}</SatirEylemleri>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { EYLEM_SINIFI, EylemEtiketi } from "@/components/satir-eylemi";
 import { Button } from "@/components/ui/button";
 
 import { giderSil, type GiderDurumu } from "./actions";
@@ -54,9 +55,15 @@ export function SilButonu({
     <div className="space-y-1">
       <AlertDialog open={acik} onOpenChange={setAcik}>
         <AlertDialogTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            title={ortak("sil")}
+            aria-label={ortak("sil")}
+            className={EYLEM_SINIFI}
+          >
             <Trash2 />
-            {ortak("sil")}
+            <EylemEtiketi>{ortak("sil")}</EylemEtiketi>
           </Button>
         </AlertDialogTrigger>
 

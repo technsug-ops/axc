@@ -1,13 +1,12 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
 import { History, Package } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
+import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -70,18 +69,8 @@ export default async function StokSayfasi({
   function eylemler(varyant: (typeof varyantlar)[number]) {
     return (
       <>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/stok/${varyant.id}`}>
-            <History />
-            {t("hareketler")}
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/urunler/${varyant.product.id}`}>
-            <Package />
-            {t("urunKarti")}
-          </Link>
-        </Button>
+        <SatirEylemi href={`/stok/${varyant.id}`} ikon={History} etiket={t("hareketler")} />
+        <SatirEylemi href={`/urunler/${varyant.product.id}`} ikon={Package} etiket={t("urunKarti")} />
       </>
     );
   }
@@ -132,7 +121,9 @@ export default async function StokSayfasi({
               <TableBody>
                 {varyantlar.map((varyant) => (
                   <TableRow key={varyant.id}>
-                    <TableCell>
+                    {/* Uzun metin SARILIR: hücre varsayılanı nowrap; tabloyu ekran
+                          dışına itip eylem düğmelerini görünmez yapıyordu. */}
+                    <TableCell className="max-w-[22rem] whitespace-normal">
                       <Baglanti href={`/stok/${varyant.id}`}>
                         {varyant.product.name}
                       </Baglanti>
@@ -175,9 +166,7 @@ export default async function StokSayfasi({
                         : "—"}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        {eylemler(varyant)}
-                      </div>
+                      <SatirEylemleri>{eylemler(varyant)}</SatirEylemleri>
                     </TableCell>
                   </TableRow>
                 ))}

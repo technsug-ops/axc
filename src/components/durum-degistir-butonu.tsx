@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Power, PowerOff } from "lucide-react";
 
+import { EYLEM_SINIFI, EylemEtiketi } from "@/components/satir-eylemi";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -34,17 +35,25 @@ export function DurumDegistirButonu({
     {},
   );
 
+  // Masaüstünde metin gizlendiği için etiket `title`/`aria-label` ile
+  // taşınır — ikon tek başına ne yaptığını söylemez.
+  const etiket = aktifMi ? t("pasifeAl") : t("aktiflestir");
+
   return (
     <div className="space-y-1">
       <form action={formAction}>
         <input type="hidden" name="id" value={kayitId} />
-        <Button type="submit" variant="outline" size="sm" disabled={bekliyor}>
+        <Button
+          type="submit"
+          variant="outline"
+          size="sm"
+          disabled={bekliyor}
+          title={etiket}
+          aria-label={etiket}
+          className={EYLEM_SINIFI}
+        >
           {aktifMi ? <PowerOff /> : <Power />}
-          {bekliyor
-            ? t("kaydediliyor")
-            : aktifMi
-              ? t("pasifeAl")
-              : t("aktiflestir")}
+          <EylemEtiketi>{bekliyor ? t("kaydediliyor") : etiket}</EylemEtiketi>
         </Button>
       </form>
 

@@ -6,6 +6,7 @@ import { ExcelIndir } from "@/components/excel-indir";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
+import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,18 +78,16 @@ export default async function UrunlerSayfasi({
   function eylemler(urun: (typeof urunler)[number]) {
     return (
       <>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/urunler/${urun.id}`}>
-            <Eye />
-            {ortak("detay")}
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/urunler/${urun.id}/duzenle`}>
-            <Pencil />
-            {ortak("duzenle")}
-          </Link>
-        </Button>
+        <SatirEylemi
+          href={`/urunler/${urun.id}`}
+          ikon={Eye}
+          etiket={ortak("detay")}
+        />
+        <SatirEylemi
+          href={`/urunler/${urun.id}/duzenle`}
+          ikon={Pencil}
+          etiket={ortak("duzenle")}
+        />
         <SilButonu urunId={urun.id} urunAdi={urun.name} />
       </>
     );
@@ -167,7 +166,10 @@ export default async function UrunlerSayfasi({
                   const ana = anaVaryant(urun);
                   return (
                     <TableRow key={urun.id}>
-                      <TableCell>
+                      {/* Ürün adı SARILIR. Tablo hücresi varsayılan olarak
+                          `whitespace-nowrap`; uzun ad tabloyu ekran dışına
+                          itiyor ve eylem düğmelerini görünmez yapıyordu. */}
+                      <TableCell className="max-w-[22rem] whitespace-normal">
                         <Baglanti href={`/urunler/${urun.id}`}>
                           {urun.name}
                         </Baglanti>
@@ -202,9 +204,7 @@ export default async function UrunlerSayfasi({
                         {bicim.tarih(urun.createdAt)}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          {eylemler(urun)}
-                        </div>
+                        <SatirEylemleri>{eylemler(urun)}</SatirEylemleri>
                       </TableCell>
                     </TableRow>
                   );

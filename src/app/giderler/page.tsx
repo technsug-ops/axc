@@ -4,6 +4,7 @@ import { BarChart3, Pencil, Plus, Repeat } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
 import { ListeKarti } from "@/components/liste-karti";
+import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -135,12 +136,7 @@ export default async function GiderlerSayfasi({
     const { tutar } = parcala(kayit);
     return (
       <>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/giderler/${kayit.id}/duzenle`}>
-            <Pencil />
-            {ortak("duzenle")}
-          </Link>
-        </Button>
+        <SatirEylemi href={`/giderler/${kayit.id}/duzenle`} ikon={Pencil} etiket={ortak("duzenle")} />
         <SilButonu
           giderId={kayit.id}
           aciklama={aciklamaMetni(kayit)}
@@ -304,9 +300,7 @@ export default async function GiderlerSayfasi({
                         {bicim.para(netDusen, kayit.currency)}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          {eylemler(kayit)}
-                        </div>
+                        <SatirEylemleri>{eylemler(kayit)}</SatirEylemleri>
                       </TableCell>
                     </TableRow>
                   );
