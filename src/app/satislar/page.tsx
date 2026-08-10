@@ -7,6 +7,7 @@ import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
+import { UzunAd } from "@/components/uzun-ad";
 import { NetKar } from "@/components/net-kar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -236,15 +237,17 @@ export default async function SatislarSayfasi({
                     <TableCell className="text-muted-foreground">
                       {hesapMetni(satis)}
                     </TableCell>
-                    {/* Uzun metin SARILIR: hücre varsayılanı nowrap; tabloyu ekran
-                          dışına itip eylem düğmelerini görünmez yapıyordu. */}
-                    <TableCell className="max-w-[22rem] whitespace-normal">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span>{urunOzeti(satis)}</span>
-                        {satis.returns.length ? (
-                          <Badge variant="outline">{tIade("iadeVar")}</Badge>
-                        ) : null}
-                      </div>
+                    {/* Uzun ürün özeti kesilir, tamamı `title`'da; satırın
+                        Detay düğmesi kaydın tamamına götürür (bkz. UzunAd). */}
+                    <TableCell>
+                      <UzunAd
+                        metin={urunOzeti(satis)}
+                        ek={
+                          satis.returns.length ? (
+                            <Badge variant="outline">{tIade("iadeVar")}</Badge>
+                          ) : null
+                        }
+                      />
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {adetToplami(satis)}

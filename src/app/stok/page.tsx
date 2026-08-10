@@ -6,6 +6,7 @@ import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
+import { UzunAd } from "@/components/uzun-ad";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -121,12 +122,13 @@ export default async function StokSayfasi({
               <TableBody>
                 {varyantlar.map((varyant) => (
                   <TableRow key={varyant.id}>
-                    {/* Uzun metin SARILIR: hücre varsayılanı nowrap; tabloyu ekran
-                          dışına itip eylem düğmelerini görünmez yapıyordu. */}
-                    <TableCell className="max-w-[22rem] whitespace-normal">
-                      <Baglanti href={`/stok/${varyant.id}`}>
-                        {varyant.product.name}
-                      </Baglanti>
+                    {/* Uzun ad kesilir, tamamı `title`'da (bkz. UzunAd).
+                        Marka alt satırda kalır — kısaltmaya dahil değil. */}
+                    <TableCell>
+                      <UzunAd
+                        metin={varyant.product.name}
+                        href={`/stok/${varyant.id}`}
+                      />
                       {varyant.product.brand ? (
                         <div className="text-muted-foreground text-xs">
                           {varyant.product.brand}

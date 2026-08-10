@@ -7,6 +7,7 @@ import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
+import { UzunAd } from "@/components/uzun-ad";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -166,18 +167,20 @@ export default async function UrunlerSayfasi({
                   const ana = anaVaryant(urun);
                   return (
                     <TableRow key={urun.id}>
-                      {/* Ürün adı SARILIR. Tablo hücresi varsayılan olarak
-                          `whitespace-nowrap`; uzun ad tabloyu ekran dışına
-                          itiyor ve eylem düğmelerini görünmez yapıyordu. */}
-                      <TableCell className="max-w-[22rem] whitespace-normal">
-                        <Baglanti href={`/urunler/${urun.id}`}>
-                          {urun.name}
-                        </Baglanti>
-                        {!urun.isActive ? (
-                          <Badge variant="secondary" className="ml-2">
-                            {ortak("pasif")}
-                          </Badge>
-                        ) : null}
+                      {/* Uzun ad üç noktayla kesilir; tamamı `title`'da ve
+                          Detay düğmesinde. Sınır hücreye değil içindeki
+                          bloğa konur — `<td>` üzerinde `max-width` yok
+                          sayılıyor (bkz. UzunAd). */}
+                      <TableCell>
+                        <UzunAd
+                          metin={urun.name}
+                          href={`/urunler/${urun.id}`}
+                          ek={
+                            !urun.isActive ? (
+                              <Badge variant="secondary">{ortak("pasif")}</Badge>
+                            ) : null
+                          }
+                        />
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {urun.brand ?? "—"}

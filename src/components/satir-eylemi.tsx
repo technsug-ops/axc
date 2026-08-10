@@ -40,10 +40,20 @@ export function EylemEtiketi({ children }: { children: React.ReactNode }) {
   return <span className="md:hidden">{children}</span>;
 }
 
-/** Satırdaki düğmeleri yan yana ve tek satırda tutar. */
+/**
+ * Satırdaki düğmeleri yan yana tutar.
+ *
+ * ⚠ Masaüstünde SARMA YOK (`md:flex-nowrap`). Sütun sıkışınca üç düğme alt
+ * alta diziliyordu: 3 × 32px + boşluklar ≈ 112px. Satır yüksekliği bu yüzden
+ * üçe katlanıyordu ve sebebi görünmüyordu — düğmeler zaten ekranın dışında
+ * kalıyordu. Telefonda (kart görünümü) sarma açık kalır; orada düğmeler
+ * metinli ve 44px, dar ekranda alt satıra inmeleri doğru davranış.
+ */
 export function SatirEylemleri({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">{children}</div>
+    <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
+      {children}
+    </div>
   );
 }
 
