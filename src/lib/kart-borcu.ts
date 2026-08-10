@@ -18,8 +18,10 @@ import { ayKaydir, gunDegeri, type TakvimGunu } from "@/lib/donem";
  *  2. Taksitli alımda tutar eşit bölünür; bölünmeyen kuruş SON taksite
  *     eklenir. (1.000 TL / 3 -> 333,33 + 333,33 + 333,34)
  *
- *  Yanlışsa ikisi de tek satırlık düzeltmedir; tahmin edip sessiz kalmaktansa
- *  yazılı durmaları iyidir.
+ *  Bu ikisi VARSAYILAN olarak doğru kabul edildi (kullanıcı onayı 10.08.2026)
+ *  ama BANKA DAVRANIŞINA GÖRE DOĞRULANACAK: canlıda ilk gerçek ekstre geldiğinde
+ *  sistemin hesabıyla karşılaştırılıp teyit edilecek. Fark çıkarsa ikisi de tek
+ *  satırlık düzeltmedir — bu yüzden varsayım gizlenmiyor, yazılı duruyor.
  * ============================================================================
  */
 

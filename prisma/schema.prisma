@@ -70,6 +70,15 @@ enum StockMovementType {
   COUNT_CORRECTION // sayım farkı
 }
 
+/// Tedarikçiden tazminat talebinin hangi aşamada olduğu.
+enum CompensationStatus {
+  OPEN // hasar kaydedildi, talep henüz açılmadı
+  CLAIMED // tedarikçiye bildirildi
+  ACCEPTED // kabul edildi, ödeme/iade bekleniyor
+  REJECTED // reddedildi
+  SETTLED // kapandı (para geldi ya da mal değişti)
+}
+
 enum PurchaseStatus {
   DRAFT // taslak
   ORDERED // sipariş verildi, henüz hiçbir kalem gelmedi
@@ -421,6 +430,14 @@ model ChannelAccount {
   /// Hesabın çalıştığı para birimi (TR mağazası TRY, DE mağazası EUR).
   defaultCurrency Currency
 
+  /// ÖDEME VADESİ (gün) — satıştan kaç gün sonra para hesaba geçer.
+  /// Beklenen hakediş tarihi = satış tarihi + bu gün sayısı.
+  /// KANAL HESABI seviyesinde tutuluyor (kullanıcı kararı 10.08.2026):
+  /// aynı pazaryerinde açılan ikinci mağazanın anlaşması farklı olabilir.
+  /// Boşsa o hesabın satışları için beklenen tarih ÜRETİLMEZ — tahmin
+  /// edilmiş bir tarih göstermektense boş bırakılır.
+  payoutDays Int?
+
   isActive Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -429,6 +446,7 @@ model ChannelAccount {
   channelSkus ChannelSku[]
   purchases   Purchase[]
   sales       Sale[]
+  settlements Settlement[]
 
   @@unique([channelId, code])
   @@index([channelId])
@@ -519,8 +537,13 @@ model Purchase {
   code   String         @unique // ALM-2026-0001
   status PurchaseStatus @default(DRAFT)
 
-  /// Tedarikçi şimdilik serbest metin. Ayrı Supplier modeli sonraki fazda.
+  /// TEDARİKÇİ — 10.08.2026'da kayda bağlandı (Faz 3).
+  /// `supplierName` SİLİNMEDİ: eski kayıtların yazıldığı hâli ve içe
+  /// aktarma izi olarak duruyor. Migration mevcut benzersiz adları
+  /// Supplier'a eşledi; formda artık kayıtlı tedarikçi seçilir.
   supplierName String?
+  supplierId   String?
+  supplier     Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
   purchasedAt DateTime
   receivedAt  DateTime?
@@ -577,6 +600,9 @@ model PurchaseItem {
   /// sonraki fazlarda; şimdilik sadece sayı ve not saklanır.
   damagedQuantity Int     @default(0)
   damageNote      String? @db.Text
+
+  /// Bu kalemdeki hasar için açılan tazminat talepleri (Faz 3).
+  compensations Compensation[]
 
   /// NOT: "gelen sağlam" adedi BİLEREK kolon olarak tutulmuyor.
   /// Bu kaleme ait PURCHASE_IN hareketlerinin toplamından türetilir
@@ -715,9 +741,10 @@ model Sale {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items   SaleItem[]
-  fees    SaleFee[]
-  returns Return[]
+  items           SaleItem[]
+  fees            SaleFee[]
+  returns         Return[]
+  settlementItems SettlementItem[]
 
   @@index([channelAccountId])
   @@index([soldAt])
@@ -1009,6 +1036,130 @@ model Expense {
   @@index([spentAt])
   @@index([categoryId])
   @@index([templateId])
+}
+
+// ============================================================================
+//  TEDARİKÇİ · HAKEDİŞ · TAZMİNAT  (Faz 3)
+// ============================================================================
+
+/// Malı aldığınız firma. Tazminat bir tedarikçiye açılır; serbest metinle
+/// "bu tedarikçiden toplam ne kadar alacağım var" sorusu cevaplanamazdı.
+model Supplier {
+  id String @id @default(cuid())
+
+  name String @unique
+
+  /// Telefon / e-posta / kişi — serbest metin, tek alan yeter.
+  contact String?
+  note    String? @db.Text
+
+  /// SİLİNMEZ, pasife alınır — geçmiş alımlar tedarikçisiz kalmasın.
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchases     Purchase[]
+  compensations Compensation[]
+
+  @@index([isActive])
+}
+
+// ----------------------------------------------------------------------------
+//  HAKEDİŞ — "sattım, parayı ne zaman aldım?"
+// ----------------------------------------------------------------------------
+//  Kâr motoru satışın KAZANCINI biliyordu, TAHSİLATINI bilmiyordu. Hakediş
+//  pazaryerinin yaptığı toplu ödemedir: bir dönemin siparişleri tek seferde
+//  ödenir.
+//
+//  BEKLENEN tarih hesaplanır (satış + kanal hesabının vadesi),
+//  GERÇEKLEŞEN ödeme pazaryeri hakediş raporundan içe aktarılır.
+//  İkisinin farkı "bekleyen para" ve "geç/eksik ödeme" görünümünü verir.
+// ----------------------------------------------------------------------------
+
+model Settlement {
+  id String @id @default(cuid())
+
+  channelAccountId String
+  channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
+
+  /// Pazaryerindeki hakediş/ödeme numarası — opsiyonel ama girilirse tekildir.
+  code String?
+
+  /// Paranın hesaba geçtiği gün.
+  paidAt DateTime
+
+  /// Hakedişin kapsadığı dönem (rapordan okunur).
+  periodStart DateTime?
+  periodEnd   DateTime?
+
+  /// Panelin bildirdiği TOPLAM ödeme. Kalem toplamıyla arasındaki fark
+  /// ekranda gösterilir — sessizce eşitlenmez.
+  amount   Decimal  @db.Decimal(18, 4)
+  currency Currency
+
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items SettlementItem[]
+
+  @@index([channelAccountId])
+  @@index([paidAt])
+}
+
+/// Hakedişin hangi satışı kapsadığı. Bir satış birden çok hakedişte
+/// görünebilir (kısmi ödeme), bu yüzden satış başına tekillik YOK.
+model SettlementItem {
+  id           String     @id @default(cuid())
+  settlementId String
+  settlement   Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Restrict)
+
+  /// Bu satış için ödenen NET tutar (rapordan; kesintiler düşülmüş hâli).
+  amount   Decimal  @db.Decimal(18, 4)
+  currency Currency
+
+  createdAt DateTime @default(now())
+
+  @@unique([settlementId, saleId])
+  @@index([saleId])
+}
+
+// ----------------------------------------------------------------------------
+//  TAZMİNAT — hasarlı gelen mal için tedarikçiden alacak
+// ----------------------------------------------------------------------------
+
+model Compensation {
+  id String @id @default(cuid())
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  /// Hangi alım kalemindeki hasar. Silinirse talep kaydı kalır.
+  purchaseItemId String?
+  purchaseItem   PurchaseItem? @relation(fields: [purchaseItemId], references: [id], onDelete: SetNull)
+
+  /// Talebe konu adet.
+  quantity Int
+
+  /// Talep edilen tutar.
+  amount   Decimal  @db.Decimal(18, 4)
+  currency Currency
+
+  status     CompensationStatus @default(OPEN)
+  occurredAt DateTime
+  note       String?            @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([purchaseItemId])
 }
 
 /// Tekrarlayan gider ŞABLONU — gider DEĞİLDİR, hiçbir toplama girmez.
