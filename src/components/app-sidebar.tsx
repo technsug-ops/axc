@@ -14,6 +14,7 @@ import {
   Receipt,
   ShoppingCart,
   Store,
+  Tags,
   Wallet,
 } from "lucide-react";
 
@@ -52,6 +53,7 @@ const OPERASYON: MenuOgesi[] = [
   { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
   { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
   { anahtar: "stok", href: "/stok", icon: Boxes, aktif: true },
+  { anahtar: "kanalSkulari", href: "/kanal-sku", icon: Tags, aktif: true },
   { anahtar: "giderler", href: "/giderler", icon: Wallet, aktif: true },
   { anahtar: "rapor", href: "/rapor", icon: BarChart3, aktif: true },
   { anahtar: "kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
