@@ -37,6 +37,8 @@ import type { Currency } from "@/generated/prisma/enums";
 
 export type RaporSatis = {
   id: string;
+  /** Sipariş numarası — yalnızca ekranda etiket olarak kullanılır. */
+  kod: string | null;
   /** soldAt — UTC gece yarısı takvim günü. */
   tarih: Date;
   /** KDV DAHİL satış geliri (Σ adet × birim fiyat). */
@@ -49,6 +51,9 @@ export type RaporSatis = {
 
 export type RaporIade = {
   id: string;
+  /** İadenin bağlı olduğu satış — ekranda oraya gidilir. */
+  satisId: string;
+  kod: string | null;
   /** occurredAt — iade kendi tarihine yazılır. */
   tarih: Date;
   /** İADE ETKİSİ (satışın yeni neti değil). İşaret anlamlıdır. */
@@ -94,6 +99,22 @@ export type GiderKategoriOzeti = {
 
 export type HesaplanamayanOzet = { durum: KarDurumu; adet: number };
 
+/**
+ * Kârı hesaplanamayan kaydın KİMLİĞİ.
+ *
+ * Sayı yetmez: "1 satışın kârı hesaplanamadı" diyen bir uyarı, hangi satış
+ * olduğunu söylemezse kullanıcıyı listeyi tarayarak aramaya bırakır. Motor
+ * kimliği de döndürür, ekran doğrudan o kayda bağlantı verir.
+ * _Kullanıcı isteği 10.08.2026._
+ */
+export type HesaplanamayanKayit = {
+  /** Gidilecek satışın kimliği (iadelerde iadenin bağlı olduğu satış). */
+  satisId: string;
+  kod: string | null;
+  tarih: Date;
+  durum: KarDurumu | null;
+};
+
 export type ParaBirimiRaporu = {
   paraBirimi: Currency;
 
@@ -106,12 +127,15 @@ export type ParaBirimiRaporu = {
   hesaplananSatisAdedi: number;
   hesaplanamayanSatisAdedi: number;
   hesaplanamayanDurumlar: HesaplanamayanOzet[];
+  /** Ekranın bağlantı verebilmesi için — eskiden tarihe göre sıralı. */
+  hesaplanamayanSatislar: HesaplanamayanKayit[];
 
   // --- İADE ---
   iadeAdedi: number;
   iadeNet1: number;
   iadeNet2: number;
   hesaplanamayanIadeAdedi: number;
+  hesaplanamayanIadeler: HesaplanamayanKayit[];
 
   // --- BRÜT (iade etkileri dahil) ---
   brutNet1: number;
@@ -154,10 +178,12 @@ function bosRapor(paraBirimi: Currency): ParaBirimiRaporu {
     hesaplananSatisAdedi: 0,
     hesaplanamayanSatisAdedi: 0,
     hesaplanamayanDurumlar: [],
+    hesaplanamayanSatislar: [],
     iadeAdedi: 0,
     iadeNet1: 0,
     iadeNet2: 0,
     hesaplanamayanIadeAdedi: 0,
+    hesaplanamayanIadeler: [],
     brutNet1: 0,
     brutNet2: 0,
     giderAdedi: 0,
@@ -210,11 +236,17 @@ export function raporHesapla(
       b.satisNet1 += satis.net1;
       b.satisNet2 += satis.net2;
     } else {
-      // SIFIR SAYILMAZ — sayılır ve nedeni yazılır.
+      // SIFIR SAYILMAZ — sayılır, nedeni yazılır, KİMLİĞİ tutulur.
       b.hesaplanamayanSatisAdedi++;
       const sayac = durumSayaci.get(satis.paraBirimi)!;
       const kod: KarDurumu = satis.durum ?? "RULE_MISSING";
       sayac.set(kod, (sayac.get(kod) ?? 0) + 1);
+      b.hesaplanamayanSatislar.push({
+        satisId: satis.id,
+        kod: satis.kod,
+        tarih: satis.tarih,
+        durum: satis.durum,
+      });
     }
   }
 
@@ -230,6 +262,12 @@ export function raporHesapla(
       b.iadeNet2 += iade.net2;
     } else {
       b.hesaplanamayanIadeAdedi++;
+      b.hesaplanamayanIadeler.push({
+        satisId: iade.satisId,
+        kod: iade.kod,
+        tarih: iade.tarih,
+        durum: iade.durum,
+      });
     }
   }
 
@@ -277,6 +315,12 @@ export function raporHesapla(
     b.hesaplanamayanDurumlar = [...durumSayaci.get(paraBirimi)!]
       .map(([durum, adet]) => ({ durum, adet }))
       .sort((a, x) => x.adet - a.adet || a.durum.localeCompare(x.durum));
+
+    // Eskiden yeniye: en uzun süredir bekleyen sorun başta görünsün.
+    const tariheGore = (a: HesaplanamayanKayit, x: HesaplanamayanKayit) =>
+      a.tarih.getTime() - x.tarih.getTime();
+    b.hesaplanamayanSatislar.sort(tariheGore);
+    b.hesaplanamayanIadeler.sort(tariheGore);
 
     b.kategoriler = [...kategoriler.get(paraBirimi)!.values()].sort(
       (a, x) => x.netDusen - a.netDusen || a.kategoriAd.localeCompare(x.kategoriAd),

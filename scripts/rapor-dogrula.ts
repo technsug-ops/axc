@@ -196,6 +196,7 @@ console.log("\n3) SINIR GÜNLERİ — ay başı DAHİL, bir önceki gün HARİÇ
   function tekSatis(tarih: string): RaporSatis {
     return {
       id: tarih,
+      kod: tarih,
       tarih: gun(tarih),
       gelir: 100,
       net1: 10,
@@ -234,14 +235,14 @@ console.log("\n4) ELLE HESAP — mini veri setinin her rakamı");
   const pencere = pencereOlustur("BU_AY", an);
 
   const satislar: RaporSatis[] = [
-    { id: "S1", tarih: gun("2026-08-05"), gelir: 2157, net1: 348, net2: 300, paraBirimi: "TRY", durum: "CALCULATED" },
-    { id: "S2", tarih: gun("2026-08-12"), gelir: 7835, net1: 1200, net2: 1000, paraBirimi: "TRY", durum: "CALCULATED" },
+    { id: "S1", kod: "S1-kod", tarih: gun("2026-08-05"), gelir: 2157, net1: 348, net2: 300, paraBirimi: "TRY", durum: "CALCULATED" },
+    { id: "S2", kod: "S2-kod", tarih: gun("2026-08-12"), gelir: 7835, net1: 1200, net2: 1000, paraBirimi: "TRY", durum: "CALCULATED" },
     // Maliyetsiz parti — kârı YOK, geliri VAR.
-    { id: "S3", tarih: gun("2026-08-20"), gelir: 500, net1: null, net2: null, paraBirimi: "TRY", durum: "NO_COST" },
+    { id: "S3", kod: "S3-kod", tarih: gun("2026-08-20"), gelir: 500, net1: null, net2: null, paraBirimi: "TRY", durum: "NO_COST" },
   ];
 
   const iadeler: RaporIade[] = [
-    { id: "I1", tarih: gun("2026-08-15"), net1: -695.11, net2: -600, paraBirimi: "TRY", durum: "CALCULATED" },
+    { id: "I1", satisId: "S1", kod: "I1-kod", tarih: gun("2026-08-15"), net1: -695.11, net2: -600, paraBirimi: "TRY", durum: "CALCULATED" },
   ];
 
   const giderler: RaporGider[] = [
@@ -304,11 +305,11 @@ console.log("\n5) KURALLAR");
 {
   // --- 5a) İADE KENDİ AYINA YAZILIR (kullanıcı kararı 10.08.2026) ---------
   const satisTemmuz: RaporSatis = {
-    id: "S", tarih: gun("2026-07-20"), gelir: 2157,
+    id: "S", kod: "S-kod", tarih: gun("2026-07-20"), gelir: 2157,
     net1: 348, net2: 300, paraBirimi: "TRY", durum: "CALCULATED",
   };
   const iadeAgustos: RaporIade = {
-    id: "I", tarih: gun("2026-08-05"),
+    id: "I", satisId: "S", kod: "I-kod", tarih: gun("2026-08-05"),
     net1: -695.11, net2: -600, paraBirimi: "TRY", durum: "CALCULATED",
   };
   const veri: RaporGirdisi = {
@@ -343,8 +344,8 @@ console.log("\n5) KURALLAR");
   const pencere = pencereOlustur("BU_AY", new Date("2026-08-31T09:00:00Z"));
   const cokluSonuc = raporHesapla(pencere, {
     satislar: [
-      { id: "T", tarih: gun("2026-08-05"), gelir: 1000, net1: 100, net2: 80, paraBirimi: "TRY", durum: "CALCULATED" },
-      { id: "T2", tarih: gun("2026-08-06"), gelir: 500, net1: 50, net2: 40, paraBirimi: "TRY", durum: "CALCULATED" },
+      { id: "T", kod: "T-kod", tarih: gun("2026-08-05"), gelir: 1000, net1: 100, net2: 80, paraBirimi: "TRY", durum: "CALCULATED" },
+      { id: "T2", kod: "T2-kod", tarih: gun("2026-08-06"), gelir: 500, net1: 50, net2: 40, paraBirimi: "TRY", durum: "CALCULATED" },
     ],
     iadeler: [],
     giderler: [
@@ -365,10 +366,10 @@ console.log("\n5) KURALLAR");
   // --- 5c) HESAPLANAMAYAN KÂR SIFIR SAYILMAZ ------------------------------
   const eksik = raporHesapla(pencere, {
     satislar: [
-      { id: "A", tarih: gun("2026-08-02"), gelir: 1000, net1: null, net2: null, paraBirimi: "TRY", durum: "NO_COST" },
-      { id: "B", tarih: gun("2026-08-03"), gelir: 2000, net1: null, net2: null, paraBirimi: "TRY", durum: "CURRENCY_MISMATCH" },
-      { id: "C", tarih: gun("2026-08-04"), gelir: 3000, net1: null, net2: null, paraBirimi: "TRY", durum: "NO_COST" },
-      { id: "D", tarih: gun("2026-08-05"), gelir: 4000, net1: 500, net2: 400, paraBirimi: "TRY", durum: "CALCULATED" },
+      { id: "A", kod: "A-kod", tarih: gun("2026-08-02"), gelir: 1000, net1: null, net2: null, paraBirimi: "TRY", durum: "NO_COST" },
+      { id: "B", kod: "B-kod", tarih: gun("2026-08-03"), gelir: 2000, net1: null, net2: null, paraBirimi: "TRY", durum: "CURRENCY_MISMATCH" },
+      { id: "C", kod: "C-kod", tarih: gun("2026-08-04"), gelir: 3000, net1: null, net2: null, paraBirimi: "TRY", durum: "NO_COST" },
+      { id: "D", kod: "D-kod", tarih: gun("2026-08-05"), gelir: 4000, net1: 500, net2: 400, paraBirimi: "TRY", durum: "CALCULATED" },
     ],
     iadeler: [],
     giderler: [],
@@ -388,6 +389,57 @@ console.log("\n5) KURALLAR");
   kontrol(
     "ortalama kâr, BİLİNEN satışa bölünür (400/1)",
     Math.abs((eksik.satisBasinaOrtBrutKar ?? 0) - 400) < TOLERANS,
+  );
+
+  // SAYI YETMEZ — ekran hangi satışa gideceğini bilmeli.
+  kontrol(
+    "sorunlu satışların KİMLİĞİ de döner",
+    eksik.hesaplanamayanSatislar.length === 3,
+    eksik.hesaplanamayanSatislar,
+  );
+  kontrol(
+    "kimlik listesi sayaçla tutarlı",
+    eksik.hesaplanamayanSatislar.length === eksik.hesaplanamayanSatisAdedi,
+  );
+  kontrol(
+    "eskiden yeniye sıralı (en uzun bekleyen başta)",
+    eksik.hesaplanamayanSatislar[0]?.satisId === "A" &&
+      eksik.hesaplanamayanSatislar[2]?.satisId === "C",
+    eksik.hesaplanamayanSatislar.map((k) => k.satisId),
+  );
+  kontrol(
+    "her kaydın nedeni taşınır",
+    eksik.hesaplanamayanSatislar.every((k) => k.durum !== null) &&
+      eksik.hesaplanamayanSatislar[1]?.durum === "CURRENCY_MISMATCH",
+  );
+  kontrol(
+    "hesaplanan satış listeye GİRMEZ",
+    !eksik.hesaplanamayanSatislar.some((k) => k.satisId === "D"),
+  );
+
+  // İade tarafı: bağlantı iadenin bağlı olduğu SATIŞA gider.
+  const iadeEksik = raporHesapla(pencere, {
+    satislar: [],
+    iadeler: [
+      {
+        id: "IX",
+        satisId: "SATIS-42",
+        kod: "TY-42",
+        tarih: gun("2026-08-07"),
+        net1: null,
+        net2: null,
+        paraBirimi: "TRY",
+        durum: "NO_COST",
+      },
+    ],
+    giderler: [],
+  }).paraBirimleri[0]!;
+
+  kontrol(
+    "hesaplanamayan iade satışına bağlanır",
+    iadeEksik.hesaplanamayanIadeler.length === 1 &&
+      iadeEksik.hesaplanamayanIadeler[0]?.satisId === "SATIS-42",
+    iadeEksik.hesaplanamayanIadeler,
   );
 
   // --- 5d) GİDER KDV'Sİ — birim kontrol ----------------------------------

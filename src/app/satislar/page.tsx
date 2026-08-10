@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { Eye, Plus, Undo2 } from "lucide-react";
+import { Eye, Plus, TriangleAlert, Undo2 } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -29,17 +29,30 @@ export async function generateMetadata() {
 export default async function SatislarSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; kar?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, kar } = await searchParams;
   const arama = (q ?? "").trim();
+
+  /**
+   * Dönem raporundaki "kârı hesaplanamadı" uyarısı buraya bağlanır.
+   * Sorunlu satışları aramadan bulabilmek için ayrı bir süzgeç
+   * (Kullanıcı Kolaylığı #9 — bilgiye az tıkla ulaş).
+   */
+  const karEksik = kar === "eksik";
   const bicim = await bicimlendirici();
   const t = await getTranslations("Satis");
   const tIade = await getTranslations("Iade");
   const ortak = await getTranslations("Ortak");
 
   const satislar = await prisma.sale.findMany({
-    where: arama ? { code: { contains: arama } } : undefined,
+    where: {
+      ...(arama ? { code: { contains: arama } } : {}),
+      // Hiç hesaplanmamış (null) VEYA hesaplanamamış olanlar.
+      ...(karEksik
+        ? { OR: [{ profitStatus: null }, { NOT: { profitStatus: "CALCULATED" } }] }
+        : {}),
+    },
     include: {
       items: {
         include: {
@@ -136,6 +149,8 @@ export default async function SatislarSayfasi({
       </div>
 
       <form action="/satislar" className="flex flex-wrap items-end gap-2">
+        {/* Süzgeç aramada kaybolmasın. */}
+        {karEksik ? <input type="hidden" name="kar" value="eksik" /> : null}
         <Input
           name="q"
           defaultValue={arama}
@@ -145,20 +160,39 @@ export default async function SatislarSayfasi({
         <Button type="submit" variant="secondary">
           {ortak("ara")}
         </Button>
-        {arama ? (
+        {arama || karEksik ? (
           <Button type="button" variant="ghost" asChild>
             <Link href="/satislar">{ortak("temizle")}</Link>
           </Button>
         ) : null}
       </form>
 
+      {/* Hangi süzgecin açık olduğu EKRANDA yazar (#5). */}
+      {karEksik ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+          <TriangleAlert className="size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+          <span className="text-sm font-medium text-amber-800 dark:text-amber-300">
+            {t("karEksikFiltresi")}
+          </span>
+          <Badge variant="outline">{satislar.length}</Badge>
+        </div>
+      ) : null}
+
       {satislar.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
           <p className="font-medium">
-            {arama ? t("bosFiltreBaslik") : t("bosBaslik")}
+            {karEksik
+              ? t("bosKarEksikBaslik")
+              : arama
+                ? t("bosFiltreBaslik")
+                : t("bosBaslik")}
           </p>
           <p className="text-muted-foreground mt-1 text-sm">
-            {arama ? t("bosFiltreIpucu") : t("bosIpucu")}
+            {karEksik
+              ? t("bosKarEksikIpucu")
+              : arama
+                ? t("bosFiltreIpucu")
+                : t("bosIpucu")}
           </p>
         </div>
       ) : (

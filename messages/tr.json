@@ -619,7 +619,10 @@
     "yenidenHesaplandi": "Kâr yeniden hesaplandı.",
     "hesaplanamadi": "Yeniden hesaplama yapılamadı.",
     "satisBulunamadi": "Satış bulunamadı.",
-    "degisiklikYok": "Değişiklik yok."
+    "degisiklikYok": "Değişiklik yok.",
+    "karEksikFiltresi": "Kârı hesaplanamayanlar",
+    "bosKarEksikBaslik": "Kârı hesaplanamayan satış yok",
+    "bosKarEksikIpucu": "Bu listedeki her satışın kârı hesaplanmış durumda."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -875,6 +878,8 @@
     "bosBaslik": "Bu dönemde kayıt yok",
     "bosIpucu": "Seçili tarih aralığında satış, iade veya gider bulunmuyor.",
     "paraBirimiNotu": "Para birimleri AYRI raporlanır — kur çevirisi yapılmaz, tek rakama toplanmaz.",
-    "giderEkle": "Gider gir"
+    "giderEkle": "Gider gir",
+    "hesaplanamayanTikla": "Sorunlu kaydın üstüne tıklayın, doğrudan o satışa gidersiniz.",
+    "hepsiniGor": "+{sayi} kayıt daha — hepsini gör"
   }
 }

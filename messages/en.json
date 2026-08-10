@@ -619,7 +619,10 @@
     "yenidenHesaplandi": "",
     "hesaplanamadi": "",
     "satisBulunamadi": "",
-    "degisiklikYok": ""
+    "degisiklikYok": "",
+    "karEksikFiltresi": "",
+    "bosKarEksikBaslik": "",
+    "bosKarEksikIpucu": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -875,6 +878,8 @@
     "bosBaslik": "",
     "bosIpucu": "",
     "paraBirimiNotu": "",
-    "giderEkle": ""
+    "giderEkle": "",
+    "hesaplanamayanTikla": "",
+    "hepsiniGor": ""
   }
 }

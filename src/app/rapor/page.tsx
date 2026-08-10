@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Plus, TriangleAlert } from "lucide-react";
+import { ArrowRight, Plus, TriangleAlert } from "lucide-react";
 
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +52,12 @@ export async function generateMetadata() {
   return { title: tBaslik("rapor") };
 }
 
+/**
+ * Uyarı kutusunda kaç sorunlu kayıt doğrudan gösterilir.
+ * Fazlası kutuyu ekran boyu uzatırdı; kalanı süzülmüş listeye gider.
+ */
+const GORUNEN_SORUN = 6;
+
 export default async function RaporSayfasi({
   searchParams,
 }: {
@@ -97,6 +103,7 @@ export default async function RaporSayfasi({
       where: { soldAt: aralik },
       select: {
         id: true,
+        code: true,
         soldAt: true,
         net1Amount: true,
         net2Amount: true,
@@ -115,6 +122,8 @@ export default async function RaporSayfasi({
       where: { occurredAt: aralik },
       select: {
         id: true,
+        saleId: true,
+        code: true,
         occurredAt: true,
         net1Amount: true,
         net2Amount: true,
@@ -151,6 +160,7 @@ export default async function RaporSayfasi({
 
     return {
       id: satis.id,
+      kod: satis.code,
       tarih: satis.soldAt,
       gelir,
       net1: sayi(satis.net1Amount),
@@ -162,6 +172,8 @@ export default async function RaporSayfasi({
 
   const iadeler: RaporIade[] = iadeKayitlari.map((iade) => ({
     id: iade.id,
+    satisId: iade.saleId,
+    kod: iade.code,
     tarih: iade.occurredAt,
     net1: sayi(iade.net1Amount),
     net2: sayi(iade.net2Amount),
@@ -258,30 +270,67 @@ export default async function RaporSayfasi({
           </div>
         </div>
 
-        {/* ------------------- HESAPLANAMAYANLAR (rozet) ----------------- */}
+        {/* ---------------- HESAPLANAMAYANLAR — TIKLANABİLİR -------------
+            Uyarı "bir sorun var" demekle kalmaz, SORUNUN NEREDE olduğunu
+            gösterir: her kayıt kendi satışına giden bir bağlantıdır.
+            _Kullanıcı isteği 10.08.2026: "tıklayınca problemli olan yere
+            giderse kullanıcı kolaylığı olmuş olur."_                    */}
         {b.hesaplanamayanSatisAdedi > 0 || b.hesaplanamayanIadeAdedi > 0 ? (
-          <div className="space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-            <p className="flex gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
-              <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-              <span>
-                {t("hesaplanamayanBaslik", {
-                  sayi: b.hesaplanamayanSatisAdedi,
-                })}
-              </span>
-            </p>
-            <p className="text-xs text-amber-800 dark:text-amber-300">
-              {t("hesaplanamayanNotu")}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {b.hesaplanamayanDurumlar.map((d) => (
-                <Badge key={d.durum} variant="outline">
-                  {t("durumAdet", {
-                    durum: durumEtiketi(d.durum),
-                    sayi: d.adet,
+          <div className="space-y-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+            <div className="space-y-1">
+              <p className="flex gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+                <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+                <span>
+                  {t("hesaplanamayanBaslik", {
+                    sayi: b.hesaplanamayanSatisAdedi,
                   })}
-                </Badge>
-              ))}
+                </span>
+              </p>
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                {t("hesaplanamayanNotu")} {t("hesaplanamayanTikla")}
+              </p>
             </div>
+
+            <div className="flex flex-wrap gap-2">
+              {[...b.hesaplanamayanSatislar, ...b.hesaplanamayanIadeler]
+                .slice(0, GORUNEN_SORUN)
+                .map((kayit) => (
+                  <Button
+                    key={`${kayit.satisId}-${kayit.tarih.getTime()}`}
+                    variant="outline"
+                    size="sm"
+                    className="border-amber-500/50 bg-background"
+                    asChild
+                  >
+                    <Link href={`/satislar/${kayit.satisId}`}>
+                      <ArrowRight />
+                      <span>{bicim.tarih(kayit.tarih)}</span>
+                      <span className="font-mono text-xs">
+                        {kayit.kod ?? tSatis("siparisNoYok")}
+                      </span>
+                      <Badge variant="secondary">
+                        {durumEtiketi(kayit.durum ?? "RULE_MISSING")}
+                      </Badge>
+                    </Link>
+                  </Button>
+                ))}
+            </div>
+
+            {/* Çok sayıda varsa hepsi listede süzülür. */}
+            {b.hesaplanamayanSatisAdedi + b.hesaplanamayanIadeAdedi >
+            GORUNEN_SORUN ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/satislar?kar=eksik">
+                  {t("hepsiniGor", {
+                    sayi:
+                      b.hesaplanamayanSatisAdedi +
+                      b.hesaplanamayanIadeAdedi -
+                      GORUNEN_SORUN,
+                  })}
+                </Link>
+              </Button>
+            ) : null}
+
             {b.hesaplanamayanIadeAdedi > 0 ? (
               <p className="text-xs text-amber-800 dark:text-amber-300">
                 {t("hesaplanamayanIade", { sayi: b.hesaplanamayanIadeAdedi })}
