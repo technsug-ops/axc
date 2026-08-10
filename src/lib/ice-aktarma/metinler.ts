@@ -73,6 +73,7 @@ export async function sablonMetinleri(): Promise<SablonMetinleri> {
       t("yardim11"),
       t("yardim12"),
       t("yardim13"),
+      t("yardim14"),
     ],
     zorunluIsareti: t("zorunluIsareti"),
   };

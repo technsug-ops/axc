@@ -434,6 +434,36 @@ console.log("\n7) YA HEPSİ YA HİÇİ — tek hata planı tamamen boşaltır");
 
   const bos = calistir(veriKur({}));
   kontrol("bomboş dosya reddedilir", hataVar(bos, "HIC_SATIR_YOK"));
+
+  // --- ARTÇI HATA OLMAZ ---
+  // Ürün satırındaki kategori hatası, o ürünün stok satırlarını da
+  // "SKU tanımsız" diye işaretlememeli: 1 kök neden, 1 hata.
+  const artci = calistir(
+    veriKur({
+      urunler: [satir(2, { urunAdi: "A", sku: "A-1", firmaSku: "FA-1", kategori: "Yok Böyle" })],
+      acilisStogu: [
+        satir(2, { sku: "A-1", adet: "10" }),
+        satir(3, { sku: "A-1", adet: "5" }),
+      ],
+      kanalSku: [satir(2, { sku: "A-1", kanalHesabi: "Trendyol — TR Ana Mağaza" })],
+    }),
+  );
+  kontrol(
+    "kategori hatası stok satırlarına ARTÇI hata üretmez",
+    artci.hatalar.length === 1 && artci.hatalar[0]?.alan === "kategori",
+    artci.hatalar,
+  );
+  kontrol("artçı SKU_TANIMSIZ üretilmedi", !hataVar(artci, "SKU_TANIMSIZ"));
+
+  // Gerçekten hiç bildirilmemiş SKU ise hata YİNE verilir.
+  const gercektenYok = calistir(
+    veriKur({
+      urunler: [satir(2, { urunAdi: "A", sku: "A-1", firmaSku: "FA-1", kategori: "Genel" })],
+      acilisStogu: [satir(2, { sku: "BASKA-SKU", adet: "10" })],
+    }),
+  );
+  kontrol("hiç bildirilmemiş SKU hâlâ yakalanır", hataVar(gercektenYok, "SKU_TANIMSIZ"));
+
   kosanBolumler.push("hepsi-ya-hici");
 }
 

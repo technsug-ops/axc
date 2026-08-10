@@ -995,6 +995,7 @@
     "hataGECERSIZ_SECENEK": "«{alan}» için «{deger}» geçerli değil. Kabul edilenler: {ek}",
     "hataGECERSIZ_TARIH": "«{deger}» tarih olarak okunamadı. Örnek: 01.03.2026",
     "hataPARA_BIRIMI_EKSIK": "Birim maliyet yazdıysanız para birimi de zorunludur (TRY veya EUR).",
-    "hataHIC_SATIR_YOK": "Dosyada hiç veri satırı yok. Örnek satırları silip kendi verinizi yazdınız mı?"
+    "hataHIC_SATIR_YOK": "Dosyada hiç veri satırı yok. Örnek satırları silip kendi verinizi yazdınız mı?",
+    "yardim14": "NOT: «Listeler» sayfası yalnızca BİLGİ içindir. Oraya yeni bir kategori veya raf adı yazmak sistemde o kaydı OLUŞTURMAZ. Yeni kategori için Ayarlar → KDV Kategorileri, yeni raf için Ayarlar → Raf Konumları ekranını kullanın, sonra şablonu yeniden indirin."
   }
 }

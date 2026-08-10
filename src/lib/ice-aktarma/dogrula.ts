@@ -324,6 +324,20 @@ export function iceAktarmaDogrula(
   // =========================================================================
   /** Dosyada tanımlanan SKU -> varyant kimliği (yeni veya mevcut). */
   const dosyaSku = new Map<string, string>();
+
+  /**
+   * ARTÇI HATA ÖNLEYİCİ.
+   *
+   * Ürünler sayfasında BİLDİRİLEN her SKU — satırın başka bir hatası olsa
+   * bile. Açılış stoğu ve kanal SKU sayfaları buna bakar: SKU dosyada
+   * yazılıysa "tanımsız" demeyiz.
+   *
+   * Aksi hâlde tek bir kategori yazım hatası, o ürünün stok satırlarını da
+   * "SKU tanımsız" diye işaretliyor ve kullanıcı 2 gerçek hata yerine 5 hata
+   * görüyordu — hangisinin kök neden olduğu kaybolur.
+   * _10.08.2026, kullanıcının test dosyasında görüldü._
+   */
+  const bildirilenSkular = new Set<string>();
   const dosyadaGorulen = {
     sku: new Map<string, number>(),
     firmaSku: new Map<string, number>(),
@@ -333,6 +347,11 @@ export function iceAktarmaDogrula(
   const urunGruplari = new Map<string, YeniUrun>();
 
   for (const satir of veri.urunler) {
+    // SKU'yu doğrulamadan ÖNCE bildir: satır hatalı olsa da bu SKU dosyada
+    // yazılıdır, alt sayfalar "tanımsız" dememeli.
+    const bildirilenSku = (satir.hucreler["sku"] ?? "").trim();
+    if (bildirilenSku !== "") bildirilenSkular.add(anahtarla(bildirilenSku));
+
     if (!zorunlulariDenetle("urunler", satir)) continue;
 
     const oku = (a: string) => (satir.hucreler[a] ?? "").trim();
@@ -525,6 +544,26 @@ export function iceAktarmaDogrula(
     );
   }
 
+  /**
+   * SKU çözülemedi: gerçekten tanımsız mı, yoksa ürün satırındaki BAŞKA bir
+   * hatanın artçısı mı? İkincisiyse sessiz geçilir — kök neden zaten
+   * bildirildi, aynı sorunu iki kez saymak listeyi bulandırır.
+   */
+  function skuHatasiBildir(
+    sayfa: SayfaAnahtari,
+    satirNo: number,
+    sku: string,
+  ) {
+    if (bildirilenSkular.has(anahtarla(sku))) return;
+    hata({
+      sayfa,
+      satir: satirNo,
+      alan: "sku",
+      kod: "SKU_TANIMSIZ",
+      deger: sku,
+    });
+  }
+
   // =========================================================================
   //  2) AÇILIŞ STOĞU — her satır AYRI bir FIFO partisi
   // =========================================================================
@@ -536,13 +575,7 @@ export function iceAktarmaDogrula(
 
     const varyantId = varyantiBul(sku);
     if (!varyantId) {
-      hata({
-        sayfa: "acilisStogu",
-        satir: satir.satirNo,
-        alan: "sku",
-        kod: "SKU_TANIMSIZ",
-        deger: sku,
-      });
+      skuHatasiBildir("acilisStogu", satir.satirNo, sku);
       continue;
     }
 
@@ -634,7 +667,7 @@ export function iceAktarmaDogrula(
 
     const varyantId = varyantiBul(sku);
     if (!varyantId) {
-      hata({ sayfa: "kanalSku", satir: satir.satirNo, alan: "sku", kod: "SKU_TANIMSIZ", deger: sku });
+      skuHatasiBildir("kanalSku", satir.satirNo, sku);
       continue;
     }
 
