@@ -303,8 +303,8 @@ export default async function GiderlerSayfasi({
                       <TableCell className="text-right whitespace-nowrap">
                         {bicim.para(netDusen, kayit.currency)}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap items-start gap-2">
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex items-center gap-2">
                           {eylemler(kayit)}
                         </div>
                       </TableCell>

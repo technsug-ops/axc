@@ -201,8 +201,8 @@ export default async function UrunlerSayfasi({
                       <TableCell className="text-muted-foreground whitespace-nowrap">
                         {bicim.tarih(urun.createdAt)}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-2">
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex items-center gap-2">
                           {eylemler(urun)}
                         </div>
                       </TableCell>

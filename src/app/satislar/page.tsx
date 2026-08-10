@@ -269,8 +269,8 @@ export default async function SatislarSayfasi({
                         durum={satis.profitStatus}
                       />
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
+                    <TableCell className="whitespace-nowrap">
+                      <div className="flex items-center gap-2">
                         {eylemler(satis)}
                       </div>
                     </TableCell>

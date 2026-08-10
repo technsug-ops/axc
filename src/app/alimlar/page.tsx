@@ -239,8 +239,8 @@ export default async function AlimlarSayfasi({
                         {durumEtiketleri[alim.status]}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
+                    <TableCell className="whitespace-nowrap">
+                      <div className="flex items-center gap-2">
                         {eylemler(alim)}
                       </div>
                     </TableCell>

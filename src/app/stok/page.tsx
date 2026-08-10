@@ -174,8 +174,8 @@ export default async function StokSayfasi({
                         ? bicim.tarih(sonHareketler.get(varyant.id)!)
                         : "—"}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
+                    <TableCell className="whitespace-nowrap">
+                      <div className="flex items-center gap-2">
                         {eylemler(varyant)}
                       </div>
                     </TableCell>

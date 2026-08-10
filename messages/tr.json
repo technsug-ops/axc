@@ -430,7 +430,7 @@
     "alimiKaydet": "Alımı Kaydet",
     "formNotu": "Yeni alım \"Sipariş verildi\" durumunda kaydedilir; mal kabul, alım detayından yapılır.",
     "duzenle": "Alımı düzenle",
-    "iptalEt": "Alımı iptal et",
+    "iptalEt": "İptal",
     "kalemKilitli": "Bu kalemde mal kabul yapıldı; çıkarılamaz.",
     "duzenleUyariBaslik": "Bu alımda mal kabul yapıldı",
     "duzenleUyari": "Adet ve maliyeti düzeltebilirsiniz. Maliyeti değiştirirseniz o partinin stok defterindeki maliyet damgası da düzelir; GEÇMİŞ satışların kârı DEĞİŞMEZ, bundan sonraki satışlar doğru maliyeti kullanır. Sipariş adedi, kabul edilmiş adedin altına indirilemez.",
