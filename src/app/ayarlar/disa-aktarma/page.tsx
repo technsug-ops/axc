@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { YEDEK_TABLOLARI } from "@/lib/yedek";
 
+import { OtomatikYedekDurumu } from "./otomatik-durum";
+
+/** Yedek listesi canlı okunur; statik çizilirse hep aynı anı gösterirdi. */
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
   return { title: tBaslik("disaAktarma") };
@@ -90,12 +95,7 @@ export default async function DisaAktarmaSayfasi() {
           <p className="text-muted-foreground text-sm">
             {t("geriYuklemeMetin")}
           </p>
-          <div className="rounded-lg border p-3">
-            <div className="text-sm font-medium">{t("otomatikBaslik")}</div>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {t("otomatikMetin")}
-            </p>
-          </div>
+          <OtomatikYedekDurumu />
         </CardContent>
       </Card>
     </div>

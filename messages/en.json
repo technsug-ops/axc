@@ -1082,6 +1082,13 @@
     "otomatikBaslik": "",
     "otomatikMetin": "",
     "hafifYedekIndir": "",
-    "hafifYedekNotu": ""
+    "hafifYedekNotu": "",
+    "otomatikKurulu": "",
+    "otomatikKuruluDegil": "",
+    "otomatikHenuzYok": "",
+    "sonYedekler": "",
+    "yedekIndirBaglanti": "",
+    "yedekBoyut": "",
+    "otomatikNotu": ""
   }
 }

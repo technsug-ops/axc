@@ -1082,6 +1082,13 @@
     "otomatikBaslik": "Otomatik yedek",
     "otomatikMetin": "Zamanlanmış otomatik yedek HENÜZ KURULU DEĞİL; hangi sunucuda çalışacağınız belli olunca kurulacak. O güne kadar buradan elle yedek alın.",
     "hafifYedekIndir": "Hafif yedek indir (tarifesiz)",
-    "hafifYedekNotu": "Kargo tarife tablosu 44.841 satır ve dosyanın neredeyse tamamını o kaplıyor; oysa seed ile aynen yeniden üretilebilen referans veridir. Hafif yedek onu dışarıda bırakır — birkaç yüz kilobayt kalır, her gün almaya elverişlidir. Dosyanın içinde eksik olduğu yazar."
+    "hafifYedekNotu": "Kargo tarife tablosu 44.841 satır ve dosyanın neredeyse tamamını o kaplıyor; oysa seed ile aynen yeniden üretilebilen referans veridir. Hafif yedek onu dışarıda bırakır — birkaç yüz kilobayt kalır, her gün almaya elverişlidir. Dosyanın içinde eksik olduğu yazar.",
+    "otomatikKurulu": "Her gece otomatik yedek alınıyor. Son {sayi} yedek aşağıda; {gun} günden eskiler kendiliğinden siliniyor.",
+    "otomatikKuruluDegil": "Otomatik yedek HENÜZ ÇALIŞMIYOR. Kurulumu tamamlamak için Vercel panelinde iki şey gerekiyor: Storage → Blob deposu oluşturup projeye bağlamak, ve Settings → Environment Variables içine CRON_SECRET eklemek. İkisi tamamlanana kadar yalnız elle yedek vardır.",
+    "otomatikHenuzYok": "Depo bağlı ama henüz yedek alınmamış. İlk otomatik yedek bu gece çalışacak.",
+    "sonYedekler": "Son yedekler",
+    "yedekIndirBaglanti": "indir",
+    "yedekBoyut": "{kb} KB",
+    "otomatikNotu": "Otomatik yedek İŞ VERİSİNİN TAMAMINI içerir; yalnızca kargo tarife tablosu dışarıda bırakılır (seed ile yeniden üretilir, dosyanın içinde eksik olduğu yazar). Tam yedeği yukarıdaki düğmeden elle alabilirsiniz."
   }
 }
