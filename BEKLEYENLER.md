@@ -17,16 +17,12 @@ listesiyle birlikte teslim edilir.
 
 ## İlk zorunlu migration ile birlikte
 
-- [ ] **`axcaliSku` → `companySku` yeniden adlandırması**
-      _09.08.2026: Faz 2 / Aşama 2 (kâr motoru) migration'ına binmesi
-      kararlaştırıldı. Migration `ALTER TABLE ... RENAME COLUMN` ile
-      elle yazılacak — Prisma'nın ürettiği DROP+ADD veri kaybettirir._
-      Arayüzde her yerde "Firma SKU" yazıyor (09.08.2026), ama veritabanı
-      alanı hâlâ eski marka adını taşıyor. Tek başına bir migration açmaya
-      değmez; şema değişikliği gerektiren ilk işte birlikte yapılacak.
-      Etkilenecek yerler: `prisma/schema.prisma`, ürün ve alım action'ları,
-      ürün formu, arama sorguları.
-      _Karar 09.08.2026: adlandırma standardının son adımı._
+- [x] ~~**`axcaliSku` → `companySku` yeniden adlandırması**~~
+      _Tamamlandı 09.08.2026, kâr motoru migration'ında
+      (`20260809164359_kar_motoru`). Prisma'nın ürettiği DROP+ADD veri
+      kaybettireceği için migration elle `ALTER TABLE ... CHANGE` olarak
+      yazıldı; önce yedek alındı, sonra iki kaydın da değeri korunduğu
+      doğrulandı. Adlandırma standardının son adımıydı._
 
 - [ ] **Veritabanı adı `axcali_erp`**
       Bağlantı dizesindeki veritabanı adı da eski markayı taşıyor.

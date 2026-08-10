@@ -1,0 +1,72 @@
+import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+
+import { GeriBaglanti } from "@/components/baglanti";
+import { Card, CardContent } from "@/components/ui/card";
+import { tarihGirdisi } from "@/lib/bicim";
+import { gunMetni } from "@/lib/donem";
+import { prisma } from "@/lib/prisma";
+
+import { GiderFormu, type KategoriSecenegi } from "../../gider-formu";
+
+export async function generateMetadata() {
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("giderDuzenle") };
+}
+
+export default async function GiderDuzenleSayfasi({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const t = await getTranslations("Gider");
+
+  const [gider, kayitlar] = await Promise.all([
+    prisma.expense.findUnique({ where: { id } }),
+    prisma.expenseCategory.findMany({
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    }),
+  ]);
+
+  if (!gider) notFound();
+
+  // Pasif kategoriler listede DURUR — geçmiş gider kategorisiz kalmasın.
+  const kategoriler: KategoriSecenegi[] = kayitlar
+    .filter((k) => k.isActive || k.id === gider.categoryId)
+    .map((k) => ({
+      id: k.id,
+      ad: k.name,
+      kdvOrani: String(Number(k.defaultVatRate.toString())),
+      uyariAnahtari: k.warningKey,
+    }));
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div>
+        <GeriBaglanti href="/giderler">{t("baslik")}</GeriBaglanti>
+        <h1 className="mt-1 text-2xl font-semibold">{t("gideriDuzenle")}</h1>
+      </div>
+
+      <Card>
+        <CardContent>
+          <GiderFormu
+            kategoriler={kategoriler}
+            bugun={tarihGirdisi(new Date())}
+            baslangic={{
+              id: gider.id,
+              // İş tarihleri UTC gece yarısı saklanır; girdi biçimine
+              // yerel saatten değil, UTC gününden çevrilir.
+              spentAt: gunMetni(gider.spentAt),
+              categoryId: gider.categoryId,
+              amount: String(Number(gider.amount.toString())),
+              currency: gider.currency,
+              vatRate: String(Number(gider.vatRate.toString())),
+              description: gider.description ?? "",
+            }}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

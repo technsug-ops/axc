@@ -132,8 +132,8 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
   Teknosa, Mediamarkt, Vatan, Pazarama, PTTAvm
 - Bir kanalda birden fazla hesap olabilir (hesap başına alım limiti nedeniyle)
 - Üç kod rolü ayrıdır: SKU (sistem içi), Firma SKU (fiziksel etiket),
-  Barkod/EAN (üretici). Veritabanı alanı hâlâ `axcaliSku`; yeniden
-  adlandırması BEKLEYENLER.md'de.
+  Barkod/EAN (üretici). Veritabanı alanı `companySku`
+  (yeniden adlandırma 09.08.2026'da kâr motoru migration'ında yapıldı).
 - Kanal başına varyantın ayrı ChannelSku'su olabilir
 - Kredi kartı seçim mantığı (ileride): limiti uygun + kesim günü en uzak
   + faizsiz maksimum taksit

@@ -21,6 +21,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { ChannelType } from "../src/generated/prisma/enums";
 import { karMotoruSeed } from "./seed-kar-motoru";
 import { iadeSeed } from "./seed-iade";
+import { giderSeed } from "./seed-gider";
 
 const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
@@ -65,6 +66,9 @@ async function main() {
 
   // Iade sabit verisi: kanal politikasi + ceza tarifeleri.
   await iadeSeed(prisma);
+
+  // Gider kategorileri — baslangic seti; ekrandan degistirilebilir.
+  await giderSeed(prisma);
 }
 
 main()

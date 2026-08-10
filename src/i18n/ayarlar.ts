@@ -47,6 +47,11 @@ export const BICIMLER = {
       month: "2-digit",
       year: "numeric",
     },
+    /** Ağustos 2026 — ay filtreleri ve dönem başlıkları için. */
+    ayYil: {
+      month: "long",
+      year: "numeric",
+    },
   },
 } as const;
 

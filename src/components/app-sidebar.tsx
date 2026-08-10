@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
+  BarChart3,
   Boxes,
   CreditCard,
   MapPin,
@@ -12,6 +13,7 @@ import {
   Receipt,
   ShoppingCart,
   Store,
+  Wallet,
 } from "lucide-react";
 
 import {
@@ -49,6 +51,8 @@ const OPERASYON: MenuOgesi[] = [
   { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
   { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
   { anahtar: "stok", href: "/stok", icon: Boxes, aktif: true },
+  { anahtar: "giderler", href: "/giderler", icon: Wallet, aktif: true },
+  { anahtar: "rapor", href: "/rapor", icon: BarChart3, aktif: true },
   { anahtar: "kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
 ];
 

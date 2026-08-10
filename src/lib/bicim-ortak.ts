@@ -48,6 +48,11 @@ export function bicimOlustur(format: Formatter) {
     tarih(tarih: Date): string {
       return format.dateTime(tarih, "kisa");
     },
+
+    /** Ağustos 2026 — ay filtresi ve dönem başlığı. */
+    ayYil(tarih: Date): string {
+      return format.dateTime(tarih, "ayYil");
+    },
   };
 }
 

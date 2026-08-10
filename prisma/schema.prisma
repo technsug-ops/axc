@@ -927,3 +927,123 @@ model ReturnFee {
   @@index([returnId])
   @@index([returnItemId])
 }
+
+// ============================================================================
+//  GİDER / MUHASEBE  (Faz 2 / Aşama 4)
+// ----------------------------------------------------------------------------
+//  İKİ KATMAN İLKESİ (kullanıcı kararı 10.08.2026):
+//  Genel gider ÜRÜN kârının İÇİNE ASLA girmez. Ürün/satış seviyesi brüt kâr
+//  (NET-1/NET-2) olarak kalır — alım/satış kararları brüt kârla verilir,
+//  batık maliyet yanılgısı önlenir. Genel gider YALNIZCA firma/dönem
+//  seviyesinde düşülür:
+//
+//      GERÇEK NET = Σ NET-2 (iadeler dahil) − dönem giderleri
+//
+//  Bu yüzden burada satış/ürün tarafına HİÇBİR bağ yoktur; olsaydı bir gün
+//  biri "şu gideri şu ürüne dağıtalım" derdi ve ilke sessizce delinirdi.
+// ============================================================================
+
+model ExpenseCategory {
+  id String @id @default(cuid())
+
+  name String @unique
+
+  /// Sabit gider mi (kira, maaş) yoksa değişken mi (sarf malzeme)?
+  /// Dönem raporundaki gider dökümü bu ayrımla gruplanır.
+  isFixed Boolean @default(false)
+
+  /// Bu kategoriye yazılan giderin varsayılan KDV oranı (%).
+  /// Maaş ve vergi gibi KDV'siz kalemlerde 0'dır; formda değiştirilebilir.
+  defaultVatRate Decimal @db.Decimal(5, 2) @default(20)
+
+  /// SİLİNMEZ, pasife alınır — geçmiş giderler kategorisiz kalmasın.
+  isActive Boolean @default(true)
+
+  /// Ekrandaki sıra. Aynı değerdeyse ada göre sıralanır.
+  sortOrder Int @default(0)
+
+  /// Formda çıkacak uyarı metninin sözlük anahtarı. Bugün tek kullanıcısı
+  /// "Vergi": NET-2 ödenecek KDV'yi zaten düşüyor, KDV ödemesi buraya
+  /// girilirse ÇİFT düşer. Metin koda gömülmez, sözlükten çözülür.
+  warningKey String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expenses  Expense[]
+  templates ExpenseTemplate[]
+
+  @@index([isActive])
+}
+
+model Expense {
+  id String @id @default(cuid())
+
+  /// İŞ TARİHİ — giderin hangi döneme yazıldığı. Alım/satışla aynı kalıp:
+  /// takvim günü, UTC gece yarısı. Kayıt zamanı `createdAt`tir, bu değil.
+  spentAt DateTime
+
+  categoryId String
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  /// KDV DAHİL tutar — kâr motoruyla aynı kural (bkz. src/lib/kar.ts).
+  amount   Decimal  @db.Decimal(18, 4)
+  currency Currency
+
+  /// Giderin KDV oranı (%). Kategoriden önerilir, elle değiştirilebilir.
+  /// İNDİRİLEBİLİR sayılır: GERÇEK NET'ten düşen kısım tutarın KDV HARİÇ
+  /// hâlidir, KDV toplamı raporda ayrı satır olur (kullanıcı kararı
+  /// 10.08.2026). KDV'siz gider için 0 girilir → tam tutar düşer.
+  vatRate Decimal @db.Decimal(5, 2)
+
+  description String? @db.Text
+
+  /// Tekrarlayan gider şablonundan kopyalandıysa kaynağı. "Bu ay eklendi mi?"
+  /// kontrolü buradan yapılır — kira iki kez girilmesin.
+  templateId String?
+  template   ExpenseTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([spentAt])
+  @@index([categoryId])
+  @@index([templateId])
+}
+
+/// Tekrarlayan gider ŞABLONU — gider DEĞİLDİR, hiçbir toplama girmez.
+///
+/// AYRI TABLO OLMASI BİLİNÇLİ: aynı tabloda `isTemplate` bayrağı olsaydı, o
+/// filtreyi bir yerde unutan her sorgu rapora hayalet gider yazardı. Aynı
+/// gerekçeyle ReturnFee de SaleFee'den ayrılmıştı. Ayrı tablo bunu yapısal
+/// olarak imkânsız kılar.
+///
+/// OTOMATİK KAYIT ÜRETMEZ. Kullanıcı her ay "bu ay için ekle" der; sistem
+/// kendiliğinden gider yazmaz (kullanıcı kararı 10.08.2026).
+model ExpenseTemplate {
+  id String @id @default(cuid())
+
+  /// "Ofis kirası", "Muhasebeci ücreti"
+  name String
+
+  categoryId String
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  amount   Decimal  @db.Decimal(18, 4)
+  currency Currency
+  vatRate  Decimal  @db.Decimal(5, 2)
+
+  description String? @db.Text
+
+  /// Ayın kaçında ödenir (1-31). Kopyalarken tarihi önerir; boş olabilir.
+  dayOfMonth Int?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expenses Expense[]
+
+  @@index([isActive])
+}

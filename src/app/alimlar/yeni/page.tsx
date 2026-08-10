@@ -10,6 +10,13 @@ import {
   type KartSecenegi,
 } from "../alim-formu";
 
+/**
+ * Forma "bugün" yazan sayfa; statik kipte DERLEME GÜNÜ gömülü kalırdı.
+ * Gerekçenin tamamı: src/app/giderler/yeni/page.tsx.
+ * _10.08.2026'da üretim derlemesi incelenirken bulundu._
+ */
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
   return { title: tBaslik("yeniAlim") };
