@@ -268,7 +268,11 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
 - [ ] **Kimlik standardı — PARÇA 3 (ürün kodları, raf, mükerrer koruması)**
       SKU "Öner" düğmesi (SKU ve Firma SKU'yu AYNI değerle doldurur, `F-`
       öneki yok) · hareket görmüş üründe iki kod da kilitli (ekranda VE
-      sunucuda) · raf kodu deseni ekranda uygulanır (motor hazır) · kod çakışma
+      sunucuda) · raf kodu deseni ekranda uygulanır (motor hazır) ·
+      **raf formunda GÖZ AYRI AÇILIR LİSTE** (kullanıcı kararı 11.08.2026:
+      göz elle koda yazılmaz, listeden seçilir; sistem `A5` + göz `3` →
+      `A5-3` diye birleştirir, düzenlemede geri ayırır. Sebep: elle yazımda
+      "A5 3", "A5/3", "A5-03" gibi üç ayrı yazım doğar) · kod çakışma
       hatası eyleme dönük (barkod + SKU + Firma SKU: hangi üründe kayıtlı
       + "Ürüne git" + "Bu ürüne alım ekle") · ürün formunda ad+marka
       benzerlik sorusu (engel değil, sorgu) · içe aktarmada UYARI KANALI
