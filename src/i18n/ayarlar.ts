@@ -18,6 +18,24 @@ export type Dil = (typeof DILLER)[number];
 export const VARSAYILAN_DIL: Dil = "tr";
 
 /**
+ * ============================================================================
+ *  İŞ SAAT DİLİMİ — TEK SABİT, DEĞİŞMEZ
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı Almanya'da olabilir, sunucu bambaşka bir ülkede duruyor olabilir;
+ *  OPERASYON Türkiye'dedir. "Bugün hangi gün?" sorusunun cevabı çalışma
+ *  ortamına göre değişirse ay raporu, kart kesim günü ve hakediş tarihi
+ *  bulunduğunuz ülkeye göre kayar.
+ *
+ *  Bu yüzden `Intl.DateTimeFormat().resolvedOptions().timeZone` YASAKTIR.
+ *  Hem GÖSTERİM (i18n/request.ts) hem "bugün" ÜRETİMİ (lib/bicim-ortak.ts,
+ *  lib/donem.ts) buradan beslenir.
+ *
+ *  _Karar 09.08.2026, uygulama 10.08.2026 (Faz 2 / Aşama 4)._
+ * ============================================================================
+ */
+export const IS_SAAT_DILIMI = "Europe/Istanbul";
+
+/**
  * Adlandırılmış biçimler. Ekranlar seçenek nesnesi tekrarlamaz,
  * bu adları kullanır — biçim değişirse tek yerden değişir.
  */

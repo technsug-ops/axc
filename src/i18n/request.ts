@@ -1,6 +1,11 @@
 import { getRequestConfig } from "next-intl/server";
 
-import { BICIMLER, VARSAYILAN_DIL, type Dil } from "./ayarlar";
+import {
+  BICIMLER,
+  IS_SAAT_DILIMI,
+  VARSAYILAN_DIL,
+  type Dil,
+} from "./ayarlar";
 
 /**
  * ============================================================================
@@ -54,12 +59,14 @@ export default getRequestConfig(async () => {
     messages: await sozlukYukle(locale),
     formats: BICIMLER,
     /**
-     * Saat dilimi bilinçli olarak çalışma ortamından alınıyor: mevcut
-     * tarih gösterimi bugüne kadar da böyleydi, i18n geçişi görünümü
-     * DEĞİŞTİRMEMELİ. Sabit bir iş saat dilimine (ör. Europe/Istanbul)
-     * geçmek ayrı bir karar; tarihleri kaydırabileceği için burada
-     * yapılmadı.
+     * SAAT DİLİMİ SABİTTİR — çalışma ortamından ASLA okunmaz.
+     * Gerekçesi ve karar tarihi için bkz. i18n/ayarlar.ts → IS_SAAT_DILIMI.
+     *
+     * Geçiş etkisi ölçüldü (scripts/saat-dilimi-kontrol.ts): iş tarihleri
+     * (purchasedAt, soldAt, occurredAt, spentAt) UTC gece yarısı olarak
+     * saklandığı için KAYMAZ. Yalnızca gece yarısına yakın yazılmış
+     * `createdAt` denetim damgaları bir gün oynayabilir.
      */
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timeZone: IS_SAAT_DILIMI,
   };
 });

@@ -12,7 +12,8 @@
     "fifo:dogrula": "tsx scripts/fifo-dogrula.ts",
     "tarife:dogrula": "tsx scripts/tarife-dogrula.ts",
     "kar:dogrula": "tsx scripts/kar-dogrula.ts",
-    "iade:dogrula": "tsx scripts/iade-dogrula.ts"
+    "iade:dogrula": "tsx scripts/iade-dogrula.ts",
+    "rapor:dogrula": "tsx scripts/rapor-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

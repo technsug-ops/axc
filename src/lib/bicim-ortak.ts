@@ -1,6 +1,6 @@
 import type { useFormatter } from "next-intl";
 
-import { paraSecenekleri } from "@/i18n/ayarlar";
+import { IS_SAAT_DILIMI, paraSecenekleri } from "@/i18n/ayarlar";
 
 /**
  * ============================================================================
@@ -53,12 +53,29 @@ export function bicimOlustur(format: Formatter) {
 
 /**
  * <input type="date"> için: 2026-08-09
- * Dil altyapısından geçmez — bu bir görüntü biçimi değil, HTML'in
- * beklediği sabit makine biçimi.
+ *
+ * Dil altyapısından geçmez — bu bir görüntü biçimi değil, HTML'in beklediği
+ * sabit makine biçimi. Bu yüzden i18n kuralındaki "doğrudan Intl yasak"
+ * maddesi buraya işlemez; burada Intl DİL için değil, SAAT DİLİMİ için
+ * kullanılıyor.
+ *
+ * SAAT DİLİMİ: çalışma ortamının değil, İŞİN saat dilimi (Europe/Istanbul).
+ * Almanya'da gece 23:30'da açılan form Türkiye'de ertesi gün olduğu için
+ * yarının tarihini önerir — istenen davranış budur, operasyon Türkiye'de.
+ *
+ * `formatToParts` kullanılıyor: yerel ayarın tarih sıralamasına bağlı
+ * kalmadan yıl-ay-gün parçaları tek tek alınır, biçim garanti edilir.
  */
 export function tarihGirdisi(tarih: Date): string {
-  const yil = tarih.getFullYear();
-  const ay = String(tarih.getMonth() + 1).padStart(2, "0");
-  const gun = String(tarih.getDate()).padStart(2, "0");
-  return `${yil}-${ay}-${gun}`;
+  const parcalar = new Intl.DateTimeFormat("en-US", {
+    timeZone: IS_SAAT_DILIMI,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(tarih);
+
+  const al = (tur: Intl.DateTimeFormatPartTypes) =>
+    parcalar.find((p) => p.type === tur)?.value ?? "";
+
+  return `${al("year")}-${al("month")}-${al("day")}`;
 }
