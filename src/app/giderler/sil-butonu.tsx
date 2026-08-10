@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
 
@@ -70,8 +70,7 @@ export function SilButonu({
 
           <AlertDialogFooter>
             <AlertDialogCancel>{ortak("vazgec")}</AlertDialogCancel>
-            <form onSubmit={(e) => e.preventDefault()}>
-              <input type="hidden" name="id" value={giderId} />
+            <div>
               <Button
                 type="button"
                 variant="destructive"
@@ -79,13 +78,15 @@ export function SilButonu({
                 onClick={() => {
                   const veri = new FormData();
                   veri.set("id", giderId);
-                  formAction(veri);
+                  // GEÇİŞ İÇİNDE: dışarıda çağrılınca React "bekliyor"
+                  // durumunu güncellemiyor ve konsola uyarı düşüyor.
+                  startTransition(() => formAction(veri));
                 }}
               >
                 <Trash2 />
                 {bekliyor ? ortak("kaydediliyor") : t("silOnayla")}
               </Button>
-            </form>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Power, PowerOff, Save, Trash2 } from "lucide-react";
 
@@ -70,6 +70,13 @@ export function SatirDuzenle({
   >(kanalSkuSil, {});
 
   const degisti = alanlar.kanalKodu !== kanalKodu || alanlar.oran !== oran;
+
+  // Silme başarılıysa diyalog kapanır; hata varsa AÇIK kalır ki mesaj görünsün.
+  const [sonSilDurumu, setSonSilDurumu] = useState(silDurumu);
+  if (sonSilDurumu !== silDurumu) {
+    setSonSilDurumu(silDurumu);
+    if (silDurumu.basari) setSilAcik(false);
+  }
 
   const mesajlar = [durum, durumDurumu, silDurumu];
 
@@ -149,12 +156,16 @@ export function SatirDuzenle({
                 onClick={() => {
                   const veri = new FormData();
                   veri.set("id", kayitId);
-                  silAction(veri);
-                  setSilAcik(false);
+                  // GEÇİŞ İÇİNDE çağrılmak ZORUNDA: dışarıda çağrılınca
+                  // React "bekliyor" durumunu güncellemiyor ve konsola uyarı
+                  // düşüyor. Diyalog burada kapatılmaz — silme başarılıysa
+                  // aşağıdaki kontrol kapatır, hata olursa açık kalıp mesajı
+                  // gösterir.
+                  startTransition(() => silAction(veri));
                 }}
               >
                 <Trash2 />
-                {t("silOnayla")}
+                {siliniyor ? ortak("kaydediliyor") : t("silOnayla")}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
