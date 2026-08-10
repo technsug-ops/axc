@@ -10,6 +10,13 @@ import { yedegiMetneCevir, yedekUret } from "@/lib/yedek";
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * Tam yedek 25 tabloyu okuyup tek dosyada birleştiriyor; varsayılan 10
+ * saniyelik sunucusuz işlev süresi büyük veride yetmez. 60 sn, Vercel'in
+ * Hobby planındaki üst sınırdır.
+ */
+export const maxDuration = 60;
+
 export async function GET(istek: Request) {
   const tarifesiz =
     new URL(istek.url).searchParams.get("tarifesiz") === "1";

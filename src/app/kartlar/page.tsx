@@ -21,6 +21,16 @@ import { prisma } from "@/lib/prisma";
 
 import { kartDurumDegistir } from "./actions";
 
+/**
+ * VERİTABANI OKUYAN SAYFA — HER İSTEKTE ÇİZİLİR.
+ *
+ * Statik kipte Next bu sayfayı DERLEME ANINDA üretmeye çalışır ve o sırada
+ * veritabanına bağlanması gerekir. Derlemenin veritabanına bağımlı olması
+ * kırılgandır (Vercel yapı makinesi uzak MySQL'e erişemeyebilir) ve zaten
+ * bir ERP'de liste ekranı canlı veri göstermelidir.
+ */
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
   return { title: tBaslik("kartlar") };

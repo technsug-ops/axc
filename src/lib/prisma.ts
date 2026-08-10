@@ -10,7 +10,20 @@
  *  tekrar kullanılır. Production'da modüller bir kez yüklendiği için global'e
  *  yazmaya gerek yoktur.
  *
- *  KULLANIM:
+ *  NEDEN TEMBEL (LAZY):
+ *  İstemci eskiden modül yüklenirken kuruluyordu ve DATABASE_URL yoksa
+ *  IMPORT ANINDA hata fırlatıyordu. `next build` her sayfayı yüklediği için
+ *  derleme, hiç sorgu yapılmasa bile veritabanına bağımlı hâle geliyordu —
+ *  Vercel'deki ilk dağıtım tam olarak bunun yüzünden patladı (10.08.2026):
+ *
+ *      Error: DATABASE_URL tanımlı değil.
+ *        at module evaluation (src/lib/prisma.ts)
+ *        at module evaluation (src/app/alimlar/[id]/mal-kabul/page.tsx)
+ *
+ *  Artık istemci İLK KULLANIMDA kuruluyor. Bağlantı ayarı eksikse hata yine
+ *  çıkar — ama derleme sırasında değil, gerçekten sorgu yapıldığı anda.
+ *
+ *  KULLANIM (değişmedi):
  *      import { prisma } from "@/lib/prisma";
  *      const urunler = await prisma.product.findMany();
  * ============================================================================
@@ -36,7 +49,34 @@ function createPrismaClient(): PrismaClient {
   return new PrismaClient({ adapter: new PrismaMariaDb(url) });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+let istemci: PrismaClient | undefined;
+
+function istemciyiAl(): PrismaClient {
+  if (istemci) return istemci;
+
+  istemci = globalForPrisma.prisma ?? createPrismaClient();
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = istemci;
+  }
+  return istemci;
+}
+
+/**
+ * Dışarıya istemcinin kendisi değil, ilk erişimde onu kuran bir vekil
+ * (proxy) veriliyor. Çağrı yerleri değişmedi: `prisma.product.findMany()`
+ * aynen çalışır.
+ */
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_hedef, ozellik) {
+    const gercek = istemciyiAl() as unknown as Record<
+      string | symbol,
+      unknown
+    >;
+    const deger = gercek[ozellik];
+    // Metotların `this` bağı korunmalı ($transaction, $disconnect...).
+    return typeof deger === "function" ? deger.bind(gercek) : deger;
+  },
+});
 
 /**
  * İnteraktif transaction içindeki istemci:
@@ -47,7 +87,3 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
  * transaction içinde çalışan yardımcılar hem `prisma` hem `tx` kabul edebilir.
  */
 export type IslemIstemcisi = Omit<PrismaClient, `$${string}`>;
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
