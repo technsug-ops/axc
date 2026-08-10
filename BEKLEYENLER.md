@@ -42,10 +42,17 @@ listesiyle birlikte teslim edilir.
       (`purchasedAt`, `soldAt`, `occurredAt`) KAYMIYOR — tarih girdileri
       UTC gece yarısı olarak saklandığı için iki dilimde de aynı gün._
 
-## Canlıya geçiş ön şartları — ÜÇÜ DE ZORUNLU
+## Canlıya geçiş ön şartları
 
-Bunlar tamamlanmadan gerçek veriyle canlıya geçilmez.
-_Karar 09.08.2026._
+_Karar 09.08.2026. **CANLIYA GEÇİLDİ 10.08.2026** — Vercel + All-Inkl MySQL._
+
+**Canlı ortam:** Vercel projesi `axc` · adres `axc-seven.vercel.app`
+· veritabanı `d047df6e` @ `w0216a46.kasserver.com` (All-Inkl, dış erişim açık).
+`DATABASE_URL` yalnızca Vercel ortam değişkenlerinde durur; depoda yoktur.
+
+Canlı sağlık kontrolü (10.08.2026): 12 sayfa 200, tümü 1,3 sn altında ·
+şablon üretimi 2,0 sn · hafif yedek 4,2 sn · tam yedek 15,2 MB / 9,4 sn
+(60 sn sınırının altında).
 
 - [x] ~~**Veri içe aktarma modülü (Excel/CSV)**~~ — _Tamamlandı 10.08.2026_
       `/ayarlar/ice-aktarma`: şablon indir → kip seç → denetle → önizle →
@@ -75,6 +82,11 @@ _Karar 09.08.2026._
          döküm.
 
 - [ ] **Otomatik veritabanı yedeği** — TEK KALAN ÖN ŞART
+      _10.08.2026: hosting kararı verildi (Vercel), yol açıldı.
+      Vercel panelinde **Cron Jobs** bölümü mevcut; `mysqldump` yok ama
+      `/api/yedek` zaten çalışıyor ve canlıda ölçüldü (tam yedek 9,4 sn).
+      Kalan karar: yedek dosyası NEREYE yazılacak (uzak depolama / e-posta)
+      — Vercel'in dosya sistemi kalıcı değildir._
       Elle yedek 10.08.2026'da tamamlandı (`/ayarlar/disa-aktarma` →
       "Yedek al", JSON tam döküm; kargo tarifesiz hafif sürümü de var).
       Zamanlanmış olan hosting kararına bağlı:
