@@ -81,7 +81,13 @@ Canlı sağlık kontrolü (10.08.2026): 12 sayfa 200, tümü 1,3 sn altında ·
       2. `/ayarlar` altında "tüm veriyi dışa aktar" — tablo tablo tam
          döküm.
 
-- [ ] **TEK KULLANICILI GİRİŞ — gerçek envanterden ÖNCE**
+- [x] ~~**TEK KULLANICILI GİRİŞ**~~ — _Tamamlandı 10.08.2026 (`36f8e84`)_
+      `src/proxy.ts` varsayılan KAPALI: açıkça serbest bırakılmayan her yol
+      giriş ister, yeni ekran korumalı doğar. Parola Node'un scrypt'i,
+      jeton Web Crypto HMAC — sıfır yeni bağımlılık. Parola değişince açık
+      oturumlar kapanır. `oturum:dogrula` 40 kontrol; sonuncusu kaynak
+      ağacını tarayıp korumasız uç kalmadığını doğruluyor.
+      Özgün karar notu:
       _Karar 10.08.2026, canlıya çıkışta ortaya çıktı._
       Sistemde hiç giriş yoktu; deploy edilince adres internete açıldı ve
       URL'yi bilen herkes kâr/maliyet verisini görebilir hâle geldi.
@@ -94,7 +100,12 @@ Canlı sağlık kontrolü (10.08.2026): 12 sayfa 200, tümü 1,3 sn altında ·
       NextAuth v5 beta olduğu için eleniyor; `better-auth` (1.x) ya da
       elle yazılmış oturum.
 
-- [ ] **Otomatik veritabanı yedeği** — TEK KALAN ÖN ŞART
+- [x] ~~**Otomatik veritabanı yedeği**~~ — _Tamamlandı 10.08.2026 (`d40f782`)_
+      Vercel Cron her gece 03:00 (İstanbul) → `/api/yedek/otomatik` →
+      Vercel Blob (Frankfurt, ÖZEL). 30 gün saklanır, eskisi silinir.
+      `CRON_SECRET` yoksa uç nokta kapalı. Canlıda elle tetiklenip
+      doğrulandı. **Üç canlıya geçiş ön şartının üçü de tamam.**
+      Özgün karar notu:
       _10.08.2026: hosting kararı verildi (Vercel), yol açıldı.
       Vercel panelinde **Cron Jobs** bölümü mevcut; `mysqldump` yok ama
       `/api/yedek` zaten çalışıyor ve canlıda ölçüldü (tam yedek 9,4 sn).
@@ -143,7 +154,9 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       ters işaretli ADJUSTMENT + maliyetli yeni giriş üreten bir
       "stok düzeltme" ekranı mı?
 
-- [ ] **Kanal SKU / komisyon oranı ekranı**
+- [x] ~~**Kanal SKU / komisyon oranı ekranı**~~ — _Tamamlandı 10.08.2026 (`9eba8f9`)_
+      `/kanal-sku`: satır içi oran düzenleme, "yalnız oranı eksik olanlar"
+      süzgeci, üstte kaç eşlemede oran yok uyarısı. Özgün not:
       Komisyon oranı `ChannelSku` seviyesinde tutuluyor (haftalık değiştiği
       için) ama onu YAZACAK ekran yok — oran her satışta forma elle
       giriliyor, `RULE_MISSING` de çoğunlukla bundan çıkıyor. Ekran gelince
@@ -195,7 +208,10 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
 
 ## Faz 3 tazminat migration'ına binecek
 
-- [ ] **Tedarikçi kartı (Supplier modeli)**
+- [x] ~~**Tedarikçi kartı (Supplier modeli)**~~ — _Tamamlandı 10.08.2026 (`60f3800`)_
+      Faz 3 migration'ına bindi. Mevcut serbest metin adlar ayrı bir veri
+      taşıma migration'ıyla Supplier kayıtlarına eşlendi; `supplierName`
+      sütunu korundu. Özgün not:
       Bugün alımda tedarikçi **serbest metin** (`Purchase.supplierName`).
       Faz 3'te hasarlı ürün iadesi ve tazminat takibi gelince tedarikçinin
       kayıt olması gerekecek. O migration'a binecek; mevcut serbest metin
