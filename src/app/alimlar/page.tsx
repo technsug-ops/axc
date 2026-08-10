@@ -1,8 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { Eye, PackageCheck, Plus } from "lucide-react";
+import { Eye, Pencil, PackageCheck, Plus } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
+import { AlimIptalButonu } from "./iptal-butonu";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
@@ -52,7 +53,12 @@ export default async function AlimlarSayfasi({
       ...(durumGecerliMi(durumFiltresi) ? { status: durumFiltresi } : {}),
     },
     include: {
-      items: true,
+      items: {
+        include: {
+          // Duzenleme/iptal kurallari icin: mal kabul yapilmis mi?
+          stockMovements: { select: { quantityDelta: true } },
+        },
+      },
       creditCard: { select: { label: true, last4: true } },
       channelAccount: {
         include: { channel: { select: { name: true } } },
@@ -70,6 +76,10 @@ export default async function AlimlarSayfasi({
   function eylemler(alim: (typeof alimlar)[number]) {
     const kabulEdilebilir =
       alim.status !== "CANCELLED" && alim.status !== "RECEIVED";
+    const malKabulVar = alim.items.some((k) =>
+      k.stockMovements.some((h) => h.quantityDelta > 0),
+    );
+    const iptalli = alim.status === "CANCELLED";
     return (
       <>
         <Button variant="outline" size="sm" asChild>
@@ -78,6 +88,21 @@ export default async function AlimlarSayfasi({
             {ortak("detay")}
           </Link>
         </Button>
+        {!iptalli ? (
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/alimlar/${alim.id}/duzenle`}>
+              <Pencil />
+              {ortak("duzenle")}
+            </Link>
+          </Button>
+        ) : null}
+        {!iptalli ? (
+          <AlimIptalButonu
+            alimId={alim.id}
+            kod={alim.code}
+            malKabulVar={malKabulVar}
+          />
+        ) : null}
         {kabulEdilebilir ? (
           <Button size="sm" asChild>
             <Link href={`/alimlar/${alim.id}/mal-kabul`}>

@@ -44,6 +44,22 @@ type Kalem = {
   quantity: number;
   unitCostAmount: string;
   unitCostCurrency: "TRY" | "EUR";
+  /** Bu kalemden KABUL EDİLMİŞ adet. Düzenlemede adet bunun altına inemez. */
+  gelen?: number;
+};
+
+/** Düzenleme kipinde formu dolduran başlangıç değerleri. */
+export type AlimBaslangici = {
+  code: string;
+  purchasedAt: string;
+  channelAccountId: string;
+  creditCardId: string;
+  installmentCount: string;
+  supplierName: string;
+  note: string;
+  kalemler: Kalem[];
+  /** Herhangi bir kalemde mal kabul yapılmış mı? */
+  malKabulVar: boolean;
 };
 
 const SECIM_YOK = "__yok__";
@@ -59,12 +75,19 @@ export function AlimFormu({
   kartlar,
   action,
   bugun,
+  baslangic,
+  alimId,
 }: {
   hesaplar: HesapSecenegi[];
   kartlar: KartSecenegi[];
   action: (durum: AlimDurumu, formData: FormData) => Promise<AlimDurumu>;
   bugun: string;
+  /** Doluysa DÜZENLEME kipi. */
+  baslangic?: AlimBaslangici;
+  /** Düzenlenen alımın kimliği. */
+  alimId?: string;
 }) {
+  const duzenleme = Boolean(baslangic);
   const [durum, formAction, bekliyor] = useActionState<AlimDurumu, FormData>(
     action,
     {},
@@ -75,16 +98,16 @@ export function AlimFormu({
   const bicim = useBicim();
 
   // --- Başlık alanları ---
-  const [code, setCode] = useState("");
-  const [purchasedAt, setPurchasedAt] = useState(bugun);
-  const [channelAccountId, setChannelAccountId] = useState("");
-  const [creditCardId, setCreditCardId] = useState("");
-  const [installmentCount, setInstallmentCount] = useState("1");
-  const [supplierName, setSupplierName] = useState("");
-  const [note, setNote] = useState("");
+  const [code, setCode] = useState(baslangic?.code ?? "");
+  const [purchasedAt, setPurchasedAt] = useState(baslangic?.purchasedAt ?? bugun);
+  const [channelAccountId, setChannelAccountId] = useState(baslangic?.channelAccountId ?? "");
+  const [creditCardId, setCreditCardId] = useState(baslangic?.creditCardId ?? "");
+  const [installmentCount, setInstallmentCount] = useState(baslangic?.installmentCount ?? "1");
+  const [supplierName, setSupplierName] = useState(baslangic?.supplierName ?? "");
+  const [note, setNote] = useState(baslangic?.note ?? "");
 
   // --- Kalemler ---
-  const [kalemler, setKalemler] = useState<Kalem[]>([]);
+  const [kalemler, setKalemler] = useState<Kalem[]>(baslangic?.kalemler ?? []);
 
   const t = useTranslations("Alim");
   const ortak = useTranslations("Ortak");
@@ -219,6 +242,8 @@ export function AlimFormu({
 
   return (
     <form onSubmit={formGonderimi(formAction)} className="space-y-6">
+      {/* Düzenleme kipinde hangi alım güncelleniyor. */}
+      {baslangic ? <input type="hidden" name="id" value={alimId ?? ""} /> : null}
       <input type="hidden" name="veri" value={JSON.stringify(gonderilecek)} />
 
       {/* ----------------------------- BAŞLIK ----------------------------- */}
@@ -463,6 +488,10 @@ export function AlimFormu({
                     type="button"
                     variant="ghost"
                     size="sm"
+                    // Kabul edilmiş kalem çıkarılamaz: malı stok defterine
+                    // yazdık, kalemi silmek defteri sahipsiz bırakırdı.
+                    disabled={(kalem.gelen ?? 0) > 0}
+                    title={(kalem.gelen ?? 0) > 0 ? t("kalemKilitli") : undefined}
                     onClick={() =>
                       setKalemler((onceki) =>
                         onceki.filter((_, i) => i !== sira),
@@ -483,8 +512,10 @@ export function AlimFormu({
                       inputMode="numeric"
                       onChange={(e) =>
                         kalemGuncelle(sira, {
+                          // Sipariş adedi, KABUL EDİLMİŞ adedin altına
+                          // inemez: gelen mal zaten stok defterine yazıldı.
                           quantity: Math.max(
-                            1,
+                            Math.max(1, kalem.gelen ?? 0),
                             Math.trunc(Number(e.target.value) || 1),
                           ),
                         })
@@ -556,7 +587,11 @@ export function AlimFormu({
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={bekliyor || kalemler.length === 0}>
-          {bekliyor ? ortak("kaydediliyor") : t("alimiKaydet")}
+          {bekliyor
+            ? ortak("kaydediliyor")
+            : duzenleme
+              ? ortak("degisiklikleriKaydet")
+              : t("alimiKaydet")}
         </Button>
         <Button type="button" variant="outline" asChild>
           <Link href="/alimlar">{ortak("vazgec")}</Link>

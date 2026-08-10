@@ -144,7 +144,12 @@ Canlı sağlık kontrolü (10.08.2026): 12 sayfa 200, tümü 1,3 sn altında ·
 ortaya çıktı: uyarı kullanıcıyı bir yere göndermek istiyor ama o ekran yok.
 Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
 
-- [ ] **Alım düzenleme ekranı**
+- [x] ~~**Alım düzenleme ekranı**~~ — _Tamamlandı 10.08.2026_
+      `/alimlar/[id]/duzenle` + iptal. Kullanıcı kararı: mal kabul edilmiş
+      alımda **maliyet düzeltilince defterdeki maliyet damgası da düzelir**
+      (geçmiş satışlar etkilenmez, bundan sonrakiler doğru hesaplar).
+      Adet de düzeltilebilir ama kabul edilmiş adedin altına inemez.
+      Özgün not:
       `NO_COST` ve `CURRENCY_MISMATCH` durumlarının GERÇEK çözümü alım
       kaydını düzeltmektir: birim maliyet boş bırakılmış ya da para birimi
       yanlış seçilmiştir. Bugün `/alimlar/[id]` yalnızca detay gösteriyor,
