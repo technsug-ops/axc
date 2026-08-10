@@ -224,6 +224,33 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       tedarikçisiz kalmayacak.
       _Karar 09.08.2026: ayrı migration açmaya değmez._
 
+## Faz 3 — kalan parçalar
+
+- [x] ~~**Kart borcu ekranı**~~ — _Tamamlandı 10.08.2026_
+      `/kart-borcu`: kart başına ay ay ekstre dökümü, hangi alım hangi
+      ekstrede, taksit kalemleri, bekleyen toplam ve kalan limit. Ayrı
+      ekstre kaydı TUTULMAZ — alımlardan türetilir. Kesim günü girilmemiş
+      kartta uyarı EYLEME DÖNÜK: kart düzenlemeye bağlantı verir.
+
+- [ ] **Hakediş içe aktarma** — SIRADAKİ İŞ
+      Pazaryeri hakediş raporundaki sipariş numaraları satışlarla eşleştirilir;
+      eşleşmeyenler hata listesinde. Şema hazır (Settlement/SettlementItem),
+      `payoutDays` alanı bekliyor.
+      _Karar 10.08.2026: kullanıcı gerçek TY + HB hakediş raporlarını
+      toplayınca, o raporların GERÇEK kolon yapısıyla yazılacak. Uydurma
+      bir kolon şemasına göre yazmak boşa iş olurdu._
+
+- [ ] **Tazminat ekranı** — tedarikçiden alacak takibi (şema hazır)
+
+- [ ] **Kimlik standardı paketi** — SKU / alım numarası / raf kodu biçimi
+      Mevcut kayıtlar sorunu gösteriyor: `ewe`, `wew`, `25-23` gibi alım
+      kodları bilgi taşımıyor; raf kodları iki farklı yazımda (`a-01`, `a02`).
+      Öneri: otomatik SKU önerisi (değiştirilebilir), otomatik alım numarası
+      (elle girilemez), raf kodu biçim doğrulaması.
+      _Kullanıcının cevaplaması beklenen üç soru var: SKU biçimi tireli mi
+      bitişik mi · alım numarasında elle giriş kapansın mı · paket Faz 3'ün
+      içinde mi sonrasında mı._
+
 ## Faz sırasına göre zaten planlı olanlar
 
 Bunlar eksik değil, sırası gelmedi (bkz. CLAUDE.md → Faz sırası):

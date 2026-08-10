@@ -26,7 +26,8 @@
     "kanalSku": "Kanal SKU ve komisyon",
     "disaAktarma": "Dışa aktarma ve yedek",
     "giris": "Giriş",
-    "elKitabi": "Kullanıcı El Kitabı"
+    "elKitabi": "Kullanıcı El Kitabı",
+    "kartBorcu": "Kart borcu"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -522,7 +523,8 @@
     "kanalSku": "Kanal SKU",
     "kanalSkulari": "Kanal SKU",
     "veriDisari": "Dışa Aktarma",
-    "elKitabi": "El Kitabı"
+    "elKitabi": "El Kitabı",
+    "kartBorcu": "Kart Borcu"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -1135,5 +1137,33 @@
   "ElKitabi": {
     "dosyaIndir": "HTML olarak indir",
     "dosyaAdi": "selliora-el-kitabi"
+  },
+  "KartBorcu": {
+    "baslik": "Kart borcu",
+    "aciklamaMetni": "Alımlarınızdan türetilir — ayrı ekstre kaydı tutulmaz. Alım tarihi, kartın kesim günü ve taksit sayısı hangi borcun hangi aya düştüğünü belirler.",
+    "bekleyenToplam": "Bekleyen toplam",
+    "bekleyenNotu": "Henüz kesilmemiş ekstreler",
+    "kalanLimit": "Kalan limit",
+    "limitYok": "Limit girilmemiş",
+    "limitDoluluk": "Limitin %{oran} kadarı kullanımda",
+    "limitAsildi": "LİMİT AŞILDI",
+    "kesimGunu": "Kesim günü",
+    "sonOdemeGunu": "Son ödeme günü",
+    "ayinGunu": "her ayın {gun}. günü",
+    "ekstre": "Ekstre",
+    "sonOdeme": "Son ödeme",
+    "gecmisEkstre": "geçmiş",
+    "taksitEki": "{sira}/{toplam}. taksit",
+    "tekCekim": "tek çekim",
+    "ekstreYok": "Bu kartla yapılmış alım yok.",
+    "hesaplanamazBaslik": "Bu kartın borcu hesaplanamıyor",
+    "hesaplanamazMetin": "Hesap kesim günü girilmemiş. Borcun hangi aya düştüğü bu güne göre belirlendiği için hesap yapılamıyor — sıfır göstermek yanlış olurdu.",
+    "kartiDuzenle": "Kartı düzenle",
+    "farkliParaBirimi": "Farklı para birimindeki {sayi} alım bu hesaba KATILMADI",
+    "farkliParaBirimiNotu": "Kart {paraBirimi} ekstresi kesiyor; başka para birimindeki alımlar kur çevrilmeden toplanamaz.",
+    "kartYokBaslik": "Tanımlı kart yok",
+    "kartYokIpucu": "Alımlarınızı hangi kartla yaptığınızı takip edebilmek için önce kart tanımlayın.",
+    "borcDokumu": "Borç dökümü",
+    "varsayimNotu": "İki varsayım: kesim GÜNÜNDE yapılan alım o ayın ekstresine düşer; taksitte bölünmeyen kuruş son taksite eklenir. İlk gerçek ekstrenizle karşılaştırıp teyit edin."
   }
 }

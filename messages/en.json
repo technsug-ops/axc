@@ -26,7 +26,8 @@
     "kanalSku": "",
     "disaAktarma": "",
     "giris": "",
-    "elKitabi": ""
+    "elKitabi": "",
+    "kartBorcu": ""
   },
   "Ortak": {
     "kapat": "",
@@ -522,7 +523,8 @@
     "kanalSku": "",
     "kanalSkulari": "",
     "veriDisari": "",
-    "elKitabi": ""
+    "elKitabi": "",
+    "kartBorcu": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -1135,5 +1137,33 @@
   "ElKitabi": {
     "dosyaIndir": "",
     "dosyaAdi": ""
+  },
+  "KartBorcu": {
+    "baslik": "",
+    "aciklamaMetni": "",
+    "bekleyenToplam": "",
+    "bekleyenNotu": "",
+    "kalanLimit": "",
+    "limitYok": "",
+    "limitDoluluk": "",
+    "limitAsildi": "",
+    "kesimGunu": "",
+    "sonOdemeGunu": "",
+    "ayinGunu": "",
+    "ekstre": "",
+    "sonOdeme": "",
+    "gecmisEkstre": "",
+    "taksitEki": "",
+    "tekCekim": "",
+    "ekstreYok": "",
+    "hesaplanamazBaslik": "",
+    "hesaplanamazMetin": "",
+    "kartiDuzenle": "",
+    "farkliParaBirimi": "",
+    "farkliParaBirimiNotu": "",
+    "kartYokBaslik": "",
+    "kartYokIpucu": "",
+    "borcDokumu": "",
+    "varsayimNotu": ""
   }
 }

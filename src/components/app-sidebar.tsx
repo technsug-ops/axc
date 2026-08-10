@@ -10,6 +10,7 @@ import {
   CreditCard,
   Download,
   FileSpreadsheet,
+  Landmark,
   MapPin,
   Package,
   Percent,
@@ -61,6 +62,7 @@ const OPERASYON: MenuOgesi[] = [
   { anahtar: "giderler", href: "/giderler", icon: Wallet, aktif: true },
   { anahtar: "rapor", href: "/rapor", icon: BarChart3, aktif: true },
   { anahtar: "kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
+  { anahtar: "kartBorcu", href: "/kart-borcu", icon: Landmark, aktif: true },
 ];
 
 const AYARLAR: MenuOgesi[] = [

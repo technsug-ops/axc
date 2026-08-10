@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { Eye, Pencil, Plus } from "lucide-react";
+import { Eye, Pencil, Landmark, Plus } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
@@ -44,6 +44,7 @@ export default async function KartlarSayfasi() {
 
   const bicim = await bicimlendirici();
   const t = await getTranslations("Kart");
+  const tBorc = await getTranslations("KartBorcu");
   const ortak = await getTranslations("Ortak");
 
   function limitMetni(kart: (typeof kartlar)[number]) {
@@ -94,12 +95,20 @@ export default async function KartlarSayfasi() {
             {t("sayi", { sayi: kartlar.length })}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/kartlar/yeni">
-            <Plus />
-            {t("yeniKart")}
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/kart-borcu">
+              <Landmark />
+              {tBorc("borcDokumu")}
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/kartlar/yeni">
+              <Plus />
+              {t("yeniKart")}
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {kartlar.length === 0 ? (
