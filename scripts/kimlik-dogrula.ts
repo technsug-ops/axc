@@ -186,29 +186,47 @@ console.log("\n4) SIRA VE BİRLEŞTİRME");
 console.log("\n5) RAF KODU");
 // ===========================================================================
 {
-  kontrol("A-01 geçerli", rafKoduGecerliMi("A-01"));
-  kontrol("A-01-3 geçerli (gözlü)", rafKoduGecerliMi("A-01-3"));
-  kontrol("a-01 geçersiz (küçük harf)", !rafKoduGecerliMi("a-01"));
-  kontrol("a02 geçersiz (tiresiz)", !rafKoduGecerliMi("a02"));
-  kontrol("A-1 geçersiz (tek rakam)", !rafKoduGecerliMi("A-1"));
-  kontrol("AB-01 geçersiz (iki bölge harfi)", !rafKoduGecerliMi("AB-01"));
-  kontrol("A-01-33 geçersiz (iki haneli göz)", !rafKoduGecerliMi("A-01-33"));
+  /**
+   * CANLI DEPONUN GERÇEK RAF KODLARI (11.08.2026, 40 kayıt).
+   * Kural bu listeye uyduruldu, liste kurala değil: desen bunlardan birini
+   * bile geçersiz sayarsa depoda etiket değiştirmek gerekirdi.
+   */
+  const CANLI_RAFLAR = [
+    ...Array.from({ length: 27 }, (_, i) => `A${i + 1}`), // A1 … A27  (ofis)
+    "B3", "B4", "B5", "B6",
+    ...Array.from({ length: 8 }, (_, i) => `R${i + 1}`), // R1 … R8   (depo)
+    "DEPO",
+  ];
 
-  kontrol("a02 -> A-02 önerisi", rafKoduDuzelt("a02") === "A-02");
-  kontrol("a-01-3 -> A-01-3 önerisi", rafKoduDuzelt("a-01-3") === "A-01-3");
-  kontrol("A 01 -> A-01 önerisi", rafKoduDuzelt("A 01") === "A-01");
-  kontrol("kapi yani -> öneri yok", rafKoduDuzelt("kapi yani") === null);
-  kontrol("a0123 -> öneri yok (çok rakam)", rafKoduDuzelt("a0123") === null);
-
-  // CANLI VERİDEKİ İKİZ: "a-01" ve "a02" aynı rafın iki kaydı ("kapi yani").
-  // Düzeltici bunları BİRLEŞTİRMEZ — hangisinin doğru olduğu bilinemez.
-  // Sessizce tahmin etmek yanlış rafa yönlendirir; birleştirme kullanıcının
-  // onayıyla ayrı araçta yapılır.
+  const gecersizler = CANLI_RAFLAR.filter((k) => !rafKoduGecerliMi(k));
   kontrol(
-    "ikizler ayrı kalır (a-01 != a02)",
-    rafKoduDuzelt("a-01") !== rafKoduDuzelt("a02"),
-    `${rafKoduDuzelt("a-01")} / ${rafKoduDuzelt("a02")}`,
+    `canlıdaki ${CANLI_RAFLAR.length} rafın hepsi geçerli`,
+    gecersizler.length === 0,
+    gecersizler,
   );
+
+  kontrol("A5 geçerli", rafKoduGecerliMi("A5"));
+  kontrol("A27 geçerli (iki haneli)", rafKoduGecerliMi("A27"));
+  kontrol("DEPO geçerli (isimli alan)", rafKoduGecerliMi("DEPO"));
+  kontrol("A5-3 geçerli (göz eki)", rafKoduGecerliMi("A5-3"));
+  // Eski tireli biçim de kabul: geçmişte öyle yazılmış kayıt varsa kırılmasın.
+  kontrol("A-01 geçerli (eski biçim de kabul)", rafKoduGecerliMi("A-01"));
+
+  kontrol("a5 geçersiz (küçük harf)", !rafKoduGecerliMi("a5"));
+  kontrol("KAPIYANI geçersiz (4 harften uzun)", !rafKoduGecerliMi("KAPIYANI"));
+  kontrol("A 5 geçersiz (boşluk)", !rafKoduGecerliMi("A 5"));
+  kontrol("A12345 geçersiz (çok rakam)", !rafKoduGecerliMi("A12345"));
+  kontrol("boş geçersiz", !rafKoduGecerliMi(""));
+
+  kontrol("a5 -> A5 önerisi", rafKoduDuzelt("a5") === "A5");
+  kontrol("a 5 -> A5 önerisi", rafKoduDuzelt("a 5") === "A5");
+  kontrol("depo -> DEPO önerisi", rafKoduDuzelt("depo") === "DEPO");
+  kontrol("r1 -> R1 önerisi", rafKoduDuzelt(" r1 ") === "R1");
+  kontrol("kapi yani -> öneri yok", rafKoduDuzelt("kapi yani") === null);
+
+  // YAPI DEĞİŞTİRİLMEZ: "A-01" -> "A1" yapılmaz. Sıfırın anlamlı olup
+  // olmadığı bilinemez; yanlış rafa yönlendirmek hiç düzeltmemekten kötüdür.
+  kontrol("A-01 yapısı korunur (A1'e çevrilmez)", rafKoduDuzelt("a-01") === "A-01");
   kosanBolumler.push("raf");
 }
 

@@ -268,9 +268,7 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
 - [ ] **Kimlik standardı — PARÇA 3 (ürün kodları, raf, mükerrer koruması)**
       SKU "Öner" düğmesi (SKU ve Firma SKU'yu AYNI değerle doldurur, `F-`
       öneki yok) · hareket görmüş üründe iki kod da kilitli (ekranda VE
-      sunucuda) · raf kodu deseni `[A-Z]-\d{2}(-\d)?` · raf birleştirme
-      aracı (önizleme → onay → yaz; bugünkü atama taşınır, GEÇMİŞ stok
-      hareketleri ledger kuralı gereği olduğu gibi kalır) · kod çakışma
+      sunucuda) · raf kodu deseni ekranda uygulanır (motor hazır) · kod çakışma
       hatası eyleme dönük (barkod + SKU + Firma SKU: hangi üründe kayıtlı
       + "Ürüne git" + "Bu ürüne alım ekle") · ürün formunda ad+marka
       benzerlik sorusu (engel değil, sorgu) · içe aktarmada UYARI KANALI
@@ -278,6 +276,20 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       _`enYakin()` (Levenshtein) `ice-aktarma/dogrula.ts` içinde var;
       ortak modüle taşınacak — ürün formu içe aktarmanın içinden bir şey
       çağırmamalı._
+
+- [x] ~~**Raf kodu standardı — canlı depoya göre düzeltildi**~~ ✓ 11.08.2026
+      Önce `[A-Z]-\d{2}(-\d)?` önerilmişti; gerekçe olarak "a-01 ve a02 aynı
+      rafın iki kaydı" gösterilmişti. O kayıtlar YEREL DEMO veritabanındaydı.
+      Canlı veriye bakıldı: depoda 40 raf var ve hepsi zaten tutarlı —
+      A1-A27 (ofis), B3-B6, R1-R8 (depo), DEPO. Tireli biçimi dayatmak 40
+      etiketin FİZİKSEL olarak yeniden basılması demekti.
+      Desen depoya uyduruldu: `^[A-Z]{1,4}\d{0,3}(-\d{1,2})?$` — 40 rafın
+      kırkı da geçerli, `A5-3` gibi göz eki ileride açık, eski `A-01` biçimi
+      de kabul, ama `kapi yani` gibi serbest metin reddediliyor.
+      `kimlik:dogrula` bu 40 kodu her koşumda sınıyor.
+      **Raf birleştirme aracı GEREKSİZ** — canlıda birleştirilecek ikiz yok.
+      _Ders: kural yazmadan önce canlı veriye bak; demo çöpü sahte sorun
+      üretiyor._
 
 - [ ] **Kimlik kodu türetme — mevcut kayıtlar**
       Kategori ve tedarikçi kodları BOŞ doğdu (migration salt ekleme).

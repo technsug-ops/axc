@@ -227,38 +227,47 @@ export function alimNoUret(parcalar: {
 // ---------------------------------------------------------------------------
 
 /**
- * Bölge-Raf-Göz: A-01-3 (A bölgesi, 1. raf, 3. göz). Göz isteğe bağlıdır;
- * küçük depoda bölge+raf yeter, göz sonradan eklenebilir.
+ * DEPONUN KENDİ DÜZENİ ESAS ALINIR — bölge harfi + numara: A1, A27, B3, R1.
+ * Ayrıca isimlendirilmiş alan: DEPO. İsteğe bağlı göz eki: A5-3.
  *
- * Neden desen zorunlu: bugün "a-01" ve "a02" diye İKİ ayrı raf kaydı var ve
- * ikisinin de adı "kapi yani" — yani aynı raf iki kere yazılmış. Serbest
- * metin bunu engelleyemez.
+ * NEDEN BÖYLE, "A-01-3" DEĞİL:
+ * 11.08.2026'da canlı veriye bakıldı — depoda 40 raf var ve hepsi zaten
+ * tutarlı: A1-A27 (ofis), B3-B6, R1-R8 (depo), DEPO. "A-01" biçimini
+ * dayatmak 40 etiketin FİZİKSEL olarak yeniden basılması demekti; hiçbir
+ * karşılığı yokken.
+ *
+ * Önce "a-01 ve a02 aynı rafın iki kaydı" diye örnek verilmişti; o kayıtlar
+ * YEREL DEMO veritabanındaydı, gerçek depoda öyle bir karışıklık yok.
+ * Kural gerçek veriye bakılarak düzeltildi.
+ *
+ * Desenin işi standardı değiştirmek değil, SERBEST METNİ engellemek:
+ * "kapi yani" gibi bir kod hâlâ reddedilir.
  */
-export const RAF_DESENI = /^[A-Z]-\d{2}(-\d)?$/;
+export const RAF_DESENI = /^[A-Z]{1,4}\d{0,3}(-\d{1,2})?$/;
 
 export function rafKoduGecerliMi(kod: string): boolean {
   return RAF_DESENI.test(kod.trim());
 }
 
 /**
- * Serbest yazılmış rafı standarda çevirmeye ÇALIŞIR — "a02" → "A-02".
- * Çeviremezse null döner; sessizce uydurmaz.
+ * Yazımı standarda çeker: büyük harfe alır, boşlukları siler — "a5" → "A5".
  *
- * Kullanıcının yazdığını KENDİLİĞİNDEN değiştirmez: dönen değer ekranda
- * "şunu mu demek istediniz?" önerisi olarak gösterilir, onay kullanıcınındır.
+ * SADECE YAZIM DÜZELTİR, YAPI DEĞİŞTİRMEZ. "A-01"i "A1"e çevirmez: sıfırın
+ * anlamlı olup olmadığını bilemez ve yanlış rafa yönlendirmek, hiç
+ * düzeltmemekten kötüdür. Çeviremezse null döner, uydurmaz.
+ *
+ * Dönen değer ekranda "şunu mu demek istediniz?" önerisidir; onay
+ * kullanıcınındır.
  */
 export function rafKoduDuzelt(ham: string): string | null {
-  const harfler = harfleriKatla(ham);
-  const rakamlar = ham.replace(/\D/g, "");
+  const temiz = ham
+    .trim()
+    .replace(/\s+/g, "")
+    .toLocaleUpperCase("tr")
+    // Türkçe harfler raf kodunda kullanılmaz; katlama ASCII'ye indirir.
+    .split("")
+    .map((h) => TURKCE_HARFLER[h] ?? h)
+    .join("");
 
-  // Tek bölge harfi + 2 ya da 3 rakam bekleniyor: A + 01 (+ göz)
-  if (harfler.length !== 1) return null;
-  if (rakamlar.length !== 2 && rakamlar.length !== 3) return null;
-
-  const bolge = harfler;
-  const raf = rakamlar.slice(0, 2);
-  const goz = rakamlar.slice(2);
-
-  const kod = goz ? `${bolge}${AYRAC}${raf}${AYRAC}${goz}` : `${bolge}${AYRAC}${raf}`;
-  return rafKoduGecerliMi(kod) ? kod : null;
+  return rafKoduGecerliMi(temiz) ? temiz : null;
 }
