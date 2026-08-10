@@ -20,7 +20,7 @@
 -- 1) Benzersiz adlar için tedarikçi kaydı aç.
 INSERT INTO `Supplier` (`id`, `name`, `isActive`, `createdAt`, `updatedAt`)
 SELECT UUID(), TRIM(p.`supplierName`), TRUE, NOW(3), NOW(3)
-FROM `purchase` p
+FROM `Purchase` p
 WHERE p.`supplierName` IS NOT NULL
   AND TRIM(p.`supplierName`) <> ''
   AND NOT EXISTS (
@@ -29,7 +29,7 @@ WHERE p.`supplierName` IS NOT NULL
 GROUP BY TRIM(p.`supplierName`);
 
 -- 2) Alımları o kayıtlara bağla.
-UPDATE `purchase` p
+UPDATE `Purchase` p
 JOIN `Supplier` s ON s.`name` = TRIM(p.`supplierName`)
 SET p.`supplierId` = s.`id`
 WHERE p.`supplierName` IS NOT NULL

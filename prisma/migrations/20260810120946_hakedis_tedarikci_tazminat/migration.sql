@@ -1,8 +1,8 @@
 -- AlterTable
-ALTER TABLE `channelaccount` ADD COLUMN `payoutDays` INTEGER NULL;
+ALTER TABLE `ChannelAccount` ADD COLUMN `payoutDays` INTEGER NULL;
 
 -- AlterTable
-ALTER TABLE `purchase` ADD COLUMN `supplierId` VARCHAR(191) NULL;
+ALTER TABLE `Purchase` ADD COLUMN `supplierId` VARCHAR(191) NULL;
 
 -- CreateTable
 CREATE TABLE `Supplier` (

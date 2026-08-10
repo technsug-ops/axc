@@ -4,10 +4,10 @@
 -- ceza tarifesi (PenaltyTariff) ve kanal iade politikasi.
 -- TAMAMEN EK: hic DROP COLUMN / DROP TABLE yok.
 -- AlterTable
-ALTER TABLE `channel` ADD COLUMN `disputedReshipPaidBySeller` BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE `Channel` ADD COLUMN `disputedReshipPaidBySeller` BOOLEAN NOT NULL DEFAULT false;
 
 -- AlterTable
-ALTER TABLE `stockmovement` ADD COLUMN `returnItemId` VARCHAR(191) NULL,
+ALTER TABLE `StockMovement` ADD COLUMN `returnItemId` VARCHAR(191) NULL,
     MODIFY `type` ENUM('INITIAL', 'PURCHASE_IN', 'SALE_OUT', 'RETURN_IN', 'EXCHANGE_OUT', 'ADJUSTMENT', 'COUNT_CORRECTION') NOT NULL;
 
 -- CreateTable

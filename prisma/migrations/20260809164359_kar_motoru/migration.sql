@@ -7,14 +7,14 @@
 -- Migration öncesi mysqldump yedeği alındı.
 
 -- DropIndex
-DROP INDEX `ProductVariant_axcaliSku_key` ON `productvariant`;
+DROP INDEX `ProductVariant_axcaliSku_key` ON `ProductVariant`;
 
 -- AlterTable
-ALTER TABLE `channelsku` ADD COLUMN `commissionRate` DECIMAL(5, 2) NULL,
+ALTER TABLE `ChannelSku` ADD COLUMN `commissionRate` DECIMAL(5, 2) NULL,
     ADD COLUMN `commissionUpdatedAt` DATETIME(3) NULL;
 
 -- AlterTable
-ALTER TABLE `product` ADD COLUMN `categoryId` VARCHAR(191) NULL,
+ALTER TABLE `Product` ADD COLUMN `categoryId` VARCHAR(191) NULL,
     ADD COLUMN `desi` DECIMAL(9, 3) NULL,
     ADD COLUMN `vatRateOverride` DECIMAL(5, 2) NULL;
 
@@ -23,10 +23,10 @@ ALTER TABLE `product` ADD COLUMN `categoryId` VARCHAR(191) NULL,
 -- O biçim Firma SKU verisinin TAMAMINI siler ve dolu tabloda NOT NULL
 -- kolon eklemeye çalıştığı için zaten hata verirdi.
 -- CHANGE ile kolon YENİDEN ADLANDIRILIR, veri yerinde kalır.
-ALTER TABLE `productvariant` CHANGE `axcaliSku` `companySku` VARCHAR(191) NOT NULL;
+ALTER TABLE `ProductVariant` CHANGE `axcaliSku` `companySku` VARCHAR(191) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `sale` ADD COLUMN `calculatedAt` DATETIME(3) NULL,
+ALTER TABLE `Sale` ADD COLUMN `calculatedAt` DATETIME(3) NULL,
     ADD COLUMN `cargoAmount` DECIMAL(18, 4) NULL,
     ADD COLUMN `cargoCarrierId` VARCHAR(191) NULL,
     ADD COLUMN `cargoCurrency` ENUM('TRY', 'EUR') NULL,
@@ -37,7 +37,7 @@ ALTER TABLE `sale` ADD COLUMN `calculatedAt` DATETIME(3) NULL,
     ADD COLUMN `profitStatus` ENUM('CALCULATED', 'NO_COST', 'CURRENCY_MISMATCH', 'RULE_MISSING') NULL;
 
 -- AlterTable
-ALTER TABLE `saleitem` ADD COLUMN `commissionRate` DECIMAL(5, 2) NULL,
+ALTER TABLE `SaleItem` ADD COLUMN `commissionRate` DECIMAL(5, 2) NULL,
     ADD COLUMN `net1Amount` DECIMAL(18, 4) NULL,
     ADD COLUMN `net2Amount` DECIMAL(18, 4) NULL,
     ADD COLUMN `profitStatus` ENUM('CALCULATED', 'NO_COST', 'CURRENCY_MISMATCH', 'RULE_MISSING') NULL,

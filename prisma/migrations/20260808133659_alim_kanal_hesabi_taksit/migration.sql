@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `purchase` ADD COLUMN `channelAccountId` VARCHAR(191) NULL,
+ALTER TABLE `Purchase` ADD COLUMN `channelAccountId` VARCHAR(191) NULL,
     ADD COLUMN `installmentCount` INTEGER NOT NULL DEFAULT 1,
     MODIFY `goodsAmount` DECIMAL(18, 4) NULL,
     MODIFY `goodsCurrency` ENUM('TRY', 'EUR') NULL;
