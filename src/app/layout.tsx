@@ -61,6 +61,24 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
 
   if (oturumCerezi && !kullanici) redirect("/cikis");
 
+  /**
+   * GİRİŞ YAPMAMIŞ KULLANICIYA KABUK GÖSTERİLMEZ.
+   *
+   * Menü, uygulamanın tüm yapısını (hangi ekranlar var, neler yönetiliyor)
+   * ele verir. Giriş ekranında görünmesi hem bilgi sızdırır hem de kırık
+   * durur: tıklanan her başlık aynı ekrana geri atardı.
+   * _Kullanıcı 10.08.2026'da canlıda fark etti._
+   */
+  if (!kullanici) {
+    return (
+      <html lang={dil} className={cn("font-sans", geist.variable)}>
+        <body>
+          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html lang={dil} className={cn("font-sans", geist.variable)}>
       <body>
@@ -68,7 +86,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <NextIntlClientProvider>
           <TooltipProvider delayDuration={0}>
             <SidebarProvider>
-              <AppSidebar eposta={kullanici?.email} />
+              <AppSidebar eposta={kullanici.email} />
               <SidebarInset>
                 <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b px-3 md:px-4 print:hidden">
                   {/*
