@@ -29,6 +29,11 @@ export type ElKitabiVerisi = {
     paraBirimi: string | null;
   }[];
   cezaTarifeleri: { kanal: string; kademeler: { ustSinir: string; tutar: string }[] }[];
+  /** Kanal hesabı başına eşleme sayısı ve kaç tanesinde komisyon oranı yok. */
+  kanalSkuOzeti: { hesap: string; adet: number; oransiz: number }[];
+  /** Hiçbir kanala eşlenmemiş varyant sayısı — satılamaz demek değil,
+      ama satılırsa kârı hesaplanamaz demek. */
+  eslenmemisVaryant: number;
   sayimlar: {
     urun: number;
     varyant: number;
@@ -57,6 +62,8 @@ export async function elKitabiVerisi(): Promise<ElKitabiVerisi> {
     kanalSkuOransiz,
     satis,
     kullanici,
+    kanalSkulari,
+    eslenmemisVaryant,
   ] = await Promise.all([
     prisma.category.findMany({
       where: { isActive: true },
@@ -98,6 +105,15 @@ export async function elKitabiVerisi(): Promise<ElKitabiVerisi> {
     prisma.channelSku.count({ where: { commissionRate: null } }),
     prisma.sale.count(),
     prisma.user.count({ where: { isActive: true } }),
+    prisma.channelSku.findMany({
+      select: {
+        commissionRate: true,
+        channelAccount: {
+          select: { name: true, channel: { select: { name: true } } },
+        },
+      },
+    }),
+    prisma.productVariant.count({ where: { channelSkus: { none: {} } } }),
   ]);
 
   // Ceza kademelerini kanal başına grupla.
@@ -109,6 +125,16 @@ export async function elKitabiVerisi(): Promise<ElKitabiVerisi> {
       tutar: sayi(c.amount) ?? "",
     });
     cezaHaritasi.set(c.channel.name, liste);
+  }
+
+  // Kanal hesabı başına eşleme özeti — "hangi mağazada kaç ürün tanımlı".
+  const ozetHaritasi = new Map<string, { adet: number; oransiz: number }>();
+  for (const k of kanalSkulari) {
+    const etiket = `${k.channelAccount.channel.name} — ${k.channelAccount.name}`;
+    const mevcut = ozetHaritasi.get(etiket) ?? { adet: 0, oransiz: 0 };
+    mevcut.adet++;
+    if (k.commissionRate === null) mevcut.oransiz++;
+    ozetHaritasi.set(etiket, mevcut);
   }
 
   return {
@@ -139,6 +165,11 @@ export async function elKitabiVerisi(): Promise<ElKitabiVerisi> {
       kanal,
       kademeler,
     })),
+    kanalSkuOzeti: [...ozetHaritasi.entries()].map(([hesap, o]) => ({
+      hesap,
+      ...o,
+    })),
+    eslenmemisVaryant,
     sayimlar: {
       urun,
       varyant,

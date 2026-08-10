@@ -154,7 +154,7 @@ body{background:#EEF2EE}
 <header class="ek-kapak"><div class="ek-kapak-ic">
   <div class="ek-rozet">
     <span>Kullanıcı El Kitabı</span>
-    <span>10.08.2026 tarihli sistemden üretildi</span>
+    <span>11.08.2026 tarihli sistemden üretildi</span>
     <span>1 kullanıcı · 6 ürün · 3 satış</span>
   </div>
   <h1>Selliora</h1>
@@ -164,7 +164,7 @@ body{background:#EEF2EE}
 </div></header>
 
 <div class="ek-duzen">
-<nav class="ek-toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol><li><a href="#dusunce"><b>01</b><span>Sistem nasıl düşünür</span></a></li><li><a href="#giris"><b>02</b><span>Giriş ve güvenlik</span></a></li><li><a href="#kurulum"><b>03</b><span>İlk kurulum</span></a></li><li><a href="#urun"><b>04</b><span>Ürünler ve stok</span></a></li><li><a href="#alim"><b>05</b><span>Alım ve mal kabul</span></a></li><li><a href="#satis"><b>06</b><span>Satış</span></a></li><li><a href="#iade"><b>07</b><span>İade</span></a></li><li><a href="#gider"><b>08</b><span>Giderler</span></a></li><li><a href="#rapor"><b>09</b><span>Dönem raporu</span></a></li><li><a href="#toplu"><b>10</b><span>Toplu veri aktarımı</span></a></li><li><a href="#yedek"><b>11</b><span>Yedek</span></a></li><li><a href="#sorun"><b>12</b><span>Bir şey ters giderse</span></a></li><li><a href="#sozluk"><b>13</b><span>Sözlük</span></a></li><li><a href="#yolda"><b>14</b><span>Henüz yok, yolda</span></a></li></ol></nav>
+<nav class="ek-toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol><li><a href="#dusunce"><b>01</b><span>Sistem nasıl düşünür</span></a></li><li><a href="#giris"><b>02</b><span>Giriş ve güvenlik</span></a></li><li><a href="#kurulum"><b>03</b><span>İlk kurulum</span></a></li><li><a href="#urun"><b>04</b><span>Ürünler ve stok</span></a></li><li><a href="#kanalSku"><b>05</b><span>Kanal SKU — ne işe yarar</span></a></li><li><a href="#alim"><b>06</b><span>Alım ve mal kabul</span></a></li><li><a href="#satis"><b>07</b><span>Satış</span></a></li><li><a href="#iade"><b>08</b><span>İade</span></a></li><li><a href="#gider"><b>09</b><span>Giderler</span></a></li><li><a href="#rapor"><b>10</b><span>Dönem raporu</span></a></li><li><a href="#toplu"><b>11</b><span>Toplu veri aktarımı</span></a></li><li><a href="#yedek"><b>12</b><span>Yedek</span></a></li><li><a href="#sorun"><b>13</b><span>Bir şey ters giderse</span></a></li><li><a href="#sozluk"><b>14</b><span>Sözlük</span></a></li><li><a href="#yolda"><b>15</b><span>Henüz yok, yolda</span></a></li></ol></nav>
 <main class="ek-icerik">
 
 <section aria-label="Günlük iş">
@@ -196,7 +196,7 @@ ekran anlatmıyor — sistemin kafasını anlatıyor.</p>
 <tr><td class="kod">SKU</td><td>Sizin</td><td>Sistem içi ana kod. Stok bunun üstünden döner.</td></tr>
 <tr><td class="kod">Firma SKU</td><td>Sizin</td><td>Ürünün üstüne yapıştırdığınız fiziksel etiket.</td></tr>
 <tr><td class="kod">Barkod (EAN)</td><td>Üreticinin</td><td>Kutunun üstünde basılı gelen kod.</td></tr>
-<tr><td class="kod">Kanal SKU</td><td>Pazaryerinin</td><td>Trendyol veya Hepsiburada'daki stok kodu.</td></tr>
+<tr><td class="kod">Kanal SKU</td><td>Pazaryerinin</td><td>Trendyol veya Hepsiburada'daki stok kodu. <strong>Komisyon oranını da bu taşır</strong> — <a href="#kanalSku">ayrıntı</a>.</td></tr>
 </tbody></table></div>
 
 <h3>Stok bir defterdir, silinmez</h3>
@@ -265,7 +265,7 @@ malzemesini hazırlıyor.</p>
 <li><div><h3>Kanal hesapları</h3><p><strong>Ayarlar → Kanal Hesapları.</strong> Hangi pazaryerinde hangi mağazanız var. Aynı pazaryerinde birden fazla mağazanız olabilir.</p></div></li>
 <li><div><h3>Kredi kartları</h3><p><strong>Kartlar.</strong> Kart numarasının yalnızca <strong>son 4 hanesi</strong> saklanır — tam numara ve CVV hiçbir zaman istenmez.</p></div></li>
 <li><div><h3>Ürünler ve açılış stoğu</h3><p>Az ürününüz varsa tek tek girin. Listeniz varsa <strong>Ayarlar → Veri Aktarımı</strong> ile topluca yükleyin.</p></div></li>
-<li><div><h3>Kanal SKU ve komisyon oranları</h3><p><strong>Kanal SKU.</strong> <strong>Bu adımı atlamayın</strong> — atlanırsa satışların kârı hesaplanamaz.</p></div></li>
+<li><div><h3>Kanal SKU ve komisyon oranları</h3><p><strong>Kanal SKU.</strong> Sattığınız her pazaryeri için ürünün oradaki kodunu ve <strong>komisyon oranını</strong> girin. <strong>Bu adımı atlamayın</strong> — atlanırsa satış kaydedilir ama kârı hesaplanamaz. <a href="#kanalSku">Ne işe yaradığı</a>.</p></div></li>
 </ol>
 
 <div class="ek-not canli"><div class="etiket">Sizin sisteminizde şu an</div>
@@ -307,8 +307,65 @@ değiştirebilirsiniz.</p>
 basar; telefonda kamerayla da okutabilirsiniz.</p></div>
 </section>
 
+<section id="kanalSku">
+<h2 class="bolum"><b>05</b>Kanal SKU — ne işe yarar</h2>
+<p>Kanal SKU, sistemdeki ürününüz ile <strong>o ürünün bir pazaryerindeki
+karşılığı</strong> arasındaki köprüdür. Kurulumun en çok atlanan adımıdır ve
+atlanınca ilk satışta karşınıza çıkar.</p>
+
+<h3>İki işi vardır</h3>
+<ol class="adimlar">
+<li><div><h3>Eşleme — "bu ürün orada hangi kodla duruyor?"</h3>
+<p>Sizin SKU'nuz sizindir; Trendyol'un stok kodu Trendyol'undur. İkisi
+birbirini bilmez. Kanal SKU bu iki kodu birbirine bağlar. Bir sipariş
+geldiğinde "bu hangi ürünüm?" sorusunun cevabı buradan çıkar.</p></div></li>
+<li><div><h3>Komisyon oranını taşımak — asıl sebep budur</h3>
+<p>Komisyon oranı ürüne göre <em>ve</em> pazaryerine göre değişir. Aynı
+oyuncak Trendyol'da başka, Hepsiburada'da başka oran öder. Bu yüzden oran
+ürün kartında değil, <strong>ürün × pazaryeri</strong> kesişiminde —
+yani Kanal SKU'da — tutulur.</p></div></li>
+</ol>
+
+<div class="ek-not dikkat"><div class="etiket">Atlanırsa ne olur</div>
+<p>Satış kaydedilir, stok düşer, sipariş kaybolmaz — <strong>ama kâr
+hesaplanamaz.</strong> Satış listesinde net kâr yerine <strong>kural
+eksik</strong> yazar. Sistem komisyon oranını uydurmaz; uydurulmuş bir kâr
+rakamı, boş bir hücreden çok daha tehlikelidir.</p>
+<p>Oranı sonradan girip satış detayındaki <strong>Yeniden hesapla</strong>
+düğmesine basmanız yeterli — satış silinip yeniden girilmez.</p></div>
+
+<h3>Neden mağaza başına ayrı?</h3>
+<p>Kanal SKU bir <em>pazaryerine</em> değil, bir <strong>kanal hesabına</strong>
+bağlıdır. Aynı pazaryerinde iki mağazanız varsa (hesap başına alım limiti
+nedeniyle bu normaldir) her mağazanın kendi stok kodu ve kendi oranı olabilir.
+Bu yüzden eşleme her mağaza için ayrı girilir.</p>
+
+<h3>Oran haftalık değişir — ve geçmiş bozulmaz</h3>
+<p>Pazaryerleri komisyon oranlarını düzenli olarak günceller
+(<strong>Trendyol salı</strong>, <strong>Hepsiburada çarşamba</strong>).
+Oran değişince Kanal SKU'daki değeri güncellersiniz.</p>
+<div class="ek-not"><div class="etiket">Neden böyle</div>
+<p>Satış anında geçerli oran <strong>satış kaydının içine kopyalanır</strong>.
+Yani bugün oranı değiştirmeniz, geçen ayki satışların kârını değiştirmez.
+Kâr rakamı bir kere hesaplanır ve o günün gerçeğiyle donar; yoksa kapanmış bir
+ayın kârı her hafta oynardı.</p></div>
+
+<h3>Ne zaman girilir</h3>
+<ul>
+<li><strong>Ürünü ilk satışa çıkarmadan önce.</strong> Alım yapmak için gerekmez, satış için gerekir.</li>
+<li>Sadece <strong>gerçekten sattığınız</strong> pazaryerleri için girin. Satmadığınız kanal için eşleme açmak boş iş.</li>
+<li><strong>Kanal SKU</strong> ekranından tek tek, ya da <strong>Ayarlar → Veri Aktarımı</strong> ile topluca (bu sayfa tek başına da yüklenebilir).</li>
+</ul>
+
+<div class="ek-not canli"><div class="etiket">Sizin sisteminizde şu an</div>
+<p>1 kanal eşlemesi tanımlı. <strong>5 varyantın hiçbir kanal eşlemesi yok</strong> — bunlar satılırsa kârları hesaplanamaz.</p></div>
+
+<h3>Mağaza başına eşlemeleriniz</h3>
+<div class="ek-tablo"><table><thead><tr><th>Kanal hesabı</th><th>Eşleme</th><th>Oranı girilmemiş</th></tr></thead><tbody><tr><td>Trendyol — as</td><td><span class="sayi">1</span></td><td><span class="sayi">0</span></td></tr></tbody></table></div>
+</section>
+
 <section id="alim">
-<h2 class="bolum"><b>05</b>Alım ve mal kabul</h2>
+<h2 class="bolum"><b>06</b>Alım ve mal kabul</h2>
 <p>Alım iki aşamalıdır: önce <strong>siparişi</strong> kaydedersiniz, mal gelince
 <strong>mal kabul</strong> yaparsınız. Stok, sipariş anında değil mal kabulde artar.</p>
 <h3>1. Alım girme</h3>
@@ -330,7 +387,7 @@ sistem kârı hesaplayamaz. Sonradan düzeltmek şu an mümkün değil.</p></div
 </section>
 
 <section id="satis">
-<h2 class="bolum"><b>06</b>Satış</h2>
+<h2 class="bolum"><b>07</b>Satış</h2>
 <p><strong>Satışlar → Yeni satış.</strong> Bir satış her zaman bir kanal hesabına
 bağlıdır — hangi pazaryerinin hangi mağazasından satıldığı, kesintileri belirler.</p>
 <ol class="adimlar">
@@ -361,7 +418,7 @@ Kargo, desi tarifesinden okunur ve üstüne %20 KDV eklenir.</p>
 </section>
 
 <section id="iade">
-<h2 class="bolum"><b>07</b>İade</h2>
+<h2 class="bolum"><b>08</b>İade</h2>
 <p>Satış listesinde veya satış detayında <strong>İade Al</strong> düğmesi. Önce
 türü seçersiniz; tür, malın stoğa girip girmeyeceğini belirler.</p>
 <div class="ek-tablo"><table>
@@ -395,7 +452,7 @@ her iade kendi tarihli bloğunda görünür, en altta iade sonrası net yazar.</
 </section>
 
 <section id="gider">
-<h2 class="bolum"><b>08</b>Giderler</h2>
+<h2 class="bolum"><b>09</b>Giderler</h2>
 <p>Kira, maaş, sarf malzeme, abonelik, banka masrafı. <strong>Giderler → Yeni gider.</strong></p>
 <ul>
 <li>Tutar <strong>KDV dahil</strong> girilir.</li>
@@ -418,7 +475,7 @@ girilmişse düğme pasifleşir — kirayı ikinci kez girmiş olmazsınız.</p>
 </section>
 
 <section id="rapor">
-<h2 class="bolum"><b>09</b>Dönem raporu</h2>
+<h2 class="bolum"><b>10</b>Dönem raporu</h2>
 <p><strong>Rapor.</strong> "Bu ay gerçekte ne kazandım?" sorusunun cevabı burada.</p>
 <h3>Pencere seçimi</h3>
 <ul>
@@ -442,7 +499,7 @@ katılır, kârları katılmaz — sıfır sayılmazlar.</p>
 </section>
 
 <section id="toplu">
-<h2 class="bolum"><b>10</b>Toplu veri aktarımı</h2>
+<h2 class="bolum"><b>11</b>Toplu veri aktarımı</h2>
 <h3>İçe aktarma</h3>
 <ol class="adimlar">
 <li><div><h3>Şablonu indirin</h3><p>Şablon her indirdiğinizde <strong>sizin güncel verinizle</strong> üretilir: "Listeler" sayfasında geçerli kategori, raf ve kanal hesabı adları yazar.</p></div></li>
@@ -467,7 +524,7 @@ stoktan daha kötüdür.</p></div>
 </section>
 
 <section id="yedek">
-<h2 class="bolum"><b>11</b>Yedek</h2>
+<h2 class="bolum"><b>12</b>Yedek</h2>
 <div class="ek-tablo"><table>
 <thead><tr><th>Ne</th><th>Kim için</th><th>Ne zaman</th></tr></thead>
 <tbody>
@@ -483,7 +540,7 @@ durur. İndirdiğiniz dosyayı güvenli bir yerde saklayın.</p></div>
 </section>
 
 <section id="sorun">
-<h2 class="bolum"><b>12</b>Bir şey ters giderse</h2>
+<h2 class="bolum"><b>13</b>Bir şey ters giderse</h2>
 <p>Sistem sessiz kalmaz: bir şey olmadıysa <strong>neden olmadığı</strong> ekranda
 yazar. Aşağıda en sık görülenler.</p>
 <div class="ek-tablo"><table>
@@ -502,7 +559,7 @@ Yanlış bir sayım varsa düzeltme hareketi girilir, geçmiş olduğu gibi kal�
 </section>
 
 <section id="sozluk">
-<h2 class="bolum"><b>13</b>Sözlük</h2>
+<h2 class="bolum"><b>14</b>Sözlük</h2>
 <div class="ek-tablo"><table>
 <thead><tr><th>Terim</th><th>Anlamı</th></tr></thead>
 <tbody>
@@ -522,7 +579,7 @@ Yanlış bir sayım varsa düzeltme hareketi girilir, geçmiş olduğu gibi kal�
 </section>
 
 <section id="yolda">
-<h2 class="bolum"><b>14</b>Henüz yok, yolda</h2>
+<h2 class="bolum"><b>15</b>Henüz yok, yolda</h2>
 <p>Bunları sistemde <strong>aramayın</strong> — henüz yapılmadı.</p>
 <div class="ek-tablo"><table>
 <thead><tr><th>Özellik</th><th>Durum</th></tr></thead>
@@ -541,7 +598,7 @@ Yanlış bir sayım varsa düzeltme hareketi girilir, geçmiş olduğu gibi kal�
 </div>
 
 <footer class="ek-dip"><div class="ek-dip-ic">
-<div><strong style="color:var(--murekkep)">Selliora Kullanıcı El Kitabı</strong> · 10.08.2026</div>
+<div><strong style="color:var(--murekkep)">Selliora Kullanıcı El Kitabı</strong> · 11.08.2026</div>
 <div>Bu belge sistemden ÜRETİLDİ. Kategori, raf, kanal hesabı ve kesinti listeleri
 o anki veritabanınızdan okunur — elle güncellenmez, sapmaz.</div>
 </div></footer>

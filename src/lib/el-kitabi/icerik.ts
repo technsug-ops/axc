@@ -29,6 +29,7 @@ export const BOLUMLER = [
   { kimlik: "giris", ad: "Giriş ve güvenlik" },
   { kimlik: "kurulum", ad: "İlk kurulum" },
   { kimlik: "urun", ad: "Ürünler ve stok" },
+  { kimlik: "kanalSku", ad: "Kanal SKU — ne işe yarar" },
   { kimlik: "alim", ad: "Alım ve mal kabul" },
   { kimlik: "satis", ad: "Satış" },
   { kimlik: "iade", ad: "İade" },
@@ -149,7 +150,7 @@ ekran anlatmıyor — sistemin kafasını anlatıyor.</p>
 <tr><td class="kod">SKU</td><td>Sizin</td><td>Sistem içi ana kod. Stok bunun üstünden döner.</td></tr>
 <tr><td class="kod">Firma SKU</td><td>Sizin</td><td>Ürünün üstüne yapıştırdığınız fiziksel etiket.</td></tr>
 <tr><td class="kod">Barkod (EAN)</td><td>Üreticinin</td><td>Kutunun üstünde basılı gelen kod.</td></tr>
-<tr><td class="kod">Kanal SKU</td><td>Pazaryerinin</td><td>Trendyol veya Hepsiburada'daki stok kodu.</td></tr>
+<tr><td class="kod">Kanal SKU</td><td>Pazaryerinin</td><td>Trendyol veya Hepsiburada'daki stok kodu. <strong>Komisyon oranını da bu taşır</strong> — <a href="#kanalSku">ayrıntı</a>.</td></tr>
 </tbody></table></div>
 
 <h3>Stok bir defterdir, silinmez</h3>
@@ -218,7 +219,7 @@ malzemesini hazırlıyor.</p>
 <li><div><h3>Kanal hesapları</h3><p><strong>Ayarlar → Kanal Hesapları.</strong> Hangi pazaryerinde hangi mağazanız var. Aynı pazaryerinde birden fazla mağazanız olabilir.</p></div></li>
 <li><div><h3>Kredi kartları</h3><p><strong>Kartlar.</strong> Kart numarasının yalnızca <strong>son 4 hanesi</strong> saklanır — tam numara ve CVV hiçbir zaman istenmez.</p></div></li>
 <li><div><h3>Ürünler ve açılış stoğu</h3><p>Az ürününüz varsa tek tek girin. Listeniz varsa <strong>Ayarlar → Veri Aktarımı</strong> ile topluca yükleyin.</p></div></li>
-<li><div><h3>Kanal SKU ve komisyon oranları</h3><p><strong>Kanal SKU.</strong> <strong>Bu adımı atlamayın</strong> — atlanırsa satışların kârı hesaplanamaz.</p></div></li>
+<li><div><h3>Kanal SKU ve komisyon oranları</h3><p><strong>Kanal SKU.</strong> Sattığınız her pazaryeri için ürünün oradaki kodunu ve <strong>komisyon oranını</strong> girin. <strong>Bu adımı atlamayın</strong> — atlanırsa satış kaydedilir ama kârı hesaplanamaz. <a href="#kanalSku">Ne işe yaradığı</a>.</p></div></li>
 </ol>
 
 <div class="ek-not canli"><div class="etiket">Sizin sisteminizde şu an</div>
@@ -270,6 +271,85 @@ değiştirebilirsiniz.</p>
 <div class="ek-not"><div class="etiket">Kısayol</div>
 <p>Kod girilen her alan barkod okuyucuyla çalışır. USB okuyucu kodu yazıp Enter'a
 basar; telefonda kamerayla da okutabilirsiniz.</p></div>
+</section>
+
+<section id="kanalSku">
+${baslik("kanalSku")}
+<p>Kanal SKU, sistemdeki ürününüz ile <strong>o ürünün bir pazaryerindeki
+karşılığı</strong> arasındaki köprüdür. Kurulumun en çok atlanan adımıdır ve
+atlanınca ilk satışta karşınıza çıkar.</p>
+
+<h3>İki işi vardır</h3>
+<ol class="adimlar">
+<li><div><h3>Eşleme — "bu ürün orada hangi kodla duruyor?"</h3>
+<p>Sizin SKU'nuz sizindir; Trendyol'un stok kodu Trendyol'undur. İkisi
+birbirini bilmez. Kanal SKU bu iki kodu birbirine bağlar. Bir sipariş
+geldiğinde "bu hangi ürünüm?" sorusunun cevabı buradan çıkar.</p></div></li>
+<li><div><h3>Komisyon oranını taşımak — asıl sebep budur</h3>
+<p>Komisyon oranı ürüne göre <em>ve</em> pazaryerine göre değişir. Aynı
+oyuncak Trendyol'da başka, Hepsiburada'da başka oran öder. Bu yüzden oran
+ürün kartında değil, <strong>ürün × pazaryeri</strong> kesişiminde —
+yani Kanal SKU'da — tutulur.</p></div></li>
+</ol>
+
+<div class="ek-not dikkat"><div class="etiket">Atlanırsa ne olur</div>
+<p>Satış kaydedilir, stok düşer, sipariş kaybolmaz — <strong>ama kâr
+hesaplanamaz.</strong> Satış listesinde net kâr yerine <strong>kural
+eksik</strong> yazar. Sistem komisyon oranını uydurmaz; uydurulmuş bir kâr
+rakamı, boş bir hücreden çok daha tehlikelidir.</p>
+<p>Oranı sonradan girip satış detayındaki <strong>Yeniden hesapla</strong>
+düğmesine basmanız yeterli — satış silinip yeniden girilmez.</p></div>
+
+<h3>Neden mağaza başına ayrı?</h3>
+<p>Kanal SKU bir <em>pazaryerine</em> değil, bir <strong>kanal hesabına</strong>
+bağlıdır. Aynı pazaryerinde iki mağazanız varsa (hesap başına alım limiti
+nedeniyle bu normaldir) her mağazanın kendi stok kodu ve kendi oranı olabilir.
+Bu yüzden eşleme her mağaza için ayrı girilir.</p>
+
+<h3>Oran haftalık değişir — ve geçmiş bozulmaz</h3>
+<p>Pazaryerleri komisyon oranlarını düzenli olarak günceller
+(<strong>Trendyol salı</strong>, <strong>Hepsiburada çarşamba</strong>).
+Oran değişince Kanal SKU'daki değeri güncellersiniz.</p>
+<div class="ek-not"><div class="etiket">Neden böyle</div>
+<p>Satış anında geçerli oran <strong>satış kaydının içine kopyalanır</strong>.
+Yani bugün oranı değiştirmeniz, geçen ayki satışların kârını değiştirmez.
+Kâr rakamı bir kere hesaplanır ve o günün gerçeğiyle donar; yoksa kapanmış bir
+ayın kârı her hafta oynardı.</p></div>
+
+<h3>Ne zaman girilir</h3>
+<ul>
+<li><strong>Ürünü ilk satışa çıkarmadan önce.</strong> Alım yapmak için gerekmez, satış için gerekir.</li>
+<li>Sadece <strong>gerçekten sattığınız</strong> pazaryerleri için girin. Satmadığınız kanal için eşleme açmak boş iş.</li>
+<li><strong>Kanal SKU</strong> ekranından tek tek, ya da <strong>Ayarlar → Veri Aktarımı</strong> ile topluca (bu sayfa tek başına da yüklenebilir).</li>
+</ul>
+
+<div class="ek-not canli"><div class="etiket">Sizin sisteminizde şu an</div>
+<p>${s.kanalSku} kanal eşlemesi tanımlı${
+  s.kanalSkuOransiz > 0
+    ? `, <strong>${s.kanalSkuOransiz} tanesinde komisyon oranı girilmemiş</strong>`
+    : ""
+}. ${
+  veri.eslenmemisVaryant > 0
+    ? `<strong>${veri.eslenmemisVaryant} varyantın hiçbir kanal eşlemesi yok</strong> — bunlar satılırsa kârları hesaplanamaz.`
+    : "Tüm varyantlarınızın en az bir kanal eşlemesi var."
+}</p></div>
+
+${
+  veri.kanalSkuOzeti.length > 0
+    ? `<h3>Mağaza başına eşlemeleriniz</h3>
+${canliTablo(
+  ["Kanal hesabı", "Eşleme", "Oranı girilmemiş"],
+  veri.kanalSkuOzeti.map((o) => [
+    kacir(o.hesap),
+    `<span class="sayi">${o.adet}</span>`,
+    o.oransiz > 0
+      ? `<strong class="sayi">${o.oransiz}</strong>`
+      : `<span class="sayi">0</span>`,
+  ]),
+  "",
+)}`
+    : ""
+}
 </section>
 
 <section id="alim">
