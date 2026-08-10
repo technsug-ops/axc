@@ -686,7 +686,13 @@
     "kodGirilmemis": "kod yok",
     "kodOnerilemedi": "Ad harf içermediği için kod önerilemedi.",
     "kodEksikBaslik": "{sayi} kategoride kod girilmemiş",
-    "kodEksikMetin": "Otomatik SKU önerisi kategori kodundan üretilir. Kodu olmayan kategorideki ürün için sistem kod öneremez — aşağıdan Düzenle ile girin."
+    "kodEksikMetin": "Otomatik SKU önerisi kategori kodundan üretilir. Kodu olmayan kategorideki ürün için sistem kod öneremez — aşağıdan Düzenle ile girin.",
+    "hazirListe": "Hazır listeden seç",
+    "hazirListeIpucu": "Seçince form dolar; kaydetmeden önce değiştirebilirsiniz.",
+    "hazirListeSecim": "— kategori seçin —",
+    "hazirListeEklendi": "{ad} (zaten var)",
+    "hazirListeNotu": "Bu liste kayıt OLUŞTURMAZ. Seçmediğiniz kategori sistemde var olmaz. KDV oranları tipik başlangıç değeridir, vergi tavsiyesi değildir — kendi ürününüzün oranını doğrulayın.",
+    "karisikOranUyari": "Bu kategoride KDV oranı ürüne göre değişir ({aralik}). Öneri {oran} olarak dolduruldu; kendi ürününüzün oranını girin."
   },
   "Kesinti": {
     "MALIYET": "Ürün maliyeti",

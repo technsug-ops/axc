@@ -21,7 +21,8 @@
     "oturum:dogrula": "tsx scripts/oturum-dogrula.ts",
     "el-kitabi:uret": "tsx scripts/el-kitabi-uret.ts",
     "migration:kontrol": "tsx scripts/migration-kontrol.ts",
-    "kimlik:dogrula": "tsx scripts/kimlik-dogrula.ts"
+    "kimlik:dogrula": "tsx scripts/kimlik-dogrula.ts",
+    "canli:migrate": "tsx scripts/canli-migrate.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

@@ -686,7 +686,13 @@
     "kodGirilmemis": "",
     "kodOnerilemedi": "",
     "kodEksikBaslik": "",
-    "kodEksikMetin": ""
+    "kodEksikMetin": "",
+    "hazirListe": "",
+    "hazirListeIpucu": "",
+    "hazirListeSecim": "",
+    "hazirListeEklendi": "",
+    "hazirListeNotu": "",
+    "karisikOranUyari": ""
   },
   "Kesinti": {
     "MALIYET": "",

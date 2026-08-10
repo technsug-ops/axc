@@ -70,7 +70,7 @@ export default async function KategorilerSayfasi() {
           <CardTitle>{t("yeniKategori")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <KategoriFormu />
+          <KategoriFormu mevcutAdlar={kategoriler.map((k) => k.name)} />
         </CardContent>
       </Card>
 

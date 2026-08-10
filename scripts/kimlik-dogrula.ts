@@ -11,6 +11,8 @@
  *     10 Temmuz'dur ve kod 260710 olmalıdır.
  *  4) SIRA VE BİRLEŞTİRME — aynı gün ikinci kayıt çakışmıyor mu.
  *  5) RAF KODU — desen denetimi ve "şunu mu demek istediniz" önerisi.
+ *  6) KATEGORİ HAZIR LİSTESİ — kodlar tekil mi, kurulumla çakışıyor mu,
+ *     addan sapan kodun gerekçesi yazılmış mı.
  * ============================================================================
  */
 
@@ -30,9 +32,14 @@ import {
   urunKisaltmasi,
 } from "../src/lib/kimlik";
 
+import {
+  KATEGORI_ONERILERI,
+  KURULUM_KODLARI,
+} from "../src/lib/kategori-onerileri";
+
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -203,6 +210,62 @@ console.log("\n5) RAF KODU");
     `${rafKoduDuzelt("a-01")} / ${rafKoduDuzelt("a02")}`,
   );
   kosanBolumler.push("raf");
+}
+
+// ===========================================================================
+console.log("\n6) KATEGORİ HAZIR LİSTESİ");
+// ===========================================================================
+{
+  const kodlar = KATEGORI_ONERILERI.map((k) => k.kod);
+
+  // Liste elle bakımı yapılan VERİDİR; yarın bir satır eklenirken sessizce
+  // aynı kod ikinci kez yazılabilir. Bekçi her koşumda bakar.
+  const tekrarlar = kodlar.filter((k, i) => kodlar.indexOf(k) !== i);
+  kontrol("liste içinde tekrar eden kod yok", tekrarlar.length === 0, tekrarlar);
+
+  const kurulumlaCakisan = kodlar.filter((k) =>
+    (KURULUM_KODLARI as readonly string[]).includes(k),
+  );
+  kontrol(
+    "kurulum kodlarıyla (GEN/IND/SUP) çakışma yok",
+    kurulumlaCakisan.length === 0,
+    kurulumlaCakisan,
+  );
+
+  const bicimsiz = KATEGORI_ONERILERI.filter(
+    (k) => !/^[A-Z]{2,4}$/.test(k.kod),
+  ).map((k) => `${k.ad}=${k.kod}`);
+  kontrol("her kod 2-4 büyük harf", bicimsiz.length === 0, bicimsiz);
+
+  // Addan sapan kod GEREKÇESİZ kalmasın: "neden OYU değil KNS?" sorusunun
+  // cevabı kodun yanında dursun, arkeoloji gerekmesin.
+  const gerekcesizSapma = KATEGORI_ONERILERI.filter(
+    (k) => kategoriKoduOner(k.ad) !== k.kod && !k.kodNedeni,
+  ).map((k) => `${k.ad}: ${kategoriKoduOner(k.ad)} -> ${k.kod}`);
+  kontrol(
+    "addan sapan her kodun gerekçesi yazılı",
+    gerekcesizSapma.length === 0,
+    gerekcesizSapma,
+  );
+
+  // Gerekçe yazılmış ama aslında sapma YOKSA da yanıltıcıdır.
+  const bosGerekce = KATEGORI_ONERILERI.filter(
+    (k) => k.kodNedeni && kategoriKoduOner(k.ad) === k.kod,
+  ).map((k) => k.ad);
+  kontrol("gereksiz gerekçe yok", bosGerekce.length === 0, bosGerekce);
+
+  const kdvDisi = KATEGORI_ONERILERI.filter(
+    (k) => !Number.isFinite(k.kdv) || k.kdv < 0 || k.kdv > 100,
+  ).map((k) => k.ad);
+  kontrol("KDV oranları 0-100 aralığında", kdvDisi.length === 0, kdvDisi);
+
+  const adTekrari = KATEGORI_ONERILERI.map((k) => k.ad).filter(
+    (a, i, d) => d.indexOf(a) !== i,
+  );
+  kontrol("tekrar eden ad yok", adTekrari.length === 0, adTekrari);
+
+  console.log(`        (${KATEGORI_ONERILERI.length} kategori önerisi)`);
+  kosanBolumler.push("hazirListe");
 }
 
 // ===========================================================================
