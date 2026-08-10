@@ -81,6 +81,19 @@ Canlı sağlık kontrolü (10.08.2026): 12 sayfa 200, tümü 1,3 sn altında ·
       2. `/ayarlar` altında "tüm veriyi dışa aktar" — tablo tablo tam
          döküm.
 
+- [ ] **TEK KULLANICILI GİRİŞ — gerçek envanterden ÖNCE**
+      _Karar 10.08.2026, canlıya çıkışta ortaya çıktı._
+      Sistemde hiç giriş yoktu; deploy edilince adres internete açıldı ve
+      URL'yi bilen herkes kâr/maliyet verisini görebilir hâle geldi.
+      Bugünkü çözüm **Vercel Authentication** (tek tık, geçici köprü).
+      Kalıcısı uygulamanın kendi kapısı olmalı:
+      e-posta/parola · oturum · tüm sayfalar korumalı · **RBAC YOK**.
+      Faz 4'ü BEKLEMEZ — Faz 3 ekranları biterken yapılır, gerçek envanter
+      içe aktarılmadan önce hazır olur.
+      Kütüphane kısıtı için bkz. CLAUDE.md → Güvenlik katmanları:
+      NextAuth v5 beta olduğu için eleniyor; `better-auth` (1.x) ya da
+      elle yazılmış oturum.
+
 - [ ] **Otomatik veritabanı yedeği** — TEK KALAN ÖN ŞART
       _10.08.2026: hosting kararı verildi (Vercel), yol açıldı.
       Vercel panelinde **Cron Jobs** bölümü mevcut; `mysqldump` yok ama

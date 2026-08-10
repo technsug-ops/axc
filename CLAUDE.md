@@ -159,11 +159,35 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
 
 ## Faz sırası (sırayı atlama)
 - Faz 0 ✓: şema (tamamlandı)
-- Faz 1 (şimdi): ürün/varyant CRUD → alım girişi → stok görünümü → kart tanımları
-- Faz 2: satış + kâr motoru + iade + gider
-- Faz 3: hakediş + kart borcu takibi + tazminat
-- Faz 4: pazaryeri API'leri + barkod + çoklu kullanıcı
+- Faz 1 ✓: ürün/varyant CRUD → alım girişi → stok görünümü → kart tanımları
+- Faz 2 ✓: satış + kâr motoru + iade + gider
+- Faz 3 (şimdi): hakediş + kart borcu takibi + tazminat
+- **Faz 3,5 — TEK KULLANICILI GİRİŞ (canlıya geçişin ön maddesi)**
+- Faz 4: pazaryeri API'leri + barkod + çoklu kullanıcı + yetki (RBAC)
 Bir faza ait olmayan özelliği o fazda EKLEME.
+
+## Güvenlik katmanları (KESİN AYRIM)
+
+10.08.2026'da canlıya çıkınca ortaya çıktı: sistemde HİÇ giriş yoktu ve
+adres internete açıldı. Üç ayrı katman var, karıştırılmamalı:
+
+1. **Kapı kilidi — Vercel Authentication.** Koda dokunmadan siteyi yalnız
+   hesap sahibine açar. GEÇİCİ KÖPRÜ; kaba bir araçtır (telefondan bakmak
+   Vercel oturumu ister, muhasebeciye salt-okunur erişim verilemez).
+2. **Gerçek giriş — uygulamanın kendi kapısı.** E-posta/parola, oturum,
+   tüm sayfalar korumalı. RBAC YOK, sadece kapı.
+   **GERÇEK ENVANTER İÇE AKTARILMADAN ÖNCE OLMALI.** Faz 4'ü beklemez.
+   _Karar 10.08.2026._
+3. **Yetki (RBAC) — kim neyi görebilir.** "Depocu stok girsin ama kâr
+   marjını görmesin" ihtiyacı eleman alınınca ya da SaaS'laşınca doğar.
+   Tek kullanıcıda boş katmandır. Faz 4'te çoklu kullanıcıyla birlikte.
+
+**Kütüphane kısıtı (ölçüldü 10.08.2026):** `next-auth`ın kararlı sürümü
+hâlâ 4.24; App Router'ın karşılığı olan v5 yalnızca `beta` etiketinde —
+anayasa gereği KULLANILMAZ. `lucia` yazarı tarafından emekliye ayrıldı.
+Geriye iki gerçek seçenek kalıyor: `better-auth` (1.x kararlı) veya
+elle yazılmış oturum (parola özeti + HttpOnly imzalı çerez + oturum
+tablosu). Tek kullanıcı için ikincisi yeterli ve bağımlılıksızdır.
 
 ## Yol haritası notları
 
