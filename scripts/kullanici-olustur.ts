@@ -78,7 +78,23 @@ async function main() {
 }
 
 main().catch(async (e) => {
-  console.error("Hata:", e);
+  const metin = String(e);
+
+  // EN SIK HATA: bu veritabanına migration uygulanmamış. Prisma'nın uzun
+  // yığın izi yerine ne yapılacağını yazıyoruz — 10.08.2026'da kullanıcı
+  // hatayı fark etmeyip "oldu galiba" dedi, kullanıcı oluşmamıştı.
+  if (metin.includes("doesn't exist") || metin.includes("P2021")) {
+    console.error("\n  HATA: Bu veritabanında `User` tablosu yok.");
+    console.error("  Bu veritabanına migration'lar uygulanmamış.\n");
+    console.error("  Önce şunu çalıştırın (aynı DATABASE_URL ile):");
+    console.error("      npx prisma migrate deploy\n");
+  } else if (metin.includes("Can't reach") || metin.includes("ECONNREFUSED")) {
+    console.error("\n  HATA: Veritabanına ulaşılamadı.");
+    console.error("  Bağlantıyı sınamak için: npm run baglanti:test\n");
+  } else {
+    console.error("\n  HATA:", metin.split("\n")[0], "\n");
+  }
+
   await prisma.$disconnect();
   process.exitCode = 1;
 });
