@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, Plus, TriangleAlert } from "lucide-react";
 
+import { KarSorunuCozumu } from "@/components/kar-sorunu";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -336,6 +337,19 @@ export default async function RaporSayfasi({
                 {t("hesaplanamayanIade", { sayi: b.hesaplanamayanIadeAdedi })}
               </p>
             ) : null}
+
+            {/* SORUNU YAZDIK — ÇÖZÜMÜ DE YAZ. Kutuda hangi nedenler varsa
+                yalnızca onların yol haritası çıkar; üçünü birden yazıp
+                ekranı doldurmaz. */}
+            {[
+              ...new Set(
+                [...b.hesaplanamayanSatislar, ...b.hesaplanamayanIadeler].map(
+                  (k) => k.durum ?? "RULE_MISSING",
+                ),
+              ),
+            ].map((durum) => (
+              <KarSorunuCozumu key={durum} durum={durum} />
+            ))}
           </div>
         ) : null}
 

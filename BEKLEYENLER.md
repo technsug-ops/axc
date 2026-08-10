@@ -84,6 +84,28 @@ _Karar 09.08.2026._
       veri izolasyonu ve kimlik doğrulama birlikte ele alınmalı.
       _Karar 09.08.2026: bugün yapılmıyor, yön belli._
 
+## Kâr düzeltme yolundaki iki boşluk
+
+10.08.2026'da "kâr hesaplanamadı" uyarısına çözüm yol haritası yazılırken
+ortaya çıktı: uyarı kullanıcıyı bir yere göndermek istiyor ama o ekran yok.
+Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
+
+- [ ] **Alım düzenleme ekranı**
+      `NO_COST` ve `CURRENCY_MISMATCH` durumlarının GERÇEK çözümü alım
+      kaydını düzeltmektir: birim maliyet boş bırakılmış ya da para birimi
+      yanlış seçilmiştir. Bugün `/alimlar/[id]` yalnızca detay gösteriyor,
+      düzenleme yok. Stok defteri kaydı da (kural gereği) değiştirilemez;
+      bu yüzden maliyeti sonradan girmenin bugün hiçbir yolu yok.
+      Çözüm şekli kararlaştırılmalı: alım kalemi düzenleme mi, yoksa
+      ters işaretli ADJUSTMENT + maliyetli yeni giriş üreten bir
+      "stok düzeltme" ekranı mı?
+
+- [ ] **Kanal SKU / komisyon oranı ekranı**
+      Komisyon oranı `ChannelSku` seviyesinde tutuluyor (haftalık değiştiği
+      için) ama onu YAZACAK ekran yok — oran her satışta forma elle
+      giriliyor, `RULE_MISSING` de çoğunlukla bundan çıkıyor. Ekran gelince
+      satış formu oranı hazır önerir ve bu uyarı büyük ölçüde kaybolur.
+
 ## Gözlem üzerine yapılacaklar
 
 - [ ] **Kayıt sonrası yeşil başarı bildirimi** — İlke #5

@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { KarSorunuCozumu } from "@/components/kar-sorunu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bicimlendirici } from "@/lib/bicim";
@@ -85,6 +86,11 @@ export async function KarBlogu({ veri }: { veri: KarBloguVerisi }) {
                   ? t("durumCurrencyMismatch")
                   : t("durumRuleMissing")}
             </p>
+
+            {/* Raporla AYNI yol haritası — tıklayıp gelinen yer burası. */}
+            <div className="mt-3">
+              <KarSorunuCozumu durum={veri.durum!} />
+            </div>
           </div>
         ) : null}
 

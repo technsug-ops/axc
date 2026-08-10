@@ -881,5 +881,21 @@
     "giderEkle": "",
     "hesaplanamayanTikla": "",
     "hepsiniGor": ""
+  },
+  "KarSorunu": {
+    "baslik": "",
+    "nedenRuleMissing": "",
+    "ruleAdim1": "",
+    "ruleAdim2": "",
+    "ruleAdim3": "",
+    "nedenNoCost": "",
+    "costAdim1": "",
+    "costAdim2": "",
+    "costAdim3": "",
+    "nedenCurrency": "",
+    "currencyAdim1": "",
+    "currencyAdim2": "",
+    "currencyAdim3": "",
+    "satisaGit": ""
   }
 }

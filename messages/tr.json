@@ -881,5 +881,21 @@
     "giderEkle": "Gider gir",
     "hesaplanamayanTikla": "Sorunlu kaydın üstüne tıklayın, doğrudan o satışa gidersiniz.",
     "hepsiniGor": "+{sayi} kayıt daha — hepsini gör"
+  },
+  "KarSorunu": {
+    "baslik": "Nasıl düzeltilir?",
+    "nedenRuleMissing": "Komisyon oranı ya da kargo tarifesi bulunamadı. Bu ikisi olmadan sistem kâr rakamı UYDURMAZ — bu yüzden boş bıraktı.",
+    "ruleAdim1": "Satışa gidip «Yeniden hesapla» düğmesine basın; komisyon oranını ya da pazaryeri panelinden okuduğunuz komisyon tutarını girin.",
+    "ruleAdim2": "Sorun kargodaysa aynı diyalogda kargo firmasını seçin. Tarifede o desi yoksa kargo tutarını elle yazabilirsiniz.",
+    "ruleAdim3": "Kaydetmeden önce eski ve yeni NET yan yana gösterilir. Onaylayınca bu uyarı rapordan kaybolur.",
+    "nedenNoCost": "Satılan mal, birim maliyeti girilmemiş bir stok partisinden düştü. Maliyet bilinmediği için kâr sıfır sayılmadı.",
+    "costAdim1": "Satış detayındaki stok hareketinden partiye gidin; hangi girişin maliyetinin boş olduğu orada görünür.",
+    "costAdim2": "Parti bir alımdan geldiyse o alım kaleminde birim maliyet boş bırakılmış demektir.",
+    "costAdim3": "Şunu açıkça söylemek gerek: alım düzenleme ekranı HENÜZ YOK ve stok defteri kaydı değiştirilmez. Bu satırın maliyetini sonradan girmek bugün mümkün değil; eksik not edildi.",
+    "nedenCurrency": "Maliyet ile satışın para birimi farklı. Kur çevirisi YAPILMAZ (anayasa kuralı) — uydurma bir net üretmektense hesaplanmadı.",
+    "currencyAdim1": "Alımın para birimini kontrol edin: mal gerçekten EUR ile mi alındı, yoksa yanlış mı seçildi?",
+    "currencyAdim2": "Gerçekten farklıysa bu satışın kârı bilinçli olarak hesaplanmaz; geliri raporda yine sayılır.",
+    "currencyAdim3": "Yanlış girildiyse alımın düzeltilmesi gerekir — alım düzenleme ekranı henüz yok, eksik not edildi.",
+    "satisaGit": "Satışa git"
   }
 }
