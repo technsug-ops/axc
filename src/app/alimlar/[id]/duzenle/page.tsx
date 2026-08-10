@@ -25,7 +25,8 @@ export default async function AlimDuzenleSayfasi({
   const { id } = await params;
   const t = await getTranslations("Alim");
 
-  const [alim, hesapKayitlari, kartKayitlari] = await Promise.all([
+  const [alim, hesapKayitlari, kartKayitlari, tedarikciKayitlari] =
+    await Promise.all([
     prisma.purchase.findUnique({
       where: { id },
       include: {
@@ -49,6 +50,11 @@ export default async function AlimDuzenleSayfasi({
       where: { isActive: true },
       orderBy: { label: "asc" },
     }),
+    prisma.supplier.findMany({
+      where: { isActive: true, NOT: { code: null } },
+      select: { id: true, name: true, code: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   if (!alim) notFound();
@@ -63,7 +69,19 @@ export default async function AlimDuzenleSayfasi({
     channelAccountId: alim.channelAccountId ?? "",
     creditCardId: alim.creditCardId ?? "",
     installmentCount: String(alim.installmentCount),
-    supplierName: alim.supplierName ?? "",
+    // ESKİ KAYITLARIN KURTARILMASI: 10.08 öncesi alımlarda tedarikçi
+    // serbest metindi ve `supplierId` hiç yazılmıyordu. Bağ yoksa ADA GÖRE
+    // eşleştirip ön seçim yapıyoruz; kullanıcı eski bir alımı düzenlerken
+    // tedarikçiyi baştan aramak zorunda kalmasın.
+    supplierId:
+      alim.supplierId ??
+      tedarikciKayitlari.find(
+        (s2) =>
+          s2.name.trim().toLocaleLowerCase("tr") ===
+          (alim.supplierName ?? "").trim().toLocaleLowerCase("tr"),
+      )?.id ??
+      "",
+    supplierOrderNo: alim.supplierOrderNo ?? "",
     note: alim.note ?? "",
     malKabulVar,
     kalemler: alim.items.map((k) => ({
@@ -99,6 +117,11 @@ export default async function AlimDuzenleSayfasi({
       ) : null}
 
       <AlimFormu
+        tedarikciler={tedarikciKayitlari.map((s2) => ({
+          id: s2.id,
+          ad: s2.name,
+          kod: s2.code!,
+        }))}
         hesaplar={hesapKayitlari.map((h) => ({
           id: h.id,
           etiket: `${h.channel.name} — ${h.name}`,

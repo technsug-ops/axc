@@ -28,6 +28,10 @@ import {
   type VaryantSonucu,
 } from "../varyant-arama";
 import { type AlimDurumu } from "./actions";
+import {
+  TedarikciSecimi,
+  type TedarikciSecenegi,
+} from "./tedarikci-secimi";
 
 export type HesapSecenegi = {
   id: string;
@@ -50,12 +54,15 @@ type Kalem = {
 
 /** Düzenleme kipinde formu dolduran başlangıç değerleri. */
 export type AlimBaslangici = {
+  /** SİSTEM ÜRETTİ, değiştirilemez. Düzenlemede salt okunur gösterilir. */
   code: string;
   purchasedAt: string;
   channelAccountId: string;
   creditCardId: string;
   installmentCount: string;
-  supplierName: string;
+  supplierId: string;
+  /** Tedarikçideki sipariş numarası — dış dünyanın kimliği, elle girilir. */
+  supplierOrderNo: string;
   note: string;
   kalemler: Kalem[];
   /** Herhangi bir kalemde mal kabul yapılmış mı? */
@@ -73,6 +80,7 @@ function varyantEtiketi(v: VaryantSonucu): string {
 export function AlimFormu({
   hesaplar,
   kartlar,
+  tedarikciler,
   action,
   bugun,
   baslangic,
@@ -80,6 +88,7 @@ export function AlimFormu({
 }: {
   hesaplar: HesapSecenegi[];
   kartlar: KartSecenegi[];
+  tedarikciler: TedarikciSecenegi[];
   action: (durum: AlimDurumu, formData: FormData) => Promise<AlimDurumu>;
   bugun: string;
   /** Doluysa DÜZENLEME kipi. */
@@ -98,12 +107,17 @@ export function AlimFormu({
   const bicim = useBicim();
 
   // --- Başlık alanları ---
-  const [code, setCode] = useState(baslangic?.code ?? "");
+
   const [purchasedAt, setPurchasedAt] = useState(baslangic?.purchasedAt ?? bugun);
   const [channelAccountId, setChannelAccountId] = useState(baslangic?.channelAccountId ?? "");
   const [creditCardId, setCreditCardId] = useState(baslangic?.creditCardId ?? "");
   const [installmentCount, setInstallmentCount] = useState(baslangic?.installmentCount ?? "1");
-  const [supplierName, setSupplierName] = useState(baslangic?.supplierName ?? "");
+  const [supplierId, setSupplierId] = useState(baslangic?.supplierId ?? "");
+  const [supplierOrderNo, setSupplierOrderNo] = useState(
+    baslangic?.supplierOrderNo ?? "",
+  );
+  // Akış içi eklenen tedarikçi listeye burada katılır; sayfa yenilenmez.
+  const [tedarikciListesi, setTedarikciListesi] = useState(tedarikciler);
   const [note, setNote] = useState(baslangic?.note ?? "");
 
   // --- Kalemler ---
@@ -221,12 +235,12 @@ export function AlimFormu({
   }, [kalemler]);
 
   const gonderilecek = {
-    code,
     purchasedAt,
     channelAccountId,
     creditCardId,
     installmentCount: Number(installmentCount),
-    supplierName,
+    supplierId,
+    supplierOrderNo,
     note,
     kalemler: kalemler.map((k) => {
       const sayi = Number(k.unitCostAmount.replace(",", "."));
@@ -253,16 +267,36 @@ export function AlimFormu({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
+            {/* ALIM NUMARASI ELLE GİRİLMEZ — sistem üretir (ALM-HE-260811-01).
+                Salt kayıt kimliğidir; "ewe", "25-23" gibi kodlar bu yüzden
+                oluşuyordu. Düzenlemede DEĞİŞMEZ: kod bir kere doğar. */}
             <div className="space-y-2">
-              <Label htmlFor="alim-kod">{ortak("siparisNo")} *</Label>
-              {/* Sipariş fişindeki barkod okutulabilir (#7). */}
+              <Label>{t("alimNo")}</Label>
+              {duzenleme ? (
+                <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3">
+                  <span className="font-mono text-sm">{baslangic?.code}</span>
+                </div>
+              ) : (
+                <p className="text-muted-foreground flex h-9 items-center text-sm">
+                  {t("alimNoUretilecek")}
+                </p>
+              )}
+            </div>
+
+            {/* Tedarikçinin KENDİ sipariş numarası — dış dünyanın kimliği.
+                Sipariş fişindeki barkod okutulabilir (#7). */}
+            <div className="space-y-2">
+              <Label htmlFor="alim-siparis-no">{t("tedarikciSiparisNo")}</Label>
               <BarkodGirisi
-                id="alim-kod"
-                value={code}
-                onChange={setCode}
-                placeholder={t("kodIpucu")}
+                id="alim-siparis-no"
+                value={supplierOrderNo}
+                onChange={setSupplierOrderNo}
+                placeholder={t("tedarikciSiparisNoIpucu")}
                 kameraBasligi={t("kodKamera")}
               />
+              <p className="text-muted-foreground text-xs">
+                {t("tedarikciSiparisNoNotu")}
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="alim-tarih">{t("alimTarihi")} *</Label>
@@ -360,16 +394,16 @@ export function AlimFormu({
               <p className="text-muted-foreground text-xs">{t("taksitNotu")}</p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="alim-tedarikci">{t("tedarikci")}</Label>
-              <Input
-                id="alim-tedarikci"
-                value={supplierName}
-                onChange={(e) => setSupplierName(e.target.value)}
-                placeholder={ortak("istegeBagli")}
-                autoComplete="off"
-              />
-            </div>
+            <TedarikciSecimi
+              secenekler={tedarikciListesi}
+              secili={supplierId}
+              onSecim={setSupplierId}
+              onYeni={(yeni) =>
+                setTedarikciListesi((o) =>
+                  [...o, yeni].sort((a, b) => a.ad.localeCompare(b.ad, "tr")),
+                )
+              }
+            />
           </div>
 
           <div className="space-y-2">
@@ -461,6 +495,34 @@ export function AlimFormu({
                   </li>
                 ))}
               </ul>
+            ) : null}
+
+            {/* ÖNCE ARA, SONRA YARAT — arama sonuç vermeyince "yeni ürün"
+                İKİNCİL eylem olarak öne çıkar. Böyle olmazsa kullanıcı
+                mevcut ürünü bulamayıp aynı üründen ikinci kayıt açıyor.
+
+                YENİ SEKMEDE açılır: yarım doldurulmuş bu form aynı sekmede
+                gidilirse kaybolur. Dönünce aramayı tekrarlamak yeterli. */}
+            {!araniyor && sorgu.trim().length >= 2 && sonuclar.length === 0 ? (
+              <div className="rounded-md border border-dashed p-4 text-center">
+                <p className="text-sm font-medium">
+                  {t("aramaSonucsuz", { sorgu: sorgu.trim() })}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {t("aramaSonucsuzIpucu")}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-3"
+                  asChild
+                >
+                  <a href="/urunler/yeni" target="_blank" rel="noopener">
+                    <Plus />
+                    {t("yeniUrunOlustur")}
+                  </a>
+                </Button>
+              </div>
             ) : null}
           </div>
 

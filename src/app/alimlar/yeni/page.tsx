@@ -9,6 +9,7 @@ import {
   type HesapSecenegi,
   type KartSecenegi,
 } from "../alim-formu";
+import { type TedarikciSecenegi } from "../tedarikci-secimi";
 
 /**
  * Forma "bugün" yazan sayfa; statik kipte DERLEME GÜNÜ gömülü kalırdı.
@@ -23,7 +24,7 @@ export async function generateMetadata() {
 }
 
 export default async function YeniAlimSayfasi() {
-  const [hesapKayitlari, kartKayitlari] = await Promise.all([
+  const [hesapKayitlari, kartKayitlari, tedarikciKayitlari] = await Promise.all([
     prisma.channelAccount.findMany({
       where: { isActive: true },
       include: { channel: { select: { name: true } } },
@@ -32,6 +33,13 @@ export default async function YeniAlimSayfasi() {
     prisma.creditCard.findMany({
       where: { isActive: true },
       orderBy: { label: "asc" },
+    }),
+    // Kodu OLMAYAN tedarikçi listeye girmez: alım numarası kodundan
+    // üretiliyor, kodsuz seçim sessiz hataya dönerdi.
+    prisma.supplier.findMany({
+      where: { isActive: true, NOT: { code: null } },
+      select: { id: true, name: true, code: true },
+      orderBy: { name: "asc" },
     }),
   ]);
 
@@ -46,6 +54,12 @@ export default async function YeniAlimSayfasi() {
     etiket: `${k.label} (••${k.last4})`,
   }));
 
+  const tedarikciler: TedarikciSecenegi[] = tedarikciKayitlari.map((s) => ({
+    id: s.id,
+    ad: s.name,
+    kod: s.code!,
+  }));
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
@@ -56,6 +70,7 @@ export default async function YeniAlimSayfasi() {
       <AlimFormu
         hesaplar={hesaplar}
         kartlar={kartlar}
+        tedarikciler={tedarikciler}
         action={alimOlustur}
         bugun={tarihGirdisi(new Date())}
       />

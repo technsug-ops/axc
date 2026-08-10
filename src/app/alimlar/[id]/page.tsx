@@ -37,6 +37,7 @@ export default async function AlimDetaySayfasi({
   const alim = await prisma.purchase.findUnique({
     where: { id },
     include: {
+      supplier: { select: { name: true, code: true } },
       items: {
         include: {
           variant: {
@@ -112,7 +113,13 @@ export default async function AlimDetaySayfasi({
           ? t("taksitSayisi", { sayi: alim.installmentCount })
           : t("tekCekim"),
     },
-    { etiket: t("tedarikci"), deger: alim.supplierName ?? "—" },
+    // İLİŞKİ ÖNCE, serbest metin YEDEK: 10.08 öncesi kayıtlarda supplierId
+    // yok, adı sadece supplierName'de duruyor. Geçmiş bozulmadan gösterilir.
+    {
+      etiket: t("tedarikci"),
+      deger: alim.supplier?.name ?? alim.supplierName ?? "—",
+    },
+    { etiket: t("tedarikciSiparisNo"), deger: alim.supplierOrderNo ?? "—" },
   ];
 
   return (

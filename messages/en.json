@@ -27,7 +27,8 @@
     "disaAktarma": "",
     "giris": "",
     "elKitabi": "",
-    "kartBorcu": ""
+    "kartBorcu": "",
+    "tedarikciler": ""
   },
   "Ortak": {
     "kapat": "",
@@ -447,7 +448,20 @@
     "iptalliDuzenlenemez": "",
     "adetGeleninAltinda": "",
     "kalemCikarilamaz": "",
-    "maliyetDefteriGuncellendi": ""
+    "maliyetDefteriGuncellendi": "",
+    "alimNo": "",
+    "alimNoUretilecek": "",
+    "tedarikciSecin": "",
+    "tedarikciZorunlu": "",
+    "tedarikciBulunamadi": "",
+    "tedarikciKodsuz": "",
+    "tedarikciEklemeNotu": "",
+    "tedarikciSiparisNo": "",
+    "tedarikciSiparisNoIpucu": "",
+    "tedarikciSiparisNoNotu": "",
+    "aramaSonucsuz": "",
+    "aramaSonucsuzIpucu": "",
+    "yeniUrunOlustur": ""
   },
   "MalKabul": {
     "saglamSayiOlmali": "",
@@ -525,7 +539,8 @@
     "kanalSkulari": "",
     "veriDisari": "",
     "elKitabi": "",
-    "kartBorcu": ""
+    "kartBorcu": "",
+    "tedarikciler": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -1180,5 +1195,37 @@
     "kartYokIpucu": "",
     "borcDokumu": "",
     "varsayimNotu": ""
+  },
+  "Tedarikci": {
+    "baslik": "",
+    "aciklamaMetni": "",
+    "yeniTedarikci": "",
+    "tedarikciEkle": "",
+    "tanimliTedarikciler": "",
+    "bosBaslik": "",
+    "bosIpucu": "",
+    "adIpucu": "",
+    "kodIpucu": "",
+    "kodAciklama": "",
+    "adZorunlu": "",
+    "adCokUzun": "",
+    "kodZorunlu": "",
+    "kodGecersiz": "",
+    "adZatenVar": "",
+    "kodZatenVar": "",
+    "eklendi": "",
+    "guncellendi": "",
+    "eklenemedi": "",
+    "guncellenemedi": "",
+    "kimlikBulunamadi": "",
+    "bulunamadi": "",
+    "pasifeAlindi": "",
+    "aktiflestirildi": "",
+    "iletisim": "",
+    "iletisimIpucu": "",
+    "alimSayisi": "",
+    "listeNotu": "",
+    "kodsuzBaslik": "",
+    "kodsuzMetin": ""
   }
 }

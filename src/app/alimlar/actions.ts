@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import { ALIM_NO_DENEME, alimNoOlustur } from "@/lib/alim-no";
 import { prisma } from "@/lib/prisma";
 
 export type AlimDurumu = {
@@ -41,7 +42,7 @@ function alimSemasiKur(t: Ceviri) {
   });
 
   return z.object({
-    code: z.string().trim().min(1, t("siparisNoZorunlu")).max(191),
+    // ALIM NUMARASI ŞEMADA YOK: sistem üretir, formdan gelmez.
     purchasedAt: z.string().min(1, t("tarihZorunlu")),
     channelAccountId: z.string(),
     creditCardId: z.string(),
@@ -50,7 +51,12 @@ function alimSemasiKur(t: Ceviri) {
       .int(t("taksitTamSayi"))
       .min(1, t("taksitEnAzBir"))
       .max(36, t("taksitEnFazla36")),
-    supplierName: z.string().trim().max(191),
+    // TEDARİKÇİ ZORUNLU: alım numarası onun kodundan üretiliyor.
+    // "ALM-GEN" gibi bir arka kapı bilerek YOK — kimlik keyfîliğine
+    // açılan ilk delik odur.
+    supplierId: z.string().min(1, t("tedarikciZorunlu")),
+    /** Tedarikçideki sipariş numarası — bizim kimliğimiz değil, onlarınki. */
+    supplierOrderNo: z.string().trim().max(191),
     note: z.string().trim(),
     kalemler: z.array(kalemSemasi).min(1, t("enAzBirKalem")),
   });
@@ -87,12 +93,16 @@ export async function alimOlustur(
   }
   const veri = sonuc.data;
 
-  // Sipariş no benzersiz olmalı (şemada @unique).
-  const mevcut = await prisma.purchase.findUnique({
-    where: { code: veri.code },
+  // Tedarikçi gerçekten var mı ve kodu var mı? Kod olmadan numara üretilemez.
+  const tedarikci = await prisma.supplier.findUnique({
+    where: { id: veri.supplierId },
+    select: { id: true, name: true, code: true, isActive: true },
   });
-  if (mevcut) {
-    return { hatalar: [t("siparisNoZatenKayitli", { kod: veri.code })] };
+  if (!tedarikci || !tedarikci.isActive) {
+    return { hatalar: [t("tedarikciBulunamadi")] };
+  }
+  if (!tedarikci.code) {
+    return { hatalar: [t("tedarikciKodsuz", { ad: tedarikci.name })] };
   }
 
   const tarih = new Date(veri.purchasedAt);
@@ -122,43 +132,59 @@ export async function alimOlustur(
       )
     : null;
 
-  let yeniId: string;
-  try {
-    const alim = await prisma.purchase.create({
-      data: {
-        code: veri.code,
-        // Spec gereği yeni alım "sipariş verildi" durumunda başlar.
-        // Mal kabul (RECEIVED) ve stok girişi Aşama 3'te gelecek.
-        status: "ORDERED",
-        purchasedAt: tarih,
-        supplierName: veri.supplierName || null,
-        note: veri.note || null,
-        installmentCount: veri.installmentCount,
-        channelAccountId: veri.channelAccountId || null,
-        creditCardId: veri.creditCardId || null,
-        goodsAmount: malToplami,
-        goodsCurrency: tekParaBirimi,
-        items: {
-          create: veri.kalemler.map((k) => ({
-            variantId: k.variantId,
-            quantity: k.quantity,
-            unitCostAmount: k.unitCostAmount,
-            unitCostCurrency: k.unitCostCurrency,
-          })),
+  /**
+   * Numara üretimi ile yazma arasında başkası aynı numarayı alırsa
+   * `code` benzersizlik kısıtı (P2002) tetiklenir; sıra yeniden okunarak
+   * denenir. Tek kullanıcıda pratikte hiç olmaz, iki sekmede olabilir.
+   */
+  let yeniId = "";
+  let sonHata: unknown = null;
+
+  for (let deneme = 0; deneme < ALIM_NO_DENEME; deneme++) {
+    const kod = await alimNoOlustur(prisma, tedarikci.code, new Date());
+    try {
+      const alim = await prisma.purchase.create({
+        data: {
+          code: kod,
+          // Spec gereği yeni alım "sipariş verildi" durumunda başlar.
+          status: "ORDERED",
+          purchasedAt: tarih,
+          supplierId: tedarikci.id,
+          // Serbest metin alanı ARTIK YAZILMIYOR ama SİLİNMEDİ: eski
+          // kayıtların yazıldığı hâli duruyor (şemadaki not).
+          supplierOrderNo: veri.supplierOrderNo || null,
+          note: veri.note || null,
+          installmentCount: veri.installmentCount,
+          channelAccountId: veri.channelAccountId || null,
+          creditCardId: veri.creditCardId || null,
+          goodsAmount: malToplami,
+          goodsCurrency: tekParaBirimi,
+          items: {
+            create: veri.kalemler.map((k) => ({
+              variantId: k.variantId,
+              quantity: k.quantity,
+              unitCostAmount: k.unitCostAmount,
+              unitCostCurrency: k.unitCostCurrency,
+            })),
+          },
         },
-      },
-      select: { id: true },
-    });
-    yeniId = alim.id;
-  } catch (e) {
-    const kod =
-      typeof e === "object" && e !== null && "code" in e
-        ? String((e as { code: unknown }).code)
-        : "";
-    if (kod === "P2002") {
-      return { hatalar: [t("siparisNoCakisti")] };
+        select: { id: true },
+      });
+      yeniId = alim.id;
+      break;
+    } catch (e) {
+      sonHata = e;
+      const hataKodu =
+        typeof e === "object" && e !== null && "code" in e
+          ? String((e as { code: unknown }).code)
+          : "";
+      // P2002 = benzersizlik çakışması: numarayı yeniden üretip dene.
+      if (hataKodu !== "P2002") break;
     }
-    console.error("[alim] beklenmeyen hata:", e);
+  }
+
+  if (!yeniId) {
+    console.error("[alim] kaydedilemedi:", sonHata);
     return { hatalar: [t("kaydedilemedi")] };
   }
 
@@ -244,12 +270,14 @@ export async function alimGuncelle(
   const tarih = new Date(veri.purchasedAt);
   if (Number.isNaN(tarih.getTime())) return { hatalar: [t("tarihGecersiz")] };
 
-  const cakisan = await prisma.purchase.findFirst({
-    where: { code: veri.code, NOT: { id } },
-    select: { id: true },
+  // ALIM NUMARASI DÜZENLEMEDE DEĞİŞMEZ. Kod bir kere doğar; etikete ve
+  // yazışmaya girmiş olabilir. Bu yüzden çakışma kontrolü de gerekmiyor.
+  const tedarikci = await prisma.supplier.findUnique({
+    where: { id: veri.supplierId },
+    select: { id: true, isActive: true },
   });
-  if (cakisan) {
-    return { hatalar: [t("siparisNoZatenKayitli", { kod: veri.code })] };
+  if (!tedarikci || !tedarikci.isActive) {
+    return { hatalar: [t("tedarikciBulunamadi")] };
   }
 
   const gelen = await gelenAdetler(id);
@@ -295,9 +323,10 @@ export async function alimGuncelle(
       await tx.purchase.update({
         where: { id },
         data: {
-          code: veri.code,
+
           purchasedAt: tarih,
-          supplierName: veri.supplierName || null,
+          supplierId: tedarikci.id,
+          supplierOrderNo: veri.supplierOrderNo || null,
           note: veri.note || null,
           installmentCount: veri.installmentCount,
           channelAccountId: veri.channelAccountId || null,

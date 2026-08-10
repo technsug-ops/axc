@@ -27,7 +27,8 @@
     "disaAktarma": "Dışa aktarma ve yedek",
     "giris": "Giriş",
     "elKitabi": "Kullanıcı El Kitabı",
-    "kartBorcu": "Kart borcu"
+    "kartBorcu": "Kart borcu",
+    "tedarikciler": "Tedarikçiler"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -447,7 +448,20 @@
     "iptalliDuzenlenemez": "İptal edilmiş alım düzenlenemez.",
     "adetGeleninAltinda": "{urun}: sipariş adedi {adet}, ama {gelen} adet kabul edilmiş. Adet bunun altına indirilemez.",
     "kalemCikarilamaz": "{urun}: bu kalemde mal kabul yapılmış, kalem çıkarılamaz.",
-    "maliyetDefteriGuncellendi": "{sayi} stok hareketinin maliyeti de güncellendi."
+    "maliyetDefteriGuncellendi": "{sayi} stok hareketinin maliyeti de güncellendi.",
+    "alimNo": "Alım no",
+    "alimNoUretilecek": "Kaydedince sistem üretecek — ALM-HE-260811-01",
+    "tedarikciSecin": "Tedarikçi seçin",
+    "tedarikciZorunlu": "Tedarikçi seçilmeli — alım numarası tedarikçi kodundan üretilir",
+    "tedarikciBulunamadi": "Seçilen tedarikçi bulunamadı ya da pasife alınmış.",
+    "tedarikciKodsuz": "\"{ad}\" tedarikçisinin kodu girilmemiş; alım numarası üretilemiyor. Ayarlar → Tedarikçiler ekranından kodu girin.",
+    "tedarikciEklemeNotu": "Ad ve kod yeter. Kaydedince listeye eklenir ve seçilir; alım formundan çıkmazsınız.",
+    "tedarikciSiparisNo": "Tedarikçi sipariş no",
+    "tedarikciSiparisNoIpucu": "örn. 405-8780105-5340330",
+    "tedarikciSiparisNoNotu": "Tedarikçideki sipariş numarası. Sorun çıkarsa onlara bu numarayı söylersiniz. İsteğe bağlı.",
+    "aramaSonucsuz": "\"{sorgu}\" ile eşleşen ürün yok.",
+    "aramaSonucsuzIpucu": "Farklı bir kod ya da adla arayın; ürün gerçekten yoksa yeni kayıt açın. Yeni sekmede açılır, bu form kaybolmaz.",
+    "yeniUrunOlustur": "Yeni ürün oluştur"
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",
@@ -525,7 +539,8 @@
     "kanalSkulari": "Kanal SKU",
     "veriDisari": "Dışa Aktarma",
     "elKitabi": "El Kitabı",
-    "kartBorcu": "Kart Borcu"
+    "kartBorcu": "Kart Borcu",
+    "tedarikciler": "Tedarikçiler"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -1180,5 +1195,37 @@
     "kartYokIpucu": "Alımlarınızı hangi kartla yaptığınızı takip edebilmek için önce kart tanımlayın.",
     "borcDokumu": "Borç dökümü",
     "varsayimNotu": "İki varsayım: kesim GÜNÜNDE yapılan alım o ayın ekstresine düşer; taksitte bölünmeyen kuruş son taksite eklenir. İlk gerçek ekstrenizle karşılaştırıp teyit edin."
+  },
+  "Tedarikci": {
+    "baslik": "Tedarikçiler",
+    "aciklamaMetni": "Malı aldığınız firmalar. Alım numarası tedarikçi kodundan üretilir (ALM-HE-260811-01), bu yüzden kod zorunludur.",
+    "yeniTedarikci": "Yeni tedarikçi",
+    "tedarikciEkle": "Tedarikçi Ekle",
+    "tanimliTedarikciler": "Tanımlı tedarikçiler ({sayi})",
+    "bosBaslik": "Henüz tedarikçi tanımlanmamış.",
+    "bosIpucu": "Alım girebilmek için en az bir tedarikçi gerekir. Örnek: Hepsiburada, Amazon.",
+    "adIpucu": "örn. Hepsiburada",
+    "kodIpucu": "örn. HE",
+    "kodAciklama": "Alım numarasının ortasındaki harfler. 2-4 harf.",
+    "adZorunlu": "Tedarikçi adı zorunlu",
+    "adCokUzun": "Tedarikçi adı çok uzun",
+    "kodZorunlu": "Tedarikçi kodu zorunlu — alım numarası bu koddan üretilir",
+    "kodGecersiz": "Kod yalnızca harflerden oluşur ve 2-4 harf olmalıdır. Örnek: HE",
+    "adZatenVar": "\"{ad}\" adlı tedarikçi zaten var.",
+    "kodZatenVar": "\"{kod}\" kodu \"{ad}\" tedarikçisinde kullanılıyor.",
+    "eklendi": "\"{ad}\" eklendi.",
+    "guncellendi": "\"{ad}\" güncellendi.",
+    "eklenemedi": "Tedarikçi eklenemedi, beklenmeyen bir hata oluştu.",
+    "guncellenemedi": "Tedarikçi güncellenemedi, beklenmeyen bir hata oluştu.",
+    "kimlikBulunamadi": "Tedarikçi kimliği bulunamadı.",
+    "bulunamadi": "Tedarikçi bulunamadı.",
+    "pasifeAlindi": "\"{ad}\" pasife alındı; artık alım formunda seçilemez.",
+    "aktiflestirildi": "\"{ad}\" tekrar aktif.",
+    "iletisim": "İletişim",
+    "iletisimIpucu": "Telefon, e-posta veya kişi",
+    "alimSayisi": "Alım",
+    "listeNotu": "Tedarikçiler silinmez, pasife alınır — geçmiş alımlar onlara bağlıdır. Pasif tedarikçi yeni alım formunda çıkmaz ama eski alımlarda görünmeye devam eder.",
+    "kodsuzBaslik": "{sayi} tedarikçide kod girilmemiş",
+    "kodsuzMetin": "Alım numarası tedarikçi kodundan üretilir. Kodu olmayan tedarikçiyle yeni alım girilemez — aşağıdan Düzenle ile girin."
   }
 }

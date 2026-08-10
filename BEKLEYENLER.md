@@ -250,20 +250,15 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       · `src/lib/kimlik.ts` motoru · `kimlik:dogrula` (54) ·
       `migration:kontrol` harf bekçisi · kategori ekranında Kod alanı.
 
-- [ ] **Kimlik standardı — PARÇA 2 (tedarikçi ve alım numarası)**
-      TESPİT 10.08.2026: `supplierId` uygulama kodunda HİÇBİR YERDE
-      yazılmıyor. `Supplier` tablosu var ve migration eski adları taşımış,
-      ama alım formu tedarikçiyi hâlâ SERBEST METİN olarak alıyor
-      (`alim-formu.tsx` → `supplierName`). İlişki ölü duruyor; alım
-      numarası tedarikçi kodunu içerdiği için önce bu kurulmalı.
-      Kapsam: `/ayarlar/tedarikciler` ekranı · alım formunda seçim kutusu
-      + akış içi mini "yeni tedarikçi" diyaloğu (ad + kod, sayfadan
-      çıkmadan) · `supplierId` gerçekten yazılıyor · alım no üretimi,
-      kod alanı formdan kalkıyor · Tedarikçi sipariş no alanı ·
-      ürün seçiminde "önce ara, sonra yarat" (arama sonuçsuzken
-      "Yeni ürün oluştur" ikincil eylemi, YENİ SEKMEDE — yarım form
-      kaybolmasın).
-      _Tedarikçi ZORUNLU olacak; `ALM-GEN` arka kapısı bilerek yok._
+- [x] ~~**Kimlik standardı — PARÇA 2 (tedarikçi ve alım numarası)**~~ ✓ 11.08.2026
+      `/ayarlar/tedarikciler` ekranı (kod zorunlu, "Öner" düğmesi) · alım
+      formunda seçim kutusu + akış içi mini ekleme diyaloğu · `supplierId`
+      ARTIK GERÇEKTEN YAZILIYOR · alım numarası sistem üretiyor
+      (ALM-HE-260811-01), kod alanı formdan kalktı · Tedarikçi sipariş no
+      alanı · arama sonuçsuzken "Yeni ürün oluştur" (yeni sekmede).
+      Eski kayıtlar: düzenlemeye girildiğinde `supplierName` ADA GÖRE
+      eşleştirilip ön seçiliyor. Alım numarası düzenlemede DEĞİŞMEZ.
+      `alim-no:dogrula` (8) — canlıdaki serbest kodlar sayaca karışmıyor.
 
 - [ ] **Kimlik standardı — PARÇA 3 (ürün kodları, raf, mükerrer koruması)**
       SKU "Öner" düğmesi (SKU ve Firma SKU'yu AYNI değerle doldurur, `F-`

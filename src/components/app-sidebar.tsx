@@ -17,6 +17,7 @@ import {
   Receipt,
   ShoppingCart,
   Store,
+  Truck,
   Tags,
   Wallet,
 } from "lucide-react";
@@ -82,6 +83,12 @@ const AYARLAR: MenuOgesi[] = [
     anahtar: "kanalHesaplari",
     href: "/ayarlar/kanallar",
     icon: Store,
+    aktif: true,
+  },
+  {
+    anahtar: "tedarikciler",
+    href: "/ayarlar/tedarikciler",
+    icon: Truck,
     aktif: true,
   },
   {
