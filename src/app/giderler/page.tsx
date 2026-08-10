@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { BarChart3, Pencil, Plus, Repeat } from "lucide-react";
 
+import { ExcelIndir } from "@/components/excel-indir";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -159,6 +160,10 @@ export default async function GiderlerSayfasi({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ExcelIndir
+            liste="giderler"
+            parametreler={{ ay: seciliAy, kategori: seciliKategori }}
+          />
           <Button variant="outline" asChild>
             <Link href="/rapor">
               <BarChart3 />

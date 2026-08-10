@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { History, Package } from "lucide-react";
 
+import { ExcelIndir } from "@/components/excel-indir";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
@@ -87,12 +88,15 @@ export default async function StokSayfasi({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
-        <p className="text-muted-foreground text-sm">
-          {t("ozet", { varyant: varyantlar.length, adet: toplamStok })}
-          {arama ? ortak("aramaEki", { arama }) : ""}
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
+          <p className="text-muted-foreground text-sm">
+            {t("ozet", { varyant: varyantlar.length, adet: toplamStok })}
+            {arama ? ortak("aramaEki", { arama }) : ""}
+          </p>
+        </div>
+        <ExcelIndir liste="stok" parametreler={{ q: arama }} />
       </div>
 
       <StokArama baslangic={arama} />

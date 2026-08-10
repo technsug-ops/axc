@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Eye, Plus, TriangleAlert, Undo2 } from "lucide-react";
 
+import { ExcelIndir } from "@/components/excel-indir";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
@@ -140,12 +141,18 @@ export default async function SatislarSayfasi({
             {arama ? ortak("aramaEki", { arama }) : ""}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/satislar/yeni">
-            <Plus />
-            {t("yeniSatis")}
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <ExcelIndir
+            liste="satislar"
+            parametreler={{ q: arama, kar: karEksik ? "eksik" : undefined }}
+          />
+          <Button asChild>
+            <Link href="/satislar/yeni">
+              <Plus />
+              {t("yeniSatis")}
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <form action="/satislar" className="flex flex-wrap items-end gap-2">

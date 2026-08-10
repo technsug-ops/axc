@@ -47,7 +47,11 @@ listesiyle birlikte teslim edilir.
 Bunlar tamamlanmadan gerçek veriyle canlıya geçilmez.
 _Karar 09.08.2026._
 
-- [ ] **Veri içe aktarma modülü (Excel/CSV)** — Faz 2 sonu
+- [x] ~~**Veri içe aktarma modülü (Excel/CSV)**~~ — _Tamamlandı 10.08.2026_
+      `/ayarlar/ice-aktarma`: şablon indir → kip seç → denetle → önizle →
+      onayla → tek transaction. Kullanıcı testinden geçti (hata → yazım
+      önerisi → düzeltme → önizleme → yazım; 2 ürün, 3 parti, 75 adet).
+      Asıl kapsam aşağıda duruyor, tarihe not olarak bırakıldı:
       Kapsam:
       1. Ürün + varyant listesi (kodlar, komisyon oranı, desi, raf dahil)
       2. Açılış stoğu — `INITIAL` hareketi olarak, mümkünse maliyetli
@@ -58,7 +62,10 @@ _Karar 09.08.2026._
       _SaaS: bu modül onboarding'in temeli — her yeni müşteri kendi
       Excel'ini yükleyerek başlayacak._
 
-- [ ] **Dışa aktarma (Excel/CSV)** — içe aktarmayla AYNI pakette
+- [x] ~~**Dışa aktarma (Excel/CSV)**~~ — _Tamamlandı 10.08.2026_
+      Beş liste ekranında "Excel indir" (ekrandaki filtreyi uygular) +
+      `/ayarlar/disa-aktarma` altında tüm veri tek dosyada çok sayfalı.
+      Özgün kapsam notu:
       İkisi aynı şablonu ve altyapıyı paylaşır, bu yüzden birlikte
       yapılır.
       1. Her ana liste ekranına "Excel/CSV indir" eylemi — ürünler,
@@ -67,12 +74,23 @@ _Karar 09.08.2026._
       2. `/ayarlar` altında "tüm veriyi dışa aktar" — tablo tablo tam
          döküm.
 
-- [ ] **Otomatik veritabanı yedeği**
-      Zamanlanmış, saklama süreli. Hosting ortamına göre kurgulanacak;
-      Vercel + uzak MySQL mimarisinde nasıl yapılacağı o gün netleşir.
-      Ayrıca kullanıcının kendi indirebileceği yedek: `/ayarlar`'da
-      **"yedek al"** — tüm verinin tek dosyada dökümü + geri yükleme
-      yolu.
+- [ ] **Otomatik veritabanı yedeği** — TEK KALAN ÖN ŞART
+      Elle yedek 10.08.2026'da tamamlandı (`/ayarlar/disa-aktarma` →
+      "Yedek al", JSON tam döküm; kargo tarifesiz hafif sürümü de var).
+      Zamanlanmış olan hosting kararına bağlı:
+      - **All-Inkl / VPS**: sunucu cron + `mysqldump`, saklama süreli —
+        en sağlamı, muhtemel tercih.
+      - **Vercel**: `mysqldump` YOK (mysql istemcisi bulunmuyor).
+        Vercel Cron → route handler → JSON döküm → uzak depolama.
+      Karar canlıya geçiş planında verilecek.
+
+- [ ] **Yedekten geri yükleme ekranı**
+      Bugün yedek dosyası ELLE geri yükleniyor. Ekrandan tek tuşla geri
+      yükleme bilinçli olarak yapılmadı: yanlış tuşla tüm verinin üzerine
+      yazılması korumasını hak eden bir işlem. İçe aktarma altyapısı
+      (önizle-önce-yaz + tek transaction) hazır; sırası gelince onun
+      üzerine kurulur.
+      _Karar 10.08.2026._
 
 ## SaaS dönüşümü
 

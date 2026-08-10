@@ -23,7 +23,8 @@
     "giderSablonlari": "",
     "rapor": "",
     "iceAktarma": "",
-    "kanalSku": ""
+    "kanalSku": "",
+    "disaAktarma": ""
   },
   "Ortak": {
     "kapat": "",
@@ -500,7 +501,8 @@
     "rapor": "",
     "veriAktarimi": "",
     "kanalSku": "",
-    "kanalSkulari": ""
+    "kanalSkulari": "",
+    "veriDisari": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -1060,5 +1062,26 @@
     "aktiflestirildi": "",
     "hesapYokBaslik": "",
     "hesapYokIpucu": ""
+  },
+  "DisaAktarma": {
+    "excelIndir": "",
+    "baslik": "",
+    "aciklamaMetni": "",
+    "tumDosyaAdi": "",
+    "bilinmeyenListe": "",
+    "tumBaslik": "",
+    "tumMetin": "",
+    "tumIndir": "",
+    "yedekBaslik": "",
+    "yedekMetin": "",
+    "yedekIndir": "",
+    "yedekNotu": "",
+    "yedekKapsam": "",
+    "geriYuklemeBaslik": "",
+    "geriYuklemeMetin": "",
+    "otomatikBaslik": "",
+    "otomatikMetin": "",
+    "hafifYedekIndir": "",
+    "hafifYedekNotu": ""
   }
 }

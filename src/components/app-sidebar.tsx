@@ -7,6 +7,7 @@ import {
   BarChart3,
   Boxes,
   CreditCard,
+  Download,
   FileSpreadsheet,
   MapPin,
   Package,
@@ -82,6 +83,12 @@ const AYARLAR: MenuOgesi[] = [
     anahtar: "veriAktarimi",
     href: "/ayarlar/ice-aktarma",
     icon: FileSpreadsheet,
+    aktif: true,
+  },
+  {
+    anahtar: "veriDisari",
+    href: "/ayarlar/disa-aktarma",
+    icon: Download,
     aktif: true,
   },
 ];

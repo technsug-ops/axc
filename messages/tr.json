@@ -23,7 +23,8 @@
     "giderSablonlari": "Tekrarlayan giderler",
     "rapor": "Dönem raporu",
     "iceAktarma": "Veri içe aktarma",
-    "kanalSku": "Kanal SKU ve komisyon"
+    "kanalSku": "Kanal SKU ve komisyon",
+    "disaAktarma": "Dışa aktarma ve yedek"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -500,7 +501,8 @@
     "rapor": "Rapor",
     "veriAktarimi": "Veri Aktarımı",
     "kanalSku": "Kanal SKU",
-    "kanalSkulari": "Kanal SKU"
+    "kanalSkulari": "Kanal SKU",
+    "veriDisari": "Dışa Aktarma"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -1060,5 +1062,26 @@
     "aktiflestirildi": "Eşleme aktifleştirildi.",
     "hesapYokBaslik": "Kanal hesabı yok",
     "hesapYokIpucu": "Önce Ayarlar → Kanal Hesapları ekranından en az bir mağaza tanımlayın."
+  },
+  "DisaAktarma": {
+    "excelIndir": "Excel indir",
+    "baslik": "Dışa aktarma ve yedek",
+    "aciklamaMetni": "Verileriniz sizindir. İstediğiniz an tamamını indirebilirsiniz — hiçbir şey sistemde kilitli değildir.",
+    "tumDosyaAdi": "selliora-tum-veri",
+    "bilinmeyenListe": "Bilinmeyen liste.",
+    "tumBaslik": "Tüm veriyi Excel olarak indir",
+    "tumMetin": "Ürünler, alımlar, satışlar, stok ve giderler tek dosyada, her biri ayrı sayfada. Filtre uygulanmaz — her şey iner. Muhasebeciye vermek veya kendi arşiviniz için.",
+    "tumIndir": "Tüm veriyi indir",
+    "yedekBaslik": "Yedek al (JSON)",
+    "yedekMetin": "Veritabanının TAM dökümü: Excel dökümünün taşımadığı ilişkiler, stok defteri hareketleri, kesinti kalemleri ve ayar tabloları dahil. Geri yükleme için gereken dosya budur — Excel dosyası değil.",
+    "yedekIndir": "Yedek dosyasını indir",
+    "yedekNotu": "Bu dosyayı güvenli bir yerde saklayın. İçinde satış, maliyet ve kâr bilgileriniz açık metin olarak durur.",
+    "yedekKapsam": "Yedeğe giren tablolar",
+    "geriYuklemeBaslik": "Geri yükleme nasıl olur?",
+    "geriYuklemeMetin": "Yedek dosyası şu an ELLE geri yüklenir: dosyayı bize/geliştiriciye verirsiniz, veritabanına yazılır. Ekrandan tek tuşla geri yükleme HENÜZ YOK — yanlış tuşla tüm verinin üzerine yazılması, korumasını hak eden bir işlem. Otomatik zamanlanmış yedek de canlıya geçiş planına bağlı.",
+    "otomatikBaslik": "Otomatik yedek",
+    "otomatikMetin": "Zamanlanmış otomatik yedek HENÜZ KURULU DEĞİL; hangi sunucuda çalışacağınız belli olunca kurulacak. O güne kadar buradan elle yedek alın.",
+    "hafifYedekIndir": "Hafif yedek indir (tarifesiz)",
+    "hafifYedekNotu": "Kargo tarife tablosu 44.841 satır ve dosyanın neredeyse tamamını o kaplıyor; oysa seed ile aynen yeniden üretilebilen referans veridir. Hafif yedek onu dışarıda bırakır — birkaç yüz kilobayt kalır, her gün almaya elverişlidir. Dosyanın içinde eksik olduğu yazar."
   }
 }
