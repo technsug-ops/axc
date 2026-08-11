@@ -99,6 +99,47 @@ export function tarihCoz(ham: unknown): Date | null {
 /** Boş/anlamsız hücre mi? */
 const bos = (d: unknown) => String(d ?? "").trim() === "";
 
+/**
+ * TANINMAYAN İŞLEM TİPLERİ — uyarı kanalına gidecek özet.
+ *
+ * Pazaryerleri yeni tip ekliyor ve haber vermiyor. Sessizce atlarsak para
+ * kaybolur; yüklemeyi durdurursak her yeni tipte sistem kilitlenir.
+ * Orta yol: kalem yazılır, tipi ve TOPLAM TUTARI burada listelenir.
+ * Kullanıcı "bu ne?" diye bakar, biz kodu ekleriz.
+ */
+export function taninmayanTipler(
+  okuma: HakedisOkumasi,
+): { hamTip: string; sayi: number; toplam: number }[] {
+  const harita = new Map<string, { sayi: number; toplam: number }>();
+  for (const satir of okuma.satirlar) {
+    if (satir.kod !== "DIGER") continue;
+    const mevcut = harita.get(satir.hamTip) ?? { sayi: 0, toplam: 0 };
+    mevcut.sayi++;
+    mevcut.toplam += satir.tutar;
+    harita.set(satir.hamTip, mevcut);
+  }
+  return [...harita.entries()]
+    .map(([hamTip, o]) => ({ hamTip, ...o }))
+    .sort((a, b) => b.sayi - a.sayi);
+}
+
+/**
+ * Bir siparişin TÜM satırlarını toplar.
+ *
+ * TY'de de bir sipariş çok satırlıdır. Gerçek zincir (11471381662):
+ *   Satış +7850 → Kupon −15 → İade −7850 → Kupon İptal +15  =  0
+ * Yani iade edilmiş bir siparişin net hakedişi sıfırdır. Tek satıra bakan
+ * bir hesap "7850 alacağım var" derdi.
+ */
+export function siparisNeti(
+  satirlar: HakedisSatiri[],
+  siparisNo: string,
+): number {
+  return satirlar
+    .filter((s) => s.siparisNo === siparisNo)
+    .reduce((toplam, s) => toplam + s.tutar, 0);
+}
+
 // ---------------------------------------------------------------------------
 //  TRENDYOL — GENİŞ FORMAT
 // ---------------------------------------------------------------------------
@@ -106,22 +147,39 @@ const bos = (d: unknown) => String(d ?? "").trim() === "";
 /** TY "İşlem Tipi" → ortak kod. Normalize edilmiş metinle eşleşir. */
 const TY_TIPLER: Record<string, HakedisKodu> = {
   "satış": "SIPARIS_TUTARI",
+  "iade": "IADE_TUTARI",
   "kupon": "KUPON",
+  "kupon iptal": "KUPON_IPTAL",
+  "indirim": "INDIRIM",
   "e-ticaret stopajı": "ETICARET_STOPAJI",
   "kargo fatura": "KARGO_FATURA",
   "platform hizmet bedeli": "PLATFORM_HIZMET",
+  "erken ödeme kesinti faturası": "ERKEN_ODEME",
+  "uluslararası hizmet bedeli": "ULUSLARARASI_HIZMET",
   "kurumsal fatura - trendyol kupon": "KUPON",
+  "kurumsal fatura - trendyol promosyon": "PROMOSYON",
 };
 
+/**
+ * SÜTUN ADI SEÇENEKLİDİR — ilk tutan kullanılır.
+ *
+ * Gerçek dosyalarda (11.08.2026) başlıklar tarif edilenden farklı çıktı:
+ *   "Kayıt No"      →  "Kayıt No / Fatura No"
+ *   "Ürün Adı"      →  "Ürün Adı / Açıklama"
+ *   "Komisyon Oranı"→  "Komisyon / Yurt Dışı Stok Destek Oranı"
+ * Trendyol tek bir kolona iki anlam yükleyince başlığı da uzatmış.
+ * Tek ada bağlanmak, bir sonraki değişiklikte yine kırılmak demekti.
+ */
 const TY_SUTUNLAR = {
-  kayitNo: "kayıt no",
-  ulke: "ülke",
-  islemTipi: "işlem tipi",
-  siparisNo: "sipariş no",
-  barkod: "barkod",
-  saticiHakedis: "satıcı hakediş",
-  vadeTarihi: "vade tarihi",
-  toplamTutar: "toplam tutar",
+  kayitNo: ["kayıt no / fatura no", "kayıt no", "fatura no"],
+  ulke: ["ülke"],
+  islemTipi: ["işlem tipi"],
+  siparisNo: ["sipariş no"],
+  barkod: ["barkod"],
+  saticiHakedis: ["satıcı hakediş"],
+  vadeTarihi: ["vade tarihi"],
+  vadeSuresi: ["vade süresi (iş günü)", "vade süresi"],
+  toplamTutar: ["toplam tutar"],
 } as const;
 
 export function trendyolOku(satirlar: unknown[][]): HakedisOkumasi {
@@ -131,21 +189,35 @@ export function trendyolOku(satirlar: unknown[][]): HakedisOkumasi {
   }
 
   const dizin = basliklariDizinle(satirlar[0]);
-  const al = (anahtar: string) => {
-    const sira = dizin.get(anahtar);
-    if (sira === undefined) eksikSutunlar.push(anahtar);
-    return sira;
+
+  /** Seçeneklerden ilk tutanı; hiçbiri yoksa eksik listesine yazar. */
+  const al = (adaylar: readonly string[]) => {
+    for (const aday of adaylar) {
+      const sira = dizin.get(aday);
+      if (sira !== undefined) return sira;
+    }
+    eksikSutunlar.push(adaylar[0]);
+    return undefined;
+  };
+  /** Zorunlu olmayan sütun: yoksa sessizce atlanır. */
+  const secmeli = (adaylar: readonly string[]) => {
+    for (const aday of adaylar) {
+      const sira = dizin.get(aday);
+      if (sira !== undefined) return sira;
+    }
+    return undefined;
   };
 
   const s = {
     kayitNo: al(TY_SUTUNLAR.kayitNo),
-    ulke: dizin.get(TY_SUTUNLAR.ulke),
+    ulke: secmeli(TY_SUTUNLAR.ulke),
     islemTipi: al(TY_SUTUNLAR.islemTipi),
     siparisNo: al(TY_SUTUNLAR.siparisNo),
-    barkod: dizin.get(TY_SUTUNLAR.barkod),
+    barkod: secmeli(TY_SUTUNLAR.barkod),
     hakedis: al(TY_SUTUNLAR.saticiHakedis),
     vade: al(TY_SUTUNLAR.vadeTarihi),
-    toplam: dizin.get(TY_SUTUNLAR.toplamTutar),
+    vadeSuresi: secmeli(TY_SUTUNLAR.vadeSuresi),
+    toplam: secmeli(TY_SUTUNLAR.toplamTutar),
   };
 
   if (eksikSutunlar.length > 0) {
@@ -233,16 +305,16 @@ const HB_TIPLER: Record<string, HakedisKodu> = {
 };
 
 const HB_SUTUNLAR = {
-  durum: "durum",
-  odemeTarihi: "ödeme tarihi",
-  kayitNo: "kayıt no",
-  kayitTipi: "kayıt tipi",
-  vadeTarihi: "vade tarihi",
-  tutar: "tutar",
-  paraBirimi: "para birimi",
-  siparisNo: "sipariş no",
-  urunNo: "ürün no (sku)",
-  kayitTuru: "kayıt türü",
+  durum: ["durum"],
+  odemeTarihi: ["ödeme tarihi"],
+  kayitNo: ["kayıt no", "kayıt no / fatura no"],
+  kayitTipi: ["kayıt tipi"],
+  vadeTarihi: ["vade tarihi"],
+  tutar: ["tutar"],
+  paraBirimi: ["para birimi"],
+  siparisNo: ["sipariş no"],
+  urunNo: ["ürün no (sku)", "ürün no", "sku"],
+  kayitTuru: ["kayıt türü"],
 } as const;
 
 export function hepsiburadaOku(satirlar: unknown[][]): HakedisOkumasi {
@@ -256,23 +328,34 @@ export function hepsiburadaOku(satirlar: unknown[][]): HakedisOkumasi {
   }
 
   const dizin = basliklariDizinle(satirlar[0]);
-  const al = (anahtar: string) => {
-    const sira = dizin.get(anahtar);
-    if (sira === undefined) eksikSutunlar.push(anahtar);
-    return sira;
+
+  const al = (adaylar: readonly string[]) => {
+    for (const aday of adaylar) {
+      const sira = dizin.get(aday);
+      if (sira !== undefined) return sira;
+    }
+    eksikSutunlar.push(adaylar[0]);
+    return undefined;
+  };
+  const secmeli = (adaylar: readonly string[]) => {
+    for (const aday of adaylar) {
+      const sira = dizin.get(aday);
+      if (sira !== undefined) return sira;
+    }
+    return undefined;
   };
 
   const s = {
-    durum: dizin.get(HB_SUTUNLAR.durum),
-    odeme: dizin.get(HB_SUTUNLAR.odemeTarihi),
+    durum: secmeli(HB_SUTUNLAR.durum),
+    odeme: secmeli(HB_SUTUNLAR.odemeTarihi),
     kayitNo: al(HB_SUTUNLAR.kayitNo),
     kayitTipi: al(HB_SUTUNLAR.kayitTipi),
-    vade: dizin.get(HB_SUTUNLAR.vadeTarihi),
+    vade: secmeli(HB_SUTUNLAR.vadeTarihi),
     tutar: al(HB_SUTUNLAR.tutar),
-    paraBirimi: dizin.get(HB_SUTUNLAR.paraBirimi),
+    paraBirimi: secmeli(HB_SUTUNLAR.paraBirimi),
     siparisNo: al(HB_SUTUNLAR.siparisNo),
-    urunNo: dizin.get(HB_SUTUNLAR.urunNo),
-    kayitTuru: dizin.get(HB_SUTUNLAR.kayitTuru),
+    urunNo: secmeli(HB_SUTUNLAR.urunNo),
+    kayitTuru: secmeli(HB_SUTUNLAR.kayitTuru),
   };
 
   if (eksikSutunlar.length > 0) {

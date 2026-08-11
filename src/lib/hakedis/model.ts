@@ -26,6 +26,10 @@ export const HAKEDIS_KODLARI = [
   "TAHSILAT_BEDELI",
   "KAMPANYA",
   "KUPON",
+  /** Kuponun geri gelişi — POZİTİF. Kupon'un aynası, ayrı kod. */
+  "KUPON_IPTAL",
+  "INDIRIM",
+  "PROMOSYON",
   // --- iade aynaları: aynı kalemin geri dönüşü ---
   "IADE_TUTARI",
   "KOMISYON_IADE",
@@ -39,6 +43,14 @@ export const HAKEDIS_KODLARI = [
   "KARGO_FATURA",
   "ETICARET_STOPAJI",
   "HURDA_GELIRI",
+  "ERKEN_ODEME",
+  "ULUSLARARASI_HIZMET",
+  /**
+   * TANINMAYAN TİP. Pazaryerleri yeni işlem tipi ekliyor ve haber vermiyor.
+   * Sessizce atlamak, parayı kaybetmek demektir; yüklemeyi durdurmak ise
+   * her yeni tipte sistemi kilitlerdi. Bu yüzden kalem YAZILIR, ham tipiyle
+   * ve tutarıyla uyarı listesinde görünür — kullanıcı görür, biz kod ekleriz.
+   */
   "DIGER",
 ] as const;
 
@@ -50,6 +62,8 @@ export const SIPARIS_DISI_KODLAR: HakedisKodu[] = [
   "KARGO_FATURA",
   "ETICARET_STOPAJI",
   "HURDA_GELIRI",
+  "ERKEN_ODEME",
+  "ULUSLARARASI_HIZMET",
 ];
 
 /**
@@ -70,7 +84,14 @@ export type HakedisSatiri = {
   siparisNo: string | null;
   tutar: number;
   paraBirimi: Currency;
-  /** Vade tarihi — UTC gece yarısı. */
+  /**
+   * VADE TARİHİ RAPORDAN OKUNUR, HESAPLANMAZ.
+   *
+   * Aynı hesapta 21 ve 28 iş günlük satırlar bir arada çıkıyor (kullanıcı
+   * ölçümü 11.08.2026). Kanal ayarındaki `payoutDays` bu satırlar için
+   * kullanılmaz; o değer YALNIZCA rapora henüz düşmemiş satışların
+   * ön-tahmini içindir. Rapor geldiğinde gerçek tarih buradan gelir.
+   */
   vadeTarihi: Date | null;
   /** Paranın hesaba geçtiği gün. HB'de var, TY'de YOK. */
   odemeTarihi: Date | null;

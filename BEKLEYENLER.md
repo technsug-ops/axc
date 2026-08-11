@@ -169,6 +169,15 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
 
 ## Hakediş paketinden çıkan kararlar
 
+- [ ] **Gerçek hakediş dosyaları depoya KONMADI — bilinçli**
+      5 Trendyol raporu okundu ve okuyucu onlarla doğrulandı, ama dosyalar
+      `veri/` altına kopyalanmadı: içlerinde **"Müşteri Adı"** kolonu var ve
+      depo herkese açık (github.com/technsug-ops/axc). Bunun yerine gerçek
+      BAŞLIK SATIRI ve 12 işlem tipi `hakedis:dogrula`nın 5. bölümüne
+      çıkarıldı; JBL zinciri (11471381662) altın senaryo olarak sabitlendi.
+      Gerçek dosyayla yeniden koşum gerekirse yerel klasörden elle yapılır.
+      _Karar 11.08.2026._
+
 - [ ] **Resmî tatil takvimi (iş günü hesabı)**
       Trendyol vadesi İŞ GÜNÜ cinsinden. Bugün yalnız hafta sonu atlanıyor;
       resmî tatiller sayılmıyor çünkü VERİ gerektirir (yıl yıl değişir,

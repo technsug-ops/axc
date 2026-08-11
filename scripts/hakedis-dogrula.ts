@@ -10,6 +10,10 @@
  *  2) TRENDYOL — geniş format, sipariş dışı toplu kesintiler, genel toplam.
  *  3) HEPSİBURADA — uzun format, işaret tekleştirme, tipsiz son satır.
  *  4) TOLERANS — başlık yazımı değişirse okuyucu yine tutmalı.
+ *  5) GERÇEK DOSYA — 11.08.2026'da okunan 5 Trendyol raporunun GERÇEK
+ *     başlık satırı ve gerçek işlem tipleri. Ham veri depoya konmadı
+ *     (dosyalarda "Müşteri Adı" var, depo herkese açık); yapı buraya
+ *     çıkarıldı.
  * ============================================================================
  */
 
@@ -19,6 +23,8 @@ import {
   basligiNormalle,
   hepsiburadaOku,
   sayiCoz,
+  siparisNeti,
+  taninmayanTipler,
   tarihCoz,
   trendyolOku,
   turkiyeDisiMi,
@@ -26,7 +32,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 4;
+const BOLUM_SAYISI = 5;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -209,6 +215,102 @@ console.log("\n4) TOLERANS — başlık ve değer biçimleri");
   kontrol("2026-08-10 çözülür", metin(tarihCoz("2026-08-10")) === "2026-08-10");
   kontrol("boş tarih null", tarihCoz("") === null);
   kosanBolumler.push("tolerans");
+}
+
+// ===========================================================================
+console.log("\n5) GERÇEK DOSYA — 11.08.2026 Trendyol raporları");
+// ===========================================================================
+{
+  /**
+   * GERÇEK BAŞLIK SATIRI. Tarif edilenden ÜÇ KOLONDA farklı çıktı:
+   *   "Kayıt No"       →  "Kayıt No / Fatura No"
+   *   "Ürün Adı"       →  "Ürün Adı / Açıklama"
+   *   "Komisyon Oranı" →  "Komisyon / Yurt Dışı Stok Destek Oranı"
+   * Tek ada bağlı okuyucu bu dosyaları HİÇ okuyamadı (0 satır).
+   * Bu satır aynen buradadır ki başlık yine değişirse test önce kırılsın.
+   */
+  const GERCEK_BASLIK = [
+    "Kayıt No / Fatura No", "Ülke", "İşlem Tipi", "Sipariş No",
+    "Sipariş Tarihi", "İşlem Tarihi", "Satıcı", "Satıcı Cari Adı",
+    "Ürün Adı / Açıklama", "Barkod", "Komisyon / Yurt Dışı Stok Destek Oranı",
+    "TY Hakediş", "Satıcı Hakediş", "Stopaj", "KDV (%)",
+    "Vade Süresi (İş Günü)", "Teslim Tarihi", "Vade Tarihi",
+    "Toplam Tutar", "Müşteri Adı", "Paket Numarası",
+  ];
+
+  const satir = (
+    kayitNo: string, tip: string, siparis: string, hakedis: number,
+  ) => [
+    kayitNo, "Türkiye", tip, siparis, "01.08.2026", "01.08.2026", "SATICI",
+    "SATICI A.Ş.", "Ürün", "8697975600803", 15.5, 0, hakedis, 0, 20, 28,
+    "03.08.2026", "03.09.2026", 0, "", "",
+  ];
+
+  /**
+   * JBL ZİNCİRİ — ALTIN SENARYO (gerçek sipariş 11471381662).
+   * Satış → Kupon → Kupon İptal → İade. Dört satır, NET SIFIR.
+   * Tek satıra bakan bir hesap "7025,75 alacağım var" derdi; iade edilmiş
+   * siparişin hakedişi sıfırdır.
+   */
+  const zincir = [
+    GERCEK_BASLIK,
+    satir("K1", "Satış", "11471381662", 7025.75),
+    satir("K2", "Kupon", "11471381662", -13.42),
+    satir("K3", "Kupon İptal", "11471381662", 13.42),
+    satir("K4", "İade", "11471381662", -7025.75),
+  ];
+  const z = trendyolOku(zincir);
+
+  kontrol("gerçek başlık satırı okunuyor", z.eksikSutunlar.length === 0, z.eksikSutunlar);
+  kontrol("zincirin 4 satırı da okundu", z.satirlar.length === 4, z.satirlar.length);
+  kontrol("JBL zinciri NET SIFIR", siparisNeti(z.satirlar, "11471381662") === 0,
+    siparisNeti(z.satirlar, "11471381662"));
+  kontrol("iade -> IADE_TUTARI", z.satirlar[3].kod === "IADE_TUTARI");
+  kontrol("kupon iptal -> KUPON_IPTAL", z.satirlar[2].kod === "KUPON_IPTAL");
+  kontrol("vade satırdan okunur", metin(z.satirlar[0].vadeTarihi) === "2026-09-03");
+
+  /**
+   * GERÇEK DOSYALARDA GÖRÜLEN 12 İŞLEM TİPİ — hepsi tanınmalı.
+   * 298 satırda tanınmayan tip ÇIKMADI; bu test onu kilitler.
+   */
+  const TIPLER: [string, string][] = [
+    ["Satış", "SIPARIS_TUTARI"],
+    ["Kupon", "KUPON"],
+    ["Kupon İptal", "KUPON_IPTAL"],
+    ["İade", "IADE_TUTARI"],
+    ["İndirim", "INDIRIM"],
+    ["E-ticaret Stopajı", "ETICARET_STOPAJI"],
+    ["Kargo Fatura", "KARGO_FATURA"],
+    ["Platform Hizmet Bedeli", "PLATFORM_HIZMET"],
+    ["Erken Ödeme Kesinti Faturası", "ERKEN_ODEME"],
+    ["Uluslararası Hizmet Bedeli", "ULUSLARARASI_HIZMET"],
+    ["Kurumsal Fatura - Trendyol Kupon", "KUPON"],
+    ["Kurumsal Fatura - Trendyol Promosyon", "PROMOSYON"],
+  ];
+  const hepsi = trendyolOku([
+    GERCEK_BASLIK,
+    ...TIPLER.map(([tip], i) => satir(`T${i}`, tip, "1", -1)),
+  ]);
+  const yanlis = TIPLER.filter(([, beklenen], i) => hepsi.satirlar[i]?.kod !== beklenen)
+    .map(([tip], i) => `${tip} -> ${hepsi.satirlar[i]?.kod}`);
+  kontrol("12 gerçek işlem tipinin hepsi tanınıyor", yanlis.length === 0, yanlis);
+  kontrol("gerçek tiplerde tanınmayan yok", taninmayanTipler(hepsi).length === 0);
+
+  /**
+   * BİLİNMEYEN TİP: sessiz atlanmaz, yükleme de bloke edilmez.
+   * Pazaryeri yarın yeni tip ekleyecek; kalem tutarıyla listelenir.
+   */
+  const yeniTip = trendyolOku([
+    GERCEK_BASLIK,
+    satir("X1", "Yepyeni Bir Kesinti", "1", -500),
+  ]);
+  kontrol("bilinmeyen tip DIGER olur", yeniTip.satirlar[0].kod === "DIGER");
+  kontrol("bilinmeyen tip ATLANMAZ", yeniTip.satirlar.length === 1);
+  kontrol("ham tip korunur", yeniTip.satirlar[0].hamTip === "Yepyeni Bir Kesinti");
+  const tanin = taninmayanTipler(yeniTip);
+  kontrol("uyarı listesinde tutarıyla görünür",
+    tanin.length === 1 && tanin[0].toplam === -500, tanin);
+  kosanBolumler.push("gercek");
 }
 
 // ===========================================================================
