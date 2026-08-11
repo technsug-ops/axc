@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Trash2 } from "lucide-react";
+import { Trash2, ExternalLink } from "lucide-react";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { AramaSonucuSatiri } from "@/components/arama-sonucu-satiri";
@@ -728,6 +728,22 @@ export function SatisFormu({
       </Card>
 
       <HataOzeti hatalar={durum.hatalar} />
+
+      {/* Aynı siparişi ikinci kez girmeye çalışıyorsanız, var olan kayda
+          götürür. "Zaten kayıtlı" deyip bırakmak, o kaydı elle aratmaktı. */}
+      {durum.mevcutSatisId ? (
+        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+          <p className="mb-2 text-sm text-amber-900 dark:text-amber-200">
+            {t("cakisanSatisMetni")}
+          </p>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/satislar/${durum.mevcutSatisId}`}>
+              <ExternalLink />
+              {t("cakisanSatisaGit")}
+            </Link>
+          </Button>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={bekliyor || kalemler.length === 0}>

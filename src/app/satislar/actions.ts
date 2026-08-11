@@ -14,6 +14,13 @@ import {
 
 export type SatisDurumu = {
   hatalar?: string[];
+  /**
+   * Sipariş numarası zaten kayıtlıysa VAR OLAN satışa götürür.
+   * Metin içine bağlantı konamıyordu; kullanıcı aynı siparişi ikinci kez
+   * girmeye çalışırken "zaten kayıtlı" deyip bırakmak, o kaydı elle
+   * aratmak demekti (eyleme dönük hata ilkesi).
+   */
+  mevcutSatisId?: string;
 };
 
 /** Sözlükten çözülen çeviri işlevi. */
@@ -150,7 +157,14 @@ export async function satisOlustur(
       };
     }
     if (e instanceof SiparisNoCakismasiHatasi) {
-      return { hatalar: [t("siparisNoZatenKayitli", { kod: e.code })] };
+      const mevcut = await prisma.sale.findUnique({
+        where: { code: e.code },
+        select: { id: true },
+      });
+      return {
+        hatalar: [t("siparisNoZatenKayitli", { kod: e.code })],
+        mevcutSatisId: mevcut?.id,
+      };
     }
 
     const kod =

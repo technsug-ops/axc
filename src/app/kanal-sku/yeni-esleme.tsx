@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
+
 import { useActionState, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, ExternalLink } from "lucide-react";
 
 import { HataOzeti } from "@/components/hata-ozeti";
 import { Button } from "@/components/ui/button";
@@ -187,6 +189,27 @@ export function YeniEsleme({
       <p className="text-muted-foreground text-xs">{t("kanalKoduNotu")}</p>
 
       <HataOzeti hatalar={durum.hatalar} />
+
+      {/* ÇAKIŞMA EYLEME DÖNÜK: hangi kayıt olduğu yazar ve oraya götürür.
+          Bağlantı listeyi o hesaba + o SKU'ya süzer, kullanıcı aramaz. */}
+      {durum.cakisma ? (
+        <div className="space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+          <p className="text-sm text-amber-900 dark:text-amber-200">
+            {t("cakismaMetni", {
+              urun: durum.cakisma.urun,
+              kod: durum.cakisma.kanalKodu,
+            })}
+          </p>
+          <Button variant="outline" size="sm" asChild>
+            <Link
+              href={`/kanal-sku?hesap=${durum.cakisma.hesapId}&q=${encodeURIComponent(durum.cakisma.arama)}`}
+            >
+              <ExternalLink />
+              {t("cakismaEslemeyeGit")}
+            </Link>
+          </Button>
+        </div>
+      ) : null}
 
       {durum.basari ? (
         <p

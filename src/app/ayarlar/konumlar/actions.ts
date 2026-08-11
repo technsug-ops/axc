@@ -75,7 +75,15 @@ export async function konumEkle(
 
   const mevcut = await prisma.location.findUnique({ where: { code } });
   if (mevcut) {
-    return { hatalar: [t("kodZatenKayitli", { kod: code })] };
+    // PASİF RAF LİSTEDE GÖRÜNMEYEBİLİR: "zaten kayıtlı" deyip susmak,
+    // kullanıcıyı göremediği bir kayıtla çarpıştırmak olurdu.
+    return {
+      hatalar: [
+        mevcut.isActive
+          ? t("kodZatenKayitli", { kod: code, ad: mevcut.name ?? "—" })
+          : t("kodPasifRaftaVar", { kod: code, ad: mevcut.name ?? "—" }),
+      ],
+    };
   }
 
   try {
@@ -126,7 +134,13 @@ export async function konumGuncelle(
   // Kod benzersiz; başka bir rafta kullanılıyorsa engelle.
   const ayniKodlu = await prisma.location.findUnique({ where: { code } });
   if (ayniKodlu && ayniKodlu.id !== id) {
-    return { hatalar: [t("kodBaskaRaftaVar", { kod: code })] };
+    return {
+      hatalar: [
+        ayniKodlu.isActive
+          ? t("kodBaskaRaftaVar", { kod: code, ad: ayniKodlu.name ?? "—" })
+          : t("kodPasifRaftaVar", { kod: code, ad: ayniKodlu.name ?? "—" }),
+      ],
+    };
   }
 
   try {

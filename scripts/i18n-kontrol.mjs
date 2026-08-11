@@ -111,8 +111,8 @@ const ornekler = [
   [
     "Raf",
     "kodZatenKayitli",
-    { kod: "A-01" },
-    '"A-01" kodlu raf zaten kayıtlı.',
+    { kod: "A-01", ad: "OFİS" },
+    '"A-01" kodlu raf zaten kayıtlı (OFİS). Aşağıdaki listede bulup düzenleyebilirsiniz.',
   ],
   [
     "KanalHesabi",
@@ -156,11 +156,13 @@ const ornekler = [
     { sira: 3, mesaj: "adet en az 1 olmalı" },
     "3. kalem: adet en az 1 olmalı",
   ],
+  // Alim.siparisNoZatenKayitli KALDIRILDI (11.08.2026): alım numarası
+  // artık sistem üretiyor, elle girilmediği için çakışma da oluşamıyor.
   [
-    "Alim",
-    "siparisNoZatenKayitli",
-    { kod: "25-23" },
-    '"25-23" sipariş numarası zaten kayıtlı.',
+    "Raf",
+    "kodPasifRaftaVar",
+    { kod: "A-01", ad: "OFİS" },
+    '"A-01" kodu PASİF bir rafta kayıtlı (OFİS). Pasif raflar listede solgun görünür; o rafı aktifleştirebilir ya da başka kod seçebilirsiniz.',
   ],
   [
     "MalKabul",

@@ -286,7 +286,8 @@
     "bicimsizRozet": "",
     "bicimsizBaslik": "",
     "bicimsizMetin": "",
-    "birlestir": ""
+    "birlestir": "",
+    "kodPasifRaftaVar": ""
   },
   "KanalHesabi": {
     "kanalSecilmeli": "",
@@ -399,7 +400,6 @@
     "fiyatSayiOlmali": "",
     "fiyatNegatifOlamaz": "",
     "paraBirimiGecersiz": "",
-    "siparisNoZorunlu": "",
     "tarihZorunlu": "",
     "taksitSayiOlmali": "",
     "taksitTamSayi": "",
@@ -409,10 +409,8 @@
     "kalemHataKalibi": "",
     "formOkunamadi": "",
     "formBozuk": "",
-    "siparisNoZatenKayitli": "",
     "tarihGecersiz": "",
     "kalemMevcutDegil": "",
-    "siparisNoCakisti": "",
     "kaydedilemedi": "",
     "baslik": "",
     "yeniAlim": "",
@@ -694,7 +692,9 @@
     "degisiklikYok": "",
     "karEksikFiltresi": "",
     "bosKarEksikBaslik": "",
-    "bosKarEksikIpucu": ""
+    "bosKarEksikIpucu": "",
+    "cakisanSatisMetni": "",
+    "cakisanSatisaGit": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -1143,7 +1143,9 @@
     "pasifeAlindi": "",
     "aktiflestirildi": "",
     "hesapYokBaslik": "",
-    "hesapYokIpucu": ""
+    "hesapYokIpucu": "",
+    "cakismaMetni": "",
+    "cakismaEslemeyeGit": ""
   },
   "DisaAktarma": {
     "excelIndir": "",

@@ -245,11 +245,11 @@
     "kodZorunlu": "Raf kodu zorunlu",
     "kodCokUzun": "Raf kodu çok uzun",
     "adCokUzun": "Ad çok uzun",
-    "kodZatenKayitli": "\"{kod}\" kodlu raf zaten kayıtlı.",
+    "kodZatenKayitli": "\"{kod}\" kodlu raf zaten kayıtlı ({ad}). Aşağıdaki listede bulup düzenleyebilirsiniz.",
     "eklenemedi": "Raf eklenemedi, beklenmeyen bir hata oluştu.",
     "eklendi": "\"{kod}\" rafı eklendi.",
     "kimlikBulunamadi": "Raf kimliği bulunamadı.",
-    "kodBaskaRaftaVar": "\"{kod}\" kodlu başka bir raf zaten var.",
+    "kodBaskaRaftaVar": "\"{kod}\" kodu başka bir rafta kullanılıyor ({ad}).",
     "guncellenemedi": "Raf güncellenemedi, beklenmeyen bir hata oluştu.",
     "bulunamadi": "Raf bulunamadı.",
     "pasifeAlindi": "\"{kod}\" pasife alındı; artık raf seçim listelerinde çıkmaz.",
@@ -286,7 +286,8 @@
     "bicimsizRozet": "biçim dışı",
     "bicimsizBaslik": "{sayi} rafın kodu standarda uymuyor",
     "bicimsizMetin": "Bunlar çalışmaya devam eder; standarda çekmek isterseniz Düzenle ile kodu değiştirin. Kod değişirse o rafın etiketini yeniden basmanız gerekir.",
-    "birlestir": "Rafları birleştir"
+    "birlestir": "Rafları birleştir",
+    "kodPasifRaftaVar": "\"{kod}\" kodu PASİF bir rafta kayıtlı ({ad}). Pasif raflar listede solgun görünür; o rafı aktifleştirebilir ya da başka kod seçebilirsiniz."
   },
   "KanalHesabi": {
     "kanalSecilmeli": "Kanal seçilmeli",
@@ -399,7 +400,6 @@
     "fiyatSayiOlmali": "birim fiyat sayı olmalı",
     "fiyatNegatifOlamaz": "birim fiyat negatif olamaz",
     "paraBirimiGecersiz": "para birimi TRY veya EUR olmalı",
-    "siparisNoZorunlu": "Sipariş no zorunlu",
     "tarihZorunlu": "Alım tarihi zorunlu",
     "taksitSayiOlmali": "Taksit sayısı sayı olmalı",
     "taksitTamSayi": "Taksit sayısı tam sayı olmalı",
@@ -409,10 +409,8 @@
     "kalemHataKalibi": "{sira}. kalem: {mesaj}",
     "formOkunamadi": "Form verisi okunamadı.",
     "formBozuk": "Form verisi bozuk.",
-    "siparisNoZatenKayitli": "\"{kod}\" sipariş numarası zaten kayıtlı.",
     "tarihGecersiz": "Alım tarihi geçerli değil.",
     "kalemMevcutDegil": "Kalemlerden biri artık mevcut değil, listeyi yenileyin.",
-    "siparisNoCakisti": "Bu sipariş numarası zaten kayıtlı.",
     "kaydedilemedi": "Alım kaydedilemedi, beklenmeyen bir hata oluştu.",
     "baslik": "Alımlar",
     "yeniAlim": "Yeni Alım",
@@ -694,7 +692,9 @@
     "degisiklikYok": "Değişiklik yok.",
     "karEksikFiltresi": "Kârı hesaplanamayanlar",
     "bosKarEksikBaslik": "Kârı hesaplanamayan satış yok",
-    "bosKarEksikIpucu": "Bu listedeki her satışın kârı hesaplanmış durumda."
+    "bosKarEksikIpucu": "Bu listedeki her satışın kârı hesaplanmış durumda.",
+    "cakisanSatisMetni": "Bu sipariş numarası zaten kayıtlı. Aynı satışı ikinci kez girmek stoğu iki kez düşürür ve kârı bozar.",
+    "cakisanSatisaGit": "Var olan satışa git"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -1143,7 +1143,9 @@
     "pasifeAlindi": "Eşleme pasife alındı.",
     "aktiflestirildi": "Eşleme aktifleştirildi.",
     "hesapYokBaslik": "Kanal hesabı yok",
-    "hesapYokIpucu": "Önce Ayarlar → Kanal Hesapları ekranından en az bir mağaza tanımlayın."
+    "hesapYokIpucu": "Önce Ayarlar → Kanal Hesapları ekranından en az bir mağaza tanımlayın.",
+    "cakismaMetni": "Bu hesapta \"{urun}\" için \"{kod}\" kodlu eşleme zaten var. Yeni kayıt açmak yerine var olanı düzenleyin — iki eşleme komisyon oranını da ikiye böler.",
+    "cakismaEslemeyeGit": "Var olan eşlemeye git"
   },
   "DisaAktarma": {
     "excelIndir": "Excel indir",

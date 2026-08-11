@@ -169,6 +169,19 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
 
 ## Gözlem üzerine yapılacaklar
 
+- [x] ~~**Çıkmaz hatalar eyleme dönüştürüldü**~~ ✓ 11.08.2026
+      "Zaten var" diyen ama nereye gidileceğini söylemeyen hatalar:
+      · Kanal SKU eşleme çakışması → hangi ürün + "Var olan eşlemeye git"
+        (liste o hesaba ve SKU'ya süzülür)
+      · Satış sipariş no çakışması → "Var olan satışa git". Aynı satışı
+        ikinci kez girmek stoğu iki kez düşürürdü.
+      · Raf kodu çakışması → hangi raf olduğu yazıyor; kod PASİF bir rafta
+        kayıtlıysa ayrıca söyleniyor (pasif raf listede görünmüyor, kullanıcı
+        göremediği bir kayıtla çarpışıyordu).
+      Ölü sözlük anahtarları silindi: `Alim.siparisNoZatenKayitli`,
+      `siparisNoCakisti`, `siparisNoZorunlu` — alım numarası artık sistem
+      ürettiği için çakışma oluşamıyor.
+
 - [ ] **Kayıt sonrası yeşil başarı bildirimi** — İlke #5
       Şimdilik "kaydedilen kaydın sayfasına düşmek" yeterli onay sayılıyor:
       gördüğünüz şey kanıt. Kullanırken "kaydoldu mu, kaydolmadı mı?"
@@ -296,11 +309,10 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       NOT: raf deseni `[A-Z]-d{2}(-d)?` DEĞİL — canlıdaki 40 rafı
       geçersiz sayıyordu, 11.08'de depoya uyduruldu (bkz. yukarısı).
 
-- [ ] **Kimlik kodu türetme — mevcut kayıtlar**
-      Kategori ve tedarikçi kodları BOŞ doğdu (migration salt ekleme).
-      Ekranda "kod girilmemiş" uyarısı + "Öner" düğmesi var; çakışma
-      çıkarsa sessizce çözülmez, kullanıcıya sorulur. Canlıda 4 kategori
-      ve 2 tedarikçi için kod girilmesi bekleniyor.
+- [x] ~~**Kimlik kodu türetme — mevcut kayıtlar**~~ ✓ 11.08.2026
+      Kullanıcı tamamladı. Canlıda 14 kategorinin ve 8 tedarikçinin
+      hepsinde kod var (GEN/IST/SUP/KIT/ELK/KUC/OYU/KAM/BIL/KNS/TEL/MUT/
+      KOZ/DIS · AMZ/HB/TR/NON/TEK/MDIA/VTN/BI).
 
 ## Faz sırasına göre zaten planlı olanlar
 

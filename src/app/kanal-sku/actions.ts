@@ -21,9 +21,25 @@ import { prisma } from "@/lib/prisma";
  * ============================================================================
  */
 
+/**
+ * Çakışma METİN DEĞİL YAPIDIR: "bu eşleme zaten var" cümlesini okuyan
+ * kullanıcı, var olan kaydı elle aramak zorunda kalıyordu. Artık hangi
+ * kayıt olduğu ve oraya gidiş yolu birlikte dönüyor (eyleme dönük hata).
+ */
+export type EslemeCakismasi = {
+  /** Aynı varyant mı çakıştı, yoksa aynı kanal kodu mu? */
+  tur: "varyant" | "kod";
+  hesapId: string;
+  /** Listeyi o kayda süzecek arama terimi. */
+  arama: string;
+  urun: string;
+  kanalKodu: string;
+};
+
 export type KanalSkuDurumu = {
   hatalar?: string[];
   basari?: string;
+  cakisma?: EslemeCakismasi;
 };
 
 type Ceviri = (
@@ -85,15 +101,28 @@ export async function kanalSkuEkle(
       channelAccountId,
       OR: [{ variantId }, { channelSku: kanalKodu }],
     },
-    select: { variantId: true },
+    select: {
+      variantId: true,
+      channelSku: true,
+      variant: {
+        select: { sku: true, product: { select: { name: true } } },
+      },
+    },
   });
   if (cakisan) {
+    const ayniVaryant = cakisan.variantId === variantId;
     return {
       hatalar: [
-        cakisan.variantId === variantId
-          ? t("esleseZatenVar")
-          : t("kodZatenVar", { kod: kanalKodu }),
+        ayniVaryant ? t("esleseZatenVar") : t("kodZatenVar", { kod: kanalKodu }),
       ],
+      cakisma: {
+        tur: ayniVaryant ? "varyant" : "kod",
+        hesapId: channelAccountId,
+        // Var olan kaydın SKU'suyla süzülür: liste tek satıra iner.
+        arama: cakisan.variant.sku,
+        urun: cakisan.variant.product.name,
+        kanalKodu: cakisan.channelSku,
+      },
     };
   }
 
