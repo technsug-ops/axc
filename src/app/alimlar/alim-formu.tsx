@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Plus, Trash2 } from "lucide-react";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
+import { AramaSonucuSatiri } from "@/components/arama-sonucu-satiri";
 import { HataOzeti } from "@/components/hata-ozeti";
 import { Button } from "@/components/ui/button";
 import { formGonderimi } from "@/lib/form-gonderimi";
@@ -467,32 +468,16 @@ export function AlimFormu({
             {sonuclar.length ? (
               <ul className="divide-y rounded-md border">
                 {sonuclar.map((varyant) => (
-                  <li
+                  <AramaSonucuSatiri
                     key={varyant.id}
-                    className="flex flex-wrap items-center justify-between gap-2 p-3"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">
-                        {varyantEtiketi(varyant)}
-                      </div>
-                      <div className="text-muted-foreground truncate font-mono text-xs">
-                        {varyant.sku} · {varyant.companySku}
-                        {varyant.barcode ? ` · ${varyant.barcode}` : ""}
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        kalemEkle(varyant, 1);
-                        setSorgu("");
-                      }}
-                    >
-                      <Plus />
-                      {ortak("ekle")}
-                    </Button>
-                  </li>
+                    baslik={varyantEtiketi(varyant)}
+                    kodlar={`${varyant.sku} · ${varyant.companySku}${varyant.barcode ? ` · ${varyant.barcode}` : ""}`}
+                    ekleEtiketi={ortak("ekle")}
+                    onEkle={() => {
+                      kalemEkle(varyant, 1);
+                      setSorgu("");
+                    }}
+                  />
                 ))}
               </ul>
             ) : null}
