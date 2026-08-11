@@ -2,7 +2,9 @@ import { getTranslations } from "next-intl/server";
 import { TriangleAlert } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
+import { acikAlacakToplami } from "@/lib/tazminat";
 
 import { TedarikciFormu } from "./tedarikci-formu";
 import {
@@ -26,9 +28,16 @@ export async function generateMetadata() {
 export default async function TedarikcilerSayfasi() {
   const t = await getTranslations("Tedarikci");
 
+  const bicim = await bicimlendirici();
+
   const kayitlar = await prisma.supplier.findMany({
     orderBy: [{ isActive: "desc" }, { name: "asc" }],
-    include: { _count: { select: { purchases: true } } },
+    include: {
+      _count: { select: { purchases: true } },
+      // Açık alacak tedarikçi kartında görünsün: "bu firmadan ne
+      // alacağım var?" sorusu ayrı ekrana gitmeden cevaplansın (#9).
+      compensations: { select: { status: true, amount: true, currency: true } },
+    },
   });
 
   const tedarikciler: TedarikciSatiriVerisi[] = kayitlar.map((s) => ({
@@ -38,6 +47,13 @@ export default async function TedarikcilerSayfasi() {
     iletisim: s.contact,
     aktif: s.isActive,
     alimSayisi: s._count.purchases,
+    acikAlacak: acikAlacakToplami(
+      s.compensations.map((c) => ({
+        durum: c.status,
+        tutar: Number(c.amount.toString()),
+        paraBirimi: c.currency,
+      })),
+    ).map((a) => bicim.para(a.tutar, a.paraBirimi)),
   }));
 
   // Kodu olmayan AKTİF tedarikçiyle yeni alım girilemez: alım numarası

@@ -13,6 +13,7 @@ import {
   Landmark,
   MapPin,
   Package,
+  PackageX,
   Percent,
   Receipt,
   ShoppingCart,
@@ -64,6 +65,7 @@ const OPERASYON: MenuOgesi[] = [
   { anahtar: "rapor", href: "/rapor", icon: BarChart3, aktif: true },
   { anahtar: "kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
   { anahtar: "kartBorcu", href: "/kart-borcu", icon: Landmark, aktif: true },
+  { anahtar: "tazminat", href: "/tazminat", icon: PackageX, aktif: true },
 ];
 
 const AYARLAR: MenuOgesi[] = [

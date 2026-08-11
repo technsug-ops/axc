@@ -240,7 +240,24 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       toplayınca, o raporların GERÇEK kolon yapısıyla yazılacak. Uydurma
       bir kolon şemasına göre yazmak boşa iş olurdu._
 
-- [ ] **Tazminat ekranı** — tedarikçiden alacak takibi (şema hazır)
+- [x] ~~**Tazminat ekranı — ALIM TARAFI**~~ ✓ 11.08.2026
+      `/tazminat`: açık alacak özeti (para birimi başına, toplanmaz) ·
+      talep bekleyen hasar listesi (mal kabuldeki `damagedQuantity`) ·
+      satır içi talep açma diyaloğu (adet + tutar önerili, değiştirilebilir) ·
+      satır içi durum değiştirme (Açık → Bildirildi → Kabul/Red → Tahsil) ·
+      tedarikçi kartında açık alacak rozeti.
+      "Açık alacak" = OPEN + CLAIMED + ACCEPTED. Kabul edilmiş ama parası
+      gelmemiş talep HÂLÂ alacaktır; kapanma yalnızca SETTLED veya REJECTED.
+      Aynı hasar iki kez talep edilemez (kalan adet düşülür).
+      `tazminat:dogrula` (18).
+
+- [ ] **Tazminat — İADE TARAFI (migration bekliyor)**
+      `ReturnItem.damagedQuantity` (müşteriden hasarlı dönen) da talebe
+      kaynak olmalı, ama `Compensation` yalnızca `purchaseItemId` taşıyor.
+      Gereken: `Compensation.returnItemId` (nullable, SetNull, indeksli) —
+      SALT EKLEME. Kullanıcı onayı bekleniyor.
+      Motor ve ekran ikinci kaynağı alacak şekilde yazıldı; kolon gelince
+      liste sorgusu ve form kaynağı genişletilir.
 
 - [x] ~~**Kimlik standardı paketi — PARÇA 1 (temel)**~~ ✓ 10.08.2026
       Kararlar: SKU tireli `OYU-LG-260707-01` · alım no `ALM-ER-260810-01`

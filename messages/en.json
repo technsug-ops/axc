@@ -28,7 +28,8 @@
     "giris": "",
     "elKitabi": "",
     "kartBorcu": "",
-    "tedarikciler": ""
+    "tedarikciler": "",
+    "tazminat": ""
   },
   "Ortak": {
     "kapat": "",
@@ -565,7 +566,8 @@
     "veriDisari": "",
     "elKitabi": "",
     "kartBorcu": "",
-    "tedarikciler": ""
+    "tedarikciler": "",
+    "tazminat": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -1281,5 +1283,61 @@
     "yetersizRafIpucu": "",
     "ledgerBasligi": "",
     "ledgerMetni": ""
+  },
+  "TazminatDurumu": {
+    "OPEN": "",
+    "CLAIMED": "",
+    "ACCEPTED": "",
+    "REJECTED": "",
+    "SETTLED": ""
+  },
+  "Tazminat": {
+    "baslik": "",
+    "aciklamaMetni": "",
+    "acikAlacak": "",
+    "acikAlacakNotu": "",
+    "talepEdilebilir": "",
+    "talepEdilebilirNotu": "",
+    "talepAc": "",
+    "yeniTalep": "",
+    "talepler": "",
+    "bosBaslik": "",
+    "bosIpucu": "",
+    "hasarBosBaslik": "",
+    "hasarBosIpucu": "",
+    "kalemZorunlu": "",
+    "adetSayiOlmali": "",
+    "adetTamSayi": "",
+    "adetEnAzBir": "",
+    "tutarSayiOlmali": "",
+    "tutarNegatifOlamaz": "",
+    "tarihZorunlu": "",
+    "tarihGecersiz": "",
+    "durumGecersiz": "",
+    "kalemBulunamadi": "",
+    "alimTedarikcisiz": "",
+    "hepsiTalepEdilmis": "",
+    "adetKalandanFazla": "",
+    "acilamadi": "",
+    "acildi": "",
+    "kimlikBulunamadi": "",
+    "bulunamadi": "",
+    "durumDegisti": "",
+    "sutunTedarikci": "",
+    "sutunUrun": "",
+    "sutunAlim": "",
+    "sutunAdet": "",
+    "sutunTutar": "",
+    "sutunDurum": "",
+    "sutunTarih": "",
+    "hasarliAdet": "",
+    "kalanAdet": "",
+    "talepTutari": "",
+    "talepTutariNotu": "",
+    "olayTarihi": "",
+    "notEtiketi": "",
+    "durumSec": "",
+    "listeNotu": "",
+    "talepYok": ""
   }
 }

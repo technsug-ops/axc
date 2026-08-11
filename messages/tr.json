@@ -28,7 +28,8 @@
     "giris": "Giriş",
     "elKitabi": "Kullanıcı El Kitabı",
     "kartBorcu": "Kart borcu",
-    "tedarikciler": "Tedarikçiler"
+    "tedarikciler": "Tedarikçiler",
+    "tazminat": "Tazminat"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -565,7 +566,8 @@
     "veriDisari": "Dışa Aktarma",
     "elKitabi": "El Kitabı",
     "kartBorcu": "Kart Borcu",
-    "tedarikciler": "Tedarikçiler"
+    "tedarikciler": "Tedarikçiler",
+    "tazminat": "Tazminat"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -1281,5 +1283,61 @@
     "yetersizRafIpucu": "Raf Konumları ekranından raf ekleyin.",
     "ledgerBasligi": "Geçmiş kayıtlarınıza ne olur?",
     "ledgerMetni": "Hiçbir şey. \"3 Ağustos'ta A2'den çıktı\" kaydı A2'yi göstermeye devam eder. Birleştirme yalnızca ürünlerin BUGÜNKÜ raf atamasını taşır — muhasebe defteri geçmişe dönük değiştirilmez."
+  },
+  "TazminatDurumu": {
+    "OPEN": "Açık",
+    "CLAIMED": "Bildirildi",
+    "ACCEPTED": "Kabul edildi",
+    "REJECTED": "Reddedildi",
+    "SETTLED": "Tahsil edildi"
+  },
+  "Tazminat": {
+    "baslik": "Tazminat",
+    "aciklamaMetni": "Hasarlı gelen mal için tedarikçiden alacak takibi. Hasar mal kabulde sayılır; buradan talep açılır ve sonucu izlenir.",
+    "acikAlacak": "Açık alacak",
+    "acikAlacakNotu": "Açık + Bildirildi + Kabul edildi. Kabul edilmiş ama parası gelmemiş talep hâlâ alacaktır.",
+    "talepEdilebilir": "Talep bekleyen hasar",
+    "talepEdilebilirNotu": "Mal kabulde hasarlı sayılmış ama henüz talep açılmamış kalemler.",
+    "talepAc": "Talep aç",
+    "yeniTalep": "Yeni talep",
+    "talepler": "Talepler ({sayi})",
+    "bosBaslik": "Henüz tazminat talebi yok.",
+    "bosIpucu": "Mal kabulde hasarlı adet girdiğinizde burada talep açabilirsiniz.",
+    "hasarBosBaslik": "Talep bekleyen hasar yok.",
+    "hasarBosIpucu": "Mal kabul ekranında \"hasarlı\" adedi girilen kalemler burada listelenir.",
+    "kalemZorunlu": "Hangi hasar için talep açıldığı seçilmeli",
+    "adetSayiOlmali": "Adet sayı olmalı",
+    "adetTamSayi": "Adet tam sayı olmalı",
+    "adetEnAzBir": "Adet en az 1 olmalı",
+    "tutarSayiOlmali": "Talep tutarı sayı olmalı",
+    "tutarNegatifOlamaz": "Talep tutarı negatif olamaz",
+    "tarihZorunlu": "Tarih zorunlu",
+    "tarihGecersiz": "Tarih geçersiz",
+    "durumGecersiz": "Durum geçersiz",
+    "kalemBulunamadi": "Alım kalemi bulunamadı.",
+    "alimTedarikcisiz": "\"{kod}\" alımının tedarikçisi yok; alacak kime yazılacağı belli değil. Önce alımı düzenleyip tedarikçi seçin.",
+    "hepsiTalepEdilmis": "\"{sku}\" kalemindeki hasarın tamamı için talep açılmış.",
+    "adetKalandanFazla": "Talep adedi kalan hasardan fazla olamaz (kalan: {kalan}).",
+    "acilamadi": "Talep açılamadı, beklenmeyen bir hata oluştu.",
+    "acildi": "\"{sku}\" için tazminat talebi açıldı.",
+    "kimlikBulunamadi": "Talep kimliği bulunamadı.",
+    "bulunamadi": "Talep bulunamadı.",
+    "durumDegisti": "Durum \"{durum}\" olarak güncellendi.",
+    "sutunTedarikci": "Tedarikçi",
+    "sutunUrun": "Ürün",
+    "sutunAlim": "Alım",
+    "sutunAdet": "Adet",
+    "sutunTutar": "Talep tutarı",
+    "sutunDurum": "Durum",
+    "sutunTarih": "Tarih",
+    "hasarliAdet": "Hasarlı",
+    "kalanAdet": "Talep edilebilir",
+    "talepTutari": "Talep tutarı",
+    "talepTutariNotu": "Adet × birim maliyet önerilir; pazarlık farklıysa değiştirin.",
+    "olayTarihi": "Hasar tarihi",
+    "notEtiketi": "Not",
+    "durumSec": "Durum",
+    "listeNotu": "Talepler silinmez. Reddedilen talep de geçmiştir — \"bu hasarı istemiştik, kabul etmediler\" bilgisi kalır.",
+    "talepYok": "talep yok"
   }
 }

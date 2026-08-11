@@ -25,6 +25,8 @@ export type TedarikciSatiriVerisi = {
   iletisim: string | null;
   aktif: boolean;
   alimSayisi: number;
+  /** Para birimi başına biçimlendirilmiş açık alacak; boşsa alacak yok. */
+  acikAlacak: string[];
 };
 
 /**
@@ -37,6 +39,7 @@ export function TedarikciSatiri({
   tedarikci: TedarikciSatiriVerisi;
 }) {
   const t = useTranslations("Tedarikci");
+  const tTazminat = useTranslations("Tazminat");
   const ortak = useTranslations("Ortak");
 
   const [duzenleniyor, setDuzenleniyor] = useState(false);
@@ -81,6 +84,24 @@ export function TedarikciSatiri({
             {t("alimSayisi")}: {tedarikci.alimSayisi}
             {tedarikci.iletisim ? ` · ${tedarikci.iletisim}` : ""}
           </div>
+          {/* AÇIK ALACAK — sıfırsa hiç yazılmaz; "0 ₺" ile "alacak yok"
+              aynı şey değil ve boş satır göze yorucu gelir. */}
+          {tedarikci.acikAlacak.length > 0 ? (
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span className="text-muted-foreground text-xs">
+                {tTazminat("acikAlacak")}:
+              </span>
+              {tedarikci.acikAlacak.map((a) => (
+                <Badge
+                  key={a}
+                  variant="outline"
+                  className="border-amber-500/50 font-medium text-amber-700 dark:text-amber-400"
+                >
+                  {a}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
