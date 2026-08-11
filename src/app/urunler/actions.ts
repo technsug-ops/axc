@@ -6,13 +6,39 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { benzerleriBul } from "@/lib/benzerlik";
+import { degisenKodlar, urunHareketliMi } from "@/lib/urun-hareket";
 
 /**
  * Formun sunucudan geri aldığı durum. Hataları tek bir listede topluyoruz;
  * form bunları en üstte kırmızı kutuda gösteriyor.
  */
+/**
+ * Kod çakışması METİN DEĞİL YAPIDIR. Metin içine bağlantı konamaz; kullanıcı
+ * "bu barkod başka üründe" cümlesini okuyup o ürünü elle aramak zorunda
+ * kalıyordu. Artık hangi ürün olduğu ve oraya gidiş yolu birlikte dönüyor.
+ */
+export type KodCakismasi = {
+  /** "sku" | "firmaSku" | "barkod" — ekranda sözlükten çözülür. */
+  alan: "sku" | "firmaSku" | "barkod";
+  deger: string;
+  urunId: string;
+  urunAdi: string;
+};
+
+/** Ad+marka benzerliği — ENGEL DEĞİL SORGU. */
+export type BenzerUrun = {
+  urunId: string;
+  ad: string;
+  marka: string | null;
+};
+
 export type FormDurumu = {
   hatalar?: string[];
+  /** Eyleme dönük çakışma: "Ürüne git" / "Bu ürüne alım ekle". */
+  cakismalar?: KodCakismasi[];
+  /** Kaydetmeden önce sorulan benzerlik uyarısı. */
+  benzerler?: BenzerUrun[];
 };
 
 // ---------------------------------------------------------------------------
@@ -130,8 +156,9 @@ async function benzersizlikHatalari(
   varyantlar: UrunVerisi["varyantlar"],
   t: Ceviri,
   haricUrunId?: string,
-): Promise<string[]> {
+): Promise<{ hatalar: string[]; cakismalar: KodCakismasi[] }> {
   const hatalar: string[] = [];
+  const cakismalar: KodCakismasi[] = [];
 
   // 1) Formun kendi içinde tekrar
   const tekrarKontrol = (alanAdi: string, degerler: (string | undefined)[]) => {
@@ -165,22 +192,42 @@ async function benzersizlikHatalari(
         ...(barkodlar.length ? [{ barcode: { in: barkodlar } }] : []),
       ],
     },
-    select: { sku: true, companySku: true, barcode: true },
+    select: {
+      sku: true,
+      companySku: true,
+      barcode: true,
+      product: { select: { id: true, name: true } },
+    },
   });
 
   for (const cakisan of cakisanlar) {
+    const urunId = cakisan.product.id;
+    const urunAdi = cakisan.product.name;
     if (skular.includes(cakisan.sku)) {
       hatalar.push(t("skuBaskaUrunde", { deger: cakisan.sku }));
+      cakismalar.push({ alan: "sku", deger: cakisan.sku, urunId, urunAdi });
     }
     if (axcaliKodlari.includes(cakisan.companySku)) {
       hatalar.push(t("firmaSkuBaskaUrunde", { deger: cakisan.companySku }));
+      cakismalar.push({
+        alan: "firmaSku",
+        deger: cakisan.companySku,
+        urunId,
+        urunAdi,
+      });
     }
     if (cakisan.barcode && barkodlar.includes(cakisan.barcode)) {
       hatalar.push(t("barkodBaskaUrunde", { deger: cakisan.barcode }));
+      cakismalar.push({
+        alan: "barkod",
+        deger: cakisan.barcode,
+        urunId,
+        urunAdi,
+      });
     }
   }
 
-  return [...new Set(hatalar)];
+  return { hatalar: [...new Set(hatalar)], cakismalar };
 }
 
 /**
@@ -199,6 +246,37 @@ function varyantVerisi(v: UrunVerisi["varyantlar"][number], sira: number) {
   };
 }
 
+/**
+ * Ad + marka benzeyen mevcut ürünler.
+ *
+ * Marka VARSA karşılaştırma "marka + ad" üzerinden yapılır: "LEGO Glinda"
+ * ile "Karaca Glinda" birbirine benzemez, ama "LEGO Wicked Glinda" ile
+ * "LEGO Wicked Glinda 42221" benzer.
+ *
+ * Aktif olmayan ürünler de aranır — pasife alınmış bir ürünün ikizini
+ * açmak, aktif olanınkini açmak kadar yanlıştır.
+ */
+async function benzerUrunleriBul(
+  ad: string,
+  marka: string | null | undefined,
+): Promise<BenzerUrun[]> {
+  const adaylar = await prisma.product.findMany({
+    select: { id: true, name: true, brand: true },
+    take: 500,
+  });
+
+  const metin = (u: { name: string; brand: string | null }) =>
+    u.brand ? `${u.brand} ${u.name}` : u.name;
+
+  const aranan = marka ? `${marka} ${ad}` : ad;
+
+  return benzerleriBul(aranan, adaylar, metin).map((u) => ({
+    urunId: u.id,
+    ad: u.name,
+    marka: u.brand,
+  }));
+}
+
 // ---------------------------------------------------------------------------
 //  ACTION: YENİ ÜRÜN
 // ---------------------------------------------------------------------------
@@ -214,7 +292,24 @@ export async function urunOlustur(
   const veri = ayristirma.veri;
 
   const benzersizlik = await benzersizlikHatalari(veri.varyantlar, t);
-  if (benzersizlik.length) return { hatalar: benzersizlik };
+  if (benzersizlik.hatalar.length) {
+    return {
+      hatalar: benzersizlik.hatalar,
+      cakismalar: benzersizlik.cakismalar,
+    };
+  }
+
+  /**
+   * MÜKERRER ÜRÜN SORUSU — ENGEL DEĞİL.
+   * Kodlar benzersiz olduğu için aynı ürün İKİNCİ KEZ farklı kodla
+   * açılabiliyor ve sistem bunu fark etmiyordu. Ad+marka benzeyen kayıt
+   * varsa kaydetmeden önce sorulur; kullanıcı "farklı ürün" derse geçilir.
+   * Onay bayrağı formdan gelir, ikinci gönderimde kontrol atlanır.
+   */
+  if (formData.get("benzerlikOnaylandi") !== "1") {
+    const benzerler = await benzerUrunleriBul(veri.ad, veri.marka);
+    if (benzerler.length) return { benzerler };
+  }
 
   let yeniUrunId: string;
 
@@ -276,7 +371,23 @@ export async function urunGuncelle(
   const veri = ayristirma.veri;
 
   const benzersizlik = await benzersizlikHatalari(veri.varyantlar, t, urunId);
-  if (benzersizlik.length) return { hatalar: benzersizlik };
+  if (benzersizlik.hatalar.length) {
+    return {
+      hatalar: benzersizlik.hatalar,
+      cakismalar: benzersizlik.cakismalar,
+    };
+  }
+
+  // KİMLİK KİLİDİ — istemcideki disabled yalnızca kolaylık; asıl koruma
+  // burada. Hareket görmüş üründe SKU ve Firma SKU değiştirilemez.
+  if (await urunHareketliMi(urunId)) {
+    const degisenler = await degisenKodlar(urunId, veri.varyantlar);
+    if (degisenler.length) {
+      return {
+        hatalar: [t("kodKilitli", { kodlar: degisenler.join(", ") })],
+      };
+    }
+  }
 
   const mevcutVaryantlar = await prisma.productVariant.findMany({
     where: { productId: urunId },

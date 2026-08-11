@@ -1,4 +1,8 @@
 import { SUTUNLAR, type SayfaAnahtari } from "./sutunlar";
+import { anahtarla, benzerleriBul, enYakin } from "@/lib/benzerlik";
+
+// Geriye dönük uyum: bu ad buradan da dışa açıktı.
+export { enYakin };
 
 import type { Currency } from "@/generated/prisma/enums";
 
@@ -71,6 +75,8 @@ export type Referans = {
   /** "Trendyol — TR Ana Mağaza" biçiminde etiket. */
   kanalHesaplari: { id: string; etiket: string }[];
   mevcutVaryantlar: MevcutVaryant[];
+  /** Benzerlik uyarısı için mevcut ürün adları (marka dahil etiket). */
+  mevcutUrunAdlari?: string[];
   /** Zaten tanımlı kanal-SKU eşleşmeleri. */
   mevcutKanalSkulari: { kanalHesabiId: string; varyantId: string }[];
   /** Parti tarihi boş bırakılırsa kullanılacak gün (UTC gece yarısı). */
@@ -146,8 +152,29 @@ export type Ozet = {
   guncellenenKanalSku: number;
 };
 
+/**
+ * UYARI, HATA DEĞİLDİR.
+ * Hata içe aktarmayı DURDURUR ("ya hepsi ya hiçi"). Uyarı yalnızca bilgidir:
+ * "bu ürüne benzeyen bir kayıt zaten var" bir kural ihlali değil, dikkat
+ * çekilmesi gereken bir durumdur. Ayrı kanal olmasının sebebi budur —
+ * hata listesine karışsaydı yükleme boşuna dururdu.
+ */
+export type UyariKodu = "BENZER_URUN_VAR";
+
+export type SatirUyarisi = {
+  sayfa: SayfaAnahtari;
+  satir: number;
+  kod: UyariKodu;
+  /** Uyarıyı tetikleyen değer (ör. yeni ürün adı). */
+  deger: string;
+  /** Ek bilgi: benzeyen mevcut kaydın adı. */
+  ek?: string;
+};
+
 export type DogrulamaSonucu = {
   hatalar: SatirHatasi[];
+  /** Yüklemeyi DURDURMAZ; önizlemede ayrı listede gösterilir. */
+  uyarilar: SatirUyarisi[];
   ozet: Ozet;
   plan: YazimPlani;
 };
@@ -157,9 +184,7 @@ export type DogrulamaSonucu = {
 // ---------------------------------------------------------------------------
 
 /** Karşılaştırma için normalleştirir: boşluk kırpar, büyük/küçük harf eşitler. */
-function anahtarla(deger: string): string {
-  return deger.trim().toLocaleLowerCase("tr");
-}
+
 
 /** "12.500,75" / "12500.75" / "1200" -> sayı. Boşsa null, bozuksa NaN. */
 export function sayiCoz(ham: string): number | null {
@@ -205,46 +230,7 @@ export function tarihCoz(ham: string): Date | null | undefined {
   return tarih;
 }
 
-/**
- * Yazım hatasını yakalamak için en yakın adayı bulur (Levenshtein).
- * "Elektonik" yazıldığında "Elektronik" önerilir — kullanıcı listeyi
- * baştan taramak zorunda kalmaz.
- */
-export function enYakin(aranan: string, adaylar: string[]): string | null {
-  const hedef = anahtarla(aranan);
-  let enIyi: string | null = null;
-  let enIyiUzaklik = Infinity;
 
-  for (const aday of adaylar) {
-    const uzaklik = uzaklikHesapla(hedef, anahtarla(aday));
-    if (uzaklik < enIyiUzaklik) {
-      enIyiUzaklik = uzaklik;
-      enIyi = aday;
-    }
-  }
-
-  // Çok uzaksa öneri vermek kafa karıştırır.
-  const esik = Math.max(2, Math.floor(hedef.length / 3));
-  return enIyiUzaklik <= esik ? enIyi : null;
-}
-
-function uzaklikHesapla(a: string, b: string): number {
-  const onceki = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    let sonUstSol = onceki[0];
-    onceki[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const gecici = onceki[j];
-      onceki[j] = Math.min(
-        onceki[j] + 1,
-        onceki[j - 1] + 1,
-        sonUstSol + (a[i - 1] === b[j - 1] ? 0 : 1),
-      );
-      sonUstSol = gecici;
-    }
-  }
-  return onceki[b.length];
-}
 
 // ---------------------------------------------------------------------------
 //  DOĞRULAMA
@@ -258,6 +244,7 @@ export function iceAktarmaDogrula(
   kimlikUret: () => string,
 ): DogrulamaSonucu {
   const hatalar: SatirHatasi[] = [];
+  const uyarilar: SatirUyarisi[] = [];
   const plan: YazimPlani = {
     yeniUrunler: [],
     yeniVaryantlar: [],
@@ -298,7 +285,7 @@ export function iceAktarmaDogrula(
     veri.kanalSku.length === 0;
   if (hicSatirYok) {
     hata({ sayfa: null, satir: null, alan: null, kod: "HIC_SATIR_YOK" });
-    return { hatalar, ozet: bosOzet(), plan };
+    return { hatalar, uyarilar, ozet: bosOzet(), plan };
   }
 
   /** Zorunlu sütunlar dolu mu? */
@@ -515,6 +502,23 @@ export function iceAktarmaDogrula(
       };
       urunGruplari.set(grupAnahtari, urun);
       plan.yeniUrunler.push(urun);
+
+      // BENZERLİK UYARISI — engel değil, bilgi. Aynı ürünün ikinci kez
+      // farklı kodla açılması içe aktarmada da mümkün.
+      const adaylar = referans.mevcutUrunAdlari ?? [];
+      if (adaylar.length > 0) {
+        const aranan = marka ? `${marka} ${urunAdi}` : urunAdi;
+        const benzer = benzerleriBul(aranan, adaylar, (a) => a, 1)[0];
+        if (benzer) {
+          uyarilar.push({
+            sayfa: "urunler",
+            satir: satir.satirNo,
+            kod: "BENZER_URUN_VAR",
+            deger: urunAdi,
+            ek: benzer,
+          });
+        }
+      }
     } else {
       // İkinci satırdan itibaren ürün çok varyantlıdır.
       urun.cokVaryantli = true;
@@ -739,11 +743,12 @@ export function iceAktarmaDogrula(
   // --- HATA VARSA PLAN GEÇERSİZDİR ---
   // Yarım plan kazara yazılmasın diye boşaltılır: "ya hepsi ya hiçi".
   if (hatalar.length > 0) {
-    return { hatalar, ozet: bosOzet(), plan: bosPlan() };
+    return { hatalar, uyarilar, ozet: bosOzet(), plan: bosPlan() };
   }
 
   return {
     hatalar,
+    uyarilar,
     ozet: {
       yeniUrun: plan.yeniUrunler.length,
       yeniVaryant: plan.yeniVaryantlar.length,

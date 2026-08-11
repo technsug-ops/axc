@@ -103,7 +103,8 @@
     "ekleNotu": "Okutunca kalem doğrudan eklenir ve kutu yeniden odaklanır; yazınca aşağıda eşleşen ürünler çıkar. Aynı ürün tekrar okutulursa adedi artar.",
     "oran": "Oran",
     "kategori": "Kategori",
-    "oner": "Öner"
+    "oner": "Öner",
+    "bekleyin": "Bekleyin..."
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",
@@ -210,7 +211,20 @@
     "kdvOraniEtiketi": "KDV oranı",
     "kdvKaynagiIstisna": "ürün istisnası",
     "kdvKaynagiKategori": "kategori: {ad}",
-    "kdvKaynagiVarsayilan": "varsayılan"
+    "kdvKaynagiVarsayilan": "varsayılan",
+    "skuOneriKategoriYok": "Önce kategori seçin — SKU kategori kodundan üretilir.",
+    "skuOneriAdYok": "Önce ürün adı (ya da marka) girin.",
+    "skuOneriKategoriKodsuz": "\"{ad}\" kategorisinin kodu girilmemiş; SKU önerilemiyor.",
+    "skuOneriKategoriDuzelt": "Kategori kodunu gir",
+    "kodKilitliBaslik": "SKU ve Firma SKU kilitli",
+    "kodKilitliMetin": "Bu üründe stok hareketi, alım, satış veya iade kaydı var. Kod etikete basılıp ürüne yapıştırılmış olabilir; değiştirmek depodaki etiketi yalancı yapar. Diğer alanları düzenleyebilirsiniz.",
+    "cakismaMetni": "{alan} \"{deger}\" zaten \"{urun}\" ürününde kayıtlı.",
+    "cakismaUruneGit": "Ürüne git",
+    "cakismaAlimEkle": "Bu ürüne alım ekle",
+    "benzerBaslik": "Benzer {sayi} ürün bulundu — aynısı olabilir mi?",
+    "benzerMetin": "Aynı ürünü ikinci kez açmak stoğu ikiye böler ve kâr hesabını bozar. Var olanı kullanacaksanız oraya gidin; gerçekten farklı bir ürünse devam edin.",
+    "benzerVarOlanaGit": "Var olana git",
+    "benzerFarkliUrun": "Hayır, bu farklı ürün — devam et"
   },
   "UrunSil": {
     "dugme": "Sil",
@@ -261,7 +275,17 @@
     "etiketlerOzeti": "{sayi} aktif raf. Yazdırıp raflara yapıştırın; QR içeriği raf kodudur.",
     "aktifRafYok": "Aktif raf yok.",
     "aktifRafYokIpucu": "Önce <baglanti>raf konumu ekleyin</baglanti>.",
-    "yazdir": "Yazdır"
+    "yazdir": "Yazdır",
+    "goz": "Göz",
+    "gozYok": "Yok",
+    "kaydedilecekKod": "Kaydedilecek kod",
+    "kodBicimNotu": "Bölge harfi + numara. Örnek: A5 · A27 · R1 · DEPO. Göz gerekiyorsa yandaki listeden seçin.",
+    "kodBicimHatasi": "Raf kodu biçimi uygun değil. Örnek: A5, A27, R1, DEPO.",
+    "kodOnerisi": "Şunu mu demek istediniz: {kod}?",
+    "bicimsizRozet": "biçim dışı",
+    "bicimsizBaslik": "{sayi} rafın kodu standarda uymuyor",
+    "bicimsizMetin": "Bunlar çalışmaya devam eder; standarda çekmek isterseniz Düzenle ile kodu değiştirin. Kod değişirse o rafın etiketini yeniden basmanız gerekir.",
+    "birlestir": "Rafları birleştir"
   },
   "KanalHesabi": {
     "kanalSecilmeli": "Kanal seçilmeli",
@@ -363,7 +387,8 @@
     "barkodBaskaUrunde": "Barkod \"{deger}\" başka bir üründe kullanılıyor.",
     "kimlikBulunamadi": "Ürün kimliği bulunamadı.",
     "varyantSilinemez": "Stok hareketi bulunan bir varyant silinemez. Miktar düzeltmesi ters yönde bir düzeltme kaydıyla yapılır.",
-    "urunSilinemez": "Bu ürünün stok hareketi var, silinemez. Kullanımdan kaldırmak için ürünü pasife alın."
+    "urunSilinemez": "Bu ürünün stok hareketi var, silinemez. Kullanımdan kaldırmak için ürünü pasife alın.",
+    "kodKilitli": "Bu ürün hareket görmüş; SKU ve Firma SKU değiştirilemez ({kodlar}). Kod bir kere doğar ve etikete basılır."
   },
   "Alim": {
     "urunSecilmeli": "ürün seçilmeli",
@@ -1052,7 +1077,10 @@
     "hataGECERSIZ_TARIH": "«{deger}» tarih olarak okunamadı. Örnek: 01.03.2026",
     "hataPARA_BIRIMI_EKSIK": "Birim maliyet yazdıysanız para birimi de zorunludur (TRY veya EUR).",
     "hataHIC_SATIR_YOK": "Dosyada hiç veri satırı yok. Örnek satırları silip kendi verinizi yazdınız mı?",
-    "yardim14": "NOT: «Listeler» sayfası yalnızca BİLGİ içindir. Oraya yeni bir kategori veya raf adı yazmak sistemde o kaydı OLUŞTURMAZ. Yeni kategori için Ayarlar → KDV Kategorileri, yeni raf için Ayarlar → Raf Konumları ekranını kullanın, sonra şablonu yeniden indirin."
+    "yardim14": "NOT: «Listeler» sayfası yalnızca BİLGİ içindir. Oraya yeni bir kategori veya raf adı yazmak sistemde o kaydı OLUŞTURMAZ. Yeni kategori için Ayarlar → KDV Kategorileri, yeni raf için Ayarlar → Raf Konumları ekranını kullanın, sonra şablonu yeniden indirin.",
+    "uyariBasligi": "{sayi} uyarı — yükleme durmadı",
+    "uyariBenzerUrun": "Satır {satir}: \"{deger}\" — sistemde benzer bir ürün var: \"{mevcut}\"",
+    "uyariNotu": "Bunlar hata değil, bilgi. Aynı ürünü ikinci kez açıyorsanız dosyayı düzeltin; farklı ürünlerse yüklemeye devam edin."
   },
   "KanalSku": {
     "baslik": "Kanal SKU ve komisyon",
@@ -1227,5 +1255,31 @@
     "listeNotu": "Tedarikçiler silinmez, pasife alınır — geçmiş alımlar onlara bağlıdır. Pasif tedarikçi yeni alım formunda çıkmaz ama eski alımlarda görünmeye devam eder.",
     "kodsuzBaslik": "{sayi} tedarikçide kod girilmemiş",
     "kodsuzMetin": "Alım numarası tedarikçi kodundan üretilir. Kodu olmayan tedarikçiyle yeni alım girilemez — aşağıdan Düzenle ile girin."
+  },
+  "RafBirlestir": {
+    "baslik": "Rafları birleştir",
+    "aciklamaMetni": "Aynı raf iki kere yazılmışsa ürünleri tek rafta toplayın. Geçmiş stok hareketleri DEĞİŞMEZ.",
+    "kartBasligi": "Hangi raf hangisine taşınsın?",
+    "kaynakRaf": "Kaynak raf (boşalacak)",
+    "hedefRaf": "Hedef raf (kalacak)",
+    "rafSecin": "Raf seçin",
+    "kaynakNotu": "Bu rafın ürünleri taşınır, sonra raf pasife alınır.",
+    "hedefNotu": "Ürünler bu rafa taşınır.",
+    "onizle": "Önizle",
+    "onizlemeBasligi": "{kaynak} → {hedef} birleştirilecek",
+    "tasinacak": "{sayi} ürünün raf ataması taşınacak.",
+    "kalacak": "{hareket} geçmiş stok hareketi ve {iade} iade kaydı OLDUĞU GİBİ kalacak — ledger değişmez.",
+    "kaynakPasif": "{kod} pasife alınacak (silinmez, geçmiş kayıtlar ona bağlı).",
+    "onaylaVeBirlestir": "Onayla ve birleştir",
+    "birlestirildi": "{kaynak} → {hedef} birleştirildi; {sayi} ürünün rafı değişti.",
+    "ikisiDeSecilmeli": "Kaynak ve hedef rafı seçin.",
+    "ayniRaf": "Kaynak ve hedef aynı raf olamaz.",
+    "rafBulunamadi": "Raf bulunamadı.",
+    "hedefPasif": "\"{kod}\" pasif; hedef raf aktif olmalı.",
+    "birlestirilemedi": "Birleştirme yapılamadı, beklenmeyen bir hata oluştu.",
+    "yetersizRaf": "Birleştirmek için en az iki aktif raf gerekir.",
+    "yetersizRafIpucu": "Raf Konumları ekranından raf ekleyin.",
+    "ledgerBasligi": "Geçmiş kayıtlarınıza ne olur?",
+    "ledgerMetni": "Hiçbir şey. \"3 Ağustos'ta A2'den çıktı\" kaydı A2'yi göstermeye devam eder. Birleştirme yalnızca ürünlerin BUGÜNKÜ raf atamasını taşır — muhasebe defteri geçmişe dönük değiştirilmez."
   }
 }

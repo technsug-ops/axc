@@ -1,11 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { Pencil, QrCode } from "lucide-react";
+import { Merge, Pencil, QrCode, TriangleAlert } from "lucide-react";
 
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
+import { rafKoduGecerliMi } from "@/lib/kimlik";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -63,6 +64,11 @@ export default async function KonumlarSayfasi() {
     );
   }
 
+  // Standarda uymayan kodlar ÇALIŞMAYA DEVAM EDER — geçmişi bozmamak için
+  // zorla düzeltilmez. Ama görünür olur: kod değişirse etiket yeniden basılır,
+  // bu yüzden karar kullanıcınındır.
+  const bicimsizSayi = konumlar.filter((k) => !rafKoduGecerliMi(k.code)).length;
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -70,13 +76,33 @@ export default async function KonumlarSayfasi() {
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
           <p className="text-muted-foreground text-sm">{t("aciklamaMetni")}</p>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/ayarlar/konumlar/etiketler">
-            <QrCode />
-            {t("qrEtiketleri")}
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/ayarlar/konumlar/birlestir">
+              <Merge />
+              {t("birlestir")}
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/ayarlar/konumlar/etiketler">
+              <QrCode />
+              {t("qrEtiketleri")}
+            </Link>
+          </Button>
+        </div>
       </div>
+
+      {bicimsizSayi > 0 ? (
+        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+          <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+            <TriangleAlert className="size-4 shrink-0" />
+            {t("bicimsizBaslik", { sayi: bicimsizSayi })}
+          </p>
+          <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+            {t("bicimsizMetin")}
+          </p>
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -119,10 +145,20 @@ export default async function KonumlarSayfasi() {
                     {konumlar.map((konum) => (
                       <TableRow key={konum.id}>
                         <TableCell>
-                          <KopyalanabilirKod
-                            deger={konum.code}
-                            etiket={t("rafKodu")}
-                          />
+                          <span className="flex flex-wrap items-center gap-2">
+                            <KopyalanabilirKod
+                              deger={konum.code}
+                              etiket={t("rafKodu")}
+                            />
+                            {rafKoduGecerliMi(konum.code) ? null : (
+                              <Badge
+                                variant="outline"
+                                className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+                              >
+                                {t("bicimsizRozet")}
+                              </Badge>
+                            )}
+                          </span>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {konum.name ?? "—"}

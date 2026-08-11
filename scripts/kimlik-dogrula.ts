@@ -13,6 +13,8 @@
  *  5) RAF KODU — desen denetimi ve "şunu mu demek istediniz" önerisi.
  *  6) KATEGORİ HAZIR LİSTESİ — kodlar tekil mi, kurulumla çakışıyor mu,
  *     addan sapan kodun gerekçesi yazılmış mı.
+ *  7) BENZERLİK — mükerrer ürün sorusu doğru kaydı buluyor mu, alakasızı
+ *     yakalamıyor mu.
  * ============================================================================
  */
 
@@ -32,6 +34,7 @@ import {
   urunKisaltmasi,
 } from "../src/lib/kimlik";
 
+import { benzerleriBul } from "../src/lib/benzerlik";
 import {
   KATEGORI_ONERILERI,
   KURULUM_KODLARI,
@@ -39,7 +42,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -284,6 +287,41 @@ console.log("\n6) KATEGORİ HAZIR LİSTESİ");
 
   console.log(`        (${KATEGORI_ONERILERI.length} kategori önerisi)`);
   kosanBolumler.push("hazirListe");
+}
+
+// ===========================================================================
+console.log("\n7) BENZERLİK — mükerrer ürün sorusu");
+// ===========================================================================
+{
+  const MEVCUT = [
+    "LEGO Technic NASA Artemis Uzay Fırlatma Sistemi Roketi 42221",
+    "TEFAL Easyblend 1000 W Beyaz Blender Seti - 0.7 L",
+    "Anker 322 PowerLine USB-C to USB-C Örgülü Kablo",
+    "Karaca Gusto Bıçak Seti",
+  ];
+  const bul = (aranan: string) => benzerleriBul(aranan, MEVCUT, (a) => a);
+
+  // Aynı ürünün ikinci kez, biraz farklı yazımla açılması — YAKALANMALI.
+  kontrol(
+    "aynı ürün farklı yazımla yakalanır",
+    bul("LEGO Technic NASA Artemis Uzay Fırlatma Sistemi Roket 42221").length > 0,
+  );
+  kontrol(
+    "büyük/küçük harf farkı yakalanır",
+    bul("tefal easyblend 1000 w beyaz blender seti - 0.7 l").length > 0,
+  );
+
+  // Alakasız ürün — YAKALANMAMALI. Yanlış alarm, uyarıyı değersizleştirir.
+  kontrol("alakasız ürün yakalanmaz", bul("Ütü Masası").length === 0);
+  kontrol(
+    "aynı markanın farklı ürünü yakalanmaz",
+    bul("LEGO City İtfaiye Aracı 60375").length === 0,
+  );
+
+  // Çok kısa aranan: eşik anlamsızlaşır, hiç uyarma.
+  kontrol("çok kısa ad uyarı üretmez", bul("ab").length === 0);
+  kontrol("aday yoksa boş döner", benzerleriBul("LEGO", [], (a) => a).length === 0);
+  kosanBolumler.push("benzerlik");
 }
 
 // ===========================================================================

@@ -15,7 +15,7 @@ export function hesapEtiketi(kanalAdi: string, hesapAdi: string): string {
 
 /** Doğrulayıcının ihtiyaç duyduğu "sistemde ne var" bilgisi. */
 export async function referansYukle(): Promise<Referans> {
-  const [kategoriler, raflar, hesaplar, varyantlar, kanalSkulari] =
+  const [kategoriler, raflar, hesaplar, varyantlar, kanalSkulari, urunler] =
     await Promise.all([
       // Ürünün KDV kategorisi (gider kategorisi DEĞİL).
       prisma.category.findMany({
@@ -45,6 +45,8 @@ export async function referansYukle(): Promise<Referans> {
       prisma.channelSku.findMany({
         select: { channelAccountId: true, variantId: true },
       }),
+      // Benzerlik uyarısı için: mevcut ürünlerin marka + ad etiketi.
+      prisma.product.findMany({ select: { name: true, brand: true } }),
     ]);
 
   const bugun = isTakvimGunu(new Date());
@@ -63,6 +65,9 @@ export async function referansYukle(): Promise<Referans> {
       firmaSku: v.companySku,
       barkod: v.barcode,
     })),
+    mevcutUrunAdlari: urunler.map((u) =>
+      u.brand ? `${u.brand} ${u.name}` : u.name,
+    ),
     mevcutKanalSkulari: kanalSkulari.map((k) => ({
       kanalHesabiId: k.channelAccountId,
       varyantId: k.variantId,

@@ -230,6 +230,7 @@ export function BarkodGirisi({
   autoFocus,
   className,
   inputRef,
+  disabled = false,
 }: {
   value: string;
   onChange: (deger: string) => void;
@@ -242,6 +243,8 @@ export function BarkodGirisi({
   className?: string;
   /** Peş peşe okutmada kutuya tekrar odaklanabilmek için. */
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  /** Kilitli alan: hem yazma hem kamera düğmesi kapanır. */
+  disabled?: boolean;
 }) {
   const [kameraAcik, setKameraAcik] = useState(false);
 
@@ -265,6 +268,7 @@ export function BarkodGirisi({
           autoFocus={autoFocus}
           autoComplete="off"
           placeholder={placeholder}
+          disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key !== "Enter") return;
@@ -281,6 +285,7 @@ export function BarkodGirisi({
           size="icon"
           title="Kamerayla okut"
           aria-label="Kamerayla okut"
+          disabled={disabled}
           onClick={() => setKameraAcik(true)}
         >
           <Camera />

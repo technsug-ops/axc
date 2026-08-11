@@ -4,12 +4,17 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { BarkodGirisi } from "@/components/barkod-okuyucu";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { konumGuncelle, type KonumDurumu } from "../../actions";
+import {
+  RafKoduAlani,
+  koduAyir,
+  koduBirlestir,
+} from "../../raf-kodu-alani";
 
 export function KonumDuzenleFormu({
   konumId,
@@ -26,30 +31,34 @@ export function KonumDuzenleFormu({
   const t = useTranslations("Raf");
   const ortak = useTranslations("Ortak");
 
-  const [alanlar, setAlanlar] = useState(baslangic);
+  // Mevcut kod taban + göze AYRILIR; kullanıcı tireyi görmeden düzenler.
+  const bolunmus = koduAyir(baslangic.code);
+  const [alanlar, setAlanlar] = useState({
+    ...baslangic,
+    taban: bolunmus.taban,
+    goz: bolunmus.goz,
+  });
 
-  function guncelle(degisim: Partial<typeof baslangic>) {
+  function guncelle(degisim: Partial<typeof alanlar>) {
     setAlanlar((onceki) => ({ ...onceki, ...degisim }));
   }
 
-  const kodDegisti = alanlar.code.trim() !== baslangic.code;
+  const tamKod = koduBirlestir(alanlar.taban, alanlar.goz);
+  const kodDegisti = tamKod !== baslangic.code;
 
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="id" value={konumId} />
-      <input type="hidden" name="code" value={alanlar.code} />
+      <input type="hidden" name="code" value={tamKod} />
+
+      <RafKoduAlani
+        taban={alanlar.taban}
+        goz={alanlar.goz}
+        onTaban={(deger) => guncelle({ taban: deger })}
+        onGoz={(deger) => guncelle({ goz: deger })}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="duzenle-code">{t("rafKodu")} *</Label>
-          <BarkodGirisi
-            id="duzenle-code"
-            value={alanlar.code}
-            onChange={(deger) => guncelle({ code: deger })}
-            placeholder="A-01"
-            kameraBasligi={t("kameraBasligi")}
-          />
-        </div>
         <div className="space-y-2">
           <Label htmlFor="duzenle-name">{ortak("ad")}</Label>
           <Input

@@ -60,9 +60,18 @@ type Ozet = {
 
 type Yanit =
   | { durum: "HATA"; hatalar: SatirHatasi[]; eksikSutunlar: { sayfa: string; sutun: string }[] }
-  | { durum: "ONIZLEME"; ozet: Ozet }
+  | { durum: "ONIZLEME"; ozet: Ozet; uyarilar: Uyari[] }
   | { durum: "YAZILDI"; sonuc: Record<string, number> }
   | { durum: "COKTU"; mesaj: string };
+
+/** Uyarı yüklemeyi DURDURMAZ — hatadan ayrı listede gösterilir. */
+type Uyari = {
+  sayfa: string;
+  satir: number;
+  kod: string;
+  deger: string;
+  ek?: string;
+};
 
 type Kip = "YALNIZ_YENI" | "GUNCELLE";
 
@@ -163,6 +172,7 @@ export function Yukleyici() {
   }
 
   const onizleme = yanit?.durum === "ONIZLEME" ? yanit.ozet : null;
+  const uyarilar = yanit?.durum === "ONIZLEME" ? yanit.uyarilar : [];
 
   const ozetSatirlari = onizleme
     ? ([
@@ -328,6 +338,30 @@ export function Yukleyici() {
                 </div>
               ))}
             </dl>
+
+            {/* UYARILAR — yüklemeyi durdurmaz, dikkat çeker. Hata listesiyle
+                aynı kutuya konsaydı yükleme boşuna durmuş sanılırdı. */}
+            {uyarilar.length > 0 ? (
+              <div className="space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                  {t("uyariBasligi", { sayi: uyarilar.length })}
+                </p>
+                <ul className="list-inside list-disc space-y-1 text-sm text-amber-900/90 dark:text-amber-200/90">
+                  {uyarilar.map((u, i) => (
+                    <li key={i}>
+                      {t("uyariBenzerUrun", {
+                        satir: u.satir,
+                        deger: u.deger,
+                        mevcut: u.ek ?? "",
+                      })}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-amber-900/80 dark:text-amber-200/80">
+                  {t("uyariNotu")}
+                </p>
+              </div>
+            ) : null}
 
             <AlertDialog open={onayAcik} onOpenChange={setOnayAcik}>
               <AlertDialogTrigger asChild>

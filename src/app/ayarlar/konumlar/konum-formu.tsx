@@ -4,14 +4,14 @@ import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 
-import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { konumEkle, type KonumDurumu } from "./actions";
+import { RafKoduAlani, koduBirlestir } from "./raf-kodu-alani";
 
-const BOS = { code: "", name: "", description: "" };
+const BOS = { taban: "", goz: "", name: "", description: "" };
 
 export function KonumFormu() {
   const [durum, formAction, bekliyor] = useActionState<KonumDurumu, FormData>(
@@ -41,21 +41,21 @@ export function KonumFormu() {
 
   return (
     <form action={formAction} className="space-y-4">
-      {/* Raf kodu kontrollü (barkod okuyucu için); değeri gizli alanla gider. */}
-      <input type="hidden" name="code" value={alanlar.code} />
+      {/* Kod taban + gözden BİRLEŞTİRİLİR; gizli alanla gider. */}
+      <input
+        type="hidden"
+        name="code"
+        value={koduBirlestir(alanlar.taban, alanlar.goz)}
+      />
+
+      <RafKoduAlani
+        taban={alanlar.taban}
+        goz={alanlar.goz}
+        onTaban={(deger) => guncelle({ taban: deger })}
+        onGoz={(deger) => guncelle({ goz: deger })}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="konum-code">{t("rafKodu")} *</Label>
-          {/* Mevcut bir raf QR'ını okutup kodu doldurabilirsiniz. */}
-          <BarkodGirisi
-            id="konum-code"
-            value={alanlar.code}
-            onChange={(deger) => guncelle({ code: deger })}
-            placeholder={t("kodIpucu")}
-            kameraBasligi={t("kameraBasligi")}
-          />
-        </div>
         <div className="space-y-2">
           <Label htmlFor="konum-name">{ortak("ad")}</Label>
           <Input

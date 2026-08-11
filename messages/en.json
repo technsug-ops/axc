@@ -103,7 +103,8 @@
     "ekleNotu": "",
     "oran": "",
     "kategori": "",
-    "oner": ""
+    "oner": "",
+    "bekleyin": ""
   },
   "AlimDurumu": {
     "DRAFT": "",
@@ -210,7 +211,20 @@
     "kdvOraniEtiketi": "",
     "kdvKaynagiIstisna": "",
     "kdvKaynagiKategori": "",
-    "kdvKaynagiVarsayilan": ""
+    "kdvKaynagiVarsayilan": "",
+    "skuOneriKategoriYok": "",
+    "skuOneriAdYok": "",
+    "skuOneriKategoriKodsuz": "",
+    "skuOneriKategoriDuzelt": "",
+    "kodKilitliBaslik": "",
+    "kodKilitliMetin": "",
+    "cakismaMetni": "",
+    "cakismaUruneGit": "",
+    "cakismaAlimEkle": "",
+    "benzerBaslik": "",
+    "benzerMetin": "",
+    "benzerVarOlanaGit": "",
+    "benzerFarkliUrun": ""
   },
   "UrunSil": {
     "dugme": "",
@@ -261,7 +275,17 @@
     "etiketlerOzeti": "",
     "aktifRafYok": "",
     "aktifRafYokIpucu": "",
-    "yazdir": ""
+    "yazdir": "",
+    "goz": "",
+    "gozYok": "",
+    "kaydedilecekKod": "",
+    "kodBicimNotu": "",
+    "kodBicimHatasi": "",
+    "kodOnerisi": "",
+    "bicimsizRozet": "",
+    "bicimsizBaslik": "",
+    "bicimsizMetin": "",
+    "birlestir": ""
   },
   "KanalHesabi": {
     "kanalSecilmeli": "",
@@ -363,7 +387,8 @@
     "barkodBaskaUrunde": "",
     "kimlikBulunamadi": "",
     "varyantSilinemez": "",
-    "urunSilinemez": ""
+    "urunSilinemez": "",
+    "kodKilitli": ""
   },
   "Alim": {
     "urunSecilmeli": "",
@@ -1052,7 +1077,10 @@
     "hataGECERSIZ_TARIH": "",
     "hataPARA_BIRIMI_EKSIK": "",
     "hataHIC_SATIR_YOK": "",
-    "yardim14": ""
+    "yardim14": "",
+    "uyariBasligi": "",
+    "uyariBenzerUrun": "",
+    "uyariNotu": ""
   },
   "KanalSku": {
     "baslik": "",
@@ -1227,5 +1255,31 @@
     "listeNotu": "",
     "kodsuzBaslik": "",
     "kodsuzMetin": ""
+  },
+  "RafBirlestir": {
+    "baslik": "",
+    "aciklamaMetni": "",
+    "kartBasligi": "",
+    "kaynakRaf": "",
+    "hedefRaf": "",
+    "rafSecin": "",
+    "kaynakNotu": "",
+    "hedefNotu": "",
+    "onizle": "",
+    "onizlemeBasligi": "",
+    "tasinacak": "",
+    "kalacak": "",
+    "kaynakPasif": "",
+    "onaylaVeBirlestir": "",
+    "birlestirildi": "",
+    "ikisiDeSecilmeli": "",
+    "ayniRaf": "",
+    "rafBulunamadi": "",
+    "hedefPasif": "",
+    "birlestirilemedi": "",
+    "yetersizRaf": "",
+    "yetersizRafIpucu": "",
+    "ledgerBasligi": "",
+    "ledgerMetni": ""
   }
 }

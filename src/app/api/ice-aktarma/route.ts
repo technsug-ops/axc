@@ -7,6 +7,7 @@ import {
   type Kip,
   type Ozet,
   type SatirHatasi,
+  type SatirUyarisi,
 } from "@/lib/ice-aktarma/dogrula";
 import { sablonMetinleri } from "@/lib/ice-aktarma/metinler";
 import { dosyayiOku } from "@/lib/ice-aktarma/oku";
@@ -33,7 +34,7 @@ export const dynamic = "force-dynamic";
 
 type Yanit =
   | { durum: "HATA"; hatalar: SatirHatasi[]; eksikSutunlar: { sayfa: string; sutun: string }[] }
-  | { durum: "ONIZLEME"; ozet: Ozet }
+  | { durum: "ONIZLEME"; ozet: Ozet; uyarilar: SatirUyarisi[] }
   | { durum: "YAZILDI"; sonuc: YazimSonucu }
   | { durum: "COKTU"; mesaj: string };
 
@@ -87,7 +88,11 @@ export async function POST(istek: Request) {
 
   // --- 3) ÖNİZLEME (hiçbir şey yazılmadı) ---
   if (!yazilsinMi) {
-    return yanitla({ durum: "ONIZLEME", ozet: sonuc.ozet });
+    return yanitla({
+      durum: "ONIZLEME",
+      ozet: sonuc.ozet,
+      uyarilar: sonuc.uyarilar,
+    });
   }
 
   // --- 4) YAZ — tek transaction ---

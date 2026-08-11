@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -22,6 +22,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import type { FormDurumu } from "./actions";
+import { BenzerlikSorusu } from "./benzerlik-sorusu";
+import { CakismaUyarisi } from "./cakisma-uyarisi";
+import { SkuOnerButonu } from "./sku-oner-butonu";
 
 export type KonumSecenegi = { id: string; code: string; name: string | null };
 
@@ -80,6 +83,7 @@ export function UrunFormu({
   baslangic,
   urunId,
   gonderEtiketi,
+  hareketliMi = false,
 }: {
   konumlar: KonumSecenegi[];
   kategoriler: KategoriSecenegi[];
@@ -87,11 +91,19 @@ export function UrunFormu({
   baslangic?: UrunGirdisi;
   urunId?: string;
   gonderEtiketi: string;
+  /**
+   * Ürün hareket görmüş mü (stok/alım/satış/iade). Görmüşse SKU ve Firma SKU
+   * KİLİTLİ: kod etikete basılıp ürüne yapıştırılmıştır, değiştirmek
+   * depodaki etiketi yalancı yapar. Sunucu da ayrıca reddeder.
+   */
+  hareketliMi?: boolean;
 }) {
   const [durum, formAction, bekliyor] = useActionState<FormDurumu, FormData>(
     action,
     {},
   );
+
+  const formRef = useRef<HTMLFormElement>(null);
 
   const t = useTranslations("Urunler");
   const ortak = useTranslations("Ortak");
@@ -187,8 +199,24 @@ export function UrunFormu({
     })),
   };
 
+  /**
+   * "Farklı ürün — devam et" aynı formu ONAY BAYRAĞIYLA tekrar gönderir.
+   * Kullanıcı hiçbir alanı yeniden doldurmaz.
+   */
+  function benzerligeRagmenKaydet() {
+    const form = formRef.current;
+    if (!form) return;
+    const veri = new FormData(form);
+    veri.set("benzerlikOnaylandi", "1");
+    startTransition(() => formAction(veri));
+  }
+
   return (
-    <form onSubmit={formGonderimi(formAction)} className="space-y-6">
+    <form
+      ref={formRef}
+      onSubmit={formGonderimi(formAction)}
+      className="space-y-6"
+    >
       {urunId ? <input type="hidden" name="id" value={urunId} /> : null}
       <input type="hidden" name="veri" value={JSON.stringify(gonderilecek)} />
 
@@ -318,6 +346,19 @@ export function UrunFormu({
             </p>
           </div>
 
+          {/* Kilit SEBEBİYLE BİRLİKTE söylenir — "neden yazamıyorum?"
+              sorusunu ekranda cevaplamayan kilit, bozuk alan sanılır (#5). */}
+          {hareketliMi ? (
+            <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                {t("kodKilitliBaslik")}
+              </p>
+              <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+                {t("kodKilitliMetin")}
+              </p>
+            </div>
+          ) : null}
+
           {varyantlar.map((varyant, sira) => (
             <div
               key={varyant.id ?? sira}
@@ -411,13 +452,31 @@ export function UrunFormu({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor={`sku-${sira}`}>{ortak("sku")} *</Label>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor={`sku-${sira}`}>{ortak("sku")} *</Label>
+                    {/* Öner İKİ ALANI BİRDEN doldurur: SKU = Firma SKU. */}
+                    {hareketliMi ? null : (
+                      <SkuOnerButonu
+                        kategoriId={kategoriId}
+                        ad={ad}
+                        marka={marka}
+                        kullanilan={varyantlar
+                          .filter((_, i) => i !== sira)
+                          .map((v) => v.sku)
+                          .filter(Boolean)}
+                        onOneri={(kod) =>
+                          varyantGuncelle(sira, { sku: kod, companySku: kod })
+                        }
+                      />
+                    )}
+                  </div>
                   <BarkodGirisi
                     id={`sku-${sira}`}
                     value={varyant.sku}
                     onChange={(deger) => varyantGuncelle(sira, { sku: deger })}
                     placeholder={t("skuIpucu")}
                     kameraBasligi={t("skuKamera")}
+                    disabled={hareketliMi}
                   />
                 </div>
                 <div className="space-y-2">
@@ -433,6 +492,7 @@ export function UrunFormu({
                     }
                     placeholder={t("firmaSkuIpucu")}
                     kameraBasligi={t("firmaSkuKamera")}
+                    disabled={hareketliMi}
                   />
                 </div>
                 <div className="space-y-2">
@@ -509,6 +569,12 @@ export function UrunFormu({
       </Card>
 
       <HataOzeti hatalar={durum.hatalar} />
+      <CakismaUyarisi cakismalar={durum.cakismalar ?? []} />
+      <BenzerlikSorusu
+        benzerler={durum.benzerler ?? []}
+        onDevam={benzerligeRagmenKaydet}
+        bekliyor={bekliyor}
+      />
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={bekliyor}>

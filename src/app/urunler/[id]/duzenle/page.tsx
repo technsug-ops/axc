@@ -5,6 +5,8 @@ import { GeriBaglanti } from "@/components/baglanti";
 import { prisma } from "@/lib/prisma";
 
 import { urunGuncelle } from "../../actions";
+import { urunHareketliMi } from "@/lib/urun-hareket";
+
 import { UrunFormu, type UrunGirdisi } from "../../urun-formu";
 
 export default async function UrunDuzenleSayfasi({
@@ -79,6 +81,7 @@ export default async function UrunDuzenleSayfasi({
         action={urunGuncelle}
         baslangic={baslangic}
         urunId={urun.id}
+        hareketliMi={await urunHareketliMi(urun.id)}
         gonderEtiketi={t("degisiklikleriKaydet")}
       />
     </div>

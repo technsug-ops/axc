@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import { rafKoduGecerliMi } from "@/lib/kimlik";
 import { prisma } from "@/lib/prisma";
 
 export type KonumDurumu = {
@@ -19,14 +20,19 @@ export type KonumDurumu = {
 function konumSemasi(mesajlar: {
   kodZorunlu: string;
   kodCokUzun: string;
+  kodBicimHatasi: string;
   adCokUzun: string;
 }) {
   return z.object({
+    // BİÇİM DENETİMİ SUNUCUDA DA VAR: istemcideki canlı uyarı kolaylıktır,
+    // form doğrudan da gönderilebilir. Desen deponun kendi düzenine göre
+    // (A1, A27, R1, DEPO, A5-3) — bkz. src/lib/kimlik.ts.
     code: z
       .string()
       .trim()
       .min(1, mesajlar.kodZorunlu)
-      .max(191, mesajlar.kodCokUzun),
+      .max(191, mesajlar.kodCokUzun)
+      .refine(rafKoduGecerliMi, { message: mesajlar.kodBicimHatasi }),
     name: z.string().trim().max(191, mesajlar.adCokUzun),
     description: z.string().trim(),
   });
@@ -39,6 +45,7 @@ async function semaHazirla() {
     sema: konumSemasi({
       kodZorunlu: t("kodZorunlu"),
       kodCokUzun: t("kodCokUzun"),
+      kodBicimHatasi: t("kodBicimHatasi"),
       adCokUzun: t("adCokUzun"),
     }),
   };
