@@ -167,6 +167,32 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       giriliyor, `RULE_MISSING` de çoğunlukla bundan çıkıyor. Ekran gelince
       satış formu oranı hazır önerir ve bu uyarı büyük ölçüde kaybolur.
 
+## Hakediş paketinden çıkan kararlar
+
+- [ ] **Resmî tatil takvimi (iş günü hesabı)**
+      Trendyol vadesi İŞ GÜNÜ cinsinden. Bugün yalnız hafta sonu atlanıyor;
+      resmî tatiller sayılmıyor çünkü VERİ gerektirir (yıl yıl değişir,
+      dinî bayramlar kayar). Sonuç ÖLÇÜLDÜ: 28 iş günü hesapta 38 takvim
+      günü, kullanıcının gözlemi ~41 — aradaki 3 gün tatil.
+      Bu yüzden gecikme eşiği 3 iş günü. Tatil tablosu eklenirse EŞİK DE
+      yeniden düşünülmeli; `hakedis:dogrula` bu bağı test olarak kilitliyor.
+      _Karar 11.08.2026: önce hafta sonu._
+
+- [ ] **Kupon → kâr yansıması (iade-etkisi modeliyle)**
+      Trendyol "Kupon" satırı satışa bağlı ek kesintidir ama bugün YALNIZ
+      hakediş tarafında duruyor; kâr snapshot'ına dokunmuyor (kullanıcı
+      kararı 11.08.2026). Yani gerçek net kâr, kupon kadar daha düşük.
+      İade motorunun "sonradan gelen etki" modeli bu iş için hazır kalıp;
+      sırası gelince aynı yaklaşımla bağlanır.
+
+- [ ] **Yerel veritabanı sürüklenmesi — `Expense_templateId_fkey`**
+      Yerelde bu yabancı anahtar YOK, canlıda VAR (10.08 `gider_muhasebe`
+      migration'ında oluşmuş). Prisma bu yüzden hakediş migration'ına
+      alakasız bir `ADD CONSTRAINT` satırı ekledi; üretime gitseydi
+      "duplicate foreign key" ile patlardı. Satır elle silindi.
+      Yerel veritabanı bir ara elle kurcalanmış olmalı. Sonraki
+      migration'da aynı gürültü çıkarsa yerel şemayı canlıyla eşitle.
+
 ## Gözlem üzerine yapılacaklar
 
 - [x] ~~**Çıkmaz hatalar eyleme dönüştürüldü**~~ ✓ 11.08.2026

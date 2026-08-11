@@ -444,6 +444,11 @@ model ChannelAccount {
   /// edilmiş bir tarih göstermektense boş bırakılır.
   payoutDays Int?
 
+  /// Vade İŞ GÜNÜ cinsinden mi? Trendyol 28 İŞ GÜNÜ öder (≈41 takvim günü);
+  /// takvim günü sayılsaydı beklenen tarih 13 gün yanılırdı.
+  /// Varsayılan false = takvim günü.
+  payoutDaysAreBusinessDays Boolean @default(false)
+
   isActive Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -452,7 +457,8 @@ model ChannelAccount {
   channelSkus ChannelSku[]
   purchases   Purchase[]
   sales       Sale[]
-  settlements Settlement[]
+  settlements     Settlement[]
+  settlementItems SettlementItem[]
 
   @@unique([channelId, code])
   @@index([channelId])
@@ -1150,7 +1156,9 @@ model Settlement {
   code String?
 
   /// Paranın hesaba geçtiği gün.
-  paidAt DateTime
+  /// ZORUNLU DEĞİL: Trendyol raporunda gerçekleşen ödeme tarihi YOK,
+  /// yalnız vade var. Tarihler artık kalemlerde tutuluyor.
+  paidAt DateTime?
 
   /// Hakedişin kapsadığı dönem (rapordan okunur).
   periodStart DateTime?
@@ -1160,6 +1168,11 @@ model Settlement {
   /// ekranda gösterilir — sessizce eşitlenmez.
   amount   Decimal  @db.Decimal(18, 4)
   currency Currency
+
+  /// İÇE AKTARMA PARTİSİ: bir yükleme = bir Settlement (kullanıcı kararı
+  /// 11.08.2026). Tarihler kalemlerde durur, raporlama dinamik gruplar.
+  /// Yüklenen dosyanın adı — hangi rapordan geldiğini görebilmek için.
+  sourceFile String?
 
   note String? @db.Text
 
@@ -1174,22 +1187,58 @@ model Settlement {
 
 /// Hakedişin hangi satışı kapsadığı. Bir satış birden çok hakedişte
 /// görünebilir (kısmi ödeme), bu yüzden satış başına tekillik YOK.
+/// Hakediş raporundan gelen TEK SATIR.
+///
+/// Hepsiburada UZUN format verir: bir siparişin sipariş tutarı, komisyonu,
+/// kargosu, stopajı AYRI SATIRLARDIR. Bu yüzden "satış başına tek kalem"
+/// kısıtı kaldırıldı — o kısıt HB raporunun ikinci satırını reddediyordu.
 model SettlementItem {
   id           String     @id @default(cuid())
   settlementId String
   settlement   Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
 
-  saleId String
-  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  /// EŞLEŞMEYEN KALEM DE YAZILIR: rapordaki sipariş sistemde henüz yoksa
+  /// satır kaybolmaz, `saleId` boş kalır ve uyarı listesinde görünür.
+  /// Satış sonradan girilince bağlanabilir (kullanıcı kararı 11.08.2026).
+  saleId String?
+  sale   Sale?   @relation(fields: [saleId], references: [id], onDelete: Restrict)
 
-  /// Bu satış için ödenen NET tutar (rapordan; kesintiler düşülmüş hâli).
+  /// TEKİLLİK KAPSAMI. `settlementId` üzerinden de bulunabilirdi ama o zaman
+  /// aynı Kayıt No İKİNCİ bir partiyle tekrar yüklenebilirdi. İdempotentlik
+  /// kanal hesabı düzeyinde olmalı, parti düzeyinde değil.
+  channelAccountId String
+  channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
+
+  /// Pazaryerinin "Kayıt No"su. Tekrar yüklemede bu kayıt atlanır.
+  externalId String
+
+  /// Ortak kalem kodu (KOMISYON, KARGO, STOPAJ...). Pazaryerinin kendi
+  /// metni `rawType`'ta durur; tanınmayan tip DIGER olur ama metni kalır.
+  code    String
+  rawType String?
+
+  /// Ham sipariş numarası — eşleşmese bile saklanır ki sonradan bağlanabilsin.
+  orderNo String?
+
+  /// Gelir POZİTİF, gider NEGATİF. İşaret okuyucuda tekleştirilir.
   amount   Decimal  @db.Decimal(18, 4)
   currency Currency
 
+  /// Vade: paranın ne zaman ödeneceği. Ödeme: ne zaman ödendiği.
+  /// `paidAt` boşsa kalem BEKLEYEN paradır.
+  dueDate DateTime?
+  paidAt  DateTime?
+
+  /// Kaynağa dönmek gerekirse: ham satırın okunur özeti.
+  rawRow String? @db.Text
+
   createdAt DateTime @default(now())
 
-  @@unique([settlementId, saleId])
+  @@unique([channelAccountId, externalId])
+  @@index([settlementId])
   @@index([saleId])
+  @@index([orderNo])
+  @@index([dueDate])
 }
 
 // ----------------------------------------------------------------------------

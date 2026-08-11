@@ -114,6 +114,62 @@ export function gunMetni(tarih: Date): string {
   return `${tarih.getUTCFullYear()}-${ay}-${gun}`;
 }
 
+// ---------------------------------------------------------------------------
+//  İŞ GÜNÜ
+// ---------------------------------------------------------------------------
+
+/**
+ * ⚠ TATİLLER SAYILMIYOR — yalnız hafta sonu.
+ *
+ * Trendyol vadesi İŞ GÜNÜ cinsindendir (28 iş günü ≈ 41 takvim günü).
+ * Takvim günü sayılsaydı "geç ödeme" uyarısı 13 gün yanılırdı.
+ *
+ * Resmî tatiller hesaba KATILMIYOR: yıl yıl değişir, dinî bayramlar kayar,
+ * yani VERİ gerektirir — bugün öyle bir tablo yok. Sonuç: araya bayram
+ * girdiği dönemlerde beklenen tarih 2-3 gün ERKEN çıkar. Bu yüzden gecikme
+ * eşiği (bkz. HAKEDIS_ESIKLERI) sıfır değil, birkaç iş günüdür.
+ * _Karar 11.08.2026: önce hafta sonu; tatil tablosu BEKLEYENLER'de._
+ */
+export function haftaSonuMu(tarih: Date): boolean {
+  const gun = tarih.getUTCDay(); // 0 pazar · 6 cumartesi
+  return gun === 0 || gun === 6;
+}
+
+/**
+ * Bir tarihe İŞ GÜNÜ ekler. Başlangıç günü SAYILMAZ; ilk iş günü 1'dir.
+ * `sayi = 0` verilirse tarih olduğu gibi döner.
+ */
+export function isGunuEkle(tarih: Date, sayi: number): Date {
+  if (sayi <= 0) return tarih;
+
+  let gecerli = tarih;
+  let kalan = sayi;
+  // Üst sınır yok ama sonsuz döngü de yok: her adım bir gün ilerler.
+  while (kalan > 0) {
+    gecerli = gunEkle(gecerli, 1);
+    if (!haftaSonuMu(gecerli)) kalan--;
+  }
+  return gecerli;
+}
+
+/**
+ * İki tarih arasındaki İŞ GÜNÜ sayısı. Başlangıç hariç, bitiş dahil.
+ * Bitiş başlangıçtan önceyse NEGATİF döner — "3 iş günü geç" ile
+ * "3 iş günü erken" ayırt edilebilsin.
+ */
+export function isGunuFarki(baslangic: Date, bitis: Date): number {
+  const ileri = bitis.getTime() >= baslangic.getTime();
+  const [bas, son] = ileri ? [baslangic, bitis] : [bitis, baslangic];
+
+  let sayac = 0;
+  let gecerli = bas;
+  while (gecerli.getTime() < son.getTime()) {
+    gecerli = gunEkle(gecerli, 1);
+    if (!haftaSonuMu(gecerli)) sayac++;
+  }
+  return ileri ? sayac : -sayac;
+}
+
 export class PencereHatasi extends Error {
   constructor(readonly kod: "ARALIK_EKSIK" | "ARALIK_GECERSIZ" | "TERS_ARALIK") {
     super(kod);
