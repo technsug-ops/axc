@@ -1209,8 +1209,20 @@ model SettlementItem {
   channelAccountId String
   channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
 
-  /// Pazaryerinin "Kayıt No"su. Tekrar yüklemede bu kayıt atlanır.
+  /// Pazaryerinin "Kayıt No"su — HEPSİBURADA'DA BU BİR FATURA NUMARASIDIR
+  /// (EFA2026000000101) ve o faturanın TÜM kalemleri aynı numarayı taşır.
+  /// Bu yüzden TEK BAŞINA TEKİL DEĞİLDİR; ekranda "Fatura/Kayıt No" diye
+  /// etiketlenir ki kullanıcı HB panelindeki faturayla eşleştirebilsin.
+  /// Ölçüm 11.08.2026: 539 satır, yalnız 94 farklı Kayıt No.
   externalId String
+
+  /// İDEMPOTENTLİĞİN GERÇEK ANAHTARI: externalId | siparişNo | HAM TİP.
+  /// Ölçülen tekil kombinasyon (HB 539/539, TY 298/298).
+  ///
+  /// ⚠ HAM TİPTEN üretilir, normalleştirilmiş `code`tan DEĞİL: iki farklı
+  /// tanınmayan tip aynı siparişe düşünce ikisi de DIGER olur; koddan
+  /// üretilseydi biri sessizce kaybolurdu. KARAR KALICI.
+  rowKey String
 
   /// Ortak kalem kodu (KOMISYON, KARGO, STOPAJ...). Pazaryerinin kendi
   /// metni `rawType`'ta durur; tanınmayan tip DIGER olur ama metni kalır.
@@ -1234,7 +1246,8 @@ model SettlementItem {
 
   createdAt DateTime @default(now())
 
-  @@unique([channelAccountId, externalId])
+  @@unique([channelAccountId, rowKey])
+  @@index([externalId])
   @@index([settlementId])
   @@index([saleId])
   @@index([orderNo])

@@ -280,7 +280,21 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       ekstre kaydı TUTULMAZ — alımlardan türetilir. Kesim günü girilmemiş
       kartta uyarı EYLEME DÖNÜK: kart düzenlemeye bağlantı verir.
 
-- [ ] **Hakediş içe aktarma** — SIRADAKİ İŞ
+- [x] ~~**Hakediş içe aktarma**~~ ✓ 12.08.2026
+      `/hakedis` (bekleyen para) + `/hakedis/yukle` (rapor yükleme).
+      İki okuyucu tek iç modele iniyor; denetle → önizle → onayla → tek
+      transaction. Tekrar yükleme idempotent (satır anahtarı).
+      Gerçek dosyalarla doğrulandı: 5 TY (298 satır) + 1 HB (539 satır).
+
+- [ ] **Beklenen vs gerçekleşen tutar karşılaştırması**
+      Bugün "bekleyen para" yalnız ödeme tarihine bakıyor: ödenmemiş
+      kalemler bekliyor/gecikti diye ayrışıyor. TUTAR karşılaştırması
+      (kâr motorunun beklediği net hakediş ile rapordan geleni yan yana)
+      HENÜZ YOK — `odemeDurumu()` EKSIK_ODEME/FAZLA_ODEME üretebiliyor
+      ama ekran onu beslemiyor. Kâr motoru ile hakediş kalemlerini
+      eşleyen bir hesap gerekiyor; sıradaki iş.
+
+- [ ] **Eski hakediş içe aktarma notu (tarihe)**
       Pazaryeri hakediş raporundaki sipariş numaraları satışlarla eşleştirilir;
       eşleşmeyenler hata listesinde. Şema hazır (Settlement/SettlementItem),
       `payoutDays` alanı bekliyor.

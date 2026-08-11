@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   BarChart3,
+  Banknote,
   BookOpen,
   Boxes,
   CreditCard,
@@ -66,6 +67,7 @@ const OPERASYON: MenuOgesi[] = [
   { anahtar: "kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
   { anahtar: "kartBorcu", href: "/kart-borcu", icon: Landmark, aktif: true },
   { anahtar: "tazminat", href: "/tazminat", icon: PackageX, aktif: true },
+  { anahtar: "hakedis", href: "/hakedis", icon: Banknote, aktif: true },
 ];
 
 const AYARLAR: MenuOgesi[] = [
