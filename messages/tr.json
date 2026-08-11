@@ -1338,6 +1338,8 @@
     "notEtiketi": "Not",
     "durumSec": "Durum",
     "listeNotu": "Talepler silinmez. Reddedilen talep de geçmiştir — \"bu hasarı istemiştik, kabul etmediler\" bilgisi kalır.",
-    "talepYok": "talep yok"
+    "talepYok": "talep yok",
+    "kaynakIade": "iadeden",
+    "kaynakTedarikcisiz": "\"{kod}\" kaydının tedarikçisi bulunamadı; alacak kime yazılacağı belli değil. Bu ürünün alımında tedarikçi seçili olmalı."
   }
 }

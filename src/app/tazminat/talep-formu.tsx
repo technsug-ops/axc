@@ -29,8 +29,11 @@ import { formGonderimi } from "@/lib/form-gonderimi";
 import { tazminatAc, type TazminatDurumu } from "./actions";
 
 export type HasarKalemi = {
-  purchaseItemId: string;
-  alimKodu: string;
+  /** Hasar nereden geldi: mal kabulde mi, müşteri iadesinde mi. */
+  kaynak: "alim" | "iade";
+  kalemId: string;
+  /** Alım kodu ya da satış/sipariş no — hangi kayıttan geldiği. */
+  baglam: string;
   tedarikci: string;
   urun: string;
   sku: string;
@@ -88,16 +91,13 @@ export function TalepFormu({
         <DialogHeader>
           <DialogTitle>{t("yeniTalep")}</DialogTitle>
           <DialogDescription>
-            {hasar.urun} — {hasar.tedarikci} · {hasar.alimKodu}
+            {hasar.urun} — {hasar.tedarikci} · {hasar.baglam}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={formGonderimi(formAction)} className="space-y-4">
-          <input
-            type="hidden"
-            name="purchaseItemId"
-            value={hasar.purchaseItemId}
-          />
+          <input type="hidden" name="kaynak" value={hasar.kaynak} />
+          <input type="hidden" name="kalemId" value={hasar.kalemId} />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

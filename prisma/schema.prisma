@@ -935,6 +935,7 @@ model ReturnItem {
 
   stockMovements StockMovement[]
   fees           ReturnFee[]
+  compensations  Compensation[]
 
   @@index([returnId])
   @@index([saleItemId])
@@ -1205,6 +1206,14 @@ model Compensation {
   purchaseItemId String?
   purchaseItem   PurchaseItem? @relation(fields: [purchaseItemId], references: [id], onDelete: SetNull)
 
+  /// HASARIN İKİNCİ KAYNAĞI: müşteriden hasarlı dönen iade kalemi.
+  /// Mal kabulde hasarlı çıkan da, müşteriden kırık dönen de tedarikçiye
+  /// yazılabilir; ikisi ayrı alanda durur çünkü ayrı sorunun cevabıdır
+  /// ("mal bize bozuk geldi" vs "müşteriye bozuk gitmiş").
+  /// Bir talep ya alım kalemine ya iade kalemine bağlanır, ikisine değil.
+  returnItemId String?
+  returnItem   ReturnItem? @relation(fields: [returnItemId], references: [id], onDelete: SetNull)
+
   /// Talebe konu adet.
   quantity Int
 
@@ -1222,6 +1231,7 @@ model Compensation {
   @@index([supplierId])
   @@index([status])
   @@index([purchaseItemId])
+  @@index([returnItemId])
 }
 
 /// Tekrarlayan gider ŞABLONU — gider DEĞİLDİR, hiçbir toplama girmez.

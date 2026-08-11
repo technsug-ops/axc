@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
-import type { CompensationStatus } from "@/generated/prisma/enums";
+import type { CompensationStatus, Currency } from "@/generated/prisma/enums";
 import { gunMetninden } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
 import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
@@ -29,7 +29,9 @@ const DURUMLAR = [
 
 function semaKur(t: Ceviri) {
   return z.object({
-    purchaseItemId: z.string().min(1, t("kalemZorunlu")),
+    /** "alim" ya da "iade" — hasarın hangi kaynaktan geldiği. */
+    kaynak: z.enum(["alim", "iade"], { message: t("kalemZorunlu") }),
+    kalemId: z.string().min(1, t("kalemZorunlu")),
     quantity: z
       .number({ message: t("adetSayiOlmali") })
       .int(t("adetTamSayi"))
@@ -57,6 +59,87 @@ function tazele() {
   revalidatePath("/ayarlar/tedarikciler");
 }
 
+/** İki kaynağın ortak şekli — çağıran taraf farkı bilmez. */
+type CozulmusHasar = {
+  id: string;
+  sku: string;
+  hasarliAdet: number;
+  paraBirimi: Currency;
+  tedarikciId: string | null;
+  /** Hata metninde kullanılacak bağlam: alım kodu ya da sipariş no. */
+  baglam: string;
+};
+
+/**
+ * İADE TARAFINDA TEDARİKÇİ DOLAYLI BULUNUR.
+ *
+ * Alım kaleminde tedarikçi doğrudan yazılıdır. İade kaleminde yoktur:
+ * müşteri bize iade eder, biz tedarikçiden isteriz. Sorumlu tedarikçi,
+ * o varyantın EN SON alındığı tedarikçidir.
+ *
+ * ⚠ BU BİR TAHMİNDİR, kesin değildir. Aynı ürünü iki tedarikçiden aldıysanız
+ * müşteriye giden malın hangisinden çıktığını iade kaydı bilmez (FIFO
+ * partisi satışta tutulur, iadede değil). Bu yüzden form tedarikçiyi
+ * DEĞİŞTİRİLEBİLİR gösterir; sistem sadece en olası olanı önerir.
+ */
+async function hasariCoz(
+  kaynak: "alim" | "iade",
+  kalemId: string,
+): Promise<CozulmusHasar | null> {
+  if (kaynak === "alim") {
+    const k = await prisma.purchaseItem.findUnique({
+      where: { id: kalemId },
+      select: {
+        id: true,
+        damagedQuantity: true,
+        unitCostCurrency: true,
+        variant: { select: { sku: true } },
+        purchase: { select: { supplierId: true, code: true } },
+      },
+    });
+    if (!k) return null;
+    return {
+      id: k.id,
+      sku: k.variant.sku,
+      hasarliAdet: k.damagedQuantity,
+      paraBirimi: k.unitCostCurrency,
+      tedarikciId: k.purchase.supplierId,
+      baglam: k.purchase.code,
+    };
+  }
+
+  const k = await prisma.returnItem.findUnique({
+    where: { id: kalemId },
+    select: {
+      id: true,
+      damagedQuantity: true,
+      variantId: true,
+      variant: { select: { sku: true } },
+      return: { select: { sale: { select: { code: true } } } },
+    },
+  });
+  if (!k) return null;
+
+  // O varyantın son alımı: tedarikçi ve maliyet para birimi oradan gelir.
+  const sonAlim = await prisma.purchaseItem.findFirst({
+    where: { variantId: k.variantId, purchase: { NOT: { supplierId: null } } },
+    select: {
+      unitCostCurrency: true,
+      purchase: { select: { supplierId: true } },
+    },
+    orderBy: { purchase: { purchasedAt: "desc" } },
+  });
+
+  return {
+    id: k.id,
+    sku: k.variant.sku,
+    hasarliAdet: k.damagedQuantity,
+    paraBirimi: sonAlim?.unitCostCurrency ?? "TRY",
+    tedarikciId: sonAlim?.purchase.supplierId ?? null,
+    baglam: k.return.sale.code ?? k.variant.sku,
+  };
+}
+
 /**
  * ============================================================================
  *  TAZMİNAT TALEBİ AÇMA
@@ -76,7 +159,8 @@ export async function tazminatAc(
   const t = await getTranslations("Tazminat");
 
   const sonuc = semaKur(t).safeParse({
-    purchaseItemId: String(formData.get("purchaseItemId") ?? ""),
+    kaynak: String(formData.get("kaynak") ?? "alim"),
+    kalemId: String(formData.get("kalemId") ?? ""),
     quantity: Number(String(formData.get("quantity") ?? "")),
     amount: tutaraCevir(formData.get("amount")),
     occurredAt: String(formData.get("occurredAt") ?? ""),
@@ -91,35 +175,35 @@ export async function tazminatAc(
   const tarih = gunMetninden(veri.occurredAt);
   if (!tarih) return { hatalar: [t("tarihGecersiz")] };
 
-  const kalem = await prisma.purchaseItem.findUnique({
-    where: { id: veri.purchaseItemId },
-    select: {
-      id: true,
-      damagedQuantity: true,
-      unitCostCurrency: true,
-      variant: { select: { sku: true } },
-      purchase: { select: { supplierId: true, code: true } },
-    },
-  });
+  /**
+   * HASAR İKİ KAYNAKTAN GELİR ama talep TEK kaleme bağlanır:
+   *  - alım kalemi: mal bize hasarlı geldi
+   *  - iade kalemi: müşteriden hasarlı döndü
+   *
+   * İade tarafında tedarikçi DOLAYLI bulunur: iade → satış kalemi →
+   * varyant → o varyantın SON alımı. Müşteriye giden mal hangi partiden
+   * çıktıysa sorumluluk o tedarikçidedir.
+   */
+  const kalem = await hasariCoz(veri.kaynak, veri.kalemId);
   if (!kalem) return { hatalar: [t("kalemBulunamadi")] };
-
-  // Tedarikçi bağı olmayan eski alımdan talep açılamaz: alacak KİME
-  // yazılacağı belli olmalı.
-  if (!kalem.purchase.supplierId) {
-    return { hatalar: [t("alimTedarikcisiz", { kod: kalem.purchase.code })] };
+  if (!kalem.tedarikciId) {
+    return { hatalar: [t("kaynakTedarikcisiz", { kod: kalem.baglam })] };
   }
 
   const mevcutler = await prisma.compensation.findMany({
-    where: { purchaseItemId: kalem.id },
+    where:
+      veri.kaynak === "alim"
+        ? { purchaseItemId: kalem.id }
+        : { returnItemId: kalem.id },
     select: { quantity: true },
   });
   const kalan = kalanTalepEdilebilirAdet(
-    kalem.damagedQuantity,
+    kalem.hasarliAdet,
     mevcutler.map((m) => m.quantity),
   );
 
   if (kalan <= 0) {
-    return { hatalar: [t("hepsiTalepEdilmis", { sku: kalem.variant.sku })] };
+    return { hatalar: [t("hepsiTalepEdilmis", { sku: kalem.sku })] };
   }
   if (veri.quantity > kalan) {
     return { hatalar: [t("adetKalandanFazla", { kalan })] };
@@ -128,13 +212,15 @@ export async function tazminatAc(
   try {
     await prisma.compensation.create({
       data: {
-        supplierId: kalem.purchase.supplierId,
-        purchaseItemId: kalem.id,
+        supplierId: kalem.tedarikciId,
+        // Talep YA alım kalemine YA iade kalemine bağlanır, ikisine değil.
+        purchaseItemId: veri.kaynak === "alim" ? kalem.id : null,
+        returnItemId: veri.kaynak === "iade" ? kalem.id : null,
         quantity: veri.quantity,
         amount: String(veri.amount),
-        // Para birimi TALEPTEN DEĞİL, kalemin maliyetinden gelir:
+        // Para birimi TALEPTEN DEĞİL, malın maliyetinden gelir:
         // neyi kaybettiyseniz onu talep edersiniz.
-        currency: kalem.unitCostCurrency,
+        currency: kalem.paraBirimi,
         status: veri.status as CompensationStatus,
         occurredAt: tarih,
         note: veri.note || null,
@@ -146,7 +232,7 @@ export async function tazminatAc(
   }
 
   tazele();
-  return { basari: t("acildi", { sku: kalem.variant.sku }) };
+  return { basari: t("acildi", { sku: kalem.sku }) };
 }
 
 /**

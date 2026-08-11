@@ -251,13 +251,16 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       Aynı hasar iki kez talep edilemez (kalan adet düşülür).
       `tazminat:dogrula` (18).
 
-- [ ] **Tazminat — İADE TARAFI (migration bekliyor)**
-      `ReturnItem.damagedQuantity` (müşteriden hasarlı dönen) da talebe
-      kaynak olmalı, ama `Compensation` yalnızca `purchaseItemId` taşıyor.
-      Gereken: `Compensation.returnItemId` (nullable, SetNull, indeksli) —
-      SALT EKLEME. Kullanıcı onayı bekleniyor.
-      Motor ve ekran ikinci kaynağı alacak şekilde yazıldı; kolon gelince
-      liste sorgusu ve form kaynağı genişletilir.
+- [x] ~~**Tazminat — İADE TARAFI**~~ ✓ 11.08.2026
+      `Compensation.returnItemId` eklendi (salt ekleme, SetNull FK) ve
+      yerel + CANLI uygulandı. Müşteriden hasarlı dönen iade kalemleri de
+      "talep bekleyen hasar" listesine akıyor; talep listesinde "iadeden"
+      rozeti ve satışa bağlantı görünüyor.
+      Bir talep YA alım kalemine YA iade kalemine bağlanır, ikisine değil.
+      İade tarafında tedarikçi DOLAYLI bulunur: varyantın en son alındığı
+      parti. Aynı ürünü iki tedarikçiden aldıysanız bu bir TAHMİNDİR —
+      iade kaydı FIFO partisini bilmez. Form tedarikçiyi bu yüzden
+      değiştirilebilir gösterir.
 
 - [x] ~~**Kimlik standardı paketi — PARÇA 1 (temel)**~~ ✓ 10.08.2026
       Kararlar: SKU tireli `OYU-LG-260707-01` · alım no `ALM-ER-260810-01`

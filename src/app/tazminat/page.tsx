@@ -39,7 +39,7 @@ export default async function TazminatSayfasi() {
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
 
-  const [talepler, hasarliKalemler] = await Promise.all([
+  const [talepler, hasarliKalemler, hasarliIadeler] = await Promise.all([
     prisma.compensation.findMany({
       include: {
         supplier: { select: { name: true } },
@@ -49,6 +49,14 @@ export default async function TazminatSayfasi() {
               select: { sku: true, product: { select: { name: true } } },
             },
             purchase: { select: { id: true, code: true } },
+          },
+        },
+        returnItem: {
+          select: {
+            variant: {
+              select: { sku: true, product: { select: { name: true } } },
+            },
+            return: { select: { saleId: true, sale: { select: { code: true } } } },
           },
         },
       },
@@ -73,7 +81,51 @@ export default async function TazminatSayfasi() {
       },
       orderBy: { id: "desc" },
     }),
+    // İKİNCİ KAYNAK: müşteriden hasarlı dönen iade kalemleri.
+    prisma.returnItem.findMany({
+      where: { damagedQuantity: { gt: 0 } },
+      select: {
+        id: true,
+        damagedQuantity: true,
+        damageNote: true,
+        variantId: true,
+        variant: {
+          select: { sku: true, product: { select: { name: true } } },
+        },
+        return: { select: { sale: { select: { code: true } } } },
+        compensations: { select: { quantity: true } },
+      },
+      orderBy: { id: "desc" },
+    }),
   ]);
+
+  /**
+   * İade tarafında tedarikçi ve maliyet DOLAYLI bulunur: o varyantın en son
+   * alındığı parti. Tek sorguda toplanır; varyant başına tek kayıt yeter.
+   */
+  const iadeVaryantlari = [...new Set(hasarliIadeler.map((i) => i.variantId))];
+  const sonAlimlar = iadeVaryantlari.length
+    ? await prisma.purchaseItem.findMany({
+        where: {
+          variantId: { in: iadeVaryantlari },
+          purchase: { NOT: { supplierId: null } },
+        },
+        select: {
+          variantId: true,
+          unitCostAmount: true,
+          unitCostCurrency: true,
+          purchase: {
+            select: { purchasedAt: true, supplier: { select: { name: true } } },
+          },
+        },
+        orderBy: { purchase: { purchasedAt: "desc" } },
+      })
+    : [];
+
+  const sonAlimHaritasi = new Map<string, (typeof sonAlimlar)[number]>();
+  for (const a of sonAlimlar) {
+    if (!sonAlimHaritasi.has(a.variantId)) sonAlimHaritasi.set(a.variantId, a);
+  }
 
   // --- açık alacak: para birimi başına, tedarikçiden bağımsız toplam ---
   const acikToplam = acikAlacakToplami(
@@ -92,8 +144,9 @@ export default async function TazminatSayfasi() {
         k.compensations.map((c) => c.quantity),
       );
       return {
-        purchaseItemId: k.id,
-        alimKodu: k.purchase.code,
+        kaynak: "alim" as const,
+        kalemId: k.id,
+        baglam: k.purchase.code,
         tedarikci: k.purchase.supplier?.name ?? "—",
         urun: k.variant.product.name,
         sku: k.variant.sku,
@@ -108,6 +161,44 @@ export default async function TazminatSayfasi() {
       };
     })
     .filter((k) => k.kalanAdet > 0);
+
+  const bekleyenIadeler: HasarKalemi[] = hasarliIadeler
+    .map((i) => {
+      const kalan = kalanTalepEdilebilirAdet(
+        i.damagedQuantity,
+        i.compensations.map((c) => c.quantity),
+      );
+      const sonAlim = sonAlimHaritasi.get(i.variantId);
+      return {
+        kaynak: "iade" as const,
+        kalemId: i.id,
+        baglam: i.return.sale.code ?? "—",
+        tedarikci: sonAlim?.purchase.supplier?.name ?? "—",
+        urun: i.variant.product.name,
+        sku: i.variant.sku,
+        hasarliAdet: i.damagedQuantity,
+        kalanAdet: kalan,
+        onerilenTutar: varsayilanTalepTutari(
+          kalan,
+          sonAlim ? Number(sonAlim.unitCostAmount.toString()) : 0,
+        ),
+        paraBirimi: sonAlim?.unitCostCurrency ?? "TRY",
+        hasarNotu: i.damageNote,
+      };
+    })
+    .filter((i) => i.kalanAdet > 0);
+
+  // İki kaynak TEK listede: kullanıcı için ikisi de "talep bekleyen hasar".
+  const tumBekleyenler = [...bekleyenler, ...bekleyenIadeler];
+
+  /** Talep hangi kaynaktan gelirse gelsin ürün adı tek yerden okunur. */
+  function talepUrunu(k: (typeof talepler)[number]): string {
+    return (
+      k.purchaseItem?.variant.product.name ??
+      k.returnItem?.variant.product.name ??
+      "—"
+    );
+  }
 
   const bugun = tarihGirdisi(new Date());
 
@@ -145,11 +236,11 @@ export default async function TazminatSayfasi() {
       <Card>
         <CardHeader>
           <CardTitle>
-            {t("talepEdilebilir")} ({bekleyenler.length})
+            {t("talepEdilebilir")} ({tumBekleyenler.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {bekleyenler.length === 0 ? (
+          {tumBekleyenler.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
               <PackageX className="text-muted-foreground mx-auto size-6" />
               <p className="mt-2 font-medium">{t("hasarBosBaslik")}</p>
@@ -159,15 +250,21 @@ export default async function TazminatSayfasi() {
             </div>
           ) : (
             <div className="divide-y rounded-lg border">
-              {bekleyenler.map((h) => (
+              {tumBekleyenler.map((h) => (
                 <div
-                  key={h.purchaseItemId}
+                  key={`${h.kaynak}-${h.kalemId}`}
                   className="flex flex-wrap items-center justify-between gap-3 p-3"
                 >
                   <div className="min-w-0">
                     <div className="font-medium">{h.urun}</div>
                     <div className="text-muted-foreground text-xs">
-                      {h.tedarikci} · {h.alimKodu} · {t("hasarliAdet")}:{" "}
+                      {h.tedarikci} · {h.baglam} ·{" "}
+                      {h.kaynak === "iade" ? (
+                        <Badge variant="outline" className="mr-1">
+                          {t("kaynakIade")}
+                        </Badge>
+                      ) : null}
+                      {t("hasarliAdet")}:{" "}
                       <strong>{h.hasarliAdet}</strong> · {t("kalanAdet")}:{" "}
                       <strong>{h.kalanAdet}</strong>
                     </div>
@@ -225,16 +322,29 @@ export default async function TazminatSayfasi() {
                         <TableCell>{k.supplier.name}</TableCell>
                         <TableCell className="max-w-[18rem]">
                           <span className="block truncate">
-                            {k.purchaseItem?.variant.product.name ?? "—"}
+                            {talepUrunu(k)}
                           </span>
                         </TableCell>
-                        <TableCell>
+                        {/* Kaynak neyse oraya götürür: alım kaydına ya da
+                            hasarın döndüğü satışa. */}
+                        <TableCell className="whitespace-nowrap">
                           {k.purchaseItem ? (
                             <Baglanti
                               href={`/alimlar/${k.purchaseItem.purchase.id}`}
                             >
                               {k.purchaseItem.purchase.code}
                             </Baglanti>
+                          ) : k.returnItem ? (
+                            <span className="flex items-center gap-2">
+                              <Badge variant="outline">
+                                {t("kaynakIade")}
+                              </Badge>
+                              <Baglanti
+                                href={`/satislar/${k.returnItem.return.saleId}`}
+                              >
+                                {k.returnItem.return.sale.code ?? "—"}
+                              </Baglanti>
+                            </span>
                           ) : (
                             "—"
                           )}
@@ -263,7 +373,7 @@ export default async function TazminatSayfasi() {
                 {talepler.map((k) => (
                   <ListeKarti
                     key={k.id}
-                    baslik={k.purchaseItem?.variant.product.name ?? "—"}
+                    baslik={talepUrunu(k)}
                     altBaslik={`${k.supplier.name} · ${bicim.tarih(k.occurredAt)}`}
                     alanlar={[
                       {
@@ -272,6 +382,11 @@ export default async function TazminatSayfasi() {
                           <KopyalanabilirKod
                             deger={k.purchaseItem.purchase.code}
                             etiket={t("sutunAlim")}
+                          />
+                        ) : k.returnItem ? (
+                          <KopyalanabilirKod
+                            deger={k.returnItem.return.sale.code}
+                            etiket={t("kaynakIade")}
                           />
                         ) : (
                           "—"
