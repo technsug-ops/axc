@@ -100,6 +100,30 @@ export function tarihCoz(ham: unknown): Date | null {
 const bos = (d: unknown) => String(d ?? "").trim() === "";
 
 /**
+ * ============================================================================
+ *  SATIR ANAHTARI — İDEMPOTENTLİĞİN GERÇEK TEMELİ
+ * ----------------------------------------------------------------------------
+ *  İlk tasarımda "Kayıt No" tek başına anahtar sayılmıştı. GERÇEK HB DOSYASI
+ *  bunu çürüttü (11.08.2026): 539 satırda yalnız 94 farklı Kayıt No var,
+ *  445 tekrar. Çünkü HB'de Kayıt No bir FATURA numarası
+ *  (EFA2026000000101) ve o faturanın tüm kalemleri aynı numarayı taşıyor.
+ *  Tek başına kısıt konsaydı 539 satırın 445'i REDDEDİLİRDİ.
+ *
+ *  Ölçülen tekil kombinasyon:  Kayıt No + Sipariş No + Kayıt Tipi = 539/539
+ *
+ *  ⚠ NORMALLEŞTİRİLMİŞ KOD DEĞİL, HAM TİP kullanılır. Dört HB tipi bir ara
+ *  DIGER'e düşüyordu; kod kullanılsaydı aynı siparişteki iki farklı
+ *  "tanınmayan" kalem aynı anahtarı üretir, biri sessizce kaybolurdu.
+ *
+ *  Trendyol'da Kayıt No zaten tekildi (298/298); bu anahtar orada da
+ *  tekil kalır — tek şema iki kanala yeter.
+ * ============================================================================
+ */
+export function satirAnahtari(satir: HakedisSatiri): string {
+  return [satir.externalId, satir.siparisNo ?? "", satir.hamTip].join("|");
+}
+
+/**
  * TANINMAYAN İŞLEM TİPLERİ — uyarı kanalına gidecek özet.
  *
  * Pazaryerleri yeni tip ekliyor ve haber vermiyor. Sessizce atlarsak para
@@ -297,11 +321,18 @@ const HB_TIPLER: Record<string, HakedisKodu> = {
   "iade tutarı": "IADE_TUTARI",
   "komisyon iadesi": "KOMISYON_IADE",
   "mp stopaj iade": "STOPAJ_IADE",
-  "kargo bedeli (iade)": "KARGO_IADE",
-  "tahsilat yön. bedeli iadesi": "TAHSILAT_BEDELI_IADE",
-  "kampanya ind. iadesi": "KAMPANYA_IADE",
-  "hizmet bedeli (iade)": "HIZMET_BEDELI_IADE",
   "hurda geliri": "HURDA_GELIRI",
+  // --- GERÇEK DOSYADAN (11.08.2026): tarif edilenden farklı yazılmışlar.
+  // Uyarı kanalı bunları "tanınmayan tip" diye listeledi, öyle bulundu.
+  "kargo bedeli (iade sipariş)": "KARGO_IADE",
+  "kargo bedeli (iade)": "KARGO_IADE",
+  "tahsilat yönetim bedeli i̇adesi": "TAHSILAT_BEDELI_IADE",
+  "tahsilat yönetim bedeli iadesi": "TAHSILAT_BEDELI_IADE",
+  "tahsilat yön. bedeli iadesi": "TAHSILAT_BEDELI_IADE",
+  "kampanya indirimleri iadesi": "KAMPANYA_IADE",
+  "kampanya ind. iadesi": "KAMPANYA_IADE",
+  "hizmet bedeli (iade sipariş)": "HIZMET_BEDELI_IADE",
+  "hizmet bedeli (iade)": "HIZMET_BEDELI_IADE",
 };
 
 const HB_SUTUNLAR = {

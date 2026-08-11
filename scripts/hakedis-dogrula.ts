@@ -23,6 +23,7 @@ import {
   basligiNormalle,
   hepsiburadaOku,
   sayiCoz,
+  satirAnahtari,
   siparisNeti,
   taninmayanTipler,
   tarihCoz,
@@ -310,6 +311,69 @@ console.log("\n5) GERÇEK DOSYA — 11.08.2026 Trendyol raporları");
   const tanin = taninmayanTipler(yeniTip);
   kontrol("uyarı listesinde tutarıyla görünür",
     tanin.length === 1 && tanin[0].toplam === -500, tanin);
+  /**
+   * GERÇEK HB DOSYASINDAN (11.08.2026): dört iade tipi tarif edilenden
+   * FARKLI yazılmış. Uyarı kanalı bunları "tanınmayan" diye listeledi,
+   * öyle bulundular — sessiz atlansalardı 2.512 TL'lik kalem kaybolurdu.
+   */
+  const HB_GERCEK: [string, string][] = [
+    ["Kargo Bedeli (İade Sipariş)", "KARGO_IADE"],
+    ["Tahsilat Yönetim Bedeli İadesi", "TAHSILAT_BEDELI_IADE"],
+    ["Kampanya indirimleri iadesi", "KAMPANYA_IADE"],
+    ["Hizmet Bedeli (İade Sipariş)", "HIZMET_BEDELI_IADE"],
+  ];
+  const hbBaslik = [
+    "Durum", "Ödeme Tarihi", "Kayıt No", "Kayıt Tipi", "Kayıt Tarihi",
+    "Vade Tarihi", "Tutar", "Para Birimi", "Sipariş No", "Paket No",
+    "Ürün No (SKU)", "Ürün Adı", "Açıklama", "Kayıt Türü", "Kayıt Sınıfı",
+  ];
+  const hbSatir = (no: string, tip: string, sip: string) => [
+    "Ödendi", "14.07.2026", no, tip, "14.07.2026", "14.07.2026", 100, "TRY",
+    sip, "P1", "HBCV1", "Ürün", "", "Gider", "Sipariş bazlı",
+  ];
+  const hbO = hepsiburadaOku([
+    hbBaslik,
+    ...HB_GERCEK.map(([tip], i) => hbSatir("EFA1", tip, `S${i}`)),
+  ]);
+  const hbYanlis = HB_GERCEK.filter(([, bek], i) => hbO.satirlar[i]?.kod !== bek)
+    .map(([tip], i) => `${tip} -> ${hbO.satirlar[i]?.kod}`);
+  kontrol("HB gerçek başlık satırı okunuyor", hbO.eksikSutunlar.length === 0, hbO.eksikSutunlar);
+  kontrol("dört gerçek iade tipi tanınıyor", hbYanlis.length === 0, hbYanlis);
+
+  /**
+   * SATIR ANAHTARI — "Kayıt No" TEK BAŞINA YETMEZ.
+   * Gerçek HB dosyasında 539 satır ama yalnız 94 farklı Kayıt No var:
+   * o alan bir FATURA numarası (EFA2026000000101) ve faturanın tüm
+   * kalemleri aynı numarayı taşıyor. Tek başına kısıt konsaydı 445 satır
+   * reddedilirdi.
+   */
+  const ayniFatura = hepsiburadaOku([
+    hbBaslik,
+    hbSatir("EFA2026000000101", "Sipariş tutarı", "11493262226"),
+    hbSatir("EFA2026000000101", "Komisyon tutarı", "11493262226"),
+    hbSatir("EFA2026000000101", "Kargo Bedeli", "11493262226"),
+  ]);
+  const knos = new Set(ayniFatura.satirlar.map((s) => s.externalId));
+  kontrol("aynı fatura no birden çok satırda", knos.size === 1 && ayniFatura.satirlar.length === 3);
+  const anahtarlar = new Set(ayniFatura.satirlar.map(satirAnahtari));
+  kontrol("satır anahtarı üçünü de ayırır", anahtarlar.size === 3, [...anahtarlar]);
+
+  /**
+   * ANAHTAR HAM TİPTEN ÜRETİLİR, normalleştirilmiş koddan DEĞİL.
+   * İki farklı tanınmayan tip aynı siparişte olursa kod ikisini de DIGER
+   * yapar; anahtar koddan üretilseydi biri sessizce kaybolurdu.
+   */
+  const ikiTaninmayan = hepsiburadaOku([
+    hbBaslik,
+    hbSatir("EFA1", "Yepyeni Kesinti A", "S1"),
+    hbSatir("EFA1", "Yepyeni Kesinti B", "S1"),
+  ]);
+  kontrol("ikisi de DIGER", ikiTaninmayan.satirlar.every((s) => s.kod === "DIGER"));
+  kontrol(
+    "tanınmayan iki kalem yine de ayrışır",
+    new Set(ikiTaninmayan.satirlar.map(satirAnahtari)).size === 2,
+  );
+
   kosanBolumler.push("gercek");
 }
 
