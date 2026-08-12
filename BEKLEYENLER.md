@@ -120,13 +120,24 @@ Canlı sağlık kontrolü (10.08.2026): 12 sayfa 200, tümü 1,3 sn altında ·
         Vercel Cron → route handler → JSON döküm → uzak depolama.
       Karar canlıya geçiş planında verilecek.
 
-- [ ] **Yedekten geri yükleme ekranı**
-      Bugün yedek dosyası ELLE geri yükleniyor. Ekrandan tek tuşla geri
-      yükleme bilinçli olarak yapılmadı: yanlış tuşla tüm verinin üzerine
-      yazılması korumasını hak eden bir işlem. İçe aktarma altyapısı
-      (önizle-önce-yaz + tek transaction) hazır; sırası gelince onun
-      üzerine kurulur.
-      _Karar 10.08.2026._
+- [x] ~~**Yedekten geri yükleme ekranı**~~ ✓ 12.08.2026
+      `/ayarlar/geri-yukleme`. Kaynak (depodaki gece yedeği ya da dosya) →
+      denetle (hiçbir şey yazmaz) → fark tablosu → "GERİ YÜKLE" yazdırma +
+      otomatik güvenlik yedeği → tek transaction. Kısmi geri yükleme YOK.
+      `yedek:dogrula` gerçek turu koşuyor (30 kontrol).
+
+- [ ] **YEDEK KAPSAM BOŞLUĞU — nasıl oluştuğu (ders)**
+      12.08.2026'da bulundu: `YEDEK_TABLOLARI` 10.08.2026'da yazılmış, sonra
+      eklenen **beş model listeye girmemişti** — Supplier, Settlement,
+      SettlementItem, Compensation, User. Yani gece yedekleri iki gündür
+      eksik alınıyordu ve felaket anında hakediş, tedarikçi, tazminat ve
+      giriş hesapları kaybolacaktı. Hiçbir hata vermiyordu; yedek "başarılı"
+      diyordu.
+      Bekçi kuruldu (`yedek:dogrula` bölüm 1): şemadaki her model listede mi
+      diye bakıyor, eksikse kırmızı yanıyor. **Bu maddenin açık kalma sebebi:
+      aynı sınıf hatanın başka yerlerde de olabileceği.** "Yeni model
+      eklendiğinde güncellenmesi gereken listeler" taranacak (dışa aktarma
+      listeleri, içe aktarma şablonu, el kitabı sözlüğü).
 
 ## SaaS dönüşümü
 

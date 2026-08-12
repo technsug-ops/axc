@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
 
+import { YEDEK_SURUMU, YEDEK_TABLOLARI, type YedekDosyasi } from "./yedek-bicim";
+
+export { YEDEK_SURUMU, YEDEK_TABLOLARI };
+export type { YedekDosyasi };
+
 /**
  * ============================================================================
  *  YEDEK — VERİTABANININ TAM DÖKÜMÜ
@@ -19,49 +24,6 @@ import { prisma } from "@/lib/prisma";
  * ============================================================================
  */
 
-/** Yedeğe giren tablolar — ekranda da bu liste gösterilir. */
-export const YEDEK_TABLOLARI = [
-  "Category",
-  "Product",
-  "ProductVariant",
-  "VariantOption",
-  "Location",
-  "Channel",
-  "ChannelAccount",
-  "ChannelSku",
-  "ChannelFee",
-  "PenaltyTariff",
-  "CargoCarrier",
-  "CargoTariff",
-  "CreditCard",
-  "Purchase",
-  "PurchaseItem",
-  "StockMovement",
-  "Sale",
-  "SaleItem",
-  "SaleFee",
-  "Return",
-  "ReturnItem",
-  "ReturnFee",
-  "ExpenseCategory",
-  "Expense",
-  "ExpenseTemplate",
-] as const;
-
-export type YedekDosyasi = {
-  bicim: string;
-  surum: number;
-  olusturulmaAni: string;
-  /** true ise kargo tarifeleri dosyada YOK; seed ile tamamlanır. */
-  kargoTarifesiHaric: boolean;
-  satirSayilari: Record<string, number>;
-  tablolar: Record<string, unknown[]>;
-};
-
-/**
- * @param an Dosyaya yazılacak zaman damgası — dışarıdan verilir ki üretim
- *           saati okuma sorumluluğu tek yerde kalsın.
- */
 export async function yedekUret(
   an: Date,
   /**
@@ -75,32 +37,42 @@ export async function yedekUret(
    */
   tarifesiz = false,
 ): Promise<YedekDosyasi> {
+  // Sıra YEDEK_TABLOLARI ile aynıdır — bağımlılık sırası.
   const tablolar: Record<string, unknown[]> = {
     Category: await prisma.category.findMany(),
+    Location: await prisma.location.findMany(),
+    Channel: await prisma.channel.findMany(),
+    CargoCarrier: await prisma.cargoCarrier.findMany(),
+    CreditCard: await prisma.creditCard.findMany(),
+    ExpenseCategory: await prisma.expenseCategory.findMany(),
+    Supplier: await prisma.supplier.findMany(),
+    // Parola ÖZETİ (scrypt) yedeğe girer — parolanın kendisi değil, geri
+    // çevrilemez. Boş veritabanına geri yükleyip giriş yapabilmek için
+    // gerekli; olmasaydı felaket sonrası kimse içeri giremezdi.
+    // _Kullanıcı kararı 12.08.2026._
+    User: await prisma.user.findMany(),
     Product: await prisma.product.findMany(),
     ProductVariant: await prisma.productVariant.findMany(),
     VariantOption: await prisma.variantOption.findMany(),
-    Location: await prisma.location.findMany(),
-    Channel: await prisma.channel.findMany(),
+    PenaltyTariff: await prisma.penaltyTariff.findMany(),
+    ChannelFee: await prisma.channelFee.findMany(),
+    CargoTariff: tarifesiz ? [] : await prisma.cargoTariff.findMany(),
     ChannelAccount: await prisma.channelAccount.findMany(),
     ChannelSku: await prisma.channelSku.findMany(),
-    ChannelFee: await prisma.channelFee.findMany(),
-    PenaltyTariff: await prisma.penaltyTariff.findMany(),
-    CargoCarrier: await prisma.cargoCarrier.findMany(),
-    CargoTariff: tarifesiz ? [] : await prisma.cargoTariff.findMany(),
-    CreditCard: await prisma.creditCard.findMany(),
+    ExpenseTemplate: await prisma.expenseTemplate.findMany(),
+    Expense: await prisma.expense.findMany(),
     Purchase: await prisma.purchase.findMany(),
     PurchaseItem: await prisma.purchaseItem.findMany(),
-    StockMovement: await prisma.stockMovement.findMany(),
     Sale: await prisma.sale.findMany(),
     SaleItem: await prisma.saleItem.findMany(),
     SaleFee: await prisma.saleFee.findMany(),
     Return: await prisma.return.findMany(),
     ReturnItem: await prisma.returnItem.findMany(),
     ReturnFee: await prisma.returnFee.findMany(),
-    ExpenseCategory: await prisma.expenseCategory.findMany(),
-    Expense: await prisma.expense.findMany(),
-    ExpenseTemplate: await prisma.expenseTemplate.findMany(),
+    StockMovement: await prisma.stockMovement.findMany(),
+    Settlement: await prisma.settlement.findMany(),
+    SettlementItem: await prisma.settlementItem.findMany(),
+    Compensation: await prisma.compensation.findMany(),
   };
 
   const satirSayilari: Record<string, number> = {};
@@ -110,7 +82,7 @@ export async function yedekUret(
 
   return {
     bicim: "selliora-yedek",
-    surum: 1,
+    surum: YEDEK_SURUMU,
     olusturulmaAni: an.toISOString(),
     // Dosyanın kendisi eksiğini SÖYLER: geri yükleyen taraf tarifeleri
     // seed'den tamamlaması gerektiğini dosyadan okur, tahmin etmez.

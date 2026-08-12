@@ -20,8 +20,15 @@ import { get } from "@vercel/blob";
 
 export const dynamic = "force-dynamic";
 
-/** selliora-2026-08-10.json — başka hiçbir şey. */
-const AD_KALIBI = /^selliora-\d{4}-\d{2}-\d{2}\.json$/;
+/**
+ * İki ad kalıbı, başka hiçbir şey:
+ *   selliora-2026-08-10.json            gece yedeği
+ *   guvenlik-2026-08-12T09-30-00-000Z.json   geri yükleme öncesi güvenlik
+ *
+ * Güvenlik yedeği indirilebilir OLMALI: geri yüklemeden önceki hâle dönmek
+ * isteyen kullanıcı o dosyaya ulaşamazsa, güvenlik yedeği güvenlik sağlamaz.
+ */
+const AD_KALIBI = /^(selliora-\d{4}-\d{2}-\d{2}|guvenlik-[\dTZ:.-]+)\.json$/;
 
 export async function GET(istek: Request) {
   const ad = new URL(istek.url).searchParams.get("ad") ?? "";
