@@ -14,6 +14,13 @@
  *  ARAMA ve SÜZGEÇLERdir; sayfalama onların yedeğidir.
  *
  *  SAF HESAP: veritabanına gitmez. Toplam sayıyı çağıran verir.
+ *
+ *  ÇİFT ÇİZİM MESELESİ KAPANDI (karar 12.08.2026): Liste ekranları aynı
+ *  veriyi iki kez çiziyor — masaüstü tablosu (`hidden md:block`) ve telefon
+ *  kartları (`md:hidden`). 1054 kayıtta bu 2108 satır demekti ve çökmenin
+ *  ortağıydı. Sayfalamadan SONRA sayfa başı 100 satır ediyor; sorun değil.
+ *  Altı ekranın responsive yapısını yeniden kurmanın regresyon riski,
+ *  ölçülemeyecek kadar küçük bir kazanç için alınmayacak.
  * ============================================================================
  */
 

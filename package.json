@@ -28,7 +28,8 @@
     "hakedis:dogrula": "tsx scripts/hakedis-dogrula.ts",
     "panel:dogrula": "tsx scripts/panel-dogrula.ts",
     "canli:test": "tsx scripts/canli-test.ts",
-    "yedek:dogrula": "tsx scripts/yedek-dogrula.ts"
+    "yedek:dogrula": "tsx scripts/yedek-dogrula.ts",
+    "toplu:dogrula": "tsx scripts/toplu-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
