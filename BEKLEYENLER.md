@@ -180,17 +180,13 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       Form TEK SEÇİM (radyo, varsayılansız). Rolü seçilmemiş hesap hiçbir
       formda listelenmez. Kaydı olan rol sunucuda kaldırılamaz.
 
-- [ ] **Hepsiburada — S.Ahmet: çift rol düzeltmesi (kullanıcıda)**
-      Bu hesapta 7 alım VE 2 satış var. "İkisi de" normal bir durum değil
-      (kullanıcı kararı 12.08.2026): satıcı ve alıcı hesabı ayrı hesaplardır.
-      Ekranda amber uyarı ve kayıtlara bağlantı duruyor. Kullanıcı o 2 satışı
-      doğru mağazaya (Hepsiburada — AXCALI) taşıyıp rolü tek seçime
-      indirecek. Taşınana kadar hesap iki formda birden görünmeye devam eder
-      — sessizce bir tarafı kapatmak o kayıtları yetim bırakırdı.
+- [x] ~~**Hepsiburada — S.Ahmet: çift rol düzeltmesi (kullanıcıda)**~~ ✓ 12.08.2026
+      Kullanıcı 2 satışı Hepsiburada — AXCALI'ya taşıdı; hesap artık yalnız
+      ALIŞ (7 alım). Canlıda doğrulandı: çift rollü hesap KALMADI, 13 kanal
+      hesabının hepsi tek rolde.
 
-- [ ] **Trendyol — SEDA ve N11 — AXCALI: rol seçimi (kullanıcıda)**
-      Hiç kullanılmamış iki hesap; rolleri seçilmedi ve bu yüzden hiçbir
-      formda listelenmiyorlar. Kanal Hesapları ekranından rolü seçilecek.
+- [x] ~~**Trendyol — SEDA ve N11 — AXCALI: rol seçimi (kullanıcıda)**~~ ✓ 12.08.2026
+      Trendyol — SEDA alış, N11 — AXCALI satış olarak işaretlendi.
 
 - [ ] **Gerçek hakediş dosyaları depoya KONMADI — bilinçli**
       5 Trendyol raporu okundu ve okuyucu onlarla doğrulandı, ama dosyalar
