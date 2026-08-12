@@ -161,7 +161,7 @@
   "Urunler": {
     "baslik": "Ürünler",
     "yeniUrun": "Yeni Ürün",
-    "aramaIpucu": "Ad, marka, SKU veya barkod ile ara...",
+    "aramaIpucu": "Ad, marka, SKU, barkod veya kanal kodu ile ara…",
     "bosAramaBaslik": "Aramaya uyan ürün yok.",
     "bosAramaIpucu": "Farklı bir kelime, SKU veya barkod deneyin.",
     "bosBaslik": "Henüz ürün eklenmemiş.",
@@ -230,7 +230,8 @@
     "benzerBaslik": "Benzer {sayi} ürün bulundu — aynısı olabilir mi?",
     "benzerMetin": "Aynı ürünü ikinci kez açmak stoğu ikiye böler ve kâr hesabını bozar. Var olanı kullanacaksanız oraya gidin; gerçekten farklı bir ürünse devam edin.",
     "benzerVarOlanaGit": "Var olana git",
-    "benzerFarkliUrun": "Hayır, bu farklı ürün — devam et"
+    "benzerFarkliUrun": "Hayır, bu farklı ürün — devam et",
+    "kanalKodundanEslesti": "{hesap} kodu: {kod}"
   },
   "UrunSil": {
     "dugme": "Sil",

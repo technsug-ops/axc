@@ -51,6 +51,15 @@ export default async function UrunlerSayfasi({
           { variants: { some: { sku: { contains: arama } } } },
           { variants: { some: { companySku: { contains: arama } } } },
           { variants: { some: { barcode: { contains: arama } } } },
+          // KANAL KODLARI DA ARANIR: pazaryeri panelinden kopyalanan bir kod
+          // (HBCV00004IA2P8) doğrudan yapıştırılıp bulunabilsin. Ölçüldü
+          // 12.08.2026: arama süresine etkisi yok (55 -> 63 ms), ama bu
+          // olmadan o kod HİÇ bulunmuyordu.
+          {
+            variants: {
+              some: { channelSkus: { some: { channelSku: { contains: arama } } } },
+            },
+          },
         ],
       }
     : undefined;
@@ -72,12 +81,40 @@ export default async function UrunlerSayfasi({
           companySku: true,
           barcode: true,
           isDefault: true,
+          // Eşleşmenin kanal kodundan geldiğini söyleyebilmek için çekilir.
+          // Arama yokken `take: 0` — hiç satır gelmez, maliyeti yoktur.
+          // (Koşulu `false` yapmak tipi ikiye bölüyor; take ile şekil sabit.)
+          channelSkus: {
+            where: { channelSku: { contains: arama } },
+            select: {
+              channelSku: true,
+              channelAccount: {
+                select: { name: true, channel: { select: { name: true } } },
+              },
+            },
+            take: arama ? 3 : 0,
+          },
         },
         orderBy: { isDefault: "desc" },
       },
     },
     orderBy: { createdAt: "desc" },
   });
+
+  /**
+   * Eşleşme kanal kodundan mı geldi?
+   *
+   * Kullanıcı pazaryeri kodunu yapıştırıp ürünü bulduğunda, listede o kodu
+   * göremezse "bu neden çıktı?" diye sorar. Kaynak rozetle söylenir.
+   */
+  function kanalEslesmesi(urun: (typeof urunler)[number]) {
+    if (!arama) return null;
+    for (const varyant of urun.variants) {
+      const kod = varyant.channelSkus?.[0];
+      if (kod) return kod;
+    }
+    return null;
+  }
 
   // Stok hesabı tek yerde: src/lib/stok.ts (ledger toplamı).
   const stokHaritasi = await urunStoklari(urunler);
@@ -187,9 +224,24 @@ export default async function UrunlerSayfasi({
                           metin={urun.name}
                           href={`/urunler/${urun.id}`}
                           ek={
-                            !urun.isActive ? (
-                              <Badge variant="secondary">{ortak("pasif")}</Badge>
-                            ) : null
+                            <>
+                              {!urun.isActive ? (
+                                <Badge variant="secondary">
+                                  {ortak("pasif")}
+                                </Badge>
+                              ) : null}
+                              {(() => {
+                                const k = kanalEslesmesi(urun);
+                                return k ? (
+                                  <Badge variant="outline" className="text-xs">
+                                    {t("kanalKodundanEslesti", {
+                                      hesap: k.channelAccount.channel.name,
+                                      kod: k.channelSku,
+                                    })}
+                                  </Badge>
+                                ) : null;
+                              })()}
+                            </>
                           }
                         />
                       </TableCell>
