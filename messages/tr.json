@@ -372,7 +372,9 @@
     "grupAlisBos": "Henüz alış hesabı yok.",
     "grupRolsuz": "Rolü seçilmemiş hesaplar",
     "grupRolsuzAciklama": "Bu hesaplar hiçbir formda listelenmez. Alış mı satış mı olduğunu seçin.",
-    "grupRolsuzBos": "Rolü seçilmemiş hesap yok."
+    "grupRolsuzBos": "Rolü seçilmemiş hesap yok.",
+    "ciftRolBosaldi": "{bos} kaydı kalmadı — taşıma tamam. Geriye yalnız işaret kaldı; hesabı {kalan} yapabilirsiniz.",
+    "ciftRolDuzelt": "{rol} yap"
   },
   "Kart": {
     "etiketZorunlu": "Kart etiketi zorunlu",

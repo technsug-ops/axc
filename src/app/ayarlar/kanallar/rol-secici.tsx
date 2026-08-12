@@ -68,6 +68,23 @@ export function RolSecici({
   const ciftRol = hesap.alisIcin && hesap.satisIcin;
   const rolsuz = !hesap.alisIcin && !hesap.satisIcin;
 
+  /**
+   * ÇİFT ROL İKİ FARKLI DURUM OLABİLİR — ve tavsiye ikisinde AYNI OLAMAZ:
+   *
+   *  a) İki tarafta da kayıt var  -> önce kayıtlar taşınmalı.
+   *  b) Bir taraf BOŞALMIŞ        -> kayıt taşındı, geriye yalnız BAYRAK
+   *     kaldı. "Kayıtları taşıyın" demek burada eskimiş tavsiyedir;
+   *     kullanıcı taşımayı yapmış ve hesabın hâlâ listede çıkmasına
+   *     haklı olarak şaşırır. Yapılacak tek şey rolü tek seçime indirmek.
+   *  _12.08.2026: kullanıcı satışları taşıdı, uyarı aynı kaldı ve sordu._
+   */
+  const bosalanRol =
+    ciftRol && hesap.satisSayisi === 0
+      ? "SATIS"
+      : ciftRol && hesap.alimSayisi === 0
+        ? "ALIS"
+        : null;
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -114,8 +131,8 @@ export function RolSecici({
         ) : null}
       </div>
 
-      {/* ÇİFT ROL — eyleme dönük: kayıtlara götürür. */}
-      {ciftRol ? (
+      {/* ÇİFT ROL — durum neyse o söylenir. */}
+      {ciftRol && bosalanRol === null ? (
         <div className="space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
           <p className="text-sm text-amber-900 dark:text-amber-200">
             {t("ciftRolMetin")}
@@ -134,6 +151,27 @@ export function RolSecici({
               </Link>
             </Button>
           </div>
+        </div>
+      ) : null}
+
+      {/* KAYIT TAŞINMIŞ, GERİYE BAYRAK KALMIŞ — tek tıkla kapanır. */}
+      {bosalanRol !== null ? (
+        <div className="space-y-2 rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3">
+          <p className="text-sm text-emerald-900 dark:text-emerald-200">
+            {t("ciftRolBosaldi", {
+              bos: bosalanRol === "SATIS" ? t("rolSatis") : t("rolAlis"),
+              kalan: bosalanRol === "SATIS" ? t("rolAlis") : t("rolSatis"),
+            })}
+          </p>
+          <Button
+            size="sm"
+            disabled={bekliyor}
+            onClick={() => degistir(bosalanRol === "SATIS" ? "ALIS" : "SATIS")}
+          >
+            {t("ciftRolDuzelt", {
+              rol: bosalanRol === "SATIS" ? t("rolAlis") : t("rolSatis"),
+            })}
+          </Button>
         </div>
       ) : null}
 

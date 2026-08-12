@@ -66,7 +66,15 @@ export default async function KanalHesaplariSayfasi() {
     (h) => !h.alisIcin && !h.satisIcin,
   ).length;
   // ÇİFT ROL genelde kayıt hatasıdır (kullanıcı kararı 12.08.2026).
-  const ciftRolSayi = hesaplar.filter((h) => h.alisIcin && h.satisIcin).length;
+  // Kayıt taşınmış, geriye yalnız bayrak kalmış hesaplar ÜST UYARIYA
+  // girmez: yapılacak iş "kayıtları kontrol et" değil, tek tık.
+  const ciftRolSayi = hesaplar.filter(
+    (h) =>
+      h.alisIcin &&
+      h.satisIcin &&
+      h._count.purchases > 0 &&
+      h._count.sales > 0,
+  ).length;
   const ortak = await getTranslations("Ortak");
 
   /**
