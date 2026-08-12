@@ -1598,5 +1598,12 @@
     "hataSayimTutmadi": "Yazılan kayıt sayısı dosyadakiyle tutmadı, bu yüzden işlem geri alındı. Dosya eksik olabilir.",
     "hataOnayYanlis": "Onay metni doğru yazılmadı.",
     "hataBilinmeyen": "Beklenmeyen bir sorun oldu. Aşağıdaki ayrıntıyı kaydedip tekrar deneyin."
+  },
+  "Bildirim": {
+    "eklendi": "Kayıt eklendi.",
+    "guncellendi": "Değişiklikler kaydedildi.",
+    "silindi": "Kayıt silindi.",
+    "malKabul": "Mal kabul yapıldı, stok güncellendi.",
+    "iadeAlindi": "İade kaydedildi."
   }
 }

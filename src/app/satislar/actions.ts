@@ -1,5 +1,6 @@
 "use server";
 
+import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -181,5 +182,5 @@ export async function satisOlustur(
 
   revalidatePath("/satislar");
   revalidatePath("/stok");
-  redirect(`/satislar/${yeniId}`);
+  redirect(basariAdresi(`/satislar/${yeniId}`, "eklendi"));
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -189,7 +190,7 @@ export async function alimOlustur(
   }
 
   revalidatePath("/alimlar");
-  redirect(`/alimlar/${yeniId}`);
+  redirect(basariAdresi(`/alimlar/${yeniId}`, "eklendi"));
 }
 
 // ---------------------------------------------------------------------------
@@ -414,7 +415,7 @@ export async function alimGuncelle(
   revalidatePath("/alimlar");
   revalidatePath(`/alimlar/${id}`);
   revalidatePath("/stok");
-  redirect(`/alimlar/${id}`);
+  redirect(basariAdresi(`/alimlar/${id}`, "guncellendi"));
 }
 
 /**

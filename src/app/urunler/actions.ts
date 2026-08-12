@@ -1,5 +1,6 @@
 "use server";
 
+import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -348,7 +349,7 @@ export async function urunOlustur(
   revalidatePath("/urunler");
   // redirect() bilerek try/catch DIŞINDA: içeride olsaydı fırlattığı
   // yönlendirme sinyali hata sanılıp yutulurdu.
-  redirect(`/urunler/${yeniUrunId}`);
+  redirect(basariAdresi(`/urunler/${yeniUrunId}`, "eklendi"));
 }
 
 // ---------------------------------------------------------------------------
@@ -487,7 +488,7 @@ export async function urunGuncelle(
 
   revalidatePath("/urunler");
   revalidatePath(`/urunler/${urunId}`);
-  redirect(`/urunler/${urunId}`);
+  redirect(basariAdresi(`/urunler/${urunId}`, "guncellendi"));
 }
 
 // ---------------------------------------------------------------------------
@@ -526,5 +527,5 @@ export async function urunSil(
   }
 
   revalidatePath("/urunler");
-  redirect("/urunler");
+  redirect(basariAdresi("/urunler", "silindi"));
 }

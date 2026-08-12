@@ -1,5 +1,6 @@
 "use server";
 
+import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -158,7 +159,7 @@ export async function konumGuncelle(
   }
 
   rafSayfalariniTazele();
-  redirect("/ayarlar/konumlar");
+  redirect(basariAdresi("/ayarlar/konumlar", "guncellendi"));
 }
 
 /**

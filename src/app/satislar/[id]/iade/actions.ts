@@ -1,5 +1,6 @@
 "use server";
 
+import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -252,7 +253,7 @@ export async function iadeOlustur(
   revalidatePath("/satislar");
   revalidatePath("/stok");
   void yeniId;
-  redirect(`/satislar/${girdi.saleId}`);
+  redirect(basariAdresi(`/satislar/${girdi.saleId}`, "iadeAlindi"));
 }
 
 // ---------------------------------------------------------------------------

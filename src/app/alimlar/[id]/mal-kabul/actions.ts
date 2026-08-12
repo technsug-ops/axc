@@ -1,5 +1,6 @@
 "use server";
 
+import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -231,6 +232,6 @@ export async function malKabulEt(
   const toplamSaglam = veri.satirlar.reduce((t, s) => t + s.saglam, 0);
   const toplamHasarli = veri.satirlar.reduce((t, s) => t + s.hasarli, 0);
   redirect(
-    `/alimlar/${alimId}?saglam=${toplamSaglam}&hasarli=${toplamHasarli}`,
+    basariAdresi(`/alimlar/${alimId}?saglam=${toplamSaglam}&hasarli=${toplamHasarli}`, "malKabul"),
   );
 }

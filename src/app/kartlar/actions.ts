@@ -1,5 +1,6 @@
 "use server";
 
+import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -178,7 +179,7 @@ export async function kartOlustur(
 
   revalidatePath("/kartlar");
   revalidatePath("/alimlar/yeni");
-  redirect(`/kartlar/${yeniId}`);
+  redirect(basariAdresi(`/kartlar/${yeniId}`, "eklendi"));
 }
 
 export async function kartGuncelle(
@@ -211,7 +212,7 @@ export async function kartGuncelle(
   revalidatePath("/kartlar");
   revalidatePath(`/kartlar/${kartId}`);
   revalidatePath("/alimlar/yeni");
-  redirect(`/kartlar/${kartId}`);
+  redirect(basariAdresi(`/kartlar/${kartId}`, "guncellendi"));
 }
 
 /**

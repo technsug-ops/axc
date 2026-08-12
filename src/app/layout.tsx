@@ -10,6 +10,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { cn } from "@/lib/utils";
 import { AppSidebar } from "@/components/app-sidebar";
+import { BasariBildirimi } from "@/components/basari-bildirimi";
 import {
   SidebarInset,
   SidebarProvider,
@@ -113,7 +114,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                   Burada <main> KULLANILMAZ: SidebarInset zaten <main> üretiyor,
                   iç içe main geçersiz HTML olur.
                 */}
-                <div className="flex-1 p-4 md:p-6 print:p-0">{children}</div>
+                <div className="flex-1 p-4 md:p-6 print:p-0">
+                  {/* Basari mesaji TEK YERDE: her ekranda ayni yerde,
+                      ayni gorunumde cikar (Kullanici Kolayligi #10). */}
+                  <BasariBildirimi />
+                  {children}
+                </div>
               </SidebarInset>
             </SidebarProvider>
           </TooltipProvider>

@@ -247,11 +247,11 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       `siparisNoCakisti`, `siparisNoZorunlu` — alım numarası artık sistem
       ürettiği için çakışma oluşamıyor.
 
-- [ ] **Kayıt sonrası yeşil başarı bildirimi** — İlke #5
-      Şimdilik "kaydedilen kaydın sayfasına düşmek" yeterli onay sayılıyor:
-      gördüğünüz şey kanıt. Kullanırken "kaydoldu mu, kaydolmadı mı?"
-      tereddüdü yaşanırsa formlara açık bildirim eklenecek.
-      _Karar 08.08.2026: ihtiyaç doğarsa yapılacak, şimdi değil._
+- [x] ~~**Kayıt sonrası yeşil başarı bildirimi** — İlke #5~~ ✓ 12.08.2026
+      Tek bileşen, ana yerleşimde: her ekranda AYNI yerde, AYNI görünümde.
+      Sonuç adreste taşınıyor (), metin sözlükten çözülüyor;
+      gösterildikten sonra parametre adresten siliniyor ki yenilemede
+      hayalet mesaj çıkmasın. nin ikizi.
 
 ## Faz 4'te yeniden değerlendirilecek
 

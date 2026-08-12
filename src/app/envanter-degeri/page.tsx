@@ -45,7 +45,7 @@ export default async function EnvanterDegeriSayfasi() {
   const bosMu = sonuc.bloklar.length === 0 && sonuc.bilinmeyenler.length === 0;
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
