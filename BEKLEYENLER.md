@@ -309,7 +309,18 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       transaction. Tekrar yükleme idempotent (satır anahtarı).
       Gerçek dosyalarla doğrulandı: 5 TY (298 satır) + 1 HB (539 satır).
 
-- [ ] **Beklenen vs gerçekleşen tutar karşılaştırması**
+- [ ] **HAKEDİŞ CANLI TEYİDİ — ilk gerçek eşleşen hakediş geldiğinde**
+      Karşılaştırma SENTETİK veriyle yazıldı ve doğrulandı (hakedis:dogrula
+      6. bölüm, 87 kontrol). Ama sistemin ürettiği "beklenen" rakam henüz
+      GERÇEK bir ödemeyle karşılaştırılmadı: raporlar girilen satışlardan
+      eski, örtüşen veri yok.
+      İlk eşleşen hakediş geldiğinde ekrandaki "beklenen" ve "gerçekleşen"
+      rakamları pazaryeri panelindeki tutarla ELLE karşılaştırılacak.
+      Kart borcu teyidinin (2 Eylül ekstresi) ikizi — motor doğru
+      görünüyor ama gerçekle bir kez yüzleşmeden "doğrulandı" denmez.
+      _Karar 12.08.2026._
+
+- [x] ~~**Beklenen vs gerçekleşen tutar karşılaştırması**~~ ✓ 12.08.2026
       Bugün "bekleyen para" yalnız ödeme tarihine bakıyor: ödenmemiş
       kalemler bekliyor/gecikti diye ayrışıyor. TUTAR karşılaştırması
       (kâr motorunun beklediği net hakediş ile rapordan geleni yan yana)

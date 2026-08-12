@@ -137,7 +137,36 @@ export type OdemeDurumu =
   | "BEKLIYOR"
   | "GECIKTI"
   | "EKSIK_ODEME"
-  | "FAZLA_ODEME";
+  | "FAZLA_ODEME"
+  /** Bu satış için rapordan HİÇ kalem gelmemiş. */
+  | "GELMEDI";
+
+/**
+ * ============================================================================
+ *  BEKLENEN HAKEDİŞ — PAZARYERİ BİZE NE BORÇLU?
+ * ----------------------------------------------------------------------------
+ *  BEKLENEN = NET-1 + MALİYET
+ *
+ *  Neden maliyet geri ekleniyor: NET-1 KÂRDIR, malın alış bedeli de
+ *  düşülmüştür. Ama malın parasını pazaryerine ödemiyoruz — tedarikçiye
+ *  ödedik. Pazaryeri bize satış tutarını verir, kendi kesintilerini
+ *  (komisyon, stopaj, kargo, sabit gider) düşer. Maliyet onun hesabında yok.
+ *
+ *  Gerçek veriyle doğrulandı (11492628481, 12.08.2026):
+ *    brüt 1946,00 − kanal kesintileri 188,70 = 1757,30
+ *    NET-1 368,26 + maliyet 1389,04          = 1757,30  ✓
+ *
+ *  MALİYETİ AYRI PARAMETRE ALIYORUZ, kesintilerden çıkarmıyoruz: kesinti
+ *  kodlarının listesi zamanla değişir (yeni kanal ücreti eklenir) ve o
+ *  değişiklik bu hesabı sessizce bozardı. Maliyet tek ve sabit kavramdır.
+ */
+export function beklenenHakedis(
+  net1: number | null,
+  maliyet: number,
+): number | null {
+  if (net1 === null) return null;
+  return net1 + maliyet;
+}
 
 /**
  * Bir siparişin ödeme durumu.
@@ -154,8 +183,14 @@ export function odemeDurumu(girdi: {
   odendiMi: boolean;
   bugun: Date;
   gecikmeIsGunu?: number;
+  /** Bu satış için rapordan kalem geldi mi? */
+  kalemVarMi?: boolean;
 }): OdemeDurumu {
   const esik = girdi.gecikmeIsGunu ?? HAKEDIS_ESIKLERI.gecikmeIsGunu;
+
+  // HİÇ KALEM GELMEMİŞ: "bekliyor" demek yanlış olurdu — bekleyip
+  // beklemediğimizi bilmiyoruz, rapor o siparişten hiç söz etmiyor.
+  if (girdi.kalemVarMi === false) return "GELMEDI";
 
   if (girdi.odendiMi) {
     // Ödendi ama tutar tutmuyor mu? Kuruş farkı gürültüdür, susulur.

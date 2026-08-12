@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import { isTakvimGunu, gunDegeri } from "@/lib/donem";
-import { odemeDurumu } from "@/lib/hakedis/eslestir";
+import { beklenenHakedis, odemeDurumu } from "@/lib/hakedis/eslestir";
 import { HAKEDIS_ESIKLERI } from "@/lib/hakedis/model";
 import { prisma } from "@/lib/prisma";
 
@@ -40,7 +40,7 @@ export default async function HakedisSayfasi() {
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
 
-  const [partiler, kalemler] = await Promise.all([
+  const [partiler, kalemler, satislar] = await Promise.all([
     prisma.settlement.findMany({
       include: {
         channelAccount: { include: { channel: { select: { name: true } } } },
@@ -55,6 +55,14 @@ export default async function HakedisSayfasi() {
         sale: { select: { id: true, code: true } },
       },
       orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
+    }),
+    // Karşılaştırma için: kâr snapshot'ı + maliyet kesintisi.
+    prisma.sale.findMany({
+      include: {
+        channelAccount: { include: { channel: { select: { name: true } } } },
+        fees: { where: { code: "MALIYET" }, select: { amount: true } },
+      },
+      orderBy: { soldAt: "desc" },
     }),
   ]);
 
@@ -91,6 +99,100 @@ export default async function HakedisSayfasi() {
       (bekleyenToplam.get(b.kayit.currency) ?? 0) + tutar,
     );
   }
+
+  /**
+   * BEKLENEN vs GERÇEKLEŞEN — satış bazında.
+   *
+   * Beklenen, kâr motorunun snapshot'ından türetilir (NET-1 + maliyet).
+   * Gerçekleşen, o satışa bağlanmış hakediş kalemlerinin TOPLAMIDIR —
+   * bir sipariş çok satırlıdır ve tek satıra bakmak yanıltır.
+   *
+   * Kâr hesaplanamamış satışta beklenen de YOKTUR: karşılaştırma
+   * yapılmaz, ekranda "—" durur. Sıfır varsaymak yanlış rakam üretirdi.
+   */
+  const kalemHaritasi = new Map<
+    string,
+    { toplam: number; paraBirimi: string; vade: Date | null; odendi: boolean }
+  >();
+  for (const k of kalemler) {
+    if (!k.saleId) continue;
+    const m = kalemHaritasi.get(k.saleId) ?? {
+      toplam: 0,
+      paraBirimi: k.currency,
+      vade: k.dueDate,
+      odendi: true,
+    };
+    m.toplam += Number(k.amount.toString());
+    // Vade: en GEÇ olan; ödendi: kalemlerin HEPSİ ödendiyse.
+    if (k.dueDate && (!m.vade || k.dueDate > m.vade)) m.vade = k.dueDate;
+    if (!k.paidAt) m.odendi = false;
+    kalemHaritasi.set(k.saleId, m);
+  }
+
+  const karsilastirma = satislar.map((satis) => {
+    const gelen = kalemHaritasi.get(satis.id);
+    const maliyet = satis.fees.reduce(
+      (t, f) => t + Number(f.amount.toString()),
+      0,
+    );
+    const beklenen = beklenenHakedis(
+      satis.net1Amount === null ? null : Number(satis.net1Amount.toString()),
+      maliyet,
+    );
+    return {
+      id: satis.id,
+      kod: satis.code,
+      tarih: satis.soldAt,
+      hesap: `${satis.channelAccount.channel.name} — ${satis.channelAccount.name}`,
+      paraBirimi: gelen?.paraBirimi ?? satis.profitCurrency ?? "TRY",
+      beklenen,
+      gerceklesen: gelen?.toplam ?? null,
+      vade: gelen?.vade ?? null,
+      durum: odemeDurumu({
+        beklenenTutar: beklenen,
+        gerceklesenTutar: gelen?.toplam ?? null,
+        vade: gelen?.vade ?? null,
+        odendiMi: gelen?.odendi ?? false,
+        bugun,
+        kalemVarMi: gelen !== undefined,
+      }),
+    };
+  });
+
+  /** Dikkat isteyenler önce: eksik/fazla ödeme, sonra gecikme. */
+  const ONCELIK: Record<string, number> = {
+    EKSIK_ODEME: 0,
+    FAZLA_ODEME: 1,
+    GECIKTI: 2,
+    BEKLIYOR: 3,
+    ODENDI: 4,
+    GELMEDI: 5,
+  };
+  karsilastirma.sort((a, b) => ONCELIK[a.durum] - ONCELIK[b.durum]);
+
+  const sorunlu = karsilastirma.filter(
+    (k) => k.durum === "EKSIK_ODEME" || k.durum === "GECIKTI",
+  );
+
+  /**
+   * Durum kodundan sözlük metnine SABİT eşleme.
+   * Anahtar DEĞİŞKENLE birleştirilseydi i18n denetimi bu çağrıları
+   * göremez, eksik anahtar sessizce canlıya giderdi.
+   * (Bu açıklamada örnek kod YAZILMIYOR: denetim yorumları da tarıyor ve
+   *  örneği gerçek çağrı sanıp "eksik anahtar" veriyor — 12.08.2026.)
+   */
+  const durumMetni = (kod: string) =>
+    kod === "ODENDI"
+      ? t("durumODENDI")
+      : kod === "BEKLIYOR"
+        ? t("durumBEKLIYOR")
+        : kod === "GECIKTI"
+          ? t("durumGECIKTI")
+          : kod === "EKSIK_ODEME"
+            ? t("durumEKSIK_ODEME")
+            : kod === "FAZLA_ODEME"
+              ? t("durumFAZLA_ODEME")
+              : t("durumGELMEDI");
 
   const eslesmemis = kalemler.filter(
     (k) => k.saleId === null && k.orderNo !== null,
@@ -184,6 +286,145 @@ export default async function HakedisSayfasi() {
               </p>
             </CardContent>
           </Card>
+
+          {/* ---------------- BEKLENEN vs GERÇEKLEŞEN ------------------- */}
+          {karsilastirma.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {t("karsilastirmaBaslik")} ({karsilastirma.length})
+                </CardTitle>
+                <p className="text-muted-foreground text-sm">
+                  {t("karsilastirmaNotu")}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {sorunlu.length > 0 ? (
+                  <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+                    <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+                      <TriangleAlert className="size-4 shrink-0" />
+                      {t("karsilastirmaSorunlu", { sayi: sorunlu.length })}
+                    </p>
+                  </div>
+                ) : null}
+
+                <div className="hidden overflow-x-auto rounded-lg border md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{ortak("siparisNo")}</TableHead>
+                        <TableHead>{ortak("kanalHesabi")}</TableHead>
+                        <TableHead className="text-right">
+                          {t("sutunBeklenen")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("sutunGerceklesen")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("sutunFark")}
+                        </TableHead>
+                        <TableHead>{ortak("durum")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {karsilastirma.slice(0, LISTE_SINIRI).map((k) => (
+                        <TableRow key={k.id}>
+                          <TableCell>
+                            <Baglanti href={`/satislar/${k.id}`}>
+                              {k.kod ?? bicim.tarih(k.tarih)}
+                            </Baglanti>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {k.hesap}
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            {k.beklenen === null
+                              ? "—"
+                              : bicim.para(k.beklenen, k.paraBirimi)}
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            {k.gerceklesen === null
+                              ? "—"
+                              : bicim.para(k.gerceklesen, k.paraBirimi)}
+                          </TableCell>
+                          {/* Fark yalnız İKİSİ DE varsa yazılır; biri yoksa
+                              çıkarma yapmak uydurmak olurdu. */}
+                          <TableCell className="text-right whitespace-nowrap">
+                            {k.beklenen !== null && k.gerceklesen !== null
+                              ? bicim.para(
+                                  k.gerceklesen - k.beklenen,
+                                  k.paraBirimi,
+                                )
+                              : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                k.durum === "EKSIK_ODEME" ||
+                                k.durum === "GECIKTI"
+                                  ? "secondary"
+                                  : "outline"
+                              }
+                            >
+                              {durumMetni(k.durum)}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* -------------------- TELEFON: KART -------------------- */}
+                <div className="space-y-3 md:hidden">
+                  {karsilastirma.slice(0, LISTE_SINIRI).map((k) => (
+                    <ListeKarti
+                      key={k.id}
+                      baslik={
+                        <Baglanti href={`/satislar/${k.id}`}>
+                          {k.kod ?? bicim.tarih(k.tarih)}
+                        </Baglanti>
+                      }
+                      altBaslik={k.hesap}
+                      alanlar={[
+                        {
+                          etiket: t("sutunBeklenen"),
+                          deger:
+                            k.beklenen === null
+                              ? "—"
+                              : bicim.para(k.beklenen, k.paraBirimi),
+                        },
+                        {
+                          etiket: t("sutunGerceklesen"),
+                          deger:
+                            k.gerceklesen === null
+                              ? "—"
+                              : bicim.para(k.gerceklesen, k.paraBirimi),
+                        },
+                        {
+                          etiket: ortak("durum"),
+                          deger: (
+                            <Badge variant="outline">
+                              {durumMetni(k.durum)}
+                            </Badge>
+                          ),
+                        },
+                      ]}
+                    />
+                  ))}
+                </div>
+
+                {karsilastirma.length > LISTE_SINIRI ? (
+                  <p className="text-sm font-medium">
+                    {t("listeKesildi", {
+                      gosterilen: LISTE_SINIRI,
+                      toplam: karsilastirma.length,
+                    })}
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
 
           {/* -------------------- EŞLEŞMEYEN KALEMLER ------------------- */}
           {eslesmemis.length > 0 ? (

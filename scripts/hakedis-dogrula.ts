@@ -10,6 +10,9 @@
  *  2) TRENDYOL — geniş format, sipariş dışı toplu kesintiler, genel toplam.
  *  3) HEPSİBURADA — uzun format, işaret tekleştirme, tipsiz son satır.
  *  4) TOLERANS — başlık yazımı değişirse okuyucu yine tutmalı.
+ *  6) BEKLENEN vs GERÇEKLEŞEN — tam ödendi / eksik / fazla / geç /
+ *     hiç gelmedi. Senaryolar GERÇEK dosya yapısına sadık: TY'de
+ *     Satış+Kupon zinciri ve komisyon KDV DAHİL, HB'de uzun format.
  *  5) GERÇEK DOSYA — 11.08.2026'da okunan 5 Trendyol raporunun GERÇEK
  *     başlık satırı ve gerçek işlem tipleri. Ham veri depoya konmadı
  *     (dosyalarda "Müşteri Adı" var, depo herkese açık); yapı buraya
@@ -19,6 +22,12 @@
 
 import { gunDegeri, isGunuEkle, isGunuFarki, haftaSonuMu } from "../src/lib/donem";
 import { HAKEDIS_ESIKLERI } from "../src/lib/hakedis/model";
+import {
+  beklenenHakedis,
+  odemeDurumu,
+  satirlariEslestir,
+  siparisNetleri,
+} from "../src/lib/hakedis/eslestir";
 import {
   basligiNormalle,
   hepsiburadaOku,
@@ -33,7 +42,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -375,6 +384,166 @@ console.log("\n5) GERÇEK DOSYA — 11.08.2026 Trendyol raporları");
   );
 
   kosanBolumler.push("gercek");
+}
+
+// ===========================================================================
+console.log("\n6) BEKLENEN vs GERÇEKLEŞEN");
+// ===========================================================================
+{
+  const BUGUN = gun("2026-09-20");
+
+  /**
+   * BEKLENEN HAKEDİŞ = NET-1 + MALİYET.
+   * Gerçek satış 11492628481 ile doğrulandı (12.08.2026):
+   *   brüt 1946,00 − kanal kesintileri 188,70 = 1757,30
+   *   NET-1 368,26 + maliyet 1389,04          = 1757,30
+   * Maliyet geri eklenir çünkü malın parasını pazaryerine değil
+   * TEDARİKÇİYE ödedik; pazaryerinin hesabında maliyet yok.
+   */
+  kontrol(
+    "beklenen = NET-1 + maliyet (gerçek satışla doğrulandı)",
+    beklenenHakedis(368.26, 1389.04) === 1757.3,
+    beklenenHakedis(368.26, 1389.04),
+  );
+  kontrol("kâr hesaplanamamışsa beklenen de yok", beklenenHakedis(null, 100) === null);
+
+  /**
+   * TRENDYOL ZİNCİRİ — gerçek dosya yapısına sadık.
+   * Satış + Kupon aynı siparişte; hakediş İKİSİNİN TOPLAMIDIR.
+   * Komisyon KDV DAHİL tek tutardır (kullanıcı teyidi 11.08.2026):
+   * 1946 × %2,70 = 52,54 — üstüne KDV EKLENMEZ.
+   */
+  const TY_BASLIK = [
+    "Kayıt No / Fatura No", "Ülke", "İşlem Tipi", "Sipariş No",
+    "Sipariş Tarihi", "İşlem Tarihi", "Satıcı", "Satıcı Cari Adı",
+    "Ürün Adı / Açıklama", "Barkod", "Komisyon / Yurt Dışı Stok Destek Oranı",
+    "TY Hakediş", "Satıcı Hakediş", "Stopaj", "KDV (%)",
+    "Vade Süresi (İş Günü)", "Teslim Tarihi", "Vade Tarihi",
+    "Toplam Tutar", "Müşteri Adı", "Paket Numarası",
+  ];
+  const tySatir = (no: string, tip: string, sip: string, hakedis: number, vade: string) => [
+    no, "Türkiye", tip, sip, "01.08.2026", "01.08.2026", "SATICI", "SATICI A.Ş.",
+    "Ürün", "8697975600803", 2.7, 0, hakedis, 0, 20, 28, "03.08.2026", vade, 0, "", "",
+  ];
+
+  // TAM ÖDENDİ: beklenen 1757,30 · zincir toplamı 1757,30
+  const tamOdendi = trendyolOku([
+    TY_BASLIK,
+    tySatir("T1", "Satış", "11492628481", 1770.72, "03.09.2026"),
+    tySatir("T2", "Kupon", "11492628481", -13.42, "03.09.2026"),
+  ]);
+  const tamNet = siparisNetleri(tamOdendi.satirlar).get("11492628481") ?? 0;
+  kontrol("TY zinciri net = 1757,30", Math.abs(tamNet - 1757.3) < 0.001, tamNet);
+  kontrol(
+    "tam ödendi",
+    odemeDurumu({
+      beklenenTutar: 1757.3, gerceklesenTutar: tamNet,
+      vade: gun("2026-09-03"), odendiMi: true, bugun: BUGUN, kalemVarMi: true,
+    }) === "ODENDI",
+  );
+
+  // EKSİK ÖDEME: 1 TL'nin ÜSTÜNDE fark
+  kontrol(
+    "eksik ödeme (>1 TL)",
+    odemeDurumu({
+      beklenenTutar: 1757.3, gerceklesenTutar: 1700,
+      vade: gun("2026-09-03"), odendiMi: true, bugun: BUGUN, kalemVarMi: true,
+    }) === "EKSIK_ODEME",
+  );
+  // KURUŞ FARKI GÜRÜLTÜDÜR — uyarı üretmez.
+  kontrol(
+    "0,50 TL fark uyarı üretmez",
+    odemeDurumu({
+      beklenenTutar: 1757.3, gerceklesenTutar: 1756.8,
+      vade: gun("2026-09-03"), odendiMi: true, bugun: BUGUN, kalemVarMi: true,
+    }) === "ODENDI",
+  );
+  kontrol(
+    "fazla ödeme (>1 TL)",
+    odemeDurumu({
+      beklenenTutar: 1757.3, gerceklesenTutar: 1800,
+      vade: gun("2026-09-03"), odendiMi: true, bugun: BUGUN, kalemVarMi: true,
+    }) === "FAZLA_ODEME",
+  );
+
+  // GEÇ ÖDEME: vade + 3 iş günü aşıldı mı?
+  kontrol(
+    "vadesi 3 iş günü geçmiş -> GECIKTI",
+    odemeDurumu({
+      beklenenTutar: 1757.3, gerceklesenTutar: null,
+      vade: gun("2026-09-03"), odendiMi: false, bugun: BUGUN, kalemVarMi: true,
+    }) === "GECIKTI",
+  );
+  // Eşik İÇİNDE hâlâ bekliyor: tatil açığı yüzünden erken uyarmıyoruz.
+  kontrol(
+    "vade 1 iş günü geçmiş -> hâlâ BEKLIYOR",
+    odemeDurumu({
+      beklenenTutar: 1757.3, gerceklesenTutar: null,
+      vade: gun("2026-09-17"), odendiMi: false, bugun: gun("2026-09-18"),
+      kalemVarMi: true,
+    }) === "BEKLIYOR",
+  );
+  kontrol(
+    "vade yoksa gecikme İDDİA EDİLMEZ",
+    odemeDurumu({
+      beklenenTutar: 1757.3, gerceklesenTutar: null,
+      vade: null, odendiMi: false, bugun: BUGUN, kalemVarMi: true,
+    }) === "BEKLIYOR",
+  );
+
+  // HİÇ GELMEDİ: rapor o siparişten hiç söz etmiyor.
+  kontrol(
+    "rapordan hiç kalem gelmemiş -> GELMEDI",
+    odemeDurumu({
+      beklenenTutar: 1757.3, gerceklesenTutar: null,
+      vade: null, odendiMi: false, bugun: BUGUN, kalemVarMi: false,
+    }) === "GELMEDI",
+  );
+
+  /**
+   * HEPSİBURADA UZUN FORMAT — bir sipariş 6 kalem.
+   * Beklenen: brüt 1958 − (komisyon 52,87 + kargo 122,21 + stopaj 16,32
+   * + tahsilat 5,87 + hizmet 12,60) = 1748,13
+   */
+  const HB_BASLIK = [
+    "Durum", "Ödeme Tarihi", "Kayıt No", "Kayıt Tipi", "Kayıt Tarihi",
+    "Vade Tarihi", "Tutar", "Para Birimi", "Sipariş No", "Paket No",
+    "Ürün No (SKU)", "Ürün Adı", "Açıklama", "Kayıt Türü", "Kayıt Sınıfı",
+  ];
+  const hb = (no: string, tip: string, tutar: number, tur: string) => [
+    "Ödendi", "10.09.2026", no, tip, "10.08.2026", "10.09.2026", tutar, "TRY",
+    "11493262226", "P1", "HBCV1", "Ürün", "", tur, "Sipariş bazlı",
+  ];
+  const hbOkuma = hepsiburadaOku([
+    HB_BASLIK,
+    hb("EFA1", "Sipariş tutarı", 1958, "Gelir"),
+    hb("EFA1", "Komisyon tutarı", 52.87, "Gider"),
+    hb("EFA1", "Kargo Bedeli", 122.21, "Gider"),
+    hb("EFA1", "MP Stopaj", 16.32, "Gider"),
+    hb("EFA1", "Tahsilat Yönetim Bedeli", 5.87, "Gider"),
+    hb("EFA1", "Hizmet bedeli", 12.6, "Gider"),
+  ]);
+  const hbNet = siparisNetleri(hbOkuma.satirlar).get("11493262226") ?? 0;
+  kontrol("HB 6 kalem okundu", hbOkuma.satirlar.length === 6);
+  kontrol("HB uzun format net = 1748,13", Math.abs(hbNet - 1748.13) < 0.001, hbNet);
+  kontrol(
+    "HB tam ödendi",
+    odemeDurumu({
+      beklenenTutar: 1748.13, gerceklesenTutar: hbNet,
+      vade: gun("2026-09-10"), odendiMi: true, bugun: BUGUN, kalemVarMi: true,
+    }) === "ODENDI",
+  );
+
+  // Eşleştirme: satış varsa bağlanır, yoksa uyarı kovasına düşer.
+  const eslesme = satirlariEslestir(hbOkuma.satirlar, [
+    { id: "s1", kod: "11493262226", satisTarihi: gun("2026-08-10") },
+  ]);
+  kontrol("6 kalem de satışa bağlandı", eslesme.eslesenler.length === 6);
+  kontrol("eşleşmeyen yok", eslesme.eslesmeyenler.length === 0);
+
+  const eslesmeyen = satirlariEslestir(hbOkuma.satirlar, []);
+  kontrol("satış yoksa 6 kalem uyarıya düşer", eslesmeyen.eslesmeyenler.length === 6);
+  kosanBolumler.push("karsilastirma");
 }
 
 // ===========================================================================

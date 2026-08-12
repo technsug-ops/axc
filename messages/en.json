@@ -1465,6 +1465,18 @@
     "vadeYok": "",
     "eslesmemisKalem": "",
     "eslesmemisNotu": "",
-    "listeKesildi": ""
+    "listeKesildi": "",
+    "karsilastirmaBaslik": "",
+    "karsilastirmaNotu": "",
+    "karsilastirmaSorunlu": "",
+    "sutunBeklenen": "",
+    "sutunGerceklesen": "",
+    "sutunFark": "",
+    "durumODENDI": "",
+    "durumBEKLIYOR": "",
+    "durumGECIKTI": "",
+    "durumEKSIK_ODEME": "",
+    "durumFAZLA_ODEME": "",
+    "durumGELMEDI": ""
   }
 }
