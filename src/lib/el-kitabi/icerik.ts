@@ -502,6 +502,12 @@ katılır, kârları katılmaz — sıfır sayılmazlar.</p>
 kaç satış, ne kadar ciro, ne kadar NET-2. Aynı pazaryerinde birden fazla
 hesabınız varsa <strong>tek satırda birleşir</strong> — "Trendyol bu ay ne yaptı"
 sorusunun cevabı hesaplara bölünmez.</p>
+<div class="ek-not"><div class="etiket">NET-2 nereden geliyor</div>
+<p>Panelin NET-2'si <strong>Rapor ekranındaki Σ NET-2 ile aynı şeydir</strong>:
+satışların kârı <strong>artı iade etkileri</strong>. Bir iade, iadenin yapıldığı
+aya ve <strong>iade edilen satışın kanalına</strong> yazılır. İki ekranın aynı ay
+için farklı rakam vermemesi için tanım tektir — kanal blokları, grafik çizgisi ve
+aylık tablo, üçü de aynı hesabı kullanır.</p></div>
 <p>Altındaki grafik <strong>son 12 ayı</strong> çizer: dolu çizgi NET-2, kesikli
 çizgi ciro. Kanal ve para birimi süzgeçleri üstündedir. <strong>Satış olmayan ay
 grafikte atlanmaz</strong>, sıfır olarak durur — yoksa çizgi iki ayı birleştirir ve

@@ -18,7 +18,13 @@
 
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
 import { envanterHesapla, type EnvanterVaryantGirdisi } from "../src/lib/envanter";
-import { aylikSeri, panelHesapla, type PanelSatisi } from "../src/lib/panel";
+import {
+  aylikSeri,
+  panelHesapla,
+  type PanelIadesi,
+  type PanelSatisi,
+} from "../src/lib/panel";
+import { raporHesapla } from "../src/lib/rapor";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -229,6 +235,145 @@ console.log("\n2) PANEL — AYLIK SERİ");
     seriEksik[0].hesaplanamayanAdet === 1,
     seriEksik[0].hesaplanamayanAdet,
   );
+}
+
+// ===========================================================================
+console.log("\n2c) İADE ETKİSİ — PANEL NET-2 = RAPOR Σ NET-2");
+// ===========================================================================
+/**
+ * PANEL VE RAPOR AYNI TANIMI KULLANIR (kullanıcı kararı 12.08.2026).
+ *
+ * İki ekran aynı ay için farklı NET-2 gösterseydi "hangisi doğru" sorusu
+ * doğardı. Bu bölüm eşitliği İKİ AYRI MOTORU AYNI VERİYLE koşturarak
+ * kilitler — panel tarafına elle yazılmış bir beklenen değer yok, karşılık
+ * rapor motorunun kendi çıktısıdır. Biri değişip diğeri unutulursa kırılır.
+ */
+{
+  const buAy = pencereOlustur("BU_AY", AN);
+
+  function iade(ek: Partial<PanelIadesi> = {}): PanelIadesi {
+    return {
+      kanalKodu: "TRENDYOL",
+      kanalAdi: "Trendyol",
+      tarih: gun(2026, 8, 10),
+      paraBirimi: "TRY",
+      net2: -340.43,
+      durum: "CALCULATED",
+      ...ek,
+    };
+  }
+
+  const satislar = [
+    satis({ gelir: 2504, net2: 308.48 }),
+    satis({
+      kanalKodu: "HEPSIBURADA",
+      kanalAdi: "Hepsiburada",
+      gelir: 2157,
+      net2: 277.43,
+    }),
+  ];
+  const iadeler = [iade({ net2: -340.43 })];
+
+  // --- Panel motoru ---
+  const panel = panelHesapla(buAy, satislar, iadeler)[0];
+
+  // --- Rapor motoru: AYNI veri, kendi tipleriyle ---
+  const rapor = raporHesapla(buAy, {
+    satislar: satislar.map((s, i) => ({
+      id: `s${i}`,
+      kod: null,
+      tarih: s.tarih,
+      gelir: s.gelir,
+      net1: 0,
+      net2: s.net2,
+      paraBirimi: s.paraBirimi,
+      durum: s.durum,
+    })),
+    iadeler: iadeler.map((x, i) => ({
+      id: `i${i}`,
+      satisId: "s0",
+      kod: null,
+      tarih: x.tarih,
+      net1: 0,
+      net2: x.net2,
+      paraBirimi: x.paraBirimi,
+      durum: x.durum,
+    })),
+    giderler: [],
+  }).paraBirimleri[0];
+
+  yakin("panel NET-2 (iade dahil)", panel.toplamNet2, 245.48);
+  yakin("rapor Σ NET-2 (brüt)", rapor.brutNet2, 245.48);
+  kontrol(
+    "İKİ MOTOR BİREBİR EŞİT",
+    Math.abs(panel.toplamNet2 - rapor.brutNet2) < 0.0001,
+    `panel ${panel.toplamNet2} · rapor ${rapor.brutNet2}`,
+  );
+  kontrol(
+    "  ...iade sayılmasaydı 585,91 olurdu (eski davranış)",
+    Math.abs(panel.toplamNet2 - 585.91) > 1,
+    panel.toplamNet2,
+  );
+  yakin("ciro iadeden ETKİLENMEZ", panel.toplamGelir, 4661);
+  kontrol("satış adedi 2 kalır", panel.toplamAdet === 2, panel.toplamAdet);
+  kontrol("iade adedi ayrıca sayılır", panel.toplamIadeAdedi === 1, panel.toplamIadeAdedi);
+
+  // --- İADE SATIŞIN KANALINA YAZILIR ---
+  const ty = panel.kanallar.find((k) => k.kanalKodu === "TRENDYOL")!;
+  const hb = panel.kanallar.find((k) => k.kanalKodu === "HEPSIBURADA")!;
+  yakin("Trendyol NET-2 iade düşülmüş", ty.net2, 308.48 - 340.43);
+  yakin("Hepsiburada NET-2 dokunulmamış", hb.net2, 277.43);
+  kontrol("iade Trendyol satırında sayılı", ty.iadeAdedi === 1, ty.iadeAdedi);
+  kontrol("Hepsiburada'da iade yok", hb.iadeAdedi === 0, hb.iadeAdedi);
+
+  // --- İADE KENDİ AYINA DÜŞER, SATIŞIN AYINA DEĞİL ---
+  // Temmuz satışının Ağustos iadesi Ağustos'a yazılır; kapanmış ay oynamaz.
+  const gecmisSatis = panelHesapla(
+    buAy,
+    [satis({ tarih: gun(2026, 7, 20), gelir: 1000, net2: 200 })],
+    [iade({ tarih: gun(2026, 8, 3), net2: -150 })],
+  )[0];
+  kontrol("geçen ayın satışı bu aya girmedi", gecmisSatis.toplamAdet === 0);
+  yakin("ama iadesi bu aya yazıldı", gecmisSatis.toplamNet2, -150);
+  kontrol(
+    "  ...satışsız kanal bloğu yine de açıldı",
+    gecmisSatis.kanallar.length === 1,
+    gecmisSatis.kanallar.length,
+  );
+
+  // --- HESAPLANAMAYAN İADE SIFIR SAYILMAZ ---
+  const eksikIade = panelHesapla(buAy, [satis({ net2: 200 })], [
+    iade({ net2: null, durum: "NO_COST" }),
+  ])[0];
+  yakin("hesaplanamayan iade NET-2'ye girmedi", eksikIade.toplamNet2, 200);
+  kontrol(
+    "hesaplanamayan iade sayıldı",
+    eksikIade.hesaplanamayanIadeAdedi === 1,
+    eksikIade.hesaplanamayanIadeAdedi,
+  );
+
+  // --- GRAFİK ÇİZGİSİ DE AYNI TANIMI KULLANIR ---
+  const seriIadeli = aylikSeri(
+    satislar,
+    { yil: 2026, ay: 8 },
+    1,
+    null,
+    "TRY",
+    iadeler,
+  );
+  yakin("grafik NET-2 = panel NET-2", seriIadeli[0].net2, panel.toplamNet2);
+  kontrol("grafikte iade sayılı", seriIadeli[0].iadeAdedi === 1, seriIadeli[0].iadeAdedi);
+
+  // Kanal süzgeci iadeyi de süzer: Hepsiburada seçiliyken TY iadesi girmez.
+  const hbSeri = aylikSeri(satislar, { yil: 2026, ay: 8 }, 1, "HEPSIBURADA", "TRY", iadeler);
+  yakin("kanal süzgeci iadeyi de süzer", hbSeri[0].net2, 277.43);
+
+  // İade EUR, satış TRY: para birimleri karışmaz.
+  const paraAyri = panelHesapla(buAy, [satis({ net2: 200 })], [
+    iade({ paraBirimi: "EUR", net2: -50 }),
+  ]);
+  const tryBlok = paraAyri.find((x) => x.paraBirimi === "TRY")!;
+  yakin("EUR iadesi TRY NET-2'sine karışmadı", tryBlok.toplamNet2, 200);
 }
 
 // ===========================================================================

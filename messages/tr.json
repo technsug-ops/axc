@@ -1491,7 +1491,7 @@
     "satisAdedi": "Satış adedi",
     "ciro": "Ciro",
     "net2": "NET-2",
-    "net2Aciklama": "stopaj ve ödenecek KDV düşülmüş",
+    "net2Aciklama": "stopaj ve ödenecek KDV düşülmüş · iade etkileri dahil",
     "hesaplanamayan": "{sayi} satışın kârı hesaplanamadı — bu satışlar NET-2 toplamına GİRMEDİ.",
     "sorunlulariGor": "Sorunlu satışlar",
     "kanal": "Kanal",
@@ -1500,7 +1500,9 @@
     "grafikNotu": "Dolu çizgi NET-2, kesikli çizgi ciro. Kaydı olmayan ay da eksende durur — çizgi o ayı atlamaz.",
     "grafikBos": "Seçilen süzgeçte gösterilecek satış yok.",
     "tumKanallar": "Tüm kanallar",
-    "ay": "Ay"
+    "ay": "Ay",
+    "hesaplanamayanIade": "{sayi} iadenin etkisi hesaplanamadı — NET-2 toplamına GİRMEDİ.",
+    "kanalIade": "{sayi} iade dahil"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

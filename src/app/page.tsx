@@ -22,7 +22,12 @@ import {
   isTakvimGunu,
   pencereOlustur,
 } from "@/lib/donem";
-import { aylikSeri, panelHesapla, type PanelSatisi } from "@/lib/panel";
+import {
+  aylikSeri,
+  panelHesapla,
+  type PanelIadesi,
+  type PanelSatisi,
+} from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
 
 import type { Currency } from "@/generated/prisma/enums";
@@ -69,25 +74,47 @@ export default async function AnaSayfa({
   const grafikBaslangic = gunDegeri({ yil: ilkAy.yil, ay: ilkAy.ay, gun: 1 });
   const grafikBitisHaric = gunEkle(gunDegeri(bugun), 1);
 
-  const kayitlar = await prisma.sale.findMany({
-    where: { soldAt: { gte: grafikBaslangic, lt: grafikBitisHaric } },
-    select: {
-      soldAt: true,
-      net2Amount: true,
-      profitCurrency: true,
-      profitStatus: true,
-      channelAccount: {
-        select: { channel: { select: { code: true, name: true } } },
-      },
-      items: {
-        select: {
-          quantity: true,
-          unitPriceAmount: true,
-          unitPriceCurrency: true,
+  const [kayitlar, iadeKayitlari] = await Promise.all([
+    prisma.sale.findMany({
+      where: { soldAt: { gte: grafikBaslangic, lt: grafikBitisHaric } },
+      select: {
+        soldAt: true,
+        net2Amount: true,
+        profitCurrency: true,
+        profitStatus: true,
+        channelAccount: {
+          select: { channel: { select: { code: true, name: true } } },
+        },
+        items: {
+          select: {
+            quantity: true,
+            unitPriceAmount: true,
+            unitPriceCurrency: true,
+          },
         },
       },
-    },
-  });
+    }),
+    // İADELER AYRI SORGU, KENDİ TARİHİYLE SÜZÜLÜR: penceredeki bir iade
+    // pencere DIŞINDAKİ bir satışa bağlı olabilir (geçen yılın malı bu ay
+    // iade edilir). Kanalını satış listesinden aramak yerine ilişkiden
+    // okuyoruz — aksi hâlde o iade sessizce düşerdi.
+    prisma.return.findMany({
+      where: { occurredAt: { gte: grafikBaslangic, lt: grafikBitisHaric } },
+      select: {
+        occurredAt: true,
+        net2Amount: true,
+        profitCurrency: true,
+        profitStatus: true,
+        sale: {
+          select: {
+            channelAccount: {
+              select: { channel: { select: { code: true, name: true } } },
+            },
+          },
+        },
+      },
+    }),
+  ]);
 
   const satislar: PanelSatisi[] = kayitlar.map((satis) => {
     // Satışın para birimi: kâr snapshot'ındaki birim, yoksa ilk kalemin.
@@ -110,7 +137,17 @@ export default async function AnaSayfa({
     };
   });
 
-  const bloklar = panelHesapla(buAy, satislar);
+  const iadeler: PanelIadesi[] = iadeKayitlari.map((iade) => ({
+    kanalKodu: iade.sale.channelAccount.channel.code,
+    kanalAdi: iade.sale.channelAccount.channel.name,
+    tarih: iade.occurredAt,
+    // Rapor ekranıyla aynı kural: iadenin para birimi kâr snapshot'ından.
+    paraBirimi: iade.profitCurrency ?? "TRY",
+    net2: iade.net2Amount === null ? null : Number(iade.net2Amount.toString()),
+    durum: iade.profitStatus,
+  }));
+
+  const bloklar = panelHesapla(buAy, satislar, iadeler);
 
   // --- grafik süzgeçleri -----------------------------------------------------
   // Süzgeç seçenekleri VERİDEN gelir: 12 ayda hiç satış olmamış kanal listeye
@@ -137,6 +174,7 @@ export default async function AnaSayfa({
     GRAFIK_AY_SAYISI,
     seciliKanal,
     seciliPara,
+    iadeler,
   );
 
   const noktalar: GrafikNoktasi[] = seri.map((nokta) => {
@@ -232,11 +270,24 @@ export default async function AnaSayfa({
               </div>
 
               {/* --- kârı hesaplanamayanlar: SIFIR SAYILMAZ, söylenir --- */}
-              {blok.hesaplanamayanAdet > 0 ? (
+              {blok.hesaplanamayanAdet > 0 ||
+              blok.hesaplanamayanIadeAdedi > 0 ? (
                 <div className="flex flex-wrap items-center gap-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-                  <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
-                    <TriangleAlert className="size-4 shrink-0" />
-                    {t("hesaplanamayan", { sayi: blok.hesaplanamayanAdet })}
+                  <p className="space-y-1 text-sm font-medium text-amber-800 dark:text-amber-300">
+                    {blok.hesaplanamayanAdet > 0 ? (
+                      <span className="flex items-center gap-2">
+                        <TriangleAlert className="size-4 shrink-0" />
+                        {t("hesaplanamayan", { sayi: blok.hesaplanamayanAdet })}
+                      </span>
+                    ) : null}
+                    {blok.hesaplanamayanIadeAdedi > 0 ? (
+                      <span className="flex items-center gap-2">
+                        <TriangleAlert className="size-4 shrink-0" />
+                        {t("hesaplanamayanIade", {
+                          sayi: blok.hesaplanamayanIadeAdedi,
+                        })}
+                      </span>
+                    ) : null}
                   </p>
                   <Button asChild size="sm" variant="outline" className="h-11 md:h-8">
                     <Link href="/satislar?kar=eksik">
@@ -272,6 +323,13 @@ export default async function AnaSayfa({
                         </TableCell>
                         <TableCell className="text-right whitespace-nowrap">
                           {bicim.para(kanal.net2, blok.paraBirimi)}
+                          {/* İade varsa rakamın neden düştüğü satırda yazar —
+                              yoksa "ciro yüksek, kâr düşük" bilmecesi olur. */}
+                          {kanal.iadeAdedi > 0 ? (
+                            <span className="text-muted-foreground block text-xs">
+                              {t("kanalIade", { sayi: kanal.iadeAdedi })}
+                            </span>
+                          ) : null}
                           {kanal.hesaplanamayanAdet > 0 ? (
                             <span className="text-muted-foreground block text-xs">
                               {t("kanalEksik", { sayi: kanal.hesaplanamayanAdet })}
@@ -367,6 +425,11 @@ export default async function AnaSayfa({
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       {bicim.para(nokta.net2, seciliPara)}
+                      {nokta.iadeAdedi > 0 ? (
+                        <span className="text-muted-foreground block text-xs">
+                          {t("kanalIade", { sayi: nokta.iadeAdedi })}
+                        </span>
+                      ) : null}
                       {nokta.hesaplanamayanAdet > 0 ? (
                         <span className="text-muted-foreground block text-xs">
                           {t("kanalEksik", { sayi: nokta.hesaplanamayanAdet })}

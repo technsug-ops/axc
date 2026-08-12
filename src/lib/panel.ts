@@ -18,6 +18,18 @@ import type { Currency } from "@/generated/prisma/enums";
  *
  *  KÂR ÇİZGİSİ NET-2'DİR (kullanıcı kararı 12.08.2026): stopaj da ödenecek
  *  KDV de düşülmüş, yani cebe giren rakam.
+ *
+ *  NET-2 TANIMI RAPOR EKRANIYLA ÖZDEŞTİR: satışların NET-2'si + İADE
+ *  ETKİLERİ. Panel yalnız satışları saysaydı iki ekran aynı ay için farklı
+ *  NET-2 gösterirdi ve "hangisi doğru" sorusu doğardı (anayasa: aynı iş her
+ *  ekranda aynı görünür). Üç görünüm — kanal blokları, grafik çizgisi ve
+ *  aylık tablo — TEK tanımı kullanır.
+ *  _Kullanıcı kararı 12.08.2026._
+ *
+ *  İADE HANGİ AYA, HANGİ KANALA YAZILIR:
+ *    AY    → iadenin KENDİ tarihine (occurredAt). Temmuz satışının Ağustos
+ *            iadesi Ağustos'a düşer; kapanmış ay sonradan oynamaz.
+ *    KANAL → iadenin bağlı olduğu SATIŞIN kanalına.
  * ============================================================================
  */
 
@@ -35,14 +47,31 @@ export type PanelSatisi = {
   durum: KarDurumu | null;
 };
 
+/** Panelin bir iadeden ihtiyaç duyduğu her şey. */
+export type PanelIadesi = {
+  /** İadenin bağlı olduğu SATIŞIN kanalı. */
+  kanalKodu: string;
+  kanalAdi: string;
+  /** İadenin KENDİ tarihi (occurredAt) — satışın tarihi değil. */
+  tarih: Date;
+  paraBirimi: Currency;
+  net2: number | null;
+  durum: KarDurumu | null;
+};
+
 export type KanalBlogu = {
   kanalKodu: string;
   kanalAdi: string;
   adet: number;
   gelir: number;
-  /** Yalnızca kârı HESAPLANABİLMİŞ satışların NET-2 toplamı. */
+  /**
+   * Kârı HESAPLANABİLMİŞ satışların NET-2'si + iade etkileri.
+   * Rapor ekranındaki "Σ NET-2" ile aynı tanım.
+   */
   net2: number;
   hesaplanamayanAdet: number;
+  iadeAdedi: number;
+  hesaplanamayanIadeAdedi: number;
 };
 
 export type ParaBirimiPaneli = {
@@ -53,6 +82,8 @@ export type ParaBirimiPaneli = {
   toplamGelir: number;
   toplamNet2: number;
   hesaplanamayanAdet: number;
+  toplamIadeAdedi: number;
+  hesaplanamayanIadeAdedi: number;
 };
 
 /** Kâr toplamına girer mi? Durum CALCULATED değilse NET'e güvenilmez. */
@@ -70,35 +101,59 @@ function hesaplandi(durum: KarDurumu | null, net: number | null): net is number 
 export function panelHesapla(
   pencere: Pencere,
   satislar: PanelSatisi[],
+  iadeler: PanelIadesi[] = [],
 ): ParaBirimiPaneli[] {
   const bloklar = new Map<Currency, Map<string, KanalBlogu>>();
 
-  for (const satis of satislar) {
-    if (!pencerede(pencere, satis.tarih)) continue;
-
-    let kanallar = bloklar.get(satis.paraBirimi);
+  /** Blok ve kanal satırını gerektiğinde açar. */
+  function kanalSatiri(
+    paraBirimi: Currency,
+    kanalKodu: string,
+    kanalAdi: string,
+  ): KanalBlogu {
+    let kanallar = bloklar.get(paraBirimi);
     if (!kanallar) {
       kanallar = new Map();
-      bloklar.set(satis.paraBirimi, kanallar);
+      bloklar.set(paraBirimi, kanallar);
     }
 
-    let kanal = kanallar.get(satis.kanalKodu);
+    let kanal = kanallar.get(kanalKodu);
     if (!kanal) {
       kanal = {
-        kanalKodu: satis.kanalKodu,
-        kanalAdi: satis.kanalAdi,
+        kanalKodu,
+        kanalAdi,
         adet: 0,
         gelir: 0,
         net2: 0,
         hesaplanamayanAdet: 0,
+        iadeAdedi: 0,
+        hesaplanamayanIadeAdedi: 0,
       };
-      kanallar.set(satis.kanalKodu, kanal);
+      kanallar.set(kanalKodu, kanal);
     }
+    return kanal;
+  }
 
+  for (const satis of satislar) {
+    if (!pencerede(pencere, satis.tarih)) continue;
+
+    const kanal = kanalSatiri(satis.paraBirimi, satis.kanalKodu, satis.kanalAdi);
     kanal.adet++;
     kanal.gelir += satis.gelir;
     if (hesaplandi(satis.durum, satis.net2)) kanal.net2 += satis.net2;
     else kanal.hesaplanamayanAdet++;
+  }
+
+  // İADELER — satışın kanalına, İADENİN ayına.
+  // Sadece iadesi olan bir kanal da blok açar: o ay hiç satış yapılmamış
+  // olabilir ama geçen ayın malı iade edilmiş olabilir; o para gerçektir.
+  for (const iade of iadeler) {
+    if (!pencerede(pencere, iade.tarih)) continue;
+
+    const kanal = kanalSatiri(iade.paraBirimi, iade.kanalKodu, iade.kanalAdi);
+    kanal.iadeAdedi++;
+    if (hesaplandi(iade.durum, iade.net2)) kanal.net2 += iade.net2;
+    else kanal.hesaplanamayanIadeAdedi++;
   }
 
   return [...bloklar.entries()]
@@ -111,6 +166,11 @@ export function panelHesapla(
         toplamGelir: liste.reduce((t, k) => t + k.gelir, 0),
         toplamNet2: liste.reduce((t, k) => t + k.net2, 0),
         hesaplanamayanAdet: liste.reduce((t, k) => t + k.hesaplanamayanAdet, 0),
+        toplamIadeAdedi: liste.reduce((t, k) => t + k.iadeAdedi, 0),
+        hesaplanamayanIadeAdedi: liste.reduce(
+          (t, k) => t + k.hesaplanamayanIadeAdedi,
+          0,
+        ),
       };
     })
     .sort((a, b) => b.toplamAdet - a.toplamAdet);
@@ -126,8 +186,11 @@ export type AyNoktasi = {
   ay: number;
   adet: number;
   gelir: number;
+  /** Kanal bloklarıyla AYNI tanım: satış NET-2'si + iade etkileri. */
   net2: number;
   hesaplanamayanAdet: number;
+  iadeAdedi: number;
+  hesaplanamayanIadeAdedi: number;
 };
 
 /**
@@ -147,6 +210,7 @@ export function aylikSeri(
   ayAdedi: number,
   kanalKodu: string | null,
   paraBirimi: Currency,
+  iadeler: PanelIadesi[] = [],
 ): AyNoktasi[] {
   const noktalar: AyNoktasi[] = [];
   const dizin = new Map<string, AyNoktasi>();
@@ -160,24 +224,42 @@ export function aylikSeri(
       gelir: 0,
       net2: 0,
       hesaplanamayanAdet: 0,
+      iadeAdedi: 0,
+      hesaplanamayanIadeAdedi: 0,
     };
     noktalar.push(nokta);
     dizin.set(`${yil}-${ay}`, nokta);
   }
 
+  /** İş tarihleri UTC gece yarısı saklanır; ay bilgisi UTC'den okunur. */
+  const noktaBul = (tarih: Date) =>
+    dizin.get(`${tarih.getUTCFullYear()}-${tarih.getUTCMonth() + 1}`);
+
   for (const satis of satislar) {
     if (satis.paraBirimi !== paraBirimi) continue;
     if (kanalKodu !== null && satis.kanalKodu !== kanalKodu) continue;
 
-    // İş tarihleri UTC gece yarısı saklanır; ay bilgisi UTC'den okunur.
-    const anahtar = `${satis.tarih.getUTCFullYear()}-${satis.tarih.getUTCMonth() + 1}`;
-    const nokta = dizin.get(anahtar);
+    const nokta = noktaBul(satis.tarih);
     if (!nokta) continue;
 
     nokta.adet++;
     nokta.gelir += satis.gelir;
     if (hesaplandi(satis.durum, satis.net2)) nokta.net2 += satis.net2;
     else nokta.hesaplanamayanAdet++;
+  }
+
+  // İade, KENDİ ayına düşer — satışın ayına değil. Temmuz satışının
+  // Ağustos iadesi Ağustos'un çizgisini aşağı çeker; Temmuz'unkini değil.
+  for (const iade of iadeler) {
+    if (iade.paraBirimi !== paraBirimi) continue;
+    if (kanalKodu !== null && iade.kanalKodu !== kanalKodu) continue;
+
+    const nokta = noktaBul(iade.tarih);
+    if (!nokta) continue;
+
+    nokta.iadeAdedi++;
+    if (hesaplandi(iade.durum, iade.net2)) nokta.net2 += iade.net2;
+    else nokta.hesaplanamayanIadeAdedi++;
   }
 
   return noktalar;

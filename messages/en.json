@@ -1500,7 +1500,9 @@
     "grafikNotu": "",
     "grafikBos": "",
     "tumKanallar": "",
-    "ay": ""
+    "ay": "",
+    "hesaplanamayanIade": "",
+    "kanalIade": ""
   },
   "Envanter": {
     "baslik": "",
