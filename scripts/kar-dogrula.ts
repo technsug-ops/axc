@@ -9,6 +9,7 @@
  *     binde mi olduğu belirsiz kalırsa 10 kat hata çıkar; burada sabitlenir.
  *  2) ALTIN SENARYOLAR — kullanıcının Excel'inden çözümlenmiş iki gerçek
  *     satış. Motor bunları ±0,25 TL toleransla üretmeli.
+ *  2b) TRENDYOL ORAN YOLU — komisyona KDV eklenmediğinin kilidi.
  *  3) DURUM TESTLERİ — maliyetsiz parti, para birimi uyuşmazlığı, eksik kural.
  *     Hesaplanamayan kâr SIFIR SAYILMAZ, durum koduyla bildirilir.
  * ============================================================================
@@ -277,6 +278,86 @@ console.log("\n--- SENARYO 2: TRENDYOL ---");
 
   yakin("NET-2", s.net2, 182.58, 0.4);
   kontrol("durum CALCULATED", s.durum === "CALCULATED", s.durum);
+}
+
+// ===========================================================================
+console.log("\n2b) TRENDYOL ORAN YOLU — komisyona KDV EKLENMEZ");
+// ===========================================================================
+/**
+ * NEDEN AYRI BÖLÜM VAR:
+ * Senaryo 2 komisyonu TUTAR olarak veriyor, yani KDV'nin eklendiği ORAN
+ * yolundan hiç geçmiyor. Oysa gerçekte kullanılan yol odur — komisyon oranı
+ * Kanal SKU'sundan gelir, satış formunda önerilir. Hepsiburada'nın
+ * KOMISYON_KDV kuralı bir gün Trendyol'a da tanımlanırsa tek bir satır
+ * değişikliğiyle her TY satışının kârı sessizce düşerdi ve hiçbir test
+ * kırmızı yanmazdı.
+ *
+ * TEYİT (12.08.2026): TY kesintisi KDV DAHİL TEK TUTARDIR. Hem kullanıcı
+ * beyanı hem hakediş dosyası aynı şeyi söylüyor — rapordaki komisyon satırı
+ * brüt × oran'a birebir eşit, üstüne bir şey eklenmemiş.
+ */
+{
+  /** Kanalda KOMISYON_KDV kuralı olmadan tek kalemlik satış. */
+  function tyKalem(satisTutari: number, komisyonOrani: number) {
+    return karHesapla({
+      kalemler: [
+        {
+          satisTutari,
+          satisParaBirimi: "TRY",
+          maliyet: 0,
+          maliyetParaBirimi: "TRY",
+          kdvOrani: 20,
+          komisyonOrani,
+        },
+      ],
+      // Trendyol'un KOMISYON_KDV kuralı YOKTUR — canlı ve yerel veritabanında
+      // ölçüldü (12.08.2026): TRENDYOL'da yalnız SABIT_GIDER tanımlı.
+      komisyonKdvOrani: null,
+      siparisKesintileri: [],
+      kargoTarifesi: null,
+    });
+  }
+
+  // --- 1) Gerçek canlı satış: 11492628481 ---
+  const gercek = tyKalem(1946, 2.7).kalemler[0].komisyon;
+  yakin("TY 1946 × %2,70 komisyon", gercek, 52.54, 0.01);
+
+  // --- 2) NEGATİF İDDİA: KDV eklenmiş hâli ÇIKMAMALI ---
+  // Bu kontrol pozitif olanın aynısı değildir: 52,54 beklentisi tolerans
+  // yüzünden kayarsa bile bu satır 63,05'i ayrıca reddeder.
+  kontrol(
+    "  ...KDV eklenmiş 63,05 DEĞİL",
+    Math.abs(gercek - 63.05) > 1,
+    `gelen ${gercek.toFixed(2)}`,
+  );
+
+  // --- 3) Kullanıcının ikinci örneği ---
+  yakin("TY 3999 × %15,5 komisyon", tyKalem(3999, 15.5).kalemler[0].komisyon, 619.85, 0.01);
+
+  // --- Karşı kontrol: KURAL VARSA KDV gerçekten ekleniyor mu? ---
+  // Yukarıdaki üçü, motor komisyona hiç KDV eklemese de geçerdi. Bu satır
+  // Hepsiburada yolunun hâlâ çalıştığını kanıtlar: aynı girdi, tek fark kural.
+  const kurallı = karHesapla({
+    kalemler: [
+      {
+        satisTutari: 1946,
+        satisParaBirimi: "TRY",
+        maliyet: 0,
+        maliyetParaBirimi: "TRY",
+        kdvOrani: 20,
+        komisyonOrani: 2.7,
+      },
+    ],
+    komisyonKdvOrani: 20,
+    siparisKesintileri: [],
+    kargoTarifesi: null,
+  });
+  yakin(
+    "aynı girdi + KOMISYON_KDV kuralı -> 63,05",
+    kurallı.kalemler[0].komisyon,
+    63.05,
+    0.01,
+  );
 }
 
 // ===========================================================================

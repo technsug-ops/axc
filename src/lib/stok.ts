@@ -142,11 +142,33 @@ export async function acikPartiler(
   db: IslemIstemcisi,
   variantId: string,
 ): Promise<Parti[]> {
+  return (await acikPartilerToplu(db, [variantId])).get(variantId) ?? [];
+}
+
+/**
+ * Aynı hesap, TEK SORGUDA çok varyant için.
+ *
+ * Envanter değeri ekranı bütün depoyu değerler; varyant başına ayrı sorgu
+ * atmak yüzlerce gidiş-geliş demekti. Türetme kuralı `acikPartiler` ile
+ * AYNIDIR — tek gövde, iki giriş; iki ayrı FIFO tanımı doğmasın diye.
+ *
+ * @param variantIdleri  null verilirse BÜTÜN varyantlar.
+ */
+export async function acikPartilerToplu(
+  db: IslemIstemcisi,
+  variantIdleri: string[] | null,
+): Promise<Map<string, Parti[]>> {
+  if (variantIdleri !== null && variantIdleri.length === 0) return new Map();
+
   const girisler = await db.stockMovement.findMany({
-    where: { variantId, quantityDelta: { gt: 0 } },
+    where: {
+      ...(variantIdleri === null ? {} : { variantId: { in: variantIdleri } }),
+      quantityDelta: { gt: 0 },
+    },
     orderBy: [{ occurredAt: "asc" }, { createdAt: "asc" }],
     select: {
       id: true,
+      variantId: true,
       occurredAt: true,
       quantityDelta: true,
       unitCostAmount: true,
@@ -155,7 +177,7 @@ export async function acikPartiler(
     },
   });
 
-  if (girisler.length === 0) return [];
+  if (girisler.length === 0) return new Map();
 
   const tuketimler = await db.stockMovement.groupBy({
     by: ["sourceMovementId"],
@@ -174,17 +196,26 @@ export async function acikPartiler(
     }
   }
 
-  return girisler
-    .map((giris) => ({
+  // Sorgu zaten FIFO sırasında geldi; gruplama sırayı BOZMAZ (Map ekleme
+  // sırasını korur, dizilere de sırayla itiliyor).
+  const sonuc = new Map<string, Parti[]>();
+  for (const giris of girisler) {
+    const kalanAdet = giris.quantityDelta - (tuketilen.get(giris.id) ?? 0);
+    if (kalanAdet <= 0) continue;
+
+    const liste = sonuc.get(giris.variantId) ?? [];
+    liste.push({
       hareketId: giris.id,
       occurredAt: giris.occurredAt,
       girenAdet: giris.quantityDelta,
-      kalanAdet: giris.quantityDelta - (tuketilen.get(giris.id) ?? 0),
+      kalanAdet,
       birimMaliyet: giris.unitCostAmount?.toString() ?? null,
       birimMaliyetParaBirimi: giris.unitCostCurrency,
       locationId: giris.locationId,
-    }))
-    .filter((parti) => parti.kalanAdet > 0);
+    });
+    sonuc.set(giris.variantId, liste);
+  }
+  return sonuc;
 }
 
 // ---------------------------------------------------------------------------

@@ -31,7 +31,9 @@
     "tedarikciler": "Tedarikçiler",
     "tazminat": "Tazminat",
     "hakedis": "Hakediş",
-    "hakedisYukle": "Hakediş raporu yükle"
+    "hakedisYukle": "Hakediş raporu yükle",
+    "panel": "Panel",
+    "envanterDegeri": "Envanter değeri"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -620,7 +622,9 @@
     "kartBorcu": "Kart Borcu",
     "tedarikciler": "Tedarikçiler",
     "tazminat": "Tazminat",
-    "hakedis": "Hakediş"
+    "hakedis": "Hakediş",
+    "panel": "Panel",
+    "envanterDegeri": "Envanter değeri"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -1478,5 +1482,48 @@
     "durumEKSIK_ODEME": "eksik ödeme",
     "durumFAZLA_ODEME": "fazla ödeme",
     "durumGELMEDI": "rapora düşmedi"
+  },
+  "Panel": {
+    "baslik": "Panel",
+    "altBaslik": "{donem} — bu ayın özeti",
+    "buAyBaslik": "Bu ay",
+    "buAyBos": "Bu ay henüz satış kaydı yok.",
+    "satisAdedi": "Satış adedi",
+    "ciro": "Ciro",
+    "net2": "NET-2",
+    "net2Aciklama": "stopaj ve ödenecek KDV düşülmüş",
+    "hesaplanamayan": "{sayi} satışın kârı hesaplanamadı — bu satışlar NET-2 toplamına GİRMEDİ.",
+    "sorunlulariGor": "Sorunlu satışlar",
+    "kanal": "Kanal",
+    "kanalEksik": "{sayi} satış hesaplanamadı",
+    "grafikBaslik": "Son {ay} ay",
+    "grafikNotu": "Dolu çizgi NET-2, kesikli çizgi ciro. Kaydı olmayan ay da eksende durur — çizgi o ayı atlamaz.",
+    "grafikBos": "Seçilen süzgeçte gösterilecek satış yok.",
+    "tumKanallar": "Tüm kanallar",
+    "ay": "Ay"
+  },
+  "Envanter": {
+    "baslik": "Envanter değeri",
+    "aciklama": "Depoda duran malın parası. Açık partilerin kalan adedi, o partinin birim maliyetiyle çarpılır — FIFO sırasıyla aynı veriden okunur.",
+    "odenen": "Ödenen (KDV dahil)",
+    "malBedeli": "Mal bedeli (KDV hariç)",
+    "odenenAciklama": "tedarikçiye fiilen ödenen tutar",
+    "malBedeliAciklama": "KDV oranı ürünün kategorisinden çözülür",
+    "urun": "Ürün",
+    "varyant": "Varyant",
+    "adet": "Adet",
+    "birimOrtalama": "Ortalama birim",
+    "kdvOrani": "KDV",
+    "toplamBaslik": "Toplam",
+    "hesaplanamadi": "hesaplanamadı",
+    "kdvCozulemedi": "{sayi} üründe KDV oranı çözülemedi — bu ürünler mal bedeli toplamına GİRMEDİ. Ürüne kategori atayın.",
+    "kategoriAta": "Kategorileri aç",
+    "bilinmeyenBaslik": "Değeri bilinmeyen stok",
+    "bilinmeyenAciklama": "Bu partiler maliyetsiz girilmiş (açılış stoğu ya da elle düzeltme). Adetleri gerçek, paraları bilinmiyor — bu yüzden yukarıdaki toplamlara KATILMAZ.",
+    "bilinmeyenAdet": "{sayi} adet",
+    "bos": "Depoda değerlenecek stok yok.",
+    "stokYok": "Stokta kalan parti yok.",
+    "durumDegerlendi": "değerlendi",
+    "durumBilinmiyor": "değeri bilinmiyor"
   }
 }

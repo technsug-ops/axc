@@ -496,6 +496,31 @@ sonradan değişmez.</p></div>
 nedenini ve <strong>hangi satışlar olduğunu</strong> gösterir. Kayda tıklarsanız
 doğrudan o satışa gidersiniz, altında nasıl düzeltileceği yazar. Gelirleri toplama
 katılır, kârları katılmaz — sıfır sayılmazlar.</p>
+
+<h3>Panel (ana sayfa)</h3>
+<p>Girişte karşınıza çıkan ekran. <strong>Bu ayı kanal kanal</strong> gösterir:
+kaç satış, ne kadar ciro, ne kadar NET-2. Aynı pazaryerinde birden fazla
+hesabınız varsa <strong>tek satırda birleşir</strong> — "Trendyol bu ay ne yaptı"
+sorusunun cevabı hesaplara bölünmez.</p>
+<p>Altındaki grafik <strong>son 12 ayı</strong> çizer: dolu çizgi NET-2, kesikli
+çizgi ciro. Kanal ve para birimi süzgeçleri üstündedir. <strong>Satış olmayan ay
+grafikte atlanmaz</strong>, sıfır olarak durur — yoksa çizgi iki ayı birleştirir ve
+aradaki duruş hiç yaşanmamış gibi görünür. Grafiğin altındaki tablo aynı
+rakamların okunabilir hâlidir; telefonda asıl oradan bakılır.</p>
+
+<h3>Envanter değeri</h3>
+<p><strong>"Depoda ne kadar param duruyor?"</strong> Açık partilerin kalan adedi,
+o partinin birim maliyetiyle çarpılır. İki sütun vardır:</p>
+<div class="formul">Ödenen (KDV dahil)      tedarikçiye fiilen ödediğiniz tutar
+Mal bedeli (KDV hariç)  malın KDV'siz değeri</div>
+<p>KDV oranı <strong>ürünün kategorisinden</strong> okunur. Ürüne kategori
+atanmamışsa o satırda mal bedeli <strong>"hesaplanamadı"</strong> yazar ve toplama
+girmez — sistem %20 varsayıp size uydurma bir rakam vermez. Sarı kutu kaç üründe
+böyle olduğunu söyler ve kategori ekranına götürür.</p>
+<div class="ek-not"><div class="etiket">Değeri bilinmeyen stok</div>
+<p>Maliyetsiz girilmiş partiler (açılış stoğu ya da elle düzeltme) <strong>ayrı bir
+kutuda</strong> durur. Adetleri gerçektir, paraları bilinmez — bu yüzden toplamlara
+katılmazlar. Sıfır sayılsalardı envanteriniz olduğundan ucuz görünürdü.</p></div>
 </section>
 
 <section id="toplu">

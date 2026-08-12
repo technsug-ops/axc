@@ -8,10 +8,12 @@ import {
   Banknote,
   BookOpen,
   Boxes,
+  Coins,
   CreditCard,
   Download,
   FileSpreadsheet,
   Landmark,
+  LayoutDashboard,
   MapPin,
   Package,
   PackageX,
@@ -57,10 +59,17 @@ type MenuOgesi = {
 };
 
 const OPERASYON: MenuOgesi[] = [
+  { anahtar: "panel", href: "/", icon: LayoutDashboard, aktif: true },
   { anahtar: "urunler", href: "/urunler", icon: Package, aktif: true },
   { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
   { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
   { anahtar: "stok", href: "/stok", icon: Boxes, aktif: true },
+  {
+    anahtar: "envanterDegeri",
+    href: "/envanter-degeri",
+    icon: Coins,
+    aktif: true,
+  },
   { anahtar: "kanalSkulari", href: "/kanal-sku", icon: Tags, aktif: true },
   { anahtar: "giderler", href: "/giderler", icon: Wallet, aktif: true },
   { anahtar: "rapor", href: "/rapor", icon: BarChart3, aktif: true },

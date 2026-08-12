@@ -31,7 +31,9 @@
     "tedarikciler": "",
     "tazminat": "",
     "hakedis": "",
-    "hakedisYukle": ""
+    "hakedisYukle": "",
+    "panel": "",
+    "envanterDegeri": ""
   },
   "Ortak": {
     "kapat": "",
@@ -620,7 +622,9 @@
     "kartBorcu": "",
     "tedarikciler": "",
     "tazminat": "",
-    "hakedis": ""
+    "hakedis": "",
+    "panel": "",
+    "envanterDegeri": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -1478,5 +1482,48 @@
     "durumEKSIK_ODEME": "",
     "durumFAZLA_ODEME": "",
     "durumGELMEDI": ""
+  },
+  "Panel": {
+    "baslik": "",
+    "altBaslik": "",
+    "buAyBaslik": "",
+    "buAyBos": "",
+    "satisAdedi": "",
+    "ciro": "",
+    "net2": "",
+    "net2Aciklama": "",
+    "hesaplanamayan": "",
+    "sorunlulariGor": "",
+    "kanal": "",
+    "kanalEksik": "",
+    "grafikBaslik": "",
+    "grafikNotu": "",
+    "grafikBos": "",
+    "tumKanallar": "",
+    "ay": ""
+  },
+  "Envanter": {
+    "baslik": "",
+    "aciklama": "",
+    "odenen": "",
+    "malBedeli": "",
+    "odenenAciklama": "",
+    "malBedeliAciklama": "",
+    "urun": "",
+    "varyant": "",
+    "adet": "",
+    "birimOrtalama": "",
+    "kdvOrani": "",
+    "toplamBaslik": "",
+    "hesaplanamadi": "",
+    "kdvCozulemedi": "",
+    "kategoriAta": "",
+    "bilinmeyenBaslik": "",
+    "bilinmeyenAciklama": "",
+    "bilinmeyenAdet": "",
+    "bos": "",
+    "stokYok": "",
+    "durumDegerlendi": "",
+    "durumBilinmiyor": ""
   }
 }

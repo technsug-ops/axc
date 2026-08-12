@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { ayKaydir, gunDegeri, gunMetni } from "@/lib/donem";
+import { envanterVerisi } from "@/lib/envanter-veri";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { prisma } from "@/lib/prisma";
 
@@ -26,6 +27,7 @@ export const LISTELER = [
   "satislar",
   "stok",
   "giderler",
+  "envanter-degeri",
 ] as const;
 export type ListeAnahtari = (typeof LISTELER)[number];
 
@@ -55,7 +57,98 @@ export async function listeSayfasi(
       return stokSayfasi(p);
     case "giderler":
       return giderlerSayfasi(p);
+    case "envanter-degeri":
+      return envanterDegeriSayfasi();
   }
+}
+
+/**
+ * Envanter değeri — EKRANLA BİREBİR AYNI VERİ.
+ *
+ * Sorgu burada tekrarlanmıyor: ekranın kullandığı `envanterVerisi()`
+ * çağrılıyor. Böylece "indirdiğim dosya ekranda gördüğümden farklı" durumu
+ * doğamaz.
+ *
+ * Değeri bilinmeyen partiler dosyada da AYRI satırlarda ve tutar sütunları
+ * boş olarak durur — sıfır yazmak "bedava mal" demek olurdu.
+ */
+async function envanterDegeriSayfasi(): Promise<Sayfa> {
+  const t = await getTranslations("IceAktarma");
+  const tEnvanter = await getTranslations("Envanter");
+  const tBaslik = await getTranslations("Basliklar");
+  const ortak = await getTranslations("Ortak");
+
+  const { sonuc, kimlikler } = await envanterVerisi();
+
+  const satirlar: (string | number | null | undefined)[][] = [];
+
+  for (const blok of sonuc.bloklar) {
+    for (const satir of blok.satirlar) {
+      const k = kimlikler.get(satir.variantId);
+      satirlar.push([
+        k?.urunAdi,
+        k?.marka,
+        k?.varyantAdi,
+        k?.sku,
+        k?.firmaSku,
+        k?.barkod,
+        k?.kategoriAdi,
+        k?.rafKodu,
+        satir.adet,
+        String(satir.odenen),
+        satir.malBedeli === null
+          ? tEnvanter("hesaplanamadi")
+          : String(satir.malBedeli),
+        satir.paraBirimi,
+        satir.kdvOrani === null ? tEnvanter("hesaplanamadi") : satir.kdvOrani,
+        tEnvanter("durumDegerlendi"),
+      ]);
+    }
+  }
+
+  for (const satir of sonuc.bilinmeyenler) {
+    const k = kimlikler.get(satir.variantId);
+    satirlar.push([
+      k?.urunAdi,
+      k?.marka,
+      k?.varyantAdi,
+      k?.sku,
+      k?.firmaSku,
+      k?.barkod,
+      k?.kategoriAdi,
+      k?.rafKodu,
+      satir.adet,
+      // Maliyet bilinmiyor: tutar sütunları BOŞ BIRAKILIR, sıfır YAZILMAZ —
+      // sıfır "bedava mal" demek olurdu ve Excel'de toplanabilir bir sayıdır.
+      // Neden boş olduğu son sütunda yazar.
+      null,
+      null,
+      null,
+      null,
+      tEnvanter("durumBilinmiyor"),
+    ]);
+  }
+
+  return {
+    ad: tBaslik("envanterDegeri"),
+    basliklar: [
+      t("sutunUrunAdi"),
+      t("sutunMarka"),
+      t("sutunVaryantAdi"),
+      t("sutunSku"),
+      t("sutunFirmaSku"),
+      t("sutunBarkod"),
+      t("sutunKategori"),
+      t("sutunRaf"),
+      tEnvanter("adet"),
+      tEnvanter("odenen"),
+      tEnvanter("malBedeli"),
+      ortak("paraBirimi"),
+      tEnvanter("kdvOrani"),
+      ortak("durum"),
+    ],
+    satirlar,
+  };
 }
 
 // ---------------------------------------------------------------------------
