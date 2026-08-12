@@ -727,7 +727,16 @@
     "bosKarEksikBaslik": "",
     "bosKarEksikIpucu": "",
     "cakisanSatisMetni": "",
-    "cakisanSatisaGit": ""
+    "cakisanSatisaGit": "",
+    "hesabiDegistir": "",
+    "hesabiDegistirNotu": "",
+    "hesabiDegistirKanalUyarisi": "",
+    "hesabiDegisti": "",
+    "hesabiDegistirEksik": "",
+    "hesabiDegistirHesapYok": "",
+    "hesabiDegistirSatisDegil": "",
+    "hesabiDegistirAyni": "",
+    "bulunamadi": ""
   },
   "Kategori": {
     "adZorunlu": "",

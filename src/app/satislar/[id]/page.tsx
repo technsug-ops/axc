@@ -7,6 +7,7 @@ import { Baglanti, GeriBaglanti } from "@/components/baglanti";
 import { IadeBlogu, type IadeGorunumu } from "@/components/iade-blogu";
 import { KarBlogu, type KarBloguVerisi } from "@/components/kar-blogu";
 
+import { HesapDegistir } from "./hesap-degistir";
 import { YenidenHesapla } from "./yeniden-hesapla";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
@@ -32,6 +33,13 @@ export default async function SatisDetaySayfasi({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  // Satış yanlış hesaba yazılmış olabilir; taşıma için SATIŞ hesapları.
+  const satisHesaplari = await prisma.channelAccount.findMany({
+    where: { isActive: true, satisIcin: true },
+    include: { channel: { select: { name: true } } },
+    orderBy: [{ channelId: "asc" }, { name: "asc" }],
+  });
 
   const satis = await prisma.sale.findUnique({
     where: { id },
@@ -224,6 +232,16 @@ export default async function SatisDetaySayfasi({
                 {tIade("tamamiIade")}
               </Button>
             )}
+            <HesapDegistir
+              saleId={satis.id}
+              mevcutHesapId={satis.channelAccountId}
+              mevcutKanalId={satis.channelAccount.channelId}
+              secenekler={satisHesaplari.map((h) => ({
+                id: h.id,
+                etiket: `${h.channel.name} — ${h.name}`,
+                channelId: h.channelId,
+              }))}
+            />
             <YenidenHesapla
               saleId={satis.id}
               kalemler={satis.items.map((k) => {
