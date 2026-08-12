@@ -102,6 +102,15 @@ export async function stokDuzelt(
     await prisma.$transaction(async (tx) => {
       if (yon === "ARTI") {
         // --- FAZLA ÇIKAN MAL: yeni parti ---
+        // RAF VARYANTIN GÜNCEL RAFINDAN yazılır. Boş bırakılırsa sayım
+        // fazlası "rafsız" bir parti olarak doğuyordu ve toplama ekranında
+        // nerede olduğu bilinmiyordu — mal bir yerde bulundu, orası da
+        // ürünün durduğu raftır. (13.08.2026, kullanıcı testinde görüldü.)
+        const varyant = await tx.productVariant.findUnique({
+          where: { id: variantId },
+          select: { locationId: true },
+        });
+
         await tx.stockMovement.create({
           data: {
             variantId,
@@ -110,6 +119,7 @@ export async function stokDuzelt(
             occurredAt: tarih,
             adjustmentReasonId: neden.id,
             note: aciklama.trim() === "" ? null : aciklama.trim(),
+            locationId: varyant?.locationId ?? null,
             unitCostAmount: birimMaliyet === null ? null : String(birimMaliyet),
             unitCostCurrency: birimMaliyet === null ? null : paraBirimi,
           },
