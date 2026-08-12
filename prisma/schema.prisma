@@ -204,8 +204,8 @@ model ProductVariant {
   channelSkus    ChannelSku[]
   purchaseItems  PurchaseItem[]
   saleItems      SaleItem[]
-  returnItems    ReturnItem[]      @relation("IadeVaryanti")
-  exchangeItems  ReturnItem[]      @relation("DegisimVaryanti")
+  returnItems    ReturnItem[]    @relation("IadeVaryanti")
+  exchangeItems  ReturnItem[]    @relation("DegisimVaryanti")
   stockMovements StockMovement[]
 
   @@index([productId])
@@ -286,10 +286,10 @@ model Channel {
   /// öder mi? Trendyol: hayır · Hepsiburada: evet.
   disputedReshipPaidBySeller Boolean @default(false)
 
-  accounts        ChannelAccount[]
-  fees            ChannelFee[]
-  cargoTariffs    CargoTariff[]
-  penaltyTariffs  PenaltyTariff[]
+  accounts       ChannelAccount[]
+  fees           ChannelFee[]
+  cargoTariffs   CargoTariff[]
+  penaltyTariffs PenaltyTariff[]
 }
 
 // ============================================================================
@@ -443,21 +443,19 @@ model ChannelAccount {
   /// Boşsa o hesabın satışları için beklenen tarih ÜRETİLMEZ — tahmin
   /// edilmiş bir tarih göstermektense boş bırakılır.
   /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
-   *
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
-   *   ALIŞ  — kampanya döneminde mal ALDIĞI kişisel hesaplar (hesap başına
-   *           alım limiti olduğu için birden çok: s.ahmet, Seda, Eymen...)
-   *   SATIŞ — mal SATTIĞI mağaza hesabı (AXCALI)
+   * ALIŞ  — kampanya döneminde mal ALDIĞI kişisel hesaplar (hesap başına
+   * alım limiti olduğu için birden çok: s.ahmet, Seda, Eymen...)
+   * SATIŞ — mal SATTIĞI mağaza hesabı (AXCALI)
    * Ölçüm: 13 hesabın 8'i alış, 2'si satış.
-   *
    * Formda TEK SEÇİM yapılır (radyo, varsayılansız): bir hesap ya alış ya
    * satış hesabıdır — kullanıcı kararı 12.08.2026, "ikisi de" NORMAL BİR
    * DURUM DEĞİLDİR. İki ayrı bayrak tutulmasının tek sebebi, geçmişte
    * yanlışlıkla ikisi birden kullanılmış hesabı GÖRÜNÜR kılabilmek —
    * o hesap ekranda amber uyarı alır ve düzeltmeye çağırır.
-   *
    * İKİSİ DE FALSE = ROL SEÇİLMEMİŞ. Böyle hesap hiçbir forma listelenmez;
    * listede "rol seçilmedi" rozeti taşır. Sessizce bir tarafa atamak,
    * kullanıcının hiç görmediği bir karar vermek olurdu.
@@ -478,9 +476,9 @@ model ChannelAccount {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  channelSkus ChannelSku[]
-  purchases   Purchase[]
-  sales       Sale[]
+  channelSkus     ChannelSku[]
+  purchases       Purchase[]
+  sales           Sale[]
   settlements     Settlement[]
   settlementItems SettlementItem[]
 
@@ -721,6 +719,11 @@ model StockMovement {
   unitCostAmount   Decimal?  @db.Decimal(18, 4)
   unitCostCurrency Currency?
 
+  /// ELLE DÜZELTME NEDENİ — yalnız ADJUSTMENT/COUNT_CORRECTION tipinde
+  /// dolu olur. Satış, alım ve iade hareketlerinde boştur.
+  adjustmentReasonId String?
+  adjustmentReason   StockAdjustmentReason? @relation(fields: [adjustmentReasonId], references: [id], onDelete: Restrict)
+
   note String? @db.Text
 
   createdAt DateTime @default(now())
@@ -732,6 +735,7 @@ model StockMovement {
   @@index([returnItemId])
   @@index([sourceMovementId])
   @@index([locationId])
+  @@index([adjustmentReasonId])
 }
 
 // ============================================================================
@@ -1026,7 +1030,7 @@ model ExpenseCategory {
 
   /// Bu kategoriye yazılan giderin varsayılan KDV oranı (%).
   /// Maaş ve vergi gibi KDV'siz kalemlerde 0'dır; formda değiştirilebilir.
-  defaultVatRate Decimal @db.Decimal(5, 2) @default(20)
+  defaultVatRate Decimal @default(20) @db.Decimal(5, 2)
 
   /// SİLİNMEZ, pasife alınır — geçmiş giderler kategorisiz kalmasın.
   isActive Boolean @default(true)
@@ -1353,6 +1357,44 @@ model ExpenseTemplate {
   updatedAt DateTime @updatedAt
 
   expenses Expense[]
+
+  @@index([isActive])
+}
+
+// ============================================================================
+//  STOK DÜZELTME NEDENİ
+// ----------------------------------------------------------------------------
+//  Kırılma, kayıp, fire, sayım farkı... Neden VERİDİR, sabit kod değil:
+//  SaaS'ta her müşteri kendi fire nedenlerini tanımlayacak. ExpenseCategory
+//  deseninin aynısı — silinmez, pasife alınır; geçmiş hareketler nedensiz
+//  kalmasın.
+// ============================================================================
+
+model StockAdjustmentReason {
+  id String @id @default(cuid())
+
+  name String @unique
+
+  /// Bu neden hangi hareket tipini yazar.
+  /// COUNT_CORRECTION (sayım farkı) ile ADJUSTMENT (kırılma/kayıp) ayrı
+  /// tiplerdir ve raporda AYRI satırlarda görünürler: sayım farkı ölçüm
+  /// hatasıdır, fire gerçek kayıptır.
+  movementType StockMovementType @default(ADJUSTMENT)
+
+  /// Açıklama girmek zorunlu mu? "Diğer" nedeninde açıklamasız kayıt,
+  /// üç ay sonra cevapsız bir soruya dönüşür.
+  requiresNote Boolean @default(false)
+
+  /// SİLİNMEZ, pasife alınır.
+  isActive Boolean @default(true)
+
+  /// Ekrandaki sıra. Aynı değerdeyse ada göre sıralanır.
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movements StockMovement[]
 
   @@index([isActive])
 }
