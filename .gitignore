@@ -44,3 +44,6 @@ next-env.d.ts
 
 # postinstall ile node_modules'ten kopyalanir (scripts/copy-zxing-wasm.mjs)
 /public/zxing_reader.wasm
+
+# Göç öncesi güvenlik yedekleri — makinede kalır, depoya girmez.
+yedekler/
