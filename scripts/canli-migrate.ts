@@ -40,15 +40,17 @@
  * ============================================================================
  */
 
-import { config } from "dotenv";
 import { execSync } from "node:child_process";
-import { existsSync } from "node:fs";
 
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
-
-const CANLI_DOSYA = ".env.canli";
+import {
+  CANLI_DOSYA,
+  canliYapilandirma,
+  kurulumuAnlat,
+  parolayiTemizle,
+} from "./canli-ortak";
 
 /**
  * Alt komutlar SABİT metin olarak çalıştırılır (execSync), dizi argümanla
@@ -67,104 +69,31 @@ function basarisiz(mesaj: string) {
   console.log(`  ✗  ${mesaj}`);
 }
 
-/** Hata metinleri bağlantı dizesini içerebiliyor; parola her hâlükârda silinir. */
-function parolayiTemizle(metin: string, parola: string): string {
-  let temiz = metin.replace(/(mysql:\/\/[^:\s]+:)[^@\s]+(@)/gi, "$1***$2");
-  if (parola.length > 0) temiz = temiz.split(parola).join("***");
-  return temiz;
-}
-
 async function main() {
   console.log("\nCANLI MIGRATION\n");
 
   // --- 0) Adres dosyası -----------------------------------------------------
-  /** Dosya yoksa ya da eksikse: ne yazılacağı TAM OLARAK gösterilir. */
-  function kurulumuAnlat() {
-    console.log("");
-    console.log(`     Proje kökünde "${CANLI_DOSYA}" dosyası açın.`);
-    console.log("     İKİ YOLDAN BİRİ yeter:");
-    console.log("");
-    console.log("     A) Vercel > Settings > Environment Variables > DATABASE_URL");
-    console.log("        değerini kopyalayıp tek satır yazın:");
-    console.log("");
-    console.log("          CANLI_DATABASE_URL=mysql://kullanici:parola@sunucu:3306/veritabani");
-    console.log("");
-    console.log("     B) Ya da KAS panelindeki dört değeri ayrı satırlara yazın,");
-    console.log("        adresi komut kendisi kurar:");
-    console.log("");
-    console.log("          CANLI_SUNUCU=w0216a46.kasserver.com");
-    console.log("          CANLI_KULLANICI=d047df6e");
-    console.log("          CANLI_PAROLA=parolaniz");
-    console.log("          CANLI_VERITABANI=d047df6e");
-    console.log("");
-    console.log("     Dosya git'e GİRMEZ (.gitignore -> .env*).\n");
-  }
-
-  if (!existsSync(CANLI_DOSYA)) {
-    basarisiz(`${CANLI_DOSYA} bulunamadı.`);
-    kurulumuAnlat();
-    process.exitCode = 1;
-    return;
-  }
-
-  const { parsed } = config({ path: CANLI_DOSYA });
-
-  /**
-   * Adres ya hazır verilir ya da parçalardan kurulur.
-   * Parçadan kurarken parola KAÇIRILIR (encodeURIComponent): "@" ya da ":"
-   * içeren bir parola elle yazılmış adreste bağlantıyı sessizce bozardı.
-   */
-  function adresiCoz(): { ham: string; kaynak: string } | null {
-    const hazir = (parsed?.CANLI_DATABASE_URL ?? "").trim();
-    if (hazir !== "") return { ham: hazir, kaynak: "CANLI_DATABASE_URL" };
-
-    const sunucu = (parsed?.CANLI_SUNUCU ?? "").trim();
-    const kullanici = (parsed?.CANLI_KULLANICI ?? "").trim();
-    const parola = parsed?.CANLI_PAROLA ?? "";
-    const veritabani = (parsed?.CANLI_VERITABANI ?? "").trim();
-
-    const eksikler = [
-      sunucu === "" ? "CANLI_SUNUCU" : null,
-      kullanici === "" ? "CANLI_KULLANICI" : null,
-      parola === "" ? "CANLI_PAROLA" : null,
-      veritabani === "" ? "CANLI_VERITABANI" : null,
-    ].filter(Boolean);
-
-    // Hiçbiri yoksa "dosya boş" demektir; bazısı varsa eksik olanı söyle.
-    if (eksikler.length === 4) return null;
-    if (eksikler.length > 0) {
-      basarisiz(`${CANLI_DOSYA} eksik: ${eksikler.join(", ")}`);
-      return null;
-    }
-
-    const port = (parsed?.CANLI_PORT ?? "3306").trim();
-    return {
-      ham: `mysql://${encodeURIComponent(kullanici)}:${encodeURIComponent(parola)}@${sunucu}:${port}/${veritabani}`,
-      kaynak: "parçalardan kuruldu",
-    };
-  }
-
-  const cozum = adresiCoz();
-  if (!cozum) {
-    if (!parsed?.CANLI_SUNUCU) {
+  // Okuma ve doğrulama `canli-ortak.ts` içinde; canlı adresin nereden geldiği
+  // tek yerde tanımlı (canli:test aynı kaynaktan okur).
+  const cozum = canliYapilandirma();
+  if (!cozum.tamam) {
+    if (cozum.hata.kod === "DOSYA_YOK") {
+      basarisiz(`${CANLI_DOSYA} bulunamadı.`);
+      kurulumuAnlat();
+    } else if (cozum.hata.kod === "EKSIK") {
+      basarisiz(`${CANLI_DOSYA} eksik: ${cozum.hata.eksikler.join(", ")}`);
+    } else if (cozum.hata.kod === "BOS") {
       basarisiz(`${CANLI_DOSYA} içinde bağlantı bilgisi yok.`);
       kurulumuAnlat();
+    } else {
+      basarisiz("CANLI_DATABASE_URL okunamadı.");
+      console.log("     Biçim: mysql://kullanici:parola@sunucu:3306/veritabani\n");
     }
     process.exitCode = 1;
     return;
   }
-  const ham = cozum.ham;
 
-  let adres: URL;
-  try {
-    adres = new URL(ham);
-  } catch {
-    basarisiz("CANLI_DATABASE_URL okunamadı.");
-    console.log("     Biçim: mysql://kullanici:parola@sunucu:3306/veritabani\n");
-    process.exitCode = 1;
-    return;
-  }
-  const parola = adres.password;
+  const { ham, parola, adres, kaynak, yerelMi } = cozum.veri;
 
   // --- 1) Harf bekçisi ------------------------------------------------------
   console.log("1) MIGRATION DOSYALARI");
@@ -180,12 +109,11 @@ async function main() {
 
   // --- 2) Hedef denetimi ----------------------------------------------------
   console.log("\n2) HEDEF (parola gizli)");
-  console.log(`     kaynak      ${cozum.kaynak}`);
+  console.log(`     kaynak      ${kaynak}`);
   console.log(`     sunucu      ${adres.hostname}`);
   console.log(`     veritabanı  ${adres.pathname.slice(1)}`);
   console.log(`     kullanıcı   ${adres.username}`);
 
-  const yerelMi = ["localhost", "127.0.0.1", "::1"].includes(adres.hostname);
   if (yerelMi) {
     console.log("");
     basarisiz("BU ADRES YEREL VERİTABANI — canlı migration çalıştırılmadı.");
