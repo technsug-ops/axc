@@ -36,43 +36,53 @@ export async function yedekUret(
    * varsayılan olması yanlış olurdu.
    */
   tarifesiz = false,
+  /**
+   * Hangi veritabanından okunacak. Varsayılan uygulamanın kendi istemcisi.
+   *
+   * DIŞARIDAN VERİLEBİLMESİ ŞART: canlıya bağlanan bir betik yedek isterse,
+   * ortak istemci `.env`'deki YEREL adrese bakar ve yanlış veritabanını
+   * yedekler. 12.08.2026'da kimlik göçünde tam olarak bu oldu — göç canlıya,
+   * yedek yerele gidecekti. Sahte güvenlik ağı, hiç ağ olmamasından kötüdür.
+   */
+  istemci: typeof prisma = prisma,
 ): Promise<YedekDosyasi> {
   // Sıra YEDEK_TABLOLARI ile aynıdır — bağımlılık sırası.
   const tablolar: Record<string, unknown[]> = {
-    Category: await prisma.category.findMany(),
-    Location: await prisma.location.findMany(),
-    Channel: await prisma.channel.findMany(),
-    CargoCarrier: await prisma.cargoCarrier.findMany(),
-    CreditCard: await prisma.creditCard.findMany(),
-    ExpenseCategory: await prisma.expenseCategory.findMany(),
-    Supplier: await prisma.supplier.findMany(),
+    Category: await istemci.category.findMany(),
+    Location: await istemci.location.findMany(),
+    Channel: await istemci.channel.findMany(),
+    CargoCarrier: await istemci.cargoCarrier.findMany(),
+    CreditCard: await istemci.creditCard.findMany(),
+    ExpenseCategory: await istemci.expenseCategory.findMany(),
+    Supplier: await istemci.supplier.findMany(),
     // Parola ÖZETİ (scrypt) yedeğe girer — parolanın kendisi değil, geri
     // çevrilemez. Boş veritabanına geri yükleyip giriş yapabilmek için
     // gerekli; olmasaydı felaket sonrası kimse içeri giremezdi.
     // _Kullanıcı kararı 12.08.2026._
-    User: await prisma.user.findMany(),
-    Product: await prisma.product.findMany(),
-    ProductVariant: await prisma.productVariant.findMany(),
-    VariantOption: await prisma.variantOption.findMany(),
-    PenaltyTariff: await prisma.penaltyTariff.findMany(),
-    ChannelFee: await prisma.channelFee.findMany(),
-    CargoTariff: tarifesiz ? [] : await prisma.cargoTariff.findMany(),
-    ChannelAccount: await prisma.channelAccount.findMany(),
-    ChannelSku: await prisma.channelSku.findMany(),
-    ExpenseTemplate: await prisma.expenseTemplate.findMany(),
-    Expense: await prisma.expense.findMany(),
-    Purchase: await prisma.purchase.findMany(),
-    PurchaseItem: await prisma.purchaseItem.findMany(),
-    Sale: await prisma.sale.findMany(),
-    SaleItem: await prisma.saleItem.findMany(),
-    SaleFee: await prisma.saleFee.findMany(),
-    Return: await prisma.return.findMany(),
-    ReturnItem: await prisma.returnItem.findMany(),
-    ReturnFee: await prisma.returnFee.findMany(),
-    StockMovement: await prisma.stockMovement.findMany(),
-    Settlement: await prisma.settlement.findMany(),
-    SettlementItem: await prisma.settlementItem.findMany(),
-    Compensation: await prisma.compensation.findMany(),
+    User: await istemci.user.findMany(),
+    StockAdjustmentReason: await istemci.stockAdjustmentReason.findMany(),
+    Product: await istemci.product.findMany(),
+    ProductVariant: await istemci.productVariant.findMany(),
+    VariantOption: await istemci.variantOption.findMany(),
+    PenaltyTariff: await istemci.penaltyTariff.findMany(),
+    ChannelFee: await istemci.channelFee.findMany(),
+    CargoTariff: tarifesiz ? [] : await istemci.cargoTariff.findMany(),
+    ChannelAccount: await istemci.channelAccount.findMany(),
+    ChannelSku: await istemci.channelSku.findMany(),
+    ExpenseTemplate: await istemci.expenseTemplate.findMany(),
+    Expense: await istemci.expense.findMany(),
+    Purchase: await istemci.purchase.findMany(),
+    PurchaseItem: await istemci.purchaseItem.findMany(),
+    Sale: await istemci.sale.findMany(),
+    SaleItem: await istemci.saleItem.findMany(),
+    SaleFee: await istemci.saleFee.findMany(),
+    Return: await istemci.return.findMany(),
+    ReturnItem: await istemci.returnItem.findMany(),
+    ReturnFee: await istemci.returnFee.findMany(),
+    StockMovement: await istemci.stockMovement.findMany(),
+    Settlement: await istemci.settlement.findMany(),
+    SettlementItem: await istemci.settlementItem.findMany(),
+    Compensation: await istemci.compensation.findMany(),
   };
 
   const satirSayilari: Record<string, number> = {};

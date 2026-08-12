@@ -226,7 +226,10 @@ async function main() {
     mkdirSync(YEDEK_KLASORU, { recursive: true });
     const an = new Date();
     const ad = `${YEDEK_KLASORU}/goc-oncesi-${an.toISOString().replace(/[:.]/g, "-")}.json`;
-    const yedek = await yedekUret(an, false);
+    // İSTEMCİ AÇIKÇA VERİLİYOR: yedek, göç edilen veritabanından alınır.
+    // Varsayılana bırakılsaydı `.env`'deki YEREL adres yedeklenir, canlı
+    // göçün ağı sahte olurdu.
+    const yedek = await yedekUret(an, false, prisma as never);
     writeFileSync(ad, yedegiMetneCevir(yedek), "utf8");
     console.log(`  ✓  ${ad}`);
     console.log("     Bir sorun olursa: Ayarlar → Geri yükleme → bu dosyayı yükleyin.");
