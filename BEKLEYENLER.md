@@ -169,6 +169,29 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
 
 ## Hakediş paketinden çıkan kararlar
 
+- [x] ~~**Kanal hesabı rolü: ALIŞ / SATIŞ ayrımı**~~ ✓ 12.08.2026
+      Kullanıcı arbitraj yaptığı için AYNI pazaryerinde iki tür hesabı var:
+      kampanyada mal ALDIĞI kişisel hesaplar (hesap başına alım limiti
+      nedeniyle birden çok) ve mal SATTIĞI mağaza. Ayrım yoktu; dört ekran
+      13 hesabın hepsini gösteriyordu — Amazon'dan alım yaptığı hesaba
+      hakediş raporu yükleyebiliyordu.
+      Roller kullanımdan TÜRETİLDİ (tahmin edilmedi): 8 alış, 2 satış,
+      1 çift rol, 2 rol seçilmemiş.
+      Form TEK SEÇİM (radyo, varsayılansız). Rolü seçilmemiş hesap hiçbir
+      formda listelenmez. Kaydı olan rol sunucuda kaldırılamaz.
+
+- [ ] **Hepsiburada — S.Ahmet: çift rol düzeltmesi (kullanıcıda)**
+      Bu hesapta 7 alım VE 2 satış var. "İkisi de" normal bir durum değil
+      (kullanıcı kararı 12.08.2026): satıcı ve alıcı hesabı ayrı hesaplardır.
+      Ekranda amber uyarı ve kayıtlara bağlantı duruyor. Kullanıcı o 2 satışı
+      doğru mağazaya (Hepsiburada — AXCALI) taşıyıp rolü tek seçime
+      indirecek. Taşınana kadar hesap iki formda birden görünmeye devam eder
+      — sessizce bir tarafı kapatmak o kayıtları yetim bırakırdı.
+
+- [ ] **Trendyol — SEDA ve N11 — AXCALI: rol seçimi (kullanıcıda)**
+      Hiç kullanılmamış iki hesap; rolleri seçilmedi ve bu yüzden hiçbir
+      formda listelenmiyorlar. Kanal Hesapları ekranından rolü seçilecek.
+
 - [ ] **Gerçek hakediş dosyaları depoya KONMADI — bilinçli**
       5 Trendyol raporu okundu ve okuyucu onlarla doğrulandı, ama dosyalar
       `veri/` altına kopyalanmadı: içlerinde **"Müşteri Adı"** kolonu var ve

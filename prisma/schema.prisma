@@ -442,6 +442,30 @@ model ChannelAccount {
   /// aynı pazaryerinde açılan ikinci mağazanın anlaşması farklı olabilir.
   /// Boşsa o hesabın satışları için beklenen tarih ÜRETİLMEZ — tahmin
   /// edilmiş bir tarih göstermektense boş bırakılır.
+  /**
+   * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
+   *
+   * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
+   * pazaryerinde iki tür hesabı var.
+   *   ALIŞ  — kampanya döneminde mal ALDIĞI kişisel hesaplar (hesap başına
+   *           alım limiti olduğu için birden çok: s.ahmet, Seda, Eymen...)
+   *   SATIŞ — mal SATTIĞI mağaza hesabı (AXCALI)
+   * Ölçüm: 13 hesabın 8'i alış, 2'si satış.
+   *
+   * Formda TEK SEÇİM yapılır (radyo, varsayılansız): bir hesap ya alış ya
+   * satış hesabıdır — kullanıcı kararı 12.08.2026, "ikisi de" NORMAL BİR
+   * DURUM DEĞİLDİR. İki ayrı bayrak tutulmasının tek sebebi, geçmişte
+   * yanlışlıkla ikisi birden kullanılmış hesabı GÖRÜNÜR kılabilmek —
+   * o hesap ekranda amber uyarı alır ve düzeltmeye çağırır.
+   *
+   * İKİSİ DE FALSE = ROL SEÇİLMEMİŞ. Böyle hesap hiçbir forma listelenmez;
+   * listede "rol seçilmedi" rozeti taşır. Sessizce bir tarafa atamak,
+   * kullanıcının hiç görmediği bir karar vermek olurdu.
+   */
+  alisIcin  Boolean @default(false)
+  satisIcin Boolean @default(false)
+
+  /// YALNIZ SATIŞ HESABI İÇİN ANLAMLI: alış hesabında vade diye bir şey yok.
   payoutDays Int?
 
   /// Vade İŞ GÜNÜ cinsinden mi? Trendyol 28 İŞ GÜNÜ öder (≈41 takvim günü);

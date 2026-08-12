@@ -71,7 +71,7 @@ export default async function KanalSkuSayfasi({
       orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
     }),
     prisma.channelAccount.findMany({
-      where: { isActive: true },
+      where: { isActive: true, satisIcin: true },
       include: { channel: { select: { name: true } } },
       orderBy: { name: "asc" },
     }),

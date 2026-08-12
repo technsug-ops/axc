@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
+import { TriangleAlert } from "lucide-react";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { prisma } from "@/lib/prisma";
 
 import { kanalHesabiDurumDegistir } from "./actions";
 import { KanalHesabiFormu } from "./kanal-hesabi-formu";
+import { RolSecici } from "./rol-secici";
 
 /**
  * VERİTABANI OKUYAN SAYFA — HER İSTEKTE ÇİZİLİR.
@@ -41,13 +43,21 @@ export default async function KanalHesaplariSayfasi() {
     prisma.channelAccount.findMany({
       include: {
         channel: { select: { name: true } },
-        _count: { select: { purchases: true } },
+        _count: { select: { purchases: true, sales: true } },
       },
       orderBy: [{ channelId: "asc" }, { code: "asc" }],
     }),
   ]);
 
   const t = await getTranslations("KanalHesabi");
+
+  // ROL SEÇİLMEMİŞ HESAP hiçbir formda listelenmez — bunu ekranda
+  // söylemezsek kullanıcı "hesabım kayboldu" der.
+  const rolsuzSayi = hesaplar.filter(
+    (h) => !h.alisIcin && !h.satisIcin,
+  ).length;
+  // ÇİFT ROL genelde kayıt hatasıdır (kullanıcı kararı 12.08.2026).
+  const ciftRolSayi = hesaplar.filter((h) => h.alisIcin && h.satisIcin).length;
   const ortak = await getTranslations("Ortak");
 
   return (
@@ -56,6 +66,30 @@ export default async function KanalHesaplariSayfasi() {
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("aciklamaMetni")}</p>
       </div>
+
+      {rolsuzSayi > 0 ? (
+        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+          <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+            <TriangleAlert className="size-4 shrink-0" />
+            {t("rolSecilmediBaslik", { sayi: rolsuzSayi })}
+          </p>
+          <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+            {t("rolSecilmediMetin")}
+          </p>
+        </div>
+      ) : null}
+
+      {ciftRolSayi > 0 ? (
+        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+          <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+            <TriangleAlert className="size-4 shrink-0" />
+            {t("ciftRolBaslik", { sayi: ciftRolSayi })}
+          </p>
+          <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+            {t("ciftRolMetin")}
+          </p>
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -89,6 +123,7 @@ export default async function KanalHesaplariSayfasi() {
                     <TableHead>{t("hesap")}</TableHead>
                     <TableHead>{ortak("kod")}</TableHead>
                     <TableHead>{ortak("paraBirimi")}</TableHead>
+                    <TableHead>{t("rolBaslik")}</TableHead>
                     <TableHead className="text-right">
                       {t("alimSutunu")}
                     </TableHead>
@@ -110,6 +145,20 @@ export default async function KanalHesaplariSayfasi() {
                         />
                       </TableCell>
                       <TableCell>{hesap.defaultCurrency}</TableCell>
+                      <TableCell>
+                        <RolSecici
+                          hesap={{
+                            id: hesap.id,
+                            ad: hesap.name,
+                            alisIcin: hesap.alisIcin,
+                            satisIcin: hesap.satisIcin,
+                            alimSayisi: hesap._count.purchases,
+                            satisSayisi: hesap._count.sales,
+                            payoutDays: hesap.payoutDays,
+                            isGunuMu: hesap.payoutDaysAreBusinessDays,
+                          }}
+                        />
+                      </TableCell>
                       <TableCell className="text-right">
                         {hesap._count.purchases}
                       </TableCell>

@@ -23,7 +23,7 @@ export default async function YeniSatisSayfasi() {
   const t = await getTranslations("Satis");
 
   const hesapKayitlari = await prisma.channelAccount.findMany({
-    where: { isActive: true },
+    where: { isActive: true, satisIcin: true },
     include: { channel: { select: { name: true } } },
     orderBy: [{ channelId: "asc" }, { name: "asc" }],
   });

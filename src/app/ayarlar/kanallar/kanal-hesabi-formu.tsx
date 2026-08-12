@@ -21,6 +21,8 @@ import { kanalHesabiEkle, type KanalHesabiDurumu } from "./actions";
 export type KanalSecenegi = { id: string; name: string };
 
 const BOS = {
+  /** VARSAYILANI YOK: kullanıcı bakmadan yanlış rolde hesap açmasın. */
+  rol: "" as "" | "ALIS" | "SATIS",
   channelId: "",
   paraBirimi: "TRY" as "TRY" | "EUR",
   name: "",
@@ -56,6 +58,46 @@ export function KanalHesabiFormu({ kanallar }: { kanallar: KanalSecenegi[] }) {
       {/* Radix Select kontrollü; değerleri gizli alanlarla gönderiyoruz. */}
       <input type="hidden" name="channelId" value={alanlar.channelId} />
       <input type="hidden" name="defaultCurrency" value={alanlar.paraBirimi} />
+      <input type="hidden" name="rol" value={alanlar.rol} />
+
+      {/* ROL — ZORUNLU TEK SEÇİM, VARSAYILANSIZ.
+          Bir hesap ya mal ALDIĞINIZ hesaptır ya mal SATTIĞINIZ mağaza.
+          Aynı pazaryerinde ikisi de varsa AYRI hesap olarak tanımlanır. */}
+      <fieldset className="space-y-2 rounded-md border p-3">
+        <legend className="px-1 text-sm font-medium">
+          {t("rolBaslik")} *
+        </legend>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {(
+            [
+              ["ALIS", t("rolAlis"), t("rolAlisAciklama")],
+              ["SATIS", t("rolSatis"), t("rolSatisAciklama")],
+            ] as const
+          ).map(([deger, baslik, aciklama]) => (
+            <label
+              key={deger}
+              className={`flex cursor-pointer gap-3 rounded-md border p-3 transition-colors ${
+                alanlar.rol === deger ? "border-primary bg-accent" : "hover:bg-accent/50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="rol-secim"
+                className="mt-1 size-4 shrink-0"
+                checked={alanlar.rol === deger}
+                onChange={() => guncelle({ rol: deger })}
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">{baslik}</span>
+                <span className="text-muted-foreground block text-xs">
+                  {aciklama}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+        <p className="text-muted-foreground text-xs">{t("rolNotu")}</p>
+      </fieldset>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">

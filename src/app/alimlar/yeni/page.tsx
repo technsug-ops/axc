@@ -26,7 +26,7 @@ export async function generateMetadata() {
 export default async function YeniAlimSayfasi() {
   const [hesapKayitlari, kartKayitlari, tedarikciKayitlari] = await Promise.all([
     prisma.channelAccount.findMany({
-      where: { isActive: true },
+      where: { isActive: true, alisIcin: true },
       include: { channel: { select: { name: true } } },
       orderBy: [{ channelId: "asc" }, { code: "asc" }],
     }),

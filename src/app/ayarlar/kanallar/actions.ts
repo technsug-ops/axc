@@ -19,8 +19,16 @@ function hesapSemasi(m: {
   adZorunlu: string;
   adCokUzun: string;
   paraBirimiGecersiz: string;
+  rolZorunlu: string;
 }) {
   return z.object({
+    /**
+     * ROL ZORUNLU, VARSAYILANI YOK. Bir hesap ya mal ALDIĞINIZ hesaptır ya
+     * mal SATTIĞINIZ mağaza — "ikisi de" normal bir durum değildir
+     * (kullanıcı kararı 12.08.2026). Varsayılan konsaydı kullanıcı hiç
+     * bakmadan yanlış rolde hesap açardı.
+     */
+    rol: z.enum(["ALIS", "SATIS"], { message: m.rolZorunlu }),
     channelId: z.string().trim().min(1, m.kanalSecilmeli),
     code: z.string().trim().min(1, m.kodZorunlu).max(191, m.kodCokUzun),
     name: z.string().trim().min(1, m.adZorunlu).max(191, m.adCokUzun),
@@ -29,6 +37,17 @@ function hesapSemasi(m: {
       message: m.paraBirimiGecersiz,
     }),
   });
+}
+
+/** Hesap listesini okuyan tüm ekranlar tazelenir. */
+function tazele() {
+  revalidatePath("/ayarlar/kanallar");
+  // Bu formlar hesap listesini rolüne göre süzüyor; tazelenmezse rol
+  // değişikliği listelerde görünmez.
+  revalidatePath("/alimlar/yeni");
+  revalidatePath("/satislar/yeni");
+  revalidatePath("/kanal-sku");
+  revalidatePath("/hakedis/yukle");
 }
 
 export async function kanalHesabiEkle(
@@ -44,9 +63,11 @@ export async function kanalHesabiEkle(
     adZorunlu: t("adZorunlu"),
     adCokUzun: t("adCokUzun"),
     paraBirimiGecersiz: t("paraBirimiGecersiz"),
+    rolZorunlu: t("rolZorunlu"),
   });
 
   const sonuc = sema.safeParse({
+    rol: String(formData.get("rol") ?? ""),
     channelId: String(formData.get("channelId") ?? ""),
     code: String(formData.get("code") ?? ""),
     name: String(formData.get("name") ?? ""),
@@ -83,6 +104,10 @@ export async function kanalHesabiEkle(
         name,
         externalId: externalId || null,
         defaultCurrency,
+        // Tek seçim: XOR. Şemada iki bayrak var ama form ikisini birden
+        // açmaz — çift rol yalnız geçmiş kayıtlarda görülebilir.
+        alisIcin: sonuc.data.rol === "ALIS",
+        satisIcin: sonuc.data.rol === "SATIS",
       },
     });
   } catch (e) {
@@ -90,12 +115,97 @@ export async function kanalHesabiEkle(
     return { hatalar: [t("eklenemedi")] };
   }
 
-  revalidatePath("/ayarlar/kanallar");
-  // Alım ve satış formları hesap listesini buradan alıyor; ikisi de
-  // statik üretiliyor, tazelenmezse yeni hesap listede görünmez.
-  revalidatePath("/alimlar/yeni");
-  revalidatePath("/satislar/yeni");
+  tazele();
   return { basari: t("eklendi", { kanal: kanal.name, ad: name }) };
+}
+
+/**
+ * ============================================================================
+ *  ROL DEĞİŞTİRME — KAYDI OLAN ROL KALDIRILAMAZ
+ * ----------------------------------------------------------------------------
+ *  Bir hesabın alım kaydı varken "artık satış hesabı" demek, o alımları
+ *  ait olmadıkları bir role bırakmaktır. Ekranlar role göre süzüldüğü için
+ *  o alımlar hiçbir formda görünmez hâle gelirdi — sessiz veri kaybı.
+ *
+ *  Bu yüzden kaldırma REDDEDİLİR ve NEDENİ söylenir: kaç kayıt engelliyor.
+ *  Kullanıcı önce kayıtları doğru hesaba taşır.
+ * ============================================================================
+ */
+export async function kanalHesabiRolDegistir(
+  _oncekiDurum: KanalHesabiDurumu,
+  formData: FormData,
+): Promise<KanalHesabiDurumu> {
+  const t = await getTranslations("KanalHesabi");
+
+  const id = String(formData.get("id") ?? "");
+  const rol = String(formData.get("rol") ?? "");
+  if (!id) return { hatalar: [t("kimlikBulunamadi")] };
+  if (rol !== "ALIS" && rol !== "SATIS") {
+    return { hatalar: [t("rolZorunlu")] };
+  }
+
+  const hesap = await prisma.channelAccount.findUnique({
+    where: { id },
+    include: { _count: { select: { purchases: true, sales: true } } },
+  });
+  if (!hesap) return { hatalar: [t("bulunamadi")] };
+
+  // Kaldırılmak istenen rolde kayıt var mı?
+  if (rol === "SATIS" && hesap._count.purchases > 0) {
+    return {
+      hatalar: [t("rolKaldirilamazAlim", { sayi: hesap._count.purchases })],
+    };
+  }
+  if (rol === "ALIS" && hesap._count.sales > 0) {
+    return {
+      hatalar: [t("rolKaldirilamazSatis", { sayi: hesap._count.sales })],
+    };
+  }
+
+  await prisma.channelAccount.update({
+    where: { id },
+    data: { alisIcin: rol === "ALIS", satisIcin: rol === "SATIS" },
+  });
+
+  tazele();
+  return {
+    basari: t("rolDegisti", {
+      ad: hesap.name,
+      rol: rol === "ALIS" ? t("rolAlis") : t("rolSatis"),
+    }),
+  };
+}
+
+/** Vade ayarı — YALNIZ satış hesabında anlamlı. */
+export async function kanalHesabiVadeGuncelle(
+  _oncekiDurum: KanalHesabiDurumu,
+  formData: FormData,
+): Promise<KanalHesabiDurumu> {
+  const t = await getTranslations("KanalHesabi");
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { hatalar: [t("kimlikBulunamadi")] };
+
+  const hesap = await prisma.channelAccount.findUnique({ where: { id } });
+  if (!hesap) return { hatalar: [t("bulunamadi")] };
+  if (!hesap.satisIcin) return { hatalar: [t("vadeYalnizSatis")] };
+
+  const ham = String(formData.get("payoutDays") ?? "").trim();
+  const gun = ham === "" ? null : Number(ham);
+  if (gun !== null && (!Number.isInteger(gun) || gun < 0 || gun > 365)) {
+    return { hatalar: [t("vadeGecersiz")] };
+  }
+
+  await prisma.channelAccount.update({
+    where: { id },
+    data: {
+      payoutDays: gun,
+      payoutDaysAreBusinessDays: formData.get("isGunu") === "1",
+    },
+  });
+
+  tazele();
+  return { basari: t("vadeGuncellendi", { ad: hesap.name }) };
 }
 
 /** Hesap silinmez; alımlarla ilişkili olabilir. Sadece aktif/pasif yapılır. */
@@ -116,9 +226,7 @@ export async function kanalHesabiDurumDegistir(
     data: { isActive: !hesap.isActive },
   });
 
-  revalidatePath("/ayarlar/kanallar");
-  revalidatePath("/alimlar/yeni");
-  revalidatePath("/satislar/yeni");
+  tazele();
   return {
     basari: hesap.isActive
       ? t("pasifeAlindi", { ad: hesap.name })

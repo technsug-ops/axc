@@ -42,7 +42,7 @@ export default async function AlimDuzenleSayfasi({
       },
     }),
     prisma.channelAccount.findMany({
-      where: { isActive: true },
+      where: { isActive: true, alisIcin: true },
       include: { channel: { select: { name: true } } },
       orderBy: { name: "asc" },
     }),
