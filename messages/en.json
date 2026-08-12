@@ -1608,5 +1608,13 @@
     "silindi": "",
     "malKabul": "",
     "iadeAlindi": ""
+  },
+  "Sayfalama": {
+    "ozet": "",
+    "toplamKayit": "",
+    "ilkSayfa": "",
+    "oncekiSayfa": "",
+    "sonrakiSayfa": "",
+    "sonSayfa": ""
   }
 }

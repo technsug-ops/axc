@@ -1608,5 +1608,13 @@
     "silindi": "Kayıt silindi.",
     "malKabul": "Mal kabul yapıldı, stok güncellendi.",
     "iadeAlindi": "İade kaydedildi."
+  },
+  "Sayfalama": {
+    "ozet": "{toplam} kayıt · sayfa {sayfa}/{sonSayfa}",
+    "toplamKayit": "{toplam} kayıt",
+    "ilkSayfa": "İlk sayfa",
+    "oncekiSayfa": "Önceki sayfa",
+    "sonrakiSayfa": "Sonraki sayfa",
+    "sonSayfa": "Son sayfa"
   }
 }

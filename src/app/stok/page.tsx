@@ -16,8 +16,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SayfalamaCubugu } from "@/components/sayfalama";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
+import { sayfaCoz } from "@/lib/sayfalama";
 import { sonHareketTarihleri, varyantStoklari } from "@/lib/stok";
 
 import { StokArama } from "./stok-arama";
@@ -30,25 +32,33 @@ export async function generateMetadata() {
 export default async function StokSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; sayfa?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, sayfa } = await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
   const t = await getTranslations("Stok");
   const ortak = await getTranslations("Ortak");
 
+  const suzgec = arama
+    ? {
+        OR: [
+          { sku: { contains: arama } },
+          { companySku: { contains: arama } },
+          { barcode: { contains: arama } },
+          { product: { name: { contains: arama } } },
+        ],
+      }
+    : undefined;
+
+  // ÖNCE SAY, SONRA SAYFAYI ÇEK (bkz. lib/sayfalama.ts).
+  const toplam = await prisma.productVariant.count({ where: suzgec });
+  const sayfalama = sayfaCoz(sayfa, toplam);
+
   const varyantlar = await prisma.productVariant.findMany({
-    where: arama
-      ? {
-          OR: [
-            { sku: { contains: arama } },
-            { companySku: { contains: arama } },
-            { barcode: { contains: arama } },
-            { product: { name: { contains: arama } } },
-          ],
-        }
-      : undefined,
+    where: suzgec,
+    skip: sayfalama.atla,
+    take: sayfalama.boyut,
     include: {
       product: { select: { id: true, name: true, brand: true } },
       location: { select: { code: true } },
@@ -233,6 +243,12 @@ export default async function StokSayfasi({
               />
             ))}
           </div>
+
+          <SayfalamaCubugu
+            sayfalama={sayfalama}
+            yol="/stok"
+            parametreler={{ q: arama }}
+          />
         </>
       )}
 

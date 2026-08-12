@@ -7,6 +7,7 @@ import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
+import { SayfalamaCubugu } from "@/components/sayfalama";
 import { UzunAd } from "@/components/uzun-ad";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
+import { sayfaCoz } from "@/lib/sayfalama";
 import { urunStoklari } from "@/lib/stok";
 
 import { SilButonu } from "./sil-butonu";
@@ -33,26 +35,35 @@ export async function generateMetadata() {
 export default async function UrunlerSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; sayfa?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, sayfa } = await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
   const t = await getTranslations("Urunler");
   const ortak = await getTranslations("Ortak");
 
+  const suzgec = arama
+    ? {
+        OR: [
+          { name: { contains: arama } },
+          { brand: { contains: arama } },
+          { variants: { some: { sku: { contains: arama } } } },
+          { variants: { some: { companySku: { contains: arama } } } },
+          { variants: { some: { barcode: { contains: arama } } } },
+        ],
+      }
+    : undefined;
+
+  // ÖNCE SAY, SONRA SAYFAYI ÇEK. Sayım olmadan "kaç sayfa var"
+  // bilinemez; kullanıcı kararı gereği toplam sayı da ekranda yazıyor.
+  const toplam = await prisma.product.count({ where: suzgec });
+  const sayfalama = sayfaCoz(sayfa, toplam);
+
   const urunler = await prisma.product.findMany({
-    where: arama
-      ? {
-          OR: [
-            { name: { contains: arama } },
-            { brand: { contains: arama } },
-            { variants: { some: { sku: { contains: arama } } } },
-            { variants: { some: { companySku: { contains: arama } } } },
-            { variants: { some: { barcode: { contains: arama } } } },
-          ],
-        }
-      : undefined,
+    where: suzgec,
+    skip: sayfalama.atla,
+    take: sayfalama.boyut,
     include: {
       variants: {
         select: {
@@ -263,6 +274,12 @@ export default async function UrunlerSayfasi({
               );
             })}
           </div>
+
+          <SayfalamaCubugu
+            sayfalama={sayfalama}
+            yol="/urunler"
+            parametreler={{ q: arama }}
+          />
         </>
       )}
     </div>
