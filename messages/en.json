@@ -1597,7 +1597,10 @@
     "hataTabloTaninmadi": "",
     "hataSayimTutmadi": "",
     "hataOnayYanlis": "",
-    "hataBilinmeyen": ""
+    "hataBilinmeyen": "",
+    "girisKaybiBaslik": "",
+    "girisKaybiMetin": "",
+    "girisKaybiCare": ""
   },
   "Bildirim": {
     "eklendi": "",

@@ -132,6 +132,15 @@ export type FarkRaporu = {
   kayipVar: boolean;
   /** Kargo tarifeleri dosyada yok — seed ile tamamlanacak. */
   tarifeSeedGerekli: boolean;
+  /**
+   * GİRİŞ HESABI KAYBI: şu an kullanıcı var ama yedekte YOK.
+   *
+   * Bu, diğer tablo kayıplarından farklı bir şeydir — geri yükleme
+   * bittiğinde sisteme GİREMEZSİNİZ ve düzeltmek için sunucuya komut
+   * satırından erişmek gerekir. Ayrı bayrak, ekranda ayrı ve en sert
+   * uyarı. _12.08.2026: eski biçimli bir yedekte User 2 -> 0 görüldü._
+   */
+  girisKaybi: boolean;
 };
 
 /**
@@ -171,6 +180,10 @@ export function farkRaporu(
     tarifeSeedGerekli:
       yedek.kargoTarifesiHaric ||
       (yedek.tablolar.CargoTariff?.length ?? 0) === 0,
+    girisKaybi: (() => {
+      const kullanici = satirlar.find((s) => s.tablo === "User");
+      return kullanici !== undefined && kullanici.mevcut > 0 && kullanici.gelecek === 0;
+    })(),
   };
 }
 

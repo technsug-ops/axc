@@ -181,9 +181,14 @@ async function main() {
   // -------------------------------------------------------------------- 4
   console.log("\n4) SON GECE YEDEĞİ");
   if (yapi.blobJetonu === null) {
+    // DİKKAT: bu "depo bağlı değil" DEMEK DEĞİL. Depo Vercel'de bağlı
+    // olabilir ve gece yedekleri alınıyor olabilir; bu betik SİZİN
+    // BİLGİSAYARINIZDA çalışıyor ve depoyu okumak için jetona ihtiyacı var.
+    // İlk yazımda mesaj bunu ayırmıyordu ve "Blob'u zaten bağlamıştık"
+    // cevabını aldı — haklı olarak (12.08.2026).
     atla(
-      "yedek deposu jetonu yok",
-      `${CANLI_DOSYA} içine ekleyin:  BLOB_READ_WRITE_TOKEN=... (Vercel > Storage > Blob)`,
+      "bu bilgisayarda depo jetonu tanımlı değil",
+      `Depo Vercel'de bağlı olsa bile bu betik onu okuyamaz. Kontrolü açmak için\n     ${CANLI_DOSYA} içine ekleyin:  BLOB_READ_WRITE_TOKEN=...\n     (Vercel > Storage > Blob > .env.local sekmesindeki değer)`,
     );
   } else {
     try {

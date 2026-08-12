@@ -360,6 +360,23 @@ export function GeriYuklemeAkisi({
               </div>
             </dl>
 
+            {/* GİRİŞ KAYBI EN ÜSTTE VE EN SERT: diğer kayıplar veri
+                kaybıdır, bu KİLİTLENMEDİR. Sarı kutunun içinde bir satır
+                olarak kalsaydı, uzun listede gözden kaçardı. */}
+            {fark.girisKaybi ? (
+              <div
+                role="alert"
+                className="space-y-1 rounded-md border-2 border-red-600/60 bg-red-500/10 p-4 text-sm text-red-800 dark:border-red-400/60 dark:text-red-300"
+              >
+                <p className="flex items-center gap-2 text-base font-semibold">
+                  <TriangleAlert className="size-5 shrink-0" />
+                  {t("girisKaybiBaslik")}
+                </p>
+                <p>{t("girisKaybiMetin")}</p>
+                <p>{t("girisKaybiCare")}</p>
+              </div>
+            ) : null}
+
             {/* En önemli cümle: ne kadar silinip ne kadar geleceği. */}
             <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
               <p className="font-medium">
