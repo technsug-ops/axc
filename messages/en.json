@@ -363,7 +363,16 @@
     "silEngelSatis": "",
     "silEngelKanalSku": "",
     "silEngelHakedis": "",
-    "silNotu": ""
+    "silNotu": "",
+    "grupSatis": "",
+    "grupSatisAciklama": "",
+    "grupSatisBos": "",
+    "grupAlis": "",
+    "grupAlisAciklama": "",
+    "grupAlisBos": "",
+    "grupRolsuz": "",
+    "grupRolsuzAciklama": "",
+    "grupRolsuzBos": ""
   },
   "Kart": {
     "etiketZorunlu": "",

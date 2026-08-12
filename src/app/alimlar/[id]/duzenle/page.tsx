@@ -41,6 +41,10 @@ export default async function AlimDuzenleSayfasi({
         },
       },
     }),
+    // Süzgeç sonradan konduğu için MEVCUT hesap listede olmayabilir
+    // (rolü değişmiş ya da pasife alınmış olabilir). Listede olmasaydı
+    // açılır kutu boş görünür, kaydedince hesap SESSİZCE SİLİNİRDİ.
+    // Bu yüzden aşağıda mevcut hesap ayrıca ekleniyor.
     prisma.channelAccount.findMany({
       where: { isActive: true, alisIcin: true },
       include: { channel: { select: { name: true } } },
@@ -58,6 +62,19 @@ export default async function AlimDuzenleSayfasi({
   ]);
 
   if (!alim) notFound();
+
+  // Mevcut hesap süzgece takılıyorsa listeye geri konur.
+  const hesapListesi = [...hesapKayitlari];
+  if (
+    alim.channelAccountId &&
+    !hesapListesi.some((h) => h.id === alim.channelAccountId)
+  ) {
+    const mevcut = await prisma.channelAccount.findUnique({
+      where: { id: alim.channelAccountId },
+      include: { channel: { select: { name: true } } },
+    });
+    if (mevcut) hesapListesi.unshift(mevcut);
+  }
 
   const malKabulVar = alim.items.some((k) =>
     k.stockMovements.some((h) => h.quantityDelta > 0),
@@ -122,7 +139,7 @@ export default async function AlimDuzenleSayfasi({
           ad: s2.name,
           kod: s2.code!,
         }))}
-        hesaplar={hesapKayitlari.map((h) => ({
+        hesaplar={hesapListesi.map((h) => ({
           id: h.id,
           etiket: `${h.channel.name} — ${h.name}`,
           paraBirimi: h.defaultCurrency,

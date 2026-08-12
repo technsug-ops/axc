@@ -68,6 +68,14 @@ export default async function SatisDetaySayfasi({
 
   if (!satis) notFound();
 
+  // Mevcut hesap SATIŞ süzgecine takılıyorsa (rolü ALIŞ'a çevrilmişse)
+  // yine de seçenekte durur; yoksa diyalog boş açılır ve kullanıcı
+  // hangi hesapta olduğunu göremez.
+  const hesapSecenekleri = [...satisHesaplari];
+  if (!hesapSecenekleri.some((h) => h.id === satis.channelAccountId)) {
+    hesapSecenekleri.unshift(satis.channelAccount);
+  }
+
   const bicim = await bicimlendirici();
   const t = await getTranslations("Satis");
   const ortak = await getTranslations("Ortak");
@@ -236,7 +244,7 @@ export default async function SatisDetaySayfasi({
               saleId={satis.id}
               mevcutHesapId={satis.channelAccountId}
               mevcutKanalId={satis.channelAccount.channelId}
-              secenekler={satisHesaplari.map((h) => ({
+              secenekler={hesapSecenekleri.map((h) => ({
                 id: h.id,
                 etiket: `${h.channel.name} — ${h.name}`,
                 channelId: h.channelId,

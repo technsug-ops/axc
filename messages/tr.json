@@ -363,7 +363,16 @@
     "silEngelSatis": "{sayi} satış",
     "silEngelKanalSku": "{sayi} kanal SKU",
     "silEngelHakedis": "{sayi} hakediş kaydı",
-    "silNotu": "Yalnız hiç kullanılmamış hesap silinebilir. Kaydı olan hesap pasife alınır: hiçbir formda çıkmaz ama geçmişi bozulmaz."
+    "silNotu": "Yalnız hiç kullanılmamış hesap silinebilir. Kaydı olan hesap pasife alınır: hiçbir formda çıkmaz ama geçmişi bozulmaz.",
+    "grupSatis": "Satış hesapları (mağazalarınız)",
+    "grupSatisAciklama": "Mal SATTIĞINIZ mağaza hesapları. Satış, Kanal SKU ve hakediş ekranlarında bunlar çıkar.",
+    "grupSatisBos": "Henüz satış hesabı yok. Satış girmek ve hakediş yüklemek için en az bir mağaza hesabı gerekir.",
+    "grupAlis": "Alış hesapları",
+    "grupAlisAciklama": "Mal ALDIĞINIZ hesaplar. Kampanya döneminde pazaryerinden alım yapmak için açılan hesaplar buraya girer; alım formunda bunlar çıkar.",
+    "grupAlisBos": "Henüz alış hesabı yok.",
+    "grupRolsuz": "Rolü seçilmemiş hesaplar",
+    "grupRolsuzAciklama": "Bu hesaplar hiçbir formda listelenmez. Alış mı satış mı olduğunu seçin.",
+    "grupRolsuzBos": "Rolü seçilmemiş hesap yok."
   },
   "Kart": {
     "etiketZorunlu": "Kart etiketi zorunlu",

@@ -69,6 +69,36 @@ export default async function KanalHesaplariSayfasi() {
   const ciftRolSayi = hesaplar.filter((h) => h.alisIcin && h.satisIcin).length;
   const ortak = await getTranslations("Ortak");
 
+  /**
+   * ÜÇ AYRI BÖLÜM. Rolü olmayan hesap görünmez olsaydı kullanıcı onu hiç
+   * fark etmez, "hesabım kayboldu" derdi; kendi bölümünde durur.
+   * Çift rollü hesap ALIŞ bölümünde çıkar ve orada uyarısını taşır —
+   * düzeltilecek yer alım tarafıdır (satışları taşınacak).
+   */
+  const gruplar = [
+    {
+      anahtar: "satis",
+      baslik: t("grupSatis"),
+      aciklama: t("grupSatisAciklama"),
+      bosMetin: t("grupSatisBos"),
+      hesaplar: hesaplar.filter((h) => h.satisIcin && !h.alisIcin),
+    },
+    {
+      anahtar: "alis",
+      baslik: t("grupAlis"),
+      aciklama: t("grupAlisAciklama"),
+      bosMetin: t("grupAlisBos"),
+      hesaplar: hesaplar.filter((h) => h.alisIcin),
+    },
+    {
+      anahtar: "rolsuz",
+      baslik: t("grupRolsuz"),
+      aciklama: t("grupRolsuzAciklama"),
+      bosMetin: t("grupRolsuzBos"),
+      hesaplar: hesaplar.filter((h) => !h.alisIcin && !h.satisIcin),
+    },
+  ].filter((g) => g.anahtar !== "rolsuz" || g.hesaplar.length > 0);
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
@@ -109,19 +139,22 @@ export default async function KanalHesaplariSayfasi() {
         </CardContent>
       </Card>
 
-      <Card>
+      {/* ALICI VE SATICI HESAPLARI AYRI BÖLÜMLERDE (kullanıcı isteği
+          12.08.2026). Tek karışık listede "hangisi mağazam?" sorusu her
+          seferinde yeniden soruluyordu. Rol seçilmemiş hesaplar da kendi
+          bölümünde durur — orada oldukları için görülüp düzeltilirler. */}
+      {gruplar.map((grup) => (
+      <Card key={grup.anahtar}>
         <CardHeader>
           <CardTitle>
-            {t("tanimliHesaplar", { sayi: hesaplar.length })}
+            {grup.baslik} ({grup.hesaplar.length})
           </CardTitle>
+          <p className="text-muted-foreground text-sm">{grup.aciklama}</p>
         </CardHeader>
         <CardContent>
-          {hesaplar.length === 0 ? (
+          {grup.hesaplar.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="font-medium">{t("bosBaslik")}</p>
-              <p className="text-muted-foreground mt-1 text-sm">
-                {t("bosIpucu")}
-              </p>
+              <p className="text-muted-foreground text-sm">{grup.bosMetin}</p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border">
@@ -141,7 +174,7 @@ export default async function KanalHesaplariSayfasi() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {hesaplar.map((hesap) => (
+                  {grup.hesaplar.map((hesap) => (
                     <TableRow key={hesap.id}>
                       <TableCell className="font-medium">
                         {hesap.channel.name}
@@ -210,6 +243,7 @@ export default async function KanalHesaplariSayfasi() {
           <p className="text-muted-foreground mt-3 text-xs">{t("silNotu")}</p>
         </CardContent>
       </Card>
+      ))}
     </div>
   );
 }
