@@ -32,7 +32,7 @@ import { kanalSkuEkle, type KanalSkuDurumu } from "./actions";
 export function YeniEsleme({
   hesaplar,
 }: {
-  hesaplar: { id: string; etiket: string }[];
+  hesaplar: { id: string; etiket: string; satisIcin: boolean }[];
 }) {
   const t = useTranslations("KanalSku");
   const ortak = useTranslations("Ortak");
@@ -48,6 +48,10 @@ export function YeniEsleme({
   const [hesapId, setHesapId] = useState("");
   const [kanalKodu, setKanalKodu] = useState("");
   const [oran, setOran] = useState("");
+
+  /** Secilen hesap SATIS mi — komisyon yalniz o zaman sorulur. */
+  const seciliSatisMi =
+    hesaplar.find((h) => h.id === hesapId)?.satisIcin ?? true;
   const [araniyor, aramayaBasla] = useTransition();
 
   // Başarılı kayıttan sonra formu boşalt — arka arkaya eşleme girilir.
@@ -172,18 +176,28 @@ export function YeniEsleme({
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="ks-oran">{t("oranEtiketi")}</Label>
-          <Input
-            id="ks-oran"
-            name="commissionRate"
-            value={oran}
-            onChange={(e) => setOran(e.target.value)}
-            inputMode="decimal"
-            placeholder={t("oranIpucu")}
-            autoComplete="off"
-          />
-        </div>
+        {/* Komisyon YALNIZ satis hesabinda sorulur (bkz. satir-duzenle). */}
+        {seciliSatisMi ? (
+          <div className="space-y-2">
+            <Label htmlFor="ks-oran">{t("oranEtiketi")}</Label>
+            <Input
+              id="ks-oran"
+              name="commissionRate"
+              value={oran}
+              onChange={(e) => setOran(e.target.value)}
+              inputMode="decimal"
+              placeholder={t("oranIpucu")}
+              autoComplete="off"
+            />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label>{t("oranEtiketi")}</Label>
+            <p className="text-muted-foreground pt-2 text-sm">
+              {t("alisKoduNotu")}
+            </p>
+          </div>
+        )}
       </div>
 
       <p className="text-muted-foreground text-xs">{t("kanalKoduNotu")}</p>

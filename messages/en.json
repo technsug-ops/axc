@@ -1215,7 +1215,10 @@
     "hesapYokBaslik": "",
     "hesapYokIpucu": "",
     "cakismaMetni": "",
-    "cakismaEslemeyeGit": ""
+    "cakismaEslemeyeGit": "",
+    "rolSatis": "",
+    "rolAlis": "",
+    "alisKoduNotu": ""
   },
   "DisaAktarma": {
     "excelIndir": "",

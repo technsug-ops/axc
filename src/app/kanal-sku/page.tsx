@@ -18,6 +18,9 @@ import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { prisma } from "@/lib/prisma";
 
 import { KanalSkuFiltresi } from "./filtre";
+import { SayfalamaCubugu } from "@/components/sayfalama";
+import { sayfaCoz } from "@/lib/sayfalama";
+
 import { SatirDuzenle } from "./satir-duzenle";
 import { YeniEsleme } from "./yeni-esleme";
 
@@ -29,9 +32,9 @@ export async function generateMetadata() {
 export default async function KanalSkuSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ hesap?: string; q?: string; eksik?: string }>;
+  searchParams: Promise<{ hesap?: string; q?: string; eksik?: string; sayfa?: string }>;
 }) {
-  const { hesap, q, eksik } = await searchParams;
+  const { hesap, q, eksik, sayfa } = await searchParams;
   const seciliHesap = hesap ?? "";
   const arama = (q ?? "").trim();
   const eksikOran = eksik === "1";
@@ -40,22 +43,35 @@ export default async function KanalSkuSayfasi({
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
 
+  const suzgec = {
+    ...(seciliHesap ? { channelAccountId: seciliHesap } : {}),
+    // "Oranı eksik" süzgeci YALNIZ SATIŞ hesaplarında anlamlı: alış
+    // hesabındaki kodun komisyonu olmaz, boş olması eksiklik değildir.
+    ...(eksikOran
+      ? { commissionRate: null, channelAccount: { satisIcin: true } }
+      : {}),
+    ...(arama
+      ? {
+          OR: [
+            { channelSku: { contains: arama } },
+            { variant: { sku: { contains: arama } } },
+            { variant: { companySku: { contains: arama } } },
+            { variant: { product: { name: { contains: arama } } } },
+          ],
+        }
+      : {}),
+  };
+
+  // ÖNCE SAY, SONRA SAYFAYI ÇEK. Göçten sonra bu ekranda 1039 kayıt var;
+  // sayfalamasız hâli /urunler'i çökerten desenin aynısıydı.
+  const toplam = await prisma.channelSku.count({ where: suzgec });
+  const sayfalama = sayfaCoz(sayfa, toplam);
+
   const [kayitlar, hesapKayitlari, eksikOranSayisi] = await Promise.all([
     prisma.channelSku.findMany({
-      where: {
-        ...(seciliHesap ? { channelAccountId: seciliHesap } : {}),
-        ...(eksikOran ? { commissionRate: null } : {}),
-        ...(arama
-          ? {
-              OR: [
-                { channelSku: { contains: arama } },
-                { variant: { sku: { contains: arama } } },
-                { variant: { companySku: { contains: arama } } },
-                { variant: { product: { name: { contains: arama } } } },
-              ],
-            }
-          : {}),
-      },
+      where: suzgec,
+      skip: sayfalama.atla,
+      take: sayfalama.boyut,
       include: {
         variant: {
           select: {
@@ -65,22 +81,34 @@ export default async function KanalSkuSayfasi({
           },
         },
         channelAccount: {
-          select: { name: true, channel: { select: { name: true } } },
+          select: {
+            name: true,
+            satisIcin: true,
+            alisIcin: true,
+            channel: { select: { name: true } },
+          },
         },
       },
       orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
     }),
+    // ALIŞ HESAPLARI DA LİSTELENİR (kullanıcı kararı 12.08.2026):
+    // ürünün tedarikçi kataloğundaki kodu (Amazon ASIN vb.) da bir TAKMA
+    // ADDIR ve aynı tabloya yazılır. Komisyon alanı yalnız satış hesabında
+    // görünür; alışta anlamı yoktur.
     prisma.channelAccount.findMany({
-      where: { isActive: true, satisIcin: true },
+      where: { isActive: true, OR: [{ satisIcin: true }, { alisIcin: true }] },
       include: { channel: { select: { name: true } } },
       orderBy: { name: "asc" },
     }),
-    prisma.channelSku.count({ where: { commissionRate: null } }),
+    prisma.channelSku.count({
+      where: { commissionRate: null, channelAccount: { satisIcin: true } },
+    }),
   ]);
 
   const hesaplar = hesapKayitlari.map((h) => ({
     id: h.id,
     etiket: hesapEtiketi(h.channel.name, h.name),
+    satisIcin: h.satisIcin,
   }));
 
   const filtreVar = Boolean(seciliHesap || arama || eksikOran);
@@ -111,6 +139,9 @@ export default async function KanalSkuSayfasi({
         hesapEtiketi={hesapAdi(kayit)}
         kanalKodu={kayit.channelSku}
         oran={oranMetni(kayit)}
+        // Komisyon YALNIZ satis hesabinda anlamli: alis hesabindaki kod
+        // urunun tedarikci katalogundaki kodudur, komisyonu olmaz.
+        oranGosterilsin={kayit.channelAccount.satisIcin}
         aktifMi={kayit.isActive}
       />
     );
@@ -165,7 +196,7 @@ export default async function KanalSkuSayfasi({
 
       <div>
         <p className="text-muted-foreground text-sm">
-          {t("toplamEsleme", { sayi: kayitlar.length })}
+          {t("toplamEsleme", { sayi: toplam })}
         </p>
         <p className="text-muted-foreground text-xs">{t("snapshotNotu")}</p>
       </div>
@@ -207,7 +238,8 @@ export default async function KanalSkuSayfasi({
                     <TableCell>
                       <div className="flex flex-wrap items-center gap-2">
                         <span>{urunAdi(kayit)}</span>
-                        {kayit.commissionRate === null ? (
+                        {kayit.commissionRate === null &&
+                        kayit.channelAccount.satisIcin ? (
                           <Badge
                             variant="outline"
                             className="border-amber-500/50 text-amber-700 dark:text-amber-400"
@@ -227,7 +259,16 @@ export default async function KanalSkuSayfasi({
                       />
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">
-                      {hesapAdi(kayit)}
+                      <span className="flex items-center gap-2">
+                        {hesapAdi(kayit)}
+                        {/* Rol rozeti: aynı listede alış ve satış kodları yan
+                            yana duruyor, hangisi olduğu görünmeli. */}
+                        <Badge variant="outline" className="text-xs">
+                          {kayit.channelAccount.satisIcin
+                            ? t("rolSatis")
+                            : t("rolAlis")}
+                        </Badge>
+                      </span>
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
                       {kayit.commissionUpdatedAt
@@ -284,6 +325,12 @@ export default async function KanalSkuSayfasi({
               />
             ))}
           </div>
+
+          <SayfalamaCubugu
+            sayfalama={sayfalama}
+            yol="/kanal-sku"
+            parametreler={{ hesap: seciliHesap, q: arama, eksik: eksikOran ? "1" : undefined }}
+          />
         </>
       )}
     </div>

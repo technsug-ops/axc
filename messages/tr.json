@@ -23,7 +23,7 @@
     "giderSablonlari": "Tekrarlayan giderler",
     "rapor": "Dönem raporu",
     "iceAktarma": "Veri içe aktarma",
-    "kanalSku": "Kanal SKU ve komisyon",
+    "kanalSku": "Kanal kodları",
     "disaAktarma": "Dışa aktarma ve yedek",
     "giris": "Giriş",
     "elKitabi": "Kullanıcı El Kitabı",
@@ -617,7 +617,7 @@
     "rapor": "Rapor",
     "veriAktarimi": "Veri Aktarımı",
     "kanalSku": "Kanal SKU",
-    "kanalSkulari": "Kanal SKU",
+    "kanalSkulari": "Kanal kodları",
     "veriDisari": "Dışa Aktarma",
     "elKitabi": "El Kitabı",
     "kartBorcu": "Kart Borcu",
@@ -1155,8 +1155,8 @@
     "uyariNotu": "Bunlar hata değil, bilgi. Aynı ürünü ikinci kez açıyorsanız dosyayı düzeltin; farklı ürünlerse yüklemeye devam edin."
   },
   "KanalSku": {
-    "baslik": "Kanal SKU ve komisyon",
-    "aciklamaMetni": "Bir ürünün hangi pazaryeri hesabında hangi kodla satıldığı ve o kanaldaki komisyon oranı. Oran boş kalırsa satışın kârı hesaplanamaz — raporda «kural eksik» uyarısı bu yüzden çıkar.",
+    "baslik": "Kanal kodları",
+    "aciklamaMetni": "Bir ürünün pazaryerlerindeki TAKMA ADLARI. İç kimliğiniz tektir (SKU = Firma SKU); her hesabın kendi kodu bunun yanında durur. SATIŞ hesabında komisyon oranı da buradan gelir — boş kalırsa satışta kâr hesaplanamaz. ALIŞ hesabında kod, ürünün tedarikçi kataloğundaki karşılığıdır; komisyonu olmaz.",
     "snapshotNotu": "Oranı değiştirmek GEÇMİŞ satışları etkilemez: satış anındaki oran satışa yazılmıştır. Buradaki değer bundan sonraki satışlara önerilir.",
     "yeniEsleme": "Yeni eşleme",
     "varyantAra": "Ürün ara (ad, SKU, Firma SKU veya barkod)",
@@ -1215,7 +1215,10 @@
     "hesapYokBaslik": "Kanal hesabı yok",
     "hesapYokIpucu": "Önce Ayarlar → Kanal Hesapları ekranından en az bir mağaza tanımlayın.",
     "cakismaMetni": "Bu hesapta \"{urun}\" için \"{kod}\" kodlu eşleme zaten var. Yeni kayıt açmak yerine var olanı düzenleyin — iki eşleme komisyon oranını da ikiye böler.",
-    "cakismaEslemeyeGit": "Var olan eşlemeye git"
+    "cakismaEslemeyeGit": "Var olan eşlemeye git",
+    "rolSatis": "satış",
+    "rolAlis": "alış",
+    "alisKoduNotu": "alış kodu — komisyon yok"
   },
   "DisaAktarma": {
     "excelIndir": "Excel indir",

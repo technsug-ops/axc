@@ -40,6 +40,7 @@ export function SatirDuzenle({
   hesapEtiketi,
   kanalKodu,
   oran,
+  oranGosterilsin,
   aktifMi,
 }: {
   kayitId: string;
@@ -48,6 +49,8 @@ export function SatirDuzenle({
   kanalKodu: string;
   /** Boşsa "" — oran girilmemiş demektir. */
   oran: string;
+  /** Komisyon alanı gösterilsin mi — yalnız SATIŞ hesabında anlamlı. */
+  oranGosterilsin: boolean;
   aktifMi: boolean;
 }) {
   const t = useTranslations("KanalSku");
@@ -101,18 +104,27 @@ export function SatirDuzenle({
             className="w-40 font-mono text-xs"
           />
 
-          <Input
-            name="commissionRate"
-            value={alanlar.oran}
-            onChange={(e) =>
-              setAlanlar((o) => ({ ...o, oran: e.target.value }))
-            }
-            inputMode="decimal"
-            placeholder={t("oranIpucu")}
-            aria-label={t("oranEtiketi")}
-            autoComplete="off"
-            className="w-24"
-          />
+          {/* ALIS HESABINDA KOMISYON ALANI YOK: urunun tedarikci
+              katalogundaki kodunun komisyonu olmaz. Bos bir kutu gostermek,
+              doldurulmasi gereken bir sey varmis izlenimi verirdi. */}
+          {oranGosterilsin ? (
+            <Input
+              name="commissionRate"
+              value={alanlar.oran}
+              onChange={(e) =>
+                setAlanlar((o) => ({ ...o, oran: e.target.value }))
+              }
+              inputMode="decimal"
+              placeholder={t("oranIpucu")}
+              aria-label={t("oranEtiketi")}
+              autoComplete="off"
+              className="w-24"
+            />
+          ) : (
+            <span className="text-muted-foreground w-24 text-xs">
+              {t("alisKoduNotu")}
+            </span>
+          )}
 
           <Button type="submit" size="sm" disabled={!degisti || kaydediyor}>
             <Save />

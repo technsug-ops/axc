@@ -25,7 +25,7 @@ export function KanalSkuFiltresi({
   arama,
   eksikOran,
 }: {
-  hesaplar: { id: string; etiket: string }[];
+  hesaplar: { id: string; etiket: string; satisIcin: boolean }[];
   seciliHesap: string;
   arama: string;
   eksikOran: boolean;

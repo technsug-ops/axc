@@ -139,6 +139,17 @@ Canlı sağlık kontrolü (10.08.2026): 12 sayfa 200, tümü 1,3 sn altında ·
       eklendiğinde güncellenmesi gereken listeler" taranacak (dışa aktarma
       listeleri, içe aktarma şablonu, el kitabı sözlüğü).
 
+
+- [ ] **27 katalog kaydı — kanal kodu yok (kullanıcı kararı: şimdilik dokunma)**
+      Kodları pazaryeri deseninde değil (MTKRUPSGVX2, SGBRAUN072195, BD802253…);
+      ön ekler kaynak mağaza gibi duruyor ama TEYİT EDİLMEDİ, tahminle
+      yazılmadı. Üçünün de ortak özelliği: **stok 0 · alım yok · satış yok** —
+      hiç hareket görmemiş katalog kayıtları. Taşımamak bugün hiçbir şeyi
+      bozmuyor. İlk alım ya da satış geldiğinde hangi kanala ait oldukları
+      kendiliğinden belli olur.  idempotenttir: ön ek→kanal
+      eşlemesi verildiğinde ikinci tur güvenle koşar, taşınmışlara dokunmaz.
+      _Karar 12.08.2026._
+
 ## SaaS dönüşümü
 
 - [ ] **Çok-kiracılı (multi-tenant) mimari**
