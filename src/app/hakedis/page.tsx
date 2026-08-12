@@ -24,6 +24,12 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Uzun listelerde gösterilecek en fazla satır. Kesme SESSİZ DEĞİLDİR:
+ * sınırı aşan her listede kaç kalemin gösterilmediği yazar.
+ */
+const LISTE_SINIRI = 100;
+
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
   return { title: tBaslik("hakedis") };
@@ -89,6 +95,31 @@ export default async function HakedisSayfasi() {
   const eslesmemis = kalemler.filter(
     (k) => k.saleId === null && k.orderNo !== null,
   );
+
+  /**
+   * EŞLEŞMEYENLER SİPARİŞ BAZINDA GRUPLANIR.
+   * Bir sipariş 7 kalem olabilir; kalem kalem listelemek 648 satır
+   * demekti ve okunmazdı. Kullanıcının sorduğu soru "hangi siparişler
+   * sistemde yok?" — cevabı sipariş listesidir.
+   *
+   * Uyarıyı sayı olarak yazıp listelemeseydik, "eyleme dönük hata"
+   * ilkesini kendi ekranımızda çiğnerdik: kullanıcı hangi siparişleri
+   * gireceğini göremezdi.
+   */
+  const eslesmeyenSiparisler = [
+    ...eslesmemis
+      .reduce((harita, k) => {
+        const no = k.orderNo!;
+        const m = harita.get(no) ?? { sayi: 0, toplam: 0, paraBirimi: k.currency };
+        m.sayi++;
+        m.toplam += Number(k.amount.toString());
+        harita.set(no, m);
+        return harita;
+      }, new Map<string, { sayi: number; toplam: number; paraBirimi: string }>())
+      .entries(),
+  ]
+    .map(([siparisNo, m]) => ({ siparisNo, ...m }))
+    .sort((a, b) => Math.abs(b.toplam) - Math.abs(a.toplam));
 
   return (
     <div className="space-y-6">
@@ -161,8 +192,51 @@ export default async function HakedisSayfasi() {
                 {t("eslesmemisKalem", { sayi: eslesmemis.length })}
               </p>
               <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
-                {t("eslesmemisNotu")}
+                {t("eslesmemisNotu", { siparis: eslesmeyenSiparisler.length })}
               </p>
+
+              {/* HANGİ SİPARİŞLER — tutara göre, en büyük önce. */}
+              <div className="mt-3 overflow-x-auto rounded-md border bg-background">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{ortak("siparisNo")}</TableHead>
+                      <TableHead className="text-right">
+                        {t("sutunKalem")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("sutunTutar")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {eslesmeyenSiparisler
+                      .slice(0, LISTE_SINIRI)
+                      .map((s2) => (
+                        <TableRow key={s2.siparisNo}>
+                          <TableCell>
+                            <KopyalanabilirKod
+                              deger={s2.siparisNo}
+                              etiket={ortak("siparisNo")}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">{s2.sayi}</TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            {bicim.para(s2.toplam, s2.paraBirimi)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {eslesmeyenSiparisler.length > LISTE_SINIRI ? (
+                <p className="mt-2 text-sm font-medium text-amber-900 dark:text-amber-200">
+                  {t("listeKesildi", {
+                    gosterilen: LISTE_SINIRI,
+                    toplam: eslesmeyenSiparisler.length,
+                  })}
+                </p>
+              ) : null}
             </div>
           ) : null}
 
@@ -269,7 +343,7 @@ export default async function HakedisSayfasi() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {bekleyenler.slice(0, 100).map(({ kayit, durum }) => (
+                      {bekleyenler.slice(0, LISTE_SINIRI).map(({ kayit, durum }) => (
                         <TableRow key={kayit.id}>
                           <TableCell className="whitespace-nowrap">
                             {kayit.dueDate ? (
@@ -319,6 +393,16 @@ export default async function HakedisSayfasi() {
                     </TableBody>
                   </Table>
                 </div>
+                {/* SESSİZ KESME YOK: kaç kalemin gösterilmediği yazar.
+                    Görünmeyen 12 satır, "hepsi bu" sanılmamalı. */}
+                {bekleyenler.length > LISTE_SINIRI ? (
+                  <p className="text-sm font-medium">
+                    {t("listeKesildi", {
+                      gosterilen: LISTE_SINIRI,
+                      toplam: bekleyenler.length,
+                    })}
+                  </p>
+                ) : null}
                 <p className="text-muted-foreground text-xs">
                   {t("faturaNoNotu")}
                 </p>

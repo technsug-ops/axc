@@ -1464,6 +1464,7 @@
     "gecikmeNotu": "Gecikme eşiği {gun} iş günü. Resmî tatiller hesaba katılmadığı için beklenen tarih birkaç gün erken çıkabilir.",
     "vadeYok": "vade yok",
     "eslesmemisKalem": "eşleşmemiş {sayi} kalem",
-    "eslesmemisNotu": "Sipariş numarası sistemde bulunamayan kalemler. Satışı girdiğinizde bağlanabilir."
+    "eslesmemisNotu": "{siparis} siparişin numarası sistemde bulunamadı — o satışlar henüz girilmemiş olabilir. Kalemler yazıldı; satışı girdiğinizde bağlanabilir.",
+    "listeKesildi": "{toplam} kalemin ilk {gosterilen} tanesi gösteriliyor."
   }
 }
