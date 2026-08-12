@@ -2,6 +2,8 @@
 
 import { startTransition, useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
+
+import { bantDisiMi, type KomisyonBandi } from "@/lib/komisyon-bandi";
 import { Power, PowerOff, Save, Trash2 } from "lucide-react";
 
 import {
@@ -41,6 +43,7 @@ export function SatirDuzenle({
   kanalKodu,
   oran,
   oranGosterilsin,
+  bant,
   aktifMi,
 }: {
   kayitId: string;
@@ -51,6 +54,8 @@ export function SatirDuzenle({
   oran: string;
   /** Komisyon alanı gösterilsin mi — yalnız SATIŞ hesabında anlamlı. */
   oranGosterilsin: boolean;
+  /** Hakedişten gelen komisyon bandı — yoksa uyarı verilmez. */
+  bant: KomisyonBandi | null;
   aktifMi: boolean;
 }) {
   const t = useTranslations("KanalSku");
@@ -73,6 +78,18 @@ export function SatirDuzenle({
   >(kanalSkuSil, {});
 
   const degisti = alanlar.kanalKodu !== kanalKodu || alanlar.oran !== oran;
+
+  /**
+   * Girilen oran bandın dışında mı? UYARIDIR, ENGEL DEĞİL — kampanyalı
+   * ürünün oranı bandın dışında olabilir ve bu meşrudur. Amaç yanlış tuşu
+   * yakalamak (%2 yerine %20 gibi).
+   */
+  const girilen = Number(alanlar.oran.replace(",", "."));
+  const bantUyarisi =
+    bant !== null &&
+    alanlar.oran.trim() !== "" &&
+    Number.isFinite(girilen) &&
+    bantDisiMi(girilen, bant);
 
   // Silme başarılıysa diyalog kapanır; hata varsa AÇIK kalır ki mesaj görünsün.
   const [sonSilDurumu, setSonSilDurumu] = useState(silDurumu);
@@ -130,6 +147,17 @@ export function SatirDuzenle({
             <Save />
             {kaydediyor ? ortak("kaydediliyor") : t("kaydet")}
           </Button>
+
+          {/* Bant dışı uyarısı KAYDETMEYİ ENGELLEMEZ: kampanyalı ürünün
+              oranı bandın dışında olabilir. Yanlış tuşu yakalamak için. */}
+          {bantUyarisi && bant ? (
+            <span className="text-xs text-amber-700 dark:text-amber-400">
+              {t("bantDisi", {
+                alt: bant.uyariAlt.toFixed(2),
+                ust: bant.uyariUst.toFixed(2),
+              })}
+            </span>
+          ) : null}
         </form>
 
         <form action={durumAction}>

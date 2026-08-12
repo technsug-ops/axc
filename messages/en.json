@@ -1226,7 +1226,12 @@
     "cakismaEslemeyeGit": "",
     "rolSatis": "",
     "rolAlis": "",
-    "alisKoduNotu": ""
+    "alisKoduNotu": "",
+    "bantBaslik": "",
+    "bantSatiri": "",
+    "bantNotu": "",
+    "bantIpucu": "",
+    "bantDisi": ""
   },
   "DisaAktarma": {
     "excelIndir": "",

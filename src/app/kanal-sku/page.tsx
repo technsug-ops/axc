@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { TriangleAlert } from "lucide-react";
+import { Info, TriangleAlert } from "lucide-react";
 
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
+import { komisyonBandi } from "@/lib/komisyon-bandi";
 import { prisma } from "@/lib/prisma";
 
 import { KanalSkuFiltresi } from "./filtre";
@@ -64,6 +65,21 @@ export default async function KanalSkuSayfasi({
 
   // ÖNCE SAY, SONRA SAYFAYI ÇEK. Göçten sonra bu ekranda 1039 kayıt var;
   // sayfalamasız hâli /urunler'i çökerten desenin aynısıydı.
+  // KOMISYON BANDI: hakedislerden fiilen odenen oran. Her hakedis
+  // yuklemesinden sonra kendiliginden guncellenir — onbellek yok.
+  const bantKalemleri = await prisma.settlementItem.findMany({
+    where: { code: { in: ["KOMISYON", "SIPARIS_TUTARI"] } },
+    select: { channelAccountId: true, orderNo: true, code: true, amount: true },
+  });
+  const bantlar = komisyonBandi(
+    bantKalemleri.map((k) => ({
+      channelAccountId: k.channelAccountId,
+      siparisNo: k.orderNo,
+      kod: k.code,
+      tutar: Number(k.amount.toString()),
+    })),
+  );
+
   const toplam = await prisma.channelSku.count({ where: suzgec });
   const sayfalama = sayfaCoz(sayfa, toplam);
 
@@ -142,6 +158,10 @@ export default async function KanalSkuSayfasi({
         // Komisyon YALNIZ satis hesabinda anlamli: alis hesabindaki kod
         // urunun tedarikci katalogundaki kodudur, komisyonu olmaz.
         oranGosterilsin={kayit.channelAccount.satisIcin}
+        bant={
+          bantlar.find((b) => b.channelAccountId === kayit.channelAccountId) ??
+          null
+        }
         aktifMi={kayit.isActive}
       />
     );
@@ -169,6 +189,35 @@ export default async function KanalSkuSayfasi({
         </div>
       ) : null}
 
+      {/* ------------------- KOMİSYON BANDI -------------------
+          Hakedişten gelen GERÇEKTEN ÖDENMİŞ oran. Öneri değil, ölçü:
+          elle oran girerken "normal ne kadar" sorusunun cevabı. */}
+      {bantlar.length > 0 ? (
+        <div className="space-y-2 rounded-lg border p-4">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Info className="size-4 shrink-0" />
+            {t("bantBaslik")}
+          </div>
+          <ul className="space-y-1 text-sm">
+            {bantlar.map((b) => {
+              const h = hesaplar.find((x) => x.id === b.channelAccountId);
+              return (
+                <li key={b.channelAccountId}>
+                  <span className="font-medium">{h?.etiket ?? "—"}</span>{" "}
+                  {t("bantSatiri", {
+                    dusuk: b.enDusuk.toFixed(2),
+                    yuksek: b.enYuksek.toFixed(2),
+                    medyan: b.medyan.toFixed(2),
+                    siparis: b.siparisSayisi,
+                  })}
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-muted-foreground text-xs">{t("bantNotu")}</p>
+        </div>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>{t("yeniEsleme")}</CardTitle>
@@ -182,7 +231,7 @@ export default async function KanalSkuSayfasi({
               </p>
             </div>
           ) : (
-            <YeniEsleme hesaplar={hesaplar} />
+            <YeniEsleme hesaplar={hesaplar} bantlar={bantlar} />
           )}
         </CardContent>
       </Card>

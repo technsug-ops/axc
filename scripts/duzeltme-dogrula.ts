@@ -4,17 +4,20 @@
  * ----------------------------------------------------------------------------
  *  Çalıştırma:  npm run duzeltme:dogrula
  *
- *  ÜÇ BÖLÜM:
+ *  DÖRT BÖLÜM:
  *  1) GİRDİ DENETİMİ — eksi adet, sıfır, zorunlu açıklama, para birimsiz tutar.
  *  2) DÖNEM ETKİSİ — fire ile sayım farkı AYRI sayılıyor mu, maliyeti
  *     bilinmeyen hareket sıfır sayılmıyor mu.
  *  3) RAPORA ETKİSİ — düzeltme GERÇEK NET'ten düşüyor ama NET-2'ye
  *     KARIŞMIYOR mu. Bu, kararın kendisidir: düzeltme bir satış değildir.
+ *  4) KOMİSYON BANDI — hakedişten fiilen ödenen oran; uyarı eşiği gerçekten
+ *     yanlış tuşu yakalıyor mu.
  * ============================================================================
  */
 
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
 import { raporHesapla } from "../src/lib/rapor";
+import { bantDisiMi, komisyonBandi } from "../src/lib/komisyon-bandi";
 import {
   duzeltmeOzeti,
   duzeltmeyiDogrula,
@@ -252,6 +255,126 @@ console.log("\n3) RAPORA ETKİSİ — GERÇEK NET'ten düşer, NET-2'ye KARIŞMA
     ],
   }).paraBirimleri[0];
   yakin("geçen ayın düzeltmesi girmedi", disarda.duzeltmeZarari, 0);
+}
+
+
+// ===========================================================================
+console.log("\n4) KOMİSYON BANDI — hakedişten fiilen ödenen oran");
+// ===========================================================================
+{
+  const kalem = (siparisNo: string, kod: string, tutar: number, hesap = "h1") => ({
+    channelAccountId: hesap,
+    siparisNo,
+    kod,
+    tutar,
+  });
+
+  // Üç sipariş: %20, %10, %30
+  const bant = komisyonBandi([
+    kalem("A", "SIPARIS_TUTARI", 1000),
+    kalem("A", "KOMISYON", -200),
+    kalem("B", "SIPARIS_TUTARI", 1000),
+    kalem("B", "KOMISYON", -100),
+    kalem("C", "SIPARIS_TUTARI", 1000),
+    kalem("C", "KOMISYON", -300),
+  ])[0];
+
+  yakin("en düşük %10", bant.enDusuk, 10);
+  yakin("en yüksek %30", bant.enYuksek, 30);
+  yakin("medyan %20", bant.medyan, 20);
+  kontrol("3 sipariş sayıldı", bant.siparisSayisi === 3, bant.siparisSayisi);
+  kontrol(
+    "kesinti NEGATİF gelse de oran pozitif",
+    bant.enDusuk > 0 && bant.enYuksek > 0,
+  );
+
+  // MEDYAN, ORTALAMA DEĞİL: tek uç değer ortalamayı çeker, medyanı çekmez.
+  const uclu = komisyonBandi([
+    kalem("A", "SIPARIS_TUTARI", 1000),
+    kalem("A", "KOMISYON", 200),
+    kalem("B", "SIPARIS_TUTARI", 1000),
+    kalem("B", "KOMISYON", 200),
+    kalem("C", "SIPARIS_TUTARI", 1000),
+    kalem("C", "KOMISYON", 900),
+  ])[0];
+  yakin("uç değer medyanı bozmaz (%20)", uclu.medyan, 20);
+  kontrol(
+    "  ...ortalama olsaydı ~%43 çıkardı",
+    Math.abs(uclu.medyan - 43.3) > 5,
+    uclu.medyan,
+  );
+
+  // EKSİK VERİ: yalnız komisyonu ya da yalnız tutarı olan sipariş sayılmaz.
+  const eksik = komisyonBandi([
+    kalem("A", "SIPARIS_TUTARI", 1000),
+    kalem("A", "KOMISYON", 200),
+    kalem("B", "KOMISYON", 150), // tutarı yok
+    kalem("C", "SIPARIS_TUTARI", 900), // komisyonu yok
+    kalem("D", "SIPARIS_TUTARI", 1000),
+    kalem("D", "KOMISYON", 220),
+    kalem("E", "SIPARIS_TUTARI", 1000),
+    kalem("E", "KOMISYON", 180),
+  ])[0];
+  kontrol(
+    "yarım siparişler sayılmadı (3 gözlem)",
+    eksik.siparisSayisi === 3,
+    eksik.siparisSayisi,
+  );
+
+  // AZ GÖZLEMDEN BANT ÇIKMAZ.
+  const azgozlem = komisyonBandi([
+    kalem("A", "SIPARIS_TUTARI", 1000),
+    kalem("A", "KOMISYON", 200),
+    kalem("B", "SIPARIS_TUTARI", 1000),
+    kalem("B", "KOMISYON", 200),
+  ]);
+  kontrol("2 siparişten bant üretilmez", azgozlem.length === 0, azgozlem.length);
+
+  // KANAL HESAPLARI KARIŞMAZ.
+  const ikiHesap = komisyonBandi([
+    kalem("A", "SIPARIS_TUTARI", 1000, "h1"),
+    kalem("A", "KOMISYON", 200, "h1"),
+    kalem("B", "SIPARIS_TUTARI", 1000, "h1"),
+    kalem("B", "KOMISYON", 200, "h1"),
+    kalem("C", "SIPARIS_TUTARI", 1000, "h1"),
+    kalem("C", "KOMISYON", 200, "h1"),
+    kalem("D", "SIPARIS_TUTARI", 1000, "h2"),
+    kalem("D", "KOMISYON", 50, "h2"),
+    kalem("E", "SIPARIS_TUTARI", 1000, "h2"),
+    kalem("E", "KOMISYON", 50, "h2"),
+    kalem("F", "SIPARIS_TUTARI", 1000, "h2"),
+    kalem("F", "KOMISYON", 50, "h2"),
+  ]);
+  kontrol("iki hesap iki ayrı bant", ikiHesap.length === 2, ikiHesap.length);
+  const h2 = ikiHesap.find((b) => b.channelAccountId === "h2")!;
+  yakin("ikinci hesabın medyanı %5", h2.medyan, 5);
+
+  // --- UYARI EŞİĞİ: geniş bant hiçbir şeyi yakalamaz, bu yüzden dilim ---
+  const genis = komisyonBandi(
+    Array.from({ length: 20 }, (_, i) => [
+      kalem(`S${i}`, "SIPARIS_TUTARI", 1000),
+      // 18 tanesi %18-22 bandında, 2 tanesi uçta (%2 ve %60)
+      kalem(`S${i}`, "KOMISYON", i === 0 ? 20 : i === 19 ? 600 : 180 + i * 2),
+    ]).flat(),
+  )[0];
+  kontrol(
+    "görülen bant uç değerleri İÇERİR",
+    genis.enDusuk < 5 && genis.enYuksek > 50,
+    `%${genis.enDusuk.toFixed(1)} – %${genis.enYuksek.toFixed(1)}`,
+  );
+  kontrol(
+    "uyarı aralığı DAR (uç değerler dışarıda)",
+    genis.uyariAlt > 10 && genis.uyariUst < 40,
+    `%${genis.uyariAlt.toFixed(1)} – %${genis.uyariUst.toFixed(1)}`,
+  );
+  kontrol("%2 girilirse UYARIR", bantDisiMi(2, genis));
+  kontrol("%60 girilirse UYARIR", bantDisiMi(60, genis));
+  kontrol("%20 girilirse SUSAR", !bantDisiMi(20, genis));
+  kontrol(
+    "  ...görülen bant kullanılsaydı %2 bile SUSARDI",
+    2 >= genis.enDusuk,
+    `görülen alt sınır %${genis.enDusuk.toFixed(2)}`,
+  );
 }
 
 console.log("\n" + "=".repeat(70));

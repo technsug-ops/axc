@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import { useActionState, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+
+import { bantDisiMi, type KomisyonBandi } from "@/lib/komisyon-bandi";
 import { Plus, Search, X, ExternalLink } from "lucide-react";
 
 import { HataOzeti } from "@/components/hata-ozeti";
@@ -31,8 +33,11 @@ import { kanalSkuEkle, type KanalSkuDurumu } from "./actions";
  */
 export function YeniEsleme({
   hesaplar,
+  bantlar,
 }: {
   hesaplar: { id: string; etiket: string; satisIcin: boolean }[];
+  /** Hakedişten gelen komisyon bantları — hesap başına en fazla bir tane. */
+  bantlar: KomisyonBandi[];
 }) {
   const t = useTranslations("KanalSku");
   const ortak = useTranslations("Ortak");
@@ -52,6 +57,15 @@ export function YeniEsleme({
   /** Secilen hesap SATIS mi — komisyon yalniz o zaman sorulur. */
   const seciliSatisMi =
     hesaplar.find((h) => h.id === hesapId)?.satisIcin ?? true;
+
+  /** Seçilen hesabın bandı ve girilen oranın o bandın dışında olup olmadığı. */
+  const bant = bantlar.find((b) => b.channelAccountId === hesapId) ?? null;
+  const girilen = Number(oran.replace(",", "."));
+  const bantUyarisi =
+    bant !== null &&
+    oran.trim() !== "" &&
+    Number.isFinite(girilen) &&
+    bantDisiMi(girilen, bant);
   const [araniyor, aramayaBasla] = useTransition();
 
   // Başarılı kayıttan sonra formu boşalt — arka arkaya eşleme girilir.
@@ -189,6 +203,19 @@ export function YeniEsleme({
               placeholder={t("oranIpucu")}
               autoComplete="off"
             />
+            {bant ? (
+              <p className="text-muted-foreground text-xs">
+                {t("bantIpucu", { medyan: bant.medyan.toFixed(2) })}
+              </p>
+            ) : null}
+            {bantUyarisi && bant ? (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                {t("bantDisi", {
+                  alt: bant.uyariAlt.toFixed(2),
+                  ust: bant.uyariUst.toFixed(2),
+                })}
+              </p>
+            ) : null}
           </div>
         ) : (
           <div className="space-y-2">

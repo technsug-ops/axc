@@ -150,6 +150,31 @@ Canlı sağlık kontrolü (10.08.2026): 12 sayfa 200, tümü 1,3 sn altında ·
       eşlemesi verildiğinde ikinci tur güvenle koşar, taşınmışlara dokunmaz.
       _Karar 12.08.2026._
 
+
+- [ ] **Hakedişten ürün bazlı komisyon oranı önerisi (ERTELENDİ)**
+      Fikir sağlam — gerçekten ödenmiş orandan iyi kaynak yok — ama bugün
+      girdisi boş. Ölçüldü 13.08.2026: 651 hakediş kaleminin **0 tanesi**
+      satışa bağlı; oran hesaplanabilen 84 siparişin **hiçbiri** sistemde
+      satış olarak yok (raporlar girilen satışlardan eski). Ayrıca yüklü
+      Trendyol dosyalarında **hiç komisyon kalemi yok** — 92 komisyon
+      satırının hepsi Hepsiburada; TY'de komisyon net hakedişin içinde eriyor,
+      oran ancak çıkarma yoluyla bulunur ve kırılgandır.
+      YAZILMA ŞARTI: eşleşen satış sayısı anlamlı olduğunda.
+      KURALLAR (karar 13.08.2026):
+      - Yalnız TEK KALEMLİ siparişten öneri üretilir.
+      - Çok kalemliye "sipariş oranı %X, N kalem — ürün bazında
+        ayrıştırılamaz" denir. %17 ve %23'lük iki ürün %20 gösterir ve
+        ikisine de yanlış yazılır.
+      - Her hakediş yüklemesinde kaç öneri üretilebildiği raporlanır.
+      Kanal bazlı BANT bu maddeyi beklemeden yapıldı (src/lib/komisyon-bandi.ts).
+
+- [ ] **Pazaryeri komisyon listesi okuyucusu**
+      1039 kanal kodunun komisyon oranı boş; kâr motoru oranı oradan okuyor.
+      En hızlı yol satıcı panelinden inen komisyon listesi + içe aktarma
+      "güncelle" kipi (artık 417 ms).
+      KURAL: gerçek dosya gelmeden okuyucu YAZILMAZ — hakediş okuyucusunda
+      spec ile gerçek başlıklar tutmamıştı, aynı tuzağa iki kez düşülmez.
+
 ## SaaS dönüşümü
 
 - [ ] **Çok-kiracılı (multi-tenant) mimari**

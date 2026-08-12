@@ -1226,7 +1226,12 @@
     "cakismaEslemeyeGit": "Var olan eşlemeye git",
     "rolSatis": "satış",
     "rolAlis": "alış",
-    "alisKoduNotu": "alış kodu — komisyon yok"
+    "alisKoduNotu": "alış kodu — komisyon yok",
+    "bantBaslik": "Hakedişten: fiilen ödediğiniz komisyon",
+    "bantSatiri": "%{dusuk} – %{yuksek} · tipik %{medyan} ({siparis} siparişten)",
+    "bantNotu": "Bu oranlar hakediş dosyalarınızdaki gerçek kesintilerden hesaplandı — tahmin değil. Her hakediş yüklemesinden sonra kendiliğinden güncellenir. Ürün bazında değil KANAL bazındadır; bir ürünün oranı kampanyaya göre bandın dışında olabilir.",
+    "bantIpucu": "Bu hesapta tipik oran %{medyan}.",
+    "bantDisi": "Alışılmadık: bu hesapta oranlar genelde %{alt} – %{ust} arasında. Yine de kaydedebilirsiniz."
   },
   "DisaAktarma": {
     "excelIndir": "Excel indir",
