@@ -17,6 +17,9 @@ import {
 import { stokHareketEtiketleri } from "@/lib/etiketler";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
+import { tarihGirdisi } from "@/lib/bicim";
+
+import { DuzeltmeFormu } from "./duzeltme-formu";
 import { varyantStogu } from "@/lib/stok";
 
 export default async function VaryantHareketleriSayfasi({
@@ -35,6 +38,11 @@ export default async function VaryantHareketleriSayfasi({
   });
 
   if (!varyant) notFound();
+
+  const nedenler = await prisma.stockAdjustmentReason.findMany({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  });
 
   const bicim = await bicimlendirici();
   const t = await getTranslations("Stok");
@@ -161,6 +169,20 @@ export default async function VaryantHareketleriSayfasi({
           </CardContent>
         </Card>
       </div>
+
+      {/* Düzeltme formu hareket geçmişinin ÜSTÜNDE: yeni kaydın hemen
+          altında sonucunu görürsünüz. */}
+      <DuzeltmeFormu
+        variantId={varyant.id}
+        mevcutStok={stok}
+        bugun={tarihGirdisi(new Date())}
+        nedenler={nedenler.map((n) => ({
+          id: n.id,
+          ad: n.name,
+          aciklamaZorunlu: n.requiresNote,
+          sayimFarkiMi: n.movementType === "COUNT_CORRECTION",
+        }))}
+      />
 
       <Card>
         <CardHeader>

@@ -1,0 +1,166 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
+
+import { prisma } from "@/lib/prisma";
+import { acikPartiler, fifoDagit } from "@/lib/stok";
+import {
+  duzeltmeyiDogrula,
+  hareketMiktari,
+  type DuzeltmeYonu,
+} from "@/lib/stok-duzeltme";
+
+import type { Currency } from "@/generated/prisma/enums";
+
+/**
+ * ============================================================================
+ *  STOK DÜZELTME — YAZAN TARAF
+ * ----------------------------------------------------------------------------
+ *  LEDGER KURALI (anayasa): hareket SİLİNMEZ, DEĞİŞTİRİLMEZ. Yanlış düzeltme,
+ *  ters işaretli ikinci bir düzeltmeyle kapatılır. Bu ekranda "düzelt" ya da
+ *  "sil" düğmesi bilerek YOKTUR.
+ *
+ *  EKSİ YÖN — FIFO'dan düşer ve HER PARTİ İÇİN AYRI HAREKET yazılır.
+ *  Tek hareket yazıp maliyeti ortalasaydık, o partinin gerçek maliyeti
+ *  kaybolurdu; satışta olduğu gibi burada da parti izi korunuyor
+ *  (`sourceMovementId`).
+ *
+ *  ARTI YÖN — tek hareket, yeni bir FIFO partisi. Maliyet girilmezse parti
+ *  NO_COST doğar; o mal satılınca kâr "hesaplanamadı" der. Sıfır maliyet
+ *  VARSAYILMAZ.
+ *
+ *  STOK YETMİYORSA HİÇ YAZILMAZ: kısmi düzeltme yok. Elinizde 3 varken 5
+ *  kırıldıysa, kayıt 3'e düşürülmez — ne olduğu sorulur.
+ * ============================================================================
+ */
+
+export type DuzeltmeDurumu = {
+  hatalar?: string[];
+  /** Stok yetersizse: gerçekte kaç adet var. */
+  mevcutStok?: number;
+};
+
+export async function stokDuzelt(
+  _onceki: DuzeltmeDurumu,
+  formData: FormData,
+): Promise<DuzeltmeDurumu> {
+  const t = await getTranslations("StokDuzeltme");
+
+  const variantId = String(formData.get("variantId") ?? "");
+  const nedenId = String(formData.get("nedenId") ?? "");
+  const yon = String(formData.get("yon") ?? "") as DuzeltmeYonu;
+  const adet = Number(String(formData.get("adet") ?? "").replace(",", "."));
+  const aciklama = String(formData.get("aciklama") ?? "");
+  const tarihMetni = String(formData.get("tarih") ?? "");
+  const maliyetMetni = String(formData.get("birimMaliyet") ?? "").trim();
+  const paraBirimi = (String(formData.get("paraBirimi") ?? "TRY") ||
+    "TRY") as Currency;
+
+  if (!variantId) return { hatalar: [t("varyantYok")] };
+  if (!nedenId) return { hatalar: [t("nedenSecin")] };
+  if (yon !== "EKSI" && yon !== "ARTI") return { hatalar: [t("yonSecin")] };
+
+  const neden = await prisma.stockAdjustmentReason.findUnique({
+    where: { id: nedenId },
+    select: { id: true, movementType: true, requiresNote: true, isActive: true },
+  });
+  if (!neden || !neden.isActive) return { hatalar: [t("nedenBulunamadi")] };
+
+  const birimMaliyet =
+    maliyetMetni === "" ? null : Number(maliyetMetni.replace(",", "."));
+
+  const hatalar = duzeltmeyiDogrula({
+    adet,
+    yon,
+    birimMaliyet,
+    paraBirimi: birimMaliyet === null ? null : paraBirimi,
+    aciklamaZorunlu: neden.requiresNote,
+    aciklama,
+  });
+
+  if (hatalar.length) {
+    // Kod -> metin SABİT eşleme (i18n denetimi görebilsin).
+    const metin = (kod: string) =>
+      kod === "ADET_SIFIR"
+        ? t("hataAdetSifir")
+        : kod === "ADET_TAM_SAYI_DEGIL"
+          ? t("hataAdetTamSayi")
+          : kod === "ACIKLAMA_ZORUNLU"
+            ? t("hataAciklamaZorunlu")
+            : kod === "MALIYET_NEGATIF"
+              ? t("hataMaliyetNegatif")
+              : t("hataMaliyetParaBirimsiz");
+    return { hatalar: hatalar.map(metin) };
+  }
+
+  // İş tarihi: verilmezse bugünün İSTANBUL günü (form varsayılanı zaten öyle).
+  const tarih = tarihMetni ? new Date(`${tarihMetni}T00:00:00.000Z`) : new Date();
+  if (Number.isNaN(tarih.getTime())) return { hatalar: [t("tarihGecersiz")] };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (yon === "ARTI") {
+        // --- FAZLA ÇIKAN MAL: yeni parti ---
+        await tx.stockMovement.create({
+          data: {
+            variantId,
+            type: neden.movementType,
+            quantityDelta: hareketMiktari({ adet, yon }),
+            occurredAt: tarih,
+            adjustmentReasonId: neden.id,
+            note: aciklama.trim() === "" ? null : aciklama.trim(),
+            unitCostAmount: birimMaliyet === null ? null : String(birimMaliyet),
+            unitCostCurrency: birimMaliyet === null ? null : paraBirimi,
+          },
+        });
+        return;
+      }
+
+      // --- MAL GİTTİ: FIFO'dan düş ---
+      const partiler = await acikPartiler(tx, variantId);
+      const dagitim = fifoDagit(partiler, adet);
+      if (!dagitim.yeterliMi) {
+        // Özel hata: ekranda "elinizde şu kadar var" diye gösterilecek.
+        throw Object.assign(new Error("STOK_YETMIYOR"), {
+          mevcut: dagitim.mevcut,
+        });
+      }
+
+      // HER PARTİ İÇİN AYRI HAREKET: parti izi (sourceMovementId) korunur,
+      // maliyet ortalanmaz.
+      for (const pay of dagitim.dagitim) {
+        await tx.stockMovement.create({
+          data: {
+            variantId,
+            type: neden.movementType,
+            quantityDelta: -pay.adet,
+            occurredAt: tarih,
+            adjustmentReasonId: neden.id,
+            note: aciklama.trim() === "" ? null : aciklama.trim(),
+            sourceMovementId: pay.parti.hareketId,
+            locationId: pay.parti.locationId,
+            // Maliyet PARTİDEN gelir, kullanıcıdan değil: kaybedilen para
+            // o malın gerçek alış bedelidir.
+            unitCostAmount: pay.parti.birimMaliyet,
+            unitCostCurrency: pay.parti.birimMaliyetParaBirimi,
+          },
+        });
+      }
+    });
+  } catch (e) {
+    const mevcut = (e as { mevcut?: number }).mevcut;
+    if (typeof mevcut === "number") {
+      return { hatalar: [t("stokYetmiyor", { mevcut })], mevcutStok: mevcut };
+    }
+    console.error("[stok duzeltme] beklenmeyen hata:", e);
+    return { hatalar: [t("kaydedilemedi")] };
+  }
+
+  revalidatePath("/stok");
+  revalidatePath(`/stok/${variantId}`);
+  revalidatePath("/envanter-degeri");
+  revalidatePath("/rapor");
+
+  return {};
+}

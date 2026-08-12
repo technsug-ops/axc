@@ -30,6 +30,7 @@ import {
   type ParaBirimiRaporu,
   type RaporGider,
   type RaporIade,
+  type RaporDuzeltmesi,
   type RaporSatis,
 } from "@/lib/rapor";
 
@@ -99,7 +100,8 @@ export default async function RaporSayfasi({
 
   const aralik = { gte: pencere.baslangic, lt: pencere.bitisHaric };
 
-  const [satisKayitlari, iadeKayitlari, giderKayitlari] = await Promise.all([
+  const [satisKayitlari, iadeKayitlari, duzeltmeKayitlari, giderKayitlari] =
+    await Promise.all([
     prisma.sale.findMany({
       where: { soldAt: aralik },
       select: {
@@ -130,6 +132,21 @@ export default async function RaporSayfasi({
         net2Amount: true,
         profitCurrency: true,
         profitStatus: true,
+      },
+    }),
+    // Fire ve sayim farki: ADJUSTMENT + COUNT_CORRECTION hareketleri.
+    // Gider tablosuna bakilmaz — tek kaynak stok defteri.
+    prisma.stockMovement.findMany({
+      where: {
+        occurredAt: aralik,
+        type: { in: ["ADJUSTMENT", "COUNT_CORRECTION"] },
+      },
+      select: {
+        occurredAt: true,
+        quantityDelta: true,
+        unitCostAmount: true,
+        unitCostCurrency: true,
+        type: true,
       },
     }),
     prisma.expense.findMany({
@@ -193,7 +210,20 @@ export default async function RaporSayfasi({
     sabitMi: gider.category.isFixed,
   }));
 
-  const sonuc = raporHesapla(pencere, { satislar, iadeler, giderler });
+  const duzeltmeler: RaporDuzeltmesi[] = duzeltmeKayitlari.map((d) => ({
+    tarih: d.occurredAt,
+    miktar: d.quantityDelta,
+    birimMaliyet: sayi(d.unitCostAmount),
+    paraBirimi: d.unitCostCurrency,
+    tip: d.type === "COUNT_CORRECTION" ? "COUNT_CORRECTION" : "ADJUSTMENT",
+  }));
+
+  const sonuc = raporHesapla(pencere, {
+    satislar,
+    iadeler,
+    giderler,
+    duzeltmeler,
+  });
 
   const durumEtiketi = (durum: string) =>
     durum === "NO_COST"
@@ -268,8 +298,37 @@ export default async function RaporSayfasi({
           </div>
           <div className="text-muted-foreground mt-1 text-xs">
             {t("gercekNetForm")} · {para(b.brutNet2)} − {para(b.giderNetDusen)}
+            {b.duzeltmeZarari !== 0 ? ` − ${para(b.duzeltmeZarari)}` : ""}
           </div>
         </div>
+
+        {/* ------------------- FİRE VE DÜZELTME ------------------------
+            Stok defterinden türer; gider tablosuna YAZILMAZ. Bu yüzden
+            gider dökümünde değil, kendi kutusunda duruyor. */}
+        {b.duzeltmeZarari !== 0 || b.duzeltmeBilinmeyenAdet > 0 ? (
+          <div className="space-y-2 rounded-lg border p-4">
+            <div className="text-sm font-medium">{t("duzeltmeBaslik")}</div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {kart(
+                t("fireZarari"),
+                para(b.fireZarari),
+                t("duzeltmeAdet", { sayi: b.fireAdedi }),
+              )}
+              {kart(
+                t("sayimZarari"),
+                para(b.sayimZarari),
+                t("duzeltmeAdet", { sayi: b.sayimAdedi }),
+              )}
+              {kart(t("duzeltmeToplam"), para(b.duzeltmeZarari))}
+            </div>
+            {b.duzeltmeBilinmeyenAdet > 0 ? (
+              <p className="text-sm text-amber-800 dark:text-amber-300">
+                {t("duzeltmeBilinmeyen", { sayi: b.duzeltmeBilinmeyenAdet })}
+              </p>
+            ) : null}
+            <p className="text-muted-foreground text-xs">{t("duzeltmeNotu")}</p>
+          </div>
+        ) : null}
 
         {/* ---------------- HESAPLANAMAYANLAR — TIKLANABİLİR -------------
             Uyarı "bir sorun var" demekle kalmaz, SORUNUN NEREDE olduğunu

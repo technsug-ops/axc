@@ -78,10 +78,21 @@ export type RaporGider = {
   sabitMi: boolean;
 };
 
+export type RaporDuzeltmesi = {
+  tarih: Date;
+  /** Negatif = mal gitti, pozitif = fazla cikti. */
+  miktar: number;
+  birimMaliyet: number | null;
+  paraBirimi: Currency | null;
+  tip: "ADJUSTMENT" | "COUNT_CORRECTION";
+};
+
 export type RaporGirdisi = {
   satislar: RaporSatis[];
   iadeler: RaporIade[];
   giderler: RaporGider[];
+  /** Fire ve sayim farki hareketleri — stok defterinden gelir. */
+  duzeltmeler?: RaporDuzeltmesi[];
 };
 
 export type GiderKategoriOzeti = {
@@ -146,6 +157,17 @@ export type ParaBirimiRaporu = {
   giderKdvDahil: number;
   giderIndirilebilirKdv: number;
   giderNetDusen: number;
+
+  // --- FIRE VE DUZELTME (stok defterinden turer, gider tablosunda YOK) ---
+  /** Fire/hasar/kayip zarari — POZITIF sayi = kaybedilen para. */
+  fireZarari: number;
+  fireAdedi: number;
+  /** Sayim farki zarari — ayri satir: olcum hatasi ile gercek kayip ayni degil. */
+  sayimZarari: number;
+  sayimAdedi: number;
+  duzeltmeZarari: number;
+  /** Maliyeti bilinmedigi icin paraya cevrilemeyen adet. Sifir sayilmaz. */
+  duzeltmeBilinmeyenAdet: number;
   sabitGiderNetDusen: number;
   degiskenGiderNetDusen: number;
   kategoriler: GiderKategoriOzeti[];
@@ -190,6 +212,12 @@ function bosRapor(paraBirimi: Currency): ParaBirimiRaporu {
     giderKdvDahil: 0,
     giderIndirilebilirKdv: 0,
     giderNetDusen: 0,
+    fireZarari: 0,
+    fireAdedi: 0,
+    sayimZarari: 0,
+    sayimAdedi: 0,
+    duzeltmeZarari: 0,
+    duzeltmeBilinmeyenAdet: 0,
     sabitGiderNetDusen: 0,
     degiskenGiderNetDusen: 0,
     kategoriler: [],
@@ -271,6 +299,32 @@ export function raporHesapla(
     }
   }
 
+  // ------------------------------ DÜZELTMELER ------------------------------
+  // Fire, hasar, kayip, sayim farki. STOK DEFTERINDEN turer; gider tablosuna
+  // YAZILMAZ (kullanici karari 12.08.2026) — tek kaynak ledger, cift kayit yok.
+  // Kar hesabina (NET-1/NET-2) KARISMAZ: duzeltme bir satis degildir. Donem
+  // kalemi olarak GERCEK NET'ten duser, tipki gider gibi.
+  for (const d of girdi.duzeltmeler ?? []) {
+    if (!pencerede(pencere, d.tarih)) continue;
+    if (d.birimMaliyet === null || d.paraBirimi === null) {
+      // Maliyeti bilinmeyen hareket paraya cevrilemez. Sifir saymak, kaybi
+      // hic yasanmamis gibi gostermek olurdu — ayrica sayilir, ekranda yazar.
+      const hedef = girdi.duzeltmeler?.find((x) => x.paraBirimi !== null);
+      blok(hedef?.paraBirimi ?? "TRY").duzeltmeBilinmeyenAdet += Math.abs(d.miktar);
+      continue;
+    }
+    const bd = blok(d.paraBirimi);
+    // miktar negatifse zarar POZITIF olsun diye ters cevriliyor.
+    const zarar = -d.miktar * d.birimMaliyet;
+    if (d.tip === "ADJUSTMENT") {
+      bd.fireZarari += zarar;
+      bd.fireAdedi += Math.abs(d.miktar);
+    } else {
+      bd.sayimZarari += zarar;
+      bd.sayimAdedi += Math.abs(d.miktar);
+    }
+  }
+
   // -------------------------------- GİDERLER -------------------------------
   for (const gider of girdi.giderler) {
     if (!pencerede(pencere, gider.tarih)) continue;
@@ -310,7 +364,8 @@ export function raporHesapla(
   for (const [paraBirimi, b] of bloklar) {
     b.brutNet1 = b.satisNet1 + b.iadeNet1;
     b.brutNet2 = b.satisNet2 + b.iadeNet2;
-    b.gercekNet = b.brutNet2 - b.giderNetDusen;
+    b.duzeltmeZarari = b.fireZarari + b.sayimZarari;
+    b.gercekNet = b.brutNet2 - b.giderNetDusen - b.duzeltmeZarari;
 
     b.hesaplanamayanDurumlar = [...durumSayaci.get(paraBirimi)!]
       .map(([durum, adet]) => ({ durum, adet }))

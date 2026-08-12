@@ -20,6 +20,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { ChannelType } from "../src/generated/prisma/enums";
 import { karMotoruSeed } from "./seed-kar-motoru";
+import { stokDuzeltmeSeed } from "./seed-stok-duzeltme";
 import { iadeSeed } from "./seed-iade";
 import { giderSeed } from "./seed-gider";
 
@@ -69,6 +70,8 @@ async function main() {
 
   // Gider kategorileri — baslangic seti; ekrandan degistirilebilir.
   await giderSeed(prisma);
+
+  await stokDuzeltmeSeed(prisma);
 }
 
 main()
