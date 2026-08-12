@@ -460,6 +460,7 @@ export function UrunFormu({
                         kategoriId={kategoriId}
                         ad={ad}
                         marka={marka}
+                        mevcutSku={varyant.sku}
                         kullanilan={varyantlar
                           .filter((_, i) => i !== sira)
                           .map((v) => v.sku)

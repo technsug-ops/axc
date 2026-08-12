@@ -143,6 +143,81 @@ export function urunKisaltmasi(
 }
 
 /**
+ * ============================================================================
+ *  MODEL AYIRT EDİCİ — ürün adından
+ * ----------------------------------------------------------------------------
+ *  NEDEN VAR (kullanıcı 1054 ürünlük gerçek katalogda yakaladı, 12.08.2026):
+ *  Kod biçimi {kategori}-{marka}-{gün}-{sıra} idi ve MODELİ AYIRT ETMİYORDU.
+ *  Aynı markanın onlarca ürünü aynı gün girilince hepsi aynı ön eki
+ *  paylaşıyordu; kod yalnızca sıra numarasıyla ayrılıyordu ve kullanıcı
+ *  koda bakıp hangi ürün olduğunu anlayamıyordu.
+ *
+ *  KURAL: adın İLK RAKAM İÇEREN belirteci model numarasıdır.
+ *    "MG5942/15 13 ü 1 Arada Erkek Bakım Seti"  -> MG594
+ *    "S5588/38 Islak Kuru Tıraş Makinesi"       -> S5588
+ *    "OneBlade Pro QP6650"                      -> QP665
+ *
+ *  Rakamlı belirteç yoksa ilk iki anlamlı kelimenin baş harfleri:
+ *    "OneBlade Pro" -> OB
+ *
+ *  Türkçe harfler `harfleriKatla` ile katlanır ama RAKAMLAR KORUNUR —
+ *  model numarasının değeri zaten rakamlarındadır.
+ * ============================================================================
+ */
+
+/** Model parçasının en fazla uzunluğu. */
+const MODEL_UZUNLUGU = 5;
+
+/**
+ * Belirteci koda uygun hâle getirir: Türkçe harf katlaması + yalnız A-Z0-9.
+ * `harfleriKatla` rakamları atıyor, bu yüzden ayrı bir katlama gerekiyor.
+ */
+function belirteciKatla(metin: string): string {
+  let sonuc = "";
+  for (const harf of metin) sonuc += TURKCE_HARFLER[harf] ?? harf;
+  return sonuc
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // birleşen aksan işaretleri
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+}
+
+/**
+ * Ürün adından model ayırt edicisi. Üretilemezse null.
+ *
+ * @param uzunluk En fazla kaç karakter (varsayılan 5).
+ */
+export function modelAyirtEdici(
+  ad: string,
+  uzunluk = MODEL_UZUNLUGU,
+): string | null {
+  const belirtecler = ad.trim().split(/\s+/).filter((b) => b.length > 0);
+  if (belirtecler.length === 0) return null;
+
+  // 1) İlk RAKAM İÇEREN belirteç — model numarası budur.
+  for (const ham of belirtecler) {
+    if (!/\d/.test(ham)) continue;
+    const katlanmis = belirteciKatla(ham);
+    // Yalnız rakamdan oluşan belirteç model değildir: "13 ü 1 Arada"daki
+    // "13" gibi sayılar ada aittir, ürünü tanımlamaz.
+    if (katlanmis.length === 0 || !/[A-Z]/.test(katlanmis)) continue;
+    return katlanmis.slice(0, uzunluk);
+  }
+
+  // 2) Rakamlı belirteç yok → ilk iki anlamlı kelimenin baş harfleri.
+  const harfliler = belirtecler
+    .map((b) => belirteciKatla(b))
+    .filter((b) => b.length > 0);
+  if (harfliler.length === 0) return null;
+  if (harfliler.length === 1) return harfliler[0].slice(0, uzunluk);
+
+  return harfliler
+    .slice(0, 2)
+    .map((k) => k[0])
+    .join("");
+}
+
+/**
  * Gün kodu: YYAAGG, İŞ saat diliminde. 7 Temmuz 2026 → 260707
  *
  * @param an "Şu an" ya da ürünün sisteme ilk giriş anı. Dışarıdan verilir.
@@ -186,20 +261,30 @@ export function sonrakiSira(mevcutKodlar: string[], onEk: string): number {
 //  BİRLEŞTİRİCİLER
 // ---------------------------------------------------------------------------
 
-/** SKU'nun sıra hariç kısmı — "sonrakiSira" bu ön ekle sorgulanır. */
+/**
+ * SKU'nun sıra hariç kısmı — "sonrakiSira" bu ön ekle sorgulanır.
+ *
+ * ÜÇÜNCÜ PARÇA ARTIK GÜN DEĞİL MODEL (karar 12.08.2026):
+ *     eski  KOZ-PH-260812-01   gün · aynı markanın her ürünü aynı
+ *     yeni  KOZ-PH-MG594-01    model · ürünü koddan tanıyabilirsiniz
+ *
+ * Daha önce üretilmiş gün biçimli kodlar DEĞİŞMEZ (kural 3: doğduktan
+ * sonra kod değişmez). İki biçim yan yana yaşar; kod zaten yalnız ipucudur.
+ */
 export function skuOnEki(parcalar: {
   kategoriKodu: string;
   kisaltma: string;
-  gun: string;
+  /** Model ayırt edicisi (bkz. modelAyirtEdici). */
+  ayirt: string;
 }): string {
-  return [parcalar.kategoriKodu, parcalar.kisaltma, parcalar.gun].join(AYRAC) + AYRAC;
+  return [parcalar.kategoriKodu, parcalar.kisaltma, parcalar.ayirt].join(AYRAC) + AYRAC;
 }
 
-/** OYU-LG-260707-01 */
+/** KOZ-PH-MG594-01 */
 export function skuUret(parcalar: {
   kategoriKodu: string;
   kisaltma: string;
-  gun: string;
+  ayirt: string;
   sira: number;
 }): string {
   return skuOnEki(parcalar) + siraKodu(parcalar.sira);

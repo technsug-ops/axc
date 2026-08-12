@@ -4,12 +4,14 @@
  * ----------------------------------------------------------------------------
  *  Çalıştırma:  npm run kimlik:dogrula
  *
- *  Veritabanına GİTMEZ. Beş bölüm:
+ *  Veritabanına GİTMEZ. Sekiz bölüm:
  *  1) HARF KATLAMA — Türkçe harfler doğru karşılığa iniyor mu ("İ" tuzağı).
  *  2) KISALTMALAR — kategori / tedarikçi / ürün-marka kuralları.
  *  3) GÜN KODU — İŞ saat dilimi. Almanya'da 9 Temmuz gecesi Türkiye'de
  *     10 Temmuz'dur ve kod 260710 olmalıdır.
  *  4) SIRA VE BİRLEŞTİRME — aynı gün ikinci kayıt çakışmıyor mu.
+ *  4b) MODEL AYIRT EDİCİ — aynı markanın farklı modelleri farklı kod alıyor
+ *     mu (kullanıcı gerçek katalogda yakaladı, 12.08.2026).
  *  5) RAF KODU — desen denetimi ve "şunu mu demek istediniz" önerisi.
  *  6) KATEGORİ HAZIR LİSTESİ — kodlar tekil mi, kurulumla çakışıyor mu,
  *     addan sapan kodun gerekçesi yazılmış mı.
@@ -27,6 +29,7 @@ import {
   rafKoduDuzelt,
   rafKoduGecerliMi,
   siraKodu,
+  modelAyirtEdici,
   skuOnEki,
   skuUret,
   sonrakiSira,
@@ -42,7 +45,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 7;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -144,7 +147,7 @@ console.log("\n3) GÜN KODU — İŞ SAAT DİLİMİ (Europe/Istanbul)");
 console.log("\n4) SIRA VE BİRLEŞTİRME");
 // ===========================================================================
 {
-  const onEk = skuOnEki({ kategoriKodu: "OYU", kisaltma: "LG", gun: "260707" });
+  const onEk = skuOnEki({ kategoriKodu: "OYU", kisaltma: "LG", ayirt: "260707" });
   kontrol("ön ek OYU-LG-260707-", onEk === "OYU-LG-260707-");
 
   kontrol("hiç kayıt yoksa sıra 1", sonrakiSira([], onEk) === 1);
@@ -170,7 +173,7 @@ console.log("\n4) SIRA VE BİRLEŞTİRME");
 
   kontrol(
     "SKU OYU-LG-260707-01",
-    skuUret({ kategoriKodu: "OYU", kisaltma: "LG", gun: "260707", sira: 1 }) ===
+    skuUret({ kategoriKodu: "OYU", kisaltma: "LG", ayirt: "260707", sira: 1 }) ===
       "OYU-LG-260707-01",
   );
   kontrol(
@@ -179,10 +182,72 @@ console.log("\n4) SIRA VE BİRLEŞTİRME");
       "ALM-ER-260810-01",
   );
   // Aynı gün aynı kategoriden İKİNCİ ürün: çakışma olmamalı.
-  const birinci = skuUret({ kategoriKodu: "OYU", kisaltma: "LG", gun: "260707", sira: 1 });
-  const ikinci = skuUret({ kategoriKodu: "OYU", kisaltma: "LG", gun: "260707", sira: 2 });
+  const birinci = skuUret({ kategoriKodu: "OYU", kisaltma: "LG", ayirt: "260707", sira: 1 });
+  const ikinci = skuUret({ kategoriKodu: "OYU", kisaltma: "LG", ayirt: "260707", sira: 2 });
   kontrol("aynı gün iki LEGO çakışmaz", birinci !== ikinci);
   kosanBolumler.push("sira");
+}
+
+// ===========================================================================
+console.log("\n4b) MODEL AYIRT EDİCİ — aynı markanın ürünleri ayrışıyor mu");
+// ===========================================================================
+/**
+ * KULLANICI GERÇEK KATALOGDA YAKALADI (12.08.2026): aynı marka+kategorideki
+ * FARKLI modellere hep aynı kod öneriliyordu. Bu bölüm o hatanın geri
+ * gelmesini engeller — asıl iddia en sondaki "üçü de birbirinden farklı".
+ */
+{
+  const philips: [string, string][] = [
+    ["MG5942/15 13 ü 1 Arada Erkek Bakım Seti", "MG594"],
+    ["S5588/38 Islak Kuru Tıraş Makinesi", "S5588"],
+    ["OneBlade Pro QP6650", "QP665"],
+  ];
+
+  for (const [ad, beklenen] of philips) {
+    const gelen = modelAyirtEdici(ad);
+    kontrol(
+      `"${ad.slice(0, 28)}…" -> ${beklenen}`,
+      gelen === beklenen,
+      `gelen ${gelen}`,
+    );
+  }
+
+  // ASIL İDDİA: üç Philips ürünü artık AYNI kodu almıyor.
+  const kodlar = philips.map(([ad]) =>
+    skuUret({
+      kategoriKodu: "KOZ",
+      kisaltma: "PH",
+      ayirt: modelAyirtEdici(ad)!,
+      sira: 1,
+    }),
+  );
+  kontrol(
+    "üç Philips modeli üç FARKLI kod aldı",
+    new Set(kodlar).size === 3,
+    kodlar.join(" · "),
+  );
+  kontrol(
+    "  ...eski hâlde üçü de aynı olurdu (KOZ-PH-260812-01)",
+    !kodlar.every((k) => k === kodlar[0]),
+  );
+
+  // Rakamlı belirteç yoksa baş harfler.
+  kontrol("rakamsız ad -> baş harfler", modelAyirtEdici("OneBlade Pro") === "OP");
+  kontrol("tek kelimelik ad", modelAyirtEdici("Tıraşmakinesi") === "TIRAS");
+
+  // Yalnız RAKAMDAN oluşan belirteç model değildir: "13 ü 1 Arada"daki 13
+  // ada aittir. Model olarak seçilseydi kod "13" olurdu ve hiçbir şey
+  // ayırt etmezdi.
+  kontrol(
+    "salt sayı model sayılmaz",
+    modelAyirtEdici("13 ü 1 Arada Bakım Seti MG5942") === "MG594",
+    String(modelAyirtEdici("13 ü 1 Arada Bakım Seti MG5942")),
+  );
+
+  // Türkçe harf katlaması rakamları KORUR.
+  kontrol("Türkçe harf + rakam", modelAyirtEdici("ÇİFT-500 Model") === "CIFT5");
+  kontrol("boş ad -> null", modelAyirtEdici("   ") === null);
+  kosanBolumler.push("model");
 }
 
 // ===========================================================================

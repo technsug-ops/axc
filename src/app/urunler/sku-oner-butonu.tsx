@@ -28,12 +28,15 @@ export function SkuOnerButonu({
   kategoriId,
   ad,
   marka,
+  mevcutSku,
   kullanilan,
   onOneri,
 }: {
   kategoriId: string;
   ad: string;
   marka: string;
+  /** Formdaki SKU alanının o anki değeri. Doluysa özdeşlik dalı çalışır. */
+  mevcutSku: string;
   /** Aynı formdaki diğer varyantların kodları — sıra onları atlasın. */
   kullanilan: string[];
   onOneri: (kod: string) => void;
@@ -46,7 +49,7 @@ export function SkuOnerButonu({
 
   function iste() {
     gecis(async () => {
-      const cevap = await skuOner({ kategoriId, ad, marka, kullanilan });
+      const cevap = await skuOner({ kategoriId, ad, marka, mevcutSku, kullanilan });
       setSonuc(cevap);
       if ("kod" in cevap) onOneri(cevap.kod);
     });

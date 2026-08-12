@@ -1,7 +1,7 @@
 "use server";
 
 import {
-  gunKodu,
+  modelAyirtEdici,
   skuOnEki,
   skuUret,
   sonrakiSira,
@@ -13,28 +13,51 @@ import { prisma } from "@/lib/prisma";
  * ============================================================================
  *  SKU ÖNERİSİ
  * ----------------------------------------------------------------------------
- *  OYU-LG-260811-01 = kategori kodu · ürün/marka kısaltması · gün · sıra
+ *  KOZ-PH-MG594-01 = kategori kodu · marka kısaltması · MODEL · sıra
  *
  *  ÜÇ KURAL (bkz. src/lib/kimlik.ts):
  *   - Kod İPUCUDUR, gerçek veritabanındadır. Kategori sonradan değişse kod
  *     değişmez.
- *   - Tarih ürünün SİSTEME İLK GİRİŞ günüdür, alım günü değil.
  *   - Doğduktan sonra değişmez (hareket görmüş üründe kilitli).
+ *   - Öneri DAYATMA DEĞİLDİR: düğmeye basılmadan alan dolmaz.
  *
- *  ÖNERİ DAYATMA DEĞİLDİR: düğmeye basılmadan alan dolmaz, dolduktan sonra
- *  elle değiştirilebilir. Bu yüzden sunucu tarafında SADECE öneri üretilir,
- *  kaydetme sırasında zorunluluk aranmaz.
+ *  ----------------------------------------------------------------------
+ *  12.08.2026 — GERÇEK KATALOGDA ÇIKAN İKİ KUSUR VE ÇÖZÜMLERİ
+ *  ----------------------------------------------------------------------
+ *  KUSUR 1 — sıra sayacı KÖRDÜ. Sorgu yalnız `sku` sütununa bakıyordu.
+ *  Kullanıcının ürünlerinde `sku` pazaryeri kodunu taşıyor (HBCV...),
+ *  üretilen kod ise `companySku`'ya yazılıyordu. Sorgu hiçbir şey bulamıyor,
+ *  max=0 çıkıyor ve HER SEFERİNDE "-01" öneriliyordu. Ölçüm:
+ *      KOZ-PH-260812- ön eki · sku sütununda 0 · companySku sütununda 3
+ *  Çözüm: arama İKİ SÜTUNDA birden yapılır (aşağıda `mevcutKodlar`).
+ *
+ *  KUSUR 2 — kod MODELİ AYIRT ETMİYORDU. {kategori}-{marka}-{gün} biçiminde
+ *  aynı markanın aynı gün girilen bütün ürünleri aynı ön eki paylaşıyordu.
+ *  Çözüm: gün yerine ürün adından türetilen model (bkz. modelAyirtEdici).
+ *
+ *  ÖZDEŞLİK DALI (kullanıcı kararı): SKU zaten doluysa — ki içe aktarılan
+ *  1054 ürünün hemen hepsinde pazaryeri kodu dolu — üretim yapılmaz, Firma
+ *  SKU'ya SKU'nun AYNISI önerilir. Üretim formülü yalnız SKU da boşken
+ *  devreye girer.
  * ============================================================================
  */
 
 export type SkuOnerisi =
-  | { kod: string }
-  | { hata: "KATEGORI_SECILMEDI" | "KATEGORI_KODSUZ" | "KISALTMA_YOK"; ad?: string };
+  | { kod: string; kaynak: "OZDESLIK" | "URETILDI" }
+  | {
+      hata: "KATEGORI_SECILMEDI" | "KATEGORI_KODSUZ" | "KISALTMA_YOK";
+      ad?: string;
+    };
+
+/** Çakışma denemesinde kaç sıra ileri gidilir. */
+const EN_FAZLA_DENEME = 200;
 
 export async function skuOner(girdi: {
   kategoriId: string;
   ad: string;
   marka: string;
+  /** Formdaki SKU alanının mevcut değeri — doluysa özdeşlik dalı çalışır. */
+  mevcutSku?: string;
   /**
    * Aynı formda HENÜZ KAYDEDİLMEMİŞ varyantların kodları.
    * Veritabanı bunları bilmez; çok varyantlı üründe ikinci varyant
@@ -42,6 +65,14 @@ export async function skuOner(girdi: {
    */
   kullanilan?: string[];
 }): Promise<SkuOnerisi> {
+  // --- ÖZDEŞLİK DALI: SKU doluysa üretme, aynısını öner ---
+  // Kararımız SKU ile Firma SKU'nun özdeş olması. Pazaryeri kodu varken
+  // ikinci bir kod uydurmak, aynı ürüne iki kimlik takmak olurdu.
+  const mevcutSku = (girdi.mevcutSku ?? "").trim();
+  if (mevcutSku !== "") {
+    return { kod: mevcutSku, kaynak: "OZDESLIK" };
+  }
+
   if (!girdi.kategoriId) return { hata: "KATEGORI_SECILMEDI" };
 
   const kategori = await prisma.category.findUnique({
@@ -52,24 +83,51 @@ export async function skuOner(girdi: {
   if (!kategori.code) return { hata: "KATEGORI_KODSUZ", ad: kategori.name };
 
   const kisaltma = urunKisaltmasi(girdi.ad, girdi.marka);
-  if (!kisaltma) return { hata: "KISALTMA_YOK" };
+  // Model üretilemezse (ad boş/anlamsız) kısaltma tek başına ayırt edici olur.
+  const ayirt = modelAyirtEdici(girdi.ad) ?? kisaltma;
+  if (!kisaltma || !ayirt) return { hata: "KISALTMA_YOK" };
 
-  // Gün İŞ saat diliminden çözülür — Almanya'da gece yarısından sonra
-  // girilen ürün Türkiye'nin ertesi gününü alır.
-  const gun = gunKodu(new Date());
-  const onEk = skuOnEki({ kategoriKodu: kategori.code, kisaltma, gun });
+  const onEk = skuOnEki({ kategoriKodu: kategori.code, kisaltma, ayirt });
 
+  // --- İKİ SÜTUNDA BİRDEN ARA (kusur 1) ---
   const mevcutlar = await prisma.productVariant.findMany({
-    where: { sku: { startsWith: onEk } },
-    select: { sku: true },
+    where: {
+      OR: [
+        { sku: { startsWith: onEk } },
+        { companySku: { startsWith: onEk } },
+      ],
+    },
+    select: { sku: true, companySku: true },
   });
 
-  const sira = sonrakiSira(
-    [...mevcutlar.map((v) => v.sku), ...(girdi.kullanilan ?? [])],
-    onEk,
-  );
+  const mevcutKodlar = [
+    ...mevcutlar.map((v) => v.sku),
+    ...mevcutlar.flatMap((v) => (v.companySku ? [v.companySku] : [])),
+    ...(girdi.kullanilan ?? []),
+  ];
 
-  return {
-    kod: skuUret({ kategoriKodu: kategori.code, kisaltma, gun, sira }),
-  };
+  let sira = sonrakiSira(mevcutKodlar, onEk);
+  let kod = skuUret({ kategoriKodu: kategori.code, kisaltma, ayirt, sira });
+
+  // --- ÇAKIŞMA KONTROLÜ (kusur 3) ---
+  // `sonrakiSira` ön ekle başlayan kodlara bakar; ama aynı kod ön ek DIŞI
+  // bir yolla da girilmiş olabilir (elle yazılmış, içe aktarılmış). Kullanıcıya
+  // kaydedilemeyecek bir kod önermemek için gerçekten boş olduğu doğrulanır.
+  const kullanilanKume = new Set(girdi.kullanilan ?? []);
+  for (let deneme = 0; deneme < EN_FAZLA_DENEME; deneme++) {
+    const cakisma =
+      kullanilanKume.has(kod) ||
+      (await prisma.productVariant.count({
+        where: { OR: [{ sku: kod }, { companySku: kod }] },
+      })) > 0;
+
+    if (!cakisma) return { kod, kaynak: "URETILDI" };
+
+    sira++;
+    kod = skuUret({ kategoriKodu: kategori.code, kisaltma, ayirt, sira });
+  }
+
+  // 200 denemede boş kod bulunamadıysa öneri verilmez — sonsuza kadar
+  // denemek yerine kullanıcı elle yazsın.
+  return { hata: "KISALTMA_YOK" };
 }
