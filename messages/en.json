@@ -352,7 +352,18 @@
     "vadeGuncellendi": "",
     "vadeKaydet": "",
     "hicSatisHesabi": "",
-    "hicAlisHesabi": ""
+    "hicAlisHesabi": "",
+    "sil": "",
+    "silBaslik": "",
+    "silAciklama": "",
+    "siliniyor": "",
+    "silindi": "",
+    "silinemez": "",
+    "silEngelAlim": "",
+    "silEngelSatis": "",
+    "silEngelKanalSku": "",
+    "silEngelHakedis": "",
+    "silNotu": ""
   },
   "Kart": {
     "etiketZorunlu": "",

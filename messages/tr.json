@@ -352,7 +352,18 @@
     "vadeGuncellendi": "\"{ad}\" vade ayarı güncellendi.",
     "vadeKaydet": "Vadeyi kaydet",
     "hicSatisHesabi": "Satış hesabı tanımlı değil. Hakediş yükleyebilmek için önce mağaza hesabınızı Kanal Hesapları ekranından tanımlayın.",
-    "hicAlisHesabi": "Alış hesabı tanımlı değil."
+    "hicAlisHesabi": "Alış hesabı tanımlı değil.",
+    "sil": "Sil",
+    "silBaslik": "Hesap silinsin mi?",
+    "silAciklama": "\"{ad}\" kalıcı olarak silinecek. Bu hesabın hiç kaydı yok, geri alınamaz bir kayıp olmaz — ama işlem geri alınamaz.",
+    "siliniyor": "Siliniyor...",
+    "silindi": "\"{ad}\" silindi.",
+    "silinemez": "Bu hesap silinemez: {engeller}. Kapanmış bir hesabı listelerden çıkarmak için PASİFE ALIN — geçmiş kayıtlarda görünmeye devam eder.",
+    "silEngelAlim": "{sayi} alım",
+    "silEngelSatis": "{sayi} satış",
+    "silEngelKanalSku": "{sayi} kanal SKU",
+    "silEngelHakedis": "{sayi} hakediş kaydı",
+    "silNotu": "Yalnız hiç kullanılmamış hesap silinebilir. Kaydı olan hesap pasife alınır: hiçbir formda çıkmaz ama geçmişi bozulmaz."
   },
   "Kart": {
     "etiketZorunlu": "Kart etiketi zorunlu",

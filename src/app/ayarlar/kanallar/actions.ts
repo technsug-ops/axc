@@ -208,6 +208,68 @@ export async function kanalHesabiVadeGuncelle(
   return { basari: t("vadeGuncellendi", { ad: hesap.name }) };
 }
 
+/**
+ * ============================================================================
+ *  HESAP SİLME — YALNIZ HİÇ KULLANILMAMIŞSA
+ * ----------------------------------------------------------------------------
+ *  Kapattığınız bir pazaryeri hesabını sistemden de kaldırabilmek gerekiyor
+ *  (kullanıcı isteği 12.08.2026). Ama silme, kaydı olan hesapta GEÇMİŞİ
+ *  bozar: alımlar, satışlar, hakediş kalemleri o hesaba bağlıdır.
+ *
+ *  KURAL: hiç kaydı olmayan hesap SİLİNİR; kaydı olan hesap PASİFE ALINIR.
+ *  Reddetme sessiz değildir — hangi kayıt türünden kaç tane olduğu yazar,
+ *  kullanıcı neyin engellediğini görür.
+ *
+ *  Pasif hesap: hiçbir formda çıkmaz ama geçmiş kayıtlarında görünmeye
+ *  devam eder. Kapanmış hesabın doğru karşılığı budur.
+ * ============================================================================
+ */
+export async function kanalHesabiSil(
+  _oncekiDurum: KanalHesabiDurumu,
+  formData: FormData,
+): Promise<KanalHesabiDurumu> {
+  const t = await getTranslations("KanalHesabi");
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { hatalar: [t("kimlikBulunamadi")] };
+
+  const hesap = await prisma.channelAccount.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          purchases: true,
+          sales: true,
+          channelSkus: true,
+          settlementItems: true,
+          settlements: true,
+        },
+      },
+    },
+  });
+  if (!hesap) return { hatalar: [t("bulunamadi")] };
+
+  const c = hesap._count;
+  const engeller: string[] = [];
+  if (c.purchases > 0) engeller.push(t("silEngelAlim", { sayi: c.purchases }));
+  if (c.sales > 0) engeller.push(t("silEngelSatis", { sayi: c.sales }));
+  if (c.channelSkus > 0)
+    engeller.push(t("silEngelKanalSku", { sayi: c.channelSkus }));
+  if (c.settlementItems > 0 || c.settlements > 0)
+    engeller.push(
+      t("silEngelHakedis", { sayi: c.settlementItems + c.settlements }),
+    );
+
+  if (engeller.length > 0) {
+    return { hatalar: [t("silinemez", { engeller: engeller.join(" · ") })] };
+  }
+
+  await prisma.channelAccount.delete({ where: { id } });
+
+  tazele();
+  return { basari: t("silindi", { ad: hesap.name }) };
+}
+
 /** Hesap silinmez; alımlarla ilişkili olabilir. Sadece aktif/pasif yapılır. */
 export async function kanalHesabiDurumDegistir(
   _oncekiDurum: KanalHesabiDurumu,

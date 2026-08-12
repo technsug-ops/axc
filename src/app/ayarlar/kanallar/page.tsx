@@ -17,6 +17,7 @@ import { prisma } from "@/lib/prisma";
 import { kanalHesabiDurumDegistir } from "./actions";
 import { KanalHesabiFormu } from "./kanal-hesabi-formu";
 import { RolSecici } from "./rol-secici";
+import { HesapSilButonu } from "./sil-butonu";
 
 /**
  * VERİTABANI OKUYAN SAYFA — HER İSTEKTE ÇİZİLİR.
@@ -43,7 +44,15 @@ export default async function KanalHesaplariSayfasi() {
     prisma.channelAccount.findMany({
       include: {
         channel: { select: { name: true } },
-        _count: { select: { purchases: true, sales: true } },
+        _count: {
+          select: {
+            purchases: true,
+            sales: true,
+            channelSkus: true,
+            settlementItems: true,
+            settlements: true,
+          },
+        },
       },
       orderBy: [{ channelId: "asc" }, { code: "asc" }],
     }),
@@ -170,11 +179,24 @@ export default async function KanalHesaplariSayfasi() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <DurumDegistirButonu
-                          kayitId={hesap.id}
-                          aktifMi={hesap.isActive}
-                          action={kanalHesabiDurumDegistir}
-                        />
+                        <div className="flex flex-wrap items-start justify-end gap-2">
+                          <DurumDegistirButonu
+                            kayitId={hesap.id}
+                            aktifMi={hesap.isActive}
+                            action={kanalHesabiDurumDegistir}
+                          />
+                          <HesapSilButonu
+                            hesapId={hesap.id}
+                            ad={hesap.name}
+                            kayitSayisi={
+                              hesap._count.purchases +
+                              hesap._count.sales +
+                              hesap._count.channelSkus +
+                              hesap._count.settlementItems +
+                              hesap._count.settlements
+                            }
+                          />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -182,6 +204,10 @@ export default async function KanalHesaplariSayfasi() {
               </Table>
             </div>
           )}
+
+          {/* Silme kuralı EKRANDA yazar: pasif düğmeye basıp "neden
+              olmuyor?" diye düşünmek zorunda kalmasın (#5). */}
+          <p className="text-muted-foreground mt-3 text-xs">{t("silNotu")}</p>
         </CardContent>
       </Card>
     </div>
