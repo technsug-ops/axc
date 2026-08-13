@@ -1,5 +1,5 @@
 import { GENEL_KDV_ORANI, kdvAyir, type KarDurumu } from "@/lib/kar";
-import { prisma } from "@/lib/prisma";
+import { prisma, type IslemIstemcisi } from "@/lib/prisma";
 import { acikPartiler, fifoDagit, type Parti } from "@/lib/stok";
 
 import type { Currency, ReturnType } from "@/generated/prisma/enums";
@@ -294,6 +294,17 @@ export type IadeKaydiGirdisi = {
     locationId: string | null;
     /** Değişim ürünü — doluysa EXCHANGE_OUT hareketi oluşur. */
     exchangeVariantId: string | null;
+    /**
+     * 6. SENARYO — YANLIŞ ÜRÜN GÖNDERİLDİ.
+     *
+     * Dolu ve satılan varyanttan FARKLIYSA, geri dönen mal satılan mal
+     * DEĞİLDİR: A satıldı, B gönderildi, B dönüyor, A gidiyor. O zaman
+     * `RETURN_IN` bu varyanta yazılır ve iki taraf da DÜZELTME hareketiyle
+     * kapatılır (bkz. lib/iade/yanlis-urun.ts).
+     *
+     * Boş bırakılırsa akış değişmez: dönen mal satılan maldır.
+     */
+    donenVaryantId?: string | null;
   }[];
 };
 
@@ -306,6 +317,48 @@ export class FazlaIadeHatasi extends Error {
     super("Fazla iade");
     this.name = "FazlaIadeHatasi";
   }
+}
+
+/**
+ * 6. senaryoda ters çevrilecek SALE_OUT'un maliyeti yok. Düzeltme partisi
+ * maliyetsiz doğarsa o mal bir sonraki satışta "kâr hesaplanamadı" der;
+ * sessiz bozulma yerine işlem durur ve sebep söylenir.
+ */
+export class MaliyetsizSatisHatasi extends Error {
+  constructor(readonly variantId: string) {
+    super("Satış çıkışının maliyeti yok");
+    this.name = "MaliyetsizSatisHatasi";
+  }
+}
+
+/**
+ * SEVKİYAT HATASI NEDENİ — ADIYLA DEĞİL `systemKey` İLE BULUNUR.
+ *
+ * Neden adı kullanıcıya aittir ve "Düzeltme nedenleri" ekranından
+ * değiştirilebilir; koda ad gömülse, kullanıcı adı düzelttiği an 6. senaryo
+ * sessizce çalışmaz olurdu.
+ *
+ * YOKSA AÇILIR (idempotent): sistem nedeni, kullanıcının silmesine ya da
+ * seed'in atlanmasına bağlı kalmamalı. Açılan kayıt neden listesinde
+ * görünür; adı değiştirilebilir, `systemKey` sabit kalır.
+ */
+async function sevkiyatHatasiNedeniId(tx: IslemIstemcisi): Promise<string> {
+  const mevcut = await tx.stockAdjustmentReason.findUnique({
+    where: { systemKey: "SEVKIYAT_HATASI" },
+    select: { id: true },
+  });
+  if (mevcut) return mevcut.id;
+
+  const yeni = await tx.stockAdjustmentReason.create({
+    data: {
+      name: "Sevkiyat hatası (yanlış ürün)",
+      systemKey: "SEVKIYAT_HATASI",
+      movementType: "ADJUSTMENT",
+      requiresNote: false,
+    },
+    select: { id: true },
+  });
+  return yeni.id;
 }
 
 export class DegisimStokYokHatasi extends Error {
@@ -490,8 +543,106 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
         select: { id: true },
       });
 
-      // SAĞLAM mal stoğa döner — ama itirazlı iadede ürün müşteride kalır.
-      if (girdi.returnType !== "DISPUTED" && g.saglamAdet > 0) {
+      /**
+       * 6. SENARYO — YANLIŞ ÜRÜN. Dönen mal satılan mal değilse defter İKİ
+       * TARAFTA düzeltilir; hepsi bu transaction içinde.
+       *
+       *   A (satılan) : DÜZELTME +  → "A aslında hiç gitmemişti"
+       *   B (dönen)   : DÜZELTME −  → "B fiilen gitti, defterde duruyordu"
+       *                 RETURN_IN + → sağlam döndüyse stoğa girer
+       *
+       * A'nın EXCHANGE_OUT'u aşağıdaki değişim bloğunda yazılıyor
+       * (`exchangeVariantId` = A): senaryo 6 bir DEĞİŞİMDİR, ciro DURUR.
+       */
+      const yanlisUrunMu =
+        !!g.donenVaryantId && g.donenVaryantId !== kalem.variantId;
+      const donenVaryantId = yanlisUrunMu
+        ? g.donenVaryantId!
+        : kalem.variantId;
+
+      if (yanlisUrunMu) {
+        const nedenId = await sevkiyatHatasiNedeniId(tx);
+
+        /**
+         * DÜZELTME + : MALİYET, TERS ÇEVİRDİĞİ SALE_OUT'TAN BİREBİR KOPYALANIR.
+         * Kullanıcıya sorulmaz, sıfır varsayılmaz — yoksa yeni parti NO_COST
+         * doğar ve o mal bir sonraki satışta "kâr hesaplanamadı" der; depo
+         * hatasını düzeltmek kâr motorunu bozardı.
+         * _Mimar kilidi 14.08.2026._
+         *
+         * ÇOK PARTİLİ SATIŞTA PARTİ BAŞINA AYRI SATIR: ortalama maliyet
+         * yazmak, iki farklı maliyetli malı tek fiyata eşitlemek olurdu.
+         */
+        for (const cikis of kalem.stockMovements) {
+          if (cikis.unitCostAmount === null) {
+            throw new MaliyetsizSatisHatasi(kalem.variantId);
+          }
+          await tx.stockMovement.create({
+            data: {
+              variantId: kalem.variantId,
+              type: "ADJUSTMENT",
+              quantityDelta: Math.abs(cikis.quantityDelta),
+              occurredAt: girdi.occurredAt,
+              returnItemId: iadeKalemi.id,
+              adjustmentReasonId: nedenId,
+              unitCostAmount: cikis.unitCostAmount,
+              unitCostCurrency: cikis.unitCostCurrency,
+            },
+          });
+        }
+
+        // DÜZELTME − : B fiilen gitmişti; FIFO'dan maliyetiyle düşer.
+        const bPartileri = await acikPartiler(tx, donenVaryantId);
+        const bDagitim = fifoDagit(bPartileri, g.iadeAdedi);
+        if (!bDagitim.yeterliMi) {
+          throw new DegisimStokYokHatasi(
+            donenVaryantId,
+            g.iadeAdedi,
+            bDagitim.mevcut,
+          );
+        }
+
+        let kalanSaglam = girdi.returnType === "DISPUTED" ? 0 : g.saglamAdet;
+        for (const pay of bDagitim.dagitim) {
+          await tx.stockMovement.create({
+            data: {
+              variantId: donenVaryantId,
+              type: "ADJUSTMENT",
+              quantityDelta: -pay.adet,
+              occurredAt: girdi.occurredAt,
+              returnItemId: iadeKalemi.id,
+              adjustmentReasonId: nedenId,
+              sourceMovementId: pay.parti.hareketId,
+              unitCostAmount: pay.parti.birimMaliyet,
+              unitCostCurrency: pay.parti.birimMaliyetParaBirimi,
+            },
+          });
+
+          /**
+           * RETURN_IN, ÇIKIŞ MALİYETİNİN AYNASI: aynı partiden çıktı, aynı
+           * maliyetle giriyor. Yeni maliyet uydurulsaydı aynı mal defterde
+           * iki değerle durur ve envanter değeri sessizce kayardı.
+           * Hasarlı kısım HİÇ girmez (maliyeti satıcıda kalır).
+           */
+          if (kalanSaglam > 0) {
+            const adet = Math.min(pay.adet, kalanSaglam);
+            kalanSaglam -= adet;
+            await tx.stockMovement.create({
+              data: {
+                variantId: donenVaryantId,
+                type: "RETURN_IN",
+                quantityDelta: adet,
+                occurredAt: girdi.occurredAt,
+                returnItemId: iadeKalemi.id,
+                locationId: g.locationId,
+                unitCostAmount: pay.parti.birimMaliyet,
+                unitCostCurrency: pay.parti.birimMaliyetParaBirimi,
+              },
+            });
+          }
+        }
+      } else if (girdi.returnType !== "DISPUTED" && g.saglamAdet > 0) {
+        // SAĞLAM mal stoğa döner — ama itirazlı iadede ürün müşteride kalır.
         await tx.stockMovement.create({
           data: {
             variantId: kalem.variantId,
