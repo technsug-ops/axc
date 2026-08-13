@@ -946,7 +946,10 @@
     "tazminatTalebiAc": "Tazminat talebi aç",
     "hasarNotuZorunlu": "{urun}: hasarlı adet girdiniz, hasar notu zorunludur. Ne hasarı olduğunu ve kimin tespit ettiğini kısaca yazın.",
     "degisimTeslimi": "Değişim ürünü teslim tarihi",
-    "degisimTeslimiNotu": "Hakediş vadesi bu tarihten yeniden başlar. Boş bırakılırsa satış tarihi kullanılır."
+    "degisimTeslimiNotu": "Hakediş vadesi bu tarihten yeniden başlar. Boş bırakılırsa satış tarihi kullanılır.",
+    "donenUrun": "Dönen ürün (yanlış giden)",
+    "donenUrunAyni": "Satılan ürünün kendisi",
+    "donenUrunBildirimden": "Bildirimden geldi, seçili getirildi."
   },
   "Gider": {
     "baslik": "Giderler",

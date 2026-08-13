@@ -68,6 +68,14 @@ export function BildirimFormu({
   const [varyantId, setVaryantId] = useState("");
   const [adet, setAdet] = useState("1");
   const [not, setNot] = useState("");
+  const [donenId, setDonenId] = useState("");
+
+  /**
+   * DÖNEN ÜRÜN yalnız YANLIS_URUN gerekçesinde sorulur: 6. senaryonun
+   * defter düzeltmesi bu varyanta yazılıyor ve iade formu onu SEÇİLİ
+   * getiriyor. Diğer gerekçelerde dönen mal satılan malın kendisidir.
+   */
+  const donenSorulur = gerekce === "YANLIS_URUN";
 
   const ayirmaSorulur =
     gerekce !== "" && degisimGerekceleri.includes(gerekce as ReturnReason);
@@ -78,6 +86,7 @@ export function BildirimFormu({
     setKod("");
     setGerekce("");
     setVaryantId("");
+    setDonenId("");
     setAdet("1");
     setNot("");
     router.refresh();
@@ -90,6 +99,7 @@ export function BildirimFormu({
     reason: gerekce,
     reservedVariantId: ayirmaSorulur && varyantId ? varyantId : null,
     reservedQuantity: ayirmaSorulur && varyantId ? Number(adet) || 0 : 0,
+    returnedVariantId: donenSorulur && donenId ? donenId : null,
     note: not,
   });
 

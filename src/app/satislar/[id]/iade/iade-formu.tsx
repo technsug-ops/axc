@@ -59,6 +59,8 @@ type Girdi = {
   hasarNotu: string;
   locationId: string;
   exchangeVariantId: string;
+  /** 6. senaryo: geri DÖNEN (yanlış giden) varyant. Boşsa satılan maldır. */
+  donenVaryantId: string;
 };
 
 const YOK = "__yok__";
@@ -81,6 +83,7 @@ export function IadeFormu({
   varyantlar,
   yenidenGonderimGorunur,
   bugun,
+  onDolu,
 }: {
   saleId: string;
   kalemler: IadeKalemSecenegi[];
@@ -89,6 +92,16 @@ export function IadeFormu({
   /** Kanal politikası: itirazlı iadede yeniden gönderimi satıcı öder mi? */
   yenidenGonderimGorunur: boolean;
   bugun: string;
+  /**
+   * BİLDİRİMDEN ÖN-DOLU GEÇİŞ (). YANLIS_URUN
+   * gerekçesinde dönen varyant SEÇİLİ gelir; kullanıcı elle aramaz.
+   */
+  onDolu?: {
+    bildirimId: string;
+    donenVaryantId: string | null;
+    gonderilecekVaryantId: string | null;
+    donenEtiket: string | null;
+  } | null;
 }) {
   const t = useTranslations("Iade");
   const tTur = useTranslations("IadeTuru");
@@ -121,7 +134,10 @@ export function IadeFormu({
           hasarliAdet: "",
           hasarNotu: "",
           locationId: s.varsayilanLocationId,
-          exchangeVariantId: "",
+          // ÖN-DOLU: bildirim YANLIS_URUN ise gönderilecek ürün satılan
+          // varyanttır; dönen ürün bildirimden geliyor ve SEÇİLİ gelir.
+          exchangeVariantId: onDolu?.gonderilecekVaryantId ?? "",
+          donenVaryantId: onDolu?.donenVaryantId ?? "",
         },
       ]),
     ),
@@ -157,6 +173,7 @@ export function IadeFormu({
 
   function girdiTopla() {
     return {
+      bildirimId: onDolu?.bildirimId ?? "",
       saleId,
       code,
       returnType,
@@ -177,6 +194,7 @@ export function IadeFormu({
           hasarNotu: g.hasarNotu,
           locationId: g.locationId,
           exchangeVariantId: g.exchangeVariantId,
+          donenVaryantId: g.donenVaryantId,
         };
       }),
     };
@@ -459,6 +477,51 @@ export function IadeFormu({
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    {/* ============ DÖNEN ÜRÜN — 6. SENARYO ============
+                        A satıldı, B gönderildi: geri gelen mal SATILAN MAL
+                        DEĞİL. Bu alan doluysa motor beş hareketlik defteri
+                        yazar (DÜZELTME ±, EXCHANGE_OUT, RETURN_IN) ve
+                        maliyeti ters çevirdiği SALE_OUT'tan kopyalar.
+                        Bildirimden gelindiyse SEÇİLİ gelir. */}
+                    <div className="space-y-2">
+                      <Label htmlFor={`donen-${s.saleItemId}`}>
+                        {t("donenUrun")}
+                      </Label>
+                      <Select
+                        value={g.donenVaryantId || YOK}
+                        onValueChange={(d) =>
+                          guncelle(s.saleItemId, {
+                            donenVaryantId: d === YOK ? "" : d,
+                          })
+                        }
+                      >
+                        <SelectTrigger
+                          id={`donen-${s.saleItemId}`}
+                          className="w-full"
+                        >
+                          <SelectValue placeholder={t("donenUrunAyni")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={YOK}>
+                            {t("donenUrunAyni")}
+                          </SelectItem>
+                          {varyantlar.map((v) => (
+                            <SelectItem key={v.id} value={v.id}>
+                              {v.etiket}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {/* Bildirimden geldiyse nereden geldiğini söyle:
+                          "kim doldurdu" sorusu ekranda cevaplı olsun (#5). */}
+                      {onDolu?.donenVaryantId === g.donenVaryantId &&
+                      g.donenVaryantId !== "" ? (
+                        <p className="text-muted-foreground text-xs">
+                          {t("donenUrunBildirimden")}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 ) : null}

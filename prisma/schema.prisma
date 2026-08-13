@@ -241,6 +241,9 @@ model ProductVariant {
   returnItems    ReturnItem[]    @relation("IadeVaryanti")
   exchangeItems  ReturnItem[]    @relation("DegisimVaryanti")
   ayrilanBildirimler ReturnNotice[] @relation("AyrilanVaryant")
+  /// 6. senaryoda YANLIŞ GİDEN (geri dönen) ürün olarak geçtiği bildirimler.
+  /// Ayrılan ile aynı şey DEĞİL: ayrılan gönderilecek, dönen geri gelen.
+  donenBildirimler ReturnNotice[] @relation("DonenVaryant")
   stockMovements StockMovement[]
 
   @@index([productId])
@@ -1075,6 +1078,22 @@ model ReturnNotice {
   reservedVariantId String?
   reservedVariant   ProductVariant? @relation("AyrilanVaryant", fields: [reservedVariantId], references: [id], onDelete: SetNull)
   reservedQuantity  Int             @default(0)
+
+  /**
+   * DÖNEN (YANLIŞ GİDEN) ÜRÜN — yalnız 6. senaryoda dolu.
+   * _Kullanıcı onayı 14.08.2026._
+   *
+   * `reservedVariantId` ile KARIŞTIRILMAZ, ikisi ayrı şeyi anlatır:
+   *   reserved  → GÖNDERECEĞİMİZ ürün (stok ekranındaki "ayrılmış" rozeti)
+   *   returned  → GERİ GELEN ürün (defter düzeltmesinin öznesi)
+   * 6. senaryoda gönderilen A, dönen B'dir; tek alanla anlatılamıyordu ve
+   * iade formu dönen ürünü ön-dolu getiremiyordu.
+   *
+   * Boş kalması NORMALDİR: diğer gerekçelerde dönen mal satılan malın
+   * kendisidir, ayrıca yazmak tekrar olurdu.
+   */
+  returnedVariantId String?
+  returnedVariant   ProductVariant? @relation("DonenVaryant", fields: [returnedVariantId], references: [id], onDelete: SetNull)
 
   /// Mal gelip hüküm verilince doğan iade. Bire bir.
   returnId String? @unique

@@ -22,12 +22,16 @@ export async function generateMetadata() {
 
 export default async function IadeSayfasi({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  /** Bildirimden gelen ön-dolu geçiş: ?bildirim=<id> */
+  searchParams: Promise<{ bildirim?: string }>;
 }) {
   await sayfaIzni("iade.yaz");
 
   const { id } = await params;
+  const { bildirim: bildirimId } = await searchParams;
   const t = await getTranslations("Iade");
 
   const satis = await prisma.sale.findUnique({
@@ -93,6 +97,47 @@ export default async function IadeSayfasi({
       : `${v.product.name} (${v.sku})`,
   }));
 
+  /**
+   * ÖN-DOLU GEÇİŞ — bildirimden gelindiyse form hazır açılır.
+   *
+   * YANLIS_URUN gerekçesinde iki bilgi taşınır ve BİNDİRİLMEZ:
+   *   dönen (returnedVariantId)  → geri gelen yanlış ürün, defter düzeltmesi
+   *   gönderilecek (reservedVariantId) → değişimde çıkacak doğru ürün
+   * Diğer gerekçelerde dönen mal satılan malın kendisidir; alan boş kalır ve
+   * form eski davranışını sürdürür.
+   *
+   * Bildirim başka bir satışa aitse ya da iadesi zaten işlenmişse ÖN-DOLU
+   * UYGULANMAZ: yanlış satışın ürününü seçili getirmek sessiz bir hata olurdu.
+   */
+  const bildirim = bildirimId
+    ? await prisma.returnNotice.findFirst({
+        where: { id: bildirimId, saleId: satis.id, returnId: null },
+        select: {
+          id: true,
+          reason: true,
+          returnedVariantId: true,
+          reservedVariantId: true,
+          returnedVariant: {
+            select: { sku: true, product: { select: { name: true } } },
+          },
+        },
+      })
+    : null;
+
+  const onDolu =
+    bildirim === null
+      ? null
+      : {
+          bildirimId: bildirim.id,
+          donenVaryantId:
+            bildirim.reason === "YANLIS_URUN" ? bildirim.returnedVariantId : null,
+          gonderilecekVaryantId:
+            bildirim.reason === "YANLIS_URUN" ? bildirim.reservedVariantId : null,
+          donenEtiket: bildirim.returnedVariant
+            ? `${bildirim.returnedVariant.product.name} (${bildirim.returnedVariant.sku})`
+            : null,
+        };
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
@@ -122,6 +167,7 @@ export default async function IadeSayfasi({
             satis.channelAccount.channel.disputedReshipPaidBySeller
           }
           bugun={tarihGirdisi(new Date())}
+          onDolu={onDolu}
         />
       )}
     </div>

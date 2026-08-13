@@ -37,6 +37,12 @@ export type IadeKalemGirisi = {
   hasarNotu: string;
   locationId: string;
   exchangeVariantId: string;
+  /**
+   * 6. SENARYO — DÖNEN (yanlış giden) varyant. Satılan varyanttan
+   * farklıysa motor beş hareketlik defteri yazar (bkz. lib/iade.ts).
+   * Boşsa akış değişmez: dönen mal satılan maldır.
+   */
+  donenVaryantId: string;
 };
 
 export type IadeFormGirdisi = {
@@ -52,6 +58,8 @@ export type IadeFormGirdisi = {
   ceza: number | null;
   cezaNotu: string;
   kalemler: IadeKalemGirisi[];
+  /** Hangi bildirimden geldi — kaydedilince o bildirim kapatılır. */
+  bildirimId: string;
 };
 
 export type OnizlemeSonucu = {
@@ -258,6 +266,7 @@ export async function iadeOlustur(
         hasarNotu: k.hasarNotu || null,
         locationId: k.locationId || null,
         exchangeVariantId: k.exchangeVariantId || null,
+        donenVaryantId: k.donenVaryantId || null,
       })),
     });
   } catch (e) {
@@ -287,10 +296,25 @@ export async function iadeOlustur(
     return { hata: t("kaydedilemedi") };
   }
 
+  /**
+   * BİLDİRİM İADEYE BAĞLANIR VE KAPANIR.
+   *
+   * `returnId` bire birdir: bir bildirimden bir iade doğar. `returnId: null`
+   * koşulu ikinci kez işlemeyi engeller — aksi hâlde aynı bildirimden iki
+   * iade açılıp stok iki kez düzeltilebilirdi. Ayrılmış rozeti de bu
+   * kapanışla kendiliğinden düşer (türetilmiş, sayaç değil).
+   */
+  if (girdi.bildirimId) {
+    await prisma.returnNotice.updateMany({
+      where: { id: girdi.bildirimId, returnId: null },
+      data: { returnId: yeniId, status: "KAPANDI" },
+    });
+    revalidatePath("/iadeler");
+  }
+
   revalidatePath(`/satislar/${girdi.saleId}`);
   revalidatePath("/satislar");
   revalidatePath("/stok");
-  void yeniId;
   redirect(basariAdresi(`/satislar/${girdi.saleId}`, "iadeAlindi"));
 }
 

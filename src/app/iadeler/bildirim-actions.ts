@@ -51,6 +51,11 @@ function semaKur(t: Ceviri) {
     /** Değişim için ayrılan ürün — FİZİKSEL STOĞA DOKUNMAZ, niyet beyanıdır. */
     reservedVariantId: z.string().nullable(),
     reservedQuantity: z.number().int().min(0),
+    /**
+     * 6. SENARYODA DÖNEN (yanlış giden) ürün. `reservedVariantId` ile
+     * BİNDİRİLMEZ: ayrılan gönderilecek, dönen geri gelen.
+     */
+    returnedVariantId: z.string().nullable(),
     note: z.string().trim(),
   });
 }
@@ -118,6 +123,9 @@ export async function bildirimOlustur(
       note: veri.note || null,
       reservedVariantId: veri.reservedVariantId || null,
       reservedQuantity: veri.reservedVariantId ? veri.reservedQuantity : 0,
+      // Yalnız YANLIS_URUN gerekçesinde anlamlı; diğerlerinde boş kalır.
+      returnedVariantId:
+        veri.reason === "YANLIS_URUN" ? veri.returnedVariantId || null : null,
       userId: kullanici?.id ?? null,
     },
   });

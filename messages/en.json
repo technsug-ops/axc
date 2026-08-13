@@ -946,7 +946,10 @@
     "tazminatTalebiAc": "",
     "hasarNotuZorunlu": "",
     "degisimTeslimi": "",
-    "degisimTeslimiNotu": ""
+    "degisimTeslimiNotu": "",
+    "donenUrun": "",
+    "donenUrunAyni": "",
+    "donenUrunBildirimden": ""
   },
   "Gider": {
     "baslik": "",
