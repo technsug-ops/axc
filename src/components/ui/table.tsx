@@ -65,12 +65,25 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   )
 }
 
+/**
+ * YOĞUNLUK — 14.08.2026'da düşürüldü.
+ *
+ * Liste tabloları 9-10 sütuna çıktı ve içerikleri `whitespace-nowrap`
+ * (para, tarih, kod); toplam genişlik dizüstü ekranında sığmıyordu.
+ * Kullanıcı kararı: "gerekiyorsa punto düşürelim." Önce YAZI BOYUTUNA
+ * DEĞİL BOŞLUĞA dokunuldu — yatay dolgu 8px'ten 6px'e, satır yüksekliği
+ * 40px'ten 36px'e indi. 10 sütunlu bir tabloda bu ~40px kazandırıyor ve
+ * okunabilirlikten hiçbir şey götürmüyor.
+ *
+ * Dokunma hedefleri BUNDAN ETKİLENMEZ: satır eylemleri kendi buton
+ * bileşenlerinde 44px kalıyor (İlke #8).
+ */
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       data-slot="table-head"
       className={cn(
-        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
+        "h-9 px-1.5 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}
@@ -83,7 +96,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        "px-1.5 py-1.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}

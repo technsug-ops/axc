@@ -88,7 +88,23 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <TooltipProvider delayDuration={0}>
             <SidebarProvider>
               <AppSidebar eposta={kullanici.email} />
-              <SidebarInset>
+              {/*
+                `min-w-0` ZORUNLU — yoksa SAYFA yana kayar.
+                _Kullanıcı 14.08.2026'da canlıda yakaladı: /alimlar,
+                /satislar ve /urunler ekranlarında pencerenin altında yatay
+                kaydırma çubuğu çıkıyordu._
+
+                Sebep: SidebarInset bir flex öğesi ve flex öğelerinin
+                varsayılan `min-width` değeri `auto`'dur — yani içeriğinden
+                DAHA KÜÇÜK olamaz. Geniş bir tablo öğeyi viewport'un dışına
+                itiyor, kaydırma da tablonun kabında değil SAYFADA oluşuyor:
+                menü ve üst çubuk dahil her şey kayıyor.
+
+                `min-w-0` öğenin küçülmesine izin verir; böylece tablolar
+                KENDİ `overflow-x-auto` kaplarında kayar — istenen davranış
+                budur.
+              */}
+              <SidebarInset className="min-w-0">
                 <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b px-3 md:px-4 print:hidden">
                   {/*
                     Menü tetikleyicisi.
@@ -114,7 +130,17 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                   Burada <main> KULLANILMAZ: SidebarInset zaten <main> üretiyor,
                   iç içe main geçersiz HTML olur.
                 */}
-                <div className="flex-1 p-4 md:p-6 print:p-0">
+                {/*
+                  `min-w-0` yukarıdakinin ikizi (bu da flex öğesi),
+                  `overflow-x-clip` ise EMNİYET KEMERİ: yarın bir ekran
+                  kendi kabına almadığı geniş bir öğe koyarsa sayfa yine
+                  kaymaz, o öğe kırpılır. Kırpmak, tüm arayüzün yana
+                  kaymasından iyidir — ama asıl çözüm her zaman geniş
+                  içeriği kendi `overflow-x-auto` kabına koymaktır.
+                  `clip` seçildi, `hidden` değil: `hidden` yeni bir kaydırma
+                  bağlamı açar ve içteki `sticky` başlıkları bozar.
+                */}
+                <div className="min-w-0 flex-1 overflow-x-clip p-4 md:p-6 print:p-0">
                   {/* Basari mesaji TEK YERDE: her ekranda ayni yerde,
                       ayni gorunumde cikar (Kullanici Kolayligi #10). */}
                   <BasariBildirimi />
