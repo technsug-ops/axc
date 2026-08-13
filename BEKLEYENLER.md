@@ -6,8 +6,10 @@ listesiyle birlikte teslim edilir.
 
 ## AÇIK PAKET SIRASI — 13.08.2026 itibarıyla
 
-İki paket açık. Mimar onaylı sıra, **paket ADIYLA**:
-**RMA KALANI → GEÇMİŞ VERİ.**
+İki paket açık + bir yeni istek. Mimar onaylı sıra, **paket ADIYLA**:
+**RMA KALANI (şimdi) → GEÇMİŞ VERİ.**
+PANEL / İŞ ZEKÂSI paketi 14.08.2026'da istendi; sıradaki yeri mimar
+kararını bekliyor (aşağıda, ölçümü yapıldı).
 Gerekçe: geçmiş veri referans olduğu için en son; RMA kalanı günlük akışta
 karşımıza çıkıyor. (Komisyon paketi 13.08.2026'da tamamlandı, aşağıda.)
 
@@ -57,7 +59,9 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       - Aralık dışı oran (ör. fiyat kolonu kayması: 3299) YAZILMAZ, uyarıya
         düşer.
 
-- [x] ~~**SÜZGEÇ AŞAMA 1**~~ ✓ 13.08.2026 — Halil testi BEKLİYOR
+- [x] ~~**SÜZGEÇ AŞAMA 1**~~ ✓ 13.08.2026 · **Halil testi GEÇTİ 14.08.2026**
+      (gerçek cihaz + canlı adres, mimar onaylı). Aynı gün ek düzeltme:
+      liste tabloları tek ekrana sığdırıldı (bkz. aşağıdaki yerleşim notu).
       Satışlar süzgeçleri (dönem · kanal · kanal hesabı · kâr durumu · iade
       var/yok) · Alımlar süzgeçleri (dönem · durum · hesap · tedarikçi · kart)
       · panelde kanal adı TIKLANABİLİR (`/satislar?kanal=X&pencere=BU_AY`) ·
@@ -109,6 +113,42 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       yok); `Settlement` pazaryeri rapor dosyasından doğar ve satırları
       siparişlerle eşleşir (eşleşecek sipariş yok). Mevcut modellere
       koymak iki motoru da kirletir. `source=GECMIS_EXCEL` damgası şart.
+
+- [ ] **PANEL / İŞ ZEKÂSI (yeni istek 14.08.2026) — sıradaki yeri onay bekliyor**
+      Kullanıcı: "Paneli daha efektif kullanmak istiyorum... bir nevi
+      business intelligence olarak bana destek olsun."
+      İstenenler: dönem seçimi (bugün · bu hafta · bu ay · özel aralık) ·
+      kanal kırılımı (HB · TY · N11) · toplam sipariş · kargoya teslim edilen
+      sipariş · ciro · NET-1 ve NET-2 · en çok satılan ürünler · en çok kâr
+      edilen ürünler · en çok stokta bekleyen ürünler · en az kâr bırakan
+      ürünler.
+
+      **ÖLÇÜLDÜ 14.08.2026 — 8 kalemin 7'si BUGÜNKÜ VERİYLE üretilebilir,
+      1'i ÜRETİLEMEZ:**
+      - Dönem + kanal süzgeci: altyapı HAZIR (`lib/liste-suzgeci.ts` →
+        `pencereCoz`, `components/suzgec-cubugu.tsx`). Panel bugün sabit
+        "bu ay" gösteriyor; süzgeç çubuğu takılacak.
+      - Toplam sipariş · ciro: panel zaten hesaplıyor.
+      - NET-1: `Sale.net1Amount` var ama panel yalnız NET-2 gösteriyor;
+        eklenmesi ekran işi, hesap işi değil.
+      - Ürün bazlı kâr sıralaması (en çok / en az kâr): **`SaleItem` üzerinde
+        `net1Amount`, `net2Amount`, `profitStatus` VAR** — kalem bazlı kâr
+        snapshot'ı zaten yazılıyor. Sıralama doğrudan bu alanlardan çıkar.
+      - En çok satılan: `SaleItem.quantity` toplamı.
+      - En çok stokta bekleyen: stok defterinden türetilir; "bekleme" ölçütü
+        KARAR GEREKTİRİR — adet mi, yaşlanma (en eski FIFO partisi) mı?
+        İkisi de hesaplanabilir, ikisi farklı soruyu cevaplar.
+      - ⛔ **KARGOYA TESLİM EDİLEN SİPARİŞ — BUGÜN İZLENMİYOR.** `Sale`
+        üzerinde kargo firması, desi ve ücret var (satışta snapshot'lanıyor)
+        ama **"kargoya verildi" durumu/tarihi YOK**. Bu rakam ancak yeni bir
+        alan (ör. `shippedAt`) + onu dolduran bir akış ile doğar; uydurulamaz.
+        Migration ve akış kararı mimara ait.
+
+      **NOT — kâr sıralaması yanıltıcı olabilir:** kalem NET'i sipariş
+        genelindeki kesintilerin (kargo, ödeme gideri) payını taşımıyorsa
+        tek kalemli ve çok kalemli siparişler aynı ölçekte karşılaştırılmaz.
+        Yazımdan önce `lib/kar.ts`'in kalem/sipariş ayrımı okunacak ve
+        sıralamanın hangi rakama dayandığı EKRANDA yazılacak.
 
 ## Sonraki uygun pakette
 
