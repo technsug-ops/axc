@@ -179,6 +179,20 @@ export function IadeFormu({
     };
   }
 
+  /**
+   * Hasarlı işaretlenmiş ama notu boş kalem var mı?
+   * Sunucu da aynı kontrolü yapar (tek doğruluk kaynağı orası); buradaki
+   * kopya sadece kullanıcıyı kaydet düğmesine kadar yürütmemek için.
+   */
+  const notsuzHasar = secenekler.some((s) => {
+    const g = girdiler[s.saleItemId];
+    return (
+      Math.trunc(sayi(g.iadeAdedi)) > 0 &&
+      Math.trunc(sayi(g.hasarliAdet)) > 0 &&
+      g.hasarNotu.trim() === ""
+    );
+  });
+
   function onizle() {
     setMesaj(null);
     gecis(async () => {
@@ -423,10 +437,13 @@ export function IadeFormu({
                   </div>
                 ) : null}
 
+                {/* HASAR NOTU ZORUNLU: hasarlı işaretlemek, o malın
+                    maliyetini üstünüzde bırakan bir para kararıdır.
+                    Gerekçesiz kalırsa aylar sonra kimse hatırlamaz. */}
                 {stogaGirer && sayi(g.hasarliAdet) > 0 ? (
                   <div className="space-y-2">
                     <Label htmlFor={`hasarnot-${s.saleItemId}`}>
-                      {t("hasarNotu")}
+                      {t("hasarNotu")} *
                     </Label>
                     <Textarea
                       id={`hasarnot-${s.saleItemId}`}
@@ -435,8 +452,14 @@ export function IadeFormu({
                       onChange={(e) =>
                         guncelle(s.saleItemId, { hasarNotu: e.target.value })
                       }
-                      placeholder={ortak("istegeBagli")}
+                      placeholder={t("hasarNotuIpucu")}
+                      aria-invalid={g.hasarNotu.trim() === ""}
                     />
+                    {g.hasarNotu.trim() === "" ? (
+                      <p className="text-destructive text-sm" role="alert">
+                        {t("hasarNotuZorunluKisa")}
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
 
@@ -599,12 +622,23 @@ export function IadeFormu({
                   <div key={i} className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">
                       {tKesinti.has(s.code) ? tKesinti(s.code) : s.code}
+                      {/* AÇIK SIFIR: "maliyet geri gelmedi"yi satırın
+                          YOKLUĞUNDAN anlamak imkânsızdı. Artık satır durur
+                          ve nedenini yazar — kullanıcı kaydetmeden önce ne
+                          kaybedeceğini görür. */}
+                      {s.code === "MALIYET_GERI" && s.tutar === 0 ? (
+                        <span className="text-muted-foreground block text-xs">
+                          {t("maliyetGeriYok")}
+                        </span>
+                      ) : null}
                     </dt>
                     <dd
                       className={
                         s.tutar < 0
                           ? "text-destructive whitespace-nowrap"
-                          : "whitespace-nowrap text-emerald-600"
+                          : s.tutar === 0
+                            ? "text-muted-foreground whitespace-nowrap"
+                            : "whitespace-nowrap text-emerald-600"
                       }
                     >
                       {s.tutar > 0 ? "+" : ""}
@@ -654,11 +688,21 @@ export function IadeFormu({
         </div>
       ) : null}
 
+      {/* Devre dışı düğme sebebini SÖYLEMELİ (#5): sessiz kilit,
+          kullanıcıya "sistem bozuk" dedirtir. */}
+      {notsuzHasar ? (
+        <p className="text-destructive text-sm" role="alert">
+          {t("hasarNotuZorunluKisa")}
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         {/* Ledger'a yazar, geri alınamaz — onay zorunlu (#6). */}
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button disabled={bekliyor || !onizleme?.satirlar?.length}>
+            <Button
+              disabled={bekliyor || !onizleme?.satirlar?.length || notsuzHasar}
+            >
               <Undo2 />
               {t("iadeKaydet")}
             </Button>

@@ -280,6 +280,50 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
     800,
   );
 
+  /**
+   * AÇIK SIFIR — 13.08.2026 dersi, kilitleniyor.
+   *
+   * Tamamı hasarlı iadede MALIYET_GERI satırı eskiden HİÇ OLUŞMUYORDU.
+   * Kullanıcı "maliyet geri gelmedi"yi satırın yokluğundan anlamak
+   * zorundaydı; anlamadı ve kanal NET-2'si eksiye düşünce "hesaplamada
+   * hata var" dedi. Hesap doğruydu, eksik olan AÇIKLAMAYDI.
+   *
+   * Bu kontrol iki şeyi birden korur: satır VAR olmalı ve tutarı SIFIR
+   * olmalı. Biri bozulursa ekrandaki açıklama sessizce kaybolur.
+   */
+  const th = iadeEtkisiHesapla({
+    returnType: "NORMAL",
+    kalemler: [
+      {
+        satilanAdet: 1,
+        iadeAdedi: 1,
+        saglamAdet: 0, // tamamı hasarlı
+        satisTutari: 2980,
+        maliyet: 1799,
+        kdvOrani: 20,
+        komisyon: 439.55,
+        degisimMaliyeti: null,
+      },
+    ],
+    odemeGideri: 0,
+    siparisToplami: 2980,
+    iadeKargosu: 163,
+    yenidenGonderimKargosu: null,
+    ceza: null,
+  });
+  kontrol(
+    "tamamı hasarlı: MALIYET_GERI satırı GÖRÜNÜR (sessiz yokluk değil)",
+    th.kalemSatirlari[0].some((s) => s.code === "MALIYET_GERI"),
+  );
+  yakin(
+    "tamamı hasarlı: MALIYET_GERI tutarı sıfır",
+    satir(th.kalemSatirlari[0], "MALIYET_GERI"),
+    0,
+  );
+  // Canlı vakanın kendisi: açık sıfır eklemek TOPLAMI değiştirmemeli.
+  yakin("canlı TY vakası NET-1 etkisi", th.net1Etkisi, -2678.62);
+  yakin("canlı TY vakası NET-2 etkisi", th.net2Etkisi, -2228.04);
+
   // Değişim: yerine giden ürünün maliyeti giderdir.
   const d = iadeEtkisiHesapla(
     lego({ kalemler: [{ ...lego().kalemler[0], degisimMaliyeti: 900 }] }),

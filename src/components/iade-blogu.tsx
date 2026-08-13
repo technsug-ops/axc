@@ -1,6 +1,9 @@
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bicimlendirici } from "@/lib/bicim";
 import { iadeTuruEtiketleri } from "@/lib/etiketler";
@@ -30,14 +33,51 @@ export type IadeGorunumu = {
   satirlar: { code: string; tutar: number }[];
 };
 
+/**
+ * TALEP BEKLEYEN HASAR — eyleme dönük öneri.
+ *
+ * 13.08.2026 dersi: kullanıcı hasarlı bir iade kaydetti, 1.799 TL maliyet
+ * üstünde kaldı ve bunu ancak kanal NET-2'si eksiye düşünce fark etti.
+ * Hasarın parasal sonucu, hasarın kaydedildiği yerde söylenmeli.
+ *
+ * Kaydetme ANINA değil VERİYE bağlı: talep açılana kadar her açılışta
+ * görünür. Tek seferlik bir bildirim olsaydı, kapatan bir daha görmezdi.
+ */
+export type BekleyenHasar = {
+  adet: number;
+  tutar: number;
+  paraBirimi: Currency;
+};
+
+/**
+ * GEÇMİŞ KAYITLAR İÇİN AÇIK SIFIR.
+ *
+ * 13.08.2026'dan önce yazılan iadelerde sağlam adet 0'ken `MALIYET_GERI`
+ * satırı hiç oluşmuyordu; kullanıcı "maliyet geri gelmedi"yi satırın
+ * YOKLUĞUNDAN anlamak zorundaydı ve anlamadı.
+ *
+ * Defter kaydı DEĞİŞTİRİLMEZ (anayasa: kayıt silinmez/düzenlenmez) —
+ * eksik satır yalnızca EKRANDA tamamlanır. Koşul `KAYIP_GELIR`e bağlı:
+ * itirazı kabul edilen (DISPUTED) iadede gelir zaten geri gelmez, orada
+ * maliyet satırı anlamsız olurdu.
+ */
+function gosterilecekSatirlar(satirlar: { code: string; tutar: number }[]) {
+  const gelirDondu = satirlar.some((s) => s.code === "KAYIP_GELIR");
+  const maliyetSatiriVar = satirlar.some((s) => s.code === "MALIYET_GERI");
+  if (!gelirDondu || maliyetSatiriVar) return satirlar;
+  return [...satirlar, { code: "MALIYET_GERI", tutar: 0 }];
+}
+
 export async function IadeBlogu({
   iadeler,
   paraBirimi,
   orijinalNet1,
   orijinalNet2,
+  bekleyenHasar,
 }: {
   iadeler: IadeGorunumu[];
   paraBirimi: Currency;
+  bekleyenHasar?: BekleyenHasar | null;
   orijinalNet1: number | null;
   orijinalNet2: number | null;
 }) {
@@ -77,6 +117,25 @@ export async function IadeBlogu({
       </CardHeader>
       <CardContent className="space-y-5">
         <p className="text-muted-foreground text-xs">{t("etkiNotu")}</p>
+
+        {/* Hasarlı mal = üstünüzde kalan maliyet. Rakamı söyle, yapılacak
+            işi göster — "bir şeyler ters" demek yetmez (#5). */}
+        {bekleyenHasar && bekleyenHasar.adet > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+              {t("hasarUyarisi", {
+                adet: bekleyenHasar.adet,
+                tutar: bicim.para(bekleyenHasar.tutar, bekleyenHasar.paraBirimi),
+              })}
+            </p>
+            <Button asChild size="sm" variant="outline" className="h-11 md:h-8">
+              <Link href="/tazminat">
+                {t("tazminatTalebiAc")}
+                <ArrowRight />
+              </Link>
+            </Button>
+          </div>
+        ) : null}
 
         {/* Orijinal kâr — silinmediği görünsün. */}
         <div className="rounded-lg border p-3">
@@ -131,14 +190,32 @@ export async function IadeBlogu({
             </div>
 
             <dl className="space-y-1 text-sm">
-              {iade.satirlar.map((s, i) => (
+              {/* GEÇMİŞ KAYITLAR İÇİN AÇIK SIFIR.
+                  13.08.2026'dan önce yazılan iadelerde sağlam adet 0'ken
+                  MALIYET_GERI satırı hiç oluşmuyordu. Defter kaydı
+                  DEĞİŞTİRİLMEZ (anayasa); eksik olan satır yalnızca EKRANDA
+                  tamamlanır ki eski iadeler de kendini açıklasın.
+                  Koşul KAYIP_GELIR'e bağlı: itirazı kabul edilen (DISPUTED)
+                  iadede zaten maliyet geri gelmez, orada satır anlamsız. */}
+              {gosterilecekSatirlar(iade.satirlar).map((s, i) => (
                 <div key={i} className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">{ad(s.code)}</dt>
+                  <dt className="text-muted-foreground">
+                    {ad(s.code)}
+                    {/* Açık sıfırın nedeni burada da yazar — aynı bilgi
+                        önizlemede ve kayıtta aynı görünmeli (#10). */}
+                    {s.code === "MALIYET_GERI" && s.tutar === 0 ? (
+                      <span className="block text-xs">
+                        {t("maliyetGeriYok")}
+                      </span>
+                    ) : null}
+                  </dt>
                   <dd
                     className={
                       s.tutar < 0
                         ? "text-destructive whitespace-nowrap"
-                        : "whitespace-nowrap text-emerald-600"
+                        : s.tutar === 0
+                          ? "text-muted-foreground whitespace-nowrap"
+                          : "whitespace-nowrap text-emerald-600"
                     }
                   >
                     {s.tutar > 0 ? "+" : ""}

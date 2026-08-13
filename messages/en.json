@@ -914,7 +914,13 @@
     "kalanYok": "",
     "iadeEdilebilirYok": "",
     "stokEtkisiYok": "",
-    "hicKalemSecilmedi": ""
+    "hicKalemSecilmedi": "",
+    "hasarNotuIpucu": "",
+    "hasarNotuZorunluKisa": "",
+    "maliyetGeriYok": "",
+    "hasarUyarisi": "",
+    "tazminatTalebiAc": "",
+    "hasarNotuZorunlu": ""
   },
   "Gider": {
     "baslik": "",

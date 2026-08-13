@@ -143,9 +143,16 @@ export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
 
       // Maliyet SADECE stoğa dönen (sağlam) adet kadar geri gelir.
       // Hasarlı mal stoğa girmez; maliyeti satıcıda kalır.
+      //
+      // SIFIR DA YAZILIR — 13.08.2026 dersi. Eskiden sağlam adet 0'ken bu
+      // satır hiç oluşmuyordu ve önizlemede GÖRÜNMÜYORDU. Kullanıcı bir TY
+      // iadesini hasarlı kaydetti, 1.799 TL maliyet üstünde kaldı, kanal
+      // NET-2'si −806,20'ye düştü ve "hesaplamada hata var" dedi. Hesap
+      // doğruydu; EKSİK OLAN AÇIKLAMAYDI. Sessiz yokluk yerine açık sıfır:
+      // satır durur, tutarı 0,00'dır, ekran nedenini yazar.
       if (kalem.maliyet === null) {
         durum = "NO_COST";
-      } else if (saglamOran > 0) {
+      } else {
         satirlar.push({
           code: "MALIYET_GERI",
           tutar: kalem.maliyet * saglamOran,

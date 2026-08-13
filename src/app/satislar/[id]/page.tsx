@@ -5,7 +5,11 @@ import { Undo2 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { Baglanti, GeriBaglanti } from "@/components/baglanti";
-import { IadeBlogu, type IadeGorunumu } from "@/components/iade-blogu";
+import {
+  IadeBlogu,
+  type BekleyenHasar,
+  type IadeGorunumu,
+} from "@/components/iade-blogu";
 import { KarBlogu, type KarBloguVerisi } from "@/components/kar-blogu";
 
 import { HesapDegistir } from "./hesap-degistir";
@@ -26,6 +30,9 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { kalemDusumleri, type Dusum } from "@/lib/satis";
+import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
+
+import type { Currency } from "@/generated/prisma/enums";
 import { satisKalemToplamlari } from "@/lib/tutar";
 
 export default async function SatisDetaySayfasi({
@@ -65,7 +72,18 @@ export default async function SatisDetaySayfasi({
       cargoCarrier: { select: { name: true } },
       returns: {
         orderBy: { occurredAt: "asc" },
-        include: { fees: { orderBy: { createdAt: "asc" } } },
+        include: {
+          fees: { orderBy: { createdAt: "asc" } },
+          // Hasarlı kalemler + açılmış talepler: "talep bekleyen hasar"
+          // uyarısı bunlardan hesaplanır (bkz. iade-blogu.tsx).
+          items: {
+            select: {
+              damagedQuantity: true,
+              variantId: true,
+              compensations: { select: { quantity: true } },
+            },
+          },
+        },
       },
       channelAccount: { include: { channel: { select: { name: true } } } },
     },
@@ -121,6 +139,61 @@ export default async function SatisDetaySayfasi({
       tutar: Number(f.amount.toString()),
     })),
   }));
+
+  /**
+   * TALEP BEKLEYEN HASAR — hasarlı dönüp de tazminat talebi açılmamış adet.
+   * Tutar, Tazminat ekranıyla AYNI yoldan bulunur: varyantın son alımındaki
+   * birim maliyet. İki ekranın farklı rakam söylemesi güven kaybettirirdi.
+   */
+  const hasarliIadeKalemleri = satis.returns
+    .flatMap((i) => i.items)
+    .filter((k) => k.damagedQuantity > 0);
+
+  const bekleyenAdet = hasarliIadeKalemleri.reduce(
+    (toplam, k) =>
+      toplam +
+      kalanTalepEdilebilirAdet(
+        k.damagedQuantity,
+        k.compensations.map((c) => c.quantity),
+      ),
+    0,
+  );
+
+  let bekleyenHasar: BekleyenHasar | null = null;
+  if (bekleyenAdet > 0) {
+    const sonAlimlar = await prisma.purchaseItem.findMany({
+      where: {
+        variantId: { in: hasarliIadeKalemleri.map((k) => k.variantId) },
+        purchase: { NOT: { supplierId: null } },
+      },
+      select: {
+        variantId: true,
+        unitCostAmount: true,
+        unitCostCurrency: true,
+      },
+      orderBy: { purchase: { purchasedAt: "desc" } },
+    });
+
+    const sonAlim = new Map<string, (typeof sonAlimlar)[number]>();
+    for (const a of sonAlimlar) {
+      if (!sonAlim.has(a.variantId)) sonAlim.set(a.variantId, a);
+    }
+
+    let tutar = 0;
+    let paraBirimi: Currency = satis.profitCurrency ?? "TRY";
+    for (const k of hasarliIadeKalemleri) {
+      const kalan = kalanTalepEdilebilirAdet(
+        k.damagedQuantity,
+        k.compensations.map((c) => c.quantity),
+      );
+      const alim = sonAlim.get(k.variantId);
+      if (kalan > 0 && alim) {
+        tutar += kalan * Number(alim.unitCostAmount.toString());
+        paraBirimi = alim.unitCostCurrency;
+      }
+    }
+    bekleyenHasar = { adet: bekleyenAdet, tutar, paraBirimi };
+  }
 
   const karVerisi: KarBloguVerisi = {
     durum: satis.profitStatus,
@@ -461,6 +534,7 @@ export default async function SatisDetaySayfasi({
         paraBirimi={satis.profitCurrency ?? "TRY"}
         orijinalNet1={sayi(satis.net1Amount)}
         orijinalNet2={sayi(satis.net2Amount)}
+        bekleyenHasar={bekleyenHasar}
       />
 
       <p className="text-muted-foreground text-xs">{t("detayNotu")}</p>

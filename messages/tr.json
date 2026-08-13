@@ -914,7 +914,13 @@
     "kalanYok": "kalan yok",
     "iadeEdilebilirYok": "İade edilebilir kalem yok.",
     "stokEtkisiYok": "Bu iade türünde ürün stoğa girmez.",
-    "hicKalemSecilmedi": "Hiç kalem seçilmedi — iade adedi girin."
+    "hicKalemSecilmedi": "Hiç kalem seçilmedi — iade adedi girin.",
+    "hasarNotuIpucu": "Ne hasarı, kim tespit etti? (örn. ekran çatlak, depoda açarken görüldü)",
+    "hasarNotuZorunluKisa": "Hasarlı adet girdiniz — hasar notu zorunludur.",
+    "maliyetGeriYok": "Hasarlı mal stoğa dönmez; maliyeti üstünüzde kalır.",
+    "hasarUyarisi": "{adet} adet hasarlı mal kaydettiniz — {tutar} maliyet üstünüzde kaldı.",
+    "tazminatTalebiAc": "Tazminat talebi aç",
+    "hasarNotuZorunlu": "{urun}: hasarlı adet girdiniz, hasar notu zorunludur. Ne hasarı olduğunu ve kimin tespit ettiğini kısaca yazın."
   },
   "Gider": {
     "baslik": "Giderler",

@@ -203,6 +203,18 @@ export async function iadeOlustur(
         }),
       };
     }
+
+    // HASAR NOTU ZORUNLU (karar 13.08.2026). Hasarlı işaretlemek maliyeti
+    // üstünüzde bırakan bir para kararıdır; gerekçesiz kalırsa aylar sonra
+    // "bu 1.799 TL neydi" sorusunun cevabı kimsede olmaz. Canlıda tam olarak
+    // bu oldu: hasarlı=1 girilmiş, not boş bırakılmıştı.
+    if (k.hasarliAdet > 0 && k.hasarNotu.trim() === "") {
+      return {
+        hata: t("hasarNotuZorunlu", {
+          urun: urunAdlari.get(k.saleItemId) ?? "",
+        }),
+      };
+    }
   }
 
   let yeniId: string;
