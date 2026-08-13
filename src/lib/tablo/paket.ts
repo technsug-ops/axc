@@ -2,7 +2,7 @@ import { unzipSync, zipSync } from "fflate";
 
 /**
  * ============================================================================
- *  XLSX PAKET NORMALLEŞTİRİCİ
+ *  XLSX PAKET NORMALLEŞTİRİCİ — TÜM YÜKLEMELERİN ORTAK KAPISI
  * ----------------------------------------------------------------------------
  *  11.08.2026: Trendyol'un indirdiği hakediş dosyaları GEÇERLİ xlsx ama
  *  `read-excel-file` onları açamıyordu:
@@ -25,6 +25,11 @@ import { unzipSync, zipSync } from "fflate";
  *  riskli — bir tarih biçimi hatası sessizce yanlış hakediş üretirdi.
  *
  *  `fflate` YENİ BAĞIMLILIK DEĞİL: `read-excel-file` zaten ona bağlı.
+ *
+ *  13.08.2026'da `hakedis/` altından buraya taşındı: komisyon listesi
+ *  yükleyicisi de aynı kapıdan geçmek zorunda. Trendyol'un ÜRÜN LİSTESİ
+ *  dosyası da tam olarak aynı ZIP64 biçiminde geliyor (ölçüldü) — kopya
+ *  yazılsaydı biri düzeltilip diğeri unutulurdu.
  * ============================================================================
  */
 

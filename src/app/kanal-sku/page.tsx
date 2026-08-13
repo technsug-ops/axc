@@ -1,10 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
-import { Info, TriangleAlert } from "lucide-react";
+import Link from "next/link";
+import { Info, TriangleAlert, Upload } from "lucide-react";
 
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -44,6 +46,7 @@ export default async function KanalSkuSayfasi({
   const eksikOran = eksik === "1";
 
   const t = await getTranslations("KanalSku");
+  const tKomisyon = await getTranslations("Komisyon");
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
 
@@ -172,11 +175,21 @@ export default async function KanalSkuSayfasi({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
-        <p className="text-muted-foreground max-w-3xl text-sm">
-          {t("aciklamaMetni")}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
+          <p className="text-muted-foreground max-w-3xl text-sm">
+            {t("aciklamaMetni")}
+          </p>
+        </div>
+        {/* Oranı tek tek elle girmenin yanında TOPLU yol: pazaryerinden
+            inen ürün listesi. Ekranın en pahalı işi bu, görünür durur (#1). */}
+        <Button asChild>
+          <Link href="/kanal-sku/komisyon-aktar">
+            <Upload />
+            {tKomisyon("baslik")}
+          </Link>
+        </Button>
       </div>
 
       {/* Oranı eksik olanlar: raporda "kural eksik" diyen satışların kaynağı. */}
@@ -189,6 +202,14 @@ export default async function KanalSkuSayfasi({
           <span className="text-xs text-amber-800 dark:text-amber-300">
             {t("eksikOranNotu")}
           </span>
+          {/* UYARI EYLEME DÖNÜK: 1000+ eksik oranı tek tek girmek gerçekçi
+              değil, en hızlı çözüm pazaryeri listesini aktarmak. */}
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/kanal-sku/komisyon-aktar">
+              <Upload />
+              {tKomisyon("kisaEylem")}
+            </Link>
+          </Button>
         </div>
       ) : null}
 

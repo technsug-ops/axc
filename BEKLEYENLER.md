@@ -6,28 +6,39 @@ listesiyle birlikte teslim edilir.
 
 ## AÇIK PAKET SIRASI — 13.08.2026 itibarıyla
 
-Dört paket açık. Kullanıcı onaylı sıra: **komisyon → Aşama 1 → iade kalanı
-→ geçmiş veri.** Gerekçe: komisyon oranları kâr motorunun doğruluğunu
-doğrudan etkiliyor; süzgeçler her gün kullanılacak; geçmiş veri referans
-olduğu için en son.
+Üç paket açık. Kullanıcı onaylı sıra: **Aşama 1 → iade kalanı → geçmiş veri.**
+Gerekçe: süzgeçler her gün kullanılacak; geçmiş veri referans olduğu için
+en son. (Komisyon paketi 13.08.2026'da tamamlandı, aşağıda.)
 
-- [ ] **1 · KOMİSYON İÇE AKTARMA (HB + TY)** — sırada, ölçümü yapıldı.
-      Dosyalar: `veri/ozel/` (gitignore'lu, ticari veri).
-      **ÖLÇÜLDÜ (gerçek dosyalarla, 13.08.2026):**
-      - HB `Listelerim`: 2151 veri satırı · 2151 tekil SKU · 0 boş komisyon
-      - TY `Ürünler`: 1581 veri satırı · 1581 tekil barkod · 0 boş komisyon
-      - **Dimension tuzağı `read-excel-file`'da YOK** — 1581 satır okundu,
-        exceljs eklemeye gerek yok.
-      - **TUZAK:** `readXlsxFile(yol, { sheet: "Listelerim" })` **1 satır**
-        döndürüyor. `{ getSheets: true }` ile okuyup diziden ada göre
-        seçmek gerekiyor (`.data` alanı). İsimle seçen kod sessizce boş
-        liste okur.
-      - Eşleşme: TY barkod→varyant **1042/1581** · HB SKU→ChannelSku
-        **1030/2151**, bunların **1023'ünün oranı boş** (+10 Satıcı Stok
-        Kodu ile). Canlıda 1052 kanal kodu, **1031'i boş oran**.
-      - Yüzde ayrıştırma: `"13%"→13` · `"8.5"→8.5` · `"16,67%"→16.67`
-      Yazım: okuyucular · platform tanıma (yanlış dosya reddi) ·
-      önizle-onayla · tek transaction · SAHİP'e açık, Operasyon'a kapalı.
+- [x] ~~**1 · KOMİSYON İÇE AKTARMA (HB + TY)**~~ ✓ 13.08.2026
+      `/kanal-sku/komisyon-aktar`: dosya → platform tanıma → denetle →
+      önizle → onayla → tek transaction. İzin `kanalsku.yaz` (SAHİP'e açık,
+      Operasyon'a kapalı). `komisyon:dogrula` (65, veritabanısız) +
+      `komisyon:prova` (33, yerel yazma yolu; canlı adreste çalışmayı
+      REDDEDER).
+      **KULLANICI KARARLARI (13.08.2026):**
+      - Eksik eşleme **YARATILIR** (barkod varyanta tutuyorsa). Bu karar
+        olmasa TY tarafı 1042 yerine 14 oranla çıkardı.
+      - Dolu oranın **ÜZERİNE YAZILIR**, önizlemede eski→yeni listelenir.
+        Pazaryeri dosyası en güncel kaynaktır (oranlar haftalık değişir).
+      **GERÇEK VERİYLE PROVA (canlı, salt okunur, 13.08.2026):**
+      - HB `Listelerim` 2151 satır → **1024 boş oran dolacak** · 26 yeni
+        eşleme · 7 aynı · 13 tekrar (aynı ürünün ikinci listelemesi) ·
+        1081 satır katalogda yok
+      - TY `Ürünler` 1581 satır → **1028 yeni eşleme** · 3 oran değişecek
+        (17→20 · 14→14,75 · 16→14) · 11 aynı · 539 katalogda yok
+      - Kanal kodu geleneği ÖLÇÜLDÜ ve korundu: TY'de `channelSku`=barkod
+        (14/14), HB'de = HB SKU.
+      **İKİ TUZAK — kalıcı olarak kilitlendi:**
+      - `readXlsxFile(yol, { sheet: "Ad" })` **1 satır** döndürüyor. Sayfa
+        ADIYLA değil BAŞLIK İMZASIYLA seçiliyor (`platformTani`); TY dosyası
+        iki sayfalı ve sıra garanti değil.
+      - Yüzde ayrıştırıcı para ayrıştırıcısından AYRI olmak zorunda:
+        `sayiCoz("16.666")` → 16666 (para için doğru, oran için felaket).
+        `yuzdeCoz` noktayı da virgülü de ONDALIK sayar. Doğrulama betiği
+        bu hatayı yazarken yakaladı.
+      - Aralık dışı oran (ör. fiyat kolonu kayması: 3299) YAZILMAZ, uyarıya
+        düşer.
 
 - [ ] **2 · SÜZGEÇ AŞAMA 1** — Satışlar + Alımlar süzgeçleri + panelde
       kanal adı tıklanabilir (`/satislar?kanal=TRENDYOL`) + kanal altında
@@ -285,12 +296,12 @@ Canlı sağlık kontrolü (10.08.2026): 12 sayfa 200, tümü 1,3 sn altında ·
       - Her hakediş yüklemesinde kaç öneri üretilebildiği raporlanır.
       Kanal bazlı BANT bu maddeyi beklemeden yapıldı (src/lib/komisyon-bandi.ts).
 
-- [ ] **Pazaryeri komisyon listesi okuyucusu**
-      1039 kanal kodunun komisyon oranı boş; kâr motoru oranı oradan okuyor.
-      En hızlı yol satıcı panelinden inen komisyon listesi + içe aktarma
-      "güncelle" kipi (artık 417 ms).
-      KURAL: gerçek dosya gelmeden okuyucu YAZILMAZ — hakediş okuyucusunda
-      spec ile gerçek başlıklar tutmamıştı, aynı tuzağa iki kez düşülmez.
+- [x] ~~**Pazaryeri komisyon listesi okuyucusu**~~ ✓ 13.08.2026
+      Ayrı bir ekran olarak çıktı: `/kanal-sku/komisyon-aktar` (bkz. AÇIK
+      PAKET SIRASI → 1). "Gerçek dosya gelmeden okuyucu YAZILMAZ" kuralına
+      uyuldu: iki gerçek dosyanın başlık satırları okundu, okuyucular onlara
+      göre yazıldı ve başlıklar `komisyon:dogrula`nın 5. bölümüne kilitlendi
+      (dosyalar depoya KONMADI — ticari veri, depo herkese açık).
 
 
 ## Faz 4 — açılış bekliyor (sıralama onayı gerekli)

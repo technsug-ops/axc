@@ -15,7 +15,7 @@ import {
   trendyolOku,
   turkiyeDisiMi,
 } from "./okuyucu";
-import { paketiNormalle } from "./paket";
+import { paketiNormalle } from "@/lib/tablo/paket";
 
 /**
  * ============================================================================
