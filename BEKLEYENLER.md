@@ -16,12 +16,26 @@ listesiyle birlikte teslim edilir.
       sayfalama önce mi gelmeli. _Ürün ekranlarında sayfalama 50/sayfa
       olarak çözülmüştü; alımlarda henüz yok._
 
-- [ ] **Veri temizliği: bir alımın kodu sipariş numarası olarak girilmiş.**
-      _13.08.2026'da arama testinde görüldü:_ kodu `431 231 579 6` olan
-      bir alım var (Alım Kodu alanına pazaryeri sipariş numarası
-      yazılmış). Sistem hatası değil, veri girişi; kullanıcı isterse
-      düzeltir. Not düşüldü ki ileride "kod neden böyle" diye
-      şaşırılmasın.
+- [ ] **Veri temizliği: 3 ESKİ alımın kodu sipariş numarası olarak girilmiş.**
+      _13.08.2026'da arama testinde görüldü:_ `431 231 579 6`,
+      `405-8780105-5340330`, `482 929 661 2`. Bunlar alım numarasının
+      ELLE girildiği dönemden kalma kayıtlar — o gün formda kod alanı
+      açıktı ve "ewe", "25-23" gibi kodlar da bu yüzden oluşmuştu.
+      **Kaynak sorun ZATEN kapalı:** alım numarası artık sistem üretiyor
+      (`ALM-HE-260811-01`) ve elle girilemiyor. Geriye yalnız eski
+      kayıtların görüntüsü kaldı; ikisinde Sipariş No alanı boş, o yüzden
+      listede `—` görünecekler. Kullanıcı isterse düzenleme ekranından
+      Sipariş No'yu doldurur; kod bir kere doğduğu için DEĞİŞMEZ.
+
+- [ ] **Canlı veritabanı bağlantı sınırı ölçülsün.**
+      _13.08.2026'da tesadüfen görüldü:_ arka arkaya çalışan doğrulama
+      betikleri `max_user_connections` sınırına çarptı
+      (`pool timeout ... limit=10`). Paylaşımlı sunucuda (KAS) izin
+      verilen eşzamanlı bağlantı, Prisma'nın varsayılan havuzundan
+      KÜÇÜK olabilir. Bugün tek kullanıcıyla sorun çıkmıyor ama
+      **çok kullanıcıya geçmeden önce** ölçülmeli: sunucunun sınırı kaç,
+      Prisma havuzu (`connection_limit`) ona göre kısılmalı mı.
+      Sessizce 500 döndüren türden bir tuzak.
 
 - [x] ~~**Detay sayfası tabloları mobilde karta dönsün** — İlke #8~~
       _Tamamlandı 09.08.2026 (`e4c65b0`): alım kalemleri, ürün varyantları
