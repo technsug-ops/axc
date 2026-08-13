@@ -6,6 +6,45 @@ listesiyle birlikte teslim edilir.
 
 ## Sonraki uygun pakette
 
+- [ ] **HURDA / İKİNCİ EL STOK TAKİBİ** — Excel'deki "Hurda Takip"
+      sekmesinin karşılığı. _Karar 13.08.2026, RMA modülünden SONRA
+      ayrı iş._
+
+      **ÖLÇÜLDÜ — bugün sistemde YERİ YOK.** Hasarlı mal yalnızca bir
+      SAYAÇTIR (`PurchaseItem.damagedQuantity`, `ReturnItem.damagedQuantity`)
+      ve o sayaçları sadece Tazminat ekranı okur. Stok defterine HİÇBİR
+      hareket yazılmaz. Stok = Σ `StockMovement.quantityDelta` olduğu için
+      sonuç şu: **mal fiziken depoda, sistemde yok.** Stok ekranında
+      görünmez, envanter değerine girmez, aranamaz.
+
+      **Bu bir kusur değil, bilinçli tasarımdı:** hasarlı mal SATILABİLİR
+      stok değildir ve normal stoğa karışırsa FIFO'dan sağlam mal gibi
+      düşülür. Ama kullanıcının gerçek akışı bunu aşıyor: hasarlı mal
+      **ikinci el satılıyor ya da yedek parçayla onarılıp tekrar satışa
+      giriyor.** Yani "maliyeti düşülmüş ama fiziken elde, ileride
+      satılabilir" diye üçüncü bir hâl var.
+
+      **Bugünkü engel somut:** satış akışı stok yetmezse `yetersizStok`
+      hatası veriyor (`src/lib/satis.ts:118`). Hurda malın stoğu 0 olduğu
+      için ikinci el satış BUGÜN KAYDEDİLEMEZ.
+
+      **Çözüm yönü (tasarlanacak):** hasarlı mal için ayrı bir stok
+      havuzu — muhtemelen `StockMovement`'a hurda ayrımı ya da ayrı bir
+      raf/konum (Location) ile. Kritik kural: hurda stoğu **normal FIFO'ya
+      KARIŞMAMALI**, ayrı listelenmeli, envanter değerinde ayrı satır
+      olmalı (maliyeti zaten gider yazılmış).
+
+      **Kâr tarafı:** ikinci el satış geliri normal kâr gibi değil,
+      **"görünmeyen giderden kurtarım"** olarak görünmeli. Maliyeti
+      geçmişte düşüldüğü için o satışın kârı neredeyse tamamı kârdır;
+      normal marjla aynı tabloda göstermek kanal marjlarını yanıltır.
+
+      **Tetikleyen vaka:** axcali1672, 2.980 TL'lik TY satışı, hasarlı
+      döndü, 1.799 TL maliyet gider yazıldı. Tazminat talebi
+      AÇILMAYACAK (kullanıcı kararı) — mal ikinci el satılacak ya da
+      onarılacak. Panel −806,20 DOĞRU kalır.
+
+
 - [ ] **Alımı ÜRÜN/SKU ile arama — önce ÖLÇ, sonra yaz.**
       _Karar 13.08.2026._ Alım araması bugün alım kodu, tedarikçi sipariş
       numarası ve tedarikçi adında çalışıyor (ayraç duyarsız). "Bu ürünü
