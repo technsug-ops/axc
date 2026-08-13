@@ -286,6 +286,26 @@ zorlaştıracak şekilde yazılmıyor.
   değerlendirilecek). Bu doğrulamayı kullanıcı gerçek cihazda yapar;
   teslim raporunda "mobil doğrulama kullanıcıda" satırı açıkça yazılır.
 
+## HALİL TESTİ — paketin kapanma şartı (KESİN KURAL)
+
+_Mimar kararı 13.08.2026._ Bir paket, kod yeşil olduğu için değil, **gerçek
+kullanımda doğrulandığı için** kapanır. Beş madde, hepsi zorunlu:
+
+a) **Gerçek cihaz + CANLI adres.** Yerel sunucu sayılmaz.
+b) **Gerçek dosya/veri ile.** Sentetik örnek sayılmaz.
+c) **Ekrandaki rakamlar teslim raporundakiyle BİREBİR tutmalı.**
+   Tutmayan tek rakam testi düşürür — "yaklaşık aynı" diye bir sonuç yok.
+d) **Günlük iş akışında bir uçtan uca deneme.** Paketin çıktısı, günlük
+   akışta gerçekten kullanılıyor mu?
+e) **Sonuç mimara rapor; mimar onayı olmadan paket KAPANMAZ.**
+
+**Teslim raporu kuralı:** her teslim raporu bir **"Halil test listesi"**
+bölümü içerir — madde madde, **tıklama düzeyinde** (hangi ekran, hangi
+düğme, hangi rakam beklenir). Kullanıcı listeyi okuyup uygulayabilmeli;
+"test et" demek yeterli değildir.
+
+Bir paket Halil testini geçmeden sıradaki pakete GEÇİLMEZ.
+
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`
 - Her anlamlı iş biriminde commit at; günün sonunda değil, iş bitince

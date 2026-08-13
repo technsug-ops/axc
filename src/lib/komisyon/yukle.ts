@@ -64,6 +64,8 @@ export type KomisyonOnizlemesi = {
   oranOrnekleri: KomisyonPlani["oranOrnekleri"];
   bulunamayanOrnekleri: KomisyonPlani["bulunamayanOrnekleri"];
   yeniEslemeOrnekleri: { kanalKodu: string; varyantSku: string; oran: number }[];
+  /** Yazımdan sonra oranı boş kalacak eşlemelerden örnekler. */
+  kalanBosOranOrnekleri: KomisyonPlani["kalanBosOranOrnekleri"];
 };
 
 export type KomisyonDenetimi =
@@ -213,12 +215,24 @@ export async function komisyonDenetle(
         varyantSku: y.varyantSku,
         oran: y.oran,
       })),
+      kalanBosOranOrnekleri: plan.kalanBosOranOrnekleri,
     },
     yazim: { guncellenecekler: plan.guncellenecekler, yaratilacaklar: temiz },
   };
 }
 
-export type KomisyonYazimi = { guncellenen: number; yaratilan: number };
+export type KomisyonYazimi = {
+  guncellenen: number;
+  yaratilan: number;
+  /**
+   * YAZIMDAN SONRA bu hesapta oranı HÂLÂ boş olan eşleme sayısı.
+   *
+   * Mimar kararı 13.08.2026: "açık sıfır, sessiz yokluk değil." Tahmin
+   * DEĞİL ölçüm: transaction bittikten sonra veritabanına sorulur, çünkü
+   * kullanıcıya söylenen kapanış rakamı gerçeğin kendisi olmalı.
+   */
+  kalanBosOran: number;
+};
 
 /**
  * Onaydan sonra yazar. TEK TRANSACTION — ya hepsi ya hiçi.
@@ -302,8 +316,24 @@ export async function komisyonYaz(
         yaratilan = sonuc.count;
       }
 
-      return { guncellenen, yaratilan };
+      /**
+       * KAPANIŞ RAKAMI AYNI TRANSACTION İÇİNDE ÖLÇÜLÜR. Dışarıda ölçseydik
+       * araya başka bir yazım girip sayıyı değiştirebilirdi ve kullanıcıya
+       * bu yüklemeye ait olmayan bir rakam söylenirdi.
+       */
+      const kalanBosOran = await tx.channelSku.count({
+        where: { channelAccountId, commissionRate: null },
+      });
+
+      return { guncellenen, yaratilan, kalanBosOran };
     },
     { timeout: ISLEM_SURESI_MS, maxWait: BEKLEME_SURESI_MS },
   );
+}
+
+/** Yazacak bir şey yokken de kapanış rakamı söylenir — sessiz yokluk olmaz. */
+export async function bosOranSayisi(channelAccountId: string): Promise<number> {
+  return prisma.channelSku.count({
+    where: { channelAccountId, commissionRate: null },
+  });
 }

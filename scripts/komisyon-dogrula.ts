@@ -473,6 +473,58 @@ console.log("\n4) PLAN — eşleştirme sırası ve yazım kararları");
   const kod1 = plan.guncellenecekler.find((g) => g.eslemeId === "e-kod");
   kontrol("aynı hedefe ikinci satır yazılmaz (13 kaldı)", kod1?.yeniOran === 13, kod1);
 
+  /**
+   * ORANI BOŞ KALANLAR — "açık sıfır, sessiz yokluk değil" (mimar kararı
+   * 13.08.2026). Yukarıdaki senaryoda dosyanın hiç dokunmadığı boş oranlı
+   * eşleme YOK: beş mevcut eşlemenin üçü dolduruldu, biri aynı kaldı (oranı
+   * vardı), biri değişti (oranı vardı). Bu yüzden 0 beklenir.
+   */
+  kontrol("dokunulmayan boş oran yoksa 0 raporlanır", plan.sayim.kalanBosOran === 0, plan.sayim.kalanBosOran);
+
+  {
+    // Dosyada HİÇ geçmeyen, oranı boş bir eşleme ekleyip sayının 1'e
+    // çıktığını görüyoruz — kullanıcıya söylenecek kapanış rakamı budur.
+    const listedenKalkmis: MevcutEsleme = {
+      id: "e-hayalet",
+      kanalKodu: "DOSYADA-YOK",
+      varyantId: "v-kod",
+      oran: null,
+    };
+    const planIkinci = planKur(okuma, [...mevcutlar, listedenKalkmis], varyantlar);
+    kontrol(
+      "dosyada geçmeyen boş oranlı eşleme kalan sayısına girer",
+      planIkinci.sayim.kalanBosOran === 1,
+      planIkinci.sayim.kalanBosOran,
+    );
+    kontrol(
+      "kalan örneği kanal kodunu ve varyant SKU'sunu taşır",
+      planIkinci.kalanBosOranOrnekleri[0]?.kanalKodu === "DOSYADA-YOK" &&
+        planIkinci.kalanBosOranOrnekleri[0]?.varyantSku === "AAA-01",
+      planIkinci.kalanBosOranOrnekleri[0],
+    );
+  }
+
+  {
+    /**
+     * ORANI OKUNAMAYAN SATIRIN EŞLEMESİ DE BOŞ KALIR. Eşleşti diye
+     * "halloldu" sayılırsa kullanıcı eksik kalan kaydı hiç görmez.
+     */
+    const tekSatir: KomisyonOkumasi = {
+      platform: "TRENDYOL",
+      sayfa: "Ürünler",
+      satirlar: [
+        { kanalKodu: "KOD-1", ikinciKod: null, barkodlar: [], oran: null, hamOran: "abc", urunAdi: null, satirNo: 2 },
+      ],
+      eksikSutunlar: [],
+    };
+    const planUcuncu = planKur(tekSatir, [mevcutlar[0]], varyantlar);
+    kontrol(
+      "oranı okunamayan satırın eşlemesi boş kalanlarda sayılır",
+      planUcuncu.sayim.kalanBosOran === 1 && planUcuncu.sayim.oranOkunamadi === 1,
+      planUcuncu.sayim,
+    );
+  }
+
   // Önizleme listeleri
   kontrol("değişen örneği eski->yeni taşır", plan.degisenOrnekleri[0]?.eskiOran === 10 && plan.degisenOrnekleri[0]?.yeniOran === 17, plan.degisenOrnekleri[0]);
   kontrol("oran örneği ham metni taşır", plan.oranOrnekleri[0]?.satirNo === 9);

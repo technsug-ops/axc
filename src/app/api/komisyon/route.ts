@@ -1,5 +1,6 @@
 import { apiIzni } from "@/lib/yetki";
 import {
+  bosOranSayisi,
   komisyonDenetle,
   komisyonYaz,
   type KomisyonHatasi,
@@ -26,7 +27,13 @@ export const dynamic = "force-dynamic";
 type Yanit =
   | { durum: "HATA"; hatalar: KomisyonHatasi[] }
   | { durum: "ONIZLEME"; onizleme: KomisyonOnizlemesi }
-  | { durum: "YAZILDI"; guncellenen: number; yaratilan: number }
+  | {
+      durum: "YAZILDI";
+      guncellenen: number;
+      yaratilan: number;
+      /** Yazımdan sonra oranı hâlâ boş olan eşleme sayısı — ölçüm. */
+      kalanBosOran: number;
+    }
   | { durum: "COKTU"; mesaj: string };
 
 function yanitla(govde: Yanit, durum = 200) {
@@ -66,9 +73,14 @@ export async function POST(istek: Request) {
     }
 
     // Yazacak satır kalmadıysa boşuna transaction açılmaz: ikinci yüklemede
-    // her şey aynı kalmış olabilir.
+    // her şey aynı kalmış olabilir. Kapanış rakamı yine söylenir.
     if (sonuc.onizleme.yazilacak === 0) {
-      return yanitla({ durum: "YAZILDI", guncellenen: 0, yaratilan: 0 });
+      return yanitla({
+        durum: "YAZILDI",
+        guncellenen: 0,
+        yaratilan: 0,
+        kalanBosOran: await bosOranSayisi(hesapId),
+      });
     }
 
     const yazim = await komisyonYaz(hesapId, sonuc.yazim);

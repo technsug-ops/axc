@@ -133,6 +133,10 @@ async function main() {
           { sku: `${ON_EK}V3`, companySku: `${ON_EK}V3`, barcode: `${ON_EK}B3` },
           // 4) eşlemesi olacak, oran AYNI kalacak
           { sku: `${ON_EK}V4`, companySku: `${ON_EK}V4`, barcode: `${ON_EK}B4` },
+          // 5) eşlemesi olacak, oranı BOŞ ama DOSYADA HİÇ GEÇMEYECEK.
+          //    Pazaryerinde listeden kalkmış ürünün karşılığı: yazımdan
+          //    sonra oranı boş KALIR ve kullanıcıya sayısı söylenmelidir.
+          { sku: `${ON_EK}V5`, companySku: `${ON_EK}V5`, barcode: `${ON_EK}B5` },
         ],
       },
     },
@@ -155,6 +159,8 @@ async function main() {
         channelSku: `${ON_EK}SKU4`,
         commissionRate: "12.5",
       },
+      // Dosyada geçmeyecek, oranı boş: kapanış rakamının kaynağı.
+      { channelAccountId: hesap.id, variantId: v[`${ON_EK}V5`], channelSku: `${ON_EK}SKU5` },
     ],
   });
 
@@ -198,13 +204,30 @@ async function main() {
       o.degisenOrnekleri[0]?.eskiOran === 10 && o.degisenOrnekleri[0]?.yeniOran === 16.67,
       o.degisenOrnekleri[0],
     );
-    kontrol("denetim HİÇBİR ŞEY YAZMADI", (await prisma.channelSku.count({ where: { channelAccountId: hesap.id } })) === 3);
+    /**
+     * KAPANIŞ RAKAMI ÖNİZLEMEDE DE VAR (mimar kararı 13.08.2026):
+     * SKU5 dosyada geçmiyor, oranı boş — yazımdan sonra da boş kalacak ve
+     * kullanıcı bunu ONAYDAN ÖNCE görmeli.
+     */
+    kontrol("önizleme: oranı boş kalacak 1", o.sayim.kalanBosOran === 1, o.sayim.kalanBosOran);
+    kontrol(
+      "önizleme: kalan örneği SKU5'i gösterir",
+      o.kalanBosOranOrnekleri[0]?.kanalKodu === `${ON_EK}SKU5`,
+      o.kalanBosOranOrnekleri,
+    );
+    kontrol("denetim HİÇBİR ŞEY YAZMADI", (await prisma.channelSku.count({ where: { channelAccountId: hesap.id } })) === 4);
 
     // ------------------------------------------------------------------- YAZ
     console.log("\n2) YAZ");
     const yazim = await komisyonYaz(hesap.id, denetim.yazim);
     kontrol("2 güncelleme yazıldı", yazim.guncellenen === 2, yazim);
     kontrol("1 yeni eşleme açıldı", yazim.yaratilan === 1, yazim);
+    /**
+     * Bu sayı TAHMİN DEĞİL ÖLÇÜM: yazımdan sonra aynı transaction içinde
+     * sayılıyor. Önizlemedeki 1 ile birebir tutmalı, yoksa kullanıcıya
+     * verilen kapanış rakamı ile ekranın gösterdiği çelişirdi.
+     */
+    kontrol("yazım sonrası oranı boş kalan 1 (ölçüm)", yazim.kalanBosOran === 1, yazim);
 
     const sonrasi = await prisma.channelSku.findMany({
       where: { channelAccountId: hesap.id },
@@ -262,7 +285,8 @@ async function main() {
       bul(`${ON_EK}SKU4`)?.commissionUpdatedAt === null,
       bul(`${ON_EK}SKU4`)?.commissionUpdatedAt,
     );
-    kontrol("toplam eşleme 4", sonrasi.length === 4, sonrasi.length);
+    // 4 mevcut + 1 yeni açılan.
+    kontrol("toplam eşleme 5", sonrasi.length === 5, sonrasi.length);
 
     // ------------------------------------------------------- İKİNCİ KOŞU
     console.log("\n3) AYNI DOSYA İKİNCİ KEZ (idempotentlik)");

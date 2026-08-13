@@ -79,6 +79,18 @@ export type KomisyonSayimi = {
   katalogdaYok: number;
   /** Aynı eşlemeye/varyanta düşen ikinci satır — ilki kazanır. */
   tekrarEden: number;
+  /**
+   * YAZIMDAN SONRA ORANI HÂLÂ BOŞ KALACAK EŞLEME SAYISI.
+   *
+   * Mimar kararı 13.08.2026: "açık sıfır, sessiz yokluk değil." Bu sayı
+   * sıfır değilse kullanıcı bunu ONAYDAN ÖNCE görmeli, yoksa "hepsi
+   * doldu" sanır ve /kanal-sku'daki amber uyarının neden hâlâ durduğunu
+   * anlamaz.
+   *
+   * Sebebi hep aynı: bu eşlemelerin kanal kodu DOSYADA HİÇ GEÇMİYOR —
+   * genelde pazaryerinde listeden kalkmış ürünler.
+   */
+  kalanBosOran: number;
 };
 
 export type KomisyonPlani = {
@@ -96,6 +108,8 @@ export type KomisyonPlani = {
   }[];
   oranOrnekleri: { satirNo: number; hamOran: string }[];
   bulunamayanOrnekleri: { satirNo: number; kod: string; urunAdi: string | null }[];
+  /** Oranı boş kalacak eşlemelerden örnekler (ilk ORNEK_SINIRI kadar). */
+  kalanBosOranOrnekleri: { kanalKodu: string; varyantSku: string }[];
 };
 
 /** Bir satırın deneyeceği tüm kod adayları — sırayla. */
@@ -130,6 +144,9 @@ export function planKur(
     yeniEsleme: 0,
     katalogdaYok: 0,
     tekrarEden: 0,
+    // Döngüden SONRA hesaplanıyor: hangi eşlemeye dokunulduğu ancak o zaman
+    // biliniyor.
+    kalanBosOran: 0,
   };
 
   const guncellenecekler: PlanGuncelleme[] = [];
@@ -240,6 +257,22 @@ export function planKur(
     }
   }
 
+  /**
+   * --- ORANI BOŞ KALACAKLAR ---
+   *
+   * Oranı boş olan ve bu dosyanın DOKUNMADIĞI eşlemeler. İki yoldan buraya
+   * düşerler: kanal kodu dosyada hiç geçmiyor (listeden kalkmış ürün), ya da
+   * geçiyor ama o satırın oranı okunamadı.
+   *
+   * Bu sayı, /kanal-sku ekranındaki amber uyarının yazımdan sonra kaç
+   * gösterecek olduğudur — kullanıcı onaydan önce bilmeli.
+   */
+  const varyantSkulari = new Map(varyantlar.map((v) => [v.id, v.sku]));
+  const kalanlar = mevcutlar.filter(
+    (m) => m.oran === null && !dokunulanEsleme.has(m.id),
+  );
+  sayim.kalanBosOran = kalanlar.length;
+
   return {
     platform: okuma.platform,
     sayfa: okuma.sayfa,
@@ -249,6 +282,10 @@ export function planKur(
     degisenOrnekleri,
     oranOrnekleri,
     bulunamayanOrnekleri,
+    kalanBosOranOrnekleri: kalanlar.slice(0, ORNEK_SINIRI).map((m) => ({
+      kanalKodu: m.kanalKodu,
+      varyantSku: varyantSkulari.get(m.varyantId) ?? "—",
+    })),
   };
 }
 

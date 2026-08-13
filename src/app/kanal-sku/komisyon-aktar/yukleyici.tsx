@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { TriangleAlert, Upload } from "lucide-react";
+import { ExternalLink, TriangleAlert, Upload } from "lucide-react";
 
 import {
   AlertDialog,
@@ -52,6 +53,7 @@ type Onizleme = {
     yeniEsleme: number;
     katalogdaYok: number;
     tekrarEden: number;
+    kalanBosOran: number;
   };
   yazilacak: number;
   kodCakisti: number;
@@ -68,12 +70,18 @@ type Onizleme = {
     urunAdi: string | null;
   }[];
   yeniEslemeOrnekleri: { kanalKodu: string; varyantSku: string; oran: number }[];
+  kalanBosOranOrnekleri: { kanalKodu: string; varyantSku: string }[];
 };
 
 type Yanit =
   | { durum: "HATA"; hatalar: Hata[] }
   | { durum: "ONIZLEME"; onizleme: Onizleme }
-  | { durum: "YAZILDI"; guncellenen: number; yaratilan: number }
+  | {
+      durum: "YAZILDI";
+      guncellenen: number;
+      yaratilan: number;
+      kalanBosOran: number;
+    }
   | { durum: "COKTU"; mesaj: string };
 
 /**
@@ -153,6 +161,9 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
         [t("ozetKatalogdaYok"), String(onizleme.sayim.katalogdaYok)],
         [t("ozetOranOkunamadi"), String(onizleme.sayim.oranOkunamadi)],
         [t("ozetYazilacak"), String(onizleme.yazilacak)],
+        // AÇIK SIFIR: bu kutu sıfır olsa bile gösterilir. "Oranı boş kalan
+        // yok" cümlesini görmek, hiç görmemekten iyidir (mimar kararı).
+        [t("ozetKalanBosOran"), String(onizleme.sayim.kalanBosOran)],
       ] as const)
     : [];
 
@@ -313,6 +324,44 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
               </div>
             ) : null}
 
+            {/* ORANI BOŞ KALACAKLAR — açık sıfır, sessiz yokluk değil.
+                Sıfırsa da bir satır yazılır; kullanıcı "hepsi doldu"
+                bilgisini ekrandan ALIR, çıkarsamak zorunda kalmaz. */}
+            {onizleme.sayim.kalanBosOran > 0 ? (
+              <div className="space-y-2 rounded-md border p-3">
+                <p className="text-sm font-medium">
+                  {t("kalanBaslik", { sayi: onizleme.sayim.kalanBosOran })}
+                </p>
+                <p className="text-muted-foreground text-xs">{t("kalanNotu")}</p>
+                <ul className="space-y-1 text-sm">
+                  {onizleme.kalanBosOranOrnekleri.map((k, i) => (
+                    <li key={i}>
+                      {t("kalanSatiri", { kod: k.kanalKodu, sku: k.varyantSku })}
+                    </li>
+                  ))}
+                </ul>
+                {onizleme.sayim.kalanBosOran >
+                onizleme.kalanBosOranOrnekleri.length ? (
+                  <p className="text-muted-foreground text-xs">
+                    {t("ilkNGosteriliyor", {
+                      gosterilen: onizleme.kalanBosOranOrnekleri.length,
+                      toplam: onizleme.sayim.kalanBosOran,
+                    })}
+                  </p>
+                ) : null}
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/kanal-sku?hesap=${hesap}&eksik=1`}>
+                    <ExternalLink />
+                    {t("kalanListeye")}
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm text-emerald-700 dark:text-emerald-400">
+                {t("kalanYok")}
+              </p>
+            )}
+
             {/* UYARILAR — yüklemeyi DURDURMAZ. */}
             {onizleme.sayim.katalogdaYok > 0 ||
             onizleme.sayim.oranOkunamadi > 0 ||
@@ -410,17 +459,34 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
 
       {/* -------------------------- SONUÇ --------------------------- */}
       {yanit?.durum === "YAZILDI" ? (
-        <p
+        <div
           role="status"
-          className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400"
+          className="space-y-2 rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400"
         >
-          {yanit.guncellenen === 0 && yanit.yaratilan === 0
-            ? t("hicYeniYok")
-            : t("yazildi", {
-                guncellenen: yanit.guncellenen,
-                yaratilan: yanit.yaratilan,
-              })}
-        </p>
+          <p>
+            {yanit.guncellenen === 0 && yanit.yaratilan === 0
+              ? t("hicYeniYok")
+              : t("yazildi", {
+                  guncellenen: yanit.guncellenen,
+                  yaratilan: yanit.yaratilan,
+                })}
+          </p>
+          {/* KAPANIŞ RAKAMI — yazımdan sonra ÖLÇÜLEN gerçek sayı. Sıfır da
+              yazılır: kullanıcı işin bittiğini ekrandan görmeli. */}
+          {yanit.kalanBosOran > 0 ? (
+            <div className="space-y-2">
+              <p>{t("sonucKalan", { sayi: yanit.kalanBosOran })}</p>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/kanal-sku?hesap=${hesap}&eksik=1`}>
+                  <ExternalLink />
+                  {t("kalanListeye")}
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <p>{t("sonucKalanYok")}</p>
+          )}
+        </div>
       ) : null}
     </div>
   );

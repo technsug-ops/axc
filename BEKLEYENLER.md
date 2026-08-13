@@ -6,9 +6,19 @@ listesiyle birlikte teslim edilir.
 
 ## AÇIK PAKET SIRASI — 13.08.2026 itibarıyla
 
-Üç paket açık. Kullanıcı onaylı sıra: **Aşama 1 → iade kalanı → geçmiş veri.**
+Üç paket açık. Mimar onaylı sıra, **paket ADIYLA**:
+**SÜZGEÇ AŞAMA 1 → RMA KALANI → GEÇMİŞ VERİ.**
 Gerekçe: süzgeçler her gün kullanılacak; geçmiş veri referans olduğu için
 en son. (Komisyon paketi 13.08.2026'da tamamlandı, aşağıda.)
+
+> **SIRA HEP PAKET ADIYLA YAZILIR — rakam kısaltması KULLANILMAZ.**
+> _Karar 13.08.2026, bugünkü karışıklığın dersi:_ "1 → 4 → 3 → 2" ifadesi
+> paket NUMARASI olarak yazılmıştı, pozisyon olarak okunabiliyordu ve aynı
+> mesajın düz yazısıyla çelişiyordu. Numara, listedeki sıra değiştiğinde
+> anlamını kaybediyor; ad kaybetmiyor.
+
+Bir paket **Halil testini** geçmeden sıradakine geçilmez
+(tanım: CLAUDE.md → Halil testi).
 
 - [x] ~~**1 · KOMİSYON İÇE AKTARMA (HB + TY)**~~ ✓ 13.08.2026
       `/kanal-sku/komisyon-aktar`: dosya → platform tanıma → denetle →
@@ -29,6 +39,13 @@ en son. (Komisyon paketi 13.08.2026'da tamamlandı, aşağıda.)
         (17→20 · 14→14,75 · 16→14) · 11 aynı · 539 katalogda yok
       - Kanal kodu geleneği ÖLÇÜLDÜ ve korundu: TY'de `channelSku`=barkod
         (14/14), HB'de = HB SKU.
+      **AÇIK SIFIR (mimar kararı 13.08.2026): "oran yok" uyarısı yazımdan
+      sonra kaç kalıyor, ONAYDAN ÖNCE söylenir.** Önizlemede ayrı kutu +
+      liste + "oranı eksik olanları listele" bağlantısı; sonuç satırında
+      yazımdan SONRA ÖLÇÜLEN (tahmin değil) sayı. Sıfırsa da cümle yazılır.
+      Ölçüm: HB'de **7** kalıyor (kanal kodu dosyada hiç geçmiyor —
+      listeden kalkmış ürünler), TY'de **0**. İki dosya sonrası sistem
+      genelinde oranı boş eşleme: **7** (1031'den düşüyor).
       **İKİ TUZAK — kalıcı olarak kilitlendi:**
       - `readXlsxFile(yol, { sheet: "Ad" })` **1 satır** döndürüyor. Sayfa
         ADIYLA değil BAŞLIK İMZASIYLA seçiliyor (`platformTani`); TY dosyası

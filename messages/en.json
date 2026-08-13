@@ -1306,7 +1306,15 @@
     "yazOnayAciklama": "",
     "yazilacakYok": "",
     "yazildi": "",
-    "hicYeniYok": ""
+    "hicYeniYok": "",
+    "ozetKalanBosOran": "",
+    "kalanBaslik": "",
+    "kalanNotu": "",
+    "kalanSatiri": "",
+    "kalanListeye": "",
+    "kalanYok": "",
+    "sonucKalan": "",
+    "sonucKalanYok": ""
   },
   "DisaAktarma": {
     "excelIndir": "",

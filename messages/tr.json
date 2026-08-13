@@ -1306,7 +1306,15 @@
     "yazOnayAciklama": "{guncellenecek} eşlemenin oranı yazılacak ve {yeni} yeni eşleme açılacak. Bu işlem tek seferde yapılır; bir şey ters giderse hiçbiri yazılmaz.",
     "yazilacakYok": "Yazılacak bir şey yok — dosyadaki oranlar sistemdekilerle aynı.",
     "yazildi": "{guncellenen} oran güncellendi, {yaratilan} yeni eşleme açıldı.",
-    "hicYeniYok": "Hiçbir şey değişmedi: dosyadaki oranlar sistemdekilerle aynı."
+    "hicYeniYok": "Hiçbir şey değişmedi: dosyadaki oranlar sistemdekilerle aynı.",
+    "ozetKalanBosOran": "Oranı boş kalacak",
+    "kalanBaslik": "Yazımdan sonra {sayi} eşlemede oran hâlâ boş kalacak",
+    "kalanNotu": "Bu eşlemelerin kanal kodu dosyada hiç geçmiyor — büyük olasılıkla pazaryerinde listeden kalkmış ürünler. Oranları /kanal-sku ekranından elle girilebilir.",
+    "kalanSatiri": "{kod} → {sku}",
+    "kalanListeye": "Oranı eksik olanları listele",
+    "kalanYok": "Yazımdan sonra oranı boş eşleme kalmıyor.",
+    "sonucKalan": "Bu mağazada oranı hâlâ boş {sayi} eşleme var — pazaryeri dosyasında bulunmadılar.",
+    "sonucKalanYok": "Bu mağazada oranı boş eşleme kalmadı."
   },
   "DisaAktarma": {
     "excelIndir": "Excel indir",
