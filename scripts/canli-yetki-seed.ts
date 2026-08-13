@@ -27,6 +27,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { yetkiSeed } from "../prisma/seed-yetki";
 import { canliYapilandirma, parolayiTemizle } from "./canli-ortak";
+import { bekciyiYaz, yetkiBekcisi } from "./yetki-bekci";
 
 async function main() {
   const y = canliYapilandirma();
@@ -49,6 +50,17 @@ async function main() {
     await yetkiSeed(prisma);
     console.log("");
     console.log("  ✓ izinler canlıda güncel");
+
+    /**
+     * SENKRONDAN SONRA BEKÇİ (mimar kararı 13.08.2026).
+     *
+     * Senkron yalnız `SONRADAN_DOGAN` listesindeki anahtarları ekler; o
+     * listeye yazmayı unutan bir paket, tam yetkili rolü eksik bırakır ve
+     * senkron bunu hiç söylemez. Bekçi bağımsız ölçer ve çıkış kodunu 1
+     * yapar — "yeşil geçti" izlenimi vermeden.
+     */
+    const bekci = await yetkiBekcisi(prisma);
+    if (!bekciyiYaz(bekci)) process.exitCode = 1;
   } catch (e) {
     console.log("  ✗ HATA:", parolayiTemizle(String(e), y.veri.parola).slice(0, 300));
     process.exitCode = 1;

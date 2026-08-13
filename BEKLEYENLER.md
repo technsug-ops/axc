@@ -53,10 +53,18 @@ en son. (Komisyon paketi 13.08.2026'da tamamlandı, aşağıda.)
       dosya ekleri (Teslim B). Şema HAZIR (ReturnNotice, Attachment),
       migration canlıda uygulandı.
 
-- [ ] **4 · GEÇMİŞ VERİ AKTARIMI** — kart kesim/son ödeme günleri · geçmiş
-      kart ekstreleri · geçmiş hakediş tahsilatları.
-      Dosya: `C:\Users\yapra\Desktop\excel\hakedis ve kredi kartlari`
+- [ ] **4 · GEÇMİŞ VERİ AKTARIMI** — geçmiş kart ekstreleri · geçmiş hakediş
+      tahsilatları. Dosya: `C:\Users\yapra\Desktop\excel\hakedis ve kredi kartlari`
+      **KAPSAM KÜÇÜLDÜ — kart günleri İŞE GEREK YOK (ölçüldü 13.08.2026):**
+      `CreditCard` şemasında `statementDay` ve `dueDay` alanları ZATEN VAR
+      (Int?, ayın günü 1-31) ve **canlıda 10 kartın 10'unda da dolu** —
+      limitleriyle birlikte. Aralık dışı değer taşıyan kart yok. Yani bu
+      paketin "kart kesim/son ödeme günleri" bacağı düştü; kalan iş yalnız
+      geçmiş EKSTRELER ve geçmiş TAHSİLATLAR.
       **ANALİZ SONUCU: İKİ YENİ TABLO GEREKİYOR, migration onayı şart.**
+      Mimar kararı 13.08.2026: yön ONAYLI (beyan verisi ayrı tablolarda,
+      Settlement/kart-borcu motoruna karışmaz), ama **SQL taslağı bu pakete
+      sıra gelince onaya gelir** — şimdi kod yazılmıyor.
       Gerekçe: kart borcu alımlardan TÜRETİLİR (geçmiş alımlar sistemde
       yok); `Settlement` pazaryeri rapor dosyasından doğar ve satırları
       siparişlerle eşleşir (eşleşecek sipariş yok). Mevcut modellere

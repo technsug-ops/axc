@@ -9,15 +9,16 @@
  *     sormak mı? Bu bölüm paketin en önemli parçası: 58 action var ve
  *     BİRİ unutulursa o kapı herkese açık kalır. Menü gizlemek yetki
  *     değildir; unutulan bir action sessizce çalışır.
- *  2) KORUMASIZ SAYFA BEKÇİSİ — aynı şey sayfalar için.
+ *  2) KORUMASIZ SAYFA BEKÇİSİ — aynı şey sayfalar için (2b: API uçları,
+ *     2c: net kâr sızıntısı).
  *  3) İZİN LİSTESİ TUTARLILIĞI — kodda tanımlı ama hiçbir yerde
  *     kullanılmayan izin var mı; koruma satırında tanınmayan anahtar
  *     kullanılmış mı.
- *  4) SEED TUTARLILIĞI — SAHİP tüm izinlere sahip mi, OPERASYON'un
- *     izinleri tanınıyor mu.
+ *  4) YETKİ BEKÇİSİ — tam yetkili rol (adı ne olursa olsun) eksik izinle
+ *     kalırsa yakalanıyor mu? Bekçi canlıda veritabanına bakar; burada
+ *     SAHTE rol okuyucusuyla sınanır.
  *
- *  Veritabanına GİTMEZ (4. bölüm hariç, o da yalnız yerelde koşar):
- *  kaynak ağacını tarar.
+ *  Veritabanına GİTMEZ: kaynak ağacını tarar, geri kalanı saf hesaptır.
  * ============================================================================
  */
 
@@ -30,6 +31,7 @@ import {
   TUM_IZINLER,
   izinTaninirMi,
 } from "../src/lib/yetki/izinler";
+import { yetkiBekcisi } from "./yetki-bekci";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -323,10 +325,88 @@ console.log("\n3) İZİN LİSTESİ TUTARLILIĞI");
   );
 }
 
-console.log("\n" + "=".repeat(70));
-if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
-else {
-  console.log(`${basarisiz} KONTROL BAŞARISIZ (${calisan} kontrolden)`);
-  process.exitCode = 1;
+// ===========================================================================
+console.log("\n4) YETKİ BEKÇİSİ — tam yetkili rol eksik izinle kalır mı?");
+// ===========================================================================
+// Üst düzey `await` tsx'in cjs kipinde desteklenmiyor (ölçüldü); bu yüzden
+// bölüm bir async sarmalayıcı içinde koşuyor. Sonuç özeti bu bloktan SONRA
+// yazıldığı için `await` ile bekleniyor.
+async function bekciBolumu() {
+  /**
+   * Bekçi canlıda veritabanına bakar; burada SAHTE ROL OKUYUCUSUYLA sınanıyor,
+   * yani bu bölüm de veritabanısız kalıyor.
+   *
+   * Sınanan asıl şey mimar kuralı (13.08.2026): "deploy öncesi tüm izinlere
+   * sahip rol, deploy sonrası da tüm izinlere sahip olur — ölçüt izin kümesi,
+   * isim etiket." Bekçi bunu ADA BAKMADAN ölçmeli.
+   */
+  const okuyucu = (roller: { name: string; izinler: string[] }[]) => ({
+    role: {
+      findMany: async () =>
+        roller.map((r) => ({
+          name: r.name,
+          izinler: r.izinler.map((permissionKey) => ({ permissionKey })),
+        })),
+    },
+  });
+
+  const hepsi = [...TUM_IZINLER];
+
+  // 1) Tam yetkili rol, adı "Sahip" olmasa da temiz geçmeli.
+  const temiz = await yetkiBekcisi(
+    okuyucu([
+      { name: "CEO", izinler: hepsi },
+      { name: "Operasyon", izinler: [...OPERASYON_IZINLERI] },
+    ]),
+  );
+  kontrol("tam yetkili 'CEO' + kısıtlı 'Operasyon' -> sorun yok", temiz.sorunSayisi === 0, temiz.satirlar);
+  kontrol(
+    "kısıtlı rol 'kısıtlı (beklenen)' diye sınıflanır",
+    temiz.satirlar.find((s) => s.rol === "Operasyon")?.aciklama === "kısıtlı (beklenen)",
+  );
+
+  /**
+   * 2) ASIL VAKA — 13.08.2026'da canlıda yaşanan hata.
+   * "CEO" tek bir izinden yoksun: bekçi bunu YAKALAMALI. Senkron bu durumu
+   * SONRADAN_DOGAN listesi eksikse sessizce atlıyor; bekçinin varlık sebebi
+   * tam olarak bu.
+   */
+  const eksikBir = await yetkiBekcisi(
+    okuyucu([{ name: "CEO", izinler: hepsi.filter((i) => i !== "iade.gor") }]),
+  );
+  kontrol("tam yetkiliye yakın rolde 1 eksik izin YAKALANIR", eksikBir.sorunSayisi === 1, eksikBir.satirlar);
+  kontrol(
+    "eksik iznin adı raporlanır",
+    eksikBir.satirlar[0]?.eksikler.join(",") === "iade.gor",
+    eksikBir.satirlar[0]?.eksikler,
+  );
+
+  // 3) Gerçekten kısıtlı bir rol (eşiğin altında) alarm ÜRETMEZ.
+  const azYetkili = await yetkiBekcisi(
+    okuyucu([{ name: "Depocu", izinler: hepsi.slice(0, 5) }]),
+  );
+  kontrol("az yetkili yeni rol alarm üretmez", azYetkili.sorunSayisi === 0, azYetkili.satirlar);
+
+  // 4) Rol hiç izinsizse de alarm üretmez — yeni açılmış boş rol olabilir.
+  const bosRol = await yetkiBekcisi(okuyucu([{ name: "Yeni", izinler: [] }]));
+  kontrol("izinsiz rol alarm üretmez", bosRol.sorunSayisi === 0);
+
+  // 5) Hiç rol yoksa bekçi patlamaz.
+  const rolsuz = await yetkiBekcisi(okuyucu([]));
+  kontrol("rol yokken bekçi çalışır", rolsuz.sorunSayisi === 0 && rolsuz.satirlar.length === 0);
 }
-console.log("");
+
+/**
+ * ÖZET BEKÇİ BÖLÜMÜNDEN SONRA YAZILIR. Sıralama önemli: async bölüm
+ * beklenmezse özet "hepsi geçti" der ve o bölümün kontrolleri hiç sayılmaz —
+ * yeşil yanan ama bir şeyi ölçmeyen bir doğrulayıcı, olmayandan tehlikelidir.
+ */
+bekciBolumu().then(() => {
+  console.log("\n" + "=".repeat(70));
+  if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
+  else {
+    console.log(`${basarisiz} KONTROL BAŞARISIZ (${calisan} kontrolden)`);
+    process.exitCode = 1;
+  }
+  console.log("");
+});

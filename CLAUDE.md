@@ -187,6 +187,30 @@ adres internete açıldı. Üç ayrı katman var, karıştırılmamalı:
    marjını görmesin" ihtiyacı eleman alınınca ya da SaaS'laşınca doğar.
    Tek kullanıcıda boş katmandır. Faz 4'te çoklu kullanıcıyla birlikte.
 
+### YETKİ İKİ BACAKLIDIR (KESİN KURAL — mimar kararı 13.08.2026)
+
+Bir izin iki yerde yaşar: **KOD** (deploy ile gider) ve **VERİTABANI**
+(rol-izin satırı). İkincisi unutulunca ekran **sessizce kaybolur** —
+`sayfaIzni` izni bulamayınca `notFound()` döner; menüde görünür, tıklayınca
+404. Canlıda tam olarak bu yaşandı (`/iadeler`, 13.08.2026).
+
+- **Ölçüt İZİN KÜMESİDİR, ROL ADI DEĞİL. İsim bir etikettir, yetki değil.**
+  Bu deploy'dan ÖNCE bütün izinlere sahip olan bir rol, bu deploy'dan SONRA
+  da bütün izinlere sahip olur — adı "Sahip" olmasa da (kullanıcının rolü
+  "CEO", seed'in kurduğu "Sahip" değil).
+- Aynı ölçüt `lib/yetki/koruma.ts`'in kendini kilitleme korumasında da
+  geçerlidir; iki yerde iki farklı ölçüt olmaz.
+- **Yeni izin eklendiğinde:** anahtar `lib/yetki/izinler.ts`'e girer VE
+  `prisma/seed-yetki.ts` → `SONRADAN_DOGAN` listesine yazılır. İkincisi
+  unutulursa tam yetkili rol o izni hiç görmez.
+- **Her deploy sonrası `npm run canli:yetki` KOŞULUR.** Komut önce
+  senkronu yapar, sonra **bekçiyi** çalıştırır: tam yetkili rollerden birinin
+  eksik izni varsa kırmızı yanar ve çıkış kodu 1 döner. Bilinçli kısıtlı
+  roller `scripts/yetki-bekci.ts` içinde ADIYLA beyan edilir — beyan
+  edilmeyen bir eksik, hata sayılır.
+- Yeni bir izin EKLENMEDİĞİ paketlerde de koşmak zararsızdır ve alışkanlık
+  hâline gelmesi gerekir; unutulan tek satır bir ekranı görünmez yapıyor.
+
 **Kütüphane kısıtı (ölçüldü 10.08.2026):** `next-auth`ın kararlı sürümü
 hâlâ 4.24; App Router'ın karşılığı olan v5 yalnızca `beta` etiketinde —
 anayasa gereği KULLANILMAZ. `lucia` yazarı tarafından emekliye ayrıldı.
@@ -277,5 +301,8 @@ zorlaştıracak şekilde yazılmıyor.
   1. `git status` çıktısında `.env` geçmiyor
   2. `git log --all -S "<parola>"` ile geçmişte sır aranmış ve temiz
   3. Sır bulunursa push ETME, önce kullanıcıya bildir
+- **Deploy sonrası: `npm run canli:yetki`.** Senkron + bekçi tek komutta;
+  bekçi kırmızı yanarsa ekran canlıda sessizce kayıp demektir (bkz.
+  Güvenlik katmanları → Yetki iki bacaklıdır).
 
 @AGENTS.md
