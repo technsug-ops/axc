@@ -216,15 +216,51 @@ Aday sıralama (mimar önerisi, kullanıcı onayı bekleniyor):
       denemeden sonra yazılır.
       Mimari hazır: `ChannelType`'a `WEBSITE` eklenmesi yeterli.
 
-## SaaS dönüşümü
+## Büyüme sırası — ÜÇ AŞAMA, SIRAYLA
 
-- [ ] **Çok-kiracılı (multi-tenant) mimari**
-      Sistem ileride satılabilir bir SaaS olacak. Bugün tek firma
-      varsayımıyla çalışıyoruz ama CLAUDE.md'deki adlandırma standardı
-      gereği bu varsayımı derinleştiren kısayollardan kaçınıyoruz.
-      Dönüşüm SaaS kararı netleşince planlanacak; kiracı (tenant) ayrımı,
-      veri izolasyonu ve kimlik doğrulama birlikte ele alınmalı.
-      _Karar 09.08.2026: bugün yapılmıyor, yön belli._
+_Karar 13.08.2026: **SaaS ERTELENDİ.** Önce tek firma için her şey
+tamamlanır, sistem kendi işinde kanıtlanır, sonra SaaS._
+
+**Mimari kararlar SaaS-uyumlu alınmaya devam eder; SaaS'a özel iş AÇILMAZ.**
+Bu ayrım önemli: `Company` tablosu ve `UserCompanyRole` üyeliği bugün
+kuruldu (13.08.2026) çünkü RBAC'i yarın yeniden yazmamak için gerekliydi —
+ama bu "SaaS işine başladık" demek değil. Bugünkü kural değişmedi:
+yeni yazılan hiçbir özellik "tek firma" varsayımını DERİNLEŞTİRMEZ.
+
+### 1 · TEK FİRMA TAMAMLAMA — şimdi
+
+Bu dosyadaki açık maddelerin tamamı buraya girer. Sistem tek firmada
+eksiksiz çalışmadan sonraki aşamaya geçilmez. Bugünkü öncelikler:
+pazaryeri API'leri, barkod akışları, depo/sevkiyat, RBAC ekranları.
+
+- [ ] **Sistem kendi işinde kanıtlansın**
+      Ölçüt kod değil KULLANIM: günlük veri girişi kesintisiz sürüyor mu,
+      iki canlı teyit geçti mi (2 Eylül kart ekstresi · ilk eşleşen
+      hakediş), kâr rakamlarına güveniliyor mu.
+
+### 2 · ÇOK-FİRMA VERİ KATMANI — kendi alt firmaları ihtiyacı doğunca
+
+- [ ] **companyId'nin veri katmanına yayılması**
+      Bugün yalnız üyelik firma biliyor; ürün, alım, satış, stok gibi
+      ~30 tablo bilmiyor. Yayılma AYRI PAKETTİR ve üç parçası var:
+      1. **Damgalama** — her kayıt bir firmaya yazılır (migration + geriye
+         dönük doldurma; bugünkü veri tek firmaya damgalanır).
+      2. **Sorgu süzgeci** — her okuma aktif firmayla süzülür. Tek tek
+         `where` yazmak sürdürülemez; merkezî bir katman gerekir.
+      3. **SIZINTI BEKÇİSİ** — süzgeçsiz kalan sorguyu yakalayan denetim
+         betiği. `yetki:dogrula`'nın "korumasız action" bekçisiyle aynı
+         mantık: biri unutulursa başka firmanın verisi görünür ve bu
+         SESSİZ olur.
+      Tetikleyici: kullanıcının kendi ikinci firması doğduğunda.
+
+### 3 · SaaS — EN SON
+
+- [ ] **Kayıt · faturalama · firma bazlı yedek**
+      Aşama 2 bittikten sonra. Kapsam: dışarıdan müşteri kaydı, abonelik
+      ve faturalama, firma bazlı yedek/geri yükleme izolasyonu, onboarding
+      (içe aktarma) ve offboarding (dışa aktarma) — ikisi de zaten
+      birinci sınıf özellik olarak duruyor (bkz. VERİ SAHİPLİĞİ İLKESİ).
+      _SaaS'a özel hiçbir iş bu aşamadan önce açılmaz._
 
 ## Kâr düzeltme yolundaki iki boşluk
 

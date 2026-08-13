@@ -22,7 +22,12 @@ yeniden yazmadan büyü.
 
 ## Adlandırma standardı (KESİN KURAL)
 
-Bu sistem ileride satılabilir bir SaaS olacak (çok-kiracılı dönüşüm SONRA).
+Bu sistem ileride satılabilir bir SaaS olacak. **SIRA NET (karar 13.08.2026):**
+önce tek firma için her şey tamamlanır ve sistem kendi işinde kanıtlanır;
+sonra çok-firma veri katmanı; SaaS EN SON. Mimari kararlar SaaS-uyumlu
+alınmaya devam eder ama **SaaS'a özel iş AÇILMAZ** (bkz. BEKLEYENLER →
+Büyüme sırası).
+
 Bu nedenle hiçbir firma/marka adı sistemin YAPISINA gömülmez.
 
 - Alan adları, ekran başlıkları ve sistem metinleri hiçbir belirli
