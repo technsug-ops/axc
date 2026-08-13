@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
@@ -103,6 +104,8 @@ export async function tedarikciEkle(
   _oncekiDurum: TedarikciDurumu,
   formData: FormData,
 ): Promise<TedarikciDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("Tedarikci");
 
   const sonuc = semaKur(t).safeParse(formuOku(formData));
@@ -137,6 +140,8 @@ export async function tedarikciGuncelle(
   _oncekiDurum: TedarikciDurumu,
   formData: FormData,
 ): Promise<TedarikciDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("Tedarikci");
 
   const id = String(formData.get("id") ?? "");
@@ -182,6 +187,8 @@ export async function tedarikciDurumDegistir(
   _oncekiDurum: TedarikciDurumu,
   formData: FormData,
 ): Promise<TedarikciDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("Tedarikci");
 
   const id = String(formData.get("id") ?? "");

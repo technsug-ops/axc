@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
@@ -92,6 +93,8 @@ export async function kategoriEkle(
   _oncekiDurum: KategoriDurumu,
   formData: FormData,
 ): Promise<KategoriDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("Kategori");
 
   const sonuc = kategoriSemasiKur(t).safeParse({
@@ -131,6 +134,8 @@ export async function kategoriGuncelle(
   _oncekiDurum: KategoriDurumu,
   formData: FormData,
 ): Promise<KategoriDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("Kategori");
 
   const id = String(formData.get("id") ?? "");
@@ -178,6 +183,8 @@ export async function kategoriDurumDegistir(
   _oncekiDurum: KategoriDurumu,
   formData: FormData,
 ): Promise<KategoriDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("Kategori");
 
   const id = String(formData.get("id") ?? "");

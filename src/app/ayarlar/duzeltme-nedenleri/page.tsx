@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { TriangleAlert } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,8 @@ export async function generateMetadata() {
 }
 
 export default async function DuzeltmeNedenleriSayfasi() {
+  await sayfaIzni("ayar.yaz");
+
   const t = await getTranslations("DuzeltmeNedeni");
 
   const kayitlar = await prisma.stockAdjustmentReason.findMany({

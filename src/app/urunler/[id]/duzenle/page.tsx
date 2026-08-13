@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 
 import { GeriBaglanti } from "@/components/baglanti";
@@ -14,6 +15,8 @@ export default async function UrunDuzenleSayfasi({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await sayfaIzni("urun.yaz");
+
   const { id } = await params;
   const t = await getTranslations("Urunler");
 

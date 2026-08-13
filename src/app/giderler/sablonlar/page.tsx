@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { sayfaIzni } from "@/lib/yetki";
 import { GeriBaglanti } from "@/components/baglanti";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,8 @@ export async function generateMetadata() {
 }
 
 export default async function SablonlarSayfasi() {
+  await sayfaIzni("gider.yaz");
+
   const t = await getTranslations("Gider");
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();

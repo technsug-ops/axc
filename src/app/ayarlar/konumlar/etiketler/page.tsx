@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import QRCode from "qrcode";
 
@@ -32,6 +33,8 @@ export async function generateMetadata() {
  * yazdırılabilir; yazıcıya en temiz giden yol budur.
  */
 export default async function RafEtiketleriSayfasi() {
+  await sayfaIzni("ayar.yaz");
+
   const konumlar = await prisma.location.findMany({
     where: { isActive: true },
     orderBy: { code: "asc" },

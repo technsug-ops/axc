@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -155,6 +156,8 @@ export async function kartOlustur(
   _oncekiDurum: KartDurumu,
   formData: FormData,
 ): Promise<KartDurumu> {
+  await yetkiIste("kart.gor");
+
   const { t, mesajlar, sema } = await kartHazirla();
 
   const sonuc = formuOku(sema, formData);
@@ -186,6 +189,8 @@ export async function kartGuncelle(
   _oncekiDurum: KartDurumu,
   formData: FormData,
 ): Promise<KartDurumu> {
+  await yetkiIste("kart.gor");
+
   const { t, mesajlar, sema } = await kartHazirla();
 
   const kartId = String(formData.get("id") ?? "");
@@ -223,6 +228,8 @@ export async function kartDurumDegistir(
   _oncekiDurum: KartDurumu,
   formData: FormData,
 ): Promise<KartDurumu> {
+  await yetkiIste("kart.gor");
+
   const t = await getTranslations("Kart");
 
   const kartId = String(formData.get("id") ?? "");

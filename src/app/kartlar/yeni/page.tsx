@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { GeriBaglanti } from "@/components/baglanti";
 
 import { kartOlustur } from "../actions";
@@ -10,6 +11,8 @@ export async function generateMetadata() {
 }
 
 export default async function YeniKartSayfasi() {
+  await sayfaIzni("kart.gor");
+
   const t = await getTranslations("Kart");
   return (
     <div className="mx-auto max-w-3xl space-y-6">

@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
@@ -65,6 +66,8 @@ export async function nedenEkle(
   _onceki: NedenDurumu,
   formData: FormData,
 ): Promise<NedenDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("DuzeltmeNedeni");
 
   const cozum = semaKur(t).safeParse({
@@ -106,6 +109,8 @@ export async function nedenGuncelle(
   _onceki: NedenDurumu,
   formData: FormData,
 ): Promise<NedenDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("DuzeltmeNedeni");
 
   const id = String(formData.get("id") ?? "");
@@ -157,6 +162,8 @@ export async function nedenDurumDegistir(
   _onceki: NedenDurumu,
   formData: FormData,
 ): Promise<NedenDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("DuzeltmeNedeni");
 
   const id = String(formData.get("id") ?? "");

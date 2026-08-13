@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { Eye, Pencil, Plus } from "lucide-react";
 
@@ -37,6 +38,8 @@ export default async function UrunlerSayfasi({
 }: {
   searchParams: Promise<{ q?: string; sayfa?: string }>;
 }) {
+  await sayfaIzni("urun.gor");
+
   const { q, sayfa } = await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();

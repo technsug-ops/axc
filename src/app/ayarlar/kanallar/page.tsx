@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
 import { TriangleAlert } from "lucide-react";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -35,6 +36,8 @@ export async function generateMetadata() {
 }
 
 export default async function KanalHesaplariSayfasi() {
+  await sayfaIzni("ayar.yaz");
+
   const [kanallar, hesaplar] = await Promise.all([
     prisma.channel.findMany({
       where: { isActive: true },

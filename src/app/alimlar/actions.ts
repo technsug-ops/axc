@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -74,6 +75,8 @@ export async function alimOlustur(
   _oncekiDurum: AlimDurumu,
   formData: FormData,
 ): Promise<AlimDurumu> {
+  await yetkiIste("alim.yaz");
+
   const t = await getTranslations("Alim");
 
   const ham = formData.get("veri");
@@ -236,6 +239,8 @@ export async function alimGuncelle(
   _oncekiDurum: AlimDurumu,
   formData: FormData,
 ): Promise<AlimDurumu> {
+  await yetkiIste("alim.yaz");
+
   const t = await getTranslations("Alim");
 
   const id = String(formData.get("id") ?? "");
@@ -428,6 +433,8 @@ export async function alimIptalEt(
   _oncekiDurum: AlimDurumu,
   formData: FormData,
 ): Promise<AlimDurumu> {
+  await yetkiIste("alim.yaz");
+
   const t = await getTranslations("Alim");
 
   const id = String(formData.get("id") ?? "");

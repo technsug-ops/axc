@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
@@ -19,6 +20,8 @@ export default async function MalKabulSayfasi({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await sayfaIzni("malkabul.yaz");
+
   const { id } = await params;
 
   const alim = await prisma.purchase.findUnique({

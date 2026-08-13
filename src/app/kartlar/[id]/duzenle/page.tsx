@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 
 import { GeriBaglanti } from "@/components/baglanti";
@@ -12,6 +13,8 @@ export default async function KartDuzenleSayfasi({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await sayfaIzni("kart.gor");
+
   const { id } = await params;
   const t = await getTranslations("Kart");
   const ortak = await getTranslations("Ortak");

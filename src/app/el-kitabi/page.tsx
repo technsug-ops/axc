@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,8 @@ export async function generateMetadata() {
 }
 
 export default async function ElKitabiSayfasi() {
+  await sayfaIzni("elkitabi.gor");
+
   const t = await getTranslations("ElKitabi");
   const bicim = await bicimlendirici();
 

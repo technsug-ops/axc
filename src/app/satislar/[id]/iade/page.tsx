@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
@@ -24,6 +25,8 @@ export default async function IadeSayfasi({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await sayfaIzni("iade.yaz");
+
   const { id } = await params;
   const t = await getTranslations("Iade");
 

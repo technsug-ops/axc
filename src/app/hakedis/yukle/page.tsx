@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
@@ -16,6 +17,8 @@ export async function generateMetadata() {
 }
 
 export default async function HakedisYukleSayfasi() {
+  await sayfaIzni("hakedis.gor");
+
   const t = await getTranslations("Hakedis");
   const tHesap = await getTranslations("KanalHesabi");
   const tBaslik = await getTranslations("Basliklar");

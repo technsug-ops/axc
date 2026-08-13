@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
@@ -54,6 +55,8 @@ export async function birlestirmeOnizle(
   _oncekiDurum: BirlestirDurumu,
   formData: FormData,
 ): Promise<BirlestirDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("RafBirlestir");
 
   const kaynakId = String(formData.get("kaynakId") ?? "");
@@ -87,6 +90,8 @@ export async function birlestirmeyiUygula(
   _oncekiDurum: BirlestirDurumu,
   formData: FormData,
 ): Promise<BirlestirDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("RafBirlestir");
 
   const kaynakId = String(formData.get("kaynakId") ?? "");

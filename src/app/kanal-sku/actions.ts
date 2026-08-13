@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
@@ -71,6 +72,8 @@ export async function kanalSkuEkle(
   _oncekiDurum: KanalSkuDurumu,
   formData: FormData,
 ): Promise<KanalSkuDurumu> {
+  await yetkiIste("kanalsku.yaz");
+
   const t = await getTranslations("KanalSku");
 
   const variantId = String(formData.get("variantId") ?? "");
@@ -150,6 +153,8 @@ export async function kanalSkuGuncelle(
   _oncekiDurum: KanalSkuDurumu,
   formData: FormData,
 ): Promise<KanalSkuDurumu> {
+  await yetkiIste("kanalsku.yaz");
+
   const t = await getTranslations("KanalSku");
 
   const id = String(formData.get("id") ?? "");
@@ -219,6 +224,8 @@ export async function kanalSkuDurumDegistir(
   _oncekiDurum: KanalSkuDurumu,
   formData: FormData,
 ): Promise<KanalSkuDurumu> {
+  await yetkiIste("kanalsku.yaz");
+
   const t = await getTranslations("KanalSku");
 
   const id = String(formData.get("id") ?? "");
@@ -243,6 +250,8 @@ export async function kanalSkuSil(
   _oncekiDurum: KanalSkuDurumu,
   formData: FormData,
 ): Promise<KanalSkuDurumu> {
+  await yetkiIste("kanalsku.yaz");
+
   const t = await getTranslations("KanalSku");
 
   const id = String(formData.get("id") ?? "");

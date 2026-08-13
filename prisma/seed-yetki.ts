@@ -84,11 +84,17 @@ export async function yetkiSeed(prisma: PrismaClient) {
     console.log(`${OPERASYON_ROLU.padEnd(15)}: ${OPERASYON_IZINLERI.length} izin`);
   }
 
-  // --- 4) MEVCUT KULLANICILAR: üyeliği olmayan herkes SAHİP olur ---
-  // Bugün tek kullanıcı var. Üyeliği zaten olan kullanıcıya DOKUNULMAZ:
-  // rolü ekrandan düşürülmüş olabilir, seed onu geri yükseltmemeli.
+  // --- 4) MEVCUT KULLANICILAR: üyeliği olmayan AKTİF herkes SAHİP olur ---
+  // Üyeliği zaten olan kullanıcıya DOKUNULMAZ: rolü ekrandan düşürülmüş
+  // olabilir, seed onu geri yükseltmemeli.
+  //
+  // PASİF KULLANICI ATLANIR: 13.08.2026'da canlıda yazım hatasıyla açılmış
+  // pasif bir hesap vardı ve seed ona SAHİP üyeliği verdi. Zararsızdı
+  // (pasif kullanıcı giriş yapamıyor) ama hayalet üyelik bırakmanın anlamı
+  // yok — kullanılmayan bir yetki, bir gün fark edilmeden kullanılan
+  // yetkidir.
   const kullanicilar = await prisma.user.findMany({
-    where: { userCompanyRoles: { none: {} } },
+    where: { isActive: true, userCompanyRoles: { none: {} } },
     select: { id: true, email: true },
   });
 

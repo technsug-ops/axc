@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { prisma } from "@/lib/prisma";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { varyantStogu } from "@/lib/stok";
@@ -34,6 +35,8 @@ export async function kalemBilgisiGetir(
   variantId: string,
   channelAccountId: string,
 ): Promise<KalemBilgisi> {
+  await yetkiIste("satis.yaz");
+
   const [varyant, stok] = await Promise.all([
     prisma.productVariant.findUnique({
       where: { id: variantId },
@@ -104,6 +107,8 @@ export async function kargoSecenekleriGetir(
   channelAccountId: string,
   desi: number,
 ): Promise<KargoSecenegi[]> {
+  await yetkiIste("satis.yaz");
+
   if (!channelAccountId) return [];
 
   const hesap = await prisma.channelAccount.findUnique({

@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { Database, Download, TriangleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,8 @@ export async function generateMetadata() {
 }
 
 export default async function DisaAktarmaSayfasi() {
+  await sayfaIzni("veri.aktar");
+
   const t = await getTranslations("DisaAktarma");
 
   return (

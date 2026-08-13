@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 import { Pencil, PackageCheck } from "lucide-react";
 
@@ -32,6 +33,8 @@ export default async function AlimDetaySayfasi({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ saglam?: string; hasarli?: string }>;
 }) {
+  await sayfaIzni("alim.gor");
+
   const [{ id }, kabulSonucu] = await Promise.all([params, searchParams]);
 
   const alim = await prisma.purchase.findUnique({

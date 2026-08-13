@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -286,6 +287,8 @@ export async function urunOlustur(
   _oncekiDurum: FormDurumu,
   formData: FormData,
 ): Promise<FormDurumu> {
+  await yetkiIste("urun.yaz");
+
   const t = await getTranslations("Urun");
 
   const ayristirma = veriyiAyristir(formData, t);
@@ -360,6 +363,8 @@ export async function urunGuncelle(
   _oncekiDurum: FormDurumu,
   formData: FormData,
 ): Promise<FormDurumu> {
+  await yetkiIste("urun.yaz");
+
   const t = await getTranslations("Urun");
 
   const urunId = formData.get("id");
@@ -499,6 +504,8 @@ export async function urunSil(
   _oncekiDurum: FormDurumu,
   formData: FormData,
 ): Promise<FormDurumu> {
+  await yetkiIste("urun.yaz");
+
   const t = await getTranslations("Urun");
 
   const urunId = formData.get("id");

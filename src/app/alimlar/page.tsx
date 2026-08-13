@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { Eye, Pencil, PackageCheck, Plus } from "lucide-react";
 
@@ -40,6 +41,8 @@ export default async function AlimlarSayfasi({
 }: {
   searchParams: Promise<{ q?: string; durum?: string }>;
 }) {
+  await sayfaIzni("alim.gor");
+
   const { q, durum } = await searchParams;
   const arama = (q ?? "").trim();
   const durumFiltresi = (durum ?? "").trim();

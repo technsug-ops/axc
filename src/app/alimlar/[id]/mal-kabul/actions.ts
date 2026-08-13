@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -56,6 +57,8 @@ export async function malKabulEt(
   _oncekiDurum: MalKabulDurumu,
   formData: FormData,
 ): Promise<MalKabulDurumu> {
+  await yetkiIste("malkabul.yaz");
+
   const t = await getTranslations("MalKabul");
 
   const alimId = String(formData.get("alimId") ?? "");

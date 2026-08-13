@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
@@ -87,6 +88,8 @@ export async function giderEkle(
   _oncekiDurum: GiderDurumu,
   formData: FormData,
 ): Promise<GiderDurumu> {
+  await yetkiIste("gider.yaz");
+
   const t = await getTranslations("Gider");
 
   const sonuc = giderSemasiKur(t).safeParse(formuOku(formData));
@@ -128,6 +131,8 @@ export async function giderGuncelle(
   _oncekiDurum: GiderDurumu,
   formData: FormData,
 ): Promise<GiderDurumu> {
+  await yetkiIste("gider.yaz");
+
   const t = await getTranslations("Gider");
 
   const id = String(formData.get("id") ?? "");
@@ -174,6 +179,8 @@ export async function giderSil(
   _oncekiDurum: GiderDurumu,
   formData: FormData,
 ): Promise<GiderDurumu> {
+  await yetkiIste("gider.yaz");
+
   const t = await getTranslations("Gider");
 
   const id = String(formData.get("id") ?? "");
@@ -204,6 +211,8 @@ export async function sablonEkle(
   _oncekiDurum: GiderDurumu,
   formData: FormData,
 ): Promise<GiderDurumu> {
+  await yetkiIste("gider.yaz");
+
   const t = await getTranslations("Gider");
 
   const ad = String(formData.get("name") ?? "").trim();
@@ -255,6 +264,8 @@ export async function sablonDurumDegistir(
   _oncekiDurum: GiderDurumu,
   formData: FormData,
 ): Promise<GiderDurumu> {
+  await yetkiIste("gider.yaz");
+
   const t = await getTranslations("Gider");
 
   const id = String(formData.get("id") ?? "");
@@ -291,6 +302,8 @@ export async function sablondanEkle(
   _oncekiDurum: GiderDurumu,
   formData: FormData,
 ): Promise<GiderDurumu> {
+  await yetkiIste("gider.yaz");
+
   const t = await getTranslations("Gider");
 
   const id = String(formData.get("id") ?? "");

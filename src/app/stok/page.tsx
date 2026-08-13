@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { History, Package } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
@@ -34,6 +35,8 @@ export default async function StokSayfasi({
 }: {
   searchParams: Promise<{ q?: string; sayfa?: string }>;
 }) {
+  await sayfaIzni("stok.gor");
+
   const { q, sayfa } = await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();

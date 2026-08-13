@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 import { CreditCard, Pencil, TriangleAlert } from "lucide-react";
 
@@ -33,6 +34,8 @@ export async function generateMetadata() {
 }
 
 export default async function KartBorcuSayfasi() {
+  await sayfaIzni("kart.gor");
+
   const t = await getTranslations("KartBorcu");
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();

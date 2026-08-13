@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, Plus, TriangleAlert } from "lucide-react";
 
@@ -69,6 +70,8 @@ export default async function RaporSayfasi({
     bitis?: string;
   }>;
 }) {
+  await sayfaIzni("rapor.gor");
+
   const parametreler = await searchParams;
   const t = await getTranslations("Rapor");
   const tSatis = await getTranslations("Satis");

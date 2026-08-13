@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -78,6 +79,8 @@ export async function satisOlustur(
   _oncekiDurum: SatisDurumu,
   formData: FormData,
 ): Promise<SatisDurumu> {
+  await yetkiIste("satis.yaz");
+
   const t = await getTranslations("Satis");
 
   const ham = formData.get("veri");

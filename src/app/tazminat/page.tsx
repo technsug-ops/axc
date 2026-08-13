@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { PackageX, TriangleAlert } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
@@ -34,6 +35,8 @@ export async function generateMetadata() {
 }
 
 export default async function TazminatSayfasi() {
+  await sayfaIzni("tazminat.yaz");
+
   const t = await getTranslations("Tazminat");
   const tDurum = await getTranslations("TazminatDurumu");
   const ortak = await getTranslations("Ortak");

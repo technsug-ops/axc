@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { GeriBaglanti } from "@/components/baglanti";
 import { tarihGirdisi } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
@@ -24,6 +25,8 @@ export async function generateMetadata() {
 }
 
 export default async function YeniAlimSayfasi() {
+  await sayfaIzni("alim.yaz");
+
   const [hesapKayitlari, kartKayitlari, tedarikciKayitlari] = await Promise.all([
     prisma.channelAccount.findMany({
       where: { isActive: true, alisIcin: true },

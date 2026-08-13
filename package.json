@@ -31,7 +31,8 @@
     "yedek:dogrula": "tsx scripts/yedek-dogrula.ts",
     "toplu:dogrula": "tsx scripts/toplu-dogrula.ts",
     "kimlik:goc": "tsx scripts/kimlik-goc.ts",
-    "duzeltme:dogrula": "tsx scripts/duzeltme-dogrula.ts"
+    "duzeltme:dogrula": "tsx scripts/duzeltme-dogrula.ts",
+    "yetki:dogrula": "tsx scripts/yetki-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

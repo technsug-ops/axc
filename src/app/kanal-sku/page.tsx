@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { Info, TriangleAlert } from "lucide-react";
 
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -35,6 +36,8 @@ export default async function KanalSkuSayfasi({
 }: {
   searchParams: Promise<{ hesap?: string; q?: string; eksik?: string; sayfa?: string }>;
 }) {
+  await sayfaIzni("kanalsku.yaz");
+
   const { hesap, q, eksik, sayfa } = await searchParams;
   const seciliHesap = hesap ?? "";
   const arama = (q ?? "").trim();

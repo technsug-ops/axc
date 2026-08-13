@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Pencil } from "lucide-react";
@@ -29,6 +30,8 @@ export default async function UrunDetaySayfasi({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await sayfaIzni("urun.gor");
+
   const { id } = await params;
 
   const urun = await prisma.product.findUnique({

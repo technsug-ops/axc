@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
@@ -156,6 +157,8 @@ export async function tazminatAc(
   _oncekiDurum: TazminatDurumu,
   formData: FormData,
 ): Promise<TazminatDurumu> {
+  await yetkiIste("tazminat.yaz");
+
   const t = await getTranslations("Tazminat");
 
   const sonuc = semaKur(t).safeParse({
@@ -243,6 +246,8 @@ export async function tazminatDurumDegistir(
   _oncekiDurum: TazminatDurumu,
   formData: FormData,
 ): Promise<TazminatDurumu> {
+  await yetkiIste("tazminat.yaz");
+
   const t = await getTranslations("Tazminat");
   const tDurum = await getTranslations("TazminatDurumu");
 

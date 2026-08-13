@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 
 import { GeriBaglanti } from "@/components/baglanti";
@@ -17,6 +18,8 @@ export default async function KonumDuzenleSayfasi({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await sayfaIzni("ayar.yaz");
+
   const { id } = await params;
 
   const konum = await prisma.location.findUnique({

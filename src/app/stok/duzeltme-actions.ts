@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
@@ -45,6 +46,8 @@ export async function stokDuzelt(
   _onceki: DuzeltmeDurumu,
   formData: FormData,
 ): Promise<DuzeltmeDurumu> {
+  await yetkiIste("stok.duzelt");
+
   const t = await getTranslations("StokDuzeltme");
 
   const variantId = String(formData.get("variantId") ?? "");

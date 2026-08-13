@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -64,6 +65,8 @@ export type OnizlemeSonucu = {
 export async function iadeOnizle(
   girdi: IadeFormGirdisi,
 ): Promise<OnizlemeSonucu> {
+  await yetkiIste("iade.yaz");
+
   const t = await getTranslations("Iade");
 
   const satis = await prisma.sale.findUnique({
@@ -169,6 +172,8 @@ export type KayitSonucu = { hata?: string };
 export async function iadeOlustur(
   girdi: IadeFormGirdisi,
 ): Promise<KayitSonucu> {
+  await yetkiIste("iade.yaz");
+
   const t = await getTranslations("Iade");
 
   const tarih = new Date(girdi.occurredAt);
@@ -262,6 +267,8 @@ export async function iadeOlustur(
 export async function cezaOnerisiGetir(
   saleId: string,
 ): Promise<number | null> {
+  await yetkiIste("iade.yaz");
+
   const satis = await prisma.sale.findUnique({
     where: { id: saleId },
     include: {
@@ -280,5 +287,7 @@ export async function cezaOnerisiGetir(
 
 /** Değişim ürünü seçilince stok bilgisi — erken uyarı için. */
 export async function degisimStoguGetir(variantId: string): Promise<number> {
+  await yetkiIste("iade.yaz");
+
   return varyantStogu(variantId);
 }

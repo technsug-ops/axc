@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -65,6 +66,8 @@ export async function konumEkle(
   _oncekiDurum: KonumDurumu,
   formData: FormData,
 ): Promise<KonumDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const { t, sema } = await semaHazirla();
 
   const sonuc = sema.safeParse(formuOku(formData));
@@ -120,6 +123,8 @@ export async function konumGuncelle(
   _oncekiDurum: KonumDurumu,
   formData: FormData,
 ): Promise<KonumDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const { t, sema } = await semaHazirla();
 
   const id = String(formData.get("id") ?? "");
@@ -171,6 +176,8 @@ export async function konumDurumDegistir(
   _oncekiDurum: KonumDurumu,
   formData: FormData,
 ): Promise<KonumDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("Raf");
 
   const id = String(formData.get("id") ?? "");

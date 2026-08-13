@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { sayfaIzni } from "@/lib/yetki";
 import { Yukleyici } from "./yukleyici";
 
 export async function generateMetadata() {
@@ -8,6 +9,8 @@ export async function generateMetadata() {
 }
 
 export default async function IceAktarmaSayfasi() {
+  await sayfaIzni("veri.aktar");
+
   const t = await getTranslations("IceAktarma");
 
   return (

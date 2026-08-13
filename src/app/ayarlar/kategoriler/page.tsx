@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { TriangleAlert } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,8 @@ export async function generateMetadata() {
 }
 
 export default async function KategorilerSayfasi() {
+  await sayfaIzni("ayar.yaz");
+
   const t = await getTranslations("Kategori");
 
   const kayitlar = await prisma.category.findMany({

@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -58,6 +59,8 @@ function varyantiOzetle(v: {
 
 /** Serbest metin araması: ürün adı, SKU, Firma SKU veya barkod. */
 export async function varyantAra(sorgu: string): Promise<VaryantSonucu[]> {
+  await yetkiIste("urun.gor");
+
   const q = sorgu.trim();
   if (q.length < 2) return [];
 
@@ -87,6 +90,8 @@ export async function varyantAra(sorgu: string): Promise<VaryantSonucu[]> {
 export async function varyantKodlaBul(
   kod: string,
 ): Promise<VaryantSonucu | null> {
+  await yetkiIste("urun.gor");
+
   const temiz = kod.trim();
   if (!temiz) return null;
 

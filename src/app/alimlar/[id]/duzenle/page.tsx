@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 import { TriangleAlert } from "lucide-react";
 
@@ -22,6 +23,8 @@ export default async function AlimDuzenleSayfasi({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await sayfaIzni("alim.yaz");
+
   const { id } = await params;
   const t = await getTranslations("Alim");
 

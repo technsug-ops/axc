@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 
@@ -36,6 +37,8 @@ export async function generateMetadata() {
 }
 
 export default async function EnvanterDegeriSayfasi() {
+  await sayfaIzni("envanter.gor");
+
   const t = await getTranslations("Envanter");
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();

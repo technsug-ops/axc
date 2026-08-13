@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 
@@ -29,6 +30,8 @@ export default async function KartDetaySayfasi({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await sayfaIzni("kart.gor");
+
   const { id } = await params;
 
   const kart = await prisma.creditCard.findUnique({

@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
@@ -32,6 +33,8 @@ export async function satisHesabiDegistir(
   _oncekiDurum: SatisHesapDurumu,
   formData: FormData,
 ): Promise<SatisHesapDurumu> {
+  await yetkiIste("kar.duzelt");
+
   const t = await getTranslations("Satis");
 
   const saleId = String(formData.get("saleId") ?? "");

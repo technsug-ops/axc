@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 import { Undo2 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -32,6 +33,10 @@ export default async function SatisDetaySayfasi({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await sayfaIzni("satis.gor");
+  // Kâr bloğu ayrı izin — bkz. lib/yetki/izinler.ts (tek alan-izni istisnası).
+  const karGorunur = await izinVarMi("satis.kar.gor");
+
   const { id } = await params;
 
   // Satış yanlış hesaba yazılmış olabilir; taşıma için SATIŞ hesapları.
@@ -447,7 +452,9 @@ export default async function SatisDetaySayfasi({
         );
       })}
 
-      {satis.profitStatus !== null ? <KarBlogu veri={karVerisi} /> : null}
+      {karGorunur && satis.profitStatus !== null ? (
+        <KarBlogu veri={karVerisi} />
+      ) : null}
 
       <IadeBlogu
         iadeler={iadeler}

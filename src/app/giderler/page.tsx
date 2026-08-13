@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 import { BarChart3, Pencil, Plus, Repeat } from "lucide-react";
 
@@ -45,6 +46,8 @@ export default async function GiderlerSayfasi({
 }: {
   searchParams: Promise<{ ay?: string; kategori?: string }>;
 }) {
+  await sayfaIzni("gider.yaz");
+
   const { ay: ayParam, kategori: kategoriParam } = await searchParams;
   const t = await getTranslations("Gider");
   const ortak = await getTranslations("Ortak");

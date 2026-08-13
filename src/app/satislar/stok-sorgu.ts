@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { varyantStogu } from "@/lib/stok";
 
 /**
@@ -12,5 +13,7 @@ import { varyantStogu } from "@/lib/stok";
  * gerek kalmasın).
  */
 export async function varyantStoguGetir(variantId: string): Promise<number> {
+  await yetkiIste("satis.yaz");
+
   return varyantStogu(variantId);
 }

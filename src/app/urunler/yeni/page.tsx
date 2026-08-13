@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { GeriBaglanti } from "@/components/baglanti";
 import { prisma } from "@/lib/prisma";
 
@@ -21,6 +22,8 @@ export async function generateMetadata() {
 }
 
 export default async function YeniUrunSayfasi() {
+  await sayfaIzni("urun.yaz");
+
   const t = await getTranslations("Urunler");
 
   const konumlar = await prisma.location.findMany({

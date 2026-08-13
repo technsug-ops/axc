@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { Eye, Pencil, Landmark, Plus } from "lucide-react";
 
@@ -38,6 +39,8 @@ export async function generateMetadata() {
 }
 
 export default async function KartlarSayfasi() {
+  await sayfaIzni("kart.gor");
+
   const kartlar = await prisma.creditCard.findMany({
     include: { _count: { select: { purchases: true } } },
     orderBy: [{ isActive: "desc" }, { label: "asc" }],

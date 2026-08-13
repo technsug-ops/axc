@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { sayfaIzni } from "@/lib/yetki";
 import { GeriBaglanti } from "@/components/baglanti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -14,6 +15,8 @@ export async function generateMetadata() {
 }
 
 export default async function RafBirlestirSayfasi() {
+  await sayfaIzni("ayar.yaz");
+
   const t = await getTranslations("RafBirlestir");
   const tRaf = await getTranslations("Raf");
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 
 import { GeriBaglanti } from "@/components/baglanti";
@@ -25,6 +26,8 @@ export async function generateMetadata() {
 }
 
 export default async function YeniGiderSayfasi() {
+  await sayfaIzni("gider.yaz");
+
   const t = await getTranslations("Gider");
 
   const kayitlar = await prisma.expenseCategory.findMany({

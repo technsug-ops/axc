@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { Merge, Pencil, QrCode, TriangleAlert } from "lucide-react";
 
@@ -38,6 +39,8 @@ export async function generateMetadata() {
 }
 
 export default async function KonumlarSayfasi() {
+  await sayfaIzni("ayar.yaz");
+
   const konumlar = await prisma.location.findMany({
     orderBy: [{ isActive: "desc" }, { code: "asc" }],
     include: { _count: { select: { variants: true } } },

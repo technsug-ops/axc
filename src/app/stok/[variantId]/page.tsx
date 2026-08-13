@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 
 import { Baglanti, GeriBaglanti } from "@/components/baglanti";
@@ -27,6 +28,8 @@ export default async function VaryantHareketleriSayfasi({
 }: {
   params: Promise<{ variantId: string }>;
 }) {
+  await sayfaIzni("stok.gor");
+
   const { variantId } = await params;
 
   const varyant = await prisma.productVariant.findUnique({

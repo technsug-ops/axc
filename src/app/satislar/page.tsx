@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { Eye, Plus, TriangleAlert, Undo2 } from "lucide-react";
 
@@ -34,6 +35,12 @@ export default async function SatislarSayfasi({
 }: {
   searchParams: Promise<{ q?: string; kar?: string }>;
 }) {
+  await sayfaIzni("satis.gor");
+  // TEK ALAN-İZNİ (bilinçli istisna, bkz. lib/yetki/izinler.ts başlığı):
+  // izin modeli sayfa bazlıdır; NET-2 kolonu operasyonun görmemesi gereken
+  // TEK alandır ve sayfayı komple kapatmak satış girişini imkânsız kılardı.
+  const karGorunur = await izinVarMi("satis.kar.gor");
+
   const { q, kar } = await searchParams;
   const arama = (q ?? "").trim();
 
@@ -210,7 +217,9 @@ export default async function SatislarSayfasi({
                     {ortak("sutunBirimFiyat")}
                   </TableHead>
                   <TableHead>{ortak("tutar")}</TableHead>
-                  <TableHead className="text-right">{t("netKar")}</TableHead>
+                  {karGorunur ? (
+                    <TableHead className="text-right">{t("netKar")}</TableHead>
+                  ) : null}
                   <TableHead>{ortak("eylemler")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -258,13 +267,15 @@ export default async function SatislarSayfasi({
                     <TableCell className="whitespace-nowrap">
                       {tutarMetni(satis)}
                     </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      <NetKar
-                        tutar={satis.net2Amount}
-                        paraBirimi={satis.profitCurrency}
-                        durum={satis.profitStatus}
-                      />
-                    </TableCell>
+                    {karGorunur ? (
+                      <TableCell className="text-right whitespace-nowrap">
+                        <NetKar
+                          tutar={satis.net2Amount}
+                          paraBirimi={satis.profitCurrency}
+                          durum={satis.profitStatus}
+                        />
+                      </TableCell>
+                    ) : null}
                     <TableCell className="whitespace-nowrap">
                       <SatirEylemleri>{eylemler(satis)}</SatirEylemleri>
                     </TableCell>
@@ -315,16 +326,20 @@ export default async function SatislarSayfasi({
                     deger: birimFiyatMetni(satis),
                   },
                   { etiket: ortak("tutar"), deger: tutarMetni(satis) },
-                  {
-                    etiket: t("netKar"),
-                    deger: (
-                      <NetKar
-                        tutar={satis.net2Amount}
-                        paraBirimi={satis.profitCurrency}
-                        durum={satis.profitStatus}
-                      />
-                    ),
-                  },
+                  ...(karGorunur
+                    ? [
+                        {
+                          etiket: t("netKar"),
+                          deger: (
+                            <NetKar
+                              tutar={satis.net2Amount}
+                              paraBirimi={satis.profitCurrency}
+                              durum={satis.profitStatus}
+                            />
+                          ),
+                        },
+                      ]
+                    : []),
                   { etiket: ortak("kanalHesabi"), deger: hesapMetni(satis) },
                 ]}
                 eylemler={eylemler(satis)}

@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
@@ -22,6 +23,8 @@ export type OnizlemeSonucu = {
 export async function karOnizleAction(
   girdi: YenidenHesaplaGirdisi,
 ): Promise<OnizlemeSonucu> {
+  await yetkiIste("kar.duzelt");
+
   const t = await getTranslations("Satis");
 
   const sonuc = await karOnizle(girdi);
@@ -45,6 +48,8 @@ export type YazmaSonucu = { hata?: string; basari?: string };
 export async function karYenidenYazAction(
   girdi: YenidenHesaplaGirdisi,
 ): Promise<YazmaSonucu> {
+  await yetkiIste("kar.duzelt");
+
   const t = await getTranslations("Satis");
 
   let yazildi = false;

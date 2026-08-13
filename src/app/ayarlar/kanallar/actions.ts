@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
@@ -54,6 +55,8 @@ export async function kanalHesabiEkle(
   _oncekiDurum: KanalHesabiDurumu,
   formData: FormData,
 ): Promise<KanalHesabiDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("KanalHesabi");
 
   const sema = hesapSemasi({
@@ -135,6 +138,8 @@ export async function kanalHesabiRolDegistir(
   _oncekiDurum: KanalHesabiDurumu,
   formData: FormData,
 ): Promise<KanalHesabiDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("KanalHesabi");
 
   const id = String(formData.get("id") ?? "");
@@ -181,6 +186,8 @@ export async function kanalHesabiVadeGuncelle(
   _oncekiDurum: KanalHesabiDurumu,
   formData: FormData,
 ): Promise<KanalHesabiDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("KanalHesabi");
 
   const id = String(formData.get("id") ?? "");
@@ -228,6 +235,8 @@ export async function kanalHesabiSil(
   _oncekiDurum: KanalHesabiDurumu,
   formData: FormData,
 ): Promise<KanalHesabiDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("KanalHesabi");
 
   const id = String(formData.get("id") ?? "");
@@ -275,6 +284,8 @@ export async function kanalHesabiDurumDegistir(
   _oncekiDurum: KanalHesabiDurumu,
   formData: FormData,
 ): Promise<KanalHesabiDurumu> {
+  await yetkiIste("ayar.yaz");
+
   const t = await getTranslations("KanalHesabi");
 
   const id = String(formData.get("id") ?? "");

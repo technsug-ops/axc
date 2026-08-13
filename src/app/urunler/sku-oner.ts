@@ -1,5 +1,6 @@
 "use server";
 
+import { yetkiIste } from "@/lib/yetki";
 import {
   modelAyirtEdici,
   skuOnEki,
@@ -65,6 +66,8 @@ export async function skuOner(girdi: {
    */
   kullanilan?: string[];
 }): Promise<SkuOnerisi> {
+  await yetkiIste("urun.gor");
+
   // --- ÖZDEŞLİK DALI: SKU doluysa üretme, aynısını öner ---
   // Kararımız SKU ile Firma SKU'nun özdeş olması. Pazaryeri kodu varken
   // ikinci bir kod uydurmak, aynı ürüne iki kimlik takmak olurdu.

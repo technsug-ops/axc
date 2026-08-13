@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
 import { ShieldAlert } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,8 @@ export async function generateMetadata() {
 }
 
 export default async function GeriYuklemeSayfasi() {
+  await sayfaIzni("veri.aktar");
+
   const t = await getTranslations("GeriYukleme");
 
   const depoBagli = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
