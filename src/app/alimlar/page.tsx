@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ALIM_DURUMLARI, alimDurumEtiketleri } from "@/lib/etiketler";
+import { alimAramaKosulu } from "@/lib/alim-arama";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { kalemToplamlari } from "@/lib/tutar";
@@ -51,9 +52,11 @@ export default async function AlimlarSayfasi({
   const t = await getTranslations("Alim");
   const ortak = await getTranslations("Ortak");
 
+  const aramaKosulu = await alimAramaKosulu(arama);
+
   const alimlar = await prisma.purchase.findMany({
     where: {
-      ...(arama ? { code: { contains: arama } } : {}),
+      ...(aramaKosulu ?? {}),
       ...(durumGecerliMi(durumFiltresi) ? { status: durumFiltresi } : {}),
     },
     include: {
@@ -67,6 +70,7 @@ export default async function AlimlarSayfasi({
       channelAccount: {
         include: { channel: { select: { name: true } } },
       },
+      supplier: { select: { name: true } },
     },
     orderBy: { purchasedAt: "desc" },
   });
@@ -177,6 +181,12 @@ export default async function AlimlarSayfasi({
             <Table>
               <TableHeader>
                 <TableRow>
+                  {/* İKİ AYRI KİMLİK, İKİ AYRI SÜTUN (İlke #3).
+                      "Alım Kodu" sistemin ürettiği kayıt numarasıdır;
+                      "Sipariş No" tedarikçiye/pazaryerine sorun bildirirken
+                      söylediğiniz numaradır. Eskiden tek sütun vardı ve
+                      "Sipariş No" başlığı altında ALIM KODU yazıyordu. */}
+                  <TableHead>{t("alimKodu")}</TableHead>
                   <TableHead>{ortak("siparisNo")}</TableHead>
                   <TableHead>{ortak("tarih")}</TableHead>
                   <TableHead>{ortak("kanalHesabi")}</TableHead>
@@ -199,10 +209,24 @@ export default async function AlimlarSayfasi({
                         </Baglanti>
                         <KopyalanabilirKod
                           deger={alim.code}
-                          etiket={ortak("siparisNo")}
+                          etiket={t("alimKodu")}
                           sadeceIkon
                         />
                       </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {alim.supplierOrderNo ? (
+                        <span className="inline-flex items-center gap-1">
+                          {alim.supplierOrderNo}
+                          <KopyalanabilirKod
+                            deger={alim.supplierOrderNo}
+                            etiket={ortak("siparisNo")}
+                            sadeceIkon
+                          />
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {bicim.tarih(alim.purchasedAt)}
@@ -249,12 +273,31 @@ export default async function AlimlarSayfasi({
                     </Baglanti>
                     <KopyalanabilirKod
                       deger={alim.code}
-                      etiket={ortak("siparisNo")}
+                      etiket={t("alimKodu")}
                       sadeceIkon
                     />
                   </span>
                 }
                 alanlar={[
+                  // İlke #3, mobil öncelik: sipariş no tarihten ÖNCE gelir —
+                  // telefonda kaydı bulmak için bakılan ilk şey odur.
+                  ...(alim.supplierOrderNo
+                    ? [
+                        {
+                          etiket: ortak("siparisNo"),
+                          deger: (
+                            <span className="inline-flex items-center gap-1">
+                              {alim.supplierOrderNo}
+                              <KopyalanabilirKod
+                                deger={alim.supplierOrderNo}
+                                etiket={ortak("siparisNo")}
+                                sadeceIkon
+                              />
+                            </span>
+                          ),
+                        },
+                      ]
+                    : []),
                   {
                     etiket: ortak("tarih"),
                     deger: bicim.tarih(alim.purchasedAt),

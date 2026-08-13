@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { alimAramaKosulu } from "@/lib/alim-arama";
 import { ayKaydir, gunDegeri, gunMetni } from "@/lib/donem";
 import { envanterVerisi } from "@/lib/envanter-veri";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
@@ -224,9 +225,10 @@ async function alimlarSayfasi(p: Parametreler): Promise<Sayfa> {
   const arama = (p.q ?? "").trim();
   const durum = p.durum ?? "";
 
+  // Ekrandaki liste ile inen dosya AYNI koşulu kullanır (bkz. lib/alim-arama).
   const alimlar = await prisma.purchase.findMany({
     where: {
-      ...(arama ? { code: { contains: arama } } : {}),
+      ...((await alimAramaKosulu(arama)) ?? {}),
       ...(durum ? { status: durum as never } : {}),
     },
     include: {

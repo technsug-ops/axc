@@ -6,6 +6,23 @@ listesiyle birlikte teslim edilir.
 
 ## Sonraki uygun pakette
 
+- [ ] **Alımı ÜRÜN/SKU ile arama — önce ÖLÇ, sonra yaz.**
+      _Karar 13.08.2026._ Alım araması bugün alım kodu, tedarikçi sipariş
+      numarası ve tedarikçi adında çalışıyor (ayraç duyarsız). "Bu ürünü
+      hangi alımlarda almıştım?" sorusu AYRI iştir: `PurchaseItem` →
+      `ProductVariant` üzerinden join gerektirir ve alım listesinde
+      sayfalama yok — 1054 ürünlük katalogda ölçmeden yazılmaz.
+      **Ölçülecek:** kaç alım/kalem var, join'li aramanın süresi ne,
+      sayfalama önce mi gelmeli. _Ürün ekranlarında sayfalama 50/sayfa
+      olarak çözülmüştü; alımlarda henüz yok._
+
+- [ ] **Veri temizliği: bir alımın kodu sipariş numarası olarak girilmiş.**
+      _13.08.2026'da arama testinde görüldü:_ kodu `431 231 579 6` olan
+      bir alım var (Alım Kodu alanına pazaryeri sipariş numarası
+      yazılmış). Sistem hatası değil, veri girişi; kullanıcı isterse
+      düzeltir. Not düşüldü ki ileride "kod neden böyle" diye
+      şaşırılmasın.
+
 - [x] ~~**Detay sayfası tabloları mobilde karta dönsün** — İlke #8~~
       _Tamamlandı 09.08.2026 (`e4c65b0`): alım kalemleri, ürün varyantları
       ve stok hareketleri tabloları karta çevrildi; gerçek cihazda

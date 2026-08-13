@@ -477,7 +477,7 @@
     "baslik": "Alımlar",
     "yeniAlim": "Yeni Alım",
     "durumEki": " — {durum}",
-    "aramaIpucu": "Sipariş numarasına göre ara...",
+    "aramaIpucu": "Alım kodu, sipariş no veya tedarikçi ara...",
     "durumFiltresiEtiketi": "Duruma göre filtrele",
     "tumDurumlar": "Tüm durumlar",
     "malKabul": "Mal Kabul",
@@ -547,7 +547,8 @@
     "tedarikciSiparisNoNotu": "Tedarikçideki sipariş numarası. Sorun çıkarsa onlara bu numarayı söylersiniz. İsteğe bağlı.",
     "aramaSonucsuz": "\"{sorgu}\" ile eşleşen ürün yok.",
     "aramaSonucsuzIpucu": "Farklı bir kod ya da adla arayın; ürün gerçekten yoksa yeni kayıt açın. Yeni sekmede açılır, bu form kaybolmaz.",
-    "yeniUrunOlustur": "Yeni ürün oluştur"
+    "yeniUrunOlustur": "Yeni ürün oluştur",
+    "alimKodu": "Alım Kodu"
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",
