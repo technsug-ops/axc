@@ -699,3 +699,19 @@ Bunlar eksik değil, sırası gelmedi (bkz. CLAUDE.md → Faz sırası):
 - Stok hareketlerinde "kim" bilgisi (kullanıcı/kimlik doğrulama) → Faz 4
 - Kredi kartı borç ve ekstre takibi → Faz 3
 - Kanal komisyon kuralları ve net kâr hesabı → Faz 2
+
+## Tek ekrana sığmayan diğer listeler — ölçülecek
+
+- [ ] **Geniş kalan liste ekranları (kullanıcı kuralı: sayfa sağa sola gitmez)**
+      _Karar 14.08.2026._ Alımlar, Satışlar ve Ürünler tek ekrana sığdırıldı
+      (sütunlar iki satırlı hücrelere bindi, bkz. `components/iki-satir.tsx`);
+      ölçüm: 1232→859px · 1122→874px · 1189→802px, bütçe 1045px.
+      **Sırada bakılacaklar (sütun sayıları, tek tablo değil sayfa toplamı):**
+      hakediş 24 · iadeler 22 · envanter değeri 12 · stok 9 · kartlar 9 ·
+      giderler 9 · ayarlar/kanallar 9.
+      Bunların bir kısmı sayfada birden fazla tablo olduğu için yüksek
+      görünüyor; **önce ölç, sonra dokun.** Ölçüm yöntemi hazır: gerçek
+      metin uzunluklarından piksel tahmini (`veri/ozel/` altındaki geçici
+      betik kalıbı) + `yerlesim:dogrula`nın sütun bütçesi bölümü.
+      Bekçi bugün yalnız o üç ekranı tutuyor; buradakiler düzeltildikçe
+      listeye eklenecek.

@@ -6,6 +6,7 @@ import { Eye, Pencil, Plus } from "lucide-react";
 import { ExcelIndir } from "@/components/excel-indir";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { IkiSatir } from "@/components/iki-satir";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { SayfalamaCubugu } from "@/components/sayfalama";
@@ -199,13 +200,11 @@ export default async function UrunlerSayfasi({
             <Table>
               <TableHeader>
                 <TableRow>
+                  {/* SÜTUNLAR BİRLEŞTİRİLDİ (14.08.2026, tek ekrana sığsın):
+                      ürün+marka · Firma SKU+barkod · stok+varyant sayısı.
+                      Üç kimlik de listede DURUYOR ve kopyalanabiliyor. */}
                   <TableHead>{ortak("urun")}</TableHead>
-                  <TableHead>{ortak("marka")}</TableHead>
                   <TableHead>{ortak("firmaSku")}</TableHead>
-                  <TableHead>{ortak("barkod")}</TableHead>
-                  <TableHead className="text-right">
-                    {ortak("varyant")}
-                  </TableHead>
                   <TableHead className="text-right">
                     {t("sutunToplamStok")}
                   </TableHead>
@@ -223,10 +222,17 @@ export default async function UrunlerSayfasi({
                           bloğa konur — `<td>` üzerinde `max-width` yok
                           sayılıyor (bkz. UzunAd). */}
                       <TableCell>
-                        <UzunAd
-                          metin={urun.name}
-                          href={`/urunler/${urun.id}`}
-                          ek={
+                        {/* MARKA ADIN ALTINDA: ayrı sütun 117px yiyordu ve
+                            marka adı zaten ürün adının başında geçiyor. */}
+                        <IkiSatir
+                          alt={urun.brand ?? undefined}
+                          altIpucu={urun.brand ?? undefined}
+                          enGenis="max-w-[20rem]"
+                          ust={
+                            <UzunAd
+                              metin={urun.name}
+                              href={`/urunler/${urun.id}`}
+                              ek={
                             <>
                               {!urun.isActive ? (
                                 <Badge variant="secondary">
@@ -245,29 +251,40 @@ export default async function UrunlerSayfasi({
                                 ) : null;
                               })()}
                             </>
+                              }
+                            />
                           }
                         />
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {urun.brand ?? "—"}
-                      </TableCell>
                       <TableCell>
-                        <KopyalanabilirKod
-                          deger={ana?.companySku}
-                          etiket={ortak("firmaSku")}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <KopyalanabilirKod
-                          deger={ana?.barcode}
-                          etiket={ortak("barkod")}
+                        {/* Firma SKU üstte, barkod altta: ikisi de kimlik
+                            kodudur, ikisi de tık-kopyala taşır (#3, #4). */}
+                        <IkiSatir
+                          ust={
+                            <KopyalanabilirKod
+                              deger={ana?.companySku}
+                              etiket={ortak("firmaSku")}
+                            />
+                          }
+                          alt={
+                            <KopyalanabilirKod
+                              deger={ana?.barcode}
+                              etiket={ortak("barkod")}
+                            />
+                          }
                         />
                       </TableCell>
                       <TableCell className="text-right">
-                        {urun.variants.length}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {stokHaritasi.get(urun.id) ?? 0}
+                        <IkiSatir
+                          ust={
+                            <span className="font-medium">
+                              {stokHaritasi.get(urun.id) ?? 0}
+                            </span>
+                          }
+                          alt={t("varyantSayisi", {
+                            sayi: urun.variants.length,
+                          })}
+                        />
                       </TableCell>
                       <TableCell className="text-muted-foreground whitespace-nowrap">
                         {bicim.tarih(urun.createdAt)}

@@ -8,6 +8,7 @@ import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { AlimIptalButonu } from "./iptal-butonu";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { IkiSatir } from "@/components/iki-satir";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { Badge } from "@/components/ui/badge";
@@ -263,16 +264,16 @@ export default async function AlimlarSayfasi({
             <Table>
               <TableHeader>
                 <TableRow>
-                  {/* İKİ AYRI KİMLİK, İKİ AYRI SÜTUN (İlke #3).
-                      "Alım Kodu" sistemin ürettiği kayıt numarasıdır;
-                      "Sipariş No" tedarikçiye/pazaryerine sorun bildirirken
-                      söylediğiniz numaradır. Eskiden tek sütun vardı ve
-                      "Sipariş No" başlığı altında ALIM KODU yazıyordu. */}
-                  <TableHead>{t("alimKodu")}</TableHead>
-                  <TableHead>{ortak("siparisNo")}</TableHead>
+                  {/* İKİ AYRI KİMLİK, TEK SÜTUN AMA İKİ SATIR (İlke #3 + #9).
+                      "Alım Kodu" sistemin ürettiği kayıt numarası, "Sipariş
+                      No" tedarikçiye sorun bildirirken söylediğiniz numara.
+                      İkisi de listede DURUYOR ve kopyalanabiliyor; 14.08.2026
+                      ölçümünde ayrı sütun olmaları tabloyu ekran dışına
+                      itiyordu (bkz. components/iki-satir.tsx). */}
+                  <TableHead>{t("alimKoduVeSiparis")}</TableHead>
                   <TableHead>{ortak("tarih")}</TableHead>
                   <TableHead>{ortak("kanalHesabi")}</TableHead>
-                  <TableHead className="text-right">{ortak("kalem")}</TableHead>
+                  {/* Kalem sayısı tutarın altında — ayrı sütun 50px yiyordu. */}
                   <TableHead>{ortak("toplam")}</TableHead>
                   <TableHead>{ortak("kart")}</TableHead>
                   <TableHead>{ortak("durum")}</TableHead>
@@ -285,49 +286,70 @@ export default async function AlimlarSayfasi({
                     <TableCell>
                       {/* Kod link olarak zaten yazıyor; yanına sadece
                           kopyala ikonu koyuyoruz, metin tekrarı olmasın. */}
-                      <div className="flex items-center gap-1">
-                        <Baglanti href={`/alimlar/${alim.id}`}>
-                          {alim.code}
-                        </Baglanti>
-                        <KopyalanabilirKod
-                          deger={alim.code}
-                          etiket={t("alimKodu")}
-                          sadeceIkon
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {alim.supplierOrderNo ? (
-                        <span className="inline-flex items-center gap-1">
-                          {alim.supplierOrderNo}
-                          <KopyalanabilirKod
-                            deger={alim.supplierOrderNo}
-                            etiket={ortak("siparisNo")}
-                            sadeceIkon
-                          />
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
+                      <IkiSatir
+                        ustIpucu={alim.code}
+                        ust={
+                          <span className="inline-flex items-center gap-1">
+                            <Baglanti href={`/alimlar/${alim.id}`}>
+                              {alim.code}
+                            </Baglanti>
+                            <KopyalanabilirKod
+                              deger={alim.code}
+                              etiket={t("alimKodu")}
+                              sadeceIkon
+                            />
+                          </span>
+                        }
+                        altIpucu={alim.supplierOrderNo ?? undefined}
+                        alt={
+                          alim.supplierOrderNo ? (
+                            <span className="inline-flex items-center gap-1">
+                              {alim.supplierOrderNo}
+                              <KopyalanabilirKod
+                                deger={alim.supplierOrderNo}
+                                etiket={ortak("siparisNo")}
+                                sadeceIkon
+                              />
+                            </span>
+                          ) : (
+                            "—"
+                          )
+                        }
+                      />
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {bicim.tarih(alim.purchasedAt)}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {alim.channelAccount
-                        ? `${alim.channelAccount.channel.name} — ${alim.channelAccount.name}`
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {alim.items.length}
+                    <TableCell>
+                      {/* Kanal üstte, hesap altta: "Hepsiburada — S.Ahmet"
+                          tek satırda 169px yiyordu, iki satırda 94px. */}
+                      <IkiSatir
+                        enGenis="max-w-[8rem]"
+                        ust={alim.channelAccount?.channel.name ?? "—"}
+                        alt={alim.channelAccount?.name}
+                        ustIpucu={alim.channelAccount?.channel.name}
+                        altIpucu={alim.channelAccount?.name}
+                      />
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {toplamMetni(alim)}
+                      <IkiSatir
+                        ust={toplamMetni(alim)}
+                        alt={t("kalemSayisi", { sayi: alim.items.length })}
+                      />
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {alim.creditCard
-                        ? `${alim.creditCard.label} (••${alim.creditCard.last4})`
-                        : "—"}
+                    <TableCell>
+                      {/* Kart etiketi serbest metin ("Şaban Akçalı Bonus") ve
+                          27 karaktere kadar çıkıyor; son dört hane altta. */}
+                      {alim.creditCard ? (
+                        <IkiSatir
+                          enGenis="max-w-[7.5rem]"
+                          ust={alim.creditCard.label}
+                          ustIpucu={alim.creditCard.label}
+                          alt={`••${alim.creditCard.last4}`}
+                        />
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">

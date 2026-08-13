@@ -117,7 +117,8 @@
     "kategori": "Kategori",
     "oner": "Öner",
     "bekleyin": "Bekleyin...",
-    "kanal": "Kanal"
+    "kanal": "Kanal",
+    "birimFiyatKisa": "birim {tutar}"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",
@@ -238,7 +239,8 @@
     "benzerMetin": "Aynı ürünü ikinci kez açmak stoğu ikiye böler ve kâr hesabını bozar. Var olanı kullanacaksanız oraya gidin; gerçekten farklı bir ürünse devam edin.",
     "benzerVarOlanaGit": "Var olana git",
     "benzerFarkliUrun": "Hayır, bu farklı ürün — devam et",
-    "kanalKodundanEslesti": "{hesap} kodu: {kod}"
+    "kanalKodundanEslesti": "{hesap} kodu: {kod}",
+    "varyantSayisi": "{sayi} varyant"
   },
   "UrunSil": {
     "dugme": "Sil",
@@ -552,7 +554,8 @@
     "aramaSonucsuzIpucu": "Farklı bir kod ya da adla arayın; ürün gerçekten yoksa yeni kayıt açın. Yeni sekmede açılır, bu form kaybolmaz.",
     "yeniUrunOlustur": "Yeni ürün oluştur",
     "alimKodu": "Alım Kodu",
-    "kart": "Kart"
+    "kart": "Kart",
+    "alimKoduVeSiparis": "Alım / Sipariş no"
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",

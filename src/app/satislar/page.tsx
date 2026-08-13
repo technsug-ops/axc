@@ -7,6 +7,7 @@ import { ExcelIndir } from "@/components/excel-indir";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { IkiSatir } from "@/components/iki-satir";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { UzunAd } from "@/components/uzun-ad";
@@ -319,14 +320,14 @@ export default async function SatislarSayfasi({
             <Table>
               <TableHeader>
                 <TableRow>
+                  {/* SÜTUNLAR BİRLEŞTİRİLDİ (14.08.2026, tek ekrana sığsın):
+                      tarih+sipariş no · kanal+hesap · tutar+birim fiyat.
+                      Hiçbir bilgi düşmedi, ikincil olan alt satıra indi
+                      (bkz. components/iki-satir.tsx). */}
                   <TableHead>{ortak("tarih")}</TableHead>
-                  <TableHead>{ortak("siparisNo")}</TableHead>
                   <TableHead>{ortak("kanalHesabi")}</TableHead>
                   <TableHead>{ortak("urun")}</TableHead>
                   <TableHead className="text-right">{ortak("adet")}</TableHead>
-                  <TableHead className="text-right">
-                    {ortak("sutunBirimFiyat")}
-                  </TableHead>
                   <TableHead>{ortak("tutar")}</TableHead>
                   {karGorunur ? (
                     <TableHead className="text-right">{t("netKar")}</TableHead>
@@ -338,24 +339,35 @@ export default async function SatislarSayfasi({
                 {satislar.map((satis) => (
                   <TableRow key={satis.id}>
                     <TableCell className="whitespace-nowrap">
-                      <Baglanti href={`/satislar/${satis.id}`}>
-                        {bicim.tarih(satis.soldAt)}
-                      </Baglanti>
+                      {/* Tarih üstte (kayda giden bağlantı), sipariş no altta
+                          ve kopyalanabilir — kimlik listede kalıyor (#3, #4). */}
+                      <IkiSatir
+                        ust={
+                          <Baglanti href={`/satislar/${satis.id}`}>
+                            {bicim.tarih(satis.soldAt)}
+                          </Baglanti>
+                        }
+                        alt={
+                          satis.code ? (
+                            <KopyalanabilirKod
+                              deger={satis.code}
+                              etiket={ortak("siparisNo")}
+                            />
+                          ) : (
+                            t("siparisNoYok")
+                          )
+                        }
+                        altIpucu={satis.code ?? undefined}
+                      />
                     </TableCell>
                     <TableCell>
-                      {satis.code ? (
-                        <KopyalanabilirKod
-                          deger={satis.code}
-                          etiket={ortak("siparisNo")}
-                        />
-                      ) : (
-                        <span className="text-muted-foreground text-xs">
-                          {t("siparisNoYok")}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {hesapMetni(satis)}
+                      <IkiSatir
+                        enGenis="max-w-[8rem]"
+                        ust={satis.channelAccount.channel.name}
+                        ustIpucu={satis.channelAccount.channel.name}
+                        alt={satis.channelAccount.name}
+                        altIpucu={satis.channelAccount.name}
+                      />
                     </TableCell>
                     {/* Uzun ürün özeti kesilir, tamamı `title`'da; satırın
                         Detay düğmesi kaydın tamamına götürür (bkz. UzunAd). */}
@@ -372,11 +384,16 @@ export default async function SatislarSayfasi({
                     <TableCell className="text-right font-medium">
                       {adetToplami(satis)}
                     </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {birimFiyatMetni(satis)}
-                    </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {tutarMetni(satis)}
+                      {/* Tutar üstte, birim fiyat altta. Tek kalemli satışta
+                          ikisi aynı sayıdır ama çok kalemlide birim fiyat
+                          "—" olur; ayrı sütun 95px yiyordu. */}
+                      <IkiSatir
+                        ust={tutarMetni(satis)}
+                        alt={ortak("birimFiyatKisa", {
+                          tutar: birimFiyatMetni(satis),
+                        })}
+                      />
                     </TableCell>
                     {karGorunur ? (
                       <TableCell className="text-right whitespace-nowrap">

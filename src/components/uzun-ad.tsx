@@ -39,12 +39,12 @@ export function UzunAd({
   href?: string;
   /** Adın yanında duran ve KISALTILMAYAN ek (rozet vb.). */
   ek?: React.ReactNode;
-  /** Genişlik sınırını değiştirmek için: varsayılan `max-w-[22rem]`. */
+  /** Genişlik sınırını değiştirmek için: varsayılan `max-w-[18rem]`. */
   className?: string;
 }) {
   // `block` şart: `truncate` satır içi öğede çalışmaz, genişlik sınırı
   // uygulanabilmesi için blok olmalı.
-  const kisaltilmis = cn("block max-w-[22rem] truncate", className);
+  const kisaltilmis = cn("block max-w-[18rem] truncate", className);
 
   return (
     // `min-w-0` şart: flex çocuğu varsayılan olarak içeriğinden küçülmez,

@@ -96,6 +96,47 @@ console.log("\n2) TABLO — kendi kaydırma kabı yerinde mi?");
   );
 }
 
+console.log("\n3) SÜTUN BÜTÇESİ — liste tabloları tek ekrana sığıyor mu?");
+{
+  /**
+   * ÖLÇÜLDÜ 14.08.2026 (canlı veriyle, gerçek metin uzunluklarından):
+   *   1365px pencere − 256px menü − dolgu ≈ 1045px kullanılabilir.
+   *   ESKİ HÂL: alımlar 1232px · ürünler 1189px · satışlar 1122px → taşıyor.
+   *   YENİ HÂL: alımlar  859px · satışlar  874px · ürünler  802px → sığıyor.
+   *
+   * Sütun sayısı kaba ama işe yarayan bir vekil: 13px yazıda 7 sütun
+   * ~1045px'e sığıyor, 8. sütun taşırıyor. Gerçek piksel ölçümü tarayıcı
+   * ister (projede otomasyon yok), bu yüzden bekçi SAYIYI tutuyor.
+   *
+   * Yeni bir sütun gerekiyorsa çare sütun eklemek değil, ilişkili iki
+   * bilgiyi tek hücrede üst üste koymaktır (components/iki-satir.tsx).
+   */
+  const TAVAN = 7;
+  const LISTELER = [
+    "src/app/alimlar/page.tsx",
+    "src/app/satislar/page.tsx",
+    "src/app/urunler/page.tsx",
+  ];
+
+  for (const yol of LISTELER) {
+    const kaynak = readFileSync(yol, "utf8");
+    // İlk <TableHeader> bloğu = masaüstü liste tablosunun başlık satırı.
+    const blok = /<TableHeader>([\s\S]*?)<\/TableHeader>/.exec(kaynak);
+    if (!blok) {
+      kontrol(`${yol}: başlık satırı bulundu`, false);
+      continue;
+    }
+    const sayi = (blok[1].match(/<TableHead[\s>]/g) ?? []).length;
+    kontrol(
+      `${yol.replace("src/app/", "").replace("/page.tsx", "")}: ${sayi} sütun (tavan ${TAVAN})`,
+      sayi <= TAVAN,
+      sayi > TAVAN
+        ? `${sayi - TAVAN} sütun fazla — iki satırlı hücreye taşı (iki-satir.tsx)`
+        : undefined,
+    );
+  }
+}
+
 console.log("");
 if (basarisiz === 0) {
   console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
