@@ -175,6 +175,47 @@ Canlı sağlık kontrolü (10.08.2026): 12 sayfa 200, tümü 1,3 sn altında ·
       KURAL: gerçek dosya gelmeden okuyucu YAZILMAZ — hakediş okuyucusunda
       spec ile gerçek başlıklar tutmamıştı, aynı tuzağa iki kez düşülmez.
 
+
+## Faz 4 — açılış bekliyor (sıralama onayı gerekli)
+
+_Karar 13.08.2026. Sistem şu an **BAKIM / KULLANIM** kipinde: kullanıcı
+günlük veri giriyor, iki canlı teyit bekleniyor (2 Eylül kart ekstresi ve
+ilk eşleşen hakediş). **Kullanıcı sıralamayı onaylayana kadar iş
+AÇILMAZ** — analiz bile başlamaz._
+
+Aday sıralama (mimar önerisi, kullanıcı onayı bekleniyor):
+
+- [ ] **1. Pazaryeri API entegrasyonları**
+      Satış/sipariş otomatik akışı. Elle satış girme biter; hakediş
+      eşleşmeleri kendiliğinden dolar — bugün 651 hakediş kaleminin 0'ı
+      satışa bağlı, sebebi tam olarak bu.
+      Önce HB mi TY mi: **kullanıcının satış hacmine göre** karar verilecek.
+
+- [ ] **2. Barkod okutma akışları**
+      Mal kabul + sipariş karşılama, telefon kamerasıyla. SKU etiketleri
+      zaten basılıyor, ortak bileşen (`barkod-okuyucu.tsx`) zaten var.
+
+- [ ] **3. Depo/raf optimizasyonu + toplu sevkiyat**
+      "4'ü X 5'i Y" Katman-2. Kargo maliyet önerisi mantığı Faz 2'de
+      kurulmuştu; toplu sevkiyat ekranı aynı mantığı toplu işe uygular.
+
+- [ ] **4. Çoklu kullanıcı + RBAC**
+      TR ekibi sisteme girecekse ÖNE ÇEKİLİR. Bugün tek kullanıcıda boş
+      katman; "depocu stok girsin ama kâr marjını görmesin" ihtiyacı
+      eleman alınınca doğar.
+
+- [ ] **Web sitesi kanalı — 2027 başı, ikas denemesiyle açılır**
+      Faz 4'ün 1 numarası olmaktan ÇIKTI (karar 13.08.2026, ~6 ay
+      ertelendi). Platform karşılaştırması yapıldı, eğilim **ikas**:
+      TR ekip işletecek, TR pazarı, ilk yıl düşük hacim, uzun vadeli marka.
+      WooCommerce yedekte (API sınırına çarpılırsa). Shopify **elendi**:
+      TR'de Shopify Payments yok, USD maliyet, TR entegrasyonları üçüncü
+      parti.
+      SIRADAKİ ADIM KOD DEĞİL: TR ekibi ikas deneme hesabında 3-5 ürünle
+      test siparişi çevirecek. Faz 4 planının site kanalı bölümü o
+      denemeden sonra yazılır.
+      Mimari hazır: `ChannelType`'a `WEBSITE` eklenmesi yeterli.
+
 ## SaaS dönüşümü
 
 - [ ] **Çok-kiracılı (multi-tenant) mimari**
@@ -312,13 +353,11 @@ Yol haritası bu yüzden "bu ekran henüz yok" diyerek dürüst kalıyor.
       Faz 2'de yazılıyor; bu ekran onları toplu işe uygular.
       _Karar 09.08.2026._
 
-- [ ] **İlk entegrasyon: kendi web sitesi kanalı**
-      Faz 4'te bağlanacak İLK kanal pazaryeri değil, kullanıcının kendi
-      e-ticaret sitesidir (bkz. CLAUDE.md → Yol haritası notları).
-      **Platform kararı bekleniyor** (Shopify / WooCommerce / ikas);
-      Faz 3 sonuna kadar verilecek. Şemada `ChannelType`'a `WEBSITE`
-      eklenmesi yetecek, kanal mimarisi değişmeyecek.
-      _Karar 09.08.2026._
+- [x] ~~**İlk entegrasyon: kendi web sitesi kanalı**~~ → **DEĞİŞTİ 13.08.2026**
+      Bu madde "Faz 4'ün ilk kanalı web sitesidir" diyordu. Karar
+      değişti: web sitesi ~6 ay ertelendi, Faz 4'ün 1 numarası pazaryeri
+      API'leri oldu. Güncel hâli için bkz. **Faz 4 — açılış bekliyor**
+      bölümü. Özgün not (09.08.2026) tarihe bırakıldı.
 
 - [ ] **Ürün görselleri**
       Faz 4'te pazaryeri/site API'lerinden çekilecek. Erken ihtiyaç

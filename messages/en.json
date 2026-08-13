@@ -34,7 +34,8 @@
     "hakedisYukle": "",
     "panel": "",
     "envanterDegeri": "",
-    "geriYukleme": ""
+    "geriYukleme": "",
+    "duzeltmeNedenleri": ""
   },
   "Ortak": {
     "kapat": "",
@@ -627,7 +628,8 @@
     "hakedis": "",
     "panel": "",
     "envanterDegeri": "",
-    "geriYukleme": ""
+    "geriYukleme": "",
+    "duzeltmeNedenleri": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -1666,5 +1668,35 @@
     "hataAciklamaZorunlu": "",
     "hataMaliyetNegatif": "",
     "hataMaliyetParaBirimsiz": ""
+  },
+  "DuzeltmeNedeni": {
+    "baslik": "",
+    "aciklamaMetni": "",
+    "yeniNeden": "",
+    "tanimliNedenler": "",
+    "ekle": "",
+    "adEtiketi": "",
+    "adIpucu": "",
+    "tipEtiketi": "",
+    "tipFire": "",
+    "tipSayim": "",
+    "tipFireNotu": "",
+    "tipSayimNotu": "",
+    "aciklamaZorunluEtiketi": "",
+    "aciklamaZorunluNotu": "",
+    "aciklamaZorunluRozet": "",
+    "hareketSayisi": "",
+    "tipKilitli": "",
+    "aktifYokBaslik": "",
+    "aktifYokMetin": "",
+    "bosBaslik": "",
+    "bosIpucu": "",
+    "listeNotu": "",
+    "adZorunlu": "",
+    "adCokUzun": "",
+    "adZatenVar": "",
+    "tipGecersiz": "",
+    "kayitBulunamadi": "",
+    "kaydedilemedi": ""
   }
 }

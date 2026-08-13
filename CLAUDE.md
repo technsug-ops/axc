@@ -194,12 +194,17 @@ tablosu). Tek kullanıcı için ikincisi yeterli ve bağımlılıksızdır.
 Alınmış yön kararları. Bugün uygulanmıyor, ama bugünkü işler bunları
 zorlaştıracak şekilde yazılmıyor.
 
-- **WEB SİTESİ KANALI:** Kullanıcı kendi e-ticaret sitesinde de satış
-  yapacak. Mimari karar: **Selliora mağaza OLMAZ, mağazayı yöneten beyin
-  olur.** Kendi site, `WEBSITE` tipinde 12. kanal olarak bağlanır (hazır
-  platform: Shopify/WooCommerce/ikas — platform kararı Faz 3 sonuna kadar
-  verilecek). Faz 4 entegrasyon sırasında web sitesi kanalı **1
-  NUMARADIR**; pazaryeri API'lerinden (Trendyol vb.) önce gelir.
+- **WEB SİTESİ KANALI — 2027 BAŞINA ERTELENDİ (karar 13.08.2026).**
+  Kullanıcı kendi e-ticaret sitesinde de satış yapacak. Mimari karar
+  değişmedi: **Selliora mağaza OLMAZ, mağazayı yöneten beyin olur.** Kendi
+  site, `WEBSITE` tipinde 12. kanal olarak bağlanır.
+  Platform karşılaştırması yapıldı, **eğilim ikas**: TR ekip işletecek, TR
+  pazarı, ilk yıl düşük hacim, uzun vadeli marka. `WooCommerce` yedekte
+  (API sınırına çarpılırsa), `Shopify` **elendi** (TR'de Shopify Payments
+  yok, USD maliyet, TR entegrasyonları üçüncü parti).
+  Karar deneme ile mühürlenecek: TR ekibi ikas deneme hesabında 3-5 ürünle
+  test siparişi çevirecek. **Faz 4'ün 1 numarası DEĞİL** — o sıra
+  pazaryeri API'lerine geçti.
 - **SaaS FEATURE:** "Kendi siteni bağla", SaaS'ta bir plan/feature kalemi
   olarak konumlanacak — pazaryeri + kendi site tek stoktan yönetilir,
   ayrışma noktası budur.

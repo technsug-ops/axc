@@ -34,7 +34,8 @@
     "hakedisYukle": "Hakediş raporu yükle",
     "panel": "Panel",
     "envanterDegeri": "Envanter değeri",
-    "geriYukleme": "Yedekten geri yükleme"
+    "geriYukleme": "Yedekten geri yükleme",
+    "duzeltmeNedenleri": "Düzeltme nedenleri"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -627,7 +628,8 @@
     "hakedis": "Hakediş",
     "panel": "Panel",
     "envanterDegeri": "Envanter değeri",
-    "geriYukleme": "Geri yükleme"
+    "geriYukleme": "Geri yükleme",
+    "duzeltmeNedenleri": "Düzeltme nedenleri"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -1666,5 +1668,35 @@
     "hataAciklamaZorunlu": "Bu nedende açıklama zorunlu — ne olduğunu yazın.",
     "hataMaliyetNegatif": "Birim maliyet eksi olamaz.",
     "hataMaliyetParaBirimsiz": "Maliyet girildi ama para birimi seçilmedi."
+  },
+  "DuzeltmeNedeni": {
+    "baslik": "Stok düzeltme nedenleri",
+    "aciklamaMetni": "Kırılma, kayıp, fire, sayım farkı… Stok düzeltme ekranında çıkan liste buradan gelir. Neden silinemez, pasife alınır — geçmiş hareketler nedensiz kalmasın.",
+    "yeniNeden": "Yeni neden",
+    "tanimliNedenler": "Tanımlı nedenler ({sayi})",
+    "ekle": "Nedeni ekle",
+    "adEtiketi": "Neden adı",
+    "adIpucu": "örn. Nakliye hasarı",
+    "tipEtiketi": "Hareket tipi",
+    "tipFire": "Fire / kayıp",
+    "tipSayim": "Sayım farkı",
+    "tipFireNotu": "Gerçek kayıp: mal kırıldı, kayboldu, bozuldu. Raporda “fire” satırında görünür.",
+    "tipSayimNotu": "Ölçüm hatası: mal kaybolmadı, sayı tutmadı. Raporda AYRI satırda görünür — fireyle karıştırılmaz.",
+    "aciklamaZorunluEtiketi": "Bu nedende açıklama zorunlu olsun",
+    "aciklamaZorunluNotu": "“Diğer” gibi nedenlerde işaretleyin. Açıklamasız kayıt üç ay sonra cevabı olmayan bir soruya dönüşür.",
+    "aciklamaZorunluRozet": "açıklama zorunlu",
+    "hareketSayisi": "{sayi} stok hareketi bu nedene bağlı",
+    "tipKilitli": "Tip değiştirilemez: {sayi} hareket bu nedene bağlı. Değiştirilseydi geçmiş raporlar oynardı — dünkü fire bugün sayım farkı olurdu.",
+    "aktifYokBaslik": "Aktif neden kalmadı",
+    "aktifYokMetin": "Stok düzeltme ekranında seçilecek neden yok; düzeltme yapılamaz. En az birini yeniden aktif edin ya da yeni bir neden ekleyin.",
+    "bosBaslik": "Henüz neden tanımlı değil",
+    "bosIpucu": "Yukarıdaki formdan ekleyin.",
+    "listeNotu": "Neden silinmez, pasife alınır. Pasif neden yeni kayıtta seçilemez; geçmiş hareketlerde görünmeye devam eder.",
+    "adZorunlu": "Neden adı boş olamaz.",
+    "adCokUzun": "Neden adı çok uzun.",
+    "adZatenVar": "“{ad}” adında bir neden zaten var.",
+    "tipGecersiz": "Hareket tipi seçilmedi.",
+    "kayitBulunamadi": "Kayıt bulunamadı.",
+    "kaydedilemedi": "Kaydedilemedi. Tekrar deneyin; sorun sürerse bildirin."
   }
 }

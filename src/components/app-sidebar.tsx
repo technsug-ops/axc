@@ -8,6 +8,7 @@ import {
   Banknote,
   BookOpen,
   Boxes,
+  ClipboardList,
   Coins,
   CreditCard,
   DatabaseBackup,
@@ -91,6 +92,12 @@ const AYARLAR: MenuOgesi[] = [
     anahtar: "kategoriler",
     href: "/ayarlar/kategoriler",
     icon: Percent,
+    aktif: true,
+  },
+  {
+    anahtar: "duzeltmeNedenleri",
+    href: "/ayarlar/duzeltme-nedenleri",
+    icon: ClipboardList,
     aktif: true,
   },
   {
