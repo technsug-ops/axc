@@ -97,6 +97,11 @@ const temiz = (deger: string | undefined) => (deger ?? "").trim();
 export const KAR_SUZGECLERI = ["eksik", "tam"] as const;
 /** İade süzgecinin tanıdığı değerler. */
 export const IADE_SUZGECLERI = ["var", "yok"] as const;
+/**
+ * Kargo süzgeci — panelin "kargoya verilen / bekleyen" kutusu buraya bağlanır.
+ * `Sale.shippedAt` dolu mu boş mu; başka bir kaynağı yok.
+ */
+export const KARGO_SUZGECLERI = ["verildi", "bekleyen"] as const;
 
 /** Satış listesi koşulu — ekran ve Excel aynı koşulu kullanır. */
 export function satisKosulu(
@@ -110,6 +115,7 @@ export function satisKosulu(
   const hesap = temiz(p.hesap);
   const kar = temiz(p.kar);
   const iade = temiz(p.iade);
+  const kargo = temiz(p.kargo);
 
   const kosul: Prisma.SaleWhereInput = {
     // Süzgeç kapalıysa alan HİÇ yazılmaz; `undefined` koşulu Prisma'da
@@ -137,6 +143,14 @@ export function satisKosulu(
     // İadesi olan / olmayan satışlar.
     ...(iade === "var" ? { returns: { some: {} } } : {}),
     ...(iade === "yok" ? { returns: { none: {} } } : {}),
+    /**
+     * KARGOYA VERİLDİ / BEKLİYOR. Panelden gelen bağlantı bunu taşıyor.
+     * "Bekleyen" = `shippedAt` BOŞ; yani hiç işaretlenmemiş satış. Bunu
+     * "kargo firması seçilmemiş" ile karıştırmamak gerekir — firma satışta
+     * seçilir, verildi işareti sonra elle konur.
+     */
+    ...(kargo === "verildi" ? { shippedAt: { not: null } } : {}),
+    ...(kargo === "bekleyen" ? { shippedAt: null } : {}),
   };
 
   return { kosul, pencere };

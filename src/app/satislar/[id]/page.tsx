@@ -28,7 +28,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
+import { gunMetni } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
+import { KargoDurumu } from "../kargo-durumu";
 import { kalemDusumleri, type Dusum } from "@/lib/satis";
 import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
 
@@ -226,7 +228,8 @@ export default async function SatisDetaySayfasi({
     kargoGirilmedi: satis.cargoAmount === null,
   };
 
-  const bilgiler: { etiket: string; deger: string }[] = [
+  // `deger` ReactNode: kargo satırı bir düğme taşıyor (metin değil).
+  const bilgiler: { etiket: string; deger: React.ReactNode }[] = [
     { etiket: t("satisTarihi"), deger: bicim.tarih(satis.soldAt) },
     {
       etiket: ortak("kanalHesabi"),
@@ -241,6 +244,21 @@ export default async function SatisDetaySayfasi({
       deger: satis.cargoCarrier
         ? `${satis.cargoCarrier.name}${satis.cargoDesi ? ` — ${Number(satis.cargoDesi.toString())} desi` : ""}`
         : t("kargoSecilmedi"),
+    },
+    {
+      /**
+       * KARGOYA VERİLDİ — elle işaretlenir (kullanıcı kararı 14.08.2026).
+       * Detayda tarih de değiştirilebiliyor: "dün verdim, bugün giriyorum"
+       * hâli listedeki tek tıklık düğmeyle çözülmez.
+       */
+      etiket: t("kargoyaVerildi"),
+      deger: (
+        <KargoDurumu
+          saleId={satis.id}
+          shippedAt={satis.shippedAt ? gunMetni(satis.shippedAt) : null}
+          kip="detay"
+        />
+      ),
     },
   ];
 

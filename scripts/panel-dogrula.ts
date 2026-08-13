@@ -70,6 +70,7 @@ function satis(ek: Partial<PanelSatisi> = {}): PanelSatisi {
     gelir: 1000,
     net2: 200,
     durum: "CALCULATED",
+    kargoyaVerildiMi: false,
     ...ek,
   };
 }
@@ -556,6 +557,35 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
    */
   kontrol("iadesi olmayan kanalda tutar 0'dır (null değil)", hb.iadeTutari === 0);
 
+
+  /**
+   * KARGO SAYAÇLARI (14.08.2026). "Bekleyen" AYRI SAYAÇ DEĞİL: toplam −
+   * verilen. Ayrı tutulsaydı iki sayaç birbirinden sapabilir ve panel
+   * "8 sipariş, 5 verildi, 4 bekliyor" gibi imkânsız bir şey yazabilirdi.
+   */
+  const kargo = panelHesapla(buAy, [
+    satis({ kargoyaVerildiMi: true }),
+    satis({ kargoyaVerildiMi: true }),
+    satis({ kargoyaVerildiMi: false }),
+    satis({ kanalKodu: "HEPSIBURADA", kanalAdi: "Hepsiburada", kargoyaVerildiMi: false }),
+  ]);
+  const kb = kargo[0];
+  kontrol("kargoya verilen 2", kb.kargoyaVerilenAdet === 2, kb.kargoyaVerilenAdet);
+  kontrol("bekleyen 2 (toplam − verilen)", kb.kargoBekleyenAdet === 2, kb.kargoBekleyenAdet);
+  kontrol(
+    "verilen + bekleyen = toplam adet",
+    kb.kargoyaVerilenAdet + kb.kargoBekleyenAdet === kb.toplamAdet,
+    [kb.kargoyaVerilenAdet, kb.kargoBekleyenAdet, kb.toplamAdet],
+  );
+  kontrol(
+    "kanal bazında da sayılıyor",
+    kb.kanallar.find((k) => k.kanalKodu === "TRENDYOL")!.kargoyaVerilenAdet === 2,
+    kb.kanallar.map((k) => [k.kanalKodu, k.kargoyaVerilenAdet]),
+  );
+  kontrol(
+    "hiç işaretlenmemişse verilen 0, bekleyen = toplam",
+    (() => { const x = panelHesapla(buAy, [satis(), satis()])[0]; return x.kargoyaVerilenAdet === 0 && x.kargoBekleyenAdet === 2; })(),
+  );
   // --- HESAP KIRILIMI: aynı pazaryerinde iki mağaza ---
   const cokHesap = panelHesapla(
     buAy,

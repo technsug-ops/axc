@@ -8,6 +8,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { gunDegeri, gunMetninden, isTakvimGunu } from "@/lib/donem";
 import {
   satisKaydet,
   SiparisNoCakismasiHatasi,
@@ -187,3 +188,65 @@ export async function satisOlustur(
   revalidatePath("/stok");
   redirect(basariAdresi(`/satislar/${yeniId}`, "eklendi"));
 }
+
+/**
+ * ============================================================================
+ *  KARGOYA VERİLDİ İŞARETİ — ELLE, GERİ ALINABİLİR
+ * ----------------------------------------------------------------------------
+ *  _Kullanıcı kararı 14.08.2026: "kargoya teslim edilen ürünü manuel
+ *  girebilirim."_ Pazaryeri API'si gelene kadar (Faz 4) bu bilgi başka
+ *  hiçbir yerden türetilemiyor.
+ *
+ *  LEDGER DEĞİL, DURUM: stok hareketi gibi dokunulmaz bir kayıt değil.
+ *  Yanlış işaretlenirse temizlenir; ters kayıt gerekmez, kâr hesabına da
+ *  girmez. Bu yüzden tek düğmeyle açılıp kapanabiliyor.
+ *
+ *  TARİH İŞ TAKVİMİNDEN GELİR (Europe/Istanbul, UTC gece yarısı): Almanya'da
+ *  gece yarısından sonra işaretlense bile Türkiye'nin günü yazılır — anayasa
+ *  kuralı. Boş tarih = "kargoya verilmedi"ye geri döndür.
+ * ============================================================================
+ */
+export async function kargoDurumuGuncelle(
+  saleId: string,
+  tarih: string | null,
+): Promise<{ hata?: string }> {
+  await yetkiIste("satis.yaz");
+  const t = await getTranslations("Satis");
+
+  const satis = await prisma.sale.findUnique({
+    where: { id: saleId },
+    select: { id: true },
+  });
+  if (!satis) return { hata: t("bulunamadi") };
+
+  /**
+   * ÜÇ GİRDİ:
+   *   null / ""  → işaret KALDIRILIR (kargoya verilmedi)
+   *   "BUGUN"    → İŞ TAKVİMİ günü yazılır (Europe/Istanbul). Liste
+   *                düğmesi bunu gönderir; tarayıcının saatine güvenilmez,
+   *                Almanya'da gece yarısından sonra bir gün geriye yazardı.
+   *   "2026-08-14" → verilen gün (detaydaki geçmişe dönük giriş)
+   *
+   * Ayrıştırılamayan tarih SESSİZCE bugüne düşmez, hata döner.
+   */
+  let deger: Date | null = null;
+  const ham = (tarih ?? "").trim();
+  if (ham === "BUGUN") {
+    deger = gunDegeri(isTakvimGunu(new Date()));
+  } else if (ham !== "") {
+    deger = gunMetninden(ham);
+    if (!deger) return { hata: t("kargoTarihiGecersiz") };
+  }
+
+  await prisma.sale.update({
+    where: { id: saleId },
+    data: { shippedAt: deger },
+  });
+
+  revalidatePath("/satislar");
+  revalidatePath(`/satislar/${saleId}`);
+  // Panel kutusu bu sayıdan besleniyor.
+  revalidatePath("/");
+  return {};
+}
+

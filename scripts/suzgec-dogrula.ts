@@ -228,6 +228,26 @@ console.log("\n3) SATIŞ KOŞULU");
     satisKosulu({ q: " TY-123 " }, AN).kosul.code,
   );
 
+
+  /**
+   * KARGO SÜZGECİ (14.08.2026). Panelin "kargoya verilen / bekleyen" kutusu
+   * bu koşula bağlanıyor; kaynağı `Sale.shippedAt`.
+   */
+  kontrol(
+    "kargo verildi: shippedAt DOLU aranır",
+    JSON.stringify(satisKosulu({ kargo: "verildi" }, AN).kosul.shippedAt) ===
+      JSON.stringify({ not: null }),
+    satisKosulu({ kargo: "verildi" }, AN).kosul.shippedAt,
+  );
+  kontrol(
+    "kargo bekleyen: shippedAt BOŞ aranır",
+    satisKosulu({ kargo: "bekleyen" }, AN).kosul.shippedAt === null,
+    satisKosulu({ kargo: "bekleyen" }, AN).kosul.shippedAt,
+  );
+  kontrol(
+    "tanınmayan kargo değeri süzgeç kurmaz",
+    satisKosulu({ kargo: "yolda" }, AN).kosul.shippedAt === undefined,
+  );
   // HEPSİ BİR ARADA: hiçbiri diğerini düşürmemeli.
   const hepsi = satisKosulu(
     { pencere: "BU_AY", kanal: "TRENDYOL", hesap: "hsp1", kar: "tam", iade: "var", q: "X" },

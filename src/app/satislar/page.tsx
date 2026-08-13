@@ -8,6 +8,7 @@ import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
+import { KargoDurumu } from "./kargo-durumu";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { UzunAd } from "@/components/uzun-ad";
@@ -24,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
+import { gunMetni } from "@/lib/donem";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { satisKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
@@ -47,6 +49,7 @@ export default async function SatislarSayfasi({
     kanal?: string;
     hesap?: string;
     iade?: string;
+    kargo?: string;
   }>;
 }) {
   await sayfaIzni("satis.gor");
@@ -177,6 +180,19 @@ export default async function SatislarSayfasi({
         { deger: "yok", etiket: t("iadeSuzgeciYok") },
       ],
     },
+    /**
+     * KARGO SÜZGECİ — panelin "kargoya verilen / bekleyen" kutusu buraya
+     * bağlanıyor. "Bekleyen" günlük iş listesidir: bugün ne kargoya
+     * verilecek, onu gösterir.
+     */
+    {
+      ad: "kargo",
+      etiket: t("kargoSuzgeci"),
+      secenekler: [
+        { deger: "verildi", etiket: t("kargoSuzgeciVerildi") },
+        { deger: "bekleyen", etiket: t("kargoSuzgeciBekleyen") },
+      ],
+    },
   ];
 
   /**
@@ -189,6 +205,7 @@ export default async function SatislarSayfasi({
     kanal: p.kanal,
     hesap: p.hesap,
     iade: p.iade,
+    kargo: p.kargo,
     pencere: p.pencere,
     baslangic: p.baslangic,
     bitis: p.bitis,
@@ -210,6 +227,13 @@ export default async function SatislarSayfasi({
   function eylemler(satis: (typeof satislar)[number]) {
     return (
       <>
+        {/* KARGO İŞARETİ AYRI SÜTUN DEĞİL, EYLEM: bu bir toggle ve tablo
+            sütun bütçesi 7 (bkz. yerlesim:dogrula). Durum da burada
+            görünüyor — işaretliyse tarih, değilse düğme. */}
+        <KargoDurumu
+          saleId={satis.id}
+          shippedAt={satis.shippedAt ? gunMetni(satis.shippedAt) : null}
+        />
         <SatirEylemi href={`/satislar/${satis.id}`} ikon={Eye} etiket={ortak("detay")} />
         {iadeKalanVar(satis) ? (
           <SatirEylemi href={`/satislar/${satis.id}/iade`} ikon={Undo2} etiket={tIade("iadeAl")} />

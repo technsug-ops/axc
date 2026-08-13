@@ -820,6 +820,31 @@ model Sale {
   cargoAmount   Decimal?  @db.Decimal(18, 4)
   cargoCurrency Currency?
 
+  /**
+   * KARGOYA VERİLDİ — elle işaretlenen operasyonel durum.
+   * _Kullanıcı kararı 14.08.2026: "kargoya teslim edilen ürünü manuel
+   * girebilirim."_
+   *
+   * BOŞ = henüz kargoya verilmedi (bekliyor). DOLU = o gün kargoya verildi.
+   * Panel "kargoya verilen / bekleyen" sayısını bu alandan üretir; başka
+   * hiçbir yerden türetilemiyordu — kargo firması, desi ve ücret satışta
+   * seçiliyor ama "verildi" bilgisi hiç tutulmuyordu.
+   *
+   * LEDGER DEĞİL, DURUM: stok defteri gibi dokunulmaz bir kayıt değildir;
+   * yanlış işaretlenirse temizlenebilir. Bu yüzden ADJUSTMENT benzeri bir
+   * ters kayıt gerekmez — kâr hesabına da girmez.
+   *
+   * İŞ TARİHİ (UTC gece yarısı, Europe/Istanbul günü): saat taşımaz, çünkü
+   * "hangi gün kargoya verildi" sorusunun cevabı gündür.
+   *
+   * TEK PAKET VARSAYIMI: bir satış = bir sevkiyat. Kısmi sevkiyat (bir
+   * siparişin iki koliyle gitmesi) gerekirse bu alan kalkar, yerine
+   * Shipment tablosu gelir; çağıran taraflar o gün değişir. Bugün ~30
+   * paket/gün için ayrı tablo yönetmek gereksiz karmaşıklıktı
+   * (kullanıcı kararı 14.08.2026).
+   */
+  shippedAt DateTime?
+
   // --- SATIŞ SEVİYESİ KÂR ---
   /// Σ kalem NET − sipariş başına kesintiler (hizmet bedeli, sabit gider,
   /// kargo). Bu kesintiler kalemlere bölünmez.

@@ -787,7 +787,15 @@
     "karSuzgeciTam": "",
     "iadeSuzgeci": "",
     "iadeSuzgeciVar": "",
-    "iadeSuzgeciYok": ""
+    "iadeSuzgeciYok": "",
+    "kargoSuzgeci": "",
+    "kargoSuzgeciVerildi": "",
+    "kargoSuzgeciBekleyen": "",
+    "kargoyaVerildi": "",
+    "kargoIsaretiKaldir": "",
+    "kargoTarihi": "",
+    "kargoTarihiKaydet": "",
+    "kargoTarihiGecersiz": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -1617,7 +1625,10 @@
     "ciroIade": "",
     "ciroIadeYok": "",
     "ciroIadeYokTire": "",
-    "ciroNet": ""
+    "ciroNet": "",
+    "kargoDurumu": "",
+    "kargoBekleyen": "",
+    "kargoBekleyenYok": ""
   },
   "Envanter": {
     "baslik": "",

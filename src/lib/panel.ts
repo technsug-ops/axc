@@ -47,6 +47,12 @@ export type PanelSatisi = {
   gelir: number;
   net2: number | null;
   durum: KarDurumu | null;
+  /**
+   * KARGOYA VERİLDİ Mİ? Elle işaretlenen operasyonel durum
+   * (`Sale.shippedAt` dolu mu). Panel "kargoya verilen / bekleyen"
+   * sayısını buradan üretir; başka hiçbir yerden türetilemiyor.
+   */
+  kargoyaVerildiMi: boolean;
 };
 
 /** Panelin bir iadeden ihtiyaç duyduğu her şey. */
@@ -100,6 +106,8 @@ export type KanalBlogu = {
   hesaplanamayanIadeAdedi: number;
   /** Ciro sunumunun gri satırı: brüt − bu tutar = net ciro. */
   iadeTutari: number;
+  /** Kargoya verilmiş sipariş sayısı. Bekleyen = adet − bu. */
+  kargoyaVerilenAdet: number;
   /**
    * HESAP KIRILIMI. Kanal seviyesinde gruplama doğru varsayılan (kullanıcı
    * "Trendyol bu ay ne yaptı" diye soruyor) ama aynı pazaryerinde iki
@@ -121,6 +129,14 @@ export type ParaBirimiPaneli = {
   hesaplanamayanIadeAdedi: number;
   /** Blok başlığındaki ciro kutusunun gri satırı. */
   toplamIadeTutari: number;
+  /** Dönemde kargoya verilen sipariş sayısı. */
+  kargoyaVerilenAdet: number;
+  /**
+   * Dönemde kargoya VERİLMEMİŞ sipariş sayısı — bugün ne yapılacağını
+   * söyleyen rakam. Toplam − verilen; ayrı sayaç tutulmuyor ki ikisi
+   * birbirinden sapamasın.
+   */
+  kargoBekleyenAdet: number;
 };
 
 /** Kâr toplamına girer mi? Durum CALCULATED değilse NET'e güvenilmez. */
@@ -166,6 +182,7 @@ export function panelHesapla(
         iadeAdedi: 0,
         hesaplanamayanIadeAdedi: 0,
         iadeTutari: 0,
+        kargoyaVerilenAdet: 0,
         hesaplar: [],
       };
       kanallar.set(kanalKodu, kanal);
@@ -198,6 +215,7 @@ export function panelHesapla(
     kanal.gelir += satis.gelir;
     if (hesaplandi(satis.durum, satis.net2)) kanal.net2 += satis.net2;
     else kanal.hesaplanamayanAdet++;
+    if (satis.kargoyaVerildiMi) kanal.kargoyaVerilenAdet++;
 
     const hesap = hesapSatiri(kanal, satis.hesapAdi);
     hesap.adet++;
@@ -243,6 +261,10 @@ export function panelHesapla(
           0,
         ),
         toplamIadeTutari: liste.reduce((t, k) => t + k.iadeTutari, 0),
+        kargoyaVerilenAdet: liste.reduce((t, k) => t + k.kargoyaVerilenAdet, 0),
+        kargoBekleyenAdet:
+          liste.reduce((t, k) => t + k.adet, 0) -
+          liste.reduce((t, k) => t + k.kargoyaVerilenAdet, 0),
       };
     })
     .sort((a, b) => b.toplamAdet - a.toplamAdet);

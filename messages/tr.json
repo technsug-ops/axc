@@ -787,7 +787,15 @@
     "karSuzgeciTam": "Kârı hesaplananlar",
     "iadeSuzgeci": "İade",
     "iadeSuzgeciVar": "İadesi olanlar",
-    "iadeSuzgeciYok": "İadesi olmayanlar"
+    "iadeSuzgeciYok": "İadesi olmayanlar",
+    "kargoSuzgeci": "Kargo",
+    "kargoSuzgeciVerildi": "Kargoya verilenler",
+    "kargoSuzgeciBekleyen": "Kargo bekleyenler",
+    "kargoyaVerildi": "Kargoya verildi",
+    "kargoIsaretiKaldir": "Kargo işaretini kaldır",
+    "kargoTarihi": "Kargoya veriliş tarihi",
+    "kargoTarihiKaydet": "Tarihi kaydet",
+    "kargoTarihiGecersiz": "Kargo tarihi okunamadı. Gün, ay ve yılı kontrol edin."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -1617,7 +1625,10 @@
     "ciroIade": "−{tutar} iade",
     "ciroIadeYok": "iade yok",
     "ciroIadeYokTire": "— iade",
-    "ciroNet": "net {tutar}"
+    "ciroNet": "net {tutar}",
+    "kargoDurumu": "Kargoya verilen",
+    "kargoBekleyen": "{sayi} sipariş bekliyor",
+    "kargoBekleyenYok": "bekleyen yok"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

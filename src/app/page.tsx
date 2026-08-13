@@ -88,6 +88,7 @@ export default async function AnaSayfa({
       where: { soldAt: { gte: grafikBaslangic, lt: grafikBitisHaric } },
       select: {
         soldAt: true,
+        shippedAt: true,
         net2Amount: true,
         profitCurrency: true,
         profitStatus: true,
@@ -157,6 +158,7 @@ export default async function AnaSayfa({
       gelir,
       net2: satis.net2Amount === null ? null : Number(satis.net2Amount.toString()),
       durum: satis.profitStatus,
+      kargoyaVerildiMi: satis.shippedAt !== null,
     };
   });
 
@@ -254,6 +256,14 @@ export default async function AnaSayfa({
   const kanalSatislariAdresi = (kanalKodu: string) =>
     `/satislar?kanal=${encodeURIComponent(kanalKodu)}&pencere=BU_AY`;
 
+  /**
+   * KARGO KUTUSUNDAN SATIŞLARA. Dönem aynı taşınıyor (BU_AY) — paneldeki
+   * sayı ile listedeki kayıt sayısı birebir tutsun. "Bekleyenler"i dönem
+   * dışında da görmek isteyen, listedeki dönem rozetini tek tıkla kaldırır.
+   */
+  const kargoAdresi = (kargo: "verildi" | "bekleyen") =>
+    `/satislar?kargo=${kargo}&pencere=BU_AY`;
+
   const paraAdresi = (para: string) => {
     const s = new URLSearchParams();
     if (seciliKanal) s.set("kanal", seciliKanal);
@@ -313,6 +323,31 @@ export default async function AnaSayfa({
                       blok.paraBirimi,
                     )}
                   />
+                </div>
+                {/* KARGO DURUMU — elle işaretlenen operasyonel rakam.
+                    "Bekleyen" bugün ne yapılacağını söylediği için verilenle
+                    birlikte duruyor (kullanıcı kararı 14.08.2026) ve ikisi de
+                    o satışlara süzülmüş listeye götürüyor (İlke #2, #9). */}
+                <div className="space-y-1 rounded-lg border p-4">
+                  <div className="text-muted-foreground text-xs">
+                    {t("kargoDurumu")}
+                  </div>
+                  <div className="text-2xl font-semibold">
+                    <Baglanti href={kargoAdresi("verildi")}>
+                      {blok.kargoyaVerilenAdet}
+                    </Baglanti>
+                  </div>
+                  <div className="text-xs">
+                    {blok.kargoBekleyenAdet > 0 ? (
+                      <Baglanti href={kargoAdresi("bekleyen")}>
+                        {t("kargoBekleyen", { sayi: blok.kargoBekleyenAdet })}
+                      </Baglanti>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        {t("kargoBekleyenYok")}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {karGorunur ? (
                   <div className="space-y-1 rounded-lg border p-4">
