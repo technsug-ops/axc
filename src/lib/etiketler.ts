@@ -1,7 +1,9 @@
 import { getTranslations } from "next-intl/server";
 
 import type {
+  NoticeStatus,
   PurchaseStatus,
+  ReturnReason,
   ReturnType,
   StockMovementType,
 } from "@/generated/prisma/enums";
@@ -98,5 +100,74 @@ export async function iadeTuruEtiketleri(): Promise<
     UNDELIVERED: tTur("UNDELIVERED"),
     NORMAL: tTur("NORMAL"),
     DISPUTED: tTur("DISPUTED"),
+  };
+}
+
+/**
+ * ============================================================================
+ *  İADE BİLDİRİMİ — GEREKÇE VE DURUM ETİKETLERİ
+ * ----------------------------------------------------------------------------
+ *  `Record<...>` tipi BİLEREK dar: şemaya yeni bir gerekçe/durum eklenip
+ *  karşılığı yazılmazsa proje DERLENMEZ. Bildirim ekranında ham enum
+ *  ("KULLANILMIS_ITIRAZ") görünmesi bu kilit sayesinde imkânsız.
+ * ============================================================================
+ */
+
+const GEREKCE_SIRASI: Record<ReturnReason, null> = {
+  DEGISIM: null,
+  DEGISIM_KUSURLU: null,
+  CALISMIYOR: null,
+  CAYMA: null,
+  KULLANILMIS_ITIRAZ: null,
+  YANLIS_URUN: null,
+  DIGER: null,
+};
+
+/** Formdaki sıra — şemadaki sırayla aynı, tesadüfe bırakılmıyor. */
+export const IADE_GEREKCELERI = Object.keys(GEREKCE_SIRASI) as ReturnReason[];
+
+export async function iadeGerekceEtiketleri(): Promise<
+  Record<ReturnReason, string>
+> {
+  const tGerekce = await getTranslations("IadeGerekcesi");
+  return {
+    DEGISIM: tGerekce("DEGISIM"),
+    DEGISIM_KUSURLU: tGerekce("DEGISIM_KUSURLU"),
+    CALISMIYOR: tGerekce("CALISMIYOR"),
+    CAYMA: tGerekce("CAYMA"),
+    KULLANILMIS_ITIRAZ: tGerekce("KULLANILMIS_ITIRAZ"),
+    YANLIS_URUN: tGerekce("YANLIS_URUN"),
+    DIGER: tGerekce("DIGER"),
+  };
+}
+
+const BILDIRIM_DURUM_SIRASI: Record<NoticeStatus, null> = {
+  BEKLENIYOR: null,
+  MAL_GELDI: null,
+  ITIRAZ_ACILDI: null,
+  ITIRAZ_INCELEMEDE: null,
+  ITIRAZ_KABUL: null,
+  ITIRAZ_RED: null,
+  KAPANDI: null,
+  IPTAL: null,
+};
+
+export const BILDIRIM_DURUMLARI = Object.keys(
+  BILDIRIM_DURUM_SIRASI,
+) as NoticeStatus[];
+
+export async function bildirimDurumEtiketleri(): Promise<
+  Record<NoticeStatus, string>
+> {
+  const tBildirimDurumu = await getTranslations("BildirimDurumu");
+  return {
+    BEKLENIYOR: tBildirimDurumu("BEKLENIYOR"),
+    MAL_GELDI: tBildirimDurumu("MAL_GELDI"),
+    ITIRAZ_ACILDI: tBildirimDurumu("ITIRAZ_ACILDI"),
+    ITIRAZ_INCELEMEDE: tBildirimDurumu("ITIRAZ_INCELEMEDE"),
+    ITIRAZ_KABUL: tBildirimDurumu("ITIRAZ_KABUL"),
+    ITIRAZ_RED: tBildirimDurumu("ITIRAZ_RED"),
+    KAPANDI: tBildirimDurumu("KAPANDI"),
+    IPTAL: tBildirimDurumu("IPTAL"),
   };
 }

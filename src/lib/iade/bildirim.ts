@@ -160,3 +160,25 @@ export function itirazAcilabilirMi(durum: NoticeStatus): boolean {
 export function kapanistaIadeDogarMi(oncekiDurum: NoticeStatus): boolean {
   return iadeIslenebilirMi(oncekiDurum);
 }
+
+/**
+ * "İADEYİ İŞLE" KAPALIYSA SEBEP ANAHTARI — BOŞ KALAMAZ.
+ *
+ * Mimar kuralı 14.08.2026: kapalı düğme PASİF görünür ve NEDENİ ekranda
+ * yazar. Sebep metni sözlükten gelir; burada yalnız ANAHTARI duruyor ki
+ * ekran ile kural aynı kaynaktan beslensin.
+ *
+ * `null` = düğme AÇIK, sebep gerekmez. `Record<NoticeStatus, …>` tipi
+ * bilerek dar: şemaya yeni bir durum eklenip sebebi yazılmazsa proje
+ * DERLENMEZ — sebepsiz pasif düğme çıkması imkânsız.
+ */
+export const IADE_ISLE_SEBEP_ANAHTARI: Record<NoticeStatus, string | null> = {
+  MAL_GELDI: null,
+  ITIRAZ_RED: null,
+  BEKLENIYOR: "iadeIsleSebepBekleniyor",
+  ITIRAZ_ACILDI: "iadeIsleSebepItirazSuruyor",
+  ITIRAZ_INCELEMEDE: "iadeIsleSebepItirazSuruyor",
+  ITIRAZ_KABUL: "iadeIsleSebepItirazKabul",
+  KAPANDI: "iadeIsleSebepKapandi",
+  IPTAL: "iadeIsleSebepIptal",
+};

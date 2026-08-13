@@ -15,7 +15,11 @@
  * ============================================================================
  */
 
+import { readFileSync } from "node:fs";
+
 import {
+  IADE_ISLE_SEBEP_ANAHTARI,
+  IZINLI_GECISLER,
   ayrilmisAdetler,
   degisimAyrilirMi,
   gecisGecerliMi,
@@ -113,6 +117,28 @@ console.log("\n1) BİLDİRİM — DURUM MAKİNESİ");
   kontrol("v2 için ayrılmış 1 (ITIRAZ_KABUL sayılmadı)", ayrilmis.get("v2") === 1, ayrilmis.get("v2"));
   kontrol("kapanmış bildirimler toplamda YOK", (ayrilmis.get("v1") ?? 0) < 5);
 
+
+  /**
+   * SEBEPSİZ PASİF DÜĞME OLAMAZ (mimar kuralı 14.08.2026). Kapalı her durum
+   * için sözlük anahtarı VAR, açık olanlarda YOK. Bu eşleme ekranla aynı
+   * kaynaktan geliyor; boş ipuçlu bir düğme çıkarsa burada kırılır.
+   */
+  const durumlar = Object.keys(IZINLI_GECISLER) as (keyof typeof IZINLI_GECISLER)[];
+  for (const d of durumlar) {
+    const anahtar = IADE_ISLE_SEBEP_ANAHTARI[d];
+    const acik = iadeIslenebilirMi(d);
+    kontrol(
+      `${d}: ${acik ? "açık, sebep gerekmez" : "kapalı, sebebi VAR"}`,
+      acik ? anahtar === null : typeof anahtar === "string" && anahtar.length > 0,
+      anahtar,
+    );
+  }
+  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const eksikMetin = durumlar
+    .map((d) => IADE_ISLE_SEBEP_ANAHTARI[d])
+    .filter((a): a is string => a !== null)
+    .filter((a) => !(a in sozluk.Bildirim2));
+  kontrol("her sebep anahtarının sözlükte metni var", eksikMetin.length === 0, eksikMetin);
   // --- DEĞİŞİM GEREKÇELERİ ---
   kontrol("DEGISIM ayırma ister", degisimAyrilirMi("DEGISIM"));
   kontrol("YANLIS_URUN ayırma ister (6. senaryo)", degisimAyrilirMi("YANLIS_URUN"));

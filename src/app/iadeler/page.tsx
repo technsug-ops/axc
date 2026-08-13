@@ -23,11 +23,27 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import {
   LISTE_PENCERELERI,
+  gunDegeri,
   gunMetni,
+  isTakvimGunu,
   pencereOlustur,
   type PencereTuru,
 } from "@/lib/donem";
-import { iadeTuruEtiketleri } from "@/lib/etiketler";
+import {
+  BILDIRIM_DURUMLARI,
+  bildirimDurumEtiketleri,
+  iadeGerekceEtiketleri,
+  iadeTuruEtiketleri,
+} from "@/lib/etiketler";
+import {
+  ayrilmisSayilirMi,
+  DEGISIM_GEREKCELERI,
+  gecisGecerliMi,
+  IADE_ISLE_SEBEP_ANAHTARI,
+  iadeIslenebilirMi,
+} from "@/lib/iade/bildirim";
+import { BildirimFormu } from "./bildirim-formu";
+import { BildirimDurumu } from "./bildirim-durumu";
 import {
   iadeToplamlari,
   kanalKirilimi,
@@ -38,7 +54,7 @@ import { prisma } from "@/lib/prisma";
 import { sayfaCoz } from "@/lib/sayfalama";
 import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
 
-import type { ReturnType } from "@/generated/prisma/enums";
+import type { NoticeStatus, ReturnType } from "@/generated/prisma/enums";
 
 export const dynamic = "force-dynamic";
 
@@ -308,10 +324,80 @@ export default async function IadelerSayfasi({
     ),
   );
 
-  // --- bekleyen bildirimler (RMA) ---
-  const bekleyenBildirimler = await prisma.returnNotice.count({
-    where: { status: { in: ["BEKLENIYOR", "MAL_GELDI", "ITIRAZ_ACILDI", "ITIRAZ_INCELEMEDE"] } },
+  /**
+   * --- BİLDİRİMLER (AŞAMA A) ---
+   *
+   * KAPANMIŞLAR DA LİSTELENİR ama sonda: "geçen hafta o iade ne olmuştu?"
+   * sorusunun cevabı ekranda kalmalı. Sıralama: açık olanlar önce, sonra
+   * bildirim tarihine göre yeniden eskiye.
+   */
+  const bildirimKayitlari = await prisma.returnNotice.findMany({
+    orderBy: [{ noticedAt: "desc" }, { createdAt: "desc" }],
+    take: 50,
+    select: {
+      id: true,
+      code: true,
+      noticedAt: true,
+      reason: true,
+      status: true,
+      note: true,
+      reservedQuantity: true,
+      returnId: true,
+      reservedVariant: {
+        select: { sku: true, product: { select: { name: true } } },
+      },
+      sale: {
+        select: {
+          id: true,
+          code: true,
+          channelAccount: {
+            select: { name: true, channel: { select: { name: true } } },
+          },
+        },
+      },
+    },
   });
+
+  const bekleyenBildirimler = bildirimKayitlari.filter((b) =>
+    ayrilmisSayilirMi(b.status),
+  ).length;
+
+  // Form seçenekleri: son satışlar ve varyantlar VERİDEN gelir.
+  const [formSatislari, formVaryantlari] = await Promise.all([
+    prisma.sale.findMany({
+      orderBy: { soldAt: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        code: true,
+        soldAt: true,
+        channelAccount: {
+          select: { name: true, channel: { select: { name: true } } },
+        },
+      },
+    }),
+    prisma.productVariant.findMany({
+      where: { isActive: true },
+      orderBy: { sku: "asc" },
+      take: 500,
+      select: { id: true, sku: true, product: { select: { name: true } } },
+    }),
+  ]);
+
+  const gerekceEtiketleri = await iadeGerekceEtiketleri();
+  const durumEtiketleri = await bildirimDurumEtiketleri();
+  const tBildirim = await getTranslations("Bildirim2");
+
+  /**
+   * KAPALI GEÇİŞİN SEBEBİ — mimar kuralı: pasif düğme sebepsiz kalmaz.
+   * Metin sözlükten gelir; iki vaka bilerek adıyla anlatılıyor çünkü
+   * kullanıcının en çok takıldığı yer bunlar.
+   */
+  function iadeIsleSebebi(durum: NoticeStatus): string {
+    const anahtar = IADE_ISLE_SEBEP_ANAHTARI[durum];
+    // Açık durumda sebep sorulmaz; çağıran taraf zaten düğmeyi açık çiziyor.
+    return anahtar ? tBildirim(anahtar) : "";
+  }
 
   const suzgecler: SuzgecTanimi[] = [
     {
@@ -358,20 +444,113 @@ export default async function IadelerSayfasi({
         <ExcelIndir liste="iadeler" parametreler={disaAktarmaParametreleri} />
       </div>
 
-      {/* ==================== BEKLEYEN BİLDİRİMLER ==================== */}
+      {/* ================== BİLDİRİMLER — AŞAMA A ==================
+          Pazaryeri "müşteri iade istiyor" dedi, mal yolda. Burada kâr ve
+          stok hesabı YOKTUR; ledger ancak "İadeyi işle" ile açılan AŞAMA
+          B'de (iade formu) hareket görür. */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("bekleyenBildirimler")}</CardTitle>
+          <CardTitle>
+            {t("bekleyenBildirimler")}
+            {bekleyenBildirimler > 0 ? (
+              <Badge variant="secondary" className="ml-2">
+                {bekleyenBildirimler}
+              </Badge>
+            ) : null}
+          </CardTitle>
+          <p className="text-muted-foreground text-sm">
+            {tBildirim("aciklamaMetni")}
+          </p>
         </CardHeader>
-        <CardContent>
-          {bekleyenBildirimler === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              {t("bildirimYok")}
-            </p>
+        <CardContent className="space-y-5">
+          <BildirimFormu
+            satislar={formSatislari.map((s) => ({
+              id: s.id,
+              etiket: `${s.code ?? tBildirim("siparisNoYok")} · ${bicim.tarih(s.soldAt)} · ${s.channelAccount.channel.name} — ${s.channelAccount.name}`,
+            }))}
+            varyantlar={formVaryantlari.map((v) => ({
+              id: v.id,
+              etiket: `${v.product.name} (${v.sku})`,
+            }))}
+            degisimGerekceleri={[...DEGISIM_GEREKCELERI]}
+            gerekceEtiketleri={gerekceEtiketleri}
+            bugun={gunMetni(gunDegeri(isTakvimGunu(new Date())))}
+          />
+
+          {bildirimKayitlari.length === 0 ? (
+            <p className="text-muted-foreground text-sm">{t("bildirimYok")}</p>
           ) : (
-            <p className="text-sm">
-              {t("bildirimSayisi", { sayi: bekleyenBildirimler })}
-            </p>
+            <div className="space-y-3">
+              {bildirimKayitlari.map((b) => (
+                <div key={b.id} className="space-y-2 rounded-lg border p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Baglanti href={`/satislar/${b.sale.id}`}>
+                      {b.sale.code ?? tBildirim("siparisNoYok")}
+                    </Baglanti>
+                    <Badge variant="outline">{gerekceEtiketleri[b.reason]}</Badge>
+                    <Badge
+                      variant={ayrilmisSayilirMi(b.status) ? "default" : "secondary"}
+                    >
+                      {durumEtiketleri[b.status]}
+                    </Badge>
+                    <span className="text-muted-foreground text-xs">
+                      {bicim.tarih(b.noticedAt)}
+                      {b.code ? ` · ${b.code}` : ""}
+                    </span>
+                    {/* AYRILMIŞ ÜRÜN ROZETİ: stoğa dokunmaz, niyet beyanıdır. */}
+                    {b.reservedVariant && b.reservedQuantity > 0 ? (
+                      <Badge
+                        variant="outline"
+                        className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+                      >
+                        {tBildirim("ayrilanRozeti", {
+                          urun: b.reservedVariant.sku,
+                          sayi: b.reservedQuantity,
+                        })}
+                      </Badge>
+                    ) : null}
+                    {b.returnId ? (
+                      <Baglanti href={`/satislar/${b.sale.id}`}>
+                        {tBildirim("iadeIslendi")}
+                      </Baglanti>
+                    ) : null}
+                  </div>
+
+                  {b.note ? (
+                    <p className="text-muted-foreground text-xs">{b.note}</p>
+                  ) : null}
+
+                  <BildirimDurumu
+                    bildirimId={b.id}
+                    iadeIsle={{
+                      acik: iadeIslenebilirMi(b.status) && b.returnId === null,
+                      /**
+                       * ÖN-DOLU GEÇİŞ: bildirimin kimliği adreste taşınıyor;
+                       * iade formu gerekçeyi ve YANLIS_URUN'da dönen varyantı
+                       * oradan okuyup hazır getiriyor.
+                       */
+                      adres: `/satislar/${b.sale.id}/iade?bildirim=${b.id}`,
+                      sebep: iadeIsleSebebi(b.status),
+                      etiket: tBildirim("iadeyiIsle"),
+                    }}
+                    secenekler={BILDIRIM_DURUMLARI.filter(
+                      (hedef) => hedef !== b.status,
+                    )
+                      .filter((hedef) =>
+                        // Yalnız anlamlı hedefler: izinli olanlar + iki
+                        // öğretici kapalı örnek (kullanıcı neden basamadığını
+                        // görsün) ekranı doldurmasın diye izinliler yeter.
+                        gecisGecerliMi(b.status, hedef),
+                      )
+                      .map((hedef) => ({
+                        hedef,
+                        etiket: durumEtiketleri[hedef],
+                        acik: true,
+                      }))}
+                  />
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

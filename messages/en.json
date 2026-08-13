@@ -118,7 +118,8 @@
     "oner": "",
     "bekleyin": "",
     "kanal": "",
-    "birimFiyatKisa": ""
+    "birimFiyatKisa": "",
+    "not": ""
   },
   "AlimDurumu": {
     "DRAFT": "",
@@ -1996,5 +1997,62 @@
     "enCokIade": "",
     "enCokIadeNotu": "",
     "girenKullanici": ""
+  },
+  "IadeGerekcesi": {
+    "DEGISIM": "",
+    "DEGISIM_KUSURLU": "",
+    "CALISMIYOR": "",
+    "CAYMA": "",
+    "KULLANILMIS_ITIRAZ": "",
+    "YANLIS_URUN": "",
+    "DIGER": ""
+  },
+  "BildirimDurumu": {
+    "BEKLENIYOR": "",
+    "MAL_GELDI": "",
+    "ITIRAZ_ACILDI": "",
+    "ITIRAZ_INCELEMEDE": "",
+    "ITIRAZ_KABUL": "",
+    "ITIRAZ_RED": "",
+    "KAPANDI": "",
+    "IPTAL": ""
+  },
+  "Bildirim2": {
+    "aciklamaMetni": "",
+    "satis": "",
+    "satisSecin": "",
+    "satisZorunlu": "",
+    "satisBulunamadi": "",
+    "siparisNoYok": "",
+    "gerekce": "",
+    "gerekceSecin": "",
+    "gerekceZorunlu": "",
+    "talepNo": "",
+    "talepNoIpucu": "",
+    "bildirimTarihi": "",
+    "tarihZorunlu": "",
+    "tarihGecersiz": "",
+    "notIpucu": "",
+    "ayrilanBaslik": "",
+    "ayrilanNotu": "",
+    "ayrilanUrunSecin": "",
+    "ayrilanUrunZorunlu": "",
+    "ayrilanAdetZorunlu": "",
+    "ayrilanUrunBulunamadi": "",
+    "ayrilanRozeti": "",
+    "bildirimEkle": "",
+    "kaydediliyor": "",
+    "formOkunamadi": "",
+    "bulunamadi": "",
+    "kapaliBildirim": "",
+    "gecisIzinliDegil": "",
+    "iadeyiIsle": "",
+    "iadeIslendi": "",
+    "iadeIsleSebepBekleniyor": "",
+    "iadeIsleSebepItirazKabul": "",
+    "iadeIsleSebepIptal": "",
+    "iadeIsleSebepKapandi": "",
+    "iadeIsleSebepDiger": "",
+    "iadeIsleSebepItirazSuruyor": ""
   }
 }

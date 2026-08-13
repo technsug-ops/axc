@@ -118,7 +118,8 @@
     "oner": "Öner",
     "bekleyin": "Bekleyin...",
     "kanal": "Kanal",
-    "birimFiyatKisa": "birim {tutar}"
+    "birimFiyatKisa": "birim {tutar}",
+    "not": "Not"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",
@@ -1996,5 +1997,62 @@
     "enCokIade": "En çok iade edilen ürünler",
     "enCokIadeNotu": "Tek sorunlu ürün ayın kârını yiyebilir. Hasarlı sütunu ayrı: çok iade edilen ama sağlam dönen ürün (beden/renk) ile hasarlı dönen ürün (kalite) ayrı sorunlardır.",
     "girenKullanici": "Giren kullanıcı"
+  },
+  "IadeGerekcesi": {
+    "DEGISIM": "Değişim",
+    "DEGISIM_KUSURLU": "Değişim (kusur iddiası)",
+    "CALISMIYOR": "Çalışmıyor",
+    "CAYMA": "Cayma hakkı",
+    "KULLANILMIS_ITIRAZ": "Kullanılmış — itiraz",
+    "YANLIS_URUN": "Yanlış ürün gönderildi",
+    "DIGER": "Diğer"
+  },
+  "BildirimDurumu": {
+    "BEKLENIYOR": "Mal yolda",
+    "MAL_GELDI": "Mal geldi",
+    "ITIRAZ_ACILDI": "İtiraz açıldı",
+    "ITIRAZ_INCELEMEDE": "İtiraz incelemede",
+    "ITIRAZ_KABUL": "İtiraz kabul (lehe)",
+    "ITIRAZ_RED": "İtiraz red (aleyhe)",
+    "KAPANDI": "Kapandı",
+    "IPTAL": "İptal"
+  },
+  "Bildirim2": {
+    "aciklamaMetni": "Pazaryeri iade talebini bildirdi, mal henüz yolda. Bu kayıt stok ve kâr hesabına DOKUNMAZ; mal gelip hüküm verilince \"İadeyi işle\" ile gerçek iade açılır.",
+    "satis": "Hangi satış",
+    "satisSecin": "Satış seçin",
+    "satisZorunlu": "Satış seçilmeli.",
+    "satisBulunamadi": "Satış bulunamadı.",
+    "siparisNoYok": "sipariş no yok",
+    "gerekce": "Gerekçe",
+    "gerekceSecin": "Gerekçe seçin",
+    "gerekceZorunlu": "Gerekçe seçilmeli.",
+    "talepNo": "Pazaryeri talep no",
+    "talepNoIpucu": "örn. TY-4432259217",
+    "bildirimTarihi": "Bildirim tarihi",
+    "tarihZorunlu": "Bildirim tarihi zorunlu.",
+    "tarihGecersiz": "Bildirim tarihi okunamadı.",
+    "notIpucu": "örn. müşteri kutuyu açmadığını söylüyor",
+    "ayrilanBaslik": "Değişim için ayrılan ürün",
+    "ayrilanNotu": "Bu bir NİYET BEYANIDIR: fiziksel stoğa ve FIFO'ya dokunmaz. Stok ekranında \"ayrılmış\" rozeti olarak görünür ve bildirim kapanınca kendiliğinden düşer.",
+    "ayrilanUrunSecin": "Ürün seçin",
+    "ayrilanUrunZorunlu": "Adet girildiyse ürün de seçilmeli.",
+    "ayrilanAdetZorunlu": "Ürün seçildiyse adet 1 veya daha fazla olmalı.",
+    "ayrilanUrunBulunamadi": "Ayrılan ürün bulunamadı.",
+    "ayrilanRozeti": "{urun} · {sayi} ayrıldı",
+    "bildirimEkle": "Bildirim ekle",
+    "kaydediliyor": "Kaydediliyor...",
+    "formOkunamadi": "Form okunamadı.",
+    "bulunamadi": "Bildirim bulunamadı.",
+    "kapaliBildirim": "Bu bildirim kapandı; durumu değişmez.",
+    "gecisIzinliDegil": "Bu geçiş izinli değil.",
+    "iadeyiIsle": "İadeyi işle",
+    "iadeIslendi": "İade işlendi",
+    "iadeIsleSebepBekleniyor": "Mal gelmeden iade işlenemez — önce \"Mal geldi\" işaretlenir.",
+    "iadeIsleSebepItirazKabul": "İtiraz kazanıldı, ürün müşteride kaldı; iade işlenmez.",
+    "iadeIsleSebepIptal": "Bildirim iptal edildi, mal hiç gelmedi.",
+    "iadeIsleSebepKapandi": "Bildirim kapandı.",
+    "iadeIsleSebepDiger": "Bu durumda iade işlenemez.",
+    "iadeIsleSebepItirazSuruyor": "İtiraz sürüyor; sonuç gelmeden iade işlenmez."
   }
 }
