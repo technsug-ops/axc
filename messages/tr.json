@@ -1847,5 +1847,27 @@
     "kisa": "Yeni parola en az {uzunluk} karakter olmalı.",
     "tekrarTutmuyor": "İki parola aynı değil.",
     "ayniParola": "Yeni parola eskisiyle aynı olamaz."
+  },
+  "Pencere": {
+    "bugun": "Bugün",
+    "buHafta": "Bu hafta",
+    "son15Gun": "Son 15 gün",
+    "son30Gun": "Son 30 gün",
+    "buAy": "Bu ay",
+    "son3Ay": "Son 3 ay",
+    "son6Ay": "Son 6 ay",
+    "son1Yil": "Son 1 yıl",
+    "ozel": "Özel aralık"
+  },
+  "Suzgec": {
+    "suzgecler": "Süzgeçler",
+    "tumu": "Tüm {alan}",
+    "temizle": "Temizle",
+    "kaldir": "Kaldır",
+    "uygula": "Uygula",
+    "baslangic": "Başlangıç",
+    "bitis": "Bitiş",
+    "araIpucu": "Yazarak daraltın...",
+    "sonucYok": "Eşleşen seçenek yok."
   }
 }

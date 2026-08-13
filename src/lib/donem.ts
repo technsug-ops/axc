@@ -24,12 +24,55 @@ import { IS_SAAT_DILIMI } from "@/i18n/ayarlar";
  * ============================================================================
  */
 
+/**
+ * İKİ ÖLÇÜ BİR ARADA — bilerek, ama karıştırılmadan.
+ *
+ * "Son 15 gün" GÜN sayar, "Son 3 ay" TAKVİM AYI sayar. İkisi aynı menüde
+ * durduğu için ekran her seçeneğin altına gerçek tarih aralığını yazar
+ * ("01.06.2026 – 13.08.2026"); kullanıcı tanımı tahmin etmek zorunda kalmaz.
+ *
+ * Ay ölçüsü DEĞİŞTİRİLMEDİ: "Son 3 ay" hâlâ BU AY DAHİL son 3 takvim ayıdır
+ * (karar 10.08.2026). Değiştirseydik eski raporlar sessizce kayardı.
+ */
 export const PENCERE_TURLERI = [
+  "BUGUN",
+  "BU_HAFTA",
+  "SON_15_GUN",
+  "SON_30_GUN",
+  "BU_AY",
+  "SON_3_AY",
+  "SON_6_AY",
+  "SON_1_YIL",
+  "OZEL",
+] as const;
+
+/**
+ * RAPOR'un menüsü — bilinçli olarak DAR.
+ *
+ * Rapor dönem kârı okur; "bugün" ya da "bu hafta" orada anlamlı bir kâr
+ * dönemi değildir (kesintiler ve hakedişler aylık işler). Liste ekranları
+ * ise günlük çalışır ve dar aralıklara ihtiyaç duyar. Motor tek, menüler
+ * ekranın işine göre ayrı.
+ */
+export const RAPOR_PENCERELERI = [
   "BU_AY",
   "SON_3_AY",
   "SON_6_AY",
   "OZEL",
-] as const;
+] as const satisfies readonly PencereTuru[];
+
+/** Liste ekranlarının menüsü — operasyon günlük çalışır, dar aralık ister. */
+export const LISTE_PENCERELERI = [
+  "BUGUN",
+  "BU_HAFTA",
+  "SON_15_GUN",
+  "SON_30_GUN",
+  "BU_AY",
+  "SON_3_AY",
+  "SON_6_AY",
+  "SON_1_YIL",
+  "OZEL",
+] as const satisfies readonly PencereTuru[];
 
 export type PencereTuru = (typeof PENCERE_TURLERI)[number];
 
@@ -206,11 +249,32 @@ export function pencereOlustur(
   }
 
   const bugun = isTakvimGunu(an);
-  const geriAy = tur === "BU_AY" ? 0 : tur === "SON_3_AY" ? 2 : 5;
+  const sonGun = gunDegeri(bugun);
+
+  // --- GÜN ÖLÇÜSÜ: bugünden geriye kayan pencere, BUGÜN DAHİL ---
+  // "Son 15 gün" = bugün + geriye 14 gün. Bugünü saymasaydık 15 gün seçen
+  // kullanıcı 16 günlük veri görürdü.
+  if (tur === "BUGUN" || tur === "SON_15_GUN" || tur === "SON_30_GUN") {
+    const geriGun = tur === "BUGUN" ? 0 : tur === "SON_15_GUN" ? 14 : 29;
+    const baslangic = gunEkle(sonGun, -geriGun);
+    return { tur, baslangic, bitisHaric: gunEkle(sonGun, 1), sonGun };
+  }
+
+  // --- HAFTA: PAZARTESİ başlar (Türkiye'de hafta böyle konuşulur) ---
+  if (tur === "BU_HAFTA") {
+    // getUTCDay: 0 pazar … 6 cumartesi. Pazartesiye kaç gün geri gidilecek:
+    // pazartesi 0, salı 1, … pazar 6.
+    const pazartesiyeUzaklik = (sonGun.getUTCDay() + 6) % 7;
+    const baslangic = gunEkle(sonGun, -pazartesiyeUzaklik);
+    return { tur, baslangic, bitisHaric: gunEkle(sonGun, 1), sonGun };
+  }
+
+  // --- AY ÖLÇÜSÜ: BU AY DAHİL son N takvim ayı; başlangıç ay başına yaslanır ---
+  const geriAy =
+    tur === "BU_AY" ? 0 : tur === "SON_3_AY" ? 2 : tur === "SON_6_AY" ? 5 : 11;
   const bas = ayKaydir(bugun.yil, bugun.ay, -geriAy);
 
   const baslangic = gunDegeri({ yil: bas.yil, ay: bas.ay, gun: 1 });
-  const sonGun = gunDegeri(bugun);
 
   return { tur, baslangic, bitisHaric: gunEkle(sonGun, 1), sonGun };
 }

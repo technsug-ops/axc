@@ -106,6 +106,52 @@ console.log("\n1) PENCERE — dönem sınırları");
   const son6 = pencereOlustur("SON_6_AY", an);
   kontrol(`son 6 ay       ${aralik(son6)}`, aralik(son6) === "2026-03-01 → 2026-08-10");
 
+  // ------------------------------------------------------------------
+  // LİSTE PENCERELERİ (13.08.2026) — gün ölçüsü ile ay ölçüsü bir arada.
+  // Gün ölçüsü BUGÜNÜ SAYAR: "son 15 gün" seçen 16 günlük veri görmemeli.
+  // ------------------------------------------------------------------
+  const bugun = pencereOlustur("BUGUN", an);
+  kontrol(`bugün          ${aralik(bugun)}`, aralik(bugun) === "2026-08-10 → 2026-08-10");
+
+  const son15 = pencereOlustur("SON_15_GUN", an);
+  kontrol(
+    `son 15 gün     ${aralik(son15)}`,
+    aralik(son15) === "2026-07-27 → 2026-08-10",
+  );
+
+  const son30 = pencereOlustur("SON_30_GUN", an);
+  kontrol(
+    `son 30 gün     ${aralik(son30)}`,
+    aralik(son30) === "2026-07-12 → 2026-08-10",
+  );
+
+  // 10 Ağustos 2026 PAZARTESİ. Hafta pazartesi başlar (Türkiye).
+  const haftaPzt = pencereOlustur("BU_HAFTA", an);
+  kontrol(
+    `bu hafta (pzt) ${aralik(haftaPzt)}`,
+    aralik(haftaPzt) === "2026-08-10 → 2026-08-10",
+  );
+
+  // 16 Ağustos 2026 PAZAR — haftanın SON günü, pazartesiye 6 gün geri.
+  const haftaPaz = pencereOlustur("BU_HAFTA", new Date("2026-08-16T09:00:00Z"));
+  kontrol(
+    `bu hafta (paz) ${aralik(haftaPaz)}`,
+    aralik(haftaPaz) === "2026-08-10 → 2026-08-16",
+  );
+
+  const son1Yil = pencereOlustur("SON_1_YIL", an);
+  kontrol(
+    `son 1 yıl      ${aralik(son1Yil)}`,
+    aralik(son1Yil) === "2025-09-01 → 2026-08-10",
+  );
+
+  // GÜN ÖLÇÜSÜ AY SINIRINI AŞAR — takvim ayına yaslanmaz.
+  const ayBasi = pencereOlustur("SON_15_GUN", new Date("2026-08-03T09:00:00Z"));
+  kontrol(
+    `son 15 gün ay sınırını aşar ${aralik(ayBasi)}`,
+    aralik(ayBasi) === "2026-07-20 → 2026-08-03",
+  );
+
   // YIL SINIRI — Ocak'tan geriye giderken yıl düşmeli.
   const ocak = new Date("2026-01-15T09:00:00Z");
   const ocakSon3 = pencereOlustur("SON_3_AY", ocak);

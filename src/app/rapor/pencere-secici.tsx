@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import type { PencereTuru } from "@/lib/donem";
+import { RAPOR_PENCERELERI, type PencereTuru } from "@/lib/donem";
+import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
 
 /**
  * Dönem seçici (Kullanıcı Kolaylığı İlkeleri #2, #9, #10).
@@ -28,16 +29,19 @@ export function PencereSecici({
   bitis: string;
 }) {
   const t = useTranslations("Rapor");
+  const tPencere = useTranslations("Pencere");
   const router = useRouter();
 
   const [ozelAcik, setOzelAcik] = useState(secili === "OZEL");
   const [alanlar, setAlanlar] = useState({ baslangic, bitis });
 
-  const SECENEKLER: { tur: PencereTuru; etiket: string }[] = [
-    { tur: "BU_AY", etiket: t("buAy") },
-    { tur: "SON_3_AY", etiket: t("son3Ay") },
-    { tur: "SON_6_AY", etiket: t("son6Ay") },
-  ];
+  // Rapor'un menüsü bilinçli olarak DAR — gerekçesi lib/donem.ts'te.
+  // "OZEL" burada yok çünkü kendi düğmesi var (aşağıda).
+  const SECENEKLER: { tur: PencereTuru; etiket: string }[] =
+    RAPOR_PENCERELERI.filter((p) => p !== "OZEL").map((tur) => ({
+      tur,
+      etiket: tPencere(PENCERE_ANAHTARI[tur]),
+    }));
 
   return (
     <div className="space-y-3">

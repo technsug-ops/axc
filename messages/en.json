@@ -1847,5 +1847,27 @@
     "kisa": "",
     "tekrarTutmuyor": "",
     "ayniParola": ""
+  },
+  "Pencere": {
+    "bugun": "",
+    "buHafta": "",
+    "son15Gun": "",
+    "son30Gun": "",
+    "buAy": "",
+    "son3Ay": "",
+    "son6Ay": "",
+    "son1Yil": "",
+    "ozel": ""
+  },
+  "Suzgec": {
+    "suzgecler": "",
+    "tumu": "",
+    "temizle": "",
+    "kaldir": "",
+    "uygula": "",
+    "baslangic": "",
+    "bitis": "",
+    "araIpucu": "",
+    "sonucYok": ""
   }
 }
