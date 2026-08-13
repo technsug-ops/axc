@@ -31,6 +31,7 @@
 
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
+import { havuzluAdres } from "@/lib/veritabani-adresi";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -46,7 +47,9 @@ function createPrismaClient(): PrismaClient {
   }
 
   // Prisma 7'de MySQL bağlantısı driver adapter üzerinden kurulur.
-  return new PrismaClient({ adapter: new PrismaMariaDb(url) });
+  // Havuz ayarları adrese burada eklenir — gerekçesi ve ölçülen sunucu
+  // sınırları için bkz. lib/veritabani-adresi.ts.
+  return new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(url)) });
 }
 
 let istemci: PrismaClient | undefined;

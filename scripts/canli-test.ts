@@ -27,6 +27,7 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
+import { betikAdresi } from "../src/lib/veritabani-adresi";
 import {
   CANLI_DOSYA,
   canliYapilandirma,
@@ -150,7 +151,7 @@ async function main() {
       `${CANLI_DOSYA} içine üretim adresini yazın.`,
     );
   } else {
-    const prisma = new PrismaClient({ adapter: new PrismaMariaDb(yapi.ham) });
+    const prisma = new PrismaClient({ adapter: new PrismaMariaDb(betikAdresi(yapi.ham)) });
     try {
       await prisma.$queryRaw`SELECT 1`;
       basarili("bağlantı ve parola geçti");

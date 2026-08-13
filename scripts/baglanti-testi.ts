@@ -26,6 +26,7 @@ import { connect } from "node:net";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
+import { betikAdresi } from "../src/lib/veritabani-adresi";
 
 const TCP_ZAMAN_ASIMI_MS = 8000;
 
@@ -140,7 +141,7 @@ async function main() {
   }
 
   console.log("\n3) GİRİŞ VE ŞEMA");
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(ham) });
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(betikAdresi(ham)) });
   try {
     await prisma.$queryRaw`SELECT 1`;
     basarili("kullanıcı adı ve parola geçti");

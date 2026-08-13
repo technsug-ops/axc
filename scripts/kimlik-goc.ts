@@ -41,6 +41,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
+import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { topluGuncelle } from "../src/lib/toplu-guncelle";
 import { yedegiMetneCevir, yedekUret } from "../src/lib/yedek";
 
@@ -79,7 +80,7 @@ async function main() {
     }
   }
 
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(url) });
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(betikAdresi(url)) });
 
   console.log("\nKİMLİK GÖÇÜ");
   console.log(`  hedef  : ${canli ? "CANLI" : "YEREL"}`);

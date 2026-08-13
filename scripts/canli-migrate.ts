@@ -45,6 +45,7 @@ import { execSync } from "node:child_process";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
+import { betikAdresi } from "../src/lib/veritabani-adresi";
 import {
   CANLI_DOSYA,
   canliYapilandirma,
@@ -166,7 +167,7 @@ async function main() {
 
   // --- 5) Sağlık kontrolü ---------------------------------------------------
   console.log("\n5) SAĞLIK KONTROLÜ — yeni kolonlar canlıda okunuyor mu");
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(ham) });
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(betikAdresi(ham)) });
   try {
     const kategoriler = await prisma.category.findMany({
       select: { name: true, code: true },

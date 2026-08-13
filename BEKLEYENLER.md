@@ -27,15 +27,15 @@ listesiyle birlikte teslim edilir.
       listede `—` görünecekler. Kullanıcı isterse düzenleme ekranından
       Sipariş No'yu doldurur; kod bir kere doğduğu için DEĞİŞMEZ.
 
-- [ ] **Canlı veritabanı bağlantı sınırı ölçülsün.**
-      _13.08.2026'da tesadüfen görüldü:_ arka arkaya çalışan doğrulama
-      betikleri `max_user_connections` sınırına çarptı
-      (`pool timeout ... limit=10`). Paylaşımlı sunucuda (KAS) izin
-      verilen eşzamanlı bağlantı, Prisma'nın varsayılan havuzundan
-      KÜÇÜK olabilir. Bugün tek kullanıcıyla sorun çıkmıyor ama
-      **çok kullanıcıya geçmeden önce** ölçülmeli: sunucunun sınırı kaç,
-      Prisma havuzu (`connection_limit`) ona göre kısılmalı mı.
-      Sessizce 500 döndüren türden bir tuzak.
+- [x] ~~**Canlı veritabanı bağlantı sınırı ölçülsün.**~~
+      _Tamamlandı 13.08.2026._ Ölçüldü: `max_user_connections` **25**,
+      `wait_timeout` **120 sn**. Sürücü varsayılanları (10/10/1800 sn) bu
+      sunucuya yanlıştı; üçüncü eşzamanlı Vercel örneğinde kota bitiyordu.
+      Ayarlar `src/lib/veritabani-adresi.ts`'e yazıldı
+      (3 · 1 · 60 sn), betikler tek bağlantıya indirildi,
+      `npm run baglanti:olc` ile ölçüm kalıcı hâle getirildi.
+      **Not:** `minimumIdle=0` denendi ve bağlantıyı tamamen kırıyor —
+      dosyadaki uyarıya bakılmadan değiştirilmemeli.
 
 - [x] ~~**Detay sayfası tabloları mobilde karta dönsün** — İlke #8~~
       _Tamamlandı 09.08.2026 (`e4c65b0`): alım kalemleri, ürün varyantları

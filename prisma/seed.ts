@@ -19,13 +19,15 @@ import "dotenv/config";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { ChannelType } from "../src/generated/prisma/enums";
+import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { karMotoruSeed } from "./seed-kar-motoru";
 import { stokDuzeltmeSeed } from "./seed-stok-duzeltme";
 import { yetkiSeed } from "./seed-yetki";
 import { iadeSeed } from "./seed-iade";
 import { giderSeed } from "./seed-gider";
 
-const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
+// Seed de bir betiktir: tek bağlantı yeter, canlının kotasını yemesin.
+const adapter = new PrismaMariaDb(betikAdresi(process.env.DATABASE_URL!));
 const prisma = new PrismaClient({ adapter });
 
 /**
