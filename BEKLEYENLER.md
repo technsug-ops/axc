@@ -57,12 +57,28 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       - Aralık dışı oran (ör. fiyat kolonu kayması: 3299) YAZILMAZ, uyarıya
         düşer.
 
-- [ ] **2 · SÜZGEÇ AŞAMA 1** — Satışlar + Alımlar süzgeçleri + panelde
+- [ ] **SÜZGEÇ AŞAMA 1** — Satışlar + Alımlar süzgeçleri + panelde
       kanal adı tıklanabilir (`/satislar?kanal=TRENDYOL`) + kanal altında
       hesap kırılımı. Altyapı (Aşama 0) HAZIR ve `/iadeler`'de çalışıyor;
       yalnız bu ekranlara bağlanacak.
-      **Ayrıca onay bekleyen:** panelde ciro sunumu — `10.111,00` altına
-      gri `−2.980,00 iade → net 7.131,00` satırı.
+
+      **PANELDE CİRO SUNUMU — ONAYLANDI (mimar, 13.08.2026).** Bu pakete
+      biniyor, tek deploy. Biçim: **brüt · gri iade düşümü · vurgulu net**
+      (ör. `10.111,00` · `−2.980,00 iade` · **net 7.131,00**) ve panelin
+      ciro gösterdiği **HER yerde tutarlı** — kanal kırılımı dahil.
+      İade sıfırsa gri satır **GİZLENMEZ**; ne yazacağı önizlemeyle
+      önerilecek ve seçim teslim raporunda gelecek.
+
+      **KAPSAM BULGUSU (ölçüldü 13.08.2026): panel iade TUTARINI bugün
+      hiç taşımıyor.** `src/lib/panel.ts` yalnız `iadeAdedi` (sayı) tutuyor;
+      iade NET-2'yi etkiliyor ama ciro düşümü diye bir alan yok. Eklenecek
+      alan `iadeTutari` ve kaynağı **`ReturnLine.KAYIP_GELIR`** satırlarının
+      mutlak toplamı — `/iadeler` ekranı da aynı yerden okuyor, yani iki
+      ekran aynı rakamı üretir. Bu kaynak DEĞİŞİMİ kendiliğinden dışarıda
+      bırakıyor: değişimde `KAYIP_GELIR` satırı hiç oluşmuyor (kural
+      13.08.2026, ciro değişimde DURUR). **Şema değişikliği YOK.**
+      Dokunulacak dört yüzey: ciro kutusu · kanal tablosu (masaüstü) ·
+      kanal kartı (telefon) · aylık seri tablosu + grafik.
 
 - [ ] **3 · İADE MODÜLÜ KALANI** — RMA bildirim akışı (kayıt + "iadeyi
       işle" ile ön-dolu Return açma) · 6. senaryo düzeltmesi (yanlış ürün:
