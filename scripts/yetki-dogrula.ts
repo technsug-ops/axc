@@ -68,6 +68,10 @@ const KAYNAKLAR = dosyalar("src");
 const ACTION_ISTISNALARI = new Map<string, string>([
   ["girisYap", "giriş yapmamış kullanıcı çağırır — yetki isteyemez"],
   ["cikisYap", "çıkış her zaman serbest olmalı"],
+  [
+    "parolamiDegistir",
+    "kendi parolasını değiştiriyor; izin şartı koysak ilk girişte parola değiştirmek ZORUNDA olan kullanıcı bunu yapamazdı — hedef oturumdan gelir, formdan değil",
+  ],
 ]);
 
 // ===========================================================================
@@ -125,6 +129,10 @@ console.log("\n2) KORUMASIZ SAYFA BEKÇİSİ");
 const SAYFA_ISTISNALARI = new Map<string, string>([
   ["src/app/giris/page.tsx", "giriş ekranı"],
   ["src/app/page.tsx", "panel — girişi olan herkes görür"],
+  [
+    "src/app/parola-degistir/page.tsx",
+    "ilk girişte parola değiştirme — yetkisi henüz çözülemeyen kullanıcı da açabilmeli",
+  ],
 ]);
 {
   const korumasiz: string[] = [];
@@ -194,10 +202,9 @@ console.log("\n3) İZİN LİSTESİ TUTARLILIĞI");
   // Tanımlı ama hiç kullanılmayan izin: ölü izin, yanlış güven verir.
   // BEKLEYEN İZİNLER ayrı: ekranı henüz yazılmamış izinler burada durur ve
   // listeden düşmek İŞİN BİTTİĞİ anlamına gelir. Gerekçesiz bırakılmaz.
-  const BEKLEYEN = new Map<string, string>([
-    ["kullanici.yonet", "kullanıcı ekranı henüz yazılmadı"],
-    ["rol.yonet", "rol ekranı henüz yazılmadı"],
-  ]);
+  // 13.08.2026: kullanici.yonet ve rol.yonet ekranları yazıldı, listeden
+  // düştüler. Liste boş olması İYİdir — bekleyen izin kalmadı demektir.
+  const BEKLEYEN = new Map<string, string>([]);
   for (const [izin, sebep] of BEKLEYEN) {
     kontrol(`  bekleyen izin gerekçeli: ${izin}`, sebep.length > 10, sebep);
   }

@@ -21,9 +21,11 @@ import {
   PackageX,
   Percent,
   Receipt,
+  ShieldCheck,
   ShoppingCart,
   Store,
   Truck,
+  Users,
   Tags,
   Wallet,
 } from "lucide-react";
@@ -124,6 +126,13 @@ const AYARLAR: MenuOgesi[] = [
     icon: DatabaseBackup,
     aktif: true,
   },
+  {
+    anahtar: "kullanicilar",
+    href: "/ayarlar/kullanicilar",
+    icon: Users,
+    aktif: true,
+  },
+  { anahtar: "roller", href: "/ayarlar/roller", icon: ShieldCheck, aktif: true },
   { anahtar: "elKitabi", href: "/el-kitabi", icon: BookOpen, aktif: true },
   {
     anahtar: "veriDisari",

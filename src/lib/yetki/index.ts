@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
 import { oturumdakiKullanici } from "@/lib/oturum";
@@ -144,7 +144,23 @@ export async function yetkiIste(izin: Izin): Promise<YetkiBaglami> {
  * adresi elle yazan biri de sistemin yapısını öğrenmemeli.
  */
 export async function sayfaIzni(izin: Izin): Promise<YetkiBaglami> {
+  // PAROLA DEĞİŞTİRME ZORUNLUYSA HİÇBİR SAYFA AÇILMAZ. Sahip parolayı
+  // belirledi; kullanıcı kendi parolasını koymadan sistemde dolaşmamalı.
+  // Kontrol burada çünkü her korumalı sayfa buradan geçiyor — tek yer.
+  if (await parolaDegismeliMi()) redirect("/parola-degistir");
+
   const baglam = await yetkiBaglami();
   if (!baglam || !baglam.izinler.has(izin)) notFound();
   return baglam;
 }
+
+/** Oturumdaki kullanıcı ilk parolasını değiştirmek zorunda mı? */
+export const parolaDegismeliMi = cache(async (): Promise<boolean> => {
+  const kullanici = await oturumdakiKullanici();
+  if (!kullanici) return false;
+  const kayit = await prisma.user.findUnique({
+    where: { id: kullanici.id },
+    select: { mustChangePassword: true },
+  });
+  return kayit?.mustChangePassword ?? false;
+});
