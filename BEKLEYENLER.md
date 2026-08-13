@@ -6,10 +6,10 @@ listesiyle birlikte teslim edilir.
 
 ## AÇIK PAKET SIRASI — 13.08.2026 itibarıyla
 
-İki paket açık + bir yeni istek. Mimar onaylı sıra, **paket ADIYLA**:
-**RMA KALANI (şimdi) → GEÇMİŞ VERİ.**
-PANEL / İŞ ZEKÂSI paketi 14.08.2026'da istendi; sıradaki yeri mimar
-kararını bekliyor (aşağıda, ölçümü yapıldı).
+Üç paket açık. Mimar onaylı sıra, **paket ADIYLA**:
+**RMA KALANI (şimdi) → PANEL AŞAMA 2 → GEÇMİŞ VERİ.**
+_Sıra kararı 14.08.2026: RMA'nın gövdesi (bildirim durum makinesi + 6.
+senaryo) kritik ve yarım bırakılmaz; Panel Aşama 2 hemen ardından açılır._
 Gerekçe: geçmiş veri referans olduğu için en son; RMA kalanı günlük akışta
 karşımıza çıkıyor. (Komisyon paketi 13.08.2026'da tamamlandı, aşağıda.)
 
@@ -114,7 +114,7 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       siparişlerle eşleşir (eşleşecek sipariş yok). Mevcut modellere
       koymak iki motoru da kirletir. `source=GECMIS_EXCEL` damgası şart.
 
-- [ ] **PANEL / İŞ ZEKÂSI (yeni istek 14.08.2026) — sıradaki yeri onay bekliyor**
+- [ ] **PANEL AŞAMA 2 — İŞ ZEKÂSI (RMA'dan HEMEN SONRA, mimar onaylı sıra)**
       Kullanıcı: "Paneli daha efektif kullanmak istiyorum... bir nevi
       business intelligence olarak bana destek olsun."
       İstenenler: dönem seçimi (bugün · bu hafta · bu ay · özel aralık) ·
@@ -135,9 +135,16 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         `net1Amount`, `net2Amount`, `profitStatus` VAR** — kalem bazlı kâr
         snapshot'ı zaten yazılıyor. Sıralama doğrudan bu alanlardan çıkar.
       - En çok satılan: `SaleItem.quantity` toplamı.
-      - En çok stokta bekleyen: stok defterinden türetilir; "bekleme" ölçütü
-        KARAR GEREKTİRİR — adet mi, yaşlanma (en eski FIFO partisi) mı?
-        İkisi de hesaplanabilir, ikisi farklı soruyu cevaplar.
+      - En çok stokta bekleyen: **ÖLÇÜT YAŞLANMA, ADET DEĞİL** (mimar kararı
+        14.08.2026). Gerekçe: arbitrajda asıl risk yaşlanan paradır —
+        faizsiz kart süresi işlerken satılmayan mal ölü sermayedir.
+        "50 adet var" eyleme dönüşmez; "bu 8 kalem 45+ gündür rafta"
+        doğrudan işe götürür ("rakam eyleme dönüşür" ilkesi).
+        Sıralama: **en eski FIFO partisinin giriş tarihine göre azalan**.
+        Adet ve **bağlı sermaye (KDV hariç maliyet)** YAN SÜTUN olarak durur
+        ama sıralama ölçütü YAŞ.
+        Eşik bandı önerisi: **0-30 / 31-60 / 60+ gün** — kesin eşik Panel
+        Aşama 2 tasarımında ÖNİZLEMEYLE netleşecek.
       - ⛔ **KARGOYA TESLİM EDİLEN SİPARİŞ — BUGÜN İZLENMİYOR.** `Sale`
         üzerinde kargo firması, desi ve ücret var (satışta snapshot'lanıyor)
         ama **"kargoya verildi" durumu/tarihi YOK**. Bu rakam ancak yeni bir
