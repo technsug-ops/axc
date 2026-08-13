@@ -4,6 +4,53 @@ Karara bağlanmış ama bilinçli olarak sonraki pakete bırakılmış işler.
 Sırası gelince CLAUDE.md'deki **Kullanıcı Kolaylığı İlkeleri** kontrol
 listesiyle birlikte teslim edilir.
 
+## AÇIK PAKET SIRASI — 13.08.2026 itibarıyla
+
+Dört paket açık. Kullanıcı onaylı sıra: **komisyon → Aşama 1 → iade kalanı
+→ geçmiş veri.** Gerekçe: komisyon oranları kâr motorunun doğruluğunu
+doğrudan etkiliyor; süzgeçler her gün kullanılacak; geçmiş veri referans
+olduğu için en son.
+
+- [ ] **1 · KOMİSYON İÇE AKTARMA (HB + TY)** — sırada, ölçümü yapıldı.
+      Dosyalar: `veri/ozel/` (gitignore'lu, ticari veri).
+      **ÖLÇÜLDÜ (gerçek dosyalarla, 13.08.2026):**
+      - HB `Listelerim`: 2151 veri satırı · 2151 tekil SKU · 0 boş komisyon
+      - TY `Ürünler`: 1581 veri satırı · 1581 tekil barkod · 0 boş komisyon
+      - **Dimension tuzağı `read-excel-file`'da YOK** — 1581 satır okundu,
+        exceljs eklemeye gerek yok.
+      - **TUZAK:** `readXlsxFile(yol, { sheet: "Listelerim" })` **1 satır**
+        döndürüyor. `{ getSheets: true }` ile okuyup diziden ada göre
+        seçmek gerekiyor (`.data` alanı). İsimle seçen kod sessizce boş
+        liste okur.
+      - Eşleşme: TY barkod→varyant **1042/1581** · HB SKU→ChannelSku
+        **1030/2151**, bunların **1023'ünün oranı boş** (+10 Satıcı Stok
+        Kodu ile). Canlıda 1052 kanal kodu, **1031'i boş oran**.
+      - Yüzde ayrıştırma: `"13%"→13` · `"8.5"→8.5` · `"16,67%"→16.67`
+      Yazım: okuyucular · platform tanıma (yanlış dosya reddi) ·
+      önizle-onayla · tek transaction · SAHİP'e açık, Operasyon'a kapalı.
+
+- [ ] **2 · SÜZGEÇ AŞAMA 1** — Satışlar + Alımlar süzgeçleri + panelde
+      kanal adı tıklanabilir (`/satislar?kanal=TRENDYOL`) + kanal altında
+      hesap kırılımı. Altyapı (Aşama 0) HAZIR ve `/iadeler`'de çalışıyor;
+      yalnız bu ekranlara bağlanacak.
+      **Ayrıca onay bekleyen:** panelde ciro sunumu — `10.111,00` altına
+      gri `−2.980,00 iade → net 7.131,00` satırı.
+
+- [ ] **3 · İADE MODÜLÜ KALANI** — RMA bildirim akışı (kayıt + "iadeyi
+      işle" ile ön-dolu Return açma) · 6. senaryo düzeltmesi (yanlış ürün:
+      dönen varyant seçimi + ÜÇ hareket tek işlemde) · itiraz döngüsü ve
+      dosya ekleri (Teslim B). Şema HAZIR (ReturnNotice, Attachment),
+      migration canlıda uygulandı.
+
+- [ ] **4 · GEÇMİŞ VERİ AKTARIMI** — kart kesim/son ödeme günleri · geçmiş
+      kart ekstreleri · geçmiş hakediş tahsilatları.
+      Dosya: `C:\Users\yapra\Desktop\excel\hakedis ve kredi kartlari`
+      **ANALİZ SONUCU: İKİ YENİ TABLO GEREKİYOR, migration onayı şart.**
+      Gerekçe: kart borcu alımlardan TÜRETİLİR (geçmiş alımlar sistemde
+      yok); `Settlement` pazaryeri rapor dosyasından doğar ve satırları
+      siparişlerle eşleşir (eşleşecek sipariş yok). Mevcut modellere
+      koymak iki motoru da kirletir. `source=GECMIS_EXCEL` damgası şart.
+
 ## Sonraki uygun pakette
 
 - [ ] **HURDA / İKİNCİ EL STOK TAKİBİ** — Excel'deki "Hurda Takip"

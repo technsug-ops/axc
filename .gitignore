@@ -47,3 +47,6 @@ next-env.d.ts
 
 # Göç öncesi güvenlik yedekleri — makinede kalır, depoya girmez.
 yedekler/
+
+# Ticari veri (urun listeleri, komisyon, hakedis) — depo herkese acik
+veri/ozel/
