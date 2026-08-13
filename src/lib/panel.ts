@@ -38,6 +38,8 @@ export type PanelSatisi = {
   /** Kanalın kendi kodu — hesap değil KANAL seviyesinde gruplanır. */
   kanalKodu: string;
   kanalAdi: string;
+  /** Kanal HESABININ adı — kanal altındaki kırılım için ("AXCALI"). */
+  hesapAdi: string;
   /** İş tarihi (UTC gece yarısı). */
   tarih: Date;
   paraBirimi: Currency;
@@ -52,11 +54,35 @@ export type PanelIadesi = {
   /** İadenin bağlı olduğu SATIŞIN kanalı. */
   kanalKodu: string;
   kanalAdi: string;
+  /** İadenin bağlı olduğu SATIŞIN kanal hesabı. */
+  hesapAdi: string;
   /** İadenin KENDİ tarihi (occurredAt) — satışın tarihi değil. */
   tarih: Date;
   paraBirimi: Currency;
   net2: number | null;
   durum: KarDurumu | null;
+  /**
+   * CİRODAN DÜŞEN TUTAR (pozitif sayı olarak).
+   *
+   * Kaynağı `ReturnLine.KAYIP_GELIR` satırlarının mutlak toplamıdır —
+   * `/iadeler` ekranı da aynı yerden okur, iki ekran aynı rakamı üretir.
+   *
+   * DEĞİŞİM BU SAYIYA GİRMEZ ve bunun için ayrı bir kural yazmak gerekmedi:
+   * değişimde `KAYIP_GELIR` satırı hiç oluşmuyor (kural 13.08.2026 — ciro
+   * değişimde DURUR, para satıcıda kalır). Yani kaynağı seçmek, kuralı
+   * seçmek oldu.
+   */
+  iadeTutari: number;
+};
+
+/** Kanal altındaki hesap kırılımı — "Trendyol'un hangi mağazası?" */
+export type HesapSatiri = {
+  hesapAdi: string;
+  adet: number;
+  gelir: number;
+  iadeTutari: number;
+  iadeAdedi: number;
+  net2: number;
 };
 
 export type KanalBlogu = {
@@ -72,6 +98,15 @@ export type KanalBlogu = {
   hesaplanamayanAdet: number;
   iadeAdedi: number;
   hesaplanamayanIadeAdedi: number;
+  /** Ciro sunumunun gri satırı: brüt − bu tutar = net ciro. */
+  iadeTutari: number;
+  /**
+   * HESAP KIRILIMI. Kanal seviyesinde gruplama doğru varsayılan (kullanıcı
+   * "Trendyol bu ay ne yaptı" diye soruyor) ama aynı pazaryerinde iki
+   * mağaza varsa toplamın içinde hangisinin ne yaptığı kayboluyordu.
+   * Cirosu yüksek hesap başta.
+   */
+  hesaplar: HesapSatiri[];
 };
 
 export type ParaBirimiPaneli = {
@@ -84,6 +119,8 @@ export type ParaBirimiPaneli = {
   hesaplanamayanAdet: number;
   toplamIadeAdedi: number;
   hesaplanamayanIadeAdedi: number;
+  /** Blok başlığındaki ciro kutusunun gri satırı. */
+  toplamIadeTutari: number;
 };
 
 /** Kâr toplamına girer mi? Durum CALCULATED değilse NET'e güvenilmez. */
@@ -128,10 +165,29 @@ export function panelHesapla(
         hesaplanamayanAdet: 0,
         iadeAdedi: 0,
         hesaplanamayanIadeAdedi: 0,
+        iadeTutari: 0,
+        hesaplar: [],
       };
       kanallar.set(kanalKodu, kanal);
     }
     return kanal;
+  }
+
+  /** Kanal içindeki hesap satırını gerektiğinde açar. */
+  function hesapSatiri(kanal: KanalBlogu, hesapAdi: string): HesapSatiri {
+    let hesap = kanal.hesaplar.find((h) => h.hesapAdi === hesapAdi);
+    if (!hesap) {
+      hesap = {
+        hesapAdi,
+        adet: 0,
+        gelir: 0,
+        iadeTutari: 0,
+        iadeAdedi: 0,
+        net2: 0,
+      };
+      kanal.hesaplar.push(hesap);
+    }
+    return hesap;
   }
 
   for (const satis of satislar) {
@@ -142,6 +198,11 @@ export function panelHesapla(
     kanal.gelir += satis.gelir;
     if (hesaplandi(satis.durum, satis.net2)) kanal.net2 += satis.net2;
     else kanal.hesaplanamayanAdet++;
+
+    const hesap = hesapSatiri(kanal, satis.hesapAdi);
+    hesap.adet++;
+    hesap.gelir += satis.gelir;
+    if (hesaplandi(satis.durum, satis.net2)) hesap.net2 += satis.net2;
   }
 
   // İADELER — satışın kanalına, İADENİN ayına.
@@ -152,13 +213,23 @@ export function panelHesapla(
 
     const kanal = kanalSatiri(iade.paraBirimi, iade.kanalKodu, iade.kanalAdi);
     kanal.iadeAdedi++;
+    kanal.iadeTutari += iade.iadeTutari;
     if (hesaplandi(iade.durum, iade.net2)) kanal.net2 += iade.net2;
     else kanal.hesaplanamayanIadeAdedi++;
+
+    const hesap = hesapSatiri(kanal, iade.hesapAdi);
+    hesap.iadeAdedi++;
+    hesap.iadeTutari += iade.iadeTutari;
+    if (hesaplandi(iade.durum, iade.net2)) hesap.net2 += iade.net2;
   }
 
   return [...bloklar.entries()]
     .map(([paraBirimi, kanallar]) => {
       const liste = [...kanallar.values()].sort((a, b) => b.gelir - a.gelir);
+      // Hesaplar da cirosuna göre sıralanır — kanalla aynı mantık.
+      for (const kanal of liste) {
+        kanal.hesaplar.sort((a, b) => b.gelir - a.gelir);
+      }
       return {
         paraBirimi,
         kanallar: liste,
@@ -171,6 +242,7 @@ export function panelHesapla(
           (t, k) => t + k.hesaplanamayanIadeAdedi,
           0,
         ),
+        toplamIadeTutari: liste.reduce((t, k) => t + k.iadeTutari, 0),
       };
     })
     .sort((a, b) => b.toplamAdet - a.toplamAdet);
@@ -191,6 +263,8 @@ export type AyNoktasi = {
   hesaplanamayanAdet: number;
   iadeAdedi: number;
   hesaplanamayanIadeAdedi: number;
+  /** Ciro sunumu aylık tabloda da aynı: brüt − bu tutar = net ciro. */
+  iadeTutari: number;
 };
 
 /**
@@ -226,6 +300,7 @@ export function aylikSeri(
       hesaplanamayanAdet: 0,
       iadeAdedi: 0,
       hesaplanamayanIadeAdedi: 0,
+      iadeTutari: 0,
     };
     noktalar.push(nokta);
     dizin.set(`${yil}-${ay}`, nokta);
@@ -258,6 +333,7 @@ export function aylikSeri(
     if (!nokta) continue;
 
     nokta.iadeAdedi++;
+    nokta.iadeTutari += iade.iadeTutari;
     if (hesaplandi(iade.durum, iade.net2)) nokta.net2 += iade.net2;
     else nokta.hesaplanamayanIadeAdedi++;
   }

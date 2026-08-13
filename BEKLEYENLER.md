@@ -6,10 +6,10 @@ listesiyle birlikte teslim edilir.
 
 ## AÇIK PAKET SIRASI — 13.08.2026 itibarıyla
 
-Üç paket açık. Mimar onaylı sıra, **paket ADIYLA**:
-**SÜZGEÇ AŞAMA 1 → RMA KALANI → GEÇMİŞ VERİ.**
-Gerekçe: süzgeçler her gün kullanılacak; geçmiş veri referans olduğu için
-en son. (Komisyon paketi 13.08.2026'da tamamlandı, aşağıda.)
+İki paket açık. Mimar onaylı sıra, **paket ADIYLA**:
+**RMA KALANI → GEÇMİŞ VERİ.**
+Gerekçe: geçmiş veri referans olduğu için en son; RMA kalanı günlük akışta
+karşımıza çıkıyor. (Komisyon paketi 13.08.2026'da tamamlandı, aşağıda.)
 
 > **SIRA HEP PAKET ADIYLA YAZILIR — rakam kısaltması KULLANILMAZ.**
 > _Karar 13.08.2026, bugünkü karışıklığın dersi:_ "1 → 4 → 3 → 2" ifadesi
@@ -20,7 +20,7 @@ en son. (Komisyon paketi 13.08.2026'da tamamlandı, aşağıda.)
 Bir paket **Halil testini** geçmeden sıradakine geçilmez
 (tanım: CLAUDE.md → Halil testi).
 
-- [x] ~~**1 · KOMİSYON İÇE AKTARMA (HB + TY)**~~ ✓ 13.08.2026
+- [x] ~~**KOMİSYON İÇE AKTARMA (HB + TY)**~~ ✓ 13.08.2026
       `/kanal-sku/komisyon-aktar`: dosya → platform tanıma → denetle →
       önizle → onayla → tek transaction. İzin `kanalsku.yaz` (SAHİP'e açık,
       Operasyon'a kapalı). `komisyon:dogrula` (65, veritabanısız) +
@@ -57,36 +57,43 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       - Aralık dışı oran (ör. fiyat kolonu kayması: 3299) YAZILMAZ, uyarıya
         düşer.
 
-- [ ] **SÜZGEÇ AŞAMA 1** — Satışlar + Alımlar süzgeçleri + panelde
-      kanal adı tıklanabilir (`/satislar?kanal=TRENDYOL`) + kanal altında
-      hesap kırılımı. Altyapı (Aşama 0) HAZIR ve `/iadeler`'de çalışıyor;
-      yalnız bu ekranlara bağlanacak.
+- [x] ~~**SÜZGEÇ AŞAMA 1**~~ ✓ 13.08.2026 — Halil testi BEKLİYOR
+      Satışlar süzgeçleri (dönem · kanal · kanal hesabı · kâr durumu · iade
+      var/yok) · Alımlar süzgeçleri (dönem · durum · hesap · tedarikçi · kart)
+      · panelde kanal adı TIKLANABİLİR (`/satislar?kanal=X&pencere=BU_AY`) ·
+      kanal altında HESAP KIRILIMI · panelde CİRO SUNUMU dört yüzeyde.
+      `suzgec:dogrula` (34) · `panel:dogrula` 75 → 94.
 
-      **PANELDE CİRO SUNUMU — ONAYLANDI (mimar, 13.08.2026).** Bu pakete
-      biniyor, tek deploy. Biçim: **brüt · gri iade düşümü · vurgulu net**
-      (ör. `10.111,00` · `−2.980,00 iade` · **net 7.131,00**) ve panelin
-      ciro gösterdiği **HER yerde tutarlı** — kanal kırılımı dahil.
-      İade sıfırsa gri satır **GİZLENMEZ**; ne yazacağı önizlemeyle
-      önerilecek ve seçim teslim raporunda gelecek.
+      **ÜÇ KARAR, GEREKÇELİ:**
+      - **Dönem varsayılanı "tüm zamanlar".** Satışlar/Alımlar bugüne kadar
+        dönemsiz çalışıyordu; varsayılanı "son 30 gün" yapmak eski kayıtları
+        hiç uyarı vermeden ekrandan kaldırırdı. Süzgeç eklemek, kayıt
+        gizlemek anlamına gelmemeli.
+      - **Sıfır iade gösterimi:** kutularda "iade yok", tablo/kart
+        satırlarında "— iade". "−0,00" ELENDİ: yuvarlanmış küçük bir tutar
+        sanılıyor (anayasa 11. ilkenin aynı tuzağı). Karar tek bileşende:
+        `src/components/ciro-sunumu.tsx`.
+      - **Ekran ve Excel AYNI koşul kurucusunu kullanıyor**
+        (`src/lib/liste-suzgeci.ts`). `/iadeler` bu koşulu iki kez yazıyor
+        (Aşama 0 borcu); Satışlar ve Alımlar aynı borcu almadı.
 
-      **KAPSAM BULGUSU (ölçüldü 13.08.2026): panel iade TUTARINI bugün
-      hiç taşımıyor.** `src/lib/panel.ts` yalnız `iadeAdedi` (sayı) tutuyor;
-      iade NET-2'yi etkiliyor ama ciro düşümü diye bir alan yok. Eklenecek
-      alan `iadeTutari` ve kaynağı **`ReturnLine.KAYIP_GELIR`** satırlarının
-      mutlak toplamı — `/iadeler` ekranı da aynı yerden okuyor, yani iki
-      ekran aynı rakamı üretir. Bu kaynak DEĞİŞİMİ kendiliğinden dışarıda
-      bırakıyor: değişimde `KAYIP_GELIR` satırı hiç oluşmuyor (kural
-      13.08.2026, ciro değişimde DURUR). **Şema değişikliği YOK.**
-      Dokunulacak dört yüzey: ciro kutusu · kanal tablosu (masaüstü) ·
-      kanal kartı (telefon) · aylık seri tablosu + grafik.
+      **ÖLÇÜLDÜ — sayfalama GEREKMİYOR:** canlıda 9 satış · 50 alım · 2 iade.
+      Ürünler/Kanal SKU'da sayfalama 1000+ kayıt yüzünden vardı; burada
+      sayfalama çubuğu gürültüden başka bir şey olmazdı. (Bu, aşağıdaki
+      "Alımı ÜRÜN/SKU ile arama — önce ÖLÇ" maddesinin sayfalama sorusunu da
+      cevaplıyor.)
 
-- [ ] **3 · İADE MODÜLÜ KALANI** — RMA bildirim akışı (kayıt + "iadeyi
+      **CİRO SUNUMU KAYNAĞI:** `ReturnLine.KAYIP_GELIR` mutlak toplamı —
+      `/iadeler` ile aynı yer. Değişim bu satırı hiç üretmediği için
+      "değişimde ciro DURUR" kuralı kendiliğinden geçerli.
+
+- [ ] **RMA KALANI (İADE MODÜLÜ)** — RMA bildirim akışı (kayıt + "iadeyi
       işle" ile ön-dolu Return açma) · 6. senaryo düzeltmesi (yanlış ürün:
       dönen varyant seçimi + ÜÇ hareket tek işlemde) · itiraz döngüsü ve
       dosya ekleri (Teslim B). Şema HAZIR (ReturnNotice, Attachment),
       migration canlıda uygulandı.
 
-- [ ] **4 · GEÇMİŞ VERİ AKTARIMI** — geçmiş kart ekstreleri · geçmiş hakediş
+- [ ] **GEÇMİŞ VERİ AKTARIMI** — geçmiş kart ekstreleri · geçmiş hakediş
       tahsilatları. Dosya: `C:\Users\yapra\Desktop\excel\hakedis ve kredi kartlari`
       **KAPSAM KÜÇÜLDÜ — kart günleri İŞE GEREK YOK (ölçüldü 13.08.2026):**
       `CreditCard` şemasında `statementDay` ve `dueDay` alanları ZATEN VAR

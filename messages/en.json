@@ -551,7 +551,8 @@
     "aramaSonucsuz": "",
     "aramaSonucsuzIpucu": "",
     "yeniUrunOlustur": "",
-    "alimKodu": ""
+    "alimKodu": "",
+    "kart": ""
   },
   "MalKabul": {
     "saglamSayiOlmali": "",
@@ -777,7 +778,13 @@
     "hesabiDegistirHesapYok": "",
     "hesabiDegistirSatisDegil": "",
     "hesabiDegistirAyni": "",
-    "bulunamadi": ""
+    "bulunamadi": "",
+    "karSuzgeci": "",
+    "karSuzgeciEksik": "",
+    "karSuzgeciTam": "",
+    "iadeSuzgeci": "",
+    "iadeSuzgeciVar": "",
+    "iadeSuzgeciYok": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -1603,7 +1610,11 @@
     "tumKanallar": "",
     "ay": "",
     "hesaplanamayanIade": "",
-    "kanalIade": ""
+    "kanalIade": "",
+    "ciroIade": "",
+    "ciroIadeYok": "",
+    "ciroIadeYokTire": "",
+    "ciroNet": ""
   },
   "Envanter": {
     "baslik": "",

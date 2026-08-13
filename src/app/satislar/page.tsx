@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Eye, Plus, TriangleAlert, Undo2 } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
+import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
@@ -22,7 +23,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
+import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
+import { satisKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
+import { suzgecAdresi } from "@/lib/suzgec";
 import { satisKalemToplamlari } from "@/lib/tutar";
 
 export async function generateMetadata() {
@@ -33,7 +37,16 @@ export async function generateMetadata() {
 export default async function SatislarSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; kar?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    kar?: string;
+    pencere?: string;
+    baslangic?: string;
+    bitis?: string;
+    kanal?: string;
+    hesap?: string;
+    iade?: string;
+  }>;
 }) {
   await sayfaIzni("satis.gor");
   // TEK ALAN-İZNİ (bilinçli istisna, bkz. lib/yetki/izinler.ts başlığı):
@@ -41,28 +54,41 @@ export default async function SatislarSayfasi({
   // TEK alandır ve sayfayı komple kapatmak satış girişini imkânsız kılardı.
   const karGorunur = await izinVarMi("satis.kar.gor");
 
-  const { q, kar } = await searchParams;
-  const arama = (q ?? "").trim();
+  const p = await searchParams;
+  const arama = (p.q ?? "").trim();
 
   /**
    * Dönem raporundaki "kârı hesaplanamadı" uyarısı buraya bağlanır.
    * Sorunlu satışları aramadan bulabilmek için ayrı bir süzgeç
    * (Kullanıcı Kolaylığı #9 — bilgiye az tıkla ulaş).
    */
-  const karEksik = kar === "eksik";
+  const karEksik = p.kar === "eksik";
   const bicim = await bicimlendirici();
   const t = await getTranslations("Satis");
   const tIade = await getTranslations("Iade");
+  const tSuzgec = await getTranslations("Suzgec");
   const ortak = await getTranslations("Ortak");
 
+  // EKRAN VE EXCEL AYNI KOŞULU KULLANIR (bkz. lib/liste-suzgeci.ts).
+  const { kosul, pencere } = satisKosulu(p);
+
+  // Süzgeç seçenekleri VERİDEN gelir: olmayan bir seçeneğe tıklanıp boş
+  // liste görülmesin.
+  const [kanallar, hesaplar] = await Promise.all([
+    prisma.channel.findMany({
+      where: { isActive: true },
+      select: { code: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.channelAccount.findMany({
+      where: { isActive: true, satisIcin: true },
+      select: { id: true, name: true, channel: { select: { name: true } } },
+      orderBy: [{ channelId: "asc" }, { name: "asc" }],
+    }),
+  ]);
+
   const satislar = await prisma.sale.findMany({
-    where: {
-      ...(arama ? { code: { contains: arama } } : {}),
-      // Hiç hesaplanmamış (null) VEYA hesaplanamamış olanlar.
-      ...(karEksik
-        ? { OR: [{ profitStatus: null }, { NOT: { profitStatus: "CALCULATED" } }] }
-        : {}),
-    },
+    where: kosul,
     include: {
       items: {
         include: {
@@ -119,6 +145,67 @@ export default async function SatislarSayfasi({
     });
   }
 
+  /** Süzgeç çubuğunun seçenekleri. */
+  const suzgecler: SuzgecTanimi[] = [
+    {
+      ad: "kanal",
+      etiket: ortak("kanal"),
+      secenekler: kanallar.map((k) => ({ deger: k.code, etiket: k.name })),
+    },
+    {
+      ad: "hesap",
+      etiket: ortak("kanalHesabi"),
+      secenekler: hesaplar.map((h) => ({
+        deger: h.id,
+        etiket: hesapEtiketi(h.channel.name, h.name),
+      })),
+    },
+    {
+      ad: "kar",
+      etiket: t("karSuzgeci"),
+      secenekler: [
+        { deger: "eksik", etiket: t("karSuzgeciEksik") },
+        { deger: "tam", etiket: t("karSuzgeciTam") },
+      ],
+    },
+    {
+      ad: "iade",
+      etiket: t("iadeSuzgeci"),
+      secenekler: [
+        { deger: "var", etiket: t("iadeSuzgeciVar") },
+        { deger: "yok", etiket: t("iadeSuzgeciYok") },
+      ],
+    },
+  ];
+
+  /**
+   * Arama formunun taşıyacağı süzgeçler ve Excel'e gidecek parametreler
+   * TEK KAYNAKTAN üretiliyor: ikisi ayrı yazılsaydı biri güncellenip diğeri
+   * unutulur ve inen dosya ekrandan farklı olurdu.
+   */
+  const formTasinanlar: Record<string, string | undefined> = {
+    kar: p.kar,
+    kanal: p.kanal,
+    hesap: p.hesap,
+    iade: p.iade,
+    pencere: p.pencere,
+    baslangic: p.baslangic,
+    bitis: p.bitis,
+  };
+  const disaAktarmaParametreleri = { ...formTasinanlar, q: arama };
+
+  const suzgecVar =
+    arama !== "" || Object.values(formTasinanlar).some((d) => (d ?? "") !== "");
+
+  /**
+   * Seçili dönemin gerçek karşılığı — tanım tahmin edilmesin. Biçim
+   * /iadeler ekranıyla birebir aynı (İlke #10); tarihler dil
+   * altyapısından geçiyor.
+   */
+  const aralikMetni = pencere.pencere
+    ? `${bicim.tarih(pencere.pencere.baslangic)} — ${bicim.tarih(pencere.pencere.sonGun)}`
+    : "";
+
   function eylemler(satis: (typeof satislar)[number]) {
     return (
       <>
@@ -138,13 +225,16 @@ export default async function SatislarSayfasi({
           <p className="text-muted-foreground text-sm">
             {ortak("kayitSayisi", { sayi: satislar.length })}
             {arama ? ortak("aramaEki", { arama }) : ""}
+            {/* Seçili dönem başlıkta yazar: "9 kayıt" rakamının hangi
+                aralığa ait olduğu ekranda görünsün (#5). */}
+            {aralikMetni ? ` · ${aralikMetni}` : ""}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ExcelIndir
-            liste="satislar"
-            parametreler={{ q: arama, kar: karEksik ? "eksik" : undefined }}
-          />
+          {/* EXCEL EKRANDAKİ SÜZGECİ UYGULAR: aynı parametreler, aynı koşul
+              kurucusu (lib/liste-suzgeci.ts). Liste bir şey, dosya başka şey
+              söylemesin. */}
+          <ExcelIndir liste="satislar" parametreler={disaAktarmaParametreleri} />
           <Button asChild>
             <Link href="/satislar/yeni">
               <Plus />
@@ -155,8 +245,13 @@ export default async function SatislarSayfasi({
       </div>
 
       <form action="/satislar" className="flex flex-wrap items-end gap-2">
-        {/* Süzgeç aramada kaybolmasın. */}
-        {karEksik ? <input type="hidden" name="kar" value="eksik" /> : null}
+        {/* SÜZGEÇLER ARAMADA KAYBOLMASIN: form gönderimi adresi baştan kurar,
+            gizli alanlar açık süzgeçleri taşır. Tek tek yazmak yerine
+            listeden üretiliyor — yeni bir süzgeç eklenince burada unutulan
+            alan sessizce filtreyi düşürürdü. */}
+        {Object.entries(formTasinanlar).map(([ad, deger]) =>
+          deger ? <input key={ad} type="hidden" name={ad} value={deger} /> : null,
+        )}
         <Input
           name="q"
           defaultValue={arama}
@@ -166,12 +261,26 @@ export default async function SatislarSayfasi({
         <Button type="submit" variant="secondary">
           {ortak("ara")}
         </Button>
-        {arama || karEksik ? (
+        {arama ? (
           <Button type="button" variant="ghost" asChild>
-            <Link href="/satislar">{ortak("temizle")}</Link>
+            <Link href={suzgecAdresi("/satislar", p, { q: "" })}>
+              {ortak("temizle")}
+            </Link>
           </Button>
         ) : null}
       </form>
+
+      <SuzgecCubugu
+        temelAdres="/satislar"
+        mevcut={p}
+        suzgecler={suzgecler}
+        zaman={{
+          secili: pencere.tur,
+          aralikMetni,
+          baslangic: p.baslangic ?? "",
+          bitis: p.bitis ?? "",
+        }}
+      />
 
       {/* Hangi süzgecin açık olduğu EKRANDA yazar (#5). */}
       {karEksik ? (
@@ -189,14 +298,16 @@ export default async function SatislarSayfasi({
           <p className="font-medium">
             {karEksik
               ? t("bosKarEksikBaslik")
-              : arama
+              : suzgecVar
                 ? t("bosFiltreBaslik")
                 : t("bosBaslik")}
           </p>
           <p className="text-muted-foreground mt-1 text-sm">
+            {/* SÜZGEÇ YÜZÜNDEN BOŞSA ONU SÖYLE: "kayıt yok" demek, süzgeci
+                unutan kullanıcıya yanlış cevabı kendinden emin vermektir. */}
             {karEksik
               ? t("bosKarEksikIpucu")
-              : arama
+              : suzgecVar
                 ? t("bosFiltreIpucu")
                 : t("bosIpucu")}
           </p>

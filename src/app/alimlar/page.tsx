@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Eye, Pencil, PackageCheck, Plus } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
+import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { AlimIptalButonu } from "./iptal-butonu";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -21,9 +22,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ALIM_DURUMLARI, alimDurumEtiketleri } from "@/lib/etiketler";
-import { alimAramaKosulu } from "@/lib/alim-arama";
 import { bicimlendirici } from "@/lib/bicim";
+import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
+import { alimKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
+import { suzgecAdresi } from "@/lib/suzgec";
 import { kalemToplamlari } from "@/lib/tutar";
 
 export async function generateMetadata() {
@@ -31,34 +34,60 @@ export async function generateMetadata() {
   return { title: tBaslik("alimlar") };
 }
 
-type AlimDurumKodu = (typeof ALIM_DURUMLARI)[number];
-
-function durumGecerliMi(deger: string): deger is AlimDurumKodu {
-  return (ALIM_DURUMLARI as readonly string[]).includes(deger);
-}
+/**
+ * Durum doğrulaması artık `lib/liste-suzgeci.ts` içinde: koşulu kuran taraf
+ * geçerliliği de kontrol ediyor. İki yerde iki liste tutmak, birine yeni bir
+ * durum eklenip ötekinin unutulması demekti.
+ */
 
 export default async function AlimlarSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; durum?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    durum?: string;
+    pencere?: string;
+    baslangic?: string;
+    bitis?: string;
+    hesap?: string;
+    tedarikci?: string;
+    kart?: string;
+  }>;
 }) {
   await sayfaIzni("alim.gor");
 
-  const { q, durum } = await searchParams;
-  const arama = (q ?? "").trim();
-  const durumFiltresi = (durum ?? "").trim();
+  const p = await searchParams;
+  const arama = (p.q ?? "").trim();
   const bicim = await bicimlendirici();
   const durumEtiketleri = await alimDurumEtiketleri();
   const t = await getTranslations("Alim");
   const ortak = await getTranslations("Ortak");
 
-  const aramaKosulu = await alimAramaKosulu(arama);
+  // EKRAN VE EXCEL AYNI KOŞULU KULLANIR (bkz. lib/liste-suzgeci.ts).
+  const { kosul, pencere } = await alimKosulu(p);
+
+  // Süzgeç seçenekleri VERİDEN gelir. Alım hesapları ALIŞ rolündedir;
+  // satış mağazasını alım süzgecinde listelemek anlamsız olurdu.
+  const [hesaplar, tedarikciler, kartlar] = await Promise.all([
+    prisma.channelAccount.findMany({
+      where: { isActive: true, alisIcin: true },
+      select: { id: true, name: true, channel: { select: { name: true } } },
+      orderBy: [{ channelId: "asc" }, { name: "asc" }],
+    }),
+    prisma.supplier.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.creditCard.findMany({
+      where: { isActive: true },
+      select: { id: true, label: true },
+      orderBy: { label: "asc" },
+    }),
+  ]);
 
   const alimlar = await prisma.purchase.findMany({
-    where: {
-      ...(aramaKosulu ?? {}),
-      ...(durumGecerliMi(durumFiltresi) ? { status: durumFiltresi } : {}),
-    },
+    where: kosul,
     include: {
       items: {
         include: {
@@ -74,6 +103,56 @@ export default async function AlimlarSayfasi({
     },
     orderBy: { purchasedAt: "desc" },
   });
+
+  /** Süzgeç çubuğunun seçenekleri. */
+  const suzgecler: SuzgecTanimi[] = [
+    {
+      ad: "durum",
+      etiket: t("durumFiltresiEtiketi"),
+      secenekler: ALIM_DURUMLARI.map((d) => ({
+        deger: d,
+        etiket: durumEtiketleri[d],
+      })),
+    },
+    {
+      ad: "hesap",
+      etiket: ortak("kanalHesabi"),
+      secenekler: hesaplar.map((h) => ({
+        deger: h.id,
+        etiket: hesapEtiketi(h.channel.name, h.name),
+      })),
+    },
+    {
+      ad: "tedarikci",
+      etiket: t("tedarikci"),
+      secenekler: tedarikciler.map((s) => ({ deger: s.id, etiket: s.name })),
+    },
+    {
+      ad: "kart",
+      etiket: t("kart"),
+      secenekler: kartlar.map((k) => ({ deger: k.id, etiket: k.label })),
+    },
+  ];
+
+  /** Arama formu ve Excel TEK KAYNAKTAN beslenir. */
+  const formTasinanlar: Record<string, string | undefined> = {
+    durum: p.durum,
+    hesap: p.hesap,
+    tedarikci: p.tedarikci,
+    kart: p.kart,
+    pencere: p.pencere,
+    baslangic: p.baslangic,
+    bitis: p.bitis,
+  };
+  const disaAktarmaParametreleri = { ...formTasinanlar, q: arama };
+
+  const suzgecVar =
+    arama !== "" || Object.values(formTasinanlar).some((d) => (d ?? "") !== "");
+
+  /** Seçili dönemin gerçek karşılığı — /iadeler ve /satislar ile aynı biçim. */
+  const aralikMetni = pencere.pencere
+    ? `${bicim.tarih(pencere.pencere.baslangic)} — ${bicim.tarih(pencere.pencere.sonGun)}`
+    : "";
 
   function toplamMetni(alim: (typeof alimlar)[number]) {
     const toplamlar = kalemToplamlari(alim.items);
@@ -116,16 +195,12 @@ export default async function AlimlarSayfasi({
           <p className="text-muted-foreground text-sm">
             {ortak("kayitSayisi", { sayi: alimlar.length })}
             {arama ? ortak("aramaEki", { arama }) : ""}
-            {durumGecerliMi(durumFiltresi)
-              ? t("durumEki", { durum: durumEtiketleri[durumFiltresi] })
-              : ""}
+            {aralikMetni ? ` · ${aralikMetni}` : ""}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ExcelIndir
-            liste="alimlar"
-            parametreler={{ q: arama, durum: durumFiltresi }}
-          />
+          {/* EXCEL EKRANDAKİ SÜZGECİ UYGULAR — aynı koşul kurucusu. */}
+          <ExcelIndir liste="alimlar" parametreler={disaAktarmaParametreleri} />
           <Button asChild>
             <Link href="/alimlar/yeni">
               <Plus />
@@ -136,42 +211,49 @@ export default async function AlimlarSayfasi({
       </div>
 
       <form action="/alimlar" className="flex flex-wrap items-end gap-2">
+        {/* Açık süzgeçler arama gönderiminde kaybolmasın. */}
+        {Object.entries(formTasinanlar).map(([ad, deger]) =>
+          deger ? <input key={ad} type="hidden" name={ad} value={deger} /> : null,
+        )}
         <Input
           name="q"
           defaultValue={arama}
           placeholder={t("aramaIpucu")}
           className="max-w-xs min-w-44 flex-1"
         />
-        <select
-          name="durum"
-          defaultValue={durumFiltresi}
-          className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-          aria-label={t("durumFiltresiEtiketi")}
-        >
-          <option value="">{t("tumDurumlar")}</option>
-          {ALIM_DURUMLARI.map((d) => (
-            <option key={d} value={d}>
-              {durumEtiketleri[d]}
-            </option>
-          ))}
-        </select>
         <Button type="submit" variant="secondary">
-          {ortak("filtrele")}
+          {ortak("ara")}
         </Button>
-        {arama || durumFiltresi ? (
+        {arama ? (
           <Button type="button" variant="ghost" asChild>
-            <Link href="/alimlar">{ortak("temizle")}</Link>
+            <Link href={suzgecAdresi("/alimlar", p, { q: "" })}>
+              {ortak("temizle")}
+            </Link>
           </Button>
         ) : null}
       </form>
 
+      {/* DURUM SÜZGECİ ARTIK ORTAK ÇUBUKTA: kendi <select>'i vardı, iki
+          farklı süzgeç görünümü aynı ekranda duruyordu (İlke #10). */}
+      <SuzgecCubugu
+        temelAdres="/alimlar"
+        mevcut={p}
+        suzgecler={suzgecler}
+        zaman={{
+          secili: pencere.tur,
+          aralikMetni,
+          baslangic: p.baslangic ?? "",
+          bitis: p.bitis ?? "",
+        }}
+      />
+
       {alimlar.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
           <p className="font-medium">
-            {arama || durumFiltresi ? t("bosFiltreBaslik") : t("bosBaslik")}
+            {suzgecVar ? t("bosFiltreBaslik") : t("bosBaslik")}
           </p>
           <p className="text-muted-foreground mt-1 text-sm">
-            {arama || durumFiltresi ? t("bosFiltreIpucu") : t("bosIpucu")}
+            {suzgecVar ? t("bosFiltreIpucu") : t("bosIpucu")}
           </p>
         </div>
       ) : (

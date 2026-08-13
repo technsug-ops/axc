@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 
+import { Baglanti } from "@/components/baglanti";
+import { CiroSunumu } from "@/components/ciro-sunumu";
 import { CizgiGrafik, type GrafikNoktasi } from "@/components/cizgi-grafik";
 import { ListeKarti } from "@/components/liste-karti";
 import { Button } from "@/components/ui/button";
@@ -90,7 +92,9 @@ export default async function AnaSayfa({
         profitCurrency: true,
         profitStatus: true,
         channelAccount: {
-          select: { channel: { select: { code: true, name: true } } },
+          // `name` HESAP KIRILIMI İÇİN: aynı pazaryerindeki iki mağaza
+          // toplamın içinde kaybolmasın (mimar kararı 13.08.2026).
+          select: { name: true, channel: { select: { code: true, name: true } } },
         },
         items: {
           select: {
@@ -112,10 +116,21 @@ export default async function AnaSayfa({
         net2Amount: true,
         profitCurrency: true,
         profitStatus: true,
+        /**
+         * CİRO DÜŞÜMÜNÜN KAYNAĞI — `KAYIP_GELIR` satırları.
+         * `/iadeler` ekranı da aynı yerden okuyor; iki ekran aynı rakamı
+         * üretsin diye kaynak ORTAK. Değişimde bu satır hiç oluşmadığı için
+         * "değişim ciroyu düşürmez" kuralı kendiliğinden geçerli olur —
+         * ayrı bir istisna yazmak gerekmedi.
+         */
+        fees: { select: { code: true, amount: true } },
         sale: {
           select: {
             channelAccount: {
-              select: { channel: { select: { code: true, name: true } } },
+              select: {
+                name: true,
+                channel: { select: { code: true, name: true } },
+              },
             },
           },
         },
@@ -136,6 +151,7 @@ export default async function AnaSayfa({
     return {
       kanalKodu: satis.channelAccount.channel.code,
       kanalAdi: satis.channelAccount.channel.name,
+      hesapAdi: satis.channelAccount.name,
       tarih: satis.soldAt,
       paraBirimi,
       gelir,
@@ -147,11 +163,19 @@ export default async function AnaSayfa({
   const iadeler: PanelIadesi[] = iadeKayitlari.map((iade) => ({
     kanalKodu: iade.sale.channelAccount.channel.code,
     kanalAdi: iade.sale.channelAccount.channel.name,
+    hesapAdi: iade.sale.channelAccount.name,
     tarih: iade.occurredAt,
     // Rapor ekranıyla aynı kural: iadenin para birimi kâr snapshot'ından.
     paraBirimi: iade.profitCurrency ?? "TRY",
     net2: iade.net2Amount === null ? null : Number(iade.net2Amount.toString()),
     durum: iade.profitStatus,
+    // Mutlak değer: satır defterde negatif duruyor (gider işareti), ekranda
+    // "−X iade" diye zaten eksiyle yazılıyor. İki kez eksiye düşmesin.
+    iadeTutari: Math.abs(
+      iade.fees
+        .filter((f) => f.code === "KAYIP_GELIR")
+        .reduce((t2, f) => t2 + Number(f.amount.toString()), 0),
+    ),
   }));
 
   const bloklar = panelHesapla(buAy, satislar, iadeler);
@@ -219,6 +243,17 @@ export default async function AnaSayfa({
     return ek ? `/?${ek}` : "/";
   };
 
+  /**
+   * PANELDEN SATIŞLARA: kanal adı tıklanınca o kanalın satışları açılır.
+   *
+   * DÖNEM DE TAŞINIR (`pencere=BU_AY`): panel bloğu "bu ay"ı gösteriyor, ama
+   * satış listesinin varsayılanı son 30 gün. Dönemi taşımasak kullanıcı
+   * paneldeki 4 satışa tıklayıp listede 6 satış görür ve rakamların
+   * tutmadığını sanar — en sinsi tutarsızlık türü.
+   */
+  const kanalSatislariAdresi = (kanalKodu: string) =>
+    `/satislar?kanal=${encodeURIComponent(kanalKodu)}&pencere=BU_AY`;
+
   const paraAdresi = (para: string) => {
     const s = new URLSearchParams();
     if (seciliKanal) s.set("kanal", seciliKanal);
@@ -263,9 +298,21 @@ export default async function AnaSayfa({
                 </div>
                 <div className="space-y-1 rounded-lg border p-4">
                   <div className="text-muted-foreground text-xs">{t("ciro")}</div>
-                  <div className="text-2xl font-semibold">
-                    {bicim.para(blok.toplamGelir, blok.paraBirimi)}
-                  </div>
+                  {/* BRÜT · İADE DÜŞÜMÜ · NET — panelin ciro gösterdiği dört
+                      yüzeyin hepsinde aynı bileşen (mimar kararı 13.08.2026). */}
+                  <CiroSunumu
+                    boyut="kutu"
+                    brut={bicim.para(blok.toplamGelir, blok.paraBirimi)}
+                    iade={
+                      blok.toplamIadeTutari > 0
+                        ? bicim.para(blok.toplamIadeTutari, blok.paraBirimi)
+                        : null
+                    }
+                    net={bicim.para(
+                      blok.toplamGelir - blok.toplamIadeTutari,
+                      blok.paraBirimi,
+                    )}
+                  />
                 </div>
                 {karGorunur ? (
                   <div className="space-y-1 rounded-lg border p-4">
@@ -331,14 +378,30 @@ export default async function AnaSayfa({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {blok.kanallar.map((kanal) => (
+                    {blok.kanallar.flatMap((kanal) => [
                       <TableRow key={kanal.kanalKodu}>
                         <TableCell className="font-medium">
-                          {kanal.kanalAdi}
+                          {/* TIKLANABİLİR KANAL: o kanalın satışlarına süzülmüş
+                              gider. Link stili görünür (İlke #2) — düz metin
+                              gibi duran tıklanabilir öğe yasak. */}
+                          <Baglanti href={kanalSatislariAdresi(kanal.kanalKodu)}>
+                            {kanal.kanalAdi}
+                          </Baglanti>
                         </TableCell>
                         <TableCell className="text-right">{kanal.adet}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
-                          {bicim.para(kanal.gelir, blok.paraBirimi)}
+                          <CiroSunumu
+                            brut={bicim.para(kanal.gelir, blok.paraBirimi)}
+                            iade={
+                              kanal.iadeTutari > 0
+                                ? bicim.para(kanal.iadeTutari, blok.paraBirimi)
+                                : null
+                            }
+                            net={bicim.para(
+                              kanal.gelir - kanal.iadeTutari,
+                              blok.paraBirimi,
+                            )}
+                          />
                         </TableCell>
                         {/* İade/eksik notları BU HÜCREYE ait: ciro iadeden
                             etkilenmez, düşen rakam NET-2'dir. Sütun gizlenince
@@ -360,8 +423,54 @@ export default async function AnaSayfa({
                             ) : null}
                           </TableCell>
                         ) : null}
-                      </TableRow>
-                    ))}
+                      </TableRow>,
+                      /**
+                       * HESAP KIRILIMI — kanal altında, girintili.
+                       *
+                       * Kanal seviyesinde gruplamak doğru varsayılan ("Trendyol
+                       * bu ay ne yaptı") ama aynı pazaryerinde iki mağaza varsa
+                       * hangisinin ne yaptığı toplamın içinde kayboluyordu.
+                       * TEK HESAP VARSA SATIR AÇILMAZ: kırılım o zaman kanal
+                       * satırının tekrarıdır, gürültüden başka bir şey değil.
+                       */
+                      ...(kanal.hesaplar.length > 1
+                        ? kanal.hesaplar.map((hesap) => (
+                            <TableRow
+                              key={`${kanal.kanalKodu}-${hesap.hesapAdi}`}
+                              className="bg-muted/30"
+                            >
+                              <TableCell className="text-muted-foreground pl-8 text-xs">
+                                {hesap.hesapAdi}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground text-right text-xs">
+                                {hesap.adet}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground text-right text-xs whitespace-nowrap">
+                                <CiroSunumu
+                                  brut={bicim.para(hesap.gelir, blok.paraBirimi)}
+                                  iade={
+                                    hesap.iadeTutari > 0
+                                      ? bicim.para(
+                                          hesap.iadeTutari,
+                                          blok.paraBirimi,
+                                        )
+                                      : null
+                                  }
+                                  net={bicim.para(
+                                    hesap.gelir - hesap.iadeTutari,
+                                    blok.paraBirimi,
+                                  )}
+                                />
+                              </TableCell>
+                              {karGorunur ? (
+                                <TableCell className="text-muted-foreground text-right text-xs whitespace-nowrap">
+                                  {bicim.para(hesap.net2, blok.paraBirimi)}
+                                </TableCell>
+                              ) : null}
+                            </TableRow>
+                          ))
+                        : []),
+                    ])}
                   </TableBody>
                 </Table>
               </div>
@@ -371,12 +480,29 @@ export default async function AnaSayfa({
                 {blok.kanallar.map((kanal) => (
                   <ListeKarti
                     key={kanal.kanalKodu}
-                    baslik={kanal.kanalAdi}
+                    baslik={
+                      <Baglanti href={kanalSatislariAdresi(kanal.kanalKodu)}>
+                        {kanal.kanalAdi}
+                      </Baglanti>
+                    }
                     alanlar={[
                       { etiket: t("satisAdedi"), deger: String(kanal.adet) },
                       {
                         etiket: t("ciro"),
-                        deger: bicim.para(kanal.gelir, blok.paraBirimi),
+                        deger: (
+                          <CiroSunumu
+                            brut={bicim.para(kanal.gelir, blok.paraBirimi)}
+                            iade={
+                              kanal.iadeTutari > 0
+                                ? bicim.para(kanal.iadeTutari, blok.paraBirimi)
+                                : null
+                            }
+                            net={bicim.para(
+                              kanal.gelir - kanal.iadeTutari,
+                              blok.paraBirimi,
+                            )}
+                          />
+                        ),
                       },
                       ...(karGorunur
                         ? [
@@ -385,6 +511,26 @@ export default async function AnaSayfa({
                               deger: bicim.para(kanal.net2, blok.paraBirimi),
                             },
                           ]
+                        : []),
+                      // HESAP KIRILIMI TELEFONDA DA VAR: tek hesapta gizli.
+                      ...(kanal.hesaplar.length > 1
+                        ? kanal.hesaplar.map((hesap) => ({
+                            etiket: hesap.hesapAdi,
+                            deger: (
+                              <CiroSunumu
+                                brut={bicim.para(hesap.gelir, blok.paraBirimi)}
+                                iade={
+                                  hesap.iadeTutari > 0
+                                    ? bicim.para(hesap.iadeTutari, blok.paraBirimi)
+                                    : null
+                                }
+                                net={bicim.para(
+                                  hesap.gelir - hesap.iadeTutari,
+                                  blok.paraBirimi,
+                                )}
+                              />
+                            ),
+                          }))
                         : []),
                     ]}
                   />
@@ -452,7 +598,18 @@ export default async function AnaSayfa({
                     </TableCell>
                     <TableCell className="text-right">{nokta.adet}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
-                      {bicim.para(nokta.gelir, seciliPara)}
+                      <CiroSunumu
+                        brut={bicim.para(nokta.gelir, seciliPara)}
+                        iade={
+                          nokta.iadeTutari > 0
+                            ? bicim.para(nokta.iadeTutari, seciliPara)
+                            : null
+                        }
+                        net={bicim.para(
+                          nokta.gelir - nokta.iadeTutari,
+                          seciliPara,
+                        )}
+                      />
                     </TableCell>
                     {karGorunur ? (
                       <TableCell className="text-right whitespace-nowrap">

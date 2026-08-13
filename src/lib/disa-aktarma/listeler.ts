@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import { alimAramaKosulu } from "@/lib/alim-arama";
+import { alimKosulu, satisKosulu } from "@/lib/liste-suzgeci";
 import {
   LISTE_PENCERELERI,
   ayKaydir,
@@ -354,15 +354,12 @@ async function alimlarSayfasi(p: Parametreler): Promise<Sayfa> {
   const ortak = await getTranslations("Ortak");
   const tAlim = await getTranslations("Alim");
   const tDurum = await getTranslations("AlimDurumu");
-  const arama = (p.q ?? "").trim();
-  const durum = p.durum ?? "";
+  // Ekrandaki liste ile inen dosya AYNI koşul kurucusunu kullanır
+  // (lib/liste-suzgeci.ts) — dönem, hesap, tedarikçi ve kart dahil.
+  const { kosul } = await alimKosulu(p);
 
-  // Ekrandaki liste ile inen dosya AYNI koşulu kullanır (bkz. lib/alim-arama).
   const alimlar = await prisma.purchase.findMany({
-    where: {
-      ...((await alimAramaKosulu(arama)) ?? {}),
-      ...(durum ? { status: durum as never } : {}),
-    },
+    where: kosul,
     include: {
       items: {
         include: {
@@ -418,21 +415,12 @@ async function satislarSayfasi(p: Parametreler): Promise<Sayfa> {
   const tBaslik = await getTranslations("Basliklar");
   const ortak = await getTranslations("Ortak");
   const tSatis = await getTranslations("Satis");
-  const arama = (p.q ?? "").trim();
-  const karEksik = p.kar === "eksik";
+  // EKRANLA AYNI KOŞUL KURUCUSU (lib/liste-suzgeci.ts): dosyada ekranda
+  // görünenden farklı bir liste çıkmasın.
+  const { kosul } = satisKosulu(p);
 
   const satislar = await prisma.sale.findMany({
-    where: {
-      ...(arama ? { code: { contains: arama } } : {}),
-      ...(karEksik
-        ? {
-            OR: [
-              { profitStatus: null },
-              { NOT: { profitStatus: "CALCULATED" } },
-            ],
-          }
-        : {}),
-    },
+    where: kosul,
     include: {
       items: { include: { variant: { select: { sku: true } } } },
       channelAccount: {

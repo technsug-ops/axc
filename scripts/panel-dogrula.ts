@@ -64,6 +64,7 @@ function satis(ek: Partial<PanelSatisi> = {}): PanelSatisi {
   return {
     kanalKodu: "TRENDYOL",
     kanalAdi: "Trendyol",
+    hesapAdi: "AXCALI",
     tarih: gun(2026, 8, 5),
     paraBirimi: "TRY",
     gelir: 1000,
@@ -255,10 +256,12 @@ console.log("\n2c) İADE ETKİSİ — PANEL NET-2 = RAPOR Σ NET-2");
     return {
       kanalKodu: "TRENDYOL",
       kanalAdi: "Trendyol",
+      hesapAdi: "AXCALI",
       tarih: gun(2026, 8, 10),
       paraBirimi: "TRY",
       net2: -340.43,
       durum: "CALCULATED",
+      iadeTutari: 0,
       ...ek,
     };
   }
@@ -489,6 +492,124 @@ console.log("\n3) ENVANTER DEĞERİ");
   yakin("2×100 + 3×150", cokParti.bloklar[0].toplamOdenen, 650);
 
   kontrol("hiç parti yoksa boş sonuç", envanterHesapla([]).bloklar.length === 0);
+}
+
+// ===========================================================================
+console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
+// ===========================================================================
+/**
+ * Mimar kararı 13.08.2026: panelin ciro gösterdiği HER yerde brüt, gri iade
+ * düşümü ve net ciro. Bu bölüm sayının doğru TÜRETİLDİĞİNİ kilitliyor:
+ * ekranın biçimi değişse de hesap değişmemeli.
+ *
+ * KRİTİK AYRIM: iade CİRODAN düşer ama NET-2 zaten kendi içinde düşülmüştür.
+ * İkisini karıştırmak (iade tutarını NET-2'den bir kez daha düşmek) kârı
+ * iki kez cezalandırırdı.
+ */
+{
+  const buAy = pencereOlustur("BU_AY", AN);
+
+  const iade = (ek: Partial<PanelIadesi> = {}): PanelIadesi => ({
+    kanalKodu: "TRENDYOL",
+    kanalAdi: "Trendyol",
+    hesapAdi: "AXCALI",
+    tarih: gun(2026, 8, 10),
+    paraBirimi: "TRY",
+    net2: -100,
+    durum: "CALCULATED",
+    iadeTutari: 0,
+    ...ek,
+  });
+
+  // --- GERÇEK CANLI VAKA (13.08.2026, Ağustos): Trendyol 10.111 ciro,
+  //     2.980 iade düşümü → net 7.131. Hepsiburada 4.898, iade YOK.
+  const bloklar = panelHesapla(
+    buAy,
+    [
+      satis({ gelir: 10111, hesapAdi: "AXCALI" }),
+      satis({
+        kanalKodu: "HEPSIBURADA",
+        kanalAdi: "Hepsiburada",
+        hesapAdi: "AXCALI",
+        gelir: 4898,
+      }),
+    ],
+    [iade({ iadeTutari: 2980 })],
+  );
+
+  const blok = bloklar[0];
+  const ty = blok.kanallar.find((k) => k.kanalKodu === "TRENDYOL")!;
+  const hb = blok.kanallar.find((k) => k.kanalKodu === "HEPSIBURADA")!;
+
+  yakin("TY brüt ciro", ty.gelir, 10111);
+  yakin("TY iade düşümü", ty.iadeTutari, 2980);
+  yakin("TY net ciro (brüt − iade)", ty.gelir - ty.iadeTutari, 7131);
+  yakin("HB iadesi yok -> düşüm 0", hb.iadeTutari, 0);
+  yakin("blok brüt toplamı", blok.toplamGelir, 15009);
+  yakin("blok iade toplamı", blok.toplamIadeTutari, 2980);
+  yakin("blok net cirosu", blok.toplamGelir - blok.toplamIadeTutari, 12029);
+
+  /**
+   * SIFIR İLE "YOK" AYRIMI EKRANIN İŞİ, MOTORUN DEĞİL: motor her zaman sayı
+   * üretir (0), ekran 0'ı "iade yok" / "— iade" diye yazar. Motor null
+   * döndürseydi her çağıran ayrı bir null kuralı yorumlardı.
+   */
+  kontrol("iadesi olmayan kanalda tutar 0'dır (null değil)", hb.iadeTutari === 0);
+
+  // --- HESAP KIRILIMI: aynı pazaryerinde iki mağaza ---
+  const cokHesap = panelHesapla(
+    buAy,
+    [
+      satis({ hesapAdi: "AXCALI", gelir: 6000 }),
+      satis({ hesapAdi: "SEDA", gelir: 4000 }),
+    ],
+    [iade({ hesapAdi: "SEDA", iadeTutari: 1000 })],
+  );
+  const kanal = cokHesap[0].kanallar[0];
+  kontrol("kanal iki hesaba bölündü", kanal.hesaplar.length === 2, kanal.hesaplar);
+  kontrol(
+    "hesaplar ciroya göre sıralı (büyük başta)",
+    kanal.hesaplar[0].hesapAdi === "AXCALI",
+    kanal.hesaplar.map((h) => h.hesapAdi),
+  );
+  yakin("hesap cirosu ayrı tutuluyor", kanal.hesaplar[0].gelir, 6000);
+  yakin("iade DOĞRU hesaba yazıldı", kanal.hesaplar[1].iadeTutari, 1000);
+  yakin("diğer hesabın iadesi 0", kanal.hesaplar[0].iadeTutari, 0);
+  yakin(
+    "hesap ciroları kanal cirosunu verir",
+    kanal.hesaplar.reduce((t, h) => t + h.gelir, 0),
+    kanal.gelir,
+  );
+  yakin(
+    "hesap iadeleri kanal iadesini verir",
+    kanal.hesaplar.reduce((t, h) => t + h.iadeTutari, 0),
+    kanal.iadeTutari,
+  );
+
+  // Tek hesaplı kanalda kırılım YİNE ÜRETİLİR; gizleme kararı ekranın işi.
+  const tekHesap = panelHesapla(buAy, [satis({ hesapAdi: "AXCALI" })], []);
+  kontrol("tek hesapta da kırılım verisi var", tekHesap[0].kanallar[0].hesaplar.length === 1);
+
+  // --- AYLIK SERİ: iade KENDİ ayına düşer ---
+  const seri = aylikSeri(
+    [satis({ tarih: gun(2026, 7, 20), gelir: 5000 })],
+    { yil: 2026, ay: 8 },
+    2,
+    null,
+    "TRY",
+    [iade({ tarih: gun(2026, 8, 10), iadeTutari: 1500 })],
+  );
+  const temmuz = seri.find((n) => n.ay === 7)!;
+  const agustos = seri.find((n) => n.ay === 8)!;
+  yakin("Temmuz cirosu 5000", temmuz.gelir, 5000);
+  yakin("Temmuz iade düşümü 0 (iade Ağustos'ta)", temmuz.iadeTutari, 0);
+  yakin("Ağustos iade düşümü 1500", agustos.iadeTutari, 1500);
+  /**
+   * SATIŞSIZ AYDA İADE: brüt 0, düşüm 1500 → net −1500. Rakam eksiye
+   * düşebilir ve bu DOĞRU: o ay kasadan para çıkmıştır. Ekran bunu
+   * gizlemez.
+   */
+  yakin("satışsız ayda net ciro eksiye düşer", agustos.gelir - agustos.iadeTutari, -1500);
 }
 
 // ===========================================================================

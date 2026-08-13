@@ -551,7 +551,8 @@
     "aramaSonucsuz": "\"{sorgu}\" ile eşleşen ürün yok.",
     "aramaSonucsuzIpucu": "Farklı bir kod ya da adla arayın; ürün gerçekten yoksa yeni kayıt açın. Yeni sekmede açılır, bu form kaybolmaz.",
     "yeniUrunOlustur": "Yeni ürün oluştur",
-    "alimKodu": "Alım Kodu"
+    "alimKodu": "Alım Kodu",
+    "kart": "Kart"
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",
@@ -777,7 +778,13 @@
     "hesabiDegistirHesapYok": "Seçilen hesap bulunamadı ya da pasif.",
     "hesabiDegistirSatisDegil": "\"{ad}\" bir ALIŞ hesabı; satış oraya taşınamaz. Kanal Hesapları ekranından satış hesabı tanımlayın.",
     "hesabiDegistirAyni": "Satış zaten bu hesapta.",
-    "bulunamadi": "Satış bulunamadı."
+    "bulunamadi": "Satış bulunamadı.",
+    "karSuzgeci": "Kâr durumu",
+    "karSuzgeciEksik": "Kârı hesaplanamayanlar",
+    "karSuzgeciTam": "Kârı hesaplananlar",
+    "iadeSuzgeci": "İade",
+    "iadeSuzgeciVar": "İadesi olanlar",
+    "iadeSuzgeciYok": "İadesi olmayanlar"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -1603,7 +1610,11 @@
     "tumKanallar": "Tüm kanallar",
     "ay": "Ay",
     "hesaplanamayanIade": "{sayi} iadenin etkisi hesaplanamadı — NET-2 toplamına GİRMEDİ.",
-    "kanalIade": "{sayi} iade dahil"
+    "kanalIade": "{sayi} iade dahil",
+    "ciroIade": "−{tutar} iade",
+    "ciroIadeYok": "iade yok",
+    "ciroIadeYokTire": "— iade",
+    "ciroNet": "net {tutar}"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
