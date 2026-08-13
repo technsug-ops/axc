@@ -116,7 +116,25 @@ export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
     const oran = kalem.iadeAdedi / kalem.satilanAdet;
     const saglamOran = kalem.saglamAdet / kalem.satilanAdet;
 
-    if (geriGelir) {
+    /**
+     * DEĞİŞİM Mİ, İADE Mİ — kâr davranışları FARKLIDIR.
+     * _Kullanıcı teyidi 13.08.2026._
+     *
+     *   İADE   : müşteri parasını geri alır → ciro DÜŞER, komisyon geri gelir
+     *   DEĞİŞİM: pazaryeri siparişi AÇIK tutar, para SATICIDA KALIR →
+     *            ciro ve komisyon DURUR; tek gider git-gel kargo (+ceza)
+     *
+     * Eskiden ikisi de "NORMAL iade" sayılıyordu ve değişimde de ciro
+     * siliniyordu: 2.980 TL'lik bir değişim, satış ayakta olmasına rağmen
+     * 2.980 TL gelir kaybı yazıyordu. Kanal marjını olduğundan kötü
+     * gösteren sessiz bir hataydı.
+     *
+     * Ayrım kalem bazındadır: bir siparişte bir kalem iade, başka kalem
+     * değişim olabilir.
+     */
+    const degisimMi = kalem.degisimMaliyeti !== null;
+
+    if (geriGelir && !degisimMi) {
       const kayipGelir = kalem.satisTutari * oran;
       satirlar.push({ code: "KAYIP_GELIR", tutar: -kayipGelir });
       satisKdvIadesi += kdvAyir(kayipGelir, kalem.kdvOrani);
@@ -140,7 +158,14 @@ export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
       const stopajIade =
         ((kalem.satisTutari * oran) / (1 + kalem.kdvOrani / 100)) * 0.01;
       satirlar.push({ code: "STOPAJ_IADE", tutar: stopajIade });
+    }
 
+    // MALİYET, DEĞİŞİMDE DE GERİ GELİR — bu blok gelir bloğunun DIŞINDA.
+    // Gerekçe: ciro değişimde durur ama ESKİ MAL FİZİKEN DÖNER. Maliyeti
+    // gelirle birlikte dondursaydık, geri gelen malın maliyeti hiç
+    // sayılmaz ve değişim olduğundan kârlı görünürdü.
+    // DISPUTED'ta blok hiç çalışmaz: ürün müşteride kalır (geriGelir=false).
+    if (geriGelir) {
       // Maliyet SADECE stoğa dönen (sağlam) adet kadar geri gelir.
       // Hasarlı mal stoğa girmez; maliyeti satıcıda kalır.
       //

@@ -324,6 +324,113 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
   yakin("canlı TY vakası NET-1 etkisi", th.net1Etkisi, -2678.62);
   yakin("canlı TY vakası NET-2 etkisi", th.net2Etkisi, -2228.04);
 
+  /**
+   * ══════════════════════════════════════════════════════════════════════
+   *  ALTIN SENARYO — DEĞİŞİMDE CİRO DURUR
+   *  _Kullanıcı teyidi 13.08.2026._
+   * ----------------------------------------------------------------------
+   *  Pazaryeri değişimde siparişi AÇIK tutar ve para SATICIDA KALIR.
+   *  Dolayısıyla değişim ile iade AYNI ŞEY DEĞİLDİR:
+   *
+   *      İADE   → ciro DÜŞER, komisyon geri gelir
+   *      DEĞİŞİM→ ciro DURUR, komisyon durur; tek gider git-gel kargo
+   *
+   *  ESKİ DAVRANIŞ YANLIŞTI: değişim "NORMAL iade" sayılıyordu ve
+   *  2.980 TL'lik bir değişimde satış ayakta olmasına rağmen 2.980 TL
+   *  gelir kaybı yazılıyordu. Aynı senaryoda NET-1 −2.828,62 çıkıyordu;
+   *  doğrusu −313,00. Kanal marjını olduğundan 2.515 TL kötü gösteren
+   *  SESSİZ bir hataydı — mevcut değişim testleri yalnız DEGISIM_MALIYET
+   *  satırına baktığı için yakalanmamıştı.
+   *
+   *  Bu blok o hatanın geri gelmesini engeller: yokluğu OLMASI gereken
+   *  satırlar kadar önemlidir, o yüzden ayrı ayrı kontrol edilir.
+   * ══════════════════════════════════════════════════════════════════════
+   */
+  {
+    const dg = iadeEtkisiHesapla({
+      returnType: "NORMAL",
+      kalemler: [
+        {
+          satilanAdet: 1,
+          iadeAdedi: 1,
+          saglamAdet: 1, // eski mal sağlam döndü, stoğa girdi
+          satisTutari: 2980,
+          maliyet: 1799,
+          kdvOrani: 20,
+          komisyon: 439.55,
+          degisimMaliyeti: 1799, // yerine giden ürün, FIFO'dan
+        },
+      ],
+      odemeGideri: 0,
+      siparisToplami: 2980,
+      iadeKargosu: 163,
+      yenidenGonderimKargosu: 150,
+      ceza: null,
+    });
+
+    const satirlari = dg.kalemSatirlari[0];
+    const varMi = (kod: string) => satirlari.some((s) => s.code === kod);
+
+    // --- CİRO TARAFI HİÇ DOKUNULMAMALI ---
+    kontrol("değişim: KAYIP_GELIR YAZILMAZ", !varMi("KAYIP_GELIR"));
+    kontrol("değişim: KOMISYON_IADE YAZILMAZ", !varMi("KOMISYON_IADE"));
+    kontrol("değişim: STOPAJ_IADE YAZILMAZ", !varMi("STOPAJ_IADE"));
+    kontrol("değişim: ODEME_GIDERI_IADE YAZILMAZ", !varMi("ODEME_GIDERI_IADE"));
+
+    // --- MAL TARAFI İŞLER: eski mal döner, yenisi çıkar ---
+    yakin("değişim: eski malın maliyeti geri", satir(satirlari, "MALIYET_GERI"), 1799);
+    yakin("değişim: yeni malın maliyeti gider", satir(satirlari, "DEGISIM_MALIYET"), -1799);
+
+    // --- TEK GERÇEK GİDER: GİT-GEL KARGO ---
+    yakin("değişim: iade kargosu", satir(dg.genelSatirlar, "IADE_KARGO"), -163);
+    yakin(
+      "değişim: yeniden gönderim kargosu",
+      satir(dg.genelSatirlar, "YENIDEN_GONDERIM_KARGO"),
+      -150,
+    );
+
+    // Maliyetler eşitlendiği için net etki YALNIZ kargodur.
+    yakin("değişim NET-1 = sadece kargo", dg.net1Etkisi, -313);
+    // KDV: ciro/komisyon dokunulmadığı için yalnız kargo KDV'si indirilir.
+    yakin("değişim NET-2", dg.net2Etkisi, -260.83);
+
+    // Aynı senaryo İADE olsaydı (değişim ürünü yok) ciro düşerdi —
+    // iki davranışın FARKLI olduğu burada kilitlenir.
+    const iadeHali = iadeEtkisiHesapla({
+      returnType: "NORMAL",
+      kalemler: [
+        {
+          satilanAdet: 1,
+          iadeAdedi: 1,
+          saglamAdet: 1,
+          satisTutari: 2980,
+          maliyet: 1799,
+          kdvOrani: 20,
+          komisyon: 439.55,
+          degisimMaliyeti: null, // DEĞİŞİM YOK — gerçek iade
+        },
+      ],
+      odemeGideri: 0,
+      siparisToplami: 2980,
+      iadeKargosu: 163,
+      yenidenGonderimKargosu: null,
+      ceza: null,
+    });
+    kontrol(
+      "iade: KAYIP_GELIR YAZILIR (değişimle aynı olmadığının kanıtı)",
+      iadeHali.kalemSatirlari[0].some((s) => s.code === "KAYIP_GELIR"),
+    );
+    // Bulanık eşik yerine KESİN rakam: ikisinin ne olduğu da yazılı kalsın.
+    //   iade   : -2980 gelir +439,55 komisyon +24,83 stopaj +1799 maliyet
+    //            -163 kargo  =  -879,62
+    //   değişim: yalnız git-gel kargo         =  -313,00
+    yakin("aynı olayın İADE hâli", iadeHali.net1Etkisi, -879.62);
+    kontrol(
+      "iade ile değişim aynı sonucu VERMEZ (fark 566,62 TL)",
+      Math.abs(iadeHali.net1Etkisi - dg.net1Etkisi) > 500,
+    );
+  }
+
   // Değişim: yerine giden ürünün maliyeti giderdir.
   const d = iadeEtkisiHesapla(
     lego({ kalemler: [{ ...lego().kalemler[0], degisimMaliyeti: 900 }] }),
