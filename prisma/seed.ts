@@ -21,6 +21,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { ChannelType } from "../src/generated/prisma/enums";
 import { karMotoruSeed } from "./seed-kar-motoru";
 import { stokDuzeltmeSeed } from "./seed-stok-duzeltme";
+import { yetkiSeed } from "./seed-yetki";
 import { iadeSeed } from "./seed-iade";
 import { giderSeed } from "./seed-gider";
 
@@ -72,6 +73,8 @@ async function main() {
   await giderSeed(prisma);
 
   await stokDuzeltmeSeed(prisma);
+
+  await yetkiSeed(prisma);
 }
 
 main()

@@ -444,6 +444,7 @@ model ChannelAccount {
   /// edilmiş bir tarih göstermektense boş bırakılır.
   /**
    * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -719,6 +720,12 @@ model StockMovement {
   unitCostAmount   Decimal?  @db.Decimal(18, 4)
   unitCostCurrency Currency?
 
+  /// KİM YAPTI — çok kullanıcılı yapıyla doldu (Faz 4).
+  /// GEÇMİŞ HAREKETLER null KALIR ve ekranda "sistem öncesi" görünür;
+  /// geriye doldurmak, olmayan bir bilgiyi uydurmak olurdu.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
   /// ELLE DÜZELTME NEDENİ — yalnız ADJUSTMENT/COUNT_CORRECTION tipinde
   /// dolu olur. Satış, alım ve iade hareketlerinde boştur.
   adjustmentReasonId String?
@@ -736,6 +743,7 @@ model StockMovement {
   @@index([sourceMovementId])
   @@index([locationId])
   @@index([adjustmentReasonId])
+  @@index([userId])
 }
 
 // ============================================================================
@@ -1123,10 +1131,18 @@ model User {
   /// içinde taşındığı için doğrulama veritabanına gitmeden yapılabilir.
   sessionVersion Int @default(1)
 
+  /// SAHİP parola atar, kullanıcı İLK GİRİŞTE değiştirmek zorunda kalır.
+  /// E-posta altyapısı yok (karar 13.08.2026): davet e-postası kurmak,
+  /// çözdüğü sorundan büyük bir bağımlılık olurdu.
+  mustChangePassword Boolean @default(false)
+
   lastLoginAt DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  stockMovements   StockMovement[]
+  userCompanyRoles UserCompanyRole[]
+  auditLogs        AuditLog[]
 
   @@index([isActive])
 }
@@ -1397,4 +1413,141 @@ model StockAdjustmentReason {
   movements StockMovement[]
 
   @@index([isActive])
+}
+
+// ============================================================================
+//  YETKİ (RBAC) VE ÇOK FİRMA HAZIRLIĞI
+// ----------------------------------------------------------------------------
+//  Karar 13.08.2026. İki hedef aynı pakette:
+//
+//  1. BUGÜN: TR ekibi sisteme girecek. İki rol (SAHİP, OPERASYON), sayfa ve
+//     işlem bazlı izin. Roller VERİDİR — enum değil; ekip büyüyünce yeni rol
+//     ekrandan türetilir.
+//
+//  2. YARIN: sistem TEK GİRİŞ + ÇOK FİRMA olacak (tipik ERP). Yapı buna
+//     HAZIR doğuyor ama tam çok-kiracılık BUGÜN YAPILMIYOR: kullanıcı role
+//     doğrudan değil ÜYELİK üzerinden bağlanıyor. Bugün tek firma olduğu
+//     için davranış birebir aynı; yarın aynı kullanıcı başka firmada başka
+//     rol taşıyabilir ve tek satır bile yeniden yazılmaz.
+//
+//     companyId'nin diğer 30 tabloya yayılması AYRI PAKETTİR
+//     (bkz. BEKLEYENLER → çok-firma veri katmanı).
+//
+//  İZİN ANAHTARLARI KOD SABİTİDİR, VERİ DEĞİL: "alim.yaz" ancak o kodu
+//  koruyan bir satır varsa anlamlıdır. Rol veridir, izin listesi değil.
+// ============================================================================
+
+/// Firma. Bugün TEK kayıt (seed) — çok firma yapısının çıpası.
+model Company {
+  id String @id @default(cuid())
+
+  name String
+  /// Kimlik standardındaki kod (bkz. lib/kimlik.ts).
+  code String @unique
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  uyelikler UserCompanyRole[]
+  auditLogs AuditLog[]
+
+  @@index([isActive])
+}
+
+/// Rol — FİRMA BAĞIMSIZ. İzin tanımları ortaktır, atama üyelikte yapılır.
+model Role {
+  id String @id @default(cuid())
+
+  name String @unique
+
+  /// Sistem rolü SİLİNEMEZ ve pasife alınamaz (SAHİP).
+  /// Ada bakarak korumak kırılgandı: kullanıcı adı "Patron" yapabilir.
+  isSystem Boolean @default(false)
+
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  izinler   RolePermission[]
+  uyelikler UserCompanyRole[]
+
+  @@index([isActive])
+}
+
+/// Rolün sahip olduğu izin. Anahtar KODDAN gelir (lib/yetki/izinler.ts).
+model RolePermission {
+  id     String @id @default(cuid())
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  /// "alim.yaz", "rapor.gor" gibi. Kod sabiti; veritabanı doğrulamaz,
+  /// uygulama tanımadığı anahtarı YOK SAYAR ve denetim betiği bildirir.
+  permissionKey String
+
+  createdAt DateTime @default(now())
+
+  @@unique([roleId, permissionKey])
+  @@index([roleId])
+}
+
+/// ÜYELİK: kullanıcı + firma + rol. Kullanıcı role DOĞRUDAN bağlanmaz.
+model UserCompanyRole {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  roleId String
+  /// Restrict: kullanımdaki rol silinemez. Roller zaten silinmez, pasife
+  /// alınır — bu kısıt o kuralın veritabanı tarafındaki karşılığıdır.
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+
+  /// Bir kullanıcının bir firmada TEK rolü olur.
+  @@unique([userId, companyId])
+  @@index([companyId])
+  @@index([roleId])
+}
+
+/// DENETİM İZİ — ledger'a girmeyen ama "kim yaptı" bilinmesi gereken işler.
+/// Geri yükleme, dışa aktarma, yedek indirme, kullanıcı/rol değişikliği.
+/// Dışa aktarma özellikle: tüm veriyi indirmek sessiz kalmamalı.
+model AuditLog {
+  id String @id @default(cuid())
+
+  /// Kim. Kullanıcı silinmez (pasife alınır), bu yüzden Restrict.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  /// Ne yapıldı: "GERI_YUKLEME", "DISA_AKTARMA", "YEDEK_INDIRME",
+  /// "KULLANICI_DEGISTI", "ROL_DEGISTI". Kod sabiti, sözlükten çözülür.
+  action String
+
+  /// Neye yapıldı — kayıt tipi ve kimliği (varsa).
+  targetType String?
+  targetId   String?
+
+  /// Serbest ayrıntı: kaç satır yazıldı, hangi dosya, eski/yeni rol...
+  detail String? @db.Text
+
+  /// Nereden. Vekil sunucu arkasında güvenilmez olabilir; bilgi amaçlı.
+  ip String?
+
+  createdAt               DateTime               @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }

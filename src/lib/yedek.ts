@@ -61,6 +61,13 @@ export async function yedekUret(
     // _Kullanıcı kararı 12.08.2026._
     User: await istemci.user.findMany(),
     StockAdjustmentReason: await istemci.stockAdjustmentReason.findMany(),
+    // YETKİ: rol tanımları ve üyelikler. Parola özeti User'da zaten var;
+    // bunlar olmadan boş veritabanına dönüşte kimse hiçbir şey yapamaz.
+    Company: await istemci.company.findMany(),
+    Role: await istemci.role.findMany(),
+    RolePermission: await istemci.rolePermission.findMany(),
+    UserCompanyRole: await istemci.userCompanyRole.findMany(),
+    AuditLog: await istemci.auditLog.findMany(),
     Product: await istemci.product.findMany(),
     ProductVariant: await istemci.productVariant.findMany(),
     VariantOption: await istemci.variantOption.findMany(),

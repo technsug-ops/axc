@@ -33,6 +33,12 @@ export const YEDEK_TABLOLARI = [
   "Supplier",
   "User",
   "StockAdjustmentReason",
+  "Company",
+  "Role",
+  // --- yetki: rol izinleri ve üyelikler ---
+  "RolePermission",
+  "UserCompanyRole",
+  "AuditLog",
   // --- ürün ağacı ---
   "Product",
   "ProductVariant",
@@ -69,13 +75,16 @@ export const YEDEK_TABLOLARI = [
  *   1 — ilk sürüm (10.08.2026)
  *   2 — Supplier, User, Settlement, SettlementItem, Compensation eklendi
  *       ve tablo sırası bağımlılık sırasına çevrildi (12.08.2026)
+ *   4 — Company, Role, RolePermission, UserCompanyRole, AuditLog
+ *       eklendi (13.08.2026). Kapsam bekçisi migration'dan hemen sonra
+ *       kırmızı yandı; aynı pakette kapatıldı.
  *   3 — StockAdjustmentReason eklendi (12.08.2026). Bu kez unutulmadı:
  *       `yedek:dogrula` kapsam bekçisi migration'dan hemen sonra yakaladı.
  *
  * Sürüm 1 dosyalar OKUNABİLİR kalır; geri yükleme ekranı eksik tabloları
  * tek tek sayar ve uyarır — sessizce "tamam" demez.
  */
-export const YEDEK_SURUMU = 3;
+export const YEDEK_SURUMU = 4;
 
 export type YedekDosyasi = {
   bicim: string;
