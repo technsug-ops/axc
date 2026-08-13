@@ -35,7 +35,8 @@
     "yetki:dogrula": "tsx scripts/yetki-dogrula.ts",
     "baglanti:olc": "tsx scripts/baglanti-olc.ts",
     "canli:yedek": "tsx scripts/canli-yedek.ts",
-    "canli:ham-yedek": "tsx scripts/canli-ham-yedek.ts"
+    "canli:ham-yedek": "tsx scripts/canli-ham-yedek.ts",
+    "canli:yetki": "tsx scripts/canli-yetki-seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

@@ -58,6 +58,63 @@ export async function yetkiSeed(prisma: PrismaClient) {
   });
   console.log(`${SAHIP_ROLU.padEnd(15)}: ${TUM_IZINLER.length} izin (sistem rolü)`);
 
+  /**
+   * --- 2b) TAM YETKİLİ ROLLER: ADA DEĞİL, İZİN KÜMESİNE BAK ---
+   *
+   * 13.08.2026'DA CANLIDA YAKALANDI: `/iadeler` menüde göründü ama tıklayınca
+   * 404 verdi. Sebep, kullanıcının rolünün "Sahip" DEĞİL "CEO" olmasıydı —
+   * kendi rolünü açmıştı. Seed rolü ADIYLA aradığı için yeni izin ona hiç
+   * ulaşmadı; sahip, kendi sistemindeki yeni ekranı göremedi.
+   *
+   * KURAL: bu deploy'dan ÖNCE bütün izinlere sahip olan bir rol, bu deploy'dan
+   * SONRA da bütün izinlere sahip olmalıdır. Adı ne olursa olsun.
+   *
+   * Ölçüt izin KÜMESİDİR, ad değil — `lib/yetki/koruma.ts` kendini kilitleme
+   * korumasında da aynı ölçüt kullanılıyor. İsim bir etikettir, yetki değil.
+   *
+   * Yalnız `SONRADAN_DOGAN` anahtarları eklenir; başka hiçbir izne dokunulmaz.
+   * Kısıtlı roller (Operasyon gibi) bu kuraldan ETKİLENMEZ, çünkü onlar zaten
+   * "bütün izinlere sahip" değildir.
+   */
+  const SONRADAN_DOGAN: string[] = [
+    // 13.08.2026 — /iadeler ekranı yazıldı.
+    "iade.gor",
+  ];
+
+  {
+    const eskiKume = TUM_IZINLER.filter(
+      (i) => !SONRADAN_DOGAN.includes(i),
+    );
+
+    const roller = await prisma.role.findMany({
+      where: { name: { not: SAHIP_ROLU } },
+      select: {
+        id: true,
+        name: true,
+        izinler: { select: { permissionKey: true } },
+      },
+    });
+
+    for (const rol of roller) {
+      const sahipOldugu = new Set(rol.izinler.map((i) => i.permissionKey));
+      const eskidenTamYetkili = eskiKume.every((i) => sahipOldugu.has(i));
+      if (!eskidenTamYetkili) continue;
+
+      const eksik = SONRADAN_DOGAN.filter((i) => !sahipOldugu.has(i));
+      if (eksik.length === 0) continue;
+
+      await prisma.rolePermission.createMany({
+        data: eksik.map((permissionKey) => ({
+          roleId: rol.id,
+          permissionKey,
+        })),
+      });
+      console.log(
+        `${rol.name.padEnd(15)}: tam yetkili rol, +${eksik.length} yeni izin (${eksik.join(", ")})`,
+      );
+    }
+  }
+
   // --- 3) OPERASYON: yalnız YOKSA kurulur ---
   const mevcutOperasyon = await prisma.role.findUnique({
     where: { name: OPERASYON_ROLU },
