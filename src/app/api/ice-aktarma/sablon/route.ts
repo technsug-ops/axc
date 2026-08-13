@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { apiIzni } from "@/lib/yetki";
 import { sablonMetinleri } from "@/lib/ice-aktarma/metinler";
 import { sablonVerisi } from "@/lib/ice-aktarma/referans";
 import { sablonUret } from "@/lib/ice-aktarma/sablon";
@@ -18,6 +19,9 @@ import { sablonUret } from "@/lib/ice-aktarma/sablon";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const red = await apiIzni("veri.aktar");
+  if (red) return red;
+
   const t = await getTranslations("IceAktarma");
 
   const [metinler, veri] = await Promise.all([

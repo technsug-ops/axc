@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { apiIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 
 import {
@@ -39,6 +40,9 @@ type Yanit =
   | { durum: "COKTU"; mesaj: string };
 
 export async function POST(istek: Request) {
+  const red = await apiIzni("veri.aktar");
+  if (red) return red;
+
   const t = await getTranslations("IceAktarma");
 
   let form: FormData;

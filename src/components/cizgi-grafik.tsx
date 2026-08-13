@@ -85,6 +85,7 @@ export function CizgiGrafik({
   net2Adi,
   bicimle,
   bosMesaj,
+  net2Goster = true,
 }: {
   noktalar: GrafikNoktasi[];
   gelirAdi: string;
@@ -92,8 +93,18 @@ export function CizgiGrafik({
   /** Tutarı ekran biçimine çevirir — dil altyapısından gelir. */
   bicimle: (deger: number) => string;
   bosMesaj: string;
+  /**
+   * NET-2 çizilsin mi. `satis.kar.gor` izni olmayan kullanıcıda KAPALI olur.
+   *
+   * Kapatınca çizgi silinmez, ASIL ÇİZGİ CİRO OLUR: bu grafik NET-2 etrafında
+   * kurulu (alan dolgusu, noktalar, eksen sınırları ondan gelir). Sadece
+   * gizleseydik geriye kesikli, soluk, tek başına yetim bir ciro çizgisi
+   * kalırdı — grafiği bozuk gösterirdi. Eksen de yalnız cirodan hesaplanır;
+   * yoksa boşluk NET-2'nin nerede olduğunu ele verirdi.
+   */
+  net2Goster?: boolean;
 }) {
-  const doluMu = noktalar.some((n) => n.gelir !== 0 || n.net2 !== 0);
+  const doluMu = noktalar.some((n) => n.gelir !== 0 || (net2Goster && n.net2 !== 0));
   if (noktalar.length === 0 || !doluMu) {
     return (
       <p className="text-muted-foreground py-8 text-center text-sm">
@@ -102,7 +113,14 @@ export function CizgiGrafik({
     );
   }
 
-  const y = eksen(noktalar.flatMap((n) => [n.gelir, n.net2]));
+  /** Kalın çizgi + alan + noktalar bu seriyi izler. */
+  const anaSeri = (n: GrafikNoktasi) => (net2Goster ? n.net2 : n.gelir);
+
+  const y = eksen(
+    net2Goster
+      ? noktalar.flatMap((n) => [n.gelir, n.net2])
+      : noktalar.map((n) => n.gelir),
+  );
 
   // Tek noktalı seride payda sıfır olurdu; o durumda nokta ortaya konur.
   const adimX =
@@ -116,7 +134,7 @@ export function CizgiGrafik({
     noktalar.map((n, i) => `${x(i)},${yKonum(sec(n))}`).join(" ");
 
   const sifirY = yKonum(0);
-  const alan = `${x(0)},${sifirY} ${cizgi((n) => n.net2)} ${x(noktalar.length - 1)},${sifirY}`;
+  const alan = `${x(0)},${sifirY} ${cizgi(anaSeri)} ${x(noktalar.length - 1)},${sifirY}`;
 
   const isaretler: number[] = [];
   for (let d = y.alt; d <= y.ust + y.adim / 2; d += y.adim) isaretler.push(d);
@@ -173,10 +191,10 @@ export function CizgiGrafik({
           />
         ) : null}
 
-        {/* --- NET-2 alanı ve çizgisi (kalın, dolu) --- */}
+        {/* --- ana seri: alan ve çizgi (kalın, dolu) --- */}
         <polygon points={alan} className="text-foreground" fill="currentColor" opacity={0.08} />
         <polyline
-          points={cizgi((n) => n.net2)}
+          points={cizgi(anaSeri)}
           className="text-foreground"
           fill="none"
           stroke="currentColor"
@@ -185,17 +203,19 @@ export function CizgiGrafik({
           strokeLinecap="round"
         />
 
-        {/* --- ciro çizgisi (kesikli, soluk) --- */}
-        <polyline
-          points={cizgi((n) => n.gelir)}
-          className="text-muted-foreground"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeDasharray="6 4"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
+        {/* --- ciro çizgisi (kesikli, soluk) — ciro zaten ana çizgiyse yok --- */}
+        {net2Goster ? (
+          <polyline
+            points={cizgi((n) => n.gelir)}
+            className="text-muted-foreground"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeDasharray="6 4"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        ) : null}
 
         {/* --- nokta işaretleri --- */}
         <g className="text-foreground">
@@ -203,7 +223,7 @@ export function CizgiGrafik({
             <circle
               key={n.tamEtiket}
               cx={x(i)}
-              cy={yKonum(n.net2)}
+              cy={yKonum(anaSeri(n))}
               r={3.5}
               fill="currentColor"
             />
@@ -234,22 +254,24 @@ export function CizgiGrafik({
           <svg width={22} height={8} aria-hidden="true" className="text-foreground">
             <line x1={0} y1={4} x2={22} y2={4} stroke="currentColor" strokeWidth={2.5} />
           </svg>
-          {net2Adi}
+          {net2Goster ? net2Adi : gelirAdi}
         </span>
-        <span className="flex items-center gap-2">
-          <svg width={22} height={8} aria-hidden="true">
-            <line
-              x1={0}
-              y1={4}
-              x2={22}
-              y2={4}
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeDasharray="6 4"
-            />
-          </svg>
-          {gelirAdi}
-        </span>
+        {net2Goster ? (
+          <span className="flex items-center gap-2">
+            <svg width={22} height={8} aria-hidden="true">
+              <line
+                x1={0}
+                y1={4}
+                x2={22}
+                y2={4}
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeDasharray="6 4"
+              />
+            </svg>
+            {gelirAdi}
+          </span>
+        ) : null}
       </div>
     </div>
   );

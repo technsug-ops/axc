@@ -164,3 +164,27 @@ export const parolaDegismeliMi = cache(async (): Promise<boolean> => {
   });
   return kayit?.mustChangePassword ?? false;
 });
+
+/**
+ * API UCU KORUMASI — her route handler'ın ilk satırı.
+ *
+ *     export async function GET(istek: Request) {
+ *       const red = await apiIzni("veri.aktar");
+ *       if (red) return red;
+ *       ...
+ *     }
+ *
+ * NEDEN AYRI: sayfada `notFound()`, action'da hata fırlatılıyor. API'de
+ * ikisi de yanlış — makine okunur bir yanıt gerekir.
+ *
+ * 13.08.2026'DA BULUNDU: 10 API ucunun HİÇBİRİNDE yetki kontrolü yoktu.
+ * Yalnız `proxy.ts` giriş arıyordu, yani GİRİŞİ OLAN HERKES `/api/yedek`
+ * ile tüm veritabanını indirebiliyor, `/api/geri-yukle/uygula` ile
+ * silebiliyordu. Bekçi yalnız sayfa ve action tarıyordu — kör noktasıydı.
+ * Bekçiye API bölümü eklendi.
+ */
+export async function apiIzni(izin: Izin): Promise<Response | null> {
+  const baglam = await yetkiBaglami();
+  if (baglam?.izinler.has(izin)) return null;
+  return Response.json({ durum: "YETKISIZ", izin }, { status: 403 });
+}

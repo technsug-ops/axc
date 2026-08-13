@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { apiIzni } from "@/lib/yetki";
 import {
   listeGecerliMi,
   listeSayfasi,
@@ -19,6 +20,9 @@ export async function GET(
   istek: Request,
   { params }: { params: Promise<{ liste: string }> },
 ) {
+  const red = await apiIzni("veri.aktar");
+  if (red) return red;
+
   const { liste } = await params;
   const t = await getTranslations("DisaAktarma");
   const url = new URL(istek.url);

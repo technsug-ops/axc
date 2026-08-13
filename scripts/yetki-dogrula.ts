@@ -160,6 +160,105 @@ const SAYFA_ISTISNALARI = new Map<string, string>([
 }
 
 // ===========================================================================
+console.log("\n2b) KORUMASIZ API UCU BEKÇİSİ");
+// ===========================================================================
+/**
+ * 13.08.2026'DA AÇILDI — ve açılır açılmaz 9 korumasız uç buldu.
+ *
+ * Bekçinin İLK hâli yalnız sayfa ve action tarıyordu; 10 API ucunun
+ * hiçbirinde yetki kontrolü YOKTU. Girişi olan herkes `/api/yedek` ile tüm
+ * veritabanını indirebiliyor, `/api/geri-yukle/uygula` ile silebiliyordu.
+ *
+ * DERS: bekçinin kendisi de eksik olabilir. Kapsamı, korunacak yüzeyin
+ * TAMAMINI saymalı — sayfa + action + API. Kör noktası olan bir bekçi,
+ * olmayan bir bekçiden daha tehlikelidir: yeşil yanar ve güven verir.
+ */
+const API_ISTISNALARI = new Map<string, string>([
+  [
+    "src/app/api/yedek/otomatik/route.ts",
+    "Vercel Cron çağırır; kendi CRON_SECRET koruması var, tarayıcı oturumu taşıyamaz",
+  ],
+]);
+{
+  const korumasiz: string[] = [];
+  let korumali = 0;
+
+  for (const yol of KAYNAKLAR) {
+    const anahtar = yol.replace(/\\/g, "/");
+    if (!/\/api\/.*route\.ts$/.test(anahtar)) continue;
+    if (API_ISTISNALARI.has(anahtar)) continue;
+
+    const icerik = readFileSync(yol, "utf8");
+    if (/apiIzni\(|yetkiIste\(|izinVarMi\(/.test(icerik)) korumali++;
+    else korumasiz.push(anahtar);
+  }
+
+  console.log(`        ${korumali} korumalı · ${korumasiz.length} KORUMASIZ`);
+  kontrol(
+    "her API ucu yetki istiyor",
+    korumasiz.length === 0,
+    korumasiz.length ? korumasiz.join("\n         ") : undefined,
+  );
+  for (const [yol, sebep] of API_ISTISNALARI) {
+    kontrol(
+      `  istisna gerekçeli: ${yol.split("/").slice(-2).join("/")}`,
+      sebep.length > 10,
+    );
+  }
+}
+
+// ===========================================================================
+console.log("\n2c) NET KÂR SIZINTI BEKÇİSİ");
+// ===========================================================================
+/**
+ * 13.08.2026'DA KULLANICI YAKALADI: "Operasyon kullanıcısı marjları görmüyor
+ * ama panelde toplu görüyor."
+ *
+ * Satış listesinde NET-2 doğru şekilde gizlenmişti. Panel unutuldu — çünkü
+ * panel "herkese açık sayfa" istisnasındaydı ve bekçi sayfanın AÇILDIĞINI
+ * denetliyordu, İÇİNDE NE YAZDIĞINI değil. Marj tek tek gizlenip toplamı
+ * açıkta bırakılırsa gizleme diye bir şey yoktur.
+ *
+ * KURAL: NET-1/NET-2 gösteren her sayfa ya `satis.kar.gor` sorar, ya da
+ * OPERASYON'un elinde OLMAYAN bir izinle tümüyle kapalıdır (/rapor, /hakedis
+ * böyle). İkisi de yoksa sızıntıdır.
+ */
+{
+  const sizintili: string[] = [];
+  let temiz = 0;
+
+  for (const yol of KAYNAKLAR) {
+    if (!/[\\/]page\.tsx$/.test(yol)) continue;
+    const icerik = readFileSync(yol, "utf8");
+    if (!/\bnet1|\bnet2|Net1|Net2/.test(icerik)) continue;
+
+    const anahtar = yol.replace(/\\/g, "/");
+
+    // 1. yol: alanı doğrudan izne bağlamış.
+    if (icerik.includes("satis.kar.gor")) {
+      temiz++;
+      continue;
+    }
+
+    // 2. yol: sayfanın kapısı zaten OPERASYON'a kapalı.
+    const kapi = [...icerik.matchAll(/sayfaIzni\("([^"]+)"\)/g)].map((e) => e[1]);
+    const operasyonAcabilir =
+      kapi.length === 0 ||
+      kapi.some((i) => (OPERASYON_IZINLERI as readonly string[]).includes(i));
+
+    if (operasyonAcabilir) sizintili.push(`${anahtar}  (kapı: ${kapi.join(", ") || "YOK"})`);
+    else temiz++;
+  }
+
+  console.log(`        ${temiz} temiz · ${sizintili.length} SIZINTILI`);
+  kontrol(
+    "NET kâr gösteren her sayfa ya izin sorar ya tümüyle kapalı",
+    sizintili.length === 0,
+    sizintili.length ? sizintili.join("\n         ") : undefined,
+  );
+}
+
+// ===========================================================================
 console.log("\n3) İZİN LİSTESİ TUTARLILIĞI");
 // ===========================================================================
 {

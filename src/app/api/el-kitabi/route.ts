@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { apiIzni } from "@/lib/yetki";
 import { bicimlendirici } from "@/lib/bicim";
 import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
 import { elKitabiTekDosya } from "@/lib/el-kitabi/uret";
@@ -17,6 +18,9 @@ import { elKitabiTekDosya } from "@/lib/el-kitabi/uret";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const red = await apiIzni("elkitabi.gor");
+  if (red) return red;
+
   const t = await getTranslations("ElKitabi");
   const bicim = await bicimlendirici();
 

@@ -1,4 +1,5 @@
 import { farkRaporu } from "@/lib/geri-yukle";
+import { apiIzni } from "@/lib/yetki";
 import { mevcutSatirSayilari } from "@/lib/geri-yukle-calistir";
 
 import { kaynagiOku, metniCoz } from "../ortak";
@@ -19,6 +20,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function POST(istek: Request) {
+  const red = await apiIzni("veri.aktar");
+  if (red) return red;
+
   const kaynak = await kaynagiOku(istek);
   if (!kaynak.tamam) {
     return Response.json({ durum: "KAYNAK_HATASI", ...kaynak }, { status: 400 });

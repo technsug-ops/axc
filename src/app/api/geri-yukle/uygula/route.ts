@@ -1,5 +1,6 @@
 import { put } from "@vercel/blob";
 
+import { apiIzni } from "@/lib/yetki";
 import { onayGecerliMi } from "@/lib/geri-yukle";
 import { geriYukle } from "@/lib/geri-yukle-calistir";
 import { yedegiMetneCevir, yedekUret } from "@/lib/yedek";
@@ -33,6 +34,9 @@ export const maxDuration = 300;
 const KLASOR = "yedek";
 
 export async function POST(istek: Request) {
+  const red = await apiIzni("veri.aktar");
+  if (red) return red;
+
   // İstek gövdesi bir kez okunabilir; onay da aynı formdan gelir.
   const kopya = istek.clone();
   const form = await kopya.formData().catch(() => null);

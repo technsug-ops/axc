@@ -1,3 +1,4 @@
+import { apiIzni } from "@/lib/yetki";
 import { get } from "@vercel/blob";
 
 /**
@@ -31,6 +32,9 @@ export const dynamic = "force-dynamic";
 const AD_KALIBI = /^(selliora-\d{4}-\d{2}-\d{2}|guvenlik-[\dTZ:.-]+)\.json$/;
 
 export async function GET(istek: Request) {
+  const red = await apiIzni("veri.aktar");
+  if (red) return red;
+
   const ad = new URL(istek.url).searchParams.get("ad") ?? "";
 
   if (!AD_KALIBI.test(ad)) {

@@ -1,3 +1,4 @@
+import { apiIzni } from "@/lib/yetki";
 import {
   hakedisDenetle,
   hakedisYaz,
@@ -32,6 +33,9 @@ function yanitla(govde: Yanit, durum = 200) {
 }
 
 export async function POST(istek: Request) {
+  const red = await apiIzni("hakedis.gor");
+  if (red) return red;
+
   let form: FormData;
   try {
     form = await istek.formData();

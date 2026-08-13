@@ -29,6 +29,7 @@ import {
   type PanelSatisi,
 } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
+import { izinVarMi } from "@/lib/yetki";
 
 import type { Currency } from "@/generated/prisma/enums";
 
@@ -61,6 +62,12 @@ export default async function AnaSayfa({
 }: {
   searchParams: Promise<{ kanal?: string; para?: string }>;
 }) {
+  // PANEL HERKESE AÇIK ama NET-2 DEĞİL. 13.08.2026'da kullanıcı yakaladı:
+  // satış listesinde marj gizliydi, panelde TOPLU görünüyordu.
+  // `satis.kar.gor` NET-2 KAVRAMINI yönetir — nerede görünürse orada.
+  // Bu yeni bir alan-izni değil, aynı iznin aynı kavrama uygulanması.
+  const karGorunur = await izinVarMi("satis.kar.gor");
+
   const parametreler = await searchParams;
   const t = await getTranslations("Panel");
   const bicim = await bicimlendirici();
@@ -244,8 +251,10 @@ export default async function AnaSayfa({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* --- üç büyük rakam --- */}
-              <div className="grid gap-3 sm:grid-cols-3">
+              {/* --- büyük rakamlar: NET-2 gizliyse iki sütun, boşluk kalmaz --- */}
+              <div
+                className={`grid gap-3 ${karGorunur ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+              >
                 <div className="space-y-1 rounded-lg border p-4">
                   <div className="text-muted-foreground text-xs">
                     {t("satisAdedi")}
@@ -258,20 +267,28 @@ export default async function AnaSayfa({
                     {bicim.para(blok.toplamGelir, blok.paraBirimi)}
                   </div>
                 </div>
-                <div className="space-y-1 rounded-lg border p-4">
-                  <div className="text-muted-foreground text-xs">{t("net2")}</div>
-                  <div className="text-2xl font-semibold">
-                    {bicim.para(blok.toplamNet2, blok.paraBirimi)}
+                {karGorunur ? (
+                  <div className="space-y-1 rounded-lg border p-4">
+                    <div className="text-muted-foreground text-xs">
+                      {t("net2")}
+                    </div>
+                    <div className="text-2xl font-semibold">
+                      {bicim.para(blok.toplamNet2, blok.paraBirimi)}
+                    </div>
+                    <div className="text-muted-foreground text-xs">
+                      {t("net2Aciklama")}
+                    </div>
                   </div>
-                  <div className="text-muted-foreground text-xs">
-                    {t("net2Aciklama")}
-                  </div>
-                </div>
+                ) : null}
               </div>
 
-              {/* --- kârı hesaplanamayanlar: SIFIR SAYILMAZ, söylenir --- */}
-              {blok.hesaplanamayanAdet > 0 ||
-              blok.hesaplanamayanIadeAdedi > 0 ? (
+              {/* --- kârı hesaplanamayanlar: SIFIR SAYILMAZ, söylenir ---
+                  Kâr göremeyen kullanıcıya gösterilmez: uyarı kâr hakkında ve
+                  "sorunluları gör" düğmesi kâr süzgecine gider — elinden
+                  gelecek bir iş yok, yalnız kafa karıştırır. */}
+              {karGorunur &&
+              (blok.hesaplanamayanAdet > 0 ||
+                blok.hesaplanamayanIadeAdedi > 0) ? (
                 <div className="flex flex-wrap items-center gap-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
                   <p className="space-y-1 text-sm font-medium text-amber-800 dark:text-amber-300">
                     {blok.hesaplanamayanAdet > 0 ? (
@@ -308,7 +325,9 @@ export default async function AnaSayfa({
                         {t("satisAdedi")}
                       </TableHead>
                       <TableHead className="text-right">{t("ciro")}</TableHead>
-                      <TableHead className="text-right">{t("net2")}</TableHead>
+                      {karGorunur ? (
+                        <TableHead className="text-right">{t("net2")}</TableHead>
+                      ) : null}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -321,21 +340,26 @@ export default async function AnaSayfa({
                         <TableCell className="text-right whitespace-nowrap">
                           {bicim.para(kanal.gelir, blok.paraBirimi)}
                         </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          {bicim.para(kanal.net2, blok.paraBirimi)}
-                          {/* İade varsa rakamın neden düştüğü satırda yazar —
-                              yoksa "ciro yüksek, kâr düşük" bilmecesi olur. */}
-                          {kanal.iadeAdedi > 0 ? (
-                            <span className="text-muted-foreground block text-xs">
-                              {t("kanalIade", { sayi: kanal.iadeAdedi })}
-                            </span>
-                          ) : null}
-                          {kanal.hesaplanamayanAdet > 0 ? (
-                            <span className="text-muted-foreground block text-xs">
-                              {t("kanalEksik", { sayi: kanal.hesaplanamayanAdet })}
-                            </span>
-                          ) : null}
-                        </TableCell>
+                        {/* İade/eksik notları BU HÜCREYE ait: ciro iadeden
+                            etkilenmez, düşen rakam NET-2'dir. Sütun gizlenince
+                            notlar da gider — dayanağı kalmaz. */}
+                        {karGorunur ? (
+                          <TableCell className="text-right whitespace-nowrap">
+                            {bicim.para(kanal.net2, blok.paraBirimi)}
+                            {/* İade varsa rakamın neden düştüğü satırda yazar —
+                                yoksa "ciro yüksek, kâr düşük" bilmecesi olur. */}
+                            {kanal.iadeAdedi > 0 ? (
+                              <span className="text-muted-foreground block text-xs">
+                                {t("kanalIade", { sayi: kanal.iadeAdedi })}
+                              </span>
+                            ) : null}
+                            {kanal.hesaplanamayanAdet > 0 ? (
+                              <span className="text-muted-foreground block text-xs">
+                                {t("kanalEksik", { sayi: kanal.hesaplanamayanAdet })}
+                              </span>
+                            ) : null}
+                          </TableCell>
+                        ) : null}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -354,10 +378,14 @@ export default async function AnaSayfa({
                         etiket: t("ciro"),
                         deger: bicim.para(kanal.gelir, blok.paraBirimi),
                       },
-                      {
-                        etiket: t("net2"),
-                        deger: bicim.para(kanal.net2, blok.paraBirimi),
-                      },
+                      ...(karGorunur
+                        ? [
+                            {
+                              etiket: t("net2"),
+                              deger: bicim.para(kanal.net2, blok.paraBirimi),
+                            },
+                          ]
+                        : []),
                     ]}
                   />
                 ))}
@@ -399,6 +427,7 @@ export default async function AnaSayfa({
             net2Adi={t("net2")}
             bicimle={(deger) => bicim.para(deger, seciliPara)}
             bosMesaj={t("grafikBos")}
+            net2Goster={karGorunur}
           />
 
           {/* Grafiğin okunabilir hâli — dokunmatik cihazda ve ekran
@@ -410,7 +439,9 @@ export default async function AnaSayfa({
                   <TableHead>{t("ay")}</TableHead>
                   <TableHead className="text-right">{t("satisAdedi")}</TableHead>
                   <TableHead className="text-right">{t("ciro")}</TableHead>
-                  <TableHead className="text-right">{t("net2")}</TableHead>
+                  {karGorunur ? (
+                    <TableHead className="text-right">{t("net2")}</TableHead>
+                  ) : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -423,19 +454,21 @@ export default async function AnaSayfa({
                     <TableCell className="text-right whitespace-nowrap">
                       {bicim.para(nokta.gelir, seciliPara)}
                     </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {bicim.para(nokta.net2, seciliPara)}
-                      {nokta.iadeAdedi > 0 ? (
-                        <span className="text-muted-foreground block text-xs">
-                          {t("kanalIade", { sayi: nokta.iadeAdedi })}
-                        </span>
-                      ) : null}
-                      {nokta.hesaplanamayanAdet > 0 ? (
-                        <span className="text-muted-foreground block text-xs">
-                          {t("kanalEksik", { sayi: nokta.hesaplanamayanAdet })}
-                        </span>
-                      ) : null}
-                    </TableCell>
+                    {karGorunur ? (
+                      <TableCell className="text-right whitespace-nowrap">
+                        {bicim.para(nokta.net2, seciliPara)}
+                        {nokta.iadeAdedi > 0 ? (
+                          <span className="text-muted-foreground block text-xs">
+                            {t("kanalIade", { sayi: nokta.iadeAdedi })}
+                          </span>
+                        ) : null}
+                        {nokta.hesaplanamayanAdet > 0 ? (
+                          <span className="text-muted-foreground block text-xs">
+                            {t("kanalEksik", { sayi: nokta.hesaplanamayanAdet })}
+                          </span>
+                        ) : null}
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))}
               </TableBody>
