@@ -274,6 +274,13 @@ export type IadeKaydiGirdisi = {
   returnType: ReturnType;
   occurredAt: Date;
   note: string | null;
+  /** Kaydı giren kullanıcı. Oturumdan gelir, formdan DEĞİL. */
+  userId: string | null;
+  /**
+   * Değişim ürününün müşteriye teslim tarihi — hakediş vadesi buradan
+   * yeniden başlar. Değişim yoksa null.
+   */
+  degisimTeslimTarihi: Date | null;
   iadeKargosu: number | null;
   yenidenGonderimKargosu: number | null;
   ceza: number | null;
@@ -440,6 +447,8 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
         returnType: girdi.returnType,
         occurredAt: girdi.occurredAt,
         note: girdi.note,
+        userId: girdi.userId,
+        exchangeDeliveredAt: girdi.degisimTeslimTarihi,
         returnCargoAmount:
           girdi.iadeKargosu === null ? null : String(girdi.iadeKargosu),
         reshipCargoAmount:

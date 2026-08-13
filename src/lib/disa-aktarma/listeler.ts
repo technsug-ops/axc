@@ -1,7 +1,14 @@
 import { getTranslations } from "next-intl/server";
 
 import { alimAramaKosulu } from "@/lib/alim-arama";
-import { ayKaydir, gunDegeri, gunMetni } from "@/lib/donem";
+import {
+  LISTE_PENCERELERI,
+  ayKaydir,
+  gunDegeri,
+  gunMetni,
+  pencereOlustur,
+  type PencereTuru,
+} from "@/lib/donem";
 import { envanterVerisi } from "@/lib/envanter-veri";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { prisma } from "@/lib/prisma";
@@ -29,6 +36,7 @@ export const LISTELER = [
   "stok",
   "giderler",
   "envanter-degeri",
+  "iadeler",
 ] as const;
 export type ListeAnahtari = (typeof LISTELER)[number];
 
@@ -60,7 +68,131 @@ export async function listeSayfasi(
       return giderlerSayfasi(p);
     case "envanter-degeri":
       return envanterDegeriSayfasi();
+    case "iadeler":
+      return iadelerSayfasi(p);
   }
+}
+
+/**
+ * İADELER — EKRANDAKİ SÜZGEÇ BİREBİR UYGULANIR.
+ *
+ * Dönem, kanal, tür ve hasar süzgeçleri ekranla AYNI biçimde kurulur;
+ * ayrı yazılsalardı liste bir şey, inen dosya başka şey söylerdi (alım
+ * aramasında tam olarak bu yaşandı).
+ */
+async function iadelerSayfasi(p: Parametreler): Promise<Sayfa> {
+  const tBaslik = await getTranslations("Basliklar");
+  const ortak = await getTranslations("Ortak");
+  const tIadeler = await getTranslations("Iadeler");
+  const tIade = await getTranslations("Iade");
+  const tTur = await getTranslations("IadeTuru");
+
+  const istenen = (p.pencere ?? "SON_30_GUN") as PencereTuru;
+  const tur = (LISTE_PENCERELERI as readonly string[]).includes(istenen)
+    ? istenen
+    : "SON_30_GUN";
+
+  let pencere;
+  try {
+    pencere = pencereOlustur(
+      tur,
+      new Date(),
+      tur === "OZEL" && p.baslangic && p.bitis
+        ? { baslangic: p.baslangic, bitis: p.bitis }
+        : undefined,
+    );
+  } catch {
+    pencere = pencereOlustur("SON_30_GUN", new Date());
+  }
+
+  const kanal = (p.kanal ?? "").trim();
+  const turFiltresi = (p.tur ?? "").trim();
+  const hasar = (p.hasar ?? "").trim();
+
+  const iadeler = await prisma.return.findMany({
+    where: {
+      occurredAt: { gte: pencere.baslangic, lt: pencere.bitisHaric },
+      ...(kanal
+        ? { sale: { channelAccount: { channel: { code: kanal } } } }
+        : {}),
+      ...(["UNDELIVERED", "NORMAL", "DISPUTED"].includes(turFiltresi)
+        ? { returnType: turFiltresi as never }
+        : {}),
+      ...(hasar === "var" || hasar === "talepsiz"
+        ? { items: { some: { damagedQuantity: { gt: 0 } } } }
+        : {}),
+    },
+    include: {
+      sale: {
+        select: {
+          code: true,
+          channelAccount: {
+            select: { name: true, channel: { select: { name: true } } },
+          },
+        },
+      },
+      user: { select: { name: true, email: true } },
+      items: {
+        include: {
+          variant: {
+            select: { sku: true, product: { select: { name: true } } },
+          },
+        },
+      },
+    },
+    orderBy: { occurredAt: "desc" },
+  });
+
+  // HER SATIR BİR İADE KALEMİ — hangi ürünün döndüğü satır satır okunur.
+  const satirlar = iadeler.flatMap((i) =>
+    i.items.map((k) => [
+      gun(i.occurredAt),
+      i.sale.code,
+      `${i.sale.channelAccount.channel.name} — ${i.sale.channelAccount.name}`,
+      i.code,
+      tTur.has(i.returnType) ? tTur(i.returnType) : i.returnType,
+      k.variant.product.name,
+      k.variant.sku,
+      k.quantity,
+      k.soundQuantity,
+      k.damagedQuantity,
+      k.damageNote,
+      sayi(i.net1Amount),
+      sayi(i.net2Amount),
+      i.profitCurrency,
+      sayi(i.penaltyAmount),
+      sayi(i.returnCargoAmount),
+      sayi(i.reshipCargoAmount),
+      gun(i.exchangeDeliveredAt),
+      i.user?.name ?? i.user?.email ?? "",
+    ]),
+  );
+
+  return {
+    ad: tBaslik("iadeler"),
+    basliklar: [
+      ortak("tarih"),
+      ortak("siparisNo"),
+      ortak("kanalHesabi"),
+      tIade("iadeNo"),
+      tIadeler("turSuzgeci"),
+      ortak("urun"),
+      ortak("sku"),
+      ortak("adet"),
+      tIade("saglamAdet"),
+      tIade("hasarliAdet"),
+      tIade("hasarNotu"),
+      "NET-1",
+      "NET-2",
+      ortak("paraBirimi"),
+      tIadeler("ceza"),
+      tIade("iadeKargosu"),
+      tIade("yenidenGonderim"),
+      tIade("degisimTeslimi"),
+      tIadeler("girenKullanici"),
+    ],
+    satirlar,
+  };
 }
 
 /**

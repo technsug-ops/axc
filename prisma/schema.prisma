@@ -963,6 +963,22 @@ model Return {
   penaltyCurrency Currency?
   penaltyNote     String?   @db.Text
 
+  /// DEĞİŞİM ÜRÜNÜNÜN MÜŞTERİYE TESLİM TARİHİ.
+  ///
+  /// VADE BURADAN YENİDEN BAŞLAR (kullanıcı kararı 13.08.2026): değişimde
+  /// pazaryeri siparişi açık tutar ama hakediş, ORİJİNAL satıştan değil
+  /// yerine giden ürünün tesliminden sayılır. Ölçüldü: `beklenenVade`
+  /// bugün `Sale.soldAt` kullanıyor, yani değişimli satışta beklenen para
+  /// tarihi olduğundan ERKEN çıkıyor.
+  ///
+  /// Boşsa eski davranış sürer (satış tarihi). Kalem değil KAYIT
+  /// seviyesinde: ayda ~1 iade hacminde kalem bazında tarih tutmak
+  /// karşılığı olmayan bir karmaşıklık olurdu.
+  ///
+  /// NOT: hakediş dosyası bir vade taşıyorsa RAPOR KAZANIR; bu alan
+  /// yalnızca rapora düşmemiş satışların TAHMİNİNİ düzeltir.
+  exchangeDeliveredAt DateTime?
+
   /// KİM GİRDİ — 13.08.2026'da eklendi.
   /// StockMovement.userId ile AYNI desen: geçmiş kayıtlar null kalır ve
   /// ekranda "sistem öncesi" görünür; geriye doldurmak olmayan bir bilgiyi

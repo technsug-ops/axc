@@ -145,12 +145,26 @@ export async function hakedisDenetle(
   ];
   const satisKayitlari = await prisma.sale.findMany({
     where: { code: { in: siparisNolar } },
-    select: { id: true, code: true, soldAt: true },
+    select: {
+      id: true,
+      code: true,
+      soldAt: true,
+      // DEĞİŞİMDE VADE YENİDEN BAŞLAR (kullanıcı kararı 13.08.2026):
+      // hakediş, orijinal satıştan değil yerine giden ürünün müşteriye
+      // teslim tarihinden sayılır. En SON teslim kazanır — birden çok
+      // değişim olduysa saat en son gidenden işler.
+      returns: {
+        where: { exchangeDeliveredAt: { not: null } },
+        select: { exchangeDeliveredAt: true },
+        orderBy: { exchangeDeliveredAt: "desc" },
+        take: 1,
+      },
+    },
   });
   const satislar: MevcutSatis[] = satisKayitlari.map((s) => ({
     id: s.id,
     kod: s.code,
-    satisTarihi: s.soldAt,
+    satisTarihi: s.returns[0]?.exchangeDeliveredAt ?? s.soldAt,
   }));
 
   const eslesme = satirlariEslestir(yeniler, satislar);

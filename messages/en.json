@@ -38,7 +38,8 @@
     "duzeltmeNedenleri": "",
     "kullanicilar": "",
     "roller": "",
-    "parolaDegistir": ""
+    "parolaDegistir": "",
+    "iadeler": ""
   },
   "Ortak": {
     "kapat": "",
@@ -114,7 +115,8 @@
     "oran": "",
     "kategori": "",
     "oner": "",
-    "bekleyin": ""
+    "bekleyin": "",
+    "kanal": ""
   },
   "AlimDurumu": {
     "DRAFT": "",
@@ -635,7 +637,8 @@
     "geriYukleme": "",
     "duzeltmeNedenleri": "",
     "kullanicilar": "",
-    "roller": ""
+    "roller": "",
+    "iadeler": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -920,7 +923,9 @@
     "maliyetGeriYok": "",
     "hasarUyarisi": "",
     "tazminatTalebiAc": "",
-    "hasarNotuZorunlu": ""
+    "hasarNotuZorunlu": "",
+    "degisimTeslimi": "",
+    "degisimTeslimiNotu": ""
   },
   "Gider": {
     "baslik": "",
@@ -1869,5 +1874,38 @@
     "bitis": "",
     "araIpucu": "",
     "sonucYok": ""
+  },
+  "Iadeler": {
+    "baslik": "",
+    "bekleyenBildirimler": "",
+    "bildirimYok": "",
+    "bildirimSayisi": "",
+    "donemOzeti": "",
+    "iadeAdedi": "",
+    "urunAdedi": "",
+    "kayipGelir": "",
+    "toplamEtki": "",
+    "cezaToplami": "",
+    "donenMaliyet": "",
+    "donmeyenMaliyet": "",
+    "donmeyenMaliyetNotu": "",
+    "talepsizHasar": "",
+    "talepsizKisa": "",
+    "turSuzgeci": "",
+    "hasarSuzgeci": "",
+    "hasarVar": "",
+    "hasarTalepsiz": "",
+    "etkiNet2": "",
+    "ceza": "",
+    "bosListe": "",
+    "kanalKirilimi": "",
+    "oranTanimi": "",
+    "donemSatisi": "",
+    "iadeOrani": "",
+    "oranYok": "",
+    "ortalamaEtki": "",
+    "enCokIade": "",
+    "enCokIadeNotu": "",
+    "girenKullanici": ""
   }
 }

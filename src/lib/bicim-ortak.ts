@@ -53,6 +53,21 @@ export function bicimOlustur(format: Formatter) {
     ayYil(tarih: Date): string {
       return format.dateTime(tarih, "ayYil");
     },
+
+    /**
+     * %12,5 — oran gösterimi. GİRDİ YÜZDE DEĞERİDİR (12.5), kesir değil.
+     *
+     * Doğrudan `Intl.NumberFormat` ya da elle "%" eklemek YASAK (anayasa):
+     * ondalık ayracı dile göre değişir ve elle biçimlendirme İngilizce
+     * ortamda "12.5" yazıp Türkçe ekranda yanlış görünür.
+     */
+    yuzde(deger: number, basamak = 1): string {
+      return format.number(deger / 100, {
+        style: "percent",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: basamak,
+      });
+    },
   };
 }
 

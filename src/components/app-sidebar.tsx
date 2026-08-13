@@ -19,6 +19,7 @@ import {
   MapPin,
   Package,
   PackageX,
+  Undo2,
   Percent,
   Receipt,
   ShieldCheck,
@@ -67,6 +68,7 @@ const OPERASYON: MenuOgesi[] = [
   { anahtar: "urunler", href: "/urunler", icon: Package, aktif: true },
   { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
   { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
+  { anahtar: "iadeler", href: "/iadeler", icon: Undo2, aktif: true },
   { anahtar: "stok", href: "/stok", icon: Boxes, aktif: true },
   {
     anahtar: "envanterDegeri",

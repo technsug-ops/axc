@@ -99,6 +99,8 @@ export function IadeFormu({
   const [returnType, setReturnType] = useState<ReturnType>("NORMAL");
   const [code, setCode] = useState("");
   const [occurredAt, setOccurredAt] = useState(bugun);
+  // Degisim urununun musteriye teslim tarihi — hakedis vadesi bundan baslar.
+  const [degisimTeslimTarihi, setDegisimTeslimTarihi] = useState("");
   const [note, setNote] = useState("");
 
   const [iadeKargosu, setIadeKargosu] = useState("");
@@ -159,6 +161,7 @@ export function IadeFormu({
       code,
       returnType,
       occurredAt,
+      degisimTeslimTarihi,
       note,
       iadeKargosu: sayiVeyaNull(iadeKargosu),
       yenidenGonderimKargosu: sayiVeyaNull(yenidenGonderim),
@@ -184,6 +187,12 @@ export function IadeFormu({
    * Sunucu da aynı kontrolü yapar (tek doğruluk kaynağı orası); buradaki
    * kopya sadece kullanıcıyı kaydet düğmesine kadar yürütmemek için.
    */
+  /** Gerçekten değişim var mı — teslim tarihi alanı buna bağlı. */
+  const degisimVar = secenekler.some((s) => {
+    const g = girdiler[s.saleItemId];
+    return Math.trunc(sayi(g.iadeAdedi)) > 0 && g.exchangeVariantId !== "";
+  });
+
   const notsuzHasar = secenekler.some((s) => {
     const g = girdiler[s.saleItemId];
     return (
@@ -255,6 +264,23 @@ export function IadeFormu({
                 onChange={(e) => setOccurredAt(e.target.value)}
               />
             </div>
+
+            {/* DEĞİŞİMDE VADE YENİDEN BAŞLAR — alan yalnız gerçekten
+                değişim varken görünür, yoksa boş bir soru işareti olurdu. */}
+            {degisimVar ? (
+              <div className="space-y-2">
+                <Label htmlFor="degisim-teslim">{t("degisimTeslimi")}</Label>
+                <Input
+                  id="degisim-teslim"
+                  type="date"
+                  value={degisimTeslimTarihi}
+                  onChange={(e) => setDegisimTeslimTarihi(e.target.value)}
+                />
+                <p className="text-muted-foreground text-xs">
+                  {t("degisimTeslimiNotu")}
+                </p>
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="iade-no">{t("iadeNo")}</Label>
               <Input

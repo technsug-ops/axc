@@ -38,7 +38,8 @@
     "duzeltmeNedenleri": "Düzeltme nedenleri",
     "kullanicilar": "Kullanıcılar",
     "roller": "Roller",
-    "parolaDegistir": "Parola değiştir"
+    "parolaDegistir": "Parola değiştir",
+    "iadeler": "İadeler"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -114,7 +115,8 @@
     "oran": "Oran",
     "kategori": "Kategori",
     "oner": "Öner",
-    "bekleyin": "Bekleyin..."
+    "bekleyin": "Bekleyin...",
+    "kanal": "Kanal"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",
@@ -635,7 +637,8 @@
     "geriYukleme": "Geri yükleme",
     "duzeltmeNedenleri": "Düzeltme nedenleri",
     "kullanicilar": "Kullanıcılar",
-    "roller": "Roller"
+    "roller": "Roller",
+    "iadeler": "İadeler"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -920,7 +923,9 @@
     "maliyetGeriYok": "Hasarlı mal stoğa dönmez; maliyeti üstünüzde kalır.",
     "hasarUyarisi": "{adet} adet hasarlı mal kaydettiniz — {tutar} maliyet üstünüzde kaldı.",
     "tazminatTalebiAc": "Tazminat talebi aç",
-    "hasarNotuZorunlu": "{urun}: hasarlı adet girdiniz, hasar notu zorunludur. Ne hasarı olduğunu ve kimin tespit ettiğini kısaca yazın."
+    "hasarNotuZorunlu": "{urun}: hasarlı adet girdiniz, hasar notu zorunludur. Ne hasarı olduğunu ve kimin tespit ettiğini kısaca yazın.",
+    "degisimTeslimi": "Değişim ürünü teslim tarihi",
+    "degisimTeslimiNotu": "Hakediş vadesi bu tarihten yeniden başlar. Boş bırakılırsa satış tarihi kullanılır."
   },
   "Gider": {
     "baslik": "Giderler",
@@ -1869,5 +1874,38 @@
     "bitis": "Bitiş",
     "araIpucu": "Yazarak daraltın...",
     "sonucYok": "Eşleşen seçenek yok."
+  },
+  "Iadeler": {
+    "baslik": "İadeler",
+    "bekleyenBildirimler": "Bekleyen bildirimler",
+    "bildirimYok": "Bekleyen iade bildirimi yok.",
+    "bildirimSayisi": "{sayi} bildirim mal bekliyor.",
+    "donemOzeti": "Dönem özeti",
+    "iadeAdedi": "İade adedi",
+    "urunAdedi": "Ürün adedi",
+    "kayipGelir": "Kaybedilen gelir",
+    "toplamEtki": "Toplam iade etkisi",
+    "cezaToplami": "Ceza toplamı",
+    "donenMaliyet": "Stoğa dönen maliyet",
+    "donmeyenMaliyet": "Stoğa dönmeyen maliyet",
+    "donmeyenMaliyetNotu": "Hasarlı mal — maliyeti üstünüzde kaldı.",
+    "talepsizHasar": "Tazminatı açılmamış hasar",
+    "talepsizKisa": "talepsiz",
+    "turSuzgeci": "Tür",
+    "hasarSuzgeci": "Hasar",
+    "hasarVar": "Hasarlı içerenler",
+    "hasarTalepsiz": "Tazminatı açılmamış hasarlılar",
+    "etkiNet2": "İade etkisi (NET-2)",
+    "ceza": "Ceza",
+    "bosListe": "Bu dönemde iade yok.",
+    "kanalKirilimi": "Pazaryeri kırılımı",
+    "oranTanimi": "İade oranı = dönemde gelen iade ÷ dönemde yapılan satış. Pay ve payda farklı siparişlere ait olabilir; bu oran operasyon yükünü ölçer, ürün kalitesini değil.",
+    "donemSatisi": "Dönem satışı",
+    "iadeOrani": "İade oranı",
+    "oranYok": "ölçülemez",
+    "ortalamaEtki": "İade başına ortalama",
+    "enCokIade": "En çok iade edilen ürünler",
+    "enCokIadeNotu": "Tek sorunlu ürün ayın kârını yiyebilir. Hasarlı sütunu ayrı: çok iade edilen ama sağlam dönen ürün (beden/renk) ile hasarlı dönen ürün (kalite) ayrı sorunlardır.",
+    "girenKullanici": "Giren kullanıcı"
   }
 }

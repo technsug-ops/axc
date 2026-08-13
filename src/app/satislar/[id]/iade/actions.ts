@@ -44,6 +44,8 @@ export type IadeFormGirdisi = {
   code: string;
   returnType: ReturnType;
   occurredAt: string;
+  /** Değişim ürününün müşteriye teslim tarihi — hakediş vadesi bundan. */
+  degisimTeslimTarihi: string;
   note: string;
   iadeKargosu: number | null;
   yenidenGonderimKargosu: number | null;
@@ -172,12 +174,27 @@ export type KayitSonucu = { hata?: string };
 export async function iadeOlustur(
   girdi: IadeFormGirdisi,
 ): Promise<KayitSonucu> {
-  await yetkiIste("iade.yaz");
+  const baglam = await yetkiIste("iade.yaz");
 
   const t = await getTranslations("Iade");
 
   const tarih = new Date(girdi.occurredAt);
   if (Number.isNaN(tarih.getTime())) return { hata: t("tarihGecersiz") };
+
+  /**
+   * DEĞİŞİM TESLİM TARİHİ — hakediş vadesi buradan yeniden başlar.
+   * Yalnız gerçekten değişim varsa anlamlıdır; değişim yokken girilmiş
+   * bir tarih sessizce yok sayılır, kayda yazılmaz.
+   */
+  const degisimVar = girdi.kalemler.some(
+    (k) => k.iadeAdedi > 0 && k.exchangeVariantId,
+  );
+  let teslimTarihi: Date | null = null;
+  if (degisimVar && girdi.degisimTeslimTarihi) {
+    const d = new Date(girdi.degisimTeslimTarihi);
+    if (Number.isNaN(d.getTime())) return { hata: t("tarihGecersiz") };
+    teslimTarihi = d;
+  }
 
   const secili = girdi.kalemler.filter((k) => k.iadeAdedi > 0);
   if (secili.length === 0) return { hata: t("hicKalemSecilmedi") };
@@ -225,6 +242,10 @@ export async function iadeOlustur(
       returnType: girdi.returnType,
       occurredAt: tarih,
       note: girdi.note || null,
+      // Kim girdi: OTURUMDAN gelir, formdan değil — form değeri
+      // istemciden gelir ve değiştirilebilir.
+      userId: baglam.kullaniciId,
+      degisimTeslimTarihi: teslimTarihi,
       iadeKargosu: girdi.iadeKargosu,
       yenidenGonderimKargosu: girdi.yenidenGonderimKargosu,
       ceza: girdi.ceza,
