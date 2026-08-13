@@ -21,6 +21,10 @@ import { SayfalamaCubugu } from "@/components/sayfalama";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { sayfaCoz } from "@/lib/sayfalama";
+import {
+  AYRILMIS_SAYILAN_DURUMLAR,
+  ayrilmisAdetler,
+} from "@/lib/iade/bildirim";
 import { sonHareketTarihleri, varyantStoklari } from "@/lib/stok";
 
 import { StokArama } from "./stok-arama";
@@ -70,10 +74,34 @@ export default async function StokSayfasi({
   });
 
   const varyantIdleri = varyantlar.map((v) => v.id);
-  const [stoklar, sonHareketler] = await Promise.all([
+  const [stoklar, sonHareketler, acikBildirimler] = await Promise.all([
     varyantStoklari(varyantIdleri),
     sonHareketTarihleri(varyantIdleri),
+    /**
+     * AYRILMIŞ STOK — AÇIK BİLDİRİMLERDEN ANLIK TÜRETİLİR.
+     *
+     * Ne bir kolon ne bir sayaç: her istekte açık bildirimler okunur.
+     * Kolon tutulsaydı bildirim kapandığında onu düşürmeyi unutmak mümkün
+     * olurdu ve rozet gerçekte olmayan bir rezervasyonu gösterirdi. Böyle
+     * kurulduğu için bildirim kapanır kapanmaz rozet KENDİLİĞİNDEN düşer —
+     * "rezervasyonu serbest bırakmayı unutma" diye bir iş doğmaz.
+     */
+    prisma.returnNotice.findMany({
+      where: {
+        reservedVariantId: { in: varyantIdleri },
+        status: { in: AYRILMIS_SAYILAN_DURUMLAR },
+      },
+      select: { status: true, reservedVariantId: true, reservedQuantity: true },
+    }),
   ]);
+
+  const ayrilmis = ayrilmisAdetler(
+    acikBildirimler.map((b) => ({
+      durum: b.status,
+      reservedVariantId: b.reservedVariantId,
+      reservedQuantity: b.reservedQuantity,
+    })),
+  );
 
   const toplamStok = varyantIdleri.reduce(
     (toplam, id) => toplam + (stoklar.get(id) ?? 0),
@@ -174,6 +202,21 @@ export default async function StokSayfasi({
                     </TableCell>
                     <TableCell className="text-right text-base font-semibold">
                       {stoklar.get(varyant.id) ?? 0}
+                      {/* AYRILMIŞ ROZETİ: fiziksel stoğu DÜŞÜRMEZ, yanında
+                          durur. "3 var ama 1'i söz verilmiş" bilgisi toplama
+                          ekranında kararı değiştirir. */}
+                      {ayrilmis.get(varyant.id) ? (
+                        <span className="block">
+                          <Badge
+                            variant="outline"
+                            className="border-amber-500/50 text-xs font-normal text-amber-700 dark:text-amber-400"
+                          >
+                            {t("ayrilmisRozeti", {
+                              sayi: ayrilmis.get(varyant.id)!,
+                            })}
+                          </Badge>
+                        </span>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">
                       {sonHareketler.get(varyant.id)
@@ -206,6 +249,20 @@ export default async function StokSayfasi({
                     deger: (
                       <span className="text-base font-semibold">
                         {stoklar.get(varyant.id) ?? 0}
+                        {/* Rozet telefonda da görünür: toplama ekranında
+                            birincil cihaz telefon (İlke #8). */}
+                        {ayrilmis.get(varyant.id) ? (
+                          <span className="block">
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500/50 text-xs font-normal text-amber-700 dark:text-amber-400"
+                            >
+                              {t("ayrilmisRozeti", {
+                                sayi: ayrilmis.get(varyant.id)!,
+                              })}
+                            </Badge>
+                          </span>
+                        ) : null}
                       </span>
                     ),
                   },

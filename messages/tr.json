@@ -165,7 +165,8 @@
     "sutunBirimMaliyet": "Birim maliyet",
     "sutunKim": "Kim",
     "gecmisNotu": "Hareketler değiştirilmez ve silinmez. Hatalı bir giriş, ters yönde bir düzeltme kaydıyla giderilir. \"Kim\" sütunu çok kullanıcılı yapıyla (Faz 4) dolacak.",
-    "satisKaynagi": "Satış"
+    "satisKaynagi": "Satış",
+    "ayrilmisRozeti": "{sayi} ayrıldı"
   },
   "Urunler": {
     "baslik": "Ürünler",
