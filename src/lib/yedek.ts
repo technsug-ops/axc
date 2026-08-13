@@ -86,10 +86,14 @@ export async function yedekUret(
     Return: await istemci.return.findMany(),
     ReturnItem: await istemci.returnItem.findMany(),
     ReturnFee: await istemci.returnFee.findMany(),
+    ReturnNotice: await istemci.returnNotice.findMany(),
     StockMovement: await istemci.stockMovement.findMany(),
     Settlement: await istemci.settlement.findMany(),
     SettlementItem: await istemci.settlementItem.findMany(),
     Compensation: await istemci.compensation.findMany(),
+    // ⚠ SATIRLAR yedeklenir, DOSYALAR değil — dosyalar Blob'da kalır.
+    // Aşağıdaki ek manifesti "neyin eksik olduğunu" sayıyla söyler.
+    Attachment: await istemci.attachment.findMany(),
   };
 
   const satirSayilari: Record<string, number> = {};
@@ -106,6 +110,17 @@ export async function yedekUret(
     kargoTarifesiHaric: tarifesiz,
     satirSayilari,
     tablolar,
+    // Dosya, İÇİNDE OLMAYANI da söyler (bkz. yedek-bicim.ts → ekManifesti).
+    ekManifesti: {
+      adet: tablolar.Attachment.length,
+      toplamBayt: tablolar.Attachment.reduce(
+        (t: number, e) => t + (e as { sizeBytes: number }).sizeBytes,
+        0,
+      ),
+      yollar: tablolar.Attachment.map(
+        (e) => (e as { blobPath: string }).blobPath,
+      ),
+    },
   };
 }
 

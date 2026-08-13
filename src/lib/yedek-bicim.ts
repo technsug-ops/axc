@@ -62,12 +62,21 @@ export const YEDEK_TABLOLARI = [
   "Return",
   "ReturnItem",
   "ReturnFee",
+  // İade bildirimi (RMA) — Sale, ProductVariant, Return ve User'a bakar,
+  // bu yüzden dördünden de SONRA gelir.
+  "ReturnNotice",
   // --- stok defteri: yukarıdakilerin hepsine bakabilir, KENDİNE de ---
   "StockMovement",
   // --- hakediş ve tazminat ---
   "Settlement",
   "SettlementItem",
   "Compensation",
+  // --- dosya ekleri ---
+  // ⚠ YALNIZ SATIRLAR YEDEKLENİR, DOSYALARIN KENDİSİ DEĞİL (karar
+  // 13.08.2026). Dosyalar Vercel Blob'da durur. Telafi üçlüsü: bu satırlar
+  // + yedekteki EK MANİFESTİ + geri yükleme ekranındaki "N ek bu dosyada
+  // yok, Blob'da" uyarısı. Blob yedekleme stratejisi ayrı karar maddesi.
+  "Attachment",
 ] as const;
 
 /**
@@ -75,6 +84,9 @@ export const YEDEK_TABLOLARI = [
  *   1 — ilk sürüm (10.08.2026)
  *   2 — Supplier, User, Settlement, SettlementItem, Compensation eklendi
  *       ve tablo sırası bağımlılık sırasına çevrildi (12.08.2026)
+ *   5 — ReturnNotice (RMA bildirimi) ve Attachment eklendi (13.08.2026).
+ *       Attachment'ta YALNIZ SATIRLAR var; dosyalar Blob'da kalır ve JSON
+ *       yedeğe girmez (kullanıcı kararı). Yedek, ek manifesti taşır.
  *   4 — Company, Role, RolePermission, UserCompanyRole, AuditLog
  *       eklendi (13.08.2026). Kapsam bekçisi migration'dan hemen sonra
  *       kırmızı yandı; aynı pakette kapatıldı.
@@ -84,7 +96,7 @@ export const YEDEK_TABLOLARI = [
  * Sürüm 1 dosyalar OKUNABİLİR kalır; geri yükleme ekranı eksik tabloları
  * tek tek sayar ve uyarır — sessizce "tamam" demez.
  */
-export const YEDEK_SURUMU = 4;
+export const YEDEK_SURUMU = 5;
 
 export type YedekDosyasi = {
   bicim: string;
@@ -94,6 +106,24 @@ export type YedekDosyasi = {
   kargoTarifesiHaric: boolean;
   satirSayilari: Record<string, number>;
   tablolar: Record<string, unknown[]>;
+
+  /**
+   * EK MANİFESTİ — dosya, İÇİNDE OLMAYAN şeyi de söyler.
+   *
+   * Ek dosyaları (fotoğraf, fatura) Blob'da durur ve bu JSON'a girmez
+   * (kullanıcı kararı 13.08.2026). Sessizce yok saymak, geri yükleyen
+   * kişiye "her şey burada" yalanını söylerdi. Bu blok sayıyı ve yolları
+   * taşır; geri yükleme ekranı "N ek bu dosyada yok, Blob'da" uyarısını
+   * buradan üretir.
+   *
+   * Sürüm 4 ve öncesi dosyalarda YOKTUR — okuyan taraf yokluğunu
+   * "ek yok" değil "bilinmiyor" saymalıdır.
+   */
+  ekManifesti?: {
+    adet: number;
+    toplamBayt: number;
+    yollar: string[];
+  };
 };
 
 /**

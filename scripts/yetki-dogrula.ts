@@ -303,7 +303,12 @@ console.log("\n3) İZİN LİSTESİ TUTARLILIĞI");
   // listeden düşmek İŞİN BİTTİĞİ anlamına gelir. Gerekçesiz bırakılmaz.
   // 13.08.2026: kullanici.yonet ve rol.yonet ekranları yazıldı, listeden
   // düştüler. Liste boş olması İYİdir — bekleyen izin kalmadı demektir.
-  const BEKLEYEN = new Map<string, string>([]);
+  const BEKLEYEN = new Map<string, string>([
+    [
+      "iade.gor",
+      "13.08.2026 — /iadeler ekranı Teslim A'da yazılıyor; izin ve şema önce açıldı (migration tek seferde). Ekran gelince bu satır DÜŞER.",
+    ],
+  ]);
   for (const [izin, sebep] of BEKLEYEN) {
     kontrol(`  bekleyen izin gerekçeli: ${izin}`, sebep.length > 10, sebep);
   }

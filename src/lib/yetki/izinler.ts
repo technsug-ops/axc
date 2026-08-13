@@ -39,6 +39,7 @@ export const IZINLER = [
   { anahtar: "stok.duzelt", grup: "operasyon" },
   { anahtar: "satis.gor", grup: "operasyon" },
   { anahtar: "satis.yaz", grup: "operasyon" },
+  { anahtar: "iade.gor", grup: "operasyon" },
   { anahtar: "iade.yaz", grup: "operasyon" },
   { anahtar: "elkitabi.gor", grup: "operasyon" },
 
@@ -95,6 +96,12 @@ export const OPERASYON_IZINLERI: readonly Izin[] = [
   "stok.duzelt",
   "satis.gor",
   "satis.yaz",
+  // İADEYİ OPERASYON GİRİYOR — listesini de görmeli.
+  // Kullanıcı kararı 13.08.2026: "iade giren rol iade listesini göremezse
+  // işlevsiz bir rol teslim edilmiş olur." Para sütunları (NET-2 etkisi,
+  // ceza, maliyet) `satis.kar.gor`e bağlı; Operasyon listeyi PARASIZ görür
+  // ve koruma budur — sayfayı tümden kapatmak değil.
+  "iade.gor",
   "iade.yaz",
   "elkitabi.gor",
 ];

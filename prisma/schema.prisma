@@ -50,7 +50,41 @@ enum ProfitStatus {
 enum ReturnType {
   UNDELIVERED // teslim edilemeden döndü; gidiş kargosu zaten yandı
   NORMAL // müşteri aldı, iade etti; dönüş kargosu satıcıda
-  DISPUTED // itiraz KABUL edildi; ürün müşteriye geri gitti, stoğa GİRMEZ
+  /// GEÇ İTİRAZ (rolü netleşti 13.08.2026, kullanıcı kararı).
+  /// İade İŞLENDİKTEN SONRA kazanılan itiraz: mal zaten gelmiş ve kayda
+  /// girmişken pazaryeri sonradan satıcı lehine karar verir; ürün müşteride
+  /// kalır, stoğa GİRMEZ.
+  /// Mal GELMEDEN açılan itiraz artık burada YAŞAMAZ — o, bildirimin
+  /// (ReturnNotice) bir dalıdır ve kabul edilirse Return hiç doğmaz.
+  DISPUTED
+}
+
+/// MÜŞTERİNİN İADE GEREKÇESİ — bildirim anında bilinen tek şey.
+/// Kâr etkisi yok; bu bir sınıflandırmadır ve operasyon kalitesi ölçer.
+enum ReturnReason {
+  DEGISIM // yedek ürün ayrılır, gelince gönderilir
+  DEGISIM_KUSURLU // aynı + müşteri kusur iddia ediyor
+  CALISMIYOR // gelince servise/analize gider, hüküm sonra
+  CAYMA // gelince muayene; sağlamsa onay
+  KULLANILMIS_ITIRAZ // kullanılmış çıktı; pazaryerine itiraz edildi
+  /// BİZİM HATAMIZ — A satıldı, B gönderildi. Dönen varyant satılandan
+  /// FARKLIDIR. Kırılımda ayrı sayılır: bu bir DEPO HATASI metriğidir,
+  /// müşteri caymasıyla aynı kefeye konmaz.
+  YANLIS_URUN
+  DIGER
+}
+
+/// BİLDİRİMİN AŞAMASI. Return'ün profitStatus'ü ile karıştırılmaz —
+/// bildirimde kâr hesabı YOKTUR, bu yüzden "hesaplanamayan" sayacına düşmez.
+enum NoticeStatus {
+  BEKLENIYOR // pazaryeri bildirdi, mal yolda
+  MAL_GELDI // geldi; muayene/servis sürüyor, hüküm yok
+  ITIRAZ_ACILDI // kullanılmış çıktı, kanıtla itiraz edildi
+  ITIRAZ_INCELEMEDE // pazaryeri inceliyor
+  ITIRAZ_KABUL // LEHE — ürün müşteride kalır, iade İŞLENMEZ, kâr etkisi doğmaz
+  ITIRAZ_RED // ALEYHE — normal iade akışı işler, Return doğar
+  KAPANDI // iade işlendi (Return doğdu) ya da lehe kapandı
+  IPTAL // müşteri vazgeçti, mal hiç gelmedi
 }
 
 enum ChannelType {
@@ -206,6 +240,7 @@ model ProductVariant {
   saleItems      SaleItem[]
   returnItems    ReturnItem[]    @relation("IadeVaryanti")
   exchangeItems  ReturnItem[]    @relation("DegisimVaryanti")
+  ayrilanBildirimler ReturnNotice[] @relation("AyrilanVaryant")
   stockMovements StockMovement[]
 
   @@index([productId])
@@ -800,6 +835,7 @@ model Sale {
   items           SaleItem[]
   fees            SaleFee[]
   returns         Return[]
+  returnNotices   ReturnNotice[]
   settlementItems SettlementItem[]
 
   @@index([channelAccountId])
@@ -927,6 +963,18 @@ model Return {
   penaltyCurrency Currency?
   penaltyNote     String?   @db.Text
 
+  /// KİM GİRDİ — 13.08.2026'da eklendi.
+  /// StockMovement.userId ile AYNI desen: geçmiş kayıtlar null kalır ve
+  /// ekranda "sistem öncesi" görünür; geriye doldurmak olmayan bir bilgiyi
+  /// uydurmak olurdu.
+  ///
+  /// NEDEN AYRI ALAN — stok hareketinden okunamıyor: tamamı hasarlı iadede
+  /// RETURN_IN hareketi HİÇ OLUŞMUYOR (canlı vakada doğrulandı), yani izin
+  /// en çok gerektiği yerde iz kalmıyordu. "Bu 1.799 TL'lik hasarı kim
+  /// işaretledi" sorusunun cevabı olmalı.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
   /// İade SONRASI net — orijinal snapshot'a dokunmadan hesaplanır.
   net1Amount     Decimal?      @db.Decimal(18, 4)
   net2Amount     Decimal?      @db.Decimal(18, 4)
@@ -940,8 +988,109 @@ model Return {
   items ReturnItem[]
   fees  ReturnFee[]
 
+  /// Bu iadeyi doğuran bildirim — VARSA. Bildirimsiz doğrudan iade girme
+  /// yolu AÇIK kalır: kapıya habersiz gelen koli gerçeği.
+  notice ReturnNotice?
+
   @@index([saleId])
   @@index([occurredAt])
+  @@index([userId])
+}
+
+/// ============================================================================
+///  İADE BİLDİRİMİ (RMA) — İKİ AŞAMALI AKIŞIN BİRİNCİ AŞAMASI
+/// ----------------------------------------------------------------------------
+///  NEDEN Return'DEN AYRI BİR VARLIK:
+///  Bildirim geldiğinde mal henüz yolda. Sağlam mı hasarlı mı, hatta gelecek
+///  mi belli değil — yani KÂR ETKİSİ HESAPLANAMAZ. Bunu Return'e yazsaydık
+///  net1/net2 null kalır ve kayıt panelin/raporun "kârı hesaplanamayan"
+///  sayacına düşerdi; o uyarı gerçek sorunları gösteriyor, gürültülenemez.
+///
+///  KURAL NET: bildirim kayıt değil, KAYDIN ÖNCÜSÜDÜR.
+///  `Return` = hükmü verilmiş iade.
+///
+///  Faz 4'te pazaryeri API'si iade bildirimlerini otomatik getirdiğinde
+///  taşıyıcı bu tablodur; akış değişmez, yalnız kaynağı otomatikleşir.
+/// ============================================================================
+model ReturnNotice {
+  id String @id @default(cuid())
+
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  /// Pazaryerindeki talep numarası — dış dünyanın kimliği.
+  code String?
+
+  noticedAt DateTime
+  reason    ReturnReason
+  status    NoticeStatus @default(BEKLENIYOR)
+  note      String?      @db.Text
+
+  /// DEĞİŞİM İÇİN AYRILAN ÜRÜN (senaryo 1, 2, 6).
+  /// FİZİKSEL STOK VE FIFO'YA DOKUNMAZ — bu bir defter kaydı değil, niyet
+  /// beyanıdır. Stok ekranındaki "ayrılmış N adet" rozeti açık
+  /// bildirimlerden ANLIK toplanır; bildirim kapanınca kendiliğinden düşer.
+  /// "Rezervasyonu serbest bırakmayı unutma" diye bir iş doğmaz.
+  reservedVariantId String?
+  reservedVariant   ProductVariant? @relation("AyrilanVaryant", fields: [reservedVariantId], references: [id], onDelete: SetNull)
+  reservedQuantity  Int             @default(0)
+
+  /// Mal gelip hüküm verilince doğan iade. Bire bir.
+  returnId String? @unique
+  return   Return? @relation(fields: [returnId], references: [id], onDelete: SetNull)
+
+  /// Kim girdi. Geçmiş kayıt yok (tablo yeni) ama desen aynı kalsın.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([saleId])
+  @@index([status])
+  @@index([noticedAt])
+  @@index([reservedVariantId])
+  @@index([userId])
+}
+
+/// ============================================================================
+///  DOSYA EKİ — GENEL ALTYAPI
+/// ----------------------------------------------------------------------------
+///  İhtiyaç dört yerde AYNI: itiraz fotoğrafı · hasar fotoğrafı · alım
+///  faturası · tazminat delili. Dördünü ayrı ayrı yazmak aynı işi dört kez
+///  yapmaktır, bu yüzden tek model.
+///
+///  BAĞ POLİMORFİKTİR (foreign key YOK) — bilinçli. Dört ayrı nullable FK,
+///  şemayı her yeni ek türünde büyütürdü. Bedeli: silinen kaydın ekleri
+///  otomatik düşmez, temizlik uygulama katmanının işidir.
+///
+///  ⚠ DOSYALARIN KENDİSİ JSON YEDEĞE GİRMEZ (kullanıcı kararı 13.08.2026).
+///  Telafi üçlüsü: (1) bu tablonun SATIRLARI yedekte, (2) yedeğe EK
+///  MANİFESTİ eklenir (adet/boyut/blob yolları), (3) geri yükleme ekranı
+///  "N ek bu dosyada yok, Blob'da" uyarısı gösterir.
+///  Blob yedekleme stratejisi ayrı karar maddesi (BEKLEYENLER).
+/// ============================================================================
+model Attachment {
+  id String @id @default(cuid())
+
+  /// "ReturnNotice" | "Return" | "Purchase" | "Compensation"
+  targetType String
+  targetId   String
+
+  /// Depodaki yol: ekler/<tip>/<id>/<dosya>
+  blobPath String
+  fileName String
+  mimeType String
+  /// Sınır uygulama katmanında: dosya başına 5 MB, kayıt başına 10 ek.
+  sizeBytes Int
+
+  uploadedAt DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([targetType, targetId])
+  @@index([userId])
 }
 
 model ReturnItem {
@@ -1141,6 +1290,9 @@ model User {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   stockMovements   StockMovement[]
+  iadeler          Return[]
+  iadeBildirimleri ReturnNotice[]
+  ekler            Attachment[]
   userCompanyRoles UserCompanyRole[]
   auditLogs        AuditLog[]
 
@@ -1390,6 +1542,13 @@ model StockAdjustmentReason {
   id String @id @default(cuid())
 
   name String @unique
+
+  /// SİSTEM ANAHTARI — kod bu nedeni adıyla DEĞİL bununla bulur.
+  /// Ad kullanıcıya aittir ve "Neden yönetimi" ekranından değiştirilebilir;
+  /// koda ad gömseydik kullanıcı adı düzelttiği an sevkiyat hatası düzeltmesi
+  /// sessizce çalışmaz olurdu. Elle açılan nedenlerde null'dur.
+  /// Bugünkü tek değer: "SEVKIYAT_HATASI" (yanlış ürün gönderimi).
+  systemKey String? @unique
 
   /// Bu neden hangi hareket tipini yazar.
   /// COUNT_CORRECTION (sayım farkı) ile ADJUSTMENT (kırılma/kayıp) ayrı

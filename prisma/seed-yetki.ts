@@ -65,11 +65,53 @@ export async function yetkiSeed(prisma: PrismaClient) {
   });
 
   if (mevcutOperasyon) {
-    const sayi = await prisma.rolePermission.count({
-      where: { roleId: mevcutOperasyon.id },
-    });
+    /**
+     * SONRADAN DOĞAN İZİNLER — dar kapı.
+     *
+     * Kural hâlâ geçerli: mevcut OPERASYON rolünün izinleri toptan
+     * EZİLMEZ, çünkü kullanıcı ekrandan değiştirmiş olabilir. Ama sistem
+     * yeni bir izin doğurduğunda (ekran sonradan yazıldı) rol o izni hiç
+     * görmemiş olur ve kullanıcı "neden göremiyorum" diye takılır.
+     *
+     * Bu yüzden yalnız AŞAĞIDA ADI GEÇEN yeni izinler eklenir, o da
+     * yoksa. Diğer hiçbir izne dokunulmaz.
+     *
+     * ⚠ GERİLİM AÇIKÇA YAZILI: kullanıcı bu izni bilerek KALDIRIRSA, bir
+     * sonraki seed koşusu geri ekler. Listeden düşürmek, iznin artık
+     * "yeni" olmadığı anlamına gelir — kalıcı hâle gelince buradan silin.
+     */
+    const SONRADAN_DOGAN: string[] = [
+      // 13.08.2026 — /iadeler ekranı yazıldı. Kullanıcı kararı: iadeyi
+      // Operasyon giriyor, listesini de görmeli. Para sütunları
+      // satis.kar.gor'a bağlı olduğu için liste PARASIZ görünür.
+      "iade.gor",
+    ];
+
+    const varOlanlar = new Set(
+      (
+        await prisma.rolePermission.findMany({
+          where: { roleId: mevcutOperasyon.id },
+          select: { permissionKey: true },
+        })
+      ).map((i) => i.permissionKey),
+    );
+
+    const eklenecek = SONRADAN_DOGAN.filter((i) => !varOlanlar.has(i));
+    if (eklenecek.length > 0) {
+      await prisma.rolePermission.createMany({
+        data: eklenecek.map((permissionKey) => ({
+          roleId: mevcutOperasyon.id,
+          permissionKey,
+        })),
+      });
+    }
+
+    const sayi = varOlanlar.size + eklenecek.length;
     console.log(
-      `${OPERASYON_ROLU.padEnd(15)}: ${sayi} izin (mevcut — dokunulmadı)`,
+      `${OPERASYON_ROLU.padEnd(15)}: ${sayi} izin` +
+        (eklenecek.length > 0
+          ? ` (+${eklenecek.length} yeni: ${eklenecek.join(", ")})`
+          : " (mevcut — dokunulmadı)"),
     );
   } else {
     const operasyon = await prisma.role.create({
