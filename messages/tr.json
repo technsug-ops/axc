@@ -2112,7 +2112,11 @@
     "eksikOnEk": "Kaydetmek için eksik:",
     "eksikSatis": "satış seçin",
     "eksikGerekce": "gerekçe seçin",
-    "eksikDonen": "dönen (yanlış giden) ürünü seçin"
+    "eksikDonen": "dönen (yanlış giden) ürünü seçin",
+    "aramaIpucu": "Talep no, sipariş no, SKU veya not ara...",
+    "aramaSonucYok": "Aramaya uyan bildirim yok. Talep no, sipariş no ya da SKU ile deneyin.",
+    "satisListesiSinirli": "En yeni {sayi} satış listeleniyor. Aradığınız satış burada yoksa daha eskidir — satış detayındaki İade Al düğmesinden devam edin.",
+    "talepNoKisa": "Talep no"
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { Eye, TriangleAlert } from "lucide-react";
@@ -11,7 +12,9 @@ import { SayfalamaCubugu } from "@/components/sayfalama";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { UzunAd } from "@/components/uzun-ad";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -38,7 +41,9 @@ import {
   iadeTuruEtiketleri,
 } from "@/lib/etiketler";
 import {
+  AYRILMIS_SAYILAN_DURUMLAR,
   ayrilmisSayilirMi,
+  bildirimAramaKosulu,
   DEGISIM_GEREKCELERI,
   gecisGecerliMi,
   IADE_ISLE_SEBEP_ANAHTARI,
@@ -57,6 +62,7 @@ import {
 } from "@/lib/iade-liste";
 import { prisma } from "@/lib/prisma";
 import { sayfaCoz } from "@/lib/sayfalama";
+import { suzgecAdresi } from "@/lib/suzgec";
 import { varyantStoklari } from "@/lib/stok";
 import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
 
@@ -86,6 +92,9 @@ export async function generateMetadata() {
 
 const TURLER: ReturnType[] = ["UNDELIVERED", "NORMAL", "DISPUTED"];
 
+/** Bildirim formundaki satış listesinin üst sınırı — dolarsa ekranda yazar. */
+const SATIS_LISTE_SINIRI = 500;
+
 function turGecerliMi(deger: string): deger is ReturnType {
   return (TURLER as string[]).includes(deger);
 }
@@ -101,6 +110,8 @@ export default async function IadelerSayfasi({
     tur?: string;
     hasar?: string;
     sayfa?: string;
+    /** Bildirim araması — işlenmiş iade tablosunun süzgeçlerinden AYRI. */
+    bq?: string;
   }>;
 }) {
   await sayfaIzni("iade.gor");
@@ -337,7 +348,22 @@ export default async function IadelerSayfasi({
    * sorusunun cevabı ekranda kalmalı. Sıralama: açık olanlar önce, sonra
    * bildirim tarihine göre yeniden eskiye.
    */
+  /**
+   * BİLDİRİM ARAMASI — SUNUCUDA.
+   *
+   * Liste en yeni 50 ile sınırlı; istemcide süzmek yalnız o 50'yi süzerdi ve
+   * 51. kayıt hiç bulunamazdı (aynı sessiz düşme tuzağı). Bu yüzden arama
+   * sorgunun İÇİNDE.
+   *
+   * Talep no aranabilir olmalı: kullanıcı 14.08.2026'da bildirimi kodundan
+   * (nbkhuj) aradı, arama kutusu olmadığı için bulamadı ve satış açılır
+   * listesinde aradı — orada hiçbir zaman olmayacaktı, o bir satış kodu değil.
+   */
+  const bildirimArama = (p.bq ?? "").trim();
+  const bildirimKosulu = bildirimAramaKosulu(bildirimArama);
+
   const bildirimKayitlari = await prisma.returnNotice.findMany({
+    where: bildirimKosulu,
     orderBy: [{ noticedAt: "desc" }, { createdAt: "desc" }],
     take: 50,
     select: {
@@ -367,9 +393,20 @@ export default async function IadelerSayfasi({
     },
   });
 
-  const bekleyenBildirimler = bildirimKayitlari.filter((b) =>
-    ayrilmisSayilirMi(b.status),
-  ).length;
+  /**
+   * BEKLEYEN SAYACI ARAMADAN BAĞIMSIZ. Eskiden ekrandaki 50 kaydın içinden
+   * sayılıyordu; arama açıkken "3 bekleyen" rozeti aramanın sonucunu
+   * gösterirdi ve rakam yalan olurdu. Rozet her zaman TÜM açık bildirimleri
+   * sayar.
+   */
+  const bekleyenBildirimler = await prisma.returnNotice.count({
+    where: { status: { in: AYRILMIS_SAYILAN_DURUMLAR } },
+  });
+
+  /** Aramaya uyan toplam — 50'lik pencerenin dışında kalan var mı. */
+  const bildirimToplami = await prisma.returnNotice.count({
+    where: bildirimKosulu,
+  });
 
   /**
    * EKLER — bildirim başına, TEK SORGUDA. Satır satır sorgu atmak 50
@@ -408,9 +445,14 @@ export default async function IadelerSayfasi({
 
   // Form seçenekleri: son satışlar ve varyantlar VERİDEN gelir.
   const [formSatislari, formVaryantlari] = await Promise.all([
+    /**
+     * SATIŞ LİSTESİ — sınır 500. Tamamını yüklemek uzun vadede ağır (günde
+     * ~30 satış), ama 100 fazla dardı. Sınıra dayanırsa ekran bunu SÖYLER;
+     * sessizce kesilen liste kabul edilmiyor.
+     */
     prisma.sale.findMany({
       orderBy: { soldAt: "desc" },
-      take: 100,
+      take: SATIS_LISTE_SINIRI,
       select: {
         id: true,
         code: true,
@@ -528,6 +570,7 @@ export default async function IadelerSayfasi({
               id: s.id,
               etiket: `${s.code ?? tBildirim("siparisNoYok")} · ${bicim.tarih(s.soldAt)} · ${s.channelAccount.channel.name} — ${s.channelAccount.name}`,
             }))}
+            satisSiniriDoldu={formSatislari.length === SATIS_LISTE_SINIRI}
             /**
              * İKİ LİSTE, İKİ KURAL (bkz. bildirim-formu.tsx başlığı):
              *   ayrılan → gönderilecek yedek, STOKTA OLMALI
@@ -554,8 +597,45 @@ export default async function IadelerSayfasi({
             bugun={gunMetni(gunDegeri(isTakvimGunu(new Date())))}
           />
 
+          {/* ==================== BİLDİRİM ARAMASI ====================
+              Sunucuda arar (bkz. sorgu). Diğer süzgeçler gizli alanlarla
+              taşınır; arama yapmak dönem penceresini sıfırlamaz. */}
+          <form action="/iadeler" className="flex flex-wrap items-end gap-2">
+            {Object.entries(disaAktarmaParametreleri).map(([ad, deger]) =>
+              deger ? (
+                <input key={ad} type="hidden" name={ad} value={deger} />
+              ) : null,
+            )}
+            <Input
+              name="bq"
+              defaultValue={bildirimArama}
+              placeholder={tBildirim("aramaIpucu")}
+              className="max-w-xs min-w-44 flex-1"
+              autoComplete="off"
+            />
+            <Button type="submit" variant="secondary">
+              {ortak("ara")}
+            </Button>
+            {bildirimArama ? (
+              <Button type="button" variant="ghost" asChild>
+                <Link href={suzgecAdresi("/iadeler", p, { bq: "" })}>
+                  {ortak("temizle")}
+                </Link>
+              </Button>
+            ) : null}
+          </form>
+
+          {bildirimArama ? (
+            <p className="text-muted-foreground text-xs">
+              {ortak("kayitSayisi", { sayi: bildirimToplami })}
+              {ortak("aramaEki", { arama: bildirimArama })}
+            </p>
+          ) : null}
+
           {bildirimKayitlari.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t("bildirimYok")}</p>
+            <p className="text-muted-foreground text-sm">
+              {bildirimArama ? tBildirim("aramaSonucYok") : t("bildirimYok")}
+            </p>
           ) : (
             <div className="space-y-3">
               {bildirimKayitlari.map((b) => (
@@ -572,8 +652,21 @@ export default async function IadelerSayfasi({
                     </Badge>
                     <span className="text-muted-foreground text-xs">
                       {bicim.tarih(b.noticedAt)}
-                      {b.code ? ` · ${b.code}` : ""}
                     </span>
+                    {/* TALEP NO BİR KİMLİK KODUDUR (İlke #3 ve #4): listede
+                        GÖRÜNÜR durur ve tek tıkla kopyalanır. Eskiden tarihin
+                        arkasında gri bir ek gibiydi; kullanıcı aradığı
+                        bildirimi bu yüzden gözden kaçırdı. */}
+                    {b.code ? (
+                      <span className="inline-flex items-center gap-1 font-mono text-xs">
+                        {tBildirim("talepNoKisa")}: {b.code}
+                        <KopyalanabilirKod
+                          deger={b.code}
+                          etiket={tBildirim("talepNoKisa")}
+                          sadeceIkon
+                        />
+                      </span>
+                    ) : null}
                     {/* AYRILMIŞ ÜRÜN ROZETİ: stoğa dokunmaz, niyet beyanıdır. */}
                     {b.reservedVariant && b.reservedQuantity > 0 ? (
                       <Badge

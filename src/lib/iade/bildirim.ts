@@ -154,6 +154,56 @@ export function donenUrunZorunluMu(gerekce: ReturnReason): boolean {
 
 /**
  * ---------------------------------------------------------------------------
+ *  BİLDİRİM ARAMASI — HANGİ ALANLARDA ARANIR?
+ * ---------------------------------------------------------------------------
+ *  14.08.2026: kullanıcı bildirimi TALEP NO'sundan (nbkhuj) aramak istedi.
+ *  Arama kutusu yoktu; satış açılır listesinde aradı ve bulamadı — orada
+ *  hiçbir zaman olmayacaktı, o bir satış kodu değil bildirim kodu.
+ *
+ *  Kullanıcı elindeki HANGİ kâğıtla gelirse gelsin bulabilmeli: pazaryeri
+ *  talep no, sipariş no, ürün SKU'su ya da kendi yazdığı not. Bu yüzden
+ *  liste değil SORGU süzülür — en yeni 50'yi istemcide süzmek, 51. kaydı
+ *  hiç bulunamaz yapardı.
+ *
+ *  Alan listesi burada duruyor ki `rma:dogrula` hangi alanların arandığını
+ *  DEĞER olarak sınayabilsin; biri sessizce düşerse test kırmızı yanar.
+ */
+export const BILDIRIM_ARAMA_ALANLARI = [
+  "code",
+  "note",
+  "sale.code",
+  "reservedVariant.sku",
+  "returnedVariant.sku",
+  "reservedVariant.product.name",
+  "returnedVariant.product.name",
+] as const;
+
+/** Noktalı yolu iç içe nesneye çevirir: "sale.code" → { sale: { code: … } } */
+function icIceKosul(yol: string, deger: unknown): Record<string, unknown> {
+  const parcalar = yol.split(".");
+  let sonuc: unknown = deger;
+  for (let i = parcalar.length - 1; i >= 0; i--) {
+    sonuc = { [parcalar[i]]: sonuc };
+  }
+  return sonuc as Record<string, unknown>;
+}
+
+/**
+ * Prisma `where` parçası. Boş aramada BOŞ NESNE döner — "hiçbir şey eşleşmesin"
+ * değil, "süzme" demektir; ikisini karıştırmak listeyi sessizce boşaltırdı.
+ */
+export function bildirimAramaKosulu(arama: string): Record<string, unknown> {
+  const q = arama.trim();
+  if (q === "") return {};
+  return {
+    OR: BILDIRIM_ARAMA_ALANLARI.map((yol) =>
+      icIceKosul(yol, { contains: q }),
+    ),
+  };
+}
+
+/**
+ * ---------------------------------------------------------------------------
  *  BİLDİRİMDEN İADE FORMUNA ÖN-DOLU GEÇİŞ — HANGİ KALEME YAZILIR?
  * ---------------------------------------------------------------------------
  *  Bildirim SATIŞA bağlıdır, satış kalemine değil. Satışta birden fazla kalem

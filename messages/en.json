@@ -2112,7 +2112,11 @@
     "eksikOnEk": "",
     "eksikSatis": "",
     "eksikGerekce": "",
-    "eksikDonen": ""
+    "eksikDonen": "",
+    "aramaIpucu": "",
+    "aramaSonucYok": "",
+    "satisListesiSinirli": "",
+    "talepNoKisa": ""
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "",

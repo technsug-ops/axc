@@ -21,8 +21,10 @@ import {
   DEGISIM_GEREKCELERI,
   IADE_ISLE_SEBEP_ANAHTARI,
   IZINLI_GECISLER,
+  BILDIRIM_ARAMA_ALANLARI,
   ayirmaMumkunMu,
   ayrilmisAdetler,
+  bildirimAramaKosulu,
   degisimAyrilirMi,
   donenUrunZorunluMu,
   gecisGecerliMi,
@@ -52,7 +54,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -896,6 +898,113 @@ console.log("\n5) İADE FORMU — ÖN-DOLU GEÇİŞ (T4/14 CANLI HATASI)");
     );
   }
   kosanBolumler.push("on-dolu-gecis");
+}
+
+// ===========================================================================
+console.log("\n6) BİLDİRİM LİSTESİ — BULUNABİLİRLİK");
+// ===========================================================================
+/**
+ * Kullanıcı bildirimi TALEP NO'sundan aramak istedi (nbkhuj); arama kutusu
+ * yoktu. Satış açılır listesinde aradı — orada hiçbir zaman olmayacaktı,
+ * o bir satış kodu değil. Bulunabilirlik iki bacaklıdır:
+ *   ARAMA  — hangi kâğıtla gelirse gelsin sorguda karşılığı olmalı
+ *   GÖRÜNÜRLÜK — talep no listede kimlik kodu gibi durmalı, gri ek gibi değil
+ */
+{
+  kontrol(
+    "boş arama SÜZMEZ (listeyi sessizce boşaltmaz)",
+    Object.keys(bildirimAramaKosulu("")).length === 0,
+  );
+  kontrol(
+    "  ...yalnız boşluk da süzmez",
+    Object.keys(bildirimAramaKosulu("   ")).length === 0,
+  );
+
+  const kosul = bildirimAramaKosulu("  nbkhuj ");
+  const dallar = (kosul.OR ?? []) as Record<string, unknown>[];
+  kontrol("arama OR dalları üretiyor", dallar.length > 0, dallar.length);
+  kontrol(
+    "  ...arama metni kırpılıyor",
+    JSON.stringify(kosul).includes('"nbkhuj"') &&
+      !JSON.stringify(kosul).includes('" nbkhuj'),
+  );
+
+  /** HER ALAN TEK TEK: biri sessizce düşerse o kâğıtla gelen bulamaz. */
+  const metin = JSON.stringify(kosul);
+  const beklenen: [string, string][] = [
+    ["talep no", '{"code":{"contains":"nbkhuj"}}'],
+    ["not", '{"note":{"contains":"nbkhuj"}}'],
+    ["sipariş no", '{"sale":{"code":{"contains":"nbkhuj"}}}'],
+    ["ayrılan SKU", '{"reservedVariant":{"sku":{"contains":"nbkhuj"}}}'],
+    ["dönen SKU", '{"returnedVariant":{"sku":{"contains":"nbkhuj"}}}'],
+    [
+      "ayrılan ürün adı",
+      '{"reservedVariant":{"product":{"name":{"contains":"nbkhuj"}}}}',
+    ],
+    [
+      "dönen ürün adı",
+      '{"returnedVariant":{"product":{"name":{"contains":"nbkhuj"}}}}',
+    ],
+  ];
+  for (const [ad, parca] of beklenen) {
+    kontrol(`  ${ad} aranıyor`, metin.includes(parca), parca);
+  }
+  kontrol(
+    "aranan alan sayısı listeyle tutuyor",
+    dallar.length === BILDIRIM_ARAMA_ALANLARI.length,
+    [dallar.length, BILDIRIM_ARAMA_ALANLARI.length],
+  );
+
+  // --- EKRAN BAĞLANTISI ---
+  const sayfa2 = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  kontrol(
+    "arama SUNUCUDA yapılıyor (sorgunun içinde)",
+    sayfa2.includes("bildirimAramaKosulu(bildirimArama)") &&
+      sayfa2.includes("where: bildirimKosulu"),
+  );
+  kontrol(
+    "arama kutusu ekranda ve `bq` parametresini yazıyor",
+    sayfa2.includes('name="bq"') && sayfa2.includes("p.bq"),
+  );
+  /**
+   * BEKLEYEN ROZETİ ARAMADAN BAĞIMSIZ: eskiden ekrandaki 50 kaydın içinden
+   * sayılıyordu, arama açıkken rozet aramanın sonucunu gösterip yalan söylerdi.
+   */
+  kontrol(
+    "bekleyen rozeti arama sonucundan DEĞİL, tüm açık bildirimlerden sayılıyor",
+    sayfa2.includes("status: { in: AYRILMIS_SAYILAN_DURUMLAR }"),
+  );
+  kontrol(
+    "talep no listede KOPYALANABİLİR kimlik kodu (İlke #3/#4)",
+    sayfa2.includes("talepNoKisa") && sayfa2.includes("<KopyalanabilirKod"),
+  );
+
+  const bForm = readFileSync("src/app/iadeler/bildirim-formu.tsx", "utf8");
+  kontrol(
+    "satış seçici ARANABİLİR (düz açılır liste değil)",
+    bForm.includes('id="bildirim-satis"') &&
+      !bForm.includes('<SelectTrigger id="bildirim-satis"'),
+  );
+  kontrol(
+    "satış listesi sınıra dayanırsa ekran SÖYLÜYOR (sessiz kesme yok)",
+    bForm.includes("satisSiniriDoldu") &&
+      bForm.includes("satisListesiSinirli"),
+  );
+
+  const sozluk5 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  for (const anahtar of [
+    "aramaIpucu",
+    "aramaSonucYok",
+    "satisListesiSinirli",
+    "talepNoKisa",
+  ]) {
+    kontrol(
+      `  sözlükte var: Bildirim2.${anahtar}`,
+      typeof sozluk5.Bildirim2?.[anahtar] === "string" &&
+        sozluk5.Bildirim2[anahtar].length > 0,
+    );
+  }
+  kosanBolumler.push("bulunabilirlik");
 }
 
 // ===========================================================================

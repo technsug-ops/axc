@@ -60,6 +60,7 @@ export type VaryantSecenegi = {
  */
 export function BildirimFormu({
   satislar,
+  satisSiniriDoldu,
   stoktakiVaryantlar,
   tumVaryantlar,
   degisimGerekceleri,
@@ -67,6 +68,8 @@ export function BildirimFormu({
   bugun,
 }: {
   satislar: SatisSecenegi[];
+  /** Satış listesi üst sınıra dayandı mı — dayandıysa ekranda yazar. */
+  satisSiniriDoldu: boolean;
   /** AYRILAN ürün için: yalnız stoğu olanlar. */
   stoktakiVaryantlar: VaryantSecenegi[];
   /** DÖNEN ürün için: hepsi (stok 0 olabilir). */
@@ -150,18 +153,27 @@ export function BildirimFormu({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="bildirim-satis">{t("satis")} *</Label>
-          <Select value={satisId} onValueChange={setSatisId}>
-            <SelectTrigger id="bildirim-satis" className="h-11 w-full md:h-9">
-              <SelectValue placeholder={t("satisSecin")} />
-            </SelectTrigger>
-            <SelectContent>
-              {satislar.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.etiket}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* ARANABİLİR: sipariş no yazarak daraltılır. Düz açılır listede
+              kullanıcı gözüyle tarayıp bulmak zorundaydı; hacim büyüdükçe
+              imkânsızlaşan bir iş (İlke #9 ve #10). */}
+          <AranabilirSecim
+            id="bildirim-satis"
+            etiket={t("satisSecin")}
+            secenekler={satislar.map((s) => ({
+              deger: s.id,
+              etiket: s.etiket,
+            }))}
+            seciliDeger={satisId}
+            onSec={setSatisId}
+          />
+          {/* SINIR AÇIKÇA YAZAR: liste doluysa daha eski satışlar burada
+              YOK demektir. Sessizce kesilen liste, kullanıcıya "o satış
+              sistemde kayıtlı değil" dedirtir — en sinsi tür. */}
+          {satisSiniriDoldu ? (
+            <p className="text-muted-foreground text-xs">
+              {t("satisListesiSinirli", { sayi: satislar.length })}
+            </p>
+          ) : null}
         </div>
 
         <div className="space-y-2">
