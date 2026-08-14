@@ -7,8 +7,21 @@ listesiyle birlikte teslim edilir.
 ## AÇIK PAKET SIRASI — 13.08.2026 itibarıyla
 
 Mimar onaylı sıra, **paket ADIYLA**:
-**RMA KALANI (test bekliyor) → PANEL AŞAMA 2 (test bekliyor) →
+**~~RMA KALANI~~ ✓ KAPANDI (14.08.2026) → PANEL AŞAMA 2 (test bekliyor) →
 PANEL AŞAMA 3 PAKET 1 → PANEL AŞAMA 3 PAKET 2 → GEÇMİŞ VERİ.**
+
+_Sıradaki tek açık test: **Panel Aşama 2 (P1–P8)**. Geçmesiyle ana sistem
+tamamlanmış sayılıyor._
+
+> **PANEL AŞAMA 2 TESTİNDE AYRICA TEYİT EDİLECEK (P3 — NET-1/NET-2):**
+> RMA'nın önizleme/hasarlı payı düzeltmesi (`0ee7504`) iade rakamlarını
+> değiştirmedi. Gerekçe koda bakılarak doğrulandı: satış detayındaki iade
+> bloğu netleri **kayıtlı** `net1Amount`/`net2Amount`'tan okuyor, kesinti
+> satırlarından yeniden hesaplamıyor; ayrıştırma da net-nötrdü
+> (`MALIYET_GERI + MALIYET_DONMEYEN` = eski tek satır). Geri doldurma
+> koşumu bunu canlıda da gösterdi: iki iadenin NET'i birebir aynı kaldı.
+> Beklenen tek görünür fark: kesinti listesinde **bir satır daha**.
+> P3'te rakamların tuttuğu yine de gözle teyit edilir.
 
 _Sıra kararı 14.08.2026: RMA'nın gövdesi (bildirim durum makinesi + 6.
 senaryo) kritik ve yarım bırakılmaz; Panel Aşama 2 hemen ardından açılır._
@@ -96,11 +109,37 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       `/iadeler` ile aynı yer. Değişim bu satırı hiç üretmediği için
       "değişimde ciro DURUR" kuralı kendiliğinden geçerli.
 
-- [ ] **RMA KALANI (İADE MODÜLÜ)** — RMA bildirim akışı (kayıt + "iadeyi
-      işle" ile ön-dolu Return açma) · 6. senaryo düzeltmesi (yanlış ürün:
-      dönen varyant seçimi + ÜÇ hareket tek işlemde) · itiraz döngüsü ve
-      dosya ekleri (Teslim B). Şema HAZIR (ReturnNotice, Attachment),
-      migration canlıda uygulandı.
+- [x] ~~**RMA KALANI (İADE MODÜLÜ)**~~ ✓ 14.08.2026 — **HALİL TESTİ GEÇTİ,
+      MİMAR ONAYLI.** T1–T5 gerçek cihazda, canlıda doğrulandı.
+      Bildirim akışı · "iadeyi işle" ile ön-dolu Return · 6. senaryo
+      (yanlış ürün) · itiraz döngüsü · dosya ekleri — hepsi kapandı.
+      `rma:dogrula` 121 → **240 kontrol**, dokuz bölüm.
+
+      **Test sırasında çıkan ve düzeltilen canlı hatalar** (her biri artık
+      test kilidinde):
+      - Ön-dolu dönen ürün ekranda çizilmiyordu (alanlar `adet > 0`e
+        bağlıydı; bildirimden gelindiğinde adet boştu).
+      - Geri gelen mala STOK YETERLİLİĞİ uygulanıyordu ve hata yanlış rolü
+        suçluyordu ("değişim ürününde stok yok"). Yeterlilik ≠ maliyet
+        bilgisi; ayrım `donenMalDagilimi`de.
+      - "Stoğa dönmeyen maliyet" tamamen hasarlı iadede ₺0,00 gösteriyordu;
+        kaynak hiç üretilmiyordu. `MALIYET_DONMEYEN` kendi satırı oldu
+        (net-nötr ayrıştırma), geçmiş iki iade `maliyet:geri-doldur` ile
+        tamamlandı.
+      - Dosya yükleme sayfayı çökertiyordu: beyan edilen sınır (5 MB)
+        Server Action gövde tavanından (1 MB) büyüktü. Yükleme Route
+        Handler'a taşındı, sınır 4 MB, istemci önden eliyor.
+      - Blob deposu private'ken kod herkese açık erişim gönderiyordu.
+        Özel erişim + yetkili indirme ucu (`/api/ekler/[id]`).
+      - Geri alınamaz durum geçişleri onay sormuyordu (İlke #6).
+
+      **AÇIK KALAN GÖZLE DOĞRULAMA (kod işi değil, veri bekliyor):**
+      Kısmi hasarlı iade (2+ adetli satışta 1 sağlam 1 hasarlı) önizleme =
+      kayıt eşitliği **otomatik testle** kapatıldı (`iade:dogrula`,
+      mutasyon denemesiyle kanıtlandı). Canlıda 2+ adetli satış
+      OLMADIĞI için gözle doğrulanamadı. **İlk 2+ adetli iade doğduğunda
+      bakılacak:** önizlemedeki NET-1/NET-2 ile kaydedilen değer birebir mi.
+      _Not 14.08.2026._
 
 - [ ] **GEÇMİŞ VERİ AKTARIMI** — geçmiş kart ekstreleri · geçmiş hakediş
       tahsilatları. Dosya: `C:\Users\yapra\Desktop\excel\hakedis ve kredi kartlari`
