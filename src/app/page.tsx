@@ -133,7 +133,7 @@ export default async function AnaSayfa({
     sirala?: string;
     /** Nakit takvimi penceresi (14 | 30) — dönem süzgecinden BAĞIMSIZ. */
     takvim?: string;
-    /** Ürün analizi sekmesi: satis | kar | marj | zayif. */
+    /** Ürün analizi sekmesi: verim | hacim | stok. */
     analiz?: string;
   }>;
 }) {
@@ -682,7 +682,7 @@ export default async function AnaSayfa({
    * DURUYOR - "toplam ne kazandim" da gecerli bir soru - ama varsayilan
    * degil: mutlak tutar tek basina yaniltiyordu.
    */
-  const analizSekmesi = parametreler.analiz ?? "marj";
+  const analizSekmesi = parametreler.analiz ?? (karGorunur ? "verim" : "hacim");
   const analizAdresi = (deger: string) =>
     suzgecAdresi("/", parametreler, { analiz: deger });
 
@@ -1101,119 +1101,116 @@ export default async function AnaSayfa({
         ))
       )}
 
-      {/* ==================== ÜRÜN LİSTELERİ ====================
-          KATLANIR (14.08.2026): dört liste alt alta panelin yarısını
-          yutuyordu ve panel "yönetici özeti" olmaktan çıkıyordu. Silinmedi —
-          başlığa tıklayınca açılıyor. Varsayılan KAPALI: panel açılışta bir
-          ekrana sığsın.
+      {/* ═══════════════════════ ÜRÜN ANALİZİ ═══════════════════════
+          İKİ KART YAN YANA (14.08.2026, kullanıcı isteği). Tek liste tam
+          genişlikte durunca sağ yarı boş kalıyordu.
 
-          Açıldığında dizüstünde 2×2 duruyor: dört kartı yan yana dizmek her
-          birini ~250 px'e sıkıştırır ve ürün adı ile rakam aynı satıra
-          sığmaz. Telefonda alt alta düşer (İlke #8). */}
+          SEKMELER ÇİFT HÂLİNDE: yan yana duran iki liste aynı sorunun iki
+          yüzü. Rastgele eşleştirme değil —
+            VERİM  → en yüksek marj  ·  en az kâr bırakan  (aynı eksenin
+                     iki ucu; hangisi verimli, hangisi değil)
+            HACİM  → en çok satılan  ·  en çok kâr eden    (adet ve tutar;
+                     "çok satan" ile "çok kazandıran" aynı ürün olmayabilir
+                     ve bunu YAN YANA görmek gerekiyor)
+            STOK   → stokta bekleyen                        (tek liste)
+
+          Beş sekme üçe indi ve her sekme daha çok şey söylüyor. */}
       <SekmeliBolum
         baslik={t("urunAnaliziBaslik")}
         notu={t("urunAnaliziNotu")}
+        secili={analizSekmesi}
         sekmeler={[
-          {
-            anahtar: "satis",
-            etiket: t("enCokSatilan"),
-            adres: analizAdresi("satis"),
-            icerik: (
-              <PanelListesi
-                baslik={t("enCokSatilan")}
-                notu={t("enCokSatilanNotu")}
-                satirlar={enCokSatilanlar}
-                bosMesaj={t("listeBos")}
-                skuEtiketi={t("sku")}
-              />
-            ),
-          },
           ...(karGorunur
             ? [
                 {
-                  anahtar: "kar",
-                  etiket: t("enCokKar"),
-                  adres: analizAdresi("kar"),
+                  anahtar: "verim",
+                  etiket: t("sekmeVerim"),
+                  adres: analizAdresi("verim"),
                   icerik: (
-                    <PanelListesi
-                      baslik={t("enCokKar")}
-                      notu={t("enCokKarNotu")}
-                      satirlar={enCokKarEdenler}
-                      bosMesaj={t("listeBos")}
-                      skuEtiketi={t("sku")}
-                      altNot={
-                        <>
-                          {/* RENK DAYANAGI EKRANDA: esik uydurma degil,
-                              donemin kendi ortalamasi. */}
-                          {ortalamaMarj === null
-                            ? null
-                            : t("marjRenkNotu", {
-                                ortalama: bicim.yuzde(ortalamaMarj),
-                              })}{" "}
-                          {t("kalemKariNotu")}
-                          {karsizUrun > 0 ? (
-                            <> {t("karsizUrun", { sayi: karsizUrun })}</>
-                          ) : null}
-                        </>
-                      }
-                    />
-                  ),
-                },
-                {
-                  /* MARJ — HACİMDEN BAĞIMSIZ (kullanıcı kararı 14.08.2026).
-                     Kâr listesiyle AYNI kartta ama AYRI sekmede: biri "parayı
-                     hangi ürün getirdi", öteki "hangi ürün daha verimli
-                     satıyor" sorusunu cevaplıyor ve farklı ürünü işaret
-                     edebilirler. Sekme, ikisini karıştırmadan yan yana tutar. */
-                  anahtar: "marj",
-                  etiket: t("enYuksekMarj"),
-                  adres: analizAdresi("marj"),
-                  icerik: (
-                    <PanelListesi
-                      baslik={t("enYuksekMarj")}
-                      notu={t("marjNotu")}
-                      satirlar={enYuksekMarjlilar}
-                      bosMesaj={t("listeBos")}
-                      skuEtiketi={t("sku")}
-                      altNot={t("marjUyari")}
-                    />
-                  ),
-                },
-                {
-                  anahtar: "zayif",
-                  etiket: t("enAzKar"),
-                  adres: analizAdresi("zayif"),
-                  icerik: (
-                    <PanelListesi
-                      baslik={t("enAzKar")}
-                      notu={t("enAzKarNotu")}
-                      satirlar={enAzKarBirakanlar}
-                      bosMesaj={t("listeBos")}
-                      skuEtiketi={t("sku")}
-                      altNot={
-                        /**
-                         * AZ ÇEŞİTLİ DÖNEMDE İKİ LİSTE AYNI LİSTEDİR —
-                         * söylenmesi gerekir. Canlı ölçüm (14.08.2026):
-                         * Ağustos'ta 5 çeşit ürün satılmış, liste tavanı da
-                         * 5; yani "en az kâr" tablosu "en çok kâr"ın ters
-                         * sırasıdır. Uyarı olmasaydı kullanıcı iki ayrı
-                         * bulgu okuduğunu sanardı.
-                         */
-                        <>
-                          {urunSatirlari.length <= LISTE_SATIRI &&
-                          urunSatirlari.length > 0
-                            ? t("azCesitUyari", { sayi: urunSatirlari.length })
-                            : null}
-                          {karsizUrun > 0 ? (
-                            <> {t("karsizUrun", { sayi: karsizUrun })}</>
-                          ) : null}
-                        </>
-                      }
-                    />
+                    <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+                      {/* MARJ — HACİMDEN BAĞIMSIZ (kullanıcı kararı
+                          14.08.2026). Kâr listesiyle karıştırılmasın diye
+                          ayrı: biri "parayı hangi ürün getirdi", öteki
+                          "hangi ürün daha verimli satıyor". */}
+                      <PanelListesi
+                        baslik={t("enYuksekMarj")}
+                        notu={t("marjNotu")}
+                        satirlar={enYuksekMarjlilar}
+                        bosMesaj={t("listeBos")}
+                        skuEtiketi={t("sku")}
+                        altNot={t("marjUyari")}
+                      />
+                      <PanelListesi
+                        baslik={t("enAzKar")}
+                        notu={t("enAzKarNotu")}
+                        satirlar={enAzKarBirakanlar}
+                        bosMesaj={t("listeBos")}
+                        skuEtiketi={t("sku")}
+                        altNot={
+                          /**
+                           * AZ ÇEŞİTLİ DÖNEMDE İKİ LİSTE AYNI LİSTEDİR —
+                           * söylenmesi gerekir. Canlı ölçüm (14.08.2026):
+                           * Ağustos'ta 5 çeşit ürün satılmış, liste tavanı
+                           * da 5; yani "en az kâr" tablosu "en çok kâr"ın
+                           * ters sırasıdır. Uyarı olmasaydı kullanıcı iki
+                           * ayrı bulgu okuduğunu sanardı.
+                           */
+                          <>
+                            {urunSatirlari.length <= LISTE_SATIRI &&
+                            urunSatirlari.length > 0
+                              ? t("azCesitUyari", { sayi: urunSatirlari.length })
+                              : null}
+                            {karsizUrun > 0 ? (
+                              <> {t("karsizUrun", { sayi: karsizUrun })}</>
+                            ) : null}
+                          </>
+                        }
+                      />
+                    </div>
                   ),
                 },
               ]
             : []),
+          {
+            anahtar: "hacim",
+            etiket: t("sekmeHacim"),
+            adres: analizAdresi("hacim"),
+            icerik: (
+              <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+                <PanelListesi
+                  baslik={t("enCokSatilan")}
+                  notu={t("enCokSatilanNotu")}
+                  satirlar={enCokSatilanlar}
+                  bosMesaj={t("listeBos")}
+                  skuEtiketi={t("sku")}
+                />
+                {karGorunur ? (
+                  <PanelListesi
+                    baslik={t("enCokKar")}
+                    notu={t("enCokKarNotu")}
+                    satirlar={enCokKarEdenler}
+                    bosMesaj={t("listeBos")}
+                    skuEtiketi={t("sku")}
+                    altNot={
+                      <>
+                        {/* RENK DAYANAĞI EKRANDA: eşik uydurma değil,
+                            dönemin kendi ortalaması. */}
+                        {ortalamaMarj === null
+                          ? null
+                          : t("marjRenkNotu", {
+                              ortalama: bicim.yuzde(ortalamaMarj),
+                            })}{" "}
+                        {t("kalemKariNotu")}
+                        {karsizUrun > 0 ? (
+                          <> {t("karsizUrun", { sayi: karsizUrun })}</>
+                        ) : null}
+                      </>
+                    }
+                  />
+                ) : null}
+              </div>
+            ),
+          },
           {
             /* STOKTA BEKLEYEN — kâr iznine bağlı DEĞİL: adet ve yaş
                operasyonel bilgidir. İçindeki SERMAYE sütunu maliyet
@@ -1291,7 +1288,6 @@ export default async function AnaSayfa({
             ),
           },
         ]}
-        secili={analizSekmesi}
       />
 
       {/* Yaşlanma listesi ARTIK AYRI BLOK DEĞİL — "Ürün analizi" kartının
@@ -1306,7 +1302,13 @@ export default async function AnaSayfa({
           <CardTitle>{t("grafikBaslik", { ay: GRAFIK_AY_SAYISI })}</CardTitle>
           <p className="text-muted-foreground text-sm">{t("grafikNotu")}</p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        {/* GRAFİK SOLDA, AYLIK SAYILAR SAĞDA (14.08.2026, kullanıcı).
+            İkisi alt alta durunca blok panelin en uzun parçasıydı: grafik
+            tam genişlikte, altında 12 satırlık tablo. Oysa ikisi AYNI
+            veriyi anlatıyor — biri eğilimi, öteki rakamı. Yan yana
+            durduklarında göz eğriden rakama tek bakışta geçiyor ve blok
+            yarı yüksekliğe iniyor. */}
+        <CardContent className="grid min-w-0 gap-4 xl:grid-cols-2">
           <CizgiGrafik
             noktalar={noktalar}
             gelirAdi={t("ciro")}

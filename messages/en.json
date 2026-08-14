@@ -1685,7 +1685,9 @@
     "urunAnaliziBaslik": "",
     "urunAnaliziNotu": "",
     "kanalSatisYok": "",
-    "marjRenkNotu": ""
+    "marjRenkNotu": "",
+    "sekmeVerim": "",
+    "sekmeHacim": ""
   },
   "Envanter": {
     "baslik": "",
