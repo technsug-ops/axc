@@ -4,7 +4,7 @@ import { Check, ListChecks } from "lucide-react";
 
 import { DurumRozeti } from "@/components/durum-rozeti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DURUM_YAZISI, DURUM_ZEMINI } from "@/lib/panel/renkler";
+import { DURUM_YAZISI, DURUM_ZEMINI } from "@/lib/renkler";
 import {
   bekleyenToplam,
   gorevleriKur,

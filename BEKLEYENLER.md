@@ -17,11 +17,12 @@ yeni yetenek ekleniyor. Bu ayrım kayıtta dursun — "yarım kalan iş" ile
 "henüz başlanmamış iş" karıştırılmasın.
 
 Mimar onaylı sıra, **paket ADIYLA**:
-**~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ →
-PANEL AŞAMA 3 PAKET 1 → PANEL AŞAMA 3 PAKET 2 → GEÇMİŞ VERİ.**
+**~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ · ~~AŞAMA 3 PAKET 1~~ ✓ →
+PANEL AŞAMA 3 PAKET 2 → GEÇMİŞ VERİ.**
 
-_Sıradaki: **Panel Aşama 3 Paket 1** (nakit takvimi + "bugün ne
-yapmalıyım"). Komut hazır, açılmayı bekliyor._
+_Sıradaki: **Panel Aşama 3 Paket 2** — karşılaştırma yüzdeleri, iki kâr
+oranı (tanımlar mühürlü), **sermaye verimi** sekmesi, zarara giden
+satışlar. Renk sistemi bu pakette kalan sayfalara yayılır._
 
 > **VERİ BEKLEYEN GÖZLE DOĞRULAMALAR** — kod işi değil, canlıda o veri
 > doğduğunda bakılacak. Kapanmamış iş sayılmaz, unutulmasın diye burada:
@@ -270,7 +271,19 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         Yazımdan önce `lib/kar.ts`'in kalem/sipariş ayrımı okunacak ve
         sıralamanın hangi rakama dayandığı EKRANDA yazılacak.
 
-- [ ] **PANEL AŞAMA 3 — PAKET 1: NAKİT VE EYLEM ODAĞI**
+- [x] ~~**PANEL AŞAMA 3 — PAKET 1: NAKİT VE EYLEM ODAĞI**~~ ✓ 15.08.2026 —
+      **ÇİFT SAYIM CANLI SORGUYLA DOĞRULANDI, KESİŞİM 0.** Kapanma şartı
+      buydu. Ölçüm: 110 rapor kalemi · 10 tahmin satırı · kesişim 0 ·
+      sipariş no çakışması 0 · ödenmiş satış tahminde 0.
+      _Denetimde çıkan ve düzeltilen:_ rapor kalemlerinin hiçbiri satışa
+      bağlı değildi (saleId boş), yani kimliğe bakan kapı hiç devreye
+      girmiyordu — çakışmama TESADÜFTÜ. Kapı iki anahtarlı yapıldı
+      (satış kimliği + sipariş numarası).
+      _Ayrıca:_ sessiz süzgeç kaybı (ALIM_DURUM_KODLARI şemayla uyuşmuyordu)
+      ve "sayı = liste" uyuşmazlığı düzeltildi.
+      `panel:dogrula` 179 → 244, `suzgec:dogrula` 47 → 51.
+
+      _Kapandı — özgün kapsam:_
       _Mimar sözleşmesi 14.08.2026. RMA **ve** Panel Aşama 2 testleri
       geçmeden BAŞLANMAZ. Paket 1 Halil testini geçmeden Paket 2 yazılmaz._
 

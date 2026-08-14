@@ -30,11 +30,14 @@ import {
   type TakvimSatiri,
 } from "../src/lib/panel/nakit-takvimi";
 import {
+  ANLAMLI_RENKLER,
   DURUM_ISARETI,
+  DURUM_SERIDI,
   DURUM_YAZISI,
   DURUM_ZEMINI,
+  karDurumu,
   tutarDurumu,
-} from "../src/lib/panel/renkler";
+} from "../src/lib/renkler";
 import {
   adVarMi,
   gunSatirSayisi,
@@ -1408,18 +1411,64 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * PALET TEK KAPIDAN GEÇER. Ekranlar ham renk kodu yazmamalı; yazarsa
    * palet değiştiğinde bir yer geride kalır ve renkler ayrışır.
    */
-  const gorevEkrani = readFileSync("src/app/gorev-kutusu.tsx", "utf8");
-  const nakitEkrani = readFileSync("src/app/nakit-ozeti.tsx", "utf8");
-  for (const [ad, kaynak] of [
-    ["görev kutusu", gorevEkrani],
-    ["nakit özeti", nakitEkrani],
-    ["panel", panelSayfasi],
-  ] as const) {
+  /**
+   * TEK KAYNAK KAPISI — TÜM EKRANLAR. Renk sistemi sayfa bazlı değil DURUM
+   * bazlı: aynı renk her sayfada aynı şeyi söyler. Bir ekran ham renk kodu
+   * yazarsa palet değiştiğinde orası geride kalır ve sistem sessizce
+   * ayrışır — "başka bir yeşil" doğar.
+   *
+   * Tarama ekran dosyalarında #RRGGBB arıyor; palet ve grafik bileşeni
+   * bilinçli istisna (renk orada TANIMLANIYOR / SVG çiziyor).
+   */
+  const renkTaranacak: [string, string][] = [
+    ["görev kutusu", "src/app/gorev-kutusu.tsx"],
+    ["nakit özeti", "src/app/nakit-ozeti.tsx"],
+    ["panel", "src/app/page.tsx"],
+    ["nakit takvimi sayfası", "src/app/nakit-takvimi/page.tsx"],
+    ["net kâr bileşeni", "src/components/net-kar.tsx"],
+    ["satışlar", "src/app/satislar/page.tsx"],
+    ["panel kartları", "src/app/panel-kartlari.tsx"],
+  ];
+  for (const [ad, yol] of renkTaranacak) {
+    const kaynak = readFileSync(yol, "utf8");
     kontrol(
       `  ${ad} ham renk kodu YAZMIYOR (palet tek kapıdan)`,
       !/#[0-9A-Fa-f]{6}/.test(kaynak),
     );
   }
+
+  /** Palet ve sunum bileşeni AYNI ton kümesini tanımalı. */
+  const rozetBileseni = readFileSync("src/components/durum-rozeti.tsx", "utf8");
+  kontrol(
+    "sunum bileşeni üç katmanı da sunuyor (şerit · zemin · rakam)",
+    rozetBileseni.includes("DURUM_SERIDI") &&
+      rozetBileseni.includes("DURUM_ZEMINI") &&
+      rozetBileseni.includes("DURUM_YAZISI"),
+  );
+  kontrol(
+    "her tonun ŞERİDİ tanımlı (üç katmanın birincisi)",
+    ANLAMLI_RENKLER.every((d) => DURUM_SERIDI[d].includes("border-l")),
+  );
+  /**
+   * KÂR RENGİ HER YERDE AYNI KAYNAKTAN. `karDurumu` null'ı NÖTR sayar:
+   * hesaplanamamış kâr "sıfır kâr" değildir, yeşil de kırmızı da yalan olur.
+   */
+  kontrol("hesaplanamayan kâr NÖTR (yeşil/kırmızı yalan olurdu)", karDurumu(null) === "notr");
+  kontrol("kârda olumlu", karDurumu(10) === "olumlu");
+  kontrol("zararda olumsuz", karDurumu(-10) === "olumsuz");
+  kontrol("sıfır kâr NÖTR", karDurumu(0) === "notr");
+  /** NET-2 sunumu paletten geliyor ve yanında KELİME var (kısıt #1). */
+  const netKar = readFileSync("src/components/net-kar.tsx", "utf8");
+  kontrol(
+    "NET-2 rengi paletten, yanında kelime var",
+    netKar.includes("karDurumu(sayi)") &&
+      netKar.includes('t("karda")') &&
+      netKar.includes('t("zararda")'),
+  );
+  kontrol(
+    "  ...sıfırda kelime YOK (nötr, ne müjde ne alarm)",
+    netKar.includes('renk === "notr" ? null'),
+  );
   kontrol(
     "marj rozeti paletten geliyor",
     panelSayfasi.includes("<DurumRozeti durum={renkDurumu}>"),

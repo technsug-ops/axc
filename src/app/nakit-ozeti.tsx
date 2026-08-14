@@ -13,7 +13,7 @@ import {
   DURUM_YAZISI,
   tutarDurumu,
   type DurumRengi,
-} from "@/lib/panel/renkler";
+} from "@/lib/renkler";
 
 /**
  * ============================================================================

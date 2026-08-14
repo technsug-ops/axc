@@ -800,7 +800,9 @@
     "kargoIsaretiKaldir": "Kargo işaretini kaldır",
     "kargoTarihi": "Kargoya veriliş tarihi",
     "kargoTarihiKaydet": "Tarihi kaydet",
-    "kargoTarihiGecersiz": "Kargo tarihi okunamadı. Gün, ay ve yılı kontrol edin."
+    "kargoTarihiGecersiz": "Kargo tarihi okunamadı. Gün, ay ve yılı kontrol edin.",
+    "karda": "kârda",
+    "zararda": "zararda"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",

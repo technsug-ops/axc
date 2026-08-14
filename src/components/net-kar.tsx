@@ -1,7 +1,8 @@
 import { getTranslations } from "next-intl/server";
 
-import { Badge } from "@/components/ui/badge";
+import { DurumRakami, DurumRozeti } from "@/components/durum-rozeti";
 import { bicimlendirici } from "@/lib/bicim";
+import { karDurumu } from "@/lib/renkler";
 
 import type { Currency, ProfitStatus } from "@/generated/prisma/enums";
 
@@ -42,20 +43,27 @@ export async function NetKar({
         : durum === "CURRENCY_MISMATCH"
           ? t("durumKisaCurrency")
           : t("durumKisaRule");
-    return (
-      <Badge
-        variant="outline"
-        className="border-amber-500/50 text-amber-700 dark:text-amber-400"
-      >
-        {kisa}
-      </Badge>
-    );
+    // Hesaplanamayan kâr UYARI'dır: eksik bir şey var, ele alınmalı.
+    return <DurumRozeti durum="uyari">{kisa}</DurumRozeti>;
   }
 
   const sayi = Number(tutar.toString());
+  const renk = karDurumu(sayi);
+
+  /**
+   * RENK TEK BAŞINA KONUŞMAZ (kısıt #1): rakamın yanında kelime durur.
+   * Sıfırda kelime YOK — sıfır nötrdür, "kârda" da "zararda" da değildir.
+   */
   return (
-    <span className={sayi < 0 ? "text-destructive font-medium" : "font-medium"}>
-      {bicim.para(sayi, paraBirimi ?? "TRY")}
+    <span className="inline-flex flex-wrap items-baseline gap-1">
+      <DurumRakami durum={renk} className="font-medium">
+        {bicim.para(sayi, paraBirimi ?? "TRY")}
+      </DurumRakami>
+      {renk === "notr" ? null : (
+        <DurumRozeti durum={renk} isaretsiz>
+          {renk === "olumlu" ? t("karda") : t("zararda")}
+        </DurumRozeti>
+      )}
     </span>
   );
 }

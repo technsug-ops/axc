@@ -6,6 +6,7 @@ import { Eye, Plus, TriangleAlert, Undo2 } from "lucide-react";
 import { ExcelIndir } from "@/components/excel-indir";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Baglanti } from "@/components/baglanti";
+import { DurumRozeti } from "@/components/durum-rozeti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
 import { KargoDurumu } from "./kargo-durumu";
@@ -399,7 +400,7 @@ export default async function SatislarSayfasi({
                         metin={urunOzeti(satis)}
                         ek={
                           satis.returns.length ? (
-                            <Badge variant="outline">{tIade("iadeVar")}</Badge>
+                            <DurumRozeti durum="uyari">{tIade("iadeVar")}</DurumRozeti>
                           ) : null
                         }
                       />
@@ -447,7 +448,7 @@ export default async function SatislarSayfasi({
                       {urunOzeti(satis)}
                     </Baglanti>
                     {satis.returns.length ? (
-                      <Badge variant="outline">{tIade("iadeVar")}</Badge>
+                      <DurumRozeti durum="uyari">{tIade("iadeVar")}</DurumRozeti>
                     ) : null}
                   </span>
                 }
