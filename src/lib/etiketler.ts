@@ -171,3 +171,53 @@ export async function bildirimDurumEtiketleri(): Promise<
     IPTAL: tBildirimDurumu("IPTAL"),
   };
 }
+
+/**
+ * DURUM ADI ≠ DÜĞME ADI (kullanıcı geri bildirimi 14.08.2026: "devam
+ * gelmiyor").
+ *
+ * Geçiş düğmeleri durum adlarını yazıyordu: "Mal geldi", "İptal". Kullanıcı
+ * bunları ROZET sandı ve ilerlemek için basılacak bir şey görmedi. Düğme
+ * EYLEM söylemeli: "Mal geldi olarak işaretle".
+ *
+ * Tip bilerek dar (`Record<NoticeStatus, …>`): şemaya yeni durum eklenip
+ * eylem metni yazılmazsa proje DERLENMEZ — etiketsiz düğme çıkamaz.
+ */
+export async function bildirimGecisEtiketleri(): Promise<
+  Record<NoticeStatus, string>
+> {
+  const tGecis = await getTranslations("BildirimGecisi");
+  return {
+    BEKLENIYOR: tGecis("BEKLENIYOR"),
+    MAL_GELDI: tGecis("MAL_GELDI"),
+    ITIRAZ_ACILDI: tGecis("ITIRAZ_ACILDI"),
+    ITIRAZ_INCELEMEDE: tGecis("ITIRAZ_INCELEMEDE"),
+    ITIRAZ_KABUL: tGecis("ITIRAZ_KABUL"),
+    ITIRAZ_RED: tGecis("ITIRAZ_RED"),
+    KAPANDI: tGecis("KAPANDI"),
+    IPTAL: tGecis("IPTAL"),
+  };
+}
+
+/**
+ * SIRADAKİ ADIM METNİ — "şimdi ne yapmalıyım" sorusunun cevabı kayıtta yazar.
+ *
+ * Kullanıcı 14.08.2026'da BEKLENIYOR durumundaki bildirimde takıldı: "İadeyi
+ * işle" pasifti (doğru), sebebi yazılıydı (doğru) ama İLERLEMEK için hangi
+ * düğmeye basılacağı yazılı değildi. Sebep ile YÖNLENDİRME ayrı iki şeydir.
+ */
+export async function bildirimSiradakiAdim(): Promise<
+  Record<NoticeStatus, string>
+> {
+  const tGecis = await getTranslations("BildirimGecisi");
+  return {
+    BEKLENIYOR: tGecis("siradakiBekleniyor"),
+    MAL_GELDI: tGecis("siradakiMalGeldi"),
+    ITIRAZ_ACILDI: tGecis("siradakiItiraz"),
+    ITIRAZ_INCELEMEDE: tGecis("siradakiItiraz"),
+    ITIRAZ_KABUL: tGecis("siradakiItirazKabul"),
+    ITIRAZ_RED: tGecis("siradakiItirazRed"),
+    KAPANDI: tGecis("siradakiYok"),
+    IPTAL: tGecis("siradakiYok"),
+  };
+}

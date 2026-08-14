@@ -18,15 +18,19 @@
 import { readFileSync } from "node:fs";
 
 import {
+  DEGISIM_GEREKCELERI,
   IADE_ISLE_SEBEP_ANAHTARI,
   IZINLI_GECISLER,
+  ayirmaMumkunMu,
   ayrilmisAdetler,
   degisimAyrilirMi,
+  donenUrunZorunluMu,
   gecisGecerliMi,
   iadeIslenebilirMi,
   itirazAcilabilirMi,
   kapaliMi,
   kapanistaIadeDogarMi,
+  serbestStok,
 } from "../src/lib/iade/bildirim";
 import {
   EK_SINIRLARI,
@@ -43,7 +47,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 3;
+const BOLUM_SAYISI = 4;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -466,6 +470,149 @@ console.log("\n3) DOSYA EKLERİ — SINIRLAR");
     bicim.includes('"ReturnNotice"'),
   );
   kosanBolumler.push("ekler");
+}
+
+// ===========================================================================
+console.log("\n4) FORM KURALLARI — 14.08.2026'DA CANLIDA ÇIKAN HATALAR");
+// ===========================================================================
+/**
+ * Kullanıcı testi düşürdü ve dört ayrı hata buldu:
+ *   1. YANLIS_URUN seçilince "dönen ürün" alanı EKRANA HİÇ ÇİZİLMEMİŞTİ.
+ *   2. Ayrılan ürün listesi BÜTÜN ürünleri gösteriyordu (stok bilgisi yok).
+ *   3. Stoğu 0 olan ürün ayrılabiliyordu; "ayrıldı" rozeti çıkıyordu.
+ *   4. Geçiş düğmeleri DURUM ADI yazıyordu, eylem adı değil ("devam gelmiyor").
+ *
+ * Bu bölüm 1, 3 ve 4'ün kuralını kilitliyor; 2 sunum katmanı olduğu için
+ * ekran kaynağından doğrulanıyor.
+ */
+{
+  // --- DÖNEN ÜRÜN ZORUNLULUĞU (hata 1) ---
+  kontrol("YANLIS_URUN'da dönen ürün ZORUNLU", donenUrunZorunluMu("YANLIS_URUN"));
+  for (const g of ["DEGISIM", "DEGISIM_KUSURLU", "CAYMA", "CALISMIYOR", "KULLANILMIS_ITIRAZ", "DIGER"] as const) {
+    kontrol(`  ...${g} gerekçesinde sorulmaz`, !donenUrunZorunluMu(g));
+  }
+  kontrol(
+    "değişim gerekçelerinden YALNIZ YANLIS_URUN dönen ürün ister",
+    DEGISIM_GEREKCELERI.filter(donenUrunZorunluMu).length === 1,
+    DEGISIM_GEREKCELERI.filter(donenUrunZorunluMu),
+  );
+
+  /** DÖNEN ÜRÜN ALANI EKRANDA GERÇEKTEN VAR MI (hata 1'in ta kendisi). */
+  const form = readFileSync("src/app/iadeler/bildirim-formu.tsx", "utf8");
+  kontrol(
+    "form dönen ürün alanını ÇİZİYOR (donenSorulur bloğu)",
+    form.includes("donenSorulur ?") && form.includes("bildirim-donen"),
+  );
+  kontrol(
+    "dönen ürün seçicisi ARANABİLİR (1055 ürün düz listeye sığmaz)",
+    form.includes("AranabilirSecim"),
+  );
+  kontrol(
+    "ayrılan ürün listesi STOKTAKİ varyantlardan besleniyor",
+    form.includes("stoktakiVaryantlar"),
+  );
+  kontrol(
+    "dönen ürün listesi TÜM varyantlardan besleniyor (stok 0 olabilir)",
+    form.includes("tumVaryantlar"),
+  );
+
+  const sayfa = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  kontrol(
+    "sayfa ayrılan listeyi stoğa göre süzüyor",
+    sayfa.includes("formStoklari.get(v.id) ?? 0) > 0"),
+  );
+  /**
+   * VARYANT SORGUSUNDA SINIR YOK. Eskiden `take: 500` vardı: 1055 üründen
+   * 500'ü listeleniyor, gerisi SESSİZCE düşüyordu. Aradığı ürünü bulamayan
+   * kullanıcı onun sistemde kayıtlı olmadığını sanardı — en sinsi tür.
+   * Kontrol metinsel ve dar: sorgunun kendisini okumak yerine o satırın
+   * geri gelmediğini kanıtlıyor.
+   */
+  kontrol(
+    "  ...ve varyant sorgusunda `take: 500` SINIRI YOK (ürün sessizce düşmesin)",
+    !sayfa.includes("take: 500"),
+  );
+
+  // --- AYIRMA STOK KONTROLÜ (hata 3) ---
+  kontrol(
+    "stok 0 -> ayırma REDDEDİLİR",
+    !ayirmaMumkunMu({ mevcutStok: 0, zatenAyrilmis: 0, istenen: 1 }),
+  );
+  kontrol(
+    "stok 1, istenen 1 -> KABUL",
+    ayirmaMumkunMu({ mevcutStok: 1, zatenAyrilmis: 0, istenen: 1 }),
+  );
+  kontrol(
+    "stok 1, istenen 2 -> REDDEDİLİR",
+    !ayirmaMumkunMu({ mevcutStok: 1, zatenAyrilmis: 0, istenen: 2 }),
+  );
+  /**
+   * AYNI MALI İKİ BİLDİRİME AYIRMAK: 1 adet stok, 1 adet zaten ayrılmış.
+   * Yalnız mevcut stoğa bakan bir kontrol bunu KABUL ederdi ve iki bildirim
+   * de "hazır" görünürdü — biri gönderilince öteki boşa çıkardı.
+   */
+  kontrol(
+    "stok 1 ama 1 adedi başka bildirime ayrılmış -> REDDEDİLİR",
+    !ayirmaMumkunMu({ mevcutStok: 1, zatenAyrilmis: 1, istenen: 1 }),
+  );
+  kontrol(
+    "stok 5, 2 ayrılmış, 3 isteniyor -> KABUL (tam sınır)",
+    ayirmaMumkunMu({ mevcutStok: 5, zatenAyrilmis: 2, istenen: 3 }),
+  );
+  kontrol(
+    "stok 5, 2 ayrılmış, 4 isteniyor -> REDDEDİLİR",
+    !ayirmaMumkunMu({ mevcutStok: 5, zatenAyrilmis: 2, istenen: 4 }),
+  );
+  kontrol("serbest stok = mevcut − ayrılmış", serbestStok(5, 2) === 3, serbestStok(5, 2));
+  kontrol("adet 0 ile ayırma anlamsız -> REDDEDİLİR", !ayirmaMumkunMu({ mevcutStok: 9, zatenAyrilmis: 0, istenen: 0 }));
+
+  /** SUNUCU DA AYNI FONKSİYONU ÇAĞIRIYOR: ekranda engellemek yetki değildir. */
+  const eylem = readFileSync("src/app/iadeler/bildirim-actions.ts", "utf8");
+  kontrol("sunucu ayırma kontrolünü yapıyor", eylem.includes("ayirmaMumkunMu"));
+  kontrol("sunucu dönen ürün zorunluluğunu yapıyor", eylem.includes("donenUrunZorunluMu"));
+
+  // --- DÜĞME ETİKETLERİ EYLEM DİLİNDE (hata 4) ---
+  const sozluk3 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const gecis = sozluk3.BildirimGecisi ?? {};
+  for (const durum of Object.keys(IZINLI_GECISLER)) {
+    kontrol(
+      `  geçiş etiketi var: ${durum}`,
+      typeof gecis[durum] === "string" && gecis[durum].length > 0,
+      gecis[durum],
+    );
+  }
+  kontrol(
+    "MAL_GELDI düğmesi EYLEM söylüyor (durum adı değil)",
+    typeof gecis.MAL_GELDI === "string" && gecis.MAL_GELDI.includes("işaretle"),
+    gecis.MAL_GELDI,
+  );
+  kontrol(
+    "  ...durum rozetiyle AYNI METİN DEĞİL",
+    gecis.MAL_GELDI !== sozluk3.BildirimDurumu?.MAL_GELDI,
+    [gecis.MAL_GELDI, sozluk3.BildirimDurumu?.MAL_GELDI],
+  );
+  /** SIRADAKİ ADIM: her durumda yazılı ve BEKLENIYOR'da yönlendirme veriyor. */
+  for (const anahtar of [
+    "siradakiBekleniyor",
+    "siradakiMalGeldi",
+    "siradakiItiraz",
+    "siradakiItirazKabul",
+    "siradakiItirazRed",
+    "siradakiYok",
+  ]) {
+    kontrol(`  sıradaki adım metni var: ${anahtar}`, typeof gecis[anahtar] === "string" && gecis[anahtar].length > 0);
+  }
+  kontrol(
+    "BEKLENIYOR'da sıradaki adım hangi düğmeye basılacağını SÖYLÜYOR",
+    typeof gecis.siradakiBekleniyor === "string" &&
+      gecis.siradakiBekleniyor.includes("Mal geldi"),
+    gecis.siradakiBekleniyor,
+  );
+  kontrol(
+    "sayfa sıradaki adımı gösteriyor",
+    sayfa.includes("siradakiAdimlar[b.status]"),
+  );
+  kosanBolumler.push("form-kurallari");
 }
 
 // ===========================================================================

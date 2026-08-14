@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 
+import { AranabilirSecim } from "@/components/aranabilir-secim";
 import { HataOzeti } from "@/components/hata-ozeti";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,12 @@ import { bildirimOlustur, type BildirimDurumu } from "./bildirim-actions";
 import type { ReturnReason } from "@/generated/prisma/enums";
 
 export type SatisSecenegi = { id: string; etiket: string };
-export type VaryantSecenegi = { id: string; etiket: string };
+export type VaryantSecenegi = {
+  id: string;
+  etiket: string;
+  /** Stok adedi metni — "stokta 4 adet". Aranabilir seçimde alt satır. */
+  stokMetni?: string;
+};
 
 /**
  * ============================================================================
@@ -35,17 +41,36 @@ export type VaryantSecenegi = { id: string; etiket: string };
  *  DEGISIM_KUSURLU, YANLIS_URUN). Diğer gerekçelerde hüküm mal gelince
  *  verilir; peşin ayırma sormak, kullanıcıya cevabını bilmediği bir soru
  *  sormaktır.
+ *
+ *  İKİ ÜRÜN ALANI, İKİ AYRI KURAL (14.08.2026'da kullanıcı hatayı buldu):
+ *
+ *    AYRILAN ürün  = MÜŞTERİYE GİDECEK yedek. STOKTA OLMAK ZORUNDA —
+ *      liste yalnız stoğu olan varyantları gösterir ve adedi yazar.
+ *      Eskiden bütün ürünler listeleniyordu; kullanıcı stoğu 0 olan bir
+ *      ürünü seçti ve "ayrıldı" rozeti çıktı. Gönderilemeyecek bir malı
+ *      ayırmak, olmayan bir hazırlığı yapılmış göstermekti.
+ *
+ *    DÖNEN ürün    = YANLIŞLIKLA GİTMİŞ, geri gelen mal. STOK ŞARTI YOK:
+ *      zaten stoktan çıkmış olduğu için 0 görünmesi NORMALDİR. Bu alan
+ *      6. senaryonun defter düzeltmesinin hedefidir.
+ *
+ *  Bu ayrım bindirilirse ya gönderilemeyecek mal ayrılır ya da dönen mal
+ *  hiç seçilemez.
  * ============================================================================
  */
 export function BildirimFormu({
   satislar,
-  varyantlar,
+  stoktakiVaryantlar,
+  tumVaryantlar,
   degisimGerekceleri,
   gerekceEtiketleri,
   bugun,
 }: {
   satislar: SatisSecenegi[];
-  varyantlar: VaryantSecenegi[];
+  /** AYRILAN ürün için: yalnız stoğu olanlar. */
+  stoktakiVaryantlar: VaryantSecenegi[];
+  /** DÖNEN ürün için: hepsi (stok 0 olabilir). */
+  tumVaryantlar: VaryantSecenegi[];
   /** Hangi gerekçelerde ayrılan ürün sorulur — sunucudan gelir (tek kaynak). */
   degisimGerekceleri: ReturnReason[];
   gerekceEtiketleri: Record<string, string>;
@@ -79,6 +104,19 @@ export function BildirimFormu({
 
   const ayirmaSorulur =
     gerekce !== "" && degisimGerekceleri.includes(gerekce as ReturnReason);
+
+  /** Seçilen ayrılan ürünün stok metni — seçimden sonra da görünür kalır. */
+  const seciliStokMetni =
+    stoktakiVaryantlar.find((v) => v.id === varyantId)?.stokMetni ?? null;
+
+  /**
+   * KAYIT ŞARTLARI — düğme neden kapalı, ekranda yazılı (İlke #5).
+   * YANLIS_URUN'da dönen ürün ZORUNLU: onsuz 6. senaryo kurulamaz.
+   */
+  const eksikler: string[] = [];
+  if (!satisId) eksikler.push(t("eksikSatis"));
+  if (!gerekce) eksikler.push(t("eksikGerekce"));
+  if (donenSorulur && !donenId) eksikler.push(t("eksikDonen"));
 
   // Kayıt başarılıysa form sıfırlanır ve liste tazelenir.
   if (durum.basarili && satisId !== "") {
@@ -169,6 +207,32 @@ export function BildirimFormu({
         </div>
       </div>
 
+      {/* DÖNEN ÜRÜN — yalnız YANLIS_URUN gerekçesinde, ZORUNLU.
+          6. senaryonun defter düzeltmesi bu varyanta yazılıyor; boş kalırsa
+          "iadeyi işle" ön-dolu gelemez ve senaryo hiç kurulamaz. */}
+      {donenSorulur ? (
+        <div className="space-y-3 rounded-lg border border-amber-500/50 bg-amber-500/5 p-3">
+          <p className="text-sm font-medium">{t("donenBaslik")} *</p>
+          <p className="text-muted-foreground text-xs">{t("donenNotu")}</p>
+          <div className="space-y-2">
+            <Label htmlFor="bildirim-donen">{ortak("urun")}</Label>
+            {/* STOK ŞARTI YOK: yanlışlıkla gitmiş mal zaten stoktan
+                düşmüştür, 0 görünmesi normaldir. */}
+            <AranabilirSecim
+              id="bildirim-donen"
+              etiket={t("donenUrunSecin")}
+              secenekler={tumVaryantlar.map((v) => ({
+                deger: v.id,
+                etiket: v.etiket,
+                altEtiket: v.stokMetni,
+              }))}
+              seciliDeger={donenId}
+              onSec={setDonenId}
+            />
+          </div>
+        </div>
+      ) : null}
+
       {/* AYRILAN ÜRÜN — yalnız değişim gerekçelerinde. */}
       {ayirmaSorulur ? (
         <div className="space-y-3 rounded-lg border p-3">
@@ -177,18 +241,25 @@ export function BildirimFormu({
           <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
             <div className="space-y-2">
               <Label htmlFor="bildirim-varyant">{ortak("urun")}</Label>
-              <Select value={varyantId} onValueChange={setVaryantId}>
-                <SelectTrigger id="bildirim-varyant" className="h-11 w-full md:h-9">
-                  <SelectValue placeholder={t("ayrilanUrunSecin")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {varyantlar.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.etiket}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* YALNIZ STOĞU OLANLAR — gönderilemeyecek mal ayrılamaz.
+                  Etiketin altında stok adedi yazar ki seçim körlemesine
+                  yapılmasın (kullanıcının 14.08.2026'daki hatası). */}
+              <AranabilirSecim
+                id="bildirim-varyant"
+                etiket={t("ayrilanUrunSecin")}
+                secenekler={stoktakiVaryantlar.map((v) => ({
+                  deger: v.id,
+                  etiket: v.etiket,
+                  altEtiket: v.stokMetni,
+                }))}
+                seciliDeger={varyantId}
+                onSec={setVaryantId}
+              />
+              {stoktakiVaryantlar.length === 0 ? (
+                <p className="text-muted-foreground text-xs">
+                  {t("stoktaUrunYok")}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="bildirim-adet">{ortak("adet")}</Label>
@@ -202,6 +273,10 @@ export function BildirimFormu({
               />
             </div>
           </div>
+          {/* Seçilen ürünün stoğu, seçimden SONRA da görünür durur. */}
+          {seciliStokMetni ? (
+            <p className="text-muted-foreground text-xs">{seciliStokMetni}</p>
+          ) : null}
         </div>
       ) : null}
 
@@ -216,14 +291,24 @@ export function BildirimFormu({
         />
       </div>
 
-      <Button
-        type="submit"
-        className="h-11 md:h-9"
-        disabled={bekliyor || !satisId || !gerekce}
-      >
-        <Plus className="size-4" />
-        {bekliyor ? t("kaydediliyor") : t("bildirimEkle")}
-      </Button>
+      <div className="space-y-2">
+        <Button
+          type="submit"
+          className="h-11 md:h-9"
+          disabled={bekliyor || eksikler.length > 0}
+        >
+          <Plus className="size-4" />
+          {bekliyor ? t("kaydediliyor") : t("bildirimEkle")}
+        </Button>
+
+        {/* DÜĞME NEDEN KAPALI: sebep ekranda yazar (İlke #5). Sessiz pasif
+            düğme "sistem bozuk" hissi verir. */}
+        {eksikler.length > 0 ? (
+          <p className="text-muted-foreground text-xs">
+            {t("eksikOnEk")} {eksikler.join(" · ")}
+          </p>
+        ) : null}
+      </div>
     </form>
   );
 }

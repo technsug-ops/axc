@@ -3,17 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CalendarRange, Search, SlidersHorizontal, X } from "lucide-react";
+import { CalendarRange, SlidersHorizontal, X } from "lucide-react";
 
+import { AranabilirSecim } from "@/components/aranabilir-secim";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -215,13 +209,24 @@ export function SuzgecCubugu({
         <div className="flex flex-wrap gap-2">
           {suzgecler.map((s) =>
             s.aranabilir || s.secenekler.length > ARAMA_ESIGI ? (
-              <AranabilirSecim
-                key={s.ad}
-                tanim={s}
-                seciliDeger={(mevcut[s.ad] ?? "").trim()}
-                seciliEtiket={secenekEtiketi(s)}
-                onSec={(deger) => git({ [s.ad]: deger })}
-              />
+              /**
+               * ARANABİLİR SEÇİM ORTAK BİLEŞENE TAŞINDI (14.08.2026).
+               * Eskiden bu dosyanın içinde ayrı bir kopya duruyordu ve form
+               * alanı olarak kullanılamıyordu; iade bildirim formu 1055
+               * ürünü düz açılır listede gösteriyordu. Tek bileşen oldu.
+               */
+              <div key={s.ad} className="min-w-40">
+                <AranabilirSecim
+                  etiket={s.etiket}
+                  secenekler={s.secenekler.map((o) => ({
+                    deger: o.deger,
+                    etiket: o.etiket,
+                  }))}
+                  seciliDeger={(mevcut[s.ad] ?? "").trim()}
+                  onSec={(deger) => git({ [s.ad]: deger })}
+                  tumuEtiketi={t("tumu", { alan: s.etiket })}
+                />
+              </div>
             ) : (
               <Select
                 key={s.ad}
@@ -309,90 +314,8 @@ export function SuzgecCubugu({
 }
 
 /**
- * ARANABİLİR SEÇİM — 112 marka düz açılır listeye sığmaz.
- *
- * Kütüphane yerine Dialog + Input: kullanıcı yazarak daraltır, listeden
- * seçer. Telefonda tam ekran açılır, her satır 44 px.
+ * ARANABİLİR SEÇİM buradan `components/aranabilir-secim.tsx`'e TAŞINDI
+ * (14.08.2026). Sebep: form alanı olarak da gerekiyordu — iade bildirim
+ * formu 1055 ürünü düz açılır listede gösteriyordu ve telefonda
+ * kullanılamıyordu. İki kopya yerine tek bileşen (İlke #10).
  */
-function AranabilirSecim({
-  tanim,
-  seciliDeger,
-  seciliEtiket,
-  onSec,
-}: {
-  tanim: SuzgecTanimi;
-  seciliDeger: string;
-  seciliEtiket: string;
-  onSec: (deger: string) => void;
-}) {
-  const t = useTranslations("Suzgec");
-  const [acik, setAcik] = useState(false);
-  const [arama, setArama] = useState("");
-
-  const kucuk = arama.trim().toLocaleLowerCase("tr");
-  const suzulmus =
-    kucuk === ""
-      ? tanim.secenekler
-      : tanim.secenekler.filter((o) =>
-          o.etiket.toLocaleLowerCase("tr").includes(kucuk),
-        );
-
-  return (
-    <Dialog open={acik} onOpenChange={setAcik}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="h-11 min-w-40 justify-start md:h-9">
-          <Search className="size-4" />
-          {seciliDeger ? seciliEtiket : tanim.etiket}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[80vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>{tanim.etiket}</DialogTitle>
-        </DialogHeader>
-
-        <Input
-          autoFocus
-          value={arama}
-          onChange={(e) => setArama(e.target.value)}
-          placeholder={t("araIpucu")}
-          className="h-11 md:h-9"
-        />
-
-        <div className="max-h-[50vh] space-y-1 overflow-y-auto">
-          <button
-            type="button"
-            className="hover:bg-muted flex h-11 w-full items-center rounded-md px-3 text-left text-sm"
-            onClick={() => {
-              onSec("");
-              setAcik(false);
-            }}
-          >
-            {t("tumu", { alan: tanim.etiket })}
-          </button>
-
-          {suzulmus.length === 0 ? (
-            <p className="text-muted-foreground px-3 py-6 text-center text-sm">
-              {t("sonucYok")}
-            </p>
-          ) : (
-            suzulmus.map((o) => (
-              <button
-                key={o.deger}
-                type="button"
-                className={`hover:bg-muted flex h-11 w-full items-center rounded-md px-3 text-left text-sm ${
-                  o.deger === seciliDeger ? "bg-muted font-medium" : ""
-                }`}
-                onClick={() => {
-                  onSec(o.deger);
-                  setAcik(false);
-                }}
-              >
-                {o.etiket}
-              </button>
-            ))
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}

@@ -32,6 +32,8 @@ import {
 import {
   BILDIRIM_DURUMLARI,
   bildirimDurumEtiketleri,
+  bildirimGecisEtiketleri,
+  bildirimSiradakiAdim,
   iadeGerekceEtiketleri,
   iadeTuruEtiketleri,
 } from "@/lib/etiketler";
@@ -55,6 +57,7 @@ import {
 } from "@/lib/iade-liste";
 import { prisma } from "@/lib/prisma";
 import { sayfaCoz } from "@/lib/sayfalama";
+import { varyantStoklari } from "@/lib/stok";
 import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
 
 import type { NoticeStatus, ReturnType } from "@/generated/prisma/enums";
@@ -417,16 +420,32 @@ export default async function IadelerSayfasi({
         },
       },
     }),
+    /**
+     * FORM VARYANTLARI — `take` KALDIRILDI.
+     *
+     * Eskiden 500 ile sınırlıydı ve düz açılır listede gösteriliyordu:
+     * 1055 üründen 500'ü listelenip gerisi SESSİZCE düşüyordu (aradığı
+     * ürünü bulamayan kullanıcı onun kayıtlı olmadığını sanardı). Artık
+     * liste aranabilir seçicide çiziliyor, tamamı geliyor.
+     */
     prisma.productVariant.findMany({
       where: { isActive: true },
       orderBy: { sku: "asc" },
-      take: 500,
       select: { id: true, sku: true, product: { select: { name: true } } },
     }),
   ]);
 
+  /**
+   * AYRILAN ürün listesi için STOK gerekiyor: gönderilemeyecek mal
+   * ayrılamaz (kullanıcı 14.08.2026'da stoğu 0 olan ürünü ayırdı).
+   * Tek sorguda bütün varyantların stoğu — varyant başına sorgu atmıyoruz.
+   */
+  const formStoklari = await varyantStoklari(formVaryantlari.map((v) => v.id));
+
   const gerekceEtiketleri = await iadeGerekceEtiketleri();
   const durumEtiketleri = await bildirimDurumEtiketleri();
+  const gecisEtiketleri = await bildirimGecisEtiketleri();
+  const siradakiAdimlar = await bildirimSiradakiAdim();
   const tBildirim = await getTranslations("Bildirim2");
 
   /**
@@ -509,9 +528,26 @@ export default async function IadelerSayfasi({
               id: s.id,
               etiket: `${s.code ?? tBildirim("siparisNoYok")} · ${bicim.tarih(s.soldAt)} · ${s.channelAccount.channel.name} — ${s.channelAccount.name}`,
             }))}
-            varyantlar={formVaryantlari.map((v) => ({
+            /**
+             * İKİ LİSTE, İKİ KURAL (bkz. bildirim-formu.tsx başlığı):
+             *   ayrılan → gönderilecek yedek, STOKTA OLMALI
+             *   dönen   → yanlışlıkla gitmiş mal, stok 0 olabilir
+             */
+            stoktakiVaryantlar={formVaryantlari
+              .filter((v) => (formStoklari.get(v.id) ?? 0) > 0)
+              .map((v) => ({
+                id: v.id,
+                etiket: `${v.product.name} (${v.sku})`,
+                stokMetni: tBildirim("stokMetni", {
+                  sayi: formStoklari.get(v.id) ?? 0,
+                }),
+              }))}
+            tumVaryantlar={formVaryantlari.map((v) => ({
               id: v.id,
               etiket: `${v.product.name} (${v.sku})`,
+              stokMetni: tBildirim("stokMetni", {
+                sayi: formStoklari.get(v.id) ?? 0,
+              }),
             }))}
             degisimGerekceleri={[...DEGISIM_GEREKCELERI]}
             gerekceEtiketleri={gerekceEtiketleri}
@@ -575,6 +611,13 @@ export default async function IadelerSayfasi({
                     />
                   ) : null}
 
+                  {/* SIRADAKİ ADIM — "şimdi ne yapmalıyım" kayıtta yazar.
+                      Sebep (neden basamıyorum) ile yönlendirme (ne yapmalıyım)
+                      ayrı iki şeydir; ikincisi eksikti. */}
+                  <p className="text-muted-foreground text-xs">
+                    {siradakiAdimlar[b.status]}
+                  </p>
+
                   <BildirimDurumu
                     bildirimId={b.id}
                     iadeIsle={{
@@ -599,7 +642,10 @@ export default async function IadelerSayfasi({
                       )
                       .map((hedef) => ({
                         hedef,
-                        etiket: durumEtiketleri[hedef],
+                        // DURUM ADI DEĞİL EYLEM ADI: "Mal geldi" bir rozet
+                        // gibi okunuyordu, "Mal geldi olarak işaretle"
+                        // basılacak bir şey olduğunu söylüyor.
+                        etiket: gecisEtiketleri[hedef],
                         acik: true,
                       }))}
                   />

@@ -140,6 +140,47 @@ export function degisimAyrilirMi(gerekce: ReturnReason): boolean {
 }
 
 /**
+ * DÖNEN (YANLIŞ GİDEN) ÜRÜN HANGİ GEREKÇEDE ZORUNLU?
+ *
+ * Yalnız YANLIS_URUN'da. 6. senaryonun defter düzeltmesi o varyanta yazılır;
+ * boş kalırsa iade formu dönen ürünü ön-dolu getiremez ve senaryo hiç
+ * kurulamaz — kullanıcı 14.08.2026'da tam buna takıldı ("devam gelmiyor").
+ *
+ * Diğer gerekçelerde dönen mal satılan malın KENDİSİDİR, sorulmaz.
+ */
+export function donenUrunZorunluMu(gerekce: ReturnReason): boolean {
+  return gerekce === "YANLIS_URUN";
+}
+
+/**
+ * ---------------------------------------------------------------------------
+ *  AYIRMA STOK KONTROLÜ
+ * ---------------------------------------------------------------------------
+ *  Ayırmak = MÜŞTERİYE GÖNDERİLECEK malı taahhüt etmek. Olmayan malı taahhüt
+ *  etmek, yapılmamış bir hazırlığı yapılmış göstermektir; stok ekranındaki
+ *  "ayrılmış N adet" rozeti de yalancı olur.
+ *
+ *  14.08.2026: kullanıcı stoğu 0 olan ürünü ayırdı ve rozet çıktı. Ne ekran
+ *  ne sunucu engelliyordu.
+ *
+ *  ÖLÇÜT SERBEST STOK: mevcut − DİĞER açık bildirimlerde ayrılmış. Yalnız
+ *  mevcut stoğa bakılsaydı 1 adetlik mal iki bildirime ayrı ayrı taahhüt
+ *  edilir ve ikisi de "hazır" görünürdü.
+ */
+export function serbestStok(mevcutStok: number, zatenAyrilmis: number): number {
+  return mevcutStok - zatenAyrilmis;
+}
+
+export function ayirmaMumkunMu(girdi: {
+  mevcutStok: number;
+  zatenAyrilmis: number;
+  istenen: number;
+}): boolean {
+  if (girdi.istenen <= 0) return false;
+  return girdi.istenen <= serbestStok(girdi.mevcutStok, girdi.zatenAyrilmis);
+}
+
+/**
  * İTİRAZ DALINA GİREBİLİR Mİ?
  *
  * İtiraz, "ürün kullanılmış geldi" iddiasıyla pazaryerine yapılır — yani

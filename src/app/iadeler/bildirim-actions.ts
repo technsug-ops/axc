@@ -5,9 +5,18 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { gunMetninden } from "@/lib/donem";
-import { gecisGecerliMi, kapaliMi } from "@/lib/iade/bildirim";
+import {
+  AYRILMIS_SAYILAN_DURUMLAR,
+  ayirmaMumkunMu,
+  ayrilmisAdetler,
+  donenUrunZorunluMu,
+  gecisGecerliMi,
+  kapaliMi,
+  serbestStok,
+} from "@/lib/iade/bildirim";
 import { oturumdakiKullanici } from "@/lib/oturum";
 import { prisma } from "@/lib/prisma";
+import { varyantStogu } from "@/lib/stok";
 import { yetkiIste } from "@/lib/yetki";
 
 import type { NoticeStatus } from "@/generated/prisma/enums";
@@ -102,12 +111,85 @@ export async function bildirimOlustur(
   if (!veri.reservedVariantId && veri.reservedQuantity > 0) {
     return { hatalar: [t("ayrilanUrunZorunlu")] };
   }
+  /**
+   * ============================================================================
+   *  AYRILAN ÜRÜN STOKTA OLMAK ZORUNDA — SUNUCUDA DOĞRULANIR
+   * ----------------------------------------------------------------------------
+   *  14.08.2026'da kullanıcı yakaladı: stoğu 0 olan bir ürün seçildi ve
+   *  "ayrıldı" rozeti çıktı. Ayırmak, MÜŞTERİYE GÖNDERİLECEK malı taahhüt
+   *  etmektir; olmayan malı taahhüt etmek boş bir hazırlık kaydıdır ve stok
+   *  ekranındaki rozeti yalancı yapar.
+   *
+   *  ÖLÇÜT "SERBEST STOK": mevcut stok − DİĞER açık bildirimlerde ayrılmış
+   *  adet. Yalnız mevcut stoğa bakılsaydı 1 adetlik mal iki bildirime ayrı
+   *  ayrı taahhüt edilebilirdi ve ikisi de "hazır" görünürdü.
+   *
+   *  Ekranda liste zaten stoğu olanlarla sınırlı; bu kontrol o listeyi
+   *  ATLAYAN istekler için (adres/istek elle kurulabilir) ve iki kullanıcı
+   *  aynı malı ayırırsa diye duruyor.
+   * ============================================================================
+   */
   if (veri.reservedVariantId) {
     const varyant = await prisma.productVariant.findUnique({
       where: { id: veri.reservedVariantId },
-      select: { id: true },
+      select: { id: true, sku: true },
     });
     if (!varyant) return { hatalar: [t("ayrilanUrunBulunamadi")] };
+
+    const mevcutStok = await varyantStogu(veri.reservedVariantId);
+
+    const acikBildirimler = await prisma.returnNotice.findMany({
+      where: {
+        reservedVariantId: veri.reservedVariantId,
+        status: { in: AYRILMIS_SAYILAN_DURUMLAR },
+      },
+      select: { status: true, reservedVariantId: true, reservedQuantity: true },
+    });
+    const zatenAyrilmis =
+      ayrilmisAdetler(
+        acikBildirimler.map((b) => ({
+          durum: b.status,
+          reservedVariantId: b.reservedVariantId,
+          reservedQuantity: b.reservedQuantity,
+        })),
+      ).get(veri.reservedVariantId) ?? 0;
+
+    // Kural SAF MODÜLDEN gelir; ekran, sunucu ve test aynı fonksiyonu çağırır.
+    if (
+      !ayirmaMumkunMu({
+        mevcutStok,
+        zatenAyrilmis,
+        istenen: veri.reservedQuantity,
+      })
+    ) {
+      return {
+        hatalar: [
+          t("ayrilanStokYetersiz", {
+            sku: varyant.sku,
+            stok: mevcutStok,
+            ayrilmis: zatenAyrilmis,
+            serbest: Math.max(0, serbestStok(mevcutStok, zatenAyrilmis)),
+            istenen: veri.reservedQuantity,
+          }),
+        ],
+      };
+    }
+  }
+
+  /**
+   * YANLIS_URUN'DA DÖNEN ÜRÜN ZORUNLU. Boş bırakılırsa 6. senaryonun defter
+   * düzeltmesi hedefsiz kalır: iade formu dönen varyantı ön-dolu getiremez ve
+   * kullanıcı "devam gelmiyor" der (14.08.2026'da tam bu yaşandı).
+   */
+  if (donenUrunZorunluMu(veri.reason)) {
+    if (!veri.returnedVariantId) {
+      return { hatalar: [t("donenUrunZorunlu")] };
+    }
+    const donen = await prisma.productVariant.findUnique({
+      where: { id: veri.returnedVariantId },
+      select: { id: true },
+    });
+    if (!donen) return { hatalar: [t("donenUrunBulunamadi")] };
   }
 
   const kullanici = await oturumdakiKullanici();
