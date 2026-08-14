@@ -48,6 +48,7 @@ export function PanelListesi({
   skuEtiketi,
   ustEylem,
   altNot,
+  genis = false,
 }: {
   baslik: string;
   /** Başlığın altındaki tek satırlık açıklama — ölçütü söyler. */
@@ -60,6 +61,16 @@ export function PanelListesi({
   ustEylem?: React.ReactNode;
   /** Listenin altındaki uyarı — kapsam sınırları burada yazar. */
   altNot?: React.ReactNode;
+  /**
+   * Liste TEK BAŞINA tam genişlikte mi duruyor?
+   *
+   * 15.08.2026: genişlik sınırı (max-w-3xl) iki liste yan yanayken doğru,
+   * ama tek liste geniş bir kartta durunca sağ tarafı boş bırakıyor —
+   * kullanıcı haklı olarak "kötü tasarım" dedi. Bu kipte satırlar İKİ
+   * SÜTUNA dizilir: alan dolar, liste yarı yüksekliğe iner ve satırlar
+   * yine dar kalır (yani "etiket solda / rakam çok sağda" tuzağı doğmaz).
+   */
+  genis?: boolean;
 }) {
   return (
     <Card className="min-w-0">
@@ -92,7 +103,13 @@ export function PanelListesi({
            * OLMAZ. Dar kartlarda (2×2 ızgara) zaten sınır etkisizdir; asıl
            * kazanç tam genişlikte duran listelerde (yaşlanma).
            */
-          <ul className="max-w-3xl divide-y">
+          <ul
+            className={
+              genis
+                ? "grid gap-x-8 sm:grid-cols-2 [&>li]:border-b"
+                : "max-w-3xl divide-y"
+            }
+          >
             {satirlar.map((s) => (
               <li
                 key={s.anahtar}

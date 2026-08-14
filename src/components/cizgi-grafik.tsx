@@ -31,12 +31,25 @@ export type GrafikNoktasi = {
   net2: number;
 };
 
-/** Çizim alanı — kullanıcı birimi (viewBox), piksel değil. */
+/**
+ * Çizim alanı — kullanıcı birimi (viewBox), piksel değil.
+ *
+ * ORAN ÖNEMLİ, MUTLAK DEĞER DEĞİL (15.08.2026 düzeltmesi). SVG `w-full`
+ * ile çizildiği için viewBox ekran genişliğine ÖLÇEKLENİR: 760 birimlik
+ * bir kutu 1100 px'lik alanda %45 büyür — 13 birimlik yazı 19 px olur,
+ * 260 birimlik yükseklik 376 px'e çıkar. Kullanıcı haklı olarak "inanılmaz
+ * kötü, çok büyük" dedi; grafik ekranın üçte birini yiyordu.
+ *
+ * Çözüm kutuyu GENİŞ ve BASIK yapmak: 1240×280 (yaklaşık 4,4:1). Aynı
+ * ekranda ölçek ~0,9'a düşüyor, yazılar 12 px civarında kalıyor ve
+ * yükseklik ~250 px'i geçmiyor. Eğilim grafiği zaten yatay okunur —
+ * yüksek bir kutu bilgi taşımaz, yalnız yer kaplar.
+ */
 const G = {
-  genislik: 760,
-  yukseklik: 260,
-  sol: 84,
-  sag: 14,
+  genislik: 1240,
+  yukseklik: 280,
+  sol: 110,
+  sag: 16,
   ust: 16,
   alt: 34,
 } as const;
@@ -146,7 +159,7 @@ export function CizgiGrafik({
     <div className="overflow-x-auto">
       <svg
         viewBox={`0 0 ${G.genislik} ${G.yukseklik}`}
-        className="h-auto w-full min-w-[560px]"
+        className="h-auto max-h-[260px] w-full min-w-[560px]"
         role="img"
         aria-hidden="true"
       >
@@ -164,7 +177,7 @@ export function CizgiGrafik({
             />
           ))}
         </g>
-        <g className="text-muted-foreground" fontSize={13}>
+        <g className="text-muted-foreground" fontSize={12}>
           {isaretler.map((deger) => (
             <text
               key={deger}
@@ -231,7 +244,7 @@ export function CizgiGrafik({
         </g>
 
         {/* --- ay etiketleri --- */}
-        <g className="text-muted-foreground" fontSize={13}>
+        <g className="text-muted-foreground" fontSize={12}>
           {noktalar.map((n, i) =>
             i % etiketAtla === 0 ? (
               <text

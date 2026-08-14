@@ -1229,6 +1229,7 @@ export default async function AnaSayfa({
                 satirlar={yaslanmaSatirlari}
                 bosMesaj={t("yaslanmaBos")}
                 skuEtiketi={t("sku")}
+                genis
                 ustEylem={
                   // Sermaye sıralaması MALİYET bilgisidir; kâr göremeyene kapalı.
                   karGorunur ? (
