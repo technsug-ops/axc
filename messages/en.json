@@ -119,7 +119,8 @@
     "bekleyin": "",
     "kanal": "",
     "birimFiyatKisa": "",
-    "not": ""
+    "not": "",
+    "panel": ""
   },
   "AlimDurumu": {
     "DRAFT": "",
@@ -646,7 +647,8 @@
     "duzeltmeNedenleri": "",
     "kullanicilar": "",
     "roller": "",
-    "iadeler": ""
+    "iadeler": "",
+    "nakitTakvimi": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -2184,6 +2186,16 @@
     "hareketYok": "",
     "vadesizBaslik": "",
     "vadesizNotu": "",
-    "disaridaNotu": ""
+    "disaridaNotu": "",
+    "ozetBaslik": "",
+    "takvimiAc": "",
+    "sayfaBasligi": "",
+    "gecikmisUyarisi": "",
+    "vadesizUyarisi": "",
+    "kalemSayisi": "",
+    "tahminRozeti": "",
+    "kaynak_KART": "",
+    "kaynak_HAKEDIS_RAPOR": "",
+    "kaynak_HAKEDIS_TAHMIN": ""
   }
 }

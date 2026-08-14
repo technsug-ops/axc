@@ -30,6 +30,11 @@ import {
   type TakvimSatiri,
 } from "../src/lib/panel/nakit-takvimi";
 import {
+  adVarMi,
+  gunSatirSayisi,
+  gunuDokumle,
+} from "../src/lib/panel/takvim-gruplama";
+import {
   aylikSeri,
   panelHesapla,
   type PanelIadesi,
@@ -1231,27 +1236,92 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       veriKaynagi.includes("beklenenVade("),
   );
 
+  // ------------------- İSİMSİZ SATIR YAZILMAZ (14.08.2026 kusuru) -------------
+  /**
+   * CANLIDA GÖRÜLEN: bir günde 20+ satır ve çoğunun başlığı "—". Hakediş
+   * kalemleri sipariş SATIRI başına geliyor; kalem bir satışa bağlı
+   * değilse gösterilecek ad yok. Panel isimsiz rakam duvarına döndü.
+   *
+   * KURAL: adını söyleyemeyen satır tek başına durmaz, kardeşleriyle
+   * toplanır. Rakam kaybolmaz — okunabilir olur.
+   */
+  const adsiz = (tutar: number): TakvimSatiri => ({
+    yon: "GIRECEK",
+    kaynak: "HAKEDIS_RAPOR",
+    tarih: gun(20),
+    tutar,
+    paraBirimi: "TRY",
+    baslik: "—",
+    adres: "/hakedis",
+  });
+
+  const dokum = gunuDokumle([
+    adsiz(959.15),
+    adsiz(959.15),
+    adsiz(2471.4),
+    s({ yon: "CIKACAK", tutar: 1500, baslik: "Garanti ••4321" }),
+    s({ yon: "GIRECEK", tutar: 300, baslik: "11504122276", kaynak: "HAKEDIS_TAHMIN" }),
+  ]);
+
+  kontrol("adı olan satır TEK TEK duruyor", dokum.tekil.length === 2, dokum.tekil.length);
+  kontrol("adsız üç satır TEK öbeğe indi", dokum.obekler.length === 1, dokum.obekler.length);
+  yakin("öbek tutarı korunuyor (rakam kaybolmuyor)", dokum.obekler[0].tutar, 4389.7);
+  kontrol("öbek adedi doğru", dokum.obekler[0].adet === 3, dokum.obekler[0].adet);
+  /** ASIL KİLİT: ekranda çizilecek satır sayısı 5 değil 3. */
+  kontrol(
+    "20 kalemlik gün 3 satıra iniyor (rakam duvarı imkânsız)",
+    gunSatirSayisi(dokum) === 3,
+    gunSatirSayisi(dokum),
+  );
+  kontrol(
+    "boş ve '-' başlıklar da adsız sayılıyor",
+    !adVarMi("") && !adVarMi("—") && !adVarMi("-") && !adVarMi("?"),
+  );
+  kontrol("gerçek ad adsız SAYILMIYOR", adVarMi("11504122276"));
+
   // ------------------- EKRAN: SINIR VE BAĞIMSIZLIK YAZILI MI -------------------
-  const takvimEkrani = readFileSync("src/app/nakit-takvimi-blogu.tsx", "utf8");
+  const takvimSayfasi = readFileSync("src/app/nakit-takvimi/page.tsx", "utf8");
+  const nakitOzeti = readFileSync("src/app/nakit-ozeti.tsx", "utf8");
   const panelSayfasi = readFileSync("src/app/page.tsx", "utf8");
   const sozlukP = JSON.parse(readFileSync("messages/tr.json", "utf8"));
 
   kontrol(
     "dönem süzgecinden bağımsızlık EKRANDA yazıyor",
-    takvimEkrani.includes("donemBagimsiz") &&
+    takvimSayfasi.includes("donemBagimsiz") &&
       typeof sozlukP.NakitTakvimi?.donemBagimsiz === "string" &&
       sozlukP.NakitTakvimi.donemBagimsiz.includes("ETKİLENMEZ"),
   );
   kontrol(
     "kart sınırı EKRANDA yazıyor (sessiz yokluk yok)",
-    takvimEkrani.includes("kartSiniriNotu") &&
+    takvimSayfasi.includes("kartSiniriNotu") &&
       typeof sozlukP.NakitTakvimi?.kartSiniriNotu === "string" &&
       sozlukP.NakitTakvimi.kartSiniriNotu.includes("hakediş"),
   );
+  /**
+   * PANEL YÖNETİCİ ÖZETİDİR. Kullanıcı 14.08.2026'da haklı olarak
+   * "panel özet olmaktan çıkmış" dedi. Panelde GÜN LİSTESİ olamaz;
+   * satır sayısı veriyle büyüyen hiçbir şey oraya konmaz.
+   */
   kontrol(
-    "panel yerleşimi: görev kutusu takvimden ÖNCE",
-    panelSayfasi.indexOf("<GorevKutusu") <
-      panelSayfasi.indexOf("<NakitTakvimiBlogu"),
+    "panelde nakit ÖZETİ var, gün listesi YOK",
+    panelSayfasi.includes("<NakitOzeti") &&
+      !panelSayfasi.includes("<NakitTakvimiBlogu"),
+  );
+  kontrol(
+    "  ...özet bloğu gün döngüsü ÇİZMİYOR",
+    !nakitOzeti.includes(".gunler.map") && !nakitOzeti.includes("doluGunler"),
+  );
+  kontrol(
+    "  ...ve ayrıntıya bağlantı veriyor",
+    nakitOzeti.includes('href="/nakit-takvimi"'),
+  );
+  kontrol(
+    "döküm ayrıntı sayfasında yaşıyor",
+    takvimSayfasi.includes("gunuDokumle"),
+  );
+  kontrol(
+    "panel yerleşimi: görev kutusu nakit özetinden ÖNCE",
+    panelSayfasi.indexOf("<GorevKutusu") < panelSayfasi.indexOf("<NakitOzeti"),
   );
   /**
    * YETKİ: nakit takvimi bir PARA bloğudur. Operasyon görmemeli; izin
@@ -1260,7 +1330,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   kontrol(
     "nakit takvimi `satis.kar.gor`a bağlı",
     panelSayfasi.includes("karGorunur ? (") &&
-      panelSayfasi.includes("<NakitTakvimiBlogu"),
+      panelSayfasi.includes("<NakitOzeti"),
   );
   kontrol(
     "  ...izin yoksa takvim sorgusu ATILMIYOR",

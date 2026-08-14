@@ -119,7 +119,8 @@
     "bekleyin": "Bekleyin...",
     "kanal": "Kanal",
     "birimFiyatKisa": "birim {tutar}",
-    "not": "Not"
+    "not": "Not",
+    "panel": "Panel"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",
@@ -646,7 +647,8 @@
     "duzeltmeNedenleri": "Düzeltme nedenleri",
     "kullanicilar": "Kullanıcılar",
     "roller": "Roller",
-    "iadeler": "İadeler"
+    "iadeler": "İadeler",
+    "nakitTakvimi": "Nakit takvimi"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -2184,6 +2186,16 @@
     "hareketYok": "Önümüzdeki {gun} günde beklenen hareket yok.",
     "vadesizBaslik": "Vadesi bilinmeyen ({sayi})",
     "vadesizNotu": "Bu satırlar takvime ve toplamlara GİRMEZ. Sıfır varsayılmadı — tarihi ya da tutarı bilinmiyor.",
-    "disaridaNotu": "{sayi} satır bu takvimde gösterilmedi: penceresi dışında ya da para birimi TRY değil (kur çevrilmez)."
+    "disaridaNotu": "{sayi} satır bu takvimde gösterilmedi: penceresi dışında ya da para birimi TRY değil (kur çevrilmez).",
+    "ozetBaslik": "Nakit özeti · {gun} gün",
+    "takvimiAc": "Takvimi aç",
+    "sayfaBasligi": "Nakit takvimi",
+    "gecikmisUyarisi": "{sayi} gecikmiş kalem · {tutar}",
+    "vadesizUyarisi": "{sayi} kalemin vadesi bilinmiyor — toplamlara girmedi.",
+    "kalemSayisi": "{sayi} kalem",
+    "tahminRozeti": "tahmin",
+    "kaynak_KART": "Kredi kartı",
+    "kaynak_HAKEDIS_RAPOR": "Hakediş (rapor)",
+    "kaynak_HAKEDIS_TAHMIN": "Hakediş (tahmin)"
   }
 }

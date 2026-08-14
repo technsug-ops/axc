@@ -48,7 +48,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
-import { NakitTakvimiBlogu } from "./nakit-takvimi-blogu";
+import { NakitOzeti } from "./nakit-ozeti";
 import { gorevSayilariniTopla } from "@/lib/panel/gorev-verisi";
 import {
   nakitTakvimiKur,
@@ -631,9 +631,6 @@ export default async function AnaSayfa({
     pencereGun: takvimPenceresi,
   });
 
-  /** Pencere düğmesi diğer süzgeçleri KORUR. */
-  const takvimAdresi = (gun: TakvimPenceresi) =>
-    suzgecAdresi("/", parametreler, { takvim: String(gun) });
 
   const seri = aylikSeri(
     satislar,
@@ -719,11 +716,7 @@ export default async function AnaSayfa({
           Öngörü: "ne zaman sıkışırım". Para bloğu olduğu için
           `satis.kar.gor`a bağlı — Operasyon nakit pozisyonu görmez. */}
       {karGorunur ? (
-        <NakitTakvimiBlogu
-          takvim={takvim}
-          pencere={takvimPenceresi}
-          pencereAdresi={takvimAdresi}
-        />
+        <NakitOzeti takvim={takvim} pencereGun={takvimPenceresi} />
       ) : null}
 
       {/* Para birimi süzgeci: yalnız birden fazla varsa görünür. Süzgeç

@@ -8,6 +8,7 @@ import {
   Banknote,
   BookOpen,
   Boxes,
+  CalendarClock,
   ClipboardList,
   Coins,
   CreditCard,
@@ -83,6 +84,12 @@ const OPERASYON: MenuOgesi[] = [
   { anahtar: "kartBorcu", href: "/kart-borcu", icon: Landmark, aktif: true },
   { anahtar: "tazminat", href: "/tazminat", icon: PackageX, aktif: true },
   { anahtar: "hakedis", href: "/hakedis", icon: Banknote, aktif: true },
+  {
+    anahtar: "nakitTakvimi",
+    href: "/nakit-takvimi",
+    icon: CalendarClock,
+    aktif: true,
+  },
 ];
 
 const AYARLAR: MenuOgesi[] = [
