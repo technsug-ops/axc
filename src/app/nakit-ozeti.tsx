@@ -2,12 +2,18 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { AlertTriangle, ArrowRight, CalendarClock } from "lucide-react";
 
+import { DurumRozeti } from "@/components/durum-rozeti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bicimlendirici } from "@/lib/bicim";
 import {
   TAKVIM_PARA_BIRIMI,
   type NakitTakvimi,
 } from "@/lib/panel/nakit-takvimi";
+import {
+  DURUM_YAZISI,
+  tutarDurumu,
+  type DurumRengi,
+} from "@/lib/panel/renkler";
 
 /**
  * ============================================================================
@@ -43,6 +49,7 @@ export async function NakitOzeti({
 
   const para = (n: number) => bicim.para(n, TAKVIM_PARA_BIRIMI);
   const acikMi = takvim.netPozisyon < 0;
+  const netDurumu: DurumRengi = tutarDurumu(takvim.netPozisyon);
   const gecikmisSayisi = takvim.gecikmis.length;
   const vadesizSayisi = takvim.vadesizler.length;
 
@@ -69,20 +76,24 @@ export async function NakitOzeti({
         {/* Dar kartta üç kutu: dolgu küçük, tutar text-xl ve break-words —
             ₺210.942,81 gibi uzun tutar kutunun dışına taşmasın (15.08.2026). */}
         <div className="grid gap-2 sm:grid-cols-3">
-          <Kutu etiket={t("cikacak")} deger={para(takvim.cikacakToplam)} />
-          <Kutu etiket={t("girecek")} deger={para(takvim.girecekToplam)} />
-          <div
-            className={`min-w-0 space-y-1 rounded-lg border p-3 ${
-              acikMi ? "border-destructive/50 bg-destructive/10" : ""
-            }`}
-          >
+          {/* ÇIKACAK amber (uyarı), GİRECEK mavi (öngörü) — renk sistemi
+              (bkz. lib/panel/renkler.ts). Zemin nötr, yalnız rakam renkli. */}
+          <Kutu etiket={t("cikacak")} deger={para(takvim.cikacakToplam)} durum="uyari" />
+          <Kutu etiket={t("girecek")} deger={para(takvim.girecekToplam)} durum="bilgi" />
+          {/* NET POZİSYON: açıkta kırmızı, fazlada yeşil, sıfırda nötr.
+              Kenarlık da renkleniyor ama ZEMİN pastel kalıyor (kısıt #2). */}
+          <div className="min-w-0 space-y-1 rounded-lg border p-3">
             <div className="text-muted-foreground text-xs">
               {t("netPozisyon")}
             </div>
             <div
-              className={`text-xl font-semibold break-words tabular-nums ${acikMi ? "text-destructive" : ""}`}
+              className={`flex flex-wrap items-baseline gap-1 text-xl font-semibold break-words tabular-nums ${DURUM_YAZISI[netDurumu]}`}
             >
               {para(takvim.netPozisyon)}
+              {/* RENK TEK BAŞINA KONUŞMAZ (kısıt #1): durumu kelime söyler. */}
+              <DurumRozeti durum={netDurumu} isaretsiz>
+                {acikMi ? t("acikVarKisa") : t("acikYokKisa")}
+              </DurumRozeti>
             </div>
           </div>
         </div>
@@ -109,11 +120,23 @@ export async function NakitOzeti({
   );
 }
 
-function Kutu({ etiket, deger }: { etiket: string; deger: string }) {
+function Kutu({
+  etiket,
+  deger,
+  durum,
+}: {
+  etiket: string;
+  deger: string;
+  durum: DurumRengi;
+}) {
   return (
     <div className="min-w-0 space-y-1 rounded-lg border p-3">
       <div className="text-muted-foreground text-xs">{etiket}</div>
-      <div className="text-xl font-semibold break-words tabular-nums">{deger}</div>
+      <div
+        className={`text-xl font-semibold break-words tabular-nums ${DURUM_YAZISI[durum]}`}
+      >
+        {deger}
+      </div>
     </div>
   );
 }

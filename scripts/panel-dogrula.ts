@@ -30,6 +30,12 @@ import {
   type TakvimSatiri,
 } from "../src/lib/panel/nakit-takvimi";
 import {
+  DURUM_ISARETI,
+  DURUM_YAZISI,
+  DURUM_ZEMINI,
+  tutarDurumu,
+} from "../src/lib/panel/renkler";
+import {
   adVarMi,
   gunSatirSayisi,
   gunuDokumle,
@@ -1342,6 +1348,71 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   kontrol(
     "görev kutusu izinsiz de görünüyor (operasyonel sayılar)",
     panelSayfasi.includes("<GorevKutusu sayilar={gorevSayilari} />"),
+  );
+
+  // ------------------------- RENK SİSTEMİ (15.08.2026) -------------------------
+  /**
+   * Mimar kararı: renk ANLAM taşır, süs değildir. Dört anlamsal ton, pastel
+   * zemin + koyu yazı, ve en önemlisi: RENK TEK BAŞINA ANLAM TAŞIMAZ.
+   * Renk körlüğünde (erkeklerin ~%8'i) ve siyah-beyaz çıktıda kırmızı ile
+   * yeşil ayırt edilemez; işaret olmazsa bilgi tamamen kaybolur.
+   */
+  kontrol(
+    "dört anlamsal ton da tanımlı",
+    (["olumlu", "olumsuz", "uyari", "bilgi"] as const).every(
+      (d) => DURUM_ZEMINI[d].length > 0 && DURUM_YAZISI[d].length > 0,
+    ),
+  );
+  kontrol(
+    "her tonun İŞARETİ var (renk tek başına konuşmaz)",
+    (["olumlu", "olumsuz", "uyari", "bilgi"] as const).every(
+      (d) => DURUM_ISARETI[d].length > 0,
+    ),
+    DURUM_ISARETI,
+  );
+  kontrol(
+    "  ...ve tonlar birbirinden FARKLI işaret taşıyor",
+    new Set(
+      (["olumlu", "olumsuz", "uyari", "bilgi"] as const).map(
+        (d) => DURUM_ISARETI[d],
+      ),
+    ).size === 4,
+  );
+  /**
+   * SIFIR NÖTRDÜR. "Sıfır kâr" ne iyi ne kötüdür; yeşile boyamak yanlış bir
+   * müjde, kırmızıya boyamak yersiz bir alarm olurdu.
+   */
+  kontrol("pozitif tutar olumlu", tutarDurumu(1) === "olumlu");
+  kontrol("negatif tutar olumsuz", tutarDurumu(-1) === "olumsuz");
+  kontrol("SIFIR nötr (ne müjde ne alarm)", tutarDurumu(0) === "notr");
+
+  /** Karanlık tema: her ton iki temada da tanımlı olmalı. */
+  kontrol(
+    "her ton karanlık temada da tanımlı",
+    (["olumlu", "olumsuz", "uyari", "bilgi"] as const).every((d) =>
+      DURUM_ZEMINI[d].includes("dark:"),
+    ),
+  );
+
+  /**
+   * PALET TEK KAPIDAN GEÇER. Ekranlar ham renk kodu yazmamalı; yazarsa
+   * palet değiştiğinde bir yer geride kalır ve renkler ayrışır.
+   */
+  const gorevEkrani = readFileSync("src/app/gorev-kutusu.tsx", "utf8");
+  const nakitEkrani = readFileSync("src/app/nakit-ozeti.tsx", "utf8");
+  for (const [ad, kaynak] of [
+    ["görev kutusu", gorevEkrani],
+    ["nakit özeti", nakitEkrani],
+    ["panel", panelSayfasi],
+  ] as const) {
+    kontrol(
+      `  ${ad} ham renk kodu YAZMIYOR (palet tek kapıdan)`,
+      !/#[0-9A-Fa-f]{6}/.test(kaynak),
+    );
+  }
+  kontrol(
+    "marj rozeti paletten geliyor",
+    panelSayfasi.includes("<DurumRozeti durum={renkDurumu}>"),
   );
 }
 

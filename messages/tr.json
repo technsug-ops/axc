@@ -2204,6 +2204,8 @@
     "tahminRozeti": "tahmin",
     "kaynak_KART": "Kredi kartı",
     "kaynak_HAKEDIS_RAPOR": "Hakediş (rapor)",
-    "kaynak_HAKEDIS_TAHMIN": "Hakediş (tahmin)"
+    "kaynak_HAKEDIS_TAHMIN": "Hakediş (tahmin)",
+    "acikVarKisa": "açık",
+    "acikYokKisa": "fazla"
   }
 }

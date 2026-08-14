@@ -2,8 +2,9 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Check, ListChecks } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { DurumRozeti } from "@/components/durum-rozeti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DURUM_YAZISI, DURUM_ZEMINI } from "@/lib/panel/renkler";
 import {
   bekleyenToplam,
   gorevleriKur,
@@ -51,13 +52,11 @@ export async function GorevKutusu({
         <CardTitle className="flex flex-wrap items-center gap-2 text-base">
           <ListChecks className="size-5" />
           {t("baslik")}
+          {/* Bekleyen iş AMBER, hepsi temiz YEŞİL — renk sistemi. */}
           {toplam > 0 ? (
-            <Badge variant="secondary">{t("bekleyen", { sayi: toplam })}</Badge>
+            <DurumRozeti durum="uyari">{t("bekleyen", { sayi: toplam })}</DurumRozeti>
           ) : (
-            <Badge variant="outline" className="gap-1">
-              <Check className="size-3" />
-              {t("hepsiTemiz")}
-            </Badge>
+            <DurumRozeti durum="olumlu">{t("hepsiTemiz")}</DurumRozeti>
           )}
         </CardTitle>
       </CardHeader>
@@ -75,17 +74,21 @@ export async function GorevKutusu({
                * etiket ("Komisyon oranı boş kanal SKU") hücreyi kendi
                * genişliğine zorluyor ve yazı kutunun dışına taşıyordu.
                */
-              className={`hover:bg-muted/60 flex min-h-11 min-w-0 flex-col justify-between gap-1 rounded-lg border p-3 ${
-                g.temizMi ? "" : "border-foreground/20"
-              }`}
+              className="hover:bg-muted/60 flex min-h-11 min-w-0 flex-col justify-between gap-1 rounded-lg border p-3"
             >
+              {/* İŞARET + RENK BİRLİKTE (kısıt #1): temizde ✓ ikonu,
+                  bekleyende rakamın kendisi zaten sayısal işaret. */}
               {g.temizMi ? (
-                <span className="text-muted-foreground inline-flex items-center gap-1 text-lg font-semibold">
+                <span
+                  className={`inline-flex items-center gap-1 text-sm ${DURUM_YAZISI.olumlu}`}
+                >
                   <Check className="size-4" />
-                  <span className="text-sm font-normal">{t("temiz")}</span>
+                  {t("temiz")}
                 </span>
               ) : (
-                <span className="text-2xl leading-none font-semibold tabular-nums">
+                <span
+                  className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-2xl leading-none font-semibold tabular-nums ${DURUM_ZEMINI.uyari}`}
+                >
                   {g.sayi}
                 </span>
               )}

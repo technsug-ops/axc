@@ -5,6 +5,7 @@ import { ArrowRight, TriangleAlert } from "lucide-react";
 import { Baglanti } from "@/components/baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
 import { CizgiGrafik, type GrafikNoktasi } from "@/components/cizgi-grafik";
+import { DurumRozeti } from "@/components/durum-rozeti";
 import { KatlanirBolum } from "@/components/katlanir-bolum";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { SuzgecCubugu } from "@/components/suzgec-cubugu";
@@ -466,17 +467,14 @@ export default async function AnaSayfa({
   function marjRozeti(marj: number | null) {
     const durum = marjDurumu(marj, ortalamaMarj);
     if (durum === null || marj === null) return null;
-    const renk =
-      durum === "zarar"
-        ? "border-destructive/50 text-destructive"
-        : durum === "zayif"
-          ? "border-amber-500/50 text-amber-700 dark:text-amber-400"
-          : "border-emerald-500/50 text-emerald-700 dark:text-emerald-400";
-    return (
-      <span className={`rounded-md border px-1.5 py-0.5 text-xs ${renk}`}>
-        {bicim.yuzde(marj)}
-      </span>
-    );
+    /**
+     * PALET TEK KAYNAKTAN (bkz. lib/panel/renkler.ts). Rozet işaret de
+     * taşıyor: renk körlüğünde ve siyah-beyaz çıktıda yüzde tek başına
+     * kalmasın (kısıt #1).
+     */
+    const renkDurumu =
+      durum === "zarar" ? "olumsuz" : durum === "zayif" ? "uyari" : "olumlu";
+    return <DurumRozeti durum={renkDurumu}>{bicim.yuzde(marj)}</DurumRozeti>;
   }
 
   const enCokKarEdenler = karSiralamasi(urunSatirlari, "en-cok", LISTE_SATIRI).map(
