@@ -20,11 +20,15 @@
 
 import { alimAramaKosulu } from "../src/lib/alim-arama";
 import { gunMetni } from "../src/lib/donem";
+import { PurchaseStatus } from "../src/generated/prisma/enums";
 import {
+  ALIM_BEKLEYEN_KODU,
+  ALIM_DURUM_KODLARI,
   alimKosulu,
   pencereCoz,
   satisKosulu,
 } from "../src/lib/liste-suzgeci";
+import { GOREV_ADRESLERI } from "../src/lib/panel/bugun-ne-yapmaliyim";
 import { aktifSuzgecler, suzgecAdresi } from "../src/lib/suzgec";
 
 let basarisiz = 0;
@@ -349,7 +353,13 @@ async function alimBolumu() {
 
   const hepsi = (
     await alimKosulu(
-      { pencere: "BU_AY", durum: "PARTIAL", hesap: "h", tedarikci: "t", kart: "k" },
+      {
+        pencere: "BU_AY",
+        durum: "PARTIALLY_RECEIVED",
+        hesap: "h",
+        tedarikci: "t",
+        kart: "k",
+      },
       AN,
     )
   ).kosul;
@@ -358,11 +368,60 @@ async function alimBolumu() {
     hepsi.purchasedAt !== undefined &&
       // `status` tipi enum süzgeci de olabildiği için metne çevrilip
       // karşılaştırılıyor; koşul kurucusu düz enum değeri yazıyor.
-      String(hepsi.status) === "PARTIAL" &&
+      String(hepsi.status) === "PARTIALLY_RECEIVED" &&
       hepsi.channelAccountId === "h" &&
       hepsi.supplierId === "t" &&
       hepsi.creditCardId === "k",
     hepsi,
+  );
+
+  /**
+   * ══════════════════════════════════════════════════════════════════════
+   *  SÜZGEÇ KODLARI ŞEMAYLA TUTUYOR MU — KÖR NOKTA KAPANIYOR
+   * ----------------------------------------------------------------------
+   *  15.08.2026: `ALIM_DURUM_KODLARI` içinde `PARTIAL` yazıyordu, şemadaki
+   *  değer `PARTIALLY_RECEIVED`. Açılır liste doğru değeri gönderiyor,
+   *  koşul kurucusu onu TANIMIYOR ve süzgeç SESSİZCE DÜŞÜYORDU: kullanıcı
+   *  "Kısmen teslim alındı"yı seçiyor, liste bütün alımları gösteriyordu.
+   *
+   *  TESTLER BUNU NEDEN YAKALAMADI: yukarıdaki kontrol de `PARTIAL`
+   *  kullanıyordu. Kod ve test AYNI yanlış sabiti paylaşıyordu; birbirleriyle
+   *  uyuşuyor, ŞEMAYLA uyuşmuyorlardı. Sabiti sabitle karşılaştırmak hiçbir
+   *  şey kanıtlamaz — DIŞ KAYNAKLA karşılaştırmak gerekiyordu.
+   *
+   *  Aşağıdaki kontrol listeyi Prisma'nın ürettiği enum ile karşılaştırıyor:
+   *  şemaya yeni bir durum eklenir ya da adı değişirse burada kırılır.
+   */
+  const semaDurumlari = Object.keys(PurchaseStatus).sort();
+  const suzgecDurumlari = [...ALIM_DURUM_KODLARI].sort();
+  kontrol(
+    "alım durum kodları ŞEMA enum'uyla birebir",
+    JSON.stringify(semaDurumlari) === JSON.stringify(suzgecDurumlari),
+    { sema: semaDurumlari, suzgec: suzgecDurumlari },
+  );
+
+  /** Bileşik "bekleyen" kodu: iki durumu birlikte süzer. */
+  const bekleyen = (await alimKosulu({ durum: ALIM_BEKLEYEN_KODU }, AN)).kosul;
+  kontrol(
+    "BEKLEYEN kodu ORDERED + PARTIALLY_RECEIVED süzüyor",
+    JSON.stringify(bekleyen.status) ===
+      JSON.stringify({ in: ["ORDERED", "PARTIALLY_RECEIVED"] }),
+    bekleyen.status,
+  );
+  /**
+   * PANELİN SÖZÜ: sayı = liste. Görev kutusunun adresi, sayıyı üreten
+   * koşulun AYNISINI taşımalı. Adres tek bir duruma gitseydi panel 5 der,
+   * liste 4 gösterirdi.
+   */
+  kontrol(
+    "görev kutusu 'mal kabul bekleyen' adresi BEKLEYEN kodunu taşıyor",
+    GOREV_ADRESLERI.malKabulBekleyen.includes(`durum=${ALIM_BEKLEYEN_KODU}`),
+    GOREV_ADRESLERI.malKabulBekleyen,
+  );
+  kontrol(
+    "  ...ve 'bekleyen iade bildirimi' adresi süzgeçli",
+    GOREV_ADRESLERI.iadeBildirimi.includes("bekleyen=1"),
+    GOREV_ADRESLERI.iadeBildirimi,
   );
   kosanBolumler.push("alım");
 }

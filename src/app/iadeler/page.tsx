@@ -112,6 +112,8 @@ export default async function IadelerSayfasi({
     sayfa?: string;
     /** Bildirim araması — işlenmiş iade tablosunun süzgeçlerinden AYRI. */
     bq?: string;
+    /** Panelden gelen "bekleyen bildirim" süzgeci. */
+    bekleyen?: string;
   }>;
 }) {
   await sayfaIzni("iade.gor");
@@ -382,7 +384,18 @@ export default async function IadelerSayfasi({
    * listesinde aradı — orada hiçbir zaman olmayacaktı, o bir satış kodu değil.
    */
   const bildirimArama = (p.bq ?? "").trim();
-  const bildirimKosulu = bildirimAramaKosulu(bildirimArama);
+  /**
+   * PANELDEN GELEN SÜZGEÇ: yalnız AÇIK bildirimler. Panelin sayısı bunları
+   * sayıyor; bağlantı süzgeçsiz gelseydi liste kapanmışları da gösterir ve
+   * "sayı = liste" sözü bozulurdu (15.08.2026).
+   */
+  const yalnizBekleyen = p.bekleyen === "1";
+  const bildirimKosulu = {
+    ...bildirimAramaKosulu(bildirimArama),
+    ...(yalnizBekleyen
+      ? { status: { in: AYRILMIS_SAYILAN_DURUMLAR } }
+      : {}),
+  };
 
   const bildirimKayitlari = await prisma.returnNotice.findMany({
     where: bildirimKosulu,

@@ -160,14 +160,35 @@ export function satisKosulu(
 //  ALIM
 // ---------------------------------------------------------------------------
 
-/** Alım durumları — koşul kurucusunun tanıdığı değerler. */
+/**
+ * Alım durumları — koşul kurucusunun tanıdığı değerler.
+ *
+ * ⚠ ŞEMADAKİ ADLARLA BİREBİR OLMAK ZORUNDA. 15.08.2026'da burada `PARTIAL`
+ * yazıyordu, şemadaki değer ise `PARTIALLY_RECEIVED`. Açılır liste doğru
+ * değeri gönderiyor, bu kontrol onu TANIMIYOR ve süzgeç SESSİZCE DÜŞÜYORDU:
+ * kullanıcı "Kısmen teslim alındı"yı seçiyor, liste bütün alımları
+ * gösteriyor ve süzdüğünü sanıyordu. Bu dosyanın kendi başlığında yazan
+ * "sessiz süzgeç kaybı" hatasının ta kendisi.
+ * `suzgec:dogrula` artık bu listeyi şema enum'uyla karşılaştırıyor.
+ */
 export const ALIM_DURUM_KODLARI = [
   "DRAFT",
   "ORDERED",
-  "PARTIAL",
+  "PARTIALLY_RECEIVED",
   "RECEIVED",
   "CANCELLED",
 ] as const;
+
+/**
+ * BİLEŞİK SÜZGEÇ — "mal kabul bekleyen".
+ *
+ * Panelin "Mal kabul bekleyen alım" sayısı ORDERED **ve**
+ * PARTIALLY_RECEIVED'ı birlikte sayıyor: kalemlerin bir kısmı geldiyse iş
+ * bitmemiştir. Bağlantı tek bir duruma gitseydi ekrandaki sayı ile listenin
+ * kaydı TUTMAZDI — panelin en temel sözü budur (sayı = liste).
+ */
+export const ALIM_BEKLEYEN_KODU = "BEKLEYEN";
+const ALIM_BEKLEYEN_DURUMLARI = ["ORDERED", "PARTIALLY_RECEIVED"] as const;
 
 function alimDurumuGecerliMi(deger: string): boolean {
   return (ALIM_DURUM_KODLARI as readonly string[]).includes(deger);
@@ -197,9 +218,12 @@ export async function alimKosulu(
   const kosul: Prisma.PurchaseWhereInput = {
     ...(pencere.aralik ? { purchasedAt: pencere.aralik } : {}),
     ...(aramaKosulu ?? {}),
-    ...(alimDurumuGecerliMi(durum)
-      ? { status: durum as Prisma.PurchaseWhereInput["status"] }
-      : {}),
+    // Bileşik "bekleyen" ÖNCE denenir; tek durum kontrolü onu tanımaz.
+    ...(durum === ALIM_BEKLEYEN_KODU
+      ? { status: { in: [...ALIM_BEKLEYEN_DURUMLARI] } }
+      : alimDurumuGecerliMi(durum)
+        ? { status: durum as Prisma.PurchaseWhereInput["status"] }
+        : {}),
     ...(hesap ? { channelAccountId: hesap } : {}),
     ...(tedarikci ? { supplierId: tedarikci } : {}),
     ...(kart ? { creditCardId: kart } : {}),

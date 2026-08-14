@@ -36,11 +36,21 @@ export const GOREV_ANAHTARLARI = [
 
 export type GorevAnahtari = (typeof GOREV_ANAHTARLARI)[number];
 
-/** Her görevin süzülü hedefi — sayı tıklanınca buraya gider. */
+/**
+ * Her görevin süzülü hedefi — sayı tıklanınca buraya gider.
+ *
+ * ADRES, SAYIYI ÜRETEN KOŞULUN AYNISINI TAŞIMALI (15.08.2026 düzeltmesi).
+ * Önce `malKabulBekleyen` ORDERED **ve** PARTIALLY_RECEIVED sayıyor ama
+ * bağlantı `?durum=ORDERED`e gidiyordu: panel 5 diyor, liste 4 gösteriyordu.
+ * Panelin en temel sözü "sayı = liste"dir; tutmayan sayı, panele olan
+ * güveni tek seferde bitirir.
+ * `iadeBildirimi` de süzgeçsiz `/iadeler`e gidiyordu — orada KAPANMIŞ
+ * bildirimler de listeleniyor, sayı ile liste ayrışıyordu.
+ */
 export const GOREV_ADRESLERI: Record<GorevAnahtari, string> = {
   kargoBekleyen: "/satislar?kargo=bekleyen",
-  iadeBildirimi: "/iadeler",
-  malKabulBekleyen: "/alimlar?durum=ORDERED",
+  iadeBildirimi: "/iadeler?bekleyen=1",
+  malKabulBekleyen: "/alimlar?durum=BEKLEYEN",
   karHesaplanamayan: "/satislar?kar=eksik",
   oransizKanalSku: "/kanal-sku?eksik=1",
 };
