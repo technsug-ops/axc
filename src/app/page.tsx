@@ -5,6 +5,7 @@ import { ArrowRight, TriangleAlert } from "lucide-react";
 import { Baglanti } from "@/components/baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
 import { CizgiGrafik, type GrafikNoktasi } from "@/components/cizgi-grafik";
+import { KatlanirBolum } from "@/components/katlanir-bolum";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { SuzgecCubugu } from "@/components/suzgec-cubugu";
 import { Button } from "@/components/ui/button";
@@ -626,7 +627,10 @@ export default async function AnaSayfa({
         variant={seciliMi ? "default" : "outline"}
         className="h-11 md:h-9"
       >
-        <Link href={adres}>{etiket}</Link>
+        {/* Sayfa içi süzgeç: başa sarmaz (bkz. sekmeli-bolum.tsx). */}
+        <Link href={adres} scroll={false}>
+          {etiket}
+        </Link>
       </Button>
     );
   }
@@ -1302,13 +1306,18 @@ export default async function AnaSayfa({
           <CardTitle>{t("grafikBaslik", { ay: GRAFIK_AY_SAYISI })}</CardTitle>
           <p className="text-muted-foreground text-sm">{t("grafikNotu")}</p>
         </CardHeader>
-        {/* GRAFİK SOLDA, AYLIK SAYILAR SAĞDA (14.08.2026, kullanıcı).
-            İkisi alt alta durunca blok panelin en uzun parçasıydı: grafik
-            tam genişlikte, altında 12 satırlık tablo. Oysa ikisi AYNI
-            veriyi anlatıyor — biri eğilimi, öteki rakamı. Yan yana
-            durduklarında göz eğriden rakama tek bakışta geçiyor ve blok
-            yarı yüksekliğe iniyor. */}
-        <CardContent className="grid min-w-0 gap-4 xl:grid-cols-2">
+        {/* GRAFİK TAM GENİŞLİK, TABLO KATLI (15.08.2026 düzeltmesi).
+            Bir gün önce ikisini yan yana koymuştum ve kullanıcı haklı olarak
+            "çok kötü oldu" dedi. Sebebi: ÇİZGİ GRAFİĞİ GENİŞLİK İSTER.
+            12 ayı yarım genişliğe sıkıştırınca ay etiketleri üst üste
+            biniyor, eğim yassılaşıyor ve grafik ne söylediğini kaybediyor.
+            Yan yana kurgusu iki LİSTE için doğruydu (aynı biçim, aynı
+            yükseklik); grafik + tablo için değil.
+
+            Yer kazancı bu kez KATLAMAYLA: eğri hikâyeyi anlatır, tablo
+            rakamı teyit eder. Teyit her zaman ekranda durmak zorunda değil,
+            ama BİR TIK ötede durmalı — silinmiyor, katlanıyor. */}
+        <CardContent className="min-w-0 space-y-4">
           <CizgiGrafik
             noktalar={noktalar}
             gelirAdi={t("ciro")}
@@ -1319,7 +1328,10 @@ export default async function AnaSayfa({
           />
 
           {/* Grafiğin okunabilir hâli — dokunmatik cihazda ve ekran
-              okuyucuda ASIL kaynak budur (bkz. cizgi-grafik.tsx). */}
+              okuyucuda ASIL kaynak budur (bkz. cizgi-grafik.tsx). Bu yüzden
+              SİLİNMEZ; `<details>` ekran okuyucuda "genişlet" olarak
+              tanınır, erişilebilirlik kaybı olmaz. */}
+          <KatlanirBolum baslik={t("aylikRakamlar")} notu={t("aylikRakamlarNotu")}>
           <div className="overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
@@ -1379,6 +1391,7 @@ export default async function AnaSayfa({
               </TableBody>
             </Table>
           </div>
+          </KatlanirBolum>
         </CardContent>
       </Card>
     </div>

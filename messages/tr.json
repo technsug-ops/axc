@@ -1687,7 +1687,9 @@
     "kanalSatisYok": "Bu dönemde satış yok",
     "marjRenkNotu": "Renkler dönemin ortalama marjına göre ({ortalama}): altı sarı, üstü yeşil, zarar kırmızı. Eşik uydurma değil, bu dönemin kendi ortalaması.",
     "sekmeVerim": "Verim (marj)",
-    "sekmeHacim": "Hacim (adet ve tutar)"
+    "sekmeHacim": "Hacim (adet ve tutar)",
+    "aylikRakamlar": "Aylık rakamlar",
+    "aylikRakamlarNotu": "grafiğin tablo hâli"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

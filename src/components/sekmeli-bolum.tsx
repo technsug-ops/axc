@@ -61,6 +61,17 @@ export function SekmeliBolum({
               <Link
                 key={s.anahtar}
                 href={s.adres}
+                /**
+                 * SAYFA BAŞA ATMAZ — 15.08.2026 kullanıcı hatası.
+                 *
+                 * Next gezinmede sayfayı varsayılan olarak başa sarar; bu,
+                 * SAYFA DEĞİŞTİRİRKEN doğrudur. Ama sekme aynı sayfada bir
+                 * bölümü değiştiriyor: kullanıcı aşağıda bir karta bakarken
+                 * sekmeye basınca ekran tepeye fırlıyor ve baktığı yeri
+                 * kaybediyordu. Aynı gerekçe sayfa içi her süzgeç bağlantısı
+                 * için geçerli (sıralama, para birimi, takvim penceresi).
+                 */
+                scroll={false}
                 aria-current={s.anahtar === aktif.anahtar ? "page" : undefined}
                 className={`inline-flex min-h-11 items-center rounded-md border px-3 text-sm md:min-h-9 ${
                   s.anahtar === aktif.anahtar

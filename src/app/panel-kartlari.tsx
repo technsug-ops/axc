@@ -195,7 +195,10 @@ export function SiralamaDugmeleri({
           variant={s.seciliMi ? "default" : "outline"}
           className="h-11 text-xs md:h-7"
         >
-          <Link href={s.adres}>{s.etiket}</Link>
+          {/* Sayfa içi sıralama: başa sarmaz. */}
+          <Link href={s.adres} scroll={false}>
+            {s.etiket}
+          </Link>
         </Button>
       ))}
     </div>

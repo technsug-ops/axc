@@ -1687,7 +1687,9 @@
     "kanalSatisYok": "",
     "marjRenkNotu": "",
     "sekmeVerim": "",
-    "sekmeHacim": ""
+    "sekmeHacim": "",
+    "aylikRakamlar": "",
+    "aylikRakamlarNotu": ""
   },
   "Envanter": {
     "baslik": "",
