@@ -30,6 +30,7 @@ import {
   itirazAcilabilirMi,
   kapaliMi,
   kapanistaIadeDogarMi,
+  onDoluHedefKalem,
   serbestStok,
 } from "../src/lib/iade/bildirim";
 import {
@@ -47,7 +48,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 4;
+const BOLUM_SAYISI = 5;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -613,6 +614,141 @@ console.log("\n4) FORM KURALLARI — 14.08.2026'DA CANLIDA ÇIKAN HATALAR");
     sayfa.includes("siradakiAdimlar[b.status]"),
   );
   kosanBolumler.push("form-kurallari");
+}
+
+// ===========================================================================
+console.log("\n5) İADE FORMU — ÖN-DOLU GEÇİŞ (T4/14 CANLI HATASI)");
+// ===========================================================================
+/**
+ * T4 testinin 14. adımında akış durdu: "Dönen ürün (yanlış giden) alanında B
+ * seçili gelmeli — bu sekme çalışmıyor, Değişim ürün alanı yok."
+ *
+ * Üç ayrı sebep vardı, üçü de aynı ekranda:
+ *   1. Raf/Değişim/Dönen alanları YALNIZ `adet > 0` iken çiziliyordu.
+ *      Bildirimden gelindiğinde adet boştur — ön-dolu gelen B ekranda HİÇ
+ *      görünmedi. Form doluydu, ekran boştu: en sinsi tür.
+ *   2. Varyant sorgusunda `take: 200` vardı. 1055 üründen 200'ü listeleniyor,
+ *      seçili değerin karşılığı listede bulunamayınca alan boş görünüyordu.
+ *      (Bildirim formundaki `take: 500` tuzağının ikizi.)
+ *   3. Ön-dolu BÜTÜN kalemlere yazılıyordu — çok kalemli satışta dönen ürün
+ *      her kaleme düşerdi. Sessiz yanlış defter riski.
+ */
+{
+  // --- HANGİ KALEME (hata 3) ---
+  const K = (id: string, v: string) => ({ saleItemId: id, variantId: v });
+
+  kontrol(
+    "tek kalem -> ön-dolu o kaleme",
+    onDoluHedefKalem({ kalemler: [K("k1", "A")], ayrilanVaryantId: null }) ===
+      "k1",
+  );
+  kontrol(
+    "ayrılan varyantla eşleşen kalem seçilir",
+    onDoluHedefKalem({
+      kalemler: [K("k1", "A"), K("k2", "C")],
+      ayrilanVaryantId: "C",
+    }) === "k2",
+  );
+  kontrol(
+    "çok kalem + eşleşme yok -> TAHMİN YOK (null)",
+    onDoluHedefKalem({
+      kalemler: [K("k1", "A"), K("k2", "C")],
+      ayrilanVaryantId: "Z",
+    }) === null,
+  );
+  kontrol(
+    "aynı varyant iki kalemde -> belirsiz, null",
+    onDoluHedefKalem({
+      kalemler: [K("k1", "A"), K("k2", "A")],
+      ayrilanVaryantId: "A",
+    }) === null,
+  );
+  kontrol(
+    "ayrılan varyant yok ama tek kalem var -> o kalem",
+    onDoluHedefKalem({ kalemler: [K("k1", "A")], ayrilanVaryantId: null }) ===
+      "k1",
+  );
+  kontrol(
+    "hiç kalem yok -> null",
+    onDoluHedefKalem({ kalemler: [], ayrilanVaryantId: "A" }) === null,
+  );
+
+  // --- ALANLAR EKRANA ÇİZİLİYOR MU (hata 1) ---
+  const iadeForm = readFileSync(
+    "src/app/satislar/[id]/iade/iade-formu.tsx",
+    "utf8",
+  );
+  /**
+   * Koşul artık yalnız adede bakmıyor: DOLU BİR DEĞER ASLA GİZLENMEZ.
+   * Kontrol metinsel ve dar — eski koşulun geri gelmediğini kanıtlıyor.
+   */
+  kontrol(
+    "ürün alanları dolu değerle de çiziliyor (adet 0 olsa bile)",
+    iadeForm.includes("const alanlarGorunur") &&
+      iadeForm.includes("g.donenVaryantId !== \"\""),
+  );
+  kontrol(
+    "  ...eski `adet > 0` kilidi GERİ GELMEDİ",
+    !iadeForm.includes("stogaGirer && adet > 0"),
+  );
+  kontrol(
+    "ön-dolu YALNIZ hedef kaleme yazılıyor",
+    iadeForm.includes("onDolu?.hedefKalemId === s.saleItemId"),
+  );
+  kontrol(
+    "hedef bulunamazsa ekran SÖYLÜYOR (sessiz kalmıyor)",
+    iadeForm.includes("onDoluHedefYok"),
+  );
+  kontrol(
+    "değişim ve dönen seçicileri ARANABİLİR",
+    iadeForm.includes("AranabilirSecim") && !iadeForm.includes("varyantlar.map"),
+  );
+  kontrol(
+    "iki liste AYRI besleniyor (değişim stoklu, dönen hepsi)",
+    iadeForm.includes("degisimVaryantlari") &&
+      iadeForm.includes("donenVaryantlari"),
+  );
+
+  // --- LİSTE SINIRI (hata 2) ---
+  const iadeSayfa = readFileSync("src/app/satislar/[id]/iade/page.tsx", "utf8");
+  kontrol(
+    "varyant sorgusunda `take: 200` SINIRI YOK (ürün sessizce düşmesin)",
+    !iadeSayfa.includes("take: 200"),
+  );
+  kontrol(
+    "değişim listesi stoğa göre süzülüyor",
+    iadeSayfa.includes("(stoklar.get(v.id) ?? 0) > 0"),
+  );
+  /**
+   * ÖN-DOLU GELEN ÜRÜN STOĞU 0 OLSA DA LİSTEDE KALIR. Yoksa seçili değerin
+   * karşılığı listede bulunmaz ve alan yine boş görünürdü — düzeltmeye
+   * çalıştığımız hatanın ta kendisi geri gelirdi.
+   */
+  kontrol(
+    "  ...ama ön-dolu gelen ürün stoksuz da olsa listede KALIYOR",
+    iadeSayfa.includes("v.id === onDolu?.gonderilecekVaryantId"),
+  );
+  kontrol(
+    "dönen listesi TÜM varyantlardan (stok 0 normaldir)",
+    iadeSayfa.includes("varyantKayitlari.map(secenekYap)"),
+  );
+
+  // --- SÖZLÜK ---
+  const sozluk4 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  for (const anahtar of [
+    "stokMetni",
+    "degisimUrunuSecin",
+    "donenUrunSecin",
+    "onDoluHedefYok",
+    "donenUrunBildirimden",
+  ]) {
+    kontrol(
+      `  sözlükte var: Iade.${anahtar}`,
+      typeof sozluk4.Iade?.[anahtar] === "string" &&
+        sozluk4.Iade[anahtar].length > 0,
+    );
+  }
+  kosanBolumler.push("on-dolu-gecis");
 }
 
 // ===========================================================================

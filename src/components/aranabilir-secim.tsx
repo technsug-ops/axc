@@ -48,6 +48,12 @@ export function AranabilirSecim({
   onSec,
   /** Verilirse listenin başında "tümü/temizle" satırı çıkar. */
   tumuEtiketi,
+  /**
+   * Seçim BOŞKEN düğmede yazan metin. Verilmezse `etiket` kullanılır.
+   * Boşluğun kendisi anlamlı olan alanlar için: "Değişim yok" bir yer tutucu
+   * değil, geçerli bir cevaptır — orada alan adını göstermek bilgi kaybıdır.
+   */
+  bosEtiket,
   /** Düğmenin id'si — `<Label htmlFor>` ile eşleşsin. */
   id,
   className,
@@ -57,6 +63,7 @@ export function AranabilirSecim({
   seciliDeger: string;
   onSec: (deger: string) => void;
   tumuEtiketi?: string;
+  bosEtiket?: string;
   id?: string;
   className?: string;
 }) {
@@ -90,7 +97,7 @@ export function AranabilirSecim({
               Yer tutucu değer gibi görünmesin diye seçili metin normal,
               boş hâl soluk (İlke #11). */}
           <span className={`truncate ${secili ? "" : "text-muted-foreground"}`}>
-            {secili ? secili.etiket : etiket}
+            {secili ? secili.etiket : (bosEtiket ?? etiket)}
           </span>
         </Button>
       </DialogTrigger>

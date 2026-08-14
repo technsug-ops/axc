@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Calculator, Undo2 } from "lucide-react";
 
+import { AranabilirSecim } from "@/components/aranabilir-secim";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -41,6 +42,8 @@ import type { ReturnType } from "@/generated/prisma/enums";
 
 export type IadeKalemSecenegi = {
   saleItemId: string;
+  /** Ön-dolu geçişin hangi kaleme gideceği bununla çözülür. */
+  variantId: string;
   baslik: string;
   sku: string;
   satilanAdet: number;
@@ -50,7 +53,12 @@ export type IadeKalemSecenegi = {
 };
 
 export type KonumSecenegi = { id: string; kod: string };
-export type VaryantSecenegi = { id: string; etiket: string };
+export type VaryantSecenegi = {
+  id: string;
+  etiket: string;
+  /** "stokta 4 adet" — seçim körlemesine yapılmasın. */
+  stokMetni?: string;
+};
 
 type Girdi = {
   iadeAdedi: string;
@@ -80,7 +88,8 @@ export function IadeFormu({
   saleId,
   kalemler: secenekler,
   konumlar,
-  varyantlar,
+  degisimVaryantlari,
+  donenVaryantlari,
   yenidenGonderimGorunur,
   bugun,
   onDolu,
@@ -88,19 +97,24 @@ export function IadeFormu({
   saleId: string;
   kalemler: IadeKalemSecenegi[];
   konumlar: KonumSecenegi[];
-  varyantlar: VaryantSecenegi[];
+  /** Müşteriye ÇIKACAK mal — stoğu olanlar (+ ön-dolu geleni). */
+  degisimVaryantlari: VaryantSecenegi[];
+  /** Geri GELEN mal — hepsi; stoktan çıkmış olduğu için 0 normaldir. */
+  donenVaryantlari: VaryantSecenegi[];
   /** Kanal politikası: itirazlı iadede yeniden gönderimi satıcı öder mi? */
   yenidenGonderimGorunur: boolean;
   bugun: string;
   /**
-   * BİLDİRİMDEN ÖN-DOLU GEÇİŞ (). YANLIS_URUN
-   * gerekçesinde dönen varyant SEÇİLİ gelir; kullanıcı elle aramaz.
+   * BİLDİRİMDEN ÖN-DOLU GEÇİŞ. YANLIS_URUN gerekçesinde dönen varyant
+   * SEÇİLİ gelir; kullanıcı elle aramaz. `hedefKalemId` hangi kaleme
+   * yazılacağını söyler — `null` ise TAHMİN YAPILMAZ, ekran bunu yazar.
    */
   onDolu?: {
     bildirimId: string;
     donenVaryantId: string | null;
     gonderilecekVaryantId: string | null;
     donenEtiket: string | null;
+    hedefKalemId: string | null;
   } | null;
 }) {
   const t = useTranslations("Iade");
@@ -124,22 +138,41 @@ export function IadeFormu({
     undefined,
   );
 
+  /**
+   * ÖN-DOLU YALNIZ HEDEF KALEME. Eskiden `secenekler.map` içinde koşulsuz
+   * yazılıyordu: iki kalemli bir satışta dönen ürün B her iki kaleme birden
+   * düşerdi.
+   */
+  const onDoluUrunVar =
+    (onDolu?.donenVaryantId ?? "") !== "" ||
+    (onDolu?.gonderilecekVaryantId ?? "") !== "";
+
   const [girdiler, setGirdiler] = useState<Record<string, Girdi>>(() =>
     Object.fromEntries(
-      secenekler.map((s) => [
-        s.saleItemId,
-        {
-          iadeAdedi: "",
-          saglamAdet: "",
-          hasarliAdet: "",
-          hasarNotu: "",
-          locationId: s.varsayilanLocationId,
-          // ÖN-DOLU: bildirim YANLIS_URUN ise gönderilecek ürün satılan
-          // varyanttır; dönen ürün bildirimden geliyor ve SEÇİLİ gelir.
-          exchangeVariantId: onDolu?.gonderilecekVaryantId ?? "",
-          donenVaryantId: onDolu?.donenVaryantId ?? "",
-        },
-      ]),
+      secenekler.map((s) => {
+        const hedef = onDoluUrunVar && onDolu?.hedefKalemId === s.saleItemId;
+        return [
+          s.saleItemId,
+          {
+            /**
+             * ADET 1 ÖN-DOLU — yalnız ön-dolu ÜRÜN gelen kalemde. Amaç
+             * kolaylık değil görünürlük: ürün alanları adet girilene kadar
+             * çizilmiyordu, seçili gelen ürün EKRANDA HİÇ GÖRÜNMÜYORDU
+             * (kullanıcı T4'te buna takıldı). Ürün gelmeyen kalemlerde adet
+             * boş kalır — girilmemiş bir sayı uydurmayız.
+             */
+            iadeAdedi: hedef ? "1" : "",
+            saglamAdet: hedef ? "1" : "",
+            hasarliAdet: hedef ? "0" : "",
+            hasarNotu: "",
+            locationId: s.varsayilanLocationId,
+            exchangeVariantId: hedef
+              ? (onDolu?.gonderilecekVaryantId ?? "")
+              : "",
+            donenVaryantId: hedef ? (onDolu?.donenVaryantId ?? "") : "",
+          },
+        ];
+      }),
     ),
   );
 
@@ -339,10 +372,36 @@ export function IadeFormu({
           <CardTitle>{t("kalemler")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* ÖN-DOLU YERLEŞTİRİLEMEDİYSE SESSİZ KALINMAZ (İlke #5): bilgi
+              bildirimde var ama hangi kaleme ait olduğu belirsiz. Kullanıcı
+              bunu bilmeden formu eksik doldurabilirdi. */}
+          {onDoluUrunVar && !onDolu?.hedefKalemId ? (
+            <p className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-xs">
+              {t("onDoluHedefYok", { urun: onDolu?.donenEtiket ?? "" })}
+            </p>
+          ) : null}
+
           {secenekler.map((s) => {
             const g = girdiler[s.saleItemId];
             const adet = Math.trunc(sayi(g.iadeAdedi));
             const asim = adet > s.kalanAdet;
+
+            /**
+             * RAF / DEĞİŞİM / DÖNEN ALANLARI NE ZAMAN ÇİZİLİR?
+             *
+             * Eski koşul yalnız `adet > 0` idi. Bildirimden gelindiğinde adet
+             * boş olduğu için üç alan da gizleniyor, seçili gelen dönen ürün
+             * ekranda hiç görünmüyordu: kullanıcı "değişim ürün alanı yok"
+             * dedi ve haklıydı — form dolu, ekran boştu.
+             *
+             * Yeni ölçüt: DOLU BİR DEĞER ASLA GİZLENMEZ. Adet girilmemiş olsa
+             * bile bir ürün seçiliyse alanı çiziyoruz.
+             */
+            const alanlarGorunur =
+              stogaGirer &&
+              (adet > 0 ||
+                g.exchangeVariantId !== "" ||
+                g.donenVaryantId !== "");
 
             return (
               <div key={s.saleItemId} className="space-y-3 rounded-lg border p-4">
@@ -421,7 +480,7 @@ export function IadeFormu({
                   )}
                 </div>
 
-                {stogaGirer && adet > 0 ? (
+                {alanlarGorunur ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor={`raf-${s.saleItemId}`}>
@@ -454,29 +513,23 @@ export function IadeFormu({
                       <Label htmlFor={`degisim-${s.saleItemId}`}>
                         {t("degisimUrunu")}
                       </Label>
-                      <Select
-                        value={g.exchangeVariantId || YOK}
-                        onValueChange={(d) =>
-                          guncelle(s.saleItemId, {
-                            exchangeVariantId: d === YOK ? "" : d,
-                          })
+                      {/* 1055 ürün düz açılır listeye sığmaz — bildirim
+                          formundaki bileşenin aynısı (İlke #10). */}
+                      <AranabilirSecim
+                        id={`degisim-${s.saleItemId}`}
+                        etiket={t("degisimUrunuSecin")}
+                        bosEtiket={t("degisimYok")}
+                        tumuEtiketi={t("degisimYok")}
+                        secenekler={degisimVaryantlari.map((v) => ({
+                          deger: v.id,
+                          etiket: v.etiket,
+                          altEtiket: v.stokMetni,
+                        }))}
+                        seciliDeger={g.exchangeVariantId}
+                        onSec={(d) =>
+                          guncelle(s.saleItemId, { exchangeVariantId: d })
                         }
-                      >
-                        <SelectTrigger
-                          id={`degisim-${s.saleItemId}`}
-                          className="w-full"
-                        >
-                          <SelectValue placeholder={t("degisimYok")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={YOK}>{t("degisimYok")}</SelectItem>
-                          {varyantlar.map((v) => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.etiket}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      />
                     </div>
 
                     {/* ============ DÖNEN ÜRÜN — 6. SENARYO ============
@@ -489,31 +542,21 @@ export function IadeFormu({
                       <Label htmlFor={`donen-${s.saleItemId}`}>
                         {t("donenUrun")}
                       </Label>
-                      <Select
-                        value={g.donenVaryantId || YOK}
-                        onValueChange={(d) =>
-                          guncelle(s.saleItemId, {
-                            donenVaryantId: d === YOK ? "" : d,
-                          })
+                      <AranabilirSecim
+                        id={`donen-${s.saleItemId}`}
+                        etiket={t("donenUrunSecin")}
+                        bosEtiket={t("donenUrunAyni")}
+                        tumuEtiketi={t("donenUrunAyni")}
+                        secenekler={donenVaryantlari.map((v) => ({
+                          deger: v.id,
+                          etiket: v.etiket,
+                          altEtiket: v.stokMetni,
+                        }))}
+                        seciliDeger={g.donenVaryantId}
+                        onSec={(d) =>
+                          guncelle(s.saleItemId, { donenVaryantId: d })
                         }
-                      >
-                        <SelectTrigger
-                          id={`donen-${s.saleItemId}`}
-                          className="w-full"
-                        >
-                          <SelectValue placeholder={t("donenUrunAyni")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={YOK}>
-                            {t("donenUrunAyni")}
-                          </SelectItem>
-                          {varyantlar.map((v) => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.etiket}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      />
                       {/* Bildirimden geldiyse nereden geldiğini söyle:
                           "kim doldurdu" sorusu ekranda cevaplı olsun (#5). */}
                       {onDolu?.donenVaryantId === g.donenVaryantId &&

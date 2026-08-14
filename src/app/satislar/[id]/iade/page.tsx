@@ -6,7 +6,9 @@ import { getTranslations } from "next-intl/server";
 import { GeriBaglanti } from "@/components/baglanti";
 import { Button } from "@/components/ui/button";
 import { tarihGirdisi } from "@/lib/bicim";
+import { onDoluHedefKalem } from "@/lib/iade/bildirim";
 import { prisma } from "@/lib/prisma";
+import { varyantStoklari } from "@/lib/stok";
 
 import {
   IadeFormu,
@@ -60,6 +62,8 @@ export default async function IadeSayfasi({
     const oncekiIade = k.returnItems.reduce((t2, r) => t2 + r.quantity, 0);
     return {
       saleItemId: k.id,
+      // Ön-dolu geçiş hangi kaleme yazılacak — varyant üzerinden eşleşiyor.
+      variantId: k.variantId,
       baslik: k.variant.name
         ? `${k.variant.product.name} — ${k.variant.name}`
         : k.variant.product.name,
@@ -78,23 +82,30 @@ export default async function IadeSayfasi({
       select: { id: true, code: true },
       orderBy: { code: "asc" },
     }),
+    /**
+     * VARYANT LİSTESİ — `take` SINIRI YOK.
+     *
+     * Eskiden 200 ile sınırlıydı: 1055 üründen 200'ü listeleniyor, gerisi
+     * SESSİZCE düşüyordu. Bildirimden ön-dolu gelen ürün o 200'ün içinde
+     * değilse açılır liste onu bulamıyor ve alan BOŞ görünüyordu — kullanıcı
+     * 14.08.2026'da T4 testinde tam buna takıldı. Aynı tuzak bildirim
+     * formunda 500 olarak vardı ve orada da kaldırıldı.
+     */
     prisma.productVariant.findMany({
       where: { isActive: true },
-      include: { product: { select: { name: true } } },
       orderBy: { sku: "asc" },
-      take: 200,
+      select: {
+        id: true,
+        sku: true,
+        name: true,
+        product: { select: { name: true } },
+      },
     }),
   ]);
 
   const konumlar: KonumSecenegi[] = konumKayitlari.map((k) => ({
     id: k.id,
     kod: k.code,
-  }));
-  const varyantlar: VaryantSecenegi[] = varyantKayitlari.map((v) => ({
-    id: v.id,
-    etiket: v.name
-      ? `${v.product.name} — ${v.name} (${v.sku})`
-      : `${v.product.name} (${v.sku})`,
   }));
 
   /**
@@ -136,7 +147,50 @@ export default async function IadeSayfasi({
           donenEtiket: bildirim.returnedVariant
             ? `${bildirim.returnedVariant.product.name} (${bildirim.returnedVariant.sku})`
             : null,
+          /**
+           * HANGİ KALEME: bildirim satışa bağlıdır, kaleme değil. Kural saf
+           * fonksiyonda (`lib/iade/bildirim.ts`) ve `rma:dogrula` sınıyor.
+           * Eskiden ön-dolu BÜTÜN kalemlere yazılıyordu.
+           */
+          hedefKalemId: onDoluHedefKalem({
+            kalemler: iadeEdilebilir.map((k) => ({
+              saleItemId: k.saleItemId,
+              variantId: k.variantId,
+            })),
+            ayrilanVaryantId:
+              bildirim.reason === "YANLIS_URUN"
+                ? bildirim.reservedVariantId
+                : null,
+          }),
         };
+
+  /**
+   * İKİ LİSTE, İKİ KURAL (bildirim formundaki ayrımın aynısı — İlke #10):
+   *
+   *   DÖNEN ürün  = yanlışlıkla gitmiş, geri gelen mal. STOK ŞARTI YOK:
+   *     zaten stoktan çıkmış olduğu için 0 görünmesi NORMALDİR.
+   *   DEĞİŞİM ürünü = müşteriye çıkacak mal. Stoktan düşecek, stoğu olmalı.
+   *     Ama BİLDİRİMDEN ÖN-DOLU GELEN ürün stoğu 0 olsa da listede KALIR:
+   *     aksi hâlde seçili değerin karşılığı listede bulunmaz ve alan boş
+   *     görünürdü — düzeltmeye çalıştığımız hatanın ta kendisi.
+   */
+  const stoklar = await varyantStoklari(varyantKayitlari.map((v) => v.id));
+
+  const secenekYap = (v: (typeof varyantKayitlari)[number]): VaryantSecenegi => ({
+    id: v.id,
+    etiket: v.name
+      ? `${v.product.name} — ${v.name} (${v.sku})`
+      : `${v.product.name} (${v.sku})`,
+    stokMetni: t("stokMetni", { sayi: stoklar.get(v.id) ?? 0 }),
+  });
+
+  const donenVaryantlari: VaryantSecenegi[] = varyantKayitlari.map(secenekYap);
+  const degisimVaryantlari: VaryantSecenegi[] = varyantKayitlari
+    .filter(
+      (v) =>
+        (stoklar.get(v.id) ?? 0) > 0 || v.id === onDolu?.gonderilecekVaryantId,
+    )
+    .map(secenekYap);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -162,7 +216,8 @@ export default async function IadeSayfasi({
           saleId={satis.id}
           kalemler={iadeEdilebilir}
           konumlar={konumlar}
-          varyantlar={varyantlar}
+          degisimVaryantlari={degisimVaryantlari}
+          donenVaryantlari={donenVaryantlari}
           yenidenGonderimGorunur={
             satis.channelAccount.channel.disputedReshipPaidBySeller
           }

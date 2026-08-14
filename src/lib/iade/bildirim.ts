@@ -154,6 +154,43 @@ export function donenUrunZorunluMu(gerekce: ReturnReason): boolean {
 
 /**
  * ---------------------------------------------------------------------------
+ *  BİLDİRİMDEN İADE FORMUNA ÖN-DOLU GEÇİŞ — HANGİ KALEME YAZILIR?
+ * ---------------------------------------------------------------------------
+ *  Bildirim SATIŞA bağlıdır, satış kalemine değil. Satışta birden fazla kalem
+ *  varsa "dönen ürün B" bilgisinin hangi kaleme ait olduğu bildirimden
+ *  okunamaz. Eskiden ön-dolu BÜTÜN kalemlere yazılıyordu: iki kalemli bir
+ *  satışta B her iki kaleme birden düşer, kullanıcı fark etmezse iki ayrı
+ *  defter düzeltmesi doğardı. Sessiz yanlış defter — bu modülün en tehlikeli
+ *  hata türü.
+ *
+ *  ÖLÇÜT SIRASI:
+ *    1. Bildirimin AYRILAN varyantıyla eşleşen kalem (6. senaryoda ayrılan
+ *       ürün, satılan doğru üründür — yani kalemin kendisi).
+ *    2. Eşleşme yoksa ve iade edilebilir TEK kalem varsa, o kalem.
+ *    3. Hiçbiri değilse `null` — TAHMİN YAPILMAZ. Ekran bunu söyler ve
+ *       kullanıcı doğru kalemde elle seçer.
+ *
+ *  Birden fazla kalem aynı varyantı taşıyorsa da `null`: "hangisi" sorusunun
+ *  cevabı yoktur, atmak zorundayız.
+ */
+export function onDoluHedefKalem(girdi: {
+  kalemler: { saleItemId: string; variantId: string }[];
+  ayrilanVaryantId: string | null;
+}): string | null {
+  const { kalemler, ayrilanVaryantId } = girdi;
+  if (kalemler.length === 0) return null;
+
+  if (ayrilanVaryantId) {
+    const eslesen = kalemler.filter((k) => k.variantId === ayrilanVaryantId);
+    if (eslesen.length === 1) return eslesen[0].saleItemId;
+    if (eslesen.length > 1) return null;
+  }
+
+  return kalemler.length === 1 ? kalemler[0].saleItemId : null;
+}
+
+/**
+ * ---------------------------------------------------------------------------
  *  AYIRMA STOK KONTROLÜ
  * ---------------------------------------------------------------------------
  *  Ayırmak = MÜŞTERİYE GÖNDERİLECEK malı taahhüt etmek. Olmayan malı taahhüt

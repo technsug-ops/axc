@@ -949,7 +949,11 @@
     "degisimTeslimiNotu": "",
     "donenUrun": "",
     "donenUrunAyni": "",
-    "donenUrunBildirimden": ""
+    "donenUrunBildirimden": "",
+    "stokMetni": "",
+    "degisimUrunuSecin": "",
+    "donenUrunSecin": "",
+    "onDoluHedefYok": ""
   },
   "Gider": {
     "baslik": "",
