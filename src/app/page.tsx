@@ -210,6 +210,20 @@ export default async function AnaSayfa({
     iadeler,
   );
 
+  /**
+   * TABLO EN YENİDEN ESKİYE (kullanıcı kararı 14.08.2026).
+   *
+   * GRAFİK ile TABLO farklı sıra ister ve bu bir tutarsızlık değil:
+   *   grafik → zaman ekseni soldan sağa akar, eski solda kalmalı
+   *   tablo  → okumaya en üstten başlanır, oradaki ay BU AY olmalı
+   * Eskiden ikisi de kronolojikti ve tablonun tepesinde 11 ay önceki ay
+   * duruyordu; "bu ay ne oldu" sorusu için ekranın en altına inmek
+   * gerekiyordu.
+   *
+   * Etiket burada nokta ile EŞLEŞTİRİLİYOR: eskiden `noktalar[i]` ile
+   * dizin üzerinden bulunuyordu ve sıra değişince ay adları satırlardan
+   * KAYARDI — sessiz ve fark edilmesi zor bir hata.
+   */
   const noktalar: GrafikNoktasi[] = seri.map((nokta) => {
     const tarih = gunDegeri({ yil: nokta.yil, ay: nokta.ay, gun: 1 });
     const tam = bicim.ayYil(tarih);
@@ -221,6 +235,14 @@ export default async function AnaSayfa({
       net2: nokta.net2,
     };
   });
+
+  /**
+   * Tablonun satırları: nokta + ay adı BİRLİKTE taşınır, sonra ters çevrilir.
+   * `seri` grafiğe ait olduğu için ona DOKUNULMUYOR — kopya ters çevriliyor.
+   */
+  const aylikSatirlar = seri
+    .map((nokta, i) => ({ nokta, etiket: noktalar[i]?.tamEtiket ?? "" }))
+    .reverse();
 
   /** Süzgeç düğmesi — bağlantıdır, istemci JavaScript'i gerektirmez. */
   function suzgecDugmesi(etiket: string, adres: string, seciliMi: boolean) {
@@ -626,11 +648,9 @@ export default async function AnaSayfa({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {seri.map((nokta, i) => (
+                {aylikSatirlar.map(({ nokta, etiket }) => (
                   <TableRow key={`${nokta.yil}-${nokta.ay}`}>
-                    <TableCell className="whitespace-nowrap">
-                      {noktalar[i]?.tamEtiket}
-                    </TableCell>
+                    <TableCell className="whitespace-nowrap">{etiket}</TableCell>
                     <TableCell className="text-right">{nokta.adet}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       <CiroSunumu
