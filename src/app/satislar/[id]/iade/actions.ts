@@ -11,12 +11,15 @@ import {
   DegisimStokYokHatasi,
   DonenMaliyetYokHatasi,
   FazlaIadeHatasi,
+  fifoMaliyeti,
   iadeEtkisiHesapla,
   iadeKaydet,
+  komisyonToplami,
+  satisCikisMaliyeti,
   type IadeSatiri,
 } from "@/lib/iade";
 import { prisma } from "@/lib/prisma";
-import { varyantStogu } from "@/lib/stok";
+import { acikPartiler, fifoDagit, varyantStogu } from "@/lib/stok";
 
 import type { ReturnType } from "@/generated/prisma/enums";
 
@@ -114,34 +117,24 @@ export async function iadeOnizle(
     const kalem = satis.items.find((k) => k.id === g.saleItemId);
     if (!kalem) return { hata: t("kalemBulunamadi") };
 
-    let maliyet: number | null = 0;
-    for (const h of kalem.stockMovements) {
-      if (h.unitCostAmount === null) {
-        maliyet = null;
-        break;
-      }
-      maliyet =
-        (maliyet ?? 0) +
-        Number(h.unitCostAmount.toString()) * Math.abs(h.quantityDelta);
-    }
+    /**
+     * ÖNİZLEME = KAYIT. Girdiyi kuran parçalar `lib/iade.ts`'ten geliyor;
+     * kayıt yolu da aynılarını çağırıyor. Eskiden bu blok kendi kopyasını
+     * taşıyordu ve değişim maliyetini YAKLAŞIK hesaplıyordu (en eski
+     * hareketin birim maliyeti × adet) — kapanmış partileri de sayıyor,
+     * çok partili çıkışta tutmuyordu. Ekranda bir rakam, kayıtta başka
+     * rakam demekti.
+     */
+    const maliyet = satisCikisMaliyeti(kalem.stockMovements);
 
-    // Değişim maliyeti önizlemede yaklaşık: en eski partinin birim maliyeti.
-    // Kesin değer kayıt anında FIFO'dan okunur.
     let degisimMaliyeti: number | null = null;
     if (g.exchangeVariantId) {
-      const hareket = await prisma.stockMovement.findFirst({
-        where: {
-          variantId: g.exchangeVariantId,
-          quantityDelta: { gt: 0 },
-          unitCostAmount: { not: null },
-        },
-        orderBy: [{ occurredAt: "asc" }, { createdAt: "asc" }],
-        select: { unitCostAmount: true },
-      });
-      if (hareket?.unitCostAmount) {
-        degisimMaliyeti =
-          Number(hareket.unitCostAmount.toString()) * g.iadeAdedi;
-      }
+      // Kayıtla AYNI kaynak: açık partiler + FIFO dağıtımı.
+      const partiler = await acikPartiler(prisma, g.exchangeVariantId);
+      const dagitim = fifoDagit(partiler, g.iadeAdedi);
+      // Stok yetmiyorsa değişim zaten kaydedilemez; önizlemede uydurma
+      // rakam göstermek yerine satır hiç çizilmez, hüküm kayıtta verilir.
+      if (dagitim.yeterliMi) degisimMaliyeti = fifoMaliyeti(dagitim.dagitim);
     }
 
     kalemler.push({
@@ -151,9 +144,7 @@ export async function iadeOnizle(
       satisTutari: Number(kalem.unitPriceAmount.toString()) * kalem.quantity,
       maliyet,
       kdvOrani: kalem.vatRate ? Number(kalem.vatRate.toString()) : 20,
-      komisyon: kalem.fees
-        .filter((f) => f.code === "KOMISYON")
-        .reduce((t2, f) => t2 + Number(f.amount.toString()), 0),
+      komisyon: komisyonToplami(kalem.fees),
       degisimMaliyeti,
     });
   }

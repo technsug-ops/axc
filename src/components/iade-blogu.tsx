@@ -202,9 +202,11 @@ export async function IadeBlogu({
                 <div key={i} className="flex justify-between gap-4">
                   <dt className="text-muted-foreground">
                     {ad(s.code)}
-                    {/* Açık sıfırın nedeni burada da yazar — aynı bilgi
-                        önizlemede ve kayıtta aynı görünmeli (#10). */}
-                    {s.code === "MALIYET_GERI" && s.tutar === 0 ? (
+                    {/* Aynı açıklama önizlemede ve kayıtta AYNI görünür
+                        (#10). Eski kayıtlarda dönmeyen satırı yoksa açık
+                        sıfırlı MALIYET_GERI hâlâ nedeni yazar. */}
+                    {(s.code === "MALIYET_DONMEYEN" && s.tutar !== 0) ||
+                    (s.code === "MALIYET_GERI" && s.tutar === 0) ? (
                       <span className="block text-xs">
                         {t("maliyetGeriYok")}
                       </span>

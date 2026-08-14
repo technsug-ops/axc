@@ -1201,6 +1201,25 @@ console.log("\n8) GERİ ALINAMAZ GEÇİŞ — ONAY ZORUNLU");
       typeof sozluk7.Bildirim2?.satisIpucu === "string" &&
       sozluk7.Bildirim2.satisIpucu.includes("talep no"),
   );
+  /**
+   * İPUCU PENCERENİN İÇİNDE DE OLMALI. Alanın altına yazılan metin pencere
+   * açıkken görünmüyor — kullanıcı tam da ararken göremiyordu ve iki kez
+   * talep no'yu satış penceresine yazdı.
+   */
+  kontrol(
+    "  ...ve ipucu ARAMA PENCERESİNİN İÇİNDE de duruyor",
+    bForm2.includes('ipucu={t("satisPencereIpucu")}') &&
+      typeof sozluk7.Bildirim2?.satisPencereIpucu === "string" &&
+      sozluk7.Bildirim2.satisPencereIpucu.includes("Sipariş numarasıyla"),
+  );
+  const secimBileseni = readFileSync(
+    "src/components/aranabilir-secim.tsx",
+    "utf8",
+  );
+  kontrol(
+    "  ...bileşen ipucunu arama kutusunun ALTINA çiziyor",
+    secimBileseni.includes("{ipucu ? <p"),
+  );
   kosanBolumler.push("gecis-onayi");
 }
 

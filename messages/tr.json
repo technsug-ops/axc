@@ -2122,7 +2122,8 @@
     "talepNoKisa": "Talep no",
     "gecisOnayAciklama": "Bu durum değişikliği GERİ ALINAMAZ. Bildirim akışı ileri gider; önceki duruma dönüş yoktur. Devam etmek istiyor musunuz?",
     "gecisOnayla": "Evet, işaretle",
-    "satisIpucu": "Sipariş numarasıyla arayın. Pazaryeri talep no (ör. nbkhuj) burada değil, aşağıdaki \"Pazaryeri talep no\" alanına yazılır."
+    "satisIpucu": "Sipariş numarasıyla arayın. Pazaryeri talep no (ör. nbkhuj) burada değil, aşağıdaki \"Pazaryeri talep no\" alanına yazılır.",
+    "satisPencereIpucu": "Sipariş numarasıyla arayın (ör. 11504122276). Ürün SKU'su veya talep no değil."
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",

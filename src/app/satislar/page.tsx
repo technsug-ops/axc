@@ -70,7 +70,6 @@ export default async function SatislarSayfasi({
   const bicim = await bicimlendirici();
   const t = await getTranslations("Satis");
   const tIade = await getTranslations("Iade");
-  const tSuzgec = await getTranslations("Suzgec");
   const ortak = await getTranslations("Ortak");
 
   // EKRAN VE EXCEL AYNI KOŞULU KULLANIR (bkz. lib/liste-suzgeci.ts).

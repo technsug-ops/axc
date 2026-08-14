@@ -761,11 +761,11 @@ export function IadeFormu({
                   <div key={i} className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">
                       {tKesinti.has(s.code) ? tKesinti(s.code) : s.code}
-                      {/* AÇIK SIFIR: "maliyet geri gelmedi"yi satırın
-                          YOKLUĞUNDAN anlamak imkânsızdı. Artık satır durur
-                          ve nedenini yazar — kullanıcı kaydetmeden önce ne
-                          kaybedeceğini görür. */}
-                      {s.code === "MALIYET_GERI" && s.tutar === 0 ? (
+                      {/* NEDENİ SATIRIN YANINDA. Açıklama artık DÖNMEYEN
+                          satırına bağlı: maliyet iki satıra ayrıldığından
+                          (14.08.2026) "geri gelmedi" bilgisi sıfır tutarda
+                          değil, dönmeyen payda yaşıyor. */}
+                      {s.code === "MALIYET_DONMEYEN" && s.tutar !== 0 ? (
                         <span className="text-muted-foreground block text-xs">
                           {t("maliyetGeriYok")}
                         </span>

@@ -159,6 +159,7 @@ export function BildirimFormu({
           <AranabilirSecim
             id="bildirim-satis"
             etiket={t("satisSecin")}
+            ipucu={t("satisPencereIpucu")}
             secenekler={satislar.map((s) => ({
               deger: s.id,
               etiket: s.etiket,

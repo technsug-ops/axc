@@ -54,6 +54,15 @@ export function AranabilirSecim({
    * değil, geçerli bir cevaptır — orada alan adını göstermek bilgi kaybıdır.
    */
   bosEtiket,
+  /**
+   * Arama kutusunun HEMEN ALTINDA duran açıklama — ne aranacağını söyler.
+   *
+   * PENCERENİN İÇİNDE olması şart: alanın altına yazılan ipucu pencere
+   * açıkken görünmüyor ve tam da aranırken lazım oluyor. Kullanıcı
+   * 14.08.2026'da iki kez talep no'yu satış penceresine yazıp "eşleşen
+   * seçenek yok" cevabını hata sandı.
+   */
+  ipucu,
   /** Düğmenin id'si — `<Label htmlFor>` ile eşleşsin. */
   id,
   className,
@@ -64,6 +73,7 @@ export function AranabilirSecim({
   onSec: (deger: string) => void;
   tumuEtiketi?: string;
   bosEtiket?: string;
+  ipucu?: string;
   id?: string;
   className?: string;
 }) {
@@ -113,6 +123,9 @@ export function AranabilirSecim({
           placeholder={t("araIpucu")}
           className="h-11 md:h-9"
         />
+
+        {/* NE ARANACAĞI PENCERENİN İÇİNDE YAZAR (bkz. `ipucu` gerekçesi). */}
+        {ipucu ? <p className="text-muted-foreground text-xs">{ipucu}</p> : null}
 
         <div className="max-h-[50vh] space-y-1 overflow-y-auto">
           {tumuEtiketi ? (

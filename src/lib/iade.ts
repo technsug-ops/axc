@@ -89,6 +89,52 @@ export type IadeSonucu = {
  * İade etkisini hesaplar. Veritabanına GİTMEZ; aynı girdiyle her zaman aynı
  * çıktıyı üretir, bu yüzden `iade:dogrula` ile birebir sınanabilir.
  */
+/**
+ * ---------------------------------------------------------------------------
+ *  ÖNİZLEME İLE KAYIT AYNI KAYNAKTAN BESLENİR
+ * ---------------------------------------------------------------------------
+ *  14.08.2026: önizleme ve kayıt `iadeEtkisiHesapla`yı paylaşıyordu ama ona
+ *  verilen GİRDİYİ iki yerde ayrı ayrı kuruyordu. Aynı kodun iki kopyası,
+ *  biri düzeltilip diğeri unutulduğunda ekranın kaydettiğinden başka bir
+ *  rakam göstermesi demektir — kullanıcı yanlış rakama bakarak karar verir.
+ *  Bu yüzden girdiyi üreten parçalar buraya çıkarıldı ve İKİ TARAF DA
+ *  bunları çağırıyor.
+ */
+
+/** Satış çıkışının TOPLAM maliyeti. Biri maliyetsizse `null` — uydurulmaz. */
+export function satisCikisMaliyeti(
+  hareketler: {
+    quantityDelta: number;
+    unitCostAmount: { toString(): string } | null;
+  }[],
+): number | null {
+  let toplam = 0;
+  for (const h of hareketler) {
+    if (h.unitCostAmount === null) return null;
+    toplam += Number(h.unitCostAmount.toString()) * Math.abs(h.quantityDelta);
+  }
+  return toplam;
+}
+
+/** Kalemin komisyon toplamı. */
+export function komisyonToplami(
+  kesintiler: { code: string; amount: { toString(): string } }[],
+): number {
+  return kesintiler
+    .filter((f) => f.code === "KOMISYON")
+    .reduce((t, f) => t + Number(f.amount.toString()), 0);
+}
+
+/** FIFO dağıtımının para karşılığı — değişimde çıkan malın maliyeti. */
+export function fifoMaliyeti(
+  dagitim: { parti: { birimMaliyet: string | null }; adet: number }[],
+): number {
+  return dagitim.reduce(
+    (t, p) => t + Number(p.parti.birimMaliyet ?? 0) * p.adet,
+    0,
+  );
+}
+
 export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
   // İtiraz kabul edilmişse satış ayakta: gelir ve kesintiler geri gelmez.
   const geriGelir = girdi.returnType !== "DISPUTED";
@@ -476,20 +522,8 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
     for (const g of girdi.kalemler) {
       const kalem = kalemHaritasi.get(g.saleItemId)!;
 
-      let maliyet: number | null = 0;
-      for (const h of kalem.stockMovements) {
-        if (h.unitCostAmount === null) {
-          maliyet = null;
-          break;
-        }
-        maliyet =
-          (maliyet ?? 0) +
-          Number(h.unitCostAmount.toString()) * Math.abs(h.quantityDelta);
-      }
-
-      const komisyon = kalem.fees
-        .filter((f) => f.code === "KOMISYON")
-        .reduce((t, f) => t + Number(f.amount.toString()), 0);
+      const maliyet = satisCikisMaliyeti(kalem.stockMovements);
+      const komisyon = komisyonToplami(kalem.fees);
 
       // --- değişim: yeni ürün FIFO'dan düşer ---
       let degisimMaliyeti: number | null = null;
@@ -504,10 +538,7 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
           );
         }
         degisimPlanlari.set(g.saleItemId, dagitim.dagitim);
-        degisimMaliyeti = dagitim.dagitim.reduce(
-          (t, p) => t + Number(p.parti.birimMaliyet ?? 0) * p.adet,
-          0,
-        );
+        degisimMaliyeti = fifoMaliyeti(dagitim.dagitim);
       }
 
       hesapKalemleri.push({

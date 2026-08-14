@@ -17,7 +17,16 @@
 
 import "dotenv/config";
 
-import { cezaOnerisi, iadeEtkisiHesapla, type IadeGirdisi } from "../src/lib/iade";
+import { readFileSync } from "node:fs";
+
+import {
+  cezaOnerisi,
+  fifoMaliyeti,
+  iadeEtkisiHesapla,
+  komisyonToplami,
+  satisCikisMaliyeti,
+  type IadeGirdisi,
+} from "../src/lib/iade";
 import { prisma } from "../src/lib/prisma";
 
 let basarisiz = 0;
@@ -369,6 +378,112 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
   kontrol(
     "hasar yokken de MALIYET_DONMEYEN satırı VAR (açık sıfır)",
     hasarsiz.kalemSatirlari[0].some((s) => s.code === "MALIYET_DONMEYEN"),
+  );
+
+  /**
+   * ══════════════════════════════════════════════════════════════════════
+   *  ÖNİZLEME = KAYIT (kullanıcı isteği 14.08.2026)
+   * ----------------------------------------------------------------------
+   *  Önizleme ile kayıt aynı `iadeEtkisiHesapla`yı çağırıyor AMA ona
+   *  verilen girdiyi eskiden iki ayrı yerde, iki ayrı kod parçasıyla
+   *  kuruyorlardı. Kopyanın biri düzeltilip diğeri unutulduğunda ekran
+   *  kaydettiğinden başka bir rakam gösterir — kullanıcı yanlış rakama
+   *  bakarak karar verir. Girdiyi üreten parçalar artık paylaşılıyor;
+   *  aşağıda hem parçaları hem de iki yolun AYNI parçaları çağırdığını
+   *  sınıyoruz.
+   */
+  const hareketler = [
+    { quantityDelta: -1, unitCostAmount: "1799.0000" },
+    { quantityDelta: -1, unitCostAmount: "1750.0000" },
+  ];
+  yakin("satış çıkış maliyeti toplanıyor", satisCikisMaliyeti(hareketler) ?? -1, 3549);
+  kontrol(
+    "bir hareket maliyetsizse TOPLAM null (uydurulmaz)",
+    satisCikisMaliyeti([...hareketler, { quantityDelta: -1, unitCostAmount: null }]) === null,
+  );
+  yakin("hareket yoksa maliyet sıfır", satisCikisMaliyeti([]) ?? -1, 0);
+  yakin(
+    "komisyon yalnız KOMISYON satırlarından",
+    komisyonToplami([
+      { code: "KOMISYON", amount: "100" },
+      { code: "KARGO", amount: "50" },
+      { code: "KOMISYON", amount: "39.55" },
+    ]),
+    139.55,
+  );
+  yakin(
+    "değişim maliyeti FIFO paylarından",
+    fifoMaliyeti([
+      { parti: { birimMaliyet: "100.0000" }, adet: 2 },
+      { parti: { birimMaliyet: "150.0000" }, adet: 1 },
+    ]),
+    350,
+  );
+  kontrol(
+    "  ...maliyetsiz parti sıfır sayılır, patlamaz",
+    fifoMaliyeti([{ parti: { birimMaliyet: null }, adet: 3 }]) === 0,
+  );
+
+  /** İKİ YOL DA AYNI PARÇALARI ÇAĞIRIYOR MU (kopya kalmadı mı). */
+  const onizlemeKaynagi = readFileSync(
+    "src/app/satislar/[id]/iade/actions.ts",
+    "utf8",
+  );
+  kontrol(
+    "önizleme paylaşılan parçaları çağırıyor",
+    onizlemeKaynagi.includes("satisCikisMaliyeti(") &&
+      onizlemeKaynagi.includes("komisyonToplami(") &&
+      onizlemeKaynagi.includes("fifoMaliyeti("),
+  );
+  /**
+   * ESKİ YAKLAŞIKLIK GERİ GELMEDİ: değişim maliyeti "en eski hareketin
+   * birim maliyeti × adet" ile tahmin ediliyordu; kapanmış partileri de
+   * sayıyor ve çok partili çıkışta tutmuyordu.
+   */
+  kontrol(
+    "  ...değişim maliyeti GERÇEK FIFO'dan (yaklaşık hesap kalkmış)",
+    onizlemeKaynagi.includes("acikPartiler(prisma, g.exchangeVariantId)") &&
+      !onizlemeKaynagi.includes("quantityDelta: { gt: 0 }"),
+  );
+  const kayitKaynagi = readFileSync("src/lib/iade.ts", "utf8");
+  kontrol(
+    "kayıt da aynı parçaları çağırıyor",
+    kayitKaynagi.includes("satisCikisMaliyeti(kalem.stockMovements)") &&
+      kayitKaynagi.includes("komisyonToplami(kalem.fees)") &&
+      kayitKaynagi.includes("fifoMaliyeti(dagitim.dagitim)"),
+  );
+
+  /** Kısmi hasarlı önizleme satırı — kullanıcının istediği kilit. */
+  const kismi = iadeEtkisiHesapla({
+    returnType: "NORMAL",
+    kalemler: [
+      {
+        satilanAdet: 2,
+        iadeAdedi: 2,
+        saglamAdet: 1,
+        satisTutari: 2400,
+        maliyet: 1600,
+        kdvOrani: 20,
+        komisyon: 200,
+        degisimMaliyeti: null,
+      },
+    ],
+    odemeGideri: 0,
+    siparisToplami: 2400,
+    iadeKargosu: null,
+    yenidenGonderimKargosu: null,
+    ceza: null,
+  });
+  kontrol(
+    "kısmi hasarlıda DÖNMEYEN satırı önizlemede GÖRÜNÜR",
+    kismi.kalemSatirlari[0].some(
+      (s) => s.code === "MALIYET_DONMEYEN" && s.tutar !== 0,
+    ),
+  );
+  yakin(
+    "  ...tutarı hasarlı adede düşen pay (2 adetin 1'i)",
+    satir(kismi.kalemSatirlari[0], "MALIYET_DONMEYEN"),
+    -800,
   );
   yakin(
     "  ...tutarı sıfır",
