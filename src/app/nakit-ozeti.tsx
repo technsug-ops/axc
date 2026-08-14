@@ -66,11 +66,13 @@ export async function NakitOzeti({
       </CardHeader>
 
       <CardContent className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-3">
+        {/* Dar kartta üç kutu: dolgu küçük, tutar text-xl ve break-words —
+            ₺210.942,81 gibi uzun tutar kutunun dışına taşmasın (15.08.2026). */}
+        <div className="grid gap-2 sm:grid-cols-3">
           <Kutu etiket={t("cikacak")} deger={para(takvim.cikacakToplam)} />
           <Kutu etiket={t("girecek")} deger={para(takvim.girecekToplam)} />
           <div
-            className={`space-y-1 rounded-lg border p-4 ${
+            className={`min-w-0 space-y-1 rounded-lg border p-3 ${
               acikMi ? "border-destructive/50 bg-destructive/10" : ""
             }`}
           >
@@ -78,7 +80,7 @@ export async function NakitOzeti({
               {t("netPozisyon")}
             </div>
             <div
-              className={`text-2xl font-semibold ${acikMi ? "text-destructive" : ""}`}
+              className={`text-xl font-semibold break-words tabular-nums ${acikMi ? "text-destructive" : ""}`}
             >
               {para(takvim.netPozisyon)}
             </div>
@@ -109,9 +111,9 @@ export async function NakitOzeti({
 
 function Kutu({ etiket, deger }: { etiket: string; deger: string }) {
   return (
-    <div className="space-y-1 rounded-lg border p-4">
+    <div className="min-w-0 space-y-1 rounded-lg border p-3">
       <div className="text-muted-foreground text-xs">{etiket}</div>
-      <div className="text-2xl font-semibold">{deger}</div>
+      <div className="text-xl font-semibold break-words tabular-nums">{deger}</div>
     </div>
   );
 }

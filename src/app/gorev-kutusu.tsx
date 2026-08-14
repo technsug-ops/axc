@@ -69,7 +69,13 @@ export async function GorevKutusu({
             <Link
               key={g.anahtar}
               href={g.adres}
-              className={`hover:bg-muted/60 flex min-h-11 flex-col justify-between gap-1 rounded-lg border p-3 ${
+              /**
+               * `min-w-0` ŞART (15.08.2026): ızgara hücresinin varsayılan
+               * en küçük genişliği "auto"dur, yani içeriği kadar. Uzun
+               * etiket ("Komisyon oranı boş kanal SKU") hücreyi kendi
+               * genişliğine zorluyor ve yazı kutunun dışına taşıyordu.
+               */
+              className={`hover:bg-muted/60 flex min-h-11 min-w-0 flex-col justify-between gap-1 rounded-lg border p-3 ${
                 g.temizMi ? "" : "border-foreground/20"
               }`}
             >
@@ -83,7 +89,7 @@ export async function GorevKutusu({
                   {g.sayi}
                 </span>
               )}
-              <span className="text-muted-foreground text-xs leading-tight">
+              <span className="text-muted-foreground text-[11px] leading-tight break-words hyphens-auto">
                 {t(g.anahtar)}
               </span>
             </Link>
