@@ -354,6 +354,19 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         > ürünün KENDİ KDV oranıyla ayrıştırılacak. Bu adım atlanırsa oran
         > sessizce düşük çıkar ve kimse fark etmez.
 
+      - **"SERMAYE VERİMİ" SEKMESİ — Ürün analizine EKLENECEK.**
+        _Gerekçesi kullanıcının 14.08.2026 örneği:_ "1.000 ₺'lik üründen
+        200 ₺, 10.000 ₺'lik üründen 250 ₺ kazandım; sistemde 250 kazandığım
+        'en çok kazandıran' oluyor." Marj bunu kısmen yakalar (%20 vs %2,5)
+        ama asıl ölçü **bağlanan sermayenin verimi**: 10.000 ₺'yi rafta
+        tutup 250 ₺ kazanmak ile 1.000 ₺'yi tutup 200 ₺ kazanmak aynı şey
+        değildir.
+        **ARBİTRAJDA ASIL ÖLÇÜT BUDUR:** faizsiz kart süresi işlerken ölü
+        sermayeyi gösteren rakam bu. Yaşlanma listesinin "bağlı sermaye"
+        sütunuyla aynı kavramın kâr tarafı.
+        Paket 1'de yapılan (yeterli, yanıltmayı durdurur): marj rozeti +
+        varsayılan sekmenin marj olması.
+
         **Karışma uyarısı ekranda:** düşük maliyetli üründe
         "NET-2 / maliyet" çok yüksek çıkar (aynı kâr, küçük payda). Etiket
         zorunlu; oran, tanımı görünmeden güvenilmez bir sayıdır.

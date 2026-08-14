@@ -37,9 +37,11 @@ import {
 } from "@/lib/panel";
 import {
   birimKar,
+  donemOrtalamaMarji,
   enCokSatilan,
   karSiralamasi,
   karsizUrunSayisi,
+  marjDurumu,
   marjSiralamasi,
   marjYuzdesi,
   urunlereTopla,
@@ -442,16 +444,51 @@ export default async function AnaSayfa({
    * "neden birinci" sorusu tek bakışta anlaşılsın: çok mu sattı, iyi mi
    * sattı? (Kullanıcı kararı 14.08.2026: iki ölçüt ayrı ayrı görünecek.)
    */
+  /**
+   * DÖNEMİN ORTALAMA MARJI — rozet renginin DAYANAĞI. Uydurma eşik yok;
+   * gerekçe için bkz. `lib/panel-listeler.ts` → MARJ RENGİ.
+   */
+  const ortalamaMarj = donemOrtalamaMarji(urunSatirlari);
+
+  /**
+   * MARJ ROZETİ — 14.08.2026, kullanıcı bulgusu.
+   *
+   * "1.000 ₺'lik üründen 200 ₺, 10.000 ₺'lik üründen 250 ₺ kazandım;
+   * sistemde 250 kazandığım 'en çok kazandıran' oluyor." Doğruydu: liste
+   * MUTLAK tutara göre sıralıyor ve marj sönük gri bir alt satırdaydı —
+   * yanlış okumayı engelleyemiyordu.
+   *
+   * Artık marj ürünün YANINDA, renkli rozet olarak duruyor: rakam tek
+   * başına okunamıyor. Renk dönem ortalamasına göre, ortalama da listenin
+   * altında YAZILI — renk sessiz bir hüküm değil.
+   */
+  function marjRozeti(marj: number | null) {
+    const durum = marjDurumu(marj, ortalamaMarj);
+    if (durum === null || marj === null) return null;
+    const renk =
+      durum === "zarar"
+        ? "border-destructive/50 text-destructive"
+        : durum === "zayif"
+          ? "border-amber-500/50 text-amber-700 dark:text-amber-400"
+          : "border-emerald-500/50 text-emerald-700 dark:text-emerald-400";
+    return (
+      <span className={`rounded-md border px-1.5 py-0.5 text-xs ${renk}`}>
+        {bicim.yuzde(marj)}
+      </span>
+    );
+  }
+
   const enCokKarEdenler = karSiralamasi(urunSatirlari, "en-cok", LISTE_SATIRI).map(
     (s) => {
       const marj = marjYuzdesi(s);
-      return listeSatiri(
-        s,
-        bicim.para(s.net2, seciliPara),
-        marj === null
-          ? t("adetDegeri", { sayi: s.adet })
-          : t("karAlt", { sayi: s.adet, marj: bicim.yuzde(marj) }),
-      );
+      return {
+        ...listeSatiri(
+          s,
+          bicim.para(s.net2, seciliPara),
+          t("adetDegeri", { sayi: s.adet }),
+        ),
+        rozet: marjRozeti(marj),
+      };
     },
   );
 
@@ -638,7 +675,14 @@ export default async function AnaSayfa({
   const aralikMetni = `${bicim.tarih(donem.baslangic)} – ${bicim.tarih(donem.sonGun)}`;
 
   /** Ürün analizi sekmesi — seçim URL'de yaşar, diğer süzgeçler korunur. */
-  const analizSekmesi = parametreler.analiz ?? "satis";
+  /**
+   * VARSAYILAN SEKME: MARJ (mimar karari 14.08.2026).
+   *
+   * Panel acilista VERIMLE gelir, hacimle degil. "En cok kar eden" sekmesi
+   * DURUYOR - "toplam ne kazandim" da gecerli bir soru - ama varsayilan
+   * degil: mutlak tutar tek basina yaniltiyordu.
+   */
+  const analizSekmesi = parametreler.analiz ?? "marj";
   const analizAdresi = (deger: string) =>
     suzgecAdresi("/", parametreler, { analiz: deger });
 
@@ -1099,6 +1143,13 @@ export default async function AnaSayfa({
                       skuEtiketi={t("sku")}
                       altNot={
                         <>
+                          {/* RENK DAYANAGI EKRANDA: esik uydurma degil,
+                              donemin kendi ortalamasi. */}
+                          {ortalamaMarj === null
+                            ? null
+                            : t("marjRenkNotu", {
+                                ortalama: bicim.yuzde(ortalamaMarj),
+                              })}{" "}
                           {t("kalemKariNotu")}
                           {karsizUrun > 0 ? (
                             <> {t("karsizUrun", { sayi: karsizUrun })}</>

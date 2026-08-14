@@ -1683,8 +1683,9 @@
     "karAlt": "{sayi} adet · marj {marj}",
     "marjAlt": "{sayi} adet · birim {birim}",
     "urunAnaliziBaslik": "Ürün analizi",
-    "urunAnaliziNotu": "Dört ayrı soru, dört ayrı sıralama. Sekme seçimi adreste saklanır.",
-    "kanalSatisYok": "Bu dönemde satış yok"
+    "urunAnaliziNotu": "Dört ayrı soru, dört ayrı sıralama. Varsayılan VERİM (marj); mutlak tutar ayrı sekmede. Sekme seçimi adreste saklanır.",
+    "kanalSatisYok": "Bu dönemde satış yok",
+    "marjRenkNotu": "Renkler dönemin ortalama marjına göre ({ortalama}): altı sarı, üstü yeşil, zarar kırmızı. Eşik uydurma değil, bu dönemin kendi ortalaması."
   },
   "Envanter": {
     "baslik": "Envanter değeri",

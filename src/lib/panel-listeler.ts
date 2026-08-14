@@ -204,3 +204,49 @@ export function marjSiralamasi(
   // Eşit marjda parası büyük olan üstte: ikinci ölçüt hep toplam kâr.
   return marjli.slice(0, kac).map((x) => x.s);
 }
+
+/**
+ * ---------------------------------------------------------------------------
+ *  MARJ RENGİ — EŞİK UYDURULMAZ, DÖNEMİN KENDİ ORTALAMASI ÖLÇÜTTÜR
+ * ---------------------------------------------------------------------------
+ *  14.08.2026, kullanıcı uyarısı: "renk eşiği sessiz varsayım olmasın —
+ *  kaçın altı kırmızı, kaçın üstü yeşil, o eşik nereden geliyor?"
+ *
+ *  Haklı bir uyarı. "%5'in altı kötüdür" demek, hiçbir yere dayanmayan bir
+ *  sayıyı sisteme gömmek olurdu; sektöre, ürüne ve kanala göre değişir ve
+ *  yanlış olduğu gün kimse fark etmez.
+ *
+ *  ÖLÇÜT DÖNEMİN KENDİSİ: bir ürünün marjı, o dönemde yapılan TÜM satışın
+ *  ortalama marjıyla karşılaştırılır. "Ortalamanın altında" cümlesi
+ *  kanıtlanabilir; "%5'in altında" cümlesi değil. Ortalama ekranda YAZAR,
+ *  böylece rengin nereden geldiği görünür.
+ *
+ *  ÜÇ DURUM, ÜÇÜ DE AÇIK:
+ *    zarar     — marj negatif: ürün para kaybettiriyor
+ *    zayif     — ortalamanın altında
+ *    guclu     — ortalama ve üstü
+ */
+export type MarjDurumu = "zarar" | "zayif" | "guclu";
+
+export function donemOrtalamaMarji(satirlar: UrunSatiri[]): number | null {
+  let ciro = 0;
+  let net2 = 0;
+  for (const s of satirlar) {
+    if (s.kalemSayisi === s.hesaplanamayanKalem) continue;
+    ciro += s.hesaplananCiro;
+    net2 += s.net2;
+  }
+  if (ciro <= 0) return null;
+  return (net2 / ciro) * 100;
+}
+
+export function marjDurumu(
+  marj: number | null,
+  ortalama: number | null,
+): MarjDurumu | null {
+  if (marj === null) return null;
+  if (marj < 0) return "zarar";
+  // Ortalama hesaplanamıyorsa karşılaştıracak bir şey yok: nötr sayılır.
+  if (ortalama === null) return "guclu";
+  return marj < ortalama ? "zayif" : "guclu";
+}
