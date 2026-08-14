@@ -1681,7 +1681,9 @@
     "marjNotu": "Marj = NET-2 ÷ satış tutarı (KDV dahil, yani pazaryerinde yazan fiyat). Hacimden bağımsız.",
     "marjUyari": "Marj tek başına yanıltır: tek adet satılmış küçük bir ürün yüksek yüzdeyle başa çıkabilir. Yanında adet ve birim kâr yazıyor.",
     "karAlt": "{sayi} adet · marj {marj}",
-    "marjAlt": "{sayi} adet · birim {birim}"
+    "marjAlt": "{sayi} adet · birim {birim}",
+    "urunAnaliziBaslik": "Ürün analizi",
+    "urunAnaliziNotu": "Dört ayrı soru, dört ayrı sıralama. Sekme seçimi adreste saklanır."
   },
   "Envanter": {
     "baslik": "Envanter değeri",

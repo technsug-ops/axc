@@ -78,7 +78,21 @@ export function PanelListesi({
             {bosMesaj}
           </p>
         ) : (
-          <ul className="divide-y">
+          /**
+           * GENİŞLİK SINIRLI — 14.08.2026, kullanıcı üç ayrı ekranda aynı
+           * şeyi söyledi: "çok verimsiz yerleşim".
+           *
+           * Satırlar tam genişlikte `justify-between` duruyordu: ürün adı en
+           * solda, rakam en sağda, arada yüzlerce piksel boşluk. Geniş
+           * ekranda göz addan rakama uzun bir yol katediyor ve iki satırı
+           * karşılaştırmak zorlaşıyor. Sayıların yakın durması okumayı
+           * hızlandırır; boşluk bilgi taşımaz.
+           *
+           * KURAL: panelde tam genişlikte "etiket solda / rakam sağda" satır
+           * OLMAZ. Dar kartlarda (2×2 ızgara) zaten sınır etkisizdir; asıl
+           * kazanç tam genişlikte duran listelerde (yaşlanma).
+           */
+          <ul className="max-w-3xl divide-y">
             {satirlar.map((s) => (
               <li
                 key={s.anahtar}

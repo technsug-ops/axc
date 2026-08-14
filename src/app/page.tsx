@@ -6,6 +6,7 @@ import { Baglanti } from "@/components/baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
 import { CizgiGrafik, type GrafikNoktasi } from "@/components/cizgi-grafik";
 import { ListeKarti } from "@/components/liste-karti";
+import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { SuzgecCubugu } from "@/components/suzgec-cubugu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,6 +132,8 @@ export default async function AnaSayfa({
     sirala?: string;
     /** Nakit takvimi penceresi (14 | 30) — dönem süzgecinden BAĞIMSIZ. */
     takvim?: string;
+    /** Ürün analizi sekmesi: satis | kar | marj | zayif. */
+    analiz?: string;
   }>;
 }) {
   // PANEL HERKESE AÇIK ama NET DEĞİL. 13.08.2026'da kullanıcı yakaladı:
@@ -606,6 +609,11 @@ export default async function AnaSayfa({
 
   const aralikMetni = `${bicim.tarih(donem.baslangic)} – ${bicim.tarih(donem.sonGun)}`;
 
+  /** Ürün analizi sekmesi — seçim URL'de yaşar, diğer süzgeçler korunur. */
+  const analizSekmesi = parametreler.analiz ?? "satis";
+  const analizAdresi = (deger: string) =>
+    suzgecAdresi("/", parametreler, { analiz: deger });
+
   /**
    * ========================= PANEL AŞAMA 3 — PAKET 1 =========================
    *
@@ -748,9 +756,9 @@ export default async function AnaSayfa({
             <CardContent className="space-y-4">
               {/* --- büyük rakamlar --- */}
               <div
-                className={`grid gap-3 sm:grid-cols-3 ${karGorunur ? "lg:grid-cols-5" : ""}`}
+                className={`grid gap-2 sm:grid-cols-3 ${karGorunur ? "lg:grid-cols-5" : ""}`}
               >
-                <div className="space-y-1 rounded-lg border p-4">
+                <div className="space-y-0.5 rounded-lg border p-3">
                   <div className="text-muted-foreground text-xs">
                     {t("satisAdedi")}
                   </div>
@@ -760,7 +768,7 @@ export default async function AnaSayfa({
                     </Baglanti>
                   </div>
                 </div>
-                <div className="space-y-1 rounded-lg border p-4">
+                <div className="space-y-0.5 rounded-lg border p-3">
                   <div className="text-muted-foreground text-xs">{t("ciro")}</div>
                   {/* BRÜT · İADE DÜŞÜMÜ · NET — panelin ciro gösterdiği dört
                       yüzeyin hepsinde aynı bileşen (mimar kararı 13.08.2026). */}
@@ -782,7 +790,7 @@ export default async function AnaSayfa({
                     "Bekleyen" bugün ne yapılacağını söylediği için verilenle
                     birlikte duruyor (kullanıcı kararı 14.08.2026) ve ikisi de
                     o satışlara süzülmüş listeye götürüyor (İlke #2, #9). */}
-                <div className="space-y-1 rounded-lg border p-4">
+                <div className="space-y-0.5 rounded-lg border p-3">
                   <div className="text-muted-foreground text-xs">
                     {t("kargoDurumu")}
                   </div>
@@ -809,7 +817,7 @@ export default async function AnaSayfa({
                     tahmin edilmesin. */}
                 {karGorunur ? (
                   <>
-                    <div className="space-y-1 rounded-lg border p-4">
+                    <div className="space-y-0.5 rounded-lg border p-3">
                       <div className="text-muted-foreground text-xs">
                         {t("net1")}
                       </div>
@@ -820,7 +828,7 @@ export default async function AnaSayfa({
                         {t("net1Aciklama")}
                       </div>
                     </div>
-                    <div className="space-y-1 rounded-lg border p-4">
+                    <div className="space-y-0.5 rounded-lg border p-3">
                       <div className="text-muted-foreground text-xs">
                         {t("net2")}
                       </div>
@@ -868,8 +876,12 @@ export default async function AnaSayfa({
                 </div>
               ) : null}
 
-              {/* --- kanal kırılımı: masaüstü tablo --- */}
-              <div className="hidden overflow-x-auto rounded-lg border md:block">
+              {/* --- kanal kırılımı: masaüstü tablo ---
+                  GENİŞLİK SINIRLI (14.08.2026): tablo tüm ekrana yayılınca
+                  iki kanal için sütunlar arası kocaman boşluk kalıyor ve
+                  göz kanal adından rakama uzun bir yol katediyor. Rakamlar
+                  birbirine yakın durunca karşılaştırma tek bakışta olur. */}
+              <div className="hidden max-w-3xl overflow-x-auto rounded-lg border md:block">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1048,75 +1060,114 @@ export default async function AnaSayfa({
       )}
 
       {/* ==================== ÜRÜN LİSTELERİ ====================
-          Dört ayrı soru, dört ayrı liste. Dizüstünde 2×2 duruyor: dört kartı
-          yan yana dizmek her birini ~250 px'e sıkıştırır ve ürün adı ile
-          rakam aynı satıra sığmaz (14.08.2026'da ölçülen genişlik sorunu).
-          Telefonda alt alta düşer (İlke #8). */}
-      <div className="grid min-w-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
-        <PanelListesi
-          baslik={t("enCokSatilan")}
-          notu={t("enCokSatilanNotu")}
-          satirlar={enCokSatilanlar}
-          bosMesaj={t("listeBos")}
-          skuEtiketi={t("sku")}
-        />
-        {karGorunur ? (
-          <>
-            <PanelListesi
-              baslik={t("enCokKar")}
-              notu={t("enCokKarNotu")}
-              satirlar={enCokKarEdenler}
-              bosMesaj={t("listeBos")}
-              skuEtiketi={t("sku")}
-              altNot={
-                <>
-                  {t("kalemKariNotu")}
-                  {karsizUrun > 0 ? (
-                    <> {t("karsizUrun", { sayi: karsizUrun })}</>
-                  ) : null}
-                </>
-              }
-            />
-            {/* MARJ — HACİMDEN BAĞIMSIZ (kullanıcı kararı 14.08.2026).
-                Toplam kâr listesiyle yan yana durması şart: biri "parayı
-                hangi ürün getirdi", öteki "hangi ürün daha verimli satıyor"
-                sorusunu cevaplıyor ve ikisi farklı ürünü işaret edebilir. */}
-            <PanelListesi
-              baslik={t("enYuksekMarj")}
-              notu={t("marjNotu")}
-              satirlar={enYuksekMarjlilar}
-              bosMesaj={t("listeBos")}
-              skuEtiketi={t("sku")}
-              altNot={t("marjUyari")}
-            />
-            <PanelListesi
-              baslik={t("enAzKar")}
-              notu={t("enAzKarNotu")}
-              satirlar={enAzKarBirakanlar}
-              bosMesaj={t("listeBos")}
-              skuEtiketi={t("sku")}
-              altNot={
-                /**
-                 * AZ ÇEŞİTLİ DÖNEMDE İKİ LİSTE AYNI LİSTEDİR — söylenmesi
-                 * gerekir. Canlı ölçüm (14.08.2026) gösterdi: Ağustos'ta 5
-                 * çeşit ürün satılmış, liste tavanı da 5; yani "en az kâr"
-                 * tablosu "en çok kâr"ın ters sırasıdır. Uyarı olmasaydı
-                 * kullanıcı iki ayrı bulgu okuduğunu sanardı.
-                 */
-                <>
-                  {urunSatirlari.length <= LISTE_SATIRI &&
-                  urunSatirlari.length > 0
-                    ? t("azCesitUyari", { sayi: urunSatirlari.length })
-                    : null}
-                  {karsizUrun > 0 ? (
-                    <> {t("karsizUrun", { sayi: karsizUrun })}</>
-                  ) : null}
-                </>
-              }
-            />
-          </>
-        ) : null}
-      </div>
+          KATLANIR (14.08.2026): dört liste alt alta panelin yarısını
+          yutuyordu ve panel "yönetici özeti" olmaktan çıkıyordu. Silinmedi —
+          başlığa tıklayınca açılıyor. Varsayılan KAPALI: panel açılışta bir
+          ekrana sığsın.
+
+          Açıldığında dizüstünde 2×2 duruyor: dört kartı yan yana dizmek her
+          birini ~250 px'e sıkıştırır ve ürün adı ile rakam aynı satıra
+          sığmaz. Telefonda alt alta düşer (İlke #8). */}
+      <SekmeliBolum
+        baslik={t("urunAnaliziBaslik")}
+        notu={t("urunAnaliziNotu")}
+        sekmeler={[
+          {
+            anahtar: "satis",
+            etiket: t("enCokSatilan"),
+            adres: analizAdresi("satis"),
+            icerik: (
+              <PanelListesi
+                baslik={t("enCokSatilan")}
+                notu={t("enCokSatilanNotu")}
+                satirlar={enCokSatilanlar}
+                bosMesaj={t("listeBos")}
+                skuEtiketi={t("sku")}
+              />
+            ),
+          },
+          ...(karGorunur
+            ? [
+                {
+                  anahtar: "kar",
+                  etiket: t("enCokKar"),
+                  adres: analizAdresi("kar"),
+                  icerik: (
+                    <PanelListesi
+                      baslik={t("enCokKar")}
+                      notu={t("enCokKarNotu")}
+                      satirlar={enCokKarEdenler}
+                      bosMesaj={t("listeBos")}
+                      skuEtiketi={t("sku")}
+                      altNot={
+                        <>
+                          {t("kalemKariNotu")}
+                          {karsizUrun > 0 ? (
+                            <> {t("karsizUrun", { sayi: karsizUrun })}</>
+                          ) : null}
+                        </>
+                      }
+                    />
+                  ),
+                },
+                {
+                  /* MARJ — HACİMDEN BAĞIMSIZ (kullanıcı kararı 14.08.2026).
+                     Kâr listesiyle AYNI kartta ama AYRI sekmede: biri "parayı
+                     hangi ürün getirdi", öteki "hangi ürün daha verimli
+                     satıyor" sorusunu cevaplıyor ve farklı ürünü işaret
+                     edebilirler. Sekme, ikisini karıştırmadan yan yana tutar. */
+                  anahtar: "marj",
+                  etiket: t("enYuksekMarj"),
+                  adres: analizAdresi("marj"),
+                  icerik: (
+                    <PanelListesi
+                      baslik={t("enYuksekMarj")}
+                      notu={t("marjNotu")}
+                      satirlar={enYuksekMarjlilar}
+                      bosMesaj={t("listeBos")}
+                      skuEtiketi={t("sku")}
+                      altNot={t("marjUyari")}
+                    />
+                  ),
+                },
+                {
+                  anahtar: "zayif",
+                  etiket: t("enAzKar"),
+                  adres: analizAdresi("zayif"),
+                  icerik: (
+                    <PanelListesi
+                      baslik={t("enAzKar")}
+                      notu={t("enAzKarNotu")}
+                      satirlar={enAzKarBirakanlar}
+                      bosMesaj={t("listeBos")}
+                      skuEtiketi={t("sku")}
+                      altNot={
+                        /**
+                         * AZ ÇEŞİTLİ DÖNEMDE İKİ LİSTE AYNI LİSTEDİR —
+                         * söylenmesi gerekir. Canlı ölçüm (14.08.2026):
+                         * Ağustos'ta 5 çeşit ürün satılmış, liste tavanı da
+                         * 5; yani "en az kâr" tablosu "en çok kâr"ın ters
+                         * sırasıdır. Uyarı olmasaydı kullanıcı iki ayrı
+                         * bulgu okuduğunu sanardı.
+                         */
+                        <>
+                          {urunSatirlari.length <= LISTE_SATIRI &&
+                          urunSatirlari.length > 0
+                            ? t("azCesitUyari", { sayi: urunSatirlari.length })
+                            : null}
+                          {karsizUrun > 0 ? (
+                            <> {t("karsizUrun", { sayi: karsizUrun })}</>
+                          ) : null}
+                        </>
+                      }
+                    />
+                  ),
+                },
+              ]
+            : []),
+        ]}
+        secili={analizSekmesi}
+      />
 
       {/* ==================== STOKTA BEKLEYEN — YAŞLANMA ==================== */}
       <PanelListesi

@@ -129,7 +129,32 @@ tercih değil, zorunluluktur:
     kartındaki gri "1,5"i ve satış formundaki gri "0"ı girilmiş değer
     sandı, boş alanı dolu zannedip sistemi hatalı sandı._
 
-YENİ EKRAN KONTROL LİSTESİ: Her yeni ekran tesliminde bu 10 maddeye
+12. ALANI VERİMLİ KULLAN: Ekranda boşluk bilgi taşımaz. Yasak kalıp —
+    **tam genişlikte "etiket solda, rakam en sağda" satır**: göz aradaki
+    yüzlerce pikseli kat etmek zorunda kalır ve iki satırı karşılaştırmak
+    zorlaşır. Doğrusu: sayı grupları için **kompakt kutucuk ızgarası**,
+    listeler için **genişlik sınırı** (`max-w-3xl` gibi).
+    _14.08.2026'da kullanıcı aynı şeyi ÜÇ ayrı ekranda söyledi: kanal
+    tablosu, görev kutusu, yaşlanma listesi. Üçü de aynı kalıptı._
+
+13. ÖZET EKRANDA DÖKÜM OLMAZ: Panel bir HÜKÜM yeridir. **Satır sayısı
+    veriyle birlikte BÜYÜYEN hiçbir şey özet ekranına konmaz** — bugün 3
+    satırla masum görünen liste, hacim artınca ekranı yutar. Döküm kendi
+    sayfasına gider, özette rakam + "aç" bağlantısı kalır.
+    **Sayfa içinde SEKME serbesttir** (kullanıcı kararı 14.08.2026): aynı
+    anda karşılaştırılması GEREKMEYEN blokları ayırır. Birlikte okunması
+    gereken rakamlar (ciro ile NET) sekmeye bölünmez — sekme, bilgiyi
+    saklamanın kolay yolu değildir. Sekme seçimi URL'ye yazılır.
+    _Gerekçe: nakit takvimi 14 günü gün gün panele basınca panel "özet
+    olmaktan çıktı" (kullanıcı, 14.08.2026)._
+
+14. ADSIZ SATIR YAZILMAZ: Kendini tanıtamayan (adı boş ya da "—") bir
+    kayıt tek başına satır olmayı hak etmez; kardeşleriyle toplanıp
+    "N kalem" olarak gösterilir. Rakam kaybolmaz, okunabilir olur.
+    _14.08.2026: hakediş kalemleri sipariş SATIRI başına geldiği için tek
+    günde 20+ "—" satırı çıktı; ekran isimsiz rakam duvarına döndü._
+
+YENİ EKRAN KONTROL LİSTESİ: Her yeni ekran tesliminde bu 14 maddeye
 uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklenir.
 
 ## İş sabitleri
