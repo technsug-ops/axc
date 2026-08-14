@@ -36,9 +36,12 @@ import {
   type PanelSatisi,
 } from "@/lib/panel";
 import {
+  birimKar,
   enCokSatilan,
   karSiralamasi,
   karsizUrunSayisi,
+  marjSiralamasi,
+  marjYuzdesi,
   urunlereTopla,
   type KalemGirdisi,
 } from "@/lib/panel-listeler";
@@ -393,22 +396,56 @@ export default async function AnaSayfa({
     ),
   );
 
+  /**
+   * TOPLAM KÂR LİSTESİ — hacim × verim. Alt satırda MARJ da yazıyor ki
+   * "neden birinci" sorusu tek bakışta anlaşılsın: çok mu sattı, iyi mi
+   * sattı? (Kullanıcı kararı 14.08.2026: iki ölçüt ayrı ayrı görünecek.)
+   */
   const enCokKarEdenler = karSiralamasi(urunSatirlari, "en-cok", LISTE_SATIRI).map(
-    (s) =>
-      listeSatiri(
+    (s) => {
+      const marj = marjYuzdesi(s);
+      return listeSatiri(
         s,
         bicim.para(s.net2, seciliPara),
-        t("adetDegeri", { sayi: s.adet }),
-      ),
+        marj === null
+          ? t("adetDegeri", { sayi: s.adet })
+          : t("karAlt", { sayi: s.adet, marj: bicim.yuzde(marj) }),
+      );
+    },
+  );
+
+  /**
+   * MARJ LİSTESİ — hacimden BAĞIMSIZ. Birincil değer yüzde; altta adet ve
+   * birim kâr durur, çünkü tek adetlik küçük bir ürün yüksek yüzdeyle başa
+   * çıkabilir ve yüzde tek başına yanıltır.
+   */
+  const enYuksekMarjlilar = marjSiralamasi(urunSatirlari, "en-cok", LISTE_SATIRI).map(
+    (s) => {
+      const birim = birimKar(s);
+      return listeSatiri(
+        s,
+        bicim.yuzde(marjYuzdesi(s) ?? 0),
+        birim === null
+          ? t("adetDegeri", { sayi: s.adet })
+          : t("marjAlt", {
+              sayi: s.adet,
+              birim: bicim.para(birim, seciliPara),
+            }),
+      );
+    },
   );
 
   const enAzKarBirakanlar = karSiralamasi(urunSatirlari, "en-az", LISTE_SATIRI).map(
-    (s) =>
-      listeSatiri(
+    (s) => {
+      const marj = marjYuzdesi(s);
+      return listeSatiri(
         s,
         bicim.para(s.net2, seciliPara),
-        t("adetDegeri", { sayi: s.adet }),
-      ),
+        marj === null
+          ? t("adetDegeri", { sayi: s.adet })
+          : t("karAlt", { sayi: s.adet, marj: bicim.yuzde(marj) }),
+      );
+    },
   );
 
   const karsizUrun = karsizUrunSayisi(urunSatirlari);
@@ -962,9 +999,11 @@ export default async function AnaSayfa({
       )}
 
       {/* ==================== ÜRÜN LİSTELERİ ====================
-          Üçü yan yana: aynı dönemin üç ayrı sorusu. Telefonda alt alta
-          düşer (İlke #8). */}
-      <div className="grid min-w-0 gap-4 lg:grid-cols-3">
+          Dört ayrı soru, dört ayrı liste. Dizüstünde 2×2 duruyor: dört kartı
+          yan yana dizmek her birini ~250 px'e sıkıştırır ve ürün adı ile
+          rakam aynı satıra sığmaz (14.08.2026'da ölçülen genişlik sorunu).
+          Telefonda alt alta düşer (İlke #8). */}
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
         <PanelListesi
           baslik={t("enCokSatilan")}
           notu={t("enCokSatilanNotu")}
@@ -976,13 +1015,30 @@ export default async function AnaSayfa({
           <>
             <PanelListesi
               baslik={t("enCokKar")}
-              notu={t("kalemKariNotu")}
+              notu={t("enCokKarNotu")}
               satirlar={enCokKarEdenler}
               bosMesaj={t("listeBos")}
               skuEtiketi={t("sku")}
               altNot={
-                karsizUrun > 0 ? t("karsizUrun", { sayi: karsizUrun }) : null
+                <>
+                  {t("kalemKariNotu")}
+                  {karsizUrun > 0 ? (
+                    <> {t("karsizUrun", { sayi: karsizUrun })}</>
+                  ) : null}
+                </>
               }
+            />
+            {/* MARJ — HACİMDEN BAĞIMSIZ (kullanıcı kararı 14.08.2026).
+                Toplam kâr listesiyle yan yana durması şart: biri "parayı
+                hangi ürün getirdi", öteki "hangi ürün daha verimli satıyor"
+                sorusunu cevaplıyor ve ikisi farklı ürünü işaret edebilir. */}
+            <PanelListesi
+              baslik={t("enYuksekMarj")}
+              notu={t("marjNotu")}
+              satirlar={enYuksekMarjlilar}
+              bosMesaj={t("listeBos")}
+              skuEtiketi={t("sku")}
+              altNot={t("marjUyari")}
             />
             <PanelListesi
               baslik={t("enAzKar")}

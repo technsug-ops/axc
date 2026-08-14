@@ -1663,7 +1663,13 @@
     "yaslanmaSermayeToplami": "Toplam bağlı sermaye (KDV hariç) {tutar} · {kalem} kalem.",
     "yaslanmaHesaplanamayan": "{sayi} kalemin bağlı sermayesi hesaplanamadı (maliyeti bilinmeyen parti).",
     "azCesitUyari": "Bu dönemde {sayi} çeşit ürün satıldı; liste \"en çok kâr\"ın ters sırasıdır.",
-    "yaslanmaKalan": "En riskli kalemler gösteriliyor; {sayi} kalem daha var."
+    "yaslanmaKalan": "En riskli kalemler gösteriliyor; {sayi} kalem daha var.",
+    "enCokKarNotu": "Toplam NET-2'ye göre: hacim × verim. \"Bu dönemde parayı hangi ürün getirdi?\"",
+    "enYuksekMarj": "En yüksek kâr marjı",
+    "marjNotu": "Marj = NET-2 ÷ satış tutarı (KDV dahil, yani pazaryerinde yazan fiyat). Hacimden bağımsız.",
+    "marjUyari": "Marj tek başına yanıltır: tek adet satılmış küçük bir ürün yüksek yüzdeyle başa çıkabilir. Yanında adet ve birim kâr yazıyor.",
+    "karAlt": "{sayi} adet · marj {marj}",
+    "marjAlt": "{sayi} adet · birim {birim}"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

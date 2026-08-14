@@ -25,9 +25,12 @@ import {
   type PanelSatisi,
 } from "../src/lib/panel";
 import {
+  birimKar,
   enCokSatilan,
   karSiralamasi,
   karsizUrunSayisi,
+  marjSiralamasi,
+  marjYuzdesi,
   urunlereTopla,
   type KalemGirdisi,
 } from "../src/lib/panel-listeler";
@@ -830,6 +833,98 @@ console.log("\n7) ÜRÜN LİSTELERİ — EN ÇOK SATILAN / EN ÇOK KÂR / EN AZ 
     ).length === 1,
   );
   kontrol("boş girdi boş liste", urunlereTopla([]).length === 0);
+
+  // =========================================================================
+  console.log("\n7b) KÂR MARJI — HACİMDEN BAĞIMSIZ SIRALAMA");
+  // =========================================================================
+  /**
+   * Kullanıcı kararı 14.08.2026: "3 tane satmış, o yüzden en yüksek kârı
+   * ondan etmiş" ile "ürünün kâr marjı üstün" AYRI iki listedir.
+   *
+   * Bu bölüm iki şeyi kilitliyor:
+   *   1) İki sıralama GERÇEKTEN ayrışıyor (hacim marja karışmıyor).
+   *   2) Marjın paydası, payı ile AYNI kalem kümesinden geliyor.
+   */
+  {
+    // --- TEMEL: 1000 satıp 200 kâr = %20 ---
+    const yirmi = urunlereTopla([kalem({ ciro: 1000, net2: 200 })])[0];
+    yakin("marj %20", marjYuzdesi(yirmi)!, 20);
+    yakin("birim kâr (1 adet)", birimKar(yirmi)!, 200);
+
+    const cokAdet = urunlereTopla([kalem({ adet: 4, ciro: 4000, net2: 800 })])[0];
+    yakin("adet artınca marj DEĞİŞMEZ", marjYuzdesi(cokAdet)!, 20);
+    yakin("  ...birim kâr adede bölünür", birimKar(cokAdet)!, 200);
+
+    // --- İKİ SIRALAMA AYRIŞIYOR ---
+    // "cok": 3 adet × 1000, toplam kâr 900 (marj %30 değil %30... hacim yüksek)
+    // "verimli": 1 adet × 500, kâr 250 → marj %50, toplam kâr 250.
+    const satirlar2 = urunlereTopla([
+      kalem({ variantId: "cok", urunAdi: "Hacim", sku: "H", adet: 3, ciro: 3000, net2: 900 }),
+      kalem({ variantId: "verimli", urunAdi: "Verim", sku: "V", adet: 1, ciro: 500, net2: 250 }),
+    ]);
+    const toplamSirasi = karSiralamasi(satirlar2, "en-cok", 5);
+    const marjSirasi = marjSiralamasi(satirlar2, "en-cok", 5);
+    kontrol("toplam kârda hacimli başta", toplamSirasi[0].variantId === "cok", toplamSirasi[0].variantId);
+    kontrol("marjda verimli başta", marjSirasi[0].variantId === "verimli", marjSirasi[0].variantId);
+    kontrol(
+      "  ...İKİ LİSTE FARKLI ÜRÜNÜ İŞARET EDİYOR",
+      toplamSirasi[0].variantId !== marjSirasi[0].variantId,
+    );
+    yakin("hacimlinin marjı %30", marjYuzdesi(satirlar2.find((s) => s.variantId === "cok")!)!, 30);
+    yakin("verimlinin marjı %50", marjYuzdesi(satirlar2.find((s) => s.variantId === "verimli")!)!, 50);
+
+    // --- PAY VE PAYDA AYNI KALEM KÜMESİNDEN ---
+    // Ürünün iki kalemi var: biri hesaplanmış (1000 ciro / 300 kâr = %30),
+    // biri hesaplanamamış (9000 ciro). Payda 10.000 alınsaydı marj %3
+    // çıkardı — sağlam ürün "zayıf marjlı" görünürdü.
+    const yarim = urunlereTopla([
+      kalem({ variantId: "y", urunAdi: "Y", sku: "Y", ciro: 1000, net2: 300 }),
+      kalem({ variantId: "y", urunAdi: "Y", sku: "Y", ciro: 9000, net2: null, durum: "NO_COST" }),
+    ])[0];
+    yakin("marj hesaplanan kalemden (%30)", marjYuzdesi(yarim)!, 30);
+    kontrol(
+      "  ...tüm ciroya bölünmedi (%3 DEĞİL)",
+      Math.abs(marjYuzdesi(yarim)! - 3) > 1,
+      marjYuzdesi(yarim),
+    );
+    yakin("  ...toplam ciro yine 10.000 gösteriliyor", yarim.ciro, 10000);
+    yakin("birim kâr da hesaplanan adetten", birimKar(yarim)!, 300);
+
+    // --- HESAPLANAMAYAN VE SIFIR CİRO: MARJ NULL, LİSTEYE GİRMEZ ---
+    const karsiz = urunlereTopla([
+      kalem({ variantId: "z", urunAdi: "Z", sku: "Z", net2: null, durum: "RULE_MISSING" }),
+    ])[0];
+    kontrol("kârı hesaplanamayan -> marj null", marjYuzdesi(karsiz) === null, marjYuzdesi(karsiz));
+    const bedava = urunlereTopla([kalem({ variantId: "b", ciro: 0, net2: 0 })])[0];
+    kontrol("sıfır ciro -> marj null (sıfıra bölme yok)", marjYuzdesi(bedava) === null);
+    kontrol(
+      "marjsız ürünler listeye girmedi",
+      marjSiralamasi(urunlereTopla([
+        kalem({ variantId: "z", urunAdi: "Z", sku: "Z", net2: null, durum: "NO_COST" }),
+        kalem({ variantId: "iyi", urunAdi: "İyi", sku: "I", ciro: 100, net2: 40 }),
+      ]), "en-cok", 5).map((s) => s.variantId).join("") === "iyi",
+    );
+
+    // --- EKSİ MARJ EN AZ LİSTESİNİN BAŞINDA ---
+    const eksili = urunlereTopla([
+      kalem({ variantId: "zarar", urunAdi: "Zarar", sku: "Z2", ciro: 1000, net2: -150 }),
+      kalem({ variantId: "kar", urunAdi: "Kâr", sku: "K2", ciro: 1000, net2: 150 }),
+    ]);
+    const enAzMarj = marjSiralamasi(eksili, "en-az", 5);
+    kontrol("en az marjda zarar başta", enAzMarj[0].variantId === "zarar", enAzMarj[0].variantId);
+    yakin("  ...eksi marj korunuyor (-%15)", marjYuzdesi(enAzMarj[0])!, -15);
+
+    // Eşit marjda parası büyük olan üstte.
+    const esit = urunlereTopla([
+      kalem({ variantId: "kucuk", urunAdi: "K", sku: "K3", ciro: 100, net2: 20 }),
+      kalem({ variantId: "buyuk", urunAdi: "B", sku: "B3", ciro: 10000, net2: 2000 }),
+    ]);
+    kontrol(
+      "eşit marjda toplam kâr belirliyor",
+      marjSiralamasi(esit, "en-cok", 2)[0].variantId === "buyuk",
+      marjSiralamasi(esit, "en-cok", 2).map((s) => s.variantId),
+    );
+  }
 }
 
 // ===========================================================================

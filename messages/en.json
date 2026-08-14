@@ -1663,7 +1663,13 @@
     "yaslanmaSermayeToplami": "",
     "yaslanmaHesaplanamayan": "",
     "azCesitUyari": "",
-    "yaslanmaKalan": ""
+    "yaslanmaKalan": "",
+    "enCokKarNotu": "",
+    "enYuksekMarj": "",
+    "marjNotu": "",
+    "marjUyari": "",
+    "karAlt": "",
+    "marjAlt": ""
   },
   "Envanter": {
     "baslik": "",
