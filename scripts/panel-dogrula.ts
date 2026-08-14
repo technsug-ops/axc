@@ -1227,9 +1227,19 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
 
   // --------------------------- ÇİFT SAYIM KAPISI ---------------------------
   const veriKaynagi = readFileSync("src/lib/panel/takvim-verisi.ts", "utf8");
+  /**
+   * ÇİFT SAYIM KAPISI İKİ ANAHTARLI OLMALI. Canlı denetim 15.08.2026:
+   * 110 rapor kaleminin hiçbiri bir satışa bağlı değildi (saleId boş),
+   * yani yalnız kimliğe bakan kapı HİÇ devreye girmiyordu; çakışma
+   * olmaması tesadüftü. Sipariş numarası ikinci anahtar olarak eklendi.
+   */
   kontrol(
-    "rapordan kalemi olan satış tahmine GİRMİYOR (çift sayım kapısı)",
+    "çift sayım kapısı SATIŞ KİMLİĞİNE bakıyor",
     veriKaynagi.includes("id: { notIn: [...raporluSatisIdleri] }"),
+  );
+  kontrol(
+    "  ...ve SİPARİŞ NUMARASINA da bakıyor (eşleştirme yapılmadan da korur)",
+    veriKaynagi.includes("NOT: { code: { in: [...raporluSiparisNolari] } }"),
   );
   kontrol(
     "geçmiş kart ekstresi gecikmiş SAYILMIYOR (ödeme kaydı yok)",

@@ -153,14 +153,32 @@ export async function takvimSatirlariniTopla(
       amount: true,
       dueDate: true,
       saleId: true,
+      orderNo: true,
       sale: { select: { code: true } },
       settlement: { select: { id: true, currency: true } },
     },
   });
 
+  /**
+   * ÇİFT SAYIM KAPISI İKİ ANAHTARLI — 15.08.2026 canlı denetimi.
+   *
+   * Kapı önce yalnız `saleId`ye bakıyordu. Canlıda ölçüldü: 110 rapor
+   * kaleminin HİÇBİRİ bir satışa bağlı değil (`saleId` boş), çünkü
+   * eşleştirme henüz yapılmamış. Yani koruma hiç devreye girmiyordu ve
+   * çakışma olmaması TESADÜFTÜ — 75 rapor sipariş numarası ile 10 tahmin
+   * satışı o gün kesişmiyordu. İlk kesişen siparişte aynı para iki kez
+   * "girecek" sayılacaktı.
+   *
+   * İkinci anahtar SİPARİŞ NUMARASI: rapor kalemi bir satışa bağlanmamış
+   * olsa bile sipariş numarasını taşıyor. Eşleştirme yapılmadan da kapı
+   * çalışıyor.
+   */
   const raporluSatisIdleri = new Set<string>();
+  const raporluSiparisNolari = new Set<string>();
   for (const k of raporKalemleri) {
     if (k.saleId) raporluSatisIdleri.add(k.saleId);
+    const siparisNo = (k.orderNo ?? "").trim();
+    if (siparisNo) raporluSiparisNolari.add(siparisNo);
     const tutar = Number(k.amount.toString());
     // Negatif kalem (kesinti/mahsup) girecek para değildir; takvimi
     // yanıltmasın diye alınmaz — hakediş ekranında zaten görünüyor.
@@ -186,7 +204,9 @@ export async function takvimSatirlariniTopla(
     where: {
       soldAt: { gte: geriye },
       net1Amount: { not: null },
+      // İKİ ANAHTAR: eşleşmiş satış kimliği VE rapordaki sipariş numarası.
       id: { notIn: [...raporluSatisIdleri] },
+      NOT: { code: { in: [...raporluSiparisNolari] } },
     },
     select: {
       id: true,
