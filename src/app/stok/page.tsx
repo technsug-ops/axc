@@ -54,6 +54,20 @@ export default async function StokSayfasi({
           { companySku: { contains: arama } },
           { barcode: { contains: arama } },
           { product: { name: { contains: arama } } },
+          /**
+           * KANAL KODLARI DA ARANIR — 14.08.2026 kullanıcı bulgusu.
+           *
+           * Kullanıcı pazaryerinden kopyaladığı eşleşme kodunu
+           * (ör. EN10051201144) buraya yapıştırdı ve "0 varyant" gördü.
+           * Ürün duruyordu; arama o alana BAKMIYORDU. `/urunler` 12.08'de
+           * aynı gerekçeyle düzeltilmişti, `/stok` unutulmuş — iki ekran
+           * aynı kodla aynı sonucu vermeliydi (İlke #10).
+           *
+           * Depoda çalışan kişi elindeki HANGİ kâğıtla gelirse gelsin
+           * ürünü bulabilmeli: sistem SKU'su, firma etiketi, üretici
+           * barkodu ya da pazaryeri kodu.
+           */
+          { channelSkus: { some: { channelSku: { contains: arama } } } },
         ],
       }
     : undefined;
@@ -61,6 +75,21 @@ export default async function StokSayfasi({
   // ÖNCE SAY, SONRA SAYFAYI ÇEK (bkz. lib/sayfalama.ts).
   const toplam = await prisma.productVariant.count({ where: suzgec });
   const sayfalama = sayfaCoz(sayfa, toplam);
+
+  /**
+   * ÖZET SAYFAYI DEĞİL TÜM SÜZGECİ ANLATIR — 14.08.2026 kullanıcı bulgusu.
+   *
+   * Başlıkta "50 varyant · toplam 2 adet" yazıyordu: ikisi de EKRANDAKİ
+   * sayfanın rakamıydı. 1066 varyantlık depoda "50 varyant" görmek, deponun
+   * tamamı sanılabilecek bir yanlış rakamdı — üstelik sayfa değiştikçe
+   * değişiyordu. Adet toplamı tek sorguda, süzgecin TAMAMI üzerinden
+   * okunuyor (defterin toplamı = mevcut stok).
+   */
+  const stokToplami = await prisma.stockMovement.aggregate({
+    where: suzgec ? { variant: suzgec } : undefined,
+    _sum: { quantityDelta: true },
+  });
+  const tumStok = stokToplami._sum.quantityDelta ?? 0;
 
   const varyantlar = await prisma.productVariant.findMany({
     where: suzgec,
@@ -103,11 +132,6 @@ export default async function StokSayfasi({
     })),
   );
 
-  const toplamStok = varyantIdleri.reduce(
-    (toplam, id) => toplam + (stoklar.get(id) ?? 0),
-    0,
-  );
-
   function eylemler(varyant: (typeof varyantlar)[number]) {
     return (
       <>
@@ -123,7 +147,8 @@ export default async function StokSayfasi({
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
           <p className="text-muted-foreground text-sm">
-            {t("ozet", { varyant: varyantlar.length, adet: toplamStok })}
+            {/* SÜZGECİN TAMAMI — sayfanın değil (bkz. `tumStok` gerekçesi). */}
+            {t("ozet", { varyant: toplam, adet: tumStok })}
             {arama ? ortak("aramaEki", { arama }) : ""}
           </p>
         </div>
