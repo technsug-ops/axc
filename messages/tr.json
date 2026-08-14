@@ -1662,8 +1662,8 @@
     "yaslanmaUyari": "En yaşlı kalem en pahalı kalem değildir; iki sıralama bu yüzden var.",
     "yaslanmaSermayeToplami": "Toplam bağlı sermaye (KDV hariç) {tutar} · {kalem} kalem.",
     "yaslanmaHesaplanamayan": "{sayi} kalemin bağlı sermayesi hesaplanamadı (maliyeti bilinmeyen parti).",
-    "yaslanmaTumu": "Tamamını gör ({sayi} kalem)",
-    "azCesitUyari": "Bu dönemde {sayi} çeşit ürün satıldı; liste \"en çok kâr\"ın ters sırasıdır."
+    "azCesitUyari": "Bu dönemde {sayi} çeşit ürün satıldı; liste \"en çok kâr\"ın ters sırasıdır.",
+    "yaslanmaKalan": "En riskli kalemler gösteriliyor; {sayi} kalem daha var."
   },
   "Envanter": {
     "baslik": "Envanter değeri",

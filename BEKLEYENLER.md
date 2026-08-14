@@ -114,7 +114,27 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       siparişlerle eşleşir (eşleşecek sipariş yok). Mevcut modellere
       koymak iki motoru da kirletir. `source=GECMIS_EXCEL` damgası şart.
 
-- [ ] **PANEL AŞAMA 2 — İŞ ZEKÂSI (RMA'dan HEMEN SONRA, mimar onaylı sıra)**
+- [x] **PANEL AŞAMA 2 — İŞ ZEKÂSI — YAZILDI 14.08.2026 (commit 43c3427)**
+      Halil testi kullanıcıda; onaylanınca bu madde kapanır.
+      Teslim edilen: dönem süzgeci (bugün/bu hafta/bu ay/özel) · kanal
+      süzgeci artık BLOKLARI da süzüyor · NET-1 kutusu + aylık tablo sütunu ·
+      en çok satılan · en çok kâr eden · en az kâr bırakan · stokta bekleyen
+      (YAŞLANMA, bant satır rozeti, ikinci sıralama bağlı sermayeye göre).
+      Kargoya verilen/bekleyen kutusu 13.08.2026'da `Sale.shippedAt` ile
+      gelmişti; dönem süzgecine bağlandı.
+
+      **BU PAKETTEN DOĞAN BORÇLAR:**
+      - `/stok` ekranında **YAŞ SÜTUNU YOK.** Panel bu yüzden "tamamını gör"
+        bağlantısı VERMİYOR (soruyu cevaplamayan ekrana göndermemek için) ve
+        yalnız "N kalem daha var" diyor. Yaş sütunu /stok'a eklenince
+        bağlantı da açılır.
+      - Ürün listeleri **KALEM NET-2'sine** dayanıyor; sipariş başına
+        kesintiler (hizmet bedeli, sabit gider) kalemde yok. Ekranda yazılı.
+        Sipariş kesintisini kalemlere dağıtmak ayrı bir karar — mimara ait.
+      - Yaşlanma listesi panelde **8 satır**; tamamı (14.08.2026'da 19 kalem)
+        için ayrı ekran yok.
+
+      _Aşağıdaki ölçüm ve kararlar kayıt için duruyor._
       Kullanıcı: "Paneli daha efektif kullanmak istiyorum... bir nevi
       business intelligence olarak bana destek olsun."
       İstenenler: dönem seçimi (bugün · bu hafta · bu ay · özel aralık) ·

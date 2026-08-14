@@ -1060,13 +1060,15 @@ export default async function AnaSayfa({
                 {t("yaslanmaHesaplanamayan", { sayi: sermaye.hesaplanamayan })}
               </>
             ) : null}
+            {/**
+             * BURAYA BAĞLANTI KONMUYOR — bilinçli. "Tamamını gör" düğmesi
+             * `/stok`'a giderdi, ama o ekranda YAŞ SÜTUNU YOK: kullanıcı
+             * soruyu cevaplayamayan bir listeye düşerdi. Sayı söyleniyor,
+             * yanıltıcı bağlantı verilmiyor. Yaş sütununun /stok'a eklenmesi
+             * BEKLEYENLER'e yazıldı.
+             */}
             {yaslanma.length > YASLANMA_SATIRI ? (
-              <>
-                {" "}
-                <Baglanti href="/stok">
-                  {t("yaslanmaTumu", { sayi: yaslanma.length })}
-                </Baglanti>
-              </>
+              <> {t("yaslanmaKalan", { sayi: yaslanma.length - YASLANMA_SATIRI })}</>
             ) : null}
           </>
         }
