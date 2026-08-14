@@ -179,9 +179,34 @@ export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
       if (kalem.maliyet === null) {
         durum = "NO_COST";
       } else {
+        /**
+         * MALİYET İKİ SATIRA AYRILIR — 14.08.2026 kullanıcı bulgusu.
+         *
+         * Eskiden tek satır vardı: `maliyet × sağlamOran`. Hasarlıya düşen
+         * maliyet HİÇBİR YERE YAZILMIYORDU; "stoğa dönmeyen maliyet" kutusu
+         * onu dönen maliyetten türetmeye çalışıyor ve sağlam adet 0'ken
+         * SIFIR gösteriyordu. Kullanıcının iki iadesi de tamamen hasarlıydı;
+         * ekran "maliyeti üstünüzde kaldı" yazıp yanına ₺0,00 koyuyordu.
+         * Kaynak üretilmediği için türetecek bir şey de yoktu.
+         *
+         * AYRIŞTIRMA, EK YÜK DEĞİL: iki satırın TOPLAMI eski tek satırla
+         * BİREBİR AYNIDIR (tam × iadeOranı − tam × hasarlıOranı =
+         * tam × sağlamOran). NET-1 ve NET-2 DEĞİŞMEZ; yalnız paranın nereye
+         * gittiği görünür olur. Negatif satırı eski satırın üstüne eklemek
+         * zararı İKİ KEZ sayardı — net satırların toplamıdır.
+         */
+        const hasarliOran = oran - saglamOran;
+
         satirlar.push({
           code: "MALIYET_GERI",
-          tutar: kalem.maliyet * saglamOran,
+          tutar: kalem.maliyet * oran,
+        });
+
+        // SIFIR DA YAZILIR (aynı 13.08.2026 dersi): hasar yokken satır
+        // 0,00 olarak durur ki "hiç hasar yok" ile "hesaplanmadı" ayrışsın.
+        satirlar.push({
+          code: "MALIYET_DONMEYEN",
+          tutar: -(kalem.maliyet * hasarliOran),
         });
       }
     }

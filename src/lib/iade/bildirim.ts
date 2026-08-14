@@ -154,6 +154,28 @@ export function donenUrunZorunluMu(gerekce: ReturnReason): boolean {
 
 /**
  * ---------------------------------------------------------------------------
+ *  DURUM GEÇİŞİ ONAY İSTER Mİ?
+ * ---------------------------------------------------------------------------
+ *  14.08.2026: kullanıcı T4 testinin ortasında "İtiraz açıldı" düğmesine
+ *  yanlışlıkla bastı. Bildirim itiraz dalına girdi, "İadeyi işle" kapandı ve
+ *  MAL_GELDI'ye DÖNÜŞ YOK — tek tıkla akış değişti, geri alınamadı.
+ *
+ *  BU DURUM MAKİNESİNDE HİÇBİR GEÇİŞ GERİ ALINAMAZ: `IZINLI_GECISLER`in
+ *  hiçbir kenarı geriye gitmez. Dolayısıyla ölçüt "hangisi tehlikeli" değil,
+ *  HEPSİ tehlikelidir — İlke #6 gereği hepsi onay ister. Mutlu yoldaki
+ *  "Mal geldi" de dahil: gelmemiş malı gelmiş işaretlemek, olmayan malı
+ *  stoğa sokmanın kapısıdır.
+ *
+ *  Fonksiyon bilerek basit ve TEK KAYNAK: ekran da `rma:dogrula` da bunu
+ *  çağırır. İleride geri dönüşlü bir geçiş eklenirse istisna BURAYA yazılır.
+ */
+export function gecisOnayIster(hedef: NoticeStatus): boolean {
+  // Bugün istisna yok; imza hedef alıyor ki istisna eklemek tek satır olsun.
+  return IZINLI_GECISLER[hedef] !== undefined;
+}
+
+/**
+ * ---------------------------------------------------------------------------
  *  BİLDİRİM ARAMASI — HANGİ ALANLARDA ARANIR?
  * ---------------------------------------------------------------------------
  *  14.08.2026: kullanıcı bildirimi TALEP NO'sundan (nbkhuj) aramak istedi.

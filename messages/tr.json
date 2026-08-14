@@ -854,11 +854,12 @@
     "ODEME_GIDERI_IADE": "Ödeme gideri iadesi",
     "STOPAJ_IADE": "Stopaj iadesi",
     "KAYIP_GELIR": "Kaybedilen gelir",
-    "MALIYET_GERI": "Maliyet geri (stoğa döndü)",
+    "MALIYET_GERI": "Maliyet geri (iade edilen adedin tamamı)",
     "IADE_KARGO": "İade kargosu",
     "YENIDEN_GONDERIM_KARGO": "Yeniden gönderim kargosu",
     "CEZA": "Ceza",
-    "DEGISIM_MALIYET": "Değişim ürün maliyeti"
+    "DEGISIM_MALIYET": "Değişim ürün maliyeti",
+    "MALIYET_DONMEYEN": "Stoğa dönmeyen maliyet (hasarlı)"
   },
   "IadeTuru": {
     "UNDELIVERED": "Teslim edilemedi",
@@ -2118,7 +2119,10 @@
     "aramaIpucu": "Talep no, sipariş no, SKU veya not ara...",
     "aramaSonucYok": "Aramaya uyan bildirim yok. Talep no, sipariş no ya da SKU ile deneyin.",
     "satisListesiSinirli": "En yeni {sayi} satış listeleniyor. Aradığınız satış burada yoksa daha eskidir — satış detayındaki İade Al düğmesinden devam edin.",
-    "talepNoKisa": "Talep no"
+    "talepNoKisa": "Talep no",
+    "gecisOnayAciklama": "Bu durum değişikliği GERİ ALINAMAZ. Bildirim akışı ileri gider; önceki duruma dönüş yoktur. Devam etmek istiyor musunuz?",
+    "gecisOnayla": "Evet, işaretle",
+    "satisIpucu": "Sipariş numarasıyla arayın. Pazaryeri talep no (ör. nbkhuj) burada değil, aşağıdaki \"Pazaryeri talep no\" alanına yazılır."
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",

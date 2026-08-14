@@ -97,6 +97,7 @@ export async function IadeBlogu({
     "STOPAJ_IADE",
     "KAYIP_GELIR",
     "MALIYET_GERI",
+    "MALIYET_DONMEYEN",
     "IADE_KARGO",
     "YENIDEN_GONDERIM_KARGO",
     "CEZA",

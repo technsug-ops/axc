@@ -274,11 +274,22 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
     yenidenGonderimKargosu: null,
     ceza: null,
   });
-  yakin(
-    "hasarlı adet maliyeti geri GELMEZ (yarısı)",
-    satir(h.kalemSatirlari[0], "MALIYET_GERI"),
-    800,
-  );
+  /**
+   * MALİYET ARTIK İKİ SATIR — 14.08.2026 kullanıcı bulgusu.
+   *
+   * Eskiden tek satır vardı ve SAĞLAM adede göreydi (800). Hasarlıya düşen
+   * maliyet hiçbir yere yazılmıyordu; "stoğa dönmeyen maliyet" kutusu onu
+   * dönen maliyetten türetmeye çalışıyor, sağlam adet 0'ken ₺0,00
+   * gösteriyordu. Artık kırılım açık: tamamı +1600, hasarlı payı −800.
+   *
+   * KİLİT: İKİSİNİN TOPLAMI ESKİ TEK SATIRA EŞİT. Bu eşitlik bozulursa
+   * zarar çifte sayılır ya da eksik kalır — NET sessizce kayar.
+   */
+  const hGeri = satir(h.kalemSatirlari[0], "MALIYET_GERI");
+  const hDonmeyen = satir(h.kalemSatirlari[0], "MALIYET_DONMEYEN");
+  yakin("iade edilen adedin TAMAMININ maliyeti yazılır", hGeri, 1600);
+  yakin("hasarlıya düşen pay AYRI satırda ve NEGATİF", hDonmeyen, -800);
+  yakin("  ...ikisinin toplamı eski tek satıra EŞİT (net kaymaz)", hGeri + hDonmeyen, 800);
 
   /**
    * AÇIK SIFIR — 13.08.2026 dersi, kilitleniyor.
@@ -315,9 +326,53 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
     "tamamı hasarlı: MALIYET_GERI satırı GÖRÜNÜR (sessiz yokluk değil)",
     th.kalemSatirlari[0].some((s) => s.code === "MALIYET_GERI"),
   );
+  /**
+   * TAMAMEN HASARLI — KULLANICININ EKRANDA GÖRDÜĞÜ VAKA (14.08.2026).
+   *
+   * Dönem özetinde "Stoğa dönmeyen maliyet ₺0,00" yazıyordu, altında da
+   * "Hasarlı mal — maliyeti üstünüzde kaldı". Kutu kendi açıklamasını
+   * yalanlıyordu: 1.799 TL gerçekten üstte kalmıştı.
+   *
+   * ÜÇ KİLİT BİRDEN: dönmeyen satırı VAR, tutarı TAM maliyet, ve stoğa
+   * FİİLEN dönen (ikisinin toplamı) SIFIR.
+   */
+  const thGeri = satir(th.kalemSatirlari[0], "MALIYET_GERI");
+  const thDonmeyen = satir(th.kalemSatirlari[0], "MALIYET_DONMEYEN");
+  kontrol(
+    "tamamı hasarlı: MALIYET_DONMEYEN satırı GÖRÜNÜR",
+    th.kalemSatirlari[0].some((s) => s.code === "MALIYET_DONMEYEN"),
+  );
+  yakin("tamamı hasarlı: dönmeyen maliyet TAM tutar (0 değil!)", thDonmeyen, -1799);
+  yakin("tamamı hasarlı: stoğa FİİLEN dönen maliyet sıfır", thGeri + thDonmeyen, 0);
+
+  /** Hasar YOKKEN satır yine durur, tutarı 0 — "hesaplanmadı" ile ayrışsın. */
+  const hasarsiz = iadeEtkisiHesapla({
+    returnType: "NORMAL",
+    kalemler: [
+      {
+        satilanAdet: 1,
+        iadeAdedi: 1,
+        saglamAdet: 1,
+        satisTutari: 2980,
+        maliyet: 1799,
+        kdvOrani: 20,
+        komisyon: 439.55,
+        degisimMaliyeti: null,
+      },
+    ],
+    odemeGideri: 0,
+    siparisToplami: 2980,
+    iadeKargosu: null,
+    yenidenGonderimKargosu: null,
+    ceza: null,
+  });
+  kontrol(
+    "hasar yokken de MALIYET_DONMEYEN satırı VAR (açık sıfır)",
+    hasarsiz.kalemSatirlari[0].some((s) => s.code === "MALIYET_DONMEYEN"),
+  );
   yakin(
-    "tamamı hasarlı: MALIYET_GERI tutarı sıfır",
-    satir(th.kalemSatirlari[0], "MALIYET_GERI"),
+    "  ...tutarı sıfır",
+    satir(hasarsiz.kalemSatirlari[0], "MALIYET_DONMEYEN"),
     0,
   );
   // Canlı vakanın kendisi: açık sıfır eklemek TOPLAMI değiştirmemeli.

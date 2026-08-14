@@ -28,6 +28,7 @@ import {
   degisimAyrilirMi,
   donenUrunZorunluMu,
   gecisGecerliMi,
+  gecisOnayIster,
   iadeIslenebilirMi,
   itirazAcilabilirMi,
   kapaliMi,
@@ -55,7 +56,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 7;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1139,6 +1140,60 @@ console.log("\n7) GERİ GELEN MAL — STOK ŞARTI YOK, MALİYET ŞARTI VAR");
       sozluk6.Iade.donenMaliyetYok.includes("maliyet"),
   );
   kosanBolumler.push("donen-mal");
+}
+
+// ===========================================================================
+console.log("\n8) GERİ ALINAMAZ GEÇİŞ — ONAY ZORUNLU");
+// ===========================================================================
+/**
+ * Kullanıcı T4'ün ortasında yanlışlıkla "İtiraz açıldı"ya bastı. Bildirim
+ * itiraz dalına düştü, "İadeyi işle" kapandı ve MAL_GELDI'ye dönüş olmadığı
+ * için akış kilitlendi — tek tık, geri dönüş yok, onay da sorulmamıştı.
+ */
+{
+  const durumlar = Object.keys(IZINLI_GECISLER) as (keyof typeof IZINLI_GECISLER)[];
+
+  /**
+   * ÖNCE İDDİANIN KENDİSİ: bu makinede hiçbir kenar geriye gitmiyor mu?
+   * Onay kuralının gerekçesi bu; gerekçe çürürse kural da gözden geçirilmeli.
+   */
+  let geriDonusVar = false;
+  for (const kaynak of durumlar) {
+    for (const hedef of IZINLI_GECISLER[kaynak]) {
+      if (IZINLI_GECISLER[hedef].includes(kaynak)) geriDonusVar = true;
+    }
+  }
+  kontrol("hiçbir geçiş geri alınamıyor (onay kuralının gerekçesi)", !geriDonusVar);
+
+  for (const hedef of durumlar) {
+    kontrol(`  ${hedef} geçişi onay istiyor`, gecisOnayIster(hedef));
+  }
+
+  const durumBileseni = readFileSync(
+    "src/app/iadeler/bildirim-durumu.tsx",
+    "utf8",
+  );
+  kontrol(
+    "düğme onay diyaloğuna sarılı (tek tıkla geçiş yok)",
+    durumBileseni.includes("gecisOnayIster(s.hedef)") &&
+      durumBileseni.includes("AlertDialog"),
+  );
+  const sozluk7 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  kontrol(
+    "onay metni GERİ ALINAMAZ diyor",
+    typeof sozluk7.Bildirim2?.gecisOnayAciklama === "string" &&
+      sozluk7.Bildirim2.gecisOnayAciklama.includes("GERİ ALINAMAZ"),
+  );
+
+  /** Satış kutusu ne beklediğini söylüyor mu (aynı tuzağa iki kez düşüldü). */
+  const bForm2 = readFileSync("src/app/iadeler/bildirim-formu.tsx", "utf8");
+  kontrol(
+    "satış seçme kutusu ne aranacağını SÖYLÜYOR",
+    bForm2.includes("satisIpucu") &&
+      typeof sozluk7.Bildirim2?.satisIpucu === "string" &&
+      sozluk7.Bildirim2.satisIpucu.includes("talep no"),
+  );
+  kosanBolumler.push("gecis-onayi");
 }
 
 // ===========================================================================

@@ -166,6 +166,12 @@ export function BildirimFormu({
             seciliDeger={satisId}
             onSec={setSatisId}
           />
+          {/* NE ARANACAĞI YAZAR: kullanıcı 14.08.2026'da iki kez pazaryeri
+              TALEP NO'sunu (nbkhuj) bu kutuya yazdı ve "eşleşen seçenek yok"
+              cevabını hata sandı. Doğru cevaptı — o bir satış kodu değil.
+              Alanın ne beklediğini söylemek, yanlış cevabı düzeltmekten
+              ucuzdur (İlke #5). */}
+          <p className="text-muted-foreground text-xs">{t("satisIpucu")}</p>
           {/* SINIR AÇIKÇA YAZAR: liste doluysa daha eski satışlar burada
               YOK demektir. Sessizce kesilen liste, kullanıcıya "o satış
               sistemde kayıtlı değil" dedirtir — en sinsi tür. */}

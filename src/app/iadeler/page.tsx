@@ -223,7 +223,22 @@ export default async function IadelerSayfasi({
         .filter((f) => f.code === kod)
         .reduce((t2, f) => t2 + Number(f.amount.toString()), 0);
 
-    const maliyetGeri = satirTutari("MALIYET_GERI");
+    /**
+     * MALİYET İKİ SATIRDAN OKUNUR, TÜRETİLMEZ (14.08.2026 düzeltmesi).
+     *
+     * Eskiden yalnız `MALIYET_GERI` vardı ve dönmeyen maliyet ondan
+     * türetiliyordu: `(maliyetGeri / saglamAdet) * hasarliAdet`. Sağlam adet
+     * 0 olunca sıfıra bölünmesin diye 0 dönüyordu — yani TAMAMEN HASARLI
+     * iadede "üstünüzde kalan maliyet" ₺0,00 görünüyordu. Kutunun kendi
+     * açıklaması rakamı yalanlıyordu.
+     *
+     * MALIYET_GERI artık iade edilen adedin TAMAMININ maliyeti,
+     * MALIYET_DONMEYEN ise hasarlıya düşen NEGATİF pay. İkisinin toplamı
+     * gerçekten stoğa dönen maliyettir; eski tek satırla birebir aynı.
+     */
+    const maliyetTam = satirTutari("MALIYET_GERI");
+    const donmeyen = satirTutari("MALIYET_DONMEYEN");
+    const maliyetGeri = maliyetTam + donmeyen;
     const kayipGelir = Math.abs(satirTutari("KAYIP_GELIR"));
 
     const veri: IadeSatirVerisi = {
@@ -239,10 +254,11 @@ export default async function IadelerSayfasi({
       net2: sayi(i.net2Amount),
       ceza: sayi(i.penaltyAmount) ?? 0,
       donenMaliyet: maliyetGeri,
-      // Stoğa dönmeyen maliyet: hasarlı adet oranınca. Maliyet satırı
-      // sağlam adede göre yazıldığı için dönmeyeni tersinden türetiyoruz.
-      donmeyenMaliyet:
-        saglamAdet > 0 ? (maliyetGeri / saglamAdet) * hasarliAdet : 0,
+      /**
+       * Stoğa dönmeyen maliyet ARTIK KENDİ SATIRINDAN okunuyor. Satır
+       * negatif tutulur (nete öyle giriyor); kutuda pozitif gösterilir.
+       */
+      donmeyenMaliyet: Math.abs(donmeyen),
       kayipGelir,
       paraBirimi: i.profitCurrency ?? "TRY",
     };

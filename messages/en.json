@@ -858,7 +858,8 @@
     "IADE_KARGO": "",
     "YENIDEN_GONDERIM_KARGO": "",
     "CEZA": "",
-    "DEGISIM_MALIYET": ""
+    "DEGISIM_MALIYET": "",
+    "MALIYET_DONMEYEN": ""
   },
   "IadeTuru": {
     "UNDELIVERED": "",
@@ -2118,7 +2119,10 @@
     "aramaIpucu": "",
     "aramaSonucYok": "",
     "satisListesiSinirli": "",
-    "talepNoKisa": ""
+    "talepNoKisa": "",
+    "gecisOnayAciklama": "",
+    "gecisOnayla": "",
+    "satisIpucu": ""
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "",

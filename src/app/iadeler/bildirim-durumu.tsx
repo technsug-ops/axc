@@ -6,8 +6,19 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { ArrowRight, Ban, Undo2 } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { gecisOnayIster } from "@/lib/iade/bildirim";
 
 import { bildirimDurumuGuncelle } from "./bildirim-actions";
 
@@ -55,6 +66,7 @@ export function BildirimDurumu({
   iadeIsle: { acik: boolean; adres?: string; sebep: string; etiket: string };
 }) {
   const t = useTranslations("Bildirim2");
+  const ortak = useTranslations("Ortak");
   const router = useRouter();
   const [bekliyor, basla] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
@@ -101,17 +113,58 @@ export function BildirimDurumu({
         {/* --- DURUM GEÇİŞLERİ --- */}
         {secenekler.map((s) =>
           s.acik ? (
-            <Button
-              key={s.hedef}
-              size="sm"
-              variant="outline"
-              className="h-11 md:h-8"
-              disabled={bekliyor}
-              onClick={() => git(s.hedef)}
-            >
-              <ArrowRight className="size-4" />
-              {s.etiket}
-            </Button>
+            /**
+             * ONAY ZORUNLU (İlke #6). Bu durum makinesinde hiçbir geçiş geri
+             * alınamaz; kullanıcı 14.08.2026'da yanlışlıkla "İtiraz açıldı"ya
+             * bastı ve bildirim tek tıkla itiraz dalına düştü, MAL_GELDI'ye
+             * dönüş olmadığı için akış kilitlendi. Kural saf fonksiyonda:
+             * `gecisOnayIster`.
+             */
+            gecisOnayIster(s.hedef) ? (
+              <AlertDialog key={s.hedef}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-11 md:h-8"
+                    disabled={bekliyor}
+                  >
+                    <ArrowRight className="size-4" />
+                    {s.etiket}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{s.etiket}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t("gecisOnayAciklama")}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{ortak("vazgec")}</AlertDialogCancel>
+                    <Button
+                      type="button"
+                      onClick={() => git(s.hedef)}
+                      disabled={bekliyor}
+                    >
+                      {t("gecisOnayla")}
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (
+              <Button
+                key={s.hedef}
+                size="sm"
+                variant="outline"
+                className="h-11 md:h-8"
+                disabled={bekliyor}
+                onClick={() => git(s.hedef)}
+              >
+                <ArrowRight className="size-4" />
+                {s.etiket}
+              </Button>
+            )
           ) : (
             <Tooltip key={s.hedef}>
               <TooltipTrigger asChild>
