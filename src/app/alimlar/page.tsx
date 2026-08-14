@@ -11,7 +11,8 @@ import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
-import { Badge } from "@/components/ui/badge";
+import { DurumRozeti } from "@/components/durum-rozeti";
+import { ALIM_DURUM_RENGI } from "@/lib/durum-renkleri";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -352,9 +353,9 @@ export default async function AlimlarSayfasi({
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">
+                      <DurumRozeti durum={ALIM_DURUM_RENGI[alim.status]} isaretsiz>
                         {durumEtiketleri[alim.status]}
-                      </Badge>
+                      </DurumRozeti>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       <SatirEylemleri>{eylemler(alim)}</SatirEylemleri>
@@ -409,9 +410,9 @@ export default async function AlimlarSayfasi({
                   {
                     etiket: ortak("durum"),
                     deger: (
-                      <Badge variant="secondary">
+                      <DurumRozeti durum={ALIM_DURUM_RENGI[alim.status]} isaretsiz>
                         {durumEtiketleri[alim.status]}
-                      </Badge>
+                      </DurumRozeti>
                     ),
                   },
                   { etiket: ortak("kalem"), deger: alim.items.length },

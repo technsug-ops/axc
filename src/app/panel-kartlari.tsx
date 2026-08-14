@@ -4,6 +4,8 @@ import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
+import { DURUM_ZEMINI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -180,16 +182,10 @@ export function BantRozeti({
   bant: "NOTR" | "AMBER" | "KIRMIZI";
   metin: string;
 }) {
-  const stil =
-    bant === "KIRMIZI"
-      ? "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-300"
-      : bant === "AMBER"
-        ? "border-amber-500/50 bg-amber-500/10 text-amber-800 dark:text-amber-300"
-        : "border-border bg-muted text-muted-foreground";
-
+  /** Renk paletten; eşleme lib/durum-renkleri.ts'te (60+ gün kırmızı). */
   return (
     <span
-      className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] leading-none font-medium ${stil}`}
+      className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-medium ${DURUM_ZEMINI[YAS_BANDI_RENGI[bant]]}`}
     >
       {metin}
     </span>

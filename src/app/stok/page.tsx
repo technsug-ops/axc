@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SayfalamaCubugu } from "@/components/sayfalama";
+import { DURUM_ZEMINI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { sayfaCoz } from "@/lib/sayfalama";
@@ -234,7 +235,7 @@ export default async function StokSayfasi({
                         <span className="block">
                           <Badge
                             variant="outline"
-                            className="border-amber-500/50 text-xs font-normal text-amber-700 dark:text-amber-400"
+                            className={`text-xs font-normal ${DURUM_ZEMINI.uyari}`}
                           >
                             {t("ayrilmisRozeti", {
                               sayi: ayrilmis.get(varyant.id)!,
@@ -280,7 +281,7 @@ export default async function StokSayfasi({
                           <span className="block">
                             <Badge
                               variant="outline"
-                              className="border-amber-500/50 text-xs font-normal text-amber-700 dark:text-amber-400"
+                              className={`text-xs font-normal ${DURUM_ZEMINI.uyari}`}
                             >
                               {t("ayrilmisRozeti", {
                                 sayi: ayrilmis.get(varyant.id)!,

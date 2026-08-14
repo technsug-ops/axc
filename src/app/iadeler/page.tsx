@@ -11,6 +11,8 @@ import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { SayfalamaCubugu } from "@/components/sayfalama";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { UzunAd } from "@/components/uzun-ad";
+import { DurumRozeti } from "@/components/durum-rozeti";
+import { BILDIRIM_DURUM_RENGI } from "@/lib/durum-renkleri";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +44,6 @@ import {
 } from "@/lib/etiketler";
 import {
   AYRILMIS_SAYILAN_DURUMLAR,
-  ayrilmisSayilirMi,
   bildirimAramaKosulu,
   DEGISIM_GEREKCELERI,
   gecisGecerliMi,
@@ -684,11 +685,12 @@ export default async function IadelerSayfasi({
                       {b.sale.code ?? tBildirim("siparisNoYok")}
                     </Baglanti>
                     <Badge variant="outline">{gerekceEtiketleri[b.reason]}</Badge>
-                    <Badge
-                      variant={ayrilmisSayilirMi(b.status) ? "default" : "secondary"}
-                    >
+                    {/* Durum akışı renk sisteminden: kapandı/kabul yeşil,
+                        mal geldi mavi, bekleyen ve itiraz amber, red kırmızı,
+                        iptal nötr (bkz. lib/durum-renkleri.ts). */}
+                    <DurumRozeti durum={BILDIRIM_DURUM_RENGI[b.status]} isaretsiz>
                       {durumEtiketleri[b.status]}
-                    </Badge>
+                    </DurumRozeti>
                     <span className="text-muted-foreground text-xs">
                       {bicim.tarih(b.noticedAt)}
                     </span>

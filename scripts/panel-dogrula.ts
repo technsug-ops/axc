@@ -30,6 +30,12 @@ import {
   type TakvimSatiri,
 } from "../src/lib/panel/nakit-takvimi";
 import {
+  ALIM_DURUM_RENGI,
+  BILDIRIM_DURUM_RENGI,
+  KAR_DURUM_RENGI,
+  YAS_BANDI_RENGI,
+} from "../src/lib/durum-renkleri";
+import {
   ANLAMLI_RENKLER,
   DURUM_ISARETI,
   DURUM_SERIDI,
@@ -1469,6 +1475,66 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     "  ...sıfırda kelime YOK (nötr, ne müjde ne alarm)",
     netKar.includes('renk === "notr" ? null'),
   );
+
+  /**
+   * DURUM → RENK EŞLEMESİ. `Record<Enum, DurumRengi>` tipi sayesinde
+   * şemaya yeni bir durum eklenip burada unutulursa proje DERLENMEZ —
+   * yani "eksik eşleme" hatası hiç canlıya çıkamaz. Aşağıdakiler ise
+   * eşlemenin DOĞRU olduğunu sınıyor; tip yalnız TAM olduğunu garanti eder.
+   */
+  kontrol(
+    "alım: teslim alındı OLUMLU, bekleyenler UYARI",
+    ALIM_DURUM_RENGI.RECEIVED === "olumlu" &&
+      ALIM_DURUM_RENGI.ORDERED === "uyari" &&
+      ALIM_DURUM_RENGI.PARTIALLY_RECEIVED === "uyari",
+  );
+  /** İPTAL KIRMIZI DEĞİL: bilinçli bir karardır, hata değil. */
+  kontrol(
+    "  ...iptal ve taslak NÖTR (hata değil, karar)",
+    ALIM_DURUM_RENGI.CANCELLED === "notr" && ALIM_DURUM_RENGI.DRAFT === "notr",
+  );
+  kontrol(
+    "iade: kapandı/kabul OLUMLU, red OLUMSUZ, mal geldi BİLGİ",
+    BILDIRIM_DURUM_RENGI.KAPANDI === "olumlu" &&
+      BILDIRIM_DURUM_RENGI.ITIRAZ_KABUL === "olumlu" &&
+      BILDIRIM_DURUM_RENGI.ITIRAZ_RED === "olumsuz" &&
+      BILDIRIM_DURUM_RENGI.MAL_GELDI === "bilgi",
+  );
+  kontrol(
+    "  ...bekleyen ve itiraz dalı UYARI, iptal NÖTR",
+    BILDIRIM_DURUM_RENGI.BEKLENIYOR === "uyari" &&
+      BILDIRIM_DURUM_RENGI.ITIRAZ_ACILDI === "uyari" &&
+      BILDIRIM_DURUM_RENGI.IPTAL === "notr",
+  );
+  /**
+   * HESAPLANMIŞ KÂR NÖTRDÜR: rakamın kendisi zaten kâr/zarar rengini
+   * taşıyor; kutuyu bir de yeşile boyamak aynı şeyi iki kez söylerdi.
+   */
+  kontrol(
+    "kâr durumu: hesaplandı NÖTR, eksik hâller UYARI",
+    KAR_DURUM_RENGI.CALCULATED === "notr" &&
+      KAR_DURUM_RENGI.NO_COST === "uyari" &&
+      KAR_DURUM_RENGI.RULE_MISSING === "uyari" &&
+      KAR_DURUM_RENGI.CURRENCY_MISMATCH === "uyari",
+  );
+  kontrol(
+    "yaşlanma: taze NÖTR, 31-60 UYARI, 60+ OLUMSUZ",
+    YAS_BANDI_RENGI.NOTR === "notr" &&
+      YAS_BANDI_RENGI.AMBER === "uyari" &&
+      YAS_BANDI_RENGI.KIRMIZI === "olumsuz",
+  );
+
+  /** Eşlemeyi kullanan ekranlar gerçekten ORTAK sözlükten okuyor mu? */
+  for (const [ad, yol, sembol] of [
+    ["alımlar", "src/app/alimlar/page.tsx", "ALIM_DURUM_RENGI"],
+    ["iadeler", "src/app/iadeler/page.tsx", "BILDIRIM_DURUM_RENGI"],
+    ["yaşlanma rozeti", "src/app/panel-kartlari.tsx", "YAS_BANDI_RENGI"],
+  ] as const) {
+    kontrol(
+      `  ${ad} ORTAK eşlemeden okuyor`,
+      readFileSync(yol, "utf8").includes(sembol),
+    );
+  }
   kontrol(
     "marj rozeti paletten geliyor",
     panelSayfasi.includes("<DurumRozeti durum={renkDurumu}>"),
