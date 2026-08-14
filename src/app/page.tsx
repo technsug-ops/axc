@@ -47,6 +47,14 @@ import {
 } from "@/lib/panel-listeler";
 import { prisma } from "@/lib/prisma";
 import { acikPartilerToplu } from "@/lib/stok";
+import { GorevKutusu } from "./gorev-kutusu";
+import { NakitTakvimiBlogu } from "./nakit-takvimi-blogu";
+import { gorevSayilariniTopla } from "@/lib/panel/gorev-verisi";
+import {
+  nakitTakvimiKur,
+  type TakvimPenceresi,
+} from "@/lib/panel/nakit-takvimi";
+import { takvimBugunu, takvimSatirlariniTopla } from "@/lib/panel/takvim-verisi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { izinVarMi } from "@/lib/yetki";
 import {
@@ -121,6 +129,8 @@ export default async function AnaSayfa({
     baslangic?: string;
     bitis?: string;
     sirala?: string;
+    /** Nakit takvimi penceresi (14 | 30) — dönem süzgecinden BAĞIMSIZ. */
+    takvim?: string;
   }>;
 }) {
   // PANEL HERKESE AÇIK ama NET DEĞİL. 13.08.2026'da kullanıcı yakaladı:
@@ -596,6 +606,35 @@ export default async function AnaSayfa({
 
   const aralikMetni = `${bicim.tarih(donem.baslangic)} – ${bicim.tarih(donem.sonGun)}`;
 
+  /**
+   * ========================= PANEL AŞAMA 3 — PAKET 1 =========================
+   *
+   * İKİSİ DE DÖNEM SÜZGECİNDEN BAĞIMSIZ ve bu bilinçli:
+   *  - Görev kutusu BUGÜNÜN işini sayar; döneme bağlansaydı dönem
+   *    daraldığında iş listesi sessizce kısalır, kullanıcı işini unuturdu.
+   *  - Takvim İLERİYE bakar; dönem süzgeci geçmişi süzer. Aynı düğmeye
+   *    bağlansalardı "bugün" seçilince takvim boşalırdı. Ekranda da yazıyor.
+   */
+  const takvimPenceresi: TakvimPenceresi =
+    parametreler.takvim === "30" ? 30 : 14;
+
+  const takvimBugun = takvimBugunu();
+  const [takvimSatirlari, gorevSayilari] = await Promise.all([
+    // Nakit takvimi PARA bloğudur; izin yoksa sorgu bile atılmaz.
+    karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([]),
+    gorevSayilariniTopla(),
+  ]);
+
+  const takvim = nakitTakvimiKur({
+    satirlar: takvimSatirlari,
+    bugun: takvimBugun,
+    pencereGun: takvimPenceresi,
+  });
+
+  /** Pencere düğmesi diğer süzgeçleri KORUR. */
+  const takvimAdresi = (gun: TakvimPenceresi) =>
+    suzgecAdresi("/", parametreler, { takvim: String(gun) });
+
   const seri = aylikSeri(
     satislar,
     { yil: bugun.yil, ay: bugun.ay },
@@ -669,6 +708,23 @@ export default async function AnaSayfa({
           bitis: parametreler.bitis ?? "",
         }}
       />
+
+      {/* ================= 1) BUGÜN NE YAPMALIYIM =================
+          EN ÜSTTE: panel açılışında eylem üstte, rapor altta (mimar
+          kararı 14.08.2026). Operasyonel sayılar — `satis.kar.gor`
+          İSTEMEZ, depocu da görür. */}
+      <GorevKutusu sayilar={gorevSayilari} />
+
+      {/* ==================== 2) NAKİT TAKVİMİ ====================
+          Öngörü: "ne zaman sıkışırım". Para bloğu olduğu için
+          `satis.kar.gor`a bağlı — Operasyon nakit pozisyonu görmez. */}
+      {karGorunur ? (
+        <NakitTakvimiBlogu
+          takvim={takvim}
+          pencere={takvimPenceresi}
+          pencereAdresi={takvimAdresi}
+        />
+      ) : null}
 
       {/* Para birimi süzgeci: yalnız birden fazla varsa görünür. Süzgeç
           çubuğuna girmiyor çünkü "tümü" seçeneği YOK — iki para birimi tek

@@ -2155,5 +2155,35 @@
     "hataYUKLENEMEDI": "",
     "hataDEPO_YOK": "",
     "hataCOK_BUYUK": ""
+  },
+  "Gorevler": {
+    "baslik": "",
+    "aciklama": "",
+    "bekleyen": "",
+    "hepsiTemiz": "",
+    "temiz": "",
+    "temizNotu": "",
+    "kargoBekleyen": "",
+    "iadeBildirimi": "",
+    "malKabulBekleyen": "",
+    "karHesaplanamayan": "",
+    "oransizKanalSku": ""
+  },
+  "NakitTakvimi": {
+    "baslik": "",
+    "donemBagimsiz": "",
+    "pencereDugmesi": "",
+    "cikacak": "",
+    "girecek": "",
+    "netPozisyon": "",
+    "acikVar": "",
+    "acikYok": "",
+    "gecikmisDahil": "",
+    "gecikmisBaslik": "",
+    "kartSiniriNotu": "",
+    "hareketYok": "",
+    "vadesizBaslik": "",
+    "vadesizNotu": "",
+    "disaridaNotu": ""
   }
 }

@@ -149,6 +149,20 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       bakılacak:** önizlemedeki NET-1/NET-2 ile kaydedilen değer birebir mi.
       _Not 14.08.2026._
 
+- [ ] **KART ÖDEME TAKİBİ** — _Karar 14.08.2026: ŞİMDİ DEĞİL, **geçmiş veri
+      paketiyle BİRLİKTE** tasarlanır (ayrı ayrı değil)._
+      Sistemde "bu ekstreyi ödedim" kaydı YOK. Panel için zorunlu değil ama
+      nakit takviminin gecikmiş bölümünü kart tarafında eksik bırakıyor.
+      **Neden geçmiş veri paketiyle birlikte:** o paket zaten geçmiş
+      EKSTRELERİ getiriyor; ekstre kaydı varsa "ödendi mi / ne zaman"
+      alanı oraya DOĞAL bağlanır. Ayrı tasarlanırsa iki farklı ekstre
+      kavramı doğar ve biri diğerini gölgeler.
+      **Bugünkü geçici çözüm (onaylı):** geçmiş ekstreler ÖDENMİŞ sayılır —
+      `lib/kart-borcu.ts`in `bekleyenToplam` tanımıyla AYNI varsayım, iki
+      yerde çelişki yok. Gecikmiş bölümü yalnız hakedişten beslenir
+      (`SettlementItem.paidAt` gerçekten tutuluyor) ve **ekranda bu sınır
+      AÇIKÇA yazar** ("sessiz yokluk yok, açık sınır").
+
 - [ ] **GEÇMİŞ VERİ AKTARIMI** — geçmiş kart ekstreleri · geçmiş hakediş
       tahsilatları. Dosya: `C:\Users\yapra\Desktop\excel\hakedis ve kredi kartlari`
       **KAPSAM KÜÇÜLDÜ — kart günleri İŞE GEREK YOK (ölçüldü 13.08.2026):**

@@ -2155,5 +2155,35 @@
     "hataYUKLENEMEDI": "Dosya yüklenemedi. Tekrar deneyin.",
     "hataDEPO_YOK": "Dosya deposu yapılandırılmamış; ek yüklenemedi. (Yönetici: BLOB_READ_WRITE_TOKEN eksik.)",
     "hataCOK_BUYUK": "Dosya çok büyük. Dosya başına sınır 4 MB."
+  },
+  "Gorevler": {
+    "baslik": "Bugün ne yapmalıyım",
+    "aciklama": "Bekleyen işler. Her satır tıklanınca kendi süzülü listesine gider. Dönem süzgecinden etkilenmez.",
+    "bekleyen": "{sayi} bekleyen",
+    "hepsiTemiz": "Hepsi temiz",
+    "temiz": "temiz",
+    "temizNotu": "Bekleyen iş yok. Satırlara yine de tıklayıp listeleri görebilirsiniz.",
+    "kargoBekleyen": "Kargoya verilmemiş sipariş",
+    "iadeBildirimi": "Bekleyen iade bildirimi",
+    "malKabulBekleyen": "Mal kabul bekleyen alım",
+    "karHesaplanamayan": "Kârı hesaplanamayan satış",
+    "oransizKanalSku": "Komisyon oranı boş kanal SKU"
+  },
+  "NakitTakvimi": {
+    "baslik": "Nakit takvimi · {gun} gün",
+    "donemBagimsiz": "Bu takvim İLERİYE bakar; yukarıdaki dönem süzgecinden ETKİLENMEZ. Kendi penceresini kullanır.",
+    "pencereDugmesi": "{gun} gün",
+    "cikacak": "Çıkacak",
+    "girecek": "Girecek",
+    "netPozisyon": "Net pozisyon",
+    "acikVar": "Bu pencerede açık var — çıkan para girenden fazla.",
+    "acikYok": "Bu pencerede açık yok.",
+    "gecikmisDahil": "Toplamlara gecikmiş {tutar} dahildir.",
+    "gecikmisBaslik": "Gecikmiş ({sayi})",
+    "kartSiniriNotu": "Kart ekstreleri için gecikmiş takibi henüz yok (ödeme kaydı gelince eklenecek); gecikmiş yalnız hakediş tahsilatlarını gösterir.",
+    "hareketYok": "Önümüzdeki {gun} günde beklenen hareket yok.",
+    "vadesizBaslik": "Vadesi bilinmeyen ({sayi})",
+    "vadesizNotu": "Bu satırlar takvime ve toplamlara GİRMEZ. Sıfır varsayılmadı — tarihi ya da tutarı bilinmiyor.",
+    "disaridaNotu": "{sayi} satır bu takvimde gösterilmedi: penceresi dışında ya da para birimi TRY değil (kur çevrilmez)."
   }
 }
