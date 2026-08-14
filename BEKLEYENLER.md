@@ -6,10 +6,15 @@ listesiyle birlikte teslim edilir.
 
 ## AÇIK PAKET SIRASI — 13.08.2026 itibarıyla
 
-Üç paket açık. Mimar onaylı sıra, **paket ADIYLA**:
-**RMA KALANI (şimdi) → PANEL AŞAMA 2 → GEÇMİŞ VERİ.**
+Mimar onaylı sıra, **paket ADIYLA**:
+**RMA KALANI (test bekliyor) → PANEL AŞAMA 2 (test bekliyor) →
+PANEL AŞAMA 3 PAKET 1 → PANEL AŞAMA 3 PAKET 2 → GEÇMİŞ VERİ.**
+
 _Sıra kararı 14.08.2026: RMA'nın gövdesi (bildirim durum makinesi + 6.
 senaryo) kritik ve yarım bırakılmaz; Panel Aşama 2 hemen ardından açılır._
+_Aşama 3 kararı 14.08.2026: RMA **ve** Panel Aşama 2 Halil testleri
+geçtikten SONRA başlanır — ikisi de kullanıcıda beklerken üçüncü paket
+açılmaz._
 Gerekçe: geçmiş veri referans olduğu için en son; RMA kalanı günlük akışta
 karşımıza çıkıyor. (Komisyon paketi 13.08.2026'da tamamlandı, aşağıda.)
 
@@ -177,7 +182,86 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         Yazımdan önce `lib/kar.ts`'in kalem/sipariş ayrımı okunacak ve
         sıralamanın hangi rakama dayandığı EKRANDA yazılacak.
 
+- [ ] **PANEL AŞAMA 3 — PAKET 1: NAKİT VE EYLEM ODAĞI**
+      _Mimar sözleşmesi 14.08.2026. RMA **ve** Panel Aşama 2 testleri
+      geçmeden BAŞLANMAZ. Paket 1 Halil testini geçmeden Paket 2 yazılmaz._
+
+      **1a. NAKİT TAKVİMİ (paketin kalbi).** Önümüzdeki 14 gün, iki sütun:
+      - **ÖDENECEK (kart):** her kartın son ödeme günü + o güne düşen borç.
+        Kaynak alımlar (kart + taksit) → kesim/ödeme günü kurallarıyla
+        türetilir. **Mevcut `lib/kart-borcu.ts` kullanılır, İKİNCİ MOTOR
+        AÇILMAZ.**
+      - **GELECEK (hakediş):** vade motorundan beklenen ödeme tarihi +
+        tutar; **BEKLENEN = NET-1 + MALİYET**. Yalnız tutarı bilinen
+        satırlar; "planlı tarih, tutar yok" olanlar takvime GİRMEZ, ayrı
+        not olarak yazılır.
+      - **ALT SATIR:** 14 günde çıkacak toplam · girecek toplam · NET
+        pozisyon (açık ise KIRMIZI, ör. −7.250).
+      - Pencere seçilebilir: **14 / 30 gün**.
+      - Her satır tıklanınca kaynağına gider (kart → o kartın borç detayı,
+        hakediş → o settlement).
+      - **İLKE: tahmin değil, sistemdeki gerçek vade/borç.** Bilinmeyen
+        vade **"?"** ile gösterilir, SIFIR VARSAYILMAZ (sessiz sıfır yasak).
+      - Para asla Float; `Europe/Istanbul` sabit.
+
+      **1b. "BUGÜN NE YAPMALIYIM" KUTUSU.** Tek kart, beş tıklanabilir sayı,
+      hepsi mevcut veriden:
+      - kargoya verilmemiş sipariş (`shippedAt` boş) → süzülmüş satış listesi
+      - bekleyen iade bildirimi (mal yolda / karar bekleyen `ReturnNotice`)
+        → `/iadeler` süzülü
+      - mal kabul bekleyen alım (`ORDERED`/`PARTIAL`) → `/alimlar` süzülü
+      - kârı hesaplanamayan satış (`NO_COST`/`RULE_MISSING`) → süzülü liste
+      - oranı boş kanal SKU → `/kanal-sku?eksik=1`
+      - **Her sayı 0 ise satır "temiz ✓" gösterir, GİZLENMEZ (açık sıfır).**
+
+- [ ] **PANEL AŞAMA 3 — PAKET 2: RAKAM YARGIYA DÖNSÜN**
+      _Paket 1 Halil testini geçmeden yazılmaz._
+
+      **2a. KARŞILAŞTIRMA + MARJ%.**
+      - Ciro, NET-1, NET-2'nin yanına önceki döneme göre değişim
+        (▲%18 / ▼%31). **Önceki dönem = seçili dönemin bir öncesi**
+        (bu ay→geçen ay, bu hafta→geçen hafta).
+      - **Marj% = NET-2 / brüt ciro**, kanal kırılımında yan yana (TY marjı
+        eksi, HB %19 aynı ekranda görünsün).
+      - Aylık tabloya marj% sütunu.
+      - _Not: ürün bazlı marj 14.08.2026'da Aşama 2'ye eklendi
+        (`marjYuzdesi`); buradaki iş KANAL ve DÖNEM seviyesidir._
+
+      **2b. ZARARA GİDEN SATIŞLAR.** "NET-2'si eksi olan N satış" sayacı →
+      tıkla → o satışlar süzülü liste (en çok götüren üstte). Dönem
+      süzgecine bağlı.
+
+      **ORTAK KURALLAR (iki pakete de):**
+      - Hepsi **salt-okuma** bekleniyor; **migration ÇIKARSA DUR ve SQL'i
+        onaya getir** (muhtemelen çıkmaz).
+      - Yetki: para/marj sütunları `satis.kar.gor`'a bağlı (Operasyon marj
+        görmez); **nakit takvimi ve zarar listesi de öyle**. "Bugün ne
+        yapmalıyım" kutusundaki OPERASYONEL sayılar (kargo, iade, mal kabul)
+        Operasyon'a AÇIK, kâr/oran sayıları KAPALI.
+      - `panel:dogrula` genişletilir: nakit takvimi çıkacak/girecek
+        toplamları kesin rakamla · net pozisyon işareti · "bugün" kutusundaki
+        her sayının süzülü listenin kaydıyla BİREBİR tutması · marj% =
+        NET-2/ciro doğrulaması · zarar sayacının gerçekten eksi NET-2'leri
+        sayması.
+      - Her paket AYRI teslim + AYRI Halil testi (tıklama düzeyinde,
+        rakamlar taahhütlü).
+
 ## Sonraki uygun pakette
+
+- [ ] **STOK TÜKENME SİNYALİ** — geçmiş satış hızından "kaç gün stok kaldı".
+      _Mimar notu 14.08.2026: düşük öncelik, Aşama 3'e DEĞİL._
+      **"Sinyal, karar değil" olarak sunulacak** — ortalama yanıltabilir
+      (kampanya günü satışı sıradan güne yayılır). Yaşlanma listesinin
+      tersi ucu: o "çok yavaş", bu "çok hızlı" diyor.
+
+- [ ] **KOMİSYON ORANI TAZELİĞİ UYARISI** — "oranlar N gün önce yüklendi".
+      Trendyol salı, Hepsiburada çarşamba güncelliyor; eski oranla fiyat
+      koymak sessiz zarardır. _Mimar notu 14.08.2026, düşük öncelik._
+
+- [ ] **İADE ORANI ve TEDARİKÇİ TESLİM SÜRESİ — RAPOR ekranına.**
+      İade oranı kanal/ürün bazında; teslim süresi `purchasedAt` →
+      `receivedAt` farkından. Panele değil rapora. _Mimar notu 14.08.2026._
+
 
 - [ ] **HURDA / İKİNCİ EL STOK TAKİBİ** — Excel'deki "Hurda Takip"
       sekmesinin karşılığı. _Karar 13.08.2026, RMA modülünden SONRA
