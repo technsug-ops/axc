@@ -714,18 +714,26 @@ export default async function AnaSayfa({
         }}
       />
 
-      {/* ================= 1) BUGÜN NE YAPMALIYIM =================
-          EN ÜSTTE: panel açılışında eylem üstte, rapor altta (mimar
-          kararı 14.08.2026). Operasyonel sayılar — `satis.kar.gor`
-          İSTEMEZ, depocu da görür. */}
-      <GorevKutusu sayilar={gorevSayilari} />
+      {/* ═══════════════ ÜST SIRA: EYLEM + ÖNGÖRÜ YAN YANA ═══════════════
+          14.08.2026 — PANEL DİKEY YIĞINDI, IZGARA OLDU.
+          Her blok tam genişlikte alt alta duruyordu; 1400 px ekranda alanın
+          büyük kısmı boş kalıyor, sayfa dört ekran uzuyordu. Gösterge
+          tablosu YATAY eksende okunur: birlikte bakılan iki blok yan yana
+          durur, göz aşağı kaydırmak yerine sağa bakar.
 
-      {/* ==================== 2) NAKİT TAKVİMİ ====================
-          Öngörü: "ne zaman sıkışırım". Para bloğu olduğu için
-          `satis.kar.gor`a bağlı — Operasyon nakit pozisyonu görmez. */}
-      {karGorunur ? (
-        <NakitOzeti takvim={takvim} pencereGun={takvimPenceresi} />
-      ) : null}
+          Eşleştirme rastgele değil: solda "şimdi ne yapacağım" (eylem),
+          sağda "ne zaman sıkışırım" (öngörü). İkisi günlük kararın iki
+          yarısı ve birlikte okunur. */}
+      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+        {/* Operasyonel sayılar — `satis.kar.gor` İSTEMEZ, depocu da görür. */}
+        <GorevKutusu sayilar={gorevSayilari} />
+
+        {/* Para bloğu — izne bağlı; Operasyon nakit pozisyonu görmez.
+            İzin yoksa görev kutusu tek başına tam genişliğe yayılır. */}
+        {karGorunur ? (
+          <NakitOzeti takvim={takvim} pencereGun={takvimPenceresi} />
+        ) : null}
+      </div>
 
       {/* Para birimi süzgeci: yalnız birden fazla varsa görünür. Süzgeç
           çubuğuna girmiyor çünkü "tümü" seçeneği YOK — iki para birimi tek
@@ -1165,70 +1173,91 @@ export default async function AnaSayfa({
                 },
               ]
             : []),
+          {
+            /* STOKTA BEKLEYEN — kâr iznine bağlı DEĞİL: adet ve yaş
+               operasyonel bilgidir. İçindeki SERMAYE sütunu maliyet
+               olduğu için ayrıca izne bakıyor. */
+            anahtar: "stok",
+            etiket: t("yaslanmaBaslik"),
+            adres: analizAdresi("stok"),
+            icerik: (
+              <PanelListesi
+                baslik={t("yaslanmaBaslik")}
+                notu={t("yaslanmaNotu")}
+                satirlar={yaslanmaSatirlari}
+                bosMesaj={t("yaslanmaBos")}
+                skuEtiketi={t("sku")}
+                ustEylem={
+                  // Sermaye sıralaması MALİYET bilgisidir; kâr göremeyene kapalı.
+                  karGorunur ? (
+                    <SiralamaDugmeleri
+                      secenekler={[
+                        {
+                          etiket: t("siralaYas"),
+                          adres: siralamaAdresi("yas"),
+                          seciliMi: siralamaOlcutu === "yas",
+                        },
+                        {
+                          etiket: t("siralaSermaye"),
+                          adres: siralamaAdresi("sermaye"),
+                          seciliMi: siralamaOlcutu === "sermaye",
+                        },
+                      ]}
+                    />
+                  ) : null
+                }
+                altNot={
+                  <>
+                    {/* KULLANICI UYARISI (14.08.2026): en yaşlı kalem en
+                        pahalı kalem DEĞİLDİR. Ölçüm: 95 günlük kalem
+                        4.796,63 ₺ tutarken 14 günlük kalem 37.789,50 ₺
+                        tutuyordu. İki sıralama bu yüzden var. */}
+                    {t("yaslanmaUyari")}
+                    {karGorunur && sermaye.kalem > 0 ? (
+                      <>
+                        {" "}
+                        {t("yaslanmaSermayeToplami", {
+                          tutar: bicim.para(sermaye.toplam, "TRY"),
+                          kalem: sermaye.kalem,
+                        })}
+                      </>
+                    ) : null}
+                    {karGorunur && sermaye.hesaplanamayan > 0 ? (
+                      <>
+                        {" "}
+                        {t("yaslanmaHesaplanamayan", {
+                          sayi: sermaye.hesaplanamayan,
+                        })}
+                      </>
+                    ) : null}
+                    {/**
+                     * BURAYA BAĞLANTI KONMUYOR — bilinçli. "Tamamını gör"
+                     * `/stok`'a giderdi ama o ekranda YAŞ SÜTUNU YOK:
+                     * kullanıcı soruyu cevaplayamayan bir listeye düşerdi.
+                     * Sayı söyleniyor, yanıltıcı bağlantı verilmiyor.
+                     */}
+                    {yaslanma.length > YASLANMA_SATIRI ? (
+                      <>
+                        {" "}
+                        {t("yaslanmaKalan", {
+                          sayi: yaslanma.length - YASLANMA_SATIRI,
+                        })}
+                      </>
+                    ) : null}
+                  </>
+                }
+              />
+            ),
+          },
         ]}
         secili={analizSekmesi}
       />
 
-      {/* ==================== STOKTA BEKLEYEN — YAŞLANMA ==================== */}
-      <PanelListesi
-        baslik={t("yaslanmaBaslik")}
-        notu={t("yaslanmaNotu")}
-        satirlar={yaslanmaSatirlari}
-        bosMesaj={t("yaslanmaBos")}
-        skuEtiketi={t("sku")}
-        ustEylem={
-          // Sermayeye göre sıralama MALİYET bilgisidir; kâr göremeyene kapalı.
-          karGorunur ? (
-            <SiralamaDugmeleri
-              secenekler={[
-                {
-                  etiket: t("siralaYas"),
-                  adres: siralamaAdresi("yas"),
-                  seciliMi: siralamaOlcutu === "yas",
-                },
-                {
-                  etiket: t("siralaSermaye"),
-                  adres: siralamaAdresi("sermaye"),
-                  seciliMi: siralamaOlcutu === "sermaye",
-                },
-              ]}
-            />
-          ) : null
-        }
-        altNot={
-          <>
-            {/* KULLANICI UYARISI (14.08.2026): en yaşlı kalem en pahalı kalem
-                DEĞİLDİR. Ölçüm: 95 günlük kalem 4.796,63 ₺ tutarken 14 günlük
-                kalem 37.789,50 ₺ tutuyordu. İki sıralama bu yüzden var. */}
-            {t("yaslanmaUyari")}
-            {karGorunur && sermaye.kalem > 0 ? (
-              <>
-                {" "}
-                {t("yaslanmaSermayeToplami", {
-                  tutar: bicim.para(sermaye.toplam, "TRY"),
-                  kalem: sermaye.kalem,
-                })}
-              </>
-            ) : null}
-            {karGorunur && sermaye.hesaplanamayan > 0 ? (
-              <>
-                {" "}
-                {t("yaslanmaHesaplanamayan", { sayi: sermaye.hesaplanamayan })}
-              </>
-            ) : null}
-            {/**
-             * BURAYA BAĞLANTI KONMUYOR — bilinçli. "Tamamını gör" düğmesi
-             * `/stok`'a giderdi, ama o ekranda YAŞ SÜTUNU YOK: kullanıcı
-             * soruyu cevaplayamayan bir listeye düşerdi. Sayı söyleniyor,
-             * yanıltıcı bağlantı verilmiyor. Yaş sütununun /stok'a eklenmesi
-             * BEKLEYENLER'e yazıldı.
-             */}
-            {yaslanma.length > YASLANMA_SATIRI ? (
-              <> {t("yaslanmaKalan", { sayi: yaslanma.length - YASLANMA_SATIRI })}</>
-            ) : null}
-          </>
-        }
-      />
+      {/* Yaşlanma listesi ARTIK AYRI BLOK DEĞİL — "Ürün analizi" kartının
+          bir sekmesi (14.08.2026). Tam genişlikte ayrı bir kart olarak
+          durunca panelin bir ekranını daha yiyordu; oysa aynı soruya
+          ("hangi ürün ne durumda") bakan diğer listelerle aynı yere ait.
+          İçeriği yukarıdaki sekme dizisinde. */}
 
       {/* ======================== AYLIK GRAFİK ======================== */}
       <Card className="min-w-0">
