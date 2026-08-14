@@ -5,7 +5,6 @@ import { ArrowRight, TriangleAlert } from "lucide-react";
 import { Baglanti } from "@/components/baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
 import { CizgiGrafik, type GrafikNoktasi } from "@/components/cizgi-grafik";
-import { ListeKarti } from "@/components/liste-karti";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { SuzgecCubugu } from "@/components/suzgec-cubugu";
 import { Button } from "@/components/ui/button";
@@ -884,182 +883,122 @@ export default async function AnaSayfa({
                 </div>
               ) : null}
 
-              {/* --- kanal kırılımı: masaüstü tablo ---
-                  GENİŞLİK SINIRLI (14.08.2026): tablo tüm ekrana yayılınca
-                  iki kanal için sütunlar arası kocaman boşluk kalıyor ve
-                  göz kanal adından rakama uzun bir yol katediyor. Rakamlar
-                  birbirine yakın durunca karşılaştırma tek bakışta olur. */}
-              <div className="hidden max-w-3xl overflow-x-auto rounded-lg border md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("kanal")}</TableHead>
-                      <TableHead className="text-right">
-                        {t("satisAdedi")}
-                      </TableHead>
-                      <TableHead className="text-right">{t("ciro")}</TableHead>
-                      {karGorunur ? (
-                        <TableHead className="text-right">{t("net2")}</TableHead>
-                      ) : null}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {blok.kanallar.flatMap((kanal) => [
-                      <TableRow key={kanal.kanalKodu}>
-                        <TableCell className="font-medium">
-                          {/* TIKLANABİLİR KANAL: o kanalın satışlarına süzülmüş
-                              gider. Link stili görünür (İlke #2) — düz metin
-                              gibi duran tıklanabilir öğe yasak. */}
-                          <Baglanti href={kanalSatislariAdresi(kanal.kanalKodu)}>
-                            {kanal.kanalAdi}
-                          </Baglanti>
-                        </TableCell>
-                        <TableCell className="text-right">{kanal.adet}</TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <CiroSunumu
-                            brut={bicim.para(kanal.gelir, blok.paraBirimi)}
-                            iade={
-                              kanal.iadeTutari > 0
-                                ? bicim.para(kanal.iadeTutari, blok.paraBirimi)
-                                : null
-                            }
-                            net={bicim.para(
-                              kanal.gelir - kanal.iadeTutari,
-                              blok.paraBirimi,
-                            )}
-                          />
-                        </TableCell>
-                        {/* İade/eksik notları BU HÜCREYE ait: ciro iadeden
-                            etkilenmez, düşen rakam NET-2'dir. Sütun gizlenince
-                            notlar da gider — dayanağı kalmaz. */}
-                        {karGorunur ? (
-                          <TableCell className="text-right whitespace-nowrap">
-                            {bicim.para(kanal.net2, blok.paraBirimi)}
-                            {/* İade varsa rakamın neden düştüğü satırda yazar —
-                                yoksa "ciro yüksek, kâr düşük" bilmecesi olur. */}
-                            {kanal.iadeAdedi > 0 ? (
-                              <span className="text-muted-foreground block text-xs">
-                                {t("kanalIade", { sayi: kanal.iadeAdedi })}
-                              </span>
-                            ) : null}
-                            {kanal.hesaplanamayanAdet > 0 ? (
-                              <span className="text-muted-foreground block text-xs">
-                                {t("kanalEksik", { sayi: kanal.hesaplanamayanAdet })}
-                              </span>
-                            ) : null}
-                          </TableCell>
-                        ) : null}
-                      </TableRow>,
-                      /**
-                       * HESAP KIRILIMI — kanal altında, girintili.
-                       *
-                       * Kanal seviyesinde gruplamak doğru varsayılan ("Trendyol
-                       * bu ay ne yaptı") ama aynı pazaryerinde iki mağaza varsa
-                       * hangisinin ne yaptığı toplamın içinde kayboluyordu.
-                       * TEK HESAP VARSA SATIR AÇILMAZ: kırılım o zaman kanal
-                       * satırının tekrarıdır, gürültüden başka bir şey değil.
-                       */
-                      ...(kanal.hesaplar.length > 1
-                        ? kanal.hesaplar.map((hesap) => (
-                            <TableRow
-                              key={`${kanal.kanalKodu}-${hesap.hesapAdi}`}
-                              className="bg-muted/30"
-                            >
-                              <TableCell className="text-muted-foreground pl-8 text-xs">
-                                {hesap.hesapAdi}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground text-right text-xs">
-                                {hesap.adet}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground text-right text-xs whitespace-nowrap">
-                                <CiroSunumu
-                                  brut={bicim.para(hesap.gelir, blok.paraBirimi)}
-                                  iade={
-                                    hesap.iadeTutari > 0
-                                      ? bicim.para(
-                                          hesap.iadeTutari,
-                                          blok.paraBirimi,
-                                        )
-                                      : null
-                                  }
-                                  net={bicim.para(
-                                    hesap.gelir - hesap.iadeTutari,
-                                    blok.paraBirimi,
-                                  )}
-                                />
-                              </TableCell>
-                              {karGorunur ? (
-                                <TableCell className="text-muted-foreground text-right text-xs whitespace-nowrap">
-                                  {bicim.para(hesap.net2, blok.paraBirimi)}
-                                </TableCell>
-                              ) : null}
-                            </TableRow>
-                          ))
-                        : []),
-                    ])}
-                  </TableBody>
-                </Table>
-              </div>
+              {/* ================= KANAL KIRILIMI — TEK UYGULAMA =================
+                  14.08.2026, kullanıcı: "bura daha iyi kurgulanabilir".
 
-              {/* --- kanal kırılımı: telefon kartı --- */}
-              <div className="space-y-3 md:hidden">
+                  ÖNCE: masaüstünde TABLO, telefonda KART — iki ayrı kod, aynı
+                  bilgi. Tablo iki kanal için yanlış biçimdi: dört sütun tüm
+                  genişliğe yayılıyor, altında koca boşluk kalıyordu. Genişliği
+                  kırpınca bu kez sağ yarı boş kaldı.
+
+                  ŞİMDİ: tek duyarlı IZGARA. Kanal sayısı azken kartlar yan yana
+                  dizilir ve alan dolar; artınca kendiliğinden alt satıra iner.
+                  Telefonda tek sütun — ayrı bir mobil uygulama gerekmiyor
+                  (İlke #8 ve #10: aynı bilgi her yerde aynı görünür).
+
+                  Tablo, satır sayısı ÖNGÖRÜLEMEYEN listeler için doğru araçtır;
+                  2-11 kanal için kart ızgarası hem daha yoğun hem daha okunur. */}
+              <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {blok.kanallar.map((kanal) => (
-                  <ListeKarti
+                  <div
                     key={kanal.kanalKodu}
-                    baslik={
+                    className="min-w-0 space-y-3 rounded-lg border p-3"
+                  >
+                    {/* TIKLANABİLİR KANAL: o kanalın satışlarına süzülmüş
+                        gider. Link stili görünür (İlke #2). */}
+                    <div className="font-medium">
                       <Baglanti href={kanalSatislariAdresi(kanal.kanalKodu)}>
                         {kanal.kanalAdi}
                       </Baglanti>
-                    }
-                    alanlar={[
-                      { etiket: t("satisAdedi"), deger: String(kanal.adet) },
-                      {
-                        etiket: t("ciro"),
-                        deger: (
-                          <CiroSunumu
-                            brut={bicim.para(kanal.gelir, blok.paraBirimi)}
-                            iade={
-                              kanal.iadeTutari > 0
-                                ? bicim.para(kanal.iadeTutari, blok.paraBirimi)
-                                : null
-                            }
-                            net={bicim.para(
-                              kanal.gelir - kanal.iadeTutari,
-                              blok.paraBirimi,
-                            )}
-                          />
-                        ),
-                      },
-                      ...(karGorunur
-                        ? [
-                            {
-                              etiket: t("net2"),
-                              deger: bicim.para(kanal.net2, blok.paraBirimi),
-                            },
-                          ]
-                        : []),
-                      // HESAP KIRILIMI TELEFONDA DA VAR: tek hesapta gizli.
-                      ...(kanal.hesaplar.length > 1
-                        ? kanal.hesaplar.map((hesap) => ({
-                            etiket: hesap.hesapAdi,
-                            deger: (
-                              <CiroSunumu
-                                brut={bicim.para(hesap.gelir, blok.paraBirimi)}
-                                iade={
-                                  hesap.iadeTutari > 0
-                                    ? bicim.para(hesap.iadeTutari, blok.paraBirimi)
-                                    : null
-                                }
-                                net={bicim.para(
-                                  hesap.gelir - hesap.iadeTutari,
-                                  blok.paraBirimi,
-                                )}
-                              />
-                            ),
-                          }))
-                        : []),
-                    ]}
-                  />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                      <div className="min-w-0">
+                        <div className="text-muted-foreground text-xs">
+                          {t("satisAdedi")}
+                        </div>
+                        <div className="text-lg font-semibold tabular-nums">
+                          {kanal.adet}
+                        </div>
+                      </div>
+
+                      {/* İade/eksik notları NET-2'nin yanında: ciro iadeden
+                          etkilenmez, düşen rakam NET-2'dir. Sütun izne
+                          kapalıysa notlar da gider — dayanağı kalmaz. */}
+                      {karGorunur ? (
+                        <div className="min-w-0">
+                          <div className="text-muted-foreground text-xs">
+                            {t("net2")}
+                          </div>
+                          <div className="text-lg font-semibold">
+                            {bicim.para(kanal.net2, blok.paraBirimi)}
+                          </div>
+                          {kanal.iadeAdedi > 0 ? (
+                            <div className="text-muted-foreground text-xs">
+                              {t("kanalIade", { sayi: kanal.iadeAdedi })}
+                            </div>
+                          ) : null}
+                          {kanal.hesaplanamayanAdet > 0 ? (
+                            <div className="text-muted-foreground text-xs">
+                              {t("kanalEksik", {
+                                sayi: kanal.hesaplanamayanAdet,
+                              })}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      <div className="col-span-2 min-w-0">
+                        <div className="text-muted-foreground text-xs">
+                          {t("ciro")}
+                        </div>
+                        <CiroSunumu
+                          brut={bicim.para(kanal.gelir, blok.paraBirimi)}
+                          iade={
+                            kanal.iadeTutari > 0
+                              ? bicim.para(kanal.iadeTutari, blok.paraBirimi)
+                              : null
+                          }
+                          net={bicim.para(
+                            kanal.gelir - kanal.iadeTutari,
+                            blok.paraBirimi,
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    {/**
+                     * HESAP KIRILIMI — kanal kartının içinde.
+                     *
+                     * Kanal seviyesinde gruplamak doğru varsayılan ("Trendyol
+                     * bu ay ne yaptı") ama aynı pazaryerinde iki mağaza varsa
+                     * hangisinin ne yaptığı toplamın içinde kayboluyordu.
+                     * TEK HESAPTA HİÇ ÇİZİLMEZ: kırılım o zaman kanal
+                     * satırının tekrarıdır, gürültüden başka bir şey değil.
+                     */}
+                    {kanal.hesaplar.length > 1 ? (
+                      <ul className="space-y-1 border-t pt-2">
+                        {kanal.hesaplar.map((hesap) => (
+                          <li
+                            key={`${kanal.kanalKodu}-${hesap.hesapAdi}`}
+                            className="text-muted-foreground flex flex-wrap items-baseline justify-between gap-2 text-xs"
+                          >
+                            <span className="min-w-0 truncate">
+                              {hesap.hesapAdi} · {hesap.adet}
+                            </span>
+                            <span className="shrink-0 tabular-nums">
+                              {karGorunur
+                                ? bicim.para(hesap.net2, blok.paraBirimi)
+                                : bicim.para(
+                                    hesap.gelir - hesap.iadeTutari,
+                                    blok.paraBirimi,
+                                  )}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
                 ))}
               </div>
             </CardContent>
