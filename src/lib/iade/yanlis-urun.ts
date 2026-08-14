@@ -273,3 +273,73 @@ export function maliyetKilidiTutuyorMu(
     );
   });
 }
+
+/**
+ * ============================================================================
+ *  GERİ GELEN MALIN (B) DEFTER DAĞILIMI — STOK ŞARTI YOK
+ * ----------------------------------------------------------------------------
+ *  14.08.2026 CANLI HATASI (T4): iade kaydı "Zolo Powerbank (axcali1603) için
+ *  değişim ürününde stok yok: 1 adet istendi, 0 adet var" diyerek DURDU.
+ *  axcali1603 geri GELEN maldı, gidecek olan değil. İki ayrı yanlış vardı:
+ *
+ *    1. STOK YETERLİLİĞİ YANLIŞ MALA UYGULANIYORDU. Yeterlilik ÇIKACAK mala
+ *       (değişimde gidecek varyant) uygulanır: elimizde yoksa gönderemeyiz.
+ *       Geri GELEN mal zaten depodan çıkmıştır — stoğunun 0 görünmesi
+ *       NORMALDİR, kaydı durdurması saçmadır.
+ *    2. HATA YANLIŞ ROLÜ SUÇLUYORDU: "değişim ürünü" diyerek kullanıcıyı
+ *       doğru ürüne bakmaktan alıkoydu.
+ *
+ *  AYRIMIN KENDİSİ: STOK YETERLİLİĞİ ≠ MALİYET BİLGİSİ.
+ *    - Yeterlilik: B için ARANMAZ. Asla hata değildir.
+ *    - Maliyet: B stoğa GİRERKEN birim maliyet gerekir. Maliyetsiz hareket
+ *      kâr motorunu NO_COST'a düşürür (mimar kilidi 14.08.2026) — bu yüzden
+ *      maliyet uydurulmaz, bilinmiyorsa AÇIKÇA söylenir.
+ *
+ *  DÜZELTME − NEDEN "min(iadeAdedi, defterdekiStok)" KADAR:
+ *  O hareket "B fiilen gitmişti ama defterde duruyordu" demektir. Defterde
+ *  hiç durmuyorsa (B sisteme hiç girilmemiş) düzeltilecek bir şey de yoktur;
+ *  eksi yazmak olmayan malı eksiye düşürmek olurdu.
+ * ============================================================================
+ */
+export type DonenMalDagilimi = {
+  /** Defterin fazla gösterdiği kadar DÜZELTME − yazılır. */
+  duzeltmeAdedi: number;
+  /** RETURN_IN ile stoğa girecek adet (hasarlı girmez). */
+  girisAdedi: number;
+  /** FIFO partilerinin karşılamadığı, son bilinen maliyete düşen adet. */
+  sonMaliyeteDusenAdet: number;
+  /** Yalnız maliyet bilinmediğinde dolar — stok yetersizliği HATA DEĞİLDİR. */
+  hata: "MALIYET_BILINMIYOR" | null;
+};
+
+export function donenMalDagilimi(girdi: {
+  iadeAdedi: number;
+  /** Stoğa girecek sağlam adet; itirazlı iadede 0 verilir (mal müşteride). */
+  girecekSaglamAdet: number;
+  /** B'nin defterdeki açık stoğu — 0 olabilir, hata değildir. */
+  defterdekiStok: number;
+  /** B'nin geçmişinde maliyetli bir hareket var mı? */
+  sonBilinenMaliyetVarMi: boolean;
+}): DonenMalDagilimi {
+  const duzeltmeAdedi = Math.max(
+    0,
+    Math.min(girdi.iadeAdedi, girdi.defterdekiStok),
+  );
+  const girisAdedi = Math.max(0, girdi.girecekSaglamAdet);
+
+  /**
+   * Girişin maliyeti önce ÇIKTIĞI partiden gelir (çıkışın aynası). FIFO'nun
+   * karşılamadığı kısım için son bilinen maliyete düşülür.
+   */
+  const sonMaliyeteDusenAdet = Math.max(0, girisAdedi - duzeltmeAdedi);
+
+  return {
+    duzeltmeAdedi,
+    girisAdedi,
+    sonMaliyeteDusenAdet,
+    hata:
+      sonMaliyeteDusenAdet > 0 && !girdi.sonBilinenMaliyetVarMi
+        ? "MALIYET_BILINMIYOR"
+        : null,
+  };
+}

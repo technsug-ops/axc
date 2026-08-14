@@ -1,5 +1,6 @@
 import { GENEL_KDV_ORANI, kdvAyir, type KarDurumu } from "@/lib/kar";
 import { prisma, type IslemIstemcisi } from "@/lib/prisma";
+import { donenMalDagilimi } from "@/lib/iade/yanlis-urun";
 import { acikPartiler, fifoDagit, type Parti } from "@/lib/stok";
 
 import type { Currency, ReturnType } from "@/generated/prisma/enums";
@@ -361,6 +362,20 @@ async function sevkiyatHatasiNedeniId(tx: IslemIstemcisi): Promise<string> {
   return yeni.id;
 }
 
+/**
+ * GERİ GELEN MALIN MALİYETİ BİLİNMİYOR — stok yetersizliği DEĞİLDİR.
+ *
+ * B'nin sistemde hiç maliyetli hareketi yoksa (ürün hiç alınmamış) geri gelen
+ * malı değerlendiremeyiz. Sıfırla yazmak envanteri sessizce eksiltirdi;
+ * durdurup DOĞRU ürünü ve DOĞRU çözümü söylüyoruz.
+ */
+export class DonenMaliyetYokHatasi extends Error {
+  constructor(readonly variantId: string) {
+    super("Geri gelen ürünün maliyeti bilinmiyor");
+    this.name = "DonenMaliyetYokHatasi";
+  }
+}
+
 export class DegisimStokYokHatasi extends Error {
   constructor(
     readonly variantId: string,
@@ -591,55 +606,109 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
           });
         }
 
-        // DÜZELTME − : B fiilen gitmişti; FIFO'dan maliyetiyle düşer.
+        /**
+         * B — GERİ GELEN MAL. STOK YETERLİLİĞİ ARANMAZ.
+         *
+         * 14.08.2026 canlı hatası: burada `fifoDagit` yetmezse
+         * `DegisimStokYokHatasi` fırlatılıyordu ve ekran "değişim ürününde
+         * stok yok" diyerek B'yi suçluyordu. Kural ve mesaj birlikte
+         * yanlıştı; ayrımı `donenMalDagilimi` tutuyor ve `rma:dogrula`
+         * onu sınıyor.
+         */
         const bPartileri = await acikPartiler(tx, donenVaryantId);
-        const bDagitim = fifoDagit(bPartileri, g.iadeAdedi);
-        if (!bDagitim.yeterliMi) {
-          throw new DegisimStokYokHatasi(
-            donenVaryantId,
-            g.iadeAdedi,
-            bDagitim.mevcut,
-          );
+        const bMevcut = bPartileri.reduce((t, p) => t + p.kalanAdet, 0);
+
+        /** Maliyeti bilinen SON hareket — FIFO'nun yetmediği giriş için. */
+        const sonMaliyetli = await tx.stockMovement.findFirst({
+          where: { variantId: donenVaryantId, unitCostAmount: { not: null } },
+          orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
+          select: { unitCostAmount: true, unitCostCurrency: true },
+        });
+
+        const dagilim = donenMalDagilimi({
+          iadeAdedi: g.iadeAdedi,
+          girecekSaglamAdet:
+            girdi.returnType === "DISPUTED" ? 0 : g.saglamAdet,
+          defterdekiStok: bMevcut,
+          sonBilinenMaliyetVarMi: sonMaliyetli !== null,
+        });
+
+        /**
+         * MALİYET UYDURULMAZ. B'nin hiç maliyetli hareketi yoksa geri gelen
+         * malın değeri bilinmiyordur; sıfır yazmak envanteri sessizce
+         * eksiltir ve o mal sonraki satışta "kâr hesaplanamadı" der.
+         * Bu bir STOK yetersizliği değildir — mesajı da öyle demez.
+         */
+        if (dagilim.hata === "MALIYET_BILINMIYOR") {
+          throw new DonenMaliyetYokHatasi(donenVaryantId);
         }
 
-        let kalanSaglam = girdi.returnType === "DISPUTED" ? 0 : g.saglamAdet;
-        for (const pay of bDagitim.dagitim) {
+        /** Girişin maliyet payları: önce çıktığı parti, kalan son maliyet. */
+        const girisPaylari: {
+          adet: number;
+          /** Decimal metin olarak taşınır — iki kaynak tek tipte buluşsun. */
+          birimMaliyet: string | null;
+          paraBirimi: Currency | null;
+        }[] = [];
+
+        // DÜZELTME − : yalnız defterin FAZLA gösterdiği kadar.
+        if (dagilim.duzeltmeAdedi > 0) {
+          const bDagitim = fifoDagit(bPartileri, dagilim.duzeltmeAdedi);
+          if (bDagitim.yeterliMi) {
+            for (const pay of bDagitim.dagitim) {
+              await tx.stockMovement.create({
+                data: {
+                  variantId: donenVaryantId,
+                  type: "ADJUSTMENT",
+                  quantityDelta: -pay.adet,
+                  occurredAt: girdi.occurredAt,
+                  returnItemId: iadeKalemi.id,
+                  adjustmentReasonId: nedenId,
+                  sourceMovementId: pay.parti.hareketId,
+                  unitCostAmount: pay.parti.birimMaliyet,
+                  unitCostCurrency: pay.parti.birimMaliyetParaBirimi,
+                },
+              });
+              girisPaylari.push({
+                adet: pay.adet,
+                birimMaliyet: pay.parti.birimMaliyet,
+                paraBirimi: pay.parti.birimMaliyetParaBirimi,
+              });
+            }
+          }
+        }
+
+        if (dagilim.sonMaliyeteDusenAdet > 0 && sonMaliyetli) {
+          girisPaylari.push({
+            adet: dagilim.sonMaliyeteDusenAdet,
+            birimMaliyet: sonMaliyetli.unitCostAmount!.toString(),
+            paraBirimi: sonMaliyetli.unitCostCurrency,
+          });
+        }
+
+        /**
+         * RETURN_IN, ÇIKIŞ MALİYETİNİN AYNASI: aynı partiden çıktıysa aynı
+         * maliyetle giriyor. Yeni maliyet uydurulsaydı aynı mal defterde iki
+         * değerle durur ve envanter değeri sessizce kayardı.
+         * Hasarlı kısım HİÇ girmez (maliyeti satıcıda kalır).
+         */
+        let kalanSaglam = dagilim.girisAdedi;
+        for (const pay of girisPaylari) {
+          if (kalanSaglam <= 0) break;
+          const adet = Math.min(pay.adet, kalanSaglam);
+          kalanSaglam -= adet;
           await tx.stockMovement.create({
             data: {
               variantId: donenVaryantId,
-              type: "ADJUSTMENT",
-              quantityDelta: -pay.adet,
+              type: "RETURN_IN",
+              quantityDelta: adet,
               occurredAt: girdi.occurredAt,
               returnItemId: iadeKalemi.id,
-              adjustmentReasonId: nedenId,
-              sourceMovementId: pay.parti.hareketId,
-              unitCostAmount: pay.parti.birimMaliyet,
-              unitCostCurrency: pay.parti.birimMaliyetParaBirimi,
+              locationId: g.locationId,
+              unitCostAmount: pay.birimMaliyet,
+              unitCostCurrency: pay.paraBirimi,
             },
           });
-
-          /**
-           * RETURN_IN, ÇIKIŞ MALİYETİNİN AYNASI: aynı partiden çıktı, aynı
-           * maliyetle giriyor. Yeni maliyet uydurulsaydı aynı mal defterde
-           * iki değerle durur ve envanter değeri sessizce kayardı.
-           * Hasarlı kısım HİÇ girmez (maliyeti satıcıda kalır).
-           */
-          if (kalanSaglam > 0) {
-            const adet = Math.min(pay.adet, kalanSaglam);
-            kalanSaglam -= adet;
-            await tx.stockMovement.create({
-              data: {
-                variantId: donenVaryantId,
-                type: "RETURN_IN",
-                quantityDelta: adet,
-                occurredAt: girdi.occurredAt,
-                returnItemId: iadeKalemi.id,
-                locationId: g.locationId,
-                unitCostAmount: pay.parti.birimMaliyet,
-                unitCostCurrency: pay.parti.birimMaliyetParaBirimi,
-              },
-            });
-          }
         }
       } else if (girdi.returnType !== "DISPUTED" && g.saglamAdet > 0) {
         // SAĞLAM mal stoğa döner — ama itirazlı iadede ürün müşteride kalır.

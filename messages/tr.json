@@ -956,7 +956,8 @@
     "onDoluHedefYok": "Bildirimde dönen ürün bilgisi var ({urun}) ama bu satışta birden fazla kalem olduğu için hangi kaleme ait olduğu belirlenemedi. Dönen ve değişim ürününü doğru kalemde elle seçin.",
     "onDoluOzetiBaslik": "Bildirimden gelindi — aşağıdaki alanlar hazır dolduruldu",
     "onDoluDonen": "Geri gelen (yanlış giden) ürün: {urun}",
-    "onDoluGonderilecek": "Değişimde gidecek ürün: {urun}"
+    "onDoluGonderilecek": "Değişimde gidecek ürün: {urun}",
+    "donenMaliyetYok": "{urun} için sistemde hiç stok hareketi yok, bu yüzden geri gelen malın maliyeti bilinmiyor. Bu bir stok yetersizliği DEĞİLDİR — geri gelen malın stoğu 0 olabilir. Eksik olan maliyettir: önce bu ürüne bir alım (stok girişi) girin, sonra iadeyi kaydedin."
   },
   "Gider": {
     "baslik": "Giderler",

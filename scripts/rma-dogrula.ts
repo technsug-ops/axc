@@ -46,6 +46,7 @@ import {
   urunAlanlariCizilirMi,
 } from "../src/lib/iade/on-dolu";
 import {
+  donenMalDagilimi,
   maliyetKilidiTutuyorMu,
   yanlisUrunPlani,
   type PartiDusumu,
@@ -54,7 +55,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1005,6 +1006,139 @@ console.log("\n6) BİLDİRİM LİSTESİ — BULUNABİLİRLİK");
     );
   }
   kosanBolumler.push("bulunabilirlik");
+}
+
+// ===========================================================================
+console.log("\n7) GERİ GELEN MAL — STOK ŞARTI YOK, MALİYET ŞARTI VAR");
+// ===========================================================================
+/**
+ * T4 canlıda DURDU: "Zolo Powerbank (axcali1603) için değişim ürününde stok
+ * yok: 1 istendi, 0 var." axcali1603 geri GELEN maldı. Stok yeterliliği
+ * yanlış mala uygulanıyordu ve hata yanlış rolü suçluyordu.
+ *
+ * MEVCUT TESTLER NEDEN YAKALAMADI: 2. bölüm 6. senaryonun DEFTER PLANINI
+ * (`yanlisUrunPlani`) sınıyor — o saf fonksiyon zaten kendisine verilen
+ * parti düşümleriyle çalışır, stok yeterliliğine hiç bakmaz. Yeterlilik
+ * kararı `iadeKaydet` içinde, transaction'ın ortasında, veritabanı
+ * sorgusuyla iç içe duruyordu; hiçbir saf fonksiyonda karşılığı yoktu, bu
+ * yüzden hiçbir test onu göremedi. Kural artık `donenMalDagilimi`'nde.
+ */
+{
+  // --- ASIL KİLİT: GERİ GELENİN STOĞU 0 OLSA BİLE KAYIT GEÇER ---
+  const stoksuz = donenMalDagilimi({
+    iadeAdedi: 1,
+    girecekSaglamAdet: 1,
+    defterdekiStok: 0,
+    sonBilinenMaliyetVarMi: true,
+  });
+  kontrol("geri gelenin stoğu 0 -> kayıt DURMAZ", stoksuz.hata === null, stoksuz);
+  kontrol("  ...defterde yoksa DÜZELTME − yazılmaz", stoksuz.duzeltmeAdedi === 0);
+  kontrol("  ...ama sağlam mal stoğa GİRER", stoksuz.girisAdedi === 1);
+  kontrol(
+    "  ...girişin maliyeti son bilinen maliyetten alınır",
+    stoksuz.sonMaliyeteDusenAdet === 1,
+  );
+
+  // --- DEFTERDE DURUYORSA DÜZELTME YAZILIR (net 0 kuralı) ---
+  const defterde = donenMalDagilimi({
+    iadeAdedi: 1,
+    girecekSaglamAdet: 1,
+    defterdekiStok: 3,
+    sonBilinenMaliyetVarMi: true,
+  });
+  kontrol("defterde duruyorsa DÜZELTME − yazılır", defterde.duzeltmeAdedi === 1);
+  kontrol(
+    "  ...giriş kendi partisinden karşılanır (son maliyete düşmez)",
+    defterde.sonMaliyeteDusenAdet === 0,
+  );
+  kontrol(
+    "  ...net 0: bir çıkar bir girer",
+    defterde.girisAdedi - defterde.duzeltmeAdedi === 0,
+  );
+
+  // --- KISMİ: defter 1 gösteriyor ama 2 dönüyor ---
+  const kismi = donenMalDagilimi({
+    iadeAdedi: 2,
+    girecekSaglamAdet: 2,
+    defterdekiStok: 1,
+    sonBilinenMaliyetVarMi: true,
+  });
+  kontrol("defterde 1 var, 2 dönüyor -> DÜZELTME yalnız 1", kismi.duzeltmeAdedi === 1);
+  kontrol("  ...kalan 1 son maliyete düşer", kismi.sonMaliyeteDusenAdet === 1);
+  kontrol("  ...ikisi de stoğa girer", kismi.girisAdedi === 2);
+
+  // --- HASARLI: stoğa girmez, maliyeti üstümüzde kalır ---
+  const hasarli = donenMalDagilimi({
+    iadeAdedi: 2,
+    girecekSaglamAdet: 1,
+    defterdekiStok: 2,
+    sonBilinenMaliyetVarMi: true,
+  });
+  kontrol("hasarlı kısım stoğa GİRMEZ", hasarli.girisAdedi === 1);
+  kontrol("  ...ama defter düzeltmesi TAM adet üzerinden", hasarli.duzeltmeAdedi === 2);
+
+  // --- İTİRAZLI: mal müşteride kalır, giriş yok ---
+  const itirazli = donenMalDagilimi({
+    iadeAdedi: 1,
+    girecekSaglamAdet: 0,
+    defterdekiStok: 0,
+    sonBilinenMaliyetVarMi: false,
+  });
+  kontrol("itirazlıda giriş yok -> maliyet de sorulmaz", itirazli.hata === null);
+  kontrol("  ...stoğa hiç girmez", itirazli.girisAdedi === 0);
+
+  /**
+   * TEK GERÇEK DURDURUCU: maliyet bilinmiyor. Stok yetersizliği DEĞİL.
+   * Sıfır maliyetle yazmak envanteri sessizce eksiltirdi.
+   */
+  const maliyetsiz = donenMalDagilimi({
+    iadeAdedi: 1,
+    girecekSaglamAdet: 1,
+    defterdekiStok: 0,
+    sonBilinenMaliyetVarMi: false,
+  });
+  kontrol(
+    "hiç maliyet geçmişi yoksa DURUR (maliyet uydurulmaz)",
+    maliyetsiz.hata === "MALIYET_BILINMIYOR",
+  );
+  kontrol(
+    "  ...ve bu bir STOK hatası olarak adlandırılmaz",
+    maliyetsiz.hata !== null && !String(maliyetsiz.hata).includes("STOK"),
+  );
+
+  // --- DEĞİŞİMDE GİDECEK ÜRÜN: STOK ŞARTI DEVAM EDİYOR ---
+  const kaynak = readFileSync("src/lib/iade.ts", "utf8");
+  kontrol(
+    "değişimde gidecek ürüne stok kontrolü UYGULANIYOR (kural kalktı sanılmasın)",
+    kaynak.includes("const partiler = await acikPartiler(tx, g.exchangeVariantId)") &&
+      kaynak.includes("throw new DegisimStokYokHatasi("),
+  );
+  kontrol(
+    "geri gelen mal artık DegisimStokYokHatasi FIRLATMIYOR",
+    !kaynak.includes("throw new DegisimStokYokHatasi(\n            donenVaryantId"),
+  );
+  kontrol(
+    "geri gelen için AYRI hata tipi var (doğru rolü söyler)",
+    kaynak.includes("DonenMaliyetYokHatasi") &&
+      kaynak.includes("donenMalDagilimi({"),
+  );
+
+  const eylem2 = readFileSync(
+    "src/app/satislar/[id]/iade/actions.ts",
+    "utf8",
+  );
+  kontrol(
+    "ekran bu hatayı AYRI mesajla gösteriyor",
+    eylem2.includes("DonenMaliyetYokHatasi") &&
+      eylem2.includes("donenMaliyetYok"),
+  );
+  const sozluk6 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  kontrol(
+    "mesaj stok yetersizliği DEMİYOR, maliyeti işaret ediyor",
+    typeof sozluk6.Iade?.donenMaliyetYok === "string" &&
+      sozluk6.Iade.donenMaliyetYok.includes("maliyet"),
+  );
+  kosanBolumler.push("donen-mal");
 }
 
 // ===========================================================================

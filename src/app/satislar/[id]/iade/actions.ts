@@ -9,6 +9,7 @@ import { getTranslations } from "next-intl/server";
 import {
   cezaOnerisi,
   DegisimStokYokHatasi,
+  DonenMaliyetYokHatasi,
   FazlaIadeHatasi,
   iadeEtkisiHesapla,
   iadeKaydet,
@@ -276,6 +277,24 @@ export async function iadeOlustur(
           urun: urunAdlari.get(e.saleItemId) ?? "",
           kalan: e.kalan,
           girilen: e.girilen,
+        }),
+      };
+    }
+    /**
+     * GERİ GELEN MALIN MALİYETİ YOK — ayrı hata, ayrı mesaj. Eskiden bu
+     * durum "değişim ürününde stok yok" diye görünüyordu ve kullanıcıyı
+     * yanlış ürüne baktırıyordu (T4, 14.08.2026).
+     */
+    if (e instanceof DonenMaliyetYokHatasi) {
+      const varyant = await prisma.productVariant.findUnique({
+        where: { id: e.variantId },
+        include: { product: { select: { name: true } } },
+      });
+      return {
+        hata: t("donenMaliyetYok", {
+          urun: varyant
+            ? `${varyant.product.name} (${varyant.sku})`
+            : e.variantId,
         }),
       };
     }

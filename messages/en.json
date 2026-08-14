@@ -956,7 +956,8 @@
     "onDoluHedefYok": "",
     "onDoluOzetiBaslik": "",
     "onDoluDonen": "",
-    "onDoluGonderilecek": ""
+    "onDoluGonderilecek": "",
+    "donenMaliyetYok": ""
   },
   "Gider": {
     "baslik": "",
