@@ -270,9 +270,23 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       **2a. KARŞILAŞTIRMA + MARJ%.**
       - Ciro, NET-1, NET-2'nin yanına önceki döneme göre değişim
         (▲%18 / ▼%31). **Önceki dönem = seçili dönemin bir öncesi**
-        (bu ay→geçen ay, bu hafta→geçen hafta).
-      - **Marj% = NET-2 / brüt ciro**, kanal kırılımında yan yana (TY marjı
-        eksi, HB %19 aynı ekranda görünsün).
+        (bugün→dün, bu hafta→geçen hafta, bu ay→geçen ay).
+        _Kullanıcı 14.08.2026'da bunu ekran üzerinde ayrıca istedi:
+        "kargoya verilen +%15" gibi, her kutunun kendi karşılaştırması._
+      - **İKİ KÂR ORANI YAN YANA** — kullanıcı isteği 14.08.2026, rakip
+        araçta gördüğü kutulardan:
+        - **Kâr / Ürün maliyeti** (maliyetin üzerine ne kadar kazandık)
+        - **Kâr / Satış fiyatı** = klasik marj
+        İkisi AYNI ANDA durur; biri diğerinin yerine geçmez. Aynı kâr
+        rakamına iki farklı payda uygulanır ve düşük maliyetli üründe
+        birinci oran çok yüksek çıkar — bu yüzden hangisinin hangisi
+        olduğu kutunun üstünde AÇIKÇA yazar.
+        **Tanım netleştirilecek (yazımdan önce mimara sorulur):** pay
+        NET-1 mi NET-2 mi, payda KDV dahil mi hariç mi. Ekranda hangi
+        rakamdan hesaplandığı YAZILI olacak — oran, tanımı görünmeden
+        güvenilmez bir sayıdır.
+      - Marj kanal kırılımında da yan yana (TY marjı eksi, HB %19 aynı
+        ekranda görünsün).
       - Aylık tabloya marj% sütunu.
       - _Not: ürün bazlı marj 14.08.2026'da Aşama 2'ye eklendi
         (`marjYuzdesi`); buradaki iş KANAL ve DÖNEM seviyesidir._
