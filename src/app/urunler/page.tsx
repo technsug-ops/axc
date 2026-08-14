@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
-import { Eye, Pencil, Plus } from "lucide-react";
+import { Eye, PackagePlus, Pencil, Plus } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
 import { Baglanti } from "@/components/baglanti";
@@ -136,6 +136,16 @@ export default async function UrunlerSayfasi({
           ikon={Eye}
           etiket={ortak("detay")}
         />
+        {/* ALIM GİR — ürünü listede bulan kullanıcı alımı buradan açar;
+            /alimlar'a gidip aynı ürünü yeniden aramak zorunda kalmaz
+            (İlke #1 ve #9). Detaydaki düğmeyle aynı adres, aynı davranış. */}
+        {urun.variants[0] ? (
+          <SatirEylemi
+            href={`/alimlar/yeni?varyant=${urun.variants[0].id}`}
+            ikon={PackagePlus}
+            etiket={t("alimGir")}
+          />
+        ) : null}
         <SatirEylemi
           href={`/urunler/${urun.id}/duzenle`}
           ikon={Pencil}

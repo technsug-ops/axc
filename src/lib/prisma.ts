@@ -48,7 +48,10 @@ function createPrismaClient(): PrismaClient {
 
   // Prisma 7'de MySQL bağlantısı driver adapter üzerinden kurulur.
   // Havuz ayarları adrese burada eklenir — gerekçesi ve ölçülen sunucu
-  // sınırları için bkz. lib/veritabani-adresi.ts.
+  // sınırları için bkz. lib/veritabani-adresi.ts. BU SARMALAYICI
+  // KALDIRILMAZ: çıplak adresle sürücü varsayılanları geçerli olur
+  // (connectionLimit 10, minimumIdle 10) ve havuz hiç iş yokken 10 bağlantı
+  // park eder — hesabın 25'lik kotası boşuna dolar.
   return new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(url)) });
 }
 

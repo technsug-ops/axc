@@ -50,6 +50,25 @@ export async function alimAramaKosulu(
     // tedarikçi. İkisi de aranır, yoksa göç öncesi alımlar bulunamaz.
     { supplierName: { contains: arama } },
     { supplier: { is: { name: { contains: arama } } } },
+    /**
+     * ÜRÜN DE ARANIR — 14.08.2026'da kullanıcı yakaladı.
+     *
+     * Kullanıcı alım listesinde `axcali1603` aradı ve "0 kayıt" gördü. Kayıt
+     * yoktu ama arama o alana ZATEN BAKMIYORDU: yalnız alım kodu, sipariş no
+     * ve tedarikçi adı taranıyordu. Bu dosyanın kendi başlığında anlatılan
+     * 13.08.2026 hatasının aynısı, bir alan ötede duruyormuş.
+     *
+     * "Bu ürün hangi alımda geldi?" operasyonun en sık sorularından biri ve
+     * cevabı hiçbir ekranda yoktu. Ürün adı, SKU, Firma SKU ve barkod aranır.
+     */
+    { items: { some: { variant: { sku: { contains: arama } } } } },
+    { items: { some: { variant: { companySku: { contains: arama } } } } },
+    { items: { some: { variant: { barcode: { contains: arama } } } } },
+    {
+      items: {
+        some: { variant: { product: { name: { contains: arama } } } },
+      },
+    },
   ];
 
   const sade = ayraclariAt(arama);

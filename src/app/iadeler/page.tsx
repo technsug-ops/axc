@@ -147,13 +147,6 @@ export default async function IadelerSayfasi({
 
   const aralik = { gte: pencere.baslangic, lt: pencere.bitisHaric };
 
-  // --- süzgeç seçenekleri ---
-  const kanallar = await prisma.channel.findMany({
-    where: { isActive: true },
-    select: { code: true, name: true },
-    orderBy: { name: "asc" },
-  });
-
   const kanalKodu = (p.kanal ?? "").trim();
   const turFiltresi = (p.tur ?? "").trim();
   const hasarFiltresi = (p.hasar ?? "").trim();
@@ -259,34 +252,56 @@ export default async function IadelerSayfasi({
 
   const toplamlar = iadeToplamlari(satirlar.map((s) => s.veri));
 
-  // --- kanal kırılımı: PENCEREDEKİ TÜM iadeler (sayfa değil) ---
-  const tumIadeler = await prisma.return.findMany({
-    where: { occurredAt: aralik },
-    select: {
-      net2Amount: true,
-      penaltyAmount: true,
-      profitCurrency: true,
-      returnType: true,
-      sale: {
-        select: {
-          channelAccount: {
-            select: { channel: { select: { code: true, name: true } } },
+  /**
+   * --- KANAL KIRILIMI: PENCEREDEKİ TÜM iadeler (sayfa değil) ---
+   *
+   * ÜÇ SORGU PEŞ PEŞE DEĞİL PARALEL. Ölçüldü 14.08.2026: bu sayfada 2 satır
+   * dönen bir sorgu bile 133 ms sürüyordu — maliyet veriden değil GİDİŞ-
+   * DÖNÜŞÜN KENDİSİNDEN geliyor. Birbirini beklemesi gerekmeyen sorguları
+   * sırayla `await` etmek, gecikmeyi topluyordu.
+   */
+  const [tumIadeler, donemSatislari, hesapKanallari] = await Promise.all([
+    prisma.return.findMany({
+      where: { occurredAt: aralik },
+      select: {
+        net2Amount: true,
+        penaltyAmount: true,
+        profitCurrency: true,
+        returnType: true,
+        sale: {
+          select: {
+            channelAccount: {
+              select: { channel: { select: { code: true, name: true } } },
+            },
+          },
+        },
+        items: {
+          select: {
+            quantity: true,
+            soundQuantity: true,
+            damagedQuantity: true,
+            variantId: true,
+            variant: {
+              select: {
+                sku: true,
+                name: true,
+                product: { select: { name: true } },
+              },
+            },
           },
         },
       },
-      items: {
-        select: {
-          quantity: true,
-          soundQuantity: true,
-          damagedQuantity: true,
-          variantId: true,
-          variant: {
-            select: { sku: true, name: true, product: { select: { name: true } } },
-          },
-        },
-      },
-    },
-  });
+    }),
+    // Oranın paydası: AYNI dönemde yapılan satışlar (dönem oranı tanımı).
+    prisma.sale.groupBy({
+      by: ["channelAccountId"],
+      where: { soldAt: aralik },
+      _count: { _all: true },
+    }),
+    prisma.channelAccount.findMany({
+      select: { id: true, channel: { select: { code: true } } },
+    }),
+  ]);
 
   const kirilimGirdisi: IadeSatirVerisi[] = tumIadeler.map((i) => ({
     iadeId: "",
@@ -306,15 +321,6 @@ export default async function IadelerSayfasi({
     paraBirimi: i.profitCurrency ?? "TRY",
   }));
 
-  // Oranın paydası: AYNI dönemde yapılan satışlar (dönem oranı tanımı).
-  const donemSatislari = await prisma.sale.groupBy({
-    by: ["channelAccountId"],
-    where: { soldAt: aralik },
-    _count: { _all: true },
-  });
-  const hesapKanallari = await prisma.channelAccount.findMany({
-    select: { id: true, channel: { select: { code: true } } },
-  });
   const hesapKanalKodu = new Map(
     hesapKanallari.map((h) => [h.id, h.channel.code]),
   );
@@ -399,14 +405,13 @@ export default async function IadelerSayfasi({
    * gösterirdi ve rakam yalan olurdu. Rozet her zaman TÜM açık bildirimleri
    * sayar.
    */
-  const bekleyenBildirimler = await prisma.returnNotice.count({
-    where: { status: { in: AYRILMIS_SAYILAN_DURUMLAR } },
-  });
-
-  /** Aramaya uyan toplam — 50'lik pencerenin dışında kalan var mı. */
-  const bildirimToplami = await prisma.returnNotice.count({
-    where: bildirimKosulu,
-  });
+  const [bekleyenBildirimler, bildirimToplami] = await Promise.all([
+    prisma.returnNotice.count({
+      where: { status: { in: AYRILMIS_SAYILAN_DURUMLAR } },
+    }),
+    /** Aramaya uyan toplam — 50'lik pencerenin dışında kalan var mı. */
+    prisma.returnNotice.count({ where: bildirimKosulu }),
+  ]);
 
   /**
    * EKLER — bildirim başına, TEK SORGUDA. Satır satır sorgu atmak 50
@@ -443,8 +448,13 @@ export default async function IadelerSayfasi({
     adet: EK_SINIRLARI.enFazlaEk,
   });
 
-  // Form seçenekleri: son satışlar ve varyantlar VERİDEN gelir.
-  const [formSatislari, formVaryantlari] = await Promise.all([
+  // Form seçenekleri ve süzgeç kanalları — hepsi bağımsız, hepsi PARALEL.
+  const [kanallar, formSatislari, formVaryantlari] = await Promise.all([
+    prisma.channel.findMany({
+      where: { isActive: true },
+      select: { code: true, name: true },
+      orderBy: { name: "asc" },
+    }),
     /**
      * SATIŞ LİSTESİ — sınır 500. Tamamını yüklemek uzun vadede ağır (günde
      * ~30 satış), ama 100 fazla dardı. Sınıra dayanırsa ekran bunu SÖYLER;

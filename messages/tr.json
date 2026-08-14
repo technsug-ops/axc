@@ -242,7 +242,8 @@
     "benzerVarOlanaGit": "Var olana git",
     "benzerFarkliUrun": "Hayır, bu farklı ürün — devam et",
     "kanalKodundanEslesti": "{hesap} kodu: {kod}",
-    "varyantSayisi": "{sayi} varyant"
+    "varyantSayisi": "{sayi} varyant",
+    "alimGir": "Alım gir"
   },
   "UrunSil": {
     "dugme": "Sil",

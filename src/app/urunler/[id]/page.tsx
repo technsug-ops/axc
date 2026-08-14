@@ -2,7 +2,7 @@ import Link from "next/link";
 import { sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Pencil } from "lucide-react";
+import { PackagePlus, Pencil } from "lucide-react";
 
 import { GeriBaglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -57,6 +57,10 @@ export default async function UrunDetaySayfasi({
   // Stok hesabı tek yerde: src/lib/stok.ts (ledger toplamı).
   const stokHaritasi = await varyantStoklari(urun.variants.map((v) => v.id));
 
+  /** Alım kısayolu bunu taşır; sıralama zaten isDefault'u başa alıyor. */
+  const varsayilanVaryant =
+    urun.variants.find((v) => v.isDefault) ?? urun.variants[0] ?? null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -72,6 +76,19 @@ export default async function UrunDetaySayfasi({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {/* ALIM GİR — ürünü bulup "şimdi ne yapacağım" diye kalmak
+                İlke #1 ve #9 ihlaliydi: kullanıcı ürünü buluyor ama alım
+                girmek için /alimlar'a gidip aynı ürünü yeniden aramak
+                zorunda kalıyordu. Varsayılan varyantı taşıyoruz; form o
+                kalemi hazır ekliyor. */}
+            {varsayilanVaryant ? (
+              <Button asChild>
+                <Link href={`/alimlar/yeni?varyant=${varsayilanVaryant.id}`}>
+                  <PackagePlus />
+                  {t("alimGir")}
+                </Link>
+              </Button>
+            ) : null}
             <Button variant="outline" asChild>
               <Link href={`/urunler/${urun.id}/duzenle`}>
                 <Pencil />

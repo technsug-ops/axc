@@ -24,10 +24,18 @@ export async function generateMetadata() {
   return { title: tBaslik("yeniAlim") };
 }
 
-export default async function YeniAlimSayfasi() {
+export default async function YeniAlimSayfasi({
+  searchParams,
+}: {
+  /** Ürün ekranındaki "Alım gir" düğmesinden gelir: ?varyant=<id> */
+  searchParams: Promise<{ varyant?: string }>;
+}) {
   await sayfaIzni("alim.yaz");
 
-  const [hesapKayitlari, kartKayitlari, tedarikciKayitlari] = await Promise.all([
+  const { varyant: varyantId } = await searchParams;
+
+  const [hesapKayitlari, kartKayitlari, tedarikciKayitlari, hazirKayit] =
+    await Promise.all([
     prisma.channelAccount.findMany({
       where: { isActive: true, alisIcin: true },
       include: { channel: { select: { name: true } } },
@@ -39,12 +47,42 @@ export default async function YeniAlimSayfasi() {
     }),
     // Kodu OLMAYAN tedarikçi listeye girmez: alım numarası kodundan
     // üretiliyor, kodsuz seçim sessiz hataya dönerdi.
-    prisma.supplier.findMany({
-      where: { isActive: true, NOT: { code: null } },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+      prisma.supplier.findMany({
+        where: { isActive: true, NOT: { code: null } },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: "asc" },
+      }),
+      /**
+       * ÜRÜNDEN GELİNDİYSE O VARYANT. Pasif varyant kabul edilmez: forma
+       * hazır konsa alım kaydedilirken reddedilirdi ve kullanıcı nedenini
+       * anlamazdı.
+       */
+      varyantId
+        ? prisma.productVariant.findFirst({
+            where: { id: varyantId, isActive: true },
+            select: {
+              id: true,
+              sku: true,
+              companySku: true,
+              barcode: true,
+              name: true,
+              product: { select: { name: true, brand: true } },
+            },
+          })
+        : Promise.resolve(null),
+    ]);
+
+  const hazirVaryant = hazirKayit
+    ? {
+        id: hazirKayit.id,
+        urunAdi: hazirKayit.product.name,
+        marka: hazirKayit.product.brand,
+        varyantAdi: hazirKayit.name,
+        sku: hazirKayit.sku,
+        companySku: hazirKayit.companySku,
+        barcode: hazirKayit.barcode,
+      }
+    : null;
 
   const hesaplar: HesapSecenegi[] = hesapKayitlari.map((h) => ({
     id: h.id,
@@ -76,6 +114,7 @@ export default async function YeniAlimSayfasi() {
         tedarikciler={tedarikciler}
         action={alimOlustur}
         bugun={tarihGirdisi(new Date())}
+        hazirVaryant={hazirVaryant}
       />
     </div>
   );

@@ -18,6 +18,7 @@
  * ============================================================================
  */
 
+import { alimAramaKosulu } from "../src/lib/alim-arama";
 import { gunMetni } from "../src/lib/donem";
 import {
   alimKosulu,
@@ -306,6 +307,45 @@ async function alimBolumu() {
     "kart süzülür",
     (await alimKosulu({ kart: "krt1" }, AN)).kosul.creditCardId === "krt1",
   );
+
+  /**
+   * ARAMA HANGİ ALANLARA BAKIYOR — 14.08.2026 KULLANICI BULGUSU.
+   *
+   * Kullanıcı alım listesinde `axcali1603` aradı, "0 kayıt" gördü. Kayıt
+   * yoktu ama arama ürün alanlarına ZATEN BAKMIYORDU. "0 kayıt" cevabı,
+   * aramanın o alana hiç bakmamasından geliyorsa yalandır ve kullanıcı
+   * kaydın olmadığına inanır.
+   *
+   * İKİ KARAKTERLİK TERİM BİLEREK: sadeleştirilmiş tarama 3 karakterden
+   * kısa terimlerde çalışmaz, yani bu kontrol VERİTABANINA GİTMEZ.
+   */
+  const aramaKosulu = await alimAramaKosulu("ab");
+  const dallar = (aramaKosulu?.OR ?? []) as unknown[];
+  const aramaMetni = JSON.stringify(aramaKosulu);
+  const beklenenAlanlar: [string, string][] = [
+    ["alım kodu", '{"code":{"contains":"ab"}}'],
+    ["tedarikçi sipariş no", '{"supplierOrderNo":{"contains":"ab"}}'],
+    ["tedarikçi adı (serbest metin)", '{"supplierName":{"contains":"ab"}}'],
+    ["tedarikçi adı (kayıtlı)", '{"supplier":{"is":{"name":{"contains":"ab"}}}}'],
+    ["ürün SKU", '{"items":{"some":{"variant":{"sku":{"contains":"ab"}}}}}'],
+    [
+      "ürün Firma SKU",
+      '{"items":{"some":{"variant":{"companySku":{"contains":"ab"}}}}}',
+    ],
+    [
+      "ürün barkod",
+      '{"items":{"some":{"variant":{"barcode":{"contains":"ab"}}}}}',
+    ],
+    [
+      "ürün adı",
+      '{"items":{"some":{"variant":{"product":{"name":{"contains":"ab"}}}}}}',
+    ],
+  ];
+  for (const [ad, parca] of beklenenAlanlar) {
+    kontrol(`  alım araması ${ad} alanına bakıyor`, aramaMetni.includes(parca), parca);
+  }
+  kontrol("aranan alan sayısı beklenenle tutuyor", dallar.length === beklenenAlanlar.length, dallar.length);
+  kontrol("boş arama süzgeç KURMAZ", (await alimAramaKosulu("")) === undefined);
 
   const hepsi = (
     await alimKosulu(

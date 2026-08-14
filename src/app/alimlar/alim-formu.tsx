@@ -86,6 +86,7 @@ export function AlimFormu({
   bugun,
   baslangic,
   alimId,
+  hazirVaryant,
 }: {
   hesaplar: HesapSecenegi[];
   kartlar: KartSecenegi[];
@@ -96,6 +97,15 @@ export function AlimFormu({
   baslangic?: AlimBaslangici;
   /** Düzenlenen alımın kimliği. */
   alimId?: string;
+  /**
+   * ÜRÜNDEN GELİNDİYSE HAZIR KALEM (`/alimlar/yeni?varyant=<id>`).
+   *
+   * Ürün ekranında "Alım gir" düğmesine basan kullanıcı hangi ürünü
+   * istediğini SÖYLEMİŞTİR; formu boş açıp aynı ürünü bir daha aratmak
+   * gereksiz adımdır (İlke #9). `baslangic`ten AYRI tutuluyor: o düzenleme
+   * kipini açar, bu YENİ alımdır.
+   */
+  hazirVaryant?: VaryantSonucu | null;
 }) {
   const duzenleme = Boolean(baslangic);
   const [durum, formAction, bekliyor] = useActionState<AlimDurumu, FormData>(
@@ -122,7 +132,22 @@ export function AlimFormu({
   const [note, setNote] = useState(baslangic?.note ?? "");
 
   // --- Kalemler ---
-  const [kalemler, setKalemler] = useState<Kalem[]>(baslangic?.kalemler ?? []);
+  const [kalemler, setKalemler] = useState<Kalem[]>(() => {
+    if (baslangic?.kalemler) return baslangic.kalemler;
+    if (!hazirVaryant) return [];
+    // Adet 1, maliyet BOŞ: adedi tahmin etmek makul, parayı tahmin etmek
+    // değil — kullanıcı gerçek maliyeti kendisi yazar.
+    return [
+      {
+        variantId: hazirVaryant.id,
+        etiket: varyantEtiketi(hazirVaryant),
+        sku: hazirVaryant.sku,
+        quantity: 1,
+        unitCostAmount: "",
+        unitCostCurrency: "TRY",
+      },
+    ];
+  });
 
   const t = useTranslations("Alim");
   const ortak = useTranslations("Ortak");
