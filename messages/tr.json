@@ -953,7 +953,10 @@
     "stokMetni": "stokta {sayi} adet",
     "degisimUrunuSecin": "Değişim ürünü seçin",
     "donenUrunSecin": "Dönen ürünü seçin",
-    "onDoluHedefYok": "Bildirimde dönen ürün bilgisi var ({urun}) ama bu satışta birden fazla kalem olduğu için hangi kaleme ait olduğu belirlenemedi. Dönen ve değişim ürününü doğru kalemde elle seçin."
+    "onDoluHedefYok": "Bildirimde dönen ürün bilgisi var ({urun}) ama bu satışta birden fazla kalem olduğu için hangi kaleme ait olduğu belirlenemedi. Dönen ve değişim ürününü doğru kalemde elle seçin.",
+    "onDoluOzetiBaslik": "Bildirimden gelindi — aşağıdaki alanlar hazır dolduruldu",
+    "onDoluDonen": "Geri gelen (yanlış giden) ürün: {urun}",
+    "onDoluGonderilecek": "Değişimde gidecek ürün: {urun}"
   },
   "Gider": {
     "baslik": "Giderler",

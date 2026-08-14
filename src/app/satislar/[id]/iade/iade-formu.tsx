@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useBicim } from "@/lib/bicim-istemci";
+import { urunAlanlariCizilirMi } from "@/lib/iade/on-dolu";
 
 import {
   cezaOnerisiGetir,
@@ -105,16 +106,18 @@ export function IadeFormu({
   yenidenGonderimGorunur: boolean;
   bugun: string;
   /**
-   * BİLDİRİMDEN ÖN-DOLU GEÇİŞ. YANLIS_URUN gerekçesinde dönen varyant
-   * SEÇİLİ gelir; kullanıcı elle aramaz. `hedefKalemId` hangi kaleme
-   * yazılacağını söyler — `null` ise TAHMİN YAPILMAZ, ekran bunu yazar.
+   * BİLDİRİMDEN ÖN-DOLU GEÇİŞ. Değerleri bu bileşen HESAPLAMAZ; saf karar
+   * `lib/iade/on-dolu.ts`'ten hazır gelir ve `rma:dogrula` orayı sınar.
    */
   onDolu?: {
     bildirimId: string;
-    donenVaryantId: string | null;
-    gonderilecekVaryantId: string | null;
-    donenEtiket: string | null;
     hedefKalemId: string | null;
+    donenVaryantId: string;
+    gonderilecekVaryantId: string;
+    adet: string;
+    urunVar: boolean;
+    donenEtiket: string | null;
+    gonderilecekEtiket: string | null;
   } | null;
 }) {
   const t = useTranslations("Iade");
@@ -143,26 +146,17 @@ export function IadeFormu({
    * yazılıyordu: iki kalemli bir satışta dönen ürün B her iki kaleme birden
    * düşerdi.
    */
-  const onDoluUrunVar =
-    (onDolu?.donenVaryantId ?? "") !== "" ||
-    (onDolu?.gonderilecekVaryantId ?? "") !== "";
-
   const [girdiler, setGirdiler] = useState<Record<string, Girdi>>(() =>
     Object.fromEntries(
       secenekler.map((s) => {
-        const hedef = onDoluUrunVar && onDolu?.hedefKalemId === s.saleItemId;
+        const hedef = onDolu?.hedefKalemId === s.saleItemId;
         return [
           s.saleItemId,
           {
-            /**
-             * ADET 1 ÖN-DOLU — yalnız ön-dolu ÜRÜN gelen kalemde. Amaç
-             * kolaylık değil görünürlük: ürün alanları adet girilene kadar
-             * çizilmiyordu, seçili gelen ürün EKRANDA HİÇ GÖRÜNMÜYORDU
-             * (kullanıcı T4'te buna takıldı). Ürün gelmeyen kalemlerde adet
-             * boş kalır — girilmemiş bir sayı uydurmayız.
-             */
-            iadeAdedi: hedef ? "1" : "",
-            saglamAdet: hedef ? "1" : "",
+            // Adet ön-dolu YALNIZ hedef kalemde; diğerlerinde boş kalır —
+            // girilmemiş bir sayı uydurmayız.
+            iadeAdedi: hedef ? (onDolu?.adet ?? "") : "",
+            saglamAdet: hedef ? (onDolu?.adet ?? "") : "",
             hasarliAdet: hedef ? "0" : "",
             hasarNotu: "",
             locationId: s.varsayilanLocationId,
@@ -372,13 +366,31 @@ export function IadeFormu({
           <CardTitle>{t("kalemler")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* ÖN-DOLU YERLEŞTİRİLEMEDİYSE SESSİZ KALINMAZ (İlke #5): bilgi
-              bildirimde var ama hangi kaleme ait olduğu belirsiz. Kullanıcı
-              bunu bilmeden formu eksik doldurabilirdi. */}
-          {onDoluUrunVar && !onDolu?.hedefKalemId ? (
-            <p className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-xs">
-              {t("onDoluHedefYok", { urun: onDolu?.donenEtiket ?? "" })}
-            </p>
+          {/* ===================== BİLDİRİM ÖZETİ =====================
+              Bildirimden ne geldiği, alanların içine bakmadan ÜSTTE yazar.
+              İki işi var:
+                1. İlke #5 — "bu değeri kim doldurdu" sorusu ekranda cevaplı.
+                2. TEŞHİS — kutu hiç görünmüyorsa ön-dolu veri gelmemiştir;
+                   kutu görünüp alanlar boşsa sorun eşleşmededir. İki hatayı
+                   ekrana bakarak ayırmak mümkün olsun diye duruyor. */}
+          {onDolu?.urunVar ? (
+            <div className="space-y-1 rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-xs">
+              <p className="font-medium">{t("onDoluOzetiBaslik")}</p>
+              {onDolu.donenEtiket ? (
+                <p>{t("onDoluDonen", { urun: onDolu.donenEtiket })}</p>
+              ) : null}
+              {onDolu.gonderilecekEtiket ? (
+                <p>
+                  {t("onDoluGonderilecek", { urun: onDolu.gonderilecekEtiket })}
+                </p>
+              ) : null}
+              {/* Hedef kalem bulunamadıysa SESSİZ KALINMAZ. */}
+              {onDolu.hedefKalemId === null ? (
+                <p className="text-destructive font-medium">
+                  {t("onDoluHedefYok", { urun: onDolu.donenEtiket ?? "" })}
+                </p>
+              ) : null}
+            </div>
           ) : null}
 
           {secenekler.map((s) => {
@@ -387,21 +399,16 @@ export function IadeFormu({
             const asim = adet > s.kalanAdet;
 
             /**
-             * RAF / DEĞİŞİM / DÖNEN ALANLARI NE ZAMAN ÇİZİLİR?
-             *
-             * Eski koşul yalnız `adet > 0` idi. Bildirimden gelindiğinde adet
-             * boş olduğu için üç alan da gizleniyor, seçili gelen dönen ürün
-             * ekranda hiç görünmüyordu: kullanıcı "değişim ürün alanı yok"
-             * dedi ve haklıydı — form dolu, ekran boştu.
-             *
-             * Yeni ölçüt: DOLU BİR DEĞER ASLA GİZLENMEZ. Adet girilmemiş olsa
-             * bile bir ürün seçiliyse alanı çiziyoruz.
+             * ÇİZİM KARARI DA SAF FONKSİYONDAN GELİR — `rma:dogrula` bunu
+             * doğrudan çağırıp sınıyor. Eski koşul yalnız `adet > 0` idi ve
+             * ön-dolu geçişi görünmez yapıyordu.
              */
-            const alanlarGorunur =
-              stogaGirer &&
-              (adet > 0 ||
-                g.exchangeVariantId !== "" ||
-                g.donenVaryantId !== "");
+            const alanlarGorunur = urunAlanlariCizilirMi({
+              stogaGirer,
+              adet,
+              gonderilecekVaryantId: g.exchangeVariantId,
+              donenVaryantId: g.donenVaryantId,
+            });
 
             return (
               <div key={s.saleItemId} className="space-y-3 rounded-lg border p-4">

@@ -40,6 +40,10 @@ import {
   uzanti,
 } from "../src/lib/ekler";
 import {
+  iadeFormuOnDolu,
+  urunAlanlariCizilirMi,
+} from "../src/lib/iade/on-dolu";
+import {
   maliyetKilidiTutuyorMu,
   yanlisUrunPlani,
   type PartiDusumu,
@@ -673,27 +677,168 @@ console.log("\n5) İADE FORMU — ÖN-DOLU GEÇİŞ (T4/14 CANLI HATASI)");
     onDoluHedefKalem({ kalemler: [], ayrilanVaryantId: "A" }) === null,
   );
 
-  // --- ALANLAR EKRANA ÇİZİLİYOR MU (hata 1) ---
+  /**
+   * -------------------------------------------------------------------------
+   *  ALANLARA GİDEN DEĞER — TESTİN ESKİ KÖR NOKTASI
+   * -------------------------------------------------------------------------
+   *  T4/14 İKİNCİ KEZ düştüğünde 142 kontrolün hepsi yeşildi. Sebep: bu
+   *  bölümdeki kontroller kaynak dosyada metin arıyordu ("AranabilirSecim
+   *  geçiyor mu", "hedefKalemId yazılmış mı"). Metin araması bir alanın
+   *  ÇİZİLDİĞİNİ kanıtlayamaz; olsa olsa satırın silinmediğini kanıtlar.
+   *  "Alan var mı" sorusuna cevap veriyorduk, "hangi DEĞERLE geliyor"
+   *  sorusuna değil — kör nokta tam oradaydı.
+   *
+   *  Artık ekranın verdiği iki karar da saf fonksiyonda ve BURADA GERÇEK T4
+   *  ŞEKLİYLE ÇAĞRILIYOR. Aşağıdaki kimlikler canlıdan okundu (bildirim
+   *  nbkhuj, satış 11502693455).
+   */
+  const T4_DONEN = "f6b75942-8860-4462-8ded-540ffda4205c"; // axcali1603 — B
+  const T4_AYRILAN = "d6b84620-88c0-4a7f-ad85-89cb1322e56a"; // axcali1752 — A
+  const T4_KALEM = "cmsroq01j000504l66ym0w3kv";
+
+  const t4 = iadeFormuOnDolu({
+    bildirim: {
+      reason: "YANLIS_URUN",
+      returnedVariantId: T4_DONEN,
+      reservedVariantId: T4_AYRILAN,
+    },
+    kalemler: [{ saleItemId: T4_KALEM, variantId: T4_AYRILAN }],
+  });
+
+  kontrol("T4: ön-dolu hedef kalemi buldu", t4.hedefKalemId === T4_KALEM, t4);
+  kontrol(
+    "T4: DÖNEN alanının değeri = bildirimin returnedVariantId'si (B)",
+    t4.donenVaryantId === T4_DONEN,
+    t4.donenVaryantId,
+  );
+  kontrol(
+    "T4: DEĞİŞİM alanının değeri = bildirimin reservedVariantId'si (A)",
+    t4.gonderilecekVaryantId === T4_AYRILAN,
+    t4.gonderilecekVaryantId,
+  );
+  kontrol(
+    "T4: iki alan BİRBİRİNE karışmadı",
+    t4.donenVaryantId !== t4.gonderilecekVaryantId,
+  );
+  kontrol("T4: hedef kalemde adet 1 ön-dolu", t4.adet === "1", t4.adet);
+
+  /**
+   * ASIL KİLİT: adet SIFIRKEN bile alanlar çizilmeli. Eski kural yalnız
+   * `adet > 0`a bakıyordu ve ön-dolu gelen ürünü EKRANDA GÖRÜNMEZ yapıyordu.
+   * Bu satır o kuralın geri gelmesini imkânsız kılar.
+   */
+  kontrol(
+    "T4: adet 0 olsa BİLE ürün alanları ÇİZİLİR (asıl kilit)",
+    urunAlanlariCizilirMi({
+      stogaGirer: true,
+      adet: 0,
+      gonderilecekVaryantId: t4.gonderilecekVaryantId,
+      donenVaryantId: t4.donenVaryantId,
+    }),
+  );
+  kontrol(
+    "  ...yalnız dönen dolu olsa da çizilir",
+    urunAlanlariCizilirMi({
+      stogaGirer: true,
+      adet: 0,
+      gonderilecekVaryantId: "",
+      donenVaryantId: T4_DONEN,
+    }),
+  );
+  kontrol(
+    "  ...yalnız değişim dolu olsa da çizilir",
+    urunAlanlariCizilirMi({
+      stogaGirer: true,
+      adet: 0,
+      gonderilecekVaryantId: T4_AYRILAN,
+      donenVaryantId: "",
+    }),
+  );
+  kontrol(
+    "boş form + adet 0 -> çizilmez (ekran gereksiz dolmasın)",
+    !urunAlanlariCizilirMi({
+      stogaGirer: true,
+      adet: 0,
+      gonderilecekVaryantId: "",
+      donenVaryantId: "",
+    }),
+  );
+  kontrol(
+    "itirazlı iadede çizilmez (mal müşteride kalır)",
+    !urunAlanlariCizilirMi({
+      stogaGirer: false,
+      adet: 2,
+      gonderilecekVaryantId: T4_AYRILAN,
+      donenVaryantId: T4_DONEN,
+    }),
+  );
+
+  // --- ÖN-DOLU HANGİ DURUMDA HİÇ OLMAZ ---
+  for (const g of ["DEGISIM", "DEGISIM_KUSURLU", "CAYMA", "CALISMIYOR"] as const) {
+    const s = iadeFormuOnDolu({
+      bildirim: {
+        reason: g,
+        returnedVariantId: T4_DONEN,
+        reservedVariantId: T4_AYRILAN,
+      },
+      kalemler: [{ saleItemId: T4_KALEM, variantId: T4_AYRILAN }],
+    });
+    kontrol(
+      `  ${g} gerekçesinde ön-dolu ÜRÜN yazılmaz`,
+      s.donenVaryantId === "" && s.gonderilecekVaryantId === "" && !s.urunVar,
+    );
+  }
+  kontrol(
+    "bildirim yoksa ön-dolu yok",
+    iadeFormuOnDolu({ bildirim: null, kalemler: [] }).urunVar === false,
+  );
+
+  /**
+   * HEDEF BELİRSİZSE DEĞER YAZILMAZ. Yanlış kaleme yazılan bir dönen ürün
+   * sessiz yanlış defter demektir; boş bırakıp kullanıcıya söylemek daha
+   * güvenli.
+   */
+  const belirsiz = iadeFormuOnDolu({
+    bildirim: {
+      reason: "YANLIS_URUN",
+      returnedVariantId: T4_DONEN,
+      reservedVariantId: null,
+    },
+    kalemler: [
+      { saleItemId: "k1", variantId: "X" },
+      { saleItemId: "k2", variantId: "Y" },
+    ],
+  });
+  kontrol("hedef belirsiz -> değer YAZILMAZ", belirsiz.donenVaryantId === "");
+  kontrol(
+    "  ...ama urunVar TRUE kalır (ekran uyarıyı gösterebilsin)",
+    belirsiz.urunVar,
+  );
+
+  // --- EKRAN BU FONKSİYONLARI GERÇEKTEN ÇAĞIRIYOR MU (bağlantı kontrolü) ---
   const iadeForm = readFileSync(
     "src/app/satislar/[id]/iade/iade-formu.tsx",
     "utf8",
   );
-  /**
-   * Koşul artık yalnız adede bakmıyor: DOLU BİR DEĞER ASLA GİZLENMEZ.
-   * Kontrol metinsel ve dar — eski koşulun geri gelmediğini kanıtlıyor.
-   */
   kontrol(
-    "ürün alanları dolu değerle de çiziliyor (adet 0 olsa bile)",
-    iadeForm.includes("const alanlarGorunur") &&
-      iadeForm.includes("g.donenVaryantId !== \"\""),
+    "form çizim kararını saf fonksiyondan alıyor (kopya mantık yok)",
+    iadeForm.includes("urunAlanlariCizilirMi({") &&
+      !iadeForm.includes("stogaGirer && adet > 0"),
   );
+  const iadeSayfa = readFileSync("src/app/satislar/[id]/iade/page.tsx", "utf8");
   kontrol(
-    "  ...eski `adet > 0` kilidi GERİ GELMEDİ",
-    !iadeForm.includes("stogaGirer && adet > 0"),
+    "sayfa ön-dolu kararını saf fonksiyondan alıyor",
+    iadeSayfa.includes("iadeFormuOnDolu({"),
   );
   kontrol(
     "ön-dolu YALNIZ hedef kaleme yazılıyor",
     iadeForm.includes("onDolu?.hedefKalemId === s.saleItemId"),
+  );
+  kontrol(
+    "bildirimden ne geldiği ÜSTTE özetleniyor (teşhis + İlke #5)",
+    iadeForm.includes("onDoluOzetiBaslik") &&
+      iadeForm.includes("onDoluDonen") &&
+      iadeForm.includes("onDoluGonderilecek"),
   );
   kontrol(
     "hedef bulunamazsa ekran SÖYLÜYOR (sessiz kalmıyor)",
@@ -710,7 +855,6 @@ console.log("\n5) İADE FORMU — ÖN-DOLU GEÇİŞ (T4/14 CANLI HATASI)");
   );
 
   // --- LİSTE SINIRI (hata 2) ---
-  const iadeSayfa = readFileSync("src/app/satislar/[id]/iade/page.tsx", "utf8");
   kontrol(
     "varyant sorgusunda `take: 200` SINIRI YOK (ürün sessizce düşmesin)",
     !iadeSayfa.includes("take: 200"),
@@ -740,6 +884,9 @@ console.log("\n5) İADE FORMU — ÖN-DOLU GEÇİŞ (T4/14 CANLI HATASI)");
     "degisimUrunuSecin",
     "donenUrunSecin",
     "onDoluHedefYok",
+    "onDoluOzetiBaslik",
+    "onDoluDonen",
+    "onDoluGonderilecek",
     "donenUrunBildirimden",
   ]) {
     kontrol(

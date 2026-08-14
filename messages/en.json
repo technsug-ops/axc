@@ -953,7 +953,10 @@
     "stokMetni": "",
     "degisimUrunuSecin": "",
     "donenUrunSecin": "",
-    "onDoluHedefYok": ""
+    "onDoluHedefYok": "",
+    "onDoluOzetiBaslik": "",
+    "onDoluDonen": "",
+    "onDoluGonderilecek": ""
   },
   "Gider": {
     "baslik": "",

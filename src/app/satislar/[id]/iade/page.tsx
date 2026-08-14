@@ -6,7 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { GeriBaglanti } from "@/components/baglanti";
 import { Button } from "@/components/ui/button";
 import { tarihGirdisi } from "@/lib/bicim";
-import { onDoluHedefKalem } from "@/lib/iade/bildirim";
+import { iadeFormuOnDolu } from "@/lib/iade/on-dolu";
 import { prisma } from "@/lib/prisma";
 import { varyantStoklari } from "@/lib/stok";
 
@@ -131,37 +131,38 @@ export default async function IadeSayfasi({
           returnedVariant: {
             select: { sku: true, product: { select: { name: true } } },
           },
+          reservedVariant: {
+            select: { sku: true, product: { select: { name: true } } },
+          },
         },
       })
     : null;
+
+  /**
+   * ÖN-DOLU KARARI TEK SAF FONKSİYONDAN GELİR (`lib/iade/on-dolu.ts`).
+   * Sayfa artık hangi alana ne yazılacağına kendi karar vermiyor; `rma:dogrula`
+   * aynı fonksiyonu gerçek T4 şekliyle çağırıp DEĞERLERİ sınıyor.
+   */
+  const onDoluKarari = iadeFormuOnDolu({
+    bildirim,
+    kalemler: iadeEdilebilir.map((k) => ({
+      saleItemId: k.saleItemId,
+      variantId: k.variantId,
+    })),
+  });
+
+  const urunEtiketi = (
+    v: { sku: string; product: { name: string } } | null,
+  ): string | null => (v ? `${v.product.name} (${v.sku})` : null);
 
   const onDolu =
     bildirim === null
       ? null
       : {
           bildirimId: bildirim.id,
-          donenVaryantId:
-            bildirim.reason === "YANLIS_URUN" ? bildirim.returnedVariantId : null,
-          gonderilecekVaryantId:
-            bildirim.reason === "YANLIS_URUN" ? bildirim.reservedVariantId : null,
-          donenEtiket: bildirim.returnedVariant
-            ? `${bildirim.returnedVariant.product.name} (${bildirim.returnedVariant.sku})`
-            : null,
-          /**
-           * HANGİ KALEME: bildirim satışa bağlıdır, kaleme değil. Kural saf
-           * fonksiyonda (`lib/iade/bildirim.ts`) ve `rma:dogrula` sınıyor.
-           * Eskiden ön-dolu BÜTÜN kalemlere yazılıyordu.
-           */
-          hedefKalemId: onDoluHedefKalem({
-            kalemler: iadeEdilebilir.map((k) => ({
-              saleItemId: k.saleItemId,
-              variantId: k.variantId,
-            })),
-            ayrilanVaryantId:
-              bildirim.reason === "YANLIS_URUN"
-                ? bildirim.reservedVariantId
-                : null,
-          }),
+          ...onDoluKarari,
+          donenEtiket: urunEtiketi(bildirim.returnedVariant),
+          gonderilecekEtiket: urunEtiketi(bildirim.reservedVariant),
         };
 
   /**
