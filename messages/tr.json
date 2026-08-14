@@ -2058,5 +2058,19 @@
     "iadeIsleSebepKapandi": "Bildirim kapandı.",
     "iadeIsleSebepDiger": "Bu durumda iade işlenemez.",
     "iadeIsleSebepItirazSuruyor": "İtiraz sürüyor; sonuç gelmeden iade işlenmez."
+  },
+  "Ekler": {
+    "baslik": "Dosya ekleri ({sayi})",
+    "sinirlar": "İzin verilen: JPG, PNG, WEBP, PDF · dosya başına en fazla {mb} MB · kayıt başına en fazla {adet} ek.",
+    "sil": "Eki sil",
+    "yedekUyarisi": "Dosyalar JSON yedeğe GİRMEZ. Yedek yalnız ek kayıtlarını (ad, boyut, hangi kayda ait) taşır; dosyaların kendisi dosya deposunda durur. Geri yükleme ekleri listeler ama dosyaları geri getirmez.",
+    "hataTUR_IZINLI_DEGIL": "Bu dosya türü kabul edilmiyor. Yalnız JPG, PNG, WEBP ve PDF yüklenebilir.",
+    "hataUZANTI_TURLE_UYUSMUYOR": "Dosya uzantısı içeriğiyle uyuşmuyor. Dosyayı kontrol edin.",
+    "hataDOSYA_BOS": "Dosya boş görünüyor.",
+    "hataDOSYA_COK_BUYUK": "Dosya çok büyük. Dosya başına sınır 5 MB.",
+    "hataEK_SINIRI_ASILDI": "Bu kayıtta en fazla 10 ek olabilir. Yeni ek eklemek için birini silin.",
+    "hataHEDEF_GECERSIZ": "Ek bu kayda bağlanamıyor.",
+    "hataYUKLENEMEDI": "Dosya yüklenemedi. Tekrar deneyin.",
+    "hataDEPO_YOK": "Dosya deposu yapılandırılmamış; ek yüklenemedi. (Yönetici: BLOB_READ_WRITE_TOKEN eksik.)"
   }
 }

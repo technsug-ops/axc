@@ -29,6 +29,12 @@ import {
   kapanistaIadeDogarMi,
 } from "../src/lib/iade/bildirim";
 import {
+  EK_SINIRLARI,
+  ekiDogrula,
+  ekYolu,
+  uzanti,
+} from "../src/lib/ekler";
+import {
   maliyetKilidiTutuyorMu,
   yanlisUrunPlani,
   type PartiDusumu,
@@ -37,7 +43,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 2;
+const BOLUM_SAYISI = 3;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -346,6 +352,120 @@ console.log("\n2) 6. SENARYO — YANLIŞ ÜRÜN DEFTERİ");
     fazlaSaglam.hatalar,
   );
   kosanBolumler.push("6. senaryo");
+}
+
+// ===========================================================================
+console.log("\n3) DOSYA EKLERİ — SINIRLAR");
+// ===========================================================================
+/**
+ * Mimar kanıt maddesi (14.08.2026): 6 MB reddedilir · 11. ek reddedilir ·
+ * yanlış uzantı reddedilir. Doğrulama SAF olduğu için gerçek dosya yüklemeden
+ * sınanıyor; sunucu da aynı fonksiyonu çağırıyor (tek doğruluk kaynağı).
+ */
+{
+  const gecerli = {
+    dosyaAdi: "itiraz-fotograf.jpg",
+    mimeType: "image/jpeg",
+    sizeBytes: 2 * 1024 * 1024,
+    mevcutEkSayisi: 0,
+    hedefTipi: "ReturnNotice",
+  };
+
+  kontrol("2 MB JPG kabul edilir", ekiDogrula(gecerli).length === 0, ekiDogrula(gecerli));
+  kontrol(
+    "5 MB tam sınırda kabul edilir",
+    ekiDogrula({ ...gecerli, sizeBytes: EK_SINIRLARI.enFazlaBayt }).length === 0,
+  );
+
+  // --- 6 MB REDDEDİLİR ---
+  const buyuk = ekiDogrula({ ...gecerli, sizeBytes: 6 * 1024 * 1024 });
+  kontrol("6 MB dosya REDDEDİLİR", buyuk.includes("DOSYA_COK_BUYUK"), buyuk);
+
+  // --- 11. EK REDDEDİLİR ---
+  kontrol(
+    "10. ek kabul (mevcut 9)",
+    ekiDogrula({ ...gecerli, mevcutEkSayisi: 9 }).length === 0,
+  );
+  const onbirinci = ekiDogrula({ ...gecerli, mevcutEkSayisi: 10 });
+  kontrol("11. ek REDDEDİLİR", onbirinci.includes("EK_SINIRI_ASILDI"), onbirinci);
+
+  // --- YANLIŞ TÜR / UZANTI ---
+  const zip = ekiDogrula({
+    ...gecerli,
+    dosyaAdi: "belgeler.zip",
+    mimeType: "application/zip",
+  });
+  kontrol("zip REDDEDİLİR", zip.includes("TUR_IZINLI_DEGIL"), zip);
+  const exe = ekiDogrula({
+    ...gecerli,
+    dosyaAdi: "virus.exe",
+    mimeType: "application/x-msdownload",
+  });
+  kontrol("exe REDDEDİLİR", exe.includes("TUR_IZINLI_DEGIL"), exe);
+
+  /**
+   * TÜR VE UZANTI BİRLİKTE KONTROL EDİLİR. Tarayıcının bildirdiği MIME
+   * güvenilmez: `.exe` dosyası `image/png` diye gönderilebilir. Uzantı da
+   * tek başına yetmez; ikisinin BİRBİRİYLE tutması gerekiyor.
+   */
+  const uyusmaz = ekiDogrula({
+    ...gecerli,
+    dosyaAdi: "sahte.exe",
+    mimeType: "image/png",
+  });
+  kontrol(
+    "tür PNG ama uzantı .exe -> REDDEDİLİR",
+    uyusmaz.includes("UZANTI_TURLE_UYUSMUYOR"),
+    uyusmaz,
+  );
+  kontrol(
+    "PDF kabul edilir",
+    ekiDogrula({ ...gecerli, dosyaAdi: "fatura.pdf", mimeType: "application/pdf" })
+      .length === 0,
+  );
+  kontrol(
+    "büyük harfli uzantı da tanınır (.PDF)",
+    ekiDogrula({ ...gecerli, dosyaAdi: "FATURA.PDF", mimeType: "application/pdf" })
+      .length === 0,
+  );
+  kontrol("boş dosya REDDEDİLİR", ekiDogrula({ ...gecerli, sizeBytes: 0 }).includes("DOSYA_BOS"));
+  kontrol(
+    "tanınmayan hedef tipi REDDEDİLİR",
+    ekiDogrula({ ...gecerli, hedefTipi: "Kullanici" }).includes("HEDEF_GECERSIZ"),
+  );
+  kontrol("uzantı küçük harfe iner", uzanti("Foto.JPEG") === ".jpeg", uzanti("Foto.JPEG"));
+
+  /**
+   * BLOB YOLU ÖNGÖRÜLEBİLİR: boşluk ve yol ayracı temizlenir, yoksa depoda
+   * "ekler/ReturnNotice/id/../../gizli" gibi bir anahtar üretilebilirdi.
+   */
+  const yol = ekYolu("ReturnNotice", "bld1", "../gizli dosya.pdf", 1755000000000);
+  kontrol(
+    "yol ayracı ve boşluk temizlenir",
+    yol === "ekler/ReturnNotice/bld1/1755000000000-.._gizli_dosya.pdf",
+    yol,
+  );
+
+  /** YEDEK UYARISI SÖZLÜKTE VAR: ekranda boş metin çıkmasın. */
+  const sozluk2 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  kontrol(
+    "yedek uyarısı sözlükte ve DOSYALARIN girmediğini söylüyor",
+    typeof sozluk2.Ekler?.yedekUyarisi === "string" &&
+      sozluk2.Ekler.yedekUyarisi.includes("yedeğe"),
+    sozluk2.Ekler?.yedekUyarisi,
+  );
+
+  /** ATTACHMENT YEDEK MANİFESTİNDE: satırlar kaybolmasın. */
+  const bicim = readFileSync("src/lib/yedek-bicim.ts", "utf8");
+  kontrol(
+    "Attachment yedek manifestinde",
+    bicim.includes('"Attachment"'),
+  );
+  kontrol(
+    "ReturnNotice yedek manifestinde",
+    bicim.includes('"ReturnNotice"'),
+  );
+  kosanBolumler.push("ekler");
 }
 
 // ===========================================================================

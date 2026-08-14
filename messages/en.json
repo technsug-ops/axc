@@ -2058,5 +2058,19 @@
     "iadeIsleSebepKapandi": "",
     "iadeIsleSebepDiger": "",
     "iadeIsleSebepItirazSuruyor": ""
+  },
+  "Ekler": {
+    "baslik": "",
+    "sinirlar": "",
+    "sil": "",
+    "yedekUyarisi": "",
+    "hataTUR_IZINLI_DEGIL": "",
+    "hataUZANTI_TURLE_UYUSMUYOR": "",
+    "hataDOSYA_BOS": "",
+    "hataDOSYA_COK_BUYUK": "",
+    "hataEK_SINIRI_ASILDI": "",
+    "hataHEDEF_GECERSIZ": "",
+    "hataYUKLENEMEDI": "",
+    "hataDEPO_YOK": ""
   }
 }

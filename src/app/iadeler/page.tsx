@@ -43,6 +43,9 @@ import {
   iadeIslenebilirMi,
 } from "@/lib/iade/bildirim";
 import { BildirimFormu } from "./bildirim-formu";
+import { Ekler } from "./ekler";
+import { EK_SINIRLARI } from "@/lib/ekler";
+
 import { BildirimDurumu } from "./bildirim-durumu";
 import {
   iadeToplamlari,
@@ -343,6 +346,9 @@ export default async function IadelerSayfasi({
       note: true,
       reservedQuantity: true,
       returnId: true,
+      returnedVariant: {
+        select: { sku: true, product: { select: { name: true } } },
+      },
       reservedVariant: {
         select: { sku: true, product: { select: { name: true } } },
       },
@@ -361,6 +367,41 @@ export default async function IadelerSayfasi({
   const bekleyenBildirimler = bildirimKayitlari.filter((b) =>
     ayrilmisSayilirMi(b.status),
   ).length;
+
+  /**
+   * EKLER — bildirim başına, TEK SORGUDA. Satır satır sorgu atmak 50
+   * bildirimde 50 gidiş-geliş demekti.
+   */
+  const ekKayitlari = await prisma.attachment.findMany({
+    where: {
+      targetType: "ReturnNotice",
+      targetId: { in: bildirimKayitlari.map((b) => b.id) },
+    },
+    orderBy: { uploadedAt: "asc" },
+    select: {
+      id: true,
+      targetId: true,
+      fileName: true,
+      sizeBytes: true,
+      blobPath: true,
+    },
+  });
+  const eklerHaritasi = new Map<string, typeof ekKayitlari>();
+  for (const e of ekKayitlari) {
+    const liste = eklerHaritasi.get(e.targetId) ?? [];
+    liste.push(e);
+    eklerHaritasi.set(e.targetId, liste);
+  }
+  /**
+   * SINIR METNİ SAYFADA ÜRETİLİR, action olarak DEĞİL: sunucu action'ı
+   * dışarıdan çağrılabilir bir uçtur ve yetki ister (yetki:dogrula bunu
+   * yakaladı). Metin üretmek için uç açmak gereksiz yüzey demekti.
+   */
+  const tEkler = await getTranslations("Ekler");
+  const ekSinirlari = tEkler("sinirlar", {
+    mb: EK_SINIRLARI.enFazlaBayt / (1024 * 1024),
+    adet: EK_SINIRLARI.enFazlaEk,
+  });
 
   // Form seçenekleri: son satışlar ve varyantlar VERİDEN gelir.
   const [formSatislari, formVaryantlari] = await Promise.all([
@@ -518,6 +559,20 @@ export default async function IadelerSayfasi({
 
                   {b.note ? (
                     <p className="text-muted-foreground text-xs">{b.note}</p>
+                  ) : null}
+
+                  {/* İTİRAZ DALINDA EKLER: kanıt dosyaları itiraz açıldıktan
+                      itibaren duruyor. İtiraz yoksa bölüm gösterilmiyor —
+                      her bildirime dosya kutusu koymak ekranı doldururdu. */}
+                  {["ITIRAZ_ACILDI", "ITIRAZ_INCELEMEDE", "ITIRAZ_KABUL", "ITIRAZ_RED"].includes(
+                    b.status,
+                  ) ? (
+                    <Ekler
+                      hedefTipi="ReturnNotice"
+                      hedefId={b.id}
+                      ekler={eklerHaritasi.get(b.id) ?? []}
+                      sinirMetni={ekSinirlari}
+                    />
                   ) : null}
 
                   <BildirimDurumu
