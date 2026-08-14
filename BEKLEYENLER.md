@@ -273,18 +273,43 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         (bugün→dün, bu hafta→geçen hafta, bu ay→geçen ay).
         _Kullanıcı 14.08.2026'da bunu ekran üzerinde ayrıca istedi:
         "kargoya verilen +%15" gibi, her kutunun kendi karşılaştırması._
-      - **İKİ KÂR ORANI YAN YANA** — kullanıcı isteği 14.08.2026, rakip
-        araçta gördüğü kutulardan:
-        - **Kâr / Ürün maliyeti** (maliyetin üzerine ne kadar kazandık)
-        - **Kâr / Satış fiyatı** = klasik marj
-        İkisi AYNI ANDA durur; biri diğerinin yerine geçmez. Aynı kâr
-        rakamına iki farklı payda uygulanır ve düşük maliyetli üründe
-        birinci oran çok yüksek çıkar — bu yüzden hangisinin hangisi
-        olduğu kutunun üstünde AÇIKÇA yazar.
-        **Tanım netleştirilecek (yazımdan önce mimara sorulur):** pay
-        NET-1 mi NET-2 mi, payda KDV dahil mi hariç mi. Ekranda hangi
-        rakamdan hesaplandığı YAZILI olacak — oran, tanımı görünmeden
-        güvenilmez bir sayıdır.
+      - **İKİ KÂR ORANI YAN YANA — TANIMLAR MÜHÜRLENDİ 14.08.2026.**
+        İkisi AYNI ANDA durur, biri diğerinin yerine GEÇMEZ ve her birinin
+        ÜSTÜNDE tanım etiketi yazar:
+
+        | kutu | pay | payda | etiket |
+        |---|---|---|---|
+        | Kâr / Maliyet | NET-2 | ürün maliyeti, **KDV HARİÇ** | `NET-2 / maliyet (KDV hariç)` |
+        | Kâr / Satış fiyatı | NET-2 | **brüt ciro (KDV DAHİL)** | `NET-2 / brüt ciro` |
+
+        **Pay neden ikisinde de NET-2:** panel zaten NET-2'yi "gerçek kâr"
+        olarak kullanıyor. NET-1 stopaj öncesidir ve yanıltır; iki kutu
+        farklı kâr tanımı kullansa oranlar karşılaştırılamazdı.
+
+        **Marj paydası neden brüt ciro:** rakip araçlar müşteri ödemesi
+        üzerinden hesaplıyor; karşılaştırılabilir olsun. _Kullanıcının
+        canlı örneği: ciro 6.200,00 · NET-2 272,85 → **%4,40**. Rakip
+        araç %4,35 diyor; fark muhtemelen onların paydaya iade/kesinti
+        katmasından. Tanım kutuda yazılı olduğu için bizimki savunulabilir._
+
+        **Maliyet paydası neden KDV hariç:** KDV eklemek paydayı yapay
+        şişirir, oran olduğundan düşük görünür.
+
+        > ⚠ **UYGULAMA UYARISI — MALİYET KDV DÂHİL SAKLANIYOR.**
+        > Kullanıcının gerekçesinde "FIFO maliyeti zaten KDV hariç
+        > tutuluyor" deniyordu; **bu doğru değil** (ölçüldü 14.08.2026):
+        > `lib/kar.ts` başlığı "TUTARLAR KDV DAHİLDİR — satış, **maliyet**,
+        > komisyon…" diyor, `IadeGirdisi.maliyet` "KDV DAHİL toplam maliyet
+        > (FIFO partilerinden)" olarak belgeli ve `alisKdv = kdvAyir(maliyet,
+        > kdvOrani)` KDV'yi maliyetin İÇİNDEN çıkarıyor.
+        > **KARAR DEĞİŞMEDİ, GEREKÇE DEĞİŞTİ:** payda KDV hariç OLACAK ama
+        > bu kendiliğinden gelmiyor — FIFO maliyetinden `kdvAyir` ile
+        > ürünün KENDİ KDV oranıyla ayrıştırılacak. Bu adım atlanırsa oran
+        > sessizce düşük çıkar ve kimse fark etmez.
+
+        **Karışma uyarısı ekranda:** düşük maliyetli üründe
+        "NET-2 / maliyet" çok yüksek çıkar (aynı kâr, küçük payda). Etiket
+        zorunlu; oran, tanımı görünmeden güvenilmez bir sayıdır.
       - Marj kanal kırılımında da yan yana (TY marjı eksi, HB %19 aynı
         ekranda görünsün).
       - Aylık tabloya marj% sütunu.
