@@ -6,22 +6,30 @@ listesiyle birlikte teslim edilir.
 
 ## AÇIK PAKET SIRASI — 13.08.2026 itibarıyla
 
+## ✅ ANA SİSTEM TAMAMLANDI — 14.08.2026
+
+**Tek firma tamamlama hedefi doldu.** Sistem canlıda, günlük kullanımda ve
+test ağı tam. Faz 0–3 ile Faz 3,5 (tek kullanıcılı giriş) kapalı; RMA ve
+Panel Aşama 2 Halil testleri gerçek cihazda, canlı adreste geçti.
+
+Bundan sonrası **büyüme/ek paket**: eksik bir temel kapatılmıyor, üstüne
+yeni yetenek ekleniyor. Bu ayrım kayıtta dursun — "yarım kalan iş" ile
+"henüz başlanmamış iş" karıştırılmasın.
+
 Mimar onaylı sıra, **paket ADIYLA**:
-**~~RMA KALANI~~ ✓ KAPANDI (14.08.2026) → PANEL AŞAMA 2 (test bekliyor) →
+**~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ →
 PANEL AŞAMA 3 PAKET 1 → PANEL AŞAMA 3 PAKET 2 → GEÇMİŞ VERİ.**
 
-_Sıradaki tek açık test: **Panel Aşama 2 (P1–P8)**. Geçmesiyle ana sistem
-tamamlanmış sayılıyor._
+_Sıradaki: **Panel Aşama 3 Paket 1** (nakit takvimi + "bugün ne
+yapmalıyım"). Komut hazır, açılmayı bekliyor._
 
-> **PANEL AŞAMA 2 TESTİNDE AYRICA TEYİT EDİLECEK (P3 — NET-1/NET-2):**
-> RMA'nın önizleme/hasarlı payı düzeltmesi (`0ee7504`) iade rakamlarını
-> değiştirmedi. Gerekçe koda bakılarak doğrulandı: satış detayındaki iade
-> bloğu netleri **kayıtlı** `net1Amount`/`net2Amount`'tan okuyor, kesinti
-> satırlarından yeniden hesaplamıyor; ayrıştırma da net-nötrdü
-> (`MALIYET_GERI + MALIYET_DONMEYEN` = eski tek satır). Geri doldurma
-> koşumu bunu canlıda da gösterdi: iki iadenin NET'i birebir aynı kaldı.
-> Beklenen tek görünür fark: kesinti listesinde **bir satır daha**.
-> P3'te rakamların tuttuğu yine de gözle teyit edilir.
+> **VERİ BEKLEYEN GÖZLE DOĞRULAMALAR** — kod işi değil, canlıda o veri
+> doğduğunda bakılacak. Kapanmamış iş sayılmaz, unutulmasın diye burada:
+> - **Kısmi hasarlı iade (2+ adetli satış).** Önizleme = kayıt eşitliği
+>   otomatik testle kapatıldı (`iade:dogrula`, mutasyon denemesiyle
+>   kanıtlandı); canlıda 2+ adetli satış olmadığı için gözle bakılamadı.
+>   İlk 2+ adetli iade doğduğunda: önizlemedeki NET-1/NET-2 ile kaydedilen
+>   değer birebir mi? _Not 14.08.2026._
 
 _Sıra kararı 14.08.2026: RMA'nın gövdesi (bildirim durum makinesi + 6.
 senaryo) kritik ve yarım bırakılmaz; Panel Aşama 2 hemen ardından açılır._
@@ -158,8 +166,11 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       siparişlerle eşleşir (eşleşecek sipariş yok). Mevcut modellere
       koymak iki motoru da kirletir. `source=GECMIS_EXCEL` damgası şart.
 
-- [x] **PANEL AŞAMA 2 — İŞ ZEKÂSI — YAZILDI 14.08.2026 (commit 43c3427)**
-      Halil testi kullanıcıda; onaylanınca bu madde kapanır.
+- [x] ~~**PANEL AŞAMA 2 — İŞ ZEKÂSI**~~ ✓ 14.08.2026 (commit 43c3427) —
+      **HALİL TESTİ GEÇTİ (P1–P8, gerçek cihaz, canlı), MİMAR ONAYLI.**
+      P3'te (NET-1/NET-2) RMA'nın `0ee7504` düzeltmesi sonrası iade
+      rakamlarının da tuttuğu teyit edildi — ayrıştırma net-nötrdü, iade
+      bloğu netleri kayıtlı değerlerden okuyor.
       Teslim edilen: dönem süzgeci (bugün/bu hafta/bu ay/özel) · kanal
       süzgeci artık BLOKLARI da süzüyor · NET-1 kutusu + aylık tablo sütunu ·
       en çok satılan · en çok kâr eden · en az kâr bırakan · stokta bekleyen
