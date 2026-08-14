@@ -45,6 +45,15 @@ export type PanelSatisi = {
   paraBirimi: Currency;
   /** KDV dahil satış tutarı toplamı. */
   gelir: number;
+  /**
+   * NET-1 — yalnız stopaj düşülmüş kâr.
+   *
+   * NET-2 ile AYNI durum bayrağına bağlıdır (`durum`), çünkü ikisi tek
+   * hesaptan doğar: NET-2 = NET-1 − ödenecek KDV. Ayrı bir bayrak tutmak,
+   * "NET-1 hesaplandı ama NET-2 hesaplanmadı" gibi olmayan bir hâl
+   * uydurmak olurdu.
+   */
+  net1: number | null;
   net2: number | null;
   durum: KarDurumu | null;
   /**
@@ -65,6 +74,8 @@ export type PanelIadesi = {
   /** İadenin KENDİ tarihi (occurredAt) — satışın tarihi değil. */
   tarih: Date;
   paraBirimi: Currency;
+  /** İadenin NET-1 etkisi — negatif gelir (satışla aynı bayrağa bağlı). */
+  net1: number | null;
   net2: number | null;
   durum: KarDurumu | null;
   /**
@@ -88,6 +99,7 @@ export type HesapSatiri = {
   gelir: number;
   iadeTutari: number;
   iadeAdedi: number;
+  net1: number;
   net2: number;
 };
 
@@ -96,6 +108,11 @@ export type KanalBlogu = {
   kanalAdi: string;
   adet: number;
   gelir: number;
+  /**
+   * Kârı HESAPLANABİLMİŞ satışların NET-1'i + iade etkileri.
+   * NET-2 ile aynı kural; tek fark ödenecek KDV'nin düşülmemiş olması.
+   */
+  net1: number;
   /**
    * Kârı HESAPLANABİLMİŞ satışların NET-2'si + iade etkileri.
    * Rapor ekranındaki "Σ NET-2" ile aynı tanım.
@@ -123,6 +140,8 @@ export type ParaBirimiPaneli = {
   kanallar: KanalBlogu[];
   toplamAdet: number;
   toplamGelir: number;
+  /** NET-1 — stopaj düşülmüş, ödenecek KDV DÜŞÜLMEMİŞ kâr. */
+  toplamNet1: number;
   toplamNet2: number;
   hesaplanamayanAdet: number;
   toplamIadeAdedi: number;
@@ -177,6 +196,7 @@ export function panelHesapla(
         kanalAdi,
         adet: 0,
         gelir: 0,
+        net1: 0,
         net2: 0,
         hesaplanamayanAdet: 0,
         iadeAdedi: 0,
@@ -200,6 +220,7 @@ export function panelHesapla(
         gelir: 0,
         iadeTutari: 0,
         iadeAdedi: 0,
+        net1: 0,
         net2: 0,
       };
       kanal.hesaplar.push(hesap);
@@ -215,12 +236,15 @@ export function panelHesapla(
     kanal.gelir += satis.gelir;
     if (hesaplandi(satis.durum, satis.net2)) kanal.net2 += satis.net2;
     else kanal.hesaplanamayanAdet++;
+    // NET-1 aynı bayrağa bakar; "hesaplanamayan" bir kez sayılır.
+    if (hesaplandi(satis.durum, satis.net1)) kanal.net1 += satis.net1;
     if (satis.kargoyaVerildiMi) kanal.kargoyaVerilenAdet++;
 
     const hesap = hesapSatiri(kanal, satis.hesapAdi);
     hesap.adet++;
     hesap.gelir += satis.gelir;
     if (hesaplandi(satis.durum, satis.net2)) hesap.net2 += satis.net2;
+    if (hesaplandi(satis.durum, satis.net1)) hesap.net1 += satis.net1;
   }
 
   // İADELER — satışın kanalına, İADENİN ayına.
@@ -234,11 +258,13 @@ export function panelHesapla(
     kanal.iadeTutari += iade.iadeTutari;
     if (hesaplandi(iade.durum, iade.net2)) kanal.net2 += iade.net2;
     else kanal.hesaplanamayanIadeAdedi++;
+    if (hesaplandi(iade.durum, iade.net1)) kanal.net1 += iade.net1;
 
     const hesap = hesapSatiri(kanal, iade.hesapAdi);
     hesap.iadeAdedi++;
     hesap.iadeTutari += iade.iadeTutari;
     if (hesaplandi(iade.durum, iade.net2)) hesap.net2 += iade.net2;
+    if (hesaplandi(iade.durum, iade.net1)) hesap.net1 += iade.net1;
   }
 
   return [...bloklar.entries()]
@@ -253,6 +279,7 @@ export function panelHesapla(
         kanallar: liste,
         toplamAdet: liste.reduce((t, k) => t + k.adet, 0),
         toplamGelir: liste.reduce((t, k) => t + k.gelir, 0),
+        toplamNet1: liste.reduce((t, k) => t + k.net1, 0),
         toplamNet2: liste.reduce((t, k) => t + k.net2, 0),
         hesaplanamayanAdet: liste.reduce((t, k) => t + k.hesaplanamayanAdet, 0),
         toplamIadeAdedi: liste.reduce((t, k) => t + k.iadeAdedi, 0),
@@ -280,6 +307,8 @@ export type AyNoktasi = {
   ay: number;
   adet: number;
   gelir: number;
+  /** Kanal bloklarıyla AYNI tanım: satış NET-1'i + iade etkileri. */
+  net1: number;
   /** Kanal bloklarıyla AYNI tanım: satış NET-2'si + iade etkileri. */
   net2: number;
   hesaplanamayanAdet: number;
@@ -318,6 +347,7 @@ export function aylikSeri(
       ay,
       adet: 0,
       gelir: 0,
+      net1: 0,
       net2: 0,
       hesaplanamayanAdet: 0,
       iadeAdedi: 0,
@@ -343,6 +373,7 @@ export function aylikSeri(
     nokta.gelir += satis.gelir;
     if (hesaplandi(satis.durum, satis.net2)) nokta.net2 += satis.net2;
     else nokta.hesaplanamayanAdet++;
+    if (hesaplandi(satis.durum, satis.net1)) nokta.net1 += satis.net1;
   }
 
   // İade, KENDİ ayına düşer — satışın ayına değil. Temmuz satışının
@@ -358,6 +389,7 @@ export function aylikSeri(
     nokta.iadeTutari += iade.iadeTutari;
     if (hesaplandi(iade.durum, iade.net2)) nokta.net2 += iade.net2;
     else nokta.hesaplanamayanIadeAdedi++;
+    if (hesaplandi(iade.durum, iade.net1)) nokta.net1 += iade.net1;
   }
 
   return noktalar;

@@ -24,7 +24,22 @@ import {
   type PanelIadesi,
   type PanelSatisi,
 } from "../src/lib/panel";
+import {
+  enCokSatilan,
+  karSiralamasi,
+  karsizUrunSayisi,
+  urunlereTopla,
+  type KalemGirdisi,
+} from "../src/lib/panel-listeler";
 import { raporHesapla } from "../src/lib/rapor";
+import {
+  sermayeToplami,
+  siralamaGecerliMi,
+  yasBandi,
+  YAS_BANTLARI,
+  yaslanmaListesi,
+  type YaslanmaGirdisi,
+} from "../src/lib/yaslanma";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -68,6 +83,9 @@ function satis(ek: Partial<PanelSatisi> = {}): PanelSatisi {
     tarih: gun(2026, 8, 5),
     paraBirimi: "TRY",
     gelir: 1000,
+    // NET-1 > NET-2 olmalı: aradaki fark ödenecek KDV'dir. Testlerde de
+    // gerçek hayattaki sıra korunuyor ki ikisi karışırsa gözle görülsün.
+    net1: 260,
     net2: 200,
     durum: "CALCULATED",
     kargoyaVerildiMi: false,
@@ -260,6 +278,7 @@ console.log("\n2c) İADE ETKİSİ — PANEL NET-2 = RAPOR Σ NET-2");
       hesapAdi: "AXCALI",
       tarih: gun(2026, 8, 10),
       paraBirimi: "TRY",
+      net1: -300,
       net2: -340.43,
       durum: "CALCULATED",
       iadeTutari: 0,
@@ -516,6 +535,7 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
     hesapAdi: "AXCALI",
     tarih: gun(2026, 8, 10),
     paraBirimi: "TRY",
+    net1: -80,
     net2: -100,
     durum: "CALCULATED",
     iadeTutari: 0,
@@ -640,6 +660,324 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
    * gizlemez.
    */
   yakin("satışsız ayda net ciro eksiye düşer", agustos.gelir - agustos.iadeTutari, -1500);
+}
+
+// ===========================================================================
+console.log("\n6) NET-1 — STOPAJ DÜŞÜLMÜŞ, ÖDENECEK KDV DÜŞÜLMEMİŞ");
+// ===========================================================================
+/**
+ * Kullanıcı isteği 14.08.2026: panelde "net kâr 1, 2" birlikte görünsün.
+ *
+ * NET-1'in kendi bayrağı YOK, NET-2 ile aynı `durum`a bağlı — çünkü ikisi tek
+ * hesaptan doğar. Bu bölüm iki şeyi kilitliyor: (a) NET-1 NET-2'den ayrı
+ * toplanıyor, (b) hesaplanamayan kâr NET-1'de de sıfır sayılmıyor.
+ */
+{
+  const buAy = pencereOlustur("BU_AY", AN);
+
+  const bloklar = panelHesapla(buAy, [
+    satis({ net1: 260, net2: 200 }),
+    satis({ net1: 140, net2: 90 }),
+  ]);
+  const blok = bloklar[0];
+  yakin("toplam NET-1", blok.toplamNet1, 400);
+  yakin("toplam NET-2 ayrı durdu", blok.toplamNet2, 290);
+  kontrol(
+    "NET-1 > NET-2 (fark ödenecek KDV)",
+    blok.toplamNet1 > blok.toplamNet2,
+    [blok.toplamNet1, blok.toplamNet2],
+  );
+  yakin("kanal satırında da NET-1", blok.kanallar[0].net1, 400);
+  yakin("hesap kırılımında da NET-1", blok.kanallar[0].hesaplar[0].net1, 400);
+
+  // HESAPLANAMAYAN: NET-1 dolu olsa BİLE durum CALCULATED değilse sayılmaz.
+  // En sinsi hata burada olurdu — NET-2 doğru, NET-1 şişkin çıkardı.
+  const eksik = panelHesapla(buAy, [
+    satis({ net1: 260, net2: 200 }),
+    satis({ net1: 999, net2: null, durum: "NO_COST" }),
+  ])[0];
+  yakin("NET-1 yalnız hesaplanabilenden", eksik.toplamNet1, 260);
+  kontrol(
+    "  ...NO_COST satışın NET-1'i toplama GİRMEDİ",
+    Math.abs(eksik.toplamNet1 - 1259) > 1,
+    eksik.toplamNet1,
+  );
+
+  // İADE NET-1'İ DE DÜŞÜRÜR — satışla aynı kural.
+  const iadeli = panelHesapla(
+    buAy,
+    [satis({ net1: 260, net2: 200 })],
+    [
+      {
+        kanalKodu: "TRENDYOL",
+        kanalAdi: "Trendyol",
+        hesapAdi: "AXCALI",
+        tarih: gun(2026, 8, 10),
+        paraBirimi: "TRY",
+        net1: -100,
+        net2: -120,
+        durum: "CALCULATED",
+        iadeTutari: 500,
+      },
+    ],
+  )[0];
+  yakin("iade NET-1'den düştü", iadeli.toplamNet1, 160);
+  yakin("iade NET-2'den de düştü", iadeli.toplamNet2, 80);
+
+  // AYLIK SERİDE DE VAR: tablo NET-1 sütununu buradan okuyor.
+  const seri = aylikSeri(
+    [satis({ tarih: gun(2026, 8, 5), net1: 260, net2: 200 })],
+    { yil: 2026, ay: 8 },
+    1,
+    null,
+    "TRY",
+  );
+  yakin("seri NET-1", seri[0].net1, 260);
+}
+
+// ===========================================================================
+console.log("\n7) ÜRÜN LİSTELERİ — EN ÇOK SATILAN / EN ÇOK KÂR / EN AZ KÂR");
+// ===========================================================================
+/**
+ * Kullanıcı isteği 14.08.2026. Bu listelerin en tehlikeli hatası patlamak
+ * değil, YANLIŞ ÜRÜNÜ ÖNE ÇIKARMAK: kârı hesaplanamamış bir ürünü "en az kâr
+ * bırakan"ın başına oturtmak, olmayan bir bulguyu gerçek gibi gösterir.
+ */
+{
+  const kalem = (ek: Partial<KalemGirdisi> = {}): KalemGirdisi => ({
+    variantId: "v1",
+    urunAdi: "Ürün 1",
+    sku: "AX-1",
+    adet: 1,
+    ciro: 1000,
+    net1: 260,
+    net2: 200,
+    durum: "CALCULATED",
+    ...ek,
+  });
+
+  // --- AYNI VARYANTIN İKİ SATIŞI TEK SATIRDA TOPLANIR ---
+  const toplu = urunlereTopla([
+    kalem({ adet: 2, ciro: 2000, net2: 400 }),
+    kalem({ adet: 3, ciro: 3000, net2: 600 }),
+    kalem({ variantId: "v2", urunAdi: "Ürün 2", sku: "AX-2", adet: 1, ciro: 500, net2: 50 }),
+  ]);
+  kontrol("iki varyant iki satır", toplu.length === 2, toplu.length);
+  const v1 = toplu.find((s) => s.variantId === "v1")!;
+  kontrol("adetler toplandı (5)", v1.adet === 5, v1.adet);
+  yakin("cirolar toplandı", v1.ciro, 5000);
+  yakin("NET-2 toplandı", v1.net2, 1000);
+  kontrol("kalem sayısı 2", v1.kalemSayisi === 2, v1.kalemSayisi);
+
+  // --- HESAPLANAMAYAN KÂR SIFIR SAYILMAZ, AYRICA SAYILIR ---
+  const eksikli = urunlereTopla([
+    kalem({ adet: 1, net2: 200 }),
+    kalem({ adet: 1, net2: null, durum: "NO_COST" }),
+  ]);
+  yakin("NET-2 yalnız hesaplanabilenden", eksikli[0].net2, 200);
+  kontrol(
+    "hesaplanamayan kalem sayıldı",
+    eksikli[0].hesaplanamayanKalem === 1,
+    eksikli[0].hesaplanamayanKalem,
+  );
+  kontrol("adet yine de 2", eksikli[0].adet === 2, eksikli[0].adet);
+
+  // --- EN ÇOK SATILAN: ADETE GÖRE ---
+  const satirlar = urunlereTopla([
+    kalem({ variantId: "a", urunAdi: "A", sku: "A", adet: 10, ciro: 1000, net2: 50 }),
+    kalem({ variantId: "b", urunAdi: "B", sku: "B", adet: 3, ciro: 9000, net2: 900 }),
+    kalem({ variantId: "c", urunAdi: "C", sku: "C", adet: 5, ciro: 500, net2: -200 }),
+  ]);
+  const cokSatan = enCokSatilan(satirlar, 3);
+  kontrol(
+    "adet sırası A(10) > C(5) > B(3)",
+    cokSatan.map((s) => s.variantId).join("") === "acb",
+    cokSatan.map((s) => [s.variantId, s.adet]),
+  );
+  kontrol(
+    "  ...ciroya göre sıralanmadı (B başta olurdu)",
+    cokSatan[0].variantId !== "b",
+    cokSatan[0].variantId,
+  );
+  kontrol("kaç satır istendiyse o kadar döner", enCokSatilan(satirlar, 2).length === 2);
+
+  // --- EN ÇOK / EN AZ KÂR: NET-2'YE GÖRE, EKSİ KÂR EN ÜSTTE ---
+  const cokKar = karSiralamasi(satirlar, "en-cok", 3);
+  kontrol("en çok kâr B", cokKar[0].variantId === "b", cokKar[0].variantId);
+  const azKar = karSiralamasi(satirlar, "en-az", 3);
+  kontrol("en az kâr C (eksi kâr)", azKar[0].variantId === "c", azKar[0].variantId);
+  yakin("  ...eksi kâr korunuyor", azKar[0].net2, -200);
+
+  // --- KÂRI HİÇ HESAPLANAMAMIŞ ÜRÜN İKİ LİSTEYE DE GİRMEZ ---
+  // Sıfır sayılsaydı "en az kâr bırakan"ın başına oturur ve kullanıcı
+  // olmayan bir soruna bakardı.
+  const karsizli = urunlereTopla([
+    kalem({ variantId: "a", urunAdi: "A", sku: "A", net2: 300 }),
+    kalem({ variantId: "z", urunAdi: "Z", sku: "Z", net2: null, durum: "RULE_MISSING" }),
+  ]);
+  const azKar2 = karSiralamasi(karsizli, "en-az", 5);
+  kontrol("kârsız ürün listeye girmedi", azKar2.every((s) => s.variantId !== "z"), azKar2.map((s) => s.variantId));
+  kontrol("kârsız ürün ayrıca sayıldı", karsizUrunSayisi(karsizli) === 1, karsizUrunSayisi(karsizli));
+  kontrol(
+    "  ...kısmen hesaplanan ürün listede KALIR",
+    karSiralamasi(
+      urunlereTopla([
+        kalem({ variantId: "k", urunAdi: "K", sku: "K", net2: 100 }),
+        kalem({ variantId: "k", urunAdi: "K", sku: "K", net2: null, durum: "NO_COST" }),
+      ]),
+      "en-az",
+      5,
+    ).length === 1,
+  );
+  kontrol("boş girdi boş liste", urunlereTopla([]).length === 0);
+}
+
+// ===========================================================================
+console.log("\n8) STOKTA BEKLEYEN — YAŞLANMA");
+// ===========================================================================
+/**
+ * MİMAR KARARI 14.08.2026: ölçüt ADET DEĞİL YAŞLANMA; bantlar satır rozeti;
+ * bağlı sermaye KDV HARİÇ; ikinci sıralama sermayeye göre.
+ *
+ * Bu bölüm eşikleri ve iki sıralamayı kilitliyor. Eşik kod içinde tek yerde
+ * (`YAS_BANTLARI`) durduğu için buradaki sayılar değişirse test kırılır —
+ * eşik sessizce kaymaz.
+ */
+{
+  const BUGUN = gun(2026, 8, 14);
+
+  const parti = (
+    gunSayisi: number,
+    kalanAdet: number,
+    birimMaliyet: string | null,
+    para: "TRY" | "EUR" = "TRY",
+  ) => ({
+    hareketId: `h${gunSayisi}-${kalanAdet}`,
+    occurredAt: gun(2026, 8, 14 - gunSayisi),
+    girenAdet: kalanAdet,
+    kalanAdet,
+    birimMaliyet,
+    birimMaliyetParaBirimi: birimMaliyet === null ? null : (para as "TRY" | "EUR"),
+    locationId: null,
+  });
+
+  // --- EŞİKLER: 0-30 nötr · 31-60 amber · 61+ kırmızı ---
+  kontrol("30 gün NÖTR", yasBandi(30) === "NOTR", yasBandi(30));
+  kontrol("31 gün AMBER (eşik)", yasBandi(31) === "AMBER", yasBandi(31));
+  kontrol("60 gün AMBER", yasBandi(60) === "AMBER", yasBandi(60));
+  kontrol("61 gün KIRMIZI (eşik)", yasBandi(61) === "KIRMIZI", yasBandi(61));
+  kontrol("bugün girmiş mal NÖTR", yasBandi(0) === "NOTR", yasBandi(0));
+  kontrol("eşikler tek kaynaktan", YAS_BANTLARI.amberGun === 31 && YAS_BANTLARI.kirmiziGun === 61, YAS_BANTLARI);
+
+  // --- YAŞ EN ESKİ AÇIK PARTİDEN GELİR, SON GİRİŞTEN DEĞİL ---
+  // Üstüne mal ekleyerek yaşı sıfırlamak mümkün olmamalı.
+  const cokParti = yaslanmaListesi(
+    [{ variantId: "v1", kdvOrani: 20, partiler: [parti(95, 4, "120"), parti(2, 10, "120")] }],
+    BUGUN,
+  );
+  kontrol("yaş en eski partiden (95)", cokParti[0].yasGun === 95, cokParti[0].yasGun);
+  kontrol("  ...son girişten olsaydı 2 olurdu", cokParti[0].yasGun !== 2);
+  kontrol("adet iki partiden (14)", cokParti[0].adet === 14, cokParti[0].adet);
+  kontrol("bant kırmızı", cokParti[0].bant === "KIRMIZI", cokParti[0].bant);
+
+  // --- BAĞLI SERMAYE KDV HARİÇ ---
+  // 5 × 120 = 600 ödenmiş; %20 KDV ayrışınca mal bedeli 500.
+  const sermayeli = yaslanmaListesi(
+    [{ variantId: "v1", kdvOrani: 20, partiler: [parti(10, 5, "120")] }],
+    BUGUN,
+  );
+  yakin("sermaye KDV hariç", sermayeli[0].sermayeKdvHaric!, 500);
+  kontrol("para birimi taşınıyor", sermayeli[0].sermayeParaBirimi === "TRY", sermayeli[0].sermayeParaBirimi);
+  const onKdv = yaslanmaListesi(
+    [{ variantId: "v1", kdvOrani: 10, partiler: [parti(10, 2, "110")] }],
+    BUGUN,
+  );
+  yakin("%10 kategoride oran ürüne göre", onKdv[0].sermayeKdvHaric!, 200);
+
+  // --- MALİYETİ BİLİNMEYEN PARTİ: SERMAYE NULL, SIFIR DEĞİL ---
+  const maliyetsiz = yaslanmaListesi(
+    [{ variantId: "v1", kdvOrani: 20, partiler: [parti(10, 5, "120"), parti(3, 2, null)] }],
+    BUGUN,
+  );
+  kontrol("maliyetsiz parti varsa sermaye null", maliyetsiz[0].sermayeKdvHaric === null, maliyetsiz[0].sermayeKdvHaric);
+  kontrol("  ...adet yine biliniyor (7)", maliyetsiz[0].adet === 7, maliyetsiz[0].adet);
+  kontrol("  ...sıfır YAZILMADI", maliyetsiz[0].sermayeKdvHaric !== 0);
+
+  // --- İKİ PARA BİRİMİ: TOPLAM KURULMAZ (çevirim yasak) ---
+  const ikiPara = yaslanmaListesi(
+    [{ variantId: "v1", kdvOrani: 20, partiler: [parti(10, 1, "120", "TRY"), parti(5, 1, "50", "EUR")] }],
+    BUGUN,
+  );
+  kontrol("iki para birimi -> sermaye null", ikiPara[0].sermayeKdvHaric === null, ikiPara[0].sermayeKdvHaric);
+  kontrol("  ...para birimi de null", ikiPara[0].sermayeParaBirimi === null);
+
+  // --- TÜKENMİŞ PARTİ LİSTEYE GİRMEZ ---
+  const tukenmis = yaslanmaListesi(
+    [
+      { variantId: "bos", kdvOrani: 20, partiler: [parti(80, 0, "120")] },
+      { variantId: "dolu", kdvOrani: 20, partiler: [parti(5, 1, "120")] },
+    ],
+    BUGUN,
+  );
+  kontrol("stoğu bitmiş varyant listede yok", tukenmis.length === 1, tukenmis.map((s) => s.variantId));
+  kontrol("  ...eski ama tükenmiş parti yaşlandırmıyor", tukenmis[0].variantId === "dolu");
+
+  // --- İKİ SIRALAMA AYRIŞIYOR (canlı ölçüm 14.08.2026) ---
+  // 95 günlük kalem 4.796,63 ₺ tutuyor; 14 günlük LEGO 37.789,50 ₺.
+  // Tek sıralama dayatılsaydı diğer soru cevapsız kalırdı.
+  const girdiler: YaslanmaGirdisi[] = [
+    { variantId: "moka", kdvOrani: 20, partiler: [parti(95, 4, "1438.99")] },
+    { variantId: "lego", kdvOrani: 20, partiler: [parti(14, 5, "9069.48")] },
+  ];
+  const yasSirali = yaslanmaListesi(girdiler, BUGUN, "yas");
+  kontrol("yaş sırasında moka başta", yasSirali[0].variantId === "moka", yasSirali.map((s) => s.variantId));
+  const sermayeSirali = yaslanmaListesi(girdiler, BUGUN, "sermaye");
+  kontrol("sermaye sırasında lego başta", sermayeSirali[0].variantId === "lego", sermayeSirali.map((s) => s.variantId));
+  kontrol(
+    "  ...iki sıralama GERÇEKTEN ayrışıyor",
+    yasSirali[0].variantId !== sermayeSirali[0].variantId,
+  );
+  kontrol("varsayılan sıralama yaş", yaslanmaListesi(girdiler, BUGUN)[0].variantId === "moka");
+
+  // Sermaye sırasında "hesaplanamadı" satırları SONA gider — bilinmeyen
+  // değer "en pahalı" gibi görünmemeli.
+  const karisik = yaslanmaListesi(
+    [
+      { variantId: "bilinmeyen", kdvOrani: 20, partiler: [parti(90, 3, null)] },
+      { variantId: "bilinen", kdvOrani: 20, partiler: [parti(5, 1, "1200")] },
+    ],
+    BUGUN,
+    "sermaye",
+  );
+  kontrol(
+    "hesaplanamayan sermaye sona düştü",
+    karisik[karisik.length - 1].variantId === "bilinmeyen",
+    karisik.map((s) => s.variantId),
+  );
+
+  // --- SIRALAMA PARAMETRESİ DOĞRULAMASI (adres elle kurcalanabilir) ---
+  kontrol("geçerli ölçüt: yas", siralamaGecerliMi("yas"));
+  kontrol("geçerli ölçüt: sermaye", siralamaGecerliMi("sermaye"));
+  kontrol("uydurma ölçüt reddedilir", !siralamaGecerliMi("adet"));
+
+  // --- TOPLAM SERMAYE TEK PARA BİRİMİ İÇİN ---
+  const toplam = sermayeToplami(
+    yaslanmaListesi(
+      [
+        { variantId: "a", kdvOrani: 20, partiler: [parti(10, 5, "120", "TRY")] },
+        { variantId: "b", kdvOrani: 20, partiler: [parti(10, 1, "60", "EUR")] },
+        { variantId: "c", kdvOrani: 20, partiler: [parti(10, 2, null)] },
+      ],
+      BUGUN,
+    ),
+    "TRY",
+  );
+  yakin("TRY toplamı yalnız TRY'den", toplam.toplam, 500);
+  kontrol("  ...EUR karışmadı", Math.abs(toplam.toplam - 550) > 1, toplam.toplam);
+  kontrol("hesaplanamayan ayrıca sayıldı", toplam.hesaplanamayan === 1, toplam.hesaplanamayan);
+  kontrol("sayılan kalem 1", toplam.kalem === 1, toplam.kalem);
+
+  kontrol("boş girdi boş liste", yaslanmaListesi([], BUGUN).length === 0);
 }
 
 // ===========================================================================

@@ -6,6 +6,7 @@ import { Baglanti } from "@/components/baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
 import { CizgiGrafik, type GrafikNoktasi } from "@/components/cizgi-grafik";
 import { ListeKarti } from "@/components/liste-karti";
+import { SuzgecCubugu } from "@/components/suzgec-cubugu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -23,29 +24,71 @@ import {
   gunEkle,
   isTakvimGunu,
   pencereOlustur,
+  pencerede,
+  type PencereTuru,
 } from "@/lib/donem";
+import { kdvOraniniCoz } from "@/lib/kdv";
+import { pencereCoz } from "@/lib/liste-suzgeci";
 import {
   aylikSeri,
   panelHesapla,
   type PanelIadesi,
   type PanelSatisi,
 } from "@/lib/panel";
+import {
+  enCokSatilan,
+  karSiralamasi,
+  karsizUrunSayisi,
+  urunlereTopla,
+  type KalemGirdisi,
+} from "@/lib/panel-listeler";
 import { prisma } from "@/lib/prisma";
+import { acikPartilerToplu } from "@/lib/stok";
+import { suzgecAdresi } from "@/lib/suzgec";
 import { izinVarMi } from "@/lib/yetki";
+import {
+  siralamaGecerliMi,
+  yaslanmaListesi,
+  sermayeToplami,
+  YAS_BANTLARI,
+  type SiralamaOlcutu,
+  type YaslanmaGirdisi,
+} from "@/lib/yaslanma";
+
+import {
+  BantRozeti,
+  PanelListesi,
+  SiralamaDugmeleri,
+  type PanelListeSatiri,
+} from "./panel-kartlari";
 
 import type { Currency } from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
- *  ANA SAYFA — "BU AY NE OLDU?"
+ *  ANA SAYFA — İŞ ZEKÂSI PANELİ
  * ----------------------------------------------------------------------------
+ *  Kullanıcı isteği 14.08.2026: "Paneli daha efektif kullanmak istiyorum.
+ *  Bugün, bu hafta, bu ay, belli tarih aralıkları; kanallar; toplam sipariş,
+ *  kargoya teslim edilen, ciro, net kâr 1-2; en çok satılan, en çok kâr
+ *  eden, en az kâr bırakan, stokta en çok bekleyen ürünler — bir nevi
+ *  business intelligence olarak bana destek ol."
+ *
  *  Kâr rakamları SNAPSHOT'lardan okunur; burada hiçbir kâr YENİDEN
  *  HESAPLANMAZ (rapor ekranıyla aynı ilke). Oran/tarife bugün değişse
  *  geçmiş ayların grafiği oynamaz.
  *
- *  TEK SORGU İKİ İŞE BAKAR: hem bu ayın kanal blokları hem 12 aylık grafik
- *  aynı satış listesinden türetilir. Ayrı sorgu atmak aynı veriyi iki kez
+ *  TEK SORGU ÜÇ İŞE BAKAR: dönem blokları, ürün listeleri ve 12 aylık grafik
+ *  aynı satış listesinden türetilir. Ayrı sorgu atmak aynı veriyi üç kez
  *  okumak olurdu.
+ *
+ *  DÖNEM SÜZGECİ BLOKLARI VE ÜRÜN LİSTELERİNİ SÜZER, GRAFİĞİ SÜZMEZ: grafik
+ *  "son 12 ay" demek, dönem ise "şu aralık". Grafiği de süzsek 12 aylık
+ *  eğilim seçilen aralığa kırpılır ve grafiğin varlık sebebi kalmazdı.
+ *
+ *  YAŞLANMA LİSTESİ DÖNEMDEN ETKİLENMEZ: "bugün depoda ne bekliyor" sorusu
+ *  geçmiş bir tarih aralığıyla daralmaz. Bu, ekranda yazılı bir nottur —
+ *  sessiz bir istisna değil.
  * ============================================================================
  */
 
@@ -53,6 +96,12 @@ export const dynamic = "force-dynamic";
 
 /** Grafikte kaç ay görünecek (bu ay dahil). */
 const GRAFIK_AY_SAYISI = 12;
+
+/** Ürün listelerinde kaç satır. Panelde yer sınırlı; detay listelere gider. */
+const LISTE_SATIRI = 5;
+
+/** Yaşlanma listesinde kaç satır — en riskli kalemler yeter, tamamı /stok'ta. */
+const YASLANMA_SATIRI = 8;
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -62,11 +111,18 @@ export async function generateMetadata() {
 export default async function AnaSayfa({
   searchParams,
 }: {
-  searchParams: Promise<{ kanal?: string; para?: string }>;
+  searchParams: Promise<{
+    kanal?: string;
+    para?: string;
+    pencere?: string;
+    baslangic?: string;
+    bitis?: string;
+    sirala?: string;
+  }>;
 }) {
-  // PANEL HERKESE AÇIK ama NET-2 DEĞİL. 13.08.2026'da kullanıcı yakaladı:
+  // PANEL HERKESE AÇIK ama NET DEĞİL. 13.08.2026'da kullanıcı yakaladı:
   // satış listesinde marj gizliydi, panelde TOPLU görünüyordu.
-  // `satis.kar.gor` NET-2 KAVRAMINI yönetir — nerede görünürse orada.
+  // `satis.kar.gor` NET KAVRAMINI yönetir — nerede görünürse orada.
   // Bu yeni bir alan-izni değil, aynı iznin aynı kavrama uygulanması.
   const karGorunur = await izinVarMi("satis.kar.gor");
 
@@ -76,19 +132,43 @@ export default async function AnaSayfa({
 
   const an = new Date();
   const bugun = isTakvimGunu(an);
-  const buAy = pencereOlustur("BU_AY", an);
+
+  /**
+   * DÖNEM — VARSAYILAN "BU AY".
+   *
+   * Liste ekranlarının varsayılanı "tüm zamanlar" (bkz. `pencereCoz`), ama
+   * panelin varsayılanı BU AY: panel "ne oldu" özetidir, tüm zamanların
+   * toplamı bir gösterge tablosunda bilgi taşımaz. Adres boşsa ya da
+   * bozuksa da buraya düşer — hata vermez, boş ekran göstermez.
+   */
+  const cozum = pencereCoz(parametreler, an);
+  const donem = cozum.pencere ?? pencereOlustur("BU_AY", an);
+  const donemTuru: PencereTuru = cozum.tur === "" ? "BU_AY" : cozum.tur;
 
   // Grafik penceresi: bu ay dahil son 12 ayın 1'inden bugüne.
   const ilkAy = ayKaydir(bugun.yil, bugun.ay, -(GRAFIK_AY_SAYISI - 1));
   const grafikBaslangic = gunDegeri({ yil: ilkAy.yil, ay: ilkAy.ay, gun: 1 });
   const grafikBitisHaric = gunEkle(gunDegeri(bugun), 1);
 
-  const [kayitlar, iadeKayitlari] = await Promise.all([
+  /**
+   * SORGU ARALIĞI İKİSİNİ DE KAPSAR. Özel aralık 12 aydan geriye gidebilir;
+   * yalnız grafik aralığını çekseydik seçilen dönemin kayıtları sessizce
+   * eksik kalır ve panel "0 satış" derdi.
+   */
+  const veriBaslangic = new Date(
+    Math.min(grafikBaslangic.getTime(), donem.baslangic.getTime()),
+  );
+  const veriBitisHaric = new Date(
+    Math.max(grafikBitisHaric.getTime(), donem.bitisHaric.getTime()),
+  );
+
+  const [kayitlar, iadeKayitlari, partiHaritasi] = await Promise.all([
     prisma.sale.findMany({
-      where: { soldAt: { gte: grafikBaslangic, lt: grafikBitisHaric } },
+      where: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } },
       select: {
         soldAt: true,
         shippedAt: true,
+        net1Amount: true,
         net2Amount: true,
         profitCurrency: true,
         profitStatus: true,
@@ -102,6 +182,19 @@ export default async function AnaSayfa({
             quantity: true,
             unitPriceAmount: true,
             unitPriceCurrency: true,
+            // KALEM SEVİYESİ KÂR — ürün listelerinin kaynağı. Satış
+            // seviyesindeki NET ile toplanmaz: sipariş başına kesintiler
+            // (hizmet bedeli, sabit gider) kalemde YOK.
+            net1Amount: true,
+            net2Amount: true,
+            profitStatus: true,
+            variantId: true,
+            variant: {
+              select: {
+                sku: true,
+                product: { select: { id: true, name: true } },
+              },
+            },
           },
         },
       },
@@ -111,9 +204,10 @@ export default async function AnaSayfa({
     // iade edilir). Kanalını satış listesinden aramak yerine ilişkiden
     // okuyoruz — aksi hâlde o iade sessizce düşerdi.
     prisma.return.findMany({
-      where: { occurredAt: { gte: grafikBaslangic, lt: grafikBitisHaric } },
+      where: { occurredAt: { gte: veriBaslangic, lt: veriBitisHaric } },
       select: {
         occurredAt: true,
+        net1Amount: true,
         net2Amount: true,
         profitCurrency: true,
         profitStatus: true,
@@ -137,6 +231,14 @@ export default async function AnaSayfa({
         },
       },
     }),
+    /**
+     * YAŞLANMA — AÇIK FIFO PARTİLERİ.
+     *
+     * Stok ve envanter ekranlarıyla AYNI motor (`acikPartilerToplu`). Panel
+     * kendi FIFO'sunu yazsaydı iki tanım doğar ve bir gün "stokta 4 var"
+     * diyen ekran ile "3 var" diyen panel yan yana dururdu.
+     */
+    acikPartilerToplu(prisma, null),
   ]);
 
   const satislar: PanelSatisi[] = kayitlar.map((satis) => {
@@ -156,6 +258,7 @@ export default async function AnaSayfa({
       tarih: satis.soldAt,
       paraBirimi,
       gelir,
+      net1: satis.net1Amount === null ? null : Number(satis.net1Amount.toString()),
       net2: satis.net2Amount === null ? null : Number(satis.net2Amount.toString()),
       durum: satis.profitStatus,
       kargoyaVerildiMi: satis.shippedAt !== null,
@@ -169,6 +272,7 @@ export default async function AnaSayfa({
     tarih: iade.occurredAt,
     // Rapor ekranıyla aynı kural: iadenin para birimi kâr snapshot'ından.
     paraBirimi: iade.profitCurrency ?? "TRY",
+    net1: iade.net1Amount === null ? null : Number(iade.net1Amount.toString()),
     net2: iade.net2Amount === null ? null : Number(iade.net2Amount.toString()),
     durum: iade.profitStatus,
     // Mutlak değer: satır defterde negatif duruyor (gider işareti), ekranda
@@ -180,11 +284,48 @@ export default async function AnaSayfa({
     ),
   }));
 
-  const bloklar = panelHesapla(buAy, satislar, iadeler);
+  /**
+   * ÜRÜN LİSTELERİNİN HAM VERİSİ — satış KALEMLERİ.
+   *
+   * Satışın kanalı/tarihi/para birimi kalemle birlikte taşınıyor ki süzgeç
+   * bloklarla AYNI koşulu uygulasın. Kalem seviyesinde ayrıca süzmek
+   * gerekseydi iki farklı "bu dönem" tanımı doğardı.
+   */
+  type PanelKalemi = KalemGirdisi & {
+    /** Ürün kartına bağlantı için — hesaba girmez, sunuma girer. */
+    urunId: string;
+    tarih: Date;
+    kanalKodu: string;
+    paraBirimi: Currency;
+  };
 
-  // --- grafik süzgeçleri -----------------------------------------------------
-  // Süzgeç seçenekleri VERİDEN gelir: 12 ayda hiç satış olmamış kanal listeye
-  // girmez, olmayan bir seçeneğe tıklanıp boş grafik görülmez.
+  const kalemler: PanelKalemi[] = kayitlar.flatMap((satis) => {
+    const paraBirimi: Currency =
+      satis.profitCurrency ?? satis.items[0]?.unitPriceCurrency ?? "TRY";
+
+    return satis.items
+      // Satışın para biriminden farklı kalem ciroya girmiyor (yukarıdaki
+      // `gelir` kuralı); listeye de girmemeli, yoksa iki rakam ayrışır.
+      .filter((k) => k.unitPriceCurrency === paraBirimi)
+      .map((k) => ({
+        variantId: k.variantId,
+        urunAdi: k.variant.product.name,
+        urunId: k.variant.product.id,
+        sku: k.variant.sku,
+        adet: k.quantity,
+        ciro: Number(k.unitPriceAmount.toString()) * k.quantity,
+        net1: k.net1Amount === null ? null : Number(k.net1Amount.toString()),
+        net2: k.net2Amount === null ? null : Number(k.net2Amount.toString()),
+        durum: k.profitStatus,
+        tarih: satis.soldAt,
+        kanalKodu: satis.channelAccount.channel.code,
+        paraBirimi,
+      }));
+  });
+
+  // --- SÜZGEÇ SEÇENEKLERİ ----------------------------------------------------
+  // Seçenekler SÜZÜLMEMİŞ veriden gelir: bir kanal seçilince diğer kanallar
+  // listeden düşmemeli, yoksa geri dönmek imkânsızlaşır.
   const kanalSecenekleri = [
     ...new Map(satislar.map((s) => [s.kanalKodu, s.kanalAdi])).entries(),
   ].sort((a, b) => a[1].localeCompare(b[1], "tr"));
@@ -201,48 +342,164 @@ export default async function AnaSayfa({
       ? (parametreler.para as Currency)
       : (paraSecenekleri[0] ?? "TRY");
 
-  const seri = aylikSeri(
-    satislar,
-    { yil: bugun.yil, ay: bugun.ay },
-    GRAFIK_AY_SAYISI,
-    seciliKanal,
-    seciliPara,
-    iadeler,
+  /**
+   * KANAL SÜZGECİ ARTIK BLOKLARI DA SÜZER (14.08.2026).
+   *
+   * Önce yalnız grafiği süzüyordu; kullanıcı "Hepsiburada, Trendyol, N11
+   * direkt panelde görünsün" dediğinde ortaya çıktı: kanal seçilince üstteki
+   * rakamlar değişmiyordu, yani süzgeç yarım çalışıyordu.
+   */
+  const donemSatislari = seciliKanal
+    ? satislar.filter((s) => s.kanalKodu === seciliKanal)
+    : satislar;
+  const donemIadeleri = seciliKanal
+    ? iadeler.filter((i) => i.kanalKodu === seciliKanal)
+    : iadeler;
+
+  const bloklar = panelHesapla(donem, donemSatislari, donemIadeleri);
+
+  // --- ÜRÜN LİSTELERİ --------------------------------------------------------
+  const donemKalemleri = kalemler.filter(
+    (k) =>
+      pencerede(donem, k.tarih) &&
+      k.paraBirimi === seciliPara &&
+      (seciliKanal === null || k.kanalKodu === seciliKanal),
   );
 
-  /**
-   * TABLO EN YENİDEN ESKİYE (kullanıcı kararı 14.08.2026).
-   *
-   * GRAFİK ile TABLO farklı sıra ister ve bu bir tutarsızlık değil:
-   *   grafik → zaman ekseni soldan sağa akar, eski solda kalmalı
-   *   tablo  → okumaya en üstten başlanır, oradaki ay BU AY olmalı
-   * Eskiden ikisi de kronolojikti ve tablonun tepesinde 11 ay önceki ay
-   * duruyordu; "bu ay ne oldu" sorusu için ekranın en altına inmek
-   * gerekiyordu.
-   *
-   * Etiket burada nokta ile EŞLEŞTİRİLİYOR: eskiden `noktalar[i]` ile
-   * dizin üzerinden bulunuyordu ve sıra değişince ay adları satırlardan
-   * KAYARDI — sessiz ve fark edilmesi zor bir hata.
-   */
-  const noktalar: GrafikNoktasi[] = seri.map((nokta) => {
-    const tarih = gunDegeri({ yil: nokta.yil, ay: nokta.ay, gun: 1 });
-    const tam = bicim.ayYil(tarih);
-    return {
-      // "Ağustos 2026" -> "Ağustos"; yıl eksende gereksiz yer kaplar.
-      etiket: tam.split(" ")[0] ?? tam,
-      tamEtiket: tam,
-      gelir: nokta.gelir,
-      net2: nokta.net2,
-    };
+  const urunSatirlari = urunlereTopla(donemKalemleri);
+  /** Ürün kimliği kalemden gelir; toplama girmediği için ayrı haritada. */
+  const urunKimligi = new Map(
+    donemKalemleri.map((k) => [k.variantId, { urunId: k.urunId, sku: k.sku }]),
+  );
+
+  const listeSatiri = (
+    satir: (typeof urunSatirlari)[number],
+    deger: string,
+    altDeger: string,
+  ): PanelListeSatiri => ({
+    anahtar: satir.variantId,
+    urunAdi: satir.urunAdi,
+    urunId: urunKimligi.get(satir.variantId)?.urunId ?? null,
+    sku: satir.sku,
+    deger,
+    altDeger,
   });
 
+  const enCokSatilanlar = enCokSatilan(urunSatirlari, LISTE_SATIRI).map((s) =>
+    listeSatiri(
+      s,
+      t("adetDegeri", { sayi: s.adet }),
+      bicim.para(s.ciro, seciliPara),
+    ),
+  );
+
+  const enCokKarEdenler = karSiralamasi(urunSatirlari, "en-cok", LISTE_SATIRI).map(
+    (s) =>
+      listeSatiri(
+        s,
+        bicim.para(s.net2, seciliPara),
+        t("adetDegeri", { sayi: s.adet }),
+      ),
+  );
+
+  const enAzKarBirakanlar = karSiralamasi(urunSatirlari, "en-az", LISTE_SATIRI).map(
+    (s) =>
+      listeSatiri(
+        s,
+        bicim.para(s.net2, seciliPara),
+        t("adetDegeri", { sayi: s.adet }),
+      ),
+  );
+
+  const karsizUrun = karsizUrunSayisi(urunSatirlari);
+
+  // --- YAŞLANMA --------------------------------------------------------------
   /**
-   * Tablonun satırları: nokta + ay adı BİRLİKTE taşınır, sonra ters çevrilir.
-   * `seri` grafiğe ait olduğu için ona DOKUNULMUYOR — kopya ters çevriliyor.
+   * SIRALAMA ÖLÇÜTÜ: yaş (varsayılan) ya da bağlı sermaye.
+   * İki ayrı soru: "en uzun bekleyen hangisi" ve "en çok parayı hangisi
+   * tutuyor". 14.08.2026 ölçümü ikisinin AYRIŞTIĞINI gösterdi (95 günlük
+   * kalem 4.797 ₺, 14 günlük kalem 37.790 ₺), o yüzden tek sıralama yetmiyor.
+   * Sermaye maliyet bilgisidir; kâr göremeyen kullanıcıya kapalı kalır.
    */
-  const aylikSatirlar = seri
-    .map((nokta, i) => ({ nokta, etiket: noktalar[i]?.tamEtiket ?? "" }))
-    .reverse();
+  const istenenSirala = (parametreler.sirala ?? "").trim();
+  const siralamaOlcutu: SiralamaOlcutu =
+    karGorunur && siralamaGecerliMi(istenenSirala) ? istenenSirala : "yas";
+
+  const partiVaryantlari = [...partiHaritasi.keys()];
+  const varyantBilgileri =
+    partiVaryantlari.length === 0
+      ? []
+      : await prisma.productVariant.findMany({
+          where: { id: { in: partiVaryantlari } },
+          select: {
+            id: true,
+            sku: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                vatRateOverride: true,
+                category: { select: { name: true, vatRate: true } },
+              },
+            },
+          },
+        });
+
+  const yaslanmaGirdileri: YaslanmaGirdisi[] = varyantBilgileri.map((v) => ({
+    variantId: v.id,
+    partiler: partiHaritasi.get(v.id) ?? [],
+    // KDV oranı TEK KAYNAKTAN: ürün istisnası > kategori > varsayılan %20.
+    kdvOrani: kdvOraniniCoz(v.product).oran,
+  }));
+
+  const yaslanma = yaslanmaListesi(yaslanmaGirdileri, gunDegeri(bugun), siralamaOlcutu);
+  const varyantKimligi = new Map(
+    varyantBilgileri.map((v) => [
+      v.id,
+      { sku: v.sku, urunAdi: v.product.name, urunId: v.product.id },
+    ]),
+  );
+
+  /** Bağlı sermaye toplamı — yalnız TRY; çevirim yapılmaz. */
+  const sermaye = sermayeToplami(yaslanma, "TRY");
+
+  const yaslanmaSatirlari: PanelListeSatiri[] = yaslanma
+    .slice(0, YASLANMA_SATIRI)
+    .map((s) => {
+      const kimlik = varyantKimligi.get(s.variantId);
+      return {
+        anahtar: s.variantId,
+        urunAdi: kimlik?.urunAdi ?? s.variantId,
+        urunId: kimlik?.urunId ?? null,
+        sku: kimlik?.sku ?? "",
+        // Birincil değer YAŞ: ölçüt bu (mimar kararı 14.08.2026).
+        deger: t("yasGun", { sayi: s.yasGun }),
+        altDeger:
+          s.sermayeKdvHaric !== null && s.sermayeParaBirimi !== null && karGorunur
+            ? t("yaslanmaAlt", {
+                adet: s.adet,
+                tutar: bicim.para(s.sermayeKdvHaric, s.sermayeParaBirimi),
+              })
+            : karGorunur && s.sermayeKdvHaric === null
+              ? t("yaslanmaSermayeYok", { adet: s.adet })
+              : t("adetDegeri", { sayi: s.adet }),
+        rozet: (
+          <BantRozeti
+            bant={s.bant}
+            metin={
+              s.bant === "KIRMIZI"
+                ? t("bantKirmizi", { gun: YAS_BANTLARI.kirmiziGun - 1 })
+                : s.bant === "AMBER"
+                  ? t("bantAmber", {
+                      alt: YAS_BANTLARI.amberGun,
+                      ust: YAS_BANTLARI.kirmiziGun - 1,
+                    })
+                  : t("bantNotr", { gun: YAS_BANTLARI.amberGun - 1 })
+            }
+          />
+        ),
+      };
+    });
 
   /** Süzgeç düğmesi — bağlantıdır, istemci JavaScript'i gerektirmez. */
   function suzgecDugmesi(etiket: string, adres: string, seciliMi: boolean) {
@@ -259,74 +516,163 @@ export default async function AnaSayfa({
     );
   }
 
-  const kanalAdresi = (kanal: string | null) => {
-    const s = new URLSearchParams();
-    if (kanal) s.set("kanal", kanal);
-    if (parametreler.para) s.set("para", parametreler.para);
-    const ek = s.toString();
-    return ek ? `/?${ek}` : "/";
-  };
+  const paraAdresi = (para: string) =>
+    suzgecAdresi("/", parametreler, { para });
+
+  const siralamaAdresi = (olcut: SiralamaOlcutu) =>
+    suzgecAdresi("/", parametreler, { sirala: olcut });
 
   /**
    * PANELDEN SATIŞLARA: kanal adı tıklanınca o kanalın satışları açılır.
    *
-   * DÖNEM DE TAŞINIR (`pencere=BU_AY`): panel bloğu "bu ay"ı gösteriyor, ama
-   * satış listesinin varsayılanı son 30 gün. Dönemi taşımasak kullanıcı
+   * DÖNEM DE TAŞINIR: panel bloğu seçili dönemi gösteriyor, ama satış
+   * listesinin varsayılanı tüm zamanlar. Dönemi taşımasak kullanıcı
    * paneldeki 4 satışa tıklayıp listede 6 satış görür ve rakamların
-   * tutmadığını sanar — en sinsi tutarsızlık türü.
+   * tutmadığını sanar — en sinsi tutarsızlık türü. Özel aralıkta sınır
+   * günleri de gider.
    */
+  const donemParametreleri = (): Record<string, string> =>
+    donemTuru === "OZEL"
+      ? {
+          pencere: "OZEL",
+          baslangic: parametreler.baslangic ?? "",
+          bitis: parametreler.bitis ?? "",
+        }
+      : { pencere: donemTuru };
+
+  const satisAdresi = (ek: Record<string, string>) =>
+    suzgecAdresi("/satislar", {}, { ...donemParametreleri(), ...ek });
+
   const kanalSatislariAdresi = (kanalKodu: string) =>
-    `/satislar?kanal=${encodeURIComponent(kanalKodu)}&pencere=BU_AY`;
+    satisAdresi({ kanal: kanalKodu });
 
   /**
-   * KARGO KUTUSUNDAN SATIŞLARA. Dönem aynı taşınıyor (BU_AY) — paneldeki
-   * sayı ile listedeki kayıt sayısı birebir tutsun. "Bekleyenler"i dönem
-   * dışında da görmek isteyen, listedeki dönem rozetini tek tıkla kaldırır.
+   * KARGO KUTUSUNDAN SATIŞLARA. Dönem aynı taşınıyor — paneldeki sayı ile
+   * listedeki kayıt sayısı birebir tutsun. "Bekleyenler"i dönem dışında da
+   * görmek isteyen, listedeki dönem rozetini tek tıkla kaldırır.
    */
   const kargoAdresi = (kargo: "verildi" | "bekleyen") =>
-    `/satislar?kargo=${kargo}&pencere=BU_AY`;
+    satisAdresi({
+      kargo,
+      ...(seciliKanal ? { kanal: seciliKanal } : {}),
+    });
 
-  const paraAdresi = (para: string) => {
-    const s = new URLSearchParams();
-    if (seciliKanal) s.set("kanal", seciliKanal);
-    s.set("para", para);
-    return `/?${s.toString()}`;
-  };
+  const aralikMetni = `${bicim.tarih(donem.baslangic)} – ${bicim.tarih(donem.sonGun)}`;
+
+  const seri = aylikSeri(
+    satislar,
+    { yil: bugun.yil, ay: bugun.ay },
+    GRAFIK_AY_SAYISI,
+    seciliKanal,
+    seciliPara,
+    iadeler,
+  );
+
+  const noktalar: GrafikNoktasi[] = seri.map((nokta) => {
+    const tarih = gunDegeri({ yil: nokta.yil, ay: nokta.ay, gun: 1 });
+    const tam = bicim.ayYil(tarih);
+    return {
+      // "Ağustos 2026" -> "Ağustos"; yıl eksende gereksiz yer kaplar.
+      etiket: tam.split(" ")[0] ?? tam,
+      tamEtiket: tam,
+      gelir: nokta.gelir,
+      net2: nokta.net2,
+    };
+  });
+
+  /**
+   * TABLO EN YENİDEN ESKİYE (kullanıcı kararı 14.08.2026).
+   *
+   * GRAFİK ile TABLO farklı sıra ister ve bu bir tutarsızlık değil:
+   *   grafik → zaman ekseni soldan sağa akar, eski solda kalmalı
+   *   tablo  → okumaya en üstten başlanır, oradaki ay BU AY olmalı
+   *
+   * Etiket burada nokta ile EŞLEŞTİRİLİYOR: eskiden `noktalar[i]` ile
+   * dizin üzerinden bulunuyordu ve sıra değişince ay adları satırlardan
+   * KAYARDI — sessiz ve fark edilmesi zor bir hata.
+   */
+  const aylikSatirlar = seri
+    .map((nokta, i) => ({ nokta, etiket: noktalar[i]?.tamEtiket ?? "" }))
+    .reverse();
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">
-          {t("altBaslik", { donem: bicim.ayYil(buAy.sonGun) })}
+          {t("altBaslik", { aralik: aralikMetni })}
         </p>
       </div>
 
-      {/* ==================== BU AY — KANAL BAZINDA ==================== */}
+      {/* ======================== DÖNEM VE KANAL ========================
+          Ortak süzgeç çubuğu (İlke #10): aynı işlem her ekranda aynı
+          görünür. Panelin farkı yalnız VARSAYILANI — dönem hiç seçilmemişse
+          bu ay. */}
+      <SuzgecCubugu
+        temelAdres="/"
+        mevcut={parametreler}
+        suzgecler={
+          kanalSecenekleri.length > 0
+            ? [
+                {
+                  ad: "kanal",
+                  etiket: t("kanal"),
+                  secenekler: kanalSecenekleri.map(([kod, ad]) => ({
+                    deger: kod,
+                    etiket: ad,
+                  })),
+                },
+              ]
+            : []
+        }
+        zaman={{
+          secili: donemTuru,
+          aralikMetni,
+          baslangic: parametreler.baslangic ?? "",
+          bitis: parametreler.bitis ?? "",
+        }}
+      />
+
+      {/* Para birimi süzgeci: yalnız birden fazla varsa görünür. Süzgeç
+          çubuğuna girmiyor çünkü "tümü" seçeneği YOK — iki para birimi tek
+          toplamda buluşmaz, her zaman biri seçili olmalıdır. */}
+      {paraSecenekleri.length > 1 ? (
+        <div className="flex flex-wrap gap-2">
+          {paraSecenekleri.map((para) =>
+            suzgecDugmesi(para, paraAdresi(para), para === seciliPara),
+          )}
+        </div>
+      ) : null}
+
+      {/* ==================== DÖNEM — KANAL BAZINDA ==================== */}
       {bloklar.length === 0 ? (
         <Card>
           <CardContent className="text-muted-foreground py-8 text-center text-sm">
-            {t("buAyBos")}
+            {t("donemBos")}
           </CardContent>
         </Card>
       ) : (
         bloklar.map((blok) => (
-          <Card key={blok.paraBirimi}>
+          <Card key={blok.paraBirimi} className="min-w-0">
             <CardHeader>
               <CardTitle>
-                {t("buAyBaslik")} · {blok.paraBirimi}
+                {t("donemBaslik")} · {blok.paraBirimi}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* --- büyük rakamlar: NET-2 gizliyse iki sütun, boşluk kalmaz --- */}
+              {/* --- büyük rakamlar --- */}
               <div
-                className={`grid gap-3 ${karGorunur ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+                className={`grid gap-3 sm:grid-cols-3 ${karGorunur ? "lg:grid-cols-5" : ""}`}
               >
                 <div className="space-y-1 rounded-lg border p-4">
                   <div className="text-muted-foreground text-xs">
                     {t("satisAdedi")}
                   </div>
-                  <div className="text-2xl font-semibold">{blok.toplamAdet}</div>
+                  <div className="text-2xl font-semibold">
+                    <Baglanti href={satisAdresi(seciliKanal ? { kanal: seciliKanal } : {})}>
+                      {blok.toplamAdet}
+                    </Baglanti>
+                  </div>
                 </div>
                 <div className="space-y-1 rounded-lg border p-4">
                   <div className="text-muted-foreground text-xs">{t("ciro")}</div>
@@ -371,18 +717,35 @@ export default async function AnaSayfa({
                     )}
                   </div>
                 </div>
+                {/* NET-1 VE NET-2 YAN YANA (kullanıcı isteği 14.08.2026:
+                    "net kâr 1, 2"). İkisi arasındaki fark ÖDENECEK KDV'dir;
+                    açıklama satırları bunu yazıyor ki hangisine bakılacağı
+                    tahmin edilmesin. */}
                 {karGorunur ? (
-                  <div className="space-y-1 rounded-lg border p-4">
-                    <div className="text-muted-foreground text-xs">
-                      {t("net2")}
+                  <>
+                    <div className="space-y-1 rounded-lg border p-4">
+                      <div className="text-muted-foreground text-xs">
+                        {t("net1")}
+                      </div>
+                      <div className="text-2xl font-semibold">
+                        {bicim.para(blok.toplamNet1, blok.paraBirimi)}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        {t("net1Aciklama")}
+                      </div>
                     </div>
-                    <div className="text-2xl font-semibold">
-                      {bicim.para(blok.toplamNet2, blok.paraBirimi)}
+                    <div className="space-y-1 rounded-lg border p-4">
+                      <div className="text-muted-foreground text-xs">
+                        {t("net2")}
+                      </div>
+                      <div className="text-2xl font-semibold">
+                        {bicim.para(blok.toplamNet2, blok.paraBirimi)}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        {t("net2Aciklama")}
+                      </div>
                     </div>
-                    <div className="text-muted-foreground text-xs">
-                      {t("net2Aciklama")}
-                    </div>
-                  </div>
+                  </>
                 ) : null}
               </div>
 
@@ -598,32 +961,124 @@ export default async function AnaSayfa({
         ))
       )}
 
+      {/* ==================== ÜRÜN LİSTELERİ ====================
+          Üçü yan yana: aynı dönemin üç ayrı sorusu. Telefonda alt alta
+          düşer (İlke #8). */}
+      <div className="grid min-w-0 gap-4 lg:grid-cols-3">
+        <PanelListesi
+          baslik={t("enCokSatilan")}
+          notu={t("enCokSatilanNotu")}
+          satirlar={enCokSatilanlar}
+          bosMesaj={t("listeBos")}
+          skuEtiketi={t("sku")}
+        />
+        {karGorunur ? (
+          <>
+            <PanelListesi
+              baslik={t("enCokKar")}
+              notu={t("kalemKariNotu")}
+              satirlar={enCokKarEdenler}
+              bosMesaj={t("listeBos")}
+              skuEtiketi={t("sku")}
+              altNot={
+                karsizUrun > 0 ? t("karsizUrun", { sayi: karsizUrun }) : null
+              }
+            />
+            <PanelListesi
+              baslik={t("enAzKar")}
+              notu={t("enAzKarNotu")}
+              satirlar={enAzKarBirakanlar}
+              bosMesaj={t("listeBos")}
+              skuEtiketi={t("sku")}
+              altNot={
+                /**
+                 * AZ ÇEŞİTLİ DÖNEMDE İKİ LİSTE AYNI LİSTEDİR — söylenmesi
+                 * gerekir. Canlı ölçüm (14.08.2026) gösterdi: Ağustos'ta 5
+                 * çeşit ürün satılmış, liste tavanı da 5; yani "en az kâr"
+                 * tablosu "en çok kâr"ın ters sırasıdır. Uyarı olmasaydı
+                 * kullanıcı iki ayrı bulgu okuduğunu sanardı.
+                 */
+                <>
+                  {urunSatirlari.length <= LISTE_SATIRI &&
+                  urunSatirlari.length > 0
+                    ? t("azCesitUyari", { sayi: urunSatirlari.length })
+                    : null}
+                  {karsizUrun > 0 ? (
+                    <> {t("karsizUrun", { sayi: karsizUrun })}</>
+                  ) : null}
+                </>
+              }
+            />
+          </>
+        ) : null}
+      </div>
+
+      {/* ==================== STOKTA BEKLEYEN — YAŞLANMA ==================== */}
+      <PanelListesi
+        baslik={t("yaslanmaBaslik")}
+        notu={t("yaslanmaNotu")}
+        satirlar={yaslanmaSatirlari}
+        bosMesaj={t("yaslanmaBos")}
+        skuEtiketi={t("sku")}
+        ustEylem={
+          // Sermayeye göre sıralama MALİYET bilgisidir; kâr göremeyene kapalı.
+          karGorunur ? (
+            <SiralamaDugmeleri
+              secenekler={[
+                {
+                  etiket: t("siralaYas"),
+                  adres: siralamaAdresi("yas"),
+                  seciliMi: siralamaOlcutu === "yas",
+                },
+                {
+                  etiket: t("siralaSermaye"),
+                  adres: siralamaAdresi("sermaye"),
+                  seciliMi: siralamaOlcutu === "sermaye",
+                },
+              ]}
+            />
+          ) : null
+        }
+        altNot={
+          <>
+            {/* KULLANICI UYARISI (14.08.2026): en yaşlı kalem en pahalı kalem
+                DEĞİLDİR. Ölçüm: 95 günlük kalem 4.796,63 ₺ tutarken 14 günlük
+                kalem 37.789,50 ₺ tutuyordu. İki sıralama bu yüzden var. */}
+            {t("yaslanmaUyari")}
+            {karGorunur && sermaye.kalem > 0 ? (
+              <>
+                {" "}
+                {t("yaslanmaSermayeToplami", {
+                  tutar: bicim.para(sermaye.toplam, "TRY"),
+                  kalem: sermaye.kalem,
+                })}
+              </>
+            ) : null}
+            {karGorunur && sermaye.hesaplanamayan > 0 ? (
+              <>
+                {" "}
+                {t("yaslanmaHesaplanamayan", { sayi: sermaye.hesaplanamayan })}
+              </>
+            ) : null}
+            {yaslanma.length > YASLANMA_SATIRI ? (
+              <>
+                {" "}
+                <Baglanti href="/stok">
+                  {t("yaslanmaTumu", { sayi: yaslanma.length })}
+                </Baglanti>
+              </>
+            ) : null}
+          </>
+        }
+      />
+
       {/* ======================== AYLIK GRAFİK ======================== */}
-      <Card>
+      <Card className="min-w-0">
         <CardHeader>
           <CardTitle>{t("grafikBaslik", { ay: GRAFIK_AY_SAYISI })}</CardTitle>
           <p className="text-muted-foreground text-sm">{t("grafikNotu")}</p>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* --- kanal süzgeci --- */}
-          {kanalSecenekleri.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {suzgecDugmesi(t("tumKanallar"), kanalAdresi(null), seciliKanal === null)}
-              {kanalSecenekleri.map(([kod, ad]) =>
-                suzgecDugmesi(ad, kanalAdresi(kod), seciliKanal === kod),
-              )}
-            </div>
-          ) : null}
-
-          {/* --- para birimi süzgeci: yalnız birden fazlaysa görünür --- */}
-          {paraSecenekleri.length > 1 ? (
-            <div className="flex flex-wrap gap-2">
-              {paraSecenekleri.map((para) =>
-                suzgecDugmesi(para, paraAdresi(para), para === seciliPara),
-              )}
-            </div>
-          ) : null}
-
           <CizgiGrafik
             noktalar={noktalar}
             gelirAdi={t("ciro")}
@@ -642,6 +1097,9 @@ export default async function AnaSayfa({
                   <TableHead>{t("ay")}</TableHead>
                   <TableHead className="text-right">{t("satisAdedi")}</TableHead>
                   <TableHead className="text-right">{t("ciro")}</TableHead>
+                  {karGorunur ? (
+                    <TableHead className="text-right">{t("net1")}</TableHead>
+                  ) : null}
                   {karGorunur ? (
                     <TableHead className="text-right">{t("net2")}</TableHead>
                   ) : null}
@@ -666,6 +1124,11 @@ export default async function AnaSayfa({
                         )}
                       />
                     </TableCell>
+                    {karGorunur ? (
+                      <TableCell className="text-muted-foreground text-right whitespace-nowrap">
+                        {bicim.para(nokta.net1, seciliPara)}
+                      </TableCell>
+                    ) : null}
                     {karGorunur ? (
                       <TableCell className="text-right whitespace-nowrap">
                         {bicim.para(nokta.net2, seciliPara)}
