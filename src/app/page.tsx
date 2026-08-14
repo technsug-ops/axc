@@ -338,6 +338,35 @@ export default async function AnaSayfa({
       }));
   });
 
+  /**
+   * SATIŞ KANALLARI — SATIŞI OLMAYAN DA GÖRÜNÜR (14.08.2026, kullanıcı).
+   *
+   * Panel yalnız o dönemde satış YAPILMIŞ kanalları çiziyordu. "N11 neden
+   * yok?" sorusunun cevabı ekranda değildi — oysa "N11'de bu dönem satış
+   * yok" bir BİLGİDİR. Sessiz yokluk yerine AÇIK SIFIR: kanal kartı durur,
+   * üstünde sıfır yazar.
+   *
+   * Yalnız SATIŞ rolündeki aktif hesaplar sayılır; alış hesabının panelde
+   * ciro satırı olmaz. Para birimi hesapla birlikte geliyor ki sıfır kart
+   * DOĞRU para bloğuna düşsün — TRY bloğuna EUR kanalı eklenmez.
+   */
+  const satisHesaplari = await prisma.channelAccount.findMany({
+    where: { isActive: true, satisIcin: true },
+    select: {
+      defaultCurrency: true,
+      channel: { select: { code: true, name: true } },
+    },
+  });
+
+  /** para birimi → o para biriminde satış yapan kanallar. */
+  const paraBirimineGoreKanallar = new Map<string, Map<string, string>>();
+  for (const h of satisHesaplari) {
+    const kanallar =
+      paraBirimineGoreKanallar.get(h.defaultCurrency) ?? new Map<string, string>();
+    kanallar.set(h.channel.code, h.channel.name);
+    paraBirimineGoreKanallar.set(h.defaultCurrency, kanallar);
+  }
+
   // --- SÜZGEÇ SEÇENEKLERİ ----------------------------------------------------
   // Seçenekler SÜZÜLMEMİŞ veriden gelir: bir kanal seçilince diğer kanallar
   // listeden düşmemeli, yoksa geri dönmek imkânsızlaşır.
@@ -1000,6 +1029,28 @@ export default async function AnaSayfa({
                     ) : null}
                   </div>
                 ))}
+
+                {/* SATIŞI OLMAYAN KANALLAR — AÇIK SIFIR.
+                    Kart soluk çizilir: "var ama boş" ile "hiç yok" ayrışsın.
+                    Kanal sayısı arttığında bu bölümün ayarlardan seçilebilir
+                    olması BEKLEYENLER'de. */}
+                {[...(paraBirimineGoreKanallar.get(blok.paraBirimi) ?? [])]
+                  .filter(
+                    ([kod]) => !blok.kanallar.some((k) => k.kanalKodu === kod),
+                  )
+                  .sort((a, b) => a[1].localeCompare(b[1], "tr"))
+                  .map(([kod, ad]) => (
+                    <div
+                      key={`bos-${kod}`}
+                      className="text-muted-foreground min-w-0 space-y-2 rounded-lg border border-dashed p-3"
+                    >
+                      <div className="font-medium">
+                        <Baglanti href={kanalSatislariAdresi(kod)}>{ad}</Baglanti>
+                      </div>
+                      <div className="text-xs">{t("kanalSatisYok")}</div>
+                      <div className="text-lg font-semibold tabular-nums">0</div>
+                    </div>
+                  ))}
               </div>
             </CardContent>
           </Card>

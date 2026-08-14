@@ -384,6 +384,18 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
 
 ## Sonraki uygun pakette
 
+- [ ] **PANEL KANAL KARTLARI AYARLANABİLİR OLSUN** — _Kullanıcı isteği
+      14.08.2026._ Bugün panel, o para biriminde satış yapan TÜM aktif
+      kanalları çiziyor; satışı olmayan kanal soluk kart + sıfır olarak
+      duruyor (açık sıfır). Bu, 2-4 kanalda doğru davranış.
+      **11 kanala çıkınca ekranı doldurur.** O zaman ayarlardan seçilebilir
+      olacak: hangi kanallar panelde görünsün, kaç tanesi, sıfır olanlar
+      gizlensin mi. Ayar VERİDİR (kod değil) — SaaS'ta her müşteri kendi
+      seçimini yapar.
+      **İlke korunur:** gizleme SESSİZ olmaz; gizlenen kanal varsa altta
+      "N kanal gizli" yazar ve tek tıkla açılır. Yoksa "kanalım neden yok"
+      sorusu geri döner.
+
 - [ ] **STOK TÜKENME SİNYALİ** — geçmiş satış hızından "kaç gün stok kaldı".
       _Mimar notu 14.08.2026: düşük öncelik, Aşama 3'e DEĞİL._
       **"Sinyal, karar değil" olarak sunulacak** — ortalama yanıltabilir
