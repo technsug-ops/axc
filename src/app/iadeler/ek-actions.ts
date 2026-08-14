@@ -1,15 +1,9 @@
 "use server";
 
-import { del, put } from "@vercel/blob";
+import { del } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 
-import {
-  ekHedefiGecerliMi,
-  ekYolu,
-  ekiDogrula,
-  type EkHatasi,
-} from "@/lib/ekler";
-import { oturumdakiKullanici } from "@/lib/oturum";
+import { type EkHatasi } from "@/lib/ekler";
 import { prisma } from "@/lib/prisma";
 import { yetkiIste } from "@/lib/yetki";
 
@@ -28,66 +22,18 @@ import { yetkiIste } from "@/lib/yetki";
 
 export type EkSonucu = { hata?: EkHatasi | "YUKLENEMEDI" | "DEPO_YOK" };
 
-export async function ekYukle(formData: FormData): Promise<EkSonucu> {
-  await yetkiIste("iade.yaz");
-
-  const hedefTipi = String(formData.get("hedefTipi") ?? "");
-  const hedefId = String(formData.get("hedefId") ?? "");
-  const dosya = formData.get("dosya");
-
-  if (!ekHedefiGecerliMi(hedefTipi)) return { hata: "HEDEF_GECERSIZ" };
-  if (!(dosya instanceof File)) return { hata: "DOSYA_BOS" };
-
-  const mevcutEkSayisi = await prisma.attachment.count({
-    where: { targetType: hedefTipi, targetId: hedefId },
-  });
-
-  const hatalar = ekiDogrula({
-    dosyaAdi: dosya.name,
-    mimeType: dosya.type,
-    sizeBytes: dosya.size,
-    mevcutEkSayisi,
-    hedefTipi,
-  });
-  if (hatalar.length > 0) return { hata: hatalar[0] };
-
-  /**
-   * BLOB JETONU YOKSA SESSİZ BAŞARISIZLIK OLMAZ. Yerel geliştirmede jeton
-   * bulunmayabilir; "yükledim" deyip hiçbir şey yazmamak, kullanıcının
-   * kanıtını kaybettiğini aylar sonra öğrenmesi demektir.
-   */
-  if (!process.env.BLOB_READ_WRITE_TOKEN) return { hata: "DEPO_YOK" };
-
-  const yol = ekYolu(hedefTipi, hedefId, dosya.name, Date.now());
-
-  try {
-    // ÖZEL erişim: ek dosyaları herkese açık adresle servis edilmez.
-    const yuklenen = await put(yol, dosya, {
-      access: "public",
-      addRandomSuffix: false,
-      contentType: dosya.type,
-    });
-
-    const kullanici = await oturumdakiKullanici();
-    await prisma.attachment.create({
-      data: {
-        targetType: hedefTipi,
-        targetId: hedefId,
-        blobPath: yuklenen.url,
-        fileName: dosya.name,
-        mimeType: dosya.type,
-        sizeBytes: dosya.size,
-        userId: kullanici?.id ?? null,
-      },
-    });
-  } catch (e) {
-    console.error("[ek] yükleme hatası:", e);
-    return { hata: "YUKLENEMEDI" };
-  }
-
-  revalidatePath("/iadeler");
-  return {};
-}
+/**
+ * ⚠ EK YÜKLEME BURADA DEĞİL — `src/app/api/ekler/route.ts` içinde.
+ *
+ * 14.08.2026 (T5): yükleme bu dosyada bir Server Action'dı ve canlıda sayfayı
+ * çökertiyordu. Server Action gövdesi varsayılan 1 MB ile sınırlı; sınır
+ * ÇERÇEVE KATMANINDA uygulandığı için 2-4 MB'lık telefon fotoğrafı buradaki
+ * `try/catch`e HİÇ ULAŞMIYOR, fonksiyon 500 dönüyordu. Kibar hata mesajı
+ * yazmak çözmüyordu — hata mesajdan önce oluyordu.
+ *
+ * Yükleme Route Handler'a taşındı (o sınıra tabi değil). Burada YALNIZ silme
+ * kaldı: gövdesi küçük, Server Action'a uygun.
+ */
 
 /**
  * Eki siler. SATIR VE DOSYA BİRLİKTE gider; dosya kalırsa depoda kimsenin

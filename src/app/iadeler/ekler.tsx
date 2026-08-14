@@ -7,8 +7,9 @@ import { FileText, Paperclip, TriangleAlert, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ekiDogrula } from "@/lib/ekler";
 
-import { ekSil, ekYukle } from "./ek-actions";
+import { ekSil } from "./ek-actions";
 
 /**
  * ============================================================================
@@ -49,21 +50,69 @@ export function Ekler({
   const [hata, setHata] = useState<string | null>(null);
   const girdiRef = useRef<HTMLInputElement>(null);
 
+  /** Seçim kutusunu boşaltır — aynı dosya tekrar seçilebilsin. */
+  const kutuyuBosalt = () => {
+    if (girdiRef.current) girdiRef.current.value = "";
+  };
+
   const yukle = (dosya: File) => {
     setHata(null);
+
+    /**
+     * ÖNCE TARAYICIDA ELE — 14.08.2026 canlı çökmesinin (T5) asıl dersi.
+     *
+     * Büyük dosya ağa çıkarsa taşıma tavanına çarpar ve hata BİZİM
+     * kodumuzdan önce oluşur; kibar mesaj yazma şansı kalmaz. Burada aynı
+     * SAF kuralla (`ekiDogrula`, sunucudakiyle birebir aynı fonksiyon)
+     * eliyoruz: reddedilen dosya için HİÇ İSTEK ATILMAZ, kullanıcı sebebi
+     * anında görür.
+     *
+     * Bu istemci kontrolü GÜVENLİK DEĞİLDİR: uç dışarıdan çağrılabilir,
+     * sunucu aynı kontrolü yeniden yapar. Buradaki amaç hız ve çökmeme.
+     */
+    const hatalar = ekiDogrula({
+      dosyaAdi: dosya.name,
+      mimeType: dosya.type,
+      sizeBytes: dosya.size,
+      mevcutEkSayisi: ekler.length,
+      hedefTipi,
+    });
+    if (hatalar.length > 0) {
+      setHata(t(`hata${hatalar[0]}`));
+      kutuyuBosalt();
+      return;
+    }
+
     const govde = new FormData();
     govde.set("hedefTipi", hedefTipi);
     govde.set("hedefId", hedefId);
     govde.set("dosya", dosya);
 
     basla(async () => {
-      const sonuc = await ekYukle(govde);
-      if (sonuc.hata) {
-        // Hata KODU sözlükten metne çevrilir; ham kod ekranda görünmez.
-        setHata(t(`hata${sonuc.hata}`));
-      } else {
-        if (girdiRef.current) girdiRef.current.value = "";
+      /**
+       * HER YOL KİBAR BİTER. Ağ kopması, 500, bozuk JSON — hiçbiri istisna
+       * olarak dışarı taşmaz; taşsaydı ekran error boundary'ye düşer ve
+       * kullanıcı yine "sayfa çöktü" görürdü.
+       */
+      try {
+        const cevap = await fetch("/api/ekler", { method: "POST", body: govde });
+        const sonuc = (await cevap.json().catch(() => ({
+          hata: "YUKLENEMEDI",
+        }))) as { hata?: string };
+
+        if (!cevap.ok || sonuc.hata) {
+          const anahtar = `hata${sonuc.hata ?? "YUKLENEMEDI"}`;
+          // Tanınmayan kod gelirse sözlük patlamasın: genel mesaja düş.
+          setHata(t.has(anahtar) ? t(anahtar) : t("hataYUKLENEMEDI"));
+          kutuyuBosalt();
+          return;
+        }
+
+        kutuyuBosalt();
         router.refresh();
+      } catch {
+        setHata(t("hataYUKLENEMEDI"));
+        kutuyuBosalt();
       }
     });
   };
@@ -71,8 +120,13 @@ export function Ekler({
   const sil = (ekId: string) => {
     setHata(null);
     basla(async () => {
-      await ekSil(ekId);
-      router.refresh();
+      // Silme de sessizce patlamaz; küçük gövde olduğu için action kalıyor.
+      try {
+        await ekSil(ekId);
+        router.refresh();
+      } catch {
+        setHata(t("hataYUKLENEMEDI"));
+      }
     });
   };
 

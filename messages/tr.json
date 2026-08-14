@@ -2148,10 +2148,11 @@
     "hataTUR_IZINLI_DEGIL": "Bu dosya türü kabul edilmiyor. Yalnız JPG, PNG, WEBP ve PDF yüklenebilir.",
     "hataUZANTI_TURLE_UYUSMUYOR": "Dosya uzantısı içeriğiyle uyuşmuyor. Dosyayı kontrol edin.",
     "hataDOSYA_BOS": "Dosya boş görünüyor.",
-    "hataDOSYA_COK_BUYUK": "Dosya çok büyük. Dosya başına sınır 5 MB.",
+    "hataDOSYA_COK_BUYUK": "Dosya çok büyük. Dosya başına sınır 4 MB — bu dosya gönderilmedi, sayfa etkilenmedi.",
     "hataEK_SINIRI_ASILDI": "Bu kayıtta en fazla 10 ek olabilir. Yeni ek eklemek için birini silin.",
     "hataHEDEF_GECERSIZ": "Ek bu kayda bağlanamıyor.",
     "hataYUKLENEMEDI": "Dosya yüklenemedi. Tekrar deneyin.",
-    "hataDEPO_YOK": "Dosya deposu yapılandırılmamış; ek yüklenemedi. (Yönetici: BLOB_READ_WRITE_TOKEN eksik.)"
+    "hataDEPO_YOK": "Dosya deposu yapılandırılmamış; ek yüklenemedi. (Yönetici: BLOB_READ_WRITE_TOKEN eksik.)",
+    "hataCOK_BUYUK": "Dosya çok büyük. Dosya başına sınır 4 MB."
   }
 }

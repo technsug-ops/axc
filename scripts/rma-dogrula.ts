@@ -38,6 +38,7 @@ import {
 } from "../src/lib/iade/bildirim";
 import {
   EK_SINIRLARI,
+  TASIMA_SINIRI,
   ekiDogrula,
   ekYolu,
   uzanti,
@@ -56,7 +57,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 8;
+const BOLUM_SAYISI = 9;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -386,13 +387,20 @@ console.log("\n3) DOSYA EKLERİ — SINIRLAR");
 
   kontrol("2 MB JPG kabul edilir", ekiDogrula(gecerli).length === 0, ekiDogrula(gecerli));
   kontrol(
-    "5 MB tam sınırda kabul edilir",
+    "beyan edilen sınır tam noktasında kabul edilir",
     ekiDogrula({ ...gecerli, sizeBytes: EK_SINIRLARI.enFazlaBayt }).length === 0,
   );
 
-  // --- 6 MB REDDEDİLİR ---
-  const buyuk = ekiDogrula({ ...gecerli, sizeBytes: 6 * 1024 * 1024 });
-  kontrol("6 MB dosya REDDEDİLİR", buyuk.includes("DOSYA_COK_BUYUK"), buyuk);
+  /**
+   * SINIRIN BİR BAYT ÜSTÜ REDDEDİLİR. Sabit rakam yazmıyoruz: sınır
+   * 14.08.2026'da 5 MB→ 4 MB'a indi (taşıma tavanı), etiket sabit kalsaydı
+   * test doğru kalır ama METİN yalan söylerdi.
+   */
+  const buyuk = ekiDogrula({
+    ...gecerli,
+    sizeBytes: EK_SINIRLARI.enFazlaBayt + 1,
+  });
+  kontrol("sınırın bir bayt üstü REDDEDİLİR", buyuk.includes("DOSYA_COK_BUYUK"), buyuk);
 
   // --- 11. EK REDDEDİLİR ---
   kontrol(
@@ -1194,6 +1202,135 @@ console.log("\n8) GERİ ALINAMAZ GEÇİŞ — ONAY ZORUNLU");
       sozluk7.Bildirim2.satisIpucu.includes("talep no"),
   );
   kosanBolumler.push("gecis-onayi");
+}
+
+// ===========================================================================
+console.log("\n9) DOSYA YÜKLEME — BEYAN EDİLEN SINIR TAŞINABİLİR OLMALI");
+// ===========================================================================
+/**
+ * T5 CANLI ÇÖKMESİ: itiraz kanıtı yüklenirken sayfa "This page couldn't
+ * load" ile düştü.
+ *
+ * MEVCUT TESTLER NEDEN YAKALAMADI — kör nokta tam olarak burasıydı:
+ * 3. bölüm `ekiDogrula`yı sınıyordu ve "5 MB tam sınırda KABUL EDİLİR"
+ * diyordu. Kural doğru uygulanıyordu; sorun KURALIN KENDİSİNDEYDİ. Sistem
+ * taşıyamayacağı bir boyutu kabul edeceğini beyan ediyordu: Server Action
+ * gövdesi varsayılan 1 MB ve bu sınır ÇERÇEVE KATMANINDA uygulanıyor, yani
+ * istek bizim koda hiç ulaşmadan 500 dönüyor. Saf doğrulayıcı testi bunu
+ * göremezdi çünkü hiçbir şey TAŞIMIYORDU — dosya hiç gönderilmiyordu.
+ *
+ * Eksik olan kontrol "sınır doğru mu uygulanıyor" değil,
+ * "SINIR TESLİM EDİLEBİLİR Mİ" idi. Aşağıdaki ilk kontrol o.
+ */
+{
+  /** ASIL KİLİT: beyan edilen sınır taşıma tavanının ALTINDA kalmalı. */
+  kontrol(
+    "beyan edilen dosya sınırı taşıma tavanının ALTINDA",
+    EK_SINIRLARI.enFazlaBayt < TASIMA_SINIRI,
+    [EK_SINIRLARI.enFazlaBayt, TASIMA_SINIRI],
+  );
+  kontrol(
+    "  ...ve multipart başlıkları için pay kalıyor (en az 256 KB)",
+    TASIMA_SINIRI - EK_SINIRLARI.enFazlaBayt >= 256 * 1024,
+    TASIMA_SINIRI - EK_SINIRLARI.enFazlaBayt,
+  );
+
+  const dosya = (mb: number, tur = "image/jpeg", ad = "kanit.jpg") => ({
+    dosyaAdi: ad,
+    mimeType: tur,
+    sizeBytes: Math.round(mb * 1024 * 1024),
+    mevcutEkSayisi: 0,
+    hedefTipi: "ReturnNotice",
+  });
+
+  kontrol("4 MB tam sınırda kabul", ekiDogrula(dosya(4)).length === 0);
+  kontrol(
+    "5 MB REDDEDİLİR (eskiden kabul ediliyordu — çökmenin kaynağı)",
+    ekiDogrula(dosya(5)).includes("DOSYA_COK_BUYUK"),
+  );
+
+  /**
+   * RED BİR HATA DEĞERİDİR, İSTİSNA DEĞİL. `ekiDogrula` hiçbir girdide
+   * throw etmemeli: istemci onu doğrudan çağırıyor ve fırlatırsa ekran
+   * error boundary'ye düşer — düzeltmeye çalıştığımız çökmenin ta kendisi.
+   */
+  const zorGirdiler = [
+    dosya(99),
+    dosya(0),
+    dosya(1, "application/zip", "a.zip"),
+    dosya(1, "image/png", "a.exe"),
+    { ...dosya(1), dosyaAdi: "" },
+    { ...dosya(1), mimeType: "" },
+    { ...dosya(1), hedefTipi: "Yok" },
+    { ...dosya(1), mevcutEkSayisi: 999 },
+  ];
+  let firlatti = false;
+  for (const g of zorGirdiler) {
+    try {
+      ekiDogrula(g);
+    } catch {
+      firlatti = true;
+    }
+  }
+  kontrol("hiçbir girdide İSTİSNA fırlatmıyor (hata DEĞER olarak döner)", !firlatti);
+
+  // --- YÜKLEME YOLU ---
+  const ekBileseni = readFileSync("src/app/iadeler/ekler.tsx", "utf8");
+  kontrol(
+    "istemci dosyayı GÖNDERMEDEN ÖNCE eliyor (aynı saf kural)",
+    ekBileseni.includes("ekiDogrula({"),
+  );
+  kontrol(
+    "yükleme Route Handler'a gidiyor (Server Action gövde sınırına takılmaz)",
+    ekBileseni.includes('fetch("/api/ekler"'),
+  );
+  kontrol(
+    "  ...ve istek try/catch içinde (ağ hatası ekranı çökertmez)",
+    ekBileseni.includes("} catch {") && ekBileseni.includes("hataYUKLENEMEDI"),
+  );
+  kontrol(
+    "tanınmayan hata kodu sözlüğü patlatmıyor (t.has ile korunuyor)",
+    ekBileseni.includes("t.has(anahtar)"),
+  );
+
+  const ekAction = readFileSync("src/app/iadeler/ek-actions.ts", "utf8");
+  kontrol(
+    "çöken Server Action KALDIRILDI (tek yol kaldı)",
+    !ekAction.includes("export async function ekYukle"),
+  );
+
+  const ekRota = readFileSync("src/app/api/ekler/route.ts", "utf8");
+  kontrol(
+    "rota her hatayı KOD olarak döndürüyor (istisna dışarı taşmıyor)",
+    ekRota.includes("} catch (e) {") && ekRota.includes('hataDon("YUKLENEMEDI")'),
+  );
+  kontrol(
+    "  ...depo yapılandırılmamışsa da kibar cevap",
+    ekRota.includes('hataDon("DEPO_YOK")'),
+  );
+  /**
+   * JETON SUNUCUDA KALIR. İstemci bileşeninde jeton adı geçmemeli; geçseydi
+   * derleyici onu istemci paketine koymaya çalışırdı.
+   */
+  kontrol(
+    "blob jetonu istemci bileşeninde GEÇMİYOR",
+    !ekBileseni.includes("BLOB_READ_WRITE_TOKEN"),
+  );
+  kontrol(
+    "  ...yalnız sunucu tarafında okunuyor",
+    ekRota.includes("process.env.BLOB_READ_WRITE_TOKEN"),
+  );
+
+  const sozluk8 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  kontrol(
+    "sınır metni 4 MB diyor (beyan ile kural tutuyor)",
+    typeof sozluk8.Ekler?.hataDOSYA_COK_BUYUK === "string" &&
+      sozluk8.Ekler.hataDOSYA_COK_BUYUK.includes(
+        String(EK_SINIRLARI.enFazlaBayt / (1024 * 1024)),
+      ),
+    sozluk8.Ekler?.hataDOSYA_COK_BUYUK,
+  );
+  kosanBolumler.push("dosya-yukleme");
 }
 
 // ===========================================================================

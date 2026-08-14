@@ -22,9 +22,34 @@
  * ============================================================================
  */
 
+/**
+ * ---------------------------------------------------------------------------
+ *  TAŞIMA SINIRI — BEYAN EDİLEN SINIR BUNU AŞAMAZ
+ * ---------------------------------------------------------------------------
+ *  14.08.2026 CANLI ÇÖKMESİ (T5): kullanıcı itiraz kanıtı yüklemeye çalıştı,
+ *  sayfa "This page couldn't load" ile düştü. Sebep dosyada ya da kodumuzda
+ *  değildi: BEYAN EDİLEN SINIR (5 MB) TAŞINABİLİR SINIRDAN BÜYÜKTÜ.
+ *
+ *  İki tavan var ve ikisi de bizim kodumuzun ÜSTÜNDE:
+ *    • Server Action gövdesi varsayılan 1 MB (Next belgesi:
+ *      config/next-config-js/serverActions → bodySizeLimit). Aşınca istek
+ *      ÇERÇEVE KATMANINDA reddedilir — bizim `try/catch`imiz hiç çalışmaz,
+ *      fonksiyon 500 döner, ekran error boundary'ye düşer. Bu yüzden
+ *      "kibarca hata göster" kodu yazmak tek başına ÇÖKMEYİ ÖNLEMİYORDU.
+ *      (`bodySizeLimit` yalnız `experimental.` altında yaşıyor; anayasa
+ *      gereği kullanılmıyor — bu yüzden yükleme Route Handler'a taşındı.)
+ *    • Sunucusuz fonksiyon istek gövdesi ~4,5 MB (barındırma tavanı).
+ *
+ *  Beyan edilen sınır bu tavanın ALTINDA kalmalı; multipart başlıkları da
+ *  yer kaplar. 4 MB seçildi: telefon fotoğrafı (2-4 MB) geçer, tavana yarım
+ *  megabaytlık pay kalır. `rma:dogrula` bu ilişkiyi KİLİTLİYOR — sınır
+ *  yeniden yükseltilirse test kırmızı yanar.
+ */
+export const TASIMA_SINIRI = Math.floor(4.5 * 1024 * 1024);
+
 export const EK_SINIRLARI = {
-  /** Dosya başına bayt sınırı — 5 MB. */
-  enFazlaBayt: 5 * 1024 * 1024,
+  /** Dosya başına bayt sınırı — 4 MB (taşıma tavanının altında). */
+  enFazlaBayt: 4 * 1024 * 1024,
   /** Kayıt başına ek sayısı. */
   enFazlaEk: 10,
 } as const;
