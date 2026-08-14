@@ -16,8 +16,19 @@
  * ============================================================================
  */
 
+import { readFileSync } from "node:fs";
+
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
 import { envanterHesapla, type EnvanterVaryantGirdisi } from "../src/lib/envanter";
+import {
+  bekleyenToplam,
+  gorevleriKur,
+  hepsiTemizMi,
+} from "../src/lib/panel/bugun-ne-yapmaliyim";
+import {
+  nakitTakvimiKur,
+  type TakvimSatiri,
+} from "../src/lib/panel/nakit-takvimi";
 import {
   aylikSeri,
   panelHesapla,
@@ -1073,6 +1084,195 @@ console.log("\n8) STOKTA BEKLEYEN — YAŞLANMA");
   kontrol("sayılan kalem 1", toplam.kalem === 1, toplam.kalem);
 
   kontrol("boş girdi boş liste", yaslanmaListesi([], BUGUN).length === 0);
+}
+
+// ===========================================================================
+console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
+// ===========================================================================
+/**
+ * Takvim iki motoru BİRLEŞTİRİR; hiçbir hesap kuralı orada doğmaz. Bu
+ * yüzden sınanan şey birleştirmenin kendisi: hangi satır takvime girer,
+ * hangisi toplama katılır, hangisi hiç sayılmaz.
+ *
+ * Kural saf fonksiyonda ve burada DEĞER olarak sınanıyor — "ekranda var mı"
+ * değil, "hangi rakamı üretiyor". Kalıcı derse uygun: koda gömülü karar
+ * testin göremediği karardır.
+ */
+{
+  const BUG = gunDegeri({ yil: 2026, ay: 8, gun: 14 });
+  const gun = (g: number) => gunDegeri({ yil: 2026, ay: 8, gun: g });
+
+  const s = (
+    ek: Partial<TakvimSatiri> & Pick<TakvimSatiri, "yon" | "tutar">,
+  ): TakvimSatiri => ({
+    kaynak: "KART",
+    tarih: gun(20),
+    paraBirimi: "TRY",
+    baslik: "x",
+    adres: "/",
+    ...ek,
+  });
+
+  const t1 = nakitTakvimiKur({
+    satirlar: [
+      s({ yon: "CIKACAK", tutar: 1000, tarih: gun(20) }),
+      s({ yon: "GIRECEK", tutar: 400, tarih: gun(18), kaynak: "HAKEDIS_RAPOR" }),
+      // GECİKMİŞ — toplama GİRER (mimar kararı 14.08.2026).
+      s({ yon: "GIRECEK", tutar: 250, tarih: gun(10), kaynak: "HAKEDIS_RAPOR" }),
+      // Pencere DIŞI (14 gün = 14–27 Ağustos) — sayılmaz.
+      s({ yon: "CIKACAK", tutar: 9999, tarih: gun(30) }),
+      // Vadesi bilinmiyor — sayılmaz, "?" listesinde durur.
+      s({ yon: "GIRECEK", tutar: 777, tarih: null, kaynak: "HAKEDIS_TAHMIN" }),
+      // TRY değil — kur çevrilmez, toplama karışmaz.
+      s({ yon: "GIRECEK", tutar: 555, tarih: gun(19), paraBirimi: "EUR" }),
+    ],
+    bugun: BUG,
+    pencereGun: 14,
+  });
+
+  yakin("çıkacak toplamı", t1.cikacakToplam, 1000);
+  yakin("girecek toplamı (gecikmiş DAHİL)", t1.girecekToplam, 650);
+  yakin("net pozisyon = girecek − çıkacak", t1.netPozisyon, -350);
+  kontrol("açık varsa net EKSİ", t1.netPozisyon < 0, t1.netPozisyon);
+
+  kontrol("gecikmiş ayrı listede", t1.gecikmis.length === 1, t1.gecikmis.length);
+  yakin("gecikmiş girecek ayrıca dönüyor", t1.gecikmisGirecek, 250);
+
+  /** SIFIR VARSAYILMAZ: vadesi bilinmeyen satır toplama KATILMAZ. */
+  kontrol("vadesiz satır ayrı", t1.vadesizler.length === 1, t1.vadesizler.length);
+  kontrol(
+    "  ...ve toplama KATILMADI (777 eklenmedi)",
+    Math.abs(t1.girecekToplam - 777) > 1,
+  );
+
+  /** Pencere dışı ve EUR satır SESSİZCE YUTULMAZ, sayılır. */
+  kontrol(
+    "pencere dışı + EUR satırlar dışarıda SAYILDI",
+    t1.disaridaKalanlar.length === 2,
+    t1.disaridaKalanlar.length,
+  );
+  kontrol(
+    "  ...EUR toplama KARIŞMADI (kur çevrilmedi)",
+    Math.abs(t1.girecekToplam - 1205) > 1,
+  );
+
+  kontrol("boş günler de üretiliyor (14 gün)", t1.gunler.length === 14, t1.gunler.length);
+  kontrol(
+    "gün toplamı satırla tutuyor",
+    t1.gunler.find((g) => g.gun === "2026-08-20")?.cikacak === 1000,
+  );
+
+  /** 30 günlük pencerede dışarıda kalan satır İÇERİ girer. */
+  const t2 = nakitTakvimiKur({
+    satirlar: [s({ yon: "CIKACAK", tutar: 9999, tarih: gun(30) })],
+    bugun: BUG,
+    pencereGun: 30,
+  });
+  yakin("30 gün penceresinde satır içeri giriyor", t2.cikacakToplam, 9999);
+  kontrol("  ...14 günde girmiyordu", t1.cikacakToplam !== 9999);
+
+  kontrol(
+    "hiç satır yoksa toplamlar sıfır ama gün listesi DOLU",
+    (() => {
+      const b = nakitTakvimiKur({ satirlar: [], bugun: BUG, pencereGun: 14 });
+      return (
+        b.cikacakToplam === 0 && b.girecekToplam === 0 && b.gunler.length === 14
+      );
+    })(),
+  );
+
+  // ------------------------------- GÖREV KUTUSU -------------------------------
+  const gorevler = gorevleriKur({
+    kargoBekleyen: 3,
+    iadeBildirimi: 0,
+    malKabulBekleyen: 2,
+    karHesaplanamayan: 0,
+    oransizKanalSku: 1,
+  });
+  kontrol("beş görev de üretiliyor", gorevler.length === 5, gorevler.length);
+  /** AÇIK SIFIR: sıfır olan satır GİZLENMEZ, temiz işaretlenir. */
+  kontrol(
+    "sıfır olan satır listeden DÜŞMÜYOR",
+    gorevler.filter((g) => g.temizMi).length === 2,
+  );
+  kontrol(
+    "her görevin süzülü adresi var",
+    gorevler.every((g) => g.adres.startsWith("/")),
+  );
+  yakin("bekleyen toplamı", bekleyenToplam(gorevler), 6);
+  kontrol("hepsi sıfır değilse hepsiTemiz FALSE", !hepsiTemizMi(gorevler));
+  kontrol(
+    "hepsi sıfırsa hepsiTemiz TRUE",
+    hepsiTemizMi(
+      gorevleriKur({
+        kargoBekleyen: 0,
+        iadeBildirimi: 0,
+        malKabulBekleyen: 0,
+        karHesaplanamayan: 0,
+        oransizKanalSku: 0,
+      }),
+    ),
+  );
+
+  // --------------------------- ÇİFT SAYIM KAPISI ---------------------------
+  const veriKaynagi = readFileSync("src/lib/panel/takvim-verisi.ts", "utf8");
+  kontrol(
+    "rapordan kalemi olan satış tahmine GİRMİYOR (çift sayım kapısı)",
+    veriKaynagi.includes("id: { notIn: [...raporluSatisIdleri] }"),
+  );
+  kontrol(
+    "geçmiş kart ekstresi gecikmiş SAYILMIYOR (ödeme kaydı yok)",
+    veriKaynagi.includes("if (ekstre.gecmisMi) continue;"),
+  );
+  kontrol(
+    "ikinci motor açılmamış — kart ve hakediş mevcut motorlardan",
+    veriKaynagi.includes("kartBorcuHesapla(") &&
+      veriKaynagi.includes("beklenenHakedis(") &&
+      veriKaynagi.includes("beklenenVade("),
+  );
+
+  // ------------------- EKRAN: SINIR VE BAĞIMSIZLIK YAZILI MI -------------------
+  const takvimEkrani = readFileSync("src/app/nakit-takvimi-blogu.tsx", "utf8");
+  const panelSayfasi = readFileSync("src/app/page.tsx", "utf8");
+  const sozlukP = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+
+  kontrol(
+    "dönem süzgecinden bağımsızlık EKRANDA yazıyor",
+    takvimEkrani.includes("donemBagimsiz") &&
+      typeof sozlukP.NakitTakvimi?.donemBagimsiz === "string" &&
+      sozlukP.NakitTakvimi.donemBagimsiz.includes("ETKİLENMEZ"),
+  );
+  kontrol(
+    "kart sınırı EKRANDA yazıyor (sessiz yokluk yok)",
+    takvimEkrani.includes("kartSiniriNotu") &&
+      typeof sozlukP.NakitTakvimi?.kartSiniriNotu === "string" &&
+      sozlukP.NakitTakvimi.kartSiniriNotu.includes("hakediş"),
+  );
+  kontrol(
+    "panel yerleşimi: görev kutusu takvimden ÖNCE",
+    panelSayfasi.indexOf("<GorevKutusu") <
+      panelSayfasi.indexOf("<NakitTakvimiBlogu"),
+  );
+  /**
+   * YETKİ: nakit takvimi bir PARA bloğudur. Operasyon görmemeli; izin
+   * yoksa sorgu bile atılmamalı (veri sızıntısı da maliyet de olmasın).
+   */
+  kontrol(
+    "nakit takvimi `satis.kar.gor`a bağlı",
+    panelSayfasi.includes("karGorunur ? (") &&
+      panelSayfasi.includes("<NakitTakvimiBlogu"),
+  );
+  kontrol(
+    "  ...izin yoksa takvim sorgusu ATILMIYOR",
+    panelSayfasi.includes(
+      "karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([])",
+    ),
+  );
+  /** Görev kutusu OPERASYONEL: izne bağlanmamalı. */
+  kontrol(
+    "görev kutusu izinsiz de görünüyor (operasyonel sayılar)",
+    panelSayfasi.includes("<GorevKutusu sayilar={gorevSayilari} />"),
+  );
 }
 
 // ===========================================================================

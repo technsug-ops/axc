@@ -157,6 +157,30 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       EKSTRELERİ getiriyor; ekstre kaydı varsa "ödendi mi / ne zaman"
       alanı oraya DOĞAL bağlanır. Ayrı tasarlanırsa iki farklı ekstre
       kavramı doğar ve biri diğerini gölgeler.
+      **MİMARİ KARARLAR (kullanıcı, 14.08.2026) — sıra gelince uygulanır:**
+
+      Kart ödeme kaydı **ekstre dönemine bağlıdır**, üç alan taşır:
+      1. **Ödeme tarihi.**
+      2. **Ödenen ana borç** — sistem alımlardan TÜRETİR (`kart-borcu.ts`),
+         ön-dolu gelir, kullanıcı teyit eder.
+      3. **Gecikme faizi / masrafı** — AYRI alan, ELLE girilir, varsayılan
+         boş. Boş = faiz yok; **sıfır SESSİZCE VARSAYILMAZ**, kullanıcı
+         açıkça bırakır ya da girer.
+
+      **FAİZ MİMARİSİ — AYRI AÇIK ALAN, FARK HESABI DEĞİL:**
+      - Faiz ana borçtan TÜRETİLMEZ. Fark hesabı sinsidir: ana borç bir
+        kuruş şaşarsa o fark "faiz" sanılır ve gider yazılır.
+      - Girilen faiz → gider modülüne **"finansman gideri / gecikme faizi"**
+        kategorisi → **DÖNEM kârını** düşürür. Belirli bir satışa
+        bağlanmaz; genel finansman maliyetidir ("Diğer Giderler" mantığı).
+      - **Ana borç ödemesi kârı ETKİLEMEZ** (maliyet alımda zaten sayıldı).
+        Faiz EK giderdir. İki rakam ayrı satır; toplanmaz, karışmaz.
+
+      **SİSTEM FAİZİ HESAPLAMAZ, UYARIR:** son ödeme günü geçmiş + ödendi
+      işareti yoksa → *"N gün gecikmiş, ödeme işaretlenmemiş"*. Faiz oranı
+      ÜRETİLMEZ — bankaya, güne ve karta göre değişir; uydurulursa panel
+      yanlış olur. Gerçek fatura faizi elle girilir.
+
       **Bugünkü geçici çözüm (onaylı):** geçmiş ekstreler ÖDENMİŞ sayılır —
       `lib/kart-borcu.ts`in `bekleyenToplam` tanımıyla AYNI varsayım, iki
       yerde çelişki yok. Gecikmiş bölümü yalnız hakedişten beslenir
