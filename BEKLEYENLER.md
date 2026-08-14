@@ -236,7 +236,16 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       _Mimar sözleşmesi 14.08.2026. RMA **ve** Panel Aşama 2 testleri
       geçmeden BAŞLANMAZ. Paket 1 Halil testini geçmeden Paket 2 yazılmaz._
 
-      **1a. NAKİT TAKVİMİ (paketin kalbi).** Önümüzdeki 14 gün, iki sütun:
+      **1a. NAKİT TAKVİMİ (paketin kalbi).** Önümüzdeki 14 gün, iki sütun.
+      **PARA BİRİMİ: TEK — TRY** (mimar kararı 14.08.2026). Çıkacak,
+      girecek ve net pozisyon hepsi TRY. EUR için bkz. "Çok para birimi"
+      büyüme paketi; bugün EUR kodu/ekranı YOK.
+      **GECİKMİŞLER TAKVİME GİRER** (mimar kararı 14.08.2026): vadesi
+      geçmiş ama ödenmemiş kalemler en üstte ayrı "GECİKMİŞ" başlığında.
+      Takvimden düşerlerse görünmez olurlar; oysa en acil madde onlar.
+      **GİRECEK TARAFINDA "RAPOR KAZANIR":** rapordan kalemi olan satış
+      tahmin listesine GİRMEZ (çift sayım olurdu); satırda kaynak rozeti
+      (rapor / tahmin) durur.
       - **ÖDENECEK (kart):** her kartın son ödeme günü + o güne düşen borç.
         Kaynak alımlar (kart + taksit) → kesim/ödeme günü kurallarıyla
         türetilir. **Mevcut `lib/kart-borcu.ts` kullanılır, İKİNCİ MOTOR
@@ -342,6 +351,25 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       **"Sinyal, karar değil" olarak sunulacak** — ortalama yanıltabilir
       (kampanya günü satışı sıradan güne yayılır). Yaşlanma listesinin
       tersi ucu: o "çok yavaş", bu "çok hızlı" diyor.
+
+- [ ] **ÇOK PARA BİRİMİ (EUR)** — _Karar 14.08.2026, mimar._
+      Nakit takvimi ve panel bugün **tek para birimi konuşuyor: TRY.**
+      Mimari EUR'ya **hazır** (para tutan yapılar ileride para birimi
+      etiketi alabilecek biçimde), ama **EUR kodu / ekranı / mantığı YOK.**
+
+      **NEDEN ŞİMDİ TASARLANMIYOR:** iki farklı akış iki farklı mimari
+      demek ve gerçek akış görülmeden seçilemez —
+      - (a) ayrı bir EUR hesabı tutulur, TRY'den bağımsız yaşar; ya da
+      - (b) giriş anında TL'ye çevrilir, defter tek para birimli kalır.
+      (a) çok para birimli defter ister (her toplam para birimi başına),
+      (b) kur kaynağı ve çevrim anı kararı ister. Yanlış seçim, sonradan
+      dönüşü pahalı bir yapı bırakır.
+
+      **AÇILMA ŞARTI:** gerçek bir EUR işlemi doğduğunda VE akış
+      netleştiğinde. O güne kadar yeni özellikler "tek para birimi"
+      varsayımını DERİNLEŞTİRMEMELİ (bkz. CLAUDE.md → SaaS hazırlık
+      kuralı): para tutan alanlar `Currency` taşımaya devam eder,
+      toplamlar para birimine göre gruplanabilir kalır.
 
 - [ ] **KOMİSYON ORANI TAZELİĞİ UYARISI** — "oranlar N gün önce yüklendi".
       Trendyol salı, Hepsiburada çarşamba güncelliyor; eski oranla fiyat
