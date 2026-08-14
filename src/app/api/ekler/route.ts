@@ -6,7 +6,6 @@ import {
   ekHedefiGecerliMi,
   ekYolu,
   ekiDogrula,
-  EK_SINIRLARI,
   type EkHatasi,
 } from "@/lib/ekler";
 import { oturumdakiKullanici } from "@/lib/oturum";
@@ -83,9 +82,23 @@ export async function POST(istek: Request) {
      */
     if (!process.env.BLOB_READ_WRITE_TOKEN) return hataDon("DEPO_YOK");
 
+    /**
+     * ÖZEL ERİŞİM — 14.08.2026 T5'in İKİNCİ hatası.
+     *
+     * Kod erişimi HERKESE AÇIK gönderiyordu ama depo PRIVATE yapılandırılmış;
+     * SDK her yüklemede "Cannot use public access on a private store" ile
+     * patlıyor, ekranda "Dosya yüklenemedi" görünüyordu. Kodun kendi yorumu
+     * "ÖZEL erişim: ek dosyaları herkese açık adresle servis edilmez"
+     * diyordu — YORUM DOĞRUYDU, PARAMETRE YANLIŞTI. İkisi birbirini
+     * yalanlıyordu ve kimse fark etmemişti.
+     *
+     * ÖZEL DOĞRU TERCİH: bunlar itiraz kanıtı — müşteri fotoğrafı, fatura.
+     * Tahmin edilebilir bir adresle herkese açık servis edilmemeli.
+     * Dosyalar `/api/ekler/<id>` üzerinden, OTURUM KONTROLÜYLE sunuluyor.
+     */
     const yol = ekYolu(hedefTipi, hedefId, dosya.name, Date.now());
     const yuklenen = await put(yol, dosya, {
-      access: "public",
+      access: "private",
       addRandomSuffix: false,
       contentType: dosya.type,
     });
@@ -95,7 +108,9 @@ export async function POST(istek: Request) {
       data: {
         targetType: hedefTipi,
         targetId: hedefId,
-        blobPath: yuklenen.url,
+        // ÖZEL depoda ham URL tek başına açılmaz; kalıcı olan YOL saklanır
+        // ve indirme kendi ucumuzdan, yetki kontrolüyle yapılır.
+        blobPath: yuklenen.pathname,
         fileName: dosya.name,
         mimeType: dosya.type,
         sizeBytes: dosya.size,
@@ -114,9 +129,4 @@ export async function POST(istek: Request) {
     console.error("[ek] yükleme hatası:", e);
     return hataDon("YUKLENEMEDI");
   }
-}
-
-/** İstemcinin sınırı sunucudan okuyabilmesi için — tek kaynak. */
-export async function GET() {
-  return NextResponse.json({ sinirlar: EK_SINIRLARI });
 }

@@ -1312,6 +1312,40 @@ console.log("\n9) DOSYA YÜKLEME — BEYAN EDİLEN SINIR TAŞINABİLİR OLMALI")
    * JETON SUNUCUDA KALIR. İstemci bileşeninde jeton adı geçmemeli; geçseydi
    * derleyici onu istemci paketine koymaya çalışırdı.
    */
+  /**
+   * DEPO ÖZEL — YÜKLEME DE ÖZEL OLMALI. T5'in ikinci hatası buydu: kod
+   * `access: "public"` gönderiyordu, depo private'tı ve SDK her yüklemede
+   * "Cannot use public access on a private store" ile patlıyordu. Kodun
+   * kendi yorumu "ÖZEL erişim" diyordu — yorum doğru, parametre yanlıştı.
+   */
+  kontrol(
+    'yükleme ÖZEL erişimle yapılıyor (depo private — "public" patlatıyor)',
+    ekRota.includes('access: "private"') && !ekRota.includes('access: "public"'),
+  );
+  kontrol(
+    "  ...ve kalıcı olan YOL saklanıyor (özel depoda ham URL açılmaz)",
+    ekRota.includes("blobPath: yuklenen.pathname"),
+  );
+
+  const indirmeRotasi = readFileSync(
+    "src/app/api/ekler/[id]/route.ts",
+    "utf8",
+  );
+  kontrol(
+    "indirme kendi ucumuzdan ve YETKİ KONTROLÜYLE geçiyor",
+    indirmeRotasi.includes('yetkiIste("iade.gor")') &&
+      indirmeRotasi.includes('access: "private"'),
+  );
+  kontrol(
+    "  ...özel dosya önbelleğe alınmıyor",
+    indirmeRotasi.includes("no-store"),
+  );
+  kontrol(
+    "ekran ham Blob adresine bağlantı VERMİYOR",
+    ekBileseni.includes("`/api/ekler/${e.id}`") &&
+      !ekBileseni.includes("href={e.blobPath}"),
+  );
+
   kontrol(
     "blob jetonu istemci bileşeninde GEÇMİYOR",
     !ekBileseni.includes("BLOB_READ_WRITE_TOKEN"),

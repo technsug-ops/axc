@@ -145,8 +145,10 @@ export function Ekler({
           {ekler.map((e) => (
             <li key={e.id} className="flex items-center gap-2 text-sm">
               <FileText className="text-muted-foreground size-4 shrink-0" />
+              {/* ÖZEL DOSYA — ham Blob adresi verilmez, akış kendi
+                  ucumuzdan ve oturum kontrolüyle geçer. */}
               <a
-                href={e.blobPath}
+                href={`/api/ekler/${e.id}`}
                 target="_blank"
                 rel="noreferrer"
                 className="truncate underline underline-offset-2"
