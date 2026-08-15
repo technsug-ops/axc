@@ -6,7 +6,14 @@ import {
   zararOzeti,
   type DagilimGirdisi,
 } from "../src/lib/panel/dagilim";
+import { readFileSync } from "node:fs";
+
 import { satisKosulu } from "../src/lib/liste-suzgeci";
+import {
+  bandinVaryantlari,
+  yasSuzgeciCoz,
+  YAS_SUZGEC_KODU,
+} from "../src/lib/yaslanma";
 import { sermayeVerimiSiralamasi } from "../src/lib/panel/kar-orani";
 
 /**
@@ -409,6 +416,94 @@ console.log("=".repeat(70));
     kosul.profitStatus === "CALCULATED" &&
       JSON.stringify(kosul.net2Amount) === JSON.stringify({ lt: 0 }),
     [kosul.profitStatus, kosul.net2Amount],
+  );
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("10) ÖLÜ SERMAYE ROZETİ — HEDEF VE SAYI=LİSTE (O2)");
+console.log("=".repeat(70));
+
+{
+  /**
+   * O2 TESTİ DÜŞTÜ (15.08.2026): rozet `analizAdresi("stok")`e gidiyordu,
+   * yani PANELİN KENDİ SEKMESİNE — ayrı bir ekrana değil. Kullanıcı
+   * tıklayınca sayfa başa atıyor, "panele döndü" görünüyordu.
+   * Rozet EYLEME götürmeli.
+   */
+  const panel = readFileSync("src/app/page.tsx", "utf8");
+  kontrol(
+    "ölü sermaye rozeti /stok yaş süzgecine gidiyor",
+    panel.includes("/stok?yas=") && panel.includes("href={oluSermayeAdresi}"),
+  );
+  kontrol(
+    "  ...panelin kendi sekmesine GİTMİYOR",
+    !panel.includes('href={analizAdresi("stok")}'),
+  );
+
+  /**
+   * SAYI = LİSTE. Rozetteki sayı `sermayeToplami.kalem` olsaydı yalnız
+   * maliyeti BİLİNEN kalemleri sayardı; liste ise bandı tutan HEPSİNİ
+   * gösterir. Rozet "4" derken liste 5 çıkardı.
+   */
+  kontrol(
+    "rozet sayısı KÜMEDEN okunuyor (sermayeToplami.kalem DEĞİL)",
+    panel.includes("kalem: oluKalemler.length") &&
+      !panel.includes("kalem: oluSermaye.kalem"),
+  );
+
+  const stok = readFileSync("src/app/stok/page.tsx", "utf8");
+  kontrol("/stok yaş süzgecini tanıyor", stok.includes("yasSuzgeciCoz(yas)"));
+  kontrol(
+    "  ...AYNI kuralı çağırıyor (bandinVaryantlari — tek kaynak)",
+    stok.includes("bandinVaryantlari(") && panel.includes("bandinVaryantlari("),
+  );
+  kontrol(
+    "  ...süzgeç ekranda GÖRÜNÜR ve temizlenebilir (sessiz süzgeç yok)",
+    stok.includes('t("yasSuzgeci"') && stok.includes('ortak("temizle")'),
+  );
+  kontrol(
+    "  ...süzgeç kapalıyken yaşlanma sorgusu KOŞMUYOR",
+    stok.includes("if (yasBandi) {"),
+  );
+
+  kontrol("kirmizi → KIRMIZI", yasSuzgeciCoz("kirmizi") === "KIRMIZI");
+  kontrol("  ...amber → AMBER", yasSuzgeciCoz("amber") === "AMBER");
+  kontrol(
+    "  ...tanınmayan değer null (sessiz varsayılan yok)",
+    yasSuzgeciCoz("eski") === null,
+  );
+  kontrol("  ...boş değer null", yasSuzgeciCoz(undefined) === null);
+  kontrol(
+    "adres kodu ile çözücü aynı dili konuşuyor",
+    yasSuzgeciCoz(YAS_SUZGEC_KODU.KIRMIZI) === "KIRMIZI" &&
+      yasSuzgeciCoz(YAS_SUZGEC_KODU.AMBER) === "AMBER",
+  );
+
+  const satirlar = (
+    [
+      { variantId: "a", bant: "KIRMIZI" },
+      { variantId: "b", bant: "AMBER" },
+      { variantId: "c", bant: "KIRMIZI" },
+      { variantId: "d", bant: "NOTR" },
+    ] as const
+  ).map((x) => ({
+    variantId: x.variantId,
+    bant: x.bant,
+    enEskiGiris: new Date(0),
+    yasGun: 0,
+    adet: 1,
+    sermayeKdvHaric: null,
+    sermayeParaBirimi: null,
+  }));
+  kontrol(
+    "bandın varyantları YALNIZ o bandı döndürüyor",
+    bandinVaryantlari(satirlar, "KIRMIZI").join(",") === "a,c",
+    bandinVaryantlari(satirlar, "KIRMIZI"),
+  );
+  kontrol(
+    "  ...sermayesi hesaplanamayan kalem de DAHİL (rafta bekliyor)",
+    bandinVaryantlari(satirlar, "KIRMIZI").length === 2,
   );
 }
 

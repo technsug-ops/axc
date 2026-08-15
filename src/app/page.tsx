@@ -83,10 +83,12 @@ import { takvimBugunu, takvimSatirlariniTopla } from "@/lib/panel/takvim-verisi"
 import { suzgecAdresi } from "@/lib/suzgec";
 import { izinVarMi } from "@/lib/yetki";
 import {
+  bandinVaryantlari,
   siralamaGecerliMi,
   yaslanmaListesi,
   sermayeToplami,
   YAS_BANTLARI,
+  YAS_SUZGEC_KODU,
   type SiralamaOlcutu,
   type YaslanmaGirdisi,
 } from "@/lib/yaslanma";
@@ -903,6 +905,9 @@ export default async function AnaSayfa({
    * DÖNEM SÜZGECİNDEN ETKİLENMEZ: "bugün depoda ne bekliyor" sorusu geçmiş
    * bir tarih aralığıyla daralmaz (aynı ilke yaşlanma listesinde de yazılı).
    */
+  const oluKalemler = bandinVaryantlari(yaslanma, "KIRMIZI");
+  /** Rozetin hedefi — /stok yaş süzgeci. Kod tek yerden okunuyor. */
+  const oluSermayeAdresi = `/stok?yas=${YAS_SUZGEC_KODU.KIRMIZI}`;
   const oluSermaye = sermayeToplami(
     yaslanma.filter((y) => y.bant === "KIRMIZI"),
     "TRY",
@@ -1777,12 +1782,22 @@ export default async function AnaSayfa({
                           kesmeliyim" sorusunun iki yarısı (para kaybı ve
                           para tutsak) birlikte okunur. Sıfırsa gizlenmez. */}
                       <div className="flex">
-                        {oluSermaye.kalem > 0 ? (
+                        {oluKalemler.length > 0 ? (
                           <DurumRozeti durum="olumsuz" isaretsiz>
-                            <Baglanti href={analizAdresi("stok")}>
+                            {/* HEDEF: /stok'un YAŞ SÜZGECİ — panelin kendi
+                                sekmesi DEĞİL. O2 testi tam burada düştü:
+                                `analizAdresi("stok")` aynı sayfanın sekmesine
+                                gidiyordu, yani rozet eyleme götürmüyor,
+                                sayfayı başa atıyordu. */}
+                            <Baglanti href={oluSermayeAdresi}>
                               {t("oluSermaye", {
                                 gun: YAS_BANTLARI.kirmiziGun,
-                                kalem: oluSermaye.kalem,
+                                /* SAYI KÜMEDEN OKUNUYOR. `sermayeToplami.kalem`
+                                   yalnız maliyeti BİLİNEN kalemleri sayar;
+                                   liste ise bandı tutan HEPSİNİ gösterecek.
+                                   İkisi ayrışmasın diye sayı da aynı kümeden
+                                   geliyor (Halil maddesi c). */
+                                kalem: oluKalemler.length,
                                 tutar: bicim.para(oluSermaye.toplam, "TRY"),
                               })}
                             </Baglanti>

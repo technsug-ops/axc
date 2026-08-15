@@ -221,3 +221,46 @@ export function sermayeToplami(
   }
   return { toplam, kalem, hesaplanamayan };
 }
+
+/**
+ * ============================================================================
+ *  YAŞ SÜZGECİ — PANEL ROZETİ İLE /stok LİSTESİNİN TEK KAYNAĞI
+ * ----------------------------------------------------------------------------
+ *  15.08.2026, O2 testi düştü: panel "4 kalem 61+ gündür rafta" diyordu ama
+ *  rozet panelin kendi sekmesine (`/?analiz=stok`) gidiyordu — ayrı bir
+ *  ekrana değil. Rozet EYLEME götürmeli.
+ *
+ *  Rozetin saydığı küme ile açılan listenin kümesi AYNI OLMAK ZORUNDA
+ *  (Halil testi maddesi c). Bu yüzden ölçüt burada, tek yerde: iki taraf da
+ *  bu fonksiyonu çağırır. İki yerde iki koşul yazılsaydı biri gün eşiğini,
+ *  diğeri para birimini süzer ve sayılar sessizce ayrışırdı.
+ * ============================================================================
+ */
+
+/** Adres parametresi → yaş bandı. Tanımadığını sessizce varsayılana düşürmez. */
+export function yasSuzgeciCoz(deger: string | undefined): YasBandi | null {
+  if (deger === "kirmizi") return "KIRMIZI";
+  if (deger === "amber") return "AMBER";
+  return null;
+}
+
+/** Yaş bandı → adres parametresi. Tek yerde, iki yönlü. */
+export const YAS_SUZGEC_KODU: Record<"AMBER" | "KIRMIZI", string> = {
+  AMBER: "amber",
+  KIRMIZI: "kirmizi",
+};
+
+/**
+ * O banttaki varyantların kimlikleri — liste süzgecinin girdisi.
+ *
+ * KÜME TANIMI SADE: bandı tutan HER varyant. Sermayesi hesaplanamayanlar da
+ * DAHİL — onlar da rafta bekliyor. Sermaye toplamı ayrı bir sorudur ve
+ * `sermayeToplami` onu ayrıca söylüyor; ikisini karıştırmak "maliyeti
+ * bilinmeyen kalem raftaki listede yok" gibi sessiz bir kayba yol açardı.
+ */
+export function bandinVaryantlari(
+  satirlar: YaslanmaSatiri[],
+  bant: YasBandi,
+): string[] {
+  return satirlar.filter((s) => s.bant === bant).map((s) => s.variantId);
+}

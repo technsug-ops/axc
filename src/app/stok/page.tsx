@@ -20,7 +20,15 @@ import {
 import { SayfalamaCubugu } from "@/components/sayfalama";
 import { DURUM_ZEMINI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
+import { DurumRozeti } from "@/components/durum-rozeti";
 import { prisma } from "@/lib/prisma";
+import { acikPartilerToplu } from "@/lib/stok";
+import {
+  bandinVaryantlari,
+  yaslanmaListesi,
+  yasSuzgeciCoz,
+  YAS_BANTLARI,
+} from "@/lib/yaslanma";
 import { sayfaCoz } from "@/lib/sayfalama";
 import {
   AYRILMIS_SAYILAN_DURUMLAR,
@@ -38,17 +46,45 @@ export async function generateMetadata() {
 export default async function StokSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sayfa?: string }>;
+  searchParams: Promise<{ q?: string; sayfa?: string; yas?: string }>;
 }) {
   await sayfaIzni("stok.gor");
 
-  const { q, sayfa } = await searchParams;
+  const { q, sayfa, yas } = await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
   const t = await getTranslations("Stok");
   const ortak = await getTranslations("Ortak");
 
-  const suzgec = arama
+  /**
+   * YAŞ SÜZGECİ — panelin "ölü sermaye" rozetinin hedefi (O2, 15.08.2026).
+   *
+   * Ölçüt `lib/yaslanma.ts`te TEK YERDE: panel rozeti de bu liste de aynı
+   * `bandinVaryantlari` çağrısını kullanıyor. İki yerde iki koşul yazılsaydı
+   * biri gün eşiğini diğeri para birimini süzer ve sayılar sessizce
+   * ayrışırdı — rozet "4" derken liste 5 gösterirdi.
+   *
+   * SÜZGEÇ KAPALIYKEN HİÇBİR EK SORGU KOŞMUYOR: yaşlanma hesabı bütün stok
+   * hareketlerini okur; her stok açılışında o bedeli ödemeye değmez.
+   */
+  const yasBandi = yasSuzgeciCoz(yas);
+  let yasVaryantlari: string[] | null = null;
+  if (yasBandi) {
+    const partiler = await acikPartilerToplu(prisma, null);
+    yasVaryantlari = bandinVaryantlari(
+      yaslanmaListesi(
+        [...partiler.entries()].map(([variantId, liste]) => ({
+          variantId,
+          partiler: liste,
+          kdvOrani: null,
+        })),
+        new Date(),
+      ),
+      yasBandi,
+    );
+  }
+
+  const aramaKosulu = arama
     ? {
         OR: [
           { sku: { contains: arama } },
@@ -72,6 +108,19 @@ export default async function StokSayfasi({
         ],
       }
     : undefined;
+
+  /**
+   * İki süzgeç BİRLİKTE yaşar: arama + yaş.
+   *
+   * Yaş bandı boş küme döndürürse `id: { in: [] }` yazılır ve liste boş
+   * çıkar — bu DOĞRU davranıştır. "Süzgeç yokmuş gibi hepsini göster"
+   * sessiz bir kayıp olurdu: kullanıcı 61+ gün arıyor, ekranda 1066 varyant
+   * görüyor ve süzgecin çalıştığını sanıyor.
+   */
+  const suzgec =
+    yasVaryantlari === null
+      ? aramaKosulu
+      : { ...(aramaKosulu ?? {}), id: { in: yasVaryantlari } };
 
   // ÖNCE SAY, SONRA SAYFAYI ÇEK (bkz. lib/sayfalama.ts).
   const toplam = await prisma.productVariant.count({ where: suzgec });
@@ -157,6 +206,20 @@ export default async function StokSayfasi({
       </div>
 
       <StokArama baslangic={arama} />
+
+      {/* SESSİZ SÜZGEÇ YASAK: yaş süzgeci açıkken ekranda GÖRÜNÜR ve tek
+          tıkla kaldırılır. Görünmeseydi kullanıcı eksik listeyi deponun
+          tamamı sanardı — bu dosyada `tumStok` de aynı sebeple var. */}
+      {yasBandi ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <DurumRozeti durum="olumsuz" isaretsiz>
+            {t("yasSuzgeci", { gun: YAS_BANTLARI.kirmiziGun })}
+          </DurumRozeti>
+          <Baglanti href={arama ? `/stok?q=${encodeURIComponent(arama)}` : "/stok"}>
+            {ortak("temizle")}
+          </Baglanti>
+        </div>
+      ) : null}
 
       {varyantlar.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
