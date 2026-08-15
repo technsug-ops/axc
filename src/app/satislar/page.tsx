@@ -182,6 +182,8 @@ export default async function SatislarSayfasi({
       secenekler: [
         { deger: "eksik", etiket: t("karSuzgeciEksik") },
         { deger: "tam", etiket: t("karSuzgeciTam") },
+        // 2b: panelin "N satış zararda" sayacı buraya bağlanır.
+        { deger: "zarar", etiket: t("karSuzgeciZarar") },
       ],
     },
     {

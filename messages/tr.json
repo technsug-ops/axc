@@ -802,7 +802,8 @@
     "kargoTarihiKaydet": "Tarihi kaydet",
     "kargoTarihiGecersiz": "Kargo tarihi okunamadı. Gün, ay ve yılı kontrol edin.",
     "karda": "kârda",
-    "zararda": "zararda"
+    "zararda": "zararda",
+    "karSuzgeciZarar": "Zarara gidenler"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -1723,7 +1724,9 @@
     "sermayeAltDeger": "bağlı nakit verimi {nakit} · NET-2 {net2} · maliyet {maliyet} (KDV hariç) · nakit maliyet {nakitMaliyet} (KDV dahil)",
     "sermayeRozeti": "sermaye verimi",
     "maliyetBilinmiyor": "maliyet bilinmiyor",
-    "sermayeUyari": "Maliyeti bilinmeyen ürünler listeden ÇIKARILMADI, sona kondu — oranları boş görünür. Sıfır sayılsaydı en verimsiz gibi görünürlerdi."
+    "sermayeUyari": "Maliyeti bilinmeyen ürünler listeden ÇIKARILMADI, sona kondu — oranları boş görünür. Sıfır sayılsaydı en verimsiz gibi görünürlerdi.",
+    "zararliSatis": "{sayi} satış zararda · {tutar}",
+    "zararliSatisYok": "Bu dönemde zarara giden satış yok"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

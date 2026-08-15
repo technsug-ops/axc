@@ -3,8 +3,10 @@ import {
   paretoKur,
   paylariDenkle,
   yogunlasma,
+  zararOzeti,
   type DagilimGirdisi,
 } from "../src/lib/panel/dagilim";
+import { satisKosulu } from "../src/lib/liste-suzgeci";
 import { sermayeVerimiSiralamasi } from "../src/lib/panel/kar-orani";
 
 /**
@@ -358,6 +360,57 @@ console.log("=".repeat(70));
 }
 
 
+
+console.log("");
+console.log("=".repeat(70));
+console.log("9) ZARARA GİDEN SATIŞLAR (2b)");
+console.log("=".repeat(70));
+
+{
+  const z = zararOzeti([
+    { net2: -100, hesaplandiMi: true },
+    { net2: -50, hesaplandiMi: true },
+    { net2: 200, hesaplandiMi: true },
+    { net2: 0, hesaplandiMi: true },
+  ]);
+  kontrol("2 satış zararda", z.adet === 2, z.adet);
+  kontrol("  ...toplam −150 (işaret saklanmıyor)", z.toplam === -150, z.toplam);
+  kontrol("  ...sıfır NET-2 zarar SAYILMIYOR", z.adet === 2);
+
+  /**
+   * ⚠ KÂRI HESAPLANAMAYAN SATIŞ ZARAR SAYILMAZ. Zarar bir HÜKÜMDÜR;
+   * hesabı bitmemiş satış hakkında hüküm verilmez. O kayıtlar kendi
+   * uyarısında ("kârı hesaplanamayan") duruyor.
+   */
+  const eksik = zararOzeti([
+    { net2: -100, hesaplandiMi: false },
+    { net2: -40, hesaplandiMi: true },
+  ]);
+  kontrol("hesaplanmamış satış zarara GİRMİYOR", eksik.adet === 1, eksik.adet);
+  kontrol("  ...toplamı da etkilemiyor (−40)", eksik.toplam === -40, eksik.toplam);
+
+  kontrol(
+    "NET-2 null olan satış zarara girmiyor",
+    zararOzeti([{ net2: null, hesaplandiMi: true }]).adet === 0,
+  );
+  kontrol(
+    "zarar yoksa adet 0, toplam 0",
+    zararOzeti([{ net2: 500, hesaplandiMi: true }]).adet === 0 &&
+      zararOzeti([{ net2: 500, hesaplandiMi: true }]).toplam === 0,
+  );
+
+  /**
+   * SAYAÇ İLE LİSTE BİREBİR: `kar=zarar` süzgeci de AYNI iki şartı arar.
+   * Tek şart olsaydı (yalnız net2 < 0) sayı ile liste ayrışırdı.
+   */
+  const kosul = satisKosulu({ kar: "zarar" }).kosul;
+  kontrol(
+    "süzgeç AYNI iki şartı arıyor (hesaplanmış + NET-2 eksi)",
+    kosul.profitStatus === "CALCULATED" &&
+      JSON.stringify(kosul.net2Amount) === JSON.stringify({ lt: 0 }),
+    [kosul.profitStatus, kosul.net2Amount],
+  );
+}
 
 console.log("");
 console.log("=".repeat(70));

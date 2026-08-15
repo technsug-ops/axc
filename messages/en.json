@@ -802,7 +802,8 @@
     "kargoTarihiKaydet": "",
     "kargoTarihiGecersiz": "",
     "karda": "",
-    "zararda": ""
+    "zararda": "",
+    "karSuzgeciZarar": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -1723,7 +1724,9 @@
     "sermayeAltDeger": "",
     "sermayeRozeti": "",
     "maliyetBilinmiyor": "",
-    "sermayeUyari": ""
+    "sermayeUyari": "",
+    "zararliSatis": "",
+    "zararliSatisYok": ""
   },
   "Envanter": {
     "baslik": "",

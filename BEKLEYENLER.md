@@ -526,6 +526,58 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       - Her paket AYRI teslim + AYRI Halil testi (tıklama düzeyinde,
         rakamlar taahhütlü).
 
+- [ ] **UYARI MERKEZİ (ÇAN) — FAZ 1: DÖRT KIRMIZI UYARI**
+      _Mimar sözleşmesi 15.08.2026._ **SIRA: Panel Aşama 3'ün kalan
+      maddelerinden SONRA** — çan onların hesaplarını kullanacak.
+
+      **FAZ 1 KAPSAMI — yalnız KIRMIZI (para kaybı/riski):**
+      1. **Nakit açığı** — 14 günde çıkacak > girecek → "Önümüzdeki 14 günde
+         ₺X açık". Kaynak `lib/panel/nakit-takvimi.ts` (zaten var).
+      2. **Maliyetsiz stok** — alımı girilmemiş, stok hareketi olan ürün
+         (NO_COST riski) → "N ürünün maliyeti yok".
+      3. **Kârı hesaplanamayan satış** — NO_COST/RULE_MISSING → "N satışın
+         kârı hesaplanamıyor".
+      4. **Hakediş gecikti** — beklenen ödeme tarihi geçmiş, `paidAt` boş
+         → "N hakediş gecikti, ₺X".
+
+      **ÇAN BİLEŞENİ:** üst çubukta çan + sayı rozeti (kırmızı uyarı varsa
+      rozet KIRMIZI). Tıkla → açılır panel, uyarılar listeli. Her uyarı
+      başlık + sayı/tutar + **TIKLANABİLİR** (ilgili süzülü ekrana gider).
+      Uyarı yoksa çan nötr ve **"temiz ✓" yazar — gizlenmez** (açık sıfır).
+      **Her uyarı EYLEME götürür; bilgi için bilgi yok.**
+
+      **MİMARİ:**
+      - Her uyarı SAF FONKSİYON: `lib/uyari/*.ts` — "bu uyarı var mı, kaç,
+        tutar, nereye" tek yerde. Çan bunları toplar. **TEK KAYNAK:** panel
+        görev kutusu ve çan aynı hesabı çağırsın, kopya YASAK.
+      - `seviye` alanı BAŞTAN olsun (kirmizi/amber/notr) ama Faz 1'de
+        hepsi kırmızı. "Mimari genişlemeye hazır, içerik dar" — EUR
+        kararıyla aynı ilke.
+      - **Yetki etiketi her uyarıda:** finans/kâr uyarıları `satis.kar.gor`
+        (Operasyon nakit açığı/kârsız satış GÖRMEZ); operasyonel olanlar
+        (maliyetsiz stok) açık olabilir.
+      - Salt-okuma; migration çıkmaz beklenir.
+
+      **TEST:** `uyari:dogrula` — her uyarının doğru koşulda tetiklendiği ·
+      tetiklenmemesi gerekende SESSİZ kaldığı · sayı/tutarın gerçek veriyle
+      tuttuğu · çan rozetinin EN YÜKSEK seviyeyi gösterdiği.
+      _Mutasyon: uyarı koşulunu gevşet → test kırmızı._
+
+- [ ] **UYARI MERKEZİ — FAZ 2: AMBER VE NÖTR KATMAN**
+      _Faz 1 kapanmadan başlanmaz._
+
+      **AMBER:** kart ödemesi yaklaşan · **geciken sipariş** · stok bitiyor ·
+      bekleyen iade · zarar eden satış · **marj düştü**.
+      **NÖTR:** ölü sermaye (60 gün) · kanal SKU boş.
+
+      **EŞİKLER NETLEŞTİ (mimar kararı 15.08.2026):**
+      - **Geciken sipariş: 7 GÜN SABİT.** Alım `ORDERED` + `purchasedAt`
+        üstünden 7+ gün geçmiş + mal kabul edilmemiş → amber.
+        _Tedarikçi bazlı ayar İLERİDE; şimdi sabit — erken özellik yasak._
+      - **Marj düştü: NET-2 / brüt ciro < %10** → amber. Dönem/ürün bazında.
+        **Eşik EKRANDA GÖRÜNÜR** ("%10 altı" yazılı) — uydurma bir sabit
+        gibi durmasın.
+
 ## Sonraki uygun pakette
 
 - [ ] **PANEL KANAL KARTLARI AYARLANABİLİR OLSUN** — _Kullanıcı isteği

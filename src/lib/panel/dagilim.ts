@@ -109,6 +109,29 @@ export function yogunlasma(
   };
 }
 
+/**
+ * ZARARA GİDEN SATIŞ ÖZETİ (2b).
+ *
+ * Sayaç ile tıklanınca açılan listenin BİREBİR tutması şart. O yüzden ölçüt
+ * burada tek yerde: NET-2 EKSİ **ve** kâr HESAPLANMIŞ. `lib/liste-suzgeci`
+ * içindeki `kar=zarar` koşulu aynı iki şartı arıyor.
+ *
+ * Kârı hesaplanamayan satış zarar SAYILMAZ: zarar bir hükümdür, hesabı
+ * bitmemiş satış hakkında hüküm verilmez. O kayıtlar kendi uyarısında
+ * ("kârı hesaplanamayan") duruyor.
+ */
+export function zararOzeti(
+  satislar: { net2: number | null; hesaplandiMi: boolean }[],
+): { adet: number; toplam: number } {
+  const zararlilar = satislar.filter(
+    (s) => s.hesaplandiMi && s.net2 !== null && s.net2 < 0,
+  );
+  return {
+    adet: zararlilar.length,
+    toplam: zararlilar.reduce((t, s) => t + (s.net2 ?? 0), 0),
+  };
+}
+
 // ---------------------------------------------------------------------------
 //  KANAL DAĞILIMI
 // ---------------------------------------------------------------------------

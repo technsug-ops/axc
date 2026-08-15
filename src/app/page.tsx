@@ -63,7 +63,12 @@ import {
   kiyasCoz,
   kiyasPenceresi,
 } from "@/lib/karsilastirma";
-import { kanalDagilimi, paretoKur, yogunlasma } from "@/lib/panel/dagilim";
+import {
+  kanalDagilimi,
+  paretoKur,
+  yogunlasma,
+  zararOzeti,
+} from "@/lib/panel/dagilim";
 import { prisma } from "@/lib/prisma";
 import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
@@ -743,6 +748,20 @@ export default async function AnaSayfa({
     })),
   );
   const yogunluk = yogunlasma(pareto, YOGUNLASMA_HEDEFI);
+
+  /**
+   * ZARARA GİDEN SATIŞLAR (2b) — dönem süzgecine bağlı.
+   * Ölçüt `zararOzeti` içinde tek yerde; tıklanınca açılan liste
+   * (`/satislar?kar=zarar`) aynı iki şartı arıyor, sayı ile liste tutar.
+   */
+  const zarar = zararOzeti(
+    donemSatislari
+      .filter((s) => pencerede(donem, s.tarih))
+      .map((s) => ({
+        net2: s.net2,
+        hesaplandiMi: s.durum === "CALCULATED",
+      })),
+  );
 
   /**
    * Dağılım kutularının para birimi. Ürün listeleri kalem seviyesinde
@@ -1692,6 +1711,31 @@ export default async function AnaSayfa({
                   adres: analizAdresi("dagilim"),
                   icerik: (
                     <div className="min-w-0 space-y-4">
+                      {/* ZARARA GİDEN SATIŞLAR (2b) — sayaç EYLEME götürür:
+                          tıklayınca `kar=zarar` süzgeciyle o satışlara gider.
+                          Sıfırsa GİZLENMEZ, "temiz" yazar — açık sıfır.
+                          Ölçüt `zararOzeti` ile süzgeçte AYNI: hesaplanmış
+                          VE NET-2 eksi. Böylece sayı ile liste tutar. */}
+                      <div className="flex">
+                        {zarar.adet > 0 ? (
+                          <DurumRozeti durum="olumsuz" isaretsiz>
+                            <Baglanti href={satisAdresi({ kar: "zarar" })}>
+                              {t("zararliSatis", {
+                                sayi: zarar.adet,
+                                tutar: bicim.para(
+                                  zarar.toplam,
+                                  dagilimParaBirimi,
+                                ),
+                              })}
+                            </Baglanti>
+                          </DurumRozeti>
+                        ) : (
+                          <DurumRozeti durum="olumlu" isaretsiz>
+                            {t("zararliSatisYok")}
+                          </DurumRozeti>
+                        )}
+                      </div>
+
                       {/* YOĞUNLAŞMA CÜMLESİ — abartısız, yorum kullanıcının.
                           Panel yalnız dağılımı dürüstçe söyler. */}
                       {yogunluk ? (

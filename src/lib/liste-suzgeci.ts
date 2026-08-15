@@ -94,7 +94,7 @@ const temiz = (deger: string | undefined) => (deger ?? "").trim();
 // ---------------------------------------------------------------------------
 
 /** Kâr süzgecinin tanıdığı değerler. */
-export const KAR_SUZGECLERI = ["eksik", "tam"] as const;
+export const KAR_SUZGECLERI = ["eksik", "tam", "zarar"] as const;
 /** İade süzgecinin tanıdığı değerler. */
 export const IADE_SUZGECLERI = ["var", "yok"] as const;
 /**
@@ -148,6 +148,20 @@ export function satisKosulu(
       ? { OR: [{ profitStatus: null }, { NOT: { profitStatus: "CALCULATED" } }] }
       : {}),
     ...(kar === "tam" ? { profitStatus: "CALCULATED" } : {}),
+    /**
+     * ZARARA GİDEN SATIŞLAR (2b). Panelin "N satış zararda" sayacı buraya
+     * bağlanır.
+     *
+     * İKİ ŞART BİRLİKTE: NET-2 eksi OLMALI **ve** kâr HESAPLANMIŞ olmalı.
+     * Yalnız `net2Amount < 0` denseydi, kârı hesaplanamamış satışların
+     * NET'i `null` olduğu için listeye girmezdi — orası doğru; ama
+     * `profitStatus` şartı olmadan yarın NET yazılıp durum bozuk kalırsa
+     * o kayıt "zarar" sayılırdı. Zarar bir HÜKÜMDÜR; hesabı tamamlanmamış
+     * satış hakkında hüküm verilmez.
+     */
+    ...(kar === "zarar"
+      ? { profitStatus: "CALCULATED", net2Amount: { lt: 0 } }
+      : {}),
     // İadesi olan / olmayan satışlar.
     ...(iade === "var" ? { returns: { some: {} } } : {}),
     ...(iade === "yok" ? { returns: { none: {} } } : {}),
