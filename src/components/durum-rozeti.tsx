@@ -35,7 +35,7 @@ export function DurumRozeti({
 }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ${DURUM_ZEMINI[durum]}`}
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${DURUM_ZEMINI[durum]}`}
     >
       {!isaretsiz && DURUM_ISARETI[durum] ? (
         <span aria-hidden="true">{DURUM_ISARETI[durum]}</span>

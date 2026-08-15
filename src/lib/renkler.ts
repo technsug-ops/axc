@@ -72,15 +72,30 @@ export const DURUM_SERIDI: Record<DurumRengi, string> = {
   notr: "border-l-[3px] border-l-[#B4B2A9]",
 };
 
-/** Pastel zemin + koyu yazı — rozet ve küçük kutucuklar için. */
+/**
+ * Pastel zemin + koyu yazı + kendi tonunda ince kenarlık.
+ *
+ * TONLAR BİR TIK KOYULAŞTIRILDI (15.08.2026). İlk set kâğıt üstünde doğruydu
+ * ama ekranda kayboluyordu — kullanıcı "inanılmaz zayıf bir renk uygulaması"
+ * dedi. Sebebi ölçüldü: zeminler beyazdan yalnız birkaç birim ayrılıyordu,
+ * yani rozet "renkli bir şey" olarak DEĞİL, biraz kirli beyaz olarak
+ * görünüyordu.
+ *
+ * Kenarlık eklendi çünkü tek başına zemin, bir tablo hücresinin içinde
+ * sınırını belli edemiyor; rozeti nesne yapan şey kenarıdır. Kısıt #2
+ * korunuyor: zemin hâlâ pastel, kontrast hâlâ RAKAMDA — doygunluk zemine
+ * değil, kenarlığa ve yazıya verildi.
+ */
 export const DURUM_ZEMINI: Record<DurumRengi, string> = {
   olumlu:
-    "bg-[#E1F5EE] text-[#0F6E56] dark:bg-[#0F6E56]/30 dark:text-[#9FE6CE]",
+    "bg-[#CFEFE1] text-[#0B5C47] ring-1 ring-inset ring-[#1D9E75]/35 dark:bg-[#0F6E56]/35 dark:text-[#A9EBD4] dark:ring-[#1D9E75]/45",
   olumsuz:
-    "bg-[#FCEBEB] text-[#A32D2D] dark:bg-[#A32D2D]/30 dark:text-[#F3B6B6]",
-  uyari: "bg-[#FAEEDA] text-[#854F0B] dark:bg-[#854F0B]/35 dark:text-[#F0CE96]",
-  bilgi: "bg-[#EAF2FB] text-[#185FA5] dark:bg-[#185FA5]/30 dark:text-[#A8CBEF]",
-  notr: "bg-[#F1EFE8] text-foreground dark:bg-muted dark:text-muted-foreground",
+    "bg-[#FBDADA] text-[#8F2424] ring-1 ring-inset ring-[#E24B4A]/35 dark:bg-[#A32D2D]/35 dark:text-[#F6C2C2] dark:ring-[#E24B4A]/45",
+  uyari:
+    "bg-[#F9E3BC] text-[#6F4108] ring-1 ring-inset ring-[#EF9F27]/40 dark:bg-[#854F0B]/40 dark:text-[#F3D5A2] dark:ring-[#EF9F27]/45",
+  bilgi:
+    "bg-[#D9E8F9] text-[#134F8B] ring-1 ring-inset ring-[#378ADD]/35 dark:bg-[#185FA5]/35 dark:text-[#B3D2F1] dark:ring-[#378ADD]/45",
+  notr: "bg-[#EDEBE4] text-foreground ring-1 ring-inset ring-border dark:bg-muted dark:text-muted-foreground",
 };
 
 /** Yalnız RAKAM rengi — zemin nötr kalsın istenen büyük tutarlar için. */

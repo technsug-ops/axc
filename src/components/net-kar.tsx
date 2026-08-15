@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import { DurumRakami, DurumRozeti } from "@/components/durum-rozeti";
+import { DurumRozeti } from "@/components/durum-rozeti";
 import { bicimlendirici } from "@/lib/bicim";
 import { karDurumu } from "@/lib/renkler";
 
@@ -51,19 +51,32 @@ export async function NetKar({
   const renk = karDurumu(sayi);
 
   /**
-   * RENK TEK BAŞINA KONUŞMAZ (kısıt #1): rakamın yanında kelime durur.
-   * Sıfırda kelime YOK — sıfır nötrdür, "kârda" da "zararda" da değildir.
+   * RAKAM VE KELİME TEK PARÇA, PASTEL ZEMİN ÜSTÜNDE (15.08.2026 düzeltmesi).
+   *
+   * İlk denemede rakam yalnız KOYU YAZI ile renklendirilmişti ve kullanıcı
+   * "inanılmaz zayıf bir renk uygulaması" dedi — haklıydı: paletin koyu
+   * yeşili 13 px'te siyahtan ayırt edilmiyor. Spesifikasyonun kendisi
+   * "pastel ZEMİN + koyu rakam" diyordu; zemini atlayınca renk kayboluyor.
+   *
+   * Rakam ile kelime AYNI çip içinde: iki ayrı öğe gibi durunca göz ikisini
+   * ilişkilendirmiyordu. Sıfırda çip YOK — nötr, ne müjde ne alarm.
    */
-  return (
-    <span className="inline-flex flex-wrap items-baseline gap-1">
-      <DurumRakami durum={renk} className="font-medium">
+  if (renk === "notr") {
+    return (
+      <span className="font-medium tabular-nums">
         {bicim.para(sayi, paraBirimi ?? "TRY")}
-      </DurumRakami>
-      {renk === "notr" ? null : (
-        <DurumRozeti durum={renk} isaretsiz>
-          {renk === "olumlu" ? t("karda") : t("zararda")}
-        </DurumRozeti>
-      )}
-    </span>
+      </span>
+    );
+  }
+
+  return (
+    <DurumRozeti durum={renk} isaretsiz>
+      <span className="font-semibold tabular-nums">
+        {bicim.para(sayi, paraBirimi ?? "TRY")}
+      </span>
+      <span className="opacity-75">
+        {renk === "olumlu" ? t("karda") : t("zararda")}
+      </span>
+    </DurumRozeti>
   );
 }

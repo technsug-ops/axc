@@ -48,16 +48,17 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
+    /* SAYFA GRİ, KART BEYAZ — 15.08.2026'da ters çevrildi.
+       09.08.2026'da "kart sayfadan ayrılmıyor" denmişti ve kart
+       GRİLEŞTİRİLMİŞTİ. Ayrım geliyordu ama yanlış yönden: kart sayfanın
+       üstüne çıkmak yerine içine gömülüyordu, bütün ekran donuk bir griye
+       düşüyordu ve renkli rozetler bu gri üstünde iyice sönüyordu.
+       Doğrusu tersi: zemin geri çekilir, kart öne çıkar. Aynı ayrım, ama
+       kart artık bir yüzey; pastel rozetler de beyaz üstünde okunuyor.
+       Koyu temada kart ZATEN sayfadan açık — orada bir şey değişmiyor. */
+    --background: oklch(0.968 0.002 90);
     --foreground: oklch(0.145 0 0);
-    /* KART ZEMİNİ — bilerek sayfadan koyu.
-       shadcn varsayılanında kart da sayfa da saf beyazdı; kart bir yüzey
-       gibi durmuyor, sınırı yalnızca kenarlıktan anlaşılıyordu. Hafif gri
-       zemin kartı sayfadan ayırıyor, içindeki beyaz giriş alanları da
-       kartın üstünde okunur kalıyor (kullanıcı geri bildirimi 09.08.2026).
-       Koyu temada kart ZATEN sayfadan açık; orada zemin değişmiyor,
-       kenarlık koyulaşıyor. */
-    --card: oklch(0.97 0 0);
+    --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);

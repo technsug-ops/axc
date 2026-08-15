@@ -7,6 +7,7 @@ import { ExcelIndir } from "@/components/excel-indir";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Baglanti } from "@/components/baglanti";
 import { DurumRozeti } from "@/components/durum-rozeti";
+import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
 import { KargoDurumu } from "./kargo-durumu";
@@ -139,6 +140,17 @@ export default async function SatislarSayfasi({
     if (satis.items.length !== 1) return "—";
     const kalem = satis.items[0];
     return bicim.para(kalem.unitPriceAmount, kalem.unitPriceCurrency);
+  }
+
+  /**
+   * SATIRIN KÂR DURUMU — şerit rengi buradan. Hesaplanmamış kâr NÖTRDÜR:
+   * "zarar" demek yalan olurdu.
+   */
+  function satirDurumu(satis: (typeof satislar)[number]) {
+    if (satis.profitStatus !== "CALCULATED" || satis.net2Amount === null) {
+      return "notr" as const;
+    }
+    return karDurumu(Number(satis.net2Amount.toString()));
   }
 
   /** Kalemlerden en az birinde iade edilebilir adet kaldı mı? */
@@ -361,7 +373,20 @@ export default async function SatislarSayfasi({
               </TableHeader>
               <TableBody>
                 {satislar.map((satis) => (
-                  <TableRow key={satis.id}>
+                  /* ÜÇÜNCÜ KATMAN — SATIR ŞERİDİ. Rozet tek başına zayıf
+                     kalıyordu: göz satırı OKUMADAN durumu göremiyordu. 3px sol
+                     şerit satırı taramadan önce sınıflandırır.
+                     Yalnız ZARAR şeritlenir; her satırı boyamak nötr tabanı
+                     yok eder ve vurgu anlamını yitirir (kısıt #3). Kâr izni
+                     yoksa şerit de yok — NET bilgisi kenarlıktan sızmaz. */
+                  <TableRow
+                    key={satis.id}
+                    className={
+                      karGorunur && satirDurumu(satis) === "olumsuz"
+                        ? DURUM_SERIDI.olumsuz
+                        : ""
+                    }
+                  >
                     <TableCell className="whitespace-nowrap">
                       {/* Tarih üstte (kayda giden bağlantı), sipariş no altta
                           ve kopyalanabilir — kimlik listede kalıyor (#3, #4). */}

@@ -1414,6 +1414,70 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
 
   /**
+   * ════════════════════════════════════════════════════════════════════
+   *  RENK GERÇEKTEN GÖRÜNÜYOR MU — ÖLÇÜLÜR, GÖZE BIRAKILMAZ
+   * --------------------------------------------------------------------
+   *  İlk palet "tanımlı" olduğu için bütün testleri geçmişti ama ekranda
+   *  kayboluyordu: zeminler beyazdan yalnız birkaç birim ayrılıyordu, göz
+   *  onları renk değil kirli beyaz olarak okuyordu. Testler bunu göremezdi
+   *  çünkü hepsi "bu ton tanımlı mı" diye soruyordu — "AYIRT EDİLİYOR MU"
+   *  diye değil. O yüzden burada mesafe SAYIYLA sınanıyor.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const hexOku = (sinif: string) => {
+    const m = /bg-\[#([0-9A-Fa-f]{6})\]/.exec(sinif);
+    if (!m) return null;
+    const s = m[1];
+    return [0, 2, 4].map((i) => parseInt(s.slice(i, i + 2), 16));
+  };
+  /** Beyazdan toplam kanal uzaklığı — 255'lik ölçekte. */
+  const beyazdanUzaklik = (rgb: number[]) =>
+    rgb.reduce((t, k) => t + (255 - k), 0);
+
+  kontrol(
+    "her pastel zemin BEYAZDAN belirgin ayrışıyor (soluk değil)",
+    (["olumlu", "olumsuz", "uyari", "bilgi"] as const).every((d) => {
+      const rgb = hexOku(DURUM_ZEMINI[d]);
+      // 60 eşiği: eski palet 42-52 arasındaydı ve ekranda görünmüyordu.
+      return rgb !== null && beyazdanUzaklik(rgb) >= 60;
+    }),
+  );
+  kontrol(
+    "  ...ama hâlâ PASTEL (doygun blok değil — kontrast rakamda kalır)",
+    (["olumlu", "olumsuz", "uyari", "bilgi"] as const).every((d) => {
+      const rgb = hexOku(DURUM_ZEMINI[d]);
+      return rgb !== null && beyazdanUzaklik(rgb) <= 260;
+    }),
+  );
+  kontrol(
+    "  ...rozetin kendi tonunda kenarlığı var (hücre içinde nesne olur)",
+    (["olumlu", "olumsuz", "uyari", "bilgi"] as const).every((d) =>
+      DURUM_ZEMINI[d].includes("ring-1"),
+    ),
+  );
+
+  /**
+   * SAYFA GRİ, KART BEYAZ. Ters kurulursa (kart sayfadan koyu) kartlar
+   * gömülür ve pastel rozetler gri üstünde sönerdi — 15.08.2026'da tam
+   * olarak bu yaşandı.
+   */
+  const tema = readFileSync("src/app/globals.css", "utf8");
+  // Dilim `:root {` ile ONDAN SONRAKİ `.dark {` arasından alınır. Düz
+  // `indexOf(".dark")` dosyanın başındaki `@custom-variant dark (&:is(.dark *))`
+  // satırına takılıp dilimi boş bırakıyordu; iki değer de NaN çıkıyor ve
+  // kontrol kendi hatasından kırmızı yanıyordu.
+  const kokBas = tema.indexOf(":root {");
+  const acikTema = tema.slice(kokBas, tema.indexOf(".dark {", kokBas));
+  const acikLuma = (ad: string) => {
+    const m = new RegExp(`--${ad}:\\s*oklch\\(([0-9.]+)`).exec(acikTema);
+    return m ? Number(m[1]) : NaN;
+  };
+  kontrol(
+    "açık temada KART sayfadan açık (kart yükselir, gömülmez)",
+    acikLuma("card") > acikLuma("background"),
+  );
+
+  /**
    * PALET TEK KAPIDAN GEÇER. Ekranlar ham renk kodu yazmamalı; yazarsa
    * palet değiştiğinde bir yer geride kalır ve renkler ayrışır.
    */
@@ -1473,7 +1537,27 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
   kontrol(
     "  ...sıfırda kelime YOK (nötr, ne müjde ne alarm)",
-    netKar.includes('renk === "notr" ? null'),
+    netKar.includes('if (renk === "notr")'),
+  );
+
+  /**
+   * ÜÇ KATMANIN ÜÇÜNCÜSÜ — satır şeridi gerçekten UYGULANMIŞ mı.
+   * İlk turda `DURUM_SERIDI` tanımlıydı ama hiçbir ekran kullanmıyordu;
+   * "tanımlandı" ile "uygulandı" arasındaki farkı test görmemişti.
+   */
+  const satisSayfasi = readFileSync("src/app/satislar/page.tsx", "utf8");
+  kontrol(
+    "satış satırı: zarar edende sol şerit var",
+    satisSayfasi.includes("DURUM_SERIDI.olumsuz") &&
+      satisSayfasi.includes("satirDurumu(satis)"),
+  );
+  kontrol(
+    "  ...şerit yalnız ZARARDA (her satır boyanmaz, nötr taban korunur)",
+    !satisSayfasi.includes("DURUM_SERIDI.olumlu"),
+  );
+  kontrol(
+    "  ...kâr izni yoksa şerit de yok (NET kenarlıktan sızmaz)",
+    satisSayfasi.includes("karGorunur && satirDurumu(satis)"),
   );
 
   /**
