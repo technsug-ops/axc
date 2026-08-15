@@ -355,7 +355,18 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       kapsamıyordu; "geçen yıl aynı dönem" 12 ay geriye düşüyor, grafik
       penceresi ise 11 ay — panel "geçen yıl 0 satış" derdi. **Veri
       yokluğu değil SORGU yokluğu**, sessiz sıfırın en sinsi hâli.
-      `panel:dogrula` 299 → 306. _Halil testi (K1–K12) bekliyor._
+      `panel:dogrula` 299 → 306. **HALİL TESTİ GEÇTİ (K1–K12, gerçek cihaz
+      + canlı), MİMAR ONAYLI — 2a HEM RAPOR HEM PANELDE TAMAMLANDI,
+      madde tamamen kapalı.**
+      _Testte çıkan ve düzeltilen:_ kıyas dönemi bomboşken "karşılaştırılamaz"
+      rozeti BEŞ KUTUDA tekrarlanıyor ve kutulardan taşıyordu. Bütün
+      kutularda aynı olan rozet bilgi taşımaz; durum artık seçicinin altında
+      BİR KEZ yazılıyor (`c024de1`).
+
+      ✅ **SERMAYE VERİMİ KAPANDI 15.08.2026** (`02a3a5c`) — panelde
+      "Sermaye verimi" sekmesi, NET-2 / maliyet (KDV hariç), ürün ürün,
+      azalan sıralı. Maliyeti bilinmeyen ürün ATILMIYOR, sona konuyor.
+      `dagilim:dogrula` 43 → 52. _Halil testi (S1–S9) bekliyor._
 
       **2c. PARETO / DAĞILIM ANALİZİ — KULLANICININ 1 NUMARASI**
       _Karar 15.08.2026._ Cironun ve kârın (NET-2) yüzde olarak NEREDEN
