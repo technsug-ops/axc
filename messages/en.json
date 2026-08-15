@@ -1691,7 +1691,9 @@
     "sekmeVerim": "",
     "sekmeHacim": "",
     "aylikRakamlar": "",
-    "aylikRakamlarNotu": ""
+    "aylikRakamlarNotu": "",
+    "kargoEkseniNotu": "",
+    "kargoBekleyenNotu": ""
   },
   "Envanter": {
     "baslik": "",

@@ -1691,7 +1691,9 @@
     "sekmeVerim": "Verim (marj)",
     "sekmeHacim": "Hacim (adet ve tutar)",
     "aylikRakamlar": "Aylık rakamlar",
-    "aylikRakamlarNotu": "grafiğin tablo hâli"
+    "aylikRakamlarNotu": "grafiğin tablo hâli",
+    "kargoEkseniNotu": "kargoya verme tarihine göre",
+    "kargoBekleyenNotu": "şu an bekleyen — dönemden bağımsız"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

@@ -253,6 +253,50 @@ console.log("\n3) SATIŞ KOŞULU");
     "tanınmayan kargo değeri süzgeç kurmaz",
     satisKosulu({ kargo: "yolda" }, AN).kosul.shippedAt === undefined,
   );
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  DÖNEM, KARGO SÜZGECİNDE TARİH EKSENİNİ DEĞİŞTİRİR (15.08.2026)
+   * --------------------------------------------------------------------
+   *  Panelin "kargoya verildi" sayacı `shippedAt`e göre sayıyor. Bu liste
+   *  `soldAt`a göre süzülseydi, dün satılıp bugün kargolanan paket
+   *  sayaçta VAR listede YOK olurdu — Halil testi maddesi (c) düşerdi.
+   *
+   *  ESKİ TEST BUNU GÖREMEZDİ: yalnız `shippedAt`in DOLU olup olmadığına
+   *  bakıyordu, döneme hiç bakmıyordu. Dönem ekseni test edilmemiş bir
+   *  boyuttu; test edilmeyen boyutta hata görünmez.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const kargoDonemli = satisKosulu(
+    { kargo: "verildi", pencere: "BU_AY" },
+    AN,
+  ).kosul;
+  kontrol(
+    "kargo verildi + dönem: dönem shippedAt'e uygulanır",
+    typeof kargoDonemli.shippedAt === "object" &&
+      kargoDonemli.shippedAt !== null &&
+      "gte" in kargoDonemli.shippedAt,
+    kargoDonemli.shippedAt,
+  );
+  kontrol(
+    "  ...ve soldAt'e UYGULANMAZ (yoksa 'bu ay satılmış VE kargolanmış' olurdu)",
+    kargoDonemli.soldAt === undefined,
+    kargoDonemli.soldAt,
+  );
+  kontrol(
+    "kargo süzgeci YOKKEN dönem yine soldAt'e uygulanır",
+    (() => {
+      const k = satisKosulu({ pencere: "BU_AY" }, AN).kosul;
+      return k.soldAt !== undefined && k.shippedAt === undefined;
+    })(),
+  );
+  kontrol(
+    "kargo bekleyen + dönem: dönem SATIŞ tarihine uygulanır (elle seçim)",
+    (() => {
+      const k = satisKosulu({ kargo: "bekleyen", pencere: "BU_AY" }, AN).kosul;
+      return k.shippedAt === null && k.soldAt !== undefined;
+    })(),
+  );
   // HEPSİ BİR ARADA: hiçbiri diğerini düşürmemeli.
   const hepsi = satisKosulu(
     { pencere: "BU_AY", kanal: "TRENDYOL", hesap: "hsp1", kar: "tam", iade: "var", q: "X" },

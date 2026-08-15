@@ -120,7 +120,15 @@ export function satisKosulu(
   const kosul: Prisma.SaleWhereInput = {
     // Süzgeç kapalıysa alan HİÇ yazılmaz; `undefined` koşulu Prisma'da
     // "koşul yok" demektir ama açıkça atlamak niyeti okunur kılıyor.
-    ...(pencere.aralik ? { soldAt: pencere.aralik } : {}),
+    /**
+     * Dönem normalde SATIŞ tarihine uygulanır — ama kargo süzgeci açıkken
+     * ekseni kargo devralır (aşağıya bakın). İki tarih koşulu aynı anda
+     * yazılırsa "bu ay satılmış VE bu ay kargolanmış" olur; oysa sorulan
+     * "bu ay kargolanmış"tır.
+     */
+    ...(pencere.aralik && kargo !== "verildi"
+      ? { soldAt: pencere.aralik }
+      : {}),
     ...(arama ? { code: { contains: arama } } : {}),
     /**
      * KANAL ve HESAP birlikte gelebilir (panelden gelen bağlantı kanal
@@ -149,7 +157,21 @@ export function satisKosulu(
      * "kargo firması seçilmemiş" ile karıştırmamak gerekir — firma satışta
      * seçilir, verildi işareti sonra elle konur.
      */
-    ...(kargo === "verildi" ? { shippedAt: { not: null } } : {}),
+    /**
+     * DÖNEM, KARGO SÜZGECİNDE TARİH EKSENİNİ DEĞİŞTİRİR (15.08.2026).
+     *
+     * "Kargoya verilenler" sorusu bir OPERASYON sorusudur: "bu dönemde ne
+     * KARGOLADIM". Satış tarihine göre süzülürse dün satılıp bugün
+     * kargolanan paket bugünkü listede görünmez — panelin sayacında tam
+     * olarak bu hata vardı ve liste de aynı hatayı tekrarlıyordu.
+     *
+     * Bu yüzden `kargo=verildi` seçiliyken dönem `shippedAt`e uygulanır,
+     * `soldAt`a DEĞİL. Panelin sayacı ile bu listenin kaydı ancak böyle
+     * birebir tutar (Halil testi maddesi c).
+     */
+    ...(kargo === "verildi"
+      ? { shippedAt: pencere.aralik ?? { not: null } }
+      : {}),
     ...(kargo === "bekleyen" ? { shippedAt: null } : {}),
   };
 

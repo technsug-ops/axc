@@ -56,6 +56,7 @@ import {
 import {
   aylikSeri,
   panelHesapla,
+  type PanelKargosu,
   type PanelIadesi,
   type PanelSatisi,
 } from "../src/lib/panel";
@@ -126,7 +127,17 @@ function satis(ek: Partial<PanelSatisi> = {}): PanelSatisi {
     net1: 260,
     net2: 200,
     durum: "CALCULATED",
-    kargoyaVerildiMi: false,
+    ...ek,
+  };
+}
+
+/** Kargo kaydı — satıştan AYRI eksende yaşar (ölçüt shippedAt). */
+function kargo(ek: Partial<PanelKargosu> = {}): PanelKargosu {
+  return {
+    kanalKodu: "TRENDYOL",
+    kanalAdi: "Trendyol",
+    paraBirimi: "TRY",
+    kargoTarihi: gun(2026, 8, 5),
     ...ek,
   };
 }
@@ -617,32 +628,122 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
 
 
   /**
-   * KARGO SAYAÇLARI (14.08.2026). "Bekleyen" AYRI SAYAÇ DEĞİL: toplam −
-   * verilen. Ayrı tutulsaydı iki sayaç birbirinden sapabilir ve panel
-   * "8 sipariş, 5 verildi, 4 bekliyor" gibi imkânsız bir şey yazabilirdi.
+   * ════════════════════════════════════════════════════════════════════
+   *  KARGO — SEVKİYAT TARİHİ EKSENİ (15.08.2026 düzeltmesi)
+   * --------------------------------------------------------------------
+   *  ESKİ TESTLER HATAYI NEDEN YAKALAMADI: hatayı KURAL olarak yazmışlardı.
+   *  Buradaki eski kontrol "verilen + bekleyen = toplam adet" diyordu —
+   *  bu eşitlik ancak kargo SATIŞ tarihine göre sayılırsa doğrudur. Yani
+   *  test, yanlış ekseni doğrulamıyor, ONAYLIYORDU. Bir test kendi
+   *  varsayımını sınayamaz.
+   *
+   *  Eski kontroller ayrıca kargoyu hep satışla AYNI güne koyuyordu
+   *  (`kargoyaVerildiMi: true`, tarih yok). İki eksenin ayrıştığı tek
+   *  senaryo — dün satılıp bugün kargolanan sipariş — hiç kurulmamıştı.
+   *  Ayrışmayan veriyle eksen hatası görünmez.
+   *
+   *  Yeni kontroller o senaryoyu ADIYLA kuruyor.
+   * ════════════════════════════════════════════════════════════════════
    */
-  const kargo = panelHesapla(buAy, [
-    satis({ kargoyaVerildiMi: true }),
-    satis({ kargoyaVerildiMi: true }),
-    satis({ kargoyaVerildiMi: false }),
-    satis({ kanalKodu: "HEPSIBURADA", kanalAdi: "Hepsiburada", kargoyaVerildiMi: false }),
-  ]);
-  const kb = kargo[0];
-  kontrol("kargoya verilen 2", kb.kargoyaVerilenAdet === 2, kb.kargoyaVerilenAdet);
-  kontrol("bekleyen 2 (toplam − verilen)", kb.kargoBekleyenAdet === 2, kb.kargoBekleyenAdet);
+  const bugun = pencereOlustur("BUGUN", AN);
+  // DÜN penceresi: "bugün" penceresini bir gün geriye kurmak için sabit an kaydırılır.
+  const dun = pencereOlustur("BUGUN", new Date("2026-08-11T09:00:00Z"));
+
+  /** DÜN satılan, BUGÜN kargolanan sipariş — hatanın tam senaryosu. */
+  const dunSatBugunKargola = [
+    kargo({ kargoTarihi: gun(2026, 8, 12) }),
+    kargo({ kargoTarihi: gun(2026, 8, 12) }),
+    kargo({ kargoTarihi: gun(2026, 8, 12) }),
+    kargo({ kargoTarihi: gun(2026, 8, 12) }),
+  ];
+  /** BUGÜN satılan ve BUGÜN kargolanan iki sipariş. */
+  const bugunkuler = [
+    kargo({ kargoTarihi: gun(2026, 8, 12) }),
+    kargo({ kargoTarihi: gun(2026, 8, 12) }),
+  ];
+
+  const bugunBlok = panelHesapla(
+    bugun,
+    [satis({ tarih: gun(2026, 8, 12) }), satis({ tarih: gun(2026, 8, 12) })],
+    [],
+    [...dunSatBugunKargola, ...bugunkuler],
+  )[0];
   kontrol(
-    "verilen + bekleyen = toplam adet",
-    kb.kargoyaVerilenAdet + kb.kargoBekleyenAdet === kb.toplamAdet,
-    [kb.kargoyaVerilenAdet, kb.kargoBekleyenAdet, kb.toplamAdet],
+    "BUGÜN kargolanan 6 (2 bugünkü + 4 dünkü sipariş)",
+    bugunBlok.kargoyaVerilenAdet === 6,
+    bugunBlok.kargoyaVerilenAdet,
   );
   kontrol(
-    "kanal bazında da sayılıyor",
-    kb.kanallar.find((k) => k.kanalKodu === "TRENDYOL")!.kargoyaVerilenAdet === 2,
-    kb.kanallar.map((k) => [k.kanalKodu, k.kargoyaVerilenAdet]),
+    "  ...aynı ekranda satış adedi 2 (satış ekseni ayrı, doğru)",
+    bugunBlok.toplamAdet === 2,
+    bugunBlok.toplamAdet,
   );
   kontrol(
-    "hiç işaretlenmemişse verilen 0, bekleyen = toplam",
-    (() => { const x = panelHesapla(buAy, [satis(), satis()])[0]; return x.kargoyaVerilenAdet === 0 && x.kargoBekleyenAdet === 2; })(),
+    "  ...yani verilen + bekleyen = toplam adet ARTIK GEÇERLİ DEĞİL",
+    bugunBlok.kargoyaVerilenAdet !== bugunBlok.toplamAdet,
+  );
+
+  /** Aynı sevkiyatlar DÜNÜN penceresinde GÖRÜNMEMELİ. */
+  const dunBlok = panelHesapla(
+    dun,
+    [satis({ tarih: gun(2026, 8, 11) })],
+    [],
+    [...dunSatBugunKargola, ...bugunkuler],
+  )[0];
+  kontrol(
+    "DÜN kargolanan 0 (bugün kargolananlar dünün hanesine yazılmıyor)",
+    dunBlok.kargoyaVerilenAdet === 0,
+    dunBlok.kargoyaVerilenAdet,
+  );
+
+  /** Kargo, o dönemde satışı olmayan bir kanal için de satır açar. */
+  const yalnizKargo = panelHesapla(
+    bugun,
+    [satis({ tarih: gun(2026, 8, 12) })],
+    [],
+    [
+      kargo({
+        kanalKodu: "HEPSIBURADA",
+        kanalAdi: "Hepsiburada",
+        kargoTarihi: gun(2026, 8, 12),
+      }),
+    ],
+  )[0];
+  kontrol(
+    "dönemde satışı olmayan kanaldan sevkiyat çıkarsa satır açılır",
+    yalnizKargo.kanallar.find((k) => k.kanalKodu === "HEPSIBURADA")
+      ?.kargoyaVerilenAdet === 1,
+    yalnizKargo.kanallar.map((k) => [k.kanalKodu, k.kargoyaVerilenAdet]),
+  );
+
+  /**
+   * BEKLEYEN DÖNEMDEN BAĞIMSIZ. Aynı bekleyen küme, hangi pencere
+   * seçilirse seçilsin aynı sayıyı vermeli — "bugünün bekleyeni" yoktur.
+   */
+  const bekleyenler = [
+    kargo({ kargoTarihi: null }),
+    kargo({ kargoTarihi: null }),
+    kargo({ kargoTarihi: null, kanalKodu: "HEPSIBURADA", kanalAdi: "Hepsiburada" }),
+  ];
+  const bugunBek = panelHesapla(bugun, [satis({ tarih: gun(2026, 8, 12) })], [], bekleyenler)[0];
+  const ayBek = panelHesapla(buAy, [satis()], [], bekleyenler)[0];
+  kontrol("bekleyen 3 — BUGÜN penceresinde", bugunBek.kargoBekleyenAdet === 3, bugunBek.kargoBekleyenAdet);
+  kontrol(
+    "  ...BU AY penceresinde de 3 (dönem bekleyeni değiştirmiyor)",
+    ayBek.kargoBekleyenAdet === 3,
+    ayBek.kargoBekleyenAdet,
+  );
+  kontrol(
+    "  ...bekleyen kanal satırı AÇMIYOR (boş 0 satış satırı çıkmasın)",
+    bugunBek.kanallar.every((k) => k.kanalKodu !== "HEPSIBURADA"),
+    bugunBek.kanallar.map((k) => k.kanalKodu),
+  );
+  kontrol(
+    "kargo listesi boşsa verilen ve bekleyen 0",
+    (() => {
+      const x = panelHesapla(buAy, [satis(), satis()])[0];
+      return x.kargoyaVerilenAdet === 0 && x.kargoBekleyenAdet === 0;
+    })(),
   );
   // --- HESAP KIRILIMI: aynı pazaryerinde iki mağaza ---
   const cokHesap = panelHesapla(

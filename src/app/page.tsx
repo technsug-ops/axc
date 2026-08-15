@@ -40,6 +40,7 @@ import {
   aylikSeri,
   panelHesapla,
   type PanelIadesi,
+  type PanelKargosu,
   type PanelSatisi,
 } from "@/lib/panel";
 import {
@@ -189,7 +190,7 @@ export default async function AnaSayfa({
     Math.max(grafikBitisHaric.getTime(), donem.bitisHaric.getTime()),
   );
 
-  const [kayitlar, iadeKayitlari, partiHaritasi] = await Promise.all([
+  const [kayitlar, iadeKayitlari, partiHaritasi, kargoKayitlari] = await Promise.all([
     prisma.sale.findMany({
       where: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } },
       select: {
@@ -266,7 +267,51 @@ export default async function AnaSayfa({
      * diyen ekran ile "3 var" diyen panel yan yana dururdu.
      */
     acikPartilerToplu(prisma, null),
+
+    /**
+     * KARGO — KENDİ EKSENİ, KENDİ SORGUSU.
+     *
+     * İki küme çekilir ve ikisi de satış sorgusunun aralığına SIĞMAZ:
+     *  1. Bu DÖNEMDE kargolananlar — satış tarihi çok eski olabilir.
+     *  2. Hâlâ bekleyenler (`shippedAt: null`) — dönemden bağımsızdır,
+     *     "bugünün bekleyeni" diye bir şey yoktur.
+     *
+     * Sorgu bilerek HAFİF: kalemlerden yalnız BİR tanesinin para birimi
+     * alınıyor, çünkü tek ihtiyacımız satışı doğru blokta saymak.
+     */
+    prisma.sale.findMany({
+      where: {
+        OR: [
+          { shippedAt: { gte: donem.baslangic, lt: donem.bitisHaric } },
+          { shippedAt: null },
+        ],
+      },
+      select: {
+        shippedAt: true,
+        profitCurrency: true,
+        channelAccount: {
+          select: { channel: { select: { code: true, name: true } } },
+        },
+        items: { select: { unitPriceCurrency: true }, take: 1 },
+      },
+    }),
   ]);
+
+  /**
+   * KARGO LİSTESİ — satış listesinden AYRI.
+   *
+   * Satış sorgusu `soldAt` aralığına bakar. Bu dönemde kargolanan bir
+   * sipariş çok daha önce satılmış olabilir ve o sorguya HİÇ GİRMEZ;
+   * bekleyenler için de aynısı geçerli (aylar önce satılmış, hâlâ
+   * gönderilmemiş). Bu yüzden kargo kendi hafif sorgusuyla geliyor:
+   * yalnız sevkiyat tarihi, kanal ve para birimi çekiliyor.
+   */
+  const kargolar: PanelKargosu[] = kargoKayitlari.map((k) => ({
+    kanalKodu: k.channelAccount.channel.code,
+    kanalAdi: k.channelAccount.channel.name,
+    paraBirimi: k.profitCurrency ?? k.items[0]?.unitPriceCurrency ?? "TRY",
+    kargoTarihi: k.shippedAt,
+  }));
 
   const satislar: PanelSatisi[] = kayitlar.map((satis) => {
     // Satışın para birimi: kâr snapshot'ındaki birim, yoksa ilk kalemin.
@@ -288,7 +333,6 @@ export default async function AnaSayfa({
       net1: satis.net1Amount === null ? null : Number(satis.net1Amount.toString()),
       net2: satis.net2Amount === null ? null : Number(satis.net2Amount.toString()),
       durum: satis.profitStatus,
-      kargoyaVerildiMi: satis.shippedAt !== null,
     };
   });
 
@@ -412,7 +456,7 @@ export default async function AnaSayfa({
     ? iadeler.filter((i) => i.kanalKodu === seciliKanal)
     : iadeler;
 
-  const bloklar = panelHesapla(donem, donemSatislari, donemIadeleri);
+  const bloklar = panelHesapla(donem, donemSatislari, donemIadeleri, kargolar);
 
   // --- ÜRÜN LİSTELERİ --------------------------------------------------------
   const donemKalemleri = kalemler.filter(
@@ -691,15 +735,21 @@ export default async function AnaSayfa({
     satisAdresi({ kanal: kanalKodu });
 
   /**
-   * KARGO KUTUSUNDAN SATIŞLARA. Dönem aynı taşınıyor — paneldeki sayı ile
-   * listedeki kayıt sayısı birebir tutsun. "Bekleyenler"i dönem dışında da
-   * görmek isteyen, listedeki dönem rozetini tek tıkla kaldırır.
+   * KARGO KUTUSUNDAN SATIŞLARA — SAYI İLE LİSTE BİREBİR TUTMALI.
+   *
+   * "Verildi" dönemi TAŞIR: liste tarafında dönem artık `shippedAt`e
+   * uygulanıyor (bkz. lib/liste-suzgeci.ts), yani "bu dönemde
+   * kargoladıklarım" — panelin saydığı şeyin aynısı.
+   *
+   * "Bekleyen" dönemi TAŞIMAZ: o sayaç dönemden bağımsızdır. Dönem
+   * taşınsaydı panel "7 bekliyor" derken liste 2 kayıt gösterirdi.
    */
-  const kargoAdresi = (kargo: "verildi" | "bekleyen") =>
-    satisAdresi({
-      kargo,
-      ...(seciliKanal ? { kanal: seciliKanal } : {}),
-    });
+  const kargoAdresi = (kargo: "verildi" | "bekleyen") => {
+    const ek = { kargo, ...(seciliKanal ? { kanal: seciliKanal } : {}) };
+    return kargo === "bekleyen"
+      ? suzgecAdresi("/satislar", {}, ek)
+      : satisAdresi(ek);
+  };
 
   const aralikMetni = `${bicim.tarih(donem.baslangic)} – ${bicim.tarih(donem.sonGun)}`;
 
@@ -900,7 +950,12 @@ export default async function AnaSayfa({
                 {/* KARGO DURUMU — elle işaretlenen operasyonel rakam.
                     "Bekleyen" bugün ne yapılacağını söylediği için verilenle
                     birlikte duruyor (kullanıcı kararı 14.08.2026) ve ikisi de
-                    o satışlara süzülmüş listeye götürüyor (İlke #2, #9). */}
+                    o satışlara süzülmüş listeye götürüyor (İlke #2, #9).
+
+                    İKİ TARİH EKSENİ AYNI EKRANDA — alttaki not ZORUNLU.
+                    Ciro ve satış adedi SATIŞ tarihine, kargo SEVKİYAT
+                    tarihine göre süzülür. Not olmazsa kullanıcı "satış 2 ama
+                    kargo 6, neden tutmuyor" der ve panele güveni gider. */}
                 <IstatistikKutusu
                   etiket={t("kargoDurumu")}
                   cocuk={
@@ -921,11 +976,15 @@ export default async function AnaSayfa({
                     ) : null
                   }
                   altNot={
-                    blok.kargoBekleyenAdet > 0 ? null : (
-                      <span className="text-muted-foreground">
-                        {t("kargoBekleyenYok")}
+                    <span className="text-muted-foreground">
+                      {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
+                      <span className="block">{t("kargoEkseniNotu")}</span>
+                      <span className="block">
+                        {blok.kargoBekleyenAdet > 0
+                          ? t("kargoBekleyenNotu")
+                          : t("kargoBekleyenYok")}
                       </span>
-                    )
+                    </span>
                   }
                 />
                 {/* NET-1 VE NET-2 YAN YANA (kullanıcı isteği 14.08.2026:

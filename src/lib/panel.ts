@@ -56,12 +56,36 @@ export type PanelSatisi = {
   net1: number | null;
   net2: number | null;
   durum: KarDurumu | null;
+};
+
+/**
+ * ============================================================================
+ *  KARGO — AYRI TARİH EKSENİ (15.08.2026 düzeltmesi)
+ * ----------------------------------------------------------------------------
+ *  Kargo bir SATIŞ metriği değil OPERASYON metriğidir: "o gün kaç paket
+ *  elimden çıktı". Ölçütü `shippedAt`tir, satış tarihi değil.
+ *
+ *  ÖNCEDEN YANLIŞTI: kargo sayacı satış döngüsünün İÇİNDE, satış tarihine
+ *  göre süzülmüş listede sayılıyordu; `shippedAt` yalnız "dolu mu boş mu"
+ *  diye okunuyor, NE ZAMAN diye hiç sorulmuyordu. Sonuç: dün satılıp bugün
+ *  kargolanan paket DÜNÜN hanesine yazılıyordu. Kullanıcı bugün 6 paket
+ *  kargoladı, panel "2" dedi (canlı, 15.08.2026).
+ *
+ *  Bu yüzden kargo AYRI BİR LİSTE olarak geliyor: satış listesi dönemin
+ *  satışlarını taşır, kargo listesi dönemin SEVKİYATLARINI. İkisi aynı
+ *  kaydın iki farklı sorusudur ve aynı döngüde cevaplanamaz.
+ * ============================================================================
+ */
+export type PanelKargosu = {
+  kanalKodu: string;
+  kanalAdi: string;
+  paraBirimi: Currency;
   /**
-   * KARGOYA VERİLDİ Mİ? Elle işaretlenen operasyonel durum
-   * (`Sale.shippedAt` dolu mu). Panel "kargoya verilen / bekleyen"
-   * sayısını buradan üretir; başka hiçbir yerden türetilemiyor.
+   * KARGOYA VERİLME TARİHİ. `null` ise sipariş HÂLÂ BEKLİYOR — ve bekleyen
+   * DÖNEMDEN BAĞIMSIZDIR: "bugünün bekleyeni" diye bir şey yoktur, ne zaman
+   * satılırsa satılsın kargolanmamış her sipariş şu an bekliyordur.
    */
-  kargoyaVerildiMi: boolean;
+  kargoTarihi: Date | null;
 };
 
 /** Panelin bir iadeden ihtiyaç duyduğu her şey. */
@@ -123,7 +147,7 @@ export type KanalBlogu = {
   hesaplanamayanIadeAdedi: number;
   /** Ciro sunumunun gri satırı: brüt − bu tutar = net ciro. */
   iadeTutari: number;
-  /** Kargoya verilmiş sipariş sayısı. Bekleyen = adet − bu. */
+  /** Bu dönemde KARGOYA VERİLEN sipariş sayısı (ölçüt: shippedAt). */
   kargoyaVerilenAdet: number;
   /**
    * HESAP KIRILIMI. Kanal seviyesinde gruplama doğru varsayılan (kullanıcı
@@ -148,12 +172,17 @@ export type ParaBirimiPaneli = {
   hesaplanamayanIadeAdedi: number;
   /** Blok başlığındaki ciro kutusunun gri satırı. */
   toplamIadeTutari: number;
-  /** Dönemde kargoya verilen sipariş sayısı. */
+  /**
+   * Bu dönemde kargoya verilen sipariş sayısı — ölçüt `shippedAt`.
+   * Satış tarihi bu dönemin DIŞINDA olabilir; olması da gerekir: dün
+   * satılıp bugün kargolanan paket bugünün işidir.
+   */
   kargoyaVerilenAdet: number;
   /**
-   * Dönemde kargoya VERİLMEMİŞ sipariş sayısı — bugün ne yapılacağını
-   * söyleyen rakam. Toplam − verilen; ayrı sayaç tutulmuyor ki ikisi
-   * birbirinden sapamasın.
+   * ŞU AN kargoya verilmemiş sipariş sayısı — DÖNEMDEN BAĞIMSIZ.
+   * "Bugünün bekleyeni" diye bir şey yok; kargolanmamış her sipariş, ne
+   * zaman satılmış olursa olsun, bugün bekliyordur. Bu yüzden dönem
+   * süzgeci bu rakama uygulanmaz.
    */
   kargoBekleyenAdet: number;
 };
@@ -174,8 +203,15 @@ export function panelHesapla(
   pencere: Pencere,
   satislar: PanelSatisi[],
   iadeler: PanelIadesi[] = [],
+  kargolar: PanelKargosu[] = [],
 ): ParaBirimiPaneli[] {
   const bloklar = new Map<Currency, Map<string, KanalBlogu>>();
+  /**
+   * BEKLEYEN AYRI TUTULUYOR, BLOK AÇMIYOR. Dönemden bağımsız olduğu için
+   * kanal satırı açsaydı, bu dönemde hiç işlem görmemiş bir kanal
+   * "0 satış / 0 ciro" satırıyla ekrana gelirdi — bilgi değil gürültü.
+   */
+  const bekleyenler = new Map<Currency, number>();
 
   /** Blok ve kanal satırını gerektiğinde açar. */
   function kanalSatiri(
@@ -238,13 +274,40 @@ export function panelHesapla(
     else kanal.hesaplanamayanAdet++;
     // NET-1 aynı bayrağa bakar; "hesaplanamayan" bir kez sayılır.
     if (hesaplandi(satis.durum, satis.net1)) kanal.net1 += satis.net1;
-    if (satis.kargoyaVerildiMi) kanal.kargoyaVerilenAdet++;
 
     const hesap = hesapSatiri(kanal, satis.hesapAdi);
     hesap.adet++;
     hesap.gelir += satis.gelir;
     if (hesaplandi(satis.durum, satis.net2)) hesap.net2 += satis.net2;
     if (hesaplandi(satis.durum, satis.net1)) hesap.net1 += satis.net1;
+  }
+
+  /**
+   * KARGO — SATIŞTAN AYRI DÖNGÜ, AYRI EKSEN.
+   *
+   * Satış döngüsü `satis.tarih`e (soldAt) bakar, bu döngü
+   * `kargo.kargoTarihi`ne (shippedAt). Aynı panelde iki tarih ekseni
+   * bilinçlidir ve ekranda yazılıdır:
+   *   ciro / satış adedi = "bu dönemde ne SATTIM"
+   *   kargo             = "bu dönemde ne KARGOLADIM"
+   * Not düşülmezse kullanıcı "satış 2 ama kargo 6, neden tutmuyor" der.
+   *
+   * Bu döngü kanal satırı AÇABİLİR: bu dönemde satış yapılmamış bir
+   * kanaldan sevkiyat çıkmış olabilir ve o paket gerçekten elden çıkmıştır
+   * — iade döngüsündeki ilkenin aynısı.
+   */
+  for (const kargo of kargolar) {
+    if (kargo.kargoTarihi === null) {
+      // DÖNEM KONTROLÜ YOK: bekleyen zamansızdır.
+      bekleyenler.set(
+        kargo.paraBirimi,
+        (bekleyenler.get(kargo.paraBirimi) ?? 0) + 1,
+      );
+      continue;
+    }
+    if (!pencerede(pencere, kargo.kargoTarihi)) continue;
+    kanalSatiri(kargo.paraBirimi, kargo.kanalKodu, kargo.kanalAdi)
+      .kargoyaVerilenAdet++;
   }
 
   // İADELER — satışın kanalına, İADENİN ayına.
@@ -289,9 +352,8 @@ export function panelHesapla(
         ),
         toplamIadeTutari: liste.reduce((t, k) => t + k.iadeTutari, 0),
         kargoyaVerilenAdet: liste.reduce((t, k) => t + k.kargoyaVerilenAdet, 0),
-        kargoBekleyenAdet:
-          liste.reduce((t, k) => t + k.adet, 0) -
-          liste.reduce((t, k) => t + k.kargoyaVerilenAdet, 0),
+        // Dönemden bağımsız: çıkarma İLE TÜRETİLMİYOR, sayılıyor.
+        kargoBekleyenAdet: bekleyenler.get(paraBirimi) ?? 0,
       };
     })
     .sort((a, b) => b.toplamAdet - a.toplamAdet);
