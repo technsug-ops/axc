@@ -34,7 +34,9 @@ import {
   pencerede,
   type PencereTuru,
 } from "@/lib/donem";
+import { GENEL_KDV_ORANI, kdvHaric } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
+import { kutuOranlari } from "@/lib/panel/kar-orani";
 import { pencereCoz } from "@/lib/liste-suzgeci";
 import {
   aylikSeri,
@@ -190,7 +192,13 @@ export default async function AnaSayfa({
     Math.max(grafikBitisHaric.getTime(), donem.bitisHaric.getTime()),
   );
 
-  const [kayitlar, iadeKayitlari, partiHaritasi, kargoKayitlari] = await Promise.all([
+  const [
+    kayitlar,
+    iadeKayitlari,
+    partiHaritasi,
+    kargoKayitlari,
+    maliyetKayitlari,
+  ] = await Promise.all([
     prisma.sale.findMany({
       where: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } },
       select: {
@@ -295,7 +303,49 @@ export default async function AnaSayfa({
         items: { select: { unitPriceCurrency: true }, take: 1 },
       },
     }),
+
+    /**
+     * MALİYET SATIRLARI — kâr oranlarının paydası.
+     *
+     * Maliyet, kalem başına `SaleFee` satırında POZİTİF bir kesinti olarak
+     * duruyor (bkz. lib/kar.ts). Yanında kalemin KDV oranı çekiliyor çünkü
+     * payda KDV HARİÇ olmalı ve FIFO maliyeti KDV DÂHİL saklanıyor.
+     *
+     * Sorgu YALNIZ SEÇİLİ DÖNEMİ kapsıyor: 12 aylık grafik aralığını da
+     * çekmek, kullanılmayacak binlerce satır okumak olurdu.
+     */
+    prisma.saleFee.findMany({
+      where: {
+        code: "MALIYET",
+        sale: { soldAt: { gte: donem.baslangic, lt: donem.bitisHaric } },
+      },
+      select: {
+        amount: true,
+        currency: true,
+        saleItem: { select: { vatRate: true } },
+      },
+    }),
   ]);
+
+  /**
+   * PARA BİRİMİ BAŞINA KDV HARİÇ MALİYET.
+   *
+   * Oran KDV oranı BULUNAMAYAN kalemde varsayılan %20'ye düşer — bu
+   * anayasadaki çözüm sırasının son basamağıdır ("ürün istisnası >
+   * kategori oranı > varsayılan %20"), uydurma bir varsayım değil.
+   */
+  const maliyetKdvHaric = new Map<Currency, number>();
+  for (const satir of maliyetKayitlari) {
+    const tutar = Number(satir.amount.toString());
+    const oran =
+      satir.saleItem?.vatRate === null || satir.saleItem?.vatRate === undefined
+        ? GENEL_KDV_ORANI
+        : Number(satir.saleItem.vatRate.toString());
+    maliyetKdvHaric.set(
+      satir.currency,
+      (maliyetKdvHaric.get(satir.currency) ?? 0) + kdvHaric(tutar, oran),
+    );
+  }
 
   /**
    * KARGO LİSTESİ — satış listesinden AYRI.
@@ -532,6 +582,49 @@ export default async function AnaSayfa({
       <DurumRozeti durum={renk} isaretsiz>
         {renk === "olumlu" ? tSatis("karda") : tSatis("zararda")}
       </DurumRozeti>
+    );
+  }
+
+  /**
+   * KÂR ORANLARI — NET KUTUSUNUN İÇİNDE İKİ SATIR.
+   *
+   * Kullanıcı isteği 15.08.2026: "hem NET-1'de hem NET-2'de bu iki bilgi
+   * kartın içinde görünebilir mi". Her kutu KENDİ kârının oranını gösterir;
+   * aynı sayıyı iki kutuda tekrarlamak bilgi taşımazdı.
+   *
+   * TANIM ETİKETİ RAKAMIN YANINDA DURUR. Oran tek başına yazılsaydı
+   * "neyin oranı" sorusu doğardı; paydası farklı iki oran yan yana
+   * duruyor ve karışması işin doğasında.
+   *
+   * Payda yoksa satır HİÇ ÇİZİLMEZ — "%0" yazmak "kâr yok" demektir, oysa
+   * doğru cevap "hesaplanamıyor"dur.
+   */
+  function oranSatirlari(kar: number, blok: (typeof bloklar)[number]) {
+    const oranlar = kutuOranlari({
+      kar,
+      maliyetKdvHaric: maliyetKdvHaric.get(blok.paraBirimi) ?? 0,
+      brutCiro: blok.toplamGelir,
+    });
+    if (oranlar.maliyete === null && oranlar.satisa === null) return null;
+    return (
+      <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        {oranlar.maliyete === null ? null : (
+          <span className="whitespace-nowrap">
+            <span className="font-medium tabular-nums">
+              {bicim.yuzde(oranlar.maliyete)}
+            </span>{" "}
+            <span className="text-muted-foreground">{t("oranMaliyete")}</span>
+          </span>
+        )}
+        {oranlar.satisa === null ? null : (
+          <span className="whitespace-nowrap">
+            <span className="font-medium tabular-nums">
+              {bicim.yuzde(oranlar.satisa)}
+            </span>{" "}
+            <span className="text-muted-foreground">{t("oranSatisa")}</span>
+          </span>
+        )}
+      </span>
     );
   }
 
@@ -998,9 +1091,12 @@ export default async function AnaSayfa({
                       cocuk={bicim.para(blok.toplamNet1, blok.paraBirimi)}
                       rozet={karRozeti(blok.toplamNet1)}
                       altNot={
-                        <span className="text-muted-foreground">
-                          {t("net1Aciklama")}
-                        </span>
+                        <>
+                          {oranSatirlari(blok.toplamNet1, blok)}
+                          <span className="text-muted-foreground block">
+                            {t("net1Aciklama")}
+                          </span>
+                        </>
                       }
                     />
                     {/* NET-2 BAŞROL. Beş kutu da aynı boydayken hiçbiri
@@ -1012,9 +1108,12 @@ export default async function AnaSayfa({
                       cocuk={bicim.para(blok.toplamNet2, blok.paraBirimi)}
                       rozet={karRozeti(blok.toplamNet2)}
                       altNot={
-                        <span className="text-muted-foreground">
-                          {t("net2Aciklama")}
-                        </span>
+                        <>
+                          {oranSatirlari(blok.toplamNet2, blok)}
+                          <span className="text-muted-foreground block">
+                            {t("net2Aciklama")}
+                          </span>
+                        </>
                       }
                     />
                   </>

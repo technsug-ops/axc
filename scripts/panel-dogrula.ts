@@ -20,6 +20,8 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
+import { kdvHaric } from "../src/lib/kar";
+import { karOrani, kutuOranlari } from "../src/lib/panel/kar-orani";
 import { envanterHesapla, type EnvanterVaryantGirdisi } from "../src/lib/envanter";
 import {
   bekleyenToplam,
@@ -738,6 +740,68 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
     bugunBek.kanallar.every((k) => k.kanalKodu !== "HEPSIBURADA"),
     bugunBek.kanallar.map((k) => k.kanalKodu),
   );
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  KÂR ORANLARI — İKİ PAYDA, İKİ AYRI SORU
+   * --------------------------------------------------------------------
+   *  Tanımlar BEKLEYENLER.md'de mühürlü. Sözleşmenin kendisi bir tuzağı
+   *  ADIYLA işaretlemişti: "payda KDV hariç OLACAK ama bu kendiliğinden
+   *  gelmiyor — FIFO maliyeti KDV DÂHİL saklanıyor; bu adım atlanırsa
+   *  oran sessizce düşük çıkar ve kimse fark etmez."
+   *
+   *  O yüzden burada KDV ayrıştırmasının YAPILDIĞI, sayıyla sınanıyor.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  {
+    // Maliyet 1.200 (KDV dâhil, %20) → KDV hariç 1.000. Kâr 200.
+    const maliyetKdvHaric = kdvHaric(1200, 20);
+    kontrol(
+      "KDV ayrıştırması: 1.200 (%20 dâhil) → 1.000",
+      Math.abs(maliyetKdvHaric - 1000) < 0.01,
+      maliyetKdvHaric,
+    );
+    const o = kutuOranlari({ kar: 200, maliyetKdvHaric, brutCiro: 2000 });
+    kontrol(
+      "maliyete göre oran %20 (200 / 1.000)",
+      o.maliyete !== null && Math.abs(o.maliyete - 20) < 0.01,
+      o.maliyete,
+    );
+    kontrol(
+      "  ...KDV dâhil payda kullanılsaydı %16,7 çıkardı (sessiz hata)",
+      Math.abs(karOrani(200, 1200)! - 16.6667) < 0.01,
+    );
+    kontrol(
+      "satış fiyatına göre oran %10 (200 / 2.000 brüt ciro)",
+      o.satisa !== null && Math.abs(o.satisa - 10) < 0.01,
+      o.satisa,
+    );
+
+    /** Sözleşmedeki canlı örnek: ciro 6.200,00 · NET-2 272,85 → %4,40. */
+    const canli = karOrani(272.85, 6200);
+    kontrol(
+      "sözleşmedeki canlı örnek doğrulanıyor (%4,40)",
+      canli !== null && Math.abs(canli - 4.4008) < 0.01,
+      canli,
+    );
+
+    /** SIFIRA BÖLME SESSİZ GEÇMEZ. */
+    kontrol("payda 0 ise oran null (%0 DEĞİL)", karOrani(200, 0) === null);
+    kontrol("  ...eksi payda da null", karOrani(200, -5) === null);
+    kontrol(
+      "  ...maliyet yoksa maliyet oranı null, ciro oranı yaşar",
+      (() => {
+        const x = kutuOranlari({ kar: 200, maliyetKdvHaric: 0, brutCiro: 2000 });
+        return x.maliyete === null && x.satisa !== null;
+      })(),
+    );
+    /** ZARAR EKSİ ORAN VERİR — mutlak değere çevrilmez. */
+    kontrol(
+      "zararda oran EKSİ çıkar (işaret saklanmaz)",
+      karOrani(-100, 1000) === -10,
+      karOrani(-100, 1000),
+    );
+  }
+
   kontrol(
     "kargo listesi boşsa verilen ve bekleyen 0",
     (() => {

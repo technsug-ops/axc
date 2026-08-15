@@ -1693,7 +1693,9 @@
     "aylikRakamlar": "Aylık rakamlar",
     "aylikRakamlarNotu": "grafiğin tablo hâli",
     "kargoEkseniNotu": "kargoya verme tarihine göre",
-    "kargoBekleyenNotu": "şu an bekleyen — dönemden bağımsız"
+    "kargoBekleyenNotu": "şu an bekleyen — dönemden bağımsız",
+    "oranMaliyete": "maliyete göre (KDV hariç)",
+    "oranSatisa": "satış fiyatına göre (brüt)"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
