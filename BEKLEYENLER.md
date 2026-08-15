@@ -338,6 +338,25 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
 
       ---
 
+      ✅ **2c KAPANDI 15.08.2026** (`f944ef3`) — **HALİL TESTİ GEÇTİ
+      (D1–D13, gerçek cihaz + canlı), MİMAR ONAYLI.**
+      Tanım (b) uygulandı: iki ayrı liste. `dagilim:dogrula` 43 kontrol.
+      _Denetimde çıkan ve düzeltilen:_ `paylariDenkle` yuvarlama artığını
+      KOŞULSUZ en büyük paya ekliyordu; ciro sıfırken girdiler `[0,0]`
+      olduğu için artık 100 çıkıyor ve hiç satış olmayan bir dönemde ekrana
+      **"%100 Trendyol"** yazacaktı — sözleşmenin adıyla yasakladığı
+      SAHTE %100. Denkleştirme artık yalnız ham toplam %100'e yakınsa
+      çalışıyor; bir YUVARLAMA düzeltmesidir, eksik veri tamamlama aracı
+      değil. Hatayı testin kendisi yakaladı.
+
+      ✅ **2a PANEL AYAĞI KAPANDI 15.08.2026** (`bd89176`) — kural tek
+      kaynakta (`lib/karsilastirma.ts`), panelde ikinci kaydırma hesabı yok
+      (testle kilitli). _Denetimde çıkan:_ sorgu aralığı kıyas penceresini
+      kapsamıyordu; "geçen yıl aynı dönem" 12 ay geriye düşüyor, grafik
+      penceresi ise 11 ay — panel "geçen yıl 0 satış" derdi. **Veri
+      yokluğu değil SORGU yokluğu**, sessiz sıfırın en sinsi hâli.
+      `panel:dogrula` 299 → 306. _Halil testi (K1–K12) bekliyor._
+
       **2c. PARETO / DAĞILIM ANALİZİ — KULLANICININ 1 NUMARASI**
       _Karar 15.08.2026._ Cironun ve kârın (NET-2) yüzde olarak NEREDEN
       geldiğini gösterir.
