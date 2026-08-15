@@ -414,6 +414,19 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       çalışıyor; bir YUVARLAMA düzeltmesidir, eksik veri tamamlama aracı
       değil. Hatayı testin kendisi yakaladı.
 
+      ✅ **PANEL AŞAMA 3 TAMAMEN KAPANDI 15.08.2026 — MİMAR ONAYLI.**
+      Son test O2 (ölü sermaye rozetinin hedefi) `cfc9db1` ile düzeltilip
+      geçti. **Dört kullanıcı sorusu da panelde cevaplanıyor:**
+      _nereye yoğunlaşmalıyım_ (Pareto) · _ilerliyor muyum_ (karşılaştırma) ·
+      _param nerede verimli_ (sermaye verimi) · _neyi kesmeliyim_ (zarar +
+      ölü sermaye). Melontik eşleme etiketleri, renk sistemi, nakit takvimi
+      ve görev kutusu dahil.
+      _O2'de çıkan ve düzeltilen:_ rozet panelin kendi sekmesine gidiyordu
+      (eyleme götürmüyordu) **ve** sayısı `sermayeToplami.kalem`den
+      geliyordu — o yalnız maliyeti bilinen kalemleri sayıyor, liste ise
+      hepsini gösterecekti. Düzeltilirken YENİ bir "sayı ≠ liste" hatası
+      doğması önlendi.
+
       ✅ **2a PANEL AYAĞI KAPANDI 15.08.2026** (`bd89176`) — kural tek
       kaynakta (`lib/karsilastirma.ts`), panelde ikinci kaydırma hesabı yok
       (testle kilitli). _Denetimde çıkan:_ sorgu aralığı kıyas penceresini
