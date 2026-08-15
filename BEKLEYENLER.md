@@ -582,8 +582,13 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       **FAZ 1 KAPSAMI — yalnız KIRMIZI (para kaybı/riski):**
       1. **Nakit açığı** — 14 günde çıkacak > girecek → "Önümüzdeki 14 günde
          ₺X açık". Kaynak `lib/panel/nakit-takvimi.ts` (zaten var).
-      2. **Maliyetsiz stok** — alımı girilmemiş, stok hareketi olan ürün
-         (NO_COST riski) → "N ürünün maliyeti yok".
+      2. **Maliyetsiz stok — ÖLÇÜT (a), ONAYLI 15.08.2026:** stokta adedi
+         olan ama **birim maliyeti bilinmeyen FIFO partisi** bulunan
+         varyantlar → "N ürünün maliyeti yok".
+         **ÖNLEYİCİ:** satıştan ÖNCE yakalar, hâlâ düzeltilebilir (alım gir
+         → NO_COST hiç doğmaz). Tepkisel okuma (`NO_COST`'a düşmüş
+         satışların varyantları) ELENDİ: zaten 3. uyarının kapsamında,
+         çift sayım olurdu.
       3. **Kârı hesaplanamayan satış** — NO_COST/RULE_MISSING → "N satışın
          kârı hesaplanamıyor".
       4. **Hakediş gecikti** — beklenen ödeme tarihi geçmiş, `paidAt` boş
@@ -594,6 +599,22 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       başlık + sayı/tutar + **TIKLANABİLİR** (ilgili süzülü ekrana gider).
       Uyarı yoksa çan nötr ve **"temiz ✓" yazar — gizlenmez** (açık sıfır).
       **Her uyarı EYLEME götürür; bilgi için bilgi yok.**
+
+      **VERİ TEMELİ ÖLÇÜLDÜ 15.08.2026 — DÖRDÜ DE MEVCUT ALANLARDAN ÇIKIYOR,
+      MİGRATION GEREKMİYOR:**
+      1. Nakit açığı → `lib/panel/nakit-takvimi.ts` (`netPozisyon` zaten var)
+      2. Maliyetsiz stok → `Parti.birimMaliyet` **nullable**; açık partiler
+         `acikPartilerToplu()` ile geliyor. `kalanAdet > 0 && birimMaliyet
+         === null` olan varyantlar. Stok/envanter ekranlarıyla AYNI motor —
+         panel kendi FIFO'sunu yazmaz.
+      3. Kârı hesaplanamayan satış → `Sale.profitStatus` (`NO_COST` /
+         `RULE_MISSING` / `CURRENCY_MISMATCH`). `/satislar?kar=eksik`
+         süzgeci zaten aynı koşulu kuruyor.
+      4. Hakediş gecikti → **`SettlementItem.dueDate` ve `.paidAt`** (ikisi
+         de nullable). Ölçüt: `dueDate < bugün && paidAt === null`.
+         ⚠ Tarih `Settlement`te DEĞİL **KALEMDE** — üst kayıttaki `paidAt`
+         bir içe aktarma partisine ait, vade kalemde tutuluyor. Yanlış
+         seviyeden okunursa uyarı sessizce boş çıkar.
 
       **MİMARİ:**
       - Her uyarı SAF FONKSİYON: `lib/uyari/*.ts` — "bu uyarı var mı, kaç,
