@@ -333,18 +333,32 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         (bugün→dün, bu hafta→geçen hafta, bu ay→geçen ay).
         _Kullanıcı 14.08.2026'da bunu ekran üzerinde ayrıca istedi:
         "kargoya verilen +%15" gibi, her kutunun kendi karşılaştırması._
-      - **İKİ KÂR ORANI YAN YANA — TANIMLAR MÜHÜRLENDİ 14.08.2026.**
+      - ✅ **İKİ KÂR ORANI — YAPILDI 15.08.2026** (`c54c8af`).
+        Tanımlar 14.08.2026'da mühürlendi, **payda 15.08.2026'da
+        değiştirilmedi ama PAY kuralı değişti** (aşağıya bakın).
         İkisi AYNI ANDA durur, biri diğerinin yerine GEÇMEZ ve her birinin
-        ÜSTÜNDE tanım etiketi yazar:
+        YANINDA tanım etiketi yazar:
 
         | kutu | pay | payda | etiket |
         |---|---|---|---|
-        | Kâr / Maliyet | NET-2 | ürün maliyeti, **KDV HARİÇ** | `NET-2 / maliyet (KDV hariç)` |
-        | Kâr / Satış fiyatı | NET-2 | **brüt ciro (KDV DAHİL)** | `NET-2 / brüt ciro` |
+        | Kâr / Maliyet | **o kutunun kendi kârı** | ürün maliyeti, **KDV HARİÇ** | `maliyete göre (KDV hariç)` |
+        | Kâr / Satış fiyatı | **o kutunun kendi kârı** | **brüt ciro (KDV DAHİL)** | `satış fiyatına göre (brüt)` |
 
-        **Pay neden ikisinde de NET-2:** panel zaten NET-2'yi "gerçek kâr"
-        olarak kullanıyor. NET-1 stopaj öncesidir ve yanıltır; iki kutu
-        farklı kâr tanımı kullansa oranlar karşılaştırılamazdı.
+        > **PAY KURALI DEĞİŞTİ — kullanıcı kararı 15.08.2026:**
+        > _"net 1 kendi içinde, net 2 kendi içinde değerlendirilmeli."_
+        > NET-1 kutusundaki oranlar NET-1'den, NET-2 kutusundakiler
+        > NET-2'den hesaplanır.
+        >
+        > **Eski karar ve gerekçesi (14.08.2026):** pay ikisinde de NET-2
+        > olacaktı, çünkü "NET-1 stopaj öncesidir ve yanıltır; iki kutu
+        > farklı kâr tanımı kullansa oranlar karşılaştırılamazdı."
+        >
+        > **Neden değişti:** aynı sayıyı iki kutuda tekrarlamak bilgi
+        > taşımıyordu. Eski gerekçedeki uyarı GEÇERSİZ DEĞİL — NET-1'in
+        > maliyet oranı stopaj öncesi olduğu için NET-2'ninkinden HEP
+        > yüksek çıkar. İki kutu yan yana okunurken bu fark akılda
+        > tutulmalı; oranlar birbirinin yerine geçmez, aynı işin iki
+        > aşamasıdır.
 
         **Marj paydası neden brüt ciro:** rakip araçlar müşteri ödemesi
         üzerinden hesaplıyor; karşılaştırılabilir olsun. _Kullanıcının

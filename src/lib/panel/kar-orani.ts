@@ -31,8 +31,17 @@ export function karOrani(kar: number, payda: number): number | null {
 }
 
 /**
- * Bir kutunun iki oranı. `kar` o kutunun KENDİ rakamıdır (NET-1 kutusunda
- * NET-1, NET-2 kutusunda NET-2) — kullanıcı isteği 15.08.2026.
+ * Bir kutunun iki oranı.
+ *
+ * PAY, O KUTUNUN KENDİ KÂRIDIR — NET-1 kutusunda NET-1, NET-2 kutusunda
+ * NET-2. Kullanıcı kararı 15.08.2026: _"net 1 kendi içinde, net 2 kendi
+ * içinde değerlendirilmeli."_
+ *
+ * 14.08.2026'daki ilk mühür "pay ikisinde de NET-2" diyordu; aynı sayıyı
+ * iki kutuda tekrarlamak bilgi taşımadığı için değişti. O kararın uyarısı
+ * ise HÂLÂ GEÇERLİ: NET-1 stopaj öncesidir, bu yüzden NET-1'in oranı
+ * NET-2'ninkinden HEP yüksek çıkar. İki oran birbirinin yerine geçmez;
+ * aynı hesabın iki aşamasıdır.
  */
 export function kutuOranlari(girdi: {
   kar: number;
