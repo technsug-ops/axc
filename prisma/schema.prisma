@@ -113,6 +113,16 @@ enum CompensationStatus {
   SETTLED // kapandı (para geldi ya da mal değişti)
 }
 
+/// Kart ekstresi ödeme kaydının KAYNAĞI.
+/// Geçmiş veri paketi AYNI tabloyu kullanır (mimar kararı 15.08.2026):
+/// ayrı tasarlanırsa iki farklı "ekstre" kavramı doğar ve biri diğerini
+/// gölgeler.
+enum KartOdemeKaynagi {
+  TURETILEN // canlı: ekstre borcu alımlardan türetildi
+  GECMIS_EXCEL // geçmiş beyan: Excel'den aktarıldı
+  ELLE // kullanıcı doğrudan girdi
+}
+
 enum PurchaseStatus {
   DRAFT // taslak
   ORDERED // sipariş verildi, henüz hiçbir kalem gelmedi
@@ -593,8 +603,90 @@ model CreditCard {
   updatedAt DateTime @updatedAt
 
   purchases Purchase[]
+  odemeler  KartOdeme[]
 
   @@index([isActive])
+}
+
+/// KART EKSTRE ÖDEMESİ — bir ekstre dönemi için bir ödeme kaydı.
+///
+/// NEDEN VAR: sistem kart borcunu alımlardan TÜRETİYOR ama "ödendi" kaydı
+/// yoktu; nakit takvimi kart tarafını ve gecikmişi gösteremiyordu. Bu tablo
+/// nakit takviminin eksik yarısını kapatır.
+///
+/// LEDGER DEĞİŞMEZLİĞİ: kayıt SİLİNMEZ. Yanlışsa TERS KAYITLA düzeltilir —
+/// StockMovement ilkesinin aynısı. `updatedAt` yalnız not düzeltmesi
+/// içindir; tutarlar değişmez.
+///
+/// MÜKERRER ÖDEME KORUMASI DB KISITI DEĞİL, ÖNİZLEMEDİR (mimar kararı
+/// 15.08.2026). `@@unique([cardId, donem])` KONULMADI çünkü kısmi ödeme ve
+/// ters kayıt aynı döneme düşer. Kaza, kaydetmeden önce "bu ekstreye daha
+/// önce ₺X ödenmiş, kalan ₺Y — yine de ekle?" uyarısıyla yakalanır.
+model KartOdeme {
+  id String @id @default(cuid())
+
+  cardId String
+  card   CreditCard @relation(fields: [cardId], references: [id], onDelete: Restrict)
+
+  /// EKSTRE DÖNEMİ — ayın 1'i olarak saklanır (2026-08-01 = "Ağustos
+  /// ekstresi"). Kesim günü karta bağlı ve değişebilir; buraya
+  /// KOPYALANMAZ, `CreditCard.statementDay`den okunur.
+  donem DateTime
+
+  /// Sistemin alımlardan TÜRETTİĞİ ekstre borcu (`lib/kart-borcu.ts`),
+  /// kayıt anında SNAPSHOT'lanır: alım sonradan düzeltilse bile o gün hangi
+  /// borç üzerinden ödeme yapıldığı değişmez (kâr snapshot'larıyla aynı ilke).
+  ekstreBorcu Decimal @db.Decimal(18, 4)
+
+  /// ÖDENEN ANA BORÇ. Ön-dolu gelir (= ekstreBorcu) ama kullanıcı
+  /// DÜZELTEBİLİR — banka farklı kesmiş olabilir.
+  ///
+  /// KALAN ALANI YOK, TÜRETİLİR: ekstreBorcu − odenenAnaBorc. Saklansaydı
+  /// iki rakam birbirinden sapabilir ve panel "borç 1.000, ödenen 400,
+  /// kalan 700" gibi imkânsız bir şey yazabilirdi.
+  odenenAnaBorc Decimal @db.Decimal(18, 4)
+
+  odemeTarihi DateTime
+
+  /// GECİKME FAİZİ — İKİ GİRİŞ YOLU:
+  ///   (a) `faizOrani` (günlük %) + `faizGun` → sistem ÇARPAR
+  ///   (b) `faizTutar` doğrudan elle
+  /// SİSTEM ORANI ÜRETMEZ: bankaya, karta ve güne göre değişir; uydurulursa
+  /// panel yanlış olur. Kullanıcı girer, sistem yalnız çarpar.
+  faizOrani Decimal? @db.Decimal(6, 4)
+  faizGun   Int?
+
+  /// Hesaplanan ya da elle girilen faiz. SIFIR SESSİZCE VARSAYILMAZ:
+  /// gecikme yoksa kullanıcı açıkça 0 bırakır.
+  faizTutar Decimal @default(0) @db.Decimal(18, 4)
+
+  /// EUR kapısı açık ama kullanılmadıkça TRY varsayılır (mimar kararı
+  /// 15.08.2026) — çok para birimi hâlâ ertelenmiş büyüme paketi.
+  currency Currency @default(TRY)
+
+  /// FAİZİN GİDER KARŞILIĞI. Faiz → "finansman gideri / kart gecikme faizi"
+  /// olarak O DÖNEMİN kârını düşürür. ANA BORÇ ÖDEMESİ KÂRI ETKİLEMEZ —
+  /// maliyet alımda zaten sayıldı. İki rakam ayrı; toplanmaz, karışmaz.
+  faizGiderId String?  @unique
+  faizGider   Expense? @relation(fields: [faizGiderId], references: [id], onDelete: SetNull)
+
+  kaynak KartOdemeKaynagi @default(TURETILEN)
+
+  /// TERS KAYIT — düzeltmenin tek yolu. Yanlış kayıt ters işaretli bir
+  /// kayıtla nötrlenir; ikisi de defterde kalır.
+  isReversal Boolean    @default(false)
+  reversesId String?    @unique
+  reverses   KartOdeme? @relation("KartOdemeTers", fields: [reversesId], references: [id], onDelete: Restrict)
+  reversedBy KartOdeme? @relation("KartOdemeTers")
+
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cardId, donem])
+  @@index([odemeTarihi])
+  @@index([kaynak])
 }
 
 // ============================================================================
@@ -1298,6 +1390,10 @@ model Expense {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  /// Bu gider bir KART GECİKME FAİZİ karşılığıysa, doğduğu ödeme kaydı.
+  /// Tekil: bir ödemenin faizi tek bir gidere yazılır.
+  kartOdemesi KartOdeme?
 
   @@index([spentAt])
   @@index([categoryId])

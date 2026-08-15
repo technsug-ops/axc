@@ -52,6 +52,12 @@ export const YEDEK_TABLOLARI = [
   // --- gider ---
   "ExpenseTemplate",
   "Expense",
+  /**
+   * Kart ödemesi: `CreditCard` VE `Expense`'ten SONRA gelmeli — ikisine de
+   * yabancı anahtarı var (faiz gideri bağı dahil). Sıra bozulursa geri
+   * yükleme "parent kayıt yok" diye patlar.
+   */
+  "KartOdeme",
   // --- alım ---
   "Purchase",
   "PurchaseItem",
