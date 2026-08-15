@@ -195,6 +195,20 @@ async function main() {
     });
     basarili(`Purchase.supplierOrderNo okundu — ${alimSayisi} kayıtta boş`);
 
+    /**
+     * ⚠ BU ADIM HER MİGRATION'DA GENİŞLETİLİR.
+     *
+     * 15.08.2026'da fark edildi: sağlık kontrolü hâlâ ESKİ bir migration'ın
+     * kolonlarını sınıyordu. Yani adım "CANLI ŞEMA GÜNCEL" derken o gün
+     * gönderilen migration hakkında HİÇBİR ŞEY kanıtlamıyordu — yeşil ama
+     * boş bir doğrulama.
+     *
+     * Yeni bir tablo/kolon gönderen herkes buraya bir satır ekler; yoksa
+     * kontrol zamanla kendi geçmişini doğrulayan bir tören hâline gelir.
+     */
+    const kartOdemeSayisi = await prisma.kartOdeme.count();
+    basarili(`KartOdeme okundu — ${kartOdemeSayisi} kayıt (yeni tablo)`);
+
     console.log("\nCANLI ŞEMA GÜNCEL.\n");
   } catch (e) {
     console.log(parolayiTemizle(String(e), parola));
