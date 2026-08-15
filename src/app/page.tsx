@@ -577,6 +577,21 @@ export default async function AnaSayfa({
   const kiyasBlogu = (paraBirimi: Currency) =>
     kiyasBloklar?.find((b) => b.paraBirimi === paraBirimi) ?? null;
 
+  /**
+   * KIYAS DÖNEMİ TAMAMEN BOŞ MU?
+   *
+   * Boşsa her kutuya "karşılaştırılamaz" basmak GÜRÜLTÜDÜR: beş kutuda aynı
+   * cümle tekrarlanır, uzun metin kutuları taşırır ve rakamların önüne
+   * geçer (kullanıcı ekran görüntüsü 15.08.2026). Bütün satırlarda AYNI
+   * olan bir rozet bilgi taşımaz — vadesi bilinmeyen listesinde de aynı
+   * karara varmıştık.
+   *
+   * Doğrusu: durumu seçicinin altında BİR KEZ söyle, kutuları rakamlara
+   * bırak.
+   */
+  const kiyasBos =
+    kiyasPencere !== null && (kiyasBloklar === null || kiyasBloklar.length === 0);
+
   // --- ÜRÜN LİSTELERİ --------------------------------------------------------
   const donemKalemleri = kalemler.filter(
     (k) =>
@@ -949,7 +964,7 @@ export default async function AnaSayfa({
     bicimle: (n: number) => string,
     artisIyiMi = true,
   ) {
-    if (!kiyasPencere) return null;
+    if (!kiyasPencere || kiyasBos) return null;
     const d = degisim(simdi, onceki);
     if (!d.karsilastirilabilir || d.mutlak === null) {
       return (
@@ -1141,6 +1156,14 @@ export default async function AnaSayfa({
               {aralikMetni} ↔ {bicim.tarih(kiyasPencere.baslangic)} –{" "}
               {bicim.tarih(kiyasPencere.sonGun)}
             </span>
+          ) : null}
+          {/* Kıyas dönemi bomboşsa BİR KEZ söylenir; beş kutuda
+              tekrarlanmaz. Sessiz sıfır yasağı korunuyor — durum yine
+              açıkça yazılı, sadece tek yerde. */}
+          {kiyasBos ? (
+            <DurumRozeti durum="notr" isaretsiz>
+              {tRapor("kiyaslanamaz")}
+            </DurumRozeti>
           ) : null}
         </div>
       ) : null}

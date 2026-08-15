@@ -35,7 +35,13 @@ export function DurumRozeti({
 }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1 rounded-sm px-2 py-0.5 text-[11px] leading-5 font-semibold ${DURUM_ZEMINI[durum]}`}
+      /**
+       * `max-w-full` + `break-words`: rozet kapsayıcısından TAŞMAZ.
+       * 15.08.2026'da panelde "karşılaştırılamaz — kıyas döneminde kayıt
+       * yok" metni kutunun kenarından kesiliyordu; `shrink-0` daralmayı
+       * engelliyor, taşma sınırı da yoktu.
+       */
+      className={`inline-flex max-w-full shrink-0 items-center gap-1 rounded-sm px-2 py-0.5 text-[11px] leading-5 font-semibold break-words ${DURUM_ZEMINI[durum]}`}
     >
       {!isaretsiz && DURUM_ISARETI[durum] ? (
         <span aria-hidden="true">{DURUM_ISARETI[durum]}</span>
