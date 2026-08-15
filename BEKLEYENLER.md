@@ -363,10 +363,27 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       kutularda aynı olan rozet bilgi taşımaz; durum artık seçicinin altında
       BİR KEZ yazılıyor (`c024de1`).
 
-      ✅ **SERMAYE VERİMİ KAPANDI 15.08.2026** (`02a3a5c`) — panelde
-      "Sermaye verimi" sekmesi, NET-2 / maliyet (KDV hariç), ürün ürün,
-      azalan sıralı. Maliyeti bilinmeyen ürün ATILMIYOR, sona konuyor.
-      `dagilim:dogrula` 43 → 52. _Halil testi (S1–S9) bekliyor._
+      ✅ **SERMAYE VERİMİ KAPANDI 15.08.2026** (`02a3a5c` + `7a00812`) —
+      **HALİL TESTİ GEÇTİ (S1–S9, gerçek cihaz + canlı), MİMAR ONAYLI.**
+
+      Panelde "Sermaye verimi" sekmesi, ürün ürün, **İKİ ORAN HİYERARŞİYLE**
+      (mimar kararı 15.08.2026):
+      - **ANA (büyük, SIRALAMA ÖLÇÜTÜ):** NET-2 / maliyet **KDV HARİÇ** —
+        "sermaye verimi", malın kendisinden kazanç. Pay ile payda aynı
+        tabanda: NET-2'nin içinde alışta ödenen KDV zaten geri verilmiş.
+      - **İKİNCİL (küçük, altta):** NET-2 / maliyet **KDV DAHİL** — "bağlı
+        nakit verimi", kasadan çıkan paranın verimi. Kullanıcının işi
+        faizsiz kart süresine dayalı: ödenen 1.200 ₺'nin TAMAMI bağlı,
+        200 ₺ KDV aylar sonra beyannameyle geri geliyor.
+      - Ekranda iki taban da yazılı ve etiketli. Maliyeti bilinmeyen ürün
+        ATILMIYOR, sona konuyor.
+
+      `dagilim:dogrula` 43 → 58.
+      _Testin dişi:_ bölüm yeniden yazılırken betiğin **kapanış bloğu
+      kesilmişti**; özet satırı basılmıyor ve betik kural bozulsa bile
+      **çıkış kodu 0** dönüyordu — CI'da hep yeşil sayılacaktı. Lint
+      uyarısı yakaladı; blok geri kondu, çıkış kodu kanıtlandı (bozunca 1,
+      düzeltince 0). Bkz. hafıza: yalancı yeşil.
 
       **2c. PARETO / DAĞILIM ANALİZİ — KULLANICININ 1 NUMARASI**
       _Karar 15.08.2026._ Cironun ve kârın (NET-2) yüzde olarak NEREDEN
