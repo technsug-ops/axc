@@ -272,6 +272,8 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         sıralamanın hangi rakama dayandığı EKRANDA yazılacak.
 
 - [x] ~~**PANEL AŞAMA 3 — PAKET 1: NAKİT VE EYLEM ODAĞI**~~ ✓ 15.08.2026 —
+      **HALİL TESTİ GEÇTİ (A→B→C→D, gerçek cihaz + canlı).** Mimar onayı
+      alındı; paket KAPANDI ve Paket 2 açıldı.
       **ÇİFT SAYIM CANLI SORGUYLA DOĞRULANDI, KESİŞİM 0.** Kapanma şartı
       buydu. Ölçüm: 110 rapor kalemi · 10 tahmin satırı · kesişim 0 ·
       sipariş no çakışması 0 · ödenmiş satış tahminde 0.

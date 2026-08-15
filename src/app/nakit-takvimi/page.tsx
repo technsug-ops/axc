@@ -16,7 +16,7 @@ import {
 import { gunuDokumle } from "@/lib/panel/takvim-gruplama";
 import { takvimBugunu, takvimSatirlariniTopla } from "@/lib/panel/takvim-verisi";
 import { sayfaIzni } from "@/lib/yetki";
-import { DURUM_YAZISI } from "@/lib/renkler";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -84,7 +84,9 @@ export default async function NakitTakvimiSayfasi({
             key={gun}
             href={`/nakit-takvimi?takvim=${gun}`}
             className={`inline-flex min-h-11 items-center rounded-md border px-3 text-sm md:min-h-9 ${
-              gun === pencere ? "bg-foreground text-background" : "hover:bg-muted"
+              gun === pencere
+                ? "bg-primary text-primary-foreground border-primary"
+                : "hover:bg-muted"
             }`}
           >
             {t("pencereDugmesi", { gun })}
@@ -95,20 +97,23 @@ export default async function NakitTakvimiSayfasi({
       <div className="grid gap-3 sm:grid-cols-3">
         <Kutu etiket={t("cikacak")} deger={para(takvim.cikacakToplam)} />
         <Kutu etiket={t("girecek")} deger={para(takvim.girecekToplam)} />
+        {/* NET POZİSYON — açıkta paletin OLUMSUZ kutusu (sol şerit + pastel
+            zemin). Önceden ham `destructive` sınıflarıyla yazılmıştı; renk
+            sistemi tek kapıdan geçtiği için burası da paletten besleniyor. */}
         <div
-          className={`space-y-1 rounded-lg border p-4 ${
-            acikMi ? "border-destructive/50 bg-destructive/10" : ""
+          className={`bg-card flex min-w-0 flex-col gap-1.5 rounded-lg border p-4 ${
+            acikMi ? DURUM_KUTUSU.olumsuz : ""
           }`}
         >
-          <div className="text-muted-foreground text-xs">{t("netPozisyon")}</div>
-          <div
-            className={`text-2xl font-semibold ${acikMi ? "text-destructive" : ""}`}
-          >
+          <span className={acikMi ? "text-xs" : "text-muted-foreground text-xs"}>
+            {t("netPozisyon")}
+          </span>
+          <span className="text-2xl font-semibold tabular-nums">
             {para(takvim.netPozisyon)}
-          </div>
-          <div className="text-muted-foreground text-xs">
+          </span>
+          <span className={acikMi ? "text-xs" : "text-muted-foreground text-xs"}>
             {acikMi ? t("acikVar") : t("acikYok")}
-          </div>
+          </span>
         </div>
       </div>
 
@@ -208,16 +213,28 @@ export default async function NakitTakvimiSayfasi({
   );
 }
 
+/**
+ * Rakam kutusu — panelin `IstatistikKutusu`suyla AYNI anatomi: gri etiket
+ * üstte, iri rakam altta, beyaz kart zemini. Aynı bilgi iki ekranda iki
+ * farklı kutuda görünmesin (İlke #10).
+ */
 function Kutu({ etiket, deger }: { etiket: string; deger: string }) {
   return (
-    <div className="space-y-1 rounded-lg border p-4">
-      <div className="text-muted-foreground text-xs">{etiket}</div>
-      <div className="text-2xl font-semibold">{deger}</div>
+    <div className="bg-card flex min-w-0 flex-col gap-1.5 rounded-lg border p-4">
+      <span className="text-muted-foreground text-xs">{etiket}</span>
+      <span className="text-2xl font-semibold tabular-nums">{deger}</span>
     </div>
   );
 }
 
-/** Adı olanlar tek tek, adsızlar "N kalem" olarak. */
+/**
+ * Adı olanlar tek tek, adsızlar "N kalem" olarak.
+ *
+ * ── GENİŞLİK SINIRI (İlke #12) ──────────────────────────────────────────
+ * Satırlar `max-w-3xl` içinde durur. Sınırsız genişlikte "etiket solda,
+ * tutar en sağda" yasak kalıptır: göz aradaki yüzlerce pikseli kat etmek
+ * zorunda kalır ve iki satırı karşılaştırmak zorlaşır.
+ */
 function Dokum({
   satirlar,
   para,
@@ -233,8 +250,63 @@ function Dokum({
 }) {
   const dokum = gunuDokumle(satirlar);
 
+  /**
+   * TUTARI BİLİNMEYEN LİSTE IZGARAYA DÖNER (15.08.2026 düzeltmesi).
+   *
+   * Ekran görüntüsünde 16 satır vardı ve her satırın en sağında yalnız bir
+   * "?" duruyordu; aradaki bütün genişlik boştu. Üstelik "?" hiçbir şey
+   * söylemiyordu — başlığın altındaki not zaten "tutarı bilinmiyor" diyor.
+   * Aynı şekilde 16 satırın 16'sında da aynı "tahmin" rozeti vardı: bütün
+   * satırlarda AYNI olan bir rozet bilgi taşımaz, gürültü olur.
+   *
+   * Doğrusu kompakt kutucuk ızgarası: kodlar yan yana akar, ekranın
+   * tamamı 16 kod için harcanmaz.
+   */
+  if (tutarGizle) {
+    const tumuTahmin = dokum.tekil.every((s) => s.kaynak === "HAKEDIS_TAHMIN");
+    return (
+      <div className="space-y-2">
+        {/* Rozet satır satır tekrarlanmıyor; hepsi aynıysa BİR KEZ yazılıyor. */}
+        {tumuTahmin && dokum.tekil.length > 0 ? (
+          <Badge variant="outline" className="text-[10px]">
+            {tahminEtiketi}
+          </Badge>
+        ) : null}
+        <ul className="flex flex-wrap gap-1.5">
+          {dokum.tekil.map((s, i) => (
+            <li key={`t-${i}`}>
+              <Link
+                href={s.adres}
+                className="bg-muted/60 hover:bg-muted inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
+              >
+                <span className="truncate underline underline-offset-2">
+                  {s.baslik}
+                </span>
+                {!tumuTahmin && s.kaynak === "HAKEDIS_TAHMIN" ? (
+                  <Badge variant="outline" className="text-[10px]">
+                    {tahminEtiketi}
+                  </Badge>
+                ) : null}
+              </Link>
+            </li>
+          ))}
+          {dokum.obekler.map((o, i) => (
+            <li key={`o-${i}`}>
+              <Link
+                href={o.adres}
+                className="bg-muted/60 hover:bg-muted inline-flex items-center rounded-md px-2 py-1 text-xs underline underline-offset-2 transition-colors"
+              >
+                {obekAdi(o.kaynak, o.adet)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
   return (
-    <ul className="space-y-1">
+    <ul className="max-w-3xl space-y-1">
       {dokum.tekil.map((s, i) => (
         <li
           key={`t-${i}`}
@@ -250,7 +322,7 @@ function Dokum({
               </Badge>
             ) : null}
           </span>
-          <Tutar yon={s.yon} tutar={s.tutar} para={para} gizle={tutarGizle} />
+          <Tutar yon={s.yon} tutar={s.tutar} para={para} />
         </li>
       ))}
 
@@ -262,25 +334,28 @@ function Dokum({
           <Link href={o.adres} className="underline underline-offset-2">
             {obekAdi(o.kaynak, o.adet)}
           </Link>
-          <Tutar yon={o.yon} tutar={o.tutar} para={para} gizle={tutarGizle} />
+          <Tutar yon={o.yon} tutar={o.tutar} para={para} />
         </li>
       ))}
     </ul>
   );
 }
 
+/**
+ * Tutar sütunu. "Bilinmiyor" hâli BURADA YOK: tutarı bilinmeyen liste
+ * ızgaraya dönüyor ve sütun hiç çizilmiyor. Önceden her satırın sağında
+ * yalnız bir "?" duruyordu — başlığın altındaki not zaten aynı şeyi
+ * söylüyordu, yani 16 kez tekrarlanan boş bir işaretti.
+ */
 function Tutar({
   yon,
   tutar,
   para,
-  gizle,
 }: {
   yon: "CIKACAK" | "GIRECEK";
   tutar: number;
   para: (n: number) => string;
-  gizle?: boolean;
 }) {
-  if (gizle) return <span className="text-muted-foreground shrink-0">?</span>;
   const cikis = yon === "CIKACAK";
   return (
     <span
