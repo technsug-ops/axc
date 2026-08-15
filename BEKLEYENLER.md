@@ -327,12 +327,80 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
 - [ ] **PANEL AŞAMA 3 — PAKET 2: RAKAM YARGIYA DÖNSÜN**
       _Paket 1 Halil testini geçmeden yazılmaz._
 
+      **ÖNCELİK SIRASI — KULLANICI BELİRLEDİ 15.08.2026.** Paket 2 içinde
+      bu sırayla ilerlenir:
+      1. **2c Pareto/dağılım** (YENİ) — "nereye yoğunlaşmalıyım"
+      2. **2a Dönem karşılaştırması** — "ilerliyor muyum"
+      3. **Sermaye verimi (Kâr/Maliyet)** — "param nerede verimli"
+      4. **2b Zarar + ölü sermaye (yaşlanma)** — "neyi kesmeliyim"
+
+      ---
+
+      **2c. PARETO / DAĞILIM ANALİZİ — KULLANICININ 1 NUMARASI**
+      _Karar 15.08.2026._ Cironun ve kârın (NET-2) yüzde olarak NEREDEN
+      geldiğini gösterir.
+
+      - **Kanal dağılımı:** "ciro %X Trendyol · %Y Hepsiburada · %Z N11".
+        Dönem süzgecine bağlı.
+      - **Ürün yoğunlaşması:** ürünler kâra göre sıralı, KÜMÜLATİF yüzde
+        (ilk ürün %25, ilk 5 %70, ilk 10 %85 gibi).
+      - **CİRO VE NET-2 İÇİN AYRI DAĞILIM.** Biri hacmi, diğeri gerçek
+        kazancı gösterir; **farklı olabilirler ve o fark önemlidir.**
+      - **Görsel:** yatay bar ya da kümülatif çizgi — ama **yüzde HER ZAMAN
+        yazılı**, sadece grafik değil.
+      - **Eyleme dönük not** ("kârının %70'i 5 üründe") ama **abartısız**:
+        yorumu kullanıcı yapar, panel dağılımı dürüstçe gösterir.
+
+      **2c KURALLARI (hepsi test edilir):**
+      - Yüzde paydası = **dönemin toplamı** (ciro dağılımı → dönem toplam
+        cirosu; kâr dağılımı → dönem toplam NET-2). Tüm zaman DEĞİL.
+      - **Toplam %100 olmalı.** Yuvarlama farkı "diğer"e ya da en büyüğe
+        verilir, KAYBOLMAZ (sessiz yokluk yasak).
+      - **NET-2 negatif ürünler dağılımda kalır:** zarar edenler payı
+        düşürür. "Kârın %70'i 5 üründe ama 3 ürün zarar ettiriyor" —
+        ikisi BİRLİKTE görünür.
+      - **Sıfır satış / tek kanal:** dağılım anlamsızsa "tek kanaldan
+        geliyor, dağılım yok" denir. **Sahte %100 gösterilmez.**
+      - **Renk:** paletten. Burada durum bazlı değil KATEGORİ bazlı —
+        her kanal hep aynı ton.
+      - _Mutasyon: payda dönem yerine tüm zaman → test kırmızı._
+
+      ---
+
       **2a. KARŞILAŞTIRMA + MARJ%.**
-      - Ciro, NET-1, NET-2'nin yanına önceki döneme göre değişim
-        (▲%18 / ▼%31). **Önceki dönem = seçili dönemin bir öncesi**
-        (bugün→dün, bu hafta→geçen hafta, bu ay→geçen ay).
-        _Kullanıcı 14.08.2026'da bunu ekran üzerinde ayrıca istedi:
-        "kargoya verilen +%15" gibi, her kutunun kendi karşılaştırması._
+      _Kapsam genişletildi 15.08.2026 (karar: seçenek a) — panel + rapor
+      TEK PAKETTE, kural TEK SAF FONKSİYONDA. İki kopya YASAK: bu oturumda
+      `PARTIAL`/`PARTIALLY_RECEIVED` hatası tam bu yüzden çıkmıştı._
+      - ✅ **RAPORDA YAPILDI 15.08.2026** (`dfc18b6`) · **PANELDE HENÜZ YOK.**
+        Ciro, NET-1, NET-2'nin yanına değişim — **hem SAYI hem ORAN**
+        (▲₺2.400 · %18). İkisi birlikte: yalnız yüzde küçük rakamlarda
+        abartır (2→6 TL "%200"), yalnız sayı büyüklüğün anlamını kaçırır.
+
+        **KIYAS REFERANSLARI (üçü de seçilebilir, açılır):**
+        önceki dönem · 3 ay önce · geçen yıl aynı dönem.
+
+        **EŞİT GÜN KARŞILAŞTIRMASI (TUZAK 1'in çözümü).** Ayın 15'inde
+        "bu ay ↔ geçen ay" ciroyu yarım, gideri tam alır → yapay ▼.
+        Çözüm: kıyas penceresi AY KAYDIRMASIYLA kurulur, "bu ayın ilk 15
+        günü ↔ geçen ayın ilk 15 günü". Kıyaslanan aralık ekranda YAZILI:
+        `01–15 Ağu ↔ 01–15 Tem`. Tanım ekranda = savunulabilir.
+        _Ayrıca gider satırında "dikkatli oku" işareti: aylık sabit
+        giderler belirli güne düşer, eşit gün kıyası bunu tam yakalamaz._
+
+        **İADE SATIRI ROZET ALMAZ (TUZAK 2'nin çözümü).** Geçmiş ayın malı
+        bu ay iade edilince etkisi bu ayın hanesine yazılır; rozet bunu
+        "performans düşüşü" sanardı. Performans değil, GEÇMİŞE DÖNÜK
+        DÜZELTME. Kartta "karşılaştırma yapılmaz" notu var.
+
+        **SESSİZ SIFIR YASAK.** Üç hâl ayrı: kıyas döneminde KAYIT YOK →
+        "karşılaştırılamaz"; kayıt var ama değer 0 → sayı gösterilir,
+        yüzde gösterilmez; normal → ikisi de.
+
+        **MİMARİ:** kural TEK saf fonksiyonda — `src/lib/karsilastirma.ts`.
+        Panel de rapor da onu çağırır. `karsilastirma:dogrula` (46 kontrol).
+
+        **KALAN:** panelde karşılaştırma henüz yok; 2a ancak panele de
+        uygulanınca kapanır.
       - ✅ **İKİ KÂR ORANI — YAPILDI 15.08.2026** (`c54c8af`).
         Tanımlar 14.08.2026'da mühürlendi, **payda 15.08.2026'da
         değiştirilmedi ama PAY kuralı değişti** (aşağıya bakın).

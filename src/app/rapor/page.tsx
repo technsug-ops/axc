@@ -41,7 +41,7 @@ import {
   degisim,
   kiyasCoz,
   kiyasPenceresi,
-} from "@/lib/rapor/karsilastirma";
+} from "@/lib/karsilastirma";
 import { DurumRozeti } from "@/components/durum-rozeti";
 
 import { PencereSecici } from "./pencere-secici";
@@ -319,8 +319,19 @@ export default async function RaporSayfasi({
     bicimle: (n: number) => string,
     artisIyiMi = true,
   ) {
-    if (onceki === null) return null;
     const d = degisim(simdi, onceki);
+    /**
+     * KIYAS DÖNEMİNDE KAYIT YOK. "Karşılaştırılamaz" DEMEK ZORUNDAYIZ:
+     * rozeti hiç çizmemek "sorun yok" gibi okunur, %0 yazmak "hiç
+     * değişmedi" der. İkisi de veri yokluğunu gizler (sessiz sıfır yasağı).
+     */
+    if (!d.karsilastirilabilir || d.mutlak === null) {
+      return (
+        <DurumRozeti durum="notr" isaretsiz>
+          {t("kiyaslanamaz")}
+        </DurumRozeti>
+      );
+    }
     if (d.mutlak === 0) {
       return <DurumRozeti durum="notr" isaretsiz>{t("degisimYok")}</DurumRozeti>;
     }
@@ -412,11 +423,17 @@ export default async function RaporSayfasi({
             undefined,
             degisimRozeti(b.brutNet2, k?.brutNet2 ?? null, para),
           )}
-          {/* GİDERDE ARTIŞ KÖTÜDÜR — yön rengi tersine çevriliyor. */}
+          {/* GİDERDE ARTIŞ KÖTÜDÜR — yön rengi tersine çevriliyor.
+              AYRICA "DİKKATLİ OKU" İŞARETİ: aylık sabit giderler (kira,
+              abonelik) ayın belirli bir gününe düşer. Eşit gün kıyası
+              ciroyu adil böler ama gideri bölmez — ayın 10'unda düşen kira,
+              8'inde bakıldığında bir dönemde var diğerinde yoktur. */}
           {kart(
             t("donemGiderleri"),
             para(b.giderNetDusen),
-            t("giderNotu"),
+            kiyasPencere
+              ? `${t("giderNotu")} · ⚠ ${t("giderKiyasNotu")}`
+              : t("giderNotu"),
             undefined,
             degisimRozeti(b.giderNetDusen, k?.giderNetDusen ?? null, para, false),
           )}
@@ -427,12 +444,17 @@ export default async function RaporSayfasi({
             undefined,
             degisimRozeti(b.satisAdedi, k?.satisAdedi ?? null, (n) => String(n)),
           )}
+          {/* İADE SATIRI KARŞILAŞTIRMA ROZETİ ALMAZ (mimar kararı
+              15.08.2026). Geçmiş ayın malı bu ay iade edilince etkisi BU
+              ayın hanesine yazılır; rozet bunu "performans düşüşü" sanardı.
+              Bu bir performans ölçüsü değil, GEÇMİŞE DÖNÜK DÜZELTMEDİR. */}
           {kart(
             t("iadeAdedi"),
             `${b.iadeAdedi} · ${para(b.iadeNet2)}`,
-            t("iadeEtkisi"),
+            kiyasPencere
+              ? `${t("iadeEtkisi")} · ${t("iadeKiyasNotu")}`
+              : t("iadeEtkisi"),
             b.iadeNet2 < 0 ? "kotu" : undefined,
-            degisimRozeti(b.iadeAdedi, k?.iadeAdedi ?? null, (n) => String(n), false),
           )}
         </div>
 

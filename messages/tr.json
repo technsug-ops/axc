@@ -1108,7 +1108,10 @@
     "kiyas_gecenYil": "Geçen yıl aynı dönem",
     "kiyasNotu": "Karşılaştırma aynı gün sayısına göre yapılır. Dönem giderleri aya yayılmadan düşer; ay ortasında bakıldığında gider satırı iki dönemde farklı günlere denk gelebilir. İade etkisi, malın satıldığı döneme değil iade edildiği döneme yazılır.",
     "ciroyaOran": "ciroya oran {oran}",
-    "degisimYok": "değişim yok"
+    "degisimYok": "değişim yok",
+    "kiyaslanamaz": "karşılaştırılamaz — kıyas döneminde kayıt yok",
+    "iadeKiyasNotu": "geçmiş dönem iadeleri de buraya yazılır; karşılaştırma yapılmaz",
+    "giderKiyasNotu": "aylık sabit giderler belirli güne düşer, eşit gün kıyası bunu tam yakalamayabilir"
   },
   "KarSorunu": {
     "baslik": "Nasıl düzeltilir?",

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { gunDegeri, gunMetni, pencereOlustur } from "../src/lib/donem";
 import {
   KIYAS_ANAHTARLARI,
@@ -6,7 +8,7 @@ import {
   degisim,
   kiyasCoz,
   kiyasPenceresi,
-} from "../src/lib/rapor/karsilastirma";
+} from "../src/lib/karsilastirma";
 
 /**
  * ============================================================================
@@ -157,6 +159,55 @@ console.log("=".repeat(70));
   kontrol("  ...ama mutlak fark yine de var (+500)", yeni.mutlak === 500, yeni.mutlak);
   kontrol("iki dönem de 0 ise yüzde null", degisim(0, 0).yuzde === null);
   kontrol("değişim yoksa yüzde 0", degisim(100, 100).yuzde === 0);
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  "KARŞILAŞTIRILAMAZ" — SESSİZ SIFIR YASAĞI
+   * --------------------------------------------------------------------
+   *  "Geçen yıl bu dönem kayıt yok" ile "geçen yıl değer sıfırdı" AYNI
+   *  ŞEY DEĞİLDİR. İlki ölçümün yokluğu, ikincisi bir ölçüm. Rozeti hiç
+   *  çizmemek "sorun yok" gibi okunur, %0 yazmak "hiç değişmedi" der;
+   *  ikisi de veri yokluğunu gizler.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const veriYok = degisim(500, null);
+  kontrol("kıyas döneminde KAYIT YOKSA karşılaştırılamaz", !veriYok.karsilastirilabilir);
+  kontrol("  ...mutlak fark da null (uydurma sayı yok)", veriYok.mutlak === null);
+  kontrol("  ...yüzde de null", veriYok.yuzde === null);
+  kontrol(
+    "KAYIT VAR ama değer 0 ise karşılaştırılabilir (farklı hâl)",
+    degisim(500, 0).karsilastirilabilir === true,
+  );
+
+  /**
+   * SAYI VE ORAN TUTARLI: oran = fark / önceki × 100. Ekranda iki rakam
+   * yan yana duruyor; biri diğerini yalanlarsa panele güven biter.
+   */
+  for (const [simdi, onceki] of [
+    [1200, 1000],
+    [800, 1000],
+    [2400, 2000],
+    [-50, -100],
+  ] as const) {
+    const d = degisim(simdi, onceki);
+    const beklenen = ((simdi - onceki) / Math.abs(onceki)) * 100;
+    kontrol(
+      `sayı ve oran tutarlı (${simdi} ↔ ${onceki})`,
+      d.mutlak === simdi - onceki && Math.abs((d.yuzde ?? 0) - beklenen) < 1e-9,
+      [d.mutlak, d.yuzde],
+    );
+  }
+
+  /** Kullanıcının örneği: ▲₺2.400 ▲%18 birlikte okunabilmeli. */
+  const ornek = degisim(15733.33, 13333.33);
+  kontrol(
+    "örnek: +2.400 farkın oranı ≈ %18",
+    ornek.mutlak !== null &&
+      Math.abs(ornek.mutlak - 2400) < 0.01 &&
+      ornek.yuzde !== null &&
+      Math.abs(ornek.yuzde - 18) < 0.01,
+    [ornek.mutlak, ornek.yuzde],
+  );
 }
 
 console.log("");
@@ -189,6 +240,55 @@ console.log("=".repeat(70));
   kontrol(
     "TANIMSIZ değer SESSİZCE varsayılana düşmez",
     kiyasCoz("gecenHafta") === null,
+  );
+}
+
+
+console.log("");
+console.log("=".repeat(70));
+console.log("5) EKRAN KURALLARI — İKİ TUZAK");
+console.log("=".repeat(70));
+
+{
+  const rapor = readFileSync("src/app/rapor/page.tsx", "utf8");
+  /**
+   * TUZAK 2 — İADE SATIRI ROZET ALMAZ. Geçmiş ayın malı bu ay iade
+   * edilince etkisi bu ayın hanesine yazılır; rozet bunu performans
+   * düşüşü sanardı. Bu bir ölçü değil, geçmişe dönük düzeltmedir.
+   */
+  /**
+   * ⚠ KAÇIŞ TUZAĞI: bu kontrol ilk yazımda `[sS]` içeriyordu (`[\s\S]`
+   * olması gerekiyordu). O hâliyle HİÇBİR ZAMAN eşleşmiyordu, yani rozet
+   * geri konsa bile test YEŞİL yanıyordu — yalancı yeşil. Mutasyon
+   * denemesinde yakalandı: iade kartına rozeti geri koydum, test kırmızı
+   * yanmadı. Kontrolün kendisi de sınanmalı.
+   */
+  const iadeKarti = rapor.slice(
+    rapor.indexOf('t("iadeAdedi")'),
+    rapor.indexOf('t("iadeAdedi")') + 400,
+  );
+  kontrol(
+    "iade kartı karşılaştırma rozeti ALMIYOR",
+    iadeKarti.length > 100 && !iadeKarti.includes("degisimRozeti"),
+  );
+  kontrol(
+    "  ...yerine 'karşılaştırma yapılmaz' notu var",
+    rapor.includes("iadeKiyasNotu"),
+  );
+  /** TUZAK 1 — gider satırında 'dikkatli oku' işareti. */
+  kontrol(
+    "gider kartında kıyas uyarısı var (sabit gider belirli güne düşer)",
+    rapor.includes("giderKiyasNotu"),
+  );
+  kontrol(
+    "  ...uyarı YALNIZ karşılaştırma açıkken çıkıyor",
+    rapor.includes("kiyasPencere") &&
+      /kiyasPencere[\s\S]{0,160}giderKiyasNotu/.test(rapor),
+  );
+  /** Kıyaslanan aralık EKRANDA YAZILI olmalı. */
+  kontrol(
+    "kıyaslanan aralık ekranda yazılı (01–15 Ağu ↔ 01–15 Tem)",
+    /kiyasPencere\.baslangic[\s\S]{0,200}kiyasPencere\.sonGun/.test(rapor),
   );
 }
 

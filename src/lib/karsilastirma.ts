@@ -87,37 +87,60 @@ export function kiyasPenceresi(pencere: Pencere, tur: KiyasTuru): Pencere {
   };
 }
 
-/** Bir ölçünün iki dönem arasındaki değişimi. */
+/**
+ * Bir ölçünün iki dönem arasındaki değişimi.
+ *
+ * ÜÇ AYRI HÂL, ÜÇÜ DE FARKLI ŞEY SÖYLER (sessiz sıfır yasağı):
+ *
+ *   `veriYok`   → kıyas döneminde HİÇ KAYIT yok. Ekran "karşılaştırılamaz"
+ *                 der. %0 yazmak "hiç değişmedi", boş bırakmak "sorun yok"
+ *                 anlamına gelirdi; ikisi de yalan.
+ *   `yuzde null`→ kayıt VAR ama değer sıfırdı. Fark SAYI olarak gösterilir,
+ *                 yüzde gösterilmez: sıfırdan artışın yüzdesi yoktur.
+ *   normal      → hem sayı hem yüzde.
+ */
 export type Degisim = {
   /** Şimdiki değer. */
   simdi: number;
-  /** Kıyas dönemindeki değer. */
-  onceki: number;
-  /** Fark — SAYI olarak (kullanıcı isteği: hem sayı hem oran). */
-  mutlak: number;
-  /**
-   * Yüzde değişim. Kıyas dönemi SIFIRSA `null` — sıfırdan artışın yüzdesi
-   * yoktur. "%100 arttı" yazmak yalan olurdu, "%0" ise hiç değişmediğini
-   * söylerdi; ikisi de yanlış. Ekran bu durumda "yeni" der.
-   */
+  /** Kıyas dönemindeki değer. Kayıt yoksa `null`. */
+  onceki: number | null;
+  /** Fark — SAYI olarak. Kıyas döneminde kayıt yoksa `null`. */
+  mutlak: number | null;
+  /** Yüzde değişim. Kayıt yoksa ya da önceki değer 0 ise `null`. */
   yuzde: number | null;
+  /**
+   * Kıyas döneminde KAYIT VAR MI. `false` → ekran "karşılaştırılamaz" der.
+   * "Değer sıfırdı" ile "hiç kayıt yoktu" AYNI ŞEY DEĞİLDİR; ilki bir
+   * ölçüm, ikincisi ölçümün yokluğudur.
+   */
+  karsilastirilabilir: boolean;
 };
 
 /**
- * İki dönemi karşılaştırır.
+ * İki dönemi karşılaştırır. `onceki` `null` ise kıyas döneminde kayıt yok.
  *
  * YÜZDE PAYDASI MUTLAK DEĞER. Eksiden eksiye iyileşme doğru işaretlensin:
  * −100'den −50'ye geçmek +%50'dir (iyileşme), −%50 değil. Ham bölme
  * kullanılsaydı işaret ters dönerdi ve zarardan çıkan bir dönem "kötüleşti"
  * görünürdü — tam da bakılan rakamda.
  */
-export function degisim(simdi: number, onceki: number): Degisim {
+export function degisim(simdi: number, onceki: number | null): Degisim {
+  if (onceki === null) {
+    return {
+      simdi,
+      onceki: null,
+      mutlak: null,
+      yuzde: null,
+      karsilastirilabilir: false,
+    };
+  }
   const mutlak = simdi - onceki;
   return {
     simdi,
     onceki,
     mutlak,
     yuzde: onceki === 0 ? null : (mutlak / Math.abs(onceki)) * 100,
+    karsilastirilabilir: true,
   };
 }
 

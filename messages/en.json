@@ -1108,7 +1108,10 @@
     "kiyas_gecenYil": "",
     "kiyasNotu": "",
     "ciroyaOran": "",
-    "degisimYok": ""
+    "degisimYok": "",
+    "kiyaslanamaz": "",
+    "iadeKiyasNotu": "",
+    "giderKiyasNotu": ""
   },
   "KarSorunu": {
     "baslik": "",
