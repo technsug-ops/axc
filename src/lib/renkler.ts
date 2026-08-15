@@ -98,6 +98,30 @@ export const DURUM_ZEMINI: Record<DurumRengi, string> = {
   notr: "bg-[#EDEBE4] text-foreground ring-1 ring-inset ring-border dark:bg-muted dark:text-muted-foreground",
 };
 
+/**
+ * DOYGUN ÇİP — ikon kutusu için, BEYAZ ikon üstünde tam doygun ton.
+ *
+ * KURAL: DOYGUNLUK YALNIZ KÜÇÜK ALANDA (15.08.2026). Kullanıcının örnek
+ * verdiği ERP ekranının asıl numarası buydu: renk tam doygun ama yalnız
+ * ~28 px'lik ikon dairelerinde ve grafik çubuklarında yaşıyor; rakamların
+ * kendisi siyah, kartlar beyaz. Böylece ekran hem renkli hem sakin.
+ *
+ * Yani kısıt #2 ("asla doygun koca blok") kalkmıyor — tersine, doygunluğun
+ * nereye gideceği belirleniyor: ÇİPE. Bu yüzden bu sınıflar yalnız
+ * `IstatistikKutusu`nun ikon kutusunda kullanılır; zemin olarak kullanılırsa
+ * `panel:dogrula` yakalar.
+ *
+ * Tonlar beyaz ikon için koyulaştırıldı — grafik öğede aranan 3:1 kontrast
+ * oranı her tonda sağlanıyor (en düşüğü yeşil, 3,46).
+ */
+export const DURUM_CIPI: Record<DurumRengi, string> = {
+  olumlu: "bg-[#1D9E75] text-white",
+  olumsuz: "bg-[#E24B4A] text-white",
+  uyari: "bg-[#B87309] text-white",
+  bilgi: "bg-[#2F7FD1] text-white",
+  notr: "bg-[#6B7280] text-white",
+};
+
 /** Yalnız RAKAM rengi — zemin nötr kalsın istenen büyük tutarlar için. */
 export const DURUM_YAZISI: Record<DurumRengi, string> = {
   olumlu: "text-[#0F6E56] dark:text-[#6FD8B4]",

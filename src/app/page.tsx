@@ -1,11 +1,23 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowRight, TriangleAlert } from "lucide-react";
+import {
+  ArrowRight,
+  Receipt,
+  ShoppingBag,
+  TrendingUp,
+  TriangleAlert,
+  Truck,
+  Wallet,
+} from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
 import { CizgiGrafik, type GrafikNoktasi } from "@/components/cizgi-grafik";
 import { DurumRozeti } from "@/components/durum-rozeti";
+import {
+  IstatistikKutusu,
+  PayCubugu,
+} from "@/components/istatistik-kutusu";
 import { KatlanirBolum } from "@/components/katlanir-bolum";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { SuzgecCubugu } from "@/components/suzgec-cubugu";
@@ -50,6 +62,7 @@ import {
   type KalemGirdisi,
 } from "@/lib/panel-listeler";
 import { prisma } from "@/lib/prisma";
+import { DURUM_CIPI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
 import { NakitOzeti } from "./nakit-ozeti";
@@ -840,20 +853,31 @@ export default async function AnaSayfa({
               <div
                 className={`grid gap-2 sm:grid-cols-3 ${karGorunur ? "lg:grid-cols-5" : ""}`}
               >
-                <div className="space-y-0.5 rounded-lg border p-3">
-                  <div className="text-muted-foreground text-xs">
-                    {t("satisAdedi")}
-                  </div>
-                  <div className="text-2xl font-semibold">
+                <IstatistikKutusu
+                  etiket={t("satisAdedi")}
+                  ikon={ShoppingBag}
+                  cocuk={
                     <Baglanti href={satisAdresi(seciliKanal ? { kanal: seciliKanal } : {})}>
                       {blok.toplamAdet}
                     </Baglanti>
+                  }
+                />
+                {/* CİRO — kutu düzenine girmiyor çünkü tek rakam değil, üç
+                    satır (brüt · iade düşümü · net). Kendi bileşeni var ve
+                    panelin ciro gösterdiği dört yüzeyin hepsinde aynı
+                    (mimar kararı 13.08.2026). */}
+                <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className={`flex size-7 shrink-0 items-center justify-center rounded-md ${DURUM_CIPI.notr}`}
+                      aria-hidden="true"
+                    >
+                      <Receipt className="size-4" />
+                    </span>
+                    <span className="text-muted-foreground min-w-0 text-xs break-words">
+                      {t("ciro")}
+                    </span>
                   </div>
-                </div>
-                <div className="space-y-0.5 rounded-lg border p-3">
-                  <div className="text-muted-foreground text-xs">{t("ciro")}</div>
-                  {/* BRÜT · İADE DÜŞÜMÜ · NET — panelin ciro gösterdiği dört
-                      yüzeyin hepsinde aynı bileşen (mimar kararı 13.08.2026). */}
                   <CiroSunumu
                     boyut="kutu"
                     brut={bicim.para(blok.toplamGelir, blok.paraBirimi)}
@@ -872,17 +896,20 @@ export default async function AnaSayfa({
                     "Bekleyen" bugün ne yapılacağını söylediği için verilenle
                     birlikte duruyor (kullanıcı kararı 14.08.2026) ve ikisi de
                     o satışlara süzülmüş listeye götürüyor (İlke #2, #9). */}
-                <div className="space-y-0.5 rounded-lg border p-3">
-                  <div className="text-muted-foreground text-xs">
-                    {t("kargoDurumu")}
-                  </div>
-                  <div className="text-2xl font-semibold">
+                <IstatistikKutusu
+                  etiket={t("kargoDurumu")}
+                  ikon={Truck}
+                  /* Bekleyen kargo YAPILACAK İŞTİR — çip amber yanar.
+                     Bekleyen yoksa nötr: "iş yok" bir başarı değil, sıradan
+                     hâldir; yeşile boyamak her gün kutlama olurdu. */
+                  durum={blok.kargoBekleyenAdet > 0 ? "uyari" : "notr"}
+                  cocuk={
                     <Baglanti href={kargoAdresi("verildi")}>
                       {blok.kargoyaVerilenAdet}
                     </Baglanti>
-                  </div>
-                  <div className="text-xs">
-                    {blok.kargoBekleyenAdet > 0 ? (
+                  }
+                  altNot={
+                    blok.kargoBekleyenAdet > 0 ? (
                       <Baglanti href={kargoAdresi("bekleyen")}>
                         {t("kargoBekleyen", { sayi: blok.kargoBekleyenAdet })}
                       </Baglanti>
@@ -890,37 +917,41 @@ export default async function AnaSayfa({
                       <span className="text-muted-foreground">
                         {t("kargoBekleyenYok")}
                       </span>
-                    )}
-                  </div>
-                </div>
+                    )
+                  }
+                />
                 {/* NET-1 VE NET-2 YAN YANA (kullanıcı isteği 14.08.2026:
                     "net kâr 1, 2"). İkisi arasındaki fark ÖDENECEK KDV'dir;
                     açıklama satırları bunu yazıyor ki hangisine bakılacağı
                     tahmin edilmesin. */}
                 {karGorunur ? (
                   <>
-                    <div className="space-y-0.5 rounded-lg border p-3">
-                      <div className="text-muted-foreground text-xs">
-                        {t("net1")}
-                      </div>
-                      <div className="text-2xl font-semibold">
-                        {bicim.para(blok.toplamNet1, blok.paraBirimi)}
-                      </div>
-                      <div className="text-muted-foreground text-xs">
-                        {t("net1Aciklama")}
-                      </div>
-                    </div>
-                    <div className="space-y-0.5 rounded-lg border p-3">
-                      <div className="text-muted-foreground text-xs">
-                        {t("net2")}
-                      </div>
-                      <div className="text-2xl font-semibold">
-                        {bicim.para(blok.toplamNet2, blok.paraBirimi)}
-                      </div>
-                      <div className="text-muted-foreground text-xs">
-                        {t("net2Aciklama")}
-                      </div>
-                    </div>
+                    <IstatistikKutusu
+                      etiket={t("net1")}
+                      ikon={TrendingUp}
+                      durum={karDurumu(blok.toplamNet1)}
+                      cocuk={bicim.para(blok.toplamNet1, blok.paraBirimi)}
+                      altNot={
+                        <span className="text-muted-foreground">
+                          {t("net1Aciklama")}
+                        </span>
+                      }
+                    />
+                    {/* NET-2 BAŞROL. Beş kutu da aynı boydayken hiçbiri
+                        önemli görünmüyordu; oysa günün sonunda cebe giren
+                        rakam budur. Tek "bas" kutusu o yüzden burada. */}
+                    <IstatistikKutusu
+                      etiket={t("net2")}
+                      ikon={Wallet}
+                      durum={karDurumu(blok.toplamNet2)}
+                      bas
+                      cocuk={bicim.para(blok.toplamNet2, blok.paraBirimi)}
+                      altNot={
+                        <span className="text-muted-foreground">
+                          {t("net2Aciklama")}
+                        </span>
+                      }
+                    />
                   </>
                 ) : null}
               </div>
@@ -977,7 +1008,7 @@ export default async function AnaSayfa({
                 {blok.kanallar.map((kanal) => (
                   <div
                     key={kanal.kanalKodu}
-                    className="min-w-0 space-y-3 rounded-lg border p-3"
+                    className="bg-card min-w-0 space-y-3 rounded-lg border p-3"
                   >
                     {/* TIKLANABİLİR KANAL: o kanalın satışlarına süzülmüş
                         gider. Link stili görünür (İlke #2). */}
@@ -986,6 +1017,23 @@ export default async function AnaSayfa({
                         {kanal.kanalAdi}
                       </Baglanti>
                     </div>
+
+                    {/* PAY ÇUBUĞU — kanalın ciro içindeki ağırlığı.
+                        Kartlar bir ızgara dolusu birbirinin aynıydı; hangi
+                        kanalın yükü taşıdığı ancak rakamlar tek tek okunup
+                        kafada karşılaştırılınca anlaşılıyordu. Çubuk bunu
+                        BAKINCA söylüyor.
+                        Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11
+                        ton, dört durum rengiyle karışır ve "yeşil = iyi"
+                        anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK. */}
+                    {blok.toplamGelir > 0 ? (
+                      <PayCubugu
+                        oran={kanal.gelir / blok.toplamGelir}
+                        etiket={bicim.yuzde(
+                          (kanal.gelir / blok.toplamGelir) * 100,
+                        )}
+                      />
+                    ) : null}
 
                     <div className="grid grid-cols-2 gap-x-3 gap-y-2">
                       <div className="min-w-0">

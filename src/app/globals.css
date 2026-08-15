@@ -62,8 +62,23 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
+    /* ══════════════════════════════════════════════════════════════════
+       AKSAN RENGİ — 15.08.2026'da eklendi.
+
+       Sistemde hiç renk yoktu: `--primary` siyahtı, bütün gri tonlar
+       chroma 0'dı. Kullanıcı "ayırt edici bir renk yok, bütünlük yok"
+       dedi — haklıydı, ekranda tutunacak tek bir ton bile yoktu.
+
+       AYRI BİR MARKA RENGİ UYDURULMADI: aksan, paletteki "bilgi"
+       mavisinin ta kendisi (#2F7FD1). Gerekçe — o mavi zaten "bilgi /
+       gidilecek yer" demek, bağlantı da tam olarak odur. Ayrı bir marka
+       tonu eklemek altıncı bir renk açar ve dört anlamlı rengin yanında
+       gürültü olurdu.
+
+       Bu tek token bütün uygulamayı renklendiriyor: `Baglanti` zaten
+       `text-primary` kullanıyor, butonlar ve aktif menü de öyle. */
+    --primary: oklch(0.55 0.15 254);
+    --primary-foreground: oklch(0.99 0 0);
     /* Kart zemini 0.97 oldu; bu yuzeyler kartin UZERINDE duruyor,
        aynı tonda kalırlarsa kaybolurlar. Bir kademe koyu. */
     --secondary: oklch(0.94 0 0);
@@ -81,7 +96,9 @@
        alanlar kart kenarlığından ayrışsın. */
     --border: oklch(0.82 0 0);
     --input: oklch(0.8 0 0);
-    --ring: oklch(0.708 0 0);
+    /* Odak halkası da aksan: klavyeyle gezen kullanıcı nerede olduğunu
+       gri bir halkadan değil, sistemin kendi renginden görür. */
+    --ring: oklch(0.6 0.13 254);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
@@ -90,12 +107,14 @@
     --radius: 0.625rem;
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary: oklch(0.55 0.15 254);
     --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
+    /* Aktif menü satırı: mavi tint + mavi yazı. Gri bir vurgu "seçili"
+       demiyordu, sadece biraz kirli görünüyordu (ekran görüntüsü 15.08.2026). */
+    --sidebar-accent: oklch(0.952 0.022 254);
+    --sidebar-accent-foreground: oklch(0.42 0.13 254);
     --sidebar-border: var(--border);
-    --sidebar-ring: oklch(0.708 0 0);
+    --sidebar-ring: oklch(0.6 0.13 254);
 }
 
 .dark {
@@ -105,8 +124,8 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
+    --primary: oklch(0.74 0.12 254);
+    --primary-foreground: oklch(0.18 0.03 254);
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.269 0 0);
@@ -118,7 +137,7 @@
        kartların sınırı seçilemiyordu. Bkz. açık temadaki not. */
     --border: oklch(1 0 0 / 32%);
     --input: oklch(1 0 0 / 40%);
-    --ring: oklch(0.556 0 0);
+    --ring: oklch(0.62 0.12 254);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
@@ -126,12 +145,12 @@
     --chart-5: oklch(0.269 0 0);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary: oklch(0.66 0.14 254);
     --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent: oklch(0.31 0.05 254);
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: var(--border);
-    --sidebar-ring: oklch(0.556 0 0);
+    --sidebar-ring: oklch(0.62 0.12 254);
 }
 
 @layer base {

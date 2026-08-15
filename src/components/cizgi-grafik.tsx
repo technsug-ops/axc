@@ -205,10 +205,15 @@ export function CizgiGrafik({
         ) : null}
 
         {/* --- ana seri: alan ve çizgi (kalın, dolu) --- */}
-        <polygon points={alan} className="text-foreground" fill="currentColor" opacity={0.08} />
+        <polygon
+          points={alan}
+          className="text-primary"
+          fill="currentColor"
+          opacity={0.1}
+        />
         <polyline
           points={cizgi(anaSeri)}
-          className="text-foreground"
+          className="text-primary"
           fill="none"
           stroke="currentColor"
           strokeWidth={2.5}
@@ -231,7 +236,7 @@ export function CizgiGrafik({
         ) : null}
 
         {/* --- nokta işaretleri --- */}
-        <g className="text-foreground">
+        <g className="text-primary">
           {noktalar.map((n, i) => (
             <circle
               key={n.tamEtiket}
@@ -264,7 +269,7 @@ export function CizgiGrafik({
       {/* --- gösterge --- */}
       <div className="text-muted-foreground mt-2 flex flex-wrap gap-4 text-sm">
         <span className="flex items-center gap-2">
-          <svg width={22} height={8} aria-hidden="true" className="text-foreground">
+          <svg width={22} height={8} aria-hidden="true" className="text-primary">
             <line x1={0} y1={4} x2={22} y2={4} stroke="currentColor" strokeWidth={2.5} />
           </svg>
           {net2Goster ? net2Adi : gelirAdi}

@@ -37,7 +37,9 @@ import {
 } from "../src/lib/durum-renkleri";
 import {
   ANLAMLI_RENKLER,
+  DURUM_CIPI,
   DURUM_ISARETI,
+  DURUM_RENKLERI,
   DURUM_SERIDI,
   DURUM_YAZISI,
   DURUM_ZEMINI,
@@ -1457,17 +1459,98 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
 
   /**
+   * ════════════════════════════════════════════════════════════════════
+   *  AKSAN RENGİ VAR MI — "ayırt edici bir renk yok" (15.08.2026)
+   * --------------------------------------------------------------------
+   *  Sistemin bütün gri tonları chroma 0'dı ve `--primary` siyahtı; ekranda
+   *  tutunacak tek bir ton yoktu. Bu kontrol `--primary`in RENKLİ olmasını
+   *  şart koşuyor — biri yarın siyaha döndürürse sessizce geri gitmesin.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const tema = readFileSync("src/app/globals.css", "utf8");
+  // Dilim ":root {" ile ONDAN SONRAKİ ".dark {" arasından alınır. Düz bir
+  // indexOf(".dark") dosyanın başındaki @custom-variant satırına takılıp
+  // dilimi boş bırakıyordu; iki değer de NaN çıkıyor ve kontrol kendi
+  // hatasından kırmızı yanıyordu.
+  const kokBas = tema.indexOf(":root {");
+  const acikTema = tema.slice(kokBas, tema.indexOf(".dark {", kokBas));
+  const kroma = (blok: string, ad: string) => {
+    const m = new RegExp(`--${ad}:\\s*oklch\\([0-9.]+\\s+([0-9.]+)`).exec(blok);
+    return m ? Number(m[1]) : NaN;
+  };
+  kontrol(
+    "aksan rengi RENKLİ (--primary gri değil)",
+    kroma(acikTema, "primary") > 0.05,
+  );
+  kontrol(
+    "  ...koyu temada da renkli",
+    kroma(tema.slice(tema.indexOf(".dark {", kokBas)), "primary") > 0.05,
+  );
+  kontrol(
+    "  ...aktif menü satırı da aksan tonunda (gri vurgu 'seçili' demiyor)",
+    kroma(acikTema, "sidebar-accent") > 0.01,
+  );
+
+  /**
+   * DOYGUN ÇİP YALNIZ KÜÇÜK ALANDA. Çip sınıfları zemin olarak kullanılırsa
+   * kısıt #2 çöker ("asla doygun koca blok"). Bu yüzden `DURUM_CIPI` yalnız
+   * `size-7` ikon kutusunda geçmeli.
+   */
+  const kutuKaynak = readFileSync(
+    "src/components/istatistik-kutusu.tsx",
+    "utf8",
+  );
+  kontrol(
+    "doygun çip KÜÇÜK alanda (size-7 ikon kutusu)",
+    kutuKaynak.includes("size-7") && kutuKaynak.includes("DURUM_CIPI[durum]"),
+  );
+  kontrol(
+    "  ...her doygun ton beyaz ikon taşıyor (grafik öğede 3:1 kontrast)",
+    DURUM_RENKLERI.every((d) => DURUM_CIPI[d].includes("text-white")),
+  );
+  kontrol(
+    "  ...çipin varsayılanı NÖTR (renk ancak durum varsa yanar, kısıt #3)",
+    kutuKaynak.includes('durum = "notr"'),
+  );
+  kontrol(
+    "  ...pay çubuğu oranı kırpıyor (bozuk veri ekranı taşırmaz)",
+    kutuKaynak.includes("Math.max(0, Math.min(1,"),
+  );
+  kontrol(
+    "  ...pay çubuğunun yanında YAZILI yüzde var (kısıt #1)",
+    kutuKaynak.includes("etiket") && kutuKaynak.includes("tabular-nums"),
+  );
+
+  /**
+   * PANELDE TEK KUTU ANATOMİSİ. Elle yazılmış `rounded-lg border p-3` +
+   * `text-2xl font-semibold` kalıbı geri sızarsa sayfa yine "bir renkli bir
+   * renksiz" hâle döner — kullanıcının 15.08.2026'daki tam şikâyeti buydu.
+   */
+  const panelKaynak = readFileSync("src/app/page.tsx", "utf8");
+  kontrol(
+    "panel rakam kutuları ORTAK bileşenden",
+    panelKaynak.includes("<IstatistikKutusu"),
+  );
+  kontrol(
+    "  ...elle yazılmış eski kutu kalıbı geri sızmadı",
+    !panelKaynak.includes('"space-y-0.5 rounded-lg border p-3"'),
+  );
+  kontrol(
+    "  ...NET-2 başrol (tek 'bas' kutusu)",
+    (panelKaynak.match(/^\s*bas$/gm) ?? []).length === 1,
+  );
+  kontrol(
+    "  ...grafiğin ana serisi aksan renginde (sayfayla aynı dil)",
+    readFileSync("src/components/cizgi-grafik.tsx", "utf8").includes(
+      'className="text-primary"',
+    ),
+  );
+
+  /**
    * SAYFA GRİ, KART BEYAZ. Ters kurulursa (kart sayfadan koyu) kartlar
    * gömülür ve pastel rozetler gri üstünde sönerdi — 15.08.2026'da tam
    * olarak bu yaşandı.
    */
-  const tema = readFileSync("src/app/globals.css", "utf8");
-  // Dilim `:root {` ile ONDAN SONRAKİ `.dark {` arasından alınır. Düz
-  // `indexOf(".dark")` dosyanın başındaki `@custom-variant dark (&:is(.dark *))`
-  // satırına takılıp dilimi boş bırakıyordu; iki değer de NaN çıkıyor ve
-  // kontrol kendi hatasından kırmızı yanıyordu.
-  const kokBas = tema.indexOf(":root {");
-  const acikTema = tema.slice(kokBas, tema.indexOf(".dark {", kokBas));
   const acikLuma = (ad: string) => {
     const m = new RegExp(`--${ad}:\\s*oklch\\(([0-9.]+)`).exec(acikTema);
     return m ? Number(m[1]) : NaN;
