@@ -952,6 +952,25 @@ Aday sıralama (mimar önerisi, kullanıcı onayı bekleniyor):
       satışa bağlı, sebebi tam olarak bu.
       Önce HB mi TY mi: **kullanıcının satış hacmine göre** karar verilecek.
 
+      **KARGO GERÇEK TUTARA BAĞLANACAK (karar 15.08.2026).** Bugün kargo
+      göz kararı desiden TAHMİN giriliyor; API bağlanınca pazaryerinin
+      GERÇEK kestiği tutardan okunacak (Melontik'in yaptığı gibi) ve manuel
+      tahmin otomatikle değişecek.
+
+      > **O ZAMANA KADAR BİLİNEN SAPMA KABUL EDİLDİ.** NET-2'nin kargo
+      > kaleminde küçük ve **yönü belli** bir iyimserlik var: ~₺9–10/sipariş,
+      > kârı hafif YÜKSEK gösteriyor. Ayrı bir "gerçek kargo güncelle"
+      > adımı manuel yükü artırır, farkın büyüklüğüne değmez.
+      > _Bu bir sessiz varsayım DEĞİL: ölçüldü, yönü biliniyor, yazılı._
+
+      > **KÂR MOTORU DIŞ KAYNAKLA DOĞRULANDI (15.08.2026).** Aynı sipariş
+      > Melontik (rakip ticari araç) ile karşılaştırıldı: **satış, komisyon,
+      > stopaj, hizmet bedeli, maliyet ve net KDV mantığı BİREBİR tutuyor.**
+      > Tek fark kargo GİRDİSİ (tahmin vs API) — formül değil.
+      > **NET-2 formülü sağlam; dokunulmuyor.** Bu, "sabit ≠ sabit, dış
+      > kaynakla karşılaştır" ilkesinin en güçlü uygulaması: kendi testimiz
+      > kendi varsayımımızı doğrular, bağımsız bir araç doğrulamaz.
+
 - [ ] **2. Barkod okutma akışları**
       Mal kabul + sipariş karşılama, telefon kamerasıyla. SKU etiketleri
       zaten basılıyor, ortak bileşen (`barkod-okuyucu.tsx`) zaten var.
