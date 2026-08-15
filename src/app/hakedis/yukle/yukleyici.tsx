@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useBicim } from "@/lib/bicim-istemci";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export type HesapSecenegi = { id: string; etiket: string };
 
@@ -256,17 +257,17 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
 
             {/* UYARILAR — yüklemeyi DURDURMAZ. */}
             {onizleme.uyarilar.length > 0 ? (
-              <div className="space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-                <p className="flex items-center gap-2 text-sm font-medium text-amber-900 dark:text-amber-200">
+              <div className={`space-y-2 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+                <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
                   <TriangleAlert className="size-4 shrink-0" />
                   {t("uyariBaslik", { sayi: onizleme.uyarilar.length })}
                 </p>
-                <ul className="list-inside list-disc space-y-1 text-sm text-amber-900/90 dark:text-amber-200/90">
+                <ul className={`list-inside list-disc space-y-1 text-sm ${DURUM_YAZISI.uyari}`}>
                   {onizleme.uyarilar.slice(0, 30).map((u, i) => (
                     <li key={i}>{uyariMetni(u, paraBirimi)}</li>
                   ))}
                 </ul>
-                <p className="text-xs text-amber-900/80 dark:text-amber-200/80">
+                <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
                   {t("uyariNotu")}
                 </p>
               </div>
@@ -302,7 +303,7 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
       {yanit?.durum === "YAZILDI" ? (
         <p
           role="status"
-          className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400"
+          className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.olumlu}`}
         >
           {yanit.yazilan === 0
             ? t("hicYeniYok")

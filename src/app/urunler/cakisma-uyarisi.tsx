@@ -7,6 +7,7 @@ import { ExternalLink, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import type { KodCakismasi } from "./actions";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -37,10 +38,10 @@ export function CakismaUyarisi({ cakismalar }: { cakismalar: KodCakismasi[] }) {
         : ortak("barkod");
 
   return (
-    <div className="space-y-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-4">
+    <div className={`space-y-3 rounded-md p-4 ${DURUM_KUTUSU.uyari}`}>
       {cakismalar.map((c, i) => (
         <div key={`${c.alan}-${c.deger}-${i}`} className="space-y-2">
-          <p className="text-sm text-amber-900 dark:text-amber-200">
+          <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
             {t("cakismaMetni", {
               alan: alanAdi(c.alan),
               deger: c.deger,

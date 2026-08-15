@@ -7,6 +7,7 @@ import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import type { BenzerUrun } from "./actions";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -36,12 +37,12 @@ export function BenzerlikSorusu({
   if (!benzerler.length) return null;
 
   return (
-    <div className="space-y-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-4">
+    <div className={`space-y-3 rounded-md p-4 ${DURUM_KUTUSU.uyari}`}>
       <div>
-        <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+        <p className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
           {t("benzerBaslik", { sayi: benzerler.length })}
         </p>
-        <p className="mt-1 text-sm text-amber-900/90 dark:text-amber-200/90">
+        <p className={`mt-1 text-sm ${DURUM_YAZISI.uyari}`}>
           {t("benzerMetin")}
         </p>
       </div>

@@ -18,6 +18,7 @@ import {
 import { formGonderimi } from "@/lib/form-gonderimi";
 
 import { giderEkle, giderGuncelle, type GiderDurumu } from "./actions";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -161,7 +162,7 @@ export function GiderFormu({
 
       {/* Kategoriye özel uyarı — çift sayımı önler (İlke #5). */}
       {uyari ? (
-        <p className="flex gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+        <p className={`flex gap-2 rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
           <TriangleAlert className="mt-0.5 size-4 shrink-0" />
           <span>{uyari}</span>
         </p>
@@ -237,7 +238,7 @@ export function GiderFormu({
 
       {durum.basari ? (
         <p
-          className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400"
+          className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.olumlu}`}
           role="status"
         >
           {durum.basari}

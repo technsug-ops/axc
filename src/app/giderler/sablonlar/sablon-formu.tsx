@@ -19,6 +19,7 @@ import { formGonderimi } from "@/lib/form-gonderimi";
 
 import { sablonEkle, type GiderDurumu } from "../actions";
 import type { KategoriSecenegi } from "../gider-formu";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 /**
  * Tekrarlayan gider şablonu formu.
@@ -114,7 +115,7 @@ export function SablonFormu({
       </div>
 
       {uyari ? (
-        <p className="flex gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+        <p className={`flex gap-2 rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
           <TriangleAlert className="mt-0.5 size-4 shrink-0" />
           <span>{uyari}</span>
         </p>
@@ -208,7 +209,7 @@ export function SablonFormu({
 
       {durum.basari ? (
         <p
-          className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400"
+          className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.olumlu}`}
           role="status"
         >
           {durum.basari}

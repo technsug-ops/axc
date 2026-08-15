@@ -27,6 +27,7 @@ import { sayfaCoz } from "@/lib/sayfalama";
 
 import { SatirDuzenle } from "./satir-duzenle";
 import { YeniEsleme } from "./yeni-esleme";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -194,12 +195,12 @@ export default async function KanalSkuSayfasi({
 
       {/* Oranı eksik olanlar: raporda "kural eksik" diyen satışların kaynağı. */}
       {eksikOranSayisi > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-          <TriangleAlert className="size-4 shrink-0 text-amber-700 dark:text-amber-400" />
-          <span className="text-sm font-medium text-amber-800 dark:text-amber-300">
+        <div className={`flex flex-wrap items-center gap-2 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <TriangleAlert className={`size-4 shrink-0 ${DURUM_YAZISI.uyari}`} />
+          <span className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
             {t("eksikOranSayisi", { sayi: eksikOranSayisi })}
           </span>
-          <span className="text-xs text-amber-800 dark:text-amber-300">
+          <span className={`text-xs ${DURUM_YAZISI.uyari}`}>
             {t("eksikOranNotu")}
           </span>
           {/* UYARI EYLEME DÖNÜK: 1000+ eksik oranı tek tek girmek gerçekçi
@@ -315,7 +316,7 @@ export default async function KanalSkuSayfasi({
                         kayit.channelAccount.satisIcin ? (
                           <Badge
                             variant="outline"
-                            className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+                            className={`${DURUM_YAZISI.uyari} border-current/40`}
                           >
                             {t("eksikOranRozeti")}
                           </Badge>
@@ -366,7 +367,7 @@ export default async function KanalSkuSayfasi({
                     {kayit.commissionRate === null ? (
                       <Badge
                         variant="outline"
-                        className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+                        className={`${DURUM_YAZISI.uyari} border-current/40`}
                       >
                         {t("eksikOranRozeti")}
                       </Badge>

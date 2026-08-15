@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 
 import { tazminatDurumDegistir, type TazminatDurumu } from "./actions";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 const DURUMLAR = ["OPEN", "CLAIMED", "ACCEPTED", "REJECTED", "SETTLED"] as const;
 
@@ -62,7 +63,7 @@ export function DurumSecici({
       </Select>
 
       {durum.basari ? (
-        <p className="text-xs font-medium text-emerald-600" role="status">
+        <p className={`text-xs font-medium ${DURUM_YAZISI.olumlu}`} role="status">
           {durum.basari}
         </p>
       ) : null}

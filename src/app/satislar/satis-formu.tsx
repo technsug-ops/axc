@@ -35,6 +35,7 @@ import {
   type KargoSecenegi,
 } from "./kalem-bilgisi";
 import { type SatisDurumu } from "./actions";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export type HesapSecenegi = {
   id: string;
@@ -686,7 +687,7 @@ export function SatisFormu({
 
                   {/* Sessiz varsayım olmasın: kategorisiz ürün %20'ye düşer. */}
                   {kalem.kdvVarsayilan ? (
-                    <p className="text-amber-700 text-xs dark:text-amber-500">
+                    <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
                       {t("varsayilanKdvNotu")}
                     </p>
                   ) : null}
@@ -732,8 +733,8 @@ export function SatisFormu({
       {/* Aynı siparişi ikinci kez girmeye çalışıyorsanız, var olan kayda
           götürür. "Zaten kayıtlı" deyip bırakmak, o kaydı elle aratmaktı. */}
       {durum.mevcutSatisId ? (
-        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-          <p className="mb-2 text-sm text-amber-900 dark:text-amber-200">
+        <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`mb-2 text-sm ${DURUM_YAZISI.uyari}`}>
             {t("cakisanSatisMetni")}
           </p>
           <Button variant="outline" size="sm" asChild>

@@ -9,6 +9,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { iadeTuruEtiketleri } from "@/lib/etiketler";
 
 import type { Currency, ReturnType } from "@/generated/prisma/enums";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -122,8 +123,8 @@ export async function IadeBlogu({
         {/* Hasarlı mal = üstünüzde kalan maliyet. Rakamı söyle, yapılacak
             işi göster — "bir şeyler ters" demek yetmez (#5). */}
         {bekleyenHasar && bekleyenHasar.adet > 0 ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+          <div className={`flex flex-wrap items-center justify-between gap-3 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+            <p className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
               {t("hasarUyarisi", {
                 adet: bekleyenHasar.adet,
                 tutar: bicim.para(bekleyenHasar.tutar, bekleyenHasar.paraBirimi),
@@ -182,7 +183,7 @@ export async function IadeBlogu({
                   className={
                     (iade.net2 ?? 0) < 0
                       ? "text-destructive font-medium"
-                      : "font-medium text-emerald-600"
+                      : `font-medium ${DURUM_YAZISI.olumlu}`
                   }
                 >
                   {iade.net2 === null ? "—" : para(iade.net2)}
@@ -218,7 +219,7 @@ export async function IadeBlogu({
                         ? "text-destructive whitespace-nowrap"
                         : s.tutar === 0
                           ? "text-muted-foreground whitespace-nowrap"
-                          : "whitespace-nowrap text-emerald-600"
+                          : `whitespace-nowrap ${DURUM_YAZISI.olumlu}`
                     }
                   >
                     {s.tutar > 0 ? "+" : ""}

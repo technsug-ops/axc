@@ -26,6 +26,7 @@ import {
   kanalSkuSil,
   type KanalSkuDurumu,
 } from "./actions";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -151,7 +152,7 @@ export function SatirDuzenle({
           {/* Bant dışı uyarısı KAYDETMEYİ ENGELLEMEZ: kampanyalı ürünün
               oranı bandın dışında olabilir. Yanlış tuşu yakalamak için. */}
           {bantUyarisi && bant ? (
-            <span className="text-xs text-amber-700 dark:text-amber-400">
+            <span className={`text-xs ${DURUM_YAZISI.uyari}`}>
               {t("bantDisi", {
                 alt: bant.uyariAlt.toFixed(2),
                 ust: bant.uyariUst.toFixed(2),
@@ -215,7 +216,7 @@ export function SatirDuzenle({
       {mesajlar.map((m, sira) => (
         <div key={sira}>
           {m.basari ? (
-            <p className="text-xs font-medium text-emerald-600" role="status">
+            <p className={`text-xs font-medium ${DURUM_YAZISI.olumlu}`} role="status">
               {m.basari}
             </p>
           ) : null}

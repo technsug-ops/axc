@@ -15,6 +15,7 @@ import {
   koduAyir,
   koduBirlestir,
 } from "../../raf-kodu-alani";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 export function KonumDuzenleFormu({
   konumId,
@@ -89,7 +90,7 @@ export function KonumDuzenleFormu({
       {kodDegisti ? (
         <p
           role="status"
-          className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400"
+          className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}
         >
           {t.rich("kodDegistiUyarisi", {
             kod: baslangic.code,

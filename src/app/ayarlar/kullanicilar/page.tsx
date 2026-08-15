@@ -9,6 +9,7 @@ import { tamYetkiliRolIdleri } from "@/lib/yetki/koruma";
 
 import { KullaniciFormu } from "./kullanici-formu";
 import { KullaniciSatiri, type KullaniciSatiriVerisi } from "./kullanici-satiri";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -93,12 +94,12 @@ export default async function KullanicilarSayfasi() {
       </div>
 
       {sahipSayisi === 1 ? (
-        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-          <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+        <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
             <TriangleAlert className="size-4 shrink-0" />
             {t("tekSahipBaslik")}
           </p>
-          <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+          <p className={`mt-1 text-sm ${DURUM_YAZISI.uyari}`}>
             {t("tekSahipMetin")}
           </p>
         </div>

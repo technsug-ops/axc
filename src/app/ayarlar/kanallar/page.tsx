@@ -19,6 +19,7 @@ import { kanalHesabiDurumDegistir } from "./actions";
 import { KanalHesabiFormu } from "./kanal-hesabi-formu";
 import { RolSecici } from "./rol-secici";
 import { HesapSilButonu } from "./sil-butonu";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * VERİTABANI OKUYAN SAYFA — HER İSTEKTE ÇİZİLİR.
@@ -118,24 +119,24 @@ export default async function KanalHesaplariSayfasi() {
       </div>
 
       {rolsuzSayi > 0 ? (
-        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-          <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+        <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
             <TriangleAlert className="size-4 shrink-0" />
             {t("rolSecilmediBaslik", { sayi: rolsuzSayi })}
           </p>
-          <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+          <p className={`mt-1 text-sm ${DURUM_YAZISI.uyari}`}>
             {t("rolSecilmediMetin")}
           </p>
         </div>
       ) : null}
 
       {ciftRolSayi > 0 ? (
-        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-          <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+        <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
             <TriangleAlert className="size-4 shrink-0" />
             {t("ciftRolBaslik", { sayi: ciftRolSayi })}
           </p>
-          <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+          <p className={`mt-1 text-sm ${DURUM_YAZISI.uyari}`}>
             {t("ciftRolMetin")}
           </p>
         </div>

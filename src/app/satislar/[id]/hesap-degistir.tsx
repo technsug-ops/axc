@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 
 import { satisHesabiDegistir, type SatisHesapDurumu } from "./hesap-actions";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export type SatisHesapSecenegi = {
   id: string;
@@ -116,8 +117,8 @@ export function HesapDegistir({
 
           {/* Kanal değişiyorsa kesinti kuralları da değişir. */}
           {kanalDegisiyor ? (
-            <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-              <p className="flex items-start gap-2 text-sm text-amber-900 dark:text-amber-200">
+            <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+              <p className={`flex items-start gap-2 text-sm ${DURUM_YAZISI.uyari}`}>
                 <TriangleAlert className="mt-0.5 size-4 shrink-0" />
                 {t("hesabiDegistirKanalUyarisi")}
               </p>

@@ -12,6 +12,7 @@ import { kartBorcuHesapla, type BorcAlimi } from "@/lib/kart-borcu";
 import { prisma } from "@/lib/prisma";
 
 import type { Currency } from "@/generated/prisma/enums";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -204,12 +205,12 @@ export default async function KartBorcuSayfasi() {
 
                 {/* --------------------- HESAPLANAMIYORSA ------------------ */}
                 {!sonuc.hesaplanabilir ? (
-                  <div className="space-y-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-4">
-                    <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+                  <div className={`space-y-3 rounded-md p-4 ${DURUM_KUTUSU.uyari}`}>
+                    <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
                       <TriangleAlert className="size-4 shrink-0" />
                       {t("hesaplanamazBaslik")}
                     </p>
-                    <p className="text-sm text-amber-800 dark:text-amber-300">
+                    <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
                       {t("hesaplanamazMetin")}
                     </p>
                     {/* Uyarı EYLEME DÖNÜK: kullanıcı kararı 10.08.2026 */}
@@ -342,7 +343,7 @@ export default async function KartBorcuSayfasi() {
 
                 {/* ------------- FARKLI PARA BİRİMİ: SESSİZ ATLANMAZ ------- */}
                 {farkliParaBirimiSayisi > 0 ? (
-                  <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300">
+                  <div className={`rounded-md p-3 text-xs ${DURUM_KUTUSU.uyari}`}>
                     <strong>
                       {t("farkliParaBirimi", { sayi: farkliParaBirimiSayisi })}
                     </strong>{" "}

@@ -7,6 +7,7 @@ import { kullaniciVarMi, oturumdakiKullanici } from "@/lib/oturum";
 import { UYGULAMA } from "@/lib/uygulama";
 
 import { GirisFormu } from "./giris-formu";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /** Giriş durumu her istekte taze okunmalı. */
 export const dynamic = "force-dynamic";
@@ -44,22 +45,22 @@ export default async function GirisSayfasi({
         </div>
 
         {kurulumEksik ? (
-          <div className="space-y-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
-            <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+          <div className={`space-y-2 rounded-lg p-4 ${DURUM_KUTUSU.uyari}`}>
+            <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
               <TriangleAlert className="size-4 shrink-0" />
               {t("kurulumEksikBaslik")}
             </p>
-            <p className="text-sm text-amber-800 dark:text-amber-300">
+            <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
               {t("kurulumEksikMetin")}
             </p>
           </div>
         ) : !kullaniciTanimliMi ? (
-          <div className="space-y-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
-            <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+          <div className={`space-y-2 rounded-lg p-4 ${DURUM_KUTUSU.uyari}`}>
+            <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
               <TriangleAlert className="size-4 shrink-0" />
               {t("kullaniciYokBaslik")}
             </p>
-            <p className="text-sm text-amber-800 dark:text-amber-300">
+            <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
               {t("kullaniciYokMetin")}
             </p>
           </div>

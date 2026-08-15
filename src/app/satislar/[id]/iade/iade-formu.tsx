@@ -40,6 +40,7 @@ import {
 } from "./actions";
 
 import type { ReturnType } from "@/generated/prisma/enums";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export type IadeKalemSecenegi = {
   saleItemId: string;
@@ -374,7 +375,7 @@ export function IadeFormu({
                    kutu görünüp alanlar boşsa sorun eşleşmededir. İki hatayı
                    ekrana bakarak ayırmak mümkün olsun diye duruyor. */}
           {onDolu?.urunVar ? (
-            <div className="space-y-1 rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-xs">
+            <div className={`space-y-1 rounded-md p-3 text-xs ${DURUM_KUTUSU.uyari}`}>
               <p className="font-medium">{t("onDoluOzetiBaslik")}</p>
               {onDolu.donenEtiket ? (
                 <p>{t("onDoluDonen", { urun: onDolu.donenEtiket })}</p>
@@ -697,7 +698,7 @@ export function IadeFormu({
 
           {cezaOneri !== undefined ? (
             cezaOneri === null ? (
-              <p className="text-amber-700 text-xs dark:text-amber-500">
+              <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
                 {t("cezaOnerisiYok")}
               </p>
             ) : (
@@ -777,7 +778,7 @@ export function IadeFormu({
                           ? "text-destructive whitespace-nowrap"
                           : s.tutar === 0
                             ? "text-muted-foreground whitespace-nowrap"
-                            : "whitespace-nowrap text-emerald-600"
+                            : `whitespace-nowrap ${DURUM_YAZISI.olumlu}`
                       }
                     >
                       {s.tutar > 0 ? "+" : ""}

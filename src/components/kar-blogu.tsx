@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bicimlendirici } from "@/lib/bicim";
 
 import type { Currency, ProfitStatus } from "@/generated/prisma/enums";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -76,7 +77,7 @@ export async function KarBlogu({ veri }: { veri: KarBloguVerisi }) {
         {hesaplanamadi ? (
           <div
             role="status"
-            className="rounded-md border border-amber-500/50 bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-400"
+            className={`rounded-md p-4 text-sm ${DURUM_KUTUSU.uyari}`}
           >
             <p className="font-medium">{t("karHesaplanamadi")}</p>
             <p className="mt-1">
@@ -98,7 +99,7 @@ export async function KarBlogu({ veri }: { veri: KarBloguVerisi }) {
         {veri.kargoGirilmedi ? (
           <div
             role="status"
-            className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400"
+            className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}
           >
             <p className="font-medium">{t("kargoGirilmedi")}</p>
             <p className="mt-1">{t("kargoGirilmediNotu")}</p>
@@ -108,7 +109,7 @@ export async function KarBlogu({ veri }: { veri: KarBloguVerisi }) {
         {veri.varsayilanKdvKullanildi ? (
           <p
             role="status"
-            className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400"
+            className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}
           >
             {t("varsayilanKdvNotu")}
           </p>

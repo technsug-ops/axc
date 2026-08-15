@@ -25,6 +25,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { kalemIlerlemesi, kalemTeslimAlinanlar } from "@/lib/stok";
 import { kalemToplamlari } from "@/lib/tutar";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 export default async function AlimDetaySayfasi({
   params,
@@ -181,7 +182,7 @@ export default async function AlimDetaySayfasi({
       {kabulSonucu.saglam !== undefined ? (
         <div
           role="status"
-          className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-400"
+          className={`rounded-md p-4 text-sm ${DURUM_KUTUSU.olumlu}`}
         >
           {t.rich("kabulOzeti", {
             saglam: kabulSonucu.saglam,

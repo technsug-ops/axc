@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { YEDEK_TABLOLARI } from "@/lib/yedek";
 
 import { OtomatikYedekDurumu } from "./otomatik-durum";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 /** Yedek listesi canlı okunur; statik çizilirse hep aynı anı gösterirdi. */
 export const dynamic = "force-dynamic";
@@ -73,7 +74,7 @@ export default async function DisaAktarmaSayfasi() {
 
           <p className="text-muted-foreground text-xs">{t("hafifYedekNotu")}</p>
 
-          <p className="flex gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+          <p className={`flex gap-2 rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
             <TriangleAlert className="mt-0.5 size-4 shrink-0" />
             <span>{t("yedekNotu")}</span>
           </p>

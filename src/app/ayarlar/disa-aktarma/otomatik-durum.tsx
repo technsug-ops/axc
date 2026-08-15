@@ -3,6 +3,7 @@ import { CalendarClock, Download, TriangleAlert } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { bicimlendirici } from "@/lib/bicim";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -24,12 +25,12 @@ export async function OtomatikYedekDurumu() {
 
   if (!depoBagli || !sirVar) {
     return (
-      <div className="space-y-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
-        <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+      <div className={`space-y-2 rounded-lg p-4 ${DURUM_KUTUSU.uyari}`}>
+        <div className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
           <TriangleAlert className="size-4 shrink-0" />
           {t("otomatikBaslik")}
         </div>
-        <p className="text-sm text-amber-800 dark:text-amber-300">
+        <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
           {t("otomatikKuruluDegil")}
         </p>
       </div>

@@ -16,6 +16,7 @@ import {
 import { gunuDokumle } from "@/lib/panel/takvim-gruplama";
 import { takvimBugunu, takvimSatirlariniTopla } from "@/lib/panel/takvim-verisi";
 import { sayfaIzni } from "@/lib/yetki";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -115,7 +116,7 @@ export default async function NakitTakvimiSayfasi({
 
       {/* --------------------------- GECİKMİŞ --------------------------- */}
       {takvim.gecikmis.length > 0 ? (
-        <Card className="border-amber-500/50">
+        <Card className={`${DURUM_YAZISI.uyari} border-current/40`}>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="size-4" />
@@ -283,7 +284,7 @@ function Tutar({
   const cikis = yon === "CIKACAK";
   return (
     <span
-      className={`shrink-0 tabular-nums ${cikis ? "text-destructive" : "text-emerald-600"}`}
+      className={`shrink-0 tabular-nums ${cikis ? "text-destructive" : `${DURUM_YAZISI.olumlu}`}`}
     >
       {cikis ? "−" : "+"}
       {para(tutar)}

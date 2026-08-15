@@ -7,7 +7,7 @@ import { ExcelIndir } from "@/components/excel-indir";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Baglanti } from "@/components/baglanti";
 import { DurumRozeti } from "@/components/durum-rozeti";
-import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
+import { DURUM_KUTUSU, DURUM_SERIDI, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
 import { KargoDurumu } from "./kargo-durumu";
@@ -321,9 +321,9 @@ export default async function SatislarSayfasi({
 
       {/* Hangi süzgecin açık olduğu EKRANDA yazar (#5). */}
       {karEksik ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-          <TriangleAlert className="size-4 shrink-0 text-amber-700 dark:text-amber-400" />
-          <span className="text-sm font-medium text-amber-800 dark:text-amber-300">
+        <div className={`flex flex-wrap items-center gap-2 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <TriangleAlert className={`size-4 shrink-0 ${DURUM_YAZISI.uyari}`} />
+          <span className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
             {t("karEksikFiltresi")}
           </span>
           <Badge variant="outline">{satislar.length}</Badge>

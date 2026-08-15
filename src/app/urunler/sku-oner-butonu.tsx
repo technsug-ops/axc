@@ -8,6 +8,7 @@ import { Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { skuOner, type SkuOnerisi } from "./sku-oner";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -71,7 +72,7 @@ export function SkuOnerButonu({
       </Button>
 
       {hata ? (
-        <p className="text-xs text-amber-700 dark:text-amber-400">
+        <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
           {hata.hata === "KATEGORI_SECILMEDI" ? t("skuOneriKategoriYok") : null}
           {hata.hata === "KISALTMA_YOK" ? t("skuOneriAdYok") : null}
           {hata.hata === "KATEGORI_KODSUZ" ? (

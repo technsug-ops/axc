@@ -16,6 +16,7 @@ import {
   kanalHesabiVadeGuncelle,
   type KanalHesabiDurumu,
 } from "./actions";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -91,14 +92,14 @@ export function RolSecici({
         {ciftRol ? (
           <Badge
             variant="outline"
-            className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+            className={`${DURUM_YAZISI.uyari} border-current/40`}
           >
             {t("ciftRol")}
           </Badge>
         ) : rolsuz ? (
           <Badge
             variant="outline"
-            className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+            className={`${DURUM_YAZISI.uyari} border-current/40`}
           >
             {t("rolSecilmedi")}
           </Badge>
@@ -133,8 +134,8 @@ export function RolSecici({
 
       {/* ÇİFT ROL — durum neyse o söylenir. */}
       {ciftRol && bosalanRol === null ? (
-        <div className="space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-          <p className="text-sm text-amber-900 dark:text-amber-200">
+        <div className={`space-y-2 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
             {t("ciftRolMetin")}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -156,8 +157,8 @@ export function RolSecici({
 
       {/* KAYIT TAŞINMIŞ, GERİYE BAYRAK KALMIŞ — tek tıkla kapanır. */}
       {bosalanRol !== null ? (
-        <div className="space-y-2 rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3">
-          <p className="text-sm text-emerald-900 dark:text-emerald-200">
+        <div className={`space-y-2 rounded-md p-3 ${DURUM_KUTUSU.olumlu}`}>
+          <p className={`text-sm ${DURUM_YAZISI.olumlu}`}>
             {t("ciftRolBosaldi", {
               bos: bosalanRol === "SATIS" ? t("rolSatis") : t("rolAlis"),
               kalan: bosalanRol === "SATIS" ? t("rolAlis") : t("rolSatis"),
@@ -209,7 +210,7 @@ export function RolSecici({
           </div>
           <p className="text-muted-foreground text-xs">{t("vadeNotu")}</p>
           {vadeDurum.basari ? (
-            <p className="text-xs font-medium text-emerald-600" role="status">
+            <p className={`text-xs font-medium ${DURUM_YAZISI.olumlu}`} role="status">
               {vadeDurum.basari}
             </p>
           ) : null}
@@ -222,7 +223,7 @@ export function RolSecici({
       ) : null}
 
       {durum.basari ? (
-        <p className="text-xs font-medium text-emerald-600" role="status">
+        <p className={`text-xs font-medium ${DURUM_YAZISI.olumlu}`} role="status">
           {durum.basari}
         </p>
       ) : null}

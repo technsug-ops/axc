@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useBicim } from "@/lib/bicim-istemci";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export type HesapSecenegi = { id: string; etiket: string };
 
@@ -357,7 +358,7 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
                 </Button>
               </div>
             ) : (
-              <p className="text-sm text-emerald-700 dark:text-emerald-400">
+              <p className={`text-sm ${DURUM_YAZISI.olumlu}`}>
                 {t("kalanYok")}
               </p>
             )}
@@ -367,12 +368,12 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
             onizleme.sayim.oranOkunamadi > 0 ||
             onizleme.sayim.tekrarEden > 0 ||
             onizleme.kodCakisti > 0 ? (
-              <div className="space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-                <p className="flex items-center gap-2 text-sm font-medium text-amber-900 dark:text-amber-200">
+              <div className={`space-y-2 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+                <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
                   <TriangleAlert className="size-4 shrink-0" />
                   {t("uyariBaslik")}
                 </p>
-                <ul className="list-inside list-disc space-y-1 text-sm text-amber-900/90 dark:text-amber-200/90">
+                <ul className={`list-inside list-disc space-y-1 text-sm ${DURUM_YAZISI.uyari}`}>
                   {onizleme.sayim.katalogdaYok > 0 ? (
                     <li>
                       {t("uyariKatalogdaYok", {
@@ -417,7 +418,7 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
                     <li>{t("uyariKodCakisti", { sayi: onizleme.kodCakisti })}</li>
                   ) : null}
                 </ul>
-                <p className="text-xs text-amber-900/80 dark:text-amber-200/80">
+                <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
                   {t("uyariNotu")}
                 </p>
               </div>
@@ -461,7 +462,7 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
       {yanit?.durum === "YAZILDI" ? (
         <div
           role="status"
-          className="space-y-2 rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400"
+          className={`space-y-2 rounded-md p-3 text-sm ${DURUM_KUTUSU.olumlu}`}
         >
           <p>
             {yanit.guncellenen === 0 && yanit.yaratilan === 0

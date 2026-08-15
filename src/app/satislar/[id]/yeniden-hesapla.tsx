@@ -33,6 +33,7 @@ import {
   karYenidenYazAction,
   type OnizlemeSonucu,
 } from "./yeniden-hesapla-actions";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 export type KargoFirmasiSecenegi = { id: string; ad: string };
 
@@ -327,7 +328,7 @@ export function YenidenHesapla({
                               ? "py-1 text-right"
                               : fark < 0
                                 ? "text-destructive py-1 text-right whitespace-nowrap"
-                                : "py-1 text-right whitespace-nowrap text-emerald-600"
+                                : `py-1 text-right whitespace-nowrap ${DURUM_YAZISI.olumlu}`
                           }
                         >
                           {fark === null
@@ -357,7 +358,7 @@ export function YenidenHesapla({
                     <dt
                       className={
                         k.code === "KOMISYON" && k.tutar === 0
-                          ? "text-amber-700 dark:text-amber-500"
+                          ? `${DURUM_YAZISI.uyari}`
                           : "text-muted-foreground"
                       }
                     >
@@ -366,7 +367,7 @@ export function YenidenHesapla({
                     <dd
                       className={
                         k.code === "KOMISYON" && k.tutar === 0
-                          ? "text-amber-700 whitespace-nowrap dark:text-amber-500"
+                          ? `whitespace-nowrap ${DURUM_YAZISI.uyari}`
                           : "whitespace-nowrap"
                       }
                     >
@@ -380,7 +381,7 @@ export function YenidenHesapla({
             {onizleme?.yeni && onizleme.yeni.durum !== "CALCULATED" ? (
               <Badge
                 variant="outline"
-                className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+                className={`${DURUM_YAZISI.uyari} border-current/40`}
               >
                 {onizleme.yeni.durum === "NO_COST"
                   ? t("durumKisaNoCost")

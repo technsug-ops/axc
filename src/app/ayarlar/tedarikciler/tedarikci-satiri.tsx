@@ -17,6 +17,7 @@ import {
   type TedarikciDurumu,
 } from "./actions";
 import { TedarikciKodAlani } from "./kod-alani";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 export type TedarikciSatiriVerisi = {
   id: string;
@@ -71,7 +72,7 @@ export function TedarikciSatiri({
             ) : (
               <Badge
                 variant="outline"
-                className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+                className={`${DURUM_YAZISI.uyari} border-current/40`}
               >
                 {ortak("kod")} —
               </Badge>
@@ -95,7 +96,7 @@ export function TedarikciSatiri({
                 <Badge
                   key={a}
                   variant="outline"
-                  className="border-amber-500/50 font-medium text-amber-700 dark:text-amber-400"
+                  className={`font-medium ${DURUM_YAZISI.uyari} border-current/40`}
                 >
                   {a}
                 </Badge>

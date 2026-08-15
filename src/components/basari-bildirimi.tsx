@@ -10,6 +10,7 @@ import {
   basariKoduMu,
   type BasariKodu,
 } from "@/lib/bildirim";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -103,7 +104,7 @@ export function BasariBildirimi() {
   return (
     <div
       role="status"
-      className="mb-4 flex items-center gap-3 rounded-lg border border-emerald-600/40 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-400/40 dark:text-emerald-300"
+      className={`mb-4 flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${DURUM_KUTUSU.olumlu}`}
     >
       <CheckCircle2 className="size-5 shrink-0" />
       <span className="flex-1">{metin}</span>
@@ -111,7 +112,7 @@ export function BasariBildirimi() {
         type="button"
         onClick={kapat}
         aria-label={ortak("kapat")}
-        className="grid size-11 shrink-0 place-items-center rounded-md transition-colors hover:bg-emerald-600/15 md:size-8"
+        className={`grid size-11 shrink-0 place-items-center rounded-md transition-colors hover: md:size-8 ${DURUM_YAZISI.olumlu}`}
       >
         <X className="size-4" />
       </button>

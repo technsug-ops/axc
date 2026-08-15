@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 
 import { KategoriFormu } from "./kategori-formu";
 import { KategoriSatiri, type KategoriSatiriVerisi } from "./kategori-satiri";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * VERİTABANI OKUYAN SAYFA — HER İSTEKTE ÇİZİLİR.
@@ -57,12 +58,12 @@ export default async function KategorilerSayfasi() {
       </div>
 
       {kodsuzSayi > 0 ? (
-        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-          <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+        <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
             <TriangleAlert className="size-4 shrink-0" />
             {t("kodEksikBaslik", { sayi: kodsuzSayi })}
           </p>
-          <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+          <p className={`mt-1 text-sm ${DURUM_YAZISI.uyari}`}>
             {t("kodEksikMetin")}
           </p>
         </div>

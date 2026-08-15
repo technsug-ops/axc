@@ -5,6 +5,7 @@ import { ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { GeriYuklemeAkisi } from "./akis";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -66,12 +67,12 @@ export default async function GeriYuklemeSayfasi() {
       </div>
 
       {/* Uyarı en tepede: bu ekranın ne yaptığı okunmadan geçilmesin. */}
-      <div className="space-y-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
-        <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+      <div className={`space-y-2 rounded-lg p-4 ${DURUM_KUTUSU.uyari}`}>
+        <div className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
           <ShieldAlert className="size-4 shrink-0" />
           {t("uyariBaslik")}
         </div>
-        <p className="text-sm text-amber-800 dark:text-amber-300">
+        <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
           {t("uyariMetin")}
         </p>
       </div>

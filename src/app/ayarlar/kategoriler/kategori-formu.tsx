@@ -13,6 +13,7 @@ import { KATEGORI_ONERILERI } from "@/lib/kategori-onerileri";
 
 import { kategoriEkle, type KategoriDurumu } from "./actions";
 import { KodAlani } from "./kod-alani";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 const BOS = { name: "", vatRate: "", code: "" };
 
@@ -104,7 +105,7 @@ export function KategoriFormu({
       </div>
 
       {karisikUyari ? (
-        <p className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+        <p className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
           {karisikUyari}
         </p>
       ) : null}
@@ -151,7 +152,7 @@ export function KategoriFormu({
       <HataOzeti hatalar={durum.hatalar} />
 
       {durum.basari ? (
-        <p className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400">
+        <p className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.olumlu}`}>
           {durum.basari}
         </p>
       ) : null}

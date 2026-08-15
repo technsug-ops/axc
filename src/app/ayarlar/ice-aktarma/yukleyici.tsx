@@ -25,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -322,7 +323,7 @@ export function Yukleyici() {
       {onizleme ? (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-emerald-600">
+            <CardTitle className={`flex items-center gap-2 ${DURUM_YAZISI.olumlu}`}>
               <CheckCircle2 className="size-5" />
               {t("onizlemeBasligi")}
             </CardTitle>
@@ -342,11 +343,11 @@ export function Yukleyici() {
             {/* UYARILAR — yüklemeyi durdurmaz, dikkat çeker. Hata listesiyle
                 aynı kutuya konsaydı yükleme boşuna durmuş sanılırdı. */}
             {uyarilar.length > 0 ? (
-              <div className="space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-                <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+              <div className={`space-y-2 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+                <p className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
                   {t("uyariBasligi", { sayi: uyarilar.length })}
                 </p>
-                <ul className="list-inside list-disc space-y-1 text-sm text-amber-900/90 dark:text-amber-200/90">
+                <ul className={`list-inside list-disc space-y-1 text-sm ${DURUM_YAZISI.uyari}`}>
                   {uyarilar.map((u, i) => (
                     <li key={i}>
                       {t("uyariBenzerUrun", {
@@ -357,7 +358,7 @@ export function Yukleyici() {
                     </li>
                   ))}
                 </ul>
-                <p className="text-xs text-amber-900/80 dark:text-amber-200/80">
+                <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
                   {t("uyariNotu")}
                 </p>
               </div>
@@ -396,9 +397,9 @@ export function Yukleyici() {
       ) : null}
 
       {yanit?.durum === "YAZILDI" ? (
-        <Card className="border-emerald-500/50">
+        <Card className={`${DURUM_YAZISI.olumlu} border-current/40`}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-emerald-600">
+            <CardTitle className={`flex items-center gap-2 ${DURUM_YAZISI.olumlu}`}>
               <CheckCircle2 className="size-5" />
               {t("basariBasligi")}
             </CardTitle>

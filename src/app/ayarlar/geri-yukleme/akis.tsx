@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { useBicim } from "@/lib/bicim-istemci";
 import { ONAY_METNI, type FarkRaporu } from "@/lib/geri-yukle";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -172,9 +173,9 @@ export function GeriYuklemeAkisi({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {basarili ? (
-              <CheckCircle2 className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <CheckCircle2 className={`size-5 shrink-0 ${DURUM_YAZISI.olumlu}`} />
             ) : (
-              <TriangleAlert className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <TriangleAlert className={`size-5 shrink-0 ${DURUM_YAZISI.uyari}`} />
             )}
             {basarili ? t("sonucBasarili") : t("sonucBasarisiz")}
           </CardTitle>
@@ -313,7 +314,7 @@ export function GeriYuklemeAkisi({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TriangleAlert className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <TriangleAlert className={`size-5 shrink-0 ${DURUM_YAZISI.uyari}`} />
               {t("dosyaOkunamadi")}
             </CardTitle>
           </CardHeader>
@@ -366,7 +367,7 @@ export function GeriYuklemeAkisi({
             {fark.girisKaybi ? (
               <div
                 role="alert"
-                className="space-y-1 rounded-md border-2 border-red-600/60 bg-red-500/10 p-4 text-sm text-red-800 dark:border-red-400/60 dark:text-red-300"
+                className={`space-y-1 rounded-md border-2 p-4 text-sm ${DURUM_KUTUSU.olumsuz}`}
               >
                 <p className="flex items-center gap-2 text-base font-semibold">
                   <TriangleAlert className="size-5 shrink-0" />
@@ -378,7 +379,7 @@ export function GeriYuklemeAkisi({
             ) : null}
 
             {/* En önemli cümle: ne kadar silinip ne kadar geleceği. */}
-            <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+            <div className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
               <p className="font-medium">
                 {t("ozet", {
                   silinecek: fark.toplamMevcut,
@@ -417,11 +418,11 @@ export function GeriYuklemeAkisi({
                       <TableCell className="text-right">{s.gelecek}</TableCell>
                       <TableCell className="text-xs">
                         {s.dosyadaYok ? (
-                          <span className="text-amber-700 dark:text-amber-400">
+                          <span className={`${DURUM_YAZISI.uyari}`}>
                             {t("dosyadaYok")}
                           </span>
                         ) : s.gelecek < s.mevcut ? (
-                          <span className="text-amber-700 dark:text-amber-400">
+                          <span className={`${DURUM_YAZISI.uyari}`}>
                             {t("azalacak", { fark: s.mevcut - s.gelecek })}
                           </span>
                         ) : (

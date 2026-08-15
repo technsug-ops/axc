@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ekiDogrula } from "@/lib/ekler";
 
 import { ekSil } from "./ek-actions";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -188,7 +189,7 @@ export function Ekler({
       />
 
       {/* YEDEK UYARISI — kalıcı, koşula bağlı değil. */}
-      <p className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400">
+      <p className={`flex items-start gap-2 text-xs ${DURUM_YAZISI.uyari}`}>
         <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
         {t("yedekUyarisi")}
       </p>

@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 
 import { alimGuncelle } from "../../actions";
 import { AlimFormu, type AlimBaslangici } from "../../alim-formu";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export const dynamic = "force-dynamic";
 
@@ -125,12 +126,12 @@ export default async function AlimDuzenleSayfasi({
       </div>
 
       {malKabulVar ? (
-        <div className="space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-4">
-          <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+        <div className={`space-y-2 rounded-md p-4 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
             <TriangleAlert className="size-4 shrink-0" />
             {t("duzenleUyariBaslik")}
           </p>
-          <p className="text-sm text-amber-800 dark:text-amber-300">
+          <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
             {t("duzenleUyari")}
           </p>
         </div>

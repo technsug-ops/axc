@@ -21,6 +21,7 @@ import {
 import { bildirimOlustur, type BildirimDurumu } from "./bildirim-actions";
 
 import type { ReturnReason } from "@/generated/prisma/enums";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 export type SatisSecenegi = { id: string; etiket: string };
 export type VaryantSecenegi = {
@@ -230,7 +231,7 @@ export function BildirimFormu({
           6. senaryonun defter düzeltmesi bu varyanta yazılıyor; boş kalırsa
           "iadeyi işle" ön-dolu gelemez ve senaryo hiç kurulamaz. */}
       {donenSorulur ? (
-        <div className="space-y-3 rounded-lg border border-amber-500/50 bg-amber-500/5 p-3">
+        <div className={`space-y-3 rounded-lg p-3 ${DURUM_KUTUSU.uyari}`}>
           <p className="text-sm font-medium">{t("donenBaslik")} *</p>
           <p className="text-muted-foreground text-xs">{t("donenNotu")}</p>
           <div className="space-y-2">

@@ -68,6 +68,7 @@ import { varyantStoklari } from "@/lib/stok";
 import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
 
 import type { NoticeStatus, ReturnType } from "@/generated/prisma/enums";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export const dynamic = "force-dynamic";
 
@@ -712,7 +713,7 @@ export default async function IadelerSayfasi({
                     {b.reservedVariant && b.reservedQuantity > 0 ? (
                       <Badge
                         variant="outline"
-                        className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+                        className={`${DURUM_YAZISI.uyari} border-current/40`}
                       >
                         {tBildirim("ayrilanRozeti", {
                           urun: b.reservedVariant.sku,
@@ -1141,7 +1142,7 @@ export default async function IadelerSayfasi({
                     <TableCell className="text-right">{u.iadeAdedi}</TableCell>
                     <TableCell className="text-right">
                       {u.hasarliAdet > 0 ? (
-                        <span className="text-amber-700 dark:text-amber-400">
+                        <span className={`${DURUM_YAZISI.uyari}`}>
                           {u.hasarliAdet}
                         </span>
                       ) : (
@@ -1173,7 +1174,7 @@ function Ozet({
   return (
     <div
       className={`space-y-1 rounded-lg border p-4 ${
-        uyari ? "border-amber-500/50 bg-amber-500/10" : ""
+        uyari ? `${DURUM_KUTUSU.uyari}` : ""
       }`}
     >
       <div className="text-muted-foreground text-xs">{etiket}</div>
@@ -1212,7 +1213,7 @@ function AdetRozetleri({
       {hasarli > 0 ? (
         <Badge
           variant="outline"
-          className="border-amber-500/50 text-xs text-amber-700 dark:text-amber-400"
+          className={`text-xs ${DURUM_YAZISI.uyari} border-current/40`}
         >
           {hasarliEtiket}: {hasarli}
         </Badge>

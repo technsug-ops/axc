@@ -24,6 +24,7 @@ import { formGonderimi } from "@/lib/form-gonderimi";
 import { varyantAra } from "../varyant-arama";
 import type { VaryantSonucu } from "@/lib/varyant-ozet";
 import { kanalSkuEkle, type KanalSkuDurumu } from "./actions";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * Yeni kanal eşlemesi.
@@ -210,7 +211,7 @@ export function YeniEsleme({
               </p>
             ) : null}
             {bantUyarisi && bant ? (
-              <p className="text-xs text-amber-700 dark:text-amber-400">
+              <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
                 {t("bantDisi", {
                   alt: bant.uyariAlt.toFixed(2),
                   ust: bant.uyariUst.toFixed(2),
@@ -235,8 +236,8 @@ export function YeniEsleme({
       {/* ÇAKIŞMA EYLEME DÖNÜK: hangi kayıt olduğu yazar ve oraya götürür.
           Bağlantı listeyi o hesaba + o SKU'ya süzer, kullanıcı aramaz. */}
       {durum.cakisma ? (
-        <div className="space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-          <p className="text-sm text-amber-900 dark:text-amber-200">
+        <div className={`space-y-2 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
             {t("cakismaMetni", {
               urun: durum.cakisma.urun,
               kod: durum.cakisma.kanalKodu,
@@ -255,7 +256,7 @@ export function YeniEsleme({
 
       {durum.basari ? (
         <p
-          className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400"
+          className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.olumlu}`}
           role="status"
         >
           {durum.basari}

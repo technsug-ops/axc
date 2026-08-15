@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 
 import { konumEkle, type KonumDurumu } from "./actions";
 import { RafKoduAlani, koduBirlestir } from "./raf-kodu-alani";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 const BOS = { taban: "", goz: "", name: "", description: "" };
 
@@ -94,7 +95,7 @@ export function KonumFormu() {
       ) : null}
 
       {durum.basari ? (
-        <p className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400">
+        <p className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.olumlu}`}>
           {durum.basari}
         </p>
       ) : null}

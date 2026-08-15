@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Check, Copy, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -98,7 +99,7 @@ export function KopyalanabilirKod({
         className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 shrink-0 items-center justify-center rounded transition-colors"
       >
         {durum === "kopyalandi" ? (
-          <Check className="size-3.5 text-emerald-600" />
+          <Check className={`size-3.5 ${DURUM_YAZISI.olumlu}`} />
         ) : durum === "hata" ? (
           <X className="text-destructive size-3.5" />
         ) : (
@@ -108,7 +109,7 @@ export function KopyalanabilirKod({
 
       {/* Yerinde onay — sessiz başarı/başarısızlık yasak (#5). */}
       {durum === "kopyalandi" ? (
-        <span className="text-xs font-medium text-emerald-600" role="status">
+        <span className={`text-xs font-medium ${DURUM_YAZISI.olumlu}`} role="status">
           {t("kopyalandi")}
         </span>
       ) : null}

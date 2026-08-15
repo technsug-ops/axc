@@ -19,6 +19,7 @@ import {
 import { UzunAd } from "@/components/uzun-ad";
 import { bicimlendirici } from "@/lib/bicim";
 import { envanterVerisi } from "@/lib/envanter-veri";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -107,8 +108,8 @@ export default async function EnvanterDegeriSayfasi() {
 
             {/* --- KDV oranı çözülemeyenler: toplamdan DÜŞTÜĞÜ söylenir --- */}
             {blok.kdvCozulemeyenSatir > 0 ? (
-              <div className="flex flex-wrap items-center gap-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-                <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+              <div className={`flex flex-wrap items-center gap-3 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+                <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
                   <TriangleAlert className="size-4 shrink-0" />
                   {t("kdvCozulemedi", { sayi: blok.kdvCozulemeyenSatir })}
                 </p>

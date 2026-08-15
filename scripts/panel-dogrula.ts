@@ -16,6 +16,7 @@
  * ============================================================================
  */
 
+import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
@@ -39,6 +40,7 @@ import {
   ANLAMLI_RENKLER,
   DURUM_CIPI,
   DURUM_ISARETI,
+  DURUM_KUTUSU,
   DURUM_RENKLERI,
   DURUM_SERIDI,
   DURUM_YAZISI,
@@ -1547,10 +1549,54 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * yandı — bu tuzağa bu dosyada dördüncü kez düşüldü. Ham renk sınıfı
    * `bg-/text-/border-` önekiyle yazılır; aranan da odur.
    */
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  HAM RENK SINIFI TÜM UYGULAMADA YASAK — 15.08.2026
+   * --------------------------------------------------------------------
+   *  Kontrol önce yalnız panele bakıyordu ve panel temizdi; oysa geri
+   *  kalan uygulamada 58 dosyada 177 ham sınıf duruyordu. Ağırlıklı iki
+   *  kalıp: `border-amber-500/50 bg-amber-500/10` uyarı kutusu ve emerald
+   *  eşdeğeri. Yani aynı "uyarı" kavramı panelde bir tonda, formda başka
+   *  bir tonda görünüyordu — renk sisteminin tek vaadi buydu ve tam
+   *  burada deliniyordu.
+   *
+   *  Tek dosyaya bakan bir kontrol, "temiz" derken yalnız baktığı yer için
+   *  konuşur. Kapsam artık bütün `src`.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const HAM_RENK =
+    /\b(?:dark:)?(?:bg|text|border|ring)-(?:amber|yellow|orange|emerald|green|teal|red|rose|blue|sky)-\d/;
+  const kaynakDosyalari = execSync("git ls-files", { encoding: "utf8" })
+    .split("\n")
+    .filter((y) => y.startsWith("src/") && /\.tsx?$/.test(y));
+  /**
+   * YORUMLAR AYIKLANIR. Bu dosyada beş kez aynı tuzağa düşüldü: kontrol
+   * bir sınıf adını AÇIKLAYAN yoruma takılıp kırmızı yandı — en son
+   * paletin kendi belgesinde, `DURUM_KUTUSU`nun neyi değiştirdiğini
+   * anlatan satırda. Kural koda bakar; kodda ne yazdığı önemlidir,
+   * yorumda neyin anlatıldığı değil.
+   */
+  const yorumsuz = (kaynak: string) =>
+    kaynak.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const kirliler = kaynakDosyalari.filter((y) =>
+    HAM_RENK.test(yorumsuz(readFileSync(y, "utf8"))),
+  );
   kontrol(
-    "  ...panelde ham Tailwind renk sınıfı kalmadı (uyarı da paletten geçiyor)",
-    !/\b(bg|text|border|ring)-(amber|red|green|blue|emerald|rose)-\d/.test(
-      readFileSync("src/app/page.tsx", "utf8"),
+    `ham Tailwind renk sınıfı YOK (${kaynakDosyalari.length} kaynak dosyası tarandı)`,
+    kirliler.length === 0,
+  );
+  if (kirliler.length) {
+    for (const y of kirliler.slice(0, 10)) console.log(`          ${y}`);
+    if (kirliler.length > 10) {
+      console.log(`          ...ve ${kirliler.length - 10} dosya daha`);
+    }
+  }
+  kontrol(
+    "  ...kutu kabuğu K1+K2 bileşimi (yeni ton uydurulmadı)",
+    DURUM_RENKLERI.every(
+      (d) =>
+        DURUM_KUTUSU[d].includes(DURUM_SERIDI[d]) &&
+        DURUM_KUTUSU[d].includes(DURUM_ZEMINI[d]),
     ),
   );
   kontrol(

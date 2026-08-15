@@ -24,6 +24,7 @@ import { kdvOraniniCoz } from "@/lib/kdv";
 import { varyantStoklari } from "@/lib/stok";
 
 import { SilButonu } from "../sil-butonu";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 export default async function UrunDetaySayfasi({
   params,
@@ -126,7 +127,7 @@ export default async function UrunDetaySayfasi({
           {kdv.kaynak === "VARSAYILAN" ? (
             <p
               role="status"
-              className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400"
+              className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}
             >
               {t("kategoriAtanmamisNotu")}
             </p>

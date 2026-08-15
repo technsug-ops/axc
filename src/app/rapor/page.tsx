@@ -38,6 +38,7 @@ import {
 import { PencereSecici } from "./pencere-secici";
 
 import type { Currency } from "@/generated/prisma/enums";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -250,7 +251,7 @@ export default async function RaporSayfasi({
             vurgu === "kotu"
               ? "text-destructive text-xl font-semibold"
               : vurgu === "iyi"
-                ? "text-xl font-semibold text-emerald-600"
+                ? `text-xl font-semibold ${DURUM_YAZISI.olumlu}`
                 : "text-xl font-semibold"
           }
         >
@@ -294,7 +295,7 @@ export default async function RaporSayfasi({
             className={
               b.gercekNet < 0
                 ? "text-destructive text-3xl font-bold"
-                : "text-3xl font-bold text-emerald-600"
+                : `text-3xl font-bold ${DURUM_YAZISI.olumlu}`
             }
           >
             {para(b.gercekNet)}
@@ -325,7 +326,7 @@ export default async function RaporSayfasi({
               {kart(t("duzeltmeToplam"), para(b.duzeltmeZarari))}
             </div>
             {b.duzeltmeBilinmeyenAdet > 0 ? (
-              <p className="text-sm text-amber-800 dark:text-amber-300">
+              <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
                 {t("duzeltmeBilinmeyen", { sayi: b.duzeltmeBilinmeyenAdet })}
               </p>
             ) : null}
@@ -339,9 +340,9 @@ export default async function RaporSayfasi({
             _Kullanıcı isteği 10.08.2026: "tıklayınca problemli olan yere
             giderse kullanıcı kolaylığı olmuş olur."_                    */}
         {b.hesaplanamayanSatisAdedi > 0 || b.hesaplanamayanIadeAdedi > 0 ? (
-          <div className="space-y-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+          <div className={`space-y-3 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
             <div className="space-y-1">
-              <p className="flex gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+              <p className={`flex gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
                 <TriangleAlert className="mt-0.5 size-4 shrink-0" />
                 <span>
                   {t("hesaplanamayanBaslik", {
@@ -349,7 +350,7 @@ export default async function RaporSayfasi({
                   })}
                 </span>
               </p>
-              <p className="text-xs text-amber-800 dark:text-amber-300">
+              <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
                 {t("hesaplanamayanNotu")} {t("hesaplanamayanTikla")}
               </p>
             </div>
@@ -362,7 +363,7 @@ export default async function RaporSayfasi({
                     key={`${kayit.satisId}-${kayit.tarih.getTime()}`}
                     variant="outline"
                     size="sm"
-                    className="border-amber-500/50 bg-background"
+                    className={`bg-background ${DURUM_YAZISI.uyari} border-current/40`}
                     asChild
                   >
                     <Link href={`/satislar/${kayit.satisId}`}>
@@ -395,7 +396,7 @@ export default async function RaporSayfasi({
             ) : null}
 
             {b.hesaplanamayanIadeAdedi > 0 ? (
-              <p className="text-xs text-amber-800 dark:text-amber-300">
+              <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
                 {t("hesaplanamayanIade", { sayi: b.hesaplanamayanIadeAdedi })}
               </p>
             ) : null}

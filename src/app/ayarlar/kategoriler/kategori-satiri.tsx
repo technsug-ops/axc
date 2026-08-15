@@ -16,6 +16,7 @@ import {
   type KategoriDurumu,
 } from "./actions";
 import { KodAlani } from "./kod-alani";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 export type KategoriSatiriVerisi = {
   id: string;
@@ -72,7 +73,7 @@ export function KategoriSatiri({
             ) : (
               <Badge
                 variant="outline"
-                className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+                className={`${DURUM_YAZISI.uyari} border-current/40`}
               >
                 {t("kodGirilmemis")}
               </Badge>

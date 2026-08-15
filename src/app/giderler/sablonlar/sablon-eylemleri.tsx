@@ -7,6 +7,7 @@ import { CalendarPlus, Check, Power, PowerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { sablonDurumDegistir, sablondanEkle, type GiderDurumu } from "../actions";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * Şablon satırının eylemleri (Kullanıcı Kolaylığı İlkeleri #1, #5, #6).
@@ -86,7 +87,7 @@ export function SablonEylemleri({
       {mesajlar.map((durum, sira) => (
         <div key={sira}>
           {durum.basari ? (
-            <p className="text-xs font-medium text-emerald-600" role="status">
+            <p className={`text-xs font-medium ${DURUM_YAZISI.olumlu}`} role="status">
               {durum.basari}
             </p>
           ) : null}

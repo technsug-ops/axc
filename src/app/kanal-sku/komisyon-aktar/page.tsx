@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { sayfaIzni } from "@/lib/yetki";
 
 import { Yukleyici, type HesapSecenegi } from "./yukleyici";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export const dynamic = "force-dynamic";
 
@@ -52,8 +53,8 @@ export default async function KomisyonAktarSayfasi() {
 
       {/* SATIŞ HESABI YOKSA SESSİZ BOŞ LİSTE OLMAZ: sebebi ve çözümü yazar (#5). */}
       {hesaplar.length === 0 ? (
-        <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
-          <p className="text-sm text-amber-900 dark:text-amber-200">
+        <div className={`rounded-lg p-4 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
             {tHesap("hicSatisHesabi")}
           </p>
           <Button variant="outline" size="sm" className="mt-3" asChild>

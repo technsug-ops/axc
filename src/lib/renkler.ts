@@ -99,6 +99,26 @@ export const DURUM_ZEMINI: Record<DurumRengi, string> = {
 };
 
 /**
+ * DURUM KUTUSU — form içi uyarı/başarı kutularının kabuğu.
+ *
+ * YENİ RENK DEĞİL: K1 (sol şerit) + K2 (pastel zemin) bileşimi. Uygulamada
+ * 58 dosyada elle yazılmış iki kalıp vardı —
+ * `border-amber-500/50 bg-amber-500/10` ve emerald eşdeğeri — yani paletin
+ * tamamen dışından, doğrudan Tailwind'in kendi renk ölçeğinden. Sonuç: aynı
+ * "uyarı" kavramı panelde bir tonda, formda başka bir tonda görünüyordu.
+ *
+ * Yarıçap ve dolgu BURAYA GİRMEZ: çağıran yer `rounded-md p-3` gibi kendi
+ * ölçüsünü verir. Kutunun rengi tek yerden, biçimi çağıran yerden gelir.
+ */
+export const DURUM_KUTUSU: Record<DurumRengi, string> = {
+  olumlu: `${DURUM_SERIDI.olumlu} ${DURUM_ZEMINI.olumlu}`,
+  olumsuz: `${DURUM_SERIDI.olumsuz} ${DURUM_ZEMINI.olumsuz}`,
+  uyari: `${DURUM_SERIDI.uyari} ${DURUM_ZEMINI.uyari}`,
+  bilgi: `${DURUM_SERIDI.bilgi} ${DURUM_ZEMINI.bilgi}`,
+  notr: `${DURUM_SERIDI.notr} ${DURUM_ZEMINI.notr}`,
+};
+
+/**
  * DOYGUN ÇİP — ikon kutusu için, BEYAZ ikon üstünde tam doygun ton.
  *
  * KURAL: DOYGUNLUK YALNIZ KÜÇÜK ALANDA (15.08.2026). Kullanıcının örnek

@@ -22,6 +22,7 @@ import { isTakvimGunu, gunDegeri } from "@/lib/donem";
 import { beklenenHakedis, odemeDurumu } from "@/lib/hakedis/eslestir";
 import { HAKEDIS_ESIKLERI } from "@/lib/hakedis/model";
 import { prisma } from "@/lib/prisma";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export const dynamic = "force-dynamic";
 
@@ -273,12 +274,12 @@ export default async function HakedisSayfasi() {
               </div>
 
               {geciken.length > 0 ? (
-                <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-                  <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+                <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+                  <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
                     <TriangleAlert className="size-4 shrink-0" />
                     {geciken.length} {t("gecikti")}
                   </p>
-                  <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+                  <p className={`mt-1 text-sm ${DURUM_YAZISI.uyari}`}>
                     {t("gecikmeNotu", { gun: HAKEDIS_ESIKLERI.gecikmeIsGunu })}
                   </p>
                 </div>
@@ -303,8 +304,8 @@ export default async function HakedisSayfasi() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {sorunlu.length > 0 ? (
-                  <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-                    <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+                  <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+                    <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
                       <TriangleAlert className="size-4 shrink-0" />
                       {t("karsilastirmaSorunlu", { sayi: sorunlu.length })}
                     </p>
@@ -431,11 +432,11 @@ export default async function HakedisSayfasi() {
 
           {/* -------------------- EŞLEŞMEYEN KALEMLER ------------------- */}
           {eslesmemis.length > 0 ? (
-            <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+            <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+              <p className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
                 {t("eslesmemisKalem", { sayi: eslesmemis.length })}
               </p>
-              <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+              <p className={`mt-1 text-sm ${DURUM_YAZISI.uyari}`}>
                 {t("eslesmemisNotu", { siparis: eslesmeyenSiparisler.length })}
               </p>
 
@@ -474,7 +475,7 @@ export default async function HakedisSayfasi() {
                 </Table>
               </div>
               {eslesmeyenSiparisler.length > LISTE_SINIRI ? (
-                <p className="mt-2 text-sm font-medium text-amber-900 dark:text-amber-200">
+                <p className={`mt-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
                   {t("listeKesildi", {
                     gosterilen: LISTE_SINIRI,
                     toplam: eslesmeyenSiparisler.length,

@@ -20,6 +20,7 @@ import {
   birlestirmeyiUygula,
   type BirlestirDurumu,
 } from "./actions";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export type RafSecenegi = { id: string; kod: string; ad: string | null };
 
@@ -112,14 +113,14 @@ export function BirlestirFormu({ raflar }: { raflar: RafSecenegi[] }) {
       <HataOzeti hatalar={uygulama.hatalar} />
 
       {gosterilecek && !uygulama.basari ? (
-        <div className="space-y-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-4">
-          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+        <div className={`space-y-3 rounded-md p-4 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
             {t("onizlemeBasligi", {
               kaynak: gosterilecek.kaynakKod,
               hedef: gosterilecek.hedefKod,
             })}
           </p>
-          <ul className="list-inside list-disc space-y-1 text-sm text-amber-900/90 dark:text-amber-200/90">
+          <ul className={`list-inside list-disc space-y-1 text-sm ${DURUM_YAZISI.uyari}`}>
             <li>
               {t("tasinacak", { sayi: gosterilecek.tasinacakVaryant })}
             </li>
@@ -143,7 +144,7 @@ export function BirlestirFormu({ raflar }: { raflar: RafSecenegi[] }) {
       ) : null}
 
       {uygulama.basari ? (
-        <p className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400">
+        <p className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.olumlu}`}>
           {uygulama.basari}
         </p>
       ) : null}

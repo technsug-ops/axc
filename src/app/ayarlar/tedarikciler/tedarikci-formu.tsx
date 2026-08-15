@@ -12,6 +12,7 @@ import { formGonderimi } from "@/lib/form-gonderimi";
 
 import { tedarikciEkle, type TedarikciDurumu } from "./actions";
 import { TedarikciKodAlani } from "./kod-alani";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 const BOS = { name: "", code: "", contact: "" };
 
@@ -78,7 +79,7 @@ export function TedarikciFormu() {
       <HataOzeti hatalar={durum.hatalar} />
 
       {durum.basari ? (
-        <p className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400">
+        <p className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.olumlu}`}>
           {durum.basari}
         </p>
       ) : null}

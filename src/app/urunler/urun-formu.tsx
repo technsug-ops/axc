@@ -25,6 +25,7 @@ import type { FormDurumu } from "./actions";
 import { BenzerlikSorusu } from "./benzerlik-sorusu";
 import { CakismaUyarisi } from "./cakisma-uyarisi";
 import { SkuOnerButonu } from "./sku-oner-butonu";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export type KonumSecenegi = { id: string; code: string; name: string | null };
 
@@ -271,7 +272,7 @@ export function UrunFormu({
               </Select>
               {/* Sessiz varsayım olmasın: kategorisiz ürün %20'ye düşer. */}
               {kategoriId === "" && kdvIstisnasi.trim() === "" ? (
-                <p className="text-amber-700 text-xs dark:text-amber-500">
+                <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
                   {t("kategoriAtanmamisNotu")}
                 </p>
               ) : null}
@@ -349,11 +350,11 @@ export function UrunFormu({
           {/* Kilit SEBEBİYLE BİRLİKTE söylenir — "neden yazamıyorum?"
               sorusunu ekranda cevaplamayan kilit, bozuk alan sanılır (#5). */}
           {hareketliMi ? (
-            <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+            <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+              <p className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
                 {t("kodKilitliBaslik")}
               </p>
-              <p className="mt-1 text-sm text-amber-800/90 dark:text-amber-300/90">
+              <p className={`mt-1 text-sm ${DURUM_YAZISI.uyari}`}>
                 {t("kodKilitliMetin")}
               </p>
             </div>

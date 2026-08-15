@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { rafKoduDuzelt, rafKoduGecerliMi } from "@/lib/kimlik";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -106,7 +107,7 @@ export function RafKoduAlani({
             {t("kaydedilecekKod")}: <span className="font-mono">{tamKod}</span>
           </p>
         ) : (
-          <p className="text-xs text-amber-700 dark:text-amber-400">
+          <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
             {t("kodBicimHatasi")}
             {oneri ? ` ${t("kodOnerisi", { kod: oneri })}` : ""}
           </p>

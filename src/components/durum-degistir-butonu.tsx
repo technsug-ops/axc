@@ -6,6 +6,7 @@ import { Power, PowerOff } from "lucide-react";
 
 import { EYLEM_SINIFI, EylemEtiketi } from "@/components/satir-eylemi";
 import { Button } from "@/components/ui/button";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * Aktif/pasif düğmesi (Kullanıcı Kolaylığı İlkeleri #1, #5, #10).
@@ -58,7 +59,7 @@ export function DurumDegistirButonu({
       </form>
 
       {durum.basari ? (
-        <p className="text-xs font-medium text-emerald-600" role="status">
+        <p className={`text-xs font-medium ${DURUM_YAZISI.olumlu}`} role="status">
           {durum.basari}
         </p>
       ) : null}

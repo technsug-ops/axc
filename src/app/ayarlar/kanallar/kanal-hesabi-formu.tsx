@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 
 import { kanalHesabiEkle, type KanalHesabiDurumu } from "./actions";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 
 export type KanalSecenegi = { id: string; name: string };
 
@@ -187,7 +188,7 @@ export function KanalHesabiFormu({ kanallar }: { kanallar: KanalSecenegi[] }) {
       ) : null}
 
       {durum.basari ? (
-        <p className="rounded-md border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400">
+        <p className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.olumlu}`}>
           {durum.basari}
         </p>
       ) : null}
