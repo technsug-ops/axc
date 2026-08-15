@@ -1726,7 +1726,11 @@
     "maliyetBilinmiyor": "",
     "sermayeUyari": "",
     "zararliSatis": "",
-    "zararliSatisYok": ""
+    "zararliSatisYok": "",
+    "melontikCiro": "",
+    "melontikMaliyet": "",
+    "oluSermaye": "",
+    "oluSermayeYok": ""
   },
   "Envanter": {
     "baslik": "",

@@ -688,7 +688,23 @@ export default async function AnaSayfa({
    * Payda yoksa satır HİÇ ÇİZİLMEZ — "%0" yazmak "kâr yok" demektir, oysa
    * doğru cevap "hesaplanamıyor"dur.
    */
-  function oranSatirlari(kar: number, blok: (typeof bloklar)[number]) {
+  function oranSatirlari(
+    kar: number,
+    blok: (typeof bloklar)[number],
+    /**
+     * MELONTİK EŞLEME ETİKETİ (mimar kararı 15.08.2026, seçenek C).
+     *
+     * Melontik case'i AÇIK ve sürekli karşılaştırılacak; hangi bizim
+     * rakamın onların hangisine denk geldiği ekranda yazmazsa her
+     * karşılaştırmada aynı sürtünme doğar. Ölçüldü (15.08.2026, iki
+     * sipariş): Melontik "Kâr/Satış Fiyat" = NET-2 / brüt ciro, birebir
+     * aynı tanım.
+     *
+     * YALNIZ NET-2 KUTUSUNDA: Melontik'in oranı NET-2 üzerinden; etiketi
+     * NET-1 kutusuna da koymak yanlış eşleme olurdu.
+     */
+    melontikEsleme = false,
+  ) {
     const oranlar = kutuOranlari({
       kar,
       maliyetKdvHaric: maliyetKdvHaric.get(blok.paraBirimi) ?? 0,
@@ -706,11 +722,14 @@ export default async function AnaSayfa({
           </span>
         )}
         {oranlar.satisa === null ? null : (
-          <span className="whitespace-nowrap">
+          <span className="min-w-0">
             <span className="font-medium tabular-nums">
               {bicim.yuzde(oranlar.satisa)}
             </span>{" "}
-            <span className="text-muted-foreground">{t("oranSatisa")}</span>
+            <span className="text-muted-foreground break-words">
+              {t("oranSatisa")}
+              {melontikEsleme ? ` ${t("melontikCiro")}` : ""}
+            </span>
           </span>
         )}
       </span>
@@ -870,6 +889,24 @@ export default async function AnaSayfa({
 
   /** Bağlı sermaye toplamı — yalnız TRY; çevirim yapılmaz. */
   const sermaye = sermayeToplami(yaslanma, "TRY");
+
+  /**
+   * ÖLÜ SERMAYE — 60+ GÜNDÜR RAFTA (Panel Aşama 3, madde 4).
+   *
+   * Yaşlanma listesi Paket 1'den beri var; eksik olan HÜKÜMDÜ. "Neyi
+   * kesmeliyim" sorusunun iki yarısı yan yana durmalı: zarara giden
+   * satışlar (para kaybı) ve ölü sermaye (para tutsak).
+   *
+   * Ölçüt `YAS_BANTLARI.kirmiziGun` (61) — aynı sabit rozetleri de
+   * boyuyor, ikinci bir eşik uydurulmadı.
+   *
+   * DÖNEM SÜZGECİNDEN ETKİLENMEZ: "bugün depoda ne bekliyor" sorusu geçmiş
+   * bir tarih aralığıyla daralmaz (aynı ilke yaşlanma listesinde de yazılı).
+   */
+  const oluSermaye = sermayeToplami(
+    yaslanma.filter((y) => y.bant === "KIRMIZI"),
+    "TRY",
+  );
 
   const yaslanmaSatirlari: PanelListeSatiri[] = yaslanma
     .slice(0, YASLANMA_SATIRI)
@@ -1383,7 +1420,7 @@ export default async function AnaSayfa({
                       )}
                       altNot={
                         <>
-                          {oranSatirlari(blok.toplamNet2, blok)}
+                          {oranSatirlari(blok.toplamNet2, blok, true)}
                           <span className="text-muted-foreground block">
                             {t("net2Aciklama")}
                           </span>
@@ -1732,6 +1769,27 @@ export default async function AnaSayfa({
                         ) : (
                           <DurumRozeti durum="olumlu" isaretsiz>
                             {t("zararliSatisYok")}
+                          </DurumRozeti>
+                        )}
+                      </div>
+
+                      {/* ÖLÜ SERMAYE — zararın YANINDA duruyor: "neyi
+                          kesmeliyim" sorusunun iki yarısı (para kaybı ve
+                          para tutsak) birlikte okunur. Sıfırsa gizlenmez. */}
+                      <div className="flex">
+                        {oluSermaye.kalem > 0 ? (
+                          <DurumRozeti durum="olumsuz" isaretsiz>
+                            <Baglanti href={analizAdresi("stok")}>
+                              {t("oluSermaye", {
+                                gun: YAS_BANTLARI.kirmiziGun,
+                                kalem: oluSermaye.kalem,
+                                tutar: bicim.para(oluSermaye.toplam, "TRY"),
+                              })}
+                            </Baglanti>
+                          </DurumRozeti>
+                        ) : (
+                          <DurumRozeti durum="olumlu" isaretsiz>
+                            {t("oluSermayeYok", { gun: YAS_BANTLARI.kirmiziGun })}
                           </DurumRozeti>
                         )}
                       </div>

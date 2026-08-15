@@ -1889,6 +1889,42 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     panelKaynak.includes("gte: kiyasPencere.baslangic"),
   );
 
+  /**
+   * "NEYİ KESMELİYİM" — İKİ YARIM YAN YANA (Panel Aşama 3, madde 4).
+   * Zarara giden satışlar (para KAYBI) ve ölü sermaye (para TUTSAK) aynı
+   * yerde durmalı; ayrı ekranlarda dururlarsa kullanıcı ikisini birlikte
+   * tartmaz.
+   */
+  kontrol(
+    "zarar ve ölü sermaye AYNI yerde (neyi kesmeliyim)",
+    dagilimBolumu.includes('t("zararliSatis"') &&
+      dagilimBolumu.includes('t("oluSermaye"'),
+  );
+  kontrol(
+    "  ...ikisi de sıfırken GİZLENMİYOR (açık sıfır)",
+    dagilimBolumu.includes('t("zararliSatisYok")') &&
+      dagilimBolumu.includes('t("oluSermayeYok"'),
+  );
+  kontrol(
+    "  ...ölü sermaye eşiği YAS_BANTLARI'ndan (ikinci eşik uydurulmamış)",
+    panelKaynak.includes("YAS_BANTLARI.kirmiziGun") &&
+      panelKaynak.includes('y.bant === "KIRMIZI"'),
+  );
+
+  /**
+   * MELONTİK EŞLEME ETİKETİ (seçenek C). Ölçüldü 15.08.2026: Melontik'in
+   * "Kâr/Ürün Maliyet" oranı bizim NAKİT oranımızla (KDV dâhil payda)
+   * birebir aynı; "Kâr/Satış Fiyat" ise marjımızla aynı. Etiket YALNIZ
+   * NET-2 kutusunda — Melontik'in oranı NET-2 üzerinden, NET-1'e koymak
+   * yanlış eşleme olurdu.
+   */
+  kontrol(
+    "Melontik eşleme etiketi YALNIZ NET-2 kutusunda",
+    panelKaynak.includes("oranSatirlari(blok.toplamNet2, blok, true)") &&
+      panelKaynak.includes("oranSatirlari(blok.toplamNet1, blok)") &&
+      !panelKaynak.includes("oranSatirlari(blok.toplamNet1, blok, true)"),
+  );
+
   kontrol(
     "kanal kartında İKİ çubuk var (ciro payı + NET-2 payı)",
     panelKaynak.includes("pay.ciroPayi / 100") &&
