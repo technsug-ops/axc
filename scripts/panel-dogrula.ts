@@ -1791,6 +1791,62 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     "  ...NET-2 başrol (tek 'bas' kutusu)",
     (panelKaynak.match(/^\s*bas$/gm) ?? []).length === 1,
   );
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  DAĞILIM SEKMESİ (2c) — EKRAN KURALLARI
+   * --------------------------------------------------------------------
+   *  Kontroller REGEX DEĞİL dilim + `includes` ile yazıldı. 15.08.2026'da
+   *  bir kontrolde kabuk kaçışı `[\s\S]`'i `[sS]`'e çevirmiş, regex hiç
+   *  eşleşmemiş ve test YALANCI YEŞİL yanmıştı. Dilim yönteminde böyle bir
+   *  sessiz kırılma yok.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const dagilimBolumu = panelKaynak.slice(
+    panelKaynak.indexOf('anahtar: "dagilim"'),
+    panelKaynak.indexOf('anahtar: "hacim"'),
+  );
+  kontrol(
+    "dağılım sekmesi var ve iki AYRI kutu taşıyor",
+    dagilimBolumu.length > 500 &&
+      dagilimBolumu.includes('t("karEdenler")') &&
+      dagilimBolumu.includes('t("zararEdenler")'),
+  );
+  kontrol(
+    "  ...kâr kutusu YEŞİL, zarar kutusu KIRMIZI aksanlı",
+    dagilimBolumu.includes("DURUM_SERIDI.olumlu") &&
+      dagilimBolumu.includes("DURUM_SERIDI.olumsuz"),
+  );
+  kontrol(
+    "  ...zarar kutusunda TOPLAM özeti var (N ürün toplam −₺X)",
+    dagilimBolumu.includes('t("zararOzeti"'),
+  );
+  kontrol(
+    "  ...sıfır kârlı ürün sessizce kaybolmuyor",
+    dagilimBolumu.includes('t("notrUrunNotu"'),
+  );
+  /**
+   * Sekmenin ÖNÜNDEKİ 300 karakterde `karGorunur` koşulu olmalı: sekmenin
+   * tamamı NET-2 üzerine kurulu, izinsiz kullanıcıya boş kabuk gösterilmez.
+   */
+  kontrol(
+    "  ...kâr izni yoksa sekme HİÇ çizilmiyor",
+    panelKaynak
+      .slice(
+        Math.max(0, panelKaynak.indexOf('anahtar: "dagilim"') - 300),
+        panelKaynak.indexOf('anahtar: "dagilim"'),
+      )
+      .includes("karGorunur"),
+  );
+  kontrol(
+    "kanal kartında İKİ çubuk var (ciro payı + NET-2 payı)",
+    panelKaynak.includes("pay.ciroPayi / 100") &&
+      panelKaynak.includes("pay.net2Payi / 100"),
+  );
+  kontrol(
+    "  ...NET-2 payı null ise çubuk çizilmiyor (eksi toplamda pay anlamsız)",
+    panelKaynak.includes("pay.net2Payi !== null"),
+  );
+
   kontrol(
     "  ...grafiğin ana serisi aksan renginde (sayfayla aynı dil)",
     readFileSync("src/components/cizgi-grafik.tsx", "utf8").includes(

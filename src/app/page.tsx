@@ -5,7 +5,7 @@ import { ArrowRight, TriangleAlert } from "lucide-react";
 import { Baglanti } from "@/components/baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
 import { CizgiGrafik, type GrafikNoktasi } from "@/components/cizgi-grafik";
-import { DurumRozeti } from "@/components/durum-rozeti";
+import { DurumRakami, DurumRozeti } from "@/components/durum-rozeti";
 import {
   IstatistikKutusu,
   PayCubugu,
@@ -57,8 +57,9 @@ import {
   urunlereTopla,
   type KalemGirdisi,
 } from "@/lib/panel-listeler";
+import { kanalDagilimi, paretoKur, yogunlasma } from "@/lib/panel/dagilim";
 import { prisma } from "@/lib/prisma";
-import { karDurumu } from "@/lib/renkler";
+import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
 import { NakitOzeti } from "./nakit-ozeti";
@@ -123,6 +124,15 @@ const GRAFIK_AY_SAYISI = 12;
 
 /** Ürün listelerinde kaç satır. Panelde yer sınırlı; detay listelere gider. */
 const LISTE_SATIRI = 5;
+
+/**
+ * Yoğunlaşma cümlesinin hedefi: "kârının %70'i şu N üründe".
+ * 70 klasik Pareto eşiği; ekranda YAZILI olduğu için sessiz varsayım değil.
+ */
+const YOGUNLASMA_HEDEFI = 70;
+
+/** Dağılım kutularında kaç satır görünür — gerisi kendi sayfasına gider. */
+const DAGILIM_SATIRI = 8;
 
 /** Yaşlanma listesinde kaç satır — en riskli kalemler yeter, tamamı /stok'ta. */
 const YASLANMA_SATIRI = 8;
@@ -641,6 +651,33 @@ export default async function AnaSayfa({
     return <DurumRozeti durum={renkDurumu}>{bicim.yuzde(marj)}</DurumRozeti>;
   }
 
+  /**
+   * ══════════════════ DAĞILIM (2c) — "NEREYE YOĞUNLAŞMALIYIM" ══════════════
+   * İKİ AYRI LİSTE (mimar kararı 15.08.2026): kâr edenler kendi toplamları
+   * üzerinden kümülatifli, zarar edenler ayrı kutuda. Tek listede negatifleri
+   * kümülatife katmak eğriyi %100'ün üstüne çıkarıp geri düşürürdü.
+   *
+   * PAYDA DÖNEMİN TOPLAMIDIR, tüm zamanın değil: `urunSatirlari` zaten
+   * seçili dönemin kalemlerinden türüyor.
+   */
+  const pareto = paretoKur(
+    urunSatirlari.map((u) => ({
+      anahtar: u.variantId,
+      ad: u.urunAdi,
+      sku: u.sku,
+      net2: u.net2,
+    })),
+  );
+  const yogunluk = yogunlasma(pareto, YOGUNLASMA_HEDEFI);
+
+  /**
+   * Dağılım kutularının para birimi. Ürün listeleri kalem seviyesinde
+   * tek para birimi varsayar (bkz. lib/panel-listeler.ts); dağılım da aynı
+   * varsayımı kullanıyor ve HAREKETİ EN ÇOK olan bloğun birimini alıyor.
+   * Blok yoksa TRY — sistemin operasyon para birimi.
+   */
+  const dagilimParaBirimi: Currency = bloklar[0]?.paraBirimi ?? "TRY";
+
   const enCokKarEdenler = karSiralamasi(urunSatirlari, "en-cok", LISTE_SATIRI).map(
     (s) => {
       const marj = marjYuzdesi(s);
@@ -998,7 +1035,25 @@ export default async function AnaSayfa({
           </CardContent>
         </Card>
       ) : (
-        bloklar.map((blok) => (
+        bloklar.map((blok) => {
+          /**
+           * KANAL PAYLARI (2c) — ciro% ve NET-2%, toplam %100.
+           * `kanalDagilimi` yuvarlama artığını en büyük paya ekler; ekranda
+           * "toplam %100 değil" çelişkisi çıkmaz. Toplam NET-2 eksiyse kâr
+           * payı `null` döner ve o çubuk hiç çizilmez.
+           */
+          const dagilim = kanalDagilimi(
+            blok.kanallar.map((k) => ({
+              kanalKodu: k.kanalKodu,
+              kanalAdi: k.kanalAdi,
+              ciro: k.gelir,
+              net2: k.net2,
+            })),
+          );
+          const kanalPaylari = new Map(
+            dagilim.kanallar.map((k) => [k.kanalKodu, k]),
+          );
+          return (
           <Card key={blok.paraBirimi} className="min-w-0">
             <CardHeader>
               <CardTitle>
@@ -1197,14 +1252,45 @@ export default async function AnaSayfa({
                         Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11
                         ton, dört durum rengiyle karışır ve "yeşil = iyi"
                         anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK. */}
-                    {blok.toplamGelir > 0 ? (
-                      <PayCubugu
-                        oran={kanal.gelir / blok.toplamGelir}
-                        etiket={bicim.yuzde(
-                          (kanal.gelir / blok.toplamGelir) * 100,
-                        )}
-                      />
-                    ) : null}
+                    {/* İKİ ÇUBUK: CİRO PAYI VE NET-2 PAYI (2c).
+                        Biri hacmi, diğeri gerçek kazancı gösterir ve
+                        FARKLI OLABİLİRLER — o fark önemlidir: cironun
+                        %60'ını taşıyan kanal kârın %40'ını getiriyor
+                        olabilir. Paylar `kanalDagilimi` ile denkleştirilir,
+                        toplam %100'dür ve yuvarlama artığı kaybolmaz.
+                        Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11
+                        ton, dört durum rengiyle karışır ve "yeşil = iyi"
+                        anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK. */}
+                    {(() => {
+                      const pay = kanalPaylari.get(kanal.kanalKodu);
+                      if (!pay) return null;
+                      return (
+                        <div className="space-y-1">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="text-muted-foreground w-10 shrink-0 text-xs">
+                              {t("ciro")}
+                            </span>
+                            <PayCubugu
+                              oran={pay.ciroPayi / 100}
+                              etiket={bicim.yuzde(pay.ciroPayi)}
+                            />
+                          </div>
+                          {/* NET-2 payı: toplam kâr eksiyse pay ANLAMSIZ —
+                              işaretler birbirini yer. O hâlde çubuk yok. */}
+                          {karGorunur && pay.net2Payi !== null ? (
+                            <div className="flex min-w-0 items-center gap-2">
+                              <span className="text-muted-foreground w-10 shrink-0 text-xs">
+                                {t("net2")}
+                              </span>
+                              <PayCubugu
+                                oran={pay.net2Payi / 100}
+                                etiket={bicim.yuzde(pay.net2Payi)}
+                              />
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })()}
 
                     <div className="grid grid-cols-2 gap-x-3 gap-y-2">
                       <div className="min-w-0">
@@ -1319,7 +1405,8 @@ export default async function AnaSayfa({
               </div>
             </CardContent>
           </Card>
-        ))
+          );
+        })
       )}
 
       {/* ═══════════════════════ ÜRÜN ANALİZİ ═══════════════════════
@@ -1387,6 +1474,139 @@ export default async function AnaSayfa({
                           </>
                         }
                       />
+                    </div>
+                  ),
+                },
+              ]
+            : []),
+          /**
+           * ═══════════════ DAĞILIM SEKMESİ (2c) ═══════════════
+           * Kâr izni yoksa hiç çizilmez: sekmenin tamamı NET-2 üzerine
+           * kurulu, izinsiz kullanıcıya boş bir kabuk göstermek olurdu.
+           */
+          ...(karGorunur
+            ? [
+                {
+                  anahtar: "dagilim",
+                  etiket: t("sekmeDagilim"),
+                  adres: analizAdresi("dagilim"),
+                  icerik: (
+                    <div className="min-w-0 space-y-4">
+                      {/* YOĞUNLAŞMA CÜMLESİ — abartısız, yorum kullanıcının.
+                          Panel yalnız dağılımı dürüstçe söyler. */}
+                      {yogunluk ? (
+                        <p className="text-sm">
+                          {t("yogunlasmaCumlesi", {
+                            sayi: yogunluk.urunSayisi,
+                            yuzde: bicim.yuzde(yogunluk.yuzde),
+                          })}
+                        </p>
+                      ) : null}
+
+                      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+                        {/* KÂR EDENLER — kümülatif kendi toplamları üzerinden */}
+                        <div
+                          className={`min-w-0 rounded-lg border p-3 ${DURUM_SERIDI.olumlu} bg-card`}
+                        >
+                          <div className="mb-2 min-w-0">
+                            <div className="font-medium">{t("karEdenler")}</div>
+                            <p className="text-muted-foreground text-xs">
+                              {t("karEdenlerNotu")}
+                            </p>
+                          </div>
+                          {pareto.karEdenler.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">
+                              {t("karEdenYok")}
+                            </p>
+                          ) : (
+                            <ul className="max-w-3xl space-y-2">
+                              {pareto.karEdenler.slice(0, DAGILIM_SATIRI).map((u) => (
+                                <li key={u.anahtar} className="min-w-0 space-y-1">
+                                  <div className="flex min-w-0 items-baseline justify-between gap-2 text-sm">
+                                    <span className="min-w-0 truncate">{u.ad}</span>
+                                    <span className="shrink-0 tabular-nums">
+                                      {bicim.para(u.net2, dagilimParaBirimi)}
+                                    </span>
+                                  </div>
+                                  {/* Çubuk KÜMÜLATİFİ gösterir: "ilk N ürün
+                                      kârın %X'i" cümlesi gözle okunsun. */}
+                                  <PayCubugu
+                                    oran={u.kumulatif / 100}
+                                    etiket={bicim.yuzde(u.kumulatif)}
+                                  />
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {pareto.karEdenler.length > DAGILIM_SATIRI ? (
+                            <p className="text-muted-foreground mt-2 text-xs">
+                              {t("dagilimKalan", {
+                                sayi: pareto.karEdenler.length - DAGILIM_SATIRI,
+                              })}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        {/* ZARAR EDENLER — AYRI KUTU, kümülatife karışmaz */}
+                        <div
+                          className={`min-w-0 rounded-lg border p-3 ${DURUM_SERIDI.olumsuz} bg-card`}
+                        >
+                          <div className="mb-2 min-w-0">
+                            <div className="font-medium">{t("zararEdenler")}</div>
+                            <p className="text-muted-foreground text-xs">
+                              {t("zararEdenlerNotu")}
+                            </p>
+                          </div>
+                          {pareto.zararEdenler.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">
+                              {t("zararEdenYok")}
+                            </p>
+                          ) : (
+                            <>
+                              <div className="mb-2">
+                                <DurumRozeti durum="olumsuz" isaretsiz>
+                                  {t("zararOzeti", {
+                                    sayi: pareto.zararEdenler.length,
+                                    tutar: bicim.para(
+                                      pareto.zararToplami,
+                                      dagilimParaBirimi,
+                                    ),
+                                  })}
+                                </DurumRozeti>
+                              </div>
+                              <ul className="max-w-3xl space-y-1">
+                                {pareto.zararEdenler
+                                  .slice(0, DAGILIM_SATIRI)
+                                  .map((u) => (
+                                    <li
+                                      key={u.anahtar}
+                                      className="flex min-w-0 items-baseline justify-between gap-2 text-sm"
+                                    >
+                                      <span className="min-w-0 truncate">{u.ad}</span>
+                                      <DurumRakami durum="olumsuz" className="shrink-0">
+                                        {bicim.para(u.net2, dagilimParaBirimi)}
+                                      </DurumRakami>
+                                    </li>
+                                  ))}
+                              </ul>
+                            </>
+                          )}
+                          {pareto.zararEdenler.length > DAGILIM_SATIRI ? (
+                            <p className="text-muted-foreground mt-2 text-xs">
+                              {t("dagilimKalan", {
+                                sayi: pareto.zararEdenler.length - DAGILIM_SATIRI,
+                              })}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {/* SIFIR KÂRLI ÜRÜN SESSİZCE KAYBOLMAZ. */}
+                      {pareto.notrAdet > 0 ? (
+                        <p className="text-muted-foreground text-xs">
+                          {t("notrUrunNotu", { sayi: pareto.notrAdet })}
+                        </p>
+                      ) : null}
                     </div>
                   ),
                 },

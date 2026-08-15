@@ -1705,7 +1705,18 @@
     "kargoEkseniNotu": "",
     "kargoBekleyenNotu": "",
     "oranMaliyete": "",
-    "oranSatisa": ""
+    "oranSatisa": "",
+    "sekmeDagilim": "",
+    "yogunlasmaCumlesi": "",
+    "karEdenler": "",
+    "karEdenlerNotu": "",
+    "karEdenYok": "",
+    "zararEdenler": "",
+    "zararEdenlerNotu": "",
+    "zararEdenYok": "",
+    "zararOzeti": "",
+    "dagilimKalan": "",
+    "notrUrunNotu": ""
   },
   "Envanter": {
     "baslik": "",

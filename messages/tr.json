@@ -1705,7 +1705,18 @@
     "kargoEkseniNotu": "kargoya verme tarihine göre",
     "kargoBekleyenNotu": "şu an bekleyen — dönemden bağımsız",
     "oranMaliyete": "maliyete göre (KDV hariç)",
-    "oranSatisa": "satış fiyatına göre (brüt)"
+    "oranSatisa": "satış fiyatına göre (brüt)",
+    "sekmeDagilim": "Dağılım (nereye yoğunlaşmalıyım)",
+    "yogunlasmaCumlesi": "Kârının {yuzde}'i {sayi} üründen geliyor.",
+    "karEdenler": "Kâr edenler",
+    "karEdenlerNotu": "NET-2'ye göre azalan. Çubuk, baştan buraya kadarki kümülatif payı gösterir; son satır %100'dür.",
+    "karEdenYok": "Bu dönemde kâr eden ürün yok.",
+    "zararEdenler": "Zarar ettirenler",
+    "zararEdenlerNotu": "Ayrı sayılır; kâr kümülatifine karışmaz. En çok zarar ettiren üstte.",
+    "zararEdenYok": "Bu dönemde zarar ettiren ürün yok.",
+    "zararOzeti": "{sayi} ürün toplam {tutar}",
+    "dagilimKalan": "+{sayi} ürün daha",
+    "notrUrunNotu": "{sayi} ürünün NET-2'si tam sıfır — ne kâr ne zarar, iki listeye de girmedi."
   },
   "Envanter": {
     "baslik": "Envanter değeri",
