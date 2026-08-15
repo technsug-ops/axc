@@ -5,6 +5,7 @@ import {
   yogunlasma,
   type DagilimGirdisi,
 } from "../src/lib/panel/dagilim";
+import { sermayeVerimiSiralamasi } from "../src/lib/panel/kar-orani";
 
 /**
  * ============================================================================
@@ -260,6 +261,66 @@ console.log("=".repeat(70));
     zararli.kanallar.every((k) => k.net2Payi === null),
   );
   kontrol("  ...ama ciro payı yine hesaplanıyor", zararli.kanallar[0].ciroPayi === 66.7);
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("8) SERMAYE VERİMİ — 'PARAM NEREDE VERİMLİ'");
+console.log("=".repeat(70));
+
+{
+  /**
+   * KULLANICININ ÖRNEĞİ (14.08.2026): 10.000 ₺'lik üründen 250 ₺,
+   * 1.000 ₺'lik üründen 200 ₺. Mutlak tutar birinciyi "en çok kazandıran"
+   * gösteriyordu; sermaye verimi ikinciyi öne çıkarmalı.
+   */
+  const sirali = sermayeVerimiSiralamasi([
+    { anahtar: "pahali", ad: "Pahalı", sku: "p", net2: 250, maliyetKdvHaric: 10000 },
+    { anahtar: "ucuz", ad: "Ucuz", sku: "u", net2: 200, maliyetKdvHaric: 1000 },
+  ]);
+  kontrol(
+    "1.000₺'den 200₺ kazandıran ÜSTTE (10.000₺'den 250₺ kazandırandan önce)",
+    sirali[0].ad === "Ucuz",
+    sirali.map((s2) => [s2.ad, s2.verim]),
+  );
+  kontrol("  ...verimi %20", sirali[0].verim === 20, sirali[0].verim);
+  kontrol("  ...pahalının verimi %2,5", sirali[1].verim === 2.5, sirali[1].verim);
+
+  /**
+   * ⚠ KDV AYRIŞTIRMASI PAYDADA: maliyet KDV DÂHİL saklanıyor. Atlanırsa
+   * oran sessizce DÜŞÜK çıkar — sözleşmenin adıyla işaretlediği tuzak.
+   * Burada payda KDV DÂHİL verilirse oranın %20 değil %16,7 çıktığı,
+   * yani farkın gerçek olduğu gösteriliyor.
+   */
+  const dahil = sermayeVerimiSiralamasi([
+    { anahtar: "a", ad: "A", sku: "a", net2: 200, maliyetKdvHaric: 1200 },
+  ]);
+  kontrol(
+    "KDV dâhil payda %16,7 verir — ayrıştırma atlanırsa oran DÜŞER",
+    Math.abs((dahil[0].verim ?? 0) - 16.6667) < 0.01,
+    dahil[0].verim,
+  );
+
+  /** MALİYETİ BİLİNMEYEN ÜRÜN ATILMAZ, SONA KONUR. */
+  const eksik = sermayeVerimiSiralamasi([
+    { anahtar: "yok", ad: "Maliyetsiz", sku: "y", net2: 500, maliyetKdvHaric: null },
+    { anahtar: "var", ad: "Normal", sku: "v", net2: 100, maliyetKdvHaric: 1000 },
+  ]);
+  kontrol("maliyeti bilinmeyen ürün listeden ATILMIYOR", eksik.length === 2);
+  kontrol("  ...SONA konuyor", eksik[1].ad === "Maliyetsiz", eksik.map((e) => e.ad));
+  kontrol("  ...oranı null (sıfır SAYILMIYOR)", eksik[1].verim === null);
+
+  /** Zararda verim EKSİ çıkar; mutlak değere çevrilmez. */
+  const zarar = sermayeVerimiSiralamasi([
+    { anahtar: "z", ad: "Z", sku: "z", net2: -100, maliyetKdvHaric: 1000 },
+  ]);
+  kontrol("zararda verim EKSİ (−%10)", zarar[0].verim === -10, zarar[0].verim);
+
+  /** Maliyet sıfırsa oran hesaplanamaz — bölme yapılmaz. */
+  const sifir = sermayeVerimiSiralamasi([
+    { anahtar: "s", ad: "S", sku: "s", net2: 100, maliyetKdvHaric: 0 },
+  ]);
+  kontrol("maliyet 0 ise verim null (sonsuz DEĞİL)", sifir[0].verim === null);
 }
 
 console.log("");

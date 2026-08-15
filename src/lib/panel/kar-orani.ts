@@ -55,3 +55,65 @@ export function kutuOranlari(girdi: {
     satisa: karOrani(girdi.kar, girdi.brutCiro),
   };
 }
+
+// ---------------------------------------------------------------------------
+//  SERMAYE VERİMİ — ÜRÜN KIRILIMI
+// ---------------------------------------------------------------------------
+
+/**
+ * ============================================================================
+ *  "PARAM NEREDE VERİMLİ ÇALIŞIYOR"
+ * ----------------------------------------------------------------------------
+ *  Kullanıcının örneği (14.08.2026): "1.000 ₺'lik üründen 200 ₺, 10.000 ₺'lik
+ *  üründen 250 ₺ kazandım; sistemde 250 kazandığım 'en çok kazandıran'
+ *  oluyor." Mutlak tutar yanıltıyor — 10.000 ₺'yi rafta tutup 250 ₺ kazanmak
+ *  ile 1.000 ₺'yi tutup 200 ₺ kazanmak aynı şey değildir (%2,5 ve %20).
+ *
+ *  ── MARJDAN FARKI ───────────────────────────────────────────────────────
+ *  Marj      = NET-2 / ciro     → "SATIŞTAN ne kaldı"
+ *  Sermaye v.= NET-2 / maliyet  → "BAĞLI PARADAN ne kazandım"
+ *  İkisi farklı soru; ekranda etiketleri ayrı yazılır, karışmasın.
+ *
+ *  ⚠ MALİYET KDV DÂHİL SAKLANIYOR. Payda `kdvHaric` ile ürünün KENDİ oranıyla
+ *  ayrıştırılır. Bu adım atlanırsa oran sessizce DÜŞÜK çıkar ve kimse fark
+ *  etmez — sözleşmenin adıyla işaretlediği tuzak (BEKLEYENLER.md).
+ * ============================================================================
+ */
+
+export type SermayeGirdisi = {
+  anahtar: string;
+  ad: string;
+  sku: string;
+  net2: number;
+  /** Ürünün KDV HARİÇ maliyeti. Bilinmiyorsa null. */
+  maliyetKdvHaric: number | null;
+};
+
+export type SermayeSatiri = SermayeGirdisi & {
+  /** NET-2 / maliyet (%). Maliyet bilinmiyorsa null. */
+  verim: number | null;
+};
+
+/**
+ * Ürünleri sermaye verimine göre AZALAN sıralar.
+ *
+ * MALİYETİ BİLİNMEYEN ÜRÜN LİSTEDEN ATILMAZ, SONA KONUR ve oranı `null`
+ * kalır. Atılsaydı kullanıcı "bu ürün nerede" diye sorardı ve rakam sessizce
+ * kaybolurdu; sıfır saysaydık en verimsiz gibi görünürdü — ikisi de yalan.
+ */
+export function sermayeVerimiSiralamasi(
+  girdiler: SermayeGirdisi[],
+): SermayeSatiri[] {
+  return girdiler
+    .map((g) => ({
+      ...g,
+      verim:
+        g.maliyetKdvHaric === null ? null : karOrani(g.net2, g.maliyetKdvHaric),
+    }))
+    .sort((a, b) => {
+      if (a.verim === null && b.verim === null) return 0;
+      if (a.verim === null) return 1;
+      if (b.verim === null) return -1;
+      return b.verim - a.verim;
+    });
+}

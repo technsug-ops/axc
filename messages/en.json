@@ -1716,7 +1716,14 @@
     "zararEdenYok": "",
     "zararOzeti": "",
     "dagilimKalan": "",
-    "notrUrunNotu": ""
+    "notrUrunNotu": "",
+    "sekmeSermaye": "",
+    "sermayeBaslik": "",
+    "sermayeNotu": "",
+    "sermayeAltDeger": "",
+    "sermayeRozeti": "",
+    "maliyetBilinmiyor": "",
+    "sermayeUyari": ""
   },
   "Envanter": {
     "baslik": "",

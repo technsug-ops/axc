@@ -1716,7 +1716,14 @@
     "zararEdenYok": "Bu dönemde zarar ettiren ürün yok.",
     "zararOzeti": "{sayi} ürün toplam {tutar}",
     "dagilimKalan": "+{sayi} ürün daha",
-    "notrUrunNotu": "{sayi} ürünün NET-2'si tam sıfır — ne kâr ne zarar, iki listeye de girmedi."
+    "notrUrunNotu": "{sayi} ürünün NET-2'si tam sıfır — ne kâr ne zarar, iki listeye de girmedi.",
+    "sekmeSermaye": "Sermaye verimi",
+    "sermayeBaslik": "Bağlı paradan ne kazandım",
+    "sermayeNotu": "NET-2 ÷ ürün maliyeti (KDV hariç). Azalan sıralı. Marjdan FARKLI bir soru: marj satıştan ne kaldığını, sermaye verimi bağladığın paradan ne kazandığını söyler.",
+    "sermayeAltDeger": "NET-2 {net2} · maliyet {maliyet}",
+    "sermayeRozeti": "sermaye verimi",
+    "maliyetBilinmiyor": "maliyet bilinmiyor",
+    "sermayeUyari": "Maliyeti bilinmeyen ürünler listeden ÇIKARILMADI, sona kondu — oranları boş görünür. Sıfır sayılsaydı en verimsiz gibi görünürlerdi."
   },
   "Envanter": {
     "baslik": "Envanter değeri",
