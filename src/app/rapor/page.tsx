@@ -35,6 +35,15 @@ import {
   type RaporSatis,
 } from "@/lib/rapor";
 
+import {
+  KIYAS_ANAHTARLARI,
+  ciroyaOran,
+  degisim,
+  kiyasCoz,
+  kiyasPenceresi,
+} from "@/lib/rapor/karsilastirma";
+import { DurumRozeti } from "@/components/durum-rozeti";
+
 import { PencereSecici } from "./pencere-secici";
 
 import type { Currency } from "@/generated/prisma/enums";
@@ -69,6 +78,8 @@ export default async function RaporSayfasi({
     pencere?: string;
     baslangic?: string;
     bitis?: string;
+    /** Karşılaştırma tabanı: onceki | ucAy | gecenYil. Boşsa kapalı. */
+    kiyas?: string;
   }>;
 }) {
   await sayfaIzni("rapor.gor");
@@ -104,10 +115,55 @@ export default async function RaporSayfasi({
 
   const aralik = { gte: pencere.baslangic, lt: pencere.bitisHaric };
 
+  /**
+   * Kıyas seçimi adreste yaşar; DÖNEM SEÇİMİ KORUNUR. Aynı düğmeye tekrar
+   * basmak karşılaştırmayı KAPATIR — açtığın şeyi kapatmanın yolu, açtığın
+   * düğmedir (İlke #10).
+   */
+  const kiyasAdresi = (yeni: string | null) => {
+    const q = new URLSearchParams();
+    if (parametreler.pencere) q.set("pencere", parametreler.pencere);
+    if (parametreler.baslangic) q.set("baslangic", parametreler.baslangic);
+    if (parametreler.bitis) q.set("bitis", parametreler.bitis);
+    if (yeni) q.set("kiyas", yeni);
+    const metin = q.toString();
+    return metin ? `/rapor?${metin}` : "/rapor";
+  };
+
+  /**
+   * KARŞILAŞTIRMA PENCERESİ — seçiliyse kurulur, değilse yok.
+   *
+   * Karşılaştırma KAPALI gelir: her rapora zorla ikinci bir rakam basmak,
+   * kullanıcı istemediği hâlde ekranı iki katına çıkarırdı. Seçilince açılır
+   * ve seçim adreste yaşar (özet ekranda döküm olmaz ilkesiyle aynı çizgi).
+   */
+  const kiyasTuru = kiyasCoz(parametreler.kiyas);
+  const kiyasPencere = kiyasTuru ? kiyasPenceresi(pencere, kiyasTuru) : null;
+
+  /**
+   * SORGU İKİ PENCEREYİ DE KAPSAR AMA ARADAKİ BOŞLUĞU KAPSAMAZ.
+   * "Geçen yıl aynı dönem" seçilince tek aralık kullansaydık 13 ayın
+   * tamamını okurduk; oysa iki uçtaki pencereler yetiyor.
+   */
+  const ikiAralik = (alan: string) =>
+    kiyasPencere
+      ? {
+          OR: [
+            { [alan]: aralik },
+            {
+              [alan]: {
+                gte: kiyasPencere.baslangic,
+                lt: kiyasPencere.bitisHaric,
+              },
+            },
+          ],
+        }
+      : { [alan]: aralik };
+
   const [satisKayitlari, iadeKayitlari, duzeltmeKayitlari, giderKayitlari] =
     await Promise.all([
     prisma.sale.findMany({
-      where: { soldAt: aralik },
+      where: ikiAralik("soldAt"),
       select: {
         id: true,
         code: true,
@@ -126,7 +182,7 @@ export default async function RaporSayfasi({
       },
     }),
     prisma.return.findMany({
-      where: { occurredAt: aralik },
+      where: ikiAralik("occurredAt"),
       select: {
         id: true,
         saleId: true,
@@ -154,7 +210,7 @@ export default async function RaporSayfasi({
       },
     }),
     prisma.expense.findMany({
-      where: { spentAt: aralik },
+      where: ikiAralik("spentAt"),
       select: {
         id: true,
         spentAt: true,
@@ -222,12 +278,22 @@ export default async function RaporSayfasi({
     tip: d.type === "COUNT_CORRECTION" ? "COUNT_CORRECTION" : "ADJUSTMENT",
   }));
 
-  const sonuc = raporHesapla(pencere, {
-    satislar,
-    iadeler,
-    giderler,
-    duzeltmeler,
-  });
+  const girdi = { satislar, iadeler, giderler, duzeltmeler };
+  const sonuc = raporHesapla(pencere, girdi);
+
+  /**
+   * KIYAS DÖNEMİ AYNI MOTORDAN GEÇER.
+   *
+   * `raporHesapla` pencereyi kendi içinde süzdüğü için ikinci çağrı aynı
+   * veriyle yetiniyor. Kıyas için ayrı bir hesap yazmak, aynı kuralın
+   * ikinci kopyasını doğururdu — bu oturumda tam olarak o yüzden bir hata
+   * bulmuştuk (alım sayfası `select`i elle ikinci kez yazmıştı).
+   */
+  const kiyasSonuc = kiyasPencere ? raporHesapla(kiyasPencere, girdi) : null;
+
+  /** Kıyas bloğunu para birimine göre bulur; o dönemde hiç hareket yoksa null. */
+  const kiyasBlogu = (paraBirimi: string) =>
+    kiyasSonuc?.paraBirimleri.find((b) => b.paraBirimi === paraBirimi) ?? null;
 
   const durumEtiketi = (durum: string) =>
     durum === "NO_COST"
@@ -236,12 +302,48 @@ export default async function RaporSayfasi({
         ? tSatis("durumKisaCurrency")
         : tSatis("durumKisaRule");
 
-  /** Üst kart — büyük rakam + altında ne olduğunu söyleyen not. */
+  /**
+   * DEĞİŞİM ROZETİ — HEM SAYI HEM ORAN (kullanıcı isteği 15.08.2026).
+   *
+   * Yalnız yüzde gösterilseydi "%200 arttı" küçük rakamlarda abartılı
+   * görünürdü (2 TL'den 6 TL'ye); yalnız sayı gösterilseydi büyüklüğün
+   * anlamı kaybolurdu. İkisi birlikte duruyor.
+   *
+   * YÖN RENGİ İÇERİĞE GÖRE DEĞİL, KULLANICIYA GÖRE: gider ve zarar
+   * kalemlerinde ARTIŞ kötüdür. Bu yüzden `artisIyiMi` çağıran taraftan
+   * geliyor; burada tahmin edilmiyor.
+   */
+  function degisimRozeti(
+    simdi: number,
+    onceki: number | null,
+    bicimle: (n: number) => string,
+    artisIyiMi = true,
+  ) {
+    if (onceki === null) return null;
+    const d = degisim(simdi, onceki);
+    if (d.mutlak === 0) {
+      return <DurumRozeti durum="notr" isaretsiz>{t("degisimYok")}</DurumRozeti>;
+    }
+    const iyi = d.mutlak > 0 === artisIyiMi;
+    const yon = d.mutlak > 0 ? "▲" : "▼";
+    return (
+      <DurumRozeti durum={iyi ? "olumlu" : "olumsuz"} isaretsiz>
+        <span className="tabular-nums">
+          {yon} {bicimle(Math.abs(d.mutlak))}
+          {/* Kıyas dönemi SIFIRSA yüzde yok — "%100 arttı" yalan olurdu. */}
+          {d.yuzde === null ? "" : ` · ${bicim.yuzde(Math.abs(d.yuzde))}`}
+        </span>
+      </DurumRozeti>
+    );
+  }
+
+  /** Üst kart — büyük rakam + değişim rozeti + altında not. */
   function kart(
     etiket: string,
     deger: string,
     not?: string,
     vurgu?: "iyi" | "kotu",
+    rozet?: React.ReactNode,
   ) {
     return (
       <div className="space-y-1 rounded-lg border p-4">
@@ -257,6 +359,7 @@ export default async function RaporSayfasi({
         >
           {deger}
         </div>
+        {rozet ? <div className="flex">{rozet}</div> : null}
         {not ? (
           <div className="text-muted-foreground text-xs">{not}</div>
         ) : null}
@@ -266,6 +369,19 @@ export default async function RaporSayfasi({
 
   function blokCiz(b: ParaBirimiRaporu) {
     const para = (n: number) => bicim.para(n, b.paraBirimi);
+    const k = kiyasBlogu(b.paraBirimi);
+
+    /**
+     * CİROYA ORANLA NET — kullanıcı isteği 15.08.2026.
+     * Payda BRÜT CİRO; paneldeki "satış fiyatına göre" oranıyla AYNI tanım
+     * ki iki ekran aynı kavramı farklı hesaplamasın. Ciro yoksa satır yok.
+     */
+    const oranNotu = (net: number, taban: string) => {
+      const oran = ciroyaOran(net, b.satisGeliri);
+      return oran === null
+        ? taban
+        : `${t("ciroyaOran", { oran: bicim.yuzde(oran) })} · ${taban}`;
+    };
 
     return (
       <div key={b.paraBirimi} className="space-y-5">
@@ -275,16 +391,48 @@ export default async function RaporSayfasi({
 
         {/* ------------------------- ÜST KARTLAR ------------------------- */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {kart(t("satisGeliri"), para(b.satisGeliri))}
-          {kart(t("netBir"), para(b.brutNet1), t("brutNotu"))}
-          {kart(t("netIki"), para(b.brutNet2), t("brutNotu"))}
-          {kart(t("donemGiderleri"), para(b.giderNetDusen), t("giderNotu"))}
-          {kart(t("satisAdedi"), String(b.satisAdedi))}
+          {kart(
+            t("satisGeliri"),
+            para(b.satisGeliri),
+            undefined,
+            undefined,
+            degisimRozeti(b.satisGeliri, k?.satisGeliri ?? null, para),
+          )}
+          {kart(
+            t("netBir"),
+            para(b.brutNet1),
+            oranNotu(b.brutNet1, t("brutNotu")),
+            undefined,
+            degisimRozeti(b.brutNet1, k?.brutNet1 ?? null, para),
+          )}
+          {kart(
+            t("netIki"),
+            para(b.brutNet2),
+            oranNotu(b.brutNet2, t("brutNotu")),
+            undefined,
+            degisimRozeti(b.brutNet2, k?.brutNet2 ?? null, para),
+          )}
+          {/* GİDERDE ARTIŞ KÖTÜDÜR — yön rengi tersine çevriliyor. */}
+          {kart(
+            t("donemGiderleri"),
+            para(b.giderNetDusen),
+            t("giderNotu"),
+            undefined,
+            degisimRozeti(b.giderNetDusen, k?.giderNetDusen ?? null, para, false),
+          )}
+          {kart(
+            t("satisAdedi"),
+            String(b.satisAdedi),
+            undefined,
+            undefined,
+            degisimRozeti(b.satisAdedi, k?.satisAdedi ?? null, (n) => String(n)),
+          )}
           {kart(
             t("iadeAdedi"),
             `${b.iadeAdedi} · ${para(b.iadeNet2)}`,
             t("iadeEtkisi"),
             b.iadeNet2 < 0 ? "kotu" : undefined,
+            degisimRozeti(b.iadeAdedi, k?.iadeAdedi ?? null, (n) => String(n), false),
           )}
         </div>
 
@@ -600,6 +748,41 @@ export default async function RaporSayfasi({
         baslangic={parametreler.baslangic ?? gunMetni(pencere.baslangic)}
         bitis={parametreler.bitis ?? gunMetni(pencere.sonGun)}
       />
+
+      {/* ══════════════════ KARŞILAŞTIRMA SEÇİCİ ══════════════════
+          Kapalı gelir; her rapora zorla ikinci bir rakam basmak ekranı
+          gereksiz yere iki katına çıkarırdı. Seçim adreste yaşar.
+
+          KIYASLANAN ARALIK YAZILI DURUR: "1–15 Ağu ↔ 1–15 Tem". Tanım
+          ekranda olmazsa rozet sessiz bir varsayıma dönerdi — kâr
+          oranlarında da aynı ilkeyi uyguladık. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-muted-foreground text-sm">{t("kiyasBaslik")}</span>
+        {KIYAS_ANAHTARLARI.map((a) => (
+          <Button
+            key={a}
+            asChild
+            size="sm"
+            variant={kiyasTuru === a ? "default" : "outline"}
+            className="h-11 md:h-8"
+          >
+            <Link href={kiyasAdresi(kiyasTuru === a ? null : a)}>
+              {t(`kiyas_${a}`)}
+            </Link>
+          </Button>
+        ))}
+        {kiyasPencere ? (
+          <span className="text-muted-foreground text-xs">
+            {bicim.tarih(pencere.baslangic)} – {bicim.tarih(pencere.sonGun)}
+            {" ↔ "}
+            {bicim.tarih(kiyasPencere.baslangic)} – {bicim.tarih(kiyasPencere.sonGun)}
+          </span>
+        ) : null}
+      </div>
+
+      {kiyasPencere ? (
+        <p className="text-muted-foreground text-xs">{t("kiyasNotu")}</p>
+      ) : null}
 
       {pencereHatasi ? (
         <p

@@ -1101,7 +1101,14 @@
     "duzeltmeToplam": "",
     "duzeltmeNotu": "",
     "duzeltmeAdet": "",
-    "duzeltmeBilinmeyen": ""
+    "duzeltmeBilinmeyen": "",
+    "kiyasBaslik": "",
+    "kiyas_onceki": "",
+    "kiyas_ucAy": "",
+    "kiyas_gecenYil": "",
+    "kiyasNotu": "",
+    "ciroyaOran": "",
+    "degisimYok": ""
   },
   "KarSorunu": {
     "baslik": "",

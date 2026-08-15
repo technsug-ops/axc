@@ -1101,7 +1101,14 @@
     "duzeltmeToplam": "Düzeltme zararı",
     "duzeltmeNotu": "Stok defterinden türetilir; gider tablosuna YAZILMAZ, çift kayıt olmaz. GERÇEK NET'ten düşer.",
     "duzeltmeAdet": "{sayi} adet",
-    "duzeltmeBilinmeyen": "{sayi} adet düzeltmenin maliyeti bilinmiyor — paraya çevrilemedi, toplama girmedi."
+    "duzeltmeBilinmeyen": "{sayi} adet düzeltmenin maliyeti bilinmiyor — paraya çevrilemedi, toplama girmedi.",
+    "kiyasBaslik": "Karşılaştır:",
+    "kiyas_onceki": "Önceki dönem",
+    "kiyas_ucAy": "3 ay öncesi",
+    "kiyas_gecenYil": "Geçen yıl aynı dönem",
+    "kiyasNotu": "Karşılaştırma aynı gün sayısına göre yapılır. Dönem giderleri aya yayılmadan düşer; ay ortasında bakıldığında gider satırı iki dönemde farklı günlere denk gelebilir. İade etkisi, malın satıldığı döneme değil iade edildiği döneme yazılır.",
+    "ciroyaOran": "ciroya oran {oran}",
+    "degisimYok": "değişim yok"
   },
   "KarSorunu": {
     "baslik": "Nasıl düzeltilir?",
