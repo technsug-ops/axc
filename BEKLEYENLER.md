@@ -18,10 +18,18 @@ yeni yetenek ekleniyor. Bu ayrım kayıtta dursun — "yarım kalan iş" ile
 
 Mimar onaylı sıra, **paket ADIYLA**:
 **~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ · ~~AŞAMA 3 PAKET 1~~ ✓ →
-~~PANEL AŞAMA 3 PAKET 2~~ ✓ → UYARI MERKEZİ FAZ 1 → DESTEK MODÜLÜ →
-GEÇMİŞ VERİ.**
+~~PANEL AŞAMA 3 PAKET 2~~ ✓ → KART ÖDEME TAKİBİ → UYARI MERKEZİ FAZ 1 →
+DESTEK MODÜLÜ → GEÇMİŞ VERİ (kart ödemeyle TEK TABLO, `source` alanıyla) →
+MELONTİK CASE.**
 
-_Sıradaki: **Uyarı merkezi Faz 1** — dört kırmızı uyarı (nakit açığı,
+_Sıra 15.08.2026'da güncellendi: **kart ödeme takibi ÖNE ALINDI** — nakit
+takviminin eksik yarısı, kullanıcı önceliği._
+
+_Sıradaki: **Kart ödeme takibi** — ekstre dönemi bazlı ödeme kaydı, faiz
+iki giriş yollu, migration SQL'i onaya gelir. Panel Aşama 3'ün son testi
+(O1–O4) geçince başlar._
+
+_Ondan sonra: **Uyarı merkezi Faz 1** — dört kırmızı uyarı (nakit açığı,
 maliyetsiz stok, kârı hesaplanamayan satış, geciken hakediş), üst çubukta
 çan. Her uyarı `lib/uyari/*.ts` altında saf fonksiyon; panel görev kutusu
 ile çan aynı hesabı çağırır, kopya yasak._
@@ -155,43 +163,79 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       bakılacak:** önizlemedeki NET-1/NET-2 ile kaydedilen değer birebir mi.
       _Not 14.08.2026._
 
-- [ ] **KART ÖDEME TAKİBİ** — _Karar 14.08.2026: ŞİMDİ DEĞİL, **geçmiş veri
-      paketiyle BİRLİKTE** tasarlanır (ayrı ayrı değil)._
-      Sistemde "bu ekstreyi ödedim" kaydı YOK. Panel için zorunlu değil ama
-      nakit takviminin gecikmiş bölümünü kart tarafında eksik bırakıyor.
-      **Neden geçmiş veri paketiyle birlikte:** o paket zaten geçmiş
-      EKSTRELERİ getiriyor; ekstre kaydı varsa "ödendi mi / ne zaman"
-      alanı oraya DOĞAL bağlanır. Ayrı tasarlanırsa iki farklı ekstre
-      kavramı doğar ve biri diğerini gölgeler.
-      **MİMARİ KARARLAR (kullanıcı, 14.08.2026) — sıra gelince uygulanır:**
+- [ ] **KART ÖDEME TAKİBİ — SIRADA (öne alındı 15.08.2026)**
+      _Kullanıcı önceliği: **nakit takviminin eksik yarısı.**_ Sistem kart
+      borcunu alımlardan türetiyor ama **"ödendi" kaydı YOK** → nakit takvimi
+      kart tarafını ve gecikmişi gösteremiyor. Bu paket onu kapatır.
+      **SIRA: Panel Aşama 3'ün son testi (O1–O4) geçince BAŞLAR.**
 
-      Kart ödeme kaydı **ekstre dönemine bağlıdır**, üç alan taşır:
-      1. **Ödeme tarihi.**
-      2. **Ödenen ana borç** — sistem alımlardan TÜRETİR (`kart-borcu.ts`),
-         ön-dolu gelir, kullanıcı teyit eder.
-      3. **Gecikme faizi / masrafı** — AYRI alan, ELLE girilir, varsayılan
-         boş. Boş = faiz yok; **sıfır SESSİZCE VARSAYILMAZ**, kullanıcı
-         açıkça bırakır ya da girer.
+      **KAYIT BİRİMİ: EKSTRE DÖNEMİ** — her ekstre, kesim gününden kesim
+      gününe bir dönemdir.
+
+      | # | Alan | Kaynak |
+      |---|---|---|
+      | 1 | Kart bilgileri (banka, sahip, kesim/son ödeme günü, limit) | ✅ mevcut |
+      | 2 | **Ekstre borcu** | alımlardan TÜRETİLİR (`kart-borcu.ts`), ön-dolu |
+      | 3 | Son ödeme tarihi | kesim gününden ✅ mevcut |
+      | 4 | **Ödenen ana borç** | ön-dolu (sistemin hesabı), **kullanıcı DÜZELTEBİLİR** — banka farklı kesmiş olabilir |
+      | 5 | **Kalan** | TÜRETİLİR = ekstre borcu − ödenen. 0 → kapandı · artı → **kısmi ödeme, açık kalan görünür** |
+      | 6 | **Faiz (gecikme)** | iki giriş yolu, aşağıda |
+
+      **FAİZ — İKİ GİRİŞ YOLU (kullanıcı hangisini isterse):**
+      - **(a)** günlük faiz oranı **%** + gecikme **gün** sayısı → **sistem
+        çarpar.** Örnek: 1.000 × %3 × 2 gün = **60 TL**.
+      - **(b)** faiz tutarı **doğrudan elle** (60).
+
+      > **SİSTEM FAİZ ORANINI UYDURMAZ.** Oran bankaya, karta ve güne göre
+      > değişir; üretilirse panel yanlış olur. **Kullanıcı girer, sistem
+      > yalnız çarpar.** _Bu, 14.08.2026'daki "sistem faizi hesaplamaz"
+      > kararının rafine hâli: hesaplamayan şey ORANDIR, çarpma değil._
 
       **FAİZ MİMARİSİ — AYRI AÇIK ALAN, FARK HESABI DEĞİL:**
-      - Faiz ana borçtan TÜRETİLMEZ. Fark hesabı sinsidir: ana borç bir
+      - Faiz ana borçtan **TÜRETİLMEZ.** Fark hesabı sinsidir: ana borç bir
         kuruş şaşarsa o fark "faiz" sanılır ve gider yazılır.
-      - Girilen faiz → gider modülüne **"finansman gideri / gecikme faizi"**
-        kategorisi → **DÖNEM kârını** düşürür. Belirli bir satışa
+      - Girilen faiz → gider modülüne **"finansman gideri / kart gecikme
+        faizi"** → **O DÖNEMİN kârını** düşürür. Belirli bir alıma
         bağlanmaz; genel finansman maliyetidir ("Diğer Giderler" mantığı).
-      - **Ana borç ödemesi kârı ETKİLEMEZ** (maliyet alımda zaten sayıldı).
+      - **ANA BORÇ ÖDEMESİ KÂRI ETKİLEMEZ** — maliyet alımda zaten sayıldı.
         Faiz EK giderdir. İki rakam ayrı satır; toplanmaz, karışmaz.
+      - _Kilit örnek:_ 1.000 TL gecikmiş, günlük %3, 2 gün → 60 TL faiz
+        gideri; ödeme kaydedilince o dönem kârından düşer.
 
-      **SİSTEM FAİZİ HESAPLAMAZ, UYARIR:** son ödeme günü geçmiş + ödendi
-      işareti yoksa → *"N gün gecikmiş, ödeme işaretlenmemiş"*. Faiz oranı
-      ÜRETİLMEZ — bankaya, güne ve karta göre değişir; uydurulursa panel
-      yanlış olur. Gerçek fatura faizi elle girilir.
+      **İLKELER:**
+      - **Ledger değişmez:** ödeme kaydı SİLİNMEZ; yanlışsa **ters kayıtla**
+        düzeltilir (StockMovement ilkesinin aynısı).
+      - **Preview-before-write:** kaydetmeden önce *"şu ödeniyor · şu kalıyor
+        · şu faiz gider yazılacak"* önizlemesi.
+      - **Sessiz sıfır yasak:** faiz girilmezse 0 (gecikme yok) ama kullanıcı
+        AÇIKÇA bırakır/girer; kalan tutar açıkça gösterilir.
+      - **Yetki:** kart ödeme = sahip/finans (`satis.kar.gor` + kart yetkisi).
+        **Operasyon GÖRMEZ.**
 
-      **Bugünkü geçici çözüm (onaylı):** geçmiş ekstreler ÖDENMİŞ sayılır —
-      `lib/kart-borcu.ts`in `bekleyenToplam` tanımıyla AYNI varsayım, iki
-      yerde çelişki yok. Gecikmiş bölümü yalnız hakedişten beslenir
-      (`SettlementItem.paidAt` gerçekten tutuluyor) ve **ekranda bu sınır
-      AÇIKÇA yazar** ("sessiz yokluk yok, açık sınır").
+      **MİGRATION — SALT-EKLEME, ⚠ SQL ONAYA GELİR (çalıştırılmadan):**
+      yeni tablo **`KartOdeme`** (id, cardId, donem, ekstreBorcu,
+      odenenAnaBorc, odemeTarihi, faizOrani?, faizGun?, faizTutar, kalan,
+      **source**, oluşturulma). Faiz gideri `Gider` tablosuna bağlanır.
+      **Harf bekçisi:** tablo adı büyük harf.
+
+      **GEÇMİŞ VERİ İLE TEK TABLO — `source` alanı:**
+      `TURETILEN` (canlı, alımlardan) · `GECMIS_EXCEL` (geçmiş beyan) ·
+      `ELLE`. **Birlikte tasarlanır:** ayrı tasarlanırsa iki farklı ekstre
+      kavramı doğar ve biri diğerini gölgeler.
+
+      **NAKİT TAKVİMİ BAĞLANTISI:** ödeme kaydı gelince takvim kart tarafındaki
+      gerçekleşen ödemeyi bilir → **gecikmiş kart ekstreleri gösterilebilir**
+      (bugün gecikmiş yalnız hakedişten besleniyor).
+      _Bugünkü geçici varsayım kalkar:_ geçmiş ekstreler "ÖDENMİŞ sayılır"
+      varsayımı (`kart-borcu.ts` → `bekleyenToplam` ile aynı) yerini
+      GERÇEK kayda bırakır.
+
+      **TEST — `kart-odeme:dogrula`:** faiz İKİ yoldan da doğru
+      (oran × gün = tutar) · ana borç ön-dolu geliyor VE düzeltilebiliyor ·
+      kalan = borç − ödenen · faiz gideri DOĞRU döneme yazılıyor ·
+      ledger değişmezliği (ters kayıt) · kısmi ödemede açık kalan görünüyor.
+      _Mutasyon: **faiz gideri kâra karışmasın** kilidi — ana borcu kâra
+      düşür → test kırmızı._
 
 - [ ] **GEÇMİŞ VERİ AKTARIMI** — geçmiş kart ekstreleri · geçmiş hakediş
       tahsilatları. Dosya: `C:\Users\yapra\Desktop\excel\hakedis ve kredi kartlari`
