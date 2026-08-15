@@ -1508,9 +1508,50 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     "  ...her doygun ton beyaz ikon taşıyor (grafik öğede 3:1 kontrast)",
     DURUM_RENKLERI.every((d) => DURUM_CIPI[d].includes("text-white")),
   );
+
+  /**
+   * ÜÇ KATMANIN YERİ — TASARIM REFERANSINDAN.
+   *
+   * `Site Sayfaları.dc.html`: K1 şerit ve K3 doygun çip UYARI KARTINDA;
+   * stat kartında çip YOK, durumu rakamın altındaki pastel rozet taşıyor.
+   * İlk uygulamada çipi her stat kutusuna koymuştum — doygunluk her kutuda
+   * tekrarlanınca dikkat çağrısı olmaktan çıkıyor.
+   */
   kontrol(
-    "  ...çipin varsayılanı NÖTR (renk ancak durum varsa yanar, kısıt #3)",
-    kutuKaynak.includes('durum = "notr"'),
+    "uyarı kartı ÜÇ KATMANI birlikte taşıyor (şerit + çip + metin)",
+    kutuKaynak.includes("DURUM_SERIDI[durum]") &&
+      kutuKaynak.includes("DURUM_CIPI[durum]"),
+  );
+  kontrol(
+    "  ...uyarı kartında ikon yoksa işaret yazılır (kısıt #1)",
+    kutuKaynak.includes("DURUM_ISARETI[durum]"),
+  );
+  /**
+   * Dilim bir sonraki `export function`a kadar alınır. İlk yazımda sınır
+   * `[\s\S]*?\n}` idi; tembel eşleşme props tipinin kapanış parantezinde
+   * duruyor, gövdeyi hiç kapsamıyordu — kontrol HER ZAMAN yeşil yanıyordu.
+   * Mutasyon denemesinde yakalandı: çipi stat kartına geri koydum, test
+   * kırmızı yanmadı. Sınır artık gerçek fonksiyon sınırı.
+   */
+  const statGovdesi = kutuKaynak.slice(
+    kutuKaynak.indexOf("export function IstatistikKutusu"),
+    kutuKaynak.indexOf("export function UyariKarti"),
+  );
+  kontrol(
+    "  ...stat kartında doygun çip YOK (durum pastel rozetten konuşur)",
+    statGovdesi.length > 200 && !statGovdesi.includes("DURUM_CIPI"),
+  );
+  /**
+   * Kontrol SÖZCÜĞE değil SINIF SÖZDİZİMİNE bakıyor. Düz `includes("amber")`
+   * kullandığımda kendi açıklama yorumumdaki örnek metne takılıp kırmızı
+   * yandı — bu tuzağa bu dosyada dördüncü kez düşüldü. Ham renk sınıfı
+   * `bg-/text-/border-` önekiyle yazılır; aranan da odur.
+   */
+  kontrol(
+    "  ...panelde ham Tailwind renk sınıfı kalmadı (uyarı da paletten geçiyor)",
+    !/\b(bg|text|border|ring)-(amber|red|green|blue|emerald|rose)-\d/.test(
+      readFileSync("src/app/page.tsx", "utf8"),
+    ),
   );
   kontrol(
     "  ...pay çubuğu oranı kırpıyor (bozuk veri ekranı taşırmaz)",

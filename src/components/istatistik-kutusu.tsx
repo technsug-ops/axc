@@ -1,71 +1,121 @@
 import type { LucideIcon } from "lucide-react";
 
-import { DURUM_CIPI, type DurumRengi } from "@/lib/renkler";
+import {
+  DURUM_CIPI,
+  DURUM_ISARETI,
+  DURUM_SERIDI,
+  type DurumRengi,
+} from "@/lib/renkler";
 
 /**
  * ============================================================================
- *  İSTATİSTİK KUTUSU — PANELİN TEK RAKAM KUTUSU
+ *  RAKAM KUTUSU VE UYARI KARTI — TASARIM REFERANSINA GÖRE
  * ----------------------------------------------------------------------------
- *  Panelde beş yerde elle yazılmış aynı kutu vardı: `rounded-lg border p-3` +
- *  gri etiket + `text-2xl` rakam. Beşi de birbirinin kopyasıydı, bu yüzden
- *  panel "tek düze" görünüyordu — bütün rakamlar aynı ağırlıkta duruyor,
- *  hangisinin önemli olduğu anlaşılmıyordu.
+ *  Kaynak: kullanıcının `Site Sayfaları.dc.html` tasarım dosyası (Claude
+ *  Design projesi "Palet Spesifikasyonu Tasarımı"). Üç katmanın HANGİSİNİN
+ *  NEREDE kullanılacağı orada gösteriliyor ve ilk uygulamamda yanlış
+ *  yerleştirmiştim:
  *
- *  Bu bileşen üç şeyi getiriyor:
+ *    K1 sol şerit  → UYARI/BİLDİRİM kartları
+ *    K2 pastel rozet → tablo satırları VE stat kartlarının rakamının ALTI
+ *    K3 doygun çip  → YALNIZ uyarı kartındaki 28 px ikon kutusu
  *
- *  1. İKON ÇİPİ — her rakamın kendi ikonu, doygun renkli küçük kutuda.
- *     Tek düzeliği kıran şey ikonun KENDİSİ: beş kutu artık beş farklı şeye
- *     benziyor. Renk ise ancak durum VARSA renklenir; sayının kendisinde
- *     iyi/kötü yoksa çip nötr kalır. "Satış adedi" ne iyidir ne kötü.
- *
- *  2. HİYERARŞİ — `bas` verilen kutu daha iri rakam taşır. Ekranda her şey
- *     eşit önemdeyse hiçbir şey önemli değildir.
- *
- *  3. RAKAM SİYAH KALIR. Renk çipte; kontrast rakamda (kısıt #2). Rakamı da
- *     boyamak ikinci kez aynı şeyi söylemek olurdu.
+ *  Ben K3'ü stat kutularının etiketinin yanına koymuştum. Referans stat
+ *  kartında hiç çip kullanmıyor: orada durumu taşıyan şey rakamın altındaki
+ *  PASTEL ROZET (ya da oran gösteren çubuk). Doygun renk uyarıya ayrılmış —
+ *  makul, çünkü doygunluk bir dikkat çağrısıdır ve her rakam kutusunda
+ *  tekrarlanırsa çağrı olmaktan çıkar.
  * ============================================================================
+ */
+
+/**
+ * STAT KARTI — etiket / iri rakam / (rozet ya da çubuk).
+ *
+ * Panelde beş yerde elle yazılmış aynı kutu vardı; hepsi aynı göründüğü için
+ * hiçbiri önemli durmuyordu ve sayfa "tek düze" okunuyordu.
  */
 export function IstatistikKutusu({
   etiket,
-  ikon: Ikon,
-  durum = "notr",
   bas = false,
   cocuk,
+  rozet,
   altNot,
 }: {
   etiket: string;
-  ikon: LucideIcon;
-  /**
-   * Çipin rengi. Varsayılan NÖTR — bir rakama renk vermek için o rakamın
-   * gerçekten bir durumu olmalı (kısıt #3: nötr taban korunur).
-   */
-  durum?: DurumRengi;
-  /** Başrol kutusu: rakam bir boy iri. Ekranda en fazla bir-iki tane olmalı. */
+  /** Başrol kutusu: rakam bir boy iri. Ekranda en fazla bir tane olmalı. */
   bas?: boolean;
   /** Rakamın kendisi — bağlantı, para bileşeni, ne gerekiyorsa. */
   cocuk: React.ReactNode;
-  /** Rakamın altındaki açıklama ya da ikincil bağlantı. */
+  /**
+   * Rakamın ALTINDAKİ pastel rozet ya da pay çubuğu. Referansta stat
+   * kartının durumu buradan konuşuyor.
+   */
+  rozet?: React.ReactNode;
+  /** Açıklama ya da ikincil bağlantı. */
   altNot?: React.ReactNode;
 }) {
   return (
-    <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3">
-      <div className="flex min-w-0 items-center gap-2">
-        <span
-          className={`flex size-7 shrink-0 items-center justify-center rounded-md ${DURUM_CIPI[durum]}`}
-          aria-hidden="true"
-        >
-          <Ikon className="size-4" />
-        </span>
-        <span className="text-muted-foreground min-w-0 text-xs break-words">
-          {etiket}
-        </span>
-      </div>
-      <div
+    <div className="bg-card flex min-w-0 flex-col gap-1.5 rounded-lg border p-3">
+      <span className="text-muted-foreground min-w-0 text-xs break-words">
+        {etiket}
+      </span>
+      <span
         className={`min-w-0 font-semibold tabular-nums ${bas ? "text-3xl" : "text-2xl"}`}
       >
         {cocuk}
+      </span>
+      {rozet ? <span className="flex min-w-0">{rozet}</span> : null}
+      {altNot ? <span className="min-w-0 text-xs">{altNot}</span> : null}
+    </div>
+  );
+}
+
+/**
+ * UYARI KARTI — üç katmanın hepsi bir arada: sol şerit + doygun çip + metin.
+ *
+ * Panelde uyarılar `amber-500` gibi ham Tailwind sınıflarıyla yazılmıştı;
+ * yani palet dışından. Tek kapı kuralı burada da geçerli.
+ *
+ * Çipteki işaret (✓ − • →) paletten geliyor: renk tek başına konuşmaz, renk
+ * körlüğünde ve siyah-beyaz çıktıda işaret ayakta kalır (kısıt #1).
+ */
+export function UyariKarti({
+  durum,
+  baslik,
+  altSatir,
+  eylem,
+  ikon: Ikon,
+}: {
+  durum: DurumRengi;
+  baslik: React.ReactNode;
+  altSatir?: React.ReactNode;
+  /** Sağdaki düğme/bağlantı — "sorunluları gör" gibi. */
+  eylem?: React.ReactNode;
+  /**
+   * Çipteki ikon. Verilmezse durumun kendi işareti (✓ − • →) yazılır;
+   * ikonsuz da anlam kaybolmasın diye.
+   */
+  ikon?: LucideIcon;
+}) {
+  return (
+    <div
+      className={`bg-card flex min-w-0 flex-wrap items-center gap-3 rounded-lg border p-3 ${DURUM_SERIDI[durum]}`}
+    >
+      <span
+        className={`flex size-7 shrink-0 items-center justify-center rounded-md text-sm font-bold ${DURUM_CIPI[durum]}`}
+        aria-hidden="true"
+      >
+        {Ikon ? <Ikon className="size-4" /> : DURUM_ISARETI[durum]}
+      </span>
+      <div className="min-w-0 flex-1 text-sm leading-snug">
+        <span className="font-medium break-words">{baslik}</span>
+        {altSatir ? (
+          <span className="text-muted-foreground block text-xs break-words">
+            {altSatir}
+          </span>
+        ) : null}
       </div>
-      {altNot ? <div className="min-w-0 text-xs">{altNot}</div> : null}
+      {eylem ? <span className="shrink-0">{eylem}</span> : null}
     </div>
   );
 }
@@ -73,10 +123,9 @@ export function IstatistikKutusu({
 /**
  * PAY ÇUBUĞU — uzunluk bilgi taşır.
  *
- * Kanal kartları bir ızgara dolusu birbirinin aynı kutuydu; hangi kanalın
- * yükü taşıdığı ancak rakamları tek tek okuyup kafada karşılaştırınca
- * anlaşılıyordu. Çubuk bunu BAKINCA söylüyor — örnek ERP ekranındaki yatay
- * çubukların işi de buydu.
+ * Referanstaki "Kota kullanımı" kartının karşılığı. Kanal kartları bir ızgara
+ * dolusu birbirinin aynıydı; hangi kanalın yükü taşıdığı ancak rakamlar tek
+ * tek okunup kafada karşılaştırılınca anlaşılıyordu.
  *
  * Renk taşımıyor, UZUNLUK taşıyor: tek aksan tonu yeterli. Kanal başına ayrı
  * renk verilseydi 11 ton dört durum rengiyle karışır ve "yeşil = iyi" anlamı
@@ -95,16 +144,16 @@ export function PayCubugu({
 }) {
   const guvenli = Math.max(0, Math.min(1, Number.isFinite(oran) ? oran : 0));
   return (
-    <div className="flex min-w-0 items-center gap-2">
-      <div className="bg-muted h-1.5 min-w-0 flex-1 overflow-hidden rounded-full">
-        <div
-          className="h-full rounded-full bg-[#2F7FD1]"
+    <span className="flex min-w-0 flex-1 items-center gap-2">
+      <span className="bg-muted h-2 min-w-0 flex-1 overflow-hidden rounded-full">
+        <span
+          className="block h-full rounded-full bg-[#2F7FD1]"
           style={{ width: `${(guvenli * 100).toFixed(1)}%` }}
         />
-      </div>
+      </span>
       <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
         {etiket}
       </span>
-    </div>
+    </span>
   );
 }

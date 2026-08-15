@@ -207,10 +207,22 @@ export function AppSidebar({ eposta }: { eposta?: string }) {
         {/* Logo ana sayfaya döner. */}
         <Link
           href="/"
-          className="hover:bg-sidebar-accent -mx-2 flex flex-col rounded-md px-2 py-1 transition-colors"
+          className="hover:bg-sidebar-accent -mx-2 flex items-center gap-2.5 rounded-md px-2 py-1 transition-colors"
         >
-          <span className="text-base font-semibold">{UYGULAMA.ad}</span>
-          <span className="text-muted-foreground text-xs">{t("slogan")}</span>
+          {/* MARKA KARESİ — tasarım referansındaki aksan renkli kare.
+              Uygulamanın adı TEK sabitten okunuyor (anayasa); kare de o adın
+              baş harfini taşıyor, yani marka değiştiğinde burada elle
+              güncellenecek bir şey kalmıyor. */}
+          <span
+            className="bg-sidebar-primary text-sidebar-primary-foreground grid size-7 shrink-0 place-items-center rounded-md text-sm font-bold"
+            aria-hidden="true"
+          >
+            {UYGULAMA.ad.charAt(0)}
+          </span>
+          <span className="flex min-w-0 flex-col">
+            <span className="text-base font-semibold">{UYGULAMA.ad}</span>
+            <span className="text-muted-foreground text-xs">{t("slogan")}</span>
+          </span>
         </Link>
       </SidebarHeader>
       <SidebarContent>

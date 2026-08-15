@@ -1,14 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import {
-  ArrowRight,
-  Receipt,
-  ShoppingBag,
-  TrendingUp,
-  TriangleAlert,
-  Truck,
-  Wallet,
-} from "lucide-react";
+import { ArrowRight, TriangleAlert } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
@@ -17,6 +9,7 @@ import { DurumRozeti } from "@/components/durum-rozeti";
 import {
   IstatistikKutusu,
   PayCubugu,
+  UyariKarti,
 } from "@/components/istatistik-kutusu";
 import { KatlanirBolum } from "@/components/katlanir-bolum";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
@@ -62,7 +55,7 @@ import {
   type KalemGirdisi,
 } from "@/lib/panel-listeler";
 import { prisma } from "@/lib/prisma";
-import { DURUM_CIPI, karDurumu } from "@/lib/renkler";
+import { karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
 import { NakitOzeti } from "./nakit-ozeti";
@@ -160,6 +153,8 @@ export default async function AnaSayfa({
 
   const parametreler = await searchParams;
   const t = await getTranslations("Panel");
+  // "kârda"/"zararda" satış kavramıdır; sözlüğü çoğaltmak yerine oradan okunur.
+  const tSatis = await getTranslations("Satis");
   const bicim = await bicimlendirici();
 
   const an = new Date();
@@ -477,6 +472,25 @@ export default async function AnaSayfa({
    * başına okunamıyor. Renk dönem ortalamasına göre, ortalama da listenin
    * altında YAZILI — renk sessiz bir hüküm değil.
    */
+  /**
+   * NET KUTULARININ ALTINDAKİ KÂR ROZETİ — tasarım referansında stat kartının
+   * durumu rakamın ALTINDAKİ pastel rozetten konuşuyor.
+   *
+   * Sıfırda rozet YOK: sıfır ne müjde ne alarmdır (kısıt #4). "kârda" ve
+   * "zararda" sözcükleri `Satis` sözlüğünden okunuyor — aynı kavramın
+   * karşılığını ikinci bir sözlüğe kopyalamak, ileride birini değiştirip
+   * diğerini unutmanın davetiyesidir.
+   */
+  function karRozeti(tutar: number) {
+    const renk = karDurumu(tutar);
+    if (renk === "notr") return null;
+    return (
+      <DurumRozeti durum={renk} isaretsiz>
+        {renk === "olumlu" ? tSatis("karda") : tSatis("zararda")}
+      </DurumRozeti>
+    );
+  }
+
   function marjRozeti(marj: number | null) {
     const durum = marjDurumu(marj, ortalamaMarj);
     if (durum === null || marj === null) return null;
@@ -855,7 +869,6 @@ export default async function AnaSayfa({
               >
                 <IstatistikKutusu
                   etiket={t("satisAdedi")}
-                  ikon={ShoppingBag}
                   cocuk={
                     <Baglanti href={satisAdresi(seciliKanal ? { kanal: seciliKanal } : {})}>
                       {blok.toplamAdet}
@@ -867,17 +880,9 @@ export default async function AnaSayfa({
                     panelin ciro gösterdiği dört yüzeyin hepsinde aynı
                     (mimar kararı 13.08.2026). */}
                 <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={`flex size-7 shrink-0 items-center justify-center rounded-md ${DURUM_CIPI.notr}`}
-                      aria-hidden="true"
-                    >
-                      <Receipt className="size-4" />
-                    </span>
-                    <span className="text-muted-foreground min-w-0 text-xs break-words">
-                      {t("ciro")}
-                    </span>
-                  </div>
+                  <span className="text-muted-foreground min-w-0 text-xs break-words">
+                    {t("ciro")}
+                  </span>
                   <CiroSunumu
                     boyut="kutu"
                     brut={bicim.para(blok.toplamGelir, blok.paraBirimi)}
@@ -898,22 +903,25 @@ export default async function AnaSayfa({
                     o satışlara süzülmüş listeye götürüyor (İlke #2, #9). */}
                 <IstatistikKutusu
                   etiket={t("kargoDurumu")}
-                  ikon={Truck}
-                  /* Bekleyen kargo YAPILACAK İŞTİR — çip amber yanar.
-                     Bekleyen yoksa nötr: "iş yok" bir başarı değil, sıradan
-                     hâldir; yeşile boyamak her gün kutlama olurdu. */
-                  durum={blok.kargoBekleyenAdet > 0 ? "uyari" : "notr"}
                   cocuk={
                     <Baglanti href={kargoAdresi("verildi")}>
                       {blok.kargoyaVerilenAdet}
                     </Baglanti>
                   }
-                  altNot={
+                  /* BEKLEYEN KARGO YAPILACAK İŞTİR — rozet amber yanar.
+                     Bekleyen yoksa rozet YOK: "iş yok" bir başarı değil,
+                     sıradan hâldir; yeşile boyamak her gün kutlama olurdu. */
+                  rozet={
                     blok.kargoBekleyenAdet > 0 ? (
-                      <Baglanti href={kargoAdresi("bekleyen")}>
-                        {t("kargoBekleyen", { sayi: blok.kargoBekleyenAdet })}
-                      </Baglanti>
-                    ) : (
+                      <DurumRozeti durum="uyari">
+                        <Baglanti href={kargoAdresi("bekleyen")}>
+                          {t("kargoBekleyen", { sayi: blok.kargoBekleyenAdet })}
+                        </Baglanti>
+                      </DurumRozeti>
+                    ) : null
+                  }
+                  altNot={
+                    blok.kargoBekleyenAdet > 0 ? null : (
                       <span className="text-muted-foreground">
                         {t("kargoBekleyenYok")}
                       </span>
@@ -928,9 +936,8 @@ export default async function AnaSayfa({
                   <>
                     <IstatistikKutusu
                       etiket={t("net1")}
-                      ikon={TrendingUp}
-                      durum={karDurumu(blok.toplamNet1)}
                       cocuk={bicim.para(blok.toplamNet1, blok.paraBirimi)}
+                      rozet={karRozeti(blok.toplamNet1)}
                       altNot={
                         <span className="text-muted-foreground">
                           {t("net1Aciklama")}
@@ -942,10 +949,9 @@ export default async function AnaSayfa({
                         rakam budur. Tek "bas" kutusu o yüzden burada. */}
                     <IstatistikKutusu
                       etiket={t("net2")}
-                      ikon={Wallet}
-                      durum={karDurumu(blok.toplamNet2)}
                       bas
                       cocuk={bicim.para(blok.toplamNet2, blok.paraBirimi)}
+                      rozet={karRozeti(blok.toplamNet2)}
                       altNot={
                         <span className="text-muted-foreground">
                           {t("net2Aciklama")}
@@ -963,30 +969,37 @@ export default async function AnaSayfa({
               {karGorunur &&
               (blok.hesaplanamayanAdet > 0 ||
                 blok.hesaplanamayanIadeAdedi > 0) ? (
-                <div className="flex flex-wrap items-center gap-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
-                  <p className="space-y-1 text-sm font-medium text-amber-800 dark:text-amber-300">
-                    {blok.hesaplanamayanAdet > 0 ? (
-                      <span className="flex items-center gap-2">
-                        <TriangleAlert className="size-4 shrink-0" />
-                        {t("hesaplanamayan", { sayi: blok.hesaplanamayanAdet })}
-                      </span>
-                    ) : null}
-                    {blok.hesaplanamayanIadeAdedi > 0 ? (
-                      <span className="flex items-center gap-2">
-                        <TriangleAlert className="size-4 shrink-0" />
-                        {t("hesaplanamayanIade", {
+                /* UYARI KARTI — referanstaki bildirim kartının ta kendisi:
+                   sol şerit + doygun çip + metin + eylem. Önceden burada
+                   `amber-500/10` gibi ham Tailwind sınıfları vardı, yani
+                   palet dışından bir sarı; tek kapı kuralı deliniyordu. */
+                <UyariKarti
+                  durum="uyari"
+                  ikon={TriangleAlert}
+                  baslik={
+                    blok.hesaplanamayanAdet > 0
+                      ? t("hesaplanamayan", { sayi: blok.hesaplanamayanAdet })
+                      : t("hesaplanamayanIade", {
                           sayi: blok.hesaplanamayanIadeAdedi,
-                        })}
-                      </span>
-                    ) : null}
-                  </p>
-                  <Button asChild size="sm" variant="outline" className="h-11 md:h-8">
-                    <Link href="/satislar?kar=eksik">
-                      {t("sorunlulariGor")}
-                      <ArrowRight />
-                    </Link>
-                  </Button>
-                </div>
+                        })
+                  }
+                  altSatir={
+                    blok.hesaplanamayanAdet > 0 &&
+                    blok.hesaplanamayanIadeAdedi > 0
+                      ? t("hesaplanamayanIade", {
+                          sayi: blok.hesaplanamayanIadeAdedi,
+                        })
+                      : null
+                  }
+                  eylem={
+                    <Button asChild size="sm" variant="outline" className="h-11 md:h-8">
+                      <Link href="/satislar?kar=eksik">
+                        {t("sorunlulariGor")}
+                        <ArrowRight />
+                      </Link>
+                    </Button>
+                  }
+                />
               ) : null}
 
               {/* ================= KANAL KIRILIMI — TEK UYGULAMA =================
