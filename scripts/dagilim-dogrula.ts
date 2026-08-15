@@ -265,7 +265,7 @@ console.log("=".repeat(70));
 
 console.log("");
 console.log("=".repeat(70));
-console.log("8) SERMAYE VERİMİ — 'PARAM NEREDE VERİMLİ'");
+console.log("8) SERMAYE VERİMİ — İKİ ORAN, İKİ TABAN");
 console.log("=".repeat(70));
 
 {
@@ -275,53 +275,89 @@ console.log("=".repeat(70));
    * gösteriyordu; sermaye verimi ikinciyi öne çıkarmalı.
    */
   const sirali = sermayeVerimiSiralamasi([
-    { anahtar: "pahali", ad: "Pahalı", sku: "p", net2: 250, maliyetKdvHaric: 10000 },
-    { anahtar: "ucuz", ad: "Ucuz", sku: "u", net2: 200, maliyetKdvHaric: 1000 },
+    { anahtar: "pahali", ad: "Pahalı", sku: "p", net2: 250, maliyetKdvHaric: 10000, maliyetKdvDahil: 12000 },
+    { anahtar: "ucuz", ad: "Ucuz", sku: "u", net2: 200, maliyetKdvHaric: 1000, maliyetKdvDahil: 1200 },
   ]);
   kontrol(
     "1.000₺'den 200₺ kazandıran ÜSTTE (10.000₺'den 250₺ kazandırandan önce)",
     sirali[0].ad === "Ucuz",
     sirali.map((s2) => [s2.ad, s2.verim]),
   );
-  kontrol("  ...verimi %20", sirali[0].verim === 20, sirali[0].verim);
-  kontrol("  ...pahalının verimi %2,5", sirali[1].verim === 2.5, sirali[1].verim);
+  kontrol("  ...ANA oran (KDV hariç) %20", sirali[0].verim === 20, sirali[0].verim);
+  kontrol("  ...pahalının ana oranı %2,5", sirali[1].verim === 2.5, sirali[1].verim);
 
   /**
-   * ⚠ KDV AYRIŞTIRMASI PAYDADA: maliyet KDV DÂHİL saklanıyor. Atlanırsa
-   * oran sessizce DÜŞÜK çıkar — sözleşmenin adıyla işaretlediği tuzak.
-   * Burada payda KDV DÂHİL verilirse oranın %20 değil %16,7 çıktığı,
-   * yani farkın gerçek olduğu gösteriliyor.
+   * ⚠ İKİ TABAN, İKİ SORU. Mimarın örneği: NET-2 250, maliyet 1.200 (KDV
+   * dâhil) / 1.000 (hariç) → sermaye verimi %25, nakit verimi %20,8.
+   * Nakit oranı HEP daha düşüktür: payda büyük.
    */
-  const dahil = sermayeVerimiSiralamasi([
-    { anahtar: "a", ad: "A", sku: "a", net2: 200, maliyetKdvHaric: 1200 },
+  const iki = sermayeVerimiSiralamasi([
+    { anahtar: "a", ad: "A", sku: "a", net2: 250, maliyetKdvHaric: 1000, maliyetKdvDahil: 1200 },
+  ])[0];
+  kontrol("ANA oran KDV HARİÇ paydadan: %25", iki.verim === 25, iki.verim);
+  kontrol(
+    "NAKİT oranı KDV DAHİL paydadan: %20,8",
+    Math.abs((iki.nakitVerimi ?? 0) - 20.8333) < 0.01,
+    iki.nakitVerimi,
+  );
+  kontrol(
+    "  ...nakit oranı ana orandan DÜŞÜK (payda daha büyük)",
+    (iki.nakitVerimi ?? 0) < (iki.verim ?? 0),
+  );
+  kontrol(
+    "  ...iki oran BİRBİRİNE eşit değil (tabanlar karışmamış)",
+    iki.verim !== iki.nakitVerimi,
+  );
+
+  /**
+   * ⚠ ASIL KİLİT: SIRALAMA ANA ORANDAN. Nakit orandan sıralamak listeyi
+   * sessizce BAŞKA bir soruya göre dizerdi. Burada iki ürünün ana oran
+   * sırası ile nakit oran sırası BİLEREK ters kuruluyor.
+   */
+  const ters = sermayeVerimiSiralamasi([
+    // Ana oran %10, nakit %9,09
+    { anahtar: "x", ad: "X", sku: "x", net2: 100, maliyetKdvHaric: 1000, maliyetKdvDahil: 1100 },
+    // Ana oran %12, nakit %10 → ana oranda ÜSTTE, nakitte de üstte olmamalı diye
+    // paydası şişirildi: nakit oranı X'ten DÜŞÜK olacak şekilde.
+    { anahtar: "y", ad: "Y", sku: "y", net2: 120, maliyetKdvHaric: 1000, maliyetKdvDahil: 1500 },
   ]);
   kontrol(
-    "KDV dâhil payda %16,7 verir — ayrıştırma atlanırsa oran DÜŞER",
-    Math.abs((dahil[0].verim ?? 0) - 16.6667) < 0.01,
-    dahil[0].verim,
+    "sıralama ANA orandan: Y üstte (%12 > %10)",
+    ters[0].ad === "Y",
+    ters.map((r) => [r.ad, r.verim, r.nakitVerimi]),
+  );
+  kontrol(
+    "  ...oysa NAKİT oranda X üstte olurdu (%9,09 > %8) — sıralama değişmedi",
+    (ters[0].nakitVerimi ?? 0) < (ters[1].nakitVerimi ?? 0),
+    ters.map((r) => r.nakitVerimi),
   );
 
   /** MALİYETİ BİLİNMEYEN ÜRÜN ATILMAZ, SONA KONUR. */
   const eksik = sermayeVerimiSiralamasi([
-    { anahtar: "yok", ad: "Maliyetsiz", sku: "y", net2: 500, maliyetKdvHaric: null },
-    { anahtar: "var", ad: "Normal", sku: "v", net2: 100, maliyetKdvHaric: 1000 },
+    { anahtar: "yok", ad: "Maliyetsiz", sku: "y", net2: 500, maliyetKdvHaric: null, maliyetKdvDahil: null },
+    { anahtar: "var", ad: "Normal", sku: "v", net2: 100, maliyetKdvHaric: 1000, maliyetKdvDahil: 1200 },
   ]);
   kontrol("maliyeti bilinmeyen ürün listeden ATILMIYOR", eksik.length === 2);
   kontrol("  ...SONA konuyor", eksik[1].ad === "Maliyetsiz", eksik.map((e) => e.ad));
-  kontrol("  ...oranı null (sıfır SAYILMIYOR)", eksik[1].verim === null);
+  kontrol("  ...her iki oranı da null (sıfır SAYILMIYOR)",
+    eksik[1].verim === null && eksik[1].nakitVerimi === null);
 
   /** Zararda verim EKSİ çıkar; mutlak değere çevrilmez. */
   const zarar = sermayeVerimiSiralamasi([
-    { anahtar: "z", ad: "Z", sku: "z", net2: -100, maliyetKdvHaric: 1000 },
+    { anahtar: "z", ad: "Z", sku: "z", net2: -100, maliyetKdvHaric: 1000, maliyetKdvDahil: 1200 },
   ]);
-  kontrol("zararda verim EKSİ (−%10)", zarar[0].verim === -10, zarar[0].verim);
+  kontrol("zararda ana oran EKSİ (−%10)", zarar[0].verim === -10, zarar[0].verim);
+  kontrol("  ...nakit oranı da EKSİ", (zarar[0].nakitVerimi ?? 0) < 0);
 
   /** Maliyet sıfırsa oran hesaplanamaz — bölme yapılmaz. */
   const sifir = sermayeVerimiSiralamasi([
-    { anahtar: "s", ad: "S", sku: "s", net2: 100, maliyetKdvHaric: 0 },
+    { anahtar: "s", ad: "S", sku: "s", net2: 100, maliyetKdvHaric: 0, maliyetKdvDahil: 0 },
   ]);
-  kontrol("maliyet 0 ise verim null (sonsuz DEĞİL)", sifir[0].verim === null);
+  kontrol("maliyet 0 ise iki oran da null (sonsuz DEĞİL)",
+    sifir[0].verim === null && sifir[0].nakitVerimi === null);
 }
+
+
 
 console.log("");
 console.log("=".repeat(70));

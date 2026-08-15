@@ -80,22 +80,49 @@ export function kutuOranlari(girdi: {
  * ============================================================================
  */
 
+/**
+ * ── İKİ ORAN, İKİ KARAR EKSENİ (mimar kararı 15.08.2026) ────────────────
+ *
+ * ANA ORAN — NET-2 / maliyet KDV HARİÇ → "sermaye verimi"
+ *   Malın KENDİSİNDEN kazanç. Pay ile payda aynı tabanda: NET-2'nin içinde
+ *   alışta ödenen KDV zaten geri verilmiş durumda (`lib/kar.ts`:
+ *   `net2 = net1 − (satisKdv − alisKdv − komisyonKdv)`). Paydaya KDV dahil
+ *   koymak iki farklı taban karıştırır ve oranı yapay olarak DÜŞÜRÜR.
+ *   SIRALAMA BUNDAN YAPILIR.
+ *
+ * İKİNCİL ORAN — NET-2 / maliyet KDV DAHİL → "bağlı nakit verimi"
+ *   Kasadan çıkan paranın verimi. Kullanıcının işi faizsiz kart süresine
+ *   dayalı: kartla ödenen 1.200 ₺'nin TAMAMI bağlı kalır, 200 ₺ KDV aylar
+ *   sonra beyannameyle geri gelir. "Ekonomik kâr" ile "nakit bağlılığı"
+ *   iki ayrı gerçek; tek rakam yanıltır — "en çok kâr eden vs sermaye
+ *   verimi" ayrımının aynısı.
+ *
+ * HİYERARŞİ ŞART: ana oran baskın, nakit oranı küçük ve ikincil. Yoksa asıl
+ * soru ("param nerede verimli") bulanır.
+ */
 export type SermayeGirdisi = {
   anahtar: string;
   ad: string;
   sku: string;
   net2: number;
-  /** Ürünün KDV HARİÇ maliyeti. Bilinmiyorsa null. */
+  /** KDV HARİÇ maliyet — ANA oranın paydası. Bilinmiyorsa null. */
   maliyetKdvHaric: number | null;
+  /** KDV DAHİL maliyet — nakit oranının paydası. Bilinmiyorsa null. */
+  maliyetKdvDahil: number | null;
 };
 
 export type SermayeSatiri = SermayeGirdisi & {
-  /** NET-2 / maliyet (%). Maliyet bilinmiyorsa null. */
+  /** ANA: NET-2 / maliyet (KDV hariç), %. Sıralama ölçütü. */
   verim: number | null;
+  /** İKİNCİL: NET-2 / maliyet (KDV dahil), %. */
+  nakitVerimi: number | null;
 };
 
 /**
- * Ürünleri sermaye verimine göre AZALAN sıralar.
+ * Ürünleri ANA orana (KDV hariç) göre AZALAN sıralar.
+ *
+ * ⚠ SIRALAMA NAKİT ORANDAN YAPILMAZ. İkisi çok yakın ama aynı değil; nakit
+ * orandan sıralamak listeyi sessizce başka bir soruya göre dizerdi.
  *
  * MALİYETİ BİLİNMEYEN ÜRÜN LİSTEDEN ATILMAZ, SONA KONUR ve oranı `null`
  * kalır. Atılsaydı kullanıcı "bu ürün nerede" diye sorardı ve rakam sessizce
@@ -109,6 +136,8 @@ export function sermayeVerimiSiralamasi(
       ...g,
       verim:
         g.maliyetKdvHaric === null ? null : karOrani(g.net2, g.maliyetKdvHaric),
+      nakitVerimi:
+        g.maliyetKdvDahil === null ? null : karOrani(g.net2, g.maliyetKdvDahil),
     }))
     .sort((a, b) => {
       if (a.verim === null && b.verim === null) return 0;
