@@ -399,8 +399,12 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         **MİMARİ:** kural TEK saf fonksiyonda — `src/lib/karsilastirma.ts`.
         Panel de rapor da onu çağırır. `karsilastirma:dogrula` (46 kontrol).
 
-        **KALAN:** panelde karşılaştırma henüz yok; 2a ancak panele de
-        uygulanınca kapanır.
+        **KALAN — PANEL EKSİĞİ 2c İLE AYNI TURDA GELİR** (mimar kararı
+        15.08.2026, ayrı tur DEĞİL). Gerekçe: `lib/karsilastirma.ts` tek
+        kaynak olduğu için panele bağlamak onu ÇAĞIRMAK demek — yeni mantık
+        yok. 2c de panel işi. Tek deploy, tek test.
+        _O panel turunda sıra: önce 2c (Pareto), sonra 2a'nın panel ayağı;
+        ama İKİSİ TEK PAKETTE kapanır._
       - ✅ **İKİ KÂR ORANI — YAPILDI 15.08.2026** (`c54c8af`).
         Tanımlar 14.08.2026'da mühürlendi, **payda 15.08.2026'da
         değiştirilmedi ama PAY kuralı değişti** (aşağıya bakın).
