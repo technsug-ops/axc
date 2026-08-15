@@ -578,6 +578,60 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         **Eşik EKRANDA GÖRÜNÜR** ("%10 altı" yazılı) — uydurma bir sabit
         gibi durmasın.
 
+- [ ] **DESTEK / TALEP MODÜLÜ — FAZ 1**
+      _Mimar sözleşmesi 15.08.2026._ **SIRA: Panel Aşama 3 bitmeden
+      BAŞLANMAZ** (zarar/ölü sermaye → uyarı merkezi Faz 1 → destek).
+      _Gerekçe: AXCALI eksik/taleplerini Telegram'dan dağınık iletiyor,
+      sürdürülebilir değil. Telegram kaosu gerçek ama bir paket bitmeden
+      diğeri başlamaz._
+
+      **KAPSAM:**
+      - Her ekranda erişilebilir **"Bildir"** düğmesi (üst çubukta, kalıcı).
+        Tür: **HATA / İSTEK**.
+      - Form: başlık + açıklama + ekran görüntüsü (opsiyonel, çoklu) +
+        **OTOMATİK yakalanan**: sayfa (URL/route), tarayıcı (user-agent),
+        kullanıcı, tarih/saat (Europe/Istanbul).
+      - Ekran görüntüsü **MEVCUT `Attachment` altyapısı** (RMA'dan): Blob,
+        jpeg/png/webp, boyut sınırı, N ek/kayıt. **Yeni tablo değil**,
+        polimorfik tipe `TALEP` eklenir.
+      - Liste ekranı (`/talepler`): durum akışı
+        **AÇIK → İNCELENİYOR → YAPILIYOR → ÇÖZÜLDÜ → KAPANDI**
+        (+ REDDEDİLDİ / ERTELENDİ). Tür ve durum süzgeci.
+      - **AXCALI kendi bildirdiğinin DURUMUNU görür** ("aldık / yapılıyor /
+        çözüldü") — kör kutuya atmıyor, takip edebiliyor.
+      - **DIŞ BİLDİRİM YOK** (Telegram/e-posta). Geliştirici Selliora'ya
+        girip bakar. _Faz 2'de eklenebilir; mimari hazır kalsın._
+
+      **MİGRATION — SALT-EKLEME, SQL ONAYA GELİR:**
+      yeni tablo `Talep` (id, tür, başlık, açıklama, durum, oluşturan,
+      sayfa, userAgent, oluşturulma, güncellenme) + `Attachment` tipine
+      `TALEP`. **Harf bekçisi:** tablo adı büyük harfle başlar.
+
+      **YETKİ:**
+      - **"Bildir" düğmesi HERKESE AÇIK** — AXCALI operasyon rolü de
+        bildirebilmeli.
+      - Talep **LİSTESİ ve durum değiştirme** = yeni izin **`destek.yonet`**
+        (geliştirici/sahip rolünde). AXCALI kendi taleplerini görür ama
+        **durumunu DEĞİŞTİREMEZ**.
+      - ⚠ Yeni izin: anahtar `lib/yetki/izinler.ts`'e **VE**
+        `prisma/seed-yetki.ts` → `SONRADAN_DOGAN` listesine yazılır,
+        deploy sonrası `npm run canli:yetki` koşulur.
+
+      **İLKELER:**
+      - Durum değişikliği ledger DEĞİL ama **iz kalır**: kim, ne zaman,
+        hangi duruma aldı (audit).
+      - **Otomatik teknik bilgi "sessiz varsayım" olmaz:** ne yakalandığı
+        formda KULLANICIYA GÖRÜNÜR. Gizli veri toplama izlenimi olmasın.
+
+      **TEST — `destek:dogrula`:** otomatik alanların doğru yakalandığı ·
+      durum akışının İZİNLİ geçişleri (ve izinsizin reddedildiği) · yetki
+      ayrımı (AXCALI durum değiştiremez) · ek yükleme sınırları.
+
+- [ ] **DESTEK / TALEP MODÜLÜ — FAZ 2**
+      _Faz 1 kapanmadan başlanmaz._
+      Öncelik/kategori · dış bildirim (Telegram bot / e-posta) ·
+      geliştirici notu ve yanıtı (AXCALI ile yazışma) · çözüldü bildirimi.
+
 ## Sonraki uygun pakette
 
 - [ ] **PANEL KANAL KARTLARI AYARLANABİLİR OLSUN** — _Kullanıcı isteği
