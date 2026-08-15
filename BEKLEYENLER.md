@@ -18,11 +18,16 @@ yeni yetenek ekleniyor. Bu ayrım kayıtta dursun — "yarım kalan iş" ile
 
 Mimar onaylı sıra, **paket ADIYLA**:
 **~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ · ~~AŞAMA 3 PAKET 1~~ ✓ →
-PANEL AŞAMA 3 PAKET 2 → GEÇMİŞ VERİ.**
+~~PANEL AŞAMA 3 PAKET 2~~ ✓ → UYARI MERKEZİ FAZ 1 → DESTEK MODÜLÜ →
+GEÇMİŞ VERİ.**
 
-_Sıradaki: **Panel Aşama 3 Paket 2** — karşılaştırma yüzdeleri, iki kâr
-oranı (tanımlar mühürlü), **sermaye verimi** sekmesi, zarara giden
-satışlar. Renk sistemi bu pakette kalan sayfalara yayılır._
+_Sıradaki: **Uyarı merkezi Faz 1** — dört kırmızı uyarı (nakit açığı,
+maliyetsiz stok, kârı hesaplanamayan satış, geciken hakediş), üst çubukta
+çan. Her uyarı `lib/uyari/*.ts` altında saf fonksiyon; panel görev kutusu
+ile çan aynı hesabı çağırır, kopya yasak._
+
+_Renk sistemi tüm uygulamaya uygulandı (`6a11ba3`) ve ham Tailwind renk
+sınıfı `panel:dogrula` ile yasaklandı — 288 kaynak dosyası taranıyor._
 
 > **VERİ BEKLEYEN GÖZLE DOĞRULAMALAR** — kod işi değil, canlıda o veri
 > doğduğunda bakılacak. Kapanmamış iş sayılmaz, unutulmasın diye burada:
@@ -326,7 +331,23 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       - oranı boş kanal SKU → `/kanal-sku?eksik=1`
       - **Her sayı 0 ise satır "temiz ✓" gösterir, GİZLENMEZ (açık sıfır).**
 
-- [ ] **PANEL AŞAMA 3 — PAKET 2: RAKAM YARGIYA DÖNSÜN**
+- [x] ~~**PANEL AŞAMA 3 — PAKET 2: RAKAM YARGIYA DÖNSÜN**~~ ✓ **15.08.2026
+      — PAKET TAMAMEN KAPANDI, MİMAR ONAYLI.** Dört maddenin dördü de
+      Halil testinden geçti:
+      **2c Pareto/dağılım** (`f944ef3`, D1–D13) ·
+      **2a karşılaştırma — rapor + panel** (`dfc18b6` + `bd89176`, K1–K12) ·
+      **Sermaye verimi, iki oran** (`02a3a5c` + `7a00812`, S1–S9) ·
+      **2b zarara giden satışlar** (`8bff858`, Z1–Z6).
+
+      _Pakette çıkan ve düzeltilen üç sessiz hata:_ `paylariDenkle` hiç
+      satış olmayan dönemde SAHTE %100 üretiyordu · panel sorgu aralığı
+      kıyas penceresini kapsamıyordu (veri yokluğu değil SORGU yokluğu) ·
+      doğrulama betiğinin kapanış bloğu kesilip çıkış kodu 0'a düşmüştü
+      (yalancı yeşil).
+
+      _Sıradaki: uyarı merkezi Faz 1._
+
+      _Özgün kapsam:_
       _Paket 1 Halil testini geçmeden yazılmaz._
 
       **ÖNCELİK SIRASI — KULLANICI BELİRLEDİ 15.08.2026.** Paket 2 içinde
@@ -524,6 +545,17 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       - _Not: ürün bazlı marj 14.08.2026'da Aşama 2'ye eklendi
         (`marjYuzdesi`); buradaki iş KANAL ve DÖNEM seviyesidir._
 
+      ✅ **2b KAPANDI 15.08.2026** (`8bff858`) — **HALİL TESTİ GEÇTİ
+      (Z1–Z6, gerçek cihaz + canlı), MİMAR ONAYLI.**
+      Dağılım sekmesinde "N satış zararda · −₺X" sayacı; tıklayınca
+      `/satislar?kar=zarar`. Sıfırsa gizlenmiyor, "temiz" yazıyor.
+      **Ölçüt TEK YERDE** (`zararOzeti`) ve süzgeç AYNI iki şartı arıyor
+      (`CALCULATED` **ve** `net2 < 0`) — sayı ile liste birebir tutuyor.
+      **Kârı hesaplanamayan satış zarar SAYILMIYOR:** zarar bir hükümdür,
+      hesabı bitmemiş satış hakkında hüküm verilmez.
+      `dagilim:dogrula` 58 → 66.
+
+      _Özgün kapsam:_
       **2b. ZARARA GİDEN SATIŞLAR.** "NET-2'si eksi olan N satış" sayacı →
       tıkla → o satışlar süzülü liste (en çok götüren üstte). Dönem
       süzgecine bağlı.
@@ -648,6 +680,55 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       _Faz 1 kapanmadan başlanmaz._
       Öncelik/kategori · dış bildirim (Telegram bot / e-posta) ·
       geliştirici notu ve yanıtı (AXCALI ile yazışma) · çözüldü bildirimi.
+
+## MELONTİK CASE — AÇIK DOSYA, BÜYÜYOR
+
+_Mimar kararı 15.08.2026._ **SIRA: Panel Aşama 3 + destek modülünden SONRA.**
+Bu başlık **kapanmaz**; kullanıcı bilgi verdikçe genişler.
+
+**AMAÇ:** Melontik'in (rakip ticari araç) özelliklerini Selliora'ya
+taşımak — ama **KLON DEĞİL.** Alınan şey ekranın kendisi değil, o ekranın
+cevapladığı SORU. Selliora'nın odağı **kâr optimizasyonu**: "hangi fiyattan
+satarsam ne kalır" sorusu, rakip aracın çözdüğü başka her şeyden önce gelir.
+
+**DOĞRULANMIŞ TEMEL — bu case'in dayanağı budur:**
+Selliora'nın kâr motoru (NET-2) Melontik ile **BİREBİR tutuyor** (aynı
+sipariş, 15.08.2026): satış, komisyon, stopaj, hizmet bedeli, maliyet ve
+net KDV mantığı aynı. Tek fark kargo GİRDİSİ (bizde manuel tahmin, onlarda
+API) — formül değil. **Yani optimizasyon katmanı sağlam bir kâr hesabının
+üstüne kurulacak.** Bu doğrulama olmasaydı, optimizasyon yanlış bir
+temelin üstünde büyürdü.
+
+### 1. FİYAT / KOMİSYON SİMÜLASYONU — ilk hedef
+
+Netleşen ilk parça. **Salı tarifesi** (Trendyol komisyonlarını Salı,
+Hepsiburada Çarşamba günceller — bkz. anayasa) üzerinden, her fiyat aralığı
+için **NET-2**'yi hesaplar. Payda uydurma değil: **GERÇEK FIFO maliyeti**
+kullanılır.
+
+- Dosya yapısı çözüldü; örnek `veri/ozel/` altında (ticari veri, **depoya
+  ASLA girmez**).
+- Kâr motoruna YENİ bir hesap yazılmaz: mevcut `lib/kar.ts` farklı fiyat
+  varsayımlarıyla çağrılır. **İki kâr tanımı doğmamalı** — bu oturumda
+  `PARTIAL`/`PARTIALLY_RECEIVED` hatası tam olarak iki kopyadan çıkmıştı.
+- Komisyon oranı **ChannelSku seviyesinde** ve satışta snapshot'lanıyor;
+  simülasyon **o günkü** oranı kullanır ve hangi tarih/tarife ile hesapladığını
+  EKRANDA yazar (sessiz varsayım yasağı).
+
+### Kullanıcı öncelik sırası (TASLAK — ek bilgiyle netleşecek)
+
+1. **Fiyat / komisyon simülasyonu** ← ilk hedef, yukarıda
+2. Reklam analizi
+3. API entegrasyonu _(Faz 4'ün 1. maddesiyle örtüşüyor; orada kargo da
+   gerçek tutara bağlanacak)_
+4. Kampanya aracı
+
+_2–4 arası şimdilik BAŞLIK; kapsamları kullanıcının vereceği bilgiyle
+yazılacak. Erken özellik yasağı burada da geçerli: bilgi gelmeden kod
+yazılmaz._
+
+**ANAYASA HATIRLATMASI:** rakip aracın adı bir REFERANSTIR, veri bile
+değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.**
 
 ## Sonraki uygun pakette
 
