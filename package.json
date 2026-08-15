@@ -29,6 +29,7 @@
     "komisyon:dogrula": "tsx scripts/komisyon-dogrula.ts",
     "komisyon:prova": "tsx scripts/komisyon-prova.ts",
     "panel:dogrula": "tsx scripts/panel-dogrula.ts",
+    "arama:dogrula": "tsx scripts/arama-dogrula.ts",
     "suzgec:dogrula": "tsx scripts/suzgec-dogrula.ts",
     "rma:dogrula": "tsx scripts/rma-dogrula.ts",
     "rma:prova": "tsx scripts/rma-prova.ts",

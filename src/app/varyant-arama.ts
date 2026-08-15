@@ -1,7 +1,13 @@
 "use server";
 
-import { yetkiIste } from "@/lib/yetki";
 import { prisma } from "@/lib/prisma";
+import { aramaKosulu, kodKosulu } from "@/lib/varyant-arama-kurali";
+import {
+  VARYANT_SECIMI,
+  varyantiOzetle,
+  type VaryantSonucu,
+} from "@/lib/varyant-ozet";
+import { yetkiIste } from "@/lib/yetki";
 
 /**
  * ============================================================================
@@ -18,46 +24,7 @@ import { prisma } from "@/lib/prisma";
  * ============================================================================
  */
 
-/** Formlarda ve barkod aramasında kullanılan hafif varyant özeti. */
-export type VaryantSonucu = {
-  id: string;
-  urunAdi: string;
-  marka: string | null;
-  varyantAdi: string | null;
-  sku: string;
-  companySku: string;
-  barcode: string | null;
-};
-
-const VARYANT_SECIMI = {
-  id: true,
-  sku: true,
-  companySku: true,
-  barcode: true,
-  name: true,
-  product: { select: { name: true, brand: true } },
-} as const;
-
-function varyantiOzetle(v: {
-  id: string;
-  sku: string;
-  companySku: string;
-  barcode: string | null;
-  name: string | null;
-  product: { name: string; brand: string | null };
-}): VaryantSonucu {
-  return {
-    id: v.id,
-    urunAdi: v.product.name,
-    marka: v.product.brand,
-    varyantAdi: v.name,
-    sku: v.sku,
-    companySku: v.companySku,
-    barcode: v.barcode,
-  };
-}
-
-/** Serbest metin araması: ürün adı, SKU, Firma SKU veya barkod. */
+/** Serbest metin araması: ürün adı ve DÖRT kod rolü (bkz. varyant-arama-kurali). */
 export async function varyantAra(sorgu: string): Promise<VaryantSonucu[]> {
   await yetkiIste("urun.gor");
 
@@ -67,12 +34,7 @@ export async function varyantAra(sorgu: string): Promise<VaryantSonucu[]> {
   const varyantlar = await prisma.productVariant.findMany({
     where: {
       isActive: true,
-      OR: [
-        { sku: { contains: q } },
-        { companySku: { contains: q } },
-        { barcode: { contains: q } },
-        { product: { name: { contains: q } } },
-      ],
+      OR: aramaKosulu(q),
     },
     select: VARYANT_SECIMI,
     take: 20,
@@ -98,7 +60,7 @@ export async function varyantKodlaBul(
   const varyant = await prisma.productVariant.findFirst({
     where: {
       isActive: true,
-      OR: [{ barcode: temiz }, { companySku: temiz }, { sku: temiz }],
+      OR: kodKosulu(temiz),
     },
     select: VARYANT_SECIMI,
   });

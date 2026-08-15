@@ -26,8 +26,8 @@ import { useBicim } from "@/lib/bicim-istemci";
 import {
   varyantAra,
   varyantKodlaBul,
-  type VaryantSonucu,
 } from "../varyant-arama";
+import { kodDizisi, type VaryantSonucu } from "@/lib/varyant-ozet";
 import { type AlimDurumu } from "./actions";
 import {
   TedarikciSecimi,
@@ -496,7 +496,7 @@ export function AlimFormu({
                   <AramaSonucuSatiri
                     key={varyant.id}
                     baslik={varyantEtiketi(varyant)}
-                    kodlar={`${varyant.sku} · ${varyant.companySku}${varyant.barcode ? ` · ${varyant.barcode}` : ""}`}
+                    kodlar={kodDizisi(varyant)}
                     ekleEtiketi={ortak("ekle")}
                     onEkle={() => {
                       kalemEkle(varyant, 1);

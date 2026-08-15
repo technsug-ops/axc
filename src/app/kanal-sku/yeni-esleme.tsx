@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/select";
 import { formGonderimi } from "@/lib/form-gonderimi";
 
-import { varyantAra, type VaryantSonucu } from "../varyant-arama";
+import { varyantAra } from "../varyant-arama";
+import type { VaryantSonucu } from "@/lib/varyant-ozet";
 import { kanalSkuEkle, type KanalSkuDurumu } from "./actions";
 
 /**

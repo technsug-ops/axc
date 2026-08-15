@@ -3,6 +3,7 @@ import { sayfaIzni } from "@/lib/yetki";
 import { GeriBaglanti } from "@/components/baglanti";
 import { tarihGirdisi } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
+import { VARYANT_SECIMI, varyantiOzetle } from "@/lib/varyant-ozet";
 
 import { alimOlustur } from "../actions";
 import {
@@ -60,29 +61,14 @@ export default async function YeniAlimSayfasi({
       varyantId
         ? prisma.productVariant.findFirst({
             where: { id: varyantId, isActive: true },
-            select: {
-              id: true,
-              sku: true,
-              companySku: true,
-              barcode: true,
-              name: true,
-              product: { select: { name: true, brand: true } },
-            },
+            select: VARYANT_SECIMI,
           })
         : Promise.resolve(null),
     ]);
 
-  const hazirVaryant = hazirKayit
-    ? {
-        id: hazirKayit.id,
-        urunAdi: hazirKayit.product.name,
-        marka: hazirKayit.product.brand,
-        varyantAdi: hazirKayit.name,
-        sku: hazirKayit.sku,
-        companySku: hazirKayit.companySku,
-        barcode: hazirKayit.barcode,
-      }
-    : null;
+  // Elle yazılmış ikinci bir kopya DEĞİL: arama ile aynı seçim ve aynı
+  // dönüşüm. İki kopya olduğunda biri güncellenip diğeri unutuluyordu.
+  const hazirVaryant = hazirKayit ? varyantiOzetle(hazirKayit) : null;
 
   const hesaplar: HesapSecenegi[] = hesapKayitlari.map((h) => ({
     id: h.id,
