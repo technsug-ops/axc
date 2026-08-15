@@ -15,6 +15,7 @@
     "iade:dogrula": "tsx scripts/iade-dogrula.ts",
     "rapor:dogrula": "tsx scripts/rapor-dogrula.ts",
     "ice-aktarma:dogrula": "tsx scripts/ice-aktarma-dogrula.ts",
+    "kart-odeme:dogrula": "tsx scripts/kart-odeme-dogrula.ts",
     "kart:dogrula": "tsx scripts/kart-dogrula.ts",
     "baglanti:test": "tsx scripts/baglanti-testi.ts",
     "kullanici:olustur": "tsx scripts/kullanici-olustur.ts",
