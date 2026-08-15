@@ -1602,6 +1602,31 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
 
   /**
+   * ÖLÇÜ SİSTEMİ — tasarım referansındaki köşe yarıçapları.
+   *
+   * Referans (Site Sayfaları.dc.html): kart 9px, buton ve menü satırı 7px,
+   * rozet 5-6px. Bunlar TEK değerden türüyor; `--radius` kayarsa üçü birden
+   * kayar ve ekran referanstan sessizce uzaklaşır.
+   */
+  const yaricap = /--radius:\s*([0-9.]+)rem/.exec(acikTema);
+  const yaricapPx = yaricap ? Number(yaricap[1]) * 16 : NaN;
+  kontrol(
+    "kart yarıçapı referanstaki 9px (tek kaynaktan türüyor)",
+    Math.abs(yaricapPx - 9) < 0.5,
+  );
+  kontrol(
+    "  ...kart bileşeni lg yarıçapı kullanıyor (xl referanstan yuvarlaktı)",
+    !readFileSync("src/components/ui/card.tsx", "utf8").includes("rounded-xl"),
+  );
+  kontrol(
+    "  ...rozet referans ölçüsünde (11px yazı, küçük yarıçap)",
+    (() => {
+      const rozet = readFileSync("src/components/durum-rozeti.tsx", "utf8");
+      return rozet.includes("text-[11px]") && rozet.includes("rounded-sm");
+    })(),
+  );
+
+  /**
    * PALET TEK KAPIDAN GEÇER. Ekranlar ham renk kodu yazmamalı; yazarsa
    * palet değiştiğinde bir yer geride kalır ve renkler ayrışır.
    */
