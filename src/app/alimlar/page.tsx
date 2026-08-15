@@ -9,6 +9,7 @@ import { AlimIptalButonu } from "./iptal-butonu";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
+import { UzunAd } from "@/components/uzun-ad";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { DurumRozeti } from "@/components/durum-rozeti";
@@ -64,6 +65,8 @@ export default async function AlimlarSayfasi({
   const durumEtiketleri = await alimDurumEtiketleri();
   const t = await getTranslations("Alim");
   const ortak = await getTranslations("Ortak");
+  // "+N kalem" cümlesi satış sözlüğünde; aynı cümle iki sözlükte durmasın.
+  const tSatis = await getTranslations("Satis");
 
   // EKRAN VE EXCEL AYNI KOŞULU KULLANIR (bkz. lib/liste-suzgeci.ts).
   const { kosul, pencere } = await alimKosulu(p);
@@ -95,6 +98,20 @@ export default async function AlimlarSayfasi({
         include: {
           // Duzenleme/iptal kurallari icin: mal kabul yapilmis mi?
           stockMovements: { select: { quantityDelta: true } },
+          /**
+           * ÜRÜN ADI LİSTEDE GÖRÜNÜR (kullanıcı isteği 15.08.2026:
+           * "alınan ve kabulü beklenen malların isimleri de yazılsın").
+           * "1 kalem" ne alındığını söylemiyordu; mal kabul sırası gelen
+           * alımın NE olduğunu görmek için detaya girmek gerekiyordu
+           * (İlke #3 ve #9).
+           */
+          variant: {
+            select: {
+              name: true,
+              sku: true,
+              product: { select: { name: true } },
+            },
+          },
         },
       },
       creditCard: { select: { label: true, last4: true } },
@@ -155,6 +172,23 @@ export default async function AlimlarSayfasi({
   const aralikMetni = pencere.pencere
     ? `${bicim.tarih(pencere.pencere.baslangic)} — ${bicim.tarih(pencere.pencere.sonGun)}`
     : "";
+
+  /**
+   * Satırda "ne alındı" özeti: tek kalemse ürün adı, çoksa "+N kalem".
+   * `/satislar`daki `urunOzeti` ile AYNI kalıp — aynı bilgi iki ekranda
+   * aynı biçimde görünsün (İlke #10). Sözlük anahtarı da oradan okunuyor;
+   * aynı cümleyi ikinci bir sözlüğe kopyalamak, birini değiştirip diğerini
+   * unutmanın davetiyesidir.
+   */
+  function urunOzeti(alim: (typeof alimlar)[number]) {
+    if (alim.items.length === 0) return "—";
+    const ilk = alim.items[0];
+    const ad = ilk.variant.name
+      ? `${ilk.variant.product.name} — ${ilk.variant.name}`
+      : ilk.variant.product.name;
+    if (alim.items.length === 1) return ad;
+    return tSatis("digerKalemler", { urun: ad, sayi: alim.items.length - 1 });
+  }
 
   function toplamMetni(alim: (typeof alimlar)[number]) {
     const toplamlar = kalemToplamlari(alim.items);
@@ -274,6 +308,7 @@ export default async function AlimlarSayfasi({
                   <TableHead>{t("alimKoduVeSiparis")}</TableHead>
                   <TableHead>{ortak("tarih")}</TableHead>
                   <TableHead>{ortak("kanalHesabi")}</TableHead>
+                  <TableHead>{ortak("urun")}</TableHead>
                   {/* Kalem sayısı tutarın altında — ayrı sütun 50px yiyordu. */}
                   <TableHead>{ortak("toplam")}</TableHead>
                   <TableHead>{ortak("kart")}</TableHead>
@@ -331,6 +366,10 @@ export default async function AlimlarSayfasi({
                         ustIpucu={alim.channelAccount?.channel.name}
                         altIpucu={alim.channelAccount?.name}
                       />
+                    </TableCell>
+                    {/* ÜRÜN — uzun adlar sarmalı, tablo genişlemesin. */}
+                    <TableCell className="min-w-0 max-w-[22rem]">
+                      <UzunAd metin={urunOzeti(alim)} />
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       <IkiSatir
@@ -415,6 +454,11 @@ export default async function AlimlarSayfasi({
                       </DurumRozeti>
                     ),
                   },
+                  /* ÜRÜN TELEFONDA DA GÖRÜNÜR (İlke #8, #3). Mobilde
+                     öncelik sırası ad > kod olduğu için kalem sayısından
+                     ÖNCE geliyor: "ne alındı" sorusu "kaç kalem"den
+                     önemlidir. */
+                  { etiket: ortak("urun"), deger: urunOzeti(alim) },
                   { etiket: ortak("kalem"), deger: alim.items.length },
                   { etiket: ortak("toplam"), deger: toplamMetni(alim) },
                   {
