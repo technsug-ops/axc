@@ -57,6 +57,12 @@ import {
   urunlereTopla,
   type KalemGirdisi,
 } from "@/lib/panel-listeler";
+import {
+  KIYAS_ANAHTARLARI,
+  degisim,
+  kiyasCoz,
+  kiyasPenceresi,
+} from "@/lib/karsilastirma";
 import { kanalDagilimi, paretoKur, yogunlasma } from "@/lib/panel/dagilim";
 import { prisma } from "@/lib/prisma";
 import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
@@ -154,8 +160,10 @@ export default async function AnaSayfa({
     sirala?: string;
     /** Nakit takvimi penceresi (14 | 30) — dönem süzgecinden BAĞIMSIZ. */
     takvim?: string;
-    /** Ürün analizi sekmesi: verim | hacim | stok. */
+    /** Ürün analizi sekmesi: verim | hacim | stok | dagilim. */
     analiz?: string;
+    /** Karşılaştırma tabanı: onceki | ucAy | gecenYil. Boşsa kapalı. */
+    kiyas?: string;
   }>;
 }) {
   // PANEL HERKESE AÇIK ama NET DEĞİL. 13.08.2026'da kullanıcı yakaladı:
@@ -168,6 +176,9 @@ export default async function AnaSayfa({
   const t = await getTranslations("Panel");
   // "kârda"/"zararda" satış kavramıdır; sözlüğü çoğaltmak yerine oradan okunur.
   const tSatis = await getTranslations("Satis");
+  // Karşılaştırma metinleri rapor sözlüğünde; aynı kavramı ikinci bir
+  // sözlüğe kopyalamak, birini değiştirip diğerini unutmanın davetiyesidir.
+  const tRapor = await getTranslations("Rapor");
   const bicim = await bicimlendirici();
 
   const an = new Date();
@@ -195,11 +206,37 @@ export default async function AnaSayfa({
    * yalnız grafik aralığını çekseydik seçilen dönemin kayıtları sessizce
    * eksik kalır ve panel "0 satış" derdi.
    */
+  /**
+   * ══════════════ KIYAS PENCERESİ (2a — panel ayağı) ══════════════
+   * Kural TEK KAYNAKTAN: `lib/karsilastirma.ts`. Panel de rapor da aynı
+   * fonksiyonu çağırıyor; ikinci bir kopya yazılmadı.
+   *
+   * KAPALI GELİR. Her panele zorla ikinci bir rakam basmak, kullanıcı
+   * istemediği hâlde ekranı iki katına çıkarırdı — ve karşılaştırma açıkken
+   * sorgu aralığı genişliyor, yani maliyeti de var.
+   */
+  const kiyasTuru = kiyasCoz(parametreler.kiyas);
+  const kiyasPencere = kiyasTuru ? kiyasPenceresi(donem, kiyasTuru) : null;
+
+  /**
+   * SORGU ARALIĞI ÜÇÜNÜ DE KAPSAR: grafik, seçili dönem VE kıyas dönemi.
+   * "Geçen yıl aynı dönem" 12 ay geriye düşer ve grafik penceresinin
+   * (11 ay) DIŞINDA kalır; kapsanmasaydı panel "geçen yıl 0 satış" derdi —
+   * veri yokluğu değil, SORGU yokluğu yüzünden.
+   */
   const veriBaslangic = new Date(
-    Math.min(grafikBaslangic.getTime(), donem.baslangic.getTime()),
+    Math.min(
+      grafikBaslangic.getTime(),
+      donem.baslangic.getTime(),
+      kiyasPencere?.baslangic.getTime() ?? Infinity,
+    ),
   );
   const veriBitisHaric = new Date(
-    Math.max(grafikBitisHaric.getTime(), donem.bitisHaric.getTime()),
+    Math.max(
+      grafikBitisHaric.getTime(),
+      donem.bitisHaric.getTime(),
+      kiyasPencere?.bitisHaric.getTime() ?? -Infinity,
+    ),
   );
 
   const [
@@ -301,6 +338,16 @@ export default async function AnaSayfa({
       where: {
         OR: [
           { shippedAt: { gte: donem.baslangic, lt: donem.bitisHaric } },
+          ...(kiyasPencere
+            ? [
+                {
+                  shippedAt: {
+                    gte: kiyasPencere.baslangic,
+                    lt: kiyasPencere.bitisHaric,
+                  },
+                },
+              ]
+            : []),
           { shippedAt: null },
         ],
       },
@@ -517,6 +564,18 @@ export default async function AnaSayfa({
     : iadeler;
 
   const bloklar = panelHesapla(donem, donemSatislari, donemIadeleri, kargolar);
+
+  /**
+   * KIYAS BLOKLARI — aynı motor, farklı pencere. `panelHesapla` pencereyi
+   * kendi içinde süzdüğü için ikinci çağrı aynı listeyle yetiniyor; kıyas
+   * için ayrı bir hesap YAZILMADI.
+   */
+  const kiyasBloklar = kiyasPencere
+    ? panelHesapla(kiyasPencere, donemSatislari, donemIadeleri, kargolar)
+    : null;
+  /** Kıyas döneminde o para biriminde HİÇ KAYIT yoksa null → "karşılaştırılamaz". */
+  const kiyasBlogu = (paraBirimi: Currency) =>
+    kiyasBloklar?.find((b) => b.paraBirimi === paraBirimi) ?? null;
 
   // --- ÜRÜN LİSTELERİ --------------------------------------------------------
   const donemKalemleri = kalemler.filter(
@@ -858,6 +917,65 @@ export default async function AnaSayfa({
         }
       : { pencere: donemTuru };
 
+  /**
+   * Kıyas seçimi adreste yaşar; DÖNEM, KANAL ve SEKME seçimi KORUNUR.
+   * Aynı düğmeye tekrar basmak karşılaştırmayı kapatır.
+   */
+  const kiyasAdresi = (yeni: string | null) => {
+    const q = new URLSearchParams();
+    for (const [ad, deger] of Object.entries(donemParametreleri())) {
+      if (deger) q.set(ad, deger);
+    }
+    if (parametreler.kanal) q.set("kanal", parametreler.kanal);
+    if (parametreler.analiz) q.set("analiz", parametreler.analiz);
+    if (parametreler.sirala) q.set("sirala", parametreler.sirala);
+    if (parametreler.takvim) q.set("takvim", parametreler.takvim);
+    if (yeni) q.set("kiyas", yeni);
+    const metin = q.toString();
+    return metin ? `/?${metin}` : "/";
+  };
+
+  /**
+   * DEĞİŞİM ROZETİ — HEM SAYI HEM ORAN. Raporla AYNI kural
+   * (`lib/karsilastirma.ts`); iki ekranda iki farklı hesap olmasın.
+   *
+   * Kıyas döneminde KAYIT YOKSA "karşılaştırılamaz" der. Rozeti hiç
+   * çizmemek "sorun yok" gibi okunur, %0 yazmak "hiç değişmedi" der;
+   * ikisi de veri yokluğunu gizler (sessiz sıfır yasağı).
+   */
+  function kiyasRozeti(
+    simdi: number,
+    onceki: number | null,
+    bicimle: (n: number) => string,
+    artisIyiMi = true,
+  ) {
+    if (!kiyasPencere) return null;
+    const d = degisim(simdi, onceki);
+    if (!d.karsilastirilabilir || d.mutlak === null) {
+      return (
+        <DurumRozeti durum="notr" isaretsiz>
+          {tRapor("kiyaslanamaz")}
+        </DurumRozeti>
+      );
+    }
+    if (d.mutlak === 0) {
+      return (
+        <DurumRozeti durum="notr" isaretsiz>
+          {tRapor("degisimYok")}
+        </DurumRozeti>
+      );
+    }
+    const iyi = d.mutlak > 0 === artisIyiMi;
+    return (
+      <DurumRozeti durum={iyi ? "olumlu" : "olumsuz"} isaretsiz>
+        <span className="tabular-nums">
+          {d.mutlak > 0 ? "▲" : "▼"} {bicimle(Math.abs(d.mutlak))}
+          {d.yuzde === null ? "" : ` · ${bicim.yuzde(Math.abs(d.yuzde))}`}
+        </span>
+      </DurumRozeti>
+    );
+  }
+
   const satisAdresi = (ek: Record<string, string>) =>
     suzgecAdresi("/satislar", {}, { ...donemParametreleri(), ...ek });
 
@@ -995,6 +1113,38 @@ export default async function AnaSayfa({
         }}
       />
 
+      {/* ═══════════════ KARŞILAŞTIRMA SEÇİCİ (2a) ═══════════════
+          KAPALI GELİR: her panele zorla ikinci bir rakam basmak ekranı
+          gereksiz kalabalıklaştırırdı; ayrıca açıkken sorgu aralığı
+          genişliyor, yani maliyeti var.
+          Aynı düğmeye tekrar basmak KAPATIR (İlke #10).
+          KIYASLANAN ARALIK YAZILI DURUR — tanım ekranda olmazsa rozet
+          sessiz bir varsayıma dönerdi. */}
+      {karGorunur ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-muted-foreground text-sm">{tRapor("kiyasBaslik")}</span>
+          {KIYAS_ANAHTARLARI.map((a) => (
+            <Button
+              key={a}
+              asChild
+              size="sm"
+              variant={kiyasTuru === a ? "default" : "outline"}
+              className="h-11 md:h-8"
+            >
+              <Link href={kiyasAdresi(kiyasTuru === a ? null : a)} scroll={false}>
+                {tRapor(`kiyas_${a}`)}
+              </Link>
+            </Button>
+          ))}
+          {kiyasPencere ? (
+            <span className="text-muted-foreground text-xs">
+              {aralikMetni} ↔ {bicim.tarih(kiyasPencere.baslangic)} –{" "}
+              {bicim.tarih(kiyasPencere.sonGun)}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
       {/* ═══════════════ ÜST SIRA: EYLEM + ÖNGÖRÜ YAN YANA ═══════════════
           14.08.2026 — PANEL DİKEY YIĞINDI, IZGARA OLDU.
           Her blok tam genişlikte alt alta duruyordu; 1400 px ekranda alanın
@@ -1053,6 +1203,8 @@ export default async function AnaSayfa({
           const kanalPaylari = new Map(
             dagilim.kanallar.map((k) => [k.kanalKodu, k]),
           );
+          /** Bu para biriminin kıyas dönemi bloğu; yoksa null. */
+          const kb = kiyasBlogu(blok.paraBirimi);
           return (
           <Card key={blok.paraBirimi} className="min-w-0">
             <CardHeader>
@@ -1072,6 +1224,11 @@ export default async function AnaSayfa({
                       {blok.toplamAdet}
                     </Baglanti>
                   }
+                  rozet={kiyasRozeti(
+                    blok.toplamAdet,
+                    kb?.toplamAdet ?? null,
+                    (n) => String(n),
+                  )}
                 />
                 {/* CİRO — kutu düzenine girmiyor çünkü tek rakam değil, üç
                     satır (brüt · iade düşümü · net). Kendi bileşeni var ve
@@ -1094,6 +1251,11 @@ export default async function AnaSayfa({
                       blok.paraBirimi,
                     )}
                   />
+                  {/* Kıyas BRÜT ciro üzerinden: iade etkisi ayrı bir
+                      kavram ve raporda da karşılaştırma dışında tutuluyor. */}
+                  {kiyasRozeti(blok.toplamGelir, kb?.toplamGelir ?? null, (n) =>
+                    bicim.para(n, blok.paraBirimi),
+                  )}
                 </div>
                 {/* KARGO DURUMU — elle işaretlenen operasyonel rakam.
                     "Bekleyen" bugün ne yapılacağını söylediği için verilenle
@@ -1111,6 +1273,11 @@ export default async function AnaSayfa({
                       {blok.kargoyaVerilenAdet}
                     </Baglanti>
                   }
+                  kiyas={kiyasRozeti(
+                    blok.kargoyaVerilenAdet,
+                    kb?.kargoyaVerilenAdet ?? null,
+                    (n) => String(n),
+                  )}
                   /* BEKLEYEN KARGO YAPILACAK İŞTİR — rozet amber yanar.
                      Bekleyen yoksa rozet YOK: "iş yok" bir başarı değil,
                      sıradan hâldir; yeşile boyamak her gün kutlama olurdu. */
@@ -1145,6 +1312,11 @@ export default async function AnaSayfa({
                       etiket={t("net1")}
                       cocuk={bicim.para(blok.toplamNet1, blok.paraBirimi)}
                       rozet={karRozeti(blok.toplamNet1)}
+                      kiyas={kiyasRozeti(
+                        blok.toplamNet1,
+                        kb?.toplamNet1 ?? null,
+                        (n) => bicim.para(n, blok.paraBirimi),
+                      )}
                       altNot={
                         <>
                           {oranSatirlari(blok.toplamNet1, blok)}
@@ -1162,6 +1334,11 @@ export default async function AnaSayfa({
                       bas
                       cocuk={bicim.para(blok.toplamNet2, blok.paraBirimi)}
                       rozet={karRozeti(blok.toplamNet2)}
+                      kiyas={kiyasRozeti(
+                        blok.toplamNet2,
+                        kb?.toplamNet2 ?? null,
+                        (n) => bicim.para(n, blok.paraBirimi),
+                      )}
                       altNot={
                         <>
                           {oranSatirlari(blok.toplamNet2, blok)}

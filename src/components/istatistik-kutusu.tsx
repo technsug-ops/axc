@@ -39,6 +39,7 @@ export function IstatistikKutusu({
   bas = false,
   cocuk,
   rozet,
+  kiyas,
   altNot,
 }: {
   etiket: string;
@@ -51,6 +52,8 @@ export function IstatistikKutusu({
    * kartının durumu buradan konuşuyor.
    */
   rozet?: React.ReactNode;
+  /** Karşılaştırma rozeti (2a) — durum rozetinin ALTINDA ayrı satır. */
+  kiyas?: React.ReactNode;
   /** Açıklama ya da ikincil bağlantı. */
   altNot?: React.ReactNode;
 }) {
@@ -65,6 +68,7 @@ export function IstatistikKutusu({
         {cocuk}
       </span>
       {rozet ? <span className="flex min-w-0">{rozet}</span> : null}
+      {kiyas ? <span className="flex min-w-0">{kiyas}</span> : null}
       {altNot ? <span className="min-w-0 text-xs">{altNot}</span> : null}
     </div>
   );

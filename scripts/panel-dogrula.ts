@@ -1837,6 +1837,58 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       )
       .includes("karGorunur"),
   );
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  KARŞILAŞTIRMA PANELE İNDİ (2a) — TEK KAYNAK ŞARTI
+   * --------------------------------------------------------------------
+   *  Mimar kuralı: kural TEK saf fonksiyonda, iki kopya YASAK. Bu oturumda
+   *  `PARTIAL`/`PARTIALLY_RECEIVED` hatası tam bu yüzden çıkmıştı — iki
+   *  yerde iki sabit. Panel de rapor da `lib/karsilastirma.ts` çağırmalı.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const raporKaynak = readFileSync("src/app/rapor/page.tsx", "utf8");
+  kontrol(
+    "panel karşılaştırmayı ORTAK kaynaktan alıyor",
+    panelKaynak.includes('from "@/lib/karsilastirma"') &&
+      panelKaynak.includes("kiyasPenceresi(donem, kiyasTuru)"),
+  );
+  kontrol(
+    "  ...rapor da AYNI kaynağı kullanıyor (iki kopya yok)",
+    raporKaynak.includes('from "@/lib/karsilastirma"'),
+  );
+  kontrol(
+    "  ...panelde ikinci bir pencere-kaydırma hesabı YOK",
+    !panelKaynak.includes("ayGeriKaydir("),
+  );
+  kontrol(
+    "karşılaştırma KAPALI geliyor (kiyasCoz boşta null döner)",
+    panelKaynak.includes("kiyasCoz(parametreler.kiyas)"),
+  );
+  kontrol(
+    "  ...kıyaslanan aralık ekranda yazılı",
+    panelKaynak.includes("kiyasPencere.baslangic") &&
+      panelKaynak.includes("kiyasPencere.sonGun"),
+  );
+  /**
+   * SORGU ARALIĞI KIYAS PENCERESİNİ DE KAPSAMALI. "Geçen yıl aynı dönem"
+   * 12 ay geriye düşer ve grafik penceresinin (11 ay) DIŞINDA kalır;
+   * kapsanmasaydı panel "geçen yıl 0 satış" derdi — veri yokluğu değil,
+   * SORGU yokluğu yüzünden. Sessiz sıfırın en sinsi hâli.
+   */
+  const aralikBolumu = panelKaynak.slice(
+    panelKaynak.indexOf("const veriBaslangic"),
+    panelKaynak.indexOf("const veriBaslangic") + 700,
+  );
+  kontrol(
+    "sorgu aralığı KIYAS penceresini de kapsıyor",
+    aralikBolumu.includes("kiyasPencere?.baslangic") &&
+      aralikBolumu.includes("kiyasPencere?.bitisHaric"),
+  );
+  kontrol(
+    "  ...kargo sorgusu da kıyas dönemini kapsıyor",
+    panelKaynak.includes("gte: kiyasPencere.baslangic"),
+  );
+
   kontrol(
     "kanal kartında İKİ çubuk var (ciro payı + NET-2 payı)",
     panelKaynak.includes("pay.ciroPayi / 100") &&
