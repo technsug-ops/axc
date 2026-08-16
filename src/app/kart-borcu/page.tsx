@@ -7,8 +7,11 @@ import { Baglanti } from "@/components/baglanti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { bicimlendirici } from "@/lib/bicim";
-import { gunDegeri, isTakvimGunu } from "@/lib/donem";
+import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
 import { kartBorcuHesapla, type BorcAlimi } from "@/lib/kart-borcu";
+import { faizKategorisi } from "./eylemler";
+import { OdemeFormu } from "./odeme-formu";
+import { OdemeSatiri } from "./odeme-satiri";
 import { prisma } from "@/lib/prisma";
 
 import type { Currency } from "@/generated/prisma/enums";
@@ -39,6 +42,7 @@ export default async function KartBorcuSayfasi() {
 
   const t = await getTranslations("KartBorcu");
   const ortak = await getTranslations("Ortak");
+  const tOdeme = await getTranslations("KartOdeme");
   const bicim = await bicimlendirici();
 
   const kartlar = await prisma.creditCard.findMany({
@@ -62,6 +66,38 @@ export default async function KartBorcuSayfasi() {
 
   // "Bugün" iş saat diliminde; ekstre geçmiş mi kararı buna bakar.
   const bugun = gunDegeri(isTakvimGunu(new Date()));
+  const bugunMetni = gunMetni(bugun);
+
+  /**
+   * KART ÖDEMELERİ — ekstre dönemine göre eşlenecek.
+   *
+   * Ödeme kaydı geldiği için "geçmiş ekstreler ödenmiş sayılır" varsayımı
+   * artık gerekmiyor: hangi ekstreye ne ödendiği GERÇEK kayıttan okunuyor.
+   */
+  const odemeler = await prisma.kartOdeme.findMany({
+    orderBy: { odemeTarihi: "asc" },
+    select: {
+      id: true,
+      cardId: true,
+      donem: true,
+      ekstreBorcu: true,
+      odenenAnaBorc: true,
+      odemeTarihi: true,
+      faizTutar: true,
+      isReversal: true,
+      reversedBy: { select: { id: true } },
+    },
+  });
+
+  /**
+   * Faiz kategorisi tanımlı mı. YOKSA form eyleme dönük uyarı gösterir ve
+   * ayarlara link verir — sessizce kategori yaratılmaz (mimar kararı).
+   */
+  const kategoriVar = (await faizKategorisi()) !== null;
+
+  /** Ekstre dönemi anahtarı — kesim tarihinin ayının 1'i (ISO). */
+  const donemAnahtari = (kesim: Date) =>
+    `${kesim.getUTCFullYear()}-${String(kesim.getUTCMonth() + 1).padStart(2, "0")}-01`;
   const sayi = (d: { toString(): string } | null) =>
     d === null ? null : Number(d.toString());
 
@@ -334,6 +370,69 @@ export default async function KartBorcuSayfasi() {
                                 </div>
                               ))}
                             </dl>
+
+                            {/* ---------------- ÖDEME KAYDI ----------------
+                                Borç burada türetiliyor, ödeme de buraya
+                                düşüyor: ekran arası gidiş geliş yok
+                                (mimar kararı 15.08.2026, seçenek a). */}
+                            {(() => {
+                              const anahtar = donemAnahtari(ekstre.kesimTarihi);
+                              const donemOdemeleri = odemeler.filter(
+                                (o) =>
+                                  o.cardId === kart.id &&
+                                  donemAnahtari(o.donem) === anahtar,
+                              );
+                              const netOdenen = donemOdemeleri.reduce(
+                                (top, o) => top + Number(o.odenenAnaBorc.toString()),
+                                0,
+                              );
+                              return (
+                                <div className="space-y-2 border-t pt-2">
+                                  {donemOdemeleri.length > 0 ? (
+                                    <>
+                                      <div className="text-xs font-medium">
+                                        {tOdeme("odemeler")}
+                                      </div>
+                                      {donemOdemeleri.map((o) => (
+                                        <OdemeSatiri
+                                          key={o.id}
+                                          odemeId={o.id}
+                                          odenen={Number(o.odenenAnaBorc.toString())}
+                                          faiz={Number(o.faizTutar.toString())}
+                                          tarih={bicim.tarih(o.odemeTarihi)}
+                                          paraBirimi={kart.currency}
+                                          tersMi={o.isReversal}
+                                          tersAlinmisMi={o.reversedBy !== null}
+                                        />
+                                      ))}
+                                      {/* Kalan TÜRETİLİR, saklanmaz. */}
+                                      <div className="flex flex-wrap justify-between gap-2 text-sm">
+                                        <span className="text-muted-foreground">
+                                          {tOdeme("kalan")}
+                                        </span>
+                                        <span className="tabular-nums font-medium">
+                                          {para(ekstre.toplam - netOdenen)}
+                                        </span>
+                                      </div>
+                                    </>
+                                  ) : null}
+                                  <OdemeFormu
+                                    cardId={kart.id}
+                                    donem={anahtar}
+                                    donemEtiketi={bicim.tarih(ekstre.kesimTarihi)}
+                                    ekstreBorcu={ekstre.toplam}
+                                    paraBirimi={kart.currency}
+                                    mevcutKayitlar={donemOdemeleri.map((o) => ({
+                                      odenenAnaBorc: Number(
+                                        o.odenenAnaBorc.toString(),
+                                      ),
+                                    }))}
+                                    bugun={bugunMetni}
+                                    faizKategorisiVar={kategoriVar}
+                                  />
+                                </div>
+                              );
+                            })()}
                           </div>
                         ))}
                       </div>
