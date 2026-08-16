@@ -7,6 +7,7 @@ import {
   oncekiOdenen,
   tersKayit,
 } from "../src/lib/kart-odeme/hesap";
+import { readFileSync } from "node:fs";
 
 /**
  * ============================================================================
@@ -158,6 +159,79 @@ console.log("=".repeat(70));
   kontrol(
     "  ...ama kayıt VAR olduğu için uyarı yine çıkıyor (geçmiş görünsün)",
     tersli.uyar === true,
+  );
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  CANLIDA YAŞANAN SENARYO (16.08.2026) — MÜKERRER TAM ÖDEME
+   * --------------------------------------------------------------------
+   *  Hasan Akbank / 09.08.2026 ekstresi, borç 1.199,66. Kullanıcı AYNI
+   *  ekstreye İKİ KEZ tam ödeme girdi; kalan −1.199,66 oldu, faiz iki kez
+   *  yazıldı.
+   *
+   *  İLK TURDA NEDEN YAKALANMADI: saf kuralın "ikinci ödemede uyarı var"
+   *  testi VARDI ve geçiyordu. Eksik olan İKİ ŞEYDİ:
+   *   1. "Ekstre zaten KAPALI" hâli ayrı bir seviye olarak yoktu — kısmi
+   *      ödeme ile mükerrer tam ödeme aynı tonda uyarıyordu.
+   *   2. Uyarının EKRANDA ne kadar görünür olduğu hiç sınanmamıştı; test
+   *      bayrağı doğruluyordu, sunumu değil.
+   *  Bayrak doğru olsa da kullanıcı görmüyorsa uyarı çalışmıyordur.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const canliSenaryo = mukerrerUyarisi({
+    ekstreBorcu: 1199.66,
+    mevcutKayitlar: [{ odenenAnaBorc: 1199.66 }],
+    yeniOdeme: 1199.66,
+  });
+  kontrol("canlı senaryo: ikinci tam ödeme UYARIYOR", canliSenaryo.uyar === true);
+  kontrol(
+    "  ...ve 'ekstre ZATEN KAPALI' olarak işaretleniyor",
+    canliSenaryo.zatenKapali === true,
+  );
+  kontrol("  ...kalan borç 0", canliSenaryo.kalanBorc === 0);
+  kontrol("  ...aşıyor olarak da işaretli", canliSenaryo.asiyorMu === true);
+
+  /** KISMİ ÖDEME KAPALI DEĞİLDİR — iki seviye karışmasın. */
+  const kismiKapali = mukerrerUyarisi({
+    ekstreBorcu: 1000,
+    mevcutKayitlar: [{ odenenAnaBorc: 400 }],
+    yeniOdeme: 600,
+  });
+  kontrol("kısmi ödemede ekstre KAPALI DEĞİL", kismiKapali.zatenKapali === false);
+  kontrol("  ...ama uyarı yine de var", kismiKapali.uyar === true);
+
+  /** Fazla ödenmişse de kapalı sayılır (kalan eksi). */
+  const fazla = mukerrerUyarisi({
+    ekstreBorcu: 1000,
+    mevcutKayitlar: [{ odenenAnaBorc: 1200 }],
+    yeniOdeme: 100,
+  });
+  kontrol("fazla ödenmişse de KAPALI", fazla.zatenKapali === true);
+
+  /** İlk ödemede kapalı bayrağı ASLA yanmaz. */
+  kontrol(
+    "ilk ödemede kapalı bayrağı yanmıyor",
+    mukerrerUyarisi({ ekstreBorcu: 1000, mevcutKayitlar: [], yeniOdeme: 1000 })
+      .zatenKapali === false,
+  );
+
+  /**
+   * EKRAN BAĞI — bayrak doğru olsa da kullanıcı görmüyorsa uyarı
+   * çalışmıyordur. Bu kontrol "kural teslim edilebilir mi" süzgecidir
+   * (anayasa notu 16.08.2026).
+   */
+  const form = readFileSync("src/app/kart-borcu/odeme-formu.tsx", "utf8");
+  kontrol(
+    "ekranda mükerrer uyarısı ÜÇ KATMANLI kartla gösteriliyor",
+    form.includes("<UyariKarti") && form.includes("zatenKapaliBaslik"),
+  );
+  kontrol(
+    "  ...uyarı önizleme RAKAMLARINDAN ÖNCE geliyor",
+    form.indexOf("zatenKapaliBaslik") < form.indexOf('t("onizlemeBaslik")'),
+  );
+  kontrol(
+    "  ...ekstre kapalıyken AÇIK ONAY olmadan kaydedilemiyor",
+    form.includes("kapaliEngeli") && form.includes("|| kapaliEngeli"),
   );
 
   kontrol("önceki ödenen toplamı düz toplam", oncekiOdenen([

@@ -4,7 +4,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
+import { TriangleAlert } from "lucide-react";
+
 import { DurumRozeti } from "@/components/durum-rozeti";
+import { UyariKarti } from "@/components/istatistik-kutusu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,6 +76,12 @@ export function OdemeFormu({
    * kendi kategorisini seçer. Tek bir ada bağlamak, kategori ekleme ekranı
    * olmadığı için kullanıcıyı çıkmaza sokuyordu (16.08.2026 bulgusu).
    */
+  /**
+   * Ekstre zaten kapalıyken AÇIK ONAY istenir. Uyarıyı okumadan
+   * "kaydet"e basmak mümkün olmasın: mükerrer tam ödeme bir KAZADIR ve
+   * kaza, ek bir bilinçli hareketle durdurulur (İlke #6).
+   */
+  const [kapaliOnay, setKapaliOnay] = useState(false);
   const [kategoriId, setKategoriId] = useState(
     kategoriler.find((k) => k.onerilenMi)?.id ?? "",
   );
@@ -106,6 +115,7 @@ export function OdemeFormu({
   const faizSorunlu = !faizGecerliMi(faiz);
   // Faiz varsa kategori ZORUNLU; faiz yoksa hiç sorulmuyor.
   const kategoriEngeli = onizleme.faiz > 0 && kategoriId === "";
+  const kapaliEngeli = onizleme.mukerrer.zatenKapali && !kapaliOnay;
 
   function kaydet() {
     setHata(null);
@@ -258,6 +268,33 @@ export function OdemeFormu({
         ) : null}
       </div>
 
+      {/* ═══════════ MÜKERRER UYARISI — RAKAMLARIN ÜSTÜNDE ═══════════
+          16.08.2026: uyarı 11 px'lik bir rozetti ve önizleme rakamlarının
+          ALTINDA duruyordu; kullanıcı aynı ekstreye iki kez tam ödeme
+          girdi ve uyarıyı görmedi. Bayrak doğruydu, SUNUM zayıftı.
+          Görülmesi kolay kaçan uyarı, çalışmayan uyarıdır (İlke #5).
+          Artık üç katmanlı uyarı kartı ve rakamlardan ÖNCE. */}
+      {onizleme.mukerrer.zatenKapali ? (
+        <UyariKarti
+          durum="olumsuz"
+          ikon={TriangleAlert}
+          baslik={t("zatenKapaliBaslik")}
+          altSatir={t("zatenKapaliNot", {
+            onceki: para(onizleme.mukerrer.oncekiToplam),
+          })}
+        />
+      ) : onizleme.mukerrer.uyar ? (
+        <UyariKarti
+          durum="uyari"
+          ikon={TriangleAlert}
+          baslik={t("mukerrerUyari", {
+            onceki: para(onizleme.mukerrer.oncekiToplam),
+            kalan: para(onizleme.mukerrer.kalanBorc),
+          })}
+          altSatir={onizleme.mukerrer.asiyorMu ? t("asiyorUyari") : null}
+        />
+      ) : null}
+
       {/* ------------------------- ÖNİZLEME ------------------------- */}
       <div className="space-y-2 rounded-md border p-3">
         <div className="text-sm font-medium">{t("onizlemeBaslik")}</div>
@@ -289,23 +326,24 @@ export function OdemeFormu({
             : t("karaEtkiYok")}
         </p>
 
-        {onizleme.mukerrer.uyar ? (
-          <DurumRozeti durum="uyari">
-            {t("mukerrerUyari", {
-              onceki: para(onizleme.mukerrer.oncekiToplam),
-              kalan: para(onizleme.mukerrer.kalanBorc),
-            })}
-          </DurumRozeti>
-        ) : null}
-
-        {onizleme.mukerrer.asiyorMu ? (
-          <DurumRozeti durum="olumsuz">{t("asiyorUyari")}</DurumRozeti>
-        ) : null}
       </div>
 
       {/* Kategori seçilmediyse uyarır — ÇIKMAZ YOK, seçenek listede. */}
       {kategoriEngeli ? (
         <DurumRozeti durum="olumsuz">{t("kategoriSec")}</DurumRozeti>
+      ) : null}
+
+      {/* Kapalı ekstreye ödeme: onay kutusu işaretlenmeden kaydedilemez. */}
+      {onizleme.mukerrer.zatenKapali ? (
+        <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
+          <input
+            type="checkbox"
+            className="size-4"
+            checked={kapaliOnay}
+            onChange={(e) => setKapaliOnay(e.target.checked)}
+          />
+          {t("zatenKapaliOnay")}
+        </label>
       ) : null}
 
       {faizSorunlu ? (
@@ -317,7 +355,7 @@ export function OdemeFormu({
         <Button
           size="sm"
           className="h-11 md:h-9"
-          disabled={bekliyor || faizSorunlu || kategoriEngeli}
+          disabled={bekliyor || faizSorunlu || kategoriEngeli || kapaliEngeli}
           onClick={kaydet}
         >
           {bekliyor ? ortak("kaydediliyor") : t("onaylaKaydet")}

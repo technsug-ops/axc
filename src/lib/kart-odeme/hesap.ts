@@ -111,6 +111,16 @@ export type MukerrerUyarisi = {
    * çekebilir) ama kaza ihtimali yüksektir; uyarı bunu söyler.
    */
   asiyorMu: boolean;
+  /**
+   * EKSTRE ZATEN KAPALI MI — önceki ödemeler borcu bitirmiş.
+   *
+   * 16.08.2026 canlı bulgusu: kullanıcı aynı ekstreye iki kez TAM ödeme
+   * girebildi. Uyarı bayrağı doğru dönüyordu ama tek bir seviyesi vardı;
+   * "biraz daha ödeme yapıyorsun" ile "bu ekstre zaten kapalı" aynı tonda
+   * görünüyordu. Kısmi ödeme MEŞRU, mükerrer tam ödeme KAZA — ikisi ayrı
+   * seviyede söylenmeli.
+   */
+  zatenKapali: boolean;
 };
 
 /**
@@ -138,6 +148,8 @@ export function mukerrerUyarisi(girdi: {
     oncekiToplam,
     kalanBorc,
     asiyorMu: girdi.yeniOdeme > kalanBorc,
+    // Borç bitmişken yeni ödeme: ekstre zaten kapalı.
+    zatenKapali: girdi.mevcutKayitlar.length > 0 && kalanBorc <= 0,
   };
 }
 
