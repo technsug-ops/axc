@@ -154,6 +154,24 @@ export async function sayfaIzni(izin: Izin): Promise<YetkiBaglami> {
   return baglam;
 }
 
+/**
+ * SAYFA YALNIZ GİRİŞ İSTER — İZİN İSTEMEZ.
+ *
+ * Destek talepleri için doğdu (16.08.2026): sistemi kullanan herkes
+ * bildirdiği şeyin nerede olduğunu görmeli. İzne bağlansaydı bildirim yine
+ * Telegram'a kaçardı ve modül varlık sebebini kaybederdi.
+ *
+ * `sayfaIzni` ile AYNI kapılardan geçer (parola değiştirme zorunluluğu,
+ * oturum kontrolü); yalnız izin kümesine bakmaz. İkinci bir giriş mantığı
+ * yazmıyoruz — o gün biri güncellenip diğeri unutulurdu.
+ */
+export async function sayfaGirisi(): Promise<YetkiBaglami> {
+  if (await parolaDegismeliMi()) redirect("/parola-degistir");
+  const baglam = await yetkiBaglami();
+  if (!baglam) notFound();
+  return baglam;
+}
+
 /** Oturumdaki kullanıcı ilk parolasını değiştirmek zorunda mı? */
 export const parolaDegismeliMi = cache(async (): Promise<boolean> => {
   const kullanici = await oturumdakiKullanici();

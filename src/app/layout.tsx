@@ -19,6 +19,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { OTURUM_CEREZI } from "@/lib/oturum-imza";
 import { oturumdakiKullanici } from "@/lib/oturum";
+import { BildirButonu } from "@/components/bildir-butonu";
 import { UyariCani } from "@/components/uyari-cani";
 import { UYGULAMA } from "@/lib/uygulama";
 
@@ -133,6 +134,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                     sorgu koymak uygulamadaki her sayfayı bekletirdi.
                   */}
                   <div className="ms-auto flex items-center gap-2">
+                    {/* BİLDİR — her ekranda, izinsiz. Sorunun yaşandığı anda
+                        bildirilmesi esas; menü zinciri kurulunca kimse
+                        bildirmez ve bildirim Telegram'a kaçar. */}
+                    <BildirButonu />
                     <UyariCani />
                   </div>
                 </header>

@@ -48,7 +48,8 @@
     "canli:ham-yedek": "tsx scripts/canli-ham-yedek.ts",
     "canli:yetki": "tsx scripts/canli-yetki-seed.ts",
     "maliyet:geri-doldur": "tsx scripts/maliyet-donmeyen-geri-doldur.ts",
-    "uyari:dogrula": "tsx scripts/uyari-dogrula.ts"
+    "uyari:dogrula": "tsx scripts/uyari-dogrula.ts",
+    "talep:dogrula": "tsx scripts/talep-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

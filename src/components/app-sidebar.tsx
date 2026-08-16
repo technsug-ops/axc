@@ -7,6 +7,7 @@ import {
   BarChart3,
   Banknote,
   BookOpen,
+  MessageSquarePlus,
   Boxes,
   CalendarClock,
   ClipboardList,
@@ -143,6 +144,14 @@ const AYARLAR: MenuOgesi[] = [
   },
   { anahtar: "roller", href: "/ayarlar/roller", icon: ShieldCheck, aktif: true },
   { anahtar: "elKitabi", href: "/el-kitabi", icon: BookOpen, aktif: true },
+  /* Destek talepleri — izin İSTEMEZ, herkes kendi bildirdiğinin nerede
+     olduğunu görebilmeli (bkz. talepler/page.tsx). */
+  {
+    anahtar: "talepler",
+    href: "/talepler",
+    icon: MessageSquarePlus,
+    aktif: true,
+  },
   {
     anahtar: "veriDisari",
     href: "/ayarlar/disa-aktarma",
