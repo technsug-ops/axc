@@ -250,7 +250,21 @@ export default async function KartBorcuSayfasi({
     paraOzeti.set(h.kart.currency, g);
   }
 
-  const yaklasanOdeme =
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  "YAKLAŞAN" DEĞİL "SIRADAKİ" — 16.08.2026 canlı bulgusu
+   * --------------------------------------------------------------------
+   *  Bu kutu eskiden "en yakın son ödeme" idi ve geçmiş ekstreler zaten
+   *  ödenmiş sayıldığı için gösterdiği tarih hep GELECEKTEYDİ. Varsayım
+   *  kalkınca değer "kapanmamış ilk ekstre"ye döndü ve ekranda 02.02.2026
+   *  belirdi — bugünden altı ay ÖNCE. Etiket "en yakın" derken geçmiş bir
+   *  tarih göstermek, kullanıcıya sistemin bozulduğunu düşündürür.
+   *
+   *  Rakam doğruydu, ADI yanlıştı. Değer değişince etiketin de değişmesi
+   *  gerekiyordu: sıradaki iş, gecikmişse gecikmiş olduğu SÖYLENEREK.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const siradakiOdeme =
     kartHesaplari
       .filter((h) => h.yakin?.sonOdemeTarihi)
       .map((h) => ({
@@ -258,6 +272,7 @@ export default async function KartBorcuSayfasi({
         tutar: h.yakin!.kalan,
         etiket: h.kart.label,
         paraBirimi: h.kart.currency,
+        gecikmisMi: h.yakin!.sonOdemeTarihi!.getTime() < bugun.getTime(),
       }))
       .sort((a, b) => a.sonOdeme.getTime() - b.sonOdeme.getTime())[0] ?? null;
 
@@ -349,15 +364,24 @@ export default async function KartBorcuSayfasi({
                 }
               />
             ))}
-            {/* "Önce hangisini ödemeliyim" — en yakın son ödeme günü. */}
-            {yaklasanOdeme ? (
+            {/* "Önce hangisini ödemeliyim" — kapanmamış ilk ekstrenin vadesi. */}
+            {siradakiOdeme ? (
               <IstatistikKutusu
-                etiket={t("yaklasanOdeme")}
-                cocuk={bicim.tarih(yaklasanOdeme.sonOdeme)}
+                etiket={t("siradakiOdeme")}
+                cocuk={bicim.tarih(siradakiOdeme.sonOdeme)}
+                /* Vadesi geçmiş bir tarihi sessizce göstermek yasak: tarih
+                   tek başına "geç kaldım" demez, rozet der. */
+                rozet={
+                  siradakiOdeme.gecikmisMi ? (
+                    <DurumRozeti durum="olumsuz" isaretsiz>
+                      {t("vadesiGecti")}
+                    </DurumRozeti>
+                  ) : null
+                }
                 altNot={
                   <span className="text-muted-foreground">
-                    {yaklasanOdeme.etiket} ·{" "}
-                    {bicim.para(yaklasanOdeme.tutar, yaklasanOdeme.paraBirimi)}
+                    {siradakiOdeme.etiket} ·{" "}
+                    {bicim.para(siradakiOdeme.tutar, siradakiOdeme.paraBirimi)}
                   </span>
                 }
               />

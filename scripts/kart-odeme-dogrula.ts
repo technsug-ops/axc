@@ -39,6 +39,7 @@ const satir = readFileSync("src/app/kart-borcu/odeme-satiri.tsx", "utf8");
 const eylem = readFileSync("src/app/kart-borcu/eylemler.ts", "utf8");
 const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
   KartOdeme?: Record<string, string>;
+  KartBorcu?: Record<string, string>;
 };
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
@@ -446,6 +447,30 @@ console.log("=".repeat(70));
    *  şey formu ve ters alma düğmesini gerçekten GİZLİYOR mu.
    * ════════════════════════════════════════════════════════════════════
    */
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  GEÇMİŞ TARİH "YAKLAŞAN" DİYE GÖSTERİLMEZ (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Varsayım kalkınca "en yakın son ödeme" kutusu 02.02.2026 gösterdi —
+   *  bugünden altı ay ÖNCE. Rakam doğruydu (sıradaki kapanmamış ekstre),
+   *  ADI yanlıştı. Değer anlam değiştirince etiketin de değişmesi gerekir;
+   *  aksi hâlde doğru rakam bozuk sistem izlenimi verir.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "sıradaki ödeme kutusu vadesi geçmişi İŞARETLİYOR",
+    sayfa.includes("gecikmisMi:") && sayfa.includes('t("vadesiGecti")'),
+  );
+  kontrol(
+    "  ...eski 'yaklaşan' adı kalmamış (etiket değerle uyumlu)",
+    !sayfa.includes("yaklasanOdeme"),
+  );
+  kontrol(
+    "  ...uyarı metni sözlükte dolu",
+    typeof tr.KartBorcu?.vadesiGecti === "string" &&
+      tr.KartBorcu.vadesiGecti.length > 0,
+  );
+
   kontrol(
     "sayfa ödeme yetkisini ayrıca soruyor (kart.gor yetmez)",
     sayfa.includes('izinVarMi("satis.kar.gor")'),

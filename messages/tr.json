@@ -1450,6 +1450,8 @@
     "toplamLimitNotu": "Kalan limit {kalan} · {adet} kart",
     "kartAdedi": "{adet} kart · limit tanımlı değil",
     "yaklasanOdeme": "En yakın son ödeme",
+    "siradakiOdeme": "Sıradaki ödeme",
+    "vadesiGecti": "vadesi geçti",
     "kartlarBaslik": "Kartlar",
     "kartlarNotu": "Kartlar bekleyen tutara göre sıralı — en borçlu başta. Sekme etiketinde o kartın bekleyen toplamı yazıyor; seçim adreste kalır."
   },
