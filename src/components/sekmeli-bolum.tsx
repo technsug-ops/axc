@@ -75,7 +75,16 @@ export function SekmeliBolum({
                 aria-current={s.anahtar === aktif.anahtar ? "page" : undefined}
                 className={`inline-flex min-h-11 items-center rounded-md border px-3 text-sm md:min-h-9 ${
                   s.anahtar === aktif.anahtar
-                    ? "bg-foreground text-background"
+                    ? /**
+                       * AKTİF SEKME AKSAN RENGİNDE — siyah değil.
+                       * 16.08.2026: renk sistemi turunda bu bileşen
+                       * atlanmıştı; sekme siyah dolgu kalmıştı. Uygulamanın
+                       * her yerinde "seçili olan" aksan mavisidir (süzgeç
+                       * düğmeleri, birincil butonlar, sol menü). Tek bir
+                       * yerde siyah kalması, aynı anlamın iki farklı renkle
+                       * söylenmesi olurdu (İlke #10).
+                       */
+                      "bg-primary text-primary-foreground border-primary"
                     : "hover:bg-muted"
                 }`}
               >

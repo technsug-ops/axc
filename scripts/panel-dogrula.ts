@@ -1645,6 +1645,18 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     const m = new RegExp(`--${ad}:\\s*oklch\\([0-9.]+\\s+([0-9.]+)`).exec(blok);
     return m ? Number(m[1]) : NaN;
   };
+  /**
+   * AKTİF SEÇİM HER YERDE AKSAN RENGİNDE. 16.08.2026: sekme bileşeni renk
+   * sistemi turunda atlanmış, siyah dolgu kalmıştı. Aynı anlamın iki farklı
+   * renkle söylenmesi tutarlılığı bozar (İlke #10).
+   */
+  kontrol(
+    "aktif sekme aksan renginde (siyah dolgu kalmadı)",
+    !readFileSync("src/components/sekmeli-bolum.tsx", "utf8").includes(
+      "bg-foreground text-background",
+    ),
+  );
+
   kontrol(
     "aksan rengi RENKLİ (--primary gri değil)",
     kroma(acikTema, "primary") > 0.05,
