@@ -105,7 +105,7 @@ export async function talepDurumDegistir(
   yeniDurum: TalepDurumu,
   cozumNotu: string | null,
 ): Promise<DurumSonucu> {
-  await yetkiIste("destek.yonet");
+  const baglam = await yetkiIste("destek.yonet");
   const t = await getTranslations("Talep");
 
   const mevcut = await prisma.talep.findUnique({
@@ -132,10 +132,23 @@ export async function talepDurumDegistir(
         yeniDurum,
         new Date(),
       ),
-      // Boş not mevcut notu SİLMEZ: geliştirici durumu ilerletirken not
-      // yazmak zorunda değil, ama yazdığı not kaybolmamalı.
+      /**
+       * Boş not mevcut notu SİLMEZ: geliştirici durumu ilerletirken not
+       * yazmak zorunda değil, ama yazdığı not kaybolmamalı.
+       *
+       * NOT YAZILIRKEN YAZAR VE ZAMAN DA YAZILIR — Faz 2 hazırlığı (mimar
+       * vizyonu 16.08.2026). Talep ileride bir MESAJ DİZİSİ taşıyacak; o
+       * göçün temiz bir INSERT...SELECT olabilmesi için mesajın kimden ve
+       * ne zaman geldiği bugünden kayıtta olmalı. `updatedAt` bu işi
+       * göremez: her durum değişikliğinde ezilir ve notun yazıldığı anı
+       * değil kaydın en son dokunulduğu anı söyler.
+       */
       ...(cozumNotu !== null && cozumNotu.trim() !== ""
-        ? { cozumNotu: cozumNotu.trim() }
+        ? {
+            cozumNotu: cozumNotu.trim(),
+            cozumNotuYazanId: baglam.kullaniciId,
+            cozumNotuZamani: new Date(),
+          }
         : {}),
     },
   });

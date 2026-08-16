@@ -100,6 +100,8 @@ export default async function TaleplerSayfasi({
       rota: true,
       tarayici: true,
       cozumNotu: true,
+      cozumNotuZamani: true,
+      cozumNotuYazan: { select: { name: true, email: true } },
       createdAt: true,
       kapatilmaZamani: true,
       bildiren: { select: { email: true, name: true } },
@@ -266,7 +268,21 @@ export default async function TaleplerSayfasi({
 
                 {x.cozumNotu ? (
                   <div className={`rounded-lg p-3 ${DURUM_KUTUSU.olumlu}`}>
-                    <p className="text-xs font-medium">{t("cozumNotu")}</p>
+                    {/* KİM ve NE ZAMAN yazdı — Faz 2'de mesaj başlığı olacak
+                        bilginin bugünkü karşılığı. Konuşmanın kimden geldiği
+                        bilinmeden mesaj dizisi kurulamaz. */}
+                    <p className="text-xs font-medium">
+                      {t("cozumNotu")}
+                      {x.cozumNotuYazan || x.cozumNotuZamani ? (
+                        <span className="text-muted-foreground font-normal">
+                          {" · "}
+                          {x.cozumNotuYazan?.name ?? x.cozumNotuYazan?.email ?? ""}
+                          {x.cozumNotuZamani
+                            ? ` · ${bicim.tarih(x.cozumNotuZamani)}`
+                            : ""}
+                        </span>
+                      ) : null}
+                    </p>
                     <p className="text-sm whitespace-pre-wrap">{x.cozumNotu}</p>
                   </div>
                 ) : null}

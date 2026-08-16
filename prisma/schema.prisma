@@ -512,6 +512,7 @@ model ChannelAccount {
    * /**
    * /**
    * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -1469,6 +1470,8 @@ model User {
   auditLogs        AuditLog[]
   /// Bu kullanıcının açtığı destek talepleri.
   talepler         Talep[]           @relation("TalepBildiren")
+  /// Bu kullanıcının yazdığı çözüm notları (Faz 2'de mesajlara evrilecek).
+  talepCozumleri   Talep[]           @relation("TalepCozumYazani")
 
   @@index([isActive])
 }
@@ -1968,8 +1971,29 @@ model Talep {
   bildirenId String
   bildiren   User   @relation("TalepBildiren", fields: [bildirenId], references: [id], onDelete: Restrict)
 
-  /// Geliştiricinin cevabı — kullanıcı okur, yazamaz.
+  /// ── GELİŞTİRİCİNİN CEVABI — kullanıcı okur, yazamaz ────────────────────
+  ///
+  /// FAZ 2'DE MESAJ DİZİSİNE EVRİLECEK (mimar vizyonu 16.08.2026). Bugün
+  /// tek not; yarın `TalepMesaj[]`. Geçiş YENİDEN YAZIM değil, temiz bir
+  /// göç olmalı:
+  ///
+  ///   INSERT INTO TalepMesaj (talepId, gonderenId, gonderenTipi, metin, createdAt)
+  ///   SELECT id, bildirenId,        'MUSTERI',      aciklama,  createdAt        FROM Talep;
+  ///   SELECT id, cozumNotuYazanId,  'GELISTIRICI',  cozumNotu, cozumNotuZamani  FROM Talep
+  ///     WHERE cozumNotu IS NOT NULL;
+  ///
+  /// Bu SELECT'in çalışabilmesi için notun YAZARI ve ZAMANI bugünden
+  /// tutulmalı. `updatedAt` işe yaramaz: her durum değişikliğinde ezilir
+  /// ve notun ne zaman yazıldığını değil kaydın en son ne zaman
+  /// dokunulduğunu söyler.
   cozumNotu String? @db.Text
+
+  /// Notu yazan geliştirici. Faz 2'de mesajın `gonderenId`si olacak.
+  cozumNotuYazanId String?
+  cozumNotuYazan   User?   @relation("TalepCozumYazani", fields: [cozumNotuYazanId], references: [id], onDelete: Restrict)
+
+  /// Notun YAZILDIĞI an. Faz 2'de mesajın `createdAt`i olacak.
+  cozumNotuZamani DateTime?
 
   /// Durum COZULDU/KAPANDI'ya geçtiği an.
   kapatilmaZamani DateTime?

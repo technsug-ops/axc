@@ -966,7 +966,7 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         **Eşik EKRANDA GÖRÜNÜR** ("%10 altı" yazılı) — uydurma bir sabit
         gibi durmasın.
 
-- [ ] **DESTEK / TALEP MODÜLÜ — FAZ 1**
+- [x] **DESTEK / TALEP MODÜLÜ — FAZ 1** ✓ _yazıldı 16.08.2026; migration onayda_
       _Mimar sözleşmesi 15.08.2026._ **SIRA: Panel Aşama 3 bitmeden
       BAŞLANMAZ** (zarar/ölü sermaye → uyarı merkezi Faz 1 → destek).
       _Gerekçe: AXCALI eksik/taleplerini Telegram'dan dağınık iletiyor,
@@ -1739,3 +1739,60 @@ Bunlar eksik değil, sırası gelmedi (bkz. CLAUDE.md → Faz sırası):
       betik kalıbı) + `yerlesim:dogrula`nın sütun bütçesi bölümü.
       Bekçi bugün yalnız o üç ekranı tutuyor; buradakiler düzeltildikçe
       listeye eklenecek.
+
+## DESTEK MODÜLÜ — VİZYON: ÇİFT YÖNLÜ İLETİŞİM KANALI
+
+_Mimar sözleşmesi 16.08.2026._ Destek modülü **bugünün Telegram kaosunu
+çözmekle sınırlı değil — ürünün KALICI destek kanalı.** Çok kullanıcıya
+geçince kullanıcı ↔ yapıcı iletişimi buradan akmalı; her firmayla ayrı
+Telegram yürütmek imkânsız.
+
+**KURGU (16.08.2026 düzeltmesi):**
+`TALEP AÇAN` → müşteri firma (AXCALI, ileride başkaları) ·
+`TALEP ÇÖZEN` → geliştirici (`destek.yonet`)
+
+### Faz 1 — YAZILDI (tek yönlü + durum)
+
+Kullanıcı talep açar → yapıcı durum + çözüm notu verir → kullanıcı okur.
+Karşılıklı konuşma YOK.
+
+### Faz 2 — talep bir MESAJ DİZİSİ taşır
+
+- **Kullanıcı → yapıcı:** hata/istek (mevcut) + sonradan mesaj ekleyebilir
+- **Yapıcı → kullanıcı:** çözüm + soru ("şunu netleştir") + ara güncelleme
+- **Kullanıcı → yapıcı:** yanıt ("hâlâ olmuyor", "oldu teşekkürler")
+- `TalepMesaj` tablosu: `talepId · gonderenId · gonderenTipi
+  (MUSTERI/GELISTIRICI) · metin · ek · zaman`
+- Yeni yanıt bildirimi: çanla mı ayrı mı — **Faz 2'de karar**
+
+### FAZ 1 MİMARİSİ FAZ 2'YE HAZIR — kısayol yasak
+
+**DURUM İLE MESAJ AYRI KALIR.** Durum "NEREDE" der (YAPILIYOR), mesajlar
+"NE KONUŞULDU" der. Karışsalardı Faz 2'de mesaj eklemek durumu
+değiştirmek zorunda bırakırdı. `talep:dogrula` bunu ayrıca tutuyor.
+
+**`cozumNotu` → `TalepMesaj[]` GÖÇÜ TEMİZ OLMALI, YENİDEN YAZIM DEĞİL:**
+
+```sql
+INSERT INTO TalepMesaj (talepId, gonderenId, gonderenTipi, metin, createdAt)
+SELECT id, bildirenId,       'MUSTERI',     aciklama,  createdAt       FROM Talep;
+INSERT INTO TalepMesaj (talepId, gonderenId, gonderenTipi, metin, createdAt)
+SELECT id, cozumNotuYazanId, 'GELISTIRICI', cozumNotu, cozumNotuZamani  FROM Talep
+  WHERE cozumNotu IS NOT NULL;
+```
+
+⚠ **BU SELECT İLK TESLİMDE ÇALIŞMAZDI.** Notun YAZARI ve ZAMANI
+tutulmuyordu; o hâliyle göç yeniden yazım olurdu. `updatedAt` işe
+yaramaz — her durum değişikliğinde ezilir ve notun yazıldığı anı değil
+kaydın en son dokunulduğu anı söyler. `cozumNotuYazanId` +
+`cozumNotuZamani` bu yüzden **Faz 1'e eklendi** (16.08.2026) ve testle
+kilitlendi. _Vizyonu kaydetmek yetmez; bugünkü yapının o vizyona
+gerçekten evrilip evrilmediği AYRICA sınanır._
+
+**`companyId` zaten eklendi** → Faz 2'de her firmanın kendi konuşması
+izole; izolasyon o zaman GERÇEK olur.
+
+**`gonderenTipi` baştan düşünüldü:** Faz 1'de not hep GELİSTİRİCİ'den
+gelir (yalnız `destek.yonet` yazabiliyor), Faz 2'de iki taraf yazar.
+
+_EUR ve uyarı-erteleme ile aynı ilke: mimari genişlemeye hazır, içerik dar._

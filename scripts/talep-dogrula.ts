@@ -378,6 +378,57 @@ console.log("=".repeat(70));
     eylem.includes("companyId: baglam.companyId"),
   );
 
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  FAZ 2'YE EVRİLEBİLİRLİK — MESAJ DİZİSİNE GEÇİŞ (mimar vizyonu)
+   * --------------------------------------------------------------------
+   *  Talep Faz 2'de bir MESAJ DİZİSİ taşıyacak (TalepMesaj). Geçişin
+   *  YENİDEN YAZIM değil temiz bir göç olması isteniyor:
+   *
+   *    INSERT INTO TalepMesaj (talepId, gonderenId, gonderenTipi, metin, createdAt)
+   *    SELECT id, bildirenId,       'MUSTERI',     aciklama,  createdAt       FROM Talep;
+   *    SELECT id, cozumNotuYazanId, 'GELISTIRICI', cozumNotu, cozumNotuZamani FROM Talep
+   *      WHERE cozumNotu IS NOT NULL;
+   *
+   *  Bu SELECT'in çalışması için notun YAZARI ve ZAMANI bugünden
+   *  tutulmalı. İlk teslimde ikisi de YOKTU — o hâliyle göç yeniden yazım
+   *  olurdu. `updatedAt` işe yaramaz: her durum değişikliğinde ezilir ve
+   *  notun yazıldığı anı değil kaydın en son dokunulduğu anı söyler.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const sema = readFileSync("prisma/schema.prisma", "utf8");
+  kontrol(
+    "çözüm notunun YAZARI tutuluyor (Faz 2 göçü için)",
+    sema.includes("cozumNotuYazanId String?"),
+  );
+  kontrol(
+    "  ...ZAMANI da tutuluyor (updatedAt yeterli değil)",
+    sema.includes("cozumNotuZamani DateTime?"),
+  );
+  kontrol(
+    "  ...not yazılırken ikisi de KAYDEDİLİYOR",
+    eylem.includes("cozumNotuYazanId: baglam.kullaniciId") &&
+      eylem.includes("cozumNotuZamani: new Date()"),
+  );
+  kontrol(
+    "  ...ikisi de NULL olabiliyor (geçmiş kayıt bozulmuyor, yazar uydurulmuyor)",
+    sema.includes("cozumNotuYazanId String?") &&
+      sema.includes("cozumNotuZamani DateTime?"),
+  );
+  kontrol(
+    "  ...ekranda kim/ne zaman görünüyor",
+    sayfa.includes("x.cozumNotuYazan") && sayfa.includes("x.cozumNotuZamani"),
+  );
+  /**
+   * DURUM İLE MESAJ AYRI KALIR (mimar şartı): durum "nerede" der
+   * (YAPILIYOR), not "ne konuşuldu" der. Karışırlarsa Faz 2'de mesaj
+   * eklemek durumu değiştirmek zorunda bırakırdı.
+   */
+  kontrol(
+    "not YAZMAK durumu değiştirmiyor (ikisi ayrı alan)",
+    !eylem.includes("durum: cozumNotu"),
+  );
+
   /** Süzgeç ADRESTE yaşar — geri tuşu çalışsın, link paylaşılabilsin. */
   kontrol("süzgeç adreste", sayfa.includes("/talepler?"));
 
