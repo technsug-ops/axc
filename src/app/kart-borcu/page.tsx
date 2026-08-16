@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { sayfaIzni } from "@/lib/yetki";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 import { CreditCard, Pencil, TriangleAlert } from "lucide-react";
 
@@ -46,6 +46,25 @@ export default async function KartBorcuSayfasi({
   searchParams: Promise<{ kart?: string }>;
 }) {
   await sayfaIzni("kart.gor");
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  SAYFA İZNİ ≠ ÖDEME İZNİ (K19, 16.08.2026)
+   * --------------------------------------------------------------------
+   *  Sayfayı `kart.gor` açıyor. Ama ödeme kaydetmek bir PARA işlemidir
+   *  ve eylemler ayrıca `satis.kar.gor` istiyor. Sayfa bunu sormuyordu:
+   *  yalnız `kart.gor` olan kullanıcı formu GÖRÜYOR, dolduruyor, kaydete
+   *  basıyor ve ancak o zaman yetki hatası alıyordu.
+   *
+   *  Yazma güvendeydi (sunucu eylemi durduruyor) ama kullanıcı yapamayacağı
+   *  bir işe DAVET ediliyordu — çıkmaza götüren uyarı, anayasadaki
+   *  "kural teslim edilebilir mi" süzgecinin tam örneği.
+   *
+   *  Düğmeyi pasif yapmak da yetmez (İlke #5: sessiz başarısızlık yasak):
+   *  yetki yoksa form hiç çizilmez ve NEDEN çizilmediği yazılır.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const odemeYetkisi = await izinVarMi("satis.kar.gor");
 
   const t = await getTranslations("KartBorcu");
   const ortak = await getTranslations("Ortak");
@@ -553,6 +572,9 @@ export default async function KartBorcuSayfasi({
                                           paraBirimi={kart.currency}
                                           tersMi={o.isReversal}
                                           tersAlinmisMi={o.reversedBy !== null}
+                                          /* Ters almak da yazma işlemidir —
+                                             aynı izne bağlı. */
+                                          yetkiVar={odemeYetkisi}
                                         />
                                       ))}
                                       {/* Kalan TÜRETİLİR, saklanmaz. */}
@@ -581,6 +603,11 @@ export default async function KartBorcuSayfasi({
                                    * Alternatif (useEffect ile eşitleme) kullanıcı yazarken
                                    * de tetiklenip elle girilen tutarı ezerdi.
                                    */}
+                                  {!odemeYetkisi ? (
+                                    <p className="text-muted-foreground text-xs">
+                                      {tOdeme("yetkiYok")}
+                                    </p>
+                                  ) : (
                                   <OdemeFormu
                                     key={`${anahtar}-${donemOdemeleri.length}-${netOdenen}`}
                                     cardId={kart.id}
@@ -596,6 +623,7 @@ export default async function KartBorcuSayfasi({
                                     bugun={bugunMetni}
                                     kategoriler={kategoriler}
                                   />
+                                  )}
                                 </div>
                               );
                             })()}

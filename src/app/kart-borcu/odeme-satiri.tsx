@@ -25,6 +25,7 @@ export function OdemeSatiri({
   paraBirimi,
   tersMi,
   tersAlinmisMi,
+  yetkiVar,
 }: {
   odemeId: string;
   odenen: number;
@@ -33,6 +34,8 @@ export function OdemeSatiri({
   paraBirimi: "TRY" | "EUR";
   tersMi: boolean;
   tersAlinmisMi: boolean;
+  /** `satis.kar.gor` — ters almak da para yazan bir işlem (K19). */
+  yetkiVar: boolean;
 }) {
   const t = useTranslations("KartOdeme");
   const ortak = useTranslations("Ortak");
@@ -61,7 +64,7 @@ export function OdemeSatiri({
       </span>
 
       {/* Ters kaydın tersi alınmaz; zaten ters alınmış kayıt da tekrarlanmaz. */}
-      {!tersMi && !tersAlinmisMi ? (
+      {yetkiVar && !tersMi && !tersAlinmisMi ? (
         <Button
           size="sm"
           variant="outline"

@@ -25,6 +25,22 @@ import { readFileSync } from "node:fs";
 let gecen = 0;
 let kalan = 0;
 
+/**
+ * EKRAN BAĞI KAYNAKLARI — MODÜL DÜZEYİNDE.
+ *
+ * Bunlar önce bir bloğun içinde okunuyordu; ikinci bölümde aynı adlara
+ * ulaşılamayınca betik "sayfa is not defined" diye ÇÖKTÜ (16.08.2026).
+ * Çökme sessiz geçmedi — ama blok kapsamlı bir tanım aynı sessizlikle
+ * yanlış dosyayı da okuyabilirdi. Kaynaklar tek yerde durur.
+ */
+const form = readFileSync("src/app/kart-borcu/odeme-formu.tsx", "utf8");
+const sayfa = readFileSync("src/app/kart-borcu/page.tsx", "utf8");
+const satir = readFileSync("src/app/kart-borcu/odeme-satiri.tsx", "utf8");
+const eylem = readFileSync("src/app/kart-borcu/eylemler.ts", "utf8");
+const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  KartOdeme?: Record<string, string>;
+};
+
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
     gecen += 1;
@@ -221,12 +237,6 @@ console.log("=".repeat(70));
    * çalışmıyordur. Bu kontrol "kural teslim edilebilir mi" süzgecidir
    * (anayasa notu 16.08.2026).
    */
-  const form = readFileSync("src/app/kart-borcu/odeme-formu.tsx", "utf8");
-  const sayfa = readFileSync("src/app/kart-borcu/page.tsx", "utf8");
-  const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
-    KartOdeme?: Record<string, string>;
-  };
-
   /**
    * ════════════════════════════════════════════════════════════════════
    *  ÖN-DOLU TUTAR = KALAN BORÇ (16.08.2026 canlı bulgusu)
@@ -424,7 +434,37 @@ console.log("=".repeat(70));
    *  düşerdi. Karta ödeme yapmak bir gider değil, borcun kapanmasıdır.
    * ════════════════════════════════════════════════════════════════════
    */
-  const eylem = readFileSync("src/app/kart-borcu/eylemler.ts", "utf8");
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  K19 — SAYFA İZNİ ÖDEME İZNİNİ KAPSAMAZ (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Sayfayı `kart.gor` açıyordu, eylemler ise `satis.kar.gor` istiyordu.
+   *  Aradaki boşlukta kullanıcı formu görüp dolduruyor, ancak KAYDET'te
+   *  duvara çarpıyordu. Yazma güvendeydi; davet yanlıştı.
+   *
+   *  Bu kontrol iki bacağı da tutar: sayfa izni SORUYOR mu, ve sorduğu
+   *  şey formu ve ters alma düğmesini gerçekten GİZLİYOR mu.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "sayfa ödeme yetkisini ayrıca soruyor (kart.gor yetmez)",
+    sayfa.includes('izinVarMi("satis.kar.gor")'),
+  );
+  kontrol(
+    "  ...yetki yoksa form çizilmiyor",
+    sayfa.includes("!odemeYetkisi ?") && sayfa.includes('tOdeme("yetkiYok")'),
+  );
+  kontrol(
+    "  ...NEDEN çizilmediği yazıyor (sessiz kaybolma yok)",
+    typeof tr.KartOdeme?.yetkiYok === "string" &&
+      tr.KartOdeme.yetkiYok.length > 0,
+  );
+  kontrol(
+    "  ...ters alma düğmesi de yetkiye bağlı",
+    sayfa.includes("yetkiVar={odemeYetkisi}") &&
+      satir.includes("{yetkiVar && !tersMi"),
+  );
+
   const kapi = eylem.indexOf("if (faiz > 0 && kategoriId)");
   const yazim = eylem.indexOf("tx.expense.create");
   kontrol("odemeKaydet gideri faiz kapısının ARDINDA yazıyor", kapi !== -1);
