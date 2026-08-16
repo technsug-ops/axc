@@ -674,6 +674,38 @@ console.log("=".repeat(70));
       sayfa.includes('t("durumKismen")') &&
       sayfa.includes('t("durumOdendi")'),
   );
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  İPTAL EDİLMİŞ ÖDEME İPTAL GÖRÜNÜR (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Kullanıcı ters kayıt attı ve "sistem sıfırlamamış" dedi. Sistem
+   *  sıfırlamıştı; ekran söylemiyordu. Ters ALINMIŞ asıl satır düz yazı,
+   *  tam renk, işaretsiz duruyordu — canlı bir ödemeden farksız.
+   *
+   *  Defter kaydı silinmez ama "kayıt duruyor" ile "kayıt geçerli" ayrı
+   *  şeylerdir. Üstü çizili + soluk + kelimeyle "iptal edildi".
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "ters ALINMIŞ ödeme satırı iptal görünüyor (üstü çizili)",
+    satir.includes("const iptal = tersAlinmisMi;") &&
+      satir.includes('iptal ? "line-through" : ""'),
+  );
+  kontrol(
+    "  ...soluklaştırılıyor",
+    satir.includes('iptal ? "opacity-60" : ""'),
+  );
+  kontrol(
+    "  ...KELİMEYLE de söyleniyor (çizgi tek başına yetmez)",
+    satir.includes('t("iptalEdildi")') &&
+      typeof tr.KartOdeme?.iptalEdildi === "string" &&
+      tr.KartOdeme.iptalEdildi.length > 0,
+  );
+  kontrol(
+    "  ...ters kaydın KENDİSİ iptal sayılmıyor (o geçerli bir düzeltme)",
+    !satir.includes("const iptal = tersMi"),
+  );
+
   kontrol(
     "ödenmemişler kartlar arası TEK listede toplanıyor",
     sayfa.includes("const odenmemisEkstreler = kartHesaplari"),

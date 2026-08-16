@@ -46,19 +46,54 @@ export function OdemeSatiri({
 
   const para = (n: number) => bicim.para(n, paraBirimi);
 
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  İPTAL EDİLMİŞ ÖDEME, İPTAL EDİLMİŞ GÖRÜNÜR (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Kullanıcı: "ters kayıt yapmışım, sistem sıfırlamamış."
+   *
+   *  Sistem SIFIRLAMIŞTI — net etki sıfırdı, kalan doğru hesaplanıyordu.
+   *  Ama ters ALINMIŞ asıl satır hâlâ canlı bir ödeme gibi duruyordu:
+   *  düz yazı, tam renk, hiçbir işaret. Ekranda üç satır vardı ve ikisi
+   *  birbirini götürüyordu; bunu görmek için okuyup kafadan toplamak
+   *  gerekiyordu.
+   *
+   *  Defter kaydı SİLİNMEZ (StockMovement ilkesi) — silinmemeli de. Ama
+   *  "kayıt duruyor" ile "kayıt geçerli" ayrı şeylerdir; ekranın bunu
+   *  söylemesi gerekir. Üstü çizili + soluk + "iptal edildi" etiketi.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const iptal = tersAlinmisMi;
+
   return (
-    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 text-sm">
+    <div
+      className={`flex min-w-0 flex-wrap items-center justify-between gap-2 text-sm ${
+        iptal ? "opacity-60" : ""
+      }`}
+    >
       <span className="flex min-w-0 flex-wrap items-center gap-2">
         <span className="text-muted-foreground">{tarih}</span>
-        <span className="tabular-nums">{para(odenen)}</span>
+        <span className={`tabular-nums ${iptal ? "line-through" : ""}`}>
+          {para(odenen)}
+        </span>
         {faiz !== 0 ? (
-          <span className="text-muted-foreground tabular-nums text-xs">
+          <span
+            className={`text-muted-foreground tabular-nums text-xs ${
+              iptal ? "line-through" : ""
+            }`}
+          >
             {t("faiz")} {para(faiz)}
           </span>
         ) : null}
         {tersMi ? (
           <DurumRozeti durum="notr" isaretsiz>
             {t("tersKayitEtiketi")}
+          </DurumRozeti>
+        ) : null}
+        {/* Renk ve çizgi tek başına yetmez — kelimeyle de söylenir. */}
+        {iptal ? (
+          <DurumRozeti durum="notr" isaretsiz>
+            {t("iptalEdildi")}
           </DurumRozeti>
         ) : null}
       </span>
