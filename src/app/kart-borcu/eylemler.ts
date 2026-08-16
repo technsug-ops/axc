@@ -11,7 +11,7 @@ import {
   type FaizGirdisi,
 } from "@/lib/kart-odeme/hesap";
 import {
-  FAIZ_KATEGORI_ADI,
+  FAIZ_KATEGORI_ONERISI,
   type OdemeGirdisi,
   type OdemeSonucu,
 } from "@/lib/kart-odeme/kategori";
@@ -31,13 +31,26 @@ import { yetkiIste } from "@/lib/yetki";
  * ============================================================================
  */
 
-/** Kategori gerçekten var mı — kod bazında kontrol, varsayım yok. */
-export async function faizKategorisi(): Promise<{ id: string; ad: string } | null> {
-  const kayit = await prisma.expenseCategory.findFirst({
-    where: { name: FAIZ_KATEGORI_ADI, isActive: true },
+/**
+ * Faiz giderinin yazılabileceği kategoriler — AKTİF OLANLARIN HEPSİ.
+ *
+ * Tek bir ada bağlı DEĞİL: kullanıcı seçer. Önerilen ad varsa form onu
+ * ön-seçili getirir. Kategori eklemek için ekran olmadığı için tek ada
+ * bağlamak kullanıcıyı çıkmaza sokuyordu (16.08.2026 bulgusu).
+ */
+export async function faizKategorileri(): Promise<
+  { id: string; ad: string; onerilenMi: boolean }[]
+> {
+  const kayitlar = await prisma.expenseCategory.findMany({
+    where: { isActive: true },
     select: { id: true, name: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
-  return kayit ? { id: kayit.id, ad: kayit.name } : null;
+  return kayitlar.map((k) => ({
+    id: k.id,
+    ad: k.name,
+    onerilenMi: k.name === FAIZ_KATEGORI_ONERISI,
+  }));
 }
 
 /**
@@ -67,20 +80,30 @@ export async function odemeKaydet(girdi: OdemeGirdisi): Promise<OdemeSonucu> {
   if (!kart) return { tamam: false, hata: t("kartYok") };
 
   const faiz = faizTutari(girdi.faiz);
-  const kategori = faiz > 0 ? await faizKategorisi() : null;
-  // FAİZ VAR AMA KATEGORİ YOK: sessizce kategorisiz gider yazmak yerine
-  // işlemi durduruyoruz. Form zaten uyarıyor; bu ikinci kapı.
-  if (faiz > 0 && kategori === null) {
-    return { tamam: false, hata: t("kategoriYok") };
+  /**
+   * FAİZ VAR AMA KATEGORİ SEÇİLMEMİŞ: sessizce kategorisiz gider yazmak
+   * yerine işlemi durduruyoruz. Form zaten seçtiriyor; bu ikinci kapı.
+   * Seçilen kategorinin GERÇEKTEN var ve aktif olduğu da doğrulanıyor —
+   * arayüzden gelen kimliğe güvenilmez.
+   */
+  let kategoriId: string | null = null;
+  if (faiz > 0) {
+    if (!girdi.faizKategoriId) return { tamam: false, hata: t("kategoriSec") };
+    const kategori = await prisma.expenseCategory.findFirst({
+      where: { id: girdi.faizKategoriId, isActive: true },
+      select: { id: true },
+    });
+    if (!kategori) return { tamam: false, hata: t("kategoriYok") };
+    kategoriId = kategori.id;
   }
 
   await prisma.$transaction(async (tx) => {
     let faizGiderId: string | null = null;
-    if (faiz > 0 && kategori) {
+    if (faiz > 0 && kategoriId) {
       const gider = await tx.expense.create({
         data: {
           spentAt: odemeTarihi,
-          categoryId: kategori.id,
+          categoryId: kategoriId,
           amount: faiz,
           currency: kart.currency,
           // Gecikme faizi KDV'siz bir finansman gideridir.

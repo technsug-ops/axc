@@ -11,14 +11,20 @@ import type { FaizGirdisi } from "./hesap";
  */
 
 /**
- * Faiz giderinin yazılacağı gider kategorisinin ADI.
+ * Faiz gideri için TERCİH EDİLEN kategori adı — ZORUNLU DEĞİL, yalnız
+ * formda ön-seçim ipucu.
  *
- * SEED'E EKLENMEZ, OTOMATİK OLUŞTURULMAZ (mimar kararı 15.08.2026). Yoksa
- * form eyleme dönük uyarı gösterir ve ayarlara link verir; kullanıcı bir kez
- * tanımlar. Sessizce kategori yaratmak, kullanıcının görmediği veri üretmek
- * olurdu.
+ * ⚠ 16.08.2026 DÜZELTMESİ. Önce bu ad ZORUNLUYDU: kategori yoksa faiz
+ * yazılamıyor, form "ayarlardan ekle" diyordu. İki sebeple yanlıştı:
+ *   1. Gider kategorisi eklemek için EKRAN YOK — kategoriler yalnız
+ *      `prisma/seed-gider.ts`ten geliyor. Uyarı çıkmaza götürüyordu.
+ *   2. Anayasa: "Kategoriler ve oranları AYARLANABİLİR VERİDİR (sabit kod
+ *      değil)." Adı koda gömmek o kuralı deliyordu.
+ *
+ * Doğrusu: kullanıcı MEVCUT kategorilerden seçer. Bu ad varsa ön-seçili
+ * gelir, yoksa kullanıcı kendi kategorisini seçer — çıkmaz yok.
  */
-export const FAIZ_KATEGORI_ADI = "Kart gecikme faizi";
+export const FAIZ_KATEGORI_ONERISI = "Kart gecikme faizi";
 
 export type OdemeGirdisi = {
   cardId: string;
@@ -28,6 +34,8 @@ export type OdemeGirdisi = {
   odenenAnaBorc: number;
   odemeTarihi: string;
   faiz: FaizGirdisi;
+  /** Faiz giderinin yazılacağı kategori. Faiz 0 ise null olabilir. */
+  faizKategoriId: string | null;
 };
 
 export type OdemeSonucu = { tamam: true } | { tamam: false; hata: string };

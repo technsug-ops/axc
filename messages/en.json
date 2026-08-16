@@ -2276,8 +2276,6 @@
     "karaEtkiYok": "",
     "mukerrerUyari": "",
     "asiyorUyari": "",
-    "kategoriYokUyari": "",
-    "kategoriEkle": "",
     "faizGecersiz": "",
     "tarihGecersiz": "",
     "kartYok": "",
@@ -2292,6 +2290,10 @@
     "tersAl": "",
     "tersKayitEtiketi": "",
     "odenmis": "",
-    "kismiOdenmis": ""
+    "kismiOdenmis": "",
+    "faizKategorisi": "",
+    "kategoriSecin": "",
+    "faizKategorisiNotu": "",
+    "kategoriSec": ""
   }
 }

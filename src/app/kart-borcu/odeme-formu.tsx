@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -40,7 +39,7 @@ export function OdemeFormu({
   paraBirimi,
   mevcutKayitlar,
   bugun,
-  faizKategorisiVar,
+  kategoriler,
 }: {
   cardId: string;
   /** Ekstre dönemi — ayın 1'i, ISO. */
@@ -51,8 +50,8 @@ export function OdemeFormu({
   paraBirimi: "TRY" | "EUR";
   mevcutKayitlar: { odenenAnaBorc: number }[];
   bugun: string;
-  /** Faiz kategorisi tanımlı mı — yoksa eyleme dönük uyarı gösterilir. */
-  faizKategorisiVar: boolean;
+  /** Faiz giderinin yazılabileceği AKTİF kategoriler. */
+  kategoriler: { id: string; ad: string; onerilenMi: boolean }[];
 }) {
   const t = useTranslations("KartOdeme");
   const ortak = useTranslations("Ortak");
@@ -69,6 +68,14 @@ export function OdemeFormu({
   const [oran, setOran] = useState("");
   const [gun, setGun] = useState("");
   const [faizTutarMetni, setFaizTutarMetni] = useState("");
+  /**
+   * KATEGORİ SEÇİMİ. Önerilen ad varsa ön-seçili gelir; yoksa kullanıcı
+   * kendi kategorisini seçer. Tek bir ada bağlamak, kategori ekleme ekranı
+   * olmadığı için kullanıcıyı çıkmaza sokuyordu (16.08.2026 bulgusu).
+   */
+  const [kategoriId, setKategoriId] = useState(
+    kategoriler.find((k) => k.onerilenMi)?.id ?? "",
+  );
 
   const sayi = (m: string) => {
     const d = Number(m.replace(",", "."));
@@ -97,7 +104,8 @@ export function OdemeFormu({
 
   const para = (n: number) => bicim.para(n, paraBirimi);
   const faizSorunlu = !faizGecerliMi(faiz);
-  const kategoriEngeli = onizleme.faiz > 0 && !faizKategorisiVar;
+  // Faiz varsa kategori ZORUNLU; faiz yoksa hiç sorulmuyor.
+  const kategoriEngeli = onizleme.faiz > 0 && kategoriId === "";
 
   function kaydet() {
     setHata(null);
@@ -109,6 +117,7 @@ export function OdemeFormu({
         odenenAnaBorc: sayi(odenen),
         odemeTarihi: tarih,
         faiz,
+        faizKategoriId: kategoriId || null,
       });
       if (sonuc.tamam) {
         setAcik(false);
@@ -212,6 +221,29 @@ export function OdemeFormu({
           </div>
         ) : null}
 
+        {/* KATEGORİ SEÇİMİ — yalnız faiz varken sorulur. */}
+        {faizYolu !== "yok" ? (
+          <div className="space-y-1">
+            <Label htmlFor={`kategori-${donem}`}>{t("faizKategorisi")}</Label>
+            <select
+              id={`kategori-${donem}`}
+              className="border-input bg-background h-11 w-full rounded-md border px-3 text-sm md:h-9"
+              value={kategoriId}
+              onChange={(e) => setKategoriId(e.target.value)}
+            >
+              <option value="">{t("kategoriSecin")}</option>
+              {kategoriler.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.ad}
+                </option>
+              ))}
+            </select>
+            <p className="text-muted-foreground text-xs">
+              {t("faizKategorisiNotu")}
+            </p>
+          </div>
+        ) : null}
+
         {faizYolu === "elle" ? (
           <div className="space-y-1">
             <Label htmlFor={`faiz-${donem}`}>{t("faizTutari")}</Label>
@@ -271,14 +303,9 @@ export function OdemeFormu({
         ) : null}
       </div>
 
-      {/* KATEGORİ YOKSA ÇIKMAZ DEĞİL: link ÇÖZÜME götürür. */}
+      {/* Kategori seçilmediyse uyarır — ÇIKMAZ YOK, seçenek listede. */}
       {kategoriEngeli ? (
-        <DurumRozeti durum="olumsuz">
-          {t("kategoriYokUyari")}{" "}
-          <Link href="/ayarlar/kategoriler" className="underline underline-offset-2">
-            {t("kategoriEkle")}
-          </Link>
-        </DurumRozeti>
+        <DurumRozeti durum="olumsuz">{t("kategoriSec")}</DurumRozeti>
       ) : null}
 
       {faizSorunlu ? (

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { bicimlendirici } from "@/lib/bicim";
 import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
 import { kartBorcuHesapla, type BorcAlimi } from "@/lib/kart-borcu";
-import { faizKategorisi } from "./eylemler";
+import { faizKategorileri } from "./eylemler";
 import { OdemeFormu } from "./odeme-formu";
 import { OdemeSatiri } from "./odeme-satiri";
 import { prisma } from "@/lib/prisma";
@@ -90,10 +90,14 @@ export default async function KartBorcuSayfasi() {
   });
 
   /**
-   * Faiz kategorisi tanımlı mı. YOKSA form eyleme dönük uyarı gösterir ve
-   * ayarlara link verir — sessizce kategori yaratılmaz (mimar kararı).
+   * Faiz giderinin yazılabileceği AKTİF kategoriler.
+   *
+   * Kullanıcı SEÇER; sessizce kategori yaratılmaz (mimar kararı) ama tek bir
+   * ADA da bağlanmaz. Tek ada bağlıydı ve kategori yoksa form "ayarlardan
+   * ekle" diyordu — oysa gider kategorisi ekleyecek EKRAN YOK, yani uyarı
+   * çıkmaza götürüyordu (16.08.2026 bulgusu).
    */
-  const kategoriVar = (await faizKategorisi()) !== null;
+  const kategoriler = await faizKategorileri();
 
   /** Ekstre dönemi anahtarı — kesim tarihinin ayının 1'i (ISO). */
   const donemAnahtari = (kesim: Date) =>
@@ -428,7 +432,7 @@ export default async function KartBorcuSayfasi() {
                                       ),
                                     }))}
                                     bugun={bugunMetni}
-                                    faizKategorisiVar={kategoriVar}
+                                    kategoriler={kategoriler}
                                   />
                                 </div>
                               );

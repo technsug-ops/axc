@@ -2276,8 +2276,6 @@
     "karaEtkiYok": "Bu ödeme dönem kârını etkilemez — ana borcun maliyeti alımda sayıldı, faiz de yok.",
     "mukerrerUyari": "Bu ekstreye daha önce {onceki} ödenmiş, kalan {kalan}. Yine de eklensin mi?",
     "asiyorUyari": "Girilen tutar kalan borcu AŞIYOR — mükerrer ödeme olabilir.",
-    "kategoriYokUyari": "“Kart gecikme faizi” gider kategorisi tanımlı değil; faiz yazılamaz.",
-    "kategoriEkle": "Ayarlardan ekle",
     "faizGecersiz": "Faiz değerleri geçersiz — eksi sayı ya da ondalık gün olamaz.",
     "tarihGecersiz": "Tarih okunamadı.",
     "kartYok": "Kart bulunamadı.",
@@ -2292,6 +2290,10 @@
     "tersAl": "Ters al",
     "tersKayitEtiketi": "ters kayıt",
     "odenmis": "ödendi",
-    "kismiOdenmis": "kısmi ödendi"
+    "kismiOdenmis": "kısmi ödendi",
+    "faizKategorisi": "Faiz gideri kategorisi",
+    "kategoriSecin": "— kategori seçin —",
+    "faizKategorisiNotu": "Faiz bu kategoriye gider olarak yazılacak ve o dönemin kârından düşecek.",
+    "kategoriSec": "Faiz için bir gider kategorisi seçin."
   }
 }
