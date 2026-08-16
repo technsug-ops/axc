@@ -359,6 +359,29 @@ hesap, teslim edilemeyen bir sözün üstünde durabilir.
 > Karşılığı yoksa yapılacak şey talimatı sessizce uygulamak değil,
 > **eksiği bildirip niyeti karşılayan yolu önermektir.**
 
+### VİZYONU KAYDETMEK YETMEZ — EVRİLEBİLİRLİK SINANIR
+
+_Ders 16.08.2026._ Aynı süzgecin **geleceğe dönük** hâli: "bu yapı ileride
+şuna evrilecek" demek bir İDDİADIR ve iddia, **gerçek göç senaryosu
+denenmeden doğru sayılmaz.**
+
+Destek modülünde yaşandı. Sözleşme doğruydu ("Faz 1 dar olsun ama Faz 2'ye
+mesaj dizisine temiz evrilsin"), tasarım da makul görünüyordu. Ama Faz 2'nin
+göç sorgusu **yazılıp denenince** boşluk çıktı: `cozumNotu` notun YAZARINI
+ve ZAMANINI tutmuyordu, dolayısıyla `INSERT ... SELECT` kurulamıyordu ve
+göçün adı "temiz migration" değil **"yeniden yazım"** olurdu — tam
+kaçınılmak istenen şey. (`updatedAt` işe yaramıyordu: her durum
+değişikliğinde eziliyor ve notun yazıldığı anı değil kaydın en son
+dokunulduğu anı söylüyor.)
+
+**KURAL:** İleri uyumluluk iddiası taşıyan her teslimde,
+1. Gelecekteki göç sorgusu/adımı **bugünden yazılır**,
+2. **Gerçek veriyle prova edilir** (salt-okunur; hiçbir şey yazmaz),
+3. Kurulamayan satır varsa eksik alan **bugün** eklenir.
+
+"Sonra düşünürüz" denen alan, sonra düşünüldüğünde veri çoktan onsuz
+birikmiştir; o noktada eklemek geçmişi uydurmak ya da kaybetmek olur.
+
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`
 - Her anlamlı iş biriminde commit at; günün sonunda değil, iş bitince
