@@ -312,6 +312,62 @@ console.log("=".repeat(70));
   kontrol("faiz yoksa kâra etki 0", faizsiz.karaEtki === 0);
   kontrol("  ...gider YAZILMIYOR", faizsiz.giderYazilacakMi === false);
 
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  ÖNİZLEMEDEKİ "KALAN" ÖNCEKİ ÖDEMELERİ SAYAR (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Ekranda iki farklı "kalan" görünüyordu: üstteki not "kalan borç
+   *  ₺0,00" derken önizleme kutusu "Kalan ₺1.199,66" yazıyordu. İkisi de
+   *  kendi tanımınca doğruydu ama aynı kelimeyle iki hesap, kullanıcıya
+   *  hangisine inanacağını bıraktı.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const oncekiliOn = odemeOnizlemesi({
+    ekstreBorcu: 1199.66,
+    odenenAnaBorc: 0,
+    faiz: { yol: "yok" },
+    mevcutKayitlar: [{ odenenAnaBorc: 1199.66 }],
+  });
+  kontrol(
+    "kapalı ekstrede önizleme kalanı 0 (önceki ödeme sayılıyor)",
+    oncekiliOn.kalan === 0,
+    oncekiliOn.kalan,
+  );
+  kontrol(
+    "  ...önceki toplam ayrı alan olarak taşınıyor",
+    Math.abs(oncekiliOn.oncekiToplam - 1199.66) < 0.001,
+  );
+
+  const yarimOn = odemeOnizlemesi({
+    ekstreBorcu: 1000,
+    odenenAnaBorc: 300,
+    faiz: { yol: "yok" },
+    mevcutKayitlar: [{ odenenAnaBorc: 400 }],
+  });
+  kontrol(
+    "400 ödenmiş ekstreye 300 daha: kalan 300 (1.000 − 400 − 300)",
+    yarimOn.kalan === 300,
+    yarimOn.kalan,
+  );
+  kontrol(
+    "  ...önceki ödeme olmadan davranış değişmiyor",
+    odemeOnizlemesi({
+      ekstreBorcu: 1000,
+      odenenAnaBorc: 300,
+      faiz: { yol: "yok" },
+      mevcutKayitlar: [],
+    }).kalan === 700,
+  );
+  kontrol(
+    "ekranda önceki ödeme satırı ve 'bu ödemeden sonra kalan' etiketi var",
+    readFileSync("src/app/kart-borcu/odeme-formu.tsx", "utf8").includes(
+      't("oncekiOdenen")',
+    ) &&
+      readFileSync("src/app/kart-borcu/odeme-formu.tsx", "utf8").includes(
+        't("kalanSonra")',
+      ),
+  );
+
   /** Kısmi ödeme önizlemesi: kalan görünür, uyarı taşınır. */
   const kismi = odemeOnizlemesi({
     ekstreBorcu: 1000,

@@ -340,12 +340,20 @@ export function OdemeFormu({
             <dt className="text-muted-foreground">{t("ekstreBorcu")}</dt>
             <dd className="tabular-nums">{para(onizleme.ekstreBorcu)}</dd>
           </div>
+          {/* Önceki ödemeler GÖRÜNÜR: "kalan" rakamının neden o olduğu
+              ekranda anlaşılsın, kafada hesap yapılmasın. */}
+          {onizleme.oncekiToplam !== 0 ? (
+            <div className="flex justify-between gap-2">
+              <dt className="text-muted-foreground">{t("oncekiOdenen")}</dt>
+              <dd className="tabular-nums">{para(onizleme.oncekiToplam)}</dd>
+            </div>
+          ) : null}
           <div className="flex justify-between gap-2">
             <dt className="text-muted-foreground">{t("odeniyor")}</dt>
             <dd className="tabular-nums">{para(onizleme.odenenAnaBorc)}</dd>
           </div>
           <div className="flex justify-between gap-2">
-            <dt className="text-muted-foreground">{t("kalan")}</dt>
+            <dt className="text-muted-foreground">{t("kalanSonra")}</dt>
             {/* Eksi kalan KIRPILMAZ: fazla ödeme gerçek bir olaydır. */}
             <dd className="tabular-nums font-medium">{para(onizleme.kalan)}</dd>
           </div>

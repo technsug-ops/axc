@@ -2300,6 +2300,8 @@
     "zatenKapaliOnay": "Biliyorum, yine de ekle",
     "onDoluKalanNotu": "Kalan borç {kalan} — ekstrenin tamamı {borc}, bir kısmı zaten ödenmiş. Banka farklı kestiyse düzeltin.",
     "asiyorBaslik": "Girilen tutar kalan borcu AŞIYOR — kalan yalnızca {kalan}.",
-    "asiyorNot": "Bu ekstreye daha önce {onceki} ödenmiş. Fazla ödeme kaydedilebilir ama mükerrer giriş olabilir; devam etmek için aşağıdaki kutuyu işaretleyin."
+    "asiyorNot": "Bu ekstreye daha önce {onceki} ödenmiş. Fazla ödeme kaydedilebilir ama mükerrer giriş olabilir; devam etmek için aşağıdaki kutuyu işaretleyin.",
+    "oncekiOdenen": "Daha önce ödenen",
+    "kalanSonra": "Bu ödemeden sonra kalan"
   }
 }

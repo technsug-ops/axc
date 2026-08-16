@@ -155,7 +155,18 @@ export function mukerrerUyarisi(girdi: {
 
 export type OdemeOnizlemesi = {
   ekstreBorcu: number;
+  /** Bu ekstreye DAHA ÖNCE ödenmiş net tutar. */
+  oncekiToplam: number;
   odenenAnaBorc: number;
+  /**
+   * BU ÖDEMEDEN SONRA KALAN — önceki ödemeler DAHİL.
+   *
+   * ⚠ 16.08.2026 düzeltmesi. Önce yalnız `ekstreBorcu − buÖdeme`ydi, yani
+   * önceki ödemeleri SAYMIYORDU. Ekranda çelişki doğuyordu: üstteki not
+   * "kalan borç ₺0,00" derken hemen altındaki kutu "Kalan ₺1.199,66"
+   * yazıyordu. Aynı kelime, iki farklı hesap — hangisine inanacağını
+   * kullanıcı bilemez.
+   */
   kalan: number;
   faiz: number;
   /** Faiz için gider kaydı doğacak mı. Sıfır faizde gider YAZILMAZ. */
@@ -182,10 +193,13 @@ export function odemeOnizlemesi(girdi: {
   mevcutKayitlar: { odenenAnaBorc: number }[];
 }): OdemeOnizlemesi {
   const faiz = faizTutari(girdi.faiz);
+  const onceki = oncekiOdenen(girdi.mevcutKayitlar);
   return {
     ekstreBorcu: girdi.ekstreBorcu,
+    oncekiToplam: onceki,
     odenenAnaBorc: girdi.odenenAnaBorc,
-    kalan: kalanHesapla(girdi.ekstreBorcu, girdi.odenenAnaBorc),
+    // Önceki ödemeler DAHİL: ekranda tek bir "kalan" kavramı olsun.
+    kalan: kalanHesapla(girdi.ekstreBorcu, onceki + girdi.odenenAnaBorc),
     faiz,
     giderYazilacakMi: faiz > 0,
     // ⚠ ANA BORÇ BURAYA GİRMEZ. Girerse kâr iki kez düşer.
