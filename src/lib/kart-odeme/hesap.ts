@@ -1,3 +1,12 @@
+import {
+  kurusaYuvarla,
+  kurusAsiyorMu,
+  kurusSifirMi,
+} from "@/lib/para";
+
+/** Geriye dönük yayın — mevcut çağıranlar bu modülden alıyor. */
+export { kurusaYuvarla };
+
 /**
  * ============================================================================
  *  KART EKSTRE ÖDEMESİ — SAF KURALLAR
@@ -177,9 +186,15 @@ export function mukerrerUyarisi(girdi: {
     uyar: girdi.mevcutKayitlar.length > 0 || kesilmemis,
     oncekiToplam,
     kalanBorc,
-    asiyorMu: girdi.yeniOdeme > kalanBorc,
+    /**
+     * KURUŞ DÜZEYİNDE karşılaştırılır. Ham `>` ile 1e-13'lük bir artık
+     * "aşıyor" saydırıyordu: kullanıcı ₺7.137,87 girdiğinde ekran
+     * "kalan yalnızca ₺7.137,87, aşıyorsun" diyordu (16.08.2026).
+     */
+    asiyorMu: kurusAsiyorMu(girdi.yeniOdeme, kalanBorc),
     // Borç bitmişken yeni ödeme: ekstre zaten kapalı.
-    zatenKapali: girdi.mevcutKayitlar.length > 0 && kalanBorc <= 0,
+    zatenKapali:
+      girdi.mevcutKayitlar.length > 0 && kurusSifirMi(kalanBorc),
   };
 }
 
@@ -230,8 +245,17 @@ export function odemeOnizlemesi(girdi: {
     ekstreBorcu: girdi.ekstreBorcu,
     oncekiToplam: onceki,
     odenenAnaBorc: girdi.odenenAnaBorc,
-    // Önceki ödemeler DAHİL: ekranda tek bir "kalan" kavramı olsun.
-    kalan: kalanHesapla(girdi.ekstreBorcu, onceki + girdi.odenenAnaBorc),
+    /**
+     * Önceki ödemeler DAHİL: ekranda tek bir "kalan" kavramı olsun.
+     *
+     * SUNUM SINIRI olduğu için kuruşa yuvarlanır. Yuvarlanmadığında ekranda
+     * "−₺0,00" görünüyordu (16.08.2026): tam ödemede kalan −9e-13 çıkıyor,
+     * biçimlendirici eksi işaretini koruyup sıfıra yuvarlıyordu. Kullanıcı
+     * için "eksi sıfır" diye bir tutar yoktur.
+     */
+    kalan: kurusaYuvarla(
+      kalanHesapla(girdi.ekstreBorcu, onceki + girdi.odenenAnaBorc),
+    ),
     faiz,
     giderYazilacakMi: faiz > 0,
     // ⚠ ANA BORÇ BURAYA GİRMEZ. Girerse kâr iki kez düşer.
@@ -267,17 +291,3 @@ export function tersKayit(asil: {
   };
 }
 
-/**
- * KURUŞA YUVARLAMA — para aritmetiğinin sunum sınırı.
- *
- * Veritabanı `Decimal(18,4)` tutuyor, yani kayıt tam. Sapma yalnız
- * JavaScript'te doğuyor: `583.33 - 300` → `283.33000000000004`. Bu ham
- * değer bir para alanına yazılırsa kullanıcı sistemin bozuk olduğunu
- * düşünür — 16.08.2026'da tam olarak bu yaşandı.
- *
- * Hesabın İÇİNDE yuvarlama yapılmaz (art arda yuvarlama hata biriktirir);
- * yalnız ekrana/girdiye çıkarken bir kez uygulanır.
- */
-export function kurusaYuvarla(tutar: number): number {
-  return Math.round(tutar * 100) / 100;
-}

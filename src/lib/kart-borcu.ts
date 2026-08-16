@@ -1,3 +1,5 @@
+import { kurusaYuvarla } from "@/lib/para";
+
 import { ayKaydir, gunDegeri, type TakvimGunu } from "@/lib/donem";
 
 /**
@@ -270,7 +272,16 @@ export function kartBorcuHesapla(
   let bekleyenToplam = 0;
   for (const ekstre of ekstreler) {
     ekstre.odenen = odemeToplami.get(donemAnahtari(ekstre.kesimTarihi)) ?? 0;
-    ekstre.kalan = Math.max(0, ekstre.toplam - ekstre.odenen);
+    /**
+     * KURUŞA YUVARLANIR — yoksa kapalı ekstre "ödenmedi" görünür.
+     *
+     * Ekstre toplamı taksit paylarının toplamıdır ve kayan noktada
+     * `7137.869999999999` gibi çıkabilir (16.08.2026, canlı). Tam ödeme
+     * kaydedildiğinde kalan `+9e-13` kalırsa `kalan > 0` doğru döner:
+     * ekstre kırmızı "ödenmedi" listesinde durur, kullanıcı ödediği hâlde
+     * ödenmemiş görür ve tekrar öder. Kuruşun altında para yoktur.
+     */
+    ekstre.kalan = Math.max(0, kurusaYuvarla(ekstre.toplam - ekstre.odenen));
     if (ekstre.gecmisMi) gecikmisToplam += ekstre.kalan;
     else bekleyenToplam += ekstre.kalan;
   }

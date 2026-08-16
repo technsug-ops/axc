@@ -1,3 +1,5 @@
+import { kurusAsiyorMu } from "../src/lib/para";
+import { kartBorcuHesapla } from "../src/lib/kart-borcu";
 import {
   faizGecerliMi,
   faizTutari,
@@ -390,6 +392,122 @@ console.log("=".repeat(70));
    *  ödenen şey henüz var olmayan bir borçtur.
    * ════════════════════════════════════════════════════════════════════
    */
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  KAYAN NOKTA ARTIĞI KARŞILAŞTIRMAYA GİRMEZ (16.08.2026 canlı)
+   * --------------------------------------------------------------------
+   *  Murat Garanti 24.07.2026: taksit payları toplanınca ekstre borcu
+   *  `7137.869999999999` çıkıyor, ekranda ₺7.137,87 görünüyor. Kullanıcı
+   *  ön-dolu ₺7.137,87'yi kaydetmek isteyince form dedi ki:
+   *
+   *      "Girilen tutar kalan borcu AŞIYOR — kalan yalnızca ₺7.137,87."
+   *
+   *  Aynı sayı hem aşan hem aşılan; altında da "−₺0,00" yazıyordu. Ön-dolu
+   *  değeri yuvarlamıştık ama KARŞILAŞTIRMA ham sayıyla yapılıyordu.
+   *
+   *  Aynı tuzağın daha tehlikeli ayağı `kart-borcu.ts`teydi: tam ödenmiş
+   *  bir ekstrede kalan `+9e-13` kalsaydı `kalan > 0` doğru döner, ekstre
+   *  "ödenmedi" listesinde durur ve kullanıcı ikinci kez öderdi.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  /* Tür açıkça `number`: literal tür olarak bırakılırsa TypeScript iki
+     sabitin "örtüşmediğini" söyleyip karşılaştırmayı hata sayıyor —
+     ki bu, senaryonun geçerli olduğunun ayrıca kanıtı. */
+  const HAM: number = 7137.869999999999;
+  kontrol(
+    "ham ekstre borcu gerçekten kirli (senaryo geçerli)",
+    HAM !== 7137.87 && HAM.toFixed(2) === "7137.87",
+  );
+  const tamOdeme = odemeOnizlemesi({
+    ekstreBorcu: HAM,
+    odenenAnaBorc: 7137.87,
+    faiz: { yol: "yok" },
+    mevcutKayitlar: [],
+  });
+  kontrol(
+    "tam ödeme 'AŞIYOR' saydırmıyor",
+    tamOdeme.mukerrer.asiyorMu === false,
+  );
+  kontrol(
+    "  ...kalan −0 değil, tam 0",
+    tamOdeme.kalan === 0 && !Object.is(tamOdeme.kalan, -0),
+    tamOdeme.kalan,
+  );
+  kontrol(
+    "  ...gerçek aşma hâlâ yakalanıyor",
+    odemeOnizlemesi({
+      ekstreBorcu: HAM,
+      odenenAnaBorc: 7137.88,
+      faiz: { yol: "yok" },
+      mevcutKayitlar: [],
+    }).mukerrer.asiyorMu === true,
+  );
+  kontrol(
+    "  ...kuruşun ALTINDAKİ fark aşma sayılmıyor",
+    kurusAsiyorMu(100.001, 100) === false,
+  );
+  kontrol(
+    "  ...bir kuruşluk fark aşma sayılıyor",
+    kurusAsiyorMu(100.01, 100) === true,
+  );
+
+  /**
+   * TAM ÖDENEN EKSTRE "ÖDENMEDİ" LİSTESİNDE KALMAZ.
+   *
+   * Veri özenle seçildi: `500.08 + 507.85` kayan noktada `1007.9300000000001`
+   * verir — yani artık ARTI yönde. Eksi yönde artık `Math.max(0, …)` zaten
+   * yutuluyor; asıl tehlike bu yön, çünkü `kalan > 0` yanlışlıkla doğru
+   * döner ve kullanıcı ödediği ekstreyi kırmızı görüp ikinci kez öder.
+   * (İlk denemede eksi yönde veri seçmiştim ve mutasyon testi tetiklenmedi —
+   * testin kendisi kusurluydu.)
+   */
+  const kirliEkstre = kartBorcuHesapla(
+    [
+      { id: "x", kod: "K", tarih: new Date("2026-01-05T00:00:00.000Z"), tutar: 500.08, taksitSayisi: 1 },
+      { id: "y", kod: "L", tarih: new Date("2026-01-05T00:00:00.000Z"), tutar: 507.85, taksitSayisi: 1 },
+    ],
+    { kesimGunu: 24, sonOdemeGunu: 3, limit: null },
+    new Date("2026-06-01T00:00:00.000Z"),
+    [{ donem: new Date("2026-01-01T00:00:00.000Z"), odenenAnaBorc: 1007.93 }],
+  );
+  kontrol(
+    "senaryo geçerli: ekstre toplamı kayan noktada ARTI artık bırakıyor",
+    500.08 + 507.85 > 1007.93,
+  );
+  kontrol(
+    "kuruşu kuruşuna ödenen ekstrede kalan SIFIR (artık bırakmıyor)",
+    kirliEkstre.ekstreler[0]?.kalan === 0,
+    kirliEkstre.ekstreler[0]?.kalan,
+  );
+  kontrol(
+    "  ...kalan EKSİ SIFIR değil (ekranda '−₺0,00' yazmaz)",
+    !Object.is(kirliEkstre.ekstreler[0]?.kalan, -0),
+  );
+  kontrol(
+    "  ...ödenmemiş listesine girmiyor (kalan > 0 yanlış dönmüyor)",
+    (kirliEkstre.ekstreler[0]?.kalan ?? 1) > 0 === false,
+  );
+  kontrol(
+    "  ...gecikmiş toplamına da girmiyor",
+    kirliEkstre.gecikmisToplam === 0,
+    kirliEkstre.gecikmisToplam,
+  );
+  /**
+   * YUVARLAMA AÇIK BORCU GİZLEMENİN YOLU DEĞİL: bir kuruş eksik ödenmişse
+   * ekstre hâlâ açıktır. Kuruşun ALTI yok sayılır, kuruşun KENDİSİ değil.
+   */
+  const birKurusEksik = kartBorcuHesapla(
+    [{ id: "x", kod: "K", tarih: new Date("2026-01-05T00:00:00.000Z"), tutar: 1000, taksitSayisi: 1 }],
+    { kesimGunu: 24, sonOdemeGunu: 3, limit: null },
+    new Date("2026-06-01T00:00:00.000Z"),
+    [{ donem: new Date("2026-01-01T00:00:00.000Z"), odenenAnaBorc: 999.99 }],
+  );
+  kontrol(
+    "bir kuruş eksik ödemede ekstre AÇIK kalıyor",
+    Math.abs((birKurusEksik.ekstreler[0]?.kalan ?? 0) - 0.01) < 0.0001,
+    birKurusEksik.ekstreler[0]?.kalan,
+  );
+
   const kesilmemisOnizleme = odemeOnizlemesi({
     ekstreBorcu: 5000,
     odenenAnaBorc: 5000,
