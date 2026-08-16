@@ -502,6 +502,51 @@ console.log("=".repeat(70));
     new Date("2026-06-01T00:00:00.000Z"),
     [{ donem: new Date("2026-01-01T00:00:00.000Z"), odenenAnaBorc: 999.99 }],
   );
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  HEPSİ İPTAL EDİLMİŞ EKSTRE "KISMEN ÖDENDİ" GÖRÜNMEZ (16.08.2026)
+   * --------------------------------------------------------------------
+   *  S.ahmet Vakıf 17.09 ekstresi: dört ödeme, dördünün de ters kaydı.
+   *  Geçerli tek bir ödeme yok, net sıfır. Ama ekran sarı "kısmen ödendi"
+   *  diyordu.
+   *
+   *  Kayan noktada net toplam `5.68e-14` çıkıyor ve `odenen > 0` doğru
+   *  dönüyor. `kalan` yuvarlanıyordu, `odenen` yuvarlanmıyordu — aynı
+   *  tuzağın ÜÇÜNCÜ ayağı. Bir tutarın sunumu yuvarlanıp kararı ham
+   *  sayıyla verildiğinde ekran kendiyle çelişir.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const hepsiIptal = kartBorcuHesapla(
+    [{ id: "x", kod: "K", tarih: new Date("2026-01-05T00:00:00.000Z"), tutar: 583.33, taksitSayisi: 1 }],
+    { kesimGunu: 17, sonOdemeGunu: 27, limit: null },
+    new Date("2026-06-01T00:00:00.000Z"),
+    [583.33, 300, 283.33, 50, -583.33, -50, -283.33, -300].map((tutar) => ({
+      donem: new Date("2026-01-01T00:00:00.000Z"),
+      odenenAnaBorc: tutar,
+    })),
+  );
+  kontrol(
+    "senaryo geçerli: ters kayıtlar ham toplamda artık bırakıyor",
+    [583.33, 300, 283.33, 50, -583.33, -50, -283.33, -300].reduce(
+      (t, k) => t + k,
+      0,
+    ) > 0,
+  );
+  kontrol(
+    "hepsi iptal edilmiş ekstrede ÖDENEN sıfır",
+    hepsiIptal.ekstreler[0]?.odenen === 0,
+    hepsiIptal.ekstreler[0]?.odenen,
+  );
+  kontrol(
+    "  ...'kısmen ödendi' sayılmıyor (odenen > 0 yanlış dönmüyor)",
+    (hepsiIptal.ekstreler[0]?.odenen ?? 1) > 0 === false,
+  );
+  kontrol(
+    "  ...borcun tamamı hâlâ açık",
+    Math.abs((hepsiIptal.ekstreler[0]?.kalan ?? 0) - 583.33) < 0.005,
+    hepsiIptal.ekstreler[0]?.kalan,
+  );
+
   kontrol(
     "bir kuruş eksik ödemede ekstre AÇIK kalıyor",
     Math.abs((birKurusEksik.ekstreler[0]?.kalan ?? 0) - 0.01) < 0.0001,

@@ -271,7 +271,21 @@ export function kartBorcuHesapla(
   let gecikmisToplam = 0;
   let bekleyenToplam = 0;
   for (const ekstre of ekstreler) {
-    ekstre.odenen = odemeToplami.get(donemAnahtari(ekstre.kesimTarihi)) ?? 0;
+    /**
+     * ÖDENEN DE KURUŞA YUVARLANIR — yoksa "kısmen ödendi" yalanı doğar.
+     *
+     * 16.08.2026, S.ahmet Vakıf 17.09 ekstresi: dört ödeme ve dört ters
+     * kaydı vardı, net sıfır olması gerekiyordu. Kayan noktada toplam
+     * `5.68e-14` çıktı ve `odenen > 0` doğru döndü: ekstre sarı "kısmen
+     * ödendi" rozetiyle göründü, oysa geçerli tek bir ödemesi yoktu.
+     *
+     * `kalan` yuvarlanıyordu ama `odenen` yuvarlanmıyordu — aynı tuzağın
+     * üçüncü ayağı. Bir tutarın SUNUMU yuvarlanıp KARARI ham sayıyla
+     * verildiğinde ekran hep kendiyle çelişir.
+     */
+    ekstre.odenen = kurusaYuvarla(
+      odemeToplami.get(donemAnahtari(ekstre.kesimTarihi)) ?? 0,
+    );
     /**
      * KURUŞA YUVARLANIR — yoksa kapalı ekstre "ödenmedi" görünür.
      *
