@@ -1444,7 +1444,13 @@
     "kartYokBaslik": "",
     "kartYokIpucu": "",
     "borcDokumu": "",
-    "varsayimNotu": ""
+    "varsayimNotu": "",
+    "toplamBekleyen": "",
+    "toplamLimitNotu": "",
+    "kartAdedi": "",
+    "yaklasanOdeme": "",
+    "kartlarBaslik": "",
+    "kartlarNotu": ""
   },
   "Tedarikci": {
     "baslik": "",

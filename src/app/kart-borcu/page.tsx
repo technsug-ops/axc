@@ -12,6 +12,8 @@ import { kartBorcuHesapla, type BorcAlimi } from "@/lib/kart-borcu";
 import { faizKategorileri } from "./eylemler";
 import { OdemeFormu } from "./odeme-formu";
 import { OdemeSatiri } from "./odeme-satiri";
+import { IstatistikKutusu } from "@/components/istatistik-kutusu";
+import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { prisma } from "@/lib/prisma";
 
 import type { Currency } from "@/generated/prisma/enums";
@@ -37,13 +39,19 @@ export async function generateMetadata() {
   return { title: tBaslik("kartBorcu") };
 }
 
-export default async function KartBorcuSayfasi() {
+export default async function KartBorcuSayfasi({
+  searchParams,
+}: {
+  /** Seçili kart sekmesi — seçim ADRESTE yaşar (bkz. sekmeli-bolum.tsx). */
+  searchParams: Promise<{ kart?: string }>;
+}) {
   await sayfaIzni("kart.gor");
 
   const t = await getTranslations("KartBorcu");
   const ortak = await getTranslations("Ortak");
   const tOdeme = await getTranslations("KartOdeme");
   const bicim = await bicimlendirici();
+  const { kart: seciliKartParam } = await searchParams;
 
   const kartlar = await prisma.creditCard.findMany({
     where: { isActive: true },
@@ -131,6 +139,79 @@ export default async function KartBorcuSayfasi() {
     return { tutar, farkliVar };
   }
 
+  /**
+   * ÖZET HESABI — ÇİZİMDEN AYRI.
+   *
+   * `kartBorcuHesapla` burada özet için, aşağıda sekme içeriği için olmak
+   * üzere iki kez çağrılıyor. İKİNCİ BİR KURAL YAZILMIYOR, aynı saf
+   * fonksiyon çağrılıyor — iki farklı toplam doğması imkânsız. Kopyalasaydık
+   * panodaki rakam ile sekmedeki rakam bir gün ayrışırdı.
+   */
+  const kartHesaplari = kartlar.map((kart) => {
+    const borclar: BorcAlimi[] = [];
+    for (const a of alimlar.filter((x) => x.creditCardId === kart.id)) {
+      const { tutar } = kartTutari(a, kart.currency);
+      if (tutar <= 0) continue;
+      borclar.push({
+        id: a.id,
+        kod: a.code,
+        tarih: a.purchasedAt,
+        tutar,
+        taksitSayisi: a.installmentCount,
+      });
+    }
+    const limit =
+      kart.creditLimitCurrency === kart.currency
+        ? sayi(kart.creditLimitAmount)
+        : null;
+    const sonuc = kartBorcuHesapla(
+      borclar,
+      { kesimGunu: kart.statementDay, sonOdemeGunu: kart.dueDay, limit },
+      bugun,
+    );
+    // Henüz geçmemiş ilk ekstre: "önce hangisini ödemeliyim".
+    const yakin =
+      sonuc.ekstreler.find((e) => e.sonOdemeTarihi !== null && !e.gecmisMi) ??
+      null;
+    return { kart, sonuc, limit, yakin };
+  });
+
+  /** Para birimi başına toplam — ÇEVRİM YOK, her birim kendi kutusunda. */
+  const paraOzeti = new Map<
+    Currency,
+    { bekleyen: number; limit: number; limitVar: boolean; adet: number }
+  >();
+  for (const h of kartHesaplari) {
+    const g = paraOzeti.get(h.kart.currency) ?? {
+      bekleyen: 0,
+      limit: 0,
+      limitVar: false,
+      adet: 0,
+    };
+    g.bekleyen += h.sonuc.bekleyenToplam;
+    g.adet += 1;
+    if (h.limit !== null) {
+      g.limit += h.limit;
+      g.limitVar = true;
+    }
+    paraOzeti.set(h.kart.currency, g);
+  }
+
+  const yaklasanOdeme =
+    kartHesaplari
+      .filter((h) => h.yakin?.sonOdemeTarihi)
+      .map((h) => ({
+        sonOdeme: h.yakin!.sonOdemeTarihi!,
+        tutar: h.yakin!.toplam,
+        etiket: h.kart.label,
+        paraBirimi: h.kart.currency,
+      }))
+      .sort((a, b) => a.sonOdeme.getTime() - b.sonOdeme.getTime())[0] ?? null;
+
+  /** Seçili sekme; bilinmeyen/eksik seçim İLK karta düşer, boş ekran yok. */
+  const seciliKart =
+    kartlar.find((k) => k.id === seciliKartParam)?.id ?? kartlar[0]?.id ?? "";
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -160,7 +241,50 @@ export default async function KartBorcuSayfasi() {
         </div>
       ) : (
         <div className="space-y-6">
-          {kartlar.map((kart) => {
+          {/* ═════════════════ TOPLAM PANOSU ═════════════════
+              Kartlar sekmeye alındığı için "hepsi birden" görünümü burada
+              duruyor. Sekme yalnız AYNI ANDA gerekmeyen şeyleri ayırır;
+              toplamlar birlikte okunmalı, o yüzden üstte ve hep açık.
+
+              PARA BİRİMİ ÇEVRİLMEZ: her birim kendi kutusunda toplanır. */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[...paraOzeti.entries()].map(([birim, g]) => (
+              <IstatistikKutusu
+                key={birim}
+                etiket={t("toplamBekleyen", { paraBirimi: birim })}
+                cocuk={bicim.para(g.bekleyen, birim)}
+                altNot={
+                  <span className="text-muted-foreground">
+                    {g.limitVar
+                      ? t("toplamLimitNotu", {
+                          kalan: bicim.para(g.limit - g.bekleyen, birim),
+                          adet: g.adet,
+                        })
+                      : t("kartAdedi", { adet: g.adet })}
+                  </span>
+                }
+              />
+            ))}
+            {/* "Önce hangisini ödemeliyim" — en yakın son ödeme günü. */}
+            {yaklasanOdeme ? (
+              <IstatistikKutusu
+                etiket={t("yaklasanOdeme")}
+                cocuk={bicim.tarih(yaklasanOdeme.sonOdeme)}
+                altNot={
+                  <span className="text-muted-foreground">
+                    {yaklasanOdeme.etiket} ·{" "}
+                    {bicim.para(yaklasanOdeme.tutar, yaklasanOdeme.paraBirimi)}
+                  </span>
+                }
+              />
+            ) : null}
+          </div>
+
+          <SekmeliBolum
+            baslik={t("kartlarBaslik")}
+            notu={t("kartlarNotu")}
+            secili={seciliKart}
+            sekmeler={kartlar.map((kart) => {
             const kartAlimlari = alimlar.filter(
               (a) => a.creditCardId === kart.id,
             );
@@ -207,10 +331,16 @@ export default async function KartBorcuSayfasi() {
                 ? Math.round((sonuc.bekleyenToplam / limit) * 100)
                 : null;
 
-            return (
+            return {
+              anahtar: kart.id,
+              // Sekme etiketi kart adı + bekleyen tutar: hangi karta
+              // bakacağını sekmeye tıklamadan görebil (İlke #9).
+              etiket: `${kart.label} · ${para(sonuc.bekleyenToplam)}`,
+              adres: `/kart-borcu?kart=${kart.id}`,
+              icerik: (
               <section
                 key={kart.id}
-                className="space-y-4 rounded-lg border p-4 md:p-5"
+                className="space-y-4"
               >
                 {/* ------------------------ KART BAŞLIĞI ------------------- */}
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -454,8 +584,10 @@ export default async function KartBorcuSayfasi() {
                   </div>
                 ) : null}
               </section>
-            );
+              ),
+            };
           })}
+          />
 
           <p className="text-muted-foreground text-xs">{t("varsayimNotu")}</p>
         </div>

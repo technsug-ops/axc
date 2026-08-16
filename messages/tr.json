@@ -1444,7 +1444,13 @@
     "kartYokBaslik": "Tanımlı kart yok",
     "kartYokIpucu": "Alımlarınızı hangi kartla yaptığınızı takip edebilmek için önce kart tanımlayın.",
     "borcDokumu": "Borç dökümü",
-    "varsayimNotu": "İki varsayım: kesim GÜNÜNDE yapılan alım o ayın ekstresine düşer; taksitte bölünmeyen kuruş son taksite eklenir. İlk gerçek ekstrenizle karşılaştırıp teyit edin."
+    "varsayimNotu": "İki varsayım: kesim GÜNÜNDE yapılan alım o ayın ekstresine düşer; taksitte bölünmeyen kuruş son taksite eklenir. İlk gerçek ekstrenizle karşılaştırıp teyit edin.",
+    "toplamBekleyen": "Toplam bekleyen · {paraBirimi}",
+    "toplamLimitNotu": "Kalan limit {kalan} · {adet} kart",
+    "kartAdedi": "{adet} kart · limit tanımlı değil",
+    "yaklasanOdeme": "En yakın son ödeme",
+    "kartlarBaslik": "Kartlar",
+    "kartlarNotu": "Her kart kendi sekmesinde. Sekme etiketinde o kartın bekleyen toplamı yazıyor; seçim adreste kalır."
   },
   "Tedarikci": {
     "baslik": "Tedarikçiler",
