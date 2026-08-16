@@ -20,7 +20,7 @@ Mimar onaylı sıra, **paket ADIYLA**:
 **~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ · ~~AŞAMA 3 PAKET 1~~ ✓ →
 ~~PANEL AŞAMA 3 PAKET 2~~ ✓ → ~~KART ÖDEME TAKİBİ~~ ✓ → ~~RAPOR FİRE/KAZANÇ
 ETİKETİ~~ ✓ → ~~UYARI MERKEZİ FAZ 1~~ ✓ →
-DESTEK MODÜLÜ → GEÇMİŞ VERİ (kart ödemeyle TEK TABLO, `source` alanıyla) →
+~~DESTEK MODÜLÜ~~ ✓ → GEÇMİŞ VERİ (kart ödemeyle TEK TABLO, `source` alanıyla) →
 MELONTİK CASE.**
 
 _Sıra 15.08.2026'da güncellendi: **kart ödeme takibi ÖNE ALINDI** — nakit
@@ -966,7 +966,7 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         **Eşik EKRANDA GÖRÜNÜR** ("%10 altı" yazılı) — uydurma bir sabit
         gibi durmasın.
 
-- [x] **DESTEK / TALEP MODÜLÜ — FAZ 1** ✓ _yazıldı 16.08.2026; migration onayda_
+- [x] ~~**DESTEK / TALEP MODÜLÜ — FAZ 1**~~ ✓ **KAPANDI 17.08.2026 — Halil testi geçti, mimar onaylı.**
       _Mimar sözleşmesi 15.08.2026._ **SIRA: Panel Aşama 3 bitmeden
       BAŞLANMAZ** (zarar/ölü sermaye → uyarı merkezi Faz 1 → destek).
       _Gerekçe: AXCALI eksik/taleplerini Telegram'dan dağınık iletiyor,
@@ -1869,3 +1869,38 @@ yetkili + SAĞLAYICI`. Yarın açılacak tam yetkili bir firma rolü —
 _Bu turda ÜÇÜNCÜ yalancı yeşil kalıbı yakalandı: `?.[0]` isteğe bağlı
 zinciri yüzünden desen hiç eşleşmediğinde kontrol yeşil yanıyordu. Ortak
 kök hep aynı: **kontrol, aradığını bulamadığında başarılı sayılmamalı.**_
+
+### ✅ DESTEK / TALEP MODÜLÜ FAZ 1 — KAPANDI 17.08.2026
+
+Halil testi geçti (Kapandı: kutu kayboldu + çan söndü · Mobil: taşma yok,
+süzgeçler basılabilir, otomatik bilgi katlanmış). Mimar onaylı.
+
+**Teslim edilen:** Bildir düğmesi (her ekranda, izinsiz) → talep + otomatik
+bağlam (görünür, katlanmış) + ekran görüntüsü (polimorfik `Attachment`,
+yeni altyapı yok) · `/talepler` + durum akışı (son duraklar tek yön,
+`COZULDU → YAPILIYOR` serbest) · çözüm notu yazar + zaman damgalı ·
+`companyId` firma izolasyonu kodda hazır (tek firmada etkisiz, bilinçli) ·
+`destek.yonet` sigortası · çan uyarısı (cevapsız talep).
+
+**FAZ 2 EVRİLEBİLİRLİĞİ ÜÇ PROVAYLA KANITLANDI** — son ölçüm: 2 mesaj
+(MUSTERI 1 · GELISTIRICI 1), kurulamayan 0. Göç temiz `INSERT … SELECT`.
+
+**DÖRT KUSUR, DÖRDÜ DE YALNIZ GERÇEK VERİYLE ÇIKTI.** Hiçbirini tsc, lint
+ya da mevcut testler göremezdi:
+1. `destek.yonet` canlıda HİÇBİR rolde yoktu → durum kontrolü hiç çizilmedi
+   (yetki iki bacaklı; `canli:yetki` koşulmamıştı).
+2. Bağlam kutusu ham user-agent'ı formun ortasına seriyordu → katlandı.
+3. Not alanı EYLEM DÜĞMESİNDEN SONRA duruyordu → kullanıcı görmeden
+   kaydetti, not sessizce boş kaldı.
+4. Not, DURUM DEĞİŞİKLİĞİNE BAĞIMLIYDI. `COZULDU`dan çıkış talebin anlamını
+   değiştirdiği için "çözdüm, açıklamasını yazayım" demek İMKANSIZDI.
+   **Sözleşme "durum nerede der, mesaj ne konuşuldu der" diyordu — kural
+   YAZILIYDI, uygulama onu TUTMUYORDU.**
+
+> **DERS:** Kuralı yazmak, kuralın uygulandığını göstermez. Sözleşmedeki
+> her ayrım için "bu ayrım ekranda gerçekten yaşıyor mu?" ayrıca sorulur.
+
+`talep:dogrula` 84 kontrol.
+
+**FAZ 2 (sırada değil):** `TalepMesaj` thread'i (göç hazır) · dış bildirim ·
+uyarı erteleme.
