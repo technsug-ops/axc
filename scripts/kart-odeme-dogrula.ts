@@ -2,6 +2,7 @@ import {
   faizGecerliMi,
   faizTutari,
   kalanHesapla,
+  kurusaYuvarla,
   mukerrerUyarisi,
   odemeOnizlemesi,
   oncekiOdenen,
@@ -239,7 +240,7 @@ console.log("=".repeat(70));
   kontrol(
     "form ön-doluyu KALAN borçtan alıyor (ekstrenin tamamından değil)",
     form.includes("ekstreBorcu - oncekiOdenen(mevcutKayitlar)") &&
-      form.includes("useState(String(kalanBorc))"),
+      form.includes("useState(kalanBorc.toFixed(2))"),
   );
   kontrol(
     "  ...ön-doluda eksi öneri yok (kapalı ekstrede 0)",
@@ -262,6 +263,29 @@ console.log("=".repeat(70));
    *  ₺0,00 görür ve gider hiç yazılmazdı.
    * ════════════════════════════════════════════════════════════════════
    */
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  KURUŞA YUVARLAMA — KAYAN NOKTA ARTIĞI EKRANA ÇIKMAZ (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Canlıda ön-dolu alanda "283.33000000000004" görüldü: 583,33 − 300
+   *  JavaScript'te tam çıkmıyor. Veritabanı Decimal(18,4) olduğu için
+   *  KAYIT tamdı; sapma yalnız JS aritmetiğindeydi. Ham hâliyle para
+   *  alanına yazılınca kullanıcı sistemin bozuk olduğunu düşünür.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "583,33 − 300 kuruşa yuvarlanıyor (283.33000000000004 değil)",
+    kurusaYuvarla(583.33 - 300) === 283.33,
+    583.33 - 300,
+  );
+  kontrol("  ...yuvarlama tutarı bozmuyor", kurusaYuvarla(1199.66) === 1199.66);
+  kontrol("  ...yukarı yuvarlama doğru", kurusaYuvarla(0.005) === 0.01);
+  kontrol("  ...eksi tutarlarda da çalışıyor", kurusaYuvarla(-283.33000000000004) === -283.33);
+  kontrol(
+    "form ön-doluyu kuruşa yuvarlayarak yazıyor",
+    form.includes("kurusaYuvarla(") && form.includes("kalanBorc.toFixed(2)"),
+  );
+
   kontrol(
     "faiz matrahı ödeme ÖNCESİ kalan borçtan (tam ödemede sıfırlanmıyor)",
     form.includes("matrah: kalanBorc") &&

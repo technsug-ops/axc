@@ -233,3 +233,18 @@ export function tersKayit(asil: {
     isReversal: true,
   };
 }
+
+/**
+ * KURUŞA YUVARLAMA — para aritmetiğinin sunum sınırı.
+ *
+ * Veritabanı `Decimal(18,4)` tutuyor, yani kayıt tam. Sapma yalnız
+ * JavaScript'te doğuyor: `583.33 - 300` → `283.33000000000004`. Bu ham
+ * değer bir para alanına yazılırsa kullanıcı sistemin bozuk olduğunu
+ * düşünür — 16.08.2026'da tam olarak bu yaşandı.
+ *
+ * Hesabın İÇİNDE yuvarlama yapılmaz (art arda yuvarlama hata biriktirir);
+ * yalnız ekrana/girdiye çıkarken bir kez uygulanır.
+ */
+export function kurusaYuvarla(tutar: number): number {
+  return Math.round(tutar * 100) / 100;
+}

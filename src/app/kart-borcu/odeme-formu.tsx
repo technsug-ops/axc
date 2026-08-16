@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { useBicim } from "@/lib/bicim-istemci";
 import {
   faizGecerliMi,
+  kurusaYuvarla,
   odemeOnizlemesi,
   oncekiOdenen,
   type FaizGirdisi,
@@ -77,8 +78,19 @@ export function OdemeFormu({
    * Sıfırın altına inmez: kapalı ekstrede öneri 0'dır, kullanıcı isterse
    * yazar.
    */
-  const kalanBorc = Math.max(0, ekstreBorcu - oncekiOdenen(mevcutKayitlar));
-  const [odenen, setOdenen] = useState(String(kalanBorc));
+  /**
+   * KURUŞA YUVARLANIR. `583,33 − 300` JavaScript'te `283.33000000000004`
+   * veriyor ve bu ham hâliyle para alanına yazılıyordu (16.08.2026 canlı
+   * bulgusu). Para iki ondalıktır; kayan nokta artığı ne girdi alanında ne
+   * de faiz matrahında görünmeli.
+   *
+   * Veritabanı Decimal(18,4) olduğu için kayıt zaten tam; sapma yalnız
+   * JavaScript aritmetiğinde doğuyor. O yüzden düzeltme SUNUM sınırında.
+   */
+  const kalanBorc = kurusaYuvarla(
+    Math.max(0, ekstreBorcu - oncekiOdenen(mevcutKayitlar)),
+  );
+  const [odenen, setOdenen] = useState(kalanBorc.toFixed(2));
   const [tarih, setTarih] = useState(bugun);
   const [faizYolu, setFaizYolu] = useState<FaizGirdisi["yol"]>("yok");
   const [oran, setOran] = useState("");
