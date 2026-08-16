@@ -49,7 +49,8 @@
     "canli:yetki": "tsx scripts/canli-yetki-seed.ts",
     "maliyet:geri-doldur": "tsx scripts/maliyet-donmeyen-geri-doldur.ts",
     "uyari:dogrula": "tsx scripts/uyari-dogrula.ts",
-    "talep:dogrula": "tsx scripts/talep-dogrula.ts"
+    "talep:dogrula": "tsx scripts/talep-dogrula.ts",
+    "gecmis:dogrula": "tsx scripts/gecmis-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
