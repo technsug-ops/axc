@@ -102,6 +102,13 @@ export function oncekiOdenen(
 export type MukerrerUyarisi = {
   /** Ekranda uyarı çıkacak mı. */
   uyar: boolean;
+  /**
+   * EKSTRE HENÜZ KESİLMEMİŞ — kesim tarihi gelecekte.
+   *
+   * En üst seviye uyarıdır: "zaten kapalı"dan da önce gelir, çünkü burada
+   * ödenen şey henüz var olmayan bir borçtur.
+   */
+  kesilmemis: boolean;
   /** Bu döneme daha önce ödenmiş net tutar. */
   oncekiToplam: number;
   /** Önceki ödemelerden sonra kalan borç. */
@@ -139,12 +146,35 @@ export function mukerrerUyarisi(girdi: {
   mevcutKayitlar: { odenenAnaBorc: number }[];
   /** Şimdi eklenmek istenen ödeme. */
   yeniOdeme: number;
+  /**
+   * EKSTRE KESİLDİ Mİ — hesap kesim tarihi geçti mi.
+   *
+   * ⚠ 16.08.2026 canlı bulgusu, ₺163.782,83'lük kaza. Kullanıcı geçmiş
+   * ekstreleri kapatırken HENÜZ KESİLMEMİŞ ekstrelere de ödeme kaydetti:
+   * sekiz kartta, aylar sonrasına ait ekstreler "ödendi" oldu. Ekran bunu
+   * hiç sorgulamadı — her ekstrenin altında aynı "Ödendi işaretle" düğmesi
+   * vardı ve gelecek bir ekstre ile geçmiş bir ekstre birbirinden
+   * ayırt edilemiyordu.
+   *
+   * Kesilmemiş ekstreye ödeme YASAK değildir (banka erken çekebilir, kart
+   * kapatılıyor olabilir) ama olağan iş değildir; kaza ihtimali yüksektir.
+   * Bu yüzden engel değil, UYARI + onay kapısı.
+   *
+   * Varsayılanı `true`: bilgi verilmemişse eski davranış korunur, sessizce
+   * uyarı üretilmez.
+   */
+  kesilmisMi?: boolean;
 }): MukerrerUyarisi {
   const oncekiToplam = oncekiOdenen(girdi.mevcutKayitlar);
   const kalanBorc = girdi.ekstreBorcu - oncekiToplam;
+  const kesilmemis = girdi.kesilmisMi === false;
   return {
-    // Daha önce HİÇ ödeme yoksa uyarı yok — ilk ödeme sıradan bir iştir.
-    uyar: girdi.mevcutKayitlar.length > 0,
+    kesilmemis,
+    /**
+     * Daha önce HİÇ ödeme yoksa uyarı yok — ilk ödeme sıradan bir iştir.
+     * Ama ekstre henüz kesilmemişse ilk ödeme de sıradan DEĞİLDİR.
+     */
+    uyar: girdi.mevcutKayitlar.length > 0 || kesilmemis,
     oncekiToplam,
     kalanBorc,
     asiyorMu: girdi.yeniOdeme > kalanBorc,
@@ -191,6 +221,8 @@ export function odemeOnizlemesi(girdi: {
   odenenAnaBorc: number;
   faiz: FaizGirdisi;
   mevcutKayitlar: { odenenAnaBorc: number }[];
+  /** Ekstre kesildi mi; verilmezse uyarı üretilmez (eski davranış). */
+  kesilmisMi?: boolean;
 }): OdemeOnizlemesi {
   const faiz = faizTutari(girdi.faiz);
   const onceki = oncekiOdenen(girdi.mevcutKayitlar);
@@ -208,6 +240,7 @@ export function odemeOnizlemesi(girdi: {
       ekstreBorcu: girdi.ekstreBorcu,
       mevcutKayitlar: girdi.mevcutKayitlar,
       yeniOdeme: girdi.odenenAnaBorc,
+      kesilmisMi: girdi.kesilmisMi,
     }),
   };
 }

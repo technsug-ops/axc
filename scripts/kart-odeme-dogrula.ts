@@ -358,9 +358,81 @@ console.log("=".repeat(70));
     form.includes('t("faizHesapNotu", { matrah: para(kalanBorc) })'),
   );
 
+  /**
+   * ONAY KAPISI ÜÇ HÂLİ DE TUTAR. Kontrol önce tek bir metin parçasına
+   * bakıyordu (`asiyorMu) && !kapaliOnay`) ve ifadeye üçüncü bir hâl
+   * eklenip satır sarınca kırmızı yandı — kod DOĞRUYKEN. Biçime değil,
+   * ifadenin içeriğine bakılır.
+   */
+  const engelIfadesi = (() => {
+    const bas = form.indexOf("const kapaliEngeli =");
+    return bas === -1 ? "" : form.slice(bas, bas + 260);
+  })();
   kontrol(
     "kalanı AŞAN ödeme de açık onay istiyor (kaza ihtimali)",
-    form.includes("onizleme.mukerrer.asiyorMu) && !kapaliOnay"),
+    engelIfadesi.includes("asiyorMu") && engelIfadesi.includes("!kapaliOnay"),
+  );
+  kontrol(
+    "  ...zaten kapalı ekstre de aynı kapıdan geçiyor",
+    engelIfadesi.includes("zatenKapali"),
+  );
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  KESİLMEMİŞ EKSTREYE ÖDEME — ₺163.782,83'LÜK KAZA (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Kullanıcı geçmiş ekstreleri kapatırken sekiz kartta HENÜZ KESİLMEMİŞ
+   *  ekstrelere de ödeme kaydetti. Ekran hiç sormadı: her ekstrenin
+   *  altında aynı "Ödendi işaretle" düğmesi vardı ve gelecek bir ekstre
+   *  ile geçmiş bir ekstre ayırt edilemiyordu.
+   *
+   *  Yasak değil (banka erken çekebilir) ama olağan iş de değil — uyarı
+   *  ve onay kapısı. Bu, "zaten kapalı"dan da ÖNCE gelen seviyedir:
+   *  ödenen şey henüz var olmayan bir borçtur.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const kesilmemisOnizleme = odemeOnizlemesi({
+    ekstreBorcu: 5000,
+    odenenAnaBorc: 5000,
+    faiz: { yol: "yok" },
+    mevcutKayitlar: [],
+    kesilmisMi: false,
+  });
+  kontrol(
+    "kesilmemiş ekstreye ödeme UYARI üretiyor",
+    kesilmemisOnizleme.mukerrer.kesilmemis === true &&
+      kesilmemisOnizleme.mukerrer.uyar === true,
+  );
+  kontrol(
+    "  ...kesilmiş ekstrede ilk ödeme sessiz geçiyor",
+    odemeOnizlemesi({
+      ekstreBorcu: 5000,
+      odenenAnaBorc: 5000,
+      faiz: { yol: "yok" },
+      mevcutKayitlar: [],
+      kesilmisMi: true,
+    }).mukerrer.uyar === false,
+  );
+  kontrol(
+    "  ...bilgi verilmezse eski davranış korunuyor",
+    odemeOnizlemesi({
+      ekstreBorcu: 5000,
+      odenenAnaBorc: 5000,
+      faiz: { yol: "yok" },
+      mevcutKayitlar: [],
+    }).mukerrer.kesilmemis === false,
+  );
+  kontrol(
+    "  ...onay kapısı kesilmemişi de tutuyor",
+    engelIfadesi.includes("kesilmemis"),
+  );
+  kontrol(
+    "  ...uyarı EN ÜSTTE (zaten kapalıdan önce)",
+    form.indexOf("kesilmemisBaslik") !== -1 &&
+      form.indexOf("kesilmemisBaslik") < form.indexOf("zatenKapaliBaslik"),
+  );
+  kontrol(
+    "  ...sayfa kesim durumunu forma veriyor",
+    sayfa.includes("kesilmisMi={ekstre.gecmisMi}"),
   );
   kontrol(
     "  ...aşma kendi başlığıyla KIRMIZI kartta",

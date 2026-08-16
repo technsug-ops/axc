@@ -40,6 +40,8 @@ export function OdemeFormu({
   cardId,
   donem,
   donemEtiketi,
+  kesilmisMi,
+  kesimEtiketi,
   ekstreBorcu,
   paraBirimi,
   mevcutKayitlar,
@@ -50,6 +52,10 @@ export function OdemeFormu({
   /** Ekstre dönemi — ayın 1'i, ISO. */
   donem: string;
   donemEtiketi: string;
+  /** Hesap kesim tarihi geçti mi — gelecek ekstreye ödeme uyarı ister. */
+  kesilmisMi: boolean;
+  /** Kesim tarihinin okunur hâli; uyarı metninde geçer. */
+  kesimEtiketi: string;
   /** Türetilen ekstre borcu; forma ÖN-DOLU gelir ve snapshot'lanır. */
   ekstreBorcu: number;
   paraBirimi: "TRY" | "EUR";
@@ -142,6 +148,7 @@ export function OdemeFormu({
     odenenAnaBorc: sayi(odenen),
     faiz,
     mevcutKayitlar,
+    kesilmisMi,
   });
 
   const para = (n: number) => bicim.para(n, paraBirimi);
@@ -155,7 +162,10 @@ export function OdemeFormu({
    * sıradan işlerdir.
    */
   const kapaliEngeli =
-    (onizleme.mukerrer.zatenKapali || onizleme.mukerrer.asiyorMu) && !kapaliOnay;
+    (onizleme.mukerrer.kesilmemis ||
+      onizleme.mukerrer.zatenKapali ||
+      onizleme.mukerrer.asiyorMu) &&
+    !kapaliOnay;
 
   function kaydet() {
     setHata(null);
@@ -324,7 +334,16 @@ export function OdemeFormu({
           girdi ve uyarıyı görmedi. Bayrak doğruydu, SUNUM zayıftı.
           Görülmesi kolay kaçan uyarı, çalışmayan uyarıdır (İlke #5).
           Artık üç katmanlı uyarı kartı ve rakamlardan ÖNCE. */}
-      {onizleme.mukerrer.zatenKapali ? (
+      {/* SIRA ÖNEMLİ: kesilmemiş ekstre en üst seviyedir. Ödenen şey
+          henüz var olmayan bir borçtur; "zaten kapalı"dan da önce gelir. */}
+      {onizleme.mukerrer.kesilmemis ? (
+        <UyariKarti
+          durum="olumsuz"
+          ikon={TriangleAlert}
+          baslik={t("kesilmemisBaslik")}
+          altSatir={t("kesilmemisNot", { tarih: kesimEtiketi })}
+        />
+      ) : onizleme.mukerrer.zatenKapali ? (
         <UyariKarti
           durum="olumsuz"
           ikon={TriangleAlert}
@@ -402,7 +421,9 @@ export function OdemeFormu({
       ) : null}
 
       {/* Kapalı ekstreye ödeme: onay kutusu işaretlenmeden kaydedilemez. */}
-      {onizleme.mukerrer.zatenKapali || onizleme.mukerrer.asiyorMu ? (
+      {onizleme.mukerrer.kesilmemis ||
+      onizleme.mukerrer.zatenKapali ||
+      onizleme.mukerrer.asiyorMu ? (
         <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
           <input
             type="checkbox"

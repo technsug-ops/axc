@@ -843,6 +843,10 @@ export default async function KartBorcuSayfasi({
                                         o.odenenAnaBorc.toString(),
                                       ),
                                     }))}
+                                    /* Kesim tarihi geçmediyse form uyarır:
+                                       henüz var olmayan bir borç ödeniyor. */
+                                    kesilmisMi={ekstre.gecmisMi}
+                                    kesimEtiketi={bicim.tarih(ekstre.kesimTarihi)}
                                     bugun={bugunMetni}
                                     kategoriler={kategoriler}
                                   />

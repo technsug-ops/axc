@@ -2311,6 +2311,8 @@
     "faizKategorisiNotu": "Faiz bu kategoriye gider olarak yazılacak ve o dönemin kârından düşecek.",
     "kategoriSec": "Faiz için bir gider kategorisi seçin.",
     "zatenKapaliBaslik": "Bu ekstre zaten kapalı — mükerrer ödeme olabilir.",
+    "kesilmemisBaslik": "Bu ekstre henüz kesilmedi — ödeme erken olabilir.",
+    "kesilmemisNot": "Hesap kesim tarihi {tarih}, yani bu borç henüz oluşmadı. Bankanın erken çektiğinden eminseniz aşağıdaki kutuyu işaretleyin.",
     "zatenKapaliNot": "Daha önce {onceki} ödenmiş ve borç bitmiş. Yine de eklemek istiyorsanız aşağıdaki kutuyu işaretleyin.",
     "zatenKapaliOnay": "Biliyorum, yine de ekle",
     "onDoluKalanNotu": "Kalan borç {kalan} — ekstrenin tamamı {borc}, bir kısmı zaten ödenmiş. Banka farklı kestiyse düzeltin.",
