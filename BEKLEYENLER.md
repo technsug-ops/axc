@@ -19,7 +19,7 @@ yeni yetenek ekleniyor. Bu ayrım kayıtta dursun — "yarım kalan iş" ile
 Mimar onaylı sıra, **paket ADIYLA**:
 **~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ · ~~AŞAMA 3 PAKET 1~~ ✓ →
 ~~PANEL AŞAMA 3 PAKET 2~~ ✓ → ~~KART ÖDEME TAKİBİ~~ ✓ → ~~RAPOR FİRE/KAZANÇ
-ETİKETİ~~ ✓ → UYARI MERKEZİ FAZ 1 →
+ETİKETİ~~ ✓ → ~~UYARI MERKEZİ FAZ 1~~ ✓ →
 DESTEK MODÜLÜ → GEÇMİŞ VERİ (kart ödemeyle TEK TABLO, `source` alanıyla) →
 MELONTİK CASE.**
 
@@ -107,6 +107,86 @@ gibi gösterilen iki olayı telafi etmez.** Kutunun görünürlük ölçütü ar
 net değil, HAREKETİN VARLIĞI. Net etki değişmedi (kayıp − kazanç).
 
 `duzeltme:dogrula` 49 → 67. Üç mutasyonla doğrulandı.
+
+### ✅ UYARI MERKEZİ FAZ 1 — KAPANDI 16.08.2026
+
+Üst çubukta çan, dört kırmızı uyarı, hepsi `lib/uyari/*.ts` altında saf
+fonksiyon. **Gerçek bir uyarı tetiklenerek sınandı** — çan boşken
+"çalışıyor" demek kolaydır, asıl sınav uyarı doğunca doğru mesajı, doğru
+sayıyı, doğru linki göstermek ve **sorun çözülünce sönmektir.**
+
+Canlı test zinciri (F1 Williams · `OYU-HT-260812-01`):
+maliyetsiz numune girildi → çan **1** · "1 ürünün maliyeti bilinmiyor" →
+tıklandı → `/stok?maliyet=yok` **tek varyant** → sayım farkıyla düşüldü →
+çan **"Temiz ✓"**. Defterde **4 hareket**, hiçbiri silinmedi, stok 0.
+
+**KOPYA YASAK.** Dördü de mevcut motorlardan okunuyor; çan kendi sorgusunu
+yazmıyor. Kârsız satış sayısı doğrudan panel görev kutusunun sayacından
+gelir — ayrı yazılsaydı koşullardan biri değişince aynı ekranda iki farklı
+sayı görünürdü.
+
+**Sözleşmedeki iki adresin karşılığı YOKTU** (anayasa notu: gösterdiğim
+link var olan bir ekrana mı gidiyor):
+- `/hakedis?durum=geciken` — o ekranda "durum" süzgeci hiç yok; süzgeçsiz
+  `/hakedis`'e bağlandı (ekran aynı sayıyı kendi kutusunda gösteriyor).
+- `/stok?maliyet=yok` — süzgeç yoktu, EKLENDİ. Çan ve liste aynı
+  fonksiyonu çağırıyor.
+_Mimar talimatı da bu süzgeçten geçer: talimat niyeti söyler, karşılığı
+olup olmadığını kontrol etmek uygulayanın işidir._
+
+**Yetki süzgeci SAYIMDAN ÖNCE:** rozet 3 gösterip listede 1 uyarı çizmek
+"iki uyarı saklanıyor" demek olurdu — saklananın varlığını sızdırırdı.
+**Açık sıfır:** uyarı yoksa çan gizlenmez, "temiz ✓" yazar. Yükleniyor ile
+sıfır AYRI hâller; yüklenmemişken rozet çizilmez ki sahte bir "0 uyarı"
+güvencesi verilmesin.
+
+**Testin dişi:** (1) kendi başlık yorumumdaki `prisma.sale.count` cümlesi
+testi kırmızıya çevirdi — kaynak metnine bakan kontrol KODA bakmalı,
+anlatıya değil. (2) Süzgeç listesi hesaplanıp sorguya hiç bağlanmamıştı;
+`?maliyet=yok` bütün stoğu gösterecekti ve yalnız ESLint'in
+kullanılmayan-değişken uyarısı yakaladı.
+
+`uyari:dogrula` 49 kontrol. Yedi mutasyonla doğrulandı.
+
+### ✅ DÜZELTME NEDENİ YÖNÜ — KAPANDI 16.08.2026
+
+Kullanıcı sorusu: _"stoğa eklerken neden girmek sağlıklı mı?"_ **Evet —
+hatta eksiden daha önemli:** yoktan mal belirmesi eksilmesinden daha
+şüphelidir; hayalet envanter ve sahte kâr sisteme bu kapıdan girer.
+
+Ama soru gerçek bir kusuru yakaladı: liste yönü hiç sormuyordu, "Stoğa
+ekle"de **Fire** seçilebiliyordu. Zararsız da değil — rapor o kaydı
+FİRE KAZANCI satırına yazar ve ekran kendini yalanlar.
+
+`yon DuzeltmeYonu @default(HER_IKISI)` eklendi (salt-ekleme, tek sütun).
+Dört ARTI neden derlendi: kayıp mal bulundu · tedarikçi fazla gönderdi ·
+numune/hediye giriş · yanlış varyanttan aktarıldı (açıklama zorunlu).
+
+**ÜÇ TUZAK ÜST ÜSTE ÇIKTI, üçü de aynı aileden:**
+1. **Migration YANLIŞ TABLOYA çıktı** (`expensecategory`) — aynı yorum
+   satırı iki modelde vardı. SQL okunmasaydı gider kategorilerine anlamsız
+   bir sütun eklenecekti.
+2. **Tablo adı küçük harfliydi** (`stockadjustmentreason`). Canlı ölçüm:
+   gerçek ad `StockAdjustmentReason`, `lower_case_table_names=0` — harfe
+   DUYARLI. Küçük harfle gitseydi migration canlıda patlardı.
+   **Depoda `migration:kontrol` adında bir harf bekçisi ZATEN VARDI ve
+   mutasyon denemesinde doğru yakaladı — ben onu commit'ten önce
+   koşmamıştım. Bekçi var ama çalıştırılmadıysa yok gibidir.**
+3. **Yönü yönetecek EKRAN unutulmuştu.** Kullanıcının açtığı her neden
+   sonsuza dek HER_IKISI kalıyordu — kapatılan kapı ayarlardan yeniden
+   açılıyordu. Canlıda örneği vardı ("Nakliye hasarı").
+   _Kendi paketimden çıkan "kural teslim edilebilir mi" ihlali._
+
+**Yön TİP GİBİ kilitlenmez:** tip geçmiş raporu oynatır (dünkü fire bugün
+sayım farkı olurdu), yön yalnız SEÇİM listesini süzer ve yazılmış
+kayıtların anlamına dokunmaz — o yüzden sonradan düzeltilebilmeli.
+Süzgeç sunucuda da doğrulanıyor: ekran süzgeci güvenlik değil kolaylıktır.
+
+**Yedek kapsamı tersine kanıtlandı:** `yedek:dogrula` önce `ColumnNotFound`
+verdi — yedek Prisma modeli üzerinden okuduğu için yeni sütunu İSTİYORDU.
+Bekçinin "eksik" demesi, kapsamın tam olduğunun kanıtı oldu.
+
+`duzeltme:dogrula` 67 → 95. Yedi mutasyonla doğrulandı.
 
 > **VERİ BEKLEYEN GÖZLE DOĞRULAMALAR** — kod işi değil, canlıda o veri
 > doğduğunda bakılacak. Kapanmamış iş sayılmaz, unutulmasın diye burada:
@@ -841,7 +921,38 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       _Mutasyon: uyarı koşulunu gevşet → test kırmızı._
 
 - [ ] **UYARI MERKEZİ — FAZ 2: AMBER VE NÖTR KATMAN**
-      _Faz 1 kapanmadan başlanmaz._
+      _Faz 1 kapanmadan başlanmaz._ **Faz 1 KAPANDI 16.08.2026** — Faz 2
+      artık açılabilir.
+
+      **UYARI ERTELEME — mimar sözleşmesi 16.08.2026.**
+
+      Kullanıcı sezgisi: bilerek kabul edilen bir durum (ör. maliyeti hiç
+      olmayacak numune) sonsuza dek kırmızı yanmasın.
+
+      **CEVAP "KAPAT/OKUNDU" DEĞİL.** Faz 1'in dördü de DURUM uyarısıdır,
+      olay değil: "1 ürünün maliyeti bilinmiyor" bir şeyin OLDUĞUNU değil,
+      şu anda ÖYLE OLDUĞUNU söyler. Okundu diye kapatmak uyarıyı yalancı
+      yapar — durum sürer, ekran temiz görünür. Üstelik "kapattım ve
+      unuttum" diye yeni bir hata sınıfı doğar ki kalıcı kırmızı rozetten
+      çok daha tehlikelidir.
+
+      **CEVAP: ERTELE.**
+      - Erteleme **SEBEP + BİTİŞ TARİHİ** ister. Sebepsiz/tarihsiz
+        erteleme yok.
+      - Panelde **"N uyarı ertelenmiş"** görünür — ayrı ama GÖRÜNÜR,
+        sessizce saklanmaz.
+      - Süre dolunca uyarı **kendiliğinden geri gelir**. Kalıcı unutma
+        imkânsız.
+      - Erteleme kaydı **iz bırakır** (kim, ne zaman, neden, ne kadar).
+      - Şema: yeni tablo (`UyariErteleme`) — salt-ekleme, SQL onaya gelir.
+
+      **AYRIM:** "kapat" durumu GÖRMEZDEN GELİR (yalan); "ertele" durumu
+      KABUL EDER ama görünür ve geçici tutar (bilinçli karar). Panelin
+      "sayı = gerçek durum" ilkesi ikisinde de korunur — biri onu bozar,
+      diğeri bozmaz.
+
+      _Faz 1 (4 kırmızı, kendiliğinden sönen) bugün için yeterli;
+      erteleme amber katmanla birlikte gelir._
 
       **AMBER:** kart ödemesi yaklaşan · **geciken sipariş** · stok bitiyor ·
       bekleyen iade · zarar eden satış · **marj düştü**.
