@@ -207,6 +207,9 @@ export default async function RaporSayfasi({
         unitCostAmount: true,
         unitCostCurrency: true,
         type: true,
+        /* İadeden doğan hareketi ayırt etmek için — süzme SAF KATMANDA
+           yapılır ki test görebilsin (bkz. rapor.ts, iadeKaynakliMi). */
+        returnItemId: true,
       },
     }),
     prisma.expense.findMany({
@@ -276,6 +279,7 @@ export default async function RaporSayfasi({
     birimMaliyet: sayi(d.unitCostAmount),
     paraBirimi: d.unitCostCurrency,
     tip: d.type === "COUNT_CORRECTION" ? "COUNT_CORRECTION" : "ADJUSTMENT",
+    iadeKaynakliMi: d.returnItemId !== null,
   }));
 
   const girdi = { satislar, iadeler, giderler, duzeltmeler };
@@ -472,28 +476,70 @@ export default async function RaporSayfasi({
           </div>
           <div className="text-muted-foreground mt-1 text-xs">
             {t("gercekNetForm")} · {para(b.brutNet2)} − {para(b.giderNetDusen)}
-            {b.duzeltmeZarari !== 0 ? ` − ${para(b.duzeltmeZarari)}` : ""}
+            {/* Net düzeltme EKSİ ise (kazanç kayıptan büyük) formülde
+                "− −₺500" yazmaz; işaret düzeltilip artı olarak okunur. */}
+            {b.duzeltmeZarari > 0
+              ? ` − ${para(b.duzeltmeZarari)}`
+              : b.duzeltmeZarari < 0
+                ? ` + ${para(-b.duzeltmeZarari)}`
+                : ""}
           </div>
         </div>
 
         {/* ------------------- FİRE VE DÜZELTME ------------------------
             Stok defterinden türer; gider tablosuna YAZILMAZ. Bu yüzden
             gider dökümünde değil, kendi kutusunda duruyor. */}
-        {b.duzeltmeZarari !== 0 || b.duzeltmeBilinmeyenAdet > 0 ? (
+        {/**
+         * GÖRÜNÜRLÜK ÖLÇÜTÜ NET DEĞİL, HAREKETİN KENDİSİ — 16.08.2026.
+         *
+         * Koşul \`duzeltmeZarari !== 0\` idi. ₺500 fire ile ₺500 fazla
+         * çıkan mal aynı dönemdeyse net sıfır olur ve kutu HİÇ ÇİZİLMEZDİ:
+         * iki gerçek olay ekrandan tamamen silinirdi. Ölçüt artık net değil,
+         * hareketin varlığı.
+         */}
+        {b.fireZarari > 0 ||
+        b.fireKazanci > 0 ||
+        b.sayimZarari > 0 ||
+        b.sayimKazanci > 0 ||
+        b.duzeltmeBilinmeyenAdet > 0 ? (
           <div className="space-y-2 rounded-lg border p-4">
             <div className="text-sm font-medium">{t("duzeltmeBaslik")}</div>
+            {/* KAYIP VE KAZANÇ AYRI KUTU: biri diğerini götürmez. Sıfır
+                olan kutu çizilmez — boş kutu bilgi taşımaz. */}
             <div className="grid gap-3 sm:grid-cols-3">
+              {b.fireZarari > 0
+                ? kart(
+                    t("fireZarari"),
+                    para(b.fireZarari),
+                    t("duzeltmeAdet", { sayi: b.fireAdedi }),
+                  )
+                : null}
+              {b.fireKazanci > 0
+                ? kart(
+                    t("fireKazanci"),
+                    para(b.fireKazanci),
+                    t("duzeltmeAdet", { sayi: b.fireKazancAdedi }),
+                  )
+                : null}
+              {b.sayimZarari > 0
+                ? kart(
+                    t("sayimZarari"),
+                    para(b.sayimZarari),
+                    t("duzeltmeAdet", { sayi: b.sayimAdedi }),
+                  )
+                : null}
+              {b.sayimKazanci > 0
+                ? kart(
+                    t("sayimKazanci"),
+                    para(b.sayimKazanci),
+                    t("duzeltmeAdet", { sayi: b.sayimKazancAdedi }),
+                  )
+                : null}
               {kart(
-                t("fireZarari"),
-                para(b.fireZarari),
-                t("duzeltmeAdet", { sayi: b.fireAdedi }),
+                t("duzeltmeToplam"),
+                para(b.duzeltmeZarari),
+                t("duzeltmeToplamNotu"),
               )}
-              {kart(
-                t("sayimZarari"),
-                para(b.sayimZarari),
-                t("duzeltmeAdet", { sayi: b.sayimAdedi }),
-              )}
-              {kart(t("duzeltmeToplam"), para(b.duzeltmeZarari))}
             </div>
             {b.duzeltmeBilinmeyenAdet > 0 ? (
               <p className={`text-sm ${DURUM_YAZISI.uyari}`}>

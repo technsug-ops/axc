@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 /**
  * ============================================================================
  *  STOK DÜZELTME DOĞRULAMA
@@ -220,6 +221,7 @@ console.log("\n3) RAPORA ETKİSİ — GERÇEK NET'ten düşer, NET-2'ye KARIŞMA
         birimMaliyet: 40,
         paraBirimi: "TRY",
         tip: "ADJUSTMENT",
+        iadeKaynakliMi: false,
       },
     ],
   }).paraBirimleri[0];
@@ -251,10 +253,122 @@ console.log("\n3) RAPORA ETKİSİ — GERÇEK NET'ten düşer, NET-2'ye KARIŞMA
         birimMaliyet: 100,
         paraBirimi: "TRY",
         tip: "ADJUSTMENT",
+        iadeKaynakliMi: false,
       },
     ],
   }).paraBirimleri[0];
   yakin("geçen ayın düzeltmesi girmedi", disarda.duzeltmeZarari, 0);
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  İADEDEN DOĞAN DÜZELTME ÇİFT SAYILMAZ (16.08.2026)
+   * --------------------------------------------------------------------
+   *  İade işlenirken stok defterine ADJUSTMENT yazılıyor (hasarlı mal
+   *  stoğa girmiyor). O paranın etkisi İADENİN NET-2'sinde ZATEN var.
+   *  Fire toplamına da eklenince aynı lira iki kez düşüyordu; canlıda
+   *  GERÇEK NET ₺1.327,99 olduğundan DÜŞÜK çıkıyordu.
+   *
+   *  Bu kusur neden görülmedi: her iki taraf da tek başına doğruydu.
+   *  İade motoru doğru hesaplıyor, fire toplamı doğru topluyordu. Hata
+   *  ARALARINDAKİ boşluktaydı ve iki testin de kapsamı dışındaydı.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const iadeKaynakli = raporHesapla(pencere, {
+    ...ortakGirdi,
+    duzeltmeler: [
+      {
+        tarih: gun(2026, 8, 6),
+        miktar: -2,
+        birimMaliyet: 40,
+        paraBirimi: "TRY",
+        tip: "ADJUSTMENT",
+        iadeKaynakliMi: true,
+      },
+    ],
+  }).paraBirimleri[0];
+  yakin("iadeden doğan düzeltme fireye GİRMEZ", iadeKaynakli.fireZarari, 0);
+  yakin("  ...düzeltme toplamına da girmez", iadeKaynakli.duzeltmeZarari, 0);
+  yakin(
+    "  ...GERÇEK NET düşmez (para iadenin NET-2'sinde sayıldı)",
+    iadeKaynakli.gercekNet,
+    duzeltmesiz.gercekNet,
+  );
+  kontrol(
+    "  ...elle girilen aynı düzeltme HÂLÂ sayılıyor (kural fazla süpürmüyor)",
+    Math.abs(duzeltmeli.fireZarari - 80) < 0.005,
+    duzeltmeli.fireZarari,
+  );
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  KAYIP VE KAZANÇ AYRI SATIR — BİRİ DİĞERİNİ GÖTÜRMEZ (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Tek alanda toplanıyorlardı. ₺500 fire ile ₺500 fazla çıkan mal aynı
+   *  dönemde olunca net sıfır çıkıyor, ekranda "düzeltme yok" yazıyordu:
+   *  İKİ GERÇEK OLAY birden görünmez oluyordu. Net etki doğruydu — ama
+   *  doğru bir toplam, olmamış gibi gösterilen iki olayı telafi etmez.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const kayipKazanc = raporHesapla(pencere, {
+    ...ortakGirdi,
+    duzeltmeler: [
+      { tarih: gun(2026, 8, 6), miktar: -5, birimMaliyet: 100, paraBirimi: "TRY", tip: "ADJUSTMENT", iadeKaynakliMi: false },
+      { tarih: gun(2026, 8, 7), miktar: 5, birimMaliyet: 100, paraBirimi: "TRY", tip: "ADJUSTMENT", iadeKaynakliMi: false },
+      { tarih: gun(2026, 8, 8), miktar: -3, birimMaliyet: 20, paraBirimi: "TRY", tip: "COUNT_CORRECTION", iadeKaynakliMi: false },
+      { tarih: gun(2026, 8, 9), miktar: 1, birimMaliyet: 20, paraBirimi: "TRY", tip: "COUNT_CORRECTION", iadeKaynakliMi: false },
+    ],
+  }).paraBirimleri[0];
+  yakin("fire KAYBI ayrı duruyor", kayipKazanc.fireZarari, 500);
+  yakin("fire KAZANCI ayrı duruyor", kayipKazanc.fireKazanci, 500);
+  yakin("  ...adetler de ayrı", kayipKazanc.fireAdedi, 5);
+  yakin("  ...kazanç adedi ayrı", kayipKazanc.fireKazancAdedi, 5);
+  yakin("sayım KAYBI ayrı duruyor", kayipKazanc.sayimZarari, 60);
+  yakin("sayım KAZANCI ayrı duruyor", kayipKazanc.sayimKazanci, 20);
+  kontrol(
+    "kayıp ve kazanç birbirini GİZLEMİYOR (ikisi de sıfırdan büyük)",
+    kayipKazanc.fireZarari > 0 && kayipKazanc.fireKazanci > 0,
+  );
+  yakin(
+    "net etki DEĞİŞMEDİ (kayıp − kazanç = 500 − 500 + 60 − 20)",
+    kayipKazanc.duzeltmeZarari,
+    40,
+  );
+
+  /** Tam denkleşen dönemde bile olaylar kaybolmaz. */
+  const denk = raporHesapla(pencere, {
+    ...ortakGirdi,
+    duzeltmeler: [
+      { tarih: gun(2026, 8, 6), miktar: -5, birimMaliyet: 100, paraBirimi: "TRY", tip: "ADJUSTMENT", iadeKaynakliMi: false },
+      { tarih: gun(2026, 8, 7), miktar: 5, birimMaliyet: 100, paraBirimi: "TRY", tip: "ADJUSTMENT", iadeKaynakliMi: false },
+    ],
+  }).paraBirimleri[0];
+  yakin("denk dönemde net sıfır", denk.duzeltmeZarari, 0);
+  kontrol(
+    "  ...ama olaylar HÂLÂ kayıtlı (ekran kutusu çizilir)",
+    denk.fireZarari === 500 && denk.fireKazanci === 500,
+    `${denk.fireZarari} / ${denk.fireKazanci}`,
+  );
+
+  /** EKRAN BAĞI — kutu net'e değil, hareketin varlığına bakıyor. */
+  const raporEkrani = readFileSync("src/app/rapor/page.tsx", "utf8");
+  kontrol(
+    "ekran kutusu NET'e değil hareketin VARLIĞINA bakıyor",
+    raporEkrani.includes("b.fireZarari > 0 ||") &&
+      raporEkrani.includes("b.fireKazanci > 0 ||"),
+  );
+  kontrol(
+    "  ...kazanç kendi kutusunda gösteriliyor",
+    raporEkrani.includes('t("fireKazanci")') &&
+      raporEkrani.includes('t("sayimKazanci")'),
+  );
+  kontrol(
+    "  ...eski 'net sıfırsa kutuyu gizle' koşulu kalmamış",
+    !raporEkrani.includes("b.duzeltmeZarari !== 0 || b.duzeltmeBilinmeyenAdet"),
+  );
+  kontrol(
+    "  ...net kazançta formül '− −₺X' yazmıyor",
+    raporEkrani.includes("b.duzeltmeZarari < 0"),
+  );
 }
 
 

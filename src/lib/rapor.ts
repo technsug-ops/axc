@@ -85,6 +85,18 @@ export type RaporDuzeltmesi = {
   birimMaliyet: number | null;
   paraBirimi: Currency | null;
   tip: "ADJUSTMENT" | "COUNT_CORRECTION";
+  /**
+   * BU HAREKET BİR İADEDEN Mİ DOĞDU (`returnItemId` dolu mu).
+   *
+   * ⚠ ÇİFT SAYIM. İade işlenirken stok defterine ADJUSTMENT yazılıyor
+   * (hasarlı mal stoğa girmez, gider yazılır). O paranın etkisi İADENİN
+   * NET-2'sinde ZATEN var. Fire toplamına da eklenince aynı lira iki kez
+   * düşüyor ve GERÇEK NET olduğundan düşük çıkıyordu.
+   *
+   * Kural sorguya değil BURAYA konuyor: sorguda `returnItemId: null`
+   * süzgeci testin göremeyeceği bir yerde yaşar ve sessizce kaybolabilir.
+   */
+  iadeKaynakliMi: boolean;
 };
 
 export type RaporGirdisi = {
@@ -159,12 +171,25 @@ export type ParaBirimiRaporu = {
   giderNetDusen: number;
 
   // --- FIRE VE DUZELTME (stok defterinden turer, gider tablosunda YOK) ---
-  /** Fire/hasar/kayip zarari — POZITIF sayi = kaybedilen para. */
+  /**
+   * FIRE — KAYIP VE KAZANÇ AYRI TOPLANIR.
+   *
+   * Tek alanda toplanıyorlardı ve biri diğerini SESSİZCE götürüyordu:
+   * ₺500 fire ile ₺500 fazla çıkan mal net sıfır görünüyor, ekranda
+   * "düzeltme yok" yazıyordu. Oysa ikisi ayrı olaydır — biri kayıp, biri
+   * sayım/etiket hatasının telafisi. Net etki değişmiyor (kayıp − kazanç)
+   * ama ekranda ikisi de görünüyor.
+   */
   fireZarari: number;
   fireAdedi: number;
+  /** Fazla çıkan mal — POZITIF sayi = geri kazanılan para. */
+  fireKazanci: number;
+  fireKazancAdedi: number;
   /** Sayim farki zarari — ayri satir: olcum hatasi ile gercek kayip ayni degil. */
   sayimZarari: number;
   sayimAdedi: number;
+  sayimKazanci: number;
+  sayimKazancAdedi: number;
   duzeltmeZarari: number;
   /** Maliyeti bilinmedigi icin paraya cevrilemeyen adet. Sifir sayilmaz. */
   duzeltmeBilinmeyenAdet: number;
@@ -214,8 +239,12 @@ function bosRapor(paraBirimi: Currency): ParaBirimiRaporu {
     giderNetDusen: 0,
     fireZarari: 0,
     fireAdedi: 0,
+    fireKazanci: 0,
+    fireKazancAdedi: 0,
     sayimZarari: 0,
     sayimAdedi: 0,
+    sayimKazanci: 0,
+    sayimKazancAdedi: 0,
     duzeltmeZarari: 0,
     duzeltmeBilinmeyenAdet: 0,
     sabitGiderNetDusen: 0,
@@ -306,6 +335,12 @@ export function raporHesapla(
   // kalemi olarak GERCEK NET'ten duser, tipki gider gibi.
   for (const d of girdi.duzeltmeler ?? []) {
     if (!pencerede(pencere, d.tarih)) continue;
+    /**
+     * İADEDEN DOĞAN HAREKET BURADA SAYILMAZ — parası iadenin NET-2'sinde.
+     * Sayılırsa aynı lira iki kez düşer (16.08.2026 bulgusu: GERÇEK NET
+     * ₺1.327,99 olduğundan düşük çıkıyordu).
+     */
+    if (d.iadeKaynakliMi) continue;
     if (d.birimMaliyet === null || d.paraBirimi === null) {
       // Maliyeti bilinmeyen hareket paraya cevrilemez. Sifir saymak, kaybi
       // hic yasanmamis gibi gostermek olurdu — ayrica sayilir, ekranda yazar.
@@ -316,12 +351,23 @@ export function raporHesapla(
     const bd = blok(d.paraBirimi);
     // miktar negatifse zarar POZITIF olsun diye ters cevriliyor.
     const zarar = -d.miktar * d.birimMaliyet;
+    const kayipMi = zarar > 0;
+    const tutar = Math.abs(zarar);
+    const adet = Math.abs(d.miktar);
     if (d.tip === "ADJUSTMENT") {
-      bd.fireZarari += zarar;
-      bd.fireAdedi += Math.abs(d.miktar);
+      if (kayipMi) {
+        bd.fireZarari += tutar;
+        bd.fireAdedi += adet;
+      } else {
+        bd.fireKazanci += tutar;
+        bd.fireKazancAdedi += adet;
+      }
+    } else if (kayipMi) {
+      bd.sayimZarari += tutar;
+      bd.sayimAdedi += adet;
     } else {
-      bd.sayimZarari += zarar;
-      bd.sayimAdedi += Math.abs(d.miktar);
+      bd.sayimKazanci += tutar;
+      bd.sayimKazancAdedi += adet;
     }
   }
 
@@ -364,7 +410,12 @@ export function raporHesapla(
   for (const [paraBirimi, b] of bloklar) {
     b.brutNet1 = b.satisNet1 + b.iadeNet1;
     b.brutNet2 = b.satisNet2 + b.iadeNet2;
-    b.duzeltmeZarari = b.fireZarari + b.sayimZarari;
+    /**
+     * NET ETKİ = KAYIP − KAZANÇ. Ayrıştırma yalnız GÖRÜNÜRLÜK içindir;
+     * GERÇEK NET'e giren rakam değişmez.
+     */
+    b.duzeltmeZarari =
+      b.fireZarari + b.sayimZarari - b.fireKazanci - b.sayimKazanci;
     b.gercekNet = b.brutNet2 - b.giderNetDusen - b.duzeltmeZarari;
 
     b.hesaplanamayanDurumlar = [...durumSayaci.get(paraBirimi)!]
