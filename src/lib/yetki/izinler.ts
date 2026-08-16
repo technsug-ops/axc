@@ -26,6 +26,25 @@ export type IzinTanimi = {
   anahtar: string;
   /** Ekranda hangi başlık altında gruplanır. */
   grup: "operasyon" | "para" | "ayar" | "yonetim";
+  /**
+   * SAĞLAYICI İZNİ Mİ — FİRMA DÜZLEMİNDE DEĞİL, ÜRÜNÜ SAĞLAYAN DÜZLEMDE.
+   *
+   * ⚠ 16.08.2026 teşhisi: sistemde "sağlayıcı" diye bir KAVRAM yok. Roller
+   * global (`Role`de `companyId` yok), 40 modelin yalnız 3'ünde
+   * `companyId` var. Yani firma-üstü bir düzlem tanımlı değil ve
+   * "bütün firmaları gör" yetkisi bir FİRMA rolünde duruyor.
+   *
+   * Tam ayrımı bugün KURMUYORUZ — kurulsaydı yalnız taleplerde izolasyon
+   * olurdu, ürün/satış/kâr açık kalırdı; kısmi izolasyon izolasyon
+   * değildir. Ayrım, çok-firma veri katmanı paketinin ilk maddesi
+   * (bkz. BEKLEYENLER → engelleyici ön şart).
+   *
+   * BUGÜN YAPILAN SİGORTA: bu işaretli izinler `SONRADAN_DOGAN`
+   * mekanizmasıyla HİÇBİR role OTOMATİK dağıtılmaz. Mevcut roller
+   * korunur (elle verilmiş), ama yarın açılan tam yetkili bir rol bunları
+   * kendiliğinden ALMAZ. Keskin uç körelir; kavram yerinde durur.
+   */
+  saglayici?: true;
 };
 
 export const IZINLER = [
@@ -73,7 +92,11 @@ export const IZINLER = [
    * DURUMUNU değiştirmek ve çözüm notu yazmak bu izne bağlı — kullanıcı
    * kendi talebinin nerede olduğunu GÖRÜR ama ilerletemez.
    */
-  { anahtar: "destek.yonet", grup: "yonetim" },
+  /**
+   * SAĞLAYICI İZNİ: talebi AÇAN müşteri firmadır, ÇÖZEN ürünü sağlayandır.
+   * Bu yüzden firma rollerine otomatik dağıtılmaz (bkz. `saglayici`).
+   */
+  { anahtar: "destek.yonet", grup: "yonetim", saglayici: true },
 ] as const satisfies readonly IzinTanimi[];
 
 export type Izin = (typeof IZINLER)[number]["anahtar"];
@@ -87,6 +110,44 @@ export function izinTaninirMi(anahtar: string): anahtar is Izin {
 
 /** Tüm izinler — SAHİP rolünün seed'i. */
 export const TUM_IZINLER: readonly Izin[] = IZINLER.map((i) => i.anahtar);
+
+/**
+ * SAĞLAYICI DÜZLEMİNE AİT İZİNLER — otomatik dağıtım YASAK.
+ *
+ * `prisma/seed-yetki.ts` bu listedekileri "sonradan doğan izin" olarak
+ * hiçbir role yağdırmaz; `scripts/yetki-bekci.ts` de bunların eksikliğini
+ * HATA saymaz. İki yerde iki farklı ölçüt olmasın diye tek kaynak burası.
+ *
+ * Liste bugün tek elemanlı. Yeni bir sağlayıcı izni doğduğunda yapılacak
+ * tek şey tanımına `saglayici: true` yazmaktır — mekanizma kendiliğinden
+ * uygular.
+ */
+export const SAGLAYICI_IZINLERI: readonly Izin[] = IZINLER.filter(
+  (i) => "saglayici" in i && i.saglayici === true,
+).map((i) => i.anahtar);
+
+/**
+ * SONRADAN DOĞAN İZİNLERDEN HANGİLERİ ROLLERE OTOMATİK DAĞITILIR.
+ *
+ * Sağlayıcı izinleri ELENİR — bir firma rolü onları kendiliğinden almaz.
+ * Kural saf fonksiyonda çünkü seed'in içine gömülseydi hiçbir test
+ * göremezdi; bu oturumda tam bu tuzağa iki kez düşüldü.
+ *
+ * ÇİFT KATMAN BİLİNÇLİ: bir izin `SONRADAN_DOGAN` listesine yanlışlıkla
+ * yazılsa bile `saglayici` işareti onu burada tekrar eler. Tek katman
+ * olsaydı, listeye ekleyen bir kişi sigortayı farkında olmadan delerdi.
+ */
+export function otomatikDagitilacak(
+  sonradanDogan: readonly string[],
+): readonly string[] {
+  const saglayici = new Set<string>(SAGLAYICI_IZINLERI);
+  return sonradanDogan.filter((i) => !saglayici.has(i));
+}
+
+/** Firma düzlemine ait izinler — tam yetkili rolün sahip olması BEKLENEN küme. */
+export const FIRMA_IZINLERI: readonly Izin[] = TUM_IZINLER.filter(
+  (i) => !(SAGLAYICI_IZINLERI as readonly string[]).includes(i),
+);
 
 /**
  * OPERASYON rolünün başlangıç izinleri (kullanıcı kararı 13.08.2026).

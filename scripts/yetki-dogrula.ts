@@ -26,10 +26,13 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import {
+  FIRMA_IZINLERI,
   IZINLER,
   OPERASYON_IZINLERI,
+  SAGLAYICI_IZINLERI,
   TUM_IZINLER,
   izinTaninirMi,
+  otomatikDagitilacak,
 } from "../src/lib/yetki/izinler";
 import { yetkiBekcisi } from "./yetki-bekci";
 
@@ -73,6 +76,10 @@ const ACTION_ISTISNALARI = new Map<string, string>([
   [
     "parolamiDegistir",
     "kendi parolasını değiştiriyor; izin şartı koysak ilk girişte parola değiştirmek ZORUNDA olan kullanıcı bunu yapamazdı — hedef oturumdan gelir, formdan değil",
+  ],
+  [
+    "uyarilariGetir",
+    "tek bir izne bağlanamaz: çan BEŞ ayrı uyarı taşıyor ve her birinin kendi izni var. Süzme uyarilariTopla içinde, SUNUCUDA, sayımdan ÖNCE yapılıyor (izneGoreSuz) — istemciye göremeyeceği uyarı hiç gönderilmiyor. Buraya yetkiIste koymak, izni OLMAYAN kullanıcının çanı hiç görememesi demek olurdu; oysa operasyonel uyarıyı (maliyetsiz stok) görmeli.",
   ],
 ]);
 
@@ -402,6 +409,121 @@ async function bekciBolumu() {
  * yeşil yanan ama bir şeyi ölçmeyen bir doğrulayıcı, olmayandan tehlikelidir.
  */
 bekciBolumu().then(() => {
+
+// ===========================================================================
+console.log("\n6) SAĞLAYICI İZNİ — OTOMATİK DAĞITILMAZ");
+// ===========================================================================
+{
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  SİGORTA: SAĞLAYICI İZNİ FİRMA ROLLERİNE YAĞDIRILMAZ (karar 16.08.2026)
+   * --------------------------------------------------------------------
+   *  TEŞHİS: sistemde "sağlayıcı" diye bir kavram YOK. Roller global
+   *  (`Role`de `companyId` yok), 40 modelin yalnız 3'ünde `companyId` var.
+   *  Yani "bütün firmaları gör" yetkisi bir FİRMA rolünde duruyor.
+   *
+   *  Tam ayrım BUGÜN KURULMADI — kurulsaydı yalnız taleplerde izolasyon
+   *  olurdu, ürün/satış/kâr açık kalırdı; KISMİ İZOLASYON İZOLASYON
+   *  DEĞİLDİR. Ayrım çok-firma veri katmanının ilk maddesi.
+   *
+   *  BUGÜNKÜ SİGORTA: `SONRADAN_DOGAN` mekanizması sağlayıcı izinlerini
+   *  hiçbir role otomatik dağıtmaz. Mevcut roller korunur (elle verildi),
+   *  ama yarın açılacak tam yetkili bir rol — ikinci firmanın sahibi
+   *  dahil — bunları KENDİLİĞİNDEN ALMAZ.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "destek.yonet SAĞLAYICI izni olarak işaretli",
+    (SAGLAYICI_IZINLERI as readonly string[]).includes("destek.yonet"),
+  );
+  kontrol(
+    "  ...firma izinleri kümesinde YOK",
+    !(FIRMA_IZINLERI as readonly string[]).includes("destek.yonet"),
+  );
+  kontrol(
+    "  ...ama TÜM izinler listesinde var (yok sayılmıyor)",
+    (TUM_IZINLER as readonly string[]).includes("destek.yonet"),
+  );
+  kontrol(
+    "firma + sağlayıcı = tüm izinler (hiçbiri kaybolmuyor)",
+    FIRMA_IZINLERI.length + SAGLAYICI_IZINLERI.length === TUM_IZINLER.length,
+    `${FIRMA_IZINLERI.length} + ${SAGLAYICI_IZINLERI.length} = ${TUM_IZINLER.length}`,
+  );
+
+  /**
+   * ASIL KİLİT: dağıtım listesinden ELENİYOR mu.
+   *
+   * Girdi bilerek SABİT yazıldı, `SAGLAYICI_IZINLERI`den TÜRETİLMEDİ:
+   * türetilseydi işareti kaldıran bir mutasyon test verisini de değiştirir
+   * ve test yeşil kalırdı. (İlk denemede tam bu oldu — kusurlu mutasyon.)
+   */
+  kontrol(
+    "sonradan doğan listede olsa BİLE dağıtılmıyor",
+    !otomatikDagitilacak(["iade.gor", "destek.yonet"]).includes("destek.yonet"),
+  );
+  kontrol(
+    "  ...firma izni olan diğerleri NORMAL dağıtılıyor",
+    otomatikDagitilacak(["iade.gor", "destek.yonet"]).includes("iade.gor"),
+  );
+  kontrol(
+    "  ...yalnız sağlayıcı izni varsa dağıtılacak hiçbir şey kalmıyor",
+    otomatikDagitilacak(["destek.yonet"]).length === 0,
+  );
+  kontrol(
+    "boş liste boş döner",
+    otomatikDagitilacak([]).length === 0,
+  );
+
+  /**
+   * BEKÇİ AYNI ÖLÇÜTÜ KULLANMALI. İki yerde iki farklı ölçüt olsaydı seed
+   * izni dağıtmaz, bekçi eksik sayar ve her tam yetkili rol kırmızı
+   * yanardı — bekçi bir süre sonra görmezden gelinen bir alarma dönerdi.
+   */
+  const bekci = readFileSync("scripts/yetki-bekci.ts", "utf8");
+  kontrol(
+    "bekçi ölçütü FİRMA izinleri (sağlayıcıyı eksik saymıyor)",
+    bekci.includes("FIRMA_IZINLERI.filter((i) => !sahipOldugu.has(i))"),
+  );
+  /**
+   * SESSİZ HARİÇ TUTMA YOK: bekçi neyi ölçmediğini YAZAR. Bu satır olmasa
+   * altı ay sonra "destek.yonet niye hiç kontrol edilmiyor?" sorusunun
+   * cevabı kalmazdı.
+   */
+  kontrol(
+    "  ...ölçüt dışı bıraktığını EKRANDA bildiriyor",
+    bekci.includes("ölçüt DIŞI (sağlayıcı düzlemi"),
+  );
+
+  const seed = readFileSync("prisma/seed-yetki.ts", "utf8");
+  kontrol(
+    "seed dağıtımı saf fonksiyondan geçiriyor",
+    seed.includes("otomatikDagitilacak(SONRADAN_DOGAN)"),
+  );
+  kontrol(
+    "  ...destek.yonet SONRADAN_DOGAN listesinde DEĞİL",
+    /**
+     * İLK HÂLİ YALANCI YEŞİLDİ:
+     *   !/SONRADAN_DOGAN[\s\S]{0,600}?\]\s*;/.exec(seed)?.[0].includes(...)
+     *
+     * İsteğe bağlı zincir (`?.`) yüzünden desen HİÇ eşleşmediğinde ifade
+     * `undefined` oluyor ve `!undefined === true` — yani kontrol, aradığı
+     * bloğu bulamadığında da yeşil yanıyordu. Mutasyon denemesi bunu
+     * gösterdi: listeye `destek.yonet` geri konduğu hâlde test susuyordu.
+     *
+     * Bu, bu oturumdaki ÜÇÜNCÜ yalancı yeşil kalıbı (öncekiler: `indexOf`
+     * −1 tuzağı ve biçime bağlı metin kontrolü). Ortak kök: KONTROL,
+     * ARADIĞINI BULAMADIĞINDA BAŞARILI SAYILMAMALI.
+     */
+    (() => {
+      const bas = seed.indexOf("const SONRADAN_DOGAN");
+      if (bas === -1) return false; // blok yoksa kontrol de geçmez
+      const son = seed.indexOf("];", bas);
+      if (son === -1) return false;
+      return !seed.slice(bas, son).includes('"destek.yonet"');
+    })(),
+  );
+}
+
   console.log("\n" + "=".repeat(70));
   if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
   else {

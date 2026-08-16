@@ -1,4 +1,8 @@
-import { TUM_IZINLER, SAHIP_ROLU } from "../src/lib/yetki/izinler";
+import {
+  FIRMA_IZINLERI,
+  SAGLAYICI_IZINLERI,
+  SAHIP_ROLU,
+} from "../src/lib/yetki/izinler";
 
 /**
  * ============================================================================
@@ -74,7 +78,10 @@ type RolOkuyucu = {
 
 export type BekciSatiri = {
   rol: string;
+  /** Rolün sahip olduğu FİRMA izni sayısı (sağlayıcı izinleri hariç). */
   sahipOlduguSayi: number;
+  /** Sağlayıcı düzleminden bir izin taşıyor mu — raporda ayrıca yazılır. */
+  saglayiciIzniVar: boolean;
   eksikler: string[];
   /** Bu satır hataya mı sebep oldu? */
   sorunlu: boolean;
@@ -96,13 +103,25 @@ export async function yetkiBekcisi(prisma: RolOkuyucu): Promise<BekciSonucu> {
 
   const satirlar: BekciSatiri[] = roller.map((rol) => {
     const sahipOldugu = new Set(rol.izinler.map((i) => i.permissionKey));
-    const eksikler = TUM_IZINLER.filter((i) => !sahipOldugu.has(i));
-    const oran = (TUM_IZINLER.length - eksikler.length) / TUM_IZINLER.length;
+    /**
+     * ÖLÇÜT FİRMA İZİNLERİ — SAĞLAYICI İZNİ SAYILMAZ (karar 16.08.2026).
+     *
+     * Sağlayıcı izinleri firma rollerine otomatik dağıtılmıyor; bekçi
+     * onları da arasaydı her tam yetkili rol "eksik izni var" diye kırmızı
+     * yanardı ve bekçi bir süre sonra görmezden gelinen bir alarma
+     * dönerdi. Bekçinin ölçütü ile seed'in ölçütü AYNI kaynaktan gelir —
+     * iki yerde iki farklı ölçüt olmaz (anayasa kuralı).
+     */
+    const eksikler = FIRMA_IZINLERI.filter((i) => !sahipOldugu.has(i));
+    const oran =
+      (FIRMA_IZINLERI.length - eksikler.length) / FIRMA_IZINLERI.length;
 
     if (eksikler.length === 0) {
       return {
         rol: rol.name,
-        sahipOlduguSayi: sahipOldugu.size,
+        sahipOlduguSayi: FIRMA_IZINLERI.filter((i) => sahipOldugu.has(i))
+          .length,
+        saglayiciIzniVar: SAGLAYICI_IZINLERI.some((i) => sahipOldugu.has(i)),
         eksikler,
         sorunlu: false,
         aciklama: "tam yetkili",
@@ -114,7 +133,9 @@ export async function yetkiBekcisi(prisma: RolOkuyucu): Promise<BekciSonucu> {
     if (beyan && eksikler.every((e) => beyan.includes(e))) {
       return {
         rol: rol.name,
-        sahipOlduguSayi: sahipOldugu.size,
+        sahipOlduguSayi: FIRMA_IZINLERI.filter((i) => sahipOldugu.has(i))
+          .length,
+        saglayiciIzniVar: SAGLAYICI_IZINLERI.some((i) => sahipOldugu.has(i)),
         eksikler,
         sorunlu: false,
         aciklama: "beyanlı kısıtlı",
@@ -125,7 +146,9 @@ export async function yetkiBekcisi(prisma: RolOkuyucu): Promise<BekciSonucu> {
     if (oran < YAKINLIK_ESIGI) {
       return {
         rol: rol.name,
-        sahipOlduguSayi: sahipOldugu.size,
+        sahipOlduguSayi: FIRMA_IZINLERI.filter((i) => sahipOldugu.has(i))
+          .length,
+        saglayiciIzniVar: SAGLAYICI_IZINLERI.some((i) => sahipOldugu.has(i)),
         eksikler,
         sorunlu: false,
         aciklama: "kısıtlı (beklenen)",
@@ -139,7 +162,8 @@ export async function yetkiBekcisi(prisma: RolOkuyucu): Promise<BekciSonucu> {
      */
     return {
       rol: rol.name,
-      sahipOlduguSayi: sahipOldugu.size,
+      sahipOlduguSayi: FIRMA_IZINLERI.filter((i) => sahipOldugu.has(i)).length,
+      saglayiciIzniVar: SAGLAYICI_IZINLERI.some((i) => sahipOldugu.has(i)),
       eksikler,
       sorunlu: true,
       aciklama: "EKSİK İZİN",
@@ -149,7 +173,8 @@ export async function yetkiBekcisi(prisma: RolOkuyucu): Promise<BekciSonucu> {
   return {
     satirlar: satirlar.sort((a, b) => b.sahipOlduguSayi - a.sahipOlduguSayi),
     sorunSayisi: satirlar.filter((s) => s.sorunlu).length,
-    toplamIzin: TUM_IZINLER.length,
+    // Ekranda gösterilen ölçüt de FİRMA izinleri — rapor ile kural aynı.
+    toplamIzin: FIRMA_IZINLERI.length,
   };
 }
 
@@ -157,13 +182,26 @@ export async function yetkiBekcisi(prisma: RolOkuyucu): Promise<BekciSonucu> {
 export function bekciyiYaz(sonuc: BekciSonucu): boolean {
   console.log("");
   console.log("YETKİ BEKÇİSİ — tam yetkili rol eksik izinle kalmış mı?");
-  console.log(`  koddaki izin sayısı: ${sonuc.toplamIzin}`);
+  console.log(`  koddaki firma izni: ${sonuc.toplamIzin}`);
+  /**
+   * ÖLÇÜT DIŞI BIRAKILAN NE VARSA YAZILIR.
+   *
+   * Sağlayıcı izinleri bekçinin ölçütüne girmiyor — girseydi her tam
+   * yetkili rol kırmızı yanardı. Ama SESSİZCE hariç tutmak, bekçinin
+   * neyi görmediğini gizlemek olurdu; bu satır olmadan altı ay sonra
+   * "destek.yonet niye hiç kontrol edilmiyor?" sorusunun cevabı kalmaz.
+   */
+  if (SAGLAYICI_IZINLERI.length > 0) {
+    console.log(
+      `  ölçüt DIŞI (sağlayıcı düzlemi, otomatik dağıtılmaz): ${SAGLAYICI_IZINLERI.join(", ")}`,
+    );
+  }
   console.log("");
 
   for (const s of sonuc.satirlar) {
     const isaret = s.sorunlu ? "✗" : "·";
     console.log(
-      `  ${isaret}  ${s.rol.padEnd(16)} ${String(s.sahipOlduguSayi).padStart(2)}/${sonuc.toplamIzin}  ${s.aciklama}`,
+      `  ${isaret}  ${s.rol.padEnd(16)} ${String(s.sahipOlduguSayi).padStart(2)}/${sonuc.toplamIzin}  ${s.aciklama}${s.saglayiciIzniVar ? "  + SAĞLAYICI" : ""}`,
     );
     if (s.sorunlu) {
       console.log(`     eksik: ${s.eksikler.join(", ")}`);

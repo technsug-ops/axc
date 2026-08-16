@@ -1796,3 +1796,76 @@ izole; izolasyon o zaman GERÇEK olur.
 gelir (yalnız `destek.yonet` yazabiliyor), Faz 2'de iki taraf yazar.
 
 _EUR ve uyarı-erteleme ile aynı ilke: mimari genişlemeye hazır, içerik dar._
+
+## ⛔ ENGELLEYİCİ ÖN ŞART — SAĞLAYICI / FİRMA AYRIMI
+
+_Mimar kararı 16.08.2026, teşhis raporu sonrası._
+
+> **İKİNCİ `Company` KAYDI AÇILMADAN ÖNCE sağlayıcı/firma ayrımı KURULUR.**
+
+### Teşhis — neden engelleyici
+
+Kullanıcı sezgisi doğruydu ama kırık daha derinde çıktı:
+
+- **"Sağlayıcı" diye bir kavram sistemde HİÇ YOK.** `saglayici` · `isProvider`
+  · `isGlobal` · `superAdmin` — kod tabanında sıfır eşleşme.
+- **Roller GLOBAL.** `Role`de `companyId` yok, `name @unique`. Firma bilgisi
+  yalnız `UserCompanyRole`da yaşıyor; rolün kendisi ve izinleri firma-üstü.
+- **40 modelin yalnız 3'ünde `companyId` var** (`UserCompanyRole`,
+  `AuditLog`, `Talep`). Ürün, alım, satış, stok, kart — hiçbiri firma
+  taşımıyor.
+- `/ayarlar/roller` ve `/ayarlar/kullanicilar` firma süzgeci UYGULAMIYOR;
+  yeni kullanıcı **"ilk aktif firmaya"** bağlanıyor; `yetkiBaglami`
+  **ilk üyeliği** alıyor.
+
+İkinci firma açıldığında sızan yalnız talepler değil, **her şey** olur.
+
+### Neden BUGÜN kurulmadı
+
+**Kısmi izolasyon, izolasyon değildir.** Bugün kurulsaydı yalnız
+taleplerde izolasyon olurdu; ikinci firmanın sahibi taleplerini göremezken
+bütün ürün/satış/kâr verisini görmeye devam ederdi — bu, izolasyon
+sanılan bir yarım önlemdir ve yanlış güven verir.
+
+### Kapsam — çok-firma veri katmanının İLK MADDESİ
+
+`companyId` yayılımından **ÖNCE** yapılır: kimin neyi gördüğü, yayılımın
+tasarımını belirler.
+
+- `User.isSaglayici` (ya da firma-üstü üyelik kaydı)
+- **İzin çözümü iki düzleme ayrılır:** firma izni / sağlayıcı izni
+- `SONRADAN_DOGAN` sağlayıcı izinlerini firma rollerine dağıtmaz ✓ _(bugün
+  yapıldı, aşağıya bak)_
+- Rol ve kullanıcı ekranlarına firma süzgeci
+- Yeni kullanıcının "ilk aktif firmaya" bağlanması düzeltilir
+- `yetkiBaglami` çok üyelikte firma seçimi (oturumdaki aktif firma)
+- **Talepler tarafı HAZIR** — yalnız `destekVerir`in kaynağı değişir
+
+### ✅ BUGÜN TAKILAN SİGORTA (16.08.2026)
+
+Kavram kurulmadı ama **en keskin uç köreltildi**: sağlayıcı izinleri artık
+hiçbir role OTOMATİK dağıtılmıyor.
+
+- İşaret iznin TANIMINDA: `{ anahtar: "destek.yonet", saglayici: true }`
+- `SAGLAYICI_IZINLERI` / `FIRMA_IZINLERI` tek kaynaktan türer
+- `otomatikDagitilacak()` **saf fonksiyon** — seed'e gömülmedi ki test
+  görebilsin
+- **ÇİFT KATMAN:** izin `SONRADAN_DOGAN`a yanlışlıkla yazılsa bile
+  `saglayici` işareti onu tekrar eler. Tek katman olsaydı listeye ekleyen
+  kişi sigortayı farkında olmadan delerdi.
+- **Bekçi aynı ölçütü kullanır** (`FIRMA_IZINLERI`) — iki yerde iki ölçüt
+  olsaydı her tam yetkili rol kırmızı yanar, bekçi görmezden gelinen bir
+  alarma dönerdi.
+- **Bekçi neyi ölçmediğini YAZAR:** _"ölçüt DIŞI (sağlayıcı düzlemi,
+  otomatik dağıtılmaz): destek.yonet"_. Sessiz hariç tutma, altı ay sonra
+  cevapsız bir soru bırakırdı.
+
+Mevcut roller korunur (izin elle verilmişti): CEO ve Sahip `25/25 tam
+yetkili + SAĞLAYICI`. Yarın açılacak tam yetkili bir firma rolü —
+**ikinci firmanın sahibi dahil** — bunu kendiliğinden ALMAZ.
+
+`yetki:dogrula` 25 → 34. Dört mutasyonla doğrulandı.
+
+_Bu turda ÜÇÜNCÜ yalancı yeşil kalıbı yakalandı: `?.[0]` isteğe bağlı
+zinciri yüzünden desen hiç eşleşmediğinde kontrol yeşil yanıyordu. Ortak
+kök hep aynı: **kontrol, aradığını bulamadığında başarılı sayılmamalı.**_

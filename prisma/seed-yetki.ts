@@ -3,6 +3,8 @@ import {
   OPERASYON_ROLU,
   SAHIP_ROLU,
   TUM_IZINLER,
+  FIRMA_IZINLERI,
+  otomatikDagitilacak,
 } from "../src/lib/yetki/izinler";
 
 import { PrismaClient } from "../src/generated/prisma/client";
@@ -79,14 +81,37 @@ export async function yetkiSeed(prisma: PrismaClient) {
   const SONRADAN_DOGAN: string[] = [
     // 13.08.2026 — /iadeler ekranı yazıldı.
     "iade.gor",
-    // 16.08.2026 — destek/talep modülü. Bu satır unutulursa tam yetkili
-    // rol izni HİÇ görmez ve /talepler canlıda sessizce 404 döner
-    // (anayasa: yetki iki bacaklıdır).
-    "destek.yonet",
+    /**
+     * ⚠ `destek.yonet` BİLEREK BURADA DEĞİL (karar 16.08.2026).
+     *
+     * O bir SAĞLAYICI iznidir: talebi AÇAN müşteri firmadır, ÇÖZEN ürünü
+     * sağlayandır. Bu listeye yazılsaydı, yarın açılacak HERHANGİ bir tam
+     * yetkili rol onu kendiliğinden alırdı — ikinci firmanın sahibi dahil.
+     * O gün AXCALI'nin talepleri başka firmaya açılırdı.
+     *
+     * Aşağıdaki döngü `SAGLAYICI_IZINLERI`ni ayrıca eliyor; bu yorum
+     * yalnız "unutuldu mu?" diye bakan gözü durdurmak için.
+     */
   ];
 
+  /**
+   * SAĞLAYICI İZİNLERİ HİÇBİR ROLE OTOMATİK DAĞITILMAZ.
+   *
+   * Mekanizma tek izin için değil, KURAL olarak kuruldu: yeni bir sağlayıcı
+   * izni doğduğunda yapılacak tek şey tanımına `saglayici: true` yazmak.
+   * Burada ayrıca bir liste tutulmuyor — iki yerde iki ölçüt olmasın.
+   */
+  const dagitilacak = otomatikDagitilacak(SONRADAN_DOGAN);
+
   {
-    const eskiKume = TUM_IZINLER.filter(
+    /**
+     * "ESKİDEN TAM YETKİLİ MİYDİ" ÖLÇÜSÜ SAĞLAYICI İZNİNİ SAYMAZ.
+     *
+     * Saysaydı, sağlayıcı iznine sahip OLMAYAN bir rol "eskiden de tam
+     * yetkili değildi" diye elenir ve normal yeni izinleri de alamazdı.
+     * Firma rolü sağlayıcı iznine sahip olmadığı için CEZALANDIRILMAMALI.
+     */
+    const eskiKume = FIRMA_IZINLERI.filter(
       (i) => !SONRADAN_DOGAN.includes(i),
     );
 
@@ -104,7 +129,7 @@ export async function yetkiSeed(prisma: PrismaClient) {
       const eskidenTamYetkili = eskiKume.every((i) => sahipOldugu.has(i));
       if (!eskidenTamYetkili) continue;
 
-      const eksik = SONRADAN_DOGAN.filter((i) => !sahipOldugu.has(i));
+      const eksik = dagitilacak.filter((i) => !sahipOldugu.has(i));
       if (eksik.length === 0) continue;
 
       await prisma.rolePermission.createMany({
