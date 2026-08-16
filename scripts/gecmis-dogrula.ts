@@ -26,7 +26,9 @@ import {
   ekstreleriOku,
   kartBloklariniBul,
   yillikToplamSatirimi,
+  type OkunanEkstre,
 } from "../src/lib/gecmis/okuyucu";
+import { onizlemeKur } from "../src/lib/gecmis/onizleme";
 
 let gecen = 0;
 let kalan = 0;
@@ -332,6 +334,120 @@ console.log("=".repeat(70));
       { excelEtiketi: "b", onerilenKartId: null, guven: 0, gerekce: "eslesmeYok" },
     ]).length === 0,
   );
+}
+
+
+console.log("");
+console.log("=".repeat(70));
+console.log("5) ÖNİZLEME — ÇAKIŞMA VE ÖZET");
+console.log("=".repeat(70));
+{
+  const ek = (kart: string, yil: number, ay: number, borc: number): OkunanEkstre => ({
+    kartEtiketi: kart,
+    yil,
+    ay,
+    donem: donemTarihi(yil, ay),
+    hamDonemMetni: "x",
+    borc,
+    odenenTutar: null,
+    odemeTarihi: null,
+  });
+
+  const ekstreler = [
+    ek("Akbank ( Hasan )", 2025, 5, 100),
+    ek("Akbank ( Hasan )", 2025, 6, 200),
+    ek("Akbank ( Hasan )", 2026, 7, 300), // TÜRETİLEN var — atlanmalı
+    ek("Vakıf ( S.Ahmet )", 2025, 5, 50),
+    ek("Bilinmeyen ( X )", 2025, 5, 999), // eşleştirilmedi — atlanmalı
+  ];
+
+  const sonuc = onizlemeKur({
+    ekstreler,
+    atlananlar: [],
+    eslesmeler: [
+      { excelEtiketi: "Akbank ( Hasan )", kartId: "k-akbank" },
+      { excelEtiketi: "Vakıf ( S.Ahmet )", kartId: "k-vakif" },
+      { excelEtiketi: "Bilinmeyen ( X )", kartId: null },
+    ],
+    mevcutDonemler: [
+      { kartId: "k-akbank", donemAnahtari: "2026-07-01", kaynak: "TURETILEN" },
+    ],
+  });
+
+  kontrol("üç satır yazılacak", sonuc.yazilacaklar.length === 3, sonuc.yazilacaklar.length);
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  TÜRETİLEN KAZANIR — ÇİFT SAYIM GİRİŞTE ENGELLENİR
+   * --------------------------------------------------------------------
+   *  Türetilmiş ekstre gerçek alım kayıtlarından çıkar ve güncellenir;
+   *  beyan bir insanın tabloya yazdığı özettir. İkisi toplanırsa aynı ay
+   *  iki kez borç yazar — raporda düzelttiğimiz çift sayımın kart
+   *  versiyonu, ama bu sefer yazmadan ÖNCE durduruluyor.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "TÜRETİLEN olan dönem yazılmıyor",
+    !sonuc.yazilacaklar.some((y) => y.donemAnahtari === "2026-07-01"),
+  );
+  kontrol(
+    "  ...sebebiyle raporlanıyor (sessiz atlama yok)",
+    sonuc.cakismalar.some((c) => c.sebep === "TURETILEN_VAR" && c.borc === 300),
+  );
+
+  kontrol(
+    "eşleştirilmeyen kart yazılmıyor",
+    !sonuc.yazilacaklar.some((y) => y.borc === 999),
+  );
+  kontrol(
+    "  ...sebebi KART_ATLANDI",
+    sonuc.cakismalar.some((c) => c.sebep === "KART_ATLANDI" && c.borc === 999),
+  );
+
+  /** Aynı dosyada aynı kart+ay iki kez geçerse ikincisi atlanır. */
+  const tekrar = onizlemeKur({
+    ekstreler: [ek("A", 2025, 5, 10), ek("A", 2025, 5, 20)],
+    atlananlar: [],
+    eslesmeler: [{ excelEtiketi: "A", kartId: "k1" }],
+    mevcutDonemler: [],
+  });
+  kontrol("aynı dosyada tekrarlanan dönem bir kez yazılır", tekrar.yazilacaklar.length === 1);
+  kontrol("  ...ilki kazanır", tekrar.yazilacaklar[0].borc === 10);
+  kontrol(
+    "  ...ikincisi sebebiyle raporlanır",
+    tekrar.cakismalar.some((c) => c.sebep === "ZATEN_BEYAN_VAR" && c.borc === 20),
+  );
+
+  /** Daha önce beyan edilmiş dönem tekrar yazılmaz. */
+  const ikinciYukleme = onizlemeKur({
+    ekstreler: [ek("A", 2025, 5, 10)],
+    atlananlar: [],
+    eslesmeler: [{ excelEtiketi: "A", kartId: "k1" }],
+    mevcutDonemler: [{ kartId: "k1", donemAnahtari: "2025-05-01", kaynak: "GECMIS_EXCEL" }],
+  });
+  kontrol("aynı dosya ikinci kez yüklenirse yazılmaz", ikinciYukleme.yazilacaklar.length === 0);
+  kontrol(
+    "  ...kullanıcı SEBEBİ görür, veritabanı hatasını değil",
+    ikinciYukleme.cakismalar[0]?.sebep === "ZATEN_BEYAN_VAR",
+  );
+
+  // --- özet ---
+  const akbankOzet = sonuc.kartOzetleri.find((o) => o.excelEtiketi === "Akbank ( Hasan )");
+  kontrol("kart özeti satır sayısı doğru", akbankOzet?.satir === 2, akbankOzet);
+  kontrol("  ...toplam borç doğru", akbankOzet?.toplamBorc === 300);
+  kontrol("  ...dönem aralığı doğru", akbankOzet?.ilkDonem === "2025-05-01" && akbankOzet?.sonDonem === "2025-06-01");
+  kontrol("atlanan kartın özeti de var (sıfır satırla)", sonuc.kartOzetleri.some((o) => o.kartId === null && o.satir === 0));
+  kontrol("genel toplam borç", sonuc.toplamBorc === 350, sonuc.toplamBorc);
+  kontrol("genel dönem aralığı", sonuc.ilkDonem === "2025-05-01" && sonuc.sonDonem === "2025-06-01");
+
+  /** Okuyucunun atlananları önizlemede AYNEN taşınır — tek rapor. */
+  const tasima = onizlemeKur({
+    ekstreler: [],
+    atlananlar: [{ sebep: "YILLIK_TOPLAM", satir: 5, kartEtiketi: null, ayrinti: "Yillik Toplam 2025" }],
+    eslesmeler: [],
+    mevcutDonemler: [],
+  });
+  kontrol("okuyucunun atlananları önizlemede taşınıyor", tasima.atlananlar.length === 1);
 }
 
 console.log("");
