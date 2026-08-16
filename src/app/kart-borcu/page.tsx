@@ -208,9 +208,25 @@ export default async function KartBorcuSayfasi({
       }))
       .sort((a, b) => a.sonOdeme.getTime() - b.sonOdeme.getTime())[0] ?? null;
 
-  /** Seçili sekme; bilinmeyen/eksik seçim İLK karta düşer, boş ekran yok. */
+  /**
+   * SEKME SIRASI: BEKLEYEN TUTARA GÖRE AZALAN — alfabetik DEĞİL.
+   *
+   * Kullanıcı kararı 16.08.2026: borç ekranında sıralama ölçütü AD değil
+   * TUTARDIR; ekran "hangi kartı önce ödemeliyim" sorusuna hizmet eder.
+   * Ad sekme etiketinde durduğu için arama kaybolmuyor.
+   */
+  const siraliKartlar = [...kartHesaplari]
+    .sort((a, b) => b.sonuc.bekleyenToplam - a.sonuc.bekleyenToplam)
+    .map((h) => h.kart);
+
+  /**
+   * Seçili sekme; bilinmeyen/eksik seçim EN BORÇLU karta düşer (sıralı
+   * listenin ilki), boş ekran yok.
+   */
   const seciliKart =
-    kartlar.find((k) => k.id === seciliKartParam)?.id ?? kartlar[0]?.id ?? "";
+    siraliKartlar.find((k) => k.id === seciliKartParam)?.id ??
+    siraliKartlar[0]?.id ??
+    "";
 
   return (
     <div className="space-y-6">
@@ -284,7 +300,7 @@ export default async function KartBorcuSayfasi({
             baslik={t("kartlarBaslik")}
             notu={t("kartlarNotu")}
             secili={seciliKart}
-            sekmeler={kartlar.map((kart) => {
+            sekmeler={siraliKartlar.map((kart) => {
             const kartAlimlari = alimlar.filter(
               (a) => a.creditCardId === kart.id,
             );

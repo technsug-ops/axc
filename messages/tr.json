@@ -1450,7 +1450,7 @@
     "kartAdedi": "{adet} kart · limit tanımlı değil",
     "yaklasanOdeme": "En yakın son ödeme",
     "kartlarBaslik": "Kartlar",
-    "kartlarNotu": "Her kart kendi sekmesinde. Sekme etiketinde o kartın bekleyen toplamı yazıyor; seçim adreste kalır."
+    "kartlarNotu": "Kartlar bekleyen tutara göre sıralı — en borçlu başta. Sekme etiketinde o kartın bekleyen toplamı yazıyor; seçim adreste kalır."
   },
   "Tedarikci": {
     "baslik": "Tedarikçiler",
