@@ -18,7 +18,8 @@ yeni yetenek ekleniyor. Bu ayrım kayıtta dursun — "yarım kalan iş" ile
 
 Mimar onaylı sıra, **paket ADIYLA**:
 **~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ · ~~AŞAMA 3 PAKET 1~~ ✓ →
-~~PANEL AŞAMA 3 PAKET 2~~ ✓ → KART ÖDEME TAKİBİ → UYARI MERKEZİ FAZ 1 →
+~~PANEL AŞAMA 3 PAKET 2~~ ✓ → KART ÖDEME TAKİBİ → RAPOR FİRE/KAZANÇ
+ETİKETİ → UYARI MERKEZİ FAZ 1 →
 DESTEK MODÜLÜ → GEÇMİŞ VERİ (kart ödemeyle TEK TABLO, `source` alanıyla) →
 MELONTİK CASE.**
 
@@ -236,6 +237,47 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       ledger değişmezliği (ters kayıt) · kısmi ödemede açık kalan görünüyor.
       _Mutasyon: **faiz gideri kâra karışmasın** kilidi — ana borcu kâra
       düşür → test kırmızı._
+
+- [ ] **RAPOR: FİRE/DÜZELTME ETİKETİ YANILTIYOR — YÜKSEK ÖNCELİK**
+      _Bulundu 16.08.2026, kart ödeme Halil testi sırasında._
+      **SIRA: kart ödeme paketi kapanır kapanmaz İLK İŞ.** Uzun bekletilmez;
+      ekran şu an yanlış bir şey söylüyor.
+      _Bu, rapor ekranının ÖNCEDEN gelen kusuru — kart ödeme paketinin
+      parçası değil._
+
+      **SORUN:** `ADJUSTMENT` hareketlerinin NETİ "Fire / hasar / kayıp"
+      başlığı altında gösteriliyor. Ama net KAZANÇ olabiliyor.
+      _Canlı ölçüm (Ağustos 2026, 4 hareket):_
+
+      | tarih | delta | birim | sonuç | not |
+      |---|---|---|---|---|
+      | 13.08 | −1 | ₺279,00 | kayıp 279,00 | "test - kutu ezildi" |
+      | 13.08 | +1 | ₺279,00 | kazanç −279,00 | "yanlis sayim" |
+      | 14.08 | +1 | ₺1.438,99 | kazanç −1.438,99 | **not YOK** |
+      | 14.08 | −1 | ₺111,00 | kayıp 111,00 | |
+
+      **Net −₺1.327,99 = ₺1.327,99 KAZANÇ**, ama ekran "kayıp" diyor.
+      Formül `− −₺1.327,99` ile gerçek neti ARTIRIYOR
+      (`3.218,33 − 290,50 + 1.327,99 = 4.255,82`).
+      **Aritmetik doğru, SUNUM ters.**
+
+      **DÜZELTME:** kayıp ve kazanç **AYRI SATIR**; asla tek "net"te toplanıp
+      "zarar/kayıp" denmez. Pozitif `ADJUSTMENT`lar **kazanç**, negatifler
+      **kayıp**, ayrı toplanır. Örnek: `kayıp ₺390,00 · kazanç ₺1.717,99`.
+      **Renk:** kayıp kırmızı, kazanç yeşil (durum bazlı palet).
+
+      > Bu, **Pareto'daki kâr/zarar ayrımı ilkesinin aynısı**: iki yön iki
+      > gerçektir, tek sayıda toplanınca ikisi de kaybolur.
+
+      **KİLİT:** pozitif toplam "kazanç" satırında, negatif "kayıp"ta;
+      **hiçbir kazanç "kayıp/zarar" başlığı altında görünmez.**
+      _Mutasyon: kazancı kayıp toplamına sok → test kırmızı._
+
+      **AÇIK VERİ SORUSU (kod değil):** 14.08 tarihli **₺1.438,99'luk
+      açıklamasız + düzeltme** tek başına gerçek neti o kadar şişiriyor.
+      Kullanıcıya sorulacak: o hareket neydi, doğru mu girildi?
+      _Ayrıca düşünülecek: "notu olmayan büyük düzeltme" bir uyarı konusu
+      olabilir (uyarı merkezi Faz 2)._
 
 - [ ] **GEÇMİŞ VERİ AKTARIMI** — geçmiş kart ekstreleri · geçmiş hakediş
       tahsilatları. Dosya: `C:\Users\yapra\Desktop\excel\hakedis ve kredi kartlari`
