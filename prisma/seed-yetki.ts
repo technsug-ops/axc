@@ -79,6 +79,10 @@ export async function yetkiSeed(prisma: PrismaClient) {
   const SONRADAN_DOGAN: string[] = [
     // 13.08.2026 — /iadeler ekranı yazıldı.
     "iade.gor",
+    // 16.08.2026 — destek/talep modülü. Bu satır unutulursa tam yetkili
+    // rol izni HİÇ görmez ve /talepler canlıda sessizce 404 döner
+    // (anayasa: yetki iki bacaklıdır).
+    "destek.yonet",
   ];
 
   {

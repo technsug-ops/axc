@@ -65,6 +65,15 @@ export const IZINLER = [
   // --- YÖNETİM ---
   { anahtar: "kullanici.yonet", grup: "yonetim" },
   { anahtar: "rol.yonet", grup: "yonetim" },
+  /**
+   * DESTEK TALEBİ YÖNETİMİ — geliştiricide.
+   *
+   * Talep AÇMAK izin istemez: sistemi kullanan herkes "burada olmuyor"
+   * diyebilmeli, aksi hâlde bildirim yine Telegram'a kaçar. Talebin
+   * DURUMUNU değiştirmek ve çözüm notu yazmak bu izne bağlı — kullanıcı
+   * kendi talebinin nerede olduğunu GÖRÜR ama ilerletemez.
+   */
+  { anahtar: "destek.yonet", grup: "yonetim" },
 ] as const satisfies readonly IzinTanimi[];
 
 export type Izin = (typeof IZINLER)[number]["anahtar"];

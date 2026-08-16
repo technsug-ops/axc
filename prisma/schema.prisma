@@ -510,6 +510,7 @@ model ChannelAccount {
    * /**
    * /**
    * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -1236,7 +1237,10 @@ model ReturnNotice {
 model Attachment {
   id String @id @default(cuid())
 
-  /// "ReturnNotice" | "Return" | "Purchase" | "Compensation"
+  /// "ReturnNotice" | "Return" | "Purchase" | "Compensation" | "Talep"
+  /// ENUM DEĞİL, düz string: hedef listesi `lib/ekler.ts`te tutuluyor ve
+  /// `ekHedefiGecerliMi` ile doğrulanıyor. Yeni hedef eklemek migration
+  /// GEREKTİRMEZ — yalnız o listeye yazılır.
   targetType String
   targetId   String
 
@@ -1462,6 +1466,8 @@ model User {
   ekler            Attachment[]
   userCompanyRoles UserCompanyRole[]
   auditLogs        AuditLog[]
+  /// Bu kullanıcının açtığı destek talepleri.
+  talepler         Talep[]           @relation("TalepBildiren")
 
   @@index([isActive])
 }
@@ -1882,5 +1888,83 @@ model AuditLog {
 
   @@index([userId])
   @@index([action])
+  @@index([createdAt])
+}
+
+/// Talep türü — kullanıcının ne bildirdiği.
+///
+/// İKİ TÜR YETER: "hata" (çalışmıyor) ile "istek" (olsun isterim) farklı
+/// aciliyet ve farklı iş demektir. Üçüncü bir tür (soru, öneri) bugün
+/// karşılığı olmayan bir ayrım olurdu — erken özellik yasak.
+enum TalepTuru {
+  HATA
+  ISTEK
+}
+
+/// Talebin yaşam döngüsü.
+///
+/// AXCALI kendi talebinin DURUMUNU görür ama DEĞİŞTİREMEZ (`destek.yonet`
+/// geliştiricide). "Kör kutuya attım" hissi bu yüzden doğmuyor: bildirdiği
+/// şeyin nerede olduğunu takip edebiliyor.
+enum TalepDurumu {
+  ACIK
+  INCELENIYOR
+  YAPILIYOR
+  COZULDU
+  KAPANDI
+  REDDEDILDI
+  ERTELENDI
+}
+
+/// ============================================================================
+///  DESTEK / TALEP — Faz 1
+/// ----------------------------------------------------------------------------
+///  Mimar sözleşmesi 15.08.2026. AXCALI eksik ve taleplerini Telegram'dan
+///  dağınık iletiyordu; kayıt kalmıyor, durum takip edilemiyordu.
+///
+///  EKLER AYRI TABLO DEĞİL: mevcut `Attachment` polimorfik olarak kullanılır
+///  (`targetType = "Talep"`). RMA'nın boyut/tür sınırları aynen geçerli —
+///  ikinci bir ek altyapısı doğmasın.
+///
+///  DIŞ BİLDİRİM YOK (Telegram/e-posta): geliştirici Selliora'ya girip bakar.
+///  Faz 2'de eklenebilir; mimari hazır kalıyor.
+/// ============================================================================
+model Talep {
+  id String @id @default(cuid())
+
+  /// Ekranda ve listede gösterilen kısa numara (TLP-0001).
+  kod String @unique
+
+  tur   TalepTuru
+  durum TalepDurumu @default(ACIK)
+
+  baslik   String @db.VarChar(191)
+  aciklama String @db.Text
+
+  /// ── OTOMATİK YAKALANAN BAĞLAM ──────────────────────────────────────────
+  /// Kullanıcı "şurada olmuyor" derken hangi ekranda olduğunu yazmak zorunda
+  /// kalmasın diye toplanır. NE YAKALANDIĞI FORMDA GÖRÜNÜR — gizli toplama
+  /// izlenimi bırakılmaz (mimar şartı 16.08.2026).
+  /// Bildirimin yapıldığı sayfa (pathname + sorgu).
+  rota     String? @db.VarChar(500)
+  /// Tarayıcı/cihaz kimliği — "yalnız telefonda oluyor" ayrımı için.
+  tarayici String? @db.VarChar(500)
+
+  /// Bildiren kullanıcı. SİLİNMEZ: kullanıcı pasife alınsa da talep kalır.
+  bildirenId String
+  bildiren   User   @relation("TalepBildiren", fields: [bildirenId], references: [id], onDelete: Restrict)
+
+  /// Geliştiricinin cevabı — kullanıcı okur, yazamaz.
+  cozumNotu String? @db.Text
+
+  /// Durum COZULDU/KAPANDI'ya geçtiği an.
+  kapatilmaZamani DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([durum])
+  @@index([tur])
+  @@index([bildirenId])
   @@index([createdAt])
 }

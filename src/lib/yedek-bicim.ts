@@ -77,6 +77,11 @@ export const YEDEK_TABLOLARI = [
   "Settlement",
   "SettlementItem",
   "Compensation",
+  // --- destek talepleri ---
+  // EKLERDEN ÖNCE: Attachment polimorfik olarak Talep'e de bağlanabiliyor
+  // (`targetType = "Talep"`). Geri yüklemede önce hedef, sonra ek gelmeli;
+  // sıra bağımlılık yönündedir.
+  "Talep",
   // --- dosya ekleri ---
   // ⚠ YALNIZ SATIRLAR YEDEKLENİR, DOSYALARIN KENDİSİ DEĞİL (karar
   // 13.08.2026). Dosyalar Vercel Blob'da durur. Telafi üçlüsü: bu satırlar

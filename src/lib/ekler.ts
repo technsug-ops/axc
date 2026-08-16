@@ -68,6 +68,9 @@ export const EK_HEDEFLERI = [
   "Return",
   "Purchase",
   "Compensation",
+  /** Destek talebi ekran görüntüsü (16.08.2026). Migration GEREKTİRMEDİ:
+   *  `Attachment.targetType` düz string, kısıt bu listede yaşıyor. */
+  "Talep",
 ] as const;
 export type EkHedefi = (typeof EK_HEDEFLERI)[number];
 
