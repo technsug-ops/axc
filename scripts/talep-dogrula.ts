@@ -281,9 +281,38 @@ console.log("=".repeat(70));
 
   /** YETKİ İKİ BACAKLIDIR: kod + veritabanı. */
   kontrol("destek.yonet izin listesinde", izinler.includes('anahtar: "destek.yonet"'));
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  BU KONTROL TERSİNE ÇEVRİLDİ (mimar kararı 16.08.2026)
+   * --------------------------------------------------------------------
+   *  İlk hâli `destek.yonet`in SONRADAN_DOGAN'a YAZILDIĞINI arıyordu ve
+   *  yazıldığı gün doğruydu: yetki iki bacaklıdır, kod deploy olur ama
+   *  veritabanı satırı unutulursa ekran canlıda sessizce 404 döner.
+   *
+   *  Sonra teşhis raporu çıktı: `destek.yonet` bir SAĞLAYICI iznidir —
+   *  talebi AÇAN müşteri firmadır, ÇÖZEN ürünü sağlayandır. Otomatik
+   *  dağıtım açık kalsaydı, yarın açılacak tam yetkili herhangi bir rol
+   *  (ikinci firmanın sahibi dahil) onu kendiliğinden alır ve AXCALI'nin
+   *  talepleri başka firmaya açılırdı.
+   *
+   *  ESKİ ENDİŞE HÂLÂ GEÇERLİ ama başka türlü karşılanıyor: izin elle
+   *  verildi ve bekçi onu "+ SAĞLAYICI" diye ayrıca raporluyor — yani
+   *  sessizce kaybolmuyor, ölçüt dışı olduğu EKRANDA yazıyor.
+   * ════════════════════════════════════════════════════════════════════
+   */
   kontrol(
-    "  ...SONRADAN_DOGAN'a da yazılmış (canlıda sessizce kaybolmasın)",
-    seed.includes('"destek.yonet"'),
+    "  ...SONRADAN_DOGAN'a YAZILMAMIŞ (sağlayıcı izni otomatik dağıtılmaz)",
+    (() => {
+      const bas = seed.indexOf("const SONRADAN_DOGAN");
+      if (bas === -1) return false;
+      const son = seed.indexOf("];", bas);
+      if (son === -1) return false;
+      return !seed.slice(bas, son).includes('"destek.yonet"');
+    })(),
+  );
+  kontrol(
+    "  ...bunun yerine SAĞLAYICI izni olarak işaretli",
+    izinler.includes('anahtar: "destek.yonet", grup: "yonetim", saglayici: true'),
   );
 
   /**
