@@ -19,6 +19,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { OTURUM_CEREZI } from "@/lib/oturum-imza";
 import { oturumdakiKullanici } from "@/lib/oturum";
+import { UyariCani } from "@/components/uyari-cani";
 import { UYGULAMA } from "@/lib/uygulama";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
@@ -125,6 +126,15 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                     <Home className="size-4" />
                     {UYGULAMA.ad}
                   </Link>
+                  {/*
+                    UYARI ÇANI — sağa yaslı, her ekranda görünür.
+                    `ms-auto` ile: marka solda kalsın, çan sağ uçta dursun.
+                    Kendi verisini bağlandıktan sonra çekiyor; kök layout'a
+                    sorgu koymak uygulamadaki her sayfayı bekletirdi.
+                  */}
+                  <div className="ms-auto flex items-center gap-2">
+                    <UyariCani />
+                  </div>
                 </header>
                 {/*
                   Burada <main> KULLANILMAZ: SidebarInset zaten <main> üretiyor,

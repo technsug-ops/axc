@@ -2326,5 +2326,21 @@
     "asiyorNot": "",
     "oncekiOdenen": "",
     "kalanSonra": ""
+  },
+  "Uyari": {
+    "baslik": "",
+    "aciklama": "",
+    "yukleniyor": "",
+    "temiz": "",
+    "canEtiketiVar": "",
+    "canEtiketiTemiz": "",
+    "baslik_nakitAcigi": "",
+    "eylem_nakitAcigi": "",
+    "baslik_maliyetsizStok": "",
+    "eylem_maliyetsizStok": "",
+    "baslik_karHesaplanamayan": "",
+    "eylem_karHesaplanamayan": "",
+    "baslik_hakedisGecikti": "",
+    "eylem_hakedisGecikti": ""
   }
 }

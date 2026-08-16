@@ -35,6 +35,7 @@ import {
   ayrilmisAdetler,
 } from "@/lib/iade/bildirim";
 import { sonHareketTarihleri, varyantStoklari } from "@/lib/stok";
+import { maliyetsizVaryantlar } from "@/lib/uyari/maliyetsiz-stok";
 
 import { StokArama } from "./stok-arama";
 
@@ -46,11 +47,16 @@ export async function generateMetadata() {
 export default async function StokSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sayfa?: string; yas?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    sayfa?: string;
+    yas?: string;
+    maliyet?: string;
+  }>;
 }) {
   await sayfaIzni("stok.gor");
 
-  const { q, sayfa, yas } = await searchParams;
+  const { q, sayfa, yas, maliyet } = await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
   const t = await getTranslations("Stok");
@@ -67,22 +73,52 @@ export default async function StokSayfasi({
    * SÜZGEÇ KAPALIYKEN HİÇBİR EK SORGU KOŞMUYOR: yaşlanma hesabı bütün stok
    * hareketlerini okur; her stok açılışında o bedeli ödemeye değmez.
    */
+  /**
+   * MALİYETSİZ SÜZGECİ — uyarı merkezinin hedefi (16.08.2026).
+   *
+   * Çandaki "N ürünün maliyeti bilinmiyor" uyarısı buraya gelir. Ölçüt
+   * `lib/uyari/maliyetsiz-stok.ts`te TEK YERDE: çan sayısı da bu liste de
+   * aynı `maliyetsizVaryantlar` çağrısını kullanıyor. İki yerde iki koşul
+   * yazılsaydı rozet 4 derken liste 5 gösterirdi.
+   *
+   * İki süzgeç de AYNI pahalı sorguyu (bütün stok hareketleri) istiyor;
+   * ikisi birden açıksa sorgu BİR KEZ koşuyor. Hiçbiri açık değilse hiç
+   * koşmuyor — her stok açılışında o bedel ödenmez.
+   */
+  const maliyetsizIsteniyor = maliyet === "yok";
   const yasBandi = yasSuzgeciCoz(yas);
   let yasVaryantlari: string[] | null = null;
-  if (yasBandi) {
+  let maliyetsizListe: string[] | null = null;
+
+  if (yasBandi || maliyetsizIsteniyor) {
     const partiler = await acikPartilerToplu(prisma, null);
-    yasVaryantlari = bandinVaryantlari(
-      yaslanmaListesi(
-        [...partiler.entries()].map(([variantId, liste]) => ({
-          variantId,
-          partiler: liste,
-          kdvOrani: null,
-        })),
-        new Date(),
-      ),
-      yasBandi,
-    );
+    if (maliyetsizIsteniyor) maliyetsizListe = maliyetsizVaryantlar(partiler);
+    if (yasBandi) {
+      yasVaryantlari = bandinVaryantlari(
+        yaslanmaListesi(
+          [...partiler.entries()].map(([variantId, liste]) => ({
+            variantId,
+            partiler: liste,
+            kdvOrani: null,
+          })),
+          new Date(),
+        ),
+        yasBandi,
+      );
+    }
   }
+
+  /**
+   * İKİ SÜZGEÇ BİRLİKTE: KESİŞİM. "Yaşlanmış VE maliyetsiz" istenirse
+   * ikisini de sağlayanlar gelir. Birleşim olsaydı süzgeç eklemek listeyi
+   * BÜYÜTÜRDÜ; kullanıcı daraltmak isterken genişletmiş olurdu.
+   */
+  const varyantSuzgeci =
+    yasVaryantlari === null
+      ? maliyetsizListe
+      : maliyetsizListe === null
+        ? yasVaryantlari
+        : yasVaryantlari.filter((id) => maliyetsizListe.includes(id));
 
   const aramaKosulu = arama
     ? {
@@ -118,9 +154,9 @@ export default async function StokSayfasi({
    * görüyor ve süzgecin çalıştığını sanıyor.
    */
   const suzgec =
-    yasVaryantlari === null
+    varyantSuzgeci === null
       ? aramaKosulu
-      : { ...(aramaKosulu ?? {}), id: { in: yasVaryantlari } };
+      : { ...(aramaKosulu ?? {}), id: { in: varyantSuzgeci } };
 
   // ÖNCE SAY, SONRA SAYFAYI ÇEK (bkz. lib/sayfalama.ts).
   const toplam = await prisma.productVariant.count({ where: suzgec });

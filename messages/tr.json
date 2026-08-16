@@ -2326,5 +2326,21 @@
     "asiyorNot": "Bu ekstreye daha önce {onceki} ödenmiş. Fazla ödeme kaydedilebilir ama mükerrer giriş olabilir; devam etmek için aşağıdaki kutuyu işaretleyin.",
     "oncekiOdenen": "Daha önce ödenen",
     "kalanSonra": "Bu ödemeden sonra kalan"
+  },
+  "Uyari": {
+    "baslik": "Uyarılar",
+    "aciklama": "Para kaybı ya da riski taşıyan durumlar. Her satır ilgili ekrana götürür.",
+    "yukleniyor": "Uyarılar yükleniyor…",
+    "temiz": "Temiz ✓ — bekleyen uyarı yok.",
+    "canEtiketiVar": "Uyarılar ({sayi} uyarı)",
+    "canEtiketiTemiz": "Uyarılar (temiz)",
+    "baslik_nakitAcigi": "Önümüzdeki 14 günde nakit açığı",
+    "eylem_nakitAcigi": "Nakit takvimini aç",
+    "baslik_maliyetsizStok": "{sayi} ürünün maliyeti bilinmiyor",
+    "eylem_maliyetsizStok": "Alım girilirse kâr hesaplanabilir hâle gelir",
+    "baslik_karHesaplanamayan": "{sayi} satışın kârı hesaplanamıyor",
+    "eylem_karHesaplanamayan": "Eksik maliyet ya da kuralı tamamla",
+    "baslik_hakedisGecikti": "{sayi} hakediş kalemi gecikti",
+    "eylem_hakedisGecikti": "Hakediş ekranını aç"
   }
 }
