@@ -1434,6 +1434,36 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    *  dönmesi, gerçek borcu yeniden görünmez yapardı.
    * ════════════════════════════════════════════════════════════════════
    */
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  MOBİLDE TAŞMA — GRID ÖĞESİNİN min-width'i AUTO'DUR (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Kullanıcı telefondan panele baktı: yaşlanma listesinde ürün adları
+   *  kısalmıyor, satır kartı taşıyor, sağdaki rakam ekranın dışında
+   *  kalıyordu. İçeride `min-w-0` ve `truncate` VARDI ama hiç devreye
+   *  giremiyordu.
+   *
+   *  Sebep: `genis` kipte <ul> bir GRID ve <li> grid öğesi oluyor. Grid ve
+   *  flex öğelerinin varsayılan `min-width` değeri `auto`dur — içeriğinden
+   *  dar olmayı reddeder. Kısaltma zincirinin EN DIŞTAKİ halkası eksikti.
+   *
+   *  Dar (`divide-y`) kipte <li> blok öğesi olduğundan hata görünmüyordu:
+   *  yalnız tam genişlikteki listede, yalnız telefonda çıkıyordu. Masaüstü
+   *  bakışı bu kusuru göremezdi.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const panelKartlari = readFileSync("src/app/panel-kartlari.tsx", "utf8");
+  kontrol(
+    "panel listesi satırı daralabiliyor (grid öğesinde min-w-0)",
+    panelKartlari.includes(
+      'className="flex min-w-0 items-start justify-between gap-3 py-2',
+    ),
+  );
+  kontrol(
+    "  ...rozet ezilmiyor (ad kısalır, rozet tam kalır)",
+    panelKartlari.includes('<span className="shrink-0">{s.rozet}</span>'),
+  );
+
   kontrol(
     "takvim kart ödemelerini GERÇEK kayıttan okuyor",
     veriKaynagi.includes("prisma.kartOdeme.findMany"),

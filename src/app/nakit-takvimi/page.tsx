@@ -274,7 +274,10 @@ function Dokum({
         ) : null}
         <ul className="flex flex-wrap gap-1.5">
           {dokum.tekil.map((s, i) => (
-            <li key={`t-${i}`}>
+            /* `min-w-0`: <li> bir flex öğesi, varsayılan min-width'i `auto`
+               ve içeriğinden dar olmayı reddeder. İçerideki `max-w-full`
+               tek başına yetmez — uzun ürün adı telefonda kutuyu taşırır. */
+            <li key={`t-${i}`} className="min-w-0">
               <Link
                 href={s.adres}
                 className="bg-muted/60 hover:bg-muted inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"

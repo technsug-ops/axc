@@ -115,7 +115,21 @@ export function PanelListesi({
             {satirlar.map((s) => (
               <li
                 key={s.anahtar}
-                className="flex items-start justify-between gap-3 py-2 first:pt-0 last:pb-0"
+                /**
+                 * `min-w-0` BURADA DA ŞART — 16.08.2026 mobil bulgusu.
+                 *
+                 * `genis` kipte <ul> bir GRID; <li> de grid öğesi olur ve
+                 * grid öğesinin varsayılan `min-width` değeri `auto`dur:
+                 * içeriğinden dar olmayı reddeder. İçerideki `min-w-0` +
+                 * `truncate` bu yüzden hiç devreye giremiyordu — ad
+                 * kısalmıyor, satır kartı taşıyor, sağdaki rakam telefonda
+                 * ekranın dışında kalıyordu.
+                 *
+                 * Dar olmayan (`divide-y`) kipte <li> blok öğesi olduğu için
+                 * sorun görünmüyordu; hata yalnız tam genişlikteki
+                 * listelerde, yalnız telefonda çıkıyordu.
+                 */
+                className="flex min-w-0 items-start justify-between gap-3 py-2 first:pt-0 last:pb-0"
               >
                 {/* `min-w-0` şart: olmadan uzun ad kısalmaz, kartı taşırır. */}
                 <div className="min-w-0 flex-1">
@@ -133,7 +147,9 @@ export function PanelListesi({
                         {s.urunAdi}
                       </span>
                     )}
-                    {s.rozet}
+                    {/* Rozet ezilmez: ad kısalır, rozet tam kalır. Rozetin
+                        yarısı ("0-30 g" yerine "0-30") bilgi değil gürültü. */}
+                    {s.rozet ? <span className="shrink-0">{s.rozet}</span> : null}
                   </div>
                   <KopyalanabilirKod
                     deger={s.sku}
