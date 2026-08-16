@@ -18,8 +18,8 @@ yeni yetenek ekleniyor. Bu ayrım kayıtta dursun — "yarım kalan iş" ile
 
 Mimar onaylı sıra, **paket ADIYLA**:
 **~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ · ~~AŞAMA 3 PAKET 1~~ ✓ →
-~~PANEL AŞAMA 3 PAKET 2~~ ✓ → ~~KART ÖDEME TAKİBİ~~ ✓ → RAPOR FİRE/KAZANÇ
-ETİKETİ → UYARI MERKEZİ FAZ 1 →
+~~PANEL AŞAMA 3 PAKET 2~~ ✓ → ~~KART ÖDEME TAKİBİ~~ ✓ → ~~RAPOR FİRE/KAZANÇ
+ETİKETİ~~ ✓ → UYARI MERKEZİ FAZ 1 →
 DESTEK MODÜLÜ → GEÇMİŞ VERİ (kart ödemeyle TEK TABLO, `source` alanıyla) →
 MELONTİK CASE.**
 
@@ -77,6 +77,36 @@ biçime bağlı metin kontrolü) ve **bir kusurlu mutasyon** (test verisi eksi
 yönde artık bırakıyordu, `Math.max(0, …)` yutuyordu) yakalandı.
 
 Testler: `kart-odeme:dogrula` 121 · `kart:dogrula` 48 · `panel:dogrula` 316.
+
+### ✅ RAPOR FİRE/KAZANÇ ETİKETİ — KAPANDI 16.08.2026
+
+Halil testi canlıda geçti; kullanıcı iki fire girip rakamları birebir
+doğruladı (fire ₺929,00 / fazla çıkan ₺279,00 / düzeltme ₺650,00 /
+GERÇEK NET ₺2.277,83 = 3.218,33 − 290,50 − 650,00).
+
+**1 · ÇİFT SAYIM.** İade işlenirken stok defterine `ADJUSTMENT` yazılıyor;
+o paranın etkisi iadenin NET-2'sinde ZATEN var. Fire toplamına da
+eklenince aynı lira iki kez sayılıyordu.
+- **Kusur neden görülmedi: her iki taraf da TEK BAŞINA doğruydu.** İade
+  motoru doğru hesaplıyor, fire toplamı doğru topluyordu. Hata
+  ARALARINDAKİ boşluktaydı ve iki testin de kapsamı dışındaydı. _İki
+  doğru bileşen, aralarında sınanmamış bir bağ — aranacak kalıp budur._
+- **Süzgeç sorguya DEĞİL saf katmana konuldu** (`iadeKaynakliMi`).
+  Sorgudaki `returnItemId: null` testin göremeyeceği bir yerde yaşar ve
+  bir gün sessizce kaybolabilirdi.
+- **Yön SABİT DEĞİL:** hasarlı mal stoktan düşerse GERÇEK NET düşük,
+  iade geri girip maliyeti geri gelirse yüksek çıkar. Canlı ölçüm
+  (08.2026): net etki −1.327,99, GERÇEK NET ₺4.255,82 görünüyordu;
+  doğrusu ₺2.927,83. _Raporlarken yönü ters yazdım; kayıt düzeltildi
+  (`14c46fd`). Hesap doğruyken KAYDIN yanlış olması ayrı bir hatadır._
+
+**2 · KAYIP VE KAZANÇ AYNI ALANDA TOPLANIYORDU.** ₺500 fire ile ₺500 fazla
+çıkan mal aynı dönemdeyse net sıfır çıkıyor ve kutu HİÇ ÇİZİLMİYORDU —
+iki gerçek olay birden ekrandan siliniyordu. **Doğru bir toplam, olmamış
+gibi gösterilen iki olayı telafi etmez.** Kutunun görünürlük ölçütü artık
+net değil, HAREKETİN VARLIĞI. Net etki değişmedi (kayıp − kazanç).
+
+`duzeltme:dogrula` 49 → 67. Üç mutasyonla doğrulandı.
 
 > **VERİ BEKLEYEN GÖZLE DOĞRULAMALAR** — kod işi değil, canlıda o veri
 > doğduğunda bakılacak. Kapanmamış iş sayılmaz, unutulmasın diye burada:
