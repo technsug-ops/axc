@@ -2297,6 +2297,9 @@
     "kategoriSec": "Faiz için bir gider kategorisi seçin.",
     "zatenKapaliBaslik": "Bu ekstre zaten kapalı — mükerrer ödeme olabilir.",
     "zatenKapaliNot": "Daha önce {onceki} ödenmiş ve borç bitmiş. Yine de eklemek istiyorsanız aşağıdaki kutuyu işaretleyin.",
-    "zatenKapaliOnay": "Biliyorum, yine de ekle"
+    "zatenKapaliOnay": "Biliyorum, yine de ekle",
+    "onDoluKalanNotu": "Kalan borç {kalan} — ekstrenin tamamı {borc}, bir kısmı zaten ödenmiş. Banka farklı kestiyse düzeltin.",
+    "asiyorBaslik": "Girilen tutar kalan borcu AŞIYOR — kalan yalnızca {kalan}.",
+    "asiyorNot": "Bu ekstreye daha önce {onceki} ödenmiş. Fazla ödeme kaydedilebilir ama mükerrer giriş olabilir; devam etmek için aşağıdaki kutuyu işaretleyin."
   }
 }

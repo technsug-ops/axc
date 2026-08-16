@@ -221,6 +221,42 @@ console.log("=".repeat(70));
    * (anayasa notu 16.08.2026).
    */
   const form = readFileSync("src/app/kart-borcu/odeme-formu.tsx", "utf8");
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  ÖN-DOLU TUTAR = KALAN BORÇ (16.08.2026 canlı bulgusu)
+   * --------------------------------------------------------------------
+   *  S.ahmet Garanti / 07.08.2026 ekstresi, borç 9.097,66. İlk ödeme
+   *  5.097,66 → kalan 4.000,00. İkinci ödemede form yine EKSTRENİN
+   *  TAMAMINI ön-dolu getirdi; kullanıcı 5.097,66 girdi ve kalan
+   *  −1.097,66'ya düştü.
+   *
+   *  Form fazla ödemeyi BİZZAT ÖNERİYORDU. "Sistemin hesabı ön-dolu gelir"
+   *  demek, ikinci ödemede KALAN demektir — mimar tanımı yarım
+   *  uygulanmıştı.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "form ön-doluyu KALAN borçtan alıyor (ekstrenin tamamından değil)",
+    form.includes("ekstreBorcu - oncekiOdenen(mevcutKayitlar)") &&
+      form.includes("useState(String(kalanBorc))"),
+  );
+  kontrol(
+    "  ...ön-doluda eksi öneri yok (kapalı ekstrede 0)",
+    form.includes("Math.max(0, ekstreBorcu - oncekiOdenen"),
+  );
+  kontrol(
+    "  ...kısmen ödenmişse NEDEN o tutar önerildiği yazılı",
+    form.includes("onDoluKalanNotu"),
+  );
+  kontrol(
+    "kalanı AŞAN ödeme de açık onay istiyor (kaza ihtimali)",
+    form.includes("onizleme.mukerrer.asiyorMu) && !kapaliOnay"),
+  );
+  kontrol(
+    "  ...aşma kendi başlığıyla KIRMIZI kartta",
+    form.includes('t("asiyorBaslik"'),
+  );
   kontrol(
     "ekranda mükerrer uyarısı ÜÇ KATMANLI kartla gösteriliyor",
     form.includes("<UyariKarti") && form.includes("zatenKapaliBaslik"),

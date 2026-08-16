@@ -15,6 +15,7 @@ import { useBicim } from "@/lib/bicim-istemci";
 import {
   faizGecerliMi,
   odemeOnizlemesi,
+  oncekiOdenen,
   type FaizGirdisi,
   type OdemeOnizlemesi,
 } from "@/lib/kart-odeme/hesap";
@@ -64,8 +65,20 @@ export function OdemeFormu({
   const [bekliyor, basla] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
 
-  // ÖN-DOLU: sistemin hesabı gelir, kullanıcı DÜZELTEBİLİR.
-  const [odenen, setOdenen] = useState(String(ekstreBorcu));
+  /**
+   * ÖN-DOLU = KALAN BORÇ, ekstrenin tamamı DEĞİL.
+   *
+   * ⚠ 16.08.2026 canlı bulgusu. Form ekstrenin TAMAMINI ön-dolu getiriyordu;
+   * ₺5.097,66 zaten ödenmiş bir ekstrede ikinci kez ₺9.097,66 öneriyordu.
+   * Yani fazla ödemeyi bizzat teşvik ediyordu — kullanıcı ₺5.097,66'yı
+   * tekrar girdi ve kalan −₺1.097,66'ya düştü.
+   *
+   * "Sistemin hesabı ön-dolu gelir" demek, İKİNCİ ödemede KALAN demektir.
+   * Sıfırın altına inmez: kapalı ekstrede öneri 0'dır, kullanıcı isterse
+   * yazar.
+   */
+  const kalanBorc = Math.max(0, ekstreBorcu - oncekiOdenen(mevcutKayitlar));
+  const [odenen, setOdenen] = useState(String(kalanBorc));
   const [tarih, setTarih] = useState(bugun);
   const [faizYolu, setFaizYolu] = useState<FaizGirdisi["yol"]>("yok");
   const [oran, setOran] = useState("");
@@ -115,7 +128,14 @@ export function OdemeFormu({
   const faizSorunlu = !faizGecerliMi(faiz);
   // Faiz varsa kategori ZORUNLU; faiz yoksa hiç sorulmuyor.
   const kategoriEngeli = onizleme.faiz > 0 && kategoriId === "";
-  const kapaliEngeli = onizleme.mukerrer.zatenKapali && !kapaliOnay;
+  /**
+   * AÇIK ONAY İKİ HÂLDE İSTENİR: ekstre zaten kapalıysa ya da girilen tutar
+   * KALANI AŞIYORSA. İkisi de "kaza" ihtimali yüksek hâller. Kısmi ödeme
+   * (kalandan az) ve tam kalan ödeme SORULMADAN geçer — onlar meşru ve
+   * sıradan işlerdir.
+   */
+  const kapaliEngeli =
+    (onizleme.mukerrer.zatenKapali || onizleme.mukerrer.asiyorMu) && !kapaliOnay;
 
   function kaydet() {
     setHata(null);
@@ -167,7 +187,14 @@ export function OdemeFormu({
             onChange={(e) => setOdenen(e.target.value)}
           />
           <p className="text-muted-foreground text-xs">
-            {t("onDoluNotu", { tutar: para(ekstreBorcu) })}
+            {/* Ne önerildiği ve NEDEN önerildiği yazılı: kısmen ödenmiş bir
+                ekstrede öneri kalan borçtur, ekstrenin tamamı değil. */}
+            {mevcutKayitlar.length > 0
+              ? t("onDoluKalanNotu", {
+                  kalan: para(kalanBorc),
+                  borc: para(ekstreBorcu),
+                })
+              : t("onDoluNotu", { tutar: para(ekstreBorcu) })}
           </p>
         </div>
         <div className="space-y-1">
@@ -283,6 +310,17 @@ export function OdemeFormu({
             onceki: para(onizleme.mukerrer.oncekiToplam),
           })}
         />
+      ) : onizleme.mukerrer.asiyorMu ? (
+        <UyariKarti
+          durum="olumsuz"
+          ikon={TriangleAlert}
+          baslik={t("asiyorBaslik", {
+            kalan: para(onizleme.mukerrer.kalanBorc),
+          })}
+          altSatir={t("asiyorNot", {
+            onceki: para(onizleme.mukerrer.oncekiToplam),
+          })}
+        />
       ) : onizleme.mukerrer.uyar ? (
         <UyariKarti
           durum="uyari"
@@ -291,7 +329,6 @@ export function OdemeFormu({
             onceki: para(onizleme.mukerrer.oncekiToplam),
             kalan: para(onizleme.mukerrer.kalanBorc),
           })}
-          altSatir={onizleme.mukerrer.asiyorMu ? t("asiyorUyari") : null}
         />
       ) : null}
 
@@ -334,7 +371,7 @@ export function OdemeFormu({
       ) : null}
 
       {/* Kapalı ekstreye ödeme: onay kutusu işaretlenmeden kaydedilemez. */}
-      {onizleme.mukerrer.zatenKapali ? (
+      {onizleme.mukerrer.zatenKapali || onizleme.mukerrer.asiyorMu ? (
         <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
           <input
             type="checkbox"
