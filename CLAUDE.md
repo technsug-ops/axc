@@ -331,6 +331,34 @@ düğme, hangi rakam beklenir). Kullanıcı listeyi okuyup uygulayabilmeli;
 
 Bir paket Halil testini geçmeden sıradaki pakete GEÇİLMEZ.
 
+## "KURAL DOĞRU MU" DEĞİL, "KURAL TESLİM EDİLEBİLİR Mİ" (KESİN KURAL)
+
+_Ders 16.08.2026._ Saf kural testi (matematik, mantık) geçse bile, kuralın
+sistemde **yerine getirilebileceği VARSAYIMI ayrıca sınanmalıdır.** Doğru
+hesap, teslim edilemeyen bir sözün üstünde durabilir.
+
+**Ayrı sorulacak sorular — ekran-veri bağı:**
+- Gösterdiğim link **var olan** bir ekrana mı gidiyor?
+- Kullanıcıya "şunu tanımla" diyorsam, onu tanımlayacak **ekran var mı**?
+- Beyan ettiğim sınır (dosya boyutu, adet, süre) sistemin **gerçekten
+  taşıyabildiği** sınır mı?
+- Saydığım küme ile tıklanınca açılan listenin kümesi **aynı** mı?
+
+**Bu tuzağın ailesi — üçü de aynı kökten:**
+1. **`varyantAra`** — arama kuralı doğruydu ama Kanal SKU'yu hiç sormuyordu;
+   "sabit = sabit" varsayımı sınanmamıştı.
+2. **RMA dosya tavanı** — "5 MB kabul edilir" testi geçiyordu, taşıma
+   tavanı 1 MB'tı. Test, sistemin tutamayacağı bir sözü doğruluyordu.
+3. **Kart faizi kategori linki** — form "ayarlardan ekle" diyordu; o ekran
+   gider kategorisi yönetmiyordu ve gider kategorisi ekleyecek ekran **hiç
+   yoktu.** Uyarı çıkmaza götürüyordu.
+
+> **MİMAR TALİMATLARI DA BU SÜZGEÇTEN GEÇER.** Mimar "link göster" derse,
+> o linkin **hedefi var mı** diye sorulur. Talimat niyeti söyler; niyetin
+> sistemde karşılığı olup olmadığını kontrol etmek uygulayanın işidir.
+> Karşılığı yoksa yapılacak şey talimatı sessizce uygulamak değil,
+> **eksiği bildirip niyeti karşılayan yolu önermektir.**
+
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`
 - Her anlamlı iş biriminde commit at; günün sonunda değil, iş bitince
