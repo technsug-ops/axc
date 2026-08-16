@@ -412,6 +412,29 @@ console.log("=".repeat(70));
 
   /**
    * ════════════════════════════════════════════════════════════════════
+   *  ANA BORÇ ÖDEMESİ GİDER DEĞİLDİR — EYLEM DE BUNA UYUYOR MU
+   * --------------------------------------------------------------------
+   *  Yukarıdaki iki kontrol SAF KURALI sınıyor. Ama kural doğru olup
+   *  eylem ona uymayabilir; oturumun dersi tam olarak bu (anayasa notu
+   *  16.08.2026). Bu yüzden `odemeKaydet` içinde `expense.create`in
+   *  faiz kapısının ARDINDA durduğu ayrıca doğrulanır.
+   *
+   *  Neden ana borç gider değil: o para ALIM maliyetinde zaten sayıldı.
+   *  Ödeme anında ikinci kez gider yazılsa aynı lira iki kez kârdan
+   *  düşerdi. Karta ödeme yapmak bir gider değil, borcun kapanmasıdır.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const eylem = readFileSync("src/app/kart-borcu/eylemler.ts", "utf8");
+  const kapi = eylem.indexOf("if (faiz > 0 && kategoriId)");
+  const yazim = eylem.indexOf("tx.expense.create");
+  kontrol("odemeKaydet gideri faiz kapısının ARDINDA yazıyor", kapi !== -1);
+  kontrol(
+    "  ...ilk expense.create kapıdan SONRA geliyor",
+    kapi !== -1 && yazim > kapi && yazim - kapi < 200,
+  );
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
    *  ÖNİZLEMEDEKİ "KALAN" ÖNCEKİ ÖDEMELERİ SAYAR (16.08.2026)
    * --------------------------------------------------------------------
    *  Ekranda iki farklı "kalan" görünüyordu: üstteki not "kalan borç
