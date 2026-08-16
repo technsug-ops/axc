@@ -45,6 +45,7 @@ import { execSync } from "node:child_process";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
+import { beklenenSemayiCikar } from "./migration-semasi";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import {
   CANLI_DOSYA,
@@ -196,18 +197,57 @@ async function main() {
     basarili(`Purchase.supplierOrderNo okundu — ${alimSayisi} kayıtta boş`);
 
     /**
-     * ⚠ BU ADIM HER MİGRATION'DA GENİŞLETİLİR.
+     * ════════════════════════════════════════════════════════════════════
+     *  YAPISAL DOĞRULAMA — LİSTE ELLE TUTULMUYOR (16.08.2026)
+     * --------------------------------------------------------------------
+     *  Buradaki kontroller önce ELLE yazılıyordu ve yorumu bile "her
+     *  migration'da genişletilir" diye uyarıyordu. Disiplin tam da
+     *  öngörüldüğü gibi tutmadı: `GecmisEkstre` gönderildi, sağlık
+     *  kontrolü onu HİÇ sormadı ve yine "CANLI ŞEMA GÜNCEL" dedi.
      *
-     * 15.08.2026'da fark edildi: sağlık kontrolü hâlâ ESKİ bir migration'ın
-     * kolonlarını sınıyordu. Yani adım "CANLI ŞEMA GÜNCEL" derken o gün
-     * gönderilen migration hakkında HİÇBİR ŞEY kanıtlamıyordu — yeşil ama
-     * boş bir doğrulama.
-     *
-     * Yeni bir tablo/kolon gönderen herkes buraya bir satır ekler; yoksa
-     * kontrol zamanla kendi geçmişini doğrulayan bir tören hâline gelir.
+     *  Beklenen şema artık MIGRATION DOSYALARINDAN türetiliyor ve canlının
+     *  `information_schema`sıyla karşılaştırılıyor. Yeni tablo/kolon
+     *  gönderen kişinin eklemesi gereken bir satır YOK — unutulabilecek
+     *  adım ortadan kalktı.
+     * ════════════════════════════════════════════════════════════════════
      */
-    const kartOdemeSayisi = await prisma.kartOdeme.count();
-    basarili(`KartOdeme okundu — ${kartOdemeSayisi} kayıt (yeni tablo)`);
+    const { tablolar } = beklenenSemayiCikar();
+    const canliSutunlar = await prisma.$queryRawUnsafe<
+      { TABLE_NAME: string; COLUMN_NAME: string }[]
+    >(
+      "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()",
+    );
+    const canli = new Map<string, Set<string>>();
+    for (const r of canliSutunlar) {
+      const k = canli.get(r.TABLE_NAME) ?? new Set<string>();
+      k.add(r.COLUMN_NAME);
+      canli.set(r.TABLE_NAME, k);
+    }
+
+    const eksikler: string[] = [];
+    for (const [tablo, kolonlar] of tablolar) {
+      const mevcut = canli.get(tablo);
+      if (!mevcut) {
+        eksikler.push(`tablo YOK: ${tablo}`);
+        continue;
+      }
+      for (const kolon of kolonlar) {
+        if (!mevcut.has(kolon)) eksikler.push(`kolon YOK: ${tablo}.${kolon}`);
+      }
+    }
+
+    if (eksikler.length > 0) {
+      for (const e of eksikler) basarisiz(e);
+      throw new Error("Şema eksik");
+    }
+    const kolonSayisi = [...tablolar.values()].reduce((t, k) => t + k.size, 0);
+    basarili(
+      `${tablolar.size} tablo · ${kolonSayisi} eklenmiş kolon canlıda DOĞRULANDI`,
+    );
+
+    /** En son migration'ın getirdiği tablo(lar) ayrıca sayılır. */
+    const gecmisEkstreSayisi = await prisma.gecmisEkstre.count();
+    basarili(`GecmisEkstre okundu — ${gecmisEkstreSayisi} kayıt (yeni tablo)`);
 
     console.log("\nCANLI ŞEMA GÜNCEL.\n");
   } catch (e) {
