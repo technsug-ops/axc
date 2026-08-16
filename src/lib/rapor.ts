@@ -91,7 +91,13 @@ export type RaporDuzeltmesi = {
    * ⚠ ÇİFT SAYIM. İade işlenirken stok defterine ADJUSTMENT yazılıyor
    * (hasarlı mal stoğa girmez, gider yazılır). O paranın etkisi İADENİN
    * NET-2'sinde ZATEN var. Fire toplamına da eklenince aynı lira iki kez
-   * düşüyor ve GERÇEK NET olduğundan düşük çıkıyordu.
+   * sayılıyordu.
+   *
+   * YÖN SABİT DEĞİL: hasarlı mal stoktan düşerse GERÇEK NET olduğundan
+   * DÜŞÜK, iade geri girip maliyeti geri gelirse YÜKSEK çıkar. Canlıda
+   * 08.2026 döneminde net etki −1.327,99 idi, yani GERÇEK NET ₺4.255,82
+   * görünüyordu; doğrusu ₺2.927,83. Kusuru "hep şu yöne şaşırtır" diye
+   * hatırlamak yanlış olur — hareketin işaretine bağlıdır.
    *
    * Kural sorguya değil BURAYA konuyor: sorguda `returnItemId: null`
    * süzgeci testin göremeyeceği bir yerde yaşar ve sessizce kaybolabilir.
@@ -337,8 +343,9 @@ export function raporHesapla(
     if (!pencerede(pencere, d.tarih)) continue;
     /**
      * İADEDEN DOĞAN HAREKET BURADA SAYILMAZ — parası iadenin NET-2'sinde.
-     * Sayılırsa aynı lira iki kez düşer (16.08.2026 bulgusu: GERÇEK NET
-     * ₺1.327,99 olduğundan düşük çıkıyordu).
+     * Sayılırsa aynı lira iki kez sayılır. 16.08.2026 canlı ölçümü:
+     * 08.2026 döneminde iade kaynaklı net etki −1.327,99 idi ve GERÇEK
+     * NET ₺4.255,82 görünüyordu; doğrusu ₺2.927,83.
      */
     if (d.iadeKaynakliMi) continue;
     if (d.birimMaliyet === null || d.paraBirimi === null) {

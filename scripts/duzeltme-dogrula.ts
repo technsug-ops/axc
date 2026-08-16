@@ -265,8 +265,10 @@ console.log("\n3) RAPORA ETKİSİ — GERÇEK NET'ten düşer, NET-2'ye KARIŞMA
    * --------------------------------------------------------------------
    *  İade işlenirken stok defterine ADJUSTMENT yazılıyor (hasarlı mal
    *  stoğa girmiyor). O paranın etkisi İADENİN NET-2'sinde ZATEN var.
-   *  Fire toplamına da eklenince aynı lira iki kez düşüyordu; canlıda
-   *  GERÇEK NET ₺1.327,99 olduğundan DÜŞÜK çıkıyordu.
+   *  Fire toplamına da eklenince aynı lira iki kez sayılıyordu. Canlı
+   *  ölçüm (08.2026): iade kaynaklı net etki −1.327,99, GERÇEK NET
+   *  ₺4.255,82 görünüyordu; doğrusu ₺2.927,83. Yön hareketin işaretine
+   *  bağlıdır — "hep yüksek gösterir" diye hatırlanmamalı.
    *
    *  Bu kusur neden görülmedi: her iki taraf da tek başına doğruydu.
    *  İade motoru doğru hesaplıyor, fire toplamı doğru topluyordu. Hata
