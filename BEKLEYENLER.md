@@ -238,7 +238,43 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       _Mutasyon: **faiz gideri kâra karışmasın** kilidi — ana borcu kâra
       düşür → test kırmızı._
 
-- [ ] **RAPOR: FİRE/DÜZELTME ETİKETİ YANILTIYOR — YÜKSEK ÖNCELİK**
+- [ ] **RAPOR: FİRE/DÜZELTME — ÇİFT SAYIM + ETİKET — YÜKSEK ÖNCELİK**
+
+      > ⚠ **TEŞHİS 16.08.2026'da BÜYÜDÜ.** Önce yalnız "etiket yanıltıyor"
+      > sanılmıştı; canlı araştırma **PARA HATASI** olduğunu gösterdi.
+      > Detay aşağıda "ÇİFT SAYIM" başlığında.
+
+      **ÇİFT SAYIM (asıl kusur, ölçüldü):**
+      Fire/düzeltme hesabı `ADJUSTMENT` ve `COUNT_CORRECTION` hareketlerini
+      sayıyor — ama **RMA'dan DOĞAN hareketleri de** sayıyor. Onların parası
+      iade NET-2'sinde ZATEN var; ikinci kez saymak çift sayımdır.
+
+      _Canlı kanıt (Ağustos 2026):_ dört hareketin ikisi elle girilmiş ve
+      **birbirini götürüyor** (279 kayıp + 279 düzeltme = 0). Kalan
+      −₺1.327,99'un **tamamı** `returnItemId` dolu, `systemKey:
+      SEVKIYAT_HATASI` olan otomatik hareketlerden geliyor.
+
+      Bialetti (axcali1752) defteri eksiksiz — `ADJUSTMENT +1` ile
+      `EXCHANGE_OUT −1` aynı saniyede, net stok etkisi SIFIR. İadenin
+      kalemleri de sıfırlanmış: `MALIYET_GERI +1.438,99` ·
+      `DEGISIM_MALIYET −1.438,99` · **NET-2 = 0.**
+      Rapor buna rağmen ₺1.438,99'u "düzeltme kazancı" sayıyor.
+
+      ```
+      GERÇEK NET (ekranda) = 3.218,33 − 290,50 + 1.327,99 = ₺4.255,82
+      DOĞRUSU              = 3.218,33 − 290,50           = ₺2.927,83
+      ```
+      **Gerçek net ₺1.327,99 FAZLA gösteriliyor.**
+
+      **DÜZELTME (1) — ASIL:** `returnItemId` DOLU olan hareketler
+      fire/düzeltme hesabına **GİRMEZ**. Bu, nakit takviminde kurduğumuz
+      çift sayım kapısının aynısı.
+      _Mutasyon: RMA doğumlu hareketi hesaba geri sok → test kırmızı._
+
+      **DÜZELTME (2) — ETİKET** (aşağıdaki özgün kural aynen geçerli, ama
+      artık YALNIZ elle girilen düzeltmeler için):
+
+      _Özgün kayıt:_
       _Bulundu 16.08.2026, kart ödeme Halil testi sırasında._
       **SIRA: kart ödeme paketi kapanır kapanmaz İLK İŞ.** Uzun bekletilmez;
       ekran şu an yanlış bir şey söylüyor.
@@ -273,11 +309,13 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       **hiçbir kazanç "kayıp/zarar" başlığı altında görünmez.**
       _Mutasyon: kazancı kayıp toplamına sok → test kırmızı._
 
-      **AÇIK VERİ SORUSU (kod değil):** 14.08 tarihli **₺1.438,99'luk
-      açıklamasız + düzeltme** tek başına gerçek neti o kadar şişiriyor.
-      Kullanıcıya sorulacak: o hareket neydi, doğru mu girildi?
-      _Ayrıca düşünülecek: "notu olmayan büyük düzeltme" bir uyarı konusu
-      olabilir (uyarı merkezi Faz 2)._
+      ✅ **AÇIK VERİ SORUSU KAPANDI 16.08.2026.** ₺1.438,99'luk hareket
+      MEŞRU: RMA 6. senaryosunun (sevkiyat hatası) otomatik ürünü,
+      `returnItemId` dolu, kullanıcı girmemiş. Defter eksiksiz, eşi
+      `EXCHANGE_OUT` olarak duruyor, net stok etkisi sıfır. Sorun harekette
+      DEĞİL, raporun onu sayıyor olmasında.
+      _Yan not: "notu olmayan büyük ELLE düzeltme" yine de uyarı merkezi
+      Faz 2 konusu olabilir._
 
 - [ ] **GEÇMİŞ VERİ AKTARIMI** — geçmiş kart ekstreleri · geçmiş hakediş
       tahsilatları. Dosya: `C:\Users\yapra\Desktop\excel\hakedis ve kredi kartlari`
