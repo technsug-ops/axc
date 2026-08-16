@@ -274,6 +274,32 @@ console.log("=".repeat(70));
     "sayfa izin değil GİRİŞ istiyor (herkes kendi talebini görür)",
     sayfa.includes("sayfaGirisi()") && !sayfa.includes("sayfaIzni("),
   );
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  EYLEM DÜĞMESİ EN SONDA — 17.08.2026 canlı bulgusu
+   * --------------------------------------------------------------------
+   *  Çözüm notu kutusu "Güncelle" düğmesinin ALTINDAYDI. Kullanıcı
+   *  yukarıdan aşağı okuyup durumu seçti, düğmeye bastı ve notu HİÇ
+   *  görmedi: TLP-0001 "Çözüldü"ye geçti, çözüm notu boş kaldı.
+   *
+   *  Kayıp SESSİZDİ — hata yok, uyarı yok, yalnız boş bir alan. Göç
+   *  provası bunu ortaya çıkardı: GELISTIRICI mesajı hiç doğmadı.
+   *  Bir formda düğmeden SONRA gelen alan doldurulmaz.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const durumKontrolu = readFileSync(
+    "src/app/talepler/durum-kontrolu.tsx",
+    "utf8",
+  );
+  kontrol(
+    "çözüm notu alanı EYLEM DÜĞMESİNDEN ÖNCE",
+    (() => {
+      const not = durumKontrolu.indexOf("<Textarea");
+      const dugme = durumKontrolu.indexOf("<Button");
+      return not !== -1 && dugme !== -1 && not < dugme;
+    })(),
+  );
+
   kontrol(
     "yetkisizde durum kontrolü HİÇ çizilmiyor (pasif düğme yok)",
     sayfa.includes("yonetebilir ? (") && sayfa.includes('izinVarMi("destek.yonet")'),

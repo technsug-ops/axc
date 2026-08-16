@@ -50,6 +50,24 @@ export function DurumKontrolu({
   return (
     <div className="space-y-2 border-t pt-3">
       <div className="text-xs font-medium">{t("durumIlerlet")}</div>
+      {/**
+       * ⚠ NOT ALANI DÜĞMEDEN ÖNCE — 17.08.2026 canlı bulgusu.
+       *
+       * İlk hâlinde not kutusu "Güncelle" düğmesinin ALTINDAYDI. Kullanıcı
+       * yukarıdan aşağı okuyup durumu seçiyor, düğmeye basıyor ve notu HİÇ
+       * görmüyordu: TLP-0001 "Çözüldü"ye geçti, çözüm notu boş kaldı.
+       *
+       * Kayıp sessizdi — hata yok, uyarı yok, sadece boş bir alan. Bir
+       * formda EYLEM DÜĞMESİ EN SONDA durur; ondan sonra gelen alan
+       * doldurulmaz.
+       */}
+      <Textarea
+        rows={2}
+        value={not}
+        onChange={(e) => setNot(e.target.value)}
+        placeholder={t("cozumNotuIpucu")}
+      />
+
       <div className="flex flex-wrap items-start gap-2">
         <Select value={hedef} onValueChange={setHedef}>
           <SelectTrigger className="h-11 w-full sm:w-56 md:h-9">
@@ -85,12 +103,6 @@ export function DurumKontrolu({
           {bekliyor ? ortak("kaydediliyor") : t("durumGuncelle")}
         </Button>
       </div>
-      <Textarea
-        rows={2}
-        value={not}
-        onChange={(e) => setNot(e.target.value)}
-        placeholder={t("cozumNotuIpucu")}
-      />
       {hata ? <p className={`text-sm ${DURUM_YAZISI.olumsuz}`}>{hata}</p> : null}
     </div>
   );
