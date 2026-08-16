@@ -234,6 +234,10 @@ console.log("=".repeat(70));
   const yorumsuz = (m: string) =>
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
   const eylem = yorumsuz(readFileSync("src/app/talepler/eylemler.ts", "utf8"));
+  const durumKontrolu = readFileSync(
+    "src/app/talepler/durum-kontrolu.tsx",
+    "utf8",
+  );
   const sayfa = readFileSync("src/app/talepler/page.tsx", "utf8");
   const buton = readFileSync("src/components/bildir-butonu.tsx", "utf8");
   const duzen = readFileSync("src/app/layout.tsx", "utf8");
@@ -287,10 +291,46 @@ console.log("=".repeat(70));
    *  Bir formda düğmeden SONRA gelen alan doldurulmaz.
    * ════════════════════════════════════════════════════════════════════
    */
-  const durumKontrolu = readFileSync(
-    "src/app/talepler/durum-kontrolu.tsx",
-    "utf8",
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  NOT TEK BAŞINA KAYDEDİLEBİLİR (17.08.2026 canlı bulgusu)
+   * --------------------------------------------------------------------
+   *  Durum ZORUNLUYDU: not yazmak için mutlaka bir geçiş seçmek
+   *  gerekiyordu. TLP-0001 `COZULDU` idi ve oradan yalnız `KAPANDI` ya da
+   *  `YAPILIYOR`a gidilebiliyor — ikisi de talebin ANLAMINI değiştirir.
+   *  "Çözdüm, açıklamasını da yazayım" demek imkânsızdı.
+   *
+   *  Mimar şartı zaten söylüyordu: durum "NEREDE" der, not "NE KONUŞULDU"
+   *  der. İkisi ayrı şeyse biri diğerini ZORUNLU KILMAMALI. Kural
+   *  yazılıydı, uygulama onu tutmuyordu.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "durum İSTEĞE BAĞLI (yalnız not yazılabilir)",
+    eylem.includes("yeniDurum: TalepDurumu | null"),
   );
+  kontrol(
+    "  ...durum yoksa geçiş doğrulaması atlanıyor",
+    eylem.includes("if (yeniDurum !== null && !gecisGecerliMi("),
+  );
+  kontrol(
+    "  ...durum yoksa kapanış zamanına DOKUNULMUYOR",
+    eylem.includes("yeniDurum === null") &&
+      eylem.includes("kapatilmaZamani: kapanisZamani("),
+  );
+  kontrol(
+    "  ...ne durum ne not varsa açıkça reddediliyor (sessiz 'tamam' yok)",
+    eylem.includes("degisiklikYok"),
+  );
+  kontrol(
+    "  ...düğme yalnız notla da açılıyor",
+    durumKontrolu.includes('hedef === "" && not.trim() === ""'),
+  );
+  kontrol(
+    "  ...düğme yazısı duruma göre değişiyor",
+    durumKontrolu.includes('t("notuKaydet")'),
+  );
+
   kontrol(
     "çözüm notu alanı EYLEM DÜĞMESİNDEN ÖNCE",
     (() => {

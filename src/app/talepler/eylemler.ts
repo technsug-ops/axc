@@ -100,9 +100,24 @@ export async function talepOlustur(
 
 export type DurumSonucu = { tamam: boolean; hata?: string };
 
+/**
+ * Durumu ilerletir ve/veya çözüm notu yazar.
+ *
+ * ⚠ `yeniDurum` NEDEN İSTEĞE BAĞLI (17.08.2026 canlı bulgusu)
+ *
+ * İlk hâlinde durum ZORUNLUYDU: not yazmak için mutlaka bir geçiş seçmek
+ * gerekiyordu. TLP-0001 `COZULDU` durumundaydı ve oradan yalnız `KAPANDI`
+ * ya da `YAPILIYOR`a gidilebiliyor — ikisi de talebin ANLAMINI değiştirir.
+ * Yani "çözdüm, açıklamasını da yazayım" demek imkânsızdı; kullanıcı notu
+ * yazmayı denedi, kaydedemedi ve göç provası GELİSTİRİCİ dalını hiç
+ * göremedi.
+ *
+ * Durum "NEREDE" der, not "NE KONUŞULDU" der (mimar şartı). İkisi ayrı
+ * şeyse biri diğerini zorunlu kılmamalı.
+ */
 export async function talepDurumDegistir(
   talepId: string,
-  yeniDurum: TalepDurumu,
+  yeniDurum: TalepDurumu | null,
   cozumNotu: string | null,
 ): Promise<DurumSonucu> {
   const baglam = await yetkiIste("destek.yonet");
@@ -119,19 +134,32 @@ export async function talepDurumDegistir(
    * gösteriyor, ama süzgeç GÖRÜNÜRLÜKTÜR: eski sekme açık kalabilir,
    * istek elle kurulabilir. (Bugün stok düzeltmede aynı boşluk çıktı.)
    */
-  if (!gecisGecerliMi(mevcut.durum, yeniDurum)) {
+  const notVar = cozumNotu !== null && cozumNotu.trim() !== "";
+
+  // Ne durum ne not: yapılacak bir şey yok. Sessizce "tamam" demek,
+  // kullanıcıya hiçbir şey olmadığını gizlemek olurdu.
+  if (yeniDurum === null && !notVar) {
+    return { tamam: false, hata: t("degisiklikYok") };
+  }
+
+  if (yeniDurum !== null && !gecisGecerliMi(mevcut.durum, yeniDurum)) {
     return { tamam: false, hata: t("gecisGecersiz") };
   }
 
   await prisma.talep.update({
     where: { id: talepId },
     data: {
-      durum: yeniDurum,
-      kapatilmaZamani: kapanisZamani(
-        mevcut.kapatilmaZamani,
-        yeniDurum,
-        new Date(),
-      ),
+      // Durum verilmediyse DOKUNULMAZ — yalnız not yazılıyor demektir.
+      ...(yeniDurum === null
+        ? {}
+        : {
+            durum: yeniDurum,
+            kapatilmaZamani: kapanisZamani(
+              mevcut.kapatilmaZamani,
+              yeniDurum,
+              new Date(),
+            ),
+          }),
       /**
        * Boş not mevcut notu SİLMEZ: geliştirici durumu ilerletirken not
        * yazmak zorunda değil, ama yazdığı not kaybolmamalı.
@@ -143,9 +171,9 @@ export async function talepDurumDegistir(
        * göremez: her durum değişikliğinde ezilir ve notun yazıldığı anı
        * değil kaydın en son dokunulduğu anı söyler.
        */
-      ...(cozumNotu !== null && cozumNotu.trim() !== ""
+      ...(notVar
         ? {
-            cozumNotu: cozumNotu.trim(),
+            cozumNotu: cozumNotu!.trim(),
             cozumNotuYazanId: baglam.kullaniciId,
             cozumNotuZamani: new Date(),
           }

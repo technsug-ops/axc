@@ -71,7 +71,7 @@ export function DurumKontrolu({
       <div className="flex flex-wrap items-start gap-2">
         <Select value={hedef} onValueChange={setHedef}>
           <SelectTrigger className="h-11 w-full sm:w-56 md:h-9">
-            <SelectValue placeholder={t("durumSecin")} />
+            <SelectValue placeholder={t("durumSecinIstege")} />
           </SelectTrigger>
           <SelectContent>
             {secenekler.map((d) => (
@@ -83,13 +83,19 @@ export function DurumKontrolu({
         </Select>
         <Button
           className="h-11 md:h-9"
-          disabled={bekliyor || hedef === ""}
+          /**
+           * NOT TEK BAŞINA DA KAYDEDİLİR. Düğme önce yalnız hedef durum
+           * seçiliyken açılıyordu; "çözdüm, açıklamasını yazayım" demek
+           * imkânsızdı çünkü COZULDU'dan çıkış talebin anlamını değiştirir.
+           */
+          disabled={bekliyor || (hedef === "" && not.trim() === "")}
           onClick={() =>
             basla(async () => {
               setHata(null);
               const sonuc = await talepDurumDegistir(
                 talepId,
-                hedef as TalepDurumu,
+                // Boş seçim = durum DEĞİŞMESİN, yalnız not yazılsın.
+                hedef === "" ? null : (hedef as TalepDurumu),
                 not,
               );
               if (sonuc.tamam) {
@@ -100,7 +106,11 @@ export function DurumKontrolu({
             })
           }
         >
-          {bekliyor ? ortak("kaydediliyor") : t("durumGuncelle")}
+          {bekliyor
+            ? ortak("kaydediliyor")
+            : hedef === ""
+              ? t("notuKaydet")
+              : t("durumGuncelle")}
         </Button>
       </div>
       {hata ? <p className={`text-sm ${DURUM_YAZISI.olumsuz}`}>{hata}</p> : null}

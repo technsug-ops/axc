@@ -2406,6 +2406,9 @@
     "kaydedildi": "{kod} numarasıyla kaydedildi. Ekran görüntüsü eklemek isterseniz talep listesinden ekleyebilirsiniz.",
     "taleplereGit": "Taleplere git",
     "baglamOzet": "Sayfa ve tarayıcı bilgisi otomatik ekleniyor — görmek için tıklayın",
-    "listeNotuDestek": "Bütün firmalardan gelen hata ve istekler. Durumu buradan ilerletebilirsiniz."
+    "listeNotuDestek": "Bütün firmalardan gelen hata ve istekler. Durumu buradan ilerletebilirsiniz.",
+    "notuKaydet": "Notu kaydet",
+    "durumSecinIstege": "Durum değiştir (isteğe bağlı)",
+    "degisiklikYok": "Değiştirilecek bir şey yok — durum seçin ya da not yazın."
   }
 }
