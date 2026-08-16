@@ -216,8 +216,10 @@ export default async function TaleplerSayfasi({
 
                 {/* YAKALANAN BAĞLAM GÖRÜNÜR — gizli toplama izlenimi yok. */}
                 {x.rota || x.tarayici ? (
-                  <div className="bg-muted/40 space-y-1 rounded-lg border p-3">
-                    <p className="text-xs font-medium">{t("baglamBaslik")}</p>
+                  <details className="bg-muted/40 rounded-lg border px-3 py-2">
+                    <summary className="cursor-pointer text-xs">
+                      {t("baglamOzet")}
+                    </summary>
                     {x.rota ? (
                       <p className="text-muted-foreground text-xs break-all">
                         {t("baglamSayfa")}:{" "}
@@ -230,7 +232,7 @@ export default async function TaleplerSayfasi({
                         <span className="font-mono">{x.tarayici}</span>
                       </p>
                     ) : null}
-                  </div>
+                  </details>
                 ) : null}
 
                 {x.cozumNotu ? (

@@ -185,19 +185,34 @@ export function BildirButonu() {
             />
           </div>
 
-          {/* ------------------- YAKALANAN BAĞLAM ---------------------- */}
-          {/* GİZLİ TOPLAMA YOK: ne gönderildiği burada yazıyor. */}
-          <div className="bg-muted/40 space-y-1 rounded-lg border p-3">
-            <p className="text-xs font-medium">{t("baglamBaslik")}</p>
-            <p className="text-muted-foreground text-xs break-all">
-              {t("baglamSayfa")}: <span className="font-mono">{rota}</span>
-            </p>
-            <p className="text-muted-foreground line-clamp-2 text-xs break-all">
-              {t("baglamTarayici")}:{" "}
-              <span className="font-mono">{tarayici || "—"}</span>
-            </p>
-            <p className="text-muted-foreground text-xs">{t("baglamNotu")}</p>
-          </div>
+          {/**
+           * ── YAKALANAN BAĞLAM: GÖRÜNÜR AMA KATLANMIŞ ──────────────────
+           *
+           * İlk hâli üç satırlık ham user-agent metnini formun ortasına
+           * seriyordu ve kullanıcı haklı olarak "bunu bana niye
+           * gösteriyorsun?" dedi (16.08.2026).
+           *
+           * İKİ ŞART BİRDEN KORUNUYOR: gizli toplama YOK — ne
+           * gönderildiği tek satırda yazıyor ve isteyen açıp GÖRÜYOR.
+           * Ama varsayılan kapalı: bilgi ulaşılabilir olmalı, dayatılan
+           * değil. Kullanıcının işi hata bildirmek, tarayıcı sürümünü
+           * okumak değil.
+           */}
+          <details className="bg-muted/40 rounded-lg border px-3 py-2">
+            <summary className="cursor-pointer text-xs">
+              {t("baglamOzet")}
+            </summary>
+            <div className="mt-2 space-y-1">
+              <p className="text-muted-foreground text-xs break-all">
+                {t("baglamSayfa")}: <span className="font-mono">{rota}</span>
+              </p>
+              <p className="text-muted-foreground text-xs break-all">
+                {t("baglamTarayici")}:{" "}
+                <span className="font-mono">{tarayici || "—"}</span>
+              </p>
+              <p className="text-muted-foreground text-xs">{t("baglamNotu")}</p>
+            </div>
+          </details>
 
           {/* EKRAN GÖRÜNTÜSÜ KAYITTAN SONRA: ek polimorfik olarak kayda
               bağlanıyor, kayıt yokken bağlanacak kimlik de yok. */}

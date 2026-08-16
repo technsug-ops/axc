@@ -2233,7 +2233,9 @@
     "hataHEDEF_GECERSIZ": "Ek bu kayda bağlanamıyor.",
     "hataYUKLENEMEDI": "Dosya yüklenemedi. Tekrar deneyin.",
     "hataDEPO_YOK": "Dosya deposu yapılandırılmamış; ek yüklenemedi. (Yönetici: BLOB_READ_WRITE_TOKEN eksik.)",
-    "hataCOK_BUYUK": "Dosya çok büyük. Dosya başına sınır 4 MB."
+    "hataCOK_BUYUK": "Dosya çok büyük. Dosya başına sınır 4 MB.",
+    "yuklendi": "✓ {dosya} yüklendi ve kayda eklendi. Ayrıca gönderme gerekmez.",
+    "secmeNotu": "Dosyayı seçer seçmez yüklenir; ayrı bir gönder düğmesi yoktur."
   },
   "Gorevler": {
     "baslik": "Bugün ne yapmalıyım",
@@ -2350,7 +2352,9 @@
     "baslik_karHesaplanamayan": "{sayi} satışın kârı hesaplanamıyor",
     "eylem_karHesaplanamayan": "Eksik maliyet ya da kuralı tamamla",
     "baslik_hakedisGecikti": "{sayi} hakediş kalemi gecikti",
-    "eylem_hakedisGecikti": "Hakediş ekranını aç"
+    "eylem_hakedisGecikti": "Hakediş ekranını aç",
+    "baslik_cevapsizTalep": "{sayi} destek talebi cevap bekliyor",
+    "eylem_cevapsizTalep": "Talebi incele ve durumunu ilerlet"
   },
   "Talep": {
     "bildirEtiketi": "Hata veya istek bildir",
@@ -2400,6 +2404,7 @@
     "cozumNotu": "Çözüm notu",
     "cozumNotuIpucu": "İsteğe bağlı: ne yapıldığını yazın, bildiren kişi okuyacak.",
     "kaydedildi": "{kod} numarasıyla kaydedildi. Ekran görüntüsü eklemek isterseniz talep listesinden ekleyebilirsiniz.",
-    "taleplereGit": "Taleplere git"
+    "taleplereGit": "Taleplere git",
+    "baglamOzet": "Sayfa ve tarayıcı bilgisi otomatik ekleniyor — görmek için tıklayın"
   }
 }

@@ -247,11 +247,31 @@ console.log("=".repeat(70));
    * öğrenildiği gün güveni bitirir.
    */
   kontrol("bildir düğmesi üst çubukta", duzen.includes("<BildirButonu />"));
+  /**
+   * ── BAĞLAM: GÖRÜNÜR AMA KATLANMIŞ (16.08.2026 kullanıcı sorusu) ────────
+   *  "Otomatik bilgiler kullanıcı tarafından neden görünsün, gerek var mı?"
+   *
+   *  İlk hâli üç satırlık ham user-agent metnini formun ortasına seriyordu.
+   *  Kullanıcı haklıydı: onun işi hata bildirmek, tarayıcı sürümü okumak
+   *  değil. Ama tamamen gizlemek de olmaz — sessizce toplanan bilgi,
+   *  toplandığı öğrenildiği gün güveni bitirir.
+   *
+   *  ÇÖZÜM İKİSİNİ BİRDEN TUTAR: tek satır özet HER ZAMAN görünür, ayrıntı
+   *  tıklayınca açılır. Bilgi ULAŞILABİLİR olmalı, DAYATILAN değil.
+   */
   kontrol(
-    "yakalanan bağlam FORMDA görünüyor",
-    buton.includes('t("baglamBaslik")') &&
+    "yakalanan bağlam formda GÖRÜNÜR (tek satır özet)",
+    buton.includes('t("baglamOzet")'),
+  );
+  kontrol(
+    "  ...ayrıntı açılabiliyor, gizlenmiyor",
+    buton.includes("<details") &&
       buton.includes('t("baglamSayfa")') &&
       buton.includes('t("baglamTarayici")'),
+  );
+  kontrol(
+    "  ...varsayılan KAPALI (open özniteliği yok)",
+    !/<details[^>]*open/.test(buton),
   );
   kontrol(
     "  ...başka bir şey toplanmadığı YAZILI",
@@ -259,7 +279,7 @@ console.log("=".repeat(70));
   );
   kontrol(
     "yakalanan bağlam LİSTEDE de görünüyor",
-    sayfa.includes('t("baglamBaslik")'),
+    sayfa.includes('t("baglamOzet")'),
   );
 
   /** İKİNCİ EK ALTYAPISI YOK — mevcut Attachment kullanılıyor. */
@@ -281,6 +301,22 @@ console.log("=".repeat(70));
   kontrol(
     "  ...süzgeçli boş ile hiç talep yok AYRI mesaj",
     (tr.Talep?.hicTalepYok ?? "") !== (tr.Talep?.suzgecBos ?? ""),
+  );
+
+  /**
+   * ── ÇANA DÜŞEN "CEVAPSIZ TALEP" YALNIZ *ACIK* SAYAR ───────────────────
+   *  Kullanıcı sordu: "bu talepler bir developer paneline düşmeli, o
+   *  nerede?" Panel /talepler'in kendisiydi ama oraya BAKMAK İÇİN BİR SEBEP
+   *  yoktu. Çan o boşluğu kapatıyor.
+   *
+   *  INCELENIYOR/YAPILIYOR sayılsaydı uyarı iş bitene kadar yanar kalırdı;
+   *  sönmeyen uyarı bir süre sonra okunmayan uyarıdır (aynı gerekçe
+   *  maliyetsiz stokta "tükenmiş parti sayılmaz" kuralında da var).
+   */
+  const toplayici = yorumsuz(readFileSync("src/lib/uyari/topla.ts", "utf8"));
+  kontrol(
+    "çan yalnız ACIK talepleri sayıyor",
+    toplayici.includes('prisma.talep.count({ where: { durum: "ACIK" } })'),
   );
 
   /** Süzgeç ADRESTE yaşar — geri tuşu çalışsın, link paylaşılabilsin. */

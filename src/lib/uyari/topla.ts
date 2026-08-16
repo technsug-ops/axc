@@ -43,7 +43,7 @@ import type { Uyari } from "./turler";
 export async function uyarilariTopla(): Promise<Uyari[]> {
   const bugun = gunDegeri(isTakvimGunu(new Date()));
 
-  const [takvimSatirlari, gorevSayilari, gecikenHakedis, partiler] =
+  const [takvimSatirlari, gorevSayilari, gecikenHakedis, partiler, cevapsizTalep] =
     await Promise.all([
       takvimSatirlariniTopla(bugun),
       gorevSayilariniTopla(),
@@ -57,6 +57,14 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
         _sum: { amount: true },
       }),
       acikPartilerToplu(prisma, null),
+      /**
+       * CEVAPLANMAMIŞ TALEP — henüz ELE ALINMAMIŞ olanlar.
+       *
+       * Yalnız ACIK sayılıyor: INCELENIYOR/YAPILIYOR zaten görülmüş ve iş
+       * başlamış demektir; onları da saymak uyarıyı iş bitene kadar yanar
+       * hâlde tutar ve sönmeyen uyarı bir süre sonra okunmaz olur.
+       */
+      prisma.talep.count({ where: { durum: "ACIK" } }),
     ]);
 
   const takvim = nakitTakvimiKur({
@@ -69,6 +77,7 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
     nakitAcigi: nakitAcigiOlcumu(takvim.netPozisyon),
     maliyetsizStok: { sayi: maliyetsizVaryantlar(partiler).length },
     karHesaplanamayan: { sayi: gorevSayilari.karHesaplanamayan },
+    cevapsizTalep: { sayi: cevapsizTalep },
     hakedisGecikti: {
       sayi: gecikenHakedis._count._all,
       tutar:
@@ -83,8 +92,13 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
    * çizmek "iki uyarı saklanıyor" demek olurdu — hem kafa karıştırır hem
    * saklananın varlığını sızdırır.
    */
-  const karGorunur = await izinVarMi("satis.kar.gor");
-  return izneGoreSuz(uyarilar, (izin) =>
-    izin === "satis.kar.gor" ? karGorunur : true,
-  );
+  const [karGorunur, destekYonetir] = await Promise.all([
+    izinVarMi("satis.kar.gor"),
+    izinVarMi("destek.yonet"),
+  ]);
+  return izneGoreSuz(uyarilar, (izin) => {
+    if (izin === "satis.kar.gor") return karGorunur;
+    if (izin === "destek.yonet") return destekYonetir;
+    return true;
+  });
 }

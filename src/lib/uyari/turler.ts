@@ -37,6 +37,19 @@ export const UYARI_ANAHTARLARI = [
   "karHesaplanamayan",
   /** Vadesi geçmiş ve hâlâ ödenmemiş hakediş kalemi. */
   "hakedisGecikti",
+  /**
+   * CEVAPLANMAMIŞ DESTEK TALEBİ — 16.08.2026, kullanıcı sorusu:
+   * "bu talepler bir developer paneline düşmeli, o nerede?"
+   *
+   * Panel /talepler'in kendisiydi ama ORAYA BAKMAK İÇİN BİR SEBEP YOKTU:
+   * yeni talebin geldiğini söyleyen hiçbir işaret bulunmuyordu. Dış
+   * bildirim (Telegram/e-posta) Faz 2 kararı; o gelene kadar çan bu
+   * boşluğu kapatıyor — geliştirici sisteme girdiğinde görüyor.
+   *
+   * YALNIZ `destek.yonet` OLANDA çıkar: bildiren kişi kendi talebini zaten
+   * biliyor, ona "1 talep var" demek gürültüdür.
+   */
+  "cevapsizTalep",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -60,6 +73,7 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
    * kalem listesi Faz 2 işi olarak BEKLEYENLER’e yazıldı.
    */
   hakedisGecikti: "/hakedis",
+  cevapsizTalep: "/talepler?durum=ACIK",
 };
 
 /**
@@ -73,6 +87,7 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   maliyetsizStok: null,
   karHesaplanamayan: "satis.kar.gor",
   hakedisGecikti: "satis.kar.gor",
+  cevapsizTalep: "destek.yonet",
 };
 
 export type Uyari = {

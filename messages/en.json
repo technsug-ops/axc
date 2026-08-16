@@ -2233,7 +2233,9 @@
     "hataHEDEF_GECERSIZ": "",
     "hataYUKLENEMEDI": "",
     "hataDEPO_YOK": "",
-    "hataCOK_BUYUK": ""
+    "hataCOK_BUYUK": "",
+    "yuklendi": "",
+    "secmeNotu": ""
   },
   "Gorevler": {
     "baslik": "",
@@ -2350,7 +2352,9 @@
     "baslik_karHesaplanamayan": "",
     "eylem_karHesaplanamayan": "",
     "baslik_hakedisGecikti": "",
-    "eylem_hakedisGecikti": ""
+    "eylem_hakedisGecikti": "",
+    "baslik_cevapsizTalep": "",
+    "eylem_cevapsizTalep": ""
   },
   "Talep": {
     "bildirEtiketi": "",
@@ -2400,6 +2404,7 @@
     "cozumNotu": "",
     "cozumNotuIpucu": "",
     "kaydedildi": "",
-    "taleplereGit": ""
+    "taleplereGit": "",
+    "baglamOzet": ""
   }
 }

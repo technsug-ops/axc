@@ -49,6 +49,16 @@ export function Ekler({
   const router = useRouter();
   const [bekliyor, basla] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
+  /**
+   * SON YÜKLENEN DOSYA — "gönder tuşu yok, ulaştı mı?" (kullanıcı 16.08.2026)
+   *
+   * Yükleme dosya SEÇİLİR SEÇİLMEZ oluyor; gönder düğmesi yok çünkü
+   * gönderilecek bir adım kalmıyor. Ama ekran bunu söylemiyordu: tek işaret
+   * listedeki sayacın artmasıydı, kullanıcı onu fark etmeyip "iletildi mi
+   * bilmiyorum" dedi. SESSİZ BAŞARI, sessiz başarısızlık kadar kötüdür —
+   * işlem sonucu her zaman görünür bildirilir (İlke #5).
+   */
+  const [sonYuklenen, setSonYuklenen] = useState<string | null>(null);
   const girdiRef = useRef<HTMLInputElement>(null);
 
   /** Seçim kutusunu boşaltır — aynı dosya tekrar seçilebilsin. */
@@ -58,6 +68,7 @@ export function Ekler({
 
   const yukle = (dosya: File) => {
     setHata(null);
+    setSonYuklenen(null);
 
     /**
      * ÖNCE TARAYICIDA ELE — 14.08.2026 canlı çökmesinin (T5) asıl dersi.
@@ -110,6 +121,7 @@ export function Ekler({
         }
 
         kutuyuBosalt();
+        setSonYuklenen(dosya.name);
         router.refresh();
       } catch {
         setHata(t("hataYUKLENEMEDI"));
@@ -120,6 +132,7 @@ export function Ekler({
 
   const sil = (ekId: string) => {
     setHata(null);
+    setSonYuklenen(null);
     basla(async () => {
       // Silme de sessizce patlamaz; küçük gövde olduğu için action kalıyor.
       try {
@@ -193,6 +206,13 @@ export function Ekler({
         <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
         {t("yedekUyarisi")}
       </p>
+
+      {/* BAŞARI DA GÖRÜNÜR SÖYLENİR — "gönder tuşu yok" sorusunun cevabı. */}
+      {sonYuklenen ? (
+        <p role="status" className={`text-xs ${DURUM_YAZISI.olumlu}`}>
+          {t("yuklendi", { dosya: sonYuklenen })}
+        </p>
+      ) : null}
 
       {hata ? (
         <p role="alert" className="text-destructive text-xs">

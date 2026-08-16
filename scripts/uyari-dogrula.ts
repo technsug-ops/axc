@@ -52,6 +52,7 @@ const bos: UyariOlcumleri = {
   maliyetsizStok: { sayi: 0 },
   karHesaplanamayan: { sayi: 0 },
   hakedisGecikti: { sayi: 0 },
+  cevapsizTalep: { sayi: 0 },
 };
 
 const parti = (kalanAdet: number, birimMaliyet: string | null): Parti => ({
@@ -86,8 +87,9 @@ console.log("=".repeat(70));
     maliyetsizStok: { sayi: 3 },
     karHesaplanamayan: { sayi: 7 },
     hakedisGecikti: { sayi: 2, tutar: 4400 },
+    cevapsizTalep: { sayi: 1 },
   });
-  kontrol("dört ölçüm → dört uyarı", dolu.length === 4, dolu.length);
+  kontrol("beş ölçüm → beş uyarı", dolu.length === 5, dolu.length);
   kontrol("hepsi FAZ 1'de kırmızı", dolu.every((u) => u.seviye === "kirmizi"));
 
   /** SIFIR OLAN ELENİR — "0 satışın kârı hesaplanamıyor" satırı olmaz. */
@@ -186,12 +188,34 @@ console.log("=".repeat(70));
     maliyetsizStok: { sayi: 3 },
     karHesaplanamayan: { sayi: 7 },
     hakedisGecikti: { sayi: 2, tutar: 400 },
+    cevapsizTalep: { sayi: 0 },
   });
   const kisitli = izneGoreSuz(hepsi, () => false);
   kontrol("kâr izni yoksa yalnız operasyonel uyarı kalıyor", kisitli.length === 1);
   kontrol("  ...kalan maliyetsiz stok", kisitli[0]?.anahtar === "maliyetsizStok");
   kontrol("  ...rozet sayısı da düşüyor (saklanan sayılmaz)", canSayisi(kisitli) === 1);
   kontrol("izin varsa dördü de görünüyor", izneGoreSuz(hepsi, () => true).length === 4);
+
+  /**
+   * CEVAPSIZ TALEP YALNIZ `destek.yonet` OLANDA. Bildiren kişi kendi
+   * talebini zaten biliyor; ona "1 talep var" demek gürültüdür ve çanın
+   * "her uyarı eyleme götürür" sözünü bozar — bildiren o talebi
+   * ilerletemez.
+   */
+  const talepli = uyarilariKur({ ...bos, cevapsizTalep: { sayi: 2 } });
+  kontrol("cevapsız talep uyarısı doğuyor", talepli.length === 1);
+  kontrol(
+    "  ...destek.yonet izni istiyor",
+    UYARI_IZINLERI.cevapsizTalep === "destek.yonet",
+  );
+  kontrol(
+    "  ...yetkisizde HİÇ görünmüyor",
+    izneGoreSuz(talepli, () => false).length === 0,
+  );
+  kontrol(
+    "  ...AÇIK taleplerin listesine gidiyor",
+    UYARI_ADRESLERI.cevapsizTalep === "/talepler?durum=ACIK",
+  );
 
   kontrol(
     "maliyetsiz stok izin İSTEMİYOR (depocu görebilir)",
