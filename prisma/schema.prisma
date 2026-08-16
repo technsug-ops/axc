@@ -39,6 +39,21 @@ enum FeeBasis {
 
 /// Kâr hesaplanabildi mi, hesaplanamadıysa NEDEN.
 /// Sıfır varsaymak yasak — hesaplanamayan kâr ekranda "hesaplanamadı" yazar.
+/// Bir düzeltme nedeninin hangi YÖNDE seçilebileceği.
+///
+/// 16.08.2026 kullanıcı bulgusu: "stoğa ekle" derken listede "Fire",
+/// "Hasar / kırılma", "Kayıp" görünüyordu. Yoktan mal belirmesini "fire"
+/// diye kaydetmek anlamsızdır ve zararsız da değil — rapor o kaydı
+/// "fire kazancı" satırına yazar, ekran kendi kendini yalanlar.
+enum DuzeltmeYonu {
+  /// Yalnız stoktan düşerken seçilebilir (fire, hasar, kayıp).
+  EKSI
+  /// Yalnız stoğa eklerken seçilebilir (kayıp bulundu, fazla gönderim).
+  ARTI
+  /// İki yönde de anlamlı (sayım farkı, diğer).
+  HER_IKISI
+}
+
 enum ProfitStatus {
   CALCULATED
   NO_COST // FIFO partisinde birim maliyet yok
@@ -244,17 +259,17 @@ model ProductVariant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  options        VariantOption[]
-  channelSkus    ChannelSku[]
-  purchaseItems  PurchaseItem[]
-  saleItems      SaleItem[]
-  returnItems    ReturnItem[]    @relation("IadeVaryanti")
-  exchangeItems  ReturnItem[]    @relation("DegisimVaryanti")
-  ayrilanBildirimler ReturnNotice[] @relation("AyrilanVaryant")
+  options            VariantOption[]
+  channelSkus        ChannelSku[]
+  purchaseItems      PurchaseItem[]
+  saleItems          SaleItem[]
+  returnItems        ReturnItem[]    @relation("IadeVaryanti")
+  exchangeItems      ReturnItem[]    @relation("DegisimVaryanti")
+  ayrilanBildirimler ReturnNotice[]  @relation("AyrilanVaryant")
   /// 6. senaryoda YANLIŞ GİDEN (geri dönen) ürün olarak geçtiği bildirimler.
   /// Ayrılan ile aynı şey DEĞİL: ayrılan gönderilecek, dönen geri gelen.
-  donenBildirimler ReturnNotice[] @relation("DonenVaryant")
-  stockMovements StockMovement[]
+  donenBildirimler   ReturnNotice[]  @relation("DonenVaryant")
+  stockMovements     StockMovement[]
 
   @@index([productId])
   @@index([isActive])
@@ -491,6 +506,8 @@ model ChannelAccount {
   /// Boşsa o hesabın satışları için beklenen tarih ÜRETİLMEZ — tahmin
   /// edilmiş bir tarih göstermektense boş bırakılır.
   /**
+   * /**
+   * /**
    * /**
    * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
@@ -919,19 +936,15 @@ model Sale {
    * KARGOYA VERİLDİ — elle işaretlenen operasyonel durum.
    * _Kullanıcı kararı 14.08.2026: "kargoya teslim edilen ürünü manuel
    * girebilirim."_
-   *
    * BOŞ = henüz kargoya verilmedi (bekliyor). DOLU = o gün kargoya verildi.
    * Panel "kargoya verilen / bekleyen" sayısını bu alandan üretir; başka
    * hiçbir yerden türetilemiyordu — kargo firması, desi ve ücret satışta
    * seçiliyor ama "verildi" bilgisi hiç tutulmuyordu.
-   *
    * LEDGER DEĞİL, DURUM: stok defteri gibi dokunulmaz bir kayıt değildir;
    * yanlış işaretlenirse temizlenebilir. Bu yüzden ADJUSTMENT benzeri bir
    * ters kayıt gerekmez — kâr hesabına da girmez.
-   *
    * İŞ TARİHİ (UTC gece yarısı, Europe/Istanbul günü): saat taşımaz, çünkü
    * "hangi gün kargoya verildi" sorusunun cevabı gündür.
-   *
    * TEK PAKET VARSAYIMI: bir satış = bir sevkiyat. Kısmi sevkiyat (bir
    * siparişin iki koliyle gitmesi) gerekirse bu alan kalkar, yerine
    * Shipment tablosu gelir; çağıran taraflar o gün değişir. Bugün ~30
@@ -1174,13 +1187,11 @@ model ReturnNotice {
   /**
    * DÖNEN (YANLIŞ GİDEN) ÜRÜN — yalnız 6. senaryoda dolu.
    * _Kullanıcı onayı 14.08.2026._
-   *
    * `reservedVariantId` ile KARIŞTIRILMAZ, ikisi ayrı şeyi anlatır:
-   *   reserved  → GÖNDERECEĞİMİZ ürün (stok ekranındaki "ayrılmış" rozeti)
-   *   returned  → GERİ GELEN ürün (defter düzeltmesinin öznesi)
+   * reserved  → GÖNDERECEĞİMİZ ürün (stok ekranındaki "ayrılmış" rozeti)
+   * returned  → GERİ GELEN ürün (defter düzeltmesinin öznesi)
    * 6. senaryoda gönderilen A, dönen B'dir; tek alanla anlatılamıyordu ve
    * iade formu dönen ürünü ön-dolu getiremiyordu.
-   *
    * Boş kalması NORMALDİR: diğer gerekçelerde dönen mal satılan malın
    * kendisidir, ayrıca yazmak tekrar olurdu.
    */
@@ -1230,9 +1241,9 @@ model Attachment {
   targetId   String
 
   /// Depodaki yol: ekler/<tip>/<id>/<dosya>
-  blobPath String
-  fileName String
-  mimeType String
+  blobPath  String
+  fileName  String
+  mimeType  String
   /// Sınır uygulama katmanında: dosya başına 5 MB, kayıt başına 10 ek.
   sizeBytes Int
 
@@ -1712,6 +1723,13 @@ model StockAdjustmentReason {
   /// hatasıdır, fire gerçek kayıptır.
   movementType StockMovementType @default(ADJUSTMENT)
 
+  /// Bu neden hangi YÖNDE seçilebilir.
+  ///
+  /// VARSAYILAN `HER_IKISI`: mevcut kayıtlar ve kullanıcının kendi açtığı
+  /// nedenler davranış DEĞİŞTİRMEZ — migration hiçbir satırı kısıtlamaz.
+  /// Daraltma sonradan, seed ile ve bilinçli olarak yapılır.
+  yon DuzeltmeYonu @default(HER_IKISI)
+
   /// Açıklama girmek zorunlu mu? "Diğer" nedeninde açıklamasız kayıt,
   /// üç ay sonra cevapsız bir soruya dönüşür.
   requiresNote Boolean @default(false)
@@ -1824,8 +1842,8 @@ model UserCompanyRole {
   /// alınır — bu kısıt o kuralın veritabanı tarafındaki karşılığıdır.
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict)
 
-  createdAt               DateTime               @default(now())
-  updatedAt               DateTime               @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   /// Bir kullanıcının bir firmada TEK rolü olur.
   @@unique([userId, companyId])
@@ -1860,7 +1878,7 @@ model AuditLog {
   /// Nereden. Vekil sunucu arkasında güvenilmez olabilir; bilgi amaçlı.
   ip String?
 
-  createdAt               DateTime               @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([action])

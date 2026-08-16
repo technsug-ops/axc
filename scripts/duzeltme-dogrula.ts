@@ -493,6 +493,106 @@ console.log("\n4) KOMİSYON BANDI — hakedişten fiilen ödenen oran");
   );
 }
 
+// ===========================================================================
+console.log("\n5) NEDEN YÖNÜ — ANLAMSIZ BİLEŞİM KURULAMAZ");
+// ===========================================================================
+{
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  "STOĞA EKLE" LİSTESİNDE FİRE GÖRÜNÜYORDU (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Kullanıcı sordu: "artıda neden girmek sağlıklı mı?" Cevap EVET —
+   *  yoktan mal belirmesi eksilmesinden DAHA şüphelidir; hayalet envanter
+   *  ve sahte kâr sisteme bu kapıdan girer.
+   *
+   *  Ama liste yönü hiç sormuyordu: "Stoğa ekle" seçiliyken "Fire",
+   *  "Hasar / kırılma", "Kayıp" seçilebiliyordu. Zararsız da değildi —
+   *  rapor o kaydı FİRE KAZANCI satırına yazar ve ekran kendini yalanlar.
+   *
+   *  Süzgeç görünürlük değil GEÇERLİLİK meselesi.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const seed = readFileSync("prisma/seed-stok-duzeltme.ts", "utf8");
+  const form = readFileSync(
+    "src/app/stok/[variantId]/duzeltme-formu.tsx",
+    "utf8",
+  );
+  const varyantSayfasi = readFileSync(
+    "src/app/stok/[variantId]/page.tsx",
+    "utf8",
+  );
+  const sema = readFileSync("prisma/schema.prisma", "utf8");
+
+  const yonu = (ad: string) => {
+    const yer = seed.indexOf(`name: "${ad}"`);
+    if (yer === -1) return null;
+    const m = seed.slice(yer, yer + 260).match(/yon: "(EKSI|ARTI|HER_IKISI)"/);
+    return m ? m[1] : null;
+  };
+
+  kontrol("şemada yön alanı var", sema.includes("yon DuzeltmeYonu"));
+  kontrol(
+    "  ...varsayılanı HER_IKISI (migration hiçbir satırı kısıtlamaz)",
+    sema.includes("yon DuzeltmeYonu @default(HER_IKISI)"),
+  );
+
+  kontrol("Fire yalnız EKSİ yönde", yonu("Fire") === "EKSI", yonu("Fire"));
+  kontrol("Hasar / kırılma yalnız EKSİ", yonu("Hasar / kırılma") === "EKSI");
+  kontrol("Kayıp yalnız EKSİ yönde", yonu("Kayıp") === "EKSI");
+  kontrol("Sayım farkı İKİ yönde geçerli", yonu("Sayım farkı") === "HER_IKISI");
+  kontrol("Diğer İKİ yönde geçerli", yonu("Diğer") === "HER_IKISI");
+
+  /** ARTI yönde seçilecek EN AZ BİR neden olmalı — yoksa form çıkmaza döner. */
+  const artiNedenler = [
+    "Kayıp mal bulundu",
+    "Tedarikçi fazla gönderdi",
+    "Numune / hediye giriş",
+    "Yanlış varyanttan aktarıldı",
+  ];
+  for (const ad of artiNedenler) {
+    kontrol(`"${ad}" ARTI yönde tanımlı`, yonu(ad) === "ARTI", yonu(ad));
+  }
+  const aktarimYeri = seed.indexOf('name: "Yanlış varyanttan aktarıldı"');
+  kontrol(
+    "  ...varyant aktarımı AÇIKLAMA istiyor (karşı kayıt bulunabilsin)",
+    aktarimYeri !== -1 &&
+      seed.slice(aktarimYeri, aktarimYeri + 260).includes("requiresNote: true"),
+  );
+
+  kontrol(
+    "form nedenleri YÖNE göre süzüyor",
+    form.includes("const uygunNedenler"),
+  );
+  kontrol(
+    "  ...HER_IKISI iki yönde de kalıyor",
+    form.includes('n.yon === "HER_IKISI" || n.yon === yon'),
+  );
+  kontrol(
+    "  ...listede SÜZÜLMÜŞ küme çiziliyor (ham liste değil)",
+    form.includes("{uygunNedenler.map(") && !form.includes("{nedenler.map("),
+  );
+  kontrol(
+    "  ...yön değişince uygunsuz seçim düşüyor",
+    form.includes("const gecerliNedenId") &&
+      form.includes("value={gecerliNedenId}"),
+  );
+  kontrol(
+    "  ...forma yön bilgisi GERÇEKTEN geçiyor",
+    varyantSayfasi.includes("yon: n.yon"),
+  );
+
+  /**
+   * SEED VAR OLANI GÜNCELLEMELİ. `update: {}` bırakılsaydı canlıdaki üç
+   * neden HER_IKISI varsayılanında kalır ve süzgeç HİÇBİR ŞEYİ süzmezdi:
+   * kod doğru olur, ekran eski davranışta kalırdı.
+   */
+  kontrol(
+    "seed mevcut nedenlerin YÖNÜNÜ güncelliyor",
+    seed.includes("update: { yon: n.yon }"),
+  );
+}
+
+
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
 else {

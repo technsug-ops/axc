@@ -40,6 +40,8 @@ export type NedenSecenegi = {
   ad: string;
   aciklamaZorunlu: boolean;
   sayimFarkiMi: boolean;
+  /** Hangi yönde seçilebilir: "EKSI" | "ARTI" | "HER_IKISI". */
+  yon: "EKSI" | "ARTI" | "HER_IKISI";
 };
 
 export function DuzeltmeFormu({
@@ -65,7 +67,40 @@ export function DuzeltmeFormu({
   const [yon, setYon] = useState<"EKSI" | "ARTI">("EKSI");
   const [nedenId, setNedenId] = useState("");
 
-  const secilenNeden = nedenler.find((n) => n.id === nedenId);
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  NEDEN LİSTESİ YÖNE GÖRE SÜZÜLÜR (16.08.2026 kullanıcı bulgusu)
+   * --------------------------------------------------------------------
+   *  "Stoğa ekle" seçiliyken listede "Fire", "Hasar / kırılma", "Kayıp"
+   *  görünüyordu. Yoktan mal belirmesini "fire" diye kaydetmek anlamsızdır
+   *  ve zararsız da değil: rapor o kaydı FİRE KAZANCI satırına yazar ve
+   *  ekran kendi kendini yalanlar ("Fire ₺0,00 / Fazla çıkan ₺279,00").
+   *
+   *  Süzgeç GÖRÜNÜRLÜK değil GEÇERLİLİK meselesi — anlamsız bileşim hiç
+   *  kurulamamalı.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const uygunNedenler = nedenler.filter(
+    (n) => n.yon === "HER_IKISI" || n.yon === yon,
+  );
+
+  /**
+   * YÖN DEĞİŞİNCE UYGUNSUZ SEÇİM DÜŞER — ÇİZİM SIRASINDA TÜRETİLEREK.
+   *
+   * Kullanıcı "Fire" seçip sonra "Stoğa ekle"ye basarsa seçim SESSİZCE
+   * kalırdı: ekranda geçerli görünen, kaydedilince anlamsız olan bir kayıt
+   * doğardı.
+   *
+   * Bu önce `useEffect` ile sıfırlanıyordu; ESLint haklı olarak itiraz
+   * etti (`set-state-in-effect`). Efekt bir kare GEÇ çalışır — o kare
+   * boyunca ekranda hâlâ geçersiz seçim durur. Türetme aynı karede doğru
+   * sonucu verir ve fazladan çizim yapmaz.
+   */
+  const gecerliNedenId = uygunNedenler.some((n) => n.id === nedenId)
+    ? nedenId
+    : "";
+
+  const secilenNeden = nedenler.find((n) => n.id === gecerliNedenId);
 
   return (
     <Card>
@@ -112,19 +147,19 @@ export function DuzeltmeFormu({
             {/* ------------------------ NEDEN ------------------------ */}
             <div className="space-y-2">
               <Label htmlFor="sd-neden">{t("nedenEtiketi")} *</Label>
-              <Select value={nedenId} onValueChange={setNedenId}>
+              <Select value={gecerliNedenId} onValueChange={setNedenId}>
                 <SelectTrigger id="sd-neden" className="w-full">
                   <SelectValue placeholder={t("nedenSecin")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {nedenler.map((n) => (
+                  {uygunNedenler.map((n) => (
                     <SelectItem key={n.id} value={n.id}>
                       {n.ad}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <input type="hidden" name="nedenId" value={nedenId} />
+              <input type="hidden" name="nedenId" value={gecerliNedenId} />
               {secilenNeden?.sayimFarkiMi ? (
                 <p className="text-muted-foreground text-xs">
                   {t("sayimFarkiNotu")}

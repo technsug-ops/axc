@@ -184,6 +184,7 @@ export default async function VaryantHareketleriSayfasi({
           ad: n.name,
           aciklamaZorunlu: n.requiresNote,
           sayimFarkiMi: n.movementType === "COUNT_CORRECTION",
+          yon: n.yon,
         }))}
       />
 
