@@ -1924,7 +1924,13 @@
     "adZatenVar": "“{ad}” adında bir neden zaten var.",
     "tipGecersiz": "Hareket tipi seçilmedi.",
     "kayitBulunamadi": "Kayıt bulunamadı.",
-    "kaydedilemedi": "Kaydedilemedi. Tekrar deneyin; sorun sürerse bildirin."
+    "kaydedilemedi": "Kaydedilemedi. Tekrar deneyin; sorun sürerse bildirin.",
+    "yonEtiketi": "Hangi yönde seçilebilir",
+    "yonEksi": "Yalnız stoktan düşerken",
+    "yonArti": "Yalnız stoğa eklerken",
+    "yonHerIkisi": "Her iki yönde",
+    "yonNotu": "Fire ve hasar yalnız düşerken, bulunan mal yalnız eklerken anlamlıdır. Emin değilseniz “her iki yönde” bırakın.",
+    "yonGecersiz": "Yön seçimi geçersiz"
   },
   "Kullanici": {
     "baslik": "Kullanıcılar",

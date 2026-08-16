@@ -40,10 +40,23 @@ export function NedenFormu() {
     "ADJUSTMENT",
   );
   const [aciklamaZorunlu, setAciklamaZorunlu] = useState(false);
+  /**
+   * YÖN — 16.08.2026'da eklendi.
+   *
+   * Alan şemaya girdiğinde bu ekran unutulmuştu: kullanıcının açtığı her
+   * neden sonsuza dek `HER_IKISI` kalıyordu ve "stoğa ekle" listesinde
+   * anlamsız seçenekler yeniden birikiyordu. Yani kapatılan kapı
+   * ayarlardan tekrar açılıyordu.
+   *
+   * VARSAYILAN HER_IKISI: kullanıcı düşünmeden geçerse davranış eskisi
+   * gibi olur — süzgeç kısıtlamaz. Daraltma bilinçli bir seçimdir.
+   */
+  const [yon, setYon] = useState<"EKSI" | "ARTI" | "HER_IKISI">("HER_IKISI");
 
   return (
     <form onSubmit={formGonderimi(formAction)} className="space-y-4">
       <input type="hidden" name="movementType" value={tip} />
+      <input type="hidden" name="yon" value={yon} />
       {aciklamaZorunlu ? (
         <input type="hidden" name="requiresNote" value="on" />
       ) : null}
@@ -82,6 +95,24 @@ export function NedenFormu() {
             {tip === "ADJUSTMENT" ? t("tipFireNotu") : t("tipSayimNotu")}
           </p>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="neden-yon">{t("yonEtiketi")} *</Label>
+        <Select
+          value={yon}
+          onValueChange={(d) => setYon(d as "EKSI" | "ARTI" | "HER_IKISI")}
+        >
+          <SelectTrigger id="neden-yon" className="h-11 w-full md:h-10 sm:max-w-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="EKSI">{t("yonEksi")}</SelectItem>
+            <SelectItem value="ARTI">{t("yonArti")}</SelectItem>
+            <SelectItem value="HER_IKISI">{t("yonHerIkisi")}</SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-muted-foreground text-xs">{t("yonNotu")}</p>
       </div>
 
       <label className="flex items-center gap-2 text-sm">

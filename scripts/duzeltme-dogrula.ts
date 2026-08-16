@@ -590,6 +590,81 @@ console.log("\n5) NEDEN YÖNÜ — ANLAMSIZ BİLEŞİM KURULAMAZ");
     "seed mevcut nedenlerin YÖNÜNÜ güncelliyor",
     seed.includes("update: { yon: n.yon }"),
   );
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  YÖNÜ YÖNETECEK EKRAN VAR MI (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Alan şemaya eklendiğinde ayarlar ekranı UNUTULMUŞTU: kullanıcının
+   *  açtığı her neden sonsuza dek HER_IKISI kalıyordu ve "stoğa ekle"
+   *  listesinde anlamsız seçenekler yeniden birikiyordu. Yani az önce
+   *  kapatılan kapı ayarlardan tekrar açılıyordu.
+   *
+   *  Canlıda örneği vardı: kullanıcının eklediği "Nakliye hasarı" nedeni.
+   *  Anlamı eksi yön, ama kimse öyle işaretleyemiyordu.
+   *
+   *  "Kullanıcıya 'şunu tanımla' diyorsam, onu tanımlayacak EKRAN var mı?"
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const nedenFormu = readFileSync(
+    "src/app/ayarlar/duzeltme-nedenleri/neden-formu.tsx",
+    "utf8",
+  );
+  const nedenSatiri = readFileSync(
+    "src/app/ayarlar/duzeltme-nedenleri/neden-satiri.tsx",
+    "utf8",
+  );
+  const nedenEylem = readFileSync(
+    "src/app/ayarlar/duzeltme-nedenleri/actions.ts",
+    "utf8",
+  );
+  const nedenSayfasi = readFileSync(
+    "src/app/ayarlar/duzeltme-nedenleri/page.tsx",
+    "utf8",
+  );
+  const trSozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    DuzeltmeNedeni?: Record<string, string>;
+  };
+
+  kontrol(
+    "YENİ neden formunda yön seçimi var",
+    nedenFormu.includes('name="yon"'),
+  );
+  kontrol(
+    "  ...varsayılanı HER_IKISI, düşünmeden geçen kısıtlanmıyor",
+    nedenFormu.includes('useState<"EKSI" | "ARTI" | "HER_IKISI">("HER_IKISI")'),
+  );
+  kontrol(
+    "MEVCUT neden satırında yön düzenlenebiliyor",
+    nedenSatiri.includes('name="yon"'),
+  );
+  /**
+   * YÖN TİP GİBİ KİLİTLENMEZ. Tip geçmiş raporu oynatır — dünkü fire bugün
+   * sayım farkı olurdu. Yön yalnız seçim listesini süzer; yazılmış
+   * kayıtların anlamına dokunmaz, o yüzden sonradan düzeltilebilmeli.
+   */
+  kontrol(
+    "  ...yön hareket görmüş nedende de değiştirilebiliyor",
+    !nedenSatiri.includes("yonKilitli"),
+  );
+  kontrol(
+    "sunucu yönü DOĞRULUYOR (istek elle kurulabilir)",
+    nedenEylem.includes('z.enum(["EKSI", "ARTI", "HER_IKISI"]'),
+  );
+  kontrol(
+    "  ...ekleme ve güncelleme yollarının İKİSİNDE de yazılıyor",
+    (nedenEylem.match(/yon: cozum\.data\.yon/g) ?? []).length === 2,
+  );
+  kontrol(
+    "sayfa yönü satıra GERÇEKTEN geçiriyor",
+    nedenSayfasi.includes("yon: n.yon"),
+  );
+  kontrol(
+    "yön metinleri sözlükte DOLU",
+    ["yonEtiketi", "yonEksi", "yonArti", "yonHerIkisi", "yonNotu"].every(
+      (k) => (trSozluk.DuzeltmeNedeni?.[k] ?? "").length > 0,
+    ),
+  );
 }
 
 

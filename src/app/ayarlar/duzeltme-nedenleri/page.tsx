@@ -40,6 +40,7 @@ export default async function DuzeltmeNedenleriSayfasi() {
     name: n.name,
     movementType:
       n.movementType === "COUNT_CORRECTION" ? "COUNT_CORRECTION" : "ADJUSTMENT",
+    yon: n.yon,
     requiresNote: n.requiresNote,
     isActive: n.isActive,
     hareketSayisi: n._count.movements,

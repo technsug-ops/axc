@@ -40,6 +40,15 @@ function semaKur(t: Ceviri) {
     movementType: z.enum(["ADJUSTMENT", "COUNT_CORRECTION"], {
       message: t("tipGecersiz"),
     }),
+    /**
+     * YÖN — hangi yönde seçilebileceği.
+     *
+     * TİPTEN FARKLI OLARAK SONRADAN DEĞİŞTİRİLEBİLİR: tip raporu ikiye
+     * böldüğü için hareket görmüş nedende kilitlenir, ama yön yalnız
+     * SEÇİM listesini süzer. Geçmiş kayıtların anlamını değiştirmez —
+     * kullanıcı "Nakliye hasarı"nı sonradan EKSİ'ye çekebilmeli.
+     */
+    yon: z.enum(["EKSI", "ARTI", "HER_IKISI"], { message: t("yonGecersiz") }),
   });
 }
 
@@ -73,6 +82,7 @@ export async function nedenEkle(
   const cozum = semaKur(t).safeParse({
     name: formData.get("name"),
     movementType: formData.get("movementType"),
+    yon: formData.get("yon"),
   });
   if (!cozum.success) {
     return { hatalar: cozum.error.issues.map((i) => i.message) };
@@ -92,6 +102,7 @@ export async function nedenEkle(
       data: {
         name: cozum.data.name,
         movementType: cozum.data.movementType,
+        yon: cozum.data.yon,
         requiresNote: formData.get("requiresNote") === "on",
         sortOrder: (enBuyuk._max.sortOrder ?? 0) + 10,
       },
@@ -131,6 +142,7 @@ export async function nedenGuncelle(
       mevcut._count.movements > 0
         ? mevcut.movementType
         : formData.get("movementType"),
+    yon: formData.get("yon"),
   });
   if (!cozum.success) {
     return { hatalar: cozum.error.issues.map((i) => i.message) };
@@ -145,6 +157,7 @@ export async function nedenGuncelle(
       data: {
         name: cozum.data.name,
         movementType: cozum.data.movementType,
+        yon: cozum.data.yon,
         requiresNote: formData.get("requiresNote") === "on",
       },
     });

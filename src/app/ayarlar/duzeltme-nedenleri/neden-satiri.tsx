@@ -29,6 +29,8 @@ export type NedenSatiriVerisi = {
   id: string;
   name: string;
   movementType: "ADJUSTMENT" | "COUNT_CORRECTION";
+  /** Hangi yönde seçilebilir — "stoğa ekle"de fire çıkmasın diye. */
+  yon: "EKSI" | "ARTI" | "HER_IKISI";
   requiresNote: boolean;
   isActive: boolean;
   /** Bu nedene bağlı stok hareketi sayısı — tip kilidini belirler. */
@@ -55,6 +57,12 @@ export function NedenSatiri({ neden }: { neden: NedenSatiriVerisi }) {
 
   const [ad, setAd] = useState(neden.name);
   const [tip, setTip] = useState(neden.movementType);
+  /**
+   * YÖN TİPTEN FARKLI: hareket görmüş nedende de DEĞİŞTİRİLEBİLİR.
+   * Tip geçmiş raporu oynatır (dünkü fire bugün sayım farkı olurdu); yön
+   * yalnız SEÇİM listesini süzer, yazılmış kayıtların anlamına dokunmaz.
+   */
+  const [yon, setYon] = useState(neden.yon);
   const [aciklamaZorunlu, setAciklamaZorunlu] = useState(neden.requiresNote);
 
   const tipKilitli = neden.hareketSayisi > 0;
@@ -113,6 +121,7 @@ export function NedenSatiri({ neden }: { neden: NedenSatiriVerisi }) {
     <form onSubmit={formGonderimi(formAction)} className="space-y-3 p-4">
       <input type="hidden" name="id" value={neden.id} />
       <input type="hidden" name="movementType" value={tip} />
+      <input type="hidden" name="yon" value={yon} />
       {aciklamaZorunlu ? (
         <input type="hidden" name="requiresNote" value="on" />
       ) : null}
@@ -154,6 +163,24 @@ export function NedenSatiri({ neden }: { neden: NedenSatiriVerisi }) {
               {t("tipKilitli", { sayi: neden.hareketSayisi })}
             </p>
           ) : null}
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor={`yon-${neden.id}`}>{t("yonEtiketi")}</Label>
+          <Select
+            value={yon}
+            onValueChange={(d) => setYon(d as typeof yon)}
+          >
+            <SelectTrigger id={`yon-${neden.id}`} className="h-11 w-full md:h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="EKSI">{t("yonEksi")}</SelectItem>
+              <SelectItem value="ARTI">{t("yonArti")}</SelectItem>
+              <SelectItem value="HER_IKISI">{t("yonHerIkisi")}</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-muted-foreground text-xs">{t("yonNotu")}</p>
         </div>
       </div>
 

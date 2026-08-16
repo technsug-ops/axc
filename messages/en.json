@@ -1924,7 +1924,13 @@
     "adZatenVar": "",
     "tipGecersiz": "",
     "kayitBulunamadi": "",
-    "kaydedilemedi": ""
+    "kaydedilemedi": "",
+    "yonEtiketi": "",
+    "yonEksi": "",
+    "yonArti": "",
+    "yonHerIkisi": "",
+    "yonNotu": "",
+    "yonGecersiz": ""
   },
   "Kullanici": {
     "baslik": "",
