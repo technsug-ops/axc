@@ -566,7 +566,23 @@ export default async function KartBorcuSayfasi({
                                       </div>
                                     </>
                                   ) : null}
+                                  {/**
+                                   * KAYIT DEĞİŞİNCE FORM SIFIRLANIR — 16.08.2026 canlı bulgusu.
+                                   *
+                                   * Ödeme kaydedilince sunucu verisi tazeleniyor ve "Kalan"
+                                   * ₺0,00'a düşüyordu, ama formun içindeki tutar EN SON
+                                   * yazılan değerde kalıyordu: ekranda "Kalan ₺0,00" ile
+                                   * dolu bir "283,33" alanı yan yana duruyordu. Sebep
+                                   * useState: ilk değer yalnız bileşen KURULURKEN okunur,
+                                   * prop sonradan değişince yeniden çalışmaz.
+                                   *
+                                   * key ödeme kümesini taşır; küme değişince React bileşeni
+                                   * yeniden kurar ve ön-dolu değer taze kalandan hesaplanır.
+                                   * Alternatif (useEffect ile eşitleme) kullanıcı yazarken
+                                   * de tetiklenip elle girilen tutarı ezerdi.
+                                   */}
                                   <OdemeFormu
+                                    key={`${anahtar}-${donemOdemeleri.length}-${netOdenen}`}
                                     cardId={kart.id}
                                     donem={anahtar}
                                     donemEtiketi={bicim.tarih(ekstre.kesimTarihi)}

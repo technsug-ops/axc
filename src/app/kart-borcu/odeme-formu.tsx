@@ -209,12 +209,17 @@ export function OdemeFormu({
           <p className="text-muted-foreground text-xs">
             {/* Ne önerildiği ve NEDEN önerildiği yazılı: kısmen ödenmiş bir
                 ekstrede öneri kalan borçtur, ekstrenin tamamı değil. */}
-            {mevcutKayitlar.length > 0
-              ? t("onDoluKalanNotu", {
-                  kalan: para(kalanBorc),
-                  borc: para(ekstreBorcu),
-                })
-              : t("onDoluNotu", { tutar: para(ekstreBorcu) })}
+            {/* Üç hâl AYRI cümledir. Kapalı ekstrede "bir kısmı zaten
+                ödenmiş" demek yanlıştı: tamamı ödenmişti ve cümle hâlâ
+                tutar girmeye davet ediyordu (16.08.2026 canlı bulgusu). */}
+            {mevcutKayitlar.length === 0
+              ? t("onDoluNotu", { tutar: para(ekstreBorcu) })
+              : kalanBorc === 0
+                ? t("onDoluKapaliNotu", { borc: para(ekstreBorcu) })
+                : t("onDoluKalanNotu", {
+                    kalan: para(kalanBorc),
+                    borc: para(ekstreBorcu),
+                  })}
           </p>
         </div>
         <div className="space-y-1">

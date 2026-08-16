@@ -2305,6 +2305,7 @@
     "zatenKapaliNot": "Daha önce {onceki} ödenmiş ve borç bitmiş. Yine de eklemek istiyorsanız aşağıdaki kutuyu işaretleyin.",
     "zatenKapaliOnay": "Biliyorum, yine de ekle",
     "onDoluKalanNotu": "Kalan borç {kalan} — ekstrenin tamamı {borc}, bir kısmı zaten ödenmiş. Banka farklı kestiyse düzeltin.",
+    "onDoluKapaliNotu": "Bu ekstre kapalı — tamamı ({borc}) ödenmiş. Yeni bir ödeme gerekmiyor; banka ek tutar kestiyse yazabilirsiniz.",
     "asiyorBaslik": "Girilen tutar kalan borcu AŞIYOR — kalan yalnızca {kalan}.",
     "asiyorNot": "Bu ekstreye daha önce {onceki} ödenmiş. Fazla ödeme kaydedilebilir ama mükerrer giriş olabilir; devam etmek için aşağıdaki kutuyu işaretleyin.",
     "oncekiOdenen": "Daha önce ödenen",

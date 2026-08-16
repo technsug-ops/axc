@@ -222,6 +222,10 @@ console.log("=".repeat(70));
    * (anayasa notu 16.08.2026).
    */
   const form = readFileSync("src/app/kart-borcu/odeme-formu.tsx", "utf8");
+  const sayfa = readFileSync("src/app/kart-borcu/page.tsx", "utf8");
+  const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    KartOdeme?: Record<string, string>;
+  };
 
   /**
    * ════════════════════════════════════════════════════════════════════
@@ -273,6 +277,53 @@ console.log("=".repeat(70));
    *  alanına yazılınca kullanıcı sistemin bozuk olduğunu düşünür.
    * ════════════════════════════════════════════════════════════════════
    */
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  KAYIT SONRASI FORM BAYAT KALMAZ (16.08.2026 canlı bulgusu)
+   * --------------------------------------------------------------------
+   *  Ödeme kaydedilince "Kalan ₺0,00"a düştü ama form içindeki tutar
+   *  "283,33" olarak kaldı ve not satırı hâlâ "bir kısmı zaten ödenmiş"
+   *  diyordu. useState ilk değeri yalnız kurulum anında okur.
+   *
+   *  İki kontrol: (1) sayfa formu ödeme kümesini taşıyan bir key ile
+   *  kuruyor, (2) kapalı ekstrenin AYRI cümlesi var.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "kayıt değişince form yeniden kuruluyor (key ödeme kümesini taşıyor)",
+    /**
+     * BURADA REGEX KULLANILMAZ. İlk hâli `<OdemeFormu\s+key=\{[^}]*...\}`
+     * idi ve DOĞRU kodda kırmızı yandı: key'in değeri `${anahtar}` gibi
+     * süslü parantez taşıyor, desen daha ilk değişkende kırılıyor. Kaçış
+     * karakterleri de araç zincirinde eriyip deseni sessizce anlamsız
+     * bırakabiliyor (bkz. "yalancı yeşil", 15.08.2026). Düz metin araması
+     * hem okunur hem kırılmaz.
+     */
+    (() => {
+      const yer = sayfa.indexOf("<OdemeFormu");
+      if (yer === -1) return false;
+      const bas = sayfa.slice(yer, yer + 200);
+      return (
+        bas.includes("key=") &&
+        bas.includes("donemOdemeleri.length") &&
+        bas.includes("netOdenen")
+      );
+    })(),
+  );
+  kontrol(
+    "kapalı ekstrenin ayrı not cümlesi var (kısmi ödeme cümlesi kullanılmıyor)",
+    form.includes("kalanBorc === 0") && form.includes("onDoluKapaliNotu"),
+  );
+  kontrol(
+    "  ...kapalı cümlesi sözlükte dolu",
+    typeof tr.KartOdeme?.onDoluKapaliNotu === "string" &&
+      tr.KartOdeme.onDoluKapaliNotu.length > 0,
+  );
+  kontrol(
+    "  ...kapalı cümlesi 'bir kısmı ödenmiş' demiyor",
+    !String(tr.KartOdeme?.onDoluKapaliNotu ?? "").includes("bir kısmı"),
+  );
+
   kontrol(
     "583,33 − 300 kuruşa yuvarlanıyor (283.33000000000004 değil)",
     kurusaYuvarla(583.33 - 300) === 283.33,
