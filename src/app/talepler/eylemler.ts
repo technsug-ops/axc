@@ -81,6 +81,10 @@ export async function talepOlustur(
           rota: bagalamiKirp(String(formData.get("rota") ?? "")),
           tarayici: bagalamiKirp(String(formData.get("tarayici") ?? "")),
           bildirenId: baglam.kullaniciId,
+          // TALEBİ AÇAN FİRMA — oturumdaki bağlamdan, formdan DEĞİL.
+          // Formdan alınsaydı istek elle kurulup başka firma adına talep
+          // açılabilirdi.
+          companyId: baglam.companyId,
         },
         select: { kod: true },
       });

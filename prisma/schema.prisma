@@ -511,6 +511,7 @@ model ChannelAccount {
    * /**
    * /**
    * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -1791,6 +1792,7 @@ model Company {
 
   uyelikler UserCompanyRole[]
   auditLogs AuditLog[]
+  talepler  Talep[]
 
   @@index([isActive])
 }
@@ -1950,6 +1952,18 @@ model Talep {
   /// Tarayıcı/cihaz kimliği — "yalnız telefonda oluyor" ayrımı için.
   tarayici String? @db.VarChar(500)
 
+  /// ── TALEBİ AÇAN FİRMA ──────────────────────────────────────────────────
+  /// Destek veren taraf GELİŞTİRİCİDİR (`destek.yonet`); açan taraf müşteri
+  /// firmadır. Bugün tek firma var ama bu alan olmadan ikinci firma geldiği
+  /// gün talepler birbirine karışır ve AXCALI başka firmanın talebini
+  /// OKUR — sonradan düzeltilmesi zor bir sızıntı.
+  ///
+  /// Anayasa: "yeni yazılan hiçbir özellik tek firma varsayımını
+  /// DERİNLEŞTİRMEMELİ." Çok-kiracılılığı bugün kurmuyoruz; yalnız onu
+  /// ileride zorlaştıracak kısayoldan kaçınıyoruz.
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
   /// Bildiren kullanıcı. SİLİNMEZ: kullanıcı pasife alınsa da talep kalır.
   bildirenId String
   bildiren   User   @relation("TalepBildiren", fields: [bildirenId], references: [id], onDelete: Restrict)
@@ -1963,6 +1977,7 @@ model Talep {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([companyId])
   @@index([durum])
   @@index([tur])
   @@index([bildirenId])

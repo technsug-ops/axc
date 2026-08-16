@@ -25,6 +25,8 @@ import {
   sonrakiSira,
   talebiDogrula,
   talepKodu,
+  talepSuzgeci,
+  firmaSutunuGorunsunMu,
 } from "../src/lib/talep/turler";
 
 let gecen = 0;
@@ -184,6 +186,48 @@ console.log("=".repeat(70));
 
 console.log("");
 console.log("=".repeat(70));
+console.log("3b) KİM HANGİ TALEBİ GÖRÜR — FİRMA İZOLASYONU");
+console.log("=".repeat(70));
+{
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  KURGU DÜZELTMESİ (mimar, 16.08.2026)
+   * --------------------------------------------------------------------
+   *  İlk teslim yanlış kurulmuştu: sanki talebi açan da çözen de aynı
+   *  firmadaymış gibi, herkes herkesin talebini görüyordu.
+   *
+   *  DOĞRU KURGU:
+   *    TALEP AÇAN  → müşteri firma (AXCALI, ileride başkaları)
+   *    TALEP ÇÖZEN → geliştirici (`destek.yonet`)
+   *
+   *  ⚠ BU KURAL BUGÜN GÖRÜNMEZ. Tek firma varken iki dal da aynı sonucu
+   *  verir; fark ancak ikinci firma geldiğinde ortaya çıkar — ve o gün
+   *  eksikse AXCALI başka firmanın talebini okumuş olur. Sonradan eklenen
+   *  izolasyon, sızıntı yaşandıktan SONRA eklenen izolasyondur.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "müşteri YALNIZ kendi firmasının taleplerini görür",
+    talepSuzgeci({ companyId: "AXC", destekVerir: false }).companyId === "AXC",
+  );
+  kontrol(
+    "  ...başka firmanın kimliğiyle süzülmüyor",
+    talepSuzgeci({ companyId: "BSK", destekVerir: false }).companyId !== "AXC",
+  );
+  kontrol(
+    "geliştirici BÜTÜN firmaları görür (süzgeç yok)",
+    talepSuzgeci({ companyId: "AXC", destekVerir: true }).companyId === undefined,
+  );
+  kontrol(
+    "  ...süzgeç nesnesi boş (yanlışlıkla daraltmıyor)",
+    Object.keys(talepSuzgeci({ companyId: "AXC", destekVerir: true })).length === 0,
+  );
+  kontrol("firma sütunu yalnız destek verende", firmaSutunuGorunsunMu(true));
+  kontrol("  ...müşteride gizli (kendi adını görmek gürültü)", !firmaSutunuGorunsunMu(false));
+}
+
+console.log("");
+console.log("=".repeat(70));
 console.log("4) EKRAN BAĞI VE YETKİ");
 console.log("=".repeat(70));
 {
@@ -317,6 +361,21 @@ console.log("=".repeat(70));
   kontrol(
     "çan yalnız ACIK talepleri sayıyor",
     toplayici.includes('prisma.talep.count({ where: { durum: "ACIK" } })'),
+  );
+
+  /** FİRMA SÜZGECİ SORGUYA GERÇEKTEN BAĞLANMIŞ MI — hesaplamak yetmez. */
+  kontrol(
+    "liste firma süzgecini sorguya uyguluyor",
+    sayfa.includes("talepSuzgeci(") && sayfa.includes("...firmaSuzgeci,"),
+  );
+  kontrol(
+    "  ...firma OTURUMDAN geliyor, formdan değil",
+    sayfa.includes("companyId: baglam.companyId") &&
+      eylem.includes("companyId: baglam.companyId"),
+  );
+  kontrol(
+    "  ...talep açılırken firma yazılıyor",
+    eylem.includes("companyId: baglam.companyId"),
   );
 
   /** Süzgeç ADRESTE yaşar — geri tuşu çalışsın, link paylaşılabilsin. */

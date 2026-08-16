@@ -2405,6 +2405,7 @@
     "cozumNotuIpucu": "İsteğe bağlı: ne yapıldığını yazın, bildiren kişi okuyacak.",
     "kaydedildi": "{kod} numarasıyla kaydedildi. Ekran görüntüsü eklemek isterseniz talep listesinden ekleyebilirsiniz.",
     "taleplereGit": "Taleplere git",
-    "baglamOzet": "Sayfa ve tarayıcı bilgisi otomatik ekleniyor — görmek için tıklayın"
+    "baglamOzet": "Sayfa ve tarayıcı bilgisi otomatik ekleniyor — görmek için tıklayın",
+    "listeNotuDestek": "Bütün firmalardan gelen hata ve istekler. Durumu buradan ilerletebilirsiniz."
   }
 }

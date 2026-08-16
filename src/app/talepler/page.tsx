@@ -13,6 +13,8 @@ import {
   TALEP_DURUMLARI,
   TALEP_TURLERI,
   acikMi,
+  firmaSutunuGorunsunMu,
+  talepSuzgeci,
   type TalepDurumu,
   type TalepTuru,
 } from "@/lib/talep/turler";
@@ -47,14 +49,28 @@ export default async function TaleplerSayfasi({
 }: {
   searchParams: Promise<{ durum?: string; tur?: string }>;
 }) {
-  await sayfaGirisi();
+  const baglam = await sayfaGirisi();
 
   const { durum, tur } = await searchParams;
   const t = await getTranslations("Talep");
   const tEkler = await getTranslations("Ekler");
   const bicim = await bicimlendirici();
 
+  /**
+   * DESTEK VEREN Mİ, TALEP AÇAN MI (mimar düzeltmesi 16.08.2026).
+   *
+   * Destek veren taraf GELİŞTİRİCİDİR ve bütün firmaların taleplerini
+   * görür; müşteri firma yalnız kendi taleplerini. Bugün tek firma olduğu
+   * için iki dal aynı sonucu veriyor — fark ikinci firma geldiğinde
+   * ortaya çıkar ve o gün eksik olsaydı bir firma diğerinin talebini
+   * OKUMUŞ olurdu.
+   */
   const yonetebilir = await izinVarMi("destek.yonet");
+  const firmaSuzgeci = talepSuzgeci({
+    companyId: baglam.companyId,
+    destekVerir: yonetebilir,
+  });
+  const firmaGoster = firmaSutunuGorunsunMu(yonetebilir);
 
   /** Bilinmeyen süzgeç değeri SESSİZCE yok sayılır, boş liste getirmez. */
   const durumSuzgeci = (TALEP_DURUMLARI as readonly string[]).includes(
@@ -68,6 +84,8 @@ export default async function TaleplerSayfasi({
 
   const talepler = await prisma.talep.findMany({
     where: {
+      // FİRMA SÜZGECİ İLK SIRADA — diğerleri onun içinde daraltır.
+      ...firmaSuzgeci,
       ...(durumSuzgeci ? { durum: durumSuzgeci } : {}),
       ...(turSuzgeci ? { tur: turSuzgeci } : {}),
     },
@@ -85,6 +103,7 @@ export default async function TaleplerSayfasi({
       createdAt: true,
       kapatilmaZamani: true,
       bildiren: { select: { email: true, name: true } },
+      company: { select: { name: true, code: true } },
     },
   });
 
@@ -134,7 +153,9 @@ export default async function TaleplerSayfasi({
     <div className="space-y-4 p-4 md:p-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">{t("listeBaslik")}</h1>
-        <p className="text-muted-foreground text-sm">{t("listeNotu")}</p>
+        <p className="text-muted-foreground text-sm">
+          {firmaGoster ? t("listeNotuDestek") : t("listeNotu")}
+        </p>
       </div>
 
       {/* ---------------------------- SÜZGEÇLER --------------------------- */}
@@ -203,6 +224,14 @@ export default async function TaleplerSayfasi({
                   <DurumRozeti durum="notr" isaretsiz>
                     {t(`tur${x.tur}`)}
                   </DurumRozeti>
+                  {/* FİRMA yalnız destek verene gösterilir: müşteri zaten
+                      tek bir firmanın içinde, ona kendi adını yazmak
+                      gürültü olurdu. */}
+                  {firmaGoster ? (
+                    <DurumRozeti durum="bilgi" isaretsiz>
+                      {x.company.name}
+                    </DurumRozeti>
+                  ) : null}
                   <span className="text-muted-foreground text-xs">
                     {bicim.tarih(x.createdAt)} ·{" "}
                     {x.bildiren.name ?? x.bildiren.email}

@@ -160,3 +160,38 @@ export function bagalamiKirp(deger: string | null | undefined): string | null {
   if (temiz === "") return null;
   return temiz.slice(0, 500);
 }
+
+/**
+ * ============================================================================
+ *  KİM HANGİ TALEBİ GÖRÜR — SAF KURAL
+ * ----------------------------------------------------------------------------
+ *  Kurgu (mimar düzeltmesi 16.08.2026):
+ *    TALEP AÇAN  → müşteri firma (AXCALI, ileride başkaları)
+ *    TALEP ÇÖZEN → geliştirici (`destek.yonet`)
+ *
+ *  Geliştirici BÜTÜN firmaların taleplerini görür — işi o. Müşteri firma
+ *  YALNIZ KENDİ taleplerini görür.
+ *
+ *  ⚠ BU KURAL BUGÜN GÖRÜNMEZ. Tek firma varken iki dal da aynı sonucu
+ *  verir; fark ancak ikinci firma geldiğinde ortaya çıkar — ve o gün
+ *  eksikse AXCALI başka firmanın talebini okumuş olur. Bu yüzden kural
+ *  ŞİMDİ yazılıyor ve ŞİMDİ sınanıyor: sonradan eklenen izolasyon,
+ *  sızıntı yaşandıktan sonra eklenen izolasyondur.
+ * ============================================================================
+ */
+export function talepSuzgeci(girdi: {
+  /** Bakan kişinin firması. */
+  companyId: string;
+  /** `destek.yonet` izni var mı — yani destek veren taraf mı. */
+  destekVerir: boolean;
+}): { companyId?: string } {
+  // Geliştirici: firma süzgeci YOK, hepsini görür.
+  if (girdi.destekVerir) return {};
+  // Müşteri: yalnız kendi firması.
+  return { companyId: girdi.companyId };
+}
+
+/** Firma sütunu ekranda gösterilsin mi — tek firma görene gereksiz. */
+export function firmaSutunuGorunsunMu(destekVerir: boolean): boolean {
+  return destekVerir;
+}
