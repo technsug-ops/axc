@@ -18,7 +18,7 @@ yeni yetenek ekleniyor. Bu ayrım kayıtta dursun — "yarım kalan iş" ile
 
 Mimar onaylı sıra, **paket ADIYLA**:
 **~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ · ~~AŞAMA 3 PAKET 1~~ ✓ →
-~~PANEL AŞAMA 3 PAKET 2~~ ✓ → KART ÖDEME TAKİBİ → RAPOR FİRE/KAZANÇ
+~~PANEL AŞAMA 3 PAKET 2~~ ✓ → ~~KART ÖDEME TAKİBİ~~ ✓ → RAPOR FİRE/KAZANÇ
 ETİKETİ → UYARI MERKEZİ FAZ 1 →
 DESTEK MODÜLÜ → GEÇMİŞ VERİ (kart ödemeyle TEK TABLO, `source` alanıyla) →
 MELONTİK CASE.**
@@ -37,6 +37,46 @@ ile çan aynı hesabı çağırır, kopya yasak._
 
 _Renk sistemi tüm uygulamaya uygulandı (`6a11ba3`) ve ham Tailwind renk
 sınıfı `panel:dogrula` ile yasaklandı — 288 kaynak dosyası taranıyor._
+
+### ✅ KART ÖDEME TAKİBİ — KAPANDI 16.08.2026
+
+Halil testi geçti; canlı denetim temiz (gecikmiş ₺0,00, kesilmemişe
+ödenmiş ₺0,00, 58 kayıt / 37 asıl / 21 ters). **Kart tarafında kalan
+varsayım sıfır:** "geçmiş ekstreler ödenmiş sayılır" KODDAN kalktı, bir
+ekstrenin kapanıp kapanmadığı `KartOdeme` kaydından okunuyor.
+
+**Canlıda çıkan ve kapatılan kusurlar — hepsi aynı iki aileden:**
+
+_A · Kayan nokta sunuma sızdı (üç kez)._ Para karşılaştırmaları artık
+`src/lib/para.ts` üzerinden kuruş çözünürlüğünde. **Ders: bir tutarın
+SUNUMU yuvarlanıp KARARI ham sayıyla verilirse ekran kendiyle çelişir —
+yuvarlama o tutarın girdiği BÜTÜN karar noktalarında geçerli olmalı.**
+1. Ön-dolu alanda `283.33000000000004`.
+2. "Girilen tutar kalan borcu AŞIYOR — kalan yalnızca ₺7.137,87" (ham
+   değer `7137.869999999999`; `toFixed(10)` bile gizliyordu).
+3. Dört ödemesi de iptal edilmiş ekstre "kısmen ödendi" görünüyordu
+   (net `5.68e-14`).
+
+_B · Kural doğruydu, EKRAN söylemiyordu._ (Anayasa notu: "kural teslim
+edilebilir mi".)
+- Kayıttan sonra form bayat kalıyordu (`useState` ilk değeri donmuş).
+- Sayfa izni (`kart.gor`) ödeme iznini (`satis.kar.gor`) kapsamıyordu:
+  kullanıcı yapamayacağı bir işe DAVET ediliyordu (K19).
+- Ters ALINMIŞ ödeme satırı canlı bir ödeme gibi duruyordu → kullanıcı
+  "sistem sıfırlamamış" dedi; sistem sıfırlamıştı, ekran söylemiyordu.
+- Ödenmemiş ekstreyi bulmak için on sekmeyi tek tek açmak gerekiyordu.
+- Solukluk "geçmiş"e bağlıydı; dikkat isteyen kayıt tam da silikleşendi.
+- Kesilmemiş ekstreye ödeme uyarısız geçiyordu → **₺163.782,83 yanlış
+  işaretlendi.** Artık kırmızı uyarı + onay kapısı (engel değil).
+
+**Testin dişi:** `panel:dogrula` ve `kart:dogrula`'daki iki kontrol eski
+VARSAYIMI kilitliyordu (`if (ekstre.gecmisMi) continue;` satırının
+VARLIĞINI arıyordu; "bekleyen 2500'e düşer" derken ₺2.000 hiçbir toplamda
+görünmüyordu). Bu turda ayrıca **iki yalancı yeşil** (`indexOf` −1 tuzağı,
+biçime bağlı metin kontrolü) ve **bir kusurlu mutasyon** (test verisi eksi
+yönde artık bırakıyordu, `Math.max(0, …)` yutuyordu) yakalandı.
+
+Testler: `kart-odeme:dogrula` 121 · `kart:dogrula` 48 · `panel:dogrula` 316.
 
 > **VERİ BEKLEYEN GÖZLE DOĞRULAMALAR** — kod işi değil, canlıda o veri
 > doğduğunda bakılacak. Kapanmamış iş sayılmaz, unutulmasın diye burada:
