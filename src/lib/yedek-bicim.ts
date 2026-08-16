@@ -58,6 +58,8 @@ export const YEDEK_TABLOLARI = [
    * yükleme "parent kayıt yok" diye patlar.
    */
   "KartOdeme",
+  // Geçmiş beyan ekstreleri — karta bağlı, KartOdeme ile aynı seviyede.
+  "GecmisEkstre",
   // --- alım ---
   "Purchase",
   "PurchaseItem",

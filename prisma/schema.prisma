@@ -132,7 +132,14 @@ enum CompensationStatus {
 /// Geçmiş veri paketi AYNI tabloyu kullanır (mimar kararı 15.08.2026):
 /// ayrı tasarlanırsa iki farklı "ekstre" kavramı doğar ve biri diğerini
 /// gölgeler.
-enum KartOdemeKaynagi {
+/// Bir kaydın NEREDEN geldiği.
+///
+/// Adı önce `KartOdemeKaynagi`ydi; geçmiş ekstreler de aynı damgayı
+/// taşıyınca ad dar kaldı ve `VeriKaynagi` yapıldı (16.08.2026).
+/// SQL DEĞİŞMEDİ: Prisma enum adı istemci tarafı bir tiptir, MySQL sütunu
+/// zaten `ENUM('TURETILEN','GECMIS_EXCEL','ELLE')` olarak satır içi duruyor.
+/// Boş migration üretildiği ölçülerek doğrulandı.
+enum VeriKaynagi {
   TURETILEN // canlı: ekstre borcu alımlardan türetildi
   GECMIS_EXCEL // geçmiş beyan: Excel'den aktarıldı
   ELLE // kullanıcı doğrudan girdi
@@ -513,6 +520,7 @@ model ChannelAccount {
    * /**
    * /**
    * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -622,8 +630,9 @@ model CreditCard {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  purchases Purchase[]
-  odemeler  KartOdeme[]
+  purchases       Purchase[]
+  odemeler        KartOdeme[]
+  gecmisEkstreler GecmisEkstre[]
 
   @@index([isActive])
 }
@@ -690,7 +699,7 @@ model KartOdeme {
   faizGiderId String?  @unique
   faizGider   Expense? @relation(fields: [faizGiderId], references: [id], onDelete: SetNull)
 
-  kaynak KartOdemeKaynagi @default(TURETILEN)
+  kaynak VeriKaynagi @default(TURETILEN)
 
   /// TERS KAYIT — düzeltmenin tek yolu. Yanlış kayıt ters işaretli bir
   /// kayıtla nötrlenir; ikisi de defterde kalır.
@@ -2006,4 +2015,70 @@ model Talep {
   @@index([tur])
   @@index([bildirenId])
   @@index([createdAt])
+}
+
+/// ============================================================================
+///  GEÇMİŞ KART EKSTRESİ — BEYAN VERİSİ
+/// ----------------------------------------------------------------------------
+///  Mimar kararı 16.08.2026, dosya incelemesi sonrası.
+///
+///  NEDEN AYRI TABLO: canlı ekstreler ALIMLARDAN TÜRETİLİR (`kart-borcu.ts`),
+///  saklanmaz. Geçmişte alım kaydı YOK (en eski alım 13.01.2026) ama kart
+///  ekstreleri Mayıs 2025'e kadar gidiyor. Türetme motoruna beyan verisi
+///  karıştırılsaydı iki farklı ekstre kavramı doğar ve biri diğerini
+///  gölgelerdi.
+///
+///  KAPSAM KÜÇÜLDÜ: sözleşmedeki "iki tablo" bire indi. Hakediş sayfası
+///  kapsamdan DÜŞTÜ — dosyada geçmiş hakediş yok, yalnız cari Tem-Ağu 2026
+///  var ve o dönem sistemde zaten 651 `SettlementItem` olarak duruyor;
+///  aktarmak çift sayım olurdu.
+///
+///  ⚠ ÇİFT SAYIM GİRİŞTE ENGELLENİR: `@@unique([cardId, donem])` bir kart
+///  için bir ayda TEK beyan bırakır. Aynı dönemde TÜRETİLEN ekstre de varsa
+///  TÜRETİLEN KAZANIR (gerçek alımlardan gelir) ve beyan uyarıyla atlanır —
+///  kural uygulama katmanında, bu kısıt son emniyet kemeri.
+/// ============================================================================
+model GecmisEkstre {
+  id String @id @default(cuid())
+
+  cardId String
+  card   CreditCard @relation(fields: [cardId], references: [id], onDelete: Restrict)
+
+  /// Ekstre dönemi — ayın 1'i. `KartOdeme.donem` ile AYNI sözleşme;
+  /// eşleme iki tarafta da yıl-ay üzerinden yapılır (bkz. donemAnahtari).
+  donem DateTime
+
+  /// Beyan edilen ekstre borcu (Excel: "Borç").
+  borc     Decimal  @db.Decimal(18, 4)
+  currency Currency @default(TRY)
+
+  /// Excel: "Ödenen miktar" ve "Tarih". İkisi de boş olabilir — beyan
+  /// edilmiş ama ödenmemiş ekstre gerçek bir durumdur.
+  odenenTutar Decimal?  @db.Decimal(18, 4)
+  odemeTarihi DateTime?
+
+  kaynak VeriKaynagi @default(GECMIS_EXCEL)
+
+  /// ── İZLENEBİLİRLİK ────────────────────────────────────────────────────
+  /// Excel'deki HAM dönem metni ("Mayis", "MAyıs", "temmuz"). Ay adları
+  /// tutarsız yazılmış; normalleştirilen değerin yanında ham hâli de
+  /// durursa "bu satır neydi" sorusu sonradan cevaplanabilir.
+  hamDonemMetni String? @db.VarChar(100)
+
+  /// Yükleme partisi kodu — TOPLU GERİ ALMA için.
+  ///
+  /// Bir içe aktarma 160 satır yazıyor; parti kimliği OLMADAN yanlış bir
+  /// aktarımı geri almak tek tek silmek demektir. Alan SONRADAN eklenirse
+  /// ilk aktarımın satırları partisiz kalır ve tam da geri alınması
+  /// gereken küme geri alınamaz. (Ders 16.08.2026: ileri uyumluluk iddiası
+  /// gerçek senaryoyla sınanır.)
+  iceAktarimKodu String? @db.VarChar(40)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Bir kart için bir ayda TEK beyan — çift aktarım kırılır.
+  @@unique([cardId, donem])
+  @@index([donem])
+  @@index([iceAktarimKodu])
 }
