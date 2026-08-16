@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { DurumRozeti } from "@/components/durum-rozeti";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { getTranslations } from "next-intl/server";
 import { CreditCard, Pencil, TriangleAlert } from "lucide-react";
 
@@ -22,7 +28,11 @@ import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { prisma } from "@/lib/prisma";
 
 import type { Currency } from "@/generated/prisma/enums";
-import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import {
+  DURUM_KUTUSU,
+  DURUM_YAZISI,
+  type DurumRengi,
+} from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -277,6 +287,41 @@ export default async function KartBorcuSayfasi({
       .sort((a, b) => a.sonOdeme.getTime() - b.sonOdeme.getTime())[0] ?? null;
 
   /**
+   * ════════════════════════════════════════════════════════════════════
+   *  ÖDENMEMİŞ EKSTRELER — TEK LİSTE, KARTLAR ARASI
+   * --------------------------------------------------------------------
+   *  Kullanıcı 16.08.2026: "ödenmeyenler belli olsun, hangisinin
+   *  ödenmediğini devamlı aramak zorundayım."
+   *
+   *  Sekme başına bir kart var; hangi kartta açık ekstre kaldığını görmek
+   *  için ONUNCU sekmeye kadar tek tek tıklamak gerekiyordu. Ekran "hangi
+   *  kartı önce ödemeliyim" sorusuna hizmet ediyor ama cevabı saklıyordu.
+   *
+   *  YALNIZ VADESİ GEÇMİŞ VE KAPANMAMIŞ olanlar listelenir — eyleme dönük
+   *  küme budur. Gelecek ekstreleri de eklemek listeyi taksit sayısı kadar
+   *  uzatır ve "şimdi ne yapmalıyım" sorusunu gürültüye boğardı; onlar
+   *  zaten kendi sekmesinde ve toplam rakamda duruyor (İlke #13).
+   *
+   *  Sıra ESKİDEN YENİYE: en uzun bekleyen borç en üstte.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const odenmemisEkstreler = kartHesaplari
+    .flatMap((h) =>
+      h.sonuc.ekstreler
+        .filter((e) => e.gecmisMi && e.kalan > 0)
+        .map((e) => ({
+          kartId: h.kart.id,
+          kartAdi: h.kart.label,
+          paraBirimi: h.kart.currency,
+          kesim: e.kesimTarihi,
+          sonOdeme: e.sonOdemeTarihi,
+          kalan: e.kalan,
+          kismiMi: e.odenen > 0,
+        })),
+    )
+    .sort((a, b) => a.kesim.getTime() - b.kesim.getTime());
+
+  /**
    * SEKME SIRASI: BEKLEYEN TUTARA GÖRE AZALAN — alfabetik DEĞİL.
    *
    * Kullanıcı kararı 16.08.2026: borç ekranında sıralama ölçütü AD değil
@@ -387,6 +432,62 @@ export default async function KartBorcuSayfasi({
               />
             ) : null}
           </div>
+
+          {/* ÖDENMEMİŞLER — sekmelerin ÜSTÜNDE. Aranması gereken bilgi
+              aramanın gerekmediği yerde durur. Hiç yoksa bölüm de yok:
+              "borcun temiz" bir başarı değil, sıradan hâldir. */}
+          {odenmemisEkstreler.length > 0 ? (
+            <Card className={`min-w-0 ${DURUM_KUTUSU.olumsuz}`}>
+              <CardHeader className="gap-1 pb-3">
+                <CardTitle className="text-base">
+                  {t("odenmemisBaslik", { adet: odenmemisEkstreler.length })}
+                </CardTitle>
+                <p className="text-muted-foreground text-xs">
+                  {t("odenmemisNotu")}
+                </p>
+              </CardHeader>
+              <CardContent className="min-w-0">
+                <ul className="grid gap-x-8 sm:grid-cols-2 [&>li]:border-b">
+                  {odenmemisEkstreler.map((e) => (
+                    <li
+                      key={`${e.kartId}-${e.kesim.toISOString()}`}
+                      /* `min-w-0`: grid öğesi, içeriğinden dar olmayı
+                         reddeder — mobilde satırı taşırırdı. */
+                      className="flex min-w-0 items-start justify-between gap-3 py-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <Baglanti
+                          href={`/kart-borcu?kart=${e.kartId}`}
+                          className="block truncate text-sm"
+                          title={e.kartAdi}
+                        >
+                          {e.kartAdi}
+                        </Baglanti>
+                        <div className="text-muted-foreground text-xs">
+                          {t("ekstre")} {bicim.tarih(e.kesim)}
+                          {e.sonOdeme
+                            ? ` · ${t("sonOdeme")}: ${bicim.tarih(e.sonOdeme)}`
+                            : ""}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div
+                          className={`text-sm font-semibold tabular-nums whitespace-nowrap ${DURUM_YAZISI.olumsuz}`}
+                        >
+                          {bicim.para(e.kalan, e.paraBirimi)}
+                        </div>
+                        {e.kismiMi ? (
+                          <div className="text-muted-foreground text-xs">
+                            {t("durumKismen")}
+                          </div>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          ) : null}
 
           <SekmeliBolum
             baslik={t("kartlarBaslik")}
@@ -553,13 +654,41 @@ export default async function KartBorcuSayfasi({
                       </p>
                     ) : (
                       <div className="space-y-3">
-                        {sonuc.ekstreler.map((ekstre) => (
+                        {sonuc.ekstreler.map((ekstre) => {
+                          /**
+                           * ════════════════════════════════════════════════
+                           *  SOLUKLUK "GEÇMİŞ"İ DEĞİL "ÖDENDİ"Yİ TAKİP EDER
+                           * ------------------------------------------------
+                           *  16.08.2026, kullanıcı: "ödenmeyenler belli
+                           *  olsun, hangisinin ödenmediğini devamlı aramak
+                           *  zorundayım."
+                           *
+                           *  Kart geçmişse `opacity-70` ile soluklaştırılıyordu
+                           *  — yani DİKKAT İSTEYEN kayıt tam da silikleşendi.
+                           *  Ölçüt yanlıştı: bir ekstre eskidiği için değil,
+                           *  KAPANDIĞI için arka plana çekilmeyi hak eder.
+                           *
+                           *  Dört hâl, dördü de ayrı görünür: kapalı (soluk),
+                           *  vadesi geçmiş ve açık (kırmızı şerit), kısmen
+                           *  ödenmiş (sarı), sırada bekleyen (sade).
+                           */
+                          const kapali = ekstre.kalan <= 0;
+                          const durum: DurumRengi = kapali
+                            ? "olumlu"
+                            : ekstre.gecmisMi
+                              ? "olumsuz"
+                              : ekstre.odenen > 0
+                                ? "uyari"
+                                : "notr";
+                          return (
                           <div
                             key={ekstre.kesimTarihi.toISOString()}
                             className={
-                              ekstre.gecmisMi
-                                ? "bg-muted/40 space-y-2 rounded-lg border p-3 opacity-70"
-                                : "space-y-2 rounded-lg border p-3"
+                              kapali
+                                ? "bg-muted/40 space-y-2 rounded-lg border p-3 opacity-60"
+                                : durum === "notr"
+                                  ? "space-y-2 rounded-lg border p-3"
+                                  : `space-y-2 rounded-lg p-3 ${DURUM_KUTUSU[durum]}`
                             }
                           >
                             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -574,14 +703,34 @@ export default async function KartBorcuSayfasi({
                                     {bicim.tarih(ekstre.sonOdemeTarihi)}
                                   </span>
                                 ) : null}
-                                {ekstre.gecmisMi ? (
-                                  <Badge variant="outline">
-                                    {t("gecmisEkstre")}
-                                  </Badge>
+                                {/* Durum KELİMEYLE de söylenir; renk tek
+                                    başına bilgi taşımaz (renk körlüğü). */}
+                                {kapali ? (
+                                  <DurumRozeti durum="olumlu" isaretsiz>
+                                    {t("durumOdendi")}
+                                  </DurumRozeti>
+                                ) : ekstre.gecmisMi ? (
+                                  <DurumRozeti durum="olumsuz" isaretsiz>
+                                    {t("durumOdenmedi")}
+                                  </DurumRozeti>
+                                ) : ekstre.odenen > 0 ? (
+                                  <DurumRozeti durum="uyari" isaretsiz>
+                                    {t("durumKismen")}
+                                  </DurumRozeti>
                                 ) : null}
                               </div>
-                              <div className="text-base font-semibold">
-                                {para(ekstre.toplam)}
+                              <div className="text-right">
+                                <div className="text-base font-semibold">
+                                  {para(ekstre.toplam)}
+                                </div>
+                                {/* Kısmen ödenmişte asıl soru "ne kaldı". */}
+                                {!kapali && ekstre.odenen > 0 ? (
+                                  <div
+                                    className={`text-xs ${DURUM_YAZISI[durum]}`}
+                                  >
+                                    {t("kalanEki", { tutar: para(ekstre.kalan) })}
+                                  </div>
+                                ) : null}
                               </div>
                             </div>
 
@@ -702,7 +851,8 @@ export default async function KartBorcuSayfasi({
                               );
                             })()}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </>

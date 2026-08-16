@@ -457,6 +457,65 @@ console.log("=".repeat(70));
    *  aksi hâlde doğru rakam bozuk sistem izlenimi verir.
    * ════════════════════════════════════════════════════════════════════
    */
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  ÖDENMEMİŞ ARANMAZ, GÖRÜNÜR (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Kullanıcı: "ödenmeyenler belli olsun, hangisinin ödenmediğini
+   *  devamlı aramak zorundayım."
+   *
+   *  İki ayrı kusur vardı:
+   *  1) Ekstre kartı GEÇMİŞ olduğu için soluklaştırılıyordu (opacity).
+   *     Ölçüt yanlıştı — dikkat isteyen kayıt tam da silikleşendi.
+   *     Solukluk artık KAPANMIŞ olanı takip eder.
+   *  2) On kart, on sekme: hangisinde açık ekstre kaldığını görmek için
+   *     hepsini tek tek açmak gerekiyordu. Artık sekmelerin ÜSTÜNDE tek
+   *     liste var.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "solukluk KAPANMIŞ ekstreyi takip ediyor, geçmişi değil",
+    sayfa.includes("const kapali = ekstre.kalan <= 0;") &&
+      !sayfa.includes("ekstre.gecmisMi\n                                ? \"bg-muted"),
+  );
+  kontrol(
+    "  ...durum KELİMEYLE de söyleniyor (renk tek başına yetmez)",
+    sayfa.includes('t("durumOdenmedi")') &&
+      sayfa.includes('t("durumKismen")') &&
+      sayfa.includes('t("durumOdendi")'),
+  );
+  kontrol(
+    "ödenmemişler kartlar arası TEK listede toplanıyor",
+    sayfa.includes("const odenmemisEkstreler = kartHesaplari"),
+  );
+  kontrol(
+    "  ...liste sekmelerin ÜSTÜNDE (aramadan görünür)",
+    /**
+     * VARLIK ÖNCE, SIRA SONRA. İlk hâli yalnız
+     * `indexOf(a) < indexOf(b)` idi ve bu YALANCI YEŞİLDİ: metin hiç
+     * yoksa `indexOf` −1 döner, −1 her şeyden küçüktür, kontrol geçer.
+     * Mutasyon denemesi tam bunu gösterdi — anahtarı silmek testi
+     * kırmızıya çevirmedi (16.08.2026).
+     */
+    (() => {
+      const liste = sayfa.indexOf("odenmemisBaslik");
+      const sekme = sayfa.indexOf("<SekmeliBolum");
+      return liste !== -1 && sekme !== -1 && liste < sekme;
+    })(),
+  );
+  kontrol(
+    "  ...en ESKİ borç başta",
+    sayfa.includes(".sort((a, b) => a.kesim.getTime() - b.kesim.getTime())"),
+  );
+  kontrol(
+    "  ...satır kartına gidiyor (rakam çıkmaz değil)",
+    sayfa.includes("href={`/kart-borcu?kart=${e.kartId}`}"),
+  );
+  kontrol(
+    "  ...hiç ödenmemiş yoksa bölüm de yok",
+    sayfa.includes("odenmemisEkstreler.length > 0 ?"),
+  );
+
   kontrol(
     "sıradaki ödeme kutusu vadesi geçmişi İŞARETLİYOR",
     sayfa.includes("gecikmisMi:") && sayfa.includes('t("vadesiGecti")'),
