@@ -111,8 +111,16 @@ export function OdemeFormu({
         ? { yol: "elle", tutar: sayi(faizTutarMetni) }
         : {
             yol: "hesapla",
-            // Faizin matrahı ödenmeden kalan ana paradır.
-            matrah: ekstreBorcu - sayi(odenen),
+            /**
+             * MATRAH = ÖDEME ÖNCESİ KALAN BORÇ.
+             *
+             * ⚠ 16.08.2026 düzeltmesi. Önce `ekstreBorcu − buÖdeme` idi;
+             * geciken bir ekstreyi TAM ödeyince matrah 0 çıkıyor ve faiz
+             * sıfırlanıyordu. Oysa gecikme faizi, ödeme anında BORÇLU
+             * OLDUĞUN tutar üzerinden işler — bugün ödemen, geçmiş günleri
+             * geriye dönük silmez.
+             */
+            matrah: kalanBorc,
             oran: sayi(oran),
             gun: Math.trunc(sayi(gun)),
           };
@@ -251,9 +259,7 @@ export function OdemeFormu({
             </div>
             <p className="text-muted-foreground text-xs sm:col-span-2">
               {/* Sistem ORANI üretmez, yalnız çarpar — matrah ekranda yazılı. */}
-              {t("faizHesapNotu", {
-                matrah: para(Math.max(0, ekstreBorcu - sayi(odenen))),
-              })}
+              {t("faizHesapNotu", { matrah: para(kalanBorc) })}
             </p>
           </div>
         ) : null}

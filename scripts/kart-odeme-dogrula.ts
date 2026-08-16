@@ -249,6 +249,29 @@ console.log("=".repeat(70));
     "  ...kısmen ödenmişse NEDEN o tutar önerildiği yazılı",
     form.includes("onDoluKalanNotu"),
   );
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  FAİZ MATRAHI = ÖDEME ÖNCESİ KALAN BORÇ (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Matrah `ekstreBorcu − buÖdeme` idi; geciken bir ekstreyi TAM ödeyince
+   *  matrah 0 çıkıyor ve FAİZ SIFIRLANIYORDU. Oysa gecikme faizi ödeme
+   *  anında borçlu olunan tutar üzerinden işler — bugün ödemek, geçmiş
+   *  günleri geriye dönük silmez.
+   *
+   *  Sessiz ve pahalı bir hataydı: kullanıcı faizi girdiğini sanır, ekranda
+   *  ₺0,00 görür ve gider hiç yazılmazdı.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "faiz matrahı ödeme ÖNCESİ kalan borçtan (tam ödemede sıfırlanmıyor)",
+    form.includes("matrah: kalanBorc") &&
+      !form.includes("matrah: ekstreBorcu - sayi(odenen)"),
+  );
+  kontrol(
+    "  ...ekrandaki matrah notu da aynı değeri gösteriyor",
+    form.includes('t("faizHesapNotu", { matrah: para(kalanBorc) })'),
+  );
+
   kontrol(
     "kalanı AŞAN ödeme de açık onay istiyor (kaza ihtimali)",
     form.includes("onizleme.mukerrer.asiyorMu) && !kapaliOnay"),
