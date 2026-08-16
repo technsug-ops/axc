@@ -62,15 +62,37 @@ export type Ekstre = {
   taksitler: Taksit[];
   /** Bugün itibarıyla geçmiş bir ekstre mi? */
   gecmisMi: boolean;
+  /** Bu döneme yapılmış NET ödeme (ters kayıtlar dahil, işaretli toplam). */
+  odenen: number;
+  /** `toplam − odenen`, sıfırın altına inmez. */
+  kalan: number;
 };
+
+/**
+ * Bir ekstreye yapılmış ödeme kaydı.
+ *
+ * `donem` ekstrenin KESİM ayını işaret eder; eşleme yıl-ay üzerinden yapılır
+ * (bkz. `donemAnahtari`). Gün tutmuyoruz çünkü aynı ekstreye farklı günlerde
+ * birden çok ödeme yapılabilir ve hepsi aynı döneme yazılmalıdır.
+ */
+export type EkstreOdemesi = { donem: Date; odenenAnaBorc: number };
+
+/** Ekstre dönemi anahtarı — kesim tarihinin ayı (ISO, ayın 1'i). */
+export function donemAnahtari(kesim: Date): string {
+  return `${kesim.getUTCFullYear()}-${String(kesim.getUTCMonth() + 1).padStart(2, "0")}-01`;
+}
 
 export type BorcSonucu = {
   /** Kesim günü tanımlı değilse hesap yapılamaz — sessizce sıfır gösterilmez. */
   hesaplanabilir: boolean;
   ekstreler: Ekstre[];
-  /** Henüz ödenmemiş (bugünden sonraki) ekstrelerin toplamı. */
+  /** Kesilmiş ama HÂLÂ kapanmamış ekstrelerin kalanı — gerçek gecikme. */
+  gecikmisToplam: number;
+  /** Henüz kesilmemiş ekstrelerin kalanı. */
   bekleyenToplam: number;
-  /** Limit tanımlıysa: limit − bekleyen. Yoksa null. */
+  /** `gecikmisToplam + bekleyenToplam` — kartın kapanmamış borcunun tamamı. */
+  acikToplam: number;
+  /** Limit tanımlıysa: limit − açık borç. Yoksa null. */
   kalanLimit: number | null;
 };
 
@@ -143,12 +165,23 @@ export function kartBorcuHesapla(
   kart: KartAyari,
   /** "Bugün" — dışarıdan verilir ki test gerçek takvimi beklemesin. */
   bugun: Date,
+  /**
+   * ÖDEME KAYITLARI — ZORUNLU, VARSAYILANI YOK (16.08.2026).
+   *
+   * Boş dizi geçmek meşrudur ("bu kartın hiç ödemesi yok") ama parametreyi
+   * İSTEĞE BAĞLI yapmak değildir: unutan çağıran sessizce "hiç ödenmemiş"
+   * hesabı alır ve ekranda şişmiş bir borç görünür. Zorunlu olunca derleyici
+   * her çağıranı tek tek sorar.
+   */
+  odemeler: EkstreOdemesi[],
 ): BorcSonucu {
   if (kart.kesimGunu === null) {
     return {
       hesaplanabilir: false,
       ekstreler: [],
+      gecikmisToplam: 0,
       bekleyenToplam: 0,
+      acikToplam: 0,
       kalanLimit: null,
     };
   }
@@ -184,6 +217,8 @@ export function kartBorcuHesapla(
           toplam: 0,
           taksitler: [],
           gecmisMi: kesim.getTime() < bugun.getTime(),
+          odenen: 0,
+          kalan: 0,
         };
         ekstreHaritasi.set(anahtar, ekstre);
       }
@@ -208,17 +243,45 @@ export function kartBorcuHesapla(
     );
   }
 
-  // Bekleyen = henüz kesilmemiş ekstreler. Kesilmiş olanlar ödenmiş SAYILMAZ
-  // ama sistem ödemeyi bilmiyor; bu yüzden "bekleyen" ifadesi bilinçli olarak
-  // "gelecek ekstreler" demektir, ekranda da öyle yazar.
-  const bekleyenToplam = ekstreler
-    .filter((e) => !e.gecmisMi)
-    .reduce((toplam, e) => toplam + e.toplam, 0);
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  "GEÇMİŞ EKSTRE ÖDENMİŞ SAYILIR" VARSAYIMI KALKTI (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Eskiden bekleyen = "bugünden sonraki ekstreler" demekti ve kesilmiş
+   *  ekstreler görmezden gelinirdi. Sebep dürüsttü: sistemde ödeme kaydı
+   *  YOKTU, aksi hâlde aylar öncesinin borcu uydurma bir gecikme yığınına
+   *  dönüşürdü.
+   *
+   *  Artık `KartOdeme` var. Bir ekstrenin kapanıp kapanmadığı VARSAYILMAZ,
+   *  kayıttan OKUNUR. Geçmiş ama kapanmamış ekstre gerçekten gecikmiştir
+   *  ve öyle görünür; kapanmışsa hiçbir yerde toplanmaz.
+   *
+   *  Ödeme ekstreyi AŞARSA kalan eksiye inmez (0'da durur): fazla ödeme
+   *  o kartın başka bir borcunu kapatmaz, kendi döneminde fazladır.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const odemeToplami = new Map<string, number>();
+  for (const o of odemeler) {
+    const k = donemAnahtari(o.donem);
+    odemeToplami.set(k, (odemeToplami.get(k) ?? 0) + o.odenenAnaBorc);
+  }
+
+  let gecikmisToplam = 0;
+  let bekleyenToplam = 0;
+  for (const ekstre of ekstreler) {
+    ekstre.odenen = odemeToplami.get(donemAnahtari(ekstre.kesimTarihi)) ?? 0;
+    ekstre.kalan = Math.max(0, ekstre.toplam - ekstre.odenen);
+    if (ekstre.gecmisMi) gecikmisToplam += ekstre.kalan;
+    else bekleyenToplam += ekstre.kalan;
+  }
+  const acikToplam = gecikmisToplam + bekleyenToplam;
 
   return {
     hesaplanabilir: true,
     ekstreler,
+    gecikmisToplam,
     bekleyenToplam,
-    kalanLimit: kart.limit === null ? null : kart.limit - bekleyenToplam,
+    acikToplam,
+    kalanLimit: kart.limit === null ? null : kart.limit - acikToplam,
   };
 }

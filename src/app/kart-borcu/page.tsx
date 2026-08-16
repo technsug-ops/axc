@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
+import { DurumRozeti } from "@/components/durum-rozeti";
 import { getTranslations } from "next-intl/server";
 import { CreditCard, Pencil, TriangleAlert } from "lucide-react";
 
@@ -8,7 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { bicimlendirici } from "@/lib/bicim";
 import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
-import { kartBorcuHesapla, type BorcAlimi } from "@/lib/kart-borcu";
+import {
+  donemAnahtari,
+  kartBorcuHesapla,
+  type BorcAlimi,
+} from "@/lib/kart-borcu";
 import { faizKategorileri } from "./eylemler";
 import { OdemeFormu } from "./odeme-formu";
 import { OdemeSatiri } from "./odeme-satiri";
@@ -126,9 +131,6 @@ export default async function KartBorcuSayfasi({
    */
   const kategoriler = await faizKategorileri();
 
-  /** Ekstre dönemi anahtarı — kesim tarihinin ayının 1'i (ISO). */
-  const donemAnahtari = (kesim: Date) =>
-    `${kesim.getUTCFullYear()}-${String(kesim.getUTCMonth() + 1).padStart(2, "0")}-01`;
   const sayi = (d: { toString(): string } | null) =>
     d === null ? null : Number(d.toString());
 
@@ -166,6 +168,15 @@ export default async function KartBorcuSayfasi({
    * fonksiyon çağrılıyor — iki farklı toplam doğması imkânsız. Kopyalasaydık
    * panodaki rakam ile sekmedeki rakam bir gün ayrışırdı.
    */
+  /** Bir kartın ödeme kayıtları, saf hesabın beklediği biçimde. */
+  const kartinOdemeleri = (kartId: string) =>
+    odemeler
+      .filter((o) => o.cardId === kartId)
+      .map((o) => ({
+        donem: o.donem,
+        odenenAnaBorc: Number(o.odenenAnaBorc.toString()),
+      }));
+
   const kartHesaplari = kartlar.map((kart) => {
     const borclar: BorcAlimi[] = [];
     for (const a of alimlar.filter((x) => x.creditCardId === kart.id)) {
@@ -187,10 +198,19 @@ export default async function KartBorcuSayfasi({
       borclar,
       { kesimGunu: kart.statementDay, sonOdemeGunu: kart.dueDay, limit },
       bugun,
+      kartinOdemeleri(kart.id),
     );
-    // Henüz geçmemiş ilk ekstre: "önce hangisini ödemeliyim".
+    /**
+     * "Önce hangisini ödemeliyim" — KAPANMAMIŞ ilk ekstre.
+     *
+     * Eskiden "geçmemiş ilk ekstre" idi; geçmişler nasılsa ödenmiş
+     * sayıldığı için doğruydu. Artık geçmiş bir ekstre açık kalabiliyor
+     * ve sıradaki iş odur — gecikmiş borç, gelecek borçtan önce gelir.
+     * Ekstreler kesim tarihine göre sıralı olduğundan ilk eşleşen zaten
+     * en eskisidir.
+     */
     const yakin =
-      sonuc.ekstreler.find((e) => e.sonOdemeTarihi !== null && !e.gecmisMi) ??
+      sonuc.ekstreler.find((e) => e.sonOdemeTarihi !== null && e.kalan > 0) ??
       null;
     return { kart, sonuc, limit, yakin };
   });
@@ -198,16 +218,30 @@ export default async function KartBorcuSayfasi({
   /** Para birimi başına toplam — ÇEVRİM YOK, her birim kendi kutusunda. */
   const paraOzeti = new Map<
     Currency,
-    { bekleyen: number; limit: number; limitVar: boolean; adet: number }
+    {
+      bekleyen: number;
+      gecikmis: number;
+      limit: number;
+      limitVar: boolean;
+      adet: number;
+    }
   >();
   for (const h of kartHesaplari) {
     const g = paraOzeti.get(h.kart.currency) ?? {
       bekleyen: 0,
+      gecikmis: 0,
       limit: 0,
       limitVar: false,
       adet: 0,
     };
-    g.bekleyen += h.sonuc.bekleyenToplam;
+    /**
+     * ÖZETTE AÇIK BORCUN TAMAMI DURUR. `bekleyenToplam` artık yalnız GELECEK
+     * ekstreleri sayıyor; özete onu yazsaydık gecikmiş borç ekranda hiç
+     * görünmezdi — varsayımı kaldırıp yerine SESSİZLİK koymuş olurduk.
+     * Gecikmiş ayrıca da gösterilir, çünkü aciliyeti farklıdır.
+     */
+    g.bekleyen += h.sonuc.acikToplam;
+    g.gecikmis += h.sonuc.gecikmisToplam;
     g.adet += 1;
     if (h.limit !== null) {
       g.limit += h.limit;
@@ -221,7 +255,7 @@ export default async function KartBorcuSayfasi({
       .filter((h) => h.yakin?.sonOdemeTarihi)
       .map((h) => ({
         sonOdeme: h.yakin!.sonOdemeTarihi!,
-        tutar: h.yakin!.toplam,
+        tutar: h.yakin!.kalan,
         etiket: h.kart.label,
         paraBirimi: h.kart.currency,
       }))
@@ -235,7 +269,7 @@ export default async function KartBorcuSayfasi({
    * Ad sekme etiketinde durduğu için arama kaybolmuyor.
    */
   const siraliKartlar = [...kartHesaplari]
-    .sort((a, b) => b.sonuc.bekleyenToplam - a.sonuc.bekleyenToplam)
+    .sort((a, b) => b.sonuc.acikToplam - a.sonuc.acikToplam)
     .map((h) => h.kart);
 
   /**
@@ -288,6 +322,21 @@ export default async function KartBorcuSayfasi({
                 key={birim}
                 etiket={t("toplamBekleyen", { paraBirimi: birim })}
                 cocuk={bicim.para(g.bekleyen, birim)}
+                /**
+                 * GECİKMİŞ BORÇ AYRI SÖYLENİR. Büyük rakam açık borcun
+                 * tamamı; içindeki gecikmiş kısım aciliyeti farklı olduğu
+                 * için kendi rozetinde durur. Gecikme yoksa rozet de yok —
+                 * "borcun yok" bir başarı değil, sıradan hâldir.
+                 */
+                rozet={
+                  g.gecikmis > 0 ? (
+                    <DurumRozeti durum="olumsuz" isaretsiz>
+                      {t("gecikmisRozeti", {
+                        tutar: bicim.para(g.gecikmis, birim),
+                      })}
+                    </DurumRozeti>
+                  ) : null
+                }
                 altNot={
                   <span className="text-muted-foreground">
                     {g.limitVar
@@ -354,6 +403,7 @@ export default async function KartBorcuSayfasi({
                     : null,
               },
               bugun,
+              kartinOdemeleri(kart.id),
             );
 
             const para = (n: number) => bicim.para(n, kart.currency);
@@ -363,14 +413,14 @@ export default async function KartBorcuSayfasi({
                 : null;
             const doluluk =
               limit && limit > 0
-                ? Math.round((sonuc.bekleyenToplam / limit) * 100)
+                ? Math.round((sonuc.acikToplam / limit) * 100)
                 : null;
 
             return {
               anahtar: kart.id,
               // Sekme etiketi kart adı + bekleyen tutar: hangi karta
               // bakacağını sekmeye tıklamadan görebil (İlke #9).
-              etiket: `${kart.label} · ${para(sonuc.bekleyenToplam)}`,
+              etiket: `${kart.label} · ${para(sonuc.acikToplam)}`,
               adres: `/kart-borcu?kart=${kart.id}`,
               icerik: (
               <section
@@ -435,7 +485,7 @@ export default async function KartBorcuSayfasi({
                           {t("bekleyenToplam")}
                         </div>
                         <div className="text-xl font-semibold">
-                          {para(sonuc.bekleyenToplam)}
+                          {para(sonuc.acikToplam)}
                         </div>
                         <div className="text-muted-foreground text-xs">
                           {t("bekleyenNotu")}

@@ -1419,9 +1419,37 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     "  ...ve SİPARİŞ NUMARASINA da bakıyor (eşleştirme yapılmadan da korur)",
     veriKaynagi.includes("NOT: { code: { in: [...raporluSiparisNolari] } }"),
   );
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  BU KONTROL VARSAYIMI KİLİTLİYORDU — ARTIK KAYDI KİLİTLİYOR
+   * --------------------------------------------------------------------
+   *  Eski hâli `if (ekstre.gecmisMi) continue;` satırının VARLIĞINI
+   *  arıyordu, yani "geçmiş ekstreyi görmezden gel" varsayımının bozulmadan
+   *  durduğunu doğruluyordu. O gün doğruydu: sistemde ödeme kaydı yoktu ve
+   *  varsayım bilinçliydi.
+   *
+   *  `KartOdeme` gelince varsayımın ömrü bitti. Test şimdi tersini tutuyor:
+   *  ekstre KAYITLA kapanmalı (kalan), takvime giren tutar da ödenen düşülmüş
+   *  olmalı. Eski satırın geri gelmediği de ayrıca sınanır — sessizce geri
+   *  dönmesi, gerçek borcu yeniden görünmez yapardı.
+   * ════════════════════════════════════════════════════════════════════
+   */
   kontrol(
-    "geçmiş kart ekstresi gecikmiş SAYILMIYOR (ödeme kaydı yok)",
-    veriKaynagi.includes("if (ekstre.gecmisMi) continue;"),
+    "takvim kart ödemelerini GERÇEK kayıttan okuyor",
+    veriKaynagi.includes("prisma.kartOdeme.findMany"),
+  );
+  kontrol(
+    "  ...ekstre KALANI takvime giriyor, tamamı değil",
+    veriKaynagi.includes("if (ekstre.kalan <= 0) continue;") &&
+      veriKaynagi.includes("tutar: ekstre.kalan,"),
+  );
+  kontrol(
+    "  ...'geçmişi görmezden gel' varsayımı geri gelmemiş",
+    !veriKaynagi.includes("if (ekstre.gecmisMi) continue;"),
+  );
+  kontrol(
+    "  ...ters kayıtlar süzülmüyor (düzeltme görünür kalır)",
+    !veriKaynagi.includes("isReversal: false"),
   );
   kontrol(
     "ikinci motor açılmamış — kart ve hakediş mevcut motorlardan",

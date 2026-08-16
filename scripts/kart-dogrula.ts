@@ -161,7 +161,7 @@ console.log("\n4) EKSTRE DAĞILIMI");
     { id: "a3", kod: "ALM-3", tarih: gun("2026-08-01"), tutar: 3000, taksitSayisi: 3 },
   ];
 
-  const sonuc = kartBorcuHesapla(alimlar, KART, BUGUN);
+  const sonuc = kartBorcuHesapla(alimlar, KART, BUGUN, []);
 
   kontrol("hesaplanabilir", sonuc.hesaplanabilir);
   kontrol(
@@ -209,16 +209,106 @@ console.log("\n4) EKSTRE DAĞILIMI");
     sonuc.kalanLimit,
   );
 
-  // Zaman ilerleyince geçmiş ekstre bekleyenden düşer.
-  const sonrasi = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"));
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  GEÇMİŞ EKSTRE ARTIK KAYBOLMUYOR (16.08.2026)
+   * --------------------------------------------------------------------
+   *  Bu testin eski hâli varsayımı DOĞRULUYORDU: "01.09'da bekleyen
+   *  2500'e düşer" diyordu ve ₺2.000'lik Ağustos ekstresi hiçbir toplamda
+   *  görünmediği hâlde test yeşildi. Ödenip ödenmediği hiç sorulmuyordu.
+   *
+   *  Yeni kural: ödeme kaydı yoksa o borç KAYBOLMAZ, gecikmiş olur.
+   *  Ödeme kaydı varsa hiçbir yerde toplanmaz. Aradaki fark artık
+   *  ölçülüyor.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const sonrasi = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), []);
   kontrol(
     "01.09'da 15.08 ekstresi GEÇMİŞ sayılır",
     sonrasi.ekstreler[0]?.gecmisMi === true,
   );
   kontrol(
-    "bekleyen 2500'e düşer",
+    "bekleyen (gelecek) 2500",
     Math.abs(sonrasi.bekleyenToplam - 2500) < 0.005,
     sonrasi.bekleyenToplam,
+  );
+  kontrol(
+    "ÖDENMEMİŞ geçmiş ekstre GECİKMİŞ olur, kaybolmaz",
+    Math.abs(sonrasi.gecikmisToplam - 2000) < 0.005,
+    sonrasi.gecikmisToplam,
+  );
+  kontrol(
+    "açık toplam = gecikmiş + bekleyen",
+    Math.abs(sonrasi.acikToplam - 4500) < 0.005,
+    sonrasi.acikToplam,
+  );
+
+  // Aynı an, ama Ağustos ekstresi ÖDENMİŞ kaydıyla.
+  const odenmis = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [
+    { donem: gun("2026-08-01"), odenenAnaBorc: 2000 },
+  ]);
+  kontrol("ödenen geçmiş ekstre gecikmişe girmez", odenmis.gecikmisToplam === 0);
+  kontrol(
+    "  ...ekstrenin kalanı sıfırlanır",
+    odenmis.ekstreler[0]?.kalan === 0,
+    odenmis.ekstreler[0]?.kalan,
+  );
+  kontrol(
+    "  ...açık toplam yalnız geleceği gösterir",
+    Math.abs(odenmis.acikToplam - 2500) < 0.005,
+    odenmis.acikToplam,
+  );
+
+  // Kısmi ödeme: kalan kadarı gecikmiş sayılır, tamamı değil.
+  const kismi = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [
+    { donem: gun("2026-08-20"), odenenAnaBorc: 800 },
+  ]);
+  kontrol(
+    "kısmi ödemede yalnız KALAN gecikmiş sayılır",
+    Math.abs(kismi.gecikmisToplam - 1200) < 0.005,
+    kismi.gecikmisToplam,
+  );
+  kontrol(
+    "  ...ödeme ayın herhangi bir gününde olabilir (eşleme yıl-ay)",
+    Math.abs((kismi.ekstreler[0]?.odenen ?? 0) - 800) < 0.005,
+  );
+
+  // Aynı ekstreye birden çok ödeme toplanır; ters kayıt negatif olarak girer.
+  const cokluOdeme = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [
+    { donem: gun("2026-08-01"), odenenAnaBorc: 1500 },
+    { donem: gun("2026-08-01"), odenenAnaBorc: 800 },
+    { donem: gun("2026-08-01"), odenenAnaBorc: -800 },
+  ]);
+  kontrol(
+    "aynı döneme çok ödeme toplanır, ters kayıt düşer",
+    Math.abs((cokluOdeme.ekstreler[0]?.odenen ?? 0) - 1500) < 0.005,
+    cokluOdeme.ekstreler[0]?.odenen,
+  );
+  kontrol(
+    "  ...kalan 500 gecikmiş",
+    Math.abs(cokluOdeme.gecikmisToplam - 500) < 0.005,
+    cokluOdeme.gecikmisToplam,
+  );
+
+  // Fazla ödeme kalanı EKSİYE indirmez — başka ekstreyi kapatmaz.
+  const fazla = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [
+    { donem: gun("2026-08-01"), odenenAnaBorc: 5000 },
+  ]);
+  kontrol("fazla ödemede kalan eksiye inmez", fazla.ekstreler[0]?.kalan === 0);
+  kontrol(
+    "  ...fazlalık sonraki ekstreyi kapatmaz",
+    Math.abs(fazla.bekleyenToplam - 2500) < 0.005,
+    fazla.bekleyenToplam,
+  );
+
+  // Başka kartın/dönemin ödemesi bu ekstreyi kapatmaz.
+  const yanlisDonem = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [
+    { donem: gun("2026-06-01"), odenenAnaBorc: 2000 },
+  ]);
+  kontrol(
+    "başka dönemin ödemesi bu ekstreyi kapatmaz",
+    Math.abs(yanlisDonem.gecikmisToplam - 2000) < 0.005,
+    yanlisDonem.gecikmisToplam,
   );
 
   // Kesim günü tanımsız kart: SESSİZ SIFIR YOK.
@@ -226,7 +316,7 @@ console.log("\n4) EKSTRE DAĞILIMI");
     kesimGunu: null,
     sonOdemeGunu: null,
     limit: 300000,
-  }, BUGUN);
+  }, BUGUN, []);
   kontrol("kesim günü yoksa hesaplanamaz", eksikKart.hesaplanabilir === false);
   kontrol("hesaplanamayan kartta ekstre üretilmez", eksikKart.ekstreler.length === 0);
 
@@ -235,11 +325,11 @@ console.log("\n4) EKSTRE DAĞILIMI");
     kesimGunu: 15,
     sonOdemeGunu: 25,
     limit: null,
-  }, BUGUN);
+  }, BUGUN, []);
   kontrol("limit yoksa kalan limit null", limitsiz.kalanLimit === null);
 
   // Alım yoksa borç yok ama kart hesaplanabilir.
-  const bos = kartBorcuHesapla([], KART, BUGUN);
+  const bos = kartBorcuHesapla([], KART, BUGUN, []);
   kontrol("alım yoksa ekstre yok", bos.ekstreler.length === 0);
   kontrol("alım yoksa bekleyen 0", bos.bekleyenToplam === 0);
   kontrol("alım yoksa limit tam", bos.kalanLimit === 300000);

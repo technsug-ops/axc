@@ -1446,6 +1446,7 @@
     "borcDokumu": "Borç dökümü",
     "varsayimNotu": "İki varsayım: kesim GÜNÜNDE yapılan alım o ayın ekstresine düşer; taksitte bölünmeyen kuruş son taksite eklenir. İlk gerçek ekstrenizle karşılaştırıp teyit edin.",
     "toplamBekleyen": "Toplam bekleyen · {paraBirimi}",
+    "gecikmisRozeti": "{tutar} gecikmiş",
     "toplamLimitNotu": "Kalan limit {kalan} · {adet} kart",
     "kartAdedi": "{adet} kart · limit tanımlı değil",
     "yaklasanOdeme": "En yakın son ödeme",

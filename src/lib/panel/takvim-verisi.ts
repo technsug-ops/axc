@@ -25,15 +25,18 @@ import {
  *  motorunun zaten yazılı olan "RAPOR VARSA RAPOR KAZANIR" ilkesinin
  *  takvimdeki karşılığı.
  *
- *  ── KART ÖDEMELERİ TAKİP EDİLMİYOR (bilinen sınır) ───────────────────────
- *  Sistemde "bu ekstreyi ödedim" diye bir kayıt YOK. Bu yüzden geçmiş
- *  ekstreler ÖDENMİŞ SAYILIR ve takvime gecikmiş olarak GİRMEZ.
- *  Aksi hâlde aylar öncesinin ekstreleri "gecikmiş borç" diye toplanır ve
- *  ekranda kocaman, tamamen uydurma bir rakam çıkardı. `kart-borcu.ts`in
- *  `bekleyenToplam` tanımı da aynı varsayımda ("bugünden sonraki
- *  ekstreler") — iki yerde iki farklı varsayım olmasın.
- *  Gecikmiş bölümü bu yüzden bugün YALNIZ hakediş tarafından beslenir;
- *  orada `paidAt` gerçekten tutuluyor.
+ *  ── KART ÖDEMELERİ ARTIK KAYITTAN OKUNUYOR (16.08.2026) ──────────────────
+ *  Bu bölüm eskiden "sistemde ödedim kaydı YOK, o hâlde geçmiş ekstreler
+ *  ÖDENMİŞ SAYILIR" diyordu. Varsayım dürüsttü ama bir varsayımdı.
+ *
+ *  `KartOdeme` geldi: hangi ekstreye ne ödendiği gerçek kayıtta duruyor.
+ *  Artık geçmiş ekstre görmezden GELİNMEZ — kapanmışsa zaten kalanı
+ *  sıfırdır ve takvime girmez; kapanmamışsa GERÇEKTEN gecikmiştir ve
+ *  gecikmiş olarak girer. Kart tarafında kalan varsayım sıfır.
+ *
+ *  Takvime giren tutar `ekstre.kalan`dır, `ekstre.toplam` DEĞİL: kısmen
+ *  ödenmiş bir ekstrenin tamamını nakit ihtiyacı saymak, ödenen parayı
+ *  ikinci kez çıkacak göstermek olurdu.
  *
  *  ── TEK PARA BİRİMİ ──────────────────────────────────────────────────────
  *  Satırlar para birimini TAŞIR ama takvim TRY dışını toplamaz; ayıklama
@@ -50,7 +53,7 @@ export async function takvimSatirlariniTopla(
   const satirlar: TakvimSatiri[] = [];
 
   // ---------------------------------------------------------------- KARTLAR
-  const [kartlar, kartAlimlari] = await Promise.all([
+  const [kartlar, kartAlimlari, kartOdemeleri] = await Promise.all([
     prisma.creditCard.findMany({
       where: { isActive: true },
       orderBy: { label: "asc" },
@@ -72,6 +75,14 @@ export async function takvimSatirlariniTopla(
         },
       },
       orderBy: { purchasedAt: "asc" },
+    }),
+    /**
+     * TERS KAYITLAR AYIKLANMAZ. Ters alma yeni bir satır olarak yazılır ve
+     * tutarı NEGATİFTİR (ledger değiştirilmez, düzeltilir). Hepsini toplamak
+     * doğru neti verir; `isReversal` süzmek düzeltmeyi görünmez kılardı.
+     */
+    prisma.kartOdeme.findMany({
+      select: { cardId: true, donem: true, odenenAnaBorc: true },
     }),
   ]);
 
@@ -104,6 +115,12 @@ export async function takvimSatirlariniTopla(
         limit: null,
       },
       bugun,
+      kartOdemeleri
+        .filter((o) => o.cardId === kart.id)
+        .map((o) => ({
+          donem: o.donem,
+          odenenAnaBorc: Number(o.odenenAnaBorc.toString()),
+        })),
     );
 
     /**
@@ -124,15 +141,14 @@ export async function takvimSatirlariniTopla(
     }
 
     for (const ekstre of sonuc.ekstreler) {
-      // Geçmiş ekstre ödendi sayılır (bkz. başlık: kart ödemeleri
-      // takip edilmiyor). Son ödeme günü yoksa vade bilinmiyordur.
-      if (ekstre.gecmisMi) continue;
-      if (ekstre.toplam <= 0) continue;
+      // Kapanmış ekstre takvime girmez — kalanı sıfırdır, varsayım değil
+      // kayıt söylüyor. Son ödeme günü yoksa vade bilinmiyordur.
+      if (ekstre.kalan <= 0) continue;
       satirlar.push({
         yon: "CIKACAK",
         kaynak: "KART",
         tarih: ekstre.sonOdemeTarihi,
-        tutar: ekstre.toplam,
+        tutar: ekstre.kalan,
         paraBirimi: kart.currency,
         baslik: kart.label,
         adres: `/kart-borcu`,
