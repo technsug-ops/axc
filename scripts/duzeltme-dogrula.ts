@@ -622,6 +622,7 @@ console.log("\n5) NEDEN YÖNÜ — ANLAMSIZ BİLEŞİM KURULAMAZ");
     "src/app/ayarlar/duzeltme-nedenleri/page.tsx",
     "utf8",
   );
+  const trSozluk2 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as { Stok?: Record<string, string> };
   const trSozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
     DuzeltmeNedeni?: Record<string, string>;
   };
@@ -664,6 +665,22 @@ console.log("\n5) NEDEN YÖNÜ — ANLAMSIZ BİLEŞİM KURULAMAZ");
     ["yonEtiketi", "yonEksi", "yonArti", "yonHerIkisi", "yonNotu"].every(
       (k) => (trSozluk.DuzeltmeNedeni?.[k] ?? "").length > 0,
     ),
+  );
+
+  /**
+   * SUNUCU DA DOĞRULAR — ekran süzgeci yalnız GÖRÜNÜRLÜKTÜR. İstek elle
+   * kurulabilir, eski sekme açık kalabilir, kullanıcı neden seçtikten
+   * sonra yönü değiştirebilir. Süzgeç bir GÜVENLİK değil kolaylıktır.
+   */
+  const duzeltmeEylemi = readFileSync("src/app/stok/duzeltme-actions.ts", "utf8");
+  kontrol(
+    "sunucu neden-yön uyumunu DOĞRULUYOR",
+    duzeltmeEylemi.includes(`neden.yon !== "HER_IKISI" && neden.yon !== yon`),
+  );
+  kontrol(
+    "  ...uyumsuzlukta TÜRKÇE hata dönüyor (sessiz kayıt yok)",
+    duzeltmeEylemi.includes(`t("nedenYonUyumsuz")`) &&
+      (trSozluk2.Stok?.nedenYonUyumsuz ?? "").length > 0,
   );
 }
 

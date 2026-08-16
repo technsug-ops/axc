@@ -168,7 +168,8 @@
     "gecmisNotu": "Hareketler değiştirilmez ve silinmez. Hatalı bir giriş, ters yönde bir düzeltme kaydıyla giderilir. \"Kim\" sütunu çok kullanıcılı yapıyla (Faz 4) dolacak.",
     "satisKaynagi": "Satış",
     "ayrilmisRozeti": "{sayi} ayrıldı",
-    "yasSuzgeci": "{gun}+ gündür bekleyenler"
+    "yasSuzgeci": "{gun}+ gündür bekleyenler",
+    "nedenYonUyumsuz": "Seçilen neden bu yönde kullanılamaz. Nedeni ya da yönü değiştirin."
   },
   "Urunler": {
     "baslik": "Ürünler",

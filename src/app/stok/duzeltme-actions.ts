@@ -66,9 +66,31 @@ export async function stokDuzelt(
 
   const neden = await prisma.stockAdjustmentReason.findUnique({
     where: { id: nedenId },
-    select: { id: true, movementType: true, requiresNote: true, isActive: true },
+    select: {
+      id: true,
+      movementType: true,
+      requiresNote: true,
+      isActive: true,
+      yon: true,
+    },
   });
   if (!neden || !neden.isActive) return { hatalar: [t("nedenBulunamadi")] };
+
+  /**
+   * YÖN SUNUCUDA DA DOĞRULANIR — EKRANA GÜVENİLMEZ.
+   *
+   * Form nedenleri yöne göre süzüyor, ama süzgeç yalnız GÖRÜNÜRLÜKTÜR:
+   * istek elle de kurulabilir, eski bir sekme açık kalabilir, kullanıcı
+   * neden seçtikten sonra yönü değiştirebilir. Bu depoda kural zaten
+   * yazılıydı (bkz. düzeltme nedeni tip kilidi: "ekran alanı zaten
+   * kilitli, ama sunucu da güvenmiyor") — kendi eklediğim kısıtta
+   * atlamıştım (16.08.2026).
+   *
+   * `HER_IKISI` her yönde geçer; diğerleri yalnız kendi yönünde.
+   */
+  if (neden.yon !== "HER_IKISI" && neden.yon !== yon) {
+    return { hatalar: [t("nedenYonUyumsuz")] };
+  }
 
   const birimMaliyet =
     maliyetMetni === "" ? null : Number(maliyetMetni.replace(",", "."));
