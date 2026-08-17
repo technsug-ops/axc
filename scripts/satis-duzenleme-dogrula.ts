@@ -319,7 +319,7 @@ console.log("\nSATIŞ DÜZENLEME — DOĞRULAMA\n");
    * Bu kontrol kaybın BÜYÜKLÜĞÜNÜ sabitliyor — 88,96'lık kargo üç
    * düzenlemede 51,48'e inerdi.
    */
-  const bolerek = (n: number, kez: number) =>
+  const bolerek = (n: number, kez: number): number =>
     Math.round((kez === 0 ? n : bolerek(n / 1.2, kez - 1)) * 100) / 100;
   kontrol("çevirisiz üç turda 88,96 → 51,48 olurdu", bolerek(88.96, 3) === 51.48, bolerek(88.96, 3));
 }
