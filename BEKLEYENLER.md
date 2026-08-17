@@ -1058,7 +1058,24 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
 
       **AMBER:** kart ödemesi yaklaşan · **geciken sipariş** · stok bitiyor ·
       bekleyen iade · zarar eden satış · **marj düştü**.
-      **NÖTR:** ölü sermaye (60 gün) · kanal SKU boş.
+      **NÖTR:** ölü sermaye (60 gün) · **kanal SKU boş — KOŞULLU:**
+      _yalnız STOĞU OLUP kanal kodu olmayan ürün._
+
+      **DEĞERLENDİRME 18.08.2026 — mimar "yeni ürün formunda bilgi ibaresi"
+      önerdi; ÖNERİLMİYOR, iş buraya bağlanmalı. İki ölçüm:**
+
+      1. **Yeni ürün/varyant formu kanal kodunu HİÇ SORMUYOR.** İbare,
+         kullanıcının o ekranda dolduramayacağı bir alanı işaret ederdi —
+         "kural teslim edilebilir mi" ihlali (kart faizi kategori linkinin
+         aynısı). Çalışması için `/kanal-sku`ya bağlantı gerekirdi.
+      2. **Kayıt anında HER ürün kodsuzdur** — kod listeleme anında doğar.
+         Yani ibare %100 ihtimalle çıkar. **Her zaman çıkan uyarı bilgi
+         taşımaz;** panelde "beş kutuda aynı cümle" kararının aynısı.
+
+      **Bilgi taşıyan an, kayıt anı değil:** ürünün STOĞU var ama kanal
+      kodu yok — "alındı, listelenmedi". Bugünkü 5 yarı kör tam olarak bu
+      kümedir ve gerçekten eyleme çağırır. Koşul bu yüzden eklendi; koşulsuz
+      hâli 1072 üründen her yeni kaydı sarı yakardı.
 
       **EŞİKLER NETLEŞTİ (mimar kararı 15.08.2026):**
       - **Geciken sipariş: 7 GÜN SABİT.** Alım `ORDERED` + `purchasedAt`
@@ -1173,34 +1190,26 @@ değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.
 
 ## Faz 3 kapanış borcu
 
-- [ ] **27 KANAL KODSUZ KATALOG KAYDI** — _kayıt 17.08.2026, mimar._
-      Katalogda 27 kayıt **Kanal SKU'suz** duruyor.
+- [x] **KANAL KODSUZ KAYITLAR — KAPANDI 18.08.2026, BORÇ ÇIKMADI.**
 
-      **ETKİ — ölçüldü, iddia dar bir noktada düzeltildi.** Arama gerçekten
-      Kanal SKU'ya bakıyor: `aramaKosulu` (serbest metin) ve `kodKosulu`
-      (okutulan kod) ikisi de `channelSkus`i sorguluyor. Yani kanal kodu
-      olmayan ürün, **kanal koduyla** aranınca bulunmaz.
+      Ölçüm (`npm run canli:kanal-kodsuz`): **6 / 1072** aktif varyant.
+      _27 sayısı bayatmış._
 
-      Ama "kamerayla okutunca kayıtlı değil der" **koşullu doğrudur**:
-      okuyucu etiketteki kodu okur. Pazaryeri/firma etiketi okutulursa
-      eşleşme yok; **üretici EAN'ı okutulursa `barcode` alanından eşleşir.**
-      Yani asıl soru şu ve liste çıkarılırken BİRLİKTE sorulmalı:
-      **bu 27 kaydın kaçında barkod da boş?** Hem kanal kodu hem barkodu
-      boş olan kayıt gerçekten kördür; yalnız kanal kodu eksik olan kayıt
-      EAN ile bulunur. İkisi aynı aciliyette değildir.
+      - **1 KÖR** (kanal kodu + barkod ikisi de yok): `ELK-AN-260811-01`
+        — hiç alım/satışı olmayan **katalog taslağı.**
+      - **5 yarı kör**: alınmış ama henüz kanala listelenmemiş ürünler.
 
-      **İŞ:**
-      1. Listeyi çıkar — hangi 27 ürün. Salt-okunur betik (`canli-kar-tazele`
-         kalıbı: önce rapor, yazma ayrı bayrak).
-      2. Her satırda **barkod var mı** sütunu — kör olanlar ayrışsın.
-      3. Tamamlama yolu öner: **elle** mi, **kanal eşleşmesinden türetme**
-         mi. Türetme öneriliyorsa kaynağı ve çakışma kuralı yazılı olsun —
-         yanlış kanal koduna bağlanan ürün, doğru koda hiç bağlanmamış
-         üründen daha tehlikelidir (sessizce yanlış ürüne gider).
-      4. Halil'e rapor; tamamlama ondan sonra.
+      **Kalem yanlış çerçevelenmişti: bu bir VERİ BORCU değil, OPERASYON
+      AKIŞI.** Kanal kodu ürün pazaryerine listelenirken doğar; ondan önce
+      girilecek bir kod YOKTUR. "Eksik" sanılan alan, aslında henüz
+      gelmemiş bir bilgiydi.
 
-      _Not: bu kalem VERİ borcudur, kod borcu değil — arama tarafı doğru
-      çalışıyor. Ama sonucu kullanıcıya kod hatası gibi görünür._
+      > **Kanal kodu, ürün pazaryerine listelenirken girilir; kodsuz kalan
+      > = henüz listelenmemiş. Aylık kontrol: `canli:kanal-kodsuz`.**
+
+      _Ders: bir sayı bayatlar. "27 kayıt" bir zamanlar doğruydu; kalem
+      açılırken ölçülmediği için borç sanıldı ve gerçek durum altı kayıt
+      çıktı. Sayı taşıyan her kalem, işe başlarken YENİDEN ölçülür._
 
 - [ ] **PANEL KART SIRASI + SÜZGEÇ ERİŞİMİ** — _Halil talebi 17.08.2026._
 
