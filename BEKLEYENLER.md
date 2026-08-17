@@ -1417,10 +1417,17 @@ değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.
       _Kullanıcı kararı 18.08.2026: "şu anda euroya ihtiyacımız yok, en
       sona ertele. TÜRK PİYASASINA çalışacağız."_
 
-      Sıralamada **en alt**: uyarı merkezi, stok sinyalleri ve pazaryeri
-      işleri bunun önüne geçer. Açılma şartı aşağıda duruyor ve
-      DEĞİŞMEDİ — ama artık "gerçek EUR işlemi doğsa bile" öncelik
-      almayacak; iş yükü Türk piyasası akışında.
+      **YERİ NETLEŞTİ: SaaS ile birlikte.** _Kullanıcı 18.08.2026: "SaaS
+      olduğunda para birimini koyarız."_ Bu, kalemi belirsiz bir "sonra"dan
+      çıkarıp büyüme sırasındaki ÜÇÜNCÜ aşamaya bağlar (bkz. Büyüme sırası
+      → 3 · SaaS). Mantıklı: çok para birimi tek firmanın değil, farklı
+      ülkelerde çalışan MÜŞTERİLERİN ihtiyacıdır — yani bir SaaS özelliği,
+      bir Axcalı özelliği değil.
+
+      Sıralamada en alt: uyarı merkezi, stok sinyalleri ve pazaryeri işleri
+      önüne geçer. Aşağıdaki açılma şartı (gerçek EUR işlemi) artık tek
+      başına YETMEZ — tek bir EUR işlemi için ekran açılmaz, elle not
+      düşülür ve SaaS penceresinde toplu çözülür.
 
       ⚠ **ERTELEME, TEK PARA BİRİMİ VARSAYIMINI DERİNLEŞTİRME İZNİ
       DEĞİLDİR.** Anayasa kuralı yürürlükte: parasal değer her zaman
