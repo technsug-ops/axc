@@ -23,6 +23,7 @@ import { getTranslations } from "next-intl/server";
 import { alimDurumEtiketleri } from "@/lib/etiketler";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
+import { tedarikciAdi } from "@/lib/tedarikci-adi";
 import { kalemIlerlemesi, kalemTeslimAlinanlar } from "@/lib/stok";
 import { kalemToplamlari } from "@/lib/tutar";
 import { DURUM_KUTUSU } from "@/lib/renkler";
@@ -117,11 +118,12 @@ export default async function AlimDetaySayfasi({
           ? t("taksitSayisi", { sayi: alim.installmentCount })
           : t("tekCekim"),
     },
-    // İLİŞKİ ÖNCE, serbest metin YEDEK: 10.08 öncesi kayıtlarda supplierId
-    // yok, adı sadece supplierName'de duruyor. Geçmiş bozulmadan gösterilir.
+    // Çözüm kuralı lib/tedarikci-adi.ts'te — kârlılık kartı da aynı
+    // fonksiyonu çağırıyor. İki ekranda iki mantık, aynı alımda iki farklı
+    // tedarikçi demekti (canlı hata 17.08.2026).
     {
       etiket: t("tedarikci"),
-      deger: alim.supplier?.name ?? alim.supplierName ?? "—",
+      deger: tedarikciAdi(alim) ?? "—",
     },
     { etiket: t("tedarikciSiparisNo"), deger: alim.supplierOrderNo ?? "—" },
   ];

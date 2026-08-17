@@ -2532,6 +2532,7 @@
     "stokEkrani": "Stok ekranı",
     "urunEkrani": "Ürün kartı",
     "yeniArama": "Yeni arama",
-    "tedarikciBilinmiyor": "tedarikçi bilinmiyor"
+    "girisTarihi": "giriş {tarih}",
+    "tedarikciKayitsiz": "tedarikçi kayıtsız"
   }
 }

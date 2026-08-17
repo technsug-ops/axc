@@ -5,6 +5,7 @@ import {
   type KartSatisi,
 } from "../src/lib/urun-karti";
 import type { KalemGirdisi } from "../src/lib/panel-listeler";
+import { tedarikciAdi } from "../src/lib/tedarikci-adi";
 
 /**
  * ============================================================================
@@ -276,6 +277,42 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
   kontrol(
     "TRY + EUR KARIŞIK",
     paraBirimiKarisikMi([{ paraBirimi: "TRY" }, { paraBirimi: "EUR" }]) === true,
+  );
+}
+
+// --- 9) TEDARİKÇİ ADI — CANLI HATANIN KENDİSİ ------------------------------
+{
+  console.log("\n9) TEDARİKÇİ ADI (canlı hata 17.08.2026)");
+
+  /**
+   * VAKA: ALM-TR-260814-01 alımında tedarikçi "Trendyol" alım ekranında
+   * görünüyordu, kârlılık kartında GÖRÜNMÜYORDU. Sebep zincirin kopması
+   * değildi — kart `supplierName` alanını HİÇ SORMUYORDU.
+   *
+   * `Purchase` tedarikçiyi iki alanda taşır: ilişki (10.08.2026'da bağlandı)
+   * ve serbest metin (o tarihten önceki kayıtlar + içe aktarma izi).
+   */
+  kontrol(
+    "ilişki doluysa ondan okur",
+    tedarikciAdi({ supplier: { name: "Trendyol" }, supplierName: null }) ===
+      "Trendyol",
+  );
+  kontrol(
+    "ilişki YOKSA serbest metne düşer (kaçan vaka)",
+    tedarikciAdi({ supplier: null, supplierName: "Trendyol" }) === "Trendyol",
+  );
+  kontrol(
+    "ikisi de doluysa İLİŞKİ kazanır (güncel olan)",
+    tedarikciAdi({ supplier: { name: "Yeni Ad" }, supplierName: "Eski Ad" }) ===
+      "Yeni Ad",
+  );
+  kontrol(
+    "ikisi de boşsa null — ekran 'kayıtsız' yazar",
+    tedarikciAdi({ supplier: null, supplierName: null }) === null,
+  );
+  kontrol(
+    "yalnız boşluk taşıyan eski kayıt DOLU sayılmaz",
+    tedarikciAdi({ supplier: null, supplierName: "   " }) === null,
   );
 }
 

@@ -1,6 +1,7 @@
 import { acikPartilerToplu } from "@/lib/stok";
 import { kalemDusumleri } from "@/lib/satis";
 import { prisma } from "@/lib/prisma";
+import { tedarikciAdi } from "@/lib/tedarikci-adi";
 import { VARYANT_SECIMI, varyantiOzetle, type VaryantSonucu } from "@/lib/varyant-ozet";
 import { yasBandi, gunFarki, type YasBandi } from "@/lib/yaslanma";
 import { kartOzeti, type KartGirdisi, type KartOzeti, type KartSatisi } from "@/lib/urun-karti";
@@ -213,7 +214,14 @@ export async function kartVerisiniTopla(
                 purchase: {
                   select: {
                     code: true,
+                    /**
+                     * İKİ ALAN DA SORULUR. `supplierName` 10.08.2026 öncesi
+                     * kayıtların ve içe aktarmanın tedarikçisini taşıyor;
+                     * yalnız ilişkiyi sormak, o kayıtlarda tedarikçiyi
+                     * SESSİZCE kaybetmek demekti (canlı hata 17.08.2026).
+                     */
                     supplier: { select: { name: true } },
+                    supplierName: true,
                   },
                 },
               },
@@ -240,8 +248,9 @@ export async function kartVerisiniTopla(
       enYeni?.birimMaliyet == null ? null : Number(enYeni.birimMaliyet),
     sonAlimTarihi: enYeni?.occurredAt ?? null,
     sonAlimParaBirimi: enYeni?.birimMaliyetParaBirimi ?? null,
-    sonAlimTedarikcisi:
-      sonAlimHareketi?.purchaseItem?.purchase.supplier?.name ?? null,
+    sonAlimTedarikcisi: sonAlimHareketi?.purchaseItem?.purchase
+      ? tedarikciAdi(sonAlimHareketi.purchaseItem.purchase)
+      : null,
     sonAlimKodu: sonAlimHareketi?.purchaseItem?.purchase.code ?? null,
     iadeSebepleri: [...sebepSayaci.entries()]
       .map(([sebep, sayi]) => ({ sebep: sebep as ReturnReason, sayi }))

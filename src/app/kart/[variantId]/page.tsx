@@ -152,14 +152,26 @@ export default async function KartSayfasi({
           <Kutu
             etiket={t("sonAlim")}
             deger={p(veri.sonAlimMaliyeti, veri.sonAlimParaBirimi ?? para)}
-            /* Tarih VE tedarikçi birlikte: "kimden, ne zaman, kaça" tek
-               satırda okunsun — alım kararında üçü birlikte anlamlı. */
+            /**
+             * "GİRİŞ" İBARESİ BİLİNÇLİ: burada yazan tarih malın STOĞA
+             * GİRDİĞİ gündür (mal kabul), siparişin verildiği gün değil.
+             * İkisi günlerce ayrışabiliyor; etiketsiz tarih kullanıcıyı
+             * alım tarihiyle karıştırıyordu.
+             *
+             * Alım kodu da yazar: aynı gün aynı üründen birden çok alım
+             * olabiliyor (ALM-TR-260814-01 ve -02 gibi) ve hangisinin
+             * okunduğu ekranda görünmeden doğrulanamaz.
+             */
             not={
               veri.sonAlimTarihi === null
                 ? t("alimYok")
-                : `${bicim.tarih(veri.sonAlimTarihi)} · ${
-                    veri.sonAlimTedarikcisi ?? t("tedarikciBilinmiyor")
-                  }`
+                : [
+                    t("girisTarihi", { tarih: bicim.tarih(veri.sonAlimTarihi) }),
+                    veri.sonAlimTedarikcisi ?? t("tedarikciKayitsiz"),
+                    veri.sonAlimKodu,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
             }
           />
           <Kutu
