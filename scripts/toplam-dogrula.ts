@@ -1,4 +1,4 @@
-import { suzgecToplami } from "../src/lib/liste-toplami";
+import { hesaplananToplami, suzgecToplami } from "../src/lib/liste-toplami";
 import { kalemToplamlari } from "../src/lib/tutar";
 
 /**
@@ -122,6 +122,57 @@ esit("hepsi iptalse toplam boş", hepsiIptal.toplam, []);
 esit("hepsi iptalse hariç dolu", hepsiIptal.haric, [
   { paraBirimi: "TRY", tutar: 500 },
 ]);
+
+// --- 8) NET TOPLAMI: hesaplanamayan SIFIR SAYILMAZ -------------------------
+/**
+ * Kuralın taşıyıcı senaryosu — ve YÜKÜ SAYIMDA.
+ *
+ * Gerçekte hesaplanamayan satışın `net2Amount`i NULL'dır; toplama girerse
+ * 0 olarak girer ve TOPLAMI DEĞİŞTİRMEZ. Tehlike tam da bu sessizlikte:
+ * kullanıcı "3 satıştan ₺1.500" sanır, oysa rakam 2 satışın. Bu yüzden
+ * kontrol edilmesi gereken şey toplam değil, DIŞARIDA KALAN SAYISIDIR —
+ * ekranda "1 satışın kârı hesaplanamadı" yazmasını sağlayan odur.
+ *
+ * Aşağıdaki `net: 0` bilinçli: NULL'ın gerçek davranışını taklit ediyor.
+ */
+type Satis = { kod: string; hesaplandi: boolean; net: number; para: string };
+const satislar: Satis[] = [
+  { kod: "S1", hesaplandi: true, net: 1000, para: "TRY" },
+  { kod: "S2", hesaplandi: true, net: 500, para: "TRY" },
+  { kod: "S3", hesaplandi: false, net: 0, para: "TRY" }, // NO_COST → NULL
+];
+const n = hesaplananToplami(
+  satislar,
+  (s) => s.hesaplandi,
+  (s) => ({ paraBirimi: s.para, tutar: s.net }),
+);
+esit("NET toplamı hesaplananlardan", n.toplam, [
+  { paraBirimi: "TRY", tutar: 1500 },
+]);
+esit("hesaplanamayan SAYILIR ve bildirilir", n.eksikSayi, 1);
+
+// Hepsi hesaplanamazsa toplam BOŞ döner — kutu hiç çizilmez, "₺0,00" yazmaz.
+const hicbiri = hesaplananToplami(
+  [{ kod: "S9", hesaplandi: false, net: 0, para: "TRY" }],
+  (s) => s.hesaplandi,
+  (s) => ({ paraBirimi: s.para, tutar: s.net }),
+);
+esit("hiçbiri hesaplanmadıysa toplam boş", hicbiri.toplam, []);
+esit("hepsi eksik sayılır", hicbiri.eksikSayi, 1);
+
+// Zarar eden satış toplamı DÜŞÜRÜR — mutlak değer alınmaz.
+esit(
+  "zarar negatif katkı yapar",
+  hesaplananToplami(
+    [
+      { kod: "K", hesaplandi: true, net: 300, para: "TRY" },
+      { kod: "Z", hesaplandi: true, net: -100, para: "TRY" },
+    ],
+    (s) => s.hesaplandi,
+    (s) => ({ paraBirimi: s.para, tutar: s.net }),
+  ).toplam,
+  [{ paraBirimi: "TRY", tutar: 200 }],
+);
 
 console.log(`\n${gecen} geçti · ${kalan} kaldı\n`);
 if (kalan > 0) process.exitCode = 1;

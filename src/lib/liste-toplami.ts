@@ -55,3 +55,29 @@ export function suzgecToplami<T>(
     haricSayi: harictekiler.length,
   };
 }
+
+/**
+ * KÂR TOPLAMI — HESAPLANAMAYAN TOPLAMA GİRMEZ.
+ *
+ * Maliyeti bilinmeyen (`NO_COST`), kuru uyuşmayan ya da kuralı eksik satışın
+ * NET'i YOKTUR; sıfır DEĞİLDİR. Sıfır sayılsaydı toplam sessizce olduğundan
+ * küçük çıkar ve kullanıcı zarar ettiğini sanardı.
+ *
+ * Kaç kaydın dışarıda kaldığı geri döner ve ekranda YAZILIR: eksik bir rakamı
+ * tam sanmak, yanlış bir rakamdan tehlikelidir.
+ */
+export function hesaplananToplami<T>(
+  kayitlar: readonly T[],
+  hesaplandiMi: (kayit: T) => boolean,
+  tutari: (kayit: T) => ParaToplami,
+): { toplam: ParaToplami[]; eksikSayi: number } {
+  const girenler: ParaToplami[][] = [];
+  let eksikSayi = 0;
+
+  for (const kayit of kayitlar) {
+    if (hesaplandiMi(kayit)) girenler.push([tutari(kayit)]);
+    else eksikSayi++;
+  }
+
+  return { toplam: toplamlariBirlestir(girenler), eksikSayi };
+}

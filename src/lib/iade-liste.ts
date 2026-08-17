@@ -34,6 +34,90 @@ export type IadeSatirVerisi = {
   paraBirimi: Currency;
 };
 
+/**
+ * Satır verisini üretmek için gereken EN AZ alan kümesi.
+ *
+ * Yapısal tip: hem sayfalanmış liste sorgusu (ürün adı, kullanıcı gibi
+ * ekranın ihtiyaç duyduğu fazlalıklarla) hem de özet için atılan DAR sorgu
+ * bu tipe uyar. Fazla alan taşımak sorun değil, eksik alan derlemede yakalanır.
+ */
+export type IadeHesapGirdisi = {
+  id: string;
+  returnType: ReturnType;
+  net1Amount: { toString(): string } | null;
+  net2Amount: { toString(): string } | null;
+  penaltyAmount: { toString(): string } | null;
+  profitCurrency: Currency | null;
+  sale: { channelAccount: { channel: { code: string; name: string } } };
+  fees: { code: string; amount: { toString(): string } }[];
+  items: {
+    quantity: number;
+    soundQuantity: number;
+    damagedQuantity: number;
+    compensations: { quantity: number }[];
+  }[];
+};
+
+/**
+ * ⚠ NEDEN SAF KATMANA TAŞINDI (17.08.2026)
+ *
+ * Bu dönüşüm ekranın içinde, sayfalanmış listenin `map`'i olarak duruyordu ve
+ * "Dönem özeti" kartları ondan besleniyordu. Yani özet aslında GÖRÜNEN SAYFANIN
+ * toplamıydı: sayfa boyutu 50, 51'inci iadede kart sessizce yanlış rakam
+ * gösterirdi ve başlığında "Dönem özeti" yazdığı için yanlışlığı belli olmazdı.
+ *
+ * Dönüşüm burada durunca özet, süzgecin TAMAMINDAN aynı kuralla hesaplanabiliyor
+ * (Kullanıcı Kolaylığı #15: sayfalama varsa toplam görünen sayfanın değil,
+ * süzgecin tamamının toplamıdır).
+ */
+export function iadeSatirVerisi(
+  i: IadeHesapGirdisi,
+  /** Hasarlıdan tazminat talebi açılmamış adet — kural `lib/tazminat.ts`de. */
+  kalanTalepEdilebilir: (hasarli: number, talepler: number[]) => number,
+): IadeSatirVerisi {
+  const sayi = (d: { toString(): string } | null) =>
+    d === null ? null : Number(d.toString());
+
+  const satirTutari = (kod: string) =>
+    i.fees
+      .filter((f) => f.code === kod)
+      .reduce((t, f) => t + Number(f.amount.toString()), 0);
+
+  /**
+   * MALİYET İKİ SATIRDAN OKUNUR, TÜRETİLMEZ (14.08.2026 düzeltmesi).
+   * `MALIYET_GERI` iade edilen adedin TAMAMININ maliyeti, `MALIYET_DONMEYEN`
+   * hasarlıya düşen NEGATİF pay; toplamları gerçekten stoğa dönen maliyettir.
+   */
+  const donmeyen = satirTutari("MALIYET_DONMEYEN");
+
+  return {
+    iadeId: i.id,
+    kanalKodu: i.sale.channelAccount.channel.code,
+    kanalAdi: i.sale.channelAccount.channel.name,
+    tur: i.returnType,
+    adet: i.items.reduce((t, k) => t + k.quantity, 0),
+    saglamAdet: i.items.reduce((t, k) => t + k.soundQuantity, 0),
+    hasarliAdet: i.items.reduce((t, k) => t + k.damagedQuantity, 0),
+    talepsizHasarAdet: i.items.reduce(
+      (t, k) =>
+        t +
+        kalanTalepEdilebilir(
+          k.damagedQuantity,
+          k.compensations.map((c) => c.quantity),
+        ),
+      0,
+    ),
+    net1: sayi(i.net1Amount),
+    net2: sayi(i.net2Amount),
+    ceza: sayi(i.penaltyAmount) ?? 0,
+    donenMaliyet: satirTutari("MALIYET_GERI") + donmeyen,
+    /** Satır negatif tutulur (nete öyle giriyor); kutuda pozitif gösterilir. */
+    donmeyenMaliyet: Math.abs(donmeyen),
+    kayipGelir: Math.abs(satirTutari("KAYIP_GELIR")),
+    paraBirimi: i.profitCurrency ?? "TRY",
+  };
+}
+
 export type IadeToplami = {
   paraBirimi: Currency;
   iadeAdedi: number;

@@ -21,8 +21,10 @@ import { IceAktarici } from "./ice-aktarici";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Basliklar");
-  return { title: t("gecmisEkstre") };
+  // Diğer ekranlarla aynı ad: aynı dosyada iki `t` olması hem okuyanı hem
+  // i18n kontrolünü yanıltıyordu (ad alanı gövdedeki `t`den çıkarılıyor).
+  const tBaslik = await getTranslations("Basliklar");
+  return { title: tBaslik("gecmisEkstre") };
 }
 
 export default async function GecmisEkstreSayfasi() {

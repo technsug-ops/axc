@@ -56,6 +56,7 @@ import { EK_SINIRLARI } from "@/lib/ekler";
 
 import { BildirimDurumu } from "./bildirim-durumu";
 import {
+  iadeSatirVerisi,
   iadeToplamlari,
   kanalKirilimi,
   urunKirilimi,
@@ -204,73 +205,54 @@ export default async function IadelerSayfasi({
     },
   });
 
-  const sayi = (d: { toString(): string } | null) =>
-    d === null ? null : Number(d.toString());
-
   /** Ekran satırı + saf hesaba giden veri, tek yerden türetilir. */
-  const satirlar = iadeler.map((i) => {
-    const adet = i.items.reduce((t2, k) => t2 + k.quantity, 0);
-    const saglamAdet = i.items.reduce((t2, k) => t2 + k.soundQuantity, 0);
-    const hasarliAdet = i.items.reduce((t2, k) => t2 + k.damagedQuantity, 0);
-    const talepsizHasarAdet = i.items.reduce(
-      (t2, k) =>
-        t2 +
-        kalanTalepEdilebilirAdet(
-          k.damagedQuantity,
-          k.compensations.map((c) => c.quantity),
-        ),
-      0,
-    );
+  const satirlar = iadeler.map((i) => ({
+    kayit: i,
+    veri: iadeSatirVerisi(i, kalanTalepEdilebilirAdet),
+  }));
 
-    const satirTutari = (kod: string) =>
-      i.fees
-        .filter((f) => f.code === kod)
-        .reduce((t2, f) => t2 + Number(f.amount.toString()), 0);
-
-    /**
-     * MALİYET İKİ SATIRDAN OKUNUR, TÜRETİLMEZ (14.08.2026 düzeltmesi).
-     *
-     * Eskiden yalnız `MALIYET_GERI` vardı ve dönmeyen maliyet ondan
-     * türetiliyordu: `(maliyetGeri / saglamAdet) * hasarliAdet`. Sağlam adet
-     * 0 olunca sıfıra bölünmesin diye 0 dönüyordu — yani TAMAMEN HASARLI
-     * iadede "üstünüzde kalan maliyet" ₺0,00 görünüyordu. Kutunun kendi
-     * açıklaması rakamı yalanlıyordu.
-     *
-     * MALIYET_GERI artık iade edilen adedin TAMAMININ maliyeti,
-     * MALIYET_DONMEYEN ise hasarlıya düşen NEGATİF pay. İkisinin toplamı
-     * gerçekten stoğa dönen maliyettir; eski tek satırla birebir aynı.
-     */
-    const maliyetTam = satirTutari("MALIYET_GERI");
-    const donmeyen = satirTutari("MALIYET_DONMEYEN");
-    const maliyetGeri = maliyetTam + donmeyen;
-    const kayipGelir = Math.abs(satirTutari("KAYIP_GELIR"));
-
-    const veri: IadeSatirVerisi = {
-      iadeId: i.id,
-      kanalKodu: i.sale.channelAccount.channel.code,
-      kanalAdi: i.sale.channelAccount.channel.name,
-      tur: i.returnType,
-      adet,
-      saglamAdet,
-      hasarliAdet,
-      talepsizHasarAdet,
-      net1: sayi(i.net1Amount),
-      net2: sayi(i.net2Amount),
-      ceza: sayi(i.penaltyAmount) ?? 0,
-      donenMaliyet: maliyetGeri,
-      /**
-       * Stoğa dönmeyen maliyet ARTIK KENDİ SATIRINDAN okunuyor. Satır
-       * negatif tutulur (nete öyle giriyor); kutuda pozitif gösterilir.
-       */
-      donmeyenMaliyet: Math.abs(donmeyen),
-      kayipGelir,
-      paraBirimi: i.profitCurrency ?? "TRY",
-    };
-
-    return { kayit: i, veri };
+  /**
+   * ÖZET SAYFANIN DEĞİL, SÜZGECİN TAMAMININ TOPLAMIDIR (İlke #15).
+   *
+   * ⚠ DÜZELTME 17.08.2026: bu toplam `satirlar` üzerinden hesaplanıyordu ve
+   * `satirlar` SAYFALANMIŞ listedir (sayfa boyutu 50). Yani "Dönem özeti"
+   * başlıklı kart aslında görünen sayfanın özetiydi; 51'inci iadeden sonra
+   * sessizce eksik rakam gösterirdi ve başlığı yanlışlığı gizlerdi.
+   *
+   * Sorgu DAR tutuldu: ekranın gösterdiği ürün adı / kullanıcı gibi alanlar
+   * toplam için gerekmiyor.
+   */
+  const ozetKayitlari = await prisma.return.findMany({
+    where: kosul,
+    select: {
+      id: true,
+      returnType: true,
+      net1Amount: true,
+      net2Amount: true,
+      penaltyAmount: true,
+      profitCurrency: true,
+      sale: {
+        select: {
+          channelAccount: {
+            select: { channel: { select: { code: true, name: true } } },
+          },
+        },
+      },
+      fees: { select: { code: true, amount: true } },
+      items: {
+        select: {
+          quantity: true,
+          soundQuantity: true,
+          damagedQuantity: true,
+          compensations: { select: { quantity: true } },
+        },
+      },
+    },
   });
 
-  const toplamlar = iadeToplamlari(satirlar.map((s) => s.veri));
+  const toplamlar = iadeToplamlari(
+    ozetKayitlari.map((i) => iadeSatirVerisi(i, kalanTalepEdilebilirAdet)),
+  );
 
   /**
    * --- KANAL KIRILIMI: PENCEREDEKİ TÜM iadeler (sayfa değil) ---
@@ -322,6 +304,10 @@ export default async function IadelerSayfasi({
       select: { id: true, channel: { select: { code: true } } },
     }),
   ]);
+
+  /** Kanal kırılımı dar sorgudan besleniyor; ondalık alanları sayıya çevirir. */
+  const sayi = (d: { toString(): string } | null) =>
+    d === null ? null : Number(d.toString());
 
   const kirilimGirdisi: IadeSatirVerisi[] = tumIadeler.map((i) => ({
     iadeId: "",

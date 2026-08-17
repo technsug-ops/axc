@@ -42,7 +42,7 @@
     "iadeler": "İadeler",
     "komisyonAktar": "Komisyon oranı içe aktarma",
     "talepler": "Destek talepleri",
-    "gecmisEkstre": "Geçmiş kart ekstreleri"
+    "gecmisEkstre": "Geçmiş ekstreler"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -811,7 +811,10 @@
     "kargoTarihiGecersiz": "Kargo tarihi okunamadı. Gün, ay ve yılı kontrol edin.",
     "karda": "kârda",
     "zararda": "zararda",
-    "karSuzgeciZarar": "Zarara gidenler"
+    "karSuzgeciZarar": "Zarara gidenler",
+    "ciroToplami": "Ciro toplamı",
+    "netToplami": "NET-2 toplamı",
+    "netHesaplanamayanHaric": "{sayi} satışın kârı hesaplanamadı — toplama girmedi"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -1903,7 +1906,8 @@
     "hataAdetTamSayi": "Adet tam sayı ve pozitif olmalı. Yönü yukarıdan seçin.",
     "hataAciklamaZorunlu": "Bu nedende açıklama zorunlu — ne olduğunu yazın.",
     "hataMaliyetNegatif": "Birim maliyet eksi olamaz.",
-    "hataMaliyetParaBirimsiz": "Maliyet girildi ama para birimi seçilmedi."
+    "hataMaliyetParaBirimsiz": "Maliyet girildi ama para birimi seçilmedi.",
+    "nedenYonUyumsuz": "Seçilen neden bu yön için kullanılamaz — nedenin yönü ile işlemin yönü uyuşmuyor."
   },
   "DuzeltmeNedeni": {
     "baslik": "Stok düzeltme nedenleri",

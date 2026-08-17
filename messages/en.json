@@ -811,7 +811,10 @@
     "kargoTarihiGecersiz": "",
     "karda": "",
     "zararda": "",
-    "karSuzgeciZarar": ""
+    "karSuzgeciZarar": "",
+    "ciroToplami": "",
+    "netToplami": "",
+    "netHesaplanamayanHaric": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -1903,7 +1906,8 @@
     "hataAdetTamSayi": "",
     "hataAciklamaZorunlu": "",
     "hataMaliyetNegatif": "",
-    "hataMaliyetParaBirimsiz": ""
+    "hataMaliyetParaBirimsiz": "",
+    "nedenYonUyumsuz": ""
   },
   "DuzeltmeNedeni": {
     "baslik": "",

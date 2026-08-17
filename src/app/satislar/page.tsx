@@ -33,6 +33,8 @@ import { satisKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { satisKalemToplamlari } from "@/lib/tutar";
+import { hesaplananToplami, suzgecToplami } from "@/lib/liste-toplami";
+import { ListeToplami } from "@/components/liste-toplami";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -134,6 +136,36 @@ export default async function SatislarSayfasi({
   function hesapMetni(satis: (typeof satislar)[number]) {
     return `${satis.channelAccount.channel.name} — ${satis.channelAccount.name}`;
   }
+
+  /**
+   * SÜZGECİN TOPLAMI (İlke #15) — ciro herkese, NET yalnız izinliye.
+   *
+   * `Sale`de bugün iptal alanı YOK (satış iptali paketi henüz canlıda değil),
+   * bu yüzden hariç tutulan küme boş. Paket geldiğinde `haricMi` iptalli
+   * satışları dışarıda bırakacak; kural burada tek satır değişir.
+   */
+  const ciroToplami = suzgecToplami(
+    satislar,
+    (s) => satisKalemToplamlari(s.items),
+    () => false,
+  );
+
+  /**
+   * NET-2 TOPLAMI — SESSİZ VARSAYIM YOK.
+   *
+   * Kârı hesaplanamamış satış (maliyet yok, kur uyuşmazlığı, kural eksik)
+   * toplama GİREMEZ; girseydi "0" sayılır ve NET olduğundan küçük görünürdü.
+   * Kaç satışın dışarıda kaldığı kutunun altında yazar — eksik rakamı tam
+   * sanmak, yanlış rakamdan tehlikelidir.
+   */
+  const net = hesaplananToplami(
+    satislar,
+    (s) => s.profitStatus === "CALCULATED" && s.net2Amount !== null,
+    (s) => ({
+      paraBirimi: s.profitCurrency ?? "TRY",
+      tutar: Number(s.net2Amount!.toString()),
+    }),
+  );
 
   /** Birim fiyat kolonu: tek kalemde gerçek fiyat, çok kalemde çizgi. */
   function birimFiyatMetni(satis: (typeof satislar)[number]) {
@@ -319,6 +351,27 @@ export default async function SatislarSayfasi({
           baslangic: p.baslangic ?? "",
           bitis: p.bitis ?? "",
         }}
+      />
+
+      {/* SÜZGECİN TOPLAMI — listenin üstünde, seçili dönemle birlikte (#15). */}
+      <ListeToplami
+        baslik={t("ciroToplami")}
+        toplamlar={ciroToplami.toplam}
+        altMetin={`${ortak("kayitSayisi", { sayi: satislar.length })}${
+          aralikMetni ? ` · ${aralikMetni}` : ""
+        }`}
+        ekler={[
+          {
+            etiket: t("netToplami"),
+            toplamlar: net.toplam,
+            // Kâr rakamı izne bağlı: Operasyon rolü ciroyu görür, NET'i görmez.
+            gorunur: karGorunur,
+            not:
+              net.eksikSayi > 0
+                ? t("netHesaplanamayanHaric", { sayi: net.eksikSayi })
+                : undefined,
+          },
+        ]}
       />
 
       {/* Hangi süzgecin açık olduğu EKRANDA yazar (#5). */}

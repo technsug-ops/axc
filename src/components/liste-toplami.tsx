@@ -38,17 +38,34 @@ export type HaricTutulan = {
   sayi: number;
 };
 
+/**
+ * Aynı süzgecin ikinci bir rakamı — satışta ciro yanındaki NET gibi.
+ *
+ * `not` alanı SESSİZ VARSAYIMI ÖNLER: kârı hesaplanamamış satış varsa toplam
+ * onu içermez ve bu ekranda yazar. Eksik rakamı tam sanmak, yanlış rakamdan
+ * daha tehlikelidir.
+ */
+export type EkKutu = {
+  etiket: string;
+  toplamlar: ParaToplami[];
+  not?: string;
+  /** Kâr gibi izne bağlı rakamlar için: false ise kutu hiç çizilmez. */
+  gorunur?: boolean;
+};
+
 export async function ListeToplami({
   baslik,
   toplamlar,
   altMetin,
   haric,
+  ekler,
 }: {
   baslik: string;
   toplamlar: ParaToplami[];
   /** "3 kayıt · Bugün" gibi — hangi kümenin toplamı olduğunu söyler. */
   altMetin?: string;
   haric?: HaricTutulan;
+  ekler?: EkKutu[];
 }) {
   const bicim = await bicimlendirici();
 
@@ -82,6 +99,29 @@ export async function ListeToplami({
           <div className="text-muted-foreground mt-0.5 text-xs">{altMetin}</div>
         ) : null}
       </div>
+
+      {/* Ek rakamlar — aynı süzgecin başka bir ölçüsü (ciro yanında NET). */}
+      {(ekler ?? [])
+        .filter((e) => e.gorunur !== false && e.toplamlar.length > 0)
+        .map((e) => (
+          <div key={e.etiket} className="bg-muted/40 rounded-lg border px-3 py-2">
+            <div className="text-muted-foreground text-xs">{e.etiket}</div>
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              {e.toplamlar.map((t) => (
+                <span
+                  key={t.paraBirimi}
+                  className="text-lg font-semibold tabular-nums"
+                >
+                  {bicim.para(t.tutar, t.paraBirimi)}
+                </span>
+              ))}
+            </div>
+            {/* Eksik veri sessiz kalmaz. */}
+            {e.not ? (
+              <div className="text-muted-foreground mt-0.5 text-xs">{e.not}</div>
+            ) : null}
+          </div>
+        ))}
 
       {/* Hariç tutulan küme — sessiz düşme yok. */}
       {haric && haric.sayi > 0 ? (
