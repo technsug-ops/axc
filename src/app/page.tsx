@@ -1215,6 +1215,9 @@ export default async function AnaSayfa({
           görünür. Panelin farkı yalnız VARSAYILANI — dönem hiç seçilmemişse
           bu ay. */}
       <SuzgecCubugu
+        /* YAPIŞKAN — Halil 18.08.2026: "kanalı SIK değiştiriyorum."
+           Yalnız telefonda yapışıyor; masaüstünde çubuk zaten görünür. */
+        yapiskan
         temelAdres="/"
         mevcut={parametreler}
         suzgecler={
@@ -1367,7 +1370,17 @@ export default async function AnaSayfa({
                 </p>
               ) : null}
 
-              {/* --- büyük rakamlar --- */}
+              {/* ---------------- BÜYÜK RAKAMLAR ----------------
+                  SIRA: ADET → KARGOYA VERİLEN → CİRO → NET-1 → NET-2.
+                  _Halil kararı 18.08.2026; ciro ile kargo yer değiştirdi._
+
+                  Sıra OPERASYON HUNİSİDİR: göz önce "kaç iş var", sonra
+                  "kaçı çıktı", ancak ondan sonra paraya bakar. Ciro
+                  kargodan önce durunca sayfa para ile başlıyor ve günün
+                  işi arada kalıyordu.
+
+                  ⚠ SIRA RASTGELE DEĞİL — yeni kutu eklenirken hunideki
+                  yerine konur, sona eklenmez. */}
               <div
                 className={`grid gap-2 sm:grid-cols-3 ${karGorunur ? "lg:grid-cols-5" : ""}`}
               >
@@ -1384,33 +1397,6 @@ export default async function AnaSayfa({
                     (n) => String(n),
                   )}
                 />
-                {/* CİRO — kutu düzenine girmiyor çünkü tek rakam değil, üç
-                    satır (brüt · iade düşümü · net). Kendi bileşeni var ve
-                    panelin ciro gösterdiği dört yüzeyin hepsinde aynı
-                    (mimar kararı 13.08.2026). */}
-                <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3">
-                  <span className="text-muted-foreground min-w-0 text-xs break-words">
-                    {t("ciro")}
-                  </span>
-                  <CiroSunumu
-                    boyut="kutu"
-                    brut={bicim.para(blok.toplamGelir, blok.paraBirimi)}
-                    iade={
-                      blok.toplamIadeTutari > 0
-                        ? bicim.para(blok.toplamIadeTutari, blok.paraBirimi)
-                        : null
-                    }
-                    net={bicim.para(
-                      blok.toplamGelir - blok.toplamIadeTutari,
-                      blok.paraBirimi,
-                    )}
-                  />
-                  {/* Kıyas BRÜT ciro üzerinden: iade etkisi ayrı bir
-                      kavram ve raporda da karşılaştırma dışında tutuluyor. */}
-                  {kiyasRozeti(blok.toplamGelir, kb?.toplamGelir ?? null, (n) =>
-                    bicim.para(n, blok.paraBirimi),
-                  )}
-                </div>
                 {/* KARGO DURUMU — elle işaretlenen operasyonel rakam.
                     "Bekleyen" bugün ne yapılacağını söylediği için verilenle
                     birlikte duruyor (kullanıcı kararı 14.08.2026) ve ikisi de
@@ -1477,6 +1463,33 @@ export default async function AnaSayfa({
                     </span>
                   }
                 />
+                {/* CİRO — kutu düzenine girmiyor çünkü tek rakam değil, üç
+                    satır (brüt · iade düşümü · net). Kendi bileşeni var ve
+                    panelin ciro gösterdiği dört yüzeyin hepsinde aynı
+                    (mimar kararı 13.08.2026). */}
+                <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3">
+                  <span className="text-muted-foreground min-w-0 text-xs break-words">
+                    {t("ciro")}
+                  </span>
+                  <CiroSunumu
+                    boyut="kutu"
+                    brut={bicim.para(blok.toplamGelir, blok.paraBirimi)}
+                    iade={
+                      blok.toplamIadeTutari > 0
+                        ? bicim.para(blok.toplamIadeTutari, blok.paraBirimi)
+                        : null
+                    }
+                    net={bicim.para(
+                      blok.toplamGelir - blok.toplamIadeTutari,
+                      blok.paraBirimi,
+                    )}
+                  />
+                  {/* Kıyas BRÜT ciro üzerinden: iade etkisi ayrı bir
+                      kavram ve raporda da karşılaştırma dışında tutuluyor. */}
+                  {kiyasRozeti(blok.toplamGelir, kb?.toplamGelir ?? null, (n) =>
+                    bicim.para(n, blok.paraBirimi),
+                  )}
+                </div>
                 {/* NET-1 VE NET-2 YAN YANA (kullanıcı isteği 14.08.2026:
                     "net kâr 1, 2"). İkisi arasındaki fark ÖDENECEK KDV'dir;
                     açıklama satırları bunu yazıyor ki hangisine bakılacağı

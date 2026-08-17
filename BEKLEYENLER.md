@@ -1221,7 +1221,27 @@ değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.
       sticky çubuk sürekli çalınan dikey alandır (Kural #12: alanı verimli
       kullan). Yanlış seçilirse her gün küçük bir bedel ödenir.
 
-      _İkisi de tek turda yapılır; (a) cevaba bağlı değil, (b) bağlı._
+      **✓ İKİSİ DE YAPILDI 18.08.2026.** Halil'in cevabı **SIK** geldi →
+      yapışkan çubuk seçildi.
+      - Sıra kuruldu; gerekçe koda yazıldı (yeni kutu sona değil, hunideki
+        yerine eklenir).
+      - Çubuk **yalnız telefonda** yapışıyor: masaüstünde zaten açık duruyor
+        ve orada yapışkan olsaydı üst şeridi kalıcı yerdi (Kural #12).
+      - Telefonda aktif seçim **düğmenin içinde** yazıyor (tek satır,
+        `truncate`); yoksa kullanıcı neye baktığını görmek için her
+        seferinde açmak zorunda kalırdı — yapışkanlığın amacı buydu.
+      - Dokunma hedefi 44 px korundu (İlke #8).
+      - `yapiskan` varsayılan KAPALI: hangi ekranda açılacağı ekran ekran
+        karar ister, toptan değil.
+
+      `panel:dogrula` 325 → 336. **Bekçi kendi işini yaptı:** sıra
+      değişince kıyas ibaresinin çapası kaydı ve kontrol kırmızı yandı —
+      yerleşim kuralı, yerleşim değişince yeniden soruldu.
+
+      _Bir kontrol ilk yazılışında YETERSİZDİ:_ `ozetMetni`in yalnız
+      TANIMLI olmasına bakıyordu; mutasyonda değişken durup düğme onu
+      kullanmayınca yeşil kaldı. Kontrol düğme gövdesini arayacak şekilde
+      sıkılaştırıldı.
 
 - [x] **KIYAS İBARESİ — YAPILDI 18.08.2026.** Halil: "kıyas rozeti sessiz
       kalıyor, veri mi yok değişim mi yok anlaşılmıyor."

@@ -2276,7 +2276,12 @@ console.log("\nKIYAS BOŞKEN SESSİZLİK YOK");
   );
 
   const ibareYeri = ekran.indexOf("kiyasVeriYok");
-  const izgaraYeri = ekran.indexOf("{/* --- büyük rakamlar --- */}");
+  /**
+   * ÇAPA: ızgara başlığı. 18.08.2026'da kutu sırası değişince eski çapa
+   * ("--- büyük rakamlar ---") yeniden yazıldı ve bu kontrol kırmızı yandı
+   * — doğru davranış: yerleşim kuralı yerleşim değişince yeniden sorulmalı.
+   */
+  const izgaraYeri = ekran.indexOf("BÜYÜK RAKAMLAR");
   kontrol(
     "  ...ve rakam ızgarasının ÜSTÜNDE",
     ibareYeri > 0 && izgaraYeri > 0 && ibareYeri < izgaraYeri,
@@ -2292,6 +2297,69 @@ console.log("\nKIYAS BOŞKEN SESSİZLİK YOK");
     "seçici altındaki ibare de duruyor",
     /kiyasBos \?[\s\S]{0,200}?kiyaslanamaz/.test(ekran),
   );
+}
+
+// ===========================================================================
+console.log("\nKART SIRASI VE YAPIŞKAN ÇUBUK");
+// ===========================================================================
+{
+  /**
+   * ⚠ Halil kararı 18.08.2026. İkisi de YERLEŞİM kuralı: değer testi
+   * göremez, ekran kodu taranır.
+   */
+  const ekran = readFileSync("src/app/page.tsx", "utf8");
+
+  /**
+   * SIRA: ADET → KARGO → CİRO → NET-1 → NET-2 (operasyon hunisi).
+   * Kutuların kaynak metindeki sırası ekrandaki sırasıdır (ızgara).
+   */
+  const yerler = {
+    adet: ekran.indexOf('etiket={t("satisAdedi")}'),
+    kargo: ekran.indexOf("{/* KARGO DURUMU — elle işaretlenen"),
+    ciro: ekran.indexOf("{/* CİRO — kutu düzenine girmiyor"),
+    net: ekran.indexOf("{/* NET-1 VE NET-2 YAN YANA"),
+  };
+  kontrol(
+    "beş kutunun hepsi bulundu",
+    Object.values(yerler).every((d) => d > 0),
+    yerler,
+  );
+  kontrol("1. ADET", yerler.adet < yerler.kargo);
+  kontrol("2. KARGOYA VERİLEN — ciroDAN ÖNCE", yerler.kargo < yerler.ciro);
+  kontrol("3. CİRO", yerler.ciro < yerler.net);
+  kontrol("4-5. NET-1 ve NET-2 sonda", yerler.net > yerler.ciro);
+
+  /** YAPIŞKAN ÇUBUK — panelde açık. */
+  kontrol(
+    "panel süzgeç çubuğu YAPIŞKAN",
+    /<SuzgecCubugu[\s\S]{0,400}?\byapiskan\b/.test(ekran),
+  );
+
+  const cubuk = readFileSync("src/components/suzgec-cubugu.tsx", "utf8");
+  kontrol("çubuk sticky sınıfını taşıyor", /sticky top-0/.test(cubuk));
+  /**
+   * MASAÜSTÜNDE YAPIŞMAZ — orada çubuk zaten açık duruyor ve yapışkan
+   * olsaydı üst şeridi kalıcı olarak yerdi (Kural #12).
+   */
+  kontrol("  ...ama masaüstünde STATİK", /md:static/.test(cubuk));
+  /**
+   * TELEFONDA ÖZET DÜĞMEDE: yapışkan çubuk neye bakıldığını söylemezse
+   * kullanıcı her seferinde açmak zorunda kalır — yapışkanlığın amacı
+   * tam da bunu kaldırmaktı.
+   */
+  /**
+   * ÖZET DÜĞMENİN İÇİNDE OLMALI — sadece TANIMLI olması yetmez.
+   * İlk yazdığım kontrol `/ozetMetni/` idi ve mutasyonda YEŞİL kaldı:
+   * değişken duruyordu ama düğme onu kullanmıyordu. Kontrol artık
+   * telefon düğmesinin gövdesinde arıyor.
+   */
+  kontrol(
+    "telefonda aktif seçim DÜĞMEDE yazıyor",
+    /md:hidden[\s\S]{0,700}?ozetMetni/.test(cubuk),
+  );
+  kontrol("  ...tek satır (truncate)", /truncate/.test(cubuk));
+  /** Dokunma hedefi 44 px — İlke #8, yapışkan olması bunu düşürmez. */
+  kontrol("dokunma hedefi h-11 kaldı", /h-11 w-full justify-between md:hidden/.test(cubuk));
 }
 
 // ===========================================================================

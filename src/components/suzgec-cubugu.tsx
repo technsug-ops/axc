@@ -68,6 +68,7 @@ export function SuzgecCubugu({
   mevcut,
   suzgecler,
   zaman,
+  yapiskan = false,
 }: {
   temelAdres: string;
   /** Sayfanın tüm searchParams'ı — dokunulmayanlar korunur. */
@@ -81,6 +82,19 @@ export function SuzgecCubugu({
     baslangic: string;
     bitis: string;
   };
+  /**
+   * YAPIŞKAN ÇUBUK — kaydırınca ekranın üstünde kalır.
+   *
+   * _Halil talebi 18.08.2026, telefondan: "süzgeç erişimi uzak."_ Cevabı
+   * "kanalı SIK değiştiriyorum" olduğu için yapışkan çubuk seçildi; nadir
+   * değiştiren için doğru cevap başlıkta etiket olurdu (o seçenek elendi).
+   *
+   * VARSAYILAN KAPALI. Kural #12 (alanı verimli kullan) gereği yapışkan
+   * çubuk her ekrandan dikey alan çalar; yalnız süzgecin SIK değiştiği
+   * ekranda açılır. Panelde açık, listelerde kapalı — açılması ekran ekran
+   * karar ister, toptan değil.
+   */
+  yapiskan?: boolean;
 }) {
   const t = useTranslations("Suzgec");
   const tPencere = useTranslations("Pencere");
@@ -108,8 +122,33 @@ export function SuzgecCubugu({
     return s.secenekler.find((o) => o.deger === deger)?.etiket ?? deger;
   };
 
+  /**
+   * TELEFONDA ÖZET DÜĞMENİN İÇİNDE.
+   *
+   * Yapışkan çubuk yalnız "Süzgeçler (2)" deseydi, kullanıcı neye baktığını
+   * görmek için her seferinde AÇMAK zorunda kalırdı — çubuğu yapışkan
+   * yapmanın amacı tam da bunu ortadan kaldırmaktı. Aktif seçim aynı
+   * satırda yazar; ikinci satır açılmaz (Kural #12).
+   */
+  const ozetMetni = [
+    zaman?.aralikMetni,
+    ...acikSuzgecler.map((f) => secenekEtiketi(f)),
+  ]
+    .filter((d): d is string => typeof d === "string" && d.trim() !== "")
+    .join(" · ");
+
   return (
-    <div className="space-y-3">
+    <div
+      className={
+        yapiskan
+          ? // YALNIZ TELEFONDA YAPIŞKAN. Masaüstünde çubuk zaten açık
+            // duruyor ve orada yapışkan yapmak ekranın üst şeridini kalıcı
+            // olarak yerdi — talep telefondan geldi, çözüm de telefonda
+            // kalıyor (Kural #12). md: ile eski davranışa dönülüyor.
+            "bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 space-y-3 border-b py-2 backdrop-blur md:static md:border-b-0 md:py-0 md:backdrop-blur-none"
+          : "space-y-3"
+      }
+    >
       {/* --- TELEFON: katlanır düğme --- */}
       <Button
         variant="outline"
@@ -117,11 +156,18 @@ export function SuzgecCubugu({
         onClick={() => setAcik((a) => !a)}
         aria-expanded={acik}
       >
-        <span className="flex items-center gap-2">
-          <SlidersHorizontal className="size-4" />
-          {t("suzgecler")}
+        <span className="flex min-w-0 items-center gap-2">
+          <SlidersHorizontal className="size-4 shrink-0" />
+          {/* Yapışkan çubukta özet, değilse sabit başlık. */}
+          <span className="truncate">
+            {yapiskan && ozetMetni !== "" ? ozetMetni : t("suzgecler")}
+          </span>
         </span>
-        {acikSayi > 0 ? <Badge variant="secondary">{acikSayi}</Badge> : null}
+        {acikSayi > 0 ? (
+          <Badge variant="secondary" className="shrink-0">
+            {acikSayi}
+          </Badge>
+        ) : null}
       </Button>
 
       <div className={`${acik ? "block" : "hidden"} space-y-3 md:block`}>
