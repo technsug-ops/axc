@@ -53,7 +53,9 @@
     "gecmis:dogrula": "tsx scripts/gecmis-dogrula.ts",
     "prebuild": "tsx scripts/deploy-bekci.ts",
     "deploy:bekci": "tsx scripts/deploy-bekci.ts",
-    "toplam:dogrula": "tsx scripts/toplam-dogrula.ts"
+    "toplam:dogrula": "tsx scripts/toplam-dogrula.ts",
+    "iptal:dogrula": "tsx scripts/iptal-dogrula.ts",
+    "iptal:bekci": "tsx scripts/iptal-bekci.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

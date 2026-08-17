@@ -115,6 +115,7 @@ export function satisKosulu(
   const hesap = temiz(p.hesap);
   const kar = temiz(p.kar);
   const iade = temiz(p.iade);
+  const iptal = temiz(p.iptal);
   const kargo = temiz(p.kargo);
 
   const kosul: Prisma.SaleWhereInput = {
@@ -165,6 +166,25 @@ export function satisKosulu(
     // İadesi olan / olmayan satışlar.
     ...(iade === "var" ? { returns: { some: {} } } : {}),
     ...(iade === "yok" ? { returns: { none: {} } } : {}),
+    /**
+     * ═══════════════════════════════════════════════════════════════════
+     *  İPTAL SÜZGECİ — TEK KAYNAK (mimar şartı 17.08.2026)
+     * -------------------------------------------------------------------
+     *  İptal edilen satış ciroya, NET'e ve hakediş beklentisine GİRMEZ:
+     *  mal hiç çıkmadı, komisyon kesilmedi, kargo yanmadı. İade gibi
+     *  "düşülmez", HİÇ DOĞMAMIŞ sayılır ve kümeden çıkar.
+     *
+     *  VARSAYILAN GİZLİ, `?iptal=1` ile GÖRÜNÜR. Kayıt asla silinmez —
+     *  görünmemesi yok olması değildir.
+     *
+     *  ⚠ BU SATIR TEK KAYNAKTIR. `prisma.sale` sorgusu yazan her yer bu
+     *  koşuldan geçmek ZORUNDA; `iptal:bekci` bunu tarayıp süzgeçsiz
+     *  sorguları kırmızıya düşürüyor. Her ekran kendi kontrolünü yazsaydı,
+     *  biri unutulduğu gün o ekran iptalli satışları ciroya sayardı ve
+     *  fark aylarca görülmezdi.
+     * ═══════════════════════════════════════════════════════════════════
+     */
+    ...(iptal === "1" ? {} : { iptalTarihi: null }),
     /**
      * KARGOYA VERİLDİ / BEKLİYOR. Panelden gelen bağlantı bunu taşıyor.
      * "Bekleyen" = `shippedAt` BOŞ; yani hiç işaretlenmemiş satış. Bunu
