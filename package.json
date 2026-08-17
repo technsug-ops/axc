@@ -56,7 +56,8 @@
     "toplam:dogrula": "tsx scripts/toplam-dogrula.ts",
     "iptal:dogrula": "tsx scripts/iptal-dogrula.ts",
     "iptal:bekci": "tsx scripts/iptal-bekci.ts",
-    "duzenleme:dogrula": "tsx scripts/satis-duzenleme-dogrula.ts"
+    "duzenleme:dogrula": "tsx scripts/satis-duzenleme-dogrula.ts",
+    "gerial:dogrula": "tsx scripts/geri-alma-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
