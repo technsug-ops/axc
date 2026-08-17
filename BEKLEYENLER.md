@@ -1314,19 +1314,6 @@ değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.
       canlıda sessizce kaybolur (13.08 `/iadeler` vakası). Mutasyon M1
       tam olarak bu unutmayı kırmızı yakıyor.
 
-- [ ] ~~**HAFİF YETKİ DİLİMİ (eski kayıt)**~~
-      _Sıraya girdi 18.08.2026, hakediş teyidinden sonra._
-
-      Bugün satış düzenleme ve iptal ekranları tek kullanıcıda korumasız
-      çalışıyor. RBAC'ın tamamı Faz 4'te ama **bu iki eylem yıkıcı** ve
-      izinleri şimdiden ayrılabilir — depocu satış girebilmeli, fiyat
-      düzeltip satış iptal edememeli.
-
-      ⚠ **YETKİ İKİ BACAKLIDIR:** anahtar `lib/yetki/izinler.ts`e girer VE
-      `prisma/seed-yetki.ts` → `SONRADAN_DOGAN` listesine yazılır; deploy
-      sonrası `npm run canli:yetki` koşulur. Unutulursa ekran canlıda
-      SESSİZCE kaybolur (13.08 `/iadeler` vakası).
-
 ## Faz 3 kapanış borcu
 
 - [x] **KANAL KODSUZ KAYITLAR — KAPANDI 18.08.2026, BORÇ ÇIKMADI.**
