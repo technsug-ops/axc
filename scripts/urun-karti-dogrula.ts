@@ -7,6 +7,8 @@ import {
 import type { KalemGirdisi } from "../src/lib/panel-listeler";
 import { tedarikciAdi } from "../src/lib/tedarikci-adi";
 import { aramaKarari } from "../src/lib/kart-arama-karari";
+import { aramaKosulu } from "../src/lib/varyant-arama-kurali";
+import { readFileSync } from "node:fs";
 
 /**
  * ============================================================================
@@ -368,6 +370,57 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
   kontrol(
     "hiç sonuç yok → BOŞ (kayıtlı değil ekranı)",
     aramaKarari({ tamEslesmeId: null, sonuclar: [] }).tur === "BOS",
+  );
+}
+
+// --- 11) ARAMA KAPSAMI — en geniş perspektif (17.08.2026) -------------------
+{
+  console.log("\n11) ARAMA KAPSAMI");
+
+  /**
+   * Kullanıcı isteği: "kârlılık kartı aramaları en geniş perspektiften
+   * yapılabilsin — ürün sipariş kodu, pazaryeri SKU, firma SKU, ürün
+   * barkod, EAN vs."
+   *
+   * Ortak varyant araması beş alanı zaten kapsıyordu; SİPARİŞ KODU eksikti.
+   * Kaynak metnine değil, ÜRETİLEN KOŞULA bakılıyor.
+   */
+  const kosul = JSON.stringify(aramaKosulu("ab"));
+  const alanlar: [string, string][] = [
+    ["SKU", '{"sku":{"contains":"ab"}}'],
+    ["Firma SKU", '{"companySku":{"contains":"ab"}}'],
+    ["barkod (EAN)", '{"barcode":{"contains":"ab"}}'],
+    ["pazaryeri SKU", '"channelSku":{"contains":"ab"}'],
+    ["ürün adı", '{"product":{"name":{"contains":"ab"}}}'],
+  ];
+  for (const [ad, parca] of alanlar) {
+    kontrol(`ortak arama ${ad} alanına bakıyor`, kosul.includes(parca), parca);
+  }
+
+  /**
+   * SİPARİŞ KODU KARTA ÖZGÜ: veri katmanında, satış sipariş no + alım kodu +
+   * tedarikçi sipariş no üzerinden. Ortak aramaya EKLENMEDİ çünkü satış/alım
+   * formlarında ürün seçerken sipariş numarası aramak yanıltıcı olurdu.
+   */
+  const kaynak = readFileSync("src/lib/kart-arama-verisi.ts", "utf8");
+  kontrol("kart araması SATIŞ sipariş no'ya bakıyor", /prisma\.sale\.findMany/.test(kaynak));
+  kontrol("kart araması ALIM koduna bakıyor", /code: esle/.test(kaynak));
+  kontrol("  ...tedarikçi sipariş no da", /supplierOrderNo: esle/.test(kaynak));
+  kontrol(
+    "iptal edilen satış sipariş aramasına GİRMEZ",
+    /iptalTarihi: null/.test(kaynak),
+  );
+  kontrol(
+    "iptal edilen alım da girmez",
+    /status: "CANCELLED"/.test(kaynak),
+  );
+  /**
+   * ÇOK KALEMLİ SİPARİŞTE TAM EŞLEŞME DÖNMEZ: hangi ürünün kartı açılacağı
+   * belli değildir, kullanıcı listeden seçer.
+   */
+  kontrol(
+    "çok kalemli siparişte doğrudan açma YOK",
+    /varyantlar\.length === 1/.test(kaynak),
   );
 }
 

@@ -183,6 +183,42 @@ export function iptalPlani(girdi: IptalGirdisi): IptalPlani {
 }
 
 /**
+ * ============================================================================
+ *  PLAN İMZASI — "ONAY GÖSTERİLENE VERİLMİŞTİR" (EK 1)
+ * ----------------------------------------------------------------------------
+ *  Düzenleme tarafında kurulup denenen desenin aynısı
+ *  (`lib/satis-duzenleme.ts` → `duzenlemeImzasi`).
+ *
+ *  Yazma anında plan YENİDEN kurulur ve imzası, ekranın onayladığı imzayla
+ *  karşılaştırılır. Farklıysa yazma DURUR: kullanıcı önizlemeyi açtıktan
+ *  sonra o satışa iade girmiş, satış başkası tarafından iptal edilmiş ya da
+ *  stok hareketleri değişmiş olabilir. Sessizce YENİ plana göre yazmak,
+ *  kullanıcının onaylamadığı bir işlemi onaylamış saymaktır — stok yazan,
+ *  geri alınamaz bir işlemde kabul edilemez.
+ *
+ *  İmza HAREKETLERDEN üretilir: hangi varyanttan kaç adet, hangi maliyetle,
+ *  hangi partiye dönecek. Bunlardan biri değişirse imza değişir.
+ * ============================================================================
+ */
+export function iptalImzasi(plan: IptalPlani): string {
+  if (!plan.olur) return `ENGEL:${plan.engel}`;
+  const parcalar = plan.hareketler
+    .map(
+      (h) =>
+        `${h.variantId}|${h.quantityDelta}|${h.birimMaliyet ?? ""}|${h.sourceMovementId ?? ""}|${h.locationId ?? ""}`,
+    )
+    .sort();
+  return [
+    ...parcalar,
+    `ADET:${plan.geriDonenAdet}`,
+    // Etki de imzada: araya giren bir düzenleme ciroyu değiştirmişse yakalanır.
+    `CIRO:${plan.etki.ciro}`,
+    `NET:${plan.etki.net2 ?? "yok"}`,
+    `HAKEDIS:${plan.etki.hakedisEslesmisMi}`,
+  ].join("§");
+}
+
+/**
  * İptal edilen satış ciro/NET/hakediş kümesine GİRER Mİ — tek cevap.
  *
  * ⚠ Bu fonksiyon, süzgecin tek kaynağı olduğu için ayrıca vardır: her ekran

@@ -2487,11 +2487,11 @@
   "UrunKarti": {
     "baslik": "Ürün kârlılık kartı",
     "aciklama": "Barkodu okutun ya da ad/SKU yazın — alım kararının verisi tek ekranda.",
-    "aramaIpucu": "Barkod, SKU ya da ürün adı",
+    "aramaIpucu": "Barkod, EAN, SKU, firma SKU, pazaryeri SKU, sipariş no ya da ürün adı",
     "kameraBasligi": "Ürün barkodunu okut",
     "araniyor": "Aranıyor…",
     "basla": "Ürünü okutun ya da arayın",
-    "baslaIpucu": "Elinizdeki ürünün barkodunu kameraya okutmanız yeterli.",
+    "baslaIpucu": "Barkodu okutun ya da elinizdeki herhangi bir kodu yazın — sipariş numarası da olur.",
     "kayitliDegil": "Kayıtlı değil — yeni ürün",
     "kayitliDegilIpucu": "\"{arama}\" ile eşleşen ürün yok. Bu ürün sistemde hiç bulunmuyor.",
     "yeniUrunEkle": "Yeni ürün olarak ekle",

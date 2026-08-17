@@ -11,7 +11,7 @@ import { sayfaIzni } from "@/lib/yetki";
 import { kodDizisi } from "@/lib/varyant-ozet";
 
 import { KartArama } from "./kart-arama";
-import { varyantAra, varyantKodlaBul } from "@/app/varyant-arama";
+import { kartAramaSonuclari, kartKodlaBul } from "@/lib/kart-arama-verisi";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -51,7 +51,7 @@ export default async function KartAramaSayfasi({
    */
   const [tamEslesme, sonuclar] =
     arama.length >= 2
-      ? await Promise.all([varyantKodlaBul(arama), varyantAra(arama)])
+      ? await Promise.all([kartKodlaBul(arama), kartAramaSonuclari(arama)])
       : [null, []];
 
   const karar = aramaKarari({
