@@ -1409,7 +1409,15 @@
     "sonYedekler": "",
     "yedekIndirBaglanti": "",
     "yedekBoyut": "",
-    "otomatikNotu": ""
+    "otomatikNotu": "",
+    "simdiYedekAl": "",
+    "yedekAliniyor": "",
+    "yedekAlindi": "",
+    "yedekAlinamadi": "",
+    "depoYok": "",
+    "kapsamGunluk": "",
+    "kapsamTam": "",
+    "kapsamNotu": ""
   },
   "Giris": {
     "baslik": "",

@@ -4,6 +4,9 @@ import { CalendarClock, Download, TriangleAlert } from "lucide-react";
 import { Baglanti } from "@/components/baglanti";
 import { bicimlendirici } from "@/lib/bicim";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { yedekKapsami } from "@/lib/yedek-yaz";
+
+import { YedekAlButonu } from "./yedek-al-butonu";
 
 /**
  * ============================================================================
@@ -38,7 +41,13 @@ export async function OtomatikYedekDurumu() {
   }
 
   // Depo bağlıysa listeyi oku. Ağ hatası ekranı çökertmesin.
-  let yedekler: { url: string; ad: string; tarih: Date; boyut: number }[] = [];
+  let yedekler: {
+    url: string;
+    ad: string;
+    tarih: Date;
+    boyut: number;
+    kapsam: "GUNLUK" | "TAM";
+  }[] = [];
   try {
     const { list } = await import("@vercel/blob");
     const { blobs } = await list({ prefix: "yedek/" });
@@ -58,6 +67,7 @@ export async function OtomatikYedekDurumu() {
           ad,
           tarih: new Date(b.uploadedAt),
           boyut: b.size,
+          kapsam: yedekKapsami(ad),
         };
       });
   } catch {
@@ -66,9 +76,14 @@ export async function OtomatikYedekDurumu() {
 
   return (
     <div className="space-y-3 rounded-lg border p-4">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <CalendarClock className="size-4 shrink-0" />
-        {t("otomatikBaslik")}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <CalendarClock className="size-4 shrink-0" />
+          {t("otomatikBaslik")}
+        </div>
+        {/* UYARI ÇIKMAZA GÖTÜRMESİN: çan "yedeğin eski" dediğinde çözüm
+            burada durur (bkz. yedek-al-actions.ts). */}
+        <YedekAlButonu />
       </div>
 
       {yedekler.length === 0 ? (
@@ -85,7 +100,14 @@ export async function OtomatikYedekDurumu() {
                 key={y.url}
                 className="flex flex-wrap items-center justify-between gap-2 px-3 py-2"
               >
-                <span className="font-mono text-xs">{y.ad}</span>
+                <span className="min-w-0 font-mono text-xs">
+                  {y.ad}
+                  {/* KAPSAM BEYANI: kullanıcı 2,6 MB ile 17,5 MB arasında
+                      seçim yaparken neyin eksik olduğunu bilmeliydi. */}
+                  <span className="text-muted-foreground ml-2 font-sans">
+                    {y.kapsam === "GUNLUK" ? t("kapsamGunluk") : t("kapsamTam")}
+                  </span>
+                </span>
                 <span className="flex items-center gap-3">
                   <span className="text-muted-foreground text-xs">
                     {bicim.tarih(y.tarih)} ·{" "}
@@ -103,6 +125,8 @@ export async function OtomatikYedekDurumu() {
       )}
 
       <p className="text-muted-foreground text-xs">{t("otomatikNotu")}</p>
+      {/* NE EKSİK OLDUĞU YAZILIR — sessiz varsayım yok. */}
+      <p className="text-muted-foreground text-xs">{t("kapsamNotu")}</p>
     </div>
   );
 }

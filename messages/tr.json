@@ -1409,7 +1409,15 @@
     "sonYedekler": "Son yedekler",
     "yedekIndirBaglanti": "indir",
     "yedekBoyut": "{kb} KB",
-    "otomatikNotu": "Otomatik yedek İŞ VERİSİNİN TAMAMINI içerir; yalnızca kargo tarife tablosu dışarıda bırakılır (seed ile yeniden üretilir, dosyanın içinde eksik olduğu yazar). Tam yedeği yukarıdaki düğmeden elle alabilirsiniz."
+    "otomatikNotu": "Otomatik yedek İŞ VERİSİNİN TAMAMINI içerir; yalnızca kargo tarife tablosu dışarıda bırakılır (seed ile yeniden üretilir, dosyanın içinde eksik olduğu yazar). Tam yedeği yukarıdaki düğmeden elle alabilirsiniz.",
+    "simdiYedekAl": "Şimdi yedek al",
+    "yedekAliniyor": "Yedek alınıyor…",
+    "yedekAlindi": "Yedek alındı — {gun} · {satir} satır · {kb} KB. Listede görünüyor.",
+    "yedekAlinamadi": "Yedek alınamadı. Ayrıntı sunucu günlüğünde; tekrar deneyin ya da bildirin.",
+    "depoYok": "Yedek deposu bağlı değil (Vercel → Storage → Blob). Bağlanmadan yedek yazılamaz.",
+    "kapsamGunluk": "günlük (kargo tarifeleri hariç)",
+    "kapsamTam": "tam",
+    "kapsamNotu": "Günlük yedekler kargo tarifelerini İÇERMEZ — o tablo 44.841 satırla dosyanın çoğunu kaplar ve kurulum verisinden aynen yeniden üretilebilir. İş verisinin tamamı (ürün, alım, satış, iade, stok, gider) her iki yedekte de vardır. \"Tam\" yedekler tarifeleri de taşır."
   },
   "Giris": {
     "baslik": "Selliora",
