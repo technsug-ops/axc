@@ -1,5 +1,6 @@
 import type { Currency } from "@/generated/prisma/enums";
 
+import { sermayeVerimi } from "@/lib/marj-gosterge";
 import {
   birimKar,
   marjYuzdesi,
@@ -186,10 +187,12 @@ export function kartOzeti(girdi: KartGirdisi): KartOzeti {
    * elde kalan stok bu satışın sermayesi değildir.
    */
   const birim = satir === null ? null : birimKar(satir);
-  const sermayeVerimi =
-    birim === null || ortalamaMaliyet === null || ortalamaMaliyet <= 0
-      ? null
-      : birim / ortalamaMaliyet;
+  /**
+   * ⚠ HESAP ORTAK DOSYADAN (17.08.2026): satış listesi de aynı ölçüyü
+   * gösteriyor. İki ekranın kendi formülünü yazması, aynı sayının iki dilde
+   * konuşması demekti — bugünün kargo dersi. Biçim de oradan gelir.
+   */
+  const sermayeOrani = sermayeVerimi(birim, ortalamaMaliyet);
 
   const siraliSatislar = [...satislar].sort(
     (a, b) => b.soldAt.getTime() - a.soldAt.getTime(),
@@ -207,7 +210,7 @@ export function kartOzeti(girdi: KartGirdisi): KartOzeti {
 
     birimNet2: birim,
     marj: satir === null ? null : marjYuzdesi(satir),
-    sermayeVerimi,
+    sermayeVerimi: sermayeOrani,
     sonSatisNet2: sonSatis?.net2 ?? null,
 
     ortalamaMaliyet,

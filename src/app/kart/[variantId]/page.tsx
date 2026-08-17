@@ -7,6 +7,7 @@ import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
 import { bicimlendirici } from "@/lib/bicim";
 import { iadeGerekceEtiketleri } from "@/lib/etiketler";
+import { sermayeVerimiMetni } from "@/lib/marj-gosterge";
 import { DURUM_KUTUSU, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 import { YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
 import { kartVerisiniTopla } from "@/lib/urun-karti-verisi";
@@ -248,9 +249,9 @@ export default async function KartSayfasi({
                 <Kutu
                   etiket={t("sermayeVerimi")}
                   deger={
-                    ozet.sermayeVerimi === null
-                      ? null
-                      : `${ozet.sermayeVerimi.toFixed(2)}×`
+                    /* Biçim ORTAK (lib/marj-gosterge.ts) — satış listesi de
+                       aynı metni üretir. */
+                    sermayeVerimiMetni(ozet.sermayeVerimi)
                   }
                   not={t("sermayeVerimiNotu")}
                 />

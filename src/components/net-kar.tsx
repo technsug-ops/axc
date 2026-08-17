@@ -5,6 +5,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { karDurumu } from "@/lib/renkler";
 
 import type { Currency, ProfitStatus } from "@/generated/prisma/enums";
+import type { GostergeSonucu } from "@/lib/marj-gosterge";
 
 /**
  * ============================================================================
@@ -19,10 +20,17 @@ export async function NetKar({
   tutar,
   paraBirimi,
   durum,
+  gosterge,
 }: {
   tutar: { toString(): string } | null;
   paraBirimi: Currency | null;
   durum: ProfitStatus | null;
+  /**
+   * MARJ GÖSTERGESİ — rakamın YANINDA, aynı çipte (kullanıcı isteği
+   * 17.08.2026). Hesap çağıran tarafta (`lib/marj-gosterge.ts`); bu bileşen
+   * yalnız çizer. Verilmezse gösterge çıkmaz — eski çağrılar bozulmaz.
+   */
+  gosterge?: GostergeSonucu;
 }) {
   const t = await getTranslations("Satis");
   const bicim = await bicimlendirici();
@@ -65,6 +73,9 @@ export async function NetKar({
     return (
       <span className="font-medium tabular-nums">
         {bicim.para(sayi, paraBirimi ?? "TRY")}
+        {gosterge && gosterge.tur === "DEGER" ? (
+          <span className="text-muted-foreground ml-1">{gosterge.metin}</span>
+        ) : null}
       </span>
     );
   }
@@ -74,9 +85,17 @@ export async function NetKar({
       <span className="font-semibold tabular-nums">
         {bicim.para(sayi, paraBirimi ?? "TRY")}
       </span>
-      <span className="opacity-75">
-        {renk === "olumlu" ? t("karda") : t("zararda")}
-      </span>
+      {/* ÖLÇÜ RAKAMIN YANINDA: "₺881,22 · %61". İki yüzde yan yana
+          gelmesin diye tek ölçü gösterilir (bkz. lib/marj-gosterge.ts). */}
+      {gosterge && gosterge.tur !== "YOK" ? (
+        <span className="opacity-75 tabular-nums">
+          {gosterge.tur === "BILINMIYOR" ? "?" : gosterge.metin}
+        </span>
+      ) : (
+        <span className="opacity-75">
+          {renk === "olumlu" ? t("karda") : t("zararda")}
+        </span>
+      )}
     </DurumRozeti>
   );
 }

@@ -2669,5 +2669,11 @@
     "engel_DURUM_DEGISTI": "Durum değişti — araya bir işlem girmiş olabilir. Önizlemeyi yenileyin.",
     "engel_SATIS_YOK": "Satış bulunamadı.",
     "iz_SATIS_IPTAL_GERI_ALINDI": "İptal geri alındı"
+  },
+  "MarjGosterge": {
+    "etiket": "Marj",
+    "olcu_ciro": "Ciro marjı",
+    "olcu_sermaye": "Sermaye verimi",
+    "aciklama": "Rozetteki ikinci rakam bu ölçüyü gösterir. İki ölçü aynı anda gösterilmez — yan yana iki oran karışır."
   }
 }

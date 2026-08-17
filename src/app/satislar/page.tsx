@@ -34,7 +34,17 @@ import { prisma } from "@/lib/prisma";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { satisKalemToplamlari } from "@/lib/tutar";
 import { hesaplananToplami, suzgecToplami } from "@/lib/liste-toplami";
+import { Suspense } from "react";
+
+import { MarjTercihi } from "./marj-tercihi";
 import { ListeToplami } from "@/components/liste-toplami";
+import {
+  MARJ_OLCULERI,
+  VARSAYILAN_OLCU,
+  olcuGecerliMi,
+  satirGostergesi,
+  type MarjOlcusu,
+} from "@/lib/marj-gosterge";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -56,6 +66,8 @@ export default async function SatislarSayfasi({
     kargo?: string;
     /** "1" → iptal edilenler de listelenir (varsayılan: gizli). */
     iptal?: string;
+    /** "ciro" | "sermaye" — marj göstergesinin ölçüsü. */
+    marj?: string;
   }>;
 }) {
   await sayfaIzni("satis.gor");
@@ -76,6 +88,17 @@ export default async function SatislarSayfasi({
   const bicim = await bicimlendirici();
   const t = await getTranslations("Satis");
   const tIpt = await getTranslations("SatisIptali");
+  const tMarj = await getTranslations("MarjGosterge");
+
+  /**
+   * MARJ ÖLÇÜSÜ — adresten okunur, geçersizse varsayılana düşer.
+   * "İkisi birden" YOK: iki yüzde yan yana karışır (bkz. lib/marj-gosterge).
+   */
+  const olcu: MarjOlcusu = olcuGecerliMi(p.marj) ? p.marj : VARSAYILAN_OLCU;
+
+  /** Decimal → sayı; null kalır (sıfıra çevrilmez). */
+  const sayi = (d: { toString(): string } | null) =>
+    d === null ? null : Number(d.toString());
   const tIade = await getTranslations("Iade");
   const ortak = await getTranslations("Ortak");
 
@@ -111,6 +134,11 @@ export default async function SatislarSayfasi({
       channelAccount: { include: { channel: { select: { name: true } } } },
       // Rozet ve satır eylemi için: iade var mı, kalan var mı?
       returns: { select: { id: true } },
+      /**
+       * SERMAYE VERİMİNİN PAYDASI — satışın maliyeti. Yalnız MALIYET
+       * kesintisi çekilir; YENİ HESAP YOK, mevcut snapshot okunur.
+       */
+      fees: { where: { code: "MALIYET" }, select: { amount: true } },
     },
     orderBy: { soldAt: "desc" },
   });
@@ -263,6 +291,14 @@ export default async function SatislarSayfasi({
      * olduğu için ikinci bir seçenek ("gizle") gürültü olurdu.
      */
     {
+      ad: "marj",
+      etiket: tMarj("etiket"),
+      secenekler: MARJ_OLCULERI.map((o) => ({
+        deger: o,
+        etiket: tMarj(`olcu_${o}`),
+      })),
+    },
+    {
       ad: "iptal",
       etiket: tIpt("suzgecEtiketi"),
       secenekler: [{ deger: "1", etiket: tIpt("suzgecGoster") }],
@@ -281,6 +317,7 @@ export default async function SatislarSayfasi({
     iade: p.iade,
     kargo: p.kargo,
     iptal: p.iptal,
+    marj: p.marj,
     pencere: p.pencere,
     baslangic: p.baslangic,
     bitis: p.bitis,
@@ -369,6 +406,11 @@ export default async function SatislarSayfasi({
           </Button>
         ) : null}
       </form>
+
+      {/* Tercih hatırlama — cihaz bazlı, adres kazanır (bkz. marj-tercihi). */}
+      <Suspense fallback={null}>
+        <MarjTercihi />
+      </Suspense>
 
       <SuzgecCubugu
         temelAdres="/satislar"
@@ -562,6 +604,21 @@ export default async function SatislarSayfasi({
                           tutar={satis.net2Amount}
                           paraBirimi={satis.profitCurrency}
                           durum={satis.profitStatus}
+                          gosterge={satirGostergesi({
+                            olcu,
+                            net2: sayi(satis.net2Amount),
+                            tutar: satisKalemToplamlari(satis.items).reduce(
+                              (t2, k) => t2 + k.tutar,
+                              0,
+                            ),
+                            maliyet:
+                              satis.fees.length === 0
+                                ? null
+                                : Math.abs(
+                                    Number(satis.fees[0].amount.toString()),
+                                  ),
+                            iptalliMi: satis.iptalTarihi !== null,
+                          })}
                         />
                       </TableCell>
                     ) : null}
