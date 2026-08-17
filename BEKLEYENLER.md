@@ -991,6 +991,27 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       · İadeli satışta: iptal düğmesi yerine "iadesi var — iade akışı"
         mesajı + iade kaydına bağlantı (saf katman id+kod döndürüyor)
 
+      **○ KALAN — "İPTALİ GERİ AL" (küçük paket, ~yarım dilim)**
+      _Gerçek dünya kanıtı 17.08.2026: canlı testte GERÇEK bir satış
+      (11512722550) yanlışlıkla iptal edildi ve geri alma yolu YOKTU. Tek
+      seferlik script'le düzeltildi; ekran gelene kadar bu yol açık kalmamalı._
+
+      Kapsam:
+      - Detaydaki iptal durum kutusuna **"İptali geri al"** düğmesi
+      - Önizleme-önce: kaç adet stoktan ÇIKACAK, NET/ciro nasıl dönecek
+      - **Sebep zorunlu** (kapalı liste: "yanlışlıkla iptal edildi",
+        "müşteri vazgeçmekten vazgeçti", "diğer" → açıklama zorunlu)
+      - İz satırı: "İptal geri alındı" + alan bazında değerler
+      - **ÜÇ GÜVENLİK KİLİDİ (script'te denendi, aynen taşınacak):**
+        satış yoksa DUR · iptalli değilse DUR · **iptalden sonra o maldan
+        çıkış yapılmışsa DUR** (ayna hareket güvenle ters çevrilemez, stok
+        eksiye düşebilir — mimara bildirilir)
+      - Ayna hareketin tersi ADJUSTMENT olarak yazılır, ledger SİLİNMEZ
+      - Plan imzası (EK 1) — desen düzenleme ve iptalde kurulu
+
+      Boyut: saf katman + veri + ekran + test, mevcut desenler devralınacağı
+      için düzenleme paketinin yaklaşık YARISI.
+
       **○ KALAN — ADET DİLİMİ:** düzenlemede bilinçli kapalı. Fiyat ve kargo
       stok defterine dokunmaz, **adet dokunur**: 1→2 olursa FIFO'dan ek
       çıkış, 2→1 olursa ayna giriş gerekir (iptal mekaniğinin aynısı).
