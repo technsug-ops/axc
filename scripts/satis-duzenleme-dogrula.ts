@@ -7,6 +7,7 @@ import {
   type DuzenlemeGirdisi,
   type KalemDegisikligi,
 } from "../src/lib/satis-duzenleme";
+import { kdvDahilKargo } from "../src/lib/satis-duzenleme-veri";
 
 /**
  * ============================================================================
@@ -285,6 +286,42 @@ console.log("\nSATIŞ DÜZENLEME — DOĞRULAMA\n");
     "farklı engeller farklı imza",
     duzenlemeImzasi(araya) !== duzenlemeImzasi(iptalGirdi),
   );
+}
+
+// --- 9) KARGO KDV ÇEVİRİSİ — canlı hata 17.08.2026 --------------------------
+{
+  console.log("\n9) KARGO KDV ÇEVİRİSİ");
+
+  /**
+   * ⚠ CANLI HATA: `Sale.cargoAmount` KDV HARİÇ saklanır (ölçüldü: 32/32
+   * satışta KARGO kesintisi = cargoAmount × 1,20). Düzenleme formu onu
+   * "KDV dahil" etiketiyle gösterdi; kullanıcı DOKUNMADAN kaydetti ve motor
+   * bir kez daha 1,2'ye böldü.
+   *
+   * Gerçek vaka (satış 11512722550): kargo kesintisi 88,96 → 74,13 düştü,
+   * NET-2 881,22 yerine 908,40 çıktı. HER DÜZENLEMEDE %20 küçülüyordu:
+   * üçüncüsünde 61,78, dördüncüsünde 51,48 olurdu.
+   */
+  kontrol("74,13 (KDV hariç) → 88,96 (KDV dahil)", kdvDahilKargo(74.13) === 88.96, kdvDahilKargo(74.13));
+  kontrol("61,78 → 74,14", kdvDahilKargo(61.78) === 74.14, kdvDahilKargo(61.78));
+  kontrol("null null kalır", kdvDahilKargo(null) === null);
+  kontrol("sıfır sıfır kalır", kdvDahilKargo(0) === 0);
+
+  /**
+   * KURUŞA YUVARLAMA: 61,78 × 1,2 = 74,136 — kayan nokta artığı ekrana
+   * "74,136000000001" olarak düşmemeli.
+   */
+  const y = kdvDahilKargo(61.78)!;
+  kontrol("kuruş çözünürlüğünde", Math.round(y * 100) === y * 100, y);
+
+  /**
+   * ÇİFT ÇEVİRİ KAYBI: çeviri yapılmazsa değer her turda 1,2'ye bölünür.
+   * Bu kontrol kaybın BÜYÜKLÜĞÜNÜ sabitliyor — 88,96'lık kargo üç
+   * düzenlemede 51,48'e inerdi.
+   */
+  const bolerek = (n: number, kez: number) =>
+    Math.round((kez === 0 ? n : bolerek(n / 1.2, kez - 1)) * 100) / 100;
+  kontrol("çevirisiz üç turda 88,96 → 51,48 olurdu", bolerek(88.96, 3) === 51.48, bolerek(88.96, 3));
 }
 
 console.log("");

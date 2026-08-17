@@ -1,3 +1,4 @@
+import { GENEL_KDV_ORANI } from "@/lib/kar";
 import { karYenidenYaz } from "@/lib/kar-yeniden";
 import { prisma } from "@/lib/prisma";
 import {
@@ -30,6 +31,16 @@ import {
  *  karşılaştırılır. Onay GÖSTERİLENE verilmiştir.
  * ============================================================================
  */
+
+/**
+ * Kargo tutarını KDV DAHİL hâle çevirir — ekran ve kullanıcı bu dilde konuşur.
+ * Veritabanı KDV HARİÇ saklar; çeviri tek yerde durur ki iki taraf ayrışmasın.
+ */
+export function kdvDahilKargo(kdvHaric: number | null): number | null {
+  if (kdvHaric === null) return null;
+  // Kuruşa yuvarla: 61.78 × 1.2 = 74.136 → 74.14 değil, 74.13 olmalı.
+  return Math.round(kdvHaric * (1 + GENEL_KDV_ORANI / 100) * 100) / 100;
+}
 
 export type YeniDegerler = {
   /** saleItemId → yeni birim fiyat. */
@@ -101,7 +112,19 @@ async function planKur(
       yeniFirmaId: yeni.kargoFirmaId,
       eskiDesi: sayi(satis.cargoDesi),
       yeniDesi: yeni.kargoDesi,
-      eskiTutar: sayi(satis.cargoAmount),
+      /**
+       * ⚠ KDV ÇEVİRİSİ — 17.08.2026 canlı hatası.
+       *
+       * `Sale.cargoAmount` KDV HARİÇ saklanır (ölçüldü: 32/32 satışta
+       * KARGO kesintisi = cargoAmount × 1,20). Ekran ise KULLANICININ
+       * BİLDİĞİ tutarı, yani KDV DAHİL olanı gösterir — faturada o yazar.
+       *
+       * Çeviri yapılmadığı için ekran KDV hariç değeri "KDV dahil" diye
+       * gösterdi, kullanıcı dokunmadan geri gönderdi ve motor onu bir kez
+       * daha 1,2'ye böldü: 74,13 → 61,78. Her düzenlemede kargo %20
+       * küçülüyordu.
+       */
+      eskiTutar: kdvDahilKargo(sayi(satis.cargoAmount)),
       yeniTutar: yeni.kargoTutar,
     },
     paraBirimi:

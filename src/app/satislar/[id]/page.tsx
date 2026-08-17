@@ -15,7 +15,7 @@ import { KarBlogu, type KarBloguVerisi } from "@/components/kar-blogu";
 import { HesapDegistir } from "./hesap-degistir";
 import { YenidenHesapla } from "./yeniden-hesapla";
 import { DuzenleFormu } from "./duzenle-formu";
-import { satisIzleri } from "@/lib/satis-duzenleme-veri";
+import { kdvDahilKargo, satisIzleri } from "@/lib/satis-duzenleme-veri";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -568,7 +568,9 @@ export default async function SatisDetaySayfasi({
         saleId={satis.id}
         paraBirimi={satis.profitCurrency ?? "TRY"}
         kargoDesi={sayi(satis.cargoDesi)}
-        kargoTutar={sayi(satis.cargoAmount)}
+        // KDV DAHİL gösterilir — veritabanı KDV HARİÇ saklar
+        // (bkz. lib/satis-duzenleme-veri.ts → kdvDahilKargo).
+        kargoTutar={kdvDahilKargo(sayi(satis.cargoAmount))}
         kargoFirmaId={satis.cargoCarrierId}
         kalemler={satis.items.map((k) => ({
           id: k.id,
