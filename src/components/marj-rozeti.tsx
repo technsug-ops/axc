@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { DurumRozeti } from "@/components/durum-rozeti";
 import type { GostergeSonucu } from "@/lib/marj-gosterge";
 
 /**
@@ -46,11 +46,23 @@ export async function MarjRozeti({ gosterge }: { gosterge: GostergeSonucu }) {
   }
 
   const renk = gosterge.zararMi ? "olumsuz" : "olumlu";
+
+  /**
+   * ⚠ KENDİ ÇİPİMİ YAZMIYORUM (kullanıcı 17.08.2026): ilk denemede
+   * `text-sm` ile elle bir rozet çizilmişti ve NET sütunundakinden BÜYÜK
+   * duruyordu. `DurumRozeti` zaten sistemin rozet dili — punto (11px),
+   * dolgu ve zemin oradan gelir. Aynı işi iki yerde çizmek, ikisinin bir
+   * gün ayrışması demekti.
+   *
+   * SABİT TABAN GENİŞLİK: "%5" ile "%61" farklı yer kaplıyordu ve sütun
+   * aşağı doğru tarandığında çipler kayıyordu. Taban genişlik en uzun
+   * makul değere göre; kısa değer ortalanır, çip aynı boyutta kalır.
+   */
   return (
-    <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-semibold tabular-nums ${DURUM_KUTUSU[renk]} ${DURUM_YAZISI[renk]}`}
-    >
-      {gosterge.metin}
-    </span>
+    <DurumRozeti durum={renk} isaretsiz>
+      <span className="inline-block min-w-[2.5rem] text-center tabular-nums">
+        {gosterge.metin}
+      </span>
+    </DurumRozeti>
   );
 }
