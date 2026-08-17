@@ -45,6 +45,10 @@ const ISTISNALAR = new Map<string, string>([
     "SÜZÜLMESİ TEHLİKELİ OLURDU. Bu sorgu 'bu ürün hiç hareket görmüş mü' sorusunu cevaplar ve ürün SİLİNEBİLİR Mİ kararını verir. İptal edilmiş bir satış da geçmiş bir harekettir: kalemi durur, ledger'ı durur. Süzseydik iptalli satışı olan ürün 'hiç satılmamış' sayılır ve SİLİNEBİLİR hâle gelirdi — geçmişi olan kayıt silinirdi.",
   ],
   [
+    "src/lib/satis-duzenleme-veri.ts:saleItem.findMany",
+    "TEK SATIŞIN kalemlerini okur (`where: { saleId }`), komisyon oranlarını `karYenidenYaz`a taşımak için. Liste/toplam değil. İptalli satış zaten düzenlenemez — kural `lib/satis-duzenleme.ts` içindeki IPTALLI engeli, plan hem önizlemede hem yazma anında kuruluyor.",
+  ],
+  [
     "src/app/satislar/[id]/iade/actions.ts:saleItem.findMany",
     "Doğrulama için KİMLİKLE gelen kalemlerin ürün adlarını okur (`where: { id: { in: [...] } }`). Liste/toplam değil, kullanıcının zaten seçtiği kalemler. Ayrıca iptalli satışa iade zaten engelli (bkz. `lib/iade.ts` içindeki iptal kontrolü).",
   ],

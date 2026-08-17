@@ -14,6 +14,8 @@ import { KarBlogu, type KarBloguVerisi } from "@/components/kar-blogu";
 
 import { HesapDegistir } from "./hesap-degistir";
 import { YenidenHesapla } from "./yeniden-hesapla";
+import { DuzenleFormu } from "./duzenle-formu";
+import { satisIzleri } from "@/lib/satis-duzenleme-veri";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -103,6 +105,9 @@ export default async function SatisDetaySayfasi({
 
   const bicim = await bicimlendirici();
   const t = await getTranslations("Satis");
+  const tDuz = await getTranslations("SatisDuzenleme");
+  // Denetim izi: bugünkü tek seferlik fiyat düzeltmesi de burada görünür.
+  const izler = await satisIzleri(satis.id);
   const ortak = await getTranslations("Ortak");
   const tIade = await getTranslations("Iade");
 
@@ -554,6 +559,63 @@ export default async function SatisDetaySayfasi({
         orijinalNet2={sayi(satis.net2Amount)}
         bekleyenHasar={bekleyenHasar}
       />
+
+      {/* ══════════════ DÜZENLEME ══════════════
+          Kullanıcı talebi 17.08.2026: fiyat hatası script'siz, ekrandan
+          düzeltilebilmeli. Önizleme-önce; onay düğmesi plan çizilmeden
+          aktif olmaz. */}
+      <DuzenleFormu
+        saleId={satis.id}
+        paraBirimi={satis.profitCurrency ?? "TRY"}
+        kargoDesi={sayi(satis.cargoDesi)}
+        kargoTutar={sayi(satis.cargoAmount)}
+        kargoFirmaId={satis.cargoCarrierId}
+        kalemler={satis.items.map((k) => ({
+          id: k.id,
+          urunAdi: k.variant.product.name,
+          adet: k.quantity,
+          fiyat: Number(k.unitPriceAmount.toString()),
+        }))}
+      />
+
+      {/* ══════════════ DEĞİŞİKLİK İZİ ══════════════
+          Mimar şartı: AuditLog satırı detayda GÖRÜNÜR olsun — bugünkü
+          tek seferlik fiyat düzeltmesinin izi de dahil. */}
+      <section className="space-y-2">
+        <h2 className="text-sm font-medium">{tDuz("izBaslik")}</h2>
+        {izler.length === 0 ? (
+          <p className="text-muted-foreground text-sm">{tDuz("izYok")}</p>
+        ) : (
+          <ul className="divide-y rounded-lg border text-sm">
+            {izler.map((iz) => {
+              let ayrinti: { gerekce?: string; farklar?: unknown[] } = {};
+              try {
+                ayrinti = JSON.parse(iz.detail ?? "{}");
+              } catch {
+                ayrinti = {};
+              }
+              return (
+                <li key={iz.id} className="min-w-0 px-3 py-2">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="font-medium">
+                      {tDuz(`iz_${iz.action}`)}
+                    </span>
+                    <span className="text-muted-foreground text-xs">
+                      {bicim.tarih(iz.createdAt)} ·{" "}
+                      {iz.user?.name ?? iz.user?.email ?? tDuz("izSistem")}
+                    </span>
+                  </div>
+                  {ayrinti.gerekce ? (
+                    <p className="text-muted-foreground mt-0.5 text-xs">
+                      {tDuz("izGerekce")}: {ayrinti.gerekce}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
       <p className="text-muted-foreground text-xs">{t("detayNotu")}</p>
     </div>

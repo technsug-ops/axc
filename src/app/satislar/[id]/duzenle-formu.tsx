@@ -1,0 +1,283 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Check, Pencil, TriangleAlert, X } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { useBicim } from "@/lib/bicim-istemci";
+
+import {
+  duzenlemeyiOnizle,
+  duzenlemeyiUygula,
+  type OnizlemeSonucu,
+} from "./duzenle-actions";
+
+/**
+ * ============================================================================
+ *  SATIŞ DÜZENLEME FORMU — ÖNİZLEME ÖNCE
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı talebi: "Bir daha yanlış yaptığımda script çalışmamalı, daha
+ *  kolay halletmeliyim." Ölçü: bir fiyat hatası 30 saniyede, yardımsız.
+ *
+ *  ── ONAY DÜĞMESİ ÖNİZLEME ÇİZİLMEDEN AKTİF OLMAZ ────────────────────────
+ *  Mimar şartı. Kullanıcı neyin değişeceğini görmeden yazamaz. İmza da
+ *  önizlemeden gelir; imzasız yazma sunucuda zaten reddedilir.
+ *
+ *  ── ADET BU DİLİMDE KAPALI ──────────────────────────────────────────────
+ *  Fiyat ve kargo stok defterine dokunmaz; adet dokunur (FIFO'dan ek çıkış
+ *  ya da ayna giriş gerekir). Alan GÖRÜNÜR ama kapalı ve NEDEN kapalı olduğu
+ *  yazılı — sessiz eksik bırakılmıyor.
+ * ============================================================================
+ */
+
+export type DuzenlenebilirKalem = {
+  id: string;
+  urunAdi: string;
+  adet: number;
+  fiyat: number;
+};
+
+export function DuzenleFormu({
+  saleId,
+  kalemler,
+  kargoDesi,
+  kargoTutar,
+  kargoFirmaId,
+  paraBirimi,
+}: {
+  saleId: string;
+  kalemler: DuzenlenebilirKalem[];
+  kargoDesi: number | null;
+  kargoTutar: number | null;
+  kargoFirmaId: string | null;
+  paraBirimi: string;
+}) {
+  const t = useTranslations("SatisDuzenleme");
+  const ortak = useTranslations("Ortak");
+  const bicim = useBicim();
+  const router = useRouter();
+  const [bekliyor, basla] = useTransition();
+
+  const [acik, setAcik] = useState(false);
+  const [fiyatlar, setFiyatlar] = useState<Record<string, string>>(() =>
+    Object.fromEntries(kalemler.map((k) => [k.id, String(k.fiyat)])),
+  );
+  const [desi, setDesi] = useState(kargoDesi === null ? "" : String(kargoDesi));
+  const [tutar, setTutar] = useState(kargoTutar === null ? "" : String(kargoTutar));
+  const [gerekce, setGerekce] = useState("");
+  const [onizleme, setOnizleme] = useState<OnizlemeSonucu | null>(null);
+  const [sonuc, setSonuc] = useState<string | null>(null);
+  const [hata, setHata] = useState<string | null>(null);
+
+  /** Alan değişince önizleme GEÇERSİZ olur — eski plana onay verilemesin. */
+  function degisti<T>(ayarla: (d: T) => void) {
+    return (deger: T) => {
+      setOnizleme(null);
+      setHata(null);
+      ayarla(deger);
+    };
+  }
+
+  const yeniDegerler = () => ({
+    fiyatlar: Object.fromEntries(
+      Object.entries(fiyatlar).map(([id, v]) => [id, Number(v)]),
+    ),
+    kargoFirmaId,
+    kargoDesi: desi.trim() === "" ? null : Number(desi),
+    kargoTutar: tutar.trim() === "" ? null : Number(tutar),
+  });
+
+  if (!acik) {
+    return (
+      <Button variant="outline" className="h-11" onClick={() => setAcik(true)}>
+        <Pencil />
+        {t("duzenle")}
+      </Button>
+    );
+  }
+
+  return (
+    <div className="space-y-4 rounded-lg border p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-medium">{t("baslik")}</h3>
+        <Button variant="ghost" size="sm" onClick={() => setAcik(false)}>
+          <X />
+          {ortak("kapat")}
+        </Button>
+      </div>
+
+      {/* KİMLİK DEĞİŞMEZ — neden değişmediği yazılı. */}
+      <p className="text-muted-foreground text-xs">{t("kimlikNotu")}</p>
+
+      {/* ------------------------- KALEMLER ------------------------- */}
+      {kalemler.map((k) => (
+        <div key={k.id} className="grid gap-2 sm:grid-cols-3">
+          <div className="text-sm sm:col-span-3">{k.urunAdi}</div>
+          <label className="text-sm">
+            <span className="text-muted-foreground block text-xs">
+              {t("birimFiyat")}
+            </span>
+            <Input
+              inputMode="decimal"
+              value={fiyatlar[k.id] ?? ""}
+              onChange={(e) =>
+                degisti<Record<string, string>>(setFiyatlar)({
+                  ...fiyatlar,
+                  [k.id]: e.target.value,
+                })
+              }
+              className="h-11"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="text-muted-foreground block text-xs">
+              {ortak("adet")}
+            </span>
+            {/* ADET KAPALI — sebebi altında yazılı, sessiz eksik yok. */}
+            <Input value={k.adet} disabled className="h-11" />
+            <span className="text-muted-foreground text-xs">{t("adetKapali")}</span>
+          </label>
+        </div>
+      ))}
+
+      {/* -------------------------- KARGO --------------------------- */}
+      <div className="grid gap-2 sm:grid-cols-3">
+        <label className="text-sm">
+          <span className="text-muted-foreground block text-xs">{t("desi")}</span>
+          <Input
+            inputMode="decimal"
+            value={desi}
+            placeholder={t("desiIpucu")}
+            onChange={(e) => degisti(setDesi)(e.target.value)}
+            className="h-11"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="text-muted-foreground block text-xs">
+            {t("kargoTutari")}
+          </span>
+          <Input
+            inputMode="decimal"
+            value={tutar}
+            placeholder={t("kargoIpucu")}
+            onChange={(e) => degisti(setTutar)(e.target.value)}
+            className="h-11"
+          />
+        </label>
+      </div>
+
+      {/* ------------------------- GEREKÇE -------------------------- */}
+      <label className="block text-sm">
+        <span className="text-muted-foreground block text-xs">
+          {t("gerekce")}
+        </span>
+        <Input
+          value={gerekce}
+          placeholder={t("gerekceIpucu")}
+          onChange={(e) => degisti(setGerekce)(e.target.value)}
+          className="h-11"
+        />
+      </label>
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="secondary"
+          className="h-11"
+          disabled={bekliyor}
+          onClick={() =>
+            basla(async () => {
+              setHata(null);
+              setSonuc(null);
+              const c = await duzenlemeyiOnizle(saleId, yeniDegerler(), gerekce);
+              setOnizleme(c);
+              if (!c.tamam) setHata(c.hata);
+            })
+          }
+        >
+          {bekliyor ? t("hesaplaniyor") : t("onizle")}
+        </Button>
+
+        {/* ONAY: yalnız GEÇERLİ önizleme varken aktif. */}
+        <Button
+          className="h-11"
+          disabled={bekliyor || onizleme === null || onizleme.tamam !== true}
+          onClick={() =>
+            basla(async () => {
+              if (onizleme === null || !onizleme.tamam) return;
+              const c = await duzenlemeyiUygula(
+                saleId,
+                yeniDegerler(),
+                gerekce,
+                onizleme.imza,
+              );
+              if (c.tamam) {
+                setSonuc(
+                  t("kaydedildi", {
+                    eski: c.eskiNet2 === null ? "?" : bicim.para(c.eskiNet2, paraBirimi),
+                    yeni: c.yeniNet2 === null ? "?" : bicim.para(c.yeniNet2, paraBirimi),
+                  }),
+                );
+                setOnizleme(null);
+                setAcik(false);
+                router.refresh();
+              } else {
+                setHata(c.hata);
+                // Durum değiştiyse önizleme geçersizdir; yeniden alınmalı.
+                setOnizleme(null);
+              }
+            })
+          }
+        >
+          <Check />
+          {t("onayla")}
+        </Button>
+      </div>
+
+      {/* ------------------------ ÖNİZLEME -------------------------- */}
+      {onizleme?.tamam === true ? (
+        <div className="bg-muted/40 space-y-2 rounded-md border p-3 text-sm">
+          <div className="font-medium">{t("onizlemeBaslik")}</div>
+          {onizleme.farklar.map((f, i) => (
+            <div key={i} className="flex flex-wrap items-center gap-2">
+              <span className="text-muted-foreground text-xs">
+                {f.urunAdi ? `${f.urunAdi} · ` : ""}
+                {t(`alan_${f.alan}`)}
+              </span>
+              <span className="tabular-nums line-through opacity-60">
+                {f.eski ?? "—"}
+              </span>
+              <ArrowRight className="size-3.5" />
+              <span className="font-semibold tabular-nums">{f.yeni ?? "—"}</span>
+            </div>
+          ))}
+          <div className="border-t pt-2">
+            {t("ciroEtkisi", {
+              eski: bicim.para(onizleme.eskiCiro, onizleme.paraBirimi),
+              yeni: bicim.para(onizleme.yeniCiro, onizleme.paraBirimi),
+              fark: bicim.para(onizleme.ciroFarki, onizleme.paraBirimi),
+            })}
+          </div>
+          {/* NET burada TAHMİN EDİLMEZ — motor onaydan sonra hesaplar. */}
+          <div className="text-muted-foreground text-xs">{t("netNotu")}</div>
+        </div>
+      ) : null}
+
+      {hata ? (
+        <p className={`flex items-center gap-2 rounded-md p-2 text-sm ${DURUM_KUTUSU.olumsuz} ${DURUM_YAZISI.olumsuz}`}>
+          <TriangleAlert className="size-4 shrink-0" />
+          {hata}
+        </p>
+      ) : null}
+
+      {sonuc ? (
+        <p className={`rounded-md p-2 text-sm ${DURUM_KUTUSU.olumlu} ${DURUM_YAZISI.olumlu}`}>
+          {sonuc}
+        </p>
+      ) : null}
+    </div>
+  );
+}
