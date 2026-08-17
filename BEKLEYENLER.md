@@ -991,7 +991,9 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       · İadeli satışta: iptal düğmesi yerine "iadesi var — iade akışı"
         mesajı + iade kaydına bağlantı (saf katman id+kod döndürüyor)
 
-      **○ KALAN — "İPTALİ GERİ AL" (küçük paket, ~yarım dilim)**
+      **✓ BİTEN — "İPTALİ GERİ AL"** (Halil testi geçti 17.08.2026:
+      yanlış iptal → geri al, uçtan uca EKRANDAN, terminalsiz. İz defterinde
+      iptal + geri alma çifti kaldı.)
       _Gerçek dünya kanıtı 17.08.2026: canlı testte GERÇEK bir satış
       (11512722550) yanlışlıkla iptal edildi ve geri alma yolu YOKTU. Tek
       seferlik script'le düzeltildi; ekran gelene kadar bu yol açık kalmamalı._
