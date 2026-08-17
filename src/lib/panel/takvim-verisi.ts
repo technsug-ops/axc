@@ -240,8 +240,12 @@ export async function takvimSatirlariniTopla(
       },
       items: {
         select: {
+          /**
+           * SÜZGEÇ YOK — 17.08.2026. `type: "SALE_OUT"` süzgeci adet
+           * azaltmanın ayna girişini görmüyor ve nakit takvimi maliyeti
+           * fazla sayıyordu (aynı kök: satış 11513025054).
+           */
           stockMovements: {
-            where: { type: "SALE_OUT" },
             select: { quantityDelta: true, unitCostAmount: true },
           },
         },

@@ -1,3 +1,4 @@
+import { acikCikislar, kalemMaliyeti } from "@/lib/kalem-maliyeti";
 import { GENEL_KDV_ORANI, kdvAyir, type KarDurumu } from "@/lib/kar";
 import { prisma, type IslemIstemcisi } from "@/lib/prisma";
 import { donenMalDagilimi } from "@/lib/iade/yanlis-urun";
@@ -101,19 +102,43 @@ export type IadeSonucu = {
  *  bunları çağırıyor.
  */
 
-/** Satış çıkışının TOPLAM maliyeti. Biri maliyetsizse `null` — uydurulmaz. */
+/**
+ * Satış kaleminin TOPLAM maliyeti. Biri maliyetsizse `null` — uydurulmaz.
+ *
+ * ⚠ 17.08.2026: burada `Math.abs` vardı ve çağıranların üçü de sorguyu
+ * `type: "SALE_OUT"` ile süzüyordu. Adet azaltmada yazılan ayna giriş
+ * (ADJUSTMENT) hem süzgece takılıyor hem işareti yutuluyordu: satış
+ * 11513025054 tek adete indirildiği hâlde İKİ adetlik maliyetle
+ * hesaplandı ve +₺695 kâr, −₺1.304 zarar göründü.
+ *
+ * Kural tek yere alındı: `lib/kalem-maliyeti.ts`. Bu sarmalayıcı yalnız
+ * Prisma tipini saf tipe çeviriyor.
+ */
 export function satisCikisMaliyeti(
   hareketler: {
     quantityDelta: number;
     unitCostAmount: { toString(): string } | null;
   }[],
 ): number | null {
-  let toplam = 0;
-  for (const h of hareketler) {
-    if (h.unitCostAmount === null) return null;
-    toplam += Number(h.unitCostAmount.toString()) * Math.abs(h.quantityDelta);
-  }
-  return toplam;
+  return kalemMaliyeti(
+    hareketler.map((h) => ({
+      quantityDelta: h.quantityDelta,
+      birimMaliyet: h.unitCostAmount === null ? null : h.unitCostAmount.toString(),
+      birimMaliyetParaBirimi: null,
+    })),
+  ).maliyet;
+}
+
+/** Prisma hareketlerini `acikCikislar`a verip AÇIK olanları döndürür. */
+function acikKalemCikislari<
+  T extends { quantityDelta: number; unitCostAmount: { toString(): string } | null },
+>(hareketler: T[]) {
+  return acikCikislar(
+    hareketler.map((h) => ({
+      ...h,
+      birimMaliyet: h.unitCostAmount === null ? null : h.unitCostAmount.toString(),
+    })),
+  );
 }
 
 /** Kalemin komisyon toplamı. */
@@ -472,8 +497,12 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
           include: {
             fees: true,
             returnItems: { select: { quantity: true } },
+            /**
+             * SÜZGEÇ YOK — kaleme bağlı TÜM hareketler. Maliyet işaretli
+             * toplamdan, stoğa dönecek mal `acikCikislar`tan çözülür.
+             */
             stockMovements: {
-              where: { type: "SALE_OUT" },
+              orderBy: { createdAt: "asc" },
               select: {
                 quantityDelta: true,
                 unitCostAmount: true,
@@ -663,7 +692,17 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
          * ÇOK PARTİLİ SATIŞTA PARTİ BAŞINA AYRI SATIR: ortalama maliyet
          * yazmak, iki farklı maliyetli malı tek fiyata eşitlemek olurdu.
          */
-        for (const cikis of kalem.stockMovements) {
+        /**
+         * AÇIK ÇIKIŞLAR — geri dönmüş mal ikinci kez dönmez. Adedi
+         * düşürülmüş bir satışta ham SALE_OUT listesi stoğu şişirirdi.
+         */
+        for (const cikis of acikCikislar(
+          kalem.stockMovements.map((h) => ({
+            ...h,
+            birimMaliyet:
+              h.unitCostAmount === null ? null : h.unitCostAmount.toString(),
+          })),
+        )) {
           if (cikis.unitCostAmount === null) {
             throw new MaliyetsizSatisHatasi(kalem.variantId);
           }
@@ -671,7 +710,7 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
             data: {
               variantId: kalem.variantId,
               type: "ADJUSTMENT",
-              quantityDelta: Math.abs(cikis.quantityDelta),
+              quantityDelta: cikis.adet,
               occurredAt: girdi.occurredAt,
               returnItemId: iadeKalemi.id,
               adjustmentReasonId: nedenId,
@@ -796,8 +835,9 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
             returnItemId: iadeKalemi.id,
             locationId: g.locationId,
             // Maliyet satıştaki çıkış maliyetinden gelir.
-            unitCostAmount: kalem.stockMovements[0]?.unitCostAmount ?? null,
-            unitCostCurrency: kalem.stockMovements[0]?.unitCostCurrency ?? null,
+            // AÇIK çıkışın maliyeti — geri dönmüş satır kaynak olamaz.
+            unitCostAmount: acikKalemCikislari(kalem.stockMovements)[0]?.unitCostAmount ?? null,
+            unitCostCurrency: acikKalemCikislari(kalem.stockMovements)[0]?.unitCostCurrency ?? null,
           },
         });
       }

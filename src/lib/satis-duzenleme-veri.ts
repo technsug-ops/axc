@@ -1,3 +1,4 @@
+import { acikCikislar } from "@/lib/kalem-maliyeti";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { adetPlani } from "@/lib/satis-adet";
 import { acikPartilerToplu } from "@/lib/stok";
@@ -75,9 +76,12 @@ async function planKur(
           variant: { select: { product: { select: { name: true } } } },
           /** İade edilen adet — adet bunun ALTINA inemez. */
           returnItems: { select: { quantity: true } },
-          /** Mevcut çıkışlar — adet azalırsa ayna girişin maliyet kaynağı. */
+          /**
+           * Mevcut hareketler — adet azalırsa ayna girişin maliyet kaynağı.
+           * SÜZGEÇ YOK: ikinci kez azaltmada, ilk azaltmayla geri dönmüş
+           * çıkış tekrar kaynak olmamalı (`acikCikislar` ayıklar).
+           */
           stockMovements: {
-            where: { type: "SALE_OUT" },
             orderBy: { createdAt: "asc" },
             select: {
               quantityDelta: true,
@@ -221,7 +225,6 @@ export async function duzenlemeUygula(girdi: {
       variantId: true,
       variant: { select: { product: { select: { name: true } } } },
       stockMovements: {
-        where: { type: "SALE_OUT" },
         orderBy: { createdAt: "asc" },
         select: {
           quantityDelta: true,
@@ -254,12 +257,17 @@ export async function duzenlemeUygula(girdi: {
         urunAdi: k.variant.product.name,
         eskiAdet: k.quantity,
         yeniAdet: girdi.yeni.adetler?.[k.id] ?? k.quantity,
-        cikislar: k.stockMovements.map((h) => ({
-          birimMaliyet:
-            h.unitCostAmount === null ? null : h.unitCostAmount.toString(),
+        cikislar: acikCikislar(
+          k.stockMovements.map((h) => ({
+            ...h,
+            birimMaliyet:
+              h.unitCostAmount === null ? null : h.unitCostAmount.toString(),
+          })),
+        ).map((h) => ({
+          birimMaliyet: h.birimMaliyet,
           birimMaliyetParaBirimi: h.unitCostCurrency,
           locationId: h.locationId,
-          adet: Math.abs(h.quantityDelta),
+          adet: h.adet,
         })),
         partiler: partiHaritasi.get(k.variantId) ?? [],
       })),

@@ -1,3 +1,4 @@
+import { acikCikislar, kalemMaliyeti, type MaliyetHareketi } from "../src/lib/kalem-maliyeti";
 import { adetPlani, type KalemAdetDegisimi } from "../src/lib/satis-adet";
 import type { Parti } from "../src/lib/stok";
 
@@ -210,6 +211,145 @@ console.log("\nSATIŞ ADEDİ — DOĞRULAMA\n");
     { ...kalem(1, 9, [parti("p2", 2, "100.00")]), saleItemId: "k2", variantId: "v2" },
   ]);
   kontrol("bir kalem yetersizse TÜM plan düşer", yetersiz.olur === false, yetersiz);
+}
+
+
+// --- 8) GİDİŞ-DÖNÜŞ SİMETRİSİ — İKİ DEFTER BİRDEN ---------------------------
+{
+  console.log("\n8) GİDİŞ-DÖNÜŞ SİMETRİSİ (1 → 2 → 1)");
+  /**
+   * ⚠ 17.08.2026 CANLI HATASI — BU TEST YOKTU.
+   *
+   * Satış 11513025054 (LEGO Mario Kart, ₺3.733) 1→2 çıkarıldı, sonra 2→1
+   * indirildi. STOK doğru döndü — ve stok simetrisi zaten test ediliyordu.
+   * Ama KÂR dönmedi: NET-2 +₺695'ten −₺1.304'e düştü, çünkü kâr motoru
+   * maliyeti yalnız `SALE_OUT` satırlarından topluyor, ayna girişi
+   * görmüyordu.
+   *
+   * DERS: ÖLÇÜM İKİ DEFTERİ DE ÖLÇMELİ. Bir işlem stok defterine ve kâr
+   * defterine birlikte yazıyorsa, testi de ikisini birlikte sınamalı.
+   * Tek defteri ölçen test, öbürü sessizce ayrışırken yeşil yanar.
+   */
+  const BIRIM = 2018.63;
+
+  // 1 → 2: bir adet daha çıkar.
+  const artis = adetPlani([
+    kalem(1, 2, [parti("p1", 5, String(BIRIM))], [
+      { birimMaliyet: String(BIRIM), birimMaliyetParaBirimi: "TRY", locationId: "raf-A", adet: 1 },
+    ]),
+  ]);
+  kontrol("artış planı olur", artis.olur === true);
+
+  // Defterin 1→2 sonrası hâli: iki çıkış satırı.
+  const ikiAdet: MaliyetHareketi[] = [
+    { quantityDelta: -1, birimMaliyet: String(BIRIM), birimMaliyetParaBirimi: "TRY" },
+    { quantityDelta: -1, birimMaliyet: String(BIRIM), birimMaliyetParaBirimi: "TRY" },
+  ];
+  kontrol(
+    "2 adetken maliyet = 2 × 2018,63",
+    kalemMaliyeti(ikiAdet).maliyet === 4037.26,
+    kalemMaliyeti(ikiAdet).maliyet,
+  );
+
+  // 2 → 1: ayna giriş.
+  const azalis = adetPlani([
+    kalem(2, 1, [parti("p1", 5, String(BIRIM))], [
+      { birimMaliyet: String(BIRIM), birimMaliyetParaBirimi: "TRY", locationId: "raf-A", adet: 1 },
+      { birimMaliyet: String(BIRIM), birimMaliyetParaBirimi: "TRY", locationId: "raf-A", adet: 1 },
+    ]),
+  ]);
+  kontrol("azalış planı olur", azalis.olur === true);
+  kontrol("1 adet stoğa döner", azalis.olur && azalis.stogaDonen === 1);
+
+  // Defterin 1→2→1 sonrası hâli: iki çıkış + bir ayna giriş.
+  const donusSonrasi: MaliyetHareketi[] = [
+    ...ikiAdet,
+    { quantityDelta: 1, birimMaliyet: String(BIRIM), birimMaliyetParaBirimi: "TRY" },
+  ];
+
+  /**
+   * ASIL KONTROL: başlangıç değerine KURUŞUNA EŞİT dönmeli.
+   */
+  const basta = kalemMaliyeti([ikiAdet[0]]).maliyet;
+  const sonra = kalemMaliyeti(donusSonrasi).maliyet;
+  kontrol("KÂR DEFTERİ simetrik: maliyet başlangıca EŞİT", sonra === basta, {
+    basta,
+    sonra,
+  });
+  kontrol("  ...ve tek adetlik (2018,63)", sonra === 2018.63, sonra);
+
+  /**
+   * STOK DEFTERİ de simetrik: net hareket sıfırdan bir adet çıkış.
+   */
+  const netAdet = -donusSonrasi.reduce((t, h) => t + h.quantityDelta, 0);
+  kontrol("STOK DEFTERİ simetrik: net çıkış 1 adet", netAdet === 1, netAdet);
+
+  /**
+   * İKİ DEFTER BİRBİRİYLE TUTARLI: maliyet = net adet × birim maliyet.
+   * Ayrı ayrı doğru olup birbirinden kopmaları tam olarak yaşanan hataydı.
+   */
+  kontrol("İKİ DEFTER TUTARLI: maliyet = net adet × birim", sonra === netAdet * BIRIM);
+}
+
+// --- 9) AÇIK ÇIKIŞLAR — GERİ DÖNEN MAL İKİNCİ KEZ DÖNMEZ --------------------
+{
+  console.log("\n9) AÇIK ÇIKIŞLAR (iptal/iade aynasının kaynağı)");
+  /**
+   * ⚠ AYNI KÖKÜN İKİNCİ YÜZÜ. Adedi 2→1 indirilmiş satış İPTAL edilirse,
+   * iptal aynası ham `SALE_OUT` listesinden üretiliyordu: defterde 1 adet
+   * açıkken stoğa 2 adet dönerdi. Kâr değil STOK şişerdi.
+   */
+  const h = (d: number, m = "100.00") => ({ quantityDelta: d, birimMaliyet: m });
+
+  kontrol("dönüş yokken tüm çıkışlar açık", acikCikislar([h(-2)]).length === 1);
+  kontrol("  ...adet 2", acikCikislar([h(-2)])[0].adet === 2);
+
+  const azaltilmis = [h(-1), h(-1), h(1)];
+  kontrol("1 adet döndüyse 1 adet açık kalır", acikCikislar(azaltilmis).length === 1);
+  kontrol("  ...ve adedi 1", acikCikislar(azaltilmis)[0].adet === 1);
+
+  kontrol("hepsi döndüyse açık çıkış YOK", acikCikislar([h(-2), h(2)]).length === 0);
+
+  /** SON ÇIKAN İLK KAPANIR — azalış aynasıyla aynı sıra. */
+  const cokParti = [h(-1, "80.00"), h(-1, "120.00"), h(1)];
+  kontrol("son çıkan ilk kapanır → açık olan ESKİ parti", (() => {
+    const a = acikCikislar(cokParti);
+    return a.length === 1 && a[0].birimMaliyet === "80.00";
+  })());
+
+  /** Kısmi kapanma: 3 çıkmış, 1 dönmüş → 2 açık. */
+  const kismi = [h(-2), h(-1), h(1)];
+  kontrol("3 çıkış 1 dönüş → 2 adet açık", (() => {
+    const a = acikCikislar(kismi);
+    return a.reduce((t, x) => t + x.adet, 0) === 2;
+  })());
+}
+
+// --- 10) KURUŞ TOZU — ÇOK PARTİLİ GİDİŞ-DÖNÜŞ ------------------------------
+{
+  console.log("\n10) KURUŞ TOZU (çok partili 3 → 2)");
+  /**
+   * ⚠ MUTASYON BOŞLUĞU, 17.08.2026'da bulundu. Simetri testi TEK maliyetle
+   * yazılınca yuvarlamayı sınamıyordu: 2×2018,63 − 1×2018,63 kayan noktada
+   * TAM çıkar (ikiyle çarpma ikilik tabanda kayıpsızdır). Yani
+   * `dortBasamak` kaldırıldığında test yeşil kalıyordu — koruduğunu
+   * sandığımız satır korumasızdı.
+   *
+   * Toz FARKLI maliyetli partilerde doğar:
+   *     80,10 + 120,20 − 120,20 = 80,10000000000001
+   * Test artık o vakayı sürüyor; yuvarlama gerçekten sınanıyor.
+   */
+  const cok: MaliyetHareketi[] = [
+    { quantityDelta: -1, birimMaliyet: "80.10", birimMaliyetParaBirimi: "TRY" },
+    { quantityDelta: -1, birimMaliyet: "120.20", birimMaliyetParaBirimi: "TRY" },
+    { quantityDelta: 1, birimMaliyet: "120.20", birimMaliyetParaBirimi: "TRY" },
+  ];
+  const m = kalemMaliyeti(cok).maliyet;
+  kontrol("çok partili dönüşte maliyet TAM 80,10", m === 80.1, m);
+  kontrol(
+    "  ...ham toplam zaten tozluydu (yuvarlama iş yapıyor)",
+    80.1 + 120.2 - 120.2 !== 80.1,
+  );
 }
 
 console.log("");

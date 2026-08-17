@@ -59,7 +59,8 @@
     "duzenleme:dogrula": "tsx scripts/satis-duzenleme-dogrula.ts",
     "gerial:dogrula": "tsx scripts/geri-alma-dogrula.ts",
     "marj:dogrula": "tsx scripts/marj-dogrula.ts",
-    "adet:dogrula": "tsx scripts/adet-dogrula.ts"
+    "adet:dogrula": "tsx scripts/adet-dogrula.ts",
+    "canli:kar-tazele": "tsx scripts/canli-kar-tazele.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

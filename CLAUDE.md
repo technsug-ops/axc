@@ -394,6 +394,32 @@ dokunulduğu anı söylüyor.)
 "Sonra düşünürüz" denen alan, sonra düşünüldüğünde veri çoktan onsuz
 birikmiştir; o noktada eklemek geçmişi uydurmak ya da kaybetmek olur.
 
+### ÖLÇÜM İKİ DEFTERİ DE ÖLÇMELİ (KESİN KURAL)
+
+_Ders 17.08.2026._ Bir işlem birden çok deftere yazıyorsa, testi de o
+defterleri **birlikte** sınamalıdır. Tek defteri ölçen test, öbürü sessizce
+ayrışırken yeşil yanar.
+
+**Vaka:** satış adedi 1→2→1 çevrildi. **Stok defteri** doğru döndü ve stok
+simetrisi zaten test ediliyordu. **Kâr defteri** dönmedi: maliyet yalnız
+`SALE_OUT` satırlarından toplanıyordu, adet azalışının ayna girişi
+(`ADJUSTMENT`) süzgece takılıyordu. NET-2 +₺695 kârdan −₺1.304 zarara düştü
+ve ekranda 1 adetlik satış 2 adetlik maliyetle duruyordu.
+
+- Testi **başlangıca dönüş** üzerine kur: gidiş-dönüş sonrası rakam
+  başlangıca **kuruşuna eşit** olmalı.
+- **Defterlerin birbiriyle tutarlılığını da yaz** (`maliyet = net adet ×
+  birim`); ayrı ayrı doğru olup birbirinden kopmaları tam olarak yaşanan
+  hataydı.
+- Simetri testini **tek değerle yazma**: 2×c − c kayan noktada TAM çıkar,
+  yuvarlamayı sınamaz. Farklı maliyetli parti kullan.
+
+**KARDEŞ KURAL — TİP LİSTESİ DEĞİL, BAĞ.** "Şu tipleri say" diyen her
+süzgeç, yarın eklenecek tipi sessizce dışarıda bırakır. Ölçüt bağ olmalı:
+_hareket bu kaleme bağlıysa o kalemin akışıdır_ ve işaretiyle girer. Aynı
+süzgeç sekiz yerde vardı; dördü hatalıydı.
+
+
 ## DEPLOY EDİLEN KOD, KOŞULMAYAN MIGRATION (KESİN KURAL)
 
 _Ders 17.08.2026._ Migration onay disiplini, **kodun deploy disiplinini de

@@ -1,3 +1,4 @@
+import { kalemMaliyeti } from "@/lib/kalem-maliyeti";
 import { karHesapla, type KarGirdisi, type KarSonucu } from "@/lib/kar";
 import { kdvHaricKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
@@ -56,9 +57,15 @@ export async function karOnizle(
       items: {
         orderBy: { id: "asc" },
         include: {
-          // Maliyet FIFO çıkışlarından okunur — ledger'ın kendisi.
+          /**
+           * MALİYET LEDGER'IN KENDİSİDİR — KALEME BAĞLI TÜM HAREKETLER.
+           *
+           * ⚠ 17.08.2026: burada `where: { type: "SALE_OUT" }` vardı ve adet
+           * azaltmada yazılan ayna girişi (ADJUSTMENT) görmüyordu; kâr iki
+           * adetlik maliyetle hesaplanıyordu. Süzgeç kaldırıldı, kural
+           * `lib/kalem-maliyeti.ts`e taşındı: bağ varsa hareket sayılır.
+           */
           stockMovements: {
-            where: { type: "SALE_OUT" },
             select: {
               quantityDelta: true,
               unitCostAmount: true,
@@ -121,18 +128,15 @@ export async function karOnizle(
   const duzeltmeler = new Map(girdi.kalemler.map((k) => [k.saleItemId, k]));
 
   const kalemler: KarGirdisi["kalemler"] = satis.items.map((kalem) => {
-    let maliyet: number | null = 0;
-    let maliyetParaBirimi: Currency | null = null;
-    for (const h of kalem.stockMovements) {
-      if (h.unitCostAmount === null) {
-        maliyet = null;
-        break;
-      }
-      maliyet =
-        (maliyet ?? 0) +
-        Number(h.unitCostAmount.toString()) * Math.abs(h.quantityDelta);
-      maliyetParaBirimi = h.unitCostCurrency;
-    }
+    const { maliyet, paraBirimi } = kalemMaliyeti(
+      kalem.stockMovements.map((h) => ({
+        quantityDelta: h.quantityDelta,
+        birimMaliyet:
+          h.unitCostAmount === null ? null : h.unitCostAmount.toString(),
+        birimMaliyetParaBirimi: h.unitCostCurrency,
+      })),
+    );
+    const maliyetParaBirimi = paraBirimi as Currency | null;
 
     const duzeltme = duzeltmeler.get(kalem.id);
 

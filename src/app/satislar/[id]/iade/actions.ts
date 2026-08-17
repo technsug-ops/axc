@@ -90,8 +90,12 @@ export async function iadeOnizle(
         include: {
           fees: true,
           variant: { include: { product: { select: { name: true } } } },
+          /**
+           * SÜZGEÇ YOK — 17.08.2026. Önizleme kayıtla AYNI maliyeti
+           * göstermeli; ham SALE_OUT toplamı adet azaltmadan sonra
+           * fazla çıkıyordu.
+           */
           stockMovements: {
-            where: { type: "SALE_OUT" },
             select: { quantityDelta: true, unitCostAmount: true },
           },
         },

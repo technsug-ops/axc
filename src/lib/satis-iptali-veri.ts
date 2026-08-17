@@ -1,3 +1,4 @@
+import { acikCikislar } from "@/lib/kalem-maliyeti";
 import { prisma } from "@/lib/prisma";
 import { satisKalemToplamlari } from "@/lib/tutar";
 import {
@@ -52,8 +53,14 @@ async function planKur(
            * negatiftir (stoktan düştü); plan POZİTİF adet beklediği için
            * mutlak değeri alınır.
            */
+          /**
+           * SÜZGEÇ YOK — 17.08.2026 taraması. `type: "SALE_OUT"` yalnız
+           * çıkışları getiriyordu; adedi düşürülmüş bir satış iptal
+           * edilince defterde 1 adet açıkken stoğa 2 adet dönerdi.
+           * Açık olanı `acikCikislar` çözer.
+           */
           stockMovements: {
-            where: { type: "SALE_OUT" },
+            orderBy: { createdAt: "asc" },
             select: {
               id: true,
               variantId: true,
@@ -73,13 +80,21 @@ async function planKur(
   });
   if (satis === null) return null;
 
+  /**
+   * STOĞA DÖNECEK MAL = AÇIK ÇIKIŞLAR. Geri dönmüş adet ikinci kez dönmez.
+   */
   const cikislar = satis.items.flatMap((k) =>
-    k.stockMovements.map((h) => ({
+    acikCikislar(
+      k.stockMovements.map((h) => ({
+        ...h,
+        birimMaliyet:
+          h.unitCostAmount === null ? null : h.unitCostAmount.toString(),
+      })),
+    ).map((h) => ({
       hareketId: h.id,
       variantId: h.variantId,
-      adet: Math.abs(h.quantityDelta),
-      birimMaliyet:
-        h.unitCostAmount === null ? null : h.unitCostAmount.toString(),
+      adet: h.adet,
+      birimMaliyet: h.birimMaliyet,
       birimMaliyetParaBirimi: h.unitCostCurrency,
       locationId: h.locationId,
       kaynakHareketId: h.sourceMovementId,
