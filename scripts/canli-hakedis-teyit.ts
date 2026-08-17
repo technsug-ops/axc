@@ -96,6 +96,79 @@ async function main() {
   }
   console.log("");
 
+
+  // --- 1b) SIFIRIN SEBEBİ — ZAMANLAMA MI, KURAL MI? -------------------------
+  /**
+   * ⚠ 18.08.2026 ÖLÇÜMÜ: 651 kalemin 0'ı bağlı çıktı. Betiğin ilk hâli
+   * "taze rapor yüklenmeli" diyordu — ama bu bir VARSAYIMDI ve sınanmamıştı.
+   *
+   * İki ihtimal var ve YAPILACAK İŞ tamamen farklı:
+   *
+   *   A) ZAMANLAMA — rapor, satışlar sisteme girilmeden önce yüklendi.
+   *      Eşleştirme yükleme anında koşar ve o an karşılık yoktu. Sipariş
+   *      numaraları BUGÜN sistemde varsa, gereken şey taze rapor DEĞİL,
+   *      mevcut kalemleri YENİDEN EŞLEŞTİRMEKTİR.
+   *
+   *   B) KURAL — numaralar hiç tutmuyor (biçim farkı, boşluk, ön sıfır) ya
+   *      da o siparişler gerçekten sistemde yok. Bu durumda taze rapor da
+   *      SIFIR verir ve testi tekrar boşa düşürür.
+   *
+   * Ayrımı yapmadan Halil'e "şu dosyayı getir" demek, işi ikinci kez boşa
+   * çıkarma riski taşır.
+   */
+  console.log("  ── 1b) SIFIRIN SEBEBİ ─────────────────────────────────────");
+
+  const kalemNolari = await prisma.settlementItem.findMany({
+    where: { orderNo: { not: null } },
+    select: { orderNo: true },
+    distinct: ["orderNo"],
+  });
+  const rapordakiNolar = kalemNolari
+    .map((k) => (k.orderNo ?? "").trim())
+    .filter((d) => d !== "");
+
+  const satisKodlari = await prisma.sale.findMany({
+    where: { code: { not: null } },
+    select: { code: true, soldAt: true },
+  });
+  const kodDizini = new Map<string, Date>();
+  for (const s of satisKodlari) {
+    const kod = (s.code ?? "").trim();
+    if (kod !== "") kodDizini.set(kod, s.soldAt);
+  }
+
+  const tutan = rapordakiNolar.filter((n) => kodDizini.has(n));
+
+  console.log(`     rapordaki farklı sipariş no   ${rapordakiNolar.length}`);
+  console.log(`     sistemdeki satış kodu         ${kodDizini.size}`);
+  console.log(`     BUGÜN karşılığı OLAN          ${tutan.length}`);
+  console.log("");
+
+  if (rapordakiNolar.length > 0 && kodDizini.size > 0) {
+    console.log(`     örnek rapor no   ${rapordakiNolar.slice(0, 3).join(" · ")}`);
+    console.log(
+      `     örnek satış kodu ${[...kodDizini.keys()].slice(0, 3).join(" · ")}`,
+    );
+    console.log("");
+  }
+
+  if (tutan.length > 0) {
+    console.log("     → TEŞHİS A: ZAMANLAMA. Sipariş numaraları sistemde VAR;");
+    console.log("       rapor satışlardan önce yüklendiği için bağ kurulmamış.");
+    console.log("       GEREKEN: taze rapor DEĞİL, mevcut kalemleri YENİDEN");
+    console.log("       EŞLEŞTİRMEK. Aynı dosya yeniden yüklenirse çift");
+    console.log("       sayım kapısı devreye girer — ayrı bir tazeleme yolu şart.");
+    console.log(`       Bağlanabilecek sipariş: ${tutan.length}`);
+  } else {
+    console.log("     → TEŞHİS B: KARŞILIK YOK. Raporun sipariş numaralarının");
+    console.log("       hiçbiri sistemdeki satış kodlarıyla tutmuyor.");
+    console.log("       İki alt sebep olabilir ve ayrılmalı:");
+    console.log("         · o dönemin satışları sisteme hiç girilmedi");
+    console.log("         · numara BİÇİMİ farklı (yukarıdaki örnekleri karşılaştır)");
+    console.log("       Biçim farkıysa TAZE RAPOR DA SIFIR VERİR.");
+  }
+  console.log("");
+
   // --- 2) BEKLENEN vs GERÇEKLEŞEN ------------------------------------------
   /**
    * EKRANLA AYNI HESAP: `beklenenHakedis` ve `odemeDurumu` ekranın
