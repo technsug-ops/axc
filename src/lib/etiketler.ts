@@ -63,7 +63,6 @@ const STOK_HAREKET_SIRASI: Record<StockMovementType, null> = {
   EXCHANGE_OUT: null,
   ADJUSTMENT: null,
   COUNT_CORRECTION: null,
-  SALE_CANCEL_IN: null,
 };
 
 export const STOK_HAREKET_TIPLERI = Object.keys(
@@ -82,7 +81,6 @@ export async function stokHareketEtiketleri(): Promise<
     EXCHANGE_OUT: tHareket("EXCHANGE_OUT"),
     ADJUSTMENT: tHareket("ADJUSTMENT"),
     COUNT_CORRECTION: tHareket("COUNT_CORRECTION"),
-    SALE_CANCEL_IN: tHareket("SALE_CANCEL_IN"),
   };
 }
 
