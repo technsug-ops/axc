@@ -2641,5 +2641,33 @@
     "suzgecEtiketi": "İptaller",
     "toplamHaric": "{sayi} iptal — toplama girmiyor",
     "iadeyeGitKodlu": "İade kaydını aç ({kod})"
+  },
+  "IptalGeriAl": {
+    "geriAl": "İptali geri al",
+    "baslik": "İptali geri al",
+    "aciklamaMetni": "Satış iptalsiz hâle gelir ve stoktan geri çıkar. İptal kaydı SİLİNMEZ — defterde \"iptal edildi\" ve \"geri alındı\" satırları yan yana kalır.",
+    "nedenSecin": "Neden geri alıyorsunuz?",
+    "neden_YANLISLIKLA": "Yanlışlıkla iptal edildi",
+    "neden_MUSTERI_DEVAM": "Müşteri vazgeçmekten vazgeçti",
+    "neden_DIGER": "Diğer",
+    "aciklamaZorunlu": "Açıklama (zorunlu)",
+    "aciklamaIstege": "Açıklama (isteğe bağlı)",
+    "aciklamaIpucu": "örn. test amaçlı iptal edilmişti",
+    "onizle": "Önizle",
+    "hesaplaniyor": "Hesaplanıyor…",
+    "onayla": "Geri almayı onayla",
+    "onizlemeBaslik": "Ne olacak",
+    "stoktanCikacak": "{adet} adet stoktan geri çıkacak — mal müşteride sayılacak.",
+    "netNotu": "NET ve ciro yeniden hesaplanır; satış tekrar toplamlara girer.",
+    "satisiAc": "satışı aç",
+    "satisYok": "Satış bulunamadı.",
+    "engel_IPTALLI_DEGIL": "Bu satış iptal edilmemiş — geri alınacak bir şey yok.",
+    "engel_AYNA_YOK": "İptalin yazdığı stok hareketi bulunamadı; stok güvenle geri çevrilemez.",
+    "engel_SONRAKI_CIKIS": "Geri alınamaz — iptalden sonra bu üründen satış/çıkış yapılmış. Geri alma stoğu eksiye düşürürdü. Engelleyen hareketler:",
+    "engel_NEDEN_YOK": "Neden seçilmeden geri alma kaydedilemez.",
+    "engel_ACIKLAMA_YOK": "\"Diğer\" seçildiğinde açıklama zorunludur.",
+    "engel_DURUM_DEGISTI": "Durum değişti — araya bir işlem girmiş olabilir. Önizlemeyi yenileyin.",
+    "engel_SATIS_YOK": "Satış bulunamadı.",
+    "iz_SATIS_IPTAL_GERI_ALINDI": "İptal geri alındı"
   }
 }

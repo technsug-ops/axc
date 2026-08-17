@@ -16,6 +16,7 @@ import { HesapDegistir } from "./hesap-degistir";
 import { YenidenHesapla } from "./yeniden-hesapla";
 import { DuzenleFormu } from "./duzenle-formu";
 import { IptalFormu } from "./iptal-formu";
+import { GeriAlFormu } from "./geri-al-formu";
 import { satisIzleri } from "@/lib/satis-duzenleme-veri";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -118,6 +119,7 @@ export default async function SatisDetaySayfasi({
   const t = await getTranslations("Satis");
   const tDuz = await getTranslations("SatisDuzenleme");
   const tIpt = await getTranslations("SatisIptali");
+  const tGeri = await getTranslations("IptalGeriAl");
   // Denetim izi: bugünkü tek seferlik fiyat düzeltmesi de burada görünür.
   const izler = await satisIzleri(satis.id);
   const ortak = await getTranslations("Ortak");
@@ -593,6 +595,9 @@ export default async function SatisDetaySayfasi({
           <p className={`text-xs ${DURUM_YAZISI.olumsuz}`}>
             {tIpt("iptalNotuAciklama")}
           </p>
+          {/* GERİ ALMA — gerçek dünya kanıtı 17.08.2026: yanlış iptal olur
+              ve geri yolu ekranda olmalı, terminalde değil. */}
+          <GeriAlFormu saleId={satis.id} />
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
@@ -644,7 +649,9 @@ export default async function SatisDetaySayfasi({
                 <li key={iz.id} className="min-w-0 px-3 py-2">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="font-medium">
-                      {tDuz(`iz_${iz.action}`)}
+                      {iz.action === "SATIS_IPTAL_GERI_ALINDI"
+                        ? tGeri("iz_SATIS_IPTAL_GERI_ALINDI")
+                        : tDuz(`iz_${iz.action}`)}
                     </span>
                     <span className="text-muted-foreground text-xs">
                       {bicim.tarih(iz.createdAt)} ·{" "}

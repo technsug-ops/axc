@@ -2641,5 +2641,33 @@
     "suzgecEtiketi": "",
     "toplamHaric": "",
     "iadeyeGitKodlu": ""
+  },
+  "IptalGeriAl": {
+    "geriAl": "",
+    "baslik": "",
+    "aciklamaMetni": "",
+    "nedenSecin": "",
+    "neden_YANLISLIKLA": "",
+    "neden_MUSTERI_DEVAM": "",
+    "neden_DIGER": "",
+    "aciklamaZorunlu": "",
+    "aciklamaIstege": "",
+    "aciklamaIpucu": "",
+    "onizle": "",
+    "hesaplaniyor": "",
+    "onayla": "",
+    "onizlemeBaslik": "",
+    "stoktanCikacak": "",
+    "netNotu": "",
+    "satisiAc": "",
+    "satisYok": "",
+    "engel_IPTALLI_DEGIL": "",
+    "engel_AYNA_YOK": "",
+    "engel_SONRAKI_CIKIS": "",
+    "engel_NEDEN_YOK": "",
+    "engel_ACIKLAMA_YOK": "",
+    "engel_DURUM_DEGISTI": "",
+    "engel_SATIS_YOK": "",
+    "iz_SATIS_IPTAL_GERI_ALINDI": ""
   }
 }
