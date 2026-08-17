@@ -255,6 +255,80 @@ async function main() {
       console.log("         YAPILACAK: normalleştirme YAZMA — boşa iş olur.");
       console.log("         Teyit, satışları sistemde OLAN bir dönemin");
       console.log("         raporuyla yapılmalı.");
+      console.log("");
+
+    /**
+     * ── HANGİ HESAPTA — SABAHIN ASIL SORUSU ───────────────────────────
+     *
+     * 18.08.2026 ölçümü: 34 satış, 648 kalem, kesişim SIFIR. "Dönem
+     * farkı" tek başına bunu açıklamaz; kanal hesabı da bakılmalı.
+     *
+     * Raporlar bir hesaba, satışlar başka hesaba düşüyorsa taze rapor da
+     * BOŞ çıkar — dönemi değil HESABI değiştirmek gerekir. Bu ayrım
+     * yapılmadan "yarın taze dosya yükle" demek, dördüncü sıfır demektir.
+     */
+    const kalemHesaplari = await prisma.settlementItem.groupBy({
+      by: ["channelAccountId"],
+      _count: { _all: true },
+    });
+    const satisHesaplari = await prisma.sale.groupBy({
+      by: ["channelAccountId"],
+      _count: { _all: true },
+    });
+    const hesapAdlari = new Map(
+      (
+        await prisma.channelAccount.findMany({
+          select: { id: true, name: true, channel: { select: { name: true } } },
+        })
+      ).map((h) => [h.id, `${h.channel.name} — ${h.name}`]),
+    );
+
+    console.log("     ── HANGİ HESAPTA ──");
+    console.log("       RAPOR KALEMLERİ:");
+    for (const g of kalemHesaplari) {
+      console.log(
+        `         ${doldur(hesapAdlari.get(g.channelAccountId) ?? "?", 32)} ${g._count._all}`,
+      );
+    }
+    console.log("       SATIŞLAR:");
+    for (const g of satisHesaplari) {
+      console.log(
+        `         ${doldur(hesapAdlari.get(g.channelAccountId) ?? "?", 32)} ${g._count._all}`,
+      );
+    }
+
+    const kalemHesapKumesi = new Set(kalemHesaplari.map((g) => g.channelAccountId));
+    const ortak = satisHesaplari.filter((g) => kalemHesapKumesi.has(g.channelAccountId));
+    console.log("");
+    if (ortak.length === 0) {
+      console.log("       ⚠ ORTAK HESAP YOK. Raporlar bir hesaba, satışlar");
+      console.log("         BAŞKA hesaba düşüyor. Taze rapor da bu hâliyle boş");
+      console.log("         çıkar — değiştirilmesi gereken DÖNEM değil HESAP.");
+      console.log("         Yüklenecek rapor, satışların bulunduğu hesabın");
+      console.log("         raporu olmalı.");
+    } else {
+      console.log(
+        `       ✓ ORTAK HESAP VAR: ${ortak.map((g) => hesapAdlari.get(g.channelAccountId)).join(" · ")}`,
+      );
+      console.log("         O hesabın GÜNCEL dönem raporu yüklenirse bağ kurulur.");
+    }
+
+    /**
+     * DÖNEM DAMGASI BOŞ — ayrı bulgu. `Settlement.periodStart/periodEnd`
+     * şemada var ama HİÇBİR YERDE yazılmıyor (ölçüldü 18.08.2026). Bu
+     * yüzden "bu rapor hangi dönemi kapsıyor" sorusu sistemden
+     * cevaplanamıyor; yukarıdaki tarih satırı bu yüzden boş çıktı.
+     */
+    const damgasiz = partiler.filter(
+      (p) => p.periodStart === null && p.periodEnd === null,
+    ).length;
+    if (damgasiz > 0) {
+      console.log("");
+      console.log(`       ⚠ ${damgasiz}/${partiler.length} rapor partisinde DÖNEM DAMGASI YOK.`);
+      console.log("         periodStart/periodEnd şemada var, hiçbir yerde");
+      console.log("         yazılmıyor. 'Bu rapor hangi dönemi kapsıyor'");
+      console.log("         sorusu sistemden cevaplanamıyor.");
+    }
     } else {
       console.log("       → B1 (BİÇİM). Kodların şekli TUTMUYOR — yukarıdaki");
       console.log("         iki örneği karşılaştır. Normalleştirme kuralı");

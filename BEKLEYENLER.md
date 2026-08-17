@@ -1238,6 +1238,27 @@ değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.
       **○ UZUN VADE:** `/hakedis` ekranında "bağsız kalemleri eşleştir"
       düğmesi — betik canlıda kanıtlandıktan sonra (İlke #1: görünür eylem).
 
+      **○ ÖLÇÜM SONUCU 18.08.2026 — TEŞHİS B2 (YOKLUK).**
+      648 bağsız kalem, **0 bağlanabilir**. Kodların şekli AYNI (11 hane,
+      yalnız rakam) → biçim sorunu YOK. Sistemde **34 satış** var
+      (14.07–18.08.2026) ve hiçbiri raporlarda geçmiyor.
+      **Normalleştirme YAZILMADI** — B2'de boşa iş olurdu.
+
+      _Beklenti düzeltmesi: "651 kalem canlanır" faydası GERÇEKLEŞMEZ.
+      Aracın gerekçesi daralır ama durur: geçmişi kurtarmak değil, ileriye
+      dönük emniyet ağı — sıra bir daha ters döndüğünde kalem sessizce
+      bağsız kalmayacak._
+
+      **○ İKİ YAN BULGU (aynı ölçümden):**
+      1. **Dönem damgası hiç yazılmıyor.** `Settlement.periodStart/periodEnd`
+         şemada var, kodda HİÇBİR YERDE yazılmıyor. "Bu rapor hangi dönemi
+         kapsıyor" sorusu sistemden cevaplanamıyor.
+      2. **Hesap kırılımı ölçülmeli.** 34 satış ile 648 kalemin kesişimi
+         sıfır; bunu tek başına dönem farkı açıklamaz. Raporlar bir kanal
+         hesabına, satışlar başkasına düşüyorsa **taze rapor da boş çıkar**
+         ve değiştirilmesi gereken dönem değil HESAPTIR. Betiğe kırılım
+         eklendi.
+
       **○ HALİL'DEN GELECEK — koşullu.** Betiğin çıktısına göre:
       eşleşme varsa eldekiyle koşulur, yoksa taze hakediş dökümü istenir.
 
