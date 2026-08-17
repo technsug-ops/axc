@@ -1,0 +1,262 @@
+import {
+  duzenlemeImzasi,
+  duzenlemePlani,
+  type DuzenlemeGirdisi,
+  type KalemDegisikligi,
+} from "../src/lib/satis-duzenleme";
+
+/**
+ * ============================================================================
+ *  SATIŞ DÜZENLEME — DOĞRULAMA
+ * ----------------------------------------------------------------------------
+ *  Merkezinde GERÇEK VAKA var: satış 11511906855, fiyat ₺2.085 yazılmış,
+ *  doğrusu ₺2.805. Maliyet ₺2.022,05 olduğu için sistem bu satışı ZARAR
+ *  gösteriyor; düzeltince fark ₺63 → ₺783 olmalı.
+ *
+ *  Kontroller DEĞERE bakar, kaynak metnine değil.
+ * ============================================================================
+ */
+
+let gecen = 0;
+let kalan = 0;
+
+function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
+  if (sonuc) {
+    gecen++;
+    console.log(`  OK    ${ad}`);
+  } else {
+    kalan++;
+    console.log(
+      `  HATA  ${ad}${gorulen === undefined ? "" : ` — ${JSON.stringify(gorulen)}`}`,
+    );
+  }
+}
+
+const kalem = (
+  yeniFiyat: number,
+  eskiFiyat = 2085,
+  yeniAdet = 1,
+  eskiAdet = 1,
+  iadeEdilen = 0,
+): KalemDegisikligi => ({
+  saleItemId: "k1",
+  eskiAdet,
+  yeniAdet,
+  eskiFiyat,
+  yeniFiyat,
+  iadeEdilenAdet: iadeEdilen,
+  urunAdi: "Soundcore Q21i NC Kulak Üstü Bluetooth Kulaklık",
+});
+
+const kargoDegismez = {
+  eskiDesi: 2,
+  yeniDesi: 2,
+  eskiTutar: 100,
+  yeniTutar: 100,
+  eskiFirmaId: "aras",
+  yeniFirmaId: "aras",
+};
+
+const temel: DuzenlemeGirdisi = {
+  iptalliMi: false,
+  gerekce: "Fiyat yanlış girilmiş",
+  kalemler: [kalem(2805)],
+  kargo: kargoDegismez,
+  paraBirimi: "TRY",
+};
+
+console.log("\nSATIŞ DÜZENLEME — DOĞRULAMA\n");
+
+// --- 1) GERÇEK VAKA: 2085 → 2805 --------------------------------------------
+{
+  console.log("1) GERÇEK VAKA (11511906855)");
+  const p = duzenlemePlani(temel);
+  kontrol("düzenleme kabul edilir", p.olur === true);
+  kontrol("tek fark: FİYAT", p.olur && p.farklar.length === 1 && p.farklar[0].alan === "FIYAT");
+  kontrol("  ...eski 2085", p.olur && p.farklar[0].eski === 2085);
+  kontrol("  ...yeni 2805", p.olur && p.farklar[0].yeni === 2805);
+  kontrol("eski ciro 2085", p.olur && p.eskiCiro === 2085);
+  kontrol("yeni ciro 2805", p.olur && p.yeniCiro === 2805);
+  kontrol("ciro farkı +720", p.olur && p.ciroFarki === 720, p.olur ? p.ciroFarki : p);
+
+  /**
+   * MALİYET ₺2.022,05 ile karşılaştırma: eski fiyatta brüt fark ₺62,95
+   * (komisyon+kargo sonrası zarar), yeni fiyatta ₺782,95. Kullanıcının
+   * beklediği sonuç bu — testte ayrıca yazılı ki rakam kayarsa görülsün.
+   */
+  const maliyet = 2022.05;
+  kontrol(
+    "eski brüt fark ≈ 63 (zarar bölgesi)",
+    p.olur && Math.round((p.eskiCiro - maliyet) * 100) / 100 === 62.95,
+  );
+  kontrol(
+    "yeni brüt fark ≈ 783 (zarardan çıkar)",
+    p.olur && Math.round((p.yeniCiro - maliyet) * 100) / 100 === 782.95,
+  );
+
+  /**
+   * NET-2 PLANDA TAHMİN EDİLMEZ. Kâr motoru komisyon, KDV, stopaj ve kargoyu
+   * birlikte çözer; burada tahmini bir NET üretmek kopya hesap olurdu.
+   */
+  kontrol("NET yeniden hesaplanacak diye işaretli", p.olur && p.netYenidenHesaplanacak === true);
+}
+
+// --- 2) GEREKÇE ZORUNLU — iz olmadan düzenleme yok --------------------------
+{
+  console.log("\n2) GEREKÇE ZORUNLU");
+  kontrol(
+    "gerekçesiz düzenleme OLMAZ",
+    (() => {
+      const p = duzenlemePlani({ ...temel, gerekce: null });
+      return !p.olur && p.engel === "GEREKCE_YOK";
+    })(),
+  );
+  kontrol(
+    "yalnız boşluk gerekçe SAYILMAZ",
+    (() => {
+      const p = duzenlemePlani({ ...temel, gerekce: "   " });
+      return !p.olur && p.engel === "GEREKCE_YOK";
+    })(),
+  );
+}
+
+// --- 3) İPTALLİ SATIŞ DÜZENLENEMEZ ------------------------------------------
+{
+  console.log("\n3) İPTALLİ SATIŞ");
+  const p = duzenlemePlani({ ...temel, iptalliMi: true });
+  kontrol("iptalli satış düzenlenemez", !p.olur && p.engel === "IPTALLI");
+}
+
+// --- 4) ADET, İADE EDİLEN ADEDİN ALTINA İNEMEZ ------------------------------
+{
+  console.log("\n4) İADE SINIRI");
+  /**
+   * 3 adet satılmış, 2'si iade edilmiş. Adet 1'e düşürülemez: iade kaydı
+   * satılmamış bir maldan dönmüş görünür, defter kendi içinde çelişirdi.
+   */
+  const p = duzenlemePlani({
+    ...temel,
+    kalemler: [kalem(2085, 2085, 1, 3, 2)],
+  });
+  kontrol("adet iade edilenin ALTINA inemez", !p.olur && p.engel === "ADET_IADE_ALTINDA", p);
+
+  // Tam iade adedine EŞİT olması serbest.
+  const esit = duzenlemePlani({ ...temel, kalemler: [kalem(2085, 2085, 2, 3, 2)] });
+  kontrol("  ...iade adedine EŞİT düşürme serbest", esit.olur === true);
+
+  // Üstüne çıkmak zaten serbest.
+  const ustu = duzenlemePlani({ ...temel, kalemler: [kalem(2085, 2085, 5, 3, 2)] });
+  kontrol("  ...artırmak serbest", ustu.olur === true);
+}
+
+// --- 5) GEÇERSİZ DEĞERLER ---------------------------------------------------
+{
+  console.log("\n5) GEÇERSİZ DEĞER");
+  kontrol(
+    "eksi fiyat reddedilir",
+    (() => {
+      const p = duzenlemePlani({ ...temel, kalemler: [kalem(-5)] });
+      return !p.olur && p.engel === "FIYAT_GECERSIZ";
+    })(),
+  );
+  kontrol(
+    "sıfır adet reddedilir",
+    (() => {
+      const p = duzenlemePlani({ ...temel, kalemler: [kalem(2805, 2085, 0, 1)] });
+      return !p.olur && p.engel === "ADET_GECERSIZ";
+    })(),
+  );
+  kontrol(
+    "ondalık adet reddedilir",
+    (() => {
+      const p = duzenlemePlani({ ...temel, kalemler: [kalem(2805, 2085, 1.5, 1)] });
+      return !p.olur && p.engel === "ADET_GECERSIZ";
+    })(),
+  );
+  kontrol(
+    "eksi kargo tutarı reddedilir",
+    (() => {
+      const p = duzenlemePlani({
+        ...temel,
+        kargo: { ...kargoDegismez, yeniTutar: -1 },
+      });
+      return !p.olur && p.engel === "KARGO_GECERSIZ";
+    })(),
+  );
+}
+
+// --- 6) DEĞİŞİKLİK YOKSA YAZMA YOK ------------------------------------------
+{
+  console.log("\n6) DEĞİŞİKLİK YOK");
+  const p = duzenlemePlani({ ...temel, kalemler: [kalem(2085)] });
+  kontrol("hiçbir şey değişmediyse plan OLMAZ", !p.olur && p.engel === "DEGISIKLIK_YOK");
+}
+
+// --- 7) KARGO DÜZENLEME -----------------------------------------------------
+{
+  console.log("\n7) KARGO");
+  const p = duzenlemePlani({
+    ...temel,
+    kalemler: [kalem(2085)],
+    kargo: { ...kargoDegismez, yeniDesi: 3, yeniTutar: 145 },
+  });
+  kontrol("kargo değişikliği plana girer", p.olur === true);
+  kontrol("  ...desi ve tutar ayrı fark", p.olur && p.farklar.length === 2);
+  kontrol(
+    "  ...ciro DEĞİŞMEZ (kargo ciro değil)",
+    p.olur && p.ciroFarki === 0,
+    p.olur ? p.ciroFarki : p,
+  );
+}
+
+// --- 8) PLAN İMZASI — EK 1: onay gösterilene verilir ------------------------
+{
+  console.log("\n8) PLAN İMZASI (durum değişti kontrolü)");
+  const a = duzenlemePlani(temel);
+  const b = duzenlemePlani(temel);
+  kontrol("aynı plan AYNI imzayı verir", duzenlemeImzasi(a) === duzenlemeImzasi(b));
+
+  /**
+   * TEK KURUŞ FARKI İMZAYI DEĞİŞTİRİR. Kullanıcı 2805'i onayladıysa
+   * 2805,01 yazılamaz.
+   */
+  const kurus = duzenlemePlani({ ...temel, kalemler: [kalem(2805.01)] });
+  kontrol("tek kuruş farkı imzayı DEĞİŞTİRİR", duzenlemeImzasi(a) !== duzenlemeImzasi(kurus));
+
+  /**
+   * ARAYA İADE GİRERSE: önizleme alındıktan sonra o satışa iade işlenir ve
+   * adet artık iade sınırının altında kalırsa plan ENGELE döner — imza
+   * değişir, yazma durur.
+   */
+  const araya = duzenlemePlani({
+    ...temel,
+    kalemler: [kalem(2805, 2085, 1, 1, 2)],
+  });
+  kontrol("araya iade girince plan ENGELE döner", araya.olur === false);
+  kontrol(
+    "  ...imza DEĞİŞİR (yazma durur)",
+    duzenlemeImzasi(a) !== duzenlemeImzasi(araya),
+    { once: duzenlemeImzasi(a), sonra: duzenlemeImzasi(araya) },
+  );
+
+  /**
+   * ARAYA İPTAL GİRERSE: aynı şekilde imza değişir.
+   */
+  const iptalGirdi = duzenlemePlani({ ...temel, iptalliMi: true });
+  kontrol("araya iptal girince imza DEĞİŞİR", duzenlemeImzasi(a) !== duzenlemeImzasi(iptalGirdi));
+
+  // Engel imzaları da birbirinden ayrışır — hangi engel olduğu imzada.
+  kontrol(
+    "farklı engeller farklı imza",
+    duzenlemeImzasi(araya) !== duzenlemeImzasi(iptalGirdi),
+  );
+}
+
+console.log("");
+console.log("=".repeat(70));
+if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
+else {
+  console.log(`${kalan} KONTROL BAŞARISIZ (${gecen + kalan} kontrolden)`);
+  process.exitCode = 1;
+}
+console.log("");
