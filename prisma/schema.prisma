@@ -117,28 +117,6 @@ enum StockMovementType {
   EXCHANGE_OUT // değişimde giden yeni ürün (satış geliri YOK, maliyet var)
   ADJUSTMENT // manuel düzeltme (işareti quantityDelta belirler)
   COUNT_CORRECTION // sayım farkı
-  /// SATIŞ İPTALİ — mal HİÇ ÇIKMADI, stok geri döner.
-  ///
-  /// `RETURN_IN` KULLANILMADI: o "müşteri aldı, iade etti" demektir ve
-  /// hareket tipleri kullanıcıya ETİKETLE gösteriliyor (bkz. etiketler.ts).
-  /// İptali iade diye yazsaydık ekranda "iadeden giriş" görünür, kullanıcı
-  /// hiç yaşanmamış bir iade arardı. İki farklı olay aynı görünmemeli.
-  SALE_CANCEL_IN
-}
-
-/// Bir satışın neden iptal edildiği.
-///
-/// Kullanıcı taksonomisi 17.08.2026. İki taraf ayrı tutuluyor çünkü
-/// sorumluluk farklı: müşteri iptali talebi, mağaza iptali OPERASYONU
-/// ilgilendirir. "Stok yok" sayısı artıyorsa stok yönetiminde sorun var
-/// demektir; bunu "müşteri vazgeçti" ile aynı kefeye koymak sinyali
-/// öldürürdü.
-enum SatisIptalSebebi {
-  MUSTERI_FIYAT // müşteri: fiyattan dolayı vazgeçti
-  MUSTERI_VAZGECTI // müşteri: sebepsiz vazgeçti
-  MAGAZA_STOK_YOK // mağaza: stok mevcut değil
-  MAGAZA_KOTU_NIYET // mağaza: kötü niyetli alım
-  MAGAZA_DIGER // mağaza: diğer — AÇIKLAMA ZORUNLU
 }
 
 /// Tedarikçiden tazminat talebinin hangi aşamada olduğu.
@@ -535,7 +513,6 @@ model ChannelAccount {
   /// Boşsa o hesabın satışları için beklenen tarih ÜRETİLMEZ — tahmin
   /// edilmiş bir tarih göstermektense boş bırakılır.
   /**
-   * /**
    * /**
    * /**
    * /**
@@ -955,27 +932,6 @@ model Sale {
   soldAt DateTime
   note   String?  @db.Text
 
-  /// ── İPTAL ──────────────────────────────────────────────────────────────
-  /// İPTAL EDİLDİ Mİ SORUSUNUN TEK KAYNAĞI `iptalTarihi`dir.
-  ///
-  /// Ayrı bir `iptalEdildiMi` boolean'ı EKLENMEDİ: iki alan iki gerçek
-  /// demektir ve bir gün biri doluyken diğeri boş kalır ("iptal ama tarihi
-  /// yok" ya da "tarihi var ama iptal değil"). Bu depoda aynı ilke zaten
-  /// yazılı — kalan TÜRETİLİR, saklanmaz.
-  ///
-  /// ⚠ İPTAL EDİLEN SATIŞ CİROYA, NET'E VE HAKEDİŞ BEKLENTİSİNE GİRMEZ.
-  /// İade gibi "düşülmez", HİÇ DOĞMAMIŞ sayılır: mal çıkmadı, komisyon
-  /// kesilmedi, kargo yanmadı. Süzgeç tek yerde tanımlıdır ve bir bekçi
-  /// süzgeçsiz satış sorgusu kalmadığını denetler.
-  iptalTarihi DateTime?
-  iptalSebebi SatisIptalSebebi?
-  /// MAGAZA_DIGER seçildiğinde ZORUNLU — "diğer" açıklamasız bir kayıt,
-  /// üç ay sonra cevabı olmayan bir soruya dönüşür.
-  iptalNotu   String?           @db.Text
-  /// Kim iptal etti. Kullanıcı silinmez (pasife alınır) — Restrict.
-  iptalEdenId String?
-  iptalEden   User?             @relation("SatisIptalEden", fields: [iptalEdenId], references: [id], onDelete: Restrict)
-
   // --- KARGO (satışta seçilir, snapshot'lanır) ---
   cargoCarrierId String?
   cargoCarrier   CargoCarrier? @relation(fields: [cargoCarrierId], references: [id], onDelete: SetNull)
@@ -1030,8 +986,6 @@ model Sale {
   @@index([channelAccountId])
   @@index([soldAt])
   @@index([cargoCarrierId])
-  /// İptal süzgeci her satış sorgusunda çalışacak — dizin şart.
-  @@index([iptalTarihi])
 }
 
 model SaleItem {
@@ -1515,20 +1469,18 @@ model User {
 
   lastLoginAt DateTime?
 
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  stockMovements      StockMovement[]
-  iadeler             Return[]
-  iadeBildirimleri    ReturnNotice[]
-  ekler               Attachment[]
-  userCompanyRoles    UserCompanyRole[]
-  auditLogs           AuditLog[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  stockMovements   StockMovement[]
+  iadeler          Return[]
+  iadeBildirimleri ReturnNotice[]
+  ekler            Attachment[]
+  userCompanyRoles UserCompanyRole[]
+  auditLogs        AuditLog[]
   /// Bu kullanıcının açtığı destek talepleri.
-  talepler            Talep[]           @relation("TalepBildiren")
+  talepler         Talep[]           @relation("TalepBildiren")
   /// Bu kullanıcının yazdığı çözüm notları (Faz 2'de mesajlara evrilecek).
-  talepCozumleri      Talep[]           @relation("TalepCozumYazani")
-  /// Bu kullanıcının iptal ettiği satışlar.
-  iptalEttigiSatislar Sale[]            @relation("SatisIptalEden")
+  talepCozumleri   Talep[]           @relation("TalepCozumYazani")
 
   @@index([isActive])
 }

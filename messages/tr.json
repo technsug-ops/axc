@@ -138,8 +138,7 @@
     "RETURN_IN": "İade girişi",
     "EXCHANGE_OUT": "Değişim çıkışı",
     "ADJUSTMENT": "Düzeltme",
-    "COUNT_CORRECTION": "Sayım farkı",
-    "SALE_CANCEL_IN": "Satış iptalinden giriş"
+    "COUNT_CORRECTION": "Sayım farkı"
   },
   "Stok": {
     "baslik": "Stok",
