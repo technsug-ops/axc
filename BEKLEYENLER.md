@@ -1963,4 +1963,18 @@ her kart GÖREREK onaylandı.
         satışlık marj "tek satış" uyarısıyla** verilir (marj tek başına
         yanıltır)
       - Renk sistemi: kârlı yeşil · zararlı kırmızı · bekleyen amber
-      - Erişim: ürün analizi sekmelerine arama kutusu
+      - Erişim: ürün analizi sekmelerine arama kutusu · ürünler ve stok
+        ekranlarından karta bağlantı · panele hızlı arama (değerlendirilecek)
+      - Dokunma hedefi 44×44 px; kart tek elle kaydırılabilir, kamera
+        düğmesi büyük ve erişilebilir
+
+      **YETKİ — KART İKİ PARÇADIR:** kimlik + stok herkese açıktır,
+      **kârlılık `satis.kar.gor` iznine bağlıdır.** Operasyon rolü kartı
+      açar, ürünü ve stoğunu görür, kâr bölümünü GÖRMEZ.
+
+      > Bu, kartın tasarımını belirler: kâr bölümü sonradan gizlenen bir
+      > kutu değil, **izinsiz kullanıcıya hiç render edilmeyen** bir bloktur.
+      > Gizli kutu, sunucudan gelen veriyi tarayıcıya taşır; izin ölçütü
+      > sunucuda uygulanır — rakam hiç yola çıkmaz.
+      > Kâr bölümü izin yüzünden yoksa ekran **neden yok olduğunu yazar**
+      > (sessiz boşluk yasağı, Kullanıcı Kolaylığı #5).
