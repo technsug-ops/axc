@@ -931,6 +931,41 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       tuttuğu · çan rozetinin EN YÜKSEK seviyeyi gösterdiği.
       _Mutasyon: uyarı koşulunu gevşet → test kırmızı._
 
+- [ ] **SATIŞ DÜZELTME + İPTAL** — _Kullanıcı sözleşmesi 17.08.2026._
+      **Kalem geç kaydedildi (17.08 akşamı): sözleşme verildiğinde
+      BEKLEYENLER'e işlenmemişti, yalnız sıra satırında adı geçiyordu.**
+
+      **✓ BİTEN — DÜZENLEME DİLİMİ** (Halil testi geçti 17.08.2026, test
+      düzenlemesi canlıda geri alındı):
+      - Saf kurallar (`lib/satis-duzenleme.ts`) · `duzenleme:dogrula` 40
+      - Neden KAPALI LİSTE (5 seçenek, `DIGER` açıklama zorunlu)
+      - Önizleme-önce; onay düğmesi plan çizilmeden aktif olmaz
+      - **Plan imzası (EK 1):** yazma anında plan yeniden kurulur, imza
+        farklıysa yazma DURUR ("durum değişti, önizlemeyi yenileyin")
+      - `karYenidenYaz` ile NET yeniden hesap · `AuditLog` iz (ilk gerçek
+        yazıcısı) · iz satış detayında GÖRÜNÜR
+      - **47-sorgu bekçisi** (`iptal:bekci`): 19 sorgu · 14 süzgeçli ·
+        5 gerekçeli beyan · 0 süzgeçsiz
+      - Süzgeç tek kaynakta (`satisKosulu` → `iptalTarihi`)
+      - Migration canlıda (`20260817051944_satis_iptali`)
+
+      **○ KALAN — İPTAL EKRANI** (4 parça + EK 1-2-3):
+      1. Üstü çizili + "iptal" rozeti; rozette sebep (taksonomi kısaltması,
+         `MAGAZA_DIGER` ise açıklama detayda)
+      2. `?iptal=1` süzgeci — varsayılan gizli
+      3. İptal formu: taksonomi → `iptalPlani` önizleme → onay
+      4. `MAGAZA_DIGER` açıklama zorunlu (saf katmandaki mesajın aynısı)
+      · EK 1 plan farkı · EK 2 etki özetinde null "?" + "hesaplanamadı"
+      · EK 3 `AuditLog` satırı detayda
+      · İadeli satışta: iptal düğmesi yerine "iadesi var — iade akışı"
+        mesajı + iade kaydına bağlantı (saf katman id+kod döndürüyor)
+
+      **○ KALAN — ADET DİLİMİ:** düzenlemede bilinçli kapalı. Fiyat ve kargo
+      stok defterine dokunmaz, **adet dokunur**: 1→2 olursa FIFO'dan ek
+      çıkış, 2→1 olursa ayna giriş gerekir (iptal mekaniğinin aynısı).
+      Yarım yapılırsa envanter sessizce bozulur. Ekranda alan görünür ama
+      kapalı ve nedeni yazılı.
+
 - [ ] **UYARI MERKEZİ — FAZ 2: AMBER VE NÖTR KATMAN**
       _Faz 1 kapanmadan başlanmaz._ **Faz 1 KAPANDI 16.08.2026** — Faz 2
       artık açılabilir.
