@@ -42,7 +42,8 @@
     "iadeler": "",
     "komisyonAktar": "",
     "talepler": "",
-    "gecmisEkstre": ""
+    "gecmisEkstre": "",
+    "urunKarti": ""
   },
   "Ortak": {
     "kapat": "",
@@ -172,7 +173,8 @@
     "satisKaynagi": "",
     "ayrilmisRozeti": "",
     "yasSuzgeci": "",
-    "nedenYonUyumsuz": ""
+    "nedenYonUyumsuz": "",
+    "karlilikKarti": ""
   },
   "Urunler": {
     "baslik": "",
@@ -657,7 +659,8 @@
     "iadeler": "",
     "nakitTakvimi": "",
     "talepler": "",
-    "gecmisEkstre": ""
+    "gecmisEkstre": "",
+    "urunKarti": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -2470,5 +2473,62 @@
     "hataOnizleme": "",
     "hataYazacakYok": "",
     "hataYazilamadi": ""
+  },
+  "UrunKarti": {
+    "baslik": "",
+    "aciklama": "",
+    "aramaIpucu": "",
+    "kameraBasligi": "",
+    "araniyor": "",
+    "basla": "",
+    "baslaIpucu": "",
+    "kayitliDegil": "",
+    "kayitliDegilIpucu": "",
+    "yeniUrunEkle": "",
+    "sku": "",
+    "firmaSku": "",
+    "barkod": "",
+    "stokBaslik": "",
+    "eldeki": "",
+    "yas": "",
+    "raf": "",
+    "gun": "",
+    "stokYok": "",
+    "rafYok": "",
+    "maliyetBaslik": "",
+    "sonAlim": "",
+    "alimYok": "",
+    "ortalamaMaliyet": "",
+    "maliyetBilinmiyor": "",
+    "hiz": "",
+    "hizYok": "",
+    "hizOrnek": "",
+    "satisBaslik": "",
+    "kacKez": "",
+    "toplamAdet": "",
+    "sonSatis": "",
+    "kanallar": "",
+    "hicSatilmamis": "",
+    "karBaslik": "",
+    "karYokHenuz": "",
+    "birimNet": "",
+    "marj": "",
+    "sermayeVerimi": "",
+    "sermayeVerimiNotu": "",
+    "sonSatisNet": "",
+    "tekSatisUyarisi": "",
+    "netKapsamNotu": "",
+    "karIzinYok": "",
+    "riskBaslik": "",
+    "iade": "",
+    "iadeYok": "",
+    "iadeVar": "",
+    "maliyetsizGecmis": "",
+    "maliyetsizNotu": "",
+    "zararliSatis": "",
+    "paraKarisikUyarisi": "",
+    "stokEkrani": "",
+    "urunEkrani": "",
+    "yeniArama": ""
   }
 }

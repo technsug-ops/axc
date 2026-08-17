@@ -118,10 +118,13 @@ export default async function VaryantHareketleriSayfasi({
           {varyant.product.name}
           {varyant.name ? ` — ${varyant.name}` : ""}
         </h1>
-        <p className="text-sm">
+        {/* İlke #9 — az tıkla: kârlılık kartı buradan tek tıkla açılır.
+            Stok ekranı "ne kadar var" der; kart "almalı mıyım" der. */}
+        <p className="flex flex-wrap gap-x-4 text-sm">
           <Baglanti href={`/urunler/${varyant.product.id}`}>
             {t("urunKartinaGit")}
           </Baglanti>
+          <Baglanti href={`/kart/${varyant.id}`}>{t("karlilikKarti")}</Baglanti>
         </p>
       </div>
 

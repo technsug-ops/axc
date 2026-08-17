@@ -24,6 +24,7 @@ import {
   Undo2,
   Percent,
   Receipt,
+  ScanBarcode,
   ShieldCheck,
   ShoppingCart,
   Store,
@@ -68,6 +69,12 @@ type MenuOgesi = {
 const OPERASYON: MenuOgesi[] = [
   { anahtar: "panel", href: "/", icon: LayoutDashboard, aktif: true },
   { anahtar: "urunler", href: "/urunler", icon: Package, aktif: true },
+  /**
+   * ÜRÜN KÂRLILIK KARTI — magazada telefonla barkod okutup alim karari
+   * verilen ekran. Menude ust siralarda: kullanim ani "elimde urun var,
+   * alayim mi" anidir ve o an menuyu kaydirmak istemezsiniz.
+   */
+  { anahtar: "urunKarti", href: "/kart", icon: ScanBarcode, aktif: true },
   { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
   { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
   { anahtar: "iadeler", href: "/iadeler", icon: Undo2, aktif: true },

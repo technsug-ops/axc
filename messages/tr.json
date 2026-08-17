@@ -42,7 +42,8 @@
     "iadeler": "İadeler",
     "komisyonAktar": "Komisyon oranı içe aktarma",
     "talepler": "Destek talepleri",
-    "gecmisEkstre": "Geçmiş ekstreler"
+    "gecmisEkstre": "Geçmiş ekstreler",
+    "urunKarti": "Ürün kârlılık kartı"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -172,7 +173,8 @@
     "satisKaynagi": "Satış",
     "ayrilmisRozeti": "{sayi} ayrıldı",
     "yasSuzgeci": "{gun}+ gündür bekleyenler",
-    "nedenYonUyumsuz": "Seçilen neden bu yönde kullanılamaz. Nedeni ya da yönü değiştirin."
+    "nedenYonUyumsuz": "Seçilen neden bu yönde kullanılamaz. Nedeni ya da yönü değiştirin.",
+    "karlilikKarti": "Kârlılık kartı"
   },
   "Urunler": {
     "baslik": "Ürünler",
@@ -657,7 +659,8 @@
     "iadeler": "İadeler",
     "nakitTakvimi": "Nakit takvimi",
     "talepler": "Destek talepleri",
-    "gecmisEkstre": "Geçmiş ekstreler"
+    "gecmisEkstre": "Geçmiş ekstreler",
+    "urunKarti": "Kârlılık kartı"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -2470,5 +2473,62 @@
     "hataOnizleme": "Önizleme kurulamadı.",
     "hataYazacakYok": "Yazılacak satır yok.",
     "hataYazilamadi": "Kayıt yazılamadı. Aynı kart ve dönem daha önce aktarılmış olabilir."
+  },
+  "UrunKarti": {
+    "baslik": "Ürün kârlılık kartı",
+    "aciklama": "Barkodu okutun ya da ad/SKU yazın — alım kararının verisi tek ekranda.",
+    "aramaIpucu": "Barkod, SKU ya da ürün adı",
+    "kameraBasligi": "Ürün barkodunu okut",
+    "araniyor": "Aranıyor…",
+    "basla": "Ürünü okutun ya da arayın",
+    "baslaIpucu": "Elinizdeki ürünün barkodunu kameraya okutmanız yeterli.",
+    "kayitliDegil": "Kayıtlı değil — yeni ürün",
+    "kayitliDegilIpucu": "\"{arama}\" ile eşleşen ürün yok. Bu ürün sistemde hiç bulunmuyor.",
+    "yeniUrunEkle": "Yeni ürün olarak ekle",
+    "sku": "SKU",
+    "firmaSku": "Firma SKU",
+    "barkod": "Barkod",
+    "stokBaslik": "Stok",
+    "eldeki": "Eldeki adet",
+    "yas": "Stok yaşı",
+    "raf": "Raf",
+    "gun": "{sayi} gün",
+    "stokYok": "stokta yok",
+    "rafYok": "raf tanımlı değil",
+    "maliyetBaslik": "Maliyet ve hız",
+    "sonAlim": "Son alım maliyeti",
+    "alimYok": "alım kaydı yok",
+    "ortalamaMaliyet": "Ortalama maliyet",
+    "maliyetBilinmiyor": "maliyet bilinmiyor",
+    "hiz": "Alımdan satışa",
+    "hizYok": "ölçülemedi",
+    "hizOrnek": "{sayi} satıştan",
+    "satisBaslik": "Satış geçmişi",
+    "kacKez": "Kaç kez satıldı",
+    "toplamAdet": "Toplam adet",
+    "sonSatis": "Son satış",
+    "kanallar": "Kanallar: {liste}",
+    "hicSatilmamis": "Bu ürün hiç satılmadı — kârlılık geçmişi yok.",
+    "karBaslik": "Kârlılık",
+    "karYokHenuz": "Satış olmadığı için kâr rakamı yok.",
+    "birimNet": "NET-2 / adet",
+    "marj": "Marj",
+    "sermayeVerimi": "Sermaye verimi",
+    "sermayeVerimiNotu": "kâr / maliyet",
+    "sonSatisNet": "Son satışın NET-2si",
+    "tekSatisUyarisi": "Bu rakamlar TEK satıştan çıktı — marj tek başına yanıltır.",
+    "netKapsamNotu": "NET-2 ürünün kendi marjıdır: kalem seviyesinden okunur, sipariş kargosu ve hizmet bedeli HARİÇTİR. Satışlar ekranındaki sipariş NET-2si bu yüzden farklıdır.",
+    "karIzinYok": "Kârlılık bilgisi yetkiniz dahilinde değil — kimlik ve stok bilgilerini görebilirsiniz.",
+    "riskBaslik": "Risk sinyalleri",
+    "iade": "İade",
+    "iadeYok": "yok",
+    "iadeVar": "{sayi} iade · {adet} adet",
+    "maliyetsizGecmis": "Kârı hesaplanamayan",
+    "maliyetsizNotu": "maliyet eksik",
+    "zararliSatis": "Zarar eden satış",
+    "paraKarisikUyarisi": "Bu üründe birden fazla para birimi var; kart en çok satılan para biriminden hesaplandı.",
+    "stokEkrani": "Stok ekranı",
+    "urunEkrani": "Ürün kartı",
+    "yeniArama": "Yeni arama"
   }
 }
