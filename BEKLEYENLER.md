@@ -20,7 +20,7 @@ Mimar onaylı sıra, **paket ADIYLA**:
 **~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ · ~~AŞAMA 3 PAKET 1~~ ✓ →
 ~~PANEL AŞAMA 3 PAKET 2~~ ✓ → ~~KART ÖDEME TAKİBİ~~ ✓ → ~~RAPOR FİRE/KAZANÇ
 ETİKETİ~~ ✓ → ~~UYARI MERKEZİ FAZ 1~~ ✓ →
-~~DESTEK MODÜLÜ~~ ✓ → GEÇMİŞ VERİ (kart ödemeyle TEK TABLO, `source` alanıyla) →
+~~DESTEK MODÜLÜ~~ ✓ → ~~GEÇMİŞ VERİ~~ ✓ → SATIŞ DÜZELTME+İPTAL →
 MELONTİK CASE.**
 
 _Sıra 15.08.2026'da güncellendi: **kart ödeme takibi ÖNE ALINDI** — nakit
@@ -1904,3 +1904,63 @@ ya da mevcut testler göremezdi:
 
 **FAZ 2 (sırada değil):** `TalepMesaj` thread'i (göç hazır) · dış bildirim ·
 uyarı erteleme.
+
+### ✅ GEÇMİŞ VERİ AKTARIMI — KAPANDI 17.08.2026
+
+Halil testi gerçek Excel ile geçti, mimar onaylı. **Nakit tarihi 2025
+Mayıs'a uzandı:** 16 ay × 10 kart beyan ekstresi sistemde, parti damgalı
+(`iceAktarimKodu`), geri alınabilir.
+
+Canlı ölçüm — kuru prova ile BİREBİR tuttu: `106 okundu · 10 kart · 4
+atlandı` → `89 yazılacak · 17 çakışma (TÜRETİLEN kazandı)`.
+
+**KAPSAM KÜÇÜLDÜ:** hakediş sayfası düştü — dosyada geçmiş hakediş yok,
+yalnız cari Tem-Ağu 2026 var ve o dönem sistemde zaten 651
+`SettlementItem` olarak duruyor. Aktarmak çift sayım olurdu; girişte
+engellendi.
+
+**ÇİFT AKTARIM KİLİDİ KANITLI:** ikinci yükleme SIFIR yazdı (89 "daha
+önce aktarılmış" + 17 "türetilmiş var" = 106).
+
+**GÜN EŞLEŞTİRMESİ KULLANILMADI** — ölçüldü, 10 karttan 4'ünde yanlıştı ve
+biri SESSİZCE: "Akbank ( Hasan Akçalı Ayın 7 )" sistemde ayın 7'si olan
+"S.ahmet Garanti"ye gidiyordu. Banka+sahip eşleşmesi 10/10 tuttu, yine de
+her kart GÖREREK onaylandı.
+
+`gecmis:dogrula` 116 kontrol.
+
+---
+
+- [ ] **ÜRÜN KÂRLILIK KARTI — ALIM KARARI ARACI**
+      _Kullanıcı sözleşmesi 17.08.2026._ **SIRA: satış düzeltme + iptal
+      paketinden SONRA.**
+
+      **KULLANIM SENARYOSU:** mağazada, alım öncesi, telefonla barkod okut →
+      "bu ürünü alayım mı" kararının tüm verisi TEK BAKIŞTA. Ekran mobil
+      öncelikli tasarlanır; masaüstü ikincildir.
+
+      **ARAMA:** barkod / SKU / ad ile yazarak VEYA **kamerayla okutarak**.
+      Mevcut `components/barkod-okuyucu.tsx` buraya da bağlanır — ikinci bir
+      okuyucu YAZILMAZ.
+
+      **KART İÇERİĞİ (tek ekran):**
+      - Kimlik: ad · barkod · firma SKU · görsel varsa
+      - Satış geçmişi: kaç kez · toplam adet · son satış · hangi kanallar
+      - Kârlılık: ortalama NET-2/adet · marj% · sermaye verimi (kâr/maliyet)
+        · en son satışın NET-2'si
+      - Maliyet: son alım maliyeti (FIFO) · ortalama maliyet · son alım
+        tarihi ve tedarikçi
+      - Risk: iade var mı (kaç, sebep) · `NO_COST` geçmişi · zarar eden
+        satış var mı
+      - Stok: eldeki adet · yaş (61+ gün rozetli) · raf konumu
+      - **HIZ: alımdan satışa ortalama gün** — sermaye dönüş hızı
+      - **ÜRÜN SİSTEMDE HİÇ YOKSA:** "kayıtlı değil — yeni ürün" der
+        (sessiz boş DEĞİL) + "yeni ürün olarak ekle" bağlantısı
+
+      **TAAHHÜTLER:**
+      - Rakamlar NET-2 motorundan ve FIFO'dan okunur — **kopya hesap YOK**
+      - Sessiz varsayım yok: maliyeti bilinmeyen "?" ile gösterilir; **tek
+        satışlık marj "tek satış" uyarısıyla** verilir (marj tek başına
+        yanıltır)
+      - Renk sistemi: kârlı yeşil · zararlı kırmızı · bekleyen amber
+      - Erişim: ürün analizi sekmelerine arama kutusu
