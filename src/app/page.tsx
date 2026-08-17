@@ -1347,6 +1347,26 @@ export default async function AnaSayfa({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* ---------------- KIYAS YOKSA SÖYLE ----------------
+                  ⚠ 18.08.2026 — Halil: "kıyas rozeti sessiz kaldı, veri
+                  yok mu değişim yok mu anlaşılmıyor."
+
+                  Sessizlik BİLİNÇLİYDİ (15.08.2026): kıyas dönemi bomboşken
+                  her kutuya "karşılaştırılamaz" basmak beş kez aynı cümle
+                  demekti ve rakamların önüne geçiyordu. O karar DURUYOR.
+
+                  Eksik olan yerdi: ibare dönem seçicisinin altında, yani
+                  telefonda rakamlardan EKRANLAR ötede kalıyordu. Bilgi
+                  vardı, KARAR ANINDA görünmüyordu — Ders 3'ün aynısı.
+
+                  Çözüm ikisini de korur: kutu başına DEĞİL, kart başına BİR
+                  satır, rakamların hemen üstünde. */}
+              {kiyasBos ? (
+                <p className="text-muted-foreground text-xs">
+                  {t("kiyasVeriYok")}
+                </p>
+              ) : null}
+
               {/* --- büyük rakamlar --- */}
               <div
                 className={`grid gap-2 sm:grid-cols-3 ${karGorunur ? "lg:grid-cols-5" : ""}`}

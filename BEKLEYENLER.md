@@ -174,6 +174,14 @@ ekrandan düzeltilebiliyor.** Ölçü tutturuldu.
 - kargo döngüsü: 106,75 gösterdi, dokunmadan kaydedildi, **aynen kaldı**
 - gerçek yanlış iptal (11512722550) ekrandan geri alındı, terminalsiz
 - adet 1→2→1: **NET-1 840,32 · NET-2 695,08** — başlangıca döndü
+- **madde 8 — stok üstü adet (1→99): rakamlı engel çalışıyor.** "Yapamazsın"
+  demiyor, kaç adet gerektiğini ve kaç adet olduğunu söylüyor. _Doğrulandı
+  18.08.2026 turunda._
+
+**✅ MARJ ANAHTARI — KAPANDI, canlı doğrulandı 18.08.2026.** Satış
+listesinde "Marj: Ciro | Sermaye" geçişi, `0.13×` biçimi kârlılık kartıyla
+birebir, tercih kullanıcı bazında hatırlanıyor. Marj kendi sütununda,
+rozetler eşit genişlikte ve NET ile aynı puntoda.
 
 ---
 
@@ -224,10 +232,12 @@ yüzü ortaya çıktı: adedi düşürülmüş satış iptal edilseydi **stok ş
 
 #### AÇIK KÜÇÜKLER — bu paketten arta kalanlar
 
-- [ ] **Stok düşümü döküm görüntüsü.** Satış detayındaki döküm ham
-      `SALE_OUT` satırlarını gösteriyor: adedi düşürülmüş satışta 1 adetlik
-      kayıtta 2 satır görünür. **Rakamlar doğru, görüntü yanıltıcı** —
-      Ders 3'ün aynısı. Ayna girişin de satır olarak görünmesi gerekir.
+- [x] **Stok düşümü döküm görüntüsü — YAPILDI 18.08.2026.** Geri dönüşler
+      kendi satırında ("Stoğa döndü (adet düşürüldü)", +N) ve altta **net
+      düşüm** toplamı (Kural #15). `kalemDusumleri` GENİŞLETİLMEDİ: ürün
+      kârlılık kartı onu "alımdan satışa kaç gün" için kullanıyor ve ayna
+      girişin kaynak bağı yok — karışsaydı gün hesabı bozulurdu. Ayrı
+      kaynak: `kalemGeriDonusleri`.
 
 ### ✅ DÜZELTME NEDENİ YÖNÜ — KAPANDI 16.08.2026
 
@@ -1212,6 +1222,21 @@ değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.
       kullan). Yanlış seçilirse her gün küçük bir bedel ödenir.
 
       _İkisi de tek turda yapılır; (a) cevaba bağlı değil, (b) bağlı._
+
+- [x] **KIYAS İBARESİ — YAPILDI 18.08.2026.** Halil: "kıyas rozeti sessiz
+      kalıyor, veri mi yok değişim mi yok anlaşılmıyor."
+
+      **Sessizlik bilinçliydi** (15.08.2026: kıyas dönemi bomboşken beş
+      kutuya aynı cümleyi basmak gürültüdür) ve o karar DURUYOR. Eksik olan
+      YERDİ: ibare dönem seçicisinin altındaydı, telefonda rakamlardan
+      ekranlar ötede kalıyordu. **Bilgi vardı, karar anında görünmüyordu —
+      Ders 3.**
+
+      Çözüm ikisini de korur: kutu başına DEĞİL, **kart başına bir satır**,
+      rakamların hemen üstünde. `panel:dogrula` 321 → 325; kontroller ekran
+      kodunu tarıyor çünkü hata hesapta değil **yerleşimdeydi** — değer
+      testi göremezdi. Mutasyon: ibare kaldırılınca ve kutu başına tekrar
+      geri gelince kırmızı.
 
 ## Sonraki uygun pakette
 

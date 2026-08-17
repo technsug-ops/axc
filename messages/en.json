@@ -819,7 +819,10 @@
     "karSuzgeciZarar": "",
     "ciroToplami": "",
     "netToplami": "",
-    "netHesaplanamayanHaric": ""
+    "netHesaplanamayanHaric": "",
+    "stogaDondu": "",
+    "netDusum": "",
+    "netDusumDeger": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -1777,7 +1780,8 @@
     "oluSermayeYok": "",
     "kartAra": "",
     "kargoDurumuKanal": "",
-    "kargoTumKanallar": ""
+    "kargoTumKanallar": "",
+    "kiyasVeriYok": ""
   },
   "Envanter": {
     "baslik": "",

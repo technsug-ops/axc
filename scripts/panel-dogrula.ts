@@ -2253,6 +2253,48 @@ console.log("\nKANAL SÜZGECİ — HER KART AYNI EVRENDE");
 }
 
 // ===========================================================================
+console.log("\nKIYAS BOŞKEN SESSİZLİK YOK");
+// ===========================================================================
+{
+  /**
+   * ⚠ CANLI BULGU 18.08.2026 (Halil): kıyas dönemi bomboşken kutulardaki
+   * değişim rozeti hiç çizilmiyordu; "veri mi yok, değişim mi yok" ayrımı
+   * yapılamıyordu.
+   *
+   * Sessizlik BİLİNÇLİYDİ (15.08.2026: beş kutuda aynı cümleyi tekrarlama).
+   * O karar DURUYOR — kontrol onun korunduğunu da sınıyor. Eksik olan YERDİ:
+   * ibare dönem seçicisinin altındaydı, telefonda rakamlardan ekranlar ötede.
+   *
+   * DEĞER TESTİ BUNU GÖREMEZ: `kiyasRozeti` doğru davranıyordu (null dönmesi
+   * kasıtlıydı) ve metin de vardı. Hata hesapta değil YERLEŞİMDEYDİ.
+   */
+  const ekran = readFileSync("src/app/page.tsx", "utf8");
+
+  kontrol(
+    "kıyas boşken rakam kartında ibare VAR",
+    /kiyasBos \?[\s\S]{0,400}?kiyasVeriYok/.test(ekran),
+  );
+
+  const ibareYeri = ekran.indexOf("kiyasVeriYok");
+  const izgaraYeri = ekran.indexOf("{/* --- büyük rakamlar --- */}");
+  kontrol(
+    "  ...ve rakam ızgarasının ÜSTÜNDE",
+    ibareYeri > 0 && izgaraYeri > 0 && ibareYeri < izgaraYeri,
+  );
+
+  /** ESKİ KARAR KORUNUYOR MU — kutu başına tekrar YOK. */
+  kontrol(
+    "kutu başına TEKRAR yok (eski karar duruyor)",
+    /if \(!kiyasPencere \|\| kiyasBos\) return null;/.test(ekran),
+  );
+
+  kontrol(
+    "seçici altındaki ibare de duruyor",
+    /kiyasBos \?[\s\S]{0,200}?kiyaslanamaz/.test(ekran),
+  );
+}
+
+// ===========================================================================
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) {
   console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);

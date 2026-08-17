@@ -819,7 +819,10 @@
     "karSuzgeciZarar": "Zarara gidenler",
     "ciroToplami": "Ciro toplamı",
     "netToplami": "NET-2 toplamı",
-    "netHesaplanamayanHaric": "{sayi} satışın kârı hesaplanamadı — toplama girmedi"
+    "netHesaplanamayanHaric": "{sayi} satışın kârı hesaplanamadı — toplama girmedi",
+    "stogaDondu": "Stoğa döndü (adet düşürüldü)",
+    "netDusum": "Net düşüm",
+    "netDusumDeger": "Net düşüm: {adet} adet"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -1777,7 +1780,8 @@
     "oluSermayeYok": "{gun}+ gündür bekleyen stok yok",
     "kartAra": "Ürün ara",
     "kargoDurumuKanal": "Kargoya verilen ({kanal})",
-    "kargoTumKanallar": "tüm kanallar: {verilen} · bekleyen: {bekleyen}"
+    "kargoTumKanallar": "tüm kanallar: {verilen} · bekleyen: {bekleyen}",
+    "kiyasVeriYok": "Önceki dönemde veri yok — karşılaştırma yapılamıyor."
   },
   "Envanter": {
     "baslik": "Envanter değeri",

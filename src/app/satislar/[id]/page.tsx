@@ -36,7 +36,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { gunMetni } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
 import { KargoDurumu } from "../kargo-durumu";
-import { kalemDusumleri, type Dusum } from "@/lib/satis";
+import { kalemDusumleri, kalemGeriDonusleri, type Dusum } from "@/lib/satis";
 import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
 
 import type { Currency } from "@/generated/prisma/enums";
@@ -127,6 +127,11 @@ export default async function SatisDetaySayfasi({
 
   // Hangi kalem hangi partilerden düştü — ledger'dan (src/lib/satis.ts).
   const dusumler = await kalemDusumleri(satis.items.map((k) => k.id));
+  /**
+   * GERİ DÖNÜŞLER — adet düşürülünce stoğa dönen mal. Ayrı kaynak: düşüm
+   * listesi FIFO izlenebilirliği içindir, dönüşün kaynak partisi yoktur.
+   */
+  const geriDonusler = await kalemGeriDonusleri(satis.items.map((k) => k.id));
   const toplamlar = satisKalemToplamlari(satis.items);
 
   // Yeniden hesaplama diyaloğu için kargo firmaları.
@@ -456,6 +461,18 @@ export default async function SatisDetaySayfasi({
 
       {satis.items.map((kalem) => {
         const kalemDusumleriListesi = dusumler.get(kalem.id) ?? [];
+        const kalemDonusleri = geriDonusler.get(kalem.id) ?? [];
+        /**
+         * NET DÜŞÜM — Kural #15: tek tek gösterilen yerde toplam da olur.
+         * Dönüş varken çıkışları tek tek gösterip toplamı söylememek,
+         * kullanıcıyı satırları kafadan toplamaya bırakır; zaten bu
+         * ekranın yanıltıcı olma sebebi buydu.
+         */
+        const cikanAdet = kalemDusumleriListesi.reduce(
+          (t2, d) => t2 + Math.abs(d.quantityDelta),
+          0,
+        );
+        const donenAdet = kalemDonusleri.reduce((t2, d) => t2 + d.quantityDelta, 0);
 
         return (
           <Card key={kalem.id}>
@@ -520,6 +537,45 @@ export default async function SatisDetaySayfasi({
                         </TableCell>
                       </TableRow>
                     ))}
+
+                    {/* GERİ DÖNENLER — kendi satırı, kendi işareti. */}
+                    {kalemDonusleri.map((donus) => (
+                      <TableRow key={donus.id} className="text-muted-foreground">
+                        <TableCell className="whitespace-nowrap">
+                          {bicim.tarih(donus.occurredAt)}
+                        </TableCell>
+                        <TableCell>{t("stogaDondu")}</TableCell>
+                        <TableCell>
+                          {donus.location ? (
+                            <Badge variant="secondary">{donus.location.code}</Badge>
+                          ) : (
+                            <span>—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          +{donus.quantityDelta}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          {donus.unitCostAmount
+                            ? bicim.para(
+                                donus.unitCostAmount,
+                                donus.unitCostCurrency ?? "TRY",
+                              )
+                            : t("maliyetYok")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+
+                    {/* NET — yalnız dönüş varken; yoksa gereksiz satır. */}
+                    {donenAdet > 0 ? (
+                      <TableRow className="font-medium">
+                        <TableCell colSpan={3}>{t("netDusum")}</TableCell>
+                        <TableCell className="text-right">
+                          {cikanAdet - donenAdet}
+                        </TableCell>
+                        <TableCell />
+                      </TableRow>
+                    ) : null}
                   </TableBody>
                 </Table>
               </div>
@@ -556,6 +612,44 @@ export default async function SatisDetaySayfasi({
                     ]}
                   />
                 ))}
+
+                {kalemDonusleri.map((donus) => (
+                  <ListeKarti
+                    key={donus.id}
+                    baslik={
+                      <span className="flex flex-wrap items-center gap-2">
+                        {bicim.tarih(donus.occurredAt)}
+                        <Badge variant="outline">+{donus.quantityDelta}</Badge>
+                      </span>
+                    }
+                    alanlar={[
+                      { etiket: t("partiKaynagi"), deger: t("stogaDondu") },
+                      {
+                        etiket: ortak("raf"),
+                        deger: donus.location ? (
+                          <Badge variant="secondary">{donus.location.code}</Badge>
+                        ) : (
+                          "—"
+                        ),
+                      },
+                      {
+                        etiket: t("partiBirimMaliyet"),
+                        deger: donus.unitCostAmount
+                          ? bicim.para(
+                              donus.unitCostAmount,
+                              donus.unitCostCurrency ?? "TRY",
+                            )
+                          : t("maliyetYok"),
+                      },
+                    ]}
+                  />
+                ))}
+
+                {donenAdet > 0 ? (
+                  <p className="text-sm font-medium">
+                    {t("netDusumDeger", { adet: cikanAdet - donenAdet })}
+                  </p>
+                ) : null}
               </div>
             </CardContent>
           </Card>

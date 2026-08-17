@@ -402,3 +402,54 @@ export type Dusum =
   Awaited<ReturnType<typeof kalemDusumleri>> extends Map<string, (infer T)[]>
     ? T
     : never;
+
+/**
+ * ============================================================================
+ *  SATIŞ KALEMİNİN GERİ DÖNÜŞLERİ — stoğa dönmüş adetler
+ * ----------------------------------------------------------------------------
+ *  ⚠ 17.08.2026 GÖRÜNTÜ BORCU. `kalemDusumleri` yalnız `SALE_OUT` satırlarını
+ *  getirir — FIFO izlenebilirliği için doğrudur, hangi partiden düştüğü orada
+ *  yazar. Ama adet düzenlemesiyle stoğa mal DÖNDÜĞÜNDE döküm bunu göstermez:
+ *  1 adetlik satışta 2 çıkış satırı görünür, kullanıcı "adet 1 yazıyor ama
+ *  burada 2 var" der.
+ *
+ *  Rakamlar doğruydu, GÖRÜNTÜ yanıltıcıydı — "kaydedilen ≠ görünen" dersinin
+ *  aynısı. Dönüşler ayrı kaynak olarak okunur ve dökümde KENDİ SATIRI olur.
+ *
+ *  ── NİYE `kalemDusumleri` GENİŞLETİLMEDİ ────────────────────────────────
+ *  O fonksiyonu ürün kârlılık kartı da kullanıyor ve "alımdan satışa kaç
+ *  gün" hesabını `sourceMovement.occurredAt`ten çıkarıyor. Ayna girişin
+ *  kaynak bağı YOKTUR (hayalet parti dersi); listeye karışsaydı kartın
+ *  gün hesabı bozulurdu. İki soru ayrı, iki kaynak ayrı.
+ * ============================================================================
+ */
+export async function kalemGeriDonusleri(kalemIdleri: string[]) {
+  const hareketler = await prisma.stockMovement.findMany({
+    where: { saleItemId: { in: kalemIdleri }, quantityDelta: { gt: 0 } },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      saleItemId: true,
+      quantityDelta: true,
+      occurredAt: true,
+      unitCostAmount: true,
+      unitCostCurrency: true,
+      location: { select: { code: true } },
+    },
+  });
+
+  const harita = new Map<string, typeof hareketler>();
+  for (const hareket of hareketler) {
+    if (!hareket.saleItemId) continue;
+    const liste = harita.get(hareket.saleItemId) ?? [];
+    liste.push(hareket);
+    harita.set(hareket.saleItemId, liste);
+  }
+  return harita;
+}
+
+/** Tek bir geri dönüş satırı. */
+export type GeriDonus =
+  Awaited<ReturnType<typeof kalemGeriDonusleri>> extends Map<string, (infer T)[]>
+    ? T
+    : never;
