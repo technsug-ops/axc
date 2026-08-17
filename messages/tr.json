@@ -2548,7 +2548,6 @@
     "baslik": "Satışı düzenle",
     "kimlikNotu": "Sipariş no, kanal, tarih ve ürün DEĞİŞMEZ. Yanlış ürün ya da kanal girildiyse yol düzeltme değil, iptal + yeni kayıttır.",
     "birimFiyat": "Birim fiyat",
-    "adetKapali": "adet bu sürümde değiştirilemez — stok hareketi gerektirir",
     "desi": "Desi",
     "desiIpucu": "örn. 2",
     "kargoTutari": "Kargo tutarı (KDV dahil)",
@@ -2592,7 +2591,9 @@
     "aciklamaIpucu": "örn. kanal raporunda 2.805 görünüyor",
     "engel_NEDEN_YOK": "Neden seçilmeden düzenleme kaydedilemez.",
     "engel_ACIKLAMA_YOK": "\"Diğer\" seçildiğinde açıklama zorunludur — altı ay sonra bu değişikliğin nedeni kayıtta durmalı.",
-    "kdvDahilNotu": "(KDV dahil)"
+    "kdvDahilNotu": "(KDV dahil)",
+    "adetNotu": "artarsa stoktan düşer, azalırsa stoğa döner",
+    "engel_STOK_YETMIYOR": "Stok yetmiyor — {urun} için {gereken} adet gerekiyor, elde {mevcut} adet var."
   },
   "SatisIptali": {
     "iptalEt": "Satışı iptal et",

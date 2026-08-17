@@ -96,6 +96,21 @@ export async function duzenlemeyiUygula(
       return { tamam: false, hata: t("durumDegisti") };
     }
     if (sonuc.kod === "SATIS_YOK") return { tamam: false, hata: t("satisYok") };
+
+    /**
+     * STOK YETMİYORSA RAKAMI SÖYLE: "yapamazsın" demek yetmez — kaç adet
+     * gerektiği ve kaç adet olduğu yazılır (Kullanıcı Kolaylığı #5).
+     */
+    if (sonuc.engel === "STOK_YETMIYOR" && sonuc.ayrinti) {
+      return {
+        tamam: false,
+        hata: t("engel_STOK_YETMIYOR", {
+          urun: sonuc.ayrinti.urunAdi,
+          gereken: sonuc.ayrinti.gereken,
+          mevcut: sonuc.ayrinti.mevcut,
+        }),
+      };
+    }
     return { tamam: false, hata: t(`engel_${sonuc.engel}`) };
   }
 

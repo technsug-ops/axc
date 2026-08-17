@@ -1,4 +1,6 @@
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
+import { adetPlani } from "@/lib/satis-adet";
+import { acikPartilerToplu } from "@/lib/stok";
 import { karYenidenYaz } from "@/lib/kar-yeniden";
 import { prisma } from "@/lib/prisma";
 import {
@@ -19,12 +21,10 @@ import {
  *  Bugün satış 11511906855'in fiyatı tek seferlik bir script'le düzeltildi
  *  (2085 → 2805). Bu modül o işi EKRANA taşıyor.
  *
- *  ── BU DİLİMİN KAPSAMI: FİYAT + KARGO ───────────────────────────────────
- *  ⚠ ADET BİLEREK DIŞARIDA. Fiyat ve kargo stok defterine DOKUNMAZ; adet
- *  dokunur: 1→2 olursa FIFO'dan bir adet daha çıkmalı, 2→1 olursa ayna
- *  hareketle geri dönmeli (iptal mekaniğinin aynısı). Yarım yapılırsa
- *  envanter sessizce bozulur — bu yüzden kendi dilimine bırakıldı ve ekran
- *  neden kapalı olduğunu YAZAR.
+ *  ── KAPSAM: FİYAT + ADET + KARGO ────────────────────────────────────────
+ *  Adet 17.08.2026'da eklendi (son dilim). Fiyat ve kargo stok defterine
+ *  DOKUNMAZ; adet dokunur: artarsa FIFO'dan ek çıkış, azalırsa ayna giriş.
+ *  Kurallar te, yazma aşağıda.
  *
  *  ── ÖNİZLEME İLE YAZMA AYNI PLANI KURAR ─────────────────────────────────
  *  İkisi de `planKur` çağırır; yazma anında plan YENİDEN kurulur ve imza
@@ -35,6 +35,8 @@ import {
 export type YeniDegerler = {
   /** saleItemId → yeni birim fiyat. */
   fiyatlar: Record<string, number>;
+  /** saleItemId → yeni adet. Verilmezse mevcut adet korunur. */
+  adetler?: Record<string, number>;
   kargoFirmaId: string | null;
   kargoDesi: number | null;
   kargoTutar: number | null;
@@ -68,9 +70,21 @@ async function planKur(
           unitPriceAmount: true,
           unitPriceCurrency: true,
           commissionRate: true,
+          variantId: true,
           variant: { select: { product: { select: { name: true } } } },
-          /** İade edilen adet — adet düşürme sınırı (bu dilimde salt bilgi). */
+          /** İade edilen adet — adet bunun ALTINA inemez. */
           returnItems: { select: { quantity: true } },
+          /** Mevcut çıkışlar — adet azalırsa ayna girişin maliyet kaynağı. */
+          stockMovements: {
+            where: { type: "SALE_OUT" },
+            orderBy: { createdAt: "asc" },
+            select: {
+              quantityDelta: true,
+              unitCostAmount: true,
+              unitCostCurrency: true,
+              locationId: true,
+            },
+          },
         },
       },
     },
@@ -89,8 +103,7 @@ async function planKur(
       return {
         saleItemId: k.id,
         eskiAdet: k.quantity,
-        // ADET BU DİLİMDE DEĞİŞMEZ — eski değer aynen taşınır.
-        yeniAdet: k.quantity,
+        yeniAdet: yeni.adetler?.[k.id] ?? k.quantity,
         eskiFiyat,
         yeniFiyat: yeni.fiyatlar[k.id] ?? eskiFiyat,
         iadeEdilenAdet: k.returnItems.reduce((t, r) => t + r.quantity, 0),
@@ -136,7 +149,16 @@ export async function duzenlemeOnizle(
 
 export type DuzenlemeYazmaSonucu =
   | { tamam: true; satisKodu: string | null; eskiNet2: number | null; yeniNet2: number | null }
-  | { tamam: false; kod: "SATIS_YOK" | "ENGEL" | "DURUM_DEGISTI"; engel?: string };
+  | {
+      tamam: false;
+      kod: "SATIS_YOK" | "ENGEL" | "DURUM_DEGISTI";
+      engel?: string;
+      /**
+       * Stok yetmezliğinde KAÇ ADET olduğu — ekran "yapamazsın" demekle
+       * yetinmez, rakamı söyler.
+       */
+      ayrinti?: { urunAdi: string; gereken: number; mevcut: number };
+    };
 
 /**
  * DÜZENLEMEYİ YAZAR.
@@ -177,12 +199,115 @@ export async function duzenlemeUygula(girdi: {
     select: { id: true, commissionRate: true },
   });
 
+  /** Adet planı için kalem ayrıntısı — mevcut çıkışlar ve varyant. */
+  const kalemDetaylari = await prisma.saleItem.findMany({
+    where: { saleId: girdi.saleId },
+    orderBy: { id: "asc" },
+    select: {
+      id: true,
+      quantity: true,
+      variantId: true,
+      variant: { select: { product: { select: { name: true } } } },
+      stockMovements: {
+        where: { type: "SALE_OUT" },
+        orderBy: { createdAt: "asc" },
+        select: {
+          quantityDelta: true,
+          unitCostAmount: true,
+          unitCostCurrency: true,
+          locationId: true,
+        },
+      },
+    },
+  });
+
+  /**
+   * ADET DEĞİŞİMİNİN STOK ETKİSİ — kurallar `lib/satis-adet.ts`te.
+   * Stok yetmezse plan düşer ve HİÇBİR ŞEY yazılmaz.
+   */
+  const adetDegisenler = kalemDetaylari.filter(
+    (k) => (girdi.yeni.adetler?.[k.id] ?? k.quantity) !== k.quantity,
+  );
+
+  let stokPlani: ReturnType<typeof adetPlani> | null = null;
+  if (adetDegisenler.length > 0) {
+    const partiHaritasi = await acikPartilerToplu(
+      prisma,
+      [...new Set(adetDegisenler.map((k) => k.variantId))],
+    );
+    stokPlani = adetPlani(
+      adetDegisenler.map((k) => ({
+        saleItemId: k.id,
+        variantId: k.variantId,
+        urunAdi: k.variant.product.name,
+        eskiAdet: k.quantity,
+        yeniAdet: girdi.yeni.adetler?.[k.id] ?? k.quantity,
+        cikislar: k.stockMovements.map((h) => ({
+          birimMaliyet:
+            h.unitCostAmount === null ? null : h.unitCostAmount.toString(),
+          birimMaliyetParaBirimi: h.unitCostCurrency,
+          locationId: h.locationId,
+          adet: Math.abs(h.quantityDelta),
+        })),
+        partiler: partiHaritasi.get(k.variantId) ?? [],
+      })),
+    );
+    if (!stokPlani.olur) {
+      return {
+        tamam: false,
+        kod: "ENGEL",
+        engel: "STOK_YETMIYOR",
+        ayrinti: stokPlani.ayrinti,
+      };
+    }
+  }
+
   await prisma.$transaction(async (tx) => {
     for (const [saleItemId, fiyat] of Object.entries(girdi.yeni.fiyatlar)) {
       await tx.saleItem.update({
         where: { id: saleItemId },
         data: { unitPriceAmount: String(fiyat) },
       });
+    }
+
+    // ADET: önce kalem, sonra stok hareketleri.
+    for (const k of adetDegisenler) {
+      await tx.saleItem.update({
+        where: { id: k.id },
+        data: { quantity: girdi.yeni.adetler?.[k.id] ?? k.quantity },
+      });
+    }
+    if (stokPlani !== null && stokPlani.olur) {
+      for (const c of stokPlani.cikislar) {
+        await tx.stockMovement.create({
+          data: {
+            variantId: c.variantId,
+            type: "SALE_OUT",
+            quantityDelta: c.quantityDelta,
+            occurredAt: girdi.an,
+            saleItemId: c.saleItemId,
+            locationId: c.locationId,
+            unitCostAmount: c.birimMaliyet,
+            unitCostCurrency: c.birimMaliyetParaBirimi as never,
+            sourceMovementId: c.sourceMovementId,
+          },
+        });
+      }
+      for (const g of stokPlani.girisler) {
+        await tx.stockMovement.create({
+          data: {
+            variantId: g.variantId,
+            type: "ADJUSTMENT",
+            quantityDelta: g.quantityDelta,
+            occurredAt: girdi.an,
+            saleItemId: g.saleItemId,
+            locationId: g.locationId,
+            unitCostAmount: g.birimMaliyet,
+            unitCostCurrency: g.birimMaliyetParaBirimi as never,
+            note: "Satış adedi düşürüldü — stoğa iade",
+          },
+        });
+      }
     }
     await tx.sale.update({
       where: { id: girdi.saleId },

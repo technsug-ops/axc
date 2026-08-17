@@ -2548,7 +2548,6 @@
     "baslik": "",
     "kimlikNotu": "",
     "birimFiyat": "",
-    "adetKapali": "",
     "desi": "",
     "desiIpucu": "",
     "kargoTutari": "",
@@ -2592,7 +2591,9 @@
     "aciklamaIpucu": "",
     "engel_NEDEN_YOK": "",
     "engel_ACIKLAMA_YOK": "",
-    "kdvDahilNotu": ""
+    "kdvDahilNotu": "",
+    "adetNotu": "",
+    "engel_STOK_YETMIYOR": ""
   },
   "SatisIptali": {
     "iptalEt": "",

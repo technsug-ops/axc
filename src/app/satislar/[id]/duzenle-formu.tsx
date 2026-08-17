@@ -74,6 +74,9 @@ export function DuzenleFormu({
   const [fiyatlar, setFiyatlar] = useState<Record<string, string>>(() =>
     Object.fromEntries(kalemler.map((k) => [k.id, String(k.fiyat)])),
   );
+  const [adetler, setAdetler] = useState<Record<string, string>>(() =>
+    Object.fromEntries(kalemler.map((k) => [k.id, String(k.adet)])),
+  );
   const [desi, setDesi] = useState(kargoDesi === null ? "" : String(kargoDesi));
   const [tutar, setTutar] = useState(kargoTutar === null ? "" : String(kargoTutar));
   const [neden, setNeden] = useState<DuzenlemeNedeni | "">("");
@@ -94,6 +97,9 @@ export function DuzenleFormu({
   const yeniDegerler = () => ({
     fiyatlar: Object.fromEntries(
       Object.entries(fiyatlar).map(([id, v]) => [id, Number(v)]),
+    ),
+    adetler: Object.fromEntries(
+      Object.entries(adetler).map(([id, v]) => [id, Number(v)]),
     ),
     kargoFirmaId,
     kargoDesi: desi.trim() === "" ? null : Number(desi),
@@ -146,9 +152,20 @@ export function DuzenleFormu({
             <span className="text-muted-foreground block text-xs">
               {ortak("adet")}
             </span>
-            {/* ADET KAPALI — sebebi altında yazılı, sessiz eksik yok. */}
-            <Input value={k.adet} disabled className="h-11" />
-            <span className="text-muted-foreground text-xs">{t("adetKapali")}</span>
+            {/* ADET AÇILDI (son dilim 17.08.2026): artarsa FIFO'dan ek çıkış,
+                azalırsa ayna giriş yazılır. Stok yetmezse önizleme söyler. */}
+            <Input
+              inputMode="numeric"
+              value={adetler[k.id] ?? ""}
+              onChange={(e) =>
+                degisti<Record<string, string>>(setAdetler)({
+                  ...adetler,
+                  [k.id]: e.target.value,
+                })
+              }
+              className="h-11"
+            />
+            <span className="text-muted-foreground text-xs">{t("adetNotu")}</span>
           </label>
         </div>
       ))}
