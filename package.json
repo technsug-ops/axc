@@ -63,7 +63,8 @@
     "canli:kar-tazele": "tsx scripts/canli-kar-tazele.ts",
     "canli:kanal-kodsuz": "tsx scripts/canli-kanal-kodsuz.ts",
     "canli:hakedis-teyit": "tsx scripts/canli-hakedis-teyit.ts",
-    "canli:hakedis-esle": "tsx scripts/canli-hakedis-esle.ts"
+    "canli:hakedis-esle": "tsx scripts/canli-hakedis-esle.ts",
+    "canli:melontik-teyit": "tsx scripts/canli-melontik-teyit.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

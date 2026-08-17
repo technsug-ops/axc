@@ -4,6 +4,53 @@ Karara bağlanmış ama bilinçli olarak sonraki pakete bırakılmış işler.
 Sırası gelince CLAUDE.md'deki **Kullanıcı Kolaylığı İlkeleri** kontrol
 listesiyle birlikte teslim edilir.
 
+## 🎯 ANA PLAN — "MELONTİK'E YETİŞ VE GEÇ"
+
+_Mimar + Halil onaylı, 18.08.2026._ Bundan sonraki bütün işler bu
+haritanın bir aşamasına aittir. **Aşama atlanmaz; her aşama keşif
+raporuyla açılır.**
+
+| # | Aşama | Çıkış ölçüsü |
+|---|---|---|
+| **0** | **Zemin teyidi** | NET-2 **bağımsız** doğrulandı |
+| 1 | Fiyatlama zekâsı (offline) | Melontik'in offline analizi tam karşılandı |
+| 2 | Hakediş derinliği | Melontik'i **ilk geçiş** |
+| 3 | API salt okuma | Örtüşme temiz |
+| 4 | Yarı otomatik | Elle giriş **istisna** |
+| 5 | Tam otomatik | Melontik aboneliği **iptal** |
+
+**AŞAMA 0 — ZEMİN TEYİDİ** _(açık)_
+- [ ] **Melontik çapraz teyit** — sunumdaki 6 sipariş Selliora'da var mı,
+      kâr yan yana: `11506136293` · `11505178853` · `11504867891` ·
+      `11504122276` · `11501857051` · `11500304529`
+      → araç: `npm run canli:melontik-teyit` (salt okuma)
+- [ ] **Hakediş .xlsx teyidi** — ⏸ Halil'in dosyasına bağlı, araçlar hazır
+- [ ] **Komisyon envanteri** — komut verildi
+
+**AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
+- [ ] Fiyatlama aracı (dilim + simülasyon)
+- [ ] Zararına satış uyarısı → **uyarı merkezi Faz 2** (amber katman)
+- [ ] Ürün aralık filtreleri
+
+**AŞAMA 2 — HAKEDİŞ DERİNLİĞİ**
+- [ ] Fazla kargo kontrolü (desi × tarife **vs** fiilen kesilen)
+- [ ] Dönem damgası _(bulgu 18.08: `Settlement.periodStart/periodEnd`
+      şemada var, hiçbir yerde yazılmıyor)_
+- [ ] Teyit rutini
+
+**AŞAMA 3 — API SALT OKUMA**
+- [ ] Trendyol/HB sipariş çekme **READ-ONLY**
+- [ ] Elle giriş ↔ API karşılaştırma raporu
+- [ ] Komisyon/fiyat otomatik
+
+**AŞAMA 4 — YARI OTOMATİK**
+- [ ] Önizleme + onay ile satış kaydı · Buybox · canlı kâr v1
+
+**AŞAMA 5 — TAM OTOMATİK** → Melontik aboneliği iptal
+
+> **SIRA NOTU:** EUR bu haritanın hiçbir aşamasında YOK — SaaS'a bağlandı
+> (kullanıcı kararı 18.08.2026, Türk piyasasına çalışılacak).
+
 ## AÇIK PAKET SIRASI — 13.08.2026 itibarıyla
 
 ## ✅ ANA SİSTEM TAMAMLANDI — 14.08.2026
