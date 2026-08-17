@@ -8,6 +8,7 @@ import { izinVarMi } from "@/lib/yetki";
 
 import { izneGoreSuz, nakitAcigiOlcumu, uyarilariKur } from "./kurallar";
 import { maliyetsizVaryantlar } from "./maliyetsiz-stok";
+import { yedekOlcumu } from "./yedek";
 import type { Uyari } from "./turler";
 
 /**
@@ -40,11 +41,43 @@ import type { Uyari } from "./turler";
  * ============================================================================
  */
 
+/**
+ * SON BAŞARILI YEDEĞİN ZAMANI — depo listesinden.
+ *
+ * ⚠ NEDEN VERİTABANI DAMGASI DEĞİL: "yedek alındı" damgasını veritabanına
+ * yazmak yeni bir tablo/kolon, yani migration demekti — ve tam bu sırada
+ * canlı migration bekliyor. Daha önemlisi: damga veritabanında dursaydı,
+ * veritabanının kendisi gittiğinde yedeğin varlığını da kaybederdik.
+ * Dosyanın KENDİSİ tek doğru kanıttır; listeleme onu okur.
+ *
+ * OKUNAMAZSA `null` DÖNER — ve null "yedek yok" uyarısı yakar. Hata
+ * yutulup "sorun yok" sayılmaz: doğrulanamayan yedek, yedek değildir.
+ */
+async function sonYedekZamani(): Promise<Date | null> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return null;
+  try {
+    const { list } = await import("@vercel/blob");
+    const { blobs } = await list({ prefix: "yedek/" });
+    if (blobs.length === 0) return null;
+    return blobs
+      .map((b) => new Date(b.uploadedAt))
+      .reduce((enYeni, t) => (t > enYeni ? t : enYeni));
+  } catch {
+    return null;
+  }
+}
+
 export async function uyarilariTopla(): Promise<Uyari[]> {
   const bugun = gunDegeri(isTakvimGunu(new Date()));
 
-  const [takvimSatirlari, gorevSayilari, gecikenHakedis, partiler, cevapsizTalep] =
-    await Promise.all([
+  const [
+    takvimSatirlari,
+    gorevSayilari,
+    gecikenHakedis,
+    partiler,
+    cevapsizTalep,
+    sonYedek,
+  ] = await Promise.all([
       takvimSatirlariniTopla(bugun),
       gorevSayilariniTopla(),
       /**
@@ -65,6 +98,7 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
        * hâlde tutar ve sönmeyen uyarı bir süre sonra okunmaz olur.
        */
       prisma.talep.count({ where: { durum: "ACIK" } }),
+      sonYedekZamani(),
     ]);
 
   const takvim = nakitTakvimiKur({
@@ -73,8 +107,19 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
     pencereGun: 14,
   });
 
+  /**
+   * Yedek yaşı İŞ TAKVİMİ GÜNÜNE göre ölçülür — yedek zamanı da aynı
+   * takvime indirilir ki "bugün alındı" saat farkından "1 gün" görünmesin.
+   */
+  const yedek = yedekOlcumu(
+    sonYedek === null ? null : gunDegeri(isTakvimGunu(sonYedek)),
+    bugun,
+  );
+
   const uyarilar = uyarilariKur({
     nakitAcigi: nakitAcigiOlcumu(takvim.netPozisyon),
+    yedekEski: yedek.yedekEski,
+    yedekYok: yedek.yedekYok,
     maliyetsizStok: { sayi: maliyetsizVaryantlar(partiler).length },
     karHesaplanamayan: { sayi: gorevSayilari.karHesaplanamayan },
     cevapsizTalep: { sayi: cevapsizTalep },
@@ -92,13 +137,15 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
    * çizmek "iki uyarı saklanıyor" demek olurdu — hem kafa karıştırır hem
    * saklananın varlığını sızdırır.
    */
-  const [karGorunur, destekYonetir] = await Promise.all([
+  const [karGorunur, destekYonetir, veriAktarir] = await Promise.all([
     izinVarMi("satis.kar.gor"),
     izinVarMi("destek.yonet"),
+    izinVarMi("veri.aktar"),
   ]);
   return izneGoreSuz(uyarilar, (izin) => {
     if (izin === "satis.kar.gor") return karGorunur;
     if (izin === "destek.yonet") return destekYonetir;
+    if (izin === "veri.aktar") return veriAktarir;
     return true;
   });
 }

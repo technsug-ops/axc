@@ -25,6 +25,7 @@ import {
   type UyariOlcumleri,
 } from "../src/lib/uyari/kurallar";
 import { maliyetsizMi, maliyetsizVaryantlar } from "../src/lib/uyari/maliyetsiz-stok";
+import { yedekOlcumu } from "../src/lib/uyari/yedek";
 import {
   UYARI_ADRESLERI,
   UYARI_ANAHTARLARI,
@@ -53,6 +54,8 @@ const bos: UyariOlcumleri = {
   karHesaplanamayan: { sayi: 0 },
   hakedisGecikti: { sayi: 0 },
   cevapsizTalep: { sayi: 0 },
+  yedekEski: { sayi: 0 },
+  yedekYok: { sayi: 0 },
 };
 
 const parti = (kalanAdet: number, birimMaliyet: string | null): Parti => ({
@@ -88,6 +91,8 @@ console.log("=".repeat(70));
     karHesaplanamayan: { sayi: 7 },
     hakedisGecikti: { sayi: 2, tutar: 4400 },
     cevapsizTalep: { sayi: 1 },
+    yedekEski: { sayi: 0 },
+    yedekYok: { sayi: 0 },
   });
   kontrol("beş ölçüm → beş uyarı", dolu.length === 5, dolu.length);
   kontrol("hepsi FAZ 1'de kırmızı", dolu.every((u) => u.seviye === "kirmizi"));
@@ -107,6 +112,67 @@ console.log("=".repeat(70));
   const maliyet = dolu.find((u) => u.anahtar === "maliyetsizStok");
   kontrol("maliyetsiz stok tutarsız (adet uyarısı)", maliyet?.tutar === null);
   kontrol("  ...para birimi de boş", maliyet?.paraBirimi === null);
+}
+
+
+/* ============================================================================
+ *  YEDEK YAŞI — beşinci kırmızı (17.08.2026)
+ * ==========================================================================*/
+{
+  console.log("");
+  console.log("YEDEK YAŞI");
+
+  const g = (gun: number) => new Date(Date.UTC(2026, 7, gun));
+  const bugun = g(17);
+
+  /**
+   * GERÇEK VAKA: canlıda son yedek 13.08'di, bugün 17.08. Dört gün kimse
+   * fark etmedi. Bu senaryo kuralın var oluş sebebidir.
+   */
+  const gercek = yedekOlcumu(g(13), bugun);
+  kontrol("13.08 yedeği 17.08'de UYARIR", gercek.yedekEski.sayi === 4, gercek);
+  kontrol("  ...sayı GÜN sayısıdır (4)", gercek.yedekEski.sayi === 4);
+  kontrol("  ...'yedek yok' uyarısı ÇIKMAZ", gercek.yedekYok.sayi === 0);
+
+  // EŞİK: 2 gün sessiz, 3 gün kırmızı. Sınırın iki yanı da sınanır.
+  kontrol("bugün alınmış → sessiz", yedekOlcumu(g(17), bugun).yedekEski.sayi === 0);
+  kontrol("1 gün → sessiz", yedekOlcumu(g(16), bugun).yedekEski.sayi === 0);
+  kontrol("2 gün (eşik) → HÂLÂ sessiz", yedekOlcumu(g(15), bugun).yedekEski.sayi === 0);
+  kontrol("3 gün → KIRMIZI", yedekOlcumu(g(14), bugun).yedekEski.sayi === 3);
+
+  // HİÇ YEDEK YOK / OKUNAMADI — ayrı uyarı, uydurma gün sayısı YOK.
+  const yok = yedekOlcumu(null, bugun);
+  kontrol("yedek yoksa 'yedekYok' yanar", yok.yedekYok.sayi === 1);
+  kontrol("  ...gün sayısı UYDURULMAZ", yok.yedekEski.sayi === 0);
+
+  // İleri tarihli yedek (saat kayması) alarm üretmez.
+  kontrol("ileri tarihli yedek uyarı DEĞİL", yedekOlcumu(g(19), bugun).yedekEski.sayi === 0);
+
+  // Uyarı listesine gerçekten giriyor mu + adres/izin doğru mu?
+  const liste = uyarilariKur({ ...bos, yedekEski: { sayi: 4 } });
+  const u = liste.find((x) => x.anahtar === "yedekEski");
+  kontrol("yedekEski uyarı listesine girer", u !== undefined);
+  kontrol("  ...kırmızı", u?.seviye === "kirmizi");
+  kontrol("  ...adres /ayarlar/disa-aktarma", u?.adres === "/ayarlar/disa-aktarma");
+  kontrol("  ...izin veri.aktar", u?.izin === "veri.aktar");
+
+  /**
+   * İZİN SÜZGECİ: veri.aktar YOKSA uyarı hiç görünmez. Göremeyeceği bir
+   * ekrana götüren uyarı, çıkmaz olan uyarıdan kötüdür.
+   */
+  const suzulmus = izneGoreSuz(liste, (izin) => izin !== "veri.aktar");
+  kontrol(
+    "veri.aktar yoksa yedek uyarısı GİZLENİR",
+    suzulmus.every((x) => x.anahtar !== "yedekEski"),
+  );
+
+  /**
+   * Sözlük metinleri AYRICA KONTROL EDİLMİYOR: aşağıdaki ekran bölümünde
+   * `UYARI_ANAHTARLARI.every(...)` zaten HER anahtarın başlık ve eylem
+   * metnini dolu olmaya zorluyor. Yeni anahtar eklemek o kontrolü
+   * kendiliğinden genişletiyor — ikinci bir liste tutmak, biri güncellenip
+   * ötekinin unutulacağı yeni bir borç olurdu.
+   */
 }
 
 console.log("");
@@ -188,6 +254,8 @@ console.log("=".repeat(70));
     maliyetsizStok: { sayi: 3 },
     karHesaplanamayan: { sayi: 7 },
     hakedisGecikti: { sayi: 2, tutar: 400 },
+    yedekEski: { sayi: 0 },
+    yedekYok: { sayi: 0 },
     cevapsizTalep: { sayi: 0 },
   });
   const kisitli = izneGoreSuz(hepsi, () => false);

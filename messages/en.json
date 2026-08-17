@@ -2364,7 +2364,11 @@
     "baslik_hakedisGecikti": "",
     "eylem_hakedisGecikti": "",
     "baslik_cevapsizTalep": "",
-    "eylem_cevapsizTalep": ""
+    "eylem_cevapsizTalep": "",
+    "baslik_yedekEski": "",
+    "eylem_yedekEski": "",
+    "baslik_yedekYok": "",
+    "eylem_yedekYok": ""
   },
   "Talep": {
     "bildirEtiketi": "",

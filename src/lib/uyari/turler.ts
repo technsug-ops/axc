@@ -50,6 +50,16 @@ export const UYARI_ANAHTARLARI = [
    * biliyor, ona "1 talep var" demek gürültüdür.
    */
   "cevapsizTalep",
+  /**
+   * YEDEK YAŞI — 17.08.2026, mimar kararı.
+   *
+   * Canlıda son yedek 13.08'di ve DÖRT GÜN kimse fark etmedi. Otomatik
+   * yedek kurulu görünüyordu; durduğunu söyleyen hiçbir işaret yoktu.
+   * Sessiz yedeksizlik, para riskinin ta kendisidir.
+   */
+  "yedekEski",
+  /** Hiç yedek yok YA DA yedek durumu okunamadı — ikisi de "elde yedek yok". */
+  "yedekYok",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -74,6 +84,8 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
    */
   hakedisGecikti: "/hakedis",
   cevapsizTalep: "/talepler?durum=ACIK",
+  yedekEski: "/ayarlar/disa-aktarma",
+  yedekYok: "/ayarlar/disa-aktarma",
 };
 
 /**
@@ -88,6 +100,12 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   karHesaplanamayan: "satis.kar.gor",
   hakedisGecikti: "satis.kar.gor",
   cevapsizTalep: "destek.yonet",
+  /**
+   * Yedek uyarıları dışa aktarma ekranının iznine bağlı: uyarı oraya
+   * götürüyor, göremeyeceği bir ekrana gönderen uyarı çıkmaz.
+   */
+  yedekEski: "veri.aktar",
+  yedekYok: "veri.aktar",
 };
 
 export type Uyari = {

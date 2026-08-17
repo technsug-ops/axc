@@ -2364,7 +2364,11 @@
     "baslik_hakedisGecikti": "{sayi} hakediş kalemi gecikti",
     "eylem_hakedisGecikti": "Hakediş ekranını aç",
     "baslik_cevapsizTalep": "{sayi} destek talebi cevap bekliyor",
-    "eylem_cevapsizTalep": "Talebi incele ve durumunu ilerlet"
+    "eylem_cevapsizTalep": "Talebi incele ve durumunu ilerlet",
+    "baslik_yedekEski": "Son yedek {sayi} gün önce alındı",
+    "eylem_yedekEski": "Yedeği indir ve gece işinin neden durduğuna bak",
+    "baslik_yedekYok": "Elde doğrulanmış yedek YOK",
+    "eylem_yedekYok": "Hemen yedek al — depo boş ya da okunamıyor"
   },
   "Talep": {
     "bildirEtiketi": "Hata veya istek bildir",
