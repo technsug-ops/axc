@@ -932,6 +932,9 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       _Mutasyon: uyarı koşulunu gevşet → test kırmızı._
 
 - [ ] **SATIŞ DÜZELTME + İPTAL** — _Kullanıcı sözleşmesi 17.08.2026._
+      **DÜZENLEME DİLİMİ ✓ KAPANDI 17.08.2026** (Halil döngü teyidi: form
+      106,75 gösterdi, değişmeden kaydedilince aynen kaldı). İptal ekranı ve
+      adet dilimi açık.
       **Kalem geç kaydedildi (17.08 akşamı): sözleşme verildiğinde
       BEKLEYENLER'e işlenmemişti, yalnız sıra satırında adı geçiyordu.**
 
@@ -968,6 +971,14 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       farklı şeyler konuşurken bırakır — mimarın "kesinti 88,96" demesi ile
       ekrandaki 88,96 farklı şeylerdi ve orijinal ancak ekran arkeolojisiyle
       bulundu.
+
+      **DERS 3 — KAYDEDİLEN ≠ GÖRÜNEN.** Bilgi karar anında gözle
+      görülmüyorsa yok hükmündedir. Bugün ÜÇ kez aynı biçimde yaşandı:
+      (1) tedarikçi verisi kayıttaydı, sorgu o alanı okumuyordu;
+      (2) yedek kapsamı dosyanın içinde yazılıydı, seçim ekranında yoktu;
+      (3) düzenleme farkları `AuditLog.detail`te duruyordu, iz satırı
+      göstermiyordu. Üçünde de "veri var" doğruydu ve üçünde de kullanıcı
+      yanlış karar verebilirdi.
 
       **○ KALAN — İPTAL EKRANI** (4 parça + EK 1-2-3):
       1. Üstü çizili + "iptal" rozeti; rozette sebep (taksonomi kısaltması,
