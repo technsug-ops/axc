@@ -1,4 +1,5 @@
 import { karHesapla, type KarGirdisi, type KarSonucu } from "@/lib/kar";
+import { kdvHaricKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
 
 import type { Currency } from "@/generated/prisma/enums";
@@ -103,7 +104,7 @@ export async function karOnizle(
   // != null bilerek: undefined de null gibi ele alinir.
   if (girdi.cargoAmountManual != null) {
     // Elle girilen tutar KDV DAHİL; motor KDV hariç bekliyor.
-    kargoTarifesi = girdi.cargoAmountManual / 1.2;
+    kargoTarifesi = kdvHaricKargo(girdi.cargoAmountManual);
   } else if (girdi.cargoCarrierId && girdi.cargoDesi != null) {
     const tarife = await prisma.cargoTariff.findFirst({
       where: {

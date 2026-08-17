@@ -1,4 +1,5 @@
 import { karHesapla, type KarGirdisi, type KarDurumu } from "@/lib/kar";
+import { kdvHaricKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
 import { acikPartiler, fifoDagit, type Parti } from "@/lib/stok";
 
@@ -233,7 +234,7 @@ async function karHesabiniYaz(
   // alan NaN üretip Decimal yazımını patlatıyordu (fifo:dogrula yakaladı).
   if (girdi.cargoAmountManual != null) {
     // Elle girilen tutar KDV DAHİL; motor KDV hariç bekliyor.
-    kargoTarifesi = girdi.cargoAmountManual / 1.2;
+    kargoTarifesi = kdvHaricKargo(girdi.cargoAmountManual);
   } else if (girdi.cargoCarrierId && girdi.cargoDesi != null) {
     const tamDesi = Math.max(0, Math.ceil(girdi.cargoDesi));
     const tarife = await tx.cargoTariff.findFirst({

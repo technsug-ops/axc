@@ -7,7 +7,7 @@ import {
   type DuzenlemeGirdisi,
   type KalemDegisikligi,
 } from "../src/lib/satis-duzenleme";
-import { kdvDahilKargo } from "../src/lib/satis-duzenleme-veri";
+import { kdvDahilKargo, kdvHaricKargo } from "../src/lib/kargo-kdv";
 
 /**
  * ============================================================================
@@ -322,6 +322,42 @@ console.log("\nSATIŞ DÜZENLEME — DOĞRULAMA\n");
   const bolerek = (n: number, kez: number): number =>
     Math.round((kez === 0 ? n : bolerek(n / 1.2, kez - 1)) * 100) / 100;
   kontrol("çevirisiz üç turda 88,96 → 51,48 olurdu", bolerek(88.96, 3) === 51.48, bolerek(88.96, 3));
+
+  /* ========================================================================
+   *  ÇİFT YÖN DÖNGÜSÜ — mimar şartı 17.08.2026
+   * ------------------------------------------------------------------------
+   *  Kural: DB KDV HARİÇ saklar · form AÇILIRKEN ×1,20 ile KDV DAHİL gösterir
+   *  · KAYDEDERKEN ÷1,20 ile KDV HARİÇ yazar.
+   *
+   *  Test: aç-kaydet-aç-kaydet (değer DEĞİŞTİRMEDEN iki tur). Kargo AYNEN
+   *  kalmalı. Bir yön eksik olsaydı her turda %20 kaybolurdu — canlıda tam
+   *  bu oldu (74,13 → 61,78).
+   * ======================================================================*/
+  const turAt = (dbDegeri: number): number => {
+    const ekranda = kdvDahilKargo(dbDegeri)!; // form açılıyor
+    return kdvHaricKargo(ekranda)!; // kullanıcı dokunmadan kaydediyor
+  };
+
+  for (const baslangic of [74.13, 61.78, 109.9, 88.96, 136.17, 0.01]) {
+    const birTur = turAt(baslangic);
+    const ikiTur = turAt(birTur);
+    kontrol(
+      `${baslangic} — iki tur aç/kaydet sonrası AYNEN kalır`,
+      Math.abs(ikiTur - baslangic) < 0.005 && Math.abs(birTur - baslangic) < 0.005,
+      { baslangic, birTur, ikiTur },
+    );
+  }
+
+  /**
+   * KESİNTİ DE KAYMAMALI: kullanıcının gördüğü rakam KARGO kesintisidir.
+   * 74,13 KDV hariç → kesinti 88,96. İki tur sonra yine 88,96 olmalı.
+   */
+  const kesinti = (db: number) => Math.round(db * 1.2 * 100) / 100;
+  kontrol(
+    "kesinti iki tur sonra da 88,96",
+    kesinti(turAt(turAt(74.13))) === 88.96,
+    kesinti(turAt(turAt(74.13))),
+  );
 }
 
 console.log("");

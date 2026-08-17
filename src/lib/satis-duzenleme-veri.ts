@@ -1,4 +1,4 @@
-import { GENEL_KDV_ORANI } from "@/lib/kar";
+import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { karYenidenYaz } from "@/lib/kar-yeniden";
 import { prisma } from "@/lib/prisma";
 import {
@@ -31,16 +31,6 @@ import {
  *  karşılaştırılır. Onay GÖSTERİLENE verilmiştir.
  * ============================================================================
  */
-
-/**
- * Kargo tutarını KDV DAHİL hâle çevirir — ekran ve kullanıcı bu dilde konuşur.
- * Veritabanı KDV HARİÇ saklar; çeviri tek yerde durur ki iki taraf ayrışmasın.
- */
-export function kdvDahilKargo(kdvHaric: number | null): number | null {
-  if (kdvHaric === null) return null;
-  // Kuruşa yuvarla: 61.78 × 1.2 = 74.136 → 74.14 değil, 74.13 olmalı.
-  return Math.round(kdvHaric * (1 + GENEL_KDV_ORANI / 100) * 100) / 100;
-}
 
 export type YeniDegerler = {
   /** saleItemId → yeni birim fiyat. */
