@@ -1190,7 +1190,22 @@ değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.
 
 ## Faz 3 kapanışı ve hemen sonrası
 
-- [ ] **HAKEDİŞ CANLI TEYİDİ — Faz 3'ün son parçası.**
+- [ ] **HAKEDİŞ CANLI TEYİDİ — ⏸ BEKLEMEDE (18.08.2026).**
+      _Halil: "hakediş raporunu şu anda sistemden alamam."_ Kod tarafı
+      HAZIR; iş taze rapora bağlı, bekleyen tek şey o.
+
+      **DEVAM ETMEK İÇİN ÜÇ ADIM, SIRAYLA:**
+      1. `npm run canli:hakedis-esle` — 5 sn, yazmaz. Alt kısımdaki
+         **hesap kırılımına** bak: "ORTAK HESAP VAR" diyorsa yükleme
+         güvenli; "ORTAK HESAP YOK" diyorsa değiştirilmesi gereken dönem
+         değil HESAPTIR (yoksa dördüncü sıfır).
+      2. Taze `.xlsx` yükle — **satışları sistemde olan dönem**
+         (14.07.2026 sonrası). Bağ yükleme anında kurulur.
+      3. `npm run canli:hakedis-teyit` — dört bölüm gerçek konuşur.
+
+      _Araçlarda değişiklik gerekmiyor._
+
+      **Faz 3'ün son parçası.**
       _Mimar kararı 18.08.2026._ Sistemin **ileri dönük iddiası** ilk kez
       gerçek ödemeyle sınanır: nakit takvimindeki "girecek" rakamı bu
       iddiadan besleniyor.
