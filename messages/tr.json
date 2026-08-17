@@ -2553,8 +2553,6 @@
     "desiIpucu": "örn. 2",
     "kargoTutari": "Kargo tutarı (KDV dahil)",
     "kargoIpucu": "örn. 145,50",
-    "gerekce": "Neden değiştiriyorsunuz?",
-    "gerekceIpucu": "örn. fiyat yanlış girilmiş",
     "onizle": "Önizle",
     "hesaplaniyor": "Hesaplanıyor…",
     "onayla": "Onayla ve kaydet",
@@ -2572,7 +2570,6 @@
     "engel_IPTALLI": "İptal edilmiş satış düzenlenemez.",
     "engel_DEGISIKLIK_YOK": "Hiçbir şey değişmedi — kaydedilecek bir düzeltme yok.",
     "engel_ADET_IADE_ALTINDA": "Adet, iade edilen adedin altına düşürülemez.",
-    "engel_GEREKCE_YOK": "Gerekçe zorunlu — altı ay sonra bu değişikliğin nedeni kayıtta durmalı.",
     "engel_FIYAT_GECERSIZ": "Fiyat geçersiz. Eksi ya da sayı olmayan değer yazılamaz.",
     "engel_ADET_GECERSIZ": "Adet geçersiz. Tam sayı ve sıfırdan büyük olmalı.",
     "engel_KARGO_GECERSIZ": "Kargo değeri geçersiz. Eksi ya da sayı olmayan değer yazılamaz.",
@@ -2582,6 +2579,18 @@
     "iz_SATIS_FIYAT_DUZELTME": "Fiyat düzeltmesi",
     "iz_SATIS_IPTAL": "İptal",
     "izGerekce": "Gerekçe",
-    "izSistem": "sistem"
+    "izSistem": "sistem",
+    "neden": "Neden değiştiriyorsunuz?",
+    "nedenSecin": "Neden seçin…",
+    "neden_FIYAT_YANLIS": "Fiyat yanlış girilmiş",
+    "neden_KARGO_YANLIS": "Kargo bilgisi yanlış/eksik",
+    "neden_KANAL_FARKI": "Pazaryeri raporuyla uyuşmuyor",
+    "neden_KAMPANYA_INDIRIM": "Kampanya/indirim yansımamış",
+    "neden_DIGER": "Diğer",
+    "aciklamaZorunlu": "Açıklama (zorunlu)",
+    "aciklamaIstege": "Açıklama (isteğe bağlı)",
+    "aciklamaIpucu": "örn. kanal raporunda 2.805 görünüyor",
+    "engel_NEDEN_YOK": "Neden seçilmeden düzenleme kaydedilemez.",
+    "engel_ACIKLAMA_YOK": "\"Diğer\" seçildiğinde açıklama zorunludur — altı ay sonra bu değişikliğin nedeni kayıtta durmalı."
   }
 }

@@ -4,6 +4,7 @@ import {
   duzenlemeImzasi,
   duzenlemePlani,
   type DuzenlemeGirdisi,
+  type DuzenlemeNedeni,
   type DuzenlemePlani,
 } from "@/lib/satis-duzenleme";
 
@@ -41,7 +42,8 @@ export type YeniDegerler = {
 async function planKur(
   saleId: string,
   yeni: YeniDegerler,
-  gerekce: string | null,
+  neden: DuzenlemeNedeni | null,
+  aciklama: string | null,
 ): Promise<{
   plan: DuzenlemePlani;
   imza: string;
@@ -79,7 +81,8 @@ async function planKur(
 
   const girdi: DuzenlemeGirdisi = {
     iptalliMi: satis.iptalTarihi !== null,
-    gerekce,
+    neden,
+    aciklama,
     kalemler: satis.items.map((k) => {
       const eskiFiyat = Number(k.unitPriceAmount.toString());
       return {
@@ -112,9 +115,10 @@ async function planKur(
 export async function duzenlemeOnizle(
   saleId: string,
   yeni: YeniDegerler,
-  gerekce: string | null,
+  neden: DuzenlemeNedeni | null,
+  aciklama: string | null,
 ) {
-  return planKur(saleId, yeni, gerekce);
+  return planKur(saleId, yeni, neden, aciklama);
 }
 
 export type DuzenlemeYazmaSonucu =
@@ -133,12 +137,13 @@ export type DuzenlemeYazmaSonucu =
 export async function duzenlemeUygula(girdi: {
   saleId: string;
   yeni: YeniDegerler;
-  gerekce: string;
+  neden: DuzenlemeNedeni;
+  aciklama: string | null;
   onaylananImza: string;
   kullaniciId: string;
   an: Date;
 }): Promise<DuzenlemeYazmaSonucu> {
-  const kurulum = await planKur(girdi.saleId, girdi.yeni, girdi.gerekce);
+  const kurulum = await planKur(girdi.saleId, girdi.yeni, girdi.neden, girdi.aciklama);
   if (kurulum === null) return { tamam: false, kod: "SATIS_YOK" };
 
   const { plan, imza, satisKodu } = kurulum;
@@ -187,7 +192,8 @@ export async function duzenlemeUygula(girdi: {
         targetId: girdi.saleId,
         detail: JSON.stringify({
           satisKodu,
-          gerekce: girdi.gerekce,
+          neden: girdi.neden,
+          aciklama: girdi.aciklama,
           farklar: plan.farklar,
           eskiCiro: plan.eskiCiro,
           yeniCiro: plan.yeniCiro,

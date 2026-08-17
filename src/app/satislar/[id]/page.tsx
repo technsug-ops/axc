@@ -588,7 +588,12 @@ export default async function SatisDetaySayfasi({
         ) : (
           <ul className="divide-y rounded-lg border text-sm">
             {izler.map((iz) => {
-              let ayrinti: { gerekce?: string; farklar?: unknown[] } = {};
+              let ayrinti: {
+                neden?: string;
+                aciklama?: string;
+                gerekce?: string;
+                farklar?: unknown[];
+              } = {};
               try {
                 ayrinti = JSON.parse(iz.detail ?? "{}");
               } catch {
@@ -605,9 +610,14 @@ export default async function SatisDetaySayfasi({
                       {iz.user?.name ?? iz.user?.email ?? tDuz("izSistem")}
                     </span>
                   </div>
-                  {ayrinti.gerekce ? (
+                  {/* NEDEN kapalı listeden gelir; açıklama varsa yanında. */}
+                  {ayrinti.neden || ayrinti.gerekce || ayrinti.aciklama ? (
                     <p className="text-muted-foreground mt-0.5 text-xs">
-                      {tDuz("izGerekce")}: {ayrinti.gerekce}
+                      {tDuz("izGerekce")}:{" "}
+                      {ayrinti.neden ? tDuz(`neden_${ayrinti.neden}`) : null}
+                      {ayrinti.aciklama ? ` — ${ayrinti.aciklama}` : null}
+                      {/* Eski kayıtlar (bugünkü script) serbest metin taşıyor. */}
+                      {!ayrinti.neden && ayrinti.gerekce ? ayrinti.gerekce : null}
                     </p>
                   ) : null}
                 </li>

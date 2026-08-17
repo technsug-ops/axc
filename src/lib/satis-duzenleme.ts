@@ -24,11 +24,49 @@
  * ============================================================================
  */
 
+/**
+ * ============================================================================
+ *  DÜZENLEME NEDENLERİ — KAPALI LİSTE (kullanıcı isteği 17.08.2026)
+ * ----------------------------------------------------------------------------
+ *  Gerekçe önce SERBEST METİNDİ. Kullanıcı haklı olarak itiraz etti:
+ *  "belirli nedenler olsun, sonra kargaşaya sebep olmasın."
+ *
+ *  Serbest metin altı ay sonra "fiyat hatası", "yanlış girdim", "düzeltme",
+ *  "hata" gibi aynı şeyin beş yazımıyla dolar; o alandan hiçbir zaman
+ *  "kaç düzeltme fiyat yüzünden yapıldı" sorusu cevaplanamaz.
+ *
+ *  Liste KAPALIDIR ve `DIGER` açıklama ZORUNLU kılar — aynı kural iptal
+ *  taksonomisinde de var (`MAGAZA_DIGER`, bkz. `lib/satis-iptali.ts`).
+ * ============================================================================
+ */
+export const DUZENLEME_NEDENLERI = [
+  /** Fiyat yanlış yazılmış — bugünkü 2085/2805 vakası. */
+  "FIYAT_YANLIS",
+  /** Kargo desisi ya da tutarı yanlış/eksik girilmiş. */
+  "KARGO_YANLIS",
+  /** Pazaryeri raporundaki tutar sistemdekiyle uyuşmuyor. */
+  "KANAL_FARKI",
+  /** Kampanya, kupon ya da indirim kayda yansımamış. */
+  "KAMPANYA_INDIRIM",
+  /** Diğer — AÇIKLAMA ZORUNLU. */
+  "DIGER",
+] as const;
+
+export type DuzenlemeNedeni = (typeof DUZENLEME_NEDENLERI)[number];
+
+/** Açıklama zorunlu nedenler — "diğer" kendini anlatmak zorundadır. */
+export const ACIKLAMA_ZORUNLU_NEDENLER: readonly DuzenlemeNedeni[] = ["DIGER"];
+
+export function nedenGecerliMi(deger: string): deger is DuzenlemeNedeni {
+  return (DUZENLEME_NEDENLERI as readonly string[]).includes(deger);
+}
+
 export type DuzenlemeEngeli =
   | "IPTALLI"
   | "DEGISIKLIK_YOK"
   | "ADET_IADE_ALTINDA"
-  | "GEREKCE_YOK"
+  | "NEDEN_YOK"
+  | "ACIKLAMA_YOK"
   | "FIYAT_GECERSIZ"
   | "ADET_GECERSIZ"
   | "KARGO_GECERSIZ";
@@ -56,7 +94,10 @@ export type KargoDegisikligi = {
 
 export type DuzenlemeGirdisi = {
   iptalliMi: boolean;
-  gerekce: string | null;
+  /** Kapalı listeden seçilen neden. */
+  neden: DuzenlemeNedeni | null;
+  /** Serbest açıklama — DIGER seçildiyse ZORUNLU, diğerlerinde isteğe bağlı. */
+  aciklama: string | null;
   kalemler: KalemDegisikligi[];
   kargo: KargoDegisikligi;
   paraBirimi: string;
@@ -103,8 +144,19 @@ export function duzenlemePlani(girdi: DuzenlemeGirdisi): DuzenlemePlani {
    */
   if (girdi.iptalliMi) return { olur: false, engel: "IPTALLI" };
 
-  if (girdi.gerekce === null || girdi.gerekce.trim() === "") {
-    return { olur: false, engel: "GEREKCE_YOK" };
+  /**
+   * NEDEN SEÇİLMEDEN DÜZENLEME YOK. İz olmadan düzenleme olmaz; ama iz
+   * "bir şeyler yazılmış" değil, SINIFLANDIRILMIŞ olmalı ki sonradan
+   * sayılabilsin.
+   */
+  if (girdi.neden === null) return { olur: false, engel: "NEDEN_YOK" };
+
+  /** "DİĞER" KENDİNİ ANLATMAK ZORUNDA — yalnız boşluk açıklama sayılmaz. */
+  if (
+    ACIKLAMA_ZORUNLU_NEDENLER.includes(girdi.neden) &&
+    (girdi.aciklama === null || girdi.aciklama.trim() === "")
+  ) {
+    return { olur: false, engel: "ACIKLAMA_YOK" };
   }
 
   const farklar: Fark[] = [];

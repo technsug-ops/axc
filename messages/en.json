@@ -2553,8 +2553,6 @@
     "desiIpucu": "",
     "kargoTutari": "",
     "kargoIpucu": "",
-    "gerekce": "",
-    "gerekceIpucu": "",
     "onizle": "",
     "hesaplaniyor": "",
     "onayla": "",
@@ -2572,7 +2570,6 @@
     "engel_IPTALLI": "",
     "engel_DEGISIKLIK_YOK": "",
     "engel_ADET_IADE_ALTINDA": "",
-    "engel_GEREKCE_YOK": "",
     "engel_FIYAT_GECERSIZ": "",
     "engel_ADET_GECERSIZ": "",
     "engel_KARGO_GECERSIZ": "",
@@ -2582,6 +2579,18 @@
     "iz_SATIS_FIYAT_DUZELTME": "",
     "iz_SATIS_IPTAL": "",
     "izGerekce": "",
-    "izSistem": ""
+    "izSistem": "",
+    "neden": "",
+    "nedenSecin": "",
+    "neden_FIYAT_YANLIS": "",
+    "neden_KARGO_YANLIS": "",
+    "neden_KANAL_FARKI": "",
+    "neden_KAMPANYA_INDIRIM": "",
+    "neden_DIGER": "",
+    "aciklamaZorunlu": "",
+    "aciklamaIstege": "",
+    "aciklamaIpucu": "",
+    "engel_NEDEN_YOK": "",
+    "engel_ACIKLAMA_YOK": ""
   }
 }

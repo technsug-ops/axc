@@ -8,7 +8,7 @@ import {
   duzenlemeUygula,
   type YeniDegerler,
 } from "@/lib/satis-duzenleme-veri";
-import type { Fark } from "@/lib/satis-duzenleme";
+import type { DuzenlemeNedeni, Fark } from "@/lib/satis-duzenleme";
 import { yetkiIste } from "@/lib/yetki";
 
 /**
@@ -37,12 +37,13 @@ export type OnizlemeSonucu =
 export async function duzenlemeyiOnizle(
   saleId: string,
   yeni: YeniDegerler,
-  gerekce: string,
+  neden: DuzenlemeNedeni | null,
+  aciklama: string | null,
 ): Promise<OnizlemeSonucu> {
   await yetkiIste("satis.yaz");
   const t = await getTranslations("SatisDuzenleme");
 
-  const kurulum = await duzenlemeOnizle(saleId, yeni, gerekce);
+  const kurulum = await duzenlemeOnizle(saleId, yeni, neden, aciklama);
   if (kurulum === null) return { tamam: false, hata: t("satisYok") };
 
   const { plan, imza } = kurulum;
@@ -69,7 +70,8 @@ export type UygulamaSonucu =
 export async function duzenlemeyiUygula(
   saleId: string,
   yeni: YeniDegerler,
-  gerekce: string,
+  neden: DuzenlemeNedeni,
+  aciklama: string | null,
   onaylananImza: string,
 ): Promise<UygulamaSonucu> {
   const baglam = await yetkiIste("satis.yaz");
@@ -78,7 +80,8 @@ export async function duzenlemeyiUygula(
   const sonuc = await duzenlemeUygula({
     saleId,
     yeni,
-    gerekce,
+    neden,
+    aciklama,
     onaylananImza,
     kullaniciId: baglam.kullaniciId,
     an: new Date(),

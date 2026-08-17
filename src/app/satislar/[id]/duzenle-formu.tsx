@@ -7,6 +7,14 @@ import { ArrowRight, Check, Pencil, TriangleAlert, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DUZENLEME_NEDENLERI, type DuzenlemeNedeni } from "@/lib/satis-duzenleme";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { useBicim } from "@/lib/bicim-istemci";
 
@@ -68,7 +76,8 @@ export function DuzenleFormu({
   );
   const [desi, setDesi] = useState(kargoDesi === null ? "" : String(kargoDesi));
   const [tutar, setTutar] = useState(kargoTutar === null ? "" : String(kargoTutar));
-  const [gerekce, setGerekce] = useState("");
+  const [neden, setNeden] = useState<DuzenlemeNedeni | "">("");
+  const [aciklama, setAciklama] = useState("");
   const [onizleme, setOnizleme] = useState<OnizlemeSonucu | null>(null);
   const [sonuc, setSonuc] = useState<string | null>(null);
   const [hata, setHata] = useState<string | null>(null);
@@ -170,18 +179,58 @@ export function DuzenleFormu({
         </label>
       </div>
 
-      {/* ------------------------- GEREKÇE -------------------------- */}
-      <label className="block text-sm">
-        <span className="text-muted-foreground block text-xs">
-          {t("gerekce")}
-        </span>
-        <Input
-          value={gerekce}
-          placeholder={t("gerekceIpucu")}
-          onChange={(e) => degisti(setGerekce)(e.target.value)}
-          className="h-11"
-        />
-      </label>
+      {/* ------------------------- NEDEN ---------------------------
+          KAPALI LİSTE: serbest metin altı ay sonra aynı şeyin beş yazımıyla
+          dolar ve o alandan hiçbir soru cevaplanamaz (kullanıcı isteği). */}
+      <div className="space-y-2">
+        <span className="text-muted-foreground block text-xs">{t("neden")}</span>
+        <Select
+          value={neden}
+          onValueChange={(d) => {
+            setOnizleme(null);
+            setHata(null);
+            setNeden(d as DuzenlemeNedeni);
+          }}
+        >
+          <SelectTrigger className="h-11 w-full">
+            <SelectValue placeholder={t("nedenSecin")} />
+          </SelectTrigger>
+          <SelectContent>
+            {DUZENLEME_NEDENLERI.map((n) => (
+              <SelectItem key={n} value={n}>
+                {t(`neden_${n}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* DIGER seçilince açıklama ZORUNLU — kural saf katmanda da aynı. */}
+        {neden === "DIGER" ? (
+          <label className="block text-sm">
+            <span className="text-muted-foreground block text-xs">
+              {t("aciklamaZorunlu")}
+            </span>
+            <Input
+              value={aciklama}
+              placeholder={t("aciklamaIpucu")}
+              onChange={(e) => degisti(setAciklama)(e.target.value)}
+              className="h-11"
+            />
+          </label>
+        ) : (
+          <label className="block text-sm">
+            <span className="text-muted-foreground block text-xs">
+              {t("aciklamaIstege")}
+            </span>
+            <Input
+              value={aciklama}
+              placeholder={t("aciklamaIpucu")}
+              onChange={(e) => degisti(setAciklama)(e.target.value)}
+              className="h-11"
+            />
+          </label>
+        )}
+      </div>
 
       <div className="flex flex-wrap gap-2">
         <Button
@@ -192,7 +241,12 @@ export function DuzenleFormu({
             basla(async () => {
               setHata(null);
               setSonuc(null);
-              const c = await duzenlemeyiOnizle(saleId, yeniDegerler(), gerekce);
+              const c = await duzenlemeyiOnizle(
+                saleId,
+                yeniDegerler(),
+                neden === "" ? null : neden,
+                aciklama.trim() === "" ? null : aciklama,
+              );
               setOnizleme(c);
               if (!c.tamam) setHata(c.hata);
             })
@@ -208,10 +262,12 @@ export function DuzenleFormu({
           onClick={() =>
             basla(async () => {
               if (onizleme === null || !onizleme.tamam) return;
+              if (neden === "") return;
               const c = await duzenlemeyiUygula(
                 saleId,
                 yeniDegerler(),
-                gerekce,
+                neden,
+                aciklama.trim() === "" ? null : aciklama,
                 onizleme.imza,
               );
               if (c.tamam) {

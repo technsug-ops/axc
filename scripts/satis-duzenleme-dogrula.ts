@@ -1,4 +1,7 @@
 import {
+  ACIKLAMA_ZORUNLU_NEDENLER,
+  DUZENLEME_NEDENLERI,
+  nedenGecerliMi,
   duzenlemeImzasi,
   duzenlemePlani,
   type DuzenlemeGirdisi,
@@ -59,7 +62,8 @@ const kargoDegismez = {
 
 const temel: DuzenlemeGirdisi = {
   iptalliMi: false,
-  gerekce: "Fiyat yanlış girilmiş",
+  neden: "FIYAT_YANLIS",
+  aciklama: null,
   kalemler: [kalem(2805)],
   kargo: kargoDegismez,
   paraBirimi: "TRY",
@@ -105,19 +109,50 @@ console.log("\nSATIŞ DÜZENLEME — DOĞRULAMA\n");
 {
   console.log("\n2) GEREKÇE ZORUNLU");
   kontrol(
-    "gerekçesiz düzenleme OLMAZ",
+    "nedensiz düzenleme OLMAZ",
     (() => {
-      const p = duzenlemePlani({ ...temel, gerekce: null });
-      return !p.olur && p.engel === "GEREKCE_YOK";
+      const p = duzenlemePlani({ ...temel, neden: null });
+      return !p.olur && p.engel === "NEDEN_YOK";
+    })(),
+  );
+
+  /**
+   * KAPALI LİSTE (kullanıcı isteği 17.08.2026): serbest metin yerine
+   * taksonomi. "DİĞER" kendini anlatmak zorunda.
+   */
+  kontrol(
+    "DIGER açıklamasız OLMAZ",
+    (() => {
+      const p = duzenlemePlani({ ...temel, neden: "DIGER", aciklama: null });
+      return !p.olur && p.engel === "ACIKLAMA_YOK";
     })(),
   );
   kontrol(
-    "yalnız boşluk gerekçe SAYILMAZ",
+    "  ...yalnız boşluk açıklama SAYILMAZ",
     (() => {
-      const p = duzenlemePlani({ ...temel, gerekce: "   " });
-      return !p.olur && p.engel === "GEREKCE_YOK";
+      const p = duzenlemePlani({ ...temel, neden: "DIGER", aciklama: "   " });
+      return !p.olur && p.engel === "ACIKLAMA_YOK";
     })(),
   );
+  kontrol(
+    "  ...açıklama varsa GEÇER",
+    duzenlemePlani({ ...temel, neden: "DIGER", aciklama: "Kanal raporu farklı" }).olur === true,
+  );
+
+  // Diğer nedenler açıklama İSTEMEZ — gereksiz zorunluluk işi yavaşlatır.
+  for (const n of ["FIYAT_YANLIS", "KARGO_YANLIS", "KANAL_FARKI", "KAMPANYA_INDIRIM"] as const) {
+    kontrol(
+      `${n} açıklamasız geçer`,
+      duzenlemePlani({ ...temel, neden: n, aciklama: null }).olur === true,
+    );
+  }
+  kontrol(
+    "açıklama zorunlu liste YALNIZ DIGER",
+    ACIKLAMA_ZORUNLU_NEDENLER.length === 1 && ACIKLAMA_ZORUNLU_NEDENLER[0] === "DIGER",
+  );
+  kontrol("neden listesi BEŞ kalem", DUZENLEME_NEDENLERI.length === 5);
+  kontrol("geçersiz neden reddedilir", nedenGecerliMi("UYDURMA") === false);
+  kontrol("geçerli neden tanınır", nedenGecerliMi("FIYAT_YANLIS") === true);
 }
 
 // --- 3) İPTALLİ SATIŞ DÜZENLENEMEZ ------------------------------------------
