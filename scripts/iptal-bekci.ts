@@ -128,14 +128,28 @@ for (const dosya of DOSYALAR) {
    * sorgularıdır; risk oradadır ve bekçi oraya bakar.
    */
   /**
-   * ÖNEK SABİT LİSTE DEĞİL, HERHANGİ BİR TANIMLAYICI.
+   * ═══════════════════════════════════════════════════════════════════════
+   *  ÖNEK SORULMAZ — BEYAZ LİSTE YOK
+   * -----------------------------------------------------------------------
+   *  ⚠ Bekçinin kendi kör noktası (17.08.2026): desen önce `prisma|tx|db`
+   *  ile sınırlıydı. `lib/yedek.ts` istemciyi `istemci` adıyla taşıdığı için
+   *  o dosyadaki sorgular HİÇ TARANMADI — bekçi "temiz" derken bakmadığı bir
+   *  yer vardı.
    *
-   * ⚠ İkinci kör nokta (17.08.2026): desen önce `prisma|tx|db` ile sınırlıydı
-   * ve `lib/yedek.ts` istemciyi `istemci` adıyla taşıdığı için o dosyadaki
-   * sorgular HİÇ TARANMADI — bekçi "temiz" derken bakmadığı bir yer vardı.
-   * Beyaz liste tutmak, listeye girmeyen her yeni adı sessizce muaf kılar.
+   *  ÇÖZÜM AD LİSTESİNİ GENİŞLETMEK DEĞİL, LİSTEYİ KALDIRMAKTI. Liste
+   *  tutulsaydı hastalık aynen sürerdi: listeye girmeyen her yeni takma ad
+   *  sessizce muaf olurdu. Desen artık ÖNEKİ HİÇ SORMUYOR —
+   *  `prisma.sale.findMany`, `istemci.sale.findMany`, `veritabani.sale.count`
+   *  ve destructuring ile öneki tamamen kaybolmuş `sale.findMany` çağrısı da
+   *  aynı şekilde yakalanır.
+   *
+   *  Ödediği bedel: `sale` adlı ilgisiz bir nesne yanlış yakalanabilir. Bu
+   *  kabul edilen bedeldir — yanlış alarm GÖRÜLÜR ve beyanla kapanır, kaçan
+   *  sorgu ise GÖRÜNMEZ ve aylarca yanlış ciro üretir.
+   * ═══════════════════════════════════════════════════════════════════════
    */
-  const desen = /\b\w+\.(sale|saleItem)\.(findMany|findFirst|count|aggregate|groupBy)\b/g;
+  const desen =
+    /(?:\.|\b)(sale|saleItem)\.(findMany|findFirst|count|aggregate|groupBy)\b/g;
 
   for (const m of metin.matchAll(desen)) {
     const cagri = `${m[1]}.${m[2]}`;
