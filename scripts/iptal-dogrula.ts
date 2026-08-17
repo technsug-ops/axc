@@ -56,6 +56,7 @@ const temel: IptalGirdisi = {
   sebep: "MUSTERI_VAZGECTI",
   not: null,
   cikislar: [cikis(2)],
+  etki: { ciro: 3000, net2: 450, paraBirimi: "TRY", hakedisEslesmisMi: false },
 };
 
 console.log("\nSATIŞ İPTALİ — DOĞRULAMA\n");
@@ -230,6 +231,39 @@ console.log("\nSATIŞ İPTALİ — DOĞRULAMA\n");
   const p = iptalPlani({ ...temel, cikislar: [cikis(2), cikis(0, "50.00", "v2")] });
   kontrol("sıfır adetli hareket YAZILMAZ", p.olur && p.hareketler.length === 1);
   kontrol("  ...toplam etkilenmez", p.olur && p.geriDonenAdet === 2);
+}
+
+// --- 9) ETKİ ÖZETİ — onaydan ÖNCE görünmeli ---------------------------------
+{
+  console.log("\n9) ETKİ ÖZETİ (önizleme-önce)");
+  const p = iptalPlani(temel);
+  kontrol("plan etki özeti TAŞIR", p.olur && p.etki !== undefined);
+  kontrol("  ...ciro doğru", p.olur && p.etki.ciro === 3000);
+  kontrol("  ...NET-2 doğru", p.olur && p.etki.net2 === 450);
+
+  /**
+   * HESAPLANAMAYAN NET "0" DEĞİL, BİLİNMİYOR. Sıfır gösterilseydi kullanıcı
+   * "kâr kaybım yok" sanıp iptal ederdi.
+   */
+  const netsiz = iptalPlani({
+    ...temel,
+    etki: { ciro: 3000, net2: null, paraBirimi: "TRY", hakedisEslesmisMi: false },
+  });
+  kontrol("hesaplanamayan NET null kalır", netsiz.olur && netsiz.etki.net2 === null);
+
+  /**
+   * HAKEDİŞ EŞLEŞMESİ ONAYDAN ÖNCE BİLİNMELİ: eşleşmişse iptal beklenen
+   * tahsilatı da düşürür.
+   */
+  const hakedisli = iptalPlani({
+    ...temel,
+    etki: { ciro: 3000, net2: 450, paraBirimi: "TRY", hakedisEslesmisMi: true },
+  });
+  kontrol("hakediş eşleşmesi plana taşınır", hakedisli.olur && hakedisli.etki.hakedisEslesmisMi === true);
+
+  // Engel varsa etki HİÇ dönmez — gösterilecek plan yoktur.
+  const engelli = iptalPlani({ ...temel, iptalEdilmisMi: true });
+  kontrol("engelde etki dönmez", !engelli.olur && !("etki" in engelli));
 }
 
 console.log("");

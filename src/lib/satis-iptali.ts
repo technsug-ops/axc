@@ -54,6 +54,20 @@ export type CikisHareketi = {
   kaynakHareketId: string | null;
 };
 
+/** İptalin para tarafındaki etkisi — önizlemede özet satır olarak gösterilir. */
+export type IptalEtkisi = {
+  /** Satışın KDV dahil cirosu — bu tutar ciro toplamından düşecek. */
+  ciro: number;
+  /** Hesaplanmışsa NET-2; hesaplanamamışsa null ("?" gösterilir). */
+  net2: number | null;
+  paraBirimi: string;
+  /**
+   * Bu satış için hakediş kalemi eşleşmiş mi. Eşleşmişse iptal, BEKLENEN
+   * TAHSİLATI da düşürür — kullanıcı bunu onaydan ÖNCE bilmeli.
+   */
+  hakedisEslesmisMi: boolean;
+};
+
 export type IptalGirdisi = {
   iptalEdilmisMi: boolean;
   /**
@@ -66,6 +80,7 @@ export type IptalGirdisi = {
   sebep: SatisIptalSebebi | null;
   not: string | null;
   cikislar: CikisHareketi[];
+  etki: IptalEtkisi;
 };
 
 export type YazilacakHareket = {
@@ -89,7 +104,18 @@ export type IptalPlani =
        */
       iade?: { id: string; kod: string | null };
     }
-  | { olur: true; hareketler: YazilacakHareket[]; geriDonenAdet: number };
+  | {
+      olur: true;
+      hareketler: YazilacakHareket[];
+      geriDonenAdet: number;
+      /**
+       * ONAYDAN ÖNCE GÖSTERİLİR (mimar şartı 17.08.2026): kullanıcı neyin
+       * düşeceğini görmeden onaylamaz. Onay düğmesi plan çizilmeden aktif
+       * OLMAZ — "iptal et"e basıp ne olacağını sonradan öğrenmek, geri
+       * alınamaz bir işlemde kabul edilemez.
+       */
+      etki: IptalEtkisi;
+    };
 
 /**
  * İptal edilebilir mi, edilirse hangi hareketler yazılır.
@@ -152,6 +178,7 @@ export function iptalPlani(girdi: IptalGirdisi): IptalPlani {
     olur: true,
     hareketler,
     geriDonenAdet: hareketler.reduce((t, h) => t + h.quantityDelta, 0),
+    etki: girdi.etki,
   };
 }
 
