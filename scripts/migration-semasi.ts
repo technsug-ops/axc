@@ -59,8 +59,25 @@ export function beklenenSemayiCikar(): BeklenenSema {
       continue;
     }
 
-    for (const m of sql.matchAll(/CREATE TABLE\s+`([A-Za-z_]+)`/g)) {
-      if (!tablolar.has(m[1])) tablolar.set(m[1], new Set());
+    /**
+     * CREATE TABLE gövdesindeki kolonlar da TOPLANIR.
+     *
+     * Önce yalnız tablo adı alınıyordu; kolonlar boş kümeyle geçiliyordu.
+     * Sonucu: yeni bir tabloyla gelen kolonların hiçbiri doğrulanmıyordu ve
+     * "şemada var, migration'da yok" hâli yakalanamıyordu — kontrolün en
+     * çok işe yarayacağı yer tam da yeni tablolardı.
+     *
+     * Gövde `\n)` ile kapanır (Prisma çıktısı satır başında kapatır); kolon
+     * satırları backtick ile BAŞLAR, `INDEX` / `PRIMARY KEY` / `UNIQUE` /
+     * `CONSTRAINT` satırları başlamaz — ayrım bu.
+     */
+    for (const m of sql.matchAll(/CREATE TABLE\s+`(\w+)`\s*\(([\s\S]*?)\n\)/g)) {
+      const kume = tablolar.get(m[1]) ?? new Set<string>();
+      for (const satir of m[2].split("\n")) {
+        const k = /^\s*`([A-Za-z_][A-Za-z0-9_]*)`\s+\S/.exec(satir);
+        if (k) kume.add(k[1]);
+      }
+      tablolar.set(m[1], kume);
     }
 
     /**
@@ -69,21 +86,30 @@ export function beklenenSemayiCikar(): BeklenenSema {
      * yalnız ilkini almak sessizce eksik doğrulama olurdu.
      */
     for (const m of sql.matchAll(
-      /ALTER TABLE\s+`([A-Za-z_]+)`([\s\S]*?);/g,
+      /ALTER TABLE\s+`(\w+)`([\s\S]*?);/g,
     )) {
       const tablo = m[1];
       const govde = m[2];
       if (!tablolar.has(tablo)) tablolar.set(tablo, new Set());
       const kume = tablolar.get(tablo)!;
-      for (const k of govde.matchAll(/ADD COLUMN\s+`([A-Za-z_]+)`/g)) {
+      for (const k of govde.matchAll(/ADD COLUMN\s+`(\w+)`/g)) {
         kume.add(k[1]);
       }
-      for (const k of govde.matchAll(/DROP COLUMN\s+`([A-Za-z_]+)`/g)) {
+      for (const k of govde.matchAll(/DROP COLUMN\s+`(\w+)`/g)) {
         kume.delete(k[1]);
+      }
+      /**
+       * YENİDEN ADLANDIRMA (`CHANGE eski yeni`) — eski ad düşer, yeni ad
+       * girer. İşlenmezse yeniden adlandırılan kolon "migration'da yok"
+       * sanılır: `axcaliSku → companySku` göçü tam olarak buydu.
+       */
+      for (const k of govde.matchAll(/CHANGE\s+`(\w+)`\s+`(\w+)`/g)) {
+        kume.delete(k[1]);
+        kume.add(k[2]);
       }
     }
 
-    for (const m of sql.matchAll(/DROP TABLE\s+(?:IF EXISTS\s+)?`([A-Za-z_]+)`/g)) {
+    for (const m of sql.matchAll(/DROP TABLE\s+(?:IF EXISTS\s+)?`(\w+)`/g)) {
       tablolar.delete(m[1]);
     }
   }

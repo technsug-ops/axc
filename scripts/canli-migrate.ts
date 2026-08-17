@@ -41,11 +41,13 @@
  */
 
 import { execSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
 
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { beklenenSemayiCikar } from "./migration-semasi";
+import { DAMGA_YOLU, migrationKlasorleri } from "./deploy-bekci";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import {
   CANLI_DOSYA,
@@ -155,6 +157,35 @@ async function main() {
       if (satir.trim() !== "") console.log(`     ${satir}`);
     }
     basarili("migrate deploy tamam");
+
+    /**
+     * DAMGAYI BURASI YAZAR — insan değil.
+     *
+     * `deploy-bekci.ts` katman B "hangi migration canlıda koştu" sorusunu bu
+     * dosyadan cevaplıyor ve Vercel'in build makinesi canlı veritabanına
+     * bağlanamayabiliyor (KAS uzak erişimi IP listesine bağlı). Liste elle
+     * tutulsaydı, güncellemeyi unutan ilk kişide bekçi yalancı yeşil verirdi.
+     * `migrate deploy` başarılı olduğu ana yazılıyor: uygulanan küme = disk
+     * üzerindeki bütün migration'lar.
+     */
+    const uygulananlar = migrationKlasorleri();
+    writeFileSync(
+      DAMGA_YOLU,
+      JSON.stringify(
+        {
+          aciklama:
+            "CANLIDA UYGULANMIS MIGRATION LISTESI. Bu dosyayi ELLE DUZENLEMEYIN — npm run canli:migrate basariyla bitince kendisi yazar. deploy-bekci.ts katman B bunu okur.",
+          guncelleme: new Date().toISOString().slice(0, 10),
+          uygulananlar,
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    basarili(
+      `damga güncellendi — ${uygulananlar.length} migration (prisma/canli-migrasyon-damgasi.json)`,
+    );
+    console.log("     Bu dosya COMMIT EDİLİR; bekçi onu okuyup deploy'a izin verir.");
   } catch (e) {
     const cikti =
       (e as { stdout?: Buffer }).stdout?.toString() +

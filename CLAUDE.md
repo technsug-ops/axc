@@ -154,7 +154,19 @@ tercih değil, zorunluluktur:
     _14.08.2026: hakediş kalemleri sipariş SATIRI başına geldiği için tek
     günde 20+ "—" satırı çıktı; ekran isimsiz rakam duvarına döndü._
 
-YENİ EKRAN KONTROL LİSTESİ: Her yeni ekran tesliminde bu 14 maddeye
+15. TEK TEK GÖSTERİLEN YERDE TOPLAM DA OLUR: Para ya da adet taşıyan bir
+    liste satır satır gösteriliyorsa, **o listenin toplamı da bir yerde
+    görünür.** Toplam **süzgeçle birlikte değişir** — ekranda ne varsa
+    onun toplamıdır; "hepsinin toplamı" değildir. Süzgeç "Bugün" ise
+    bugünün toplamı yazar.
+    _17.08.2026: kullanıcı KDV dengesi için aylık alım tutarını takip
+    ediyor ve rakamı satırlardan kafadan topluyordu (3 satır: 7.558,20 +
+    7.558,20 + 7.498,20 = 22.614,60). Sistem zaten biliyordu, söylemiyordu._
+    Kural alım/satış/gider/iade gibi TUTAR taşıyan bütün listelere işler.
+    Sayfalama varsa toplam **görünen sayfanın değil, süzgecin tamamının**
+    toplamıdır ve bu ekranda yazar.
+
+YENİ EKRAN KONTROL LİSTESİ: Her yeni ekran tesliminde bu 15 maddeye
 uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklenir.
 
 ## İş sabitleri
@@ -382,6 +394,37 @@ dokunulduğu anı söylüyor.)
 "Sonra düşünürüz" denen alan, sonra düşünüldüğünde veri çoktan onsuz
 birikmiştir; o noktada eklemek geçmişi uydurmak ya da kaybetmek olur.
 
+## DEPLOY EDİLEN KOD, KOŞULMAYAN MIGRATION (KESİN KURAL)
+
+_Ders 17.08.2026._ Migration onay disiplini, **kodun deploy disiplinini de
+kapsar.** Migration'ı bekletmek, ona bağlı KODU da bekletmek demektir.
+
+**Vaka `8cb0023`:** şemaya `Sale`'in dört iptal sütunu eklendi ve push
+edildi. SQL onay bekliyordu, canlıda koşmadı — ama kod deploy oldu. Prisma
+her `Sale` okumasında canlıda olmayan sütunu istedi; `Sale` okuyan **her
+ekran 500 verdi.** Tek push'la canlı yattı.
+
+> **KURAL:** Şema commit'i, migration canlıda koşana kadar PUSH EDİLMEZ.
+> Zorunluysa ayrı dalda bekler. Kod, şemasının önüne geçemez.
+
+**BEKÇİ — `scripts/deploy-bekci.ts`.** Disiplin bu oturumda üç kez
+tutmadığı için kural yapısal: `prebuild` olarak Vercel'de her deploy'dan
+önce koşar, kırmızı yanarsa **build durur.** Üç katman:
+
+- **A) Şema ↔ migration dosyaları.** Şemada alan var, migration yazılmamış.
+- **B) Migration dosyaları ↔ canlı damgası.** Dosya var, canlıda koşmamış
+  — `8cb0023` vakası tam budur.
+- **C)** Bağlantı varsa canlı doğrulaması (`canli:migrate` adım 5).
+
+**DAMGA ELLE TUTULMAZ:** `prisma/canli-migrasyon-damgasi.json`'ı
+`npm run canli:migrate` başarıyla bitince kendisi yazar. Sebebi çift:
+build makinesi canlıya bağlanamayabiliyor (KAS uzak erişimi IP listesine
+bağlı) ve elle tutulan liste er ya da geç kendi geçmişini doğrulayan bir
+törene dönüşür. Damga **commit edilir**.
+
+**Bekçi karar veremiyorsa bunu YAZAR** (damga yoksa "atlandı" der), sessiz
+yeşil vermez.
+
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`
 - Her anlamlı iş biriminde commit at; günün sonunda değil, iş bitince
@@ -392,6 +435,10 @@ birikmiştir; o noktada eklemek geçmişi uydurmak ya da kaybetmek olur.
   - `refactor` davranış değişmeden iyileştirme · `docs` belge
   - Örnek: `feat: ürün listesi ve yeni ürün formu`
 - Migration dosyaları HER ZAMAN commit'e dahil edilir
+- **ŞEMA COMMIT'İ, MIGRATION CANLIDA KOŞANA KADAR PUSH EDİLMEZ** — ya da
+  ayrı dalda bekler. (Gerekçe ve vakası için bkz. "Deploy edilen kod,
+  koşulmayan migration".) Bekçisi: `npm run deploy:bekci`, `prebuild`
+  olarak her deploy'dan önce **kendiliğinden** koşar.
 - ASLA commit'e dahil etme: `.env*`, `node_modules`, `.next`
 - Push öncesi kontrol listesi:
   1. `git status` çıktısında `.env` geçmiyor

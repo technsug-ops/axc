@@ -50,7 +50,9 @@
     "maliyet:geri-doldur": "tsx scripts/maliyet-donmeyen-geri-doldur.ts",
     "uyari:dogrula": "tsx scripts/uyari-dogrula.ts",
     "talep:dogrula": "tsx scripts/talep-dogrula.ts",
-    "gecmis:dogrula": "tsx scripts/gecmis-dogrula.ts"
+    "gecmis:dogrula": "tsx scripts/gecmis-dogrula.ts",
+    "prebuild": "tsx scripts/deploy-bekci.ts",
+    "deploy:bekci": "tsx scripts/deploy-bekci.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
