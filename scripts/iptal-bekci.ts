@@ -1,5 +1,4 @@
-import { readFileSync } from "node:fs";
-import { globSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 /**
  * ============================================================================
@@ -91,9 +90,10 @@ function satirNo(metin: string, indeks: number): number {
  * `prisma generate` çıktısıdır, elle yazılmaz ve içindeki `sale.findMany`
  * geçişleri tip tanımlarıdır — gerçek sorgu değil.
  */
-const DOSYALAR = globSync("src/**/*.{ts,tsx}", { cwd: process.cwd() }).filter(
-  (d) => !d.replace(/\\/g, "/").startsWith("src/generated/"),
-);
+const DOSYALAR = readdirSync("src", { recursive: true, encoding: "utf8" })
+  .map((d) => `src/${d.replace(/\\/g, "/")}`)
+  .filter((d) => /\.(ts|tsx)$/.test(d))
+  .filter((d) => !d.startsWith("src/generated/"));
 
 const suzgecli: Bulgu[] = [];
 const suzgecsiz: Bulgu[] = [];
