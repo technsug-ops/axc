@@ -130,7 +130,66 @@ export function satisKosulu(
     ...(pencere.aralik && kargo !== "verildi"
       ? { soldAt: pencere.aralik }
       : {}),
-    ...(arama ? { code: { contains: arama } } : {}),
+    /**
+     * ═══════════════════════════════════════════════════════════════════
+     *  SATIŞ ARAMASI — SİPARİŞ NO + ÜRÜN KİMLİKLERİ (17.08.2026)
+     * -------------------------------------------------------------------
+     *  ⚠ Kullanıcı yakaladı: arama YALNIZ sipariş numarasına bakıyordu.
+     *  "Bu ürünü hangi siparişte sattım", "şu pazaryeri SKU'su hangi
+     *  satışlarda geçti" soruları operasyonun günlük soruları ve cevabı
+     *  hiçbir ekranda yoktu.
+     *
+     *  Aynı tuzak alım listesinde 14.08.2026'da yaşanmıştı (`alim-arama.ts`
+     *  başlığı); orada kapatıldı, satış tarafı unutulmuştu.
+     *
+     *  ── NEDEN `AND` İÇİNDE SARMALANDI ─────────────────────────────────
+     *  `kar=eksik` süzgeci de kendi `OR` bloğunu yazıyor. İkisi aynı nesneye
+     *  düz `OR` olarak konsaydı ikincisi birincisini EZERDİ ve süzgeçlerden
+     *  biri sessizce kaybolurdu. `AND` içinde her koşul kendi `OR`unu
+     *  korur — ikisi birlikte kullanılabilir.
+     * ═══════════════════════════════════════════════════════════════════
+     */
+    ...(arama
+      ? {
+          AND: [
+            {
+              OR: [
+                { code: { contains: arama } },
+                { items: { some: { variant: { sku: { contains: arama } } } } },
+                {
+                  items: {
+                    some: { variant: { companySku: { contains: arama } } },
+                  },
+                },
+                {
+                  items: {
+                    some: { variant: { barcode: { contains: arama } } },
+                  },
+                },
+                /** PAZARYERİ SKU'su — kullanıcı isteği 17.08.2026. */
+                {
+                  items: {
+                    some: {
+                      variant: {
+                        channelSkus: {
+                          some: { channelSku: { contains: arama } },
+                        },
+                      },
+                    },
+                  },
+                },
+                {
+                  items: {
+                    some: {
+                      variant: { product: { name: { contains: arama } } },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        }
+      : {}),
     /**
      * KANAL ve HESAP birlikte gelebilir (panelden gelen bağlantı kanal
      * verir, kullanıcı sonra hesabı daraltır). İkisi de aynı ilişkiye

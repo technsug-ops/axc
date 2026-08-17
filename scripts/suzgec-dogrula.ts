@@ -170,9 +170,16 @@ console.log("\n3) SATIŞ KOŞULU");
 // ===========================================================================
 {
   const bos = satisKosulu({}, AN).kosul;
+  /**
+   * ⚠ 17.08.2026'da DEĞİŞTİ: koşul artık boş değil, İPTAL SÜZGECİ taşıyor.
+   * Test eski kararı kodluyordu. Amaç aynı kaldı — "kullanıcı süzgeç
+   * seçmediyse fazladan daraltma OLMAMALI" — ama iptal süzgeci bilinçli bir
+   * daraltmadır: iptal edilen satış ciroya girmez ve varsayılan olarak
+   * gizlidir (`?iptal=1` ile görünür).
+   */
   kontrol(
-    "süzgeç yoksa koşul BOŞ (tüm satışlar)",
-    Object.keys(bos).length === 0,
+    "süzgeç yoksa YALNIZ iptal süzgeci var",
+    Object.keys(bos).length === 1 && bos.iptalTarihi === null,
     bos,
   );
 
@@ -226,11 +233,18 @@ console.log("\n3) SATIŞ KOŞULU");
     JSON.stringify(satisKosulu({ iade: "yok" }, AN).kosul.returns) === JSON.stringify({ none: {} }),
   );
 
+  /**
+   * ⚠ YAPI DEĞİŞTİ 17.08.2026: arama artık tek alana değil ALTI alana bakıyor
+   * ve `AND` içinde sarmalanmış bir `OR` olarak yazılıyor (kar süzgecinin
+   * kendi OR'unu ezmemek için). Kontrol, kırpmanın hâlâ çalıştığını ve
+   * sipariş kodunun aranan alanlar arasında olduğunu doğruluyor.
+   */
   kontrol(
-    "arama sipariş kodunda süzülür",
-    JSON.stringify(satisKosulu({ q: " TY-123 " }, AN).kosul.code) ===
-      JSON.stringify({ contains: "TY-123" }),
-    satisKosulu({ q: " TY-123 " }, AN).kosul.code,
+    "arama kırpılır ve sipariş kodu aranan alanlar arasında",
+    JSON.stringify(satisKosulu({ q: " TY-123 " }, AN).kosul).includes(
+      '{"code":{"contains":"TY-123"}}',
+    ),
+    satisKosulu({ q: " TY-123 " }, AN).kosul,
   );
 
 
@@ -308,7 +322,8 @@ console.log("\n3) SATIŞ KOŞULU");
       hepsi.channelAccount !== undefined &&
       hepsi.profitStatus === "CALCULATED" &&
       hepsi.returns !== undefined &&
-      hepsi.code !== undefined,
+      // Arama artık AND/OR içinde — kod alanı orada aranıyor.
+      JSON.stringify(hepsi).includes('"code":{"contains"'),
     hepsi,
   );
   kosanBolumler.push("satış");
@@ -394,6 +409,42 @@ async function alimBolumu() {
   }
   kontrol("aranan alan sayısı beklenenle tutuyor", dallar.length === beklenenAlanlar.length, dallar.length);
   kontrol("boş arama süzgeç KURMAZ", (await alimAramaKosulu("")) === undefined);
+
+  /* ==========================================================================
+   *  SATIŞ ARAMASI — 17.08.2026 kullanıcı isteği
+   * ------------------------------------------------------------------------
+   *  Arama YALNIZ sipariş numarasına bakıyordu. "Bu ürünü hangi siparişte
+   *  sattım", "şu pazaryeri SKU hangi satışlarda geçti" cevapsızdı.
+   * ========================================================================*/
+  const satisArama = satisKosulu({ q: "ab" }, AN).kosul;
+  const satisMetni = JSON.stringify(satisArama);
+  const satisAlanlari: [string, string][] = [
+    ["sipariş no", '{"code":{"contains":"ab"}}'],
+    ["ürün SKU", '{"items":{"some":{"variant":{"sku":{"contains":"ab"}}}}}'],
+    ["ürün Firma SKU", '{"items":{"some":{"variant":{"companySku":{"contains":"ab"}}}}}'],
+    ["ürün barkod", '{"items":{"some":{"variant":{"barcode":{"contains":"ab"}}}}}'],
+    ["PAZARYERİ SKU", '{"channelSku":{"contains":"ab"}}'],
+    ["ürün adı", '{"product":{"name":{"contains":"ab"}}}'],
+  ];
+  for (const [ad, parca] of satisAlanlari) {
+    kontrol(`  satış araması ${ad} alanına bakıyor`, satisMetni.includes(parca), parca);
+  }
+
+  /**
+   * ÇAKIŞMA TESTİ: `kar=eksik` kendi OR'unu yazıyor. Arama da OR yazsaydı
+   * biri ötekini EZERDİ ve süzgeçlerden biri sessizce kaybolurdu.
+   */
+  const ikili = satisKosulu({ q: "ab", kar: "eksik" }, AN).kosul;
+  const ikiliMetni = JSON.stringify(ikili);
+  kontrol(
+    "arama + kar=eksik BİRLİKTE çalışır (arama korunur)",
+    ikiliMetni.includes('"code":{"contains":"ab"}'),
+  );
+  kontrol(
+    "  ...kâr süzgeci de korunur",
+    ikiliMetni.includes('"profitStatus":null'),
+  );
+  kontrol("boş aramada satış süzgeci kurulmaz", !JSON.stringify(satisKosulu({}, AN).kosul).includes("contains"));
 
   const hepsi = (
     await alimKosulu(

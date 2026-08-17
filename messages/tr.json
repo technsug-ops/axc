@@ -694,7 +694,7 @@
     "kaydedilemedi": "Satış kaydedilemedi, beklenmeyen bir hata oluştu.",
     "baslik": "Satışlar",
     "yeniSatis": "Yeni Satış",
-    "aramaIpucu": "Sipariş numarasına göre ara...",
+    "aramaIpucu": "Sipariş no, barkod, SKU, pazaryeri SKU ya da ürün adı",
     "bosBaslik": "Henüz satış kaydı yok.",
     "bosIpucu": "Sağ üstteki Yeni Satış düğmesiyle başlayın.",
     "bosFiltreBaslik": "Aramaya uyan satış yok.",
