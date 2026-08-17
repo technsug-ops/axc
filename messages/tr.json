@@ -467,7 +467,8 @@
     "kimlikBulunamadi": "Ürün kimliği bulunamadı.",
     "varyantSilinemez": "Stok hareketi bulunan bir varyant silinemez. Miktar düzeltmesi ters yönde bir düzeltme kaydıyla yapılır.",
     "urunSilinemez": "Bu ürünün stok hareketi var, silinemez. Kullanımdan kaldırmak için ürünü pasife alın.",
-    "kodKilitli": "Bu ürün hareket görmüş; SKU ve Firma SKU değiştirilemez ({kodlar}). Kod bir kere doğar ve etikete basılır."
+    "kodKilitli": "Bu ürün hareket görmüş; SKU ve Firma SKU değiştirilemez ({kodlar}). Kod bir kere doğar ve etikete basılır.",
+    "karlilikKarti": "Kârlılık kartı"
   },
   "Alim": {
     "urunSecilmeli": "ürün seçilmeli",
@@ -1764,7 +1765,8 @@
     "melontikCiro": "(≈ Melontik: Kâr/Satış Fiyat)",
     "melontikMaliyet": "(≈ Melontik: Kâr/Ürün Maliyet)",
     "oluSermaye": "{kalem} kalem {gun}+ gündür rafta · {tutar} bağlı",
-    "oluSermayeYok": "{gun}+ gündür bekleyen stok yok"
+    "oluSermayeYok": "{gun}+ gündür bekleyen stok yok",
+    "kartAra": "Ürün ara"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
@@ -2528,6 +2530,7 @@
     "paraKarisikUyarisi": "Bu üründe birden fazla para birimi var; kart en çok satılan para biriminden hesaplandı.",
     "stokEkrani": "Stok ekranı",
     "urunEkrani": "Ürün kartı",
-    "yeniArama": "Yeni arama"
+    "yeniArama": "Yeni arama",
+    "tedarikciBilinmiyor": "tedarikçi bilinmiyor"
   }
 }

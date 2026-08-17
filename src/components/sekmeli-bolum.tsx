@@ -37,11 +37,14 @@ export function SekmeliBolum({
   notu,
   sekmeler,
   secili,
+  ustEylem,
 }: {
   baslik: string;
   notu?: string;
   sekmeler: Sekme[];
   secili: string;
+  /** Başlık hizasında duran eylem — ürün analizinde kart araması gibi. */
+  ustEylem?: React.ReactNode;
 }) {
   if (sekmeler.length === 0) return null;
 
@@ -51,7 +54,10 @@ export function SekmeliBolum({
   return (
     <Card className="min-w-0">
       <CardHeader className="gap-2 pb-3">
-        <CardTitle className="text-base">{baslik}</CardTitle>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="text-base">{baslik}</CardTitle>
+          {ustEylem}
+        </div>
         {notu ? <p className="text-muted-foreground text-xs">{notu}</p> : null}
 
         {/* Tek sekme varsa çubuk çizilmez — tıklanacak bir seçim yok. */}

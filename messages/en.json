@@ -467,7 +467,8 @@
     "kimlikBulunamadi": "",
     "varyantSilinemez": "",
     "urunSilinemez": "",
-    "kodKilitli": ""
+    "kodKilitli": "",
+    "karlilikKarti": ""
   },
   "Alim": {
     "urunSecilmeli": "",
@@ -1764,7 +1765,8 @@
     "melontikCiro": "",
     "melontikMaliyet": "",
     "oluSermaye": "",
-    "oluSermayeYok": ""
+    "oluSermayeYok": "",
+    "kartAra": ""
   },
   "Envanter": {
     "baslik": "",
@@ -2528,6 +2530,7 @@
     "paraKarisikUyarisi": "",
     "stokEkrani": "",
     "urunEkrani": "",
-    "yeniArama": ""
+    "yeniArama": "",
+    "tedarikciBilinmiyor": ""
   }
 }

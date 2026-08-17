@@ -5,7 +5,7 @@ import { VARYANT_SECIMI, varyantiOzetle, type VaryantSonucu } from "@/lib/varyan
 import { yasBandi, gunFarki, type YasBandi } from "@/lib/yaslanma";
 import { kartOzeti, type KartGirdisi, type KartOzeti, type KartSatisi } from "@/lib/urun-karti";
 import type { KalemGirdisi } from "@/lib/panel-listeler";
-import type { Currency } from "@/generated/prisma/enums";
+import type { Currency, ReturnReason } from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
@@ -40,6 +40,12 @@ export type KartVerisi = {
   sonAlimMaliyeti: number | null;
   sonAlimTarihi: Date | null;
   sonAlimParaBirimi: Currency | null;
+  /** Son alımın tedarikçisi — bağ kurulamazsa null ("bilinmiyor"). */
+  sonAlimTedarikcisi: string | null;
+  /** Son alımın kodu — kayda gitmek için. */
+  sonAlimKodu: string | null;
+  /** İade sebepleri ve kaç kez geldiği; sebebi beyan edilmemiş iadeler yok. */
+  iadeSebepleri: { sebep: ReturnReason; sayi: number }[];
   /** Kartın hesaplanmış özeti. */
   ozet: KartOzeti;
   /** Satışların para birimi — karışıksa null ve ekran bunu söyler. */
@@ -96,9 +102,25 @@ export async function kartVerisiniTopla(
       where: { variantId },
       _sum: { quantityDelta: true },
     }),
+    /**
+     * İADE SEBEBİ MÜŞTERİNİN BEYANIDIR ve `ReturnNotice`te durur —
+     * `Return`da sebep alanı YOKTUR, orada yalnız TÜR vardır
+     * (UNDELIVERED/NORMAL/DISPUTED). İkisi ayrı sorulara cevap verir:
+     * tür "nasıl döndü", sebep "neden döndü". Alım kararı için ikincisi
+     * daha çok şey söyler — "beğenmedi" ile "çalışmıyor" aynı ürün değildir.
+     */
     prisma.returnItem.findMany({
       where: { variantId },
-      select: { quantity: true, returnId: true },
+      select: {
+        quantity: true,
+        returnId: true,
+        return: {
+          select: {
+            returnType: true,
+            notice: { select: { reason: true } },
+          },
+        },
+      },
     }),
   ]);
 
@@ -174,6 +196,39 @@ export async function kartVerisiniTopla(
   /** Son alım EN YENİ açık parti; partiler FIFO sırasında (eskiden yeniye). */
   const enYeni = partiler.length > 0 ? partiler[partiler.length - 1] : null;
 
+  /**
+   * SON ALIMIN TEDARİKÇİSİ — parti hareketinden alım kalemine, oradan alıma.
+   * `Parti` tipi tedarikçi taşımıyor (stok motorunun işi değil); kart kendi
+   * sorusunu kendi soruyor. Bağ kurulamazsa null — "bilinmiyor" yazılır,
+   * uydurulmaz.
+   */
+  const sonAlimHareketi =
+    enYeni === null
+      ? null
+      : await prisma.stockMovement.findUnique({
+          where: { id: enYeni.hareketId },
+          select: {
+            purchaseItem: {
+              select: {
+                purchase: {
+                  select: {
+                    code: true,
+                    supplier: { select: { name: true } },
+                  },
+                },
+              },
+            },
+          },
+        });
+
+  /** İade sebepleri — aynı sebepten kaç iade geldiği sayılır. */
+  const sebepSayaci = new Map<string, number>();
+  for (const i of iadeler) {
+    const sebep = i.return.notice?.reason ?? null;
+    if (sebep === null) continue;
+    sebepSayaci.set(sebep, (sebepSayaci.get(sebep) ?? 0) + 1);
+  }
+
   return {
     varyant: varyantiOzetle(varyant),
     urunId: varyant.product.id,
@@ -185,6 +240,12 @@ export async function kartVerisiniTopla(
       enYeni?.birimMaliyet == null ? null : Number(enYeni.birimMaliyet),
     sonAlimTarihi: enYeni?.occurredAt ?? null,
     sonAlimParaBirimi: enYeni?.birimMaliyetParaBirimi ?? null,
+    sonAlimTedarikcisi:
+      sonAlimHareketi?.purchaseItem?.purchase.supplier?.name ?? null,
+    sonAlimKodu: sonAlimHareketi?.purchaseItem?.purchase.code ?? null,
+    iadeSebepleri: [...sebepSayaci.entries()]
+      .map(([sebep, sayi]) => ({ sebep: sebep as ReturnReason, sayi }))
+      .sort((a, b) => b.sayi - a.sayi),
     ozet: kartOzeti(girdi),
     paraBirimi: paraSayaci.size > 1 ? null : baskinPara,
   };

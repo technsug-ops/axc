@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { PackagePlus, Pencil } from "lucide-react";
 
-import { GeriBaglanti } from "@/components/baglanti";
+import { Baglanti, GeriBaglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +50,8 @@ export default async function UrunDetaySayfasi({
 
   const bicim = await bicimlendirici();
   const t = await getTranslations("Urunler");
+  // Kârlılık kartı bağlantısının etiketi Urun sözlüğünde (varyant terimi orada).
+  const tUrun = await getTranslations("Urun");
   const ortak = await getTranslations("Ortak");
 
   // KDV oranı tek yerden çözülür: ürün istisnası > kategori > varsayılan.
@@ -169,6 +171,7 @@ export default async function UrunDetaySayfasi({
                   <TableHead>{ortak("barkod")}</TableHead>
                   <TableHead>{ortak("raf")}</TableHead>
                   <TableHead className="text-right">{ortak("stok")}</TableHead>
+                  <TableHead className="text-right">{ortak("eylemler")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -222,6 +225,14 @@ export default async function UrunDetaySayfasi({
                     </TableCell>
                     <TableCell className="text-right">
                       {stokHaritasi.get(varyant.id) ?? 0}
+                    </TableCell>
+                    {/* Kârlılık kartı VARYANT seviyesindedir: aynı ürünün iki
+                        varyantı ayrı satar, ayrı kâr eder. Bağlantı bu yüzden
+                        ürün başlığında değil, varyant satırında. */}
+                    <TableCell className="text-right">
+                      <Baglanti href={`/kart/${varyant.id}`}>
+                        {tUrun("karlilikKarti")}
+                      </Baglanti>
                     </TableCell>
                   </TableRow>
                 ))}

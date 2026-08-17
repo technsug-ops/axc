@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowRight, TriangleAlert } from "lucide-react";
+import { ArrowRight, ScanBarcode, TriangleAlert } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
@@ -1687,6 +1687,20 @@ export default async function AnaSayfa({
       <SekmeliBolum
         baslik={t("urunAnaliziBaslik")}
         notu={t("urunAnaliziNotu")}
+        /**
+         * KART ARAMASI BURADA: listeler DÖNEMİN en iyi/en kötüsünü gösterir,
+         * ama kullanıcının aklındaki ürün listede olmayabilir. Aramayı
+         * analiz başlığına koymak, "şu ürün ne durumda" sorusunu listeye
+         * bakmadan cevaplatıyor (İlke #9).
+         */
+        ustEylem={
+          <Button asChild variant="secondary" size="sm" className="h-9">
+            <Link href="/kart">
+              <ScanBarcode />
+              {t("kartAra")}
+            </Link>
+          </Button>
+        }
         secili={analizSekmesi}
         sekmeler={[
           ...(karGorunur

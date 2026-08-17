@@ -6,6 +6,7 @@ import { Boxes, Lock, PackageSearch, TriangleAlert } from "lucide-react";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
 import { bicimlendirici } from "@/lib/bicim";
+import { iadeGerekceEtiketleri } from "@/lib/etiketler";
 import { DURUM_KUTUSU, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 import { YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
 import { kartVerisiniTopla } from "@/lib/urun-karti-verisi";
@@ -94,6 +95,8 @@ export default async function KartSayfasi({
   const t = await getTranslations("UrunKarti");
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
+  // İade sebebi etiketleri sözlükten — ham enum adı ekrana yazılmaz.
+  const gerekceEtiketleri = await iadeGerekceEtiketleri();
 
   const { ozet, varyant } = veri;
   const para = veri.paraBirimi ?? "TRY";
@@ -149,10 +152,14 @@ export default async function KartSayfasi({
           <Kutu
             etiket={t("sonAlim")}
             deger={p(veri.sonAlimMaliyeti, veri.sonAlimParaBirimi ?? para)}
+            /* Tarih VE tedarikçi birlikte: "kimden, ne zaman, kaça" tek
+               satırda okunsun — alım kararında üçü birlikte anlamlı. */
             not={
               veri.sonAlimTarihi === null
                 ? t("alimYok")
-                : bicim.tarih(veri.sonAlimTarihi)
+                : `${bicim.tarih(veri.sonAlimTarihi)} · ${
+                    veri.sonAlimTedarikcisi ?? t("tedarikciBilinmiyor")
+                  }`
             }
           />
           <Kutu
@@ -279,6 +286,18 @@ export default async function KartSayfasi({
               ozet.iadeSayisi === 0
                 ? t("iadeYok")
                 : t("iadeVar", { sayi: ozet.iadeSayisi, adet: ozet.iadeAdedi })
+            }
+            /**
+             * SEBEP DE YAZAR: "2 iade" ile "2 iade — çalışmıyor" aynı alım
+             * kararını vermez. Sebep müşteri bildiriminden gelir; beyan
+             * edilmemişse hiç yazılmaz (uydurulmaz).
+             */
+            not={
+              veri.iadeSebepleri.length === 0
+                ? undefined
+                : veri.iadeSebepleri
+                    .map((s) => `${gerekceEtiketleri[s.sebep]} (${s.sayi})`)
+                    .join(" · ")
             }
             vurgu={ozet.iadeSayisi > 0 ? DURUM_YAZISI.olumsuz : ""}
           />
