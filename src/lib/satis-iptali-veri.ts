@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { satisKalemToplamlari } from "@/lib/tutar";
 import {
+  iptalImzasi,
   iptalPlani,
   type IptalGirdisi,
   type IptalPlani,
@@ -28,7 +29,11 @@ async function planKur(
   saleId: string,
   sebep: SatisIptalSebebi | null,
   not: string | null,
-): Promise<{ plan: IptalPlani; satisKodu: string | null } | null> {
+): Promise<{
+  plan: IptalPlani;
+  imza: string;
+  satisKodu: string | null;
+} | null> {
   const satis = await prisma.sale.findUnique({
     where: { id: saleId },
     select: {
@@ -102,7 +107,8 @@ async function planKur(
     },
   };
 
-  return { plan: iptalPlani(girdi), satisKodu: satis.code };
+  const plan = iptalPlani(girdi);
+  return { plan, imza: iptalImzasi(plan), satisKodu: satis.code };
 }
 
 /** ÖNİZLEME — hiçbir şey yazmaz. */
@@ -130,13 +136,26 @@ export async function iptalUygula(girdi: {
   saleId: string;
   sebep: SatisIptalSebebi;
   not: string | null;
+  /** Ekranın onayladığı plan imzası — EK 1. */
+  onaylananImza: string;
   kullaniciId: string;
   an: Date;
 }): Promise<IptalYazmaSonucu> {
   const kurulum = await planKur(girdi.saleId, girdi.sebep, girdi.not);
   if (kurulum === null) return { tamam: false, engel: "SATIS_YOK" };
 
-  const { plan, satisKodu } = kurulum;
+  const { plan, imza, satisKodu } = kurulum;
+
+  /**
+   * EK 1 — ONAY GÖSTERİLENE VERİLMİŞTİR. Plan yeniden kuruldu; imzası
+   * ekranınkinden farklıysa araya bir şey girmiş demektir (iade işlendi,
+   * başkası iptal etti, stok hareketi değişti). Sessizce YENİ plana göre
+   * stok yazmak, onaylanmamış bir işlemi onaylanmış saymaktır.
+   */
+  if (imza !== girdi.onaylananImza) {
+    return { tamam: false, engel: "DURUM_DEGISTI" };
+  }
+
   if (!plan.olur) {
     return { tamam: false, engel: plan.engel, iade: plan.iade };
   }

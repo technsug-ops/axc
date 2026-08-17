@@ -54,6 +54,8 @@ export default async function SatislarSayfasi({
     hesap?: string;
     iade?: string;
     kargo?: string;
+    /** "1" → iptal edilenler de listelenir (varsayılan: gizli). */
+    iptal?: string;
   }>;
 }) {
   await sayfaIzni("satis.gor");
@@ -73,6 +75,7 @@ export default async function SatislarSayfasi({
   const karEksik = p.kar === "eksik";
   const bicim = await bicimlendirici();
   const t = await getTranslations("Satis");
+  const tIpt = await getTranslations("SatisIptali");
   const tIade = await getTranslations("Iade");
   const ortak = await getTranslations("Ortak");
 
@@ -239,6 +242,17 @@ export default async function SatislarSayfasi({
         { deger: "bekleyen", etiket: t("kargoSuzgeciBekleyen") },
       ],
     },
+    /**
+     * İPTAL SÜZGECİ — varsayılan GİZLİ. İptal edilen satış ciroya girmez ve
+     * listede de görünmez; ama kayıt SİLİNMEZ, bu süzgeçle geri gelir.
+     * Tek seçenek: "göster". Kapalıyken gizli olması varsayılan davranış
+     * olduğu için ikinci bir seçenek ("gizle") gürültü olurdu.
+     */
+    {
+      ad: "iptal",
+      etiket: tIpt("suzgecEtiketi"),
+      secenekler: [{ deger: "1", etiket: tIpt("suzgecGoster") }],
+    },
   ];
 
   /**
@@ -252,6 +266,7 @@ export default async function SatislarSayfasi({
     hesap: p.hesap,
     iade: p.iade,
     kargo: p.kargo,
+    iptal: p.iptal,
     pencere: p.pencere,
     baslangic: p.baslangic,
     bitis: p.bitis,
@@ -436,11 +451,17 @@ export default async function SatislarSayfasi({
                      yoksa şerit de yok — NET bilgisi kenarlıktan sızmaz. */
                   <TableRow
                     key={satis.id}
-                    className={
+                    className={[
                       karGorunur && satirDurumu(satis) === "olumsuz"
                         ? DURUM_SERIDI.olumsuz
-                        : ""
-                    }
+                        : "",
+                      /* İPTAL EDİLEN SATIŞ ÜSTÜ ÇİZİLİ VE SOLGUN: satır
+                         okunmadan önce "bu sayılmıyor" anlaşılmalı. Kayıt
+                         silinmiyor, yalnız varsayılan olarak gizli. */
+                      satis.iptalTarihi !== null ? "line-through opacity-60" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                   >
                     <TableCell className="whitespace-nowrap">
                       {/* Tarih üstte (kayda giden bağlantı), sipariş no altta
@@ -463,6 +484,21 @@ export default async function SatislarSayfasi({
                         }
                         altIpucu={satis.code ?? undefined}
                       />
+                      {/* ROZETTE SEBEP DE VAR — "iptal" demek yetmez, NEDEN
+                          iptal edildiği listede görünür (mimar şartı). */}
+                      {satis.iptalTarihi !== null ? (
+                        <Badge
+                          variant="outline"
+                          className="mt-1 no-underline"
+                          title={
+                            satis.iptalNotu ??
+                            (satis.iptalSebebi ? tIpt(`sebep_${satis.iptalSebebi}`) : undefined)
+                          }
+                        >
+                          {tIpt("rozet")}
+                          {satis.iptalSebebi ? ` · ${tIpt(`sebepKisa_${satis.iptalSebebi}`)}` : ""}
+                        </Badge>
+                      ) : null}
                     </TableCell>
                     <TableCell>
                       <IkiSatir

@@ -15,6 +15,7 @@ import { KarBlogu, type KarBloguVerisi } from "@/components/kar-blogu";
 import { HesapDegistir } from "./hesap-degistir";
 import { YenidenHesapla } from "./yeniden-hesapla";
 import { DuzenleFormu } from "./duzenle-formu";
+import { IptalFormu } from "./iptal-formu";
 import { satisIzleri } from "@/lib/satis-duzenleme-veri";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -39,6 +40,7 @@ import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
 
 import type { Currency } from "@/generated/prisma/enums";
 import { satisKalemToplamlari } from "@/lib/tutar";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /** Denetim izindeki tek alan değişikliği (AuditLog.detail içinden). */
 type IzFarki = {
@@ -115,6 +117,7 @@ export default async function SatisDetaySayfasi({
   const bicim = await bicimlendirici();
   const t = await getTranslations("Satis");
   const tDuz = await getTranslations("SatisDuzenleme");
+  const tIpt = await getTranslations("SatisIptali");
   // Denetim izi: bugünkü tek seferlik fiyat düzeltmesi de burada görünür.
   const izler = await satisIzleri(satis.id);
   const ortak = await getTranslations("Ortak");
@@ -573,6 +576,31 @@ export default async function SatisDetaySayfasi({
           Kullanıcı talebi 17.08.2026: fiyat hatası script'siz, ekrandan
           düzeltilebilmeli. Önizleme-önce; onay düğmesi plan çizilmeden
           aktif olmaz. */}
+      {/* İPTAL EDİLMİŞ SATIŞ DÜZENLENEMEZ — form yerine DURUM yazar.
+          Kayıt silinmiyor; ne zaman, kim, hangi sebeple iptal ettiği
+          görünür kalıyor. */}
+      {satis.iptalTarihi !== null ? (
+        <div className={`space-y-1 rounded-lg p-4 ${DURUM_KUTUSU.olumsuz}`}>
+          <p className={`font-medium ${DURUM_YAZISI.olumsuz}`}>
+            {tIpt("iptalEdildi", { tarih: bicim.tarih(satis.iptalTarihi) })}
+          </p>
+          {satis.iptalSebebi ? (
+            <p className={`text-sm ${DURUM_YAZISI.olumsuz}`}>
+              {tIpt(`sebep_${satis.iptalSebebi}`)}
+              {satis.iptalNotu ? ` — ${satis.iptalNotu}` : ""}
+            </p>
+          ) : null}
+          <p className={`text-xs ${DURUM_YAZISI.olumsuz}`}>
+            {tIpt("iptalNotuAciklama")}
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <IptalFormu saleId={satis.id} />
+        </div>
+      )}
+
+      {satis.iptalTarihi === null ? (
       <DuzenleFormu
         saleId={satis.id}
         paraBirimi={satis.profitCurrency ?? "TRY"}
@@ -588,6 +616,7 @@ export default async function SatisDetaySayfasi({
           fiyat: Number(k.unitPriceAmount.toString()),
         }))}
       />
+      ) : null}
 
       {/* ══════════════ DEĞİŞİKLİK İZİ ══════════════
           Mimar şartı: AuditLog satırı detayda GÖRÜNÜR olsun — bugünkü

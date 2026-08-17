@@ -26,6 +26,18 @@ import type { SatisIptalSebebi } from "@/generated/prisma/enums";
  * ============================================================================
  */
 
+/**
+ * TAKSONOMİ — ekranın çizeceği sıra. Müşteri kaynaklı sebepler önce:
+ * operasyonda en sık olan onlar ("müşteri vazgeçti"), en üstte durmalı.
+ */
+export const IPTAL_SEBEPLERI: readonly SatisIptalSebebi[] = [
+  "MUSTERI_VAZGECTI",
+  "MUSTERI_FIYAT",
+  "MAGAZA_STOK_YOK",
+  "MAGAZA_KOTU_NIYET",
+  "MAGAZA_DIGER",
+];
+
 /** İptal edilmiş satışın ait olduğu taraf — ekranda gruplamak için. */
 export const MAGAZA_SEBEPLERI: readonly SatisIptalSebebi[] = [
   "MAGAZA_STOK_YOK",
