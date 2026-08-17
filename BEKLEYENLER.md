@@ -20,9 +20,34 @@ raporuyla açılır.**
 | 5 | Tam otomatik | Melontik aboneliği **iptal** |
 
 **AŞAMA 0 — ZEMİN TEYİDİ** _(açık)_
-- [ ] **Melontik çapraz teyit** — sunumdaki 6 sipariş Selliora'da var mı,
-      kâr yan yana: `11506136293` · `11505178853` · `11504867891` ·
-      `11504122276` · `11501857051` · `11500304529`
+- [ ] **Melontik çapraz teyit** — ⏳ İLK KOŞU YAPILDI 18.08.2026, **fark var**.
+
+      **Bulunan 2/6.** İkisinde de **ciro BİREBİR tuttu** (4.784 ve 6.200)
+      → aynı satıştan bahsediyoruz, kayıt sağlam. Ama NET-2 tutmadı ve
+      **işaretler ZIT** — yani tek sebep değil, iki sebep var:
+      · `11505178853` biz 631,54 · Melontik 653,15 → **−21,61**
+      · `11504122276` biz 272,85 · Melontik 261,41 → **+11,44**
+
+      **İKİ HİPOTEZ, ARAÇ İKİSİNİ DE ÖLÇÜYOR:**
+      1. **Maliyet tabanı farklı.** Melontik maliyeti sunumda yazmıyor ama
+         türetilebilir (`kâr ÷ kâr oranı`). ...853'te bizim maliyet ~25 TL
+         fazla, ...276'da eşit. **Yöntem farkı olabilir:** Melontik'in
+         maliyeti ELLE GİRİLEN ürün maliyeti (sunum slayt 10), bizimki
+         FIFO'dan gelen GERÇEK alım maliyeti. Elle girilen değer bayatsa
+         fark doğar ve o durumda **bizimki daha güvenilirdir.**
+      2. **Eksik masraf kalemi** (mimar hipotezi): Melontik'in düştüğü
+         "Ödeme Hizmeti" bizde yok. `TAHSILAT_BEDELI` hakediş modelimizde
+         TANIMLI ama kâr motorunun kesinti kodları arasında değil.
+
+      **ARAÇ DÜZELTİLDİ (3 kusur):**
+      · Kesinti dökümü sabit beş koddan okuyordu → **kayıttan** okuyor.
+        Aradığımız şey bilinmeyen bir kalemse bilinen kodlarla aranamaz.
+      · `ODENECEK_KDV` diye kesinti YOK — o rakam hiçbir yere yazılmıyor,
+        yalnız NET-1 − NET-2 farkı olarak yaşıyor. Döküm "0,00" basıp
+        kendi NET-2'sini açıklayamıyordu; artık **türetip** basıyor.
+      · Fark artık **ikiye ayrışıyor**: maliyet katkısı + masraf katkısı =
+        toplam fark; denklem kapanmazsa görülür.
+
       → araç: `npm run canli:melontik-teyit` (salt okuma)
 - [ ] **Hakediş .xlsx teyidi** — ⏸ Halil'in dosyasına bağlı, araçlar hazır
 - [ ] **Komisyon envanteri** — komut verildi
@@ -39,6 +64,11 @@ raporuyla açılır.**
 - [ ] Teyit rutini
 
 **AŞAMA 3 — API SALT OKUMA**
+_Gerekçe hanesi (18.08.2026): Melontik teyidinde 6 siparişin **4'ü
+sistemde yoktu**. Sınır tarih DEĞİL: bulunmayan `11504867891`, bulunan
+`11504122276`'dan BÜYÜK numaralı — yani aynı dönemde, elle giriş
+atlanmış. **Elle giriş kapsam boşluğu ölçüldü ve bu aşamanın en somut
+gerekçesi.**_
 - [ ] Trendyol/HB sipariş çekme **READ-ONLY**
 - [ ] Elle giriş ↔ API karşılaştırma raporu
 - [ ] Komisyon/fiyat otomatik
