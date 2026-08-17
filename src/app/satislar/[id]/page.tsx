@@ -59,6 +59,16 @@ export default async function SatisDetaySayfasi({
   await sayfaIzni("satis.gor");
   // Kâr bloğu ayrı izin — bkz. lib/yetki/izinler.ts (tek alan-izni istisnası).
   const karGorunur = await izinVarMi("satis.kar.gor");
+  /**
+   * DÜZELTME VE İPTAL AYRI İZİNLER (18.08.2026).
+   *
+   * İzin yoksa düğme HİÇ ÇİZİLMEZ — yapamayacağı bir eylemi gösterip
+   * tıklayınca hata vermek, kullanıcıyı boşuna deneten bir tasarımdır.
+   * Sunucu tarafı ayrıca korunuyor (`yetkiIste`): ekran süzgeci kolaylık,
+   * güvenlik değil.
+   */
+  const duzenleyebilir = await izinVarMi("satis.duzenle");
+  const iptalEdebilir = await izinVarMi("satis.iptal");
 
   const { id } = await params;
 
@@ -691,15 +701,17 @@ export default async function SatisDetaySayfasi({
           </p>
           {/* GERİ ALMA — gerçek dünya kanıtı 17.08.2026: yanlış iptal olur
               ve geri yolu ekranda olmalı, terminalde değil. */}
-          <GeriAlFormu saleId={satis.id} />
+          {/* Geri alma da `satis.iptal`e bağlı — iptal edebilen geri de
+              alabilmeli, yoksa kendi hatasını düzeltemeyen rol doğar. */}
+          {iptalEdebilir ? <GeriAlFormu saleId={satis.id} /> : null}
         </div>
-      ) : (
+      ) : iptalEdebilir ? (
         <div className="flex flex-wrap gap-2">
           <IptalFormu saleId={satis.id} />
         </div>
-      )}
+      ) : null}
 
-      {satis.iptalTarihi === null ? (
+      {satis.iptalTarihi === null && duzenleyebilir ? (
       <DuzenleFormu
         saleId={satis.id}
         paraBirimi={satis.profitCurrency ?? "TRY"}

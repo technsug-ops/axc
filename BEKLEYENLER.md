@@ -1285,7 +1285,36 @@ değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.
       bugün sınanabilir; "sistem önceden söyledi, kanal öyle yatırdı"
       cümlesi için taze dönem gerekir.
 
-- [ ] **HAFİF YETKİ DİLİMİ — `satis.duzenle` / `satis.iptal`**
+- [x] **HAFİF YETKİ DİLİMİ — KAPANDI 18.08.2026.**
+      `satis.duzenle` ve `satis.iptal` izinleri açıldı.
+
+      **AYRIMIN ÖLÇÜTÜ ROL DEĞİL ETKİ.** `satis.yaz` "yeni satış kaydet"
+      demektir ve depo işidir. Bu ikisi YAZILMIŞ kaydı geriye dönük
+      değiştirir: NET yeniden hesaplanır, adet değişince **stok defteri
+      hareket alır**, iptalde mal stoğa döner. "Satış girebilen herkes
+      fiyat da düzeltebilir" varsayımı, eleman alındığı gün sessizce
+      yanlış olur.
+
+      - **Operasyon bu ikisini ALMAZ** — ayrımın bütün değeri burada;
+        test "izin var mı" kadar "yanlış role verilmemiş mi" diye de sorar.
+      - Operasyon `satis.yaz`ı korur: satış girmeye devam eder.
+      - **"İptali geri al" AYRI İZİN DEĞİL**, `satis.iptal`e bağlı. Ayrı
+        tutulsaydı kendi hatasını düzeltemeyen bir rol doğardı ve iş yine
+        sahibe düşerdi — 17.08.2026'da tam olarak bu yaşandı.
+      - Altı sunucu eylemi + üç form bağlandı. **Ekran da süzüyor:**
+        yapamayacağı düğme hiç çizilmiyor (sunucu ayrıca korunuyor —
+        ekran süzgeci kolaylıktır, güvenlik değil).
+      - Bekçi eşiği kontrol edildi: Operasyon 12/27 (%44), %80 eşiğinin
+        çok altında → **yanlış alarm yok, beyan gerekmedi.**
+      - Şema değişikliği YOK, migration YOK.
+      - `yetki:dogrula` 34 → 52, dört mutasyon kırmızı.
+
+      ⚠ **DEPLOY SONRASI `npm run canli:yetki` ŞART.** İzin kodda doğdu,
+      veritabanına işlenmezse tam yetkili rol onu HİÇ görmez ve ekran
+      canlıda sessizce kaybolur (13.08 `/iadeler` vakası). Mutasyon M1
+      tam olarak bu unutmayı kırmızı yakıyor.
+
+- [ ] ~~**HAFİF YETKİ DİLİMİ (eski kayıt)**~~
       _Sıraya girdi 18.08.2026, hakediş teyidinden sonra._
 
       Bugün satış düzenleme ve iptal ekranları tek kullanıcıda korumasız

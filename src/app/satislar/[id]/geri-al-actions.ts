@@ -33,7 +33,14 @@ export async function geriAlmayiOnizle(
   neden: GeriAlmaNedeni | null,
   aciklama: string | null,
 ): Promise<GeriAlmaOnizlemeSonucu> {
-  await yetkiIste("satis.yaz");
+  /**
+   * İPTALİ GERİ ALMA DA `satis.iptal`e BAĞLIDIR — ayrı izin AÇILMADI.
+   * İptal edebilen geri de alabilmeli; ayrı tutulsaydı kendi hatasını
+   * düzeltemeyen bir rol doğar ve iş yine sahibe düşerdi. Tam olarak
+   * 17.08.2026'da yaşandı: gerçek satış yanlışlıkla iptal edildi ve
+   * geri alma yolu yoktu.
+   */
+  await yetkiIste("satis.iptal");
   const t = await getTranslations("IptalGeriAl");
 
   const kurulum = await geriAlmaOnizle(saleId, neden, aciklama);
@@ -70,7 +77,7 @@ export async function geriAlmayiUygula(
   aciklama: string | null,
   onaylananImza: string,
 ): Promise<GeriAlmaUygulamaSonucu> {
-  const baglam = await yetkiIste("satis.yaz");
+  const baglam = await yetkiIste("satis.iptal");
   const t = await getTranslations("IptalGeriAl");
 
   const sonuc = await geriAlmaUygula({

@@ -58,6 +58,28 @@ export const IZINLER = [
   { anahtar: "stok.duzelt", grup: "operasyon" },
   { anahtar: "satis.gor", grup: "operasyon" },
   { anahtar: "satis.yaz", grup: "operasyon" },
+  /**
+   * DÜZELTME VE İPTAL, SATIŞ GİRMEKTEN AYRI İZİNLERDİR (18.08.2026).
+   *
+   * `satis.yaz` "yeni satış kaydet" demektir ve depo işidir. Bu ikisi ise
+   * YAZILMIŞ bir kaydı geriye dönük değiştirir:
+   *   · `satis.duzenle` — fiyat/adet/kargo değişir, NET yeniden hesaplanır,
+   *     adet değişince STOK DEFTERİ hareket alır.
+   *   · `satis.iptal`   — satış ciro ve kâr kümesinden çıkar, mal stoğa döner.
+   *
+   * Ayrı tutulmalarının sebebi rol değil ETKİ: ikisi de geçmişi değiştirir
+   * ve ikisi de paraya dokunur. "Satış girebilen herkes fiyat da
+   * düzeltebilir" varsayımı, eleman alındığı gün sessizce yanlış olur.
+   *
+   * ⚠ OPERASYON listesine BİLEREK EKLENMEDİ — ayrımın bütün amacı bu.
+   * Depocu satış girer, fiyat düzeltip satış iptal edemez.
+   *
+   * "İptali geri al" da `satis.iptal`e bağlıdır: iptal edebilen geri de
+   * alabilmeli, yoksa kendi hatasını düzeltemeyen bir rol doğar ve iş
+   * yine sahibe düşer.
+   */
+  { anahtar: "satis.duzenle", grup: "operasyon" },
+  { anahtar: "satis.iptal", grup: "operasyon" },
   { anahtar: "iade.gor", grup: "operasyon" },
   { anahtar: "iade.yaz", grup: "operasyon" },
   { anahtar: "elkitabi.gor", grup: "operasyon" },

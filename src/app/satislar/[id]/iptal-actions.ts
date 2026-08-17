@@ -46,7 +46,12 @@ export async function iptaliOnizle(
   sebep: SatisIptalSebebi | null,
   not: string | null,
 ): Promise<IptalOnizlemeSonucu> {
-  await yetkiIste("satis.yaz");
+  /**
+   * ⚠ `satis.yaz` DEĞİL — iptal satışı ciro ve kâr kümesinden ÇIKARIR,
+   * malı stoğa döndürür. Satış girebilmek, girilmiş satışı geri almaya
+   * yetki vermez.
+   */
+  await yetkiIste("satis.iptal");
   const t = await getTranslations("SatisIptali");
 
   const kurulum = await iptalOnizle(saleId, sebep, not);
@@ -81,7 +86,7 @@ export async function iptaliUygula(
   not: string | null,
   onaylananImza: string,
 ): Promise<IptalUygulamaSonucu> {
-  const baglam = await yetkiIste("satis.yaz");
+  const baglam = await yetkiIste("satis.iptal");
   const t = await getTranslations("SatisIptali");
 
   const sonuc = await iptalUygula({

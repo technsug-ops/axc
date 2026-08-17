@@ -82,6 +82,14 @@ export async function yetkiSeed(prisma: PrismaClient) {
     // 13.08.2026 — /iadeler ekranı yazıldı.
     "iade.gor",
     /**
+     * 18.08.2026 — satış düzeltme ve iptal ekranları izne bağlandı.
+     * Tam yetkili roller bunları KENDİLİĞİNDEN almalı: dün bu işleri
+     * yapabiliyorlardı, izin doğdu diye yapamaz hâle gelmeleri sessiz bir
+     * yetki kaybı olurdu.
+     */
+    "satis.duzenle",
+    "satis.iptal",
+    /**
      * ⚠ `destek.yonet` BİLEREK BURADA DEĞİL (karar 16.08.2026).
      *
      * O bir SAĞLAYICI iznidir: talebi AÇAN müşteri firmadır, ÇÖZEN ürünü

@@ -413,6 +413,91 @@ bekciBolumu().then(() => {
 // ===========================================================================
 console.log("\n6) SAĞLAYICI İZNİ — OTOMATİK DAĞITILMAZ");
 // ===========================================================================
+console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
+// ===========================================================================
+{
+  /**
+   * ⚠ HAFİF YETKİ DİLİMİ 18.08.2026. `satis.yaz` "yeni satış kaydet"
+   * demektir ve depo işidir. Düzeltme ve iptal ise YAZILMIŞ kaydı geriye
+   * dönük değiştirir: NET yeniden hesaplanır, adet değişince stok defteri
+   * hareket alır, iptalde mal stoğa döner.
+   *
+   * Ayrımın bütün değeri Operasyon'un bunlara SAHİP OLMAMASINDA. O yüzden
+   * "izin var mı" kadar "yanlış role verilmemiş mi" de sınanıyor.
+   */
+  const anahtarlar = TUM_IZINLER as readonly string[];
+  kontrol("satis.duzenle izni TANIMLI", anahtarlar.includes("satis.duzenle"));
+  kontrol("satis.iptal izni TANIMLI", anahtarlar.includes("satis.iptal"));
+
+  const operasyon = OPERASYON_IZINLERI as readonly string[];
+  kontrol(
+    "Operasyon satis.duzenle ALMAZ",
+    !operasyon.includes("satis.duzenle"),
+  );
+  kontrol("Operasyon satis.iptal ALMAZ", !operasyon.includes("satis.iptal"));
+  /** Ayrım anlamlı olsun diye: satış GİRMEYE devam ediyor. */
+  kontrol("Operasyon satis.yaz'ı KORUR", operasyon.includes("satis.yaz"));
+
+  /**
+   * ⚠ YETKİ İKİ BACAKLIDIR. Anahtar koda girip `SONRADAN_DOGAN`a
+   * yazılmazsa, tam yetkili rol o izni HİÇ görmez ve ekran canlıda
+   * SESSİZCE kaybolur (13.08.2026 `/iadeler` vakası).
+   */
+  const seed = readFileSync("prisma/seed-yetki.ts", "utf8");
+  const dogan = seed.slice(
+    seed.indexOf("const SONRADAN_DOGAN"),
+    seed.indexOf("const dagitilacak"),
+  );
+  kontrol('SONRADAN_DOGAN "satis.duzenle" içeriyor', dogan.includes('"satis.duzenle"'));
+  kontrol('SONRADAN_DOGAN "satis.iptal" içeriyor', dogan.includes('"satis.iptal"'));
+
+  /**
+   * EYLEMLER DOĞRU İZNİ İSTİYOR MU — kaynak taranır.
+   * Değer testi göremez: `yetkiIste` her iki anahtarla da çalışır, sadece
+   * YANLIŞ olanı sorar. Sorulan anahtarın kendisi sınanmalı.
+   */
+  const duzenle = readFileSync("src/app/satislar/[id]/duzenle-actions.ts", "utf8");
+  kontrol('duzenle-actions "satis.duzenle" ister', duzenle.includes('yetkiIste("satis.duzenle")'));
+  kontrol("  ...ve satis.yaz'a DAYANMAZ", !duzenle.includes('yetkiIste("satis.yaz")'));
+
+  const iptal = readFileSync("src/app/satislar/[id]/iptal-actions.ts", "utf8");
+  kontrol('iptal-actions "satis.iptal" ister', iptal.includes('yetkiIste("satis.iptal")'));
+  kontrol("  ...ve satis.yaz'a DAYANMAZ", !iptal.includes('yetkiIste("satis.yaz")'));
+
+  /**
+   * GERİ ALMA AYNI İZNE BAĞLI — ayrı izin AÇILMADI. İptal edebilen geri de
+   * alabilmeli; ayrılsaydı kendi hatasını düzeltemeyen bir rol doğardı ve
+   * iş yine sahibe düşerdi (17.08.2026'da tam olarak bu yaşandı).
+   */
+  const gerial = readFileSync("src/app/satislar/[id]/geri-al-actions.ts", "utf8");
+  kontrol('geri-al-actions "satis.iptal" ister', gerial.includes('yetkiIste("satis.iptal")'));
+  kontrol(
+    "  ...geri alma için AYRI izin açılmadı",
+    !anahtarlar.some((a) => a.includes("gerial") || a.includes("geri")),
+  );
+
+  /**
+   * EKRAN DA SÜZÜYOR MU — yapamayacağı eylemi göstermek, kullanıcıyı
+   * boşuna deneten tasarımdır (İlke #5: sessiz başarısızlık yasak).
+   */
+  const ekran = readFileSync("src/app/satislar/[id]/page.tsx", "utf8");
+  kontrol('ekran "satis.duzenle" izni okuyor', ekran.includes('izinVarMi("satis.duzenle")'));
+  kontrol('ekran "satis.iptal" izni okuyor', ekran.includes('izinVarMi("satis.iptal")'));
+  kontrol(
+    "düzenleme formu izne bağlı çiziliyor",
+    /duzenleyebilir \?[\s\S]{0,80}?<DuzenleFormu|duzenleyebilir\s*\?\s*\(?\s*\n?\s*<DuzenleFormu|&& duzenleyebilir/.test(ekran),
+  );
+  kontrol(
+    "iptal formu izne bağlı çiziliyor",
+    /iptalEdebilir \?[\s\S]{0,200}?<IptalFormu/.test(ekran),
+  );
+  kontrol(
+    "geri alma formu izne bağlı çiziliyor",
+    /iptalEdebilir \?[\s\S]{0,120}?<GeriAlFormu/.test(ekran),
+  );
+}
+
+// ===========================================================================
 {
   /**
    * ════════════════════════════════════════════════════════════════════

@@ -40,7 +40,13 @@ export async function duzenlemeyiOnizle(
   neden: DuzenlemeNedeni | null,
   aciklama: string | null,
 ): Promise<OnizlemeSonucu> {
-  await yetkiIste("satis.yaz");
+  /**
+   * ⚠ `satis.yaz` DEĞİL — 18.08.2026. Yeni satış girmek ile YAZILMIŞ bir
+   * satışın fiyatını/adedini değiştirmek aynı yetki değildir: ikincisi
+   * geçmişi ve NET'i değiştirir, adet değişince stok defterine hareket
+   * yazar. Depocu satış girer, fiyat düzeltemez.
+   */
+  await yetkiIste("satis.duzenle");
   const t = await getTranslations("SatisDuzenleme");
 
   const kurulum = await duzenlemeOnizle(saleId, yeni, neden, aciklama);
@@ -74,7 +80,7 @@ export async function duzenlemeyiUygula(
   aciklama: string | null,
   onaylananImza: string,
 ): Promise<UygulamaSonucu> {
-  const baglam = await yetkiIste("satis.yaz");
+  const baglam = await yetkiIste("satis.duzenle");
   const t = await getTranslations("SatisDuzenleme");
 
   const sonuc = await duzenlemeUygula({
