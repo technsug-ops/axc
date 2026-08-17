@@ -314,7 +314,9 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       bakılacak:** önizlemedeki NET-1/NET-2 ile kaydedilen değer birebir mi.
       _Not 14.08.2026._
 
-- [ ] **KART ÖDEME TAKİBİ — SIRADA (öne alındı 15.08.2026)**
+- [x] ~~**KART ÖDEME TAKİBİ**~~ ✓ KAPANDI 16.08.2026 — Halil testi geçti, mimar onaylı.
+      _Kapanış notu 17.08: geçmiş ekstreler artık gerçek ödeme kayıtlarından
+      okunuyor; "geçmiş ekstre ödenmiş sayılır" varsayımı koddan kaldırıldı._
       _Kullanıcı önceliği: **nakit takviminin eksik yarısı.**_ Sistem kart
       borcunu alımlardan türetiyor ama **"ödendi" kaydı YOK** → nakit takvimi
       kart tarafını ve gecikmişi gösteremiyor. Bu paket onu kapatır.
@@ -388,7 +390,10 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       _Mutasyon: **faiz gideri kâra karışmasın** kilidi — ana borcu kâra
       düşür → test kırmızı._
 
-- [ ] **RAPOR: FİRE/DÜZELTME — ÇİFT SAYIM + ETİKET — YÜKSEK ÖNCELİK**
+- [x] ~~**RAPOR: FİRE/DÜZELTME — ÇİFT SAYIM + ETİKET**~~ ✓ KAPANDI 16.08.2026 — mimar onaylı.
+      _RMA kaynaklı düzeltmeler çift sayılıyordu; zarar ve kazanç ayrı satıra
+      bölündü. Canlı ölçüm: GERÇEK NET ₺4.255,82 → ₺2.927,83 (rapor fazla
+      gösteriyormuş — yön ilk teşhiste ters söylenmişti, ölçüm düzeltti)._
 
       > ⚠ **TEŞHİS 16.08.2026'da BÜYÜDÜ.** Önce yalnız "etiket yanıltıyor"
       > sanılmıştı; canlı araştırma **PARA HATASI** olduğunu gösterdi.
@@ -467,7 +472,11 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       _Yan not: "notu olmayan büyük ELLE düzeltme" yine de uyarı merkezi
       Faz 2 konusu olabilir._
 
-- [ ] **GEÇMİŞ VERİ AKTARIMI** — geçmiş kart ekstreleri · geçmiş hakediş
+- [x] ~~**GEÇMİŞ VERİ AKTARIMI**~~ ✓ KAPANDI 17.08.2026 — Halil testi TÜM
+      MADDELER geçti, mimar onaylı. _106 satır okundu · 10 kart · 4 atlandı →
+      89 yazıldı · 17 çakışma. İkinci yükleme SIFIR yazdı (mükerrer koruması
+      çalıştı)._ Aşağıdaki kapsam notu tarihe kaldı:
+      — geçmiş kart ekstreleri · geçmiş hakediş
       tahsilatları. Dosya: `C:\Users\yapra\Desktop\excel\hakedis ve kredi kartlari`
       **KAPSAM KÜÇÜLDÜ — kart günleri İŞE GEREK YOK (ölçüldü 13.08.2026):**
       `CreditCard` şemasında `statementDay` ve `dueDay` alanları ZATEN VAR
@@ -862,7 +871,9 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       - Her paket AYRI teslim + AYRI Halil testi (tıklama düzeyinde,
         rakamlar taahhütlü).
 
-- [ ] **UYARI MERKEZİ (ÇAN) — FAZ 1: DÖRT KIRMIZI UYARI**
+- [x] ~~**UYARI MERKEZİ (ÇAN) — FAZ 1**~~ ✓ KAPANDI 16.08.2026 — mimar onaylı.
+      _17.08: BEŞİNCİ ve ALTINCI kırmızı eklendi — yedek yaşı uyarıları
+      (yedek 4 gün alınmadı ve kimse fark etmedi). Eşik 2 gün._
       _Mimar sözleşmesi 15.08.2026._ **SIRA: Panel Aşama 3'ün kalan
       maddelerinden SONRA** — çan onların hesaplarını kullanacak.
 
