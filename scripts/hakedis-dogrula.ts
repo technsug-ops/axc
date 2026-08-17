@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { eslemeOzeti, yenidenEsle } from "../src/lib/hakedis/yeniden-esle";
 /**
  * ============================================================================
  *  HAKEDİŞ DOĞRULAMA
@@ -577,6 +578,121 @@ console.log("\nEŞİK BEYANI SABİTTEN GELİYOR MU");
     "ekran sabiti METNE geçiriyor",
     /karsilastirmaNotu"?,\s*\{[\s\S]{0,120}?HAKEDIS_ESIKLERI\.tutarFarki/.test(ekran),
   );
+}
+
+// ===========================================================================
+console.log("\nYENİDEN EŞLEŞTİRME — BAĞSIZ KALEMLER");
+// ===========================================================================
+{
+  /**
+   * ⚠ Bağ yalnız YÜKLEME anında kuruluyordu ve "önce rapor sonra satış"
+   * sırası kalemi SONSUZA DEK bağsız bırakıyordu. Üç ölçüm, üçü de sıfır:
+   * 13.08 651/0 · 15.08 110/0 · 18.08 651/0.
+   *
+   * Kural saf fonksiyonda (`lib/hakedis/yeniden-esle.ts`) çünkü betiğe
+   * gömülseydi eşleşme sistemde İKİ yerde yaşardı.
+   */
+  const kalem = (
+    id: string,
+    siparisNo: string,
+    channelAccountId = "h1",
+  ) => ({ id, siparisNo, channelAccountId });
+  const satis = (id: string, kod: string, channelAccountId = "h1") => ({
+    id,
+    kod,
+    channelAccountId,
+  });
+
+  // --- düz eşleşme ---
+  {
+    const k = yenidenEsle([kalem("k1", "11471381662")], [satis("s1", "11471381662")]);
+    kontrol("kod tutuyorsa BAĞLANIR", k[0].olur === true);
+    kontrol("  ...doğru satışa", k[0].olur && k[0].saleId === "s1");
+  }
+
+  // --- karşılık yok ---
+  {
+    const k = yenidenEsle([kalem("k1", "99999")], [satis("s1", "11471381662")]);
+    kontrol("karşılık yoksa BAĞLANMAZ", k[0].olur === false);
+    kontrol(
+      "  ...sebep KARSILIK_YOK",
+      !k[0].olur && k[0].sebep === "KARSILIK_YOK",
+    );
+  }
+
+  // --- çift eşleşme REDDEDİLİR ---
+  {
+    /**
+     * Aynı kod iki satışta: hangisi olduğu BİLİNMEZ. Tahmin edip bağlamak
+     * yanlış satışa para yazmaktır.
+     */
+    const k = yenidenEsle(
+      [kalem("k1", "11471381662")],
+      [satis("s1", "11471381662"), satis("s2", "11471381662")],
+    );
+    kontrol("çift eşleşme REDDEDİLİR", k[0].olur === false);
+    kontrol("  ...sebep CIFT_ESLESME", !k[0].olur && k[0].sebep === "CIFT_ESLESME");
+  }
+
+  // --- kanal uyuşmazlığı ---
+  {
+    /**
+     * Toplu tazeleme bütün kanalları aynı anda tarar; çapraz eşleşme ilk
+     * kez MÜMKÜN olur. Yükleme yolunda bu risk yok (tek kanalın raporu).
+     */
+    const k = yenidenEsle(
+      [kalem("k1", "11471381662", "hepsiburada")],
+      [satis("s1", "11471381662", "trendyol")],
+    );
+    kontrol("kanal tutmuyorsa BAĞLANMAZ", k[0].olur === false);
+    kontrol(
+      "  ...sebep KANAL_UYUSMUYOR",
+      !k[0].olur && k[0].sebep === "KANAL_UYUSMUYOR",
+    );
+  }
+
+  // --- boşluk kırpılır ---
+  {
+    /** Rapordan gelen değerde boşluk olabiliyor; iki taraf da kırpılır. */
+    const k = yenidenEsle([kalem("k1", " 11471381662 ")], [satis("s1", "11471381662 ")]);
+    kontrol("baştaki/sondaki boşluk eşleşmeyi BOZMAZ", k[0].olur === true);
+  }
+
+  // --- özet ---
+  {
+    const kararlar = yenidenEsle(
+      [
+        kalem("k1", "A"),
+        kalem("k2", "YOK"),
+        kalem("k3", "CIFT"),
+        kalem("k4", "A", "baska"),
+      ],
+      [satis("s1", "A"), satis("s2", "CIFT"), satis("s3", "CIFT")],
+    );
+    const o = eslemeOzeti(kararlar);
+    kontrol("özet: 1 bağlanacak", o.baglanacak === 1, o);
+    kontrol("özet: 1 karşılıksız", o.karsiligiYok === 1, o);
+    kontrol("özet: 1 çift", o.ciftEslesme === 1, o);
+    kontrol("özet: 1 kanal uyuşmaz", o.kanalUyusmaz === 1, o);
+    kontrol(
+      "özet TOPLAMI kalem sayısına eşit",
+      o.baglanacak + o.karsiligiYok + o.ciftEslesme + o.kanalUyusmaz === 4,
+    );
+  }
+
+  /**
+   * TEKRARLANABİLİRLİK: aynı girdi iki kez koşunca aynı kararlar. Betik
+   * bağlıya dokunmadığı için ikinci koşu boş geçer; saf katmanda karşılığı
+   * kararların DEĞİŞMEMESİDİR.
+   */
+  {
+    const g = [kalem("k1", "A")];
+    const h = [satis("s1", "A")];
+    kontrol(
+      "aynı girdi → aynı karar (tekrarlanabilir)",
+      JSON.stringify(yenidenEsle(g, h)) === JSON.stringify(yenidenEsle(g, h)),
+    );
+  }
 }
 
 // ===========================================================================

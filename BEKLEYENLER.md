@@ -1215,6 +1215,29 @@ değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.
       girilmeden yapıldıysa bağ hiç kurulmamıştır. **Betik önce bunu
       söyler; sıfırsa taze rapor gerekir.**
 
+      **✓ YENİDEN EŞLEŞTİRME ARACI HAZIR 18.08.2026** —
+      `npm run canli:hakedis-esle` (rapor) / `-- --uygula` (yazar).
+
+      Bağ yalnız YÜKLEME anında kuruluyordu; "önce rapor sonra satış" sırası
+      kalemi SONSUZA DEK bağsız bırakıyor. **Tarihsel kaza değil yapısal kör
+      nokta:** TY raporu haftalık, satışlar elle giriliyor — sıra bir daha
+      ters dönebilir. Bu yüzden araç TEK SEFERLİK DEĞİL, tekrarlanabilir.
+
+      - Kural saf fonksiyonda: `lib/hakedis/yeniden-esle.ts`. Betiğe
+        gömülseydi eşleşme sistemde İKİ yerde yaşardı (ilk dersin aynısı).
+      - Ölçüt yükleme yoluyla AYNI: kod birebir + satış iptalli değil.
+      - **Tek yeni kontrol KANAL.** Yükleme tek kanalın raporunu işler,
+        kodlar zaten o kanaldandır. Toplu tazeleme bütün kanalları tarar ve
+        çapraz eşleşme İLK KEZ mümkün olur — ayrı kural değil, aynı niyetin
+        yeni bağlamda yazılmış hâli.
+      - Çift eşleşme REDDEDİLİR (tahmin = yanlış satışa para yazmak).
+      - Yalnız boş `saleId`; yazma anında `saleId: null` şartı WHERE'de de
+        durur (arada başkası bağlamışsa ezilmez).
+      - `hakedis:dogrula` 90 → 105, üç mutasyon kırmızı.
+
+      **○ UZUN VADE:** `/hakedis` ekranında "bağsız kalemleri eşleştir"
+      düğmesi — betik canlıda kanıtlandıktan sonra (İlke #1: görünür eylem).
+
       **○ HALİL'DEN GELECEK — koşullu.** Betiğin çıktısına göre:
       eşleşme varsa eldekiyle koşulur, yoksa taze hakediş dökümü istenir.
 
