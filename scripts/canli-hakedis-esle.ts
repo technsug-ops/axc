@@ -185,6 +185,82 @@ async function main() {
     if (yoklar.length > 0) {
       console.log(`       örnek karşılıksız no: ${[...new Set(yoklar)].slice(0, 3).join(" · ")}`);
     }
+
+    /**
+     * ── B'NİN İKİ ALT SEBEBİ — AYRILMADAN İŞ AÇILMAZ ──────────────────
+     *
+     * B1) BİÇİM FARKI — numaralar aynı siparişi gösteriyor ama yazımları
+     *     tutmuyor (önek, tire, ön sıfır). ÇÖZÜM: normalleştirme kuralı.
+     * B2) YOKLUK — o siparişler sisteme hiç girilmemiş. ÇÖZÜM eşleştirme
+     *     DEĞİL; teyit, satışları sistemde OLAN bir dönemle yapılmalı.
+     *
+     * Ayrım kritik: B1 sanıp normalleştirme yazmak, B2'de hiçbir şeyi
+     * çözmez ve bir sabahı daha yakar.
+     *
+     * Ölçüt: kodların ŞEKLİ (uzunluk + rakam mı) ve TARİH ARALIKLARI.
+     * Şekil aynı ama numaralar farklıysa sebep yokluktur.
+     */
+    const ornekSatislar = await prisma.sale.findMany({
+      where: { code: { not: null } },
+      select: { code: true, soldAt: true },
+      orderBy: { soldAt: "asc" },
+    });
+
+    const sekil = (d: string) =>
+      `${d.length} hane · ${/^\d+$/.test(d) ? "yalnız rakam" : "rakam dışı karakter VAR"}`;
+
+    const rapordanOrnek = [...new Set(redler("KARSILIK_YOK").map((k) => k.kod))];
+    const satistanOrnek = ornekSatislar
+      .map((s) => (s.code ?? "").trim())
+      .filter((d) => d !== "");
+
+    console.log("");
+    console.log("     ── B1 (biçim) mi B2 (yokluk) mu ──");
+    if (rapordanOrnek.length > 0) {
+      console.log(`       rapor   ${rapordanOrnek[0]}   → ${sekil(rapordanOrnek[0])}`);
+    }
+    if (satistanOrnek.length > 0) {
+      console.log(`       satış   ${satistanOrnek[0]}   → ${sekil(satistanOrnek[0])}`);
+    }
+
+    const sekilAyni =
+      rapordanOrnek.length > 0 &&
+      satistanOrnek.length > 0 &&
+      sekil(rapordanOrnek[0]) === sekil(satistanOrnek[0]);
+
+    /** TARİH ARALIKLARI — kesişmiyorsa yokluk kanıtlanır. */
+    const partiler = await prisma.settlement.findMany({
+      select: { periodStart: true, periodEnd: true },
+    });
+    const tarihler = partiler
+      .flatMap((p) => [p.periodStart, p.periodEnd])
+      .filter((d): d is Date => d !== null)
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    const gun = (d: Date | undefined) =>
+      d ? d.toISOString().slice(0, 10) : "—";
+
+    console.log("");
+    console.log(`       rapor dönemi   ${gun(tarihler[0])} → ${gun(tarihler[tarihler.length - 1])}`);
+    console.log(
+      `       satış aralığı  ${gun(ornekSatislar[0]?.soldAt)} → ${gun(ornekSatislar[ornekSatislar.length - 1]?.soldAt)}`,
+    );
+    console.log(`       sistemdeki satış sayısı: ${ornekSatislar.length}`);
+    console.log("");
+
+    if (sekilAyni) {
+      console.log("       → B2 (YOKLUK). Kodların ŞEKLİ aynı; numaralar");
+      console.log("         farklı, yani biçim sorunu YOK. O dönemin satışları");
+      console.log("         sisteme girilmemiş.");
+      console.log("         YAPILACAK: normalleştirme YAZMA — boşa iş olur.");
+      console.log("         Teyit, satışları sistemde OLAN bir dönemin");
+      console.log("         raporuyla yapılmalı.");
+    } else {
+      console.log("       → B1 (BİÇİM). Kodların şekli TUTMUYOR — yukarıdaki");
+      console.log("         iki örneği karşılaştır. Normalleştirme kuralı");
+      console.log("         gerekiyor; taze rapor tek başına çözmez.");
+    }
+
   } else {
     console.log("     → TEŞHİS A: ZAMANLAMA doğrulandı; bağ kurulabilir.");
   }
