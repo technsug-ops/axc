@@ -281,6 +281,19 @@ async function main() {
     basarili(`GecmisEkstre okundu — ${gecmisEkstreSayisi} kayıt (yeni tablo)`);
 
     console.log("\nCANLI ŞEMA GÜNCEL.\n");
+
+    /**
+     * ⚠ YEREL VERİTABANI HATIRLATMASI (17.08.2026 dersi).
+     *
+     * Bu komut YALNIZ canlıya yazar. Yerel geliştirme veritabanı geride
+     * kalırsa uçtan uca testler "Unknown column" ile kırılır ve hata KODA
+     * aitmiş gibi görünür — `fifo:dogrula` tam olarak böyle kırıldı,
+     * teşhis için boşa zaman harcandı.
+     */
+    console.log("SIRADAKİ ADIM — YEREL VERİTABANI:");
+    console.log("     npx prisma migrate deploy");
+    console.log("     Yerel geride kalırsa uçtan uca testler 'Unknown");
+    console.log("     column' ile kırılır ve hata koda aitmiş gibi görünür.\n");
   } catch (e) {
     console.log(parolayiTemizle(String(e), parola));
     basarisiz("Kolonlar okunamadı — şema ile kod arasında fark var.");
