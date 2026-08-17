@@ -1161,6 +1161,58 @@ yazılmaz._
 **ANAYASA HATIRLATMASI:** rakip aracın adı bir REFERANSTIR, veri bile
 değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.**
 
+## Faz 3 kapanış borcu
+
+- [ ] **27 KANAL KODSUZ KATALOG KAYDI** — _kayıt 17.08.2026, mimar._
+      Katalogda 27 kayıt **Kanal SKU'suz** duruyor.
+
+      **ETKİ — ölçüldü, iddia dar bir noktada düzeltildi.** Arama gerçekten
+      Kanal SKU'ya bakıyor: `aramaKosulu` (serbest metin) ve `kodKosulu`
+      (okutulan kod) ikisi de `channelSkus`i sorguluyor. Yani kanal kodu
+      olmayan ürün, **kanal koduyla** aranınca bulunmaz.
+
+      Ama "kamerayla okutunca kayıtlı değil der" **koşullu doğrudur**:
+      okuyucu etiketteki kodu okur. Pazaryeri/firma etiketi okutulursa
+      eşleşme yok; **üretici EAN'ı okutulursa `barcode` alanından eşleşir.**
+      Yani asıl soru şu ve liste çıkarılırken BİRLİKTE sorulmalı:
+      **bu 27 kaydın kaçında barkod da boş?** Hem kanal kodu hem barkodu
+      boş olan kayıt gerçekten kördür; yalnız kanal kodu eksik olan kayıt
+      EAN ile bulunur. İkisi aynı aciliyette değildir.
+
+      **İŞ:**
+      1. Listeyi çıkar — hangi 27 ürün. Salt-okunur betik (`canli-kar-tazele`
+         kalıbı: önce rapor, yazma ayrı bayrak).
+      2. Her satırda **barkod var mı** sütunu — kör olanlar ayrışsın.
+      3. Tamamlama yolu öner: **elle** mi, **kanal eşleşmesinden türetme**
+         mi. Türetme öneriliyorsa kaynağı ve çakışma kuralı yazılı olsun —
+         yanlış kanal koduna bağlanan ürün, doğru koda hiç bağlanmamış
+         üründen daha tehlikelidir (sessizce yanlış ürüne gider).
+      4. Halil'e rapor; tamamlama ondan sonra.
+
+      _Not: bu kalem VERİ borcudur, kod borcu değil — arama tarafı doğru
+      çalışıyor. Ama sonucu kullanıcıya kod hatası gibi görünür._
+
+- [ ] **PANEL KART SIRASI + SÜZGEÇ ERİŞİMİ** — _Halil talebi 17.08.2026._
+
+      **a) KART SIRASI — operasyon hunisi.** İstenen sıra:
+      **Adet · Kargoya verilen · Ciro · NET-1 · NET-2**
+      (bugünkü sırada ciro ile kargo yer değiştirecek).
+      Gerekçe: göz önce "kaç iş var", sonra "kaçı çıktı", sonra para
+      sütunlarını okuyor. Sıra işin akışını takip etmeli.
+
+      **b) SÜZGEÇ ERİŞİMİ — telefonda uzak.** Çözüm Halil'in tek bir
+      sorusuna bağlı: **"kanalı SIK mı NADİR mi değiştiriyorum?"**
+      - **SIK** → sticky süzgeç çubuğu (kaydırınca üstte kalır)
+      - **NADİR** → başlıkta **aktif süzgeç etiketi** (dokununca açılır);
+        çubuk sürekli yer kaplamaz
+
+      **CEVAP BEKLİYOR — tahminle yapılmaz.** İkisi ters yönde tasarım:
+      sık değiştiren için etiket fazladan tıklama, nadir değiştiren için
+      sticky çubuk sürekli çalınan dikey alandır (Kural #12: alanı verimli
+      kullan). Yanlış seçilirse her gün küçük bir bedel ödenir.
+
+      _İkisi de tek turda yapılır; (a) cevaba bağlı değil, (b) bağlı._
+
 ## Sonraki uygun pakette
 
 - [ ] **PANEL KANAL KARTLARI AYARLANABİLİR OLSUN** — _Kullanıcı isteği
