@@ -1413,7 +1413,23 @@ değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.
       (kampanya günü satışı sıradan güne yayılır). Yaşlanma listesinin
       tersi ucu: o "çok yavaş", bu "çok hızlı" diyor.
 
-- [ ] **ÇOK PARA BİRİMİ (EUR)** — _Karar 14.08.2026, mimar._
+- [ ] **ÇOK PARA BİRİMİ (EUR) — ⏬ EN SONA ERTELENDİ.**
+      _Kullanıcı kararı 18.08.2026: "şu anda euroya ihtiyacımız yok, en
+      sona ertele. TÜRK PİYASASINA çalışacağız."_
+
+      Sıralamada **en alt**: uyarı merkezi, stok sinyalleri ve pazaryeri
+      işleri bunun önüne geçer. Açılma şartı aşağıda duruyor ve
+      DEĞİŞMEDİ — ama artık "gerçek EUR işlemi doğsa bile" öncelik
+      almayacak; iş yükü Türk piyasası akışında.
+
+      ⚠ **ERTELEME, TEK PARA BİRİMİ VARSAYIMINI DERİNLEŞTİRME İZNİ
+      DEĞİLDİR.** Anayasa kuralı yürürlükte: parasal değer her zaman
+      `Decimal + currency`. "Nasılsa hep TRY" diye para birimi alanını
+      atlayan, TRY'yi sabit yazan ya da toplamayı para birimini sormadan
+      yapan yeni kod YAZILMAZ. Erteleme EUR **özelliğini** erteler, veri
+      **şeklini** değiştirmez — bugünkü kısayol, yarınki yeniden yazımdır.
+
+      _(Özgün kayıt, karar 14.08.2026, mimar:)_
       Nakit takvimi ve panel bugün **tek para birimi konuşuyor: TRY.**
       Mimari EUR'ya **hazır** (para tutan yapılar ileride para birimi
       etiketi alabilecek biçimde), ama **EUR kodu / ekranı / mantığı YOK.**
