@@ -20,7 +20,7 @@ Mimar onaylı sıra, **paket ADIYLA**:
 **~~RMA KALANI~~ ✓ · ~~PANEL AŞAMA 2~~ ✓ · ~~AŞAMA 3 PAKET 1~~ ✓ →
 ~~PANEL AŞAMA 3 PAKET 2~~ ✓ → ~~KART ÖDEME TAKİBİ~~ ✓ → ~~RAPOR FİRE/KAZANÇ
 ETİKETİ~~ ✓ → ~~UYARI MERKEZİ FAZ 1~~ ✓ →
-~~DESTEK MODÜLÜ~~ ✓ → ~~GEÇMİŞ VERİ~~ ✓ → SATIŞ DÜZELTME+İPTAL →
+~~DESTEK MODÜLÜ~~ ✓ → ~~GEÇMİŞ VERİ~~ ✓ → ~~SATIŞ DÜZELTME+İPTAL~~ ✓ →
 MELONTİK CASE.**
 
 _Sıra 15.08.2026'da güncellendi: **kart ödeme takibi ÖNE ALINDI** — nakit
@@ -147,6 +147,87 @@ anlatıya değil. (2) Süzgeç listesi hesaplanıp sorguya hiç bağlanmamışt�
 kullanılmayan-değişken uyarısı yakaladı.
 
 `uyari:dogrula` 49 kontrol. Yedi mutasyonla doğrulandı.
+
+### ✅ SATIŞ DÜZELTME + İPTAL — KAPANDI 17.08.2026
+
+_Kullanıcı sözleşmesi 17.08.2026, aynı gün kapandı._ Halil'in talebi tekti:
+_"Bir daha yanlış yaptığımda script çalışmamalı, daha kolay halletmeliyim."_
+Teslim ölçüsü de öyleydi: **bir fiyat hatası 30 saniyede, yardımsız,
+ekrandan düzeltilebiliyor.** Ölçü tutturuldu.
+
+**TAMAMLANAN DOKUZ PARÇA:**
+
+| # | Parça | Kanıt |
+|---|---|---|
+| 1 | Şema + migration | `20260817051944_satis_iptali`, canlıda koştu |
+| 2 | Saf mekanik | `lib/satis-iptali.ts`, `lib/satis-duzenleme.ts`, `lib/satis-adet.ts` |
+| 3 | 47-sorgu bekçisi | `iptal:bekci` — ad listesi YOK, 3 kaçak mutasyonu kırmızı |
+| 4 | Veri katmanı | plan imzası (EK 1) her yazma yolunda |
+| 5 | Düzenleme ekranı | fiyat · kargo · **adet** |
+| 6 | İptal ekranı | taksonomi · önizleme · `?iptal=1` süzgeci |
+| 7 | İptali geri al | üç kilit, üçüncüsü ekranda açıklamalı |
+| 8 | İz defteri | `AuditLog` + **alan bazında eski→yeni** |
+| 9 | `kar-tazele` onarımı | `npm run canli:kar-tazele` — rapor + `--uygula` |
+
+**HALİL TESTİ ✓** (canlı, gerçek veri, kuruşuna):
+- fiyat 2.085 → 2.805, geri alındı, orijinale birebir döndü
+- kargo döngüsü: 106,75 gösterdi, dokunmadan kaydedildi, **aynen kaldı**
+- gerçek yanlış iptal (11512722550) ekrandan geri alındı, terminalsiz
+- adet 1→2→1: **NET-1 840,32 · NET-2 695,08** — başlangıca döndü
+
+---
+
+#### YEDİ BULGU — hepsi canlı testte doğdu
+
+| # | Bulgu | Ne olurdu | Nasıl bulundu |
+|---|---|---|---|
+| 1 | **Tedarikçi görünmüyor** | 8 alımda serbest metin tedarikçi ekranda yok | kullanıcı sordu |
+| 2 | **Kargo KDV tek yönlü** | her düzenlemede kargo **%20 küçülür** | mimar yakaladı |
+| 3 | **Hayalet FIFO partisi** | ledger 1 parti, FIFO 2 parti | ölçüm (23/23 tarandı) |
+| 4 | **Toplam sızması** | `?iptal=1` açıkken toplam 105.184 → 106.618 | kullanıcı gördü |
+| 5 | **Panel kargo süzgeci** | kanal seçiliyken kart tüm kanalları sayıyor | kullanıcı gördü |
+| 6 | **Panel kıyas süzgeci** | rakam kanalın, rozet tüm kanalların | **tarama buldu** |
+| 7 | **Maliyet süzgeci / `Math.abs`** | 1 adetlik satış 2 adetlik maliyetle → NET-2 +695 → **−1.304** | kullanıcı gördü |
+
+_5 ve 6 aynı ekranda, aynı satırın bir altındaydı: biri düzeltilip öteki
+bırakılsaydı kart doğru rakamı yanlış rozetle gösterecekti._
+
+_7'nin taraması aynı süzgeci **sekiz yerde** buldu, **dördü hatalıydı**
+(kâr motoru · iade · nakit takvimi · iade önizlemesi) ve aynı kökün ikinci
+yüzü ortaya çıktı: adedi düşürülmüş satış iptal edilseydi **stok şişerdi**._
+
+---
+
+#### ALTI DERS
+
+1. **TEK KAYNAK.** Aynı kural iki yerde yaşarsa biri düzeltilir, öteki
+   unutulur. Kural saf fonksiyona çıkar, iki taraf da onu çağırır.
+2. **ÇİFT YÖN ÇEVİRİ.** Bir çeviri varsa **iki yönü aynı dosyada** yaşar.
+   İleri yön yeni yazılmıştı, geri yön başka dosyaya gömülüydü; tek yön
+   eklemek hatayı çözmedi, yerini değiştirdi. (`lib/kargo-kdv.ts`)
+3. **KAYDEDİLEN ≠ GÖRÜNEN.** Bilgi karar anında gözle görülmüyorsa yok
+   hükmündedir. Aynı gün ÜÇ kez: tedarikçi · yedek kapsamı · iz farkları.
+4. **GERİ ALINAMAZ İŞLEM TASARLANMAZ.** İptal yazıldı, geri alma
+   yazılmadı — ve ilk kurbanı GERÇEK bir satış oldu. Yıkıcı bir işlem
+   teslim ediliyorsa dönüş yolu **aynı pakette** olur.
+5. **TİP LİSTESİ DEĞİL BAĞ.** "Şu tipleri say" diyen süzgeç, yarın
+   eklenecek tipi sessizce dışarıda bırakır. Ölçüt bağ olmalı: hareket bu
+   kaleme bağlıysa o kalemin akışıdır ve **işaretiyle** girer.
+6. **İKİ DEFTER BİRLİKTE ÖLÇÜLÜR.** Stok simetrisi test ediliyordu, kâr
+   simetrisi edilmiyordu; stok doğru dönerken kâr ayrıştı. Gidiş-dönüş
+   testi **başlangıca dönüş** üzerine kurulur ve defterlerin birbiriyle
+   tutarlılığı da yazılır (`maliyet = net adet × birim`).
+   _Ek tuzak: simetriyi TEK değerle yazma — 2c − c kayan noktada tam çıkar
+   ve yuvarlamayı sınamaz; mutasyon bunu gösterdi._
+
+---
+
+#### AÇIK KÜÇÜKLER — bu paketten arta kalanlar
+
+- [ ] **Stok düşümü döküm görüntüsü.** Satış detayındaki döküm ham
+      `SALE_OUT` satırlarını gösteriyor: adedi düşürülmüş satışta 1 adetlik
+      kayıtta 2 satır görünür. **Rakamlar doğru, görüntü yanıltıcı** —
+      Ders 3'ün aynısı. Ayna girişin de satır olarak görünmesi gerekir.
 
 ### ✅ DÜZELTME NEDENİ YÖNÜ — KAPANDI 16.08.2026
 
@@ -930,95 +1011,6 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       tetiklenmemesi gerekende SESSİZ kaldığı · sayı/tutarın gerçek veriyle
       tuttuğu · çan rozetinin EN YÜKSEK seviyeyi gösterdiği.
       _Mutasyon: uyarı koşulunu gevşet → test kırmızı._
-
-- [ ] **SATIŞ DÜZELTME + İPTAL** — _Kullanıcı sözleşmesi 17.08.2026._
-      **DÜZENLEME DİLİMİ ✓ KAPANDI 17.08.2026** (Halil döngü teyidi: form
-      106,75 gösterdi, değişmeden kaydedilince aynen kaldı). İptal ekranı ve
-      adet dilimi açık.
-      **Kalem geç kaydedildi (17.08 akşamı): sözleşme verildiğinde
-      BEKLEYENLER'e işlenmemişti, yalnız sıra satırında adı geçiyordu.**
-
-      **✓ BİTEN — DÜZENLEME DİLİMİ** (Halil testi geçti 17.08.2026; test
-      düzenlemesi canlıda geri alındı ve rakamlar BİREBİR orijinale döndü:
-      kargo −106,75 · NET-1 1.059,85 · NET-2 881,22):
-      - Saf kurallar (`lib/satis-duzenleme.ts`) · `duzenleme:dogrula` 40
-      - Neden KAPALI LİSTE (5 seçenek, `DIGER` açıklama zorunlu)
-      - Önizleme-önce; onay düğmesi plan çizilmeden aktif olmaz
-      - **Plan imzası (EK 1):** yazma anında plan yeniden kurulur, imza
-        farklıysa yazma DURUR ("durum değişti, önizlemeyi yenileyin")
-      - `karYenidenYaz` ile NET yeniden hesap · `AuditLog` iz (ilk gerçek
-        yazıcısı) · iz satış detayında GÖRÜNÜR
-      - **47-sorgu bekçisi** (`iptal:bekci`): 19 sorgu · 14 süzgeçli ·
-        5 gerekçeli beyan · 0 süzgeçsiz
-      - Süzgeç tek kaynakta (`satisKosulu` → `iptalTarihi`)
-      - Migration canlıda (`20260817051944_satis_iptali`)
-      - **KARGO KDV HATASI bulundu ve kapatıldı (mimar yakaladı):** form
-        `cargoAmount`i (KDV HARİÇ saklanır) "KDV dahil" etiketiyle
-        gösteriyordu; kullanıcı dokunmadan kaydedince motor bir kez daha
-        1,2'ye bölüyordu — HER DÜZENLEMEDE %20 kayıp. Ölçüldü: 32/32 satışta
-        veri sağlam, motor tutarlı, hata YALNIZ ekrandaydı. Çeviri artık
-        `lib/kargo-kdv.ts`te ÇİFT YÖNLÜ tek kaynak; iki tur aç-kaydet
-        döngüsü testte (altı değerde kargo aynen kalıyor).
-
-      **DERS 1 — BİR ÇEVİRİ VARSA İKİ YÖNÜ AYNI DOSYADA YAŞAR.**
-      İleri yön (DB→ekran) yeni yazılmış, geri yön (ekran→DB) başka bir
-      dosyaya gömülüydü. Tek yön eklemek hatayı çözmedi, sadece yerini
-      değiştirdi. Çeviri çiftleri ayrılırsa biri değişince öteki unutulur.
-
-      **DERS 2 — KARGO RAKAMI HER ZAMAN DİLİYLE ANILIR: DAHİL/HARİÇ.**
-      Aynı sayı (88,96) bir yerde KDV hariç saklanan değer, başka yerde
-      KDV dahil kesintiydi. Etiketsiz rakam, iki kişiyi aynı sayı üstünde
-      farklı şeyler konuşurken bırakır — mimarın "kesinti 88,96" demesi ile
-      ekrandaki 88,96 farklı şeylerdi ve orijinal ancak ekran arkeolojisiyle
-      bulundu.
-
-      **DERS 3 — KAYDEDİLEN ≠ GÖRÜNEN.** Bilgi karar anında gözle
-      görülmüyorsa yok hükmündedir. Bugün ÜÇ kez aynı biçimde yaşandı:
-      (1) tedarikçi verisi kayıttaydı, sorgu o alanı okumuyordu;
-      (2) yedek kapsamı dosyanın içinde yazılıydı, seçim ekranında yoktu;
-      (3) düzenleme farkları `AuditLog.detail`te duruyordu, iz satırı
-      göstermiyordu. Üçünde de "veri var" doğruydu ve üçünde de kullanıcı
-      yanlış karar verebilirdi.
-
-      **○ KALAN — İPTAL EKRANI** (4 parça + EK 1-2-3):
-      1. Üstü çizili + "iptal" rozeti; rozette sebep (taksonomi kısaltması,
-         `MAGAZA_DIGER` ise açıklama detayda)
-      2. `?iptal=1` süzgeci — varsayılan gizli
-      3. İptal formu: taksonomi → `iptalPlani` önizleme → onay
-      4. `MAGAZA_DIGER` açıklama zorunlu (saf katmandaki mesajın aynısı)
-      · EK 1 plan farkı · EK 2 etki özetinde null "?" + "hesaplanamadı"
-      · EK 3 `AuditLog` satırı detayda
-      · İadeli satışta: iptal düğmesi yerine "iadesi var — iade akışı"
-        mesajı + iade kaydına bağlantı (saf katman id+kod döndürüyor)
-
-      **✓ BİTEN — "İPTALİ GERİ AL"** (Halil testi geçti 17.08.2026:
-      yanlış iptal → geri al, uçtan uca EKRANDAN, terminalsiz. İz defterinde
-      iptal + geri alma çifti kaldı.)
-      _Gerçek dünya kanıtı 17.08.2026: canlı testte GERÇEK bir satış
-      (11512722550) yanlışlıkla iptal edildi ve geri alma yolu YOKTU. Tek
-      seferlik script'le düzeltildi; ekran gelene kadar bu yol açık kalmamalı._
-
-      Kapsam:
-      - Detaydaki iptal durum kutusuna **"İptali geri al"** düğmesi
-      - Önizleme-önce: kaç adet stoktan ÇIKACAK, NET/ciro nasıl dönecek
-      - **Sebep zorunlu** (kapalı liste: "yanlışlıkla iptal edildi",
-        "müşteri vazgeçmekten vazgeçti", "diğer" → açıklama zorunlu)
-      - İz satırı: "İptal geri alındı" + alan bazında değerler
-      - **ÜÇ GÜVENLİK KİLİDİ (script'te denendi, aynen taşınacak):**
-        satış yoksa DUR · iptalli değilse DUR · **iptalden sonra o maldan
-        çıkış yapılmışsa DUR** (ayna hareket güvenle ters çevrilemez, stok
-        eksiye düşebilir — mimara bildirilir)
-      - Ayna hareketin tersi ADJUSTMENT olarak yazılır, ledger SİLİNMEZ
-      - Plan imzası (EK 1) — desen düzenleme ve iptalde kurulu
-
-      Boyut: saf katman + veri + ekran + test, mevcut desenler devralınacağı
-      için düzenleme paketinin yaklaşık YARISI.
-
-      **○ KALAN — ADET DİLİMİ:** düzenlemede bilinçli kapalı. Fiyat ve kargo
-      stok defterine dokunmaz, **adet dokunur**: 1→2 olursa FIFO'dan ek
-      çıkış, 2→1 olursa ayna giriş gerekir (iptal mekaniğinin aynısı).
-      Yarım yapılırsa envanter sessizce bozulur. Ekranda alan görünür ama
-      kapalı ve nedeni yazılı.
 
 - [ ] **UYARI MERKEZİ — FAZ 2: AMBER VE NÖTR KATMAN**
       _Faz 1 kapanmadan başlanmaz._ **Faz 1 KAPANDI 16.08.2026** — Faz 2
