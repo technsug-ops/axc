@@ -20,6 +20,21 @@
  *  üstüne fiyatlama zekâsı kurulabilir. Tutmazsa, üstüne kurulacak her
  *  şey yanlış zemine oturur.
  *
+ *  ⚠⚠ REFERANSIN GERÇEK OLDUĞU VARSAYILMAZ — 18.08.2026 KULLANICI UYARISI.
+ *
+ *  İlk koşuda sunumdaki rakamlarla karşılaştırma yapıldı ve iki siparişte
+ *  fark çıktı. Kullanıcı sonra söyledi: **"sunumdakiler sadece demo."**
+ *  Yani o rakamlar Melontik'in bu siparişler için ürettiği gerçek çıktı
+ *  DEĞİLDİ ve çıkan fark bir BULGU değildi.
+ *
+ *  DERS — ÖLÇÜT DE KAYNAĞIYLA ANILIR. Karşılaştırmanın değeri, ölçülen
+ *  tarafa değil ÖLÇÜTE bağlıdır. Ölçüt doğrulanmadan çıkan fark, teşhis
+ *  değil gürültüdür; üstelik peşinden gerçek bir motoru "düzeltme"
+ *  girişimi başlatır ve doğru olanı bozabilirdi.
+ *
+ *  Bu yüzden betik artık referansın KAYNAĞINI ve GÜVENİLİRLİĞİNİ ekrana
+ *  basar; `_UYARI` alanı doluysa hükmü "teyit edildi" diye vermez.
+ *
  *  ── MELONTİK RAKAMLARI DEPOYA GİRMEZ ────────────────────────────────────
  *  Rakamlar sunumun 28. slaytında ("Sipariş Kârlılık Analizi — Ekrandaki
  *  örnekler") yazılı ve `veri/ozel/melontik-referans.json` dosyasına
@@ -125,6 +140,23 @@ function melontikOranlar(): Map<string, number> {
   return harita;
 }
 
+/**
+ * Referans dosyasındaki `_UYARI` alanı. Doluysa rakamlar ÖLÇÜT DEĞİLDİR
+ * ve hüküm "teyit edildi" olamaz — en fazla "şu an şöyle görünüyor".
+ */
+function referansGuvenilirMi(): string | null {
+  try {
+    const veri = JSON.parse(
+      readFileSync("veri/ozel/melontik-referans.json", "utf8"),
+    ) as { _UYARI?: string };
+    return typeof veri._UYARI === "string" && veri._UYARI.trim() !== ""
+      ? veri._UYARI
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function para(d: number | null): string {
   if (d === null) return "—";
   return d.toLocaleString("tr-TR", {
@@ -149,6 +181,7 @@ async function main() {
   const { prisma } = await import("../src/lib/prisma");
 
   const melontik = melontikRakamlari();
+  const referansUyarisi = referansGuvenilirMi();
   const melontikCirolari = melontikTutarlari();
   const melontikOranlari = melontikOranlar();
 
@@ -159,6 +192,14 @@ async function main() {
   console.log(
     `  Melontik   ${melontik.size > 0 ? `${melontik.size} sipariş için referans var` : "referans YOK (yalnız bizim taraf basılır)"}`,
   );
+  if (referansUyarisi !== null) {
+    console.log("");
+    console.log("  ╔══════════════════════════════════════════════════════════╗");
+    console.log("  ║  ⚠ REFERANS GÜVENİLİR DEĞİL — KARŞILAŞTIRMA BAĞLAYICI   ║");
+    console.log("  ║    DEĞİLDİR. Çıkan fark BULGU SAYILMAZ.                  ║");
+    console.log("  ╚══════════════════════════════════════════════════════════╝");
+    console.log(`  ${referansUyarisi}`);
+  }
   console.log("");
 
   const satislar = await prisma.sale.findMany({
@@ -362,7 +403,17 @@ async function main() {
     console.log(`     UYUŞMUYOR      ${tutmayan}`);
     console.log(`     karşılaştırılamadı ${karsilastirilmayan}`);
     console.log("");
-    if (tutmayan === 0 && tutan > 0) {
+    if (referansUyarisi !== null) {
+      console.log("     ⚠ HÜKÜM VERİLEMEZ — referans güvenilir değil.");
+      console.log("       Yukarıdaki tutan/uyuşmayan sayıları YALNIZ ölçüt");
+      console.log("       gerçek olsaydı anlam taşırdı. Bu hâliyle ne");
+      console.log("       'doğrulandı' ne 'fark var' denebilir.");
+      console.log("");
+      console.log("       GEREKEN: Melontik'in canlı 'Sipariş Kârlılık");
+      console.log("       Analizi' ekranından GERÇEK rakamlar alınıp");
+      console.log("       veri/ozel/melontik-referans.json değiştirilmeli");
+      console.log("       (ve _UYARI alanı silinmeli).");
+    } else if (tutmayan === 0 && tutan > 0) {
       console.log(`     ✓ NET-2 BAĞIMSIZ DOĞRULANDI (${tutan} sipariş üstünde).`);
       console.log("       Aşama 1'in zemini sağlam.");
     } else if (tutmayan > 0) {

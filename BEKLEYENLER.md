@@ -20,35 +20,55 @@ raporuyla açılır.**
 | 5 | Tam otomatik | Melontik aboneliği **iptal** |
 
 **AŞAMA 0 — ZEMİN TEYİDİ** _(açık)_
-- [ ] **Melontik çapraz teyit** — ⏳ İLK KOŞU YAPILDI 18.08.2026, **fark var**.
+- [ ] **Melontik çapraz teyit** — ⏸ **ÖLÇÜT BEKLİYOR.**
 
-      **Bulunan 2/6.** İkisinde de **ciro BİREBİR tuttu** (4.784 ve 6.200)
-      → aynı satıştan bahsediyoruz, kayıt sağlam. Ama NET-2 tutmadı ve
-      **işaretler ZIT** — yani tek sebep değil, iki sebep var:
-      · `11505178853` biz 631,54 · Melontik 653,15 → **−21,61**
-      · `11504122276` biz 272,85 · Melontik 261,41 → **+11,44**
+      **İLK KOŞU GEÇERSİZ SAYILDI.** Sunumdaki kâr rakamlarıyla
+      karşılaştırma yapıldı ve iki siparişte fark çıktı; ardından kullanıcı
+      bildirdi: **"sunumdakiler sadece demo."** O rakamlar Melontik'in bu
+      siparişler için ürettiği gerçek çıktı değildi.
 
-      **İKİ HİPOTEZ, ARAÇ İKİSİNİ DE ÖLÇÜYOR:**
-      1. **Maliyet tabanı farklı.** Melontik maliyeti sunumda yazmıyor ama
-         türetilebilir (`kâr ÷ kâr oranı`). ...853'te bizim maliyet ~25 TL
-         fazla, ...276'da eşit. **Yöntem farkı olabilir:** Melontik'in
-         maliyeti ELLE GİRİLEN ürün maliyeti (sunum slayt 10), bizimki
-         FIFO'dan gelen GERÇEK alım maliyeti. Elle girilen değer bayatsa
-         fark doğar ve o durumda **bizimki daha güvenilirdir.**
-      2. **Eksik masraf kalemi** (mimar hipotezi): Melontik'in düştüğü
-         "Ödeme Hizmeti" bizde yok. `TAHSILAT_BEDELI` hakediş modelimizde
-         TANIMLI ama kâr motorunun kesinti kodları arasında değil.
+      > **DERS — ÖLÇÜT DE KAYNAĞIYLA ANILIR.** Karşılaştırmanın değeri
+      > ölçülen tarafa değil **ÖLÇÜTE** bağlıdır. Doğrulanmamış ölçütten
+      > çıkan fark teşhis değil gürültüdür — üstelik peşinden gerçek bir
+      > motoru "düzeltme" girişimi başlatır ve **doğru olanı bozabilirdi.**
+      > Ölçütün gerçekliği, ölçümden ÖNCE sorulur.
 
-      **ARAÇ DÜZELTİLDİ (3 kusur):**
-      · Kesinti dökümü sabit beş koddan okuyordu → **kayıttan** okuyor.
-        Aradığımız şey bilinmeyen bir kalemse bilinen kodlarla aranamaz.
-      · `ODENECEK_KDV` diye kesinti YOK — o rakam hiçbir yere yazılmıyor,
-        yalnız NET-1 − NET-2 farkı olarak yaşıyor. Döküm "0,00" basıp
-        kendi NET-2'sini açıklayamıyordu; artık **türetip** basıyor.
-      · Fark artık **ikiye ayrışıyor**: maliyet katkısı + masraf katkısı =
-        toplam fark; denklem kapanmazsa görülür.
+      **BUGÜN ELDE KALAN (demo'dan bağımsız, geçerli):**
+      · Sipariş numaraları ve ciro **sistemde var ve tutuyor** —
+        `11505178853` 4.784,00 · `11504122276` 6.200,00. Kayıt tarafı sağlam.
+      · **6 siparişin 4'ü sistemde YOK** → elle giriş kapsam boşluğu,
+        Aşama 3'ün gerekçesi (aşağıda).
+      · Araçtaki üç kusur düzeltildi (döküm kayıttan okunuyor · ödenecek
+        KDV türetiliyor · fark maliyet/masraf diye ayrışıyor).
+      · `TAHSILAT_BEDELI` hakediş modelinde TANIMLI ama kâr motorunun
+        kesinti kodları arasında DEĞİL. **Bu, Melontik'ten bağımsız bir
+        sorudur** ve ayrı kalem olarak açıldı (aşağı bak).
+
+      **DEVAM ŞARTI:** Melontik'in canlı "Sipariş Kârlılık Analizi"
+      ekranından **gerçek** rakamlar → `veri/ozel/melontik-referans.json`
+      değiştirilir ve `_UYARI` alanı silinir. Betik o alan doluyken
+      **hüküm vermiyor** ("teyit edildi" de demiyor, "fark var" da).
 
       → araç: `npm run canli:melontik-teyit` (salt okuma)
+
+- [ ] **TAHSİLAT/ÖDEME BEDELİ KÂR MOTORUNDA MI?** — _bulgu 18.08.2026._
+      `TAHSILAT_BEDELI` hakediş okuyucusunda tanımlı bir işlem tipi, ama
+      kâr motorunun kesinti kodları arasında yok (`MALIYET`, `KOMISYON`,
+      `KARGO`, `STOPAJ` + `ChannelFee` kuralları).
+
+      **İKİ AYRI SORU, İKİSİ DE ÖLÇÜLECEK:**
+      1. Kanal bize böyle bir kesinti **kesiyor mu** — hakediş
+         kalemlerinde `TAHSILAT_BEDELI` / `HIZMET_BEDELI` satırı var mı.
+      2. Motorumuz onu **düşüyor mu** — `ChannelFee`de karşılığı var mı.
+
+      Kanal kesiyor ve biz düşmüyorsak **NET'lerimiz bugüne kadar
+      olduğundan İYİ görünmüştür** — bu, demo veriden bağımsız gerçek bir
+      risktir. Betiğin 4. bölümü ikisini de basıyor.
+
+      _Anayasa notu: HB için "%0,8 ödeme gideri" zaten yazılı; Trendyol
+      için "13,19 TL sabit, sipariş başına bir kez". Ölçüm bunların canlıda
+      gerçekten tanımlı olup olmadığını gösterecek._
+
 - [ ] **Hakediş .xlsx teyidi** — ⏸ Halil'in dosyasına bağlı, araçlar hazır
 - [ ] **Komisyon envanteri** — komut verildi
 
