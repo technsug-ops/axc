@@ -2595,7 +2595,9 @@
     "engel_ACIKLAMA_YOK": "\"Diğer\" seçildiğinde açıklama zorunludur — altı ay sonra bu değişikliğin nedeni kayıtta durmalı.",
     "kdvDahilNotu": "(KDV dahil)",
     "adetNotu": "artarsa stoktan düşer, azalırsa stoğa döner",
-    "engel_STOK_YETMIYOR": "Stok yetmiyor — {urun} için {gereken} adet gerekiyor, elde {mevcut} adet var."
+    "engel_STOK_YETMIYOR": "Stok yetmiyor — {urun} için {gereken} adet gerekiyor, elde {mevcut} adet var.",
+    "onayIcinNeden": "Kaydetmek için bir neden seçin.",
+    "onayIcinAciklama": "\"Diğer\" seçildiğinde açıklama zorunludur."
   },
   "SatisIptali": {
     "iptalEt": "Satışı iptal et",

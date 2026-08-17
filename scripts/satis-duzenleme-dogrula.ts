@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   ACIKLAMA_ZORUNLU_NEDENLER,
   DUZENLEME_NEDENLERI,
   nedenGecerliMi,
   duzenlemeImzasi,
   duzenlemePlani,
+  kaydedilebilirMi,
   type DuzenlemeGirdisi,
   type KalemDegisikligi,
 } from "../src/lib/satis-duzenleme";
@@ -106,46 +109,70 @@ console.log("\nSATIŞ DÜZENLEME — DOĞRULAMA\n");
   kontrol("NET yeniden hesaplanacak diye işaretli", p.olur && p.netYenidenHesaplanacak === true);
 }
 
-// --- 2) GEREKÇE ZORUNLU — iz olmadan düzenleme yok --------------------------
+// --- 2) GEREKÇE — KAYDIN ŞARTI, BAKMANIN DEĞİL -----------------------------
 {
-  console.log("\n2) GEREKÇE ZORUNLU");
+  console.log("\n2) GEREKÇE ZORUNLU (yalnız KAYITTA)");
+
+  /**
+   * ⚠ 17.08.2026 KULLANILABİLİRLİK DÜZELTMESİ.
+   *
+   * Neden kontrolü `duzenlemePlani`nin İÇİNDEYDİ; önizleme de aynı planı
+   * kurduğu için ÖNİZLEME de kesiliyordu. Kullanıcı adedi 1→2 yaptı,
+   * "Önizle"ye bastı ve "neden seçilmeden kaydedilemez" hatası aldı —
+   * henüz hiçbir şey kaydetmiyordu. Test listesinin 3. ve 4. maddeleri
+   * denenemedi: kullanıcı ekranı geçemedi.
+   *
+   * "Ne olacak?" sorusunun cevabı gerekçeden BAĞIMSIZDIR. Ters sıra,
+   * kullanıcıdan GÖREMEDİĞİ bir şeyi gerekçelendirmesini istiyordu.
+   *
+   * İZ ŞARTI DEĞİŞMEDİ — kontrol `kaydedilebilirMi`ye taşındı ve yazma
+   * yolunda duruyor. Aşağıdaki iki blok tam olarak bu AYRIMI sınıyor.
+   */
   kontrol(
-    "nedensiz düzenleme OLMAZ",
+    "nedensiz ÖNİZLEME olur (plan çizilir)",
+    duzenlemePlani({ ...temel, neden: null }).olur === true,
+  );
+  kontrol(
+    "  ...ve farkları GERÇEKTEN gösterir",
     (() => {
       const p = duzenlemePlani({ ...temel, neden: null });
-      return !p.olur && p.engel === "NEDEN_YOK";
+      return p.olur && p.farklar.length > 0;
     })(),
   );
+  kontrol("nedensiz KAYIT olmaz", (() => {
+    const i = kaydedilebilirMi(null, null);
+    return !i.olur && i.engel === "NEDEN_YOK";
+  })());
 
   /**
    * KAPALI LİSTE (kullanıcı isteği 17.08.2026): serbest metin yerine
    * taksonomi. "DİĞER" kendini anlatmak zorunda.
    */
-  kontrol(
-    "DIGER açıklamasız OLMAZ",
-    (() => {
-      const p = duzenlemePlani({ ...temel, neden: "DIGER", aciklama: null });
-      return !p.olur && p.engel === "ACIKLAMA_YOK";
-    })(),
-  );
-  kontrol(
-    "  ...yalnız boşluk açıklama SAYILMAZ",
-    (() => {
-      const p = duzenlemePlani({ ...temel, neden: "DIGER", aciklama: "   " });
-      return !p.olur && p.engel === "ACIKLAMA_YOK";
-    })(),
-  );
+  kontrol("DIGER açıklamasız KAYDEDİLEMEZ", (() => {
+    const i = kaydedilebilirMi("DIGER", null);
+    return !i.olur && i.engel === "ACIKLAMA_YOK";
+  })());
+  kontrol("  ...yalnız boşluk açıklama SAYILMAZ", (() => {
+    const i = kaydedilebilirMi("DIGER", "   ");
+    return !i.olur && i.engel === "ACIKLAMA_YOK";
+  })());
   kontrol(
     "  ...açıklama varsa GEÇER",
-    duzenlemePlani({ ...temel, neden: "DIGER", aciklama: "Kanal raporu farklı" }).olur === true,
+    kaydedilebilirMi("DIGER", "Kanal raporu farklı").olur === true,
+  );
+
+  /**
+   * AÇIKLAMA ŞARTI DA ÖNİZLEMEYİ KESMEZ: DIGER seçili ama açıklama boşken
+   * kullanıcı yine de ne olacağını görebilmeli.
+   */
+  kontrol(
+    "DIGER açıklamasız ÖNİZLEME olur",
+    duzenlemePlani({ ...temel, neden: "DIGER", aciklama: null }).olur === true,
   );
 
   // Diğer nedenler açıklama İSTEMEZ — gereksiz zorunluluk işi yavaşlatır.
   for (const n of ["FIYAT_YANLIS", "KARGO_YANLIS", "KANAL_FARKI", "KAMPANYA_INDIRIM"] as const) {
-    kontrol(
-      `${n} açıklamasız geçer`,
-      duzenlemePlani({ ...temel, neden: n, aciklama: null }).olur === true,
-    );
+    kontrol(`${n} açıklamasız kaydedilir`, kaydedilebilirMi(n, null).olur === true);
   }
   kontrol(
     "açıklama zorunlu liste YALNIZ DIGER",
@@ -357,6 +384,45 @@ console.log("\nSATIŞ DÜZENLEME — DOĞRULAMA\n");
     "kesinti iki tur sonra da 88,96",
     kesinti(turAt(turAt(74.13))) === 88.96,
     kesinti(turAt(turAt(74.13))),
+  );
+}
+
+
+// --- KURAL ÇAĞRILIYOR MU — YAZMA YOLU TARANIR -------------------------------
+{
+  console.log("\nKURAL YAZMA YOLUNDA DURUYOR MU");
+  /**
+   * ⚠ 17.08.2026: neden kontrolü saf plandan ÇIKARILDI (önizlemeyi kesiyordu)
+   * ve `kaydedilebilirMi`ye taşındı. Bu taşımanın sessiz riski şudur:
+   * fonksiyon DOĞRU çalışır ama YAZMA YOLU onu ÇAĞIRMAZSA nedensiz kayıt
+   * yazılır ve hiçbir değer testi bunu göremez — çünkü değerler doğrudur.
+   *
+   * O yüzden burada DEĞER değil, ÇAĞRININ VARLIĞI sınanır.
+   */
+  const kaynak = readFileSync(
+    join(process.cwd(), "src/lib/satis-duzenleme-veri.ts"),
+    "utf8",
+  );
+  const govde = kaynak.slice(kaynak.indexOf("export async function duzenlemeUygula"));
+  kontrol(
+    "duzenlemeUygula kaydedilebilirMi ÇAĞIRIR",
+    /kaydedilebilirMi\s*\(/.test(govde),
+  );
+  kontrol(
+    "  ...ve sonucuna göre DURUR",
+    /if\s*\(\s*!\s*izin\.olur\s*\)\s*return/.test(govde),
+  );
+
+  /**
+   * ÖNİZLEME İSE ÇAĞIRMAZ — çağırsaydı düzeltilen hata geri gelirdi.
+   */
+  const onizGovde = kaynak.slice(
+    kaynak.indexOf("export async function duzenlemeOnizle"),
+    kaynak.indexOf("export type DuzenlemeYazmaSonucu"),
+  );
+  kontrol(
+    "duzenlemeOnizle ÇAĞIRMAZ (hata geri gelmesin)",
+    !/kaydedilebilirMi/.test(onizGovde),
   );
 }
 

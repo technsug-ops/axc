@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import {
   duzenlemeImzasi,
   duzenlemePlani,
+  kaydedilebilirMi,
   type DuzenlemeGirdisi,
   type DuzenlemeNedeni,
   type DuzenlemePlani,
@@ -178,6 +179,17 @@ export async function duzenlemeUygula(girdi: {
   kullaniciId: string;
   an: Date;
 }): Promise<DuzenlemeYazmaSonucu> {
+  /**
+   * NEDEN KONTROLÜ BURADA — ÖNİZLEMEDE DEĞİL.
+   *
+   * ⚠ 17.08.2026: kontrol saf planın içindeydi, dolayısıyla önizlemeyi de
+   * kesiyordu. Kullanıcı adedi 1→2 yaptı, "Önizle"ye bastı ve "neden
+   * seçilmeden kaydedilemez" dedi ekran — henüz kaydetmiyordu. İz şartı
+   * değişmedi: nedensiz KAYIT yok; nedensiz BAKMAK serbest.
+   */
+  const izin = kaydedilebilirMi(girdi.neden, girdi.aciklama);
+  if (!izin.olur) return { tamam: false, kod: "ENGEL", engel: izin.engel };
+
   const kurulum = await planKur(girdi.saleId, girdi.yeni, girdi.neden, girdi.aciklama);
   if (kurulum === null) return { tamam: false, kod: "SATIS_YOK" };
 

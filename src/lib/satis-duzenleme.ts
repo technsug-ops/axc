@@ -131,6 +131,37 @@ export type DuzenlemePlani =
       netYenidenHesaplanacak: true;
     };
 
+/**
+ * ============================================================================
+ *  NEDEN KONTROLÜ — YALNIZ KAYDETMEDE
+ * ----------------------------------------------------------------------------
+ *  ⚠ 17.08.2026 kullanılabilirlik düzeltmesi: neden kontrolü `duzenlemePlani`
+ *  içindeydi ve ÖNİZLEMEYİ de engelliyordu. Kullanıcı adedi 1→2 yaptı,
+ *  "Önizle"ye bastı ve "neden seçilmeden kaydedilemez" hatası aldı — oysa
+ *  daha hiçbir şey kaydetmiyordu.
+ *
+ *  "Ne olacak?" sorusunun cevabı gerekçeden BAĞIMSIZDIR. Kullanıcı önce
+ *  değişikliği görür, sonra neden yazar; ters sıra dayatmak, göremediği bir
+ *  şeyi gerekçelendirmesini istemekti.
+ *
+ *  İZ ŞARTI DEĞİŞMEDİ: kayıt hâlâ nedensiz yazılamaz — kontrol yazma
+ *  yolunda duruyor.
+ * ============================================================================
+ */
+export function kaydedilebilirMi(
+  neden: DuzenlemeNedeni | null,
+  aciklama: string | null,
+): { olur: true } | { olur: false; engel: DuzenlemeEngeli } {
+  if (neden === null) return { olur: false, engel: "NEDEN_YOK" };
+  if (
+    ACIKLAMA_ZORUNLU_NEDENLER.includes(neden) &&
+    (aciklama === null || aciklama.trim() === "")
+  ) {
+    return { olur: false, engel: "ACIKLAMA_YOK" };
+  }
+  return { olur: true };
+}
+
 /** Kalemin satır toplamı. */
 function satirToplami(adet: number, fiyat: number): number {
   return adet * fiyat;
@@ -143,21 +174,6 @@ export function duzenlemePlani(girdi: DuzenlemeGirdisi): DuzenlemePlani {
    * yazılan bir fiyat, raporlarda hiç görünmeyecek bir rakam üretirdi.
    */
   if (girdi.iptalliMi) return { olur: false, engel: "IPTALLI" };
-
-  /**
-   * NEDEN SEÇİLMEDEN DÜZENLEME YOK. İz olmadan düzenleme olmaz; ama iz
-   * "bir şeyler yazılmış" değil, SINIFLANDIRILMIŞ olmalı ki sonradan
-   * sayılabilsin.
-   */
-  if (girdi.neden === null) return { olur: false, engel: "NEDEN_YOK" };
-
-  /** "DİĞER" KENDİNİ ANLATMAK ZORUNDA — yalnız boşluk açıklama sayılmaz. */
-  if (
-    ACIKLAMA_ZORUNLU_NEDENLER.includes(girdi.neden) &&
-    (girdi.aciklama === null || girdi.aciklama.trim() === "")
-  ) {
-    return { olur: false, engel: "ACIKLAMA_YOK" };
-  }
 
   const farklar: Fark[] = [];
 

@@ -2595,7 +2595,9 @@
     "engel_ACIKLAMA_YOK": "",
     "kdvDahilNotu": "",
     "adetNotu": "",
-    "engel_STOK_YETMIYOR": ""
+    "engel_STOK_YETMIYOR": "",
+    "onayIcinNeden": "",
+    "onayIcinAciklama": ""
   },
   "SatisIptali": {
     "iptalEt": "",

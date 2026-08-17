@@ -14,7 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DUZENLEME_NEDENLERI, type DuzenlemeNedeni } from "@/lib/satis-duzenleme";
+import {
+  DUZENLEME_NEDENLERI,
+  kaydedilebilirMi,
+  type DuzenlemeNedeni,
+} from "@/lib/satis-duzenleme";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { useBicim } from "@/lib/bicim-istemci";
 
@@ -93,6 +97,18 @@ export function DuzenleFormu({
       ayarla(deger);
     };
   }
+
+  /**
+   * KAYIT İZNİ — neden/açıklama şartı. Sunucudaki `kaydedilebilirMi` ile
+   * AYNI fonksiyon: iki yerde iki kural olsaydı ekran "olur" der, sunucu
+   * reddederdi.
+   *
+   * Bu şart ÖNİZLEMEYİ değil YALNIZ KAYDI kapatır (17.08.2026 düzeltmesi).
+   */
+  const izin = kaydedilebilirMi(
+    neden === "" ? null : neden,
+    aciklama.trim() === "" ? null : aciklama,
+  );
 
   const yeniDegerler = () => ({
     fiyatlar: Object.fromEntries(
@@ -204,7 +220,11 @@ export function DuzenleFormu({
         <Select
           value={neden}
           onValueChange={(d) => {
-            setOnizleme(null);
+            /**
+             * ÖNİZLEME BOZULMAZ — neden plana girmiyor. Eskiden burada
+             * setOnizleme(null) vardı: kullanıcı önizler, neden seçer,
+             * önizleme silinir, yeniden önizlemek zorunda kalırdı.
+             */
             setHata(null);
             setNeden(d as DuzenlemeNedeni);
           }}
@@ -230,7 +250,7 @@ export function DuzenleFormu({
             <Input
               value={aciklama}
               placeholder={t("aciklamaIpucu")}
-              onChange={(e) => degisti(setAciklama)(e.target.value)}
+              onChange={(e) => setAciklama(e.target.value)}
               className="h-11"
             />
           </label>
@@ -242,7 +262,7 @@ export function DuzenleFormu({
             <Input
               value={aciklama}
               placeholder={t("aciklamaIpucu")}
-              onChange={(e) => degisti(setAciklama)(e.target.value)}
+              onChange={(e) => setAciklama(e.target.value)}
               className="h-11"
             />
           </label>
@@ -275,11 +295,12 @@ export function DuzenleFormu({
         {/* ONAY: yalnız GEÇERLİ önizleme varken aktif. */}
         <Button
           className="h-11"
-          disabled={bekliyor || onizleme === null || onizleme.tamam !== true}
+          disabled={
+            bekliyor || onizleme === null || onizleme.tamam !== true || !izin.olur
+          }
           onClick={() =>
             basla(async () => {
-              if (onizleme === null || !onizleme.tamam) return;
-              if (neden === "") return;
+              if (onizleme === null || !onizleme.tamam || neden === "") return;
               const c = await duzenlemeyiUygula(
                 saleId,
                 yeniDegerler(),
@@ -309,6 +330,17 @@ export function DuzenleFormu({
           {t("onayla")}
         </Button>
       </div>
+
+      {/* ------------------- KAPALI BUTON KONUŞUR -------------------
+          Kural #5 — sessiz başarısızlık yasak. Onay kapalıysa NEDEN
+          kapalı olduğu ekranda yazar; kullanıcı butona basıp hiçbir şey
+          olmamasını izlemez. 17.08.2026: kullanıcı adedi 1→2 yaptı ve
+          neden alanının kaydın şartı olduğunu ekrandan anlayamadı. */}
+      {onizleme?.tamam === true && !izin.olur ? (
+        <p className="text-muted-foreground text-xs">
+          {izin.engel === "NEDEN_YOK" ? t("onayIcinNeden") : t("onayIcinAciklama")}
+        </p>
+      ) : null}
 
       {/* ------------------------ ÖNİZLEME -------------------------- */}
       {onizleme?.tamam === true ? (
