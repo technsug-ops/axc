@@ -15,6 +15,7 @@ import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { UzunAd } from "@/components/uzun-ad";
 import { NetKar } from "@/components/net-kar";
+import { MarjRozeti } from "@/components/marj-rozeti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -498,8 +499,16 @@ export default async function SatislarSayfasi({
                   <TableHead>{ortak("urun")}</TableHead>
                   <TableHead className="text-right">{ortak("adet")}</TableHead>
                   <TableHead>{ortak("tutar")}</TableHead>
+                  {/* MARJ AYRI SÜTUN (kullanıcı isteği 17.08.2026): NET
+                      rozetinin içinde sıkışıkken okunmuyordu. Başlık ÖLÇÜYÜ
+                      yazar, böylece rozette tekrar etmesi gerekmez. */}
                   {karGorunur ? (
-                    <TableHead className="text-right">{t("netKar")}</TableHead>
+                    <>
+                      <TableHead className="text-right">{t("netKar")}</TableHead>
+                      <TableHead className="text-right">
+                        {tMarj(`olcu_${olcu}`)}
+                      </TableHead>
+                    </>
                   ) : null}
                   <TableHead>{ortak("eylemler")}</TableHead>
                 </TableRow>
@@ -604,6 +613,12 @@ export default async function SatislarSayfasi({
                           tutar={satis.net2Amount}
                           paraBirimi={satis.profitCurrency}
                           durum={satis.profitStatus}
+                        />
+                      </TableCell>
+                    ) : null}
+                    {karGorunur ? (
+                      <TableCell className="text-right whitespace-nowrap">
+                        <MarjRozeti
                           gosterge={satirGostergesi({
                             olcu,
                             net2: sayi(satis.net2Amount),
@@ -681,6 +696,30 @@ export default async function SatislarSayfasi({
                               tutar={satis.net2Amount}
                               paraBirimi={satis.profitCurrency}
                               durum={satis.profitStatus}
+                            />
+                          ),
+                        },
+                        {
+                          /* Masaüstünde sütun, telefonda AYRI ALAN — aynı
+                             bilgi iki düzende de kendi yerinde durur. */
+                          etiket: tMarj(`olcu_${olcu}`),
+                          deger: (
+                            <MarjRozeti
+                              gosterge={satirGostergesi({
+                                olcu,
+                                net2: sayi(satis.net2Amount),
+                                tutar: satisKalemToplamlari(satis.items).reduce(
+                                  (t2, k) => t2 + k.tutar,
+                                  0,
+                                ),
+                                maliyet:
+                                  satis.fees.length === 0
+                                    ? null
+                                    : Math.abs(
+                                        Number(satis.fees[0].amount.toString()),
+                                      ),
+                                iptalliMi: satis.iptalTarihi !== null,
+                              })}
                             />
                           ),
                         },

@@ -64,7 +64,23 @@ export function KargoDurumu({
 
   return (
     <span className="inline-flex flex-col gap-1">
-      <span className="inline-flex items-center gap-1">
+      {/**
+       * SATIRDA SABİT TABAN GENİŞLİK (kullanıcı isteği 17.08.2026).
+       *
+       * İki hâl farklı yer kaplıyordu: işaretliyken "tarih + ✕" (~110px),
+       * işaretsizken "Kargoya verildi" düğmesi (~140px). Liste aşağı doğru
+       * tarandığında sütun her satırda başka yerde başlıyor ve göz hizayı
+       * kaybediyordu.
+       *
+       * Taban genişlik EN GENİŞ hâle göre; kısa hâl aradaki boşluğu bırakır
+       * ve iki hâl aynı yerden başlar. Detay kipinde sınır YOK — orada tek
+       * kayıt var, hizalanacak bir liste yok.
+       */}
+      <span
+        className={`inline-flex items-center gap-1 ${
+          kip === "satir" ? "min-w-[8.75rem]" : ""
+        }`}
+      >
         {isaretli ? (
           <>
             <span className="text-xs whitespace-nowrap">

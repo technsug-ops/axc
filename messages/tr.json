@@ -2674,6 +2674,7 @@
     "etiket": "Marj",
     "olcu_ciro": "Ciro marjı",
     "olcu_sermaye": "Sermaye verimi",
-    "aciklama": "Rozetteki ikinci rakam bu ölçüyü gösterir. İki ölçü aynı anda gösterilmez — yan yana iki oran karışır."
+    "aciklama": "Rozetteki ikinci rakam bu ölçüyü gösterir. İki ölçü aynı anda gösterilmez — yan yana iki oran karışır.",
+    "bilinmiyorIpucu": "Bu ölçü hesaplanamadı — maliyet bilinmiyor."
   }
 }
