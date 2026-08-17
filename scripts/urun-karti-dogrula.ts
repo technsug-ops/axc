@@ -6,6 +6,7 @@ import {
 } from "../src/lib/urun-karti";
 import type { KalemGirdisi } from "../src/lib/panel-listeler";
 import { tedarikciAdi } from "../src/lib/tedarikci-adi";
+import { aramaKarari } from "../src/lib/kart-arama-karari";
 
 /**
  * ============================================================================
@@ -313,6 +314,60 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
   kontrol(
     "yalnız boşluk taşıyan eski kayıt DOLU sayılmaz",
     tedarikciAdi({ supplier: null, supplierName: "   " }) === null,
+  );
+}
+
+// --- 10) ARAMA KARARI — canlı hata 17.08.2026 ------------------------------
+{
+  console.log("\n10) ARAMA KARARI (fazladan tıklama)");
+
+  /**
+   * VAKA: /kart?q=OYU-LG-LD-01 tam SKU eşleşmesiydi, TEK sonuç vardı, ama
+   * ekran tek elemanlı liste gösterip tıklama bekliyordu. Kural yalnız
+   * kamera yolunda uygulanıyordu; klavye yolu onu tanımıyordu.
+   *
+   * Elinde ürünle bekleyen birine tek satırlık liste gösterip "şuna tıkla"
+   * demek, cevabı bilip söylememektir.
+   */
+  const v = (id: string) => ({ id });
+
+  const tam = aramaKarari({ tamEslesmeId: "v1", sonuclar: [v("v1")] });
+  kontrol("1) tam eşleşme → DOĞRUDAN yönlendirir", tam.tur === "YONLEN");
+  kontrol(
+    "  ...doğru varyanta",
+    tam.tur === "YONLEN" && tam.variantId === "v1",
+  );
+
+  /**
+   * TAM EŞLEŞME KISMİ SONUÇLARI EZER. Kod yazan kullanıcı ne aradığını
+   * biliyor; kısmi arama 5 sonuç döndürse bile liste gösterilmez.
+   */
+  const ezme = aramaKarari({
+    tamEslesmeId: "v9",
+    sonuclar: [v("v1"), v("v2"), v("v3")],
+  });
+  kontrol(
+    "  ...çok sonuç olsa BİLE tam eşleşme kazanır",
+    ezme.tur === "YONLEN" && ezme.variantId === "v9",
+    ezme,
+  );
+
+  const tek = aramaKarari({ tamEslesmeId: null, sonuclar: [v("v7")] });
+  kontrol(
+    "2) tam eşleşme yok + TEK kısmi sonuç → yine doğrudan",
+    tek.tur === "YONLEN" && tek.variantId === "v7",
+    tek,
+  );
+
+  kontrol(
+    "3) birden çok sonuç → ANCAK o zaman liste",
+    aramaKarari({ tamEslesmeId: null, sonuclar: [v("a"), v("b")] }).tur ===
+      "LISTE",
+  );
+
+  kontrol(
+    "hiç sonuç yok → BOŞ (kayıtlı değil ekranı)",
+    aramaKarari({ tamEslesmeId: null, sonuclar: [] }).tur === "BOS",
   );
 }
 

@@ -4,11 +4,14 @@ import { PackagePlus, ScanBarcode } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+
+import { aramaKarari } from "@/lib/kart-arama-karari";
 import { sayfaIzni } from "@/lib/yetki";
 import { kodDizisi } from "@/lib/varyant-ozet";
 
 import { KartArama } from "./kart-arama";
-import { varyantAra } from "@/app/varyant-arama";
+import { varyantAra, varyantKodlaBul } from "@/app/varyant-arama";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -38,7 +41,26 @@ export default async function KartAramaSayfasi({
   const arama = (p.q ?? "").trim();
   const t = await getTranslations("UrunKarti");
 
-  const sonuclar = arama.length >= 2 ? await varyantAra(arama) : [];
+  /**
+   * KARAR TEK YERDE (`lib/kart-arama-karari.ts`) — kamera da klavye de
+   * buraya düşer. Tam eşleşme varsa liste hiç çizilmez.
+   *
+   * `varyantKodlaBul` TAM eşleşme arar (kısmi yok, ürün adına bakmaz);
+   * `varyantAra` serbest metindir. İkisi paralel sorulur: kod yazılmışsa
+   * ikisi de dönecek, ama tam eşleşme kazanacak.
+   */
+  const [tamEslesme, sonuclar] =
+    arama.length >= 2
+      ? await Promise.all([varyantKodlaBul(arama), varyantAra(arama)])
+      : [null, []];
+
+  const karar = aramaKarari({
+    tamEslesmeId: tamEslesme?.id ?? null,
+    sonuclar,
+  });
+
+  // Yönlendirme sunucuda: kullanıcı liste ekranını hiç görmez.
+  if (karar.tur === "YONLEN") redirect(`/kart/${karar.variantId}`);
 
   return (
     <div className="space-y-6">

@@ -7,7 +7,6 @@ import { Search } from "lucide-react";
 
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { Button } from "@/components/ui/button";
-import { varyantKodlaBul } from "@/app/varyant-arama";
 
 /**
  * ============================================================================
@@ -16,14 +15,14 @@ import { varyantKodlaBul } from "@/app/varyant-arama";
  *  Kullanım anı: raftaki ürünü elinde tutuyorsun, alıp almayacağına karar
  *  vereceksin. En hızlı yol OKUTMAK.
  *
- *  ── OKUTMA DOĞRUDAN KARTA GİDER ─────────────────────────────────────────
- *  Barkod okunduğunda (USB Enter ya da kamera) önce TAM EŞLEŞME denenir
- *  (`varyantKodlaBul`). Bulunursa arama sonucu listesi hiç gösterilmez, kart
- *  doğrudan açılır — okuttuktan sonra bir de listeden seçtirmek, elinde
- *  ürünle bekleyen birine fazladan dokunuş demektir (İlke #9).
+ *  ── KARAR BURADA DEĞİL, SUNUCUDA ────────────────────────────────────────
+ *  ⚠ 17.08.2026 hatası: tam eşleşmede doğrudan karta gitme kuralı YALNIZ bu
+ *  bileşende vardı. Kamerayla okutunca kart açılıyor, aynı kodu KLAVYEYLE
+ *  yazıp Ara'ya basınca tek elemanlı bir liste çıkıp bir tıklama daha
+ *  istiyordu. Aynı sorunun iki giriş yolunda iki cevabı olamaz.
  *
- *  Bulunamazsa yazıyla aramaya düşülür: kod yanlış okunmuş olabilir ya da
- *  ürün gerçekten kayıtlı değildir. İkisi de SESSİZ kalmaz.
+ *  Bu bileşen artık yalnız `/kart?q=...` adresine gidiyor; tam eşleşme ve
+ *  tek-sonuç yönlendirmesini `lib/kart-arama-karari.ts` veriyor.
  * ============================================================================
  */
 export function KartArama({ baslangic }: { baslangic: string }) {
@@ -38,15 +37,11 @@ export function KartArama({ baslangic }: { baslangic: string }) {
     router.push(temiz ? `/kart?q=${encodeURIComponent(temiz)}` : "/kart");
   }
 
-  /** Okutulan kod: önce tam eşleşme, olmazsa arama. */
+  /** Okutulan kod da yazılan metin de aynı yere gider — karar sunucuda. */
   function okundu(kod: string) {
     const temiz = kod.trim();
     if (temiz === "") return;
-    basla(async () => {
-      const varyant = await varyantKodlaBul(temiz);
-      if (varyant) router.push(`/kart/${varyant.id}`);
-      else yaziylaAra(temiz);
-    });
+    basla(() => yaziylaAra(temiz));
   }
 
   return (
