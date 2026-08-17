@@ -41,7 +41,8 @@
     "parolaDegistir": "Parola değiştir",
     "iadeler": "İadeler",
     "komisyonAktar": "Komisyon oranı içe aktarma",
-    "talepler": "Destek talepleri"
+    "talepler": "Destek talepleri",
+    "gecmisEkstre": "Geçmiş kart ekstreleri"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -652,7 +653,8 @@
     "roller": "Roller",
     "iadeler": "İadeler",
     "nakitTakvimi": "Nakit takvimi",
-    "talepler": "Destek talepleri"
+    "talepler": "Destek talepleri",
+    "gecmisEkstre": "Geçmiş ekstreler"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -1465,7 +1467,9 @@
     "siradakiOdeme": "Sıradaki ödeme",
     "vadesiGecti": "vadesi geçti",
     "kartlarBaslik": "Kartlar",
-    "kartlarNotu": "Kartlar bekleyen tutara göre sıralı — en borçlu başta. Sekme etiketinde o kartın bekleyen toplamı yazıyor; seçim adreste kalır."
+    "kartlarNotu": "Kartlar bekleyen tutara göre sıralı — en borçlu başta. Sekme etiketinde o kartın bekleyen toplamı yazıyor; seçim adreste kalır.",
+    "beyanRozeti": "geçmiş beyan",
+    "hamDonem": "Excel'de: {metin}"
   },
   "Tedarikci": {
     "baslik": "Tedarikçiler",
@@ -2410,5 +2414,50 @@
     "notuKaydet": "Notu kaydet",
     "durumSecinIstege": "Durum değiştir (isteğe bağlı)",
     "degisiklikYok": "Değiştirilecek bir şey yok — durum seçin ya da not yazın."
+  },
+  "GecmisEkstre": {
+    "sayfaBaslik": "Geçmiş kart ekstreleri",
+    "sayfaNotu": "2025 ve öncesine ait ekstreler sistemde yok — alım kaydı olmadığı için türetilemiyor. Excel dosyanızdaki beyanı buradan aktarabilirsiniz.",
+    "aktarimBaslik": "Yeni aktarım",
+    "dosyaEtiketi": "Excel dosyası",
+    "dosyaNotu": "Kart ekstreleri sayfasını içeren .xlsx dosyası. Dosya okunur, hiçbir şey yazılmaz.",
+    "dosyayiIncele": "Dosyayı incele",
+    "okumaOzeti": "{ekstre} ekstre okundu · {kart} kart bulundu · {atlanan} satır atlandı",
+    "eslesmeBaslik": "Kart eşleştirme",
+    "eslesmeNotu": "Her kartı görerek onaylayın. Öneri ön-dolu gelir ama değiştirebilir ya da atlayabilirsiniz. Onaylanmayan kart aktarılmaz.",
+    "guven": "Öneri güveni %{yuzde}",
+    "oneriYok": "Eşleşme bulunamadı — elle seçin ya da atlayın",
+    "bunuAtla": "— Bu kartı atla —",
+    "onizlemeyeGec": "Önizlemeye geç",
+    "yazilacakOzet": "{sayi} ekstre yazılacak",
+    "donemAraligi": "Dönem: {ilk} → {son}",
+    "toplamBorc": "Toplam borç {tutar}",
+    "kartOzeti": "{satir} ekstre · {ilk} → {son}",
+    "atlandi": "Atlandı — aktarılmayacak",
+    "yaz": "Onayla ve yaz",
+    "eslesmeyeDon": "Eşleştirmeye dön",
+    "yazildi": "{sayi} ekstre yazıldı. Parti kodu: {parti}",
+    "kartBorcunaGit": "Kart borcunda gör",
+    "gecmisAktarimlar": "Önceki aktarımlar",
+    "partiOzeti": "{sayi} ekstre · {ilk} → {son}",
+    "partisiz": "(parti kodsuz)",
+    "atlananOzet": "{sayi} satır atlandı — sebepleri için tıklayın",
+    "cakismaBaslik": "{sayi} satır aktarılmayacak",
+    "sebep_YILLIK_TOPLAM": "Yıllık toplam satırı (çift sayım olurdu)",
+    "sebep_GELECEK_YA_DA_SIFIR": "Sıfır borç ya da gelecek ay",
+    "sebep_AY_COZULEMEDI": "Ay adı çözülemedi",
+    "sebep_YIL_YOK": "Yıl bilgisi yok",
+    "sebep_BORC_SAYI_DEGIL": "Borç sayı değil",
+    "cakisma_TURETILEN_VAR": "Sistemde alımlardan türetilmiş ekstre var (o kazanır)",
+    "cakisma_ZATEN_BEYAN_VAR": "Bu dönem daha önce aktarılmış",
+    "cakisma_KART_ATLANDI": "Kart eşleştirilmedi",
+    "hataDosyaYok": "Dosya seçilmedi.",
+    "hataDosyaOkunamadi": "Dosya okunamadı. Geçerli bir .xlsx dosyası mı?",
+    "hataSayfaBulunamadi": "Dosyada kart ekstresi sayfası bulunamadı (Dönem ve Borç başlıkları aranıyor).",
+    "hataYapiTaninmadi": "Sayfa yapısı tanınmadı — kart etiketleri başlık satırının üstünde olmalı.",
+    "hataKartBulunamadi": "Dosyada kart bloğu bulunamadı.",
+    "hataOnizleme": "Önizleme kurulamadı.",
+    "hataYazacakYok": "Yazılacak satır yok.",
+    "hataYazilamadi": "Kayıt yazılamadı. Aynı kart ve dönem daha önce aktarılmış olabilir."
   }
 }

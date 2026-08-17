@@ -41,7 +41,8 @@
     "parolaDegistir": "",
     "iadeler": "",
     "komisyonAktar": "",
-    "talepler": ""
+    "talepler": "",
+    "gecmisEkstre": ""
   },
   "Ortak": {
     "kapat": "",
@@ -652,7 +653,8 @@
     "roller": "",
     "iadeler": "",
     "nakitTakvimi": "",
-    "talepler": ""
+    "talepler": "",
+    "gecmisEkstre": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -1465,7 +1467,9 @@
     "siradakiOdeme": "",
     "vadesiGecti": "",
     "kartlarBaslik": "",
-    "kartlarNotu": ""
+    "kartlarNotu": "",
+    "beyanRozeti": "",
+    "hamDonem": ""
   },
   "Tedarikci": {
     "baslik": "",
@@ -2410,5 +2414,50 @@
     "notuKaydet": "",
     "durumSecinIstege": "",
     "degisiklikYok": ""
+  },
+  "GecmisEkstre": {
+    "sayfaBaslik": "",
+    "sayfaNotu": "",
+    "aktarimBaslik": "",
+    "dosyaEtiketi": "",
+    "dosyaNotu": "",
+    "dosyayiIncele": "",
+    "okumaOzeti": "",
+    "eslesmeBaslik": "",
+    "eslesmeNotu": "",
+    "guven": "",
+    "oneriYok": "",
+    "bunuAtla": "",
+    "onizlemeyeGec": "",
+    "yazilacakOzet": "",
+    "donemAraligi": "",
+    "toplamBorc": "",
+    "kartOzeti": "",
+    "atlandi": "",
+    "yaz": "",
+    "eslesmeyeDon": "",
+    "yazildi": "",
+    "kartBorcunaGit": "",
+    "gecmisAktarimlar": "",
+    "partiOzeti": "",
+    "partisiz": "",
+    "atlananOzet": "",
+    "cakismaBaslik": "",
+    "sebep_YILLIK_TOPLAM": "",
+    "sebep_GELECEK_YA_DA_SIFIR": "",
+    "sebep_AY_COZULEMEDI": "",
+    "sebep_YIL_YOK": "",
+    "sebep_BORC_SAYI_DEGIL": "",
+    "cakisma_TURETILEN_VAR": "",
+    "cakisma_ZATEN_BEYAN_VAR": "",
+    "cakisma_KART_ATLANDI": "",
+    "hataDosyaYok": "",
+    "hataDosyaOkunamadi": "",
+    "hataSayfaBulunamadi": "",
+    "hataYapiTaninmadi": "",
+    "hataKartBulunamadi": "",
+    "hataOnizleme": "",
+    "hataYazacakYok": "",
+    "hataYazilamadi": ""
   }
 }

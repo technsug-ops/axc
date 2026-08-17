@@ -152,6 +152,13 @@ const AYARLAR: MenuOgesi[] = [
     icon: MessageSquarePlus,
     aktif: true,
   },
+  /* Geçmiş kart ekstresi aktarımı — veri.aktar izni. */
+  {
+    anahtar: "gecmisEkstre",
+    href: "/ayarlar/gecmis-ekstre",
+    icon: FileSpreadsheet,
+    aktif: true,
+  },
   {
     anahtar: "veriDisari",
     href: "/ayarlar/disa-aktarma",

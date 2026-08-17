@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 /**
  * ============================================================================
  *  GEÇMİŞ EKSTRE OKUYUCU DOĞRULAMA
@@ -29,6 +30,7 @@ import {
   type OkunanEkstre,
 } from "../src/lib/gecmis/okuyucu";
 import { onizlemeKur } from "../src/lib/gecmis/onizleme";
+import { birlesikToplamlar, ekstreleriBirlestir } from "../src/lib/gecmis/birlesik";
 
 let gecen = 0;
 let kalan = 0;
@@ -448,6 +450,255 @@ console.log("=".repeat(70));
     mevcutDonemler: [],
   });
   kontrol("okuyucunun atlananları önizlemede taşınıyor", tasima.atlananlar.length === 1);
+}
+
+
+console.log("");
+console.log("=".repeat(70));
+console.log("6) BİRLEŞİK GÖSTERİM — TÜRETİLMİŞ + BEYAN");
+console.log("=".repeat(70));
+{
+  const t = (yil: number, ay: number, toplam: number, kalan: number) => ({
+    kesimTarihi: donemTarihi(yil, ay),
+    sonOdemeTarihi: null,
+    toplam,
+    taksitler: [],
+    gecmisMi: true,
+    odenen: toplam - kalan,
+    kalan,
+  });
+  const b = (yil: number, ay: number, borc: number, odenen: number | null) => ({
+    donem: donemTarihi(yil, ay),
+    borc,
+    odenenTutar: odenen,
+    odemeTarihi: null,
+    hamDonemMetni: "Mayıs",
+  });
+
+  const liste = ekstreleriBirlestir({
+    turetilmis: [t(2026, 7, 1000, 400)],
+    beyanlar: [b(2025, 5, 500, 500), b(2025, 6, 300, 0)],
+    sonOdemeGunuHesapla: () => null,
+    bugun: donemTarihi(2026, 8),
+  });
+
+  kontrol("üç ekstre birleşti", liste.length === 3, liste.length);
+  kontrol(
+    "kesim tarihine göre SIRALI (geçmişten bugüne)",
+    liste[0].kesimTarihi < liste[1].kesimTarihi &&
+      liste[1].kesimTarihi < liste[2].kesimTarihi,
+  );
+  /** KAYNAK GİZLENMEZ: kullanıcı hangisinin beyan olduğunu bilmeli. */
+  kontrol(
+    "beyan satırları kaynağıyla işaretli",
+    liste.filter((e) => e.kaynak === "GECMIS_EXCEL").length === 2,
+  );
+  kontrol(
+    "  ...türetilmiş de işaretli",
+    liste.filter((e) => e.kaynak === "TURETILEN").length === 1,
+  );
+  /** HAM METİN İPUCUNA TAŞINIR — Excel'de ne yazıyordu görünsün. */
+  kontrol(
+    "beyan satırı ham dönem metnini taşıyor",
+    liste.find((e) => e.kaynak === "GECMIS_EXCEL")?.hamDonemMetni === "Mayıs",
+  );
+  kontrol(
+    "  ...türetilmişte ham metin yok",
+    liste.find((e) => e.kaynak === "TURETILEN")?.hamDonemMetni === null,
+  );
+
+  /** Ödenmiş beyanın kalanı sıfır; ödenmemişin borcu kadar. */
+  const odenmis = liste.find((e) => e.kesimTarihi.getUTCMonth() === 4);
+  kontrol("ödenmiş beyanın kalanı sıfır", odenmis?.kalan === 0, odenmis?.kalan);
+  const odenmemis = liste.find((e) => e.kesimTarihi.getUTCMonth() === 5);
+  kontrol("ödenmemiş beyanın kalanı borcu kadar", odenmemis?.kalan === 300);
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  TÜRETİLEN KAZANIR — EKRAN DA KENDİ BAŞINA DOĞRU OLMALI
+   * --------------------------------------------------------------------
+   *  İçe aktarma bu çakışmayı zaten engelliyor (`@@unique` + önizleme
+   *  kuralı). Ama veri bir şekilde çakışırsa ekran aynı ayı İKİ SATIR
+   *  göstermemeli — gösterseydi kullanıcı hangisinin doğru olduğunu
+   *  bilemez ve toplam da iki kez sayardı.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const cakisan = ekstreleriBirlestir({
+    turetilmis: [t(2026, 7, 1000, 1000)],
+    beyanlar: [b(2026, 7, 999, 0)],
+    sonOdemeGunuHesapla: () => null,
+    bugun: donemTarihi(2026, 8),
+  });
+  kontrol("çakışan ayda TEK satır", cakisan.length === 1, cakisan.length);
+  kontrol("  ...kazanan TÜRETİLEN", cakisan[0].kaynak === "TURETILEN");
+  kontrol("  ...beyanın borcu görünmüyor", cakisan[0].toplam === 1000);
+
+  /**
+   * BEYAN TOPLAMLARA KATILIR. Katılmasaydı liste 16 ay gösterirken toplam
+   * yalnız 2026'yı sayardı — ekran kendi listesiyle çelişirdi.
+   */
+  const toplam = birlesikToplamlar(liste);
+  kontrol(
+    "beyan açığı gecikmiş toplama giriyor (400 türetilmiş + 300 beyan)",
+    toplam.gecikmisToplam === 700,
+    toplam,
+  );
+  kontrol("  ...açık toplam da aynı", toplam.acikToplam === 700);
+  kontrol(
+    "ödenmiş beyan toplama ETKİ ETMİYOR",
+    !JSON.stringify(toplam).includes("1400"),
+  );
+}
+
+
+console.log("");
+console.log("=".repeat(70));
+console.log("7) EKRAN BAĞI — YAZDIM AMA GÖSTEREMİYORUM OLMASIN");
+console.log("=".repeat(70));
+{
+  const aktarici = readFileSync(
+    "src/app/ayarlar/gecmis-ekstre/ice-aktarici.tsx",
+    "utf8",
+  );
+  const eylemler = readFileSync(
+    "src/app/ayarlar/gecmis-ekstre/eylemler.ts",
+    "utf8",
+  );
+  const kartBorcu = readFileSync("src/app/kart-borcu/page.tsx", "utf8");
+  const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    GecmisEkstre?: Record<string, string>;
+    KartBorcu?: Record<string, string>;
+  };
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  İÇE AKTARILAN VERİ GÖRÜNÜR OLMALI (mimar şartı)
+   * --------------------------------------------------------------------
+   *  2025 aylarında alım yok; türetme motoru o ayları hiç üretmiyor.
+   *  Beyan ekranda gösterilmezse "tanımladım ama gösteremiyorum" olur ve
+   *  paket teslim edilemez.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "kart borcu BEYAN ekstrelerini de çekiyor",
+    kartBorcu.includes("prisma.gecmisEkstre.findMany"),
+  );
+  kontrol(
+    "  ...türetilmişle BİRLEŞTİRİYOR",
+    kartBorcu.includes("ekstreleriBirlestir("),
+  );
+  kontrol(
+    "  ...listede birleşik küme çiziliyor (yalnız türetilmiş değil)",
+    kartBorcu.includes("{birlesikEkstreler.map(") &&
+      !kartBorcu.includes("{sonuc.ekstreler.map("),
+  );
+  kontrol(
+    "  ...toplamlar da birleşikten (liste ile toplam ayrışmasın)",
+    kartBorcu.includes("birlesikToplamlar(") &&
+      kartBorcu.includes("h.toplamlar.acikToplam"),
+  );
+  kontrol(
+    "  ...ödenmemiş listesi de birleşikten",
+    kartBorcu.includes("h.birlesik\n        .filter("),
+  );
+
+  /** KAYNAK GİZLENMEZ — beyan rozeti + ham dönem ipucu. */
+  kontrol(
+    "beyan satırı ROZETLE ayrılıyor",
+    kartBorcu.includes('ekstre.kaynak === "GECMIS_EXCEL"') &&
+      kartBorcu.includes('t("beyanRozeti")'),
+  );
+  kontrol(
+    "  ...ham dönem metni ipucunda",
+    kartBorcu.includes('t("hamDonem"'),
+  );
+  kontrol(
+    "  ...rozet metni sözlükte dolu",
+    (tr.KartBorcu?.beyanRozeti ?? "").length > 0,
+  );
+
+  /** İKİ KATMANLI ÖNİZLEME — eşleşme onayı, sonra yazma onayı. */
+  kontrol(
+    "eşleştirme adımı var (kart tek tek onaylanıyor)",
+    aktarici.includes('adim === "eslesme"'),
+  );
+  kontrol(
+    "  ...her kart için ATLA seçeneği var",
+    aktarici.includes('t("bunuAtla")'),
+  );
+  kontrol(
+    "  ...güven yüzdesi gösteriliyor",
+    aktarici.includes('t("guven"'),
+  );
+  kontrol(
+    "  ...öneri yoksa uyarı çıkıyor",
+    aktarici.includes('t("oneriYok")'),
+  );
+  kontrol(
+    "önizleme adımı AYRI (tek onaya sıkıştırılmamış)",
+    aktarici.includes('adim === "onizleme"'),
+  );
+  kontrol(
+    "  ...yazma düğmesi yalnız önizlemede",
+    aktarici.includes("ekstreleriYaz("),
+  );
+
+  /** ATLANANLAR SEBEPLERİYLE — sessiz atlama yok. */
+  kontrol(
+    "atlananlar sebep dağılımıyla gösteriliyor",
+    aktarici.includes("AtlananRapor") && aktarici.includes("sebep_"),
+  );
+  kontrol(
+    "  ...çakışmalar da sebebiyle",
+    aktarici.includes("CakismaRaporu") && aktarici.includes("cakisma_"),
+  );
+  kontrol(
+    "  ...her sebebin Türkçe karşılığı var",
+    [
+      "sebep_YILLIK_TOPLAM",
+      "sebep_GELECEK_YA_DA_SIFIR",
+      "sebep_AY_COZULEMEDI",
+      "cakisma_TURETILEN_VAR",
+      "cakisma_ZATEN_BEYAN_VAR",
+      "cakisma_KART_ATLANDI",
+    ].every((k) => (tr.GecmisEkstre?.[k] ?? "").length > 0),
+  );
+
+  /** YAZDIKTAN SONRA NEREDE GÖRÜLECEĞİ SÖYLENİR. */
+  kontrol(
+    "yazma sonrası parti kodu bildiriliyor",
+    aktarici.includes('t("yazildi"') &&
+      (tr.GecmisEkstre?.yazildi ?? "").includes("{parti}"),
+  );
+  kontrol(
+    "  ...kart borcuna DOĞRUDAN bağlantı var",
+    aktarici.includes('href="/kart-borcu"'),
+  );
+
+  /** PARTİ DAMGASI — toplu geri alma için. */
+  kontrol(
+    "yazma parti kodu damgalıyor",
+    eylemler.includes("iceAktarimKodu: partiKodu"),
+  );
+  kontrol(
+    "  ...tek transaction",
+    eylemler.includes("prisma.$transaction"),
+  );
+  kontrol(
+    "  ...izin isteniyor (veri.aktar)",
+    (eylemler.match(/yetkiIste\("veri\.aktar"\)/g) ?? []).length >= 3,
+  );
+
+  /** SAYFA ADINA GÜVENİLMİYOR — yapıyla bulunuyor. */
+  kontrol(
+    "sayfa ADIYLA değil YAPISIYLA bulunuyor",
+    eylemler.includes('h.trim() === "Dönem"') &&
+      eylemler.includes('h.trim() === "Borç"'),
+  );
+
+  /** Mobil: onay listesi taşmasın. */
+  kontrol("onay listesi mobilde tek sütun", aktarici.includes("lg:grid-cols-2"));
+  kontrol("  ...uzun etiket satırı taşırmıyor", aktarici.includes("break-words"));
 }
 
 console.log("");

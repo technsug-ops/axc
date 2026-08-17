@@ -18,8 +18,13 @@ import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
 import {
   donemAnahtari,
   kartBorcuHesapla,
+  sonOdemeTarihi,
   type BorcAlimi,
 } from "@/lib/kart-borcu";
+import {
+  birlesikToplamlar,
+  ekstreleriBirlestir,
+} from "@/lib/gecmis/birlesik";
 import { faizKategorileri } from "./eylemler";
 import { OdemeFormu } from "./odeme-formu";
 import { OdemeSatiri } from "./odeme-satiri";
@@ -132,6 +137,25 @@ export default async function KartBorcuSayfasi({
   });
 
   /**
+   * GEÇMİŞ BEYAN EKSTRELERİ — türetilmişlerle BİRLİKTE gösterilecek.
+   *
+   * 2025 aylarında alım kaydı yok, o yüzden türetme motoru o ayları hiç
+   * üretmiyor. İçe aktarılan beyan görünmezse "tanımladım ama
+   * gösteremiyorum" olurdu (bkz. lib/gecmis/birlesik.ts).
+   */
+  const beyanKayitlari = await prisma.gecmisEkstre.findMany({
+    orderBy: { donem: "asc" },
+    select: {
+      cardId: true,
+      donem: true,
+      borc: true,
+      odenenTutar: true,
+      odemeTarihi: true,
+      hamDonemMetni: true,
+    },
+  });
+
+  /**
    * Faiz giderinin yazılabileceği AKTİF kategoriler.
    *
    * Kullanıcı SEÇER; sessizce kategori yaratılmaz (mimar kararı) ama tek bir
@@ -178,6 +202,19 @@ export default async function KartBorcuSayfasi({
    * fonksiyon çağrılıyor — iki farklı toplam doğması imkânsız. Kopyalasaydık
    * panodaki rakam ile sekmedeki rakam bir gün ayrışırdı.
    */
+  /** Bir kartın beyan ekstreleri, birleştiricinin beklediği biçimde. */
+  const kartinBeyanlari = (kartId: string) =>
+    beyanKayitlari
+      .filter((b) => b.cardId === kartId)
+      .map((b) => ({
+        donem: b.donem,
+        borc: Number(b.borc.toString()),
+        odenenTutar:
+          b.odenenTutar === null ? null : Number(b.odenenTutar.toString()),
+        odemeTarihi: b.odemeTarihi,
+        hamDonemMetni: b.hamDonemMetni,
+      }));
+
   /** Bir kartın ödeme kayıtları, saf hesabın beklediği biçimde. */
   const kartinOdemeleri = (kartId: string) =>
     odemeler
@@ -219,10 +256,23 @@ export default async function KartBorcuSayfasi({
      * Ekstreler kesim tarihine göre sıralı olduğundan ilk eşleşen zaten
      * en eskisidir.
      */
+    /**
+     * TÜRETİLMİŞ + BEYAN TEK LİSTEDE. 2025'te alım yok; o aylar yalnız
+     * beyandan gelir. Toplamlar da bu listeden hesaplanır, yoksa liste
+     * 16 ay gösterirken toplam yalnız 2026'yı sayardı.
+     */
+    const birlesik = ekstreleriBirlestir({
+      turetilmis: sonuc.ekstreler,
+      beyanlar: kartinBeyanlari(kart.id),
+      sonOdemeGunuHesapla: (kesim) =>
+        kart.dueDay === null ? null : sonOdemeTarihi(kesim, kart.dueDay),
+      bugun,
+    });
+    const toplamlar = birlesikToplamlar(birlesik);
+
     const yakin =
-      sonuc.ekstreler.find((e) => e.sonOdemeTarihi !== null && e.kalan > 0) ??
-      null;
-    return { kart, sonuc, limit, yakin };
+      birlesik.find((e) => e.sonOdemeTarihi !== null && e.kalan > 0) ?? null;
+    return { kart, sonuc, limit, yakin, birlesik, toplamlar };
   });
 
   /** Para birimi başına toplam — ÇEVRİM YOK, her birim kendi kutusunda. */
@@ -250,8 +300,8 @@ export default async function KartBorcuSayfasi({
      * görünmezdi — varsayımı kaldırıp yerine SESSİZLİK koymuş olurduk.
      * Gecikmiş ayrıca da gösterilir, çünkü aciliyeti farklıdır.
      */
-    g.bekleyen += h.sonuc.acikToplam;
-    g.gecikmis += h.sonuc.gecikmisToplam;
+    g.bekleyen += h.toplamlar.acikToplam;
+    g.gecikmis += h.toplamlar.gecikmisToplam;
     g.adet += 1;
     if (h.limit !== null) {
       g.limit += h.limit;
@@ -307,7 +357,7 @@ export default async function KartBorcuSayfasi({
    */
   const odenmemisEkstreler = kartHesaplari
     .flatMap((h) =>
-      h.sonuc.ekstreler
+      h.birlesik
         .filter((e) => e.gecmisMi && e.kalan > 0)
         .map((e) => ({
           kartId: h.kart.id,
@@ -329,7 +379,7 @@ export default async function KartBorcuSayfasi({
    * Ad sekme etiketinde durduğu için arama kaybolmuyor.
    */
   const siraliKartlar = [...kartHesaplari]
-    .sort((a, b) => b.sonuc.acikToplam - a.sonuc.acikToplam)
+    .sort((a, b) => b.toplamlar.acikToplam - a.toplamlar.acikToplam)
     .map((h) => h.kart);
 
   /**
@@ -531,6 +581,33 @@ export default async function KartBorcuSayfasi({
               kartinOdemeleri(kart.id),
             );
 
+            /**
+             * SEKME İÇERİĞİ DE BİRLEŞİK LİSTEYİ ÇİZER — özetle AYNI kaynak.
+             * İki yerde iki farklı liste doğsaydı sekmedeki rakam ile
+             * yukarıdaki özet bir gün ayrışırdı.
+             */
+            const birlesikEkstreler = ekstreleriBirlestir({
+              turetilmis: sonuc.ekstreler,
+              beyanlar: kartinBeyanlari(kart.id),
+              sonOdemeGunuHesapla: (kesim) =>
+                kart.dueDay === null ? null : sonOdemeTarihi(kesim, kart.dueDay),
+              bugun,
+            });
+            const sekmeToplamlari = birlesikToplamlar(birlesikEkstreler);
+            const limitDegeri =
+              kart.creditLimitCurrency === kart.currency
+                ? sayi(kart.creditLimitAmount)
+                : null;
+            /**
+             * Kalan limit BİRLEŞİK açıktan hesaplanır. Yalnız türetilmişten
+             * hesaplansaydı, ödenmemiş bir geçmiş beyan limiti serbest
+             * göstermeye devam ederdi.
+             */
+            const birlesikKalanLimit =
+              sonuc.kalanLimit === null
+                ? null
+                : (limitDegeri ?? 0) - sekmeToplamlari.acikToplam;
+
             const para = (n: number) => bicim.para(n, kart.currency);
             const limit =
               kart.creditLimitCurrency === kart.currency
@@ -538,14 +615,14 @@ export default async function KartBorcuSayfasi({
                 : null;
             const doluluk =
               limit && limit > 0
-                ? Math.round((sonuc.acikToplam / limit) * 100)
+                ? Math.round((sekmeToplamlari.acikToplam / limit) * 100)
                 : null;
 
             return {
               anahtar: kart.id,
               // Sekme etiketi kart adı + bekleyen tutar: hangi karta
               // bakacağını sekmeye tıklamadan görebil (İlke #9).
-              etiket: `${kart.label} · ${para(sonuc.acikToplam)}`,
+              etiket: `${kart.label} · ${para(sekmeToplamlari.acikToplam)}`,
               adres: `/kart-borcu?kart=${kart.id}`,
               icerik: (
               <section
@@ -610,7 +687,7 @@ export default async function KartBorcuSayfasi({
                           {t("bekleyenToplam")}
                         </div>
                         <div className="text-xl font-semibold">
-                          {para(sonuc.acikToplam)}
+                          {para(sekmeToplamlari.acikToplam)}
                         </div>
                         <div className="text-muted-foreground text-xs">
                           {t("bekleyenNotu")}
@@ -620,7 +697,7 @@ export default async function KartBorcuSayfasi({
                         <div className="text-muted-foreground text-xs">
                           {t("kalanLimit")}
                         </div>
-                        {sonuc.kalanLimit === null ? (
+                        {birlesikKalanLimit === null ? (
                           <div className="text-muted-foreground text-sm">
                             {t("limitYok")}
                           </div>
@@ -628,15 +705,15 @@ export default async function KartBorcuSayfasi({
                           <>
                             <div
                               className={
-                                sonuc.kalanLimit < 0
+                                birlesikKalanLimit < 0
                                   ? "text-destructive text-xl font-semibold"
                                   : "text-xl font-semibold"
                               }
                             >
-                              {para(sonuc.kalanLimit)}
+                              {para(birlesikKalanLimit)}
                             </div>
                             <div className="text-muted-foreground text-xs">
-                              {sonuc.kalanLimit < 0
+                              {birlesikKalanLimit < 0
                                 ? t("limitAsildi")
                                 : doluluk !== null
                                   ? t("limitDoluluk", { oran: doluluk })
@@ -648,13 +725,13 @@ export default async function KartBorcuSayfasi({
                     </div>
 
                     {/* --------------------- EKSTRE DÖKÜMÜ ----------------- */}
-                    {sonuc.ekstreler.length === 0 ? (
+                    {birlesikEkstreler.length === 0 ? (
                       <p className="text-muted-foreground text-sm">
                         {t("ekstreYok")}
                       </p>
                     ) : (
                       <div className="space-y-3">
-                        {sonuc.ekstreler.map((ekstre) => {
+                        {birlesikEkstreler.map((ekstre) => {
                           /**
                            * ════════════════════════════════════════════════
                            *  SOLUKLUK "GEÇMİŞ"İ DEĞİL "ÖDENDİ"Yİ TAKİP EDER
@@ -716,6 +793,35 @@ export default async function KartBorcuSayfasi({
                                 ) : ekstre.odenen > 0 ? (
                                   <DurumRozeti durum="uyari" isaretsiz>
                                     {t("durumKismen")}
+                                  </DurumRozeti>
+                                ) : null}
+                                {/**
+                                 * KAYNAK GÖRÜNÜR — sessiz karışma yok.
+                                 *
+                                 * Türetilmiş ekstre her alım değişikliğinde
+                                 * kendini günceller; beyan bir insanın
+                                 * yazdığı sabit özettir. İkisi aynı
+                                 * görünseydi kullanıcı yanlış olanı
+                                 * düzeltmeye kalkardı — beyanı düzeltmek
+                                 * için alım arardı ya da türetilmişi elle
+                                 * değiştirmek isterdi.
+                                 *
+                                 * Ham dönem metni ipucunda: Excel'de ne
+                                 * yazıyordu, sonradan sorulabilsin.
+                                 */}
+                                {ekstre.kaynak === "GECMIS_EXCEL" ? (
+                                  <DurumRozeti durum="bilgi" isaretsiz>
+                                    <span
+                                      title={
+                                        ekstre.hamDonemMetni
+                                          ? t("hamDonem", {
+                                              metin: ekstre.hamDonemMetni,
+                                            })
+                                          : undefined
+                                      }
+                                    >
+                                      {t("beyanRozeti")}
+                                    </span>
                                   </DurumRozeti>
                                 ) : null}
                               </div>
