@@ -935,8 +935,9 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
       **Kalem geç kaydedildi (17.08 akşamı): sözleşme verildiğinde
       BEKLEYENLER'e işlenmemişti, yalnız sıra satırında adı geçiyordu.**
 
-      **✓ BİTEN — DÜZENLEME DİLİMİ** (Halil testi geçti 17.08.2026, test
-      düzenlemesi canlıda geri alındı):
+      **✓ BİTEN — DÜZENLEME DİLİMİ** (Halil testi geçti 17.08.2026; test
+      düzenlemesi canlıda geri alındı ve rakamlar BİREBİR orijinale döndü:
+      kargo −106,75 · NET-1 1.059,85 · NET-2 881,22):
       - Saf kurallar (`lib/satis-duzenleme.ts`) · `duzenleme:dogrula` 40
       - Neden KAPALI LİSTE (5 seçenek, `DIGER` açıklama zorunlu)
       - Önizleme-önce; onay düğmesi plan çizilmeden aktif olmaz
@@ -948,6 +949,13 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         5 gerekçeli beyan · 0 süzgeçsiz
       - Süzgeç tek kaynakta (`satisKosulu` → `iptalTarihi`)
       - Migration canlıda (`20260817051944_satis_iptali`)
+      - **KARGO KDV HATASI bulundu ve kapatıldı (mimar yakaladı):** form
+        `cargoAmount`i (KDV HARİÇ saklanır) "KDV dahil" etiketiyle
+        gösteriyordu; kullanıcı dokunmadan kaydedince motor bir kez daha
+        1,2'ye bölüyordu — HER DÜZENLEMEDE %20 kayıp. Ölçüldü: 32/32 satışta
+        veri sağlam, motor tutarlı, hata YALNIZ ekrandaydı. Çeviri artık
+        `lib/kargo-kdv.ts`te ÇİFT YÖNLÜ tek kaynak; iki tur aç-kaydet
+        döngüsü testte (altı değerde kargo aynen kalıyor).
 
       **○ KALAN — İPTAL EKRANI** (4 parça + EK 1-2-3):
       1. Üstü çizili + "iptal" rozeti; rozette sebep (taksonomi kısaltması,
