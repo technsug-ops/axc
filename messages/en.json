@@ -139,7 +139,8 @@
     "RETURN_IN": "",
     "EXCHANGE_OUT": "",
     "ADJUSTMENT": "",
-    "COUNT_CORRECTION": ""
+    "COUNT_CORRECTION": "",
+    "SALE_CANCEL_IN": ""
   },
   "Stok": {
     "baslik": "",
