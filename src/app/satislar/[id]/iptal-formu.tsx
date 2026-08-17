@@ -232,12 +232,23 @@ export function IptalFormu({ saleId }: { saleId: string }) {
             <TriangleAlert className="size-4 shrink-0" />
             {hata}
           </p>
-          {/* İade engeli: kullanıcı O KAYDA gidebilmeli. */}
+          {/* İade engeli: kullanıcı O KAYDA gidebilmeli.
+              Kod NULL olabilir (iade kaydında `code` zorunlu değil); boş
+              parantez göstermek yerine metin de adres de koda göre seçilir —
+              "İade kaydını aç ()" gibi bir çıktı olmaz. */}
           {iade ? (
             <Button variant="outline" size="sm" asChild>
-              <Link href={`/iadeler?bq=${encodeURIComponent(iade.kod ?? "")}`}>
+              <Link
+                href={
+                  iade.kod
+                    ? `/iadeler?bq=${encodeURIComponent(iade.kod)}`
+                    : "/iadeler"
+                }
+              >
                 <Undo2 />
-                {t("iadeyeGit", { kod: iade.kod ?? "" })}
+                {iade.kod
+                  ? t("iadeyeGitKodlu", { kod: iade.kod })
+                  : t("iadeyeGit")}
               </Link>
             </Button>
           ) : null}

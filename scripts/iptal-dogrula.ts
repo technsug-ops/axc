@@ -88,13 +88,25 @@ console.log("\nSATIŞ İPTALİ — DOĞRULAMA\n");
     p.olur && p.hareketler[0].birimMaliyetParaBirimi === "TRY",
   );
   /**
-   * AYNA HAREKET ÇIKTIĞI PARTİYE BAĞLANIR. Bağ kopsaydı mal "kaynaksız"
-   * geri girer, FIFO sırası bozulur ve kârlılık kartındaki "alımdan satışa
-   * gün" hesabı o partiyi göremezdi.
+   * ⚠ KAYNAK BAĞI YAZILMAZ — ÖLÇÜLMÜŞ CANLI HATA 17.08.2026.
+   *
+   * Test önce "kaynak partiye BAĞLANIR" diyordu ve kod öyle yazılmıştı.
+   * Canlıda ölçüldü: ayna hareket HEM pozitif olduğu için yeni parti
+   * sayılıyor HEM de kaynak bağıyla eski partinin tüketimini sıfırlıyordu.
+   * Satış 11512722550'de ledger stoğu 1 iken FIFO 2 parti gösterdi —
+   * bir adet HAYALET stok.
+   *
+   * İade tarafı (`RETURN_IN`) kaynak bağı yazmaz; iptal de yazmaz.
+   * Maliyet aynası envanter değerini korumaya yeter.
    */
   kontrol(
-    "kaynak partiye BAĞLANIR",
-    p.olur && p.hareketler[0].sourceMovementId === "parti-1",
+    "kaynak bağı YAZILMAZ (hayalet parti önlenir)",
+    p.olur && p.hareketler[0].sourceMovementId === null,
+    p.olur ? p.hareketler[0].sourceMovementId : p,
+  );
+  kontrol(
+    "  ...ama MALİYET aynen taşınır (envanter değeri korunur)",
+    p.olur && p.hareketler[0].birimMaliyet === "1882.08",
   );
   kontrol("raf konumu korunur", p.olur && p.hareketler[0].locationId === "raf-A");
 

@@ -147,10 +147,20 @@ export default async function SatislarSayfasi({
    * bu yüzden hariç tutulan küme boş. Paket geldiğinde `haricMi` iptalli
    * satışları dışarıda bırakacak; kural burada tek satır değişir.
    */
+  /**
+   * ⚠ GÖSTERMEK ≠ SAYMAK (canlı bulgu 17.08.2026).
+   *
+   * `?iptal=1` açıkken iptalli satışlar listeye giriyordu ve TOPLAMA DA
+   * giriyorlardı: ciro 105.184 → 106.618 sıçradı. Oysa iptal edilen satış
+   * hiç doğmamış sayılır — GÖRÜNÜR olması SAYILDIĞI anlamına gelmez.
+   *
+   * Toplam kutuları HER ZAMAN iptal hariçtir; iptal edilenler ayrı kutuda,
+   * kendi rakamıyla görünür.
+   */
   const ciroToplami = suzgecToplami(
     satislar,
     (s) => satisKalemToplamlari(s.items),
-    () => false,
+    (s) => s.iptalTarihi !== null,
   );
 
   /**
@@ -163,7 +173,11 @@ export default async function SatislarSayfasi({
    */
   const net = hesaplananToplami(
     satislar,
-    (s) => s.profitStatus === "CALCULATED" && s.net2Amount !== null,
+    (s) =>
+      // İptal edilen satış NET toplamına da girmez (yukarıdaki gerekçe).
+      s.iptalTarihi === null &&
+      s.profitStatus === "CALCULATED" &&
+      s.net2Amount !== null,
     (s) => ({
       paraBirimi: s.profitCurrency ?? "TRY",
       tutar: Number(s.net2Amount!.toString()),
@@ -372,9 +386,16 @@ export default async function SatislarSayfasi({
       <ListeToplami
         baslik={t("ciroToplami")}
         toplamlar={ciroToplami.toplam}
-        altMetin={`${ortak("kayitSayisi", { sayi: satislar.length })}${
+        /* Sayı da iptal HARİÇ — toplam hangi kümeden çıktıysa o kadar kayıt. */
+        altMetin={`${ortak("kayitSayisi", { sayi: ciroToplami.sayi })}${
           aralikMetni ? ` · ${aralikMetni}` : ""
         }`}
+        /* İPTAL EDİLENLER AYRI KUTUDA — sessizce düşülmez, rakamıyla görünür. */
+        haric={{
+          etiket: tIpt("toplamHaric", { sayi: ciroToplami.haricSayi }),
+          toplamlar: ciroToplami.haric,
+          sayi: ciroToplami.haricSayi,
+        }}
         ekler={[
           {
             etiket: t("netToplami"),

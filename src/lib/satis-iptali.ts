@@ -178,12 +178,22 @@ export function iptalPlani(girdi: IptalGirdisi): IptalPlani {
       birimMaliyetParaBirimi: c.birimMaliyetParaBirimi,
       locationId: c.locationId,
       /**
-       * Ayna hareket, çıkışın düştüğü GİRİŞ partisine bağlanır — mal hangi
-       * partiden çıktıysa oraya döner. FIFO sırası bozulmaz ve kârlılık
-       * kartındaki "alımdan satışa gün" hesabı doğru partiyi görmeye devam
-       * eder.
+       * ⚠ KAYNAK BAĞI YAZILMAZ — ÖLÇÜLDÜ 17.08.2026, CANLI HATA.
+       *
+       * Önce "mal hangi partiden çıktıysa oraya döner" diye `sourceMovementId`
+       * yazılıyordu. FIFO motoru bunu kaldıramıyor: ayna hareket HEM
+       * pozitif olduğu için YENİ PARTİ sayılıyor HEM de kaynak bağıyla eski
+       * partinin tüketimini sıfırlıyordu (SALE_OUT −1 + SALE_CANCEL_IN +1 = 0).
+       * Sonuç: ledger stoğu 1, FIFO partileri 2 — bir adet HAYALET.
+       *
+       * İade tarafı zaten böyle yapmıyor: `RETURN_IN` kaynak bağı yazmaz,
+       * yeni parti olarak girer ve MALİYET AYNASI yeterli olur (bkz.
+       * `lib/iade.ts`). İptal de aynı deseni izler.
+       *
+       * Maliyet ve raf korunduğu için envanter değeri doğru kalır; "hangi
+       * partiden çıktı" bilgisi ise SALE_OUT hareketinde zaten duruyor.
        */
-      sourceMovementId: c.kaynakHareketId,
+      sourceMovementId: null,
     }));
 
   return {

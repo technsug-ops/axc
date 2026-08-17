@@ -2619,7 +2619,7 @@
     "netHesaplanamadi": "NET-2 hesaplanamadı — bu satışın kârı bilinmiyor (\"?\").",
     "hakedisUyarisi": "Bu satış bir hakediş kalemiyle eşleşmiş. İptal, beklenen tahsilatı da düşürür.",
     "satisYok": "Satış bulunamadı.",
-    "iadeyeGit": "İade kaydını aç ({kod})",
+    "iadeyeGit": "İade kayıtlarını aç",
     "engel_ZATEN_IPTAL": "Bu satış zaten iptal edilmiş.",
     "engel_IADE_VAR": "Bu satışın iadesi var — iptal yerine iade akışı kullanılır. İade malı zaten stoğa döndürdü; iptal onu ikinci kez sokardı.",
     "engel_SEBEP_YOK": "İptal sebebi seçilmeden iptal kaydedilemez.",
@@ -2638,6 +2638,8 @@
     "sebepKisa_MAGAZA_STOK_YOK": "stok yok",
     "sebepKisa_MAGAZA_KOTU_NIYET": "kötü niyet",
     "sebepKisa_MAGAZA_DIGER": "diğer",
-    "suzgecEtiketi": "İptaller"
+    "suzgecEtiketi": "İptaller",
+    "toplamHaric": "{sayi} iptal — toplama girmiyor",
+    "iadeyeGitKodlu": "İade kaydını aç ({kod})"
   }
 }

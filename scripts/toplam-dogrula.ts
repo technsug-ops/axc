@@ -174,5 +174,51 @@ esit(
   [{ paraBirimi: "TRY", tutar: 200 }],
 );
 
+// --- 9) GÖSTERMEK ≠ SAYMAK — canlı bulgu 17.08.2026 ------------------------
+{
+  /**
+   * ⚠ CANLI BULGU: `?iptal=1` açıkken iptalli satışlar listeye giriyordu ve
+   * TOPLAMA DA giriyorlardı — ciro 105.184 → 106.618 sıçradı. Oysa iptal
+   * edilen satış hiç doğmamış sayılır: GÖRÜNÜR olması SAYILDIĞI anlamına
+   * gelmez.
+   *
+   * Kural: toplam kutuları HER ZAMAN iptal hariçtir; iptal edilenler kendi
+   * kutusunda, kendi rakamıyla görünür.
+   */
+  type IptalliSatis = { kod: string; iptal: boolean; tutar: string };
+  const satislar: IptalliSatis[] = [
+    { kod: "S1", iptal: false, tutar: "105184.00" },
+    { kod: "S2", iptal: true, tutar: "1434.00" },
+  ];
+
+  const c = suzgecToplami(
+    satislar,
+    (s) => kalemToplamlari([tl(s.tutar)]),
+    (s) => s.iptal,
+  );
+  esit("iptalli satış GÖRÜNSE de toplama girmez", c.toplam, [
+    { paraBirimi: "TRY", tutar: 105184 },
+  ]);
+  esit("iptal edilen ayrı kutuda görünür", c.haric, [
+    { paraBirimi: "TRY", tutar: 1434 },
+  ]);
+  esit("kayıt sayısı da iptal hariç", c.sayi, 1);
+  esit("iptal sayısı ayrı", c.haricSayi, 1);
+
+  /**
+   * SIÇRAMA TESTİ: süzgeç kaldırılsaydı toplam 106.618 olurdu — canlıda
+   * görülen yanlış rakamın ta kendisi. Bu kontrol farkın BÜYÜKLÜĞÜNÜ
+   * sabitliyor.
+   */
+  const suzgecsiz = suzgecToplami(
+    satislar,
+    (s) => kalemToplamlari([tl(s.tutar)]),
+    () => false,
+  );
+  esit("süzgeçsiz olsaydı 106.618 çıkardı", suzgecsiz.toplam, [
+    { paraBirimi: "TRY", tutar: 106618 },
+  ]);
+}
+
 console.log(`\n${gecen} geçti · ${kalan} kaldı\n`);
 if (kalan > 0) process.exitCode = 1;
