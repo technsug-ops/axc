@@ -254,7 +254,8 @@ export default async function AnaSayfa({
     maliyetKayitlari,
   ] = await Promise.all([
     prisma.sale.findMany({
-      where: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } },
+      // İPTAL EDİLEN SATIŞ CİROYA GİRMEZ (bkz. lib/liste-suzgeci.ts).
+      where: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric }, iptalTarihi: null },
       select: {
         soldAt: true,
         shippedAt: true,
@@ -343,6 +344,8 @@ export default async function AnaSayfa({
      */
     prisma.sale.findMany({
       where: {
+        // İptal edilen satış kargolanmadı sayılır — kutuya girmez.
+        iptalTarihi: null,
         OR: [
           { shippedAt: { gte: donem.baslangic, lt: donem.bitisHaric } },
           ...(kiyasPencere

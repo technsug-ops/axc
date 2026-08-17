@@ -103,7 +103,8 @@ export async function elKitabiVerisi(): Promise<ElKitabiVerisi> {
     prisma.productVariant.count(),
     prisma.channelSku.count(),
     prisma.channelSku.count({ where: { commissionRate: null } }),
-    prisma.sale.count(),
+    // "Kaç satış yapıldı" istatistiği: iptal edilen satış YAPILMIŞ değildir.
+    prisma.sale.count({ where: { iptalTarihi: null } }),
     prisma.user.count({ where: { isActive: true } }),
     prisma.channelSku.findMany({
       select: {

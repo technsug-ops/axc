@@ -163,7 +163,8 @@ export default async function RaporSayfasi({
   const [satisKayitlari, iadeKayitlari, duzeltmeKayitlari, giderKayitlari] =
     await Promise.all([
     prisma.sale.findMany({
-      where: ikiAralik("soldAt"),
+      // Rapor ciro/NET taşır: iptal edilen satış hiç doğmamış sayılır.
+      where: { ...ikiAralik("soldAt"), iptalTarihi: null },
       select: {
         id: true,
         code: true,

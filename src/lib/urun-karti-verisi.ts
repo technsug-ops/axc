@@ -72,7 +72,12 @@ export async function kartVerisiniTopla(
 
   const [kalemler, partiHaritasi, stokToplami, iadeler] = await Promise.all([
     prisma.saleItem.findMany({
-      where: { variantId },
+      /**
+       * İPTAL EDİLEN SATIŞ KARTA GİRMEZ. Kart bir ALIM KARARI aracıdır:
+       * gerçekleşmemiş satış "bu ürün satıyor" izlenimi verir, marj ve hız
+       * rakamlarını şişirir ve mağazada yanlış karar verdirir.
+       */
+      where: { variantId, sale: { iptalTarihi: null } },
       select: {
         id: true,
         quantity: true,

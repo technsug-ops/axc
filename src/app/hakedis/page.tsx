@@ -62,6 +62,8 @@ export default async function HakedisSayfasi() {
     }),
     // Karşılaştırma için: kâr snapshot'ı + maliyet kesintisi.
     prisma.sale.findMany({
+      // İptal edilen satıştan hakediş beklenmez.
+      where: { iptalTarihi: null },
       include: {
         channelAccount: { include: { channel: { select: { name: true } } } },
         fees: { where: { code: "MALIYET" }, select: { amount: true } },

@@ -144,7 +144,12 @@ export async function hakedisDenetle(
     ...new Set(yeniler.map((s) => s.siparisNo).filter((n): n is string => !!n)),
   ];
   const satisKayitlari = await prisma.sale.findMany({
-    where: { code: { in: siparisNolar } },
+    /**
+     * İPTAL EDİLEN SATIŞ HAKEDİŞE EŞLEŞMEZ. Kanal iptal edilen siparişi
+     * ödemez; eşleşseydi ödenmeyecek bir tutar "bekleyen hakediş" olarak
+     * görünür ve nakit beklentisi şişerdi.
+     */
+    where: { code: { in: siparisNolar }, iptalTarihi: null },
     select: {
       id: true,
       code: true,

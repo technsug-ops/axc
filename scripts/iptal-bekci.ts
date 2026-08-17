@@ -29,20 +29,24 @@ import { readFileSync, readdirSync } from "node:fs";
  */
 const ISTISNALAR = new Map<string, string>([
   [
-    "src/lib/satis-iptali-veri.ts:sale.findUnique",
-    "iptal eyleminin kendisi: iptal edilecek satışı bulur ve zaten iptalli mi diye bakar — süzgeç koysaydı 'zaten iptal' kontrolü hiç çalışmazdı",
-  ],
-  [
-    "src/app/satislar/[id]/page.tsx:sale.findUnique",
-    "TEK satışın detayı: kullanıcı iptal edilmiş satışın kaydını görebilmeli, kayıt silinmiyor yalnız listeden gizleniyor",
-  ],
-  [
     "src/lib/yedek.ts:sale.findMany",
-    "YEDEK: veritabanının tamamını dışa aktarır, süzgeç uygulasaydı yedek eksik olurdu — geri yüklendiğinde iptalli satışlar kaybolurdu",
+    "YEDEK: veritabanının TAMAMINI dışa aktarır. Süzgeç uygulasaydı yedek eksik olurdu ve geri yüklendiğinde iptal edilmiş satışlar KAYBOLURDU — iptal kaydı silinmiyor, korunuyor.",
   ],
   [
     "src/lib/yedek.ts:saleItem.findMany",
-    "YEDEK: yukarıdaki gerekçenin aynısı",
+    "YEDEK: yukarıdaki gerekçenin aynısı — kalemler de eksiksiz yedeklenir",
+  ],
+  [
+    "src/lib/satis.ts:saleItem.findMany",
+    "SATIŞ YAZILIRKEN kendi kalemlerini okur (transaction içinde, `where: { saleId }`). O anda satış henüz oluşturuluyor; iptalli olması imkânsız. Süzgeç eklemek anlamsız bir koşul olurdu.",
+  ],
+  [
+    "src/lib/urun-hareket.ts:saleItem.count",
+    "SÜZÜLMESİ TEHLİKELİ OLURDU. Bu sorgu 'bu ürün hiç hareket görmüş mü' sorusunu cevaplar ve ürün SİLİNEBİLİR Mİ kararını verir. İptal edilmiş bir satış da geçmiş bir harekettir: kalemi durur, ledger'ı durur. Süzseydik iptalli satışı olan ürün 'hiç satılmamış' sayılır ve SİLİNEBİLİR hâle gelirdi — geçmişi olan kayıt silinirdi.",
+  ],
+  [
+    "src/app/satislar/[id]/iade/actions.ts:saleItem.findMany",
+    "Doğrulama için KİMLİKLE gelen kalemlerin ürün adlarını okur (`where: { id: { in: [...] } }`). Liste/toplam değil, kullanıcının zaten seçtiği kalemler. Ayrıca iptalli satışa iade zaten engelli (bkz. `lib/iade.ts` içindeki iptal kontrolü).",
   ],
 ]);
 
@@ -123,7 +127,15 @@ for (const dosya of DOSYALAR) {
    * Ciroyu, NET'i ve hakediş beklentisini şişiren şey liste/toplam
    * sorgularıdır; risk oradadır ve bekçi oraya bakar.
    */
-  const desen = /\b(?:prisma|tx|db)\.(sale|saleItem)\.(findMany|findFirst|count|aggregate|groupBy)\b/g;
+  /**
+   * ÖNEK SABİT LİSTE DEĞİL, HERHANGİ BİR TANIMLAYICI.
+   *
+   * ⚠ İkinci kör nokta (17.08.2026): desen önce `prisma|tx|db` ile sınırlıydı
+   * ve `lib/yedek.ts` istemciyi `istemci` adıyla taşıdığı için o dosyadaki
+   * sorgular HİÇ TARANMADI — bekçi "temiz" derken bakmadığı bir yer vardı.
+   * Beyaz liste tutmak, listeye girmeyen her yeni adı sessizce muaf kılar.
+   */
+  const desen = /\b\w+\.(sale|saleItem)\.(findMany|findFirst|count|aggregate|groupBy)\b/g;
 
   for (const m of metin.matchAll(desen)) {
     const cagri = `${m[1]}.${m[2]}`;

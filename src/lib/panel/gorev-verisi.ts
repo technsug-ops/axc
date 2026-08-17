@@ -29,7 +29,7 @@ export async function gorevSayilariniTopla(): Promise<
     oransizKanalSku,
   ] = await Promise.all([
     // `/satislar?kargo=bekleyen` ile aynı koşul.
-    prisma.sale.count({ where: { shippedAt: null } }),
+    prisma.sale.count({ where: { shippedAt: null, iptalTarihi: null } }),
 
     /**
      * Açık bildirim = mal yolda ya da karar bekleyen. Kapanmış/iptal olan
@@ -52,6 +52,8 @@ export async function gorevSayilariniTopla(): Promise<
     // `/satislar?kar=eksik` ile aynı koşul: hesaplanmamış ya da eksik.
     prisma.sale.count({
       where: {
+        // İptal edilen satışın kârı hesaplanmaz; görev listesine girmemeli.
+        iptalTarihi: null,
         OR: [{ profitStatus: null }, { NOT: { profitStatus: "CALCULATED" } }],
       },
     }),

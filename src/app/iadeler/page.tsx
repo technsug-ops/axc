@@ -297,7 +297,9 @@ export default async function IadelerSayfasi({
     // Oranın paydası: AYNI dönemde yapılan satışlar (dönem oranı tanımı).
     prisma.sale.groupBy({
       by: ["channelAccountId"],
-      where: { soldAt: aralik },
+      // Oranın paydası GERÇEKLEŞEN satışlar: iptal edilen sipariş satılmadı.
+      // Paydaya girseydi iade oranı olduğundan DÜŞÜK görünürdü.
+      where: { soldAt: aralik, iptalTarihi: null },
       _count: { _all: true },
     }),
     prisma.channelAccount.findMany({
@@ -478,6 +480,9 @@ export default async function IadelerSayfasi({
      * sessizce kesilen liste kabul edilmiyor.
      */
     prisma.sale.findMany({
+      // İptal edilmiş satışa iade işlenemez (lib/iade.ts) — listede de
+      // görünmemeli, yoksa seçilip hata alınır.
+      where: { iptalTarihi: null },
       orderBy: { soldAt: "desc" },
       take: SATIS_LISTE_SINIRI,
       select: {

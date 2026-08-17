@@ -218,6 +218,11 @@ export async function takvimSatirlariniTopla(
   const geriye = gunEkle(bugun, -TAHMIN_GERIYE_GUN);
   const satislar = await prisma.sale.findMany({
     where: {
+      /**
+       * İPTAL EDİLEN SATIŞTAN PARA GELMEZ. Tahmine girseydi takvim var
+       * olmayan bir tahsilatı beklerdi ve nakit açığı uyarısı geç yanardı.
+       */
+      iptalTarihi: null,
       soldAt: { gte: geriye },
       net1Amount: { not: null },
       // İKİ ANAHTAR: eşleşmiş satış kimliği VE rapordaki sipariş numarası.

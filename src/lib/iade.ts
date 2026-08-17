@@ -487,6 +487,25 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
     });
     if (!satis) throw new Error("Satış bulunamadı");
 
+    /**
+     * ═══════════════════════════════════════════════════════════════════
+     *  İPTAL EDİLMİŞ SATIŞA İADE YAPILAMAZ (17.08.2026)
+     * -------------------------------------------------------------------
+     *  Kural İKİ YÖNLÜ olmak zorunda. Diğer yönü `lib/satis-iptali.ts`te:
+     *  iadesi olan satış iptal edilemez. Bu yön olmasaydı aynı çelişki ters
+     *  kapıdan girerdi — önce iptal edilip stoğu geri gelen bir satışa iade
+     *  işlenir, mal İKİNCİ KEZ stoğa girer ve envanter sessizce şişerdi.
+     *
+     *  Bu kontrol aynı zamanda `iptal-bekci.ts`teki
+     *  `iade/actions.ts:saleItem.findMany` beyanının DAYANAĞIDIR: iptalli
+     *  satış iade akışına hiç giremediği için o sorgunun süzgece ihtiyacı
+     *  yoktur. Beyan bir garantiye dayanıyorsa garanti kodda DURMALIDIR.
+     * ═══════════════════════════════════════════════════════════════════
+     */
+    if (satis.iptalTarihi !== null) {
+      throw new Error("İptal edilmiş satışa iade işlenemez");
+    }
+
     const kanalId = satis.channelAccount.channelId;
     const paraBirimi: Currency = satis.profitCurrency ?? "TRY";
 
