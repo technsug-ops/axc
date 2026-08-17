@@ -1188,6 +1188,57 @@ yazılmaz._
 **ANAYASA HATIRLATMASI:** rakip aracın adı bir REFERANSTIR, veri bile
 değil — Selliora'nın yapısına, alan adlarına, ekran metinlerine **girmez.**
 
+## Faz 3 kapanışı ve hemen sonrası
+
+- [ ] **HAKEDİŞ CANLI TEYİDİ — Faz 3'ün son parçası.**
+      _Mimar kararı 18.08.2026._ Sistemin **ileri dönük iddiası** ilk kez
+      gerçek ödemeyle sınanır: nakit takvimindeki "girecek" rakamı bu
+      iddiadan besleniyor.
+
+      **✓ HAZIRLIK BİTTİ 18.08.2026 (Halil'siz kısım):**
+      - `npm run canli:hakedis-teyit` — salt-okunur, dört bölüm:
+        (1) test koşulabilir mi (eşleşme oranı) · (2) beklenen vs
+        gerçekleşen, sipariş bazında + toplam + durum dağılımı ·
+        (3) iptal ↔ hakediş asimetrisi · (4) vade kuralı sınavı.
+      - Ekranla **aynı fonksiyonlar** (`beklenenHakedis`, `odemeDurumu`,
+        `beklenenVade`) — betik kendi formülünü yazsaydı "betik şunu diyor
+        ama ekran bunu diyor" diye ikinci bir tartışma açardı.
+      - **Eşik beyanı sabite bağlandı.** Beyan zaten vardı ama sayı sözlüğe
+        ELLE yazılmıştı ("Fark 1 ₺"); sabit değişse ekran eski sayıyı
+        söylemeye devam ederdi — beyan doğru GÖRÜNÜR, yanlış olurdu.
+        `hakedis:dogrula` 87 → 90, iki mutasyon kırmızı.
+
+      **○ ÖN UÇUŞ ŞARTI — test boş çıkabilir.** Karşılaştırma yalnız
+      satışa BAĞLANMIŞ rapor kalemleri için çalışır. Bağ yükleme anında
+      kurulur ve daha önce iki kez ölçüldü, ikisi de sıfır: 13.08'de
+      651 kalemin 0'ı, 15.08'de 110 kalemin 0'ı. Eski yüklemeler satışlar
+      girilmeden yapıldıysa bağ hiç kurulmamıştır. **Betik önce bunu
+      söyler; sıfırsa taze rapor gerekir.**
+
+      **○ HALİL'DEN GELECEK — koşullu.** Betiğin çıktısına göre:
+      eşleşme varsa eldekiyle koşulur, yoksa taze hakediş dökümü istenir.
+
+      **KAPSAM SINIRI — dürüst olalım.** Eldeki ekstreler **öngörüyü**
+      sınayamaz (iddiadan önce girdiler), ama **öngörüyü üreten KURALI**
+      sınayabilir: `beklenenHakedis` NET-1 ve komisyondan, `beklenenVade`
+      hesabın `payoutDays` AYARINDAN üretilir — ikisi de rapordan
+      türetilmez, bağımsız kaynaklardır. Yani tutar formülü ve vade kuralı
+      bugün sınanabilir; "sistem önceden söyledi, kanal öyle yatırdı"
+      cümlesi için taze dönem gerekir.
+
+- [ ] **HAFİF YETKİ DİLİMİ — `satis.duzenle` / `satis.iptal`**
+      _Sıraya girdi 18.08.2026, hakediş teyidinden sonra._
+
+      Bugün satış düzenleme ve iptal ekranları tek kullanıcıda korumasız
+      çalışıyor. RBAC'ın tamamı Faz 4'te ama **bu iki eylem yıkıcı** ve
+      izinleri şimdiden ayrılabilir — depocu satış girebilmeli, fiyat
+      düzeltip satış iptal edememeli.
+
+      ⚠ **YETKİ İKİ BACAKLIDIR:** anahtar `lib/yetki/izinler.ts`e girer VE
+      `prisma/seed-yetki.ts` → `SONRADAN_DOGAN` listesine yazılır; deploy
+      sonrası `npm run canli:yetki` koşulur. Unutulursa ekran canlıda
+      SESSİZCE kaybolur (13.08 `/iadeler` vakası).
+
 ## Faz 3 kapanış borcu
 
 - [x] **KANAL KODSUZ KAYITLAR — KAPANDI 18.08.2026, BORÇ ÇIKMADI.**

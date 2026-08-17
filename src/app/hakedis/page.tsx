@@ -300,8 +300,15 @@ export default async function HakedisSayfasi() {
                 <CardTitle>
                   {t("karsilastirmaBaslik")} ({karsilastirma.length})
                 </CardTitle>
+                {/* EŞİK SABİTTEN GELİR — 18.08.2026.
+                    Metin eşiği ZATEN beyan ediyordu ama sayıyı ("1 ₺")
+                    sözlüğe ELLE yazıyordu. `HAKEDIS_ESIKLERI.tutarFarki`
+                    değişseydi ekran eski sayıyı söylemeye devam ederdi:
+                    beyan doğru görünür, yanlış olurdu. Tek kaynak. */}
                 <p className="text-muted-foreground text-sm">
-                  {t("karsilastirmaNotu")}
+                  {t("karsilastirmaNotu", {
+                    tutar: HAKEDIS_ESIKLERI.tutarFarki,
+                  })}
                 </p>
               </CardHeader>
               <CardContent className="space-y-3">

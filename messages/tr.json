@@ -1667,7 +1667,7 @@
     "eslesmemisNotu": "{siparis} siparişin numarası sistemde bulunamadı — o satışlar henüz girilmemiş olabilir. Kalemler yazıldı; satışı girdiğinizde bağlanabilir.",
     "listeKesildi": "{toplam} kalemin ilk {gosterilen} tanesi gösteriliyor.",
     "karsilastirmaBaslik": "Beklenen vs gerçekleşen",
-    "karsilastirmaNotu": "Beklenen = kâr hesabınızdaki net hakediş (NET-1 + maliyet). Gerçekleşen = o satışa bağlanmış rapor kalemlerinin toplamı. Fark 1 ₺'yi aşarsa uyarı çıkar; kuruş farkı yuvarlamadan doğar ve gürültüdür.",
+    "karsilastirmaNotu": "Beklenen = kâr hesabınızdaki net hakediş (NET-1 + maliyet). Gerçekleşen = o satışa bağlanmış rapor kalemlerinin toplamı. Fark {tutar} ₺'yi aşarsa uyarı çıkar; kuruş farkı yuvarlamadan doğar ve gürültüdür.",
     "karsilastirmaSorunlu": "{sayi} satışta eksik ya da geç ödeme var",
     "sutunBeklenen": "Beklenen",
     "sutunGerceklesen": "Gerçekleşen",

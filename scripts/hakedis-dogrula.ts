@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 /**
  * ============================================================================
  *  HAKEDİŞ DOĞRULAMA
@@ -544,6 +545,38 @@ console.log("\n6) BEKLENEN vs GERÇEKLEŞEN");
   const eslesmeyen = satirlariEslestir(hbOkuma.satirlar, []);
   kontrol("satış yoksa 6 kalem uyarıya düşer", eslesmeyen.eslesmeyenler.length === 6);
   kosanBolumler.push("karsilastirma");
+}
+
+// ===========================================================================
+console.log("\nEŞİK BEYANI SABİTTEN GELİYOR MU");
+// ===========================================================================
+{
+  /**
+   * ⚠ 18.08.2026 — mimar şartı: "kuruş farkları ayrı sınıf, eşik BEYANLI."
+   *
+   * Beyan zaten vardı; kusur daha incedir: sayı sözlüğe ELLE yazılmıştı
+   * ("Fark 1 ₺'yi aşarsa"). `HAKEDIS_ESIKLERI.tutarFarki` değişse metin
+   * eski sayıyı söylemeye devam ederdi — beyan DOĞRU GÖRÜNÜR, YANLIŞ olur.
+   * Bu, yakalanması en zor hata türü: ekranda bir cümle var ve güven veriyor.
+   *
+   * DEĞER TESTİ GÖREMEZ: eşiğin kendisi doğru çalışıyordu. Sınanan şey
+   * metnin sabite BAĞLI olması.
+   */
+  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const not = sozluk.Hakedis?.karsilastirmaNotu ?? "";
+
+  kontrol("karşılaştırma notu eşiği PARAMETREYLE söylüyor", not.includes("{tutar}"));
+  kontrol(
+    "  ...ve elle yazılmış sayı KALMADI",
+    !/Fark \d/.test(not),
+    not.slice(0, 80),
+  );
+
+  const ekran = readFileSync("src/app/hakedis/page.tsx", "utf8");
+  kontrol(
+    "ekran sabiti METNE geçiriyor",
+    /karsilastirmaNotu"?,\s*\{[\s\S]{0,120}?HAKEDIS_ESIKLERI\.tutarFarki/.test(ekran),
+  );
 }
 
 // ===========================================================================
