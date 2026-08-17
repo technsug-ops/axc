@@ -40,6 +40,14 @@ import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
 import type { Currency } from "@/generated/prisma/enums";
 import { satisKalemToplamlari } from "@/lib/tutar";
 
+/** Denetim izindeki tek alan değişikliği (AuditLog.detail içinden). */
+type IzFarki = {
+  alan: string;
+  urunAdi: string | null;
+  eski: string | number | null;
+  yeni: string | number | null;
+};
+
 export default async function SatisDetaySayfasi({
   params,
 }: {
@@ -594,6 +602,7 @@ export default async function SatisDetaySayfasi({
               let ayrinti: {
                 neden?: string;
                 aciklama?: string;
+                /** Eski kayıtlar (tek seferlik script) serbest metin taşır. */
                 gerekce?: string;
                 farklar?: unknown[];
               } = {};
@@ -622,6 +631,32 @@ export default async function SatisDetaySayfasi({
                       {/* Eski kayıtlar (bugünkü script) serbest metin taşıyor. */}
                       {!ayrinti.neden && ayrinti.gerekce ? ayrinti.gerekce : null}
                     </p>
+                  ) : null}
+
+                  {/* ═══ ALAN BAZINDA ESKİ → YENİ ═══
+                      Mimar şartı 17.08.2026: "İz, değeri taşımıyorsa hikâyeyi
+                      taşımıyor." Bu satış dört kez düzenlendi ama hangisinde
+                      neyin kaç olduğu görünmüyordu; ezilen orijinal ancak
+                      ekran arkeolojisiyle bulunabildi. Veri AuditLog.detail
+                      içinde zaten vardı — ekran göstermiyordu. */}
+                  {Array.isArray(ayrinti.farklar) && ayrinti.farklar.length > 0 ? (
+                    <ul className="mt-1 space-y-0.5">
+                      {(ayrinti.farklar as IzFarki[]).map((f, i) => (
+                        <li key={i} className="text-muted-foreground text-xs">
+                          {f.urunAdi ? `${f.urunAdi} · ` : ""}
+                          {tDuz(`alan_${f.alan}`)}:{" "}
+                          <span className="tabular-nums line-through opacity-70">
+                            {f.eski ?? "—"}
+                          </span>
+                          {" → "}
+                          <span className="font-medium tabular-nums">
+                            {f.yeni ?? "—"}
+                          </span>
+                          {/* Kargo rakamı DİLİYLE anılır (ders 2). */}
+                          {f.alan === "KARGO_TUTAR" ? ` ${tDuz("kdvDahilNotu")}` : ""}
+                        </li>
+                      ))}
+                    </ul>
                   ) : null}
                 </li>
               );

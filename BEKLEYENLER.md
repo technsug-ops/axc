@@ -957,6 +957,18 @@ Bir paket **Halil testini** geçmeden sıradakine geçilmez
         `lib/kargo-kdv.ts`te ÇİFT YÖNLÜ tek kaynak; iki tur aç-kaydet
         döngüsü testte (altı değerde kargo aynen kalıyor).
 
+      **DERS 1 — BİR ÇEVİRİ VARSA İKİ YÖNÜ AYNI DOSYADA YAŞAR.**
+      İleri yön (DB→ekran) yeni yazılmış, geri yön (ekran→DB) başka bir
+      dosyaya gömülüydü. Tek yön eklemek hatayı çözmedi, sadece yerini
+      değiştirdi. Çeviri çiftleri ayrılırsa biri değişince öteki unutulur.
+
+      **DERS 2 — KARGO RAKAMI HER ZAMAN DİLİYLE ANILIR: DAHİL/HARİÇ.**
+      Aynı sayı (88,96) bir yerde KDV hariç saklanan değer, başka yerde
+      KDV dahil kesintiydi. Etiketsiz rakam, iki kişiyi aynı sayı üstünde
+      farklı şeyler konuşurken bırakır — mimarın "kesinti 88,96" demesi ile
+      ekrandaki 88,96 farklı şeylerdi ve orijinal ancak ekran arkeolojisiyle
+      bulundu.
+
       **○ KALAN — İPTAL EKRANI** (4 parça + EK 1-2-3):
       1. Üstü çizili + "iptal" rozeti; rozette sebep (taksonomi kısaltması,
          `MAGAZA_DIGER` ise açıklama detayda)

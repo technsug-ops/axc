@@ -2591,6 +2591,7 @@
     "aciklamaIstege": "Açıklama (isteğe bağlı)",
     "aciklamaIpucu": "örn. kanal raporunda 2.805 görünüyor",
     "engel_NEDEN_YOK": "Neden seçilmeden düzenleme kaydedilemez.",
-    "engel_ACIKLAMA_YOK": "\"Diğer\" seçildiğinde açıklama zorunludur — altı ay sonra bu değişikliğin nedeni kayıtta durmalı."
+    "engel_ACIKLAMA_YOK": "\"Diğer\" seçildiğinde açıklama zorunludur — altı ay sonra bu değişikliğin nedeni kayıtta durmalı.",
+    "kdvDahilNotu": "(KDV dahil)"
   }
 }
