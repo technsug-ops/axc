@@ -1942,9 +1942,20 @@ her kart GÖREREK onaylandı.
 
 ---
 
-- [ ] **ÜRÜN KÂRLILIK KARTI — ALIM KARARI ARACI**
-      _Kullanıcı sözleşmesi 17.08.2026._ **SIRA: satış düzeltme + iptal
-      paketinden SONRA.**
+- [x] ~~**ÜRÜN KÂRLILIK KARTI — ALIM KARARI ARACI**~~ ✓ KAPANDI 17.08.2026 —
+      Halil testi geçti (5 madde), mimar onaylı.
+      _Kapanışta iki canlı hata bulunup düzeltildi: (1) tedarikçi görünmüyordu
+      — `Purchase` tedarikçiyi iki alanda taşıyor (`supplierId` ilişkisi ve
+      `supplierName` serbest metin), kart yalnız birini okuyordu; kural
+      `lib/tedarikci-adi.ts`te tek yere alındı. (2) tam eşleşmede fazladan
+      tıklama — kural yalnız kamera yolundaydı, klavye yolu tek elemanlı liste
+      gösteriyordu; karar `lib/kart-arama-karari.ts`te tek yere alındı._
+      _Sözleşmenin \"görsel varsa\" maddesi YAPILAMADI: şemada ürün görseli
+      alanı yok. Görsel istenirse ayrı iş (şema alanı + yükleme + depolama)._
+      _Adet dilimi ve iptal ekranı bu paketin parçası DEĞİL; kendi
+      kalemlerinde._
+
+      Aşağıdaki sözleşme metni tarihe kaldı:
 
       **KULLANIM SENARYOSU:** mağazada, alım öncesi, telefonla barkod okut →
       "bu ürünü alayım mı" kararının tüm verisi TEK BAKIŞTA. Ekran mobil
