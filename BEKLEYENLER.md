@@ -12,7 +12,7 @@ raporuyla açılır.**
 
 | # | Aşama | Çıkış ölçüsü |
 |---|---|---|
-| **0** | **Zemin teyidi** | NET-2 **bağımsız** doğrulandı |
+| **0** | **Zemin teyidi** — hakediş .xlsx + komisyon envanteri | NET-2 **bağımsız** doğrulandı |
 | 1 | Fiyatlama zekâsı (offline) | Melontik'in offline analizi tam karşılandı |
 | 2 | Hakediş derinliği | Melontik'i **ilk geçiş** |
 | 3 | API salt okuma | Örtüşme temiz |
@@ -20,57 +20,63 @@ raporuyla açılır.**
 | 5 | Tam otomatik | Melontik aboneliği **iptal** |
 
 **AŞAMA 0 — ZEMİN TEYİDİ** _(açık)_
-- [ ] **Melontik çapraz teyit** — ⏸ **ÖLÇÜT BEKLİYOR.**
+- [ ] **Hakediş .xlsx teyidi** — ⏸ Halil'in dosyasına bağlı, araçlar hazır.
+      **AŞAMA 0'IN TEK BACAĞI** (Melontik çapraz teyidi 18.08.2026'da
+      düşürüldü — gerekçe aşağıda). Tek güvenilir bağımsız kaynak budur:
+      kanalın kendi ödeme dökümü.
+      → `canli:hakedis-esle` (hesap kırılımı) → taze `.xlsx` → `canli:hakedis-teyit`
 
-      **İLK KOŞU GEÇERSİZ SAYILDI.** Sunumdaki kâr rakamlarıyla
-      karşılaştırma yapıldı ve iki siparişte fark çıktı; ardından kullanıcı
-      bildirdi: **"sunumdakiler sadece demo."** O rakamlar Melontik'in bu
-      siparişler için ürettiği gerçek çıktı değildi.
+      **BİRLİKTE BAKILACAK — ÖDEME HİZMETİ HİPOTEZİ (iddia DEĞİL):**
+      Trendyol/HB hakediş dosyalarında bir **tahsilat/ödeme bedeli**
+      satırı var mı? `TAHSILAT_BEDELI` hakediş okuyucusunda TANIMLI ama
+      kâr motorunun kesinti kodları arasında YOK.
+      · Kanal kesiyor + biz düşmüyorsak → NET'lerimiz bugüne kadar
+        **olduğundan iyi** görünmüştür. Gerçek risk.
+      · Kesmiyorsa → düzeltilecek bir şey yok.
+      _Bu soru Melontik farkından TÜREMEZ; o fark geçersiz sayıldı. Kendi
+      başına değerli olduğu için burada duruyor._
+
+- [ ] **Komisyon envanteri** — ⚠ **KOMUT YOK, yazılacak.**
+      _Ölçüldü 18.08.2026: depoda `komisyon:dogrula` (saf hesap) ve
+      `komisyon:prova` (YEREL, YAZAN uçtan uca prova) var; ikisi de
+      envanter değil. Canlıyı okuyup "komisyon oranlarımızın hâli ne"
+      diyen bir araç bulunmuyor._
+
+      Kapsam önerisi (salt okuma): kaç ChannelSku'da oran tanımlı / boş ·
+      kanal bazında dağılım · **oranların yaşı** (komisyon haftalık
+      değişiyor: TY salı, HB çarşamba) · son N günün satışlarında
+      snapshot'lanan oran ile bugünkü oranın farkı.
+      _Aşama 1 fiyatlama zekâsının girdisi budur; oran envanteri
+      bilinmeden dilim simülasyonu kurulamaz._
+
+**❌ DÜŞÜRÜLDÜ — Melontik çapraz teyit** _(18.08.2026)._
+      Sunumdaki kâr rakamları **demo**; Melontik'e maliyetler düzgün
+      girilmemiş (sunum slayt 13'teki "maliyeti olmayan ürün" uyarısı bunu
+      doğruluyor). Çürük ölçütle karşılaştırma yapılmaz.
 
       > **DERS — ÖLÇÜT DE KAYNAĞIYLA ANILIR.** Karşılaştırmanın değeri
       > ölçülen tarafa değil **ÖLÇÜTE** bağlıdır. Doğrulanmamış ölçütten
-      > çıkan fark teşhis değil gürültüdür — üstelik peşinden gerçek bir
-      > motoru "düzeltme" girişimi başlatır ve **doğru olanı bozabilirdi.**
-      > Ölçütün gerçekliği, ölçümden ÖNCE sorulur.
+      > çıkan fark teşhis değil gürültüdür ve peşinden **doğru çalışan bir
+      > motoru bozma** girişimi başlatır. Ölçütün gerçekliği ölçümden ÖNCE
+      > sorulur. _Türetilmiş maliyet ayrıştırması da bu yüzden İPTAL:
+      > demo orandan türeyen denklem kapanır ve kapandığı için İKNA EDİCİ
+      > görünür — en tehlikeli hâli budur._
 
-      **BUGÜN ELDE KALAN (demo'dan bağımsız, geçerli):**
-      · Sipariş numaraları ve ciro **sistemde var ve tutuyor** —
-        `11505178853` 4.784,00 · `11504122276` 6.200,00. Kayıt tarafı sağlam.
-      · **6 siparişin 4'ü sistemde YOK** → elle giriş kapsam boşluğu,
-        Aşama 3'ün gerekçesi (aşağıda).
-      · Araçtaki üç kusur düzeltildi (döküm kayıttan okunuyor · ödenecek
-        KDV türetiliyor · fark maliyet/masraf diye ayrışıyor).
-      · `TAHSILAT_BEDELI` hakediş modelinde TANIMLI ama kâr motorunun
-        kesinti kodları arasında DEĞİL. **Bu, Melontik'ten bağımsız bir
-        sorudur** ve ayrı kalem olarak açıldı (aşağı bak).
+      **KALICI KAZANIMLAR (demo'dan bağımsız, geçerli):**
+      1. **Ciro doğrulaması 2/2 ✓** — `11505178853` 4.784,00 ve
+         `11504122276` 6.200,00 birebir tuttu. Sipariş numaraları ve
+         cirolar GERÇEK: **kayıtlarımız pazaryeriyle örtüşüyor.**
+      2. **4 eksik sipariş** → elle giriş kapsam boşluğu kanıtı, Aşama 3
+         gerekçe hanesinde.
+      3. **Betik kusuru düzeltildi (iç işimiz):** kâr dökümü
+         `ODENECEK_KDV` diye olmayan bir kesinti arıyor ve "0,00" basıyordu;
+         134,28'lik NET-1→NET-2 farkını açıklayamıyordu. Artık kesintiler
+         KAYITTAN okunuyor ve ödenecek KDV fark olarak TÜRETİLİP basılıyor.
+      4. `TAHSILAT_BEDELI` sorusu → yukarıdaki hakediş kalemine bağlandı.
 
-      **DEVAM ŞARTI:** Melontik'in canlı "Sipariş Kârlılık Analizi"
-      ekranından **gerçek** rakamlar → `veri/ozel/melontik-referans.json`
-      değiştirilir ve `_UYARI` alanı silinir. Betik o alan doluyken
-      **hüküm vermiyor** ("teyit edildi" de demiyor, "fark var" da).
-
-      → araç: `npm run canli:melontik-teyit` (salt okuma)
-
-- [ ] **TAHSİLAT/ÖDEME BEDELİ KÂR MOTORUNDA MI?** — _bulgu 18.08.2026._
-      `TAHSILAT_BEDELI` hakediş okuyucusunda tanımlı bir işlem tipi, ama
-      kâr motorunun kesinti kodları arasında yok (`MALIYET`, `KOMISYON`,
-      `KARGO`, `STOPAJ` + `ChannelFee` kuralları).
-
-      **İKİ AYRI SORU, İKİSİ DE ÖLÇÜLECEK:**
-      1. Kanal bize böyle bir kesinti **kesiyor mu** — hakediş
-         kalemlerinde `TAHSILAT_BEDELI` / `HIZMET_BEDELI` satırı var mı.
-      2. Motorumuz onu **düşüyor mu** — `ChannelFee`de karşılığı var mı.
-
-      Kanal kesiyor ve biz düşmüyorsak **NET'lerimiz bugüne kadar
-      olduğundan İYİ görünmüştür** — bu, demo veriden bağımsız gerçek bir
-      risktir. Betiğin 4. bölümü ikisini de basıyor.
-
-      _Anayasa notu: HB için "%0,8 ödeme gideri" zaten yazılı; Trendyol
-      için "13,19 TL sabit, sipariş başına bir kez". Ölçüm bunların canlıda
-      gerçekten tanımlı olup olmadığını gösterecek._
-
-- [ ] **Hakediş .xlsx teyidi** — ⏸ Halil'in dosyasına bağlı, araçlar hazır
-- [ ] **Komisyon envanteri** — komut verildi
+      Araç duruyor (`canli:melontik-teyit`); gerçek Melontik çıktısı
+      gelirse referans değiştirilip koşulabilir, ama **Aşama 0'ın şartı
+      değil.**
 
 **AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
 - [ ] Fiyatlama aracı (dilim + simülasyon)

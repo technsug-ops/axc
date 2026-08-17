@@ -363,7 +363,16 @@ async function main() {
        *
        * DENKLEM KAPANMALI:  maliyet farkı + masraf farkı = toplam fark
        */
-      const oran = melontikOranlari.get(kod);
+      /**
+       * ⚠ AYRIŞTIRMA İPTAL EDİLDİ (mimar 18.08.2026): "çürük referansla
+       * denklem kapatılmaz." Türetilmiş maliyet, referansın kâr oranından
+       * çıkar; referans demo ise türetilen maliyet de demodur ve denklemin
+       * kapanması hiçbir şey kanıtlamaz — üstelik kapanınca İKNA EDİCİ
+       * görünür, en tehlikeli hâli budur.
+       *
+       * Referans güvenilir olduğunda kendiliğinden geri gelir.
+       */
+      const oran = referansUyarisi === null ? melontikOranlari.get(kod) : undefined;
       const bizimMaliyet = kesintiler.get("MALIYET") ?? 0;
       if (oran !== undefined && oran > 0) {
         const melontikMaliyet = bizim / (oran / 100);
@@ -384,6 +393,8 @@ async function main() {
         } else if (masrafKatkisi < -FARK_ESIGI) {
           console.log(`        → BİZ DAHA ÇOK MASRAF DÜŞÜYORUZ.`);
         }
+      } else if (referansUyarisi !== null) {
+        console.log(`        (ayrıştırma yapılmadı — referans güvenilir değil)`);
       } else {
         console.log(`        (kâr oranı yok — fark ayrıştırılamadı)`);
       }
@@ -441,7 +452,12 @@ async function main() {
    * bugüne kadar OLDUĞUNDAN İYİ görünmüştür. Kanal kesmiyorsa Melontik
    * tahmini bir kalem düşüyor demektir ve düzeltme BİZDE değil beyanda.
    */
-  console.log("  ── 4) ÖDEME HİZMETİ HİPOTEZİ ──────────────────────────────");
+  console.log("  ── 4) ÖDEME HİZMETİ — HİPOTEZ, İDDİA DEĞİL ────────────────");
+  console.log("     ⚠ Bu bölüm Melontik farkından TÜREMEZ (o fark geçersiz).");
+  console.log("       Bağımsız bir soru: kanal bir tahsilat/ödeme bedeli");
+  console.log("       kesiyor da biz düşmüyor muyuz? Cevabı .xlsx teyidi");
+  console.log("       yapılırken kesinleşecek; burada yalnız ÖLÇÜLÜYOR.");
+  console.log("");
 
   const tahsilatKalemleri = await prisma.settlementItem.groupBy({
     by: ["code"],
