@@ -563,7 +563,9 @@
     "yeniUrunOlustur": "Yeni ürün oluştur",
     "alimKodu": "Alım Kodu",
     "kart": "Kart",
-    "alimKoduVeSiparis": "Alım / Sipariş no"
+    "alimKoduVeSiparis": "Alım / Sipariş no",
+    "suzgecToplami": "Süzgeç toplamı",
+    "iptalHaric": "{sayi} iptal hariç"
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",

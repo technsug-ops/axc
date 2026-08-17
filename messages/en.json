@@ -563,7 +563,9 @@
     "yeniUrunOlustur": "",
     "alimKodu": "",
     "kart": "",
-    "alimKoduVeSiparis": ""
+    "alimKoduVeSiparis": "",
+    "suzgecToplami": "",
+    "iptalHaric": ""
   },
   "MalKabul": {
     "saglamSayiOlmali": "",

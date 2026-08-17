@@ -31,6 +31,8 @@ import { alimKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { kalemToplamlari } from "@/lib/tutar";
+import { suzgecToplami } from "@/lib/liste-toplami";
+import { ListeToplami } from "@/components/liste-toplami";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -196,6 +198,20 @@ export default async function AlimlarSayfasi({
     return toplamlar.map((t) => bicim.para(t.tutar, t.paraBirimi)).join(" + ");
   }
 
+  /**
+   * SÜZGECİN TOPLAMI (İlke #15). Satır satır gösterilen tutarın toplamı da
+   * ekranda durur — kullanıcı KDV dengesi için aylık alımı takip ediyor ve
+   * bu rakamı satırlardan kafadan topluyordu.
+   *
+   * İPTALLER TOPLAMA GİRMEZ: iptal edilmiş alım gerçekleşmiş bir alış
+   * değildir, matraha yazılamaz. Ama sessizce düşülmez — ayrı kutuda görünür.
+   */
+  const toplamlar = suzgecToplami(
+    alimlar,
+    (a) => kalemToplamlari(a.items),
+    (a) => a.status === "CANCELLED",
+  );
+
   function eylemler(alim: (typeof alimlar)[number]) {
     const kabulEdilebilir =
       alim.status !== "CANCELLED" && alim.status !== "RECEIVED";
@@ -280,6 +296,21 @@ export default async function AlimlarSayfasi({
           aralikMetni,
           baslangic: p.baslangic ?? "",
           bitis: p.bitis ?? "",
+        }}
+      />
+
+      {/* TOPLAM SÜZGECİN ALTINDA, LİSTENİN ÜSTÜNDE — hangi kümenin toplamı
+          olduğu seçili süzgeçle birlikte okunsun (İlke #15). */}
+      <ListeToplami
+        baslik={t("suzgecToplami")}
+        toplamlar={toplamlar.toplam}
+        altMetin={`${ortak("kayitSayisi", { sayi: toplamlar.sayi })}${
+          aralikMetni ? ` · ${aralikMetni}` : ""
+        }`}
+        haric={{
+          etiket: t("iptalHaric", { sayi: toplamlar.haricSayi }),
+          toplamlar: toplamlar.haric,
+          sayi: toplamlar.haricSayi,
         }}
       />
 
