@@ -1775,7 +1775,9 @@
     "melontikMaliyet": "(≈ Melontik: Kâr/Ürün Maliyet)",
     "oluSermaye": "{kalem} kalem {gun}+ gündür rafta · {tutar} bağlı",
     "oluSermayeYok": "{gun}+ gündür bekleyen stok yok",
-    "kartAra": "Ürün ara"
+    "kartAra": "Ürün ara",
+    "kargoDurumuKanal": "Kargoya verilen ({kanal})",
+    "kargoTumKanallar": "tüm kanallar: {verilen} · bekleyen: {bekleyen}"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

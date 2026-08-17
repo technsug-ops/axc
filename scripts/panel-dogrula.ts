@@ -2200,6 +2200,59 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
 }
 
 // ===========================================================================
+console.log("\nKANAL SÜZGECİ — HER KART AYNI EVRENDE");
+// ===========================================================================
+{
+  /**
+   * ⚠ CANLI BULGU 17.08.2026: kullanıcı Hepsiburada seçti; ciro ve adet o
+   * kanala düştü ama KARGO kartı GENEL sayıyı gösterdi (11 / 2 bekleyen).
+   * Aynı ekranda iki evren — kart hangi soruya cevap verdiği belli olmadan
+   * rakam gösteriyordu.
+   *
+   * Sebep: `panelHesapla` üç liste alır; ekranda satış ve iade süzülüyordu,
+   * KARGO ham geçiyordu. Tarama ikinci bir yer daha buldu: kıyas bloğu da
+   * ham listeyle çağrılıyordu, yani rozet başka evrenin değişimini
+   * gösterecekti.
+   *
+   * Bu kontrol EKRAN KODUNU tarar. Saf fonksiyon zaten doğru çalışıyordu;
+   * hata ona NE VERİLDİĞİNDEYDİ ve değer testiyle yakalanamazdı.
+   */
+  const ekran = readFileSync("src/app/page.tsx", "utf8");
+
+  const cagrilar = [...ekran.matchAll(/panelHesapla\(([\s\S]*?)\n\s*\)/g)].map(
+    (m) => m[1],
+  );
+  kontrol("panelHesapla çağrıları bulundu", cagrilar.length >= 2, cagrilar.length);
+
+  const hamKullanan = cagrilar.filter(
+    (c) => /\bkargolar\b/.test(c) && !/donemKargolari/.test(c),
+  );
+  kontrol(
+    "HİÇBİR panelHesapla çağrısı ham kargolar kullanmıyor",
+    hamKullanan.length === 0,
+    hamKullanan,
+  );
+
+  kontrol(
+    "kargo listesi kanala göre süzülüyor",
+    /donemKargolari\s*=\s*seciliKanal/.test(ekran),
+  );
+
+  /**
+   * SÜZGEÇ AÇIKKEN GENEL RESİM KAYBOLMAZ: alt satırda tüm kanal toplamı
+   * durur. Süzgeç yokken satır gereksiz tekrar olurdu.
+   */
+  kontrol(
+    "süzgeç açıkken tüm kanal toplamı hesaplanıyor",
+    /tumKanalKargo\s*=\s*seciliKanal/.test(ekran),
+  );
+  kontrol(
+    "kart başlığı süzgeç açıkken KANAL ADINI yazıyor",
+    /kargoDurumuKanal/.test(ekran),
+  );
+}
+
+// ===========================================================================
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) {
   console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);

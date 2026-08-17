@@ -573,7 +573,41 @@ export default async function AnaSayfa({
     ? iadeler.filter((i) => i.kanalKodu === seciliKanal)
     : iadeler;
 
-  const bloklar = panelHesapla(donem, donemSatislari, donemIadeleri, kargolar);
+  /**
+   * ⚠ KARGO DA SÜZÜLÜR — 17.08.2026 canlı bulgusu.
+   *
+   * Satış ve iade süzülüyordu, KARGO ham geçiyordu. Kullanıcı Hepsiburada
+   * seçti: ciro ve adet o kanala düştü, kargo kartı GENEL sayıyı gösterdi.
+   * Aynı ekranda iki evren — kart hangi soruya cevap verdiği belli olmadan
+   * rakam gösteriyordu.
+   *
+   * Bu, süzgecin "yarım çalışması"nın ikinci kez yaşanması: yukarıdaki
+   * yorumda 14.08'de grafik süzülüp rakamların süzülmediği anlatılıyor.
+   * Aynı hata bir alan ötede duruyormuş.
+   */
+  const donemKargolari = seciliKanal
+    ? kargolar.filter((k) => k.kanalKodu === seciliKanal)
+    : kargolar;
+
+  const bloklar = panelHesapla(
+    donem,
+    donemSatislari,
+    donemIadeleri,
+    donemKargolari,
+  );
+
+  /**
+   * TÜM KANAL TOPLAMI — süzgeç açıkken alt satırda gösterilir ki kullanıcı
+   * genel resmi kaybetmesin. Süzgeç yokken bu satır gereksiz.
+   */
+  const tumKanalKargo = seciliKanal
+    ? {
+        verilen: kargolar.filter(
+          (k) => k.kargoTarihi !== null && pencerede(donem, k.kargoTarihi),
+        ).length,
+        bekleyen: kargolar.filter((k) => k.kargoTarihi === null).length,
+      }
+    : null;
 
   /**
    * KIYAS BLOKLARI — aynı motor, farklı pencere. `panelHesapla` pencereyi
@@ -581,7 +615,20 @@ export default async function AnaSayfa({
    * için ayrı bir hesap YAZILMADI.
    */
   const kiyasBloklar = kiyasPencere
-    ? panelHesapla(kiyasPencere, donemSatislari, donemIadeleri, kargolar)
+    ? panelHesapla(
+        kiyasPencere,
+        donemSatislari,
+        donemIadeleri,
+        /**
+         * ⚠ KIYAS DA SÜZÜLÜ LİSTEYİ KULLANIR (17.08.2026 taraması).
+         *
+         * Ana blok düzeltilirken bu ikinci çağrı ham `kargolar` ile
+         * kalmıştı: kanal seçiliyken kartın rakamı o kanalın, "önceki
+         * döneme göre" rozeti ise TÜM kanalların değişimini gösterecekti.
+         * Aynı kartta iki farklı evren — düzeltilen hatanın kendisi.
+         */
+        donemKargolari,
+      )
     : null;
   /** Kıyas döneminde o para biriminde HİÇ KAYIT yoksa null → "karşılaştırılamaz". */
   const kiyasBlogu = (paraBirimi: Currency) =>
@@ -1354,7 +1401,17 @@ export default async function AnaSayfa({
                     tarihine göre süzülür. Not olmazsa kullanıcı "satış 2 ama
                     kargo 6, neden tutmuyor" der ve panele güveni gider. */}
                 <IstatistikKutusu
-                  etiket={t("kargoDurumu")}
+                  /* SÜZGEÇ AÇIKKEN KANAL ADI BAŞLIKTA: kart hangi soruya
+                     cevap verdiğini kendisi söyler. */
+                  etiket={
+                    seciliKanal
+                      ? t("kargoDurumuKanal", {
+                          kanal:
+                            kanalSecenekleri.find(([k]) => k === seciliKanal)?.[1] ??
+                            seciliKanal,
+                        })
+                      : t("kargoDurumu")
+                  }
                   cocuk={
                     <Baglanti href={kargoAdresi("verildi")}>
                       {blok.kargoyaVerilenAdet}
@@ -1386,6 +1443,17 @@ export default async function AnaSayfa({
                           ? t("kargoBekleyenNotu")
                           : t("kargoBekleyenYok")}
                       </span>
+                      {/* GENEL RESİM KAYBOLMASIN: süzgeç açıkken tüm kanal
+                          toplamı küçük satırda durur. Süzgeç yokken bu satır
+                          gereksiz tekrar olurdu. */}
+                      {tumKanalKargo ? (
+                        <span className="block">
+                          {t("kargoTumKanallar", {
+                            verilen: tumKanalKargo.verilen,
+                            bekleyen: tumKanalKargo.bekleyen,
+                          })}
+                        </span>
+                      ) : null}
                     </span>
                   }
                 />
