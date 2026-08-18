@@ -92,6 +92,60 @@ raporuyla açılır.**
       gelirse referans değiştirilip koşulabilir, ama **Aşama 0'ın şartı
       değil.**
 
+- [ ] **SNAPSHOT FARKI — 3 KALEM ÖN AYRIM** _(18.08.2026)._
+      Philips 5000 10in1, üç sipariş: `11493262226` · `11492798173` ·
+      `11492628481`. Snapshot **2,70** → güncel **15,00**.
+
+      ⚠ **ORAN GEÇMİŞİ TUTULMUYOR (ölçüldü).** Komisyon yüklemesi
+      `ChannelSku.commissionRate`i ÜSTÜNE yazar; ne ayrı geçmiş tablosu ne
+      `AuditLog` kaydı var, yalnız `commissionUpdatedAt` damgası kalır.
+      **"2,70 hangi yüklemeyle geldi" sorusu sistemden CEVAPLANAMAZ.**
+
+      Cevaplanabilen ve ayrımı yapmaya yeten soru:
+      · güncelleme > satış → snapshot o günkü orandı, **meşru**
+      · güncelleme < satış → satışta zaten yeni oran vardı, buna rağmen
+        farklı yazılmış → **elle giriş ihtimali**, incelenmeli
+      → `npm run canli:komisyon-envanter -- 11493262226 11492798173 11492628481`
+
+      **HÜKÜM BURADA VERİLMEZ.** Nihai hakem hakediş `.xlsx`'indeki GERÇEK
+      kesintidir. .xlsx teyit aracına not: **bu üç sipariş ÖZEL satır**
+      olarak işaretlenecek (gerçek komisyon · snapshot · güncel).
+
+- [ ] **N11 GÜNCELLEME RİTMİ — HALİL'E SORU.**
+      Envanter aracı TY (salı) ve HB (çarşamba) ritmini biliyor; **N11 için
+      ritim tanımsız** ve araç bunu "bayatlık ölçülemedi" diye açıkça
+      yazıyor — sessizce "güncel" saymıyor.
+      **Sorular:** N11 komisyonları hangi sıklıkla değişiyor? Bir dosya
+      indirilebiliyor mu, yoksa elle mi takip ediliyor?
+      _Cevap gelince `GUNCELLEME_GUNU` haritasına eklenir._
+
+- [x] **KOMİSYON DOSYASI MUAYENESİ — ARAÇ HAZIR 18.08.2026.**
+      `npm run komisyon:muayene -- "yol\dosya.xlsx"` — veritabanına HİÇ
+      bağlanmaz. Halil taze Trendyol komisyon Excel'ini indirince
+      **YÜKLEMEDEN ÖNCE** koşulacak.
+
+      **NİYE ÖNCE:** yükleme yalnız tek oranı alır; dilim kolonu varsa bile
+      sessizce düşer ve ham dosya saklanmadığı için geriye dönük
+      bakılamazdı. Soru bir kez kaçırılırsa bir hafta daha beklerdi.
+
+      Araç dilimi **iki biçimde** arıyor — kolon başlığında (fiyat/aralık/
+      alt/üst/kademe…) **ve satır tekrarında** (aynı barkod birden çok
+      satırda = her dilim bir satır). İkincisi olmasaydı "başlıkta ipucu
+      yok" deyip dilimi kaçırabilirdik.
+
+      ⚠ **Normalleştiriciden geçiyor** (`lib/tablo/paket.ts`): Trendyol
+      dosyaları ZIP64 + veri tanımlayıcılı geliyor ve `read-excel-file`
+      onları açamıyor. Atlansaydı araç ilk gerçek dosyada "okunamadı" der,
+      suç dosyaya atılırdı. **Gerçek bir TY dosyasıyla denendi, çalışıyor.**
+
+      **ARŞİV BAŞLADI:** muayene edilen dosya `veri/ozel/arsiv/` altına
+      kopyalanıyor (gitignore'da — depo herkese açık, dosya ürün/fiyat/oran
+      taşır). "Kaynakta ne vardı" sorusu bir daha cevapsız kalmayacak.
+
+      **ÇIKTI KARARI:** dilim izi VARSA → şema + okuyucu genişletme kapsamı
+      (Aşama 1 zemini). YOKSA → dilim kaynağı **"elle tanım"** olarak
+      kesinleşir.
+
 **AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
 - [ ] Fiyatlama aracı (dilim + simülasyon)
 - [ ] Zararına satış uyarısı → **uyarı merkezi Faz 2** (amber katman)

@@ -65,7 +65,8 @@
     "canli:hakedis-teyit": "tsx scripts/canli-hakedis-teyit.ts",
     "canli:hakedis-esle": "tsx scripts/canli-hakedis-esle.ts",
     "canli:melontik-teyit": "tsx scripts/canli-melontik-teyit.ts",
-    "canli:komisyon-envanter": "tsx scripts/canli-komisyon-envanter.ts"
+    "canli:komisyon-envanter": "tsx scripts/canli-komisyon-envanter.ts",
+    "komisyon:muayene": "tsx scripts/komisyon-dosya-muayene.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

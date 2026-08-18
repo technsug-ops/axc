@@ -319,6 +319,118 @@ async function main() {
   console.log("       tanımlanacak). Bu, Aşama 1'in ilk sorusudur.");
   console.log("");
 
+
+  // ==========================================================================
+  //  5) ÖN AYRIM — BELİRLİ SİPARİŞLER (komut satırından)
+  // ==========================================================================
+  /**
+   * Çalıştırma:  npm run canli:komisyon-envanter -- 11493262226 11492798173
+   *
+   * ⚠ ÖNCE BİR SINIRI BEYAN ETMEK GEREK: **ORAN GEÇMİŞİ TUTULMUYOR.**
+   * Komisyon yüklemesi `ChannelSku.commissionRate`i ÜSTÜNE YAZAR ve yalnız
+   * `commissionUpdatedAt` damgasını bırakır (ölçüldü 18.08.2026: ne ayrı bir
+   * geçmiş tablosu ne de `AuditLog` kaydı var). Yani **"2,70 hangi yüklemeyle
+   * geldi" sorusu sistemden CEVAPLANAMAZ** — o değer artık hiçbir yerde yok,
+   * sadece satışa donmuş hâli duruyor.
+   *
+   * CEVAPLANABİLEN SORU ŞU VE AYRIMI YAPMAYA YETER:
+   *
+   *   oran GÜNCELLENME tarihi > satış tarihi
+   *     → satış anında kayıtlı oran muhtemelen ESKİ değerdi; snapshot onu
+   *       dondurdu. **Snapshot MEŞRU, düzeltilecek bir şey yok.**
+   *
+   *   oran GÜNCELLENME tarihi < satış tarihi
+   *     → satış anında kayıtlı oran ZATEN yeni değerdi; buna rağmen satışa
+   *       başka bir oran yazılmış. Satış formu öneriyi değiştirmeye izin
+   *       verdiği için bu **elle giriş** olabilir. İncelenmeli.
+   *
+   * HÜKÜM YİNE DE BURADA VERİLMEZ. Nihai hakem, hakediş dosyasındaki
+   * GERÇEK kesintidir: kanal o siparişten kaç TL komisyon kesmiş?
+   * Bu bölüm yalnız hangi ihtimalin önde olduğunu söyler.
+   */
+  const istenenKodlar = process.argv.slice(2).filter((a) => /^\d{6,}$/.test(a));
+  if (istenenKodlar.length > 0) {
+    console.log("  ── 5) ÖN AYRIM — İSTENEN SİPARİŞLER ───────────────────────");
+    console.log("     ⚠ ORAN GEÇMİŞİ TUTULMUYOR: eski oranın hangi yüklemeyle");
+    console.log("       geldiği sistemden bilinemez. Aşağıdaki ölçüt, satış ile");
+    console.log("       oranın SON güncellenme tarihini karşılaştırır.");
+    console.log("");
+
+    const hedefler = await prisma.saleItem.findMany({
+      where: { sale: { code: { in: istenenKodlar } } },
+      select: {
+        commissionRate: true,
+        quantity: true,
+        unitPriceAmount: true,
+        variantId: true,
+        variant: { select: { product: { select: { name: true } } } },
+        sale: {
+          select: {
+            code: true,
+            soldAt: true,
+            channelAccountId: true,
+            channelAccount: { select: { channel: { select: { name: true } } } },
+          },
+        },
+      },
+    });
+
+    const skuKayitlari = await prisma.channelSku.findMany({
+      where: {
+        variantId: { in: [...new Set(hedefler.map((h) => h.variantId))] },
+      },
+      select: {
+        channelAccountId: true,
+        variantId: true,
+        commissionRate: true,
+        commissionUpdatedAt: true,
+        updatedAt: true,
+        createdAt: true,
+        isActive: true,
+      },
+    });
+    const skuHarita = new Map(
+      skuKayitlari.map((k) => [`${k.channelAccountId}|${k.variantId}`, k]),
+    );
+
+    for (const h of hedefler) {
+      const sku = skuHarita.get(`${h.sale.channelAccountId}|${h.variantId}`);
+      const snapshot =
+        h.commissionRate === null ? null : Number(h.commissionRate.toString());
+      const guncel =
+        sku?.commissionRate == null ? null : Number(sku.commissionRate.toString());
+
+      console.log(`     ${h.sale.code}  ${h.variant.product.name.slice(0, 40)}`);
+      console.log(`        kanal              ${h.sale.channelAccount.channel.name}`);
+      console.log(`        SATIŞ tarihi       ${gun(h.sale.soldAt)}`);
+      console.log(`        snapshot oran      ${snapshot === null ? "—" : snapshot.toFixed(2)}`);
+      console.log(`        güncel oran        ${guncel === null ? "—" : guncel.toFixed(2)}`);
+      console.log(`        oran güncellenme   ${gun(sku?.commissionUpdatedAt ?? null)}`);
+      console.log(`        kanal SKU açılışı  ${gun(sku?.createdAt ?? null)}`);
+      console.log(`        kanal SKU aktif mi ${sku ? (sku.isActive ? "evet" : "HAYIR") : "kayıt YOK"}`);
+
+      const gncl = sku?.commissionUpdatedAt ?? null;
+      if (gncl === null) {
+        console.log("        → oran hiç güncellenmemiş (damga boş) — snapshot");
+        console.log("          nereden geldiği belirsiz, elle giriş ihtimali yüksek.");
+      } else if (gncl.getTime() > h.sale.soldAt.getTime()) {
+        console.log("        → GÜNCELLEME SATIŞTAN SONRA: snapshot muhtemelen o");
+        console.log("          günkü kayıtlı orandı. **Snapshot meşru görünüyor.**");
+      } else {
+        console.log("        → GÜNCELLEME SATIŞTAN ÖNCE: satış anında kayıtlı oran");
+        console.log("          zaten güncel değerdi, buna rağmen farklı oran");
+        console.log("          yazılmış. **Elle giriş ihtimali — incelenmeli.**");
+      }
+      console.log("");
+    }
+
+    console.log("     ⚠ NİHAİ HAKEM BU BÖLÜM DEĞİL: kanalın o siparişten");
+    console.log("       FİİLEN kestiği komisyon, hakediş .xlsx'inde yazılı.");
+    console.log("       Dosya geldiğinde bu üç sipariş ÖZEL satır olarak");
+    console.log("       karşılaştırılacak (gerçek · snapshot · güncel).");
+    console.log("");
+  }
+
   await prisma.$disconnect();
 }
 
