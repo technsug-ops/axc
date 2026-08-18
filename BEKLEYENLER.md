@@ -24,7 +24,7 @@ ilgili pakette kalır._
 | H4 | **Ödeme hizmeti hipotezi** | H2 sırasında bakılacak: dosyada tahsilat/ödeme bedeli satırı var mı |
 | H5 | **N11 ritmi** | Komisyonlar hangi sıklıkla değişiyor? Cevapsızken envanter "ölçülemedi" diyor |
 | H6 | **Canlı tur** | Kart sırası · yapışkan çubuk · döküm görüntüsü · kıyas ibaresi (hepsi deploy'da) |
-| H7 | **CRON AYIRT EDİCİ TEST** | Gizli pencerede `/api/yedek/otomatik` aç → giriş sayfası mı, `KAPALI` mı, `YETKISIZ` mi. **Teşhis tablosu yukarıda.** İki kez kaçtı (18–19.08) |
+| H7 | **DIŞ ZAMANLAYICI KURULUMU** | `cron-job.org` → adım adım tarif yukarıda. Teşhis kapandı (`YETKISIZ` → suçlu Vercel zamanlayıcısı). Bildirim ayarı ŞART |
 | H8 | **Melontik ölçütü** | Çapraz teyit için GERÇEK Melontik çıktısı (sunum demo çıktı) |
 
 ### 🔧 BİZDE — karar bekleyen
@@ -53,80 +53,81 @@ güncelliğinden önce gelir)_
 ---
 
 
-### 🔴 CRON TEŞHİSİ — 19.08.2026, iki kez kaçtı
+### 🔴 CRON — TEŞHİS KAPANDI, DIŞ ZAMANLAYICIYA GEÇİLDİ (19.08.2026)
 
-**BİZİM KODUMUZ TEMİZ. Dört katman tek tek ölçüldü:**
+**AYIRT EDİCİ TEST SONUCU: `YETKISIZ` (401).** Uç açık, `CRON_SECRET`
+mevcut, doğrulama çalışıyor. **(A) ve (B) elendi.**
 
-| # | Katman | Sonuç |
+Dört katman zaten tek tek ölçülmüştü ve hepsi temizdi: yol birebir ·
+tanım hiç değişmemiş · ara katman ucu açık tutuyor · kimlik kontrolü
+standart desen. Geriye **Vercel zamanlayıcısının kendisi** kalıyor —
+**ve Hobby planında logu olmadığı için ne olduğu öğrenilemez.**
+**Teşhis burada tavan yaptı.** _Anayasa: "yönetilemeyen bağımlılık —
+üçüncü şans verilmez."_
+
+#### ✓ ÇİFT TETİK ZARARSIZ — ÖLÇÜLDÜ, VARSAYILMADI
+
+`lib/yedek-yaz.ts` okundu: dosya adı güne sabit
+(`yedek/selliora-{gün}.json`), `addRandomSuffix: false` +
+`allowOverwrite: true`, ve `put` **ancak içerik TAM üretildikten sonra**
+çağrılıyor. İki zamanlayıcı aynı gün tetiklerse **aynı dosya tazelenir,
+kopya oluşmaz**; yarım içerik iyi bir yedeğin üstüne yazamaz.
+→ **Vercel cron tanımda KALIYOR** (bedava yedeklilik), ama birincil değil.
+
+---
+
+### 📋 HALİL İÇİN: DIŞ ZAMANLAYICI KURULUMU
+
+**ÖNCE — `CRON_SECRET` değerini al:**
+Vercel → projeye gir → **Settings** → **Environment Variables** →
+listede `CRON_SECRET` → yanındaki **göz/Reveal** ile değeri göster,
+kopyala. _(Değeri hiçbir yere yapıştırıp bırakma; doğrudan aşağıdaki
+alana gidecek.)_
+
+**SONRA — zamanlayıcıyı kur** (`cron-job.org`, ücretsiz):
+
+| # | Adım | Ne yazılacak |
 |---|---|---|
-| 1 | `vercel.json` yolu ↔ rota dosyası | ✓ **birebir** — `/api/yedek/otomatik`, harf ve eğik çizgi dahil |
-| 2 | Cron tanımının deploy geçmişi | ✓ **hiç değişmemiş** — `d40f782`'de eklenmiş, silinmemiş (`git log -p` ile bakıldı, tek bir `-` satırı yok) |
-| 3 | Uygulama ara katmanı (`proxy.ts`) | ✓ uç **AÇIK YOLLAR** listesinde — oturum kontrolü onu kesmiyor |
-| 4 | Rota kimlik kontrolü | ✓ standart desen: `Authorization: Bearer $CRON_SECRET` |
+| 1 | Hesap aç, e-postayı doğrula | — |
+| 2 | **Create cronjob** | — |
+| 3 | **Title** | `Selliora gunluk yedek` |
+| 4 | **URL** | `https://axc-seven.vercel.app/api/yedek/otomatik` |
+| 5 | **Schedule** | Her gün, saat **03:00** |
+| 6 | **Timezone** | **Europe/Istanbul** _(seçenek varsa; yoksa 03:00 UTC de olur — gece koşması yeterli)_ |
+| 7 | **Advanced → Request method** | `GET` |
+| 8 | **Advanced → Headers** → yeni satır | ad: `Authorization` · değer: `Bearer ` + kopyaladığın sır |
+| 9 | **Notifications** | **"on failure" / başarısızlıkta e-posta** AÇIK |
+| 10 | Kaydet, sonra **"Run now"** ile hemen dene | — |
 
-**GERİYE İKİ İHTİMAL KALIYOR VE İKİSİ DE VERCEL TARAFINDA:**
+**BAŞARI ÖLÇÜTÜ:** HTTP **200** ve gövdede `"durum":"TAMAM"` ile birlikte
+`gun`, `satir`, `boyutBayt` alanları. Başka bir şey görürsen:
+· `401 YETKISIZ` → başlıkta `Bearer ` öneki eksik ya da sır yanlış
+kopyalanmış · `503 KAPALI` → sır Vercel'de silinmiş.
 
-**(A) `CRON_SECRET` Vercel proje ortamında tanımlı değil.**
-Rota o zaman **503 "KAPALI"** döner. Panelde "Run" görünür, log'da istek
-görünür — ama hiçbir şey yazılmaz. "Endpoint sağlam, Run üretiyor"
-gözlemiyle **tamamen uyumlu**.
+> ⚠ **ZAMAN AŞIMI UYARISI — yalancı kırmızı.** Yedek üretimi **60 saniyeye
+> kadar** sürebilir; birçok ücretsiz servisin varsayılan zaman aşımı 30
+> saniyedir. Servis "başarısız" derken yedek **alınmış olabilir.**
+> Servisin zaman aşımını izin verdiği en yükseğe çek; ve **nihai hakem
+> servisin raporu değil, ekrandaki eksik gün kutusudur.**
 
-**(B) Vercel Deployment Protection (Vercel Authentication) açık.**
-Anayasada kayıtlı: 10.08.2026'da "kapı kilidi" olarak açılmıştı. Bu
-katman **bizim kodumuzdan ÖNCE** durur ve kimliksiz her isteği keser —
-zamanlanmış cron çağrısı dahil. Panelden elle "Run" çalışır çünkü tarayıcı
-oturumu var. Örüntüyü **birebir** açıklıyor.
+**9. ADIM NİYE ÖNEMLİ:** iki kaçışı da biz fark ettik, sistem söylemedi.
+Bildirim açıkken **üçüncü kaçışı servis kendisi haber verir.**
 
-> ⚠ (B) için Vercel'in tam davranışını buradan doğrulayamıyorum; belgeye
-> bakılmadan kesin konuşmam. Ama anayasadaki kayıt, gözlemle örtüşüyor.
+#### ✓ EKSİK GÜN KUTUSU HAZIR (18.08)
 
-#### 🔬 AYIRT EDİCİ TEST — 10 saniye, güvenli, yazma yok
+`/ayarlar/disa-aktarma` sayfasında son 14 gün taranıyor; yedeği olmayan
+günler tarihleriyle kırmızı kutuda yazıyor. **Kurulumdan sonraki ilk
+doğrulama oradan okunacak:** ertesi gün kutu kaybolmuş olmalı.
+_Bugün eksikse kaçış sayılmaz (cron gece koşar); en eski yedekten öncesi
+de sayılmaz._ `yedek-bosluk:dogrula` 18 kontrol, üç mutasyon kırmızı.
 
-Tarayıcıda **gizli pencerede** (oturum kapalı) aç:
-`https://axc-seven.vercel.app/api/yedek/otomatik`
+#### HOBBY → PRO
 
-| Gördüğün | Teşhis | Çözüm |
-|---|---|---|
-| **Vercel giriş sayfası** | **(B)** — koruma cron'u kesiyor, kodumuza hiç ulaşmıyor | Vercel Authentication'ı KAPAT (uygulamanın kendi girişi Faz 3,5'te tamamlandı; köprü artık gereksiz) ya da "Protection Bypass for Automation" kur |
-| **`{"durum":"KAPALI"}`** (503) | **(A)** — `CRON_SECRET` yok | Vercel → Settings → Environment Variables → `CRON_SECRET` ekle, **production** kapsamına |
-| **`{"durum":"YETKISIZ"}`** (401) | Kod ve sır sağlam | Sorun zamanlamada; (c) maddesine geç |
-
-_Rota `if (!sir)` kontrolünü kimlik kontrolünden ÖNCE yapıyor; bu yüzden
-kimliksiz bir GET üç durumu kusursuz ayırıyor._
-
-#### (b) B PLANI — Vercel cron'una güvenmeyen emniyet
-
-**✓ YAPILDI: KAÇIRILAN GÜNLER ARTIK GÖRÜNÜYOR.** Ekran "son 10 yedek"
-listeliyordu; liste doluyken bile **arada gün eksik olabilir** ve göz
-bunu yakalamaz. Var olanı listelemek, **olmayanı göstermez** — iki kaçış
-da bu yüzden ancak biri fark edince anlaşıldı. Artık son 14 gün taranıyor
-ve eksik günler kırmızı kutuda tarihleriyle yazıyor.
-_Bugün eksikse kaçış SAYILMAZ (cron gece koşar); en eski yedekten öncesi
-de sayılmaz — "izin doğum tarihi" kuralı._
-`yedek-bosluk:dogrula` **18 kontrol**, üç mutasyon kırmızı.
-
-**○ ÖNERİ — DIŞ ZAMANLAYICI (en ucuz kalıcı çözüm).** Ücretsiz bir dış
-tetikleyici (`cron-job.org` gibi) uca `Authorization: Bearer $CRON_SECRET`
-ile vurur. **Vercel'e bağımlılık sıfırlanır**, plan tierinden bağımsızdır,
-kod değişikliği GEREKTİRMEZ. _(B) çıkarsa yine de koruma bypass'ı gerekir._
-
-**✗ ÖNERİLMEZ — "panel açılınca arka planda yedek al".** Üç sebep:
-sunucusuz ortamda yanıt döndükten sonra işin bitmesi garanti değil (yarım
-yedek, dolu görünen boş dosya) · iki sekme açan iki yedek başlatır ·
-60 saniyelik iş sayfa yüklemesine binerse panel kilitlenir.
-**Zaten var olan doğru B planı:** yedek yaşı uyarısı + "Şimdi yedek al"
-düğmesi — 18.08 böyle kurtarıldı. Yeni boşluk göstergesi onu güçlendirdi.
-
-#### (c) HOBBY → PRO DEĞERLENDİRMESİ
-
-- **Hobby'de cron günde 1 kez** ve **saat garantisi yok** — ama iki gün
-  ÜST ÜSTE hiç koşmaması esneklikle açıklanamaz. **Plan tek başına sebep
-  değil.**
-- **Log saklama Hobby'de çok kısa.** Bu vakada asıl bedel bu: gece ne
-  olduğunu geriye dönük göremiyoruz, teşhis tahmine kalıyor.
-- ⚠ **Kök sebep (B) ise Pro DÜZELTMEZ** — Deployment Protection Pro'da da
-  vardır. Önce ayırt edici testi koş, sonra plan konuş.
-- _Karar Halil'in._
+Kök sebep zamanlayıcı olduğu için **Pro'ya geçmek şart değil** — dış
+zamanlayıcı sorunu kaynağında çözüyor ve **ücretsiz**. Pro'nun bu vakadaki
+tek gerçek faydası **log saklama** olurdu (teşhisi tahmine bırakmamak).
+Dış zamanlayıcı kendi log'unu tuttuğu için o ihtiyaç da karşılanıyor.
+**Öneri: şimdilik Hobby'de kal.** _Karar Halil'in._
 
 ## 🎯 ANA PLAN — "MELONTİK'E YETİŞ VE GEÇ"
 

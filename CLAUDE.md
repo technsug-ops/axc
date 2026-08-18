@@ -394,6 +394,35 @@ dokunulduğu anı söylüyor.)
 "Sonra düşünürüz" denen alan, sonra düşünüldüğünde veri çoktan onsuz
 birikmiştir; o noktada eklemek geçmişi uydurmak ya da kaybetmek olur.
 
+### YÖNETİLEMEYEN BAĞIMLILIK — ÜÇÜNCÜ ŞANS VERİLMEZ (KESİN KURAL)
+
+_Ders 19.08.2026._ Bir dış bağımlılık **iki kez** sessizce başarısız
+olduysa ve **teşhis tavana dayandıysa** — yani neden başarısız olduğunu
+görecek aracımız yoksa — o bağımlılığa üçüncü şans verilmez. **Kontrol
+edilebilir alternatife geçilir.**
+
+**Vaka:** Vercel Cron 18 ve 19.08'de hiç tetiklenmedi. Dört katman tek tek
+ölçüldü ve hepsi temiz çıktı (yol · tanım geçmişi · ara katman · kimlik
+kontrolü). Ayırt edici test `YETKISIZ` döndü: uç açık, sır mevcut,
+doğrulama çalışıyor. Geriye zamanlayıcının kendisi kaldı — **ve Hobby
+planında logu olmadığı için ne olduğu ÖĞRENİLEMEZ.**
+
+**ÖLÇÜT — üçü birden varsa geç:**
+1. Başarısızlık **tekrarladı** (bir kez tesadüf, iki kez örüntü).
+2. Bizim tarafımız **ölçüldü ve temiz.**
+3. Karşı tarafta **teşhis aracı yok** — bir daha olursa yine bilemeyeceğiz.
+
+**Geçerken:** eski bağımlılık **tanımda bırakılabilir** (bedava
+yedeklilik), ama **birincil sayılmaz.** Şart: işin **idempotent** olması —
+çift tetiğin zararsız olduğu ÖLÇÜLMELİ, varsayılmamalı. _Bu vakada
+ölçüldü: dosya adı güne sabit (`selliora-{gün}.json`), `addRandomSuffix:
+false` + `allowOverwrite: true`, ve yazma ancak içerik TAM üretildikten
+sonra yapılıyor — ikinci tetik aynı dosyayı tazeler, kopya üretmez._
+
+**Ve kaçışın kendisi görünür kılınır:** yeni zamanlayıcı da kaçırabilir.
+Var olanı listelemek, olmayanı göstermez — eksik günler ekranda kırmızı
+yazmalı ki üçüncü kaçış birinin fark etmesine kalmasın.
+
 ### ŞEMA DEĞİŞİKLİĞİ EN PAHALI ÇÖZÜMDÜR (KESİN KURAL)
 
 _Ders 18.08.2026._ Yeni tablo/sütun, çözüm sıralamasının **en sonundadır**.
