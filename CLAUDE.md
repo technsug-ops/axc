@@ -427,6 +427,30 @@ damga **tamamen gereksizmiş**.
 > Onayı aldıktan sonra daha ucuz bir yol görülürse **bildirilir**;
 > sessizce pahalı yola gidilmez.
 
+
+### YENİ İZİN DOĞUM TARİHİ BEYAN EDİLİR (KESİN KURAL)
+
+_Ders 18.08.2026._ Bir iz/kayıt mekanizması açıldığında, **açılmadan
+önceki sessizliği VERİ sanmak** en kolay yanlış okumadır. "Kayıt yok"
+cümlesi iki farklı şey söyleyebilir:
+
+- **iz açıldıktan sonra:** o iş gerçekten yapılmadı → **hüküm**
+- **iz açılmadan önce:** o iş yapılmış da olabilir → **hüküm DEĞİL**
+
+**KURAL:** Yeni bir iz yayına girdiğinde, onu gösteren her ekran/araç
+**izin doğum tarihini yazar** ve o tarihten öncesi için "kayıt yok"un
+hüküm sayılmayacağını belirtir.
+
+**Vaka:** `AuditLog` → `KOMISYON_YUKLEME` kaydı 18.08.2026'da açıldı.
+Envanter aracı kayıtları basıyor; yanına _"iz 18.08'de açıldı, ondan
+önceki günler için 'kayıt yok' hüküm sayılmaz"_ yazılmasaydı, geçmişe
+bakan biri "13.08'de HB yüklemesi yapılmamış" derdi — oysa o gün 1056 HB
+kaydı damgalanmıştı.
+
+Bu, "kaydedilen ≠ görünen" ve "ölçüt de kaynağıyla anılır" derslerinin
+zaman eksenindeki kardeşidir: **bir verinin yokluğu, ancak o veriyi
+üreten mekanizma o sırada ÇALIŞIYORSA anlam taşır.**
+
 ### TUTARLILIK ≠ DOĞRULUK — ÖNCE REFERANSI DOĞRULA (KESİN KURAL)
 
 _Ders 18.08.2026, Melontik demo vakası._ Bir karşılaştırmanın değeri
