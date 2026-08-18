@@ -229,6 +229,20 @@ export function FiyatDene({
                         oran: oneri.dilim.oran,
                       })}
                     </p>
+                    {/* ---------- ORAN KAZANCI YOKSA SEBEBİ SÖYLENİR ----------
+                        ⚠ CANLI BULGU 19.08.2026: stoklu 30 üründen 8'inde
+                        alt dilimin oranı AYNI. Orada inmek komisyon
+                        kazandırmıyor, yalnız ciro kaybettiriyor — ve bu
+                        "kâr azaldı"dan FARKLI bir sebep. Yalnız kırmızı
+                        rakam gösterseydik kullanıcı "neden azaldı" diye
+                        düşünüp durur, dilim yapısına bakmayı akıl etmezdi. */}
+                    {oneri.oranKazanci <= 0 ? (
+                      <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
+                        {oneri.oranKazanci === 0
+                          ? t("deneOranAyni", { oran: oneri.dilim.oran })
+                          : t("deneOranYuksek")}
+                      </p>
+                    ) : null}
                     {fark !== null ? (
                       <p
                         className={`text-xs ${

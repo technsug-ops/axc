@@ -2571,7 +2571,9 @@
     "beyanDilimYok": "",
     "beyanOranYok": "",
     "beyanMaliyetYok": "",
-    "beyanPencereBitti": ""
+    "beyanPencereBitti": "",
+    "deneOranAyni": "",
+    "deneOranYuksek": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",

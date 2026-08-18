@@ -306,6 +306,52 @@ console.log("\nFİYAT SİMÜLASYONU — DOĞRULAMA\n");
   );
 }
 
+// --- 11) ORAN KAZANCI — "aynı oran" vakası ----------------------------------
+{
+  console.log("\n11) ALT DİLİMDE ORAN AYNI");
+  /**
+   * ⚠ CANLI BULGU 19.08.2026, LEGO kartında görüldü ve ölçüldü:
+   * stoklu 30 üründen **8'inde** 1. ve 2. dilimin oranı AYNI.
+   *
+   * O ürünlerde inmek komisyon kazandırmaz, yalnız ciro kaybettirir —
+   * ve bu "kâr azaldı"dan FARKLI bir sebeptir. Yalnız kırmızı rakam
+   * gösterseydik kullanıcı "neden azaldı" diye düşünüp dilim yapısına
+   * bakmayı akıl etmezdi.
+   */
+  const ayniOran: TarifeDilimi[] = [
+    { sira: 1, altLimit: 2500, ustLimit: null, oran: 8.5 },
+    { sira: 2, altLimit: 1500, ustLimit: 2034.79, oran: 8.5 },
+    { sira: 3, altLimit: null, ustLimit: 1499.99, oran: 8 },
+  ];
+  const o = birAltDilim(ayniOran, 2500)!;
+  kontrol("öneri yine üretilir", o.hedefFiyat === 2034.79);
+  kontrol("oran kazancı SIFIR", o.oranKazanci === 0);
+  /** Gerçek kazançlı vakada pozitif olmalı — sayaç ölü değil. */
+  kontrol("Manuel Rondo'da kazanç POZİTİF", birAltDilim(RONDO, 1999)!.oranKazanci === 5.2);
+
+  /** Alt dilim daha PAHALI olabilir mi — kural kendini savunsun. */
+  const tersOran: TarifeDilimi[] = [
+    { sira: 1, altLimit: 2500, ustLimit: null, oran: 8 },
+    { sira: 2, altLimit: null, ustLimit: 2499.99, oran: 12 },
+  ];
+  kontrol("alt dilim pahalıysa kazanç EKSİ", birAltDilim(tersOran, 3000)!.oranKazanci === -4);
+
+  /** Sıfır kazançta NET-2 mutlaka azalır: ciro düşer, oran aynı kalır. */
+  const simdi = simulasyonKur(temel({ hedefFiyat: 2500, dilimler: ayniOran }));
+  const inince = simulasyonKur(temel({ hedefFiyat: 2034.79, dilimler: ayniOran }));
+  kontrol("aynı oranda inmek NET-2'yi AZALTIR", inince.net2! < simdi.net2!);
+  kontrol("  ...komisyon oranı değişmedi", simdi.komisyonOrani === inince.komisyonOrani);
+
+  /** Ekran sebebi yazıyor mu — değer testi göremez. */
+  const ekran = readFileSync("src/app/kart/[variantId]/fiyat-dene.tsx", "utf8");
+  kontrol("ekran 'oran aynı' sebebini yazıyor", /deneOranAyni/.test(ekran));
+  kontrol("  ...ve 'alt dilim daha pahalı' halini", /deneOranYuksek/.test(ekran));
+  kontrol(
+    "  ...koşul oranKazanci'ndan geliyor",
+    /oneri\.oranKazanci <= 0/.test(ekran),
+  );
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

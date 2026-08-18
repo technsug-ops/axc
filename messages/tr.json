@@ -2571,7 +2571,9 @@
     "beyanDilimYok": "Bu üründe dilim tarifesi yok — tek oranla hesaplandı.",
     "beyanOranYok": "Komisyon oranı bilinmiyor; NET hesaplanamadı.",
     "beyanMaliyetYok": "Ürün maliyeti bilinmiyor; NET hesaplanamadı.",
-    "beyanPencereBitti": "Tarifenin geçerliliği {tarih} tarihinde bitti — oranlar güncel olmayabilir."
+    "beyanPencereBitti": "Tarifenin geçerliliği {tarih} tarihinde bitti — oranlar güncel olmayabilir.",
+    "deneOranAyni": "Alt dilimin oranı da %{oran} — inmek komisyon kazandırmaz, yalnız ciro kaybettirir.",
+    "deneOranYuksek": "Alt dilimin oranı DAHA YÜKSEK — inmek hem ciro hem komisyon açısından zarar."
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

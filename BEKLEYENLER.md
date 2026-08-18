@@ -336,8 +336,45 @@ sorusunu cevapsız bırakırdı.
 > **derlemeyi durduruyor.** Ekran, motorun beyanlarıyla eşit adımda
 > kalmak zorunda.
 
-**○ SIRADAKİ — 3. katman:** Halil'in canlı testi (Manuel Rondo + inmenin
-kazandırmadığı bir ürün, iki yönlü).
+#### ✅ CANLI TEST — ÇEKİRDEK ÇALIŞTI, VE BİR EKSİK BULDU (19.08.2026)
+
+**Halil ekranda doğruladı:** `1999 → %18 (1. dilim)` · `769,98 → %12,8
+(2. dilim)` · öneri zinciri her katta bir sonrakini gösteriyor
+(`2. dilimdeyken 701,28 → %11,1`) · **tek ekranda iki kanal, ikisi de
+dürüst** (HB "dilim tarifesi yok — tek oranla", TY dilimli) · sarı
+beyanlar görünüyor (pencere bitti + tek-oran).
+
+**LEGO kartında YÖN SATIRI ÇIKTI** — kırmızı, `NET-2 ₺350,85 AZALIR`.
+İki yönün biri canlıda görüldü.
+
+> **⚠ O EKRAN BEKLENMEYEN BİR ŞEY GÖSTERDİ: alt dilimin oranı da %8,5 —
+> AYNI.** İnmek komisyon kazandırmıyor, yalnız 465 TL ciro kaybettiriyor.
+> Araç doğru davranıyordu ama **sebebi söylemiyordu**; kullanıcı "neden
+> azaldı" diye düşünüp dilim yapısına bakmayı akıl etmezdi.
+>
+> **ÖLÇÜLDÜ: stoklu 30 üründen 8'inde (%27) 1. ve 2. dilimin oranı AYNI.**
+> LEGO tesadüf değil, yaygın bir hâl.
+>
+> **DÜZELTİLDİ:** `birAltDilim` artık `oranKazanci` da döndürüyor. Sıfırsa
+> ekran _"Alt dilimin oranı da %X — inmek komisyon kazandırmaz, yalnız
+> ciro kaybettirir"_ diyor; eksiyse _"alt dilim DAHA YÜKSEK"_. Bu,
+> "kâr azaldı"dan **farklı bir sebep** ve ayrı cümleyi hak ediyor.
+> `simulasyon:dogrula` 63 → **72**, iki mutasyon daha kırmızı.
+
+**○ EKSİK KALAN — YEŞİL VAKA.** TEFAL Rondo Halil'in stok ürünü değil
+(hiç alımı yok) → maliyetsiz → NET-2 boş → yön satırı görünmedi.
+**Beyan davranışı doğru** ("Ürün maliyeti bilinmiyor") ama testin asıl
+cümlesi görünmedi.
+
+**ADAY BULUNDU (canlıdan, stoklu + oran farkı en büyük):**
+| ürün | dilim 1 → 2 | fark | hedef fiyat |
+|---|---|---|---|
+| **Fiorino İndüksiyon Çelik 3 Parça** | %21 → %8,4 | **12,6 puan** | 1.254,64 |
+| Hatır Neo-S Türk Kahve Makinesi | %14,75 → %5 | 9,8 puan | 2.205,72 |
+| Optiss Elektronik Mutfak Tartısı | %14,75 → %5,2 | 9,6 puan | 914,01 |
+
+→ **Fiorino kartında** mevcut fiyatı gir; yeşil `NET-2 ARTAR` satırı
+çıkmalı. İki yön de görülünce 3. katman kapanır.
 
 ## 🎯 ANA PLAN — "MELONTİK'E YETİŞ VE GEÇ"
 

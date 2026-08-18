@@ -179,7 +179,19 @@ export function simulasyonKur(girdi: SimulasyonGirdisi): SimulasyonSonucu {
 export function birAltDilim(
   dilimler: TarifeDilimi[],
   mevcutFiyat: number,
-): { hedefFiyat: number; dilim: TarifeDilimi } | null {
+): {
+  hedefFiyat: number;
+  dilim: TarifeDilimi;
+  /**
+   * Kaç PUAN komisyon kazanılıyor. **Sıfır ya da eksi olabilir.**
+   *
+   * ⚠ CANLI ÖLÇÜM 19.08.2026: stoklu 30 üründen **8'inde** 1. ve 2.
+   * dilimin oranı AYNI. O ürünlerde inmek komisyon kazandırmaz, yalnız
+   * ciro kaybettirir — ve sebebi "kâr azaldı"dan farklıdır. Ekran ikisini
+   * ayırabilsin diye kazanç puanı da dönüyor.
+   */
+  oranKazanci: number;
+} | null {
   const simdiki = dilimBul(dilimler, mevcutFiyat);
   if (simdiki === null) return null;
 
@@ -193,5 +205,9 @@ export function birAltDilim(
    */
   if (alt.ustLimit === null) return null;
 
-  return { hedefFiyat: alt.ustLimit, dilim: alt };
+  return {
+    hedefFiyat: alt.ustLimit,
+    dilim: alt,
+    oranKazanci: Math.round((simdiki.oran - alt.oran) * 100) / 100,
+  };
 }
