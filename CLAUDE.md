@@ -423,6 +423,52 @@ sonra yapılıyor — ikinci tetik aynı dosyayı tazeler, kopya üretmez._
 Var olanı listelemek, olmayanı göstermez — eksik günler ekranda kırmızı
 yazmalı ki üçüncü kaçış birinin fark etmesine kalmasın.
 
+### DÜZELTME YOLU, TÜM OKUYUCULARA ULAŞTIĞI ÖLÇÜLMEDEN "VAR" SAYILMAZ (KESİN KURAL)
+
+_Ders 19.08.2026._ Bir veriyi düzeltecek ekran/akış yazılmış olması, o
+verinin düzeldiği anlamına gelmez. Aynı veriyi **birden çok yer okuyorsa**,
+düzeltme yolunun onların HEPSİNE ulaştığı **ölçülmelidir.** Ulaşmadığı
+yer, düzeltmeden sonra **eski değeri taşımaya devam eder** — ve artık
+ekran doğru göründüğü için kimse oraya bakmaz.
+
+**Vaka:** alım düzenleme ekranı birim maliyeti değiştirince
+`PurchaseItem`i ve `StockMovement WHERE purchaseItemId = ...` satırlarını
+güncelliyordu. Bu doğru görünüyordu. Ölçüm:
+
+> **Canlıda 49 negatif hareketin `0` tanesinde `purchaseItemId` dolu.**
+
+Çıkışlar partiye `sourceMovementId` ile bağlı; güncelleme onlara HİÇ
+ulaşmıyordu. Kâr motoru maliyeti tam o çıkış damgasından okuduğu için
+sonuç şuydu: **alım düzeltilir, alım ekranı doğru gösterir, NET-2 eski
+yanlış maliyetle kalır.** "Yeniden hesapla" düğmesi de kurtarmıyordu —
+o da aynı bayat damgayı okuyor.
+
+**KURAL — düzeltme yolu teslim edilirken üç soru:**
+1. Bu veriyi **kaç yer okuyor**? (kopyası, snapshot'ı, damgası var mı)
+2. Düzeltme onların **hepsine ulaşıyor mu** — ölçüldü mü, varsayıldı mı?
+3. Ulaşmayan varsa **onu kapatan bir yol** ya da en azından **ayrışmayı
+   gösteren bir bekçi** var mı?
+
+Bekçisi: `npm run canli:maliyet-hizala` (rapor kipi ayrışmayı sayar).
+"Kural doğru mu değil, kural teslim edilebilir mi" dersinin veri
+yolları üzerindeki kardeşi.
+
+### METADATA DÜZELTMESİ — DAR İSTİSNA (KESİN KURAL)
+
+_Mimar kararı 19.08.2026._ Ledger dokunulmazlığı **miktar ve para**
+içindir. Yanlış GİRİLMİŞ bir tarih gibi bir **metadata** hatası, ters
+kayıtla düzeltilemez (ADJUSTMENT adet düzeltir, tarih düzeltmez) ve
+kayıt silinemez (FIFO bağı `Restrict`).
+
+**Üç şart birden sağlanırsa** izli betikle vaka-bazlı onayla düzeltilir:
+1. Değişen alan **miktar ya da para DEĞİL**.
+2. **Alternatifler ölçülüp elenmiş** — ekran var mı, ters kayıt işe yarar
+   mı, silinip yeniden yazılabilir mi; hepsi denenmiş ve yazılmış.
+3. **İz bırakılıyor** — `AuditLog`a eski ve yeni değer birlikte.
+
+Ve betik **o kaydın kimliğine kilitli** olur; genel araç haline
+getirilmez. Genel araç, istisnayı kurala çevirir.
+
 ### EŞİK GÜVENİLİRLİĞİN VEKİLİDİR — VEKİL GEÇİLSE DE ASIL SORULUR (KESİN KURAL)
 
 _Ders 19.08.2026, bekleme maliyeti Aşama A._ Bir kapıya sayısal eşik
