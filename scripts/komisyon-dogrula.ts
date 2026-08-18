@@ -20,6 +20,7 @@
 import {
   hepsiburadaKomisyonOku,
   komisyonOku,
+  n11KomisyonOku,
   platformTani,
   trendyolKomisyonOku,
   yuzdeCoz,
@@ -31,6 +32,7 @@ import {
   type MevcutEsleme,
   type VaryantKaydi,
 } from "../src/lib/komisyon/plan";
+import { kanalPlatformu } from "../src/lib/komisyon/yukle";
 import type { KomisyonOkumasi } from "../src/lib/komisyon/model";
 
 let basarisiz = 0;
@@ -593,6 +595,130 @@ console.log("\n5) GERÇEK DOSYA — 13.08.2026 ölçümü");
     { tyOranSirasi, hbOranSirasi },
   );
   kosanBolumler.push("gerçek dosya");
+}
+
+
+// ===========================================================================
+console.log("\nN11 OKUYUCUSU");
+// ===========================================================================
+{
+  /**
+   * ⚠ N11 eklendi 18.08.2026. Gerçek dosyayla da denendi: 48 satır,
+   * 48 tekil kanal kodu, 8 farklı oran, 47 satırda barkod.
+   */
+  const BASLIK = [
+    "Seller ID",
+    "Stok Kodu",
+    "Ürün Kodu",
+    "Group ID",
+    "Catalog ID",
+    "Barcode",
+    "Komisyon Oranı",
+    "Marka",
+    "Ürün Adı",
+    "N11 Satış Fiyatı (KDV Dahil)",
+  ];
+  const satir = (
+    stok: string,
+    urunKodu: string,
+    oran: unknown,
+    barkod = "5702017416281",
+  ) => ["4534966", stok, urunKodu, "40681238", "100929603", barkod, oran, "LEGO", "LEGO City", 12999];
+
+  const o = n11KomisyonOku([BASLIK, satir("EN10000226597", "769381328", 18)]);
+  kontrol("N11 dosyası okunur", o.eksikSutunlar.length === 0, o.eksikSutunlar);
+  kontrol("platform N11", o.platform === "N11");
+  kontrol("bir satır", o.satirlar.length === 1);
+
+  /**
+   * ⚠ KANAL KODU `Stok Kodu` — ÖLÇÜMLE seçildi, tahminle değil.
+   * Sistemdeki üç mevcut N11 kaydı `EN10000556236` biçiminde, yani
+   * `Stok Kodu`. `Ürün Kodu` seçilseydi mevcut kayıtların HİÇBİRİ
+   * eşleşmez, üçü de yeniden yaratılır ve ikizler doğardı.
+   */
+  kontrol("kanal kodu STOK KODU", o.satirlar[0].kanalKodu === "EN10000226597");
+  kontrol("  ...ürün kodu DEĞİL", o.satirlar[0].kanalKodu !== "769381328");
+  kontrol("ikinci kod ürün kodu", o.satirlar[0].ikinciKod === "769381328");
+  kontrol("oran okunur", o.satirlar[0].oran === 18);
+  kontrol("barkod okunur", o.satirlar[0].barkodlar[0] === "5702017416281");
+
+  /**
+   * BARKOD ZORUNLU DEĞİL — ölçüldü: 48 satırın 47'sinde dolu. Zorunlu
+   * yapsaydık barkodsuz satır dosyayı tümden reddettirirdi; oysa o satır
+   * stok koduyla eşleşebiliyor.
+   */
+  const barkodsuz = n11KomisyonOku([BASLIK, satir("EN1", "769", 12, "")]);
+  kontrol("barkod DEĞERİ boş satır DÜŞMEZ", barkodsuz.satirlar.length === 1);
+  kontrol("  ...kanal kodu yine okunur", barkodsuz.satirlar[0].kanalKodu === "EN1");
+
+  /**
+   * ⚠ KOLONUN KENDİSİ YOKSA DA DOSYA OKUNUR.
+   *
+   * İlk testim yalnız barkod DEĞERİNİ boşaltıyordu; kolon başlıkta
+   * duruyordu ve "barkod zorunlu olsun" mutasyonu YEŞİL kaldı —
+   * zorunluluk kolonun VARLIĞINA bakıyor, değerine değil. Test artık
+   * kolonu tümden kaldırıyor.
+   */
+  const barkodKolonsuz = n11KomisyonOku([
+    BASLIK.filter((b) => b !== "Barcode"),
+    ["4534966", "EN1", "769", "40681238", "100929603", 18, "LEGO", "LEGO City", 12999],
+  ]);
+  kontrol(
+    "barkod KOLONU yoksa da okunur (zorunlu değil)",
+    barkodKolonsuz.eksikSutunlar.length === 0,
+    barkodKolonsuz.eksikSutunlar,
+  );
+
+  /** Kodu olmayan satır (toplam/boş) atlanır. */
+  const bosSatir = n11KomisyonOku([BASLIK, satir("", "", 12), satir("EN2", "770", 12)]);
+  kontrol("kodsuz satır atlanır", bosSatir.satirlar.length === 1);
+
+  /** Zorunlu kolon eksikse bildirilir. */
+  const eksik = n11KomisyonOku([BASLIK.filter((b) => b !== "Stok Kodu"), []]);
+  kontrol("Stok Kodu yoksa bildirilir", eksik.eksikSutunlar.length > 0, eksik.eksikSutunlar);
+
+  // --- TANIMA ---
+  const sayfa: SayfaGirdisi[] = [
+    { sheet: "Ürün Bilgileri Güncelle", data: [BASLIK, satir("EN1", "769", 18)] },
+  ];
+  const t = platformTani(sayfa);
+  kontrol("platformTani N11'i TANIR", t.durum === "TANINDI" && t.platform === "N11");
+
+  /**
+   * ⚠ ÖZGÜN KOLONLA TANINIR. Ortak başlıklara (`Komisyon Oranı`,
+   * `Ürün Adı`) bakılsaydı üç platform birbirine karışırdı. N11'in
+   * özgün kolonları çıkarılınca tanınmamalı.
+   */
+  const ozgunsuz: SayfaGirdisi[] = [
+    {
+      sheet: "x",
+      data: [
+        ["Stok Kodu", "Komisyon Oranı", "Ürün Adı"],
+        ["EN1", 18, "LEGO"],
+      ],
+    },
+  ];
+  kontrol("özgün kolon yoksa TANIMAZ", platformTani(ozgunsuz).durum === "TANINMADI");
+
+  /** komisyonOku doğru okuyucuya yönlendirir. */
+  const yonlendirme = komisyonOku({
+    platform: "N11",
+    sayfa: "Ürün Bilgileri Güncelle",
+    veri: [BASLIK, satir("EN1", "769", 18)],
+  });
+  kontrol("komisyonOku N11'i doğru okuyucuya verir", yonlendirme.platform === "N11");
+  kontrol("  ...sayfa adı korunur", yonlendirme.sayfa === "Ürün Bilgileri Güncelle");
+
+  /**
+   * ⚠ KANAL ↔ PLATFORM EŞLEMESİ. Bu kural hiçbir testte geçmiyordu ve
+   * "N11 eşlemesini sil" mutasyonu YEŞİL kalıyordu. Eşleme olmadan
+   * yükleme "dosya ile hesap çelişiyor" kontrolünü yapamaz ve N11
+   * dosyası Trendyol hesabına yüklenebilir.
+   */
+  kontrol("kanal kodu N11 → platform N11", kanalPlatformu("N11") === "N11");
+  kontrol("  ...TRENDYOL korunur", kanalPlatformu("TRENDYOL") === "TRENDYOL");
+  kontrol("  ...HEPSIBURADA korunur", kanalPlatformu("HEPSIBURADA") === "HEPSIBURADA");
+  kontrol("  ...tanınmayan kanal null", kanalPlatformu("PAZARAMA") === null);
 }
 
 // ===========================================================================

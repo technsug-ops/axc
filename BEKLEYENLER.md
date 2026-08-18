@@ -164,7 +164,38 @@ sisteme hiç girmiyor — 48 ürün. _Kalem aşağıda güncellendi._
 · HB listesinde `Buybox Sırası` · `Vade Süresi` · `İndirimli Fiyat` var.
 · İkisi de **Aşama 4'ün Buybox işinin** hazır girdisi — API'siz.
 
-- [ ] **N11 KOMİSYON İÇE AKTARMA — okuyucu tanımıyor.**
+- [x] **N11 KOMİSYON İÇE AKTARMA — YAZILDI 18.08.2026.**
+      Üçüncü platform tanıyıcısı + kolon eşlemesi. Gerçek dosyayla
+      denendi: **48 satır, 48 tekil kanal kodu, 8 farklı oran**, 47
+      satırda barkod. `komisyon:dogrula` 69 → **90**.
+
+      **KANAL KODU `Stok Kodu` — TAHMİNLE DEĞİL ÖLÇÜMLE SEÇİLDİ.**
+      Dosyada dört tekil aday vardı (`Stok Kodu` · `Ürün Kodu` ·
+      `Group ID` · `Catalog ID`). Sistemdeki üç mevcut N11 kaydı
+      `EN10000556236` biçiminde, yani `Stok Kodu`. Başkası seçilseydi
+      **mevcut kayıtların hiçbiri eşleşmez, üçü de yeniden yaratılır ve
+      N11 tarafında ikizler doğardı.** `Ürün Kodu` ikinci aday olarak
+      duruyor. Dosyadaki `EN10051441050` zaten sistemde kayıtlı — eşleşme
+      ilk yüklemede kurulacak.
+
+      **Barkod zorunlu DEĞİL** (48'in 47'sinde dolu, ölçüldü): zorunlu
+      olsaydı barkodsuz tek satır dosyayı tümden reddettirirdi.
+
+      **İKİ YALANCI YEŞİL DAHA YAKALANDI:**
+      1. _"Barkod zorunlu olsun"_ mutasyonu yeşil kaldı — testim barkod
+         **değerini** boşaltıyordu ama **kolon** başlıkta duruyordu;
+         zorunluluk kolonun VARLIĞINA bakıyor. Test kolonu tümden
+         kaldıracak şekilde düzeltildi.
+      2. _"N11 kanal eşlemesini sil"_ mutasyonu yeşil kaldı — `kanalPlatformu`
+         **hiçbir testte geçmiyordu.** Eşleme olmadan yükleme "dosya ile
+         hesap çelişiyor" kontrolünü yapamaz ve **N11 dosyası Trendyol
+         hesabına yüklenebilirdi.** Fonksiyon dışa açıldı ve sınandı.
+
+      _Ritim sorusu HÂLÂ AÇIK: N11 komisyonları hangi sıklıkla değişiyor?
+      Cevap gelene kadar envanter N11 için "bayatlık ölçülemedi" diyor —
+      sessizce "güncel" saymıyor._
+
+- [x] ~~**N11 KOMİSYON İÇE AKTARMA — okuyucu tanımıyor.**~~
       _Ölçüldü 18.08.2026._ N11 dosyası `Komisyon Oranı` taşıyor (48 ürün,
       sayfa `Ürün Bilgileri Güncelle`) ama `komisyon/okuyucu.ts` yalnız
       TRENDYOL ve HEPSIBURADA tanıyor.

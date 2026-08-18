@@ -24,7 +24,7 @@
  */
 
 /** Dosyanın hangi pazaryerinden indiği. Dosyanın KENDİSİNDEN tanınır. */
-export type KomisyonPlatformu = "TRENDYOL" | "HEPSIBURADA";
+export type KomisyonPlatformu = "TRENDYOL" | "HEPSIBURADA" | "N11";
 
 /** Okunmuş tek satır — pazaryeri biçiminden arınmış. */
 export type KomisyonSatiri = {

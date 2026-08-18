@@ -88,6 +88,21 @@ const IMZALAR: {
     ozgun: ["partner id", "tedarikçi stok kodu", "trendyol.com linki"],
     zorunlu: ["barkod", "komisyon oranı"],
   },
+  {
+    /**
+     * N11 — eklendi 18.08.2026. Dosya `Ürün Bilgileri Güncelle` sayfasında
+     * geliyor ve yanında iki sayfa daha var (`Kılavuz`,
+     * `ShipmentTemplatesValidations`); tanıma sayfa sayfa yürüdüğü için
+     * doğru olanı buluyor.
+     *
+     * ÖZGÜN KOLONLAR ölçüldü: `Catalog ID`, `Group ID`, `Seller ID` ve
+     * `N11 Satış Fiyatı` yalnız bu dosyada var. Ortak başlıklara
+     * (`Komisyon Oranı`, `Ürün Adı`) bakarak karar verilmiyor.
+     */
+    platform: "N11",
+    ozgun: ["catalog id", "group id", "seller id", "n11 satış fiyatı (kdv dahil)"],
+    zorunlu: ["stok kodu", "komisyon oranı"],
+  },
 ];
 
 export type SayfaGirdisi = { sheet: string; data: unknown[][] };
@@ -280,6 +295,79 @@ export function trendyolKomisyonOku(satirlar: unknown[][]): KomisyonOkumasi {
 }
 
 /** Tanınan platforma göre okuyucuyu seçer. */
+const N11_SUTUNLAR = {
+  /**
+   * ⚠ KANAL KODU `Stok Kodu` — ÖLÇÜLDÜ, tahmin edilmedi.
+   *
+   * Dosyada dört aday tekil kolon var: `Stok Kodu` (EN10000226597),
+   * `Ürün Kodu` (769381328), `Group ID`, `Catalog ID`. Sistemdeki üç
+   * mevcut N11 kanal SKU'su `EN10000556236` biçiminde — yani `Stok Kodu`.
+   * Başkası seçilseydi mevcut kayıtların HİÇBİRİ eşleşmez, üçü de
+   * yeniden yaratılır ve N11 tarafında ikizler doğardı.
+   */
+  stokKodu: ["Stok Kodu"],
+  /** İkinci aday: N11'in kendi ürün kodu. Yalnız eşleştirmede kullanılır. */
+  urunKodu: ["Ürün Kodu"],
+  oran: ["Komisyon Oranı"],
+  barkod: ["Barcode", "Barkod"],
+  urunAdi: ["Ürün Adı"],
+} as const;
+
+export function n11KomisyonOku(satirlar: unknown[][]): KomisyonOkumasi {
+  if (satirlar.length === 0) {
+    return {
+      platform: "N11",
+      sayfa: "",
+      satirlar: [],
+      eksikSutunlar: ["(dosya boş)"],
+    };
+  }
+
+  const eksikSutunlar: string[] = [];
+  const { al, secmeli } = sutunSecici(basliklariDizinle(satirlar[0]), eksikSutunlar);
+
+  const s = {
+    stok: al(N11_SUTUNLAR.stokKodu),
+    urunKodu: secmeli(N11_SUTUNLAR.urunKodu),
+    oran: al(N11_SUTUNLAR.oran),
+    barkod: secmeli(N11_SUTUNLAR.barkod),
+    urunAdi: secmeli(N11_SUTUNLAR.urunAdi),
+  };
+  if (eksikSutunlar.length > 0) {
+    return { platform: "N11", sayfa: "", satirlar: [], eksikSutunlar };
+  }
+
+  const cikti: KomisyonSatiri[] = [];
+  for (let i = 1; i < satirlar.length; i++) {
+    const satir = satirlar[i];
+    const hucre = (sira: number | undefined) =>
+      sira === undefined ? undefined : satir[sira];
+
+    const kanalKodu = metin(hucre(s.stok));
+    const ikinciKod = metinYaDaNull(hucre(s.urunKodu));
+    // Kodu olmayan satır boş satır ya da toplam satırıdır.
+    if (kanalKodu === "" && ikinciKod === null) continue;
+
+    const hamOran = metin(hucre(s.oran));
+    cikti.push({
+      kanalKodu: kanalKodu === "" ? (ikinciKod ?? "") : kanalKodu,
+      ikinciKod,
+      /**
+       * Barkod ÖLÇÜLDÜ: 48 satırın 47'sinde dolu. Boş olan satır barkod
+       * yoluyla eşleşemez ama stok koduyla eşleşir — bu yüzden barkod
+       * ZORUNLU kolon değil.
+       */
+      barkodlar: barkodlariAyir(hucre(s.barkod)),
+      oran: yuzdeCoz(hamOran),
+      hamOran,
+      urunAdi: metinYaDaNull(hucre(s.urunAdi)),
+      satirNo: i + 1,
+    });
+  }
+
+  return { platform: "N11", sayfa: "", satirlar: cikti, eksikSutunlar: [] };
+}
+
 export function komisyonOku(tanima: {
   platform: KomisyonPlatformu;
   sayfa: string;
@@ -288,6 +376,8 @@ export function komisyonOku(tanima: {
   const okuma =
     tanima.platform === "HEPSIBURADA"
       ? hepsiburadaKomisyonOku(tanima.veri)
-      : trendyolKomisyonOku(tanima.veri);
+      : tanima.platform === "N11"
+        ? n11KomisyonOku(tanima.veri)
+        : trendyolKomisyonOku(tanima.veri);
   return { ...okuma, sayfa: tanima.sayfa };
 }

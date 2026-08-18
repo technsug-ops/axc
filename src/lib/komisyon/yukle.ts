@@ -80,11 +80,25 @@ export type KomisyonDenetimi =
       };
     };
 
-/** Kanal kodundan platform — dosya ile hesabın çelişip çelişmediğini bilmek için. */
-function kanalPlatformu(kanalKodu: string): KomisyonPlatformu | null {
+/**
+ * Kanal kodundan platform — dosya ile hesabın çelişip çelişmediğini bilmek
+ * için.
+ *
+ * ⚠ DIŞA AÇIK ÇÜNKÜ SINANMASI GEREKİYOR (18.08.2026): N11 eşlemesi
+ * eklendiğinde mutasyon YEŞİL kaldı — kural hiçbir testte geçmiyordu.
+ * Eşleme unutulursa okuyucu dosyayı tanır ama "dosya ile hesap çelişiyor"
+ * kontrolü yapılamaz ve N11 dosyası Trendyol hesabına yüklenebilir.
+ */
+export function kanalPlatformu(kanalKodu: string): KomisyonPlatformu | null {
   const k = kanalKodu.toUpperCase();
   if (k.includes("TRENDYOL")) return "TRENDYOL";
   if (k.includes("HEPSIBURADA")) return "HEPSIBURADA";
+  /**
+   * N11 — eklendi 18.08.2026. Bu eşleme UNUTULSAYDI okuyucu N11 dosyasını
+   * tanır ama yükleme "dosya ile hesap çelişiyor" kontrolünü yapamaz ve
+   * N11 dosyası Trendyol hesabına yüklenebilirdi.
+   */
+  if (k.includes("N11")) return "N11";
   return null;
 }
 
