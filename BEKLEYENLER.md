@@ -137,7 +137,46 @@ raporuyla açılır.**
       Araca güne göre güncelleme dağılımı eklendi — "bugün bir şey değişti
       mi" artık tek bakışta görünüyor.
 
-- [ ] **N11 GÜNCELLEME RİTMİ — HALİL'E SORU.**
+#### 📄 ÜÇ DOSYA MUAYENE EDİLDİ 18.08.2026 — dilim YALNIZ TY tarifesinde
+
+`Downloads/Komisyon Oranlari/` klasöründeki üç dosya yüklemeden ÖNCE
+incelendi. **Üçü de tek oranlı ürün listesi; DİLİM TAŞIMIYOR.**
+
+| Dosya | Satır | Sayfa | Mevcut içe aktarma | Oran aralığı | Dilim |
+|---|---|---|---|---|---|
+| Trendyol ürün listesi | 1583 | `Ürünler` | ✓ TANIDI | %3,6 – %23 (40 farklı) | yok |
+| Hepsiburada | 2153 | `Listelerim` | ✓ TANIDI | %4 – %22 (15 farklı) | yok |
+| **N11** | 48 | `Ürün Bilgileri Güncelle` | ✗ **TANIMADI** | — | yok |
+
+**KRİTİK AYRIM:** bu TY dosyası (1,27 MB, 1583 satır) **dilim tarifesi
+DEĞİL** — ürün listesi ihracı. Dilim, ayrı bir ihraçta geliyor:
+_"Komisyon Tarifeleri"_ sayfası (64 KB, 161 satır). İkisi karıştırılmamalı;
+**tarife yükleme betiği ürün listesiyle beslenirse "kolon eksik" der.**
+
+**N11 CEVABI — soru DEĞİŞTİ.** Ritim hâlâ bilinmiyor ama daha somut bir
+şey ölçüldü: **dosya VAR ve `Komisyon Oranı` kolonu taşıyor, ama okuyucumuz
+onu TANIMIYOR** (yalnız TY ve HB tanınıyor). Yani N11 oranları bugün
+sisteme hiç girmiyor — 48 ürün. _Kalem aşağıda güncellendi._
+
+**AŞAMA 1/4 İÇİN YAN BULGULAR:**
+· TY ürün listesinde `BuyBox Fiyatı` · `Trendyol'da Satılacak Fiyat` ·
+  `Desi` · `KDV Oranı` var.
+· HB listesinde `Buybox Sırası` · `Vade Süresi` · `İndirimli Fiyat` var.
+· İkisi de **Aşama 4'ün Buybox işinin** hazır girdisi — API'siz.
+
+- [ ] **N11 KOMİSYON İÇE AKTARMA — okuyucu tanımıyor.**
+      _Ölçüldü 18.08.2026._ N11 dosyası `Komisyon Oranı` taşıyor (48 ürün,
+      sayfa `Ürün Bilgileri Güncelle`) ama `komisyon/okuyucu.ts` yalnız
+      TRENDYOL ve HEPSIBURADA tanıyor. N11 oranları sisteme hiç girmiyor.
+
+      **HALİL'E SORU (hâlâ açık):** N11 komisyonları hangi sıklıkla
+      değişiyor? Ritim bilinmeden envanterdeki bayatlık bayrağı N11 için
+      "ölçülemedi" demeye devam eder.
+
+      _Kapsam küçük: üçüncü bir platform tanıyıcısı + kolon eşlemesi.
+      Dilim yok, tek oran._
+
+- [ ] ~~**N11 GÜNCELLEME RİTMİ — HALİL'E SORU.**~~
       Envanter aracı TY (salı) ve HB (çarşamba) ritmini biliyor; **N11 için
       ritim tanımsız** ve araç bunu "bayatlık ölçülemedi" diye açıkça
       yazıyor — sessizce "güncel" saymıyor.
