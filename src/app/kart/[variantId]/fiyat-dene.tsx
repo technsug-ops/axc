@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowDown, Calculator } from "lucide-react";
+import { ArrowDown, Calculator, Clock, Scale } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBicim } from "@/lib/bicim-istemci";
+import { YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import type { YasBandi } from "@/lib/yaslanma";
 import {
+  basabasFiyati,
   birAltDilim,
   simulasyonKur,
   yonHukmu,
@@ -59,6 +62,9 @@ export function FiyatDene({
   kdvOrani,
   paraBirimi,
   baslangicFiyati,
+  eldekiAdet,
+  yasGun,
+  yasBandi,
 }: {
   zeminler: ZeminGorunumu[];
   birimMaliyet: number | null;
@@ -66,6 +72,21 @@ export function FiyatDene({
   paraBirimi: "TRY" | "EUR";
   /** Son satışın birim fiyatı — kutuya önceden yazılır, yoksa boş. */
   baslangicFiyati: number | null;
+  /**
+   * ---- ÇIKIŞ KARARININ İKİNCİ YARISI ----
+   * Kullanıcı isteği 19.08.2026: "başabaşın yanında stokta ne kadar
+   * beklediğini de yazsın ki kişi bu üründen çıkıp çıkmayacağına karar
+   * versin."
+   *
+   * Başabaş "kaça satmalıyım"ı, bekleme "daha ne kadar bekleyebilirim"i
+   * söyler; çıkış kararı ikisi YAN YANAYKEN veriliyor. Rakamlar kartın
+   * üstündeki yaşlanma kutusuyla AYNI kaynaktan (`urun-karti-verisi`)
+   * geliyor — burada ikinci bir yaş hesabı yok, olsaydı iki kutu aynı
+   * ürün için farklı gün sayısı gösterebilirdi.
+   */
+  eldekiAdet: number;
+  yasGun: number | null;
+  yasBandi: YasBandi | null;
 }) {
   const t = useTranslations("UrunKarti");
   const bicim = useBicim();
@@ -155,6 +176,27 @@ export function FiyatDene({
         />
       </label>
 
+      {/* ---------- STOKTA BEKLEME — ÇIKIŞ KARARININ İKİNCİ YARISI ----------
+          ⚠ KANAL KUTUSUNUN İÇİNE KONMADI. Yaş ürünün özelliği, kanalın
+          değil: her kanal kutusunda tekrarlasaydık aynı rakam üç kez
+          yazılır, ekran bilgi yerine gürültü taşırdı (Kural #12).
+          Bir kez, başabaşların hepsinin üstünde duruyor.
+
+          "Stok yok" AYRI BİR CÜMLE: sıfır adedi "0 gündür bekliyor" diye
+          yazmak, elde mal varmış gibi okunurdu. */}
+      {eldekiAdet > 0 && yasGun !== null && yasBandi !== null ? (
+        <p
+          className={`flex flex-wrap items-center gap-1.5 text-sm ${
+            DURUM_YAZISI[YAS_BANDI_RENGI[yasBandi]]
+          }`}
+        >
+          <Clock className="size-3.5 shrink-0" />
+          {t("deneBekleme", { adet: eldekiAdet, gun: yasGun })}
+        </p>
+      ) : (
+        <p className="text-muted-foreground text-sm">{t("deneStokYok")}</p>
+      )}
+
       {zeminler.map((z) => {
         const girdi: SimulasyonGirdisi = {
           hedefFiyat: gecerli ? sayi : 0,
@@ -172,6 +214,17 @@ export function FiyatDene({
         };
 
         const s = gecerli ? simulasyonKur(girdi) : null;
+
+        /**
+         * ---- BAŞABAŞ, KANAL BAŞINA ----
+         * ⚠ HER PAZARYERİ İÇİN AYRI RAKAM — ve bu normaldir (kullanıcı
+         * teyidi 19.08.2026). Komisyon oranı, komisyon KDV'si, sipariş
+         * başına sabit kesintiler ve dilim yapısı kanaldan kanala
+         * değişiyor; NET-2'yi sıfırlayan fiyat da doğal olarak değişir.
+         * Tek bir "ürünün başabaşı" yazsaydık, hangi kanalın olduğu
+         * belirsiz bir rakam gösterirdik.
+         */
+        const basabas = gecerli ? basabasFiyati(girdi) : null;
 
         /**
          * BİR ALT DİLİM — girilen fiyata göre. Kutu boşken hesaplanmaz:
@@ -234,6 +287,35 @@ export function FiyatDene({
                     </span>
                   </div>
                 </div>
+
+                {/* ---------- BAŞABAŞ NOKTASI ----------
+                    Ekranda NET-1 ₺0,04 / NET-2 −₺1,53 görünüyordu:
+                    başabaş tam oradan geçiyordu ama araç söylemiyordu ve
+                    kullanıcı deneme yanılmayla arıyordu.
+
+                    Kök YOKSA SESSİZ KALINMAZ — dilimin tamamı kâr mı
+                    zarar mı, o yazılır. */}
+                {basabas !== null && basabas.fiyat !== null ? (
+                  <p className="flex flex-wrap items-center gap-1 text-sm">
+                    <Scale className="text-muted-foreground size-3.5 shrink-0" />
+                    <span className="tabular-nums font-medium">
+                      {t("deneBasabas", {
+                        fiyat: bicim.para(basabas.fiyat, paraBirimi),
+                      })}
+                    </span>
+                  </p>
+                ) : basabas !== null && basabas.dilimHep !== null ? (
+                  <p
+                    className={`flex flex-wrap items-center gap-1 text-sm ${
+                      DURUM_YAZISI[basabas.dilimHep === "KAR" ? "olumlu" : "olumsuz"]
+                    }`}
+                  >
+                    <Scale className="size-3.5 shrink-0" />
+                    {basabas.dilimHep === "KAR"
+                      ? t("deneBasabasHepKar")
+                      : t("deneBasabasHepZarar")}
+                  </p>
+                ) : null}
 
                 {/* ---------- BİR ALT DİLİM — YÖN DE SÖYLER ----------
                     ⚠ Araç iki yönü de dürüst gösterir. Yalnız kazancı

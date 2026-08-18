@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import {
+  basabasFiyati,
   birAltDilim,
   simulasyonKur,
   yonHukmu,
@@ -403,6 +404,139 @@ console.log("\nFİYAT SİMÜLASYONU — DOĞRULAMA\n");
 
   /** Fark kuruşa yuvarlanır — kayan nokta tozu ekrana çıkmasın. */
   kontrol("fark kuruşa yuvarlanır", yonHukmu(0.1, 0.3).fark === 0.2);
+}
+
+// --- 13) BAŞABAŞ NOKTASI -----------------------------------------------------
+{
+  console.log("\n13) BAŞABAŞ NOKTASI");
+  /**
+   * ⚠ ARANAN DEĞER FORMÜLDEN DEĞİL, MOTORDAN GELİYOR — ve test de
+   * formülü tekrar etmiyor: bulunan fiyatta NET-2'nin gerçekten sıfırın
+   * üstünde, BİR KURUŞ ALTINDA ise altında olduğu ölçülüyor. Beklenen
+   * rakamı elle yazsaydık, kâr motoru değişince test onunla birlikte
+   * kaymaz, YANLIŞ rakamı savunurdu.
+   */
+  const b = basabasFiyati(temel({ hedefFiyat: 1125, birimMaliyet: 900 }));
+  kontrol("başabaş bulunuyor", b.fiyat !== null, b);
+
+  if (b.fiyat !== null) {
+    const ustunde = simulasyonKur(temel({ hedefFiyat: b.fiyat, birimMaliyet: 900 })).net2;
+    const altinda = simulasyonKur(
+      temel({ hedefFiyat: b.fiyat - 0.01, birimMaliyet: 900 }),
+    ).net2;
+    kontrol("  ...başabaşta NET-2 zarar DEĞİL", (ustunde ?? -1) >= 0, ustunde);
+    /** BİR KURUŞ ALTI ZARAR: sınır gerçekten sınır mı, ölçülüyor. */
+    kontrol("  ...bir kuruş altı ZARAR", (altinda ?? 1) < 0, altinda);
+    /** Kuruşa YUKARI yuvarlanır — aşağı yuvarlamak başabaşın altı demekti. */
+    kontrol(
+      "  ...kuruşa yuvarlı",
+      Math.abs(b.fiyat * 100 - Math.round(b.fiyat * 100)) < 1e-9,
+      b.fiyat,
+    );
+    /** Fiyat hangi dilimdeyse başabaş da o dilimde aranır. */
+    kontrol("  ...bulunduğu dilim beyan ediliyor", b.dilimSira !== null, b);
+  }
+
+  /**
+   * ⚠ HER PAZARYERİ İÇİN AYRI RAKAM — kullanıcı teyidi 19.08.2026.
+   * Aynı ürün, aynı maliyet; tek fark kanalın sipariş başına kesintisi.
+   * Başabaş DEĞİŞMEK ZORUNDA: değişmiyorsa kesintiler hesaba girmiyordur.
+   */
+  const kesintisiz = basabasFiyati(temel({ hedefFiyat: 1125, birimMaliyet: 900 }));
+  const kesintili = basabasFiyati(
+    temel({
+      hedefFiyat: 1125,
+      birimMaliyet: 900,
+      /** Gerçek şekil: HB'nin sipariş başına 12,60 TL hizmet bedeli. */
+      siparisKesintileri: [
+        { code: "SERVICE_FEE", basis: "FIXED" as const, amount: 12.6 },
+      ],
+    }),
+  );
+  kontrol(
+    "kanal kesintisi başabaşı YUKARI taşır",
+    (kesintili.fiyat ?? 0) > (kesintisiz.fiyat ?? 0),
+    { kesintisiz: kesintisiz.fiyat, kesintili: kesintili.fiyat },
+  );
+
+  /**
+   * ⚠ DİLİMİN TAMAMI KÂRDA — KÖK YOK, AMA SESSİZ DE KALINMAZ.
+   * Maliyet çok düşükken 1. dilimde hiçbir fiyat zarar etmiyor;
+   * "başabaş bulunamadı" demek kullanıcıyı boşlukta bırakırdı.
+   */
+  const hepKar = basabasFiyati(temel({ hedefFiyat: 1999, birimMaliyet: 10 }));
+  kontrol("dilim boyu kâr → fiyat yok", hepKar.fiyat === null, hepKar);
+  kontrol("  ...ama 'hep KÂR' deniyor", hepKar.dilimHep === "KAR", hepKar);
+
+  /** Simetrisi: maliyet dilimin tavanını aşıyorsa dilim boyu zarar. */
+  const hepZarar = basabasFiyati(temel({ hedefFiyat: 660, birimMaliyet: 5000 }));
+  kontrol("dilim boyu zarar → fiyat yok", hepZarar.fiyat === null, hepZarar);
+  kontrol("  ...ve 'hep ZARAR' deniyor", hepZarar.dilimHep === "ZARAR", hepZarar);
+
+  /** Maliyet bilinmiyorsa başabaş UYDURULMAZ. */
+  const maliyetsiz = basabasFiyati(temel({ birimMaliyet: null }));
+  kontrol("maliyet yoksa başabaş YOK", maliyetsiz.fiyat === null, maliyetsiz);
+  kontrol("  ...ve hüküm de verilmez", maliyetsiz.dilimHep === null, maliyetsiz);
+
+  /** Dilimsiz (tek oran) ürün de cevapsız kalmaz. */
+  const dilimsiz = basabasFiyati(
+    temel({ hedefFiyat: 1125, birimMaliyet: 900, dilimler: null }),
+  );
+  kontrol("dilimsiz üründe de başabaş var", dilimsiz.fiyat !== null, dilimsiz);
+  kontrol("  ...dilim sırası null", dilimsiz.dilimSira === null, dilimsiz);
+}
+
+// --- 14) EKRAN — BAŞABAŞ VE BEKLEME GÖRÜNÜYOR MU -----------------------------
+{
+  console.log("\n14) EKRAN (başabaş + bekleme)");
+  /**
+   * ⚠ DEĞER TESTİ BUNU GÖREMEZ. `basabasFiyati` kusursuz çalışsa da
+   * ekran onu çağırmıyorsa kullanıcı için YOK hükmündedir — bu paketin
+   * tekrar eden dersi ("kaydedilen ≠ görünen").
+   */
+  const ekran = readFileSync("src/app/kart/[variantId]/fiyat-dene.tsx", "utf8");
+  kontrol("ekran basabasFiyati'nı çağırıyor", /basabasFiyati\(girdi\)/.test(ekran));
+  kontrol("  ...KANAL KUTUSUNUN içinde (zeminler.map sonrası)",
+    ekran.indexOf("zeminler.map") < ekran.indexOf("basabasFiyati(girdi)"));
+  /**
+   * ⚠ ANAHTARIN DOSYADA OLMASI YETMEZ — KÖR MUTASYON BUNU GÖSTERDİ.
+   * Render koşulunu `{false ? (` yapan mutasyon YEŞİL kaldı: `deneBasabas`
+   * hâlâ dosyadaydı, sadece hiç çizilmiyordu. Kontrol artık KOŞULUN
+   * kendisine bakıyor — satır gerçekten hesabın sonucuna bağlı mı?
+   */
+  kontrol("  ...fiyatı ekrana basıyor", /deneBasabas"/.test(ekran));
+  kontrol(
+    "  ...ve render KOŞULU hesaba bağlı (sabite değil)",
+    /basabas !== null && basabas\.fiyat !== null \? \(/.test(ekran),
+  );
+  kontrol("  ...kök yoksa hep-kâr/hep-zarar söylüyor",
+    /deneBasabasHepKar/.test(ekran) && /deneBasabasHepZarar/.test(ekran));
+
+  /** Bekleme: ürünün özelliği — kanal kutusunda TEKRARLANMAZ (Kural #12). */
+  kontrol("bekleme satırı var", /deneBekleme/.test(ekran));
+  kontrol("  ...kanal kutusunun DIŞINDA, bir kez",
+    ekran.indexOf("deneBekleme") < ekran.indexOf("zeminler.map"));
+  kontrol("  ...yaş bandına göre renkleniyor", /YAS_BANDI_RENGI\[yasBandi\]/.test(ekran));
+  kontrol("  ...stok yoksa AYRI cümle", /deneStokYok/.test(ekran));
+
+  /** Yaş ikinci kez hesaplanmıyor — kartın üstündeki kutuyla aynı kaynak. */
+  const sayfa = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
+  kontrol("yaş kart verisinden geçiriliyor",
+    /yasGun=\{veri\.yasGun\}/.test(sayfa) && /yasBandi=\{veri\.yasBandi\}/.test(sayfa));
+
+  /** Sözlükten geliyor mu — koda gömülü metin yasak. */
+  const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    UrunKarti: Record<string, string>;
+  };
+  for (const anahtar of [
+    "deneBasabas",
+    "deneBasabasHepKar",
+    "deneBasabasHepZarar",
+    "deneBekleme",
+    "deneStokYok",
+  ]) {
+    kontrol(`  sözlük: ${anahtar}`, typeof tr.UrunKarti[anahtar] === "string" && tr.UrunKarti[anahtar] !== "");
+  }
 }
 
 console.log("");

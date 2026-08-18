@@ -369,6 +369,11 @@ export default async function KartSayfasi({
           kdvOrani={kdvOrani}
           paraBirimi={para === "EUR" ? "EUR" : "TRY"}
           baslangicFiyati={null}
+          /* Yaş kartın üstündeki kutuyla AYNI kaynaktan — iki yerde iki
+             farklı gün sayısı çıkmasın. */
+          eldekiAdet={veri.eldekiAdet}
+          yasGun={veri.yasGun}
+          yasBandi={veri.yasBandi}
         />
       ) : null}
 

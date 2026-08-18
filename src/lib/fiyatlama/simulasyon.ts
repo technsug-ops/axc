@@ -292,3 +292,108 @@ export function yonRengi(h: YonHukmu): "olumlu" | "uyari" | "olumsuz" {
     }
   }
 }
+
+/**
+ * ============================================================================
+ *  BAŞABAŞ FİYATI — NET-2'nin SIFIRLANDIĞI NOKTA
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı isteği 19.08.2026. Ekranda NET-1 ₺0,04 ve NET-2 −₺1,53
+ *  görünüyordu: başabaş tam oradan geçiyordu ama araç söylemiyordu.
+ *  "Kaç liraya satarsam zarar etmem" günlük bir soru ve deneme yanılmayla
+ *  cevaplanıyordu.
+ *
+ *  ── FORMÜL YAZILMADI, MOTOR ARANDI ──────────────────────────────────────
+ *  Başabaşı cebirle çözmek, NET-2 formülünü İKİNCİ KEZ yazmak olurdu:
+ *  KDV mahsubu, stopaj matrahı, komisyon KDV'si, sabit sipariş
+ *  kesintileri... Biri değişince başabaş sessizce yanlış olurdu.
+ *  Bunun yerine **mevcut motor ikiye bölme ile aranıyor.** Yavaş ama
+ *  tek kaynak; ~50 çağrı ve hepsi saf.
+ *
+ *  ── DİLİM İÇİNDE ARANIR ─────────────────────────────────────────────────
+ *  ⚠ NET-2 fiyata göre TEKDÜZE ARTMAZ: dilim sınırında oran düştüğü için
+ *  fiyat DÜŞERKEN kâr ARTABİLİR. Bu yüzden tek bir "başabaş fiyatı"
+ *  aramak yanıltıcıdır — arama HER DİLİMİN KENDİ ARALIĞINDA yapılır.
+ *  Dilim içinde ise ilişki tekdüzedir (oran sabit, katsayı pozitif) ve
+ *  ikiye bölme güvenlidir.
+ * ============================================================================
+ */
+
+export type BasabasSonucu = {
+  /** Bu dilimde NET-2'yi sıfırlayan fiyat; dilim boyunca hep aynı işaretse null. */
+  fiyat: number | null;
+  dilimSira: number | null;
+  /** Dilimin tamamında kâr mı, zarar mı — başabaş yoksa cevap bu. */
+  dilimHep: "KAR" | "ZARAR" | null;
+};
+
+/** Kuruş hassasiyeti — dilim sınırları kuruşla oynanıyor. */
+const KURUS = 0.01;
+
+/**
+ * Bir aralıkta NET-2'yi sıfırlayan fiyatı arar.
+ *
+ * Dilim içinde NET-2 fiyatla ARTAR (katsayı `1 − oran/100` pozitiftir),
+ * bu yüzden kök tektir ve ikiye bölme kesin sonuç verir. Bulunan fiyat
+ * kuruşa YUKARI yuvarlanır: aşağı yuvarlamak başabaşın bir kuruş altında
+ * kalmak, yani zarar demek olurdu.
+ */
+function aralıktaAra(
+  girdi: SimulasyonGirdisi,
+  alt: number,
+  ust: number,
+): number | null {
+  const net = (f: number) => simulasyonKur({ ...girdi, hedefFiyat: f }).net2;
+
+  const altNet = net(alt);
+  const ustNet = net(ust);
+  if (altNet === null || ustNet === null) return null;
+  /** İki uç da aynı işaretteyse bu aralıkta kök yoktur. */
+  if (altNet > 0 || ustNet < 0) return null;
+
+  let a = alt;
+  let b = ust;
+  /** 60 adım, kuruşun çok altına iner; sonsuz döngü riski yok. */
+  for (let i = 0; i < 60 && b - a > KURUS / 10; i++) {
+    const orta = (a + b) / 2;
+    const d = net(orta);
+    if (d === null) return null;
+    if (d < 0) a = orta;
+    else b = orta;
+  }
+  return Math.ceil(b * 100) / 100;
+}
+
+/**
+ * Fiyatın bulunduğu dilim içindeki başabaş noktası.
+ *
+ * Dilim yoksa (tek oran) aralık maliyetten başlayıp makul bir üst sınıra
+ * kadar taranır — üst sınır maliyetin on katı: hiçbir gerçek başabaş
+ * oraya kadar gitmez, ama sonsuz aralık aranamaz.
+ */
+export function basabasFiyati(girdi: SimulasyonGirdisi): BasabasSonucu {
+  const maliyet = girdi.birimMaliyet;
+  if (maliyet === null) return { fiyat: null, dilimSira: null, dilimHep: null };
+
+  const simdiki =
+    girdi.dilimler === null ? null : dilimBul(girdi.dilimler, girdi.hedefFiyat);
+
+  /** Aralık: dilimin sınırları, ya da dilim yoksa maliyet–10× maliyet. */
+  const alt = simdiki?.altLimit ?? Math.max(KURUS, maliyet * 0.1);
+  const ust = simdiki?.ustLimit ?? Math.max(maliyet * 10, girdi.hedefFiyat * 2);
+
+  const fiyat = aralıktaAra(girdi, alt, ust);
+  if (fiyat !== null) {
+    return { fiyat, dilimSira: simdiki?.sira ?? null, dilimHep: null };
+  }
+
+  /**
+   * KÖK YOKSA SESSİZ KALINMAZ: dilimin tamamı kâr mı zarar mı, o söylenir.
+   * "Başabaş bulunamadı" demek kullanıcıyı boşlukta bırakırdı.
+   */
+  const ortaNet = simulasyonKur({ ...girdi, hedefFiyat: (alt + ust) / 2 }).net2;
+  return {
+    fiyat: null,
+    dilimSira: simdiki?.sira ?? null,
+    dilimHep: ortaNet === null ? null : ortaNet >= 0 ? "KAR" : "ZARAR",
+  };
+}

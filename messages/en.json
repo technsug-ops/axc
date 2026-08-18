@@ -2576,7 +2576,12 @@
     "yonKarArtar": "",
     "yonZararAzalir": "",
     "yonZararaGecer": "",
-    "yonKotulesir": ""
+    "yonKotulesir": "",
+    "deneBasabas": "",
+    "deneBasabasHepKar": "",
+    "deneBasabasHepZarar": "",
+    "deneBekleme": "",
+    "deneStokYok": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",

@@ -2576,7 +2576,12 @@
     "yonKarArtar": "NET-2 {fark} artar — kâr büyür (NET-2 +{sonuc} olur).",
     "yonZararAzalir": "Zarar {fark} azalır ama ÜRÜN HÂLÂ ZARARDA (NET-2 −{sonuc} olur).",
     "yonZararaGecer": "NET-2 {fark} azalır — KÂRDAN ZARARA DÜŞER (NET-2 −{sonuc} olur).",
-    "yonKotulesir": "Zarar {fark} artar (NET-2 −{sonuc} olur) — inmek kazandırmıyor."
+    "yonKotulesir": "Zarar {fark} artar (NET-2 −{sonuc} olur) — inmek kazandırmıyor.",
+    "deneBasabas": "Başabaş: {fiyat} — bu fiyatın altında NET-2 zarara döner",
+    "deneBasabasHepKar": "Bu dilimdeki her fiyat kâr bırakıyor — başabaş bu dilimin altında.",
+    "deneBasabasHepZarar": "Bu dilimde hiçbir fiyat kâra çıkmıyor — başabaş bu dilimin üstünde.",
+    "deneBekleme": "Stokta {adet} adet · {gun} gündür bekliyor",
+    "deneStokYok": "Stokta yok — bekleme süresi hesaplanmadı."
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",
