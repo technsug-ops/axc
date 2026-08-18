@@ -111,6 +111,32 @@ raporuyla açılır.**
       kesintidir. .xlsx teyit aracına not: **bu üç sipariş ÖZEL satır**
       olarak işaretlenecek (gerçek komisyon · snapshot · güncel).
 
+- [x] **ENVANTER ARACI İÇ ÇELİŞKİSİ — ÇÖZÜLDÜ 18.08.2026.**
+      Bölüm 2 "son güncelleme günü 18.08" derken Bölüm 1 "en yeni 14.08"
+      diyordu. **Çelişki değildi — YANILTICI ETİKETTİ, ki daha kötüsüdür.**
+
+      · Bölüm 1 VERİDEN okuyor (`commissionUpdatedAt`).
+      · Bölüm 2'nin rakamı **veriden hiç gelmiyordu**: takvimden hesaplanan
+        BEKLENEN YAYIM GÜNÜ. Bugün salı olduğu için 18.08 yazıyordu.
+
+      "Son güncelleme günü" ifadesi "oran şu gün güncellendi" diye okunur.
+      Artık ikisi **yan yana ve adlarıyla**: `beklenen yayım X · veride en
+      yeni Y`. TY ritmi de düzeltildi: **haftada iki gün (salı + cuma)**,
+      dosyadan ölçüldü. Tek gün yazılıydı, cuma yayımını kaçırıyordu.
+
+      **YÜKLEME ŞÜPHESİNİN MUHTEMEL CEVABI — kod okundu:**
+      `komisyon/plan.ts` oranı **zaten aynı** olan satırı yazma planına
+      HİÇ ALMAZ (`ayniKalan` sayacı). Dosya yüklenip her oran aynı çıkarsa
+      `commissionUpdatedAt` **ilerlemez.** Yani "en yeni 14.08" dürüst
+      olabilir: yükleme koşmuş, eşleşmiş, hiçbir oranı değiştirmemiştir.
+
+      > **`commissionUpdatedAt` "DEĞİŞTİ" demektir, "DOĞRULANDI" değil.**
+      > Bu ayrım bugün ölçülemiyor ve **yeni tarife tablosunun gerekçesi**:
+      > yükleme, hiçbir oran değişmese bile bir PENCERE bırakır.
+
+      Araca güne göre güncelleme dağılımı eklendi — "bugün bir şey değişti
+      mi" artık tek bakışta görünüyor.
+
 - [ ] **N11 GÜNCELLEME RİTMİ — HALİL'E SORU.**
       Envanter aracı TY (salı) ve HB (çarşamba) ritmini biliyor; **N11 için
       ritim tanımsız** ve araç bunu "bayatlık ölçülemedi" diye açıkça
@@ -245,6 +271,38 @@ veri dokunulmaz — geri doldurma YOK. SQL onaya gelecek; disiplin geçerli
   tekilleştirmeli; "iki dilim" sanmamalı.
 - **Eşleşme anahtarı BARKOD olmalı**: `SATICI STOK KODU` 161 satırda
   yalnız 98 farklı değer taşıyor ve boş olanlar var.
+
+
+#### ⏸ MIGRATION HAZIR, PUSH EDİLMEDİ — `20260818120000_komisyon_tarifesi`
+
+**Bekçi doğru davrandı:** `deploy:bekci` "migration dosyası var, canlıda
+koşulmamış" diyerek build'i durdurdu. Disiplin: yerel commit → Halil
+`npm run canli:migrate` → damga → **ancak sonra push**. _(8cb0023 vakası:
+şema deploy edilip migration koşmayınca canlı 500 vermişti.)_
+
+**SQL — salt ekleme, 7 ifade:** `SaleItem.commissionTarifeId` (nullable) ·
+`KomisyonTarifesi` · `KomisyonTarifeKalemi` + 4 yabancı anahtar.
+Hiçbir sütun düşmüyor, hiçbir veri taşınmıyor, geri doldurma yok.
+`migration:kontrol` 29/29 temiz (harf duyarlılığı).
+
+**ÜÇ KESKİNLEŞTİRME İŞLENDİ:**
+1. **`commissionRate`in kaynağı beyan edildi:** dosyadaki `GÜNCEL KOMİSYON`
+   kolonu — TY'nin kendi beyanı. Sistem fiyattan dilim çözerek
+   TÜRETMEZ. Fiyatlama aracı türetme yapar ama o **simülasyondur, kayıt
+   değil.** İki kaynak ayrışırsa tek doğru TY'nin beyanıdır.
+2. **Aynı pencere ikinci kez yüklenirse: ÜZERİNE YAZILIR**, reddedilmez.
+   _Gerekçe:_ bir pencerenin tarifesi kanalın YAYIMLADIĞI BİR OLGUDUR;
+   aynı pencerenin iki yüklemesi aynı içeriğe yakınsamalıdır. Reddetseydik
+   ilk yükleme eksik/bozuk geldiğinde düzeltmenin tek yolu elle silmek
+   olurdu. **Ledger dokunulmazlığı burada geçerli DEĞİL** — bu referans
+   veri, hareket kaydı değil. Sessiz de olmuyor: `yuklemeSayisi` ve
+   `yuklendiAt` yazılıyor.
+3. **Bağsız kalem SAKLANIR ve SAYILIR.** `variantId` null olabilir; kalem
+   yine de duruyor ve yükleme raporunda "X kalem bağsız" diye görünecek.
+   _Hakediş 648 dersinin tekrarı olmasın: bağsızlık sessiz kalmaz._
+
+**Eşleşme anahtarı BARKOD** — ölçüldü: 161 satırda 160 farklı barkod,
+`SATICI STOK KODU` yalnız 98 farklı değer + boşluklar.
 
 **AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
 - [ ] Fiyatlama aracı (dilim + simülasyon)

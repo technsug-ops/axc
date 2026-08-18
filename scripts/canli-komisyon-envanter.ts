@@ -45,9 +45,15 @@ const GERIYE_GUN = 60;
  * Oranın haftalık güncellendiği gün (0=Paz … 6=Cmt).
  * _Kaynak: CLAUDE.md iş sabitleri — Trendyol Salı, Hepsiburada Çarşamba._
  */
-const GUNCELLEME_GUNU: Record<string, number> = {
-  Trendyol: 2,
-  Hepsiburada: 3,
+const GUNCELLEME_GUNU: Record<string, number[]> = {
+  /**
+   * TRENDYOL HAFTADA İKİ KEZ — 18.08.2026'da tarife dosyasından ÖLÇÜLDÜ.
+   * Pencereler: Salı 08:00→Cuma 07:59 (3 gün) · Cuma 08:00→Salı 07:59
+   * (4 gün). Tek gün yazsaydık cuma yayımını kaçırır, salıya kadar
+   * "güncel" sayardık.
+   */
+  Trendyol: [2, 5],
+  Hepsiburada: [3],
 };
 
 function para(d: number | null): string {
@@ -71,11 +77,16 @@ function gun(d: Date | null): string {
  * Bugün o günse bugünü sayar — güncelleme günü henüz geçmemiş olabilir,
  * o yüzden "bayat" hükmü bir sonraki bölümde eşikle veriliyor.
  */
-function sonGuncellemeGunu(bugun: Date, haftaninGunu: number): Date {
-  const d = new Date(bugun);
-  const fark = (d.getUTCDay() - haftaninGunu + 7) % 7;
-  d.setUTCDate(d.getUTCDate() - fark);
-  return d;
+function sonGuncellemeGunu(bugun: Date, gunler: number[]): Date {
+  /** Birden çok yayım günü varsa EN YAKINI geçerlidir. */
+  let enYakin: Date | null = null;
+  for (const g of gunler) {
+    const d = new Date(bugun);
+    const fark = (d.getUTCDay() - g + 7) % 7;
+    d.setUTCDate(d.getUTCDate() - fark);
+    if (!enYakin || d > enYakin) enYakin = d;
+  }
+  return enYakin!;
 }
 
 async function main() {
@@ -158,8 +169,24 @@ async function main() {
   //  2) YAŞ — HAFTALIK RİTME GÖRE BAYAT MI
   // ==========================================================================
   console.log("  ── 2) ORAN YAŞI ───────────────────────────────────────────");
-  console.log("     Oran haftalık değişir: Trendyol SALI, Hepsiburada ÇARŞAMBA.");
-  console.log("     Ölçüt: son güncelleme günü geçtiği hâlde oran güncellenmemişse ŞÜPHELİ.");
+  /**
+   * ⚠ ETİKET DÜZELTMESİ 18.08.2026 — ARAÇ KUSURU.
+   *
+   * Bu bölüm "son güncelleme günü 2026-08-18" yazıyordu ve 1. bölüm aynı
+   * anda "en yeni 2026-08-14" diyordu. Mimar haklı olarak "iki bölüm farklı
+   * kaynaktan mı okuyor" diye sordu.
+   *
+   * ÇELİŞKİ DEĞİLDİ, YANILTICI ETİKETTİ — ki daha kötüsüdür:
+   *   · 1. bölüm VERİDEN okur (`commissionUpdatedAt`, gerçek güncelleme)
+   *   · 2. bölümün rakamı VERİDEN GELMİYORDU: takvimden hesaplanan
+   *     BEKLENEN YAYIM GÜNÜ. Bugün salı olduğu için 18.08 yazıyordu.
+   *
+   * "Son güncelleme günü" ifadesi "oran şu gün güncellendi" diye okunuyor.
+   * İkisi artık yan yana ve adlarıyla basılıyor.
+   */
+  console.log("     Kanal oranı haftalık yayımlar: Trendyol SALI+CUMA, Hepsiburada ÇARŞAMBA.");
+  console.log("     'Beklenen yayım' TAKVİMDEN hesaplanır; 'veride en yeni' KAYITTAN okunur.");
+  console.log("     İkisi arasındaki boşluk = tazelenmemiş olabilir.");
   console.log("");
 
   for (const [ad, o] of [...kanalOzeti.entries()].sort()) {
@@ -178,13 +205,47 @@ async function main() {
         (k.commissionUpdatedAt === null || k.commissionUpdatedAt < sinir),
     );
     console.log(
-      `     ${doldur(ad, 16)} son güncelleme günü ${gun(sinir)} → BAYAT ${bayatlar.length}/${o.dolu}`,
+      `     ${doldur(ad, 16)} beklenen yayım ${gun(sinir)} · veride en yeni ${gun(o.enYeni)} → BAYAT ${bayatlar.length}/${o.dolu}`,
     );
   }
   console.log("");
   console.log("     ⚠ 'Bayat' KESİN HATA DEĞİLDİR: oran o hafta değişmemiş de");
   console.log("       olabilir. Sinyaldir — hangi kanalın oranlarına bakılacağını");
   console.log("       söyler, tek başına yanlışlık iddia etmez.");
+  console.log("");
+
+  /**
+   * ⚠ `commissionUpdatedAt` "DEĞİŞTİ" DEMEKTİR, "DOĞRULANDI" DEĞİL.
+   *
+   * `komisyon/plan.ts` oranı ZATEN AYNI olan satırı yazma planına hiç
+   * almaz (`ayniKalan` sayacı). Yani dosya yüklenip her oran aynı çıkarsa
+   * damga İLERLEMEZ ve kayıt "bir haftadır tazelenmemiş" görünür — oysa
+   * bugün doğrulanmıştır.
+   *
+   * Bu ayrım bugün ölçülemiyor ve yeni tarife tablosunun (pencere kaydı)
+   * gerekçelerinden biri: yükleme, oran değişmese bile pencere bırakır.
+   */
+  console.log("     ⚠ DAMGA 'DEĞİŞTİ' DEMEKTİR, 'DOĞRULANDI' DEĞİL.");
+  console.log("       Oranı aynı çıkan satır yazma planına hiç girmez");
+  console.log("       (komisyon/plan.ts → ayniKalan). Dosya yüklenip hiçbir");
+  console.log("       oran değişmezse damga İLERLEMEZ; kayıt tazelenmemiş");
+  console.log("       görünür ama aslında doğrulanmıştır. Bu ayrım bugün");
+  console.log("       ölçülemiyor — yeni tarife tablosu (pencere) çözecek.");
+  console.log("");
+
+  /** GÜNE GÖRE DAĞILIM — "bugün bir şey değişti mi" bunu cevaplar. */
+  console.log("     GÜNCELLEME TARİHİ DAĞILIMI (son 10 gün):");
+  const gunSayaci = new Map<string, number>();
+  for (const k of kayitlar) {
+    if (k.commissionUpdatedAt === null) continue;
+    const g = gun(k.commissionUpdatedAt);
+    gunSayaci.set(g, (gunSayaci.get(g) ?? 0) + 1);
+  }
+  const siralı = [...gunSayaci.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
+  for (const [g, n] of siralı.slice(0, 10)) {
+    console.log(`       ${g}  ${n} kayıt`);
+  }
+  if (siralı.length === 0) console.log("       (hiç damga yok)");
   console.log("");
 
   // ==========================================================================

@@ -257,6 +257,8 @@ model Category {
 
 /// Stok, SKU ve barkodun tutulduğu seviye. Ürün seviyesinde stok YOKTUR.
 model ProductVariant {
+  komisyonTarifeKalemleri KomisyonTarifeKalemi[]
+
   id        String  @id @default(cuid())
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -517,6 +519,8 @@ model CargoTariff {
 
 /// Aynı kanalda birden fazla mağaza/hesap açılabilir.
 model ChannelAccount {
+  komisyonTarifeleri KomisyonTarifesi[]
+
   id        String  @id @default(cuid())
   channelId String
   channel   Channel @relation(fields: [channelId], references: [id], onDelete: Restrict)
@@ -1035,6 +1039,20 @@ model Sale {
 }
 
 model SaleItem {
+  /// ⚠ ORANIN HANGİ PENCEREDEN GELDİĞİ — mimar maddesi 18.08.2026.
+  ///
+  /// Satışa komisyon oranı SNAPSHOT'lanıyor ve kâr onunla hesaplanıyor;
+  /// bu doğru. Ama bugün "o snapshot BAYAT MIYDI" sorusu CEVAPLANAMIYOR:
+  /// oran geçmişi tutulmuyor (yükleme `commissionRate`i üstüne yazıyor,
+  /// ne geçmiş tablosu ne denetim kaydı var — ölçüldü 18.08.2026).
+  ///
+  /// Bu alan oranı bir TARİFE PENCERESİNE bağlar; soru gelecekte
+  /// ölçülebilir olur. Geçmiş satışlarda NULL kalır — geri doldurma YOK,
+  /// çünkü hangi pencereden geldiği zaten bilinmiyor ve uydurmak
+  /// geçmişi tahrif etmek olurdu.
+  commissionTarifeId String?
+  commissionTarife   KomisyonTarifesi? @relation(fields: [commissionTarifeId], references: [id], onDelete: SetNull)
+
   id     String @id @default(cuid())
   saleId String
   sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
@@ -2129,4 +2147,110 @@ model GecmisEkstre {
   @@unique([cardId, donem])
   @@index([donem])
   @@index([iceAktarimKodu])
+}
+
+/// ============================================================================
+///  KOMİSYON TARİFESİ — DİLİMLİ ORAN, GEÇERLİLİK PENCERESİYLE
+/// ----------------------------------------------------------------------------
+///  ⚠ NİYE VAR — 18.08.2026 ölçümü. Trendyol'un komisyon dosyası ürün başına
+///  TEK oran değil, **dört dilimli bir tarife** taşıyor: her fiyat aralığının
+///  kendi komisyonu var (örn. ≥769,99 → %18 · 701,29–769,98 → %12,8 ·
+///  641,09–701,28 → %11,1 · ≤641,08 → %9,3). Mekanizma açık: **fiyatı
+///  düşürene komisyon indirimi.**
+///
+///  Bugün `ChannelSku.commissionRate` bu bilginin yalnız bir hücresini
+///  saklıyor (fiyatın düştüğü dilimin oranı) ve gerisini atıyor. Fiyatlama
+///  aracı "bir dilim aşağı insem ne olur" sorusunu ancak tam tarifeyle
+///  cevaplayabilir.
+///
+///  ── PENCERE NİYE ŞART ───────────────────────────────────────────────────
+///  Tarifenin ömrü var: dosyadaki hücre "14 Ağustos 08.00 – 18 Ağustos 07.59"
+///  diyor. TY haftada İKİ kez yayımlıyor (Salı 08:00→Cuma 07:59 ve Cuma
+///  08:00→Salı 07:59). Penceresiz bir "güncel oran" kavramı yarımdır: hangi
+///  tarifeye ait olduğu bilinmeyen oranın bayat mı taze mi olduğu söylenemez.
+///
+///  Ayrıca bugünkü `commissionUpdatedAt` damgası "DEĞİŞTİ" demektir,
+///  "DOĞRULANDI" değil — oranı aynı çıkan satır yazma planına hiç girmiyor
+///  (`komisyon/plan.ts` → `ayniKalan`). Pencere kaydı bunu çözer: yükleme,
+///  hiçbir oran değişmese bile pencere bırakır.
+/// ============================================================================
+model KomisyonTarifesi {
+  id               String         @id @default(cuid())
+  channelAccountId String
+  channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
+
+  /// Tarifenin geçerlilik penceresi — dosyadaki hücreden çözülür.
+  pencereBaslangic DateTime
+  pencereBitis     DateTime
+
+  /// Dosyadaki `TARİFE GRUBU` — ölçüldü: dosya başına TEK değer, yani
+  /// ürün grubu değil DOSYA/tarife kimliği.
+  tarifeGrubu String?
+
+  /// Arşivdeki dosyanın adı — "kaynakta ne vardı" izlenebilsin.
+  kaynakDosyaAdi String?
+
+  /// ⚠ AYNI PENCERE İKİNCİ KEZ YÜKLENİRSE: ÜZERİNE YAZILIR (kalemler
+  /// silinip yeniden kurulur), REDDEDİLMEZ. Gerekçe: bir pencerenin
+  /// tarifesi kanalın YAYIMLADIĞI BİR OLGUDUR; aynı pencerenin iki
+  /// yüklemesi aynı içeriğe yakınsamalıdır. Reddetseydik ilk yükleme
+  /// eksik/bozuk geldiğinde düzeltmenin tek yolu elle silmek olurdu.
+  /// Ledger dokunulmazlığı burada geçerli DEĞİL: bu referans veridir,
+  /// hareket kaydı değil.
+  ///
+  /// Ama sessiz olmaz — kaçıncı yükleme olduğu ve son yükleme anı yazılır.
+  yuklemeSayisi Int      @default(1)
+  yuklendiAt    DateTime @default(now())
+
+  kalemler KomisyonTarifeKalemi[]
+
+  /// Bu tarifeden oran snapshot'lamış satış kalemleri.
+  satisKalemleri SaleItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Bir hesap + bir pencere = TEK tarife.
+  @@unique([channelAccountId, pencereBaslangic])
+  @@index([pencereBitis])
+}
+
+/// Tarifenin tek satırı: bir ürünün BİR dilimi.
+model KomisyonTarifeKalemi {
+  id        String           @id @default(cuid())
+  tarifeId  String
+  tarife    KomisyonTarifesi @relation(fields: [tarifeId], references: [id], onDelete: Cascade)
+
+  /// HAM KİMLİK — dosyadan geldiği gibi. Eşleşme kurulamasa bile kalem
+  /// SAKLANIR; bağsızlık sessiz kalmaz, yükleme raporunda sayısıyla yazar.
+  /// _Hakediş 648 dersinin tekrarı olmasın (18.08.2026)._
+  barkod         String
+  saticiStokKodu String?
+  urunAdi        String?
+
+  /// Eşleşen varyant. NULL = bağ kurulamadı; kalem yine de duruyor.
+  /// ⚠ EŞLEŞME ANAHTARI BARKOD: ölçüldü, 161 satırda 160 farklı barkod
+  /// varken `SATICI STOK KODU` yalnız 98 farklı değer taşıyor ve boş
+  /// olanlar var.
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  /// 1..4 — dosyadaki dilim sırası. 1 en pahalı dilim (üst uç açık).
+  dilimSirasi Int
+
+  /// Dilimin sınırları. NULL = o uç AÇIK: 1. dilimin üstü, son dilimin altı.
+  altLimit Decimal? @db.Decimal(18, 4)
+  ustLimit Decimal? @db.Decimal(18, 4)
+
+  /// Yüzde olarak oran (%12,8 -> 12.80) — `ChannelSku.commissionRate` ile
+  /// aynı birim.
+  oran Decimal @db.Decimal(5, 2)
+
+  createdAt DateTime @default(now())
+
+  /// Mükerrer satır tekilleşir — ölçüldü: dosyada 1 barkod iki kez, iki
+  /// satır BİREBİR aynı. "İki dilim" sanılmamalı.
+  @@unique([tarifeId, barkod, dilimSirasi])
+  @@index([variantId])
+  @@index([barkod])
 }
