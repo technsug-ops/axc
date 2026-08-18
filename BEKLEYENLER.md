@@ -605,6 +605,16 @@ aşağıda._
       "geriye dönük bakabilmek" — o kadarına serbest metin yeter. Tablo,
       ihtiyaç sorguya dönüşünce açılır.
 
+      **`detail` İÇERİĞİ — mimar şartı 18.08.2026:**
+      dosya adı · okunan · güncellenen · yaratılan · `ayniKalan` ·
+      kanal hesabı. **Yükleme ekranının sonuç mesajıyla BİREBİR aynı
+      sayılar** — iki gösterim TEK kaynaktan beslenir; ekran bir şey,
+      kayıt başka bir şey derse hangisine güvenileceği bilinmez.
+
+      **YAYINA GİRİNCE:** envanterdeki "(a) yükleme yok / (b) değişiklik
+      yok" belirsizlik notu, `AuditLog`a bakma tarifiyle güncellenir
+      (küçük iş, aynı turda).
+
       ⚠ **SIRA — BLOKAJ DEĞİL:** TY dilim yüklemesi sınavından sonra.
       _Aynı boşluk tarife tarafında YOK — `KomisyonTarifesi` zaten pencere
       kaydı bırakıyor; bu, o dersin `ChannelSku` tarafına uygulanması._

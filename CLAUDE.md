@@ -394,6 +394,39 @@ dokunulduğu anı söylüyor.)
 "Sonra düşünürüz" denen alan, sonra düşünüldüğünde veri çoktan onsuz
 birikmiştir; o noktada eklemek geçmişi uydurmak ya da kaybetmek olur.
 
+### ŞEMA DEĞİŞİKLİĞİ EN PAHALI ÇÖZÜMDÜR (KESİN KURAL)
+
+_Ders 18.08.2026._ Yeni tablo/sütun, çözüm sıralamasının **en sonundadır**.
+Bedeli koddan ibaret değil: SQL onayı · canlı koşum · damga · push
+disiplini · geri dönüşün zorluğu. Ucuzu varken pahalıya gidilmez.
+
+**Vaka:** komisyon yükleme sonuçları hiçbir yere yazılmıyordu ve envanter
+"yükleme koştu ama değişiklik yoktu" ile "yükleme hiç koşmadı" ayrımını
+yapamıyordu. Çözüm olarak `KomisyonYuklemesi` tablosu önerildi ve
+**onaylandı**. Sonra ölçüldü: `AuditLog` bu işi olduğu gibi yapıyor —
+`userId` · `createdAt` (indeksli) · `targetType/targetId` · `detail`
+(serbest metin) · `action` (indeksli). Migration, onay, canlı koşum ve
+damga **tamamen gereksizmiş**.
+
+**SORU SIRASI — yukarıdan aşağı, ilk "evet"te dur:**
+1. Mevcut bir alan/tablo bunu **zaten taşıyabiliyor mu**?
+2. Serbest metin (JSON/`detail`) yeterli mi?
+3. Türetilebilir mi (hesaplanır, saklanmaz)?
+4. …ancak bundan sonra yeni sütun, en son yeni tablo.
+
+**AYIRT EDİCİ SORU:** bu veriyle ne yapılacak?
+· **Geriye bakmak** → serbest metin yeter.
+· **SORGU** (gruplama, toplam, grafik, süzgeç) → yapı gerekir.
+İhtiyaç sorguya dönüştüğü gün tablo açılır; önce değil.
+
+> **ONAY DA BİR REFERANSTIR — VE REFERANS DOĞRULANIR.**
+> Bu kalem mimar tarafından ONAYLANMIŞTI. Onaylanmış olması onu doğru
+> yapmadı; ölçüm yanlış olduğunu gösterdi ve **kendi önerimi geri
+> almak** doğru davranıştı. "Tutarlılık ≠ doğruluk" kuralının kardeşi:
+> bir kararın onaylanmış olması, gerekçesinin sınanmasını durdurmaz.
+> Onayı aldıktan sonra daha ucuz bir yol görülürse **bildirilir**;
+> sessizce pahalı yola gidilmez.
+
 ### TUTARLILIK ≠ DOĞRULUK — ÖNCE REFERANSI DOĞRULA (KESİN KURAL)
 
 _Ders 18.08.2026, Melontik demo vakası._ Bir karşılaştırmanın değeri
