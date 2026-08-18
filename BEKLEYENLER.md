@@ -24,7 +24,7 @@ ilgili pakette kalır._
 | H4 | **Ödeme hizmeti hipotezi** | H2 sırasında bakılacak: dosyada tahsilat/ödeme bedeli satırı var mı |
 | H5 | **N11 ritmi** | Komisyonlar hangi sıklıkla değişiyor? Cevapsızken envanter "ölçülemedi" diyor |
 | H6 | **Canlı tur** | Kart sırası · yapışkan çubuk · döküm görüntüsü · kıyas ibaresi (hepsi deploy'da) |
-| H7 | **DIŞ ZAMANLAYICI KURULUMU** | `cron-job.org` → adım adım tarif yukarıda. Teşhis kapandı (`YETKISIZ` → suçlu Vercel zamanlayıcısı). Bildirim ayarı ŞART |
+| H7 | **Yedek — ilk gece doğrulaması** | ✅ Dış zamanlayıcı KURULDU ve test 200 verdi. Yarın sabah `/ayarlar/disa-aktarma` → **kırmızı eksik gün kutusu kaybolmuş olmalı** |
 | H8 | **Melontik ölçütü** | Çapraz teyit için GERÇEK Melontik çıktısı (sunum demo çıktı) |
 
 ### 🔧 BİZDE — karar bekleyen
@@ -76,6 +76,40 @@ kopya oluşmaz**; yarım içerik iyi bir yedeğin üstüne yazamaz.
 
 ---
 
+
+#### ✅ DIŞ ZAMANLAYICI KURULDU — 19.08.2026, test 200 OK
+
+`cron-job.org` → günlük 03:00, `Authorization: Bearer <CRON_SECRET>`,
+başarısızlık bildirimi açık. **Testlauf: 200 OK · 5,46 sn.**
+
+**KURULUMDA İKİ TUZAK ÇIKTI, ikisi de kayda değer:**
+
+1. **`CRON_SECRET` boşluk taşıdı ve BUILD ÇÖKTÜ.** Vercel açıkça söyledi:
+   _"contains leading or trailing whitespace, which is not allowed"_.
+   Kaynak: kod bloğu kopyalanırken **sondaki satır sonu** da geliyordu ve
+   gözle görünmüyordu. İki deneme de aynı sebeple düştü.
+   → **Çözüm: kopyalama bırakıldı, ELLE YAZILABİLİR sır üretildi**
+   (24 karakter, küçük harf + rakam, karışan harfler `l 1 0 O i` yok).
+   Üçüncü denemede build yeşil.
+
+   ⚠ **Yan sonuç:** build çöktüğü için redeploy hiç tamamlanmamıştı;
+   uygulama eski sırla çalışmaya devam ediyordu. 401'lerin sebebi
+   header değil **başarısız dağıtımdı** — hata mesajı okunmasaydı
+   header ayarlarıyla saatlerce uğraşılırdı.
+
+2. **"Sensitive" alan BOŞ görünüyor ama yer tutucu doluymuş gibi
+   duruyor.** Vercel `sk_live_a12…` diye gri bir örnek gösteriyor;
+   kullanıcı "silinecek bir şey yok" dedi ve haklıydı.
+   _Kural #11'in vahşi doğadaki örneği — yer tutucu değer sanıldı._
+
+**VERCEL CRON TANIMDA KALDI.** Build hatası düzeldiğine göre Vercel'in
+kendi cron'u da düzelmiş olabilir; iki kaynak birbirini yedekler ve
+çift tetik zararsız (idempotent, ölçüldü).
+
+**YARIN SABAH:** `/ayarlar/disa-aktarma` → kırmızı eksik gün kutusu
+kaybolmuş olmalı. Sarı **"yetkisiz çağrı"** kutusu çıkarsa, Vercel'in
+kendi cron'unun başlık gönderip göndermediği de anlaşılacak.
+
 ### 📋 HALİL İÇİN: DIŞ ZAMANLAYICI KURULUMU
 
 **ÖNCE — `CRON_SECRET` değerini al:**
@@ -104,11 +138,11 @@ alana gidecek.)_
 · `401 YETKISIZ` → başlıkta `Bearer ` öneki eksik ya da sır yanlış
 kopyalanmış · `503 KAPALI` → sır Vercel'de silinmiş.
 
-> ⚠ **ZAMAN AŞIMI UYARISI — yalancı kırmızı.** Yedek üretimi **60 saniyeye
-> kadar** sürebilir; birçok ücretsiz servisin varsayılan zaman aşımı 30
-> saniyedir. Servis "başarısız" derken yedek **alınmış olabilir.**
-> Servisin zaman aşımını izin verdiği en yükseğe çek; ve **nihai hakem
-> servisin raporu değil, ekrandaki eksik gün kutusudur.**
+> ✅ **ZAMAN AŞIMI KORKUSU YERSİZ ÇIKTI — ÖLÇÜLDÜ 19.08.2026: 5,46 sn.**
+> Rotanın `maxDuration = 60` olmasına bakıp "60 saniye sürebilir, servis
+> 30'da pes eder" diye uyarmıştım. **Üst sınırı gerçek süre sanmışım.**
+> Gerçek koşu 5,5 saniye; hiçbir servisin varsayılanına yaklaşmıyor.
+> _Ders: bir sınır değeri, ölçülmüş bir süre değildir._
 
 **9. ADIM NİYE ÖNEMLİ:** iki kaçışı da biz fark ettik, sistem söylemedi.
 Bildirim açıkken **üçüncü kaçışı servis kendisi haber verir.**
