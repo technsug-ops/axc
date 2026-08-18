@@ -23,8 +23,14 @@
  * ============================================================================
  */
 
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+} from "node:fs";
+import { basename, dirname, join } from "node:path";
 
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { raporMetni } from "../src/lib/komisyon/tarife-plan";
@@ -53,7 +59,32 @@ async function main() {
     return;
   }
   if (!existsSync(yol)) {
-    console.log(`Dosya bulunamadı: ${yol}`);
+    /**
+     * ⚠ HATA ÇIKIŞ YOLUNU GÖSTERİR (İlke #5). "Dosya bulunamadı" tek
+     * başına kullanıcıyı çıkmazda bırakır. 18.08.2026'da iki kez aynı
+     * iki sebepten oldu:
+     *   · Windows uzantıyı GİZLİYOR → yol `.xlsx`siz yazılıyor
+     *   · yolda BOŞLUK var → tırnaksız yazılınca ikiye bölünüyor
+     * İkisi de aşağıda yazılı; ayrıca klasördeki gerçek adlar listelenir.
+     */
+    console.log(`  ✗ Dosya bulunamadı: ${yol}`);
+    console.log("");
+    console.log("     İKİ SIK SEBEP:");
+    console.log("     1. UZANTI EKSİK — Windows `.xlsx`i gizler, komutta YAZILMALI.");
+    console.log("     2. TIRNAK YOK — yolda boşluk varsa çift tırnak şart:");
+    console.log(
+      '        npm run canli:tarife-yukle -- "C:\\klasor\\dosya.xlsx"',
+    );
+    const klasor = dirname(yol);
+    if (existsSync(klasor)) {
+      const adaylar = readdirSync(klasor).filter((d) => d.toLowerCase().endsWith(".xlsx"));
+      if (adaylar.length > 0) {
+        console.log("");
+        console.log(`     Bu klasördeki .xlsx dosyaları (${klasor}):`);
+        for (const a of adaylar) console.log(`        ${a}`);
+      }
+    }
+    console.log("");
     process.exitCode = 1;
     return;
   }
@@ -129,6 +160,47 @@ async function main() {
   if (onizleme.durum === "HATA") {
     console.log(`  ✗ OKUNAMADI — ${onizleme.engel}`);
     if (onizleme.eksikler) console.log(`     eksik: ${onizleme.eksikler.join(" · ")}`);
+
+    /**
+     * ⚠ YANLIŞ DOSYA EN SIK HATA — ve "kolon eksik" demek çıkış yolunu
+     * göstermiyor. Pazaryeri İKİ AYRI ihraç veriyor ve ikisi de "komisyon"
+     * diye anılıyor:
+     *   · ÜRÜN LİSTESİ  → tek oran, mevcut komisyon yükleme ekranına gider
+     *   · KOMİSYON TARİFESİ → dört dilim, BU betiğe gider
+     * Dosya ürün listesi olarak TANINIYORSA bunu söyleriz; kullanıcı
+     * "kolon eksik" ile baş başa kalmaz.
+     */
+    try {
+      const { paketiNormalle } = await import("../src/lib/tablo/paket");
+      const { platformTani } = await import("../src/lib/komisyon/okuyucu");
+      const readXlsxFile = (await import("read-excel-file/node")).default;
+      const { bayt } = paketiNormalle(dosya);
+      const sayfalar = (await readXlsxFile(bayt)) as unknown as {
+        sheet: string;
+        data: unknown[][];
+      }[];
+      const tanima = platformTani(
+        sayfalar.map((s) => ({ sheet: s.sheet, data: s.data ?? [] })),
+      );
+      console.log("");
+      if (tanima.durum === "TANINDI") {
+        console.log(`     ⚑ BU DOSYA ${tanima.platform} ÜRÜN LİSTESİ — dilim tarifesi DEĞİL.`);
+        console.log("       Tek oran taşır (GÜNCEL/Komisyon Oranı) ve mevcut");
+        console.log("       komisyon yükleme ekranına gider, bu betiğe değil.");
+        console.log("");
+        console.log("       DİLİM TARİFESİ AYRI BİR İHRAÇTIR:");
+        console.log("       Trendyol paneli → Promosyon Kârlılık Analizi →");
+        console.log("       Ürün Komisyon Tarifesi → Excel indir");
+        console.log("       (dört fiyat dilimi + geçerlilik penceresi taşır)");
+      } else {
+        console.log(`     Dosyadaki sayfalar: ${tanima.sayfalar.join(" · ")}`);
+        console.log("     Dilim tarifesi bekleniyordu: '1.Fiyat Alt Limit',");
+        console.log("     '1.KOMİSYON'… kolonlarını taşıyan ihraç.");
+      }
+    } catch {
+      // Tanıma denemesi başarısızsa asıl hata zaten yukarıda yazılı.
+    }
+    console.log("");
     await prisma.$disconnect();
     process.exitCode = 1;
     return;
