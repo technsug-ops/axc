@@ -822,7 +822,11 @@
     "netHesaplanamayanHaric": "{sayi} satışın kârı hesaplanamadı — toplama girmedi",
     "stogaDondu": "Stoğa döndü (adet düşürüldü)",
     "netDusum": "Net düşüm",
-    "netDusumDeger": "Net düşüm: {adet} adet"
+    "netDusumDeger": "Net düşüm: {adet} adet",
+    "komisyonIpucu": "örn. 15",
+    "oranKaynakYok": "Bu ürün için kayıtlı komisyon oranı yok — girdiğiniz değer hiçbir kayda dayanmıyor.",
+    "oranSupheliDusuk": "%{oran} çok düşük görünüyor; bugüne kadar görülen en düşük oran %3,6. Kontrol edin.",
+    "oranSapti": "Kayıtlı oran %{onerilen}; girdiğiniz değer {fark} puan farklı."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",

@@ -33,7 +33,7 @@ ilgili pakette kalır._
 |---|---|---|
 | K1 | **Uyarı Merkezi Faz 2 / dilim 1** | Amber + nötr, şemasız. Önerildi, **karar verilmedi** |
 | ~~K2~~ | ~~Komisyon yükleme kaydı~~ | ✅ **KAPANDI 18.08** — `AuditLog` dördüncü yazıcı, migration yok. İlk gerçek kayıt: yarın HB çarşamba yüklemesi |
-| K3 | **Satış formu oran doğrulaması** | %2,70 gibi gerçekçi olmayan oran uyarı üretmiyor. Uyarı Merkezi Faz 2 adayı |
+| ~~K3~~ | ~~Satış formu oran doğrulaması~~ | ✅ **KAPANDI 18.08** — üç uyarı + Kural #11 ihlali düzeltildi |
 | K4 | **Kıyas verisi yokluğu** | ✓ yapıldı, canlı bakış H6'da |
 
 ### ✅ BU OTURUMDA KAPANANLAR (ayrıntı ilgili pakette)
@@ -644,6 +644,35 @@ aşağıda._
       ⚠ **SIRA — BLOKAJ DEĞİL:** TY dilim yüklemesi sınavından sonra.
       _Aynı boşluk tarife tarafında YOK — `KomisyonTarifesi` zaten pencere
       kaydı bırakıyor; bu, o dersin `ChannelSku` tarafına uygulanması._
+
+
+#### ✓ SATIŞ FORMU ORAN UYARISI — K3 KAPANDI 18.08.2026
+
+Bugünkü ~721 TL'lik bulgunun **tekrarını önleyen** iş.
+`lib/komisyon/oran-uyarisi.ts` (saf) + satış formunda görünür uyarı.
+
+**ÜÇ UYARI, ÖNCELİK SIRASIYLA:**
+1. **KAYNAK YOK** — ürün için kayıtlı oran yok, kullanıcı körüne yazıyor.
+   **Asıl vaka buydu:** kanal SKU'su satıştan sonra açılmıştı. Girilen
+   değer makul görünse BİLE uyarır, çünkü doğruluğu hiçbir şeye dayanmıyor.
+2. **ŞÜPHELİ DÜŞÜK** — eşik %3.
+3. **ÖNERİDEN SAPTI** — kayıtlıdan >5 puan fark.
+
+**EŞİK UYDURULMADI, ÖLÇÜLDÜ.** 18.08 canlı ölçümü: TY %3,6–23 · HB %4–22.
+Görülen en düşük oran **%3,6**; eşik onun ALTINA (%3) konuldu — gerçek bir
+oranı yanlışlıkla suçlamamak için pay bırakıldı ama %2,70 yakalanıyor.
+Test bu sınırı iki yönden de tutuyor: %3,6 işaretlenmez, %2,99 işaretlenir.
+
+**UYARI, ENGEL DEĞİL.** Oran gerçekten düşük olabilir (kampanya, özel
+anlaşma); kaydı durdurmak operasyoncuyu kilitler ve "sistem çalışmıyor"
+dedirtirdi.
+
+**YAN BULGU — KURAL #11 İHLALİ.** Komisyon alanının yer tutucusu `"0"`du.
+Anayasa bunu açıkça yasaklıyor ("0 değil, örn. 3") ve burada özellikle
+tehlikeliydi: gri bir sıfır hem girilmiş değer sanılır hem **%0 komisyon
+mümkün görünen bir değerdir.** `örn. 15` oldu, sözlükten geliyor.
+
+`komisyon:dogrula` 107 → **126**, altı mutasyon kırmızı.
 
 **AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
 - [ ] Fiyatlama aracı (dilim + simülasyon)

@@ -35,6 +35,7 @@ import {
   type KargoSecenegi,
 } from "./kalem-bilgisi";
 import { type SatisDurumu } from "./actions";
+import { oranUyarisi } from "@/lib/komisyon/oran-uyarisi";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export type HesapSecenegi = {
@@ -59,6 +60,12 @@ type Kalem = {
   kdvVarsayilan: boolean;
   /** Kanal SKU'sundan önerilen oran; kullanıcı değiştirebilir. */
   komisyonOrani: string;
+  /**
+   * Kanal SKU'sundan gelen KAYITLI oran — kullanıcının düzenlediği
+   * değerden AYRI tutulur. Sapmayı ölçebilmek için orijinali saklamak
+   * şart; yoksa "elle mi değiştirildi" sorusu cevaplanamaz.
+   */
+  onerilenOran: number | null;
   /** Panel gerçeği — doluysa oran yok sayılır. */
   komisyonTutari: string;
 };
@@ -186,6 +193,13 @@ export function SatisFormu({
               ? String(bilgi.komisyonOrani)
               : "",
           komisyonTutari: "",
+          /**
+           * KAYITLI oran ayrı saklanır. `komisyonOrani` kullanıcı
+           * düzenledikçe değişir; sapmayı ölçmek için orijinal gerekir.
+           * `null` = bu ürün için kayıtlı oran YOK → kullanıcı körüne
+           * yazıyor demektir ve uyarı tam olarak bunu söyler.
+           */
+          onerilenOran: bilgi?.komisyonOrani ?? null,
         },
       ];
     });
@@ -653,11 +667,48 @@ export function SatisFormu({
                         id={`komisyon-oran-${sira}`}
                         value={kalem.komisyonOrani}
                         inputMode="decimal"
-                        placeholder="0"
+                        /**
+                         * KURAL #11 İHLALİ DÜZELTİLDİ: burada "0" yazıyordu.
+                         * Gri bir "0", girilmiş bir oran sanılabilir — üstelik
+                         * %0 komisyon mümkün görünen bir değer. Yer tutucu
+                         * artık "örn." ile başlıyor.
+                         */
+                        placeholder={t("komisyonIpucu")}
                         onChange={(e) =>
                           kalemGuncelle(sira, { komisyonOrani: e.target.value })
                         }
                       />
+                      {/* ---------------- ORAN UYARISI ----------------
+                          18.08.2026 ölçümü: üç satış %2,70 oranla
+                          kaydedilmiş, gerçeği %15; kâr ~721 TL fazla
+                          göründü. Kanal SKU'su satıştan SONRA açıldığı
+                          için oran forma ELLE yazılmıştı ve hiçbir şey
+                          uyarmamıştı.
+
+                          UYARI, ENGEL DEĞİL: oran gerçekten düşük
+                          olabilir (kampanya, özel anlaşma). Kaydı
+                          durdurmak operasyoncuyu kilitlerdi. */}
+                      {(() => {
+                        const ham = kalem.komisyonOrani.replace(",", ".").trim();
+                        const sayi = ham === "" ? null : Number(ham);
+                        const uyari = oranUyarisi(
+                          sayi !== null && Number.isFinite(sayi) ? sayi : null,
+                          kalem.onerilenOran,
+                        );
+                        if (uyari === null) return null;
+                        return (
+                          <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
+                            {uyari.tur === "KAYNAK_YOK"
+                              ? t("oranKaynakYok")
+                              : uyari.tur === "SUPHELI_DUSUK"
+                                ? t("oranSupheliDusuk", { oran: uyari.girilen })
+                                : t("oranSapti", {
+                                    onerilen: uyari.onerilen,
+                                    fark: uyari.fark,
+                                  })}
+                          </p>
+                        );
+                      })()}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={`komisyon-tutar-${sira}`}>

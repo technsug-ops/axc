@@ -38,6 +38,11 @@ import {
   KOMISYON_YUKLEME_EYLEMI,
   yuklemeDetayi,
 } from "../src/lib/komisyon/yukleme-kaydi";
+import {
+  GORULEN_EN_DUSUK_ORAN,
+  SUPHELI_ORAN_ESIGI,
+  oranUyarisi,
+} from "../src/lib/komisyon/oran-uyarisi";
 import type { KomisyonOkumasi } from "../src/lib/komisyon/model";
 
 let basarisiz = 0;
@@ -810,6 +815,75 @@ console.log("\nYÜKLEME KAYDI (AuditLog dördüncü yazıcı)");
     /okunan: sonuc\.onizleme\.sayim\.okunan/.test(rota) &&
       /ayniKalan: sonuc\.onizleme\.sayim\.ayniKalan/.test(rota),
   );
+}
+
+
+// ===========================================================================
+console.log("\nORAN UYARISI (satış formu)");
+// ===========================================================================
+{
+  /**
+   * ⚠ 18.08.2026 GERÇEK ZARARINDAN DOĞDU: üç satış %2,70 oranla
+   * kaydedildi, gerçeği %15; kâr ~721 TL fazla göründü. Kanal SKU'su
+   * satıştan SONRA açıldığı için oran forma ELLE yazılmıştı.
+   */
+
+  /** ASIL VAKA — kayıtlı oran yokken elle yazılan değer. */
+  kontrol(
+    "kayıtlı oran yoksa UYARIR",
+    oranUyarisi(2.7, null)?.tur === "KAYNAK_YOK",
+  );
+  kontrol(
+    "  ...değer makul olsa BİLE uyarır (dayanağı yok)",
+    oranUyarisi(15, null)?.tur === "KAYNAK_YOK",
+  );
+  /** Boş alan için uyarı YOK — kullanıcı henüz yazmadı. */
+  kontrol("boş alanda uyarı YOK", oranUyarisi(null, null) === null);
+  kontrol("  ...kayıt varken de boşta susar", oranUyarisi(null, 15) === null);
+
+  /** ŞÜPHELİ DÜŞÜK — eşik ölçülen en düşük orandan (%3,6) türedi. */
+  kontrol("%2,70 şüpheli DÜŞÜK", oranUyarisi(2.7, 15)?.tur === "SUPHELI_DUSUK");
+  kontrol("  ...eşik ölçülen en düşüğün ALTINDA", SUPHELI_ORAN_ESIGI < GORULEN_EN_DUSUK_ORAN);
+  /**
+   * SINIR: gerçek en düşük oran %3,6 idi. Eşik %3 olduğu için %3,6
+   * işaretlenmez — gerçek bir oranı yanlışlıkla suçlamayız.
+   */
+  kontrol(
+    "gerçek en düşük oran (%3,6) DÜŞÜK sayılmaz",
+    oranUyarisi(3.6, 3.6)?.tur !== "SUPHELI_DUSUK",
+  );
+  kontrol("tam eşik (%3) düşük SAYILMAZ", oranUyarisi(3, 3)?.tur !== "SUPHELI_DUSUK");
+  kontrol("%2,99 düşük sayılır", oranUyarisi(2.99, 15)?.tur === "SUPHELI_DUSUK");
+
+  /** SAPMA — kayıtlıdan uzaklaşma. */
+  const sapma = oranUyarisi(22, 15);
+  kontrol("büyük sapma UYARIR", sapma?.tur === "ONERIDEN_SAPTI");
+  kontrol("  ...farkı söyler", sapma?.tur === "ONERIDEN_SAPTI" && sapma.fark === 7);
+  kontrol("  ...kayıtlı oranı söyler", sapma?.tur === "ONERIDEN_SAPTI" && sapma.onerilen === 15);
+  /** Küçük sapma gürültüdür — her satırda uyaran araç okunmaz olur. */
+  kontrol("eşik içi sapma SUSAR", oranUyarisi(18, 15) === null);
+  kontrol("aynı oran SUSAR", oranUyarisi(15, 15) === null);
+
+  /**
+   * ÖNCELİK: "kaynak yok" en somut kusurdur ve sapmadan ÖNCE gelir;
+   * kayıt yokken "şu kadar saptı" demek anlamsız olurdu.
+   */
+  kontrol("kaynak yok, sapmadan ÖNCE gelir", oranUyarisi(99, null)?.tur === "KAYNAK_YOK");
+
+  /**
+   * EKRAN BAĞLI MI — kaynak taranır. Değer testi göremez: saf fonksiyon
+   * doğru çalışsa da form onu çağırmıyorsa uyarı hiç görünmez.
+   */
+  const form = readFileSync("src/app/satislar/satis-formu.tsx", "utf8");
+  kontrol("satış formu uyarıyı ÇAĞIRIYOR", /oranUyarisi\(/.test(form));
+  kontrol("  ...kayıtlı oranı ayrı saklıyor", /onerilenOran: bilgi\?\.komisyonOrani/.test(form));
+  /**
+   * KURAL #11: yer tutucu değer gibi görünmez. Burada "0" yazıyordu —
+   * gri bir sıfır, girilmiş oran sanılabilir ve %0 komisyon mümkün
+   * görünen bir değerdir.
+   */
+  kontrol('komisyon yer tutucusu "0" DEĞİL', !/placeholder="0"/.test(form));
+  kontrol("  ...sözlükten geliyor", /placeholder=\{t\("komisyonIpucu"\)\}/.test(form));
 }
 
 // ===========================================================================
