@@ -32,7 +32,7 @@ ilgili pakette kalır._
 | # | İş | Durum |
 |---|---|---|
 | K1 | **Uyarı Merkezi Faz 2 / dilim 1** | 🔓 **ENGEL KALKTI** — dilim verisi canlıda. Artık cevaplanabilir: _"zararına satış" uyarısı dilim bilinciyle mi kurulacak?_ **Karar bekliyor.** |
-| K5 | **Aşama 1 — fiyatlama aracı** | 🔨 **1/3 katman bitti** (saf motor, 45 kontrol). Sırada: karta "Fiyat dene" bölümü |
+| K5 | **Aşama 1 — fiyatlama aracı** | ✅ **KAPANDI 19.08.2026** — üç katman da bitti, Halil canlıda iki yönlü doğruladı (aşağıda) |
 
 _K2 (yükleme kaydı) · K3 (oran uyarısı) · ham arşiv kalemi 18.08'de
 kapandı; ayrıntıları ilgili paketlerde. **Pano kuralı: kapanan komut
@@ -268,7 +268,58 @@ olurdu; tutmaları ikisini birden doğruluyor.
 dilim yapısı, çalışan yükleme yolu.
 
 
-### 🧮 K5 — FİYATLAMA ARACI · 1. KATMAN (SAF MOTOR) BİTTİ 19.08.2026
+### 🧮 K5 — FİYATLAMA ARACI ✅ KAPANDI 19.08.2026
+
+**Üç katman da bitti; Halil canlıda (`axc-seven.vercel.app`) gerçek ürünle
+iki yönlü doğruladı — Halil testi a–e geçti.**
+
+`simulasyon:dogrula` **45 → 141 kontrol**, yirmi mutasyon kırmızı.
+
+**Katman 2 — `kart/[variantId]/fiyat-dene.tsx`:** kanal başına komisyon ·
+NET-1 · NET-2 · başabaş · bir alt dilim önerisi · beyanlar. Hesap istemcide,
+hiçbir şey kaydedilmiyor.
+
+**Sonradan eklenenler (hepsi canlı testten doğdu):**
+
+| Ekleme | Sebep |
+|---|---|
+| **Yön hükmü — varış noktası** | "ARTAR" yeşil satırı NET-2 negatifken "kâra geçer" diye okundu. Beş hâl, `ZARAR_AZALIR` **amber** |
+| **Başabaş noktası, KANAL BAŞINA** | NET-2 `−₺1,53` görünüyordu, sıfır noktası söylenmiyordu; kullanıcı deneme yanılmayla arıyordu |
+| **Stokta bekleme satırı** | Çıkış kararının ikinci yarısı: başabaş "kaça satmalıyım", bekleme "daha ne kadar bekleyebilirim" |
+| **Kâr yeşil / zarar kırmızı** | Eksi işareti tabular-nums sütunda gözden kaçıyordu |
+| **`≈ ₺0,00`** | Başabaşın bir kuruş altında ekranda **`−₺0,00`** yazıyordu — öyle bir rakam yok |
+
+**CANLI ÖLÇÜM — TEFAL Manuel Rondo (Halil, 19.08.2026):**
+
+| Fiyat | TY NET-2 | HB NET-2 |
+|---|---|---|
+| `1.125,00` | `−₺1,53` | `−₺41,04` |
+| `1.127,28` ← TY başabaş | **`₺0,01`** | `−₺39,58` |
+| `1.127,27` | `≈ ₺0,00` kırmızı | `−₺39,59` |
+| `1.189,18` | `₺41,79` | `≈ ₺0,00` kırmızı |
+| **Başabaş** | **`₺1.127,28`** | **`₺1.189,19`** |
+
+İki kanalın **ayrı** başabaşı doğru: HB komisyona %20 KDV ekliyor +
+12,60 TL hizmet bedeli + %0,8 ödeme gideri. Marjinal oranlar TY **0,675**
+· HB **0,639**; farkları tam komisyon-KDV çarpanı kadar (0,952 ↔ 0,956).
+⚠ Bu **iç tutarlılık**, bağımsız kanıt değil — ikisi de aynı kâr
+motorundan geliyor.
+
+**Yön satırı bir kuruşluk sınırda hüküm değiştirdi:** `1.127,28`'de
+"KÂRDAN ZARARA DÜŞER", `1.127,27`'de "zarar artar — inmek kazandırmıyor".
+Aynı öneri, aynı hedef fiyat; tek fark mevcut NET-2'nin işareti.
+
+**DERS — RAPORA ÖLÇÜLMEMİŞ RAKAM YAZILMAZ.** Teslim raporunda ekranın
+"nasıl görüneceğini" anlatmak için uydurulmuş rakamlar (`₺1.129,40`,
+`3 adet · 95 gün`) ölçüm gibi okundu ve mimar "senin verdiğinden farklı
+çıkıyor" dedi. Gerçek rakamlar (`₺1.127,28`, `1 adet · 123 gün`) doğruydu.
+**Kural #11'in ("yer tutucu değer gibi görünmez") rapor tarafındaki
+kardeşi:** rapora ya ölçülmüş rakam ya `₺X` yazılır. Halil testi (c)
+zaten bunu şart koşuyordu.
+
+---
+
+### 🧮 K5 — 1. KATMAN AYRINTISI (SAF MOTOR)
 
 `lib/fiyatlama/simulasyon.ts` — veritabanına gitmez, `simulasyon:dogrula`
 **45 kontrol**, altı mutasyon kırmızı.

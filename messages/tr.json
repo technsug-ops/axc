@@ -2581,7 +2581,8 @@
     "deneBasabasHepKar": "Bu dilimdeki her fiyat kâr bırakıyor — başabaş bu dilimin altında.",
     "deneBasabasHepZarar": "Bu dilimde hiçbir fiyat kâra çıkmıyor — başabaş bu dilimin üstünde.",
     "deneBekleme": "Stokta {adet} adet · {gun} gündür bekliyor",
-    "deneStokYok": "Stokta yok — bekleme süresi hesaplanmadı."
+    "deneStokYok": "Stokta yok — bekleme süresi hesaplanmadı.",
+    "deneYaklasik": "≈ {tutar}"
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

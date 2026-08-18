@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { sifiraYuvarlandi } from "../src/lib/bicim-ortak";
 import { karZararRengi } from "../src/lib/durum-renkleri";
 import {
   basabasFiyati,
@@ -568,6 +569,45 @@ console.log("\nFİYAT SİMÜLASYONU — DOĞRULAMA\n");
     "  ...ekran KENDİ eşiğini yazmıyor",
     !/s\.net2 [<>]=? 0/.test(ekran) && !/s\.net1 [<>]=? 0/.test(ekran),
   );
+}
+
+// --- 16) "EKSİ SIFIR" TUZAĞI -------------------------------------------------
+{
+  console.log("\n16) EKSİ SIFIR");
+  /**
+   * ⚠ CANLI BULGU 19.08.2026 — Halil'in ekranı: başabaşın BİR KURUŞ
+   * altında NET-2 `−₺0,00` yazıyordu. Öyle bir rakam yok.
+   */
+  kontrol("kuruş altı zarar yaklaşık sayılır", sifiraYuvarlandi(-0.004));
+  kontrol("kuruş altı kâr da öyle", sifiraYuvarlandi(0.003));
+
+  /** ⚠ TAM SIFIR "YAKLAŞIK" DEĞİLDİR — o gerçekten sıfırdır. */
+  kontrol("tam sıfır yaklaşık DEĞİL", !sifiraYuvarlandi(0));
+  kontrol("null yaklaşık DEĞİL", !sifiraYuvarlandi(null));
+
+  /** ⚠ SINIR: yarım kuruş yukarı yuvarlanır, artık sıfır değildir. */
+  kontrol("0,005 sıfıra yuvarlanmaz", !sifiraYuvarlandi(0.005));
+  kontrol("bir kuruş elbette sıfır değil", !sifiraYuvarlandi(0.01));
+  kontrol("büyük zarar sıfır değil", !sifiraYuvarlandi(-1.53));
+
+  /**
+   * ⚠ DEĞER DEĞİŞMEZ, YALNIZ GÖRÜNÜM. Renk hâlâ GERÇEK işaretten gelir:
+   * "≈ ₺0,00" kırmızıysa hâlâ zarar tarafındadır. Gri yakıp geçseydik
+   * 0,4 kuruşluk zararı başabaş ilan eder ve başabaş fiyatıyla
+   * çelişirdik (1.127,28 başabaşken 1.127,27 de sıfır görünürdü).
+   */
+  kontrol("yaklaşık zarar hâlâ KIRMIZI", karZararRengi(-0.004) === "olumsuz");
+  kontrol("yaklaşık kâr hâlâ YEŞİL", karZararRengi(0.003) === "olumlu");
+
+  const ekran = readFileSync("src/app/kart/[variantId]/fiyat-dene.tsx", "utf8");
+  kontrol("ekran NET'leri netMetni'nden geçiriyor",
+    /netMetni\(s\.net1\)/.test(ekran) && /netMetni\(s\.net2\)/.test(ekran));
+  kontrol("  ...netMetni sifiraYuvarlandi'yi kullanıyor",
+    /sifiraYuvarlandi\(deger\)/.test(ekran));
+  kontrol("  ...ve sıfırı İŞARETSİZ basıyor (bicim.para(0",
+    /deneYaklasik", \{ tutar: bicim\.para\(0, paraBirimi\) \}/.test(ekran));
+  kontrol("  ...ekran ham para biçimine dönmüyor",
+    !/bicim\.para\(s\.net1/.test(ekran) && !/bicim\.para\(s\.net2/.test(ekran));
 }
 
 console.log("");

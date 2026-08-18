@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBicim } from "@/lib/bicim-istemci";
+import { sifiraYuvarlandi } from "@/lib/bicim-ortak";
 import { karZararRengi, YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import type { YasBandi } from "@/lib/yaslanma";
@@ -134,6 +135,18 @@ export function FiyatDene({
         return String(asla);
       }
     }
+  };
+
+  /**
+   * ⚠ "EKSİ SIFIR" YAZILMAZ. Kuruşa yuvarlanınca sıfır olan ama tam sıfır
+   * OLMAYAN tutar `−₺0,00` diye çıkıyordu (canlı bulgu 19.08.2026).
+   * Yaklaşıklık işaretle söylenir; DEĞER değişmez, RENK gerçek işaretten
+   * gelir — kırmızı "≈ ₺0,00" hâlâ zarar tarafında demektir.
+   */
+  const netMetni = (deger: number | null): string => {
+    if (deger === null) return "—";
+    if (sifiraYuvarlandi(deger)) return t("deneYaklasik", { tutar: bicim.para(0, paraBirimi) });
+    return bicim.para(deger, paraBirimi);
   };
 
   const beyanMetni = (b: Beyan): string => {
@@ -287,7 +300,7 @@ export function FiyatDene({
                     <span
                       className={`font-medium tabular-nums ${DURUM_YAZISI[karZararRengi(s.net1)]}`}
                     >
-                      {s.net1 === null ? "—" : bicim.para(s.net1, paraBirimi)}
+                      {netMetni(s.net1)}
                     </span>
                   </div>
                   <div>
@@ -295,7 +308,7 @@ export function FiyatDene({
                     <span
                       className={`text-base font-semibold tabular-nums ${DURUM_YAZISI[karZararRengi(s.net2)]}`}
                     >
-                      {s.net2 === null ? "—" : bicim.para(s.net2, paraBirimi)}
+                      {netMetni(s.net2)}
                     </span>
                   </div>
                 </div>

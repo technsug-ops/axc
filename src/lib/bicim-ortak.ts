@@ -99,3 +99,27 @@ export function tarihGirdisi(tarih: Date): string {
 
   return `${al("year")}-${al("month")}-${al("day")}`;
 }
+
+/**
+ * ============================================================================
+ *  "EKSİ SIFIR" TUZAĞI
+ * ----------------------------------------------------------------------------
+ *  Canlı bulgu 19.08.2026 (Halil, Manuel Rondo). Başabaşın BİR KURUŞ
+ *  altında NET-2 gerçekte −0,004 gibi bir değer; kuruşa yuvarlanınca
+ *  0,00 oluyor ama eksi işareti kalıyor ve ekranda **`−₺0,00`** yazıyor.
+ *  Öyle bir rakam yok — biçimlendirici matematiksel olarak haklı,
+ *  kullanıcı için anlamsız.
+ *
+ *  ⚠ SIFIRA YUVARLAMAK "SIFIR" DEMEK DEĞİLDİR. Değeri düz `₺0,00` yazıp
+ *  geçmek 0,4 kuruşluk zararı BAŞABAŞ ilan ederdi ve başabaş fiyatıyla
+ *  çelişirdi (1.127,28 başabaş derken 1.127,27'yi de sıfır göstermek).
+ *  Bu yüzden fonksiyon değeri DEĞİŞTİRMEZ, yalnız durumu bildirir:
+ *  ekran "≈" ile yazar, rengi gerçek işaretten alır.
+ * ============================================================================
+ */
+export function sifiraYuvarlandi(deger: number | null): boolean {
+  if (deger === null) return false;
+  /** Tam sıfır zaten sıfırdır — "yaklaşık" demek yanlış olurdu. */
+  if (deger === 0) return false;
+  return Math.round(deger * 100) === 0;
+}
