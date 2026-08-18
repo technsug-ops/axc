@@ -1426,7 +1426,9 @@
     "kapsamTam": "tam",
     "kapsamNotu": "Günlük yedekler kargo tarifelerini İÇERMEZ — o tablo 44.841 satırla dosyanın çoğunu kaplar ve kurulum verisinden aynen yeniden üretilebilir. İş verisinin tamamı (ürün, alım, satış, iade, stok, gider) her iki yedekte de vardır. \"Tam\" yedekler tarifeleri de taşır.",
     "yedekKacti": "{sayi} günün yedeği ALINMAMIŞ",
-    "yedekKactiNe": "Otomatik yedek o günlerde çalışmamış. \"Şimdi yedek al\" bugünü kurtarır ama geçmiş günler geri gelmez."
+    "yedekKactiNe": "Otomatik yedek o günlerde çalışmamış. \"Şimdi yedek al\" bugünü kurtarır ama geçmiş günler geri gelmez.",
+    "yedekReddedildi": "Yedek ucuna {sayi} yetkisiz çağrı geldi",
+    "yedekReddedildiNe": "Biri ucu çağırdı ama doğru anahtarı göndermedi. Kaynak \"vercel\" ise zamanlayıcı çağırıyor demektir ve sorun anahtarın gönderilmemesindedir. Günde en fazla bir kayıt tutulur."
   },
   "Giris": {
     "baslik": "Selliora",

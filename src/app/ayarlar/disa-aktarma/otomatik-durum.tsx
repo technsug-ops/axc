@@ -90,6 +90,36 @@ export async function OtomatikYedekDurumu() {
     tumTarihler = [];
   }
   const bugun = gunDegeri(isTakvimGunu(new Date()));
+
+  /**
+   * REDDEDİLEN ÇAĞRILAR — 19.08.2026 hipotezinin sınavı.
+   *
+   * Açık ihtimal: Vercel zamanlayıcı ucu çağırıyor ama `Authorization`
+   * başlığını göndermiyor; rota 401 dönüyor ve kimse görmüyor. Rota artık
+   * günde bir kez iz bırakıyor; iz de burada görünmezse yine sessiz
+   * kalırdı — "kaydedilen ≠ görünen".
+   */
+  let redler: { tarih: Date; userAgent: string | null }[] = [];
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    const kayitlar = await prisma.auditLog.findMany({
+      where: { action: "YEDEK_UCU_REDDEDILDI" },
+      select: { createdAt: true, detail: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+    redler = kayitlar.map((k) => {
+      let ua: string | null = null;
+      try {
+        ua = (JSON.parse(k.detail ?? "{}") as { userAgent?: string }).userAgent ?? null;
+      } catch {
+        ua = null;
+      }
+      return { tarih: k.createdAt, userAgent: ua };
+    });
+  } catch {
+    redler = [];
+  }
   const bosluk = yedekBoslugu(tumTarihler, bugun, 14);
   const kacisSayisi = gercekKacisSayisi(bosluk, bugun);
 
@@ -124,6 +154,24 @@ export async function OtomatikYedekDurumu() {
               .join(" · ")}
           </p>
           <p className={`text-xs ${DURUM_YAZISI.olumsuz}`}>{t("yedekKactiNe")}</p>
+        </div>
+      ) : null}
+
+      {/* ---------------- REDDEDİLEN ÇAĞRILAR ----------------
+          Zamanlayıcı ucu çağırıyor ama yetkisiz mi? Bu blok onu söyler.
+          `user-agent` içinde "vercel" geçiyorsa Vercel GERÇEKTEN
+          çağırıyor demektir ve sorun başlıktadır. */}
+      {redler.length > 0 ? (
+        <div className={`space-y-1 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
+            {t("yedekReddedildi", { sayi: redler.length })}
+          </p>
+          {redler.map((r, i) => (
+            <p key={i} className={`text-xs ${DURUM_YAZISI.uyari}`}>
+              {bicim.tarih(r.tarih)} · {r.userAgent ?? "—"}
+            </p>
+          ))}
+          <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("yedekReddedildiNe")}</p>
         </div>
       ) : null}
 

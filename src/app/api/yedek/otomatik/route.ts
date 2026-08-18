@@ -26,8 +26,44 @@ import { gunlukYedekYaz, SAKLAMA_GUNU } from "@/lib/yedek-yaz";
  * ============================================================================
  */
 
+/** Reddedilen çağrı izinin eylem kodu. */
+export const RED_EYLEMI = "YEDEK_UCU_REDDEDILDI";
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+/**
+ * Reddedilen çağrıyı GÜNDE BİR KEZ kaydeder. Hata yutulur: iz tutulamadı
+ * diye reddin kendisi değişmez.
+ */
+async function redKaydiniYaz(istek: Request): Promise<void> {
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    const bugun = new Date();
+    bugun.setUTCHours(0, 0, 0, 0);
+
+    const varMi = await prisma.auditLog.findFirst({
+      where: { action: RED_EYLEMI, createdAt: { gte: bugun } },
+      select: { id: true },
+    });
+    if (varMi) return;
+
+    await prisma.auditLog.create({
+      data: {
+        action: RED_EYLEMI,
+        targetType: "YedekUcu",
+        detail: JSON.stringify({
+          userAgent: istek.headers.get("user-agent")?.slice(0, 200) ?? null,
+          /** Başlık VAR MI — değeri ASLA yazılmaz, sır sızdırılmaz. */
+          authorizationVarMi: istek.headers.get("authorization") !== null,
+          not: "Gün başına tek kayıt; sayı değil VARLIK ölçülüyor.",
+        }),
+      },
+    });
+  } catch {
+    // İz tutulamadıysa red yine de geçerlidir.
+  }
+}
 
 export async function GET(istek: Request) {
   const sir = process.env.CRON_SECRET;
@@ -44,6 +80,26 @@ export async function GET(istek: Request) {
 
   const yetki = istek.headers.get("authorization");
   if (yetki !== `Bearer ${sir}`) {
+    /**
+     * ⚠ RED SESSİZ KALMAZ — 19.08.2026 mimar hipotezi.
+     *
+     * Cron iki gece hiç koşmadı ve teşhis tavana dayandı. Açık ihtimal:
+     * **Vercel zamanlayıcı çağırıyor ama `Authorization` başlığını
+     * göndermiyor**; rota 401 dönüyor ve Vercel bunu SESSİZCE yutuyor.
+     * Bugün bunu doğrulayacak hiçbir izimiz yok — 401'in kendisi hiçbir
+     * yere yazılmıyor.
+     *
+     * Artık yazılıyor. `user-agent` de kaydediliyor: gelen istek
+     * `vercel-cron/...` ise zamanlayıcı GERÇEKTEN çağırıyor ve sorun
+     * başlıkta demektir. Hiç kayıt yoksa zamanlayıcı hiç çağırmıyordur.
+     * Hipotez ancak böyle kesinleşir.
+     *
+     * ⚠ GÜNDE EN FAZLA BİR KAYIT. Bu uç herkese AÇIK; her reddi yazsaydık
+     * dışarıdan gelen istek seliyle veritabanı şişirilebilirdi. Günde bir
+     * satır, "çağrıldı mı" sorusunu cevaplamaya yeter — sayı değil VARLIK
+     * aranıyor.
+     */
+    await redKaydiniYaz(istek);
     return Response.json({ durum: "YETKISIZ" }, { status: 401 });
   }
 
