@@ -142,9 +142,53 @@ raporuyla açılır.**
       kopyalanıyor (gitignore'da — depo herkese açık, dosya ürün/fiyat/oran
       taşır). "Kaynakta ne vardı" sorusu bir daha cevapsız kalmayacak.
 
-      **ÇIKTI KARARI:** dilim izi VARSA → şema + okuyucu genişletme kapsamı
-      (Aşama 1 zemini). YOKSA → dilim kaynağı **"elle tanım"** olarak
-      kesinleşir.
+      **✓ KOŞULDU 18.08.2026 — DİLİM VAR.** Taze TY dosyasında dört dilim,
+      dilim başına komisyon ve İKİ termin seti (3/4 gün) bulundu. Ayrıntı
+      ve sonuçları için aşağıdaki "DİLİM BULUNDU" bölümüne bak.
+
+### 🔑 DİLİM BULUNDU — 18.08.2026, Aşama 1'in zemini değişti
+
+Taze Trendyol komisyon dosyası (`komisyon:muayene` ile yüklemeden ÖNCE
+incelendi) **dört dilimli tam bir tarife** taşıyor. Bugüne kadar "elle
+tanımlanacak" sanılan kavram **veriden geliyormuş.**
+
+**DOSYADA NE VAR** (`KomisyonTarifeleriÜrünleri`, 161 ürün, 35 kolon):
+- **Dört fiyat dilimi**, alt/üst limitleriyle:
+  `1.Fiyat Alt Limit` · `2.Fiyat Üst Limiti` / `2.Fiyat Alt Limit` ·
+  `3.Fiyat Üst Limiti` / `3.Fiyat Alt Limit` · `4.Fiyat Üst Limiti`
+- **Dilim başına komisyon**: `1.KOMİSYON` … `4.KOMİSYON`
+- ⚠ **KOMİSYON TERMİNE DE BAĞLI** — dosyada İKİ tarife seti var:
+  `Tarih aralığı (3 Gün)` ve `Tarih aralığı (4 Gün)`, her biri kendi
+  4 komisyonuyla. **Bunu bilmiyorduk.** Kargo süresi vaadi komisyonu
+  değiştiriyor; bu bir FİYAT kolu değil, ayrı bir kaldıraç.
+- `KOMİSYONA ESAS FİYAT` · `GÜNCEL KOMİSYON` · `GÜNCEL TSF` ·
+  `YENİ TSF (FİYAT GÜNCELLE)` · `Hesaplanan Komisyon (3/4 Gün)` ·
+  `Tarife Seçimi` · `TARİFE GRUBU`
+- Geçerlilik penceresi hücrede yazılı: _"14 Ağustos 08.00 – 18 Ağustos 07.59"_
+
+**MELONTİK'İN KAYNAĞI BU DOSYA — kanıtlandı.** Dosyanın ilk satırı
+"Manuel Rondo 500 ml", dilimler 769,99 / 701,29 / 641,09 ve komisyonlar
+18 / 12,8 / 11,1. Melontik sunumunun 18. slaydındaki örnek **birebir bu
+satır**. Yani Melontik'in en ayırt edici ekranı sihir değil: aynı dosyayı
+okuyor. **Aynı kaynağa bizim de erişimimiz var.**
+
+**BUGÜNKÜ YAPIMIZLA ARADAKİ FARK:**
+`ChannelSku.commissionRate` **tek** `Decimal(5,2)`. Dosyada ürün başına
+**8 komisyon** (4 dilim × 2 termin) + 6 limit + geçerlilik penceresi var.
+Yani içe aktarma bugün bu bilginin **yaklaşık %90'ını atıyor** ve tek bir
+"güncel komisyon" değeri saklıyor.
+
+**SONUÇ — AŞAMA 1 KAPSAMI DEĞİŞTİ:**
+- Dilim kaynağı **"elle tanım" DEĞİL, veri.** O varsayım düştü.
+- Şema genişletmesi gerekiyor (oran → tarife: dilim listesi + termin
+  ayrımı + geçerlilik penceresi). **Migration onaya gelecek.**
+- Fiyatlama aracı gerçek dilimlerle simülasyon yapabilir — Melontik'in
+  yaptığı işin aynısı, aynı veriden.
+- ⚠ **Termin (3/4 gün) boyutu kâr motorunu da ilgilendiriyor:** bugün
+  satışa tek komisyon snapshot'lanıyor, hangi termin tarifesinden geldiği
+  kayıtlı değil.
+
+_Dosya arşivde: `veri/ozel/arsiv/` (gitignore)._
 
 **AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
 - [ ] Fiyatlama aracı (dilim + simülasyon)
