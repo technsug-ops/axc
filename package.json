@@ -69,7 +69,8 @@
     "komisyon:muayene": "tsx scripts/komisyon-dosya-muayene.ts",
     "canli:tarife-yukle": "tsx scripts/canli-tarife-yukle.ts",
     "yedek-bosluk:dogrula": "tsx scripts/yedek-bosluk-dogrula.ts",
-    "simulasyon:dogrula": "tsx scripts/simulasyon-dogrula.ts"
+    "simulasyon:dogrula": "tsx scripts/simulasyon-dogrula.ts",
+    "canli:bekleme-olcum": "tsx scripts/canli-bekleme-olcum.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
