@@ -32,7 +32,7 @@ ilgili pakette kalır._
 | # | İş | Durum |
 |---|---|---|
 | K1 | **Uyarı Merkezi Faz 2 / dilim 1** | Amber + nötr, şemasız. Önerildi, **karar verilmedi** |
-| K2 | **`KomisyonYuklemesi` tablosu** | `ayniKalan` kaydı — "yükleme yok" ile "değişiklik yok" ayrımı |
+| K2 | **Komisyon yükleme kaydı** | ⚠ Yeni tablo GEREKMİYOR — `AuditLog` yetiyor (migration yok). Sıra: TY dilim sınavından sonra |
 | K3 | **Satış formu oran doğrulaması** | %2,70 gibi gerçekçi olmayan oran uyarı üretmiyor. Uyarı Merkezi Faz 2 adayı |
 | K4 | **Kıyas verisi yokluğu** | ✓ yapıldı, canlı bakış H6'da |
 
@@ -576,16 +576,38 @@ _Ayrım için yükleme sonuçlarının kaydedilmesi gerekiyor (küçük bir tabl
 kim, ne zaman, hangi dosya, kaç okundu/güncellendi/aynı kaldı). Kalem
 aşağıda._
 
-- [ ] **KOMİSYON YÜKLEME KAYDI — küçük tablo.**
-      _Kayıt 18.08.2026._ Yükleme sonuçları hiçbir yere yazılmıyor:
-      `ayniKalan`, `guncellenen`, `yaratilan` ekranda gösterilip
-      kayboluyor. Bu yüzden envanter "yükleme koştu ama değişiklik yoktu"
-      ile "yükleme hiç koşmadı" ayrımını yapamıyor.
+- [ ] **KOMİSYON YÜKLEME KAYDI — ⚠ YENİ TABLO GEREKMİYOR, `AuditLog` YETİYOR.**
 
-      Kapsam: `KomisyonYuklemesi` (hesap · dosya adı · an · okunan ·
-      güncellenen · yaratılan · aynı kalan · eşleşmeyen). Salt ekleme.
-      _Aynı boşluk tarife tarafında YOK — `KomisyonTarifesi` zaten
-      pencere kaydı bırakıyor._
+      **İHTİYAÇ GERÇEK:** yükleme sonuçları hiçbir yere yazılmıyor;
+      `ayniKalan`, `guncellenen`, `yaratilan` ekranda gösterilip
+      kayboluyor. Envanter "yükleme koştu ama değişiklik yoktu" ile
+      "yükleme hiç koşmadı" ayrımını yapamıyor.
+
+      **AMA ÖNERDİĞİM ÇÖZÜM FAZLAYDI.** `KomisyonYuklemesi` tablosu
+      onaylandı; ölçtükten sonra geri alıyorum: **`AuditLog` bu işi
+      olduğu gibi yapıyor** ve şemada zaten var.
+
+      | İhtiyaç | `AuditLog` karşılığı |
+      |---|---|
+      | kim | `userId` |
+      | ne zaman | `createdAt` (indeksli) |
+      | hangi hesap | `targetType` + `targetId` |
+      | dosya adı + sayımlar | `detail` (Text, serbest) |
+      | aranabilirlik | `action` indeksli → `KOMISYON_YUKLEME` |
+
+      **Kazanç:** migration YOK · şema onayı YOK · canlı koşum YOK ·
+      damga YOK. Üstelik `AuditLog`un üç gerçek yazıcısı zaten var
+      (`SATIS_DUZENLEME`, `SATIS_IPTAL`, `SATIS_IPTAL_GERI_ALINDI`);
+      dördüncüsü aynı deseni izler.
+
+      **Yeni tablo NE ZAMAN gerekirdi:** yükleme kayıtları üzerinde
+      SORGU yapılacaksa (kanal × dönem toplamları, grafik). Bugün ihtiyaç
+      "geriye dönük bakabilmek" — o kadarına serbest metin yeter. Tablo,
+      ihtiyaç sorguya dönüşünce açılır.
+
+      ⚠ **SIRA — BLOKAJ DEĞİL:** TY dilim yüklemesi sınavından sonra.
+      _Aynı boşluk tarife tarafında YOK — `KomisyonTarifesi` zaten pencere
+      kaydı bırakıyor; bu, o dersin `ChannelSku` tarafına uygulanması._
 
 **AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
 - [ ] Fiyatlama aracı (dilim + simülasyon)
