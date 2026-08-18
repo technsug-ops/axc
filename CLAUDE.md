@@ -423,6 +423,37 @@ sonra yapılıyor — ikinci tetik aynı dosyayı tazeler, kopya üretmez._
 Var olanı listelemek, olmayanı göstermez — eksik günler ekranda kırmızı
 yazmalı ki üçüncü kaçış birinin fark etmesine kalmasın.
 
+### EŞİK GÜVENİLİRLİĞİN VEKİLİDİR — VEKİL GEÇİLSE DE ASIL SORULUR (KESİN KURAL)
+
+_Ders 19.08.2026, bekleme maliyeti Aşama A._ Bir kapıya sayısal eşik
+koymak, ölçmek istediğimiz şeyin **yerine geçen bir vekil** koymaktır.
+Vekil kolay ölçülür; asıl olan odur sanılır. **Vekil geçildiğinde asıl
+soru DÜŞMEZ, o zaman sorulur.**
+
+**Vaka:** kapı "örneklem < 20 ise özellik bekletilir" idi. Ölçüm 40 kalem
+buldu — eşik rahat geçildi. Ama asıl soru "bu rakam güvenilir mi"ydı ve
+cevap HAYIRDI:
+- Türetilmiş günlük oran, **ortalama mı ortanca mı** seçildiğine göre
+  `%0,47` ↔ `%1,05` arasında oynuyordu — **2,30×**. Ekrana basılacak rakam
+  veriyi değil, benim seçimimi söylerdi.
+- Bir kalemin maliyeti **imkânsızdı** (Philips OneBlade `₺27,16` → `%3612`
+  verim) ve basit ortalamayı tek başına `%116,7`'ye çekiyordu.
+
+Kapı üç eksenli yapıldı: **örneklem · duyarlılık · aykırı değer**.
+
+> **ÖLÇÜT: eşiği geçmiş olmak, sağlam olmak değildir.** Eşik "yeterince
+> veri var mı" diye sorar; sağlamlık "bu veriden çıkan rakam seçimden
+> bağımsız mı" diye sorar. İkincisi sorulmadan hiçbir türetilmiş rakam
+> ekrana çıkmaz.
+
+**KARDEŞ KURAL — GÖRÜNEN ≠ GÖRÜLEN.** `₺27,16`'lık maliyet günlerce
+iptal önizleme ekranında yazılıydı; kimse görmedi. Ekranda olmak
+fark edilmek değildir. **İmkânsız değerler kendini işaretlemelidir** —
+bir insanın dikkatine bel bağlayan doğrulama, doğrulama değildir.
+_Uyarı Merkezi Faz 2 adayı: verim/maliyet aykırılık sinyali._
+Bu, "kaydedilen ≠ görünen" dersinin bir adım ilerisi: kaydedildi,
+görüntülendi, yine de görülmedi.
+
 ### ŞEMA DEĞİŞİKLİĞİ EN PAHALI ÇÖZÜMDÜR (KESİN KURAL)
 
 _Ders 18.08.2026._ Yeni tablo/sütun, çözüm sıralamasının **en sonundadır**.

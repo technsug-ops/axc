@@ -70,7 +70,8 @@
     "canli:tarife-yukle": "tsx scripts/canli-tarife-yukle.ts",
     "yedek-bosluk:dogrula": "tsx scripts/yedek-bosluk-dogrula.ts",
     "simulasyon:dogrula": "tsx scripts/simulasyon-dogrula.ts",
-    "canli:bekleme-olcum": "tsx scripts/canli-bekleme-olcum.ts"
+    "canli:bekleme-olcum": "tsx scripts/canli-bekleme-olcum.ts",
+    "canli:maliyet-hizala": "tsx scripts/canli-maliyet-hizala.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
