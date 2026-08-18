@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBicim } from "@/lib/bicim-istemci";
-import { YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
+import { karZararRengi, YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import type { YasBandi } from "@/lib/yaslanma";
 import {
@@ -274,15 +274,27 @@ export function FiyatDene({
                       ) : null}
                     </span>
                   </div>
+                  {/* ---------- KÂR YEŞİL, ZARAR KIRMIZI ----------
+                      Eksi işareti tek karakter ve tabular-nums bir sütunda
+                      göz onu atlıyor; renk uyarıyı rakamın KENDİSİNE
+                      taşıyor. Eşik ekranda değil `karZararRengi`de —
+                      ikinci ekran aynı rakamı farklı renkte göstermesin.
+
+                      NET-2 daha büyük yazılıyor: karar veren rakam odur,
+                      NET-1 ara duraktır. */}
                   <div>
                     <span className="text-muted-foreground block text-xs">NET-1</span>
-                    <span className="font-medium tabular-nums">
+                    <span
+                      className={`font-medium tabular-nums ${DURUM_YAZISI[karZararRengi(s.net1)]}`}
+                    >
                       {s.net1 === null ? "—" : bicim.para(s.net1, paraBirimi)}
                     </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground block text-xs">NET-2</span>
-                    <span className="font-medium tabular-nums">
+                    <span
+                      className={`text-base font-semibold tabular-nums ${DURUM_YAZISI[karZararRengi(s.net2)]}`}
+                    >
                       {s.net2 === null ? "—" : bicim.para(s.net2, paraBirimi)}
                     </span>
                   </div>

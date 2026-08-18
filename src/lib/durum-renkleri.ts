@@ -83,3 +83,30 @@ export const YAS_BANDI_RENGI: Record<"NOTR" | "AMBER" | "KIRMIZI", DurumRengi> =
 export function kargoDurumRengi(verildiMi: boolean): DurumRengi {
   return verildiMi ? "olumlu" : "uyari";
 }
+
+/**
+ * ============================================================================
+ *  KÂR/ZARAR RENGİ — TEK KARAR NOKTASI
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı isteği 19.08.2026: "kârda yeşil, zararda kırmızı ile uyarıda
+ *  bulunsun." Rakamın işareti tabular-nums bir sütunda gözden kaçıyor;
+ *  eksi işareti tek karakter ve göz onu atlıyor.
+ *
+ *  ── SIFIR KIRMIZI DEĞİL, YEŞİL DE DEĞİL ─────────────────────────────────
+ *  ⚠ Başabaş noktası ne kâr ne zarardır. Kırmızı yakmak "zarar ediyorsun"
+ *  demek olurdu, yeşil yakmak "kazanıyorsun". İkisi de yanlış — ve bu,
+ *  aynı gün yön satırında verilen "sıfır kâr sayılmaz" kararının
+ *  RENK tarafındaki karşılığıdır. Aynı kural iki yerde aynı davranmalı.
+ *
+ *  Burada durmasının sebebi Kural #10 (tutarlılık): eşiği ekranın içine
+ *  yazsaydık ikinci ekran onu yeniden yorumlardı ve iki ekran aynı rakamı
+ *  farklı renkte gösterebilirdi.
+ * ============================================================================
+ */
+export function karZararRengi(deger: number | null): DurumRengi {
+  if (deger === null) return "notr";
+  if (deger > 0) return "olumlu";
+  if (deger < 0) return "olumsuz";
+  /** Tam sıfır = başabaş. Renk YOK; iddia da yok. */
+  return "notr";
+}

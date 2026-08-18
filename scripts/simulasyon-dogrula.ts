@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { karZararRengi } from "../src/lib/durum-renkleri";
 import {
   basabasFiyati,
   birAltDilim,
@@ -537,6 +538,36 @@ console.log("\nFİYAT SİMÜLASYONU — DOĞRULAMA\n");
   ]) {
     kontrol(`  sözlük: ${anahtar}`, typeof tr.UrunKarti[anahtar] === "string" && tr.UrunKarti[anahtar] !== "");
   }
+}
+
+// --- 15) KÂR/ZARAR RENGİ -----------------------------------------------------
+{
+  console.log("\n15) KÂR/ZARAR RENGİ");
+  kontrol("kâr → yeşil", karZararRengi(120.5) === "olumlu");
+  kontrol("zarar → kırmızı", karZararRengi(-1.53) === "olumsuz");
+
+  /**
+   * ⚠ SIFIR NE KÂR NE ZARAR. Kırmızı yakmak "zarar ediyorsun", yeşil
+   * yakmak "kazanıyorsun" demekti; ikisi de yanlış. Bu, aynı gün yön
+   * satırında verilen "sıfır kâr sayılmaz" kararının RENK tarafıdır —
+   * iki yerde aynı kural aynı davranmalı.
+   */
+  kontrol("başabaş (0) ne yeşil ne kırmızı", karZararRengi(0) === "notr");
+  /** Bilinmeyen değer renk İDDİA ETMEZ. */
+  kontrol("null → renk yok", karZararRengi(null) === "notr");
+
+  /** ⚠ EN KÜÇÜK ZARAR DA KIRMIZI — bir kuruş eksi, eksidir. */
+  kontrol("bir kuruş zarar kırmızı", karZararRengi(-0.01) === "olumsuz");
+  kontrol("bir kuruş kâr yeşil", karZararRengi(0.01) === "olumlu");
+
+  /** Ekran bu tek karar noktasını kullanıyor mu — kendi eşiğini yazmıyor mu? */
+  const ekran = readFileSync("src/app/kart/[variantId]/fiyat-dene.tsx", "utf8");
+  kontrol("NET-1 renklendiriliyor", /karZararRengi\(s\.net1\)/.test(ekran));
+  kontrol("NET-2 renklendiriliyor", /karZararRengi\(s\.net2\)/.test(ekran));
+  kontrol(
+    "  ...ekran KENDİ eşiğini yazmıyor",
+    !/s\.net2 [<>]=? 0/.test(ekran) && !/s\.net1 [<>]=? 0/.test(ekran),
+  );
 }
 
 console.log("");
