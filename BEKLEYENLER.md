@@ -146,49 +146,105 @@ raporuyla açılır.**
       dilim başına komisyon ve İKİ termin seti (3/4 gün) bulundu. Ayrıntı
       ve sonuçları için aşağıdaki "DİLİM BULUNDU" bölümüne bak.
 
-### 🔑 DİLİM BULUNDU — 18.08.2026, Aşama 1'in zemini değişti
+### 🔑 KOMİSYON DİLİMİ — ÖLÇÜM + ŞEMA TASARIMI (18.08.2026)
 
-Taze Trendyol komisyon dosyası (`komisyon:muayene` ile yüklemeden ÖNCE
-incelendi) **dört dilimli tam bir tarife** taşıyor. Bugüne kadar "elle
-tanımlanacak" sanılan kavram **veriden geliyormuş.**
+Taze TY komisyon dosyası **yüklemeden önce** incelendi (`komisyon:muayene`)
+ve tam ölçüldü. "Dilim elle tanımlanacak" varsayımı düştü: **veriden
+geliyor.**
 
-**DOSYADA NE VAR** (`KomisyonTarifeleriÜrünleri`, 161 ürün, 35 kolon):
-- **Dört fiyat dilimi**, alt/üst limitleriyle:
-  `1.Fiyat Alt Limit` · `2.Fiyat Üst Limiti` / `2.Fiyat Alt Limit` ·
-  `3.Fiyat Üst Limiti` / `3.Fiyat Alt Limit` · `4.Fiyat Üst Limiti`
-- **Dilim başına komisyon**: `1.KOMİSYON` … `4.KOMİSYON`
-- ⚠ **KOMİSYON TERMİNE DE BAĞLI** — dosyada İKİ tarife seti var:
-  `Tarih aralığı (3 Gün)` ve `Tarih aralığı (4 Gün)`, her biri kendi
-  4 komisyonuyla. **Bunu bilmiyorduk.** Kargo süresi vaadi komisyonu
-  değiştiriyor; bu bir FİYAT kolu değil, ayrı bir kaldıraç.
-- `KOMİSYONA ESAS FİYAT` · `GÜNCEL KOMİSYON` · `GÜNCEL TSF` ·
-  `YENİ TSF (FİYAT GÜNCELLE)` · `Hesaplanan Komisyon (3/4 Gün)` ·
-  `Tarife Seçimi` · `TARİFE GRUBU`
-- Geçerlilik penceresi hücrede yazılı: _"14 Ağustos 08.00 – 18 Ağustos 07.59"_
+#### ÖNCE BİR DÜZELTME — "termin" yorumum yanlıştı
 
-**MELONTİK'İN KAYNAĞI BU DOSYA — kanıtlandı.** Dosyanın ilk satırı
-"Manuel Rondo 500 ml", dilimler 769,99 / 701,29 / 641,09 ve komisyonlar
-18 / 12,8 / 11,1. Melontik sunumunun 18. slaydındaki örnek **birebir bu
-satır**. Yani Melontik'in en ayırt edici ekranı sihir değil: aynı dosyayı
-okuyor. **Aynı kaynağa bizim de erişimimiz var.**
+`Tarih aralığı (3 Gün)` / `(4 Gün)` kolonlarını görüp "komisyon kargo
+vaadine bağlı" dedim. **Yanlış.** Ölçüm: 3 Gün bloğu **161/161 satırda
+BOŞ**, 4 Gün bloğu **161/161 dolu** ve hepsinde aynı pencere
+_"14 Ağustos 08.00 – 18 Ağustos 07.59"_ — tam dört gün.
 
-**BUGÜNKÜ YAPIMIZLA ARADAKİ FARK:**
-`ChannelSku.commissionRate` **tek** `Decimal(5,2)`. Dosyada ürün başına
-**8 komisyon** (4 dilim × 2 termin) + 6 limit + geçerlilik penceresi var.
-Yani içe aktarma bugün bu bilginin **yaklaşık %90'ını atıyor** ve tek bir
-"güncel komisyon" değeri saklıyor.
+**"(3/4 Gün)" tarife PENCERESİNİN UZUNLUĞU'dur, kargo vaadi değil.** TY
+haftada iki kez yayımlıyor: Salı 08:00→Cuma 07:59 (3 gün) ve Cuma
+08:00→Salı 07:59 (4 gün). Şablonun iki pencere yuvası var, o hafta hangisi
+geçerliyse o dolu.
 
-**SONUÇ — AŞAMA 1 KAPSAMI DEĞİŞTİ:**
-- Dilim kaynağı **"elle tanım" DEĞİL, veri.** O varsayım düştü.
-- Şema genişletmesi gerekiyor (oran → tarife: dilim listesi + termin
-  ayrımı + geçerlilik penceresi). **Migration onaya gelecek.**
-- Fiyatlama aracı gerçek dilimlerle simülasyon yapabilir — Melontik'in
-  yaptığı işin aynısı, aynı veriden.
-- ⚠ **Termin (3/4 gün) boyutu kâr motorunu da ilgilendiriyor:** bugün
-  satışa tek komisyon snapshot'lanıyor, hangi termin tarifesinden geldiği
-  kayıtlı değil.
+> **DERS (kendi kuralımı çiğnedim):** başlıkları okuyup **değerleri
+> okumadım.** Üstelik ilk muayene çıktımda yalnız DÖRT komisyon değeri
+> basılmıştı — sekiz kolon varken. Kanıt gözümün önündeydi, yorumum onu
+> ezdi. **Kolon başlığı bir iddiadır; doğrulaması hücrededir.**
 
-_Dosya arşivde: `veri/ozel/arsiv/` (gitignore)._
+#### ÖLÇÜLEN YAPI (161 satır, 35 kolon, tek sayfa)
+
+| Ölçüm | Sonuç |
+|---|---|
+| Dilim sayısı | **4, istisnasız** — 161/161 satırda dördü de dolu |
+| Limit kolonları | 6'sı da 161/161 dolu |
+| Dilimler ürüne özel mi | **Evet** — 160 farklı limit demeti, 146 farklı oran demeti |
+| `TARİFE GRUBU` | **Tek değer** → dosya/tarife kimliği, ürün grubu DEĞİL |
+| `KOMİSYONA ESAS FİYAT` vs `GÜNCEL TSF` | **161/161 eşit** → aynı şey |
+| Tekrarlı barkod | 1 tane, **iki satır birebir aynı** → dilim değil, mükerrer satır |
+| Eşleşme anahtarı | BARKOD 160 farklı · `SATICI STOK KODU` yalnız 98 farklı (+null) |
+
+**DİLİM YAPISI — açık uçlu dört kademe** (örnek: Manuel Rondo):
+`≥769,99 → %18` · `701,29–769,98 → %12,8` · `641,09–701,28 → %11,1` ·
+`≤641,08 → %9,3`. Band 1'in üstü, band 4'ün altı **açık**.
+
+**`GÜNCEL KOMİSYON` = fiyatın düştüğü dilimin oranı** — 5/5 örnekte
+doğrulandı. Yani bugünkü tek oranımız aslında "şu anki fiyata karşılık
+gelen dilim".
+
+#### ⚠ EN ÖNEMLİ BULGU — HEPSİ EN PAHALI DİLİMDE
+
+Örneklenen ürünlerin **hepsinde** güncel fiyat 1. dilimde, yani **en
+YÜKSEK komisyon** geçerli (1999₺ ürün için %18, oysa 769,98'e inse %12,8).
+Trendyol'un mekanizması bu: **fiyatı düşürene komisyon indirimi.**
+
+Fiyatlama aracının cevaplayacağı soru tam olarak budur: _fiyatı bir dilim
+aşağı çekmek, komisyon kazancıyla telafi ediyor mu?_ Melontik'in 18.
+slaydı aynı hesabı yapıyor — **aynı dosyadan.**
+
+#### ŞEMA ÖNERİSİ — SALT EKLEME, İKİ YENİ TABLO
+
+```
+KomisyonTarifesi          bir yükleme = bir geçerlilik penceresi
+  channelAccountId        (dosya mağaza bazlı iniyor)
+  pencereBaslangic/Bitis  DateTime — hücreden çözülür
+  tarifeGrubu             dosyadaki TARİFE GRUBU
+  kaynakDosyaAdi          arşivdeki karşılığı
+  @@unique([channelAccountId, pencereBaslangic])
+
+KomisyonTarifeKalemi      ürün × dilim
+  tarifeId
+  barkod / saticiStokKodu / urunAdi   ham kimlik (eşleşme sonradan)
+  variantId?                          eşleştiyse
+  dilimSira    1..4
+  altLimit?    null = alt uç AÇIK
+  ustLimit?    null = üst uç AÇIK
+  oran         Decimal(5,2)
+  @@unique([tarifeId, barkod, dilimSira])
+```
+
+**`ChannelSku.commissionRate` KALIYOR.** Bugünkü kâr motoru onunla
+çalışıyor; kaldırmak büyük patlama olurdu. Yeni tablo **üstüne** biner:
+`commissionRate` artık "güncel fiyata karşılık gelen dilimin oranı" olarak
+_türetilir_, anlamı netleşir ama yeri değişmez.
+
+**Satış snapshot'ına ek (mimar maddesi 5):** `SaleItem`e
+`commissionTarifeId?` — oranın hangi pencereden geldiği. Bugün "snapshot
+bayat mıydı" sorusu **cevaplanamıyor** (oran geçmişi tutulmuyor); bu alan
+onu gelecekte ölçülebilir yapar.
+
+**MİGRATION:** üç tablo/alan da **salt ekleme**, hepsi nullable, geçmiş
+veri dokunulmaz — geri doldurma YOK. SQL onaya gelecek; disiplin geçerli
+(yerel → onay → canlı → damga → push).
+
+#### YAN SONUÇLAR
+
+- **Halil'e N11 sorusu DÜŞTÜ değil, DEĞİŞTİ:** TY ritmi dosyadan ölçüldü
+  (**haftada 2×: salı + cuma**) ve envanter aracına yazılacak. N11 sorusu
+  hâlâ açık.
+- **Eldeki dosyanın penceresi 18.08 07:59'da BİTTİ.** Arşive
+  _"pencere: 14–18 Ağu"_ damgasıyla girdi; yeni pencere dosyası gerekiyor.
+- **Mükerrer satır var** (1 barkod, 2 özdeş satır) → içe aktarma
+  tekilleştirmeli; "iki dilim" sanmamalı.
+- **Eşleşme anahtarı BARKOD olmalı**: `SATICI STOK KODU` 161 satırda
+  yalnız 98 farklı değer taşıyor ve boş olanlar var.
 
 **AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
 - [ ] Fiyatlama aracı (dilim + simülasyon)
