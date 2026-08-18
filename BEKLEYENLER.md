@@ -36,7 +36,21 @@ raporuyla açılır.**
       _Bu soru Melontik farkından TÜREMEZ; o fark geçersiz sayıldı. Kendi
       başına değerli olduğu için burada duruyor._
 
-- [ ] **Komisyon envanteri** — ⚠ **KOMUT YOK, yazılacak.**
+- [x] **Komisyon envanteri — ARAÇ YAZILDI 18.08.2026.**
+      `npm run canli:komisyon-envanter` (salt okuma). Dört bölüm:
+      doluluk · yaş (haftalık ritme göre bayat bayrağı) · **snapshot
+      tazeliği** · dilim.
+
+      **DİLİM SORUSU KOD OKUNARAK CEVAPLANDI, ölçüme gerek kalmadı:**
+      `ChannelSku` TEK oran taşıyor, fiyat aralığı alanı YOK · okuyucu
+      satır başına tek oran alıyor · **ham dosya saklanmıyor**, yani
+      kaynakta dilim var mıydı diye geriye dönük bakılamıyor · içe aktarma
+      yalnız TY ve HB tanıyor, **N11 dahil diğer kanallar elle**.
+      → **Aşama 1 sonucu: dilim simülasyonu bugünkü veriyle KURULAMAZ.**
+      Dilimin nereden geleceği Aşama 1'in İLK sorusudur.
+
+      _(eski kayıt: komut yoktu — `komisyon:dogrula` saf hesabı sınar,
+      `komisyon:prova` yerel ve yazan bir provadır.)_
       _Ölçüldü 18.08.2026: depoda `komisyon:dogrula` (saf hesap) ve
       `komisyon:prova` (YEREL, YAZAN uçtan uca prova) var; ikisi de
       envanter değil. Canlıyı okuyup "komisyon oranlarımızın hâli ne"

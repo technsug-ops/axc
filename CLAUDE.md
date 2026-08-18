@@ -394,6 +394,32 @@ dokunulduğu anı söylüyor.)
 "Sonra düşünürüz" denen alan, sonra düşünüldüğünde veri çoktan onsuz
 birikmiştir; o noktada eklemek geçmişi uydurmak ya da kaybetmek olur.
 
+### TUTARLILIK ≠ DOĞRULUK — ÖNCE REFERANSI DOĞRULA (KESİN KURAL)
+
+_Ders 18.08.2026, Melontik demo vakası._ Bir karşılaştırmanın değeri
+ölçülen tarafa değil **ÖLÇÜTE** bağlıdır. Doğrulanmamış bir referanstan
+çıkan fark teşhis değil **gürültüdür** — ve en tehlikeli hâli, gürültünün
+tutarlı görünmesidir.
+
+**Vaka:** Melontik sunumundaki kâr rakamlarıyla NET-2 karşılaştırıldı, iki
+siparişte fark çıktı, fark maliyet ve masraf diye ayrıştırıldı, **denklem
+kapandı.** Kapandığı için ikna ediciydi ve sıradaki adım "kâr motoruna
+eksik kesinti kalemi ekle" olacaktı. Sonra öğrenildi: sunumdaki rakamlar
+**demo**; Melontik'e maliyetler düzgün girilmemiş. Yani doğru çalışan bir
+motor, yanlış bir ölçüt uğruna bozulmak üzereydi.
+
+- **Ölçütün gerçekliği ölçümden ÖNCE sorulur.** "Rakamı çıkarabildim"
+  ile "rakam doğrulandı" aynı şey değildir.
+- Referans bir dosyadan geliyorsa **kaynağı ve güvenilirliği kayda
+  yazılır**; araç onu ekrana basar ve şüpheliyse **hüküm vermez**
+  (`veri/ozel/*.json` → `_UYARI` alanı deseni).
+- **Türetilmiş büyüklükler referansın güvenilirliğini MİRAS ALIR.** Demo
+  orandan türeyen maliyet de demodur; ondan kurulan denklemin kapanması
+  hiçbir şey kanıtlamaz.
+- Kardeş kural: kendi kendini doğrulayan ölçüm ölçüm değildir. NET-2'yi
+  kâr motoru hesaplar, ekran gösterir, test sınar — üçü de aynı kaynaktan
+  besleniyorsa **bağımsız doğrulama yapılmamış** demektir.
+
 ### ÖLÇÜM İKİ DEFTERİ DE ÖLÇMELİ (KESİN KURAL)
 
 _Ders 17.08.2026._ Bir işlem birden çok deftere yazıyorsa, testi de o
