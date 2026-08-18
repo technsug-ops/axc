@@ -110,9 +110,20 @@ export async function tarifeDenetle(
     where: { barcode: { not: null } },
     select: { id: true, barcode: true },
   });
+  /**
+   * O HESABIN KANAL SKU'LARI — birincil eşleşme anahtarı. Dosya
+   * pazaryerinin kendi kodunu taşıyor; katalog barkodumuz aynı olmak
+   * zorunda değil (ölçüldü 19.08.2026: 3 bağsızın biri bu yüzdendi).
+   */
+  const kanalKodlari = await prisma.channelSku.findMany({
+    where: { channelAccountId, isActive: true },
+    select: { channelSku: true, variantId: true },
+  });
+
   const plan = tarifePlaniKur(
     okuma,
     varyantlar.map((v) => ({ id: v.id, barkod: v.barcode })),
+    kanalKodlari.map((k) => ({ kanalKodu: k.channelSku, variantId: k.variantId })),
   );
 
   const mevcut = await prisma.komisyonTarifesi.findUnique({

@@ -7,10 +7,24 @@ import type { TarifeOkumasi, TarifeSatiri } from "./tarife-okuyucu";
  *  Girdi: okunmuş tarife + katalogdaki barkod→varyant haritası.
  *  Çıktı: yazılacak kalemler ve yükleme sonu raporunun sayıları.
  *
- *  ── EŞLEŞME ANAHTARI BARKOD ─────────────────────────────────────────────
- *  Ölçüldü 18.08.2026: dosyanın 161 satırında 160 farklı BARKOD var ama
- *  `SATICI STOK KODU` yalnız 98 farklı değer taşıyor ve bir kısmı boş.
- *  Stok kodunu anahtar yapsaydık farklı ürünler aynı kayda düşerdi.
+ *  ── EŞLEŞME İKİ AŞAMALI: ÖNCE KANAL SKU, SONRA KATALOG BARKODU ──────────
+ *  ⚠ 19.08.2026 GERÇEK VERİ DÜZELTMESİ. İlk hâlde yalnız
+ *  `ProductVariant.barcode`a bakılıyordu ve gerçek dosyada 3 ürün bağsız
+ *  çıktı. Ölçüldü: üçünden biri (`Soundcore Q21i`, `axcali2755`) sistemde
+ *  ZATEN VARDI — katalog barkodu `194644037819`, ama o ürünün **Trendyol
+ *  kanal SKU'su `194645027819`**, yani tarife dosyasındaki barkodun ta
+ *  kendisi. Yanlış negatif.
+ *
+ *  Sebebi basit: dosya PAZARYERİNİN KENDİ KODUNU taşıyor, bizim katalog
+ *  barkodumuzu değil. İkisi çoğu üründe aynı ama aynı olmak ZORUNDA değil.
+ *  Mevcut komisyon içe aktarması bunu zaten üç aşamalı yapıyordu; tarife
+ *  tarafında tek aşamaya indirmek bir gerileme oldu.
+ *
+ *  SIRA: (1) o hesabın KANAL SKU'su, (2) katalog barkodu. Kanal kodu
+ *  önce gelir çünkü dosyayla aynı dildedir.
+ *
+ *  _`SATICI STOK KODU` anahtar YAPILMADI: 161 satırda yalnız 98 farklı
+ *  değer var ve bir kısmı boş; farklı ürünler aynı kayda düşerdi._
  *
  *  ── BAĞSIZ KALEM SAKLANIR VE SAYILIR ────────────────────────────────────
  *  ⚠ Mimar şartı: bağsızlık SESSİZ KALMAZ. Katalogda karşılığı olmayan
@@ -25,6 +39,9 @@ import type { TarifeOkumasi, TarifeSatiri } from "./tarife-okuyucu";
 
 /** Katalogdaki varyant — barkoddan varyanta gitmek için. */
 export type VaryantKaydi = { id: string; barkod: string | null };
+
+/** O kanal hesabındaki eşleme — pazaryerinin kendi kodu. */
+export type KanalKodu = { kanalKodu: string; variantId: string };
 
 /** Yazılacak tek kalem: bir ürünün bir dilimi. */
 export type YazilacakKalem = {
@@ -57,16 +74,23 @@ export type TarifePlani = {
 export function tarifePlaniKur(
   okuma: TarifeOkumasi,
   varyantlar: VaryantKaydi[],
+  kanalKodlari: KanalKodu[] = [],
 ): TarifePlani {
   /**
-   * BARKOD DİZİNİ — kırpılarak kurulur. Dosyadan gelen değerde baştaki
-   * ya da sondaki boşluk olabiliyor; iki taraf da kırpılmazsa aynı ürün
-   * eşleşmez ve sebebi görünmez.
+   * İKİ DİZİN, İKİ AŞAMA. Kodlar KIRPILARAK karşılaştırılır; dosyadan
+   * gelen değerde baştaki/sondaki boşluk olabiliyor ve iki taraf da
+   * kırpılmazsa aynı ürün eşleşmez, sebebi de görünmez.
    */
-  const dizin = new Map<string, string>();
+  const kanalDizini = new Map<string, string>();
+  for (const k of kanalKodlari) {
+    const kod = k.kanalKodu.trim();
+    if (kod !== "") kanalDizini.set(kod, k.variantId);
+  }
+
+  const barkodDizini = new Map<string, string>();
   for (const v of varyantlar) {
     const b = (v.barkod ?? "").trim();
-    if (b !== "") dizin.set(b, v.id);
+    if (b !== "") barkodDizini.set(b, v.id);
   }
 
   const kalemler: YazilacakKalem[] = [];
@@ -76,7 +100,12 @@ export function tarifePlaniKur(
   let bagsizKalem = 0;
 
   for (const satir of okuma.satirlar) {
-    const variantId = dizin.get(satir.barkod.trim()) ?? null;
+    /**
+     * ÖNCE KANAL SKU, SONRA KATALOG BARKODU. Kanal kodu dosyayla aynı
+     * dilde olduğu için birincil; barkod yedek yoldur.
+     */
+    const kod = satir.barkod.trim();
+    const variantId = kanalDizini.get(kod) ?? barkodDizini.get(kod) ?? null;
     if (variantId === null) {
       bagsiz++;
       bagsizKalem += satir.dilimler.length;

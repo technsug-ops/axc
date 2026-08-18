@@ -454,6 +454,60 @@ console.log("\nKOMİSYON TARİFESİ — DOĞRULAMA\n");
   kontrol("bağsız SIFIRKEN de yazar", metin2.some((m) => m.includes("BAĞSIZ")));
 }
 
+// --- 12) KANAL SKU ÖNCELİĞİ — GERÇEK VERİ DÜZELTMESİ ------------------------
+{
+  console.log("\n12) KANAL SKU İLE EŞLEŞME");
+  /**
+   * ⚠ 19.08.2026 GERÇEK DOSYA BULGUSU. İlk hâlde yalnız katalog barkoduna
+   * bakılıyordu ve `Soundcore Q21i` bağsız çıkmıştı — oysa ürün sistemde
+   * VARDI (`axcali2755`). Katalog barkodu `194644037819`, ama o ürünün
+   * Trendyol kanal SKU'su `194645027819`, yani tarife dosyasındaki
+   * barkodun ta kendisi.
+   *
+   * Sebep: dosya PAZARYERİNİN kendi kodunu taşıyor, bizim katalog
+   * barkodumuzu değil. İkisi çoğu üründe aynı ama aynı olmak ZORUNDA değil.
+   */
+  const okuma = tarifeOku([BASLIK, satir("194645027819")], BUGUN);
+
+  const yalnizBarkod = tarifePlaniKur(okuma, [
+    { id: "v1", barkod: "194644037819" },
+  ]);
+  kontrol("katalog barkodu tutmuyorsa BAĞSIZ", yalnizBarkod.rapor.bagsizUrun === 1);
+
+  const kanalIle = tarifePlaniKur(
+    okuma,
+    [{ id: "v1", barkod: "194644037819" }],
+    [{ kanalKodu: "194645027819", variantId: "v1" }],
+  );
+  kontrol("kanal SKU'suyla EŞLEŞİR", kanalIle.rapor.eslesenUrun === 1);
+  kontrol("  ...doğru varyanta", kanalIle.kalemler[0].variantId === "v1");
+
+  /** Kanal kodu yoksa katalog barkodu YEDEK yol olarak çalışır. */
+  const barkodYedegi = tarifePlaniKur(
+    tarifeOku([BASLIK, satir("194644037819")], BUGUN),
+    [{ id: "v2", barkod: "194644037819" }],
+    [{ kanalKodu: "baska-kod", variantId: "v9" }],
+  );
+  kontrol("kanal kodu tutmazsa BARKOD yedeği çalışır", barkodYedegi.rapor.eslesenUrun === 1);
+  kontrol("  ...barkodun varyantına", barkodYedegi.kalemler[0].variantId === "v2");
+
+  /**
+   * SIRA ÖNEMLİ: aynı kod hem kanal SKU'su hem başka bir ürünün katalog
+   * barkodu olabilir. Dosya pazaryerinin dilinde konuştuğu için KANAL
+   * KODU kazanır.
+   */
+  const catisma = tarifePlaniKur(
+    tarifeOku([BASLIK, satir("AYNI")], BUGUN),
+    [{ id: "barkod-urunu", barkod: "AYNI" }],
+    [{ kanalKodu: "AYNI", variantId: "kanal-urunu" }],
+  );
+  kontrol("çatışmada KANAL SKU kazanır", catisma.kalemler[0].variantId === "kanal-urunu");
+
+  /** Kanal kodu listesi verilmezse eski davranış korunur. */
+  const eskiCagri = tarifePlaniKur(okuma, [{ id: "v1", barkod: "194645027819" }]);
+  kontrol("kanal listesi verilmezse barkodla çalışır", eskiCagri.rapor.eslesenUrun === 1);
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

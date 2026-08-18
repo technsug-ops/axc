@@ -18,7 +18,7 @@ ilgili pakette kalır._
 
 | # | İş | Ne gerekiyor |
 |---|---|---|
-| H1 | **TY dilim penceresi (18–21)** | Panelden dosya → `canli:tarife-yukle` (önce bayraksız). **Bağsız sayısı Aşama 1 kapsamını belirler.** |
+| H1 | **Dilim tarifesi — YAZMA ONAYI** | ✅ Ölçüldü: **158/160 eşleşti (%98,75)**. `--uygula` ile yazılsın mı? Ayrıntı yukarıda |
 | H2 | **Hakediş `.xlsx` teyidi** | Taze dönem dosyası → `canli:hakedis-esle` (hesap kırılımı) → `canli:hakedis-teyit` |
 | H3 | **Üç satış özel satır** | `11493262226` · `11492798173` · `11492628481` — H2 sırasında gerçek komisyon vs snapshot (2,70) vs güncel (15,00). ~−721 TL |
 | H4 | **Ödeme hizmeti hipotezi** | H2 sırasında bakılacak: dosyada tahsilat/ödeme bedeli satırı var mı |
@@ -196,6 +196,56 @@ zamanlayıcı sorunu kaynağında çözüyor ve **ücretsiz**. Pro'nun bu vakada
 tek gerçek faydası **log saklama** olurdu (teşhisi tahmine bırakmamak).
 Dış zamanlayıcı kendi log'unu tuttuğu için o ihtiyaç da karşılanıyor.
 **Öneri: şimdilik Hobby'de kal.** _Karar Halil'in._
+
+
+#### ✅ H1 ÖLÇÜLDÜ — 19.08.2026: **158/160 eşleşti**
+
+Dilim dosyası `canli:tarife-yukle` ile **rapor kipinde** koşuldu
+(yazma yok). _Penceresi geçmiş olması ölçümü engellemedi — "yeni pencere"
+beklerken asıl sayıyı geciktirmişim._
+
+```
+pencere        14.08.2026 08:00 → 18.08.2026 07:59
+okunan satır   160        (161 satır, 1 mükerrer elendi)
+yazılan kalem  640        (160 × 4 dilim)
+eşleşen ürün   158
+BAĞSIZ ürün      2  (8 kalem)
+```
+
+**→ AŞAMA 1 KAPSAMI: %98,75.** Fiyatlama aracı 158 üründe dilim
+simülasyonu yapabilir. Kapsam sorunu YOK.
+
+#### 🔧 GERÇEK VERİ BİR HATA BULDU — eşleşme tek aşamalıydı
+
+İlk koşuda 3 bağsız çıktı. Üçünden birini ölçtüm: **`Soundcore Q21i`
+sistemde ZATEN VARDI** (`axcali2755`).
+· katalog barkodu → `194644037819`
+· **Trendyol kanal SKU'su → `194645027819`** ← tarife dosyasındaki barkod
+
+Yanlış negatif. Sebebi: **dosya PAZARYERİNİN kendi kodunu taşıyor**, bizim
+katalog barkodumuzu değil; ikisi çoğu üründe aynı ama aynı olmak ZORUNDA
+değil. Mevcut komisyon içe aktarması bunu zaten üç aşamalı yapıyordu —
+tarife tarafında tek aşamaya indirmek **bir gerilemeydi** ve ancak gerçek
+veri gösterdi.
+
+**DÜZELTİLDİ:** eşleşme iki aşamalı — **(1) o hesabın kanal SKU'su,
+(2) katalog barkodu.** Kanal kodu önce gelir çünkü dosyayla aynı dildedir.
+Çatışmada kanal SKU'su kazanır. Bağsız **3 → 2** düştü.
+`tarife:dogrula` 71 → **78**, üç mutasyon kırmızı (kanal aşaması kalkar ·
+sıra ters · barkod yedeği kalkar).
+
+**KALAN 2 BAĞSIZ — gerçek katalog eksiği:**
+· `8720689017237` Philips Lumea IPL — katalogda **hiç yok** (arama 0 sonuç)
+· `84778745798` Aktiviteli İlk Adım Yürüteç — benzer ürünler var ama
+  barkodu tutan yok; **ayrı bir listing olabilir**
+
+_Bunlar kusur değil, katalog kapsamı: TY'de listelenip bizde açılmamış
+iki ürün. Kalemler yine de yazılacak (bağsızlık sessiz kalmaz)._
+
+**○ SIRADAKİ ADIM — YAZMA ONAYI.** Rapor rakamları beklenene uyuyor.
+`--uygula` ile yazılsın mı? _Pencere geçmiş ama tarife tablosu zaten
+pencereyi kaydediyor; geçmiş pencere kaydı "o hafta oran neydi"
+sorusunu cevaplar ve yazma yolunu gerçek veriyle sınar._
 
 ## 🎯 ANA PLAN — "MELONTİK'E YETİŞ VE GEÇ"
 
