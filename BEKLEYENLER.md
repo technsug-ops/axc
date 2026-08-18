@@ -376,6 +376,41 @@ cümlesi görünmedi.
 → **Fiorino kartında** mevcut fiyatı gir; yeşil `NET-2 ARTAR` satırı
 çıkmalı. İki yön de görülünce 3. katman kapanır.
 
+
+#### 🔴 YÖN SATIRI VARIŞ NOKTASINI SÖYLEMİYORDU (19.08.2026)
+
+**Halil gerçek testte yanıldı** ve bulgu keskin: NET-2 **zaten
+negatifken** de yeşil _"ARTAR — inmek kazandırıyor"_ yazıyordu. Yeşil
+renk + "kazandırıyor" kelimesi **"kâra geçer" diye okunuyor**; oysa ürün
+hâlâ zararda, sadece **daha az zararda.**
+
+> **Yön DOĞRUYDU, VARIŞ NOKTASI beyansızdı** — "kaydedilen ≠ görünen"
+> dersinin yön satırındaki hâli. Fark rakamı hesapta vardı; ne anlama
+> geldiği ekranda yoktu.
+
+**DÜZELTİLDİ — hüküm iki şeye birden bakıyor:** farkın işareti VE
+sonucun işareti. Mimar iki hâl istedi; ölçünce **beş gerçek hâl** çıktı
+ve dördü farklı karar gerektiriyor:
+
+| Hâl | Cümle | Renk |
+|---|---|---|
+| `KARA_GECER` | "ZARARDAN KÂRA GEÇER (NET-2 +X olur)" | yeşil |
+| `KAR_ARTAR` | "kâr büyür (NET-2 +X olur)" | yeşil |
+| **`ZARAR_AZALIR`** | **"Zarar azalır ama ÜRÜN HÂLÂ ZARARDA (NET-2 −Y olur)"** | **amber** |
+| `ZARARA_GECER` | "KÂRDAN ZARARA DÜŞER" | kırmızı |
+| `KOTULESIR` | "zarar artar" | kırmızı |
+
+**İKİ İNCELİK:**
+· **`KAR_ARTAR` ayrı tutuldu** — zaten kârdayken "kâra geçer" demek
+  yanlış olurdu; mimarın iki hâlli önerisi bunu kapsamıyordu.
+· **SIFIR KÂR SAYILMAZ.** NET-2 tam sıfıra gelmek "kâra geçmek" değil,
+  başabaştır; yeşil demek olmayan bir kazancı müjdelemek olurdu.
+  `hedef > 0` şartı katı ve testi var.
+
+Hüküm ve renk **saf katmanda** (`yonHukmu`, `yonRengi`) — ekran yalnız
+metne çeviriyor, `switch` tüketici. `simulasyon:dogrula` 72 → **90**,
+dört mutasyon kırmızı (asıl hatayı geri getiren M1 dahil).
+
 ## 🎯 ANA PLAN — "MELONTİK'E YETİŞ VE GEÇ"
 
 _Mimar + Halil onaylı, 18.08.2026._ Bundan sonraki bütün işler bu

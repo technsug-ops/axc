@@ -2565,15 +2565,18 @@
     "deneKomisyon": "Komisyon",
     "deneDilim": "({sira}. dilim)",
     "deneAltDilim": "{fiyat} yaparsanız bir alt dilime iner: komisyon %{oran}",
-    "deneKazanc": "NET-2 {tutar} ARTAR — inmek kazandırıyor.",
-    "deneKayip": "NET-2 {tutar} AZALIR — inmek kazandırmıyor.",
     "deneTemizle": "Temizle",
     "beyanDilimYok": "Bu üründe dilim tarifesi yok — tek oranla hesaplandı.",
     "beyanOranYok": "Komisyon oranı bilinmiyor; NET hesaplanamadı.",
     "beyanMaliyetYok": "Ürün maliyeti bilinmiyor; NET hesaplanamadı.",
     "beyanPencereBitti": "Tarifenin geçerliliği {tarih} tarihinde bitti — oranlar güncel olmayabilir.",
     "deneOranAyni": "Alt dilimin oranı da %{oran} — inmek komisyon kazandırmaz, yalnız ciro kaybettirir.",
-    "deneOranYuksek": "Alt dilimin oranı DAHA YÜKSEK — inmek hem ciro hem komisyon açısından zarar."
+    "deneOranYuksek": "Alt dilimin oranı DAHA YÜKSEK — inmek hem ciro hem komisyon açısından zarar.",
+    "yonKaraGecer": "NET-2 {fark} artar — ZARARDAN KÂRA GEÇER (NET-2 +{sonuc} olur).",
+    "yonKarArtar": "NET-2 {fark} artar — kâr büyür (NET-2 +{sonuc} olur).",
+    "yonZararAzalir": "Zarar {fark} azalır ama ÜRÜN HÂLÂ ZARARDA (NET-2 −{sonuc} olur).",
+    "yonZararaGecer": "NET-2 {fark} azalır — KÂRDAN ZARARA DÜŞER (NET-2 −{sonuc} olur).",
+    "yonKotulesir": "Zarar {fark} artar (NET-2 −{sonuc} olur) — inmek kazandırmıyor."
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

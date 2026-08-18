@@ -12,6 +12,8 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import {
   birAltDilim,
   simulasyonKur,
+  yonHukmu,
+  yonRengi,
   type Beyan,
   type SimulasyonGirdisi,
 } from "@/lib/fiyatlama/simulasyon";
@@ -88,6 +90,31 @@ export function FiyatDene({
    * hatası verir ve derleme durur. Ekran, motorun beyanlarıyla eşit
    * adımda kalmak ZORUNDA.
    */
+  /**
+   * ⚠ VARIŞ NOKTASI HER CÜMLEDE YAZILI. "Artar" tek başına yetmiyor:
+   * kullanıcı nereye vardığını görmeden karar veremez. Beş hâl, beş
+   * ayrı cümle — ve `switch` tüketici, yeni hâl eklenince derleme durur.
+   */
+  const hukumMetni = (h: ReturnType<typeof yonHukmu>): string => {
+    const tutar = (d: number) => bicim.para(Math.abs(d), paraBirimi);
+    switch (h.tur) {
+      case "KARA_GECER":
+        return t("yonKaraGecer", { fark: tutar(h.fark), sonuc: tutar(h.sonuc) });
+      case "KAR_ARTAR":
+        return t("yonKarArtar", { fark: tutar(h.fark), sonuc: tutar(h.sonuc) });
+      case "ZARAR_AZALIR":
+        return t("yonZararAzalir", { fark: tutar(h.fark), sonuc: tutar(h.sonuc) });
+      case "ZARARA_GECER":
+        return t("yonZararaGecer", { fark: tutar(h.fark), sonuc: tutar(h.sonuc) });
+      case "KOTULESIR":
+        return t("yonKotulesir", { fark: tutar(h.fark), sonuc: tutar(h.sonuc) });
+      default: {
+        const asla: never = h;
+        return String(asla);
+      }
+    }
+  };
+
   const beyanMetni = (b: Beyan): string => {
     switch (b.tur) {
       case "DILIM_YOK":
@@ -157,10 +184,18 @@ export function FiyatDene({
             ? null
             : simulasyonKur({ ...girdi, hedefFiyat: oneri.hedefFiyat });
 
-        const fark =
+        /**
+         * ⚠ HÜKÜM YALNIZ FARKA BAKMAZ, VARIŞ NOKTASINA DA BAKAR.
+         *
+         * Canlı testte yanıldı: NET-2 zaten negatifken yeşil "ARTAR —
+         * kazandırıyor" satırı "kâra geçer" diye okundu. Yön doğruydu,
+         * varış noktası beyansızdı.
+         */
+        const hukum =
           s?.net2 != null && oneriSonuc?.net2 != null
-            ? oneriSonuc.net2 - s.net2
+            ? yonHukmu(s.net2, oneriSonuc.net2)
             : null;
+        const renk = hukum === null ? null : yonRengi(hukum);
 
         return (
           <div key={z.kanalAdi} className="space-y-2 rounded-md border p-3">
@@ -207,20 +242,12 @@ export function FiyatDene({
                 {oneri !== null && oneriSonuc !== null ? (
                   <div
                     className={`rounded-md p-2 text-sm ${
-                      fark === null
-                        ? ""
-                        : fark > 0
-                          ? DURUM_KUTUSU.olumlu
-                          : DURUM_KUTUSU.olumsuz
+                      renk === null ? "" : DURUM_KUTUSU[renk]
                     }`}
                   >
                     <p
                       className={`flex flex-wrap items-center gap-1 ${
-                        fark === null
-                          ? ""
-                          : fark > 0
-                            ? DURUM_YAZISI.olumlu
-                            : DURUM_YAZISI.olumsuz
+                        renk === null ? "" : DURUM_YAZISI[renk]
                       }`}
                     >
                       <ArrowDown className="size-3.5 shrink-0" />
@@ -243,17 +270,9 @@ export function FiyatDene({
                           : t("deneOranYuksek")}
                       </p>
                     ) : null}
-                    {fark !== null ? (
-                      <p
-                        className={`text-xs ${
-                          fark > 0 ? DURUM_YAZISI.olumlu : DURUM_YAZISI.olumsuz
-                        }`}
-                      >
-                        {fark > 0
-                          ? t("deneKazanc", { tutar: bicim.para(fark, paraBirimi) })
-                          : t("deneKayip", {
-                              tutar: bicim.para(Math.abs(fark), paraBirimi),
-                            })}
+                    {hukum !== null && renk !== null ? (
+                      <p className={`text-xs ${DURUM_YAZISI[renk]}`}>
+                        {hukumMetni(hukum)}
                       </p>
                     ) : null}
                   </div>

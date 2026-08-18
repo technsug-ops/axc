@@ -2565,15 +2565,18 @@
     "deneKomisyon": "",
     "deneDilim": "",
     "deneAltDilim": "",
-    "deneKazanc": "",
-    "deneKayip": "",
     "deneTemizle": "",
     "beyanDilimYok": "",
     "beyanOranYok": "",
     "beyanMaliyetYok": "",
     "beyanPencereBitti": "",
     "deneOranAyni": "",
-    "deneOranYuksek": ""
+    "deneOranYuksek": "",
+    "yonKaraGecer": "",
+    "yonKarArtar": "",
+    "yonZararAzalir": "",
+    "yonZararaGecer": "",
+    "yonKotulesir": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",

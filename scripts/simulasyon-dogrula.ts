@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import {
   birAltDilim,
   simulasyonKur,
+  yonHukmu,
+  yonRengi,
   type SimulasyonGirdisi,
 } from "../src/lib/fiyatlama/simulasyon";
 import type { TarifeDilimi } from "../src/lib/komisyon/tarife-okuyucu";
@@ -288,12 +290,18 @@ console.log("\nFİYAT SİMÜLASYONU — DOĞRULAMA\n");
   kontrol("beyanlar listeleniyor", /s\.beyanlar\.map/.test(ekran));
 
   /** ⚠ İKİ YÖN: hem kazanç hem kayıp metni bağlı olmalı. */
-  kontrol("KAZANÇ metni bağlı", /deneKazanc/.test(ekran));
-  kontrol("KAYIP metni bağlı", /deneKayip/.test(ekran));
-  kontrol(
-    "  ...yön farkın İŞARETİNDEN geliyor",
-    /fark > 0[\s\S]{0,200}?deneKazanc/.test(ekran),
-  );
+  /** ⚠ Beş hükmün beşi de ekranda karşılığını bulmalı. */
+  for (const h of [
+    "yonKaraGecer",
+    "yonKarArtar",
+    "yonZararAzalir",
+    "yonZararaGecer",
+    "yonKotulesir",
+  ]) {
+    kontrol(`  hüküm ${h} ekranda karşılanıyor`, ekran.includes(h));
+  }
+  kontrol("hüküm saf katmandan geliyor", /yonHukmu\(/.test(ekran));
+  kontrol("renk de saf katmandan", /yonRengi\(/.test(ekran));
 
   /** MOBİL: sayısal klavye ve kuruş kabulü. */
   kontrol('inputMode="decimal"', /inputMode="decimal"/.test(ekran));
@@ -350,6 +358,51 @@ console.log("\nFİYAT SİMÜLASYONU — DOĞRULAMA\n");
     "  ...koşul oranKazanci'ndan geliyor",
     /oneri\.oranKazanci <= 0/.test(ekran),
   );
+}
+
+// --- 12) YÖN HÜKMÜ — VARIŞ NOKTASI ------------------------------------------
+{
+  console.log("\n12) YÖN HÜKMÜ (varış noktası)");
+  /**
+   * ⚠ CANLI TESTTE YANILDI — mimar bulgusu 19.08.2026.
+   *
+   * Yön satırı NET-2 zaten NEGATİFKEN de yeşil "ARTAR — kazandırıyor"
+   * diyordu. Yeşil + "kazandırıyor" **"kâra geçer" diye okunuyor**; oysa
+   * ürün hâlâ zararda, sadece daha az zararda. Yön doğruydu, VARIŞ
+   * NOKTASI beyansızdı.
+   */
+  kontrol("zarardan kâra → KARA_GECER", yonHukmu(-50, 30).tur === "KARA_GECER");
+  kontrol("  ...rengi yeşil", yonRengi(yonHukmu(-50, 30)) === "olumlu");
+
+  /**
+   * ⚠ ASIL VAKA: iyileşiyor ama HÂLÂ ZARARDA. Yeşil OLMAZ.
+   */
+  const halaZarar = yonHukmu(-500, -150);
+  kontrol("zarardan az zarara → ZARAR_AZALIR", halaZarar.tur === "ZARAR_AZALIR");
+  kontrol("  ...rengi AMBER, yeşil DEĞİL", yonRengi(halaZarar) === "uyari");
+  kontrol("  ...varış noktası taşınıyor", halaZarar.sonuc === -150);
+  kontrol("  ...fark de taşınıyor", halaZarar.fark === 350);
+
+  kontrol("kârdan daha çok kâra → KAR_ARTAR", yonHukmu(100, 250).tur === "KAR_ARTAR");
+  kontrol("  ...rengi yeşil", yonRengi(yonHukmu(100, 250)) === "olumlu");
+
+  /** Kârdan zarara düşmek, "biraz azaldı"dan başka bir şeydir. */
+  const dusus = yonHukmu(80, -20);
+  kontrol("kârdan zarara → ZARARA_GECER", dusus.tur === "ZARARA_GECER");
+  kontrol("  ...rengi kırmızı", yonRengi(dusus) === "olumsuz");
+
+  kontrol("zarardan daha çok zarara → KOTULESIR", yonHukmu(-100, -300).tur === "KOTULESIR");
+
+  /**
+   * ⚠ SIFIR KÂR SAYILMAZ. Tam sıfıra gelmek "kâra geçmek" değil,
+   * başabaştır; yeşil demek olmayan bir kazancı müjdelemek olurdu.
+   */
+  const basabas = yonHukmu(-100, 0);
+  kontrol("sıfıra gelmek KÂRA GEÇMEK değil", basabas.tur === "ZARAR_AZALIR");
+  kontrol("  ...ve yeşil DEĞİL", yonRengi(basabas) !== "olumlu");
+
+  /** Fark kuruşa yuvarlanır — kayan nokta tozu ekrana çıkmasın. */
+  kontrol("fark kuruşa yuvarlanır", yonHukmu(0.1, 0.3).fark === 0.2);
 }
 
 console.log("");

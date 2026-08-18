@@ -211,3 +211,84 @@ export function birAltDilim(
     oranKazanci: Math.round((simdiki.oran - alt.oran) * 100) / 100,
   };
 }
+
+/**
+ * ============================================================================
+ *  YÖN HÜKMÜ — "NEREYE VARIYORUZ", SADECE "NE TARAFA" DEĞİL
+ * ----------------------------------------------------------------------------
+ *  ⚠ CANLI TESTTE YANILDI — mimar bulgusu 19.08.2026.
+ *
+ *  Yön satırı NET-2 zaten NEGATİFKEN de yeşil "ARTAR — inmek kazandırıyor"
+ *  diyordu. Yeşil renk + "kazandırıyor" kelimesi **"kâra geçer" diye
+ *  okunuyor**; oysa ürün hâlâ zararda, sadece daha az zararda.
+ *
+ *  Yön DOĞRUYDU, VARIŞ NOKTASI beyansızdı. _"Kaydedilen ≠ görünen"
+ *  dersinin yön satırındaki hâli: fark rakamı kayıtta vardı, ne anlama
+ *  geldiği ekranda yoktu._
+ *
+ *  Bu yüzden hüküm iki şeye birden bakar: FARKIN İŞARETİ ve SONUCUN
+ *  İŞARETİ. Dört gerçek durum var ve dördü farklı karar gerektirir.
+ * ============================================================================
+ */
+
+export type YonHukmu =
+  /** Zarardan kâra geçiyor — en güçlü olumlu. */
+  | { tur: "KARA_GECER"; fark: number; sonuc: number }
+  /** Zaten kârdaydı, kâr artıyor. */
+  | { tur: "KAR_ARTAR"; fark: number; sonuc: number }
+  /** İyileşiyor ama HÂLÂ ZARARDA — yeşil OLMAZ, amber. */
+  | { tur: "ZARAR_AZALIR"; fark: number; sonuc: number }
+  /** Kârdayken zarara düşüyor — en güçlü olumsuz. */
+  | { tur: "ZARARA_GECER"; fark: number; sonuc: number }
+  /** Kötüleşiyor. */
+  | { tur: "KOTULESIR"; fark: number; sonuc: number };
+
+/**
+ * Mevcut ve hedef NET-2'den yön hükmü. SAF.
+ *
+ * @param mevcut Bugünkü fiyatın NET-2'si.
+ * @param hedef  Önerilen fiyatın NET-2'si.
+ */
+export function yonHukmu(mevcut: number, hedef: number): YonHukmu {
+  const fark = Math.round((hedef - mevcut) * 100) / 100;
+
+  if (fark > 0) {
+    /**
+     * ⚠ SIFIR KÂR SAYILMAZ. `hedef > 0` şartı katıdır: NET-2 tam sıfıra
+     * gelmek "kâra geçmek" değildir, başabaştır. Yeşil demek, olmayan bir
+     * kazancı müjdelemek olurdu.
+     */
+    if (hedef > 0) {
+      return mevcut > 0
+        ? { tur: "KAR_ARTAR", fark, sonuc: hedef }
+        : { tur: "KARA_GECER", fark, sonuc: hedef };
+    }
+    /** İyileşme gerçek ama varış hâlâ zararda — AMBER. */
+    return { tur: "ZARAR_AZALIR", fark, sonuc: hedef };
+  }
+
+  /** Kârdan zarara düşmek, "biraz azaldı"dan başka bir şeydir. */
+  if (mevcut > 0 && hedef <= 0) {
+    return { tur: "ZARARA_GECER", fark, sonuc: hedef };
+  }
+  return { tur: "KOTULESIR", fark, sonuc: hedef };
+}
+
+/** Hükmün rengi — ekranlar aynı eşlemeyi kullansın diye burada. */
+export function yonRengi(h: YonHukmu): "olumlu" | "uyari" | "olumsuz" {
+  switch (h.tur) {
+    case "KARA_GECER":
+    case "KAR_ARTAR":
+      return "olumlu";
+    /** İyileşiyor ama zararda — yeşil YANLIŞ okunur. */
+    case "ZARAR_AZALIR":
+      return "uyari";
+    case "ZARARA_GECER":
+    case "KOTULESIR":
+      return "olumsuz";
+    default: {
+      const asla: never = h;
+      return asla;
+    }
+  }
+}
