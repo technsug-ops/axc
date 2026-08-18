@@ -518,6 +518,27 @@ motor, yanlış bir ölçüt uğruna bozulmak üzereydi.
 > Gerçek bağımsız teyit, kanalın FİİLEN kestiği komisyondur — hakediş
 > dosyası. Kaynak değişmedikçe kaç yoldan geçtiğinin önemi yoktur.
 
+### ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERMELİ (KESİN KURAL)
+
+_Ders 19.08.2026, üç kez arka arkaya._ Bir kuralı sınayan test verisi,
+kuralın **ayırdığı iki durumu birbirinden farklı sonuca götürmelidir.**
+Ayrışmayan örnek, **kuralı değil TESADÜFÜ sınar** — ve mutasyon yeşil
+kalır.
+
+**Aynı gün üç vaka:**
+- _"Dilim BİRİM fiyattan çözülür, ciroya göre değil"_ → `1.000 × 3` ile
+  sınandı; 1.000 de 3.000 de aynı dilimdeydi. `700 × 3` yapıldı (birim
+  3. dilim, ciro 1. dilim) ve mutasyon kırmızıya döndü.
+- _"Barkod kırpılır"_ → test okuyucudan geçiyordu, o zaten kırpıyordu;
+  plan katmanının kırpması hiç çalışmıyordu.
+- _"Yuvarlama kuruş tozunu siler"_ → tek maliyetle sınandı; `2c − c`
+  kayan noktada TAM çıkıyor. Farklı maliyetli parti gerekti.
+
+**KONTROL SORUSU:** _bu kuralı kaldırsam test kırmızı yanar mı?_ Cevap
+"emin değilim" ise örnek veri ayrımı göstermiyordur. Mutasyon denemesi
+bu sorunun mekanik hâlidir ve **yeşil kalan mutasyon, testin değil
+VERİNİN kusurudur** — kod doğru, örnek kör.
+
 ### ÖLÇÜM İKİ DEFTERİ DE ÖLÇMELİ (KESİN KURAL)
 
 _Ders 17.08.2026._ Bir işlem birden çok deftere yazıyorsa, testi de o

@@ -2556,7 +2556,22 @@
     "urunEkrani": "Ürün kartı",
     "yeniArama": "Yeni arama",
     "girisTarihi": "giriş {tarih}",
-    "tedarikciKayitsiz": "tedarikçi kayıtsız"
+    "tedarikciKayitsiz": "tedarikçi kayıtsız",
+    "fiyatDeneBaslik": "Fiyat dene",
+    "fiyatDeneNot": "Bir fiyat girin; hangi komisyon dilimine düştüğünü ve NET kârı görün. Hiçbir şey kaydedilmez.",
+    "fiyatDeneAlan": "Denenecek satış fiyatı (KDV dahil)",
+    "fiyatDeneIpucu": "örn. 769,98",
+    "fiyatDeneBekliyor": "Fiyat girin.",
+    "deneKomisyon": "Komisyon",
+    "deneDilim": "({sira}. dilim)",
+    "deneAltDilim": "{fiyat} yaparsanız bir alt dilime iner: komisyon %{oran}",
+    "deneKazanc": "NET-2 {tutar} ARTAR — inmek kazandırıyor.",
+    "deneKayip": "NET-2 {tutar} AZALIR — inmek kazandırmıyor.",
+    "deneTemizle": "Temizle",
+    "beyanDilimYok": "Bu üründe dilim tarifesi yok — tek oranla hesaplandı.",
+    "beyanOranYok": "Komisyon oranı bilinmiyor; NET hesaplanamadı.",
+    "beyanMaliyetYok": "Ürün maliyeti bilinmiyor; NET hesaplanamadı.",
+    "beyanPencereBitti": "Tarifenin geçerliliği {tarih} tarihinde bitti — oranlar güncel olmayabilir."
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

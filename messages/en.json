@@ -2556,7 +2556,22 @@
     "urunEkrani": "",
     "yeniArama": "",
     "girisTarihi": "",
-    "tedarikciKayitsiz": ""
+    "tedarikciKayitsiz": "",
+    "fiyatDeneBaslik": "",
+    "fiyatDeneNot": "",
+    "fiyatDeneAlan": "",
+    "fiyatDeneIpucu": "",
+    "fiyatDeneBekliyor": "",
+    "deneKomisyon": "",
+    "deneDilim": "",
+    "deneAltDilim": "",
+    "deneKazanc": "",
+    "deneKayip": "",
+    "deneTemizle": "",
+    "beyanDilimYok": "",
+    "beyanOranYok": "",
+    "beyanMaliyetYok": "",
+    "beyanPencereBitti": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",

@@ -304,8 +304,40 @@ gereksiz kayıptır. En ucuz dilimde öneri üretilmez (uydurma hedef yok).
 > _Kalıp aynı: yalancı yeşilin kaynağı çoğu zaman kod değil, ayrımı
 > göstermeyen ÖRNEK VERİ._
 
-**○ SIRADAKİ — 2. katman:** kârlılık kartına "Fiyat dene" bölümü
-(mobil öncelikli) + otomatik "en yakın alt dilim" satırı.
+#### ✓ 2. KATMAN — "FİYAT DENE" KARTTA (19.08.2026)
+
+`kart/[variantId]/fiyat-dene.tsx` + `lib/fiyatlama/kart-verisi.ts`.
+`simulasyon:dogrula` 45 → **63**, üç ekran mutasyonu daha kırmızı.
+
+**ÜÇ ŞART DA KARŞILANDI:**
+1. **Beyanlar ekranda yaşıyor** — dört beyan da kullanıcı diliyle
+   basılıyor. _Motorun dürüstlüğü ekrana ulaşmazsa yok hükmünde._
+2. **Yön dürüst:** fark pozitifse yeşil "NET-2 X ARTAR — inmek
+   kazandırıyor", negatifse kırmızı "AZALIR — kazandırmıyor".
+   **Test iki yönü de sürüyor:** dar oran farkı (%18→%17,5) kurgusuyla
+   inmenin ZARARLI olduğu vaka eklendi; aynı motor iki zıt sonuç üretti
+   — yönün veriden okunduğunun kanıtı. _Tek yönlü test bunu gösteremezdi
+   ve araç "her zaman in" aracı sanılırdı._
+3. **Mobil:** `inputMode="decimal"`, kuruş kabul ediyor (dilim sınırları
+   kuruşla oynanıyor: 769,98). Mutasyon `numeric`e çevirince kırmızı.
+
+**EKRAN HİÇBİR ŞEY YAZMIYOR** — test kaynağı tarayıp doğruluyor
+(`prisma.` · `Action(` · `fetch(` yok). Simülasyon kayıt değildir.
+
+**KANAL BAŞINA AYRI KUTU:** dilimler, KDV kuralı ve sipariş kesintileri
+kanaldan kanala değişiyor; tek "ortalama" zemin hangi kanalda ne olacağı
+sorusunu cevapsız bırakırdı.
+
+> **TEST BİR KIRILGANLIK BULDU.** Beyan eşlemesi if/else zinciriydi ve
+> son dal "geri kalan her şey"di — `PENCERE_BITTI` adı ekranda hiç
+> geçmiyordu. Yeni bir beyan türü eklense ekran onu **sessizce "tarifenin
+> geçerliliği bitti"** diye yazardı: yanlış cümle, doğru görünümle.
+> Tüketici `switch`e çevrildi; yeni tür eklenince `never` satırı
+> **derlemeyi durduruyor.** Ekran, motorun beyanlarıyla eşit adımda
+> kalmak zorunda.
+
+**○ SIRADAKİ — 3. katman:** Halil'in canlı testi (Manuel Rondo + inmenin
+kazandırmadığı bir ürün, iki yönlü).
 
 ## 🎯 ANA PLAN — "MELONTİK'E YETİŞ VE GEÇ"
 

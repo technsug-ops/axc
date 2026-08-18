@@ -81,6 +81,12 @@ function Bolum({
   );
 }
 
+import { FiyatDene } from "./fiyat-dene";
+import {
+  simulasyonZeminleri,
+  varyantKdvOrani,
+} from "@/lib/fiyatlama/kart-verisi";
+
 export default async function KartSayfasi({
   params,
 }: {
@@ -101,6 +107,14 @@ export default async function KartSayfasi({
 
   const { ozet, varyant } = veri;
   const para = veri.paraBirimi ?? "TRY";
+
+  /**
+   * SİMÜLASYON ZEMİNİ — kanal başına dilimler, pencere ve kanal kuralları.
+   * Kâr izni yoksa hiç toplanmıyor: NET üretmeyen bir ekrana NET girdisi
+   * hazırlamak boş sorgu olurdu.
+   */
+  const zeminler = karGorunur ? await simulasyonZeminleri(variantId, new Date()) : [];
+  const kdvOrani = karGorunur ? await varyantKdvOrani(variantId) : 20;
 
   /** Para biçimi — değer null ise "?" kalır, sıfıra çevrilmez. */
   const p = (deger: number | null, birim = para) =>
@@ -336,6 +350,26 @@ export default async function KartSayfasi({
         <p className={`rounded-md p-2 text-xs ${DURUM_KUTUSU.uyari} ${DURUM_YAZISI.uyari}`}>
           {t("paraKarisikUyarisi")}
         </p>
+      ) : null}
+
+      {/* ═══════════════════ FİYAT DENE ═══════════════════
+          Aşama 1'in kullanıcıya değen yüzü. Kâr izni olmayan rol
+          NET göremez; simülasyon da NET üretiyor, aynı izne bağlı. */}
+      {karGorunur ? (
+        <FiyatDene
+          /**
+           * Tarih ISO metne çevrilir: istemci bileşenine `Date` geçmek
+           * serileştirme sınırında sessizce bozulur.
+           */
+          zeminler={zeminler.map((z) => ({
+            ...z,
+            pencereBitis: z.pencereBitis === null ? null : z.pencereBitis.toISOString(),
+          }))}
+          birimMaliyet={ozet.ortalamaMaliyet}
+          kdvOrani={kdvOrani}
+          paraBirimi={para === "EUR" ? "EUR" : "TRY"}
+          baslangicFiyati={null}
+        />
       ) : null}
 
       <div className="flex flex-wrap gap-2">

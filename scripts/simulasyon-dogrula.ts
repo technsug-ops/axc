@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import {
   birAltDilim,
   simulasyonKur,
@@ -215,6 +216,94 @@ console.log("\nFİYAT SİMÜLASYONU — DOĞRULAMA\n");
   kontrol("3 adette de 3. dilim (ciro 2.100 olsa bile)", uc.dilim?.sira === 3, uc.dilim?.sira);
   kontrol("  ...oran %11,1 kalır", uc.komisyonOrani === 11.1);
   kontrol("  ...ciro dilimi olan %18 DEĞİL", uc.komisyonOrani !== 18);
+}
+
+// --- 9) YÖN DÜRÜSTLÜĞÜ — İNMEK HER ZAMAN KAZANDIRMAZ ------------------------
+{
+  console.log("\n9) İKİ YÖN");
+  /**
+   * ⚠ MİMAR ŞARTI 19.08.2026: araç iki yönü de dürüst göstermeli.
+   * Manuel Rondo kazandıran bir örnek ama HER ÜRÜN ÖYLE DEĞİL. Yalnız
+   * kazancı gösteren bir araç "her zaman in" aracı sanılır ve kullanıcı
+   * zarar eden bir indirimi güvenle yapar.
+   *
+   * Kazandırmayan vaka: dilimler arası oran farkı KÜÇÜK, fiyat farkı
+   * BÜYÜK. Aşağıda 1. dilim %18, 2. dilim %17,5 — yarım puan kazanç,
+   * ama fiyat 1.999'dan 769,98'e düşüyor.
+   */
+  const darDilimler = [
+    { sira: 1, altLimit: 769.99, ustLimit: null, oran: 18 },
+    { sira: 2, altLimit: 701.29, ustLimit: 769.98, oran: 17.5 },
+    { sira: 3, altLimit: 641.09, ustLimit: 701.28, oran: 17 },
+    { sira: 4, altLimit: null, ustLimit: 641.08, oran: 16.5 },
+  ];
+
+  const simdi = simulasyonKur(temel({ hedefFiyat: 1999, dilimler: darDilimler }));
+  const oneri = birAltDilim(darDilimler, 1999)!;
+  const inince = simulasyonKur(
+    temel({ hedefFiyat: oneri.hedefFiyat, dilimler: darDilimler }),
+  );
+
+  kontrol("öneri yine üretilir", oneri.hedefFiyat === 769.98);
+  kontrol("  ...ama NET-2 AZALIR", inince.net2! < simdi.net2!, {
+    simdi: simdi.net2,
+    inince: inince.net2,
+  });
+  kontrol(
+    "  ...yani araç 'inme' demeli",
+    inince.net2! - simdi.net2! < 0,
+  );
+
+  /** Karşı vaka: geniş oran farkı → inmek kazandırır (Manuel Rondo). */
+  const genisSimdi = simulasyonKur(temel({ hedefFiyat: 769.99 }));
+  const genisInince = simulasyonKur(temel({ hedefFiyat: 769.98 }));
+  kontrol("geniş farkta NET-2 ARTAR", genisInince.net2! > genisSimdi.net2!);
+
+  /**
+   * İKİ VAKA AYNI KODDAN GEÇTİ ve zıt sonuç verdi — aracın yönü
+   * VERİDEN okuduğunun kanıtı. Tek yönlü test bunu gösteremezdi.
+   */
+  kontrol(
+    "aynı motor iki zıt sonuç üretti",
+    inince.net2! - simdi.net2! < 0 && genisInince.net2! - genisSimdi.net2! > 0,
+  );
+}
+
+// --- 10) EKRAN BAĞLI MI — kaynak taranır ------------------------------------
+{
+  console.log("\n10) EKRAN BAĞLARI");
+  /**
+   * Değer testi göremez: motor doğru çalışsa da ekran onu çağırmıyorsa,
+   * ya da beyanları basmıyorsa kullanıcı hiçbirini görmez.
+   */
+  const ekran = readFileSync("src/app/kart/[variantId]/fiyat-dene.tsx", "utf8");
+
+  kontrol("kart motoru ÇAĞIRIYOR", /simulasyonKur\(/.test(ekran));
+  kontrol("bir alt dilim ÇAĞRILIYOR", /birAltDilim\(/.test(ekran));
+
+  /** ⚠ BEYANLAR EKRANDA YAŞAMALI — dördü de karşılığını bulmalı. */
+  for (const b of ["DILIM_YOK", "ORAN_YOK", "MALIYET_YOK", "PENCERE_BITTI"]) {
+    kontrol(`  beyan ${b} ekranda karşılanıyor`, ekran.includes(b));
+  }
+  kontrol("beyanlar listeleniyor", /s\.beyanlar\.map/.test(ekran));
+
+  /** ⚠ İKİ YÖN: hem kazanç hem kayıp metni bağlı olmalı. */
+  kontrol("KAZANÇ metni bağlı", /deneKazanc/.test(ekran));
+  kontrol("KAYIP metni bağlı", /deneKayip/.test(ekran));
+  kontrol(
+    "  ...yön farkın İŞARETİNDEN geliyor",
+    /fark > 0[\s\S]{0,200}?deneKazanc/.test(ekran),
+  );
+
+  /** MOBİL: sayısal klavye ve kuruş kabulü. */
+  kontrol('inputMode="decimal"', /inputMode="decimal"/.test(ekran));
+  kontrol("  ...tam sayıya zorlamıyor", !/inputMode="numeric"/.test(ekran));
+
+  /** SİMÜLASYON KAYIT DEĞİL — ekran hiçbir yazma eylemi çağırmamalı. */
+  kontrol(
+    "ekran hiçbir şey YAZMIYOR",
+    !/prisma\.|Action\(|fetch\(/.test(ekran),
+  );
 }
 
 console.log("");
