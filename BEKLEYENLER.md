@@ -24,7 +24,7 @@ ilgili pakette kalır._
 | H4 | **Ödeme hizmeti hipotezi** | H2 sırasında bakılacak: dosyada tahsilat/ödeme bedeli satırı var mı |
 | H5 | **N11 ritmi** | Komisyonlar hangi sıklıkla değişiyor? Cevapsızken envanter "ölçülemedi" diyor |
 | H6 | **Canlı tur** | Kart sırası · yapışkan çubuk · döküm görüntüsü · kıyas ibaresi (hepsi deploy'da) |
-| H7 | **18.08 yedeği** | Kendiliğinden düştü mü — cron sorusunun asıl cevabı |
+| H7 | **CRON AYIRT EDİCİ TEST** | Gizli pencerede `/api/yedek/otomatik` aç → giriş sayfası mı, `KAPALI` mı, `YETKISIZ` mi. **Teşhis tablosu yukarıda.** İki kez kaçtı (18–19.08) |
 | H8 | **Melontik ölçütü** | Çapraz teyit için GERÇEK Melontik çıktısı (sunum demo çıktı) |
 
 ### 🔧 BİZDE — karar bekleyen
@@ -51,6 +51,82 @@ doğum tarihi beyan edilir · _(ölçüm ikiliği: kaynağın varlığı,
 güncelliğinden önce gelir)_
 
 ---
+
+
+### 🔴 CRON TEŞHİSİ — 19.08.2026, iki kez kaçtı
+
+**BİZİM KODUMUZ TEMİZ. Dört katman tek tek ölçüldü:**
+
+| # | Katman | Sonuç |
+|---|---|---|
+| 1 | `vercel.json` yolu ↔ rota dosyası | ✓ **birebir** — `/api/yedek/otomatik`, harf ve eğik çizgi dahil |
+| 2 | Cron tanımının deploy geçmişi | ✓ **hiç değişmemiş** — `d40f782`'de eklenmiş, silinmemiş (`git log -p` ile bakıldı, tek bir `-` satırı yok) |
+| 3 | Uygulama ara katmanı (`proxy.ts`) | ✓ uç **AÇIK YOLLAR** listesinde — oturum kontrolü onu kesmiyor |
+| 4 | Rota kimlik kontrolü | ✓ standart desen: `Authorization: Bearer $CRON_SECRET` |
+
+**GERİYE İKİ İHTİMAL KALIYOR VE İKİSİ DE VERCEL TARAFINDA:**
+
+**(A) `CRON_SECRET` Vercel proje ortamında tanımlı değil.**
+Rota o zaman **503 "KAPALI"** döner. Panelde "Run" görünür, log'da istek
+görünür — ama hiçbir şey yazılmaz. "Endpoint sağlam, Run üretiyor"
+gözlemiyle **tamamen uyumlu**.
+
+**(B) Vercel Deployment Protection (Vercel Authentication) açık.**
+Anayasada kayıtlı: 10.08.2026'da "kapı kilidi" olarak açılmıştı. Bu
+katman **bizim kodumuzdan ÖNCE** durur ve kimliksiz her isteği keser —
+zamanlanmış cron çağrısı dahil. Panelden elle "Run" çalışır çünkü tarayıcı
+oturumu var. Örüntüyü **birebir** açıklıyor.
+
+> ⚠ (B) için Vercel'in tam davranışını buradan doğrulayamıyorum; belgeye
+> bakılmadan kesin konuşmam. Ama anayasadaki kayıt, gözlemle örtüşüyor.
+
+#### 🔬 AYIRT EDİCİ TEST — 10 saniye, güvenli, yazma yok
+
+Tarayıcıda **gizli pencerede** (oturum kapalı) aç:
+`https://axc-seven.vercel.app/api/yedek/otomatik`
+
+| Gördüğün | Teşhis | Çözüm |
+|---|---|---|
+| **Vercel giriş sayfası** | **(B)** — koruma cron'u kesiyor, kodumuza hiç ulaşmıyor | Vercel Authentication'ı KAPAT (uygulamanın kendi girişi Faz 3,5'te tamamlandı; köprü artık gereksiz) ya da "Protection Bypass for Automation" kur |
+| **`{"durum":"KAPALI"}`** (503) | **(A)** — `CRON_SECRET` yok | Vercel → Settings → Environment Variables → `CRON_SECRET` ekle, **production** kapsamına |
+| **`{"durum":"YETKISIZ"}`** (401) | Kod ve sır sağlam | Sorun zamanlamada; (c) maddesine geç |
+
+_Rota `if (!sir)` kontrolünü kimlik kontrolünden ÖNCE yapıyor; bu yüzden
+kimliksiz bir GET üç durumu kusursuz ayırıyor._
+
+#### (b) B PLANI — Vercel cron'una güvenmeyen emniyet
+
+**✓ YAPILDI: KAÇIRILAN GÜNLER ARTIK GÖRÜNÜYOR.** Ekran "son 10 yedek"
+listeliyordu; liste doluyken bile **arada gün eksik olabilir** ve göz
+bunu yakalamaz. Var olanı listelemek, **olmayanı göstermez** — iki kaçış
+da bu yüzden ancak biri fark edince anlaşıldı. Artık son 14 gün taranıyor
+ve eksik günler kırmızı kutuda tarihleriyle yazıyor.
+_Bugün eksikse kaçış SAYILMAZ (cron gece koşar); en eski yedekten öncesi
+de sayılmaz — "izin doğum tarihi" kuralı._
+`yedek-bosluk:dogrula` **18 kontrol**, üç mutasyon kırmızı.
+
+**○ ÖNERİ — DIŞ ZAMANLAYICI (en ucuz kalıcı çözüm).** Ücretsiz bir dış
+tetikleyici (`cron-job.org` gibi) uca `Authorization: Bearer $CRON_SECRET`
+ile vurur. **Vercel'e bağımlılık sıfırlanır**, plan tierinden bağımsızdır,
+kod değişikliği GEREKTİRMEZ. _(B) çıkarsa yine de koruma bypass'ı gerekir._
+
+**✗ ÖNERİLMEZ — "panel açılınca arka planda yedek al".** Üç sebep:
+sunucusuz ortamda yanıt döndükten sonra işin bitmesi garanti değil (yarım
+yedek, dolu görünen boş dosya) · iki sekme açan iki yedek başlatır ·
+60 saniyelik iş sayfa yüklemesine binerse panel kilitlenir.
+**Zaten var olan doğru B planı:** yedek yaşı uyarısı + "Şimdi yedek al"
+düğmesi — 18.08 böyle kurtarıldı. Yeni boşluk göstergesi onu güçlendirdi.
+
+#### (c) HOBBY → PRO DEĞERLENDİRMESİ
+
+- **Hobby'de cron günde 1 kez** ve **saat garantisi yok** — ama iki gün
+  ÜST ÜSTE hiç koşmaması esneklikle açıklanamaz. **Plan tek başına sebep
+  değil.**
+- **Log saklama Hobby'de çok kısa.** Bu vakada asıl bedel bu: gece ne
+  olduğunu geriye dönük göremiyoruz, teşhis tahmine kalıyor.
+- ⚠ **Kök sebep (B) ise Pro DÜZELTMEZ** — Deployment Protection Pro'da da
+  vardır. Önce ayırt edici testi koş, sonra plan konuş.
+- _Karar Halil'in._
 
 ## 🎯 ANA PLAN — "MELONTİK'E YETİŞ VE GEÇ"
 

@@ -4,6 +4,8 @@ import { CalendarClock, Download, TriangleAlert } from "lucide-react";
 import { Baglanti } from "@/components/baglanti";
 import { bicimlendirici } from "@/lib/bicim";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { gunDegeri, isTakvimGunu } from "@/lib/donem";
+import { gercekKacisSayisi, yedekBoslugu } from "@/lib/yedek-bosluk";
 import { yedekKapsami } from "@/lib/yedek-yaz";
 
 import { YedekAlButonu } from "./yedek-al-butonu";
@@ -74,6 +76,23 @@ export async function OtomatikYedekDurumu() {
     yedekler = [];
   }
 
+  /**
+   * BOŞLUK TARAMASI — son 14 gün. Liste 10 kayıtla sınırlı olduğu için
+   * tarama AYRI listeden yapılır; "son 10 yedek" ile "son 14 gün" farklı
+   * sorulardır ve birini ötekinin yerine kullanmak eksik gün gizlerdi.
+   */
+  let tumTarihler: { tarih: Date }[] = [];
+  try {
+    const { list } = await import("@vercel/blob");
+    const { blobs } = await list({ prefix: "yedek/" });
+    tumTarihler = blobs.map((b) => ({ tarih: new Date(b.uploadedAt) }));
+  } catch {
+    tumTarihler = [];
+  }
+  const bugun = gunDegeri(isTakvimGunu(new Date()));
+  const bosluk = yedekBoslugu(tumTarihler, bugun, 14);
+  const kacisSayisi = gercekKacisSayisi(bosluk, bugun);
+
   return (
     <div className="space-y-3 rounded-lg border p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -85,6 +104,28 @@ export async function OtomatikYedekDurumu() {
             burada durur (bkz. yedek-al-actions.ts). */}
         <YedekAlButonu />
       </div>
+
+      {/* ---------------- KAÇIRILAN GÜNLER ----------------
+          ⚠ Cron İKİ KEZ kaçtı (18 ve 19.08.2026) ve ikisi de ancak biri
+          fark ettiği için anlaşıldı. Liste doluyken bile ARADA gün eksik
+          olabilir; göz bunu yakalamaz. Var olanı listelemek, OLMAYANI
+          göstermez. */}
+      {kacisSayisi > 0 ? (
+        <div className={`space-y-1 rounded-md p-3 ${DURUM_KUTUSU.olumsuz}`}>
+          <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.olumsuz}`}>
+            <TriangleAlert className="size-4 shrink-0" />
+            {t("yedekKacti", { sayi: kacisSayisi })}
+          </p>
+          <p className={`text-xs ${DURUM_YAZISI.olumsuz}`}>
+            {bosluk.eksikGunler
+              .filter((g) => bicim.tarih(g) !== bicim.tarih(bugun))
+              .slice(0, 10)
+              .map((g) => bicim.tarih(g))
+              .join(" · ")}
+          </p>
+          <p className={`text-xs ${DURUM_YAZISI.olumsuz}`}>{t("yedekKactiNe")}</p>
+        </div>
+      ) : null}
 
       {yedekler.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t("otomatikHenuzYok")}</p>

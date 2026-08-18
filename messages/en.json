@@ -1424,7 +1424,9 @@
     "depoYok": "",
     "kapsamGunluk": "",
     "kapsamTam": "",
-    "kapsamNotu": ""
+    "kapsamNotu": "",
+    "yedekKacti": "",
+    "yedekKactiNe": ""
   },
   "Giris": {
     "baslik": "",
