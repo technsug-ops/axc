@@ -4,6 +4,47 @@ Karara bağlanmış ama bilinçli olarak sonraki pakete bırakılmış işler.
 Sırası gelince CLAUDE.md'deki **Kullanıcı Kolaylığı İlkeleri** kontrol
 listesiyle birlikte teslim edilir.
 
+## 📌 AÇIK KOMUTLAR — 18.08.2026, gün sonu
+
+_Bu bölüm **komut bazlı**; aşağısı paket bazlı. Amaç: verilen bir talimatın
+listede kaybolmaması. **Her komut kapandığında buradan SİLİNİR**, ayrıntısı
+ilgili pakette kalır._
+
+> **NİYE VAR:** 18.08'de iki komut tekrar gönderildi çünkü yapılıp
+> yapılmadığı taranabilir değildi. İkisi de yapılmıştı — kayıt eksik değil,
+> **görünürlük** eksikti. Kural: kayıt varsa yetmez, ARANABİLİR olmalı.
+
+### ⏸ HALİL'E BAĞLI (kod işi kalmadı)
+
+| # | İş | Ne gerekiyor |
+|---|---|---|
+| H1 | **TY dilim penceresi (18–21)** | Panelden dosya → `canli:tarife-yukle` (önce bayraksız). **Bağsız sayısı Aşama 1 kapsamını belirler.** |
+| H2 | **Hakediş `.xlsx` teyidi** | Taze dönem dosyası → `canli:hakedis-esle` (hesap kırılımı) → `canli:hakedis-teyit` |
+| H3 | **Üç satış özel satır** | `11493262226` · `11492798173` · `11492628481` — H2 sırasında gerçek komisyon vs snapshot (2,70) vs güncel (15,00). ~−721 TL |
+| H4 | **Ödeme hizmeti hipotezi** | H2 sırasında bakılacak: dosyada tahsilat/ödeme bedeli satırı var mı |
+| H5 | **N11 ritmi** | Komisyonlar hangi sıklıkla değişiyor? Cevapsızken envanter "ölçülemedi" diyor |
+| H6 | **Canlı tur** | Kart sırası · yapışkan çubuk · döküm görüntüsü · kıyas ibaresi (hepsi deploy'da) |
+| H7 | **18.08 yedeği** | Kendiliğinden düştü mü — cron sorusunun asıl cevabı |
+| H8 | **Melontik ölçütü** | Çapraz teyit için GERÇEK Melontik çıktısı (sunum demo çıktı) |
+
+### 🔧 BİZDE — karar bekleyen
+
+| # | İş | Durum |
+|---|---|---|
+| K1 | **Uyarı Merkezi Faz 2 / dilim 1** | Amber + nötr, şemasız. Önerildi, **karar verilmedi** |
+| K2 | **`KomisyonYuklemesi` tablosu** | `ayniKalan` kaydı — "yükleme yok" ile "değişiklik yok" ayrımı |
+| K3 | **Satış formu oran doğrulaması** | %2,70 gibi gerçekçi olmayan oran uyarı üretmiyor. Uyarı Merkezi Faz 2 adayı |
+| K4 | **Kıyas verisi yokluğu** | ✓ yapıldı, canlı bakış H6'da |
+
+### ✅ BU OTURUMDA KAPANANLAR (ayrıntı ilgili pakette)
+
+satış düzeltme+iptal · adet dilimi · marj anahtarı · hafif yetki dilimi ·
+kanal kodsuz kayıtlar · komisyon envanteri · dosya muayenesi · tarife
+şeması+migration · tarife okuyucu+yazma yolu · N11 okuyucusu · kanal
+kırılımı · EUR ertelemesi
+
+---
+
 ## 🎯 ANA PLAN — "MELONTİK'E YETİŞ VE GEÇ"
 
 _Mimar + Halil onaylı, 18.08.2026._ Bundan sonraki bütün işler bu
