@@ -489,6 +489,46 @@ girilmesine izin veriyor ve girilen değer hiç doğrulanmıyor. %2,70 gibi
 gerçekçi olmayan bir oran uyarı üretmiyor. _Uyarı Merkezi Faz 2'nin
 adayı._
 
+
+#### ✓ ENVANTER — KANAL KIRILIMI EKLENDİ 18.08.2026
+
+Güncelleme tarihi dağılımı artık **kanal kırılımlı**. Toplam sayı "bugün
+15 kayıt değişti" diyordu ama hangi kanalda olduğunu söylemiyordu.
+
+İlk koşuda hemen işe yaradı — **N11 okuyucusu yayına girdikten sonra
+yüklenmiş:**
+
+| tarih | toplam | HB | N11 | TY |
+|---|---|---|---|---|
+| 18.08 | 56 | — | **41** | 15 |
+| 15.08 | 8 | 7 | 1 | — |
+| 13.08 | 2082 | 1056 | — | 1026 |
+
+**N11 doluluk 3 → 44.** Aktif kanal SKU'su 2113 → 2154; oranı boş kayıt
+hâlâ **0**.
+
+**○ AÇIK KALAN — `ayniKalan` sayısı BASILAMIYOR.** Mimar "bayrak
+etiketine `ayniKalan` sayısı" istedi; **bugünkü veriyle mümkün değil**:
+o sayı yükleme ANINDA üretilip **hiçbir yere yazılmıyor**, envanter
+sonradan okuyamaz. Uydurma bir sayı basmaktansa araç **belirsizliği
+yazıyor**: tablodaki `—` iki şey demek olabilir — (a) o gün o kanala
+yükleme yapılmadı, (b) yükleme yapıldı ama hiçbir oran değişmedi.
+
+_Ayrım için yükleme sonuçlarının kaydedilmesi gerekiyor (küçük bir tablo:
+kim, ne zaman, hangi dosya, kaç okundu/güncellendi/aynı kaldı). Kalem
+aşağıda._
+
+- [ ] **KOMİSYON YÜKLEME KAYDI — küçük tablo.**
+      _Kayıt 18.08.2026._ Yükleme sonuçları hiçbir yere yazılmıyor:
+      `ayniKalan`, `guncellenen`, `yaratilan` ekranda gösterilip
+      kayboluyor. Bu yüzden envanter "yükleme koştu ama değişiklik yoktu"
+      ile "yükleme hiç koşmadı" ayrımını yapamıyor.
+
+      Kapsam: `KomisyonYuklemesi` (hesap · dosya adı · an · okunan ·
+      güncellenen · yaratılan · aynı kalan · eşleşmeyen). Salt ekleme.
+      _Aynı boşluk tarife tarafında YOK — `KomisyonTarifesi` zaten
+      pencere kaydı bırakıyor._
+
 **AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
 - [ ] Fiyatlama aracı (dilim + simülasyon)
 - [ ] Zararına satış uyarısı → **uyarı merkezi Faz 2** (amber katman)

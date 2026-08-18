@@ -234,18 +234,59 @@ async function main() {
   console.log("");
 
   /** GÜNE GÖRE DAĞILIM — "bugün bir şey değişti mi" bunu cevaplar. */
-  console.log("     GÜNCELLEME TARİHİ DAĞILIMI (son 10 gün):");
-  const gunSayaci = new Map<string, number>();
+  /**
+   * ⚠ KANAL KIRILIMI ŞART — mimar isteği 18.08.2026.
+   *
+   * Toplam sayı "bugün 15 kayıt değişti" der ama HANGİ kanalda olduğunu
+   * söylemez. Hepsiburada için "yükleme koştu, hiçbir oran değişmedi" ile
+   * "yükleme hiç koşmadı" ayırt edilemiyordu — ikisi de aynı boşluğu
+   * gösteriyordu. Kırılımla en azından "o kanalda bugün hiç damga yok"
+   * denebiliyor.
+   */
+  console.log("     GÜNCELLEME TARİHİ DAĞILIMI — KANAL KIRILIMLI (son 10 gün):");
+  const kanallar = [...kanalOzeti.keys()].sort();
+  const gunKanal = new Map<string, Map<string, number>>();
   for (const k of kayitlar) {
     if (k.commissionUpdatedAt === null) continue;
     const g = gun(k.commissionUpdatedAt);
-    gunSayaci.set(g, (gunSayaci.get(g) ?? 0) + 1);
+    const satir = gunKanal.get(g) ?? new Map<string, number>();
+    const ad = k.channelAccount.channel.name;
+    satir.set(ad, (satir.get(ad) ?? 0) + 1);
+    gunKanal.set(g, satir);
   }
-  const siralı = [...gunSayaci.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
-  for (const [g, n] of siralı.slice(0, 10)) {
-    console.log(`       ${g}  ${n} kayıt`);
+  const siralı = [...gunKanal.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
+
+  console.log(
+    `       ${doldur("tarih", 12)} ${doldur("toplam", 8)} ${kanallar.map((a) => doldur(a, 14)).join("")}`,
+  );
+  for (const [g, satir] of siralı.slice(0, 10)) {
+    const toplam = [...satir.values()].reduce((t, n) => t + n, 0);
+    console.log(
+      `       ${doldur(g, 12)} ${doldur(String(toplam), 8)} ${kanallar
+        .map((a) => doldur(satir.get(a) === undefined ? "—" : String(satir.get(a)), 14))
+        .join("")}`,
+    );
   }
   if (siralı.length === 0) console.log("       (hiç damga yok)");
+
+  /**
+   * ⚠ "—" İKİ ŞEY DEMEK OLABİLİR ve bugün ayırt EDİLEMİYOR:
+   *   · o gün o kanala yükleme yapılmadı
+   *   · yükleme yapıldı ama HİÇBİR oran değişmedi (`ayniKalan`)
+   *
+   * Mimar "bayrak etiketine `ayniKalan` sayısı" istedi; o sayı yükleme
+   * ANINDA üretiliyor ve HİÇBİR YERE YAZILMIYOR — envanter sonradan
+   * okuyamaz. Ayrımı yapmak için yükleme sonuçlarının kaydedilmesi
+   * gerekir (küçük bir tablo). Kalem açıldı; uydurma bir sayı basmaktansa
+   * belirsizlik YAZILIYOR.
+   */
+  console.log("");
+  console.log("       ⚠ '—' İKİ ŞEY DEMEK OLABİLİR ve bugün AYIRT EDİLEMEZ:");
+  console.log("         (a) o gün o kanala yükleme yapılmadı");
+  console.log("         (b) yükleme yapıldı ama hiçbir oran değişmedi");
+  console.log("         `ayniKalan` sayısı yükleme anında üretilip HİÇBİR");
+  console.log("         YERE YAZILMIYOR; envanter onu sonradan okuyamaz.");
+  console.log("         Ayrım için yükleme sonuçları kaydedilmeli (kalem açık).");
   console.log("");
 
   // ==========================================================================
