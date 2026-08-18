@@ -29,6 +29,9 @@ import { gunlukYedekYaz, SAKLAMA_GUNU } from "@/lib/yedek-yaz";
 /** Reddedilen çağrı izinin eylem kodu. */
 export const RED_EYLEMI = "YEDEK_UCU_REDDEDILDI";
 
+/** BAŞARILI çağrı izinin eylem kodu. */
+export const KOSTU_EYLEMI = "YEDEK_UCU_KOSTU";
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
@@ -126,6 +129,43 @@ export async function GET(istek: Request) {
       { durum: sonuc.kod, mesaj: sonuc.mesaj },
       { status: sonuc.kod === "DEPO_YOK" ? 503 : 500 },
     );
+  }
+
+  /**
+   * ⚠ BAŞARIDA DA İZ — 19.08.2026 ölçüm boşluğu.
+   *
+   * Uca artık İKİ zamanlayıcı vuruyor: Vercel cron (00:00) ve
+   * cron-job.org (03:00). İkisi de başarılı olursa **tek dosya** oluşur
+   * ve hangisinin yazdığı ANLAŞILMAZ — dosya çağıranın kimliğini
+   * taşımıyor.
+   *
+   * Açık soru tam da bu: **Vercel cron `Authorization` başlığı gönderiyor
+   * mu?** Yalnız reddi kaydetseydik, Vercel başarılı olduğunda hiçbir şey
+   * öğrenemezdik; "kayıt yok" hem "çağırmadı" hem "çağırdı ve başardı"
+   * demeye gelirdi.
+   *
+   * `user-agent` yazılıyor: `vercel-cron/...` mı, `cron-job.org` mu.
+   * Yarın sabah üç durum birbirinden ayrılabilecek.
+   *
+   * ⚠ SINIRSIZ YAZMA RİSKİ YOK: buraya ancak DOĞRU SIRRI bilen ulaşır.
+   * Red tarafındaki "günde bir kayıt" sınırı burada gereksiz — üstelik
+   * zararlı olurdu, çünkü İKİ çağıranı da aynı gün görmek istiyoruz.
+   */
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    await prisma.auditLog.create({
+      data: {
+        action: KOSTU_EYLEMI,
+        targetType: "YedekUcu",
+        detail: JSON.stringify({
+          userAgent: istek.headers.get("user-agent")?.slice(0, 200) ?? null,
+          gun: sonuc.gun,
+          satir: sonuc.satir,
+        }),
+      },
+    });
+  } catch {
+    // İz tutulamadıysa yedek yine de alınmıştır; başarı geri alınmaz.
   }
 
   return Response.json({

@@ -100,6 +100,7 @@ export async function OtomatikYedekDurumu() {
    * kalırdı — "kaydedilen ≠ görünen".
    */
   let redler: { tarih: Date; userAgent: string | null }[] = [];
+  let kosanlar: { tarih: Date; userAgent: string | null }[] = [];
   try {
     const { prisma } = await import("@/lib/prisma");
     const kayitlar = await prisma.auditLog.findMany({
@@ -107,6 +108,28 @@ export async function OtomatikYedekDurumu() {
       select: { createdAt: true, detail: true },
       orderBy: { createdAt: "desc" },
       take: 5,
+    });
+    /**
+     * BAŞARILI ÇAĞRILAR — hangi zamanlayıcı yazdı?
+     *
+     * Uca iki kaynak vuruyor (Vercel cron 00:00, cron-job.org 03:00) ve
+     * ikisi de aynı dosyayı üretiyor. Çağıranın kimliği yalnız burada
+     * görünür; olmasa "yedek var" bilgisi kimin aldığını söylemezdi.
+     */
+    const kosmalar = await prisma.auditLog.findMany({
+      where: { action: "YEDEK_UCU_KOSTU" },
+      select: { createdAt: true, detail: true },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    });
+    kosanlar = kosmalar.map((k) => {
+      let ua: string | null = null;
+      try {
+        ua = (JSON.parse(k.detail ?? "{}") as { userAgent?: string }).userAgent ?? null;
+      } catch {
+        ua = null;
+      }
+      return { tarih: k.createdAt, userAgent: ua };
     });
     redler = kayitlar.map((k) => {
       let ua: string | null = null;
@@ -119,6 +142,7 @@ export async function OtomatikYedekDurumu() {
     });
   } catch {
     redler = [];
+    kosanlar = [];
   }
   const bosluk = yedekBoslugu(tumTarihler, bugun, 14);
   const kacisSayisi = gercekKacisSayisi(bosluk, bugun);
@@ -172,6 +196,20 @@ export async function OtomatikYedekDurumu() {
             </p>
           ))}
           <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("yedekReddedildiNe")}</p>
+        </div>
+      ) : null}
+
+      {/* ---------------- KİM ÇAĞIRDI ----------------
+          İki zamanlayıcı aynı dosyayı üretiyor; kimin yazdığı yalnız
+          burada görünür. Açık soru: Vercel cron başlığı gönderiyor mu? */}
+      {kosanlar.length > 0 ? (
+        <div className="space-y-1 rounded-md border p-3">
+          <p className="text-sm font-medium">{t("yedekCagiranlar")}</p>
+          {kosanlar.map((k, i) => (
+            <p key={i} className="text-muted-foreground font-mono text-xs">
+              {bicim.tarih(k.tarih)} · {k.userAgent ?? "—"}
+            </p>
+          ))}
         </div>
       ) : null}
 

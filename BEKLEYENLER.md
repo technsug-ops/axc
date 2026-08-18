@@ -110,6 +110,40 @@ kendi cron'u da düzelmiş olabilir; iki kaynak birbirini yedekler ve
 kaybolmuş olmalı. Sarı **"yetkisiz çağrı"** kutusu çıkarsa, Vercel'in
 kendi cron'unun başlık gönderip göndermediği de anlaşılacak.
 
+
+#### ❓ AÇIK SORU — Vercel cron `Authorization` gönderiyor mu? (ölçüm kuruldu)
+
+**ÖLÇÜLDÜ, KODDAN:** rota Vercel-cron isteğini **YALNIZ `Authorization:
+Bearer $CRON_SECRET`** ile tanıyor. Başka hiçbir işaret aranmıyor —
+`x-vercel-*` başlığı yok, `user-agent` kontrolü yok. `vercel.json` cron
+tanımı da başlık taşımıyor (şemasında öyle bir alan yok).
+
+**Yani mimarın hipotezi mekanik olarak MÜMKÜN:** Vercel tetikliyor,
+başlık gelmiyor, rota 401 dönüyor, Vercel sessizce yutuyor.
+
+**⚠ ÖLÇÜM BOŞLUĞU VARDI VE KAPATILDI.** Yalnız RED kaydediliyordu. Ama
+artık uca **iki** zamanlayıcı vuruyor (Vercel 00:00 · cron-job.org 03:00)
+ve ikisi de **aynı dosyayı** üretiyor. İkisi de başarılı olsaydı tek
+dosya oluşur ve **hangisinin yazdığı anlaşılmazdı** — "kayıt yok" hem
+"çağırmadı" hem "çağırdı ve başardı" demeye gelirdi.
+→ **Başarılı çağrı da artık iz bırakıyor** (`YEDEK_UCU_KOSTU`,
+`user-agent` ile) ve ekranda **"Yedeği kim aldı"** listesinde görünüyor.
+
+_Başarıda gün sınırı YOK — bilerek: iki çağıranı da aynı gün görmek
+istiyoruz. Sınırsız yazma riski de yok, buraya ancak doğru sırrı bilen
+ulaşır._
+
+**YARIN SABAH ÜÇ DURUM BİRBİRİNDEN AYRILACAK:**
+
+| Ekranda gördüğün | Hüküm |
+|---|---|
+| "kim aldı" listesinde **`vercel-cron/...`** | Vercel başlığı **GÖNDERİYOR** → eski kaçışların sebebi başkaydı (muhtemelen bozuk `CRON_SECRET`) |
+| Sarı **"yetkisiz çağrı"** kutusunda `vercel-cron/...` | **HİPOTEZ DOĞRU** — tetikliyor ama başlık yok. _Anayasa vakası güncellenir: "Vercel suçlu" hükmü **"bizim kapı Vercel'i tanımıyordu"**ya döner._ |
+| Yalnız `cron-job.org` var, Vercel hiç yok | Vercel tetiklemiyor — özgün teşhis ayakta kalır |
+
+_Acele değil; dış zamanlayıcı A planı ve çalışıyor. Bu ölçüm yalnız
+anayasa vakasının doğru yazılması için._
+
 ### 📋 HALİL İÇİN: DIŞ ZAMANLAYICI KURULUMU
 
 **ÖNCE — `CRON_SECRET` değerini al:**
