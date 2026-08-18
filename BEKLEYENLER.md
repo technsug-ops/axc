@@ -338,10 +338,43 @@ ofset o tarihteki gerçek İstanbul ofsetinden okunur.
 mükerrer imzası yalnız barkod · yıl dönümü yok · sabit ofset · 1. dilimin
 üstü kapalı · atlanan satır sessiz.
 
-**○ SIRADAKİ — YAZMA YOLU:** tarife + kalemleri veritabanına yazan katman
-(barkod eşleşmesi, aynı pencere ikinci kez → üzerine yaz, bağsız kalem
-sayımı, arşiv). İlk gerçek yükleme Halil'in **yeni pencere (18–21 Ağu)**
-dosyasıyla.
+#### ✓ YAZMA YOLU DA HAZIR 18.08.2026
+
+`lib/komisyon/tarife-plan.ts` (saf) + `lib/komisyon/tarife-yaz.ts` (veri) +
+`npm run canli:tarife-yukle -- "dosya.xlsx" [--uygula]`.
+
+- **Barkod anahtar** — iki tarafta da kırpılıyor.
+- **Bağsız kalem YAZILIR ve SAYILIR.** Atsaydık tarife eksik olur, üstelik
+  eksikliği bilinmezdi — hakediş 648 dersinin tam tekrarı. Rapor "BAĞSIZ
+  ürün N (M kalem)" satırını **sıfırken bile** yazar: bağsızlığın olmaması
+  ile bakılmamış olması ayırt edilebilsin.
+- **Aynı pencere ikinci kez → içerik YENİLENİR** (eski kalemler silinip
+  yeniden yazılır) ve `yuklemeSayisi` artar. `upsert` değil silme+yazma,
+  çünkü upsert dosyadan DÜŞEN bir kalemi eskisi gibi bırakırdı.
+  Önizleme "bu pencere daha önce yüklenmiş, N. yükleme" diye **onaydan
+  önce** uyarıyor.
+- **Penceresiz tarife REDDEDİLİR** — hangi aralığa ait olduğu bilinmeyen
+  oran tablonun varlık sebebini boşa çıkarır.
+- **Hesap seçimi otomatik DEĞİL:** birden çok TY satış hesabı varsa betik
+  durur ve sorar. Yanlış hesaba yazılan tarife sessizce yanlış ürünlere
+  bağlanırdı.
+- **`ChannelSku.commissionRate`e DOKUNULMUYOR.** Onu mevcut komisyon
+  yükleme yolu yazıyor (üç aşamalı eşleştirme + eksik eşleme yaratma).
+  Kopyalasaydık aynı kural sistemde iki yerde yaşardı.
+- Ham dosya arşive (`veri/ozel/arsiv/`, gitignore).
+
+`tarife:dogrula` **71 kontrol**. Mutasyonlar kırmızı: bağsız kalem atılır ·
+penceresiz kabul edilir · BAĞSIZ satırı koşullu olur · satır tarafı
+kırpılmaz.
+
+> **İKİNCİ YALANCI YEŞİL YAKALANDI.** Barkod kırpma mutasyonu önce YEŞİL
+> kaldı: testi `tarifeOku` üzerinden kurmuştum ve okuyucu barkodu zaten
+> kırpıyor, dolayısıyla plan katmanının kırpması o yolda hiç iş yapmıyordu.
+> `tarifePlaniKur` dışa açık saf bir fonksiyon; test doğrudan çağrı yoluna
+> taşındı ve mutasyon kırmızıya döndü.
+
+**○ İLK GERÇEK YÜKLEME:** Halil'in **yeni pencere (18–21 Ağu)** dosyasıyla.
+Önce bayraksız koş (rapor), rakamlar uyunca `--uygula`.
 
 **AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
 - [ ] Fiyatlama aracı (dilim + simülasyon)

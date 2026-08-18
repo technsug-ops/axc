@@ -4,6 +4,11 @@ import {
   tarifeOku,
   type TarifeDilimi,
 } from "../src/lib/komisyon/tarife-okuyucu";
+import {
+  raporMetni,
+  tarifePlaniKur,
+  yazilabilirMi,
+} from "../src/lib/komisyon/tarife-plan";
 
 /**
  * ============================================================================
@@ -323,6 +328,130 @@ console.log("\nKOMİSYON TARİFESİ — DOĞRULAMA\n");
     "  ...türetme ayrı sonuç verir (simülasyon)",
     dilimBul(celiskili.satirlar[0].dilimler, 1999)?.oran === 18,
   );
+}
+
+
+// --- 9) YAZIM PLANI — BAĞSIZLIK SESSİZ KALMAZ -------------------------------
+{
+  console.log("\n9) YAZIM PLANI");
+  const okuma = tarifeOku([BASLIK, satir("111"), satir("222"), satir("333")], BUGUN);
+  /** Üç üründen ikisinin katalogda karşılığı var. */
+  const plan = tarifePlaniKur(okuma, [
+    { id: "v1", barkod: "111" },
+    { id: "v2", barkod: "222" },
+  ]);
+
+  kontrol("her ürün 4 kalem üretir", plan.kalemler.length === 12, plan.kalemler.length);
+  kontrol("eşleşen ürün 2", plan.rapor.eslesenUrun === 2);
+  kontrol("BAĞSIZ ürün 1", plan.rapor.bagsizUrun === 1);
+  kontrol("bağsız KALEM 4", plan.rapor.bagsizKalem === 4);
+
+  /**
+   * ⚠ BAĞSIZ KALEM ATILMAZ, YAZILIR. Atsaydık tarife eksik olurdu ve
+   * eksikliği de bilinmezdi — hakediş 648 dersinin tam tekrarı.
+   */
+  const bagsizlar = plan.kalemler.filter((k) => k.variantId === null);
+  kontrol("bağsız kalemler PLANDA duruyor", bagsizlar.length === 4);
+  kontrol("  ...barkodunu koruyor", bagsizlar[0]?.barkod === "333");
+  kontrol("örnekleri raporlanıyor", plan.bagsizOrnekler[0]?.barkod === "333");
+
+  kontrol("eşleşen kalem doğru varyanta bağlanır",
+    plan.kalemler.filter((k) => k.variantId === "v1").length === 4);
+
+  /**
+   * BARKOD KIRPILARAK EŞLEŞİR — İKİ TARAFTA DA.
+   *
+   * ⚠ İlk yazılışında bu testi `tarifeOku` üzerinden kurmuştum ve
+   * mutasyon (satır tarafındaki `.trim()` kaldırıldı) YEŞİL kaldı:
+   * okuyucu barkodu zaten kırpıyor, dolayısıyla o yolda plan katmanının
+   * kırpması hiç iş yapmıyor. `tarifePlaniKur` dışa açık saf bir
+   * fonksiyon ve doğrudan da çağrılabilir; test o yolu sınamalı ki
+   * kırpma gerçekten korunsun.
+   */
+  const bosluklu = tarifePlaniKur(
+    tarifeOku([BASLIK, satir(" 111 ")], BUGUN),
+    [{ id: "v1", barkod: "111 " }],
+  );
+  kontrol("KATALOG tarafında boşluk eşleşmeyi bozmaz", bosluklu.rapor.eslesenUrun === 1);
+
+  /** SATIR tarafı: plan doğrudan çağrılıyor, okuyucunun kırpması devrede değil. */
+  const dogrudan = tarifePlaniKur(
+    {
+      pencere: { baslangic: BUGUN, bitis: BUGUN },
+      tarifeGrubu: null,
+      mukerrerElenen: 0,
+      atlananlar: [],
+      eksikSutunlar: [],
+      satirlar: [
+        {
+          barkod: " 111 ",
+          saticiStokKodu: null,
+          urunAdi: null,
+          guncelKomisyon: 18,
+          satirNo: 2,
+          dilimler: [{ sira: 1, altLimit: null, ustLimit: null, oran: 18 }],
+        },
+      ],
+    },
+    [{ id: "v1", barkod: "111" }],
+  );
+  kontrol("SATIR tarafında boşluk eşleşmeyi bozmaz", dogrudan.rapor.eslesenUrun === 1);
+
+  /** Katalogda barkodu boş varyant dizine girmez — "" ile eşleşme olmaz. */
+  const bosBarkod = tarifePlaniKur(
+    tarifeOku([BASLIK, satir("111")], BUGUN),
+    [{ id: "v9", barkod: null }, { id: "v8", barkod: "" }],
+  );
+  kontrol("barkodu boş varyantla eşleşme OLMAZ", bosBarkod.rapor.bagsizUrun === 1);
+}
+
+// --- 10) YAZIM İZNİ ---------------------------------------------------------
+{
+  console.log("\n10) YAZIM İZNİ");
+  const saglam = tarifeOku([BASLIK, satir("111")], BUGUN);
+  kontrol("sağlam okuma yazılabilir", yazilabilirMi(saglam).olur === true);
+
+  /**
+   * ⚠ PENCERESİZ TARİFE YAZILMAZ: hangi aralığa ait olduğu bilinmeyen
+   * oran "güncel mi bayat mı" sorusunu cevaplayamaz ve tablonun varlık
+   * sebebini boşa çıkarır. Tekillik anahtarı da penceresiz kurulamaz.
+   */
+  const penceresiz = { ...saglam, pencere: null };
+  const p = yazilabilirMi(penceresiz);
+  kontrol("penceresiz REDDEDİLİR", !p.olur && p.engel === "PENCERE_YOK");
+
+  const satirsiz = { ...saglam, satirlar: [] };
+  const t = yazilabilirMi(satirsiz);
+  kontrol("satırsız REDDEDİLİR", !t.olur && t.engel === "SATIR_YOK");
+
+  const eksikli = { ...saglam, eksikSutunlar: ["BARKOD"] };
+  const e = yazilabilirMi(eksikli);
+  kontrol("eksik sütun REDDEDİLİR", !e.olur && e.engel === "SUTUN_EKSIK");
+}
+
+// --- 11) RAPOR METNİ — BAĞSIZ SAYISI HER ZAMAN YAZAR ------------------------
+{
+  console.log("\n11) RAPOR METNİ");
+  const okuma = tarifeOku([BASLIK, satir("111"), satir("222")], BUGUN);
+  const plan = tarifePlaniKur(okuma, [{ id: "v1", barkod: "111" }]);
+  const metin = raporMetni(plan, okuma.pencere!, (d) => d.toISOString().slice(0, 10));
+
+  kontrol("pencere raporda", metin.some((m) => m.includes("pencere")));
+  kontrol("okunan satır raporda", metin.some((m) => m.includes("okunan satır")));
+  kontrol("yazılan kalem raporda", metin.some((m) => m.includes("yazılan kalem")));
+  /**
+   * BAĞSIZ SATIRI KOŞULSUZDUR — sıfır olsa bile yazar. "Sorun yoksa
+   * susalım" deseydik, bağsızlığın olmadığı ile bakılmadığı ayırt
+   * edilemezdi.
+   */
+  kontrol("BAĞSIZ satırı raporda", metin.some((m) => m.includes("BAĞSIZ")));
+
+  const hepsiEsli = tarifePlaniKur(okuma, [
+    { id: "v1", barkod: "111" },
+    { id: "v2", barkod: "222" },
+  ]);
+  const metin2 = raporMetni(hepsiEsli, okuma.pencere!, (d) => d.toISOString());
+  kontrol("bağsız SIFIRKEN de yazar", metin2.some((m) => m.includes("BAĞSIZ")));
 }
 
 console.log("");
