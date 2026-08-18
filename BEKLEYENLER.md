@@ -18,7 +18,7 @@ ilgili pakette kalır._
 
 | # | İş | Ne gerekiyor |
 |---|---|---|
-| H1 | **Dilim tarifesi — YAZMA ONAYI** | ✅ Ölçüldü: **158/160 eşleşti (%98,75)**. `--uygula` ile yazılsın mı? Ayrıntı yukarıda |
+| ~~H1~~ | ~~Dilim tarifesi~~ | ✅ **KAPANDI 19.08** — 640 kalem yazıldı, geri okunarak doğrulandı, çapraz teyit tuttu. **Aşama 1 açılabilir** |
 | H2 | **Hakediş `.xlsx` teyidi** | Taze dönem dosyası → `canli:hakedis-esle` (hesap kırılımı) → `canli:hakedis-teyit` |
 | H3 | **Üç satış özel satır** | `11493262226` · `11492798173` · `11492628481` — H2 sırasında gerçek komisyon vs snapshot (2,70) vs güncel (15,00). ~−721 TL |
 | H4 | **Ödeme hizmeti hipotezi** | H2 sırasında bakılacak: dosyada tahsilat/ödeme bedeli satırı var mı |
@@ -31,7 +31,8 @@ ilgili pakette kalır._
 
 | # | İş | Durum |
 |---|---|---|
-| K1 | **Uyarı Merkezi Faz 2 / dilim 1** | ⏸ **H1 SINAVINI BEKLİYOR** — mimar kararı 18.08. Dilim verisi gelince Faz 2'nin kapsamı netleşir: _"zararına satış" uyarısı DİLİM BİLİNCİYLE mi kurulacak?_ Bugün kurulsa dilimden habersiz olurdu ve dilim gelince yeniden yazılırdı. |
+| K1 | **Uyarı Merkezi Faz 2 / dilim 1** | 🔓 **ENGEL KALKTI** — dilim verisi canlıda. Artık cevaplanabilir: _"zararına satış" uyarısı dilim bilinciyle mi kurulacak?_ **Karar bekliyor.** |
+| K5 | **Aşama 1 — fiyatlama aracı** | 🔓 **ZEMİN HAZIR.** 158 üründe tam tarife. Asıl soru: _bir dilim aşağı inmek komisyon kazancıyla telafi ediyor mu?_ **Karar bekliyor.** |
 
 _K2 (yükleme kaydı) · K3 (oran uyarısı) · ham arşiv kalemi 18.08'de
 kapandı; ayrıntıları ilgili paketlerde. **Pano kuralı: kapanan komut
@@ -242,10 +243,29 @@ sıra ters · barkod yedeği kalkar).
 _Bunlar kusur değil, katalog kapsamı: TY'de listelenip bizde açılmamış
 iki ürün. Kalemler yine de yazılacak (bağsızlık sessiz kalmaz)._
 
-**○ SIRADAKİ ADIM — YAZMA ONAYI.** Rapor rakamları beklenene uyuyor.
-`--uygula` ile yazılsın mı? _Pencere geçmiş ama tarife tablosu zaten
-pencereyi kaydediyor; geçmiş pencere kaydı "o hafta oran neydi"
-sorusunu cevaplar ve yazma yolunu gerçek veriyle sınar._
+#### ✅ YAZILDI VE VERİTABANINDAN GERİ OKUNARAK DOĞRULANDI
+
+Betiğin kendi raporuna güvenilmedi; kayıt **geri okundu**:
+
+```
+tarife kaydı   1  ·  Trendyol — AXCALI
+pencere        2026-08-14T05:00Z → 2026-08-18T04:59Z   (08:00–07:59 İstanbul ✓)
+kalem          640   (bağlı 632 · bağsız 8)
+yükleme sayısı 1
+```
+
+**DİLİM YAPISI DOĞRU YAZILMIŞ** (Manuel Rondo, sunum slayt 18'deki ürün):
+`769,99+ → %18` · `701,29–769,98 → %12,8` · `641,09–701,28 → %11,1` ·
+`641,08 altı → %9,3`. **Uçlar açık.**
+
+**ÇAPRAZ TEYİT ✓:** `dilimBul(1999)` → 1. dilim %18.
+`ChannelSku.commissionRate` → %18. **İki bağımsız yol aynı sonucu verdi**
+— biri kanalın beyanı (yükleme ekranı yazdı), öteki bizim türetmemiz
+(tarifeden hesaplandı). Ayrışsalardı dilim yapısı ya da beyan hatalı
+olurdu; tutmaları ikisini birden doğruluyor.
+
+**AŞAMA 1 AÇILABİLİR.** Zemin hazır: 158 üründe tam tarife, doğrulanmış
+dilim yapısı, çalışan yükleme yolu.
 
 ## 🎯 ANA PLAN — "MELONTİK'E YETİŞ VE GEÇ"
 
