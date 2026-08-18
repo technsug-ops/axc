@@ -31,17 +31,24 @@ ilgili pakette kalır._
 
 | # | İş | Durum |
 |---|---|---|
-| K1 | **Uyarı Merkezi Faz 2 / dilim 1** | Amber + nötr, şemasız. Önerildi, **karar verilmedi** |
-| ~~K2~~ | ~~Komisyon yükleme kaydı~~ | ✅ **KAPANDI 18.08** — `AuditLog` dördüncü yazıcı, migration yok. İlk gerçek kayıt: yarın HB çarşamba yüklemesi |
-| ~~K3~~ | ~~Satış formu oran doğrulaması~~ | ✅ **KAPANDI 18.08** — üç uyarı + Kural #11 ihlali düzeltildi |
-| K4 | **Kıyas verisi yokluğu** | ✓ yapıldı, canlı bakış H6'da |
+| K1 | **Uyarı Merkezi Faz 2 / dilim 1** | ⏸ **H1 SINAVINI BEKLİYOR** — mimar kararı 18.08. Dilim verisi gelince Faz 2'nin kapsamı netleşir: _"zararına satış" uyarısı DİLİM BİLİNCİYLE mi kurulacak?_ Bugün kurulsa dilimden habersiz olurdu ve dilim gelince yeniden yazılırdı. |
+
+_K2 (yükleme kaydı) · K3 (oran uyarısı) · ham arşiv kalemi 18.08'de
+kapandı; ayrıntıları ilgili paketlerde. **Pano kuralı: kapanan komut
+buradan SİLİNİR** — birikirse pano da taranamaz hâle gelir._
 
 ### ✅ BU OTURUMDA KAPANANLAR (ayrıntı ilgili pakette)
 
 satış düzeltme+iptal · adet dilimi · marj anahtarı · hafif yetki dilimi ·
 kanal kodsuz kayıtlar · komisyon envanteri · dosya muayenesi · tarife
 şeması+migration · tarife okuyucu+yazma yolu · N11 okuyucusu · kanal
-kırılımı · EUR ertelemesi
+kırılımı · EUR ertelemesi · yükleme kaydı (AuditLog) · oran uyarısı +
+Kural #11 · ham arşiv kalemi (gerekçeli kapanış)
+
+**ANAYASAYA GİREN DERSLER (bugün 5):** iki defter birlikte ölçülür ·
+tutarlılık ≠ doğruluk · şema değişikliği en pahalı çözümdür · yeni izin
+doğum tarihi beyan edilir · _(ölçüm ikiliği: kaynağın varlığı,
+güncelliğinden önce gelir)_
 
 ---
 
