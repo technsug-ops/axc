@@ -506,6 +506,18 @@ motor, yanlış bir ölçüt uğruna bozulmak üzereydi.
   kâr motoru hesaplar, ekran gösterir, test sınar — üçü de aynı kaynaktan
   besleniyorsa **bağımsız doğrulama yapılmamış** demektir.
 
+> **BAĞIMSIZLIK, KAYNAĞIN AYRILIĞIYLA ÖLÇÜLÜR — YOLUN AYRILIĞIYLA DEĞİL.**
+> _Mimar düzeltmesi 19.08.2026._ Tarife yazımından sonra "iki bağımsız yol
+> aynı sonucu verdi" dedim: `dilimBul(1999)` %18, `ChannelSku.commissionRate`
+> %18. **Yol** ayrıydı (biri dilim tablosundan türetildi, öteki yükleme
+> ekranından geldi) ama **KAYNAK aynıydı** — ikisi de Trendyol'un kendi
+> beyanı, iki ayrı ihracı.
+>
+> O tutma değerlidir ama söylediği şey dardır: _bizim yolumuz doğru
+> çalışıyor ve dosyalar kendi içinde tutarlı._ **Doğruluk kanıtı değildir.**
+> Gerçek bağımsız teyit, kanalın FİİLEN kestiği komisyondur — hakediş
+> dosyası. Kaynak değişmedikçe kaç yoldan geçtiğinin önemi yoktur.
+
 ### ÖLÇÜM İKİ DEFTERİ DE ÖLÇMELİ (KESİN KURAL)
 
 _Ders 17.08.2026._ Bir işlem birden çok deftere yazıyorsa, testi de o

@@ -32,7 +32,7 @@ ilgili pakette kalır._
 | # | İş | Durum |
 |---|---|---|
 | K1 | **Uyarı Merkezi Faz 2 / dilim 1** | 🔓 **ENGEL KALKTI** — dilim verisi canlıda. Artık cevaplanabilir: _"zararına satış" uyarısı dilim bilinciyle mi kurulacak?_ **Karar bekliyor.** |
-| K5 | **Aşama 1 — fiyatlama aracı** | 🔓 **ZEMİN HAZIR.** 158 üründe tam tarife. Asıl soru: _bir dilim aşağı inmek komisyon kazancıyla telafi ediyor mu?_ **Karar bekliyor.** |
+| K5 | **Aşama 1 — fiyatlama aracı** | 🔨 **1/3 katman bitti** (saf motor, 45 kontrol). Sırada: karta "Fiyat dene" bölümü |
 
 _K2 (yükleme kaydı) · K3 (oran uyarısı) · ham arşiv kalemi 18.08'de
 kapandı; ayrıntıları ilgili paketlerde. **Pano kuralı: kapanan komut
@@ -266,6 +266,46 @@ olurdu; tutmaları ikisini birden doğruluyor.
 
 **AŞAMA 1 AÇILABİLİR.** Zemin hazır: 158 üründe tam tarife, doğrulanmış
 dilim yapısı, çalışan yükleme yolu.
+
+
+### 🧮 K5 — FİYATLAMA ARACI · 1. KATMAN (SAF MOTOR) BİTTİ 19.08.2026
+
+`lib/fiyatlama/simulasyon.ts` — veritabanına gitmez, `simulasyon:dogrula`
+**45 kontrol**, altı mutasyon kırmızı.
+
+**`simulasyonKur(girdi)`** → dilim · komisyon oranı · NET-1/NET-2 · beyanlar.
+**`birAltDilim(dilimler, fiyat)`** → bir alt dilime inmek için gereken fiyat.
+
+**GERÇEK VAKA SINANDI — Manuel Rondo, canlıdaki tarifeyle:**
+`769,99 → %18` · `769,98 → %12,8`. **Bir kuruş fiyat kaybı, 5,2 puan
+komisyon kazancı** ve NET-2 artıyor. Aşama 1'in varlık sebebi bu tek
+satırda.
+
+**DÖRT TASARIM KARARI:**
+1. **NET hesabı KOPYALANMADI** — mevcut `karHesapla` çağrılıyor.
+   Simülasyon yalnız GİRDİYİ değiştirir, hesabı değil. Kendi formülümüzü
+   yazsaydık aynı kural iki yerde yaşardı (bu projenin birinci dersi).
+2. **Simülasyon KAYIT DEĞİLDİR** — hiçbir rakam yazılmaz.
+   `ChannelSku.commissionRate` kanalın beyanıdır ve bu modül ona dokunmaz.
+3. **EKSİK VERİ BEYAN EDİLİR:** `DILIM_YOK` · `PENCERE_BITTI` ·
+   `MALIYET_YOK` · `ORAN_YOK`. Dilim yoksa tek oranla hesaplanır **ama
+   söylenir** — beyansız tahmin, dilim varmış gibi okunur.
+4. **PENCERE BİTMİŞSE ENGELLENMEZ, UYARILIR.** Eski tarife de fikir
+   verir; ama beyansız göstermek bayat oranla fiyat değiştirtir.
+
+**`birAltDilim` HEDEFİ ALT DİLİMİN ÜST SINIRIDIR** — bir kuruş daha inmek
+gereksiz kayıptır. En ucuz dilimde öneri üretilmez (uydurma hedef yok).
+
+> **ÜÇÜNCÜ KEZ AYNI TUZAK — test verisi ayrımı göstermiyordu.**
+> "Dilim BİRİM fiyattan çözülür, ciroya göre değil" kuralını 1.000 × 3 ile
+> sınamıştım; 1.000 de 3.000 de aynı dilimde olduğu için mutasyon YEŞİL
+> kaldı. Kural doğruydu, test **korumuyordu.** 700 × 3'e çevrildi: birim
+> 3. dilimde, ciro 1. dilimde — artık ayrışıyorlar ve mutasyon kırmızı.
+> _Kalıp aynı: yalancı yeşilin kaynağı çoğu zaman kod değil, ayrımı
+> göstermeyen ÖRNEK VERİ._
+
+**○ SIRADAKİ — 2. katman:** kârlılık kartına "Fiyat dene" bölümü
+(mobil öncelikli) + otomatik "en yakın alt dilim" satırı.
 
 ## 🎯 ANA PLAN — "MELONTİK'E YETİŞ VE GEÇ"
 
