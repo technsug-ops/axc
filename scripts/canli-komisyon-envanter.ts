@@ -471,12 +471,31 @@ async function main() {
       console.log(`        kanal SKU aktif mi ${sku ? (sku.isActive ? "evet" : "HAYIR") : "kayıt YOK"}`);
 
       const gncl = sku?.commissionUpdatedAt ?? null;
-      if (gncl === null) {
+      const acilis = sku?.createdAt ?? null;
+
+      /**
+       * ⚠ ÖNCE "KAYIT VAR MIYDI" — 18.08.2026'da bulunan mantık boşluğu.
+       *
+       * İlk hâlde yalnız `commissionUpdatedAt` satış tarihiyle
+       * karşılaştırılıyor ve "güncelleme satıştan sonraysa snapshot
+       * meşru" deniyordu. Ama kanal SKU'su satıştan SONRA açıldıysa
+       * satış anında ORTADA KAYIT YOKTU; snapshot ondan gelemezdi.
+       * Hüküm "meşru" derken imkânsız bir kaynağı işaret ediyordu —
+       * üstelik gereken veri (`createdAt`) aynı ekranda basılıydı.
+       *
+       * Kaynağın VAR OLUP OLMADIĞI, güncel olup olmadığından ÖNCE gelir.
+       */
+      if (acilis !== null && acilis.getTime() > h.sale.soldAt.getTime()) {
+        console.log("        → KANAL SKU'SU SATIŞTAN SONRA AÇILMIŞ: satış anında");
+        console.log("          ortada kayıt YOKTU, snapshot kayıttan GELEMEZ.");
+        console.log("          **Oran satış formuna ELLE girilmiş.**");
+      } else if (gncl === null) {
         console.log("        → oran hiç güncellenmemiş (damga boş) — snapshot");
         console.log("          nereden geldiği belirsiz, elle giriş ihtimali yüksek.");
       } else if (gncl.getTime() > h.sale.soldAt.getTime()) {
-        console.log("        → GÜNCELLEME SATIŞTAN SONRA: snapshot muhtemelen o");
-        console.log("          günkü kayıtlı orandı. **Snapshot meşru görünüyor.**");
+        console.log("        → GÜNCELLEME SATIŞTAN SONRA: satış anında kayıt VARDI");
+        console.log("          ve muhtemelen o günkü oranı taşıyordu.");
+        console.log("          **Snapshot meşru görünüyor.**");
       } else {
         console.log("        → GÜNCELLEME SATIŞTAN ÖNCE: satış anında kayıtlı oran");
         console.log("          zaten güncel değerdi, buna rağmen farklı oran");

@@ -167,7 +167,12 @@ sisteme hiç girmiyor — 48 ürün. _Kalem aşağıda güncellendi._
 - [ ] **N11 KOMİSYON İÇE AKTARMA — okuyucu tanımıyor.**
       _Ölçüldü 18.08.2026._ N11 dosyası `Komisyon Oranı` taşıyor (48 ürün,
       sayfa `Ürün Bilgileri Güncelle`) ama `komisyon/okuyucu.ts` yalnız
-      TRENDYOL ve HEPSIBURADA tanıyor. N11 oranları sisteme hiç girmiyor.
+      TRENDYOL ve HEPSIBURADA tanıyor.
+
+      ⚠ _Düzeltme: "N11 oranları sisteme hiç girmiyor" demiştim, envanter
+      bunu yalanladı — **3 N11 kanal SKU'su var ve üçünün de oranı dolu**
+      (14–15.08). Yani oranlar ELLE girilebiliyor ve girilmiş. Eksik olan
+      DOSYADAN içe aktarma; 48 üründen 3'ü elle kaydedilmiş._
 
       **HALİL'E SORU (hâlâ açık):** N11 komisyonları hangi sıklıkla
       değişiyor? Ritim bilinmeden envanterdeki bayatlık bayrağı N11 için
@@ -414,6 +419,44 @@ kırpılmaz.
 
 **○ İLK GERÇEK YÜKLEME:** Halil'in **yeni pencere (18–21 Ağu)** dosyasıyla.
 Önce bayraksız koş (rapor), rakamlar uyunca `--uygula`.
+
+
+#### 🔴 SNAPSHOT BULGUSU — ÜÇ SATIŞ ELLE GİRİLMİŞ ORANLA KAYITLI (18.08.2026)
+
+Envanter koştu; snapshot tazeliği bölümü **üç satışta fark** buldu ve ön
+ayrım kökü kesinleştirdi.
+
+| Sipariş | Kanal | Satış | snapshot | güncel | ciro | tahmini etki |
+|---|---|---|---|---|---|---|
+| `11493262226` | HB | 10.08 | **2,70** | 15,00 | 1.958,00 | ~−240,83 |
+| `11492798173` | HB | 10.08 | **2,70** | 15,00 | 1.961,00 | ~−241,20 |
+| `11492628481` | TY | 10.08 | **2,70** | 15,00 | 1.946,00 | ~−239,36 |
+
+Üçü de **aynı ürün** (Philips 5000 Serisi 10in1), iki farklı kanal, aynı
+gün. Toplam tahmini kâr etkisi **~−721,40** — yani bu üç satışın kârını
+olduğundan **fazla** göstermişiz.
+
+**KÖK: ORAN ELLE GİRİLMİŞ.** Kanal SKU kayıtları **12–13.08'de açılmış**,
+satışlar ise **10.08**. Satış anında ortada kayıt YOKTU; snapshot
+kayıttan gelemezdi. `2,70` satış formuna elle yazılmış. Aynı oranın iki
+ayrı kanalda birden çıkması da bunu destekliyor — kanal tarifesi olsaydı
+ikisinin tutması beklenmezdi.
+
+> **ARAÇ KUSURU DÜZELTİLDİ.** Ön ayrım ilk hâlde "snapshot meşru
+> görünüyor" diyordu: yalnız `commissionUpdatedAt`i satış tarihiyle
+> karşılaştırıyor, kaydın satış anında VAR OLUP OLMADIĞINA bakmıyordu.
+> Gereken veri (`createdAt`) **aynı ekranda basılıydı** ve hüküm onu
+> görmezden geliyordu. Kural düzeltildi: **kaynağın var olup olmadığı,
+> güncel olup olmadığından ÖNCE gelir.**
+
+**HÜKÜM YİNE DE BURADA VERİLMEZ.** Nihai hakem kanalın FİİLEN kestiği
+komisyondur — hakediş `.xlsx`inde yazılı. Üç sipariş o teyitte **özel
+satır** olarak karşılaştırılacak (gerçek · snapshot · güncel).
+
+**KALICI SORU (ayrı kalem):** satış formu kanal SKU'su yokken oran
+girilmesine izin veriyor ve girilen değer hiç doğrulanmıyor. %2,70 gibi
+gerçekçi olmayan bir oran uyarı üretmiyor. _Uyarı Merkezi Faz 2'nin
+adayı._
 
 **AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
 - [ ] Fiyatlama aracı (dilim + simülasyon)
