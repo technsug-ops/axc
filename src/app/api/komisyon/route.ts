@@ -1,4 +1,5 @@
-import { apiIzni } from "@/lib/yetki";
+import { apiIzni, yetkiBaglami } from "@/lib/yetki";
+import { yuklemeKaydiYaz } from "@/lib/komisyon/yukleme-kaydi";
 import {
   bosOranSayisi,
   komisyonDenetle,
@@ -72,9 +73,32 @@ export async function POST(istek: Request) {
       return yanitla({ durum: "ONIZLEME", onizleme: sonuc.onizleme });
     }
 
-    // Yazacak satır kalmadıysa boşuna transaction açılmaz: ikinci yüklemede
-    // her şey aynı kalmış olabilir. Kapanış rakamı yine söylenir.
+    /**
+     * KAYIT İÇİN ORTAK BİLGİ. Sayılar ekranın gördüğü NESNENİN kendisinden
+     * alınır — ekran bir şey, kayıt başka bir şey diyemez.
+     */
+    const baglam = await yetkiBaglami();
+    const ortak = {
+      dosyaAdi: dosya.name,
+      channelAccountId: hesapId,
+      platform: sonuc.onizleme.platform,
+      okunan: sonuc.onizleme.sayim.okunan,
+      ayniKalan: sonuc.onizleme.sayim.ayniKalan,
+      kullaniciId: baglam?.kullaniciId ?? null,
+      companyId: baglam?.companyId ?? null,
+    };
+
+    /**
+     * ⚠ SIFIR YAZIMDA DA KAYIT DÜŞER — kaydın VARLIK SEBEBİ bu vaka.
+     *
+     * Yazacak satır kalmadıysa boşuna transaction açılmaz: ikinci
+     * yüklemede her şey aynı kalmış olabilir. Kapanış rakamı yine
+     * söylenir — ve artık iz de bırakılır. Kayıt yalnız yazma yoluna
+     * konsaydı "yükleme koştu, hiçbir şey değişmedi" vakası GÖRÜNMEZ
+     * kalırdı; oysa envanterin ayıramadığı vaka tam olarak odur.
+     */
     if (sonuc.onizleme.yazilacak === 0) {
+      await yuklemeKaydiYaz({ ...ortak, guncellenen: 0, yaratilan: 0, yazimYapildi: false });
       return yanitla({
         durum: "YAZILDI",
         guncellenen: 0,
@@ -84,6 +108,12 @@ export async function POST(istek: Request) {
     }
 
     const yazim = await komisyonYaz(hesapId, sonuc.yazim);
+    await yuklemeKaydiYaz({
+      ...ortak,
+      guncellenen: yazim.guncellenen,
+      yaratilan: yazim.yaratilan,
+      yazimYapildi: true,
+    });
     return yanitla({ durum: "YAZILDI", ...yazim });
   } catch (e) {
     console.error("[komisyon] beklenmeyen hata:", e);

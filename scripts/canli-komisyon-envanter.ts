@@ -303,12 +303,51 @@ async function main() {
    * belirsizlik YAZILIYOR.
    */
   console.log("");
-  console.log("       ⚠ '—' İKİ ŞEY DEMEK OLABİLİR ve bugün AYIRT EDİLEMEZ:");
+  console.log("       '—' İKİ ŞEY DEMEK OLABİLİR:");
   console.log("         (a) o gün o kanala yükleme yapılmadı");
   console.log("         (b) yükleme yapıldı ama hiçbir oran değişmedi");
-  console.log("         `ayniKalan` sayısı yükleme anında üretilip HİÇBİR");
-  console.log("         YERE YAZILMIYOR; envanter onu sonradan okuyamaz.");
-  console.log("         Ayrım için yükleme sonuçları kaydedilmeli (kalem açık).");
+  console.log("       ARTIK AYIRT EDİLEBİLİR — aşağıdaki yükleme kayıtlarına bak.");
+  console.log("");
+
+  /**
+   * ⚠ BELİRSİZLİK KAPANDI (18.08.2026). Bu blok önce "ayırt edilemez"
+   * diyordu; `AuditLog`a `KOMISYON_YUKLEME` kaydı düşürüldükten sonra
+   * ayrım VERİDEN yapılabiliyor:
+   *   · kayıt YOK           → o gün yükleme yapılmadı
+   *   · kayıt VAR + yazimYapildi:false → yükleme koştu, hiçbir oran değişmedi
+   *
+   * ⚠ ESKİ GÜNLER İÇİN KAYIT YOK ve olmayacak — kayıt bugünden itibaren
+   * birikiyor. "Kayıt yok" eski tarihlerde "yükleme yapılmadı" DEMEZ;
+   * o günler için soru hâlâ cevapsızdır. Bu ayrım yazılı olmasaydı
+   * geçmişe bakan biri yanlış hüküm verirdi.
+   */
+  const yuklemeKayitlari = await prisma.auditLog.findMany({
+    where: { action: "KOMISYON_YUKLEME" },
+    select: { createdAt: true, detail: true },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+
+  console.log("     YÜKLEME KAYITLARI (AuditLog · KOMISYON_YUKLEME):");
+  if (yuklemeKayitlari.length === 0) {
+    console.log("       (henüz kayıt yok — bu iz 18.08.2026'da açıldı,");
+    console.log("        ondan ÖNCEKİ yüklemeler için kayıt YOKTUR ve");
+    console.log("        'kayıt yok' o günler için hüküm sayılmaz)");
+  } else {
+    for (const k of yuklemeKayitlari) {
+      let ozet = k.detail ?? "";
+      try {
+        const d = JSON.parse(k.detail ?? "{}") as Record<string, unknown>;
+        ozet =
+          `${d.hesap ?? "?"} · ${d.dosya ?? "?"} · okunan ${d.okunan ?? "?"} · ` +
+          `güncellenen ${d.guncellenen ?? "?"} · aynı kalan ${d.ayniKalan ?? "?"}` +
+          `${d.yazimYapildi === false ? "  ⟵ YAZIM YOK (hepsi aynıydı)" : ""}`;
+      } catch {
+        // Bozuk kayıt ham hâliyle basılır — sessizce atlanmaz.
+      }
+      console.log(`       ${gun(k.createdAt)}  ${ozet}`);
+    }
+  }
   console.log("");
 
   // ==========================================================================

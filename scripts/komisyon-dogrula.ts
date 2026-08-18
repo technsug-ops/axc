@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 /**
  * ============================================================================
  *  KOMİSYON İÇE AKTARMA DOĞRULAMA
@@ -33,6 +34,10 @@ import {
   type VaryantKaydi,
 } from "../src/lib/komisyon/plan";
 import { kanalPlatformu } from "../src/lib/komisyon/yukle";
+import {
+  KOMISYON_YUKLEME_EYLEMI,
+  yuklemeDetayi,
+} from "../src/lib/komisyon/yukleme-kaydi";
 import type { KomisyonOkumasi } from "../src/lib/komisyon/model";
 
 let basarisiz = 0;
@@ -719,6 +724,92 @@ console.log("\nN11 OKUYUCUSU");
   kontrol("  ...TRENDYOL korunur", kanalPlatformu("TRENDYOL") === "TRENDYOL");
   kontrol("  ...HEPSIBURADA korunur", kanalPlatformu("HEPSIBURADA") === "HEPSIBURADA");
   kontrol("  ...tanınmayan kanal null", kanalPlatformu("PAZARAMA") === null);
+}
+
+
+// ===========================================================================
+console.log("\nYÜKLEME KAYDI (AuditLog dördüncü yazıcı)");
+// ===========================================================================
+{
+  /**
+   * ⚠ Yeni tablo YERİNE `AuditLog` (18.08.2026). Kalem önce
+   * `KomisyonYuklemesi` tablosu olarak onaylandı, sonra ölçülüp geri
+   * alındı: `AuditLog` bu işi olduğu gibi yapıyor.
+   */
+  const temel = {
+    dosyaAdi: "trendyol.xlsx",
+    channelAccountId: "hesap-1",
+    platform: "TRENDYOL",
+    okunan: 1583,
+    guncellenen: 15,
+    yaratilan: 0,
+    ayniKalan: 1568,
+    yazimYapildi: true,
+  };
+
+  const coz = (m: string) => JSON.parse(m) as Record<string, unknown>;
+  const d = coz(yuklemeDetayi(temel));
+
+  kontrol("dosya adı kayda girer", d.dosya === "trendyol.xlsx");
+  kontrol("platform kayda girer", d.platform === "TRENDYOL");
+  kontrol("okunan kayda girer", d.okunan === 1583);
+  kontrol("güncellenen kayda girer", d.guncellenen === 15);
+  kontrol("yaratılan kayda girer", d.yaratilan === 0);
+  /**
+   * `ayniKalan` KAYDIN VARLIK SEBEBİ: envanterin "değişmedi mi, hiç
+   * koşmadı mı" sorusunu kapatan sayı budur.
+   */
+  kontrol("ayniKalan kayda girer", d.ayniKalan === 1568);
+
+  /** Hesap adı verilmezse kimlik yazılır — alan hiç boş kalmaz. */
+  kontrol("hesap adı yoksa kimlik yazılır", d.hesap === "hesap-1");
+  kontrol(
+    "hesap adı varsa O yazılır",
+    coz(yuklemeDetayi({ ...temel, channelAccountAdi: "Trendyol — AXCALI" })).hesap ===
+      "Trendyol — AXCALI",
+  );
+
+  /**
+   * ⚠ EN KRİTİK ALAN — `yazimYapildi`.
+   *
+   * Uç nokta yazacak satır kalmadığında transaction AÇMADAN erken
+   * dönüyor. Kayıt yalnız yazma yoluna konsaydı "yükleme koştu, hiçbir
+   * şey değişmedi" vakası GÖRÜNMEZ kalırdı — oysa envanterin ayıramadığı
+   * vaka TAM OLARAK odur. Bu alan iki durumu ayırır.
+   */
+  const sifirYazim = coz(
+    yuklemeDetayi({ ...temel, guncellenen: 0, yaratilan: 0, ayniKalan: 1583, yazimYapildi: false }),
+  );
+  kontrol("sıfır yazımda yazimYapildi=false", sifirYazim.yazimYapildi === false);
+  kontrol("  ...ama kayıt yine de DOLU", sifirYazim.okunan === 1583);
+  kontrol("  ...ayniKalan tüm satırlar", sifirYazim.ayniKalan === 1583);
+  kontrol("yazım varken yazimYapildi=true", d.yazimYapildi === true);
+
+  /** Eylem kodu sabit — envanter bu koda bakarak arayacak. */
+  kontrol("eylem kodu KOMISYON_YUKLEME", KOMISYON_YUKLEME_EYLEMI === "KOMISYON_YUKLEME");
+
+  /**
+   * ROTA İKİ YOLDAN DA KAYIT YAZIYOR MU — kaynak taranır.
+   * Değer testi göremez: `yuklemeDetayi` her iki yolda da doğru çalışır;
+   * sınanan şey ÇAĞRILIYOR olması.
+   */
+  const rota = readFileSync("src/app/api/komisyon/route.ts", "utf8");
+  const cagriSayisi = (rota.match(/yuklemeKaydiYaz\(/g) ?? []).length;
+  kontrol("rota İKİ yerden kayıt yazıyor", cagriSayisi === 2, cagriSayisi);
+  kontrol(
+    "sıfır yazım yolunda yazimYapildi: false",
+    /yazilacak === 0[\s\S]{0,400}?yazimYapildi: false/.test(rota),
+  );
+  kontrol(
+    "yazma yolunda yazimYapildi: true",
+    /komisyonYaz\(hesapId[\s\S]{0,400}?yazimYapildi: true/.test(rota),
+  );
+  /** Sayılar ekranın gördüğü nesneden — kopya hesap yok. */
+  kontrol(
+    "okunan/ayniKalan ÖNİZLEMEDEN alınıyor",
+    /okunan: sonuc\.onizleme\.sayim\.okunan/.test(rota) &&
+      /ayniKalan: sonuc\.onizleme\.sayim\.ayniKalan/.test(rota),
+  );
 }
 
 // ===========================================================================

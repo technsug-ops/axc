@@ -32,7 +32,7 @@ ilgili pakette kalır._
 | # | İş | Durum |
 |---|---|---|
 | K1 | **Uyarı Merkezi Faz 2 / dilim 1** | Amber + nötr, şemasız. Önerildi, **karar verilmedi** |
-| K2 | **Komisyon yükleme kaydı** | ⚠ Yeni tablo GEREKMİYOR — `AuditLog` yetiyor (migration yok). Sıra: TY dilim sınavından sonra |
+| ~~K2~~ | ~~Komisyon yükleme kaydı~~ | ✅ **KAPANDI 18.08** — `AuditLog` dördüncü yazıcı, migration yok. İlk gerçek kayıt: yarın HB çarşamba yüklemesi |
 | K3 | **Satış formu oran doğrulaması** | %2,70 gibi gerçekçi olmayan oran uyarı üretmiyor. Uyarı Merkezi Faz 2 adayı |
 | K4 | **Kıyas verisi yokluğu** | ✓ yapıldı, canlı bakış H6'da |
 
@@ -576,7 +576,33 @@ _Ayrım için yükleme sonuçlarının kaydedilmesi gerekiyor (küçük bir tabl
 kim, ne zaman, hangi dosya, kaç okundu/güncellendi/aynı kaldı). Kalem
 aşağıda._
 
-- [ ] **KOMİSYON YÜKLEME KAYDI — ⚠ YENİ TABLO GEREKMİYOR, `AuditLog` YETİYOR.**
+- [x] **KOMİSYON YÜKLEME KAYDI — YAZILDI 18.08.2026.**
+      `AuditLog`un **dördüncü yazıcısı**: `KOMISYON_YUKLEME`.
+      Şema değişikliği YOK, migration YOK.
+
+      **EN KRİTİK KARAR — SIFIR YAZIMDA DA KAYIT DÜŞER.** Uç nokta,
+      yazacak satır kalmadığında transaction AÇMADAN erken dönüyor.
+      Kaydı yalnız yazma yoluna koysaydık **tam olarak ayırt etmek
+      istediğimiz vakada hiçbir kayıt düşmezdi** — araç kendi varlık
+      sebebini karşılamazdı. İki yol da kayıt yazıyor; `yazimYapildi`
+      alanı ikisini ayırıyor.
+
+      `detail`: dosya · hesap · platform · okunan · güncellenen ·
+      yaratılan · **ayniKalan** · yazimYapildi. Sayılar **ekranın gördüğü
+      nesneden** alınıyor — iki gösterim ayrışamaz.
+
+      **Hata YUTULUR:** kayıt yazılamadı diye yükleme başarısız sayılmaz;
+      oranlar zaten yazılmıştır ve "olmadı" demek yalan olurdu.
+
+      **ENVANTER GÜNCELLENDİ:** belirsizlik notu artık "ayırt edilemez"
+      demiyor, `AuditLog` kayıtlarını basıyor. ⚠ Ama sınırı da yazıyor:
+      **iz 18.08'de açıldı; ondan önceki günler için "kayıt yok" hüküm
+      sayılmaz.** Bu yazılmasaydı geçmişe bakan biri yanlış sonuç
+      çıkarırdı.
+
+      `komisyon:dogrula` 90 → **107**, beş mutasyon kırmızı.
+
+- [x] ~~**KOMİSYON YÜKLEME KAYDI — eski kayıt**~~
 
       **İHTİYAÇ GERÇEK:** yükleme sonuçları hiçbir yere yazılmıyor;
       `ayniKalan`, `guncellenen`, `yaratilan` ekranda gösterilip
