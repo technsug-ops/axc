@@ -304,6 +304,45 @@ Hiçbir sütun düşmüyor, hiçbir veri taşınmıyor, geri doldurma yok.
 **Eşleşme anahtarı BARKOD** — ölçüldü: 161 satırda 160 farklı barkod,
 `SATICI STOK KODU` yalnız 98 farklı değer + boşluklar.
 
+
+#### ✓ TARİFE OKUYUCUSU YAZILDI 18.08.2026 — `lib/komisyon/tarife-okuyucu.ts`
+
+Saf katman; veritabanına gitmez. **Gerçek dosyayla denendi:** 161 satır →
+160 kalem + 1 mükerrer, 0 atlanan, pencere **14 Ağu 08:00 → 18 Ağu 07:59**
+(İstanbul, doğru çözüldü), `dilimBul(1999)` kanal beyanıyla aynı.
+
+**ÜÇ TASARIM NOKTASI:**
+1. **DOLU BLOK SEÇİLİR.** `1.KOMİSYON`…`4.KOMİSYON` başlıkları dosyada İKİ
+   KEZ geçiyor (iki pencere yuvası). "İlk bloğu al" deseydik gerçek
+   dosyada **tamamen boş** bloğu okur ve tarifeyi oransız yazardık —
+   sessizce. Okuyucu en dolu bloğu seçiyor; ikisi de boşsa **reddediyor**.
+2. **MÜKERRER İMZASI DİLİMLERİ DE KAPSAR.** Yalnız barkoda baksaydı, aynı
+   barkodun FARKLI tarifeyle gelmesi (gerçek bir çelişki) mükerrer sanılıp
+   **sessizce silinirdi**. Birebir aynı satır elenir ve sayılır; farklı
+   olan ikisi de saklanır.
+3. **PENCEREDE YIL YOK.** Metin "14 Ağustos 08.00-18 Ağustos 07.59" diyor,
+   yıl yazmıyor. Yıl yükleme anından alınıyor ve **Aralık→Ocak dönümü**
+   ayrıca ele alınıyor — yoksa yılda bir kez pencere "geçmişte bitmiş"
+   görünür ve tarife hiç geçerli sayılmazdı.
+
+**SAAT DİLİMİ ÖLÇÜLÜR, SABİT YAZILMAZ.** Dosyadaki 08.00 Türkiye saatidir;
+ofset o tarihteki gerçek İstanbul ofsetinden okunur.
+
+> **YALANCI YEŞİL YAKALANDI.** Sabit `+3` mutasyonu önce YEŞİL kaldı:
+> Türkiye 2016'dan beri kalıcı UTC+3, bugünkü tarihlerde sabit ile ölçülen
+> aynı sonucu veriyor. Yani "yaz saati dönerse korur" iddiam **korumasızdı**.
+> 2015 Ocak vakası eklendi (o tarihte UTC+2, 08.00 → 06:00Z) ve mutasyon
+> kırmızıya döndü.
+
+`tarife:dogrula` **51 kontrol**, altı mutasyon kırmızı: ilk bloğu al ·
+mükerrer imzası yalnız barkod · yıl dönümü yok · sabit ofset · 1. dilimin
+üstü kapalı · atlanan satır sessiz.
+
+**○ SIRADAKİ — YAZMA YOLU:** tarife + kalemleri veritabanına yazan katman
+(barkod eşleşmesi, aynı pencere ikinci kez → üzerine yaz, bağsız kalem
+sayımı, arşiv). İlk gerçek yükleme Halil'in **yeni pencere (18–21 Ağu)**
+dosyasıyla.
+
 **AŞAMA 1 — FİYATLAMA ZEKÂSI (offline)**
 - [ ] Fiyatlama aracı (dilim + simülasyon)
 - [ ] Zararına satış uyarısı → **uyarı merkezi Faz 2** (amber katman)
