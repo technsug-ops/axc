@@ -204,14 +204,36 @@ async function main() {
         k.commissionRate !== null &&
         (k.commissionUpdatedAt === null || k.commissionUpdatedAt < sinir),
     );
+    /**
+     * ⚠ ETİKET İKİNCİ KEZ DÜZELTİLDİ — mimar 18.08.2026.
+     *
+     * "BAYAT 1029/1044" bir HÜKÜM cümlesiydi ve iki ayrı durumu tek
+     * kelimeye sıkıştırıyordu: gerçekten tazelenmemiş kayıt ile "yükleme
+     * koştu, oran DEĞİŞMEDİ" kaydı. İkincisi bayat değildir; damgası
+     * ilerlememiştir çünkü `komisyon/plan.ts` aynı oranı yazma planına
+     * hiç almaz (`ayniKalan`).
+     *
+     * Yükleme anındaki `ayniKalan` sayısına ulaşamıyoruz (hiçbir yere
+     * yazılmıyor), AMA aynı ayrımı VERİDEN kurabiliyoruz:
+     *   · yayım gününden BERİ damgalanan → o yüklemede DEĞİŞEN
+     *   · daha eski damgalı              → değişmeyen
+     *
+     * Artık hüküm değil SAYIM basılıyor. Pencere tablosu gelene kadar
+     * en dürüst gösterim bu.
+     */
+    const guncellenen = o.dolu - bayatlar.length;
     console.log(
-      `     ${doldur(ad, 16)} beklenen yayım ${gun(sinir)} · veride en yeni ${gun(o.enYeni)} → BAYAT ${bayatlar.length}/${o.dolu}`,
+      `     ${doldur(ad, 16)} beklenen yayım ${gun(sinir)} · veride en yeni ${gun(o.enYeni)}`,
+    );
+    console.log(
+      `     ${doldur("", 16)} → yayımdan beri GÜNCELLENEN ${guncellenen} · DEĞİŞMEYEN ${bayatlar.length}  (toplam ${o.dolu})`,
     );
   }
   console.log("");
-  console.log("     ⚠ 'Bayat' KESİN HATA DEĞİLDİR: oran o hafta değişmemiş de");
-  console.log("       olabilir. Sinyaldir — hangi kanalın oranlarına bakılacağını");
-  console.log("       söyler, tek başına yanlışlık iddia etmez.");
+  console.log("     ⚠ 'DEĞİŞMEYEN' BAYAT DEMEK DEĞİLDİR. İki durumu birden");
+  console.log("       kapsar: (a) oran gerçekten tazelenmedi, (b) yükleme koştu");
+  console.log("       ama oran AYNI çıktı ve damga ilerlemedi. İkisi bu veriyle");
+  console.log("       AYRILAMAZ — sayım basılıyor, hüküm verilmiyor.");
   console.log("");
 
   /**

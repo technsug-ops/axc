@@ -548,6 +548,23 @@ yüklenmiş:**
 **N11 doluluk 3 → 44.** Aktif kanal SKU'su 2113 → 2154; oranı boş kayıt
 hâlâ **0**.
 
+**✓ BAYRAK ETİKETİ DÜZELTİLDİ (ikinci kez) 18.08.2026.**
+`BAYAT 1029/1044` bir **HÜKÜM** cümlesiydi ve iki ayrı durumu tek kelimeye
+sıkıştırıyordu: gerçekten tazelenmemiş kayıt ile "yükleme koştu, oran
+DEĞİŞMEDİ" kaydı. İkincisi bayat değildir.
+
+`ayniKalan`ın kendisine ulaşamıyoruz ama **aynı ayrımı veriden kurduk**:
+yayım gününden beri damgalanan = o yüklemede DEĞİŞEN; daha eski damgalı =
+değişmeyen. Artık **hüküm değil SAYIM** basılıyor:
+
+```
+Trendyol   beklenen yayım 2026-08-18 · veride en yeni 2026-08-18
+           → yayımdan beri GÜNCELLENEN 15 · DEĞİŞMEYEN 1029  (toplam 1044)
+```
+
+Altında ayrımın sınırı yazılı: "DEĞİŞMEYEN" bayat demek değildir, iki
+durumu birden kapsar ve **bu veriyle ayrılamaz**.
+
 **○ AÇIK KALAN — `ayniKalan` sayısı BASILAMIYOR.** Mimar "bayrak
 etiketine `ayniKalan` sayısı" istedi; **bugünkü veriyle mümkün değil**:
 o sayı yükleme ANINDA üretilip **hiçbir yere yazılmıyor**, envanter
