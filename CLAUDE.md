@@ -423,6 +423,41 @@ sonra yapılıyor — ikinci tetik aynı dosyayı tazeler, kopya üretmez._
 Var olanı listelemek, olmayanı göstermez — eksik günler ekranda kırmızı
 yazmalı ki üçüncü kaçış birinin fark etmesine kalmasın.
 
+### METİN, SAHİP OLMADIĞI ANLAMI İDDİA ETMEZ (KESİN KURAL)
+
+_Ders 19.08.2026._ Bir sayının yanındaki cümle, o sayının **gerçekten
+ölçtüğü şeyi** söylemek zorundadır. Doğru sayı + yanlış cümle = yanlış
+bilgi; üstelik sayı doğru olduğu için kimse şüphelenmez.
+
+**Vaka:** uyarı _"67 hakediş kalemi **satışa bağlanamadı**"_ diyordu.
+Bağsız kalem toplamı **658**'di; 67 ise **gecikme sayımından ÇIKARILAN**
+kalem sayısıydı. Cümle, sayının taşımadığı bir anlamı iddia ediyordu ve
+okuyan "demek 67 kalem bağsız" diye anlıyordu — 591 kalem yanlış tarafa
+yazılmış oluyordu.
+
+Düzeltilmiş hâli: _"67 hakediş kalemi **gecikme sayımı dışında**"_.
+
+> **KONTROL SORUSU:** bu cümledeki sayıyı üreten sorguyu okusam, cümle
+> onu mu anlatıyor? Anlatmıyorsa cümle değişir — sayı değil.
+
+### SONDA PARAMETRESİ EKRANIN PARAMETRESİ DEĞİLDİR (KESİN KURAL)
+
+_Ders 19.08.2026._ Bir rakamı ölçüp rapora yazarken, **ölçümün ekranla
+AYNI parametreden üretildiği** doğrulanmalıdır. Aksi hâlde iki doğru sayı
+çelişiyormuş gibi görünür ve olmayan bir hata aranır.
+
+**Vaka:** muafiyet sayısını sonda ile ölçüp **83** yazdım; ekran **67**
+diyordu. İkisi de kendi sınırında doğruydu — sonda `new Date()` (şu an),
+ekran `bugun` (iş takvimi günü) kullanıyordu. Vadesi BUGÜN dolan 16 kalem
+aradaki farktı ve vadesi bugün dolan kalem henüz gecikmiş değildir.
+
+> **Ayrışan şey ölçüt değil, RAPORDU.** "Rapor sayısı, ekranın koşuluyla
+> aynı parametreden üretilmeden ekran sayısı diye yazılmaz."
+
+Yapısal çaresi: koşulu **tek gövdeye** almak (`gecikmeKosulu`) ve iki
+sayının yalnız tek bir alanla ayrıldığını **testle** sabitlemek. Sonda da
+o gövdeyi çağırırsa fark doğamaz.
+
 ### SİSTEM, KENDİ DEFTERİNDE TAKİP ETMEDİĞİ ŞEY HAKKINDA İDDİA KURMAZ (KESİN KURAL)
 
 _Ders 19.08.2026._ İçe aktarılmış bir rapor satırı, bizim defterimizde
