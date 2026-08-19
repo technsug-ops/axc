@@ -36,6 +36,14 @@ import {
 } from "../src/lib/uyari/veri-supheli";
 import { SUPHELI_ORAN_ESIGI } from "../src/lib/komisyon/oran-uyarisi";
 import {
+  DOGRULAMA_SEBEPLERI,
+  damgaKur,
+  kaydiCoz,
+  notZorunluMu,
+  sebepGecerliMi,
+  susturmaGecerliMi,
+} from "../src/lib/uyari/veri-dogrulama";
+import {
   UYARI_ADRESLERI,
   UYARI_ANAHTARLARI,
   UYARI_IZINLERI,
@@ -801,6 +809,89 @@ console.log("=".repeat(70));
     "muafiyet başlığı 'sayım dışında' diyor (bağsız TOPLAM değil)",
     (sz.Uyari?.baslik_hakedisBaglanmamis ?? "").includes("sayımı dışında"),
   );
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("F2-H) DOĞRULANDI — susturma kaydın HÂLİNE bağlı");
+console.log("=".repeat(70));
+{
+  const d = { net2: 981.17, maliyet: 27.16, ciro: 1434 };
+
+  kontrol("aynı hâl → susturma GEÇERLİ", susturmaGecerliMi(d, { ...d }));
+
+  /**
+   * ⚠ TASARIMIN KALBİ: hâl değişirse susturma DÜŞER. Kalıcı muafiyet,
+   * sonradan GERÇEKTEN bozulan bir kaydı sonsuza kadar sessizleştirirdi.
+   * Üç alan da ayrı ayrı sınanıyor — yalnız maliyete bakmak yetmezdi.
+   */
+  kontrol("maliyet değişti → DÜŞER", !susturmaGecerliMi(d, { ...d, maliyet: 1100 }));
+  kontrol("NET-2 değişti → DÜŞER", !susturmaGecerliMi(d, { ...d, net2: 500 }));
+  kontrol("ciro değişti → DÜŞER", !susturmaGecerliMi(d, { ...d, ciro: 1500 }));
+
+  /**
+   * ⚠ KURUŞ BİRİM SEÇİMİDİR, TOLERANS DEĞİL. Decimal→float kuyruğu
+   * (981.1666999…) yüzünden susturmanın HAKSIZ YERE düşmesi, "bir daha
+   * doğrula" döngüsü yaratırdı. Ama BİR KURUŞ fark gerçek bir değişimdir
+   * ve düşürür.
+   */
+  kontrol("kuruş altı kuyruk susturmayı DÜŞÜRMEZ",
+    susturmaGecerliMi(d, { ...d, net2: 981.1712 }));
+  kontrol("BİR KURUŞ fark DÜŞÜRÜR",
+    !susturmaGecerliMi(d, { ...d, net2: 981.18 }));
+
+  /** Sebep kapalı küme; serbest metin susturamaz. */
+  kontrol("geçerli sebep tanınıyor", sebepGecerliMi("KUPON_INDIRIM"));
+  kontrol("uydurma sebep REDDEDİLİYOR", !sebepGecerliMi("CANIM_ISTEDI"));
+  kontrol("dört sebep tanımlı", DOGRULAMA_SEBEPLERI.length === 4);
+  kontrol("DİĞER'de not ZORUNLU", notZorunluMu("DIGER"));
+  kontrol("  ...ötekilerde değil", !notZorunluMu("KUPON_INDIRIM"));
+
+  /**
+   * ⚠ BOZUK İZ SUSTURMAZ. Çözülemeyen bir kayıt "doğrulanmış" sayılsaydı,
+   * bozuk JSON bir kalemi sonsuza kadar sessizleştirebilirdi.
+   */
+  kontrol("bozuk JSON çözülmüyor", kaydiCoz("{bozuk") === null);
+  kontrol("damgasız kayıt çözülmüyor", kaydiCoz(JSON.stringify({ sebep: "DIGER" })) === null);
+  kontrol("sebepsiz kayıt çözülmüyor", kaydiCoz(JSON.stringify({ damga: d })) === null);
+  kontrol("geçerli kayıt çözülüyor",
+    kaydiCoz(JSON.stringify({ damga: d, sebep: "KUPON_INDIRIM", not: null }))?.sebep === "KUPON_INDIRIM");
+
+  kontrol("damga kuruşa yuvarlanıyor", damgaKur({ net2: 1.005, maliyet: 2.004, ciro: 3 }).maliyet === 2);
+
+  /** ---- EKRAN VE SUNUCU BAĞI ---- */
+  const veri = readFileSync("src/lib/uyari/faz2-veri.ts", "utf8");
+  const eylem = readFileSync("src/app/satislar/dogrula-actions.ts", "utf8");
+  const buton = readFileSync("src/app/satislar/dogrula-butonu.tsx", "utf8");
+  const liste = readFileSync("src/app/satislar/page.tsx", "utf8");
+
+  kontrol("sayım doğrulanmışı düşürüyor", /susturmaGecerliMi\(damga, bugunku\)/.test(veri));
+  kontrol("  ...ve iz AuditLog'dan okunuyor", /action: DOGRULAMA_EYLEMI/.test(veri));
+
+  /**
+   * ⚠ DAMGA SUNUCUDA KURULUR. İstemciden gelseydi biri bugünkü değerlere
+   * uydurulmuş bir damga göndererek kaydı susturabilirdi.
+   */
+  kontrol("damga SUNUCUDA kuruluyor", /damgaKur\(\{ net2: net2!/.test(eylem));
+  kontrol("  ...ve şüpheli olmayan kayıt reddediliyor", /supheliMi\(\{ net2, maliyet, ciro \}\)/.test(eylem));
+  kontrol("  ...yetki satis.duzenle", /yetkiIste\("satis\.duzenle"\)/.test(eylem));
+  kontrol("  ...eski iz SİLİNMİYOR (create, update değil)", /auditLog\.create/.test(eylem) && !/auditLog\.update/.test(eylem));
+
+  kontrol("düğme onay diyaloğu açıyor", /Dialog/.test(buton));
+  kontrol("  ...geçicilik ekranda yazılı", /dogrulaGecicilik/.test(buton));
+  kontrol("  ...DİĞER'de onay kilitli", /notEksik/.test(buton));
+  kontrol("düğme YALNIZ şüpheli kalemde çiziliyor", /supheliKalemHaritasi\.get\(satis\.id\)/.test(liste));
+
+  /** Kapsam dar: supheliOran doğrulanamaz. */
+  kontrol("kapsam yalnız veriSupheli (oran doğrulanamaz)",
+    !/supheliOran/.test(eylem) && !/supheliOran/.test(buton));
+
+  const sz = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Satis?: Record<string, string>;
+  };
+  for (const a of ["dogrulaBaslik", "dogrulaGecicilik", "dogrulaNotZorunlu"]) {
+    kontrol(`  sözlük: ${a}`, (sz.Satis?.[a] ?? "").length > 0);
+  }
 }
 
 console.log("");

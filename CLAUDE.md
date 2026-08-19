@@ -423,6 +423,33 @@ sonra yapılıyor — ikinci tetik aynı dosyayı tazeler, kopya üretmez._
 Var olanı listelemek, olmayanı göstermez — eksik günler ekranda kırmızı
 yazmalı ki üçüncü kaçış birinin fark etmesine kalmasın.
 
+### SUSTURMA, KAYDIN HÂLİNE BAĞLANIR (KESİN KURAL)
+
+_Mimar kararı 19.08.2026, K6._ Bir uyarı bir kayıt için susturulabiliyorsa
+susturma **kalıcı olamaz**: kaydın O GÜNKÜ değerlerine damgalanır. Değerler
+değişirse susturma **düşer** ve uyarı yeniden yanar.
+
+Kalıcı muafiyet, tam kaçındığımız şeyi üretir: susturulmuş bir kayıt
+sonradan **gerçekten bozulduğunda** hiç konuşmaz. Doğrulanan şey kayıt
+değil, **o kaydın o hâlidir.**
+
+**Uygulama kuralları:**
+- Damga **sunucuda** kurulur; istemciden gelen değer damgalanmaz (aksi
+  hâlde bugünkü değerlere uydurulmuş bir damga kaydı susturur).
+- Karşılaştırma **kuruşuna**. Tolerans, "ne kadar değişirse yeniden
+  sorulur" diye ikinci bir uydurma eşik açardı. _Kuruşa yuvarlama tolerans
+  DEĞİL birim seçimidir: `Decimal`→float kuyruğu susturmayı haksız yere
+  düşürürdü._
+- **Çözülemeyen iz susturmaz.** Bozuk bir kayıt "doğrulanmış" sayılsaydı,
+  bozuk JSON bir kalemi sonsuza kadar sessizleştirebilirdi.
+- Sebep **kapalı kümeden**, "diğer" ise açıklama zorunlu. Sebepsiz
+  susturma, üç ay sonra "bunu neden geçmiştik" sorusuna cevap bırakmaz.
+- **Kapsam dar tutulur.** Her uyarı susturulabilir olmaz: gerçek hata
+  sınıfları (ör. şüpheli komisyon oranı) doğrulanamaz. Genel bir "sustur"
+  düğmesi, uyarı merkezini kendi kendini iptal eden bir sisteme çevirir.
+- Eski iz **silinmez**, yenisi yazılır ve en yenisi okunur — bir istisnanın
+  kaç kez geri geldiği kendi başına bilgidir.
+
 ### İMKÂNSIZ GÖRÜNEN DEĞER ÖNCE DOĞRULANIR — DÜZELTİLMEZ (KESİN KURAL)
 
 _Ders 19.08.2026, OneBlade vakası._ Bir uyarının görevi **baktırmaktır**,

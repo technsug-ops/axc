@@ -32,6 +32,7 @@ ilgili pakette kalır._
 
 | # | İş | Durum |
 |---|---|---|
+| K7 | **`satis.veri.dogrula` ayrı izni** | 🕓 **SaaS/RBAC kalemi — bugün AÇILMAZ.** Veri doğrulama bugün `satis.duzenle` istiyor. Ayrı izin daha temiz olurdu ama iki bacaklı yetki işi doğurur (izin anahtarı + seed + canlı senkron) ve tek kullanıcıda boş katmandır. Faz 4'te RBAC ile birlikte. _Karar 19.08.2026._ |
 | K6 | **Eşik yeniden ölçümü — n=200'de** | 🕓 **ZAMANA BAĞLI.** `veri-supheli.ts` eşikleri (`verim > %200`, `maliyet payı < %5`) **n=40** tabanından çıktı (19.08.2026; p95 %154, p5 %44,8). Satış kalemi **200'ü geçince** dağılım yeniden ölçülür ve eşikler tazelenir. Ölçüm aracı: `canli:bekleme-olcum` (verim dağılımı bölümü). _Eşik kaynağıyla anılır; taban büyüdüğünde kaynak eskir._ |
 | K1 | **Uyarı Merkezi Faz 2 / dilim 1** | 🔓 **ENGEL KALKTI** — dilim verisi canlıda. Artık cevaplanabilir: _"zararına satış" uyarısı dilim bilinciyle mi kurulacak?_ **Karar bekliyor.** |
 | K5 | **Aşama 1 — fiyatlama aracı** | ✅ **KAPANDI 19.08.2026** — üç katman da bitti, Halil canlıda iki yönlü doğruladı (aşağıda) |

@@ -1,6 +1,13 @@
 import { kalemMaliyeti } from "@/lib/kalem-maliyeti";
 import { prisma } from "@/lib/prisma";
 
+import {
+  DOGRULAMA_EYLEMI,
+  damgaKur,
+  kaydiCoz,
+  susturmaGecerliMi,
+  type Damga,
+} from "./veri-dogrulama";
 import { supheliMi, SUPHE_PENCERESI_GUN } from "./veri-supheli";
 
 /**
@@ -29,10 +36,36 @@ import { supheliMi, SUPHE_PENCERESI_GUN } from "./veri-supheli";
  * saklanmıyor, ledger'dan çözülüyor; sınırsız tarama çanı her sayfada
  * on binlerce satır okuturdu. Bedeli açık: bundan eskisi görünmez.
  */
+export type SupheliKalem = {
+  saleItemId: string;
+  saleId: string;
+  damga: Damga;
+};
+
 export async function supheliVeriBulgusu(bugun: Date): Promise<{
   saleIdleri: string[];
   kalemSayisi: number;
+  /** Ekranın "Doğrula" düğmesini çizebilmesi için kalem kimlikleri. */
+  kalemler: SupheliKalem[];
 }> {
+  /**
+   * ⚠ DOĞRULANMIŞ KAYITLAR — susturma KAYDIN HÂLİNE bağlı.
+   * Damga bugünkü değerlerle tutmuyorsa susturma DÜŞER ve kalem yeniden
+   * sayılır. Kalıcı muafiyet, sonradan gerçekten bozulan bir kaydı
+   * sonsuza kadar sessizleştirirdi.
+   */
+  const izler = await prisma.auditLog.findMany({
+    where: { action: DOGRULAMA_EYLEMI, targetType: "SaleItem" },
+    select: { targetId: true, detail: true },
+    orderBy: { createdAt: "desc" },
+  });
+  const dogrulanmis = new Map<string, Damga>();
+  for (const iz of izler) {
+    if (!iz.targetId || dogrulanmis.has(iz.targetId)) continue;
+    const kayit = kaydiCoz(iz.detail);
+    if (kayit) dogrulanmis.set(iz.targetId, kayit.damga);
+  }
+
   const adaylar = await prisma.saleItem.findMany({
     where: {
       sale: {
@@ -45,6 +78,7 @@ export async function supheliVeriBulgusu(bugun: Date): Promise<{
       },
     },
     select: {
+      id: true,
       saleId: true,
       quantity: true,
       unitPriceAmount: true,
@@ -60,6 +94,7 @@ export async function supheliVeriBulgusu(bugun: Date): Promise<{
   });
 
   const saleIdleri = new Set<string>();
+  const kalemler: SupheliKalem[] = [];
   let kalemSayisi = 0;
 
   for (const k of adaylar) {
@@ -78,18 +113,25 @@ export async function supheliVeriBulgusu(bugun: Date): Promise<{
       })),
     ).maliyet;
 
-    const supheli = supheliMi({
-      net2: k.net2Amount === null ? null : Number(k.net2Amount.toString()),
-      maliyet,
-      ciro: Number(k.unitPriceAmount.toString()) * k.quantity,
-    });
-    if (!supheli) continue;
+    const net2 = k.net2Amount === null ? null : Number(k.net2Amount.toString());
+    const ciro = Number(k.unitPriceAmount.toString()) * k.quantity;
+    if (!supheliMi({ net2, maliyet, ciro })) continue;
+
+    /**
+     * ⚠ SUSTURMA BURADA DÜŞÜYOR. Kalem şüpheli ama doğrulanmışsa ve
+     * damga BUGÜNKÜ değerlerle kuruşuna tutuyorsa sayılmaz. Tutmuyorsa
+     * doğrulama geçersizdir ve kalem yeniden konuşur.
+     */
+    const bugunku = damgaKur({ net2: net2!, maliyet: maliyet!, ciro });
+    const damga = dogrulanmis.get(k.id);
+    if (damga && susturmaGecerliMi(damga, bugunku)) continue;
 
     kalemSayisi++;
     saleIdleri.add(k.saleId);
+    kalemler.push({ saleItemId: k.id, saleId: k.saleId, damga: bugunku });
   }
 
-  return { saleIdleri: [...saleIdleri], kalemSayisi };
+  return { saleIdleri: [...saleIdleri], kalemSayisi, kalemler };
 }
 
 /**

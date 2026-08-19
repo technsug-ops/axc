@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { supheliVeriBulgusu } from "@/lib/uyari/faz2-veri";
+import { DogrulaButonu } from "./dogrula-butonu";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { Eye, Plus, TriangleAlert, Undo2 } from "lucide-react";
@@ -117,10 +118,11 @@ export default async function SatislarSayfasi({
    * ayrı ölçüyor; burası yalnız listeyi süzüyor — ama AYNI GÖVDEDEN,
    * ikisi ayrışmasın diye.
    */
-  const supheliIdler =
+  const supheliBulgu =
     p.veri === "supheli"
-      ? (await supheliVeriBulgusu(gunDegeri(isTakvimGunu(new Date())))).saleIdleri
-      : undefined;
+      ? await supheliVeriBulgusu(gunDegeri(isTakvimGunu(new Date())))
+      : null;
+  const supheliIdler = supheliBulgu?.saleIdleri;
 
   // EKRAN VE EXCEL AYNI KOŞULU KULLANIR (bkz. lib/liste-suzgeci.ts).
   const { kosul, pencere } = satisKosulu(p, new Date(), supheliIdler);
@@ -356,9 +358,29 @@ export default async function SatislarSayfasi({
     ? `${bicim.tarih(pencere.pencere.baslangic)} — ${bicim.tarih(pencere.pencere.sonGun)}`
     : "";
 
+  /**
+   * ŞÜPHELİ KALEMLER — satış başına, YALNIZ süzgeç açıkken.
+   *
+   * ⚠ HER AÇILIŞTA HESAPLANMAZ. "Doğrula" düğmesi ancak kullanıcı uyarıdan
+   * gelip `?veri=supheli` süzgecini açtığında anlamlı; normal listede her
+   * satır için maliyet çözmek her sayfa yüklemesine stok hareketi okuması
+   * eklerdi. Giriş noktası uyarının kendisidir.
+   */
+  const supheliKalemHaritasi = new Map<string, string[]>();
+  for (const k of supheliBulgu?.kalemler ?? []) {
+    const l = supheliKalemHaritasi.get(k.saleId) ?? [];
+    l.push(k.saleItemId);
+    supheliKalemHaritasi.set(k.saleId, l);
+  }
+
   function eylemler(satis: (typeof satislar)[number]) {
+    /** Bir satışta birden çok şüpheli kalem olabilir; her biri ayrı düğme. */
+    const supheliler = supheliKalemHaritasi.get(satis.id) ?? [];
     return (
       <>
+        {supheliler.map((saleItemId) => (
+          <DogrulaButonu key={saleItemId} saleItemId={saleItemId} />
+        ))}
         {/* KARGO İŞARETİ AYRI SÜTUN DEĞİL, EYLEM: bu bir toggle ve tablo
             sütun bütçesi 7 (bkz. yerlesim:dogrula). Durum da burada
             görünüyor — işaretliyse tarih, değilse düğme. */}
