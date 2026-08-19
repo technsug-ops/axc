@@ -35,7 +35,7 @@ ilgili pakette kalır._
 |---|---|---|
 | K7 | **`satis.veri.dogrula` ayrı izni** | 🕓 **SaaS/RBAC kalemi — bugün AÇILMAZ.** Veri doğrulama bugün `satis.duzenle` istiyor. Ayrı izin daha temiz olurdu ama iki bacaklı yetki işi doğurur (izin anahtarı + seed + canlı senkron) ve tek kullanıcıda boş katmandır. Faz 4'te RBAC ile birlikte. _Karar 19.08.2026._ |
 | K6 | **Eşik yeniden ölçümü — n=200'de** | 🕓 **ZAMANA BAĞLI.** `veri-supheli.ts` eşikleri (`verim > %200`, `maliyet payı < %5`) **n=40** tabanından çıktı (19.08.2026; p95 %154, p5 %44,8). Satış kalemi **200'ü geçince** dağılım yeniden ölçülür ve eşikler tazelenir. Ölçüm aracı: `canli:bekleme-olcum` (verim dağılımı bölümü). _Eşik kaynağıyla anılır; taban büyüdüğünde kaynak eskir._ |
-| K1 | **Uyarı Merkezi Faz 2 / dilim 1** | 🔓 **ENGEL KALKTI** — dilim verisi canlıda. Artık cevaplanabilir: _"zararına satış" uyarısı dilim bilinciyle mi kurulacak?_ **Karar bekliyor.** |
+| K1 | **Uyarı Merkezi Faz 2** | ✅ **KAPANDI 20.08.2026** — beş adayın dördü yazıldı, biri ölçümle düşürüldü; Halil canlıda uçtan uca doğruladı (aşağıda). |
 | K5 | **Aşama 1 — fiyatlama aracı** | ✅ **KAPANDI 19.08.2026** — üç katman da bitti, Halil canlıda iki yönlü doğruladı (aşağıda) |
 
 _K2 (yükleme kaydı) · K3 (oran uyarısı) · ham arşiv kalemi 18.08'de
@@ -271,6 +271,44 @@ olurdu; tutmaları ikisini birden doğruluyor.
 **AŞAMA 1 AÇILABİLİR.** Zemin hazır: 158 üründe tam tarife, doğrulanmış
 dilim yapısı, çalışan yükleme yolu.
 
+
+### 🔔 K1 — UYARI MERKEZİ FAZ 2 ✅ KAPANDI 20.08.2026
+
+**Halil canlıda doğruladı: A · B · C · D · E tam.** Son açık madde C2
+(satış formunda yön satırı) 20.08'de geçti — Fiorino `1.260` denemesi
+"kâra geçer" cümlesini çıkardı.
+
+`uyari:dogrula` **84 → 236 kontrol**, yirmi altı mutasyon kırmızı.
+
+#### Beş aday, dört teslim
+
+| # | Aday | Sonuç |
+|---|---|---|
+| 3 | **İmkânsız değer** (`veriSupheli`, amber) | ✅ eşikler ölçüldü: verim `>%200` (p95 %154), maliyet payı `<%5` (p5 %44,8) |
+| 4 | Snapshot kaynaksız | ❌ **DÜŞTÜ** — koşul canlıda **0 satır**. Yerine `supheliOran` (amber, K3 eşiğini OKUR, kendini söndüren) |
+| 2 | **Kanal kodsuz stok** (nötr) | ✅ varyant seviyesinde **2 satır**; hesap bazlı küme **499** olurdu ve hiçbir bilgi taşımazdı |
+| 1 | **Zararına satış** | ✅ iki zamanda: formda önleyici (K5 motoru), çanda geriye dönük sayaç |
+| 5 | **Üç seviyeli ekran** | ✅ kırmızı → amber → nötr; rozet yalnız kırmızı+amber, nötr için rakamsız nokta |
+
+#### Yol boyunca doğan işler
+
+| İş | Sebep |
+|---|---|
+| **Hayalet kırmızı kesildi** | Çan "67 hakediş kalemi gecikti · ₺137.975" diyordu; **177 sipariş numarasının hiçbiri** bir satışla eşleşmiyordu. Gecikme artık yalnız `saleId` dolu kalemde iddia ediliyor, muafiyet nötr uyarıyla BEYAN ediliyor |
+| **K6 — DOĞRULANDI mekanizması** | OneBlade `₺27,16` GERÇEK çıktı (hediye kuponu). Susturma kaydın HÂLİNE bağlı; değer değişirse düşer. Yeni tablo açılmadı (`AuditLog`) |
+| **Geç teslim uyarısı** | İki bozuk parti tarihi (Schafer 48 gün, LEGO 30) mal kabul formunun bugüne varsayılan gelmesinden doğdu. Eşik **15 gün** — dağılımın boş bandı (11–20'de sıfır kayıt) |
+| **Kâr durumu satırı** | Kâr hâlinde ekran sessizdi; sessizlik "hesap çalışıyor mu?" tereddüdü yaratıyordu |
+| **Dayanak rakamları** | Kutu "maliyet ortalaması" diyordu ama RAKAMI vermiyordu — kelime vardı, sayı yoktu |
+
+#### Anayasaya giren dersler (bu paketten)
+
+Sistem kendi defterinde takip etmediği şey hakkında iddia kurmaz ·
+Muafiyetin uygulanması ve beyanı ayrı sınanır · Susturma kaydın hâline
+bağlanır · İmkânsız görünen değer önce DOĞRULANIR · Eşik dağılımın
+gediğine konur · Metin sahip olmadığı anlamı iddia etmez · Sonda
+parametresi ekranın parametresi değildir · Kontrol tasarımı kapsam
+doğrulanmadan "fark" üretmez · **Kaynak tarayan kontrol deseni dosyada
+değil kullanım bloğunda arar** (dört tekrardan sonra)
 
 ### 🧮 K5 — FİYATLAMA ARACI ✅ KAPANDI 19.08.2026
 
