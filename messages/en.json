@@ -844,8 +844,6 @@
     "dogrulaSebep_OZEL_ANLASMA": "",
     "dogrulaSebep_DIGER": "",
     "dogrulaNot": "",
-    "dogrulaNotZorunluEtiket": "",
-    "dogrulaNotIpucu": "",
     "dogrulaGecicilik": "",
     "dogrulaOnayla": "",
     "dogrulaVazgec": "",
@@ -857,7 +855,12 @@
     "bosSupheliVeri": "",
     "bosSupheliOran": "",
     "zararDilimYok": "",
-    "zararEnAltDilim": ""
+    "zararEnAltDilim": "",
+    "dogrulaZorunlu": "",
+    "dogrulaNotIpucu_KUPON_INDIRIM": "",
+    "dogrulaNotIpucu_HEDIYE_NUMUNE": "",
+    "dogrulaNotIpucu_OZEL_ANLASMA": "",
+    "dogrulaNotIpucu_DIGER": ""
   },
   "Kategori": {
     "adZorunlu": "",

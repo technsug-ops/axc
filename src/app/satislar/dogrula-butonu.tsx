@@ -74,7 +74,12 @@ export function DogrulaButonu({ saleItemId }: { saleItemId: string }) {
       </Button>
 
       <Dialog open={acik} onOpenChange={setAcik}>
-        <DialogContent>
+        {/* ⚠ KÜÇÜK EKRANDA KESİLMESİN. Halil turunda not alanı
+            "yoktu" diye raporlandı; kod ölçümünde alan KOŞULSUZ
+            çiziliyordu. Geriye tek makul açıklama kalıyor: diyalog
+            görüş alanını taşıyor ve alan altta kalıyordu. Tavan
+            yükseklik + kaydırma, o ihtimali kapatıyor. */}
+        <DialogContent className="max-h-[85svh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("dogrulaBaslik")}</DialogTitle>
             <DialogDescription>{t("dogrulaAciklama")}</DialogDescription>
@@ -103,13 +108,22 @@ export function DogrulaButonu({ saleItemId }: { saleItemId: string }) {
             {/* Not alanı HER ZAMAN görünür; yalnız DİĞER'de zorunlu.
                 Gizlenen alan, seçim değişince beliren bir sürpriz olurdu. */}
             <div className="space-y-2">
+              {/* ⚠ ETİKET HER ZAMAN "AÇIKLAMA". Önce "Not (isteğe bağlı)"
+                  yazıyordu; "isteğe bağlı" ibaresi alanı atlanabilir
+                  gösteriyor ve kullanıcı yazacağı şeyi yazmadan geçiyor.
+                  Zorunluluk ayrı bir ek olarak duruyor. */}
               <Label htmlFor="dogrula-not">
-                {notZorunluMu(sebep) ? t("dogrulaNotZorunluEtiket") : t("dogrulaNot")}
+                {t("dogrulaNot")}
+                {notZorunluMu(sebep) ? (
+                  <span className={DURUM_YAZISI.olumsuz}> {t("dogrulaZorunlu")}</span>
+                ) : null}
               </Label>
               <Input
                 id="dogrula-not"
                 value={not}
-                placeholder={t("dogrulaNotIpucu")}
+                /* Yer tutucu SEBEBE göre: ne yazılacağını göstermek,
+                   boş bir kutudan çok daha fazla davet eder. */
+                placeholder={t(`dogrulaNotIpucu_${sebep}`)}
                 onChange={(e) => setNot(e.target.value)}
                 className="h-11"
               />

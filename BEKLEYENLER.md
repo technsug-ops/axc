@@ -20,6 +20,7 @@ ilgili pakette kalır._
 |---|---|---|
 | ~~H1~~ | ~~Dilim tarifesi~~ | ✅ **KAPANDI 19.08** — 640 kalem yazıldı, geri okunarak doğrulandı, çapraz teyit tuttu. **Aşama 1 açılabilir** |
 | H2 | **Hakediş `.xlsx` teyidi** | Taze dönem dosyası → `canli:hakedis-esle` (hesap kırılımı) → `canli:hakedis-teyit` |
+| H3⚡ | **BAĞSIZ HAKEDİŞ YIĞINI BÜYÜYOR** | ⚠ **ACİLİYET ARTTI.** Gecikme sayımı dışındaki kalem 19.08 sabahı **67**, akşamı **168**. Yığın büyüyor demek, hakediş↔satış bağı kurulmadıkça sistemin "alacağım ne" sorusuna verecek cevabı KÜÇÜLÜYOR demektir. H2 (hakediş `.xlsx` teyidi) sırayı öne alıyor. _Kayıt 19.08.2026._ |
 | H3 | **DÖRT satış özel satır** | `11493262226` · `11492798173` · `11492628481` (Philips 5000, ~−721 TL) **+ `11331575354` — i9000 Ultra SkinIQ** |
 | H3b | **⚠ İ9000 — TEK BAŞINA ÜÇLÜDEN BÜYÜK** | `11331575354` · Trendyol · 17.06 · **₺12.960** · oran **%2,70** · ~12 puan fark ≈ **~₺1.590 potansiyel şişkinlik** · üstelik **"iade var" rozetli**. Hakediş teyidinde ÖNCE bu bakılır. |
 | H4 | **Ödeme hizmeti hipotezi** | H2 sırasında bakılacak: dosyada tahsilat/ödeme bedeli satırı var mı |

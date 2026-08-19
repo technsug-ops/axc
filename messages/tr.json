@@ -843,9 +843,7 @@
     "dogrulaSebep_HEDIYE_NUMUNE": "Hediye / numune",
     "dogrulaSebep_OZEL_ANLASMA": "Özel anlaşma",
     "dogrulaSebep_DIGER": "Diğer (açıklama zorunlu)",
-    "dogrulaNot": "Not (isteğe bağlı)",
-    "dogrulaNotZorunluEtiket": "Açıklama (zorunlu)",
-    "dogrulaNotIpucu": "örn. HB hediye kuponuyla alındı",
+    "dogrulaNot": "Açıklama",
     "dogrulaGecicilik": "Susturma bu kaydın BUGÜNKÜ değerlerine bağlanır. Maliyet, fiyat ya da kâr değişirse uyarı yeniden yanar.",
     "dogrulaOnayla": "Doğrula ve sustur",
     "dogrulaVazgec": "Vazgeç",
@@ -857,7 +855,12 @@
     "bosSupheliVeri": "Şüpheli veri kalmadı ✓",
     "bosSupheliOran": "Şüpheli komisyon oranı kalmadı ✓",
     "zararDilimYok": "Bu kanalda dilim tarifesi yok — alt dilim önerisi yapılamıyor. (Komisyon tarifesi yüklenirse burada çıkar.)",
-    "zararEnAltDilim": "Ürün zaten en alt komisyon diliminde — inecek başka dilim yok."
+    "zararEnAltDilim": "Ürün zaten en alt komisyon diliminde — inecek başka dilim yok.",
+    "dogrulaZorunlu": "(zorunlu)",
+    "dogrulaNotIpucu_KUPON_INDIRIM": "örn. HB hediye kuponuyla alındı",
+    "dogrulaNotIpucu_HEDIYE_NUMUNE": "örn. tedarikçi numunesi, bedelsiz geldi",
+    "dogrulaNotIpucu_OZEL_ANLASMA": "örn. toplu alım anlaşması, özel fiyat",
+    "dogrulaNotIpucu_DIGER": "Neden olağan dışı? Kısaca yaz."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
