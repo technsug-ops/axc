@@ -853,7 +853,11 @@
     "dogrulaSebepGecersiz": "Geçersiz sebep seçildi.",
     "dogrulaNotZorunlu": "\"Diğer\" seçildiğinde açıklama zorunludur.",
     "dogrulaKalemYok": "Kalem bulunamadı ya da satış iptal edilmiş.",
-    "dogrulaSupheliDegil": "Bu kalem şüpheli görünmüyor — doğrulanacak bir şey yok."
+    "dogrulaSupheliDegil": "Bu kalem şüpheli görünmüyor — doğrulanacak bir şey yok.",
+    "bosSupheliVeri": "Şüpheli veri kalmadı ✓",
+    "bosSupheliOran": "Şüpheli komisyon oranı kalmadı ✓",
+    "zararDilimYok": "Bu kanalda dilim tarifesi yok — alt dilim önerisi yapılamıyor. (Komisyon tarifesi yüklenirse burada çıkar.)",
+    "zararEnAltDilim": "Ürün zaten en alt komisyon diliminde — inecek başka dilim yok."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",

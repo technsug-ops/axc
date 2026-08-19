@@ -940,6 +940,82 @@ console.log("=".repeat(70));
 
 console.log("");
 console.log("=".repeat(70));
+console.log("F2-J) HALİL TURU DÜZELTMELERİ");
+console.log("=".repeat(70));
+{
+  const can = readFileSync("src/components/uyari-cani.tsx", "utf8");
+  const liste = readFileSync("src/app/satislar/page.tsx", "utf8");
+  const form = readFileSync("src/app/satislar/zarar-uyarisi.tsx", "utf8");
+  const buton = readFileSync("src/app/satislar/dogrula-butonu.tsx", "utf8");
+
+  /**
+   * ⚠ B4a — ROZET BAYAT KALIYORDU. Veri yalnız ilk çizimde çekiliyordu;
+   * kullanıcı bir uyarıyı çözdükten sonra çanda ESKİ SAYIYI görüyor,
+   * tıklayınca boş liste açılıyordu. "Sayı ile liste ayrıştı" hatasının
+   * ZAMAN eksenindeki hâli.
+   */
+  kontrol("çan açıldıkça tazeleniyor", /\}, \[acik\]\);/.test(can));
+  kontrol("  ...ve tek seferlik değil", !/\}, \[\]\);/.test(can));
+
+  /**
+   * ⚠ B4b — SÜZGEÇ PARAMETRELERİ TAŞINMIYORDU. Üç şey birden bozuktu:
+   * boş mesajı yanlış, başka süzgece dokununca `veri=supheli` sessizce
+   * düşüyor, Excel süzgeci yok sayıyordu.
+   */
+  kontrol("veri süzgeci taşınıyor", /veri: p\.veri,/.test(liste));
+  kontrol("oran süzgeci taşınıyor", /oran: p\.oran,/.test(liste));
+
+  /** ⚠ AÇIK SIFIR: süzgeç boşaldıysa bu bir BAŞARIDIR. */
+  /**
+   * ⚠ KÖR MUTASYON DERSİ (ÜÇÜNCÜ KEZ): anahtarın dosyada bulunması
+   * yetmiyor — koşulu `false` yapan mutasyon anahtarı yerinde bırakıyor.
+   * Kontrol KOŞULA bakmalı, metne değil.
+   */
+  kontrol("şüpheli süzgeç boşalınca 'kalmadı ✓'", /bosSupheliVeri/.test(liste));
+  /**
+   * ⚠ DESENİN VARLIĞI DEĞİL, KULLANIM YERİ. İlk deneme yine kör kaldı:
+   * dosyada `p.veri === "supheli"` İKİ yerde geçiyor (küme hesabı ve boş
+   * mesaj); birini bozan mutasyon ötekini ayakta bırakıyordu. Kontrol
+   * artık koşulu SONUCUYLA birlikte arıyor.
+   */
+  kontrol(
+    "  ...boş mesaj koşulu süzgece bağlı",
+    /p\.veri === "supheli"\s*\?\s*t\("bosSupheliVeri"\)/.test(liste),
+  );
+  kontrol(
+    "  ...küme hesabı da süzgece bağlı",
+    /p\.veri === "supheli"\s*\?\s*await supheliVeriBulgusu/.test(liste),
+  );
+  kontrol("  ...oran için de", /bosSupheliOran/.test(liste));
+
+  /**
+   * ⚠ C2/C3 — FORM SESSİZ KALIYORDU. Ölçüm: stoklu 121 varyant×kanal
+   * zemininin 86'sında dilim verisi YOK (HB 0/54, N11 0/13). Öneri
+   * yokluğu kusur değil VERİ yokluğuydu — ama form bunu söylemiyordu.
+   */
+  kontrol("form öneri yoksa SEBEBİNİ söylüyor", /zararDilimYok/.test(form));
+  kontrol(
+    "  ...ve koşul ÖNERİNİN yokluğuna bağlı",
+    /\{oneri === null \? \(/.test(form),
+  );
+  kontrol("  ...ve 'zaten en alt dilim' halini ayırıyor", /zararEnAltDilim/.test(form));
+
+  /** ⚠ B3 — not alanı KOŞULSUZ çiziliyor mu? */
+  kontrol(
+    "doğrulama notu her sebepte GÖRÜNÜR (koşulsuz)",
+    /id="dogrula-not"/.test(buton) && !/notZorunluMu\(sebep\) \? \(/.test(buton),
+  );
+
+  const sz = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Satis?: Record<string, string>;
+  };
+  for (const a of ["bosSupheliVeri", "zararDilimYok", "zararEnAltDilim"]) {
+    kontrol(`  sözlük: ${a}`, (sz.Satis?.[a] ?? "").length > 0);
+  }
+}
+
+console.log("");
+console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
 else {
   console.log(`${kalan} KONTROL BAŞARISIZ (${gecen + kalan} kontrolden)`);

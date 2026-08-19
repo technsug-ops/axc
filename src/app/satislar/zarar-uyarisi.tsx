@@ -136,6 +136,26 @@ export function ZararUyarisi({
               })}
         </p>
       ) : null}
+      {/* ---------- ÖNERİ NİYE YOK — SESSİZ KALINMAZ ----------
+          ⚠ CANLI BULGU 19.08.2026: kırmızı zarar kutusu çıkıyor ama alt
+          dilim satırı çıkmıyordu ve sebebi HİÇBİR YERDE yazmıyordu;
+          "motor yarım bağlanmış" görünüyordu.
+
+          Ölçüm: stoklu 121 varyant×kanal zemininin **86'sında dilim
+          verisi YOK** — Hepsiburada ve N11'de hiç tarife yüklenmedi
+          (0/54 ve 0/13), yalnız Trendyol'un 35 zemininde dilim var.
+          Yani öneri yokluğu bir kusur değil, VERİ yokluğuydu.
+
+          Kart ekranı bunu zaten beyan ediyordu (`beyanDilimYok`); form
+          etmiyordu. Aynı bilgi iki ekranda aynı davranmalı (İlke #10). */}
+      {oneri === null ? (
+        <p className="text-muted-foreground text-xs">
+          {zemin.dilimler === null || zemin.dilimler.length === 0
+            ? t("zararDilimYok")
+            : t("zararEnAltDilim")}
+        </p>
+      ) : null}
+
       {/* ---------- SINIRA MESAFE ----------
           ⚠ AYNI KURAL KARTTAKİYLE (İlke #10). Zararı kurtaran bir öneri,
           fiyatın yarısını feda ediyorsa bunu SÖYLEMEK zorundayız; yoksa

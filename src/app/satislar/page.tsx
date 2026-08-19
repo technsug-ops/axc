@@ -343,6 +343,18 @@ export default async function SatislarSayfasi({
     pencere: p.pencere,
     baslangic: p.baslangic,
     bitis: p.bitis,
+    /**
+     * ⚠ UYARIDAN GELEN SÜZGEÇLER DE TAŞINIR — canlı bulgu 19.08.2026.
+     *
+     * Eklenmemişlerdi ve üç şey birden bozuluyordu:
+     *  1. `suzgecVar` yanlış hesaplanıyor → liste boşalınca "hiç satış
+     *     yok" diyordu; oysa doğrusu "süzgece uyan kayıt yok".
+     *  2. Kullanıcı başka bir süzgece dokununca `veri=supheli` SESSİZCE
+     *     düşüyor ve liste bambaşka bir kümeye açılıyordu.
+     *  3. Excel indirmesi süzgeci yok sayıyordu.
+     */
+    veri: p.veri,
+    oran: p.oran,
   };
   const disaAktarmaParametreleri = { ...formTasinanlar, q: arama };
 
@@ -508,11 +520,19 @@ export default async function SatislarSayfasi({
       {satislar.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
           <p className="font-medium">
-            {karEksik
-              ? t("bosKarEksikBaslik")
-              : suzgecVar
-                ? t("bosFiltreBaslik")
-                : t("bosBaslik")}
+            {/* ⚠ AÇIK SIFIR: uyarıdan gelen süzgeç boşaldıysa bu bir
+                BAŞARIDIR, "kayıt bulunamadı" değil. Genel boş mesajı
+                göstermek, sorunu çözen kullanıcıya sanki bir şey ters
+                gitmiş gibi bakmak olurdu. */}
+            {p.veri === "supheli"
+              ? t("bosSupheliVeri")
+              : p.oran === "supheli"
+                ? t("bosSupheliOran")
+                : karEksik
+                  ? t("bosKarEksikBaslik")
+                  : suzgecVar
+                    ? t("bosFiltreBaslik")
+                    : t("bosBaslik")}
           </p>
           <p className="text-muted-foreground mt-1 text-sm">
             {/* SÜZGEÇ YÜZÜNDEN BOŞSA ONU SÖYLE: "kayıt yok" demek, süzgeci

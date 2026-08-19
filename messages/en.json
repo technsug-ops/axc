@@ -853,7 +853,11 @@
     "dogrulaSebepGecersiz": "",
     "dogrulaNotZorunlu": "",
     "dogrulaKalemYok": "",
-    "dogrulaSupheliDegil": ""
+    "dogrulaSupheliDegil": "",
+    "bosSupheliVeri": "",
+    "bosSupheliOran": "",
+    "zararDilimYok": "",
+    "zararEnAltDilim": ""
   },
   "Kategori": {
     "adZorunlu": "",

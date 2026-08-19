@@ -81,6 +81,17 @@ export function UyariCani() {
   const [uyarilar, setUyarilar] = useState<Uyari[] | null>(null);
   const [acik, setAcik] = useState(false);
 
+  /**
+   * ⚠ ÇAN AÇILDIKÇA TAZELENİR — canlı bulgu 19.08.2026 (Halil).
+   *
+   * Önceden veri YALNIZ ilk çizimde çekiliyordu. Kullanıcı bir uyarıyı
+   * çözdükten sonra (ör. şüpheli veriyi doğruladıktan sonra) çana
+   * baktığında ESKİ SAYIYI görüyordu; tıklayınca da boş liste açılıyordu
+   * — "sayı ile liste ayrıştı" hatasının zaman eksenindeki hâli.
+   *
+   * `acik` bağımlılığa girdi: panel her açılışta yeniden soruyor. Bedeli
+   * bir sorgu; kazancı, rozetin GÜNCEL olduğuna güvenilebilmesi.
+   */
   useEffect(() => {
     let iptal = false;
     uyarilariGetir()
@@ -98,7 +109,7 @@ export function UyariCani() {
     return () => {
       iptal = true;
     };
-  }, []);
+  }, [acik]);
 
   const seviye = uyarilar === null ? null : canSeviyesi(uyarilar);
   const sayi = uyarilar === null ? 0 : canSayisi(uyarilar);
