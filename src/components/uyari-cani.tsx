@@ -17,6 +17,24 @@ import {
 import { useBicim } from "@/lib/bicim-istemci";
 import { uyarilariGetir } from "@/lib/uyari/eylem";
 import { canSayisi, canSeviyesi, notrVarMi } from "@/lib/uyari/kurallar";
+import type { UyariSeviyesi } from "@/lib/uyari/turler";
+
+/**
+ * OKUMA SIRASI = ÖNCELİK SIRASI. Göz yukarıdan aşağı okur; kırmızıyı
+ * amberin altına koymak, aciliyeti gizlemek olurdu.
+ */
+const SEVIYE_SIRASI: UyariSeviyesi[] = ["kirmizi", "amber", "notr"];
+
+/**
+ * ⚠ SEVİYE → RENK EŞLEMESİ TÜKETİCİ. Önceden `seviye === "kirmizi" ?
+ * olumsuz : uyari` yazıyordu; nötr katman gelince nötr satırlar SARI
+ * çizilirdi — "bilgi" satırı uyarı gibi görünürdü.
+ */
+const SEVIYE_RENGI: Record<UyariSeviyesi, "olumsuz" | "uyari" | "bilgi"> = {
+  kirmizi: "olumsuz",
+  amber: "uyari",
+  notr: "bilgi",
+};
 import { DURUM_CIPI, DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import type { Uyari } from "@/lib/uyari/turler";
 
@@ -133,34 +151,60 @@ export function UyariCani() {
             /* AÇIK SIFIR: "hiçbir şey yok" da bir cevaptır ve yazılır. */
             <p className={`text-sm ${DURUM_YAZISI.olumlu}`}>{t("temiz")}</p>
           ) : (
-            uyarilar.map((u) => (
-              <Baglanti
-                key={u.anahtar}
-                href={u.adres}
-                onClick={() => setAcik(false)}
-                className={`flex min-w-0 items-start gap-3 rounded-lg p-3 no-underline ${
-                  DURUM_KUTUSU[u.seviye === "kirmizi" ? "olumsuz" : "uyari"]
-                }`}
-              >
-                <TriangleAlert
-                  className={`mt-0.5 size-4 shrink-0 ${
-                    DURUM_YAZISI[u.seviye === "kirmizi" ? "olumsuz" : "uyari"]
-                  }`}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium">
-                    {t(`baslik_${u.anahtar}`, { sayi: u.sayi })}
-                  </span>
-                  <span className="text-muted-foreground block text-xs">
-                    {u.tutar !== null && u.paraBirimi !== null
-                      ? bicim.para(u.tutar, u.paraBirimi) + " · "
-                      : ""}
-                    {t(`eylem_${u.anahtar}`)}
-                  </span>
-                </span>
-                <ChevronRight className="mt-0.5 size-4 shrink-0 opacity-60" />
-              </Baglanti>
-            ))
+            /* ═══════════════ ÜÇ SEVİYE, TEK EKRAN ═══════════════
+               Mimar kararı 19.08.2026. Kırmızı önce, amber sonra, nötr
+               en altta — göz yukarıdan aşağı okuduğu için sıralama
+               önceliğin kendisidir.
+
+               ⚠ BAŞLIK YALNIZ O SEVİYE DOLUYSA ÇIZILIR. Boş bir
+               "Bilgi" başlığı her açılışta yer kaplar ve üç boş başlık
+               ekranı bölüm bölüm gösterip hiçbir şey söylemez.
+
+               ⚠ NÖTR KATMANIN SESSİZ AÇIKLAMASI: nötr satırlar rozete
+               girmiyor (rozet EYLEM çağrısıdır). Kullanıcı rozette 2
+               görüp ekranda 4 satır sayınca "eksik mi sayıyor" diye
+               düşünebilir; başlık bunu SÖYLÜYOR. Sayının neden
+               tutmadığını açıklamayan bir ekran, yanlış sayan bir
+               ekranla aynı güveni kaybettirir. */
+            SEVIYE_SIRASI.map((sv) => {
+              const grup = uyarilar.filter((u) => u.seviye === sv);
+              if (grup.length === 0) return null;
+              return (
+                <div key={sv} className="space-y-2">
+                  <p className="text-muted-foreground pt-2 text-xs font-medium">
+                    {t(`grup_${sv}`)}
+                  </p>
+                  {grup.map((u) => (
+                    <Baglanti
+                      key={u.anahtar}
+                      href={u.adres}
+                      onClick={() => setAcik(false)}
+                      className={`flex min-w-0 items-start gap-3 rounded-lg p-3 no-underline ${
+                        DURUM_KUTUSU[SEVIYE_RENGI[u.seviye]]
+                      }`}
+                    >
+                      <TriangleAlert
+                        className={`mt-0.5 size-4 shrink-0 ${
+                          DURUM_YAZISI[SEVIYE_RENGI[u.seviye]]
+                        }`}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium">
+                          {t(`baslik_${u.anahtar}`, { sayi: u.sayi })}
+                        </span>
+                        <span className="text-muted-foreground block text-xs">
+                          {u.tutar !== null && u.paraBirimi !== null
+                            ? bicim.para(u.tutar, u.paraBirimi) + " · "
+                            : ""}
+                          {t(`eylem_${u.anahtar}`)}
+                        </span>
+                      </span>
+                      <ChevronRight className="mt-0.5 size-4 shrink-0 opacity-60" />
+                    </Baglanti>
+                  ))}
+                </div>
+              );
+            })
           )}
         </div>
       </SheetContent>

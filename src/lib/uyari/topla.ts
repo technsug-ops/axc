@@ -84,6 +84,7 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
     supheBulgusu,
     supheliOranSayisi,
     kanalKodsuzlar,
+    zararinaSatisSayisi,
   ] = await Promise.all([
       takvimSatirlariniTopla(bugun),
       gorevSayilariniTopla(),
@@ -159,6 +160,19 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
         },
       }),
       kanalKodsuzStokluVaryantlar(),
+      /**
+       * ⚠ SÜZGEÇLE AYNI KOŞUL. `/satislar?kar=zarar` şunu uyguluyor:
+       * `profitStatus: "CALCULATED"` VE `net2Amount < 0`. Buraya yalnız
+       * `net2Amount < 0` yazsaydık, kârı henüz hesaplanmamış kalemler
+       * sayıya girer ama listede çıkmazdı — sayı ile liste ayrışırdı.
+       */
+      prisma.saleItem.count({
+        where: {
+          sale: { iptalTarihi: null },
+          profitStatus: "CALCULATED",
+          net2Amount: { lt: 0 },
+        },
+      }),
     ]);
 
   const takvim = nakitTakvimiKur({
@@ -187,6 +201,7 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
     supheliOran: { sayi: supheliOranSayisi },
     kanalKodsuzStok: { sayi: kanalKodsuzlar.length },
     hakedisBaglanmamis: { sayi: baglanmamisHakedis },
+    zararinaSatis: { sayi: zararinaSatisSayisi },
     hakedisGecikti: {
       sayi: gecikenHakedis._count._all,
       tutar:

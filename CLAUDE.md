@@ -423,6 +423,43 @@ sonra yapılıyor — ikinci tetik aynı dosyayı tazeler, kopya üretmez._
 Var olanı listelemek, olmayanı göstermez — eksik günler ekranda kırmızı
 yazmalı ki üçüncü kaçış birinin fark etmesine kalmasın.
 
+### SİSTEM, KENDİ DEFTERİNDE TAKİP ETMEDİĞİ ŞEY HAKKINDA İDDİA KURMAZ (KESİN KURAL)
+
+_Ders 19.08.2026._ İçe aktarılmış bir rapor satırı, bizim defterimizde
+takip edilen bir kayıt DEĞİLDİR. Onun üzerine hüküm kurmak — "gecikti",
+"eksik", "ödenmedi" — bilmediğimiz bir şeyi iddia etmektir.
+
+**Vaka:** çan _"67 hakediş kalemi gecikti · ₺137.975"_ diyordu. Ölçüm: üç
+hakediş partisinin **177 farklı sipariş numarasının HİÇBİRİ** bir satış
+kaydıyla eşleşmiyordu — en yeni parti dahil. Kanal çoktan ödemiş olabilir;
+sistem bunu bilemez. Her gün taşınan ₺138K'lık sahte panik, rozete olan
+güveni bitirirdi.
+
+> **ÖLÇÜT:** gecikme yalnız `saleId` dolu kalemde iddia edilir. Bağsız
+> kalem alacak değil, **rapor satırıdır**.
+
+⚠ Mimarın ilk teşhisi ("tarihsel damgalı partiler muaf tutulsun")
+**ölçümle reddedildi**: şemada öyle bir alan yok, `periodStart/End` üç
+partide de boş. Talimatın niyeti doğruydu, mekanizması sistemde yoktu —
+"mimar talimatları da bu süzgeçten geçer" kuralının bir örneği daha.
+
+**Ve kural kalkmaz, KAPSAM daralır:** bağlanmış + gecikmiş kalem hâlâ
+kırmızıdır. Bağlama çalışır çalışmaz sayı kendiliğinden doğruya döner.
+
+### MUAFİYETİN UYGULANMASI VE BEYANI AYRI SINANIR (KESİN KURAL)
+
+_Ders 19.08.2026, mutasyon bulgusu._ Bir kaydı sayımdan çıkarmak ile
+çıkarıldığını SÖYLEMEK iki ayrı davranıştır ve **ayrı ayrı sınanmalıdır.**
+
+Muafiyeti beyan eden sayıyı sabit `0`'a çeviren mutasyon **yeşil kaldı**:
+kural doğru çalışıyordu, yalnız ekrana bağlanması kopmuştu. O hâlde
+₺138K hiçbir yerde görünmeden yok olurdu.
+
+> **Doğru davranışın GÖRÜNMEZLİĞİ de yalancı yeşildir.** "Kural doğru
+> çalışıyor" testi, "kuralın sonucu kullanıcıya ulaşıyor" testinin yerine
+> geçmez. Sessiz muafiyet, muafiyetsizlikten daha tehlikelidir: ilkinde
+> rakam yanlış, ikincisinde rakam yok ve kimse aramıyor.
+
 ### DÜZELTME YOLU, TÜM OKUYUCULARA ULAŞTIĞI ÖLÇÜLMEDEN "VAR" SAYILMAZ (KESİN KURAL)
 
 _Ders 19.08.2026._ Bir veriyi düzeltecek ekran/akış yazılmış olması, o

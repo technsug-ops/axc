@@ -42,6 +42,7 @@ import {
   UYARI_SEVIYESI,
 } from "../src/lib/uyari/turler";
 import type { Parti } from "../src/lib/stok";
+import { KAR_SUZGECLERI } from "../src/lib/liste-suzgeci";
 
 let gecen = 0;
 let kalan = 0;
@@ -70,6 +71,7 @@ const bos: UyariOlcumleri = {
   supheliOran: { sayi: 0 },
   kanalKodsuzStok: { sayi: 0 },
   hakedisBaglanmamis: { sayi: 0 },
+  zararinaSatis: { sayi: 0 },
 };
 
 const parti = (kalanAdet: number, birimMaliyet: string | null): Parti => ({
@@ -111,6 +113,7 @@ console.log("=".repeat(70));
     supheliOran: { sayi: 0 },
     kanalKodsuzStok: { sayi: 0 },
   hakedisBaglanmamis: { sayi: 0 },
+  zararinaSatis: { sayi: 0 },
   });
   kontrol("beş ölçüm → beş uyarı", dolu.length === 5, dolu.length);
   kontrol("hepsi FAZ 1'de kırmızı", dolu.every((u) => u.seviye === "kirmizi"));
@@ -278,6 +281,7 @@ console.log("=".repeat(70));
     supheliOran: { sayi: 0 },
     kanalKodsuzStok: { sayi: 0 },
   hakedisBaglanmamis: { sayi: 0 },
+  zararinaSatis: { sayi: 0 },
     cevapsizTalep: { sayi: 0 },
   });
   const kisitli = izneGoreSuz(hepsi, () => false);
@@ -667,6 +671,86 @@ console.log("=".repeat(70));
   const gercek = uyarilariKur({ ...bos, hakedisGecikti: { sayi: 3, tutar: 900 } });
   kontrol("bağlı+geciken hâlâ KIRMIZI", gercek[0]?.seviye === "kirmizi");
   kontrol("  ...ve rozete giriyor", canSayisi(gercek) === 1);
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("F2-F) ZARARINA SATIŞ + ÜÇ SEVİYELİ EKRAN");
+console.log("=".repeat(70));
+{
+  const topla = readFileSync("src/lib/uyari/topla.ts", "utf8");
+  const form = readFileSync("src/app/satislar/zarar-uyarisi.tsx", "utf8");
+  const can = readFileSync("src/components/uyari-cani.tsx", "utf8");
+
+  /**
+   * ⚠ SAYI İLE LİSTE AYNI KOŞULDAN. Süzgeç `/satislar?kar=zarar` şunu
+   * uyguluyor: profitStatus CALCULATED **VE** net2 < 0. Sayaç yalnız
+   * net2 < 0 sayarsa, kârı henüz hesaplanmamış kalem sayıya girer ama
+   * listede çıkmaz — panel 5, liste 4 vakasının aynısı.
+   */
+  kontrol("sayaç profitStatus şartını da taşıyor", /profitStatus: "CALCULATED",/.test(topla));
+  kontrol("  ...ve net2 < 0", /net2Amount: \{ lt: 0 \}/.test(topla));
+  kontrol("  ...adres MEVCUT süzgeci kullanıyor", UYARI_ADRESLERI.zararinaSatis === "/satislar?kar=zarar");
+  kontrol("  ...ve KAR_SUZGECLERI 'zarar'ı tanıyor", KAR_SUZGECLERI.includes("zarar"));
+  /**
+   * ⚠ SEVİYE DE SINANIR. Zararına satış PARA KAYBIDIR; amber ya da nötre
+   * düşürmek onu rozetin dışına ya da arka plana atardı — Faz 1'in
+   * `nakitAcigi` ile aynı sınıf.
+   */
+  kontrol("zararına satış KIRMIZI", UYARI_SEVIYESI.zararinaSatis === "kirmizi");
+  kontrol(
+    "  ...ve rozete giriyor",
+    canSayisi(uyarilariKur({ ...bos, zararinaSatis: { sayi: 2 } })) === 1,
+  );
+
+  /**
+   * ⚠ FORM KENDİ KÂRINI HESAPLAMAZ. K5 motoru çağrılır; ikinci bir NET
+   * hesabı aynı satışı formda bir türlü, kayıttan sonra başka türlü
+   * gösterebilirdi.
+   */
+  /**
+   * ⚠ KÖR MUTASYON DERSİ: `simulasyonKur(` deseni ARAMAK yetmedi —
+   * kararı veren satır elle hesaba çevrildiğinde bile desen dosyada
+   * kalıyordu (alt dilim önerisi hâlâ motoru çağırıyor). Kontrol artık
+   * KARARI VEREN satıra bakıyor.
+   */
+  kontrol("form K5 motorunu çağırıyor", /simulasyonKur\(/.test(form));
+  kontrol(
+    "  ...ve HÜKMÜ VEREN NET motordan geliyor",
+    /const s = simulasyonKur\(girdi\);/.test(form),
+  );
+  kontrol("  ...alt dilim önerisi de motordan", /birAltDilim\(/.test(form));
+  kontrol("  ...varış noktası hükmüyle", /yonHukmu\(/.test(form));
+  kontrol("  ...oran FORMDAKİ değerden okunuyor", /komisyonOraniMetni/.test(form));
+  /** Kaydı engellemez — uyarı, engel değil. */
+  kontrol("form uyarısı kaydı ENGELLEMİYOR", !/disabled/.test(form));
+  /** Tahmin olduğu yazılı. */
+  kontrol("  ...tahmin olduğu beyan ediliyor", /zararTahmin/.test(form));
+
+  /** Üç seviye ayrı ayrı gruplanıyor mu, ve nötr NÖTR renkte mi? */
+  kontrol("ekran seviyeye göre gruplanıyor", /SEVIYE_SIRASI\.map/.test(can));
+  kontrol("  ...sıra kırmızı→amber→nötr", /\["kirmizi", "amber", "notr"\]/.test(can));
+  kontrol("  ...boş seviye başlığı çizilmiyor", /grup\.length === 0\) return null/.test(can));
+  kontrol("  ...nötr satır SARI değil (kendi rengi)", /notr: "bilgi"/.test(can));
+  kontrol("  ...renk eşlemesi tüketici (ikili koşul kalmadı)",
+    !/seviye === "kirmizi" \? "olumsuz" : "uyari"/.test(can));
+
+  /** Grup başlıkları sözlükten — koda gömülü metin yasak. */
+  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Uyari?: Record<string, string>;
+  };
+  for (const sv of ["kirmizi", "amber", "notr"]) {
+    kontrol(
+      `  grup başlığı sözlükte: ${sv}`,
+      (sozluk.Uyari?.[`grup_${sv}`] ?? "").length > 0,
+    );
+  }
+  for (const anahtar of ["zararUyarisi", "zararAltDilimKurtarir", "zararAltDilimKurtarmaz"]) {
+    const satis = (JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+      Satis?: Record<string, string>;
+    }).Satis;
+    kontrol(`  form metni sözlükte: ${anahtar}`, (satis?.[anahtar] ?? "").length > 0);
+  }
 }
 
 console.log("");

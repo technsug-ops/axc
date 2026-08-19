@@ -20,7 +20,8 @@ ilgili pakette kalır._
 |---|---|---|
 | ~~H1~~ | ~~Dilim tarifesi~~ | ✅ **KAPANDI 19.08** — 640 kalem yazıldı, geri okunarak doğrulandı, çapraz teyit tuttu. **Aşama 1 açılabilir** |
 | H2 | **Hakediş `.xlsx` teyidi** | Taze dönem dosyası → `canli:hakedis-esle` (hesap kırılımı) → `canli:hakedis-teyit` |
-| H3 | **Üç satış özel satır** | `11493262226` · `11492798173` · `11492628481` — H2 sırasında gerçek komisyon vs snapshot (2,70) vs güncel (15,00). ~−721 TL |
+| H3 | **DÖRT satış özel satır** | `11493262226` · `11492798173` · `11492628481` (Philips 5000, ~−721 TL) **+ `11331575354` — i9000 Ultra SkinIQ** |
+| H3b | **⚠ İ9000 — TEK BAŞINA ÜÇLÜDEN BÜYÜK** | `11331575354` · Trendyol · 17.06 · **₺12.960** · oran **%2,70** · ~12 puan fark ≈ **~₺1.590 potansiyel şişkinlik** · üstelik **"iade var" rozetli**. Hakediş teyidinde ÖNCE bu bakılır. |
 | H4 | **Ödeme hizmeti hipotezi** | H2 sırasında bakılacak: dosyada tahsilat/ödeme bedeli satırı var mı |
 | H5 | **N11 ritmi** | Komisyonlar hangi sıklıkla değişiyor? Cevapsızken envanter "ölçülemedi" diyor |
 | H6 | **Canlı tur** | Kart sırası · yapışkan çubuk · döküm görüntüsü · kıyas ibaresi (hepsi deploy'da) |
@@ -31,6 +32,7 @@ ilgili pakette kalır._
 
 | # | İş | Durum |
 |---|---|---|
+| K6 | **Eşik yeniden ölçümü — n=200'de** | 🕓 **ZAMANA BAĞLI.** `veri-supheli.ts` eşikleri (`verim > %200`, `maliyet payı < %5`) **n=40** tabanından çıktı (19.08.2026; p95 %154, p5 %44,8). Satış kalemi **200'ü geçince** dağılım yeniden ölçülür ve eşikler tazelenir. Ölçüm aracı: `canli:bekleme-olcum` (verim dağılımı bölümü). _Eşik kaynağıyla anılır; taban büyüdüğünde kaynak eskir._ |
 | K1 | **Uyarı Merkezi Faz 2 / dilim 1** | 🔓 **ENGEL KALKTI** — dilim verisi canlıda. Artık cevaplanabilir: _"zararına satış" uyarısı dilim bilinciyle mi kurulacak?_ **Karar bekliyor.** |
 | K5 | **Aşama 1 — fiyatlama aracı** | ✅ **KAPANDI 19.08.2026** — üç katman da bitti, Halil canlıda iki yönlü doğruladı (aşağıda) |
 

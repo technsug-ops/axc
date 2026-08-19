@@ -95,6 +95,17 @@ export const UYARI_ANAHTARLARI = [
    * yok olması değildir".
    */
   "hakedisBaglanmamis",
+  /**
+   * GEÇMİŞTE KAYDEDİLMİŞ ZARARINA SATIŞ.
+   *
+   * ⚠ ASIL UYARI FORMDA (`satislar/zarar-uyarisi.tsx`) — kaydetmeden önce
+   * görmek, kaydettikten sonra öğrenmekten iyidir. Buradaki sayaç GERİYE
+   * dönük olanı taşır: form uyarısı yayına girmeden önce kaydedilenler ve
+   * bilinçli olarak yine de kaydedilenler.
+   *
+   * Aynı koşul iki zamanda konuşuyor: orada önleyici, burada muhasebeci.
+   */
+  "zararinaSatis",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -134,6 +145,8 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
    */
   kanalKodsuzStok: "/stok?kanal=yok",
   hakedisBaglanmamis: "/hakedis",
+  /** Süzgeç ZATEN VAR (`KAR_SUZGECLERI` → "zarar"); yenisi açılmadı. */
+  zararinaSatis: "/satislar?kar=zarar",
 };
 
 /**
@@ -167,6 +180,8 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   kanalKodsuzStok: "notr",
   /** Muafiyet beyanı — sorun değil, bilgi. Rozete girmez. */
   hakedisBaglanmamis: "notr",
+  /** Para kaybı — Faz 1 ölçütüyle aynı sınıf. */
+  zararinaSatis: "kirmizi",
 };
 
 /**
@@ -193,6 +208,7 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   /** Kanal kodu OPERASYONEL — içinde kâr yok, depocu görüp açabilir. */
   kanalKodsuzStok: null,
   hakedisBaglanmamis: "satis.kar.gor",
+  zararinaSatis: "satis.kar.gor",
 };
 
 export type Uyari = {

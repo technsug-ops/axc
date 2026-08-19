@@ -35,6 +35,8 @@ import {
   type KargoSecenegi,
 } from "./kalem-bilgisi";
 import { type SatisDurumu } from "./actions";
+import { ZararUyarisi } from "./zarar-uyarisi";
+import type { SimulasyonZemini } from "@/lib/fiyatlama/kart-verisi";
 import { oranUyarisi } from "@/lib/komisyon/oran-uyarisi";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
@@ -68,6 +70,14 @@ type Kalem = {
   onerilenOran: number | null;
   /** Panel gerçeği — doluysa oran yok sayılır. */
   komisyonTutari: string;
+  /**
+   * ZARARINA SATIŞ UYARISININ ZEMİNİ — K5 motoruna girdi.
+   * ⚠ Form kendi kârını HESAPLAMAZ; `simulasyonKur`u çağırır. İkinci bir
+   * NET hesabı yazsaydık aynı satış formda bir türlü, kaydedildikten
+   * sonra başka türlü görünebilirdi.
+   */
+  birimMaliyet: number | null;
+  zemin: SimulasyonZemini | null;
 };
 
 /** Radix Select bos deger kabul etmiyor; "kargo secilmedi" icin nobetci. */
@@ -200,6 +210,8 @@ export function SatisFormu({
            * yazıyor demektir ve uyarı tam olarak bunu söyler.
            */
           onerilenOran: bilgi?.komisyonOrani ?? null,
+          birimMaliyet: bilgi?.birimMaliyet ?? null,
+          zemin: bilgi?.zemin ?? null,
         },
       ];
     });
@@ -735,6 +747,26 @@ export function SatisFormu({
                   <p className="text-muted-foreground text-xs">
                     {t("komisyonNotu")}
                   </p>
+
+                  {/* ---------------- ZARARINA SATIŞ ----------------
+                      Oran uyarısının hemen altında duruyor: ikisi de
+                      "bu satış beklediğin gibi mi" sorusunu soruyor ve
+                      biri ötekini açıklayabiliyor — yanlış girilmiş bir
+                      oran, zarar gibi görünür.
+
+                      Kaydı ENGELLEMEZ: zararına satış bilinçli bir karar
+                      olabilir (stok eritme, kampanya). Engelleseydik
+                      operasyoncu uyarıyı aşmanın yolunu arardı ve o yol
+                      bulunduğu anda uyarı bir daha okunmazdı. */}
+                  <ZararUyarisi
+                    fiyatMetni={kalem.unitPriceAmount}
+                    adet={kalem.quantity}
+                    birimMaliyet={kalem.birimMaliyet}
+                    kdvOrani={kalem.kdvOrani}
+                    paraBirimi={kalem.unitPriceCurrency}
+                    zemin={kalem.zemin}
+                    komisyonOraniMetni={kalem.komisyonOrani}
+                  />
 
                   {/* Sessiz varsayım olmasın: kategorisiz ürün %20'ye düşer. */}
                   {kalem.kdvVarsayilan ? (

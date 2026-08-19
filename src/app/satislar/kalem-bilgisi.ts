@@ -3,7 +3,8 @@
 import { yetkiIste } from "@/lib/yetki";
 import { prisma } from "@/lib/prisma";
 import { kdvOraniniCoz } from "@/lib/kdv";
-import { varyantStogu } from "@/lib/stok";
+import { simulasyonZeminleri, type SimulasyonZemini } from "@/lib/fiyatlama/kart-verisi";
+import { acikPartilerToplu, varyantStogu } from "@/lib/stok";
 
 /**
  * ============================================================================
@@ -29,6 +30,21 @@ export type KalemBilgisi = {
   kategoriAdi: string | null;
   /** Bu kanal hesabındaki komisyon oranı (%). Tanımlı değilse null. */
   komisyonOrani: number | null;
+
+  /**
+   * ── ZARARINA SATIŞ UYARISININ ZEMİNİ (K1, aday 1) ────────────────────
+   *  ⚠ FORM KENDİ KÂRINI HESAPLAMAZ. Bunlar K5 motorunun (`simulasyonKur`)
+   *  girdisidir; form fiyatı yazdıkça motoru çağırır. Formda ikinci bir
+   *  NET hesabı yazsaydık, aynı satış formda bir, kaydedildikten sonra
+   *  başka türlü görünebilirdi.
+   *
+   *  Maliyet AÇIK PARTİLERİN ağırlıklı ortalaması — FIFO'da hangi partinin
+   *  düşeceği satış anında belli olur, ama form kaydetmeden önce konuşuyor.
+   *  Bu bir TAHMİNDİR ve uyarı metni bunu söyler.
+   */
+  birimMaliyet: number | null;
+  /** Yalnız SEÇİLİ kanal hesabının zemini; ötekiler formda gereksiz. */
+  zemin: SimulasyonZemini | null;
 };
 
 export async function kalemBilgisiGetir(
@@ -69,6 +85,28 @@ export async function kalemBilgisiGetir(
     }
   }
 
+  /**
+   * MALİYET AÇIK PARTİLERDEN — ortak yardımcıdan, ikinci bir FIFO tanımı
+   * doğmasın. Maliyeti bilinmeyen parti varsa ortalama null döner:
+   * bilinmeyeni sıfır saymak "bedava mal" demek olurdu.
+   */
+  const partiler = (await acikPartilerToplu(prisma, [variantId])).get(variantId) ?? [];
+  let adet = 0;
+  let tutar = 0;
+  let eksik = partiler.length === 0;
+  for (const pa of partiler) {
+    if (pa.birimMaliyet === null) { eksik = true; break; }
+    adet += pa.kalanAdet;
+    tutar += Number(pa.birimMaliyet) * pa.kalanAdet;
+  }
+  const birimMaliyet = eksik || adet <= 0 ? null : tutar / adet;
+
+  const zeminler = channelAccountId
+    ? await simulasyonZeminleri(variantId, new Date())
+    : [];
+  const zemin =
+    zeminler.find((z) => z.channelAccountId === channelAccountId) ?? null;
+
   return {
     stok,
     desi: varyant?.product.desi
@@ -78,6 +116,8 @@ export async function kalemBilgisiGetir(
     kdvKaynagi: kdv.kaynak,
     kategoriAdi: kdv.kategoriAdi,
     komisyonOrani,
+    birimMaliyet,
+    zemin,
   };
 }
 

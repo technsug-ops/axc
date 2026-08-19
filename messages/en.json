@@ -826,7 +826,11 @@
     "komisyonIpucu": "",
     "oranKaynakYok": "",
     "oranSupheliDusuk": "",
-    "oranSapti": ""
+    "oranSapti": "",
+    "zararUyarisi": "",
+    "zararAltDilimKurtarir": "",
+    "zararAltDilimKurtarmaz": "",
+    "zararTahmin": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -2406,7 +2410,12 @@
     "eylem_kanalKodsuzStok": "",
     "canEtiketiBilgi": "",
     "baslik_hakedisBaglanmamis": "",
-    "eylem_hakedisBaglanmamis": ""
+    "eylem_hakedisBaglanmamis": "",
+    "grup_kirmizi": "",
+    "grup_amber": "",
+    "grup_notr": "",
+    "baslik_zararinaSatis": "",
+    "eylem_zararinaSatis": ""
   },
   "Talep": {
     "bildirEtiketi": "",
