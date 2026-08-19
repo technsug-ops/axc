@@ -30,10 +30,22 @@ const SEVIYE_SIRASI: UyariSeviyesi[] = ["kirmizi", "amber", "notr"];
  * olumsuz : uyari` yazıyordu; nötr katman gelince nötr satırlar SARI
  * çizilirdi — "bilgi" satırı uyarı gibi görünürdü.
  */
-const SEVIYE_RENGI: Record<UyariSeviyesi, "olumsuz" | "uyari" | "bilgi"> = {
+const SEVIYE_RENGI: Record<UyariSeviyesi, "olumsuz" | "uyari" | "notr"> = {
   kirmizi: "olumsuz",
   amber: "uyari",
-  notr: "bilgi",
+  /**
+   * ⚠ "bilgi" (MAVİ) DEĞİL, "notr" (GRİ/SOLUK) — mimar bulgusu
+   * 19.08.2026, canlı tur. Nötr kutular amber'la aynı görünüyordu:
+   * SAYIM ayrışmıştı (rozete girmiyorlar) ama GÖRÜNÜM ayrışmamıştı.
+   *
+   * Mavi de yeterli değildi: renkli bir kutu hiyerarşide amberle aynı
+   * ağırlıkta okunur. Hiyerarşi RENKTEN okunmalı — nötr, göz kaydırınca
+   * geçilebilen katmandır.
+   *
+   * _Ders 3'ün ("varış noktası beyansız") renk hâli: durum doğru
+   * hesaplanıyordu, kullanıcıya doğru GÖSTERİLMİYORDU._
+   */
+  notr: "notr",
 };
 import { DURUM_CIPI, DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import type { Uyari } from "@/lib/uyari/turler";

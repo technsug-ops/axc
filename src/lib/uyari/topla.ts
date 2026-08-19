@@ -70,6 +70,25 @@ async function sonYedekZamani(): Promise<Date | null> {
   }
 }
 
+/**
+ * GECİKME KOŞULU — TEK KAYNAK.
+ *
+ * ⚠ İKİ SAYI TEK SINIRDAN. `hakedisGecikti` (kırmızı) ve
+ * `hakedisBaglanmamis` (muafiyet beyanı) YALNIZCA `saleId` ile ayrılır;
+ * gecikme tanımı ikisinde de aynıdır. Ayrı ayrı yazılsaydı biri
+ * değiştirilip öteki unutulur, "kaç kalem muaf tutuldu" sorusunun cevabı
+ * kırmızı sayıyla tutmazdı.
+ *
+ * ⚠ SINIR `bugun`, `new Date()` DEĞİL — İŞ TAKVİMİ günü. Vadesi BUGÜN
+ * dolan kalem henüz gecikmiş değildir. (Bu sınır 19.08.2026'da bir
+ * raporlama hatasına yol açtı: sonda `new Date()` ile ölçüp **83**
+ * bulmuştum, ekran `bugun` ile **67** diyordu. İkisi de kendi sınırında
+ * doğruydu; ayrışan şey ölçüt değil, benim raporumdu.)
+ */
+function gecikmeKosulu(bugun: Date) {
+  return { paidAt: null, dueDate: { not: null, lt: bugun } };
+}
+
 export async function uyarilariTopla(): Promise<Uyari[]> {
   const bugun = gunDegeri(isTakvimGunu(new Date()));
 
@@ -116,20 +135,12 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
        * ═══════════════════════════════════════════════════════════════
        */
       prisma.settlementItem.aggregate({
-        where: {
-          paidAt: null,
-          dueDate: { not: null, lt: bugun },
-          saleId: { not: null },
-        },
+        where: { ...gecikmeKosulu(bugun), saleId: { not: null } },
         _count: { _all: true },
         _sum: { amount: true },
       }),
       prisma.settlementItem.count({
-        where: {
-          paidAt: null,
-          dueDate: { not: null, lt: bugun },
-          saleId: null,
-        },
+        where: { ...gecikmeKosulu(bugun), saleId: null },
       }),
       acikPartilerToplu(prisma, null),
       /**

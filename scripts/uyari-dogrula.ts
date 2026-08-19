@@ -637,12 +637,12 @@ console.log("=".repeat(70));
   const topla = readFileSync("src/lib/uyari/topla.ts", "utf8");
   kontrol(
     "geciken sayımı satışa BAĞLI kalemle sınırlı",
-    /saleId: \{ not: null \}/.test(topla) &&
+    /gecikmeKosulu\(bugun\), saleId: \{ not: null \}/.test(topla) &&
       /lt: bugun/.test(topla),
   );
   kontrol(
     "  ...ve muafiyet AYRICA sayılıyor (saleId: null)",
-    /saleId: null,/.test(topla),
+    /gecikmeKosulu\(bugun\), saleId: null/.test(topla),
   );
   /**
    * ⚠ KÖR MUTASYON DERSİ: beyanı `{ sayi: 0 }` yapan mutasyon YEŞİL
@@ -731,7 +731,15 @@ console.log("=".repeat(70));
   kontrol("ekran seviyeye göre gruplanıyor", /SEVIYE_SIRASI\.map/.test(can));
   kontrol("  ...sıra kırmızı→amber→nötr", /\["kirmizi", "amber", "notr"\]/.test(can));
   kontrol("  ...boş seviye başlığı çizilmiyor", /grup\.length === 0\) return null/.test(can));
-  kontrol("  ...nötr satır SARI değil (kendi rengi)", /notr: "bilgi"/.test(can));
+  /**
+   * ⚠ CANLI TUR BULGUSU 19.08.2026: nötr kutular amber'la AYNI görünüyordu.
+   * Sayım ayrışmıştı (rozete girmiyorlar) ama GÖRÜNÜM ayrışmamıştı.
+   * "bilgi" (mavi) de yetmez — renkli kutu hiyerarşide amberle aynı
+   * ağırlıkta okunur. Nötr GRİ/SOLUK olmalı.
+   */
+  kontrol("nötr satır GRİ/SOLUK (notr)", /notr: "notr",/.test(can));
+  kontrol("  ...amber değil", !/notr: "uyari"/.test(can));
+  kontrol("  ...mavi de değil", !/notr: "bilgi"/.test(can));
   kontrol("  ...renk eşlemesi tüketici (ikili koşul kalmadı)",
     !/seviye === "kirmizi" \? "olumsuz" : "uyari"/.test(can));
 
@@ -751,6 +759,48 @@ console.log("=".repeat(70));
     }).Satis;
     kontrol(`  form metni sözlükte: ${anahtar}`, (satis?.[anahtar] ?? "").length > 0);
   }
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("F2-G) GECİKME SINIRI TEK KAYNAK");
+console.log("=".repeat(70));
+{
+  const topla = readFileSync("src/lib/uyari/topla.ts", "utf8");
+  /**
+   * ⚠ İKİ SAYI TEK SINIRDAN. Kırmızı sayaç ile muafiyet beyanı yalnızca
+   * `saleId` ile ayrılmalı; gecikme tanımı ikisinde de aynı. Ayrı
+   * yazılsalardı biri değişip öteki unutulur ve "kaç kalem muaf tutuldu"
+   * sorusunun cevabı kırmızı sayıyla tutmazdı.
+   */
+  kontrol("gecikme koşulu TEK fonksiyonda", /function gecikmeKosulu\(/.test(topla));
+  kontrol("  ...kırmızı onu kullanıyor", /gecikmeKosulu\(bugun\), saleId: \{ not: null \}/.test(topla));
+  kontrol("  ...muafiyet de onu kullanıyor", /gecikmeKosulu\(bugun\), saleId: null/.test(topla));
+  kontrol(
+    "  ...ikinci bir dueDate koşulu KALMADI",
+    (topla.match(/dueDate: \{ not: null/g) ?? []).length === 1,
+  );
+
+  /**
+   * ⚠ SINIR İŞ TAKVİMİ GÜNÜ — `new Date()` DEĞİL. Vadesi BUGÜN dolan
+   * kalem henüz gecikmiş değildir. Sınır kayarsa aynı veriden farklı
+   * sayı çıkar: 19.08.2026'da sonda `new Date()` ile 83, ekran `bugun`
+   * ile 67 diyordu.
+   */
+  kontrol("sınır `bugun`, `new Date()` değil", /lt: bugun/.test(topla));
+
+  /**
+   * ⚠ METİN SAYIYLA UYUMLU OLMALI. "N kalem satışa bağlanamadı" derken
+   * N gecikme sayımından ÇIKARILAN sayıydı (67); bağsız kalem toplamı
+   * 658. Metin, sahip olmadığı bir anlamı iddia ediyordu.
+   */
+  const sz = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Uyari?: Record<string, string>;
+  };
+  kontrol(
+    "muafiyet başlığı 'sayım dışında' diyor (bağsız TOPLAM değil)",
+    (sz.Uyari?.baslik_hakedisBaglanmamis ?? "").includes("sayımı dışında"),
+  );
 }
 
 console.log("");
