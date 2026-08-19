@@ -610,6 +610,45 @@ console.log("\nFİYAT SİMÜLASYONU — DOĞRULAMA\n");
     !/bicim\.para\(s\.net1/.test(ekran) && !/bicim\.para\(s\.net2/.test(ekran));
 }
 
+// --- 17) KANAL BEYANI — SESSİZ EKSİKLİK YOK ----------------------------------
+{
+  console.log("\n17) KANAL BEYANI");
+  /**
+   * ⚠ GÖRÜNMEMEK "SORUN YOK" DEĞİL "HESAPLANAMADI" DEMEKTİR.
+   * Kaydı olmayan kanalın kutusu hiç çizilmiyordu; kullanıcı N11'de
+   * satıyor, kartta N11 yok ve sebebini hiçbir şey söylemiyordu.
+   */
+  const ekran = readFileSync("src/app/kart/[variantId]/fiyat-dene.tsx", "utf8");
+  kontrol("kayıtsız kanallar ekrana basılıyor", /deneKanalKaydiYok/.test(ekran));
+  kontrol("  ...yalnız BOŞ DEĞİLKEN", /kayitsizKanallar\.length > 0/.test(ekran));
+
+  /**
+   * ⚠ HİÇ ZEMİN YOKKEN BÖLÜM KOMPLE KAYBOLUYORDU (`return null`) — sessiz
+   * kayıp. Artık bölüm duruyor ve NEDEN boş olduğunu söylüyor.
+   */
+  kontrol("hiç zemin yokken bölüm KAYBOLMUYOR", !/zeminler\.length === 0\) return null/.test(ekran));
+  kontrol("  ...ve sebebini söylüyor", /deneKanalKaydiHicYok/.test(ekran));
+
+  const sayfa = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
+  kontrol("sayfa kayıtsız kanalları çözüyor", /kayitsizSatisKanallari\(variantId\)/.test(sayfa));
+  kontrol("  ...kâr izni yoksa sormuyor", /karGorunur \? await kayitsizSatisKanallari/.test(sayfa));
+
+  /**
+   * ⚠ GÜRÜLTÜ SINIRI ÖLÇÜLDÜ: yalnız `isActive && satisIcin` hesaplar
+   * sorulur. 19.08.2026'da bu 3 hesap; alış hesaplarını da katsaydık
+   * liste 13'e çıkar ve hiçbir bilgi taşımazdı (499 kümesi dersi).
+   */
+  const veri = readFileSync("src/lib/fiyatlama/kart-verisi.ts", "utf8");
+  kontrol("yalnız SATIŞ hesapları sorulıyor", /isActive: true, satisIcin: true/.test(veri));
+
+  const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    UrunKarti?: Record<string, string>;
+  };
+  for (const a of ["deneKanalKaydiYok", "deneKanalKaydiHicYok"]) {
+    kontrol(`  sözlük: ${a}`, (tr.UrunKarti?.[a] ?? "").length > 0);
+  }
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

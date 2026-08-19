@@ -66,6 +66,7 @@ export function FiyatDene({
   eldekiAdet,
   yasGun,
   yasBandi,
+  kayitsizKanallar,
 }: {
   zeminler: ZeminGorunumu[];
   birimMaliyet: number | null;
@@ -88,6 +89,12 @@ export function FiyatDene({
   eldekiAdet: number;
   yasGun: number | null;
   yasBandi: YasBandi | null;
+  /**
+   * ⚠ HESAPLANAMAYAN KANALLAR — SESSİZ EKSİKLİĞİN BEYANI.
+   * Kaydı olmayan kanal ekranda hiç görünmüyordu ve görünmemek "o kanalda
+   * sorun yok" diye okunuyordu; oysa doğrusu "o kanal HESAPLANAMADI".
+   */
+  kayitsizKanallar: string[];
 }) {
   const t = useTranslations("UrunKarti");
   const bicim = useBicim();
@@ -95,7 +102,12 @@ export function FiyatDene({
     baslangicFiyati === null ? "" : String(baslangicFiyati),
   );
 
-  if (zeminler.length === 0) return null;
+  /**
+   * ⚠ HİÇ ZEMİN YOKKEN BÖLÜM KOMPLE KAYBOLUYORDU — sessiz kayıp.
+   * Kullanıcı "Fiyat dene" diye bir şey olduğunu bile görmüyor, sebebini
+   * hiç görmüyordu. Artık bölüm duruyor ve NEDEN boş olduğunu söylüyor.
+   */
+  const hicZeminYok = zeminler.length === 0;
 
   const sayi = Number(fiyat.replace(",", "."));
   const gecerli = fiyat.trim() !== "" && Number.isFinite(sayi) && sayi > 0;
@@ -209,6 +221,12 @@ export function FiyatDene({
       ) : (
         <p className="text-muted-foreground text-sm">{t("deneStokYok")}</p>
       )}
+
+      {hicZeminYok ? (
+        <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
+          {t("deneKanalKaydiHicYok")}
+        </p>
+      ) : null}
 
       {zeminler.map((z) => {
         const girdi: SimulasyonGirdisi = {
@@ -399,6 +417,15 @@ export function FiyatDene({
           </div>
         );
       })}
+
+      {/* ---------- HESAPLANAMAYAN KANALLAR ----------
+          Kutusu çıkmayan kanal, "sorunsuz" değil "hesaplanamadı"
+          demektir. Sebebi ve çözümü tek cümlede yazıyor. */}
+      {kayitsizKanallar.length > 0 ? (
+        <p className="text-muted-foreground text-xs">
+          {t("deneKanalKaydiYok", { kanallar: kayitsizKanallar.join(" · ") })}
+        </p>
+      ) : null}
 
       {fiyat.trim() !== "" ? (
         <Button variant="ghost" size="sm" onClick={() => setFiyat("")}>

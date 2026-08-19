@@ -81,6 +81,7 @@ function Bolum({
   );
 }
 
+import { kayitsizSatisKanallari } from "@/lib/fiyatlama/kart-verisi";
 import { FiyatDene } from "./fiyat-dene";
 import {
   simulasyonZeminleri,
@@ -114,6 +115,11 @@ export default async function KartSayfasi({
    * hazırlamak boş sorgu olurdu.
    */
   const zeminler = karGorunur ? await simulasyonZeminleri(variantId, new Date()) : [];
+  /**
+   * Kaydı olmayan satış kanalları — kâr izni yoksa hiç sorulmaz
+   * (bölüm zaten çizilmiyor, boşuna sorgu atmayalım).
+   */
+  const kayitsizKanallar = karGorunur ? await kayitsizSatisKanallari(variantId) : [];
   const kdvOrani = karGorunur ? await varyantKdvOrani(variantId) : 20;
 
   /** Para biçimi — değer null ise "?" kalır, sıfıra çevrilmez. */
@@ -371,6 +377,7 @@ export default async function KartSayfasi({
           baslangicFiyati={null}
           /* Yaş kartın üstündeki kutuyla AYNI kaynaktan — iki yerde iki
              farklı gün sayısı çıkmasın. */
+          kayitsizKanallar={kayitsizKanallar}
           eldekiAdet={veri.eldekiAdet}
           yasGun={veri.yasGun}
           yasBandi={veri.yasBandi}

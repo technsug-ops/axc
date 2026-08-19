@@ -145,3 +145,43 @@ export async function varyantKdvOrani(variantId: string): Promise<number> {
   if (v === null) return VARSAYILAN_KDV_ORANI;
   return kdvOraniniCoz(v.product).oran;
 }
+
+
+/**
+ * ============================================================================
+ *  KAYIT OLMAYAN SATIŞ KANALLARI — SESSİZ EKSİKLİĞİN BEYANI
+ * ----------------------------------------------------------------------------
+ *  ⚠ `simulasyonZeminleri` yalnız KAYDI OLAN kanalları döndürüyor. Kaydı
+ *  olmayan kanal ekranda hiç görünmüyordu — ve görünmemek, "o kanalda
+ *  sorun yok" diye okunuyordu. Oysa doğrusu "o kanal HESAPLANAMADI".
+ *
+ *  Kullanıcı N11'de satıyor, kartta N11 kutusu yok, ve bunun sebebinin
+ *  "kanal kodu tanımlı değil" olduğunu hiçbir şey söylemiyor.
+ *
+ *  ── GÜRÜLTÜ RİSKİ ÖLÇÜLDÜ ───────────────────────────────────────────────
+ *  19.08.2026: `isActive && satisIcin` olan hesap sayısı **3** (Trendyol,
+ *  Hepsiburada, N11 — hepsi AXCALI). Yani bu liste en fazla 2 satır olur.
+ *  Alış hesapları dışarıda; onlarda komisyon kaydı beklemek anlamsızdı.
+ *
+ *  _Uyarı merkezindeki 499'luk küme dersi burada da geçerli: kartezyen
+ *  küme değil, FİİLEN SATIŞ YAPILAN hesaplar._
+ * ============================================================================
+ */
+export async function kayitsizSatisKanallari(
+  variantId: string,
+): Promise<string[]> {
+  const [hesaplar, kayitlar] = await Promise.all([
+    prisma.channelAccount.findMany({
+      where: { isActive: true, satisIcin: true },
+      select: { id: true, name: true, channel: { select: { name: true } } },
+    }),
+    prisma.channelSku.findMany({
+      where: { variantId, isActive: true },
+      select: { channelAccountId: true },
+    }),
+  ]);
+  const kayitli = new Set(kayitlar.map((k) => k.channelAccountId));
+  return hesaplar
+    .filter((h) => !kayitli.has(h.id))
+    .map((h) => `${h.channel.name} — ${h.name}`);
+}

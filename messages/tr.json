@@ -2600,7 +2600,9 @@
     "deneBasabasHepZarar": "Bu dilimde hiçbir fiyat kâra çıkmıyor — başabaş bu dilimin üstünde.",
     "deneBekleme": "Stokta {adet} adet · {gun} gündür bekliyor",
     "deneStokYok": "Stokta yok — bekleme süresi hesaplanmadı.",
-    "deneYaklasik": "≈ {tutar}"
+    "deneYaklasik": "≈ {tutar}",
+    "deneKanalKaydiYok": "Hesaplanamayan kanallar: {kanallar} — bu ürünün orada kanal kodu tanımlı değil.",
+    "deneKanalKaydiHicYok": "Bu ürün hiçbir satış kanalında kayıtlı değil — hesap yapılamıyor. Kanal kodu tanımlanınca burada görünür."
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",
