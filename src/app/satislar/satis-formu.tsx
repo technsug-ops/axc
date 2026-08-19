@@ -35,7 +35,7 @@ import {
   type KargoSecenegi,
 } from "./kalem-bilgisi";
 import { type SatisDurumu } from "./actions";
-import { ZararUyarisi } from "./zarar-uyarisi";
+import { KarDurumu } from "./kar-durumu";
 import type { SimulasyonZemini } from "@/lib/fiyatlama/kart-verisi";
 import { oranUyarisi } from "@/lib/komisyon/oran-uyarisi";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
@@ -758,7 +758,7 @@ export function SatisFormu({
                       olabilir (stok eritme, kampanya). Engelleseydik
                       operasyoncu uyarıyı aşmanın yolunu arardı ve o yol
                       bulunduğu anda uyarı bir daha okunmazdı. */}
-                  <ZararUyarisi
+                  <KarDurumu
                     fiyatMetni={kalem.unitPriceAmount}
                     adet={kalem.quantity}
                     birimMaliyet={kalem.birimMaliyet}

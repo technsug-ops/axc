@@ -860,7 +860,9 @@
     "dogrulaNotIpucu_KUPON_INDIRIM": "örn. HB hediye kuponuyla alındı",
     "dogrulaNotIpucu_HEDIYE_NUMUNE": "örn. tedarikçi numunesi, bedelsiz geldi",
     "dogrulaNotIpucu_OZEL_ANLASMA": "örn. toplu alım anlaşması, özel fiyat",
-    "dogrulaNotIpucu_DIGER": "Neden olağan dışı? Kısaca yaz."
+    "dogrulaNotIpucu_DIGER": "Neden olağan dışı? Kısaca yaz.",
+    "karDurumu": "Bu satış kârda — NET-2 yaklaşık {net2}",
+    "karBasabas": "Bu satış başabaşta — NET-2 sıfır."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",

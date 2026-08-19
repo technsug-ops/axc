@@ -860,7 +860,9 @@
     "dogrulaNotIpucu_KUPON_INDIRIM": "",
     "dogrulaNotIpucu_HEDIYE_NUMUNE": "",
     "dogrulaNotIpucu_OZEL_ANLASMA": "",
-    "dogrulaNotIpucu_DIGER": ""
+    "dogrulaNotIpucu_DIGER": "",
+    "karDurumu": "",
+    "karBasabas": ""
   },
   "Kategori": {
     "adZorunlu": "",

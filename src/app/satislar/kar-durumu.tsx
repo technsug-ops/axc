@@ -1,6 +1,6 @@
 "use client";
 
-import { TriangleAlert } from "lucide-react";
+import { Check, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useBicim } from "@/lib/bicim-istemci";
@@ -16,7 +16,7 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 /**
  * ============================================================================
- *  ZARARINA SATIŞ UYARISI — FORM İÇİ
+ *  KÂR DURUMU — FORM İÇİ (zarar kırmızı, kâr yeşil)
  * ----------------------------------------------------------------------------
  *  K1 aday 1, mimar onayı 19.08.2026.
  *
@@ -38,6 +38,17 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
  *  operasyoncu uyarıyı aşmanın yolunu arardı ve o yol bulunduğu anda
  *  uyarı bir daha okunmazdı.
  *
+ *  ── SESSİZLİK DE BİR CEVAPTIR, AMA YANLIŞ CEVAP ─────────────────────────
+ *  ⚠ Halil önerisi 20.08.2026. Önce yalnız ZARAR konuşuyordu; kâr
+ *  durumunda ekran sessizdi ve sessizlik "hesap çalışıyor mu?" tereddüdü
+ *  yaratıyordu. Artık her iki hâlde de bir satır var: kırmızı kutu ya da
+ *  sade yeşil onay.
+ *
+ *  ⚠ YEŞİL SATIR DİLİM/YÖN MANTIĞINA GİRMEZ. "Daha da iyileştir" önerisi
+ *  K5'in işi (kârlılık kartı); burada tek iş, formun hesabı yaptığını ve
+ *  sonucun artıda olduğunu SÖYLEMEK. Yeşil satıra öneri eklemek, satış
+ *  girerken fiyat optimizasyonu yaptırmak olurdu.
+ *
  *  ── TAHMİN OLDUĞU YAZILI ────────────────────────────────────────────────
  *  Maliyet AÇIK PARTİLERİN ağırlıklı ortalamasıdır; FIFO'da hangi partinin
  *  düşeceği kayıt anında belli olur. Rakam "yaklaşık"tır ve metin bunu
@@ -45,7 +56,7 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
  * ============================================================================
  */
 
-export function ZararUyarisi({
+export function KarDurumu({
   fiyatMetni,
   adet,
   birimMaliyet,
@@ -103,7 +114,32 @@ export function ZararUyarisi({
 
   const s = simulasyonKur(girdi);
   /** NET çözülemiyorsa susulur — beyan kartın "Fiyat dene"sinin işi. */
-  if (s.net2 === null || s.net2 >= 0) return null;
+  if (s.net2 === null) return null;
+
+  /**
+   * ⚠ KÂR HÂLİ — SADE YEŞİL SATIR, KUTU DEĞİL.
+   * Kırmızının simetriği ama aynı ağırlıkta değil: zarar bir EYLEM
+   * çağrısı, kâr yalnız bir onaydır. Aynı boyutta kutu yapsaydık iyi
+   * haber kötü haberle aynı dikkati çeker ve kırmızı sıradanlaşırdı.
+   *
+   * ⚠ TAM SIFIR YEŞİL DEĞİL: başabaş ne kâr ne zarar (aynı gün verilen
+   * "sıfır kâr sayılmaz" kararı, üçüncü ekranda da aynı davranıyor).
+   */
+  if (s.net2 > 0) {
+    return (
+      <p className={`flex flex-wrap items-center gap-1 text-sm ${DURUM_YAZISI.olumlu}`}>
+        <Check className="size-3.5 shrink-0" />
+        {t("karDurumu", { net2: bicim.para(s.net2, paraBirimi) })}
+      </p>
+    );
+  }
+  if (s.net2 === 0) {
+    return (
+      <p className="text-muted-foreground flex flex-wrap items-center gap-1 text-sm">
+        {t("karBasabas")}
+      </p>
+    );
+  }
 
   const oneri = zemin.dilimler === null ? null : birAltDilim(zemin.dilimler, fiyat);
   const oneriSonuc =

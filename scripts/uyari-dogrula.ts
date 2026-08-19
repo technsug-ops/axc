@@ -688,7 +688,7 @@ console.log("F2-F) ZARARINA SATIŞ + ÜÇ SEVİYELİ EKRAN");
 console.log("=".repeat(70));
 {
   const topla = readFileSync("src/lib/uyari/topla.ts", "utf8");
-  const form = readFileSync("src/app/satislar/zarar-uyarisi.tsx", "utf8");
+  const form = readFileSync("src/app/satislar/kar-durumu.tsx", "utf8");
   const can = readFileSync("src/components/uyari-cani.tsx", "utf8");
 
   /**
@@ -733,6 +733,29 @@ console.log("=".repeat(70));
   kontrol("  ...oran FORMDAKİ değerden okunuyor", /komisyonOraniMetni/.test(form));
   /** Kaydı engellemez — uyarı, engel değil. */
   kontrol("form uyarısı kaydı ENGELLEMİYOR", !/disabled/.test(form));
+
+  /**
+   * ⚠ SESSİZLİK DE BİR CEVAPTIR, AMA YANLIŞ CEVAP — Halil önerisi
+   * 20.08.2026. Kâr durumunda ekran susuyordu ve sessizlik "hesap
+   * çalışıyor mu?" tereddüdü yaratıyordu.
+   */
+  kontrol("kâr hâli de konuşuyor", /karDurumu/.test(form));
+  kontrol("  ...ve koşul NET-2 > 0'a bağlı", /s\.net2 > 0/.test(form));
+  /** ⚠ TAM SIFIR YEŞİL DEĞİL — üçüncü ekranda da aynı kural. */
+  kontrol("başabaş yeşil DEĞİL", /s\.net2 === 0/.test(form) && /karBasabas/.test(form));
+  /** Yeşil satır dilim/yön mantığına GİRMEZ — o K5'in işi. */
+  /**
+   * ⚠ İLK DENEME YANLIŞ ŞEYİ SINIYORDU: "karDurumu ile birAltDilim
+   * arasında 400 karakter yok" demek KAYNAK SIRASINI ölçmek olurdu,
+   * davranışı değil. Doğrusu: kâr dalı ERKEN DÖNÜYOR mu — yani öneri
+   * hesabına hiç varmadan mı çıkıyor?
+   */
+  const karDali = form.slice(
+    form.indexOf("if (s.net2 > 0) {"),
+    form.indexOf("if (s.net2 === 0) {"),
+  );
+  kontrol("kâr dalı ERKEN dönüyor (öneriye varmadan)",
+    karDali.includes("return (") && !karDali.includes("oneri"));
   /** Tahmin olduğu yazılı. */
   kontrol("  ...tahmin olduğu beyan ediliyor", /zararTahmin/.test(form));
 
@@ -945,7 +968,7 @@ console.log("=".repeat(70));
 {
   const can = readFileSync("src/components/uyari-cani.tsx", "utf8");
   const liste = readFileSync("src/app/satislar/page.tsx", "utf8");
-  const form = readFileSync("src/app/satislar/zarar-uyarisi.tsx", "utf8");
+  const form = readFileSync("src/app/satislar/kar-durumu.tsx", "utf8");
   const buton = readFileSync("src/app/satislar/dogrula-butonu.tsx", "utf8");
 
   /**

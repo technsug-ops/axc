@@ -691,7 +691,7 @@ console.log("\nFİYAT SİMÜLASYONU — DOĞRULAMA\n");
 
   /** İKİ EKRAN AYNI KURALI KULLANIYOR (İlke #10). */
   const kart = readFileSync("src/app/kart/[variantId]/fiyat-dene.tsx", "utf8");
-  const form = readFileSync("src/app/satislar/zarar-uyarisi.tsx", "utf8");
+  const form = readFileSync("src/app/satislar/kar-durumu.tsx", "utf8");
   kontrol("kart mesafeyi gösteriyor", /mesafeHukmu\(/.test(kart));
   kontrol("form da gösteriyor", /mesafeHukmu\(/.test(form));
   kontrol("  ...kart kendi eşiğini yazmıyor", !/0\.25/.test(kart));
