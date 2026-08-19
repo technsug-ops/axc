@@ -3,6 +3,9 @@ import { sifiraYuvarlandi } from "../src/lib/bicim-ortak";
 import { karZararRengi } from "../src/lib/durum-renkleri";
 import {
   basabasFiyati,
+  mesafeHukmu,
+  MESAFE_OLCUMU,
+  MESAFE_UZAK,
   birAltDilim,
   simulasyonKur,
   yonHukmu,
@@ -647,6 +650,53 @@ console.log("\nFİYAT SİMÜLASYONU — DOĞRULAMA\n");
   for (const a of ["deneKanalKaydiYok", "deneKanalKaydiHicYok"]) {
     kontrol(`  sözlük: ${a}`, (tr.UrunKarti?.[a] ?? "").length > 0);
   }
+}
+
+// --- 18) SINIRA MESAFE -------------------------------------------------------
+{
+  console.log("\n18) SINIRA MESAFE");
+  /**
+   * ⚠ KARAR: ÖNERİ GİZLENMEZ, MESAFESİ YAZILIR. Eşikle saklamak sessiz
+   * kayıp olurdu; uzak sınır bazen doğru hamledir (stok eritme).
+   */
+  const yakin = mesafeHukmu(1000, 950);
+  kontrol("yakın sınır ölçülüyor", yakin?.pay !== undefined && Math.abs(yakin.pay - 0.05) < 1e-9, yakin);
+  kontrol("  ...ve UZAK sayılmıyor", yakin?.uzak === false);
+
+  /** Gerçek vaka: 1500 → 769,98 (%48,7). */
+  const uzak = mesafeHukmu(1500, 769.98);
+  kontrol("uzak sınır UZAK sayılıyor", uzak?.uzak === true, uzak);
+
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR. Ölçülen dağılımın
+   * GÖVDESİ (%5–%20,6, 18 üründen 14'ü) yanmamalı; sıçramadan sonrası
+   * (%30,6+) yanmalı. Eşik dağılımın içine düşseydi her üründe yanardı
+   * ve uyarı okunmaz olurdu.
+   */
+  kontrol("p75 (%20,6) YANMIYOR", mesafeHukmu(1000, 1000 * (1 - MESAFE_OLCUMU.p75))?.uzak === false);
+  kontrol("ilk sıçrama (%30,6) YANIYOR", mesafeHukmu(1000, 1000 * (1 - MESAFE_OLCUMU.ilkSicrama))?.uzak === true);
+  kontrol("eşik p75 ile sıçrama ARASINDA", MESAFE_UZAK > MESAFE_OLCUMU.p75 && MESAFE_UZAK < MESAFE_OLCUMU.ilkSicrama);
+
+  /**
+   * ⚠ PAYDA MEVCUT FİYAT. Hedefe bölmek aynı hamleyi abartılı gösterirdi
+   * (1500→770 hedefe göre %95, mevcuda göre %49).
+   */
+  const m = mesafeHukmu(1500, 750);
+  kontrol("pay MEVCUT fiyattan (hedeften değil)", Math.abs((m?.pay ?? 0) - 0.5) < 1e-9, m);
+
+  /** Anlamsız girdiler hüküm ÜRETMEZ — uydurulmuş bir yüzde yazılmaz. */
+  kontrol("hedef mevcuda eşitse hüküm YOK", mesafeHukmu(1000, 1000) === null);
+  kontrol("hedef daha PAHALIYSA hüküm YOK", mesafeHukmu(1000, 1200) === null);
+  kontrol("sıfır fiyat hüküm YOK", mesafeHukmu(0, 100) === null);
+
+  /** İKİ EKRAN AYNI KURALI KULLANIYOR (İlke #10). */
+  const kart = readFileSync("src/app/kart/[variantId]/fiyat-dene.tsx", "utf8");
+  const form = readFileSync("src/app/satislar/zarar-uyarisi.tsx", "utf8");
+  kontrol("kart mesafeyi gösteriyor", /mesafeHukmu\(/.test(kart));
+  kontrol("form da gösteriyor", /mesafeHukmu\(/.test(form));
+  kontrol("  ...kart kendi eşiğini yazmıyor", !/0\.25/.test(kart));
+  kontrol("  ...form da yazmıyor", !/0\.25/.test(form));
+  kontrol("kart uzakken uyarı rengine geçiyor", /m\.uzak \? DURUM_YAZISI\.uyari/.test(kart));
 }
 
 console.log("");

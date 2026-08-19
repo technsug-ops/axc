@@ -830,7 +830,9 @@
     "zararUyarisi": "",
     "zararAltDilimKurtarir": "",
     "zararAltDilimKurtarmaz": "",
-    "zararTahmin": ""
+    "zararTahmin": "",
+    "zararMesafe": "",
+    "zararMesafeUzak": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -2602,7 +2604,9 @@
     "deneStokYok": "",
     "deneYaklasik": "",
     "deneKanalKaydiYok": "",
-    "deneKanalKaydiHicYok": ""
+    "deneKanalKaydiHicYok": "",
+    "deneMesafe": "",
+    "deneMesafeUzak": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",

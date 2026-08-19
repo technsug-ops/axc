@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useBicim } from "@/lib/bicim-istemci";
 import {
   birAltDilim,
+  mesafeHukmu,
   simulasyonKur,
   yonHukmu,
   yonRengi,
@@ -135,6 +136,24 @@ export function ZararUyarisi({
               })}
         </p>
       ) : null}
+      {/* ---------- SINIRA MESAFE ----------
+          ⚠ AYNI KURAL KARTTAKİYLE (İlke #10). Zararı kurtaran bir öneri,
+          fiyatın yarısını feda ediyorsa bunu SÖYLEMEK zorundayız; yoksa
+          "kâra geçer" cümlesi bedelini gizler. */}
+      {oneri !== null
+        ? (() => {
+            const m = mesafeHukmu(fiyat, oneri.hedefFiyat);
+            if (m === null) return null;
+            const pay = Math.round(m.pay * 100);
+            return (
+              <p
+                className={`text-xs ${m.uzak ? DURUM_YAZISI.uyari : "text-muted-foreground"}`}
+              >
+                {m.uzak ? t("zararMesafeUzak", { pay }) : t("zararMesafe", { pay })}
+              </p>
+            );
+          })()
+        : null}
       <p className="text-muted-foreground text-xs">{t("zararTahmin")}</p>
     </div>
   );

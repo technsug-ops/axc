@@ -830,7 +830,9 @@
     "zararUyarisi": "Bu kalem ZARARINA görünüyor — NET-2 yaklaşık {net2} eksi",
     "zararAltDilimKurtarir": "{fiyat} yaparsanız komisyon %{oran} dilimine iner ve NET-2 {sonuc} olur — kâra geçer",
     "zararAltDilimKurtarmaz": "{fiyat} ile %{oran} dilimine inmek de kurtarmıyor — zarar sürer",
-    "zararTahmin": "Tahmini: maliyet açık partilerin ortalaması, kargo hariç. Kayıt engellenmez."
+    "zararTahmin": "Tahmini: maliyet açık partilerin ortalaması, kargo hariç. Kayıt engellenmez.",
+    "zararMesafe": "Bu, girdiğin fiyatın %{pay} altı.",
+    "zararMesafeUzak": "⚠ Bu, girdiğin fiyatın %{pay} altı — sınır UZAK, büyük bir indirim gerekir."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -2602,7 +2604,9 @@
     "deneStokYok": "Stokta yok — bekleme süresi hesaplanmadı.",
     "deneYaklasik": "≈ {tutar}",
     "deneKanalKaydiYok": "Hesaplanamayan kanallar: {kanallar} — bu ürünün orada kanal kodu tanımlı değil.",
-    "deneKanalKaydiHicYok": "Bu ürün hiçbir satış kanalında kayıtlı değil — hesap yapılamıyor. Kanal kodu tanımlanınca burada görünür."
+    "deneKanalKaydiHicYok": "Bu ürün hiçbir satış kanalında kayıtlı değil — hesap yapılamıyor. Kanal kodu tanımlanınca burada görünür.",
+    "deneMesafe": "Mevcut fiyatın %{pay} altı.",
+    "deneMesafeUzak": "⚠ Mevcut fiyatın %{pay} altı — sınır UZAK, büyük bir indirim gerekir."
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

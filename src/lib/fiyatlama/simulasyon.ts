@@ -397,3 +397,68 @@ export function basabasFiyati(girdi: SimulasyonGirdisi): BasabasSonucu {
     dilimHep: ortaNet === null ? null : ortaNet >= 0 ? "KAR" : "ZARAR",
   };
 }
+
+
+/**
+ * ============================================================================
+ *  SINIRA MESAFE — ÖNERİ NE KADAR BÜYÜK BİR İNDİRİM İSTİYOR?
+ * ----------------------------------------------------------------------------
+ *  Karar bana bırakılmıştı (mimar, 19.08.2026). Verdiğim karar ve gerekçesi:
+ *
+ *  ── ÖNERİ GİZLENMEZ, MESAFESİ YAZILIR ───────────────────────────────────
+ *  Bir eşik koyup "çok uzaksa öneriyi hiç gösterme" demeyi REDDETTİM.
+ *  Araç karar vermez, gösterir; gizlenen öneri sessiz kayıptır ve
+ *  kullanıcı o dilimin var olduğunu hiç öğrenemez. Üstelik uzak sınır
+ *  bazen doğru hamledir (stok eritme, sezon sonu).
+ *
+ *  Bunun yerine MESAFE HER ZAMAN YAZILIR: "₺769,98 (mevcut fiyatın %49
+ *  altı)". Yüzde, soyut bir hedef fiyatı büyüklüğe çevirir; kullanıcı
+ *  %5 ile %49'u bir bakışta ayırır.
+ *
+ *  ── "UZAK" EŞİĞİ ÖLÇÜLDÜ, YUVARLANMADI ──────────────────────────────────
+ *  Canlı dağılım (19.08.2026, tarifesi ve satışı olan 18 ürün):
+ *
+ *      min %5,1 · ortanca %14,2 · p75 %20,6 · p90 %41,3 · max %45,6
+ *
+ *  ⚠ DAĞILIMDA AÇIK BİR BOŞLUK VAR: gövde %5–%20,6 arasında (18 üründen
+ *  14'ü), sonra %30,6'ya sıçrıyor. Eşik o boşluğa konuldu — dağılımın
+ *  içine düşen bir eşik her üründe yanardı ve uyarı okunmaz olurdu.
+ *
+ *  `%25` seçimi: p75'in (%20,6) üstünde, ilk sıçramanın (%30,6) altında.
+ *  Bugün 18 üründen 4'ünde yanıyor ve dördü de gerçekten büyük kesintiler
+ *  (%30,6 · %35,9 · %41,3 · %45,6).
+ * ============================================================================
+ */
+
+/** Ölçümün kaynağı — eşik kaynağıyla anılır. */
+export const MESAFE_OLCUMU = {
+  tarih: "19.08.2026",
+  ornek: 18,
+  ortanca: 0.142,
+  p75: 0.206,
+  ilkSicrama: 0.306,
+} as const;
+
+/** Bu payın üstündeki indirimler "sınır uzak" diye işaretlenir. */
+export const MESAFE_UZAK = 0.25;
+
+export type MesafeHukmu = {
+  /** Mevcut fiyata göre indirim payı (0,49 = %49 altı). */
+  pay: number;
+  /** Eşiğin üstünde mi — ekran ayrıca uyarır. */
+  uzak: boolean;
+};
+
+/**
+ * Öneriye inmek mevcut fiyatın yüzde kaçını feda ediyor?
+ *
+ * ⚠ PAYDA MEVCUT FİYAT. Hedefe bölmek matematiksel olarak da mümkündü ama
+ * kullanıcı "fiyatımın yüzde kaçını veriyorum" diye düşünüyor; hedefe
+ * göre oran aynı hamleyi daha büyük gösterir (1500→770 hedefe göre %95,
+ * mevcuda göre %49) ve rakam abartılı okunurdu.
+ */
+export function mesafeHukmu(mevcut: number, hedef: number): MesafeHukmu | null {
+  if (!(mevcut > 0) || !(hedef > 0) || hedef >= mevcut) return null;
+  const pay = (mevcut - hedef) / mevcut;
+  return { pay, uzak: pay > MESAFE_UZAK };
+}

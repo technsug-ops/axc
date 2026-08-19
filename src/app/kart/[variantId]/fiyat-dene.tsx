@@ -15,6 +15,7 @@ import type { YasBandi } from "@/lib/yaslanma";
 import {
   basabasFiyati,
   birAltDilim,
+  mesafeHukmu,
   simulasyonKur,
   yonHukmu,
   yonRengi,
@@ -381,6 +382,26 @@ export function FiyatDene({
                         oran: oneri.dilim.oran,
                       })}
                     </p>
+                    {/* ---------- SINIRA MESAFE ----------
+                        ⚠ ÖNERİ GİZLENMİYOR, BÜYÜKLÜĞÜ YAZILIYOR. Eşik
+                        koyup uzak öneriyi saklamak sessiz kayıp olurdu ve
+                        kullanıcı o dilimin varlığını hiç öğrenemezdi;
+                        üstelik uzak sınır bazen doğru hamledir. Yüzde,
+                        soyut bir hedef fiyatı büyüklüğe çevirir. */}
+                    {(() => {
+                      const m = mesafeHukmu(sayi, oneri.hedefFiyat);
+                      if (m === null) return null;
+                      const pay = Math.round(m.pay * 100);
+                      return (
+                        <p
+                          className={`text-xs ${m.uzak ? DURUM_YAZISI.uyari : "text-muted-foreground"}`}
+                        >
+                          {m.uzak
+                            ? t("deneMesafeUzak", { pay })
+                            : t("deneMesafe", { pay })}
+                        </p>
+                      );
+                    })()}
                     {/* ---------- ORAN KAZANCI YOKSA SEBEBİ SÖYLENİR ----------
                         ⚠ CANLI BULGU 19.08.2026: stoklu 30 üründen 8'inde
                         alt dilimin oranı AYNI. Orada inmek komisyon
