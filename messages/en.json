@@ -626,7 +626,9 @@
     "hasarli": "",
     "ozetNotu": "",
     "kaydet": "",
-    "altNot": ""
+    "altNot": "",
+    "teslimGecUyari": "",
+    "teslimTersUyari": ""
   },
   "Menu": {
     "operasyon": "",
@@ -2436,7 +2438,8 @@
     "grup_amber": "",
     "grup_notr": "",
     "baslik_zararinaSatis": "",
-    "eylem_zararinaSatis": ""
+    "eylem_zararinaSatis": "",
+    "izDogumu": ""
   },
   "Talep": {
     "bildirEtiketi": "",

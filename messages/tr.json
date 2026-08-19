@@ -626,7 +626,9 @@
     "hasarli": "Hasarlı",
     "ozetNotu": "Sağlam adet stoğa alım girişi olarak eklenir. Hasarlı adet stoğa GİRMEZ, sadece kalemde kayda geçer.",
     "kaydet": "Mal Kabulü Kaydet",
-    "altNot": "{kod} · Kısmi kabul yapabilirsiniz; kalan adetler için daha sonra tekrar mal kabul edersiniz."
+    "altNot": "{kod} · Kısmi kabul yapabilirsiniz; kalan adetler için daha sonra tekrar mal kabul edersiniz.",
+    "teslimGecUyari": "⚠ Sipariş {gun} gün önce verilmiş. Teslim gerçekten bu tarihte mi oldu? Geçmiş bir alım giriyorsan tarihi düzelt.",
+    "teslimTersUyari": "⚠ Teslim tarihi sipariş tarihinden ÖNCE. Bu mümkün değil — birini düzelt."
   },
   "Menu": {
     "operasyon": "Operasyon",
@@ -2436,7 +2438,8 @@
     "grup_amber": "Veri güvenilirliği",
     "grup_notr": "Bilgi — rozete girmez",
     "baslik_zararinaSatis": "{sayi} satış kalemi zararına kapandı",
-    "eylem_zararinaSatis": "NET-2 eksi — fiyat, maliyet ya da komisyon oranını kontrol et"
+    "eylem_zararinaSatis": "NET-2 eksi — fiyat, maliyet ya da komisyon oranını kontrol et",
+    "izDogumu": "Doğrulama izi {tarih} tarihinde açıldı — ondan öncesi için “doğrulanmadı” hüküm değildir."
   },
   "Talep": {
     "bildirEtiketi": "Hata veya istek bildir",

@@ -35,6 +35,7 @@ import {
   SUPHE_OLCUMU,
 } from "../src/lib/uyari/veri-supheli";
 import { SUPHELI_ORAN_ESIGI } from "../src/lib/komisyon/oran-uyarisi";
+import { gecTeslimMi, GEC_TESLIM_GUN, TESLIM_OLCUMU } from "../src/lib/uyari/gec-teslim";
 import {
   DOGRULAMA_SEBEPLERI,
   damgaKur,
@@ -892,6 +893,49 @@ console.log("=".repeat(70));
   for (const a of ["dogrulaBaslik", "dogrulaGecicilik", "dogrulaNotZorunlu"]) {
     kontrol(`  sözlük: ${a}`, (sz.Satis?.[a] ?? "").length > 0);
   }
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("F2-I) GEÇ TESLİM UYARISI + İZ DOĞUM BEYANI");
+console.log("=".repeat(70));
+{
+  const g = (m: string) => new Date(m + "T00:00:00.000Z");
+
+  /**
+   * ⚠ EŞİK DAĞILIMIN BOŞ BANDINA KONULDU (11–20 gün, n=113'te SIFIR kayıt).
+   * Mimar "30+" önerdi; ölçüm düzeltti — 30 seçilseydi 21 günlük kayıt
+   * KAÇARDI. Örnek veri ayrımın iki yakasını gösteriyor.
+   */
+  kontrol("gövde (p95=7 gün) UYARMIYOR", gecTeslimMi(g("2026-07-01"), g("2026-07-08")) === null);
+  kontrol("10 gün UYARMIYOR (gövdenin ucu)", gecTeslimMi(g("2026-07-01"), g("2026-07-11")) === null);
+  kontrol("21 gün UYARIYOR (30 olsaydı kaçardı)",
+    gecTeslimMi(g("2026-07-01"), g("2026-07-22"))?.tur === "GEC");
+  kontrol("48 gün UYARIYOR (Schafer)", gecTeslimMi(g("2026-06-26"), g("2026-08-13"))?.tur === "GEC");
+  kontrol("30 gün UYARIYOR (LEGO)", gecTeslimMi(g("2026-07-20"), g("2026-08-19"))?.tur === "GEC");
+
+  kontrol("eşik boş bandın İÇİNDE",
+    GEC_TESLIM_GUN > TESLIM_OLCUMU.bosBant[0] - 1 && GEC_TESLIM_GUN < TESLIM_OLCUMU.bosBant[1] + 1);
+  kontrol("  ...ve p95'in üstünde", GEC_TESLIM_GUN > TESLIM_OLCUMU.p95);
+
+  /** ⚠ TERS FARK DA UYARIR — ölçümde min −28 çıktı, imkânsız ve sessiz geçilemez. */
+  const ters = gecTeslimMi(g("2026-08-13"), g("2026-07-16"));
+  kontrol("teslim siparişten ÖNCEyse uyarıyor", ters?.tur === "TERS", ters);
+
+  kontrol("tarih yoksa hüküm YOK", gecTeslimMi(null, g("2026-07-01")) === null);
+
+  /** Form SORAR, ENGELLEMEZ — mal gerçekten geç gelmiş olabilir. */
+  const form = readFileSync("src/app/alimlar/[id]/mal-kabul/mal-kabul-formu.tsx", "utf8");
+  kontrol("form uyarıyı çiziyor", /gecTeslimMi\(/.test(form));
+  kontrol("  ...ve sipariş tarihini alıyor", /siparisTarihi: string/.test(form));
+  const sayfa = readFileSync("src/app/alimlar/[id]/mal-kabul/page.tsx", "utf8");
+  kontrol("  ...sayfa siparişi geçiriyor", /siparisTarihi=\{alim\.purchasedAt/.test(sayfa));
+
+  /** ---- İZ DOĞUM BEYANI ---- */
+  const can = readFileSync("src/components/uyari-cani.tsx", "utf8");
+  kontrol("iz doğum beyanı KUTUNUN İÇİNDE", /izDogumu/.test(can));
+  kontrol("  ...yalnız veriSupheli kutusunda", /u\.anahtar === "veriSupheli"/.test(can));
+  kontrol("  ...tarih sabitten okunuyor", /IZ_DOGUM_TARIHI/.test(can));
 }
 
 console.log("");

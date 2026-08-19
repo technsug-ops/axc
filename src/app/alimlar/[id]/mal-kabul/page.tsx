@@ -100,6 +100,7 @@ export default async function MalKabulSayfasi({
         alimKodu={alim.code}
         satirlar={satirlar}
         konumlar={konumlar}
+        siparisTarihi={alim.purchasedAt.toISOString().slice(0, 10)}
         bugun={tarihGirdisi(new Date())}
       />
     </div>

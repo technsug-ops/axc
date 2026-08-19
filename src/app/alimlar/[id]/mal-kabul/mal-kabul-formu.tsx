@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { gecTeslimMi } from "@/lib/uyari/gec-teslim";
+import { DURUM_YAZISI } from "@/lib/renkler";
 import { useActionState, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { PackageCheck, TriangleAlert } from "lucide-react";
@@ -65,12 +67,19 @@ export function MalKabulFormu({
   satirlar,
   konumlar,
   bugun,
+  siparisTarihi,
 }: {
   alimId: string;
   alimKodu: string;
   satirlar: KabulSatiri[];
   konumlar: KonumSecenegi[];
   bugun: string;
+  /**
+   * ⚠ TESLİM TARİHİ BUGÜNE VARSAYILAN GELİYOR ve geçmiş veri girilirken
+   * değiştirilmiyor — iki bozuk kayıt bu yüzden doğdu. Sipariş tarihi,
+   * formun "teslim gerçekten bugün mü?" diye sorabilmesi için burada.
+   */
+  siparisTarihi: string;
 }) {
   const t = useTranslations("MalKabul");
   const tOnay = useTranslations("MalKabulOnay");
@@ -186,6 +195,28 @@ export function MalKabulFormu({
                 value={teslimTarihi}
                 onChange={(e) => setTeslimTarihi(e.target.value)}
               />
+              {/* ---------- TESLİM GERÇEKTEN BUGÜN MÜ? ----------
+                  ⚠ ÖNLEMEK DÜZELTMEKTEN UCUZ. İki bozuk kayıt (Schafer,
+                  LEGO) bu alan bugüne varsayılan geldiği ve geçmiş veri
+                  girilirken değiştirilmediği için doğdu; ikisinin de
+                  düzeltmesi ledger'a elle müdahale gerektirdi.
+
+                  ENGEL DEĞİL: mal gerçekten geç gelmiş olabilir
+                  (ölçümde 21–48 gün arası dört gerçek kayıt var). */}
+              {(() => {
+                const h = gecTeslimMi(
+                  siparisTarihi ? new Date(siparisTarihi) : null,
+                  teslimTarihi ? new Date(teslimTarihi) : null,
+                );
+                if (h === null) return null;
+                return (
+                  <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
+                    {h.tur === "TERS"
+                      ? t("teslimTersUyari")
+                      : t("teslimGecUyari", { gun: h.gun })}
+                  </p>
+                );
+              })()}
             </div>
           </div>
 

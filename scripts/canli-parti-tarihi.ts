@@ -1,14 +1,22 @@
 /**
  * ============================================================================
- *  SCHAFER PARTİ TARİHİ — TEK KAYDA KİLİTLİ DÜZELTME
+ *  PARTİ TARİHİ — ONAYLI VAKA LİSTESİ
  * ----------------------------------------------------------------------------
  *  Çalıştırma:
- *      npm run canli:schafer-tarih -- --tarih=2026-07-05
- *      npm run canli:schafer-tarih -- --tarih=2026-07-05 --uygula
+ *      npm run canli:parti-tarihi -- --vaka=schafer --tarih=2026-07-05
+ *      npm run canli:parti-tarihi -- --vaka=schafer --tarih=2026-07-05 --uygula
  *
- *  ⚠ BU GENEL BİR ARAÇ DEĞİLDİR VE OLMAYACAK — mimar şartı (b),
- *  19.08.2026. Hedef hareket kimliği aşağıda SABİT yazılıdır; başka bir
- *  kayda yönlendirilemez. Genel araç, istisnayı kurala çevirir.
+ *  ⚠ BU GENEL BİR ARAÇ DEĞİLDİR VE OLMAYACAK — mimar şartı 19.08.2026.
+ *  Betik yalnız `ONAYLI_VAKALAR` listesindeki kayıtlara dokunabilir; her
+ *  vaka kendi hareket kimliği, kendi parmak izi ve kendi tarih aralığıyla
+ *  yazılıdır. **Listeye giriş YALNIZ MİMAR ONAYIYLA.**
+ *
+ *  ── NİYE TEK BETİK, İKİ VAKA ────────────────────────────────────────────
+ *  İlk hâli tek kayda kilitliydi (Schafer). İkinci vaka (LEGO) çıkınca
+ *  ikinci bir betik yazmak, kimlik doğrulaması ve aralık kilidi gibi
+ *  güvenlik parçalarını KOPYALAMAK demekti — ve kopya, üçüncü vakada
+ *  sapar. Liste deseni aynı garantileri tek gövdede tutuyor: kimlik
+ *  kilidi vakada, gövde ortak.
  *
  *  ── NİYE İSTİSNA ────────────────────────────────────────────────────────
  *  Satış `11412533563` (Schafer Kitchenhouse Termos) `14.07`'de satıldı,
@@ -35,26 +43,65 @@
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 
-/**
- * ⚠ KİLİT — ölçülerek bulundu 19.08.2026 (teşhis raporu).
- * Bu betik yalnız BU hareketi düzeltir.
- */
-const HEDEF_HAREKET_ID = "cmsrqsxni000004jsm1wa3xlc";
-
-/** Kimlik doğrulaması için beklenen değerler — yanlış kayda yazmayalım. */
-const BEKLENEN = {
-  sku: "axcali1643",
-  birimMaliyet: 504,
-  quantityDelta: 2,
-  mevcutTarih: "2026-08-13",
-  satisKodu: "11412533563",
+type Vaka = {
+  ad: string;
+  hareketId: string;
+  /** Kimlik doğrulaması — kimliğe güvenip yazmak yetmez. */
+  sku: string;
+  birimMaliyet: number;
+  quantityDelta: number;
+  mevcutTarih: string;
+  satisKodu: string;
   /** Teslim, siparişten sonra ve satıştan önce olmak ZORUNDA. */
-  enErken: "2026-06-26",
-  enGec: "2026-07-14",
+  enErken: string;
+  enGec: string;
+  sebep: string;
+};
+
+/**
+ * ⚠ ONAYLI VAKALAR — her satır mimar onayıyla girer.
+ * Kimlikler ve beklenen değerler CANLIDAN ÖLÇÜLEREK yazıldı.
+ */
+const ONAYLI_VAKALAR: Record<string, Vaka> = {
+  schafer: {
+    ad: "Schafer Kitchenhouse Mimoza 1,5 L Cam Termos",
+    hareketId: "cmsrqsxni000004jsm1wa3xlc",
+    sku: "axcali1643",
+    birimMaliyet: 504,
+    quantityDelta: 2,
+    mevcutTarih: "2026-08-13",
+    satisKodu: "11412533563",
+    enErken: "2026-06-26",
+    enGec: "2026-07-14",
+    sebep:
+      "Mal kabul teslim tarihi bugüne varsayılan geldi ve geçmiş veri " +
+      "girilirken değiştirilmedi; satış partisinden 30 gün önce görünüyordu.",
+  },
+  /**
+   * ⚠ LEGO — TARİH HALİL'DEN GELİNCE AÇILACAK. Ölçülen kimlik ve
+   * değerler hazır; `enErken`/`enGec` sipariş (20.07) ve satış (18.08)
+   * tarihlerinden geliyor. Vaka listede DURUYOR ama betik tarih
+   * verilmeden hiçbir şey yazmaz.
+   */
+  lego: {
+    ad: "LEGO City Kutup Keşif Gemisi 60368",
+    hareketId: "",
+    sku: "",
+    birimMaliyet: 0,
+    quantityDelta: 0,
+    mevcutTarih: "2026-08-19",
+    satisKodu: "11518039572",
+    enErken: "2026-07-20",
+    enGec: "2026-08-18",
+    sebep:
+      "Mal kabul teslim tarihi bugüne varsayılan geldi; parti satıştan " +
+      "BİR GÜN SONRA görünüyordu (alım 20.07'de sipariş edilmiş).",
+  },
 };
 
 const UYGULA = process.argv.includes("--uygula");
 const tarihArg = process.argv.find((a) => a.startsWith("--tarih="));
+const vakaArg = process.argv.find((a) => a.startsWith("--vaka="));
 
 function g(d: Date | null | undefined): string {
   return d ? d.toISOString().slice(0, 10) : "—";
@@ -62,14 +109,43 @@ function g(d: Date | null | undefined): string {
 
 async function main() {
   console.log("");
-  console.log("SCHAFER PARTİ TARİHİ — tek kayda kilitli düzeltme");
+  console.log("PARTİ TARİHİ — onaylı vaka listesi");
+
+  const vakaAdi = vakaArg?.slice("--vaka=".length) ?? "";
+  const BEKLENEN = ONAYLI_VAKALAR[vakaAdi];
+  if (!BEKLENEN) {
+    console.log("");
+    console.log("  ⛔ VAKA SEÇİLMEDİ ya da LİSTEDE YOK: " + (vakaAdi || "(boş)"));
+    console.log("     Onaylı vakalar: " + Object.keys(ONAYLI_VAKALAR).join(" · "));
+    console.log("     Listeye giriş YALNIZ mimar onayıyla olur.");
+    console.log("");
+    process.exitCode = 1;
+    return;
+  }
+  const HEDEF_HAREKET_ID = BEKLENEN.hareketId;
+
+  /**
+   * ⚠ KİMLİĞİ HENÜZ ÖLÇÜLMEMİŞ VAKA YAZAMAZ. Liste bir vakayı taşıyor
+   * olabilir ama hareket kimliği boşsa o vaka HAZIR DEĞİLDİR; boş kimlikle
+   * devam etmek rastgele bir kayda yazma riskidir.
+   */
+  if (HEDEF_HAREKET_ID === "") {
+    console.log("");
+    console.log("  ⛔ VAKA HAZIR DEĞİL: " + BEKLENEN.ad);
+    console.log("     Hareket kimliği henüz ölçülmedi — önce teşhis koşulur.");
+    console.log("");
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log("  vaka           " + vakaAdi + " — " + BEKLENEN.ad);
   console.log("  hedef hareket  " + HEDEF_HAREKET_ID);
 
   if (!tarihArg) {
     console.log("");
     console.log("  ⛔ TARİH VERİLMEDİ.");
     console.log("     Gerçek teslim tarihi Halil'den gelir; betik UYDURMAZ.");
-    console.log("     Kullanım:  npm run canli:schafer-tarih -- --tarih=2026-07-05");
+    console.log("     Kullanım:  npm run canli:parti-tarihi -- --vaka=" + vakaAdi + " --tarih=2026-07-05");
     console.log("");
     process.exitCode = 1;
     return;
@@ -198,7 +274,8 @@ async function main() {
   if (!UYGULA) {
     console.log("  RAPOR KİPİ — hiçbir şey yazılmadı.");
     console.log("  Tarih doğruysa:");
-    console.log("      npm run canli:schafer-tarih -- --tarih=" + metin + " --uygula");
+    console.log("      npm run canli:parti-tarihi -- --vaka=" + vakaAdi +
+      " --tarih=" + metin + " --uygula");
     console.log("");
     await prisma.$disconnect();
     return;
@@ -224,12 +301,10 @@ async function main() {
         alan: "occurredAt",
         eski: eski.toISOString(),
         yeni: yeniTarih.toISOString(),
-        sebep:
-          "Mal kabul teslim tarihi bugüne varsayılan geldi ve geçmiş veri " +
-          "girilirken değiştirilmedi; satış " + BEKLENEN.satisKodu +
-          " partisinden 30 gün önce görünüyordu.",
+        vaka: vakaAdi,
+        sebep: BEKLENEN.sebep + " (satış " + BEKLENEN.satisKodu + ")",
         onay: "mimar, 19.08.2026 — metadata istisnası (miktar/para değişmedi)",
-        kaynak: "canli:schafer-tarih",
+        kaynak: "canli:parti-tarihi",
       }),
     },
   });

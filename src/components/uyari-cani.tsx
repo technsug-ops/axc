@@ -18,6 +18,7 @@ import { useBicim } from "@/lib/bicim-istemci";
 import { uyarilariGetir } from "@/lib/uyari/eylem";
 import { canSayisi, canSeviyesi, notrVarMi } from "@/lib/uyari/kurallar";
 import type { UyariSeviyesi } from "@/lib/uyari/turler";
+import { IZ_DOGUM_TARIHI } from "@/lib/uyari/veri-dogrulama";
 
 /**
  * OKUMA SIRASI = ÖNCELİK SIRASI. Göz yukarıdan aşağı okur; kırmızıyı
@@ -210,6 +211,21 @@ export function UyariCani() {
                             : ""}
                           {t(`eylem_${u.anahtar}`)}
                         </span>
+                        {/* ---------- İZ DOĞUM BEYANI ----------
+                            ⚠ 18.08.2026 kuralı: yeni bir iz yayına
+                            girdiğinde onu gösteren ekran DOĞUM TARİHİNİ
+                            yazar. Doğrulama mekanizması bu uyarıdan SONRA
+                            açıldı; ondan öncesi için "doğrulanmamış" bir
+                            hüküm DEĞİLDİR — mekanizma yoktu.
+
+                            Kutunun DİP SATIRINDA (mimar kararı): bağlam
+                            neredeyse beyan orada. Liste başlığına konsa
+                            hangi uyarıya ait olduğu belirsiz kalırdı. */}
+                        {u.anahtar === "veriSupheli" ? (
+                          <span className="text-muted-foreground/70 mt-1 block text-[11px]">
+                            {t("izDogumu", { tarih: IZ_DOGUM_TARIHI })}
+                          </span>
+                        ) : null}
                       </span>
                       <ChevronRight className="mt-0.5 size-4 shrink-0 opacity-60" />
                     </Baglanti>
