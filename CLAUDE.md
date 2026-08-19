@@ -423,6 +423,37 @@ sonra yapılıyor — ikinci tetik aynı dosyayı tazeler, kopya üretmez._
 Var olanı listelemek, olmayanı göstermez — eksik günler ekranda kırmızı
 yazmalı ki üçüncü kaçış birinin fark etmesine kalmasın.
 
+### EŞİK, DAĞILIMIN GEDİĞİNE KONUR — GÖVDESİNE DEĞİL (KESİN KURAL)
+
+_Ders 19.08.2026._ Bir uyarı eşiği seçilirken sorulacak soru "hangi sayı
+makul görünüyor" değil, **"ölçülen dağılımda nereye düşüyor"**dur.
+Gövdenin içine düşen eşik **her satırda yanar** ve yanan uyarı okunmaz
+olur — uyarının kendisi gürültüye dönüşür.
+
+**Vaka — alt dilim önerisinde "sınır uzak" eşiği.** Ölçüm (n=18, tarifesi
+ve satışı olan ürünler):
+
+    min %5,1 · ortanca %14,2 · p75 %20,6 · [GEDİK] · %30,6 · %35,9 · %41,3 · %45,6
+
+Gövde `%5–%20,6` (18 ürünün 14'ü), sonra `%30,6`'ya **sıçrıyor**. Eşik o
+gediğe konuldu: **%25**. Bugün 4 üründe yanıyor ve dördü de gerçekten
+büyük kesinti. `%15` seçilseydi çoğu üründe yanardı; `%60` seçilseydi
+hiç yanmazdı — ikisi de aynı ölçüde işe yaramaz.
+
+**Aynı kural aynı gün ikinci kez kullanıldı:** `veri-supheli.ts`'te verim
+eşiği p95'in (`%154`) üstüne, `%200`'e konuldu; `%100` seçilseydi meşru
+bir yüksek marjlı kalemi ilk gün yanlış işaretlerdi.
+
+**YÖNTEM — üç adım, atlanmaz:**
+1. Dağılımı **ölç** (min · p25 · ortanca · p75 · p90 · p95 · max).
+2. **Gediği ara** — gövdenin bittiği yer eşiğin yeridir; yuvarlak sayı
+   değil.
+3. Eşiği **kaynağıyla yaz** (`MESAFE_OLCUMU`, `SUPHE_OLCUMU` deseni:
+   tarih · örneklem · yüzdelikler) ve testi eşiğin gövdeyle sıçrama
+   ARASINDA kaldığını sabitlesin.
+
+Örneklem büyüyünce eşik yeniden ölçülür (bkz. BEKLEYENLER → K6).
+
 ### METİN, SAHİP OLMADIĞI ANLAMI İDDİA ETMEZ (KESİN KURAL)
 
 _Ders 19.08.2026._ Bir sayının yanındaki cümle, o sayının **gerçekten
