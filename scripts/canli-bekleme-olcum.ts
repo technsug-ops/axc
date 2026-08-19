@@ -51,9 +51,19 @@ const TABLO_SATIRI = 10;
 const SAPMA_TAVANI = 1.5;
 
 /**
- * Bir kalemin verimi mağaza ortalamasının bu katını aşıyorsa MALİYET
- * ŞÜPHELİDİR. Gerçek bir arbitraj kaleminin sermaye verimi mağaza
- * ortalamasının on katı olmaz; olduysa maliyet yanlış girilmiştir.
+ * Bir kalemin verimi mağaza ortalamasının bu katını aşıyorsa AYKIRIDIR.
+ *
+ * ⚠ "AYKIRI" DEMEK "HATALI" DEMEK DEĞİLDİR — ders 19.08.2026.
+ * İlk yazılışta bu sabitin yorumunda "maliyet yanlış girilmiştir"
+ * yazıyordu. Philips OneBlade `₺27,16` ile `%3612` verim gösterdi ve
+ * "virgül hatası" sanıldı. Halil HB sipariş geçmişinden doğruladı:
+ * ürün **hediye kuponuyla** alınmış, kasadan fiilen 27,16 çıkmış.
+ * **Rakam gerçek, kâr gerçek.**
+ *
+ * Aykırılık bir HÜKÜM değil, bir DAVETTİR: "buna bak". Bakınca gerçek
+ * çıkarsa kayıt olduğu gibi kalır (Selliora kasa gerçeğini taşır; kupon
+ * etkisi maliyete gömülmez) — ama ORTALAMAYA girmez, çünkü istisna
+ * ortalamayı temsil etmez.
  */
 const AYKIRI_KAT = 10;
 
@@ -243,13 +253,39 @@ async function main() {
    * kalemler büyüklerden farklı davranıyor demektir — o da bilgidir,
    * saklanmaz.
    */
-  const agirlikli = toplamNet2 / toplamMaliyet;
-  const oranlar = olcumler.map((o) => o.net2 / o.maliyet);
-  const basit = oranlar.reduce((t, o) => t + o, 0) / oranlar.length;
+  /**
+   * ⚠ İKİ GEÇİŞ — aykırıyı bulmak için ortalama, ortalamayı kurmak için
+   * aykırısız küme gerekiyor. Döngü şöyle kırılıyor: önce HAM ortalama
+   * hesaplanıyor, aykırılar ona göre işaretleniyor, sonra ortalama
+   * ONLARSIZ yeniden kuruluyor.
+   *
+   * İstisna ortalamaya girmez — ama SİLİNMEZ de: adıyla, damgasıyla
+   * raporda durur.
+   */
+  const hamAgirlikli = toplamNet2 / toplamMaliyet;
+  const aykiriOlanlar = olcumler.filter(
+    (o) => o.net2 / o.maliyet > hamAgirlikli * AYKIRI_KAT,
+  );
+  const saglamlar = olcumler.filter((o) => !aykiriOlanlar.includes(o));
+
+  const agirlikli =
+    saglamlar.length === 0
+      ? hamAgirlikli
+      : saglamlar.reduce((t, o) => t + o.net2, 0) /
+        saglamlar.reduce((t, o) => t + o.maliyet, 0);
+  const oranlar = saglamlar.map((o) => o.net2 / o.maliyet);
+  const basit =
+    oranlar.length === 0
+      ? hamAgirlikli
+      : oranlar.reduce((t, o) => t + o, 0) / oranlar.length;
 
   console.log("   toplam NET-2        " + saga(para(toplamNet2), 14));
   console.log("   toplam maliyet      " + saga(para(toplamMaliyet), 14));
   console.log("   AĞIRLIKLI verim     " + saga(yuzde(agirlikli), 14) + "  ← esas alınan");
+  if (aykiriOlanlar.length > 0) {
+    console.log("   (aykırısız: " + aykiriOlanlar.length + " kalem dışlandı; hamı " +
+      yuzde(hamAgirlikli) + ")");
+  }
   console.log("   basit ortalama      " + saga(yuzde(basit), 14));
   console.log("   ortanca             " + saga(yuzde(ortanca(oranlar)), 14));
   console.log("");
@@ -334,8 +370,8 @@ async function main() {
   const sapma =
     degerler.length === 0 ? null : Math.max(...degerler) / Math.min(...degerler);
 
-  /** Maliyeti şüpheli kalemler — mağaza ortalamasının AYKIRI_KAT katı üstü. */
-  const aykirilar = olcumler.filter((o) => o.net2 / o.maliyet > agirlikli * AYKIRI_KAT);
+  /** Aykırılar ilk geçişte bulundu; ortalama zaten onlarsız kuruldu. */
+  const aykirilar = aykiriOlanlar;
 
   console.log("   DUYARLILIK — aynı veriden çıkan günlük oranlar");
   for (const a of adaylar) {
@@ -348,7 +384,12 @@ async function main() {
   console.log("");
 
   if (aykirilar.length > 0) {
-    console.log("   ⚠ MALİYETİ ŞÜPHELİ KALEM(LER) — verim mağaza ortalamasının " + AYKIRI_KAT + "× üstü:");
+    console.log("   ⚠ AYKIRI KALEM(LER) — ortalamadan DIŞLANDI (silinmedi):");
+    console.log("     verim mağaza ortalamasının " + AYKIRI_KAT + "× üstünde.");
+    console.log("     ⚠ AYKIRI ≠ HATALI: 19.08.2026'da Philips OneBlade (%3612)");
+    console.log("       'virgül hatası' sanıldı; HB sipariş geçmişinden doğrulandı,");
+    console.log("       ürün HEDİYE KUPONUYLA alınmış — rakam da kâr da GERÇEK.");
+    console.log("       Aykırılık bir hüküm değil, 'buna bak' davetidir.");
     for (const a of aykirilar) {
       console.log("      " + doldur(a.ad, 34) + " " + doldur(a.kod, 14) +
         " net2 " + saga(para(a.net2), 10) + " ÷ maliyet " + saga(para(a.maliyet), 10) +
@@ -366,15 +407,26 @@ async function main() {
   const ornekTamam = ornek >= ASGARI_ORNEKLEM;
   const gunTamam = gunOrt !== null && gunOrt > 0;
   const sapmaTamam = sapma !== null && sapma <= SAPMA_TAVANI;
-  const aykiriTamam = aykirilar.length === 0;
-  const saglam = ornekTamam && gunTamam && sapmaTamam && aykiriTamam;
+  /**
+   * ⚠ AYKIRI DEĞER ARTIK BLOKE ETMİYOR — ders 19.08.2026.
+   *
+   * Önceki hâlinde aykırı kalem "veri hatası" sayılıyor ve Aşama B'yi
+   * kilitliyordu. OneBlade doğrulanınca ölçüt çürüdü: gerçek bir istisna
+   * sonsuza kadar kilitleyecekti ve düzeltilecek bir şey yoktu.
+   *
+   * Doğrusu: aykırı ORTALAMADAN dışlanır (temsil etmiyor) ve BEYAN edilir
+   * (kaybolmuyor). Kilit yalnız GERÇEKTEN kaba olan eksende kalır —
+   * duyarlılık.
+   */
+  const saglam = ornekTamam && gunTamam && sapmaTamam;
 
   console.log("=".repeat(70));
   console.log("GÜVENİLİRLİK HÜKMÜ");
   console.log("   " + (ornekTamam ? "✓" : "✗") + " örneklem     " + ornek + " kalem (eşik " + ASGARI_ORNEKLEM + ")");
   console.log("   " + (gunTamam ? "✓" : "✗") + " dönüş günü   " + (gunOrt === null ? "ölçülemedi" : gunOrt.toFixed(1) + " gün"));
   console.log("   " + (sapmaTamam ? "✓" : "✗") + " duyarlılık   " + (sapma === null ? "—" : sapma.toFixed(2) + "× (tavan " + SAPMA_TAVANI.toFixed(2) + "×)"));
-  console.log("   " + (aykiriTamam ? "✓" : "✗") + " aykırı değer " + aykirilar.length + " kalem");
+  console.log("   ○ aykırı değer " + aykirilar.length +
+    " kalem — ortalamadan dışlandı, kilitlemez");
   if (!saglam) {
     console.log("");
     console.log("   ⛔ VERİ KABA — ÖZELLİK BEKLETİLİR.");
@@ -389,10 +441,6 @@ async function main() {
       console.log("      Günlük oran ORTALAMA/ORTANCA seçimine " + sapma.toFixed(2) + "× duyarlı.");
       console.log("      Ekrana basılan rakam veriyi değil, SEÇİMİ söylerdi.");
     }
-    if (!aykiriTamam) {
-      console.log("      " + aykirilar.length + " kalemin maliyeti imkânsız görünüyor; ortalamayı");
-      console.log("      yukarı çekiyor. Önce o kayıt düzeltilmeli.");
-    }
     console.log("");
     console.log("   AŞAMA B AÇILMAZ. Kaba ortalamayla motor kurulmaz.");
     console.log("=".repeat(70));
@@ -400,7 +448,7 @@ async function main() {
     return;
   }
   console.log("");
-  console.log("   ✓ Dört eksen de temiz — türetilmiş rakam gösterilebilir.");
+  console.log("   ✓ Üç kilit ekseni de temiz — türetilmiş rakam gösterilebilir.");
   console.log("=".repeat(70));
   console.log("");
 

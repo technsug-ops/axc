@@ -423,6 +423,43 @@ sonra yapılıyor — ikinci tetik aynı dosyayı tazeler, kopya üretmez._
 Var olanı listelemek, olmayanı göstermez — eksik günler ekranda kırmızı
 yazmalı ki üçüncü kaçış birinin fark etmesine kalmasın.
 
+### İMKÂNSIZ GÖRÜNEN DEĞER ÖNCE DOĞRULANIR — DÜZELTİLMEZ (KESİN KURAL)
+
+_Ders 19.08.2026, OneBlade vakası._ Bir uyarının görevi **baktırmaktır**,
+hüküm vermek değil. Bakınca gerçek çıkan istisna **işaretlenir ve yaşar**;
+sistemin "imkânsız" demesi, verinin yanlış olduğunu KANITLAMAZ.
+
+**Vaka:** Philips OneBlade `₺27,16` maliyetle `%3612` sermaye verimi
+gösterdi. İki bağımsız ölçüt aynı satırda buluştu, "virgül hatası"
+hipotezi kuruldu, düzeltme yolu (`canli:maliyet-hizala`) yazıldı ve
+Halil'e "maliyeti düzelt" tarifi verildi. Halil HB sipariş geçmişinden
+doğruladı: ürün **hediye kuponuyla** alınmış, kasadan fiilen `27,16`
+çıkmış. **Rakam gerçek, `₺981` kâr gerçek.**
+
+Bir adım daha gidilseydi doğru bir kayıt "düzeltilerek" bozulacaktı —
+ve bozulma, düzeltme kılığında geldiği için hiç fark edilmeyecekti.
+
+> **KURAL:** aykırılık bir HÜKÜM değil, bir DAVETTİR. Sıra şudur:
+> **işaretle → baktır → doğrula → (gerçekse) işaretini kaldır ve yaşat.**
+> "Düzelt" adımı ancak doğrulama HATA derse gelir.
+
+**KARDEŞ KARAR — kasa gerçeği gömülmez.** Kupon etkisi maliyete
+yedirilmez: Selliora **fiilen ödeneni** taşır, FIFO da onu taşır. Ürünün
+"piyasa değeri" ile "bize maliyeti" farklı şeylerdir ve defter ikincisini
+yazar. _(Mimar kararı 19.08.2026.)_
+
+**YAPISAL SONUÇ — SONSUZA KADAR YANAN UYARI OLMAZ.** Gerçek çıkan bir
+istisna işaretlenemiyorsa uyarı hiç sönmez; sönmeyen uyarı okunmaz olur
+ve rozetin tamamına olan güveni götürür. Bu yüzden her "şüpheli"
+uyarısının bir **DOĞRULANDI** yolu olmak zorundadır — ve doğrulama,
+kaydın o günkü değerlerine bağlanır ki değer değişince yeniden sorulsun.
+
+**AYRICA — ÖLÇÜT DE ÇÜRÜDÜ.** Aykırı değer `canli:bekleme-olcum`'da
+Aşama B'yi KİLİTLİYORDU. Gerçek bir istisna sonsuza kadar kilitlerdi ve
+düzeltilecek bir şey yoktu. Aykırı artık **ortalamadan dışlanır**
+(istisna ortalamayı temsil etmez) ve **beyan edilir** (kaybolmaz); kilit
+yalnız gerçekten kaba olan eksende kalır.
+
 ### EŞİK, DAĞILIMIN GEDİĞİNE KONUR — GÖVDESİNE DEĞİL (KESİN KURAL)
 
 _Ders 19.08.2026._ Bir uyarı eşiği seçilirken sorulacak soru "hangi sayı
