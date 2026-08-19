@@ -1,4 +1,5 @@
 import { alimAramaKosulu } from "@/lib/alim-arama";
+import { SUPHELI_ORAN_ESIGI } from "@/lib/komisyon/oran-uyarisi";
 import {
   LISTE_PENCERELERI,
   pencereOlustur,
@@ -93,6 +94,17 @@ const temiz = (deger: string | undefined) => (deger ?? "").trim();
 //  SATIŞ
 // ---------------------------------------------------------------------------
 
+/**
+ * VERİ GÜVENİLİRLİĞİ SÜZGECİ — uyarı merkezinden gelir.
+ *
+ * ⚠ EŞİK BURADA YOK. Kümeyi `uyari/faz2-veri.ts` üretiyor ve satış
+ * kimliklerini `supheliIdler` ile geçiriyor. Eşiği buraya kopyalasaydık
+ * çan ile liste ayrı ayrı karar verir, bir gün ayrışırdı.
+ */
+export const VERI_SUZGECLERI = ["supheli"] as const;
+/** Komisyon oranı süzgeci — eşik K3'ten (`oran-uyarisi.ts`) okunur. */
+export const ORAN_SUZGECLERI = ["supheli"] as const;
+
 /** Kâr süzgecinin tanıdığı değerler. */
 export const KAR_SUZGECLERI = ["eksik", "tam", "zarar"] as const;
 /** İade süzgecinin tanıdığı değerler. */
@@ -107,6 +119,8 @@ export const KARGO_SUZGECLERI = ["verildi", "bekleyen"] as const;
 export function satisKosulu(
   p: SuzgecParametreleri,
   an: Date = new Date(),
+  /** `veri=supheli` için dışarıdan hesaplanmış satış kimlikleri. */
+  supheliIdler?: string[],
 ): { kosul: Prisma.SaleWhereInput; pencere: PencereCozumu } {
   const pencere = pencereCoz(p, an);
 
@@ -117,6 +131,8 @@ export function satisKosulu(
   const iade = temiz(p.iade);
   const iptal = temiz(p.iptal);
   const kargo = temiz(p.kargo);
+  const veri = temiz(p.veri);
+  const oran = temiz(p.oran);
 
   const kosul: Prisma.SaleWhereInput = {
     // Süzgeç kapalıysa alan HİÇ yazılmaz; `undefined` koşulu Prisma'da
@@ -266,6 +282,27 @@ export function satisKosulu(
       ? { shippedAt: pencere.aralik ?? { not: null } }
       : {}),
     ...(kargo === "bekleyen" ? { shippedAt: null } : {}),
+    /**
+     * ŞÜPHELİ VERİ — küme DIŞARIDAN gelir (`supheliIdler`).
+     *
+     * ⚠ SQL'de ifade EDİLEMEZ: maliyet sütun olarak saklanmıyor, stok
+     * hareketlerinden çözülüyor ve iki türetilmiş değeri (verim, maliyet
+     * payı) karşılaştırıyoruz. Bu yüzden küme çağıran tarafta hesaplanıp
+     * kimlik listesi olarak veriliyor — çanı besleyen gövdenin AYNISI.
+     *
+     * Liste `undefined` ise süzgeç istenmemiştir; BOŞ DİZİ ise istenmiş
+     * ama hiç sonuç yoktur ve liste boş çıkar — doğru davranış budur.
+     * "Süzgeç yokmuş gibi hepsini göster" sessiz bir kayıp olurdu.
+     */
+    ...(veri === "supheli" ? { id: { in: supheliIdler ?? [] } } : {}),
+    /**
+     * ŞÜPHELİ ORAN — bu SQL'de ifade edilebiliyor, eşik K3'ten okunuyor.
+     * Kalem seviyesinde `some`: satışın HERHANGİ bir kalemi eşiğin
+     * altındaysa o satış listeye girer.
+     */
+    ...(oran === "supheli"
+      ? { items: { some: { commissionRate: { lt: SUPHELI_ORAN_ESIGI } } } }
+      : {}),
   };
 
   return { kosul, pencere };

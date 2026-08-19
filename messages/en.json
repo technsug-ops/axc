@@ -2397,7 +2397,14 @@
     "baslik_yedekEski": "",
     "eylem_yedekEski": "",
     "baslik_yedekYok": "",
-    "eylem_yedekYok": ""
+    "eylem_yedekYok": "",
+    "baslik_veriSupheli": "",
+    "eylem_veriSupheli": "",
+    "baslik_supheliOran": "",
+    "eylem_supheliOran": "",
+    "baslik_kanalKodsuzStok": "",
+    "eylem_kanalKodsuzStok": "",
+    "canEtiketiBilgi": ""
   },
   "Talep": {
     "bildirEtiketi": "",

@@ -60,6 +60,31 @@ export const UYARI_ANAHTARLARI = [
   "yedekEski",
   /** Hiç yedek yok YA DA yedek durumu okunamadı — ikisi de "elde yedek yok". */
   "yedekYok",
+
+  // ── FAZ 2 ────────────────────────────────────────────────────────────
+  /**
+   * İMKÂNSIZ DEĞER — verim ya da maliyet payı ölçülen dağılımın dışında.
+   * Eşikler ve gerekçesi `uyari/veri-supheli.ts`te; buraya kopyalanmaz.
+   */
+  "veriSupheli",
+  /**
+   * GEÇMİŞ SATIŞTA ŞÜPHELİ ORAN — K3 eşiğinin (`%3`) altında kalan,
+   * K3 yayına girmeden ÖNCE girilmiş kalemler. Kendini söndüren uyarı:
+   * dördü düzeltilince sıfırlanır ve bir daha dolmaz (yeni girişleri K3
+   * formda yakalıyor).
+   */
+  "supheliOran",
+  /**
+   * STOKTA VAR, HİÇBİR KANALDA KODU YOK. Mal rafta ama hiçbir yerde
+   * satışa açık değil.
+   *
+   * ⚠ HESAP BAZLI BOŞLUK BURAYA GİRMEZ. Ölçüldü 19.08.2026: 46 stoklu
+   * varyant × 13 aktif hesap = **499 kodsuz çift**; 13 hesabın 10'unda
+   * 46/46 boş, çünkü o hesaplar hiç kullanılmıyor. Çana konsaydı her gün
+   * ~500 satır gösterir ve HİÇBİR bilgi taşımazdı. Hesap bazlı boşluk
+   * kanal kodları ekranında sütun olarak yaşar.
+   */
+  "kanalKodsuzStok",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -86,6 +111,49 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
   cevapsizTalep: "/talepler?durum=ACIK",
   yedekEski: "/ayarlar/disa-aktarma",
   yedekYok: "/ayarlar/disa-aktarma",
+  /** Süzgeç eşiği `veri-supheli.ts`ten okunur — listede kopyalanmaz. */
+  veriSupheli: "/satislar?veri=supheli",
+  supheliOran: "/satislar?oran=supheli",
+  /**
+   * ⚠ `/kanal-sku?eksik=1` DEĞİL — o süzgeç "oranı eksik KOD" demek,
+   * bizim uyarımız "kodu HİÇ OLMAYAN varyant". Oraya götürseydik sayı 2
+   * derken liste bambaşka bir kümeyi gösterirdi.
+   *
+   * _Tasarım raporunda bu adresi "doğrulandı" diye yazmıştım; menü
+   * etiketine bakmışım, rotaya değil. Rota `/kanal-sku`, anlamı da farklı._
+   */
+  kanalKodsuzStok: "/stok?kanal=yok",
+};
+
+/**
+ * ============================================================================
+ *  SEVİYE HARİTASI — FAZ 2
+ * ----------------------------------------------------------------------------
+ *  Faz 1'de `kurallar.ts` içinde `seviye: "kirmizi"` SABİTTİ. Faz 2 üç
+ *  seviyeyi de kullanıyor ve seviye artık uyarının KENDİ tanımında duruyor;
+ *  kural gövdesi karar vermez, haritadan okur.
+ *
+ *  ── ÖLÇÜT ───────────────────────────────────────────────────────────────
+ *  🔴 KIRMIZI  para kaybı ya da para riski — bekleyemez
+ *  🟠 AMBER    veri güvenilirliği riski — rakamlar sessizce yanlış olabilir
+ *  ⚪ NÖTR     kaçırılan fırsat — kayıp yok, eylem yine de var
+ *
+ *  `veriSupheli` niye AMBER: para kaybı DEĞİL, ama kırmızıya yakın —
+ *  yanlış maliyet kâr rakamlarını sessizce bozar ve bozukluk kendini
+ *  kâr gibi gösterir (OneBlade `₺981` "kâr" yazıyordu).
+ * ============================================================================
+ */
+export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
+  nakitAcigi: "kirmizi",
+  maliyetsizStok: "kirmizi",
+  karHesaplanamayan: "kirmizi",
+  hakedisGecikti: "kirmizi",
+  cevapsizTalep: "kirmizi",
+  yedekEski: "kirmizi",
+  yedekYok: "kirmizi",
+  veriSupheli: "amber",
+  supheliOran: "amber",
+  kanalKodsuzStok: "notr",
 };
 
 /**
@@ -106,6 +174,11 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
    */
   yedekEski: "veri.aktar",
   yedekYok: "veri.aktar",
+  /** İkisi de NET/oran taşıyor — depocuya kâr bilgisi sızmaz. */
+  veriSupheli: "satis.kar.gor",
+  supheliOran: "satis.kar.gor",
+  /** Kanal kodu OPERASYONEL — içinde kâr yok, depocu görüp açabilir. */
+  kanalKodsuzStok: null,
 };
 
 export type Uyari = {

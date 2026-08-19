@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { useBicim } from "@/lib/bicim-istemci";
 import { uyarilariGetir } from "@/lib/uyari/eylem";
-import { canSayisi, canSeviyesi } from "@/lib/uyari/kurallar";
+import { canSayisi, canSeviyesi, notrVarMi } from "@/lib/uyari/kurallar";
 import { DURUM_CIPI, DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import type { Uyari } from "@/lib/uyari/turler";
 
@@ -71,6 +71,18 @@ export function UyariCani() {
 
   const seviye = uyarilar === null ? null : canSeviyesi(uyarilar);
   const sayi = uyarilar === null ? 0 : canSayisi(uyarilar);
+  /**
+   * NÖTR VARLIK NOKTASI — rakamsız.
+   *
+   * Nötr katman rozete girmiyor (rozet EYLEM çağrısıdır, bilgi sayacı
+   * değil). Ama hiçbir işaret bırakmasaydık o katman görünmez olurdu ve
+   * kimse oraya bakmazdı — yazmakla yazmamak arasında fark kalmazdı.
+   *
+   * Nokta RAKAM TAŞIMAZ: taşısaydı rozetin işini yapar ve tam kaçındığımız
+   * şeye, eylemsiz sayı enflasyonuna dönerdi. Nokta bir davettir, çağrı
+   * değil. Rozet varken çizilmez — iki işaret üst üste gürültüdür.
+   */
+  const notrNokta = uyarilar !== null && sayi === 0 && notrVarMi(uyarilar);
 
   return (
     <Sheet open={acik} onOpenChange={setAcik}>
@@ -81,7 +93,11 @@ export function UyariCani() {
           size="icon"
           className="relative size-11 shrink-0 md:size-8"
           aria-label={
-            sayi > 0 ? t("canEtiketiVar", { sayi }) : t("canEtiketiTemiz")
+            sayi > 0
+              ? t("canEtiketiVar", { sayi })
+              : notrNokta
+                ? t("canEtiketiBilgi")
+                : t("canEtiketiTemiz")
           }
         >
           <Bell className="size-4" />
@@ -93,6 +109,13 @@ export function UyariCani() {
             >
               {sayi}
             </span>
+          ) : notrNokta ? (
+            /* Sayısız nokta — "burada bakılacak bir şey var" der, çağırmaz.
+               Dokunma hedefi düğmenin kendisi; nokta yalnız işaret. */
+            <span
+              aria-hidden
+              className={`absolute -end-0.5 -top-0.5 size-2 rounded-full ${DURUM_CIPI.bilgi}`}
+            />
           ) : null}
         </Button>
       </SheetTrigger>

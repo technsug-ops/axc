@@ -23,13 +23,23 @@ import {
   nakitAcigiOlcumu,
   uyarilariKur,
   type UyariOlcumleri,
+  notrVarMi,
 } from "../src/lib/uyari/kurallar";
 import { maliyetsizMi, maliyetsizVaryantlar } from "../src/lib/uyari/maliyetsiz-stok";
 import { yedekOlcumu } from "../src/lib/uyari/yedek";
 import {
+  supheSebepleri,
+  supheliMi,
+  SUPHELI_MALIYET_PAYI,
+  SUPHELI_VERIM,
+  SUPHE_OLCUMU,
+} from "../src/lib/uyari/veri-supheli";
+import { SUPHELI_ORAN_ESIGI } from "../src/lib/komisyon/oran-uyarisi";
+import {
   UYARI_ADRESLERI,
   UYARI_ANAHTARLARI,
   UYARI_IZINLERI,
+  UYARI_SEVIYESI,
 } from "../src/lib/uyari/turler";
 import type { Parti } from "../src/lib/stok";
 
@@ -56,6 +66,9 @@ const bos: UyariOlcumleri = {
   cevapsizTalep: { sayi: 0 },
   yedekEski: { sayi: 0 },
   yedekYok: { sayi: 0 },
+  veriSupheli: { sayi: 0 },
+  supheliOran: { sayi: 0 },
+  kanalKodsuzStok: { sayi: 0 },
 };
 
 const parti = (kalanAdet: number, birimMaliyet: string | null): Parti => ({
@@ -93,6 +106,9 @@ console.log("=".repeat(70));
     cevapsizTalep: { sayi: 1 },
     yedekEski: { sayi: 0 },
     yedekYok: { sayi: 0 },
+    veriSupheli: { sayi: 0 },
+    supheliOran: { sayi: 0 },
+    kanalKodsuzStok: { sayi: 0 },
   });
   kontrol("beş ölçüm → beş uyarı", dolu.length === 5, dolu.length);
   kontrol("hepsi FAZ 1'de kırmızı", dolu.every((u) => u.seviye === "kirmizi"));
@@ -256,6 +272,9 @@ console.log("=".repeat(70));
     hakedisGecikti: { sayi: 2, tutar: 400 },
     yedekEski: { sayi: 0 },
     yedekYok: { sayi: 0 },
+    veriSupheli: { sayi: 0 },
+    supheliOran: { sayi: 0 },
+    kanalKodsuzStok: { sayi: 0 },
     cevapsizTalep: { sayi: 0 },
   });
   const kisitli = izneGoreSuz(hepsi, () => false);
@@ -435,10 +454,166 @@ console.log("=".repeat(70));
         (tr.Uyari?.[`eylem_${a}`] ?? "").length > 0,
     ),
   );
+  /**
+   * ⚠ PARAMETRE SÖZLEŞMESİ — bileşen `baslik_`e {sayi} GEÇER, `eylem_`e
+   * GEÇMEZ. `eylem_` metnine {sayi} yazmak çalışma anında next-intl
+   * hatası verir: ekran patlar, kod derlenir. Tam da "kural doğru mu
+   * değil, teslim edilebilir mi" tuzağı — testte görünmez, canlıda
+   * çöker.
+   */
+  kontrol(
+    "eylem metinleri PARAMETRESİZ",
+    UYARI_ANAHTARLARI.every((a) => !(tr.Uyari?.[`eylem_${a}`] ?? "").includes("{")),
+  );
   kontrol(
     "çan mobilde 44px dokunma hedefi",
     canBileseni.includes("size-11"),
   );
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("F2-A) İMKÂNSIZ DEĞER — eşikler ölçümden");
+console.log("=".repeat(70));
+{
+  const g = (net2: number, maliyet: number, ciro: number) => ({ net2, maliyet, ciro });
+
+  /**
+   * ⚠ GERÇEK VAKA — Philips OneBlade. NET-2 981,17 · maliyet 27,16 ·
+   * ciro 1.434. İki ölçüt de yakalamalı; biri kâr üzerinden, öteki
+   * fiyat üzerinden bakıyor.
+   */
+  const oneblade = supheSebepleri(g(981.17, 27.16, 1434));
+  kontrol("OneBlade yakalanıyor", oneblade.length === 2, oneblade);
+  kontrol("  ...verim sebebi", oneblade.includes("VERIM_YUKSEK"));
+  kontrol("  ...maliyet payı sebebi", oneblade.includes("MALIYET_DUSUK"));
+
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR — meşru yüksek marjlı
+   * kalem YAKALANMAMALI. Anker 322: NET-2 428,32 · maliyet 279 · verim
+   * %154 (ölçülen p95). Eşik %100 seçilseydi bu ilk gün yanlış alarm
+   * verirdi; test tam o seçimi kırmızıya düşürüyor.
+   */
+  const anker = supheSebepleri(g(428.32, 279, 1000));
+  kontrol("meşru yüksek marj (p95, %154) YAKALANMIYOR", anker.length === 0, anker);
+
+  /** Eşik ölçülen p95'in ÜSTÜNDE olmalı — yoksa dağılımın içine girer. */
+  kontrol("verim eşiği p95'in üstünde", SUPHELI_VERIM > SUPHE_OLCUMU.verimP95);
+  kontrol("maliyet payı eşiği p5'in altında", SUPHELI_MALIYET_PAYI < SUPHE_OLCUMU.maliyetPayiP5);
+
+  /**
+   * ⚠ EKSİK VERİ ŞÜPHE DEĞİLDİR — kendi uyarısı var. İki uyarının aynı
+   * kaydı saydırması rozeti şişirir ve ikisine de güveni azaltır.
+   */
+  kontrol("maliyet bilinmiyorsa şüphe YOK", !supheliMi({ net2: 500, maliyet: null, ciro: 1000 }));
+  kontrol("NET bilinmiyorsa şüphe YOK", !supheliMi({ net2: null, maliyet: 10, ciro: 1000 }));
+  kontrol("maliyet sıfırsa bölme YAPILMAZ", !supheliMi(g(500, 0, 1000)));
+  kontrol("ciro sıfırsa pay hesaplanmaz", supheSebepleri(g(500, 10, 0)).every((x) => x !== "MALIYET_DUSUK"));
+
+  /** Normal kalem sessiz kalmalı — ortanca verim %23, maliyet payı %66. */
+  kontrol("ortanca kalem sessiz", !supheliMi(g(230, 1000, 1515)));
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("F2-B) SEVİYE + ROZET");
+console.log("=".repeat(70));
+{
+  const uyarilar = uyarilariKur({
+    ...bos,
+    nakitAcigi: { sayi: 1, tutar: 500 },
+    veriSupheli: { sayi: 1 },
+    kanalKodsuzStok: { sayi: 2 },
+  });
+  kontrol("üç uyarı da doğdu", uyarilar.length === 3, uyarilar.length);
+
+  /** Seviye artık tanımdan geliyor — kural gövdesi karar vermiyor. */
+  kontrol("nakit KIRMIZI", uyarilar.find((u) => u.anahtar === "nakitAcigi")?.seviye === "kirmizi");
+  kontrol("veri şüpheli AMBER", uyarilar.find((u) => u.anahtar === "veriSupheli")?.seviye === "amber");
+  kontrol("kanal kodsuz NÖTR", uyarilar.find((u) => u.anahtar === "kanalKodsuzStok")?.seviye === "notr");
+
+  /**
+   * ⚠ ROZET NÖTR SAYMAZ (mimar kararı). Rozet EYLEM ÇAĞRISIDIR; bilgi
+   * sayacına dönerse gerçek kırmızı geldiği gün de okunmaz.
+   */
+  kontrol("rozet nötrü SAYMIYOR", canSayisi(uyarilar) === 2, canSayisi(uyarilar));
+  kontrol("rozet rengi en yükseği alıyor", canSeviyesi(uyarilar) === "kirmizi");
+
+  /** ⚠ AYIRT EDİCİ: yalnız nötr varken rozet SIFIR ama nokta VAR. */
+  const yalnizNotr = uyarilariKur({ ...bos, kanalKodsuzStok: { sayi: 2 } });
+  kontrol("yalnız nötr → rozet sayısı 0", canSayisi(yalnizNotr) === 0);
+  kontrol("  ...ama nötr VARLIK NOKTASI yanıyor", notrVarMi(yalnizNotr));
+  kontrol("hiç uyarı yoksa nokta da YOK", !notrVarMi(uyarilariKur(bos)));
+
+  /** Amber tek başınayken rozet amber olmalı, kırmızıya kaçmamalı. */
+  const amberTek = uyarilariKur({ ...bos, veriSupheli: { sayi: 1 } });
+  kontrol("yalnız amber → rozet amber", canSeviyesi(amberTek) === "amber");
+  kontrol("  ...ve rozete GİRER", canSayisi(amberTek) === 1);
+
+  /** Her anahtarın seviyesi tanımlı — yeni anahtar seviyesiz kalmasın. */
+  for (const a of UYARI_ANAHTARLARI) {
+    kontrol(`  seviye tanımlı: ${a}`, UYARI_SEVIYESI[a] !== undefined);
+  }
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("F2-C) ŞÜPHELİ ORAN — EŞİK K3'TEN OKUNUYOR");
+console.log("=".repeat(70));
+{
+  /**
+   * ⚠ EŞİK KOPYALANMAMALI. Aynı sayı iki yerde yaşasaydı biri değişip
+   * öteki unutulurdu; form bir şeyi şüpheli sayarken çan başkasını.
+   */
+  const topla = readFileSync("src/lib/uyari/topla.ts", "utf8");
+  kontrol("çan eşiği K3'ten import ediyor", /SUPHELI_ORAN_ESIGI/.test(topla));
+  kontrol("  ...kendi sayısını yazmıyor", !/commissionRate: \{ lt: 3 \}/.test(topla));
+  kontrol("K3 eşiği hâlâ %3", SUPHELI_ORAN_ESIGI === 3);
+
+  /** 2,70 vakası eşiğin altında — yakalanmalı. */
+  kontrol("2,70 eşiğin altında", 2.7 < SUPHELI_ORAN_ESIGI);
+  /** Meşru düşük oran (görülen en düşük 3,6) yakalanmamalı. */
+  kontrol("3,60 eşiğin ÜSTÜNDE (meşru)", 3.6 >= SUPHELI_ORAN_ESIGI);
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("F2-D) ADRESLER VE EKRAN BAĞI");
+console.log("=".repeat(70));
+{
+  /**
+   * ⚠ GÖSTERDİĞİM LİNK VAR OLAN BİR EKRANA MI GİDİYOR — ve o ekran AYNI
+   * KÜMEYİ mi gösteriyor? Tasarım raporunda `/kanal-kodlari?eksik=1`
+   * yazmıştım; MENÜ ETİKETİNE bakmışım, rotaya değil. Gerçek rota
+   * `/kanal-sku` ve oradaki `eksik=1` BAŞKA bir şey demek ("oranı eksik
+   * kod"), bizim uyarımız "kodu hiç olmayan varyant". Sayı 2 derken liste
+   * bambaşka bir küme gösterirdi.
+   */
+  const stok = readFileSync("src/app/stok/page.tsx", "utf8");
+  const satislar = readFileSync("src/app/satislar/page.tsx", "utf8");
+  const suzgec = readFileSync("src/lib/liste-suzgeci.ts", "utf8");
+
+  kontrol("kanalKodsuz adresi /stok?kanal=yok", UYARI_ADRESLERI.kanalKodsuzStok === "/stok?kanal=yok");
+  kontrol("  ...stok ekranı `kanal` parametresini okuyor", /kanal\?: string/.test(stok));
+  kontrol("  ...ve AYNI gövdeyi çağırıyor", /kanalKodsuzStokluVaryantlar\(\)/.test(stok));
+
+  kontrol("veriSupheli adresi /satislar?veri=supheli", UYARI_ADRESLERI.veriSupheli === "/satislar?veri=supheli");
+  kontrol("  ...satış ekranı `veri` parametresini okuyor", /veri\?: string/.test(satislar));
+  kontrol("  ...ve AYNI gövdeyi çağırıyor", /supheliVeriBulgusu\(/.test(satislar));
+  kontrol("  ...süzgeç kimlik listesini uyguluyor", /veri === "supheli"/.test(suzgec));
+
+  kontrol("supheliOran adresi /satislar?oran=supheli", UYARI_ADRESLERI.supheliOran === "/satislar?oran=supheli");
+  kontrol("  ...süzgeç K3 eşiğini kullanıyor", /commissionRate: \{ lt: SUPHELI_ORAN_ESIGI \}/.test(suzgec));
+  kontrol("  ...eşiği kopyalamıyor", !/commissionRate: \{ lt: 3 \}/.test(suzgec));
+
+  /** Süzgeç istenmiş ama küme boşsa liste BOŞ çıkmalı — sessiz kayıp yok. */
+  kontrol("boş küme 'hepsini göster'e düşmüyor", /supheliIdler \?\? \[\]/.test(suzgec));
+
+  /** Nötr nokta çanda var mı ve RAKAMSIZ mı? */
+  const can = readFileSync("src/components/uyari-cani.tsx", "utf8");
+  kontrol("çanda nötr varlık noktası var", /notrVarMi\(uyarilar\)/.test(can));
+  kontrol("  ...yalnız rozet YOKKEN çiziliyor", /sayi === 0 && notrVarMi/.test(can));
+  kontrol("  ...ve rakam taşımıyor", /aria-hidden/.test(can));
 }
 
 console.log("");

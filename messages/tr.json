@@ -2397,7 +2397,14 @@
     "baslik_yedekEski": "Son yedek {sayi} gün önce alındı",
     "eylem_yedekEski": "Yedeği indir ve gece işinin neden durduğuna bak",
     "baslik_yedekYok": "Elde doğrulanmış yedek YOK",
-    "eylem_yedekYok": "Hemen yedek al — depo boş ya da okunamıyor"
+    "eylem_yedekYok": "Hemen yedek al — depo boş ya da okunamıyor",
+    "baslik_veriSupheli": "{sayi} satış kaleminde veri şüpheli",
+    "eylem_veriSupheli": "Maliyet ya da kâr olağan aralığın dışında — kaydı kontrol et",
+    "baslik_supheliOran": "{sayi} satış kaleminde komisyon oranı şüpheli",
+    "eylem_supheliOran": "Oran eşiğin altında — elle girilmiş olabilir, tarifeyle karşılaştır",
+    "baslik_kanalKodsuzStok": "{sayi} üründe stok var, kanal kodu yok",
+    "eylem_kanalKodsuzStok": "Mal rafta ama hiçbir kanalda satışa açık değil",
+    "canEtiketiBilgi": "Uyarı yok — bilgi niteliğinde kayıt var"
   },
   "Talep": {
     "bildirEtiketi": "Hata veya istek bildir",

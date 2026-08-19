@@ -6,6 +6,9 @@ import { takvimSatirlariniTopla } from "@/lib/panel/takvim-verisi";
 import { prisma } from "@/lib/prisma";
 import { izinVarMi } from "@/lib/yetki";
 
+import { SUPHELI_ORAN_ESIGI } from "@/lib/komisyon/oran-uyarisi";
+
+import { kanalKodsuzStokluVaryantlar, supheliVeriBulgusu } from "./faz2-veri";
 import { izneGoreSuz, nakitAcigiOlcumu, uyarilariKur } from "./kurallar";
 import { maliyetsizVaryantlar } from "./maliyetsiz-stok";
 import { yedekOlcumu } from "./yedek";
@@ -77,6 +80,9 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
     partiler,
     cevapsizTalep,
     sonYedek,
+    supheBulgusu,
+    supheliOranSayisi,
+    kanalKodsuzlar,
   ] = await Promise.all([
       takvimSatirlariniTopla(bugun),
       gorevSayilariniTopla(),
@@ -99,6 +105,25 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
        */
       prisma.talep.count({ where: { durum: "ACIK" } }),
       sonYedekZamani(),
+      /**
+       * ⚠ SORGU BURADA YAZILMAZ — `faz2-veri.ts`ten çağrılır. Uyarının
+       * götürdüğü EKRAN da aynı gövdeyi çağırıyor; iki taraf kendi
+       * sorgusunu yazsaydı bir gün ayrışır, çan "1" derken liste 40
+       * satır gösterirdi (görev kutusu vakası, 15.08.2026).
+       */
+      supheliVeriBulgusu(gunDegeri(isTakvimGunu(new Date()))),
+      /**
+       * ⚠ EŞİK K3'TEN OKUNUR, KOPYALANMAZ. Aynı sayı iki yerde yaşasaydı
+       * biri değiştirilip öteki unutulurdu; form bir şeyi şüpheli sayarken
+       * çan başka bir şeyi sayardı.
+       */
+      prisma.saleItem.count({
+        where: {
+          sale: { iptalTarihi: null },
+          commissionRate: { lt: SUPHELI_ORAN_ESIGI },
+        },
+      }),
+      kanalKodsuzStokluVaryantlar(),
     ]);
 
   const takvim = nakitTakvimiKur({
@@ -123,6 +148,9 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
     maliyetsizStok: { sayi: maliyetsizVaryantlar(partiler).length },
     karHesaplanamayan: { sayi: gorevSayilari.karHesaplanamayan },
     cevapsizTalep: { sayi: cevapsizTalep },
+    veriSupheli: { sayi: supheBulgusu.kalemSayisi },
+    supheliOran: { sayi: supheliOranSayisi },
+    kanalKodsuzStok: { sayi: kanalKodsuzlar.length },
     hakedisGecikti: {
       sayi: gecikenHakedis._count._all,
       tutar:

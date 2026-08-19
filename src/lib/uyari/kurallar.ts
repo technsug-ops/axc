@@ -11,6 +11,7 @@
  */
 
 import {
+  UYARI_SEVIYESI,
   UYARI_ADRESLERI,
   UYARI_ANAHTARLARI,
   UYARI_IZINLERI,
@@ -54,8 +55,13 @@ export function uyarilariKur(olcumler: UyariOlcumleri): Uyari[] {
     if (!olcum || olcum.sayi <= 0) continue;
     liste.push({
       anahtar,
-      // FAZ 1: hepsi kırmızı. Amber/nötr Faz 2'de.
-      seviye: "kirmizi",
+      /**
+       * SEVİYE UYARININ KENDİ TANIMINDAN — Faz 2. Burada sabit
+       * `"kirmizi"` yazılıydı; kural gövdesi artık karar vermiyor,
+       * `UYARI_SEVIYESI` haritasından okuyor. Yeni uyarı eklendiğinde
+       * seviye tanımla birlikte gelir, kural gövdesi değişmez.
+       */
+      seviye: UYARI_SEVIYESI[anahtar],
       sayi: olcum.sayi,
       tutar: olcum.tutar ?? null,
       // Faz 1'in tamamı TRY; EUR uyarısı doğduğunda ölçüm taşıyacak.
@@ -94,7 +100,32 @@ export function canSeviyesi(uyarilar: Uyari[]): UyariSeviyesi | null {
   return "notr";
 }
 
-/** Rozetteki sayı — uyarı ADEDİ, kayıt adedi değil. */
+/**
+ * ROZETTEKİ SAYI — YALNIZ KIRMIZI + AMBER (mimar kararı 19.08.2026).
+ *
+ * ⚠ NÖTR ROZETE GİRMEZ. Girseydi şu olurdu: hiç kırmızı yokken bile rozet
+ * `3` gösterir, kullanıcı açar, hepsi bilgi çıkar. İki üç kez tekrarlayınca
+ * rozete bakmayı bırakır — ve o gün gerçek bir kırmızı geldiğinde de
+ * bakmaz. Rozet EYLEM ÇAĞRISIDIR; bilgi sayacı değil.
+ *
+ * Sayı uyarı ADEDİDİR, kayıt adedi değil: "3 uyarı" der, "3 satış" demez.
+ */
 export function canSayisi(uyarilar: Uyari[]): number {
-  return uyarilar.length;
+  return uyarilar.filter((u) => u.seviye !== "notr").length;
+}
+
+/**
+ * NÖTR KATMAN VAR MI — ROZETSİZ VARLIK NOKTASI.
+ *
+ * _Mimar bu kararı bana bıraktı (19.08.2026); şöyle karar verdim:_
+ * Nötr katman rozete girmiyor, ama HİÇBİR işaret bırakmazsak o katman
+ * görünmez olur ve kimse oraya bakmaz — yazmakla yazmamak arasında fark
+ * kalmaz. Bu yüzden **sayısız minik bir nokta**: çanın yanında durur,
+ * "burada bakılacak bir şey var" der, ama RAKAM TAŞIMAZ.
+ *
+ * Rakam taşısaydı rozetin işini yapar ve tam kaçındığımız şeye —
+ * eylemsiz sayı enflasyonuna — dönerdi. Nokta bir davettir, çağrı değil.
+ */
+export function notrVarMi(uyarilar: Uyari[]): boolean {
+  return uyarilar.some((u) => u.seviye === "notr");
 }

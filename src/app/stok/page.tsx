@@ -35,6 +35,7 @@ import {
   ayrilmisAdetler,
 } from "@/lib/iade/bildirim";
 import { sonHareketTarihleri, varyantStoklari } from "@/lib/stok";
+import { kanalKodsuzStokluVaryantlar } from "@/lib/uyari/faz2-veri";
 import { maliyetsizVaryantlar } from "@/lib/uyari/maliyetsiz-stok";
 
 import { StokArama } from "./stok-arama";
@@ -52,11 +53,13 @@ export default async function StokSayfasi({
     sayfa?: string;
     yas?: string;
     maliyet?: string;
+    /** Uyarı merkezinden gelir: stoğu var, hiçbir kanalda kodu yok. */
+    kanal?: string;
   }>;
 }) {
   await sayfaIzni("stok.gor");
 
-  const { q, sayfa, yas, maliyet } = await searchParams;
+  const { q, sayfa, yas, maliyet, kanal } = await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
   const t = await getTranslations("Stok");
@@ -86,6 +89,15 @@ export default async function StokSayfasi({
    * koşmuyor — her stok açılışında o bedel ödenmez.
    */
   const maliyetsizIsteniyor = maliyet === "yok";
+  /**
+   * ⚠ KÜME UYARIYLA AYNI GÖVDEDEN. Burada kendi sorgumuzu yazsaydık çan
+   * "2" derken liste başka bir sayı gösterebilirdi; `faz2-veri.ts` iki
+   * tarafı da besliyor.
+   */
+  const kanalKodsuzIsteniyor = kanal === "yok";
+  const kanalKodsuzListe = kanalKodsuzIsteniyor
+    ? await kanalKodsuzStokluVaryantlar()
+    : null;
   const yasBandi = yasSuzgeciCoz(yas);
   let yasVaryantlari: string[] | null = null;
   let maliyetsizListe: string[] | null = null;
@@ -113,12 +125,18 @@ export default async function StokSayfasi({
    * ikisini de sağlayanlar gelir. Birleşim olsaydı süzgeç eklemek listeyi
    * BÜYÜTÜRDÜ; kullanıcı daraltmak isterken genişletmiş olurdu.
    */
-  const varyantSuzgeci =
-    yasVaryantlari === null
-      ? maliyetsizListe
-      : maliyetsizListe === null
-        ? yasVaryantlari
-        : yasVaryantlari.filter((id) => maliyetsizListe.includes(id));
+  /**
+   * ⚠ ÜÇÜNCÜ SÜZGEÇ EKLENİNCE İÇ İÇE KOŞUL OKUNAMAZ HÂLE GELİYORDU.
+   * Kural değişmedi (KESİŞİM), gövde listeleri katlıyor: dördüncü süzgeç
+   * eklendiğinde bu satırlara dokunulmayacak.
+   */
+  const varyantSuzgeci = [yasVaryantlari, maliyetsizListe, kanalKodsuzListe]
+    .filter((l): l is string[] => l !== null)
+    .reduce<string[] | null>(
+      (kesisim, liste) =>
+        kesisim === null ? liste : kesisim.filter((id) => liste.includes(id)),
+      null,
+    );
 
   const aramaKosulu = arama
     ? {

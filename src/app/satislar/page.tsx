@@ -1,4 +1,6 @@
 import { getTranslations } from "next-intl/server";
+import { gunDegeri, isTakvimGunu } from "@/lib/donem";
+import { supheliVeriBulgusu } from "@/lib/uyari/faz2-veri";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { Eye, Plus, TriangleAlert, Undo2 } from "lucide-react";
@@ -69,6 +71,10 @@ export default async function SatislarSayfasi({
     iptal?: string;
     /** "ciro" | "sermaye" — marj göstergesinin ölçüsü. */
     marj?: string;
+    /** Uyarı merkezinden: maliyet/kâr olağan aralığın dışında. */
+    veri?: string;
+    /** Uyarı merkezinden: komisyon oranı K3 eşiğinin altında. */
+    oran?: string;
   }>;
 }) {
   await sayfaIzni("satis.gor");
@@ -103,8 +109,21 @@ export default async function SatislarSayfasi({
   const tIade = await getTranslations("Iade");
   const ortak = await getTranslations("Ortak");
 
+  /**
+   * ŞÜPHELİ VERİ KÜMESİ — yalnız süzgeç AÇIKKEN hesaplanır.
+   *
+   * ⚠ Her satış açılışında koşsaydı, hiç kullanılmayan bir süzgeç için
+   * her sayfa yüklemesinde stok hareketleri okunurdu. Çanın kendisi zaten
+   * ayrı ölçüyor; burası yalnız listeyi süzüyor — ama AYNI GÖVDEDEN,
+   * ikisi ayrışmasın diye.
+   */
+  const supheliIdler =
+    p.veri === "supheli"
+      ? (await supheliVeriBulgusu(gunDegeri(isTakvimGunu(new Date())))).saleIdleri
+      : undefined;
+
   // EKRAN VE EXCEL AYNI KOŞULU KULLANIR (bkz. lib/liste-suzgeci.ts).
-  const { kosul, pencere } = satisKosulu(p);
+  const { kosul, pencere } = satisKosulu(p, new Date(), supheliIdler);
 
   // Süzgeç seçenekleri VERİDEN gelir: olmayan bir seçeneğe tıklanıp boş
   // liste görülmesin.
