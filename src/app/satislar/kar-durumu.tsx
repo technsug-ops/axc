@@ -49,6 +49,20 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
  *  sonucun artıda olduğunu SÖYLEMEK. Yeşil satıra öneri eklemek, satış
  *  girerken fiyat optimizasyonu yaptırmak olurdu.
  *
+ *  ── CÜMLE KENDİ İDDİASINI RAKAMLA KANITLAR ──────────────────────────────
+ *  ⚠ Mimar düzeltmesi 20.08.2026. Kutu "tahmini: maliyet açık partilerin
+ *  ORTALAMASI" diyordu — bu MEKANİZMAYI anlatıyor, RAKAMI vermiyordu.
+ *  Kelime vardı, sayı yoktu; kullanıcı "hangi maliyete göre zarar?"
+ *  sorusunu soramadan kutuya bakıyordu.
+ *
+ *  Artık iki dayanak rakamı cümlenin içinde: birim maliyet ve birim satış
+ *  fiyatı. NET-2'nin nereden çıktığı, kutuya bakan kişi için görünür.
+ *  _("Metin, sahip olmadığı anlamı iddia etmez" kuralının tersi hâli:
+ *  iddiayı taşıyan cümle, dayanağını da taşımalı.)_
+ *
+ *  ⚠ RAKAMLAR BİRİM BAZINDA. Adet 2 iken toplam maliyeti birim satış
+ *  fiyatının yanına koymak, iki farklı ölçeği yan yana yazmak olurdu.
+ *
  *  ── TAHMİN OLDUĞU YAZILI ────────────────────────────────────────────────
  *  Maliyet AÇIK PARTİLERİN ağırlıklı ortalamasıdır; FIFO'da hangi partinin
  *  düşeceği kayıt anında belli olur. Rakam "yaklaşık"tır ve metin bunu
@@ -129,7 +143,11 @@ export function KarDurumu({
     return (
       <p className={`flex flex-wrap items-center gap-1 text-sm ${DURUM_YAZISI.olumlu}`}>
         <Check className="size-3.5 shrink-0" />
-        {t("karDurumu", { net2: bicim.para(s.net2, paraBirimi) })}
+        {t("karDurumu", {
+          net2: bicim.para(s.net2, paraBirimi),
+          maliyet: bicim.para(birimMaliyet, paraBirimi),
+          satis: bicim.para(fiyat, paraBirimi),
+        })}
       </p>
     );
   }
@@ -156,7 +174,11 @@ export function KarDurumu({
     <div className={`rounded-md p-2 text-sm ${DURUM_KUTUSU.olumsuz}`}>
       <p className={`flex flex-wrap items-center gap-1 ${DURUM_YAZISI.olumsuz}`}>
         <TriangleAlert className="size-3.5 shrink-0" />
-        {t("zararUyarisi", { net2: bicim.para(Math.abs(s.net2), paraBirimi) })}
+        {t("zararUyarisi", {
+          net2: bicim.para(Math.abs(s.net2), paraBirimi),
+          maliyet: bicim.para(birimMaliyet, paraBirimi),
+          satis: bicim.para(fiyat, paraBirimi),
+        })}
       </p>
       {hukum !== null && oneri !== null ? (
         <p className={`text-xs ${DURUM_YAZISI[yonRengi(hukum)]}`}>

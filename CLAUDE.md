@@ -423,6 +423,34 @@ sonra yapılıyor — ikinci tetik aynı dosyayı tazeler, kopya üretmez._
 Var olanı listelemek, olmayanı göstermez — eksik günler ekranda kırmızı
 yazmalı ki üçüncü kaçış birinin fark etmesine kalmasın.
 
+### KONTROL TASARIMI, VERİ KAPSAMI DOĞRULANMADAN "FARK" ÜRETMEZ (KESİN KURAL)
+
+_Mimar kararı 20.08.2026, K-5 kargo mutabakatı._ İki kaynağı karşılaştıran
+her kontrolden önce sorulur: **iki taraf AYNI KÜMEYİ mi kapsıyor?**
+Kapsamadıkları hâlde çıkarılan sayı "fark" değil **KAPSAM BOŞLUĞUDUR** —
+ve fark diye okunduğu anda olmayan bir hata aranmaya başlanır.
+
+**Vaka:** kargo mutabakatı için "Σ KARGO vs KARGO_FATURA" tasarlanmıştı.
+Ölçüm iki şey gösterdi:
+1. **93 `KARGO` satırının hepsi Hepsiburada, 4 `KARGO_FATURA` satırının
+   hepsi Trendyol** — kıyas iki farklı kanalı karşılaştırıyordu.
+2. Kanal bazına indirilse bile: TY temmuzda **₺12.521** kargo faturalıyor,
+   bizim temmuz beklentimiz **tek satıştan ₺109,90**. Aradaki ₺12.411 bir
+   kargo hatası DEĞİL; o dönemin satışları sisteme hiç girilmemiş.
+
+"Yorumlanamaz" notu düşerek yayımlamak bile yetmez: rakam ekranda
+durduğu sürece okunur, ve **doğru sayı + yanlış çerçeve = yanlış hüküm.**
+Kontrol, kapsam kapanana kadar YAZILMAZ.
+
+**KAPSAM SORULARI — kontrol yazılmadan önce:**
+1. İki taraf aynı **kanalı/hesabı** mı kapsıyor?
+2. Aynı **dönemi** mi?
+3. Aynı **birimi** mi (sipariş başına ↔ toplu fatura)?
+4. Bir tarafta olup ötekinde **hiç olmayan** kayıt var mı — ve oranı ne?
+
+Dördünden biri "hayır" ise üretilecek sayı farkı değil eksikliği ölçer.
+_"Tutarlılık ≠ doğruluk" ve "referansı doğrula" derslerinin kapsam hâli._
+
 ### SUSTURMA, KAYDIN HÂLİNE BAĞLANIR (KESİN KURAL)
 
 _Mimar kararı 19.08.2026, K6._ Bir uyarı bir kayıt için susturulabiliyorsa

@@ -739,6 +739,23 @@ console.log("=".repeat(70));
    * 20.08.2026. Kâr durumunda ekran susuyordu ve sessizlik "hesap
    * çalışıyor mu?" tereddüdü yaratıyordu.
    */
+  /**
+   * ⚠ CÜMLE DAYANAĞINI TAŞIR — mimar düzeltmesi 20.08.2026.
+   * Kutu "tahmini: maliyet açık partilerin ORTALAMASI" diyordu; bu
+   * MEKANİZMAYI anlatıyor, RAKAMI vermiyordu. Kelime vardı, sayı yoktu.
+   */
+  kontrol("zarar cümlesi maliyeti RAKAMLA veriyor", /maliyet: bicim\.para\(birimMaliyet/.test(form));
+  kontrol("  ...ve satış fiyatını da", /satis: bicim\.para\(fiyat/.test(form));
+  const sz2 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Satis?: Record<string, string>;
+  };
+  kontrol("  ...sözlükte iki dayanak da yer alıyor",
+    (sz2.Satis?.zararUyarisi ?? "").includes("{maliyet}") &&
+      (sz2.Satis?.zararUyarisi ?? "").includes("{satis}"));
+  kontrol("  ...kâr cümlesinde de (aynı iddia, aynı ispat)",
+    (sz2.Satis?.karDurumu ?? "").includes("{maliyet}") &&
+      (sz2.Satis?.karDurumu ?? "").includes("{satis}"));
+
   kontrol("kâr hâli de konuşuyor", /karDurumu/.test(form));
   kontrol("  ...ve koşul NET-2 > 0'a bağlı", /s\.net2 > 0/.test(form));
   /** ⚠ TAM SIFIR YEŞİL DEĞİL — üçüncü ekranda da aynı kural. */

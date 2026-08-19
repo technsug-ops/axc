@@ -829,7 +829,7 @@
     "oranKaynakYok": "Bu ürün için kayıtlı komisyon oranı yok — girdiğiniz değer hiçbir kayda dayanmıyor.",
     "oranSupheliDusuk": "%{oran} çok düşük görünüyor; bugüne kadar görülen en düşük oran %3,6. Kontrol edin.",
     "oranSapti": "Kayıtlı oran %{onerilen}; girdiğiniz değer {fark} puan farklı.",
-    "zararUyarisi": "Bu kalem ZARARINA görünüyor — NET-2 yaklaşık {net2} eksi",
+    "zararUyarisi": "Bu kalem ZARARINA görünüyor — NET-2 yaklaşık {net2} eksi (birim maliyet {maliyet} · satış {satis})",
     "zararAltDilimKurtarir": "{fiyat} yaparsanız komisyon %{oran} dilimine iner ve NET-2 {sonuc} olur — kâra geçer",
     "zararAltDilimKurtarmaz": "{fiyat} ile %{oran} dilimine inmek de kurtarmıyor — zarar sürer",
     "zararTahmin": "Tahmini: maliyet açık partilerin ortalaması, kargo hariç. Kayıt engellenmez.",
@@ -861,7 +861,7 @@
     "dogrulaNotIpucu_HEDIYE_NUMUNE": "örn. tedarikçi numunesi, bedelsiz geldi",
     "dogrulaNotIpucu_OZEL_ANLASMA": "örn. toplu alım anlaşması, özel fiyat",
     "dogrulaNotIpucu_DIGER": "Neden olağan dışı? Kısaca yaz.",
-    "karDurumu": "Bu satış kârda — NET-2 yaklaşık {net2}",
+    "karDurumu": "Bu satış kârda — NET-2 yaklaşık {net2} (birim maliyet {maliyet} · satış {satis})",
     "karBasabas": "Bu satış başabaşta — NET-2 sıfır."
   },
   "Kategori": {
