@@ -744,8 +744,18 @@ console.log("=".repeat(70));
    * Kutu "tahmini: maliyet açık partilerin ORTALAMASI" diyordu; bu
    * MEKANİZMAYI anlatıyor, RAKAMI vermiyordu. Kelime vardı, sayı yoktu.
    */
-  kontrol("zarar cümlesi maliyeti RAKAMLA veriyor", /maliyet: bicim\.para\(birimMaliyet/.test(form));
-  kontrol("  ...ve satış fiyatını da", /satis: bicim\.para\(fiyat/.test(form));
+  /**
+   * ⚠ DÖRDÜNCÜ KEZ AYNI TUZAK: aynı desen İKİ yerde geçiyor (kâr cümlesi
+   * ve zarar cümlesi); birini silen mutasyon ötekini ayakta bırakıyor ve
+   * test yeşil kalıyordu. Kontrol artık her cümleyi KENDİ BLOĞUNDA
+   * arıyor.
+   */
+  const karBloku = form.slice(form.indexOf('t("karDurumu"'), form.indexOf('if (s.net2 === 0)'));
+  const zararBloku = form.slice(form.indexOf('t("zararUyarisi"'), form.indexOf('t("zararTahmin")'));
+  for (const [ad, blok] of [["kâr", karBloku], ["zarar", zararBloku]] as const) {
+    kontrol(`${ad} cümlesi maliyeti RAKAMLA veriyor`, /maliyet: bicim\.para\(birimMaliyet/.test(blok));
+    kontrol(`  ...${ad} cümlesi satış fiyatını da`, /satis: bicim\.para\(fiyat/.test(blok));
+  }
   const sz2 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
     Satis?: Record<string, string>;
   };
