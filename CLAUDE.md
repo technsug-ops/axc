@@ -310,6 +310,12 @@ zorlaştıracak şekilde yazılmıyor.
   _09.08.2026'da üç kez yaşandı; teşhis her seferinde dev sunucusu
   günlüğünden çıktı — tahmin etmeden önce kendi günlüğüne bak._
 - Kullanıcı vibe-coder: teknik jargonu az, Türkçe açıkla
+- **HİÇBİR DOĞRULAMA BORU SONUNA GÜVENMEZ.** `npm run x:dogrula | tail -2`
+  yazıldığında çıkış kodu **`tail`den** gelir ve kırmızı test sessizce
+  yutulur. 20.08.2026'da tam bu oldu: bir push, başarısız testle gitti.
+  Doğrulama komutları çıkış koduyla kontrol edilir
+  (`npm run x:dogrula > /dev/null 2>&1; echo $?`) ve push zinciri koda
+  bağlanır.
 - Migration, silme, reset gibi geri dönüşsüz işlerde MUTLAKA onay iste
 - Her tamamlanan aşamada commit + push (mesaj formatı: tip: Türkçe açıklama).
   Push öncesi .env sızıntısı kontrolü.
@@ -422,6 +428,45 @@ sonra yapılıyor — ikinci tetik aynı dosyayı tazeler, kopya üretmez._
 **Ve kaçışın kendisi görünür kılınır:** yeni zamanlayıcı da kaçırabilir.
 Var olanı listelemek, olmayanı göstermez — eksik günler ekranda kırmızı
 yazmalı ki üçüncü kaçış birinin fark etmesine kalmasın.
+
+### KAYNAK TARAYAN KONTROL, DESENİ DOSYADA DEĞİL KULLANIM BLOĞUNDA ARAR (KESİN KURAL)
+
+_Ders 19–20.08.2026, **dört tekrardan sonra**._ Bir ekran davranışını kaynak
+metni tarayarak sınayan kontrol, aradığı deseni **dosyanın tamamında**
+ararsa yalancı yeşil üretir. Desenin dosyada BULUNMASI, o davranışın
+GERÇEKLEŞTİĞİNİ göstermez.
+
+**İki bozulma biçimi — ikisi de aynı köke bağlı:**
+1. **Koşul öldürülür, desen kalır.** `{false ? (` yapılan bir dal artık
+   hiç çizilmez ama içindeki sözlük anahtarı dosyada durur.
+2. **Aynı desen birden çok yerde geçer.** Birini bozan mutasyon ötekini
+   ayakta bırakır; tarama ikincisini bulur ve yeşil kalır.
+
+**DÖRT VAKA — hepsi mutasyonla yakalandı, hiçbiri değer testiyle:**
+
+| # | Kontrol | Neden kör kaldı |
+|---|---|---|
+| 1 | Başabaş ekrana basılıyor mu | Render koşulu `{false ? (` yapıldı; `deneBasabas` anahtarı dosyada kaldı |
+| 2 | Form K5 motorunu çağırıyor mu | `simulasyonKur(` deseni ALT DİLİM önerisinde de geçiyordu; hüküm satırı elle hesaba çevrilse bile desen ayaktaydı |
+| 3 | Boş şüpheli mesajı süzgece bağlı mı | `p.veri === "supheli"` İKİ yerde (küme hesabı + boş mesaj); biri bozulunca öteki testi geçiriyordu |
+| 4 | Kâr/zarar cümlesi maliyeti veriyor mu | `satis: bicim.para(fiyat` hem kâr hem zarar cümlesinde; birini silmek yakalanmıyordu |
+
+**YÖNTEM — kontrol yazarken:**
+1. Deseni **kullanım bloğuna daraltarak** ara: `metin.slice(baş, son)` ile
+   ilgili dalı kes, sonra içinde ara.
+2. Koşulu **sonucuyla birlikte** ara: `/p\.veri === "supheli"\s*\?\s*t\("bosSupheliVeri"\)/`
+   — koşul da sonuç da aynı desende.
+3. Aynı desen birden çok yerde geçiyorsa **her yeri ayrı ayrı** sına
+   (döngüyle: `for (const [ad, blok] of [["kâr", karBloku], …])`).
+4. **Kaynak SIRASINI ölçme, DAVRANIŞI ölç.** "A ile B arasında 400
+   karakter yok" gibi bir kontrol yazıldı ve yanlış şeyi sınadığı için
+   kırmızı yandı; doğrusu "kâr dalı öneriye varmadan erken dönüyor mu"
+   idi.
+
+> **VE HER KONTROL MUTASYONLA SINANIR.** Bu dördü de testler YEŞİLKEN
+> yazılmıştı; körlüğü ortaya çıkaran tek şey mutasyon denemesiydi.
+> Mutasyon sonucu GÖRÜLMEDEN push edilmez — yeşil test, sınanmış kontrol
+> demek değildir.
 
 ### KONTROL TASARIMI, VERİ KAPSAMI DOĞRULANMADAN "FARK" ÜRETMEZ (KESİN KURAL)
 
