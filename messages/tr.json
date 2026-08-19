@@ -2404,7 +2404,9 @@
     "eylem_supheliOran": "Oran eşiğin altında — elle girilmiş olabilir, tarifeyle karşılaştır",
     "baslik_kanalKodsuzStok": "{sayi} üründe stok var, kanal kodu yok",
     "eylem_kanalKodsuzStok": "Mal rafta ama hiçbir kanalda satışa açık değil",
-    "canEtiketiBilgi": "Uyarı yok — bilgi niteliğinde kayıt var"
+    "canEtiketiBilgi": "Uyarı yok — bilgi niteliğinde kayıt var",
+    "baslik_hakedisBaglanmamis": "{sayi} hakediş kalemi satışa bağlanamadı",
+    "eylem_hakedisBaglanmamis": "Gecikme sayımına girmiyor — karşılığı olan satış sistemde yok"
   },
   "Talep": {
     "bildirEtiketi": "Hata veya istek bildir",

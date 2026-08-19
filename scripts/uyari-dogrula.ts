@@ -69,6 +69,7 @@ const bos: UyariOlcumleri = {
   veriSupheli: { sayi: 0 },
   supheliOran: { sayi: 0 },
   kanalKodsuzStok: { sayi: 0 },
+  hakedisBaglanmamis: { sayi: 0 },
 };
 
 const parti = (kalanAdet: number, birimMaliyet: string | null): Parti => ({
@@ -109,6 +110,7 @@ console.log("=".repeat(70));
     veriSupheli: { sayi: 0 },
     supheliOran: { sayi: 0 },
     kanalKodsuzStok: { sayi: 0 },
+  hakedisBaglanmamis: { sayi: 0 },
   });
   kontrol("beş ölçüm → beş uyarı", dolu.length === 5, dolu.length);
   kontrol("hepsi FAZ 1'de kırmızı", dolu.every((u) => u.seviye === "kirmizi"));
@@ -275,6 +277,7 @@ console.log("=".repeat(70));
     veriSupheli: { sayi: 0 },
     supheliOran: { sayi: 0 },
     kanalKodsuzStok: { sayi: 0 },
+  hakedisBaglanmamis: { sayi: 0 },
     cevapsizTalep: { sayi: 0 },
   });
   const kisitli = izneGoreSuz(hepsi, () => false);
@@ -614,6 +617,56 @@ console.log("=".repeat(70));
   kontrol("çanda nötr varlık noktası var", /notrVarMi\(uyarilar\)/.test(can));
   kontrol("  ...yalnız rozet YOKKEN çiziliyor", /sayi === 0 && notrVarMi/.test(can));
   kontrol("  ...ve rakam taşımıyor", /aria-hidden/.test(can));
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("F2-E) HAYALET KIRMIZI — muafiyet ve BEYANI");
+console.log("=".repeat(70));
+{
+  /**
+   * ⚠ CANLI BULGU 19.08.2026: çan "67 hakediş kalemi gecikti · ₺137.975"
+   * diyordu. Ölçüm: üç hakediş partisinin 177 farklı sipariş numarasının
+   * HİÇBİRİ bir satış kaydıyla eşleşmiyor. Bilmediğimiz bir şeyi
+   * "gecikti" diye iddia ediyorduk.
+   */
+  const topla = readFileSync("src/lib/uyari/topla.ts", "utf8");
+  kontrol(
+    "geciken sayımı satışa BAĞLI kalemle sınırlı",
+    /saleId: \{ not: null \}/.test(topla) &&
+      /lt: bugun/.test(topla),
+  );
+  kontrol(
+    "  ...ve muafiyet AYRICA sayılıyor (saleId: null)",
+    /saleId: null,/.test(topla),
+  );
+  /**
+   * ⚠ KÖR MUTASYON DERSİ: beyanı `{ sayi: 0 }` yapan mutasyon YEŞİL
+   * kaldı — kural doğru çalışıyordu, ekrana BAĞLANMASI koptuğu hâlde.
+   * Muafiyetin uygulanması ile BEYAN EDİLMESİ ayrı iki şey; ikisi ayrı
+   * sınanmalı, yoksa ₺138K sessizce yok olur.
+   */
+  kontrol(
+    "  ...beyan ÖLÇÜLEN sayıdan besleniyor (sabit değil)",
+    /hakedisBaglanmamis: \{ sayi: baglanmamisHakedis \}/.test(topla),
+  );
+
+  /**
+   * ⚠ MUAFİYET SESSİZ OLAMAZ. Bu, muafiyeti kaldıran mutasyondan FARKLI
+   * bir kusuru yakalar: muafiyet doğru uygulanıp beyanı unutulursa
+   * ₺138K hiçbir yerde görünmeden yok olur.
+   */
+  const beyan = uyarilariKur({ ...bos, hakedisBaglanmamis: { sayi: 83 } });
+  kontrol("bağlanmamış kalem uyarı ÜRETİYOR", beyan.length === 1);
+  kontrol("  ...seviyesi NÖTR (sorun değil, beyan)", beyan[0]?.seviye === "notr");
+  kontrol("  ...rozete GİRMİYOR", canSayisi(beyan) === 0);
+  kontrol("  ...ama nokta yanıyor", notrVarMi(beyan));
+  kontrol("  ...adresi hakediş ekranı", UYARI_ADRESLERI.hakedisBaglanmamis === "/hakedis");
+
+  /** Bağlanmış ve gecikmiş kalem HÂLÂ kırmızı — kural kalkmadı, kapsam daraldı. */
+  const gercek = uyarilariKur({ ...bos, hakedisGecikti: { sayi: 3, tutar: 900 } });
+  kontrol("bağlı+geciken hâlâ KIRMIZI", gercek[0]?.seviye === "kirmizi");
+  kontrol("  ...ve rozete giriyor", canSayisi(gercek) === 1);
 }
 
 console.log("");

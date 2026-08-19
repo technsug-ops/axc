@@ -85,6 +85,16 @@ export const UYARI_ANAHTARLARI = [
    * kanal kodları ekranında sütun olarak yaşar.
    */
   "kanalKodsuzStok",
+  /**
+   * SATIŞA BAĞLANAMAYAN HAKEDİŞ KALEMİ — muafiyetin BEYANI.
+   *
+   * ⚠ Bu uyarı bir sorun değil, bir SUSKUNLUĞUN gerekçesidir. Geciken
+   * hakediş sayımı artık yalnız satışa bağlı kalemleri sayıyor; dışarıda
+   * kalanlar burada ADIYLA duruyor. Muafiyeti sessizce uygulasaydık,
+   * ₺138K'lık kalem hiçbir yerde görünmeden yok olurdu — "görünmemesi
+   * yok olması değildir".
+   */
+  "hakedisBaglanmamis",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -123,6 +133,7 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
    * etiketine bakmışım, rotaya değil. Rota `/kanal-sku`, anlamı da farklı._
    */
   kanalKodsuzStok: "/stok?kanal=yok",
+  hakedisBaglanmamis: "/hakedis",
 };
 
 /**
@@ -154,6 +165,8 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   veriSupheli: "amber",
   supheliOran: "amber",
   kanalKodsuzStok: "notr",
+  /** Muafiyet beyanı — sorun değil, bilgi. Rozete girmez. */
+  hakedisBaglanmamis: "notr",
 };
 
 /**
@@ -179,6 +192,7 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   supheliOran: "satis.kar.gor",
   /** Kanal kodu OPERASYONEL — içinde kâr yok, depocu görüp açabilir. */
   kanalKodsuzStok: null,
+  hakedisBaglanmamis: "satis.kar.gor",
 };
 
 export type Uyari = {

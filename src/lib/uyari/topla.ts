@@ -77,6 +77,7 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
     takvimSatirlari,
     gorevSayilari,
     gecikenHakedis,
+    baglanmamisHakedis,
     partiler,
     cevapsizTalep,
     sonYedek,
@@ -90,10 +91,44 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
        * VADE KALEMDE. `paidAt` boş VE vadesi bugünden önce olan kalemler.
        * `lt: bugun` — bugün vadesi dolan henüz GECİKMİŞ değildir.
        */
+      /**
+       * ═══════════════════════════════════════════════════════════════
+       *  ⚠ HAYALET KIRMIZI — SATIŞA BAĞLANAMAYAN KALEM SAYILMAZ
+       * ---------------------------------------------------------------
+       *  Canlı bulgu 19.08.2026 (mimar): çan "67 hakediş kalemi gecikti ·
+       *  ₺137.975" diyordu. Ölçüm: sistemdeki ÜÇ hakediş partisinin
+       *  177 farklı sipariş numarasının **HİÇBİRİ** bir satış kaydıyla
+       *  eşleşmiyor — en yeni parti dahil.
+       *
+       *  Yani bu kalemler bizim defterimizde takip edilen bir alacak
+       *  DEĞİL, içe aktarılmış bir rapor satırı. Kanal çoktan ödemiş
+       *  olabilir; sistem bilemez. "Gecikti" demek, bilmediğimiz bir şeyi
+       *  iddia etmekti — ve her gün ₺138K'lık sahte panik taşımak rozete
+       *  olan güveni bitirir ("her zaman çıkan uyarı bilgi taşımaz").
+       *
+       *  ⚠ MUAFİYET SESSİZ DEĞİL: dışarıda kalanlar `hakedisBaglanmamis`
+       *  nötr uyarısında ADIYLA sayılıyor. Sessiz muafiyet, ₺138K'yı
+       *  hiçbir yerde görünmeden yok ederdi.
+       *
+       *  Bağlama çalışır çalışmaz bu uyarı KENDİLİĞİNDEN doğru sayıya
+       *  döner; kural değil, kapsam daraltıldı.
+       * ═══════════════════════════════════════════════════════════════
+       */
       prisma.settlementItem.aggregate({
-        where: { paidAt: null, dueDate: { not: null, lt: bugun } },
+        where: {
+          paidAt: null,
+          dueDate: { not: null, lt: bugun },
+          saleId: { not: null },
+        },
         _count: { _all: true },
         _sum: { amount: true },
+      }),
+      prisma.settlementItem.count({
+        where: {
+          paidAt: null,
+          dueDate: { not: null, lt: bugun },
+          saleId: null,
+        },
       }),
       acikPartilerToplu(prisma, null),
       /**
@@ -151,6 +186,7 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
     veriSupheli: { sayi: supheBulgusu.kalemSayisi },
     supheliOran: { sayi: supheliOranSayisi },
     kanalKodsuzStok: { sayi: kanalKodsuzlar.length },
+    hakedisBaglanmamis: { sayi: baglanmamisHakedis },
     hakedisGecikti: {
       sayi: gecikenHakedis._count._all,
       tutar:
