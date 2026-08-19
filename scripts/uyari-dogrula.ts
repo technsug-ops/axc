@@ -1000,11 +1000,26 @@ console.log("=".repeat(70));
   );
   kontrol("  ...ve 'zaten en alt dilim' halini ayırıyor", /zararEnAltDilim/.test(form));
 
-  /** ⚠ B3 — not alanı KOŞULSUZ çiziliyor mu? */
-  kontrol(
-    "doğrulama notu her sebepte GÖRÜNÜR (koşulsuz)",
-    /id="dogrula-not"/.test(buton) && !/notZorunluMu\(sebep\) \? \(/.test(buton),
+  /**
+   * ⚠ B3 — ALAN KOŞULSUZ, ETİKET KOŞULLU. İlk kontrol ikisini
+   * ayırmıyordu: "zorunlu" ekini koşullu çizen düzeltme testi kırmızıya
+   * düşürdü, oysa ALAN hâlâ koşulsuzdu. Sınanan şey doğru olmalı —
+   * girdi her sebepte var mı, koşullu sarmalayıcı içinde mi?
+   */
+  const notBloku = buton.slice(
+    buton.indexOf('htmlFor="dogrula-not"'),
+    buton.indexOf('id="dogrula-not"'),
   );
+  kontrol("not GİRDİSİ koşulsuz çiziliyor", /id="dogrula-not"/.test(buton));
+  kontrol(
+    "  ...girdi koşullu bir dalın içinde DEĞİL",
+    !/\{notZorunluMu\(sebep\) \? \(\s*<Input/.test(buton),
+  );
+  kontrol("  ...yalnız ZORUNLU eki koşullu", /notZorunluMu\(sebep\)/.test(notBloku));
+  /** Küçük ekranda kesilmesin — alanın "görünmemesi" bu yüzden olabilirdi. */
+  kontrol("diyalog taşarsa kaydırılabiliyor", /overflow-y-auto/.test(buton));
+  /** Yer tutucu sebebe göre — ne yazılacağını gösteriyor. */
+  kontrol("yer tutucu sebebe göre", /dogrulaNotIpucu_\$\{sebep\}/.test(buton));
 
   const sz = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
     Satis?: Record<string, string>;
