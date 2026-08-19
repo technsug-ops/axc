@@ -78,17 +78,17 @@ const ONAYLI_VAKALAR: Record<string, Vaka> = {
       "girilirken değiştirilmedi; satış partisinden 30 gün önce görünüyordu.",
   },
   /**
-   * ⚠ LEGO — TARİH HALİL'DEN GELİNCE AÇILACAK. Ölçülen kimlik ve
-   * değerler hazır; `enErken`/`enGec` sipariş (20.07) ve satış (18.08)
-   * tarihlerinden geliyor. Vaka listede DURUYOR ama betik tarih
-   * verilmeden hiçbir şey yazmaz.
+   * ⚠ LEGO — kimlik 20.08.2026'da ÖLÇÜLDÜ ve vaka açıldı.
+   * `enErken`/`enGec` sipariş (20.07) ve satış (18.08) tarihlerinden.
+   * Amazon sipariş no `406-1398290-0161102` — gerçek teslim tarihi
+   * oradan okunabilir.
    */
   lego: {
     ad: "LEGO City Kutup Keşif Gemisi 60368",
-    hareketId: "",
-    sku: "",
-    birimMaliyet: 0,
-    quantityDelta: 0,
+    hareketId: "cmszq1gzg000304lbugat9jem",
+    sku: "axcali1675",
+    birimMaliyet: 8499,
+    quantityDelta: 1,
     mevcutTarih: "2026-08-19",
     satisKodu: "11518039572",
     enErken: "2026-07-20",
@@ -100,6 +100,23 @@ const ONAYLI_VAKALAR: Record<string, Vaka> = {
 };
 
 const UYGULA = process.argv.includes("--uygula");
+
+/**
+ * ⚠ TARİHİN KAYNAĞI BEYAN EDİLİR — kural 20.08.2026.
+ *
+ * Mimar "o aralıkta bir tarih yaz, farketmez" dedi. Farkeder: uydurulmuş
+ * bir tarih, ledger'da ÖLÇÜLMÜŞ gibi görünür. `13.08` yanlıştır ama izi
+ * bellidir (form varsayılanı); `29.06` yazıldığında altı ay sonra bakan
+ * biri onu gerçek teslim tarihi sanar.
+ *
+ * Çözüm reddetmek değil, DAMGALAMAK: yazılan tarihin nereden geldiği
+ * `AuditLog`a girer.
+ *   OLCULDU   — belge/sipariş geçmişinden okundu (tercih edilen)
+ *   TURETILDI — ölçülen dağılımdan çıkarıldı (sipariş + ortanca gün)
+ */
+const KAYNAKLAR = ["OLCULDU", "TURETILDI"] as const;
+type Kaynak = (typeof KAYNAKLAR)[number];
+const kaynakArg = process.argv.find((a) => a.startsWith("--kaynak="));
 const tarihArg = process.argv.find((a) => a.startsWith("--tarih="));
 const vakaArg = process.argv.find((a) => a.startsWith("--vaka="));
 
@@ -146,6 +163,19 @@ async function main() {
     console.log("  ⛔ TARİH VERİLMEDİ.");
     console.log("     Gerçek teslim tarihi Halil'den gelir; betik UYDURMAZ.");
     console.log("     Kullanım:  npm run canli:parti-tarihi -- --vaka=" + vakaAdi + " --tarih=2026-07-05");
+    console.log("");
+    process.exitCode = 1;
+    return;
+  }
+
+  const kaynak = kaynakArg?.slice("--kaynak=".length) as Kaynak | undefined;
+  if (!kaynak || !KAYNAKLAR.includes(kaynak)) {
+    console.log("");
+    console.log("  ⛔ TARİHİN KAYNAĞI BEYAN EDİLMEDİ.");
+    console.log("     --kaynak=OLCULDU    belge/sipariş geçmişinden okundu");
+    console.log("     --kaynak=TURETILDI  ölçülen dağılımdan çıkarıldı");
+    console.log("");
+    console.log("     Kaynaksız tarih, ledger'da ÖLÇÜLMÜŞ gibi görünür.");
     console.log("");
     process.exitCode = 1;
     return;
@@ -258,7 +288,13 @@ async function main() {
   }
 
   console.log("  ÜRÜN           " + h.variant.product.name);
-  console.log("  TARİH          " + g(h.occurredAt) + "  →  " + metin);
+  console.log("  TARİH          " + g(h.occurredAt) + "  →  " + metin +
+    "   [kaynak: " + kaynak + "]");
+  if (kaynak === "TURETILDI") {
+    console.log("  ⚠ TÜRETİLMİŞ TARİH — ölçülmüş değil. Amazon alımlarında");
+    console.log("    sipariş→teslim ortancası 3 gün (n=22, 20'si 0–8 gün).");
+    console.log("    Gerçek tarih sipariş geçmişinden okunabilirse OLCULDU kullan.");
+  }
   console.log("  bu partiden çıkanlar:");
   for (const t of h.tuketimler) {
     console.log(
@@ -275,7 +311,7 @@ async function main() {
     console.log("  RAPOR KİPİ — hiçbir şey yazılmadı.");
     console.log("  Tarih doğruysa:");
     console.log("      npm run canli:parti-tarihi -- --vaka=" + vakaAdi +
-      " --tarih=" + metin + " --uygula");
+      " --tarih=" + metin + " --kaynak=" + kaynak + " --uygula");
     console.log("");
     await prisma.$disconnect();
     return;
@@ -302,6 +338,15 @@ async function main() {
         eski: eski.toISOString(),
         yeni: yeniTarih.toISOString(),
         vaka: vakaAdi,
+        /** ⚠ TARİHİN KAYNAĞI — türetilmiş tarih ölçülmüş sayılmasın. */
+        tarihKaynagi: kaynak,
+        ...(kaynak === "TURETILDI"
+          ? {
+              turetmeYontemi:
+                "Amazon alımlarında sipariş→teslim ortancası 3 gün " +
+                "(n=22, 20/22 aralık 0–8 gün; ölçüm 20.08.2026).",
+            }
+          : {}),
         sebep: BEKLENEN.sebep + " (satış " + BEKLENEN.satisKodu + ")",
         onay: "mimar, 19.08.2026 — metadata istisnası (miktar/para değişmedi)",
         kaynak: "canli:parti-tarihi",
