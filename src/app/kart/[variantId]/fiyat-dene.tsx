@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useBicim } from "@/lib/bicim-istemci";
 import { sifiraYuvarlandi } from "@/lib/bicim-ortak";
 import { karZararRengi, YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
+import { ciroMarji, ciroMarjiMetni, sermayeVerimi, sermayeVerimiMetni } from "@/lib/marj-gosterge";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import type { YasBandi } from "@/lib/yaslanma";
 import {
@@ -328,6 +329,24 @@ export function FiyatDene({
                       className={`text-base font-semibold tabular-nums ${DURUM_YAZISI[karZararRengi(s.net2)]}`}
                     >
                       {netMetni(s.net2)}
+                    </span>
+                    {/* ---------- KAZANÇ ORANI ----------
+                        ⚠ Kullanıcı isteği 20.08.2026: "yalnız rakam
+                        yanıltabilir". Haklı — ₺198,75 ile ₺251,59'u yan
+                        yana koymak, ikisi FARKLI FİYATTAN çıkmışsa
+                        yanıltır. Oran, rakamı ölçeğine bağlar.
+
+                        İKİ ORAN DA VERİLİYOR ama ALT ALTA, yan yana
+                        değil: ciro marjı "bu satıştan yüzde kaç kaldı",
+                        sermaye verimi "bağladığım paraya göre ne
+                        kazandım". İkisi farklı soruya cevap veriyor ve
+                        kart zaten ikisini de kullanıyor. */}
+                    <span className="text-muted-foreground block text-xs tabular-nums">
+                      {ciroMarjiMetni(ciroMarji(s.net2, s.ciro)) ?? "—"}
+                      {" · "}
+                      {sermayeVerimiMetni(
+                        sermayeVerimi(s.net2, birimMaliyet === null ? null : birimMaliyet * 1),
+                      ) ?? "—"}
                     </span>
                   </div>
                 </div>

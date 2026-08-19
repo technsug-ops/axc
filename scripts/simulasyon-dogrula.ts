@@ -699,6 +699,66 @@ console.log("\nFİYAT SİMÜLASYONU — DOĞRULAMA\n");
   kontrol("kart uzakken uyarı rengine geçiyor", /m\.uzak \? DURUM_YAZISI\.uyari/.test(kart));
 }
 
+// --- 19) KAZANÇ ORANI + KANAL SKU ------------------------------------------
+{
+  console.log("\n19) KAZANÇ ORANI + KANAL SKU");
+  /**
+   * ⚠ "YALNIZ RAKAM YANILTABİLİR" — kullanıcı, 20.08.2026.
+   * HB'de ₺198,75 ile TY'de ₺251,59'u yan yana koymak, ikisi farklı
+   * fiyattan çıkmışsa yanıltır. Oran, rakamı ölçeğine bağlar.
+   */
+  const ekran = readFileSync("src/app/kart/[variantId]/fiyat-dene.tsx", "utf8");
+  kontrol("NET-2 yanında ciro marjı var", /ciroMarjiMetni\(ciroMarji\(s\.net2, s\.ciro\)\)/.test(ekran));
+  kontrol("  ...ve sermaye verimi", /sermayeVerimiMetni\(/.test(ekran));
+  /**
+   * ⚠ ORANLAR ORTAK YARDIMCIDAN — kart, satış listesi ve burası aynı
+   * biçimi üretsin. Ekran kendi yüzdesini hesaplasaydı üç ekranda üç
+   * farklı yuvarlama olurdu.
+   */
+  /**
+   * ⚠ İLK DENEME FAZLA GENİŞTİ: dosyada `* 100` arıyordu ve MEŞRU bir
+   * kullanımı (mesafe yüzdesi, `Math.round(m.pay * 100)`) yakalayıp
+   * kırmızı yanıyordu. Kontrol NET-2 BLOĞUNA daraltıldı — kuralın
+   * kendisi orada: oran ortak yardımcıdan gelmeli, elle hesaplanmamalı.
+   */
+  const netBloku = ekran.slice(
+    ekran.indexOf('<span className="text-muted-foreground block text-xs">NET-2</span>'),
+    /**
+     * ⚠ BİTİŞ İŞARETİ DİKKATLİ SEÇİLİR: "BİR ALT DİLİM" metni dosyada
+     * ÖNCE bir yorumda geçiyor (hesap bölümü) ve dilim NET-2 bloğundan
+     * ÖNCEYE düşüyordu — dilim boş çıkıyor, kontrol yanlış yerde arıyordu.
+     * Render sırasında NET-2'den SONRA gelen işaret kullanılıyor.
+     */
+    ekran.indexOf("BAŞABAŞ NOKTASI"),
+  );
+  kontrol(
+    "  ...oran NET-2 bloğunda elle hesaplanmıyor",
+    !netBloku.includes("* 100") && !netBloku.includes("toFixed"),
+  );
+  kontrol(
+    "  ...ve ortak yardımcıdan geliyor",
+    netBloku.includes("ciroMarjiMetni") && netBloku.includes("sermayeVerimiMetni"),
+  );
+
+  /**
+   * ⚠ SATIŞ KARTINDA PAZARYERİ KODU — kullanıcı isteği 20.08.2026.
+   * Kartta yalnız SİSTEM SKU'su vardı; pazaryeri panelinde arama yapmak
+   * için oradaki kod gerekiyor ve üç kod rolü ayrıdır.
+   */
+  const detay = readFileSync("src/app/satislar/[id]/page.tsx", "utf8");
+  kontrol("satış kartı kanal SKU'sunu gösteriyor", /etiket=\{ortak\("kanalSku"\)\}/.test(detay));
+  kontrol(
+    "  ...SATIŞIN KENDİ kanal hesabına bağlı",
+    /k\.channelAccountId === satis\.channelAccountId/.test(detay),
+  );
+  kontrol("  ...kod yoksa satır çizilmiyor", /if \(!kanalKodu\) return null;/.test(detay));
+
+  const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Ortak?: Record<string, string>;
+  };
+  kontrol("  sözlük: kanalSku", (tr.Ortak?.kanalSku ?? "").length > 0);
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

@@ -123,7 +123,8 @@
     "kanal": "Kanal",
     "birimFiyatKisa": "birim {tutar}",
     "not": "Not",
-    "panel": "Panel"
+    "panel": "Panel",
+    "kanalSku": "Kanal SKU"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",

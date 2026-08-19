@@ -87,6 +87,20 @@ export default async function SatisDetaySayfasi({
           variant: {
             include: {
               product: { select: { id: true, name: true, categoryId: true } },
+              /**
+               * ⚠ O SATIŞIN KANALINDAKİ KOD — kullanıcı isteği 20.08.2026.
+               * Satış kartında yalnız SİSTEM SKU'su (`axcali2020`) vardı;
+               * pazaryeri panelinde arama yapmak için oradaki kod gerekiyor
+               * ve iki kod BİRBİRİNDEN FARKLI (Kural: SKU · Firma SKU ·
+               * Kanal SKU üç ayrı roldür).
+               *
+               * Süzgeç satışın KENDİ kanal hesabına bağlı: aynı varyantın
+               * başka kanaldaki kodunu göstermek yanlış panele yönlendirirdi.
+               */
+              channelSkus: {
+                where: { isActive: true },
+                select: { channelSku: true, channelAccountId: true },
+              },
             },
           },
           fees: { orderBy: { createdAt: "asc" } },
@@ -497,11 +511,28 @@ export default async function SatisDetaySayfasi({
                   {bicim.para(kalem.unitPriceAmount, kalem.unitPriceCurrency)}
                 </Badge>
               </CardTitle>
-              <div className="text-muted-foreground text-xs">
+              <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                 <KopyalanabilirKod
                   deger={kalem.variant.sku}
                   etiket={ortak("sku")}
                 />
+                {/* ---------- O KANALDAKİ KOD ----------
+                    ⚠ SATIŞIN KENDİ KANAL HESABINA BAĞLI. Aynı varyantın
+                    başka kanaldaki kodunu göstermek, kullanıcıyı yanlış
+                    panelde aratırdı. Kod yoksa satır çıkmaz — boş bir
+                    "Kanal SKU: —" bilgi taşımaz. */}
+                {(() => {
+                  const kanalKodu = kalem.variant.channelSkus.find(
+                    (k) => k.channelAccountId === satis.channelAccountId,
+                  );
+                  if (!kanalKodu) return null;
+                  return (
+                    <KopyalanabilirKod
+                      deger={kanalKodu.channelSku}
+                      etiket={ortak("kanalSku")}
+                    />
+                  );
+                })()}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
