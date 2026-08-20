@@ -819,6 +819,44 @@ denetim onu üç kez şüpheli ilan etti; raporun `Komisyon Değişimi` kolonu
 > Denetim referansı seçilirken sorulur: **bu kaynak neyi kaydediyor —
 > niyeti mi, sonucu mu?** Para söz konusuysa sonuç kazanır.
 
+### DONMUŞ KAYNAK, AKAN KAYNAKLA KARŞILAŞTIRILIRKEN İKİ DAMGA YAZILIR (KESİN KURAL)
+
+_Mimar kararı 20.08.2026, K9._ Bir dış rapor **üretildiği anda donar**;
+bizim defterimiz **akmaya devam eder.** Tek damga yazılırsa çıkan rakam
+"sabit bir gerçek" sanılır — oysa fotoğraftır.
+
+**Vaka:** aynı dosyayla aynı gün iki koşum: eşleşen adet `8→9`, fark
+`219→218`, ciro `₺751.583→₺747.024`. Hiçbir şey bozulmadı; **gün içinde
+satış girildi.** Her kıyasta **rapor üretim anı** (dosya adındaki damga)
+ve **sistem okuma anı** birlikte basılır; damga yoksa bu da yazılır.
+
+**KARDEŞ MADDELER — aynı gün, aynı cepheden:**
+
+**· YOKLUK İDDİASI DA İDDİADIR.** _"Sistem şunu takip etmiyor"_ cümlesi,
+_"şöyle yapıyor"_ kadar doğrulama gerektirir. Üç kez bakılmadan kuruldu ve
+üçü de yanlış çıktı: `ChannelAccount.externalId` **vardı**
+(`AXCALI = "870249"`, raporun satıcı kimliği); fiyat kartının davranışı
+**koda bakılınca** başkaydı; `kanalAdi` bir DB alanı **değildi**.
+
+**· AŞILAN RAKAM SESSİZCE AŞILMAZ.** Yeni ölçüm eskisini kapsıyorsa
+_"X aşıldı, geçerli olan Y"_ cümlesi açıkça kurulur ve **ikisi de dosya
+adıyla** yazılır. Sessiz değiştirme, eski rakamı elinde tutan biri için
+kaynaksız bir sayı üretir.
+
+**· ADET İŞ DEĞERİ CÜMLESİ KURMAZ, CİRO KURAR.** Bulgu para birimine
+çevrilebiliyorsa öyle taşınır (`218 adet` → `₺747.024`). ⚠ **Ve paranın
+ETİKETİ kaynağın kendi etiketidir:** kolon adı birebir yazılır
+(`Toplam Tarifeli Brüt Ciro`), tabanı ise **tahmin edilmez, ölçülür.**
+_Yöntem — susmak yerine SINIR çiz:_ "kuruşuna tutmadı" demek "taban
+farklı" demek değildir. KDV ayrımı ~%16,7 fark üretirdi; ölçülen en büyük
+sapma **%0,29** çıktı → **taban aynı.** Kalan küçük fark açıklanmadı ve
+**açıklanmadığı yazıldı** — bir soruyu kapatmak, yanındakini de kapattığı
+anlamına gelmez.
+
+**· PANONUN KENDİSİ DE DOĞRULANAN BİR VERİDİR.** Okunamayacak kadar uzun
+bir pano bozulmadığını göstermez — bozulmayı **gizler.** _(Vaka: belge iki
+kopyaydı ve fark edilmesi tesadüftü.)_
+
 ### KİMLİK VARKEN DİZEYLE ARANMAZ — VE CEVAPSIZ KAPSAM SORUSUNUN ÜSTÜNE ÖLÇÜM KURULMAZ (KESİN KURAL)
 
 _Mimar kararı 20.08.2026, K11a → K11a-b._

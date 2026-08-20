@@ -181,6 +181,26 @@ async function main() {
   }
   console.log("");
 
+  /**
+   * ⚠ İKİ DAMGA — DONMUŞ KAYNAK ile AKAN KAYNAK karşılaştırılıyor.
+   * Rapor tarafı üretildiği anda DONDU (damga dosya adında); sistem
+   * tarafı akmaya devam ediyor. Aynı gün iki koşum arasında eşleşen adet
+   * 8→9, fark 219→218 oldu — çünkü gün içinde satış girildi.
+   * Tek damga yazılırsa rakam "sabit bir gerçek" sanılır.
+   * _Beşinci kapsam sorusunun doğrudan uygulaması: aynı olayı aynı
+   * zamanda mı görüyorlar?_
+   */
+  const damga = /(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})_(\d{2})/.exec(yol);
+  console.log(
+    "  RAPOR ÜRETİM ANI   " +
+      (damga
+        ? damga[3] + "." + damga[2] + "." + damga[1] + " " + damga[4] + ":" + damga[5]
+        : "⚠ dosya adında damga YOK — donmuş kaynağın anı bilinmiyor"),
+  );
+  console.log("  SİSTEM OKUMA ANI   " + new Date().toISOString().slice(0, 16).replace("T", " ") + " (UTC)");
+  console.log("  ⚠ Rapor DONMUŞ, sistem AKIYOR — bu kıyas bir FOTOĞRAFTIR.");
+  console.log("");
+
   const barkodlar = [...new Set(rapor.map((r) => r.barkod))];
   const kalemler = await prisma.saleItem.findMany({
     where: {
@@ -404,6 +424,78 @@ async function main() {
    * ne kadarının bizde olduğunu satır düzeyinde bilmiyoruz ve tahmin
    * etmek uydurmak olurdu. Yani bu rakam boşluğun ALT SINIRIDIR.
    */
+  /**
+   * ⚠ CİRONUN ETİKETİ KAYNAĞIN KENDİ ETİKETİDİR, BİZİM YORUMUMUZ DEĞİL.
+   * Kolon birebir `Toplam Tarifeli Brüt Ciro`. "Tarifeli" = yalnız tarife
+   * kapsamındaki satışlar; "Brüt" = raporun kendi nitelemesi.
+   *
+   * KDV dahil mi? TAHMİN EDİLMİYOR, ÖLÇÜLÜYOR: eşleşen satırlarda raporun
+   * birim cirosu (ciro/adet) ile bizim KDV DAHİL birim satış fiyatımız
+   * karşılaştırılıyor. Tutuyorsa iki taraf aynı tabandadır.
+   */
+  const tabanOrnek: { barkod: string; raporBirim: number; bizimBirim: number }[] = [];
+  for (const r of rapor) {
+    const kesin = kalemler.filter(
+      (k) => k.variant.barcode === r.barkod && k.sale.soldAt >= r.bas && k.sale.soldAt <= r.bit,
+    );
+    if (kesin.length === 0 || r.adet <= 0) continue;
+    const bizimAdet = kesin.reduce((t, k) => t + k.quantity, 0);
+    if (bizimAdet === 0) continue;
+    const bizimCiro = kesin.reduce(
+      (t, k) => t + Number(k.unitPriceAmount.toString()) * k.quantity,
+      0,
+    );
+    tabanOrnek.push({
+      barkod: r.barkod,
+      raporBirim: r.ciro / r.adet,
+      bizimBirim: bizimCiro / bizimAdet,
+    });
+  }
+  console.log("");
+  console.log("  CİRONUN TABANI — kaynağın kendi etiketiyle");
+  console.log("    kolon: `Toplam Tarifeli Brüt Ciro` (raporun yazdığı ad)");
+  if (tabanOrnek.length === 0) {
+    console.log("    ⚠ ÖLÇÜLEMEDİ — eşleşen satır yok; taban hakkında HÜKÜM YOK.");
+  } else {
+    const tutan = tabanOrnek.filter(
+      (t) => Math.abs(t.raporBirim - t.bizimBirim) < 0.01,
+    ).length;
+    console.log(
+      "    eşleşen " + tabanOrnek.length + " satırda rapor birim ciro ↔ bizim KDV DAHİL birim fiyat:",
+    );
+    for (const t of tabanOrnek.slice(0, 6))
+      console.log(
+        "      " + t.barkod.padEnd(16) + "rapor " + p(t.raporBirim).padStart(11) +
+          "   bizim " + p(t.bizimBirim).padStart(11) +
+          (Math.abs(t.raporBirim - t.bizimBirim) < 0.01 ? "   ✓ AYNI TABAN" : "   ⚠ FARKLI"),
+      );
+    /**
+     * ⚠ "KURUŞUNA TUTMADI" DEMEK "TABAN FARKLI" DEMEK DEĞİLDİR.
+     * Susmak yerine SINIR çiziliyor: KDV ayrımı olsaydı fark ~%16,7
+     * olurdu (KDV dahil → hariç). Ölçülen sapma bunun çok altındaysa
+     * iki taraf AYNI KDV tabanındadır ve kalan fark başka bir şeydir.
+     * Bu, "hüküm verilmez"den daha bilgilendirici ve hâlâ ölçüye dayalı.
+     */
+    const sapmalar = tabanOrnek.map((t) =>
+      Math.abs(t.raporBirim - t.bizimBirim) / t.bizimBirim,
+    );
+    const enBuyuk = Math.max(...sapmalar);
+    const KDV_IZI = 1 / 1.2; // KDV dahil ↔ hariç arasındaki fark ≈ %16,7
+    console.log(
+      "    → " + tutan + "/" + tabanOrnek.length + " satır kuruşuna aynı; " +
+        "en büyük sapma %" + (enBuyuk * 100).toFixed(2),
+    );
+    if (enBuyuk < (1 - KDV_IZI) / 4) {
+      console.log("    ✓ TABAN AYNI — KDV ayrımı olsaydı fark ~%16,7 olurdu;");
+      console.log("      ölçülen sapma bunun dörtte birinden bile küçük. Rapor");
+      console.log("      cirosu bizim KDV DAHİL fiyatımızla AYNI tabanda.");
+      console.log("      ⚠ Kalan küçük fark AÇIKLANMADI (ör. ₺15'lik sabitler);");
+      console.log("        taban sorusunu kapatır, o farkı kapatmaz.");
+    } else {
+      console.log("    ⚠ SAPMA KDV MERTEBESİNDE — taban ayrışabilir, hüküm verilmez.");
+    }
+  }
+
   const hicYok = kapsam.filter((k) => k.bizde === 0);
   const kayipCiro = hicYok.reduce((t, k) => t + k.raporCiro, 0);
   const kismi = kapsam.filter((k) => k.bizde > 0 && k.raporAdet > k.bizde).length;
