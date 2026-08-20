@@ -1,3 +1,4 @@
+import { gunEkle, gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { AYRILMIS_SAYILAN_DURUMLAR } from "@/lib/iade/bildirim";
 import { prisma } from "@/lib/prisma";
 
@@ -21,12 +22,20 @@ import type { GorevAnahtari } from "./bugun-ne-yapmaliyim";
 export async function gorevSayilariniTopla(): Promise<
   Record<GorevAnahtari, number>
 > {
+  /**
+   * ⚠ "BUGÜN" İŞ TAKVİMİNDEN — çalışma ortamının saat diliminden DEĞİL.
+   * Kullanıcı Almanya'da, operasyon Türkiye'de; `Europe/Istanbul` sabit.
+   */
+  const bugun = gunDegeri(isTakvimGunu(new Date()));
+  const yarin = gunEkle(bugun, 1);
+
   const [
     kargoBekleyen,
     iadeBildirimi,
     malKabulBekleyen,
     karHesaplanamayan,
     oransizKanalSku,
+    bugunAlim,
   ] = await Promise.all([
     // `/satislar?kargo=bekleyen` ile aynı koşul.
     prisma.sale.count({ where: { shippedAt: null, iptalTarihi: null } }),
@@ -62,6 +71,21 @@ export async function gorevSayilariniTopla(): Promise<
     prisma.channelSku.count({
       where: { commissionRate: null, channelAccount: { satisIcin: true } },
     }),
+
+    /**
+     * BUGÜN GİRİLEN ALIM — `/alimlar?pencere=BUGUN` ile AYNI koşul.
+     *
+     * ⚠ ALAN SEÇİMİ ÖLÇÜLDÜ: liste `purchasedAt` süzüyor
+     * (`liste-suzgeci.ts` → `alimKosulu`). `createdAt` seçilseydi geçmiş
+     * tarihli bir alım bugün girildiğinde panel onu sayar, liste
+     * göstermezdi — panelin "sayı = liste" sözü bozulurdu.
+     *
+     * ⚠ BU BİR SAYAÇ, BEKLEYEN İŞ DEĞİL: durum süzgeci YOK, çünkü soru
+     * "kaç alım bekliyor" değil "bugün kaç alım girildi".
+     */
+    prisma.purchase.count({
+      where: { purchasedAt: { gte: bugun, lt: yarin } },
+    }),
   ]);
 
   return {
@@ -70,5 +94,6 @@ export async function gorevSayilariniTopla(): Promise<
     malKabulBekleyen,
     karHesaplanamayan,
     oransizKanalSku,
+    bugunAlim,
   };
 }

@@ -25,7 +25,9 @@ import { karOrani, kutuOranlari } from "../src/lib/panel/kar-orani";
 import { envanterHesapla, type EnvanterVaryantGirdisi } from "../src/lib/envanter";
 import {
   bekleyenToplam,
+  GOREV_ADRESLERI,
   gorevleriKur,
+  grubunGorevleri,
   hepsiTemizMi,
 } from "../src/lib/panel/bugun-ne-yapmaliyim";
 import {
@@ -81,6 +83,7 @@ import {
   yaslanmaListesi,
   type YaslanmaGirdisi,
 } from "../src/lib/yaslanma";
+import { LISTE_PENCERELERI } from "../src/lib/donem";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -1377,8 +1380,10 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     malKabulBekleyen: 2,
     karHesaplanamayan: 0,
     oransizKanalSku: 1,
+    /** ⚠ SAYAÇ — bekleyen değil; rozete GİRMEMELİ. */
+    bugunAlim: 7,
   });
-  kontrol("beş görev de üretiliyor", gorevler.length === 5, gorevler.length);
+  kontrol("altı görev de üretiliyor", gorevler.length === 6, gorevler.length);
   /** AÇIK SIFIR: sıfır olan satır GİZLENMEZ, temiz işaretlenir. */
   kontrol(
     "sıfır olan satır listeden DÜŞMÜYOR",
@@ -1388,7 +1393,74 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     "her görevin süzülü adresi var",
     gorevler.every((g) => g.adres.startsWith("/")),
   );
-  yakin("bekleyen toplamı", bekleyenToplam(gorevler), 6);
+
+  /**
+   * ── SAYAÇ İLE BEKLEYEN AYRI (kullanıcı isteği 20.08.2026) ──────────────
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: `bugunAlim: 7` sıfırdan
+   * FARKLI seçildi. Sıfır verilseydi "sayaç toplama girmiyor" mutasyonu
+   * yeşil kalırdı — 6 ile 6 aynı çıkardı.
+   */
+  yakin("bekleyen toplamı SAYACI SAYMIYOR", bekleyenToplam(gorevler), 6);
+  kontrol(
+    "sayacın sıfırı 'temiz' DEĞİL (yapılmamış iş değil, yapılmış işin adedi)",
+    gorevleriKur({
+      kargoBekleyen: 0,
+      iadeBildirimi: 0,
+      malKabulBekleyen: 0,
+      karHesaplanamayan: 0,
+      oransizKanalSku: 0,
+      bugunAlim: 0,
+    }).find((g) => g.anahtar === "bugunAlim")?.temizMi === false,
+  );
+
+  // ── İKİ KART: her görev BİR gruba ait, hiçbiri boşta kalmıyor ──────────
+  const sevkiyat = grubunGorevleri(gorevler, "SEVKIYAT");
+  const tedarik = grubunGorevleri(gorevler, "TEDARIK");
+  kontrol(
+    "her görev tam olarak BİR kartta",
+    sevkiyat.length + tedarik.length === gorevler.length &&
+      sevkiyat.length === 2 &&
+      tedarik.length === 4,
+    { sevkiyat: sevkiyat.length, tedarik: tedarik.length },
+  );
+  kontrol(
+    "kargo ve iade SEVKİYAT kartında",
+    sevkiyat.map((g) => g.anahtar).join(",") === "kargoBekleyen,iadeBildirimi",
+    sevkiyat.map((g) => g.anahtar),
+  );
+  kontrol(
+    "bugünkü alım TEDARİK kartında ve SAYAÇ",
+    tedarik.some((g) => g.anahtar === "bugunAlim" && g.tur === "SAYAC"),
+  );
+  /** Kart rozeti kendi kartının bekleyenini sayar — ötekininkini değil. */
+  yakin("SEVKİYAT kartının rozeti", bekleyenToplam(sevkiyat), 3);
+  yakin("TEDARİK kartının rozeti", bekleyenToplam(tedarik), 3);
+
+  /**
+   * ── ADRES İDDİASI SINANIYOR ────────────────────────────────────────────
+   * ⚠ VAKA 20.08.2026: `bugunAlim` için önce `/alimlar?tarih=bugun` yazdım.
+   * ÖYLE BİR SÜZGEÇ YOK — alım listesi `pencere` parametresi okuyor ve
+   * kabul ettiği değerler `LISTE_PENCERELERI`de sabit. Sayı, var olmayan
+   * bir adrese götürseydi tıklayan boş liste görür ve panele güvenmezdi.
+   *
+   * Burada adresin sorgu parametresi, listenin GERÇEKTEN kabul ettiği
+   * değerler kümesiyle karşılaştırılıyor — dize eşitliğiyle değil.
+   */
+  {
+    const adres = GOREV_ADRESLERI.bugunAlim;
+    const sorgu = new URLSearchParams(adres.split("?")[1] ?? "");
+    const pencere = sorgu.get("pencere") ?? "";
+    kontrol(
+      "bugünkü alım adresi /alimlar'a gidiyor",
+      adres.startsWith("/alimlar?"),
+      adres,
+    );
+    kontrol(
+      "adresteki pencere değeri listenin KABUL ETTİĞİ kümede",
+      (LISTE_PENCERELERI as readonly string[]).includes(pencere),
+      { pencere, kabul: LISTE_PENCERELERI },
+    );
+  }
   kontrol("hepsi sıfır değilse hepsiTemiz FALSE", !hepsiTemizMi(gorevler));
   kontrol(
     "hepsi sıfırsa hepsiTemiz TRUE",
@@ -1399,6 +1471,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
         malKabulBekleyen: 0,
         karHesaplanamayan: 0,
         oransizKanalSku: 0,
+        bugunAlim: 0,
       }),
     ),
   );

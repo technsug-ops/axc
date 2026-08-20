@@ -2332,7 +2332,10 @@
     "iadeBildirimi": "Bekleyen iade bildirimi",
     "malKabulBekleyen": "Mal kabul bekleyen alım",
     "karHesaplanamayan": "Kârı hesaplanamayan satış",
-    "oransizKanalSku": "Komisyon oranı boş kanal SKU"
+    "oransizKanalSku": "Komisyon oranı boş kanal SKU",
+    "baslikSevkiyat": "Bugün ne göndermeliyim",
+    "baslikTedarik": "Mal ve kayıt",
+    "bugunAlim": "Bugün girilen alım"
   },
   "NakitTakvimi": {
     "baslik": "Nakit takvimi · {gun} gün",
