@@ -52,4 +52,5 @@ Kamera ile barkod okuma güvenli bağlantı (https) ister; yerel ağda `http`
 
 - `CLAUDE.md` — proje anayasası: teknoloji kuralları, adlandırma standardı,
   kullanıcı kolaylığı ilkeleri, faz sırası, commit düzeni
-- `BEKLEYENLER.md` — karara bağlanmış ama sonraya bırakılmış işler
+- `BEKLEYENLER.md` — **yalnız AÇIK işler** (kısa, tek ekran)
+- `ARSIV.md` — kapanmış işler, kararlar ve dersler (gerekçeleriyle)

@@ -744,7 +744,7 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
    * ════════════════════════════════════════════════════════════════════
    *  KÂR ORANLARI — İKİ PAYDA, İKİ AYRI SORU
    * --------------------------------------------------------------------
-   *  Tanımlar BEKLEYENLER.md'de mühürlü. Sözleşmenin kendisi bir tuzağı
+   *  Tanımlar ARSIV.md'de mühürlü. Sözleşmenin kendisi bir tuzağı
    *  ADIYLA işaretlemişti: "payda KDV hariç OLACAK ama bu kendiliğinden
    *  gelmiyor — FIFO maliyeti KDV DÂHİL saklanıyor; bu adım atlanırsa
    *  oran sessizce düşük çıkar ve kimse fark etmez."

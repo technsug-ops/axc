@@ -2,7 +2,7 @@
  * ============================================================================
  *  KÂR ORANLARI — İKİ ORAN, İKİ AYRI SORU
  * ----------------------------------------------------------------------------
- *  Tanımlar BEKLEYENLER.md'de mühürlü (14.08.2026):
+ *  Tanımlar ARSIV.md'de mühürlü (14.08.2026):
  *
  *    Kâr / Maliyet       payda: ürün maliyeti, KDV HARİÇ
  *    Kâr / Satış fiyatı  payda: brüt ciro, KDV DAHİL
@@ -76,7 +76,7 @@ export function kutuOranlari(girdi: {
  *
  *  ⚠ MALİYET KDV DÂHİL SAKLANIYOR. Payda `kdvHaric` ile ürünün KENDİ oranıyla
  *  ayrıştırılır. Bu adım atlanırsa oran sessizce DÜŞÜK çıkar ve kimse fark
- *  etmez — sözleşmenin adıyla işaretlediği tuzak (BEKLEYENLER.md).
+ *  etmez — sözleşmenin adıyla işaretlediği tuzak (ARSIV.md).
  * ============================================================================
  */
 

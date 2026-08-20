@@ -287,7 +287,7 @@ zorlaştıracak şekilde yazılmıyor.
   sonradan değişse eski satışların hesabı değişmez.
   _Karar 09.08.2026._
 - **Canlıya geçiş ön şartı: veri içe aktarma modülü.** (Ayrıntı ve
-  diğer iki ön şart için bkz. BEKLEYENLER.md → Canlıya geçiş ön şartları.)
+  diğer iki ön şart için bkz. ARSIV.md → Canlıya geçiş ön şartları.)
 - **VERİ SAHİPLİĞİ İLKESİ:** Müşteri verisini istediği an tam olarak
   dışa aktarabilir. **Onboarding = içe aktar, offboarding = dışa aktar;
   ikisi de birinci sınıf özelliktir**, sonradan eklenen eklenti değil.
@@ -942,6 +942,18 @@ düzenlemeler yalnız birinci kopyaya işliyor, ikinci kopya bayat kalıyordu.
 Aynı kalemin iki farklı sürümü, "çelişkili rakam" üretmenin en sessiz
 yolu. Silmeden önce ikinci kopyanın **özgün tek satır taşımadığı** diff ile
 doğrulandı.
+
+**SONUÇ — PANO İKİYE AYRILDI (20.08.2026):** `BEKLEYENLER.md` yalnız
+**açık** kalemleri taşır ve tek ekrana sığar; kapanmış iş, karar ve
+dersler `ARSIV.md`'e geçti. **Kapanan kalem panodan SİLİNİR** ve arşive
+**gerekçesiyle** yazılır — _"bakılmayacak"_ da bir sonuçtur.
+
+⚠ **BÖLME YÖNTEMİ DE BİR RİSKTİR:** arşiv, o günkü panonun **birebir
+kendisi** yapıldı (tek satır elden geçmedi) — özetleyerek taşımak, neyin
+kaybolduğunu ölçülemez hâle getirirdi. Ve **taşınan dosyaya işaret eden
+her satır düzeltildi** (`kar-orani.ts` · `panel-dogrula.ts` · `seed-xlsx.ts`
+· `CLAUDE.md` · `README.md`): bir belgeyi bölmek, ona bakan bağlantıları
+sessizce kırar.
 
 ### EŞİĞİ SORUYU SORAN KOYAMAZ — VE PAYDA, BOZULAN KARARDAN SEÇİLİR (KESİN KURAL)
 

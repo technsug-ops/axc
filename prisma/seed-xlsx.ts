@@ -7,7 +7,7 @@
  *  gerek yok: paylaşılan metinler + hücre değerleri yeterli.
  *
  *  KAPSAM DIŞI: formüller, biçimler, tarih dönüşümü, birleştirilmiş hücreler.
- *  İleride içe/dışa aktarma modülü gelince (BEKLEYENLER.md) orada CSV
+ *  İleride içe/dışa aktarma modülü gelince (bkz. ARSIV.md) orada CSV
  *  kullanılacak; bu okuyucu tarife seed'ine özeldir.
  * ============================================================================
  */
