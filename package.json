@@ -75,7 +75,8 @@
     "canli:parti-tarihi": "tsx scripts/canli-parti-tarihi.ts",
     "canli:kesinti-kapsami": "tsx scripts/canli-kesinti-kapsami.ts",
     "canli:kapsam-dogrula": "tsx scripts/canli-kapsam-dogrula.ts",
-    "canli:oran-denetimi": "tsx scripts/canli-oran-denetimi.ts"
+    "canli:oran-denetimi": "tsx scripts/canli-oran-denetimi.ts",
+    "canli:k13-pay": "tsx scripts/k13-hb-sabit-gider-payi.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
