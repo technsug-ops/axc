@@ -819,6 +819,32 @@ denetim onu üç kez şüpheli ilan etti; raporun `Komisyon Değişimi` kolonu
 > Denetim referansı seçilirken sorulur: **bu kaynak neyi kaydediyor —
 > niyeti mi, sonucu mu?** Para söz konusuysa sonuç kazanır.
 
+### KESİNTİ KURALI "HER ZAMAN KESİLİR" İDDİASIDIR — SIKLIĞI DA ÖLÇÜLÜR (KESİN KURAL)
+
+_Ders 20.08.2026, HB hizmet bedeli._ Bir kesinti kuralını tabloya yazmak iki
+şey birden iddia eder: **tutarı bu** ve **her seferinde alınır.** İkincisi
+neredeyse hiç sınanmaz, çünkü tutarı doğrulamak kolaydır ve doğru tutar
+kuralın tamamını doğrulamış gibi görünür.
+
+**Vaka:** `HIZMET_BEDELI` ₺12,60 doğruydu — kesilen her kayıt tam ₺12,60.
+Ama ekstre ölçüldüğünde: hesabı kesilmiş **99 siparişin yalnız 14'ünde**
+(%14) kesilmişti. Motor %100'ünden kesiyordu. Tutar doğru, **sıklık
+yanlıştı** ve NET her HB satışında sessizce karamsar çıkıyordu.
+
+Ve H8 bu ölçüm sayesinde soruyu değiştirdi: aylardır _"paket başına mı"_
+diye aranıyordu; 2 paketli dört siparişin **dördünde de bedel hiç
+kesilmemişti.** Yanlış soruya doğru cevap aranıyordu.
+
+> **KURAL:** bir kesinti kuralı yazılırken/denetlenirken **iki sayı** ölçülür:
+> **tutar** (kaç lira) ve **KAPSAMA** (kaç kayıtta geçiyor / kaç kayıtta
+> geçmesi gerekirdi). İkincisi yazılmadan kural doğrulanmış sayılmaz.
+
+⚠ **VE KOŞUL BULUNAMAZSA KURAL DEĞİŞTİRİLMEZ.** Sıklığı %14 ölçmek, kuralı
+"%14 olasılıkla kes" yapmaz — defter olasılık taşımaz. Koşul bulunana kadar
+mevcut hâl **beyanla** durur; sıfıra çekmek de en az mevcut hâli kadar
+dayanaksızdır. _("Sistem, kendi defterinde takip etmediği şey hakkında iddia
+kurmaz" kuralının kesinti tarafı.)_
+
 ### AYNI VERİ, FARKLI SORUYA FARKLI PENCEREDEN BAKAR (KESİN KURAL)
 
 _Mimar kararı 20.08.2026._ Zamana bağlı bir referans (tarife, kur, oran)
