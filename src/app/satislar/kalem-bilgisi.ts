@@ -3,7 +3,11 @@
 import { yetkiIste } from "@/lib/yetki";
 import { prisma } from "@/lib/prisma";
 import { kdvOraniniCoz } from "@/lib/kdv";
-import { simulasyonZeminleri, type SimulasyonZemini } from "@/lib/fiyatlama/kart-verisi";
+import {
+  satisTarihiTarifesi,
+  simulasyonZeminleri,
+  type SimulasyonZemini,
+} from "@/lib/fiyatlama/kart-verisi";
 import { acikPartilerToplu, varyantStogu } from "@/lib/stok";
 
 /**
@@ -57,6 +61,17 @@ export type KalemBilgisi = {
 export async function kalemBilgisiGetir(
   variantId: string,
   channelAccountId: string,
+  /**
+   * ⚠ SATIŞ TARİHİ — dilim ve taban O GÜNÜN penceresinden çözülür.
+   *
+   * Kullanıcı bildirdi (20.08.2026): farklı dönemlerde **%1'lik
+   * kampanyalar** da olmuş. En yeni pencereye bakan bir kontrol, temmuz
+   * satışına girilen %1'i ağustos tabanıyla (%2,7) kıyaslar ve DOĞRU bir
+   * oranı şüpheli ilan ederdi.
+   *
+   * Ölçüm: 54 satışın yalnız 24'ü yüklü bir pencereye düşüyor.
+   */
+  satisTarihi?: Date,
 ): Promise<KalemBilgisi> {
   await yetkiIste("satis.yaz");
 
@@ -108,32 +123,36 @@ export async function kalemBilgisiGetir(
   }
   const birimMaliyet = eksik || adet <= 0 ? null : tutar / adet;
 
+  /**
+   * ⚠ SATIŞ TARİHİNİN PENCERESİNDEN. Kapsayan pencere yoksa ikisi de
+   * `null` döner ve dilim/düşüklük hükmü VERİLMEZ — o dönemin tarifesi
+   * elimizde değilse, oran hakkında iddia kuramayız.
+   */
+  const gunun =
+    channelAccountId && satisTarihi
+      ? await satisTarihiTarifesi(variantId, channelAccountId, satisTarihi)
+      : { dilimler: null, tarifeTabani: null };
+  const tarifeTabani = gunun.tarifeTabani;
+
   const zeminler = channelAccountId
     ? await simulasyonZeminleri(variantId, new Date())
     : [];
-  const zemin =
+  const bulunan =
     zeminler.find((z) => z.channelAccountId === channelAccountId) ?? null;
+  /**
+   * ⚠ DİLİMLER GÜNÜN PENCERESİNDEN EZİLİR. Zeminin geri kalanı (kesinti
+   * kuralları, komisyon KDV'si) kanal ayarıdır ve tarihten bağımsızdır;
+   * dilimler ise o haftanın tarifesidir.
+   */
+  const zemin: SimulasyonZemini | null =
+    bulunan === null
+      ? null
+      : { ...bulunan, dilimler: gunun.dilimler ?? bulunan.dilimler };
 
   /**
    * TARİFE TABANI — o hesabın en yeni tarifesindeki en düşük oran.
    * Tarife yoksa null döner ve düşüklük hükmü hiç verilmez.
    */
-  let tarifeTabani: number | null = null;
-  if (channelAccountId) {
-    const tarife = await prisma.komisyonTarifesi.findFirst({
-      where: { channelAccountId },
-      orderBy: { pencereBaslangic: "desc" },
-      select: { id: true },
-    });
-    if (tarife) {
-      const en = await prisma.komisyonTarifeKalemi.aggregate({
-        where: { tarifeId: tarife.id },
-        _min: { oran: true },
-      });
-      tarifeTabani =
-        en._min.oran === null ? null : Number(en._min.oran.toString());
-    }
-  }
 
   return {
     stok,

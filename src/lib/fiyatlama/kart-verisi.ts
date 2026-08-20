@@ -185,3 +185,73 @@ export async function kayitsizSatisKanallari(
     .filter((h) => !kayitli.has(h.id))
     .map((h) => `${h.channel.name} — ${h.name}`);
 }
+
+/**
+ * ============================================================================
+ *  SATIŞ TARİHİNİN TARİFESİ — GEÇMİŞE DOĞRU BAKIŞ
+ * ----------------------------------------------------------------------------
+ *  ⚠ KART İLE FORM AYNI SORUYU SORMUYOR (ölçüldü 20.08.2026).
+ *
+ *  Kârlılık kartındaki "Fiyat dene" **bugün ne yapayım** diye sorar; orada
+ *  EN YENİ pencere doğrudur. Satış formu ise geçmiş bir siparişi kaydederken
+ *  **o gün ne geçerliydi** diye sorar; orada en yeni pencere YANLIŞ CEVAPTIR.
+ *
+ *  Fark somut: kullanıcı bildirdi ki farklı dönemlerde **%1'lik kampanyalar**
+ *  da olmuş. Temmuz satışına %1 girildiğinde ağustos penceresinin tabanına
+ *  (%2,7) bakan bir kontrol, DOĞRU bir oranı şüpheli ilan ederdi.
+ *
+ *  ── ÖLÇÜM ───────────────────────────────────────────────────────────────
+ *  20.08.2026: yüklü tarife penceresi **1** (14–18.08), satışlar
+ *  **17.06–20.08** arasında ve **54 satışın yalnız 24'ü** o pencereye
+ *  düşüyor. Yani bugün satışların yarısından çoğu için o dönemin tarifesi
+ *  elimizde YOK.
+ *
+ *  ── PENCERE YOKSA HÜKÜM YOK ─────────────────────────────────────────────
+ *  Kapsayan pencere bulunamazsa `null` döner ve düşüklük/dilim hükmü
+ *  VERİLMEZ. En yakın pencereye "yaklaşık" diye bakmak, bilmediğimiz bir
+ *  dönem hakkında iddia kurmak olurdu.
+ * ============================================================================
+ */
+export async function satisTarihiTarifesi(
+  variantId: string,
+  channelAccountId: string,
+  satisTarihi: Date,
+): Promise<{ dilimler: TarifeDilimi[] | null; tarifeTabani: number | null }> {
+  const tarife = await prisma.komisyonTarifesi.findFirst({
+    where: {
+      channelAccountId,
+      pencereBaslangic: { lte: satisTarihi },
+      pencereBitis: { gte: satisTarihi },
+    },
+    orderBy: { pencereBaslangic: "desc" },
+    select: { id: true },
+  });
+  if (!tarife) return { dilimler: null, tarifeTabani: null };
+
+  const [kalemler, taban] = await Promise.all([
+    prisma.komisyonTarifeKalemi.findMany({
+      where: { tarifeId: tarife.id, variantId },
+      orderBy: { dilimSirasi: "asc" },
+      select: { dilimSirasi: true, altLimit: true, ustLimit: true, oran: true },
+    }),
+    /** ⚠ TABAN O PENCEREDEN — bütün tarifelerin en düşüğünden DEĞİL. */
+    prisma.komisyonTarifeKalemi.aggregate({
+      where: { tarifeId: tarife.id },
+      _min: { oran: true },
+    }),
+  ]);
+
+  return {
+    dilimler:
+      kalemler.length === 0
+        ? null
+        : kalemler.map((k) => ({
+            sira: k.dilimSirasi,
+            altLimit: k.altLimit === null ? null : Number(k.altLimit.toString()),
+            ustLimit: k.ustLimit === null ? null : Number(k.ustLimit.toString()),
+            oran: Number(k.oran.toString()),
+          })),
+    tarifeTabani:
+      taban._min.oran === null ? null : Number(taban._min.oran.toString()),
+  };
+}

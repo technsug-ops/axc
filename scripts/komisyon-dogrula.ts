@@ -991,13 +991,39 @@ console.log("\nORAN UYARISI (satış formu)");
    * onun kayda geçmesi.
    */
   const bilgiKaynak = readFileSync("src/app/satislar/kalem-bilgisi.ts", "utf8");
+  const veriKaynak0 = readFileSync("src/lib/fiyatlama/kart-verisi.ts", "utf8");
   kontrol(
     "taban VERİDEN ölçülüyor (tarifenin en düşüğü)",
-    /_min: \{ oran: true \}/.test(bilgiKaynak),
+    /_min: \{ oran: true \}/.test(veriKaynak0),
+  );
+  /**
+   * ⚠ EN YENİ PENCERE DEĞİL, SATIŞ TARİHİNİN PENCERESİ — düzeltme
+   * 20.08.2026. Kullanıcı bildirdi: farklı dönemlerde %1'lik kampanyalar
+   * da olmuş. En yeni pencereye bakan kontrol, temmuz satışına girilen
+   * %1'i ağustos tabanıyla (%2,7) kıyaslar ve DOĞRU bir oranı şüpheli
+   * ilan ederdi.
+   *
+   * Ölçüm: yüklü pencere 1, satışlar 17.06–20.08, 54 satışın YALNIZ
+   * 24'ü o pencereye düşüyor.
+   */
+  kontrol(
+    "  ...satış TARİHİNİN penceresinden",
+    /satisTarihiTarifesi\(/.test(bilgiKaynak),
   );
   kontrol(
-    "  ...en YENİ tarifeden",
-    /orderBy: \{ pencereBaslangic: "desc" \}/.test(bilgiKaynak),
+    "  ...form satış tarihini geçiriyor",
+    /kalemBilgisiGetir\([\s\S]{0,200}soldAt/.test(form),
+  );
+  const veriKaynak = readFileSync("src/lib/fiyatlama/kart-verisi.ts", "utf8");
+  kontrol(
+    "  ...pencere tarihi KAPSAMA göre seçiliyor",
+    /pencereBaslangic: \{ lte: satisTarihi \}/.test(veriKaynak) &&
+      /pencereBitis: \{ gte: satisTarihi \}/.test(veriKaynak),
+  );
+  /** ⚠ KAPSAYAN PENCERE YOKSA HÜKÜM YOK — "en yakına" düşülmez. */
+  kontrol(
+    "  ...pencere yoksa null döner (hüküm yok)",
+    /if \(!tarife\) return \{ dilimler: null, tarifeTabani: null \};/.test(veriKaynak),
   );
   kontrol("  ...forma taşınıyor", /tarifeTabani: kalem\.tarifeTabani/.test(form));
   kontrol("şüpheli düşükte ONAY kutusu çıkıyor", /oranIstisnaOnayi/.test(form));

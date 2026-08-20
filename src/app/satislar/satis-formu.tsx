@@ -193,7 +193,17 @@ export function SatisFormu({
     // Hepsi ÖNERİDİR; kullanıcı formda değiştirebilir.
     let bilgi = null;
     try {
-      bilgi = await kalemBilgisiGetir(varyant.id, channelAccountId);
+      /**
+       * ⚠ SATIŞ TARİHİ GEÇİLİR — dilim ve taban O GÜNÜN penceresinden
+       * çözülsün. Farklı dönemlerde %1'lik kampanyalar da olmuş; en yeni
+       * pencereye bakmak, geçmiş bir satışın doğru oranını şüpheli
+       * gösterirdi.
+       */
+      bilgi = await kalemBilgisiGetir(
+        varyant.id,
+        channelAccountId,
+        soldAt ? new Date(soldAt) : undefined,
+      );
     } catch {
       bilgi = null;
     }
