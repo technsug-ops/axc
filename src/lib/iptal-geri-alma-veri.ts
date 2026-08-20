@@ -1,6 +1,7 @@
 import { karYenidenYaz } from "@/lib/kar-yeniden";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
+import { acikPartiler } from "@/lib/stok";
 import {
   geriAlmaImzasi,
   geriAlmaPlani,
@@ -127,12 +128,23 @@ async function planKur(
       satisKodu: c.saleItem?.sale.code ?? null,
     }));
 
+  /**
+   * ⚠ AYNA PARTİLERİNİN KALANI — FIFO defterinden okunuyor.
+   * Ledger toplamı bir partinin tükenip tükenmediğini SÖYLEMEZ; o bilgi
+   * yalnız açık parti hesabında var. İki defter burada buluşuyor.
+   */
+  const acikMap = new Map<string, number>();
+  for (const vid of varyantlar)
+    for (const parti of await acikPartiler(prisma, vid))
+      acikMap.set(parti.hareketId, parti.kalanAdet);
+
   const girdi: GeriAlmaGirdisi = {
     iptalliMi: satis.iptalTarihi !== null,
     aynalar: aynaKayitlari.map((a) => ({
       hareketId: a.id,
       variantId: a.variantId,
       adet: a.quantityDelta,
+      kalanAdet: acikMap.get(a.id) ?? 0,
       birimMaliyet:
         a.unitCostAmount === null ? null : a.unitCostAmount.toString(),
       birimMaliyetParaBirimi: a.unitCostCurrency,

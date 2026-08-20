@@ -40,6 +40,12 @@ export const GERI_ALMA_ACIKLAMA_ZORUNLU: readonly GeriAlmaNedeni[] = ["DIGER"];
 
 export type GeriAlmaEngeli =
   /**
+   * Ayna partisi ARTIK AÇIK DEĞİL — araya giren bir düzeltme/çıkış onu
+   * çoktan tüketmiş. Tüketilmiş partiyi bir daha tüketmek ledger'ı
+   * düşürür ama FIFO'da karşılığı olmaz: **hayalet adet** doğar.
+   */
+  | "AYNA_TUKENMIS"
+  /**
    * Ayna adetleri satışın adetleriyle tutmuyor — kayıt bozuk ya da başka
    * bir iptalin aynası karışmış. **Tahmin edilmez, durulur.**
    */
@@ -52,6 +58,11 @@ export type GeriAlmaEngeli =
 
 /** İptalin yazdığı stoğa giriş hareketi. */
 export type AynaHareket = {
+  /**
+   * Bu ayna partisinden GERİYE KALAN adet (FIFO defterine göre).
+   * Tüketilmişse 0 gelir ve geri alma durur — bkz. `AYNA_TUKENMIS`.
+   */
+  kalanAdet: number;
   hareketId: string;
   variantId: string;
   /** POZİTİF — iptal bunu stoğa eklemişti. */
@@ -153,6 +164,22 @@ export function geriAlmaPlani(girdi: GeriAlmaGirdisi): GeriAlmaPlani {
   for (const v of varyantKumesi)
     if ((aynaAdedi.get(v) ?? 0) !== (beklenen.get(v) ?? 0))
       return { olur: false, engel: "AYNA_ADET_UYUSMAZ" };
+
+  /**
+   * ── AYNA PARTİSİ HÂLÂ AÇIK MI ─────────────────────────────────────────
+   * ⚠ İKİ DEFTER BİRLİKTE SINANIR. Adet doğrulaması "doğru aynalar mı"
+   * sorusunu cevaplıyor; bu da "o aynalar hâlâ DURUYOR mu" sorusunu.
+   *
+   * Vaka 20.08.2026 (`OYU-LG-598P-01`): geri alma, 09:36'daki bir
+   * "HATA DÜZELTME" ile ÇOKTAN TÜKENMİŞ bir ayna partisini tüketmeye
+   * çalıştı. Ledger `-1` yazdı, FIFO'da düşecek parti yoktu → ledger 3,
+   * FIFO 4. Bir adet HAYALET.
+   *
+   * ⚠ Ledger tek başına bunu göstermez: toplamı düşer ve her şey normal
+   * görünür. Ayrışma ancak iki defter YAN YANA konunca çıkar.
+   */
+  for (const a of girdi.aynalar)
+    if (a.kalanAdet < a.adet) return { olur: false, engel: "AYNA_TUKENMIS" };
 
   /**
    * KİLİT 3 — İPTALDEN SONRA ÇIKIŞ VARSA GERİ ALINAMAZ.

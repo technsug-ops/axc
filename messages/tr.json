@@ -2775,7 +2775,8 @@
     "engel_DURUM_DEGISTI": "Durum değişti — araya bir işlem girmiş olabilir. Önizlemeyi yenileyin.",
     "engel_SATIS_YOK": "Satış bulunamadı.",
     "iz_SATIS_IPTAL_GERI_ALINDI": "İptal geri alındı",
-    "engel_AYNA_ADET_UYUSMAZ": "Bu satışın iptal kayıtları adet olarak tutmuyor — geri alma durduruldu. Aynı üründen başka bir iptalin kaydı karışmış ya da stok hareketleri elle değiştirilmiş olabilir. Tahmin edilerek geri alınmaz: stok ekranından hareketleri kontrol edin."
+    "engel_AYNA_ADET_UYUSMAZ": "Bu satışın iptal kayıtları adet olarak tutmuyor — geri alma durduruldu. Aynı üründen başka bir iptalin kaydı karışmış ya da stok hareketleri elle değiştirilmiş olabilir. Tahmin edilerek geri alınmaz: stok ekranından hareketleri kontrol edin.",
+    "engel_AYNA_TUKENMIS": "Bu iptalin stok kaydı araya giren başka bir düzeltmeyle zaten tüketilmiş — geri alma durduruldu. Devam edilseydi stok sayısı düşer ama parti takibinde karşılığı olmaz (hayalet adet). Stok ekranından hareketleri kontrol edip düzeltme ile hizalayın."
   },
   "MarjGosterge": {
     "etiket": "Marj",

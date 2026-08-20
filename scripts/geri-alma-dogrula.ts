@@ -37,10 +37,13 @@ const ayna = (
   adet = 1,
   maliyet: string | null = "27.16",
   kaynak: string | null = null,
+  /** Varsayılan: parti hâlâ tam duruyor. */
+  kalanAdet = adet,
 ): AynaHareket => ({
   hareketId: "ayna-02dtri",
   variantId: "v-9fb932",
   adet,
+  kalanAdet,
   birimMaliyet: maliyet,
   birimMaliyetParaBirimi: maliyet === null ? null : "TRY",
   locationId: "raf-A3",
@@ -289,6 +292,48 @@ console.log("\nİPTALİ GERİ AL — DOĞRULAMA\n");
     "TOPLAM tutsa da varyant dağılımı tutmuyorsa durulur",
     !karisik.olur && karisik.engel === "AYNA_ADET_UYUSMAZ",
     karisik,
+  );
+
+  /**
+   * ── AYNA PARTİSİ TÜKENMİŞSE ────────────────────────────────────────────
+   * ⚠ CANLI VAKA 20.08.2026 (`OYU-LG-598P-01`): geri alma, araya giren bir
+   * "HATA DÜZELTME" ile çoktan tüketilmiş ayna partisini tüketmeye çalıştı.
+   * Ledger −1 yazdı, FIFO'da düşecek parti yoktu → ledger 3, FIFO 4.
+   *
+   * ⚠ ADET DOĞRULAMASI BUNU YAKALAMAZ: adetler tutuyor (1 ayna, 1 satış),
+   * sorun aynanın MEVCUDİYETİ. İki ayrı kural, iki ayrı test.
+   */
+  const tukenmis = geriAlmaPlani({
+    ...temel,
+    aynalar: [ayna(1, "27.16", null, 0)],
+  });
+  kontrol(
+    "ayna partisi TÜKENMİŞSE durulur (hayalet adet doğmasın)",
+    !tukenmis.olur && tukenmis.engel === "AYNA_TUKENMIS",
+    tukenmis,
+  );
+
+  /** Kısmen tükenmiş de yeterli değildir — 2 gerekiyorsa 1 yetmez. */
+  const kismi = geriAlmaPlani({
+    ...temel,
+    aynalar: [ayna(2, "27.16", null, 1)],
+    satisAdetleri: [{ variantId: "v-9fb932", adet: 2 }],
+  });
+  kontrol(
+    "ayna KISMEN tükenmişse de durulur",
+    !kismi.olur && kismi.engel === "AYNA_TUKENMIS",
+    kismi,
+  );
+
+  /** ⚠ Sıra: adet uyuşmazlığı ÖNCE bakılır — daha temel bir kusur. */
+  const ikisiDe = geriAlmaPlani({
+    ...temel,
+    aynalar: [ayna(1, "27.16", null, 0), { ...ayna(1, "27.16", null, 0), hareketId: "a2" }],
+  });
+  kontrol(
+    "hem adet hem tükenmişlik bozuksa ADET hükmü döner",
+    !ikisiDe.olur && ikisiDe.engel === "AYNA_ADET_UYUSMAZ",
+    ikisiDe,
   );
 
   /** Kırpma YAPILMADIĞI da sınanır: fazla ayna sessizce 1'e indirilmemeli. */

@@ -79,7 +79,8 @@
     "canli:k13-pay": "tsx scripts/k13-hb-sabit-gider-payi.ts",
     "canli:k13b-marj": "tsx scripts/k13b-hizmet-bedeli-marj-payi.ts",
     "canli:k11a-sayim": "tsx scripts/k11a-sistem-satis-sayimi.ts",
-    "canli:k11a-b": "tsx scripts/k11a-b-barkod-kontrol.ts"
+    "canli:k11a-b": "tsx scripts/k11a-b-barkod-kontrol.ts",
+    "canli:defter-ayrismasi": "tsx scripts/canli-defter-ayrismasi.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

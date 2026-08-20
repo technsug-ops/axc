@@ -1446,6 +1446,23 @@ ve ekranda 1 adetlik satış 2 adetlik maliyetle duruyordu.
 - Simetri testini **tek değerle yazma**: 2×c − c kayan noktada TAM çıkar,
   yuvarlamayı sınamaz. Farklı maliyetli parti kullan.
 
+⚠ **VE STOĞUN KENDİSİ DE İKİ DEFTERDİR** _(eklendi 20.08.2026)_: **ledger**
+(`quantityDelta` toplamı — ekranların gösterdiği) ve **FIFO** (açık partilerin
+`kalanAdet` toplamı — maliyetin ve kârın okuduğu). Ayrıştıklarında ekran bir
+sayı, kâr hesabı başka bir sayı üzerinden çalışır ve **hiçbiri hata vermez.**
+
+İki farklı sebep aynı sonucu üretti: ① iptali geri alma, araya giren bir
+düzeltmeyle **çoktan tüketilmiş** bir ayna partisini tüketmeye çalıştı —
+ledger `−1` yazdı, FIFO'da düşecek parti yoktu; ② eski kayıtlarda ayna
+hareket `sourceMovementId` taşıyordu, hem yeni parti sayılıyor hem eski
+partinin tüketimini sıfırlıyordu. **Her ikisi de tek yönlü:** ledger düşer,
+FIFO düşmez → hayalet adet.
+
+> **Bir hareketi yazmadan önce sorulur: bu işlem İKİ deftere de aynı şeyi
+> yazıyor mu?** Yazmıyorsa yazılmaz — ve yazılmışsa **görünür kılınır**:
+> `npm run canli:defter-ayrismasi` (salt okuma; incelenen · temiz · sapan ·
+> incelenemeyen ayrı sayılır, sapma varsa çıkış kodu `1`).
+
 **KARDEŞ KURAL — TİP LİSTESİ DEĞİL, BAĞ.** "Şu tipleri say" diyen her
 süzgeç, yarın eklenecek tipi sessizce dışarıda bırakır. Ölçüt bağ olmalı:
 _hareket bu kaleme bağlıysa o kalemin akışıdır_ ve işaretiyle girer. Aynı
