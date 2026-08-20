@@ -5,6 +5,7 @@ import {
   type CikisHareketi,
   type IptalGirdisi,
 } from "../src/lib/satis-iptali";
+import { siparisNoCakismaHukmu } from "../src/lib/satis";
 
 /**
  * ============================================================================
@@ -276,6 +277,62 @@ console.log("\nSATIŞ İPTALİ — DOĞRULAMA\n");
   // Engel varsa etki HİÇ dönmez — gösterilecek plan yoktur.
   const engelli = iptalPlani({ ...temel, iptalEdilmisMi: true });
   kontrol("engelde etki dönmez", !engelli.olur && !("etki" in engelli));
+}
+
+/**
+ * ============================================================================
+ *  SİPARİŞ NO ÇAKIŞMASI — İPTALLİ İLE AKTİF AYRI HÜKÜMDÜR
+ * ----------------------------------------------------------------------------
+ *  ⚠ VAKA 20.08.2026: kullanıcı satışı iptal edip aynı numarayla yeniden
+ *  girmek istedi, sistem "zaten kayıtlı" deyip reddetti, kullanıcı da
+ *  numaranın sonuna `0` ekledi. Gerçek bir sipariş var olmayan bir
+ *  numarayla kaydedildi ve hakedişle ASLA eşleşmeyecekti.
+ *
+ *  ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: aynı kayıt bir kez
+ *  `iptalTarihi: null`, bir kez dolu veriliyor. Tek yakayla sınansaydı
+ *  "hep AKTIF döndür" mutasyonu yeşil kalırdı.
+ * ============================================================================
+ */
+{
+  console.log("");
+  console.log("SİPARİŞ NO ÇAKIŞMASI — iptalli/aktif ayrımı");
+
+  const yok = siparisNoCakismaHukmu(null);
+  kontrol("kayıt yoksa çakışma YOK", yok.tur === "YOK", yok);
+
+  const aktif = siparisNoCakismaHukmu({ id: "s1", iptalTarihi: null });
+  kontrol(
+    "aktif satışla çakışma → AKTIF (mükerrerlik uyarısı)",
+    aktif.tur === "AKTIF" && aktif.satisId === "s1",
+    aktif,
+  );
+
+  const iptalli = siparisNoCakismaHukmu({
+    id: "s2",
+    iptalTarihi: new Date("2026-08-19T00:00:00.000Z"),
+  });
+  kontrol(
+    "İPTALLİ satışla çakışma → IPTALLI (yönlendirme)",
+    iptalli.tur === "IPTALLI" && iptalli.satisId === "s2",
+    iptalli,
+  );
+
+  /**
+   * ⚠ ASIL KORUNAN ŞEY: iki durumun AYRIŞMASI. Hüküm ikisinde de "AKTIF"
+   * dönseydi ekran yine tek metin gösterir ve operatör yine çıkmazda
+   * kalırdı — vakanın kendisi bu.
+   */
+  kontrol(
+    "iki durum AYRI hüküm veriyor (aynısı dönmüyor)",
+    aktif.tur !== iptalli.tur,
+    { aktif: aktif.tur, iptalli: iptalli.tur },
+  );
+
+  /** Kimlik her iki dalda da taşınır — ekran bağlantıyı ondan kuruyor. */
+  kontrol(
+    "her iki dalda da satış kimliği taşınıyor",
+    "satisId" in aktif && "satisId" in iptalli,
+  );
 }
 
 console.log("");

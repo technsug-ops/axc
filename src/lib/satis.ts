@@ -73,9 +73,63 @@ export class YetersizStokHatasi extends Error {
   }
 }
 
+/**
+ * ============================================================================
+ *  SİPARİŞ NO ÇAKIŞMASI — İPTALLİ İLE AKTİF AYRI HÜKÜMDÜR
+ * ----------------------------------------------------------------------------
+ *  ⚠ VAKA 20.08.2026 — SİSTEM OPERATÖRÜ YANLIŞA ZORLADI.
+ *
+ *  Kullanıcı siparişi girdi, hata fark etti, İPTAL etti, aynı numarayla
+ *  yeniden girmek istedi. Sistem _"bu sipariş mevcut"_ deyip reddetti —
+ *  çünkü çakışma kontrolü iptalliyi süzmüyordu. Başka çıkış bırakılmadığı
+ *  için numaranın sonuna bir `0` eklendi: `11518018178` → `115180181780`.
+ *
+ *  Sonuç: gerçek bir sipariş, **var olmayan bir numarayla** kaydedildi.
+ *  Kanal ödeme dosyası gerçek numarayla geleceği için o satış hakedişle
+ *  **hiçbir zaman** eşleşmeyecekti — hata vermeden, sessizce.
+ *
+ *  ── NİYE ENGEL KALKMIYOR, SADECE YÖN VERİLİYOR ──────────────────────────
+ *  `Sale.code` veritabanında `@unique`. İptalli kaydı görmezden gelip yeni
+ *  kayıt açtırmak MÜMKÜN DEĞİL — veritabanı yine reddederdi. Ve olsaydı
+ *  bile doğru olmazdı: aynı sipariş için iki kayıt doğar, hangisinin
+ *  gerçek olduğu belirsizleşir.
+ *
+ *  Doğru davranış numarayı serbest bırakmak değil, **operatörü doğru
+ *  düğmeye göndermek**: o satışın İPTALİNİ GERİ AL. Ekran zaten var
+ *  (`satislar/[id]` → "İptali geri al") ve kârı da kendisi tazeliyor.
+ *
+ *  _"Uyarı çıkmaza götürmez" ilkesinin bu ekrandaki karşılığı: engelleyen
+ *  mesaj, engeli AŞMANIN yolunu da söylemek zorundadır._
+ * ============================================================================
+ */
+export type CakismaHukmu =
+  | { tur: "YOK" }
+  | { tur: "AKTIF"; satisId: string }
+  | { tur: "IPTALLI"; satisId: string };
+
+/**
+ * Çakışma hükmü — SAF. Veritabanına gitmez, yalnız bulunan kaydı yorumlar.
+ *
+ * ⚠ İki durumu ayırmak şart: aktif bir satışla çakışma GERÇEK bir
+ * mükerrerlik uyarısıdır ("aynı satışı ikinci kez girme"); iptalli bir
+ * satışla çakışma ise bir YÖNLENDİRMEDİR ("o kaydı geri al").
+ */
+export function siparisNoCakismaHukmu(
+  mevcut: { id: string; iptalTarihi: Date | null } | null,
+): CakismaHukmu {
+  if (mevcut === null) return { tur: "YOK" };
+  return mevcut.iptalTarihi === null
+    ? { tur: "AKTIF", satisId: mevcut.id }
+    : { tur: "IPTALLI", satisId: mevcut.id };
+}
+
 /** Sipariş numarası çakıştığında fırlatılır. */
 export class SiparisNoCakismasiHatasi extends Error {
-  constructor(readonly code: string) {
+  constructor(
+    readonly code: string,
+    /** ⚠ Hüküm hatanın İÇİNDE taşınır — çağıran yeniden sorgulamasın. */
+    readonly hukum: Exclude<CakismaHukmu, { tur: "YOK" }>,
+  ) {
     super("Sipariş numarası zaten kayıtlı");
     this.name = "SiparisNoCakismasiHatasi";
   }
@@ -92,9 +146,11 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
     if (girdi.code) {
       const cakisan = await tx.sale.findUnique({
         where: { code: girdi.code },
-        select: { id: true },
+        select: { id: true, iptalTarihi: true },
       });
-      if (cakisan) throw new SiparisNoCakismasiHatasi(girdi.code);
+      const hukum = siparisNoCakismaHukmu(cakisan);
+      if (hukum.tur !== "YOK")
+        throw new SiparisNoCakismasiHatasi(girdi.code, hukum);
     }
 
     // Aynı varyant birden fazla kalemde geçebilir; partilerin kalan durumu

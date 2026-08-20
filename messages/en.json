@@ -868,7 +868,10 @@
     "oranOnayBekliyor": "",
     "paketSayisi": "",
     "paketSayisiIpucu": "",
-    "paketSayisiNotu": ""
+    "paketSayisiNotu": "",
+    "siparisNoIptalliKayitli": "",
+    "cakisanSatisIptalliMetni": "",
+    "cakisanSatisIptaliGeriAl": ""
   },
   "Kategori": {
     "adZorunlu": "",

@@ -868,7 +868,10 @@
     "oranOnayBekliyor": "Şüpheli düşük komisyon oranı var. Doğruysa yanındaki kutuyu işaretleyin; yanlışsa oranı düzeltin.",
     "paketSayisi": "Paket sayısı",
     "paketSayisiIpucu": "örn. 2",
-    "paketSayisiNotu": "Sipariş bölündüyse kaç paketle gönderildi — hizmet bedeli paket başına alınır."
+    "paketSayisiNotu": "Sipariş bölündüyse kaç paketle gönderildi — hizmet bedeli paket başına alınır.",
+    "siparisNoIptalliKayitli": "\"{kod}\" sipariş numarası İPTAL EDİLMİŞ bir satışta kayıtlı. Yeni kayıt açmak yerine o satışın iptalini geri alın.",
+    "cakisanSatisIptalliMetni": "Bu sipariş numarası iptal edilmiş bir satışta duruyor. Aynı numara ikinci kez kullanılamaz; numarayı değiştirmek (ör. sonuna rakam eklemek) satışın pazaryeri ödemesiyle eşleşmesini kalıcı olarak bozar. Doğrusu: o satışı açıp \"İptali geri al\" deyin, gerekiyorsa sonra düzenleyin.",
+    "cakisanSatisIptaliGeriAl": "İptalli satışa git"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",

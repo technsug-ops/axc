@@ -964,13 +964,26 @@ export function SatisFormu({
           götürür. "Zaten kayıtlı" deyip bırakmak, o kaydı elle aratmaktı. */}
       {durum.mevcutSatisId ? (
         <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          {/*
+            ⚠ İKİ AYRI DURUM, İKİ AYRI METİN.
+            Aktif satışla çakışma bir MÜKERRERLİK uyarısıdır ("aynı satışı
+            ikinci kez girme"). İptalli satışla çakışma ise bir YÖNLENDİRME:
+            numara serbest bırakılamaz (`Sale.code` @unique) ama yapılacak
+            şey bellidir — o satışın iptalini geri al. Tek metin kullanılsaydı
+            operatör yine çıkmazda kalırdı; 20.08.2026'da tam bu oldu ve
+            numaranın sonuna bir `0` eklendi.
+          */}
           <p className={`mb-2 text-sm ${DURUM_YAZISI.uyari}`}>
-            {t("cakisanSatisMetni")}
+            {durum.mevcutSatisIptalli
+              ? t("cakisanSatisIptalliMetni")
+              : t("cakisanSatisMetni")}
           </p>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/satislar/${durum.mevcutSatisId}`}>
               <ExternalLink />
-              {t("cakisanSatisaGit")}
+              {durum.mevcutSatisIptalli
+                ? t("cakisanSatisIptaliGeriAl")
+                : t("cakisanSatisaGit")}
             </Link>
           </Button>
         </div>

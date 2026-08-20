@@ -24,6 +24,8 @@ export type SatisDurumu = {
    * aratmak demekti (eyleme dönük hata ilkesi).
    */
   mevcutSatisId?: string;
+  /** Çakışan satış İPTALLİ mi — kutu metnini bu belirler. */
+  mevcutSatisIptalli?: boolean;
 };
 
 /** Sözlükten çözülen çeviri işlevi. */
@@ -168,13 +170,25 @@ export async function satisOlustur(
       };
     }
     if (e instanceof SiparisNoCakismasiHatasi) {
-      const mevcut = await prisma.sale.findUnique({
-        where: { code: e.code },
-        select: { id: true },
-      });
+      /**
+       * ⚠ İPTALLİ ÇAKIŞMA BİR HATA DEĞİL, BİR YÖNLENDİRMEDİR.
+       * Operatör iptal edip aynı numarayla yeniden girmeye çalışıyorsa
+       * ona "olmaz" demek yetmez — 20.08.2026'da tam bu yüzden numaranın
+       * sonuna `0` eklendi ve gerçek bir sipariş var olmayan bir numarayla
+       * kaydedildi. Mesaj artık çıkışı da söylüyor: iptali geri al.
+       *
+       * Hüküm hatanın içinde geliyor; ikinci bir sorgu atılmıyor
+       * (iki sorgu iki gerçek demektir, arada kayıt değişebilir).
+       */
+      const iptalli = e.hukum.tur === "IPTALLI";
       return {
-        hatalar: [t("siparisNoZatenKayitli", { kod: e.code })],
-        mevcutSatisId: mevcut?.id,
+        hatalar: [
+          iptalli
+            ? t("siparisNoIptalliKayitli", { kod: e.code })
+            : t("siparisNoZatenKayitli", { kod: e.code }),
+        ],
+        mevcutSatisId: e.hukum.satisId,
+        mevcutSatisIptalli: iptalli,
       };
     }
 
