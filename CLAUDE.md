@@ -709,6 +709,33 @@ tüketen yoktur; maliyet damgaları sahipsiz kalır.
 > verir — kayıt ciroya/NET'e/hakedişe girmez, stok DOĞRU döner, geri
 > alınabilir ve iz bırakır.
 
+### DIŞ KAYNAĞIN KENDİ ETİKETİYLE KARŞILAŞTIR — İÇ TUTARLILIK KAYMAYI GİZLER (KESİN KURAL)
+
+_Ders 20.08.2026._ Dışarıdan gelen bir veriyi işlerken, çıktının **kaynağın
+kendi yazdığıyla** karşılaştırılması gerekir. Kendi içinde tutarlı bir
+çıktı, sistematik bir kaymayı **tamamen gizler**: bütün satırlar aynı
+miktarda kaydığı için hiçbir iç kontrol kırmızı yanmaz.
+
+**Vaka:** komisyon denetimi tarife pencerelerini `new Date(yıl, ay, gün)`
+ile kuruyordu — **yerel** gece yarısı. `soldAt` ise veritabanında **UTC**
+gece yarısı. TR'de aradaki 3 saat, pencereyi **bir gün geriye** kaydırdı.
+
+Sonuçlar kendi içinde kusursuzdu: pencereler bitişikti, satışlar
+pencerelere düşüyordu, sapma sayısı makuldü. Kaymayı gösteren tek şey
+şuydu — **rapor `28-07` diyordu, çıktı `2026-07-27` yazdı.**
+
+Ve kayma **sonucu tersine çevirmişti**: kaymalı hâlde `1 sapma · 6 sınır
+günü`, düzeltilmiş hâlde `0 sapma · 2 sınır günü`. Yani yanlış bir bulgu
+raporlanmak üzereydi.
+
+> **KURAL:** dış kaynaktan okunan her etiket (tarih · kod · tutar) en az
+> BİR kez, kaynağın kendi yazdığı hâliyle **göz göze** karşılaştırılır.
+> "Rakamlar tutarlı görünüyor" bir doğrulama değildir.
+
+⚠ **Saat dilimi hataları bu ailenin en sinsisidir:** değerler makul kalır,
+yalnız yanlış kovaya düşer. Tarih penceresiyle çalışan her karşılaştırmada
+iki tarafın da hangi saat diliminde kurulduğu **açıkça** yazılmalıdır.
+
 ### KAYDETME KARARI, TÜKETİCİSİ DOĞDUĞUNDA VERİLİR (KESİN KURAL)
 
 _Mimar kararı 20.08.2026._ Dış bir veri elimize geçtiğinde ilk soru "nereye
