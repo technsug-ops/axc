@@ -429,9 +429,39 @@ sonra yapılıyor — ikinci tetik aynı dosyayı tazeler, kopya üretmez._
 Var olanı listelemek, olmayanı göstermez — eksik günler ekranda kırmızı
 yazmalı ki üçüncü kaçış birinin fark etmesine kalmasın.
 
+### İLKE, KENDİ KAPSAMININ DIŞINA UYGULANIRSA HATAYI KORUR (KESİN KURAL)
+
+_Mimar kararı 20.08.2026._ Doğru bir ilke, ait olmadığı yere uygulandığında
+**koruduğu şey doğruluk değil, hata olur.** Bir kural savunulurken sorulacak
+soru "bu kural doğru mu" değil, **"bu durum o kuralın kapsamına giriyor mu"**dur.
+
+**Vaka:** satışın kanal hesabını değiştiren action kârı bilerek yeniden
+hesaplamıyordu ve kodda şöyle savunuluyordu:
+
+> _"Kâr snapshot'ı geçmişin kaydıdır; kullanıcı açıkça onaylamadan
+> değişmemeli."_
+
+İlke doğrudur — snapshot dokunulmazlığı bu deponun temel kurallarından
+biri (oran sonradan değişse eski satışın hesabı kaymaz). **Ama kapsamı
+şudur: DOĞRU koşullarla hesaplanmış bir snapshot'ı, sonraki değişikliklerden
+korumak.** Yanlış kanalla hesaplanmış bir snapshot bu kapsama girmez:
+orada korunan geçmiş değil, **hatanın kendisidir**.
+
+Kanal değişince kesinti kuralları değişir (HB komisyona %20 KDV ekler +
+₺12,60 hizmet; TY'de ₺13,19 sabit). Taşıma yapılıp kâr tazelenmeyince NET
+eski kanalın kurallarıyla kalıyor ve ekranda **doğru görünüyordu.**
+
+**KONTROL SORUSU:** bu ilke neyi korumak için kondu — ve elimdeki şey o mu?
+Değilse ilke burada geçerli değildir; ilkeyi genişletmek onu güçlendirmez,
+**körleştirir**.
+
+⚠ **ESKİ GEREKÇE SİLİNMEZ.** Karar çevrildiğinde önceki savunma, NİYE
+çevrildiğiyle birlikte dosyada bırakılır. Silmek, aynı gerekçenin altı ay
+sonra yeniden keşfedilip yeniden uygulanmasına yol açar.
+
 ### KAYNAK TARAYAN KONTROL, DESENİ DOSYADA DEĞİL KULLANIM BLOĞUNDA ARAR (KESİN KURAL)
 
-_Ders 19–20.08.2026, **dört tekrardan sonra**._ Bir ekran davranışını kaynak
+_Ders 19–20.08.2026, **beş tekrardan sonra**._ Bir ekran davranışını kaynak
 metni tarayarak sınayan kontrol, aradığı deseni **dosyanın tamamında**
 ararsa yalancı yeşil üretir. Desenin dosyada BULUNMASI, o davranışın
 GERÇEKLEŞTİĞİNİ göstermez.
@@ -450,8 +480,14 @@ GERÇEKLEŞTİĞİNİ göstermez.
 | 2 | Form K5 motorunu çağırıyor mu | `simulasyonKur(` deseni ALT DİLİM önerisinde de geçiyordu; hüküm satırı elle hesaba çevrilse bile desen ayaktaydı |
 | 3 | Boş şüpheli mesajı süzgece bağlı mı | `p.veri === "supheli"` İKİ yerde (küme hesabı + boş mesaj); biri bozulunca öteki testi geçiriyordu |
 | 4 | Kâr/zarar cümlesi maliyeti veriyor mu | `satis: bicim.para(fiyat` hem kâr hem zarar cümlesinde; birini silmek yakalanmıyordu |
+| 5 | Kanal taşıması kârı tazeliyor mu | Sıra kontrolü `revalidatePath` arıyordu — o kelime **IMPORT satırında da** geçiyor; `indexOf` onu buluyor ve kontrol hep yanlış konuma bakıyordu |
 
 **YÖNTEM — kontrol yazarken:**
+0. ⚠ **ÖNCE DESENİ SAY.** Aradığın metin dosyada kaç kere geçiyor?
+   Birden çoksa (import satırı · yorum · benzer çağrı · aynı yardımcının
+   başka kullanımı) işaret **çağrı yerine** bağlanır, **ada değil**:
+   `revalidatePath` değil ``revalidatePath(`/satislar/``;
+   `karYenidenYaz(` değil `await karYenidenYaz({` satır başında.
 1. Deseni **kullanım bloğuna daraltarak** ara: `metin.slice(baş, son)` ile
    ilgili dalı kes, sonra içinde ara.
 2. Koşulu **sonucuyla birlikte** ara: `/p\.veri === "supheli"\s*\?\s*t\("bosSupheliVeri"\)/`
