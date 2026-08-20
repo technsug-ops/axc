@@ -619,6 +619,65 @@ _K6'nın (veri şüpheli → DOĞRULANDI) form içindeki kardeşi. Aradaki fark:
 K6 geçmiş bir kaydı susturur ve kaydın HÂLİNE bağlanır; bu, kayıt
 oluşurken sorar ve o SİPARİŞE bağlanır._
 
+### KAPATMA KARARI DA PANOYA YAZILIR (KESİN KURAL)
+
+_Ders 20.08.2026._ Bir kalemi **kapatma** kararı, açma kararı kadar kayda
+değerdir. Konuşmada kalan karar **kapanmamış sayılır** — ve er ya da geç
+yeniden sorulur.
+
+**Vaka:** `min −28` (teslimi siparişten 28 gün önce damgalı alım) **üç
+turda üç kez** soruldu ve üç kez aynı cevap verildi: bakılmayacak. Karar
+her seferinde konuşmada kaldı, panoya yazılmadı; dördüncü kez sorulmasını
+engelleyen hiçbir şey yoktu.
+
+> **KURAL:** "bakılmayacak", "ertelendi", "gereksiz çıktı" da birer
+> SONUÇTUR. Kalem panodan SİLİNMEZ; **kapalı olarak, GEREKÇESİYLE** durur
+> ve gerekiyorsa _"bu kalem yeniden açılmaz"_ notunu taşır.
+
+Gerekçe olmadan yazılan kapanış da yetmez: altı ay sonra bakan biri
+gerekçeyi göremezse kalemi yeniden açar. _("Yeni izin doğum tarihi beyan
+edilir" kuralının karar tarafındaki kardeşi.)_
+
+### İŞARET KİMLİĞİN PARÇASI DEĞİLDİR (KESİN KURAL)
+
+_Ders 20.08.2026._ Bir kayda aciliyet/durum işareti eklemek (`H3⚡`,
+`K5*`, `H3b`) onu **yeni bir kayıt yapmaz.** `H3⚡` ile `H3` aynı
+kimliktir; işaret yalnız bir vurgudur.
+
+**Vaka:** BEKLEYENLER panosunda `H3` **üç kez**, `H4`·`H5`·`H7`·`H8`
+**ikişer kez** geçiyordu — bir kısmı işaretli varyantlar olduğu için
+"farklı" sanılmıştı. _"H3'e bak"_ demek üç satırdan hangisi belirsizdi;
+kimlikler işlevsizdi.
+
+> **KURAL:** kimlik TEKİLDİR. Aciliyet ayrı bir sütunda ya da metinde
+> yaşar, kodun içinde değil. Aynı kimliği ikinci kez kullanmak, panoyu
+> taranamaz hâle getirir.
+
+_Bu kural elle atamayla korunamıyor: kimlik çakışması aynı gün içinde
+tekrar üretildi (bkz. BEKLEYENLER → K10, kod atamasını otomatikleştir)._
+
+### SİLME KARARI: İLKE İHLALİ DEĞİL, VERİ BOZAN İŞLEM (KESİN KURAL)
+
+_Mimar düzeltmesi 20.08.2026._ "Kayıt silinmez" kuralı savunulurken
+gerekçe **ilke** değil, **sonuç** olmalıdır. İlke tartışılabilir; bozulan
+veri tartışılamaz.
+
+**Vaka:** `sfsfsf` kodlu test satışı için "sil" istendi. Zayıf cevap
+_"ledger dokunulmazlığı var"_ olurdu — bir test kaydı için istisna
+açılabilirmiş gibi görünür. Güçlü cevap şemadan okundu:
+
+- `Sale` → `SaleItem`: **Cascade** — kalemler de silinir
+- `StockMovement` → `SaleItem`: **SetNull** — `saleItemId` boşalır
+
+Yani satış silindiğinde **stok hareketleri KALIR ve hiçbir satışa bağlı
+olmaz**: stok düşük kalır, **düşüren kaybolur**. Parti tüketilmiş görünür,
+tüketen yoktur; maliyet damgaları sahipsiz kalır.
+
+> **ÖLÇÜT:** "bu işlem hangi veriyi bozar" sorusu, "hangi ilkeyi çiğner"
+> sorusundan daha güçlüdür ve tartışmayı bitirir. İptal aynı sonucu
+> verir — kayıt ciroya/NET'e/hakedişe girmez, stok DOĞRU döner, geri
+> alınabilir ve iz bırakır.
+
 ### AYNI VERİ, FARKLI SORUYA FARKLI PENCEREDEN BAKAR (KESİN KURAL)
 
 _Mimar kararı 20.08.2026._ Zamana bağlı bir referans (tarife, kur, oran)
