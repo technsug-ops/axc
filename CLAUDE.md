@@ -528,8 +528,39 @@ Kontrol, kapsam kapanana kadar YAZILMAZ.
 2. Aynı **dönemi** mi?
 3. Aynı **birimi** mi (sipariş başına ↔ toplu fatura)?
 4. Bir tarafta olup ötekinde **hiç olmayan** kayıt var mı — ve oranı ne?
+5. **AYNI OLAYI AYNI ZAMANDA mı görüyorlar?** _(eklendi 20.08.2026)_
 
-Dördünden biri "hayır" ise üretilecek sayı farkı değil eksikliği ölçer.
+Beşinden biri "hayır" ise üretilecek sayı farkı değil eksikliği ölçer.
+
+⚠ **BEŞİNCİ SORU EN SİNSİSİ: VADE GECİKMESİ KAPSAM BOŞLUĞU GİBİ GÖRÜNÜR.**
+Hakediş eşleştirmesinde üç turda üç kez `0` eşleşme çıktı ve her seferinde
+başka bir katman suçlandı (anahtar biçimi · dosya dönemi · eksik giriş).
+Gerçek sebep **takvimdi**: pazaryeri ödeme dosyası, siparişten **28–34 gün
+SONRA** yayımlanıyor. "Ağustos dosyası" haziran/temmuz siparişlerini
+taşıyordu; `0/188` bir kusur değil, **matematiksel zorunluluktu.**
+
+Ölçüldü: TY sipariş→ödeme **ortanca 28 gün** (n=267, p25 23 · p75 32 ·
+max 41) · HB **~34 gün** (24 iş günü, teslimden sonra başlar).
+
+> Bir eşleştirme sıfır dönüyorsa, **önce iki tarafın olay ufkunu ölç**:
+> aynı olaylar iki kaynağa aynı anda düşmüyor olabilir. Bunu ölçmeden
+> "eşleştirme bozuk" ya da "veri eksik" demek, olmayan bir hatayı aramaktır.
+
+### KOLON BAŞLIĞI BİR İDDİADIR — ÖDEME TARAFI
+
+_Ders 20.08.2026._ Trendyol ödeme dosyasındaki **`İşlem Tarihi`** ödeme
+günü DEĞİL: siparişten yalnız **1–4 gün** sonra, kaydın oluştuğu an.
+Gerçek ödeme günü **dosya adında** duruyor (`OdemeDetay_TR_2026-08-11_…`).
+
+İlk ölçüm bu alana güvendi ve "sipariş→ödeme 2 gün" gibi imkânsız bir
+sonuç verdi. Alan adı makul görünüyordu ve tam da bu yüzden sorgulanmadı.
+
+> **Bir alanın ADI, içeriğinin NE OLDUĞUNU söylemez.** Tarih alanları
+> özellikle: `İşlem` · `Kayıt` · `Vade` · `Ödeme` aynı dosyada dört farklı
+> ana işaret eder. Hangisinin aradığın olduğu, **değerlerin dağılımıyla**
+> sınanır — makul görünen ilk alan seçilmez.
+
+
 _"Tutarlılık ≠ doğruluk" ve "referansı doğrula" derslerinin kapsam hâli._
 
 ### SUSTURMA, KAYDIN HÂLİNE BAĞLANIR (KESİN KURAL)
