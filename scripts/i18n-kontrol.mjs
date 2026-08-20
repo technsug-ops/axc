@@ -106,6 +106,62 @@ console.log(
   `2) Yapi: tr ${trAnahtar.length} anahtar, en ${enAnahtar.length} anahtar, ${trFazla.length + enFazla.length} fark`,
 );
 
+// --- 2b) KODDA KULLANILAN ANAHTAR SOZLUKTE VAR MI ---------------------------
+/*
+ * ⚠ BU KONTROL BIR CANLI HATADAN DOGDU (21.08.2026).
+ *
+ * `Panel.alimAdedi` anahtari yanlislikla IKI sozlukten birden silindi.
+ * Yapi kontrolu (2) tr ile en'i karsilastirdigi icin YESIL kaldi -- iki
+ * taraf da ayni sekilde eksikti. Sonuc: panelde etiket yerine ham anahtar
+ * yazdi ("Panel.alimAdedi") ve bunu ancak kullanici ekranda gordu.
+ *
+ * Iki sozlugu birbirine gore dogrulamak yetmiyor; KODUN sozluge sordugu
+ * anahtar da var olmali.
+ *
+ * ⚠ YALNIZ DUZ METIN ANAHTARLAR sinaniyor. `t(g.anahtar)` ya da
+ * `t(\`engel_${x}\`)` gibi cagrilarda anahtar calisma aninda olusuyor;
+ * onlari statik olarak cozmek yanlis alarm uretir. Kapsam dar tutuldu:
+ * yakalanamayan cagri sayisi ayrica YAZILIYOR, sessizce gizlenmiyor.
+ */
+const trDuz = new Set(anahtarlar(tr));
+let kodEksik = 0;
+let kodBakilan = 0;
+let kodDinamik = 0;
+
+for (const dosya of dosyalar("src")) {
+  if (!/\.tsx?$/.test(dosya)) continue;
+  const metin = readFileSync(dosya, "utf8");
+
+  /* Dosyadaki her `t` takma adini kendi ISIM ALANIYLA eslestir. */
+  const adAlan = new Map();
+  for (const m of metin.matchAll(
+    /(?:const|let)\s+(\w+)\s*=\s*(?:await\s+)?(?:get|use)Translations\(\s*"([^"]+)"/g,
+  )) {
+    adAlan.set(m[1], m[2]);
+  }
+  if (adAlan.size === 0) continue;
+
+  for (const [alias, alan] of adAlan) {
+    const duz = new RegExp(`\\b${alias}\\(\\s*"([^"]+)"`, "g");
+    for (const m of metin.matchAll(duz)) {
+      kodBakilan++;
+      const tam = `${alan}.${m[1]}`;
+      if (!trDuz.has(tam)) {
+        kodEksik++;
+        console.log(`EKSIK  ${tam}   (${dosya})`);
+      }
+    }
+    /* Duz olmayan cagrilar -- sayilir ama hukum verilmez. */
+    const dinamik = new RegExp(`\\b${alias}\\(\\s*[^"\\s)]`, "g");
+    kodDinamik += [...metin.matchAll(dinamik)].length;
+  }
+}
+
+if (kodEksik > 0) hata = true;
+console.log(
+  `2b) Kod->sozluk: ${kodBakilan} duz cagri bakildi, ${kodEksik} eksik, ${kodDinamik} dinamik cagri SINANMADI`,
+);
+
 // --- 3) Parametreli metinlerin ciktisi --------------------------------------
 const ornekler = [
   [
@@ -312,8 +368,20 @@ for (const [adAlani, anahtar, degerler, beklenen] of ornekler) {
 }
 console.log(`3) Parametreli metin: ${ornekler.length} ornek, ${fark} fark`);
 
+/*
+ * ⚠ CIKIS KODU -- 21.08.2026'DA EKLENDI, ONCESINDE HIC YOKTU.
+ *
+ * Betik "SORUN VAR" yazip yine de 0 donuyordu. Yani
+ * `npm run i18n:kontrol; echo $?` her kosumda 0 veriyordu ve teslim
+ * raporlarina yazilan "i18n: 0" satiri bir YALANCI YESILDI.
+ *
+ * Anayasa "hicbir dogrulama boru sonuna guvenmez, cikis koduyla kontrol
+ * edilir" diyor; ama cikis kodu URETMEYEN bir betikte o kural bos calisir.
+ */
+const toplamSorun =
+  eksik + menuEksik + trFazla.length + enFazla.length + fark + kodEksik;
+
 console.log(
-  eksik + menuEksik + trFazla.length + enFazla.length + fark === 0
-    ? "\nHEPSI TEMIZ"
-    : "\nSORUN VAR",
+  toplamSorun === 0 ? "\nHEPSI TEMIZ" : `\nSORUN VAR (${toplamSorun})`,
 );
+if (toplamSorun > 0) process.exitCode = 1;

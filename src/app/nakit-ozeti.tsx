@@ -9,11 +9,7 @@ import {
   TAKVIM_PARA_BIRIMI,
   type NakitTakvimi,
 } from "@/lib/panel/nakit-takvimi";
-import {
-  DURUM_YAZISI,
-  tutarDurumu,
-  type DurumRengi,
-} from "@/lib/renkler";
+import { DURUM_YAZISI, tutarDurumu, type DurumRengi } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -54,7 +50,18 @@ export async function NakitOzeti({
   const vadesizSayisi = takvim.vadesizler.length;
 
   return (
-    <Card className="min-w-0">
+    /**
+     * ⚠ KART YÜKSEKLİĞİ KOMŞUSUNDAN GELİR (kullanıcı 21.08.2026).
+     *
+     * Bu kart, solundaki iki görev kartının TOPLAM yüksekliğine yayılıyor
+     * ve içeriği yalnız üst kısmı doldurduğu için altında ölü boşluk
+     * kalıyordu. `flex h-full flex-col` + `flex-1` ile içerik aşağı doğru
+     * BÜYÜYOR: kutular yükseliyor, rakamlar dikeyde ortalanıyor.
+     *
+     * Boşluk bilgi taşımaz (İlke #12); ama boşluğu kapatmak için METİN
+     * eklenmedi — var olan içerik yayıldı.
+     */
+    <Card className="flex h-full min-w-0 flex-col">
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-wrap items-center justify-between gap-2">
           <span className="flex items-center gap-2">
@@ -72,17 +79,26 @@ export async function NakitOzeti({
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-1 flex-col gap-3">
         {/* Dar kartta üç kutu: dolgu küçük, tutar text-xl ve break-words —
             ₺210.942,81 gibi uzun tutar kutunun dışına taşmasın (15.08.2026). */}
-        <div className="grid gap-2 sm:grid-cols-3">
+        {/* ⚠ `flex-1` — üç kutu kalan yüksekliği paylaşır ve büyür. */}
+        <div className="grid flex-1 gap-2 sm:grid-cols-3">
           {/* ÇIKACAK amber (uyarı), GİRECEK mavi (öngörü) — renk sistemi
               (bkz. lib/panel/renkler.ts). Zemin nötr, yalnız rakam renkli. */}
-          <Kutu etiket={t("cikacak")} deger={para(takvim.cikacakToplam)} durum="uyari" />
-          <Kutu etiket={t("girecek")} deger={para(takvim.girecekToplam)} durum="bilgi" />
+          <Kutu
+            etiket={t("cikacak")}
+            deger={para(takvim.cikacakToplam)}
+            durum="uyari"
+          />
+          <Kutu
+            etiket={t("girecek")}
+            deger={para(takvim.girecekToplam)}
+            durum="bilgi"
+          />
           {/* NET POZİSYON: açıkta kırmızı, fazlada yeşil, sıfırda nötr.
               Kenarlık da renkleniyor ama ZEMİN pastel kalıyor (kısıt #2). */}
-          <div className="min-w-0 space-y-1 rounded-lg border p-3">
+          <div className="flex min-w-0 flex-col justify-center gap-1 rounded-lg border p-3">
             <div className="text-muted-foreground text-xs">
               {t("netPozisyon")}
             </div>
@@ -101,7 +117,9 @@ export async function NakitOzeti({
         {/* UYARI SATIRI — yalnız gerçekten bir şey varsa çıkar. Panelde
             "sorun yok" demek için satır harcanmaz; sorun VARSA görünür. */}
         {gecikmisSayisi > 0 ? (
-          <p className="text-destructive flex items-center gap-2 text-sm">
+          /* ⚠ ORTALI (kullanıcı isteği): kutuların altındaki uyarı satırı
+             sola yapışık kalınca kartın alt yarısı dengesiz görünüyordu. */
+          <p className="text-destructive flex items-center justify-center gap-2 text-center text-sm">
             <AlertTriangle className="size-4 shrink-0" />
             {t("gecikmisUyarisi", {
               sayi: gecikmisSayisi,
@@ -111,7 +129,7 @@ export async function NakitOzeti({
         ) : null}
 
         {vadesizSayisi > 0 ? (
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-center text-xs">
             {t("vadesizUyarisi", { sayi: vadesizSayisi })}
           </p>
         ) : null}
@@ -130,7 +148,8 @@ function Kutu({
   durum: DurumRengi;
 }) {
   return (
-    <div className="min-w-0 space-y-1 rounded-lg border p-3">
+    /* Dikeyde ORTALI: kutu büyüdüğünde rakam üstte asılı kalmasın. */
+    <div className="flex min-w-0 flex-col justify-center gap-1 rounded-lg border p-3">
       <div className="text-muted-foreground text-xs">{etiket}</div>
       <div
         className={`text-xl font-semibold break-words tabular-nums ${DURUM_YAZISI[durum]}`}

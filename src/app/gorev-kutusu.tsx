@@ -65,7 +65,7 @@ function GorevKutucugu({
        * oranı boş kanal SKU") hücreyi kendi genişliğine zorluyor ve yazı
        * kutunun dışına taşıyordu.
        */
-      className="hover:bg-muted/60 flex min-h-11 min-w-0 flex-col justify-between gap-1 rounded-lg border p-3"
+      className="hover:bg-muted/60 flex min-h-11 min-w-0 flex-col justify-center gap-1 rounded-lg border p-3"
     >
       {gorev.temizMi ? (
         /* İŞARET + RENK BİRLİKTE: temizde ✓ ikonu, bekleyende rakam. */
@@ -105,7 +105,9 @@ async function TekKart({
   const toplam = bekleyenToplam(kartinkiler);
 
   return (
-    <Card className="min-w-0">
+    /* Komşu kart (Nakit özeti) yüksekliği paylaşıyor; bu kartlar da
+       kalan alanı doldursun ki sütunlar arasında ölü boşluk kalmasın. */
+    <Card className="flex h-full min-w-0 flex-col">
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-wrap items-center gap-2 text-base">
           <Ikon className="size-5" />
@@ -121,10 +123,10 @@ async function TekKart({
         </CardTitle>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="flex flex-1 flex-col">
         {/* Kutucuk sayısı karta göre: 2 ve 3. Telefonda 2 sütun. */}
         <div
-          className={`grid grid-cols-2 gap-2 ${kartinkiler.length > 2 ? "sm:grid-cols-3" : ""}`}
+          className={`grid flex-1 grid-cols-2 gap-2 ${kartinkiler.length > 2 ? "sm:grid-cols-3" : ""}`}
         >
           {kartinkiler.map((g) => (
             <GorevKutucugu
