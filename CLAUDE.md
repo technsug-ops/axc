@@ -709,6 +709,36 @@ tüketen yoktur; maliyet damgaları sahipsiz kalır.
 > verir — kayıt ciroya/NET'e/hakedişe girmez, stok DOĞRU döner, geri
 > alınabilir ve iz bırakır.
 
+### BOŞ SONUÇ İLE TEMİZ SONUCU AYIRT EDEMEYEN DENETİM, DENETİM DEĞİLDİR (KESİN KURAL)
+
+_Mimar kararı 20.08.2026._ Bir denetim aracının **hiçbir şey bulamaması**
+iki apayrı şey olabilir:
+
+- **temiz** — baktı, karşılaştırdı, sapma yok → **hüküm**
+- **boş** — hiç bakamadı (kaynak okunamadı, kolon bulunamadı, eşleşme
+  kurulamadı) → **hüküm DEĞİL**
+
+İkisi ekranda aynı görünüyorsa araç, **en tehlikeli yalancı yeşili**
+üretir: kimse bir daha bakmaz, çünkü "kontrol edildi" sanılır.
+
+**Vaka:** `canli:oran-denetimi` rapordaki kolonları adıyla arıyor. Trendyol
+başlıkları değiştirse, satır okunamaz, liste boş kalır ve çıktı **"sapma 0"**
+derdi. Araç sessizce her koşumda yeşil yanardı.
+
+Çare: kolon eksikse **hata fırlatılıyor** — denetim koşmuyor, "temiz"
+demiyor.
+
+**HER DENETİM ARACI ŞUNLARI AYRI SAYAR VE AYRI YAZAR:**
+1. Kaç kayıt **incelendi**
+2. Kaçı **temiz** çıktı
+3. Kaçı **sapan**
+4. Kaçı **incelenemedi** — ve NEDEN (kaynak yok · eşleşme kurulamadı ·
+   belirsiz)
+
+Dördüncüsü sıfırdan büyükse, sonucun kapsamı da o kadar dardır ve bu
+**ekranda yazar**. _("Açık sıfır" ilkesinin denetim tarafı: hiçbir şey
+bulunamadığında da NEDEN bulunamadığı söylenir.)_
+
 ### DIŞ KAYNAĞIN KENDİ ETİKETİYLE KARŞILAŞTIR — İÇ TUTARLILIK KAYMAYI GİZLER (KESİN KURAL)
 
 _Ders 20.08.2026._ Dışarıdan gelen bir veriyi işlerken, çıktının **kaynağın
