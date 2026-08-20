@@ -18,6 +18,40 @@
 
 ---
 
+## ✅ DEFTER ONARIMI — KAPANDI 20.08.2026 (K20 · K21 · K22)
+
+**Zincir:** sipariş no çakışması → kullanıcı numaraya `0` ekledi → iptal/geri
+alma → **iki ayrı yazılım hatası** → **iki hayalet adet** + şişik NET.
+
+**Kod düzeltmeleri (testli, mutasyonla sınanmış):**
+- `AYNA_ADET_UYUSMAZ` — geri alma, satışın kendi adedinden fazlasını
+  düşüremez. _Vaka: 1 adetlik satış 2 adet düşürdü._
+- `AYNA_TUKENMIS` — tükenmiş parti ikinci kez tüketilemez. _Hayaletin
+  kaynağı buydu._
+- Ayna süzgeci `gte` → **tam damga** (`occurredAt === iptalTarihi`).
+- Sipariş no çakışmasında iptalli kayıt **ayrı hüküm** + ekranda çıkış yolu.
+
+**Veri onarımı** — `canli:defter-onarim` (3 vaka, kimliğe kilitli, `--geri`
+ile geri alınabilir, `AuditLog`'a **3 iz**). Miktar/para değişmedi; yalnız
+`sourceMovementId` ve `unitCostAmount`.
+
+**SONUÇ — ölçüldü:**
+
+| | ledger | FIFO | beklenen |
+|---|---|---|---|
+| `OYU-LG-598P-01` | 4 | 4 | 4 ✅ |
+| `axcali1667` | 2 | 2 | 2 ✅ |
+
+`canli:defter-ayrismasi` → **72 varyantın 72'si temiz, çıkış kodu 0.**
+Satış `11518018178`: CANLI · doğru numara · **NET-2 3.188,75 → 189,58** ✅
+
+⚠ **YOL BOYUNCA İKİ HATAM:** ① "ledger 1 eksik, +1 ekle" dedim — pozitif
+düzeltme **iki deftere birden** yazıyor, ayrışma kapanmadı yön değiştirdi
+(ledger 3→4 ✓, FIFO 4→5 ✗). ② Onarım betiğinde ayırt ediciyi "kaynağı açık
+partilerde yok" diye kurdum; partiyi **son adedine kadar** tüketen hareket
+de listeden çıkıyor — kilit iki kayıt bulup durdu, doğrusu **kapasiteyle
+kıyas** oldu. İkisi de kilit/önizleme sayesinde veriye ulaşmadı.
+
 # Bekleyen İşler
 
 Karara bağlanmış ama bilinçli olarak sonraki pakete bırakılmış işler.
