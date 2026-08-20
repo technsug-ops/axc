@@ -59,6 +59,8 @@ const cikis = (): SonrakiCikis => ({
 const temel: GeriAlmaGirdisi = {
   iptalliMi: true,
   aynalar: [ayna()],
+  /** Satışın kendi adedi — ayna adediyle TUTMALI. */
+  satisAdetleri: [{ variantId: "v-9fb932", adet: 1 }],
   sonrakiCikislar: [],
   neden: "YANLISLIKLA",
   aciklama: null,
@@ -213,7 +215,13 @@ console.log("\nİPTALİ GERİ AL — DOĞRULAMA\n");
   kontrol("aynı plan aynı imza", geriAlmaImzasi(a) === geriAlmaImzasi(geriAlmaPlani(temel)));
   kontrol(
     "adet değişirse imza DEĞİŞİR",
-    geriAlmaImzasi(a) !== geriAlmaImzasi(geriAlmaPlani({ ...temel, aynalar: [ayna(2)] })),
+    geriAlmaImzasi(a) !== geriAlmaImzasi(
+      geriAlmaPlani({
+        ...temel,
+        aynalar: [ayna(2)],
+        satisAdetleri: [{ variantId: "v-9fb932", adet: 2 }],
+      }),
+    ),
   );
   /**
    * ARAYA ÇIKIŞ GİRERSE imza değişir → yazma durur. Önizleme alındıktan
@@ -223,6 +231,71 @@ console.log("\nİPTALİ GERİ AL — DOĞRULAMA\n");
     "araya çıkış girerse imza DEĞİŞİR (yazma durur)",
     geriAlmaImzasi(a) !==
       geriAlmaImzasi(geriAlmaPlani({ ...temel, sonrakiCikislar: [cikis()] })),
+  );
+}
+
+/**
+ * ============================================================================
+ *  AYNA ADEDİ SATIŞIN ADEDİYLE TUTMALI
+ * ----------------------------------------------------------------------------
+ *  ⚠ CANLI HATA 20.08.2026: 1 adetlik bir satışın iptali geri alınırken
+ *  stoktan 2 adet düştü. Sebep: ayna süzgeci `occurredAt >= iptalTarihi`
+ *  diyordu ve AYNI varyantın DAHA SONRAKİ iptalinin aynasını da topladı.
+ *
+ *  Ayna hareketler satışa bağlı DEĞİL (`saleItemId` yok, `sourceMovementId`
+ *  de bilerek yazılmıyor — hayalet parti hatası, 17.08.2026). Dolayısıyla
+ *  "bu aynalar bu satışın mı" sorusunun tek cevabı ADETLERİN TUTMASIDIR.
+ * ============================================================================
+ */
+{
+  console.log("");
+  console.log("AYNA ADEDİ — satışın adediyle karşılaştırma");
+
+  const tutan = geriAlmaPlani(temel);
+  kontrol("adetler tutuyorsa plan kurulur", tutan.olur, tutan);
+
+  /** ⚠ ASIL VAKA: iki ayna toplandı ama satış 1 adetlik. */
+  const fazla = geriAlmaPlani({
+    ...temel,
+    aynalar: [ayna(1), { ...ayna(1), hareketId: "ayna-baska-iptal" }],
+  });
+  kontrol(
+    "ayna FAZLAYSA durulur (canlı vaka: 1 adetlik satış, 2 ayna)",
+    !fazla.olur && fazla.engel === "AYNA_ADET_UYUSMAZ",
+    fazla,
+  );
+
+  /** Az da uydurulmaz — eksik ayna da hüküm vermez. */
+  const eksik = geriAlmaPlani({
+    ...temel,
+    satisAdetleri: [{ variantId: "v-9fb932", adet: 3 }],
+  });
+  kontrol(
+    "ayna EKSİKSE de durulur (uydurulmaz)",
+    !eksik.olur && eksik.engel === "AYNA_ADET_UYUSMAZ",
+    eksik,
+  );
+
+  /** ⚠ Varyant bazında bakılır — toplam tutup dağılım tutmayabilir. */
+  const karisik = geriAlmaPlani({
+    ...temel,
+    aynalar: [ayna(2)],
+    satisAdetleri: [
+      { variantId: "v-9fb932", adet: 1 },
+      { variantId: "v-baska", adet: 1 },
+    ],
+  });
+  kontrol(
+    "TOPLAM tutsa da varyant dağılımı tutmuyorsa durulur",
+    !karisik.olur && karisik.engel === "AYNA_ADET_UYUSMAZ",
+    karisik,
+  );
+
+  /** Kırpma YAPILMADIĞI da sınanır: fazla ayna sessizce 1'e indirilmemeli. */
+  kontrol(
+    "fazla ayna KIRPILMIYOR (plan hiç kurulmuyor)",
+    !fazla.olur && !("hareketler" in fazla),
+    fazla,
   );
 }
 

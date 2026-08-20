@@ -39,7 +39,7 @@ async function planKur(
       cargoCarrierId: true,
       cargoDesi: true,
       cargoAmount: true,
-      items: { select: { id: true, variantId: true, commissionRate: true } },
+      items: { select: { id: true, variantId: true, quantity: true, commissionRate: true } },
     },
   });
   if (satis === null) return null;
@@ -47,9 +47,28 @@ async function planKur(
   const varyantlar = [...new Set(satis.items.map((k) => k.variantId))];
 
   /**
-   * AYNA HAREKETLER — iptalin yazdığı girişler. İptal tarihinden sonrasına
-   * bakılır; aynı varyantın daha eski iptallerinden gelen hareketler
-   * karışmasın.
+   * AYNA HAREKETLER — iptalin yazdığı girişler.
+   *
+   * ⚠⚠ CANLI HATA 20.08.2026 — `gte` FAZLA TOPLUYORDU.
+   *
+   * Eski süzgeç `occurredAt >= satis.iptalTarihi` diyordu. Bu yalnız DAHA
+   * ESKİ iptalleri dışarıda bırakır; **daha SONRAKİ iptalleri kapsar.**
+   * Aynı varyanttan ikinci bir satış iptal edilmişse, birincinin iptalini
+   * geri almak ikincinin aynasını da tüketiyordu.
+   *
+   * Gerçekleşti: `11518018178` (1 adet) geri alınırken `115180181780`'in
+   * aynası da toplandı ve stoktan **2 adet** düştü. Önizleme de "2 adet
+   * çıkacak" yazdı — kullanıcı doğru onayladı, hesap yanlıştı.
+   *
+   * ⚠ NİYE `sourceMovementId` İLE BAĞLANMIYOR: ayna hareket kaynak bağını
+   * BİLEREK yazmıyor (`satis-iptali.ts`, ölçüldü 17.08.2026 — bağ yazılınca
+   * FIFO'da hayalet parti doğuyordu). O yüzden bağ üzerinden süzülemez.
+   *
+   * ⚠ DOĞRU AYIRT EDİCİ: TAM DAMGA. İptal, aynayı `occurredAt: girdi.an`
+   * ile yazıyor ve satışa `iptalTarihi: girdi.an` koyuyor — **aynı değer**.
+   * Yani bu iptalin aynaları `occurredAt === satis.iptalTarihi` olanlardır.
+   * Ölçüldü (20.08.2026, canlı): 4 iptalli satışın 4'ünde de tam damga
+   * beklenen adedi birebir verdi.
    */
   const aynaKayitlari =
     satis.iptalTarihi === null
@@ -58,7 +77,7 @@ async function planKur(
           where: {
             variantId: { in: varyantlar },
             type: "SALE_CANCEL_IN",
-            occurredAt: { gte: satis.iptalTarihi },
+            occurredAt: satis.iptalTarihi,
           },
           select: {
             id: true,
@@ -119,6 +138,11 @@ async function planKur(
       birimMaliyetParaBirimi: a.unitCostCurrency,
       locationId: a.locationId,
       kaynakHareketId: a.sourceMovementId,
+    })),
+    /** Satışın kendi adetleri — ayna sayısı bununla doğrulanır. */
+    satisAdetleri: satis.items.map((i) => ({
+      variantId: i.variantId,
+      adet: i.quantity,
     })),
     sonrakiCikislar,
     neden,

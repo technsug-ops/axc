@@ -39,6 +39,11 @@ export type GeriAlmaNedeni = (typeof GERI_ALMA_NEDENLERI)[number];
 export const GERI_ALMA_ACIKLAMA_ZORUNLU: readonly GeriAlmaNedeni[] = ["DIGER"];
 
 export type GeriAlmaEngeli =
+  /**
+   * Ayna adetleri satışın adetleriyle tutmuyor — kayıt bozuk ya da başka
+   * bir iptalin aynası karışmış. **Tahmin edilmez, durulur.**
+   */
+  | "AYNA_ADET_UYUSMAZ"
   | "IPTALLI_DEGIL"
   | "AYNA_YOK"
   | "SONRAKI_CIKIS"
@@ -75,6 +80,17 @@ export type SonrakiCikis = {
 export type GeriAlmaGirdisi = {
   iptalliMi: boolean;
   aynalar: AynaHareket[];
+  /**
+   * SATIŞIN KENDİ ADETLERİ — varyant başına.
+   *
+   * ⚠ NİYE VAR: ayna hareketler satışa BAĞLI DEĞİL (`saleItemId` yok,
+   * `sourceMovementId` de bilerek yazılmıyor). Yani "bu aynalar gerçekten
+   * bu satışın mı" sorusunun tek cevabı, ADETLERİN TUTMASIDIR.
+   *
+   * 20.08.2026'da tam bu doğrulanmadığı için 1 adetlik bir satışın geri
+   * alınması stoktan 2 adet düşürdü.
+   */
+  satisAdetleri: { variantId: string; adet: number }[];
   sonrakiCikislar: SonrakiCikis[];
   neden: GeriAlmaNedeni | null;
   aciklama: string | null;
@@ -116,6 +132,27 @@ export function geriAlmaPlani(girdi: GeriAlmaGirdisi): GeriAlmaPlani {
 
   // KİLİT 2 — ayna hareket yoksa stok geri çevrilemez.
   if (girdi.aynalar.length === 0) return { olur: false, engel: "AYNA_YOK" };
+
+  /**
+   * ── ADET DOĞRULAMASI — KAPSAM KONTROLÜ ────────────────────────────────
+   * ⚠ Süzgeç yanlış aynaları toplarsa sayı sessizce şişer ve stok bozulur.
+   * Burada iki taraf karşılaştırılıyor: aynaların topladığı adet, satışın
+   * KENDİ adediyle varyant varyant AYNI olmalı.
+   *
+   * ⚠ FAZLAYSA KIRPILMAZ, DURULUR. Kırpmak yanlış aynayı sessizce eler ve
+   * hangi kaydın bozuk olduğunu gizler; azsa da uydurulmaz.
+   */
+  const aynaAdedi = new Map<string, number>();
+  for (const a of girdi.aynalar)
+    aynaAdedi.set(a.variantId, (aynaAdedi.get(a.variantId) ?? 0) + a.adet);
+  const beklenen = new Map<string, number>();
+  for (const k of girdi.satisAdetleri)
+    beklenen.set(k.variantId, (beklenen.get(k.variantId) ?? 0) + k.adet);
+
+  const varyantKumesi = new Set([...aynaAdedi.keys(), ...beklenen.keys()]);
+  for (const v of varyantKumesi)
+    if ((aynaAdedi.get(v) ?? 0) !== (beklenen.get(v) ?? 0))
+      return { olur: false, engel: "AYNA_ADET_UYUSMAZ" };
 
   /**
    * KİLİT 3 — İPTALDEN SONRA ÇIKIŞ VARSA GERİ ALINAMAZ.
