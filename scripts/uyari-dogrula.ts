@@ -1081,6 +1081,64 @@ console.log("=".repeat(70));
 
 console.log("");
 console.log("=".repeat(70));
+console.log("F2-K) KANAL TAŞIMASI KÂRI TAZELİYOR");
+console.log("=".repeat(70));
+{
+  /**
+   * ⚠ CANLI BULGU 20.08.2026: "Kanal hesabını değiştir" kanalı
+   * değiştiriyor ama kârı yeniden HESAPLAMIYORDU. Kanal değişince
+   * kesinti kuralları değişir (HB: komisyon KDV'si + ₺12,60 hizmet +
+   * %0,8 ödeme; TY: ₺13,19 sabit) — taşınan satışın NET'i ESKİ kanalın
+   * kurallarıyla kalıyor ve ekranda DOĞRU görünüyordu.
+   *
+   * Önceki davranış bilinçliydi ("snapshot geçmişin kaydıdır") ama
+   * yanlış tarafta duruyordu: orada korunan geçmiş değil, HATAYDI.
+   */
+  const eylem = readFileSync("src/app/satislar/[id]/hesap-actions.ts", "utf8");
+  /**
+   * ⚠ DESEN DEĞİL, İFADE. `if (false) await karYenidenYaz({` yazan
+   * mutasyon deseni ayakta bırakıyordu; kontrol artık çağrının KOŞULSUZ
+   * bir ifade olduğunu (satır başında, iki boşluk girintili) sınıyor.
+   */
+  kontrol(
+    "kanal taşıması kârı tazeliyor",
+    /^ {2}await karYenidenYaz\(\{/m.test(eylem),
+  );
+  /**
+   * ⚠ BEŞİNCİ KEZ AYNI TUZAK: `revalidatePath` IMPORT satırında da
+   * geçiyor ve `indexOf` onu buluyordu — sıra kontrolü hep yanlış
+   * konuma bakıyordu. İşaret ÇAĞRI yerine bağlandı.
+   */
+  kontrol(
+    "  ...tazeleme işlemin PARÇASI (ayrı adım değil)",
+    eylem.indexOf("prisma.sale.update") < eylem.indexOf("await karYenidenYaz(") &&
+      eylem.indexOf("await karYenidenYaz(") <
+        eylem.indexOf('revalidatePath(`/satislar/'),
+  );
+
+  /**
+   * ⚠ ORAN TAŞINMAZ. Yeni kanalın oranını çekmek, kullanıcının girdiği
+   * oranı sessizce ezmek olurdu; oran ayrı bir düzeltmedir.
+   */
+  kontrol(
+    "  ...komisyon oranı KALEMDEN (ezilmiyor)",
+    eylem.includes("k.commissionRate === null"),
+  );
+  kontrol("  ...komisyon TUTARI null (düzenleme yoluyla aynı)", /commissionAmount: null/.test(eylem));
+  /** Kargo çevirisi tek kaynaktan — betik kendi çarpanını yazmasın. */
+  kontrol("  ...kargo kdvDahilKargo ile", /kdvDahilKargo\(/.test(eylem));
+
+  const sz3 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Satis?: Record<string, string>;
+  };
+  kontrol("diyalog metni artık 'otomatik' diyor",
+    (sz3.Satis?.hesabiDegistirNotu ?? "").includes("OTOMATİK"));
+  kontrol("  ...başarı mesajı da tazelemeyi söylüyor",
+    (sz3.Satis?.hesabiDegisti ?? "").includes("yeniden hesapland"));
+}
+
+console.log("");
+console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
 else {
   console.log(`${kalan} KONTROL BAŞARISIZ (${gecen + kalan} kontrolden)`);

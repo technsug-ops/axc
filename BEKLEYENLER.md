@@ -20,6 +20,9 @@ ilgili pakette kalır._
 |---|---|---|
 | ~~H1~~ | ~~Dilim tarifesi~~ | ✅ **KAPANDI 19.08** — 640 kalem yazıldı, geri okunarak doğrulandı, çapraz teyit tuttu. **Aşama 1 açılabilir** |
 | H2 | **Hakediş `.xlsx` teyidi** | Taze dönem dosyası → `canli:hakedis-esle` (hesap kırılımı) → `canli:hakedis-teyit` |
+| H3 | **AĞUSTOS DÖNEMİ HAKEDİŞ DOSYASI** | 🔁 **YENİDEN TANIMLANDI 20.08.2026.** Eskisi "hakediş .xlsx" idi; ölçüm gösterdi ki **temmuz dosyaları kapsam dışı**. Halil'e net: **satışları sistemde olan dönemin** (ağustos) hakediş/ödeme dosyası lazım. Temmuz dosyaları yüklenebilir ama hiçbir satışla eşleşmez. |
+| H4 | **Philips kanal düzeltmesi** | 🔨 **SIRADA.** `11492798173` · `11493262226` HB'de kayıtlı ama TY biçiminde sipariş no taşıyor (HB aralığı `4.01–4.99 milyar`, bunlar `11,49 milyar`; ayrıca 10.08'de dört satış tek TY dizisinde). **Taşıma onaylı**, kanal-değişince-kâr-tazelenir düzeltmesi canlıya çıkınca yapılır. ⚠ `%2,70` sapması AYRI kusur — her iki kanalda da kayıtlı oran `%15`. |
+| H5 | **`sfsfsf` test kaydı** | 🧹 Temizlik — Halil onaylayınca silinir/iptal edilir. |
 | H3⚡ | **BAĞSIZ HAKEDİŞ YIĞINI BÜYÜYOR** | ⚠ **ACİLİYET ARTTI.** Gecikme sayımı dışındaki kalem 19.08 sabahı **67**, akşamı **168**. Yığın büyüyor demek, hakediş↔satış bağı kurulmadıkça sistemin "alacağım ne" sorusuna verecek cevabı KÜÇÜLÜYOR demektir. H2 (hakediş `.xlsx` teyidi) sırayı öne alıyor. _Kayıt 19.08.2026._ |
 | H3 | **DÖRT satış özel satır** | `11493262226` · `11492798173` · `11492628481` (Philips 5000, ~−721 TL) **+ `11331575354` — i9000 Ultra SkinIQ** |
 | H3b | **⚠ İ9000 — TEK BAŞINA ÜÇLÜDEN BÜYÜK** | `11331575354` · Trendyol · 17.06 · **₺12.960** · oran **%2,70** · ~12 puan fark ≈ **~₺1.590 potansiyel şişkinlik** · üstelik **"iade var" rozetli**. Hakediş teyidinde ÖNCE bu bakılır. |
@@ -34,6 +37,7 @@ ilgili pakette kalır._
 | # | İş | Durum |
 |---|---|---|
 | K7 | **`satis.veri.dogrula` ayrı izni** | 🕓 **SaaS/RBAC kalemi — bugün AÇILMAZ.** Veri doğrulama bugün `satis.duzenle` istiyor. Ayrı izin daha temiz olurdu ama iki bacaklı yetki işi doğurur (izin anahtarı + seed + canlı senkron) ve tek kullanıcıda boş katmandır. Faz 4'te RBAC ile birlikte. _Karar 19.08.2026._ |
+| K8 | **H2 — hakediş eşleştirme mekanizması** | 🔨 **KÜÇÜK TUTULACAK.** Anahtar = sipariş no (biçim testi yapıldı: HB 10 hane, TY 11 hane, satış kodlarıyla BİREBİR uyumlu). Rapor/`--uygula` ayrımı, bağlanamayan kalemler ADIYLA beyan edilir (648 dersi). ⚠ **Bugün BOŞ çalışacağını bilerek yazılıyor** — doğru dosya gelince anında iş görsün. |
 | K6 | **Eşik yeniden ölçümü — n=200'de** | 🕓 **ZAMANA BAĞLI.** `veri-supheli.ts` eşikleri (`verim > %200`, `maliyet payı < %5`) **n=40** tabanından çıktı (19.08.2026; p95 %154, p5 %44,8). Satış kalemi **200'ü geçince** dağılım yeniden ölçülür ve eşikler tazelenir. Ölçüm aracı: `canli:bekleme-olcum` (verim dağılımı bölümü). _Eşik kaynağıyla anılır; taban büyüdüğünde kaynak eskir._ |
 | K1 | **Uyarı Merkezi Faz 2** | ✅ **KAPANDI 20.08.2026** — beş adayın dördü yazıldı, biri ölçümle düşürüldü; Halil canlıda uçtan uca doğruladı (aşağıda). |
 | K5 | **Aşama 1 — fiyatlama aracı** | ✅ **KAPANDI 19.08.2026** — üç katman da bitti, Halil canlıda iki yönlü doğruladı (aşağıda) |
@@ -515,7 +519,7 @@ raporuyla açılır.**
 | **0** | **Zemin teyidi** — hakediş .xlsx + komisyon envanteri | NET-2 **bağımsız** doğrulandı |
 | 1 | Fiyatlama zekâsı (offline) | Melontik'in offline analizi tam karşılandı |
 | 2 | Hakediş derinliği | Melontik'i **ilk geçiş** |
-| 3 | API salt okuma | Örtüşme temiz |
+| 3 | API salt okuma | Örtüşme temiz · ⚡ **GEREKÇE ÜÇÜNCÜ KEZ ÖLÇÜLDÜ (20.08.2026): `245 / 50 / 0`** — 245 hakediş sipariş no, 50 satış kodu, **sıfır kesişim**. Biçimler BİREBİR uyumlu (HB 10 hane, TY 11 hane); sorun anahtar değil KAPSAM. Zincir tek yerden kopuyor: **elle giriş → kapsam boşluğu → hakediş kör → K-5 kapalı** |
 | 4 | Yarı otomatik | Elle giriş **istisna** |
 | 5 | Tam otomatik | Melontik aboneliği **iptal** |
 
