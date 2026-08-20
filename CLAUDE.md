@@ -819,6 +819,54 @@ denetim onu üç kez şüpheli ilan etti; raporun `Komisyon Değişimi` kolonu
 > Denetim referansı seçilirken sorulur: **bu kaynak neyi kaydediyor —
 > niyeti mi, sonucu mu?** Para söz konusuysa sonuç kazanır.
 
+### KAYNAĞI YAZILMAYAN SAYI KULLANILAMAZ — VE YÖN, BÜYÜKLÜK DEĞİLDİR (KESİN KURAL)
+
+_Mimar kararı 20.08.2026, K9/K14._ Bir ölçüm panoya geçerken iki ayrı şey
+kaybolabilir: **kaynağı** ve **kapsamı**. İkisi de kaybolunca sayı hâlâ
+doğru olabilir ama artık kullanılamaz.
+
+**1) KAYNAĞI YAZILMAYAN SAYI, DOĞRU OLSA BİLE KULLANILAMAZ.** Panoda
+`227` yazıyordu ve penceresi de yazılıydı (97 satır, `30.06–21.08`) — ama
+**hangi dosyadan geldiği yazılmamıştı** ve daha da kötüsü, önceki ölçümün
+(`72`, dar pencere) **aşıldığı hiçbir yerde söylenmemişti.** Sayı sessizce
+değiştirilince, elinde eski rakam olan biri için kaynaksız bir sayı doğar.
+
+> **İki çelişen rakam panoda yan yana bırakılmaz.** Ama "çelişki" sanılan
+> şey çoğu zaman iki farklı kapsamdır: doğrusu birini silmek değil,
+> **ikisini de kaynağıyla yazıp hangisinin geçerli olduğunu söylemektir.**
+
+**2) YÖNÜ DOĞRULANMIŞ BİR BULGUNUN BÜYÜKLÜĞÜ AYRICA DOĞRULANIR.** Kapsamı
+karışmış bir kıyas **yön verir, sayı vermez**: "sistem tarafı eksik"
+denebilir, "64 adet eksik" denemez. Büyüklük ancak iki tarafın aynı kümeyi
+gördüğü ÖLÇÜLDÜKTEN sonra cümleye girer.
+
+⚠ **VE BU ÖLÇÜM YAPILMADAN "GEÇERSİZ" DE DENMEZ.** Aynı vakada kapsamın
+karıştığı VARSAYILDI ve büyüklük geçersiz ilan edildi; sonra ölçüldü:
+rapor `seller_870249`, `AXCALI.externalId = "870249"`, ve TY'nin **tek
+satış hesabı** AXCALI (ötekiler ALIŞ hesabı, sıfır satış). Kapsam
+karışmıyordu. **"Kapsam şüpheli" de bir iddiadır ve o da ölçülür.**
+
+**3) DESEN, ÖRNEĞİ KALMADIĞINDA DEĞİL, DOĞURAMADIĞINDA KAPANIR.**
+_"Tek vakaydı, düzeltildi"_ ile _"bugün hiçbir yerde tetiklenmiyor"_ farklı
+cümlelerdir. Birincisi kapanış, ikincisi **sessizlik** — ve sessiz bir
+desenin açılış şartı yazılır. (Vaka: `canli-komisyon-envanter.ts:55`
+kanal adına gömülü sözlük; eşleşmezse sessizce boş döner ve **boş dönüşü
+makul görünür** — K13b'yi sonucun imkânsızlığı yakalamıştı, bunu
+yakalayacak bir şey yok. Açılış şartı: kanal adının düzenlenmesi.)
+
+**4) PANO, İŞİN DURUMUNU DEĞİL NİYETİNİ KAYDEDERSE KURGU ÜRETİR.**
+Üç durum ayrı etiketlenir: **[KOMUT]** verildi/taşınmadı · **[YAZILDI]**
+betik var/koşmadı · **[KOŞTU]**. _Vaka: `K11a-rev` ve `K12-rev` panoda
+"Claude Code'da" yazılıydı, `scripts/` altında yoklardı; var olmayan bir
+betiğe "koşmasın" emri verildi._
+
+⚠ **VE PANONUN KENDİSİ DE DOĞRULANIR.** Aynı gün `BEKLEYENLER.md`'nin
+**tamamının iki kopya** olduğu ortaya çıktı (7022 satır = 3514 + 3508) —
+düzenlemeler yalnız birinci kopyaya işliyor, ikinci kopya bayat kalıyordu.
+Aynı kalemin iki farklı sürümü, "çelişkili rakam" üretmenin en sessiz
+yolu. Silmeden önce ikinci kopyanın **özgün tek satır taşımadığı** diff ile
+doğrulandı.
+
 ### EŞİĞİ SORUYU SORAN KOYAMAZ — VE PAYDA, BOZULAN KARARDAN SEÇİLİR (KESİN KURAL)
 
 _Mimar kararı 20.08.2026, K13 → K13b._ Bir oran ölçülürken iki ayrı yerden
