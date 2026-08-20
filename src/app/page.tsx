@@ -75,7 +75,7 @@ import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
 import { NakitOzeti } from "./nakit-ozeti";
 import {
-  donemAlimAdedi,
+  donemAlimi,
   gorevSayilariniTopla,
 } from "@/lib/panel/gorev-verisi";
 import {
@@ -1155,7 +1155,7 @@ export default async function AnaSayfa({
     parametreler.takvim === "30" ? 30 : 14;
 
   const takvimBugun = takvimBugunu();
-  const [takvimSatirlari, gorevSayilari, alimAdedi, kiyasAlimAdedi] =
+  const [takvimSatirlari, gorevSayilari, alim, kiyasAlim] =
     await Promise.all([
       // Nakit takvimi PARA bloğudur; izin yoksa sorgu bile atılmaz.
       karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([]),
@@ -1170,8 +1170,8 @@ export default async function AnaSayfa({
        * görmek için süzgeç "Bugün" seçilir — o zaman altısı da bugünü
        * gösterir.
        */
-      donemAlimAdedi(donem),
-      kiyasPencere ? donemAlimAdedi(kiyasPencere) : Promise.resolve(null),
+      donemAlimi(donem),
+      kiyasPencere ? donemAlimi(kiyasPencere) : Promise.resolve(null),
     ]);
 
   const takvim = nakitTakvimiKur({
@@ -1415,10 +1415,38 @@ export default async function AnaSayfa({
                   etiket={t("alimAdedi")}
                   cocuk={
                     <Baglanti href={suzgecAdresi("/alimlar", {}, donemParametreleri())}>
-                      {alimAdedi}
+                      {alim.adet}
                     </Baglanti>
                   }
-                  rozet={kiyasRozeti(alimAdedi, kiyasAlimAdedi, (n) => String(n))}
+                  rozet={kiyasRozeti(
+                    alim.adet,
+                    kiyasAlim?.adet ?? null,
+                    (n) => String(n),
+                  )}
+                  /* ---------------- ALT NOT: DÖNEMİN ALIM TUTARI ----------
+                     İlke #15 — tek tek gösterilen yerde toplam da olur.
+                     Kullanıcı KDV dengesi için aylık alım tutarını takip
+                     ediyor ve alım listesinde bu toplam ZATEN var; panelde
+                     yokken aynı rakam için ikinci ekrana gitmek gerekiyordu.
+
+                     ⚠ PARA — izne bağlı. Adet operasyoneldir, tutar değil;
+                     `satis.kar.gor` yoksa yalnız adet görünür.
+
+                     ⚠ Bu bloğun para birimi süzgeci var; yalnız o para
+                     biriminin toplamı yazılır, karışık toplam üretilmez. */
+                  altNot={
+                    karGorunur ? (
+                      <span>
+                        {t("alimToplami", {
+                          tutar: bicim.para(
+                            alim.toplam.find((x) => x.paraBirimi === blok.paraBirimi)
+                              ?.tutar ?? 0,
+                            blok.paraBirimi,
+                          ),
+                        })}
+                      </span>
+                    ) : null
+                  }
                 />
                 <IstatistikKutusu
                   etiket={t("satisAdedi")}
@@ -1432,6 +1460,16 @@ export default async function AnaSayfa({
                     kb?.toplamAdet ?? null,
                     (n) => String(n),
                   )}
+                  /* ADET KUTUSUNDA ADET, PARA KUTUSUNDA PARA.
+                     Ciro kutusu iadenin TUTARINI yazıyor; buraya ADEDİ
+                     geliyor. Aynı bilgi iki kez değil, aynı olayın iki
+                     ölçüsü — "3 iade" ile "−₺2.980" farklı sorulara cevap.
+
+                     AÇIK SIFIR: iade yoksa da satır yazılır. Yokluğundan
+                     "iade olmadı" sonucunu çıkarmak imkânsızdır. */
+                  altNot={
+                    <span>{t("iadeAdedi", { sayi: blok.toplamIadeAdedi })}</span>
+                  }
                 />
                 {/* KARGO DURUMU — elle işaretlenen operasyonel rakam.
                     "Bekleyen" bugün ne yapılacağını söylediği için verilenle

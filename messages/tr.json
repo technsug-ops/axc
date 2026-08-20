@@ -1836,7 +1836,8 @@
     "kargoDurumuKanal": "Kargoya verilen ({kanal})",
     "kargoTumKanallar": "tüm kanallar: {verilen} · bekleyen: {bekleyen}",
     "kiyasVeriYok": "Önceki dönemde veri yok — karşılaştırma yapılamıyor.",
-    "alimAdedi": "Alım adedi"
+    "alimToplami": "{tutar} toplam alım",
+    "iadeAdedi": "{sayi} iade"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
