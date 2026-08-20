@@ -819,6 +819,48 @@ denetim onu üç kez şüpheli ilan etti; raporun `Komisyon Değişimi` kolonu
 > Denetim referansı seçilirken sorulur: **bu kaynak neyi kaydediyor —
 > niyeti mi, sonucu mu?** Para söz konusuysa sonuç kazanır.
 
+### EŞİĞİ SORUYU SORAN KOYAMAZ — VE PAYDA, BOZULAN KARARDAN SEÇİLİR (KESİN KURAL)
+
+_Mimar kararı 20.08.2026, K13 → K13b._ Bir oran ölçülürken iki ayrı yerden
+hata girer: **eşik** ve **payda**. İkisi de "makul göründüğü" için sorgusuz
+geçer, ve ikisi de sonucu tersine çevirebilir.
+
+**1) EŞİĞİ SORUYU SORAN KOYAMAZ.** K13'te "pay %2'yi geçiyor mu" diye
+soruldu; `%2` veriden türetilmedi, soruyu soran yazdı. Üstelik ondan
+**₺630 sınırı** türetildi ve o sınırla 1030 ürün "geçemez" diye elendi.
+Eşik `%1` olsaydı sınır `₺1.260` olurdu ve eleme çökerdi. **Kaynağı olmayan
+eşik, üstüne kurulan bütün akıl yürütmeyi de dayanaksız yapar — argüman
+zarif olsa bile.** Eşik ya dağılımın gediğinden gelir ya hiç konmaz.
+
+**2) PAYDA, ÖLÇMESİ KOLAY OLANDAN DEĞİL, BOZULAN KARARDAN SEÇİLİR.**
+K13 ₺12,60'ı FİYATA oranladı: ortanca `%0,32`, max `%1,29` → "önemsiz".
+K13b aynı tutarı **MARJA** (NET-2) oranladı: ortanca `%3,38`, max
+`%15,18`. Aynı veri, aynı gün, **on–yirmi kat fark** — çünkü ₺12,60'ın
+bozduğu karar fiyat kararı değil marj kararıydı.
+
+> **KONTROL SORUSU:** bu sayı hangi kararı bozuyor? Payda O kararın
+> paydasıdır. Fiyat "kolay ölçülüyor" diye seçilirse cevap "önemsiz" çıkar
+> ve soru cevaplanmamış olur.
+
+**3) KENDİ SİSTEMİMİZİN DAVRANIŞI DA DOĞRULANIR.** _"Araç şunu yapıyor"_
+cümlesi bakılmadan kurulursa dış kaynak iddiasından farksızdır. K13b bunu
+**yazılırken** yaşadı: zemin `kanalAdi === "Hepsiburada"` ile aranıyordu,
+oysa alan `"Hepsiburada — HesapAdı"` üretiyor (`kart-verisi.ts:105`).
+Eşleşme hiç tutmadı, betik **29 ürünü sessizce eledi** ve tertemiz bir
+tabloyla `n=0` bastı. Ad bir ETİKETTİR; eşleştirme **kimlikle**
+(`channelAccountId`) yapılır. ⚠ Yakalanmasının tek sebebi sonucun imkânsız
+görünmesiydi — sayılar makul çıksaydı yayımlanacaktı.
+
+**4) SIFIRA VE NEGATİFE BÖLÜNMEZ.** Marjı ≤ 0 olan kayıt orana
+karıştırılmaz: bölüm saçma büyük bir sayı üretir ve **kuyruk sanılır**.
+Ayrı sayılır, ayrı listelenir. (K13b'de 6 ürün buraya düştü.)
+
+⚠ **VE ELEME SEBEPLERİ AYRI SAYILIR.** K13b'nin ilk sürümü "zemin
+bulunamadı" ile "NET-2 hesaplanamadı"yı tek sepete attı, `29 hesaplanamadı`
+dedi; hangisinin neden düştüğü kayboldu ve yukarıdaki hata neredeyse
+gizlendi. _("Boş sonuç ile temiz sonucu ayırt edemeyen denetim" kuralının
+eleme tarafı.)_
+
 ### KESİNTİ KURALI "HER ZAMAN KESİLİR" İDDİASIDIR — SIKLIĞI DA ÖLÇÜLÜR (KESİN KURAL)
 
 _Ders 20.08.2026, HB hizmet bedeli._ Bir kesinti kuralını tabloya yazmak iki

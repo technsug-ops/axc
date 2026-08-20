@@ -117,7 +117,7 @@ export type KartOzeti = {
 };
 
 /** Adet ağırlıklı ortalama — maliyeti bilinmeyen partiler HESABA GİRMEZ. */
-function agirlikliOrtalama(
+export function agirlikliOrtalama(
   partiler: { kalanAdet: number; birimMaliyet: number | null }[],
 ): number | null {
   let adet = 0;
