@@ -74,8 +74,6 @@ export default async function SatislarSayfasi({
     marj?: string;
     /** Uyarı merkezinden: maliyet/kâr olağan aralığın dışında. */
     veri?: string;
-    /** Uyarı merkezinden: komisyon oranı K3 eşiğinin altında. */
-    oran?: string;
   }>;
 }) {
   await sayfaIzni("satis.gor");
@@ -354,7 +352,6 @@ export default async function SatislarSayfasi({
      *  3. Excel indirmesi süzgeci yok sayıyordu.
      */
     veri: p.veri,
-    oran: p.oran,
   };
   const disaAktarmaParametreleri = { ...formTasinanlar, q: arama };
 
@@ -526,9 +523,7 @@ export default async function SatislarSayfasi({
                 gitmiş gibi bakmak olurdu. */}
             {p.veri === "supheli"
               ? t("bosSupheliVeri")
-              : p.oran === "supheli"
-                ? t("bosSupheliOran")
-                : karEksik
+              : karEksik
                   ? t("bosKarEksikBaslik")
                   : suzgecVar
                     ? t("bosFiltreBaslik")

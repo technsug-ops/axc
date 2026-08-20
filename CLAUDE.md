@@ -596,6 +596,41 @@ düzeltilecek bir şey yoktu. Aykırı artık **ortalamadan dışlanır**
 (istisna ortalamayı temsil etmez) ve **beyan edilir** (kaybolmaz); kilit
 yalnız gerçekten kaba olan eksende kalır.
 
+### EŞİK, ÖLÇÜLDÜĞÜ POPÜLASYONUN DIŞINA UYGULANAMAZ (KESİN KURAL)
+
+_Ders 20.08.2026, komisyon oranı vakası._ Bir eşik gerçek ölçümden gelse
+bile, **ölçüldüğü kümenin dışına uygulandığında doğru kayıtları suçlar.**
+Sorulacak soru "eşik ölçüldü mü" değil, **"ölçtüğüm küme, uyguladığım
+kümeyle aynı mı"**dır.
+
+**Vaka:** `SUPHELI_ORAN_ESIGI = 3` şöyle savunuluyordu — _"18.08.2026
+canlı ölçümü: Trendyol %3,6–%23; görülmüş en düşük oran %3,6, eşik onun
+altına konuldu."_ Ölçüm gerçekti. Ama ölçülen küme **`ChannelSku` TEK
+ORANLARIYDI**; eşik ise **satışa yazılan oranlara** uygulanıyordu ve o
+küme bir gün sonra yüklenen **dilim tarifesini** de içeriyordu (Fiorino:
+%21 → %8,4 → %4,5 → %4,2).
+
+Sonuç: dört DOĞRU kayıt (%2,70) aylarca "şüpheli" işaretlendi ve bir
+düzeltme talimatı yazıldı. Kullanıcı durdurdu: Trendyol her Salı tarife
+yayımlıyor ve **fiyat indirimi karşılığı komisyon indiriyor**
+("2.000'e %10, 1.750'ye satarsan %7"). Düşük oran mekanizmanın sonucu.
+
+**VE HİÇBİR SAYI BU İŞİ YAPAMAZ.** Eşiği %2'ye çekmek de çözmezdi:
+indirim oranı ilkece istediği kadar aşağı inebilir. "Düşük oran
+şüphelidir" cümlesi mekanizmayla çelişiyordu. Eşik düşürülmedi,
+**KALDIRILDI** ve yerine ölçüt kondu: _oran, o ürünün O FİYATTAKİ
+diliminde yazan oran mı?_ Tarife yoksa **hüküm verilmez**.
+
+> **YANLIŞ UYARI, UYARISIZLIKTAN KÖTÜDÜR.** %100 yanlış pozitif üreten
+> `supheliOran` uyarısı ve süzgeci tamamen kaldırıldı; onları "eşiği
+> ayarlayarak" yaşatmak, rozetin tamamına olan güveni harcamak olurdu.
+
+**KONTROL SORUSU — her eşikte:** bu sayıyı hangi kümeden ölçtüm, ve
+uygulayacağım küme onunla AYNI mı? Farklıysa eşik değil, **ölçüt** yanlış.
+
+⚠ Bu, "eşik dağılımın gediğine konur" kuralının kardeşi ve ondan
+önceliklidir: **önce doğru dağılımı seçersin, sonra gediğini ararsın.**
+
 ### EŞİK, DAĞILIMIN GEDİĞİNE KONUR — GÖVDESİNE DEĞİL (KESİN KURAL)
 
 _Ders 19.08.2026._ Bir uyarı eşiği seçilirken sorulacak soru "hangi sayı

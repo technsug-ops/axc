@@ -703,17 +703,33 @@ export function SatisFormu({
                       {(() => {
                         const ham = kalem.komisyonOrani.replace(",", ".").trim();
                         const sayi = ham === "" ? null : Number(ham);
-                        const uyari = oranUyarisi(
-                          sayi !== null && Number.isFinite(sayi) ? sayi : null,
-                          kalem.onerilenOran,
-                        );
+                        const fiyatHam = kalem.unitPriceAmount.replace(",", ".").trim();
+                        const fiyat = fiyatHam === "" ? null : Number(fiyatHam);
+                        /**
+                         * ⚠ DİLİM TARİFESİ ÖLÇÜTTÜR — 20.08.2026 düzeltmesi.
+                         * Önce "oran %3'ün altındaysa şüpheli" deniyordu ve
+                         * DÖRT DOĞRU KAYDI suçluyordu: Trendyol fiyat
+                         * indirimi karşılığı komisyon indiriyor. Ölçüt artık
+                         * ürünün O FİYATTAKİ dilim oranı.
+                         */
+                        const uyari = oranUyarisi({
+                          girilen:
+                            sayi !== null && Number.isFinite(sayi) ? sayi : null,
+                          onerilen: kalem.onerilenOran,
+                          dilimler: kalem.zemin?.dilimler ?? null,
+                          fiyat:
+                            fiyat !== null && Number.isFinite(fiyat) ? fiyat : null,
+                        });
                         if (uyari === null) return null;
                         return (
                           <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
                             {uyari.tur === "KAYNAK_YOK"
                               ? t("oranKaynakYok")
-                              : uyari.tur === "SUPHELI_DUSUK"
-                                ? t("oranSupheliDusuk", { oran: uyari.girilen })
+                              : uyari.tur === "DILIMDEN_SAPTI"
+                                ? t("oranDilimdenSapti", {
+                                    beklenen: uyari.beklenen,
+                                    dilim: uyari.dilimSira,
+                                  })
                                 : t("oranSapti", {
                                     onerilen: uyari.onerilen,
                                     fark: uyari.fark,

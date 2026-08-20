@@ -828,7 +828,6 @@
     "netDusumDeger": "",
     "komisyonIpucu": "",
     "oranKaynakYok": "",
-    "oranSupheliDusuk": "",
     "oranSapti": "",
     "zararUyarisi": "",
     "zararAltDilimKurtarir": "",
@@ -854,7 +853,6 @@
     "dogrulaKalemYok": "",
     "dogrulaSupheliDegil": "",
     "bosSupheliVeri": "",
-    "bosSupheliOran": "",
     "zararDilimYok": "",
     "zararEnAltDilim": "",
     "dogrulaZorunlu": "",
@@ -863,7 +861,8 @@
     "dogrulaNotIpucu_OZEL_ANLASMA": "",
     "dogrulaNotIpucu_DIGER": "",
     "karDurumu": "",
-    "karBasabas": ""
+    "karBasabas": "",
+    "oranDilimdenSapti": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -2437,8 +2436,6 @@
     "eylem_yedekYok": "",
     "baslik_veriSupheli": "",
     "eylem_veriSupheli": "",
-    "baslik_supheliOran": "",
-    "eylem_supheliOran": "",
     "baslik_kanalKodsuzStok": "",
     "eylem_kanalKodsuzStok": "",
     "canEtiketiBilgi": "",

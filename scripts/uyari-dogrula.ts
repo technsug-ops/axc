@@ -34,7 +34,6 @@ import {
   SUPHELI_VERIM,
   SUPHE_OLCUMU,
 } from "../src/lib/uyari/veri-supheli";
-import { SUPHELI_ORAN_ESIGI } from "../src/lib/komisyon/oran-uyarisi";
 import { gecTeslimMi, GEC_TESLIM_GUN, TESLIM_OLCUMU } from "../src/lib/uyari/gec-teslim";
 import {
   DOGRULAMA_SEBEPLERI,
@@ -77,7 +76,6 @@ const bos: UyariOlcumleri = {
   yedekEski: { sayi: 0 },
   yedekYok: { sayi: 0 },
   veriSupheli: { sayi: 0 },
-  supheliOran: { sayi: 0 },
   kanalKodsuzStok: { sayi: 0 },
   hakedisBaglanmamis: { sayi: 0 },
   zararinaSatis: { sayi: 0 },
@@ -119,8 +117,7 @@ console.log("=".repeat(70));
     yedekEski: { sayi: 0 },
     yedekYok: { sayi: 0 },
     veriSupheli: { sayi: 0 },
-    supheliOran: { sayi: 0 },
-    kanalKodsuzStok: { sayi: 0 },
+      kanalKodsuzStok: { sayi: 0 },
   hakedisBaglanmamis: { sayi: 0 },
   zararinaSatis: { sayi: 0 },
   });
@@ -287,8 +284,7 @@ console.log("=".repeat(70));
     yedekEski: { sayi: 0 },
     yedekYok: { sayi: 0 },
     veriSupheli: { sayi: 0 },
-    supheliOran: { sayi: 0 },
-    kanalKodsuzStok: { sayi: 0 },
+      kanalKodsuzStok: { sayi: 0 },
   hakedisBaglanmamis: { sayi: 0 },
   zararinaSatis: { sayi: 0 },
     cevapsizTalep: { sayi: 0 },
@@ -572,25 +568,7 @@ console.log("=".repeat(70));
   }
 }
 
-console.log("");
-console.log("=".repeat(70));
-console.log("F2-C) ŞÜPHELİ ORAN — EŞİK K3'TEN OKUNUYOR");
-console.log("=".repeat(70));
-{
-  /**
-   * ⚠ EŞİK KOPYALANMAMALI. Aynı sayı iki yerde yaşasaydı biri değişip
-   * öteki unutulurdu; form bir şeyi şüpheli sayarken çan başkasını.
-   */
-  const topla = readFileSync("src/lib/uyari/topla.ts", "utf8");
-  kontrol("çan eşiği K3'ten import ediyor", /SUPHELI_ORAN_ESIGI/.test(topla));
-  kontrol("  ...kendi sayısını yazmıyor", !/commissionRate: \{ lt: 3 \}/.test(topla));
-  kontrol("K3 eşiği hâlâ %3", SUPHELI_ORAN_ESIGI === 3);
 
-  /** 2,70 vakası eşiğin altında — yakalanmalı. */
-  kontrol("2,70 eşiğin altında", 2.7 < SUPHELI_ORAN_ESIGI);
-  /** Meşru düşük oran (görülen en düşük 3,6) yakalanmamalı. */
-  kontrol("3,60 eşiğin ÜSTÜNDE (meşru)", 3.6 >= SUPHELI_ORAN_ESIGI);
-}
 
 console.log("");
 console.log("=".repeat(70));
@@ -618,9 +596,6 @@ console.log("=".repeat(70));
   kontrol("  ...ve AYNI gövdeyi çağırıyor", /supheliVeriBulgusu\(/.test(satislar));
   kontrol("  ...süzgeç kimlik listesini uyguluyor", /veri === "supheli"/.test(suzgec));
 
-  kontrol("supheliOran adresi /satislar?oran=supheli", UYARI_ADRESLERI.supheliOran === "/satislar?oran=supheli");
-  kontrol("  ...süzgeç K3 eşiğini kullanıyor", /commissionRate: \{ lt: SUPHELI_ORAN_ESIGI \}/.test(suzgec));
-  kontrol("  ...eşiği kopyalamıyor", !/commissionRate: \{ lt: 3 \}/.test(suzgec));
 
   /** Süzgeç istenmiş ama küme boşsa liste BOŞ çıkmalı — sessiz kayıp yok. */
   kontrol("boş küme 'hepsini göster'e düşmüyor", /supheliIdler \?\? \[\]/.test(suzgec));
@@ -933,10 +908,6 @@ console.log("=".repeat(70));
   kontrol("  ...DİĞER'de onay kilitli", /notEksik/.test(buton));
   kontrol("düğme YALNIZ şüpheli kalemde çiziliyor", /supheliKalemHaritasi\.get\(satis\.id\)/.test(liste));
 
-  /** Kapsam dar: supheliOran doğrulanamaz. */
-  kontrol("kapsam yalnız veriSupheli (oran doğrulanamaz)",
-    !/supheliOran/.test(eylem) && !/supheliOran/.test(buton));
-
   const sz = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
     Satis?: Record<string, string>;
   };
@@ -1013,7 +984,6 @@ console.log("=".repeat(70));
    * düşüyor, Excel süzgeci yok sayıyordu.
    */
   kontrol("veri süzgeci taşınıyor", /veri: p\.veri,/.test(liste));
-  kontrol("oran süzgeci taşınıyor", /oran: p\.oran,/.test(liste));
 
   /** ⚠ AÇIK SIFIR: süzgeç boşaldıysa bu bir BAŞARIDIR. */
   /**
@@ -1036,7 +1006,6 @@ console.log("=".repeat(70));
     "  ...küme hesabı da süzgece bağlı",
     /p\.veri === "supheli"\s*\?\s*await supheliVeriBulgusu/.test(liste),
   );
-  kontrol("  ...oran için de", /bosSupheliOran/.test(liste));
 
   /**
    * ⚠ C2/C3 — FORM SESSİZ KALIYORDU. Ölçüm: stoklu 121 varyant×kanal

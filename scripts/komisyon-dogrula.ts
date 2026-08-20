@@ -38,9 +38,9 @@ import {
   KOMISYON_YUKLEME_EYLEMI,
   yuklemeDetayi,
 } from "../src/lib/komisyon/yukleme-kaydi";
+import type { TarifeDilimi } from "../src/lib/komisyon/tarife-okuyucu";
 import {
-  GORULEN_EN_DUSUK_ORAN,
-  SUPHELI_ORAN_ESIGI,
+  DILIM_TOLERANSI,
   oranUyarisi,
 } from "../src/lib/komisyon/oran-uyarisi";
 import type { KomisyonOkumasi } from "../src/lib/komisyon/model";
@@ -823,52 +823,102 @@ console.log("\nORAN UYARISI (satış formu)");
 // ===========================================================================
 {
   /**
-   * ⚠ 18.08.2026 GERÇEK ZARARINDAN DOĞDU: üç satış %2,70 oranla
-   * kaydedildi, gerçeği %15; kâr ~721 TL fazla göründü. Kanal SKU'su
-   * satıştan SONRA açıldığı için oran forma ELLE yazılmıştı.
+   * ⚠⚠ EŞİK 20.08.2026'DA ÇÜRÜDÜ — TESTLER YENİDEN YAZILDI.
+   *
+   * Eski testler "%2,70 şüpheli DÜŞÜK" diyordu ve YEŞİLDİ. Kullanıcı
+   * düzeltti: o oranlar DOĞRU. Trendyol her Salı komisyon tarifesi
+   * yayımlıyor ve fiyat indirimi karşılığı komisyon indiriyor
+   * ("2.000'e %10, 1.750'ye satarsan %7").
+   *
+   * Eski eşiğin dayanağı gerçek bir ölçümdü ama YANLIŞ POPÜLASYONDAN:
+   * `ChannelSku` tek oranları. Dilim tarifesi bir gün sonra yüklendi ve
+   * oralarda oran çok daha aşağı iniyor.
+   *
+   * ⚠ Bu testler o yüzden değerliydi ama KÖRDÜ: kuralı doğru sınıyorlardı,
+   * kuralın KENDİSİ yanlıştı. Yeşil test, doğru kural demek değildir.
    */
+  const z = (
+    girilen: number | null,
+    onerilen: number | null,
+    dilimler: TarifeDilimi[] | null = null,
+    fiyat: number | null = null,
+  ) => ({ girilen, onerilen, dilimler, fiyat });
 
-  /** ASIL VAKA — kayıtlı oran yokken elle yazılan değer. */
-  kontrol(
-    "kayıtlı oran yoksa UYARIR",
-    oranUyarisi(2.7, null)?.tur === "KAYNAK_YOK",
-  );
+  /** ASIL VAKA — ne kayıt ne tarife varken elle yazılan değer. */
+  kontrol("hiç dayanak yoksa UYARIR", oranUyarisi(z(2.7, null))?.tur === "KAYNAK_YOK");
   kontrol(
     "  ...değer makul olsa BİLE uyarır (dayanağı yok)",
-    oranUyarisi(15, null)?.tur === "KAYNAK_YOK",
+    oranUyarisi(z(15, null))?.tur === "KAYNAK_YOK",
   );
-  /** Boş alan için uyarı YOK — kullanıcı henüz yazmadı. */
-  kontrol("boş alanda uyarı YOK", oranUyarisi(null, null) === null);
-  kontrol("  ...kayıt varken de boşta susar", oranUyarisi(null, 15) === null);
+  kontrol("boş alanda uyarı YOK", oranUyarisi(z(null, null)) === null);
+  kontrol("  ...kayıt varken de boşta susar", oranUyarisi(z(null, 15)) === null);
 
-  /** ŞÜPHELİ DÜŞÜK — eşik ölçülen en düşük orandan (%3,6) türedi. */
-  kontrol("%2,70 şüpheli DÜŞÜK", oranUyarisi(2.7, 15)?.tur === "SUPHELI_DUSUK");
-  kontrol("  ...eşik ölçülen en düşüğün ALTINDA", SUPHELI_ORAN_ESIGI < GORULEN_EN_DUSUK_ORAN);
   /**
-   * SINIR: gerçek en düşük oran %3,6 idi. Eşik %3 olduğu için %3,6
-   * işaretlenmez — gerçek bir oranı yanlışlıkla suçlamayız.
+   * ── DİLİM ÖLÇÜTÜ — ASIL DÜZELTME ────────────────────────────────────
+   * Philips vakası: kayıtlı oran %15, dilimden gelen %2,70. İkisi de
+   * doğru, farklı sorulara cevap. Dilim varsa ölçüt ODUR.
+   */
+  const PHILIPS: TarifeDilimi[] = [
+    { sira: 1, altLimit: 1900, ustLimit: null, oran: 15 },
+    { sira: 2, altLimit: null, ustLimit: 1899.99, oran: 2.7 },
+  ];
+  kontrol(
+    "%2,70 dilimde yazıyorsa UYARI YOK",
+    oranUyarisi(z(2.7, 15, PHILIPS, 1500)) === null,
+  );
+  kontrol(
+    "  ...aynı oran ÜST dilimde SAPMA sayılır",
+    oranUyarisi(z(2.7, 15, PHILIPS, 1958))?.tur === "DILIMDEN_SAPTI",
+  );
+  const sapti = oranUyarisi(z(2.7, 15, PHILIPS, 1958));
+  kontrol(
+    "  ...beklenen oranı söyler",
+    sapti?.tur === "DILIMDEN_SAPTI" && sapti.beklenen === 15,
+  );
+  kontrol(
+    "  ...hangi dilim olduğunu söyler",
+    sapti?.tur === "DILIMDEN_SAPTI" && sapti.dilimSira === 1,
+  );
+  kontrol(
+    "üst dilimde %15 doğru → uyarı YOK",
+    oranUyarisi(z(15, 15, PHILIPS, 1958)) === null,
+  );
+
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: aynı oran (%2,70) bir
+   * fiyatta DOĞRU, başka fiyatta SAPMA. Tek fiyatla sınasaydık "dilim
+   * fiyattan çözülüyor" kuralı hiç sınanmamış olurdu.
+   */
+
+  /** ⚠ DÜŞÜK ORAN ARTIK TEK BAŞINA ŞÜPHE DEĞİL — mekanizma böyle. */
+  kontrol(
+    "dilimde yazan ÇOK düşük oran (%1) bile şüphe değil",
+    oranUyarisi(
+      z(1, 20, [{ sira: 1, altLimit: null, ustLimit: null, oran: 1 }], 500),
+    ) === null,
+  );
+  kontrol("tolerans dar", DILIM_TOLERANSI < 0.5);
+
+  /**
+   * ── TARİFE YOKSA HÜKÜM DAR ──────────────────────────────────────────
+   * Tarifesi elimizde olmayan bir üründe düşük oran YANLIŞ SAYILMAZ:
+   * o hafta indirim tanımlanmış ve dosyası bizde olmayabilir.
    */
   kontrol(
-    "gerçek en düşük oran (%3,6) DÜŞÜK sayılmaz",
-    oranUyarisi(3.6, 3.6)?.tur !== "SUPHELI_DUSUK",
+    "tarife yokken düşük oran SUÇLANMAZ",
+    oranUyarisi(z(2.7, 2.7))?.tur !== "DILIMDEN_SAPTI",
   );
-  kontrol("tam eşik (%3) düşük SAYILMAZ", oranUyarisi(3, 3)?.tur !== "SUPHELI_DUSUK");
-  kontrol("%2,99 düşük sayılır", oranUyarisi(2.99, 15)?.tur === "SUPHELI_DUSUK");
+  kontrol("  ...ve tek başına uyarı üretmez", oranUyarisi(z(2.7, 2.7)) === null);
 
-  /** SAPMA — kayıtlıdan uzaklaşma. */
-  const sapma = oranUyarisi(22, 15);
+  /** SAPMA — tarife yokken kayıtlı orandan uzaklaşma. */
+  const sapma = oranUyarisi(z(22, 15));
   kontrol("büyük sapma UYARIR", sapma?.tur === "ONERIDEN_SAPTI");
   kontrol("  ...farkı söyler", sapma?.tur === "ONERIDEN_SAPTI" && sapma.fark === 7);
   kontrol("  ...kayıtlı oranı söyler", sapma?.tur === "ONERIDEN_SAPTI" && sapma.onerilen === 15);
-  /** Küçük sapma gürültüdür — her satırda uyaran araç okunmaz olur. */
-  kontrol("eşik içi sapma SUSAR", oranUyarisi(18, 15) === null);
-  kontrol("aynı oran SUSAR", oranUyarisi(15, 15) === null);
+  kontrol("eşik içi sapma SUSAR", oranUyarisi(z(18, 15)) === null);
+  kontrol("aynı oran SUSAR", oranUyarisi(z(15, 15)) === null);
 
-  /**
-   * ÖNCELİK: "kaynak yok" en somut kusurdur ve sapmadan ÖNCE gelir;
-   * kayıt yokken "şu kadar saptı" demek anlamsız olurdu.
-   */
-  kontrol("kaynak yok, sapmadan ÖNCE gelir", oranUyarisi(99, null)?.tur === "KAYNAK_YOK");
+  kontrol("kaynak yok, sapmadan ÖNCE gelir", oranUyarisi(z(99, null))?.tur === "KAYNAK_YOK");
 
   /**
    * EKRAN BAĞLI MI — kaynak taranır. Değer testi göremez: saf fonksiyon

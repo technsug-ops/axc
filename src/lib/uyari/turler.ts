@@ -68,12 +68,20 @@ export const UYARI_ANAHTARLARI = [
    */
   "veriSupheli",
   /**
-   * GEÇMİŞ SATIŞTA ŞÜPHELİ ORAN — K3 eşiğinin (`%3`) altında kalan,
-   * K3 yayına girmeden ÖNCE girilmiş kalemler. Kendini söndüren uyarı:
-   * dördü düzeltilince sıfırlanır ve bir daha dolmaz (yeni girişleri K3
-   * formda yakalıyor).
+   * ⚠ `supheliOran` KALDIRILDI 20.08.2026 — ölçütü çürüdü.
+   *
+   * Uyarı "oran %3'ün altındaysa şüpheli" diyordu ve DÖRT DOĞRU KAYDI
+   * suçluyordu. Trendyol her Salı komisyon tarifesi yayımlıyor ve fiyat
+   * indirimi karşılığı komisyon indiriyor; %2,70 o mekanizmanın sonucu.
+   *
+   * Eşiği düşürmek çözmez — indirim oranı ilkece istediği kadar aşağı
+   * inebilir. Doğru ölçüt "oran o ürünün O FİYATTAKİ diliminde yazan oran
+   * mı" ve bu, satış formunda (`oran-uyarisi.ts`) uygulanıyor. GEÇMİŞE
+   * dönük dilim-bilinçli denetim ayrı bir iş; BEKLEYENLER → K9.
+   *
+   * ⚠ YANLIŞ UYARI, UYARISIZLIKTAN KÖTÜDÜR: %100 yanlış pozitif üreten
+   * bir kutu, rozetin tamamına olan güveni götürür.
    */
-  "supheliOran",
   /**
    * STOKTA VAR, HİÇBİR KANALDA KODU YOK. Mal rafta ama hiçbir yerde
    * satışa açık değil.
@@ -134,7 +142,6 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
   yedekYok: "/ayarlar/disa-aktarma",
   /** Süzgeç eşiği `veri-supheli.ts`ten okunur — listede kopyalanmaz. */
   veriSupheli: "/satislar?veri=supheli",
-  supheliOran: "/satislar?oran=supheli",
   /**
    * ⚠ `/kanal-sku?eksik=1` DEĞİL — o süzgeç "oranı eksik KOD" demek,
    * bizim uyarımız "kodu HİÇ OLMAYAN varyant". Oraya götürseydik sayı 2
@@ -176,7 +183,6 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   yedekEski: "kirmizi",
   yedekYok: "kirmizi",
   veriSupheli: "amber",
-  supheliOran: "amber",
   kanalKodsuzStok: "notr",
   /** Muafiyet beyanı — sorun değil, bilgi. Rozete girmez. */
   hakedisBaglanmamis: "notr",
@@ -204,7 +210,6 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   yedekYok: "veri.aktar",
   /** İkisi de NET/oran taşıyor — depocuya kâr bilgisi sızmaz. */
   veriSupheli: "satis.kar.gor",
-  supheliOran: "satis.kar.gor",
   /** Kanal kodu OPERASYONEL — içinde kâr yok, depocu görüp açabilir. */
   kanalKodsuzStok: null,
   hakedisBaglanmamis: "satis.kar.gor",

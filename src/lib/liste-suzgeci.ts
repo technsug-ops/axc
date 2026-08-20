@@ -1,5 +1,4 @@
 import { alimAramaKosulu } from "@/lib/alim-arama";
-import { SUPHELI_ORAN_ESIGI } from "@/lib/komisyon/oran-uyarisi";
 import {
   LISTE_PENCERELERI,
   pencereOlustur,
@@ -102,8 +101,6 @@ const temiz = (deger: string | undefined) => (deger ?? "").trim();
  * çan ile liste ayrı ayrı karar verir, bir gün ayrışırdı.
  */
 export const VERI_SUZGECLERI = ["supheli"] as const;
-/** Komisyon oranı süzgeci — eşik K3'ten (`oran-uyarisi.ts`) okunur. */
-export const ORAN_SUZGECLERI = ["supheli"] as const;
 
 /** Kâr süzgecinin tanıdığı değerler. */
 export const KAR_SUZGECLERI = ["eksik", "tam", "zarar"] as const;
@@ -132,7 +129,6 @@ export function satisKosulu(
   const iptal = temiz(p.iptal);
   const kargo = temiz(p.kargo);
   const veri = temiz(p.veri);
-  const oran = temiz(p.oran);
 
   const kosul: Prisma.SaleWhereInput = {
     // Süzgeç kapalıysa alan HİÇ yazılmaz; `undefined` koşulu Prisma'da
@@ -295,14 +291,7 @@ export function satisKosulu(
      * "Süzgeç yokmuş gibi hepsini göster" sessiz bir kayıp olurdu.
      */
     ...(veri === "supheli" ? { id: { in: supheliIdler ?? [] } } : {}),
-    /**
-     * ŞÜPHELİ ORAN — bu SQL'de ifade edilebiliyor, eşik K3'ten okunuyor.
-     * Kalem seviyesinde `some`: satışın HERHANGİ bir kalemi eşiğin
-     * altındaysa o satış listeye girer.
-     */
-    ...(oran === "supheli"
-      ? { items: { some: { commissionRate: { lt: SUPHELI_ORAN_ESIGI } } } }
-      : {}),
+
   };
 
   return { kosul, pencere };

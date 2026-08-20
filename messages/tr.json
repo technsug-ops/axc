@@ -828,7 +828,6 @@
     "netDusumDeger": "Net düşüm: {adet} adet",
     "komisyonIpucu": "örn. 15",
     "oranKaynakYok": "Bu ürün için kayıtlı komisyon oranı yok — girdiğiniz değer hiçbir kayda dayanmıyor.",
-    "oranSupheliDusuk": "%{oran} çok düşük görünüyor; bugüne kadar görülen en düşük oran %3,6. Kontrol edin.",
     "oranSapti": "Kayıtlı oran %{onerilen}; girdiğiniz değer {fark} puan farklı.",
     "zararUyarisi": "Bu kalem ZARARINA görünüyor — NET-2 yaklaşık {net2} eksi (birim maliyet {maliyet} · satış {satis})",
     "zararAltDilimKurtarir": "{fiyat} yaparsanız komisyon %{oran} dilimine iner ve NET-2 {sonuc} olur — kâra geçer",
@@ -854,7 +853,6 @@
     "dogrulaKalemYok": "Kalem bulunamadı ya da satış iptal edilmiş.",
     "dogrulaSupheliDegil": "Bu kalem şüpheli görünmüyor — doğrulanacak bir şey yok.",
     "bosSupheliVeri": "Şüpheli veri kalmadı ✓",
-    "bosSupheliOran": "Şüpheli komisyon oranı kalmadı ✓",
     "zararDilimYok": "Bu kanalda dilim tarifesi yok — alt dilim önerisi yapılamıyor. (Komisyon tarifesi yüklenirse burada çıkar.)",
     "zararEnAltDilim": "Ürün zaten en alt komisyon diliminde — inecek başka dilim yok.",
     "dogrulaZorunlu": "(zorunlu)",
@@ -863,7 +861,8 @@
     "dogrulaNotIpucu_OZEL_ANLASMA": "örn. toplu alım anlaşması, özel fiyat",
     "dogrulaNotIpucu_DIGER": "Neden olağan dışı? Kısaca yaz.",
     "karDurumu": "Bu satış kârda — NET-2 yaklaşık {net2} (birim maliyet {maliyet} · satış {satis})",
-    "karBasabas": "Bu satış başabaşta — NET-2 sıfır."
+    "karBasabas": "Bu satış başabaşta — NET-2 sıfır.",
+    "oranDilimdenSapti": "Bu fiyatta {dilim}. dilim geçerli ve tarife %{beklenen} diyor — girilen oran farklı."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -2437,8 +2436,6 @@
     "eylem_yedekYok": "Hemen yedek al — depo boş ya da okunamıyor",
     "baslik_veriSupheli": "{sayi} satış kaleminde veri şüpheli",
     "eylem_veriSupheli": "Maliyet ya da kâr olağan aralığın dışında — kaydı kontrol et",
-    "baslik_supheliOran": "{sayi} satış kaleminde komisyon oranı şüpheli",
-    "eylem_supheliOran": "Oran eşiğin altında — elle girilmiş olabilir, tarifeyle karşılaştır",
     "baslik_kanalKodsuzStok": "{sayi} üründe stok var, kanal kodu yok",
     "eylem_kanalKodsuzStok": "Mal rafta ama hiçbir kanalda satışa açık değil",
     "canEtiketiBilgi": "Uyarı yok — bilgi niteliğinde kayıt var",
