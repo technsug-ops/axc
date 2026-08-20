@@ -229,8 +229,13 @@ async function main() {
   let ayni = 0;
 
   /** Kapsam: rapordaki adet ile bizim bulduğumuz kalem sayısı. */
-  const kapsam: { urun: string; pencere: string; raporAdet: number; bizde: number }[] =
-    [];
+  const kapsam: {
+    urun: string;
+    pencere: string;
+    raporAdet: number;
+    bizde: number;
+    raporCiro: number;
+  }[] = [];
 
   for (const r of rapor) {
     const bizimkiler = kalemler.filter((k) => {
@@ -262,6 +267,7 @@ async function main() {
       pencere: g(r.bas) + ".." + g(r.bit),
       raporAdet: r.adet,
       bizde: kesin.reduce((t, k) => t + k.quantity, 0),
+      raporCiro: r.ciro,
     });
 
     for (const k of kesin) {
@@ -389,6 +395,25 @@ async function main() {
   console.log("  bizde eşleşen adet    " + bizdeToplam);
   console.log("  ⚠ FARK " + (raporToplam - bizdeToplam) + " adet — bu HATA DEĞİL,");
   console.log("    kapsam boşluğudur: kanal sattığımızı söylüyor, bizde kaydı yok.");
+
+  /**
+   * ⚠ BOŞLUĞUN LİRA KARŞILIĞI — sayı olmadan büyüklük konuşulamaz.
+   *
+   * Kaydı hiç olmayan satırların cirosu toplanıyor. Kısmi kayıtlı
+   * satırlar (rapor 12 / bizde 3) DIŞARIDA bırakılıyor: oradaki cironun
+   * ne kadarının bizde olduğunu satır düzeyinde bilmiyoruz ve tahmin
+   * etmek uydurmak olurdu. Yani bu rakam boşluğun ALT SINIRIDIR.
+   */
+  const hicYok = kapsam.filter((k) => k.bizde === 0);
+  const kayipCiro = hicYok.reduce((t, k) => t + k.raporCiro, 0);
+  const kismi = kapsam.filter((k) => k.bizde > 0 && k.raporAdet > k.bizde).length;
+  console.log("");
+  console.log(
+    "  KAYDI HİÇ OLMAYAN satır: " + hicYok.length + " · CİRO " + p(kayipCiro),
+  );
+  console.log("    ⚠ ALT SINIR: kısmi kayıtlı " + kismi + " satır bu toplama");
+  console.log("      GİRMEDİ — oradaki cironun ne kadarı bizde, satır");
+  console.log("      düzeyinde bilinmiyor ve tahmin edilmiyor.");
   if (bosluk.length > 0) {
     console.log("");
     for (const k of bosluk.slice(0, 15))
