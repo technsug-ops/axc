@@ -709,6 +709,59 @@ tüketen yoktur; maliyet damgaları sahipsiz kalır.
 > verir — kayıt ciroya/NET'e/hakedişe girmez, stok DOĞRU döner, geri
 > alınabilir ve iz bırakır.
 
+### KAYDETME KARARI, TÜKETİCİSİ DOĞDUĞUNDA VERİLİR (KESİN KURAL)
+
+_Mimar kararı 20.08.2026._ Dış bir veri elimize geçtiğinde ilk soru "nereye
+kaydedelim" değildir. **Sığması, kaydedilmesi gerektiğini göstermez** — ve
+karıştırma riski taşıyorsa sığması bir tehlikedir.
+
+**Vaka:** Trendyol "İndirimli Komisyon Tarifeleri" raporu (74 satır).
+Satır şekli `KomisyonTarifeKalemi`'ne **birebir oturuyordu**: `barkod` ·
+`dilimSirasi` · `ustLimit` · `oran`, ve `altLimit` zaten nullable. Şemaya
+girmek için hiçbir engel yoktu.
+
+**Ama satırlar KISMİ:** rapor yalnız satış OLAN aralıkları taşıyor (74
+satırın 71'inde tek aralık dolu). Aynı tabloya konsaydı
+`satisTarihiTarifesi` onları **tam tarife sanıp** forma verirdi ve
+`dilimBul` yanlış dilim döndürürdü. Yani kaydetmek, ayırt edici bir sütun
+(`tur: YAYIN | GERCEKLESEN`) **zorunlu** kılardı.
+
+Ve ölçüm asıl cevabı verdi: dosya bugün **bizim hiçbir satışımızı
+kapsamıyor** (`0/39`). Kaydetseydik hiçbir sorgunun kullanmadığı 74 satır
+ekler, bozma riskini **bedavaya** almış olurduk.
+
+> **ÖLÇÜT:** bu veriyi BUGÜN kim okuyacak? Okuyanı yoksa kaydedilmez —
+> betik okuma anında okur, karşılaştırır, raporlar. Tüketici doğduğu gün
+> kaydetme kararı yeniden verilir, ve o gün de **yeni tablo değil, tek
+> sütun** yeterli olabilir.
+
+_K2'nin (yeni tablo yerine `AuditLog`) veri tarafındaki kardeşi: orada
+"mevcut yapı taşıyor mu" soruldu, burada "taşıması gerekiyor mu"._
+
+### DENETİM İÇİN "NE OLDU" DOĞRU REFERANSTIR, "NE OLACAKTI" DEĞİL (KESİN KURAL)
+
+_Ders 20.08.2026._ Bir kaydın doğruluğunu sınarken referans, **kuralın
+kendisi değil, kuralın FİİLEN nasıl uygulandığıdır.** İkisi aynı sanılırsa
+doğru kayıt yanlış ilan edilir.
+
+**Vaka — iki dosya, iki farklı iş:**
+
+| Dosya | Ne der | Neye yarar |
+|---|---|---|
+| Salı/Cuma **tarifesi** | _"şu aralıkta şu oranı alırım"_ · ileri, tam dilimli | **simülasyon** (fiyat denemesi) |
+| **İndirimli Komisyon raporu** | _"sen şu aralıkta sattın, şu oranı uyguladım"_ · geçmiş, kısmi | **denetim** |
+
+Teşhis yapıdan çıktı: raporda aralıklar **yalnız satış olan yerlerde**
+dolu. Yayımlanan bir tarifede her ürünün bütün dilimleri olurdu. **Bu bir
+tarife değil, fatura özeti.**
+
+`%2,70` vakası tam bunun kurbanıydı: yayımlanan orana (`%15`) bakan bir
+denetim onu üç kez şüpheli ilan etti; raporun `Komisyon Değişimi` kolonu
+(`%12.00 → %3.3`) mekanizmayı tek satırda açıkladı.
+
+> Denetim referansı seçilirken sorulur: **bu kaynak neyi kaydediyor —
+> niyeti mi, sonucu mu?** Para söz konusuysa sonuç kazanır.
+
 ### AYNI VERİ, FARKLI SORUYA FARKLI PENCEREDEN BAKAR (KESİN KURAL)
 
 _Mimar kararı 20.08.2026._ Zamana bağlı bir referans (tarife, kur, oran)
