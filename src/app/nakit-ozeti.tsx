@@ -80,8 +80,19 @@ export async function NakitOzeti({
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col gap-3">
-        {/* Dar kartta üç kutu: dolgu küçük, tutar text-xl ve break-words —
-            ₺210.942,81 gibi uzun tutar kutunun dışına taşmasın (15.08.2026). */}
+        {/* ── RAKAM BOYUTU — AKIŞKAN, SABİT DEĞİL ────────────────────────
+            Kullanıcı 21.08.2026: "rakamları sığacak kadar büyütüp ortala".
+
+            ⚠ SABİT BÜYÜK PUNTO YAZILAMAZ. 15.08.2026'da tam tersi bir hata
+            yaşandı: `₺210.942,81` gibi uzun tutar kutunun DIŞINA taştı ve
+            çare punto küçültmek olmuştu. Sabit `text-3xl` yazsaydım o
+            hatayı geri getirirdim — dar ekranda kutu 3 sütuna bölünüyor.
+
+            Çare `clamp`: taban `1.125rem` (eski `text-xl` civarı, dar
+            ekranda güvenli), tavan `1.875rem`, arası viewport'la büyüyor.
+            Yani geniş ekranda rakam kutuyu dolduruyor, telefonda taşmıyor.
+            `break-words` yerinde duruyor — clamp taşmayı azaltır, garanti
+            etmez. */}
         {/* ⚠ `flex-1` — üç kutu kalan yüksekliği paylaşır ve büyür. */}
         <div className="grid flex-1 gap-2 sm:grid-cols-3">
           {/* ÇIKACAK amber (uyarı), GİRECEK mavi (öngörü) — renk sistemi
@@ -98,12 +109,12 @@ export async function NakitOzeti({
           />
           {/* NET POZİSYON: açıkta kırmızı, fazlada yeşil, sıfırda nötr.
               Kenarlık da renkleniyor ama ZEMİN pastel kalıyor (kısıt #2). */}
-          <div className="flex min-w-0 flex-col justify-center gap-1 rounded-lg border p-3">
+          <div className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border p-3 text-center">
             <div className="text-muted-foreground text-xs">
               {t("netPozisyon")}
             </div>
             <div
-              className={`flex flex-wrap items-baseline gap-1 text-xl font-semibold break-words tabular-nums ${DURUM_YAZISI[netDurumu]}`}
+              className={`flex flex-wrap items-baseline justify-center gap-1 text-[clamp(1.125rem,2.1vw,1.875rem)] leading-tight font-semibold break-words tabular-nums ${DURUM_YAZISI[netDurumu]}`}
             >
               {para(takvim.netPozisyon)}
               {/* RENK TEK BAŞINA KONUŞMAZ (kısıt #1): durumu kelime söyler. */}
@@ -148,11 +159,12 @@ function Kutu({
   durum: DurumRengi;
 }) {
   return (
-    /* Dikeyde ORTALI: kutu büyüdüğünde rakam üstte asılı kalmasın. */
-    <div className="flex min-w-0 flex-col justify-center gap-1 rounded-lg border p-3">
+    /* Dikeyde VE yatayda ORTALI: kutu büyüdüğünde rakam köşede asılı
+       kalmasın. Punto akışkan — gerekçe yukarıdaki blokta. */
+    <div className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border p-3 text-center">
       <div className="text-muted-foreground text-xs">{etiket}</div>
       <div
-        className={`text-xl font-semibold break-words tabular-nums ${DURUM_YAZISI[durum]}`}
+        className={`text-[clamp(1.125rem,2.1vw,1.875rem)] leading-tight font-semibold break-words tabular-nums ${DURUM_YAZISI[durum]}`}
       >
         {deger}
       </div>
