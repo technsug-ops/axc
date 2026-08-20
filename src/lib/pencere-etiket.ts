@@ -12,6 +12,7 @@ import type { PencereTuru } from "@/lib/donem";
  */
 export const PENCERE_ANAHTARI: Record<PencereTuru, string> = {
   BUGUN: "bugun",
+  DUN: "dun",
   BU_HAFTA: "buHafta",
   SON_15_GUN: "son15Gun",
   SON_30_GUN: "son30Gun",

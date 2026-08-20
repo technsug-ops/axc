@@ -106,6 +106,42 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
   const bos = pencereCoz({}, AN);
   kontrol("parametre yoksa zaman süzgeci KAPALI", bos.tur === "" && bos.aralik === undefined, bos);
 
+  /**
+   * ── DÜN — TEK GÜN, BUGÜNÜ İÇERMEZ (kullanıcı isteği 21.08.2026) ────────
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: DÜN ile BUGUN yan yana
+   * sınanıyor. Yalnız "dün 12 Ağustos'ta başlar" yazsaydım, `sonGun`u
+   * bugünde bırakan bir hata (yani dünü İKİ GÜNE çeviren hata) yeşil
+   * kalırdı — başlangıç yine doğru olurdu.
+   */
+  const dun = pencereCoz({ pencere: "DUN" }, AN);
+  kontrol("DUN tanınır", dun.tur === "DUN" && dun.aralik !== undefined, dun.tur);
+  kontrol(
+    "DÜN 12 Ağustos'ta başlar (AN = 13 Ağustos)",
+    dun.pencere !== null && gunMetni(dun.pencere.baslangic) === "2026-08-12",
+    dun.pencere && gunMetni(dun.pencere.baslangic),
+  );
+  kontrol(
+    "DÜN 12 Ağustos'ta BİTER — bugünü İÇERMEZ",
+    dun.pencere !== null && gunMetni(dun.pencere.sonGun) === "2026-08-12",
+    dun.pencere && gunMetni(dun.pencere.sonGun),
+  );
+  kontrol(
+    "DÜN tek gündür (bitişHariç = bugün)",
+    dun.pencere !== null && gunMetni(dun.pencere.bitisHaric) === "2026-08-13",
+    dun.pencere && gunMetni(dun.pencere.bitisHaric),
+  );
+  const bugunP = pencereCoz({ pencere: "BUGUN" }, AN);
+  kontrol(
+    "DÜN ile BUGÜN çakışmıyor (dün biter, bugün başlar)",
+    dun.pencere !== null &&
+      bugunP.pencere !== null &&
+      dun.pencere.bitisHaric.getTime() === bugunP.pencere.baslangic.getTime(),
+    {
+      dunBitis: dun.pencere && gunMetni(dun.pencere.bitisHaric),
+      bugunBas: bugunP.pencere && gunMetni(bugunP.pencere.baslangic),
+    },
+  );
+
   const buAy = pencereCoz({ pencere: "BU_AY" }, AN);
   kontrol("BU_AY tanınır", buAy.tur === "BU_AY" && buAy.aralik !== undefined);
   kontrol(

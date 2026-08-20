@@ -36,6 +36,14 @@ import { IS_SAAT_DILIMI } from "@/i18n/ayarlar";
  */
 export const PENCERE_TURLERI = [
   "BUGUN",
+  /**
+   * DÜN — kullanıcı isteği 21.08.2026.
+   *
+   * ⚠ TEK GÜNLÜK VE KAYAN DEĞİL: `[dün, dün]`. "Son 2 gün" DEĞİL — bugünü
+   * içermez. Operasyon "dün ne oldu" diye soruyor; bugünü de katan bir
+   * pencere o soruya cevap vermez, iki günü toplar.
+   */
+  "DUN",
   "BU_HAFTA",
   "SON_15_GUN",
   "SON_30_GUN",
@@ -64,6 +72,7 @@ export const RAPOR_PENCERELERI = [
 /** Liste ekranlarının menüsü — operasyon günlük çalışır, dar aralık ister. */
 export const LISTE_PENCERELERI = [
   "BUGUN",
+  "DUN",
   "BU_HAFTA",
   "SON_15_GUN",
   "SON_30_GUN",
@@ -258,6 +267,17 @@ export function pencereOlustur(
     const geriGun = tur === "BUGUN" ? 0 : tur === "SON_15_GUN" ? 14 : 29;
     const baslangic = gunEkle(sonGun, -geriGun);
     return { tur, baslangic, bitisHaric: gunEkle(sonGun, 1), sonGun };
+  }
+
+  /**
+   * --- DÜN: TEK GÜN, BUGÜNÜ İÇERMEZ ---
+   * ⚠ Yukarıdaki blokla BİRLEŞTİRİLMEDİ. Orası "bugünden geriye kayan,
+   * bugün DAHİL" penceredir; dün ise bugünü DIŞARIDA bırakır. Aynı if'e
+   * eklenseydi `sonGun` bugün kalır ve "dün" iki günü kapsardı.
+   */
+  if (tur === "DUN") {
+    const dun = gunEkle(sonGun, -1);
+    return { tur, baslangic: dun, bitisHaric: sonGun, sonGun: dun };
   }
 
   // --- HAFTA: PAZARTESİ başlar (Türkiye'de hafta böyle konuşulur) ---
