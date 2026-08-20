@@ -108,21 +108,19 @@ export async function NakitOzeti({
             durum="bilgi"
           />
           {/* NET POZİSYON: açıkta kırmızı, fazlada yeşil, sıfırda nötr.
-              Kenarlık da renkleniyor ama ZEMİN pastel kalıyor (kısıt #2). */}
-          <div className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border p-3 text-center">
-            <div className="text-muted-foreground text-xs">
-              {t("netPozisyon")}
-            </div>
-            <div
-              className={`flex flex-wrap items-baseline justify-center gap-1 text-[clamp(1.125rem,2.1vw,1.875rem)] leading-tight font-semibold break-words tabular-nums ${DURUM_YAZISI[netDurumu]}`}
-            >
-              {para(takvim.netPozisyon)}
-              {/* RENK TEK BAŞINA KONUŞMAZ (kısıt #1): durumu kelime söyler. */}
+              Kenarlık da renkleniyor ama ZEMİN pastel kalıyor (kısıt #2).
+              ⚠ ARTIK AYNI `Kutu` — rozet ALTA, rakam hizası bozulmasın. */}
+          <Kutu
+            etiket={t("netPozisyon")}
+            deger={para(takvim.netPozisyon)}
+            durum={netDurumu}
+            /* RENK TEK BAŞINA KONUŞMAZ (kısıt #1): durumu kelime söyler. */
+            rozet={
               <DurumRozeti durum={netDurumu} isaretsiz>
                 {acikMi ? t("acikVarKisa") : t("acikYokKisa")}
               </DurumRozeti>
-            </div>
-          </div>
+            }
+          />
         </div>
 
         {/* UYARI SATIRI — yalnız gerçekten bir şey varsa çıkar. Panelde
@@ -153,14 +151,29 @@ function Kutu({
   etiket,
   deger,
   durum,
+  rozet,
 }: {
   etiket: string;
   deger: string;
   durum: DurumRengi;
+  /** Rakamın ALTINDA duran işaret — yalnız net pozisyonda var. */
+  rozet?: React.ReactNode;
 }) {
   return (
-    /* Dikeyde VE yatayda ORTALI: kutu büyüdüğünde rakam köşede asılı
-       kalmasın. Punto akışkan — gerekçe yukarıdaki blokta. */
+    /**
+     * ── ÜÇ SATIRLI SABİT İSKELET — RAKAMLAR AYNI HİZADA ────────────────────
+     * ⚠ VAKA 21.08.2026: net pozisyon kutusunda rozet rakamla AYNI satırda
+     * duruyordu; dar sütunda alt satıra sarınca içerik uzuyor ve kutu
+     * dikeyde ortalı olduğu için RAKAM YUKARI KAYIYORDU. Üç kutunun rakamı
+     * aynı hizada durmuyordu.
+     *
+     * Çare: rozet kendi satırına alındı ve o satır ÜÇ KUTUDA DA ayrıldı
+     * (`min-h-6`), rozeti olmayanlarda boş duruyor. Böylece etiket ve rakam
+     * her kutuda aynı yükseklikte başlıyor.
+     *
+     * Kullanıcı onayı: _"fazla yazısı biraz altta olabilir, problem yok"_ —
+     * yani hizayı rozet değil RAKAM belirliyor.
+     */
     <div className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border p-3 text-center">
       <div className="text-muted-foreground text-xs">{etiket}</div>
       <div
@@ -168,6 +181,9 @@ function Kutu({
       >
         {deger}
       </div>
+      {/* ⚠ SATIR HER KUTUDA AYRILIR — boşken bile yer tutar, yoksa rozetli
+          kutunun rakamı ötekilerden kayar. */}
+      <div className="flex min-h-6 items-center">{rozet}</div>
     </div>
   );
 }
