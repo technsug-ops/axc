@@ -619,6 +619,35 @@ _K6'nın (veri şüpheli → DOĞRULANDI) form içindeki kardeşi. Aradaki fark:
 K6 geçmiş bir kaydı susturur ve kaydın HÂLİNE bağlanır; bu, kayıt
 oluşurken sorar ve o SİPARİŞE bağlanır._
 
+### AYNI VERİ, FARKLI SORUYA FARKLI PENCEREDEN BAKAR (KESİN KURAL)
+
+_Mimar kararı 20.08.2026._ Zamana bağlı bir referans (tarife, kur, oran)
+sorgulanırken **hangi pencerenin doğru olduğu, sorunun kendisine bağlıdır.**
+Tek bir "en güncel" cevabı her yere uygulamak, geçmişi bugünün gözlüğüyle
+okumaktır.
+
+| Soru | Doğru pencere |
+|---|---|
+| _"bugün ne yapayım"_ (fiyat denemesi, öneri) | **en yeni** |
+| _"o gün ne geçerliydi"_ (kayıt girişi, denetim) | **kaydın tarihi** |
+
+**Vaka:** komisyon tabanı en yeni tarife penceresinden okunuyordu. Kullanıcı
+bildirdi ki farklı dönemlerde **%1'lik kampanyalar** da olmuş — temmuz
+satışına girilen %1, ağustos tabanıyla (%2,7) kıyaslanıp **doğru bir oran
+şüpheli** ilan edilecekti.
+
+Ölçüm sorunun boyutunu verdi: yüklü pencere **1**, satışlar 17.06–20.08 ve
+**54 satışın yalnız 24'ü** o pencereye düşüyor.
+
+> **KAPSAYAN PENCERE YOKSA HÜKÜM VERİLMEZ.** "En yakınına yaklaşık bak"
+> demek, bilmediğimiz bir dönem hakkında iddia kurmaktır. Susmak, yanlış
+> cevaptan iyidir. _("Sistem, kendi defterinde takip etmediği şey hakkında
+> iddia kurmaz" kuralının zaman eksenindeki hâli.)_
+
+⚠ Aynı veriyi iki ekran farklı pencereden okuyorsa bu bir TUTARSIZLIK
+DEĞİLDİR — iki farklı soruya iki doğru cevaptır. Ama **hangi ekranın hangi
+soruyu sorduğu kodda yazılı olmalıdır**, yoksa biri ötekine "düzeltilir".
+
 ### MERDİVEN BASAMAKLARI ÖLÇÜMLE ELENİR, TERCİHLE DEĞİL (KESİN KURAL)
 
 _Mimar kararı 20.08.2026._ "Şema değişikliği en pahalı çözümdür" kuralının
