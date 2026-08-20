@@ -842,7 +842,8 @@ console.log("\nORAN UYARISI (satış formu)");
     onerilen: number | null,
     dilimler: TarifeDilimi[] | null = null,
     fiyat: number | null = null,
-  ) => ({ girilen, onerilen, dilimler, fiyat });
+    tarifeTabani: number | null = null,
+  ) => ({ girilen, onerilen, dilimler, fiyat, tarifeTabani });
 
   /** ASIL VAKA — ne kayıt ne tarife varken elle yazılan değer. */
   kontrol("hiç dayanak yoksa UYARIR", oranUyarisi(z(2.7, null))?.tur === "KAYNAK_YOK");
@@ -890,14 +891,61 @@ console.log("\nORAN UYARISI (satış formu)");
    * fiyattan çözülüyor" kuralı hiç sınanmamış olurdu.
    */
 
-  /** ⚠ DÜŞÜK ORAN ARTIK TEK BAŞINA ŞÜPHE DEĞİL — mekanizma böyle. */
+  /** ⚠ DİLİMDE YAZAN ORAN NE KADAR DÜŞÜK OLURSA OLSUN ŞÜPHE DEĞİL. */
   kontrol(
-    "dilimde yazan ÇOK düşük oran (%1) bile şüphe değil",
+    "dilimde yazan ÇOK düşük oran (%1) şüphe değil",
     oranUyarisi(
-      z(1, 20, [{ sira: 1, altLimit: null, ustLimit: null, oran: 1 }], 500),
+      z(1, 20, [{ sira: 1, altLimit: null, ustLimit: null, oran: 1 }], 500, 2),
     ) === null,
   );
   kontrol("tolerans dar", DILIM_TOLERANSI < 0.5);
+
+  /**
+   * ── ŞÜPHELİ DÜŞÜK — TABAN VERİDEN ─────────────────────────────────────
+   * ⚠ Kullanıcı kararı 20.08.2026: uyarı KALSIN ama tarifeyi baz alsın.
+   * Taban, o kanalın YÜKLÜ TARİFESİNDEKİ en düşük orandır — sabit sayı
+   * değil. Tarife her yüklendiğinde kendiliğinden tazelenir.
+   */
+  const dusuk = oranUyarisi(z(1.2, 15, null, 1500, 2.7));
+  kontrol("tarife tabanının ALTI şüpheli", dusuk?.tur === "SUPHELI_DUSUK");
+  kontrol("  ...tabanı söylüyor", dusuk?.tur === "SUPHELI_DUSUK" && dusuk.taban === 2.7);
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: aynı %2,70 taban
+   * ALTINDA değil ÜSTÜNDE (eşit) — şüphe yok. Eski sabit eşik (%3) tam
+   * burada yanılıyordu.
+   */
+  /**
+   * ⚠ İLK TEST YANLIŞ ŞEY BEKLEDİ: tabanın kendisinde `null` bekliyordu,
+   * oysa oradan `ONERIDEN_SAPTI` dönüyor ve bu DOĞRU — kayıtlı oran %15
+   * iken %2,70 yazmak gerçekten bir sapmadır ve söylenmelidir. Sınanacak
+   * şey "hiç uyarı yok" değil, "ŞÜPHELİ DÜŞÜK değil".
+   */
+  kontrol(
+    "tabanın KENDİSİ şüpheli DÜŞÜK değil",
+    oranUyarisi(z(2.7, 15, null, 1500, 2.7))?.tur !== "SUPHELI_DUSUK",
+  );
+  kontrol(
+    "  ...tabanın üstü de değil",
+    oranUyarisi(z(4, 15, null, 1500, 2.7))?.tur !== "SUPHELI_DUSUK",
+  );
+  kontrol(
+    "  ...ama kayıtlı orandan sapma SÖYLENİR",
+    oranUyarisi(z(2.7, 15, null, 1500, 2.7))?.tur === "ONERIDEN_SAPTI",
+  );
+
+  /** ⚠ TARİFE YOKSA DÜŞÜKLÜK HÜKMÜ VERİLMEZ — taban yok, ölçüt yok. */
+  kontrol(
+    "taban yokken düşüklük hükmü YOK",
+    oranUyarisi(z(0.5, 15, null, 1500, null))?.tur !== "SUPHELI_DUSUK",
+  );
+
+  /** ⚠ DİLİM KIYASI ÖNCE GELİR: dilimde yazan oran tabanın altında olsa bile doğrudur. */
+  kontrol(
+    "dilim oranı tabanın altında olsa BİLE şüphe değil",
+    oranUyarisi(
+      z(1, 15, [{ sira: 1, altLimit: null, ustLimit: null, oran: 1 }], 500, 2.7),
+    ) === null,
+  );
 
   /**
    * ── TARİFE YOKSA HÜKÜM DAR ──────────────────────────────────────────
@@ -934,6 +982,45 @@ console.log("\nORAN UYARISI (satış formu)");
    */
   kontrol('komisyon yer tutucusu "0" DEĞİL', !/placeholder="0"/.test(form));
   kontrol("  ...sözlükten geliyor", /placeholder=\{t\("komisyonIpucu"\)\}/.test(form));
+
+  /**
+   * ── İSTİSNA AKIŞI — SOR, ISRAR EDERSE GEÇ ─────────────────────────────
+   * ⚠ Kullanıcı kararı 20.08.2026: uyarı kaldırılsın istemedi, ISRAR
+   * mekanizması istedi. Kural zayıflamıyor — eşik yerinde, uyarı her
+   * seferinde çıkıyor; değişen tek şey o SİPARİŞ için açık onay ve
+   * onun kayda geçmesi.
+   */
+  const bilgiKaynak = readFileSync("src/app/satislar/kalem-bilgisi.ts", "utf8");
+  kontrol(
+    "taban VERİDEN ölçülüyor (tarifenin en düşüğü)",
+    /_min: \{ oran: true \}/.test(bilgiKaynak),
+  );
+  kontrol(
+    "  ...en YENİ tarifeden",
+    /orderBy: \{ pencereBaslangic: "desc" \}/.test(bilgiKaynak),
+  );
+  kontrol("  ...forma taşınıyor", /tarifeTabani: kalem\.tarifeTabani/.test(form));
+  kontrol("şüpheli düşükte ONAY kutusu çıkıyor", /oranIstisnaOnayi/.test(form));
+  kontrol(
+    "  ...yalnız SUPHELI_DUSUK halinde",
+    /const supheli = uyari\.tur === "SUPHELI_DUSUK"/.test(form),
+  );
+  kontrol("onaylanmadan kayıt İLERLEMİYOR", /onayBekleyen/.test(form));
+  /** ⚠ SESSİZ KİLİTLİ DÜĞME YASAK (İlke #5) — sebebi ekranda yazar. */
+  kontrol("  ...ve sebebi ekranda YAZIYOR", /oranOnayBekliyor/.test(form));
+  kontrol("onay kayda gidiyor", /oranIstisnasi: k\.oranIstisnasi/.test(form));
+
+  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Satis?: Record<string, string>;
+  };
+  for (const a of [
+    "oranSupheliDusuk",
+    "oranIstisnaOnayi",
+    "oranOnayBekliyor",
+    "oranDilimdenSapti",
+  ]) {
+    kontrol(`  sözlük: ${a}`, (sozluk.Satis?.[a] ?? "").length > 0);
+  }
 }
 
 // ===========================================================================

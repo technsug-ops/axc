@@ -24,10 +24,17 @@ import { dilimBul, type TarifeDilimi } from "./tarife-okuyucu";
  *  oralarda oran çok daha aşağı iniyor (Fiorino: %21 → %8,4 → %4,5 → %4,2).
  *  Eşik, ölçüldüğü kümenin dışına uygulandı.
  *
- *  ── VE HİÇBİR SAYI BU İŞİ YAPAMAZ ───────────────────────────────────────
- *  Eşiği %2'ye çekmek de çözmez: indirim mekanizması oranı ilkece istediği
- *  kadar aşağı çekebilir. "Düşük oran şüphelidir" cümlesi mekanizmayla
- *  çelişiyor. Bu yüzden eşik DÜŞÜRÜLMEDİ, **KALDIRILDI.**
+ *  ── SABİT SAYI BU İŞİ YAPAMAZ — AMA TABAN VERİDEN GELİRSE YAPAR ─────────
+ *  Eşiği %2'ye çekmek çözmezdi: indirim mekanizması oranı ilkece istediği
+ *  kadar aşağı çekebilir. Bu yüzden SABİT eşik kaldırıldı.
+ *
+ *  Yerine **veriden gelen taban** kondu (kullanıcı kararı 20.08.2026):
+ *  o kanalın YÜKLÜ TARİFESİNDE görülmüş en düşük oran. Artık eşik doğru
+ *  popülasyondan ölçülüyor ve tarife her yüklendiğinde KENDİLİĞİNDEN
+ *  tazeleniyor — bir daha "18.08'de ölçtüm, 19.08'de küme değişti"
+ *  durumuna düşülmez.
+ *
+ *  Tarife hiç yoksa taban da yoktur ve **düşüklük hükmü verilmez.**
  *
  *  ── DOĞRU ÖLÇÜT: ORANIN KENDİ TARİFESİYLE KARŞILAŞTIRILMASI ─────────────
  *  Soru "oran düşük mü" değil, **"oran o ürünün O FİYATTAKİ diliminde
@@ -62,10 +69,20 @@ export type OranZemini = {
   dilimler: TarifeDilimi[] | null;
   /** Formdaki birim satış fiyatı — dilimi çözmek için. Yoksa null. */
   fiyat: number | null;
+  /**
+   * ⚠ TABAN VERİDEN GELİR, SABİT DEĞİL.
+   * O kanalın yüklü tarifesindeki EN DÜŞÜK oran. Bunun altı, kanalın
+   * hiçbir ürün için yayımlamadığı bir orandır — indirim mekanizması bile
+   * oraya inmiyor demektir.
+   *
+   * Tarife yoksa `null` ve düşüklük hükmü VERİLMEZ.
+   */
+  tarifeTabani: number | null;
 };
 
 export type OranUyarisi =
   | { tur: "KAYNAK_YOK" }
+  | { tur: "SUPHELI_DUSUK"; girilen: number; taban: number }
   | {
       tur: "DILIMDEN_SAPTI";
       girilen: number;
@@ -84,14 +101,14 @@ export type OranUyarisi =
  * %15, dilimden gelen %2,70 — ikisi de doğru, farklı sorulara).
  */
 export function oranUyarisi(zemin: OranZemini): OranUyarisi | null {
-  const { girilen, onerilen, dilimler, fiyat } = zemin;
+  const { girilen, onerilen, dilimler, fiyat, tarifeTabani } = zemin;
 
   /**
    * ⚠ ÖNCE "KAYNAK VAR MIYDI". Ne kanal kaydı ne tarife varsa kullanıcı
    * KÖRÜNE yazıyor demektir; asıl vaka buydu ve hâlâ geçerli.
    */
   const tarifeVar = dilimler !== null && dilimler.length > 0;
-  if (onerilen === null && !tarifeVar) {
+  if (onerilen === null && !tarifeVar && tarifeTabani === null) {
     return girilen === null ? null : { tur: "KAYNAK_YOK" };
   }
 
@@ -118,10 +135,22 @@ export function oranUyarisi(zemin: OranZemini): OranUyarisi | null {
   }
 
   /**
-   * ── TARİFE YOK: kanal SKU'suyla kıyas ─────────────────────────────────
-   * ⚠ BURADA "DÜŞÜK ORAN" HÜKMÜ YOK. Tarifesi elimizde olmayan bir ürünün
-   * oranının düşük olması, yanlış olduğunu göstermez — o hafta indirim
-   * tanımlanmış olabilir ve dosyası bizde olmayabilir.
+   * ── TARİFE TABANININ ALTI — ŞÜPHELİ DÜŞÜK ─────────────────────────────
+   * ⚠ ÖLÇÜT SABİT SAYI DEĞİL, KANALIN KENDİ TARİFESİ. Taban, o kanalın
+   * yüklü tarifesindeki en düşük orandır; altına inmek, kanalın HİÇBİR
+   * ürün için yayımlamadığı bir oran demektir.
+   *
+   * Bu, dilim kıyasından SONRA gelir: dilimde yazan oran ne kadar düşük
+   * olursa olsun doğrudur ve yukarıda zaten `null` dönmüştür.
+   */
+  if (tarifeTabani !== null && girilen < tarifeTabani) {
+    return { tur: "SUPHELI_DUSUK", girilen, taban: tarifeTabani };
+  }
+
+  /**
+   * ── SON: kanal SKU'suyla kıyas ────────────────────────────────────────
+   * Tarife hiç yoksa buraya düşülür ve DÜŞÜKLÜK hükmü verilmez — o hafta
+   * indirim tanımlanmış, dosyası bizde olmayabilir.
    */
   if (onerilen === null) return { tur: "KAYNAK_YOK" };
 

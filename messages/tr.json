@@ -862,7 +862,10 @@
     "dogrulaNotIpucu_DIGER": "Neden olağan dışı? Kısaca yaz.",
     "karDurumu": "Bu satış kârda — NET-2 yaklaşık {net2} (birim maliyet {maliyet} · satış {satis})",
     "karBasabas": "Bu satış başabaşta — NET-2 sıfır.",
-    "oranDilimdenSapti": "Bu fiyatta {dilim}. dilim geçerli ve tarife %{beklenen} diyor — girilen oran farklı."
+    "oranDilimdenSapti": "Bu fiyatta {dilim}. dilim geçerli ve tarife %{beklenen} diyor — girilen oran farklı.",
+    "oranSupheliDusuk": "%{oran} — bu kanalın tarifesinde görülen en düşük oran %{taban}. Emin misiniz?",
+    "oranIstisnaOnayi": "Bu oran doğru — bu sipariş için istisna olarak kaydet",
+    "oranOnayBekliyor": "Şüpheli düşük komisyon oranı var. Doğruysa yanındaki kutuyu işaretleyin; yanlışsa oranı düzeltin."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",

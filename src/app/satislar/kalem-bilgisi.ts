@@ -45,6 +45,13 @@ export type KalemBilgisi = {
   birimMaliyet: number | null;
   /** Yalnız SEÇİLİ kanal hesabının zemini; ötekiler formda gereksiz. */
   zemin: SimulasyonZemini | null;
+  /**
+   * ⚠ ŞÜPHELİ DÜŞÜK TABANI — o kanal hesabının EN YENİ tarifesindeki en
+   * düşük oran. Sabit eşik yerine VERİDEN gelir; tarife yüklendikçe
+   * kendiliğinden tazelenir ve "yanlış popülasyondan ölçülmüş eşik"
+   * hatası (20.08.2026) bir daha doğmaz.
+   */
+  tarifeTabani: number | null;
 };
 
 export async function kalemBilgisiGetir(
@@ -107,6 +114,27 @@ export async function kalemBilgisiGetir(
   const zemin =
     zeminler.find((z) => z.channelAccountId === channelAccountId) ?? null;
 
+  /**
+   * TARİFE TABANI — o hesabın en yeni tarifesindeki en düşük oran.
+   * Tarife yoksa null döner ve düşüklük hükmü hiç verilmez.
+   */
+  let tarifeTabani: number | null = null;
+  if (channelAccountId) {
+    const tarife = await prisma.komisyonTarifesi.findFirst({
+      where: { channelAccountId },
+      orderBy: { pencereBaslangic: "desc" },
+      select: { id: true },
+    });
+    if (tarife) {
+      const en = await prisma.komisyonTarifeKalemi.aggregate({
+        where: { tarifeId: tarife.id },
+        _min: { oran: true },
+      });
+      tarifeTabani =
+        en._min.oran === null ? null : Number(en._min.oran.toString());
+    }
+  }
+
   return {
     stok,
     desi: varyant?.product.desi
@@ -118,6 +146,7 @@ export async function kalemBilgisiGetir(
     komisyonOrani,
     birimMaliyet,
     zemin,
+    tarifeTabani,
   };
 }
 

@@ -78,6 +78,22 @@ type Kalem = {
    */
   birimMaliyet: number | null;
   zemin: SimulasyonZemini | null;
+  /**
+   * ⚠ ŞÜPHELİ DÜŞÜK ÖLÇÜTÜ — o kanalın YÜKLÜ tarifesindeki en düşük oran.
+   * Sabit eşik değil: tarife her yüklendiğinde kendiliğinden tazelenir.
+   */
+  tarifeTabani: number | null;
+  /**
+   * ⚠ ŞÜPHELİ DÜŞÜK ORAN İÇİN AÇIK ONAY — kullanıcı kararı 20.08.2026:
+   * _"kullanıcıya yanlış yapıp yapmadığı sorulsun; aynı şeyi söylemeye
+   * devam ederse bu sipariş istisna kabul edilip KURAL BOZULMADAN devam
+   * edilsin."_
+   *
+   * Kural zayıflatılmıyor: eşik yerinde kalıyor, uyarı her seferinde
+   * çıkıyor. Değişen tek şey, kullanıcının o SİPARİŞ için "evet, doğru"
+   * demesi ve bunun kayda geçmesi. (K6'nın form içindeki kardeşi.)
+   */
+  oranIstisnasi: boolean;
 };
 
 /** Radix Select bos deger kabul etmiyor; "kargo secilmedi" icin nobetci. */
@@ -212,6 +228,8 @@ export function SatisFormu({
           onerilenOran: bilgi?.komisyonOrani ?? null,
           birimMaliyet: bilgi?.birimMaliyet ?? null,
           zemin: bilgi?.zemin ?? null,
+          tarifeTabani: bilgi?.tarifeTabani ?? null,
+          oranIstisnasi: false,
         },
       ];
     });
@@ -298,6 +316,31 @@ export function SatisFormu({
     };
   }, [channelAccountId, desiSayi]);
 
+  /**
+   * ⚠ ONAY BEKLEYEN ŞÜPHELİ ORAN — kayıt İLERLEMEZ.
+   *
+   * "Kullanıcıya sorulsun" demek, cevabı beklemek demektir. Ama cevap
+   * "evet, doğru" olabilir: doğruyu sistem değil kullanıcı biliyor.
+   * Kural zayıflamıyor — uyarı her seferinde çıkıyor, yalnız bu SİPARİŞ
+   * için açık onay alınıyor ve kayda geçiyor.
+   */
+  const onayBekleyen = kalemler.some((k) => {
+    if (k.oranIstisnasi) return false;
+    const ham = k.komisyonOrani.replace(",", ".").trim();
+    const sayi = ham === "" ? null : Number(ham);
+    const fiyatHam = k.unitPriceAmount.replace(",", ".").trim();
+    const fiyat = fiyatHam === "" ? null : Number(fiyatHam);
+    return (
+      oranUyarisi({
+        girilen: sayi !== null && Number.isFinite(sayi) ? sayi : null,
+        onerilen: k.onerilenOran,
+        dilimler: k.zemin?.dilimler ?? null,
+        fiyat: fiyat !== null && Number.isFinite(fiyat) ? fiyat : null,
+        tarifeTabani: k.tarifeTabani,
+      })?.tur === "SUPHELI_DUSUK"
+    );
+  });
+
   const gonderilecek = {
     code,
     soldAt,
@@ -328,6 +371,13 @@ export function SatisFormu({
           k.komisyonTutari.trim() !== "" && Number.isFinite(tutar)
             ? tutar
             : null,
+        /**
+         * ŞÜPHELİ DÜŞÜK ORAN AÇIKÇA ONAYLANDI MI — kayda gider.
+         * "İstisna kabul edilip devam edilsin" demek, istisnanın İZ
+         * BIRAKMASI demektir; yoksa üç ay sonra "bu neden böyle" sorusu
+         * cevapsız kalır.
+         */
+        oranIstisnasi: k.oranIstisnasi,
       };
     }),
   };
@@ -719,22 +769,57 @@ export function SatisFormu({
                           dilimler: kalem.zemin?.dilimler ?? null,
                           fiyat:
                             fiyat !== null && Number.isFinite(fiyat) ? fiyat : null,
+                          tarifeTabani: kalem.tarifeTabani,
                         });
                         if (uyari === null) return null;
+                        const supheli = uyari.tur === "SUPHELI_DUSUK";
                         return (
+                          <>
                           <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
                             {uyari.tur === "KAYNAK_YOK"
                               ? t("oranKaynakYok")
-                              : uyari.tur === "DILIMDEN_SAPTI"
-                                ? t("oranDilimdenSapti", {
-                                    beklenen: uyari.beklenen,
-                                    dilim: uyari.dilimSira,
+                              : uyari.tur === "SUPHELI_DUSUK"
+                                ? t("oranSupheliDusuk", {
+                                    oran: uyari.girilen,
+                                    taban: uyari.taban,
                                   })
-                                : t("oranSapti", {
+                                : uyari.tur === "DILIMDEN_SAPTI"
+                                  ? t("oranDilimdenSapti", {
+                                      beklenen: uyari.beklenen,
+                                      dilim: uyari.dilimSira,
+                                    })
+                                  : t("oranSapti", {
                                     onerilen: uyari.onerilen,
                                     fark: uyari.fark,
                                   })}
                           </p>
+                          {/* ---------- SORU: YANLIŞ MI YAZDIN? ----------
+                              ⚠ KURAL ZAYIFLATILMIYOR. Eşik yerinde duruyor
+                              ve uyarı her seferinde çıkıyor. Değişen tek
+                              şey: kullanıcı bu SİPARİŞ için "evet, doğru"
+                              diyebiliyor ve bu kayda geçiyor.
+
+                              Onaylanmadan kayıt İLERLEMEZ — "sorulsun"
+                              demek cevabı beklemek demektir. Ama cevap
+                              "evet" olabilir: doğruyu sistem değil
+                              kullanıcı biliyor. (K6'nın form içindeki
+                              kardeşi.) */}
+                          {supheli ? (
+                            <label className="mt-1 flex cursor-pointer items-start gap-2 text-xs">
+                              <input
+                                type="checkbox"
+                                className="mt-0.5 size-4 shrink-0"
+                                checked={kalem.oranIstisnasi}
+                                onChange={(e) =>
+                                  kalemGuncelle(sira, {
+                                    oranIstisnasi: e.target.checked,
+                                  })
+                                }
+                              />
+                              <span>{t("oranIstisnaOnayi")}</span>
+                            </label>
+                          ) : null}
+                          </>
                         );
                       })()}
                     </div>
@@ -846,7 +931,15 @@ export function SatisFormu({
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={bekliyor || kalemler.length === 0}>
+        {/* ⚠ SESSİZ KİLİTLİ DÜĞME YASAK (İlke #5): kaydedilemiyorsa
+            NEDEN kaydedilemediği ekranda yazar. */}
+        {onayBekleyen ? (
+          <p className={`text-sm ${DURUM_YAZISI.uyari}`}>{t("oranOnayBekliyor")}</p>
+        ) : null}
+        <Button
+          type="submit"
+          disabled={bekliyor || kalemler.length === 0 || onayBekleyen}
+        >
           {bekliyor ? ortak("kaydediliyor") : t("satisiKaydet")}
         </Button>
         <Button type="button" variant="outline" asChild>

@@ -596,6 +596,29 @@ düzeltilecek bir şey yoktu. Aykırı artık **ortalamadan dışlanır**
 (istisna ortalamayı temsil etmez) ve **beyan edilir** (kaybolmaz); kilit
 yalnız gerçekten kaba olan eksende kalır.
 
+### UYARI SORAR, KULLANICI ISRAR EDERSE İSTİSNA KAYDEDİLİR (KESİN KURAL)
+
+_Kullanıcı kararı 20.08.2026._ Bir uyarı gerçek bir riski gösteriyor ama
+kullanıcı doğruyu daha iyi biliyorsa, iki kötü seçenek vardır: uyarıyı
+kaldırmak (risk kör kalır) ya da kaydı engellemek (operasyoncu kilitlenir).
+
+**Üçüncü yol:** uyarı **sorar**, kullanıcı **ısrar ederse** o kayıt
+**istisna** olarak geçer ve **kural bozulmaz.**
+
+**Şartlar:**
+- **Eşik yerinde kalır.** Uyarı her seferinde çıkar; onay bir sonraki
+  kayda taşınmaz. "Bir kez onayladım, artık sorma" yoktur.
+- **Onay açıktır.** Kutu işaretlenmeden kayıt ilerlemez — "sorulsun"
+  demek cevabı beklemek demektir.
+- **Sebep ekranda yazar.** Kilitli düğme sessiz kalmaz (İlke #5): neden
+  ilerlemediği ve nasıl ilerleyeceği yazılıdır.
+- **İstisna İZ BIRAKIR.** "Devam edilsin" demek, kaydın sessizce geçmesi
+  demek değildir; üç ay sonra "bu neden böyle" sorusunun cevabı olmalıdır.
+
+_K6'nın (veri şüpheli → DOĞRULANDI) form içindeki kardeşi. Aradaki fark:
+K6 geçmiş bir kaydı susturur ve kaydın HÂLİNE bağlanır; bu, kayıt
+oluşurken sorar ve o SİPARİŞE bağlanır._
+
 ### EŞİK, ÖLÇÜLDÜĞÜ POPÜLASYONUN DIŞINA UYGULANAMAZ (KESİN KURAL)
 
 _Ders 20.08.2026, komisyon oranı vakası._ Bir eşik gerçek ölçümden gelse
@@ -622,8 +645,18 @@ indirim oranı ilkece istediği kadar aşağı inebilir. "Düşük oran
 diliminde yazan oran mı?_ Tarife yoksa **hüküm verilmez**.
 
 > **YANLIŞ UYARI, UYARISIZLIKTAN KÖTÜDÜR.** %100 yanlış pozitif üreten
-> `supheliOran` uyarısı ve süzgeci tamamen kaldırıldı; onları "eşiği
-> ayarlayarak" yaşatmak, rozetin tamamına olan güveni harcamak olurdu.
+> `supheliOran` uyarısı ve süzgeci kaldırıldı; onları "eşiği ayarlayarak"
+> yaşatmak, rozetin tamamına olan güveni harcamak olurdu.
+
+**AMA UYARININ KENDİSİ KALDI — TABAN VERİDEN GELİYOR.** _Kullanıcı
+düzeltmesi 20.08.2026:_ mekanizma kalksın istenmedi, **taban değişti.**
+Artık sabit `%3` yok; ölçüt **o kanalın yüklü tarifesindeki en düşük
+oran**. Bunun altı, kanalın hiçbir ürün için yayımlamadığı bir orandır.
+Tarife her yüklendiğinde eşik kendiliğinden tazelenir — "18.08'de ölçtüm,
+19.08'de küme değişti" durumu bir daha doğmaz.
+
+> **DOĞRU EŞİK SABİT SAYI DEĞİL, VERİDEN TÜRETİLEN SINIRDIR.** Sabit sayı
+> ölçüldüğü ana kilitlenir; veriden gelen sınır kümeyle birlikte yürür.
 
 **KONTROL SORUSU — her eşikte:** bu sayıyı hangi kümeden ölçtüm, ve
 uygulayacağım küme onunla AYNI mı? Farklıysa eşik değil, **ölçüt** yanlış.
