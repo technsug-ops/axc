@@ -87,8 +87,14 @@ export type KarKalemGirdisi = {
 };
 
 export type SiparisKesintisi = {
-  /** KOMISYON_KDV hariç, PER_SALE kapsamlı kurallar. */
+  /** KOMISYON_KDV hariç, sipariş/paket kapsamlı kurallar. */
   code: string;
+  /**
+   * ⚠ PAKET BAŞINA MI — ölçüldü 20.08.2026 (TY paneli).
+   * Sipariş bölünüp iki kargoyla gidince platform hizmet bedeli İKİ KEZ
+   * alınıyor. `true` ise tutar `paketSayisi` ile çarpılır.
+   */
+  paketBasina?: boolean;
   basis: "SALE_AMOUNT" | "FIXED";
   /** basis SALE_AMOUNT ise yüzde. */
   rate?: number | null;
@@ -112,6 +118,12 @@ export type KarGirdisi = {
   kargoTarifesi: number | null;
   /** Kargo seçildi ama tarife bulunamadıysa true — RULE_MISSING sebebi. */
   kargoTarifesiBulunamadi?: boolean;
+
+  /**
+   * KAÇ PAKETLE GÖNDERİLDİ. `PER_PACKAGE` kapsamlı kesintiler bununla
+   * çarpılır. Verilmezse 1 — bölünmemiş sipariş.
+   */
+  paketSayisi?: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -241,9 +253,25 @@ export function karHesapla(girdi: KarGirdisi): KarSonucu {
   );
 
   const siparisKesintileri: Kesinti[] = [];
+  /**
+   * ⚠ PAKET SAYISI EN AZ 1. Sıfır ya da eksi bir sayı gelirse kesintiyi
+   * yok etmek yerine tek pakete düşülür: bölünmemiş sipariş zaten bir
+   * pakettir ve "0 paket" diye bir gerçeklik yok.
+   */
+  const paketSayisi = Math.max(1, Math.trunc(girdi.paketSayisi ?? 1));
+
   for (const kural of girdi.siparisKesintileri) {
+    /**
+     * ⚠ ÇARPAN YALNIZ PAKET BAŞINA KURALLARDA. Yüzde tabanlı kesinti
+     * (ödeme gideri) zaten ciro üzerinden hesaplanıyor; onu paketle
+     * çarpmak aynı parayı iki kez kesmek olurdu.
+     */
+    const kat = kural.paketBasina ? paketSayisi : 1;
     if (kural.basis === "FIXED") {
-      siparisKesintileri.push({ code: kural.code, tutar: kural.amount ?? 0 });
+      siparisKesintileri.push({
+        code: kural.code,
+        tutar: (kural.amount ?? 0) * kat,
+      });
     } else {
       siparisKesintileri.push({
         code: kural.code,

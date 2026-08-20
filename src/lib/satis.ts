@@ -50,6 +50,11 @@ export type SatisGirdisi = {
   /** Pakete giren toplam desi — formdaki son değer. */
   cargoDesi: number | null;
   /**
+   * KAÇ PAKETLE GÖNDERİLDİ — `PER_PACKAGE` kesintiler bununla çarpılır.
+   * Verilmezse 1 (bölünmemiş sipariş).
+   */
+  paketSayisi?: number;
+  /**
    * Elle girilen KDV DAHİL kargo tutarı. Doluysa tarife kullanılmaz —
    * komisyondaki oran/tutar ikilisinin aynısı: panel gerçeği kazanır.
    */
@@ -216,14 +221,21 @@ async function karHesabiniYaz(
     ? Number(komisyonKdvKurali.rate.toString())
     : null;
 
+  /**
+   * ⚠ İKİ KAPSAM DA ALINIR — `PER_SALE` ve `PER_PACKAGE`.
+   * Süzgeç yalnız `PER_SALE` yazsaydı, paket başına kural sessizce
+   * DÜŞERDİ ve kesinti hiç uygulanmazdı: kâr daha da şişerdi.
+   * _"Tip listesi değil, bağ" dersinin kapsam hâli._
+   */
   const siparisKesintileri = [...gecerli.values()]
-    .filter((k) => k.scope === "PER_SALE")
+    .filter((k) => k.scope === "PER_SALE" || k.scope === "PER_PACKAGE")
     .map((k) => ({
       code: k.code,
       basis:
         k.basis === "FIXED" ? ("FIXED" as const) : ("SALE_AMOUNT" as const),
       rate: k.rate ? Number(k.rate.toString()) : null,
       amount: k.amount ? Number(k.amount.toString()) : null,
+      paketBasina: k.scope === "PER_PACKAGE",
     }));
 
   // --- kargo: ELLE GİRİLEN TUTAR TARİFEYİ EZER ---
@@ -280,6 +292,7 @@ async function karHesabiniYaz(
     siparisKesintileri,
     kargoTarifesi,
     kargoTarifesiBulunamadi,
+    paketSayisi: girdi.paketSayisi,
   });
 
   const paraBirimi = girdi.kalemler[0]?.unitPriceCurrency ?? "TRY";
@@ -290,6 +303,7 @@ async function karHesabiniYaz(
     data: {
       cargoCarrierId: girdi.cargoCarrierId,
       cargoDesi: girdi.cargoDesi === null ? null : String(girdi.cargoDesi),
+      paketSayisi: Math.max(1, Math.trunc(girdi.paketSayisi ?? 1)),
       cargoAmount: kargoTarifesi === null ? null : String(kargoTarifesi),
       cargoCurrency: kargoTarifesi === null ? null : "TRY",
       net1Amount: String(sonuc.net1),

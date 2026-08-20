@@ -865,7 +865,10 @@
     "oranDilimdenSapti": "",
     "oranSupheliDusuk": "",
     "oranIstisnaOnayi": "",
-    "oranOnayBekliyor": ""
+    "oranOnayBekliyor": "",
+    "paketSayisi": "",
+    "paketSayisiIpucu": "",
+    "paketSayisiNotu": ""
   },
   "Kategori": {
     "adZorunlu": "",

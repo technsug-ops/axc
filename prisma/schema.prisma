@@ -29,6 +29,19 @@ enum Currency {
 enum FeeScope {
   PER_SALE // sipariş başına bir kez alınır (kalem sayısından bağımsız)
   PER_ITEM // her satış kalemi için ayrı alınır
+
+  /// PAKET BAŞINA — ölçüldü 20.08.2026, TY panelinden.
+  ///
+  /// Sipariş bölünüp iki kargoyla gönderilince Trendyol'un ₺13,19 platform
+  /// hizmet bedeli İKİ KEZ alınıyor (`11361665302`: −26,38 = 2 × 13,19).
+  /// Motor bunu sipariş başına sabit sayıyordu; bölünmüş her siparişte
+  /// kesinti eksik, kâr ŞİŞKİN hesaplanıyordu.
+  ///
+  /// ⚠ `basis` DEĞİL `scope`: `basis` "nasıl hesaplanır" (yüzde/sabit),
+  /// `scope` "kaç kez alınır" der. Paket sayısı ikincinin sorusudur.
+  /// `FIXED_PER_PACKAGE` diye bir basis eklemek iki boyutu tek enuma
+  /// sıkıştırır ve "paket başına yüzde" gerektiğinde çıkmaz sokak olurdu.
+  PER_PACKAGE // her paket için ayrı alınır (bölünmüş sipariş)
 }
 
 enum FeeBasis {
@@ -548,6 +561,7 @@ model ChannelAccount {
    * /**
    * /**
    * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -987,6 +1001,21 @@ model Sale {
   /// Pakete giren toplam desi. Form varsayılanı Σ(ürün.desi × adet);
   /// fiili tartım farklı çıkabildiği için elle değiştirilebilir.
   cargoDesi Decimal? @db.Decimal(9, 3)
+
+  /// KAÇ PAKETLE GÖNDERİLDİ — ölçüldü 20.08.2026 (TY paneli).
+  ///
+  /// Sipariş bölünürse pazaryeri PAKET BAŞINA hizmet bedeli alıyor
+  /// (`11361665302`: 2 paket → −26,38 = 2 × 13,19). `PER_PACKAGE`
+  /// kapsamlı kesintiler bu sayıyla çarpılır.
+  ///
+  /// ⚠ `@default(1)` — geri doldurma YOK. Bölünmemiş sipariş zaten tek
+  /// pakettir; mevcut bütün satırlar olduğu gibi doğru kalır.
+  ///
+  /// ⚠ TÜRETİLEMEDİĞİ İÇİN SÜTUN: kargo/tarife oranıyla türetme denendi,
+  /// 49 satışın hiçbiri eşiği geçmedi ve TY kargoyu ciro yüzdesi olarak
+  /// gösteriyor — türetme tahmin olurdu ve sessizce yanlış kesinti
+  /// üretirdi. Serbest metin de yetmez: bu, NET-2'nin GİRDİSİ.
+  paketSayisi Int @default(1)
 
   /// Tarifeden okunan KDV HARİÇ kargo ücreti (snapshot).
   cargoAmount   Decimal?  @db.Decimal(18, 4)
@@ -2217,9 +2246,9 @@ model KomisyonTarifesi {
 
 /// Tarifenin tek satırı: bir ürünün BİR dilimi.
 model KomisyonTarifeKalemi {
-  id        String           @id @default(cuid())
-  tarifeId  String
-  tarife    KomisyonTarifesi @relation(fields: [tarifeId], references: [id], onDelete: Cascade)
+  id       String           @id @default(cuid())
+  tarifeId String
+  tarife   KomisyonTarifesi @relation(fields: [tarifeId], references: [id], onDelete: Cascade)
 
   /// HAM KİMLİK — dosyadan geldiği gibi. Eşleşme kurulamasa bile kalem
   /// SAKLANIR; bağsızlık sessiz kalmaz, yükleme raporunda sayısıyla yazar.

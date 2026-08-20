@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { FeeScope } from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
@@ -23,7 +24,12 @@ export type ElKitabiVerisi = {
   kanalKesintileri: {
     kanal: string;
     kod: string;
-    kapsam: "PER_SALE" | "PER_ITEM";
+    /**
+     * ⚠ ŞEMANIN ENUM'UNDAN — elle liste tutulmaz. Elle yazılan liste,
+     * `PER_PACKAGE` eklendiğinde (20.08.2026) derlemeyi kırdı ve iyi ki
+     * kırdı; sessizce eskiseydi el kitabı yeni kapsamı hiç göstermezdi.
+     */
+    kapsam: FeeScope;
     oran: string | null;
     tutar: string | null;
     paraBirimi: string | null;

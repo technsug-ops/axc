@@ -63,6 +63,11 @@ function satisSemasiKur(t: Ceviri) {
     note: z.string().trim(),
     cargoCarrierId: z.string().nullable(),
     cargoDesi: z.number().min(0).nullable(),
+    /**
+     * ⚠ EN AZ 1 — "0 paket" diye bir gerçeklik yok ve sıfır, paket başına
+     * kesintiyi yok ederdi. Alan gelmezse 1 (bölünmemiş sipariş).
+     */
+    paketSayisi: z.number().int().min(1).default(1),
     // Elle girilen KDV DAHIL kargo tutari; doluysa tarife kullanilmaz.
     cargoAmountManual: z.number().min(0).nullable(),
     kalemler: z.array(kalemSemasi).min(1, t("enAzBirKalem")),
@@ -133,6 +138,7 @@ export async function satisOlustur(
       note: veri.note || null,
       cargoCarrierId: veri.cargoCarrierId || null,
       cargoDesi: veri.cargoDesi,
+      paketSayisi: veri.paketSayisi,
       cargoAmountManual: veri.cargoAmountManual,
       kalemler: veri.kalemler.map((k) => ({
         variantId: k.variantId,

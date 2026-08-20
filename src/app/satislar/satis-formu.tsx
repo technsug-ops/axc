@@ -150,6 +150,12 @@ export function SatisFormu({
   const [cargoCarrierId, setCargoCarrierId] = useState("");
   /** Elle girilen KDV DAHİL kargo tutarı — doluysa tarife kullanılmaz. */
   const [kargoTutariElle, setKargoTutariElle] = useState("");
+  /**
+   * KAÇ PAKET — ölçüldü 20.08.2026 (TY paneli). Sipariş bölünürse
+   * platform hizmet bedeli PAKET BAŞINA alınıyor (2 paket = 2 × 13,19).
+   * Varsayılan "1": bölünmemiş sipariş zaten tek pakettir.
+   */
+  const [paketSayisi, setPaketSayisi] = useState("1");
   const [kargoSecenekleri, setKargoSecenekleri] = useState<KargoSecenegi[]>([]);
 
   /** Seçili kanal hesabının para birimi, yeni kalemler için varsayılan olur. */
@@ -348,6 +354,14 @@ export function SatisFormu({
     note,
     cargoCarrierId: cargoCarrierId || null,
     cargoDesi: desiSayi > 0 ? desiSayi : null,
+    /**
+     * ⚠ EN AZ 1. Boş ya da anlamsız değer tek pakete düşer; "0 paket"
+     * diye bir gerçeklik yok ve sıfır, kesintiyi yok ederdi.
+     */
+    paketSayisi: (() => {
+      const n = Number(paketSayisi.replace(",", "."));
+      return Number.isFinite(n) && n >= 1 ? Math.trunc(n) : 1;
+    })(),
     cargoAmountManual: (() => {
       const n = Number(kargoTutariElle.replace(",", "."));
       return kargoTutariElle.trim() !== "" && Number.isFinite(n) ? n : null;
@@ -536,6 +550,28 @@ export function SatisFormu({
               />
               <p className="text-muted-foreground text-xs">
                 {t("kargoTutariNotu")}
+              </p>
+            </div>
+
+            {/* ---------- PAKET SAYISI ----------
+                ⚠ KARGO ÜÇLÜSÜNÜN YANINDA: bölünme kargo kararıyla birlikte
+                doğuyor, orada sorulması doğal.
+
+                ⚠ ALANIN NİYE VAR OLDUĞU YAZILI. Sayı kutusu tek başına
+                "neden soruyorsun" sorusunu bırakır; yardım metni kesintiyi
+                söylüyor. */}
+            <div className="space-y-2">
+              <Label htmlFor="satis-paket">{t("paketSayisi")}</Label>
+              <Input
+                id="satis-paket"
+                value={paketSayisi}
+                onChange={(e) => setPaketSayisi(e.target.value)}
+                inputMode="numeric"
+                placeholder={t("paketSayisiIpucu")}
+                className="max-w-xs"
+              />
+              <p className="text-muted-foreground text-xs">
+                {t("paketSayisiNotu")}
               </p>
             </div>
           </div>

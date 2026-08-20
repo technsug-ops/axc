@@ -619,6 +619,39 @@ _K6'nın (veri şüpheli → DOĞRULANDI) form içindeki kardeşi. Aradaki fark:
 K6 geçmiş bir kaydı susturur ve kaydın HÂLİNE bağlanır; bu, kayıt
 oluşurken sorar ve o SİPARİŞE bağlanır._
 
+### MERDİVEN BASAMAKLARI ÖLÇÜMLE ELENİR, TERCİHLE DEĞİL (KESİN KURAL)
+
+_Mimar kararı 20.08.2026._ "Şema değişikliği en pahalı çözümdür" kuralının
+merdiveni (_mevcut alan → serbest metin → türetilebilir mi → sütun →
+tablo_) **atlanarak inilmez.** Her basamak için "olmaz" demek yetmez;
+**denenip tutmadığının gösterilmesi gerekir** — ve türetme denemesi de
+bir ÖLÇÜMDÜR.
+
+**Vaka — bölünmüş paket:** sipariş iki kargoyla gidince Trendyol'un
+₺13,19 platform hizmet bedeli **iki kez** alınıyor (`11361665302`:
+−26,38 = 2 × 13,19). Motor bunu sipariş başına sabit sayıyordu.
+
+Merdiven **ölçümle** inildi:
+1. **Mevcut alan** — `Sale`'de sayaç yok. ✗
+2. **Serbest metin** — `note`'ta "paket" geçen satış: **0**. Ve asıl
+   ölçüt: paket sayısı NET-2'nin **GİRDİSİ**, geriye bakış değil. ✗
+3. **Türetilebilir mi** — kargo/tarife oranı **49 satışta ölçüldü, hiçbiri
+   eşiği geçmedi**; üstelik TY kargoyu **ciro yüzdesi** olarak gösteriyor
+   (`%3.0`, `%3.4`), yani desi tabanlı bile değil. Türetme tahmin olur ve
+   **sessizce yanlış kesinti** üretirdi. ✗ _(Bu bir tercih değil, bir
+   ölçüm sonucudur.)_
+4. **Sütun** — `Sale.paketSayisi Int @default(1)`. ✓
+
+**VE ENUM SEÇİMİ DE ÖLÇÜTE BAĞLI:** kapsam `FeeScope`e eklendi
+(`PER_PACKAGE`), `basis`e değil. `basis` "nasıl hesaplanır", `scope`
+"kaç kez alınır" der; paket sayısı ikincinin sorusudur.
+`FIXED_PER_PACKAGE` diye bir basis, iki boyutu tek enuma sıkıştırıp
+"paket başına yüzde" gerektiğinde çıkmaz sokak olurdu.
+
+⚠ **`@default(1)` GERİ DOLDURMAYI GEREKSİZ KILAR** — bölünmemiş sipariş
+zaten tek pakettir. Varsayılanı doğru seçmek, migration'ın yarısını
+ortadan kaldırır.
+
 ### EŞİK, ÖLÇÜLDÜĞÜ POPÜLASYONUN DIŞINA UYGULANAMAZ (KESİN KURAL)
 
 _Ders 20.08.2026, komisyon oranı vakası._ Bir eşik gerçek ölçümden gelse

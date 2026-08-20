@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 /**
  * ============================================================================
  *  KÂR MOTORU DOĞRULAMA
@@ -445,6 +446,153 @@ console.log("\n3) DURUM TESTLERİ — hesaplanamayan kâr sıfır sayılmaz");
 }
 
 console.log(`\n${"=".repeat(70)}`);
+
+console.log("");
+console.log("=".repeat(70));
+console.log("BÖLÜNMÜŞ PAKET — hizmet bedeli paket başına");
+console.log("=".repeat(70));
+{
+  /**
+   * ⚠ ÖLÇÜLDÜ 20.08.2026, TY PANELİNDEN — iki gerçek sipariş:
+   *   11438745987 (1 paket) -> platform hizmet 13,19
+   *   11361665302 (2 paket) -> platform hizmet 26,38  = 2 × 13,19
+   *
+   * Motor bu bedeli SİPARİŞ BAŞINA sabit sayıyordu; bölünmüş her
+   * siparişte kesinti eksik, kâr ŞİŞKİN hesaplanıyordu.
+   */
+  const temel = (paketSayisi?: number) =>
+    karHesapla({
+      kalemler: [
+        {
+          satisTutari: 1000,
+          satisParaBirimi: "TRY",
+          maliyet: 500,
+          maliyetParaBirimi: "TRY",
+          kdvOrani: 20,
+          komisyonOrani: 10,
+        },
+      ],
+      komisyonKdvOrani: null,
+      siparisKesintileri: [
+        { code: "SABIT_GIDER", basis: "FIXED", amount: 13.19, paketBasina: true },
+      ],
+      kargoTarifesi: null,
+      paketSayisi,
+    });
+
+  const tek = temel(1);
+  const iki = temel(2);
+  const kesinti = (s: ReturnType<typeof karHesapla>) =>
+    s.siparisKesintileri.find((k) => k.code === "SABIT_GIDER")?.tutar ?? 0;
+
+  kontrol("1 paket → 13,19", Math.abs(kesinti(tek) - 13.19) < 0.001, kesinti(tek));
+  kontrol("2 paket → 26,38", Math.abs(kesinti(iki) - 26.38) < 0.001, kesinti(iki));
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: aynı kural, farklı
+   * paket sayısı, farklı sonuç. Tek paketle sınasaydık çarpan hiç
+   * sınanmamış olurdu.
+   */
+  /**
+   * ⚠ İLK TEST YANLIŞ ŞEY BEKLEDİ: "NET-2 farkı tam 13,19" dedi ve
+   * kırmızı yandı. Doğrusu değil — kesinti KDV DAHİL tutuluyor, motor
+   * KDV'sini ayırıp mahsuba yazıyor; NET-2'ye yansıyan kısım daha küçük.
+   * NET-1 ise kesintinin tamamını görür.
+   *
+   * Sınanacak şey "fark 13,19" değil, "fark VAR ve DOĞRU YÖNDE".
+   */
+  kontrol("  ...NET-1 farkı tam 13,19", Math.abs((tek.net1 - iki.net1) - 13.19) < 0.001,
+    tek.net1 - iki.net1);
+  kontrol("  ...NET-2 de düşüyor", iki.net2 < tek.net2, { tek: tek.net2, iki: iki.net2 });
+  kontrol("  ...ve NET-2 farkı 13,19'u AŞMIYOR (KDV mahsubu)",
+    tek.net2 - iki.net2 <= 13.19 + 0.001, tek.net2 - iki.net2);
+
+  /** ⚠ EN AZ 1 — "0 paket" kesintiyi yok ederdi. */
+  kontrol("paket 0 verilirse 1 sayılır", Math.abs(kesinti(temel(0)) - 13.19) < 0.001);
+  kontrol("paket eksi verilirse 1 sayılır", Math.abs(kesinti(temel(-3)) - 13.19) < 0.001);
+  kontrol("paket verilmezse 1 sayılır", Math.abs(kesinti(temel()) - 13.19) < 0.001);
+
+  /**
+   * ⚠ ÇARPAN YALNIZ PAKET BAŞINA KURALDA. Yüzde tabanlı kesinti (ödeme
+   * gideri) ciro üzerinden hesaplanıyor; onu paketle çarpmak aynı parayı
+   * iki kez kesmek olurdu.
+   */
+  const yuzdeli = karHesapla({
+    kalemler: [
+      {
+        satisTutari: 1000,
+        satisParaBirimi: "TRY",
+        maliyet: 500,
+        maliyetParaBirimi: "TRY",
+        kdvOrani: 20,
+        komisyonOrani: 10,
+      },
+    ],
+    komisyonKdvOrani: null,
+    siparisKesintileri: [
+      { code: "ODEME_GIDERI", basis: "SALE_AMOUNT", rate: 0.8 },
+      { code: "HIZMET_BEDELI", basis: "FIXED", amount: 12.6 },
+    ],
+    kargoTarifesi: null,
+    paketSayisi: 3,
+  });
+  const bul = (k: string) =>
+    yuzdeli.siparisKesintileri.find((x) => x.code === k)?.tutar ?? 0;
+  kontrol("yüzde tabanlı kesinti ÇARPILMAZ", bul("ODEME_GIDERI") < 10);
+  /** ⚠ PAKET BAŞINA İŞARETLENMEMİŞ SABİT KESİNTİ DE ÇARPILMAZ. */
+  kontrol(
+    "işaretsiz sabit kesinti ÇARPILMAZ (HB 12,60 ölçülmedi)",
+    Math.abs(bul("HIZMET_BEDELI") - 12.6) < 0.001,
+    bul("HIZMET_BEDELI"),
+  );
+
+  /**
+   * ⚠ DEĞER TESTİ BURAYA BAKAMAZ: kuralların motora TAŞINDIĞI yer
+   * veritabanına dokunuyor. Süzgeç `PER_PACKAGE`ı almazsa kural sessizce
+   * DÜŞER ve kesinti hiç uygulanmaz — kâr daha da şişer. Mutasyon
+   * denemesinde tam bu iki nokta KÖR kaldı; kaynak taraması eklendi.
+   *
+   * ⚠ Desen KULLANIM BLOĞUNDA aranıyor: "PER_PACKAGE" kelimesi dosyada
+   * yorumlarda da geçiyor, `.filter(` satırına bağlanmazsa yalancı yeşil
+   * olurdu (beş kez yaşandı).
+   */
+  for (const yol of ["src/lib/satis.ts", "src/lib/kar-yeniden.ts"]) {
+    const kaynak = readFileSync(yol, "utf8");
+    kontrol(
+      `${yol}: süzgeç PER_PACKAGE'ı da alıyor`,
+      /\.filter\(\(k\) => k\.scope === "PER_SALE" \|\| k\.scope === "PER_PACKAGE"\)/.test(
+        kaynak,
+      ),
+    );
+    kontrol(
+      `  ...ve kurala paketBasina işareti konuyor`,
+      /paketBasina: k\.scope === "PER_PACKAGE"/.test(kaynak),
+    );
+  }
+
+  /**
+   * ⚠ YENİDEN HESAP KAYDIN KENDİ GERÇEĞİYLE KOŞAR. Sabit 1'e düşseydi
+   * bölünmüş bir satış HER tazelemede yeniden şişerdi — ve tazeleme
+   * kanal taşımasında, adet düzeltmesinde, maliyet hizalamasında
+   * kendiliğinden koşuyor.
+   */
+  const yeniden = readFileSync("src/lib/kar-yeniden.ts", "utf8");
+  kontrol(
+    "yeniden hesap paket sayısını SATIŞTAN okuyor",
+    /paketSayisi: satis\.paketSayisi,/.test(yeniden),
+  );
+  const satisKaynak = readFileSync("src/lib/satis.ts", "utf8");
+  kontrol(
+    "kayıt sırasında paket sayısı motora GİDİYOR",
+    /paketSayisi: girdi\.paketSayisi,/.test(satisKaynak),
+  );
+  kontrol(
+    "  ...ve veritabanına YAZILIYOR",
+    /paketSayisi: Math\.max\(1, Math\.trunc\(girdi\.paketSayisi \?\? 1\)\)/.test(
+      satisKaynak,
+    ),
+  );
+}
+
 console.log(
   basarisiz === 0
     ? `TÜM KONTROLLER GEÇTİ (${calisan})`

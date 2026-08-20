@@ -92,7 +92,26 @@ export function elKitabiGovdesi(
     kacir(k.kanal),
     kesintiAdi[k.kod] ?? kacir(k.kod),
     k.oran !== null ? `%${k.oran}` : `${k.tutar} ${k.paraBirimi ?? ""}`,
-    k.kapsam === "PER_SALE" ? "sipariş başına" : "kalem başına",
+    /**
+     * ⚠ TÜKETİCİ EŞLEME. Önce ikili koşuldu ("PER_SALE ? ... : ...") ve
+     * `PER_PACKAGE` eklenince onu SESSİZCE "kalem başına" diye yazardı —
+     * yanlış cümle, doğru görünümle. `switch` yeni kapsam eklendiğinde
+     * derlemeyi durdurur.
+     */
+    ((): string => {
+      switch (k.kapsam) {
+        case "PER_SALE":
+          return "sipariş başına";
+        case "PER_ITEM":
+          return "kalem başına";
+        case "PER_PACKAGE":
+          return "paket başına";
+        default: {
+          const asla: never = k.kapsam;
+          return String(asla);
+        }
+      }
+    })(),
   ]);
 
   const cezaSatirlari = veri.cezaTarifeleri.flatMap((c) =>
