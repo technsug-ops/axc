@@ -74,7 +74,10 @@ import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
 import { NakitOzeti } from "./nakit-ozeti";
-import { gorevSayilariniTopla } from "@/lib/panel/gorev-verisi";
+import {
+  donemAlimAdedi,
+  gorevSayilariniTopla,
+} from "@/lib/panel/gorev-verisi";
 import {
   nakitTakvimiKur,
   type TakvimPenceresi,
@@ -1152,11 +1155,24 @@ export default async function AnaSayfa({
     parametreler.takvim === "30" ? 30 : 14;
 
   const takvimBugun = takvimBugunu();
-  const [takvimSatirlari, gorevSayilari] = await Promise.all([
-    // Nakit takvimi PARA bloğudur; izin yoksa sorgu bile atılmaz.
-    karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([]),
-    gorevSayilariniTopla(),
-  ]);
+  const [takvimSatirlari, gorevSayilari, alimAdedi, kiyasAlimAdedi] =
+    await Promise.all([
+      // Nakit takvimi PARA bloğudur; izin yoksa sorgu bile atılmaz.
+      karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([]),
+      gorevSayilariniTopla(),
+      /**
+       * ALIM ADEDİ — dönem kartının ilk kutusu (kullanıcı isteği
+       * 20–21.08.2026: _"burası da günlük bir emek"_).
+       *
+       * ⚠ DÖNEM SÜZGECİNE BAĞLI, "bugün"e sabit DEĞİL. Kart "Seçili dönem"
+       * diyor; içindeki tek kutu süzgeci dinlemeseydi kullanıcı dönemi
+       * değiştirdiğinde beş rakam oynar, biri donar kalırdı. Günlük emeği
+       * görmek için süzgeç "Bugün" seçilir — o zaman altısı da bugünü
+       * gösterir.
+       */
+      donemAlimAdedi(donem),
+      kiyasPencere ? donemAlimAdedi(kiyasPencere) : Promise.resolve(null),
+    ]);
 
   const takvim = nakitTakvimiKur({
     satirlar: takvimSatirlari,
@@ -1382,8 +1398,28 @@ export default async function AnaSayfa({
                   ⚠ SIRA RASTGELE DEĞİL — yeni kutu eklenirken hunideki
                   yerine konur, sona eklenmez. */}
               <div
-                className={`grid gap-2 sm:grid-cols-3 ${karGorunur ? "lg:grid-cols-5" : ""}`}
+                className={`grid gap-2 sm:grid-cols-3 ${karGorunur ? "lg:grid-cols-6" : ""}`}
               >
+                {/* ---------------- ALIM ADEDİ — HUNİNİN BAŞI ----------------
+                    Kullanıcı sırası 21.08.2026: alım → satış → kargo →
+                    ciro → NET-1 → NET-2.
+
+                    Huninin başına geçmesi mantıklı: mal ÖNCE alınır, sonra
+                    satılır. Ve "günlük emek" olarak istendi — kaç alım
+                    girildiği, kaç satış girildiği kadar günün işidir.
+
+                    ⚠ DÖNEM SÜZGECİNE BAĞLI, kardeşleriyle aynı pencereyi
+                    paylaşıyor; kıyas rozetini de onlarla aynı motordan
+                    alıyor. */}
+                <IstatistikKutusu
+                  etiket={t("alimAdedi")}
+                  cocuk={
+                    <Baglanti href={suzgecAdresi("/alimlar", {}, donemParametreleri())}>
+                      {alimAdedi}
+                    </Baglanti>
+                  }
+                  rozet={kiyasRozeti(alimAdedi, kiyasAlimAdedi, (n) => String(n))}
+                />
                 <IstatistikKutusu
                   etiket={t("satisAdedi")}
                   cocuk={

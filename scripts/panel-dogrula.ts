@@ -1380,10 +1380,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     malKabulBekleyen: 2,
     karHesaplanamayan: 0,
     oransizKanalSku: 1,
-    /** ⚠ SAYAÇ — bekleyen değil; rozete GİRMEMELİ. */
-    bugunAlim: 7,
   });
-  kontrol("altı görev de üretiliyor", gorevler.length === 6, gorevler.length);
+  kontrol("beş görev de üretiliyor", gorevler.length === 5, gorevler.length);
   /** AÇIK SIFIR: sıfır olan satır GİZLENMEZ, temiz işaretlenir. */
   kontrol(
     "sıfır olan satır listeden DÜŞMÜYOR",
@@ -1394,24 +1392,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     gorevler.every((g) => g.adres.startsWith("/")),
   );
 
-  /**
-   * ── SAYAÇ İLE BEKLEYEN AYRI (kullanıcı isteği 20.08.2026) ──────────────
-   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: `bugunAlim: 7` sıfırdan
-   * FARKLI seçildi. Sıfır verilseydi "sayaç toplama girmiyor" mutasyonu
-   * yeşil kalırdı — 6 ile 6 aynı çıkardı.
-   */
-  yakin("bekleyen toplamı SAYACI SAYMIYOR", bekleyenToplam(gorevler), 6);
-  kontrol(
-    "sayacın sıfırı 'temiz' DEĞİL (yapılmamış iş değil, yapılmış işin adedi)",
-    gorevleriKur({
-      kargoBekleyen: 0,
-      iadeBildirimi: 0,
-      malKabulBekleyen: 0,
-      karHesaplanamayan: 0,
-      oransizKanalSku: 0,
-      bugunAlim: 0,
-    }).find((g) => g.anahtar === "bugunAlim")?.temizMi === false,
-  );
+  yakin("bekleyen toplamı", bekleyenToplam(gorevler), 6);
 
   // ── İKİ KART: her görev BİR gruba ait, hiçbiri boşta kalmıyor ──────────
   const sevkiyat = grubunGorevleri(gorevler, "SEVKIYAT");
@@ -1420,7 +1401,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     "her görev tam olarak BİR kartta",
     sevkiyat.length + tedarik.length === gorevler.length &&
       sevkiyat.length === 2 &&
-      tedarik.length === 4,
+      tedarik.length === 3,
     { sevkiyat: sevkiyat.length, tedarik: tedarik.length },
   );
   kontrol(
@@ -1429,8 +1410,10 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     sevkiyat.map((g) => g.anahtar),
   );
   kontrol(
-    "bugünkü alım TEDARİK kartında ve SAYAÇ",
-    tedarik.some((g) => g.anahtar === "bugunAlim" && g.tur === "SAYAC"),
+    "mal kabul · kâr · oran TEDARİK kartında",
+    tedarik.map((g) => g.anahtar).join(",") ===
+      "malKabulBekleyen,karHesaplanamayan,oransizKanalSku",
+    tedarik.map((g) => g.anahtar),
   );
   /** Kart rozeti kendi kartının bekleyenini sayar — ötekininkini değil. */
   yakin("SEVKİYAT kartının rozeti", bekleyenToplam(sevkiyat), 3);
@@ -1438,27 +1421,21 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
 
   /**
    * ── ADRES İDDİASI SINANIYOR ────────────────────────────────────────────
-   * ⚠ VAKA 20.08.2026: `bugunAlim` için önce `/alimlar?tarih=bugun` yazdım.
-   * ÖYLE BİR SÜZGEÇ YOK — alım listesi `pencere` parametresi okuyor ve
-   * kabul ettiği değerler `LISTE_PENCERELERI`de sabit. Sayı, var olmayan
-   * bir adrese götürseydi tıklayan boş liste görür ve panele güvenmezdi.
+   * ⚠ VAKA 20.08.2026: yeni bir görev için `/alimlar?tarih=bugun` yazılmıştı.
+   * ÖYLE BİR SÜZGEÇ YOKTU — listeler `pencere` parametresi okuyor ve kabul
+   * ettikleri değerler `LISTE_PENCERELERI`de sabit. Sayı var olmayan bir
+   * adrese götürseydi tıklayan boş liste görür ve panele güvenmezdi.
    *
-   * Burada adresin sorgu parametresi, listenin GERÇEKTEN kabul ettiği
-   * değerler kümesiyle karşılaştırılıyor — dize eşitliğiyle değil.
+   * Burada her adresin `pencere` parametresi (varsa) listenin GERÇEKTEN
+   * kabul ettiği kümeyle karşılaştırılıyor — dize eşitliğiyle değil.
    */
-  {
-    const adres = GOREV_ADRESLERI.bugunAlim;
-    const sorgu = new URLSearchParams(adres.split("?")[1] ?? "");
-    const pencere = sorgu.get("pencere") ?? "";
+  for (const [anahtar, adres] of Object.entries(GOREV_ADRESLERI)) {
+    const pencere = new URLSearchParams(adres.split("?")[1] ?? "").get("pencere");
     kontrol(
-      "bugünkü alım adresi /alimlar'a gidiyor",
-      adres.startsWith("/alimlar?"),
-      adres,
-    );
-    kontrol(
-      "adresteki pencere değeri listenin KABUL ETTİĞİ kümede",
-      (LISTE_PENCERELERI as readonly string[]).includes(pencere),
-      { pencere, kabul: LISTE_PENCERELERI },
+      `${anahtar} adresinin pencere değeri geçerli`,
+      pencere === null ||
+        (LISTE_PENCERELERI as readonly string[]).includes(pencere),
+      { adres, pencere },
     );
   }
   kontrol("hepsi sıfır değilse hepsiTemiz FALSE", !hepsiTemizMi(gorevler));
@@ -1471,7 +1448,6 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
         malKabulBekleyen: 0,
         karHesaplanamayan: 0,
         oransizKanalSku: 0,
-        bugunAlim: 0,
       }),
     ),
   );

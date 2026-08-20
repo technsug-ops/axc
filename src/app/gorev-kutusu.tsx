@@ -32,10 +32,10 @@ import {
  *  Sayısı 0 olan kutucuk GİZLENMEZ, "temiz ✓" yazar. Satırın yokluğundan
  *  "yapılacak iş yok" sonucunu çıkarmak imkânsızdır.
  *
- *  ── ⚠ SAYAÇ İLE BEKLEYEN AYRI GÖRÜNÜR ───────────────────────────────────
- *  "Bugün girilen alım" yapılmış işin sayacıdır: rozete girmez, sıfırı
- *  "temiz" değildir ve AMBER değil NÖTR çizilir. Amber "el at" demektir;
- *  yapılmış bir işe el atılmaz.
+ *  ── ⚠ BURAYA YALNIZ BEKLEYEN İŞ GİRER ───────────────────────────────────
+ *  "Bugün girilen alım" bir süre burada durdu ve YANLIŞ YERDEYDİ: bu
+ *  kutular YAPILMAMIŞ işi sayar, o ise YAPILMIŞ işin adedi. Kullanıcı
+ *  kararı 21.08.2026 ile dönem kartına taşındı.
  *
  *  ── YETKİ ───────────────────────────────────────────────────────────────
  *  Buradaki sayıların hepsi OPERASYONELDİR — `satis.kar.gor` İSTEMEZ.
@@ -77,11 +77,7 @@ function GorevKutucugu({
         </span>
       ) : (
         <span
-          className={
-            "inline-flex items-center rounded-md px-1.5 py-0.5 text-2xl leading-none font-semibold tabular-nums " +
-            /* ⚠ SAYAÇ NÖTR: amber "el at" demek, yapılmış işe el atılmaz. */
-            (gorev.tur === "SAYAC" ? DURUM_ZEMINI.notr : DURUM_ZEMINI.uyari)
-          }
+          className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-2xl leading-none font-semibold tabular-nums ${DURUM_ZEMINI.uyari}`}
         >
           {gorev.sayi}
         </span>
@@ -126,8 +122,10 @@ async function TekKart({
       </CardHeader>
 
       <CardContent>
-        {/* Telefonda 2 sütun; kart başına en fazla 4 kutucuk var. */}
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        {/* Kutucuk sayısı karta göre: 2 ve 3. Telefonda 2 sütun. */}
+        <div
+          className={`grid grid-cols-2 gap-2 ${kartinkiler.length > 2 ? "sm:grid-cols-3" : ""}`}
+        >
           {kartinkiler.map((g) => (
             <GorevKutucugu
               key={g.anahtar}
@@ -149,8 +147,19 @@ export async function GorevKutusu({
 }) {
   const gorevler = gorevleriKur(sayilar);
 
+  /**
+   * ⚠ YAN YANA DEĞİL, ALT ALTA (kullanıcı düzeltmesi 21.08.2026).
+   *
+   * İlk teslimde iki kart `lg:grid-cols-2` ile yan yana konmuştu. Ama bu
+   * blok zaten sayfanın YARISINDA duruyor (öteki yarısı Nakit özeti), yani
+   * her kart ~%25 genişliğe düşüyor ve içindeki kutucuklar 2–3 sütuna daha
+   * bölününce etiketler harf harf sarıyordu ("Kargo | ya verilm | emiş").
+   *
+   * Alt alta konunca her kart yarım sayfa genişliğinde kalıyor ve
+   * kutucuklar okunur genişliğe kavuşuyor.
+   */
   return (
-    <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+    <div className="grid min-w-0 gap-4">
       <TekKart
         grup="SEVKIYAT"
         gorevler={gorevler}

@@ -1835,7 +1835,8 @@
     "kartAra": "Ürün ara",
     "kargoDurumuKanal": "Kargoya verilen ({kanal})",
     "kargoTumKanallar": "tüm kanallar: {verilen} · bekleyen: {bekleyen}",
-    "kiyasVeriYok": "Önceki dönemde veri yok — karşılaştırma yapılamıyor."
+    "kiyasVeriYok": "Önceki dönemde veri yok — karşılaştırma yapılamıyor.",
+    "alimAdedi": "Alım adedi"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
