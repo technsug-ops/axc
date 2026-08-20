@@ -19,7 +19,11 @@ import {
 } from "@/components/ui/select";
 import { LISTE_PENCERELERI, type PencereTuru } from "@/lib/donem";
 import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
-import { suzgecAdresi } from "@/lib/suzgec";
+import {
+  donemRozetiCizilirMi,
+  suzgecAdresi,
+  temizlemeDegisiklikleri,
+} from "@/lib/suzgec";
 
 /**
  * ============================================================================
@@ -69,6 +73,7 @@ export function SuzgecCubugu({
   suzgecler,
   zaman,
   yapiskan = false,
+  zamanSabit = false,
 }: {
   temelAdres: string;
   /** Sayfanın tüm searchParams'ı — dokunulmayanlar korunur. */
@@ -95,6 +100,19 @@ export function SuzgecCubugu({
    * karar ister, toptan değil.
    */
   yapiskan?: boolean;
+  /**
+   * DÖNEM BU EKRANDA BOŞ OLAMAZ — panel gibi.
+   *
+   * ⚠ NİYE PROP: panelde dönem hiç seçilmemişse "Bu ay"a düşüyor, yani
+   * "tüm zamanlar" diye bir hâl YOK. Orada dönemi kaldırılabilir bir rozet
+   * gibi göstermek yalan olur — çarpıya basınca yine bir dönem seçili
+   * kalır. Listelerde ise "tüm zamanlar" GERÇEK bir seçenek ve rozet
+   * doğru; o yüzden davranış ekran ekran veriliyor, toptan değil.
+   *
+   * Ayrıca seçili dönem zaten MAVİ DÜĞMEDE görünüyor; rozet onun
+   * tekrarıydı. Kaldırınca bilgi kaybolmuyor, satır kazanılıyor (#12).
+   */
+  zamanSabit?: boolean;
 }) {
   const t = useTranslations("Suzgec");
   const tPencere = useTranslations("Pencere");
@@ -114,7 +132,8 @@ export function SuzgecCubugu({
   const acikSuzgecler = suzgecler.filter(
     (s) => (mevcut[s.ad] ?? "").trim() !== "",
   );
-  const zamanAcik = (zaman?.secili ?? "") !== "";
+  /** ⚠ Kural SAF İŞLEVDE — bileşende yazılmıştı, mutasyon yeşil kaldı. */
+  const zamanAcik = donemRozetiCizilirMi(zaman?.secili ?? "", zamanSabit);
   const acikSayi = acikSuzgecler.length + (zamanAcik ? 1 : 0);
 
   const secenekEtiketi = (s: SuzgecTanimi) => {
@@ -312,9 +331,7 @@ export function SuzgecCubugu({
                   type="button"
                   aria-label={t("kaldir")}
                   className="hover:text-destructive"
-                  onClick={() =>
-                    git({ pencere: "", baslangic: "", bitis: "" })
-                  }
+                  onClick={() => git({ pencere: "", baslangic: "", bitis: "" })}
                 >
                   <X className="size-3" />
                 </button>
@@ -341,12 +358,10 @@ export function SuzgecCubugu({
               className="h-11 md:h-8"
               onClick={() =>
                 git(
-                  Object.fromEntries([
-                    ...suzgecler.map((s) => [s.ad, ""]),
-                    ["pencere", ""],
-                    ["baslangic", ""],
-                    ["bitis", ""],
-                  ]),
+                  temizlemeDegisiklikleri(
+                    suzgecler.map((s) => s.ad),
+                    zamanSabit,
+                  ),
                 )
               }
             >

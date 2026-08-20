@@ -76,3 +76,46 @@ export function aktifSuzgecler(
   }
   return sonuc;
 }
+
+/**
+ * ============================================================================
+ *  DÖNEM ROZETİ VE "TEMİZLE" — SAF KURAL
+ * ----------------------------------------------------------------------------
+ *  ⚠ NİYE BURADA, BİLEŞENDE DEĞİL (21.08.2026):
+ *  Kural önce doğrudan `SuzgecCubugu` içine yazılmıştı. Mutasyon denendi —
+ *  kuralı devre dışı bırakmak hiçbir testi kırmadı, çünkü bileşenin içindeki
+ *  koşul hiçbir yerden sınanmıyordu. Yeşil test, sınanmış kural demek
+ *  değildir; kural saf işleve çıkarıldı.
+ *
+ *  ── SABİT DÖNEM NEDİR ───────────────────────────────────────────────────
+ *  Bazı ekranlarda dönem BOŞ OLAMAZ (panel: seçilmemişse "Bu ay"a düşer).
+ *  Orada dönemi kaldırılabilir bir rozet gibi göstermek YALAN olur —
+ *  çarpıya basınca yine bir dönem seçili kalır. Listelerde ise "tüm
+ *  zamanlar" gerçek bir seçenek ve rozet doğru.
+ *
+ *  Ayrıca seçili dönem zaten MAVİ DÜĞMEDE görünüyor; rozet onun tekrarıydı.
+ * ============================================================================
+ */
+export function donemRozetiCizilirMi(
+  zamanSecili: string,
+  zamanSabit: boolean,
+): boolean {
+  return !zamanSabit && zamanSecili !== "";
+}
+
+/**
+ * "Temizle" düğmesinin yazacağı boş parametreler.
+ *
+ * ⚠ SABİT DÖNEMLİ EKRANDA DÖNEM ELLENMEZ: temizlense de yine bir dönem
+ * seçili kalacaktı, yani düğme kendi sözünü tutmamış olurdu.
+ */
+export function temizlemeDegisiklikleri(
+  suzgecAdlari: readonly string[],
+  zamanSabit: boolean,
+): Record<string, string> {
+  const giris: [string, string][] = suzgecAdlari.map((ad) => [ad, ""]);
+  if (!zamanSabit) {
+    giris.push(["pencere", ""], ["baslangic", ""], ["bitis", ""]);
+  }
+  return Object.fromEntries(giris);
+}

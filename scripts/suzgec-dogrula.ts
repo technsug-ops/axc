@@ -30,10 +30,14 @@ import {
 } from "../src/lib/liste-suzgeci";
 import { GOREV_ADRESLERI } from "../src/lib/panel/bugun-ne-yapmaliyim";
 import { aktifSuzgecler, suzgecAdresi } from "../src/lib/suzgec";
+import {
+  donemRozetiCizilirMi,
+  temizlemeDegisiklikleri,
+} from "../src/lib/suzgec";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 4;
+const BOLUM_SAYISI = 5;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -542,3 +546,57 @@ alimBolumu().then(() => {
     process.exit(1);
   }
 });
+
+/**
+ * ============================================================================
+ *  SABİT DÖNEM — ROZET ÇİZİLMEZ, "TEMİZLE" DÖNEMİ ELLEMEZ
+ * ----------------------------------------------------------------------------
+ *  ⚠ BU TEST BİR MUTASYON BULGUSUNDAN DOĞDU (21.08.2026): kural önce
+ *  doğrudan `SuzgecCubugu` bileşenine yazılmıştı ve devre dışı bırakılması
+ *  HİÇBİR testi kırmadı. Yeşil test, sınanmış kural demek değil.
+ *
+ *  ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: aynı dönem (`BU_AY`) bir
+ *  kez sabit, bir kez serbest veriliyor. Tek yakayla sınansaydı "sabiti
+ *  görmezden gel" mutasyonu yeşil kalırdı.
+ * ============================================================================
+ */
+// ===========================================================================
+console.log("\n5) SABİT DÖNEM — ROZET VE TEMİZLE");
+// ===========================================================================
+{
+  kontrol(
+    "serbest dönemde rozet ÇİZİLİR",
+    donemRozetiCizilirMi("BU_AY", false),
+  );
+  kontrol(
+    "SABİT dönemde rozet çizilmez (mavi düğmenin tekrarı olurdu)",
+    !donemRozetiCizilirMi("BU_AY", true),
+  );
+  kontrol(
+    "dönem hiç seçilmemişse serbestte de rozet yok",
+    !donemRozetiCizilirMi("", false),
+  );
+
+  const serbest = temizlemeDegisiklikleri(["kanal", "hesap"], false);
+  kontrol(
+    "serbest dönemde Temizle DÖNEMİ de sıfırlar",
+    serbest.pencere === "" &&
+      serbest.baslangic === "" &&
+      serbest.bitis === "" &&
+      serbest.kanal === "",
+    serbest,
+  );
+
+  const sabit = temizlemeDegisiklikleri(["kanal", "hesap"], true);
+  kontrol(
+    "SABİT dönemde Temizle dönemi ELLEMEZ",
+    !("pencere" in sabit) && !("baslangic" in sabit) && !("bitis" in sabit),
+    sabit,
+  );
+  kontrol(
+    "  ...ama öteki süzgeçleri yine temizler",
+    sabit.kanal === "" && sabit.hesap === "",
+    sabit,
+  );
+  kosanBolumler.push("sabit dönem");
+}

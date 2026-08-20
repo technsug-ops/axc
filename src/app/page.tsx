@@ -74,15 +74,15 @@ import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
 import { NakitOzeti } from "./nakit-ozeti";
-import {
-  donemAlimi,
-  gorevSayilariniTopla,
-} from "@/lib/panel/gorev-verisi";
+import { donemAlimi, gorevSayilariniTopla } from "@/lib/panel/gorev-verisi";
 import {
   nakitTakvimiKur,
   type TakvimPenceresi,
 } from "@/lib/panel/nakit-takvimi";
-import { takvimBugunu, takvimSatirlariniTopla } from "@/lib/panel/takvim-verisi";
+import {
+  takvimBugunu,
+  takvimSatirlariniTopla,
+} from "@/lib/panel/takvim-verisi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { izinVarMi } from "@/lib/yetki";
 import {
@@ -258,7 +258,10 @@ export default async function AnaSayfa({
   ] = await Promise.all([
     prisma.sale.findMany({
       // İPTAL EDİLEN SATIŞ CİROYA GİRMEZ (bkz. lib/liste-suzgeci.ts).
-      where: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric }, iptalTarihi: null },
+      where: {
+        soldAt: { gte: veriBaslangic, lt: veriBitisHaric },
+        iptalTarihi: null,
+      },
       select: {
         soldAt: true,
         shippedAt: true,
@@ -269,7 +272,10 @@ export default async function AnaSayfa({
         channelAccount: {
           // `name` HESAP KIRILIMI İÇİN: aynı pazaryerindeki iki mağaza
           // toplamın içinde kaybolmasın (mimar kararı 13.08.2026).
-          select: { name: true, channel: { select: { code: true, name: true } } },
+          select: {
+            name: true,
+            channel: { select: { code: true, name: true } },
+          },
         },
         items: {
           select: {
@@ -441,7 +447,10 @@ export default async function AnaSayfa({
 
     const gelir = satis.items
       .filter((k) => k.unitPriceCurrency === paraBirimi)
-      .reduce((t2, k) => t2 + Number(k.unitPriceAmount.toString()) * k.quantity, 0);
+      .reduce(
+        (t2, k) => t2 + Number(k.unitPriceAmount.toString()) * k.quantity,
+        0,
+      );
 
     return {
       kanalKodu: satis.channelAccount.channel.code,
@@ -450,8 +459,10 @@ export default async function AnaSayfa({
       tarih: satis.soldAt,
       paraBirimi,
       gelir,
-      net1: satis.net1Amount === null ? null : Number(satis.net1Amount.toString()),
-      net2: satis.net2Amount === null ? null : Number(satis.net2Amount.toString()),
+      net1:
+        satis.net1Amount === null ? null : Number(satis.net1Amount.toString()),
+      net2:
+        satis.net2Amount === null ? null : Number(satis.net2Amount.toString()),
       durum: satis.profitStatus,
     };
   });
@@ -494,24 +505,26 @@ export default async function AnaSayfa({
     const paraBirimi: Currency =
       satis.profitCurrency ?? satis.items[0]?.unitPriceCurrency ?? "TRY";
 
-    return satis.items
-      // Satışın para biriminden farklı kalem ciroya girmiyor (yukarıdaki
-      // `gelir` kuralı); listeye de girmemeli, yoksa iki rakam ayrışır.
-      .filter((k) => k.unitPriceCurrency === paraBirimi)
-      .map((k) => ({
-        variantId: k.variantId,
-        urunAdi: k.variant.product.name,
-        urunId: k.variant.product.id,
-        sku: k.variant.sku,
-        adet: k.quantity,
-        ciro: Number(k.unitPriceAmount.toString()) * k.quantity,
-        net1: k.net1Amount === null ? null : Number(k.net1Amount.toString()),
-        net2: k.net2Amount === null ? null : Number(k.net2Amount.toString()),
-        durum: k.profitStatus,
-        tarih: satis.soldAt,
-        kanalKodu: satis.channelAccount.channel.code,
-        paraBirimi,
-      }));
+    return (
+      satis.items
+        // Satışın para biriminden farklı kalem ciroya girmiyor (yukarıdaki
+        // `gelir` kuralı); listeye de girmemeli, yoksa iki rakam ayrışır.
+        .filter((k) => k.unitPriceCurrency === paraBirimi)
+        .map((k) => ({
+          variantId: k.variantId,
+          urunAdi: k.variant.product.name,
+          urunId: k.variant.product.id,
+          sku: k.variant.sku,
+          adet: k.quantity,
+          ciro: Number(k.unitPriceAmount.toString()) * k.quantity,
+          net1: k.net1Amount === null ? null : Number(k.net1Amount.toString()),
+          net2: k.net2Amount === null ? null : Number(k.net2Amount.toString()),
+          durum: k.profitStatus,
+          tarih: satis.soldAt,
+          kanalKodu: satis.channelAccount.channel.code,
+          paraBirimi,
+        }))
+    );
   });
 
   /**
@@ -538,7 +551,8 @@ export default async function AnaSayfa({
   const paraBirimineGoreKanallar = new Map<string, Map<string, string>>();
   for (const h of satisHesaplari) {
     const kanallar =
-      paraBirimineGoreKanallar.get(h.defaultCurrency) ?? new Map<string, string>();
+      paraBirimineGoreKanallar.get(h.defaultCurrency) ??
+      new Map<string, string>();
     kanallar.set(h.channel.code, h.channel.name);
     paraBirimineGoreKanallar.set(h.defaultCurrency, kanallar);
   }
@@ -553,7 +567,8 @@ export default async function AnaSayfa({
   const paraSecenekleri = [...new Set(satislar.map((s) => s.paraBirimi))];
 
   const seciliKanal =
-    parametreler.kanal && kanalSecenekleri.some(([k]) => k === parametreler.kanal)
+    parametreler.kanal &&
+    kanalSecenekleri.some(([k]) => k === parametreler.kanal)
       ? parametreler.kanal
       : null;
 
@@ -650,7 +665,8 @@ export default async function AnaSayfa({
    * bırak.
    */
   const kiyasBos =
-    kiyasPencere !== null && (kiyasBloklar === null || kiyasBloklar.length === 0);
+    kiyasPencere !== null &&
+    (kiyasBloklar === null || kiyasBloklar.length === 0);
 
   // --- ÜRÜN LİSTELERİ --------------------------------------------------------
   const donemKalemleri = kalemler.filter(
@@ -845,53 +861,59 @@ export default async function AnaSayfa({
    */
   const dagilimParaBirimi: Currency = bloklar[0]?.paraBirimi ?? "TRY";
 
-  const enCokKarEdenler = karSiralamasi(urunSatirlari, "en-cok", LISTE_SATIRI).map(
-    (s) => {
-      const marj = marjYuzdesi(s);
-      return {
-        ...listeSatiri(
-          s,
-          bicim.para(s.net2, seciliPara),
-          t("adetDegeri", { sayi: s.adet }),
-        ),
-        rozet: marjRozeti(marj),
-      };
-    },
-  );
+  const enCokKarEdenler = karSiralamasi(
+    urunSatirlari,
+    "en-cok",
+    LISTE_SATIRI,
+  ).map((s) => {
+    const marj = marjYuzdesi(s);
+    return {
+      ...listeSatiri(
+        s,
+        bicim.para(s.net2, seciliPara),
+        t("adetDegeri", { sayi: s.adet }),
+      ),
+      rozet: marjRozeti(marj),
+    };
+  });
 
   /**
    * MARJ LİSTESİ — hacimden BAĞIMSIZ. Birincil değer yüzde; altta adet ve
    * birim kâr durur, çünkü tek adetlik küçük bir ürün yüksek yüzdeyle başa
    * çıkabilir ve yüzde tek başına yanıltır.
    */
-  const enYuksekMarjlilar = marjSiralamasi(urunSatirlari, "en-cok", LISTE_SATIRI).map(
-    (s) => {
-      const birim = birimKar(s);
-      return listeSatiri(
-        s,
-        bicim.yuzde(marjYuzdesi(s) ?? 0),
-        birim === null
-          ? t("adetDegeri", { sayi: s.adet })
-          : t("marjAlt", {
-              sayi: s.adet,
-              birim: bicim.para(birim, seciliPara),
-            }),
-      );
-    },
-  );
+  const enYuksekMarjlilar = marjSiralamasi(
+    urunSatirlari,
+    "en-cok",
+    LISTE_SATIRI,
+  ).map((s) => {
+    const birim = birimKar(s);
+    return listeSatiri(
+      s,
+      bicim.yuzde(marjYuzdesi(s) ?? 0),
+      birim === null
+        ? t("adetDegeri", { sayi: s.adet })
+        : t("marjAlt", {
+            sayi: s.adet,
+            birim: bicim.para(birim, seciliPara),
+          }),
+    );
+  });
 
-  const enAzKarBirakanlar = karSiralamasi(urunSatirlari, "en-az", LISTE_SATIRI).map(
-    (s) => {
-      const marj = marjYuzdesi(s);
-      return listeSatiri(
-        s,
-        bicim.para(s.net2, seciliPara),
-        marj === null
-          ? t("adetDegeri", { sayi: s.adet })
-          : t("karAlt", { sayi: s.adet, marj: bicim.yuzde(marj) }),
-      );
-    },
-  );
+  const enAzKarBirakanlar = karSiralamasi(
+    urunSatirlari,
+    "en-az",
+    LISTE_SATIRI,
+  ).map((s) => {
+    const marj = marjYuzdesi(s);
+    return listeSatiri(
+      s,
+      bicim.para(s.net2, seciliPara),
+      marj === null
+        ? t("adetDegeri", { sayi: s.adet })
+        : t("karAlt", { sayi: s.adet, marj: bicim.yuzde(marj) }),
+    );
+  });
 
   const karsizUrun = karsizUrunSayisi(urunSatirlari);
 
@@ -934,7 +956,11 @@ export default async function AnaSayfa({
     kdvOrani: kdvOraniniCoz(v.product).oran,
   }));
 
-  const yaslanma = yaslanmaListesi(yaslanmaGirdileri, gunDegeri(bugun), siralamaOlcutu);
+  const yaslanma = yaslanmaListesi(
+    yaslanmaGirdileri,
+    gunDegeri(bugun),
+    siralamaOlcutu,
+  );
   const varyantKimligi = new Map(
     varyantBilgileri.map((v) => [
       v.id,
@@ -978,7 +1004,9 @@ export default async function AnaSayfa({
         // Birincil değer YAŞ: ölçüt bu (mimar kararı 14.08.2026).
         deger: t("yasGun", { sayi: s.yasGun }),
         altDeger:
-          s.sermayeKdvHaric !== null && s.sermayeParaBirimi !== null && karGorunur
+          s.sermayeKdvHaric !== null &&
+          s.sermayeParaBirimi !== null &&
+          karGorunur
             ? t("yaslanmaAlt", {
                 adet: s.adet,
                 tutar: bicim.para(s.sermayeKdvHaric, s.sermayeParaBirimi),
@@ -1155,31 +1183,29 @@ export default async function AnaSayfa({
     parametreler.takvim === "30" ? 30 : 14;
 
   const takvimBugun = takvimBugunu();
-  const [takvimSatirlari, gorevSayilari, alim, kiyasAlim] =
-    await Promise.all([
-      // Nakit takvimi PARA bloğudur; izin yoksa sorgu bile atılmaz.
-      karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([]),
-      gorevSayilariniTopla(),
-      /**
-       * ALIM ADEDİ — dönem kartının ilk kutusu (kullanıcı isteği
-       * 20–21.08.2026: _"burası da günlük bir emek"_).
-       *
-       * ⚠ DÖNEM SÜZGECİNE BAĞLI, "bugün"e sabit DEĞİL. Kart "Seçili dönem"
-       * diyor; içindeki tek kutu süzgeci dinlemeseydi kullanıcı dönemi
-       * değiştirdiğinde beş rakam oynar, biri donar kalırdı. Günlük emeği
-       * görmek için süzgeç "Bugün" seçilir — o zaman altısı da bugünü
-       * gösterir.
-       */
-      donemAlimi(donem),
-      kiyasPencere ? donemAlimi(kiyasPencere) : Promise.resolve(null),
-    ]);
+  const [takvimSatirlari, gorevSayilari, alim, kiyasAlim] = await Promise.all([
+    // Nakit takvimi PARA bloğudur; izin yoksa sorgu bile atılmaz.
+    karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([]),
+    gorevSayilariniTopla(),
+    /**
+     * ALIM ADEDİ — dönem kartının ilk kutusu (kullanıcı isteği
+     * 20–21.08.2026: _"burası da günlük bir emek"_).
+     *
+     * ⚠ DÖNEM SÜZGECİNE BAĞLI, "bugün"e sabit DEĞİL. Kart "Seçili dönem"
+     * diyor; içindeki tek kutu süzgeci dinlemeseydi kullanıcı dönemi
+     * değiştirdiğinde beş rakam oynar, biri donar kalırdı. Günlük emeği
+     * görmek için süzgeç "Bugün" seçilir — o zaman altısı da bugünü
+     * gösterir.
+     */
+    donemAlimi(donem),
+    kiyasPencere ? donemAlimi(kiyasPencere) : Promise.resolve(null),
+  ]);
 
   const takvim = nakitTakvimiKur({
     satirlar: takvimSatirlari,
     bugun: takvimBugun,
     pencereGun: takvimPenceresi,
   });
-
 
   const seri = aylikSeri(
     satislar,
@@ -1226,79 +1252,98 @@ export default async function AnaSayfa({
         </p>
       </div>
 
-      {/* ======================== DÖNEM VE KANAL ========================
+      {/* ═══════════ SÜZGEÇ + KARŞILAŞTIRMA — TEK GRUP ═══════════
+          ⚠ İkisi arasındaki boşluk `space-y-6` idi ve "Karşılaştır"
+          satırı ayrı bir bölüm gibi duruyordu; oysa ikisi de AYNI soruyu
+          ayarlıyor: hangi dönem. Tek sarmalda `space-y-3` ile birbirine
+          yaklaştı — kazanılan dikey alan panelin ilk ekranına yazıyor
+          (#12: alanı verimli kullan). */}
+      <div className="space-y-3">
+        {/* ======================== DÖNEM VE KANAL ========================
           Ortak süzgeç çubuğu (İlke #10): aynı işlem her ekranda aynı
           görünür. Panelin farkı yalnız VARSAYILANI — dönem hiç seçilmemişse
           bu ay. */}
-      <SuzgecCubugu
-        /* YAPIŞKAN — Halil 18.08.2026: "kanalı SIK değiştiriyorum."
+        <SuzgecCubugu
+          /* YAPIŞKAN — Halil 18.08.2026: "kanalı SIK değiştiriyorum."
            Yalnız telefonda yapışıyor; masaüstünde çubuk zaten görünür. */
-        yapiskan
-        temelAdres="/"
-        mevcut={parametreler}
-        suzgecler={
-          kanalSecenekleri.length > 0
-            ? [
-                {
-                  ad: "kanal",
-                  etiket: t("kanal"),
-                  secenekler: kanalSecenekleri.map(([kod, ad]) => ({
-                    deger: kod,
-                    etiket: ad,
-                  })),
-                },
-              ]
-            : []
-        }
-        zaman={{
-          secili: donemTuru,
-          aralikMetni,
-          baslangic: parametreler.baslangic ?? "",
-          bitis: parametreler.bitis ?? "",
-        }}
-      />
+          yapiskan
+          temelAdres="/"
+          mevcut={parametreler}
+          suzgecler={
+            kanalSecenekleri.length > 0
+              ? [
+                  {
+                    ad: "kanal",
+                    etiket: t("kanal"),
+                    secenekler: kanalSecenekleri.map(([kod, ad]) => ({
+                      deger: kod,
+                      etiket: ad,
+                    })),
+                  },
+                ]
+              : []
+          }
+          /* ⚠ PANELDE DÖNEM BOŞ OLAMAZ — seçilmemişse "Bu ay"a düşüyor.
+           Rozet kaldırılabilir gibi görünmesin diye sabit işaretlendi. */
+          zamanSabit
+          zaman={{
+            secili: donemTuru,
+            /* ⚠ ARALIK METNİ BOŞ GEÇİLİYOR, kaybolmuyor: aynı aralık iki
+             satır yukarıda sayfa BAŞLIĞINDA yazılı ("01.08 – 21.08 ·
+             dönemi değiştirmek için…"). İki kez yazmak, süzgeç alanını
+             beş satıra çıkarıp aynı şeyi dört kez söylemek demekti. */
+            aralikMetni: "",
+            baslangic: parametreler.baslangic ?? "",
+            bitis: parametreler.bitis ?? "",
+          }}
+        />
 
-      {/* ═══════════════ KARŞILAŞTIRMA SEÇİCİ (2a) ═══════════════
+        {/* ═══════════════ KARŞILAŞTIRMA SEÇİCİ (2a) ═══════════════
           KAPALI GELİR: her panele zorla ikinci bir rakam basmak ekranı
           gereksiz kalabalıklaştırırdı; ayrıca açıkken sorgu aralığı
           genişliyor, yani maliyeti var.
           Aynı düğmeye tekrar basmak KAPATIR (İlke #10).
           KIYASLANAN ARALIK YAZILI DURUR — tanım ekranda olmazsa rozet
           sessiz bir varsayıma dönerdi. */}
-      {karGorunur ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-sm">{tRapor("kiyasBaslik")}</span>
-          {KIYAS_ANAHTARLARI.map((a) => (
-            <Button
-              key={a}
-              asChild
-              size="sm"
-              variant={kiyasTuru === a ? "default" : "outline"}
-              className="h-11 md:h-8"
-            >
-              <Link href={kiyasAdresi(kiyasTuru === a ? null : a)} scroll={false}>
-                {tRapor(`kiyas_${a}`)}
-              </Link>
-            </Button>
-          ))}
-          {kiyasPencere ? (
-            <span className="text-muted-foreground text-xs">
-              {aralikMetni} ↔ {bicim.tarih(kiyasPencere.baslangic)} –{" "}
-              {bicim.tarih(kiyasPencere.sonGun)}
+        {karGorunur ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground text-sm">
+              {tRapor("kiyasBaslik")}
             </span>
-          ) : null}
-          {/* Kıyas dönemi bomboşsa BİR KEZ söylenir; beş kutuda
+            {KIYAS_ANAHTARLARI.map((a) => (
+              <Button
+                key={a}
+                asChild
+                size="sm"
+                variant={kiyasTuru === a ? "default" : "outline"}
+                className="h-11 md:h-8"
+              >
+                <Link
+                  href={kiyasAdresi(kiyasTuru === a ? null : a)}
+                  scroll={false}
+                >
+                  {tRapor(`kiyas_${a}`)}
+                </Link>
+              </Button>
+            ))}
+            {kiyasPencere ? (
+              <span className="text-muted-foreground text-xs">
+                {aralikMetni} ↔ {bicim.tarih(kiyasPencere.baslangic)} –{" "}
+                {bicim.tarih(kiyasPencere.sonGun)}
+              </span>
+            ) : null}
+            {/* Kıyas dönemi bomboşsa BİR KEZ söylenir; beş kutuda
               tekrarlanmaz. Sessiz sıfır yasağı korunuyor — durum yine
               açıkça yazılı, sadece tek yerde. */}
-          {kiyasBos ? (
-            <DurumRozeti durum="notr" isaretsiz>
-              {tRapor("kiyaslanamaz")}
-            </DurumRozeti>
-          ) : null}
-        </div>
-      ) : null}
+            {kiyasBos ? (
+              <DurumRozeti durum="notr" isaretsiz>
+                {tRapor("kiyaslanamaz")}
+              </DurumRozeti>
+            ) : null}
+          </div>
+        ) : null}
 
-      {/* ═══════════════ ÜST SIRA: EYLEM + ÖNGÖRÜ YAN YANA ═══════════════
+        {/* ═══════════════ ÜST SIRA: EYLEM + ÖNGÖRÜ YAN YANA ═══════════════
           14.08.2026 — PANEL DİKEY YIĞINDI, IZGARA OLDU.
           Her blok tam genişlikte alt alta duruyordu; 1400 px ekranda alanın
           büyük kısmı boş kalıyor, sayfa dört ekran uzuyordu. Gösterge
@@ -1308,15 +1353,16 @@ export default async function AnaSayfa({
           Eşleştirme rastgele değil: solda "şimdi ne yapacağım" (eylem),
           sağda "ne zaman sıkışırım" (öngörü). İkisi günlük kararın iki
           yarısı ve birlikte okunur. */}
-      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-        {/* Operasyonel sayılar — `satis.kar.gor` İSTEMEZ, depocu da görür. */}
-        <GorevKutusu sayilar={gorevSayilari} />
+        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+          {/* Operasyonel sayılar — `satis.kar.gor` İSTEMEZ, depocu da görür. */}
+          <GorevKutusu sayilar={gorevSayilari} />
 
-        {/* Para bloğu — izne bağlı; Operasyon nakit pozisyonu görmez.
+          {/* Para bloğu — izne bağlı; Operasyon nakit pozisyonu görmez.
             İzin yoksa görev kutusu tek başına tam genişliğe yayılır. */}
-        {karGorunur ? (
-          <NakitOzeti takvim={takvim} pencereGun={takvimPenceresi} />
-        ) : null}
+          {karGorunur ? (
+            <NakitOzeti takvim={takvim} pencereGun={takvimPenceresi} />
+          ) : null}
+        </div>
       </div>
 
       {/* Para birimi süzgeci: yalnız birden fazla varsa görünür. Süzgeç
@@ -1359,14 +1405,14 @@ export default async function AnaSayfa({
           /** Bu para biriminin kıyas dönemi bloğu; yoksa null. */
           const kb = kiyasBlogu(blok.paraBirimi);
           return (
-          <Card key={blok.paraBirimi} className="min-w-0">
-            <CardHeader>
-              <CardTitle>
-                {t("donemBaslik")} · {blok.paraBirimi}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* ---------------- KIYAS YOKSA SÖYLE ----------------
+            <Card key={blok.paraBirimi} className="min-w-0">
+              <CardHeader>
+                <CardTitle>
+                  {t("donemBaslik")} · {blok.paraBirimi}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* ---------------- KIYAS YOKSA SÖYLE ----------------
                   ⚠ 18.08.2026 — Halil: "kıyas rozeti sessiz kaldı, veri
                   yok mu değişim yok mu anlaşılmıyor."
 
@@ -1380,13 +1426,13 @@ export default async function AnaSayfa({
 
                   Çözüm ikisini de korur: kutu başına DEĞİL, kart başına BİR
                   satır, rakamların hemen üstünde. */}
-              {kiyasBos ? (
-                <p className="text-muted-foreground text-xs">
-                  {t("kiyasVeriYok")}
-                </p>
-              ) : null}
+                {kiyasBos ? (
+                  <p className="text-muted-foreground text-xs">
+                    {t("kiyasVeriYok")}
+                  </p>
+                ) : null}
 
-              {/* ---------------- BÜYÜK RAKAMLAR ----------------
+                {/* ---------------- BÜYÜK RAKAMLAR ----------------
                   SIRA: ADET → KARGOYA VERİLEN → CİRO → NET-1 → NET-2.
                   _Halil kararı 18.08.2026; ciro ile kargo yer değiştirdi._
 
@@ -1397,10 +1443,10 @@ export default async function AnaSayfa({
 
                   ⚠ SIRA RASTGELE DEĞİL — yeni kutu eklenirken hunideki
                   yerine konur, sona eklenmez. */}
-              <div
-                className={`grid gap-2 sm:grid-cols-3 ${karGorunur ? "lg:grid-cols-6" : ""}`}
-              >
-                {/* ---------------- ALIM ADEDİ — HUNİNİN BAŞI ----------------
+                <div
+                  className={`grid gap-2 sm:grid-cols-3 ${karGorunur ? "lg:grid-cols-6" : ""}`}
+                >
+                  {/* ---------------- ALIM ADEDİ — HUNİNİN BAŞI ----------------
                     Kullanıcı sırası 21.08.2026: alım → satış → kargo →
                     ciro → NET-1 → NET-2.
 
@@ -1411,19 +1457,25 @@ export default async function AnaSayfa({
                     ⚠ DÖNEM SÜZGECİNE BAĞLI, kardeşleriyle aynı pencereyi
                     paylaşıyor; kıyas rozetini de onlarla aynı motordan
                     alıyor. */}
-                <IstatistikKutusu
-                  etiket={t("alimAdedi")}
-                  cocuk={
-                    <Baglanti href={suzgecAdresi("/alimlar", {}, donemParametreleri())}>
-                      {alim.adet}
-                    </Baglanti>
-                  }
-                  rozet={kiyasRozeti(
-                    alim.adet,
-                    kiyasAlim?.adet ?? null,
-                    (n) => String(n),
-                  )}
-                  /* ---------------- ALT NOT: DÖNEMİN ALIM TUTARI ----------
+                  <IstatistikKutusu
+                    etiket={t("alimAdedi")}
+                    cocuk={
+                      <Baglanti
+                        href={suzgecAdresi(
+                          "/alimlar",
+                          {},
+                          donemParametreleri(),
+                        )}
+                      >
+                        {alim.adet}
+                      </Baglanti>
+                    }
+                    rozet={kiyasRozeti(
+                      alim.adet,
+                      kiyasAlim?.adet ?? null,
+                      (n) => String(n),
+                    )}
+                    /* ---------------- ALT NOT: DÖNEMİN ALIM TUTARI ----------
                      İlke #15 — tek tek gösterilen yerde toplam da olur.
                      Kullanıcı KDV dengesi için aylık alım tutarını takip
                      ediyor ve alım listesinde bu toplam ZATEN var; panelde
@@ -1434,44 +1486,51 @@ export default async function AnaSayfa({
 
                      ⚠ Bu bloğun para birimi süzgeci var; yalnız o para
                      biriminin toplamı yazılır, karışık toplam üretilmez. */
-                  altNot={
-                    karGorunur ? (
-                      <span>
-                        {t("alimToplami", {
-                          tutar: bicim.para(
-                            alim.toplam.find((x) => x.paraBirimi === blok.paraBirimi)
-                              ?.tutar ?? 0,
-                            blok.paraBirimi,
-                          ),
-                        })}
-                      </span>
-                    ) : null
-                  }
-                />
-                <IstatistikKutusu
-                  etiket={t("satisAdedi")}
-                  cocuk={
-                    <Baglanti href={satisAdresi(seciliKanal ? { kanal: seciliKanal } : {})}>
-                      {blok.toplamAdet}
-                    </Baglanti>
-                  }
-                  rozet={kiyasRozeti(
-                    blok.toplamAdet,
-                    kb?.toplamAdet ?? null,
-                    (n) => String(n),
-                  )}
-                  /* ADET KUTUSUNDA ADET, PARA KUTUSUNDA PARA.
+                    altNot={
+                      karGorunur ? (
+                        <span>
+                          {t("alimToplami", {
+                            tutar: bicim.para(
+                              alim.toplam.find(
+                                (x) => x.paraBirimi === blok.paraBirimi,
+                              )?.tutar ?? 0,
+                              blok.paraBirimi,
+                            ),
+                          })}
+                        </span>
+                      ) : null
+                    }
+                  />
+                  <IstatistikKutusu
+                    etiket={t("satisAdedi")}
+                    cocuk={
+                      <Baglanti
+                        href={satisAdresi(
+                          seciliKanal ? { kanal: seciliKanal } : {},
+                        )}
+                      >
+                        {blok.toplamAdet}
+                      </Baglanti>
+                    }
+                    rozet={kiyasRozeti(
+                      blok.toplamAdet,
+                      kb?.toplamAdet ?? null,
+                      (n) => String(n),
+                    )}
+                    /* ADET KUTUSUNDA ADET, PARA KUTUSUNDA PARA.
                      Ciro kutusu iadenin TUTARINI yazıyor; buraya ADEDİ
                      geliyor. Aynı bilgi iki kez değil, aynı olayın iki
                      ölçüsü — "3 iade" ile "−₺2.980" farklı sorulara cevap.
 
                      AÇIK SIFIR: iade yoksa da satır yazılır. Yokluğundan
                      "iade olmadı" sonucunu çıkarmak imkânsızdır. */
-                  altNot={
-                    <span>{t("iadeAdedi", { sayi: blok.toplamIadeAdedi })}</span>
-                  }
-                />
-                {/* KARGO DURUMU — elle işaretlenen operasyonel rakam.
+                    altNot={
+                      <span>
+                        {t("iadeAdedi", { sayi: blok.toplamIadeAdedi })}
+                      </span>
+                    }
+                  />
+                  {/* KARGO DURUMU — elle işaretlenen operasyonel rakam.
                     "Bekleyen" bugün ne yapılacağını söylediği için verilenle
                     birlikte duruyor (kullanıcı kararı 14.08.2026) ve ikisi de
                     o satışlara süzülmüş listeye götürüyor (İlke #2, #9).
@@ -1480,181 +1539,191 @@ export default async function AnaSayfa({
                     Ciro ve satış adedi SATIŞ tarihine, kargo SEVKİYAT
                     tarihine göre süzülür. Not olmazsa kullanıcı "satış 2 ama
                     kargo 6, neden tutmuyor" der ve panele güveni gider. */}
-                <IstatistikKutusu
-                  /* SÜZGEÇ AÇIKKEN KANAL ADI BAŞLIKTA: kart hangi soruya
+                  <IstatistikKutusu
+                    /* SÜZGEÇ AÇIKKEN KANAL ADI BAŞLIKTA: kart hangi soruya
                      cevap verdiğini kendisi söyler. */
-                  etiket={
-                    seciliKanal
-                      ? t("kargoDurumuKanal", {
-                          kanal:
-                            kanalSecenekleri.find(([k]) => k === seciliKanal)?.[1] ??
-                            seciliKanal,
-                        })
-                      : t("kargoDurumu")
-                  }
-                  cocuk={
-                    <Baglanti href={kargoAdresi("verildi")}>
-                      {blok.kargoyaVerilenAdet}
-                    </Baglanti>
-                  }
-                  kiyas={kiyasRozeti(
-                    blok.kargoyaVerilenAdet,
-                    kb?.kargoyaVerilenAdet ?? null,
-                    (n) => String(n),
-                  )}
-                  /* BEKLEYEN KARGO YAPILACAK İŞTİR — rozet amber yanar.
+                    etiket={
+                      seciliKanal
+                        ? t("kargoDurumuKanal", {
+                            kanal:
+                              kanalSecenekleri.find(
+                                ([k]) => k === seciliKanal,
+                              )?.[1] ?? seciliKanal,
+                          })
+                        : t("kargoDurumu")
+                    }
+                    cocuk={
+                      <Baglanti href={kargoAdresi("verildi")}>
+                        {blok.kargoyaVerilenAdet}
+                      </Baglanti>
+                    }
+                    kiyas={kiyasRozeti(
+                      blok.kargoyaVerilenAdet,
+                      kb?.kargoyaVerilenAdet ?? null,
+                      (n) => String(n),
+                    )}
+                    /* BEKLEYEN KARGO YAPILACAK İŞTİR — rozet amber yanar.
                      Bekleyen yoksa rozet YOK: "iş yok" bir başarı değil,
                      sıradan hâldir; yeşile boyamak her gün kutlama olurdu. */
-                  rozet={
-                    blok.kargoBekleyenAdet > 0 ? (
-                      <DurumRozeti durum="uyari">
-                        <Baglanti href={kargoAdresi("bekleyen")}>
-                          {t("kargoBekleyen", { sayi: blok.kargoBekleyenAdet })}
-                        </Baglanti>
-                      </DurumRozeti>
-                    ) : null
-                  }
-                  altNot={
-                    <span className="text-muted-foreground">
-                      {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
-                      <span className="block">{t("kargoEkseniNotu")}</span>
-                      <span className="block">
-                        {blok.kargoBekleyenAdet > 0
-                          ? t("kargoBekleyenNotu")
-                          : t("kargoBekleyenYok")}
-                      </span>
-                      {/* GENEL RESİM KAYBOLMASIN: süzgeç açıkken tüm kanal
+                    rozet={
+                      blok.kargoBekleyenAdet > 0 ? (
+                        <DurumRozeti durum="uyari">
+                          <Baglanti href={kargoAdresi("bekleyen")}>
+                            {t("kargoBekleyen", {
+                              sayi: blok.kargoBekleyenAdet,
+                            })}
+                          </Baglanti>
+                        </DurumRozeti>
+                      ) : null
+                    }
+                    altNot={
+                      <span className="text-muted-foreground">
+                        {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
+                        <span className="block">{t("kargoEkseniNotu")}</span>
+                        <span className="block">
+                          {blok.kargoBekleyenAdet > 0
+                            ? t("kargoBekleyenNotu")
+                            : t("kargoBekleyenYok")}
+                        </span>
+                        {/* GENEL RESİM KAYBOLMASIN: süzgeç açıkken tüm kanal
                           toplamı küçük satırda durur. Süzgeç yokken bu satır
                           gereksiz tekrar olurdu. */}
-                      {tumKanalKargo ? (
-                        <span className="block">
-                          {t("kargoTumKanallar", {
-                            verilen: tumKanalKargo.verilen,
-                            bekleyen: tumKanalKargo.bekleyen,
-                          })}
-                        </span>
-                      ) : null}
-                    </span>
-                  }
-                />
-                {/* CİRO — kutu düzenine girmiyor çünkü tek rakam değil, üç
+                        {tumKanalKargo ? (
+                          <span className="block">
+                            {t("kargoTumKanallar", {
+                              verilen: tumKanalKargo.verilen,
+                              bekleyen: tumKanalKargo.bekleyen,
+                            })}
+                          </span>
+                        ) : null}
+                      </span>
+                    }
+                  />
+                  {/* CİRO — kutu düzenine girmiyor çünkü tek rakam değil, üç
                     satır (brüt · iade düşümü · net). Kendi bileşeni var ve
                     panelin ciro gösterdiği dört yüzeyin hepsinde aynı
                     (mimar kararı 13.08.2026). */}
-                <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3">
-                  <span className="text-muted-foreground min-w-0 text-xs break-words">
-                    {t("ciro")}
-                  </span>
-                  <CiroSunumu
-                    boyut="kutu"
-                    brut={bicim.para(blok.toplamGelir, blok.paraBirimi)}
-                    iade={
-                      blok.toplamIadeTutari > 0
-                        ? bicim.para(blok.toplamIadeTutari, blok.paraBirimi)
-                        : null
-                    }
-                    net={bicim.para(
-                      blok.toplamGelir - blok.toplamIadeTutari,
-                      blok.paraBirimi,
-                    )}
-                  />
-                  {/* Kıyas BRÜT ciro üzerinden: iade etkisi ayrı bir
+                  <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3">
+                    <span className="text-muted-foreground min-w-0 text-xs break-words">
+                      {t("ciro")}
+                    </span>
+                    <CiroSunumu
+                      boyut="kutu"
+                      brut={bicim.para(blok.toplamGelir, blok.paraBirimi)}
+                      iade={
+                        blok.toplamIadeTutari > 0
+                          ? bicim.para(blok.toplamIadeTutari, blok.paraBirimi)
+                          : null
+                      }
+                      net={bicim.para(
+                        blok.toplamGelir - blok.toplamIadeTutari,
+                        blok.paraBirimi,
+                      )}
+                    />
+                    {/* Kıyas BRÜT ciro üzerinden: iade etkisi ayrı bir
                       kavram ve raporda da karşılaştırma dışında tutuluyor. */}
-                  {kiyasRozeti(blok.toplamGelir, kb?.toplamGelir ?? null, (n) =>
-                    bicim.para(n, blok.paraBirimi),
-                  )}
-                </div>
-                {/* NET-1 VE NET-2 YAN YANA (kullanıcı isteği 14.08.2026:
+                    {kiyasRozeti(
+                      blok.toplamGelir,
+                      kb?.toplamGelir ?? null,
+                      (n) => bicim.para(n, blok.paraBirimi),
+                    )}
+                  </div>
+                  {/* NET-1 VE NET-2 YAN YANA (kullanıcı isteği 14.08.2026:
                     "net kâr 1, 2"). İkisi arasındaki fark ÖDENECEK KDV'dir;
                     açıklama satırları bunu yazıyor ki hangisine bakılacağı
                     tahmin edilmesin. */}
-                {karGorunur ? (
-                  <>
-                    <IstatistikKutusu
-                      etiket={t("net1")}
-                      cocuk={bicim.para(blok.toplamNet1, blok.paraBirimi)}
-                      rozet={karRozeti(blok.toplamNet1)}
-                      kiyas={kiyasRozeti(
-                        blok.toplamNet1,
-                        kb?.toplamNet1 ?? null,
-                        (n) => bicim.para(n, blok.paraBirimi),
-                      )}
-                      altNot={
-                        <>
-                          {oranSatirlari(blok.toplamNet1, blok)}
-                          <span className="text-muted-foreground block">
-                            {t("net1Aciklama")}
-                          </span>
-                        </>
-                      }
-                    />
-                    {/* NET-2 BAŞROL. Beş kutu da aynı boydayken hiçbiri
+                  {karGorunur ? (
+                    <>
+                      <IstatistikKutusu
+                        etiket={t("net1")}
+                        cocuk={bicim.para(blok.toplamNet1, blok.paraBirimi)}
+                        rozet={karRozeti(blok.toplamNet1)}
+                        kiyas={kiyasRozeti(
+                          blok.toplamNet1,
+                          kb?.toplamNet1 ?? null,
+                          (n) => bicim.para(n, blok.paraBirimi),
+                        )}
+                        altNot={
+                          <>
+                            {oranSatirlari(blok.toplamNet1, blok)}
+                            <span className="text-muted-foreground block">
+                              {t("net1Aciklama")}
+                            </span>
+                          </>
+                        }
+                      />
+                      {/* NET-2 BAŞROL. Beş kutu da aynı boydayken hiçbiri
                         önemli görünmüyordu; oysa günün sonunda cebe giren
                         rakam budur. Tek "bas" kutusu o yüzden burada. */}
-                    <IstatistikKutusu
-                      etiket={t("net2")}
-                      bas
-                      cocuk={bicim.para(blok.toplamNet2, blok.paraBirimi)}
-                      rozet={karRozeti(blok.toplamNet2)}
-                      kiyas={kiyasRozeti(
-                        blok.toplamNet2,
-                        kb?.toplamNet2 ?? null,
-                        (n) => bicim.para(n, blok.paraBirimi),
-                      )}
-                      altNot={
-                        <>
-                          {oranSatirlari(blok.toplamNet2, blok, true)}
-                          <span className="text-muted-foreground block">
-                            {t("net2Aciklama")}
-                          </span>
-                        </>
-                      }
-                    />
-                  </>
-                ) : null}
-              </div>
+                      <IstatistikKutusu
+                        etiket={t("net2")}
+                        bas
+                        cocuk={bicim.para(blok.toplamNet2, blok.paraBirimi)}
+                        rozet={karRozeti(blok.toplamNet2)}
+                        kiyas={kiyasRozeti(
+                          blok.toplamNet2,
+                          kb?.toplamNet2 ?? null,
+                          (n) => bicim.para(n, blok.paraBirimi),
+                        )}
+                        altNot={
+                          <>
+                            {oranSatirlari(blok.toplamNet2, blok, true)}
+                            <span className="text-muted-foreground block">
+                              {t("net2Aciklama")}
+                            </span>
+                          </>
+                        }
+                      />
+                    </>
+                  ) : null}
+                </div>
 
-              {/* --- kârı hesaplanamayanlar: SIFIR SAYILMAZ, söylenir ---
+                {/* --- kârı hesaplanamayanlar: SIFIR SAYILMAZ, söylenir ---
                   Kâr göremeyen kullanıcıya gösterilmez: uyarı kâr hakkında ve
                   "sorunluları gör" düğmesi kâr süzgecine gider — elinden
                   gelecek bir iş yok, yalnız kafa karıştırır. */}
-              {karGorunur &&
-              (blok.hesaplanamayanAdet > 0 ||
-                blok.hesaplanamayanIadeAdedi > 0) ? (
-                /* UYARI KARTI — referanstaki bildirim kartının ta kendisi:
+                {karGorunur &&
+                (blok.hesaplanamayanAdet > 0 ||
+                  blok.hesaplanamayanIadeAdedi > 0) ? (
+                  /* UYARI KARTI — referanstaki bildirim kartının ta kendisi:
                    sol şerit + doygun çip + metin + eylem. Önceden burada
                    `amber-500/10` gibi ham Tailwind sınıfları vardı, yani
                    palet dışından bir sarı; tek kapı kuralı deliniyordu. */
-                <UyariKarti
-                  durum="uyari"
-                  ikon={TriangleAlert}
-                  baslik={
-                    blok.hesaplanamayanAdet > 0
-                      ? t("hesaplanamayan", { sayi: blok.hesaplanamayanAdet })
-                      : t("hesaplanamayanIade", {
-                          sayi: blok.hesaplanamayanIadeAdedi,
-                        })
-                  }
-                  altSatir={
-                    blok.hesaplanamayanAdet > 0 &&
-                    blok.hesaplanamayanIadeAdedi > 0
-                      ? t("hesaplanamayanIade", {
-                          sayi: blok.hesaplanamayanIadeAdedi,
-                        })
-                      : null
-                  }
-                  eylem={
-                    <Button asChild size="sm" variant="outline" className="h-11 md:h-8">
-                      <Link href="/satislar?kar=eksik">
-                        {t("sorunlulariGor")}
-                        <ArrowRight />
-                      </Link>
-                    </Button>
-                  }
-                />
-              ) : null}
+                  <UyariKarti
+                    durum="uyari"
+                    ikon={TriangleAlert}
+                    baslik={
+                      blok.hesaplanamayanAdet > 0
+                        ? t("hesaplanamayan", { sayi: blok.hesaplanamayanAdet })
+                        : t("hesaplanamayanIade", {
+                            sayi: blok.hesaplanamayanIadeAdedi,
+                          })
+                    }
+                    altSatir={
+                      blok.hesaplanamayanAdet > 0 &&
+                      blok.hesaplanamayanIadeAdedi > 0
+                        ? t("hesaplanamayanIade", {
+                            sayi: blok.hesaplanamayanIadeAdedi,
+                          })
+                        : null
+                    }
+                    eylem={
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="h-11 md:h-8"
+                      >
+                        <Link href="/satislar?kar=eksik">
+                          {t("sorunlulariGor")}
+                          <ArrowRight />
+                        </Link>
+                      </Button>
+                    }
+                  />
+                ) : null}
 
-              {/* ================= KANAL KIRILIMI — TEK UYGULAMA =================
+                {/* ================= KANAL KIRILIMI — TEK UYGULAMA =================
                   14.08.2026, kullanıcı: "bura daha iyi kurgulanabilir".
 
                   ÖNCE: masaüstünde TABLO, telefonda KART — iki ayrı kod, aynı
@@ -1669,21 +1738,21 @@ export default async function AnaSayfa({
 
                   Tablo, satır sayısı ÖNGÖRÜLEMEYEN listeler için doğru araçtır;
                   2-11 kanal için kart ızgarası hem daha yoğun hem daha okunur. */}
-              <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {blok.kanallar.map((kanal) => (
-                  <div
-                    key={kanal.kanalKodu}
-                    className="bg-card min-w-0 space-y-3 rounded-lg border p-3"
-                  >
-                    {/* TIKLANABİLİR KANAL: o kanalın satışlarına süzülmüş
+                <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {blok.kanallar.map((kanal) => (
+                    <div
+                      key={kanal.kanalKodu}
+                      className="bg-card min-w-0 space-y-3 rounded-lg border p-3"
+                    >
+                      {/* TIKLANABİLİR KANAL: o kanalın satışlarına süzülmüş
                         gider. Link stili görünür (İlke #2). */}
-                    <div className="font-medium">
-                      <Baglanti href={kanalSatislariAdresi(kanal.kanalKodu)}>
-                        {kanal.kanalAdi}
-                      </Baglanti>
-                    </div>
+                      <div className="font-medium">
+                        <Baglanti href={kanalSatislariAdresi(kanal.kanalKodu)}>
+                          {kanal.kanalAdi}
+                        </Baglanti>
+                      </div>
 
-                    {/* PAY ÇUBUĞU — kanalın ciro içindeki ağırlığı.
+                      {/* PAY ÇUBUĞU — kanalın ciro içindeki ağırlığı.
                         Kartlar bir ızgara dolusu birbirinin aynıydı; hangi
                         kanalın yükü taşıdığı ancak rakamlar tek tek okunup
                         kafada karşılaştırılınca anlaşılıyordu. Çubuk bunu
@@ -1691,7 +1760,7 @@ export default async function AnaSayfa({
                         Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11
                         ton, dört durum rengiyle karışır ve "yeşil = iyi"
                         anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK. */}
-                    {/* İKİ ÇUBUK: CİRO PAYI VE NET-2 PAYI (2c).
+                      {/* İKİ ÇUBUK: CİRO PAYI VE NET-2 PAYI (2c).
                         Biri hacmi, diğeri gerçek kazancı gösterir ve
                         FARKLI OLABİLİRLER — o fark önemlidir: cironun
                         %60'ını taşıyan kanal kârın %40'ını getiriyor
@@ -1700,150 +1769,155 @@ export default async function AnaSayfa({
                         Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11
                         ton, dört durum rengiyle karışır ve "yeşil = iyi"
                         anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK. */}
-                    {(() => {
-                      const pay = kanalPaylari.get(kanal.kanalKodu);
-                      if (!pay) return null;
-                      return (
-                        <div className="space-y-1">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <span className="text-muted-foreground w-10 shrink-0 text-xs">
-                              {t("ciro")}
-                            </span>
-                            <PayCubugu
-                              oran={pay.ciroPayi / 100}
-                              etiket={bicim.yuzde(pay.ciroPayi)}
-                            />
-                          </div>
-                          {/* NET-2 payı: toplam kâr eksiyse pay ANLAMSIZ —
-                              işaretler birbirini yer. O hâlde çubuk yok. */}
-                          {karGorunur && pay.net2Payi !== null ? (
+                      {(() => {
+                        const pay = kanalPaylari.get(kanal.kanalKodu);
+                        if (!pay) return null;
+                        return (
+                          <div className="space-y-1">
                             <div className="flex min-w-0 items-center gap-2">
                               <span className="text-muted-foreground w-10 shrink-0 text-xs">
-                                {t("net2")}
+                                {t("ciro")}
                               </span>
                               <PayCubugu
-                                oran={pay.net2Payi / 100}
-                                etiket={bicim.yuzde(pay.net2Payi)}
+                                oran={pay.ciroPayi / 100}
+                                etiket={bicim.yuzde(pay.ciroPayi)}
                               />
                             </div>
-                          ) : null}
-                        </div>
-                      );
-                    })()}
+                            {/* NET-2 payı: toplam kâr eksiyse pay ANLAMSIZ —
+                              işaretler birbirini yer. O hâlde çubuk yok. */}
+                            {karGorunur && pay.net2Payi !== null ? (
+                              <div className="flex min-w-0 items-center gap-2">
+                                <span className="text-muted-foreground w-10 shrink-0 text-xs">
+                                  {t("net2")}
+                                </span>
+                                <PayCubugu
+                                  oran={pay.net2Payi / 100}
+                                  etiket={bicim.yuzde(pay.net2Payi)}
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })()}
 
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-                      <div className="min-w-0">
-                        <div className="text-muted-foreground text-xs">
-                          {t("satisAdedi")}
-                        </div>
-                        <div className="text-lg font-semibold tabular-nums">
-                          {kanal.adet}
-                        </div>
-                      </div>
-
-                      {/* İade/eksik notları NET-2'nin yanında: ciro iadeden
-                          etkilenmez, düşen rakam NET-2'dir. Sütun izne
-                          kapalıysa notlar da gider — dayanağı kalmaz. */}
-                      {karGorunur ? (
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-2">
                         <div className="min-w-0">
                           <div className="text-muted-foreground text-xs">
-                            {t("net2")}
+                            {t("satisAdedi")}
                           </div>
-                          <div className="text-lg font-semibold">
-                            {bicim.para(kanal.net2, blok.paraBirimi)}
+                          <div className="text-lg font-semibold tabular-nums">
+                            {kanal.adet}
                           </div>
-                          {kanal.iadeAdedi > 0 ? (
-                            <div className="text-muted-foreground text-xs">
-                              {t("kanalIade", { sayi: kanal.iadeAdedi })}
-                            </div>
-                          ) : null}
-                          {kanal.hesaplanamayanAdet > 0 ? (
-                            <div className="text-muted-foreground text-xs">
-                              {t("kanalEksik", {
-                                sayi: kanal.hesaplanamayanAdet,
-                              })}
-                            </div>
-                          ) : null}
                         </div>
-                      ) : null}
 
-                      <div className="col-span-2 min-w-0">
-                        <div className="text-muted-foreground text-xs">
-                          {t("ciro")}
+                        {/* İade/eksik notları NET-2'nin yanında: ciro iadeden
+                          etkilenmez, düşen rakam NET-2'dir. Sütun izne
+                          kapalıysa notlar da gider — dayanağı kalmaz. */}
+                        {karGorunur ? (
+                          <div className="min-w-0">
+                            <div className="text-muted-foreground text-xs">
+                              {t("net2")}
+                            </div>
+                            <div className="text-lg font-semibold">
+                              {bicim.para(kanal.net2, blok.paraBirimi)}
+                            </div>
+                            {kanal.iadeAdedi > 0 ? (
+                              <div className="text-muted-foreground text-xs">
+                                {t("kanalIade", { sayi: kanal.iadeAdedi })}
+                              </div>
+                            ) : null}
+                            {kanal.hesaplanamayanAdet > 0 ? (
+                              <div className="text-muted-foreground text-xs">
+                                {t("kanalEksik", {
+                                  sayi: kanal.hesaplanamayanAdet,
+                                })}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+
+                        <div className="col-span-2 min-w-0">
+                          <div className="text-muted-foreground text-xs">
+                            {t("ciro")}
+                          </div>
+                          <CiroSunumu
+                            brut={bicim.para(kanal.gelir, blok.paraBirimi)}
+                            iade={
+                              kanal.iadeTutari > 0
+                                ? bicim.para(kanal.iadeTutari, blok.paraBirimi)
+                                : null
+                            }
+                            net={bicim.para(
+                              kanal.gelir - kanal.iadeTutari,
+                              blok.paraBirimi,
+                            )}
+                          />
                         </div>
-                        <CiroSunumu
-                          brut={bicim.para(kanal.gelir, blok.paraBirimi)}
-                          iade={
-                            kanal.iadeTutari > 0
-                              ? bicim.para(kanal.iadeTutari, blok.paraBirimi)
-                              : null
-                          }
-                          net={bicim.para(
-                            kanal.gelir - kanal.iadeTutari,
-                            blok.paraBirimi,
-                          )}
-                        />
                       </div>
+
+                      {/**
+                       * HESAP KIRILIMI — kanal kartının içinde.
+                       *
+                       * Kanal seviyesinde gruplamak doğru varsayılan ("Trendyol
+                       * bu ay ne yaptı") ama aynı pazaryerinde iki mağaza varsa
+                       * hangisinin ne yaptığı toplamın içinde kayboluyordu.
+                       * TEK HESAPTA HİÇ ÇİZİLMEZ: kırılım o zaman kanal
+                       * satırının tekrarıdır, gürültüden başka bir şey değil.
+                       */}
+                      {kanal.hesaplar.length > 1 ? (
+                        <ul className="space-y-1 border-t pt-2">
+                          {kanal.hesaplar.map((hesap) => (
+                            <li
+                              key={`${kanal.kanalKodu}-${hesap.hesapAdi}`}
+                              className="text-muted-foreground flex flex-wrap items-baseline justify-between gap-2 text-xs"
+                            >
+                              <span className="min-w-0 truncate">
+                                {hesap.hesapAdi} · {hesap.adet}
+                              </span>
+                              <span className="shrink-0 tabular-nums">
+                                {karGorunur
+                                  ? bicim.para(hesap.net2, blok.paraBirimi)
+                                  : bicim.para(
+                                      hesap.gelir - hesap.iadeTutari,
+                                      blok.paraBirimi,
+                                    )}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
                     </div>
+                  ))}
 
-                    {/**
-                     * HESAP KIRILIMI — kanal kartının içinde.
-                     *
-                     * Kanal seviyesinde gruplamak doğru varsayılan ("Trendyol
-                     * bu ay ne yaptı") ama aynı pazaryerinde iki mağaza varsa
-                     * hangisinin ne yaptığı toplamın içinde kayboluyordu.
-                     * TEK HESAPTA HİÇ ÇİZİLMEZ: kırılım o zaman kanal
-                     * satırının tekrarıdır, gürültüden başka bir şey değil.
-                     */}
-                    {kanal.hesaplar.length > 1 ? (
-                      <ul className="space-y-1 border-t pt-2">
-                        {kanal.hesaplar.map((hesap) => (
-                          <li
-                            key={`${kanal.kanalKodu}-${hesap.hesapAdi}`}
-                            className="text-muted-foreground flex flex-wrap items-baseline justify-between gap-2 text-xs"
-                          >
-                            <span className="min-w-0 truncate">
-                              {hesap.hesapAdi} · {hesap.adet}
-                            </span>
-                            <span className="shrink-0 tabular-nums">
-                              {karGorunur
-                                ? bicim.para(hesap.net2, blok.paraBirimi)
-                                : bicim.para(
-                                    hesap.gelir - hesap.iadeTutari,
-                                    blok.paraBirimi,
-                                  )}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                ))}
-
-                {/* SATIŞI OLMAYAN KANALLAR — AÇIK SIFIR.
+                  {/* SATIŞI OLMAYAN KANALLAR — AÇIK SIFIR.
                     Kart soluk çizilir: "var ama boş" ile "hiç yok" ayrışsın.
                     Kanal sayısı arttığında bu bölümün ayarlardan seçilebilir
                     olması BEKLEYENLER'de. */}
-                {[...(paraBirimineGoreKanallar.get(blok.paraBirimi) ?? [])]
-                  .filter(
-                    ([kod]) => !blok.kanallar.some((k) => k.kanalKodu === kod),
-                  )
-                  .sort((a, b) => a[1].localeCompare(b[1], "tr"))
-                  .map(([kod, ad]) => (
-                    <div
-                      key={`bos-${kod}`}
-                      className="text-muted-foreground min-w-0 space-y-2 rounded-lg border border-dashed p-3"
-                    >
-                      <div className="font-medium">
-                        <Baglanti href={kanalSatislariAdresi(kod)}>{ad}</Baglanti>
+                  {[...(paraBirimineGoreKanallar.get(blok.paraBirimi) ?? [])]
+                    .filter(
+                      ([kod]) =>
+                        !blok.kanallar.some((k) => k.kanalKodu === kod),
+                    )
+                    .sort((a, b) => a[1].localeCompare(b[1], "tr"))
+                    .map(([kod, ad]) => (
+                      <div
+                        key={`bos-${kod}`}
+                        className="text-muted-foreground min-w-0 space-y-2 rounded-lg border border-dashed p-3"
+                      >
+                        <div className="font-medium">
+                          <Baglanti href={kanalSatislariAdresi(kod)}>
+                            {ad}
+                          </Baglanti>
+                        </div>
+                        <div className="text-xs">{t("kanalSatisYok")}</div>
+                        <div className="text-lg font-semibold tabular-nums">
+                          0
+                        </div>
                       </div>
-                      <div className="text-xs">{t("kanalSatisYok")}</div>
-                      <div className="text-lg font-semibold tabular-nums">0</div>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
           );
         })
       )}
@@ -1919,7 +1993,9 @@ export default async function AnaSayfa({
                           <>
                             {urunSatirlari.length <= LISTE_SATIRI &&
                             urunSatirlari.length > 0
-                              ? t("azCesitUyari", { sayi: urunSatirlari.length })
+                              ? t("azCesitUyari", {
+                                  sayi: urunSatirlari.length,
+                                })
                               : null}
                             {karsizUrun > 0 ? (
                               <> {t("karsizUrun", { sayi: karsizUrun })}</>
@@ -1996,7 +2072,9 @@ export default async function AnaSayfa({
                           </DurumRozeti>
                         ) : (
                           <DurumRozeti durum="olumlu" isaretsiz>
-                            {t("oluSermayeYok", { gun: YAS_BANTLARI.kirmiziGun })}
+                            {t("oluSermayeYok", {
+                              gun: YAS_BANTLARI.kirmiziGun,
+                            })}
                           </DurumRozeti>
                         )}
                       </div>
@@ -2029,22 +2107,29 @@ export default async function AnaSayfa({
                             </p>
                           ) : (
                             <ul className="max-w-3xl space-y-2">
-                              {pareto.karEdenler.slice(0, DAGILIM_SATIRI).map((u) => (
-                                <li key={u.anahtar} className="min-w-0 space-y-1">
-                                  <div className="flex min-w-0 items-baseline justify-between gap-2 text-sm">
-                                    <span className="min-w-0 truncate">{u.ad}</span>
-                                    <span className="shrink-0 tabular-nums">
-                                      {bicim.para(u.net2, dagilimParaBirimi)}
-                                    </span>
-                                  </div>
-                                  {/* Çubuk KÜMÜLATİFİ gösterir: "ilk N ürün
+                              {pareto.karEdenler
+                                .slice(0, DAGILIM_SATIRI)
+                                .map((u) => (
+                                  <li
+                                    key={u.anahtar}
+                                    className="min-w-0 space-y-1"
+                                  >
+                                    <div className="flex min-w-0 items-baseline justify-between gap-2 text-sm">
+                                      <span className="min-w-0 truncate">
+                                        {u.ad}
+                                      </span>
+                                      <span className="shrink-0 tabular-nums">
+                                        {bicim.para(u.net2, dagilimParaBirimi)}
+                                      </span>
+                                    </div>
+                                    {/* Çubuk KÜMÜLATİFİ gösterir: "ilk N ürün
                                       kârın %X'i" cümlesi gözle okunsun. */}
-                                  <PayCubugu
-                                    oran={u.kumulatif / 100}
-                                    etiket={bicim.yuzde(u.kumulatif)}
-                                  />
-                                </li>
-                              ))}
+                                    <PayCubugu
+                                      oran={u.kumulatif / 100}
+                                      etiket={bicim.yuzde(u.kumulatif)}
+                                    />
+                                  </li>
+                                ))}
                             </ul>
                           )}
                           {pareto.karEdenler.length > DAGILIM_SATIRI ? (
@@ -2061,7 +2146,9 @@ export default async function AnaSayfa({
                           className={`min-w-0 rounded-lg border p-3 ${DURUM_SERIDI.olumsuz} bg-card`}
                         >
                           <div className="mb-2 min-w-0">
-                            <div className="font-medium">{t("zararEdenler")}</div>
+                            <div className="font-medium">
+                              {t("zararEdenler")}
+                            </div>
                             <p className="text-muted-foreground text-xs">
                               {t("zararEdenlerNotu")}
                             </p>
@@ -2091,8 +2178,13 @@ export default async function AnaSayfa({
                                       key={u.anahtar}
                                       className="flex min-w-0 items-baseline justify-between gap-2 text-sm"
                                     >
-                                      <span className="min-w-0 truncate">{u.ad}</span>
-                                      <DurumRakami durum="olumsuz" className="shrink-0">
+                                      <span className="min-w-0 truncate">
+                                        {u.ad}
+                                      </span>
+                                      <DurumRakami
+                                        durum="olumsuz"
+                                        className="shrink-0"
+                                      >
                                         {bicim.para(u.net2, dagilimParaBirimi)}
                                       </DurumRakami>
                                     </li>
@@ -2103,7 +2195,8 @@ export default async function AnaSayfa({
                           {pareto.zararEdenler.length > DAGILIM_SATIRI ? (
                             <p className="text-muted-foreground mt-2 text-xs">
                               {t("dagilimKalan", {
-                                sayi: pareto.zararEdenler.length - DAGILIM_SATIRI,
+                                sayi:
+                                  pareto.zararEdenler.length - DAGILIM_SATIRI,
                               })}
                             </p>
                           ) : null}
@@ -2278,66 +2371,75 @@ export default async function AnaSayfa({
               okuyucuda ASIL kaynak budur (bkz. cizgi-grafik.tsx). Bu yüzden
               SİLİNMEZ; `<details>` ekran okuyucuda "genişlet" olarak
               tanınır, erişilebilirlik kaybı olmaz. */}
-          <KatlanirBolum baslik={t("aylikRakamlar")} notu={t("aylikRakamlarNotu")}>
-          <div className="overflow-x-auto rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("ay")}</TableHead>
-                  <TableHead className="text-right">{t("satisAdedi")}</TableHead>
-                  <TableHead className="text-right">{t("ciro")}</TableHead>
-                  {karGorunur ? (
-                    <TableHead className="text-right">{t("net1")}</TableHead>
-                  ) : null}
-                  {karGorunur ? (
-                    <TableHead className="text-right">{t("net2")}</TableHead>
-                  ) : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {aylikSatirlar.map(({ nokta, etiket }) => (
-                  <TableRow key={`${nokta.yil}-${nokta.ay}`}>
-                    <TableCell className="whitespace-nowrap">{etiket}</TableCell>
-                    <TableCell className="text-right">{nokta.adet}</TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      <CiroSunumu
-                        brut={bicim.para(nokta.gelir, seciliPara)}
-                        iade={
-                          nokta.iadeTutari > 0
-                            ? bicim.para(nokta.iadeTutari, seciliPara)
-                            : null
-                        }
-                        net={bicim.para(
-                          nokta.gelir - nokta.iadeTutari,
-                          seciliPara,
-                        )}
-                      />
-                    </TableCell>
+          <KatlanirBolum
+            baslik={t("aylikRakamlar")}
+            notu={t("aylikRakamlarNotu")}
+          >
+            <div className="overflow-x-auto rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("ay")}</TableHead>
+                    <TableHead className="text-right">
+                      {t("satisAdedi")}
+                    </TableHead>
+                    <TableHead className="text-right">{t("ciro")}</TableHead>
                     {karGorunur ? (
-                      <TableCell className="text-muted-foreground text-right whitespace-nowrap">
-                        {bicim.para(nokta.net1, seciliPara)}
-                      </TableCell>
+                      <TableHead className="text-right">{t("net1")}</TableHead>
                     ) : null}
                     {karGorunur ? (
-                      <TableCell className="text-right whitespace-nowrap">
-                        {bicim.para(nokta.net2, seciliPara)}
-                        {nokta.iadeAdedi > 0 ? (
-                          <span className="text-muted-foreground block text-xs">
-                            {t("kanalIade", { sayi: nokta.iadeAdedi })}
-                          </span>
-                        ) : null}
-                        {nokta.hesaplanamayanAdet > 0 ? (
-                          <span className="text-muted-foreground block text-xs">
-                            {t("kanalEksik", { sayi: nokta.hesaplanamayanAdet })}
-                          </span>
-                        ) : null}
-                      </TableCell>
+                      <TableHead className="text-right">{t("net2")}</TableHead>
                     ) : null}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {aylikSatirlar.map(({ nokta, etiket }) => (
+                    <TableRow key={`${nokta.yil}-${nokta.ay}`}>
+                      <TableCell className="whitespace-nowrap">
+                        {etiket}
+                      </TableCell>
+                      <TableCell className="text-right">{nokta.adet}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <CiroSunumu
+                          brut={bicim.para(nokta.gelir, seciliPara)}
+                          iade={
+                            nokta.iadeTutari > 0
+                              ? bicim.para(nokta.iadeTutari, seciliPara)
+                              : null
+                          }
+                          net={bicim.para(
+                            nokta.gelir - nokta.iadeTutari,
+                            seciliPara,
+                          )}
+                        />
+                      </TableCell>
+                      {karGorunur ? (
+                        <TableCell className="text-muted-foreground text-right whitespace-nowrap">
+                          {bicim.para(nokta.net1, seciliPara)}
+                        </TableCell>
+                      ) : null}
+                      {karGorunur ? (
+                        <TableCell className="text-right whitespace-nowrap">
+                          {bicim.para(nokta.net2, seciliPara)}
+                          {nokta.iadeAdedi > 0 ? (
+                            <span className="text-muted-foreground block text-xs">
+                              {t("kanalIade", { sayi: nokta.iadeAdedi })}
+                            </span>
+                          ) : null}
+                          {nokta.hesaplanamayanAdet > 0 ? (
+                            <span className="text-muted-foreground block text-xs">
+                              {t("kanalEksik", {
+                                sayi: nokta.hesaplanamayanAdet,
+                              })}
+                            </span>
+                          ) : null}
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </KatlanirBolum>
         </CardContent>
       </Card>
