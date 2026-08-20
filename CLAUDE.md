@@ -819,6 +819,44 @@ denetim onu üç kez şüpheli ilan etti; raporun `Komisyon Değişimi` kolonu
 > Denetim referansı seçilirken sorulur: **bu kaynak neyi kaydediyor —
 > niyeti mi, sonucu mu?** Para söz konusuysa sonuç kazanır.
 
+### KİMLİK VARKEN DİZEYLE ARANMAZ — VE CEVAPSIZ KAPSAM SORUSUNUN ÜSTÜNE ÖLÇÜM KURULMAZ (KESİN KURAL)
+
+_Mimar kararı 20.08.2026, K11a → K11a-b._
+
+**1) CEVAPLANMAMIŞ KAPSAM SORUSUNUN ÜSTÜNE ÖLÇÜM KURULMAZ.** K11a komutu
+haziran/temmuzu "kapanmış" VARSAYARAK kuruldu; o kapsam sorusu iki tur önce
+sorulmuş, cevap gelmemişti. Soru sorulup cevap beklenmeden devam edilirse
+ölçüm cevabı varsayar ve **varsayımı veri gibi basar.**
+
+**2) KİMLİK VARKEN DİZEYLE ARAMA YAPILMAZ.** Dört ürün ADLA listelendi;
+kaynak raporda `Barkod` kolonu vardı. Dize araması sıfır dönerse **yokluğu
+değil bulunamamayı** gösterir ve ikisi rapora AYRI yazılır.
+
+⚠ **AMA "DİZE ARADIM" DA TEK BAŞINA HÜKÜM DEĞİLDİR — O DA ÖLÇÜLÜR.** Aynı
+vakada zero'ların artefakt olduğu varsayıldı; ölçüm bunu çürüttü: ürünler
+sistemde `"Qp2824/10 Oneblade…"` ve `"Karaca Burby Wood…"` adıyla
+kayıtlıydı, desenler **eşleşirdi**. Sıfırlar gerçekti; eksik olan sayı
+değil **kategoriydi** (ürün mü yok, eşleştirme mi yok, satır mı yok).
+Kural geçerli kalır, gerekçesi düzeltilir.
+
+**3) SIFIR ÜÇ FARKLI ŞEY OLABİLİR — ÜÇÜ AYRI SAYILIR.**
+`(a)` kimlik sistemde hiç yok · `(b)` kayıt var, eşleştirme yok ·
+`(c)` kayıt + eşleştirme var, **satır yok**. Üçü "bulunamadı" diye tek
+kefeye konursa **en güçlü kanıt en zayıfla aynı ağırlığa iner** —
+`(c)` giriş eksikliğinin doğrudan kanıtıdır, `(a)` ise yalnızca bir soru.
+
+**4) BENZER AD, AYNI KİMLİK DEĞİLDİR.** Rapordaki Soundcore Q21i
+`194645027819`; sistemdeki tek Q21i kaydının barkodu `194644037819`.
+Adla bakan biri "var, 1 adet girilmiş" der; **kimlikle bakan "bu ürün
+sistemde hiç yok" der.** İkisi farklı işe yol açar — biri eksik satır
+arar, öteki ürün tanımlar.
+
+**5) EN GÜÇLÜ CÜMLE, EN ÇOK TARTIŞMADAN SAĞ ÇIKANDIR.** Kapsamı tartışmalı
+bir FARK yerine kapsamdan bağımsız bir EŞİTSİZLİK kurulabiliyorsa o yazılır:
+_"tüm TY geçmişimiz 43 brüt adet; rapor tek bir ALT KÜMEDE, daha KISA bir
+aralıkta 72 adet diyor."_ Alt küme üst kümeden büyük olamaz — hesap, birim
+ve sınır tartışmalarının hiçbiri bu eşitsizliği çeviremez.
+
 ### KAYNAĞI YAZILMAYAN SAYI KULLANILAMAZ — VE YÖN, BÜYÜKLÜK DEĞİLDİR (KESİN KURAL)
 
 _Mimar kararı 20.08.2026, K9/K14._ Bir ölçüm panoya geçerken iki ayrı şey
