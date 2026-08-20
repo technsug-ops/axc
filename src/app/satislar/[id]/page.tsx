@@ -457,6 +457,45 @@ export default async function SatisDetaySayfasi({
         </div>
       </div>
 
+      {/* ═══════════════ İPTAL DURUMU — EN ÜSTTE ═══════════════
+          ⚠ TAŞINDI 20.08.2026. Bu kutu sayfanın EN ALTINDAYDI: okuyan
+          önce toplam tutarı, kalemleri ve **NET-2'yi** görüyor, iptali en
+          son öğreniyordu. İptal edilmiş bir satışta "NET-2 ₺438,72"
+          okumak, o satışın kazandırdığı sanılmasına yol açar — oysa satış
+          HİÇ DOĞMAMIŞ sayılır ve hiçbir toplama girmez.
+
+          Rakamlar yanlış değil (kaydın dondurulmuş hâli), ÇERÇEVESİ
+          eksikti. Kaydın DURUMU, içeriğinden ÖNCE okunur.
+          _"Görünen ≠ görülen" dersinin yerleşim hâli._
+
+          ⚠ İPTAL DÜĞMESİ AŞAĞIDA KALDI: durum bir BEYAN, iptal bir
+          EYLEMDİR. Yıkıcı eylemi sayfanın tepesine koymak, okumaya gelen
+          kullanıcıyı yanlışlıkla tıklamaya davet ederdi. */}
+      {/* İPTAL EDİLMİŞ SATIŞ DÜZENLENEMEZ — form yerine DURUM yazar.
+          Kayıt silinmiyor; ne zaman, kim, hangi sebeple iptal ettiği
+          görünür kalıyor. */}
+      {satis.iptalTarihi !== null ? (
+        <div className={`space-y-1 rounded-lg p-4 ${DURUM_KUTUSU.olumsuz}`}>
+          <p className={`font-medium ${DURUM_YAZISI.olumsuz}`}>
+            {tIpt("iptalEdildi", { tarih: bicim.tarih(satis.iptalTarihi) })}
+          </p>
+          {satis.iptalSebebi ? (
+            <p className={`text-sm ${DURUM_YAZISI.olumsuz}`}>
+              {tIpt(`sebep_${satis.iptalSebebi}`)}
+              {satis.iptalNotu ? ` — ${satis.iptalNotu}` : ""}
+            </p>
+          ) : null}
+          <p className={`text-xs ${DURUM_YAZISI.olumsuz}`}>
+            {tIpt("iptalNotuAciklama")}
+          </p>
+          {/* GERİ ALMA — gerçek dünya kanıtı 17.08.2026: yanlış iptal olur
+              ve geri yolu ekranda olmalı, terminalde değil. */}
+          {/* Geri alma da `satis.iptal`e bağlı — iptal edebilen geri de
+              alabilmeli, yoksa kendi hatasını düzeltemeyen rol doğar. */}
+          {iptalEdebilir ? <GeriAlFormu saleId={satis.id} /> : null}
+        </div>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>{t("satisBilgileri")}</CardTitle>
@@ -713,35 +752,15 @@ export default async function SatisDetaySayfasi({
           Kullanıcı talebi 17.08.2026: fiyat hatası script'siz, ekrandan
           düzeltilebilmeli. Önizleme-önce; onay düğmesi plan çizilmeden
           aktif olmaz. */}
-      {/* İPTAL EDİLMİŞ SATIŞ DÜZENLENEMEZ — form yerine DURUM yazar.
-          Kayıt silinmiyor; ne zaman, kim, hangi sebeple iptal ettiği
-          görünür kalıyor. */}
-      {satis.iptalTarihi !== null ? (
-        <div className={`space-y-1 rounded-lg p-4 ${DURUM_KUTUSU.olumsuz}`}>
-          <p className={`font-medium ${DURUM_YAZISI.olumsuz}`}>
-            {tIpt("iptalEdildi", { tarih: bicim.tarih(satis.iptalTarihi) })}
-          </p>
-          {satis.iptalSebebi ? (
-            <p className={`text-sm ${DURUM_YAZISI.olumsuz}`}>
-              {tIpt(`sebep_${satis.iptalSebebi}`)}
-              {satis.iptalNotu ? ` — ${satis.iptalNotu}` : ""}
-            </p>
-          ) : null}
-          <p className={`text-xs ${DURUM_YAZISI.olumsuz}`}>
-            {tIpt("iptalNotuAciklama")}
-          </p>
-          {/* GERİ ALMA — gerçek dünya kanıtı 17.08.2026: yanlış iptal olur
-              ve geri yolu ekranda olmalı, terminalde değil. */}
-          {/* Geri alma da `satis.iptal`e bağlı — iptal edebilen geri de
-              alabilmeli, yoksa kendi hatasını düzeltemeyen rol doğar. */}
-          {iptalEdebilir ? <GeriAlFormu saleId={satis.id} /> : null}
-        </div>
-      ) : iptalEdebilir ? (
+
+      {/* İPTAL EYLEMİ — durum beyanı yukarıda, EYLEM burada. Yıkıcı
+          düğme sayfanın tepesinde durmaz (İlke #6: onay ister, ama önce
+          kasıtla ulaşılmalı). */}
+      {satis.iptalTarihi === null && iptalEdebilir ? (
         <div className="flex flex-wrap gap-2">
           <IptalFormu saleId={satis.id} />
         </div>
       ) : null}
-
       {satis.iptalTarihi === null && duzenleyebilir ? (
       <DuzenleFormu
         saleId={satis.id}

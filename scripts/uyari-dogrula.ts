@@ -1108,6 +1108,43 @@ console.log("=".repeat(70));
 
 console.log("");
 console.log("=".repeat(70));
+console.log("F2-L) İPTAL DURUMU RAKAMLARDAN ÖNCE OKUNUR");
+console.log("=".repeat(70));
+{
+  /**
+   * ⚠ CANLI BULGU 20.08.2026 (`sfsfsf` ekran görüntüsü): iptal kutusu
+   * sayfanın EN ALTINDAYDI. Okuyan önce toplam tutarı, kalemleri ve
+   * NET-2'yi görüyor, iptali en son öğreniyordu — "NET-2 ₺438,72" ibaresi
+   * o satışın kazandırdığı sanılmasına yol açar. Oysa iptal edilen satış
+   * HİÇ DOĞMAMIŞ sayılır ve hiçbir toplama girmez.
+   */
+  const detay = readFileSync("src/app/satislar/[id]/page.tsx", "utf8");
+  const iptalKutusu = detay.indexOf('tIpt("iptalEdildi"');
+  const bilgiKarti = detay.indexOf('{t("satisBilgileri")}');
+  const karBlogu = detay.indexOf('t("kalemKari")');
+  kontrol("iptal durumu bilgi kartından ÖNCE", iptalKutusu > 0 && iptalKutusu < bilgiKarti);
+  kontrol(
+    "  ...ve kâr bloğundan ÖNCE",
+    iptalKutusu > 0 && (karBlogu < 0 || iptalKutusu < karBlogu),
+  );
+
+  /**
+   * ⚠ DURUM BEYANDIR, İPTAL EYLEMDİR. Yıkıcı düğmeyi sayfanın tepesine
+   * koymak, okumaya gelen kullanıcıyı yanlışlıkla tıklamaya davet ederdi.
+   */
+  const iptalDugmesi = detay.indexOf("<IptalFormu saleId={satis.id} />");
+  kontrol("iptal DÜĞMESİ aşağıda kaldı", iptalDugmesi > bilgiKarti);
+  kontrol(
+    "  ...ve yalnız iptalsiz satışta çizilir",
+    /satis\.iptalTarihi === null && iptalEdebilir/.test(detay),
+  );
+
+  /** Geri alma yolu iptal kutusunun İÇİNDE — durum ve çaresi bir arada. */
+  kontrol("geri alma kutunun içinde", detay.indexOf("<GeriAlFormu") < bilgiKarti);
+}
+
+console.log("");
+console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
 else {
   console.log(`${kalan} KONTROL BAŞARISIZ (${gecen + kalan} kontrolden)`);
