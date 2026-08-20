@@ -50,3 +50,6 @@ yedekler/
 
 # Ticari veri (urun listeleri, komisyon, hakedis) — depo herkese acik
 veri/ozel/
+
+# Ölçüm çıktıları — GERÇEK TİCARİ VERİ. Depo herkese açık; asla commit edilmez.
+raporlar/
