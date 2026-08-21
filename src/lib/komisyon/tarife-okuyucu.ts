@@ -247,13 +247,36 @@ export function tarifeOku(veri: unknown[][], bugun: Date): TarifeOkumasi {
   if (enDolu === 0) {
     return { ...bos, eksikSutunlar: ["komisyon değerleri (tüm bloklar boş)"] };
   }
-  const seciliBlok = komBloklari[doluluk.indexOf(enDolu)];
+  const blokSirasi = doluluk.indexOf(enDolu);
+  const seciliBlok = komBloklari[blokSirasi];
 
-  /** Pencere: "Tarih aralığı (N Gün)" hücrelerinden ilk ÇÖZÜLEBİLEN. */
+  /**
+   * PENCERE, SEÇİLEN BLOĞUN KENDİ TARİH KOLONUNDAN.
+   *
+   * ⚠ ÖNCE "İLK ÇÖZÜLEBİLEN" ALINIYORDU ve bu bir KAPSAM TUZAĞIYDI:
+   * oranlar dolu bloktan, pencere ise kolon sırasına göre İLK okunabilen
+   * tarihten geliyordu. Bugüne kadar tutmasının sebebi kural değil
+   * TESADÜFTÜ — elimizdeki iki dosyada da bloklardan biri tamamen boştu,
+   * dolayısıyla boş bloğun tarihi zaten çözülemiyordu.
+   *
+   * İki blok birden dolu gelen bir dosyada (Trendyol'un biçimi bunu açıkça
+   * öngörüyor: "3 Gün" ve "4 Gün" yuvaları) oranlar bir pencereden,
+   * ETİKET öteki pencereden yazılırdı. Sonuç sessizce yanlış olurdu:
+   * rakamlar makul, tarih makul, ikisi birbirine ait DEĞİL.
+   *
+   * Blok sırası ile tarih kolonu sırası aynı: her "Tarih aralığı (N Gün)"
+   * kolonunu kendi 1-4.KOMİSYON dördülü izliyor. Eşi çözülemezse ötekilere
+   * düşülür — dosya biçimi değişirse pencere büsbütün kaybolmasın.
+   */
   let pencere: TarifePenceresi | null = null;
-  const pencereKolonlari = [...dizin.entries()]
+  const tarihKolonlari = [...dizin.entries()]
     .filter(([ad]) => ad.includes("tarih") && ad.includes("aral"))
     .flatMap(([, kolonlar]) => kolonlar);
+  const esKolon = tarihKolonlari[blokSirasi];
+  const pencereKolonlari =
+    esKolon === undefined
+      ? tarihKolonlari
+      : [esKolon, ...tarihKolonlari.filter((k) => k !== esKolon)];
   for (const kolon of pencereKolonlari) {
     for (const r of satirlar) {
       const cozulen = pencereCoz(String(r[kolon] ?? ""), bugun);

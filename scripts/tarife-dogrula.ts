@@ -508,6 +508,89 @@ console.log("\nKOMİSYON TARİFESİ — DOĞRULAMA\n");
   kontrol("kanal listesi verilmezse barkodla çalışır", eskiCagri.rapor.eslesenUrun === 1);
 }
 
+// --- 13) İKİ BLOK BİRDEN DOLU — PENCERE KENDİ BLOĞUNDAN ---------------------
+{
+  console.log("");
+  console.log("13) İKİ BLOK BİRDEN DOLU — pencere KENDİ bloğundan okunur");
+
+  /**
+   * ⚠ BU DOSYA HENÜZ GÖRÜLMEDİ ama Trendyol'un biçimi onu AÇIKÇA öngörüyor:
+   * iki pencere yuvası var ("3 Gün" ve "4 Gün"). Elimizdeki iki dosyada da
+   * bloklardan biri tamamen boştu ve okuyucu doğru pencereyi bulmuştu —
+   * ama KURAL sayesinde değil, TESADÜF sayesinde: boş bloğun tarihi zaten
+   * çözülemiyordu.
+   *
+   * İkisi birden dolu gelseydi oranlar DOLU bloktan, pencere ise kolon
+   * sırasına göre İLK çözülebilen tarihten gelirdi. Sonuç sessizce yanlış
+   * olurdu: rakamlar makul, tarih makul, ikisi birbirine AİT DEĞİL.
+   *
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: iki blok FARKLI pencere
+   * ve FARKLI oran taşıyor. Aynı tarih yazılsaydı test tesadüfen geçerdi.
+   */
+  const ikiBlok = [
+    "Manuel Rondo 500 ml",
+    "111",
+    "EN10000283784",
+    769.99,
+    769.98,
+    701.29,
+    701.28,
+    641.09,
+    641.08,
+    /* 3 Gün penceresi — DOLU ama daha AZ satırda geçerli olacak */
+    "11 Ağustos 08.00-14 Ağustos 07.59",
+    9,
+    8,
+    7,
+    6,
+    /* 4 Gün penceresi — DOLU */
+    "14 Ağustos 08.00-18 Ağustos 07.59",
+    18,
+    12.8,
+    11.1,
+    9.3,
+    18,
+    "034bd9e6cfa495614d55675a24b6b6f9",
+  ];
+  /**
+   * İkinci satırda YALNIZ 4 Gün bloğu dolu → doluluk 4 Gün lehine (2'ye 1),
+   * yani seçilen blok 4 Gün. Pencere de ONUN tarihini göstermeli.
+   */
+  const okuma = tarifeOku(
+    [BASLIK, ikiBlok, satir("222", undefined, undefined, 4)],
+    BUGUN,
+  );
+
+  kontrol("iki blok dolu dosya okunabildi", okuma.eksikSutunlar.length === 0, okuma.eksikSutunlar);
+  kontrol(
+    "oranlar DOLU bloktan (4 Gün → %18)",
+    okuma.satirlar[0]?.dilimler[0]?.oran === 18,
+    okuma.satirlar[0]?.dilimler[0]?.oran,
+  );
+  /**
+   * ⚠ ASIL KONTROL: pencere 14 Ağustos olmalı, 11 Ağustos DEĞİL. Eski kod
+   * kolon sırasına baktığı için 11 Ağustos'u yazardı — oranlar 4 Gün
+   * bloğundan gelirken etiket 3 Gün bloğundan.
+   */
+  kontrol(
+    "pencere SEÇİLEN bloğun tarihi (14 Ağustos)",
+    okuma.pencere?.baslangic.toISOString() === "2026-08-14T05:00:00.000Z",
+    okuma.pencere?.baslangic.toISOString(),
+  );
+  kontrol(
+    "  ...öteki bloğun tarihi (11 Ağustos) KULLANILMADI",
+    okuma.pencere?.baslangic.toISOString() !== "2026-08-11T05:00:00.000Z",
+  );
+
+  /** Tek blok dolu olan eski dosyalar aynen çalışmaya devam etmeli. */
+  const ucuncuTek = tarifeOku([BASLIK, satir("333", undefined, undefined, 3)], BUGUN);
+  kontrol(
+    "tek blok (3 Gün) dosyası hâlâ okunuyor",
+    ucuncuTek.pencere?.baslangic.toISOString() === "2026-08-14T05:00:00.000Z",
+    ucuncuTek.pencere?.baslangic.toISOString(),
+  );
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
