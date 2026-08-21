@@ -5,7 +5,9 @@ import {
   operasyonSerisi,
   operasyonToplami,
   serileriKur,
+  TABLO_ACIK_TAVANI,
   TABLO_TAVANI,
+  tabloAcikMi,
   tabloNoktalari,
 } from "../src/lib/panel/operasyon-serisi";
 
@@ -366,6 +368,17 @@ console.log("\n9) TABLO TAVANI — özet ekranda döküm olmaz (İlke #13)");
     satislar: [],
     kargolar: [],
   });
+  /**
+   * ── VARSAYILAN AÇIK/KAPALI (kullanıcı kararı 21.08.2026) ────────────────
+   * ⚠ ÖRNEK VERİ EŞİĞİN İKİ YAKASINI DA SINIYOR: 7 ve 8. Yalnız "7 açık"
+   * yazsaydım "hep açık" mutasyonu yeşil kalırdı.
+   */
+  kontrol("bir haftalık tablo (7) AÇIK gelir", tabloAcikMi(7));
+  kontrol("8 satır KAPALI gelir", !tabloAcikMi(8));
+  kontrol("tek satır da AÇIK", tabloAcikMi(1));
+  kontrol("15 satır (tavan) KAPALI", !tabloAcikMi(TABLO_TAVANI));
+  kontrol("eşik bir hafta", TABLO_ACIK_TAVANI === 7, TABLO_ACIK_TAVANI);
+
   const k = tabloNoktalari(kisa);
   kontrol("15 nokta TAM gösteriliyor, gizlenen yok", k.gosterilen.length === 15 && k.gizlenen === 0);
 }

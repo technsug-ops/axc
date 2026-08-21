@@ -1851,7 +1851,8 @@
     "operasyonToplamCiro": "Dönem toplamı — alım {alim} · satış {satis} · FARK {fark}",
     "operasyonKdvNotu": "⚠ Bu grafik CİRO gösterir, KDV değil. Ödenecek KDV = satış KDV'si − alış KDV'si ve oran ürüne göre değişir (%1/%10/%20). Aynı ciroda farklı oranlı ürünler bambaşka KDV üretir; iki cironun farkı vergi tutarını VERMEZ.",
     "operasyonFark": "Fark (satış − alım)",
-    "operasyonTumunuGor": "+{sayi} dönem daha var — tam dökümü Rapor sayfasında aç"
+    "operasyonTumunuGor": "+{sayi} dönem daha var — tam dökümü Rapor sayfasında aç",
+    "operasyonTabloAc": "Tabloyu aç — {sayi} dönem, rakamların tamamı"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

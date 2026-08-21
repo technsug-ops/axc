@@ -78,6 +78,7 @@ import {
   operasyonSerisi,
   operasyonToplami,
   serileriKur,
+  tabloAcikMi,
   tabloNoktalari,
 } from "@/lib/panel/operasyon-serisi";
 import { UcSeriliGrafik } from "@/components/uc-serili-grafik";
@@ -1810,6 +1811,38 @@ export default async function AnaSayfa({
                 };
               })}
               gizlenenSayisi={operasyonTablo.gizlenen}
+              /* Bir haftalık veya daha kısa tabloda açık gelir; uzunda
+                 kapalı (İlke #13). Eşik saf işlevde, teste bağlı. */
+              tabloAcik={tabloAcikMi(operasyonTablo.gosterilen.length)}
+              /* AKORDİYON BAŞLIĞI — kaç satır olduğunu söylüyor ki
+                 açmadan önce beklenti kurulsun (İlke #5). */
+              tabloAcMetni={t("operasyonTabloAc", {
+                sayi: operasyonTablo.gosterilen.length,
+              })}
+              /* ⚠ ÖZET GRAFİK İLE TABLO ARASINDA (kullanıcı 21.08.2026):
+                 önce eğilim, sonra hüküm, en sonra istersen döküm. */
+              ozet={
+                <p className="text-muted-foreground text-xs">
+                  {operasyonGorunumu === "ciro"
+                    ? /* ⚠ KARGO CİROSU YAZILMIYOR (kullanıcı: "ihtiyaç yok").
+                         Yerine FARK: satış − alım. */
+                      t("operasyonToplamCiro", {
+                        alim: bicim.para(operasyonToplam.alimTutar, seciliPara),
+                        satis: bicim.para(
+                          operasyonToplam.satisCiro,
+                          seciliPara,
+                        ),
+                        fark: bicim.para(operasyonToplam.fark, seciliPara),
+                      })
+                    : /* Adet tarafında üç kalem + TOPLAM İŞLEM sayısı. */
+                      t("operasyonToplamAdet", {
+                        alim: operasyonToplam.alimAdet,
+                        satis: operasyonToplam.satisAdet,
+                        kargo: operasyonToplam.kargoAdet,
+                        islem: operasyonToplam.islemAdedi,
+                      })}
+                </p>
+              }
               /* TAM DÖKÜM KENDİ SAYFASINDA (İlke #13): panelde rakam +
                  "aç" bağlantısı kalır, döküm rapora gider. */
               tumunuGorAdresi={suzgecAdresi("/rapor", {}, donemParametreleri())}
@@ -1831,26 +1864,6 @@ export default async function AnaSayfa({
               }
               bosMesaj={t("donemBos")}
             />
-
-            {/* TOPLAM DA YAZAR (İlke #15): satır satır gösterilen şeyin
-                toplamı da ekranda durur ve SÜZGEÇLE birlikte değişir. */}
-            <p className="text-muted-foreground text-xs">
-              {operasyonGorunumu === "ciro"
-                ? /* ⚠ KARGO CİROSU YAZILMIYOR (kullanıcı: "ihtiyaç yok").
-                     Yerine FARK: satış − alım. */
-                  t("operasyonToplamCiro", {
-                    alim: bicim.para(operasyonToplam.alimTutar, seciliPara),
-                    satis: bicim.para(operasyonToplam.satisCiro, seciliPara),
-                    fark: bicim.para(operasyonToplam.fark, seciliPara),
-                  })
-                : /* Adet tarafında üç kalem + TOPLAM İŞLEM sayısı. */
-                  t("operasyonToplamAdet", {
-                    alim: operasyonToplam.alimAdet,
-                    satis: operasyonToplam.satisAdet,
-                    kargo: operasyonToplam.kargoAdet,
-                    islem: operasyonToplam.islemAdedi,
-                  })}
-            </p>
 
             {/* ⚠⚠ KDV UYARISI — KULLANICININ İKİNCİ GEREKÇESİ BUYDU.
                 "Alım KDV'si ile satış KDV'si arasındaki fark ödeyeceğim

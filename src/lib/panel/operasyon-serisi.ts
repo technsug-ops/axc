@@ -278,6 +278,26 @@ export function operasyonToplami(noktalar: OperasyonNoktasi[]): {
 export const TABLO_TAVANI = 15;
 
 /**
+ * TABLO VARSAYILAN AÇIK EŞİĞİ — bu kadar veya daha az satırda tablo AÇIK
+ * gelir, fazlasında kapalı.
+ *
+ * ⚠ Kullanıcı kararı 21.08.2026: _"eğer bu haftalık veri kadar bilgi
+ * tabloda görünüyorsa (toplam 7 satır) tablo default görünür olsun"_.
+ *
+ * Gerekçe iki taraflı ve ikisi de doğru:
+ *  · KISA tabloda kapalı durmak GEREKSİZ bir tık ekler — bilgi zaten
+ *    ekrana sığıyor, saklamanın karşılığı yok.
+ *  · UZUN tabloda açık durmak paneli özet olmaktan çıkarır (İlke #13).
+ * Eşik "bir hafta" — operasyonun doğal bakış birimi.
+ */
+export const TABLO_ACIK_TAVANI = 7;
+
+/** Tablo varsayılan açık mı? Satır sayısına bağlı, kırılıma değil. */
+export function tabloAcikMi(satirSayisi: number): boolean {
+  return satirSayisi <= TABLO_ACIK_TAVANI;
+}
+
+/**
  * Tabloda gösterilecek noktalar — SONDAN, yani en YENİ.
  *
  * ⚠ BAŞTAN DEĞİL SONDAN kırpılıyor: kırpılan bilgi eski taraf olmalı.

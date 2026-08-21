@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 
 /**
  * ============================================================================
@@ -85,6 +86,9 @@ export function UcSeriliGrafik({
   gizlenenSayisi,
   tumunuGorAdresi,
   tumunuGorMetni,
+  tabloAcMetni,
+  ozet,
+  tabloAcik = false,
 }: {
   noktalar: UcSeriNoktasi[];
   adlar: { a: string; b: string; c: string };
@@ -99,6 +103,24 @@ export function UcSeriliGrafik({
   gizlenenSayisi: number;
   tumunuGorAdresi: string;
   tumunuGorMetni: string;
+  /** Kapalı akordiyonun üstünde yazan metin. */
+  tabloAcMetni: string;
+  /**
+   * GRAFİK İLE TABLO ARASINA giren özet satırı (kullanıcı 21.08.2026).
+   *
+   * ⚠ NİYE PROP, NİYE ALTA DEĞİL: toplam, grafiğin CEVABI. Tablonun
+   * altında dururken önce döküm okunuyor, hüküm en sona kalıyordu. Sıra
+   * artık "eğilim → hüküm → istersen döküm".
+   *
+   * ⚠ Bileşenin içine yazılmadı: toplamın METNİ ekranın işine göre değişir
+   * (adet mi ciro mu, hangi para birimi). Grafik onu bilmez, çağıran bilir.
+   */
+  ozet?: React.ReactNode;
+  /**
+   * Tablo VARSAYILAN AÇIK mı? Kural bileşende değil, saf işlevde
+   * (`tabloAcikMi`) — eşik değişirse test kırmızı yansın diye.
+   */
+  tabloAcik?: boolean;
 }) {
   if (noktalar.length === 0) {
     return <p className="text-muted-foreground text-sm">{bosMesaj}</p>;
@@ -134,7 +156,9 @@ export function UcSeriliGrafik({
   ];
 
   const yol = (sec: (n: UcSeriNoktasi) => number) =>
-    noktalar.map((n, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(sec(n))}`).join(" ");
+    noktalar
+      .map((n, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(sec(n))}`)
+      .join(" ");
 
   return (
     <div className="min-w-0 space-y-3">
@@ -252,74 +276,109 @@ export function UcSeriliGrafik({
         )}
       </svg>
 
+      {/* ÖZET — grafiğin hemen altında, tablodan ÖNCE. */}
+      {ozet}
+
       {/*
+        ⚠ TABLO VARSAYILAN KAPALI — AMA KAYBOLMADI (kullanıcı 21.08.2026).
+        Grafik zaten cevabı veriyor; tablo "rakamı tam görmek isteyen" için.
+        Açık dururken panelin yarısını yiyordu (İlke #12: alanı verimli
+        kullan).
+
+        ⚠ `<details>` SEÇİLDİ, AKORDİYON BİLEŞENİ DEĞİL: shadcn Accordion
+        istemci bileşeni ve bu grafiğin "sıfır istemci JS" sözünü bozardı
+        (12.08.2026 kütüphane kararının aynı ailesi). `<details>` tarayıcının
+        kendi açılır-kapanırı: klavyeyle çalışır, ekran okuyucu "genişlet"
+        diye duyurur, JavaScript kapalıyken bile açılır.
+
+        ⚠ ERİŞİLEBİLİRLİK KAYBI YOK: SVG `aria-hidden`, yani veriyi okuyan
+        tek yer bu tablo. Kapalı olması onu DOM'dan çıkarmıyor — ekran
+        okuyucu açılır bölümü görür ve açabilir.
+
         ⚠ TABLO ASIL OKUNABİLİR HÂL — süs değil, ve KIRPILMIŞ.
         Özet ekranda döküm olmaz (İlke #13): satır sayısı veriyle büyüyen
         hiçbir şey panele konmaz. Gizlenen varsa SAYISI yazar ve tam dökümün
         adresi verilir — "bir şey gizlendi" sessiz kalmaz.
       */}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[28rem] text-sm">
-          <thead>
-            <tr className="text-muted-foreground border-b text-left text-xs">
-              <th className="py-1 pr-2 font-normal">—</th>
-              {seriler.map((s) => (
-                <th key={s.anahtar} className="py-1 pr-2 text-right font-normal">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span
-                      aria-hidden
-                      className="inline-block h-1 w-3 rounded"
-                      style={{ backgroundColor: s.renk }}
-                    />
-                    {s.ad}
-                  </span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {tabloNoktalari.map((n, i) => (
-              <tr key={n.tamEtiket + i} className="border-b last:border-0">
-                <td className="text-muted-foreground py-1 pr-2 whitespace-nowrap">
-                  {n.tamEtiket}
-                </td>
-                {seriler.map((s) => {
-                  const adres = n.adres?.[s.anahtar];
-                  const deger = bicimle(n[s.anahtar]);
-                  return (
-                    <td
-                      key={s.anahtar}
-                      className="py-1 pr-2 text-right tabular-nums"
-                    >
-                      {adres ? (
-                        <Link
-                          href={adres}
-                          className="hover:text-foreground underline-offset-2 hover:underline"
-                        >
-                          {deger}
-                        </Link>
-                      ) : (
-                        deger
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <details open={tabloAcik} className="group rounded-lg border">
+        <summary className="hover:bg-muted/60 flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm">
+          {/* İŞARET + METİN BİRLİKTE: ok tek başına "burada bir şey var"
+              demez; yanında ne olduğu yazıyor. */}
+          <ChevronRight
+            aria-hidden
+            className="size-4 shrink-0 transition-transform group-open:rotate-90"
+          />
+          {tabloAcMetni}
+        </summary>
 
-      {gizlenenSayisi > 0 ? (
-        <p className="text-muted-foreground text-xs">
-          <Link
-            href={tumunuGorAdresi}
-            className="hover:text-foreground underline underline-offset-2"
-          >
-            {tumunuGorMetni}
-          </Link>
-        </p>
-      ) : null}
+        <div className="overflow-x-auto px-3 pb-3">
+          <table className="w-full min-w-[28rem] text-sm">
+            <thead>
+              <tr className="text-muted-foreground border-b text-left text-xs">
+                <th className="py-1 pr-2 font-normal">—</th>
+                {seriler.map((s) => (
+                  <th
+                    key={s.anahtar}
+                    className="py-1 pr-2 text-right font-normal"
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        aria-hidden
+                        className="inline-block h-1 w-3 rounded"
+                        style={{ backgroundColor: s.renk }}
+                      />
+                      {s.ad}
+                    </span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tabloNoktalari.map((n, i) => (
+                <tr key={n.tamEtiket + i} className="border-b last:border-0">
+                  <td className="text-muted-foreground py-1 pr-2 whitespace-nowrap">
+                    {n.tamEtiket}
+                  </td>
+                  {seriler.map((s) => {
+                    const adres = n.adres?.[s.anahtar];
+                    const deger = bicimle(n[s.anahtar]);
+                    return (
+                      <td
+                        key={s.anahtar}
+                        className="py-1 pr-2 text-right tabular-nums"
+                      >
+                        {adres ? (
+                          <Link
+                            href={adres}
+                            className="hover:text-foreground underline-offset-2 hover:underline"
+                          >
+                            {deger}
+                          </Link>
+                        ) : (
+                          deger
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* GİZLENEN SATIR SESSİZ KALMAZ — sayısı ve tam dökümün adresi
+            tablonun İÇİNDE, yani onu okuyanın gözünün önünde. */}
+          {gizlenenSayisi > 0 ? (
+            <p className="text-muted-foreground pt-2 text-xs">
+              <Link
+                href={tumunuGorAdresi}
+                className="hover:text-foreground underline underline-offset-2"
+              >
+                {tumunuGorMetni}
+              </Link>
+            </p>
+          ) : null}
+        </div>
+      </details>
     </div>
   );
 }
