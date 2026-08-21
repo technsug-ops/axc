@@ -948,6 +948,131 @@ console.log("9) KANAL BAŞINA BUY BOX FİYATI — asıl satış kararı burada")
   );
 }
 
+// ===========================================================================
+console.log("");
+console.log("10) EKRAN — son satış fiyatı, yanıltıcı satır, durum rengi");
+// ===========================================================================
+{
+  const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+
+  /**
+   * ⚠ ORTALAMA DEĞİL SON SATIŞ (kullanıcı kararı 21.08.2026). Ortalama,
+   * aylar önceki bir fiyatı bugünkü denemeye karıştırır ve fiyat kaymasını
+   * gizler. Desen `ara()` içinde TEK yerde geçmeli.
+   */
+  kontrol(
+    "satış alanı SON satış fiyatından doluyor",
+    ekran.includes("setSatis(z.sonSatisFiyati.toFixed(2))"),
+  );
+  kontrol(
+    "  ...ortalama satış artık ALANI DOLDURMUYOR",
+    !ekran.includes("setSatis(z.ortalamaSatis"),
+  );
+  const zemin = readFileSync("src/lib/simulasyon/urun-zemini.ts", "utf8");
+  /**
+   * ⚠ SON SATIŞ, ORTALAMAYLA AYNI KÜMEDEN: iki rakam farklı kümelerden
+   * gelseydi ekranda yan yana durup birbirini yalanlarlardı.
+   */
+  /**
+   * ⚠ DESENİ DOSYADA DEĞİL SORGU BLOĞUNDA ARA: `iptalTarihi: null` bu
+   * dosyada İKİ kez geçiyor (ortalama satış sorgusu + son satış sorgusu).
+   * Dosyanın tamamında aramak, son satış sorgusundan süzgeç kalksa bile
+   * yeşil kalırdı — ötekini bulurdu.
+   */
+  const sonSatisSorgusu = zemin.slice(
+    zemin.indexOf("const sonSatis = await"),
+    zemin.indexOf("const stok = await"),
+  );
+  kontrol(
+    "son satış sorgusu bulundu",
+    sonSatisSorgusu.length > 50,
+    sonSatisSorgusu.length,
+  );
+  kontrol(
+    "  ...iptalli satışları DIŞLIYOR",
+    sonSatisSorgusu.includes("iptalTarihi: null"),
+  );
+  kontrol(
+    "  ...ve EN SON satışı alıyor (soldAt desc)",
+    sonSatisSorgusu.includes('soldAt: "desc"'),
+  );
+
+  /**
+   * ⚠ YANILTICI SATIR GİTTİ. "satış ve alış fiyatını gir" cümlesi formun
+   * GENEL durumunu anlatıyordu ama komisyon kutusunun ALTINDA duruyordu —
+   * o kutuya ne yazılacağını söylüyormuş gibi okunuyordu (kullanıcı bildirdi).
+   */
+  kontrol("yanıltıcı 'oranHenuz' satırı ekranda YOK", !ekran.includes("oranHenuz"));
+  const sozluk = readFileSync("messages/tr.json", "utf8");
+  kontrol("  ...sözlükten de kalktı", !sozluk.includes("oranHenuz"));
+
+  /**
+   * ⚠ DESEN İKİ YERDE GEÇİYOR (girdi kutusu + sonuç kutusu) — her yer AYRI
+   * sınanır. Birini bozan mutasyon ötekini ayakta bırakırdı ve tarama yeşil
+   * kalırdı.
+   */
+  const girdiKutusu = ekran.slice(
+    ekran.indexOf("function KanalGirdiKutusu("),
+    ekran.indexOf("function MiniAlan("),
+  );
+  const sonucKutusu = ekran.slice(ekran.indexOf("function KanalKutusu("));
+  for (const [ad, blok] of [
+    ["girdi kutusu", girdiKutusu],
+    ["sonuç kutusu", sonucKutusu],
+  ] as const) {
+    kontrol(
+      `${ad}: renk DURUM_SERIDI'nden geliyor`,
+      blok.includes("DURUM_SERIDI[durum]"),
+    );
+    /**
+     * ⚠ AYNI ÖLÇÜT İKİ YERDE. Kazanan yeşil, zarar kırmızı, hesaplanmayan
+     * nötr — iki kutu farklı ölçüt kullansaydı aynı kanal yukarıda yeşil
+     * aşağıda mavi görünürdü.
+     */
+    kontrol(
+      `  ...${ad}: kazanan olumlu, zarar olumsuz, hesaplanmayan nötr`,
+      /kazanan[\s\S]{0,60}"olumlu"/.test(blok) &&
+        blok.includes('"olumsuz"') &&
+        blok.includes('"notr"'),
+    );
+    /**
+     * Gri kutu duvarı gitti: zemin `bg-card`, gri `bg-muted` değil.
+     *
+     * ⚠ İŞARET `className`E BAĞLI, ADA DEĞİL. İlk yazımda yalnız
+     * `blok.includes("bg-card")` vardı ve mutasyon (kutuyu `bg-muted`e
+     * çevir) YEŞİL kaldı: `bg-card` bu bloğun YORUMUNDA da geçiyor ve
+     * tarama onu buluyordu. Desen dosyada bulunuyor diye davranış
+     * gerçekleşmiş olmuyor.
+     */
+    kontrol(
+      `  ...${ad}: zemin bg-card`,
+      blok.includes("className={`bg-card"),
+    );
+    /*
+     * ⚠ "HİÇ bg-muted GEÇMESİN" DİYE BİR KONTROL YAZILMADI ve yazılmamalı:
+     * kartın İÇİNDEKİ kompakt rakam hücreleri bilerek hafif gri (İlke #12).
+     * Yanlış kapsamlı bir kontrol, doğru kodu kırmızı yakardı — nitekim ilk
+     * denemede tam bunu yaptı. Ölçüt kartın KABUĞU, içindeki hücreler değil.
+     */
+  }
+
+  /**
+   * ⚠ KAZANAN "İLK SIRADAKİ" DEĞİL, "HESAPLANMIŞ İLK SIRADAKİ". Hiçbir
+   * kanal hesaplanamadığında sıralama girdiyi bozmaz ve listenin ilki
+   * kazanmış gibi görünürdü — sondada tam bu körlük yakalanmıştı.
+   */
+  kontrol(
+    "kazanan kanal NET-2'si null olamaz",
+    /kazananKod =[\s\S]{0,140}net2 !== null/.test(ekran),
+  );
+
+  /** Hiç satılmamış üründe ortak fiyat ZORUNLU DEĞİL — metin de öyle diyor. */
+  kontrol(
+    "hiç satılmamış üründe 'boş kalabilir' deniyor",
+    sozluk.includes("BOŞ kalabilir"),
+  );
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

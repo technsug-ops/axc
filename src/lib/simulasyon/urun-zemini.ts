@@ -53,6 +53,20 @@ export type UrunZemini = {
   ortalamaSatis: number | null;
   satisAdedi: number;
 
+  /**
+   * EN SON SATILDIĞI BİRİM FİYAT (KDV DAHİL) — hiç satılmadıysa null.
+   *
+   * ⚠ ORTALAMA DEĞİL, SON. Kullanıcı kararı 21.08.2026: _"satış fiyatı
+   * yazan yere en son satılan ürün fiyatını yaz."_ Gerekçesi denemenin
+   * kendisinde: ortalama, aylar önceki bir fiyatı bugünkü denemeye
+   * karıştırır ve **fiyat kaymasını gizler**. Bu ekran "şimdi ne yapayım"
+   * diye soruyor; o sorunun başlangıç noktası en son fiilen olan şeydir.
+   * (Anayasa: aynı veri, farklı soruya farklı pencereden bakar.)
+   */
+  sonSatisFiyati: number | null;
+  /** O satışın günü — rakamın ne kadar taze olduğu ekranda yazsın. */
+  sonSatisTarihi: Date | null;
+
   /** Ürünün KDV oranı — kategoriden çözülür. */
   kdvOrani: number;
 
@@ -139,6 +153,18 @@ export async function urunZemini(
     satisTutar += k.quantity * Number(k.unitPriceAmount);
   }
 
+  /**
+   * ── SON SATIŞ — İPTALLİ HARİÇ ──────────────────────────────────────────
+   * ⚠ Ortalamayla AYNI kümeden okunuyor (`sale.iptalTarihi: null`); iki
+   * rakam farklı kümelerden gelseydi ekranda yan yana durup birbirini
+   * yalanlarlardı.
+   */
+  const sonSatis = await prisma.saleItem.findFirst({
+    where: { variantId: varyant.id, sale: { iptalTarihi: null } },
+    orderBy: { sale: { soldAt: "desc" } },
+    select: { unitPriceAmount: true, sale: { select: { soldAt: true } } },
+  });
+
   const stok = await prisma.stockMovement.aggregate({
     where: { variantId: varyant.id },
     _sum: { quantityDelta: true },
@@ -167,6 +193,9 @@ export async function urunZemini(
     alimAdedi: alimAdet,
     ortalamaSatis: satisAdet > 0 ? satisTutar / satisAdet : null,
     satisAdedi: satisAdet,
+    sonSatisFiyati:
+      sonSatis === null ? null : Number(sonSatis.unitPriceAmount),
+    sonSatisTarihi: sonSatis?.sale.soldAt ?? null,
     kdvOrani: kdv.oran ?? VARSAYILAN_KDV_ORANI,
     eldekiAdet: stok._sum.quantityDelta ?? 0,
     zeminler: await simulasyonZeminleri(varyant.id, an),

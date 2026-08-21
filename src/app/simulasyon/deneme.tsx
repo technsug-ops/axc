@@ -19,6 +19,7 @@ import {
   DURUM_YAZISI,
   PASTA_RENKLERI,
   PASTA_VARSAYILAN,
+  type DurumRengi,
 } from "@/lib/renkler";
 import { SIMULASYON_KANALLARI } from "@/lib/simulasyon/kanal-kurallari";
 import type { UrunZemini } from "@/lib/simulasyon/urun-zemini";
@@ -118,7 +119,13 @@ export function Deneme({ bugun }: { bugun: string }) {
       /** ⚠ ORTALAMALAR KDV DAHİL — girdi dili de dahile çevriliyor. */
       setKdvDahil(true);
       if (z.ortalamaAlis !== null) setAlis(z.ortalamaAlis.toFixed(2));
-      if (z.ortalamaSatis !== null) setSatis(z.ortalamaSatis.toFixed(2));
+      /**
+       * ⚠ SON SATIŞ FİYATI, ORTALAMA DEĞİL (kullanıcı kararı 21.08.2026).
+       * Ortalama, aylar önceki bir fiyatı bugünkü denemeye karıştırır ve
+       * fiyat kaymasını gizler. Hiç satılmadıysa alan BOŞ kalır ve öyle de
+       * kalabilir — kapı artık ortak fiyatı şart koşmuyor.
+       */
+      if (z.sonSatisFiyati !== null) setSatis(z.sonSatisFiyati.toFixed(2));
       setKdv(String(z.kdvOrani));
       /**
        * ⚠ ELLE GİRİLMİŞ ORANLAR TEMİZLENİR. Önceki üründen kalan bir oran
@@ -186,6 +193,15 @@ export function Deneme({ bugun }: { bugun: string }) {
    * sırası değişir.
    */
   const sonucKod = new Map(sonuclar.map((s) => [s.kod, s]));
+  /**
+   * KAZANAN KANAL — NET-2'si hesaplanmış en iyi kanal, yoksa null.
+   *
+   * ⚠ "İLK SIRADAKİ" YETMEZ: hiçbir kanal hesaplanamadığında sıralama
+   * girdiyi bozmuyor ve listenin ilki kazanmış gibi görünürdü. Sondada tam
+   * bu körlük yakalandı (bütün NET'ler null iken kontrol yeşil kalıyordu).
+   */
+  const kazananKod =
+    sonuclar.length > 0 && sonuclar[0]!.net2 !== null ? sonuclar[0]!.kod : null;
 
   return (
     <div className="space-y-6">
@@ -258,7 +274,15 @@ export function Deneme({ bugun }: { bugun: string }) {
                   : t("zeminOzeti", {
                       adet: urun.satisAdedi,
                       alis: para(urun.ortalamaAlis),
-                      satis: para(urun.ortalamaSatis),
+                      ortalama: para(urun.ortalamaSatis),
+                      son:
+                        urun.sonSatisFiyati === null
+                          ? "—"
+                          : para(urun.sonSatisFiyati),
+                      tarih:
+                        urun.sonSatisTarihi === null
+                          ? "—"
+                          : bicim.tarih(urun.sonSatisTarihi),
                     })}
             </p>
           </div>
@@ -334,11 +358,12 @@ export function Deneme({ bugun }: { bugun: string }) {
           çıkması gerekseydi aynı kısır döngü geri gelirdi. */}
       <div className="space-y-2">
         <span className="text-sm font-medium">{t("kanalGirdiBaslik")}</span>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {SIMULASYON_KANALLARI.map((k) => (
             <KanalGirdiKutusu
               key={k.kod}
               ad={k.ad}
+              kazanan={kazananKod === k.kod}
               fiyat={kanalFiyatlari[k.kod] ?? ""}
               fiyatDegistir={(v) =>
                 setKanalFiyatlari((o) => ({ ...o, [k.kod]: v }))
@@ -365,7 +390,7 @@ export function Deneme({ bugun }: { bugun: string }) {
           <p className="text-muted-foreground mt-1 text-sm">{t("bosIpucu")}</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           {sonuclar.map((s, i) => (
             <KanalKutusu
               key={s.kod}
@@ -440,6 +465,7 @@ function Alan({
  */
 function KanalGirdiKutusu({
   ad,
+  kazanan,
   fiyat,
   fiyatDegistir,
   oran,
@@ -449,6 +475,8 @@ function KanalGirdiKutusu({
   ortakFiyat,
 }: {
   ad: string;
+  /** Bu kanal şu an en yüksek NET-2'yi veriyor mu. */
+  kazanan: boolean;
   fiyat: string;
   fiyatDegistir: (d: string) => void;
   oran: string;
@@ -468,19 +496,60 @@ function KanalGirdiKutusu({
       ? yuzde(sonuc.komisyonOrani).replace("%", "")
       : null;
 
-  /** Kaynak satırı — hangi rakamla hesaplandığı burada yazar. */
+  /**
+   * Kaynak satırı — hangi rakamla hesaplandığı burada yazar.
+   *
+   * ⚠ "HENÜZ HESAPLANMADI" METNİ BURADAN KALDIRILDI (kullanıcı 21.08.2026:
+   * _"komisyon ve buy box fiyatının altında yazan 'satış ve alış fiyatını
+   * gir' yanıltıcı"_). Haklıydı: o cümle formun GENEL durumunu anlatıyordu
+   * ama komisyon kutusunun ALTINDA duruyordu, yani o kutuya ne yazılacağını
+   * söylüyormuş gibi okunuyordu. Boş durum mesajı zaten aşağıda, kendi
+   * yerinde duruyor — aynı cümleyi dört kutuda tekrar etmek bilgi değil
+   * gürültüdür. Hesap yokken burada hiçbir şey YAZMAZ.
+   */
   const oranKaynagi = elleOran
     ? t("oranElleGirildi")
     : sonuc === null
-      ? t("oranHenuz")
+      ? null
       : sonuc.komisyonOrani === null
         ? t("oranVeriYok")
         : t(`oran_${sonuc.oranKaynagi}`);
 
+  /**
+   * ── RENK DURUMDAN GELİR, KANALDAN DEĞİL ────────────────────────────────
+   * Kullanıcı 21.08.2026: _"kartlar birbirinden biraz ayrılmalı, pano
+   * grinin tonlarından kurtulsun, biraz daha renkli yap."_
+   *
+   * ⚠ AMA MARKA RENGİ KULLANILMADI. Anayasa: renk ANLAM taşır, süs değil —
+   * aynı renk her sayfada aynı şeyi söyler. Trendyol'u turuncu yapmak,
+   * turuncunun "uyarı" anlamını bu ekranda bozardı. Renk kanalın kimliğine
+   * değil, o kanalın HÜKMÜNE bağlandı: kazanan yeşil, zarar kırmızı,
+   * hesaplanan mavi, hesaplanmayan nötr. Böylece kutuya rakam yazdıkça
+   * şerit renk değiştiriyor ve girdi ile sonuç görsel olarak bağlanıyor.
+   *
+   * Zemin `bg-card`: gri `bg-muted` kutular panoyu tek renge boğuyordu.
+   * Doygunluk şeritte (3px), zemin sakin — kısıt #2 ve #3 korunuyor.
+   */
+  const durum: DurumRengi =
+    sonuc === null || sonuc.net2 === null
+      ? "notr"
+      : kazanan
+        ? "olumlu"
+        : sonuc.net2 < 0
+          ? "olumsuz"
+          : "bilgi";
+
   return (
-    <div className="bg-muted/40 min-w-0 space-y-1.5 rounded-md border p-2">
-      <div className="truncate text-xs font-medium" title={ad}>
-        {ad}
+    <div
+      className={`bg-card min-w-0 space-y-1.5 rounded-lg border p-3 shadow-sm ${DURUM_SERIDI[durum]}`}
+    >
+      <div className="flex items-center gap-1.5">
+        {kazanan ? (
+          <Trophy className={`size-3.5 shrink-0 ${DURUM_YAZISI.olumlu}`} />
+        ) : null}
+        <span className="truncate text-sm font-medium" title={ad}>
+          {ad}
+        </span>
       </div>
 
       {/* ── BUY BOX FİYATI ─────────────────────────────────────────────── */}
@@ -516,9 +585,11 @@ function KanalGirdiKutusu({
         temizle={elleOran ? () => oranDegistir("") : null}
         temizleEtiketi={t("oranSifirla")}
       />
-      <div className="text-muted-foreground truncate text-[10px]">
-        {oranKaynagi}
-      </div>
+      {oranKaynagi === null ? null : (
+        <div className="text-muted-foreground truncate text-[10px]">
+          {oranKaynagi}
+        </div>
+      )}
     </div>
   );
 }
@@ -629,11 +700,24 @@ function KanalKutusu({
   const hesaplandi = sonuc.net2 !== null;
   const zarar = hesaplandi && sonuc.net2! < 0;
 
+  /**
+   * ⚠ ŞERİT ARTIK HER KARTTA — önce yalnız kazananda vardı ve ekran gri bir
+   * kutu duvarına dönüyordu (kullanıcı: _"pano grinin tonlarından
+   * kurtulsun"_). Renk kanalın kimliğinden değil HÜKMÜNDEN geliyor ve
+   * yukarıdaki girdi kutusunun şeridiyle AYNI ölçütü kullanıyor — iki yerde
+   * iki farklı renk, aynı kanal için çelişki üretirdi.
+   */
+  const durum: DurumRengi = !hesaplandi
+    ? "notr"
+    : kazanan
+      ? "olumlu"
+      : zarar
+        ? "olumsuz"
+        : "bilgi";
+
   return (
     <div
-      className={`min-w-0 rounded-lg border p-4 ${
-        kazanan ? DURUM_SERIDI.olumlu : ""
-      }`}
+      className={`bg-card min-w-0 rounded-lg border p-4 shadow-sm ${DURUM_SERIDI[durum]}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
