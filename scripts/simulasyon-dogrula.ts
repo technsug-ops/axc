@@ -76,7 +76,11 @@ console.log("\n1) DIŞ KAYNAK KIYASI — nesatilir'in dört senaryosu");
    */
   yakin("Trendyol NET-2", bul("TRENDYOL").net2!, 172.34);
   /** ⚠ ARTIK TUTAR DEĞİL ORAN dönüyor (motor birleşti); tutar NET içinde. */
-  kontrol("Trendyol komisyon oranı çözüldü", bul("TRENDYOL").komisyonOrani === 15, bul("TRENDYOL").komisyonOrani);
+  kontrol(
+    "Trendyol komisyon oranı çözüldü",
+    bul("TRENDYOL").komisyonOrani === 15,
+    bul("TRENDYOL").komisyonOrani,
+  );
 
   /**
    * N11 — nesatilir: kâr 172,85. Komisyon KDV'siz, pazarlama gideri ₺12,58.
@@ -122,11 +126,15 @@ console.log("\n1) DIŞ KAYNAK KIYASI — nesatilir'in dört senaryosu");
    * AMAZON — nesatilir: kâr 75,83 ama ALIŞ 599 ile. Ortak senaryoda alış 500
    * olduğu için burada ayrı bir girdiyle sınanıyor.
    */
-  const amazon = simulasyonKarsilastir({ ...ORTAK, alisFiyati: 599 }, BUGUN).find(
-    (s) => s.kod === "AMAZON",
-  )!;
+  const amazon = simulasyonKarsilastir(
+    { ...ORTAK, alisFiyati: 599 },
+    BUGUN,
+  ).find((s) => s.kod === "AMAZON")!;
   yakin("Amazon NET-2 (alış 599)", amazon.net2!, 75.83);
-  kontrol("Amazon komisyona KDV ekliyor (oran 15, NET farkı)", amazon.komisyonOrani === 15);
+  kontrol(
+    "Amazon komisyona KDV ekliyor (oran 15, NET farkı)",
+    amazon.komisyonOrani === 15,
+  );
 }
 
 // ===========================================================================
@@ -138,14 +146,17 @@ console.log("\n2) KDV DAHİL / HARİÇ — aynı ürün, iki dil, aynı sonuç")
    * dahile çevrildiğinde ORTAK senaryonun aynısı olmalı: 1000/1,2 = 833,33 ·
    * 500/1,2 = 416,67 · kargo 120/1,2 = 100.
    */
-  const haric = simulasyonKarsilastir({
-    kdvDahilMi: false,
-    satisFiyati: 1000 / 1.2,
-    alisFiyati: 500 / 1.2,
-    komisyonOrani: 15,
-    kdvOrani: 20,
-    kargoUcreti: 100,
-  }, BUGUN);
+  const haric = simulasyonKarsilastir(
+    {
+      kdvDahilMi: false,
+      satisFiyati: 1000 / 1.2,
+      alisFiyati: 500 / 1.2,
+      komisyonOrani: 15,
+      kdvOrani: 20,
+      kargoUcreti: 100,
+    },
+    BUGUN,
+  );
   const dahil = simulasyonKarsilastir(ORTAK, BUGUN);
 
   for (const kanal of ["TRENDYOL", "HEPSIBURADA", "N11", "AMAZON"]) {
@@ -159,14 +170,17 @@ console.log("\n2) KDV DAHİL / HARİÇ — aynı ürün, iki dil, aynı sonuç")
    * sonuç FARKLI olmalı. Bu olmadan "çevirim hiç yapılmıyor" mutasyonu
    * yeşil kalırdı — iki taraf da aynı işlemi atlardı.
    */
-  const yanlisDil = simulasyonKarsilastir({
-    kdvDahilMi: true,
-    satisFiyati: 1000 / 1.2,
-    alisFiyati: 500 / 1.2,
-    komisyonOrani: 15,
-    kdvOrani: 20,
-    kargoUcreti: 100,
-  }, BUGUN);
+  const yanlisDil = simulasyonKarsilastir(
+    {
+      kdvDahilMi: true,
+      satisFiyati: 1000 / 1.2,
+      alisFiyati: 500 / 1.2,
+      komisyonOrani: 15,
+      kdvOrani: 20,
+      kargoUcreti: 100,
+    },
+    BUGUN,
+  );
   kontrol(
     "KDV anahtarı gerçekten etkili (dahil ≠ hariç)",
     Math.abs(
@@ -188,7 +202,10 @@ console.log("\n3) SIRALAMA VE BOŞ GİRDİ");
   );
   kontrol(
     "EN KÂRLI başta (NET-2 azalan)",
-    sonuc.every((s, i) => i === 0 || (sonuc[i - 1]!.net2 ?? -Infinity) >= (s.net2 ?? -Infinity)),
+    sonuc.every(
+      (s, i) =>
+        i === 0 || (sonuc[i - 1]!.net2 ?? -Infinity) >= (s.net2 ?? -Infinity),
+    ),
     sonuc.map((s) => `${s.kod}:${s.net2?.toFixed(2)}`),
   );
 
@@ -215,7 +232,10 @@ console.log("\n3) SIRALAMA VE BOŞ GİRDİ");
   kontrol("dolu form eksik SAYILMIYOR", !girdiEksikMi(ORTAK));
 
   /** Kargosuz deneme meşru: alıcı ödüyorsa kargo bize gider değildir. */
-  const kargosuz = simulasyonKarsilastir({ ...ORTAK, kargoUcreti: null }, BUGUN);
+  const kargosuz = simulasyonKarsilastir(
+    { ...ORTAK, kargoUcreti: null },
+    BUGUN,
+  );
   kontrol(
     "kargosuz senaryo hesaplanıyor",
     kargosuz.length === SIMULASYON_KANALLARI.length,
@@ -351,13 +371,34 @@ console.log("\n5) DÖKÜM VE PASTA — satış fiyatı nereye gidiyor");
    * HB'de tahsilat bedeli var, Trendyol'da yok. Sabit bir kalem listesi
    * yazsaydım biri sessizce kaybolurdu.
    */
-  const kodlar = (s: (typeof sonuc)[number]) => s.dokum.map((d) => d.kod).sort();
-  kontrol("HB dökümünde tahsilat bedeli VAR", kodlar(hb).includes("ODEME_GIDERI"), kodlar(hb));
-  kontrol("Trendyol dökümünde tahsilat bedeli YOK", !kodlar(ty).includes("ODEME_GIDERI"), kodlar(ty));
-  kontrol("HB dökümünde hizmet bedeli VAR", kodlar(hb).includes("HIZMET_BEDELI"));
+  const kodlar = (s: (typeof sonuc)[number]) =>
+    s.dokum.map((d) => d.kod).sort();
+  kontrol(
+    "HB dökümünde tahsilat bedeli VAR",
+    kodlar(hb).includes("ODEME_GIDERI"),
+    kodlar(hb),
+  );
+  kontrol(
+    "Trendyol dökümünde tahsilat bedeli YOK",
+    !kodlar(ty).includes("ODEME_GIDERI"),
+    kodlar(ty),
+  );
+  kontrol(
+    "HB dökümünde hizmet bedeli VAR",
+    kodlar(hb).includes("HIZMET_BEDELI"),
+  );
   kontrol("Trendyol'da sabit gider VAR", kodlar(ty).includes("SABIT_GIDER"));
-  for (const zorunlu of ["MALIYET", "KOMISYON", "STOPAJ", "KARGO", "ODENECEK_KDV"]) {
-    kontrol(`her kanalda ${zorunlu} var`, sonuc.every((s) => kodlar(s).includes(zorunlu)));
+  for (const zorunlu of [
+    "MALIYET",
+    "KOMISYON",
+    "STOPAJ",
+    "KARGO",
+    "ODENECEK_KDV",
+  ]) {
+    kontrol(
+      `her kanalda ${zorunlu} var`,
+      sonuc.every((s) => kodlar(s).includes(zorunlu)),
+    );
   }
 
   /**
@@ -382,16 +423,25 @@ console.log("\n5) DÖKÜM VE PASTA — satış fiyatı nereye gidiyor");
    * liste veridir.
    */
   kontrol("pastanın yanında etiketli liste var", pasta.includes("<ul"));
-  kontrol("pasta hareket azaltmaya saygılı", pasta.includes("prefers-reduced-motion"));
+  kontrol(
+    "pasta hareket azaltmaya saygılı",
+    pasta.includes("prefers-reduced-motion"),
+  );
   /**
    * ⚠ PAYDA SATIŞ FİYATI, DİLİM TOPLAMI DEĞİL. Zararda kâr dilimi yoktur ve
    * kesintiler satışı aşar; dilim toplamına bölmek "her şey yolunda" görünen
    * bir pasta üretir ve zarar KAYBOLUR.
    */
-  kontrol("payda satış fiyatından korunuyor (Math.max)", /payda = Math\.max/.test(pasta));
+  kontrol(
+    "payda satış fiyatından korunuyor (Math.max)",
+    /payda = Math\.max/.test(pasta),
+  );
 
   const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
-  kontrol("her kanal kutusunda pasta çiziliyor", ekran.includes("<PastaGrafik"));
+  kontrol(
+    "her kanal kutusunda pasta çiziliyor",
+    ekran.includes("<PastaGrafik"),
+  );
   /**
    * ⚠ VE KOŞULUYLA BİRLİKTE: dökümü olmayan kanalda pasta çizilmemeli,
    * yoksa boş bir halka "hesaplandı" gibi görünür.
@@ -411,7 +461,10 @@ console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
    * ⚠ ARAMA ORTAK KOŞULDAN. Bu depoda `varyantAra` Kanal SKU'yu hiç
    * sormuyordu; kendi sorgusunu yazan her yer o kümeden ayrışır.
    */
-  kontrol("arama ortak `kodKosulu`dan geçiyor", zemin.includes("kodKosulu(temiz)"));
+  kontrol(
+    "arama ortak `kodKosulu`dan geçiyor",
+    zemin.includes("kodKosulu(temiz)"),
+  );
   /**
    * ⚠ ORTALAMA ALIŞ AÇIK PARTİDEN DEĞİL, LEDGER'DAN. Stoğu tükenmiş üründe
    * açık parti yoktur; "bu ürünü genelde kaça alıyorum" sorusu yine de
@@ -420,23 +473,33 @@ console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
    */
   kontrol(
     "ortalama alış LEDGER'dan (açık parti değil)",
-    zemin.includes("purchaseItemId: { not: null }") && !zemin.includes("acikPartiler"),
+    zemin.includes("purchaseItemId: { not: null }") &&
+      !zemin.includes("acikPartiler"),
   );
   kontrol("maliyet hareketin damgasından", zemin.includes("unitCostAmount"));
-  kontrol("iptalli satış ortalamaya girmiyor", zemin.includes("iptalTarihi: null"));
+  kontrol(
+    "iptalli satış ortalamaya girmiyor",
+    zemin.includes("iptalTarihi: null"),
+  );
   kontrol(
     "sıfır adette null döner (sıfıra bölme yok)",
     /alimAdet > 0 \? alimTutar \/ alimAdet : null/.test(zemin) &&
       /satisAdet > 0 \? satisTutar \/ satisAdet : null/.test(zemin),
   );
-  kontrol("hiçbir şey yazmıyor", !/\.create\(|\.update\(|\.delete\(/.test(zemin));
+  kontrol(
+    "hiçbir şey yazmıyor",
+    !/\.create\(|\.update\(|\.delete\(/.test(zemin),
+  );
 
   const action = readFileSync("src/app/simulasyon/actions.ts", "utf8");
   /**
    * ⚠ SERVER ACTION KENDİ BAŞINA BİR UÇTUR. Ekranın `sayfaIzni` ile korunuyor
    * olması bu action'ı KORUMAZ; izin burada da sorulmalı.
    */
-  kontrol("arama action'ı izin soruyor", action.includes('izinVarMi("satis.kar.gor")'));
+  kontrol(
+    "arama action'ı izin soruyor",
+    action.includes('izinVarMi("satis.kar.gor")'),
+  );
   kontrol("bulunamadı sessiz kalmıyor", action.includes('tur: "BULUNAMADI"'));
 
   const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
@@ -450,9 +513,132 @@ console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
    */
   kontrol(
     "ürün zeminleri karşılaştırmaya geçiyor",
-    /simulasyonKarsilastir\(girdi, new Date\(bugun\), urun\?\.zeminler/.test(ekran),
+    /simulasyonKarsilastir\(girdi, new Date\(bugun\), urun\?\.zeminler/.test(
+      ekran,
+    ),
   );
-  kontrol("oranın kaynağı ekranda yazıyor", ekran.includes("oran_${sonuc.oranKaynagi}"));
+  kontrol(
+    "oranın kaynağı ekranda yazıyor",
+    ekran.includes("oran_${sonuc.oranKaynagi}"),
+  );
+}
+
+// ===========================================================================
+console.log("\n7) KANAL BAŞINA KOMİSYON — tek oran yanlış sonuç verir");
+// ===========================================================================
+{
+  /**
+   * ⚠ KULLANICI BİLDİRDİ 21.08.2026: _"her pazar yerinde komisyon oranları
+   * farklı, kâr değişimi çoğunlukla bundan çıkıyor. Sabit olunca yanlış
+   * sonuç geliyor."_
+   *
+   * ÖLÇÜLDÜ (canlı, salt okuma) ve haklıydı:
+   *   · Trendyol ChannelSku oranları: min 3,6 · ortanca 14,8 · max 23,0
+   *     — 41 FARKLI oran
+   *   · Hepsiburada: min 4,0 · ortanca 15,0 · max 20,0 — 13 farklı oran
+   *   · AYNI ÜRÜN, farklı kanal: fark ortanca **2 puan**, p75 6,2,
+   *     max **14,4 puan** (n=1052)
+   *
+   * 1.000 ₺'lik satışta 14,4 puan = ₺144. Bu, "hangi kanalda satsam"
+   * sorusunun cevabını TERSİNE ÇEVİREBİLECEK bir büyüklük — yani tek oran
+   * yalnız yaklaşık değil, YANILTICI olur.
+   */
+  const elle = simulasyonKarsilastir(
+    { ...ORTAK, kanalOranlari: { TRENDYOL: 5 } },
+    BUGUN,
+  );
+  const ortak = simulasyonKarsilastir(ORTAK, BUGUN);
+  const ty = (l: typeof ortak) => l.find((s) => s.kod === "TRENDYOL")!;
+  const n11 = (l: typeof ortak) => l.find((s) => s.kod === "N11")!;
+
+  kontrol(
+    "kanal oranı uygulanıyor (TY %15 → %5)",
+    ty(elle).komisyonOrani === 5,
+    ty(elle).komisyonOrani,
+  );
+  kontrol("  ...ve elle girildiği beyan ediliyor", ty(elle).oranElle);
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERMELİ: öteki kanal ETKİLENMEMELİ.
+   * Oranı tek sözlükten okuyup hepsine uygulayan bir hata, yalnız TY'ye
+   * bakan bir testte yeşil kalırdı.
+   */
+  kontrol(
+    "öteki kanal ETKİLENMİYOR (N11 hâlâ %15)",
+    n11(elle).komisyonOrani === 15,
+    n11(elle).komisyonOrani,
+  );
+  kontrol("  ...ve N11 elle girilmiş SAYILMIYOR", !n11(elle).oranElle);
+
+  /** Düşük komisyon NET-2'yi yükseltmeli — yön testi. */
+  kontrol("oran düşünce NET-2 artıyor", ty(elle).net2! > ty(ortak).net2!, {
+    elle: ty(elle).net2,
+    ortak: ty(ortak).net2,
+  });
+  /** Ve büyüklüğü de sabitlensin: %10 puanlık indirim 1000 ₺'de ~100 ₺. */
+  yakin(
+    "  ...ve farkın büyüklüğü ~100 ₺",
+    ty(elle).net2! - ty(ortak).net2!,
+    100,
+    20,
+  );
+
+  /**
+   * ⚠ GEÇERSİZ METİN ORANA DÖNÜŞMEZ. Yarım yazılmış bir sayı ("1,") ya da
+   * eksi bir oran, sessizce 0 komisyon olarak okunsaydı ekran mucizevi bir
+   * kâr gösterirdi.
+   */
+  const bozuk = simulasyonKarsilastir(
+    { ...ORTAK, kanalOranlari: { TRENDYOL: Number.NaN } },
+    BUGUN,
+  );
+  kontrol(
+    "geçersiz oran yok sayılıyor (ortak orana düşer)",
+    ty(bozuk).komisyonOrani === 15,
+    ty(bozuk).komisyonOrani,
+  );
+
+  const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  kontrol(
+    "kanal kutusunda oran DÜZENLENEBİLİR",
+    ekran.includes("oranDegistir"),
+  );
+  /**
+   * ⚠ VE HANGİ KAYNAĞIN KAZANDIĞI YAZIYOR. "Oran dilim tarifesinden" ile
+   * "senin girdiğin" karışırsa kullanıcı hangi rakamla hesaplandığını
+   * bilemez — ekranda bir sayı yazıp başka bir sayıyla hesaplamak olurdu.
+   */
+  kontrol(
+    "oranın kaynağı kutuda beyan ediliyor",
+    ekran.includes("sonuc.oranElle"),
+  );
+  /**
+   * ⚠ ÜRÜN DEĞİŞİNCE ELLE ORANLAR TEMİZLENİYOR: önceki üründen kalan bir
+   * oran yeni ürünün gerçek zeminini SESSİZCE ezerdi.
+   */
+  kontrol(
+    "yeni üründe elle oranlar sıfırlanıyor",
+    ekran.includes("setKanalOranlari({})"),
+  );
+
+  const motor = readFileSync("src/lib/simulasyon/karsilastir.ts", "utf8");
+  /**
+   * ⚠ ELLE ORAN VARSA DİLİM TARİFESİ DEVREDEN ÇIKMALI. Yoksa tarife kazanır
+   * ve kullanıcının girdiği sayı sessizce yok sayılır.
+   */
+  kontrol(
+    "elle oran dilim tarifesini devre dışı bırakıyor",
+    /elleOran\(kanal\.kod, girdi\.kanalOranlari\) !== null[\s\S]{0,80}?null/.test(
+      motor,
+    ),
+  );
+  /**
+   * ⚠ SÜZGEÇ KİTAPLIKTA OLMALI, ekranın nezaketine bırakılmamalı: ikinci bir
+   * ekran eklendiğinde aynı süzgeci yazmayı unutan biri hatayı geri getirir.
+   */
+  kontrol(
+    "geçersiz oran süzgeci kitaplıkta",
+    motor.includes("function elleOran("),
+  );
 }
 
 console.log("");

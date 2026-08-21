@@ -61,6 +61,18 @@ export function Deneme({ bugun }: { bugun: string }) {
   const [kdv, setKdv] = useState(String(VARSAYILAN_KDV_ORANI));
   const [kargo, setKargo] = useState("");
   const [kdvDahil, setKdvDahil] = useState(true);
+  /**
+   * KANAL BAŞINA ORAN — kanal kodu → metin. Boş metin "elle girilmedi"
+   * demektir ve zemine/ortak orana geri düşer.
+   *
+   * ⚠ NİYE VAR (kullanıcı bildirdi 21.08.2026): _"her pazar yerinde komisyon
+   * oranları farklı, kâr değişimi çoğunlukla bundan çıkıyor. Sabit olunca
+   * yanlış sonuç geliyor."_ Ölçüldü ve haklıydı: aynı ürünün kanaldan kanala
+   * oran farkı ortanca 2 puan, p75 6,2, max 14,4 puan.
+   */
+  const [kanalOranlari, setKanalOranlari] = useState<Record<string, string>>(
+    {},
+  );
 
   /** Koddan bulunan ürün — null ise elle giriş kipindeyiz. */
   const [kod, setKod] = useState("");
@@ -89,6 +101,12 @@ export function Deneme({ bugun }: { bugun: string }) {
       if (z.ortalamaAlis !== null) setAlis(z.ortalamaAlis.toFixed(2));
       if (z.ortalamaSatis !== null) setSatis(z.ortalamaSatis.toFixed(2));
       setKdv(String(z.kdvOrani));
+      /**
+       * ⚠ ELLE GİRİLMİŞ ORANLAR TEMİZLENİR. Önceki üründen kalan bir oran
+       * yeni ürünün gerçek zeminini ezerdi ve kullanıcı bunu göremezdi —
+       * sessizce yanlış kanal kazanırdı.
+       */
+      setKanalOranlari({});
     });
   };
 
@@ -106,6 +124,12 @@ export function Deneme({ bugun }: { bugun: string }) {
     komisyonOrani: sayi(komisyon),
     kdvOrani: sayi(kdv),
     kargoUcreti: kargo.trim() === "" ? null : sayi(kargo),
+    /** Yalnız GEÇERLİ sayılar geçer; yarım yazılmış metin orana dönüşmez. */
+    kanalOranlari: Object.fromEntries(
+      Object.entries(kanalOranlari)
+        .map(([k, v]) => [k, Number(v)] as const)
+        .filter(([, v]) => Number.isFinite(v) && v >= 0),
+    ),
   };
 
   const eksik = girdiEksikMi(girdi);
@@ -281,6 +305,10 @@ export function Deneme({ bugun }: { bugun: string }) {
                   ? girdi.satisFiyati
                   : girdi.satisFiyati * (1 + girdi.kdvOrani / 100)
               }
+              oranMetni={kanalOranlari[s.kod] ?? ""}
+              oranDegistir={(v) =>
+                setKanalOranlari((o) => ({ ...o, [s.kod]: v }))
+              }
             />
           ))}
         </div>
@@ -366,6 +394,8 @@ function KanalKutusu({
   para,
   yuzde,
   satisTutari,
+  oranMetni,
+  oranDegistir,
 }: {
   sonuc: KanalSonucu;
   kazanan: boolean;
@@ -373,6 +403,9 @@ function KanalKutusu({
   yuzde: (n: number, b?: number) => string;
   /** Pastanın paydası — KDV DAHİL satış tutarı. */
   satisTutari: number;
+  /** Bu kanal için elle girilmiş oran metni — boşsa veriden gelir. */
+  oranMetni: string;
+  oranDegistir: (deger: string) => void;
 }) {
   const t = useTranslations("Simulasyon");
   const bant = marjBandi(sonuc.ciroMarji);
@@ -432,15 +465,42 @@ function KanalKutusu({
         {/* ⚠ ORANIN NEREDEN GELDİĞİ YAZAR. Barkodla ürün seçilince komisyon
             artık kullanıcının tahmini değil TARİFENİN kendisi — bu ekranın
             bütün değeri o farkta ve görünmezse fark hiç anlaşılmaz. */}
-        <Rakam
-          etiket={t("komisyon")}
-          deger={
-            sonuc.komisyonOrani === null ? "—" : yuzde(sonuc.komisyonOrani)
-          }
-          not={
-            sonuc.gercekZemin ? t(`oran_${sonuc.oranKaynagi}`) : t("oranElle")
-          }
-        />
+        {/* ── KOMİSYON: OKUNUR DEĞİL, DÜZENLENEBİLİR ────────────────────
+            Kullanıcı 21.08.2026: _"her pazar yerinde komisyon farklı, sabit
+            olunca yanlış sonuç geliyor"_. Ölçüldü: aynı üründe kanaldan
+            kanala fark ortanca 2 puan, max 14,4 puan — 1.000 ₺'de ₺144.
+
+            ⚠ KUTU HER KANALDA AYRI ve varsayılanı VERİDEN geliyor. Boş
+            bırakılırsa zemin (tarife / kanal SKU'su) kazanır; yazılırsa
+            kullanıcı kazanır. Hangisinin kazandığı ALTINDA yazıyor —
+            "oran dilim tarifesinden" ile "senin girdiğin" karışırsa
+            kullanıcı hangi rakamla hesaplandığını bilemez. */}
+        <div className="bg-muted/40 min-w-0 rounded-md border px-2 py-1.5">
+          <div className="text-muted-foreground text-xs">{t("kanalOrani")}</div>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            inputMode="decimal"
+            value={oranMetni}
+            onChange={(e) => oranDegistir(e.target.value)}
+            /* Yer tutucu VERİDEN gelen oranı gösterir — girilmiş değer
+               sanılmasın diye kutu boş, rakam gri (İlke #11). */
+            placeholder={
+              sonuc.komisyonOrani === null
+                ? "—"
+                : yuzde(sonuc.komisyonOrani).replace("%", "")
+            }
+            className="w-full bg-transparent text-center text-sm font-medium tabular-nums outline-none"
+          />
+          <div className="text-muted-foreground truncate text-[10px]">
+            {sonuc.oranElle
+              ? t("oranElleGirildi")
+              : sonuc.gercekZemin
+                ? t(`oran_${sonuc.oranKaynagi}`)
+                : t("oranElle")}
+          </div>
+        </div>
         <Rakam
           etiket={t("net1")}
           deger={sonuc.net1 === null ? "—" : para(sonuc.net1)}

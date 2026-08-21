@@ -2893,6 +2893,11 @@
     "dokum_SABIT_GIDER": "",
     "dokum_PAZARLAMA_HIZMET": "",
     "dokum_ODENECEK_KDV": "",
-    "dokum_KAR": ""
+    "dokum_KAR": "",
+    "kanalOrani": "",
+    "oranElleGirildi": "",
+    "oranSifirla": "",
+    "ortakOranEtiket": "",
+    "oranUyarisi": ""
   }
 }

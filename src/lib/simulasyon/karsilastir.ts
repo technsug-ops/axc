@@ -45,8 +45,23 @@ export type SimulasyonGirdisi = {
   satisFiyati: number;
   /** Ürünün alış fiyatı — bize maliyeti. */
   alisFiyati: number;
-  /** Komisyon oranı (%). Kanal başına farklı olabilir; şimdilik ortak. */
+  /**
+   * ORTAK komisyon oranı (%) — kanal için özel oran YOKSA kullanılır.
+   *
+   * ⚠ TEK ORAN YANLIŞ SONUÇ ÜRETİR ve bu ÖLÇÜLDÜ (21.08.2026, canlı):
+   * aynı ürünün kanaldan kanala oran farkı ortanca **2 puan**, p75 **6,2**,
+   * max **14,4 puan**. 1.000 ₺'lik bir satışta 14,4 puan ₺144 demek — yani
+   * "hangi kanalda satsam" sorusunun cevabını tersine çevirebilecek bir
+   * büyüklük. Bu yüzden kanal başına oran (`kanalOranlari`) esastır ve bu
+   * alan yalnızca YEDEKTİR.
+   */
   komisyonOrani: number;
+  /**
+   * KANAL BAŞINA ORAN (%) — kanal koduna göre. Kullanıcı bir kanalın oranını
+   * elle değiştirdiyse burada durur ve gerçek zeminin oranını da EZER:
+   * operasyoncu kampanyayı sistemden önce bilebilir.
+   */
+  kanalOranlari?: Record<string, number>;
   /** Ürünün KDV oranı (%). */
   kdvOrani: number;
   /** Kargo ücreti. Sıfır ya da null ise kargo hesaba girmez. */
@@ -101,6 +116,8 @@ export type KanalSonucu = {
   komisyonOrani: number | null;
   /** Oran nereden geldi: dilim tarifesi · tek oran · yok. */
   oranKaynagi: "DILIM" | "TEK_ORAN" | "YOK";
+  /** Oranı kullanıcı elle mi girdi (zemini ezdi mi). */
+  oranElle: boolean;
   /** Bu kanalda ürünün GERÇEK zemini kullanıldı mı (kanal SKU'su var mı). */
   gercekZemin: boolean;
   net1: number | null;
@@ -142,6 +159,27 @@ function dahileCevir(tutar: number, kdvOrani: number): number {
   return tutar * (1 + kdvOrani / 100);
 }
 
+/**
+ * Bu kanal için ELLE girilmiş geçerli oran — yoksa null.
+ *
+ * ⚠ SÜZGEÇ EKRANDA DEĞİL BURADA. İlk yazımda yalnız ekran süzüyordu ve
+ * kitaplığa `NaN` geçirilebiliyordu: `??` operatörü `NaN`i "değer var" sayar,
+ * motor oranı çözemez ve komisyon SESSİZCE null döner — ekranda kâr olduğundan
+ * BÜYÜK görünürdü. Doğrulama bunu yakaladı.
+ *
+ * Sözleşme çağıranın nezaketine bırakılmaz: ikinci bir ekran eklendiğinde
+ * aynı süzgeci yeniden yazmayı unutan biri aynı hatayı geri getirirdi.
+ */
+function elleOran(
+  kanalKodu: string,
+  oranlar: Record<string, number> | undefined,
+): number | null {
+  const deger = oranlar?.[kanalKodu];
+  if (deger === undefined) return null;
+  if (!Number.isFinite(deger) || deger < 0) return null;
+  return deger;
+}
+
 function kanalSonucu(
   kanal: SimulasyonKanali,
   girdi: SimulasyonGirdisi,
@@ -179,9 +217,27 @@ function kanalSonucu(
      * tarifesi devreye giriyor ve oran fiyata göre değişiyor; kullanıcının
      * tek bir oran tahmin etmesi o mekanizmayı görünmez kılardı.
      */
-    dilimler: zemin?.dilimler ?? null,
+    /**
+     * ⚠ ELLE ORAN GİRİLDİYSE DİLİM TARİFESİ DEVREDEN ÇIKAR. Yoksa tarife
+     * kazanır ve kullanıcının girdiği sayı sessizce yok sayılırdı —
+     * ekranda bir rakam yazıp başka bir rakamla hesaplamak.
+     */
+    dilimler:
+      elleOran(kanal.kod, girdi.kanalOranlari) !== null
+        ? null
+        : (zemin?.dilimler ?? null),
     pencereBitis: zemin?.pencereBitis ?? null,
-    tekOran: zemin?.tekOran ?? girdi.komisyonOrani,
+    /**
+     * ── ORAN SIRASI: ELLE > ZEMİN > ORTAK ──────────────────────────────
+     * ⚠ ELLE GİRİLEN EN ÜSTTE. Kanalın beyanı (ChannelSku) ya da tarife
+     * doğru olsa bile kullanıcı bir kampanyayı sistemden önce bilebilir;
+     * onu ezemediği bir ekran, bildiği şeyi giremediği için işe yaramaz.
+     * Hangi kaynağın kazandığı ekranda yazıyor.
+     */
+    tekOran:
+      elleOran(kanal.kod, girdi.kanalOranlari) ??
+      zemin?.tekOran ??
+      girdi.komisyonOrani,
     /** Kanal kuralları da zeminden — hesap bazlı farklılık varsa o kazanır. */
     komisyonKdvOrani: zemin?.komisyonKdvOrani ?? kanal.komisyonKdvOrani,
     siparisKesintileri: zemin?.siparisKesintileri ?? kanal.kesintiler,
@@ -201,6 +257,8 @@ function kanalSonucu(
      * arasındaki fark, bu ekranın bütün değeridir.
      */
     oranKaynagi: s.oranKaynagi,
+    /** Oranı kullanıcı mı verdi — ekranda "senin girdiğin" yazması için. */
+    oranElle: elleOran(kanal.kod, girdi.kanalOranlari) !== null,
     gercekZemin: zemin !== null,
     net1: s.net1,
     net2: s.net2,

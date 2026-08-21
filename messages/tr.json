@@ -2840,7 +2840,7 @@
     "aciklama": "Alış, satış ve komisyonu gir; hangi pazaryerinde ne kaldığını yan yana gör. Hiçbir kayıt oluşmaz.",
     "satisFiyati": "Satış fiyatı",
     "alisFiyati": "Alış fiyatı",
-    "komisyonOrani": "Komisyon oranı (%)",
+    "komisyonOrani": "Komisyon oranı (%) — kanal oranı yoksa",
     "kdvOrani": "KDV oranı (%)",
     "kargoUcreti": "Kargo ücreti",
     "kargoIpucu": "Boş bırakırsan kargo hesaba girmez (alıcı ödüyorsa).",
@@ -2893,6 +2893,11 @@
     "dokum_SABIT_GIDER": "Hizmet bedeli",
     "dokum_PAZARLAMA_HIZMET": "Pazarlama ve hizmet gideri",
     "dokum_ODENECEK_KDV": "Ödenecek KDV",
-    "dokum_KAR": "Kâr (NET-2)"
+    "dokum_KAR": "Kâr (NET-2)",
+    "kanalOrani": "Komisyon %",
+    "oranElleGirildi": "senin girdiğin",
+    "oranSifirla": "veriye dön",
+    "ortakOranEtiket": "Komisyon oranı (%) — kanal oranı yoksa",
+    "oranUyarisi": "Her pazaryerinde komisyon farklı. Ürünü koddan bulursan oranlar kendiliğinden gelir; gelmeyen kanalda kutuya kendin yazabilirsin."
   }
 }
