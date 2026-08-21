@@ -1584,6 +1584,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   const takvimSayfasi = readFileSync("src/app/nakit-takvimi/page.tsx", "utf8");
   const nakitOzeti = readFileSync("src/app/nakit-ozeti.tsx", "utf8");
   const panelSayfasi = readFileSync("src/app/page.tsx", "utf8");
+  const raporSayfasi = readFileSync("src/app/rapor/page.tsx", "utf8");
   const sozlukP = JSON.parse(readFileSync("messages/tr.json", "utf8"));
 
   kontrol(
@@ -1604,9 +1605,9 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * satır sayısı veriyle büyüyen hiçbir şey oraya konmaz.
    */
   kontrol(
-    "panelde nakit ÖZETİ var, gün listesi YOK",
-    panelSayfasi.includes("<NakitOzeti") &&
-      !panelSayfasi.includes("<NakitTakvimiBlogu"),
+    "RAPORDA nakit ÖZETİ var, gün listesi YOK",
+    raporSayfasi.includes("<NakitOzeti") &&
+      !raporSayfasi.includes("<NakitTakvimiBlogu"),
   );
   kontrol(
     "  ...özet bloğu gün döngüsü ÇİZMİYOR",
@@ -1621,23 +1622,60 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     takvimSayfasi.includes("gunuDokumle"),
   );
   kontrol(
-    "panel yerleşimi: görev kutusu nakit özetinden ÖNCE",
-    panelSayfasi.indexOf("<GorevKutusu") < panelSayfasi.indexOf("<NakitOzeti"),
+    "panel yerleşimi: görev kutusu PAZARYERİ kartından ÖNCE",
+    /**
+     * ⚠ İŞARET ÇAĞRI YERİNE BAĞLANIR, ADA DEĞİL: `Store` ikonu import
+     * satırında da geçiyor. Ölçüt kartın kendisi (`<Store className=`).
+     */
+    panelSayfasi.indexOf("<GorevKutusu") <
+      panelSayfasi.indexOf('<Store className="size-5" />'),
   );
   /**
    * YETKİ: nakit takvimi bir PARA bloğudur. Operasyon görmemeli; izin
    * yoksa sorgu bile atılmamalı (veri sızıntısı da maliyet de olmasın).
    */
+  /**
+   * ⚠ TAŞINDI AMA KURAL TAŞINMADI — VE TEST BUNU YAKALADI (21.08.2026).
+   *
+   * Nakit özeti panelden RAPOR sayfasına alınırken `satis.kar.gor` koruması
+   * düştü. Rapor sayfasının kendi izni `rapor.gor` ve o AYNI ŞEY DEĞİL:
+   * rapor görüp kâr göremeyen bir rol tanımlanabilir.
+   *
+   * ⚠ KONTROL DOSYA DEĞİŞTİRDİ, KAPSAM DEĞİŞTİRMEDİ: aynı iki soru artık
+   * rapor kaynağına soruluyor. Kural taşınmasaydı test de taşınmamalıydı.
+   */
   kontrol(
-    "nakit takvimi `satis.kar.gor`a bağlı",
-    panelSayfasi.includes("karGorunur ? (") &&
-      panelSayfasi.includes("<NakitOzeti"),
+    "nakit takvimi `satis.kar.gor`a bağlı (RAPOR sayfasında)",
+    raporSayfasi.includes('izinVarMi("satis.kar.gor")') &&
+      raporSayfasi.includes("{karGorunur ? (") &&
+      raporSayfasi.includes("<NakitOzeti"),
   );
   kontrol(
     "  ...izin yoksa takvim sorgusu ATILMIYOR",
-    panelSayfasi.includes(
-      "karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([])",
+    raporSayfasi.includes(
+      "karGorunur ? await takvimSatirlariniTopla(takvimBugun) : []",
     ),
+  );
+  /**
+   * ⚠ PAZARYERİ KARTI DA PARA BLOĞUDUR — NET-2 gösteriyor.
+   *
+   * Nakit özetinin yerine geçtiği için aynı korumayı taşımak zorunda:
+   * `satis.kar.gor` yoksa çizilmemeli, yoksa depocuya kâr sızar. Bu kontrol
+   * bir MUTASYONDAN doğdu (21.08.2026): koruma kaldırıldığında hiçbir test
+   * kırmıyordu.
+   *
+   * ⚠ Ölçüt koşul VE sonuç birlikte: yalnız "karGorunur" aransaydı dosyada
+   * onlarca yerde geçtiği için her zaman bulunurdu.
+   */
+  kontrol(
+    "pazaryeri kartı `satis.kar.gor`a bağlı",
+    panelSayfasi.includes("{karGorunur && ustBlok && ustPaylar ? ("),
+  );
+
+  /** Panelde artık nakit özeti OLMAMALI — taşındı, kopyalanmadı. */
+  kontrol(
+    "panelde nakit özeti KALMADI (taşındı, kopyalanmadı)",
+    !panelSayfasi.includes("<NakitOzeti"),
   );
   /** Görev kutusu OPERASYONEL: izne bağlanmamalı. */
   kontrol(

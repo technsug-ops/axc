@@ -1838,7 +1838,8 @@
     "kiyasVeriYok": "Önceki dönemde veri yok — karşılaştırma yapılamıyor.",
     "alimToplami": "{tutar} toplam alım",
     "iadeAdedi": "{sayi} iade",
-    "alimAdedi": "Alım adedi"
+    "alimAdedi": "Alım adedi",
+    "kanalKirilimi": "Pazaryeri performansı"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

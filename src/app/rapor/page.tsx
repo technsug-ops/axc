@@ -1,5 +1,14 @@
 import Link from "next/link";
-import { sayfaIzni } from "@/lib/yetki";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
+import { NakitOzeti } from "@/app/nakit-ozeti";
+import {
+  nakitTakvimiKur,
+  type TakvimPenceresi,
+} from "@/lib/panel/nakit-takvimi";
+import {
+  takvimBugunu,
+  takvimSatirlariniTopla,
+} from "@/lib/panel/takvim-verisi";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, Plus, TriangleAlert } from "lucide-react";
 
@@ -80,6 +89,8 @@ export default async function RaporSayfasi({
     bitis?: string;
     /** Karşılaştırma tabanı: onceki | ucAy | gecenYil. Boşsa kapalı. */
     kiyas?: string;
+    /** Nakit özeti penceresi: "14" (varsayılan) ya da "30". */
+    takvim?: string;
   }>;
 }) {
   await sayfaIzni("rapor.gor");
@@ -94,6 +105,36 @@ export default async function RaporSayfasi({
   const tur: PencereTuru = PENCERE_TURLERI.includes(istenen)
     ? istenen
     : "BU_AY";
+
+  /**
+   * ── NAKİT ÖZETİ — PANELDEN BURAYA TAŞINDI (kullanıcı kararı 21.08.2026)
+   * ⚠ Panelin ÜST SIRASINDA duruyordu ve orada günlük iş kartlarıyla yer
+   * paylaşıyordu. Nakit özeti günlük bir iş değil, İLERİYE bakan bir rapor
+   * sorusu ("ne zaman sıkışırım"); panelin yerine burada duruyor.
+   *
+   * ⚠ KENDİ PENCERESİ VAR (14/30 gün) ve rapor dönem süzgecinden BAĞIMSIZ:
+   * "vadesi gelen" sorusu geçmiş bir aralığa bağlanmaz. Bu ayrım panelde de
+   * böyleydi ve taşınırken korundu — taşımak, davranışı değiştirmek değil.
+   */
+  /**
+   * ⚠ YETKİ TAŞIMADA DÜŞMÜŞTÜ — TEST YAKALADI (21.08.2026).
+   *
+   * Panelde nakit takvimi `satis.kar.gor` ile korunuyordu ve izin yoksa
+   * SORGU BİLE atılmıyordu. Rapor sayfasına taşırken bu koruma unutuldu:
+   * sayfanın kendi izni `rapor.gor` ve o AYNI ŞEY DEĞİL — birinde rapor
+   * görüp kâr göremeyen bir rol tanımlanabilir.
+   *
+   * Taşımak, davranışı değiştirmek değildir; koruma birebir geri kondu.
+   */
+  const karGorunur = await izinVarMi("satis.kar.gor");
+  const takvimPenceresi: TakvimPenceresi =
+    parametreler.takvim === "30" ? 30 : 14;
+  const takvimBugun = takvimBugunu();
+  const takvim = nakitTakvimiKur({
+    satirlar: karGorunur ? await takvimSatirlariniTopla(takvimBugun) : [],
+    bugun: takvimBugun,
+    pencereGun: takvimPenceresi,
+  });
 
   const an = new Date();
   let pencere: Pencere;
@@ -162,69 +203,69 @@ export default async function RaporSayfasi({
 
   const [satisKayitlari, iadeKayitlari, duzeltmeKayitlari, giderKayitlari] =
     await Promise.all([
-    prisma.sale.findMany({
-      // Rapor ciro/NET taşır: iptal edilen satış hiç doğmamış sayılır.
-      where: { ...ikiAralik("soldAt"), iptalTarihi: null },
-      select: {
-        id: true,
-        code: true,
-        soldAt: true,
-        net1Amount: true,
-        net2Amount: true,
-        profitCurrency: true,
-        profitStatus: true,
-        items: {
-          select: {
-            quantity: true,
-            unitPriceAmount: true,
-            unitPriceCurrency: true,
+      prisma.sale.findMany({
+        // Rapor ciro/NET taşır: iptal edilen satış hiç doğmamış sayılır.
+        where: { ...ikiAralik("soldAt"), iptalTarihi: null },
+        select: {
+          id: true,
+          code: true,
+          soldAt: true,
+          net1Amount: true,
+          net2Amount: true,
+          profitCurrency: true,
+          profitStatus: true,
+          items: {
+            select: {
+              quantity: true,
+              unitPriceAmount: true,
+              unitPriceCurrency: true,
+            },
           },
         },
-      },
-    }),
-    prisma.return.findMany({
-      where: ikiAralik("occurredAt"),
-      select: {
-        id: true,
-        saleId: true,
-        code: true,
-        occurredAt: true,
-        net1Amount: true,
-        net2Amount: true,
-        profitCurrency: true,
-        profitStatus: true,
-      },
-    }),
-    // Fire ve sayim farki: ADJUSTMENT + COUNT_CORRECTION hareketleri.
-    // Gider tablosuna bakilmaz — tek kaynak stok defteri.
-    prisma.stockMovement.findMany({
-      where: {
-        occurredAt: aralik,
-        type: { in: ["ADJUSTMENT", "COUNT_CORRECTION"] },
-      },
-      select: {
-        occurredAt: true,
-        quantityDelta: true,
-        unitCostAmount: true,
-        unitCostCurrency: true,
-        type: true,
-        /* İadeden doğan hareketi ayırt etmek için — süzme SAF KATMANDA
+      }),
+      prisma.return.findMany({
+        where: ikiAralik("occurredAt"),
+        select: {
+          id: true,
+          saleId: true,
+          code: true,
+          occurredAt: true,
+          net1Amount: true,
+          net2Amount: true,
+          profitCurrency: true,
+          profitStatus: true,
+        },
+      }),
+      // Fire ve sayim farki: ADJUSTMENT + COUNT_CORRECTION hareketleri.
+      // Gider tablosuna bakilmaz — tek kaynak stok defteri.
+      prisma.stockMovement.findMany({
+        where: {
+          occurredAt: aralik,
+          type: { in: ["ADJUSTMENT", "COUNT_CORRECTION"] },
+        },
+        select: {
+          occurredAt: true,
+          quantityDelta: true,
+          unitCostAmount: true,
+          unitCostCurrency: true,
+          type: true,
+          /* İadeden doğan hareketi ayırt etmek için — süzme SAF KATMANDA
            yapılır ki test görebilsin (bkz. rapor.ts, iadeKaynakliMi). */
-        returnItemId: true,
-      },
-    }),
-    prisma.expense.findMany({
-      where: ikiAralik("spentAt"),
-      select: {
-        id: true,
-        spentAt: true,
-        amount: true,
-        vatRate: true,
-        currency: true,
-        category: { select: { id: true, name: true, isFixed: true } },
-      },
-    }),
-  ]);
+          returnItemId: true,
+        },
+      }),
+      prisma.expense.findMany({
+        where: ikiAralik("spentAt"),
+        select: {
+          id: true,
+          spentAt: true,
+          amount: true,
+          vatRate: true,
+          currency: true,
+          category: { select: { id: true, name: true, isFixed: true } },
+        },
+      }),
+    ]);
 
   const sayi = (deger: { toString(): string } | null) =>
     deger === null ? null : Number(deger.toString());
@@ -238,7 +279,10 @@ export default async function RaporSayfasi({
 
     const gelir = satis.items
       .filter((k) => k.unitPriceCurrency === paraBirimi)
-      .reduce((t2, k) => t2 + Number(k.unitPriceAmount.toString()) * k.quantity, 0);
+      .reduce(
+        (t2, k) => t2 + Number(k.unitPriceAmount.toString()) * k.quantity,
+        0,
+      );
 
     return {
       id: satis.id,
@@ -338,7 +382,11 @@ export default async function RaporSayfasi({
       );
     }
     if (d.mutlak === 0) {
-      return <DurumRozeti durum="notr" isaretsiz>{t("degisimYok")}</DurumRozeti>;
+      return (
+        <DurumRozeti durum="notr" isaretsiz>
+          {t("degisimYok")}
+        </DurumRozeti>
+      );
     }
     const iyi = d.mutlak > 0 === artisIyiMi;
     const yon = d.mutlak > 0 ? "▲" : "▼";
@@ -440,14 +488,21 @@ export default async function RaporSayfasi({
               ? `${t("giderNotu")} · ⚠ ${t("giderKiyasNotu")}`
               : t("giderNotu"),
             undefined,
-            degisimRozeti(b.giderNetDusen, k?.giderNetDusen ?? null, para, false),
+            degisimRozeti(
+              b.giderNetDusen,
+              k?.giderNetDusen ?? null,
+              para,
+              false,
+            ),
           )}
           {kart(
             t("satisAdedi"),
             String(b.satisAdedi),
             undefined,
             undefined,
-            degisimRozeti(b.satisAdedi, k?.satisAdedi ?? null, (n) => String(n)),
+            degisimRozeti(b.satisAdedi, k?.satisAdedi ?? null, (n) =>
+              String(n),
+            ),
           )}
           {/* İADE SATIRI KARŞILAŞTIRMA ROZETİ ALMAZ (mimar kararı
               15.08.2026). Geçmiş ayın malı bu ay iade edilince etkisi BU
@@ -559,7 +614,9 @@ export default async function RaporSayfasi({
         {b.hesaplanamayanSatisAdedi > 0 || b.hesaplanamayanIadeAdedi > 0 ? (
           <div className={`space-y-3 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
             <div className="space-y-1">
-              <p className={`flex gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
+              <p
+                className={`flex gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}
+              >
                 <TriangleAlert className="mt-0.5 size-4 shrink-0" />
                 <span>
                   {t("hesaplanamayanBaslik", {
@@ -680,9 +737,7 @@ export default async function RaporSayfasi({
                               {k.sabitMi ? tGider("sabit") : tGider("degisken")}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
-                            {k.adet}
-                          </TableCell>
+                          <TableCell className="text-right">{k.adet}</TableCell>
                           <TableCell className="text-right whitespace-nowrap">
                             {para(k.kdvDahil)}
                           </TableCell>
@@ -818,6 +873,12 @@ export default async function RaporSayfasi({
         bitis={parametreler.bitis ?? gunMetni(pencere.sonGun)}
       />
 
+      {/* NAKİT ÖZETİ — panelden taşındı; kendi 14/30 gün penceresiyle.
+          PARA bloğudur: `satis.kar.gor` yoksa hiç çizilmez. */}
+      {karGorunur ? (
+        <NakitOzeti takvim={takvim} pencereGun={takvimPenceresi} />
+      ) : null}
+
       {/* ══════════════════ KARŞILAŞTIRMA SEÇİCİ ══════════════════
           Kapalı gelir; her rapora zorla ikinci bir rakam basmak ekranı
           gereksiz yere iki katına çıkarırdı. Seçim adreste yaşar.
@@ -826,7 +887,9 @@ export default async function RaporSayfasi({
           ekranda olmazsa rozet sessiz bir varsayıma dönerdi — kâr
           oranlarında da aynı ilkeyi uyguladık. */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-muted-foreground text-sm">{t("kiyasBaslik")}</span>
+        <span className="text-muted-foreground text-sm">
+          {t("kiyasBaslik")}
+        </span>
         {KIYAS_ANAHTARLARI.map((a) => (
           <Button
             key={a}
@@ -844,7 +907,8 @@ export default async function RaporSayfasi({
           <span className="text-muted-foreground text-xs">
             {bicim.tarih(pencere.baslangic)} – {bicim.tarih(pencere.sonGun)}
             {" ↔ "}
-            {bicim.tarih(kiyasPencere.baslangic)} – {bicim.tarih(kiyasPencere.sonGun)}
+            {bicim.tarih(kiyasPencere.baslangic)} –{" "}
+            {bicim.tarih(kiyasPencere.sonGun)}
           </span>
         ) : null}
       </div>

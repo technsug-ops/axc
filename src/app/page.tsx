@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowRight, ScanBarcode, TriangleAlert } from "lucide-react";
+import { ArrowRight, ScanBarcode, Store, TriangleAlert } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
@@ -45,6 +45,7 @@ import {
   type PanelIadesi,
   type PanelKargosu,
   type PanelSatisi,
+  type ParaBirimiPaneli,
 } from "@/lib/panel";
 import {
   birimKar,
@@ -74,16 +75,7 @@ import { prisma } from "@/lib/prisma";
 import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
-import { NakitOzeti } from "./nakit-ozeti";
 import { donemAlimi, gorevSayilariniTopla } from "@/lib/panel/gorev-verisi";
-import {
-  nakitTakvimiKur,
-  type TakvimPenceresi,
-} from "@/lib/panel/nakit-takvimi";
-import {
-  takvimBugunu,
-  takvimSatirlariniTopla,
-} from "@/lib/panel/takvim-verisi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { izinVarMi } from "@/lib/yetki";
 import {
@@ -169,8 +161,6 @@ export default async function AnaSayfa({
     baslangic?: string;
     bitis?: string;
     sirala?: string;
-    /** Nakit takvimi penceresi (14 | 30) — dönem süzgecinden BAĞIMSIZ. */
-    takvim?: string;
     /** Ürün analizi sekmesi: verim | hacim | stok | dagilim. */
     analiz?: string;
     /** Karşılaştırma tabanı: onceki | ucAy | gecenYil. Boşsa kapalı. */
@@ -1091,7 +1081,6 @@ export default async function AnaSayfa({
     if (parametreler.kanal) q.set("kanal", parametreler.kanal);
     if (parametreler.analiz) q.set("analiz", parametreler.analiz);
     if (parametreler.sirala) q.set("sirala", parametreler.sirala);
-    if (parametreler.takvim) q.set("takvim", parametreler.takvim);
     if (yeni) q.set("kiyas", yeni);
     const metin = q.toString();
     return metin ? `/?${metin}` : "/";
@@ -1184,13 +1173,7 @@ export default async function AnaSayfa({
    *  - Takvim İLERİYE bakar; dönem süzgeci geçmişi süzer. Aynı düğmeye
    *    bağlansalardı "bugün" seçilince takvim boşalırdı. Ekranda da yazıyor.
    */
-  const takvimPenceresi: TakvimPenceresi =
-    parametreler.takvim === "30" ? 30 : 14;
-
-  const takvimBugun = takvimBugunu();
-  const [takvimSatirlari, gorevSayilari, alim, kiyasAlim] = await Promise.all([
-    // Nakit takvimi PARA bloğudur; izin yoksa sorgu bile atılmaz.
-    karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([]),
+  const [gorevSayilari, alim, kiyasAlim] = await Promise.all([
     gorevSayilariniTopla(),
     /**
      * ALIM ADEDİ — dönem kartının ilk kutusu (kullanıcı isteği
@@ -1205,12 +1188,6 @@ export default async function AnaSayfa({
     donemAlimi(donem),
     kiyasPencere ? donemAlimi(kiyasPencere) : Promise.resolve(null),
   ]);
-
-  const takvim = nakitTakvimiKur({
-    satirlar: takvimSatirlari,
-    bugun: takvimBugun,
-    pencereGun: takvimPenceresi,
-  });
 
   const seri = aylikSeri(
     satislar,
@@ -1247,6 +1224,221 @@ export default async function AnaSayfa({
   const aylikSatirlar = seri
     .map((nokta, i) => ({ nokta, etiket: noktalar[i]?.tamEtiket ?? "" }))
     .reverse();
+
+  /**
+   * ÜST SIRADA GÖSTERİLECEK BLOK — seçili para biriminin bloğu.
+   * ⚠ `bloklar[0]` DEĞİL: iki para birimi varsa ekranın geri kalanı
+   * `seciliPara`yı gösterirken üst kart başka bir para birimini gösterirdi.
+   */
+  const ustBlok =
+    bloklar.find((b) => b.paraBirimi === seciliPara) ?? bloklar[0] ?? null;
+  const ustPaylar = ustBlok
+    ? new Map(
+        kanalDagilimi(
+          ustBlok.kanallar.map((k) => ({
+            kanalKodu: k.kanalKodu,
+            kanalAdi: k.kanalAdi,
+            ciro: k.gelir,
+            net2: k.net2,
+          })),
+        ).kanallar.map((k) => [k.kanalKodu, k]),
+      )
+    : null;
+
+  /**
+   * ============================================================================
+   *  PAZARYERİ KARTLARI — ÜST SIRAYA TAŞINDI (kullanıcı kararı 21.08.2026)
+   * ----------------------------------------------------------------------------
+   *  Kartlar "Seçili dönem" kartının İÇİNDE, sayfanın ortasında duruyordu.
+   *  Kullanıcı: _"pazaryeri kartını sağ tarafa koy, nakit özetini Rapor'a al"_.
+   *
+   *  Gerekçe yerleşimden değil SORUDAN geliyor: panel açılışında sorulan iki
+   *  soru "bugün ne yapmalıyım" (sol) ve "hangi kanal ne getiriyor" (sağ).
+   *  Nakit özeti ise ileriye bakan bir RAPOR sorusu; günlük iş ekranında
+   *  yer kaplıyordu.
+   *
+   *  ⚠ JSX TAŞINDI, YENİDEN YAZILMADI. 178 satırlık işaretleme birebir
+   *  korunuyor — yeniden yazmak, içindeki onlarca kararı (pay çubuğu, iade
+   *  satırı, açık sıfır notları) sessizce kaybetme riskiydi.
+   *
+   *  ⚠ BLOK DIŞARIDAN GELİYOR: `blok` ve `kanalPaylari` eskiden `bloklar.map`
+   *  kapsamındaydı. Şimdi SEÇİLİ PARA BİRİMİNİN bloğu üstte hesaplanıp
+   *  parametre olarak veriliyor; ekranın geri kalanı da aynı para birimini
+   *  kullanıyor (`seciliPara`), yani iki yer ayrışamaz.
+   * ============================================================================
+   */
+  const kanalIzgarasi = (
+    blok: ParaBirimiPaneli,
+    kanalPaylari: Map<string, { ciroPayi: number; net2Payi: number | null }>,
+  ) => (
+    <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {blok.kanallar.map((kanal) => (
+        <div
+          key={kanal.kanalKodu}
+          className="bg-card min-w-0 space-y-3 rounded-lg border p-3"
+        >
+          {/* TIKLANABİLİR KANAL: o kanalın satışlarına süzülmüş
+                      gider. Link stili görünür (İlke #2). */}
+          <div className="font-medium">
+            <Baglanti href={kanalSatislariAdresi(kanal.kanalKodu)}>
+              {kanal.kanalAdi}
+            </Baglanti>
+          </div>
+
+          {/* PAY ÇUBUĞU — kanalın ciro içindeki ağırlığı.
+                      Kartlar bir ızgara dolusu birbirinin aynıydı; hangi
+                      kanalın yükü taşıdığı ancak rakamlar tek tek okunup
+                      kafada karşılaştırılınca anlaşılıyordu. Çubuk bunu
+                      BAKINCA söylüyor.
+                      Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11
+                      ton, dört durum rengiyle karışır ve "yeşil = iyi"
+                      anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK. */}
+          {/* İKİ ÇUBUK: CİRO PAYI VE NET-2 PAYI (2c).
+                      Biri hacmi, diğeri gerçek kazancı gösterir ve
+                      FARKLI OLABİLİRLER — o fark önemlidir: cironun
+                      %60'ını taşıyan kanal kârın %40'ını getiriyor
+                      olabilir. Paylar `kanalDagilimi` ile denkleştirilir,
+                      toplam %100'dür ve yuvarlama artığı kaybolmaz.
+                      Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11
+                      ton, dört durum rengiyle karışır ve "yeşil = iyi"
+                      anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK. */}
+          {(() => {
+            const pay = kanalPaylari.get(kanal.kanalKodu);
+            if (!pay) return null;
+            return (
+              <div className="space-y-1">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="text-muted-foreground w-10 shrink-0 text-xs">
+                    {t("ciro")}
+                  </span>
+                  <PayCubugu
+                    oran={pay.ciroPayi / 100}
+                    etiket={bicim.yuzde(pay.ciroPayi)}
+                  />
+                </div>
+                {/* NET-2 payı: toplam kâr eksiyse pay ANLAMSIZ —
+                            işaretler birbirini yer. O hâlde çubuk yok. */}
+                {karGorunur && pay.net2Payi !== null ? (
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="text-muted-foreground w-10 shrink-0 text-xs">
+                      {t("net2")}
+                    </span>
+                    <PayCubugu
+                      oran={pay.net2Payi / 100}
+                      etiket={bicim.yuzde(pay.net2Payi)}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            );
+          })()}
+
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+            <div className="min-w-0">
+              <div className="text-muted-foreground text-xs">
+                {t("satisAdedi")}
+              </div>
+              <div className="text-lg font-semibold tabular-nums">
+                {kanal.adet}
+              </div>
+            </div>
+
+            {/* İade/eksik notları NET-2'nin yanında: ciro iadeden
+                        etkilenmez, düşen rakam NET-2'dir. Sütun izne
+                        kapalıysa notlar da gider — dayanağı kalmaz. */}
+            {karGorunur ? (
+              <div className="min-w-0">
+                <div className="text-muted-foreground text-xs">{t("net2")}</div>
+                <div className="text-lg font-semibold">
+                  {bicim.para(kanal.net2, blok.paraBirimi)}
+                </div>
+                {kanal.iadeAdedi > 0 ? (
+                  <div className="text-muted-foreground text-xs">
+                    {t("kanalIade", { sayi: kanal.iadeAdedi })}
+                  </div>
+                ) : null}
+                {kanal.hesaplanamayanAdet > 0 ? (
+                  <div className="text-muted-foreground text-xs">
+                    {t("kanalEksik", {
+                      sayi: kanal.hesaplanamayanAdet,
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="col-span-2 min-w-0">
+              <div className="text-muted-foreground text-xs">{t("ciro")}</div>
+              <CiroSunumu
+                brut={bicim.para(kanal.gelir, blok.paraBirimi)}
+                iade={
+                  kanal.iadeTutari > 0
+                    ? bicim.para(kanal.iadeTutari, blok.paraBirimi)
+                    : null
+                }
+                net={bicim.para(
+                  kanal.gelir - kanal.iadeTutari,
+                  blok.paraBirimi,
+                )}
+              />
+            </div>
+          </div>
+
+          {/**
+           * HESAP KIRILIMI — kanal kartının içinde.
+           *
+           * Kanal seviyesinde gruplamak doğru varsayılan ("Trendyol
+           * bu ay ne yaptı") ama aynı pazaryerinde iki mağaza varsa
+           * hangisinin ne yaptığı toplamın içinde kayboluyordu.
+           * TEK HESAPTA HİÇ ÇİZİLMEZ: kırılım o zaman kanal
+           * satırının tekrarıdır, gürültüden başka bir şey değil.
+           */}
+          {kanal.hesaplar.length > 1 ? (
+            <ul className="space-y-1 border-t pt-2">
+              {kanal.hesaplar.map((hesap) => (
+                <li
+                  key={`${kanal.kanalKodu}-${hesap.hesapAdi}`}
+                  className="text-muted-foreground flex flex-wrap items-baseline justify-between gap-2 text-xs"
+                >
+                  <span className="min-w-0 truncate">
+                    {hesap.hesapAdi} · {hesap.adet}
+                  </span>
+                  <span className="shrink-0 tabular-nums">
+                    {karGorunur
+                      ? bicim.para(hesap.net2, blok.paraBirimi)
+                      : bicim.para(
+                          hesap.gelir - hesap.iadeTutari,
+                          blok.paraBirimi,
+                        )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ))}
+
+      {/* SATIŞI OLMAYAN KANALLAR — AÇIK SIFIR.
+                  Kart soluk çizilir: "var ama boş" ile "hiç yok" ayrışsın.
+                  Kanal sayısı arttığında bu bölümün ayarlardan seçilebilir
+                  olması BEKLEYENLER'de. */}
+      {[...(paraBirimineGoreKanallar.get(blok.paraBirimi) ?? [])]
+        .filter(([kod]) => !blok.kanallar.some((k) => k.kanalKodu === kod))
+        .sort((a, b) => a[1].localeCompare(b[1], "tr"))
+        .map(([kod, ad]) => (
+          <div
+            key={`bos-${kod}`}
+            className="text-muted-foreground min-w-0 space-y-2 rounded-lg border border-dashed p-3"
+          >
+            <div className="font-medium">
+              <Baglanti href={kanalSatislariAdresi(kod)}>{ad}</Baglanti>
+            </div>
+            <div className="text-xs">{t("kanalSatisYok")}</div>
+            <div className="text-lg font-semibold tabular-nums">0</div>
+          </div>
+        ))}
+    </div>
+  );
 
   return (
     <div className="min-w-0 space-y-6">
@@ -1358,14 +1550,40 @@ export default async function AnaSayfa({
           Eşleştirme rastgele değil: solda "şimdi ne yapacağım" (eylem),
           sağda "ne zaman sıkışırım" (öngörü). İkisi günlük kararın iki
           yarısı ve birlikte okunur. */}
-        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+        {/* ⚠ 2/5 — 3/5 (kullanıcı kararı 21.08.2026): görev kartları
+          daraltıldı, pazaryeri kartları sağa ve GENİŞ tarafa alındı.
+          Eşit bölünce (2/2) pazaryeri kartları üçe bölünüp sıkışıyordu;
+          görev kutucukları ise kısa ve fazla genişlik istemiyor. */}
+        <div className="grid min-w-0 gap-4 xl:grid-cols-5">
           {/* Operasyonel sayılar — `satis.kar.gor` İSTEMEZ, depocu da görür. */}
-          <GorevKutusu sayilar={gorevSayilari} />
+          <div className="min-w-0 xl:col-span-2">
+            <GorevKutusu sayilar={gorevSayilari} />
+          </div>
 
-          {/* Para bloğu — izne bağlı; Operasyon nakit pozisyonu görmez.
-            İzin yoksa görev kutusu tek başına tam genişliğe yayılır. */}
-          {karGorunur ? (
-            <NakitOzeti takvim={takvim} pencereGun={takvimPenceresi} />
+          {/* PAZARYERİ PERFORMANSI — para bloğu, izne bağlı.
+            İzin yoksa görev kartları tek başına tam genişliğe yayılır. */}
+          {karGorunur && ustBlok && ustPaylar ? (
+            <Card className="flex min-w-0 flex-col xl:col-span-3">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+                  <Store className="size-5" />
+                  {t("kanalKirilimi")}
+                  <span className="text-muted-foreground text-xs font-normal">
+                    {ustBlok.paraBirimi}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1">
+                {ustBlok.kanallar.length === 0 ? (
+                  /* AÇIK SIFIR: kanal yoksa kart boş kalmaz, sebebi yazar. */
+                  <p className="text-muted-foreground text-sm">
+                    {t("donemBos")}
+                  </p>
+                ) : (
+                  kanalIzgarasi(ustBlok, ustPaylar)
+                )}
+              </CardContent>
+            </Card>
           ) : null}
         </div>
       </div>
@@ -1391,22 +1609,11 @@ export default async function AnaSayfa({
       ) : (
         bloklar.map((blok) => {
           /**
-           * KANAL PAYLARI (2c) — ciro% ve NET-2%, toplam %100.
-           * `kanalDagilimi` yuvarlama artığını en büyük paya ekler; ekranda
-           * "toplam %100 değil" çelişkisi çıkmaz. Toplam NET-2 eksiyse kâr
-           * payı `null` döner ve o çubuk hiç çizilmez.
+           * ⚠ KANAL PAYLARI ARTIK BURADA HESAPLANMIYOR — pazaryeri kartları
+           * üst sıraya taşındı ve payları `ustPaylar` olarak orada bir kez
+           * hesaplanıyor. İki yerde hesaplansaydı yuvarlama artığı farklı
+           * dağıtılıp aynı kanal iki farklı yüzde gösterebilirdi.
            */
-          const dagilim = kanalDagilimi(
-            blok.kanallar.map((k) => ({
-              kanalKodu: k.kanalKodu,
-              kanalAdi: k.kanalAdi,
-              ciro: k.gelir,
-              net2: k.net2,
-            })),
-          );
-          const kanalPaylari = new Map(
-            dagilim.kanallar.map((k) => [k.kanalKodu, k]),
-          );
           /** Bu para biriminin kıyas dönemi bloğu; yoksa null. */
           const kb = kiyasBlogu(blok.paraBirimi);
           return (
@@ -1727,200 +1934,6 @@ export default async function AnaSayfa({
                     }
                   />
                 ) : null}
-
-                {/* ================= KANAL KIRILIMI — TEK UYGULAMA =================
-                  14.08.2026, kullanıcı: "bura daha iyi kurgulanabilir".
-
-                  ÖNCE: masaüstünde TABLO, telefonda KART — iki ayrı kod, aynı
-                  bilgi. Tablo iki kanal için yanlış biçimdi: dört sütun tüm
-                  genişliğe yayılıyor, altında koca boşluk kalıyordu. Genişliği
-                  kırpınca bu kez sağ yarı boş kaldı.
-
-                  ŞİMDİ: tek duyarlı IZGARA. Kanal sayısı azken kartlar yan yana
-                  dizilir ve alan dolar; artınca kendiliğinden alt satıra iner.
-                  Telefonda tek sütun — ayrı bir mobil uygulama gerekmiyor
-                  (İlke #8 ve #10: aynı bilgi her yerde aynı görünür).
-
-                  Tablo, satır sayısı ÖNGÖRÜLEMEYEN listeler için doğru araçtır;
-                  2-11 kanal için kart ızgarası hem daha yoğun hem daha okunur. */}
-                <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {blok.kanallar.map((kanal) => (
-                    <div
-                      key={kanal.kanalKodu}
-                      className="bg-card min-w-0 space-y-3 rounded-lg border p-3"
-                    >
-                      {/* TIKLANABİLİR KANAL: o kanalın satışlarına süzülmüş
-                        gider. Link stili görünür (İlke #2). */}
-                      <div className="font-medium">
-                        <Baglanti href={kanalSatislariAdresi(kanal.kanalKodu)}>
-                          {kanal.kanalAdi}
-                        </Baglanti>
-                      </div>
-
-                      {/* PAY ÇUBUĞU — kanalın ciro içindeki ağırlığı.
-                        Kartlar bir ızgara dolusu birbirinin aynıydı; hangi
-                        kanalın yükü taşıdığı ancak rakamlar tek tek okunup
-                        kafada karşılaştırılınca anlaşılıyordu. Çubuk bunu
-                        BAKINCA söylüyor.
-                        Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11
-                        ton, dört durum rengiyle karışır ve "yeşil = iyi"
-                        anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK. */}
-                      {/* İKİ ÇUBUK: CİRO PAYI VE NET-2 PAYI (2c).
-                        Biri hacmi, diğeri gerçek kazancı gösterir ve
-                        FARKLI OLABİLİRLER — o fark önemlidir: cironun
-                        %60'ını taşıyan kanal kârın %40'ını getiriyor
-                        olabilir. Paylar `kanalDagilimi` ile denkleştirilir,
-                        toplam %100'dür ve yuvarlama artığı kaybolmaz.
-                        Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11
-                        ton, dört durum rengiyle karışır ve "yeşil = iyi"
-                        anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK. */}
-                      {(() => {
-                        const pay = kanalPaylari.get(kanal.kanalKodu);
-                        if (!pay) return null;
-                        return (
-                          <div className="space-y-1">
-                            <div className="flex min-w-0 items-center gap-2">
-                              <span className="text-muted-foreground w-10 shrink-0 text-xs">
-                                {t("ciro")}
-                              </span>
-                              <PayCubugu
-                                oran={pay.ciroPayi / 100}
-                                etiket={bicim.yuzde(pay.ciroPayi)}
-                              />
-                            </div>
-                            {/* NET-2 payı: toplam kâr eksiyse pay ANLAMSIZ —
-                              işaretler birbirini yer. O hâlde çubuk yok. */}
-                            {karGorunur && pay.net2Payi !== null ? (
-                              <div className="flex min-w-0 items-center gap-2">
-                                <span className="text-muted-foreground w-10 shrink-0 text-xs">
-                                  {t("net2")}
-                                </span>
-                                <PayCubugu
-                                  oran={pay.net2Payi / 100}
-                                  etiket={bicim.yuzde(pay.net2Payi)}
-                                />
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })()}
-
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-                        <div className="min-w-0">
-                          <div className="text-muted-foreground text-xs">
-                            {t("satisAdedi")}
-                          </div>
-                          <div className="text-lg font-semibold tabular-nums">
-                            {kanal.adet}
-                          </div>
-                        </div>
-
-                        {/* İade/eksik notları NET-2'nin yanında: ciro iadeden
-                          etkilenmez, düşen rakam NET-2'dir. Sütun izne
-                          kapalıysa notlar da gider — dayanağı kalmaz. */}
-                        {karGorunur ? (
-                          <div className="min-w-0">
-                            <div className="text-muted-foreground text-xs">
-                              {t("net2")}
-                            </div>
-                            <div className="text-lg font-semibold">
-                              {bicim.para(kanal.net2, blok.paraBirimi)}
-                            </div>
-                            {kanal.iadeAdedi > 0 ? (
-                              <div className="text-muted-foreground text-xs">
-                                {t("kanalIade", { sayi: kanal.iadeAdedi })}
-                              </div>
-                            ) : null}
-                            {kanal.hesaplanamayanAdet > 0 ? (
-                              <div className="text-muted-foreground text-xs">
-                                {t("kanalEksik", {
-                                  sayi: kanal.hesaplanamayanAdet,
-                                })}
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        <div className="col-span-2 min-w-0">
-                          <div className="text-muted-foreground text-xs">
-                            {t("ciro")}
-                          </div>
-                          <CiroSunumu
-                            brut={bicim.para(kanal.gelir, blok.paraBirimi)}
-                            iade={
-                              kanal.iadeTutari > 0
-                                ? bicim.para(kanal.iadeTutari, blok.paraBirimi)
-                                : null
-                            }
-                            net={bicim.para(
-                              kanal.gelir - kanal.iadeTutari,
-                              blok.paraBirimi,
-                            )}
-                          />
-                        </div>
-                      </div>
-
-                      {/**
-                       * HESAP KIRILIMI — kanal kartının içinde.
-                       *
-                       * Kanal seviyesinde gruplamak doğru varsayılan ("Trendyol
-                       * bu ay ne yaptı") ama aynı pazaryerinde iki mağaza varsa
-                       * hangisinin ne yaptığı toplamın içinde kayboluyordu.
-                       * TEK HESAPTA HİÇ ÇİZİLMEZ: kırılım o zaman kanal
-                       * satırının tekrarıdır, gürültüden başka bir şey değil.
-                       */}
-                      {kanal.hesaplar.length > 1 ? (
-                        <ul className="space-y-1 border-t pt-2">
-                          {kanal.hesaplar.map((hesap) => (
-                            <li
-                              key={`${kanal.kanalKodu}-${hesap.hesapAdi}`}
-                              className="text-muted-foreground flex flex-wrap items-baseline justify-between gap-2 text-xs"
-                            >
-                              <span className="min-w-0 truncate">
-                                {hesap.hesapAdi} · {hesap.adet}
-                              </span>
-                              <span className="shrink-0 tabular-nums">
-                                {karGorunur
-                                  ? bicim.para(hesap.net2, blok.paraBirimi)
-                                  : bicim.para(
-                                      hesap.gelir - hesap.iadeTutari,
-                                      blok.paraBirimi,
-                                    )}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                    </div>
-                  ))}
-
-                  {/* SATIŞI OLMAYAN KANALLAR — AÇIK SIFIR.
-                    Kart soluk çizilir: "var ama boş" ile "hiç yok" ayrışsın.
-                    Kanal sayısı arttığında bu bölümün ayarlardan seçilebilir
-                    olması BEKLEYENLER'de. */}
-                  {[...(paraBirimineGoreKanallar.get(blok.paraBirimi) ?? [])]
-                    .filter(
-                      ([kod]) =>
-                        !blok.kanallar.some((k) => k.kanalKodu === kod),
-                    )
-                    .sort((a, b) => a[1].localeCompare(b[1], "tr"))
-                    .map(([kod, ad]) => (
-                      <div
-                        key={`bos-${kod}`}
-                        className="text-muted-foreground min-w-0 space-y-2 rounded-lg border border-dashed p-3"
-                      >
-                        <div className="font-medium">
-                          <Baglanti href={kanalSatislariAdresi(kod)}>
-                            {ad}
-                          </Baglanti>
-                        </div>
-                        <div className="text-xs">{t("kanalSatisYok")}</div>
-                        <div className="text-lg font-semibold tabular-nums">
-                          0
-                        </div>
-                      </div>
-                    ))}
-                </div>
               </CardContent>
             </Card>
           );
