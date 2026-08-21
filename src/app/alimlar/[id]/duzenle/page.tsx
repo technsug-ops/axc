@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { TriangleAlert } from "lucide-react";
 
 import { GeriBaglanti } from "@/components/baglanti";
+import { donusTasiyan } from "@/lib/suzgec";
 import { tarihGirdisi } from "@/lib/bicim";
 import { gunMetni } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
@@ -21,49 +22,51 @@ export async function generateMetadata() {
 
 export default async function AlimDuzenleSayfasi({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ donus?: string }>;
 }) {
   await sayfaIzni("alim.yaz");
 
-  const { id } = await params;
+  const [{ id }, { donus }] = await Promise.all([params, searchParams]);
   const t = await getTranslations("Alim");
 
   const [alim, hesapKayitlari, kartKayitlari, tedarikciKayitlari] =
     await Promise.all([
-    prisma.purchase.findUnique({
-      where: { id },
-      include: {
-        items: {
-          include: {
-            variant: {
-              include: { product: { select: { name: true } } },
+      prisma.purchase.findUnique({
+        where: { id },
+        include: {
+          items: {
+            include: {
+              variant: {
+                include: { product: { select: { name: true } } },
+              },
+              // Kabul edilmiş adet ledger'dan türetilir; kolon yok.
+              stockMovements: { select: { quantityDelta: true } },
             },
-            // Kabul edilmiş adet ledger'dan türetilir; kolon yok.
-            stockMovements: { select: { quantityDelta: true } },
           },
         },
-      },
-    }),
-    // Süzgeç sonradan konduğu için MEVCUT hesap listede olmayabilir
-    // (rolü değişmiş ya da pasife alınmış olabilir). Listede olmasaydı
-    // açılır kutu boş görünür, kaydedince hesap SESSİZCE SİLİNİRDİ.
-    // Bu yüzden aşağıda mevcut hesap ayrıca ekleniyor.
-    prisma.channelAccount.findMany({
-      where: { isActive: true, alisIcin: true },
-      include: { channel: { select: { name: true } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.creditCard.findMany({
-      where: { isActive: true },
-      orderBy: { label: "asc" },
-    }),
-    prisma.supplier.findMany({
-      where: { isActive: true, NOT: { code: null } },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+      }),
+      // Süzgeç sonradan konduğu için MEVCUT hesap listede olmayabilir
+      // (rolü değişmiş ya da pasife alınmış olabilir). Listede olmasaydı
+      // açılır kutu boş görünür, kaydedince hesap SESSİZCE SİLİNİRDİ.
+      // Bu yüzden aşağıda mevcut hesap ayrıca ekleniyor.
+      prisma.channelAccount.findMany({
+        where: { isActive: true, alisIcin: true },
+        include: { channel: { select: { name: true } } },
+        orderBy: { name: "asc" },
+      }),
+      prisma.creditCard.findMany({
+        where: { isActive: true },
+        orderBy: { label: "asc" },
+      }),
+      prisma.supplier.findMany({
+        where: { isActive: true, NOT: { code: null } },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
 
   if (!alim) notFound();
 
@@ -121,19 +124,21 @@ export default async function AlimDuzenleSayfasi({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <GeriBaglanti href={`/alimlar/${alim.id}`}>{alim.code}</GeriBaglanti>
+        <GeriBaglanti href={donusTasiyan(`/alimlar/${alim.id}`, donus)}>
+          {alim.code}
+        </GeriBaglanti>
         <h1 className="mt-1 text-2xl font-semibold">{t("duzenle")}</h1>
       </div>
 
       {malKabulVar ? (
         <div className={`space-y-2 rounded-md p-4 ${DURUM_KUTUSU.uyari}`}>
-          <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
+          <p
+            className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}
+          >
             <TriangleAlert className="size-4 shrink-0" />
             {t("duzenleUyariBaslik")}
           </p>
-          <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
-            {t("duzenleUyari")}
-          </p>
+          <p className={`text-sm ${DURUM_YAZISI.uyari}`}>{t("duzenleUyari")}</p>
         </div>
       ) : null}
 

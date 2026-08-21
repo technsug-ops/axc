@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { GeriBaglanti } from "@/components/baglanti";
+import { donusTasiyan } from "@/lib/suzgec";
 import { Button } from "@/components/ui/button";
 import { tarihGirdisi } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
@@ -17,12 +18,14 @@ import {
 
 export default async function MalKabulSayfasi({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ donus?: string }>;
 }) {
   await sayfaIzni("malkabul.yaz");
 
-  const { id } = await params;
+  const [{ id }, { donus }] = await Promise.all([params, searchParams]);
 
   const alim = await prisma.purchase.findUnique({
     where: { id },
@@ -52,7 +55,9 @@ export default async function MalKabulSayfasi({
             : t("tamamlanmis", { kod: alim.code })}
         </p>
         <Button variant="outline" asChild>
-          <Link href={`/alimlar/${alim.id}`}>{t("detayaDon")}</Link>
+          <Link href={donusTasiyan(`/alimlar/${alim.id}`, donus)}>
+            {t("detayaDon")}
+          </Link>
         </Button>
       </div>
     );
@@ -90,7 +95,9 @@ export default async function MalKabulSayfasi({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <GeriBaglanti href={`/alimlar/${alim.id}`}>{alim.code}</GeriBaglanti>
+        <GeriBaglanti href={donusTasiyan(`/alimlar/${alim.id}`, donus)}>
+          {alim.code}
+        </GeriBaglanti>
         <h1 className="mt-1 text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("aciklamaMetni")}</p>
       </div>

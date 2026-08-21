@@ -29,7 +29,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { alimKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
-import { suzgecAdresi } from "@/lib/suzgec";
+import { donusDegeri, donusTasiyan, suzgecAdresi } from "@/lib/suzgec";
 import { kalemToplamlari } from "@/lib/tutar";
 import { adetToplami, suzgecToplami } from "@/lib/liste-toplami";
 import { ListeToplami } from "@/components/liste-toplami";
@@ -217,6 +217,17 @@ export default async function AlimlarSayfasi({
    * İPTALLER TOPLAMA GİRMEZ: iptal edilmiş alım gerçekleşmiş bir alış
    * değildir, matraha yazılamaz. Ama sessizce düşülmez — ayrı kutuda görünür.
    */
+  /**
+   * SÜZGEÇ DETAYA GİRİNCE KAYBOLMASIN (kullanıcı 21.08.2026).
+   *
+   * Listedeki HER bağlantı, o anki süzgeci `donus` olarak yanında taşır;
+   * detay ekranının "‹ Alımlar" tuşu onu geri açar. Değer yalnız SORGU
+   * dizesidir — yol taşınmaz (bkz. lib/suzgec → geriAdresi).
+   */
+  const donus = donusDegeri(p);
+  const alimAdresi = (id: string, ek = "") =>
+    donusTasiyan(`/alimlar/${id}${ek}`, donus);
+
   /** Hariç yüklemi TEK GÖVDEDE — tutar ve adet kutuları ayrışamaz. */
   const iptalliMi = (a: (typeof alimlar)[number]) => a.status === "CANCELLED";
 
@@ -246,13 +257,13 @@ export default async function AlimlarSayfasi({
     return (
       <>
         <SatirEylemi
-          href={`/alimlar/${alim.id}`}
+          href={alimAdresi(alim.id)}
           ikon={Eye}
           etiket={ortak("detay")}
         />
         {!iptalli ? (
           <SatirEylemi
-            href={`/alimlar/${alim.id}/duzenle`}
+            href={alimAdresi(alim.id, "/duzenle")}
             ikon={Pencil}
             etiket={ortak("duzenle")}
           />
@@ -266,7 +277,7 @@ export default async function AlimlarSayfasi({
         ) : null}
         {kabulEdilebilir ? (
           <SatirEylemi
-            href={`/alimlar/${alim.id}/mal-kabul`}
+            href={alimAdresi(alim.id, "/mal-kabul")}
             ikon={PackageCheck}
             etiket={t("malKabul")}
             birincil
@@ -407,7 +418,7 @@ export default async function AlimlarSayfasi({
                         ustIpucu={alim.code}
                         ust={
                           <span className="inline-flex items-center gap-1">
-                            <Baglanti href={`/alimlar/${alim.id}`}>
+                            <Baglanti href={alimAdresi(alim.id)}>
                               {alim.code}
                             </Baglanti>
                             <KopyalanabilirKod
@@ -509,9 +520,7 @@ export default async function AlimlarSayfasi({
                 key={alim.id}
                 baslik={
                   <span className="inline-flex items-center gap-1">
-                    <Baglanti href={`/alimlar/${alim.id}`}>
-                      {alim.code}
-                    </Baglanti>
+                    <Baglanti href={alimAdresi(alim.id)}>{alim.code}</Baglanti>
                     <KopyalanabilirKod
                       deger={alim.code}
                       etiket={t("alimKodu")}

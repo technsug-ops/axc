@@ -6,11 +6,13 @@
  *
  *  Veritabanına GİTMEZ, "şu an"ı kendi okumaz: sabit bir AN verilir.
  *
- *  DÖRT BÖLÜM:
+ *  ALTI BÖLÜM:
  *  1) ADRES KURMA — süzgeç adresi, sayfa sıfırlama, boş değerin silinmesi.
  *  2) DÖNEM ÇÖZÜMÜ — varsayılan "tüm zamanlar", geçersiz değerin davranışı.
  *  3) SATIŞ KOŞULU — kanal/hesap/kâr/iade süzgeçleri ve birlikte kullanımı.
  *  4) ALIM KOŞULU — durum/hesap/tedarikçi/kart; aramasız çağrı DB'ye gitmez.
+ *  5) SABİT DÖNEM — rozet çizilmez, "Temizle" dönemi ellemez.
+ *  6) GERİ DÖNÜŞ — detaya girip geri dönünce süzgeç ayakta kalır.
  *
  *  ODAK: SESSİZ SÜZGEÇ KAYBI. Bu modülün en tehlikeli hatası patlamak değil,
  *  bir süzgeci koşula HİÇ yazmamaktır — ekran daha fazla kayıt gösterir,
@@ -29,19 +31,30 @@ import {
   satisKosulu,
 } from "../src/lib/liste-suzgeci";
 import { GOREV_ADRESLERI } from "../src/lib/panel/bugun-ne-yapmaliyim";
-import { aktifSuzgecler, suzgecAdresi } from "../src/lib/suzgec";
+import { readFileSync } from "node:fs";
+
+import {
+  DONUS_TAVANI,
+  aktifSuzgecler,
+  donusDegeri,
+  donusTasiyan,
+  geriAdresi,
+  suzgecAdresi,
+} from "../src/lib/suzgec";
 import {
   donemRozetiCizilirMi,
   temizlemeDegisiklikleri,
 } from "../src/lib/suzgec";
-import {
-  LISTE_PENCERELERI,
-  PANEL_VARSAYILAN_PENCERE,
-} from "../src/lib/donem";
+import { LISTE_PENCERELERI, PANEL_VARSAYILAN_PENCERE } from "../src/lib/donem";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 5;
+/**
+ * ⚠ BÖLÜM EKLENİNCE BU SAYI DA ARTAR. Sayaç, bir bölümün sessizce hiç
+ * koşmamasını yakalamak için var; artırmayı unutmak "yarım kaldı" der ve
+ * doğru davranır — eksik bırakmak yeşil yanardı.
+ */
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -64,7 +77,8 @@ console.log("\n1) ADRES KURMA");
 {
   kontrol(
     "boş süzgeç adresten SİLİNİR",
-    suzgecAdresi("/satislar", { kanal: "TRENDYOL" }, { kanal: "" }) === "/satislar",
+    suzgecAdresi("/satislar", { kanal: "TRENDYOL" }, { kanal: "" }) ===
+      "/satislar",
     suzgecAdresi("/satislar", { kanal: "TRENDYOL" }, { kanal: "" }),
   );
   kontrol(
@@ -79,7 +93,9 @@ console.log("\n1) ADRES KURMA");
    */
   kontrol(
     "sayfa parametresi düşürülür",
-    !suzgecAdresi("/satislar", { sayfa: "7" }, { kanal: "TRENDYOL" }).includes("sayfa"),
+    !suzgecAdresi("/satislar", { sayfa: "7" }, { kanal: "TRENDYOL" }).includes(
+      "sayfa",
+    ),
   );
 
   const rozetler = aktifSuzgecler(
@@ -108,7 +124,11 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
    * yapmak eski kayıtları hiç uyarı vermeden ekrandan kaldırırdı.
    */
   const bos = pencereCoz({}, AN);
-  kontrol("parametre yoksa zaman süzgeci KAPALI", bos.tur === "" && bos.aralik === undefined, bos);
+  kontrol(
+    "parametre yoksa zaman süzgeci KAPALI",
+    bos.tur === "" && bos.aralik === undefined,
+    bos,
+  );
 
   /**
    * ── DÜN — TEK GÜN, BUGÜNÜ İÇERMEZ (kullanıcı isteği 21.08.2026) ────────
@@ -118,7 +138,11 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
    * kalırdı — başlangıç yine doğru olurdu.
    */
   const dun = pencereCoz({ pencere: "DUN" }, AN);
-  kontrol("DUN tanınır", dun.tur === "DUN" && dun.aralik !== undefined, dun.tur);
+  kontrol(
+    "DUN tanınır",
+    dun.tur === "DUN" && dun.aralik !== undefined,
+    dun.tur,
+  );
   kontrol(
     "DÜN 12 Ağustos'ta başlar (AN = 13 Ağustos)",
     dun.pencere !== null && gunMetni(dun.pencere.baslangic) === "2026-08-12",
@@ -217,7 +241,10 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
     ozel.pencere !== null &&
       gunMetni(ozel.pencere.baslangic) === "2026-07-01" &&
       gunMetni(ozel.pencere.sonGun) === "2026-07-15",
-    ozel.pencere && [gunMetni(ozel.pencere.baslangic), gunMetni(ozel.pencere.sonGun)],
+    ozel.pencere && [
+      gunMetni(ozel.pencere.baslangic),
+      gunMetni(ozel.pencere.sonGun),
+    ],
   );
 
   /**
@@ -267,7 +294,8 @@ console.log("\n3) SATIŞ KOŞULU");
   const kanal = satisKosulu({ kanal: "TRENDYOL" }, AN).kosul;
   kontrol(
     "kanal kodu ilişkiden süzülür",
-    JSON.stringify(kanal.channelAccount) === JSON.stringify({ channel: { code: "TRENDYOL" } }),
+    JSON.stringify(kanal.channelAccount) ===
+      JSON.stringify({ channel: { code: "TRENDYOL" } }),
     kanal.channelAccount,
   );
 
@@ -292,7 +320,11 @@ console.log("\n3) SATIŞ KOŞULU");
   );
 
   const karEksik = satisKosulu({ kar: "eksik" }, AN).kosul;
-  kontrol("kâr eksik: OR dalı kurulur", Array.isArray(karEksik.OR) && karEksik.OR.length === 2, karEksik.OR);
+  kontrol(
+    "kâr eksik: OR dalı kurulur",
+    Array.isArray(karEksik.OR) && karEksik.OR.length === 2,
+    karEksik.OR,
+  );
   kontrol(
     "kâr tam: CALCULATED aranır",
     satisKosulu({ kar: "tam" }, AN).kosul.profitStatus === "CALCULATED",
@@ -304,11 +336,13 @@ console.log("\n3) SATIŞ KOŞULU");
 
   kontrol(
     "iade var: some",
-    JSON.stringify(satisKosulu({ iade: "var" }, AN).kosul.returns) === JSON.stringify({ some: {} }),
+    JSON.stringify(satisKosulu({ iade: "var" }, AN).kosul.returns) ===
+      JSON.stringify({ some: {} }),
   );
   kontrol(
     "iade yok: none",
-    JSON.stringify(satisKosulu({ iade: "yok" }, AN).kosul.returns) === JSON.stringify({ none: {} }),
+    JSON.stringify(satisKosulu({ iade: "yok" }, AN).kosul.returns) ===
+      JSON.stringify({ none: {} }),
   );
 
   /**
@@ -324,7 +358,6 @@ console.log("\n3) SATIŞ KOŞULU");
     ),
     satisKosulu({ q: " TY-123 " }, AN).kosul,
   );
-
 
   /**
    * KARGO SÜZGECİ (14.08.2026). Panelin "kargoya verilen / bekleyen" kutusu
@@ -391,7 +424,14 @@ console.log("\n3) SATIŞ KOŞULU");
   );
   // HEPSİ BİR ARADA: hiçbiri diğerini düşürmemeli.
   const hepsi = satisKosulu(
-    { pencere: "BU_AY", kanal: "TRENDYOL", hesap: "hsp1", kar: "tam", iade: "var", q: "X" },
+    {
+      pencere: "BU_AY",
+      kanal: "TRENDYOL",
+      hesap: "hsp1",
+      kar: "tam",
+      iade: "var",
+      q: "X",
+    },
     AN,
   ).kosul;
   kontrol(
@@ -418,10 +458,17 @@ async function alimBolumu() {
    * atmadan `undefined` döner. Bu yüzden bu bölüm de DB'siz koşabiliyor.
    */
   const bos = (await alimKosulu({}, AN)).kosul;
-  kontrol("süzgeç yoksa koşul BOŞ (tüm alımlar)", Object.keys(bos).length === 0, bos);
+  kontrol(
+    "süzgeç yoksa koşul BOŞ (tüm alımlar)",
+    Object.keys(bos).length === 0,
+    bos,
+  );
 
   const zamanli = (await alimKosulu({ pencere: "SON_30_GUN" }, AN)).kosul;
-  kontrol("dönem seçilince purchasedAt yazılır", zamanli.purchasedAt !== undefined);
+  kontrol(
+    "dönem seçilince purchasedAt yazılır",
+    zamanli.purchasedAt !== undefined,
+  );
 
   kontrol(
     "geçerli durum süzülür",
@@ -467,7 +514,10 @@ async function alimBolumu() {
     ["alım kodu", '{"code":{"contains":"ab"}}'],
     ["tedarikçi sipariş no", '{"supplierOrderNo":{"contains":"ab"}}'],
     ["tedarikçi adı (serbest metin)", '{"supplierName":{"contains":"ab"}}'],
-    ["tedarikçi adı (kayıtlı)", '{"supplier":{"is":{"name":{"contains":"ab"}}}}'],
+    [
+      "tedarikçi adı (kayıtlı)",
+      '{"supplier":{"is":{"name":{"contains":"ab"}}}}',
+    ],
     ["ürün SKU", '{"items":{"some":{"variant":{"sku":{"contains":"ab"}}}}}'],
     [
       "ürün Firma SKU",
@@ -483,9 +533,17 @@ async function alimBolumu() {
     ],
   ];
   for (const [ad, parca] of beklenenAlanlar) {
-    kontrol(`  alım araması ${ad} alanına bakıyor`, aramaMetni.includes(parca), parca);
+    kontrol(
+      `  alım araması ${ad} alanına bakıyor`,
+      aramaMetni.includes(parca),
+      parca,
+    );
   }
-  kontrol("aranan alan sayısı beklenenle tutuyor", dallar.length === beklenenAlanlar.length, dallar.length);
+  kontrol(
+    "aranan alan sayısı beklenenle tutuyor",
+    dallar.length === beklenenAlanlar.length,
+    dallar.length,
+  );
   kontrol("boş arama süzgeç KURMAZ", (await alimAramaKosulu("")) === undefined);
 
   /* ==========================================================================
@@ -499,13 +557,23 @@ async function alimBolumu() {
   const satisAlanlari: [string, string][] = [
     ["sipariş no", '{"code":{"contains":"ab"}}'],
     ["ürün SKU", '{"items":{"some":{"variant":{"sku":{"contains":"ab"}}}}}'],
-    ["ürün Firma SKU", '{"items":{"some":{"variant":{"companySku":{"contains":"ab"}}}}}'],
-    ["ürün barkod", '{"items":{"some":{"variant":{"barcode":{"contains":"ab"}}}}}'],
+    [
+      "ürün Firma SKU",
+      '{"items":{"some":{"variant":{"companySku":{"contains":"ab"}}}}}',
+    ],
+    [
+      "ürün barkod",
+      '{"items":{"some":{"variant":{"barcode":{"contains":"ab"}}}}}',
+    ],
     ["PAZARYERİ SKU", '{"channelSku":{"contains":"ab"}}'],
     ["ürün adı", '{"product":{"name":{"contains":"ab"}}}'],
   ];
   for (const [ad, parca] of satisAlanlari) {
-    kontrol(`  satış araması ${ad} alanına bakıyor`, satisMetni.includes(parca), parca);
+    kontrol(
+      `  satış araması ${ad} alanına bakıyor`,
+      satisMetni.includes(parca),
+      parca,
+    );
   }
 
   /**
@@ -522,7 +590,10 @@ async function alimBolumu() {
     "  ...kâr süzgeci de korunur",
     ikiliMetni.includes('"profitStatus":null'),
   );
-  kontrol("boş aramada satış süzgeci kurulmaz", !JSON.stringify(satisKosulu({}, AN).kosul).includes("contains"));
+  kontrol(
+    "boş aramada satış süzgeci kurulmaz",
+    !JSON.stringify(satisKosulu({}, AN).kosul).includes("contains"),
+  );
 
   const hepsi = (
     await alimKosulu(
@@ -674,3 +745,157 @@ console.log("\n5) SABİT DÖNEM — ROZET VE TEMİZLE");
   );
   kosanBolumler.push("sabit dönem");
 }
+
+// ===========================================================================
+console.log("\nGERİ DÖNÜŞ — süzgeç detaya girince kaybolmasın");
+// ===========================================================================
+{
+  /**
+   * Kullanıcı bildirdi 21.08.2026: Alımlar'da süzgeç kurup bir kayda giriyor,
+   * "‹ Alımlar" tuşuna basınca SÜZGEÇSİZ listeye dönüyor.
+   */
+  kontrol(
+    "dönüş değeri listenin sorgusunu taşıyor",
+    donusDegeri({ durum: "OPEN", kart: "abc" }) === "durum=OPEN&kart=abc",
+    donusDegeri({ durum: "OPEN", kart: "abc" }),
+  );
+  kontrol("boş süzgeçte dönüş YOK", donusDegeri({}) === undefined);
+  kontrol(
+    "boş değerler taşınmaz",
+    donusDegeri({ durum: "", kart: "   " }) === undefined,
+    donusDegeri({ durum: "", kart: "   " }),
+  );
+  /**
+   * ⚠ KENDİNİ SARMALAMA: `donus` parametresinin kendisi taşınmaz. Taşınsaydı
+   * her adımda bir kat daha sarılır ve adres katlanarak büyürdü.
+   */
+  kontrol(
+    "dönüş parametresi kendini taşımıyor",
+    donusDegeri({ durum: "OPEN", donus: "durum%3DX" }) === "durum=OPEN",
+    donusDegeri({ durum: "OPEN", donus: "durum%3DX" }),
+  );
+
+  kontrol(
+    "geri adresi süzgeci geri açıyor",
+    geriAdresi("/alimlar", "durum=OPEN") === "/alimlar?durum=OPEN",
+    geriAdresi("/alimlar", "durum=OPEN"),
+  );
+  kontrol(
+    "dönüş yoksa düz listeye gider",
+    geriAdresi("/alimlar", undefined) === "/alimlar",
+  );
+
+  /**
+   * ── AÇIK YÖNLENDİRME KAPISI ────────────────────────────────────────────
+   * ⚠ EN KOLAY ÇÖZÜM EN TEHLİKELİSİYDİ: dönülecek ADRESİ parametreye koymak.
+   * O hâlde `?donus=//baska-site` yazan biri sayfamızdaki bir bağlantıyı
+   * dışarı çevirebilirdi. Bu testler yolun ASLA kullanıcıdan gelmediğini
+   * sabitliyor: ne yazılırsa yazılsın çıktı `/alimlar` ile BAŞLAR.
+   */
+  for (const kotu of [
+    "//zararli.example",
+    "https://zararli.example",
+    "/etc/passwd",
+    "javascript:alert(1)",
+    "../../ayarlar",
+    "a=1#/baska",
+    "a=1?b=2",
+  ]) {
+    const sonuc = geriAdresi("/alimlar", kotu);
+    kontrol(
+      `"${kotu}" dışarı çıkamıyor`,
+      sonuc.startsWith("/alimlar") && !sonuc.startsWith("//"),
+      sonuc,
+    );
+    /**
+     * ⚠ VE ÇAPA/İKİNCİ SORU İŞARETİ SIZAMIYOR: ham metin yapıştırılsaydı
+     * `a=1#/baska` adrese çapa sokardı ve "/alimlar" ile başladığı için
+     * yukarıdaki kontrolü de GEÇERDİ. Örnek veri ayrımın iki yakasını
+     * göstermeli — bu yüzden ayrıca sınanıyor.
+     */
+    kontrol(
+      `  ...ve çapa/ikinci ? sızmıyor`,
+      !sonuc.includes("#") && sonuc.split("?").length <= 2,
+      sonuc,
+    );
+  }
+
+  kontrol(
+    "tavanı aşan dönüş HİÇ taşınmaz (kırık bağlantı üretme)",
+    geriAdresi("/alimlar", "a=" + "x".repeat(DONUS_TAVANI)) === "/alimlar",
+  );
+  kontrol(
+    "tavanı aşan değer üretilmiyor",
+    donusDegeri({ q: "x".repeat(DONUS_TAVANI) }) === undefined,
+  );
+
+  /**
+   * ── TAŞIMAK ≠ TÜKETMEK ─────────────────────────────────────────────────
+   * Mal kabul ekranı `geriAdresi` kullansaydı "geri" tuşu alım detayına
+   * değil, detayın adresine listenin süzgecini yapıştırarak anlamsız bir
+   * yere giderdi. Örnek veri ikisinin FARKLI çıktı ürettiğini gösteriyor.
+   */
+  const tasinan = donusTasiyan("/alimlar/123", "durum=OPEN");
+  const tuketilen = geriAdresi("/alimlar/123", "durum=OPEN");
+  kontrol(
+    "taşıyan: donus parametresi olarak sarar",
+    tasinan === "/alimlar/123?donus=durum%3DOPEN",
+    tasinan,
+  );
+  kontrol(
+    "tüketen: sorguyu doğrudan açar",
+    tuketilen === "/alimlar/123?durum=OPEN",
+    tuketilen,
+  );
+  kontrol("ikisi AYNI ŞEY DEĞİL", tasinan !== tuketilen);
+}
+
+// ===========================================================================
+console.log("\nGERİ DÖNÜŞ — zincir ekranlarda kurulu mu");
+// ===========================================================================
+{
+  /**
+   * ⚠ DESEN ÖNCE SAYILDI. `donusTasiyan` her dosyada import satırında da
+   * geçiyor; import tek başına hiçbir bağlantı kurmaz. Bu yüzden işaret
+   * ÇAĞRIYA bağlanıyor: `donusTasiyan(`.
+   */
+  const liste = readFileSync("src/app/alimlar/page.tsx", "utf8");
+  kontrol("liste dönüş değerini ÜRETİYOR", liste.includes("donusDegeri(p)"));
+  kontrol(
+    "liste bağlantıları tek gövdeden",
+    liste.includes("const alimAdresi ="),
+  );
+  /**
+   * ⚠ VE HER SATIR BAĞLANTISI O GÖVDEDEN GEÇİYOR. Biri elde kalsaydı o
+   * yoldan girildiğinde süzgeç yine kaybolurdu — ve kullanıcı "bazen
+   * çalışıyor bazen çalışmıyor" derdi, teşhisi en zor hâli.
+   */
+  kontrol(
+    "  ...ve elde kalan çıplak bağlantı yok",
+    !/href=\{`\/alimlar\/\$\{alim\.id\}/.test(liste),
+  );
+
+  const detay = readFileSync("src/app/alimlar/[id]/page.tsx", "utf8");
+  kontrol(
+    "detay zinciri TÜKETİYOR (geriAdresi)",
+    detay.includes('geriAdresi("/alimlar", donus)'),
+  );
+  kontrol(
+    "detay alt ekranlara TAŞIYOR",
+    detay.includes("donusTasiyan(`/alimlar/${alim.id}/mal-kabul`"),
+  );
+
+  for (const [ad, yol] of [
+    ["mal kabul", "src/app/alimlar/[id]/mal-kabul/page.tsx"],
+    ["düzenle", "src/app/alimlar/[id]/duzenle/page.tsx"],
+  ] as const) {
+    const kaynak = readFileSync(yol, "utf8");
+    kontrol(`${ad} — dönüşü okuyor`, kaynak.includes("searchParams"));
+    kontrol(
+      `${ad} — geri tuşu zinciri taşıyor`,
+      kaynak.includes("donusTasiyan(`/alimlar/${alim.id}`"),
+    );
+  }
+}
+
+kosanBolumler.push("geri dönüş");

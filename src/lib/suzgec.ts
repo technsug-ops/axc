@@ -119,3 +119,89 @@ export function temizlemeDegisiklikleri(
   }
   return Object.fromEntries(giris);
 }
+
+/** Geri dönüş sorgusunu taşıyan parametrenin adı. */
+export const DONUS_PARAMETRESI = "donus";
+
+/**
+ * ============================================================================
+ *  GERİ DÖNÜŞ ADRESİ — SÜZGEÇ DETAYA GİRİNCE KAYBOLMASIN
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı bildirdi 21.08.2026: Alımlar'da süzgeç kurup bir kayda giriyor,
+ *  "‹ Alımlar" tuşuna basınca SÜZGEÇSİZ listeye dönüyor. 190 kaydın içinde
+ *  aradığı yeri yeniden kurmak zorunda kalıyor.
+ *
+ *  ── NİYE `donus` YOL DEĞİL, SORGU TAŞIYOR ───────────────────────────────
+ *  ⚠ EN KOLAY ÇÖZÜM EN TEHLİKELİSİYDİ: dönülecek ADRESİ parametreye koymak
+ *  (`?donus=/alimlar?durum=X`). O hâlde adres çubuğuna yazılan her şey bir
+ *  yönlendirme hedefi olurdu — `?donus=//baska-site` yazan biri bizim
+ *  sayfamızdaki bir bağlantıyı dışarı çevirebilirdi (açık yönlendirme).
+ *
+ *  Bu yüzden parametre YALNIZ SORGU DİZESİ taşır; yol HER ZAMAN çağıran
+ *  ekranın kendi sabitinden gelir. Kullanıcıdan gelen metin bir yola
+ *  DÖNÜŞEMEZ — kötü niyetli girdi en fazla anlamsız bir süzgeç üretir, onu
+ *  da liste sayfası zaten kendi doğruluyor.
+ *
+ *  ── SESSİZ BÜYÜME YOK ───────────────────────────────────────────────────
+ *  Sorgu, adres çubuğunda taşınıyor; sınırsız bırakılırsa zincir uzadıkça
+ *  (liste → detay → düzenle) katlanarak büyüyebilir. Tavan konuldu ve
+ *  aşılırsa parametre HİÇ taşınmaz: süzgeci kaybetmek, kırık bir bağlantı
+ *  üretmekten iyidir.
+ * ============================================================================
+ */
+export const DONUS_TAVANI = 512;
+
+/**
+ * Detay ekranına taşınacak dönüş değeri — listenin O ANKİ sorgu dizesi.
+ *
+ * Boş sorgu `undefined` döner: süzgeçsiz listeden girildiğinde adres
+ * çubuğuna anlamsız bir `?donus=` eklemeye gerek yok.
+ */
+export function donusDegeri(
+  mevcut: Record<string, string | undefined>,
+): string | undefined {
+  const parametreler = new URLSearchParams();
+  for (const [ad, deger] of Object.entries(mevcut)) {
+    // ⚠ `donus`un kendisi taşınmaz — yoksa her adımda kendini sarmalar.
+    if (ad === DONUS_PARAMETRESI) continue;
+    const temiz = (deger ?? "").trim();
+    if (temiz !== "") parametreler.set(ad, temiz);
+  }
+  const sorgu = parametreler.toString();
+  if (sorgu === "" || sorgu.length > DONUS_TAVANI) return undefined;
+  return sorgu;
+}
+
+/**
+ * Geri tuşunun gideceği adres.
+ *
+ * `temel` ÇAĞIRANIN SABİTİ (ör. "/alimlar"); `donus` kullanıcıdan gelebilir
+ * ama yalnız sorgu olarak eklenir. Bu yüzden burada yol doğrulaması YOKTUR —
+ * doğrulanacak bir yol hiç oluşmuyor.
+ */
+export function geriAdresi(temel: string, donus: string | undefined): string {
+  const temiz = (donus ?? "").trim();
+  if (temiz === "" || temiz.length > DONUS_TAVANI) return temel;
+  /**
+   * ⚠ ÇÖZÜMLENİP YENİDEN KURULUYOR. Ham metni yapıştırsaydım `?donus=a#b`
+   * gibi bir girdi adrese çapa (`#`) ya da ikinci bir `?` sokabilirdi.
+   * `URLSearchParams` girdiyi ayrıştırıp yeniden kodluyor.
+   */
+  const sorgu = new URLSearchParams(temiz).toString();
+  return sorgu ? `${temel}?${sorgu}` : temel;
+}
+
+/**
+ * ARADAKİ ADIMA dönüş değerini TAŞIR (tüketmez).
+ *
+ * ⚠ İKİ AYRI İŞ, İKİ AYRI İŞLEV:
+ *   · `geriAdresi`   — TÜKETİR: `/alimlar?durum=X` (liste sahibinin adımı)
+ *   · `donusTasiyan` — TAŞIR:   `/alimlar/123?donus=durum%3DX`
+ *
+ * İkisi karıştırılırsa zincir kopar: mal kabul ekranı `geriAdresi` kullansaydı
+ * "geri" tuşu alım detayına DEĞİL, detayın adresine listenin süzgecini
+ * yapıştırarak anlamsız bir yere giderdi.
+ */
+export function donusTasiyan(yol: string, donus: string | undefined): string {
+  return suzgecAdresi(yol, {}, { [DONUS_PARAMETRESI]: donus });
+}

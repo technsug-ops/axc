@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Pencil, PackageCheck } from "lucide-react";
 
 import { Baglanti, GeriBaglanti } from "@/components/baglanti";
+import { donusTasiyan, geriAdresi } from "@/lib/suzgec";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -33,11 +34,21 @@ export default async function AlimDetaySayfasi({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saglam?: string; hasarli?: string }>;
+  searchParams: Promise<{
+    saglam?: string;
+    hasarli?: string;
+    donus?: string;
+  }>;
 }) {
   await sayfaIzni("alim.gor");
 
   const [{ id }, kabulSonucu] = await Promise.all([params, searchParams]);
+  /**
+   * DÖNÜŞ ZİNCİRİ — süzgeç bu ekranda kaybolmaz, bir ADIM YUKARI taşınır.
+   * Değer yalnız sorgu dizesidir; yol her zaman bu dosyanın sabitinden gelir
+   * (bkz. lib/suzgec → geriAdresi, açık yönlendirme gerekçesi).
+   */
+  const donus = kabulSonucu.donus;
 
   const alim = await prisma.purchase.findUnique({
     where: { id },
@@ -131,7 +142,9 @@ export default async function AlimDetaySayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <GeriBaglanti href="/alimlar">{t("baslik")}</GeriBaglanti>
+        <GeriBaglanti href={geriAdresi("/alimlar", donus)}>
+          {t("baslik")}
+        </GeriBaglanti>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold">
@@ -156,7 +169,9 @@ export default async function AlimDetaySayfasi({
             {alim.status !== "CANCELLED" ? (
               <>
                 <Button variant="outline" asChild>
-                  <Link href={`/alimlar/${alim.id}/duzenle`}>
+                  <Link
+                    href={donusTasiyan(`/alimlar/${alim.id}/duzenle`, donus)}
+                  >
                     <Pencil />
                     {ortak("duzenle")}
                   </Link>
@@ -170,7 +185,9 @@ export default async function AlimDetaySayfasi({
             ) : null}
             {kabulEdilebilir ? (
               <Button asChild>
-                <Link href={`/alimlar/${alim.id}/mal-kabul`}>
+                <Link
+                  href={donusTasiyan(`/alimlar/${alim.id}/mal-kabul`, donus)}
+                >
                   <PackageCheck />
                   {t("malKabulEt")}
                 </Link>
