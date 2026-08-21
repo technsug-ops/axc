@@ -74,6 +74,16 @@ export type SimulasyonSonucu = {
   dilim: TarifeDilimi | null;
   net1: number | null;
   net2: number | null;
+  /**
+   * SATIŞ FİYATI NEREYE GİDİYOR — pasta grafiğinin ve dökümün kaynağı.
+   *
+   * ⚠ MOTORDAN OLDUĞU GİBİ TAŞINIYOR, YENİDEN TÜRETİLMİYOR. Ekran kendi
+   * "maliyet + komisyon + kargo…" toplamını kursaydı aynı hesap sistemde
+   * iki yerde yaşardı ve biri değişince öteki sessizce ayrışırdı.
+   * Kalemler kanaldan kanala değişir (HB'de tahsilat bedeli var, TY'de yok),
+   * bu yüzden sabit alan değil LİSTE.
+   */
+  dokum: { kod: string; tutar: number }[];
   /** Zeminle ilgili her şey burada — hiçbiri sessiz kalmaz. */
   beyanlar: Beyan[];
 };
@@ -134,6 +144,8 @@ export function simulasyonKur(girdi: SimulasyonGirdisi): SimulasyonSonucu {
       dilim,
       net1: null,
       net2: null,
+      /** Hesaplanamayan senaryoda döküm de YOKTUR — boş liste, sıfır değil. */
+      dokum: [],
       beyanlar,
     };
   }
@@ -162,6 +174,19 @@ export function simulasyonKur(girdi: SimulasyonGirdisi): SimulasyonSonucu {
     dilim,
     net1: sonuc.net1,
     net2: sonuc.net2,
+    /**
+     * Kalem kesintileri (MALIYET · KOMISYON · STOPAJ) + sipariş kesintileri
+     * (KARGO · HIZMET_BEDELI · ODEME_GIDERI) + ödenecek KDV.
+     * ⚠ KDV DE BİR GİDERDİR ve grafikte görünmezse "kâr nereye gitti"
+     * sorusu cevapsız kalır — nesatilir de onu ayrı dilim gösteriyor.
+     */
+    dokum: [
+      ...sonuc.kalemler.flatMap((k) => k.kesintiler),
+      ...sonuc.siparisKesintileri,
+      { code: "ODENECEK_KDV", tutar: sonuc.kdv.odenecekKdv },
+    ]
+      .map((k) => ({ kod: k.code, tutar: Math.abs(k.tutar) }))
+      .filter((k) => k.tutar > 0.005),
     beyanlar,
   };
 }

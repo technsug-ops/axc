@@ -1,17 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Crown, Info, Trophy } from "lucide-react";
+import { Crown, Info, Search, Trophy, X } from "lucide-react";
 
 import { MarjPili } from "@/components/marj-pili";
+import { PastaGrafik, type PastaDilimi } from "@/components/pasta-grafik";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBicim } from "@/lib/bicim-istemci";
 import { VARSAYILAN_KDV_ORANI } from "@/lib/kar";
 import { marjBandi } from "@/lib/marj-bantlari";
 import { ciroMarjiMetni } from "@/lib/marj-gosterge";
-import { DURUM_KUTUSU, DURUM_SERIDI, DURUM_YAZISI } from "@/lib/renkler";
+import {
+  DURUM_KUTUSU,
+  DURUM_SERIDI,
+  DURUM_YAZISI,
+  PASTA_RENKLERI,
+  PASTA_VARSAYILAN,
+} from "@/lib/renkler";
+import type { UrunZemini } from "@/lib/simulasyon/urun-zemini";
+import { urunAra } from "./actions";
 import {
   girdiEksikMi,
   simulasyonKarsilastir,
@@ -52,6 +62,42 @@ export function Deneme({ bugun }: { bugun: string }) {
   const [kargo, setKargo] = useState("");
   const [kdvDahil, setKdvDahil] = useState(true);
 
+  /** Koddan bulunan ürün — null ise elle giriş kipindeyiz. */
+  const [kod, setKod] = useState("");
+  const [urun, setUrun] = useState<UrunZemini | null>(null);
+  const [aramaHatasi, setAramaHatasi] = useState<string | null>(null);
+  const [araniyor, basla] = useTransition();
+
+  /**
+   * ÜRÜN BULUNUNCA ALANLAR DOLAR — AMA KİLİTLENMEZ.
+   * Kullanıcı denemek için üstüne yazabilmeli; ekranın adı "fiyat DENEMESİ".
+   * Dolan değerler bir başlangıç noktasıdır, bir hüküm değil.
+   */
+  const ara = () => {
+    setAramaHatasi(null);
+    basla(async () => {
+      const sonuc = await urunAra(kod);
+      if (sonuc.tur !== "BULUNDU") {
+        setUrun(null);
+        setAramaHatasi(sonuc.mesaj);
+        return;
+      }
+      const z = sonuc.zemin;
+      setUrun(z);
+      /** ⚠ ORTALAMALAR KDV DAHİL — girdi dili de dahile çevriliyor. */
+      setKdvDahil(true);
+      if (z.ortalamaAlis !== null) setAlis(z.ortalamaAlis.toFixed(2));
+      if (z.ortalamaSatis !== null) setSatis(z.ortalamaSatis.toFixed(2));
+      setKdv(String(z.kdvOrani));
+    });
+  };
+
+  const urunuBirak = () => {
+    setUrun(null);
+    setKod("");
+    setAramaHatasi(null);
+  };
+
   const sayi = (m: string) => (m.trim() === "" ? Number.NaN : Number(m));
   const girdi = {
     kdvDahilMi: kdvDahil,
@@ -67,11 +113,89 @@ export function Deneme({ bugun }: { bugun: string }) {
    * ⚠ "BUGÜN" SUNUCUDAN GELİYOR, `new Date()` DEĞİL. İş saat dilimi sabittir
    * (Europe/Istanbul) ve tarayıcının saat dilimi ASLA kullanılmaz — anayasa.
    */
-  const sonuclar = eksik ? [] : simulasyonKarsilastir(girdi, new Date(bugun));
+  const sonuclar = eksik
+    ? []
+    : simulasyonKarsilastir(girdi, new Date(bugun), urun?.zeminler ?? []);
   const para = (n: number) => bicim.para(n, "TRY");
 
   return (
     <div className="space-y-6">
+      {/* ══════════════ ÜRÜNÜ KODDAN BUL ══════════════
+          Kullanıcı 21.08.2026: _"ürün EAN, barkod, pazaryeri SKU girdiğimde
+          bizde satılmışsa ortalama alım-satım ve komisyon otomatik gelsin"_.
+          nesatilir'de üç rakamı da kullanıcı bilmek zorunda; bizde ikisi
+          defterde ZATEN var. */}
+      <div className="space-y-2">
+        <span className="text-sm font-medium">{t("araBaslik")}</span>
+        <div className="flex flex-wrap gap-2">
+          <Input
+            value={kod}
+            onChange={(e) => setKod(e.target.value)}
+            /* USB okuyucu Enter basar (İlke #7) — form yok, tuşu dinliyoruz. */
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                ara();
+              }
+            }}
+            placeholder={t("araIpucu")}
+            className="h-11 min-w-0 flex-1"
+          />
+          <Button
+            onClick={ara}
+            disabled={araniyor || kod.trim() === ""}
+            className="h-11"
+          >
+            <Search className="size-4" />
+            {araniyor ? t("araniyor") : t("araDugme")}
+          </Button>
+        </div>
+
+        {/* BULUNAMADI SESSİZ KALMAZ — hangi kodların arandığı yazıyor (#5). */}
+        {aramaHatasi ? (
+          <p className={`rounded-md p-2 text-sm ${DURUM_KUTUSU.uyari}`}>
+            {aramaHatasi}
+          </p>
+        ) : null}
+
+        {urun ? (
+          <div className={`rounded-md p-3 ${DURUM_KUTUSU.bilgi}`}>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="font-medium">{urun.ad}</div>
+                <div className="text-xs opacity-90">
+                  {[urun.sku, urun.barkod, urun.firmaSku]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={urunuBirak}
+                className="inline-flex min-h-11 items-center gap-1 text-xs underline underline-offset-2"
+              >
+                <X className="size-3.5" />
+                {t("urunTemizle")}
+              </button>
+            </div>
+
+            {/* ⚠ EKSİK VERİ SESSİZ KALMAZ: alım/satış yoksa alan boş kalır
+                ve NEDEN boş kaldığı yazar — kullanıcı elle girmeli. */}
+            <p className="mt-2 text-xs">
+              {urun.ortalamaAlis === null
+                ? t("zeminAlimYok")
+                : urun.ortalamaSatis === null
+                  ? t("zeminSatisYok")
+                  : t("zeminOzeti", {
+                      adet: urun.satisAdedi,
+                      alis: para(urun.ortalamaAlis),
+                      satis: para(urun.ortalamaSatis),
+                    })}
+            </p>
+          </div>
+        ) : null}
+      </div>
+
       {/* ══════════════ GİRDİ ══════════════ */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Alan
@@ -152,6 +276,11 @@ export function Deneme({ bugun }: { bugun: string }) {
               kazanan={i === 0 && s.net2 !== null}
               para={para}
               yuzde={bicim.yuzde}
+              satisTutari={
+                kdvDahil
+                  ? girdi.satisFiyati
+                  : girdi.satisFiyati * (1 + girdi.kdvOrani / 100)
+              }
             />
           ))}
         </div>
@@ -200,16 +329,50 @@ function Alan({
  * rakam. Kazanan kanal şeritle ayrılıyor; ötekiler nötr kalıyor — "nötr
  * taban ~%70" kısıtı gereği her kutu renkli değil.
  */
+/**
+ * PASTA DİLİMLERİ — motorun dökümü + KÂR.
+ *
+ * ⚠ KÂR DA BİR DİLİMDİR ve son sırada durur: "satış fiyatı nereye gidiyor"
+ * sorusunun cevabı kesintiler bitince kalan şeydir. Zararda kâr dilimi HİÇ
+ * çizilmez (negatif dilim diye bir şey yok) ve pasta paydayı doldurmaz —
+ * boşluk zaten hükmü söyler.
+ *
+ * ⚠ TANINMAYAN KOD SESSİZCE KAYBOLMAZ: sözlükte karşılığı yoksa kodun
+ * kendisi yazılır ve nötr renk alır. Yeni bir kesinti kalemi eklendiğinde
+ * grafikten düşmesin.
+ */
+function pastaDilimleri(
+  sonuc: KanalSonucu,
+  t: (anahtar: string) => string,
+): PastaDilimi[] {
+  const dilimler: PastaDilimi[] = sonuc.dokum.map((d) => ({
+    etiket: t(`dokum_${d.kod}`),
+    tutar: d.tutar,
+    renk: PASTA_RENKLERI[d.kod] ?? PASTA_VARSAYILAN,
+  }));
+  if (sonuc.net2 !== null && sonuc.net2 > 0) {
+    dilimler.push({
+      etiket: t("dokum_KAR"),
+      tutar: sonuc.net2,
+      renk: PASTA_RENKLERI.KAR!,
+    });
+  }
+  return dilimler;
+}
+
 function KanalKutusu({
   sonuc,
   kazanan,
   para,
   yuzde,
+  satisTutari,
 }: {
   sonuc: KanalSonucu;
   kazanan: boolean;
   para: (n: number) => string;
   yuzde: (n: number, b?: number) => string;
+  /** Pastanın paydası — KDV DAHİL satış tutarı. */
+  satisTutari: number;
 }) {
   const t = useTranslations("Simulasyon");
   const bant = marjBandi(sonuc.ciroMarji);
@@ -266,10 +429,16 @@ function KanalKutusu({
       {/* KOMPAKT KUTUCUK IZGARASI (İlke #12) — "etiket solda rakam sağda"
           tam genişlik satırı YASAK; göz aradaki boşluğu kat etmesin. */}
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        {/* ⚠ ORANIN NEREDEN GELDİĞİ YAZAR. Barkodla ürün seçilince komisyon
+            artık kullanıcının tahmini değil TARİFENİN kendisi — bu ekranın
+            bütün değeri o farkta ve görünmezse fark hiç anlaşılmaz. */}
         <Rakam
           etiket={t("komisyon")}
           deger={
             sonuc.komisyonOrani === null ? "—" : yuzde(sonuc.komisyonOrani)
+          }
+          not={
+            sonuc.gercekZemin ? t(`oran_${sonuc.oranKaynagi}`) : t("oranElle")
           }
         />
         <Rakam
@@ -291,6 +460,27 @@ function KanalKutusu({
           </div>
         </div>
       </div>
+
+      {/* ══════════ SATIŞ FİYATI NEREYE GİDİYOR ══════════
+          Kullanıcı 21.08.2026: _"animasyonlu pasta grafik olsun ve HER
+          PAZARYERİ İÇİN altta görünsün"_. Tek bir grafik yetmezdi: dilimlerin
+          kendisi kanaldan kanala değişiyor (HB'de tahsilat bedeli var, TY'de
+          yok) ve karşılaştırmanın anlamı tam olarak bu farkta.
+
+          ⚠ DÖKÜM MOTORDAN GELİYOR, burada yeniden türetilmiyor. */}
+      {sonuc.dokum.length > 0 ? (
+        <div className="mt-3 border-t pt-3">
+          <div className="text-muted-foreground mb-2 text-xs">
+            {t("grafikBaslik")}
+          </div>
+          <PastaGrafik
+            dilimler={pastaDilimleri(sonuc, t)}
+            toplam={satisTutari}
+            bicimle={para}
+            bosMesaj={t("grafikBos")}
+          />
+        </div>
+      ) : null}
 
       {/* ⚠ BEYANLAR SESSİZ KALMAZ. Motor "maliyet yok", "oran yok" diyorsa
           ekranda görünmeli; yoksa motorun dürüstlüğü kullanıcıya ulaşmaz. */}
@@ -318,11 +508,22 @@ function KanalKutusu({
   );
 }
 
-function Rakam({ etiket, deger }: { etiket: string; deger: string }) {
+function Rakam({
+  etiket,
+  deger,
+  not,
+}: {
+  etiket: string;
+  deger: string;
+  not?: string;
+}) {
   return (
     <div className="bg-muted/40 min-w-0 rounded-md border px-2 py-1.5">
       <div className="text-muted-foreground text-xs">{etiket}</div>
       <div className="truncate text-sm font-medium tabular-nums">{deger}</div>
+      {not ? (
+        <div className="text-muted-foreground truncate text-[10px]">{not}</div>
+      ) : null}
     </div>
   );
 }

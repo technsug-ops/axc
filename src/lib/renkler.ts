@@ -252,3 +252,31 @@ export const MARJ_RAMPASI = {
     yazi: "text-[#0B5C47] dark:text-[#6FD8B4]",
   },
 } as const satisfies Record<string, MarjTonu>;
+
+/**
+ * PASTA DİLİM RENKLERİ — "satış fiyatı nereye gidiyor" grafiği için.
+ *
+ * ⚠ DURUM PALETİ DEĞİL, KATEGORİ PALETİ. Durum renkleri ANLAM taşır
+ * (olumlu/olumsuz); burada dilimleri birbirinden AYIRMAK gerekiyor ve
+ * "kargo kötüdür" gibi bir hüküm yok. Tek anlamlı dilim KÂR: o, sistemin
+ * kendi yeşili. Kalanlar nötr-soğuk tonlar; hiçbiri alarm gibi okunmasın.
+ *
+ * ⚠ VE KIRMIZI YOK: bir gider kalemini kırmızıya boyamak "hata var" diye
+ * okunurdu. Gider kaybı değil, işin maliyetidir.
+ */
+export const PASTA_RENKLERI: Record<string, string> = {
+  MALIYET: "#64748B",
+  KOMISYON: "#378ADD",
+  KARGO: "#8B7FD4",
+  STOPAJ: "#A88B6A",
+  HIZMET_BEDELI: "#5FA8C7",
+  SABIT_GIDER: "#5FA8C7",
+  ODEME_GIDERI: "#7EA3B8",
+  PAZARLAMA_HIZMET: "#9B8AA6",
+  ODENECEK_KDV: "#B4B2A9",
+  /** KÂR — sistemin kendi yeşili; tek anlamlı dilim. */
+  KAR: "#1D9E75",
+};
+
+/** Tanınmayan kesinti kodu için nötr ton — sessizce kaybolmasın. */
+export const PASTA_VARSAYILAN = "#94A3B8";

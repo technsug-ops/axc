@@ -338,6 +338,123 @@ console.log("\n4) KAYNAK BEYANI — kaynağı yazılmayan sayı kullanılamaz");
   );
 }
 
+// ===========================================================================
+console.log("\n5) DÖKÜM VE PASTA — satış fiyatı nereye gidiyor");
+// ===========================================================================
+{
+  const sonuc = simulasyonKarsilastir(ORTAK, BUGUN);
+  const hb = sonuc.find((s) => s.kod === "HEPSIBURADA")!;
+  const ty = sonuc.find((s) => s.kod === "TRENDYOL")!;
+
+  /**
+   * ⚠ DÖKÜM KANALDAN KANALA DEĞİŞİR — ve grafiğin bütün değeri bu farkta.
+   * HB'de tahsilat bedeli var, Trendyol'da yok. Sabit bir kalem listesi
+   * yazsaydım biri sessizce kaybolurdu.
+   */
+  const kodlar = (s: (typeof sonuc)[number]) => s.dokum.map((d) => d.kod).sort();
+  kontrol("HB dökümünde tahsilat bedeli VAR", kodlar(hb).includes("ODEME_GIDERI"), kodlar(hb));
+  kontrol("Trendyol dökümünde tahsilat bedeli YOK", !kodlar(ty).includes("ODEME_GIDERI"), kodlar(ty));
+  kontrol("HB dökümünde hizmet bedeli VAR", kodlar(hb).includes("HIZMET_BEDELI"));
+  kontrol("Trendyol'da sabit gider VAR", kodlar(ty).includes("SABIT_GIDER"));
+  for (const zorunlu of ["MALIYET", "KOMISYON", "STOPAJ", "KARGO", "ODENECEK_KDV"]) {
+    kontrol(`her kanalda ${zorunlu} var`, sonuc.every((s) => kodlar(s).includes(zorunlu)));
+  }
+
+  /**
+   * ── DENKLEM KAPANIYOR MU ───────────────────────────────────────────────
+   * ⚠ ASIL SINAV BU: kesintiler + NET-2 = satış fiyatı. Kapanmıyorsa
+   * grafikte bir dilim EKSİK demektir ve pasta "kâr nereye gitti" sorusunu
+   * yanlış cevaplar — üstelik güzel görünerek.
+   */
+  for (const s of sonuc) {
+    const toplam = s.dokum.reduce((t, d) => t + d.tutar, 0) + (s.net2 ?? 0);
+    yakin(`${s.ad}: kesintiler + NET-2 = satış`, toplam, 1000, 0.05);
+  }
+
+  /** Döküm MOTORDAN geliyor — ekran kendi toplamını kurmuyor. */
+  const motor = readFileSync("src/lib/simulasyon/karsilastir.ts", "utf8");
+  kontrol("döküm motordan taşınıyor", motor.includes("dokum: s.dokum"));
+
+  const pasta = readFileSync("src/components/pasta-grafik.tsx", "utf8");
+  /**
+   * ⚠ RENK TEK BAŞINA KONUŞMAZ (renk sistemi kısıt #1): pastanın yanında
+   * etiket ve tutar listesi olmalı. Renk körü bir kullanıcı için grafik süs,
+   * liste veridir.
+   */
+  kontrol("pastanın yanında etiketli liste var", pasta.includes("<ul"));
+  kontrol("pasta hareket azaltmaya saygılı", pasta.includes("prefers-reduced-motion"));
+  /**
+   * ⚠ PAYDA SATIŞ FİYATI, DİLİM TOPLAMI DEĞİL. Zararda kâr dilimi yoktur ve
+   * kesintiler satışı aşar; dilim toplamına bölmek "her şey yolunda" görünen
+   * bir pasta üretir ve zarar KAYBOLUR.
+   */
+  kontrol("payda satış fiyatından korunuyor (Math.max)", /payda = Math\.max/.test(pasta));
+
+  const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  kontrol("her kanal kutusunda pasta çiziliyor", ekran.includes("<PastaGrafik"));
+  /**
+   * ⚠ VE KOŞULUYLA BİRLİKTE: dökümü olmayan kanalda pasta çizilmemeli,
+   * yoksa boş bir halka "hesaplandı" gibi görünür.
+   */
+  kontrol(
+    "  ...yalnız dökümü olan kanalda",
+    /sonuc\.dokum\.length > 0 \? \([\s\S]{0,600}?<PastaGrafik/.test(ekran),
+  );
+}
+
+// ===========================================================================
+console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
+// ===========================================================================
+{
+  const zemin = readFileSync("src/lib/simulasyon/urun-zemini.ts", "utf8");
+  /**
+   * ⚠ ARAMA ORTAK KOŞULDAN. Bu depoda `varyantAra` Kanal SKU'yu hiç
+   * sormuyordu; kendi sorgusunu yazan her yer o kümeden ayrışır.
+   */
+  kontrol("arama ortak `kodKosulu`dan geçiyor", zemin.includes("kodKosulu(temiz)"));
+  /**
+   * ⚠ ORTALAMA ALIŞ AÇIK PARTİDEN DEĞİL, LEDGER'DAN. Stoğu tükenmiş üründe
+   * açık parti yoktur; "bu ürünü genelde kaça alıyorum" sorusu yine de
+   * cevaplanabilir olmalı. (Aynı gün kartın "son alım"ı bu yüzden 26
+   * varyantta "alım yok" diyordu.)
+   */
+  kontrol(
+    "ortalama alış LEDGER'dan (açık parti değil)",
+    zemin.includes("purchaseItemId: { not: null }") && !zemin.includes("acikPartiler"),
+  );
+  kontrol("maliyet hareketin damgasından", zemin.includes("unitCostAmount"));
+  kontrol("iptalli satış ortalamaya girmiyor", zemin.includes("iptalTarihi: null"));
+  kontrol(
+    "sıfır adette null döner (sıfıra bölme yok)",
+    /alimAdet > 0 \? alimTutar \/ alimAdet : null/.test(zemin) &&
+      /satisAdet > 0 \? satisTutar \/ satisAdet : null/.test(zemin),
+  );
+  kontrol("hiçbir şey yazmıyor", !/\.create\(|\.update\(|\.delete\(/.test(zemin));
+
+  const action = readFileSync("src/app/simulasyon/actions.ts", "utf8");
+  /**
+   * ⚠ SERVER ACTION KENDİ BAŞINA BİR UÇTUR. Ekranın `sayfaIzni` ile korunuyor
+   * olması bu action'ı KORUMAZ; izin burada da sorulmalı.
+   */
+  kontrol("arama action'ı izin soruyor", action.includes('izinVarMi("satis.kar.gor")'));
+  kontrol("bulunamadı sessiz kalmıyor", action.includes('tur: "BULUNAMADI"'));
+
+  const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  kontrol("ekranda kod arama kutusu var", ekran.includes("urunAra("));
+  /** USB okuyucu Enter basar (İlke #7) — form olmadığı için tuş dinleniyor. */
+  kontrol("okuyucunun Enter'ı çalışıyor", /e\.key === "Enter"/.test(ekran));
+  /**
+   * ⚠ GERÇEK ZEMİN KARŞILAŞTIRMAYA ULAŞIYOR MU: ürün seçilince komisyon
+   * tarifeden gelmeli. Zeminler geçirilmezse ekran sessizce kullanıcının
+   * tahminiyle hesaplar ve "tarifeden" yazısı yalan olur.
+   */
+  kontrol(
+    "ürün zeminleri karşılaştırmaya geçiyor",
+    /simulasyonKarsilastir\(girdi, new Date\(bugun\), urun\?\.zeminler/.test(ekran),
+  );
+  kontrol("oranın kaynağı ekranda yazıyor", ekran.includes("oran_${sonuc.oranKaynagi}"));
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

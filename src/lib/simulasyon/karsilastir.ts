@@ -1,3 +1,4 @@
+import type { SimulasyonZemini } from "@/lib/fiyatlama/kart-verisi";
 import { simulasyonKur, type Beyan } from "@/lib/fiyatlama/simulasyon";
 import { kdvHaricKargo } from "@/lib/kargo-kdv";
 import {
@@ -52,6 +53,44 @@ export type SimulasyonGirdisi = {
   kargoUcreti: number | null;
 };
 
+/**
+ * ============================================================================
+ *  KANAL LİSTESİ — GERÇEK ZEMİN VARSA O KAZANIR
+ * ----------------------------------------------------------------------------
+ *  Ürün seçilmediğinde bütün kanallar REFERANS kurallarla hesaplanır ve
+ *  komisyon oranını kullanıcı girer.
+ *
+ *  Ürün seçildiğinde (barkod/SKU ile) o ürünün **gerçek** kanal zeminleri
+ *  gelir: dilim tarifesi, `ChannelSku` oranı, o kanalın kesinti kuralları.
+ *  O kanallarda komisyon artık kullanıcının tahmini DEĞİL, tarifenin
+ *  kendisidir — ve hangisi kullanıldığı `oranKaynagi` ile beyan edilir.
+ *
+ *  ⚠ EŞLEŞTİRME KANAL ADIYLA. `SimulasyonZemini` kanal ADI taşıyor
+ *  ("Trendyol"), bizim listemiz KOD ("TRENDYOL"). Kimlikle eşleştirmek
+ *  isterdim ama zemin `channelAccountId` taşıyor, referans listemizin öyle
+ *  bir alanı yok — burada eşleşen şey KANAL, hesap değil. Ad karşılaştırması
+ *  büyük/küçük harf ve Türkçe yerel duyarlı yapılıyor.
+ * ============================================================================
+ */
+function zeminEslesmesi(
+  kanalAdi: string,
+  zeminler: SimulasyonZemini[],
+): SimulasyonZemini | null {
+  const hedef = kanalAdi.toLocaleLowerCase("tr");
+  return (
+    zeminler.find((z) => {
+      /**
+       * ⚠ ZEMİNİN `kanalAdi`'SI "Trendyol — AXCALI" BİÇİMİNDE OLABİLİR.
+       * Bu depoda tam bu tuzağa düşülmüştü (`kanalAdi === "Hepsiburada"`
+       * hiç tutmadı, 29 ürün sessizce elendi). Bu yüzden EŞİTLİK değil,
+       * başlangıç karşılaştırması yapılıyor.
+       */
+      const ad = z.kanalAdi.toLocaleLowerCase("tr");
+      return ad === hedef || ad.startsWith(`${hedef} `);
+    }) ?? null
+  );
+}
+
 export type KanalSonucu = {
   kod: string;
   ad: string;
@@ -60,8 +99,14 @@ export type KanalSonucu = {
   belirsizlik: string | null;
   /** Kullanılan komisyon oranı (%) — çözülemezse null. */
   komisyonOrani: number | null;
+  /** Oran nereden geldi: dilim tarifesi · tek oran · yok. */
+  oranKaynagi: "DILIM" | "TEK_ORAN" | "YOK";
+  /** Bu kanalda ürünün GERÇEK zemini kullanıldı mı (kanal SKU'su var mı). */
+  gercekZemin: boolean;
   net1: number | null;
   net2: number | null;
+  /** Satış fiyatının nereye gittiği — grafik ve döküm buradan. */
+  dokum: { kod: string; tutar: number }[];
   /**
    * ZEMİN BEYANLARI — "dilim yok", "pencere bitti", "maliyet yok".
    * ⚠ Ekranda görünmezlerse motorun dürüstlüğü kullanıcıya ulaşmaz.
@@ -101,6 +146,7 @@ function kanalSonucu(
   kanal: SimulasyonKanali,
   girdi: SimulasyonGirdisi,
   bugun: Date,
+  zemin: SimulasyonZemini | null,
 ): KanalSonucu {
   const satis = girdi.kdvDahilMi
     ? girdi.satisFiyati
@@ -128,16 +174,17 @@ function kanalSonucu(
     kdvOrani: girdi.kdvOrani,
     paraBirimi: "TRY",
     /**
-     * ⚠ DİLİM YOK, TEK ORAN VAR. Bu ekranda komisyonu KULLANICI giriyor —
-     * elindeki ürün henüz sistemde olmayabilir. Ürün seçilerek yapılan
-     * deneme kârlılık kartındaki `FiyatDene`nin işi ve orada gerçek dilim
-     * tarifesi kullanılıyor. İkisi aynı motoru çağırıyor, girdisi farklı.
+     * ⚠ GERÇEK ZEMİN VARSA KOMİSYON ORANI ORADAN — kullanıcının girdiği
+     * oran yalnız YEDEKTİR. Barkodla ürün seçildiğinde Trendyol'un dilim
+     * tarifesi devreye giriyor ve oran fiyata göre değişiyor; kullanıcının
+     * tek bir oran tahmin etmesi o mekanizmayı görünmez kılardı.
      */
-    dilimler: null,
-    pencereBitis: null,
-    tekOran: girdi.komisyonOrani,
-    komisyonKdvOrani: kanal.komisyonKdvOrani,
-    siparisKesintileri: kanal.kesintiler,
+    dilimler: zemin?.dilimler ?? null,
+    pencereBitis: zemin?.pencereBitis ?? null,
+    tekOran: zemin?.tekOran ?? girdi.komisyonOrani,
+    /** Kanal kuralları da zeminden — hesap bazlı farklılık varsa o kazanır. */
+    komisyonKdvOrani: zemin?.komisyonKdvOrani ?? kanal.komisyonKdvOrani,
+    siparisKesintileri: zemin?.siparisKesintileri ?? kanal.kesintiler,
     kargoTarifesi,
     bugun,
   });
@@ -149,8 +196,15 @@ function kanalSonucu(
     kaynakNotu: kanal.kaynakNotu,
     belirsizlik: kanal.belirsizlik,
     komisyonOrani: s.komisyonOrani,
+    /**
+     * ORAN NEREDEN GELDİ — ekranda yazar. "Tarifeden" ile "senin girdiğin"
+     * arasındaki fark, bu ekranın bütün değeridir.
+     */
+    oranKaynagi: s.oranKaynagi,
+    gercekZemin: zemin !== null,
     net1: s.net1,
     net2: s.net2,
+    dokum: s.dokum,
     beyanlar: s.beyanlar,
     ciroMarji: s.net2 === null || satis <= 0 ? null : (s.net2 / satis) * 100,
     sermayeVerimi: s.net2 === null || alis <= 0 ? null : (s.net2 / alis) * 100,
@@ -167,9 +221,13 @@ export function simulasyonKarsilastir(
   girdi: SimulasyonGirdisi,
   /** "Bugün" DIŞARIDAN — saf kalsın, iş takvimi çağırandan gelsin. */
   bugun: Date,
+  /** Ürün seçildiyse onun gerçek kanal zeminleri; yoksa boş. */
+  zeminler: SimulasyonZemini[] = [],
 ): KanalSonucu[] {
   if (girdiEksikMi(girdi)) return [];
-  return SIMULASYON_KANALLARI.map((k) => kanalSonucu(k, girdi, bugun)).sort(
+  return SIMULASYON_KANALLARI.map((k) =>
+    kanalSonucu(k, girdi, bugun, zeminEslesmesi(k.ad, zeminler)),
+  ).sort(
     /** NET hesaplanamayan kanal SONA — "0 kâr" sayılıp öne çıkamaz. */
     (a, b) => (b.net2 ?? -Infinity) - (a.net2 ?? -Infinity),
   );
