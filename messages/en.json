@@ -1882,7 +1882,14 @@
     "bos": "",
     "stokYok": "",
     "durumDegerlendi": "",
-    "durumBilinmiyor": ""
+    "durumBilinmiyor": "",
+    "girisTarihi": "",
+    "siralama": "",
+    "sira_deger": "",
+    "sira_eski": "",
+    "sira_yeni": "",
+    "aramaIpucu": "",
+    "aramaBos": ""
   },
   "GeriYukleme": {
     "baslik": "",

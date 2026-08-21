@@ -31,6 +31,14 @@ import type { Currency } from "@/generated/prisma/enums";
 /** Değerlemeye giren tek parti. */
 export type EnvanterPartisi = {
   kalanAdet: number;
+  /**
+   * PARTİNİN ENVANTERE GİRİŞ TARİHİ (`occurredAt`).
+   *
+   * ⚠ NİYE LAZIM (kullanıcı isteği 21.08.2026): "bu para ne zamandır
+   * depoda duruyor" sorusu, "ne kadar duruyor" sorusundan farklı ve
+   * sıralama ondan yapılıyor.
+   */
+  girisTarihi: Date;
   /** Decimal metin olarak taşınır. null ise maliyet bilinmiyor. */
   birimMaliyet: string | null;
   birimMaliyetParaBirimi: Currency | null;
@@ -53,6 +61,17 @@ export type EnvanterSatiri = {
   /** KDV hariç toplam. Oran çözülemediyse null. */
   malBedeli: number | null;
   kdvOrani: number | null;
+  /**
+   * EN ESKİ AÇIK PARTİNİN tarihi — "bu mal ne zamandır burada".
+   *
+   * ⚠ EN YENİ DEĞİL EN ESKİ: bir varyantın üç partisi varsa parayı en uzun
+   * bekleten en eskisidir. En yeniyi yazsaydık, aylardır duran mal dün
+   * gelmiş gibi görünürdü.
+   *
+   * ⚠ YALNIZ MALİYETİ BİLİNEN partilerden: değeri bilinmeyen parti bu
+   * satıra hiç girmiyor, tarihi de girmemeli.
+   */
+  girisTarihi: Date | null;
 };
 
 /** Maliyeti bilinmeyen partiler — para birimi de yok, o yüzden ayrı tip. */
@@ -136,6 +155,7 @@ export function envanterHesapla(
           odenen: 0,
           malBedeli: girdi.kdvOrani === null ? null : 0,
           kdvOrani: girdi.kdvOrani,
+          girisTarihi: null,
         };
         satirlar.set(girdi.variantId, satir);
       }
@@ -143,6 +163,13 @@ export function envanterHesapla(
       const tutar = birim * parti.kalanAdet;
       satir.adet += parti.kalanAdet;
       satir.odenen += tutar;
+      /** EN ESKİ kazanır — parayı en uzun bekleten parti hangisiyse o. */
+      if (
+        satir.girisTarihi === null ||
+        parti.girisTarihi.getTime() < satir.girisTarihi.getTime()
+      ) {
+        satir.girisTarihi = parti.girisTarihi;
+      }
       if (satir.malBedeli !== null && girdi.kdvOrani !== null) {
         satir.malBedeli += kdvHaric(tutar, girdi.kdvOrani);
       }
@@ -170,4 +197,66 @@ export function envanterHesapla(
     bilinmeyenler: bilinmeyenListe,
     bilinmeyenToplamAdet: bilinmeyenListe.reduce((t, b) => t + b.adet, 0),
   };
+}
+
+/**
+ * ============================================================================
+ *  ENVANTER SIRALAMASI — SAF
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı isteği 21.08.2026: _"ürün değerine göre ve envantere giriş
+ *  sırasına göre sıralama olabilir"_.
+ *
+ *  ⚠ SIRA BİLEŞENDE DEĞİL BURADA: ekranla Excel aynı sırayı göstermeli.
+ *  İki yerde iki sıralama olsaydı indirilen dosya ekrandakinden farklı
+ *  sırada çıkardı (İlke #10).
+ * ============================================================================
+ */
+export const ENVANTER_SIRALARI = ["deger", "eski", "yeni"] as const;
+export type EnvanterSiralamasi = (typeof ENVANTER_SIRALARI)[number];
+
+export function siralamaCoz(deger: string | undefined): EnvanterSiralamasi {
+  return (ENVANTER_SIRALARI as readonly string[]).includes(deger ?? "")
+    ? (deger as EnvanterSiralamasi)
+    : "deger";
+}
+
+/**
+ * ⚠ TARİHSİZ SATIR SONA — hükümsüz veri listeyi başa tıkamamalı. Tarihi
+ * olmayan satır "en eski" de değildir "en yeni" de; ikisinde de sona
+ * konuyor ve bu bilinçli.
+ */
+export function envanterSirala(
+  satirlar: EnvanterSatiri[],
+  sira: EnvanterSiralamasi,
+): EnvanterSatiri[] {
+  const kopya = [...satirlar];
+  if (sira === "deger") return kopya.sort((a, b) => b.odenen - a.odenen);
+
+  const yon = sira === "eski" ? 1 : -1;
+  return kopya.sort((a, b) => {
+    if (a.girisTarihi === null && b.girisTarihi === null) return 0;
+    if (a.girisTarihi === null) return 1;
+    if (b.girisTarihi === null) return -1;
+    return yon * (a.girisTarihi.getTime() - b.girisTarihi.getTime());
+  });
+}
+
+/**
+ * ARAMA — ad · SKU · firma SKU · barkod.
+ *
+ * ⚠ KİMLİK DIŞARIDAN GELİR: `EnvanterSatiri` yalnız `variantId` taşıyor;
+ * aranacak metinleri çağıran veriyor. Bu işlev veritabanı bilmez.
+ * ⚠ Türkçe harf duyarsızlığı için `toLocaleLowerCase("tr")` — "İ" ve "ı"
+ * aksi hâlde eşleşmez ve kullanıcı kendi ürününü bulamaz.
+ */
+export function envanterAra(
+  satirlar: EnvanterSatiri[],
+  arama: string,
+  metin: (variantId: string) => string,
+): EnvanterSatiri[] {
+  const q = arama.trim().toLocaleLowerCase("tr");
+  if (q === "") return satirlar;
+  return satirlar.filter((s) =>
+    metin(s.variantId).toLocaleLowerCase("tr").includes(q),
+  );
 }

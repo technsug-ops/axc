@@ -22,7 +22,13 @@ import { readFileSync } from "node:fs";
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
 import { kdvHaric } from "../src/lib/kar";
 import { karOrani, kutuOranlari } from "../src/lib/panel/kar-orani";
-import { envanterHesapla, type EnvanterVaryantGirdisi } from "../src/lib/envanter";
+import {
+  envanterAra,
+  envanterHesapla,
+  envanterSirala,
+  siralamaCoz,
+  type EnvanterVaryantGirdisi,
+} from "../src/lib/envanter";
 import {
   bekleyenToplam,
   GOREV_ADRESLERI,
@@ -464,7 +470,13 @@ console.log("\n3) ENVANTER DEĞERİ");
   function varyant(
     variantId: string,
     kdvOrani: number | null,
-    partiler: { kalanAdet: number; birimMaliyet: string | null; para?: "TRY" | "EUR" }[],
+    partiler: {
+      kalanAdet: number;
+      birimMaliyet: string | null;
+      para?: "TRY" | "EUR";
+      /** Partinin envantere giriş günü — sıralama testleri için. */
+      gun?: number;
+    }[],
   ): EnvanterVaryantGirdisi {
     return {
       variantId,
@@ -473,8 +485,130 @@ console.log("\n3) ENVANTER DEĞERİ");
         kalanAdet: p.kalanAdet,
         birimMaliyet: p.birimMaliyet,
         birimMaliyetParaBirimi: p.birimMaliyet === null ? null : (p.para ?? "TRY"),
+        girisTarihi: gun(2026, 8, p.gun ?? 1),
       })),
     };
+  }
+
+  /**
+   * ── GİRİŞ TARİHİ · SIRALAMA · ARAMA (kullanıcı isteği 21.08.2026) ───────
+   */
+  {
+    /**
+     * ⚠ EN ESKİ PARTİ KAZANIR. Örnekte aynı varyantın iki partisi var:
+     * 5 ve 20 Ağustos. En yeniyi yazan bir kod da "bir tarih" üretirdi ve
+     * yalnız "tarih dolu mu" diye baksaydım yeşil kalırdı.
+     */
+    const iki = envanterHesapla([
+      varyant("v-eski", 20, [
+        { kalanAdet: 1, birimMaliyet: "100", gun: 20 },
+        { kalanAdet: 1, birimMaliyet: "100", gun: 5 },
+      ]),
+    ]);
+    const satir = iki.bloklar[0]!.satirlar[0]!;
+    kontrol(
+      "giriş tarihi EN ESKİ partiden",
+      satir.girisTarihi?.getTime() === gun(2026, 8, 5).getTime(),
+      satir.girisTarihi?.toISOString().slice(0, 10),
+    );
+
+    /** Maliyeti bilinmeyen parti satıra girmiyor, tarihi de girmemeli. */
+    const bilinmeyenli = envanterHesapla([
+      varyant("v-x", 20, [
+        { kalanAdet: 1, birimMaliyet: null, gun: 1 },
+        { kalanAdet: 1, birimMaliyet: "50", gun: 15 },
+      ]),
+    ]);
+    kontrol(
+      "değeri bilinmeyen partinin tarihi satıra GİRMİYOR",
+      bilinmeyenli.bloklar[0]!.satirlar[0]!.girisTarihi?.getTime() ===
+        gun(2026, 8, 15).getTime(),
+    );
+
+    // --- SIRALAMA ---
+    const cok = envanterHesapla([
+      varyant("ucuz-eski", 20, [{ kalanAdet: 1, birimMaliyet: "10", gun: 2 }]),
+      varyant("pahali-yeni", 20, [{ kalanAdet: 1, birimMaliyet: "900", gun: 25 }]),
+      varyant("orta", 20, [{ kalanAdet: 1, birimMaliyet: "500", gun: 10 }]),
+    ]).bloklar[0]!.satirlar;
+
+    /**
+     * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: en pahalı olan en YENİ,
+     * en ucuz olan en ESKİ. Değere göre sıra ile tarihe göre sıra böylece
+     * BİRBİRİNİN TERSİ çıkıyor; ikisi aynı olsaydı "hep değere göre sırala"
+     * mutasyonu yeşil kalırdı.
+     */
+    const degere = envanterSirala(cok, "deger").map((x) => x.variantId);
+    kontrol(
+      "değere göre: pahalı başta",
+      degere.join(",") === "pahali-yeni,orta,ucuz-eski",
+      degere,
+    );
+    const eskiye = envanterSirala(cok, "eski").map((x) => x.variantId);
+    kontrol(
+      "girişe göre (eski): en eski başta",
+      eskiye.join(",") === "ucuz-eski,orta,pahali-yeni",
+      eskiye,
+    );
+    const yeniye = envanterSirala(cok, "yeni").map((x) => x.variantId);
+    kontrol(
+      "girişe göre (yeni): en yeni başta",
+      yeniye.join(",") === "pahali-yeni,orta,ucuz-eski",
+      yeniye,
+    );
+    kontrol(
+      "değer sırası ile tarih sırası AYNI DEĞİL",
+      degere.join(",") !== eskiye.join(","),
+    );
+    /**
+     * ⚠ DOĞRU ÖLÇÜT: girdi dizisi SIRALAMADAN ÖNCEKİ hâlini korumalı.
+     * İlk yazdığım kontrol "girdi sırası çıktıdan farklı olmalı" diyordu ve
+     * YANLIŞTI — ikisi tesadüfen aynı olabilir. Ölçülen şey mutasyon değil,
+     * tesadüftü.
+     */
+    const oncekiSira = cok.map((x) => x.variantId).join(",");
+    envanterSirala(cok, "eski");
+    kontrol(
+      "sıralama girdiyi BOZMUYOR (kopya üzerinde çalışır)",
+      cok.map((x) => x.variantId).join(",") === oncekiSira,
+      cok.map((x) => x.variantId),
+    );
+    kontrol("geçersiz sıra değere düşer", siralamaCoz("uydurma") === "deger");
+    kontrol("boş sıra değere düşer", siralamaCoz(undefined) === "deger");
+    kontrol("eski tanınır", siralamaCoz("eski") === "eski");
+
+    // --- ARAMA ---
+    const adlar = new Map([
+      ["ucuz-eski", "Anker Kablo"],
+      ["pahali-yeni", "LEGO Şato"],
+      /** ⚠ "Işık" — Türkçe I/ı tuzağının test verisi (aşağıda). */
+      ["orta", "Işıklı Tabela"],
+    ]);
+    const metin = (id: string) => adlar.get(id) ?? "";
+    kontrol(
+      "arama ada göre süzüyor",
+      envanterAra(cok, "lego", metin).map((x) => x.variantId).join(",") ===
+        "pahali-yeni",
+    );
+    /**
+     * ⚠ TÜRKÇE I/ı TUZAĞI — VE İLK TESTİM BUNU YAKALAMIYORDU.
+     *
+     * Önce "ŞATO" ile sınamıştım; mutasyon (yerelsiz `toLowerCase`) YEŞİL
+     * kaldı çünkü "Ş" iki yolda da aynı küçülüyor. Gerçek tuzak I/ı:
+     *   "IŞIK".toLowerCase()              → "işık"   ✗ eşleşmez
+     *   "IŞIK".toLocaleLowerCase("tr")    → "ışık"   ✓ eşleşir
+     * Kullanıcı büyük harfle arattığında ürününü BULAMAZDI.
+     */
+    kontrol(
+      "arama Türkçe I/ı harfinde eşleşiyor",
+      envanterAra(cok, "IŞIK", metin).map((x) => x.variantId).join(",") === "orta",
+      envanterAra(cok, "IŞIK", metin).map((x) => x.variantId),
+    );
+    kontrol("boş arama hepsini döndürür", envanterAra(cok, "  ", metin).length === 3);
+    kontrol(
+      "eşleşme yoksa BOŞ döner (hepsi değil)",
+      envanterAra(cok, "yokboyleurun", metin).length === 0,
+    );
   }
 
   // --- TEMEL: ödenen KDV DAHİL, mal bedeli KDV HARİÇ ---

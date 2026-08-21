@@ -92,7 +92,17 @@ export async function envanterVerisi(): Promise<EnvanterVerisi> {
       variantId: varyant.id,
       // VARSAYILANA DÜŞMEK BURADA KABUL EDİLMEZ — bkz. envanter.ts başlığı.
       kdvOrani: kdv.kaynak === "VARSAYILAN" ? null : kdv.oran,
-      partiler: partiler.get(varyant.id) ?? [],
+      /**
+       * ⚠ `occurredAt` → `girisTarihi`: `Parti` tipi ledger'ın dilini
+       * konuşuyor, envanter hesabı kendi dilini. Ara katmanda çevriliyor ki
+       * saf hesap Prisma tipine bağlanmasın.
+       */
+      partiler: (partiler.get(varyant.id) ?? []).map((p) => ({
+        kalanAdet: p.kalanAdet,
+        birimMaliyet: p.birimMaliyet,
+        birimMaliyetParaBirimi: p.birimMaliyetParaBirimi,
+        girisTarihi: p.occurredAt,
+      })),
     });
   }
 

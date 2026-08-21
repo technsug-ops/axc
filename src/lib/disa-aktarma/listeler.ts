@@ -227,6 +227,12 @@ async function envanterDegeriSayfasi(): Promise<Sayfa> {
         k?.barkod,
         k?.kategoriAdi,
         k?.rafKodu,
+        /**
+         * ⚠ EKRANDA VAR, DOSYADA DA VAR (İlke #10). Giriş tarihi ekrana
+         * eklendiğinde dışa aktarım unutulsaydı, indirilen dosya ekranda
+         * görünen bir sütunu taşımıyor olurdu.
+         */
+        satir.girisTarihi === null ? null : gun(satir.girisTarihi),
         satir.adet,
         String(satir.odenen),
         satir.malBedeli === null
@@ -250,6 +256,8 @@ async function envanterDegeriSayfasi(): Promise<Sayfa> {
       k?.barkod,
       k?.kategoriAdi,
       k?.rafKodu,
+      /** Değeri bilinmeyen partinin tarihi satıra hiç girmiyor. */
+      null,
       satir.adet,
       // Maliyet bilinmiyor: tutar sütunları BOŞ BIRAKILIR, sıfır YAZILMAZ —
       // sıfır "bedava mal" demek olurdu ve Excel'de toplanabilir bir sayıdır.
@@ -273,6 +281,7 @@ async function envanterDegeriSayfasi(): Promise<Sayfa> {
       t("sutunBarkod"),
       t("sutunKategori"),
       t("sutunRaf"),
+      tEnvanter("girisTarihi"),
       tEnvanter("adet"),
       tEnvanter("odenen"),
       tEnvanter("malBedeli"),

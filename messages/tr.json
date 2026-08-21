@@ -1882,7 +1882,14 @@
     "bos": "Depoda değerlenecek stok yok.",
     "stokYok": "Stokta kalan parti yok.",
     "durumDegerlendi": "değerlendi",
-    "durumBilinmiyor": "değeri bilinmiyor"
+    "durumBilinmiyor": "değeri bilinmiyor",
+    "girisTarihi": "Envantere giriş",
+    "siralama": "Sırala:",
+    "sira_deger": "Değere göre",
+    "sira_eski": "En eski girişe göre",
+    "sira_yeni": "En yeni girişe göre",
+    "aramaIpucu": "Ürün adı, SKU, firma SKU veya barkod…",
+    "aramaBos": "\"{arama}\" ile eşleşen ürün yok. Aramayı temizleyip listenin tamamına dönebilirsiniz."
   },
   "GeriYukleme": {
     "baslik": "Yedekten geri yükleme",
