@@ -34,6 +34,7 @@ import {
   donemRozetiCizilirMi,
   temizlemeDegisiklikleri,
 } from "../src/lib/suzgec";
+import { LISTE_PENCERELERI } from "../src/lib/donem";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -140,6 +141,18 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
       dunBitis: dun.pencere && gunMetni(dun.pencere.bitisHaric),
       bugunBas: bugunP.pencere && gunMetni(bugunP.pencere.baslangic),
     },
+  );
+
+  /**
+   * ⚠ DÜĞME SIRASI DA BİR SÖZDÜR — `LISTE_PENCERELERI`nin sırası ekrandaki
+   * sıradır (`SuzgecCubugu` doğrudan bu diziyi geziyor). Kullanıcı kararı
+   * 21.08.2026: DÜN önde. Sıra sessizce değişirse kimse fark etmez, o
+   * yüzden testle sabitlendi.
+   */
+  kontrol(
+    "süzgeç sırası DÜN ile başlar, sonra BUGÜN",
+    LISTE_PENCERELERI[0] === "DUN" && LISTE_PENCERELERI[1] === "BUGUN",
+    LISTE_PENCERELERI.slice(0, 3),
   );
 
   const buAy = pencereCoz({ pencere: "BU_AY" }, AN);

@@ -71,8 +71,20 @@ export const RAPOR_PENCERELERI = [
 
 /** Liste ekranlarının menüsü — operasyon günlük çalışır, dar aralık ister. */
 export const LISTE_PENCERELERI = [
-  "BUGUN",
+  /**
+   * ⚠ SIRA: DÜN ÖNDE (kullanıcı kararı 21.08.2026).
+   *
+   * Kronolojik olarak ters görünür ama operasyonun sorusu öyle: gün
+   * içinde "bugün ne oldu" cevabı henüz oluşmamıştır — siparişler akıyor,
+   * kargo çıkmamış, hakediş yok. Kapanmış gün DÜNDÜR ve ilk bakılan odur.
+   *
+   * ⚠ BU LİSTENİN SIRASI EKRANDAKİ DÜĞME SIRASIDIR — `SuzgecCubugu`
+   * doğrudan bunu geziyor. Yani burada sıra değiştirmek Panel, Satışlar,
+   * Alımlar ve İadeler'in HEPSİNİ birden değiştirir; tek ekran için
+   * sıralama isteniyorsa bu liste kopyalanmaz, ayrı liste açılır.
+   */
   "DUN",
+  "BUGUN",
   "BU_HAFTA",
   "SON_15_GUN",
   "SON_30_GUN",
