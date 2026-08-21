@@ -61,6 +61,7 @@
     "gerial:dogrula": "tsx scripts/geri-alma-dogrula.ts",
     "adet:dogrula": "tsx scripts/adet-dogrula.ts",
     "canli:kar-tazele": "tsx scripts/canli-kar-tazele.ts",
+    "canli:odeme-tazele": "tsx scripts/canli-odeme-gideri-tazele.ts",
     "canli:kanal-kodsuz": "tsx scripts/canli-kanal-kodsuz.ts",
     "canli:hakedis-teyit": "tsx scripts/canli-hakedis-teyit.ts",
     "canli:hakedis-esle": "tsx scripts/canli-hakedis-esle.ts",
