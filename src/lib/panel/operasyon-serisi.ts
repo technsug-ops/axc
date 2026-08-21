@@ -1,4 +1,12 @@
-import { gunEkle, gunMetni, type Pencere } from "@/lib/donem";
+import {
+  ayKaydir,
+  gunDegeri,
+  gunEkle,
+  gunMetni,
+  isTakvimGunu,
+  type Pencere,
+  type PencereTuru,
+} from "@/lib/donem";
 
 /**
  * ============================================================================
@@ -9,81 +17,155 @@ import { gunEkle, gunMetni, type Pencere } from "@/lib/donem";
  *    2. _"Alım KDV'si ile satış KDV'si arasındaki fark o ay ödeyeceğim
  *       vergiyi belli ediyor."_
  *
- *  ⚠⚠ İKİNCİ GEREKÇE İÇİN BU GRAFİK YETMEZ — VE BUNU EKRAN DA YAZAR.
+ *  ⚠⚠ İKİNCİ GEREKÇE İÇİN BU GRAFİK YETMEZ — VE EKRAN DA BUNU YAZAR.
  *
  *  Ödenecek KDV = (satış KDV'si) − (alış KDV'si). Bu grafik CİRO gösterir,
- *  KDV değil. İki tutarın farkı vergiyi VERMEZ çünkü:
- *    · KDV oranı ürüne göre değişir (%1 · %10 · %20; kategoriden gelir),
- *    · satışa oran SNAPSHOT'lanır (`SaleItem.vatRate`), alımda ise oran
- *      kalem üstünde ayrı yaşar,
- *    · aynı ciroda farklı oranlı ürünler bambaşka KDV üretir.
- *
- *  Yani "alım cirosu 100.000, satış cirosu 120.000 → 20.000 fark" cümlesi
- *  vergi hakkında HİÇBİR ŞEY söylemez. Grafik günlük operasyonu gösterir;
- *  KDV için ayrı bir hesap gerekir (bkz. BEKLEYENLER → KDV dengesi).
+ *  KDV değil. İki tutarın farkı vergiyi VERMEZ çünkü KDV oranı ürüne göre
+ *  değişir (%1 · %10 · %20; kategoriden gelir) ve aynı ciroda farklı oranlı
+ *  ürünler bambaşka KDV üretir. Grafik günlük operasyonu gösterir; KDV için
+ *  ayrı bir hesap gerekir.
  *
  *  ── ⚠ ÜÇ SAYININ BİRİMİ AYNI DEĞİL ──────────────────────────────────────
- *  ADET görünümünde:
- *    · alım  = ALIM KAYDI sayısı (sipariş), kalem/adet değil
- *    · satış = SATIŞ KAYDI sayısı (sipariş)
- *    · kargo = KARGOYA VERİLEN paket sayısı
- *  Üçü de "kaç iş yaptım" sorusunun cevabı ve panelin üstündeki kutularla
- *  AYNI ölçüttür — ekranda iki farklı "satış adedi" olmasın diye.
+ *  ADET görünümünde: alım = ALIM KAYDI, satış = SATIŞ KAYDI, kargo =
+ *  KARGOYA VERİLEN paket. Üçü de "kaç iş yaptım"ın cevabı ve panelin
+ *  üstündeki kutularla AYNI ölçüt — ekranda iki farklı "satış adedi" olmasın.
  *
  *  ── ⚠ ÜÇ FARKLI TARİH EKSENİ ────────────────────────────────────────────
  *  Alım `purchasedAt`, satış satış tarihi, kargo `shippedAt` ile kovaya
- *  girer. Bunlar AYNI GÜN OLMAK ZORUNDA DEĞİL: dün satılan bugün kargolanır.
- *  Tek eksene indirgemek (hepsini satış tarihine yazmak) 15.08.2026'da
- *  yaşanmış bir hatadır — kullanıcı 6 paket kargoladı, panel "2" dedi.
- *
- *  ── AÇIK SIFIR ──────────────────────────────────────────────────────────
- *  Penceredeki HER GÜN bir nokta üretir; hareketsiz gün atlanmaz. Atlansaydı
- *  grafikte iki gün yan yana çizilir ve aradaki boşluk görünmezdi.
+ *  girer. Aynı gün olmak ZORUNDA DEĞİL: dün satılan bugün kargolanır. Tek
+ *  eksene indirgemek 15.08.2026'da yaşanmış bir hatadır.
  * ============================================================================
  */
 
-/** Serinin bir günü. Üç kalem, her biri adet ve tutar olarak. */
-export type OperasyonGunu = {
-  /** "2026-08-21" — kova anahtarı, sıralama ve test için. */
-  gun: string;
+/**
+ * KIRILIM — noktanın kaç günü topladığı.
+ *
+ * ⚠ NİYE SABİT "GÜN" DEĞİL (kullanıcı kararı 21.08.2026): 1 yıllık pencerede
+ * 365 nokta çizilirse grafik okunmaz bir tarağa döner ve altındaki tablo
+ * 365 satır olur. Uzun pencerede soru zaten "hangi gün" değil "hangi ay".
+ */
+export const KIRILIMLAR = ["GUN", "HAFTA", "AY"] as const;
+export type Kirilim = (typeof KIRILIMLAR)[number];
+
+/**
+ * Pencere türüne göre kırılım — kullanıcının verdiği eşleme:
+ *   Son 30 gün → gün · Bu ay → hafta · Son 3/6 ay ve 1 yıl → ay
+ *
+ * ⚠ ÖZEL ARALIK TÜRDEN ÇÖZÜLEMEZ, UZUNLUKTAN ÇÖZÜLÜR: "OZEL" bir gün de
+ * olabilir üç yıl da. Gün sayısına bakılıyor ve eşikler yukarıdaki
+ * eşlemeyle AYNI mantıkta: bir aya kadar gün, bir çeyreğe kadar hafta,
+ * ötesi ay.
+ */
+export function kirilimSec(tur: PencereTuru, gunSayisi: number): Kirilim {
+  switch (tur) {
+    case "BUGUN":
+    case "DUN":
+    case "BU_HAFTA":
+    case "SON_15_GUN":
+    case "SON_30_GUN":
+      return "GUN";
+    case "BU_AY":
+      return "HAFTA";
+    case "SON_3_AY":
+    case "SON_6_AY":
+    case "SON_1_YIL":
+      return "AY";
+    default:
+      return gunSayisi <= 31 ? "GUN" : gunSayisi <= 92 ? "HAFTA" : "AY";
+  }
+}
+
+/** Serinin bir noktası. Kendi tarih aralığını TAŞIR — süzgeç bağlantısı için. */
+export type OperasyonNoktasi = {
+  /** Kova anahtarı — "2026-08-21" | "2026-W34" | "2026-08". */
+  anahtar: string;
+  /** Noktanın kapsadığı ilk gün (DAHİL) — süzgeç adresinin başlangıcı. */
+  baslangic: Date;
+  /** Noktanın kapsadığı son gün (DAHİL) — süzgeç adresinin bitişi. */
+  sonGun: Date;
   alimAdet: number;
   alimTutar: number;
   satisAdet: number;
   satisCiro: number;
   kargoAdet: number;
-  /** Kargoya verilen siparişlerin cirosu — "o gün ne kadar mal çıktı". */
   kargoCiro: number;
 };
 
 export type OperasyonGirdisi = {
   pencere: Pencere;
-  /** Alımlar — `purchasedAt` ile kovaya girer. */
+  kirilim: Kirilim;
   alimlar: { tarih: Date; tutar: number }[];
-  /** Satışlar — satış tarihiyle. */
   satislar: { tarih: Date; gelir: number }[];
-  /** Kargoya verilenler — `shippedAt` ile; verilmemişler LİSTEDE OLMAMALI. */
+  /** Kargoya VERİLENLER — verilmemişler listede olmamalı. */
   kargolar: { tarih: Date; gelir: number }[];
 };
 
-/**
- * Pencerenin her günü için tek nokta üretir.
- *
- * ⚠ PENCERE DIŞI KAYIT SESSİZCE DÜŞMEZ — hiç gelmemeli. Çağıran zaten
- * dönemle süzülmüş liste verir; burada ikinci bir süzgeç kurmak, iki yerde
- * iki farklı "dönem" tanımı doğururdu. Yine de kovası bulunamayan kayıt
- * ATLANIR (aşağıda), yoksa tek bir kayma bütün seriyi kaydırırdı.
- */
-export function operasyonSerisi(girdi: OperasyonGirdisi): OperasyonGunu[] {
-  const gunler: OperasyonGunu[] = [];
-  const dizin = new Map<string, OperasyonGunu>();
+/** Bir tarihin hangi kovaya düştüğü — kova anahtarı ve sınırları. */
+function kova(tarih: Date, kirilim: Kirilim): { anahtar: string; baslangic: Date } {
+  if (kirilim === "GUN") {
+    const g = gunDegeri(isTakvimGunu(tarih));
+    return { anahtar: gunMetni(g), baslangic: g };
+  }
+  if (kirilim === "HAFTA") {
+    /**
+     * ⚠ HAFTA PAZARTESİ BAŞLAR — Türkiye'de hafta böyle konuşulur ve
+     * `pencereOlustur` da "BU_HAFTA"yı böyle kuruyor. İki yerde iki farklı
+     * hafta tanımı olsaydı süzgeç ile grafik ayrışırdı.
+     */
+    const g = gunDegeri(isTakvimGunu(tarih));
+    const pazartesiyeUzaklik = (g.getUTCDay() + 6) % 7;
+    const bas = gunEkle(g, -pazartesiyeUzaklik);
+    return { anahtar: `H${gunMetni(bas)}`, baslangic: bas };
+  }
+  const t = isTakvimGunu(tarih);
+  const bas = gunDegeri({ yil: t.yil, ay: t.ay, gun: 1 });
+  return { anahtar: `${t.yil}-${String(t.ay).padStart(2, "0")}`, baslangic: bas };
+}
 
-  for (
-    let g = girdi.pencere.baslangic;
-    g.getTime() < girdi.pencere.bitisHaric.getTime();
-    g = gunEkle(g, 1)
-  ) {
-    const nokta: OperasyonGunu = {
-      gun: gunMetni(g),
+/** Kovanın bir sonrakine geçişi — kova genişliği kırılıma bağlı. */
+function sonrakiKova(baslangic: Date, kirilim: Kirilim): Date {
+  if (kirilim === "GUN") return gunEkle(baslangic, 1);
+  if (kirilim === "HAFTA") return gunEkle(baslangic, 7);
+  const t = isTakvimGunu(baslangic);
+  const s = ayKaydir(t.yil, t.ay, 1);
+  return gunDegeri({ yil: s.yil, ay: s.ay, gun: 1 });
+}
+
+/**
+ * Pencereyi kırılıma göre kovalara böler ve her kovaya bir nokta üretir.
+ *
+ * ── AÇIK SIFIR ──────────────────────────────────────────────────────────
+ * Hareketsiz kova ATLANMAZ. Atlansaydı grafikte iki kova yan yana çizilir
+ * ve aradaki boşluk görünmezdi — "o hafta hiç iş yapmadım" bilgisi kaybolur.
+ *
+ * ⚠ İLK VE SON KOVA PENCEREYE KIRPILIR: "Bu ay" 1 Ağustos'ta başlıyorsa ilk
+ * haftanın kovası 27 Temmuz'da başlasa bile noktanın `baslangic`ı 1 Ağustos
+ * yazar. Yoksa noktaya tıklayınca pencere DIŞINA süzülmüş bir liste açılır
+ * ve grafikteki sayı ile listenin sayısı tutmaz.
+ */
+export function operasyonSerisi(girdi: OperasyonGirdisi): OperasyonNoktasi[] {
+  const noktalar: OperasyonNoktasi[] = [];
+  const dizin = new Map<string, OperasyonNoktasi>();
+
+  let imlec = kova(girdi.pencere.baslangic, girdi.kirilim).baslangic;
+  while (imlec.getTime() < girdi.pencere.bitisHaric.getTime()) {
+    const sonraki = sonrakiKova(imlec, girdi.kirilim);
+    const { anahtar } = kova(imlec, girdi.kirilim);
+
+    /** Pencereye kırpma — nokta pencerenin dışına taşmaz. */
+    const bas =
+      imlec.getTime() < girdi.pencere.baslangic.getTime()
+        ? girdi.pencere.baslangic
+        : imlec;
+    const bitHaric =
+      sonraki.getTime() > girdi.pencere.bitisHaric.getTime()
+        ? girdi.pencere.bitisHaric
+        : sonraki;
+
+    const nokta: OperasyonNoktasi = {
+      anahtar,
+      baslangic: bas,
+      sonGun: gunEkle(bitHaric, -1),
       alimAdet: 0,
       alimTutar: 0,
       satisAdet: 0,
@@ -91,30 +173,31 @@ export function operasyonSerisi(girdi: OperasyonGirdisi): OperasyonGunu[] {
       kargoAdet: 0,
       kargoCiro: 0,
     };
-    gunler.push(nokta);
-    dizin.set(nokta.gun, nokta);
+    noktalar.push(nokta);
+    dizin.set(anahtar, nokta);
+    imlec = sonraki;
   }
 
   for (const a of girdi.alimlar) {
-    const n = dizin.get(gunMetni(a.tarih));
+    const n = dizin.get(kova(a.tarih, girdi.kirilim).anahtar);
     if (!n) continue;
     n.alimAdet++;
     n.alimTutar += a.tutar;
   }
   for (const s of girdi.satislar) {
-    const n = dizin.get(gunMetni(s.tarih));
+    const n = dizin.get(kova(s.tarih, girdi.kirilim).anahtar);
     if (!n) continue;
     n.satisAdet++;
     n.satisCiro += s.gelir;
   }
   for (const k of girdi.kargolar) {
-    const n = dizin.get(gunMetni(k.tarih));
+    const n = dizin.get(kova(k.tarih, girdi.kirilim).anahtar);
     if (!n) continue;
     n.kargoAdet++;
     n.kargoCiro += k.gelir;
   }
 
-  return gunler;
+  return noktalar;
 }
 
 /** Grafiğin iki görünümü — sekme adreste yaşar (İlke #13). */
@@ -126,53 +209,88 @@ export function gorunumCoz(deger: string | undefined): OperasyonGorunumu {
 }
 
 /**
- * Seçili görünümün üç serisi — grafik bunu çizer.
+ * Seçili görünümün üç serisi.
  *
- * ⚠ TEK YERDEN: ekranın hangi alanı okuduğu burada karar verilir. İki yerde
- * seçilseydi "adet sekmesinde ciro çizen" bir hata sessizce doğabilirdi.
+ * ⚠ ÜÇÜNCÜ SERİ GÖRÜNÜME GÖRE DEĞİŞİR (kullanıcı kararı 21.08.2026):
+ *   adet → KARGO (kaç paket çıktı)
+ *   ciro → ALIM−SATIŞ FARKI (kargo cirosu istenmedi: "ihtiyaç yok")
+ *
+ * Fark neden kargo yerine: ciro görünümünde sorulan soru "para hangi yöne
+ * aktı". Kargo cirosu satış cirosunun gecikmiş kopyasıdır — aynı parayı
+ * ikinci kez çizer ve grafiği kalabalıklaştırır. Fark ise iki çizginin
+ * arasındaki mesafeyi TEK ÇİZGİYE indirir ve göz onu zaten arıyor.
  */
 export function serileriKur(
-  gunler: OperasyonGunu[],
+  noktalar: OperasyonNoktasi[],
   gorunum: OperasyonGorunumu,
-): { alim: number[]; satis: number[]; kargo: number[] } {
+): { alim: number[]; satis: number[]; ucuncu: number[] } {
   return gorunum === "ciro"
     ? {
-        alim: gunler.map((g) => g.alimTutar),
-        satis: gunler.map((g) => g.satisCiro),
-        kargo: gunler.map((g) => g.kargoCiro),
+        alim: noktalar.map((n) => n.alimTutar),
+        satis: noktalar.map((n) => n.satisCiro),
+        /** ⚠ SATIŞ − ALIM: pozitif "içeri para girdi" demek. */
+        ucuncu: noktalar.map((n) => n.satisCiro - n.alimTutar),
       }
     : {
-        alim: gunler.map((g) => g.alimAdet),
-        satis: gunler.map((g) => g.satisAdet),
-        kargo: gunler.map((g) => g.kargoAdet),
+        alim: noktalar.map((n) => n.alimAdet),
+        satis: noktalar.map((n) => n.satisAdet),
+        ucuncu: noktalar.map((n) => n.kargoAdet),
       };
 }
 
 /** Dönemin toplamı — grafiğin altında yazar (İlke #15). */
-export function operasyonToplami(gunler: OperasyonGunu[]): {
+export function operasyonToplami(noktalar: OperasyonNoktasi[]): {
   alimAdet: number;
   alimTutar: number;
   satisAdet: number;
   satisCiro: number;
   kargoAdet: number;
-  kargoCiro: number;
+  /** Üç kalemin toplam işlem sayısı — "bu dönemde kaç iş yaptım". */
+  islemAdedi: number;
+  /** SATIŞ − ALIM. Pozitif: içeri para girdi. */
+  fark: number;
 } {
-  return gunler.reduce(
-    (t, g) => ({
-      alimAdet: t.alimAdet + g.alimAdet,
-      alimTutar: t.alimTutar + g.alimTutar,
-      satisAdet: t.satisAdet + g.satisAdet,
-      satisCiro: t.satisCiro + g.satisCiro,
-      kargoAdet: t.kargoAdet + g.kargoAdet,
-      kargoCiro: t.kargoCiro + g.kargoCiro,
+  const t = noktalar.reduce(
+    (a, n) => ({
+      alimAdet: a.alimAdet + n.alimAdet,
+      alimTutar: a.alimTutar + n.alimTutar,
+      satisAdet: a.satisAdet + n.satisAdet,
+      satisCiro: a.satisCiro + n.satisCiro,
+      kargoAdet: a.kargoAdet + n.kargoAdet,
     }),
-    {
-      alimAdet: 0,
-      alimTutar: 0,
-      satisAdet: 0,
-      satisCiro: 0,
-      kargoAdet: 0,
-      kargoCiro: 0,
-    },
+    { alimAdet: 0, alimTutar: 0, satisAdet: 0, satisCiro: 0, kargoAdet: 0 },
   );
+  return {
+    ...t,
+    islemAdedi: t.alimAdet + t.satisAdet + t.kargoAdet,
+    fark: t.satisCiro - t.alimTutar,
+  };
+}
+
+/**
+ * TABLO TAVANI — grafiğin altındaki tablo en fazla bu kadar satır gösterir.
+ *
+ * ⚠ Kullanıcı kararı 21.08.2026: _"en fazla 15 günlük tablo aşağı açılsın,
+ * daha fazlası için ayrı sayfa seçeneği çıksın"_. Gerekçe anayasada zaten
+ * var (İlke #13): satır sayısı veriyle BÜYÜYEN hiçbir şey özet ekranına
+ * konmaz. 365 satırlık bir tablo paneli özet olmaktan çıkarır.
+ */
+export const TABLO_TAVANI = 15;
+
+/**
+ * Tabloda gösterilecek noktalar — SONDAN, yani en YENİ.
+ *
+ * ⚠ BAŞTAN DEĞİL SONDAN kırpılıyor: kırpılan bilgi eski taraf olmalı.
+ * Baştan alsaydık kullanıcı dünü göremezdi ve tablo işe yaramazdı.
+ */
+export function tabloNoktalari(
+  noktalar: OperasyonNoktasi[],
+): { gosterilen: OperasyonNoktasi[]; gizlenen: number } {
+  if (noktalar.length <= TABLO_TAVANI) {
+    return { gosterilen: noktalar, gizlenen: 0 };
+  }
+  return {
+    gosterilen: noktalar.slice(-TABLO_TAVANI),
+    gizlenen: noktalar.length - TABLO_TAVANI,
+  };
 }

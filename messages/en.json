@@ -1849,7 +1849,9 @@
     "operasyonKargo": "",
     "operasyonToplamAdet": "",
     "operasyonToplamCiro": "",
-    "operasyonKdvNotu": ""
+    "operasyonKdvNotu": "",
+    "operasyonFark": "",
+    "operasyonTumunuGor": ""
   },
   "Envanter": {
     "baslik": "",

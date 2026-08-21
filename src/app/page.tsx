@@ -34,7 +34,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import {
   ayKaydir,
   gunDegeri,
-  gunMetninden,
+  gunMetni,
   gunEkle,
   isTakvimGunu,
   pencereOlustur,
@@ -74,9 +74,11 @@ import {
 } from "@/lib/karsilastirma";
 import {
   gorunumCoz,
+  kirilimSec,
   operasyonSerisi,
   operasyonToplami,
   serileriKur,
+  tabloNoktalari,
 } from "@/lib/panel/operasyon-serisi";
 import { UcSeriliGrafik } from "@/components/uc-serili-grafik";
 import { OPERASYON_GORUNUMLERI } from "@/lib/panel/operasyon-serisi";
@@ -1289,8 +1291,20 @@ export default async function AnaSayfa({
    * tarafı bugün TRY okuyor — karma para biriminde alım varsa serinin alım
    * çizgisi eksik kalır ve bu ekranda YAZILI (kart altındaki not).
    */
+  /**
+   * ⚠ KIRILIM PENCEREYE GÖRE (kullanıcı eşlemesi 21.08.2026): son 30 gün
+   * gün gün, bu ay hafta hafta, 3/6 ay ve 1 yıl ay ay. Uzun pencerede gün
+   * gün çizmek 365 noktalı okunmaz bir tarak üretir.
+   */
+  const operasyonKirilimi = kirilimSec(
+    donemTuru,
+    Math.round(
+      (donem.bitisHaric.getTime() - donem.baslangic.getTime()) / 86_400_000,
+    ),
+  );
   const operasyonGunleri = operasyonSerisi({
     pencere: donem,
+    kirilim: operasyonKirilimi,
     alimlar: alim.gunluk,
     satislar: donemSatislari
       .filter((s) => s.paraBirimi === seciliPara)
@@ -1302,6 +1316,23 @@ export default async function AnaSayfa({
   const operasyonGorunumu = gorunumCoz(parametreler.operasyon);
   const operasyonSeri = serileriKur(operasyonGunleri, operasyonGorunumu);
   const operasyonToplam = operasyonToplami(operasyonGunleri);
+  const operasyonTablo = tabloNoktalari(operasyonGunleri);
+  /**
+   * NOKTAYA TIKLAYINCA SÜZÜLMÜŞ LİSTE (kullanıcı isteği 21.08.2026).
+   * ⚠ Nokta kendi tarih aralığını taşıyor; adres ondan kuruluyor. Böylece
+   * haftalık/aylık kovada da doğru aralık açılır — "20.08" değil "17–23.08".
+   */
+  const noktaAdresi = (temel: string, n: (typeof operasyonGunleri)[number]) =>
+    suzgecAdresi(
+      temel,
+      {},
+      {
+        pencere: "OZEL",
+        baslangic: gunMetni(n.baslangic),
+        bitis: gunMetni(n.sonGun),
+        ...(seciliKanal && temel !== "/alimlar" ? { kanal: seciliKanal } : {}),
+      },
+    );
 
   /**
    * ÜST SIRADA GÖSTERİLECEK BLOK — seçili para biriminin bloğu.
@@ -1705,17 +1736,93 @@ export default async function AnaSayfa({
           </CardHeader>
           <CardContent className="space-y-3">
             <UcSeriliGrafik
-              noktalar={operasyonGunleri.map((g, i) => ({
-                etiket: bicim.tarih(gunMetninden(g.gun) ?? donem.baslangic),
-                tamEtiket: bicim.tarih(gunMetninden(g.gun) ?? donem.baslangic),
+              noktalar={operasyonGunleri.map((n, i) => ({
+                etiket: bicim.tarih(n.baslangic),
+                /* Kova bir günden genişse ARALIK yazılır: "17–23.08".
+                   Tek gün yazılsaydı haftalık noktada sayı ile etiket
+                   ayrışır, kullanıcı "o gün 12 satış mı olmuş" derdi. */
+                tamEtiket:
+                  n.baslangic.getTime() === n.sonGun.getTime()
+                    ? bicim.tarih(n.baslangic)
+                    : `${bicim.tarih(n.baslangic)} – ${bicim.tarih(n.sonGun)}`,
                 a: operasyonSeri.alim[i] ?? 0,
                 b: operasyonSeri.satis[i] ?? 0,
-                c: operasyonSeri.kargo[i] ?? 0,
+                c: operasyonSeri.ucuncu[i] ?? 0,
+                /* ⚠ FARK ÇİZGİSİ TIKLANMAZ: tek bir listeye karşılığı yok
+                   (iki kümenin farkı). Sessiz kalmasın diye adres hiç
+                   verilmiyor — nokta çizilir ama link olmaz. */
+                adres:
+                  operasyonGorunumu === "ciro"
+                    ? {
+                        a: noktaAdresi("/alimlar", n),
+                        b: noktaAdresi("/satislar", n),
+                        c: "",
+                      }
+                    : {
+                        a: noktaAdresi("/alimlar", n),
+                        b: noktaAdresi("/satislar", n),
+                        c: suzgecAdresi(
+                          "/satislar",
+                          {},
+                          {
+                            pencere: "OZEL",
+                            baslangic: gunMetni(n.baslangic),
+                            bitis: gunMetni(n.sonGun),
+                            kargo: "verildi",
+                            ...(seciliKanal ? { kanal: seciliKanal } : {}),
+                          },
+                        ),
+                      },
               }))}
+              tabloNoktalari={operasyonTablo.gosterilen.map((n) => {
+                const i = operasyonGunleri.indexOf(n);
+                return {
+                  etiket: bicim.tarih(n.baslangic),
+                  tamEtiket:
+                    n.baslangic.getTime() === n.sonGun.getTime()
+                      ? bicim.tarih(n.baslangic)
+                      : `${bicim.tarih(n.baslangic)} – ${bicim.tarih(n.sonGun)}`,
+                  a: operasyonSeri.alim[i] ?? 0,
+                  b: operasyonSeri.satis[i] ?? 0,
+                  c: operasyonSeri.ucuncu[i] ?? 0,
+                  adres:
+                    operasyonGorunumu === "ciro"
+                      ? {
+                          a: noktaAdresi("/alimlar", n),
+                          b: noktaAdresi("/satislar", n),
+                          c: "",
+                        }
+                      : {
+                          a: noktaAdresi("/alimlar", n),
+                          b: noktaAdresi("/satislar", n),
+                          c: suzgecAdresi(
+                            "/satislar",
+                            {},
+                            {
+                              pencere: "OZEL",
+                              baslangic: gunMetni(n.baslangic),
+                              bitis: gunMetni(n.sonGun),
+                              kargo: "verildi",
+                              ...(seciliKanal ? { kanal: seciliKanal } : {}),
+                            },
+                          ),
+                        },
+                };
+              })}
+              gizlenenSayisi={operasyonTablo.gizlenen}
+              /* TAM DÖKÜM KENDİ SAYFASINDA (İlke #13): panelde rakam +
+                 "aç" bağlantısı kalır, döküm rapora gider. */
+              tumunuGorAdresi={suzgecAdresi("/rapor", {}, donemParametreleri())}
+              tumunuGorMetni={t("operasyonTumunuGor", {
+                sayi: operasyonTablo.gizlenen,
+              })}
               adlar={{
                 a: t("operasyonAlim"),
                 b: t("operasyonSatis"),
-                c: t("operasyonKargo"),
+                c:
+                  operasyonGorunumu === "ciro"
+                    ? t("operasyonFark")
+                    : t("operasyonKargo"),
               }}
               bicimle={(d) =>
                 operasyonGorunumu === "ciro"
@@ -1729,15 +1836,19 @@ export default async function AnaSayfa({
                 toplamı da ekranda durur ve SÜZGEÇLE birlikte değişir. */}
             <p className="text-muted-foreground text-xs">
               {operasyonGorunumu === "ciro"
-                ? t("operasyonToplamCiro", {
+                ? /* ⚠ KARGO CİROSU YAZILMIYOR (kullanıcı: "ihtiyaç yok").
+                     Yerine FARK: satış − alım. */
+                  t("operasyonToplamCiro", {
                     alim: bicim.para(operasyonToplam.alimTutar, seciliPara),
                     satis: bicim.para(operasyonToplam.satisCiro, seciliPara),
-                    kargo: bicim.para(operasyonToplam.kargoCiro, seciliPara),
+                    fark: bicim.para(operasyonToplam.fark, seciliPara),
                   })
-                : t("operasyonToplamAdet", {
+                : /* Adet tarafında üç kalem + TOPLAM İŞLEM sayısı. */
+                  t("operasyonToplamAdet", {
                     alim: operasyonToplam.alimAdet,
                     satis: operasyonToplam.satisAdet,
                     kargo: operasyonToplam.kargoAdet,
+                    islem: operasyonToplam.islemAdedi,
                   })}
             </p>
 
