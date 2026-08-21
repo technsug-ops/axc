@@ -157,7 +157,14 @@ for (const dosya of dosyalar("src")) {
   }
 }
 
-if (kodEksik > 0) hata = true;
+/**
+ * ⚠ BURASI ÇÖKÜYORDU (düzeltildi 21.08.2026): tanımsız `hata` değişkenine
+ * atama yapılıyordu ve eksik anahtar bulunduğu anda betik ReferenceError ile
+ * patlıyordu. Çıkış kodu yine 1 olduğu için "çalışıyor" sanılıyordu — ama
+ * patlama SONRAKİ bölümleri (parametreli metin çıktıları) hiç koşturmuyordu.
+ * Yani bir eksik anahtar, öteki kontrolleri sessizce iptal ediyordu.
+ */
+if (kodEksik > 0) process.exitCode = 1;
 console.log(
   `2b) Kod->sozluk: ${kodBakilan} duz cagri bakildi, ${kodEksik} eksik, ${kodDinamik} dinamik cagri SINANMADI`,
 );

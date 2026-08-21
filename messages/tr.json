@@ -43,7 +43,8 @@
     "komisyonAktar": "Komisyon oranı içe aktarma",
     "talepler": "Destek talepleri",
     "gecmisEkstre": "Geçmiş ekstreler",
-    "urunKarti": "Ürün kârlılık kartı"
+    "urunKarti": "Ürün kârlılık kartı",
+    "simulasyon": "Fiyat denemesi"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -667,7 +668,8 @@
     "nakitTakvimi": "Nakit takvimi",
     "talepler": "Destek talepleri",
     "gecmisEkstre": "Geçmiş ekstreler",
-    "urunKarti": "Kârlılık kartı"
+    "urunKarti": "Kârlılık kartı",
+    "simulasyon": "Fiyat denemesi"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -2832,5 +2834,43 @@
     "olcekZarar": "eksi",
     "olcekAralik": "%{alt} – %{ust}",
     "olcekUstsuz": "%{alt} ve üzeri"
+  },
+  "Simulasyon": {
+    "baslik": "Fiyat denemesi",
+    "aciklama": "Alış, satış ve komisyonu gir; hangi pazaryerinde ne kaldığını yan yana gör. Hiçbir kayıt oluşmaz.",
+    "satisFiyati": "Satış fiyatı",
+    "alisFiyati": "Alış fiyatı",
+    "komisyonOrani": "Komisyon oranı (%)",
+    "kdvOrani": "KDV oranı (%)",
+    "kargoUcreti": "Kargo ücreti",
+    "kargoIpucu": "Boş bırakırsan kargo hesaba girmez (alıcı ödüyorsa).",
+    "kdvDili": "Girdiğim tutarlar",
+    "kdvDahil": "KDV dahil",
+    "kdvHaric": "KDV hariç",
+    "hesapla": "Hesapla",
+    "ornek": "örn. {deger}",
+    "bosBaslik": "Henüz hesaplanmadı",
+    "bosIpucu": "Satış fiyatı, alış fiyatı ve komisyon oranını girip Hesapla'ya bas.",
+    "hukumBaslik": "En kârlı kanal",
+    "hukum": "En çok <b>{kanal}</b> kazandırıyor: <b>{tutar}</b> net kâr (NET-2).",
+    "kanal": "Kanal",
+    "komisyon": "Komisyon",
+    "kesintiler": "Kesintiler",
+    "kargo": "Kargo",
+    "stopaj": "Stopaj",
+    "odenecekKdv": "Ödenecek KDV",
+    "net2": "NET-2",
+    "marj": "Ciro marjı",
+    "kaynak_OLCULDU": "ölçüldü",
+    "kaynak_REFERANS": "referans · doğrulanmadı",
+    "girdiOzeti": "Hesap {dil} girilen tutarlarla yapıldı — satış {satis} · alış {alis} · komisyon {komisyon} · KDV {kdv}.",
+    "notSimulasyon": "Bu bir denemedir: satış, stok ya da kesinti kaydı oluşmaz.",
+    "notTekAdet": "Hesap tek adet üzerindendir. Sipariş başına alınan sabit kesintiler (hizmet bedeli gibi) tek siparişe yazılmıştır.",
+    "bant_zarar": "Zarar",
+    "bant_cokRiskli": "Çok riskli",
+    "bant_zayif": "Zayıf",
+    "bant_kabul": "Kabul edilebilir",
+    "bant_iyi": "İyi",
+    "bant_cokIyi": "Çok iyi"
   }
 }

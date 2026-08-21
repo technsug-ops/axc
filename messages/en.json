@@ -43,7 +43,8 @@
     "komisyonAktar": "",
     "talepler": "",
     "gecmisEkstre": "",
-    "urunKarti": ""
+    "urunKarti": "",
+    "simulasyon": ""
   },
   "Ortak": {
     "kapat": "",
@@ -667,7 +668,8 @@
     "nakitTakvimi": "",
     "talepler": "",
     "gecmisEkstre": "",
-    "urunKarti": ""
+    "urunKarti": "",
+    "simulasyon": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -2832,5 +2834,43 @@
     "olcekZarar": "",
     "olcekAralik": "",
     "olcekUstsuz": ""
+  },
+  "Simulasyon": {
+    "baslik": "",
+    "aciklama": "",
+    "satisFiyati": "",
+    "alisFiyati": "",
+    "komisyonOrani": "",
+    "kdvOrani": "",
+    "kargoUcreti": "",
+    "kargoIpucu": "",
+    "kdvDili": "",
+    "kdvDahil": "",
+    "kdvHaric": "",
+    "hesapla": "",
+    "ornek": "",
+    "bosBaslik": "",
+    "bosIpucu": "",
+    "hukumBaslik": "",
+    "hukum": "",
+    "kanal": "",
+    "komisyon": "",
+    "kesintiler": "",
+    "kargo": "",
+    "stopaj": "",
+    "odenecekKdv": "",
+    "net2": "",
+    "marj": "",
+    "kaynak_OLCULDU": "",
+    "kaynak_REFERANS": "",
+    "girdiOzeti": "",
+    "notSimulasyon": "",
+    "notTekAdet": "",
+    "bant_zarar": "",
+    "bant_cokRiskli": "",
+    "bant_zayif": "",
+    "bant_kabul": "",
+    "bant_iyi": "",
+    "bant_cokIyi": ""
   }
 }

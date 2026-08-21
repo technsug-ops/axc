@@ -12,6 +12,7 @@ import {
   CalendarClock,
   ClipboardList,
   Coins,
+  Calculator,
   CreditCard,
   DatabaseBackup,
   Download,
@@ -75,6 +76,12 @@ const OPERASYON: MenuOgesi[] = [
    * alayim mi" anidir ve o an menuyu kaydirmak istemezsiniz.
    */
   { anahtar: "urunKarti", href: "/kart", icon: ScanBarcode, aktif: true },
+  /**
+   * FİYAT DENEMESİ — kârlılık kartının HEMEN ALTINDA (kullanıcı 21.08.2026).
+   * İkisi aynı ana ait: "elimde ürün var, alayım mı" ve "alırsam nereye
+   * koyayım". Menüde ayrı yerlere düşselerdi akış kopardı.
+   */
+  { anahtar: "simulasyon", href: "/simulasyon", icon: Calculator, aktif: true },
   { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
   { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
   { anahtar: "iadeler", href: "/iadeler", icon: Undo2, aktif: true },
@@ -149,7 +156,12 @@ const AYARLAR: MenuOgesi[] = [
     icon: Users,
     aktif: true,
   },
-  { anahtar: "roller", href: "/ayarlar/roller", icon: ShieldCheck, aktif: true },
+  {
+    anahtar: "roller",
+    href: "/ayarlar/roller",
+    icon: ShieldCheck,
+    aktif: true,
+  },
   { anahtar: "elKitabi", href: "/el-kitabi", icon: BookOpen, aktif: true },
   /* Destek talepleri — izin İSTEMEZ, herkes kendi bildirdiğinin nerede
      olduğunu görebilmeli (bkz. talepler/page.tsx). */
