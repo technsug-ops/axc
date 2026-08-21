@@ -41,8 +41,30 @@ import {
 export type SimulasyonGirdisi = {
   /** Girilen tutarlar KDV DAHİL mi? `false` ise hepsi KDV hariçtir. */
   kdvDahilMi: boolean;
-  /** Ürünün satış fiyatı (tek adet). */
-  satisFiyati: number;
+  /**
+   * ORTAK satış fiyatı (tek adet) — kanal için özel fiyat YOKSA kullanılır.
+   *
+   * ⚠ İSTEĞE BAĞLI. Buy box fiyatı her pazaryerinde AYRIDIR ve karşılaştırma
+   * tam olarak o farkı sormak için var: kullanıcının elinde tek bir "satış
+   * fiyatı" yok, üç ayrı buy box var.
+   */
+  satisFiyati?: number;
+  /**
+   * KANAL BAŞINA SATIŞ FİYATI — kanal koduna göre, KDV dili ortak.
+   *
+   * ⚠ NİYE VAR (kullanıcı anlattı 21.08.2026): _"x ürünü alış 1000 · TY buy
+   * box 2150, komisyon %5 → kâr 673 · HB buy box 2250, komisyon %13 → kâr
+   * 533 · N11 buy box 2175, komisyon %12 → kâr 554. En DÜŞÜK satış fiyatı
+   * en YÜKSEK kârı veriyor. Ben bunu takip edip satış kararı vermek
+   * istiyorum; satmak istemediğim pazaryerlerinde fiyatı yükseltip
+   * buybox'tan çıkıyorum."_
+   *
+   * Tek fiyatla bu soru SORULAMAZ: kanalları aynı fiyatta kıyaslamak,
+   * kullanıcının fiilen karşılaştığı durumu değil varsayımsal bir durumu
+   * ölçer. Kararı bozan şey fiyat farkı ile kesinti farkının BİRLİKTE
+   * çalışması — ikisinden biri sabitlenirse cevap değişir.
+   */
+  kanalFiyatlari?: Record<string, number>;
   /** Ürünün alış fiyatı — bize maliyeti. */
   alisFiyati: number;
   /**
@@ -117,6 +139,14 @@ export type KanalSonucu = {
   kaynak: KuralKaynagi;
   kaynakNotu: string;
   belirsizlik: string | null;
+  /**
+   * Bu kanalda kullanılan satış fiyatı (KDV DAHİL) — yoksa null.
+   *
+   * ⚠ EKRAN BUNU OKUR, girdiyi DEĞİL: pastanın paydası ve "hangi fiyatla
+   * hesaplandı" cümlesi kanal başına ayrışıyor. Ortak girdiden okunsaydı
+   * TY'nin pastası HB'nin fiyatına bölünürdü.
+   */
+  satisFiyati: number | null;
   /** Kullanılan komisyon oranı (%) — çözülemezse null. */
   komisyonOrani: number | null;
   /** Oran nereden geldi: dilim tarifesi · tek oran · yok. */
@@ -159,9 +189,19 @@ export type KanalSonucu = {
  * "NET hesaplanamadı" der — sessiz kalmaz, ama öteki kanalları da susturmaz.
  */
 export function girdiEksikMi(girdi: SimulasyonGirdisi): boolean {
+  /**
+   * ⚠ FİYAT ORTAK OLMAK ZORUNDA DEĞİL. Kullanıcının elinde tek bir satış
+   * fiyatı yok, kanal başına buy box var; ortak alanı şart koşan bir kapı
+   * onu olmayan bir rakamı uydurmaya zorlardı. Ama HİÇBİR fiyat yoksa da
+   * hesap yoktur — o zaman ekran boş durumu gösterir.
+   */
+  const fiyatVar =
+    ortakFiyat(girdi) !== null ||
+    SIMULASYON_KANALLARI.some(
+      (k) => elleFiyat(k.kod, girdi.kanalFiyatlari) !== null,
+    );
   return (
-    !Number.isFinite(girdi.satisFiyati) ||
-    girdi.satisFiyati <= 0 ||
+    !fiyatVar ||
     !Number.isFinite(girdi.alisFiyati) ||
     girdi.alisFiyati <= 0 ||
     !Number.isFinite(girdi.kdvOrani) ||
@@ -189,9 +229,32 @@ function elleOran(
   kanalKodu: string,
   oranlar: Record<string, number> | undefined,
 ): number | null {
-  const deger = oranlar?.[kanalKodu];
+  return kanalDegeri(kanalKodu, oranlar, 0);
+}
+
+/**
+ * Bu kanal için elle girilmiş SATIŞ FİYATI (buy box) — yoksa null.
+ *
+ * ⚠ FİYATTA ALT SINIR SIFIR DEĞİL: "0 ₺'ye satarım" bir deneme değil, boş
+ * bir kutudur. Oranda sıfır meşrudur (komisyonsuz kampanya), fiyatta değil.
+ */
+function elleFiyat(
+  kanalKodu: string,
+  fiyatlar: Record<string, number> | undefined,
+): number | null {
+  const deger = kanalDegeri(kanalKodu, fiyatlar, 0);
+  return deger === null || deger <= 0 ? null : deger;
+}
+
+/** Sözlükten geçerli sayı — `NaN` ve alt sınırın altı elenir. */
+function kanalDegeri(
+  kanalKodu: string,
+  sozluk: Record<string, number> | undefined,
+  altSinir: number,
+): number | null {
+  const deger = sozluk?.[kanalKodu];
   if (deger === undefined) return null;
-  if (!Number.isFinite(deger) || deger < 0) return null;
+  if (!Number.isFinite(deger) || deger < altSinir) return null;
   return deger;
 }
 
@@ -211,15 +274,67 @@ function ortakOran(girdi: SimulasyonGirdisi): number | null {
   return deger;
 }
 
+/** ORTAK yedek satış fiyatı — geçersizse null. */
+function ortakFiyat(girdi: SimulasyonGirdisi): number | null {
+  const deger = girdi.satisFiyati;
+  if (deger === undefined) return null;
+  if (!Number.isFinite(deger) || deger <= 0) return null;
+  return deger;
+}
+
+/**
+ * Bu kanalda kullanılacak satış fiyatı — ELLE > ORTAK, yoksa null.
+ * `null` dönmesi "hesap yok" demektir; sıfır sayılmaz.
+ */
+export function kanalSatisFiyati(
+  kanalKodu: string,
+  girdi: SimulasyonGirdisi,
+): number | null {
+  return elleFiyat(kanalKodu, girdi.kanalFiyatlari) ?? ortakFiyat(girdi);
+}
+
 function kanalSonucu(
   kanal: SimulasyonKanali,
   girdi: SimulasyonGirdisi,
   bugun: Date,
   zemin: SimulasyonZemini | null,
 ): KanalSonucu {
+  /**
+   * ⚠ FİYAT KANAL BAŞINA. Buy box her pazaryerinde ayrı ve karşılaştırmanın
+   * anlamı tam olarak o farkta: kullanıcı 2150/2250/2175'i yan yana koyup
+   * "hangisinde satayım" diye soruyor.
+   */
+  const hamSatis = kanalSatisFiyati(kanal.kod, girdi);
+  /**
+   * ⚠ FİYATI OLMAYAN KANAL SUSAR — sıfır saymaz, ötekileri de susturmaz.
+   * "Fiyat yok" ile "fiyat sıfır" karıştırılsaydı o kanal MALİYETİ KADAR
+   * ZARARDA görünür ve listenin en dibine düşerdi: hesaplanmamış bir kanal,
+   * hesaplanmış bir felaket gibi okunurdu.
+   */
+  if (hamSatis === null) {
+    return {
+      kod: kanal.kod,
+      ad: kanal.ad,
+      kaynak: kanal.kaynak,
+      kaynakNotu: kanal.kaynakNotu,
+      belirsizlik: kanal.belirsizlik,
+      satisFiyati: null,
+      komisyonOrani: null,
+      oranKaynagi: "YOK",
+      oranElle: elleOran(kanal.kod, girdi.kanalOranlari) !== null,
+      gercekZemin: zemin !== null,
+      net1: null,
+      net2: null,
+      dokum: [],
+      beyanlar: [{ tur: "FIYAT_YOK" }],
+      ciroMarji: null,
+      sermayeVerimi: null,
+    };
+  }
+
   const satis = girdi.kdvDahilMi
-    ? girdi.satisFiyati
-    : dahileCevir(girdi.satisFiyati, girdi.kdvOrani);
+    ? hamSatis
+    : dahileCevir(hamSatis, girdi.kdvOrani);
   const alis = girdi.kdvDahilMi
     ? girdi.alisFiyati
     : dahileCevir(girdi.alisFiyati, girdi.kdvOrani);
@@ -282,6 +397,7 @@ function kanalSonucu(
     kaynak: kanal.kaynak,
     kaynakNotu: kanal.kaynakNotu,
     belirsizlik: kanal.belirsizlik,
+    satisFiyati: satis,
     komisyonOrani: s.komisyonOrani,
     /**
      * ORAN NEREDEN GELDİ — ekranda yazar. "Tarifeden" ile "senin girdiğin"

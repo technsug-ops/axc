@@ -37,7 +37,12 @@ export type Beyan =
   | { tur: "DILIM_YOK" }
   | { tur: "PENCERE_BITTI"; bitis: Date }
   | { tur: "MALIYET_YOK" }
-  | { tur: "ORAN_YOK" };
+  | { tur: "ORAN_YOK" }
+  /**
+   * Bu kanal için satış fiyatı girilmemiş. `karsilastir.ts` üretir —
+   * `simulasyonKur` fiyatsız hiç çağrılmaz.
+   */
+  | { tur: "FIYAT_YOK" };
 
 export type SimulasyonGirdisi = {
   /** Denenmek istenen KDV DAHİL birim fiyat. */

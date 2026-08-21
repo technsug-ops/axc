@@ -76,4 +76,19 @@ Bunlar kapanmış ölçümlerin **bugün geçerli** özetleri; ayrıntı arşivd
 - **Aylık:** haziran 1 satır (net 0) · temmuz 1 satır (net 0) · ağustos 38 satır. **Ağustostan önce net sıfır TY satışı.**
 - **Hesap:** TY'nin tek satış hesabı **AXCALI** (`externalId = 870249`, rapor dosyasının satıcı kimliği). `s.ahmet` ve `SEDA` **alım** hesapları, sıfır satış → kapsam karışmıyor.
 - **`HIZMET_BEDELI` ₺12,60'ın payı:** fiyatın **binde 3'ü**, marjın **onda biri** (NET-2'ye oranla A max %5,54 · B max %15,18).
+- **Buy box verisi (ölçüldü 21.08.2026, gerçek dosyalar):** Trendyol ürün
+  listesinde **`BuyBox Fiyatı` kolonu VAR** — 1581 satırın 189'unda dolu ve
+  o 189, `Durum` alanı temiz olan **canlı listelerin tamamı** (kalan 1392'nin
+  hepsinde bir sorun var: 790 "stok girin", 373 "fiyat girin", 136 orijinallik
+  şüphesi, 40 arşiv). Barkod **189/189** dolu → kimlikle eşleşir.
+  **Hepsiburada fiyat VERMİYOR**, yalnız sıra veriyor (`Buybox Sırası`:
+  1. sırada 1071 · 2-3'te 515 · 4+'ta 565). N11 dosyası elde yok, ölçülmedi.
+  ⛔ **OTOMASYON BİLEREK AÇILMADI** — kullanıcı kararı 21.08.2026:
+  _"buybox fiyatlarını manuel gireceğim, ürün arama sırasında anlık takip
+  ediyorum; otomasyona ihtiyacım şu an yok."_ `ChannelSku`'ya sütun eklemek
+  ve dosyadan doldurmak **teknik olarak hazır**; açılış şartı kullanıcının
+  elle takibi yetersiz bulması. _Bu kalem yeniden açılana kadar iş değildir._
+- **Fiyat farkı (aynı dosya):** bizim TY fiyatımız buy box'a göre ortanca
+  **+%24,1** (p25 +5,6 · p75 +47,1 · max +177,2); **170/189 listede buy
+  box'ın ÜSTÜNDEYİZ.** Kasıtlı mı bayat mı — sorulmadı.
 - **Ölçüm anı:** rapor tarafı **donmuş**, sistem tarafı **akıyor** — aynı gün iki koşum 8→9 verdi. Her kıyasta iki damga yazılır.

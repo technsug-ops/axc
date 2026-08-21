@@ -73,6 +73,25 @@ export function Deneme({ bugun }: { bugun: string }) {
   const [kanalOranlari, setKanalOranlari] = useState<Record<string, string>>(
     {},
   );
+  /**
+   * KANAL BAŞINA SATIŞ FİYATI (buy box) — kanal kodu → metin.
+   *
+   * ⚠ NİYE VAR (kullanıcı anlattı 21.08.2026): buy box her pazaryerinde
+   * AYRI ve karar tam o farktan çıkıyor. Kendi örneği: alış 1000 · TY buy
+   * box 2150 (%5) → 673 · HB 2250 (%13) → 533 · N11 2175 (%12) → 554.
+   * **En düşük satış fiyatı en yüksek kârı veriyor.** Tek fiyatla bu soru
+   * sorulamaz; kanalları aynı fiyata sabitlemek, kullanıcının fiilen
+   * karşılaştığı durumu değil varsayımsal bir durumu ölçer.
+   *
+   * ⚠ ELLE GİRİLİYOR, OTOMASYON YOK — kullanıcı kararı 21.08.2026:
+   * _"buybox fiyatlarını manuel gireceğim, ürün arama işi sırasında anlık
+   * fiyatları manuel takip ediyorum; burada bir otomasyona ihtiyacım şu an
+   * yok."_ Trendyol ürün listesinde `BuyBox Fiyatı` kolonu VAR ve okunabilir
+   * (189/189 canlı listede dolu, barkodlu) — ama bilerek okunmuyor.
+   */
+  const [kanalFiyatlari, setKanalFiyatlari] = useState<Record<string, string>>(
+    {},
+  );
 
   /** Koddan bulunan ürün — null ise elle giriş kipindeyiz. */
   const [kod, setKod] = useState("");
@@ -107,6 +126,9 @@ export function Deneme({ bugun }: { bugun: string }) {
        * sessizce yanlış kanal kazanırdı.
        */
       setKanalOranlari({});
+      /** ⚠ FİYATLAR DA SIFIRLANIR — önceki ürünün buy box'ı yenisinin
+          kutusunda kalsaydı, hiç görmediğimiz bir fiyatla hüküm verirdik. */
+      setKanalFiyatlari({});
     });
   };
 
@@ -117,6 +139,17 @@ export function Deneme({ bugun }: { bugun: string }) {
   };
 
   const sayi = (m: string) => (m.trim() === "" ? Number.NaN : Number(m));
+  /**
+   * Metin sözlüğünü sayı sözlüğüne çevirir; yalnız GEÇERLİ sayılar geçer.
+   * ⚠ Yarım yazılmış metin ("1,") orana ya da fiyata dönüşmez. Kitaplık da
+   * ayrıca süzüyor — bu, ekranın nezaketi değil ikinci kilit.
+   */
+  const sayiSozlugu = (kaynak: Record<string, string>) =>
+    Object.fromEntries(
+      Object.entries(kaynak)
+        .map(([k, v]) => [k, Number(v)] as const)
+        .filter(([, v]) => Number.isFinite(v) && v >= 0),
+    );
   const girdi = {
     kdvDahilMi: kdvDahil,
     satisFiyati: sayi(satis),
@@ -130,11 +163,8 @@ export function Deneme({ bugun }: { bugun: string }) {
     kdvOrani: sayi(kdv),
     kargoUcreti: kargo.trim() === "" ? null : sayi(kargo),
     /** Yalnız GEÇERLİ sayılar geçer; yarım yazılmış metin orana dönüşmez. */
-    kanalOranlari: Object.fromEntries(
-      Object.entries(kanalOranlari)
-        .map(([k, v]) => [k, Number(v)] as const)
-        .filter(([, v]) => Number.isFinite(v) && v >= 0),
-    ),
+    kanalOranlari: sayiSozlugu(kanalOranlari),
+    kanalFiyatlari: sayiSozlugu(kanalFiyatlari),
   };
 
   const eksik = girdiEksikMi(girdi);
@@ -292,7 +322,7 @@ export function Deneme({ bugun }: { bugun: string }) {
         </div>
       </div>
 
-      {/* ══════════════ KOMİSYON — PAZARYERİ BAŞINA ══════════════
+      {/* ══════════════ PAZARYERİ BAŞINA GİRDİ — FİYAT + KOMİSYON ══════════
           Kullanıcı 21.08.2026, canlı ekranda: _"burada her pazar yerine has
           oran girilmeli"_. Önceki hâlde tek bir ORTAK kutu vardı; kanal
           başına kutular yalnızca SONUÇ kutusunun içinde yaşıyordu ve sonuç
@@ -303,22 +333,27 @@ export function Deneme({ bugun }: { bugun: string }) {
           ⚠ KUTULAR HESAPTAN ÖNCE DE DURUR. Oranı girmek için önce hesabın
           çıkması gerekseydi aynı kısır döngü geri gelirdi. */}
       <div className="space-y-2">
-        <span className="text-sm font-medium">{t("komisyonBaslik")}</span>
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <span className="text-sm font-medium">{t("kanalGirdiBaslik")}</span>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {SIMULASYON_KANALLARI.map((k) => (
-            <KomisyonKutusu
+            <KanalGirdiKutusu
               key={k.kod}
               ad={k.ad}
-              deger={kanalOranlari[k.kod] ?? ""}
-              degistir={(v) =>
+              fiyat={kanalFiyatlari[k.kod] ?? ""}
+              fiyatDegistir={(v) =>
+                setKanalFiyatlari((o) => ({ ...o, [k.kod]: v }))
+              }
+              oran={kanalOranlari[k.kod] ?? ""}
+              oranDegistir={(v) =>
                 setKanalOranlari((o) => ({ ...o, [k.kod]: v }))
               }
               sonuc={sonucKod.get(k.kod) ?? null}
               yuzde={bicim.yuzde}
+              ortakFiyat={satis}
             />
           ))}
         </div>
-        <p className="text-muted-foreground text-xs">{t("oranUyarisi")}</p>
+        <p className="text-muted-foreground text-xs">{t("kanalGirdiNotu")}</p>
       </div>
 
       {/* ══════════════ SONUÇ ══════════════
@@ -338,11 +373,6 @@ export function Deneme({ bugun }: { bugun: string }) {
               kazanan={i === 0 && s.net2 !== null}
               para={para}
               yuzde={bicim.yuzde}
-              satisTutari={
-                kdvDahil
-                  ? girdi.satisFiyati
-                  : girdi.satisFiyati * (1 + girdi.kdvOrani / 100)
-              }
             />
           ))}
         </div>
@@ -386,45 +416,60 @@ function Alan({
 }
 
 /**
- * ── KOMİSYON KUTUSU — PAZARYERİ BAŞINA GİRDİ ────────────────────────────
+ * ── KANAL GİRDİ KUTUSU — PAZARYERİ BAŞINA FİYAT + ORAN ──────────────────
  *
- * ⚠ HER KANAL BAĞIMSIZ — kullanıcı kararı 21.08.2026: _"kişi isterse tek
- * pazaryeri komisyon oranını girsin ve bilgi alsın, isterse hepsini. Bu onun
- * seçimi olsun."_ Bu yüzden burada "hepsini doldur" diye bir kapı YOKTUR:
- * bir kutuya yazmak yalnız o kanalın hesabını değiştirir, ötekiler zemininden
- * (tarife / kanal SKU'su) beslenmeye devam eder; zemini de yoksa o kanal
- * "NET hesaplanamadı" der ve ÖTEKİLERİ SUSTURMAZ.
+ * ⚠ İKİ GİRDİ BİRDEN, ÇÜNKÜ KARAR İKİSİNİN BİRLİKTE ÇALIŞMASINDAN ÇIKIYOR.
+ * Kullanıcının kendi örneği (21.08.2026):
  *
- * ⚠ YER TUTUCU BURADA "örn." DEĞİL, GERÇEK ORANDIR (İlke #11'in istisnası
- * değil, tam kendisi): kutu boş bırakılırsa hesapta KULLANILACAK olan oran
- * odur — yani girilmiş bir değer sanılması yanlış okuma değil, doğru okuma.
- * Verisi olmayan kanalda ise gerçek bir oran yok, orada "örn. 15" yazar.
- * Hangisi olduğu kutunun ALTINDA yazılı; bu satır olmadan ekranda bir rakam
- * gösterip başka bir rakamla hesaplamış olurduk.
+ *     alış 1000 · TY  buy box 2150 · komisyon %5  → NET-2 673,17
+ *              · HB  buy box 2250 · komisyon %13 → NET-2 538,25
+ *              · N11 buy box 2175 · komisyon %12 → NET-2 566,39
+ *
+ * EN DÜŞÜK satış fiyatı EN YÜKSEK kârı veriyor. Fiyat sabitlenirse bu sonuç
+ * doğmaz, oran sabitlenirse de doğmaz — ikisi birlikte değişmeli. Bu yüzden
+ * fiyat kutusu oranın YANINDA durur, ayrı bir ekranda değil.
+ *
+ * ⚠ HER KANAL BAĞIMSIZ — kullanıcı kararı: _"kişi isterse tek pazaryeri
+ * komisyon oranını girsin ve bilgi alsın, isterse hepsini. Bu onun seçimi
+ * olsun."_ Bir kutuya yazmak yalnız o kanalı değiştirir; boş kalan kanal
+ * zemininden ya da ortak alandan beslenir, o da yoksa SUSAR.
+ *
+ * ⚠ YER TUTUCU GERÇEK DEĞERDİR: kutu boş bırakılırsa hesapta kullanılacak
+ * olan rakam odur. Hangi kaynaktan geldiği kutunun altında yazılı — bu satır
+ * olmadan ekranda bir sayı gösterip başka bir sayıyla hesaplamış olurduk.
  */
-function KomisyonKutusu({
+function KanalGirdiKutusu({
   ad,
-  deger,
-  degistir,
+  fiyat,
+  fiyatDegistir,
+  oran,
+  oranDegistir,
   sonuc,
   yuzde,
+  ortakFiyat,
 }: {
   ad: string;
-  deger: string;
-  degistir: (d: string) => void;
+  fiyat: string;
+  fiyatDegistir: (d: string) => void;
+  oran: string;
+  oranDegistir: (d: string) => void;
   /** Bu kanalın hesabı — yoksa (form eksik) yalnız elle giriş gösterilir. */
   sonuc: KanalSonucu | null;
   yuzde: (n: number, b?: number) => string;
+  /** Ortak satış fiyatı metni — kutu boşken yer tutucu olarak görünür. */
+  ortakFiyat: string;
 }) {
   const t = useTranslations("Simulasyon");
-  const elle = deger.trim() !== "";
+  const elleOran = oran.trim() !== "";
+  const elleFiyat = fiyat.trim() !== "";
+
   const veridenOran =
     sonuc !== null && sonuc.komisyonOrani !== null && !sonuc.oranElle
       ? yuzde(sonuc.komisyonOrani).replace("%", "")
       : null;
 
   /** Kaynak satırı — hangi rakamla hesaplandığı burada yazar. */
-  const kaynakMetni = elle
+  const oranKaynagi = elleOran
     ? t("oranElleGirildi")
     : sonuc === null
       ? t("oranHenuz")
@@ -433,10 +478,73 @@ function KomisyonKutusu({
         : t(`oran_${sonuc.oranKaynagi}`);
 
   return (
-    <div className="bg-muted/40 min-w-0 rounded-md border p-2">
-      <div className="text-muted-foreground truncate text-xs" title={ad}>
+    <div className="bg-muted/40 min-w-0 space-y-1.5 rounded-md border p-2">
+      <div className="truncate text-xs font-medium" title={ad}>
         {ad}
       </div>
+
+      {/* ── BUY BOX FİYATI ─────────────────────────────────────────────── */}
+      <MiniAlan
+        etiket={t("kanalFiyati")}
+        deger={fiyat}
+        degistir={fiyatDegistir}
+        ariaEtiket={t("kanalFiyatiAria", { kanal: ad })}
+        /* Kutu boşken ortak fiyat kullanılır — yer tutucu onu gösterir. */
+        yerTutucu={
+          ortakFiyat.trim() !== ""
+            ? ortakFiyat
+            : t("ornek", { deger: "2.150" })
+        }
+        temizle={elleFiyat ? () => fiyatDegistir("") : null}
+        temizleEtiketi={t("kanalSifirla")}
+      />
+      {/* ⚠ ORTAKTAN GELDİĞİ YAZAR: aynı gri rakam üç kutuda görününce
+          "hepsi aynı fiyat mı" sorusu doğuyor; cevabı ekranda dursun. */}
+      {!elleFiyat && ortakFiyat.trim() !== "" ? (
+        <div className="text-muted-foreground truncate text-[10px]">
+          {t("fiyatOrtaktan")}
+        </div>
+      ) : null}
+
+      {/* ── KOMİSYON ORANI ─────────────────────────────────────────────── */}
+      <MiniAlan
+        etiket={t("kanalOrani")}
+        deger={oran}
+        degistir={oranDegistir}
+        ariaEtiket={t("kanalOraniAria", { kanal: ad })}
+        yerTutucu={veridenOran ?? t("ornek", { deger: "15" })}
+        temizle={elleOran ? () => oranDegistir("") : null}
+        temizleEtiketi={t("oranSifirla")}
+      />
+      <div className="text-muted-foreground truncate text-[10px]">
+        {oranKaynagi}
+      </div>
+    </div>
+  );
+}
+
+/** Kutu içi tek girdi — etiket, sayı kutusu, görünür temizleme düğmesi. */
+function MiniAlan({
+  etiket,
+  deger,
+  degistir,
+  ariaEtiket,
+  yerTutucu,
+  temizle,
+  temizleEtiketi,
+}: {
+  etiket: string;
+  deger: string;
+  degistir: (d: string) => void;
+  ariaEtiket: string;
+  yerTutucu: string;
+  /** null ise elle girilmiş değer yok — düğme çizilmez. */
+  temizle: (() => void) | null;
+  temizleEtiketi: string;
+}) {
+  return (
+    <div>
+      <div className="text-muted-foreground text-[11px]">{etiket}</div>
       <div className="flex items-center gap-1">
         {/* MOBİLDE 44 px (İlke #8). */}
         <input
@@ -446,26 +554,23 @@ function KomisyonKutusu({
           inputMode="decimal"
           value={deger}
           onChange={(e) => degistir(e.target.value)}
-          aria-label={t("kanalOraniAria", { kanal: ad })}
-          placeholder={veridenOran ?? t("ornek", { deger: "15" })}
+          aria-label={ariaEtiket}
+          placeholder={yerTutucu}
           className="h-11 min-w-0 flex-1 bg-transparent text-center text-base font-medium tabular-nums outline-none"
         />
-        {/* GÖRÜNÜR EYLEM (İlke #1): elle girilen oran tek tıkla veriye döner.
-            Kutuyu elle silmeyi beklemek gizli tıklama alanına bel bağlamaktır. */}
-        {elle ? (
+        {/* GÖRÜNÜR EYLEM (İlke #1): elle girilen değer tek tıkla veriye
+            döner. Kutuyu elle silmeyi beklemek gizli tıklama alanıdır. */}
+        {temizle ? (
           <button
             type="button"
-            onClick={() => degistir("")}
-            title={t("oranSifirla")}
-            aria-label={t("oranSifirla")}
+            onClick={temizle}
+            title={temizleEtiketi}
+            aria-label={temizleEtiketi}
             className="hover:bg-muted inline-flex size-11 shrink-0 items-center justify-center rounded"
           >
             <X className="size-3.5" />
           </button>
         ) : null}
-      </div>
-      <div className="text-muted-foreground truncate text-[10px]">
-        {kaynakMetni}
       </div>
     </div>
   );
@@ -513,14 +618,11 @@ function KanalKutusu({
   kazanan,
   para,
   yuzde,
-  satisTutari,
 }: {
   sonuc: KanalSonucu;
   kazanan: boolean;
   para: (n: number) => string;
   yuzde: (n: number, b?: number) => string;
-  /** Pastanın paydası — KDV DAHİL satış tutarı. */
-  satisTutari: number;
 }) {
   const t = useTranslations("Simulasyon");
   const bant = marjBandi(sonuc.ciroMarji);
@@ -576,7 +678,17 @@ function KanalKutusu({
 
       {/* KOMPAKT KUTUCUK IZGARASI (İlke #12) — "etiket solda rakam sağda"
           tam genişlik satırı YASAK; göz aradaki boşluğu kat etmesin. */}
-      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+      <div className="mt-3 grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
+        {/* ⚠ HANGİ FİYATLA HESAPLANDIĞI YAZAR. Kanallar farklı buy box
+            fiyatlarıyla kıyaslandığı için "hangi rakamla" sorusu ekranda
+            cevapsız kalamaz: 2150 ile 2250'yi karşılaştırdığını görmeyen
+            biri, sıralamayı yalnız komisyona bağlar. */}
+        <Rakam
+          etiket={t("kullanilanSatis")}
+          deger={
+            sonuc.satisFiyati === null ? "—" : para(sonuc.satisFiyati)
+          }
+        />
         {/* ⚠ ORANIN NEREDEN GELDİĞİ YAZAR. Barkodla ürün seçilince komisyon
             artık kullanıcının tahmini değil TARİFENİN kendisi — bu ekranın
             bütün değeri o farkta ve görünmezse fark hiç anlaşılmaz. */}
@@ -639,7 +751,10 @@ function KanalKutusu({
           </div>
           <PastaGrafik
             dilimler={pastaDilimleri(sonuc, t)}
-            toplam={satisTutari}
+            /* ⚠ PAYDA KANALIN KENDİ FİYATI. Ortak girdiden okunsaydı
+               TY'nin pastası HB'nin buy box'ına bölünürdü ve dilimler
+               yanlış oranda çizilirdi — üstelik makul görünürdü. */
+            toplam={sonuc.satisFiyati ?? 0}
             bicimle={para}
             bosMesaj={t("grafikBos")}
           />

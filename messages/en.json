@@ -2683,7 +2683,8 @@
     "deneKanalKaydiHicYok": "",
     "deneMesafe": "",
     "deneMesafeUzak": "",
-    "partiTukendi": ""
+    "partiTukendi": "",
+    "beyanFiyatYok": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",
@@ -2895,10 +2896,16 @@
     "kanalOrani": "",
     "oranElleGirildi": "",
     "oranSifirla": "",
-    "oranUyarisi": "",
-    "komisyonBaslik": "",
     "oranVeriYok": "",
     "oranHenuz": "",
-    "kanalOraniAria": ""
+    "kanalOraniAria": "",
+    "kanalGirdiBaslik": "",
+    "kanalGirdiNotu": "",
+    "kanalFiyati": "",
+    "kanalFiyatiAria": "",
+    "kanalSifirla": "",
+    "fiyatOrtaktan": "",
+    "kullanilanSatis": "",
+    "beyan_FIYAT_YOK": ""
   }
 }

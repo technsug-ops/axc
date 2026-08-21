@@ -171,6 +171,13 @@ export function FiyatDene({
         return t("beyanOranYok");
       case "MALIYET_YOK":
         return t("beyanMaliyetYok");
+      /**
+       * ⚠ BU EKRANDA DOĞMAZ (fiyat her zaman girili) ama tip artık taşıyor:
+       * `default` dalına düşürüp ham kod basmak, bir gün doğduğunda ekranda
+       * "FIYAT_YOK" yazdırırdı.
+       */
+      case "FIYAT_YOK":
+        return t("beyanFiyatYok");
       case "PENCERE_BITTI":
         return t("beyanPencereBitti", { tarih: bicim.tarih(b.bitis) });
       default: {

@@ -41,7 +41,26 @@ function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   }
 }
 
-function yakin(ad: string, bulunan: number, beklenen: number, tolerans = 0.02) {
+/**
+ * ⚠ `null` GELİRSE ÇÖKMEZ, KIRMIZI YANAR. Önceki hâli `bulunan.toFixed()`
+ * çağırıyordu; hesaplanamayan bir NET geldiğinde sonda TypeError ile
+ * DÜŞÜYORDU ve geri kalan kontroller HİÇ KOŞMUYORDU. Mutasyon denemesinde
+ * tam bu oldu: rapor "4 hata" dedi, gerçekte sonda ortada ölmüştü ve kaç
+ * kontrolün sınanmadığı bilinmiyordu.
+ *
+ * Çöken sonda, eksik sonuçla "bu kadarı bozulmuş" izlenimi verir — boş
+ * sonuçla temiz sonucu ayırt edemeyen denetimin kardeşi.
+ */
+function yakin(
+  ad: string,
+  bulunan: number | null,
+  beklenen: number,
+  tolerans = 0.02,
+) {
+  if (bulunan === null) {
+    kontrol(`${ad}  (beklenen ${beklenen.toFixed(2)})`, false, "null");
+    return;
+  }
   const fark = Math.abs(bulunan - beklenen);
   kontrol(
     `${ad}  ${bulunan.toFixed(2)} (beklenen ${beklenen.toFixed(2)})`,
@@ -604,7 +623,7 @@ console.log("\n7) KANAL BAŞINA KOMİSYON — tek oran yanlış sonuç verir");
    * dosyanın tamamında aramak, form bloğu tamamen silinse bile yeşil kalırdı.
    */
   const formBlok = ekran.slice(
-    ekran.indexOf("KOMİSYON — PAZARYERİ BAŞINA"),
+    ekran.indexOf("PAZARYERİ BAŞINA GİRDİ — FİYAT + KOMİSYON"),
     ekran.indexOf("══════════════ SONUÇ ══════════════"),
   );
   kontrol("komisyon bloğu formda var", formBlok.length > 200, formBlok.length);
@@ -756,6 +775,176 @@ console.log("8) ORTAK ORAN ZORUNLU DEĞİL — kapı kanal kutularını kapatmas
   kontrol(
     "sonuç kutusunda ikinci girdi kutusu YOK",
     !kanalKutusu.includes("onChange"),
+  );
+}
+
+// ===========================================================================
+console.log("");
+console.log("9) KANAL BAŞINA BUY BOX FİYATI — asıl satış kararı burada");
+// ===========================================================================
+{
+  /**
+   * ⚠ KULLANICI ANLATTI 21.08.2026, kendi rakamlarıyla:
+   *
+   *   _"x ürünü alış 1000 · Trendyol buy box 2150, komisyon %5, kargo 200,
+   *   diğer 13,19 → kâr 673,02 · Hepsiburada buy box 2250, komisyon %13,
+   *   diğer 31 → 533,25 · N11 buy box 2175, komisyon %12, diğer 27,36 →
+   *   554. En düşük satış fiyatı Trendyol'da olmasına rağmen en yüksek kâr
+   *   Trendyol'da. Ben bunu takip edip satış kararı vermek istiyorum;
+   *   satmak istemediğim pazaryerlerinde fiyatı yükseltip buybox'tan
+   *   çıkıyorum."_
+   *
+   * ⚠ VE BU DIŞ BİR ÖLÇÜTTÜR — bizim motorumuzun kendi çıktısı değil.
+   * Elle kurulmuş bir hesap; "kendi kendini doğrulayan ölçüm ölçüm
+   * değildir" kuralının karşılığı. Tuttuğu yer kadar TUTMADIĞI yer de
+   * anlamlı, o yüzden fark ölçülüp yazılıyor.
+   */
+  const SENARYO: SimulasyonGirdisi = {
+    kdvDahilMi: true,
+    alisFiyati: 1000,
+    kdvOrani: 20,
+    kargoUcreti: 200,
+    kanalFiyatlari: { TRENDYOL: 2150, HEPSIBURADA: 2250, N11: 2175 },
+    kanalOranlari: { TRENDYOL: 5, HEPSIBURADA: 13, N11: 12 },
+  };
+  const sonuc = simulasyonKarsilastir(SENARYO, BUGUN);
+  const bul = (kod: string) => sonuc.find((k) => k.kod === kod)!;
+
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: üç kanal ÜÇ FARKLI
+   * fiyatla hesaplanıyor. Fiyatı tek sözlükten okuyup hepsine uygulayan
+   * bir hata, tek fiyatlı bir senaryoda yeşil kalırdı.
+   */
+  kontrol("TY kendi buy box'ıyla (2150)", bul("TRENDYOL").satisFiyati === 2150);
+  kontrol("HB kendi buy box'ıyla (2250)", bul("HEPSIBURADA").satisFiyati === 2250);
+  kontrol("N11 kendi buy box'ıyla (2175)", bul("N11").satisFiyati === 2175);
+
+  /**
+   * ⚠ ASIL HÜKÜM: EN DÜŞÜK FİYAT EN YÜKSEK KÂRI VERİYOR. Kullanıcının
+   * bütün stratejisi bu tersliğe dayanıyor; sıralama bozulursa ekran ona
+   * yanlış pazaryerinde beklemesini söyler.
+   */
+  /**
+   * ⚠ KAZANANIN HESAPLANMIŞ OLMASI DA ŞART. İlk yazımda yalnız
+   * `sonuc[0].kod === "TRENDYOL"` bakılıyordu ve bu KÖR bir kontroldü:
+   * bütün NET'ler `null` olduğunda sıralama girdiyi bozmuyor, TRENDYOL
+   * listede zaten ilk sırada ve kontrol YEŞİL kalıyordu. Mutasyon (kanal
+   * fiyatını yok say) tam buradan sızdı.
+   */
+  kontrol(
+    "en düşük fiyatlı kanal (TY) KAZANIYOR",
+    sonuc[0]!.kod === "TRENDYOL" && sonuc[0]!.net2 !== null,
+    sonuc.map((k) => `${k.kod}:${k.net2?.toFixed(2)}`),
+  );
+  kontrol(
+    "  ...ve sıra TY > N11 > HB",
+    bul("TRENDYOL").net2! > bul("N11").net2! &&
+      bul("N11").net2! > bul("HEPSIBURADA").net2!,
+  );
+
+  /** Büyüklükler de sabitlensin — kesinti kuralı sessizce kayarsa yakalansın. */
+  yakin("TY NET-2 ~673", bul("TRENDYOL").net2!, 673.17, 0.02);
+  yakin("HB NET-2 ~538", bul("HEPSIBURADA").net2!, 538.25, 0.02);
+  yakin("N11 NET-2 ~566", bul("N11").net2!, 566.39, 0.02);
+
+  /**
+   * ── ORTAK FİYAT YEDEKTİR ────────────────────────────────────────────
+   * Kanalın kendi fiyatı yoksa üstteki ortak alan devreye girer.
+   */
+  const karisik = simulasyonKarsilastir(
+    { ...SENARYO, satisFiyati: 2000, kanalFiyatlari: { TRENDYOL: 2150 } },
+    BUGUN,
+  );
+  kontrol(
+    "kendi fiyatı olan kanal ONU kullanıyor",
+    karisik.find((k) => k.kod === "TRENDYOL")!.satisFiyati === 2150,
+  );
+  kontrol(
+    "  ...olmayan kanal ORTAK fiyata düşüyor",
+    karisik.find((k) => k.kod === "HEPSIBURADA")!.satisFiyati === 2000,
+  );
+
+  /**
+   * ── FİYATSIZ KANAL SUSAR, SIFIR SAYMAZ ──────────────────────────────
+   * ⚠ "Fiyat yok" ile "fiyat sıfır" karıştırılsaydı o kanal maliyeti kadar
+   * ZARARDA görünür ve listenin dibine düşerdi: hesaplanmamış bir kanal,
+   * hesaplanmış bir felaket gibi okunurdu.
+   */
+  const tekFiyat = simulasyonKarsilastir(
+    { ...SENARYO, kanalFiyatlari: { TRENDYOL: 2150 } },
+    BUGUN,
+  );
+  const bosHb = tekFiyat.find((k) => k.kod === "HEPSIBURADA")!;
+  kontrol("fiyatsız kanalın NET-2'si null", bosHb.net2 === null, bosHb.net2);
+  kontrol("  ...satış fiyatı da null (0 DEĞİL)", bosHb.satisFiyati === null);
+  kontrol(
+    "  ...ve FIYAT_YOK beyanı üretiliyor",
+    bosHb.beyanlar.some((b) => b.tur === "FIYAT_YOK"),
+    bosHb.beyanlar.map((b) => b.tur),
+  );
+  kontrol(
+    "  ...fiyatı olan kanal etkilenmiyor",
+    tekFiyat.find((k) => k.kod === "TRENDYOL")!.net2 !== null,
+  );
+
+  /** ⚠ SIFIR VE GEÇERSİZ FİYAT KUTUYA YAZILSA BİLE HESABA GİRMEZ. */
+  for (const [ad, deger] of [
+    ["sıfır", 0],
+    ["eksi", -100],
+    ["NaN", Number.NaN],
+  ] as const) {
+    const bozuk = simulasyonKarsilastir(
+      { ...SENARYO, satisFiyati: 2000, kanalFiyatlari: { TRENDYOL: deger } },
+      BUGUN,
+    );
+    kontrol(
+      `geçersiz fiyat (${ad}) yok sayılıyor → ortak fiyat`,
+      bozuk.find((k) => k.kod === "TRENDYOL")!.satisFiyati === 2000,
+      bozuk.find((k) => k.kod === "TRENDYOL")!.satisFiyati,
+    );
+  }
+
+  /** Hiç fiyat yoksa tablo hiç çizilmez — boş durum. */
+  kontrol(
+    "hiçbir fiyat yoksa tablo YOK",
+    simulasyonKarsilastir(
+      { ...SENARYO, kanalFiyatlari: {} },
+      BUGUN,
+    ).length === 0,
+  );
+  kontrol(
+    "  ...ama tek kanal fiyatı bile kapıyı açıyor",
+    !girdiEksikMi({ ...SENARYO, kanalFiyatlari: { N11: 2175 } }),
+  );
+
+  // ── EKRAN ────────────────────────────────────────────────────────────
+  const ekran9 = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const blok9 = ekran9.slice(
+    ekran9.indexOf("PAZARYERİ BAŞINA GİRDİ — FİYAT + KOMİSYON"),
+    ekran9.indexOf("══════════════ SONUÇ ══════════════"),
+  );
+  kontrol(
+    "formda kanal başına FİYAT kutusu var",
+    blok9.includes("setKanalFiyatlari((o) => ({ ...o, [k.kod]: v }))"),
+  );
+  /**
+   * ⚠ PASTANIN PAYDASI KANALIN KENDİ FİYATI. Ortak girdiden okunsaydı
+   * TY'nin pastası HB'nin buy box'ına bölünür, dilimler yanlış oranda
+   * çizilir ve MAKUL GÖRÜNÜRDÜ — hiçbir sayı imkânsız çıkmazdı.
+   */
+  const kart9 = ekran9.slice(ekran9.indexOf("function KanalKutusu("));
+  kontrol(
+    "pasta paydası kanalın KENDİ fiyatı",
+    /toplam=\{sonuc\.satisFiyati/.test(kart9),
+  );
+  kontrol(
+    "kullanılan satış fiyatı kutuda yazıyor",
+    kart9.includes('t("kullanilanSatis")'),
+  );
+  /** Ürün değişince önceki ürünün buy box'ı kutuda kalmamalı. */
+  kontrol(
+    "yeni üründe elle fiyatlar sıfırlanıyor",
+    ekran9.includes("setKanalFiyatlari({})"),
   );
 }
 

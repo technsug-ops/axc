@@ -2683,7 +2683,8 @@
     "deneKanalKaydiHicYok": "Bu ürün hiçbir satış kanalında kayıtlı değil — hesap yapılamıyor. Kanal kodu tanımlanınca burada görünür.",
     "deneMesafe": "Mevcut fiyatın %{pay} altı.",
     "deneMesafeUzak": "⚠ Mevcut fiyatın %{pay} altı — sınır UZAK, büyük bir indirim gerekir.",
-    "partiTukendi": "bu alımdan stok kalmadı"
+    "partiTukendi": "bu alımdan stok kalmadı",
+    "beyanFiyatYok": "Satış fiyatı girilmedi — NET hesaplanamadı"
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",
@@ -2838,7 +2839,7 @@
   "Simulasyon": {
     "baslik": "Fiyat denemesi",
     "aciklama": "Alış, satış ve komisyonu gir; hangi pazaryerinde ne kaldığını yan yana gör. Hiçbir kayıt oluşmaz.",
-    "satisFiyati": "Satış fiyatı",
+    "satisFiyati": "Satış fiyatı (ortak)",
     "alisFiyati": "Alış fiyatı",
     "kdvOrani": "KDV oranı (%)",
     "kargoUcreti": "Kargo ücreti",
@@ -2848,7 +2849,7 @@
     "kdvHaric": "KDV hariç",
     "ornek": "örn. {deger}",
     "bosBaslik": "Henüz hesaplanmadı",
-    "bosIpucu": "Satış ve alış fiyatını gir — hesap anında çıkar.",
+    "bosIpucu": "Alış fiyatını ve en az bir satış fiyatını gir — hesap anında çıkar.",
     "komisyon": "Komisyon",
     "net2": "NET-2",
     "marj": "Ciro marjı",
@@ -2895,10 +2896,16 @@
     "kanalOrani": "Komisyon %",
     "oranElleGirildi": "senin girdiğin",
     "oranSifirla": "veriye dön",
-    "oranUyarisi": "Her pazaryerinde komisyon farklı. Yalnız merak ettiğin pazaryerini doldurabilirsin — ötekiler dokunulmadan kalır. Ürünü koddan bulduysan oranlar kendiliğinden gelir; boş kutuya kendin yazarsan senin yazdığın geçerli olur.",
-    "komisyonBaslik": "Komisyon oranı (%) — pazaryeri başına",
     "oranVeriYok": "veri yok — kendin yaz",
     "oranHenuz": "satış ve alış fiyatını gir",
-    "kanalOraniAria": "{kanal} komisyon oranı (%)"
+    "kanalOraniAria": "{kanal} komisyon oranı (%)",
+    "kanalGirdiBaslik": "Pazaryeri başına: buy box fiyatı ve komisyon",
+    "kanalGirdiNotu": "Buy box fiyatı ve komisyon her pazaryerinde ayrıdır; karar ikisinin birlikte çalışmasından çıkar. Yalnız merak ettiğin pazaryerini doldurabilirsin — ötekiler dokunulmadan kalır. Boş bıraktığın fiyat kutusuna üstteki ortak satış fiyatı, boş bıraktığın orana ürünün kendi verisi girer.",
+    "kanalFiyati": "Buy box fiyatı",
+    "kanalFiyatiAria": "{kanal} buy box satış fiyatı",
+    "kanalSifirla": "ortak fiyata dön",
+    "fiyatOrtaktan": "ortak fiyattan",
+    "kullanilanSatis": "Satış",
+    "beyan_FIYAT_YOK": "Satış fiyatı girilmedi — NET hesaplanamadı"
   }
 }
