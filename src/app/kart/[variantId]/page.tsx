@@ -53,7 +53,9 @@ function Kutu({
   return (
     <div className="bg-muted/40 min-w-0 rounded-lg border px-3 py-2">
       <div className="text-muted-foreground text-xs">{etiket}</div>
-      <div className={`truncate text-lg font-semibold tabular-nums ${vurgu ?? ""}`}>
+      <div
+        className={`truncate text-lg font-semibold tabular-nums ${vurgu ?? ""}`}
+      >
         {deger ?? "?"}
       </div>
       {not ? <div className="text-muted-foreground text-xs">{not}</div> : null}
@@ -114,12 +116,16 @@ export default async function KartSayfasi({
    * Kâr izni yoksa hiç toplanmıyor: NET üretmeyen bir ekrana NET girdisi
    * hazırlamak boş sorgu olurdu.
    */
-  const zeminler = karGorunur ? await simulasyonZeminleri(variantId, new Date()) : [];
+  const zeminler = karGorunur
+    ? await simulasyonZeminleri(variantId, new Date())
+    : [];
   /**
    * Kaydı olmayan satış kanalları — kâr izni yoksa hiç sorulmaz
    * (bölüm zaten çizilmiyor, boşuna sorgu atmayalım).
    */
-  const kayitsizKanallar = karGorunur ? await kayitsizSatisKanallari(variantId) : [];
+  const kayitsizKanallar = karGorunur
+    ? await kayitsizSatisKanallari(variantId)
+    : [];
   const kdvOrani = karGorunur ? await varyantKdvOrani(variantId) : 20;
 
   /** Para biçimi — değer null ise "?" kalır, sıfıra çevrilmez. */
@@ -141,7 +147,10 @@ export default async function KartSayfasi({
         {/* İlke #4: her kimlik kodu tek tıkla kopyalanır. */}
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <KopyalanabilirKod deger={varyant.sku} etiket={t("sku")} />
-          <KopyalanabilirKod deger={varyant.companySku} etiket={t("firmaSku")} />
+          <KopyalanabilirKod
+            deger={varyant.companySku}
+            etiket={t("firmaSku")}
+          />
           {varyant.barcode ? (
             <KopyalanabilirKod deger={varyant.barcode} etiket={t("barkod")} />
           ) : null}
@@ -154,7 +163,9 @@ export default async function KartSayfasi({
           <Kutu etiket={t("eldeki")} deger={String(veri.eldekiAdet)} />
           <Kutu
             etiket={t("yas")}
-            deger={veri.yasGun === null ? null : t("gun", { sayi: veri.yasGun })}
+            deger={
+              veri.yasGun === null ? null : t("gun", { sayi: veri.yasGun })
+            }
             not={veri.yasGun === null ? t("stokYok") : undefined}
             /* Yaş bandı sistem renginden okunur: 61+ gün kırmızı, 31+ amber. */
             vurgu={
@@ -163,7 +174,11 @@ export default async function KartSayfasi({
                 : DURUM_YAZISI[YAS_BANDI_RENGI[veri.yasBandi]]
             }
           />
-          <Kutu etiket={t("raf")} deger={veri.rafKodu} not={veri.rafKodu === null ? t("rafYok") : undefined} />
+          <Kutu
+            etiket={t("raf")}
+            deger={veri.rafKodu}
+            not={veri.rafKodu === null ? t("rafYok") : undefined}
+          />
         </div>
       </Bolum>
 
@@ -187,9 +202,19 @@ export default async function KartSayfasi({
               veri.sonAlimTarihi === null
                 ? t("alimYok")
                 : [
-                    t("girisTarihi", { tarih: bicim.tarih(veri.sonAlimTarihi) }),
+                    t("girisTarihi", {
+                      tarih: bicim.tarih(veri.sonAlimTarihi),
+                    }),
                     veri.sonAlimTedarikcisi ?? t("tedarikciKayitsiz"),
                     veri.sonAlimKodu,
+                    /**
+                     * ⚠ TÜKENMİŞ PARTİ SESSİZ KALMAZ (kullanıcı 21.08.2026).
+                     * Eskiden stok bitince bu kutu "alım yok" derdi — alım
+                     * VARDI, stok yoktu. Rakam artık geliyor; ama çerçevesiz
+                     * gelseydi bu sefer ters yönde yanlış olurdu: mal elde
+                     * sanılırdı. Rakam da, tükendiği de yazıyor.
+                     */
+                    veri.sonAlimAcikMi ? null : t("partiTukendi"),
                   ]
                     .filter(Boolean)
                     .join(" · ")
@@ -198,7 +223,9 @@ export default async function KartSayfasi({
           <Kutu
             etiket={t("ortalamaMaliyet")}
             deger={p(ozet.ortalamaMaliyet)}
-            not={ozet.ortalamaMaliyet === null ? t("maliyetBilinmiyor") : undefined}
+            not={
+              ozet.ortalamaMaliyet === null ? t("maliyetBilinmiyor") : undefined
+            }
           />
           <Kutu
             etiket={t("hiz")}
@@ -232,7 +259,9 @@ export default async function KartSayfasi({
               <Kutu etiket={t("toplamAdet")} deger={String(ozet.toplamAdet)} />
               <Kutu
                 etiket={t("sonSatis")}
-                deger={ozet.sonSatis === null ? null : bicim.tarih(ozet.sonSatis)}
+                deger={
+                  ozet.sonSatis === null ? null : bicim.tarih(ozet.sonSatis)
+                }
               />
             </div>
             <p className="text-muted-foreground text-xs">
@@ -288,7 +317,9 @@ export default async function KartSayfasi({
 
               {/* TEK SATIŞ UYARISI — marj tek başına yanıltır. */}
               {ozet.tekSatisMi ? (
-                <p className={`rounded-md p-2 text-xs ${DURUM_KUTUSU.uyari} ${DURUM_YAZISI.uyari}`}>
+                <p
+                  className={`rounded-md p-2 text-xs ${DURUM_KUTUSU.uyari} ${DURUM_YAZISI.uyari}`}
+                >
                   {t("tekSatisUyarisi")}
                 </p>
               ) : null}
@@ -298,7 +329,9 @@ export default async function KartSayfasi({
                * `/satislar` sipariş NET-2'sini (kargo + hizmet bedeli dahil).
                * Yazılmasaydı iki ekran birbirini sessizce yalanlardı.
                */}
-              <p className="text-muted-foreground text-xs">{t("netKapsamNotu")}</p>
+              <p className="text-muted-foreground text-xs">
+                {t("netKapsamNotu")}
+              </p>
             </>
           )}
         </Bolum>
@@ -337,9 +370,7 @@ export default async function KartSayfasi({
           <Kutu
             etiket={t("maliyetsizGecmis")}
             deger={String(ozet.hesaplanamayanKalem)}
-            not={
-              ozet.hesaplanamayanKalem > 0 ? t("maliyetsizNotu") : undefined
-            }
+            not={ozet.hesaplanamayanKalem > 0 ? t("maliyetsizNotu") : undefined}
           />
           {karGorunur ? (
             <Kutu
@@ -353,7 +384,9 @@ export default async function KartSayfasi({
 
       {/* Para birimi karışıksa kart tek rakam veremez — söylenir. */}
       {veri.paraBirimi === null && !ozet.hicSatilmamisMi ? (
-        <p className={`rounded-md p-2 text-xs ${DURUM_KUTUSU.uyari} ${DURUM_YAZISI.uyari}`}>
+        <p
+          className={`rounded-md p-2 text-xs ${DURUM_KUTUSU.uyari} ${DURUM_YAZISI.uyari}`}
+        >
           {t("paraKarisikUyarisi")}
         </p>
       ) : null}
@@ -369,7 +402,8 @@ export default async function KartSayfasi({
            */
           zeminler={zeminler.map((z) => ({
             ...z,
-            pencereBitis: z.pencereBitis === null ? null : z.pencereBitis.toISOString(),
+            pencereBitis:
+              z.pencereBitis === null ? null : z.pencereBitis.toISOString(),
           }))}
           birimMaliyet={ozet.ortalamaMaliyet}
           kdvOrani={kdvOrani}
@@ -396,7 +430,9 @@ export default async function KartSayfasi({
         </Button>
       </div>
 
-      <p className="text-muted-foreground text-xs">{ortak("sku")}: {varyant.sku}</p>
+      <p className="text-muted-foreground text-xs">
+        {ortak("sku")}: {varyant.sku}
+      </p>
     </div>
   );
 }

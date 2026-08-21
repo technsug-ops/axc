@@ -2,9 +2,18 @@ import { acikPartilerToplu } from "@/lib/stok";
 import { kalemDusumleri } from "@/lib/satis";
 import { prisma } from "@/lib/prisma";
 import { tedarikciAdi } from "@/lib/tedarikci-adi";
-import { VARYANT_SECIMI, varyantiOzetle, type VaryantSonucu } from "@/lib/varyant-ozet";
+import {
+  VARYANT_SECIMI,
+  varyantiOzetle,
+  type VaryantSonucu,
+} from "@/lib/varyant-ozet";
 import { yasBandi, gunFarki, type YasBandi } from "@/lib/yaslanma";
-import { kartOzeti, type KartGirdisi, type KartOzeti, type KartSatisi } from "@/lib/urun-karti";
+import {
+  kartOzeti,
+  type KartGirdisi,
+  type KartOzeti,
+  type KartSatisi,
+} from "@/lib/urun-karti";
 import type { KalemGirdisi } from "@/lib/panel-listeler";
 import type { Currency, ReturnReason } from "@/generated/prisma/enums";
 
@@ -45,6 +54,11 @@ export type KartVerisi = {
   sonAlimTedarikcisi: string | null;
   /** Son alımın kodu — kayda gitmek için. */
   sonAlimKodu: string | null;
+  /**
+   * Son alımın partisi hâlâ açık mı? `false` ise o alımdan stok kalmamış
+   * demektir ve kart bunu YAZAR — rakam çerçevesiz durmaz.
+   */
+  sonAlimAcikMi: boolean;
   /** İade sebepleri ve kaç kez geldiği; sebebi beyan edilmemiş iadeler yok. */
   iadeSebepleri: { sebep: ReturnReason; sayi: number }[];
   /** Kartın hesaplanmış özeti. */
@@ -187,8 +201,7 @@ export async function kartVerisiniTopla(
     satislar,
     acikPartiler: partiler.map((p) => ({
       kalanAdet: p.kalanAdet,
-      birimMaliyet:
-        p.birimMaliyet === null ? null : Number(p.birimMaliyet),
+      birimMaliyet: p.birimMaliyet === null ? null : Number(p.birimMaliyet),
     })),
     iadeAdedi: iadeler.reduce((t, i) => t + i.quantity, 0),
     // Aynı iade birden çok kalem taşıyabilir; "kaç iade" tekil sayılır.
@@ -199,40 +212,80 @@ export async function kartVerisiniTopla(
   const enEski = partiler[0] ?? null;
   const yas = enEski === null ? null : gunFarki(enEski.occurredAt, new Date());
 
-  /** Son alım EN YENİ açık parti; partiler FIFO sırasında (eskiden yeniye). */
-  const enYeni = partiler.length > 0 ? partiler[partiler.length - 1] : null;
-
   /**
-   * SON ALIMIN TEDARİKÇİSİ — parti hareketinden alım kalemine, oradan alıma.
-   * `Parti` tipi tedarikçi taşımıyor (stok motorunun işi değil); kart kendi
-   * sorusunu kendi soruyor. Bağ kurulamazsa null — "bilinmiyor" yazılır,
-   * uydurulmaz.
+   * ============================================================================
+   *  SON ALIM — GEÇMİŞ SORUSU, STOK SORUSU DEĞİL
+   * ----------------------------------------------------------------------------
+   *  ⚠ KULLANICI BİLDİRDİ 21.08.2026: _"stok bitince geçmişe dönük alım
+   *  verileri gelmiyor"_. Haklıydı ve sebebi buradaydı.
+   *
+   *  Son alım EN YENİ AÇIK PARTİDEN okunuyordu. Stok bitince açık parti
+   *  kalmaz; `enYeni` null olur ve kart **"alım yok"** derdi — oysa alım
+   *  vardı, STOK yoktu. İki apayrı şey aynı cümleye düşüyordu.
+   *
+   *  ÖLÇÜLDÜ (canlı, 21.08.2026, salt okuma): alım geçmişi olan 93 varyantın
+   *  **26'sı** (%28) bu yüzden "alım yok" diyordu. Aralarında 4 alımı olan ve
+   *  aktif satılan ürünler vardı (Grundig Vcc 2170 · axcali1653).
+   *
+   *  ── DOĞRU KAYNAK: LEDGER, FIFO DEĞİL ────────────────────────────────────
+   *  Alım geçmişi, partinin tüketilmesiyle SİLİNMEZ — hareket kaydı yerinde
+   *  durur. Bu yüzden soru artık en yeni AÇIK partiye değil, alıma bağlı en
+   *  yeni GİRİŞ HAREKETİNE soruluyor.
+   *
+   *  ⚠ VE MALİYET YİNE HAREKETİN DAMGASINDAN okunuyor (`unitCost`), alım
+   *  kaleminden değil: kasadan fiilen çıkan tutarı taşıyan yer orası
+   *  (kupon vakası, 19.08.2026 — ürünün piyasa değeri ile bize maliyeti
+   *  farklı şeylerdir ve defter ikincisini yazar).
+   *
+   *  ── YAŞ VE ORTALAMA MALİYET DEĞİŞMEDİ ───────────────────────────────────
+   *  Onlar gerçekten ELDEKİ stoğun soruları; stok yokken null olmaları
+   *  doğrudur. Yalnız "son alım" yanlış kapıya soruluyordu.
+   * ============================================================================
    */
-  const sonAlimHareketi =
-    enYeni === null
-      ? null
-      : await prisma.stockMovement.findUnique({
-          where: { id: enYeni.hareketId },
-          select: {
-            purchaseItem: {
-              select: {
-                purchase: {
-                  select: {
-                    code: true,
-                    /**
-                     * İKİ ALAN DA SORULUR. `supplierName` 10.08.2026 öncesi
-                     * kayıtların ve içe aktarmanın tedarikçisini taşıyor;
-                     * yalnız ilişkiyi sormak, o kayıtlarda tedarikçiyi
-                     * SESSİZCE kaybetmek demekti (canlı hata 17.08.2026).
-                     */
-                    supplier: { select: { name: true } },
-                    supplierName: true,
-                  },
-                },
-              },
+  const sonAlimHareketi = await prisma.stockMovement.findFirst({
+    where: {
+      variantId,
+      /** Alıma bağlı GİRİŞ — düzeltme ya da iade girişi "alım" değildir. */
+      purchaseItemId: { not: null },
+      quantityDelta: { gt: 0 },
+    },
+    orderBy: { occurredAt: "desc" },
+    select: {
+      id: true,
+      occurredAt: true,
+      unitCostAmount: true,
+      unitCostCurrency: true,
+      purchaseItem: {
+        select: {
+          purchase: {
+            select: {
+              code: true,
+              /**
+               * İKİ ALAN DA SORULUR. `supplierName` 10.08.2026 öncesi
+               * kayıtların ve içe aktarmanın tedarikçisini taşıyor; yalnız
+               * ilişkiyi sormak, o kayıtlarda tedarikçiyi SESSİZCE kaybetmek
+               * demekti (canlı hata 17.08.2026).
+               */
+              supplier: { select: { name: true } },
+              supplierName: true,
             },
           },
-        });
+        },
+      },
+    },
+  });
+
+  /**
+   * O PARTİ HÂLÂ AÇIK MI — rakamın yanında yazacak.
+   *
+   * ⚠ SESSİZ KALAMAZ: "son alım ₺3.899" yazıp stoğun bittiğini söylememek,
+   * bu sefer TERS yönde yanlış bir izlenim verirdi (mal elde sanılır).
+   * Kullanıcının şikâyeti veriyi göstermemekti; çaresi veriyi ÇERÇEVESİZ
+   * göstermek değil.
+   */
+  const sonAlimAcikMi =
+    sonAlimHareketi !== null &&
+    partiler.some((p) => p.hareketId === sonAlimHareketi.id);
 
   /** İade sebepleri — aynı sebepten kaç iade geldiği sayılır. */
   const sebepSayaci = new Map<string, number>();
@@ -250,9 +303,12 @@ export async function kartVerisiniTopla(
     yasGun: yas,
     yasBandi: yas === null ? null : yasBandi(yas),
     sonAlimMaliyeti:
-      enYeni?.birimMaliyet == null ? null : Number(enYeni.birimMaliyet),
-    sonAlimTarihi: enYeni?.occurredAt ?? null,
-    sonAlimParaBirimi: enYeni?.birimMaliyetParaBirimi ?? null,
+      sonAlimHareketi?.unitCostAmount == null
+        ? null
+        : Number(sonAlimHareketi.unitCostAmount),
+    sonAlimTarihi: sonAlimHareketi?.occurredAt ?? null,
+    sonAlimParaBirimi: sonAlimHareketi?.unitCostCurrency ?? null,
+    sonAlimAcikMi,
     sonAlimTedarikcisi: sonAlimHareketi?.purchaseItem?.purchase
       ? tedarikciAdi(sonAlimHareketi.purchaseItem.purchase)
       : null,

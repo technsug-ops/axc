@@ -2680,7 +2680,8 @@
     "deneKanalKaydiYok": "Hesaplanamayan kanallar: {kanallar} — bu ürünün orada kanal kodu tanımlı değil.",
     "deneKanalKaydiHicYok": "Bu ürün hiçbir satış kanalında kayıtlı değil — hesap yapılamıyor. Kanal kodu tanımlanınca burada görünür.",
     "deneMesafe": "Mevcut fiyatın %{pay} altı.",
-    "deneMesafeUzak": "⚠ Mevcut fiyatın %{pay} altı — sınır UZAK, büyük bir indirim gerekir."
+    "deneMesafeUzak": "⚠ Mevcut fiyatın %{pay} altı — sınır UZAK, büyük bir indirim gerekir.",
+    "partiTukendi": "bu alımdan stok kalmadı"
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

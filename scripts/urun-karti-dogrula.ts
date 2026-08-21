@@ -102,7 +102,11 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
     // 10.08'de girdi, 17.08'de satıldı → 7 gün
     satislar: [satis(17, 1, 200, [10])],
   });
-  kontrol("7 günlük dönüş doğru", o.ortalamaSatisSuresi === 7, o.ortalamaSatisSuresi);
+  kontrol(
+    "7 günlük dönüş doğru",
+    o.ortalamaSatisSuresi === 7,
+    o.ortalamaSatisSuresi,
+  );
   kontrol("örnek sayısı 1", o.hizOrnekSayisi === 1);
 
   /**
@@ -115,7 +119,11 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
     satislar: [satis(17, 2, 400, [10, 13])],
   });
   kontrol("iki partili satış ikisini de sayar", cok.hizOrnekSayisi === 2);
-  kontrol("  ...ortalama 5,5 gün", cok.ortalamaSatisSuresi === 5.5, cok.ortalamaSatisSuresi);
+  kontrol(
+    "  ...ortalama 5,5 gün",
+    cok.ortalamaSatisSuresi === 5.5,
+    cok.ortalamaSatisSuresi,
+  );
 
   /**
    * BAĞ YOKSA TAHMİN YOK. `sourceMovement` boş kalmış satış hıza girmez ve
@@ -135,7 +143,11 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
     kalemler: [kalem(1, 1000, 200)],
     satislar: [satis(10, 1, 200, [17])],
   });
-  kontrol("negatif gün elenir", negatif.ortalamaSatisSuresi === null, negatif.ortalamaSatisSuresi);
+  kontrol(
+    "negatif gün elenir",
+    negatif.ortalamaSatisSuresi === null,
+    negatif.ortalamaSatisSuresi,
+  );
 }
 
 // --- 3) MALİYET ve SERMAYE VERİMİ -------------------------------------------
@@ -151,7 +163,11 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
       { kalanAdet: 1, birimMaliyet: 200 },
     ],
   });
-  kontrol("ağırlıklı ortalama maliyet 125", o.ortalamaMaliyet === 125, o.ortalamaMaliyet);
+  kontrol(
+    "ağırlıklı ortalama maliyet 125",
+    o.ortalamaMaliyet === 125,
+    o.ortalamaMaliyet,
+  );
   // birim kâr = 400/2 = 200 · sermaye verimi = 200/125 = 1,6
   kontrol("sermaye verimi 1,6", o.sermayeVerimi === 1.6, o.sermayeVerimi);
 
@@ -169,7 +185,11 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
       { kalanAdet: 5, birimMaliyet: null },
     ],
   });
-  kontrol("maliyetsiz parti ortalamaya GİRMEZ", eksik.ortalamaMaliyet === 100, eksik.ortalamaMaliyet);
+  kontrol(
+    "maliyetsiz parti ortalamaya GİRMEZ",
+    eksik.ortalamaMaliyet === 100,
+    eksik.ortalamaMaliyet,
+  );
 
   // Hiçbir partinin maliyeti yoksa: "?" (null), sıfır değil.
   const hicMaliyet = kartOzeti({
@@ -204,7 +224,11 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
     kalemler: [kalem(2, 1000, 250), kalem(1, 500, null)],
     satislar: [satis(17, 2, 250, [10]), satis(16, 1, null, [10])],
   });
-  kontrol("hesaplanamayan kalem marjı BOZMAZ", karisik.marj === 25, karisik.marj);
+  kontrol(
+    "hesaplanamayan kalem marjı BOZMAZ",
+    karisik.marj === 25,
+    karisik.marj,
+  );
   kontrol("  ...ama SAYILIR ve bildirilir", karisik.hesaplanamayanKalem === 1);
 }
 
@@ -275,11 +299,13 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
   console.log("\n8) PARA BİRİMİ");
   kontrol(
     "tek para birimi karışık DEĞİL",
-    paraBirimiKarisikMi([{ paraBirimi: "TRY" }, { paraBirimi: "TRY" }]) === false,
+    paraBirimiKarisikMi([{ paraBirimi: "TRY" }, { paraBirimi: "TRY" }]) ===
+      false,
   );
   kontrol(
     "TRY + EUR KARIŞIK",
-    paraBirimiKarisikMi([{ paraBirimi: "TRY" }, { paraBirimi: "EUR" }]) === true,
+    paraBirimiKarisikMi([{ paraBirimi: "TRY" }, { paraBirimi: "EUR" }]) ===
+      true,
   );
 }
 
@@ -403,17 +429,17 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
    * formlarında ürün seçerken sipariş numarası aramak yanıltıcı olurdu.
    */
   const kaynak = readFileSync("src/lib/kart-arama-verisi.ts", "utf8");
-  kontrol("kart araması SATIŞ sipariş no'ya bakıyor", /prisma\.sale\.findMany/.test(kaynak));
+  kontrol(
+    "kart araması SATIŞ sipariş no'ya bakıyor",
+    /prisma\.sale\.findMany/.test(kaynak),
+  );
   kontrol("kart araması ALIM koduna bakıyor", /code: esle/.test(kaynak));
   kontrol("  ...tedarikçi sipariş no da", /supplierOrderNo: esle/.test(kaynak));
   kontrol(
     "iptal edilen satış sipariş aramasına GİRMEZ",
     /iptalTarihi: null/.test(kaynak),
   );
-  kontrol(
-    "iptal edilen alım da girmez",
-    /status: "CANCELLED"/.test(kaynak),
-  );
+  kontrol("iptal edilen alım da girmez", /status: "CANCELLED"/.test(kaynak));
   /**
    * ÇOK KALEMLİ SİPARİŞTE TAM EŞLEŞME DÖNMEZ: hangi ürünün kartı açılacağı
    * belli değildir, kullanıcı listeden seçer.
@@ -421,6 +447,115 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
   kontrol(
     "çok kalemli siparişte doğrudan açma YOK",
     /varyantlar\.length === 1/.test(kaynak),
+  );
+}
+
+// ===========================================================================
+console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
+// ===========================================================================
+{
+  /**
+   * ⚠ BU BÖLÜM BİR CANLI HATADAN DOĞDU (21.08.2026). Kullanıcı: _"stok
+   * bitince geçmişe dönük alım verileri gelmiyor"_.
+   *
+   * Sebep: "son alım" EN YENİ AÇIK PARTİDEN okunuyordu. Stok bitince açık
+   * parti kalmaz → kart "alım yok" derdi; oysa alım vardı, STOK yoktu.
+   * Ölçüldü: alım geçmişi olan 93 varyantın 26'sı (%28) etkileniyordu.
+   *
+   * ⚠ TESTLER BUNU NEDEN YAKALAMADI: kart doğrulaması `sonAlim*` alanlarına
+   * HİÇ bakmıyordu. Sözleşmenin dört taahhüdü sınanıyordu, beşincisi
+   * ("son alım doğru kaynaktan gelir") hiç yazılmamıştı.
+   *
+   * ⚠ VE BU KONTROL KAYNAK TARAR — desen ÖNCE SAYILDI. `partiler` bu dosyada
+   * çok yerde geçiyor (yaş · ortalama maliyet · açık parti listesi); dosyanın
+   * tamamında arasaydım hiçbir şey ayırt edemezdim. Bu yüzden desen
+   * `sonAlimHareketi` BLOĞUNA daraltılarak aranıyor.
+   */
+  const kaynak = readFileSync("src/lib/urun-karti-verisi.ts", "utf8");
+
+  const bas = kaynak.indexOf("const sonAlimHareketi =");
+  const son = kaynak.indexOf("const sonAlimAcikMi");
+  kontrol("son alım bloğu bulunabiliyor", bas > 0 && son > bas);
+  const blok = kaynak.slice(bas, son);
+
+  kontrol(
+    "son alım LEDGER'dan okunuyor (stockMovement)",
+    /stockMovement\.findFirst/.test(blok),
+  );
+  /**
+   * ⚠ VE AÇIK PARTİDEN OKUNMUYOR. Asıl hata buydu; "stockMovement var" demek
+   * yetmez — eski kaynak yanında durursa hata geri gelir.
+   */
+  kontrol(
+    "  ...açık partiden DEĞİL (partiler bloğa girmiyor)",
+    !/partiler/.test(blok),
+  );
+  /**
+   * ⚠ ALIMA BAĞLI GİRİŞ: düzeltme (ADJUSTMENT) ya da iade girişi "alım"
+   * değildir. İkisi de pozitif hareket üretir; süzgeç olmasaydı kart bir
+   * iadeyi "son alım" diye gösterirdi.
+   */
+  kontrol(
+    "yalnız ALIMA BAĞLI giriş sayılıyor",
+    /purchaseItemId:\s*\{\s*not:\s*null\s*\}/.test(blok),
+  );
+  kontrol(
+    "yalnız GİRİŞ hareketi (quantityDelta > 0)",
+    /quantityDelta:\s*\{\s*gt:\s*0\s*\}/.test(blok),
+  );
+  kontrol(
+    "en YENİsi seçiliyor",
+    /orderBy:\s*\{\s*occurredAt:\s*"desc"\s*\}/.test(blok),
+  );
+  /**
+   * ⚠ MALİYET HAREKETİN DAMGASINDAN, alım kaleminden DEĞİL. Kasadan fiilen
+   * çıkan tutarı taşıyan yer orası (kupon vakası 19.08.2026: ürünün piyasa
+   * değeri ile bize maliyeti farklı şeylerdir, defter ikincisini yazar).
+   */
+  kontrol("maliyet hareketin damgasından", /unitCostAmount:\s*true/.test(blok));
+
+  /**
+   * ── TÜKENMİŞ PARTİ SESSİZ KALMIYOR ─────────────────────────────────────
+   * Şikâyet veriyi göstermemekti; çaresi veriyi ÇERÇEVESİZ göstermek değil.
+   * "Son alım ₺3.899" yazıp stoğun bittiğini söylememek bu sefer TERS yönde
+   * yanlış olurdu — mal elde sanılırdı.
+   */
+  kontrol(
+    "son alımın partisi açık mı hesaplanıyor",
+    kaynak.includes("sonAlimAcikMi"),
+  );
+  kontrol(
+    "  ...ve karta taşınıyor",
+    /sonAlimAcikMi,/.test(kaynak.slice(kaynak.lastIndexOf("return {"))),
+  );
+
+  const kart = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
+  /**
+   * ⚠ VE KOŞULUYLA BİRLİKTE ARANIYOR: yalnız `partiTukendi` anahtarını
+   * arasaydım, koşulu `true`ya çeviren bir mutasyon (her zaman "tükendi"
+   * yaz) testi geçerdi.
+   */
+  kontrol(
+    "kart tükenmiş partiyi YAZIYOR (koşulla birlikte)",
+    /veri\.sonAlimAcikMi\s*\?\s*null\s*:\s*t\("partiTukendi"\)/.test(kart),
+  );
+
+  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  kontrol(
+    "metin sözlükten",
+    typeof sozluk.UrunKarti?.partiTukendi === "string" &&
+      sozluk.UrunKarti.partiTukendi.length > 0,
+  );
+
+  /**
+   * ⚠ YAŞ VE ORTALAMA MALİYET DEĞİŞMEDİ — ve değişmemeli. Onlar gerçekten
+   * ELDEKİ stoğun soruları; stok yokken null olmaları DOĞRU. Yalnız "son
+   * alım" yanlış kapıya soruluyordu. Biri "madem geçmişe bakıyoruz, yaşı da
+   * geçmişten alalım" derse burası kırmızı yanar.
+   */
+  kontrol(
+    "yaş HÂLÂ en eski AÇIK partiden (elde ne var sorusu)",
+    /const enEski = partiler\[0\]/.test(kaynak),
   );
 }
 
