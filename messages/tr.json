@@ -2849,7 +2849,7 @@
     "kdvHaric": "KDV hariç",
     "ornek": "örn. {deger}",
     "bosBaslik": "Henüz hesaplanmadı",
-    "bosIpucu": "Satış fiyatı, alış fiyatı ve komisyon oranını girip Hesapla'ya bas.",
+    "bosIpucu": "Satış fiyatı, alış fiyatı ve komisyon oranını gir — hesap anında çıkar.",
     "komisyon": "Komisyon",
     "net2": "NET-2",
     "marj": "Ciro marjı",
