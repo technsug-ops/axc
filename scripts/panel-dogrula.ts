@@ -143,6 +143,8 @@ function kargo(ek: Partial<PanelKargosu> = {}): PanelKargosu {
     kanalAdi: "Trendyol",
     paraBirimi: "TRY",
     kargoTarihi: gun(2026, 8, 5),
+    /** Sevk edilen siparişin cirosu — kargo ÜCRETİ değil. */
+    gelir: 1000,
     ...ek,
   };
 }

@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowRight, ScanBarcode, Store, TriangleAlert } from "lucide-react";
+import {
+  ArrowRight,
+  ChartLine,
+  ScanBarcode,
+  Store,
+  TriangleAlert,
+} from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
@@ -28,6 +34,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import {
   ayKaydir,
   gunDegeri,
+  gunMetninden,
   gunEkle,
   isTakvimGunu,
   pencereOlustur,
@@ -65,6 +72,14 @@ import {
   kiyasCoz,
   kiyasPenceresi,
 } from "@/lib/karsilastirma";
+import {
+  gorunumCoz,
+  operasyonSerisi,
+  operasyonToplami,
+  serileriKur,
+} from "@/lib/panel/operasyon-serisi";
+import { UcSeriliGrafik } from "@/components/uc-serili-grafik";
+import { OPERASYON_GORUNUMLERI } from "@/lib/panel/operasyon-serisi";
 import {
   kanalDagilimi,
   paretoKur,
@@ -163,6 +178,8 @@ export default async function AnaSayfa({
     sirala?: string;
     /** Ürün analizi sekmesi: verim | hacim | stok | dagilim. */
     analiz?: string;
+    /** Operasyon grafiği görünümü: "adet" (varsayılan) | "ciro". */
+    operasyon?: string;
     /** Karşılaştırma tabanı: onceki | ucAy | gecenYil. Boşsa kapalı. */
     kiyas?: string;
   }>;
@@ -343,8 +360,12 @@ export default async function AnaSayfa({
      *  2. Hâlâ bekleyenler (`shippedAt: null`) — dönemden bağımsızdır,
      *     "bugünün bekleyeni" diye bir şey yoktur.
      *
-     * Sorgu bilerek HAFİF: kalemlerden yalnız BİR tanesinin para birimi
-     * alınıyor, çünkü tek ihtiyacımız satışı doğru blokta saymak.
+     * ⚠ SORGU ARTIK HAFİF DEĞİL — VE SEBEBİ YAZILI (21.08.2026).
+     * Eskiden yalnız para birimi çekiliyordu ("tek ihtiyacımız satışı doğru
+     * blokta saymak"). Günlük operasyon grafiğinin CİRO görünümü "o gün kaç
+     * liralık mal elimden çıktı" diye soruyor; bu soru kalem tutarı olmadan
+     * cevaplanamaz. Sorgu genişledi, gerekçesi burada — ileride biri
+     * "niye ağır" diye sorduğunda cevabı aramak zorunda kalmasın.
      */
     prisma.sale.findMany({
       where: {
@@ -371,7 +392,19 @@ export default async function AnaSayfa({
         channelAccount: {
           select: { channel: { select: { code: true, name: true } } },
         },
-        items: { select: { unitPriceCurrency: true }, take: 1 },
+        /**
+         * ⚠ `take: 1` KALDIRILDI. Eskiden tek kalem yetiyordu (yalnız para
+         * birimi lazımdı); ciro için TÜM kalemler gerekiyor. `take: 1` kalsa
+         * çok kalemli sipariş cirosunun yalnız ilk satırını sayardı — sessiz
+         * ve ekranda "makul" görünen bir eksiklik.
+         */
+        items: {
+          select: {
+            unitPriceCurrency: true,
+            unitPriceAmount: true,
+            quantity: true,
+          },
+        },
       },
     }),
 
@@ -427,12 +460,30 @@ export default async function AnaSayfa({
    * gönderilmemiş). Bu yüzden kargo kendi hafif sorgusuyla geliyor:
    * yalnız sevkiyat tarihi, kanal ve para birimi çekiliyor.
    */
-  const kargolar: PanelKargosu[] = kargoKayitlari.map((k) => ({
-    kanalKodu: k.channelAccount.channel.code,
-    kanalAdi: k.channelAccount.channel.name,
-    paraBirimi: k.profitCurrency ?? k.items[0]?.unitPriceCurrency ?? "TRY",
-    kargoTarihi: k.shippedAt,
-  }));
+  const kargolar: PanelKargosu[] = kargoKayitlari.map((k) => {
+    const paraBirimi: Currency =
+      k.profitCurrency ?? k.items[0]?.unitPriceCurrency ?? "TRY";
+    return {
+      kanalKodu: k.channelAccount.channel.code,
+      kanalAdi: k.channelAccount.channel.name,
+      paraBirimi,
+      kargoTarihi: k.shippedAt,
+      /**
+       * ⚠ SEVK EDİLEN SİPARİŞİN CİROSU — kargo ÜCRETİ DEĞİL.
+       * Soru "o gün kaç liralık mal elimden çıktı"; "kargoya ne kadar
+       * ödedim" başka bir soru ve başka bir alan.
+       *
+       * Hesap satış cirosuyla AYNI kuralla: yalnız o para biriminin
+       * kalemleri toplanır — karma para biriminde iki ekran ayrışmasın.
+       */
+      gelir: k.items
+        .filter((i) => i.unitPriceCurrency === paraBirimi)
+        .reduce(
+          (t, i) => t + Number(i.unitPriceAmount.toString()) * i.quantity,
+          0,
+        ),
+    };
+  });
 
   const satislar: PanelSatisi[] = kayitlar.map((satis) => {
     // Satışın para birimi: kâr snapshot'ındaki birim, yoksa ilk kalemin.
@@ -1226,6 +1277,33 @@ export default async function AnaSayfa({
     .reverse();
 
   /**
+   * ── GÜNLÜK OPERASYON SERİSİ (kullanıcı isteği 21.08.2026) ───────────────
+   * "Günlük operasyonlarım bu üç kalemden oluşuyor: kaç mal aldım, kaç mal
+   * sattım, kaç kargo verdim."
+   *
+   * ⚠ ÜÇ AYRI TARİH EKSENİ korunuyor: alım `purchasedAt`, satış satış
+   * tarihi, kargo `shippedAt`. Aynı güne indirgemek 15.08.2026'da yaşanmış
+   * bir hatadır (6 paket kargolandı, panel "2" dedi).
+   *
+   * ⚠ SEÇİLİ PARA BİRİMİ: satış ve kargo o para birimine süzülüyor. Alım
+   * tarafı bugün TRY okuyor — karma para biriminde alım varsa serinin alım
+   * çizgisi eksik kalır ve bu ekranda YAZILI (kart altındaki not).
+   */
+  const operasyonGunleri = operasyonSerisi({
+    pencere: donem,
+    alimlar: alim.gunluk,
+    satislar: donemSatislari
+      .filter((s) => s.paraBirimi === seciliPara)
+      .map((s) => ({ tarih: s.tarih, gelir: s.gelir })),
+    kargolar: donemKargolari
+      .filter((k) => k.kargoTarihi !== null && k.paraBirimi === seciliPara)
+      .map((k) => ({ tarih: k.kargoTarihi as Date, gelir: k.gelir })),
+  });
+  const operasyonGorunumu = gorunumCoz(parametreler.operasyon);
+  const operasyonSeri = serileriKur(operasyonGunleri, operasyonGorunumu);
+  const operasyonToplam = operasyonToplami(operasyonGunleri);
+
+  /**
    * ÜST SIRADA GÖSTERİLECEK BLOK — seçili para biriminin bloğu.
    * ⚠ `bloklar[0]` DEĞİL: iki para birimi varsa ekranın geri kalanı
    * `seciliPara`yı gösterirken üst kart başka bir para birimini gösterirdi.
@@ -1587,6 +1665,94 @@ export default async function AnaSayfa({
           ) : null}
         </div>
       </div>
+
+      {/* ══════════════ GÜNLÜK OPERASYON GRAFİĞİ ══════════════
+          Kullanıcı isteği 21.08.2026: _"günlük kaç mal aldığımı, kaç mal
+          sattığımı ve kaç kargo verdiğimi aynı grafikte görmek istiyorum"_.
+
+          ⚠ İZNE BAĞLI: ciro görünümü para gösteriyor. Adet görünümü
+          operasyoneldir ama sekme aynı kartta olduğu için kart bütün
+          olarak `satis.kar.gor` istiyor — yarısı görünen bir kart,
+          görünmeyen yarısını merak ettirir. */}
+      {karGorunur ? (
+        <Card className="min-w-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+              <span className="flex items-center gap-2">
+                <ChartLine className="size-5" />
+                {t("operasyonBaslik")}
+              </span>
+              {/* SEKME ADRESE YAZILIR (İlke #13): yenilenince seçim kalır. */}
+              <span className="flex flex-wrap gap-2">
+                {OPERASYON_GORUNUMLERI.map((gor) => (
+                  <Button
+                    key={gor}
+                    asChild
+                    size="sm"
+                    variant={operasyonGorunumu === gor ? "default" : "outline"}
+                    className="h-11 md:h-8"
+                  >
+                    <Link
+                      href={suzgecAdresi("/", parametreler, { operasyon: gor })}
+                      scroll={false}
+                    >
+                      {t(`operasyon_${gor}`)}
+                    </Link>
+                  </Button>
+                ))}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <UcSeriliGrafik
+              noktalar={operasyonGunleri.map((g, i) => ({
+                etiket: bicim.tarih(gunMetninden(g.gun) ?? donem.baslangic),
+                tamEtiket: bicim.tarih(gunMetninden(g.gun) ?? donem.baslangic),
+                a: operasyonSeri.alim[i] ?? 0,
+                b: operasyonSeri.satis[i] ?? 0,
+                c: operasyonSeri.kargo[i] ?? 0,
+              }))}
+              adlar={{
+                a: t("operasyonAlim"),
+                b: t("operasyonSatis"),
+                c: t("operasyonKargo"),
+              }}
+              bicimle={(d) =>
+                operasyonGorunumu === "ciro"
+                  ? bicim.para(d, seciliPara)
+                  : String(Math.round(d))
+              }
+              bosMesaj={t("donemBos")}
+            />
+
+            {/* TOPLAM DA YAZAR (İlke #15): satır satır gösterilen şeyin
+                toplamı da ekranda durur ve SÜZGEÇLE birlikte değişir. */}
+            <p className="text-muted-foreground text-xs">
+              {operasyonGorunumu === "ciro"
+                ? t("operasyonToplamCiro", {
+                    alim: bicim.para(operasyonToplam.alimTutar, seciliPara),
+                    satis: bicim.para(operasyonToplam.satisCiro, seciliPara),
+                    kargo: bicim.para(operasyonToplam.kargoCiro, seciliPara),
+                  })
+                : t("operasyonToplamAdet", {
+                    alim: operasyonToplam.alimAdet,
+                    satis: operasyonToplam.satisAdet,
+                    kargo: operasyonToplam.kargoAdet,
+                  })}
+            </p>
+
+            {/* ⚠⚠ KDV UYARISI — KULLANICININ İKİNCİ GEREKÇESİ BUYDU.
+                "Alım KDV'si ile satış KDV'si arasındaki fark ödeyeceğim
+                vergiyi belli ediyor" dedi. Bu grafik CİRO gösteriyor, KDV
+                DEĞİL: oran ürüne göre değişiyor (%1/%10/%20, kategoriden)
+                ve aynı ciroda farklı oranlı ürünler bambaşka KDV üretir.
+                Sessiz kalsaydı grafik vergi tahmininde YANILTIRDI. */}
+            <p className="text-muted-foreground border-t pt-2 text-xs">
+              {t("operasyonKdvNotu")}
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Para birimi süzgeci: yalnız birden fazla varsa görünür. Süzgeç
           çubuğuna girmiyor çünkü "tümü" seçeneği YOK — iki para birimi tek

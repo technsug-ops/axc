@@ -1840,7 +1840,16 @@
     "alimToplami": "{tutar} toplam alım",
     "iadeAdedi": "{sayi} iade",
     "alimAdedi": "Alım adedi",
-    "kanalKirilimi": "Pazaryeri performansı"
+    "kanalKirilimi": "Pazaryeri performansı",
+    "operasyonBaslik": "Günlük operasyon",
+    "operasyon_adet": "Adet",
+    "operasyon_ciro": "Ciro",
+    "operasyonAlim": "Alım",
+    "operasyonSatis": "Satış",
+    "operasyonKargo": "Kargoya verilen",
+    "operasyonToplamAdet": "Dönem toplamı — alım {alim} · satış {satis} · kargo {kargo}",
+    "operasyonToplamCiro": "Dönem toplamı — alım {alim} · satış {satis} · kargo {kargo}",
+    "operasyonKdvNotu": "⚠ Bu grafik CİRO gösterir, KDV değil. Ödenecek KDV = satış KDV'si − alış KDV'si ve oran ürüne göre değişir (%1/%10/%20). Aynı ciroda farklı oranlı ürünler bambaşka KDV üretir; iki cironun farkı vergi tutarını VERMEZ."
   },
   "Envanter": {
     "baslik": "Envanter değeri",

@@ -47,7 +47,11 @@ import type { GorevAnahtari } from "./bugun-ne-yapmaliyim";
 export async function donemAlimi(pencere: {
   baslangic: Date;
   bitisHaric: Date;
-}): Promise<{ adet: number; toplam: ParaToplami[] }> {
+}): Promise<{
+  adet: number;
+  toplam: ParaToplami[];
+  gunluk: { tarih: Date; tutar: number }[];
+}> {
   /**
    * ⚠ YARI AÇIK ARALIK — `[baslangic, bitisHaric)`. `lte: sonGun`
    * yazılsaydı son günün 00:00'ından sonrası dışarıda kalırdı; `Pencere`
@@ -57,7 +61,14 @@ export async function donemAlimi(pencere: {
     where: { purchasedAt: { gte: pencere.baslangic, lt: pencere.bitisHaric } },
     select: {
       status: true,
-      items: { select: { quantity: true, unitCostAmount: true, unitCostCurrency: true } },
+      purchasedAt: true,
+      items: {
+        select: {
+          quantity: true,
+          unitCostAmount: true,
+          unitCostCurrency: true,
+        },
+      },
     },
   });
 
@@ -67,7 +78,26 @@ export async function donemAlimi(pencere: {
     (a) => a.status === "CANCELLED",
   );
 
-  return { adet: alimlar.length, toplam: sonuc.toplam };
+  /**
+   * ⚠ GÜNLÜK DÖKÜM DE DÖNÜYOR — grafik için (21.08.2026).
+   * Ayrı bir sorgu yazılmadı: aynı kayıtlar hem toplamı hem seriyi besliyor.
+   * İki sorgu olsaydı ikisi farklı süzgeçle ayrışabilirdi.
+   *
+   * ⚠ İPTALLİ ALIM SERİYE GİRMEZ — toplamda da girmiyor. Grafik ile kutu
+   * aynı kümeyi göstermeli, yoksa "grafikte 5 var, kutuda 4" olur.
+   */
+  return {
+    adet: alimlar.length,
+    toplam: sonuc.toplam,
+    gunluk: alimlar
+      .filter((a) => a.status !== "CANCELLED")
+      .map((a) => ({
+        tarih: a.purchasedAt,
+        tutar:
+          kalemToplamlari(a.items).find((x) => x.paraBirimi === "TRY")?.tutar ??
+          0,
+      })),
+  };
 }
 
 export async function gorevSayilariniTopla(): Promise<

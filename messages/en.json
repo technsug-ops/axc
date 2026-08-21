@@ -1840,7 +1840,16 @@
     "alimToplami": "",
     "iadeAdedi": "",
     "alimAdedi": "",
-    "kanalKirilimi": ""
+    "kanalKirilimi": "",
+    "operasyonBaslik": "",
+    "operasyon_adet": "",
+    "operasyon_ciro": "",
+    "operasyonAlim": "",
+    "operasyonSatis": "",
+    "operasyonKargo": "",
+    "operasyonToplamAdet": "",
+    "operasyonToplamCiro": "",
+    "operasyonKdvNotu": ""
   },
   "Envanter": {
     "baslik": "",

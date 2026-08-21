@@ -86,6 +86,12 @@ export type PanelKargosu = {
    * satılırsa satılsın kargolanmamış her sipariş şu an bekliyordur.
    */
   kargoTarihi: Date | null;
+  /**
+   * SİPARİŞİN CİROSU — "o gün ne kadar mal elimden çıktı".
+   * ⚠ Kargo ÜCRETİ değil: soru "kaç liralık mal sevk ettim", "kargoya ne
+   * kadar ödedim" değil. İkisi karışırsa grafik bambaşka bir şey anlatır.
+   */
+  gelir: number;
 };
 
 /** Panelin bir iadeden ihtiyaç duyduğu her şey. */
