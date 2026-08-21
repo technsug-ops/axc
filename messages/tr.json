@@ -570,7 +570,8 @@
     "kart": "Kart",
     "alimKoduVeSiparis": "Alım / Sipariş no",
     "suzgecToplami": "Süzgeç toplamı",
-    "iptalHaric": "{sayi} iptal hariç"
+    "iptalHaric": "{sayi} iptal hariç",
+    "toplamAdet": "{sayi} adet sipariş"
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",

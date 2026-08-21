@@ -192,6 +192,17 @@ export default async function AlimlarSayfasi({
     return tSatis("digerKalemler", { urun: ad, sayi: alim.items.length - 1 });
   }
 
+  /**
+   * SİPARİŞ EDİLEN TOPLAM ADET — kullanıcı isteği 21.08.2026.
+   *
+   * ⚠ KALEM SAYISI İLE AYNI ŞEY DEĞİL: "1 kalem" bir ürün satırı demek,
+   * o satır 5 adet olabilir. Listede yalnız kalem sayısı vardı ve "kaç
+   * tane sipariş ettim" sorusu detaya girmeden cevaplanamıyordu (İlke #9).
+   */
+  function toplamAdet(alim: (typeof alimlar)[number]) {
+    return alim.items.reduce((t, k) => t + k.quantity, 0);
+  }
+
   function toplamMetni(alim: (typeof alimlar)[number]) {
     const toplamlar = kalemToplamlari(alim.items);
     if (!toplamlar.length) return "—";
@@ -221,9 +232,17 @@ export default async function AlimlarSayfasi({
     const iptalli = alim.status === "CANCELLED";
     return (
       <>
-        <SatirEylemi href={`/alimlar/${alim.id}`} ikon={Eye} etiket={ortak("detay")} />
+        <SatirEylemi
+          href={`/alimlar/${alim.id}`}
+          ikon={Eye}
+          etiket={ortak("detay")}
+        />
         {!iptalli ? (
-          <SatirEylemi href={`/alimlar/${alim.id}/duzenle`} ikon={Pencil} etiket={ortak("duzenle")} />
+          <SatirEylemi
+            href={`/alimlar/${alim.id}/duzenle`}
+            ikon={Pencil}
+            etiket={ortak("duzenle")}
+          />
         ) : null}
         {!iptalli ? (
           <AlimIptalButonu
@@ -233,7 +252,12 @@ export default async function AlimlarSayfasi({
           />
         ) : null}
         {kabulEdilebilir ? (
-          <SatirEylemi href={`/alimlar/${alim.id}/mal-kabul`} ikon={PackageCheck} etiket={t("malKabul")} birincil />
+          <SatirEylemi
+            href={`/alimlar/${alim.id}/mal-kabul`}
+            ikon={PackageCheck}
+            etiket={t("malKabul")}
+            birincil
+          />
         ) : null}
       </>
     );
@@ -265,7 +289,9 @@ export default async function AlimlarSayfasi({
       <form action="/alimlar" className="flex flex-wrap items-end gap-2">
         {/* Açık süzgeçler arama gönderiminde kaybolmasın. */}
         {Object.entries(formTasinanlar).map(([ad, deger]) =>
-          deger ? <input key={ad} type="hidden" name={ad} value={deger} /> : null,
+          deger ? (
+            <input key={ad} type="hidden" name={ad} value={deger} />
+          ) : null,
         )}
         <Input
           name="q"
@@ -398,9 +424,22 @@ export default async function AlimlarSayfasi({
                         altIpucu={alim.channelAccount?.name}
                       />
                     </TableCell>
-                    {/* ÜRÜN — uzun adlar sarmalı, tablo genişlemesin. */}
+                    {/* ÜRÜN — uzun adlar sarmalı, tablo genişlemesin.
+                        ⚠ ADET AYRI SÜTUN DEĞİL, ÜRÜNÜN ALTINDA (21.08.2026).
+                        Kullanıcı "adet sütunu olsun" dedi; sütun eklendi ve
+                        `yerlesim:dogrula` KIRMIZI yandı: masaüstü tablosunun
+                        sütun tavanı 7 ve bu sayfa zaten 8'deydi. Bekçinin
+                        kendi önerdiği çare uygulandı — ilişkili iki bilgi
+                        tek hücrede üst üste (`iki-satir.tsx` deseni).
+
+                        Yeri de doğru: adet, ait olduğu ÜRÜNÜN yanında
+                        duruyor. Ayrı sütunda göz ürün ile sayı arasında
+                        gidip geliyordu. */}
                     <TableCell className="min-w-0 max-w-[22rem]">
                       <UzunAd metin={urunOzeti(alim)} />
+                      <div className="text-muted-foreground text-xs tabular-nums">
+                        {t("toplamAdet", { sayi: toplamAdet(alim) })}
+                      </div>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       <IkiSatir
@@ -423,7 +462,10 @@ export default async function AlimlarSayfasi({
                       )}
                     </TableCell>
                     <TableCell>
-                      <DurumRozeti durum={ALIM_DURUM_RENGI[alim.status]} isaretsiz>
+                      <DurumRozeti
+                        durum={ALIM_DURUM_RENGI[alim.status]}
+                        isaretsiz
+                      >
                         {durumEtiketleri[alim.status]}
                       </DurumRozeti>
                     </TableCell>
@@ -480,7 +522,10 @@ export default async function AlimlarSayfasi({
                   {
                     etiket: ortak("durum"),
                     deger: (
-                      <DurumRozeti durum={ALIM_DURUM_RENGI[alim.status]} isaretsiz>
+                      <DurumRozeti
+                        durum={ALIM_DURUM_RENGI[alim.status]}
+                        isaretsiz
+                      >
                         {durumEtiketleri[alim.status]}
                       </DurumRozeti>
                     ),
@@ -490,6 +535,9 @@ export default async function AlimlarSayfasi({
                      ÖNCE geliyor: "ne alındı" sorusu "kaç kalem"den
                      önemlidir. */
                   { etiket: ortak("urun"), deger: urunOzeti(alim) },
+                  /* MOBİLDE DE VAR (İlke #8): adet kalem sayısından ÖNCE —
+                     "kaç tane" sorusu "kaç satır"dan sık sorulur. */
+                  { etiket: ortak("adet"), deger: toplamAdet(alim) },
                   { etiket: ortak("kalem"), deger: alim.items.length },
                   { etiket: ortak("toplam"), deger: toplamMetni(alim) },
                   {
