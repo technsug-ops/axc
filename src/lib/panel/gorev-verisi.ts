@@ -1,5 +1,6 @@
 import { AYRILMIS_SAYILAN_DURUMLAR } from "@/lib/iade/bildirim";
 import { suzgecToplami } from "@/lib/liste-toplami";
+import { kdvOraniniCoz } from "@/lib/kdv";
 import { kalemToplamlari, type ParaToplami } from "@/lib/tutar";
 import { prisma } from "@/lib/prisma";
 
@@ -50,7 +51,7 @@ export async function donemAlimi(pencere: {
 }): Promise<{
   adet: number;
   toplam: ParaToplami[];
-  gunluk: { tarih: Date; tutar: number }[];
+  gunluk: { tarih: Date; tutar: number; kdv: number }[];
 }> {
   /**
    * ⚠ YARI AÇIK ARALIK — `[baslangic, bitisHaric)`. `lte: sonGun`
@@ -67,6 +68,23 @@ export async function donemAlimi(pencere: {
           quantity: true,
           unitCostAmount: true,
           unitCostCurrency: true,
+          /**
+           * ⚠ KDV ORANI ALIMDA SAKLANMIYOR — kategoriden çözülüyor.
+           * `PurchaseItem`de oran alanı yok; ürün→kategori zinciri
+           * okunuyor ve `kdvOraniniCoz` ile çözülüyor (istisna > kategori
+           * > varsayılan %20). Satış tarafındaki `vatRate` bir SNAPSHOT'tır,
+           * bu ise BUGÜNKÜ oran — fark ekranda beyan ediliyor.
+           */
+          variant: {
+            select: {
+              product: {
+                select: {
+                  vatRateOverride: true,
+                  category: { select: { name: true, vatRate: true } },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -96,6 +114,18 @@ export async function donemAlimi(pencere: {
         tutar:
           kalemToplamlari(a.items).find((x) => x.paraBirimi === "TRY")?.tutar ??
           0,
+        /**
+         * ⚠ TUTARLAR KDV DAHİLDİR (bkz. `lib/kar.ts`), o yüzden içindeki
+         * vergi ÇIKARILARAK bulunur: kdv = tutar − tutar/(1+oran).
+         * Oranla ÇARPMAK yanlış olurdu — %20 için %20 değil %16,67 çıkar.
+         */
+        kdv: a.items
+          .filter((k) => k.unitCostCurrency === "TRY")
+          .reduce((t, k) => {
+            const satir = Number(k.unitCostAmount.toString()) * k.quantity;
+            const oran = kdvOraniniCoz(k.variant.product).oran;
+            return t + (satir - satir / (1 + oran / 100));
+          }, 0),
       })),
   };
 }

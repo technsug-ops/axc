@@ -46,6 +46,14 @@ export type PanelSatisi = {
   /** KDV dahil satış tutarı toplamı. */
   gelir: number;
   /**
+   * SATIŞIN İÇİNDEKİ KDV — hesaplanan vergi.
+   *
+   * ⚠ ORAN KALEMDEN, SNAPSHOT: `SaleItem.vatRate` satış anında yazılıyor.
+   * Kategoriden yeniden çözülseydi kategori oranı değişince eski satışların
+   * vergisi geriye dönük kayardı — snapshot tam bunun için var.
+   */
+  kdv: number;
+  /**
    * NET-1 — yalnız stopaj düşülmüş kâr.
    *
    * NET-2 ile AYNI durum bayrağına bağlıdır (`durum`), çünkü ikisi tek

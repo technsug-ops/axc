@@ -89,8 +89,8 @@ console.log("\n2) ÜÇ AYRI TARİH EKSENİ — aynı güne yazılmaz");
   const seri = operasyonSerisi({
     pencere,
     kirilim: "GUN",
-    alimlar: [{ tarih: g("2026-08-18"), tutar: 1000 }],
-    satislar: [{ tarih: g("2026-08-19"), gelir: 500 }],
+    alimlar: [{ tarih: g("2026-08-18"), tutar: 1000, kdv: 0 }],
+    satislar: [{ tarih: g("2026-08-19"), gelir: 500, kdv: 0 }],
     kargolar: [{ tarih: g("2026-08-21"), gelir: 500 }],
   });
   const bul = (gun: string) => seri.find((n) => n.anahtar === gun);
@@ -129,8 +129,8 @@ console.log("\n3) AYNI GÜNDE BİRDEN ÇOK KAYIT TOPLANIR");
     pencere,
     kirilim: "GUN",
     alimlar: [
-      { tarih: g("2026-08-20"), tutar: 300 },
-      { tarih: g("2026-08-20"), tutar: 700 },
+      { tarih: g("2026-08-20"), tutar: 300, kdv: 0 },
+      { tarih: g("2026-08-20"), tutar: 700, kdv: 0 },
     ],
     satislar: [],
     kargolar: [],
@@ -150,8 +150,8 @@ console.log("\n4) PENCERE DIŞI KAYIT SERİYİ KAYDIRMAZ");
     pencere,
     kirilim: "GUN",
     alimlar: [
-      { tarih: g("2026-07-01"), tutar: 999 },
-      { tarih: g("2026-08-20"), tutar: 100 },
+      { tarih: g("2026-07-01"), tutar: 999, kdv: 0 },
+      { tarih: g("2026-08-20"), tutar: 100, kdv: 0 },
     ],
     satislar: [],
     kargolar: [],
@@ -176,8 +176,8 @@ console.log("\n5) GÖRÜNÜM SEÇİMİ — adet ile ciro AYRIŞIR");
   const seri = operasyonSerisi({
     pencere,
     kirilim: "GUN",
-    alimlar: [{ tarih: g("2026-08-21"), tutar: 1000 }],
-    satislar: [{ tarih: g("2026-08-21"), gelir: 2000 }],
+    alimlar: [{ tarih: g("2026-08-21"), tutar: 1000, kdv: 0 }],
+    satislar: [{ tarih: g("2026-08-21"), gelir: 2000, kdv: 0 }],
     kargolar: [{ tarih: g("2026-08-21"), gelir: 3000 }],
   });
 
@@ -213,10 +213,10 @@ console.log("\n6) TOPLAM — grafiğin altındaki rakam (İlke #15)");
     pencere,
     kirilim: "GUN",
     alimlar: [
-      { tarih: g("2026-08-18"), tutar: 100 },
-      { tarih: g("2026-08-19"), tutar: 200 },
+      { tarih: g("2026-08-18"), tutar: 100, kdv: 0 },
+      { tarih: g("2026-08-19"), tutar: 200, kdv: 0 },
     ],
-    satislar: [{ tarih: g("2026-08-19"), gelir: 50 }],
+    satislar: [{ tarih: g("2026-08-19"), gelir: 50, kdv: 0 }],
     kargolar: [{ tarih: g("2026-08-20"), gelir: 50 }],
   });
   const t = operasyonToplami(seri);
@@ -284,8 +284,8 @@ console.log("\n7) KIRILIM — uzun pencerede gün gün çizilmez");
     pencere: buAy,
     kirilim: "HAFTA",
     alimlar: [
-      { tarih: g("2026-08-17"), tutar: 100 },
-      { tarih: g("2026-08-19"), tutar: 200 },
+      { tarih: g("2026-08-17"), tutar: 100, kdv: 0 },
+      { tarih: g("2026-08-19"), tutar: 200, kdv: 0 },
     ],
     satislar: [],
     kargolar: [],
@@ -306,8 +306,8 @@ console.log("\n8) CİRO ÜÇÜNCÜ SERİ = FARK (kargo DEĞİL)");
     pencere: pencereOlustur("BUGUN", AN),
     kirilim: "GUN",
     /** ⚠ Kargo cirosu BİLEREK farklı (9999): fark yerine kargo çizilirse yakalansın. */
-    alimlar: [{ tarih: g("2026-08-21"), tutar: 400 }],
-    satislar: [{ tarih: g("2026-08-21"), gelir: 1000 }],
+    alimlar: [{ tarih: g("2026-08-21"), tutar: 400, kdv: 0 }],
+    satislar: [{ tarih: g("2026-08-21"), gelir: 1000, kdv: 0 }],
     kargolar: [{ tarih: g("2026-08-21"), gelir: 9999 }],
   });
   const ciro = serileriKur(seri, "ciro");
@@ -326,7 +326,7 @@ console.log("\n8) CİRO ÜÇÜNCÜ SERİ = FARK (kargo DEĞİL)");
     operasyonSerisi({
       pencere: pencereOlustur("BUGUN", AN),
       kirilim: "GUN",
-      alimlar: [{ tarih: g("2026-08-21"), tutar: 1000 }],
+      alimlar: [{ tarih: g("2026-08-21"), tutar: 1000, kdv: 0 }],
       satislar: [],
       kargolar: [],
     }),
@@ -381,6 +381,66 @@ console.log("\n9) TABLO TAVANI — özet ekranda döküm olmaz (İlke #13)");
 
   const k = tabloNoktalari(kisa);
   kontrol("15 nokta TAM gösteriliyor, gizlenen yok", k.gosterilen.length === 15 && k.gizlenen === 0);
+}
+
+// ===========================================================================
+console.log("\n10) KDV GÖRÜNÜMÜ — hesaplanan − indirilecek");
+// ===========================================================================
+{
+  /**
+   * ⚠ KDV TUTARDAN TÜRETİLMİYOR, AYRI GELİYOR. Örnek bunu gösteriyor:
+   * alım tutarı 1200 ama KDV 200 (%20 dahil), satış 6000 ama KDV 60
+   * (%1 dahil). KDV'yi tutardan tek oranla hesaplayan bir kod bu veriyi
+   * ÜRETEMEZ — mutasyon yakalanır.
+   */
+  const seri = operasyonSerisi({
+    pencere: pencereOlustur("BUGUN", AN),
+    kirilim: "GUN",
+    alimlar: [{ tarih: g("2026-08-21"), tutar: 1200, kdv: 200 }],
+    satislar: [{ tarih: g("2026-08-21"), gelir: 6000, kdv: 60 }],
+    kargolar: [{ tarih: g("2026-08-21"), gelir: 9999 }],
+  });
+
+  const kdv = serileriKur(seri, "kdv");
+  kontrol("KDV görünümü alım KDV'sini veriyor", kdv.alim[0] === 200, kdv.alim[0]);
+  kontrol("  ...satış KDV'sini veriyor", kdv.satis[0] === 60, kdv.satis[0]);
+  kontrol(
+    "  ...3. seri HESAPLANAN − İNDİRİLECEK",
+    kdv.ucuncu[0] === 60 - 200,
+    kdv.ucuncu[0],
+  );
+
+  /** ⚠ KDV ile CİRO ayrı seriler — biri ötekinin yerine geçmemeli. */
+  const ciro = serileriKur(seri, "ciro");
+  kontrol(
+    "KDV serisi CİRO serisinden FARKLI",
+    kdv.alim[0] !== ciro.alim[0] && kdv.satis[0] !== ciro.satis[0],
+    { kdv, ciro },
+  );
+
+  const t = operasyonToplami(seri);
+  kontrol("toplam indirilecek KDV", t.alimKdv === 200, t.alimKdv);
+  kontrol("toplam hesaplanan KDV", t.satisKdv === 60, t.satisKdv);
+  /**
+   * ⚠ NEGATİF = DEVREDEN KDV, "alacak" değil. İşaret korunuyor; mutlak
+   * değer alınsaydı "ödeyecek miyim devredecek mi" bilgisi kaybolurdu.
+   */
+  kontrol("ödenecek KDV negatifse DEVREDEN", t.odenecekKdv === -140, t.odenecekKdv);
+
+  const artiSeri = operasyonSerisi({
+    pencere: pencereOlustur("BUGUN", AN),
+    kirilim: "GUN",
+    alimlar: [{ tarih: g("2026-08-21"), tutar: 100, kdv: 10 }],
+    satislar: [{ tarih: g("2026-08-21"), gelir: 600, kdv: 100 }],
+    kargolar: [],
+  });
+  kontrol(
+    "satış KDV'si büyükse ÖDENECEK (pozitif)",
+    operasyonToplami(artiSeri).odenecekKdv === 90,
+    operasyonToplami(artiSeri).odenecekKdv,
+  );
+
+  kontrol("kdv görünümü tanınır", gorunumCoz("kdv") === "kdv");
 }
 
 console.log("");

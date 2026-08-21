@@ -129,6 +129,8 @@ function satis(ek: Partial<PanelSatisi> = {}): PanelSatisi {
     gelir: 1000,
     // NET-1 > NET-2 olmalı: aradaki fark ödenecek KDV'dir. Testlerde de
     // gerçek hayattaki sıra korunuyor ki ikisi karışırsa gözle görülsün.
+    /** Satışın içindeki KDV — %20 dahil tutardan çıkarılmış hâli. */
+    kdv: 0,
     net1: 260,
     net2: 200,
     durum: "CALCULATED",

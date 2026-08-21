@@ -17,13 +17,23 @@ import {
  *    2. _"Alım KDV'si ile satış KDV'si arasındaki fark o ay ödeyeceğim
  *       vergiyi belli ediyor."_
  *
- *  ⚠⚠ İKİNCİ GEREKÇE İÇİN BU GRAFİK YETMEZ — VE EKRAN DA BUNU YAZAR.
+ *  ⚠ İKİNCİ GEREKÇE İÇİN AYRI SEKME VAR — VE ÖNCE YANLIŞ CEVAP VERİLDİ.
  *
- *  Ödenecek KDV = (satış KDV'si) − (alış KDV'si). Bu grafik CİRO gösterir,
- *  KDV değil. İki tutarın farkı vergiyi VERMEZ çünkü KDV oranı ürüne göre
- *  değişir (%1 · %10 · %20; kategoriden gelir) ve aynı ciroda farklı oranlı
- *  ürünler bambaşka KDV üretir. Grafik günlük operasyonu gösterir; KDV için
- *  ayrı bir hesap gerekir.
+ *  İlk sürümde karta _"bu grafik ciro gösterir, KDV değil; iki cironun
+ *  farkı vergiyi vermez"_ diye kalıcı bir uyarı konmuştu. Kullanıcı itiraz
+ *  etti: _"her ürünün KDV bilgisi girildiği için net bilgi sende var,
+ *  neden kullanmıyorsun?"_ — ve HAKLIYDI. Ölçüldü (21.08.2026, canlı):
+ *    · satış: `SaleItem.vatRate` 60/60 kalemde DOLU (satış anı snapshot'ı)
+ *    · alım : oran alanı yok AMA 193/193 kalem kategoriden çözülebiliyor
+ *      (18 kategori · %1/%10/%20 · `kdvOraniniCoz`)
+ *    · `Purchase.taxAmount` 0/193 — hiç kullanılmıyor
+ *  Yani veri vardı; eksik olan hesaptı. Uyarı kaldırıldı, yerine KDV
+ *  sekmesi kondu.
+ *
+ *  ⚠ KALAN TEK SINIR VE O BEYAN EDİLİR: satış oranı DONDURULMUŞ, alım
+ *  oranı BUGÜNDEN okunuyor. Bir kategorinin oranı değişirse geçmiş
+ *  alımların KDV'si geriye dönük kayar. (`PurchaseItem`e oran snapshot'ı
+ *  eklemek bunu kapatır — şema işi, ayrı karar.)
  *
  *  ── ⚠ ÜÇ SAYININ BİRİMİ AYNI DEĞİL ──────────────────────────────────────
  *  ADET görünümünde: alım = ALIM KAYDI, satış = SATIŞ KAYDI, kargo =
@@ -89,13 +99,23 @@ export type OperasyonNoktasi = {
   satisCiro: number;
   kargoAdet: number;
   kargoCiro: number;
+  /** İNDİRİLECEK KDV — alımların içindeki vergi. */
+  alimKdv: number;
+  /** HESAPLANAN KDV — satışların içindeki vergi. */
+  satisKdv: number;
 };
 
 export type OperasyonGirdisi = {
   pencere: Pencere;
   kirilim: Kirilim;
-  alimlar: { tarih: Date; tutar: number }[];
-  satislar: { tarih: Date; gelir: number }[];
+  /**
+   * ⚠ KDV AYRI GELİR, TUTARDAN TÜRETİLMEZ. Oran ürüne göre değişiyor
+   * (%1/%10/%20) ve bu işlev hangi kalemin hangi oranda olduğunu bilmez —
+   * bilseydi kategori çözümünü ikinci kez uygulamış olurdu. Çağıran, kalem
+   * kalem hesaplayıp toplamı buraya verir.
+   */
+  alimlar: { tarih: Date; tutar: number; kdv: number }[];
+  satislar: { tarih: Date; gelir: number; kdv: number }[];
   /** Kargoya VERİLENLER — verilmemişler listede olmamalı. */
   kargolar: { tarih: Date; gelir: number }[];
 };
@@ -172,6 +192,8 @@ export function operasyonSerisi(girdi: OperasyonGirdisi): OperasyonNoktasi[] {
       satisCiro: 0,
       kargoAdet: 0,
       kargoCiro: 0,
+      alimKdv: 0,
+      satisKdv: 0,
     };
     noktalar.push(nokta);
     dizin.set(anahtar, nokta);
@@ -183,12 +205,14 @@ export function operasyonSerisi(girdi: OperasyonGirdisi): OperasyonNoktasi[] {
     if (!n) continue;
     n.alimAdet++;
     n.alimTutar += a.tutar;
+    n.alimKdv += a.kdv;
   }
   for (const s of girdi.satislar) {
     const n = dizin.get(kova(s.tarih, girdi.kirilim).anahtar);
     if (!n) continue;
     n.satisAdet++;
     n.satisCiro += s.gelir;
+    n.satisKdv += s.kdv;
   }
   for (const k of girdi.kargolar) {
     const n = dizin.get(kova(k.tarih, girdi.kirilim).anahtar);
@@ -201,11 +225,13 @@ export function operasyonSerisi(girdi: OperasyonGirdisi): OperasyonNoktasi[] {
 }
 
 /** Grafiğin iki görünümü — sekme adreste yaşar (İlke #13). */
-export const OPERASYON_GORUNUMLERI = ["adet", "ciro"] as const;
+export const OPERASYON_GORUNUMLERI = ["adet", "ciro", "kdv"] as const;
 export type OperasyonGorunumu = (typeof OPERASYON_GORUNUMLERI)[number];
 
 export function gorunumCoz(deger: string | undefined): OperasyonGorunumu {
-  return deger === "ciro" ? "ciro" : "adet";
+  return (OPERASYON_GORUNUMLERI as readonly string[]).includes(deger ?? "")
+    ? (deger as OperasyonGorunumu)
+    : "adet";
 }
 
 /**
@@ -224,18 +250,32 @@ export function serileriKur(
   noktalar: OperasyonNoktasi[],
   gorunum: OperasyonGorunumu,
 ): { alim: number[]; satis: number[]; ucuncu: number[] } {
-  return gorunum === "ciro"
-    ? {
-        alim: noktalar.map((n) => n.alimTutar),
-        satis: noktalar.map((n) => n.satisCiro),
-        /** ⚠ SATIŞ − ALIM: pozitif "içeri para girdi" demek. */
-        ucuncu: noktalar.map((n) => n.satisCiro - n.alimTutar),
-      }
-    : {
-        alim: noktalar.map((n) => n.alimAdet),
-        satis: noktalar.map((n) => n.satisAdet),
-        ucuncu: noktalar.map((n) => n.kargoAdet),
-      };
+  if (gorunum === "ciro") {
+    return {
+      alim: noktalar.map((n) => n.alimTutar),
+      satis: noktalar.map((n) => n.satisCiro),
+      /** ⚠ SATIŞ − ALIM: pozitif "içeri para girdi" demek. */
+      ucuncu: noktalar.map((n) => n.satisCiro - n.alimTutar),
+    };
+  }
+  if (gorunum === "kdv") {
+    /**
+     * ⚠ ÖDENECEK KDV = HESAPLANAN − İNDİRİLECEK.
+     * Pozitif: devlete ödenir. Negatif: DEVREDEN KDV — sonraki aya
+     * aktarılır, iade edilmez. İşaret bu yüzden korunuyor; mutlak değer
+     * alınsaydı "ödeyecek miyim alacaklı mıyım" bilgisi kaybolurdu.
+     */
+    return {
+      alim: noktalar.map((n) => n.alimKdv),
+      satis: noktalar.map((n) => n.satisKdv),
+      ucuncu: noktalar.map((n) => n.satisKdv - n.alimKdv),
+    };
+  }
+  return {
+    alim: noktalar.map((n) => n.alimAdet),
+    satis: noktalar.map((n) => n.satisAdet),
+    ucuncu: noktalar.map((n) => n.kargoAdet),
+  };
 }
 
 /** Dönemin toplamı — grafiğin altında yazar (İlke #15). */
@@ -249,6 +289,10 @@ export function operasyonToplami(noktalar: OperasyonNoktasi[]): {
   islemAdedi: number;
   /** SATIŞ − ALIM. Pozitif: içeri para girdi. */
   fark: number;
+  alimKdv: number;
+  satisKdv: number;
+  /** ÖDENECEK KDV. Negatifse DEVREDEN — sonraki aya aktarılır. */
+  odenecekKdv: number;
 } {
   const t = noktalar.reduce(
     (a, n) => ({
@@ -257,13 +301,24 @@ export function operasyonToplami(noktalar: OperasyonNoktasi[]): {
       satisAdet: a.satisAdet + n.satisAdet,
       satisCiro: a.satisCiro + n.satisCiro,
       kargoAdet: a.kargoAdet + n.kargoAdet,
+      alimKdv: a.alimKdv + n.alimKdv,
+      satisKdv: a.satisKdv + n.satisKdv,
     }),
-    { alimAdet: 0, alimTutar: 0, satisAdet: 0, satisCiro: 0, kargoAdet: 0 },
+    {
+      alimAdet: 0,
+      alimTutar: 0,
+      satisAdet: 0,
+      satisCiro: 0,
+      kargoAdet: 0,
+      alimKdv: 0,
+      satisKdv: 0,
+    },
   );
   return {
     ...t,
     islemAdedi: t.alimAdet + t.satisAdet + t.kargoAdet,
     fark: t.satisCiro - t.alimTutar,
+    odenecekKdv: t.satisKdv - t.alimKdv,
   };
 }
 

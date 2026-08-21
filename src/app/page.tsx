@@ -297,6 +297,8 @@ export default async function AnaSayfa({
             quantity: true,
             unitPriceAmount: true,
             unitPriceCurrency: true,
+            /** KDV oranı SATIŞ ANINDA yazılmış snapshot — KDV sekmesi bunu okur. */
+            vatRate: true,
             // KALEM SEVİYESİ KÂR — ürün listelerinin kaynağı. Satış
             // seviyesindeki NET ile toplanmaz: sipariş başına kesintiler
             // (hizmet bedeli, sabit gider) kalemde YOK.
@@ -501,6 +503,20 @@ export default async function AnaSayfa({
         0,
       );
 
+    /**
+     * ⚠ KDV KALEM KALEM — tek oranla çarpılmaz. Bir siparişte %20 kulaklık
+     * ile %1 kitap birlikte olabilir; sipariş toplamına tek oran uygulamak
+     * ikisini de yanlış hesaplardı.
+     * ⚠ TUTAR KDV DAHİL: kdv = satır − satır/(1+oran).
+     */
+    const kdv = satis.items
+      .filter((k) => k.unitPriceCurrency === paraBirimi)
+      .reduce((t, k) => {
+        const satir = Number(k.unitPriceAmount.toString()) * k.quantity;
+        const oran = k.vatRate === null ? 0 : Number(k.vatRate.toString());
+        return t + (oran === 0 ? 0 : satir - satir / (1 + oran / 100));
+      }, 0);
+
     return {
       kanalKodu: satis.channelAccount.channel.code,
       kanalAdi: satis.channelAccount.channel.name,
@@ -508,6 +524,7 @@ export default async function AnaSayfa({
       tarih: satis.soldAt,
       paraBirimi,
       gelir,
+      kdv,
       net1:
         satis.net1Amount === null ? null : Number(satis.net1Amount.toString()),
       net2:
@@ -1309,7 +1326,7 @@ export default async function AnaSayfa({
     alimlar: alim.gunluk,
     satislar: donemSatislari
       .filter((s) => s.paraBirimi === seciliPara)
-      .map((s) => ({ tarih: s.tarih, gelir: s.gelir })),
+      .map((s) => ({ tarih: s.tarih, gelir: s.gelir, kdv: s.kdv })),
     kargolar: donemKargolari
       .filter((k) => k.kargoTarihi !== null && k.paraBirimi === seciliPara)
       .map((k) => ({ tarih: k.kargoTarihi as Date, gelir: k.gelir })),
@@ -1753,7 +1770,7 @@ export default async function AnaSayfa({
                    (iki kümenin farkı). Sessiz kalmasın diye adres hiç
                    verilmiyor — nokta çizilir ama link olmaz. */
                 adres:
-                  operasyonGorunumu === "ciro"
+                  operasyonGorunumu !== "adet"
                     ? {
                         a: noktaAdresi("/alimlar", n),
                         b: noktaAdresi("/satislar", n),
@@ -1787,7 +1804,7 @@ export default async function AnaSayfa({
                   b: operasyonSeri.satis[i] ?? 0,
                   c: operasyonSeri.ucuncu[i] ?? 0,
                   adres:
-                    operasyonGorunumu === "ciro"
+                    operasyonGorunumu !== "adet"
                       ? {
                           a: noktaAdresi("/alimlar", n),
                           b: noktaAdresi("/satislar", n),
@@ -1850,30 +1867,44 @@ export default async function AnaSayfa({
                 sayi: operasyonTablo.gizlenen,
               })}
               adlar={{
-                a: t("operasyonAlim"),
-                b: t("operasyonSatis"),
+                a:
+                  operasyonGorunumu === "kdv"
+                    ? t("operasyonIndirilecek")
+                    : t("operasyonAlim"),
+                b:
+                  operasyonGorunumu === "kdv"
+                    ? t("operasyonHesaplanan")
+                    : t("operasyonSatis"),
                 c:
                   operasyonGorunumu === "ciro"
                     ? t("operasyonFark")
-                    : t("operasyonKargo"),
+                    : operasyonGorunumu === "kdv"
+                      ? t("operasyonOdenecek")
+                      : t("operasyonKargo"),
               }}
               bicimle={(d) =>
-                operasyonGorunumu === "ciro"
-                  ? bicim.para(d, seciliPara)
-                  : String(Math.round(d))
+                operasyonGorunumu === "adet"
+                  ? String(Math.round(d))
+                  : bicim.para(d, seciliPara)
               }
               bosMesaj={t("donemBos")}
             />
 
-            {/* ⚠⚠ KDV UYARISI — KULLANICININ İKİNCİ GEREKÇESİ BUYDU.
-                "Alım KDV'si ile satış KDV'si arasındaki fark ödeyeceğim
-                vergiyi belli ediyor" dedi. Bu grafik CİRO gösteriyor, KDV
-                DEĞİL: oran ürüne göre değişiyor (%1/%10/%20, kategoriden)
-                ve aynı ciroda farklı oranlı ürünler bambaşka KDV üretir.
-                Sessiz kalsaydı grafik vergi tahmininde YANILTIRDI. */}
-            <p className="text-muted-foreground border-t pt-2 text-xs">
-              {t("operasyonKdvNotu")}
-            </p>
+            {/* ⚠ ESKİ UYARI KALDIRILDI, GEREKÇESİYLE (21.08.2026).
+                Kartta _"bu grafik ciro gösterir, KDV değil; iki cironun
+                farkı vergiyi vermez"_ yazıyordu. Kullanıcı itiraz etti:
+                "her ürünün KDV bilgisi girildiği için net bilgi sende var".
+                HAKLIYDI — ölçüldü: satış 60/60 kalemde snapshot'lı, alım
+                193/193 kalem kategoriden çözülebiliyor. Uyarı yerine KDV
+                SEKMESİ kondu.
+
+                Kalan tek sınır beyan ediliyor: satış oranı DONDURULMUŞ,
+                alım oranı BUGÜNDEN okunuyor. */}
+            {operasyonGorunumu === "kdv" ? (
+              <p className="text-muted-foreground border-t pt-2 text-xs">
+                {t("operasyonKdvKaynak")}
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}
