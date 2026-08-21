@@ -571,7 +571,9 @@
     "alimKoduVeSiparis": "Alım / Sipariş no",
     "suzgecToplami": "Süzgeç toplamı",
     "iptalHaric": "{sayi} iptal hariç",
-    "toplamAdet": "{sayi} adet sipariş"
+    "toplamAdet": "{sayi} adet sipariş",
+    "adetToplami": "Toplam sipariş adedi",
+    "adetIptalHaric": "{sayi} adet iptal hariç"
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",
@@ -872,7 +874,8 @@
     "paketSayisiNotu": "Sipariş bölündüyse kaç paketle gönderildi — hizmet bedeli paket başına alınır.",
     "siparisNoIptalliKayitli": "\"{kod}\" sipariş numarası İPTAL EDİLMİŞ bir satışta kayıtlı. Yeni kayıt açmak yerine o satışın iptalini geri alın.",
     "cakisanSatisIptalliMetni": "Bu sipariş numarası iptal edilmiş bir satışta duruyor. Aynı numara ikinci kez kullanılamaz; numarayı değiştirmek (ör. sonuna rakam eklemek) satışın pazaryeri ödemesiyle eşleşmesini kalıcı olarak bozar. Doğrusu: o satışı açıp \"İptali geri al\" deyin, gerekiyorsa sonra düzenleyin.",
-    "cakisanSatisIptaliGeriAl": "İptalli satışa git"
+    "cakisanSatisIptaliGeriAl": "İptalli satışa git",
+    "adetToplami": "Toplam satış adedi"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -2779,7 +2782,8 @@
     "sebepKisa_MAGAZA_DIGER": "diğer",
     "suzgecEtiketi": "İptaller",
     "toplamHaric": "{sayi} iptal — toplama girmiyor",
-    "iadeyeGitKodlu": "İade kaydını aç ({kod})"
+    "iadeyeGitKodlu": "İade kaydını aç ({kod})",
+    "adetHaric": "{sayi} adet iptal hariç"
   },
   "IptalGeriAl": {
     "geriAl": "İptali geri al",

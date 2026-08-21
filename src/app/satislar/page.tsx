@@ -43,7 +43,11 @@ import { satisKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { satisKalemToplamlari } from "@/lib/tutar";
-import { hesaplananToplami, suzgecToplami } from "@/lib/liste-toplami";
+import {
+  adetToplami,
+  hesaplananToplami,
+  suzgecToplami,
+} from "@/lib/liste-toplami";
 import { Suspense } from "react";
 
 import { MarjTercihi } from "./marj-tercihi";
@@ -180,7 +184,13 @@ export default async function SatislarSayfasi({
     return t("digerKalemler", { urun: ad, sayi: satis.items.length - 1 });
   }
 
-  function adetToplami(satis: (typeof satislar)[number]) {
+  /**
+   * ⚠ ADI "satirAdedi" — eskiden `adetToplami` idi ve kitaplıktaki
+   * `adetToplami` ile ÇAKIŞIYORDU. Çakışma sessizdi: süzgeç toplamını
+   * çağırdığımı sanırken yerel işlev kazanıyordu. Bir satırın adedi ile
+   * bütün süzgecin adedi iki ayrı şeydir; adları da ayrı olmalı.
+   */
+  function satirAdedi(satis: (typeof satislar)[number]) {
     return satis.items.reduce((toplam, k) => toplam + k.quantity, 0);
   }
 
@@ -211,11 +221,27 @@ export default async function SatislarSayfasi({
    * Toplam kutuları HER ZAMAN iptal hariçtir; iptal edilenler ayrı kutuda,
    * kendi rakamıyla görünür.
    */
+  /**
+   * ⚠ HARİÇ YÜKLEMİ TEK GÖVDEDE. Ciro ve adet kutuları yan yana duruyor;
+   * biri iptalliyi sayıp öteki saymasaydı ekranda iki rakam birbirini
+   * yalanlardı ve hangisinin doğru olduğu anlaşılmazdı.
+   */
+  const iptalliMi = (s: (typeof satislar)[number]) => s.iptalTarihi !== null;
+
   const ciroToplami = suzgecToplami(
     satislar,
     (s) => satisKalemToplamlari(s.items),
-    (s) => s.iptalTarihi !== null,
+    iptalliMi,
   );
+
+  /**
+   * ADET TOPLAMI (kullanıcı isteği 21.08.2026) — "kaç kayıt" değil "kaç ürün".
+   *
+   * ⚠ BAŞLIKTAKİ "7 kayıt" BU DEĞİL. Bir satış satırı 2 adet taşıyabiliyor;
+   * kullanıcı satırlardaki Adet sütununu kafadan topluyordu. Sistem zaten
+   * biliyordu, söylemiyordu (İlke #15).
+   */
+  const adetToplam = adetToplami(satislar, satirAdedi, iptalliMi);
 
   /**
    * NET-2 TOPLAMI — SESSİZ VARSAYIM YOK.
@@ -515,6 +541,19 @@ export default async function SatislarSayfasi({
           toplamlar: ciroToplami.haric,
           sayi: ciroToplami.haricSayi,
         }}
+        /* ADET SOLDA (kullanıcı yerleşimi 21.08.2026): önce "kaç ürün",
+           sonra "kaç para". `ekler`e koysaydım NET-2'nin sağına düşerdi. */
+        oncekiler={[
+          {
+            etiket: t("adetToplami"),
+            deger: bicim.sayi(adetToplam.toplam),
+            /* İPTALLİ ADET SESSİZ DÜŞMEZ — para tarafındaki kuralla aynı. */
+            not:
+              adetToplam.haric > 0
+                ? tIpt("adetHaric", { sayi: adetToplam.haric })
+                : undefined,
+          },
+        ]}
         ekler={[
           {
             etiket: t("netToplami"),
@@ -688,7 +727,7 @@ export default async function SatislarSayfasi({
                       />
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {adetToplami(satis)}
+                      {bicim.sayi(satirAdedi(satis))}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {/* Tutar üstte, birim fiyat altta. Tek kalemli satışta
@@ -774,7 +813,7 @@ export default async function SatislarSayfasi({
                     etiket: ortak("adet"),
                     deger: (
                       <span className="text-base font-semibold">
-                        {adetToplami(satis)}
+                        {bicim.sayi(satirAdedi(satis))}
                       </span>
                     ),
                   },

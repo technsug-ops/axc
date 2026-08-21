@@ -571,7 +571,9 @@
     "alimKoduVeSiparis": "",
     "suzgecToplami": "",
     "iptalHaric": "",
-    "toplamAdet": ""
+    "toplamAdet": "",
+    "adetToplami": "",
+    "adetIptalHaric": ""
   },
   "MalKabul": {
     "saglamSayiOlmali": "",
@@ -872,7 +874,8 @@
     "paketSayisiNotu": "",
     "siparisNoIptalliKayitli": "",
     "cakisanSatisIptalliMetni": "",
-    "cakisanSatisIptaliGeriAl": ""
+    "cakisanSatisIptaliGeriAl": "",
+    "adetToplami": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -2779,7 +2782,8 @@
     "sebepKisa_MAGAZA_DIGER": "",
     "suzgecEtiketi": "",
     "toplamHaric": "",
-    "iadeyeGitKodlu": ""
+    "iadeyeGitKodlu": "",
+    "adetHaric": ""
   },
   "IptalGeriAl": {
     "geriAl": "",

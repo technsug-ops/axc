@@ -31,7 +31,7 @@ import { alimKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { kalemToplamlari } from "@/lib/tutar";
-import { suzgecToplami } from "@/lib/liste-toplami";
+import { adetToplami, suzgecToplami } from "@/lib/liste-toplami";
 import { ListeToplami } from "@/components/liste-toplami";
 
 export async function generateMetadata() {
@@ -217,11 +217,24 @@ export default async function AlimlarSayfasi({
    * İPTALLER TOPLAMA GİRMEZ: iptal edilmiş alım gerçekleşmiş bir alış
    * değildir, matraha yazılamaz. Ama sessizce düşülmez — ayrı kutuda görünür.
    */
+  /** Hariç yüklemi TEK GÖVDEDE — tutar ve adet kutuları ayrışamaz. */
+  const iptalliMi = (a: (typeof alimlar)[number]) => a.status === "CANCELLED";
+
   const toplamlar = suzgecToplami(
     alimlar,
     (a) => kalemToplamlari(a.items),
-    (a) => a.status === "CANCELLED",
+    iptalliMi,
   );
+
+  /**
+   * ADET TOPLAMI — satır satır adet gösteren listenin toplamı (İlke #15).
+   *
+   * ⚠ BU BOŞLUĞU KENDİM AÇMIŞTIM: adet sütunu 21.08.2026'da eklendi, toplamı
+   * eklenmedi. "Tek tek gösterilen yerde toplam da olur" kuralı sütun
+   * eklendiği anda borç doğurmuştu; satış listesindeki aynı iş sırasında
+   * fark edildi ve birlikte kapatıldı.
+   */
+  const adetToplam = adetToplami(alimlar, toplamAdet, iptalliMi);
 
   function eylemler(alim: (typeof alimlar)[number]) {
     const kabulEdilebilir =
@@ -333,6 +346,17 @@ export default async function AlimlarSayfasi({
         altMetin={`${ortak("kayitSayisi", { sayi: toplamlar.sayi })}${
           aralikMetni ? ` · ${aralikMetni}` : ""
         }`}
+        /* ADET SOLDA — satışlar sayfasıyla AYNI yerleşim (İlke #10). */
+        oncekiler={[
+          {
+            etiket: t("adetToplami"),
+            deger: bicim.sayi(adetToplam.toplam),
+            not:
+              adetToplam.haric > 0
+                ? t("adetIptalHaric", { sayi: adetToplam.haric })
+                : undefined,
+          },
+        ]}
         haric={{
           etiket: t("iptalHaric", { sayi: toplamlar.haricSayi }),
           toplamlar: toplamlar.haric,

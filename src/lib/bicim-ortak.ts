@@ -14,11 +14,7 @@ import { IS_SAAT_DILIMI, paraSecenekleri } from "@/i18n/ayarlar";
 
 /** Prisma Decimal, sayı veya metin kabul eder. */
 export type HamTutar =
-  | { toString(): string }
-  | number
-  | string
-  | null
-  | undefined;
+  { toString(): string } | number | string | null | undefined;
 
 export function sayiyaCevir(tutar: HamTutar): number | null {
   if (tutar === null || tutar === undefined) return null;
@@ -67,6 +63,20 @@ export function bicimOlustur(format: Formatter) {
         minimumFractionDigits: 0,
         maximumFractionDigits: basamak,
       });
+    },
+
+    /**
+     * 1.284 — SAYIM (adet, kayıt). Para değil: birim simgesi YOKTUR.
+     *
+     * Elle `String(n)` yazmak yasak (anayasa): binlik ayracı dile göre
+     * değişir ve 1284 adet, Türkçe ekranda "1.284" okunmalı. Küçük sayıda
+     * fark görünmez — tam bu yüzden elle yazma alışkanlığı sinsi: hata
+     * ancak sayı büyüdüğünde ortaya çıkar.
+     *
+     * ONDALIK YOK: adet tam sayıdır, "2,5 ürün" diye bir şey satılmaz.
+     */
+    sayi(deger: number): string {
+      return format.number(deger, { maximumFractionDigits: 0 });
     },
   };
 }

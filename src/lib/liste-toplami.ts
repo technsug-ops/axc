@@ -81,3 +81,41 @@ export function hesaplananToplami<T>(
 
   return { toplam: toplamlariBirlestir(girenler), eksikSayi };
 }
+
+/**
+ * ADET TOPLAMI — "kaç ürün sattım/aldım", para değil SAYI.
+ *
+ * ⚠ KAYIT SAYISI ≠ ADET. Liste başlığı "7 kayıt" der; o 7 satışın içinde
+ * 2+1+3… ürün olabilir. Kullanıcı 21.08.2026: _"mevcut filtrelenmiş sayfada
+ * kaç adet satış olduğunu ekle"_ — sorduğu şey kayıt sayısı değil, ADET.
+ *
+ * ── HARİÇ KURALI ÇAĞIRANIN, BURANIN DEĞİL ───────────────────────────────
+ * `haricMi` dışarıdan geliyor ki ciro toplamıyla AYNI yüklem verilebilsin.
+ * Buraya "iptalliyi çıkar" diye gömseydim iki kutu bir gün ayrışırdı: biri
+ * iptalliyi sayar, öteki saymaz ve ekranda ikisi yan yana durur.
+ *
+ * Para toplamıyla aynı sözleşme: hariç tutulan SESSİZCE düşmez, kendi
+ * sayısıyla geri döner.
+ */
+export function adetToplami<T>(
+  kayitlar: readonly T[],
+  adedi: (kayit: T) => number,
+  haricMi: (kayit: T) => boolean,
+): { toplam: number; haric: number; sayi: number; haricSayi: number } {
+  let toplam = 0;
+  let haric = 0;
+  let sayi = 0;
+  let haricSayi = 0;
+
+  for (const kayit of kayitlar) {
+    if (haricMi(kayit)) {
+      haric += adedi(kayit);
+      haricSayi++;
+    } else {
+      toplam += adedi(kayit);
+      sayi++;
+    }
+  }
+
+  return { toplam, haric, sayi, haricSayi };
+}

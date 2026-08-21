@@ -1,4 +1,10 @@
-import { hesaplananToplami, suzgecToplami } from "../src/lib/liste-toplami";
+import { readFileSync } from "node:fs";
+
+import {
+  adetToplami,
+  hesaplananToplami,
+  suzgecToplami,
+} from "../src/lib/liste-toplami";
 import { kalemToplamlari } from "../src/lib/tutar";
 
 /**
@@ -218,6 +224,106 @@ esit(
   esit("süzgeçsiz olsaydı 106.618 çıkardı", suzgecsiz.toplam, [
     { paraBirimi: "TRY", tutar: 106618 },
   ]);
+}
+
+// ===========================================================================
+console.log("\nADET TOPLAMI — 'kaç kayıt' değil 'kaç ürün'");
+// ===========================================================================
+{
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERMELİ. Kayıt sayısı ile adet
+   * FARKLI olmalı; her satır 1 adet olsaydı "adet döndürmek yerine kayıt
+   * say" mutasyonu yeşil kalırdı. Burada 3 kayıt / 6 adet.
+   *
+   * Senaryo kullanıcının ekranından (21.08.2026, /satislar · Dün): 7 kayıt
+   * başlıkta yazıyordu ama ilk satır 2 adet taşıyordu.
+   */
+  const satislar = [
+    { adet: 2, iptal: false },
+    { adet: 1, iptal: false },
+    { adet: 3, iptal: false },
+    { adet: 5, iptal: true },
+  ];
+
+  const a = adetToplami(
+    satislar,
+    (s) => s.adet,
+    (s) => s.iptal,
+  );
+  esit("adet toplamı 6 (kayıt sayısı 3 DEĞİL)", a.toplam, 6);
+  esit("kayıt sayısı ayrıca 3", a.sayi, 3);
+
+  /**
+   * İPTAL SESSİZCE DÜŞMEZ — para tarafındaki sözleşmeyle aynı. 5 adet
+   * dışarıda kaldıysa bu ekranda yazılabilmeli.
+   */
+  esit("iptal edilen adet ayrı sayılıyor", a.haric, 5);
+  esit("iptal kayıt sayısı ayrı", a.haricSayi, 1);
+
+  /**
+   * ⚠ HARİÇ SÜZGECİ GERÇEKTEN ÇALIŞIYOR MU: yüklem hep-false yapılsaydı
+   * toplam 11 olurdu. Farkın BÜYÜKLÜĞÜNÜ sabitliyoruz.
+   */
+  const suzgecsiz = adetToplami(
+    satislar,
+    (s) => s.adet,
+    () => false,
+  );
+  esit("süzgeçsiz olsaydı 11 çıkardı", suzgecsiz.toplam, 11);
+
+  /** Boş liste sıfır döner — "—" ya da NaN değil. */
+  const bos = adetToplami(
+    [] as typeof satislar,
+    (s) => s.adet,
+    (s) => s.iptal,
+  );
+  esit("boş listede toplam 0", bos.toplam, 0);
+  esit("boş listede hariç de 0", bos.haric, 0);
+}
+
+// ===========================================================================
+console.log("\nADET EKRANA VARIYOR MU — kaynak taraması");
+// ===========================================================================
+{
+  /**
+   * ⚠ DESEN ÖNCE SAYILDI. `adetToplami` satış sayfasında İKİ kez geçiyor
+   * (import satırı + çağrı). Import tek başına hiçbir kutu çizmez, bu yüzden
+   * işaret ÇAĞRIYA bağlanıyor: `adetToplami(`.
+   */
+  for (const [ad, yol, etiket] of [
+    ["satışlar", "src/app/satislar/page.tsx", 'etiket: t("adetToplami")'],
+    ["alımlar", "src/app/alimlar/page.tsx", 'etiket: t("adetToplami")'],
+  ] as const) {
+    const kaynak = readFileSync(yol, "utf8");
+    esit(`${ad} — süzgeç adedini HESAPLIYOR`, kaynak.includes("adetToplami("), true);
+    /**
+     * ⚠ VE KUTUYA BAĞLANIYOR. Hesabın var olması ekranda göründüğü anlamına
+     * gelmez — "muafiyetin uygulanması ve beyanı ayrı sınanır" dersinin
+     * aynısı: doğru çalışan bir hesabın görünmezliği de yalancı yeşildir.
+     */
+    esit(`${ad} — kutu ÇİZİLİYOR (oncekiler)`, kaynak.includes("oncekiler={["), true);
+    esit(`${ad} — kutunun etiketi sözlükten`, kaynak.includes(etiket), true);
+    /**
+     * ⚠ VE HARİÇ YÜKLEMİ TEK GÖVDEDE: tutar ile adet aynı `iptalliMi`yi
+     * kullanmalı. İki ayrı yüklem yazılırsa biri gün gelip ötekinden ayrışır
+     * ve ekranda yan yana iki çelişen rakam durur.
+     */
+    esit(`${ad} — tutar ve adet AYNI hariç yüklemini kullanıyor`, kaynak.includes("iptalliMi"), true);
+  }
+
+  /**
+   * ⚠ SAYI ELLE BİÇİMLENDİRİLMİYOR (anayasa: biçimler dil altyapısından).
+   * `String(...)` ya da şablon içinde çıplak sayı, binlik ayracını kaybeder
+   * ve 1284 adet "1284" görünür.
+   */
+  const bilesen = readFileSync("src/components/liste-toplami.tsx", "utf8");
+  esit("ek kutular tek gövdeden çiziliyor", bilesen.includes("function ekKutulari("), true);
+  esit(
+    "öncekiler ve ekler AYNI çiziciyi kullanıyor",
+    bilesen.includes("ekKutulari(ekler, bicim)") &&
+      bilesen.includes("ekKutulari(oncekiler, bicim)"),
+    true,
+  );
 }
 
 console.log(`\n${gecen} geçti · ${kalan} kaldı\n`);
