@@ -16,12 +16,7 @@ import { readFileSync } from "node:fs";
  * ============================================================================
  */
 
-import {
-  karHesapla,
-  kdvAyir,
-  kdvHaric,
-  type KarGirdisi,
-} from "../src/lib/kar";
+import { karHesapla, kdvAyir, kdvHaric, type KarGirdisi } from "../src/lib/kar";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -39,7 +34,12 @@ function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   }
 }
 
-function yakin(ad: string, gelen: number, beklenen: number, tolerans = TOLERANS) {
+function yakin(
+  ad: string,
+  gelen: number,
+  beklenen: number,
+  tolerans = TOLERANS,
+) {
   const fark = Math.abs(gelen - beklenen);
   calisan++;
   if (fark <= tolerans) {
@@ -59,17 +59,41 @@ console.log("\n1) BİRİM TESTLERİ — oran birimi ve KDV ayrıştırma");
 // ===========================================================================
 {
   // KDV ayrıştırma: tutar KDV DAHİL, içindeki KDV çıkarılır (üstüne eklenmez).
-  kontrol("120 TL içindeki %20 KDV = 20", Math.abs(kdvAyir(120, 20) - 20) < 0.001);
-  kontrol("120 TL'nin KDV hariç hali = 100", Math.abs(kdvHaric(120, 20) - 100) < 0.001);
-  kontrol("110 TL içindeki %10 KDV = 10", Math.abs(kdvAyir(110, 10) - 10) < 0.001);
+  kontrol(
+    "120 TL içindeki %20 KDV = 20",
+    Math.abs(kdvAyir(120, 20) - 20) < 0.001,
+  );
+  kontrol(
+    "120 TL'nin KDV hariç hali = 100",
+    Math.abs(kdvHaric(120, 20) - 100) < 0.001,
+  );
+  kontrol(
+    "110 TL içindeki %10 KDV = 10",
+    Math.abs(kdvAyir(110, 10) - 10) < 0.001,
+  );
   kontrol("101 TL içindeki %1 KDV = 1", Math.abs(kdvAyir(101, 1) - 1) < 0.001);
 
-  // ORAN BİRİMİ — %0,8 BİNDE SEKİZDİR, yüzde sekiz değil.
-  // 1000 TL (KDV hariç) üzerinden %0,8 -> 8 TL. Yanlış okunursa 80 TL çıkar.
+  /**
+   * ORAN BİRİMİ **VE MATRAH** — ikisi ayrı ayrı bozulabilir.
+   *
+   * ⚠ ESKİ HÂLİ MATRAHI YANLIŞ KİLİTLİYORDU (düzeltildi 21.08.2026):
+   * girdi `satisTutari: 1200` idi ve 8 bekleniyordu — yani sessizce
+   * "KDV HARİÇ 1000'in binde sekizi" deniyordu. Testin amacı birimi
+   * (binde ↔ yüzde) sabitlemekti, ama matrahı da sabitledi ve YANLIŞ
+   * olanı sabitledi.
+   *
+   * Anayasa: _"%0,8 ödeme gideri — sipariş tutarının binde sekizi,
+   * **100 TL'de 80 kuruş**"_. Ve HB'nin kendi ekstresi ölçüldü: tahsilat
+   * bedeli / sipariş tutarı = %0,8000 (113 sipariş), sipariş tutarının
+   * KDV DAHİL olduğu aynı dosyadaki stopaj oranıyla teyit edildi.
+   *
+   * Artık girdi KDV DAHİL 1000 ve beklenen 8 — üstelik ÜÇ yanlış okuma
+   * birden dışlanıyor.
+   */
   const bindeSekiz = karHesapla({
     kalemler: [
       {
-        satisTutari: 1200,
+        satisTutari: 1000,
         satisParaBirimi: "TRY",
         maliyet: 0,
         maliyetParaBirimi: "TRY",
@@ -86,8 +110,26 @@ console.log("\n1) BİRİM TESTLERİ — oran birimi ve KDV ayrıştırma");
   const odeme = bindeSekiz.siparisKesintileri.find(
     (k) => k.code === "ODEME_GIDERI",
   )!.tutar;
-  yakin("%0,8 binde sekiz (1000 -> 8)", odeme, 8, 0.001);
-  kontrol("  ...yüzde sekiz DEĞİL (80 olmamalı)", Math.abs(odeme - 80) > 1);
+  yakin("%0,8 binde sekiz — KDV DAHİL 1000 -> 8", odeme, 8, 0.001);
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN HER YAKASINI GÖSTERMELİ: üç yanlış okuma da
+   * ayrı ayrı dışlanıyor, yoksa biri sessizce geri gelebilir.
+   */
+  kontrol(
+    "  ...yüzde sekiz DEĞİL (80 olmamalı)",
+    Math.abs(odeme - 80) > 1,
+    odeme,
+  );
+  kontrol(
+    "  ...KDV HARİÇ matrahtan DEĞİL (6,67 olmamalı)",
+    Math.abs(odeme - (1000 / 1.2) * 0.008) > 0.5,
+    odeme,
+  );
+  kontrol(
+    "  ...üstüne KDV EKLENMİYOR (9,60 olmamalı — nesatilir modeli)",
+    Math.abs(odeme - 9.6) > 0.5,
+    odeme,
+  );
 
   // Komisyon oranı: %20 yüzde yirmidir.
   const yuzdeYirmi = karHesapla({
@@ -105,7 +147,12 @@ console.log("\n1) BİRİM TESTLERİ — oran birimi ve KDV ayrıştırma");
     siparisKesintileri: [],
     kargoTarifesi: null,
   });
-  yakin("komisyon %20 (1000 -> 200)", yuzdeYirmi.kalemler[0].komisyon, 200, 0.001);
+  yakin(
+    "komisyon %20 (1000 -> 200)",
+    yuzdeYirmi.kalemler[0].komisyon,
+    200,
+    0.001,
+  );
 
   // Komisyona KDV eklenmesi (Hepsiburada): %4 -> 4 × 1,20
   const komisyonKdvli = karHesapla({
@@ -208,28 +255,57 @@ console.log("\n--- SENARYO 1: HEPSİBURADA ---");
 
   yakin("komisyon", s.kalemler[0].komisyon, 103.53);
   yakin("stopaj", s.kalemler[0].stopaj, 17.98);
+  /**
+   * ============================================================================
+   *  ⚠ BU BEKLENTİ 21.08.2026'DA DEĞİŞTİ — VE ESKİ DEĞER KAYITTA KALIYOR
+   * ----------------------------------------------------------------------------
+   *  Excel'den çözülen değer **26,85** idi (ödeme gideri ≈ 14,25 + hizmet
+   *  bedeli 12,60). Bu rakam KDV HARİÇ matrahı destekliyordu ve motor da
+   *  öyle hesaplıyordu — yani test ile motor birbirini doğruluyordu.
+   *
+   *  HEPSİBURADA'NIN KENDİ EKSTRESİ ÖLÇÜLDÜ (salt okuma, 21.08.2026):
+   *    · 113 siparişte tahsilat bedeli / sipariş tutarı = **%0,8000**
+   *      (min 0,7992 · max 0,8005 — gerçek yuvarlama gürültüsü)
+   *    · Aynı dosyadaki stopaj oranı %0,8333 çıktı (116 satır); stopaj KDV
+   *      hariç tutarın %1'i olduğuna göre payda **KDV DAHİLDİR**.
+   *    · Bu senaryonun neredeyse ikizi ekstrede duruyor — HB siparişi
+   *      `4816616670`, tutar 2.181,52 ₺:
+   *          TAHSILAT_BEDELI  −17,45  (%0,7999)
+   *          HIZMET_BEDELI    −12,60
+   *          STOPAJ           −18,18  (%0,8334)
+   *
+   *  Yani 2.157 ₺'lik bir HB satışında gerçek ödeme gideri ~17,26'dır,
+   *  14,25 değil. Excel'in o satırı tutmuyor; pazaryerinin kendi beyanı
+   *  tutuyor ve anayasanın "100 TL'de 80 kuruş" ifadesiyle de örtüşüyor.
+   *
+   *  ⚠ DEĞİŞEN YALNIZ BU KALEM. Komisyon · stopaj · kargo · satış/alış KDV
+   *  beklentileri Excel'den geldiği gibi DURUYOR ve geçiyor — yani senaryo
+   *  hâlâ dış bir referansa bağlı, tamamen motorun kendi çıktısına
+   *  çevrilmedi (aksi hâlde kendi kendini doğrulayan bir test olurdu).
+   * ============================================================================
+   */
   yakin(
-    "sipariş kesintileri (kargo hariç)",
+    "sipariş kesintileri (kargo hariç) — ekstreden düzeltildi",
     s.siparisKesintileri
       .filter((k) => k.code !== "KARGO")
       .reduce((t, k) => t + k.tutar, 0),
-    26.85,
+    29.86,
   );
   yakin(
     "kargo (KDV dahil)",
     s.siparisKesintileri.find((k) => k.code === "KARGO")!.tutar,
     107,
   );
-  yakin("NET-1", s.net1, 336.65);
+  yakin("NET-1", s.net1, 333.64);
 
   yakin("KDV: satış", s.kdv.satisKdv, 359.5);
   yakin("KDV: alış", s.kdv.alisKdv, 260.8);
   yakin("KDV: komisyon", s.kdv.komisyonKdv, 17.3);
   yakin("KDV: kargo", s.kdv.kargoKdv, 17.8);
-  yakin("KDV: sipariş kesintileri", s.kdv.kesintiKdv, 4.5);
-  yakin("KDV: ödenecek", s.kdv.odenecekKdv, 59.1);
+  yakin("KDV: sipariş kesintileri", s.kdv.kesintiKdv, 4.98);
+  yakin("KDV: ödenecek", s.kdv.odenecekKdv, 58.6);
 
-  yakin("NET-2", s.net2, 277.54);
+  yakin("NET-2", s.net2, 275.04);
   kontrol("durum CALCULATED", s.durum === "CALCULATED", s.durum);
 }
 
@@ -333,7 +409,12 @@ console.log("\n2b) TRENDYOL ORAN YOLU — komisyona KDV EKLENMEZ");
   );
 
   // --- 3) Kullanıcının ikinci örneği ---
-  yakin("TY 3999 × %15,5 komisyon", tyKalem(3999, 15.5).kalemler[0].komisyon, 619.85, 0.01);
+  yakin(
+    "TY 3999 × %15,5 komisyon",
+    tyKalem(3999, 15.5).kalemler[0].komisyon,
+    619.85,
+    0.01,
+  );
 
   // --- Karşı kontrol: KURAL VARSA KDV gerçekten ekleniyor mu? ---
   // Yukarıdaki üçü, motor komisyona hiç KDV eklemese de geçerdi. Bu satır
@@ -378,7 +459,11 @@ console.log("\n3) DURUM TESTLERİ — hesaplanamayan kâr sıfır sayılmaz");
     siparisKesintileri: [],
     kargoTarifesi: null,
   });
-  kontrol("maliyetsiz parti -> NO_COST", maliyetsiz.durum === "NO_COST", maliyetsiz.durum);
+  kontrol(
+    "maliyetsiz parti -> NO_COST",
+    maliyetsiz.durum === "NO_COST",
+    maliyetsiz.durum,
+  );
 
   const paraFarki = karHesapla({
     kalemler: [{ ...temelKalem, maliyet: 800, maliyetParaBirimi: "EUR" }],
@@ -474,7 +559,12 @@ console.log("=".repeat(70));
       ],
       komisyonKdvOrani: null,
       siparisKesintileri: [
-        { code: "SABIT_GIDER", basis: "FIXED", amount: 13.19, paketBasina: true },
+        {
+          code: "SABIT_GIDER",
+          basis: "FIXED",
+          amount: 13.19,
+          paketBasina: true,
+        },
       ],
       kargoTarifesi: null,
       paketSayisi,
@@ -485,8 +575,16 @@ console.log("=".repeat(70));
   const kesinti = (s: ReturnType<typeof karHesapla>) =>
     s.siparisKesintileri.find((k) => k.code === "SABIT_GIDER")?.tutar ?? 0;
 
-  kontrol("1 paket → 13,19", Math.abs(kesinti(tek) - 13.19) < 0.001, kesinti(tek));
-  kontrol("2 paket → 26,38", Math.abs(kesinti(iki) - 26.38) < 0.001, kesinti(iki));
+  kontrol(
+    "1 paket → 13,19",
+    Math.abs(kesinti(tek) - 13.19) < 0.001,
+    kesinti(tek),
+  );
+  kontrol(
+    "2 paket → 26,38",
+    Math.abs(kesinti(iki) - 26.38) < 0.001,
+    kesinti(iki),
+  );
   /**
    * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: aynı kural, farklı
    * paket sayısı, farklı sonuç. Tek paketle sınasaydık çarpan hiç
@@ -500,16 +598,34 @@ console.log("=".repeat(70));
    *
    * Sınanacak şey "fark 13,19" değil, "fark VAR ve DOĞRU YÖNDE".
    */
-  kontrol("  ...NET-1 farkı tam 13,19", Math.abs((tek.net1 - iki.net1) - 13.19) < 0.001,
-    tek.net1 - iki.net1);
-  kontrol("  ...NET-2 de düşüyor", iki.net2 < tek.net2, { tek: tek.net2, iki: iki.net2 });
-  kontrol("  ...ve NET-2 farkı 13,19'u AŞMIYOR (KDV mahsubu)",
-    tek.net2 - iki.net2 <= 13.19 + 0.001, tek.net2 - iki.net2);
+  kontrol(
+    "  ...NET-1 farkı tam 13,19",
+    Math.abs(tek.net1 - iki.net1 - 13.19) < 0.001,
+    tek.net1 - iki.net1,
+  );
+  kontrol("  ...NET-2 de düşüyor", iki.net2 < tek.net2, {
+    tek: tek.net2,
+    iki: iki.net2,
+  });
+  kontrol(
+    "  ...ve NET-2 farkı 13,19'u AŞMIYOR (KDV mahsubu)",
+    tek.net2 - iki.net2 <= 13.19 + 0.001,
+    tek.net2 - iki.net2,
+  );
 
   /** ⚠ EN AZ 1 — "0 paket" kesintiyi yok ederdi. */
-  kontrol("paket 0 verilirse 1 sayılır", Math.abs(kesinti(temel(0)) - 13.19) < 0.001);
-  kontrol("paket eksi verilirse 1 sayılır", Math.abs(kesinti(temel(-3)) - 13.19) < 0.001);
-  kontrol("paket verilmezse 1 sayılır", Math.abs(kesinti(temel()) - 13.19) < 0.001);
+  kontrol(
+    "paket 0 verilirse 1 sayılır",
+    Math.abs(kesinti(temel(0)) - 13.19) < 0.001,
+  );
+  kontrol(
+    "paket eksi verilirse 1 sayılır",
+    Math.abs(kesinti(temel(-3)) - 13.19) < 0.001,
+  );
+  kontrol(
+    "paket verilmezse 1 sayılır",
+    Math.abs(kesinti(temel()) - 13.19) < 0.001,
+  );
 
   /**
    * ⚠ ÇARPAN YALNIZ PAKET BAŞINA KURALDA. Yüzde tabanlı kesinti (ödeme

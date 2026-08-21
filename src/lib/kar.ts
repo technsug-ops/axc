@@ -31,10 +31,7 @@ import type { Currency } from "@/generated/prisma/enums";
  */
 
 export type KarDurumu =
-  | "CALCULATED"
-  | "NO_COST"
-  | "CURRENCY_MISMATCH"
-  | "RULE_MISSING";
+  "CALCULATED" | "NO_COST" | "CURRENCY_MISMATCH" | "RULE_MISSING";
 
 /** Stopaj oranı (%): KDV hariç tutarın yüzde 1'i. */
 export const STOPAJ_ORANI = 1;
@@ -189,7 +186,10 @@ function kalemHesapla(
   let komisyon: number | null = null;
   if (kalem.komisyonTutari !== null && kalem.komisyonTutari !== undefined) {
     komisyon = kalem.komisyonTutari;
-  } else if (kalem.komisyonOrani !== null && kalem.komisyonOrani !== undefined) {
+  } else if (
+    kalem.komisyonOrani !== null &&
+    kalem.komisyonOrani !== undefined
+  ) {
     const brut = (kalem.satisTutari * kalem.komisyonOrani) / 100;
     // Hepsiburada komisyona KDV ekler; Trendyol eklemez.
     komisyon =
@@ -244,11 +244,51 @@ export function karHesapla(girdi: KarGirdisi): KarSonucu {
     komisyonKdv += kdvAyir(s.komisyon, GENEL_KDV_ORANI);
   }
 
-  // --- sipariş başına kesintiler ---
-  // SALE_AMOUNT matrahı: KDV HARİÇ satış toplamı. Stopajla aynı mantık;
-  // altın senaryo 1 bu okumayla tutuyor (bkz. kar-dogrula.ts notu).
-  const kdvHaricSatisToplami = girdi.kalemler.reduce(
-    (t, k) => t + kdvHaric(k.satisTutari, k.kdvOrani),
+  /**
+   * ============================================================================
+   *  SALE_AMOUNT MATRAHI — KDV DAHİL SİPARİŞ TUTARI
+   * ----------------------------------------------------------------------------
+   *  ⚠ DÜZELTİLDİ 21.08.2026 — VE ESKİ GEREKÇE KAYITTA KALIYOR.
+   *
+   *  Burada eskiden **KDV HARİÇ** toplam kullanılıyordu ve şöyle savunuluyordu:
+   *      _"Stopajla aynı mantık; altın senaryo 1 bu okumayla tutuyor."_
+   *
+   *  Gerekçe iki bacaklıydı ve ikisi de çürüdü:
+   *
+   *  1) "STOPAJLA AYNI MANTIK" BİR BENZETMEDİR, KURAL DEĞİL. Stopajın matrahı
+   *     KDV hariçtir çünkü VERGİ öyle tanımlı. Ödeme gideri bir vergi değil,
+   *     pazaryerinin tahsilat komisyonudur; matrahını stopajdan türetmek
+   *     "ilkeyi kendi kapsamının dışına uygulamak"tır.
+   *
+   *  2) ANAYASA ZATEN AKSİNİ YAZIYORDU: _"%0,8 ödeme gideri — sipariş
+   *     tutarının binde sekizi, **100 TL'de 80 kuruş**"_ (teyitli 09.08.2026).
+   *     100 TL'de 80 kuruş, KDV DAHİL tutarın binde sekizidir.
+   *
+   *  ── VE PAZARYERİNİN KENDİ EKSTRESİ ÖLÇÜLDÜ (21.08.2026, salt okuma) ─────
+   *  `SettlementItem` → "Tahsilat Yönetim Bedeli", 113 sipariş:
+   *      kesinti / sipariş tutarı = %0,8000  (min 0,7992 · max 0,8005)
+   *
+   *  ⚠ Ve o "sipariş tutarı"nın KDV DAHİL olduğu, ekstrenin KENDİ içinden
+   *  teyit edildi — bizim defterimize hiç bakılmadan: aynı dosyadaki
+   *  stopaj/tutar oranı **%0,8333** çıktı (116 satır). Stopaj KDV hariç
+   *  tutarın %1'i olduğuna göre payda KDV dahildir. (Aynı ölçüm stopaj
+   *  kuralımızı da bağımsız olarak doğruladı.)
+   *
+   *  ⚠ İLK ÖLÇÜM YANILTICIYDI: kendi `SaleFee` kayıtlarımıza bakınca oran
+   *  14 kayıtta da TAM `0.8000` çıkmıştı — sıfır sapma. O satırları zaten
+   *  bu motor yazmış; kendi kendini doğrulayan ölçüm ölçüm değildir. Gerçek
+   *  kaynağın gürültüsü (0,7992–0,8005) sahiciliğin işaretiydi.
+   *
+   *  1000 ₺'lik satışta: eski hâl 6,67 ₺ · DOĞRU 8,00 ₺. Yani her HB
+   *  satışında bu kesinti %20 eksik düşülüyor, NET-2 iyimser çıkıyordu.
+   *
+   *  ⚠ KAPSAM ÖLÇÜLDÜ: canlıda `SALE_AMOUNT` tabanlı TEK kural var
+   *  (Hepsiburada / ODEME_GIDERI %0,8). Bu değişiklik başka hiçbir kesintiye
+   *  dokunmuyor.
+   * ============================================================================
+   */
+  const kdvDahilSatisToplami = girdi.kalemler.reduce(
+    (t, k) => t + k.satisTutari,
     0,
   );
 
@@ -275,7 +315,7 @@ export function karHesapla(girdi: KarGirdisi): KarSonucu {
     } else {
       siparisKesintileri.push({
         code: kural.code,
-        tutar: (kdvHaricSatisToplami * (kural.rate ?? 0)) / 100,
+        tutar: (kdvDahilSatisToplami * (kural.rate ?? 0)) / 100,
       });
     }
   }
@@ -292,7 +332,8 @@ export function karHesapla(girdi: KarGirdisi): KarSonucu {
     .filter((k) => k.code !== "KARGO")
     .reduce((t, k) => t + kdvAyir(k.tutar, GENEL_KDV_ORANI), 0);
 
-  const odenecekKdv = satisKdv - (alisKdv + komisyonKdv + kargoKdv + kesintiKdv);
+  const odenecekKdv =
+    satisKdv - (alisKdv + komisyonKdv + kargoKdv + kesintiKdv);
 
   const kalemNet1Toplami = kalemler.reduce((t, k) => t + k.net1, 0);
   const siparisKesintiToplami = siparisKesintileri.reduce(
