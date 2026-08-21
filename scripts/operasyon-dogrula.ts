@@ -1,14 +1,20 @@
-import { gunDegeri, pencereOlustur } from "../src/lib/donem";
+import { readFileSync } from "node:fs";
+
+import {
+  LISTE_PENCERELERI,
+  gunDegeri,
+  pencereOlustur,
+  type PencereTuru,
+} from "../src/lib/donem";
 import {
   gorunumCoz,
   kirilimSec,
+  pencereGunSayisi,
   operasyonSerisi,
   operasyonToplami,
   serileriKur,
   TABLO_ACIK_TAVANI,
-  TABLO_TAVANI,
   tabloAcikMi,
-  tabloNoktalari,
 } from "../src/lib/panel/operasyon-serisi";
 
 /**
@@ -45,11 +51,12 @@ function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
 
 /** Sabit "şu an": 21 Ağustos 2026. Testler takvimden bağımsız. */
 const AN = new Date("2026-08-21T09:00:00Z");
-const g = (metin: string) => gunDegeri({
-  yil: Number(metin.slice(0, 4)),
-  ay: Number(metin.slice(5, 7)),
-  gun: Number(metin.slice(8, 10)),
-});
+const g = (metin: string) =>
+  gunDegeri({
+    yil: Number(metin.slice(0, 4)),
+    ay: Number(metin.slice(5, 7)),
+    gun: Number(metin.slice(8, 10)),
+  });
 
 console.log("\nGÜNLÜK OPERASYON SERİSİ\n");
 
@@ -73,7 +80,11 @@ console.log("1) AÇIK SIFIR — her gün nokta üretir");
     ),
   );
   kontrol("ilk gün 07.08", seri[0]?.anahtar === "2026-08-07", seri[0]?.anahtar);
-  kontrol("son gün 21.08 (BUGÜN DAHİL)", seri.at(-1)?.anahtar === "2026-08-21", seri.at(-1)?.anahtar);
+  kontrol(
+    "son gün 21.08 (BUGÜN DAHİL)",
+    seri.at(-1)?.anahtar === "2026-08-21",
+    seri.at(-1)?.anahtar,
+  );
 }
 
 // ===========================================================================
@@ -220,8 +231,16 @@ console.log("\n6) TOPLAM — grafiğin altındaki rakam (İlke #15)");
     kargolar: [{ tarih: g("2026-08-20"), gelir: 50 }],
   });
   const t = operasyonToplami(seri);
-  kontrol("alım toplamı 2 kayıt / 300", t.alimAdet === 2 && t.alimTutar === 300, t);
-  kontrol("satış toplamı 1 kayıt / 50", t.satisAdet === 1 && t.satisCiro === 50, t);
+  kontrol(
+    "alım toplamı 2 kayıt / 300",
+    t.alimAdet === 2 && t.alimTutar === 300,
+    t,
+  );
+  kontrol(
+    "satış toplamı 1 kayıt / 50",
+    t.satisAdet === 1 && t.satisCiro === 50,
+    t,
+  );
   kontrol("kargo toplamı 1 kayıt", t.kargoAdet === 1, t);
 }
 
@@ -311,14 +330,19 @@ console.log("\n8) CİRO ÜÇÜNCÜ SERİ = FARK (kargo DEĞİL)");
     kargolar: [{ tarih: g("2026-08-21"), gelir: 9999 }],
   });
   const ciro = serileriKur(seri, "ciro");
-  kontrol("ciro 3. serisi SATIŞ − ALIM", ciro.ucuncu[0] === 600, ciro.ucuncu[0]);
+  kontrol(
+    "ciro 3. serisi SATIŞ − ALIM",
+    ciro.ucuncu[0] === 600,
+    ciro.ucuncu[0],
+  );
   kontrol("ciro 3. serisi kargo cirosu DEĞİL", ciro.ucuncu[0] !== 9999);
 
   const t = operasyonToplami(seri);
   kontrol("toplam fark = satış − alım", t.fark === 600, t.fark);
   kontrol(
     "işlem adedi üç kalemin toplamı",
-    t.islemAdedi === t.alimAdet + t.satisAdet + t.kargoAdet && t.islemAdedi === 3,
+    t.islemAdedi === t.alimAdet + t.satisAdet + t.kargoAdet &&
+      t.islemAdedi === 3,
     t.islemAdedi,
   );
   /** ⚠ Fark NEGATİF de olabilir — alım satıştan büyükse para dışarı çıkmış. */
@@ -335,9 +359,119 @@ console.log("\n8) CİRO ÜÇÜNCÜ SERİ = FARK (kargo DEĞİL)");
 }
 
 // ===========================================================================
-console.log("\n9) TABLO TAVANI — özet ekranda döküm olmaz (İlke #13)");
+console.log("\n9) TABLO GRAFİKLE AYNI ŞEYİ GÖSTERİR — kırpma YOK");
 // ===========================================================================
 {
+  /**
+   * ⚠ BU BÖLÜM 21.08.2026'DA DEĞİŞTİ — VE ESKİ GEREKÇE KAYITTA KALIYOR.
+   *
+   * Eskiden 15 satırlık bir TABLO TAVANI vardı ve testi "30 noktada tablo
+   * 15'te kesiliyor" diyordu. Gerekçe doğruydu: 365 satırlık bir tablo özet
+   * ekranında dökümdür (İlke #13).
+   *
+   * Ama tavan bir ZARAR üretiyordu: kırptığı satırlar için "+N dönem daha
+   * var — tam dökümü Rapor sayfasında aç" bağlantısı basıyordu ve Rapor
+   * sayfasında öyle bir döküm YOKTU. Kullanıcı bildirdi (21.08.2026).
+   * Kural doğruydu, TESLİM EDİLEMİYORDU.
+   *
+   * Tavan kaldırıldı. Yerine ASIL değişmez sınanıyor:
+   *
+   *      TABLO, GRAFİĞİN ÇİZDİĞİ NOKTALARIN AYNISINI GÖSTERİR.
+   *
+   * Bu tavandan güçlü bir iddiadır: kırpma olduğu sürece grafikle tablo
+   * AYRIŞIYORDU — çizgide 30 nokta, tabloda 15 satır. Erişilebilir tablo,
+   * grafiğin metin karşılığı olmaktan çıkmıştı.
+   */
+
+  /**
+   * ── ÖNCE SATIR SAYISI: KIRILIM NE KADAR SINIRLIYOR? ────────────────────
+   * ⚠ ÖLÇÜLDÜ (21.08.2026) ve iddiam ÇÜRÜDÜ. "Kırılım her pencereyi 32
+   * satırın altında tutar" diye yazacaktım; özel aralık ölçülünce:
+   *
+   *     31g→31 · 32g→5(hafta) · 92g→14 · 93g→4(ay) · 400g→14
+   *     1095g→37 · 3650g→121
+   *
+   * Yani HAZIR pencereler sınırlı (en kötü 30), ÖZEL ARALIK SINIRSIZ.
+   * On yıl seçen biri 121 satır alır.
+   *
+   * KABUL EDİLDİ, GİZLENMEDİ. Sebebi: o 121 satır veriyle kendiliğinden
+   * BÜYÜMEZ, kullanıcının kendi seçtiği aralıkla büyür — İlke #13'ün
+   * yasakladığı şey "hacim artınca ekranı yutan liste"dir. Üstelik tablo
+   * yedi satırdan sonra KAPALI geliyor: kimse istemeden 121 satır görmez.
+   */
+  const HAZIR_TAVAN = 30; // ölçüldü: en kötü hazır pencere "Son 30 gün"
+
+  const noktaSayisi = (
+    tur: PencereTuru,
+    ozel?: { baslangic: string; bitis: string },
+  ) => {
+    const pencere = pencereOlustur(tur, AN, ozel);
+    /**
+     * ⚠ KIRILIM EKRANIN FORMÜLÜYLE SEÇİLİYOR (`pencereGunSayisi`), sondanın
+     * kendi kopyasıyla değil. Kopya olsaydı bu test kendi hesabını doğrular,
+     * ekranınkini değil ("sonda parametresi ekranın parametresi değildir").
+     */
+    return operasyonSerisi({
+      pencere,
+      kirilim: kirilimSec(tur, pencereGunSayisi(pencere)),
+      alimlar: [],
+      satislar: [],
+      kargolar: [],
+    }).length;
+  };
+
+  const hazir: Array<[string, number]> = [];
+  // "Özel aralık" hazır pencere değil — kendi hâlleriyle aşağıda ölçülüyor.
+  for (const tur of LISTE_PENCERELERI) {
+    if (tur !== "OZEL") hazir.push([tur, noktaSayisi(tur)]);
+  }
+  for (const [ad, sayi] of hazir) {
+    kontrol(`${ad} → ${sayi} satır`, sayi <= HAZIR_TAVAN, sayi);
+  }
+  /**
+   * ⚠ VE SINIR SIKI OLMALI. "hepsi ≤ 1000" her mutasyonu yeşil geçirirdi.
+   * En kötü hâlin sınıra DEĞDİĞİNİ sınıyoruz: biri "Son 1 yıl"ı GÜN
+   * kırılımına düşürürse (365 satır) burası kırmızı yanar.
+   */
+  kontrol(
+    "sınır gevşek değil — en kötü hazır pencere sınıra değiyor",
+    Math.max(...hazir.map(([, n]) => n)) === HAZIR_TAVAN,
+    Math.max(...hazir.map(([, n]) => n)),
+  );
+
+  /** Özel aralığın sınırsızlığı BEYAN EDİLİYOR — sessiz kalmıyor. */
+  const gunMetni = (t: Date) => t.toISOString().slice(0, 10);
+  const ozelNokta = (gun: number) => {
+    const bas = new Date(AN);
+    bas.setUTCDate(bas.getUTCDate() - (gun - 1));
+    return noktaSayisi("OZEL", {
+      baslangic: gunMetni(bas),
+      bitis: gunMetni(AN),
+    });
+  };
+  kontrol(
+    "özel 31 gün → 31 satır (gün kırılımı)",
+    ozelNokta(31) === 31,
+    ozelNokta(31),
+  );
+  kontrol(
+    "özel 92 gün → 14 satır (hafta)",
+    ozelNokta(92) === 14,
+    ozelNokta(92),
+  );
+  kontrol(
+    "özel 10 yıl SINIRSIZ — 121 satır, bilerek kabul edildi",
+    ozelNokta(3650) === 121,
+    ozelNokta(3650),
+  );
+
+  /**
+   * ── ASIL DEĞİŞMEZ: GRAFİK = TABLO ──────────────────────────────────────
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERMELİ. Eski tavan 15'ti; 15'ten
+   * KISA bir pencereyle sınasaydım (ör. "Bu hafta", 5 nokta) tavan geri
+   * konsa bile test yeşil kalırdı — kırpma orada zaten çalışmıyordu.
+   * Bu yüzden ölçü 30 noktalı pencere: tavan geri gelirse 30 ≠ 15.
+   */
   const uzun = operasyonSerisi({
     pencere: pencereOlustur("SON_30_GUN", AN),
     kirilim: "GUN",
@@ -345,29 +479,46 @@ console.log("\n9) TABLO TAVANI — özet ekranda döküm olmaz (İlke #13)");
     satislar: [],
     kargolar: [],
   });
-  const { gosterilen, gizlenen } = tabloNoktalari(uzun);
-  kontrol("30 noktada tablo 15'te kesiliyor", gosterilen.length === TABLO_TAVANI);
-  kontrol("gizlenen sayısı beyan ediliyor", gizlenen === uzun.length - TABLO_TAVANI, gizlenen);
   /**
-   * ⚠ SONDAN KIRPILIYOR: kırpılan taraf ESKİ olmalı. Baştan alsaydık
-   * kullanıcı dünü göremezdi ve tablo işe yaramazdı.
+   * ⚠ BU KONTROL KAYNAK TARAR — VE DESEN ÖNCE SAYILDI.
+   * `noktalar.map(` bu dosyada ÜÇ yerde geçiyor (eksen etiketleri · grafik
+   * noktaları · tablo satırları). Dosyanın tamamında arasaydım, tablo
+   * yeniden kırpılsa bile öteki iki kullanım testi yeşil geçirirdi.
+   * Bu yüzden desen `<tbody>` BLOĞUNA daraltılarak aranıyor.
+   */
+  const bilesen = readFileSync("src/components/uc-serili-grafik.tsx", "utf8");
+  const tbodyBas = bilesen.indexOf("<tbody>");
+  const tbodySon = bilesen.indexOf("</tbody>");
+  kontrol("tablo gövdesi bulunabiliyor", tbodyBas > 0 && tbodySon > tbodyBas);
+  const tbody = bilesen.slice(tbodyBas, tbodySon);
+  kontrol(
+    "tablo GRAFİĞİN dizisini geziyor (`noktalar`) — ayrı kırpılmış dizi yok",
+    tbody.includes("noktalar.map("),
+  );
+  /**
+   * ⚠ VE KIRPMANIN GERİ GELMEDİĞİ AYRICA SINANIYOR: `slice`/`tavan` gibi
+   * bir daraltma tablo gövdesine sızarsa burası kırmızı yanar. Yalnız
+   * "noktalar.map var" demek yetmezdi — `noktalar.slice(-15).map(` de o
+   * kontrolü geçerdi.
    */
   kontrol(
-    "kırpma SONDAN — en yeni nokta tabloda",
-    gosterilen.at(-1)!.anahtar === uzun.at(-1)!.anahtar,
+    "  ...ve gövdede kırpma yok (slice/tavan)",
+    !/noktalar\s*\.\s*slice/.test(tbody) && !/TAVAN/i.test(tbody),
   );
   kontrol(
-    "  ...ve en eski nokta tabloda DEĞİL",
-    gosterilen[0]!.anahtar !== uzun[0]!.anahtar,
+    "kırpma kalıntısı hiç kalmadı (tümünü gör bağlantısı yok)",
+    !bilesen.includes("tumunuGor") && !bilesen.includes("gizlenen"),
+  );
+  /**
+   * ⚠ VE VAAT EDİLEN HEDEF: sözlükte de kalıntı kalmamalı. Anahtar dursaydı
+   * bir sonraki geliştirici onu "kullanılmıyor" sanıp geri bağlayabilirdi.
+   */
+  const sozluk = readFileSync("messages/tr.json", "utf8");
+  kontrol(
+    "sözlükte de kalıntı yok (operasyonTumunuGor silindi)",
+    !sozluk.includes("operasyonTumunuGor"),
   );
 
-  const kisa = operasyonSerisi({
-    pencere: pencereOlustur("SON_15_GUN", AN),
-    kirilim: "GUN",
-    alimlar: [],
-    satislar: [],
-    kargolar: [],
-  });
   /**
    * ── VARSAYILAN AÇIK/KAPALI (kullanıcı kararı 21.08.2026) ────────────────
    * ⚠ ÖRNEK VERİ EŞİĞİN İKİ YAKASINI DA SINIYOR: 7 ve 8. Yalnız "7 açık"
@@ -376,11 +527,8 @@ console.log("\n9) TABLO TAVANI — özet ekranda döküm olmaz (İlke #13)");
   kontrol("bir haftalık tablo (7) AÇIK gelir", tabloAcikMi(7));
   kontrol("8 satır KAPALI gelir", !tabloAcikMi(8));
   kontrol("tek satır da AÇIK", tabloAcikMi(1));
-  kontrol("15 satır (tavan) KAPALI", !tabloAcikMi(TABLO_TAVANI));
+  kontrol("30 satır KAPALI gelir", !tabloAcikMi(HAZIR_TAVAN));
   kontrol("eşik bir hafta", TABLO_ACIK_TAVANI === 7, TABLO_ACIK_TAVANI);
-
-  const k = tabloNoktalari(kisa);
-  kontrol("15 nokta TAM gösteriliyor, gizlenen yok", k.gosterilen.length === 15 && k.gizlenen === 0);
 }
 
 // ===========================================================================
@@ -402,7 +550,11 @@ console.log("\n10) KDV GÖRÜNÜMÜ — hesaplanan − indirilecek");
   });
 
   const kdv = serileriKur(seri, "kdv");
-  kontrol("KDV görünümü alım KDV'sini veriyor", kdv.alim[0] === 200, kdv.alim[0]);
+  kontrol(
+    "KDV görünümü alım KDV'sini veriyor",
+    kdv.alim[0] === 200,
+    kdv.alim[0],
+  );
   kontrol("  ...satış KDV'sini veriyor", kdv.satis[0] === 60, kdv.satis[0]);
   kontrol(
     "  ...3. seri HESAPLANAN − İNDİRİLECEK",
@@ -425,7 +577,11 @@ console.log("\n10) KDV GÖRÜNÜMÜ — hesaplanan − indirilecek");
    * ⚠ NEGATİF = DEVREDEN KDV, "alacak" değil. İşaret korunuyor; mutlak
    * değer alınsaydı "ödeyecek miyim devredecek mi" bilgisi kaybolurdu.
    */
-  kontrol("ödenecek KDV negatifse DEVREDEN", t.odenecekKdv === -140, t.odenecekKdv);
+  kontrol(
+    "ödenecek KDV negatifse DEVREDEN",
+    t.odenecekKdv === -140,
+    t.odenecekKdv,
+  );
 
   const artiSeri = operasyonSerisi({
     pencere: pencereOlustur("BUGUN", AN),

@@ -75,11 +75,11 @@ import {
 import {
   gorunumCoz,
   kirilimSec,
+  pencereGunSayisi,
   operasyonSerisi,
   operasyonToplami,
   serileriKur,
   tabloAcikMi,
-  tabloNoktalari,
 } from "@/lib/panel/operasyon-serisi";
 import { UcSeriliGrafik } from "@/components/uc-serili-grafik";
 import { OPERASYON_GORUNUMLERI } from "@/lib/panel/operasyon-serisi";
@@ -1314,12 +1314,7 @@ export default async function AnaSayfa({
    * gün gün, bu ay hafta hafta, 3/6 ay ve 1 yıl ay ay. Uzun pencerede gün
    * gün çizmek 365 noktalı okunmaz bir tarak üretir.
    */
-  const operasyonKirilimi = kirilimSec(
-    donemTuru,
-    Math.round(
-      (donem.bitisHaric.getTime() - donem.baslangic.getTime()) / 86_400_000,
-    ),
-  );
+  const operasyonKirilimi = kirilimSec(donemTuru, pencereGunSayisi(donem));
   const operasyonGunleri = operasyonSerisi({
     pencere: donem,
     kirilim: operasyonKirilimi,
@@ -1334,7 +1329,6 @@ export default async function AnaSayfa({
   const operasyonGorunumu = gorunumCoz(parametreler.operasyon);
   const operasyonSeri = serileriKur(operasyonGunleri, operasyonGorunumu);
   const operasyonToplam = operasyonToplami(operasyonGunleri);
-  const operasyonTablo = tabloNoktalari(operasyonGunleri);
   /**
    * NOKTAYA TIKLAYINCA SÜZÜLMÜŞ LİSTE (kullanıcı isteği 21.08.2026).
    * ⚠ Nokta kendi tarih aralığını taşıyor; adres ondan kuruluyor. Böylece
@@ -2149,49 +2143,11 @@ export default async function AnaSayfa({
                         ),
                       },
               }))}
-              tabloNoktalari={operasyonTablo.gosterilen.map((n) => {
-                const i = operasyonGunleri.indexOf(n);
-                return {
-                  etiket: bicim.tarih(n.baslangic),
-                  tamEtiket:
-                    n.baslangic.getTime() === n.sonGun.getTime()
-                      ? bicim.tarih(n.baslangic)
-                      : `${bicim.tarih(n.baslangic)} – ${bicim.tarih(n.sonGun)}`,
-                  a: operasyonSeri.alim[i] ?? 0,
-                  b: operasyonSeri.satis[i] ?? 0,
-                  c: operasyonSeri.ucuncu[i] ?? 0,
-                  adres:
-                    operasyonGorunumu !== "adet"
-                      ? {
-                          a: noktaAdresi("/alimlar", n),
-                          b: noktaAdresi("/satislar", n),
-                          c: "",
-                        }
-                      : {
-                          a: noktaAdresi("/alimlar", n),
-                          b: noktaAdresi("/satislar", n),
-                          c: suzgecAdresi(
-                            "/satislar",
-                            {},
-                            {
-                              pencere: "OZEL",
-                              baslangic: gunMetni(n.baslangic),
-                              bitis: gunMetni(n.sonGun),
-                              kargo: "verildi",
-                              ...(seciliKanal ? { kanal: seciliKanal } : {}),
-                            },
-                          ),
-                        },
-                };
-              })}
-              gizlenenSayisi={operasyonTablo.gizlenen}
-              /* Bir haftalık veya daha kısa tabloda açık gelir; uzunda
-                 kapalı (İlke #13). Eşik saf işlevde, teste bağlı. */
-              tabloAcik={tabloAcikMi(operasyonTablo.gosterilen.length)}
+              tabloAcik={tabloAcikMi(operasyonGunleri.length)}
               /* AKORDİYON BAŞLIĞI — kaç satır olduğunu söylüyor ki
                  açmadan önce beklenti kurulsun (İlke #5). */
               tabloAcMetni={t("operasyonTabloAc", {
-                sayi: operasyonTablo.gosterilen.length,
+                sayi: operasyonGunleri.length,
               })}
               /* ⚠ ÖZET GRAFİK İLE TABLO ARASINDA (kullanıcı 21.08.2026):
                  önce eğilim, sonra hüküm, en sonra istersen döküm. */
@@ -2217,12 +2173,6 @@ export default async function AnaSayfa({
                       })}
                 </p>
               }
-              /* TAM DÖKÜM KENDİ SAYFASINDA (İlke #13): panelde rakam +
-                 "aç" bağlantısı kalır, döküm rapora gider. */
-              tumunuGorAdresi={suzgecAdresi("/rapor", {}, donemParametreleri())}
-              tumunuGorMetni={t("operasyonTumunuGor", {
-                sayi: operasyonTablo.gizlenen,
-              })}
               adlar={{
                 a:
                   operasyonGorunumu === "kdv"

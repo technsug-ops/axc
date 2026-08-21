@@ -66,6 +66,23 @@ export type Kirilim = (typeof KIRILIMLAR)[number];
  * eşlemeyle AYNI mantıkta: bir aya kadar gün, bir çeyreğe kadar hafta,
  * ötesi ay.
  */
+/**
+ * PENCERENİN GÜN SAYISI — kırılım seçiminin girdisi.
+ *
+ * ⚠ TEK GÖVDE: bu formül eskiden `page.tsx` içinde YERİNDE yazılıydı ve
+ * doğrulama sondası da kendi kopyasını kuracaktı. İki kopya, "sonda
+ * parametresi ekranın parametresi değildir" tuzağının ta kendisi:
+ * ekran 30 der, sonda 31 der, ve aradaki fark bir hata sanılır.
+ *
+ * `bitisHaric` yarı açık olduğu için çıkarma doğrudan gün sayısını verir;
+ * `Math.round` yaz saati geçişindeki 23/25 saatlik günleri yutar.
+ */
+export function pencereGunSayisi(pencere: Pencere): number {
+  return Math.round(
+    (pencere.bitisHaric.getTime() - pencere.baslangic.getTime()) / 86_400_000,
+  );
+}
+
 export function kirilimSec(tur: PencereTuru, gunSayisi: number): Kirilim {
   switch (tur) {
     case "BUGUN":
@@ -121,7 +138,10 @@ export type OperasyonGirdisi = {
 };
 
 /** Bir tarihin hangi kovaya düştüğü — kova anahtarı ve sınırları. */
-function kova(tarih: Date, kirilim: Kirilim): { anahtar: string; baslangic: Date } {
+function kova(
+  tarih: Date,
+  kirilim: Kirilim,
+): { anahtar: string; baslangic: Date } {
   if (kirilim === "GUN") {
     const g = gunDegeri(isTakvimGunu(tarih));
     return { anahtar: gunMetni(g), baslangic: g };
@@ -139,7 +159,10 @@ function kova(tarih: Date, kirilim: Kirilim): { anahtar: string; baslangic: Date
   }
   const t = isTakvimGunu(tarih);
   const bas = gunDegeri({ yil: t.yil, ay: t.ay, gun: 1 });
-  return { anahtar: `${t.yil}-${String(t.ay).padStart(2, "0")}`, baslangic: bas };
+  return {
+    anahtar: `${t.yil}-${String(t.ay).padStart(2, "0")}`,
+    baslangic: bas,
+  };
 }
 
 /** Kovanın bir sonrakine geçişi — kova genişliği kırılıma bağlı. */
@@ -323,49 +346,32 @@ export function operasyonToplami(noktalar: OperasyonNoktasi[]): {
 }
 
 /**
- * TABLO TAVANI — grafiğin altındaki tablo en fazla bu kadar satır gösterir.
+ * ============================================================================
+ *  ⚠ TABLO TAVANI KALDIRILDI (21.08.2026) — VE SEBEBİ KAYITTA KALIYOR
+ * ----------------------------------------------------------------------------
+ *  Tavan (15 satır) 365 GÜNLÜK bir tablo korkusuyla konmuştu ve o korku
+ *  gerçekti. Ama aynı gün eklenen KIRILIM o sorunu zaten çözdü: uzun
+ *  pencere gün gün değil ay ay çiziliyor.
  *
- * ⚠ Kullanıcı kararı 21.08.2026: _"en fazla 15 günlük tablo aşağı açılsın,
- * daha fazlası için ayrı sayfa seçeneği çıksın"_. Gerekçe anayasada zaten
- * var (İlke #13): satır sayısı veriyle BÜYÜYEN hiçbir şey özet ekranına
- * konmaz. 365 satırlık bir tablo paneli özet olmaktan çıkarır.
+ *  ÖLÇÜLDÜ — her pencerenin nokta sayısı:
+ *    Dün/Bugün 1 · Bu hafta 5 · Son 15 gün 15 · Son 30 gün 30
+ *    Bu ay 4 (hafta) · Son 3 ay 3 · Son 6 ay 6 · Son 1 yıl 12 (ay)
+ *    Özel 31g → 32 · Özel 92g → 14 · Özel 400g → 14
+ *  EN KÖTÜ HÂL 32 SATIR ve tablo zaten akordiyonun arkasında.
+ *
+ *  ⚠ VE TAVAN ZARARLIYDI: "+N dönem daha var — tam dökümü Rapor sayfasında
+ *  aç" diye bir bağlantı üretiyordu, ama Rapor sayfasında öyle bir döküm
+ *  YOK. Kullanıcı bunu fark etti. Var olmayan bir hedefe götüren uyarı,
+ *  uyarısızlıktan kötüdür — kural doğruydu, TESLİM EDİLEMİYORDU.
+ *
+ *  Yani doğru çare tavanı korumak değil, tavanın var olma sebebini
+ *  ortadan kaldıran kırılımın işini tanımaktı.
+ * ============================================================================
  */
-export const TABLO_TAVANI = 15;
 
-/**
- * TABLO VARSAYILAN AÇIK EŞİĞİ — bu kadar veya daha az satırda tablo AÇIK
- * gelir, fazlasında kapalı.
- *
- * ⚠ Kullanıcı kararı 21.08.2026: _"eğer bu haftalık veri kadar bilgi
- * tabloda görünüyorsa (toplam 7 satır) tablo default görünür olsun"_.
- *
- * Gerekçe iki taraflı ve ikisi de doğru:
- *  · KISA tabloda kapalı durmak GEREKSİZ bir tık ekler — bilgi zaten
- *    ekrana sığıyor, saklamanın karşılığı yok.
- *  · UZUN tabloda açık durmak paneli özet olmaktan çıkarır (İlke #13).
- * Eşik "bir hafta" — operasyonun doğal bakış birimi.
- */
 export const TABLO_ACIK_TAVANI = 7;
 
 /** Tablo varsayılan açık mı? Satır sayısına bağlı, kırılıma değil. */
 export function tabloAcikMi(satirSayisi: number): boolean {
   return satirSayisi <= TABLO_ACIK_TAVANI;
-}
-
-/**
- * Tabloda gösterilecek noktalar — SONDAN, yani en YENİ.
- *
- * ⚠ BAŞTAN DEĞİL SONDAN kırpılıyor: kırpılan bilgi eski taraf olmalı.
- * Baştan alsaydık kullanıcı dünü göremezdi ve tablo işe yaramazdı.
- */
-export function tabloNoktalari(
-  noktalar: OperasyonNoktasi[],
-): { gosterilen: OperasyonNoktasi[]; gizlenen: number } {
-  if (noktalar.length <= TABLO_TAVANI) {
-    return { gosterilen: noktalar, gizlenen: 0 };
-  }
-  return {
-    gosterilen: noktalar.slice(-TABLO_TAVANI),
-    gizlenen: noktalar.length - TABLO_TAVANI,
-  };
 }

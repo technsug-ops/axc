@@ -1850,7 +1850,6 @@
     "operasyonToplamAdet": "Dönem toplamı — alım {alim} · satış {satis} · kargo {kargo} · toplam {islem} işlem",
     "operasyonToplamCiro": "Dönem toplamı — alım {alim} · satış {satis} · FARK {fark}",
     "operasyonFark": "Fark (satış − alım)",
-    "operasyonTumunuGor": "+{sayi} dönem daha var — tam dökümü Rapor sayfasında aç",
     "operasyonTabloAc": "Tabloyu aç — {sayi} dönem, rakamların tamamı",
     "operasyon_kdv": "KDV",
     "operasyonIndirilecek": "İndirilecek KDV (alım)",

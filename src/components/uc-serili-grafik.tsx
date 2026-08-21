@@ -28,6 +28,11 @@ import { ChevronRight } from "lucide-react";
  *  ⚠ TIKLAMA ALANI GÖRÜNMEZ AMA BÜYÜK: `r=14` şeffaf daire. Nokta 3px
  *  çizilseydi telefonda isabet ettirmek imkânsız olurdu (İlke #8, 44px).
  *
+ *  ⚠ TABLO TÜM NOKTALARI GÖSTERİR — kırpma YOK (21.08.2026). Eskiden 15
+ *  satırda kesiliyor ve "tam dökümü Rapor'da aç" diyordu; Rapor'da öyle bir
+ *  döküm YOKTU. Kırılım sayesinde en kötü hâl 32 satır, o da akordiyonun
+ *  arkasında — kırpmanın gerekçesi kalmadı.
+ *
  *  ERİŞİLEBİLİRLİK: Altındaki tablo SÜS DEĞİL, asıl okunabilir hâlidir.
  *  Dokunmatikte hover yok, ekran okuyucu SVG'yi atlıyor (`aria-hidden`) —
  *  veri ve bağlantılar oradan da erişilebilir.
@@ -82,10 +87,6 @@ export function UcSeriliGrafik({
   adlar,
   bicimle,
   bosMesaj,
-  tabloNoktalari,
-  gizlenenSayisi,
-  tumunuGorAdresi,
-  tumunuGorMetni,
   tabloAcMetni,
   ozet,
   tabloAcik = false,
@@ -94,15 +95,6 @@ export function UcSeriliGrafik({
   adlar: { a: string; b: string; c: string };
   bicimle: (deger: number) => string;
   bosMesaj: string;
-  /**
-   * TABLODA gösterilecek alt küme — grafik TÜM noktaları çizer, tablo
-   * kırpılır. İkisi ayrı: çizgi 365 noktayla da okunur, tablo okunmaz.
-   */
-  tabloNoktalari: UcSeriNoktasi[];
-  /** Tabloya girmeyen nokta sayısı — 0 ise satır hiç çıkmaz. */
-  gizlenenSayisi: number;
-  tumunuGorAdresi: string;
-  tumunuGorMetni: string;
   /** Kapalı akordiyonun üstünde yazan metin. */
   tabloAcMetni: string;
   /**
@@ -334,7 +326,7 @@ export function UcSeriliGrafik({
               </tr>
             </thead>
             <tbody>
-              {tabloNoktalari.map((n, i) => (
+              {noktalar.map((n, i) => (
                 <tr key={n.tamEtiket + i} className="border-b last:border-0">
                   <td className="text-muted-foreground py-1 pr-2 whitespace-nowrap">
                     {n.tamEtiket}
@@ -364,19 +356,6 @@ export function UcSeriliGrafik({
               ))}
             </tbody>
           </table>
-
-          {/* GİZLENEN SATIR SESSİZ KALMAZ — sayısı ve tam dökümün adresi
-            tablonun İÇİNDE, yani onu okuyanın gözünün önünde. */}
-          {gizlenenSayisi > 0 ? (
-            <p className="text-muted-foreground pt-2 text-xs">
-              <Link
-                href={tumunuGorAdresi}
-                className="hover:text-foreground underline underline-offset-2"
-              >
-                {tumunuGorMetni}
-              </Link>
-            </p>
-          ) : null}
         </div>
       </details>
     </div>
