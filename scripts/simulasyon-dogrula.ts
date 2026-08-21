@@ -598,9 +598,23 @@ console.log("\n7) KANAL BAŞINA KOMİSYON — tek oran yanlış sonuç verir");
   );
 
   const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  /**
+   * ⚠ DESEN DOSYADA DEĞİL, KULLANIM BLOĞUNDA ARANIR. `setKanalOranlari`
+   * dosyada üç yerde geçiyor (durum tanımı · ürün sıfırlama · form kutusu);
+   * dosyanın tamamında aramak, form bloğu tamamen silinse bile yeşil kalırdı.
+   */
+  const formBlok = ekran.slice(
+    ekran.indexOf("KOMİSYON — PAZARYERİ BAŞINA"),
+    ekran.indexOf("══════════════ SONUÇ ══════════════"),
+  );
+  kontrol("komisyon bloğu formda var", formBlok.length > 200, formBlok.length);
   kontrol(
-    "kanal kutusunda oran DÜZENLENEBİLİR",
-    ekran.includes("oranDegistir"),
+    "form kutuları KANAL LİSTESİNDEN üretiliyor",
+    formBlok.includes("SIMULASYON_KANALLARI.map("),
+  );
+  kontrol(
+    "form kutusu oranı YAZIYOR (salt okunur değil)",
+    formBlok.includes("setKanalOranlari((o) => ({ ...o, [k.kod]: v }))"),
   );
   /**
    * ⚠ VE HANGİ KAYNAĞIN KAZANDIĞI YAZIYOR. "Oran dilim tarifesinden" ile
@@ -638,6 +652,110 @@ console.log("\n7) KANAL BAŞINA KOMİSYON — tek oran yanlış sonuç verir");
   kontrol(
     "geçersiz oran süzgeci kitaplıkta",
     motor.includes("function elleOran("),
+  );
+}
+
+// ===========================================================================
+console.log("");
+console.log("8) ORTAK ORAN ZORUNLU DEĞİL — kapı kanal kutularını kapatmasın");
+// ===========================================================================
+{
+  /**
+   * ⚠ CANLIDA YAKALANDI 21.08.2026. Kullanıcı ürünü koddan buldu, ekranda
+   * hiçbir kanal kutusu göremedi ve bildirdi: _"burada pazar yerlerine has
+   * oran girme yeri yok"_.
+   *
+   * Sebep bir SIRALAMA tuzağıydı: kanal başına oran kutuları SONUÇ
+   * kutusunun içinde yaşıyordu, sonuç kutuları da `girdiEksikMi` ORTAK
+   * oranı şart koştuğu için çizilmiyordu. Yani kanal oranını girebilmek
+   * için önce "kanal oranı YOKSA" etiketli alanı doldurmak gerekiyordu.
+   * Alanın kendi etiketi onu YEDEK ilan ediyordu; kapı ZORUNLU tutuyordu.
+   *
+   * Motor tarafı doğruydu ve mutasyonlarla sınanmıştı — kırık olan
+   * TESLİM yoluydu. ("Kural doğru mu değil, kural teslim edilebilir mi.")
+   */
+  const ortaksiz: SimulasyonGirdisi = {
+    ...ORTAK,
+    komisyonOrani: undefined,
+  };
+
+  kontrol("ortak oran YOKKEN form eksik SAYILMIYOR", !girdiEksikMi(ortaksiz));
+  kontrol(
+    "  ...ve kanal kutuları ÇİZİLİYOR",
+    simulasyonKarsilastir(ortaksiz, BUGUN).length ===
+      SIMULASYON_KANALLARI.length,
+    simulasyonKarsilastir(ortaksiz, BUGUN).length,
+  );
+
+  /**
+   * ⚠ AMA SESSİZ SIFIR ÜRETMEZ. Oranı hiçbir yerden çözülemeyen kanal
+   * "0 komisyon" ile kârlı görünemez: NET null döner ve ORAN_YOK beyanı
+   * ekranda yazar. Kutunun çizilmesi, hüküm verilmesi demek değildir.
+   */
+  const oransiz = simulasyonKarsilastir(ortaksiz, BUGUN);
+  const oransizTy = oransiz.find((k) => k.kod === "TRENDYOL")!;
+  kontrol("oranı çözülemeyen kanalın oranı null", oransizTy.komisyonOrani === null);
+  kontrol("  ...NET-2 de null (sıfır DEĞİL)", oransizTy.net2 === null);
+  kontrol(
+    "  ...ve ORAN_YOK beyanı üretiliyor",
+    oransizTy.beyanlar.some((b) => b.tur === "ORAN_YOK"),
+    oransizTy.beyanlar.map((b) => b.tur),
+  );
+
+  /**
+   * ⚠ NaN SÜZGECİ ORTAK ORANDA DA VAR. `simulasyonKur`un sözleşmesi
+   * `tekOran: number | null` ve kontrolü `!== null`; `NaN` oradan "değer
+   * var" diye geçer ve NET sessizce `NaN` çıkardı. Elle oranda süzgeç
+   * kitaplığa taşınmıştı, ortak oranda kalmamıştı — kapı NaN'ı zaten
+   * durduruyordu. Kapı açılınca açık doğardı; süzgeç aynı gün kondu.
+   */
+  const bozukOrtak = simulasyonKarsilastir(
+    { ...ORTAK, komisyonOrani: Number.NaN },
+    BUGUN,
+  );
+  const bozukTy = bozukOrtak.find((k) => k.kod === "TRENDYOL")!;
+  kontrol("geçersiz ORTAK oran yok sayılıyor", bozukTy.komisyonOrani === null);
+  /**
+   * ⚠ GÖRÜNEN DEĞER `String()` İLE BASILIYOR, JSON İLE DEĞİL:
+   * `JSON.stringify(NaN)` → `"null"`. Yani bu kontrol kırmızı yandığında
+   * teşhis satırı "null" yazar ve okuyan "zaten null, ne istiyorsun" der —
+   * hatanın kendisini gizler. Mutasyon denemesinde tam bu yaşandı.
+   */
+  kontrol(
+    "  ...ve NET NaN DEĞİL (sessiz bozulma yok)",
+    bozukTy.net2 === null,
+    String(bozukTy.net2),
+  );
+
+  /**
+   * ── TEK PAZARYERİ DOLDURULABİLİR ────────────────────────────────────
+   * Kullanıcı kararı 21.08.2026: _"kişi isterse tek pazaryeri komisyon
+   * oranını girsin ve bilgi alsın, isterse hepsini. Bu onun seçimi olsun."_
+   *
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: doldurulan kanal HÜKÜM
+   * veriyor, doldurulmayan SUSUYOR. "Hepsi dolmadan hesap yok" diyen bir
+   * kapı, yalnız TY'ye bakan bir testte yakalanmazdı.
+   */
+  const tekKanal = simulasyonKarsilastir(
+    { ...ortaksiz, kanalOranlari: { TRENDYOL: 12 } },
+    BUGUN,
+  );
+  const tekTy = tekKanal.find((k) => k.kod === "TRENDYOL")!;
+  const tekN11 = tekKanal.find((k) => k.kod === "N11")!;
+  kontrol("tek kanal doldurunca O KANAL hesaplanıyor", tekTy.net2 !== null, tekTy.net2);
+  kontrol("  ...oranı da girilen oran", tekTy.komisyonOrani === 12, tekTy.komisyonOrani);
+  kontrol("  ...öteki kanal ise SUSUYOR (uydurulmuyor)", tekN11.net2 === null);
+
+  /**
+   * ⚠ VE İKİNCİ BİR GİRDİ KUTUSU YOK. Aynı oran hem formdan hem sonuç
+   * kutusundan düzenlenebilseydi, hangisinin geçerli olduğu ekranda
+   * cevapsız kalırdı. Sonuç kutusu artık yalnız KULLANILAN oranı okutur.
+   */
+  const ekran8 = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const kanalKutusu = ekran8.slice(ekran8.indexOf("function KanalKutusu("));
+  kontrol(
+    "sonuç kutusunda ikinci girdi kutusu YOK",
+    !kanalKutusu.includes("onChange"),
   );
 }
 

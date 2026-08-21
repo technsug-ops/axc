@@ -20,6 +20,7 @@ import {
   PASTA_RENKLERI,
   PASTA_VARSAYILAN,
 } from "@/lib/renkler";
+import { SIMULASYON_KANALLARI } from "@/lib/simulasyon/kanal-kurallari";
 import type { UrunZemini } from "@/lib/simulasyon/urun-zemini";
 import { urunAra } from "./actions";
 import {
@@ -57,7 +58,6 @@ export function Deneme({ bugun }: { bugun: string }) {
 
   const [satis, setSatis] = useState("");
   const [alis, setAlis] = useState("");
-  const [komisyon, setKomisyon] = useState("");
   const [kdv, setKdv] = useState(String(VARSAYILAN_KDV_ORANI));
   const [kargo, setKargo] = useState("");
   const [kdvDahil, setKdvDahil] = useState(true);
@@ -121,7 +121,12 @@ export function Deneme({ bugun }: { bugun: string }) {
     kdvDahilMi: kdvDahil,
     satisFiyati: sayi(satis),
     alisFiyati: sayi(alis),
-    komisyonOrani: sayi(komisyon),
+    /**
+     * ⚠ ORTAK ORAN GÖNDERİLMİYOR — ekranda böyle bir alan YOK (21.08.2026).
+     * Kullanıcı: _"burada her pazar yerine has oran girilmeli"_. Oran artık
+     * yalnız kanal başına girilir; kitaplıktaki yedek alan, kanal ayrımı
+     * olmayan çağıranlar (altın senaryolar) için duruyor.
+     */
     kdvOrani: sayi(kdv),
     kargoUcreti: kargo.trim() === "" ? null : sayi(kargo),
     /** Yalnız GEÇERLİ sayılar geçer; yarım yazılmış metin orana dönüşmez. */
@@ -141,6 +146,16 @@ export function Deneme({ bugun }: { bugun: string }) {
     ? []
     : simulasyonKarsilastir(girdi, new Date(bugun), urun?.zeminler ?? []);
   const para = (n: number) => bicim.para(n, "TRY");
+  /**
+   * Kanal kodu → sonuç. Komisyon kutuları SONUÇTAN beslenir (yer tutucu ve
+   * kaynak satırı), ama SIRALARI sonuçtan gelmez.
+   *
+   * ⚠ SIRA `SIMULASYON_KANALLARI`DAN — sonuç listesi NET-2'ye göre sıralı ve
+   * kullanıcı bir orana rakam yazdıkça o kanal sıçrayarak yer değiştirirdi:
+   * yazarken kutunun altından kayması demek. Girdi sırası sabittir, hüküm
+   * sırası değişir.
+   */
+  const sonucKod = new Map(sonuclar.map((s) => [s.kod, s]));
 
   return (
     <div className="space-y-6">
@@ -235,12 +250,6 @@ export function Deneme({ bugun }: { bugun: string }) {
           ipucu={t("ornek", { deger: "500" })}
         />
         <Alan
-          etiket={t("komisyonOrani")}
-          deger={komisyon}
-          degistir={setKomisyon}
-          ipucu={t("ornek", { deger: "15" })}
-        />
-        <Alan
           etiket={t("kdvOrani")}
           deger={kdv}
           degistir={setKdv}
@@ -283,6 +292,35 @@ export function Deneme({ bugun }: { bugun: string }) {
         </div>
       </div>
 
+      {/* ══════════════ KOMİSYON — PAZARYERİ BAŞINA ══════════════
+          Kullanıcı 21.08.2026, canlı ekranda: _"burada her pazar yerine has
+          oran girilmeli"_. Önceki hâlde tek bir ORTAK kutu vardı; kanal
+          başına kutular yalnızca SONUÇ kutusunun içinde yaşıyordu ve sonuç
+          kutuları ortak oran yazılmadan çizilmiyordu. Yani kanal oranını
+          girmek için önce "kanal oranı yoksa" etiketli alanı doldurmak
+          gerekiyordu — ekran kendi etiketiyle çelişiyordu.
+
+          ⚠ KUTULAR HESAPTAN ÖNCE DE DURUR. Oranı girmek için önce hesabın
+          çıkması gerekseydi aynı kısır döngü geri gelirdi. */}
+      <div className="space-y-2">
+        <span className="text-sm font-medium">{t("komisyonBaslik")}</span>
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          {SIMULASYON_KANALLARI.map((k) => (
+            <KomisyonKutusu
+              key={k.kod}
+              ad={k.ad}
+              deger={kanalOranlari[k.kod] ?? ""}
+              degistir={(v) =>
+                setKanalOranlari((o) => ({ ...o, [k.kod]: v }))
+              }
+              sonuc={sonucKod.get(k.kod) ?? null}
+              yuzde={bicim.yuzde}
+            />
+          ))}
+        </div>
+        <p className="text-muted-foreground text-xs">{t("oranUyarisi")}</p>
+      </div>
+
       {/* ══════════════ SONUÇ ══════════════
           ⚠ BOŞ FORMDA KUTU ÇİZİLMEZ: sıfır satış "0 kâr" değil, cevapsız
           sorudur. Sıfır duvarı hesaplanmış gibi okunurdu (İlke #5). */}
@@ -304,10 +342,6 @@ export function Deneme({ bugun }: { bugun: string }) {
                 kdvDahil
                   ? girdi.satisFiyati
                   : girdi.satisFiyati * (1 + girdi.kdvOrani / 100)
-              }
-              oranMetni={kanalOranlari[s.kod] ?? ""}
-              oranDegistir={(v) =>
-                setKanalOranlari((o) => ({ ...o, [s.kod]: v }))
               }
             />
           ))}
@@ -347,6 +381,92 @@ function Alan({
         className="h-11"
       />
       {not ? <p className="text-muted-foreground text-xs">{not}</p> : null}
+    </div>
+  );
+}
+
+/**
+ * ── KOMİSYON KUTUSU — PAZARYERİ BAŞINA GİRDİ ────────────────────────────
+ *
+ * ⚠ HER KANAL BAĞIMSIZ — kullanıcı kararı 21.08.2026: _"kişi isterse tek
+ * pazaryeri komisyon oranını girsin ve bilgi alsın, isterse hepsini. Bu onun
+ * seçimi olsun."_ Bu yüzden burada "hepsini doldur" diye bir kapı YOKTUR:
+ * bir kutuya yazmak yalnız o kanalın hesabını değiştirir, ötekiler zemininden
+ * (tarife / kanal SKU'su) beslenmeye devam eder; zemini de yoksa o kanal
+ * "NET hesaplanamadı" der ve ÖTEKİLERİ SUSTURMAZ.
+ *
+ * ⚠ YER TUTUCU BURADA "örn." DEĞİL, GERÇEK ORANDIR (İlke #11'in istisnası
+ * değil, tam kendisi): kutu boş bırakılırsa hesapta KULLANILACAK olan oran
+ * odur — yani girilmiş bir değer sanılması yanlış okuma değil, doğru okuma.
+ * Verisi olmayan kanalda ise gerçek bir oran yok, orada "örn. 15" yazar.
+ * Hangisi olduğu kutunun ALTINDA yazılı; bu satır olmadan ekranda bir rakam
+ * gösterip başka bir rakamla hesaplamış olurduk.
+ */
+function KomisyonKutusu({
+  ad,
+  deger,
+  degistir,
+  sonuc,
+  yuzde,
+}: {
+  ad: string;
+  deger: string;
+  degistir: (d: string) => void;
+  /** Bu kanalın hesabı — yoksa (form eksik) yalnız elle giriş gösterilir. */
+  sonuc: KanalSonucu | null;
+  yuzde: (n: number, b?: number) => string;
+}) {
+  const t = useTranslations("Simulasyon");
+  const elle = deger.trim() !== "";
+  const veridenOran =
+    sonuc !== null && sonuc.komisyonOrani !== null && !sonuc.oranElle
+      ? yuzde(sonuc.komisyonOrani).replace("%", "")
+      : null;
+
+  /** Kaynak satırı — hangi rakamla hesaplandığı burada yazar. */
+  const kaynakMetni = elle
+    ? t("oranElleGirildi")
+    : sonuc === null
+      ? t("oranHenuz")
+      : sonuc.komisyonOrani === null
+        ? t("oranVeriYok")
+        : t(`oran_${sonuc.oranKaynagi}`);
+
+  return (
+    <div className="bg-muted/40 min-w-0 rounded-md border p-2">
+      <div className="text-muted-foreground truncate text-xs" title={ad}>
+        {ad}
+      </div>
+      <div className="flex items-center gap-1">
+        {/* MOBİLDE 44 px (İlke #8). */}
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          inputMode="decimal"
+          value={deger}
+          onChange={(e) => degistir(e.target.value)}
+          aria-label={t("kanalOraniAria", { kanal: ad })}
+          placeholder={veridenOran ?? t("ornek", { deger: "15" })}
+          className="h-11 min-w-0 flex-1 bg-transparent text-center text-base font-medium tabular-nums outline-none"
+        />
+        {/* GÖRÜNÜR EYLEM (İlke #1): elle girilen oran tek tıkla veriye döner.
+            Kutuyu elle silmeyi beklemek gizli tıklama alanına bel bağlamaktır. */}
+        {elle ? (
+          <button
+            type="button"
+            onClick={() => degistir("")}
+            title={t("oranSifirla")}
+            aria-label={t("oranSifirla")}
+            className="hover:bg-muted inline-flex size-11 shrink-0 items-center justify-center rounded"
+          >
+            <X className="size-3.5" />
+          </button>
+        ) : null}
+      </div>
+      <div className="text-muted-foreground truncate text-[10px]">
+        {kaynakMetni}
+      </div>
     </div>
   );
 }
@@ -394,8 +514,6 @@ function KanalKutusu({
   para,
   yuzde,
   satisTutari,
-  oranMetni,
-  oranDegistir,
 }: {
   sonuc: KanalSonucu;
   kazanan: boolean;
@@ -403,9 +521,6 @@ function KanalKutusu({
   yuzde: (n: number, b?: number) => string;
   /** Pastanın paydası — KDV DAHİL satış tutarı. */
   satisTutari: number;
-  /** Bu kanal için elle girilmiş oran metni — boşsa veriden gelir. */
-  oranMetni: string;
-  oranDegistir: (deger: string) => void;
 }) {
   const t = useTranslations("Simulasyon");
   const bant = marjBandi(sonuc.ciroMarji);
@@ -465,42 +580,31 @@ function KanalKutusu({
         {/* ⚠ ORANIN NEREDEN GELDİĞİ YAZAR. Barkodla ürün seçilince komisyon
             artık kullanıcının tahmini değil TARİFENİN kendisi — bu ekranın
             bütün değeri o farkta ve görünmezse fark hiç anlaşılmaz. */}
-        {/* ── KOMİSYON: OKUNUR DEĞİL, DÜZENLENEBİLİR ────────────────────
-            Kullanıcı 21.08.2026: _"her pazar yerinde komisyon farklı, sabit
-            olunca yanlış sonuç geliyor"_. Ölçüldü: aynı üründe kanaldan
-            kanala fark ortanca 2 puan, max 14,4 puan — 1.000 ₺'de ₺144.
+        {/* ── KOMİSYON: BURADA OKUNUR, GİRDİSİ YUKARIDA ────────────────
+            ⚠ GİRDİ KUTUSU BURADAN ALINDI (21.08.2026). Önce burada bir
+            input vardı; oran girmenin TEK yolu buydu ve bu kutular ancak
+            hesap çıkınca çiziliyordu — yani oranı girmek için önce oranı
+            girmiş olmak gerekiyordu. Girdi forma taşındı.
 
-            ⚠ KUTU HER KANALDA AYRI ve varsayılanı VERİDEN geliyor. Boş
-            bırakılırsa zemin (tarife / kanal SKU'su) kazanır; yazılırsa
-            kullanıcı kazanır. Hangisinin kazandığı ALTINDA yazıyor —
-            "oran dilim tarifesinden" ile "senin girdiğin" karışırsa
-            kullanıcı hangi rakamla hesaplandığını bilemez. */}
-        <div className="bg-muted/40 min-w-0 rounded-md border px-2 py-1.5">
-          <div className="text-muted-foreground text-xs">{t("kanalOrani")}</div>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            inputMode="decimal"
-            value={oranMetni}
-            onChange={(e) => oranDegistir(e.target.value)}
-            /* Yer tutucu VERİDEN gelen oranı gösterir — girilmiş değer
-               sanılmasın diye kutu boş, rakam gri (İlke #11). */
-            placeholder={
-              sonuc.komisyonOrani === null
-                ? "—"
-                : yuzde(sonuc.komisyonOrani).replace("%", "")
-            }
-            className="w-full bg-transparent text-center text-sm font-medium tabular-nums outline-none"
-          />
-          <div className="text-muted-foreground truncate text-[10px]">
-            {sonuc.oranElle
+            ⚠ VE İKİ YERE BİRDEN KONMADI: tek değerin iki ayrı kutudan
+            düzenlenmesi, hangisinin geçerli olduğu sorusunu ekranda
+            cevapsız bırakırdı. Burada yalnız KULLANILAN oran ve nereden
+            geldiği yazar. */}
+        <Rakam
+          etiket={t("kanalOrani")}
+          deger={
+            sonuc.komisyonOrani === null
+              ? "—"
+              : yuzde(sonuc.komisyonOrani).replace("%", "")
+          }
+          not={
+            sonuc.oranElle
               ? t("oranElleGirildi")
-              : sonuc.gercekZemin
-                ? t(`oran_${sonuc.oranKaynagi}`)
-                : t("oranElle")}
-          </div>
-        </div>
+              : sonuc.komisyonOrani === null
+                ? t("oranVeriYok")
+                : t(`oran_${sonuc.oranKaynagi}`)
+          }
+        />
         <Rakam
           etiket={t("net1")}
           deger={sonuc.net1 === null ? "—" : para(sonuc.net1)}

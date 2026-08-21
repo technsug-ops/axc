@@ -54,8 +54,13 @@ export type SimulasyonGirdisi = {
    * "hangi kanalda satsam" sorusunun cevabını tersine çevirebilecek bir
    * büyüklük. Bu yüzden kanal başına oran (`kanalOranlari`) esastır ve bu
    * alan yalnızca YEDEKTİR.
+   *
+   * ⚠ İSTEĞE BAĞLI — 21.08.2026'da ekrandan KALDIRILDI. Kullanıcı: _"burada
+   * her pazar yerine has oran girilmeli"_. Ekran artık kanal başına kutu
+   * gösteriyor; bu alan yalnız kanal ayrımı OLMAYAN çağıranlar için duruyor
+   * (nesatilir altın senaryoları tek oranla kurulmuştur).
    */
-  komisyonOrani: number;
+  komisyonOrani?: number;
   /**
    * KANAL BAŞINA ORAN (%) — kanal koduna göre. Kullanıcı bir kanalın oranını
    * elle değiştirdiyse burada durur ve gerçek zeminin oranını da EZER:
@@ -140,6 +145,18 @@ export type KanalSonucu = {
  *
  * ⚠ SIFIR SATIŞ "0 KÂR" DEĞİLDİR, CEVAPSIZ SORUDUR. Boş formda tablo
  * çizmek, kullanıcıya hesaplanmış gibi görünen bir sıfır duvarı gösterirdi.
+ *
+ * ⚠ KOMİSYON ORANI BU KAPIDA SORULMAZ — 21.08.2026'da kaldırıldı.
+ * Kapı onu şart koşuyordu ve kanal başına oran kutuları SONUÇ kutusunun
+ * içinde yaşıyordu: yani kutuları görebilmek için önce ortak oranı yazmak
+ * gerekiyordu, oysa alanın kendi etiketi "kanal oranı YOKSA" diyordu. Ekran
+ * "bu yedektir" yazıp "bunu doldurmadan geçemezsin" diye davranıyordu ve
+ * ürünü koddan bulan kullanıcı, kanalların HAZIR oranlarını hiç göremiyordu.
+ * Kullanıcı canlıda yakaladı: _"burada pazar yerlerine has oran girme yeri
+ * yok"_. Ders: bir alanı YEDEK ilan eden ekran onu ZORUNLU tutamaz.
+ *
+ * Oranı çözülemeyen kanal artık kutusunu çizer ve `ORAN_YOK` beyanıyla
+ * "NET hesaplanamadı" der — sessiz kalmaz, ama öteki kanalları da susturmaz.
  */
 export function girdiEksikMi(girdi: SimulasyonGirdisi): boolean {
   return (
@@ -147,8 +164,6 @@ export function girdiEksikMi(girdi: SimulasyonGirdisi): boolean {
     girdi.satisFiyati <= 0 ||
     !Number.isFinite(girdi.alisFiyati) ||
     girdi.alisFiyati <= 0 ||
-    !Number.isFinite(girdi.komisyonOrani) ||
-    girdi.komisyonOrani < 0 ||
     !Number.isFinite(girdi.kdvOrani) ||
     girdi.kdvOrani < 0
   );
@@ -175,6 +190,22 @@ function elleOran(
   oranlar: Record<string, number> | undefined,
 ): number | null {
   const deger = oranlar?.[kanalKodu];
+  if (deger === undefined) return null;
+  if (!Number.isFinite(deger) || deger < 0) return null;
+  return deger;
+}
+
+/**
+ * ORTAK yedek oran — geçersizse null.
+ *
+ * ⚠ `elleOran`IN KARDEŞİ, AYNI TUZAK. `simulasyonKur`un sözleşmesi
+ * `tekOran: number | null` ve kontrolü `!== null`; `NaN` oradan "değer var"
+ * diye geçer, komisyon `NaN` çıkar ve NET sessizce bozulur. Elle oranda
+ * süzgeç kitaplığa taşınmıştı ama ORTAK oranda kalmamıştı — orada kapı
+ * (`girdiEksikMi`) NaN'ı zaten durduruyordu. Kapı açılınca açık doğardı.
+ */
+function ortakOran(girdi: SimulasyonGirdisi): number | null {
+  const deger = girdi.komisyonOrani;
   if (deger === undefined) return null;
   if (!Number.isFinite(deger) || deger < 0) return null;
   return deger;
@@ -237,7 +268,7 @@ function kanalSonucu(
     tekOran:
       elleOran(kanal.kod, girdi.kanalOranlari) ??
       zemin?.tekOran ??
-      girdi.komisyonOrani,
+      ortakOran(girdi),
     /** Kanal kuralları da zeminden — hesap bazlı farklılık varsa o kazanır. */
     komisyonKdvOrani: zemin?.komisyonKdvOrani ?? kanal.komisyonKdvOrani,
     siparisKesintileri: zemin?.siparisKesintileri ?? kanal.kesintiler,

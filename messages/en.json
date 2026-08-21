@@ -2840,7 +2840,6 @@
     "aciklama": "",
     "satisFiyati": "",
     "alisFiyati": "",
-    "komisyonOrani": "",
     "kdvOrani": "",
     "kargoUcreti": "",
     "kargoIpucu": "",
@@ -2881,7 +2880,6 @@
     "oran_DILIM": "",
     "oran_TEK_ORAN": "",
     "oran_YOK": "",
-    "oranElle": "",
     "grafikBaslik": "",
     "grafikBos": "",
     "dokum_MALIYET": "",
@@ -2897,7 +2895,10 @@
     "kanalOrani": "",
     "oranElleGirildi": "",
     "oranSifirla": "",
-    "ortakOranEtiket": "",
-    "oranUyarisi": ""
+    "oranUyarisi": "",
+    "komisyonBaslik": "",
+    "oranVeriYok": "",
+    "oranHenuz": "",
+    "kanalOraniAria": ""
   }
 }

@@ -2840,7 +2840,6 @@
     "aciklama": "Alış, satış ve komisyonu gir; hangi pazaryerinde ne kaldığını yan yana gör. Hiçbir kayıt oluşmaz.",
     "satisFiyati": "Satış fiyatı",
     "alisFiyati": "Alış fiyatı",
-    "komisyonOrani": "Komisyon oranı (%) — kanal oranı yoksa",
     "kdvOrani": "KDV oranı (%)",
     "kargoUcreti": "Kargo ücreti",
     "kargoIpucu": "Boş bırakırsan kargo hesaba girmez (alıcı ödüyorsa).",
@@ -2849,7 +2848,7 @@
     "kdvHaric": "KDV hariç",
     "ornek": "örn. {deger}",
     "bosBaslik": "Henüz hesaplanmadı",
-    "bosIpucu": "Satış fiyatı, alış fiyatı ve komisyon oranını gir — hesap anında çıkar.",
+    "bosIpucu": "Satış ve alış fiyatını gir — hesap anında çıkar.",
     "komisyon": "Komisyon",
     "net2": "NET-2",
     "marj": "Ciro marjı",
@@ -2881,7 +2880,6 @@
     "oran_DILIM": "oran dilim tarifesinden",
     "oran_TEK_ORAN": "oran kanal SKU'sundan",
     "oran_YOK": "oran çözülemedi",
-    "oranElle": "oran senin girdiğin",
     "grafikBaslik": "Satış fiyatı nereye gidiyor",
     "grafikBos": "Hesaplanamadı",
     "dokum_MALIYET": "Alış maliyeti",
@@ -2897,7 +2895,10 @@
     "kanalOrani": "Komisyon %",
     "oranElleGirildi": "senin girdiğin",
     "oranSifirla": "veriye dön",
-    "ortakOranEtiket": "Komisyon oranı (%) — kanal oranı yoksa",
-    "oranUyarisi": "Her pazaryerinde komisyon farklı. Ürünü koddan bulursan oranlar kendiliğinden gelir; gelmeyen kanalda kutuya kendin yazabilirsin."
+    "oranUyarisi": "Her pazaryerinde komisyon farklı. Yalnız merak ettiğin pazaryerini doldurabilirsin — ötekiler dokunulmadan kalır. Ürünü koddan bulduysan oranlar kendiliğinden gelir; boş kutuya kendin yazarsan senin yazdığın geçerli olur.",
+    "komisyonBaslik": "Komisyon oranı (%) — pazaryeri başına",
+    "oranVeriYok": "veri yok — kendin yaz",
+    "oranHenuz": "satış ve alış fiyatını gir",
+    "kanalOraniAria": "{kanal} komisyon oranı (%)"
   }
 }
