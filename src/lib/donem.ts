@@ -95,6 +95,29 @@ export const LISTE_PENCERELERI = [
   "OZEL",
 ] as const satisfies readonly PencereTuru[];
 
+/**
+ * ============================================================================
+ *  PANEL VARSAYILAN DÖNEMİ
+ * ----------------------------------------------------------------------------
+ *  ⚠ 21.08.2026'DA "BU_AY"DAN "BUGUN"A ÇEVRİLDİ — kullanıcı kararı.
+ *
+ *  ── ESKİ GEREKÇE (silinmedi) ────────────────────────────────────────────
+ *  "Liste ekranlarının varsayılanı tüm zamanlar, ama panelin varsayılanı BU
+ *  AY: panel 'ne oldu' özetidir, tüm zamanların toplamı bir gösterge
+ *  tablosunda bilgi taşımaz."
+ *
+ *  ── NİYE ÇEVRİLDİ ───────────────────────────────────────────────────────
+ *  Gerekçe çürümedi, DARALDI: aynı mantık bir adım ileri gidiyor. Panel
+ *  günlük iş ekranı — açılışta sorulan soru "bu ay ne oldu" değil, "bugün
+ *  ne yapmam gerekiyor". Aylık resim bir tık ötede duruyor.
+ *
+ *  ⚠ LİSTELERİN VARSAYILANI DEĞİŞMEDİ. Onlarda "tüm zamanlar" kararı
+ *  (13.08.2026) yerinde: orada süzgeç eklemek KAYIT GİZLEMEK olur, panelde
+ *  ise dönem zaten hiç boş olamıyor.
+ * ============================================================================
+ */
+export const PANEL_VARSAYILAN_PENCERE = "BUGUN" satisfies PencereTuru;
+
 export type PencereTuru = (typeof PENCERE_TURLERI)[number];
 
 export type Pencere = {

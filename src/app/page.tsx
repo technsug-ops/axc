@@ -33,6 +33,7 @@ import {
   pencereOlustur,
   pencerede,
   type PencereTuru,
+  PANEL_VARSAYILAN_PENCERE,
 } from "@/lib/donem";
 import { GENEL_KDV_ORANI, kdvHaric } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
@@ -195,16 +196,20 @@ export default async function AnaSayfa({
   const bugun = isTakvimGunu(an);
 
   /**
-   * DÖNEM — VARSAYILAN "BU AY".
+   * DÖNEM — VARSAYILAN TEK SABİTTEN (`PANEL_VARSAYILAN_PENCERE`).
    *
-   * Liste ekranlarının varsayılanı "tüm zamanlar" (bkz. `pencereCoz`), ama
-   * panelin varsayılanı BU AY: panel "ne oldu" özetidir, tüm zamanların
-   * toplamı bir gösterge tablosunda bilgi taşımaz. Adres boşsa ya da
-   * bozuksa da buraya düşer — hata vermez, boş ekran göstermez.
+   * ⚠ İKİ YERDE İKİ DEĞER OLMASIN: aşağıda hem `pencereOlustur` hem
+   * `donemTuru` aynı varsayılanı istiyor. Ayrı ayrı yazılsaydı biri
+   * değiştirilip öteki unutulduğunda ekran bir dönemi hesaplayıp BAŞKA
+   * bir düğmeyi mavi gösterirdi — sessiz ve fark edilmesi zor.
+   *
+   * Gerekçe ve çevrilme sebebi sabitin başında yazılı.
+   * Adres boşsa ya da bozuksa da buraya düşer — hata vermez.
    */
   const cozum = pencereCoz(parametreler, an);
-  const donem = cozum.pencere ?? pencereOlustur("BU_AY", an);
-  const donemTuru: PencereTuru = cozum.tur === "" ? "BU_AY" : cozum.tur;
+  const donem = cozum.pencere ?? pencereOlustur(PANEL_VARSAYILAN_PENCERE, an);
+  const donemTuru: PencereTuru =
+    cozum.tur === "" ? PANEL_VARSAYILAN_PENCERE : cozum.tur;
 
   // Grafik penceresi: bu ay dahil son 12 ayın 1'inden bugüne.
   const ilkAy = ayKaydir(bugun.yil, bugun.ay, -(GRAFIK_AY_SAYISI - 1));

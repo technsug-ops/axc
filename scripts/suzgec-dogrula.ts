@@ -34,7 +34,10 @@ import {
   donemRozetiCizilirMi,
   temizlemeDegisiklikleri,
 } from "../src/lib/suzgec";
-import { LISTE_PENCERELERI } from "../src/lib/donem";
+import {
+  LISTE_PENCERELERI,
+  PANEL_VARSAYILAN_PENCERE,
+} from "../src/lib/donem";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -153,6 +156,28 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
     "süzgeç sırası DÜN ile başlar, sonra BUGÜN",
     LISTE_PENCERELERI[0] === "DUN" && LISTE_PENCERELERI[1] === "BUGUN",
     LISTE_PENCERELERI.slice(0, 3),
+  );
+
+  /**
+   * ⚠ PANEL VARSAYILANI TESTE BAĞLI (21.08.2026 kullanıcı kararı: BUGUN).
+   *
+   * Varsayılan sessizce değişirse kimse fark etmez — panel açılır, rakamlar
+   * başka bir dönemi gösterir ve "satışlarım azaldı" diye okunur. Sabit
+   * burada mühürlü; değiştirmek isteyen testi de değiştirmek zorunda ve
+   * o an gerekçeyi yazmak zorunda kalır.
+   *
+   * ⚠ LİSTELERİN VARSAYILANI AYRI VE DEĞİŞMEDİ: `pencereCoz` parametresiz
+   * çağrıldığında hâlâ KAPALI dönüyor (yukarıdaki kontrol). İkisi aynı
+   * testte yan yana duruyor ki biri ötekine "düzeltilmesin".
+   */
+  kontrol(
+    "panel varsayılanı BUGUN",
+    PANEL_VARSAYILAN_PENCERE === "BUGUN",
+    PANEL_VARSAYILAN_PENCERE,
+  );
+  kontrol(
+    "  ...ama listelerin varsayılanı hâlâ KAPALI (tüm zamanlar)",
+    pencereCoz({}, AN).tur === "",
   );
 
   const buAy = pencereCoz({ pencere: "BU_AY" }, AN);
