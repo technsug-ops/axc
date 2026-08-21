@@ -1066,6 +1066,48 @@ console.log("10) EKRAN — son satış fiyatı, yanıltıcı satır, durum rengi
     /kazananKod =[\s\S]{0,140}net2 !== null/.test(ekran),
   );
 
+  /**
+   * ── GİRDİ KUTUSU GİRDİ GİBİ GÖRÜNÜYOR MU ────────────────────────────
+   * ⚠ Kullanıcı bildirdi 21.08.2026: _"rakam ve oran yazılacak yerler belli
+   * değil"_. Kutular `bg-transparent` + kenarlıksızdı; rakam kartın
+   * ortasında boşlukta duruyordu ve yazılabilir olduğu görünmüyordu
+   * (İlke #2). Kontrol `MiniAlan` gövdesine DARALTILDI — `border-input`
+   * dosyanın başka yerlerinde de geçiyor.
+   */
+  const miniAlan = ekran.slice(
+    ekran.indexOf("function MiniAlan("),
+    ekran.indexOf("── KANAL KUTUSU — ÜÇ KATMAN"),
+  );
+  kontrol("MiniAlan gövdesi bulundu", miniAlan.length > 200, miniAlan.length);
+  kontrol(
+    "  ...girdi kutusunun KENARLIĞI var",
+    miniAlan.includes("border-input") && miniAlan.includes("bg-background"),
+  );
+  kontrol(
+    "  ...odaklanınca görünür (focus-within)",
+    miniAlan.includes("focus-within:ring"),
+  );
+  kontrol(
+    "  ...dokunma hedefi 44 px (h-11)",
+    miniAlan.includes("h-11"),
+  );
+  /**
+   * ⚠ BİRİM RAKAMIN YANINDA. Etikete yazmak yetmiyordu: göz rakama bakıyor,
+   * etikete değil. Fiyat kutusunda ₺ önek, oran kutusunda % sonek.
+   */
+  const girdiKutusu2 = ekran.slice(
+    ekran.indexOf("function KanalGirdiKutusu("),
+    ekran.indexOf("function MiniAlan("),
+  );
+  kontrol(
+    "fiyat kutusunda para işareti (önek)",
+    /kanalFiyati"\)\}[\s\S]{0,200}onek=\{t\("birimPara"\)\}/.test(girdiKutusu2),
+  );
+  kontrol(
+    "oran kutusunda yüzde işareti (sonek)",
+    /kanalOrani"\)\}[\s\S]{0,200}sonek=\{t\("birimYuzde"\)\}/.test(girdiKutusu2),
+  );
+
   /** Hiç satılmamış üründe ortak fiyat ZORUNLU DEĞİL — metin de öyle diyor. */
   kontrol(
     "hiç satılmamış üründe 'boş kalabilir' deniyor",

@@ -2893,7 +2893,7 @@
     "dokum_PAZARLAMA_HIZMET": "Pazarlama ve hizmet gideri",
     "dokum_ODENECEK_KDV": "Ödenecek KDV",
     "dokum_KAR": "Kâr (NET-2)",
-    "kanalOrani": "Komisyon %",
+    "kanalOrani": "Komisyon oranı",
     "oranElleGirildi": "senin girdiğin",
     "oranSifirla": "veriye dön",
     "oranVeriYok": "veri yok — kendin yaz",
@@ -2905,6 +2905,8 @@
     "kanalSifirla": "ortak fiyata dön",
     "fiyatOrtaktan": "ortak fiyattan",
     "kullanilanSatis": "Satış",
-    "beyan_FIYAT_YOK": "Satış fiyatı girilmedi — NET hesaplanamadı"
+    "beyan_FIYAT_YOK": "Satış fiyatı girilmedi — NET hesaplanamadı",
+    "birimPara": "₺",
+    "birimYuzde": "%"
   }
 }

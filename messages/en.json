@@ -2905,6 +2905,8 @@
     "kanalSifirla": "",
     "fiyatOrtaktan": "",
     "kullanilanSatis": "",
-    "beyan_FIYAT_YOK": ""
+    "beyan_FIYAT_YOK": "",
+    "birimPara": "",
+    "birimYuzde": ""
   }
 }

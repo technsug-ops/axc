@@ -541,7 +541,7 @@ function KanalGirdiKutusu({
 
   return (
     <div
-      className={`bg-card min-w-0 space-y-1.5 rounded-lg border p-3 shadow-sm ${DURUM_SERIDI[durum]}`}
+      className={`bg-card min-w-0 space-y-2 rounded-lg border p-3 shadow-sm ${DURUM_SERIDI[durum]}`}
     >
       <div className="flex items-center gap-1.5">
         {kazanan ? (
@@ -557,6 +557,7 @@ function KanalGirdiKutusu({
         etiket={t("kanalFiyati")}
         deger={fiyat}
         degistir={fiyatDegistir}
+        onek={t("birimPara")}
         ariaEtiket={t("kanalFiyatiAria", { kanal: ad })}
         /* Kutu boşken ortak fiyat kullanılır — yer tutucu onu gösterir. */
         yerTutucu={
@@ -580,6 +581,7 @@ function KanalGirdiKutusu({
         etiket={t("kanalOrani")}
         deger={oran}
         degistir={oranDegistir}
+        sonek={t("birimYuzde")}
         ariaEtiket={t("kanalOraniAria", { kanal: ad })}
         yerTutucu={veridenOran ?? t("ornek", { deger: "15" })}
         temizle={elleOran ? () => oranDegistir("") : null}
@@ -594,13 +596,28 @@ function KanalGirdiKutusu({
   );
 }
 
-/** Kutu içi tek girdi — etiket, sayı kutusu, görünür temizleme düğmesi. */
+/**
+ * ── KUTU İÇİ TEK GİRDİ ──────────────────────────────────────────────────
+ *
+ * ⚠ ÇERÇEVE ŞART (kullanıcı bildirdi 21.08.2026: _"rakam ve oran yazılacak
+ * yerler belli değil"_). İlk hâlde kutular `bg-transparent` ve kenarlıksızdı:
+ * rakam kartın ortasında boşlukta duruyordu ve **yazılabilir bir alan
+ * olduğu görünmüyordu.** İlke #2 — tıklanabilir olan tıklanabilir görünür.
+ *
+ * ⚠ BİRİM İŞARETİ KUTUNUN İÇİNDE (₺ solda, % sağda). Etikete yazmak
+ * yetmiyordu: göz rakama bakıyor, etikete değil. Birim rakamın yanında
+ * durunca "buraya para mı oran mı yazacağım" sorusu hiç doğmuyor.
+ *
+ * ⚠ İŞARET SÖZLÜKTEN GELİYOR, koda gömülü değil.
+ */
 function MiniAlan({
   etiket,
   deger,
   degistir,
   ariaEtiket,
   yerTutucu,
+  onek,
+  sonek,
   temizle,
   temizleEtiketi,
 }: {
@@ -609,26 +626,45 @@ function MiniAlan({
   degistir: (d: string) => void;
   ariaEtiket: string;
   yerTutucu: string;
+  /** Rakamın SOLUNDA duran birim (para işareti). */
+  onek?: string;
+  /** Rakamın SAĞINDA duran birim (yüzde). */
+  sonek?: string;
   /** null ise elle girilmiş değer yok — düğme çizilmez. */
   temizle: (() => void) | null;
   temizleEtiketi: string;
 }) {
   return (
-    <div>
+    <div className="space-y-0.5">
       <div className="text-muted-foreground text-[11px]">{etiket}</div>
       <div className="flex items-center gap-1">
-        {/* MOBİLDE 44 px (İlke #8). */}
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          inputMode="decimal"
-          value={deger}
-          onChange={(e) => degistir(e.target.value)}
-          aria-label={ariaEtiket}
-          placeholder={yerTutucu}
-          className="h-11 min-w-0 flex-1 bg-transparent text-center text-base font-medium tabular-nums outline-none"
-        />
+        {/* KUTUNUN KENDİSİ — odaklanınca halka, İlke #2. Yükseklik 44 px
+            (İlke #8) ve dokunma hedefi bütün kutu, yalnız rakam değil. */}
+        <div className="border-input bg-background focus-within:border-ring focus-within:ring-ring/40 flex h-11 min-w-0 flex-1 items-center gap-1 rounded-md border px-2 focus-within:ring-2">
+          {onek ? (
+            <span className="text-muted-foreground shrink-0 text-sm">
+              {onek}
+            </span>
+          ) : null}
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            inputMode="decimal"
+            value={deger}
+            onChange={(e) => degistir(e.target.value)}
+            aria-label={ariaEtiket}
+            placeholder={yerTutucu}
+            /* SAĞA YASLI: rakamlar alt alta hizalanınca kanallar arası
+               karşılaştırma göz işi olmaktan çıkar (tabular-nums). */
+            className="min-w-0 flex-1 bg-transparent text-right text-base font-medium tabular-nums outline-none"
+          />
+          {sonek ? (
+            <span className="text-muted-foreground shrink-0 text-sm">
+              {sonek}
+            </span>
+          ) : null}
+        </div>
         {/* GÖRÜNÜR EYLEM (İlke #1): elle girilen değer tek tıkla veriye
             döner. Kutuyu elle silmeyi beklemek gizli tıklama alanıdır. */}
         {temizle ? (
@@ -637,9 +673,9 @@ function MiniAlan({
             onClick={temizle}
             title={temizleEtiketi}
             aria-label={temizleEtiketi}
-            className="hover:bg-muted inline-flex size-11 shrink-0 items-center justify-center rounded"
+            className="hover:bg-muted text-muted-foreground inline-flex size-11 shrink-0 items-center justify-center rounded-md"
           >
-            <X className="size-3.5" />
+            <X className="size-4" />
           </button>
         ) : null}
       </div>
