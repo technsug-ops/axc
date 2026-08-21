@@ -1715,200 +1715,6 @@ export default async function AnaSayfa({
         </div>
       </div>
 
-      {/* ══════════════ GÜNLÜK OPERASYON GRAFİĞİ ══════════════
-          Kullanıcı isteği 21.08.2026: _"günlük kaç mal aldığımı, kaç mal
-          sattığımı ve kaç kargo verdiğimi aynı grafikte görmek istiyorum"_.
-
-          ⚠ İZNE BAĞLI: ciro görünümü para gösteriyor. Adet görünümü
-          operasyoneldir ama sekme aynı kartta olduğu için kart bütün
-          olarak `satis.kar.gor` istiyor — yarısı görünen bir kart,
-          görünmeyen yarısını merak ettirir. */}
-      {karGorunur ? (
-        <Card className="min-w-0">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
-              <span className="flex items-center gap-2">
-                <ChartLine className="size-5" />
-                {t("operasyonBaslik")}
-              </span>
-              {/* SEKME ADRESE YAZILIR (İlke #13): yenilenince seçim kalır. */}
-              <span className="flex flex-wrap gap-2">
-                {OPERASYON_GORUNUMLERI.map((gor) => (
-                  <Button
-                    key={gor}
-                    asChild
-                    size="sm"
-                    variant={operasyonGorunumu === gor ? "default" : "outline"}
-                    className="h-11 md:h-8"
-                  >
-                    <Link
-                      href={suzgecAdresi("/", parametreler, { operasyon: gor })}
-                      scroll={false}
-                    >
-                      {t(`operasyon_${gor}`)}
-                    </Link>
-                  </Button>
-                ))}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <UcSeriliGrafik
-              noktalar={operasyonGunleri.map((n, i) => ({
-                etiket: bicim.tarih(n.baslangic),
-                /* Kova bir günden genişse ARALIK yazılır: "17–23.08".
-                   Tek gün yazılsaydı haftalık noktada sayı ile etiket
-                   ayrışır, kullanıcı "o gün 12 satış mı olmuş" derdi. */
-                tamEtiket:
-                  n.baslangic.getTime() === n.sonGun.getTime()
-                    ? bicim.tarih(n.baslangic)
-                    : `${bicim.tarih(n.baslangic)} – ${bicim.tarih(n.sonGun)}`,
-                a: operasyonSeri.alim[i] ?? 0,
-                b: operasyonSeri.satis[i] ?? 0,
-                c: operasyonSeri.ucuncu[i] ?? 0,
-                /* ⚠ FARK ÇİZGİSİ TIKLANMAZ: tek bir listeye karşılığı yok
-                   (iki kümenin farkı). Sessiz kalmasın diye adres hiç
-                   verilmiyor — nokta çizilir ama link olmaz. */
-                adres:
-                  operasyonGorunumu !== "adet"
-                    ? {
-                        a: noktaAdresi("/alimlar", n),
-                        b: noktaAdresi("/satislar", n),
-                        c: "",
-                      }
-                    : {
-                        a: noktaAdresi("/alimlar", n),
-                        b: noktaAdresi("/satislar", n),
-                        c: suzgecAdresi(
-                          "/satislar",
-                          {},
-                          {
-                            pencere: "OZEL",
-                            baslangic: gunMetni(n.baslangic),
-                            bitis: gunMetni(n.sonGun),
-                            kargo: "verildi",
-                            ...(seciliKanal ? { kanal: seciliKanal } : {}),
-                          },
-                        ),
-                      },
-              }))}
-              tabloNoktalari={operasyonTablo.gosterilen.map((n) => {
-                const i = operasyonGunleri.indexOf(n);
-                return {
-                  etiket: bicim.tarih(n.baslangic),
-                  tamEtiket:
-                    n.baslangic.getTime() === n.sonGun.getTime()
-                      ? bicim.tarih(n.baslangic)
-                      : `${bicim.tarih(n.baslangic)} – ${bicim.tarih(n.sonGun)}`,
-                  a: operasyonSeri.alim[i] ?? 0,
-                  b: operasyonSeri.satis[i] ?? 0,
-                  c: operasyonSeri.ucuncu[i] ?? 0,
-                  adres:
-                    operasyonGorunumu !== "adet"
-                      ? {
-                          a: noktaAdresi("/alimlar", n),
-                          b: noktaAdresi("/satislar", n),
-                          c: "",
-                        }
-                      : {
-                          a: noktaAdresi("/alimlar", n),
-                          b: noktaAdresi("/satislar", n),
-                          c: suzgecAdresi(
-                            "/satislar",
-                            {},
-                            {
-                              pencere: "OZEL",
-                              baslangic: gunMetni(n.baslangic),
-                              bitis: gunMetni(n.sonGun),
-                              kargo: "verildi",
-                              ...(seciliKanal ? { kanal: seciliKanal } : {}),
-                            },
-                          ),
-                        },
-                };
-              })}
-              gizlenenSayisi={operasyonTablo.gizlenen}
-              /* Bir haftalık veya daha kısa tabloda açık gelir; uzunda
-                 kapalı (İlke #13). Eşik saf işlevde, teste bağlı. */
-              tabloAcik={tabloAcikMi(operasyonTablo.gosterilen.length)}
-              /* AKORDİYON BAŞLIĞI — kaç satır olduğunu söylüyor ki
-                 açmadan önce beklenti kurulsun (İlke #5). */
-              tabloAcMetni={t("operasyonTabloAc", {
-                sayi: operasyonTablo.gosterilen.length,
-              })}
-              /* ⚠ ÖZET GRAFİK İLE TABLO ARASINDA (kullanıcı 21.08.2026):
-                 önce eğilim, sonra hüküm, en sonra istersen döküm. */
-              ozet={
-                <p className="text-muted-foreground text-xs">
-                  {operasyonGorunumu === "ciro"
-                    ? /* ⚠ KARGO CİROSU YAZILMIYOR (kullanıcı: "ihtiyaç yok").
-                         Yerine FARK: satış − alım. */
-                      t("operasyonToplamCiro", {
-                        alim: bicim.para(operasyonToplam.alimTutar, seciliPara),
-                        satis: bicim.para(
-                          operasyonToplam.satisCiro,
-                          seciliPara,
-                        ),
-                        fark: bicim.para(operasyonToplam.fark, seciliPara),
-                      })
-                    : /* Adet tarafında üç kalem + TOPLAM İŞLEM sayısı. */
-                      t("operasyonToplamAdet", {
-                        alim: operasyonToplam.alimAdet,
-                        satis: operasyonToplam.satisAdet,
-                        kargo: operasyonToplam.kargoAdet,
-                        islem: operasyonToplam.islemAdedi,
-                      })}
-                </p>
-              }
-              /* TAM DÖKÜM KENDİ SAYFASINDA (İlke #13): panelde rakam +
-                 "aç" bağlantısı kalır, döküm rapora gider. */
-              tumunuGorAdresi={suzgecAdresi("/rapor", {}, donemParametreleri())}
-              tumunuGorMetni={t("operasyonTumunuGor", {
-                sayi: operasyonTablo.gizlenen,
-              })}
-              adlar={{
-                a:
-                  operasyonGorunumu === "kdv"
-                    ? t("operasyonIndirilecek")
-                    : t("operasyonAlim"),
-                b:
-                  operasyonGorunumu === "kdv"
-                    ? t("operasyonHesaplanan")
-                    : t("operasyonSatis"),
-                c:
-                  operasyonGorunumu === "ciro"
-                    ? t("operasyonFark")
-                    : operasyonGorunumu === "kdv"
-                      ? t("operasyonOdenecek")
-                      : t("operasyonKargo"),
-              }}
-              bicimle={(d) =>
-                operasyonGorunumu === "adet"
-                  ? String(Math.round(d))
-                  : bicim.para(d, seciliPara)
-              }
-              bosMesaj={t("donemBos")}
-            />
-
-            {/* ⚠ ESKİ UYARI KALDIRILDI, GEREKÇESİYLE (21.08.2026).
-                Kartta _"bu grafik ciro gösterir, KDV değil; iki cironun
-                farkı vergiyi vermez"_ yazıyordu. Kullanıcı itiraz etti:
-                "her ürünün KDV bilgisi girildiği için net bilgi sende var".
-                HAKLIYDI — ölçüldü: satış 60/60 kalemde snapshot'lı, alım
-                193/193 kalem kategoriden çözülebiliyor. Uyarı yerine KDV
-                SEKMESİ kondu.
-
-                Kalan tek sınır beyan ediliyor: satış oranı DONDURULMUŞ,
-                alım oranı BUGÜNDEN okunuyor. */}
-            {operasyonGorunumu === "kdv" ? (
-              <p className="text-muted-foreground border-t pt-2 text-xs">
-                {t("operasyonKdvKaynak")}
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
-
       {/* Para birimi süzgeci: yalnız birden fazla varsa görünür. Süzgeç
           çubuğuna girmiyor çünkü "tümü" seçeneği YOK — iki para birimi tek
           toplamda buluşmaz, her zaman biri seçili olmalıdır. */}
@@ -2260,6 +2066,205 @@ export default async function AnaSayfa({
           );
         })
       )}
+
+      {/* ══════════════ GÜNLÜK OPERASYON GRAFİĞİ ══════════════
+          ⚠ YERİ "SEÇİLİ DÖNEM"İN ALTINDA (kullanıcı kararı 21.08.2026).
+          Sıra bilinçli: önce dönemin HÜKMÜ (adet · ciro · NET), sonra o
+          hükmün GÜN GÜN nasıl oluştuğu. Grafik üstteyken göz eğilime
+          bakıyor ama neyin eğilimi olduğunu henüz bilmiyordu.
+
+          Kullanıcı isteği 21.08.2026: _"günlük kaç mal aldığımı, kaç mal
+          sattığımı ve kaç kargo verdiğimi aynı grafikte görmek istiyorum"_.
+
+          ⚠ İZNE BAĞLI: ciro görünümü para gösteriyor. Adet görünümü
+          operasyoneldir ama sekme aynı kartta olduğu için kart bütün
+          olarak `satis.kar.gor` istiyor — yarısı görünen bir kart,
+          görünmeyen yarısını merak ettirir. */}
+      {karGorunur ? (
+        <Card className="min-w-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+              <span className="flex items-center gap-2">
+                <ChartLine className="size-5" />
+                {t("operasyonBaslik")}
+              </span>
+              {/* SEKME ADRESE YAZILIR (İlke #13): yenilenince seçim kalır. */}
+              <span className="flex flex-wrap gap-2">
+                {OPERASYON_GORUNUMLERI.map((gor) => (
+                  <Button
+                    key={gor}
+                    asChild
+                    size="sm"
+                    variant={operasyonGorunumu === gor ? "default" : "outline"}
+                    className="h-11 md:h-8"
+                  >
+                    <Link
+                      href={suzgecAdresi("/", parametreler, { operasyon: gor })}
+                      scroll={false}
+                    >
+                      {t(`operasyon_${gor}`)}
+                    </Link>
+                  </Button>
+                ))}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <UcSeriliGrafik
+              noktalar={operasyonGunleri.map((n, i) => ({
+                etiket: bicim.tarih(n.baslangic),
+                /* Kova bir günden genişse ARALIK yazılır: "17–23.08".
+                   Tek gün yazılsaydı haftalık noktada sayı ile etiket
+                   ayrışır, kullanıcı "o gün 12 satış mı olmuş" derdi. */
+                tamEtiket:
+                  n.baslangic.getTime() === n.sonGun.getTime()
+                    ? bicim.tarih(n.baslangic)
+                    : `${bicim.tarih(n.baslangic)} – ${bicim.tarih(n.sonGun)}`,
+                a: operasyonSeri.alim[i] ?? 0,
+                b: operasyonSeri.satis[i] ?? 0,
+                c: operasyonSeri.ucuncu[i] ?? 0,
+                /* ⚠ FARK ÇİZGİSİ TIKLANMAZ: tek bir listeye karşılığı yok
+                   (iki kümenin farkı). Sessiz kalmasın diye adres hiç
+                   verilmiyor — nokta çizilir ama link olmaz. */
+                adres:
+                  operasyonGorunumu !== "adet"
+                    ? {
+                        a: noktaAdresi("/alimlar", n),
+                        b: noktaAdresi("/satislar", n),
+                        c: "",
+                      }
+                    : {
+                        a: noktaAdresi("/alimlar", n),
+                        b: noktaAdresi("/satislar", n),
+                        c: suzgecAdresi(
+                          "/satislar",
+                          {},
+                          {
+                            pencere: "OZEL",
+                            baslangic: gunMetni(n.baslangic),
+                            bitis: gunMetni(n.sonGun),
+                            kargo: "verildi",
+                            ...(seciliKanal ? { kanal: seciliKanal } : {}),
+                          },
+                        ),
+                      },
+              }))}
+              tabloNoktalari={operasyonTablo.gosterilen.map((n) => {
+                const i = operasyonGunleri.indexOf(n);
+                return {
+                  etiket: bicim.tarih(n.baslangic),
+                  tamEtiket:
+                    n.baslangic.getTime() === n.sonGun.getTime()
+                      ? bicim.tarih(n.baslangic)
+                      : `${bicim.tarih(n.baslangic)} – ${bicim.tarih(n.sonGun)}`,
+                  a: operasyonSeri.alim[i] ?? 0,
+                  b: operasyonSeri.satis[i] ?? 0,
+                  c: operasyonSeri.ucuncu[i] ?? 0,
+                  adres:
+                    operasyonGorunumu !== "adet"
+                      ? {
+                          a: noktaAdresi("/alimlar", n),
+                          b: noktaAdresi("/satislar", n),
+                          c: "",
+                        }
+                      : {
+                          a: noktaAdresi("/alimlar", n),
+                          b: noktaAdresi("/satislar", n),
+                          c: suzgecAdresi(
+                            "/satislar",
+                            {},
+                            {
+                              pencere: "OZEL",
+                              baslangic: gunMetni(n.baslangic),
+                              bitis: gunMetni(n.sonGun),
+                              kargo: "verildi",
+                              ...(seciliKanal ? { kanal: seciliKanal } : {}),
+                            },
+                          ),
+                        },
+                };
+              })}
+              gizlenenSayisi={operasyonTablo.gizlenen}
+              /* Bir haftalık veya daha kısa tabloda açık gelir; uzunda
+                 kapalı (İlke #13). Eşik saf işlevde, teste bağlı. */
+              tabloAcik={tabloAcikMi(operasyonTablo.gosterilen.length)}
+              /* AKORDİYON BAŞLIĞI — kaç satır olduğunu söylüyor ki
+                 açmadan önce beklenti kurulsun (İlke #5). */
+              tabloAcMetni={t("operasyonTabloAc", {
+                sayi: operasyonTablo.gosterilen.length,
+              })}
+              /* ⚠ ÖZET GRAFİK İLE TABLO ARASINDA (kullanıcı 21.08.2026):
+                 önce eğilim, sonra hüküm, en sonra istersen döküm. */
+              ozet={
+                <p className="text-muted-foreground text-xs">
+                  {operasyonGorunumu === "ciro"
+                    ? /* ⚠ KARGO CİROSU YAZILMIYOR (kullanıcı: "ihtiyaç yok").
+                         Yerine FARK: satış − alım. */
+                      t("operasyonToplamCiro", {
+                        alim: bicim.para(operasyonToplam.alimTutar, seciliPara),
+                        satis: bicim.para(
+                          operasyonToplam.satisCiro,
+                          seciliPara,
+                        ),
+                        fark: bicim.para(operasyonToplam.fark, seciliPara),
+                      })
+                    : /* Adet tarafında üç kalem + TOPLAM İŞLEM sayısı. */
+                      t("operasyonToplamAdet", {
+                        alim: operasyonToplam.alimAdet,
+                        satis: operasyonToplam.satisAdet,
+                        kargo: operasyonToplam.kargoAdet,
+                        islem: operasyonToplam.islemAdedi,
+                      })}
+                </p>
+              }
+              /* TAM DÖKÜM KENDİ SAYFASINDA (İlke #13): panelde rakam +
+                 "aç" bağlantısı kalır, döküm rapora gider. */
+              tumunuGorAdresi={suzgecAdresi("/rapor", {}, donemParametreleri())}
+              tumunuGorMetni={t("operasyonTumunuGor", {
+                sayi: operasyonTablo.gizlenen,
+              })}
+              adlar={{
+                a:
+                  operasyonGorunumu === "kdv"
+                    ? t("operasyonIndirilecek")
+                    : t("operasyonAlim"),
+                b:
+                  operasyonGorunumu === "kdv"
+                    ? t("operasyonHesaplanan")
+                    : t("operasyonSatis"),
+                c:
+                  operasyonGorunumu === "ciro"
+                    ? t("operasyonFark")
+                    : operasyonGorunumu === "kdv"
+                      ? t("operasyonOdenecek")
+                      : t("operasyonKargo"),
+              }}
+              bicimle={(d) =>
+                operasyonGorunumu === "adet"
+                  ? String(Math.round(d))
+                  : bicim.para(d, seciliPara)
+              }
+              bosMesaj={t("donemBos")}
+            />
+
+            {/* ⚠ ESKİ UYARI KALDIRILDI, GEREKÇESİYLE (21.08.2026).
+                Kartta _"bu grafik ciro gösterir, KDV değil; iki cironun
+                farkı vergiyi vermez"_ yazıyordu. Kullanıcı itiraz etti:
+                "her ürünün KDV bilgisi girildiği için net bilgi sende var".
+                HAKLIYDI — ölçüldü: satış 60/60 kalemde snapshot'lı, alım
+                193/193 kalem kategoriden çözülebiliyor. Uyarı yerine KDV
+                SEKMESİ kondu.
+
+                Kalan tek sınır beyan ediliyor: satış oranı DONDURULMUŞ,
+                alım oranı BUGÜNDEN okunuyor. */}
+            {operasyonGorunumu === "kdv" ? (
+              <p className="text-muted-foreground border-t pt-2 text-xs">
+                {t("operasyonKdvKaynak")}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* ═══════════════════════ ÜRÜN ANALİZİ ═══════════════════════
           İKİ KART YAN YANA (14.08.2026, kullanıcı isteği). Tek liste tam
