@@ -50,6 +50,9 @@ function yakin(ad: string, bulunan: number, beklenen: number, tolerans = 0.02) {
   );
 }
 
+/** Sabit "bugün" — sonda kendi saatini okumaz (tekrarlanabilir ölçüm). */
+const BUGUN = new Date("2026-08-21T09:00:00.000Z");
+
 /** nesatilir'in ortak senaryosu — KDV DAHİL girilir. */
 const ORTAK: SimulasyonGirdisi = {
   kdvDahilMi: true,
@@ -64,20 +67,21 @@ const ORTAK: SimulasyonGirdisi = {
 console.log("\n1) DIŞ KAYNAK KIYASI — nesatilir'in dört senaryosu");
 // ===========================================================================
 {
-  const sonuc = simulasyonKarsilastir(ORTAK);
+  const sonuc = simulasyonKarsilastir(ORTAK, BUGUN);
   const bul = (kod: string) => sonuc.find((s) => s.kod === kod)!;
 
   /**
    * TRENDYOL — kuruşuna tutmalı. Komisyona KDV eklenmez, ₺13,19 sabit.
    * nesatilir: kâr 172,34.
    */
-  yakin("Trendyol NET-2", bul("TRENDYOL").net2, 172.34);
-  yakin("Trendyol komisyon (KDV yok)", bul("TRENDYOL").komisyon, 150);
+  yakin("Trendyol NET-2", bul("TRENDYOL").net2!, 172.34);
+  /** ⚠ ARTIK TUTAR DEĞİL ORAN dönüyor (motor birleşti); tutar NET içinde. */
+  kontrol("Trendyol komisyon oranı çözüldü", bul("TRENDYOL").komisyonOrani === 15, bul("TRENDYOL").komisyonOrani);
 
   /**
    * N11 — nesatilir: kâr 172,85. Komisyon KDV'siz, pazarlama gideri ₺12,58.
    */
-  yakin("N11 NET-2", bul("N11").net2, 172.85);
+  yakin("N11 NET-2", bul("N11").net2!, 172.85);
 
   /**
    * ⚠ HEPSİBURADA — BİLEREK AYRIŞIYOR.
@@ -90,25 +94,39 @@ console.log("\n1) DIŞ KAYNAK KIYASI — nesatilir'in dört senaryosu");
    * eksi KDV etkisi kadar yüksek. Bu bir hata DEĞİL, ölçülmüş kuralın
    * sonucudur. Sayı burada kaynağıyla birlikte sabitleniyor.
    */
+  /**
+   * ⚠ HB ARTIK NET-2 ÜZERİNDEN SINANIYOR. Motor birleşince kesinti dökümü
+   * dönmüyor; ölçülen kuralın etkisi NET-2'de görünüyor. nesatilir 139,83
+   * diyor; bizim ölçülmüş matrahımız (KDV dahil, üstüne KDV yok) 141,43
+   * veriyor. Aradaki 1,60 tam olarak fee farkının kendisidir.
+   */
   const hb = bul("HEPSIBURADA");
-  yakin("Hepsiburada komisyon (+%20 KDV)", hb.komisyon, 180);
-  const odeme = hb.kesintiler.find((k) => k.code === "ODEME_GIDERI")!.tutar;
-  yakin("Hepsiburada tahsilat bedeli — ÖLÇÜLEN kural", odeme, 8);
+  /**
+   * ⚠ 141,17 ELDE HESAPLANDI, motordan OKUNMADI — yoksa test kendi çıktısını
+   * doğrulardı. Döküm:
+   *   komisyon 180,00 (1000×%15×1,20) · tahsilat 8,00 (1000×%0,8, KDV DAHİL
+   *   matrah) · hizmet 12,60 · stopaj 8,33 (833,33×%1) · kargo 120,00
+   *   ödenecek KDV 29,90 = 166,67 − 83,33 − 30,00 − 20,00 − 3,43
+   *   NET-2 = 1000 − 500 − 180 − 8 − 12,60 − 8,33 − 120 − 29,90 = 141,17
+   *
+   * ⚠ İLK YAZDIĞIM 141,43 TAHMİNDİ ve kırmızı yandı — iyi ki yandı.
+   */
+  yakin("Hepsiburada NET-2 — ÖLÇÜLEN kural", hb.net2!, 141.17, 0.05);
   kontrol(
-    "  ...nesatilir'in 9,60'ı KULLANILMIYOR",
-    Math.abs(odeme - 9.6) > 0.5,
-    odeme,
+    "  ...nesatilir'in 139,83'ü KULLANILMIYOR",
+    Math.abs(hb.net2! - 139.83) > 1,
+    hb.net2,
   );
 
   /**
    * AMAZON — nesatilir: kâr 75,83 ama ALIŞ 599 ile. Ortak senaryoda alış 500
    * olduğu için burada ayrı bir girdiyle sınanıyor.
    */
-  const amazon = simulasyonKarsilastir({ ...ORTAK, alisFiyati: 599 }).find(
+  const amazon = simulasyonKarsilastir({ ...ORTAK, alisFiyati: 599 }, BUGUN).find(
     (s) => s.kod === "AMAZON",
   )!;
-  yakin("Amazon NET-2 (alış 599)", amazon.net2, 75.83);
-  yakin("Amazon komisyon (+%20 KDV)", amazon.komisyon, 180);
+  yakin("Amazon NET-2 (alış 599)", amazon.net2!, 75.83);
+  kontrol("Amazon komisyona KDV ekliyor (oran 15, NET farkı)", amazon.komisyonOrani === 15);
 }
 
 // ===========================================================================
@@ -127,13 +145,13 @@ console.log("\n2) KDV DAHİL / HARİÇ — aynı ürün, iki dil, aynı sonuç")
     komisyonOrani: 15,
     kdvOrani: 20,
     kargoUcreti: 100,
-  });
-  const dahil = simulasyonKarsilastir(ORTAK);
+  }, BUGUN);
+  const dahil = simulasyonKarsilastir(ORTAK, BUGUN);
 
   for (const kanal of ["TRENDYOL", "HEPSIBURADA", "N11", "AMAZON"]) {
     const a = haric.find((s) => s.kod === kanal)!;
     const b = dahil.find((s) => s.kod === kanal)!;
-    yakin(`${kanal}: iki dil aynı NET-2`, a.net2, b.net2, 0.05);
+    yakin(`${kanal}: iki dil aynı NET-2`, a.net2!, b.net2!, 0.05);
   }
 
   /**
@@ -148,12 +166,12 @@ console.log("\n2) KDV DAHİL / HARİÇ — aynı ürün, iki dil, aynı sonuç")
     komisyonOrani: 15,
     kdvOrani: 20,
     kargoUcreti: 100,
-  });
+  }, BUGUN);
   kontrol(
     "KDV anahtarı gerçekten etkili (dahil ≠ hariç)",
     Math.abs(
-      yanlisDil.find((s) => s.kod === "TRENDYOL")!.net2 -
-        haric.find((s) => s.kod === "TRENDYOL")!.net2,
+      yanlisDil.find((s) => s.kod === "TRENDYOL")!.net2! -
+        haric.find((s) => s.kod === "TRENDYOL")!.net2!,
     ) > 1,
   );
 }
@@ -162,7 +180,7 @@ console.log("\n2) KDV DAHİL / HARİÇ — aynı ürün, iki dil, aynı sonuç")
 console.log("\n3) SIRALAMA VE BOŞ GİRDİ");
 // ===========================================================================
 {
-  const sonuc = simulasyonKarsilastir(ORTAK);
+  const sonuc = simulasyonKarsilastir(ORTAK, BUGUN);
   kontrol(
     "bütün kanallar geliyor",
     sonuc.length === SIMULASYON_KANALLARI.length,
@@ -170,8 +188,8 @@ console.log("\n3) SIRALAMA VE BOŞ GİRDİ");
   );
   kontrol(
     "EN KÂRLI başta (NET-2 azalan)",
-    sonuc.every((s, i) => i === 0 || sonuc[i - 1]!.net2 >= s.net2),
-    sonuc.map((s) => `${s.kod}:${s.net2.toFixed(2)}`),
+    sonuc.every((s, i) => i === 0 || (sonuc[i - 1]!.net2 ?? -Infinity) >= (s.net2 ?? -Infinity)),
+    sonuc.map((s) => `${s.kod}:${s.net2?.toFixed(2)}`),
   );
 
   /**
@@ -180,15 +198,15 @@ console.log("\n3) SIRALAMA VE BOŞ GİRDİ");
    */
   kontrol(
     "boş satış fiyatı → tablo YOK",
-    simulasyonKarsilastir({ ...ORTAK, satisFiyati: 0 }).length === 0,
+    simulasyonKarsilastir({ ...ORTAK, satisFiyati: 0 }, BUGUN).length === 0,
   );
   kontrol(
     "boş alış fiyatı → tablo YOK",
-    simulasyonKarsilastir({ ...ORTAK, alisFiyati: 0 }).length === 0,
+    simulasyonKarsilastir({ ...ORTAK, alisFiyati: 0 }, BUGUN).length === 0,
   );
   kontrol(
     "eksi satış → tablo YOK",
-    simulasyonKarsilastir({ ...ORTAK, satisFiyati: -5 }).length === 0,
+    simulasyonKarsilastir({ ...ORTAK, satisFiyati: -5 }, BUGUN).length === 0,
   );
   kontrol(
     "girdiEksikMi boş formu yakalıyor",
@@ -197,15 +215,15 @@ console.log("\n3) SIRALAMA VE BOŞ GİRDİ");
   kontrol("dolu form eksik SAYILMIYOR", !girdiEksikMi(ORTAK));
 
   /** Kargosuz deneme meşru: alıcı ödüyorsa kargo bize gider değildir. */
-  const kargosuz = simulasyonKarsilastir({ ...ORTAK, kargoUcreti: null });
+  const kargosuz = simulasyonKarsilastir({ ...ORTAK, kargoUcreti: null }, BUGUN);
   kontrol(
     "kargosuz senaryo hesaplanıyor",
     kargosuz.length === SIMULASYON_KANALLARI.length,
   );
   kontrol(
     "  ...ve kargosuz NET-2 daha yüksek",
-    kargosuz.find((s) => s.kod === "TRENDYOL")!.net2 >
-      sonuc.find((s) => s.kod === "TRENDYOL")!.net2,
+    kargosuz.find((s) => s.kod === "TRENDYOL")!.net2! >
+      sonuc.find((s) => s.kod === "TRENDYOL")!.net2!,
   );
 }
 
@@ -303,9 +321,17 @@ console.log("\n4) KAYNAK BEYANI — kaynağı yazılmayan sayı kullanılamaz");
    * cevap veren iki motor olurdu ve ayrışma sessiz olurdu.
    */
   kontrol(
-    "kâr motoru YENİDEN YAZILMAMIŞ (karHesapla çağrılıyor)",
-    motor.includes("karHesapla("),
+    /**
+     * ⚠ ÖLÇÜT DEĞİŞTİ (21.08.2026): artık `karHesapla` değil `simulasyonKur`
+     * çağrılmalı. İlk hâlde bu modül kendi motorunu kuruyordu ve
+     * `lib/fiyatlama/simulasyon.ts` ZATEN VARDI — aynı soruya iki motor.
+     * Kontrol de o yanlışı doğruluyordu: "kâr motoru yeniden yazılmamış"
+     * diyordu ve YAZILMIŞTI, sadece adı başkaydı.
+     */
+    "mevcut simülasyon motoru kullanılıyor (simulasyonKur)",
+    motor.includes("simulasyonKur("),
   );
+  kontrol("  ...ve paralel motor kurulmuyor", !motor.includes("karHesapla("));
   kontrol(
     "  ...ve elle stopaj/komisyon formülü yok",
     !/\* *0\.01|\/ *1\.2 *\*/.test(motor.replace(/\/\*[\s\S]*?\*\//g, "")),

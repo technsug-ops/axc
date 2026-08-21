@@ -1,4 +1,4 @@
-import { karHesapla, type KarDurumu } from "@/lib/kar";
+import { simulasyonKur, type Beyan } from "@/lib/fiyatlama/simulasyon";
 import { kdvHaricKargo } from "@/lib/kargo-kdv";
 import {
   SIMULASYON_KANALLARI,
@@ -13,11 +13,16 @@ import {
  *  Kullanıcı isteği 21.08.2026. Girilen alış/satış/komisyon ile bütün
  *  kanalları yan yana koyar ve NET-2'ye göre sıralar.
  *
- *  ── YENİ KÂR HESABI YOK ─────────────────────────────────────────────────
- *  ⚠ Bu dosya tek bir kuruş hesaplamaz: her kanal için `karHesapla` çağrılır.
- *  Kendi formülünü yazsaydım aynı soruya iki cevap üreten iki motor olurdu
- *  ve biri gün gelip ötekinden ayrışırdı — üstelik ayrışma sessiz olurdu,
- *  çünkü ikisi de "makul" rakamlar basar.
+ *  ── PARALEL MOTOR YAZILMADI — VE İLK HÂLİNDE YAZILMIŞTI ─────────────────
+ *  ⚠ Bu dosya ilk yazıldığında doğrudan `karHesapla`yı çağırıyordu ve tam
+ *  o sırada `lib/fiyatlama/simulasyon.ts` ZATEN VARDI (464 satır: beyanlar,
+ *  başabaş, yön hükmü, alt dilim önerisi). Yani "aynı soruya iki motor"
+ *  tuzağına, o tuzağa karşı yorum yazarken düşülmüştü.
+ *
+ *  Düzeltildi: her kanal için `simulasyonKur` çağrılıyor. Kazanç yalnız
+ *  tekrarın kalkması değil — BEYANLAR da geliyor: "dilim verisi yok",
+ *  "tarife penceresi bitmiş", "maliyet yok". Kendi motorumda bunlar hiç
+ *  yoktu ve ekran, olmayan bir kesinlik gösteriyordu.
  *
  *  ── HİÇBİR ŞEY YAZMAZ ───────────────────────────────────────────────────
  *  Simülasyon bir denemedir: ne satış, ne stok, ne kesinti kaydı doğar.
@@ -53,15 +58,15 @@ export type KanalSonucu = {
   kaynak: KuralKaynagi;
   kaynakNotu: string;
   belirsizlik: string | null;
-  durum: KarDurumu;
-  komisyon: number;
-  stopaj: number;
-  /** Kanala özgü kesintiler (kargo HARİÇ) — kod ve tutar. */
-  kesintiler: { code: string; tutar: number }[];
-  kargo: number;
-  odenecekKdv: number;
-  net1: number;
-  net2: number;
+  /** Kullanılan komisyon oranı (%) — çözülemezse null. */
+  komisyonOrani: number | null;
+  net1: number | null;
+  net2: number | null;
+  /**
+   * ZEMİN BEYANLARI — "dilim yok", "pencere bitti", "maliyet yok".
+   * ⚠ Ekranda görünmezlerse motorun dürüstlüğü kullanıcıya ulaşmaz.
+   */
+  beyanlar: Beyan[];
   /** NET-2 / satış (KDV dahil), yüzde. Satış sıfırsa null. */
   ciroMarji: number | null;
   /** NET-2 / alış (KDV dahil) — "sermaye verimi", yüzde. Alış sıfırsa null. */
@@ -95,6 +100,7 @@ function dahileCevir(tutar: number, kdvOrani: number): number {
 function kanalSonucu(
   kanal: SimulasyonKanali,
   girdi: SimulasyonGirdisi,
+  bugun: Date,
 ): KanalSonucu {
   const satis = girdi.kdvDahilMi
     ? girdi.satisFiyati
@@ -115,25 +121,26 @@ function kanalSonucu(
         ? kdvHaricKargo(girdi.kargoUcreti)
         : girdi.kargoUcreti;
 
-  const sonuc = karHesapla({
-    kalemler: [
-      {
-        satisTutari: satis,
-        satisParaBirimi: "TRY",
-        maliyet: alis,
-        maliyetParaBirimi: "TRY",
-        kdvOrani: girdi.kdvOrani,
-        komisyonOrani: girdi.komisyonOrani,
-      },
-    ],
+  const s = simulasyonKur({
+    hedefFiyat: satis,
+    adet: 1,
+    birimMaliyet: alis,
+    kdvOrani: girdi.kdvOrani,
+    paraBirimi: "TRY",
+    /**
+     * ⚠ DİLİM YOK, TEK ORAN VAR. Bu ekranda komisyonu KULLANICI giriyor —
+     * elindeki ürün henüz sistemde olmayabilir. Ürün seçilerek yapılan
+     * deneme kârlılık kartındaki `FiyatDene`nin işi ve orada gerçek dilim
+     * tarifesi kullanılıyor. İkisi aynı motoru çağırıyor, girdisi farklı.
+     */
+    dilimler: null,
+    pencereBitis: null,
+    tekOran: girdi.komisyonOrani,
     komisyonKdvOrani: kanal.komisyonKdvOrani,
     siparisKesintileri: kanal.kesintiler,
     kargoTarifesi,
+    bugun,
   });
-
-  const kalem = sonuc.kalemler[0]!;
-  const kargo =
-    sonuc.siparisKesintileri.find((k) => k.code === "KARGO")?.tutar ?? 0;
 
   return {
     kod: kanal.kod,
@@ -141,16 +148,12 @@ function kanalSonucu(
     kaynak: kanal.kaynak,
     kaynakNotu: kanal.kaynakNotu,
     belirsizlik: kanal.belirsizlik,
-    durum: sonuc.durum,
-    komisyon: kalem.komisyon,
-    stopaj: kalem.stopaj,
-    kesintiler: sonuc.siparisKesintileri.filter((k) => k.code !== "KARGO"),
-    kargo,
-    odenecekKdv: sonuc.kdv.odenecekKdv,
-    net1: sonuc.net1,
-    net2: sonuc.net2,
-    ciroMarji: satis > 0 ? (sonuc.net2 / satis) * 100 : null,
-    sermayeVerimi: alis > 0 ? (sonuc.net2 / alis) * 100 : null,
+    komisyonOrani: s.komisyonOrani,
+    net1: s.net1,
+    net2: s.net2,
+    beyanlar: s.beyanlar,
+    ciroMarji: s.net2 === null || satis <= 0 ? null : (s.net2 / satis) * 100,
+    sermayeVerimi: s.net2 === null || alis <= 0 ? null : (s.net2 / alis) * 100,
   };
 }
 
@@ -160,9 +163,14 @@ function kanalSonucu(
  * ⚠ SIRALAMA EKRANIN İŞİ DEĞİL, BURANIN. İki ekran aynı listeyi farklı
  * sıralarsa "hangisi doğru" sorusu doğar; sıra da bir hükümdür.
  */
-export function simulasyonKarsilastir(girdi: SimulasyonGirdisi): KanalSonucu[] {
+export function simulasyonKarsilastir(
+  girdi: SimulasyonGirdisi,
+  /** "Bugün" DIŞARIDAN — saf kalsın, iş takvimi çağırandan gelsin. */
+  bugun: Date,
+): KanalSonucu[] {
   if (girdiEksikMi(girdi)) return [];
-  return SIMULASYON_KANALLARI.map((k) => kanalSonucu(k, girdi)).sort(
-    (a, b) => b.net2 - a.net2,
+  return SIMULASYON_KANALLARI.map((k) => kanalSonucu(k, girdi, bugun)).sort(
+    /** NET hesaplanamayan kanal SONA — "0 kâr" sayılıp öne çıkamaz. */
+    (a, b) => (b.net2 ?? -Infinity) - (a.net2 ?? -Infinity),
   );
 }
