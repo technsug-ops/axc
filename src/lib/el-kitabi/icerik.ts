@@ -28,13 +28,23 @@ export const BOLUMLER = [
   { kimlik: "dusunce", ad: "Sistem nasıl düşünür" },
   { kimlik: "giris", ad: "Giriş ve güvenlik" },
   { kimlik: "kurulum", ad: "İlk kurulum" },
+  { kimlik: "panel", ad: "Panel — güne nereden bakılır" },
   { kimlik: "urun", ad: "Ürünler ve stok" },
   { kimlik: "kanalSku", ad: "Kanal SKU — ne işe yarar" },
+  { kimlik: "komisyon", ad: "Komisyon oranı ve tarife" },
   { kimlik: "alim", ad: "Alım ve mal kabul" },
   { kimlik: "satis", ad: "Satış" },
   { kimlik: "iade", ad: "İade" },
+  { kimlik: "deneme", ad: "Fiyat denemesi — nerede satmalı" },
+  { kimlik: "kart", ad: "Kârlılık kartı" },
   { kimlik: "gider", ad: "Giderler" },
+  { kimlik: "kartBorcu", ad: "Kartlar ve kart borcu" },
+  { kimlik: "hakedis", ad: "Hakediş — param ne zaman yatar" },
+  { kimlik: "tazminat", ad: "Tazminat" },
+  { kimlik: "nakit", ad: "Nakit takvimi" },
+  { kimlik: "envanter", ad: "Envanter değeri" },
   { kimlik: "rapor", ad: "Dönem raporu" },
+  { kimlik: "talep", ad: "Destek talepleri" },
   { kimlik: "toplu", ad: "Toplu veri aktarımı" },
   { kimlik: "yedek", ad: "Yedek" },
   { kimlik: "sorun", ad: "Bir şey ters giderse" },
@@ -72,6 +82,71 @@ function canliTablo(
     .map((s) => `<tr>${s.map((h) => `<td>${h}</td>`).join("")}</tr>`)
     .join("");
   return `<div class="ek-tablo"><table><thead><tr>${bas}</tr></thead><tbody>${govde}</tbody></table></div>`;
+}
+
+/**
+ * ── EKRAN ŞEMASI ────────────────────────────────────────────────────────
+ * Ekranın FOTOĞRAFI değil, ÇİZİMİ. Projede tarayıcı otomasyonu yok
+ * (karar 08.08.2026); ama asıl gerekçe teknik değil: fotoğraf ekran her
+ * değiştiğinde bayatlar ve bayat fotoğraf kılavuzu sessizce yanlış yapar.
+ * Çizim kodun içinde yaşıyor — bir blok taşınırsa şema da düzeltilir.
+ *
+ * Amaç ekranı taklit etmek değil, YERİ tarif etmek: "sayfayı açtığında
+ * şurada şu kutu var". Numaralar `adimlar` listesiyle eşleşir.
+ */
+function ekranSemasi(
+  yol: string,
+  bloklar: {
+    /** Adım numarası — `adimlar` listesindeki sırayla aynı olmalı. */
+    no?: number;
+    ad: string;
+    aciklama?: string;
+    /** Tam satır kaplasın mı. */
+    genis?: boolean;
+    /** Ekranın HÜKÜM verdiği yer — göz önce buraya gitsin. */
+    vurgulu?: boolean;
+  }[],
+): string {
+  const govde = bloklar
+    .map((b) => {
+      const sinif = ["ekran-blok", b.genis ? "genis" : "", b.vurgulu ? "vurgulu" : ""]
+        .filter(Boolean)
+        .join(" ");
+      const no = b.no === undefined ? "" : `<span class="ekran-no">${b.no}</span>`;
+      const ac = b.aciklama ? `<p>${b.aciklama}</p>` : "";
+      return `<div class="${sinif}"><h4>${no}${kacir(b.ad)}</h4>${ac}</div>`;
+    })
+    .join("");
+  return `<figure class="ek-ekran"><figcaption>${kacir(yol)}</figcaption>
+<div class="ekran-cerceve"><div class="ekran-cubuk">${kacir(yol)}</div>
+<div class="ekran-govde">${govde}</div></div></figure>`;
+}
+
+/** "Ne zaman buraya gelirim" — bölümün ilk sorusu. */
+function neZaman(metin: string): string {
+  return `<div class="ek-nezaman"><div class="etiket">Ne zaman buraya gelirim</div><p>${metin}</p></div>`;
+}
+
+/**
+ * "Sık yapılan hata" — belge ile OPERASYON arasındaki köprü.
+ *
+ * ⚠ HER MADDE GERÇEK BİR VAKADAN GELİR, uydurulmuş bir "dikkat edin"
+ * listesi değildir. Uydurma uyarılar okunmaz hâle gelir ve gerçek olanı da
+ * beraberinde götürür.
+ */
+function sikHata(maddeler: { hata: string; cozum: string }[]): string {
+  const govde = maddeler
+    .map((m) => `<dt>${m.hata}</dt><dd>${m.cozum}</dd>`)
+    .join("");
+  return `<div class="ek-hata"><div>Sık yapılan hata</div><dl>${govde}</dl></div>`;
+}
+
+/** Adım listesi — başlık + açıklama çiftlerinden. */
+function adimlar(maddeler: { ad: string; ne: string }[]): string {
+  const govde = maddeler
+    .map((m) => `<li><div><h3>${m.ad}</h3><p>${m.ne}</p></div></li>`)
+    .join("");
+  return `<ol class="adimlar">${govde}</ol>`;
 }
 
 export function elKitabiGovdesi(
@@ -268,8 +343,44 @@ ${canliTablo(
 )}
 </section>
 
+<section id="panel">
+${baslik("panel")}
+<p><strong>Sol menüde en üstteki <em>Panel</em>.</strong> Giriş yapınca açılan
+sayfa burasıdır ve tek bir soruya cevap verir: <em>bugün ne oldu, neye
+bakmam gerek.</em></p>
+${neZaman(
+  "Her sabah ilk açtığın yer. Gün içinde bir şey ters gittiğini hissedersen de önce buraya bak — sistemin bildiği bütün uyarılar burada toplanır.",
+)}
+${ekranSemasi("Panel", [
+  { no: 1, ad: "Dönem seçici", aciklama: "Bugün · Dün · Bu ay · Son 30 gün. Ekrandaki BÜTÜN rakamlar bu seçime göre değişir.", genis: true },
+  { no: 2, ad: "Ciro ve NET", aciklama: "Seçili dönemin satış tutarı ve elde kalan. İkisi yan yana durur çünkü biri olmadan öteki yanıltır.", vurgulu: true },
+  { no: 3, ad: "Görev kutuları", aciklama: "Mal kabul bekleyen alım, kârı hesaplanamayan satış gibi ELİNDE İŞ olan kalemler." },
+  { no: 4, ad: "Uyarılar", aciklama: "Sistemin şüphelendiği kayıtlar. Rakam + 'aç' bağlantısı; döküm kendi sayfasında." },
+  { no: 5, ad: "Günlük operasyon", aciklama: "Alım (yeşil) · satış (mavi) · kargo (turuncu) — gün gün grafik." },
+  { no: 6, ad: "Nakit özeti", aciklama: "Yaklaşan kart borcu ve beklenen hakediş.", },
+])}
+<div class="ek-not"><div class="etiket">Neden döküm yok</div>
+<p>Panel bir <strong>hüküm</strong> yeridir, döküm yeri değil. Satır sayısı veriyle
+birlikte büyüyen hiçbir liste buraya konmaz: bugün 3 satırla masum görünen bir
+liste, hacim artınca ekranı yutar. Panelde <strong>rakam + "aç" bağlantısı</strong>
+kalır; dökümü kendi sayfasında görürsün.</p></div>
+${sikHata([
+  {
+    hata: "Panelde rakamı görüp dönem seçiciyi kontrol etmemek",
+    cozum: "Rakamın hangi döneme ait olduğu her zaman seçicide yazar. “Ciro düşmüş” demeden önce seçicinin “Bugün”de mi “Bu ay”da mı olduğuna bak.",
+  },
+  {
+    hata: "Uyarıyı görüp “sonra bakarım” demek",
+    cozum: "Uyarılar kendiliğinden kaybolmaz; veri düzelene kadar her gün taşınırlar. Okunmayan uyarı, bir süre sonra hiç okunmayan bir rozete dönüşür.",
+  },
+])}
+</section>
+
 <section id="urun">
 ${baslik("urun")}
+${neZaman(
+  "Yeni bir ürün almadan ÖNCE — sistemde kaydı yoksa alım girişi yapamazsın. Bir de elindeki malın kaç adet olduğunu merak ettiğinde.",
+)}
 <h3>Ürün ve varyant</h3>
 <p>Her ürünün en az bir <em>varyantı</em> vardır. Bedeni veya rengi olmayan bir
 ürün için de tek bir varsayılan varyant açılır. Stok, SKU ve barkod her zaman
@@ -290,6 +401,16 @@ değiştirebilirsiniz.</p>
 <div class="ek-not"><div class="etiket">Kısayol</div>
 <p>Kod girilen her alan barkod okuyucuyla çalışır. USB okuyucu kodu yazıp Enter'a
 basar; telefonda kamerayla da okutabilirsiniz.</p></div>
+${sikHata([
+  {
+    hata: "Aynı ürünü ikinci kez açmak",
+    cozum: "Almadan önce barkodla ARA. Aynı ürün iki kayıtla durursa stok ikiye bölünür ve kârlılık kartı iki ayrı yerde yarım rakam gösterir.",
+  },
+  {
+    hata: "Barkod ile SKU’yu karıştırmak",
+    cozum: "Barkod (EAN) ÜRETİCİNİN kodudur, kutunun üstünde yazar. SKU sistemin kendi kodu. Firma SKU ise senin fiziksel etiketin. Üçü ayrı alan, üçü de aranabilir.",
+  },
+])}
 </section>
 
 <section id="kanalSku">
@@ -383,8 +504,67 @@ ${canliTablo(
 }
 </section>
 
+<section id="komisyon">
+${baslik("komisyon")}
+<p>Komisyon, kârın en büyük kesintisidir ve <strong>her üründe, her
+pazaryerinde farklıdır.</strong> Ölçüldü: aynı ürünün kanaldan kanala oran
+farkı ortanca 2 puan, en yükseği <strong>14,4 puan</strong> — 1.000 ₺'lik bir
+satışta 144 ₺ demek.</p>
+
+<h3>İki ayrı şey, karıştırma</h3>
+<div class="ek-tablo"><table>
+<thead><tr><th>Ne</th><th>Nereden yüklenir</th><th>Ne işe yarar</th></tr></thead>
+<tbody>
+<tr><td><strong>Tek oran</strong></td><td>Kanal SKU → <em>Komisyon listesi aktar</em></td><td>Satış formunda önerilen oran</td></tr>
+<tr><td><strong>Dilim tarifesi</strong></td><td>Komut satırından tarife yükleme</td><td>Fiyata göre değişen oran — fiyat denemesi bunu kullanır</td></tr>
+</tbody></table></div>
+<p>İkisi <strong>aynı dosyayı</strong> okuyabilir ama farklı şeyler kaydeder.
+Biri "bugün oranın ne", öteki "hangi fiyatta hangi oran".</p>
+
+${neZaman(
+  "Pazaryeri komisyon oranlarını güncellediğinde. Trendyol SALI ve CUMA yayımlar, Hepsiburada ÇARŞAMBA. Yüklemezsen sistem eski oranla hesap yapar ve NET yanlış çıkar.",
+)}
+${ekranSemasi("Kanal SKU → Komisyon listesi aktar", [
+  { no: 1, ad: "Mağaza seç", aciklama: "Hangi pazaryerinin hangi hesabı. ALIŞ hesabı seçilirse reddedilir — komisyon yalnız SATTIĞIN mağazada anlamlı." },
+  { no: 2, ad: "Dosya seç", aciklama: "Satıcı panelinden indirdiğin ürün listesi. Hangi pazaryerine ait olduğu dosyanın kendisinden anlaşılır." },
+  { no: 3, ad: "Denetle", aciklama: "HİÇBİR ŞEY YAZILMAZ. Kaç oran değişecek, kaç yeni eşleme açılacak, kaç satır bizde yok — hepsi listelenir." },
+  { no: 4, ad: "Onayla ve yaz", aciklama: "Tek seferde yapılır: bir şey ters giderse hiçbiri yazılmaz.", vurgulu: true },
+])}
+<h3>Dosya nereden indirilir</h3>
+<ul>
+<li><strong>Trendyol:</strong> satıcı panelinde <em>Ürünler → Ürünlerim → Excel'e aktar</em></li>
+<li><strong>Hepsiburada:</strong> satıcı panelinde <em>Listelerim → İndir</em></li>
+</ul>
+
+<h3>Dilim tarifesi — haftalık rutin</h3>
+<p>Trendyol <strong>fiyat indirimi karşılığında komisyon indirir</strong>: aynı
+ürün 2.000 ₺'ye %10, 1.750 ₺'ye satılırsa %7 komisyon alabilir. Bu yüzden tek
+bir oran yetmez; dört dilimli bir tarife gelir.</p>
+<div class="ek-not dikkat"><div class="etiket">Kaçırılırsa geri alınamaz</div>
+<p>Tam dilimli ileri tarife <strong>arşivden inmiyor.</strong> O hafta
+indirilmezse bir daha elde edilemez ve fiyat denemesi o dönem için hesap
+yapamaz. Her <strong>Salı ve Cuma</strong> indirmek gerekiyor.</p></div>
+${sikHata([
+  {
+    hata: "Yanlış mağazanın dosyasını yüklemek",
+    cozum: "Sistem dosyanın hangi pazaryerine ait olduğunu içeriğinden anlar ve seçtiğin mağazayla uyuşmazsa reddeder. Hata mesajı hangi dosyanın hangi mağazaya ait olduğunu yazar.",
+  },
+  {
+    hata: "Denetleme adımını atlayıp doğrudan yazmak",
+    cozum: "Denetleme bedava ve geri dönüşsüz bir şey yapmıyor. “Bizde yok” diye atlanan satır sayısı beklediğinden büyükse, kataloğunda eksik ürün var demektir — önce onu düzelt.",
+  },
+  {
+    hata: "Salı/Cuma tarifesini indirmeyi unutmak",
+    cozum: "O haftanın tarifesi kaybolur. Fiyat denemesinde Trendyol kutusu “tarife penceresi bitmiş” der ve oran eski tarifeden okunur.",
+  },
+])}
+</section>
+
 <section id="alim">
 ${baslik("alim")}
+${neZaman(
+  "Tedarikçiye sipariş verdiğinde (alım kaydı) ve mal kapıya geldiğinde (mal kabul). İkisi AYRI adımdır: sipariş verdiğin an stok artmaz, mal geldiğinde artar.",
+)}
 <p>Alım iki aşamalıdır: önce <strong>siparişi</strong> kaydedersiniz, mal gelince
 <strong>mal kabul</strong> yaparsınız. Stok, sipariş anında değil mal kabulde artar.</p>
 <h3>1. Alım girme</h3>
@@ -403,10 +583,23 @@ sistem kârı hesaplayamaz. Sonradan düzeltmek şu an mümkün değil.</p></div
 <li>Malın hangi rafa girdiğini seçersiniz; bu bilgi hareketin üstünde kalıcı durur.</li>
 <li>Parçalı teslimat olabilir: bugün 3, yarın 2 kabul edersiniz.</li>
 </ul>
+${sikHata([
+  {
+    hata: "Mal kabul yapmadan “stok yok” demek",
+    cozum: "Alım kaydı stok ARTIRMAZ; mal fiilen gelince Mal Kabul yapılır. Panelde “mal kabul bekleyen” kutusu tam bunun için var.",
+  },
+  {
+    hata: "Alış fiyatına kargo/kupon etkisini yansıtmamak",
+    cozum: "Sistem KASADAN FİİLEN ÇIKAN tutarı taşır. Kuponla ucuza aldıysan o ucuz rakam doğrudur — “piyasa değeri” yazılmaz.",
+  },
+])}
 </section>
 
 <section id="satis">
 ${baslik("satis")}
+${neZaman(
+  "Pazaryerinden sipariş düştüğünde. Ne kadar erken girersen kâr rakamın o kadar doğru olur — komisyon oranı satış anında dondurulur.",
+)}
 <p><strong>Satışlar → Yeni satış.</strong> Bir satış her zaman bir kanal hesabına
 bağlıdır — hangi pazaryerinin hangi mağazasından satıldığı, kesintileri belirler.</p>
 <ol class="adimlar">
@@ -442,6 +635,9 @@ Kargo, desi tarifesinden okunur ve üstüne %20 KDV eklenir.</p>
 
 <section id="iade">
 ${baslik("iade")}
+${neZaman(
+  "Müşteri malı geri gönderdiğinde ya da kargo teslim edemeyip iade ettiğinde. Türü DOĞRU seçmek önemli: tür, malın stoğa geri girip girmeyeceğini belirler.",
+)}
 <p>Satış listesinde veya satış detayında <strong>İade Al</strong> düğmesi. Önce
 türü seçersiniz; tür, malın stoğa girip girmeyeceğini belirler.</p>
 <div class="ek-tablo"><table>
@@ -472,10 +668,114 @@ ${canliTablo(["Kanal", "Sipariş tutarı", "Ceza"], cezaSatirlari, "Ceza tarifes
 <p><strong>Önizle</strong> düğmesi etkiyi satır satır gösterir; Kaydet düğmesi siz
 önizlemeyi görmeden açılmaz. Kaydettikten sonra orijinal kâr <strong>silinmez</strong>:
 her iade kendi tarihli bloğunda görünür, en altta iade sonrası net yazar.</p>
+${sikHata([
+  {
+    hata: "Her iadeyi “normal iade” seçmek",
+    cozum: "İtirazlı iadede ürün MÜŞTERİDE kalır ve stoğa girmemelidir. Yanlış tür seçilirse elinde olmayan mal stokta görünür ve bir sonraki satış hatalı FIFO ile hesaplanır.",
+  },
+])}
+</section>
+
+<section id="deneme">
+${baslik("deneme")}
+<p><strong>Sol menü → Fiyat denemesi.</strong> Tek soruyu cevaplar:
+<em>bu ürünü şu fiyata satarsam elime ne kalır — ve hangi pazaryerinde en
+çok kalır?</em> Hiçbir kayıt oluşturmaz; istediğin kadar deneyebilirsin.</p>
+
+${neZaman(
+  "Bir ürünü almadan önce (bu fiyata alırsam kâr eder miyim) ve satmadan önce (hangi pazaryerinde bırakayım). Buy box fiyatlarını pazaryerlerinden bakıp buraya girdiğinde, hangisinde satmanın daha kârlı olduğunu görürsün.",
+)}
+
+<h3>Neden tek bir fiyat yetmez</h3>
+<p>Aynı ürünün buy box fiyatı her pazaryerinde farklıdır ve <strong>en düşük
+fiyat en yüksek kârı verebilir.</strong> Gerçek bir örnek — alış 1.000 ₺,
+kargo 200 ₺:</p>
+<div class="ek-tablo"><table>
+<thead><tr><th>Pazaryeri</th><th>Buy box</th><th>Komisyon</th><th>Diğer kesinti</th><th>NET-2</th></tr></thead>
+<tbody>
+<tr><td><strong>Trendyol</strong></td><td>2.150 ₺</td><td>%5</td><td>13,19 ₺ sabit</td><td><span class="sayi"><strong>673,17 ₺</strong></span></td></tr>
+<tr><td>N11</td><td>2.175 ₺</td><td>%12</td><td>pazarlama gideri</td><td><span class="sayi">566,39 ₺</span></td></tr>
+<tr><td>Hepsiburada</td><td>2.250 ₺</td><td>%13 <em>+KDV</em></td><td>12,60 ₺ + %0,8</td><td><span class="sayi">538,25 ₺</span></td></tr>
+</tbody></table></div>
+<p>En pahalıya satabildiğin yer Hepsiburada ama <strong>en çok para Trendyol'da
+kalıyor</strong> — çünkü komisyona KDV ekleniyor ve iki ayrı sabit kesinti daha
+var. Bu tersliği gözle görmek mümkün değil; hesabı sistem yapar.</p>
+
+${ekranSemasi("Fiyat denemesi", [
+  { no: 1, ad: "Ürünü koddan bul", aciklama: "Barkod, SKU, firma SKU ya da pazaryeri SKU'su. Okuyucuyla okutabilirsin.", genis: true },
+  { no: 2, ad: "Alış fiyatı", aciklama: "Ürün bulunduysa kendiliğinden gelir — senin GERÇEK ortalama alışın." },
+  { no: 3, ad: "Satış fiyatı (ortak)", aciklama: "İsteğe bağlı. Ürün bulunduysa EN SON sattığın fiyat gelir." },
+  { no: 4, ad: "Kargo ve KDV", aciklama: "Kargo boş bırakılırsa hesaba girmez (alıcı ödüyorsa)." },
+  { no: 5, ad: "Pazaryeri kutuları", aciklama: "Her pazaryeri için buy box fiyatı + komisyon. Yalnız merak ettiğini doldurabilirsin.", genis: true, vurgulu: true },
+  { no: 6, ad: "Sonuç kartları", aciklama: "NET-2'ye göre sıralı; kazanan kupalı ve yeşil şeritli. Altında pasta: satış fiyatı nereye gidiyor.", genis: true },
+])}
+
+<h3>Adım adım</h3>
+${adimlar([
+  { ad: "Ürünü bul", ne: "Barkodu okut ya da kodu yaz, <strong>Bul</strong>'a bas. Alış fiyatı, KDV oranı ve son satış fiyatın kendiliğinden dolar." },
+  { ad: "Buy box fiyatlarını gir", ne: "Pazaryerlerine bakıp gördüğün fiyatları ilgili kutuya yaz. Bakmadığın pazaryerini boş bırak — o kanal susar, ötekileri etkilemez." },
+  { ad: "Komisyonu kontrol et", ne: "Gri rakam veriden gelendir ve kutunun altında nereden geldiği yazar. Kampanyayı sistemden önce biliyorsan üstüne kendi oranını yaz." },
+  { ad: "Kazanana bak", ne: "En üstteki kupalı kart en çok para bırakan pazaryeridir. Şerit kırmızıysa o kanalda o fiyata satmak ZARAR demektir." },
+])}
+
+<div class="ek-not"><div class="etiket">Yeşil rakamlar nereden geliyor</div>
+<p>Alış fiyatı senin <strong>fiilen ödediğin</strong> tutardır (stok defterinden),
+komisyon o haftanın <strong>gerçek tarifesinden</strong>, kesintiler ölçülmüş
+kanal kurallarından. Bu ekranın değeri hesabın kendisinde değil,
+<strong>girdilerin tahmin olmamasında</strong>.</p></div>
+
+${sikHata([
+  {
+    hata: "Gri rakamı “girilmiş değer” sanmak",
+    cozum: "Gri rakam kutu BOŞ bırakılırsa kullanılacak olan değerdir — yani gördüğün rakamla hesaplanır. Değiştirmek istiyorsan üstüne yaz; geri dönmek için yanındaki × işaretine bas.",
+  },
+  {
+    hata: "Bir kanalın “NET hesaplanamadı” demesini hata sanmak",
+    cozum: "O kanala fiyat girmemişsindir ya da o üründe komisyon oranı yoktur. Sistem sıfır kâr uydurmaz, susar. Kutuya rakam yazınca hesaplanır.",
+  },
+  {
+    hata: "Trendyol’da “tarife penceresi bitmiş” uyarısını görmezden gelmek",
+    cozum: "O haftanın tarifesi yüklenmemiş demektir; oran eski tarifeden okunuyor ve yanlış olabilir. Salı/Cuma dosyasını indirip yükle.",
+  },
+  {
+    hata: "Sonucu kayıt sanmak",
+    cozum: "Bu ekran hiçbir şey kaydetmez — ne satış, ne stok, ne kesinti. Denemedir. Satışı gerçekten kaydetmek için Satışlar → Yeni satış.",
+  },
+])}
+</section>
+
+<section id="kart">
+${baslik("kart")}
+<p><strong>Sol menü → Kârlılık kartı.</strong> Bir ürünün tüm geçmişini tek
+sayfada toplar: kaça aldın, kaça sattın, ne kadar sürede satıldı, elinde ne
+kaldı, ne kadar kâr bıraktı.</p>
+${neZaman(
+  "Bir ürünü yeniden almadan önce. “Bu ürün iyi mi” sorusunun cevabı burada: satış hızı, ortalama marj ve elde kalan adet birlikte görünür.",
+)}
+${ekranSemasi("Kârlılık kartı", [
+  { no: 1, ad: "Ürün arama", aciklama: "Barkod ya da kod. Okuyucu destekli.", genis: true },
+  { no: 2, ad: "Özet rakamlar", aciklama: "Satılan adet · ortalama alış · ortalama satış · toplam NET-2.", vurgulu: true },
+  { no: 3, ad: "Bekleme süresi", aciklama: "Alımdan satışa kaç gün geçmiş. Sermayenin ne kadar bağlı kaldığını söyler." },
+  { no: 4, ad: "Açık partiler", aciklama: "Elde kalan mal ve her partinin GERÇEK maliyeti (FIFO)." },
+  { no: 5, ad: "Fiyat dene", aciklama: "Kartın içinden doğrudan deneme — ürün zaten seçili." },
+])}
+${sikHata([
+  {
+    hata: "Ortalama maliyet ile açık parti maliyetini karıştırmak",
+    cozum: "İkisi FARKLI sorulara cevap: ortalama “bu ürünü genelde kaça alıyorum”, açık parti “elimdeki malın maliyeti ne”. Kâr hesabı ikincisini kullanır.",
+  },
+  {
+    hata: "Stok bitince “alım kaydı yok” sanmak",
+    cozum: "Kart geçmişin tamamını gösterir; stok sıfır olsa da alım ve satış geçmişi durur.",
+  },
+])}
 </section>
 
 <section id="gider">
 ${baslik("gider")}
+${neZaman(
+  "Kira, kargo faturası, ambalaj, reklam gibi satışa DOĞRUDAN bağlı olmayan her harcamada. Satışın kendi kesintileri (komisyon, kargo) buraya girmez — onları sistem satıştan hesaplar.",
+)}
 <p>Kira, maaş, sarf malzeme, abonelik, banka masrafı. <strong>Giderler → Yeni gider.</strong></p>
 <ul>
 <li>Tutar <strong>KDV dahil</strong> girilir.</li>
@@ -503,6 +803,105 @@ ${canliTablo(
 tanımlarsınız, her ay tek dokunuşla eklersiniz. Sistem
 <strong>kendiliğinden kayıt üretmez</strong>. Aynı şablondan o ay zaten gider
 girilmişse düğme pasifleşir — kirayı ikinci kez girmiş olmazsınız.</p>
+</section>
+
+<section id="kartBorcu">
+${baslik("kartBorcu")}
+<p>İki ayrı ekran, aynı konu. <strong>Kartlar</strong> kredi kartlarını tanımlar
+(limit, kesim günü, son ödeme günü). <strong>Kart Borcu</strong> o kartlarda
+biriken borcu ve ne zaman ödeneceğini gösterir.</p>
+${neZaman(
+  "Alım yapmadan önce (hangi kartta yer var) ve ay sonuna doğru (ne kadar ödeme çıkacak).",
+)}
+<h3>Kesim günü neden önemli</h3>
+<p>Bir alım, kartın kesim gününden ÖNCE yapılırsa o ayın ekstresine düşer ve
+yakında ödenir; kesimden SONRA yapılırsa bir sonraki ekstreye kayar ve
+<strong>bir ay daha nakitte kalırsın.</strong> Sistem her alımı doğru ekstreye
+kendisi yazar.</p>
+${ekranSemasi("Kart Borcu", [
+  { no: 1, ad: "Kart kartları", aciklama: "Her kart için: bekleyen borç · kalan limit · son ödeme günü.", genis: true, vurgulu: true },
+  { no: 2, ad: "Ekstre dökümü", aciklama: "Hangi alımlar hangi aya düştü." },
+  { no: 3, ad: "Ödeme kaydı", aciklama: "Ödediğinde işaretlersin; borç düşer." },
+])}
+${sikHata([
+  {
+    hata: "Kesim günü girilmemiş kart",
+    cozum: "Kesim günü olmadan borcun hangi aya düştüğü BİLİNEMEZ. Sistem sıfır göstermez, “hesaplanamıyor” der ve sebebini yazar. Kartlar → Düzenle'den kesim gününü gir.",
+  },
+])}
+</section>
+
+<section id="hakedis">
+${baslik("hakedis")}
+<p><strong>Sol menü → Hakediş.</strong> Pazaryeri sattığın malın parasını hemen
+vermez. Hakediş, <em>ne kadar alacağın olduğunu ve ne zaman yatacağını</em>
+takip eder.</p>
+${neZaman(
+  "Pazaryerinden ödeme dosyası indirdiğinde yüklemek için; ve “bu ay elime ne geçecek” diye merak ettiğinde.",
+)}
+<div class="ek-not dikkat"><div class="etiket">Ödeme dosyası GEÇ gelir</div>
+<p>Ölçüldü: Trendyol ödeme dosyası siparişten <strong>ortanca 28 gün</strong>
+sonra, Hepsiburada <strong>~34 gün</strong> sonra yayımlanıyor. Yani
+“ağustos dosyası” haziran-temmuz siparişlerini taşır. Erken indirilen
+dosya hiçbir satışla eşleşmez — bu bir arıza değil, <strong>takvimin
+kendisi</strong>.</p></div>
+${ekranSemasi("Hakediş", [
+  { no: 1, ad: "Dosya yükle", aciklama: "Pazaryerinin ödeme/hakediş dosyası. Hangi kanala ait olduğu içeriğinden anlaşılır." },
+  { no: 2, ad: "Kalemler", aciklama: "Her satır bir ödeme kalemi. Sipariş numarasıyla satışına bağlanır." },
+  { no: 3, ad: "Bağlanamayanlar", aciklama: "Sistemde karşılığı bulunamayan kalemler AYRI sayılır ve adıyla listelenir.", vurgulu: true },
+])}
+${sikHata([
+  {
+    hata: "Bağlanamayan kalemi “alacak” sanmak",
+    cozum: "Satışına bağlanamamış kalem bir ALACAK değil, bir RAPOR SATIRIDIR. Sistem onun hakkında gecikme iddiası kurmaz — bilmediği bir şey hakkında hüküm vermez.",
+  },
+  {
+    hata: "Ödeme dosyasını çok erken indirmek",
+    cozum: "Siparişten 28–34 gün geçmeden o siparişler dosyada olmaz. Erken yükleme, bağlanamayan kalem yığınını büyütür ve hiçbir şeyi bağlamaz.",
+  },
+])}
+</section>
+
+<section id="tazminat">
+${baslik("tazminat")}
+<p><strong>Sol menü → Tazminat.</strong> Kargo firması malı kaybederse ya da
+hasar verirse ödediği bedel buraya kaydedilir.</p>
+${neZaman("Kargo kaybı/hasarı için tazminat talebi açtığında ve sonuçlandığında.")}
+${sikHata([
+  {
+    hata: "Tazminatı satışın kârına yazmak",
+    cozum: "Tazminat ayrı bir kalemdir; satışın kârını değiştirmez. Satış zaten iade/kayıp olarak işlenir, tazminat onun üstüne gelir.",
+  },
+])}
+</section>
+
+<section id="nakit">
+${baslik("nakit")}
+<p><strong>Sol menü → Nakit takvimi.</strong> Önümüzdeki günlerde
+<em>kasadan ne çıkacak, kasaya ne girecek</em> — gün gün.</p>
+${neZaman(
+  "Büyük bir alım yapmadan önce. “Bu parayı harcarsam 10 gün sonra kart borcunu ödeyebilir miyim” sorusunun cevabı burada.",
+)}
+${ekranSemasi("Nakit takvimi", [
+  { no: 1, ad: "Çıkacaklar", aciklama: "Kart borçları, vadesi gelen giderler." },
+  { no: 2, ad: "Girecekler", aciklama: "Beklenen hakediş ödemeleri." },
+  { no: 3, ad: "Günlük denge", aciklama: "Girenden çıkanı düşünce kalan.", vurgulu: true },
+])}
+</section>
+
+<section id="envanter">
+${baslik("envanter")}
+<p><strong>Sol menü → Envanter değeri.</strong> Elindeki malın
+<strong>sana kaça mal olduğu</strong> — piyasa değeri değil, fiilen ödediğin.</p>
+${neZaman(
+  "Ay sonunda “param nerede” diye baktığında. Kasada görünmeyen paranın çoğu buradadır: rafta duran mal.",
+)}
+${sikHata([
+  {
+    hata: "Envanter değerini satış fiyatıyla düşünmek",
+    cozum: "Bu ekran MALİYET gösterir. Satarsan eline geçecek para değil, o malı almak için çıkardığın paradır. Kâr, satış anında hesaplanır.",
+  },
+])}
 </section>
 
 <section id="rapor">
@@ -558,6 +957,56 @@ böyle olduğunu söyler ve kategori ekranına götürür.</p>
 <p>Maliyetsiz girilmiş partiler (açılış stoğu ya da elle düzeltme) <strong>ayrı bir
 kutuda</strong> durur. Adetleri gerçektir, paraları bilinmez — bu yüzden toplamlara
 katılmazlar. Sıfır sayılsalardı envanteriniz olduğundan ucuz görünürdü.</p></div>
+</section>
+
+<section id="talep">
+${baslik("talep")}
+<p><strong>Sol menü → Destek talepleri.</strong> Sistemle ilgili bir sorunu ya
+da isteği kayda geçirdiğin yer. Konuşmada kalan bir talep unutulur; buraya
+yazılan kalır ve durumu takip edilebilir.</p>
+${neZaman(
+  "Bir ekran beklediğin gibi çalışmadığında (HATA) ya da bugün olmayan bir şeyin olmasını istediğinde (İSTEK). İkisini ayırman önemli: hata acildir, istek sıraya girer.",
+)}
+${ekranSemasi("Destek talepleri", [
+  { no: 1, ad: "Ne bildiriyorsun", aciklama: "Hata mı istek mi. HATA: çalışması gerekirken çalışmayan bir şey. İSTEK: bugün olmayan ama olmasını istediğin bir şey." },
+  { no: 2, ad: "Kısa başlık", aciklama: "Tek cümlede ne olduğu. Örnek: 'Satış kaydederken kargo firması seçilmiyor'." },
+  { no: 3, ad: "Ne oldu, ne bekliyordun", aciklama: "Adım adım: ne yaptım, ne oldu, ne olmasını bekliyordum. Üç cümle yeter ama üçü de olsun.", genis: true, vurgulu: true },
+  { no: 4, ad: "Otomatik eklenenler", aciklama: "Hangi sayfadaydın ve hangi tarayıcıyı kullandığın kendiliğinden eklenir — senin yazmana gerek yok." },
+  { no: 5, ad: "Liste ve durum", aciklama: "Gönderdikten sonra talep listede durur; durumu buradan izlenir." },
+])}
+
+<h3>İyi bir bildirim nasıl yazılır</h3>
+<p>Aradaki fark şudur — ikisi de aynı sorunu anlatıyor ama biri
+<strong>çözülebilir</strong>:</p>
+<div class="ek-tablo"><table>
+<thead><tr><th>Zayıf</th><th>Güçlü</th></tr></thead>
+<tbody>
+<tr>
+<td>"Satış ekranı bozuk"</td>
+<td>"Satışlar → Yeni satış'ta kargo firmasını seçtim, kaydedince ücret 0 ₺ kaldı. 120 ₺ bekliyordum."</td>
+</tr>
+<tr>
+<td>"Rakamlar yanlış"</td>
+<td>"11518039572 numaralı satışta NET-2 ₺651 görünüyor, elle hesabım ₺673. Komisyon %5 girmiştim."</td>
+</tr>
+</tbody></table></div>
+<p>Güçlü olanın farkı: <strong>hangi ekran · hangi kayıt · gördüğün rakam ·
+beklediğin rakam.</strong> Bu dördü varsa sorun aranmaz, doğrudan bakılır.</p>
+
+${sikHata([
+  {
+    hata: "Ekran görüntüsünü forma eklemeye çalışmak",
+    cozum: "Form gönderilirken ek alınmaz. Önce talebi gönder, sonra LİSTEDEN o talebi açıp ekran görüntüsünü ekle.",
+  },
+  {
+    hata: "Her şeyi “HATA” olarak bildirmek",
+    cozum: "Olmayan bir özelliği istemek hata değil İSTEKTİR. Hepsi hata sayılırsa gerçek hatalar yığının içinde kaybolur.",
+  },
+  {
+    hata: "“Bir ara olmuştu” diye yazmak",
+    cozum: "Tekrarlanamayan bir sorun aranamaz. Hangi kayıtta, hangi tarihte olduğu yazılırsa bakılabilir; yazılmazsa talep açık kalır ve kimseye faydası olmaz.",
+  },
+])}
 </section>
 
 <section id="toplu">

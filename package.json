@@ -83,7 +83,8 @@
     "canli:k11a-b": "tsx scripts/k11a-b-barkod-kontrol.ts",
     "canli:defter-ayrismasi": "tsx scripts/canli-defter-ayrismasi.ts",
     "canli:defter-onarim": "tsx scripts/canli-defter-onarim.ts",
-    "operasyon:dogrula": "tsx scripts/operasyon-dogrula.ts"
+    "operasyon:dogrula": "tsx scripts/operasyon-dogrula.ts",
+    "el-kitabi:dogrula": "tsx scripts/el-kitabi-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

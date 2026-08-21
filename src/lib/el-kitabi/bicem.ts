@@ -142,8 +142,60 @@ export const EL_KITABI_BICEMI = `
 .ek-dip{border-top:1px solid var(--cizgi);background:var(--yuzey);padding:26px 24px 36px}
 .ek-dip-ic{max-width:1180px;margin:0 auto;color:var(--murekkep-3);font-size:.87rem;
   display:flex;flex-direction:column;gap:5px}
+
+/* ══════════════ EKRAN ŞEMASI — "burası neresi" ══════════════
+   ⚠ EKRAN FOTOĞRAFI DEĞİL, ÇİZİM. Projede tarayıcı otomasyonu yok
+   (karar 08.08.2026), yani ekran görüntüsü üretilemiyor. Ama asıl
+   gerekçe teknik değil: fotoğraf ekran her değiştiğinde BAYATLAR ve
+   bayat fotoğraf, kılavuzu yanlış yapar — üstelik sessizce. Çizim
+   kodun içinde yaşıyor; bir bölüm taşınırsa şema da düzeltilir.
+   Amaç ekranı taklit etmek değil, YERİ tarif etmek. */
+.ek .ek-ekran{margin:22px 0;display:flex;flex-direction:column;gap:8px}
+.ek .ek-ekran>figcaption{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--murekkep-3);font-weight:600}
+.ek .ekran-cerceve{border:1px solid var(--cizgi);border-radius:10px;overflow:hidden;
+  background:var(--yuzey);box-shadow:var(--golge)}
+.ek .ekran-cubuk{display:flex;align-items:center;gap:7px;padding:7px 12px;
+  background:var(--yuzey-2);border-bottom:1px solid var(--cizgi-2);
+  font-family:var(--mono);font-size:11.5px;color:var(--murekkep-2)}
+.ek .ekran-cubuk::before{content:"";width:9px;height:9px;border-radius:50%;
+  background:var(--cizgi);box-shadow:14px 0 0 var(--cizgi),28px 0 0 var(--cizgi);
+  margin-right:24px;flex:none}
+.ek .ekran-govde{padding:12px;display:grid;gap:9px;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.ek .ekran-blok{border:1px dashed var(--cizgi);border-radius:8px;padding:10px 11px;
+  background:var(--yuzey-2);display:flex;flex-direction:column;gap:3px;min-width:0}
+.ek .ekran-blok.genis{grid-column:1/-1}
+.ek .ekran-blok.vurgulu{border-style:solid;border-color:var(--vurgu);
+  background:var(--vurgu-yumusak)}
+.ek .ekran-blok h4{margin:0;font-family:var(--sans);font-size:.86rem;font-weight:600;
+  color:var(--murekkep);display:flex;align-items:center;gap:7px}
+.ek .ekran-blok p{margin:0;font-size:.8rem;line-height:1.5;color:var(--murekkep-2)}
+.ek .ekran-no{flex:none;width:19px;height:19px;border-radius:50%;display:grid;
+  place-items:center;font-family:var(--mono);font-size:11px;font-weight:600;
+  background:var(--vurgu);color:var(--yuzey)}
+
+/* ══════════════ ÜÇLÜ — ne zaman · adım adım · sık hata ══════════════
+   Kullanıcı 21.08.2026: _"bir aptalın anlayacağı şekle getir"_.
+   Eski kılavuz ÇOĞUNLUKLA "bu ekran nedir" anlatıyordu; ilk kez gören
+   birinin sorusu ise "ne zaman buraya gelirim ve ne tıklarım". */
+.ek .ek-nezaman{border-left:3px solid var(--vurgu);background:var(--vurgu-yumusak);
+  border-radius:0 8px 8px 0;padding:11px 14px;margin:16px 0}
+.ek .ek-nezaman .etiket{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--vurgu);font-weight:700;margin-bottom:3px}
+.ek .ek-nezaman p{margin:0;color:var(--murekkep)}
+.ek .ek-hata{border:1px solid var(--cizgi);border-radius:9px;margin:16px 0;overflow:hidden}
+.ek .ek-hata>div:first-child{background:var(--tehlike-zemin);color:var(--tehlike);
+  padding:7px 13px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;font-weight:700}
+.ek .ek-hata dl{margin:0;padding:11px 14px;display:grid;gap:9px}
+.ek .ek-hata dt{font-weight:600;font-size:.9rem;color:var(--murekkep)}
+.ek .ek-hata dd{margin:2px 0 0;font-size:.88rem;line-height:1.6;color:var(--murekkep-2)}
+.ek .ek-hata dd::before{content:"→ ";color:var(--vurgu);font-weight:700}
+
 @media print{
   .ek-toc{display:none}
+  .ekran-cerceve,.ek-hata{box-shadow:none}
   .ek-duzen{grid-template-columns:1fr}
   .ek-kart,.ek-tablo{box-shadow:none}
   .ek-icerik section{break-inside:avoid-page}
