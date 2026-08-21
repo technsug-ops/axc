@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { DurumRozeti } from "@/components/durum-rozeti";
+import { MarjPili } from "@/components/marj-pili";
 import type { GostergeSonucu } from "@/lib/marj-gosterge";
 
 /**
@@ -20,6 +21,15 @@ import type { GostergeSonucu } from "@/lib/marj-gosterge";
  *  Zarar kırmızı, kâr yeşil — NET rozetiyle aynı palet. İki sütun aynı satır
  *  hakkında aynı hükmü verir; farklı renklendirme "acaba biri diğerini mi
  *  yalanlıyor" sorusunu doğururdu.
+ *
+ *  ── İKİ GÖRÜNÜM, TEK KARAR NOKTASI (kullanıcı 21.08.2026) ───────────────
+ *  CİRO marjında artık PİL çiziliyor: kırmızıdan parlak yeşile beş bantlı
+ *  derece ölçeği (bkz. lib/marj-bantlari). SERMAYE veriminde eski ikili
+ *  rozet duruyor — kat sayısı yüzde cetveline vurulamaz.
+ *
+ *  ⚠ AYRIM `bant`IN VARLIĞINDAN OKUNUYOR, ölçü adından DEĞİL. Ölçü adına
+ *  baksaydım burada ikinci bir kural doğardı ve bir gün `marj-gosterge`
+ *  ile ayrışırdı: hangi ölçünün bandı olduğu ORADA karara bağlanıyor.
  * ============================================================================
  */
 export async function MarjRozeti({ gosterge }: { gosterge: GostergeSonucu }) {
@@ -42,6 +52,16 @@ export async function MarjRozeti({ gosterge }: { gosterge: GostergeSonucu }) {
       >
         ?
       </span>
+    );
+  }
+
+  if (gosterge.bant !== null) {
+    return (
+      <MarjPili
+        bant={gosterge.bant}
+        metin={gosterge.metin}
+        durumMetni={t(`bant_${gosterge.bant}`)}
+      />
     );
   }
 

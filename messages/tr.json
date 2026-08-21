@@ -2816,6 +2816,16 @@
     "olcu_ciro": "Ciro marjı",
     "olcu_sermaye": "Sermaye verimi",
     "aciklama": "Rozetteki ikinci rakam bu ölçüyü gösterir. İki ölçü aynı anda gösterilmez — yan yana iki oran karışır.",
-    "bilinmiyorIpucu": "Bu ölçü hesaplanamadı — maliyet bilinmiyor."
+    "bilinmiyorIpucu": "Bu ölçü hesaplanamadı — maliyet bilinmiyor.",
+    "bant_zarar": "Zarar",
+    "bant_cokRiskli": "Çok riskli",
+    "bant_zayif": "Zayıf",
+    "bant_kabul": "Kabul edilebilir",
+    "bant_iyi": "İyi",
+    "bant_cokIyi": "Çok iyi",
+    "olcekBaslik": "Marj ölçeği — renk ne demek?",
+    "olcekZarar": "eksi",
+    "olcekAralik": "%{alt} – %{ust}",
+    "olcekUstsuz": "%{alt} ve üzeri"
   }
 }

@@ -1,192 +1,286 @@
+import { readFileSync } from "node:fs";
+
 import {
-  MARJ_OLCULERI,
-  VARSAYILAN_OLCU,
-  ciroMarji,
-  ciroMarjiMetni,
-  olcuGecerliMi,
-  satirGostergesi,
-  sermayeVerimi,
-  sermayeVerimiMetni,
-} from "../src/lib/marj-gosterge";
+  MARJ_ALT_SINIRLARI,
+  MARJ_BANTLARI,
+  MARJ_DOLULUGU,
+  PIL_BOLME_SAYISI,
+  marjBandi,
+} from "../src/lib/marj-bantlari";
+import { satirGostergesi } from "../src/lib/marj-gosterge";
+import { MARJ_RAMPASI } from "../src/lib/renkler";
 
 /**
  * ============================================================================
- *  MARJ GÖSTERGESİ — DOĞRULAMA
+ *  MARJ BANTLARI — DOĞRULAMA
  * ----------------------------------------------------------------------------
- *  Kullanıcı şartları 17.08.2026:
- *    · tek ölçü, "ikisi birden" YOK
- *    · ciro marjı TAM SAYI · sermaye verimi KARTLA BİREBİR aynı biçim
- *    · NET yoksa gösterge yok · iptalli satırda yok · maliyet yoksa "?"
- *    · zarar aynı biçimde eksi ile
+ *  Çalıştırma:  npm run marj:dogrula
+ *
+ *  Kullanıcı isteği 21.08.2026: marj pil gibi dereceli renklensin.
+ *  Burada sınanan üç şey var ve üçü ayrı ayrı bozulabilir:
+ *
+ *    1. BANT KURALI     — hangi yüzde hangi banda düşüyor (sınır davranışı)
+ *    2. BANT ULAŞIYOR MU— gösterge bandı taşıyor mu, ekrana varıyor mu
+ *    3. CETVEL DOĞRU MU — ekrandaki legend, kodun eşikleriyle aynı mı
+ *
+ *  ⚠ ÜÇÜNCÜSÜ EN SİNSİSİ: eşik doğru, renk doğru, ama legend elle yazılmış
+ *  olsaydı kullanıcıya YANLIŞ bir cetvel öğretirdi ve hiçbir hesap testi
+ *  bunu yakalamazdı.
  * ============================================================================
  */
 
-let gecen = 0;
-let kalan = 0;
+let hata = 0;
+function kontrol(ad: string, gecti: boolean, detay?: unknown) {
+  console.log(
+    `  ${gecti ? "OK  " : "HATA"}  ${ad}${detay === undefined || gecti ? "" : ` — ${JSON.stringify(detay)}`}`,
+  );
+  if (!gecti) hata++;
+}
 
-function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
-  if (sonuc) {
-    gecen++;
-    console.log(`  OK    ${ad}`);
-  } else {
-    kalan++;
-    console.log(
-      `  HATA  ${ad}${gorulen === undefined ? "" : ` — ${JSON.stringify(gorulen)}`}`,
+// ===========================================================================
+console.log("\n1) BANT KURALI — sınırlar nereye düşüyor");
+// ===========================================================================
+{
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERMELİ. Her sınır için ALTINDAKİ
+   * ve TAM ÜSTÜNDEKİ değer sınanıyor; yalnız "%9 → iyi" yazsaydım eşiği 8'den
+   * 7'ye çeken mutasyon yeşil kalırdı.
+   */
+  const vakalar: Array<[number, string]> = [
+    [-50, "zarar"],
+    [-0.01, "zarar"],
+    [0, "cokRiskli"], // ⚠ SIFIR ZARAR DEĞİL: sıfır kâr zarar etmek değildir
+    [2.99, "cokRiskli"],
+    [3, "zayif"], // kullanıcı ölçeği "%3–5 Zayıf" der → sınır ÜSTTEKİNE ait
+    [4.99, "zayif"],
+    [5, "kabul"],
+    [7.99, "kabul"],
+    [8, "iyi"],
+    [11.99, "iyi"],
+    [12, "cokIyi"],
+    [61.5, "cokIyi"], // canlıdaki en yüksek marj
+  ];
+  for (const [yuzde, beklenen] of vakalar) {
+    const bulunan = marjBandi(yuzde);
+    kontrol(`%${yuzde} → ${beklenen}`, bulunan === beklenen, bulunan);
+  }
+
+  /**
+   * HESAPLANAMAYAN MARJ BANT ALMAZ. `null`u "en kötü bant" saymak sessiz bir
+   * varsayım olurdu: bilinmeyen bir marjı kırmızıya boyamak, olmayan bir
+   * hüküm vermektir.
+   */
+  kontrol("null → bant yok", marjBandi(null) === null);
+  kontrol("NaN → bant yok", marjBandi(Number.NaN) === null);
+  kontrol("Infinity → bant yok", marjBandi(Number.POSITIVE_INFINITY) === null);
+}
+
+// ===========================================================================
+console.log("\n2) BÜTÜNLÜK — bant, doluluk ve renk aynı kümeyi kapsıyor mu");
+// ===========================================================================
+{
+  for (const bant of MARJ_BANTLARI) {
+    kontrol(`${bant} — doluluğu tanımlı`, MARJ_DOLULUGU[bant] !== undefined);
+    kontrol(`${bant} — rengi tanımlı`, MARJ_RAMPASI[bant] !== undefined);
+    kontrol(
+      `${bant} — eşiği tanımlı`,
+      MARJ_ALT_SINIRLARI.some(([b]) => b === bant),
+    );
+  }
+  /**
+   * ⚠ DOLULUK SIRALI ARTMALI. Bu, "renk körü için uzunluk tek başına yeter"
+   * sözünün testi: iki bant aynı sayıda bölme yakarsa o söz düşer.
+   */
+  const sirali = MARJ_ALT_SINIRLARI.toReversed().map(([b]) => MARJ_DOLULUGU[b]);
+  kontrol(
+    "kötüden iyiye doluluk ARTIYOR (renk tek kanal değil)",
+    sirali.every((d, i) => i === 0 || d > sirali[i - 1]!),
+    sirali,
+  );
+  kontrol(
+    "en iyi bant pili tam dolduruyor",
+    Math.max(...sirali) === PIL_BOLME_SAYISI,
+    Math.max(...sirali),
+  );
+  kontrol("zarar HİÇ bölme yakmıyor", MARJ_DOLULUGU.zarar === 0);
+}
+
+// ===========================================================================
+console.log("\n3) GÖSTERGEYE ULAŞIYOR MU — ciro bantlı, sermaye bantsız");
+// ===========================================================================
+{
+  const ciro = satirGostergesi({
+    olcu: "ciro",
+    net2: 90,
+    tutar: 1000,
+    maliyet: 500,
+    iptalliMi: false,
+  });
+  kontrol(
+    "ciro marjı bant taşıyor",
+    ciro.tur === "DEGER" && ciro.bant === "iyi",
+    ciro,
+  );
+
+  /**
+   * ⚠ SERMAYE VERİMİ BANTSIZ. Aynı girdiyle ölçü değişince bant DÜŞMELİ;
+   * düşmezse "0,18×" değeri %0,18 sayılıp "zarar" bandına atardı — iki
+   * farklı birimi aynı cetvele vurmak.
+   */
+  const sermaye = satirGostergesi({
+    olcu: "sermaye",
+    net2: 90,
+    tutar: 1000,
+    maliyet: 500,
+    iptalliMi: false,
+  });
+  kontrol(
+    "sermaye verimi bant TAŞIMIYOR",
+    sermaye.tur === "DEGER" && sermaye.bant === null,
+    sermaye,
+  );
+
+  /**
+   * ⚠ BANT HAM YÜZDEDEN ÇÖZÜLÜYOR, YUVARLANMIŞ METİNDEN DEĞİL.
+   * %2,6 listede "%3" yazar; bandı yuvarlanmıştan çözseydim ZAYIF olurdu.
+   * Örnek veri ayrımın iki yakasını gösteriyor: metin "%3", bant "cokRiskli".
+   */
+  const kesirli = satirGostergesi({
+    olcu: "ciro",
+    net2: 26,
+    tutar: 1000,
+    maliyet: 500,
+    iptalliMi: false,
+  });
+  kontrol(
+    '%2,6 → metin "%3" ama bant cokRiskli (yuvarlama hükmü değiştirmiyor)',
+    kesirli.tur === "DEGER" &&
+      kesirli.metin === "%3" &&
+      kesirli.bant === "cokRiskli",
+    kesirli,
+  );
+
+  /** İptalli satırda gösterge hiç yok — bant sorusu doğmaz. */
+  const iptalli = satirGostergesi({
+    olcu: "ciro",
+    net2: 90,
+    tutar: 1000,
+    maliyet: 500,
+    iptalliMi: true,
+  });
+  kontrol("iptalli satırda gösterge YOK", iptalli.tur === "YOK");
+}
+
+// ===========================================================================
+console.log("\n4) EKRANA VARIYOR MU — kaynak taraması");
+// ===========================================================================
+{
+  /**
+   * ⚠ DESEN ÖNCE SAYILDI. `MarjPili` adı rozet dosyasında iki kere geçiyor
+   * (import + kullanım); import satırı tek başına hiçbir şey çizmez. Bu
+   * yüzden işaret ÇAĞRI yerine bağlanıyor: `<MarjPili`.
+   */
+  const rozet = readFileSync("src/components/marj-rozeti.tsx", "utf8");
+  kontrol("rozet pili ÇİZİYOR (<MarjPili)", rozet.includes("<MarjPili"));
+  /**
+   * ⚠ VE KOŞULUYLA BİRLİKTE: pil yalnız bandı olan göstergede çizilmeli.
+   * "Her zaman pil" mutasyonu sermaye veriminde yanlış cetvel gösterirdi ve
+   * yalnız `<MarjPili` arayan bir kontrol onu yeşil geçirirdi.
+   */
+  kontrol(
+    "  ...ve YALNIZ bandı olanda (koşul sonucuyla birlikte)",
+    /gosterge\.bant\s*!==\s*null\s*\)\s*\{[\s\S]{0,400}?<MarjPili/.test(rozet),
+  );
+
+  const pil = readFileSync("src/components/marj-pili.tsx", "utf8");
+  /**
+   * RENK TEK BAŞINA KONUŞMAZ (renk sistemi kısıt #1). Pilde durumun KELİMESİ
+   * ekran okuyucuya ulaşmalı; yalnız `title` bırakmak dokunmatikte bilgiyi
+   * yok ederdi.
+   */
+  kontrol(
+    "pil kelimeyi ekran okuyucuya veriyor (sr-only)",
+    pil.includes("sr-only"),
+  );
+  kontrol(
+    "pil ham renk yazmıyor — rampadan okuyor",
+    !/#[0-9A-Fa-f]{6}/.test(pil),
+  );
+
+  const olcek = readFileSync("src/components/marj-olcegi.tsx", "utf8");
+  /**
+   * ⚠ YORUMLAR ELENİYOR — VE BUNU KENDİ TESTİM ÖĞRETTİ.
+   * "Elle yazılmış eşik var mı" kontrolü ilk hâlinde KIRMIZI yandı; suçlu
+   * kod değil, ölçek dosyasındaki bir AÇIKLAMA satırıydı (`"%3 – %5" gibi
+   * bir kalıp`). Doğru çare yorumu silip testi susturmak değil, testi
+   * ÇALIŞAN KODA daraltmaktı: yorum ekrana bir şey çizmez.
+   */
+  const olcekKodu = olcek
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/.*$/gm, "");
+  kontrol("ölçek ham renk yazmıyor", !/#[0-9A-Fa-f]{6}/.test(olcek));
+  /**
+   * ⚠ CETVEL ELLE YAZILMIYOR. Legend'daki sayılar `MARJ_ALT_SINIRLARI`ndan
+   * okunmalı; elle yazılsaydı eşik değiştiği gün ekran kendi rengiyle
+   * çelişir ve kullanıcıya yanlış cetvel öğretirdi.
+   */
+  kontrol(
+    "ölçek eşikleri KODDAN okuyor (elle yazılmamış)",
+    olcek.includes("MARJ_ALT_SINIRLARI") && !/%\s*\d+\s*–/.test(olcekKodu),
+  );
+  kontrol(
+    "ölçek kapalı geliyor (<details, open yok)",
+    olcek.includes("<details") && !olcek.includes("<details open"),
+  );
+
+  const sayfa = readFileSync("src/app/satislar/page.tsx", "utf8");
+  kontrol("satış listesi ölçeği çiziyor", sayfa.includes("<MarjOlcegi />"));
+  /**
+   * ⚠ VE KOŞULUYLA BİRLİKTE — cetvel, olmayan bir renklendirmeyi
+   * açıklamamalı: sermaye ölçüsünde ve kâr gizliyken çizilmez.
+   */
+  kontrol(
+    "  ...yalnız kâr görünürken VE ciro ölçüsünde",
+    /karGorunur\s*&&\s*olcu === "ciro"\s*\?\s*<MarjOlcegi \/>/.test(sayfa),
+  );
+}
+
+// ===========================================================================
+console.log("\n5) SÖZLÜK — her bandın adı var mı");
+// ===========================================================================
+{
+  const tr = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const en = JSON.parse(readFileSync("messages/en.json", "utf8"));
+  for (const bant of MARJ_BANTLARI) {
+    kontrol(
+      `tr → bant_${bant}`,
+      typeof tr.MarjGosterge?.[`bant_${bant}`] === "string" &&
+        tr.MarjGosterge[`bant_${bant}`].length > 0,
+    );
+    kontrol(
+      `en iskeleti → bant_${bant}`,
+      `bant_${bant}` in (en.MarjGosterge ?? {}),
+    );
+  }
+  for (const anahtar of [
+    "olcekBaslik",
+    "olcekZarar",
+    "olcekAralik",
+    "olcekUstsuz",
+  ]) {
+    kontrol(
+      `tr → ${anahtar}`,
+      typeof tr.MarjGosterge?.[anahtar] === "string" &&
+        tr.MarjGosterge[anahtar].length > 0,
     );
   }
 }
 
-console.log("\nMARJ GÖSTERGESİ — DOĞRULAMA\n");
-
-// --- 1) GERÇEK VAKA: ₺881,22 · %61 ------------------------------------------
-{
-  console.log("1) GERÇEK VAKA");
-  /**
-   * Satış 11512722550: NET-2 881,22 · ciro 1.434,00 → %61,45 → TAM SAYI %61.
-   */
-  const yuzde = ciroMarji(881.22, 1434);
-  kontrol("marj hesabı doğru", yuzde !== null && Math.abs(yuzde - 61.45) < 0.01, yuzde);
-  kontrol("liste biçimi TAM SAYI", ciroMarjiMetni(yuzde) === "%61", ciroMarjiMetni(yuzde));
-
-  const g = satirGostergesi({
-    olcu: "ciro",
-    net2: 881.22,
-    tutar: 1434,
-    maliyet: 27.16,
-    iptalliMi: false,
-  });
-  kontrol("gösterge değer döner", g.tur === "DEGER");
-  kontrol("  ...metin %61", g.tur === "DEGER" && g.metin === "%61");
-  kontrol("  ...zarar değil", g.tur === "DEGER" && g.zararMi === false);
-}
-
-// --- 2) SERMAYE — KARTLA BİREBİR --------------------------------------------
-{
-  console.log("\n2) SERMAYE VERİMİ (kartla birebir)");
-  /**
-   * ⚠ AYNI SAYI İKİ EKRANDA İKİ DİLDE KONUŞAMAZ (bugünün kargo dersi).
-   * Kârlılık kartı da `sermayeVerimi` + `sermayeVerimiMetni` çağırıyor;
-   * bu kontroller iki ekranın tek kaynaktan beslendiğini sabitliyor.
-   */
-  kontrol("200 / 125 = 1,60", sermayeVerimi(200, 125) === 1.6);
-  kontrol("biçim iki ondalık + ×", sermayeVerimiMetni(1.6) === "1.60×");
-  kontrol("kart örneği 0.13×", sermayeVerimiMetni(sermayeVerimi(3.5, 27.16)) === "0.13×", sermayeVerimiMetni(sermayeVerimi(3.5, 27.16)));
-
-  // Maliyet sıfır ya da eksi: oran yok, sıfır UYDURULMAZ.
-  kontrol("maliyet sıfırsa null", sermayeVerimi(100, 0) === null);
-  kontrol("maliyet null ise null", sermayeVerimi(100, null) === null);
-  kontrol("kâr null ise null", sermayeVerimi(null, 100) === null);
-}
-
-// --- 3) İPTALLİ SATIRDA GÖSTERGE YOK ----------------------------------------
-{
-  console.log("\n3) İPTALLİ SATIR");
-  /**
-   * İptal edilen satış hiç doğmamış sayılır; marjını göstermek olmayan bir
-   * kârı tartışmak olurdu.
-   */
-  const g = satirGostergesi({
-    olcu: "ciro",
-    net2: 881.22,
-    tutar: 1434,
-    maliyet: 27.16,
-    iptalliMi: true,
-  });
-  kontrol("iptalli satırda gösterge YOK", g.tur === "YOK", g);
-}
-
-// --- 4) NET HESAPLANAMADIYSA GÖSTERGE YOK -----------------------------------
-{
-  console.log("\n4) NET YOK");
-  const g = satirGostergesi({
-    olcu: "ciro",
-    net2: null,
-    tutar: 1434,
-    maliyet: 27.16,
-    iptalliMi: false,
-  });
-  kontrol("NET null ise gösterge YOK", g.tur === "YOK");
-}
-
-// --- 5) SERMAYE MODUNDA MALİYET YOKSA "?" -----------------------------------
-{
-  console.log("\n5) MALİYET YOK (NO_COST)");
-  const g = satirGostergesi({
-    olcu: "sermaye",
-    net2: 881.22,
-    tutar: 1434,
-    maliyet: null,
-    iptalliMi: false,
-  });
-  kontrol("maliyet yoksa BİLİNMİYOR", g.tur === "BILINMIYOR", g);
-
-  /**
-   * AYNI SATIR CİRO MODUNDA DEĞER VERİR: ölçü değişince gösterge de değişir,
-   * çünkü ciro marjı maliyete ihtiyaç duymaz.
-   */
-  const ciroModu = satirGostergesi({
-    olcu: "ciro",
-    net2: 881.22,
-    tutar: 1434,
-    maliyet: null,
-    iptalliMi: false,
-  });
-  kontrol("  ...ama ciro modunda değer VAR", ciroModu.tur === "DEGER");
-}
-
-// --- 6) ZARAR — aynı biçim, eksi ile ----------------------------------------
-{
-  console.log("\n6) ZARAR");
-  const g = satirGostergesi({
-    olcu: "ciro",
-    net2: -120,
-    tutar: 1000,
-    maliyet: 900,
-    iptalliMi: false,
-  });
-  kontrol("zarar işaretlenir", g.tur === "DEGER" && g.zararMi === true);
-  kontrol("  ...biçim aynı, eksi ile", g.tur === "DEGER" && g.metin === "%-12", g);
-
-  const sermaye = satirGostergesi({
-    olcu: "sermaye",
-    net2: -120,
-    tutar: 1000,
-    maliyet: 900,
-    iptalliMi: false,
-  });
-  kontrol("sermaye modunda da eksi", sermaye.tur === "DEGER" && sermaye.metin === "-0.13×", sermaye);
-}
-
-// --- 7) SIFIR / EKSİ TUTAR — oran anlamsız ----------------------------------
-{
-  console.log("\n7) SINIR DEĞERLER");
-  kontrol("tutar sıfırsa marj null", ciroMarji(100, 0) === null);
-  kontrol("tutar eksiyse marj null", ciroMarji(100, -5) === null);
-  const g = satirGostergesi({
-    olcu: "ciro",
-    net2: 100,
-    tutar: 0,
-    maliyet: 50,
-    iptalliMi: false,
-  });
-  kontrol("  ...gösterge BİLİNMİYOR olur", g.tur === "BILINMIYOR");
-}
-
-// --- 8) ÖLÇÜ ÇÖZÜMÜ ---------------------------------------------------------
-{
-  console.log("\n8) ÖLÇÜ");
-  kontrol("varsayılan ciro", VARSAYILAN_OLCU === "ciro");
-  kontrol("iki ölçü var, ÜÇÜNCÜ YOK", MARJ_OLCULERI.length === 2);
-  kontrol("geçersiz ölçü reddedilir", olcuGecerliMi("ikisi") === false);
-  kontrol("boş ölçü reddedilir", olcuGecerliMi(undefined) === false);
-  kontrol("geçerli ölçüler tanınır", olcuGecerliMi("ciro") && olcuGecerliMi("sermaye"));
-}
-
-console.log("");
-console.log("=".repeat(70));
-if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
-else {
-  console.log(`${kalan} KONTROL BAŞARISIZ (${gecen + kalan} kontrolden)`);
+console.log("\n" + "=".repeat(70));
+if (hata > 0) {
+  console.log(`${hata} KONTROL BAŞARISIZ`);
   process.exitCode = 1;
+} else {
+  console.log("TÜM KONTROLLER GEÇTİ");
 }
 console.log("");

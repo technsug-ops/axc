@@ -2816,6 +2816,16 @@
     "olcu_ciro": "",
     "olcu_sermaye": "",
     "aciklama": "",
-    "bilinmiyorIpucu": ""
+    "bilinmiyorIpucu": "",
+    "bant_zarar": "",
+    "bant_cokRiskli": "",
+    "bant_zayif": "",
+    "bant_kabul": "",
+    "bant_iyi": "",
+    "bant_cokIyi": "",
+    "olcekBaslik": "",
+    "olcekZarar": "",
+    "olcekAralik": "",
+    "olcekUstsuz": ""
   }
 }

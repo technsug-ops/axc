@@ -467,18 +467,10 @@ console.log("\n9) TABLO GRAFİKLE AYNI ŞEYİ GÖSTERİR — kırpma YOK");
 
   /**
    * ── ASIL DEĞİŞMEZ: GRAFİK = TABLO ──────────────────────────────────────
-   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERMELİ. Eski tavan 15'ti; 15'ten
-   * KISA bir pencereyle sınasaydım (ör. "Bu hafta", 5 nokta) tavan geri
-   * konsa bile test yeşil kalırdı — kırpma orada zaten çalışmıyordu.
-   * Bu yüzden ölçü 30 noktalı pencere: tavan geri gelirse 30 ≠ 15.
+   * Tavan kalktığına göre tablo, grafiğin dizisini gezmeli. Bu VERİ
+   * katmanında sınanamaz — kırpma bileşenin İÇİNDEYDİ. Bu yüzden aşağısı
+   * kaynak tarıyor.
    */
-  const uzun = operasyonSerisi({
-    pencere: pencereOlustur("SON_30_GUN", AN),
-    kirilim: "GUN",
-    alimlar: [],
-    satislar: [],
-    kargolar: [],
-  });
   /**
    * ⚠ BU KONTROL KAYNAK TARAR — VE DESEN ÖNCE SAYILDI.
    * `noktalar.map(` bu dosyada ÜÇ yerde geçiyor (eksen etiketleri · grafik

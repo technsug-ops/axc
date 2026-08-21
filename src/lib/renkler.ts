@@ -53,12 +53,7 @@ export const DURUM_RENKLERI = [
 ] as const;
 
 /** Anlam taşıyan dört ton — nötr hariç. Testler bunları dolaşır. */
-export const ANLAMLI_RENKLER = [
-  "olumlu",
-  "olumsuz",
-  "uyari",
-  "bilgi",
-] as const;
+export const ANLAMLI_RENKLER = ["olumlu", "olumsuz", "uyari", "bilgi"] as const;
 
 /**
  * Sol şerit — 3px kenarlık. Kartın içinde durur, köşeyi taşırmaz.
@@ -185,3 +180,75 @@ export function karDurumu(tutar: number | null): DurumRengi {
   if (tutar === null) return "notr";
   return tutarDurumu(tutar);
 }
+
+/**
+ * ============================================================================
+ *  MARJ RAMPASI — DERECE ÖLÇEĞİ, DURUM PALETİ DEĞİL
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı isteği 21.08.2026 (gönderilen pil ölçeği): marj kötüden iyiye
+ *  DERECELİ renklensin — kırmızı · turuncu · sarı · yeşil · parlak yeşil.
+ *
+ *  ── NİYE YENİ BİR ÖLÇEK, "TEK KAYNAK" KURALINI DELMİYOR MU ──────────────
+ *  Delmiyor; kural "ekranlar ham renk yazmaz, hepsi buradan geçer" der ve bu
+ *  ölçek de BURADA. Ama beş durum rengiyle KARŞILANAMAZDI ve sebebi yapısal:
+ *
+ *    · DURUM paleti TÜR söyler — uyarı mı, bilgi mi, hata mı. Beş ayrı
+ *      kavram; aralarında "daha çok/daha az" ilişkisi YOKTUR.
+ *    · MARJ ölçeği DERECE söyler — tek eksende kötüden iyiye. Burada
+ *      sıralama BİLGİNİN KENDİSİDİR.
+ *
+ *  Durum renklerini sıraya dizmeye kalksaydım (olumsuz→uyarı→?→olumlu)
+ *  ortada sarı yoktu ve "kabul edilebilir" ya turuncuya ya yeşile
+ *  yapışırdı — yani kullanıcının ayırmak istediği iki bant birleşirdi.
+ *
+ *  ⚠ VE RAMPA YALNIZ MARJ İÇİNDİR. Genel amaçlı bir "renk skalası" olarak
+ *  kullanılırsa sistem sessizce ikiye bölünür ve durum paleti anlamını
+ *  yitirir. Yeni bir derece ölçeği gerekirse KENDİ adıyla, kendi
+ *  gerekçesiyle açılır.
+ *
+ *  UÇLAR DURUM PALETİNDEN ALINDI: en kötü #E24B4A ve en iyi #1D9E75 zaten
+ *  sistemin kırmızısı ve yeşili. Rampa onların arasını dolduruyor, yanlarına
+ *  YENİ bir kırmızı/yeşil koymuyor — yoksa aynı ekranda iki yeşil olurdu.
+ * ============================================================================
+ */
+
+export type MarjTonu = {
+  /** Pil bölmesinin dolgusu — doygun, küçük alan (kısıt #2'ye uygun). */
+  dolgu: string;
+  /** Rakamın rengi — zemin nötr kalır, kontrast yazıda. */
+  yazi: string;
+};
+
+export const MARJ_RAMPASI = {
+  /** Zarar: sistemin kırmızısının KOYU ucu — "çok riskli"den bir tık aşağı. */
+  zarar: {
+    dolgu: "bg-[#B03A3A]",
+    yazi: "text-[#8F2424] dark:text-[#F6C2C2]",
+  },
+  cokRiskli: {
+    dolgu: "bg-[#E24B4A]",
+    yazi: "text-[#A32D2D] dark:text-[#EF9A9A]",
+  },
+  zayif: {
+    dolgu: "bg-[#EF9F27]",
+    yazi: "text-[#854F0B] dark:text-[#E5BE7C]",
+  },
+  /**
+   * Sarı — rampanın ORTA basamağı ve paletin dışından gelen tek ton.
+   * Açık sarı yazı olarak okunmaz (beyaz üstünde 1,6:1); bu yüzden dolgu
+   * sarı, YAZI koyu hardal. Doygunluk yine yalnız küçük alanda.
+   */
+  kabul: {
+    dolgu: "bg-[#D9B310]",
+    yazi: "text-[#6B5304] dark:text-[#E8D07A]",
+  },
+  iyi: {
+    dolgu: "bg-[#1D9E75]",
+    yazi: "text-[#0F6E56] dark:text-[#6FD8B4]",
+  },
+  /** Çok iyi: aynı yeşilin parlak ucu — yeni bir hue değil, aynı ailenin tonu. */
+  cokIyi: {
+    dolgu: "bg-[#12B981]",
+    yazi: "text-[#0B5C47] dark:text-[#6FD8B4]",
+  },
+} as const satisfies Record<string, MarjTonu>;

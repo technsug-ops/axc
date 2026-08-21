@@ -22,6 +22,8 @@
  * ============================================================================
  */
 
+import { marjBandi, type MarjBandi } from "./marj-bantlari";
+
 export const MARJ_OLCULERI = ["ciro", "sermaye"] as const;
 export type MarjOlcusu = (typeof MARJ_OLCULERI)[number];
 
@@ -89,7 +91,19 @@ export type GostergeSonucu =
   | { tur: "YOK" }
   /** Ölçü hesaplanamadı (ör. maliyet bilinmiyor) — "?" gösterilir. */
   | { tur: "BILINMIYOR" }
-  | { tur: "DEGER"; metin: string; zararMi: boolean };
+  | {
+      tur: "DEGER";
+      metin: string;
+      zararMi: boolean;
+      /**
+       * PİL BANDI — yalnız CİRO marjında dolu.
+       *
+       * ⚠ SERMAYE VERİMİNDE `null`. Bantlar yüzde ölçeğinden ölçüldü;
+       * "0,13×" değerini %0,13 sayıp "çok riskli" demek, iki farklı birimi
+       * aynı cetvele vurmak olurdu (bkz. lib/marj-bantlari → yalnız ciro).
+       */
+      bant: MarjBandi | null;
+    };
 
 /**
  * Satır göstergesi — tek karar noktası.
@@ -102,13 +116,26 @@ export function satirGostergesi(girdi: GostergeGirdisi): GostergeSonucu {
   if (girdi.net2 === null) return { tur: "YOK" };
 
   if (girdi.olcu === "ciro") {
-    const metin = ciroMarjiMetni(ciroMarji(girdi.net2, girdi.tutar));
+    const yuzde = ciroMarji(girdi.net2, girdi.tutar);
+    const metin = ciroMarjiMetni(yuzde);
     if (metin === null) return { tur: "BILINMIYOR" };
-    return { tur: "DEGER", metin, zararMi: girdi.net2 < 0 };
+    /**
+     * ⚠ BANT YUVARLANMAMIŞ DEĞERDEN: `metin` listede tam sayıya yuvarlanıyor
+     * ("%3"), bant ise ham yüzdeden çözülüyor. Yuvarlanmıştan çözseydim
+     * %2,6'lık bir satır "%3" görünüp ZAYIF bandına atlardı — ekrandaki
+     * rakam yüzünden hüküm değişirdi.
+     */
+    return {
+      tur: "DEGER",
+      metin,
+      zararMi: girdi.net2 < 0,
+      bant: marjBandi(yuzde),
+    };
   }
 
   /** SERMAYE: maliyet bilinmiyorsa "?" — sıfır sayılmaz (NO_COST). */
   const metin = sermayeVerimiMetni(sermayeVerimi(girdi.net2, girdi.maliyet));
   if (metin === null) return { tur: "BILINMIYOR" };
-  return { tur: "DEGER", metin, zararMi: girdi.net2 < 0 };
+  /** BANT YOK — kat sayısı yüzde cetveline vurulmaz. */
+  return { tur: "DEGER", metin, zararMi: girdi.net2 < 0, bant: null };
 }

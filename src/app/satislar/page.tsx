@@ -10,7 +10,12 @@ import { ExcelIndir } from "@/components/excel-indir";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Baglanti } from "@/components/baglanti";
 import { DurumRozeti } from "@/components/durum-rozeti";
-import { DURUM_KUTUSU, DURUM_SERIDI, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
+import {
+  DURUM_KUTUSU,
+  DURUM_SERIDI,
+  DURUM_YAZISI,
+  karDurumu,
+} from "@/lib/renkler";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
 import { KargoDurumu } from "./kargo-durumu";
@@ -18,6 +23,7 @@ import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { UzunAd } from "@/components/uzun-ad";
 import { NetKar } from "@/components/net-kar";
+import { MarjOlcegi } from "@/components/marj-olcegi";
 import { MarjRozeti } from "@/components/marj-rozeti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -397,9 +403,17 @@ export default async function SatislarSayfasi({
           saleId={satis.id}
           shippedAt={satis.shippedAt ? gunMetni(satis.shippedAt) : null}
         />
-        <SatirEylemi href={`/satislar/${satis.id}`} ikon={Eye} etiket={ortak("detay")} />
+        <SatirEylemi
+          href={`/satislar/${satis.id}`}
+          ikon={Eye}
+          etiket={ortak("detay")}
+        />
         {iadeKalanVar(satis) ? (
-          <SatirEylemi href={`/satislar/${satis.id}/iade`} ikon={Undo2} etiket={tIade("iadeAl")} />
+          <SatirEylemi
+            href={`/satislar/${satis.id}/iade`}
+            ikon={Undo2}
+            etiket={tIade("iadeAl")}
+          />
         ) : null}
       </>
     );
@@ -422,7 +436,10 @@ export default async function SatislarSayfasi({
           {/* EXCEL EKRANDAKİ SÜZGECİ UYGULAR: aynı parametreler, aynı koşul
               kurucusu (lib/liste-suzgeci.ts). Liste bir şey, dosya başka şey
               söylemesin. */}
-          <ExcelIndir liste="satislar" parametreler={disaAktarmaParametreleri} />
+          <ExcelIndir
+            liste="satislar"
+            parametreler={disaAktarmaParametreleri}
+          />
           <Button asChild>
             <Link href="/satislar/yeni">
               <Plus />
@@ -438,7 +455,9 @@ export default async function SatislarSayfasi({
             listeden üretiliyor — yeni bir süzgeç eklenince burada unutulan
             alan sessizce filtreyi düşürürdü. */}
         {Object.entries(formTasinanlar).map(([ad, deger]) =>
-          deger ? <input key={ad} type="hidden" name={ad} value={deger} /> : null,
+          deger ? (
+            <input key={ad} type="hidden" name={ad} value={deger} />
+          ) : null,
         )}
         <Input
           name="q"
@@ -457,6 +476,13 @@ export default async function SatislarSayfasi({
           </Button>
         ) : null}
       </form>
+
+      {/* ⚠ ÖLÇEK YALNIZ CİRO MARJINDA VE YALNIZ KÂR GÖRÜNÜRKEN.
+          · Sermaye verimi (kat sayısı) bantlı değil — cetveli gösterirsem
+            olmayan bir renklendirmeyi açıklamış olurum.
+          · `karGorunur` yoksa marj sütunu HİÇ çizilmiyor; ölçeği göstermek
+            görünmeyen bir sütunun anahtarını vermek olurdu. */}
+      {karGorunur && olcu === "ciro" ? <MarjOlcegi /> : null}
 
       {/* Tercih hatırlama — cihaz bazlı, adres kazanır (bkz. marj-tercihi). */}
       <Suspense fallback={null}>
@@ -505,7 +531,9 @@ export default async function SatislarSayfasi({
 
       {/* Hangi süzgecin açık olduğu EKRANDA yazar (#5). */}
       {karEksik ? (
-        <div className={`flex flex-wrap items-center gap-2 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+        <div
+          className={`flex flex-wrap items-center gap-2 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}
+        >
           <TriangleAlert className={`size-4 shrink-0 ${DURUM_YAZISI.uyari}`} />
           <span className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
             {t("karEksikFiltresi")}
@@ -524,10 +552,10 @@ export default async function SatislarSayfasi({
             {p.veri === "supheli"
               ? t("bosSupheliVeri")
               : karEksik
-                  ? t("bosKarEksikBaslik")
-                  : suzgecVar
-                    ? t("bosFiltreBaslik")
-                    : t("bosBaslik")}
+                ? t("bosKarEksikBaslik")
+                : suzgecVar
+                  ? t("bosFiltreBaslik")
+                  : t("bosBaslik")}
           </p>
           <p className="text-muted-foreground mt-1 text-sm">
             {/* SÜZGEÇ YÜZÜNDEN BOŞSA ONU SÖYLE: "kayıt yok" demek, süzgeci
@@ -560,7 +588,9 @@ export default async function SatislarSayfasi({
                       yazar, böylece rozette tekrar etmesi gerekmez. */}
                   {karGorunur ? (
                     <>
-                      <TableHead className="text-right">{t("netKar")}</TableHead>
+                      <TableHead className="text-right">
+                        {t("netKar")}
+                      </TableHead>
                       <TableHead className="text-right">
                         {tMarj(`olcu_${olcu}`)}
                       </TableHead>
@@ -586,7 +616,9 @@ export default async function SatislarSayfasi({
                       /* İPTAL EDİLEN SATIŞ ÜSTÜ ÇİZİLİ VE SOLGUN: satır
                          okunmadan önce "bu sayılmıyor" anlaşılmalı. Kayıt
                          silinmiyor, yalnız varsayılan olarak gizli. */
-                      satis.iptalTarihi !== null ? "line-through opacity-60" : "",
+                      satis.iptalTarihi !== null
+                        ? "line-through opacity-60"
+                        : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
@@ -620,11 +652,15 @@ export default async function SatislarSayfasi({
                           className="mt-1 no-underline"
                           title={
                             satis.iptalNotu ??
-                            (satis.iptalSebebi ? tIpt(`sebep_${satis.iptalSebebi}`) : undefined)
+                            (satis.iptalSebebi
+                              ? tIpt(`sebep_${satis.iptalSebebi}`)
+                              : undefined)
                           }
                         >
                           {tIpt("rozet")}
-                          {satis.iptalSebebi ? ` · ${tIpt(`sebepKisa_${satis.iptalSebebi}`)}` : ""}
+                          {satis.iptalSebebi
+                            ? ` · ${tIpt(`sebepKisa_${satis.iptalSebebi}`)}`
+                            : ""}
                         </Badge>
                       ) : null}
                     </TableCell>
@@ -644,7 +680,9 @@ export default async function SatislarSayfasi({
                         metin={urunOzeti(satis)}
                         ek={
                           satis.returns.length ? (
-                            <DurumRozeti durum="uyari">{tIade("iadeVar")}</DurumRozeti>
+                            <DurumRozeti durum="uyari">
+                              {tIade("iadeVar")}
+                            </DurumRozeti>
                           ) : null
                         }
                       />
@@ -713,7 +751,9 @@ export default async function SatislarSayfasi({
                       {urunOzeti(satis)}
                     </Baglanti>
                     {satis.returns.length ? (
-                      <DurumRozeti durum="uyari">{tIade("iadeVar")}</DurumRozeti>
+                      <DurumRozeti durum="uyari">
+                        {tIade("iadeVar")}
+                      </DurumRozeti>
                     ) : null}
                   </span>
                 }
