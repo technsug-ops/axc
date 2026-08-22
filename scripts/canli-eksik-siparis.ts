@@ -49,7 +49,8 @@ type Okuma = {
 };
 
 /** Başlık adını gevşek karşılaştırma için normalleştirir. */
-const nrm = (h: unknown) =>
+/** Döküm betiği de aynı normalleştirmeyi kullanır — iki yerde iki kural olmasın. */
+export const nrm = (h: unknown) =>
   String(h ?? "")
     .trim()
     .toLocaleLowerCase("tr")
@@ -64,7 +65,7 @@ const TARIH_BASLIKLARI = ["sipariş tarihi", "siparis tarihi"];
  * numaralar kayan noktaya düşer ve son hane bozulur; ayrıca baştaki sıfır
  * kaybolur. `Sale.code` de dize.
  */
-const temizNo = (v: unknown): string | null => {
+export const temizNo = (v: unknown): string | null => {
   const s = String(v ?? "").trim();
   if (s === "" || s.toLowerCase() === "null") return null;
   /** Excel bazen "2.18277E+11" gibi bilimsel gösterim veriyor — bu OKUNAMAZ. */
@@ -83,7 +84,7 @@ const temizNo = (v: unknown): string | null => {
  * "Standart Teslimat" diye bastı — yani ölçüm, olmayan bir eksiklik
  * uydurdu. Ayrıştırıcı yanlışsa çıkan sayı da yanlıştır.
  */
-function csvSatirlari(ham: string): string[][] {
+export function csvSatirlari(ham: string): string[][] {
   const satirlar: string[][] = [];
   let alanlar: string[] = [];
   let alan = "";
@@ -327,7 +328,16 @@ async function main() {
   await prisma.$disconnect();
 }
 
-main().catch(async (e) => {
+/**
+ * ⚠ YALNIZ DOĞRUDAN KOŞULUNCA ÇALIŞIR. Bu dosya `canli-eksik-liste.ts`
+ * tarafından ayrıştırıcıları için IMPORT ediliyor; koşulsuz `main()` çağrısı
+ * o betiği koşturunca ÖLÇÜMÜ de çalıştırıyordu — kullanıcı döküm isterken
+ * ekrana ölçüm basılıyordu. İçe aktarılan modül yan etki üretmemeli.
+ */
+const dogrudanKosuluyor = process.argv[1]?.includes("canli-eksik-siparis") ?? false;
+
+if (dogrudanKosuluyor)
+  main().catch(async (e) => {
   console.error("Hata:", String(e).split("\n")[0]);
   process.exitCode = 1;
 });

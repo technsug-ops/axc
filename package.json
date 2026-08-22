@@ -87,7 +87,8 @@
     "el-kitabi:dogrula": "tsx scripts/el-kitabi-dogrula.ts",
     "canli:n11-kesinti": "tsx scripts/canli-n11-kesinti.ts",
     "bekci": "tsx scripts/bekci.ts",
-    "canli:eksik-siparis": "tsx scripts/canli-eksik-siparis.ts"
+    "canli:eksik-siparis": "tsx scripts/canli-eksik-siparis.ts",
+    "canli:eksik-liste": "tsx scripts/canli-eksik-liste.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
