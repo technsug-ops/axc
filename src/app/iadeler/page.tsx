@@ -7,7 +7,9 @@ import { Baglanti } from "@/components/baglanti";
 import { ExcelIndir } from "@/components/excel-indir";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
+import { KatlanirBolum } from "@/components/katlanir-bolum";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
+import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { SayfalamaCubugu } from "@/components/sayfalama";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { UzunAd } from "@/components/uzun-ad";
@@ -15,7 +17,6 @@ import { DurumRozeti } from "@/components/durum-rozeti";
 import { BILDIRIM_DURUM_RENGI } from "@/lib/durum-renkleri";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -43,7 +44,7 @@ import {
   iadeTuruEtiketleri,
 } from "@/lib/etiketler";
 import {
-  AYRILMIS_SAYILAN_DURUMLAR,
+  ACIK_BILDIRIM_DURUMLARI,
   bildirimAramaKosulu,
   DEGISIM_GEREKCELERI,
   gecisGecerliMi,
@@ -95,6 +96,26 @@ export async function generateMetadata() {
 
 const TURLER: ReturnType[] = ["UNDELIVERED", "NORMAL", "DISPUTED"];
 
+/**
+ * ── SEKMELER ──
+ * Anahtarlar adreste görünür; kısa ve Türkçe okunur tutuldu.
+ */
+const SEKME_BILDIRIM = "bildirim";
+const SEKME_ISLENMIS = "islenmis";
+const SEKME_KIRILIM = "kirilim";
+const SEKMELER = [SEKME_BILDIRIM, SEKME_ISLENMIS, SEKME_KIRILIM] as const;
+
+/**
+ * ── BİLDİRİM DURUM SÜZGECİ ──
+ *
+ * ⚠ VARSAYILAN "AÇIK" VE BU BİR DÜZELTME. Liste eskiden varsayılan olarak
+ * HER ŞEYİ gösteriyordu ama başlığı "Bekleyen bildirimler"di; canlıda
+ * rozet `0` derken altında 9 kapanmış kayıt duruyordu. Ekran artık
+ * başlığının söylediği şeyi gösteriyor.
+ */
+const BILDIRIM_SUZGECLERI = ["acik", "kapali", "hepsi"] as const;
+type BildirimSuzgeci = (typeof BILDIRIM_SUZGECLERI)[number];
+
 /** Bildirim formundaki satış listesinin üst sınırı — dolarsa ekranda yazar. */
 const SATIS_LISTE_SINIRI = 500;
 
@@ -115,8 +136,12 @@ export default async function IadelerSayfasi({
     sayfa?: string;
     /** Bildirim araması — işlenmiş iade tablosunun süzgeçlerinden AYRI. */
     bq?: string;
-    /** Panelden gelen "bekleyen bildirim" süzgeci. */
+    /** Panelden gelen "bekleyen bildirim" süzgeci — eski bağlantılar için. */
     bekleyen?: string;
+    /** Açık sekme: bildirim | islenmis | kirilim. */
+    sekme?: string;
+    /** Bildirim durum süzgeci: acik | kapali | hepsi. */
+    bdurum?: string;
   }>;
 }) {
   await sayfaIzni("iade.gor");
@@ -379,13 +404,36 @@ export default async function IadelerSayfasi({
    * sayıyor; bağlantı süzgeçsiz gelseydi liste kapanmışları da gösterir ve
    * "sayı = liste" sözü bozulurdu (15.08.2026).
    */
-  const yalnizBekleyen = p.bekleyen === "1";
+  /**
+   * ⚠ PANELDEN GELEN ESKİ BAĞLANTI KIRILMADI. Panel `/iadeler?bekleyen=1`
+   * diyor; varsayılan zaten "açık" olduğu için o bağlantı aynı sonucu
+   * veriyor. Parametre yine de okunuyor: kullanıcı sonra "hepsi"ne basıp
+   * geri gelirse `bdurum` kazanır, yani seçim adreste tek yerde yaşar.
+   */
+  const istenenDurum = p.bdurum ?? (p.bekleyen === "1" ? "acik" : "acik");
+  const bDurum: BildirimSuzgeci = (
+    BILDIRIM_SUZGECLERI as readonly string[]
+  ).includes(istenenDurum)
+    ? (istenenDurum as BildirimSuzgeci)
+    : "acik";
+
+  /**
+   * ⚠ "KAPALI" DA AÇIK KÜMEDEN TÜRETİLİR (`notIn`). İkinci bir liste
+   * yazılsaydı yeni bir durum eklendiğinde ikisi ayrışır ve bir bildirim
+   * HİÇBİR süzgeçte görünmezdi — kaybolmanın en sessiz yolu.
+   */
   const bildirimKosulu = {
     ...bildirimAramaKosulu(bildirimArama),
-    ...(yalnizBekleyen
-      ? { status: { in: AYRILMIS_SAYILAN_DURUMLAR } }
-      : {}),
+    ...(bDurum === "acik"
+      ? { status: { in: ACIK_BILDIRIM_DURUMLARI } }
+      : bDurum === "kapali"
+        ? { status: { notIn: ACIK_BILDIRIM_DURUMLARI } }
+        : {}),
   };
+
+  const sekme: string = (SEKMELER as readonly string[]).includes(p.sekme ?? "")
+    ? (p.sekme as string)
+    : SEKME_BILDIRIM;
 
   const bildirimKayitlari = await prisma.returnNotice.findMany({
     where: bildirimKosulu,
@@ -426,7 +474,7 @@ export default async function IadelerSayfasi({
    */
   const [bekleyenBildirimler, bildirimToplami] = await Promise.all([
     prisma.returnNotice.count({
-      where: { status: { in: AYRILMIS_SAYILAN_DURUMLAR } },
+      where: { status: { in: ACIK_BILDIRIM_DURUMLARI } },
     }),
     /** Aramaya uyan toplam — 50'lik pencerenin dışında kalan var mı. */
     prisma.returnNotice.count({ where: bildirimKosulu }),
@@ -566,68 +614,123 @@ export default async function IadelerSayfasi({
     hasar: hasarFiltresi,
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
-          <p className="text-muted-foreground text-sm">
-            {ortak("kayitSayisi", { sayi: toplamKayit })} · {aralikMetni}
-          </p>
-        </div>
-        <ExcelIndir liste="iadeler" parametreler={disaAktarmaParametreleri} />
+  /**
+   * ══════════════════════════════════════════════════════════════════════
+   *  SEKMELER — ÜÇ AYRI SORU, ÜÇ AYRI EKRAN
+   * ----------------------------------------------------------------------
+   *  Kullanıcı 22.08.2026: _"iadeler sayfası çok karışık."_ Ölçüm sebebi
+   *  gösterdi — sayfa altı bloğu üst üste diziyordu ve İKİ FARKLI ZİHİN
+   *  MODELİ iç içeydi:
+   *
+   *    · İŞ AKIŞI  — "şu an ne yapmalıyım" (bildirimler)
+   *    · ARŞİV     — "geçen ay ne oldu" (işlenmiş iadeler, kırılım)
+   *
+   *  ⚠ EN BÜYÜK KARIŞIKLIK BAŞLIK İLE İÇERİĞİN ÇELİŞMESİYDİ. Kart
+   *  "Bekleyen bildirimler" diyor, rozeti açık olanları sayıyordu; ama
+   *  altındaki liste BÜTÜN bildirimleri gösteriyordu. Canlıda ölçüldü:
+   *  rozet `0`, liste 9 KAPANMIŞ kayıt. Ekranın en görünür bloğu, bitmiş
+   *  işi bekleyen iş gibi gösteriyordu. Artık liste süzgece uyuyor.
+   *
+   *  ⚠ SÜZGEÇ, YALNIZ ETKİLEDİĞİ SEKMEDE DURUYOR. Eskiden dönem süzgeci
+   *  bildirimlerin ALTINDAydı ama onları süzmüyordu: dönem değiştirilince
+   *  üstteki liste kıpırdamıyor, sistem kullanıcıyı dinlemiyormuş gibi
+   *  görünüyordu.
+   *
+   *  Seçim ADRESTE yaşıyor (bkz. sekmeli-bolum.tsx): geri tuşu çalışır,
+   *  bağlantı paylaşılabilir.
+   * ══════════════════════════════════════════════════════════════════════
+   */
+  const sekmeAdresi = (anahtar: string) =>
+    // Sekme değişince sayfa numarası sıfırlanır: 3. sayfadayken başka
+    // sekmeye geçip boş liste görmek, "veri kayboldu" sanılır.
+    suzgecAdresi("/iadeler", p, { sekme: anahtar, sayfa: "" });
+
+  const durumAdresi = (deger: BildirimSuzgeci) =>
+    suzgecAdresi("/iadeler", p, { sekme: SEKME_BILDIRIM, bdurum: deger });
+
+  /**
+   * BOŞ LİSTE NEDEN BOŞ — süzgece göre değişir (İlke #5: sessiz
+   * başarısızlık yok, NEDEN olmadığı ekranda yazar). Tek bir "bildirim
+   * yok" cümlesi, "kapanmış" süzgecindeyken yalan söylerdi.
+   */
+  const bosBildirimMetni =
+    bDurum === "kapali"
+      ? t("kapanmisBildirimYok")
+      : bDurum === "hepsi"
+        ? t("hicBildirimYok")
+        : t("bildirimYok");
+
+  const durumEtiketi: Record<BildirimSuzgeci, string> = {
+    acik: t("durumAcik"),
+    kapali: t("durumKapanmis"),
+    hepsi: t("durumHepsi"),
+  };
+
+  const bildirimIcerigi = (
+    <div className="space-y-4">
+      <p className="text-muted-foreground text-sm">{t("bildirimNotu")}</p>
+
+      {/* DURUM SÜZGECİ — uygulamanın her yerindeki süzgeç düğmesiyle AYNI
+          görünüm (İlke #10). Bağlantı, düğme değil: seçim adreste yaşar. */}
+      <div className="flex flex-wrap gap-1">
+        {BILDIRIM_SUZGECLERI.map((d) => (
+          <Button
+            key={d}
+            asChild
+            size="sm"
+            variant={d === bDurum ? "default" : "outline"}
+            className="h-11 md:h-8"
+          >
+            <Link
+              href={durumAdresi(d)}
+              scroll={false}
+              aria-current={d === bDurum ? "true" : undefined}
+            >
+              {durumEtiketi[d]}
+            </Link>
+          </Button>
+        ))}
       </div>
 
-      {/* ================== BİLDİRİMLER — AŞAMA A ==================
-          Pazaryeri "müşteri iade istiyor" dedi, mal yolda. Burada kâr ve
-          stok hesabı YOKTUR; ledger ancak "İadeyi işle" ile açılan AŞAMA
-          B'de (iade formu) hareket görür. */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {t("bekleyenBildirimler")}
-            {bekleyenBildirimler > 0 ? (
-              <Badge variant="secondary" className="ml-2">
-                {bekleyenBildirimler}
-              </Badge>
-            ) : null}
-          </CardTitle>
-          <p className="text-muted-foreground text-sm">
-            {tBildirim("aciklamaMetni")}
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <BildirimFormu
-            satislar={formSatislari.map((s) => ({
-              id: s.id,
-              etiket: `${s.code ?? tBildirim("siparisNoYok")} · ${bicim.tarih(s.soldAt)} · ${s.channelAccount.channel.name} — ${s.channelAccount.name}`,
-            }))}
-            satisSiniriDoldu={formSatislari.length === SATIS_LISTE_SINIRI}
-            /**
-             * İKİ LİSTE, İKİ KURAL (bkz. bildirim-formu.tsx başlığı):
-             *   ayrılan → gönderilecek yedek, STOKTA OLMALI
-             *   dönen   → yanlışlıkla gitmiş mal, stok 0 olabilir
-             */
-            stoktakiVaryantlar={formVaryantlari
-              .filter((v) => (formStoklari.get(v.id) ?? 0) > 0)
-              .map((v) => ({
+      {/*
+        ⚠ FORM KATLANDI, KALDIRILMADI. Eskiden altı alanıyla hep açıktı ve
+        asıl işi — bekleyenleri görmeyi — ekranın altına itiyordu. Kayıt
+        günde birkaç kez yapılır, liste her açılışta okunur; yer, çok
+        okunanın hakkı.
+      */}
+      <KatlanirBolum baslik={t("yeniBildirim")}>
+            <BildirimFormu
+              satislar={formSatislari.map((s) => ({
+                id: s.id,
+                etiket: `${s.code ?? tBildirim("siparisNoYok")} · ${bicim.tarih(s.soldAt)} · ${s.channelAccount.channel.name} — ${s.channelAccount.name}`,
+              }))}
+              satisSiniriDoldu={formSatislari.length === SATIS_LISTE_SINIRI}
+              /**
+               * İKİ LİSTE, İKİ KURAL (bkz. bildirim-formu.tsx başlığı):
+               *   ayrılan → gönderilecek yedek, STOKTA OLMALI
+               *   dönen   → yanlışlıkla gitmiş mal, stok 0 olabilir
+               */
+              stoktakiVaryantlar={formVaryantlari
+                .filter((v) => (formStoklari.get(v.id) ?? 0) > 0)
+                .map((v) => ({
+                  id: v.id,
+                  etiket: `${v.product.name} (${v.sku})`,
+                  stokMetni: tBildirim("stokMetni", {
+                    sayi: formStoklari.get(v.id) ?? 0,
+                  }),
+                }))}
+              tumVaryantlar={formVaryantlari.map((v) => ({
                 id: v.id,
                 etiket: `${v.product.name} (${v.sku})`,
                 stokMetni: tBildirim("stokMetni", {
                   sayi: formStoklari.get(v.id) ?? 0,
                 }),
               }))}
-            tumVaryantlar={formVaryantlari.map((v) => ({
-              id: v.id,
-              etiket: `${v.product.name} (${v.sku})`,
-              stokMetni: tBildirim("stokMetni", {
-                sayi: formStoklari.get(v.id) ?? 0,
-              }),
-            }))}
-            degisimGerekceleri={[...DEGISIM_GEREKCELERI]}
-            gerekceEtiketleri={gerekceEtiketleri}
-            bugun={gunMetni(gunDegeri(isTakvimGunu(new Date())))}
-          />
+              degisimGerekceleri={[...DEGISIM_GEREKCELERI]}
+              gerekceEtiketleri={gerekceEtiketleri}
+              bugun={gunMetni(gunDegeri(isTakvimGunu(new Date())))}
+            />
+      </KatlanirBolum>
 
           {/* ==================== BİLDİRİM ARAMASI ====================
               Sunucuda arar (bkz. sorgu). Diğer süzgeçler gizli alanlarla
@@ -638,6 +741,11 @@ export default async function IadelerSayfasi({
                 <input key={ad} type="hidden" name={ad} value={deger} />
               ) : null,
             )}
+            {/* ⚠ SEKME VE DURUM DA TAŞINIR. Yoksa arama yapınca kullanıcı
+                bildirim sekmesinden düşer ve "açık" süzgeci sıfırlanır —
+                aradığı kayda ulaşamaz. */}
+            <input type="hidden" name="sekme" value="bildirim" />
+            <input type="hidden" name="bdurum" value={bDurum} />
             <Input
               name="bq"
               defaultValue={bildirimArama}
@@ -663,10 +771,9 @@ export default async function IadelerSayfasi({
               {ortak("aramaEki", { arama: bildirimArama })}
             </p>
           ) : null}
-
           {bildirimKayitlari.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              {bildirimArama ? tBildirim("aramaSonucYok") : t("bildirimYok")}
+              {bildirimArama ? tBildirim("aramaSonucYok") : bosBildirimMetni}
             </p>
           ) : (
             <div className="space-y-3">
@@ -779,9 +886,12 @@ export default async function IadelerSayfasi({
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+    </div>
+  );
 
+  const islenmisIcerigi = (
+    <div className="space-y-5">
+      <p className="text-muted-foreground text-sm">{t("islenmisNotu")}</p>
       <SuzgecCubugu
         temelAdres="/iadeler"
         mevcut={p}
@@ -793,16 +903,16 @@ export default async function IadelerSayfasi({
           bitis: p.bitis ?? gunMetni(pencere.sonGun),
         }}
       />
-
       {/* ========================= ÜST ŞERİT ========================= */}
+      {/* ⚠ KART İÇİNDE KART YOK. Bu blok artık sekme kartının İÇİNDE
+          çiziliyor; ayrıca <Card> sarılsaydı iç içe iki çerçeve olur ve
+          22.08.2026'da belirginleştirilen kenarlıklar üst üste binerdi. */}
       {toplamlar.map((toplam) => (
-        <Card key={toplam.paraBirimi}>
-          <CardHeader>
-            <CardTitle>
-              {t("donemOzeti")} · {toplam.paraBirimi}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <section key={toplam.paraBirimi} className="space-y-3">
+          <h3 className="text-sm font-semibold">
+            {t("donemOzeti")} · {toplam.paraBirimi}
+          </h3>
+          <div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Ozet etiket={t("iadeAdedi")} deger={String(toplam.iadeAdedi)} />
               <Ozet etiket={t("urunAdedi")} deger={String(toplam.urunAdedi)} />
@@ -839,17 +949,15 @@ export default async function IadelerSayfasi({
                 />
               ) : null}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       ))}
 
       {/* ======================= İŞLENMİŞ İADELER ======================= */}
       {satirlar.length === 0 ? (
-        <Card>
-          <CardContent className="text-muted-foreground py-10 text-center text-sm">
-            {t("bosListe")}
-          </CardContent>
-        </Card>
+        <p className="text-muted-foreground py-10 text-center text-sm">
+          {t("bosListe")}
+        </p>
       ) : (
         <>
           {/* --- masaüstü --- */}
@@ -1029,15 +1137,34 @@ export default async function IadelerSayfasi({
           />
         </>
       )}
+    </div>
+  );
 
+  const kirilimIcerigi = (
+    <div className="space-y-5">
+      <p className="text-muted-foreground text-sm">{t("kirilimNotu")}</p>
+      <SuzgecCubugu
+        temelAdres="/iadeler"
+        mevcut={p}
+        suzgecler={suzgecler}
+        zaman={{
+          secili: tur,
+          aralikMetni,
+          baslangic: p.baslangic ?? gunMetni(pencere.baslangic),
+          bitis: p.bitis ?? gunMetni(pencere.sonGun),
+        }}
+      />
+      {kirilim.length === 0 && enCokIade.length === 0 ? (
+        <p className="text-muted-foreground py-6 text-center text-sm">
+          {t("kirilimBos")}
+        </p>
+      ) : null}
       {/* ====================== PAZARYERİ KIRILIMI ====================== */}
       {kirilim.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("kanalKirilimi")}</CardTitle>
-            <p className="text-muted-foreground text-sm">{t("oranTanimi")}</p>
-          </CardHeader>
-          <CardContent className="overflow-x-auto">
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold">{t("kanalKirilimi")}</h3>
+          <p className="text-muted-foreground text-sm">{t("oranTanimi")}</p>
+          <div className="overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -1091,18 +1218,15 @@ export default async function IadelerSayfasi({
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       ) : null}
-
       {/* ==================== EN ÇOK İADE EDİLENLER ==================== */}
       {enCokIade.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("enCokIade")}</CardTitle>
-            <p className="text-muted-foreground text-sm">{t("enCokIadeNotu")}</p>
-          </CardHeader>
-          <CardContent className="overflow-x-auto">
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold">{t("iadeEdilenUrunler")}</h3>
+          <p className="text-muted-foreground text-sm">{t("enCokIadeNotu")}</p>
+          <div className="overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -1144,9 +1268,72 @@ export default async function IadelerSayfasi({
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       ) : null}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/*
+        ⚠ SAYI VE EXCEL BAŞLIKTAN İNDİ — ÇÜNKÜ İKİSİ DE TEK SEKMEYE AİT.
+        Başlıkta "N kayıt · 01.08 — 31.08" yazıyordu ve bu YALNIZ işlenmiş
+        iadelerin sayısıydı; bildirimler sekmesinde bakan biri onu ekrandaki
+        listenin sayısı sanardı. Düzeltmeye çalıştığımız hatanın (başlık
+        içerikle çelişiyor) küçük kardeşiydi. Sayılar artık sekme
+        etiketlerinde, dönem ise süzgeç çubuğunda yazıyor.
+      */}
+      <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
+
+      <SekmeliBolum
+        secili={sekme}
+        /* Excel çıktısı İŞLENMİŞ iadeleri ve o sekmenin süzgecini taşır;
+           başka sekmedeyken göstermek, farklı bir şeyi indireceği izlenimi
+           verirdi. */
+        ustEylem={
+          sekme === SEKME_ISLENMIS ? (
+            <ExcelIndir
+              liste="iadeler"
+              parametreler={disaAktarmaParametreleri}
+            />
+          ) : undefined
+        }
+        sekmeler={[
+          {
+            anahtar: SEKME_BILDIRIM,
+            /* ⚠ SAYAÇ ETİKETTE: başka sekmedeyken de bekleyen iş görünsün.
+               Rozet aramadan bağımsız sayılıyor (bkz. sorgu). */
+            etiket: (
+              <span className="inline-flex items-center gap-1.5">
+                {t("sekmeBildirimler")}
+                {bekleyenBildirimler > 0 ? (
+                  <Badge variant="secondary">{bekleyenBildirimler}</Badge>
+                ) : null}
+              </span>
+            ),
+            adres: sekmeAdresi(SEKME_BILDIRIM),
+            icerik: bildirimIcerigi,
+          },
+          {
+            anahtar: SEKME_ISLENMIS,
+            etiket: (
+              <span className="inline-flex items-center gap-1.5">
+                {t("sekmeIslenmis")}
+                <Badge variant="secondary">{toplamKayit}</Badge>
+              </span>
+            ),
+            adres: sekmeAdresi(SEKME_ISLENMIS),
+            icerik: islenmisIcerigi,
+          },
+          {
+            anahtar: SEKME_KIRILIM,
+            etiket: t("sekmeKirilim"),
+            adres: sekmeAdresi(SEKME_KIRILIM),
+            icerik: kirilimIcerigi,
+          },
+        ]}
+      />
     </div>
   );
 }

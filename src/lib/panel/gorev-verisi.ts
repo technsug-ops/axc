@@ -1,4 +1,4 @@
-import { AYRILMIS_SAYILAN_DURUMLAR } from "@/lib/iade/bildirim";
+import { ACIK_BILDIRIM_DURUMLARI } from "@/lib/iade/bildirim";
 import { suzgecToplami } from "@/lib/liste-toplami";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { kalemToplamlari, type ParaToplami } from "@/lib/tutar";
@@ -145,11 +145,17 @@ export async function gorevSayilariniTopla(): Promise<
 
     /**
      * Açık bildirim = mal yolda ya da karar bekleyen. Kapanmış/iptal olan
-     * sayılmaz; `AYRILMIS_SAYILAN_DURUMLAR` bunun tek kaynağı ve iade
-     * ekranındaki "bekleyen" rozetiyle AYNI listeyi kullanıyor.
+     * sayılmaz.
+     *
+     * ⚠ ÖLÇÜT DEĞİŞTİ 22.08.2026. Bu yorum hep doğruyu yazıyordu ama kod
+     * `AYRILMIS_SAYILAN_DURUMLAR` sayıyordu — DEĞİŞİM STOĞU için yazılmış,
+     * daha DAR bir liste. `ITIRAZ_RED` (itiraz kaybedildi, iade işlenecek)
+     * onun dışında kaldığı için gerçek bekleyen iş panelde HİÇ görünmüyordu.
+     * Ölçüt artık durum makinesinden türüyor (`ACIK_BILDIRIM_DURUMLARI`) ve
+     * iade ekranındaki rozetle AYNI listeyi kullanıyor.
      */
     prisma.returnNotice.count({
-      where: { status: { in: AYRILMIS_SAYILAN_DURUMLAR } },
+      where: { status: { in: ACIK_BILDIRIM_DURUMLARI } },
     }),
 
     /**

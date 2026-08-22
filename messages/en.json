@@ -2252,7 +2252,21 @@
     "ortalamaEtki": "",
     "enCokIade": "",
     "enCokIadeNotu": "",
-    "girenKullanici": ""
+    "girenKullanici": "",
+    "sekmeBildirimler": "",
+    "sekmeIslenmis": "",
+    "sekmeKirilim": "",
+    "bildirimNotu": "",
+    "durumAcik": "",
+    "durumKapanmis": "",
+    "durumHepsi": "",
+    "yeniBildirim": "",
+    "kapanmisBildirimYok": "",
+    "hicBildirimYok": "",
+    "islenmisNotu": "",
+    "kirilimNotu": "",
+    "kirilimBos": "",
+    "iadeEdilenUrunler": ""
   },
   "IadeGerekcesi": {
     "DEGISIM": "",

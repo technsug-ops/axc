@@ -27,7 +27,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type Sekme = {
   anahtar: string;
-  etiket: string;
+  /**
+   * ⚠ DÜZ METİN DEĞİL, DÜĞÜM. Sekme etiketinin yanında sayaç/rozet
+   * taşınabilsin diye genişletildi (iade ekranı 22.08.2026: "Bildirimler"
+   * sekmesi açık bildirim sayısını rozetle taşıyor, çünkü o sayı başka
+   * sekmedeyken de görünmeli). Dize hâlâ geçerli — eski kullanımlar aynen
+   * çalışır.
+   */
+  etiket: React.ReactNode;
   adres: string;
   icerik: React.ReactNode;
 };
@@ -39,7 +46,12 @@ export function SekmeliBolum({
   secili,
   ustEylem,
 }: {
-  baslik: string;
+  /**
+   * ⚠ İSTEĞE BAĞLI. Sayfanın kendi `h1`i zaten aynı şeyi söylüyorsa başlık
+   * yazmak tekrardır ve iki satır yer yer. Verilmezse yalnız sekme şeridi
+   * çizilir.
+   */
+  baslik?: string;
   notu?: string;
   sekmeler: Sekme[];
   secili: string;
@@ -54,10 +66,16 @@ export function SekmeliBolum({
   return (
     <Card className="min-w-0">
       <CardHeader className="gap-2 pb-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="text-base">{baslik}</CardTitle>
-          {ustEylem}
-        </div>
+        {baslik || ustEylem ? (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {baslik ? (
+              <CardTitle className="text-base">{baslik}</CardTitle>
+            ) : (
+              <span />
+            )}
+            {ustEylem}
+          </div>
+        ) : null}
         {notu ? <p className="text-muted-foreground text-xs">{notu}</p> : null}
 
         {/* Tek sekme varsa çubuk çizilmez — tıklanacak bir seçim yok. */}

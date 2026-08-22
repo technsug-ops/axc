@@ -22,6 +22,9 @@ import {
   IADE_ISLE_SEBEP_ANAHTARI,
   IZINLI_GECISLER,
   BILDIRIM_ARAMA_ALANLARI,
+  ACIK_BILDIRIM_DURUMLARI,
+  AYRILMIS_SAYILAN_DURUMLAR,
+  IADE_ISLENEBILIR,
   ayirmaMumkunMu,
   ayrilmisAdetler,
   bildirimAramaKosulu,
@@ -57,7 +60,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 9;
+const BOLUM_SAYISI = 10;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -979,10 +982,17 @@ console.log("\n6) BİLDİRİM LİSTESİ — BULUNABİLİRLİK");
   /**
    * BEKLEYEN ROZETİ ARAMADAN BAĞIMSIZ: eskiden ekrandaki 50 kaydın içinden
    * sayılıyordu, arama açıkken rozet aramanın sonucunu gösterip yalan söylerdi.
+   *
+   * ⚠ BU KONTROL 22.08.2026'DA YANLIŞ ÖLÇÜTÜ KİLİTLİYORDU. Metni doğruydu
+   * ("tüm açık bildirimlerden") ama aradığı desen
+   * `AYRILMIS_SAYILAN_DURUMLAR`dı — o liste DEĞİŞİM STOĞU için yazılmış ve
+   * `ITIRAZ_RED`i dışarıda bırakıyor. Yani bekçi, gerçek bekleyen işi
+   * saymayan bir kodu "doğru" diye onaylıyordu. Kontrolün metniyle deseni
+   * ayrışmıştı ve ayrışma metnin lehineydi: kimse şüphelenmedi.
    */
   kontrol(
     "bekleyen rozeti arama sonucundan DEĞİL, tüm açık bildirimlerden sayılıyor",
-    sayfa2.includes("status: { in: AYRILMIS_SAYILAN_DURUMLAR }"),
+    sayfa2.includes("status: { in: ACIK_BILDIRIM_DURUMLARI }"),
   );
   kontrol(
     "talep no listede KOPYALANABİLİR kimlik kodu (İlke #3/#4)",
@@ -1388,6 +1398,224 @@ console.log("\n9) DOSYA YÜKLEME — BEYAN EDİLEN SINIR TAŞINABİLİR OLMALI")
 
 // ===========================================================================
 console.log("");
+// ===========================================================================
+console.log("\n10) AÇIK BİLDİRİM ÖLÇÜTÜ VE İADE EKRANI DÜZENİ");
+// ===========================================================================
+/**
+ * ⚠ ÖLÇÜT ÖDÜNÇ ALINMIŞTI (22.08.2026, ölçümle bulundu).
+ *
+ * Panelin görev kutusu ve iade ekranındaki "bekleyen" rozeti
+ * `AYRILMIS_SAYILAN_DURUMLAR` sayıyordu. O liste DEĞİŞİM İÇİN AYRILAN
+ * STOĞU ölçmek için yazılmış ve `ITIRAZ_KABUL` ile `ITIRAZ_RED`i bilerek
+ * dışarıda bırakıyor.
+ *
+ * Sonuç: `ITIRAZ_RED` — yani "itirazı kaybettik, iadeyi İŞLEMEMİZ gerek" —
+ * hiçbir yerde bekleyen sayılmıyordu. Sistem bir yandan "İadeyi işle"
+ * düğmesini açık çiziyor, öbür yandan o kaydı bekleyen işlerden saymıyordu.
+ *
+ * Panelin kendi YORUMU zaten doğruyu yazıyordu ("kapanmış/iptal olan
+ * sayılmaz"); uygulaması ondan dardı ve bu bekçi de yanlış deseni
+ * kilitliyordu. Aşağıdaki kontroller ölçütü DEĞERDEN sınıyor.
+ */
+{
+  const durumlar = Object.keys(
+    IZINLI_GECISLER,
+  ) as (keyof typeof IZINLI_GECISLER)[];
+
+  /* Açık küme durum makinesinden TÜRÜYOR: çıkışı olan açık, olmayan kapalı. */
+  kontrol(
+    "açık küme durum makinesiyle birebir (çıkışı olan = açık)",
+    durumlar.every((d) => ACIK_BILDIRIM_DURUMLARI.includes(d) === !kapaliMi(d)),
+    ACIK_BILDIRIM_DURUMLARI,
+  );
+  kontrol(
+    "  ...KAPANDI açık sayılmıyor",
+    !ACIK_BILDIRIM_DURUMLARI.includes("KAPANDI"),
+  );
+  kontrol(
+    "  ...IPTAL açık sayılmıyor",
+    !ACIK_BILDIRIM_DURUMLARI.includes("IPTAL"),
+  );
+
+  /**
+   * ⚠ ASIL DEĞİŞMEZ BU. "İadeyi işle" düğmesinin açık olduğu her durum
+   * bekleyen sayılmak ZORUNDA; olmazsa sistem yapılacak bir işi hem
+   * gösterir hem saymaz. Eski ölçüt tam burada düşüyordu (ITIRAZ_RED).
+   */
+  const sayilmayan = IADE_ISLENEBILIR.filter(
+    (d) => !ACIK_BILDIRIM_DURUMLARI.includes(d),
+  );
+  kontrol(
+    "işlenebilir her durum BEKLEYEN sayılıyor (ITIRAZ_RED vakası)",
+    sayilmayan.length === 0,
+    sayilmayan,
+  );
+  kontrol(
+    "  ...eski ölçüt bu vakayı GERÇEKTEN kaçırıyordu (gerekçe hâlâ geçerli)",
+    IADE_ISLENEBILIR.some((d) => !AYRILMIS_SAYILAN_DURUMLAR.includes(d)),
+  );
+
+  /**
+   * ⚠ STOK DAVRANIŞI DEĞİŞMEDİ. Ayrılan stok listesi kendi işinde kaldı;
+   * genişletilseydi kapanmış bildirimler stok ayırmaya devam ederdi.
+   */
+  kontrol(
+    "ayrılan stok listesi DAR kaldı (açık kümenin alt kümesi)",
+    AYRILMIS_SAYILAN_DURUMLAR.every((d) =>
+      ACIK_BILDIRIM_DURUMLARI.includes(d),
+    ) && AYRILMIS_SAYILAN_DURUMLAR.length < ACIK_BILDIRIM_DURUMLARI.length,
+  );
+
+  /* Panel ile ekran AYNI ölçütü kullanmalı — yoksa "sayı = liste" bozulur. */
+  const gorev = readFileSync("src/lib/panel/gorev-verisi.ts", "utf8");
+  kontrol(
+    "panel görev kutusu da açık kümeyi sayıyor",
+    /returnNotice\.count\(\{\s*where: \{ status: \{ in: ACIK_BILDIRIM_DURUMLARI \} \}/.test(
+      gorev,
+    ),
+  );
+
+  // ── EKRAN DÜZENİ ──────────────────────────────────────────────────────
+  const sayfa10 = readFileSync("src/app/iadeler/page.tsx", "utf8");
+
+  kontrol(
+    "ekran üç sekmeye ayrıldı",
+    ["SEKME_BILDIRIM", "SEKME_ISLENMIS", "SEKME_KIRILIM"].every((k) =>
+      sayfa10.includes(`anahtar: ${k},`),
+    ),
+  );
+  kontrol(
+    "  ...seçim ADRESTE yaşıyor (geri tuşu çalışsın)",
+    sayfa10.includes('suzgecAdresi("/iadeler", p, { sekme:'),
+  );
+  kontrol(
+    "  ...sekme değişince sayfa numarası sıfırlanıyor",
+    /\{ sekme: anahtar, sayfa: "" \}/.test(sayfa10),
+  );
+
+  /**
+   * ⚠ DESEN KULLANIM BLOĞUNDA ARANIR. `SuzgecCubugu` sayfada iki kez
+   * geçiyor; dosyanın tamamında arasaydık "bildirim sekmesinde süzgeç yok"
+   * kontrolü hiçbir zaman kırmızı yanmazdı.
+   */
+  const kes = (bas: string, son: string) => {
+    const a = sayfa10.indexOf(bas);
+    const b = sayfa10.indexOf(son);
+    return a !== -1 && b > a ? sayfa10.slice(a, b) : "";
+  };
+  const bildirimBloku = kes(
+    "const bildirimIcerigi = (",
+    "const islenmisIcerigi = (",
+  );
+  const islenmisBloku = kes(
+    "const islenmisIcerigi = (",
+    "const kirilimIcerigi = (",
+  );
+  /**
+   * ⚠ BİTİŞ İŞARETİ TEKİL OLMALI. İlk yazımda `"  return ("` kullanıldı ve
+   * kontrol KIRMIZI yandı: o desen dosyada İKİ kez geçiyor ve ilki
+   * (`turGecerliMi` içindeki) kırılım bloğundan ÖNCE. `indexOf` onu buluyor,
+   * dilim negatif çıkıyor ve blok hiç kesilemiyordu. Deponun beş kez
+   * düştüğü tuzağın aynısı — desen ada değil, KULLANIM YERİNE bağlanır.
+   */
+  const kirilimBloku = kes("const kirilimIcerigi = (", "<SekmeliBolum");
+  for (const [ad, blok] of [
+    ["bildirim", bildirimBloku],
+    ["islenmis", islenmisBloku],
+    ["kirilim", kirilimBloku],
+  ] as const) {
+    kontrol(`  ...${ad} bloğu kesilebildi`, blok.length > 0);
+  }
+
+  /**
+   * ⚠ SÜZGEÇ YALNIZ ETKİLEDİĞİ SEKMEDE. Eskiden dönem süzgeci bildirimlerin
+   * ALTINDAydı ama onları süzmüyordu: dönem değiştirilince üstteki liste
+   * kıpırdamıyordu ve kullanıcı sistemin kendisini dinlemediğini sanıyordu.
+   */
+  kontrol(
+    "dönem süzgeci bildirim sekmesinde YOK",
+    !bildirimBloku.includes("<SuzgecCubugu"),
+  );
+  kontrol(
+    "  ...işlenmiş sekmesinde VAR",
+    islenmisBloku.includes("<SuzgecCubugu"),
+  );
+  kontrol("  ...kırılım sekmesinde VAR", kirilimBloku.includes("<SuzgecCubugu"));
+
+  /**
+   * ⚠ BAŞLIK İLE İÇERİK ARTIK ÇELİŞMİYOR. Canlıda ölçüldü (22.08.2026):
+   * rozet `0` derken altında 9 KAPANMIŞ kayıt listeleniyordu.
+   */
+  kontrol(
+    "bildirim listesi varsayılan olarak AÇIK olanları gösteriyor",
+    /\? \(istenenDurum as BildirimSuzgeci\)\s*:\s*"acik"/.test(sayfa10),
+  );
+  kontrol(
+    "  ...kapalı küme açık kümeden TÜRETİLİYOR (ikinci liste yok)",
+    sayfa10.includes("status: { notIn: ACIK_BILDIRIM_DURUMLARI }"),
+  );
+  kontrol(
+    "  ...üç durum seçeneği de ekranda",
+    bildirimBloku.includes("BILDIRIM_SUZGECLERI.map("),
+  );
+  /**
+   * BOŞ LİSTE NEDEN BOŞ — süzgece göre değişir (İlke #5). Tek cümle
+   * kullanılsaydı "kapanmış" süzgecindeyken yalan söylerdi.
+   */
+  for (const anahtar of [
+    "bildirimYok",
+    "kapanmisBildirimYok",
+    "hicBildirimYok",
+  ]) {
+    kontrol(
+      `  ...boş mesaj süzgece bağlı: ${anahtar}`,
+      sayfa10.includes(`t("${anahtar}")`),
+    );
+  }
+  kontrol(
+    "yeni bildirim formu KATLANIR (liste yer kaybetmesin)",
+    bildirimBloku.includes("<KatlanirBolum") &&
+      bildirimBloku.includes("<BildirimFormu"),
+  );
+  /**
+   * ⚠ ARAMA SEKMEDEN DÜŞÜRMÜYOR. Gizli alanlar olmadan arama yapan
+   * kullanıcı bildirim sekmesinden çıkar ve süzgeci sıfırlanır.
+   */
+  kontrol(
+    "arama sekmeyi ve durum süzgecini koruyor",
+    /name="sekme"/.test(bildirimBloku) && /name="bdurum"/.test(bildirimBloku),
+  );
+
+  const sozluk10 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  for (const anahtar of [
+    "sekmeBildirimler",
+    "sekmeIslenmis",
+    "sekmeKirilim",
+    "durumAcik",
+    "durumKapanmis",
+    "durumHepsi",
+    "yeniBildirim",
+  ]) {
+    kontrol(
+      `  sözlük: ${anahtar}`,
+      typeof sozluk10.Iadeler?.[anahtar] === "string" &&
+        sozluk10.Iadeler[anahtar].length > 0,
+    );
+  }
+  /**
+   * ⚠ "EN ÇOK" BİR SIRALAMA İDDİASIDIR. Canlıda 5 ürünün beşi de 1 adet:
+   * sıralanacak bir şey yokken "en çok iade edilen" demek, sahip olunmayan
+   * bir anlamı iddia etmektir. Başlık her hacimde doğru olanla değişti.
+   */
+  kontrol(
+    "ürün tablosu sıralama iddiası taşımıyor",
+    sayfa10.includes('t("iadeEdilenUrunler")') &&
+      !sayfa10.includes('t("enCokIade")'),
+  );
+
+  kosanBolumler.push("acik-olcut-ve-duzen");
+}
+
 if (kosanBolumler.length !== BOLUM_SAYISI) {
   console.log(
     `KOŞUM YARIM KALDI — sonuç GEÇERSİZ (${kosanBolumler.length}/${BOLUM_SAYISI})`,

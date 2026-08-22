@@ -64,6 +64,35 @@ export function kapaliMi(durum: NoticeStatus): boolean {
 }
 
 /**
+ * ============================================================================
+ *  AÇIK BİLDİRİM — İŞ BİTMEMİŞ OLANLAR
+ * ----------------------------------------------------------------------------
+ *  ⚠ BU LİSTE 22.08.2026'DA DOĞDU, ÇÜNKÜ YERİNE ÖDÜNÇ BİR LİSTE
+ *  KULLANILIYORDU. Panelin görev kutusu ve iade ekranındaki "bekleyen"
+ *  rozeti `AYRILMIS_SAYILAN_DURUMLAR` ile sayıyordu — oysa o liste
+ *  DEĞİŞİM İÇİN AYRILAN STOĞU ölçmek için yazılmıştı ve `ITIRAZ_KABUL` ile
+ *  `ITIRAZ_RED`'i bilerek dışarıda bırakıyor.
+ *
+ *  Sonuç: `ITIRAZ_RED` durumundaki bir bildirim — yani **itirazı
+ *  kaybettiğimiz, iadeyi İŞLEMEMİZ GEREKEN** kayıt — ne panelde ne iade
+ *  ekranında bekleyen sayılıyordu. `IADE_ISLENEBILIR` tam o durumda
+ *  düğmeyi AÇIK çiziyor; yani sistem bir yandan "bunu işle" diyor, öbür
+ *  yandan onu bekleyen işlerden saymıyordu.
+ *
+ *  Panelin kendi yorumu zaten doğruyu yazıyordu — _"kapanmış/iptal olan
+ *  sayılmaz"_ — uygulaması ondan dardı. Ölçüt artık DURUM MAKİNESİNİN
+ *  KENDİSİNDEN türüyor: çıkışı olmayan durum kapalıdır, geri kalanı açık.
+ *
+ *  ⚠ TÜRETİLİYOR, ELLE YAZILMIYOR. Yarın yeni bir durum eklendiğinde bu
+ *  liste kendiliğinden doğru olur; elle tutulan bir liste, tam bugün
+ *  düzeltilen hatayı bir kat yukarıda tekrar üretirdi.
+ * ============================================================================
+ */
+export const ACIK_BILDIRIM_DURUMLARI: NoticeStatus[] = (
+  Object.keys(IZINLI_GECISLER) as NoticeStatus[]
+).filter((durum) => !kapaliMi(durum));
+
+/**
  * "İADEYİ İŞLE" HANGİ DURUMLARDA AÇIK?
  *
  * MAL_GELDI  — mal elimizde, hüküm verilebilir.

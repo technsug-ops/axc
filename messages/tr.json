@@ -2252,7 +2252,21 @@
     "ortalamaEtki": "İade başına ortalama",
     "enCokIade": "En çok iade edilen ürünler",
     "enCokIadeNotu": "Tek sorunlu ürün ayın kârını yiyebilir. Hasarlı sütunu ayrı: çok iade edilen ama sağlam dönen ürün (beden/renk) ile hasarlı dönen ürün (kalite) ayrı sorunlardır.",
-    "girenKullanici": "Giren kullanıcı"
+    "girenKullanici": "Giren kullanıcı",
+    "sekmeBildirimler": "Bildirimler",
+    "sekmeIslenmis": "İşlenmiş iadeler",
+    "sekmeKirilim": "Kırılım",
+    "bildirimNotu": "Pazaryeri \"müşteri iade istiyor\" dedi, mal yolda. Burada stok ve kâr hesabı YOKTUR; mal gelince \"İadeyi işle\" ile hesap açılır.",
+    "durumAcik": "Açık",
+    "durumKapanmis": "Kapanmış",
+    "durumHepsi": "Hepsi",
+    "yeniBildirim": "Yeni bildirim kaydet",
+    "kapanmisBildirimYok": "Kapanmış bildirim yok.",
+    "hicBildirimYok": "Henüz hiç iade bildirimi yok.",
+    "islenmisNotu": "Mal gelip hüküm verilmiş iadeler. Aşağıdaki rakamlar üstteki süzgece bağlıdır.",
+    "kirilimNotu": "Hangi pazaryeri ve hangi ürün iade üretiyor. Üstteki dönem süzgeci burada da geçerlidir.",
+    "kirilimBos": "Bu dönemde kırılım çıkaracak iade yok.",
+    "iadeEdilenUrunler": "İade edilen ürünler"
   },
   "IadeGerekcesi": {
     "DEGISIM": "Değişim",
