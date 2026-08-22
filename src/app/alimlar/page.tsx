@@ -401,9 +401,15 @@ export default async function AlimlarSayfasi({
                   <TableHead>{ortak("tarih")}</TableHead>
                   <TableHead>{ortak("kanalHesabi")}</TableHead>
                   <TableHead>{ortak("urun")}</TableHead>
-                  {/* Kalem sayısı tutarın altında — ayrı sütun 50px yiyordu. */}
+                  {/* ⚠ KART AYRI SÜTUN DEĞİL — 22.08.2026'da tutarın altına
+                      indi ve kalem sayısı ürün hücresine geçti. Ölçülen sütun
+                      tavanı 7, bu tablo 8'e çıkmıştı.
+
+                      NİYE BU EŞLEŞME: "ne kadar ödedim, hangi kartla" tek
+                      soruya iki cevaptır; kalem sayısı ise ürünün yanında,
+                      toplam adetle birlikte okunur. Hiçbir bilgi düşmedi —
+                      ikisi de kendi doğal komşusuna taşındı. */}
                   <TableHead>{ortak("toplam")}</TableHead>
-                  <TableHead>{ortak("kart")}</TableHead>
                   <TableHead>{ortak("durum")}</TableHead>
                   <TableHead>{ortak("eylemler")}</TableHead>
                 </TableRow>
@@ -474,27 +480,29 @@ export default async function AlimlarSayfasi({
                       <UzunAd metin={urunOzeti(alim)} />
                       <div className="text-muted-foreground text-xs tabular-nums">
                         {t("toplamAdet", { sayi: toplamAdet(alim) })}
+                        {" · "}
+                        {t("kalemSayisi", { sayi: alim.items.length })}
                       </div>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
+                      {/* Tutar üstte, ÖDENDİĞİ KART altta. Kart etiketi
+                          serbest metin ("Şaban Akçalı Bonus") ve 27 karaktere
+                          kadar çıkıyor; kesilirse tam hâli ipucunda durur ve
+                          son dört hane yanında kalır (İlke #3). */}
                       <IkiSatir
+                        enGenis="max-w-[11rem]"
                         ust={toplamMetni(alim)}
-                        alt={t("kalemSayisi", { sayi: alim.items.length })}
+                        alt={
+                          alim.creditCard
+                            ? `${alim.creditCard.label} ••${alim.creditCard.last4}`
+                            : undefined
+                        }
+                        altIpucu={
+                          alim.creditCard
+                            ? `${alim.creditCard.label} ••${alim.creditCard.last4}`
+                            : undefined
+                        }
                       />
-                    </TableCell>
-                    <TableCell>
-                      {/* Kart etiketi serbest metin ("Şaban Akçalı Bonus") ve
-                          27 karaktere kadar çıkıyor; son dört hane altta. */}
-                      {alim.creditCard ? (
-                        <IkiSatir
-                          enGenis="max-w-[7.5rem]"
-                          ust={alim.creditCard.label}
-                          ustIpucu={alim.creditCard.label}
-                          alt={`••${alim.creditCard.last4}`}
-                        />
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
                     </TableCell>
                     <TableCell>
                       <DurumRozeti

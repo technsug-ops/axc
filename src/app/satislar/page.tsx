@@ -619,8 +619,18 @@ export default async function SatislarSayfasi({
                       (bkz. components/iki-satir.tsx). */}
                   <TableHead>{ortak("tarih")}</TableHead>
                   <TableHead>{ortak("kanalHesabi")}</TableHead>
+                  {/* ⚠ ADET AYRI SÜTUN DEĞİL — 22.08.2026'da ürün adının
+                      altına indi. Ölçülen sütun tavanı 7 ve bu tablo 8'e
+                      çıkmıştı; `yerlesim:dogrula` bunu bir süredir kırmızı
+                      yakıyordu ama bekçi rutin listede olmadığı için
+                      görülmüyordu.
+
+                      NİYE ADET SEÇİLDİ: alımlar listesi zaten "ürün özeti +
+                      toplam adet" düzeninde (İlke #10, aynı iş her ekranda
+                      aynı görünür). Marj kapatılamazdı — 17.08.2026'da
+                      kullanıcı isteğiyle NET rozetinden ÇIKARILMIŞTI; geri
+                      koymak alınmış bir kararı bozmak olurdu. */}
                   <TableHead>{ortak("urun")}</TableHead>
-                  <TableHead className="text-right">{ortak("adet")}</TableHead>
                   <TableHead>{ortak("tutar")}</TableHead>
                   {/* MARJ AYRI SÜTUN (kullanıcı isteği 17.08.2026): NET
                       rozetinin içinde sıkışıkken okunmuyordu. Başlık ÖLÇÜYÜ
@@ -725,9 +735,11 @@ export default async function SatislarSayfasi({
                           ) : null
                         }
                       />
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {bicim.sayi(satirAdedi(satis))}
+                      {/* Adet ürün adının ALTINDA — bilgi düşmedi, sütun
+                          düştü. Genişliği ürün adı belirliyor zaten. */}
+                      <div className="text-muted-foreground text-xs tabular-nums">
+                        {t("toplamAdet", { sayi: satirAdedi(satis) })}
+                      </div>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {/* Tutar üstte, birim fiyat altta. Tek kalemli satışta
