@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
 import { Geist } from "next/font/google";
-import { Home } from "lucide-react";
+import { BookOpen, Home } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 
@@ -16,7 +16,13 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { OTURUM_CEREZI } from "@/lib/oturum-imza";
 import { oturumdakiKullanici } from "@/lib/oturum";
 import { BildirButonu } from "@/components/bildir-butonu";
@@ -134,6 +140,29 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                     sorgu koymak uygulamadaki her sayfayı bekletirdi.
                   */}
                   <div className="ms-auto flex items-center gap-2">
+                    {/* EL KİTABI — üst çubukta kısayol (kullanıcı 22.08.2026).
+                        Menüde de var ama menü kapalıyken ve mobilde görünmez;
+                        oysa kılavuza tam olarak "bir şeyi bilmediğin anda"
+                        ihtiyaç duyulur ve o an menüyü açıp aramak, kılavuza
+                        hiç bakmamakla aynı kapıya çıkar (İlke #9: az tıkla).
+
+                        ⚠ İKON TEK BAŞINA KONUŞMAZ (renk/ikon kısıtı): hem
+                        `aria-label` hem ipucu var, ikisi de sözlükten. */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="icon"
+                          className="size-11 shrink-0 md:size-8"
+                        >
+                          <Link href="/el-kitabi" aria-label={ortak("elKitabiKisayolu")}>
+                            <BookOpen className="size-4" />
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{ortak("elKitabiKisayolu")}</TooltipContent>
+                    </Tooltip>
                     {/* BİLDİR — her ekranda, izinsiz. Sorunun yaşandığı anda
                         bildirilmesi esas; menü zinciri kurulunca kimse
                         bildirmez ve bildirim Telegram'a kaçar. */}

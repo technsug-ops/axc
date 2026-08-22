@@ -125,7 +125,8 @@
     "birimFiyatKisa": "birim {tutar}",
     "not": "Not",
     "panel": "Panel",
-    "kanalSku": "Kanal SKU"
+    "kanalSku": "Kanal SKU",
+    "elKitabiKisayolu": "El Kitabı"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",

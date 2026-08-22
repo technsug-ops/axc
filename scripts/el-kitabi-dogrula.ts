@@ -388,6 +388,55 @@ console.log("\nEL KİTABI — DOĞRULAMA\n");
   }
 }
 
+// --- 7) ULAŞIM — kılavuza her ekrandan gidilebiliyor mu --------------------
+{
+  console.log("");
+  console.log("7) ULAŞIM — üst çubuktaki kısayol");
+  /**
+   * ⚠ KULLANICI 22.08.2026: kılavuz üst çubuğa kısayol olarak konsun.
+   * Gerekçe basit ama önemli: kılavuza tam olarak "bir şeyi bilmediğin
+   * anda" ihtiyaç duyulur. O an sol menüyü açıp aramak, kılavuza hiç
+   * bakmamakla aynı kapıya çıkar (İlke #9: az tıkla). Menüde de duruyor
+   * ama menü mobilde kapalı.
+   */
+  const DUZEN = readFileSync("src/app/layout.tsx", "utf8");
+  /**
+   * ⚠ DESENİ KULLANIM BLOĞUNDA ARA. "el-kitabi" dizesi bu dosyada bir kez
+   * geçiyor ama işaret bağlantının KENDİSİNE bağlandı; yorumda geçen bir
+   * söz yeşil yakmasın.
+   */
+  kontrol(
+    "üst çubukta /el-kitabi bağlantısı var",
+    DUZEN.includes('href="/el-kitabi"'),
+  );
+  /**
+   * ⚠ İKON TEK BAŞINA KONUŞMAZ. Anayasa kısıtı: renk ya da ikon tek başına
+   * bilgi taşıyamaz — ekran okuyucu ve dokunmatik ipucu olmadan kitap
+   * simgesi "bu ne" sorusunu cevapsız bırakır.
+   */
+  kontrol(
+    "  ...ekran okuyucu etiketi var",
+    /href="\/el-kitabi"[\s\S]{0,120}aria-label=/.test(DUZEN),
+  );
+  kontrol(
+    "  ...etiket SÖZLÜKTEN geliyor (koda gömülü değil)",
+    /aria-label=\{ortak\("elKitabiKisayolu"\)\}/.test(DUZEN),
+  );
+  const SOZ = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Ortak: Record<string, string>;
+  };
+  kontrol(
+    "  ...sözlük anahtarı dolu",
+    (SOZ.Ortak.elKitabiKisayolu ?? "").trim() !== "",
+    SOZ.Ortak.elKitabiKisayolu,
+  );
+  /** Mobilde 44 px dokunma hedefi (İlke #8). */
+  kontrol(
+    "  ...mobilde 44 px dokunma hedefi",
+    /href="\/el-kitabi"/.test(DUZEN) && DUZEN.includes("size-11 shrink-0 md:size-8"),
+  );
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
