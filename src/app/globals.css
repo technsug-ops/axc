@@ -102,6 +102,51 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   KUTU ÇERÇEVESİ KALINLIĞI — TEK ÖLÇÜ
+   ----------------------------------------------------------------------
+   Kullanıcı 22.08.2026: _"kart çerçeveleri biraz daha belirgin olabilir,
+   mevcut kalınlığın 2/3 oranında arttırılsın."_
+
+   1px × (1 + 2/3) = 1,667px.
+
+   ⚠ RENK YETMEDİ, KALINLIK DA GEREKTİ. Aynı gün çizgi RENGİ bir kademe
+   koyulaştırılmıştı (karttan fark 0,120 → 0,200) ve kullanıcı hâlâ zayıf
+   buldu. İki eksen ayrı: koyuluk çizginin GÖRÜNÜRLÜĞÜNÜ, kalınlık
+   VARLIĞINI belli eder. İkisi birbirinin yerine geçmiyor.
+
+   ⚠ TEK TOKEN, İKİ MEKANİZMA. Kutuların çoğu `border` kullanıyor, kart
+   ise `ring-1` (kenarlık değil halka — kartın köşe yarıçapını taşırmadığı
+   için öyle seçilmişti). İkisi de BURADAN okuyor; iki ayrı sayı yazılsaydı
+   kart ile yanındaki kutu farklı kalınlıkta görünürdü.
+
+   ⚠ NİYE `@layer utilities`: Tailwind'in `border` yardımcısını EZMEK
+   gerekiyor ve utility katmanı base'i yener. Ayrı bir sınıf açıp 40 dosyaya
+   elle eklemek yerine tek kural — yeni yazılan her kutu da kendiliğinden
+   doğru kalınlıkta olur.
+   ══════════════════════════════════════════════════════════════════════ */
+:root {
+    --se-kutu-cizgi: 1.667px;
+}
+
+@layer utilities {
+    .border {
+        border-width: var(--se-kutu-cizgi);
+    }
+    .border-t {
+        border-top-width: var(--se-kutu-cizgi);
+    }
+    .border-b {
+        border-bottom-width: var(--se-kutu-cizgi);
+    }
+    .border-l {
+        border-left-width: var(--se-kutu-cizgi);
+    }
+    .border-r {
+        border-right-width: var(--se-kutu-cizgi);
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    KÖPRÜ — shadcn sözlüğü ⇄ Selliora paleti
    ----------------------------------------------------------------------
    ⚠ NİYE KÖPRÜ, NİYE YENİDEN YAZIM DEĞİL. Palet paketi kendi sözlüğünü

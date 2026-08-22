@@ -2105,6 +2105,24 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       { cizgi: cizgiLuma.toFixed(3), girdi: girdiLuma.toFixed(3) },
     );
 
+    /**
+     * ⚠ ÇERÇEVE KALINLIĞI TEK ÖLÇÜDEN. Kutuların çoğu `border`, kart ise
+     * `ring` kullanıyor (halka kartın köşe yarıçapını taşırmıyor). İki
+     * mekanizma ayrı sayı yazsaydı kart ile yanındaki kutu farklı
+     * kalınlıkta görünürdü — kullanıcının şikâyeti tam olarak "ayırt
+     * etmekte zorlanılıyor" idi, tutarsız kalınlık onu artırırdı.
+     */
+    kontrol(
+      "kutu çerçevesi tek ölçüden (--se-kutu-cizgi)",
+      /\.border\s*\{[^}]*var\(--se-kutu-cizgi\)/.test(tema),
+    );
+    kontrol(
+      "  ...kart halkası da AYNI ölçüden",
+      readFileSync("src/components/ui/card.tsx", "utf8").includes(
+        "ring-(length:--se-kutu-cizgi)",
+      ),
+    );
+
     const duzen = readFileSync("src/app/layout.tsx", "utf8");
     kontrol("tema seçici üst çubukta", duzen.includes("<TemaSecici />"));
     /**
