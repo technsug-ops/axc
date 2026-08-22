@@ -292,6 +292,17 @@ zorlaştıracak şekilde yazılmıyor.
   dışa aktarabilir. **Onboarding = içe aktar, offboarding = dışa aktar;
   ikisi de birinci sınıf özelliktir**, sonradan eklenen eklenti değil.
   _Karar 09.08.2026._
+- **PWA VAR, ÇEVRİMDIŞI YOK — BİLEREK (karar 22.08.2026).** Uygulama telefona
+  kurulur (manifest + simge + servis çalışanı; `public/sw.js`), ama **veri
+  önbelleklenmez.** Önbelleğe giren tek küme `/_next/static/` — adresinde
+  içerik özeti olduğu için bayatlaması imkânsız. Ağ yokken rakam değil
+  "Bağlantı yok" sayfası çıkar.
+  _Gerekçe:_ önbellekten gelen bir panel DÜNKÜ NET-2'yi bugünkü gibi gösterir
+  (kaynağı görünmez, yanlış olduğu anlaşılmaz) ve çıkıştan sonra aynı telefonu
+  eline alan kişiye finansal ekran açar — kapı devreye girmez, cevap ağdan
+  değil diskten gelir. **Bu kalem yeniden açılmaz**; "çevrimdışı çalışsın"
+  istenirse cevap önbellek değil, ayrı bir *yazma kuyruğu* tasarımıdır.
+  Bekçisi: `npm run pwa:dogrula`.
 - **KARGO MALİYET ÖNERİSİ — satılabilir özellik.** Müşteriler kargo
   firmasını genelde alışkanlıkla seçer; sistemin o desideki fiyatları
   yan yana gösterip en ucuzu önermesi **doğrudan para tasarrufu vaadidir**.
