@@ -1323,14 +1323,31 @@ console.log("12) N11 KESİNTİLERİ — GERÇEK HAKEDİŞ EKSTRESİNDEN");
    * ölçüldü" demek değildir.
    */
   kontrol("rozet OLCULDU (gerçek ekstre)", n11Kural.kaynak === "OLCULDU");
+  /**
+   * ⚠ ÖRNEKLEM n=1 → n=3 (aynı gün). N11'in KOMİSYON FATURASI geldi ve üç
+   * satış birden ölçüldü: ₺4.299 (%10) · ₺6.299 (%15) · ₺9.599 (%16).
+   * Üçünde de pazarlama %1,2000 ve pazaryeri %0,8000 — üç FARKLI tutarda
+   * aynı oran, yani sabit terim ihtimali kapandı.
+   */
   kontrol(
-    "  ...kaynak notu ekstreyi ve örneklemi yazıyor",
-    n11Kural.kaynakNotu.includes("hakediş ekstresi") &&
-      n11Kural.kaynakNotu.includes("n=1"),
+    "  ...kaynak notu belgeyi ve örneklemi yazıyor",
+    n11Kural.kaynakNotu.includes("KOMİSYON FATURASI") &&
+      n11Kural.kaynakNotu.includes("n=3"),
+    n11Kural.kaynakNotu.slice(0, 60),
+  );
+  /**
+   * ⚠ ÖRNEKLEM BÜYÜDÜ AMA BELİRSİZLİK BİTMEDİ — ve susturulmadı. Geriye
+   * kalan soru komisyonun indirilecek KDV içerip içermediği; fatura bunu
+   * söylemiyor, motor "içeriyor" varsayıyor. Beyan edilmezse varsayım
+   * ölçülmüş gibi okunur.
+   */
+  kontrol(
+    "  ...kalan belirsizlik (komisyon KDV'si) beyan ediliyor",
+    (n11Kural.belirsizlik ?? "").includes("KDV içerip içermediği"),
   );
   kontrol(
-    "  ...tek kayıt olduğu BELİRSİZLİK olarak duruyor",
-    (n11Kural.belirsizlik ?? "").includes("n=1"),
+    "  ...ama ölçülen oranların KESİN olduğu da yazıyor",
+    (n11Kural.belirsizlik ?? "").includes("üç satışta ölçüldü"),
   );
   /** nesatilir'in rakamı artık hiçbir yerde kullanılmamalı. */
   kontrol(

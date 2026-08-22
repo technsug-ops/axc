@@ -120,9 +120,19 @@ export const SIMULASYON_KANALLARI: SimulasyonKanali[] = [
      * olan sayılar değil, KAYNAĞIN KENDİSİYDİ: nesatilir HB ödeme giderini
      * de `9,60` diyordu, gerçeği `8,00` çıkmıştı (113 sipariş).
      *
-     * ⚠ ÖRNEKLEM n=1. Bir hakediş kaydı. Üç oranın da tam yuvarlak çıkması
-     * ve denklemin kuruşuna kapanması güçlü bir işaret, ama tek kayıt sabit
-     * bir terimi (F + oran×satış) ayırt edemez. İkinci kayıt istendi.
+     * ⚠ ÖRNEKLEM n=3 (güncellendi 22.08.2026). Önce tek hakediş kaydı vardı
+     * ve "sabit bir terimi orandan ayırt edemez" diye beyan edilmişti.
+     * Aynı gün N11'in **komisyon faturası** geldi (`Komisyon_Fatura_...
+     * 2026_07.xlsx`) ve üç satış birden ölçüldü:
+     *
+     *     sipariş        tutar     komisyon   pazarlama   pazaryeri
+     *     218135584424   6.299,00  %15,00     %1,2000     %0,8000
+     *     218277164422   4.299,00  %10,00     %1,2000     %0,8000
+     *     231686994420   9.599,00  %16,00     %1,2000     %0,8000
+     *
+     * Üç FARKLI tutar, üç FARKLI komisyon oranı, aynı iki oran — sabit
+     * terim ihtimali kapandı. Komisyon da beyan edilen oranın TAM kendisi;
+     * üstüne KDV eklenmiyor.
      */
     kesintiler: [
       { code: "PAZARLAMA_HIZMET", basis: "SALE_AMOUNT", rate: 1.2 },
@@ -130,14 +140,17 @@ export const SIMULASYON_KANALLARI: SimulasyonKanali[] = [
     ],
     kaynak: "OLCULDU",
     kaynakNotu:
-      "N11 hakediş ekstresi (22.08.2026, n=1: satış ₺9.599 · transfer 13.08.2026). Denklem kuruşuna kapandı: komisyon %16 · Pazarlama Bedeli %1,20 · Pazaryeri Bedeli %0,80 · stopaj KDV hariç %1. Matrah KDV DAHİL — stopaj satırıyla bağımsız doğrulandı.",
+      "N11 hakediş ekstresi + KOMİSYON FATURASI (22.08.2026, n=3: ₺4.299 · ₺6.299 · ₺9.599, komisyon %10/%15/%16). Üçünde de Pazarlama Bedeli %1,2000 ve Pazaryeri Bedeli %0,8000; komisyona KDV eklenmiyor. Denklem kuruşuna kapandı. Matrah KDV DAHİL — stopaj satırıyla bağımsız doğrulandı.",
     /**
-     * ⚠ ÖLÇÜLDÜ AMA TEK KAYITTAN. Rozet artık dış iddia değil gerçek ekstre
-     * gösteriyor; yine de örneklem beyan ediliyor — "ölçüldü" demek "yeterince
-     * ölçüldü" demek değildir.
+     * ⚠ GERİYE KALAN TEK SORU: komisyon tutarı KDV İÇERİYOR MU.
+     * Fatura komisyonu `oran × tutar` olarak veriyor ve üstüne KDV
+     * EKLEMİYOR — bu ölçüldü. Ama içinde indirilecek KDV olup olmadığını
+     * söylemiyor; motor bugün "içeriyor" varsayıyor (₺150 komisyonda ₺25).
+     * Yanlışsa NET-2 her N11 satışında ciro×%2,5 kadar kayar.
+     * Kapanışı komisyon faturasının KENDİSİ (PDF) getirir.
      */
     belirsizlik:
-      "Tek hakediş kaydından ölçüldü (n=1). Oranlar tam yuvarlak çıkıyor ve denklem kuruşuna kapanıyor, ama tek kayıt sabit bir terimi orandan ayırt edemez. İkinci kayıtla doğrulanacak.",
+      "Komisyon tutarının indirilecek KDV içerip içermediği faturadan okunamadı; motor İÇERİYOR varsayıyor. Kesinti oranları (%1,20 · %0,80) üç satışta ölçüldü, bunlar kesin.",
   },
   {
     kod: "AMAZON",

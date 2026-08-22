@@ -84,7 +84,8 @@
     "canli:defter-ayrismasi": "tsx scripts/canli-defter-ayrismasi.ts",
     "canli:defter-onarim": "tsx scripts/canli-defter-onarim.ts",
     "operasyon:dogrula": "tsx scripts/operasyon-dogrula.ts",
-    "el-kitabi:dogrula": "tsx scripts/el-kitabi-dogrula.ts"
+    "el-kitabi:dogrula": "tsx scripts/el-kitabi-dogrula.ts",
+    "canli:n11-kesinti": "tsx scripts/canli-n11-kesinti.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

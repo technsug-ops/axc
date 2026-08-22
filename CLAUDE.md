@@ -1367,6 +1367,56 @@ Bu, "kaydedilen ≠ görünen" ve "ölçüt de kaynağıyla anılır" derslerini
 zaman eksenindeki kardeşidir: **bir verinin yokluğu, ancak o veriyi
 üreten mekanizma o sırada ÇALIŞIYORSA anlam taşır.**
 
+### KAYNAK ÖNCELİĞİ: İÇERDEN GELEN BİLGİ ÜSTTEDİR (KESİN KURAL)
+
+_Kullanıcı kararı 22.08.2026._ Bir pazaryeri kuralı yazılırken kaynaklar
+**eşit değildir.** Dış bir hesaplayıcı referans olabilir ama **hüküm
+kuramaz**; hükmü kanalın kendi belgesi kurar.
+
+> _"Ne satılır'ı yanılmaz bir yer olarak düşünme, referans al ama önceliğin
+> hakedişler, faturalar ve kanalın kendini anlattığı dokümantasyon olsun.
+> İçerden ve asıldan bilgi her zaman daha değerlidir."_
+
+**SIRA — yukarıdan aşağı, üsttteki varsa alttaki KULLANILMAZ:**
+
+| # | Kaynak | Rozet |
+|---|---|---|
+| **1** | **Kanalın kendi belgesi** — komisyon faturası · hakediş ekstresi · satıcı paneli dökümü · resmî dokümantasyon | `OLCULDU` |
+| **2** | **Kendi defterimiz** — ölçülmüş `SaleFee` kayıtları, gerçek satışlarımız | `OLCULDU` |
+| **3** | **Dış hesaplayıcı** (nesatilir vb.) — yalnız 1 ve 2 YOKKEN | `REFERANS` |
+
+**ÜST BASAMAK GELDİĞİNDE ALTTAKİ DEĞİŞTİRİLİR, ORTALANMAZ.** İki kaynak
+çelişiyorsa "ikisinin ortası" diye bir sonuç yoktur; üstteki kazanır ve
+alttakinin niye düştüğü yazılır.
+
+**VE BU İKİ KEZ ÖLÇÜLDÜ — aynı dış kaynak, iki kanalda birden yanıldı:**
+
+| Kanal | nesatilir | Gerçek belge | Fark |
+|---|---|---|---|
+| Hepsiburada · ödeme gideri | `9,60` | `8,00` (%0,8000, 113 sipariş) | %20 |
+| N11 · hizmet giderleri | tek kalem `%1,258` | **iki kalem**: %1,20 + %0,80 | kalem eksik + oran yanlış |
+
+N11'de dış kaynak yalnız oranı kaçırmadı, **bir kesinti kaleminin
+varlığını hiç görmedi** (`Pazaryeri Bedeli`). Yani hata "biraz sapma"
+değil, **yapısal**: dışarıdan bakan bir hesaplayıcı, kanalın faturasında
+kaç satır olduğunu bilemez.
+
+**UYGULAMA:**
+- Dış kaynaktan yazılan her kural `REFERANS` rozeti + `belirsizlik` notu
+  taşır; ekranda **görünür**.
+- Kanalın belgesi eline geçtiğinde kural **deftere geçer** (`ChannelFee`)
+  ve rozet `OLCULDU`ya döner.
+- `OLCULDU` demek **"yeterince ölçüldü" demek DEĞİLDİR**: örneklem (`n=`)
+  kaynak notunda yazar ve büyüyünce güncellenir.
+- Belge **bir soruyu kapatırken başkasını açabilir**; kapanan yazılır,
+  açık kalan `belirsizlik`te durur. _Vaka: N11 faturası oranları kesinleştirdi
+  ama komisyonun indirilecek KDV içerip içermediğini söylemiyor._
+
+⚠ **BU KURAL "DIŞ KAYNAK KULLANILMAZ" DEMEK DEĞİL.** Hiçbir belgesi
+olmayan bir kanalda (bugün Amazon) dış kaynak tek seçenektir ve
+kullanılır — ama rozetiyle, beyanıyla ve **ilk belge geldiğinde
+düşeceği bilinerek.**
+
 ### TUTARLILIK ≠ DOĞRULUK — ÖNCE REFERANSI DOĞRULA (KESİN KURAL)
 
 _Ders 18.08.2026, Melontik demo vakası._ Bir karşılaştırmanın değeri
