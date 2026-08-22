@@ -129,6 +129,84 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   ÜST ÇUBUK KABUK RENGİNDE — TELEFONDA GÖRÜNEN TEK KALICI YÜZEY
+   ----------------------------------------------------------------------
+   Kullanıcı 23.08.2026, telefon ekran görüntüsüyle: _"mobilde mavi tema
+   çok belirgin değil. İlk ekran açıldığında salt beyaz çıkıyor, sadece
+   tıkladığında menü bar mavi oluyor."_
+
+   ⚠ TEŞHİS: TEMA DEĞİL, YERLEŞİM. Paletteki tek güçlü yüzey `--se-kabuk`
+   (luma 0,194) ve o YALNIZ sol menüde kullanılıyor. Masaüstünde menü hep
+   ekranda, telefonda ise çekmecede — yani mavi ekran DIŞINDA. Geriye
+   kalan her şey (üst çubuk, zemin, kartlar) beyaza yakın. Kullanıcı
+   temanın uygulanmadığını sanıyor; oysa tema doğru, mavi görünmüyor.
+
+   Çare: telefonda kalıcı olan tek kabuk parçası ÜST ÇUBUK. Onu kabuk
+   rengine almak hem kimliği geri getiriyor hem de `theme-color` ile
+   kesintisiz bir bant kuruyor — durum çubuğu zaten `--se-kabuk`
+   (bkz. layout.tsx TEMA_BETIGI), altındaki uygulama çubuğu beyaz kalınca
+   görünür bir DİKİŞ oluyordu.
+
+   ⚠ MASAÜSTÜNDE DE AYNI. Yalnız telefonda maviye alsaydık aynı öğe iki
+   ayrı kimlik taşırdı (İlke #10). Menü zaten kabuk renginde; üst çubukla
+   birlikte kabuk tek parça oluyor.
+
+   ⚠ HİÇBİR BİLEŞENE DOKUNULMADI — TOKEN DEVRİ. Aşağıdaki blok yalnız
+   yerel değişkenleri değiştiriyor; Tailwind `@theme inline` ile derlendiği
+   için yardımcılar doğrudan `var(--background)` üretiyor (ölçüldü:
+   `.bg-background { background-color: var(--background) }`). Yani çubuğun
+   içindeki her düğme, kenarlık ve ikincil metin kabuk paletine
+   KENDİLİĞİNDEN uyuyor. Altı bileşeni tek tek ezseydik biri unutulur ve
+   mavi zeminde beyaz bir kutu kalırdı.
+
+   ⚠ AÇILIR İÇERİKLER ETKİLENMEZ: ipucu, açılır pano ve diyalog portal ile
+   belge köküne çiziliyor, bu kapsamın dışında. Sadece TETİKLEYİCİLER
+   çubuğun içinde.
+   ══════════════════════════════════════════════════════════════════════ */
+[data-kabuk="ust"] {
+    --background: var(--se-kabuk);
+    --foreground: var(--se-kabuk-ink);
+
+    /* ⚠ `--muted` DA ŞART: `variant="outline"` düğmesinin üzerine gelme
+       rengi `hover:bg-muted`. Devredilmeseydi mavi bandın üstünde açık gri
+       bir parlama olurdu — ölçülmeden fark edilmesi zor, görülünce çirkin. */
+    --muted: var(--se-kabuk-hover);
+    --muted-foreground: var(--se-kabuk-ink2);
+    --accent: var(--se-kabuk-hover);
+    --accent-foreground: var(--se-kabuk-ink);
+    --secondary: var(--se-kabuk-secili);
+    --secondary-foreground: var(--se-kabuk-ink);
+
+    /**
+     * ⚠ DÜĞME KENARI KABUK ÇİZGİSİ DEĞİL, KABUK MÜREKKEBİ-2.
+     *
+     * İlk yazımda `--se-kabuk-cizgi` konmuştu ve ÖLÇÜM düşürdü: o ton
+     * bardan yalnız 0,0768 ayrışıyor (gecede 0,0449). Oysa kullanıcı
+     * 22.08.2026'da kart kenarlıklarını tam bu yüzden belirginleştirmişti
+     * ve orada kabul edilen ayrım 0,1996. Yeni çubukta aynı şikâyeti
+     * yeniden üretmek olurdu.
+     *
+     * `--se-kabuk-ink2` ile ayrım 0,5376 (gece 0,5171). Bu ton kabuğun
+     * KENDİ ikincil mürekkebi — uydurulmuş bir renk değil.
+     *
+     * ⚠ `--border` ve `--input` İKİSİ BİRDEN: shadcn'in `outline` düğmesi
+     * açık temada `border-border`, koyu temada `dark:border-input` kullanıyor
+     * (ölçüldü: ui/button.tsx:13). Biri unutulsaydı düğme yalnız BİR temada
+     * görünür kenarlı olurdu.
+     */
+    --border: var(--se-kabuk-ink2);
+    --input: var(--se-kabuk-ink2);
+    --ring: var(--se-kabuk-ink2);
+
+    color: var(--se-kabuk-ink);
+    /* ⚠ ÇUBUĞUN KENDİ ALT ÇİZGİSİ AYRI: yapısal bir ayraç, tıklanacak bir
+       kenar değil — bu yüzden sönük ton. Düğme kenarları yukarıdaki
+       `--border` üzerinden gelir; bu satır yalnız bu öğeye işler
+       (`border-color` miras alınmaz). */
+    border-color: var(--se-kabuk-cizgi);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    SOL MENÜ ÖLÇÜLERİ — OKUNAKLILIK
    ----------------------------------------------------------------------
    Kullanıcı 22.08.2026: _"menü bar biraz daha aşağıdan başlayabilir ve

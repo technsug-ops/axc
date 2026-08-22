@@ -8,7 +8,17 @@
 [data-tema="kobalt"] {
 
   /* --- yüzey merdiveni (0 en koyu → 2 en açık) --- */
-  --se-zemin:            #F7F9FB;   /* sayfa arka planı */
+  /**
+   * ⚠ 23.08.2026'DA KOYULAŞTIRILDI — #F7F9FB İDİ.
+   * Kullanıcı: _"ilk ekran açıldığında salt beyaz çıkıyor."_ Ölçüm haklı
+   * çıkardı: karttan (#FFFFFF) farkı 0,0246'ydı ve bu, paletin KENDİ zebra
+   * satırı farkından (0,0367) bile ZAYIFTI — yani kartı sayfadan ayıran
+   * sınır, tablodaki iki komşu satırı ayıran sınırdan azdı. Kart "kart"
+   * gibi durmuyordu. Yeni değer paletin kendi bir alt basamağı; fark
+   * 0,0568. Eşik uydurulmuş bir sayı değil, aynı paletten türetildi
+   * (bkz. panel:dogrula).
+   */
+  --se-zemin:            #EDF1F6;   /* sayfa arka planı */
   --se-kart:             #FFFFFF;   /* kart, panel, tablo gövdesi */
   --se-kart-2:           #FFFFFF;   /* açılır menü, modal, ipucu */
   --se-satir:            #F3F6FA;   /* zebra satır */

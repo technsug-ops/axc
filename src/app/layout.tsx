@@ -219,7 +219,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 budur.
               */}
               <SidebarInset className="min-w-0">
-                <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b px-3 md:px-4 print:hidden">
+                {/* ⚠ `data-kabuk` bir SÜS DEĞİL: globals.css'te bu çubuğa yerel
+                    token devri bağlı (üst çubuk kabuk renginde). Kaldırılırsa
+                    çubuk sessizce beyaza döner — bekçi bunu yakalıyor. */}
+                <header
+                  data-kabuk="ust"
+                  className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b px-3 md:px-4 print:hidden"
+                >
                   {/*
                     Menü tetikleyicisi.
                     shadcn varsayılanı size="icon-sm" (28px) ve variant="ghost"

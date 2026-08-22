@@ -2086,9 +2086,24 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      * Yorum bir sonraki paleti durdurmadı; ÖLÇÜM durdurur. Eşik uydurulmuş
      * bir sayı değil: 09.08'de fiilen seçilen değerin farkı (0,180).
      */
+    /**
+     * ⚠ KÖPRÜ BLOĞUNA DARALTILIYOR — DOSYANIN TAMAMINA DEĞİL.
+     *
+     * 23.08.2026: üst çubuğa yerel bir token devri eklendi
+     * (`[data-kabuk="ust"]`) ve o blok da `--border` / `--input` yazıyor.
+     * Dosyanın tamamında arayan `exec` ARTIK İLK EŞLEŞMEYİ, yani kabuk
+     * çizgisini buluyordu; kontrol doğru kodu kırmızı yaktı. Deponun beş
+     * kez düştüğü tuzağın aynısı: desen dosyada kaç kez geçiyor, önce o
+     * sayılır. Ölçüt ANA KÖPRÜ bloğudur — ekranın geneli oradan boyanıyor.
+     */
+    const kopruBasi = tema.indexOf("--background: var(--se-zemin)");
+    const kopru =
+      kopruBasi === -1 ? "" : tema.slice(kopruBasi, tema.indexOf("}", kopruBasi));
+    kontrol("token köprüsü bulunabildi (kontroller boşa bakmıyor)", kopru !== "");
+
     const kartLuma = luma(kobaltDeger("--se-kart"));
     const cizgiLuma = luma(kobaltDeger(
-      /--border:\s*var\((--se-[a-z0-9-]+)\)/.exec(tema)?.[1] ?? "--se-cizgi",
+      /--border:\s*var\((--se-[a-z0-9-]+)\)/.exec(kopru)?.[1] ?? "--se-cizgi",
     ));
     kontrol(
       "kenarlık karttan yeterince ayrışıyor (09.08.2026 kararı korunuyor)",
@@ -2097,13 +2112,146 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     );
     /** Girdi çerçevesi kart kenarlığından DAHA koyu — tıklanabilir alan ayrışsın. */
     const girdiLuma = luma(kobaltDeger(
-      /--input:\s*var\((--se-[a-z0-9-]+)\)/.exec(tema)?.[1] ?? "--se-cizgi",
+      /--input:\s*var\((--se-[a-z0-9-]+)\)/.exec(kopru)?.[1] ?? "--se-cizgi",
     ));
     kontrol(
       "  ...girdi çerçevesi kart kenarlığından koyu",
       girdiLuma < cizgiLuma,
       { cizgi: cizgiLuma.toFixed(3), girdi: girdiLuma.toFixed(3) },
     );
+
+    /**
+     * ════════════════════════════════════════════════════════════════════
+     *  SAYFA ZEMİNİ KARTI GERÇEKTEN AYIRIYOR MU
+     * --------------------------------------------------------------------
+     *  Kullanıcı 23.08.2026: _"ilk ekran açıldığında salt beyaz çıkıyor."_
+     *
+     *  Ölçüm haklı çıkardı: zemin ile kart arasındaki fark 0,0246'ydı ve bu,
+     *  aynı paletin KENDİ zebra satırı farkından (0,0367) bile ZAYIFTI —
+     *  yani kartı sayfadan ayıran sınır, tablodaki iki komşu satırı ayıran
+     *  sınırdan azdı. Kart, kart gibi durmuyordu.
+     *
+     *  ⚠ EŞİK UYDURULMADI, PALETTEN TÜRETİLDİ. Sabit bir sayı yazsaydık
+     *  ölçüldüğü ana kilitlenirdi; bu sınır paletle birlikte yürüyor:
+     *  "sayfa/kart ayrımı, o paletin kendi zebra ayrımından zayıf olamaz."
+     *  Tema değişirse eşik de kendiliğinden değişir.
+     * ════════════════════════════════════════════════════════════════════
+     */
+    for (const [ad, deger] of [
+      ["Kobalt", kobaltDeger],
+      ["Gece", geceDeger],
+    ] as const) {
+      const kart = luma(deger("--se-kart"));
+      const zemin = luma(deger("--se-zemin"));
+      const zebra = luma(deger("--se-satir"));
+      /* Gece temasında kart zeminden AÇIK, Kobalt'ta KOYU — yön değil
+         BÜYÜKLÜK karşılaştırılıyor. */
+      const sayfaFarki = Math.abs(kart - zemin);
+      const zebraFarki = Math.abs(kart - zebra);
+      kontrol(
+        `${ad}: sayfa/kart ayrımı zebra ayrımından zayıf değil`,
+        Number.isFinite(sayfaFarki) &&
+          Number.isFinite(zebraFarki) &&
+          zebraFarki > 0 &&
+          sayfaFarki >= zebraFarki,
+        { sayfa: sayfaFarki.toFixed(4), zebra: zebraFarki.toFixed(4) },
+      );
+    }
+
+    /**
+     * ════════════════════════════════════════════════════════════════════
+     *  ÜST ÇUBUK KABUK RENGİNDE Mİ — TELEFONDA TEMANIN GÖRÜNDÜĞÜ TEK YER
+     * --------------------------------------------------------------------
+     *  Kullanıcı 23.08.2026, telefon ekran görüntüsüyle: _"mobilde mavi tema
+     *  çok belirgin değil, sadece tıkladığında menü bar mavi oluyor."_
+     *
+     *  Teşhis tema değil YERLEŞİMDİ: paletteki tek güçlü yüzey `--se-kabuk`
+     *  ve o yalnız sol menüde kullanılıyor — telefonda çekmecede, yani ekran
+     *  DIŞINDA. Üst çubuk kabuk rengine alındı; hem kimlik geri geldi hem de
+     *  `theme-color` ile kesintisiz tek bant oldu.
+     * ════════════════════════════════════════════════════════════════════
+     */
+    {
+      const yerlesim = readFileSync("src/app/layout.tsx", "utf8");
+      kontrol(
+        "üst çubuk kabuk kapsamıyla işaretli",
+        /<header\s+data-kabuk="ust"/.test(yerlesim),
+      );
+
+      const kabukBasi = tema.indexOf('[data-kabuk="ust"] {');
+      const kabukBloku =
+        kabukBasi === -1 ? "" : tema.slice(kabukBasi, tema.indexOf("}", kabukBasi));
+      kontrol("  ...kapsamın CSS karşılığı var", kabukBloku !== "");
+      kontrol(
+        "  ...zemini kabuk renginden alıyor",
+        /--background:\s*var\(--se-kabuk\)/.test(kabukBloku),
+      );
+      /**
+       * ⚠ YARIM BOYAMA, HİÇ BOYAMAMAKTAN KÖTÜ. Yalnız zemin çevrilseydi
+       * çubuğun içindeki `outline` düğmeler, kenarlıklar ve ikincil metin
+       * AÇIK tema değerlerinde kalırdı: mavi bandın üstünde beyaz kutular.
+       * Devrin bu dört tokeni de kapsaması ŞART.
+       */
+      for (const jeton of [
+        "--foreground",
+        "--border",
+        "--input",
+        "--muted",
+        "--muted-foreground",
+      ]) {
+        kontrol(
+          `  ...${jeton} de kabuk paletine devredilmiş`,
+          new RegExp(`${jeton}:\\s*var\\(--se-kabuk`).test(kabukBloku),
+        );
+      }
+      /**
+       * Kabuk mürekkebi kabuk zemininde okunmalı — devir yapıldı ama yanlış
+       * tona bağlansaydı çubuk mavi olur, yazısı kaybolurdu.
+       */
+      const kabukLuma = luma(kobaltDeger("--se-kabuk"));
+      const inkLuma = luma(kobaltDeger("--se-kabuk-ink"));
+      kontrol(
+        "  ...kabuk yazısı kabuk zemininden yeterince ayrışıyor",
+        Math.abs(inkLuma - kabukLuma) >= 0.5,
+        { kabuk: kabukLuma.toFixed(3), ink: inkLuma.toFixed(3) },
+      );
+
+      /**
+       * ⚠ ÇUBUKTAKİ DÜĞME KENARI DA BULUNABİLİR OLMALI — VE EŞİK
+       * UYDURULMADI.
+       *
+       * İlk yazımda düğme kenarı `--se-kabuk-cizgi`ye bağlanmıştı; ölçüm
+       * düşürdü: bardan yalnız 0,0768 ayrışıyordu (gecede 0,0449). Oysa
+       * kullanıcı 22.08.2026'da kart kenarlıklarını tam bu yüzden
+       * belirginleştirmişti. Eşik o kararın KENDİSİ: çubuktaki tıklanabilir
+       * kenar, kartın kenarı kadar bulunabilir olmalı. Palet değişirse eşik
+       * de kendiliğinden değişir.
+       */
+      for (const [ad, deger] of [
+        ["Kobalt", kobaltDeger],
+        ["Gece", geceDeger],
+      ] as const) {
+        const kabuk = luma(deger("--se-kabuk"));
+        const kenar = luma(deger("--se-kabuk-ink2"));
+        const kartEsigi = Math.abs(
+          luma(deger("--se-kart")) - luma(deger("--se-cizgi-2")),
+        );
+        kontrol(
+          `  ...${ad}: çubuktaki düğme kenarı kart kenarı kadar bulunabilir`,
+          Number.isFinite(kenar) &&
+            Number.isFinite(kartEsigi) &&
+            Math.abs(kenar - kabuk) >= kartEsigi,
+          { ayrim: Math.abs(kenar - kabuk).toFixed(4), esik: kartEsigi.toFixed(4) },
+        );
+      }
+      /* Kenar TOKENİ doğru olanı göstermeli — ölçüm doğru, bağlantı yanlış
+         olabilirdi. */
+      kontrol(
+        "  ...düğme kenarı kabuk ÇİZGİSİNE değil MÜREKKEBİNE bağlı",
+        /--border:\s*var\(--se-kabuk-ink2\)/.test(kabukBloku) &&
+          /--input:\s*var\(--se-kabuk-ink2\)/.test(kabukBloku),
+      );
+    }
 
     /**
      * ⚠ ÇERÇEVE KALINLIĞI TEK ÖLÇÜDEN. Kutuların çoğu `border`, kart ise
