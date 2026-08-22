@@ -48,7 +48,7 @@ Altı teslimde tamamlandı; hepsi 21–22.08.2026.
 | Kanal | Buy box | Komisyon | Halil | Selliora NET-2 | Fark |
 |---|---|---|---|---|---|
 | Trendyol | 2.150 | %5 | 673,02 | **673,17** | +0,15 |
-| N11 | 2.175 | %12 | 554 | **554,07** | +0,07 |
+| N11 | 2.175 | %12 | 554 | **540,62** | −13,38 |
 | Hepsiburada | 2.250 | %13 | 533,25 | **538,25** | +5,00 |
 
 **En düşük satış fiyatı en yüksek kârı veriyor** — ve sıralama iki

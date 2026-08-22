@@ -89,49 +89,55 @@ export const SIMULASYON_KANALLARI: SimulasyonKanali[] = [
     /** Komisyona KDV eklenmiyor — nesatilir çıktısında komisyon 150 (1000×%15). */
     komisyonKdvOrani: null,
     /**
-     * ⚠ SABİTTEN YÜZDEYE ÇEVRİLDİ 22.08.2026 — VE ESKİ HÂLİ NİYE YANLIŞTI:
+     * ⚠ GERÇEK EKSTREYLE ÖLÇÜLDÜ 22.08.2026 — nesatilir kaynağı BIRAKILDI.
      *
-     * Önce `basis: "FIXED", amount: 12.58` yazıyordu ve şöyle savunuluyordu:
-     *     _"₺12,58 tek senaryodan geliyor; sabit mi ciro yüzdesi mi ayırt
-     *     edilemedi. Sabit varsayıldı ve BEYAN EDİLİYOR. Farklı bir fiyatla
-     *     İKİNCİ BİR HESAP gerekiyor."_
+     * Kullanıcı N11 "Para Transferi Listesi"nden bir hakediş detayı gönderdi
+     * ve denklem KURUŞUNA kapandı (fark 0,0000):
      *
-     * O ikinci hesap geldi. Kullanıcı nesatilir'e ₺2.175'lik senaryoyu
-     * girdi ve çıkan kesinti **₺27,36** oldu:
+     *     Satış Tutarı        9.599,00
+     *     Komisyon Tutarı     1.535,84   → %16,0000  (üstüne KDV YOK)
+     *     Pazarlama Bedeli      115,19   → %1,2000
+     *     Pazaryeri Bedeli       76,79   → %0,8000
+     *     Vergi Kesintisi        79,99   → 9.599/1,2 × %1 = STOPAJ
+     *     ─────────────────────────────
+     *     Net Transfer        7.791,19   ✓
      *
-     *     12,58 / 1.000  = %1,258
-     *     %1,258 × 2.175 = 27,3615        fark 0,0015 ₺ (yuvarlama)
+     * ── ÜÇ ŞEY BİRDEN DÜZELDİ ────────────────────────────────────────────
+     * 1. TEK KALEM DEĞİL, İKİ KALEM. `PAZARLAMA_HIZMET` tek başınaydı;
+     *    ekstre iki ayrı satır gösteriyor ve toplamları **%2,00**.
+     * 2. ORAN YANLIŞTI. nesatilir'den türetilen %1,258 gerçekte %1,20 +
+     *    %0,80. Tek kalemde bile oran tutmuyordu.
+     * 3. MATRAH BELİRSİZLİĞİ KAPANDI. Önce "KDV dahil mi hariç mi ayırt
+     *    edilemedi" diye beyan edilmişti; stopaj satırı bunu BAĞIMSIZ
+     *    olarak çözdü — 79,99 ancak KDV HARİÇ tutarın %1'i olarak çıkıyor,
+     *    dolayısıyla 9.599 KDV DAHİL demektir ve oranlar o tabana oturuyor.
+     *    Yalnız o tabanda üç oran da tam yuvarlak sayı veriyor.
      *
-     * İki nokta bir doğru kuruyor ve doğru SIFIRDAN geçiyor: sabit terim
-     * yok. Yani nesatilir bunu **ciro yüzdesi** olarak uyguluyor; bizim
-     * `FIXED` yazmamız referansı yanlış kopyalamaktı ve 1.000 ₺ dışındaki
-     * her fiyatta hesabı kaydırıyordu (2.175 ₺'de ₺14,78 eksik kesinti →
-     * NET-2 o kadar iyimser).
+     * ⚠ ÖNCEKİ GEREKÇE SİLİNMİYOR. 21.08'de kural `FIXED ₺12,58`di ve
+     * "sabit varsayıldı, BEYAN EDİLİYOR" deniyordu; 22.08'de nesatilir'in
+     * ikinci senaryosuyla yüzdeye (%1,258) çevrildi. İkisi de artık geçersiz
+     * — ama ikisi de doğru yöntemle yapılmıştı ve kaynağı yazılıydı. Yanlış
+     * olan sayılar değil, KAYNAĞIN KENDİSİYDİ: nesatilir HB ödeme giderini
+     * de `9,60` diyordu, gerçeği `8,00` çıkmıştı (113 sipariş).
      *
-     * ⚠ NE KANITLANDI, NE KANITLANMADI — ROZET DEĞİŞMİYOR:
-     * · KANITLANDI: nesatilir bunu yüzde olarak işletiyor (iki nokta, tam
-     *   uyum). Yani bizim modelimiz artık SEÇTİĞİMİZ referansa sadık.
-     * · KANITLANMADI: N11'in gerçekten %1,258 kestiği. Kaynak hâlâ tek ve
-     *   hâlâ nesatilir; `REFERANS` etiketi ve belirsizlik notu duruyor.
-     *   _"Bağımsızlık kaynağın ayrılığıyla ölçülür, yolun ayrılığıyla
-     *   değil"_ — aynı siteye ikinci kez sormak teyit değildir.
+     * ⚠ ÖRNEKLEM n=1. Bir hakediş kaydı. Üç oranın da tam yuvarlak çıkması
+     * ve denklemin kuruşuna kapanması güçlü bir işaret, ama tek kayıt sabit
+     * bir terimi (F + oran×satış) ayırt edemez. İkinci kayıt istendi.
      */
     kesintiler: [
-      { code: "PAZARLAMA_HIZMET", basis: "SALE_AMOUNT", rate: 1.258 },
+      { code: "PAZARLAMA_HIZMET", basis: "SALE_AMOUNT", rate: 1.2 },
+      { code: "PAZARYERI_BEDELI", basis: "SALE_AMOUNT", rate: 0.8 },
     ],
-    kaynak: "REFERANS",
+    kaynak: "OLCULDU",
     kaynakNotu:
-      "nesatilir.com (21–22.08.2026, iki senaryo: satış ₺1.000 ve ₺2.175). İki nokta kesintinin SABİT değil ciro yüzdesi olduğunu gösterdi (%1,258). Oranın kendisi hâlâ nesatilir beyanı; N11 ekstresiyle doğrulanmadı.",
+      "N11 hakediş ekstresi (22.08.2026, n=1: satış ₺9.599 · transfer 13.08.2026). Denklem kuruşuna kapandı: komisyon %16 · Pazarlama Bedeli %1,20 · Pazaryeri Bedeli %0,80 · stopaj KDV hariç %1. Matrah KDV DAHİL — stopaj satırıyla bağımsız doğrulandı.",
     /**
-     * ⚠ KALAN BELİRSİZLİK: MATRAH.
-     * Her iki senaryo da %20 KDV'liydi. "%1,258 × KDV DAHİL tutar" ile
-     * "%1,5096 × KDV HARİÇ tutar" bu iki noktada AYNI sonucu verir ve
-     * ayırt edilemez. Ancak KDV oranı farklı bir üründe (%1 ya da %10)
-     * ayrışırlar. `SALE_AMOUNT` seçildi çünkü motorun bu tabanı KDV DAHİL
-     * sipariş tutarıdır ve HB ödeme gideri de öyle ölçülmüştü.
+     * ⚠ ÖLÇÜLDÜ AMA TEK KAYITTAN. Rozet artık dış iddia değil gerçek ekstre
+     * gösteriyor; yine de örneklem beyan ediliyor — "ölçüldü" demek "yeterince
+     * ölçüldü" demek değildir.
      */
     belirsizlik:
-      "Oran nesatilir beyanı, N11 ekstresiyle doğrulanmadı. Ayrıca matrahın KDV dahil mi hariç mi olduğu ayırt edilemedi: iki senaryo da %20 KDV'liydi, farklı KDV oranlı bir ürün gerekiyor.",
+      "Tek hakediş kaydından ölçüldü (n=1). Oranlar tam yuvarlak çıkıyor ve denklem kuruşuna kapanıyor, ama tek kayıt sabit bir terimi orandan ayırt edemez. İkinci kayıtla doğrulanacak.",
   },
   {
     kod: "AMAZON",

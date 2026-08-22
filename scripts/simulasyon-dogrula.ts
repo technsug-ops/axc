@@ -104,7 +104,32 @@ console.log("\n1) DIŞ KAYNAK KIYASI — nesatilir'in dört senaryosu");
   /**
    * N11 — nesatilir: kâr 172,85. Komisyon KDV'siz, pazarlama gideri ₺12,58.
    */
-  yakin("N11 NET-2", bul("N11").net2!, 172.85);
+  /**
+   * ⚠ N11 ARTIK nesatilir'E GÖRE SINANMIYOR (22.08.2026). HB'de yaşananın
+   * aynısı oldu: gerçek ekstre geldi ve dış kaynağı çürüttü.
+   *
+   * nesatilir tek bir "pazarlama gideri" (₺12,58) diyordu. N11'in kendi
+   * hakediş ekstresi İKİ ayrı satır gösteriyor: Pazarlama Bedeli %1,20 ve
+   * Pazaryeri Bedeli %0,80 — toplam %2,00.
+   *
+   * ⚠ 166,67 ELDE HESAPLANDI, motordan OKUNMADI — yoksa test kendi
+   * çıktısını doğrulardı. Döküm (satış 1000 · alış 500 · komisyon %15 ·
+   * kargo 120, hepsi KDV DAHİL):
+   *   komisyon  150,00 (1000×%15, üstüne KDV YOK)
+   *   pazarlama  12,00 (1000×%1,20)
+   *   pazaryeri   8,00 (1000×%0,80)
+   *   stopaj      8,33 (833,33×%1)
+   *   kargo     120,00
+   *   NET-1 = 1000 − 500 − 150 − 12 − 8 − 8,33 − 120 = 201,67
+   *   ödenecek KDV = 166,67 − 83,33 − 20,00 − 25,00 − 3,33 = 35,00
+   *   NET-2 = 201,67 − 35,00 = 166,67
+   */
+  yakin("N11 NET-2 — ÖLÇÜLEN kural", bul("N11").net2!, 166.67, 0.02);
+  kontrol(
+    "  ...nesatilir'in 172,85'i KULLANILMIYOR",
+    Math.abs(bul("N11").net2! - 172.85) > 1,
+    bul("N11").net2,
+  );
 
   /**
    * ⚠ HEPSİBURADA — BİLEREK AYRIŞIYOR.
@@ -846,15 +871,22 @@ console.log("9) KANAL BAŞINA BUY BOX FİYATI — asıl satış kararı burada")
   yakin("TY NET-2 ~673", bul("TRENDYOL").net2!, 673.17, 0.02);
   yakin("HB NET-2 ~538", bul("HEPSIBURADA").net2!, 538.25, 0.02);
   /**
-   * ⚠ 566,39 -> 554,07 (22.08.2026). Rakam bozulmadı, KURAL düzeltildi:
-   * N11 pazarlama gideri SABİT (₺12,58) sanılıyordu, nesatilir'in ikinci
-   * senaryosu onun CİRO YÜZDESİ (%1,258) olduğunu gösterdi. Sabit hâlde
-   * 2.175 ₺'de ₺14,78 eksik kesiliyordu ve NET-2 o kadar iyimser çıkıyordu.
+   * ⚠ N11 RAKAMI İKİ KEZ DEĞİŞTİ — ÜÇÜ DE BURADA, NEDENİYLE:
+   *   566,39  ilk hâl  — pazarlama gideri SABİT ₺12,58 sanılıyordu
+   *   554,07  21.08    — nesatilir'in 2. senaryosu YÜZDE olduğunu gösterdi
+   *   540,62  22.08    — N11'in GERÇEK ekstresi geldi: iki ayrı kalem,
+   *                      %1,20 + %0,80 = %2,00 (nesatilir %1,258 diyordu)
    *
-   * ⚠ ESKİ DEĞER SİLİNMİYOR, NEDENİYLE BİRLİKTE DURUYOR: aynı senaryo iki
-   * farklı sayı vermiş görünürse, hangisinin neden geçerli olduğu okunabilsin.
+   * Rakam hiç bozulmadı; her seferinde KAYNAK iyileşti. Eski değerler
+   * silinmiyor: aynı senaryo üç farklı sayı vermiş görünürse hangisinin
+   * neden geçerli olduğu okunabilsin.
+   *
+   * ⚠ 540,62 ELDE DOĞRULANDI (satış 2175 · alış 1000 · komisyon %12 ·
+   * kargo 200): komisyon 261,00 · pazarlama 26,10 · pazaryeri 17,40 ·
+   * stopaj 18,13 · kargo 200 → NET-1 652,38; ödenecek KDV 111,75;
+   * NET-2 = 540,63.
    */
-  yakin("N11 NET-2 ~554 (eski kural 566,39 idi)", bul("N11").net2!, 554.07, 0.02);
+  yakin("N11 NET-2 ~540 (gerçek ekstre)", bul("N11").net2!, 540.62, 0.02);
 
   /**
    * ── ORTAK FİYAT YEDEKTİR ────────────────────────────────────────────
@@ -1204,29 +1236,30 @@ console.log("11) HEPSİNİ TEMİZLE — tek düğme, HİÇBİR alan geride kalma
 
 // ===========================================================================
 console.log("");
-console.log("12) N11 PAZARLAMA GİDERİ — SABİT DEĞİL, CİRO YÜZDESİ");
+console.log("12) N11 KESİNTİLERİ — GERÇEK HAKEDİŞ EKSTRESİNDEN");
 // ===========================================================================
 {
   /**
-   * ⚠ DÜZELTME 22.08.2026 ve NİYE GEREKTİ:
+   * ⚠ KAYNAK DEĞİŞTİ: nesatilir → N11'İN KENDİ EKSTRESİ (22.08.2026).
    *
-   * Kural `FIXED ₺12,58` yazılıydı ve kodun kendi notu şunu söylüyordu:
-   *   "tek senaryodan geliyor; sabit mi ciro yüzdesi mi ayırt edilemedi.
-   *    Farklı bir fiyatla İKİNCİ BİR HESAP gerekiyor."
+   * Kullanıcı "Para Transferi Listesi"nden bir hakediş detayı gönderdi ve
+   * denklem KURUŞUNA kapandı:
    *
-   * İkinci hesap geldi (nesatilir, satış ₺2.175 → ₺27,36):
-   *   12,58 / 1.000  = %1,258
-   *   %1,258 × 2.175 = 27,3615      fark 0,0015 ₺
+   *     Satış Tutarı        9.599,00
+   *     Komisyon Tutarı     1.535,84   → %16,0000  (üstüne KDV YOK)
+   *     Pazarlama Bedeli      115,19   → %1,2000
+   *     Pazaryeri Bedeli       76,79   → %0,8000
+   *     Vergi Kesintisi        79,99   → 9.599/1,2 × %1 = STOPAJ
+   *     ─────────────────────────────
+   *     Net Transfer        7.791,19   ✓ fark 0,0000
    *
-   * İki nokta bir doğru kuruyor ve doğru SIFIRDAN geçiyor — sabit terim
-   * yok. `FIXED` yazmak referansı yanlış kopyalamaktı.
-   *
-   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERMELİ: iki FARKLI fiyat
-   * sınanıyor. Tek fiyatla sınansaydı sabit hâl de geçerdi — nitekim
-   * ₺1.000'de iki model AYNI sonucu veriyor ve altın senaryo bu yüzden
-   * değişmedi.
+   * ⚠ MATRAH BAĞIMSIZ DOĞRULANDI: stopaj satırı ancak KDV HARİÇ tutarın
+   * %1'i olarak çıkıyor, dolayısıyla 9.599 KDV DAHİL demektir. Üç oran da
+   * YALNIZ o tabanda tam yuvarlak sayı veriyor. Önce "KDV dahil mi hariç mi
+   * ayırt edilemedi" diye beyan edilen belirsizlik böylece kapandı.
    */
-  const pazarlama = (satis: number): number => {
+  const EKSTRE_SATIS = 9599.0;
+  const kesinti = (kod: string, satis: number): number => {
     const k = simulasyonKarsilastir(
       {
         kdvDahilMi: true,
@@ -1234,53 +1267,75 @@ console.log("12) N11 PAZARLAMA GİDERİ — SABİT DEĞİL, CİRO YÜZDESİ");
         kdvOrani: 20,
         kargoUcreti: null,
         kanalFiyatlari: { N11: satis },
-        kanalOranlari: { N11: 12 },
+        kanalOranlari: { N11: 16 },
       },
       BUGUN,
     ).find((x) => x.kod === "N11")!;
-    return k.dokum.find((d) => d.kod === "PAZARLAMA_HIZMET")?.tutar ?? 0;
+    return k.dokum.find((d) => d.kod === kod)?.tutar ?? 0;
   };
 
-  yakin("₺1.000'de kesinti 12,58 (altın senaryo korunuyor)", pazarlama(1000), 12.58, 0.01);
-  yakin("₺2.175'te kesinti 27,36 (ikinci senaryo)", pazarlama(2175), 27.36, 0.01);
+  /** Ekstrenin kendi satırları — motor onları ÜRETEBİLMELİ. */
+  yakin("Pazarlama Bedeli = 115,19", kesinti("PAZARLAMA_HIZMET", EKSTRE_SATIS), 115.19, 0.01);
+  yakin("Pazaryeri Bedeli = 76,79", kesinti("PAZARYERI_BEDELI", EKSTRE_SATIS), 76.79, 0.01);
+  yakin("Komisyon = 1.535,84", kesinti("KOMISYON", EKSTRE_SATIS), 1535.84, 0.01);
+  yakin("Stopaj (vergi kesintisi) = 79,99", kesinti("STOPAJ", EKSTRE_SATIS), 79.99, 0.01);
 
   /**
-   * ⚠ ASIL İDDİA "İKİ RAKAM DOĞRU" DEĞİL, "FİYATLA ÖLÇEKLENİYOR". Sabit
-   * bir kural her iki fiyatta da aynı tutarı verirdi; bunu doğrudan sın.
-   */
-  kontrol(
-    "kesinti fiyatla ÖLÇEKLENİYOR (sabit DEĞİL)",
-    Math.abs(pazarlama(2000) - pazarlama(1000)) > 1,
-    { "1000": pazarlama(1000).toFixed(2), "2000": pazarlama(2000).toFixed(2) },
-  );
-  /** Oran sabit kalmalı — iki fiyatta da aynı yüzde. */
-  yakin(
-    "  ...oran her fiyatta aynı (%1,258)",
-    (pazarlama(3000) / 3000) * 100,
-    1.258,
-    0.001,
-  );
-
-  /**
-   * ⚠ ROZET DEĞİŞMEDİ ve değişmemeli: nesatilir bunu yüzde olarak
-   * işletiyor diye N11'in gerçekten öyle kestiği KANITLANMADI. Kaynak hâlâ
-   * tek ve hâlâ nesatilir. "Bağımsızlık kaynağın ayrılığıyla ölçülür,
-   * yolun ayrılığıyla değil."
+   * ⚠ İKİ AYRI KALEM OLMALI — TEK KALEMDE TOPLAMAK YETMEZ. Toplamı %2,00
+   * tutan tek bir kesinti aynı NET'i verir ama ekstreyle satır satır
+   * karşılaştırılamaz; kanal yarın birini değiştirirse hangisi olduğu
+   * bilinemez. Ekstrenin ayırdığını biz de ayırıyoruz.
    */
   const n11Kural = SIMULASYON_KANALLARI.find((k) => k.kod === "N11")!;
-  kontrol("rozet hâlâ REFERANS (doğrulanmadı)", n11Kural.kaynak === "REFERANS");
   kontrol(
-    "  ...belirsizlik hâlâ beyan ediliyor",
-    (n11Kural.belirsizlik ?? "").includes("doğrulanmadı"),
+    "iki AYRI kesinti kalemi var",
+    n11Kural.kesintiler.length === 2,
+    n11Kural.kesintiler.map((k) => k.code),
   );
-  /**
-   * ⚠ VE MATRAH BELİRSİZLİĞİ DE YAZILI: iki senaryo da %20 KDV'liydi, yani
-   * "%1,258 × KDV DAHİL" ile "%1,5096 × KDV HARİÇ" ayırt edilemez. Farklı
-   * KDV oranlı bir ürün gerekiyor.
-   */
   kontrol(
-    "  ...matrah belirsizliği de beyan ediliyor",
-    (n11Kural.belirsizlik ?? "").includes("KDV dahil mi hariç mi"),
+    "  ...biri PAZARYERI_BEDELI (önceden HİÇ yoktu)",
+    n11Kural.kesintiler.some((k) => k.code === "PAZARYERI_BEDELI"),
+  );
+
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERMELİ: iki FARKLI fiyatta
+   * oranların sabit kaldığı sınanıyor. Tek fiyat, sabit tutarlı bir kuralı
+   * da geçirirdi.
+   */
+  for (const satis of [1000, 3000]) {
+    yakin(
+      `  ...%1,20 oranı ${satis} ₺'de de aynı`,
+      (kesinti("PAZARLAMA_HIZMET", satis) / satis) * 100,
+      1.2,
+      0.001,
+    );
+    yakin(
+      `  ...%0,80 oranı ${satis} ₺'de de aynı`,
+      (kesinti("PAZARYERI_BEDELI", satis) / satis) * 100,
+      0.8,
+      0.001,
+    );
+  }
+
+  /**
+   * ⚠ ROZET ARTIK OLCULDU — çünkü kaynak dış bir hesaplayıcı değil kanalın
+   * KENDİ ekstresi. Ama örneklem beyan ediliyor: "ölçüldü" demek "yeterince
+   * ölçüldü" demek değildir.
+   */
+  kontrol("rozet OLCULDU (gerçek ekstre)", n11Kural.kaynak === "OLCULDU");
+  kontrol(
+    "  ...kaynak notu ekstreyi ve örneklemi yazıyor",
+    n11Kural.kaynakNotu.includes("hakediş ekstresi") &&
+      n11Kural.kaynakNotu.includes("n=1"),
+  );
+  kontrol(
+    "  ...tek kayıt olduğu BELİRSİZLİK olarak duruyor",
+    (n11Kural.belirsizlik ?? "").includes("n=1"),
+  );
+  /** nesatilir'in rakamı artık hiçbir yerde kullanılmamalı. */
+  kontrol(
+    "nesatilir'in %1,258'i KULLANILMIYOR",
+    !n11Kural.kesintiler.some((k) => "rate" in k && k.rate === 1.258),
   );
 }
 

@@ -273,6 +273,8 @@ export const PASTA_RENKLERI: Record<string, string> = {
   SABIT_GIDER: "#5FA8C7",
   ODEME_GIDERI: "#7EA3B8",
   PAZARLAMA_HIZMET: "#9B8AA6",
+  /** N11 "Pazaryeri Bedeli" — pazarlama bedelinin komşusu, bir ton ayrı. */
+  PAZARYERI_BEDELI: "#8C93A8",
   ODENECEK_KDV: "#B4B2A9",
   /** KÂR — sistemin kendi yeşili; tek anlamlı dilim. */
   KAR: "#1D9E75",

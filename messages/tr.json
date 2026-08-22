@@ -2891,7 +2891,7 @@
     "dokum_HIZMET_BEDELI": "Hizmet bedeli",
     "dokum_ODEME_GIDERI": "Tahsilat bedeli",
     "dokum_SABIT_GIDER": "Hizmet bedeli",
-    "dokum_PAZARLAMA_HIZMET": "Pazarlama ve hizmet gideri",
+    "dokum_PAZARLAMA_HIZMET": "Pazarlama bedeli",
     "dokum_ODENECEK_KDV": "Ödenecek KDV",
     "dokum_KAR": "Kâr (NET-2)",
     "kanalOrani": "Komisyon oranı",
@@ -2909,6 +2909,7 @@
     "beyan_FIYAT_YOK": "Satış fiyatı girilmedi — NET hesaplanamadı",
     "birimPara": "₺",
     "birimYuzde": "%",
-    "hepsiniTemizle": "Hepsini temizle"
+    "hepsiniTemizle": "Hepsini temizle",
+    "dokum_PAZARYERI_BEDELI": "Pazaryeri bedeli"
   }
 }
