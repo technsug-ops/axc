@@ -1115,6 +1115,84 @@ console.log("10) EKRAN — son satış fiyatı, yanıltıcı satır, durum rengi
   );
 }
 
+// ===========================================================================
+console.log("");
+console.log("11) HEPSİNİ TEMİZLE — tek düğme, HİÇBİR alan geride kalmasın");
+// ===========================================================================
+{
+  /**
+   * ⚠ KULLANICI 22.08.2026: "hepsinde çarpı var, o da iş görüyor ama komple
+   * temizlik yapabileceğim bir düğmeye ihtiyacım var." Dört kanal × iki kutu
+   * + dört ortak alan = on iki ayrı temizleme.
+   *
+   * ⚠ ASIL RİSK "DÜĞME VAR MI" DEĞİL, "HEPSİNİ Mİ TEMİZLİYOR". Yarım
+   * temizleyen bir düğme en kötüsüdür: kullanıcı formu boş SANIR, oysa bir
+   * kanalda eski oran durmaktadır ve sonraki denemenin hükmünü sessizce
+   * bozar. Bu yüzden her alan TEK TEK sınanıyor.
+   */
+  const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const govde = ekran.slice(
+    ekran.indexOf("const hepsiniTemizle = () => {"),
+    ekran.indexOf("const sayi = (m: string)"),
+  );
+  kontrol("temizleme işlevi bulundu", govde.length > 100, govde.length);
+
+  /**
+   * Durum listesi KAYNAKTAN türetiliyor, elle yazılmıyor: yarın yeni bir
+   * `useState` eklenip temizlemeye yazılmazsa bu kontrol kırmızı yanar.
+   * Elle liste tutulsaydı yeni alanı eklemeyi unutan kişi testi de
+   * unuturdu ve kontrol sessizce eskirdi.
+   */
+  const durumlar = [...ekran.matchAll(/const \[[a-zA-Z]+, (set[A-Z][a-zA-Z]*)\]/g)].map(
+    (m) => m[1]!,
+  );
+  kontrol("ekranın durum listesi okundu", durumlar.length >= 8, durumlar.length);
+
+  /** `araniyor` bir geçiş bayrağı (useTransition), temizlenecek bir alan değil. */
+  const HARIC = ["setKod"];
+  const temizlenmeyen = durumlar.filter(
+    (d) => !govde.includes(`${d}(`) && !HARIC.includes(d),
+  );
+  kontrol(
+    "her durum alanı temizleniyor",
+    temizlenmeyen.length === 0,
+    temizlenmeyen,
+  );
+  /** Arama kutusu da temizlenmeli — ürün bırakılıyorsa kodu da gitmeli. */
+  kontrol("arama kutusu da temizleniyor", govde.includes("setKod(\"\")"));
+
+  /**
+   * ⚠ KDV ORANI BOŞA DEĞİL VARSAYILANA DÖNER. Boş bırakılsaydı kapı
+   * kapanır ve kullanıcı hesabın neden çıkmadığını anlamazdı.
+   */
+  kontrol(
+    "KDV oranı varsayılana dönüyor (boşa DEĞİL)",
+    govde.includes("setKdv(String(VARSAYILAN_KDV_ORANI))"),
+  );
+  kontrol("KDV dili varsayılana dönüyor", govde.includes("setKdvDahil(true)"));
+
+  /**
+   * ⚠ DÜĞME YALNIZ DOLUYKEN GÖRÜNÜR. Boş formda duran bir "temizle"
+   * düğmesi tıklanınca hiçbir şey yapmaz ve kullanıcıya ekranın bozuk
+   * olduğunu düşündürür (İlke #5).
+   */
+  kontrol(
+    "düğme forma bağlı (formDolu)",
+    /\{formDolu \? \(/.test(ekran) && ekran.includes("hepsiniTemizle}"),
+  );
+  /** Boşluk ölçütü ürün ve kanal kutularını da kapsamalı. */
+  const dolulukGovdesi = ekran.slice(
+    ekran.indexOf("const formDolu ="),
+    ekran.indexOf("const hepsiniTemizle"),
+  );
+  for (const alan of ["urun !== null", "kanalFiyatlari", "kanalOranlari"]) {
+    kontrol(
+      `  ...doluluk ölçütü ${alan} kapsıyor`,
+      dolulukGovdesi.includes(alan),
+    );
+  }
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

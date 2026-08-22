@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Crown, Info, Search, Trophy, X } from "lucide-react";
+import { Crown, Eraser, Info, Search, Trophy, X } from "lucide-react";
 
 import { MarjPili } from "@/components/marj-pili";
 import { PastaGrafik, type PastaDilimi } from "@/components/pasta-grafik";
@@ -142,6 +142,47 @@ export function Deneme({ bugun }: { bugun: string }) {
   const urunuBirak = () => {
     setUrun(null);
     setKod("");
+    setAramaHatasi(null);
+  };
+
+  /**
+   * ── HEPSİNİ TEMİZLE ────────────────────────────────────────────────────
+   *
+   * Kullanıcı 22.08.2026: _"hepsinde çarpı var, o da iş görüyor ama komple
+   * temizlik yapabileceğim bir düğmeye ihtiyacım var."_ Haklı: dört kanal ×
+   * iki kutu + dört ortak alan = **on iki ayrı temizleme**. Tek tek silmek
+   * bir işlem değil, bir tören.
+   *
+   * ⚠ ONAY DİYALOĞU YOK ve bu bilinçli. İlke #6 "yıkıcı eylem = onay" der;
+   * ölçüt ise şudur: **bu işlem hangi veriyi bozar?** Cevap: hiçbirini.
+   * Ekranın kendi cümlesi zaten _"hiçbir kayıt oluşmaz"_ — burası bir
+   * karalama kâğıdı. Karalama kâğıdını silmek için onay istemek, kuralı
+   * ait olmadığı yere uygulamak olurdu.
+   *
+   * ⚠ DÜĞME YALNIZ DOLUYKEN GÖRÜNÜR. Boş formda duran bir "temizle"
+   * düğmesi, tıklanınca hiçbir şey olmadığı için kullanıcıya ekranın
+   * bozuk olduğunu düşündürür (İlke #5: sessiz başarısızlık yasak).
+   */
+  const formDolu =
+    satis.trim() !== "" ||
+    alis.trim() !== "" ||
+    kargo.trim() !== "" ||
+    kod.trim() !== "" ||
+    urun !== null ||
+    Object.values(kanalFiyatlari).some((v) => v.trim() !== "") ||
+    Object.values(kanalOranlari).some((v) => v.trim() !== "");
+
+  /** Formu ilk açılış hâline döndürür — TEK yerden, alan alan. */
+  const hepsiniTemizle = () => {
+    setSatis("");
+    setAlis("");
+    setKargo("");
+    setKdv(String(VARSAYILAN_KDV_ORANI));
+    setKdvDahil(true);
+    setKanalFiyatlari({});
+    setKanalOranlari({});
+    setKod("");
+    setUrun(null);
     setAramaHatasi(null);
   };
 
@@ -379,6 +420,24 @@ export function Deneme({ bugun }: { bugun: string }) {
           ))}
         </div>
         <p className="text-muted-foreground text-xs">{t("kanalGirdiNotu")}</p>
+
+        {/* ── HEPSİNİ TEMİZLE — formun SONUNDA, sonucun hemen üstünde ──
+            Girdi alanı burada biter; sıfırlama düğmesinin doğal yeri o
+            sınırdır. Yukarı konsaydı arama kutusuyla karışırdı: kullanıcı
+            "aramayı mı temizliyor, formu mu" diye sorardı. */}
+        {formDolu ? (
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={hepsiniTemizle}
+              className="h-11"
+            >
+              <Eraser className="size-4" />
+              {t("hepsiniTemizle")}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {/* ══════════════ SONUÇ ══════════════

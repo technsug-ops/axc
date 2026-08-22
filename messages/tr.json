@@ -2907,6 +2907,7 @@
     "kullanilanSatis": "Satış",
     "beyan_FIYAT_YOK": "Satış fiyatı girilmedi — NET hesaplanamadı",
     "birimPara": "₺",
-    "birimYuzde": "%"
+    "birimYuzde": "%",
+    "hepsiniTemizle": "Hepsini temizle"
   }
 }
