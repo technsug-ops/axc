@@ -3,24 +3,43 @@ import type { FeeScope } from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
- *  EL KİTABI — CANLI VERİ
+ *  EL KİTABI — CANLI VERİ (YALNIZ PAZARYERİ KURALLARI)
  * ----------------------------------------------------------------------------
- *  El kitabının "sisteme bağlı" olmasının anlamı budur: kategorilerinizi,
- *  raflarınızı, kanal hesaplarınızı ve kesinti kurallarınızı VERİTABANINDAN
- *  okur. Ayarlardan bir raf eklediğinizde el kitabı da onu yazar.
+ *  ⚠ EL KİTABI FİRMAYA ÖZEL BİR BELGE DEĞİLDİR — kullanıcı düzeltmesi
+ *  22.08.2026: _"el kitabı bu firmaya özel olmuş, bu şekilde uygun değil.
+ *  Şahsileştirmeden yapılmalı; firmanın kanal hesapları var, raf sistemiyle
+ *  ilgili bilgiler var."_
  *
- *  Elle yazılmış bir belge birkaç ay içinde gerçekten sapar; sapmış bir
- *  kılavuz, olmayan kılavuzdan daha kötüdür çünkü okuyan ona güvenir.
+ *  Haklıydı ve bu doğrudan anayasaya aykırıydı: _"firma adları yalnızca VERİ
+ *  olabilir, YAPI olamaz."_ Belge şunları basıyordu ve hepsi ÇIKARILDI:
+ *
+ *    · kanal hesabı adları        → mağaza ve KİŞİ adları
+ *    · raf kodları ve adları      → deponun fiziksel yerleşimi
+ *    · kapaktaki sayımlar         → "N kullanıcı · N ürün · N satış"
+ *    · KDV / gider kategorileri   → kurulumun kendi tercihleri
+ *    · kargo firmaları            → kurulumun kendi tercihleri
+ *    · kanal SKU özeti            → hangi mağazada kaç ürün
+ *
+ *  ⚠ ESKİ GEREKÇE SİLİNMİYOR. Bu veriler bilerek konmuştu: _"elle yazılmış
+ *  bir belge birkaç ay içinde gerçekten sapar; sapmış bir kılavuz olmayan
+ *  kılavuzdan daha kötüdür."_ Kaygı GEÇERLİ ama KAPSAMI yanlıştı: sapma
+ *  riski KURALLAR içindir (bir kesinti oranı değişirse belge yanılır),
+ *  KİMLİK için değil — bir rafın adı belgeyi yanlış yapmaz, yalnız
+ *  belgeyi o kuruluma hapseder.
+ *
+ *  Çare kimliği yazmak değil, YERİ göstermek: kılavuz artık _"kendi
+ *  raflarını Ayarlar → Raf Konumları'nda görürsün"_ diyor. Ekran zaten var
+ *  ve her zaman günceldir; kopyası bayatlar, kendisi bayatlamaz.
+ *
+ *  ── GERİDE NE KALDI ─────────────────────────────────────────────────────
+ *  Yalnız KANAL bazlı kurallar: komisyon KDV'si, hizmet bedeli, ceza
+ *  tarifesi. Bunlar PAZARYERİ bilgisidir (Trendyol · Hepsiburada), firma
+ *  bilgisi değil — hiçbir mağaza ya da kişi adı taşımazlar.
  * ============================================================================
  */
 
 export type ElKitabiVerisi = {
-  kdvKategorileri: { ad: string; oran: string }[];
-  raflar: { kod: string; ad: string | null }[];
-  kanalHesaplari: { etiket: string; paraBirimi: string }[];
-  giderKategorileri: { ad: string; sabitMi: boolean; kdv: string }[];
-  kargoFirmalari: string[];
-  /** Kanal başına kesinti kuralları — şablon değil, sizde tanımlı olan. */
+  /** Kanal başına kesinti kuralları — PAZARYERİ bazında, hesap bazında DEĞİL. */
   kanalKesintileri: {
     kanal: string;
     kod: string;
@@ -34,68 +53,23 @@ export type ElKitabiVerisi = {
     tutar: string | null;
     paraBirimi: string | null;
   }[];
-  cezaTarifeleri: { kanal: string; kademeler: { ustSinir: string; tutar: string }[] }[];
-  /** Kanal hesabı başına eşleme sayısı ve kaç tanesinde komisyon oranı yok. */
-  kanalSkuOzeti: { hesap: string; adet: number; oransiz: number }[];
-  /** Hiçbir kanala eşlenmemiş varyant sayısı — satılamaz demek değil,
-      ama satılırsa kârı hesaplanamaz demek. */
-  eslenmemisVaryant: number;
-  sayimlar: {
-    urun: number;
-    varyant: number;
-    kanalSku: number;
-    kanalSkuOransiz: number;
-    satis: number;
-    kullanici: number;
-  };
+  cezaTarifeleri: {
+    kanal: string;
+    kademeler: { ustSinir: string; tutar: string }[];
+  }[];
 };
 
 const sayi = (d: { toString(): string } | null) =>
   d === null ? null : String(Number(d.toString()));
 
 export async function elKitabiVerisi(): Promise<ElKitabiVerisi> {
-  const [
-    kategoriler,
-    raflar,
-    hesaplar,
-    giderKategorileri,
-    kargolar,
-    kesintiler,
-    cezalar,
-    urun,
-    varyant,
-    kanalSku,
-    kanalSkuOransiz,
-    satis,
-    kullanici,
-    kanalSkulari,
-    eslenmemisVaryant,
-  ] = await Promise.all([
-    prisma.category.findMany({
-      where: { isActive: true },
-      select: { name: true, vatRate: true },
-      orderBy: { vatRate: "desc" },
-    }),
-    prisma.location.findMany({
-      where: { isActive: true },
-      select: { code: true, name: true },
-      orderBy: { code: "asc" },
-    }),
-    prisma.channelAccount.findMany({
-      where: { isActive: true },
-      include: { channel: { select: { name: true } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.expenseCategory.findMany({
-      where: { isActive: true },
-      select: { name: true, isFixed: true, defaultVatRate: true },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    }),
-    prisma.cargoCarrier.findMany({
-      where: { isActive: true },
-      select: { name: true },
-      orderBy: { name: "asc" },
-    }),
+  /**
+   * ⚠ YALNIZ İKİ SORGU KALDI. Önce on beş sorgu koşuyordu ve on üçü
+   * kurulumun KİMLİĞİNİ okuyordu (raflar, hesaplar, kategoriler, sayımlar).
+   * Okunmayan veri okunmaz: alan tipten kalkınca sorgusu da kalkar, yoksa
+   * bir gün biri "zaten çekiliyor" deyip yeniden basar.
+   */
+  const [kesintiler, cezalar] = await Promise.all([
     prisma.channelFee.findMany({
       where: { isActive: true },
       include: { channel: { select: { name: true } } },
@@ -105,25 +79,9 @@ export async function elKitabiVerisi(): Promise<ElKitabiVerisi> {
       include: { channel: { select: { name: true } } },
       orderBy: [{ channelId: "asc" }, { orderAmountUpTo: "asc" }],
     }),
-    prisma.product.count(),
-    prisma.productVariant.count(),
-    prisma.channelSku.count(),
-    prisma.channelSku.count({ where: { commissionRate: null } }),
-    // "Kaç satış yapıldı" istatistiği: iptal edilen satış YAPILMIŞ değildir.
-    prisma.sale.count({ where: { iptalTarihi: null } }),
-    prisma.user.count({ where: { isActive: true } }),
-    prisma.channelSku.findMany({
-      select: {
-        commissionRate: true,
-        channelAccount: {
-          select: { name: true, channel: { select: { name: true } } },
-        },
-      },
-    }),
-    prisma.productVariant.count({ where: { channelSkus: { none: {} } } }),
   ]);
 
-  // Ceza kademelerini kanal başına grupla.
+  /** Ceza kademelerini kanal başına grupla. */
   const cezaHaritasi = new Map<string, { ustSinir: string; tutar: string }[]>();
   for (const c of cezalar) {
     const liste = cezaHaritasi.get(c.channel.name) ?? [];
@@ -134,32 +92,7 @@ export async function elKitabiVerisi(): Promise<ElKitabiVerisi> {
     cezaHaritasi.set(c.channel.name, liste);
   }
 
-  // Kanal hesabı başına eşleme özeti — "hangi mağazada kaç ürün tanımlı".
-  const ozetHaritasi = new Map<string, { adet: number; oransiz: number }>();
-  for (const k of kanalSkulari) {
-    const etiket = `${k.channelAccount.channel.name} — ${k.channelAccount.name}`;
-    const mevcut = ozetHaritasi.get(etiket) ?? { adet: 0, oransiz: 0 };
-    mevcut.adet++;
-    if (k.commissionRate === null) mevcut.oransiz++;
-    ozetHaritasi.set(etiket, mevcut);
-  }
-
   return {
-    kdvKategorileri: kategoriler.map((k) => ({
-      ad: k.name,
-      oran: sayi(k.vatRate) ?? "",
-    })),
-    raflar: raflar.map((r) => ({ kod: r.code, ad: r.name })),
-    kanalHesaplari: hesaplar.map((h) => ({
-      etiket: `${h.channel.name} — ${h.name}`,
-      paraBirimi: h.defaultCurrency,
-    })),
-    giderKategorileri: giderKategorileri.map((g) => ({
-      ad: g.name,
-      sabitMi: g.isFixed,
-      kdv: sayi(g.defaultVatRate) ?? "",
-    })),
-    kargoFirmalari: kargolar.map((k) => k.name),
     kanalKesintileri: kesintiler.map((k) => ({
       kanal: k.channel.name,
       kod: k.code,
@@ -172,18 +105,5 @@ export async function elKitabiVerisi(): Promise<ElKitabiVerisi> {
       kanal,
       kademeler,
     })),
-    kanalSkuOzeti: [...ozetHaritasi.entries()].map(([hesap, o]) => ({
-      hesap,
-      ...o,
-    })),
-    eslenmemisVaryant,
-    sayimlar: {
-      urun,
-      varyant,
-      kanalSku,
-      kanalSkuOransiz,
-      satis,
-      kullanici,
-    },
   };
 }

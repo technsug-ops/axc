@@ -30,6 +30,7 @@ export const BOLUMLER = [
   { kimlik: "kurulum", ad: "İlk kurulum" },
   { kimlik: "panel", ad: "Panel — güne nereden bakılır" },
   { kimlik: "urun", ad: "Ürünler ve stok" },
+  { kimlik: "stok", ad: "Stok — elimde ne var" },
   { kimlik: "kanalSku", ad: "Kanal SKU — ne işe yarar" },
   { kimlik: "komisyon", ad: "Komisyon oranı ve tarife" },
   { kimlik: "alim", ad: "Alım ve mal kabul" },
@@ -45,12 +46,71 @@ export const BOLUMLER = [
   { kimlik: "envanter", ad: "Envanter değeri" },
   { kimlik: "rapor", ad: "Dönem raporu" },
   { kimlik: "talep", ad: "Destek talepleri" },
+  { kimlik: "raf", ad: "Ayarlar — Raf Konumları" },
+  { kimlik: "kategori", ad: "Ayarlar — KDV Kategorileri" },
+  { kimlik: "duzeltme", ad: "Ayarlar — Düzeltme nedenleri" },
+  { kimlik: "kanalHesabi", ad: "Ayarlar — Kanal Hesapları" },
+  { kimlik: "tedarikci", ad: "Ayarlar — Tedarikçiler" },
+  { kimlik: "kullanici", ad: "Ayarlar — Kullanıcılar" },
+  { kimlik: "rol", ad: "Ayarlar — Roller" },
   { kimlik: "toplu", ad: "Toplu veri aktarımı" },
+  { kimlik: "gecmisEkstre", ad: "Ayarlar — Geçmiş ekstreler" },
   { kimlik: "yedek", ad: "Yedek" },
   { kimlik: "sorun", ad: "Bir şey ters giderse" },
   { kimlik: "sozluk", ad: "Sözlük" },
   { kimlik: "yolda", ad: "Henüz yok, yolda" },
 ] as const;
+
+/**
+ * ── MENÜ ↔ BÖLÜM EŞLEMESİ ───────────────────────────────────────────────
+ *
+ * Kullanıcı kararı 22.08.2026: _"el kitabında menü barda mevcut bulunan TÜM
+ * sayfalar açıklanmalı."_ Bu eşleme onu **denetlenebilir** yapar: bekçi
+ * `app-sidebar.tsx`teki menü anahtarlarını okur ve her birinin burada bir
+ * bölüme bağlandığını sınar.
+ *
+ * ⚠ ELLE TUTULAN LİSTE DEĞİL, KAPI. Menüye yeni bir sayfa eklenip buraya
+ * yazılmazsa bekçi kırmızı yanar — yani kılavuz, ekranın gerisinde
+ * SESSİZCE kalamaz. Bugüne kadar tam bu oldu: son iki haftada eklenen on
+ * ekranın hiçbiri kitapta yoktu.
+ *
+ * `null` = bilerek bölümü yok; gerekçesi yanında yazar.
+ */
+export const MENU_BOLUM: Record<string, string | null> = {
+  panel: "panel",
+  urunler: "urun",
+  urunKarti: "kart",
+  simulasyon: "deneme",
+  alimlar: "alim",
+  satislar: "satis",
+  iadeler: "iade",
+  stok: "stok",
+  envanterDegeri: "envanter",
+  kanalSkulari: "kanalSku",
+  giderler: "gider",
+  rapor: "rapor",
+  /** İki menü öğesi, tek bölüm: kart tanımı ile kart borcu aynı konudur. */
+  kartlar: "kartBorcu",
+  kartBorcu: "kartBorcu",
+  tazminat: "tazminat",
+  hakedis: "hakedis",
+  nakitTakvimi: "nakit",
+  rafKonumlari: "raf",
+  kategoriler: "kategori",
+  duzeltmeNedenleri: "duzeltme",
+  kanalHesaplari: "kanalHesabi",
+  tedarikciler: "tedarikci",
+  veriAktarimi: "toplu",
+  /** Yedek alma ve geri yükleme tek bölümde anlatılıyor. */
+  geriYukleme: "yedek",
+  veriDisari: "yedek",
+  kullanicilar: "kullanici",
+  roller: "rol",
+  talepler: "talep",
+  gecmisEkstre: "gecmisEkstre",
+  /** Kitabın KENDİSİ — kendi kendini anlatan bölüm açmak tekrar olurdu. */
+  elKitabi: null,
+};
 
 const iki = (n: number) => String(n).padStart(2, "0");
 
@@ -153,8 +213,6 @@ export function elKitabiGovdesi(
   veri: ElKitabiVerisi,
   uretimTarihi: string,
 ): string {
-  const s = veri.sayimlar;
-
   // --- kanal kesintileri: kanal başına satır ---
   const kesintiAdi: Record<string, string> = {
     KOMISYON_KDV: "Komisyon KDV'si",
@@ -202,8 +260,8 @@ export function elKitabiGovdesi(
 <header class="ek-kapak"><div class="ek-kapak-ic">
   <div class="ek-rozet">
     <span>Kullanıcı El Kitabı</span>
-    <span>${kacir(uretimTarihi)} tarihli sistemden üretildi</span>
-    <span>${s.kullanici} kullanıcı · ${s.urun} ürün · ${s.satis} satış</span>
+    <span>${kacir(uretimTarihi)}</span>
+    <span>Sürüm bilgisi kapakta durur; kurulum sayıları DURMAZ</span>
   </div>
   <h1>Selliora</h1>
   <p>Çok kanallı e-ticaret operasyonunuzun tek defteri: ne aldınız, ne sattınız,
@@ -316,31 +374,13 @@ malzemesini hazırlıyor.</p>
 <li><div><h3>Kanal SKU ve komisyon oranları</h3><p><strong>Kanal SKU.</strong> Sattığınız her pazaryeri için ürünün oradaki kodunu ve <strong>komisyon oranını</strong> girin. <strong>Bu adımı atlamayın</strong> — atlanırsa satış kaydedilir ama kârı hesaplanamaz. <a href="#kanalSku">Ne işe yaradığı</a>.</p></div></li>
 </ol>
 
-<div class="ek-not canli"><div class="etiket">Sizin sisteminizde şu an</div>
-<p>${veri.raflar.length} raf · ${veri.kdvKategorileri.length} KDV kategorisi ·
-${veri.kanalHesaplari.length} kanal hesabı · ${s.varyant} varyant ·
-${s.kanalSku} kanal eşlemesi${s.kanalSkuOransiz > 0 ? ` (<strong>${s.kanalSkuOransiz} tanesinde komisyon oranı yok</strong>)` : ""}.</p></div>
-
-<h3>Tanımlı raflarınız</h3>
-${canliTablo(
-  ["Kod", "Ad"],
-  veri.raflar.map((r) => [`<span class="kod">${kacir(r.kod)}</span>`, kacir(r.ad ?? "—")]),
-  "Henüz raf tanımlamamışsınız. Ayarlar → Raf Konumları ekranından başlayın.",
-)}
-
-<h3>KDV kategorileriniz</h3>
-${canliTablo(
-  ["Kategori", "KDV oranı"],
-  veri.kdvKategorileri.map((k) => [kacir(k.ad), `<span class="sayi">%${k.oran}</span>`]),
-  "Henüz KDV kategorisi yok.",
-)}
-
-<h3>Kanal hesaplarınız</h3>
-${canliTablo(
-  ["Hesap", "Para birimi"],
-  veri.kanalHesaplari.map((h) => [kacir(h.etiket), kacir(h.paraBirimi)]),
-  "Henüz kanal hesabı tanımlamamışsınız. Satış girebilmek için en az bir tane gerekir.",
-)}
+<div class="ek-not"><div class="etiket">Kendi tanımlarını nerede görürsün</div>
+<p>Bu kitap <strong>senin verilerini yazmaz</strong> — sistemin nasıl
+çalıştığını anlatır. Kendi raflarını, kategorilerini ve mağaza hesaplarını
+her zaman kendi ekranlarında, <strong>güncel hâliyle</strong> görürsün:
+Ayarlar → <strong>Raf Konumları</strong> · <strong>KDV Kategorileri</strong> ·
+<strong>Kanal Hesapları</strong>. Kitaba kopyalansaydı bir ay sonra
+bayatlardı; ekran bayatlamaz.</p></div>
 </section>
 
 <section id="panel">
@@ -413,6 +453,36 @@ ${sikHata([
 ])}
 </section>
 
+<section id="stok">
+${baslik("stok")}
+<p><strong>Sol menü → Stok.</strong> Hangi üründen kaç adet olduğu ve
+<strong>nerede durduğu</strong>. Ürün listesi "ne satıyorum" sorusuna,
+bu ekran "elimde ne var" sorusuna cevap verir.</p>
+${neZaman(
+  "Sipariş toplarken (mal hangi rafta), yeniden sipariş verirken (ne bitti) ve sayım yaparken (sistem ne diyor, rafta ne var).",
+)}
+<h3>Stok bir DEFTERDİR, bir sayı değil</h3>
+<p>Sistem stoğu "şu an 5 adet" diye tutmaz; her hareketi tek tek yazar ve
+toplamını alır. Mal kabul <strong>+3</strong>, satış <strong>&minus;1</strong>,
+iade <strong>+1</strong>&hellip; Bu yüzden bir rakam yanlış göründüğünde
+<strong>neden</strong> yanlış olduğu her zaman bulunabilir: hareketleri
+açarsın, hangi kaydın onu değiştirdiğini görürsün.</p>
+<div class="ek-not"><div class="etiket">Kayıt silinmez</div>
+<p>Yanlış girilen bir hareket <strong>silinmez</strong>; ters işaretli bir
+<strong>düzeltme</strong> ile dengelenir. Böylece bir farkın neden oluştuğu
+defterde kalır. Silme olsaydı cevap da silinirdi.</p></div>
+${sikHata([
+  {
+    hata: "Stok rakamını elle düzeltmeye çalışmak",
+    cozum: "Elle yazılan rakam nedenini taşımaz. Sayımda fark çıktıysa DÜZELTME hareketi gir ve nedenini seç \u2014 üç ay sonra o farkın neden oluştuğu okunabilir olur.",
+  },
+  {
+    hata: "Rafı boş bırakmak",
+    cozum: "Raf yazılmazsa toplama sırasında malı aramak zorunda kalırsın. Depo büyüdükçe bu dakikalar toplanır.",
+  },
+])}
+</section>
+
 <section id="kanalSku">
 ${baslik("kanalSku")}
 <p>Kanal SKU, sistemdeki ürününüz ile <strong>o ürünün bir pazaryerindeki
@@ -475,33 +545,11 @@ ayın kârı her hafta oynardı.</p></div>
 <li><strong>Kanal SKU</strong> ekranından tek tek, <strong>Ayarlar → Veri Aktarımı</strong> ile topluca (bu sayfa tek başına da yüklenebilir), ya da <strong>Kanal SKU → Komisyon oranı içe aktarma</strong> ile pazaryerinin kendi ürün listesinden.</li>
 </ul>
 
-<div class="ek-not canli"><div class="etiket">Sizin sisteminizde şu an</div>
-<p>${s.kanalSku} kanal eşlemesi tanımlı${
-  s.kanalSkuOransiz > 0
-    ? `, <strong>${s.kanalSkuOransiz} tanesinde komisyon oranı girilmemiş</strong>`
-    : ""
-}. ${
-  veri.eslenmemisVaryant > 0
-    ? `<strong>${veri.eslenmemisVaryant} varyantın hiçbir kanal eşlemesi yok</strong> — bunlar satılırsa kârları hesaplanamaz.`
-    : "Tüm varyantlarınızın en az bir kanal eşlemesi var."
-}</p></div>
-
-${
-  veri.kanalSkuOzeti.length > 0
-    ? `<h3>Mağaza başına eşlemeleriniz</h3>
-${canliTablo(
-  ["Kanal hesabı", "Eşleme", "Oranı girilmemiş"],
-  veri.kanalSkuOzeti.map((o) => [
-    kacir(o.hesap),
-    `<span class="sayi">${o.adet}</span>`,
-    o.oransiz > 0
-      ? `<strong class="sayi">${o.oransiz}</strong>`
-      : `<span class="sayi">0</span>`,
-  ]),
-  "",
-)}`
-    : ""
-}
+<div class="ek-not"><div class="etiket">Eksik eşlemeni nasıl görürsün</div>
+<p>Hangi ürünün hangi mağazada tanımlı olduğunu ve <strong>hangilerinde
+komisyon oranı boş kaldığını</strong> <strong>Kanal SKU</strong> ekranındaki
+süzgeçlerden görürsün. Oranı boş bir eşleme satış kaydını engellemez ama o
+satışın <strong>kârı hesaplanamaz</strong> — panelde uyarı olarak çıkar.</p></div>
 </section>
 
 <section id="komisyon">
@@ -629,8 +677,12 @@ ${canliTablo(
 <p>Ayrıca her satışta <strong>stopaj</strong> kesilir: KDV hariç tutarın %1'i.
 Kargo, desi tarifesinden okunur ve üstüne %20 KDV eklenir.</p>
 
-<h3>Kargo firmalarınız</h3>
-<p>${veri.kargoFirmalari.length > 0 ? veri.kargoFirmalari.map(kacir).join(" · ") : "Tanımlı kargo firması yok."}</p>
+<h3>Kargo firması ve desi tarifesi</h3>
+<p>Satış formunda kargo firmasını sen seçersin; ücret, o firmanın
+<strong>desi tarifesinden</strong> okunur ve üstüne %20 KDV eklenir. Farklı bir
+tutar ödediysen elle yazabilirsin — yazdığın tutar geçerli olur.</p>
+<p>Kullandığın firmalar ve tarifeleri kurulumda tanımlanır; listeni satış
+formundaki kargo seçiminde görürsün.</p>
 </section>
 
 <section id="iade">
@@ -787,16 +839,13 @@ ${neZaman(
 KDV'yi zaten düşüyor; ikinci kez düşerdi. "Vergi" kategorisi damga vergisi, MTV
 gibi KDV dışı vergiler içindir.</p></div>
 
-<h3>Gider kategorileriniz</h3>
-${canliTablo(
-  ["Kategori", "Tür", "Varsayılan KDV"],
-  veri.giderKategorileri.map((g) => [
-    kacir(g.ad),
-    g.sabitMi ? "Sabit" : "Değişken",
-    `<span class="sayi">%${g.kdv}</span>`,
-  ]),
-  "Gider kategorisi tanımlı değil.",
-)}
+<h3>Gider kategorileri</h3>
+<p>Her gider bir <strong>kategoriye</strong> ve bir <strong>türe</strong>
+bağlanır: <strong>sabit</strong> (kira gibi her ay aynı) ya da
+<strong>değişken</strong> (ambalaj gibi hacimle değişen). Bu ayrım dönem
+raporunda sabit giderlerin ayrı toplanmasını sağlar.</p>
+<p>Kategorilerin kendi listesini ve varsayılan KDV oranlarını
+<strong>Giderler → Şablonlar</strong> ekranında yönetirsin.</p>
 
 <h3>Her ay tekrar eden giderler</h3>
 <p><strong>Giderler → Tekrarlayan giderler.</strong> Kirayı bir kez şablon olarak
@@ -1009,6 +1058,139 @@ ${sikHata([
 ])}
 </section>
 
+<section id="raf">
+${baslik("raf")}
+<p><strong>Ayarlar → Raf Konumları.</strong> Deponun içindeki yerlerin
+listesi. Her rafın bir <strong>kodu</strong> (kısa, okunaklı) ve isteğe bağlı
+bir <strong>adı</strong> vardır.</p>
+${neZaman(
+  "Depoyu ilk kurarken; yeni bir raf ya da kutu eklediğinde; ve iki rafı birleştirmek istediğinde.",
+)}
+<h3>Neden ayrı bir ekran</h3>
+<p>Raf, ürünün <strong>özelliği değil konumu</strong>dur. Aynı ürün iki rafta
+durabilir, aynı raf onlarca ürün taşıyabilir. Ayrı tutulduğu için raf adını
+değiştirmek hiçbir ürünü bozmaz.</p>
+<p>Bu ekranda ayrıca <strong>etiket yazdırma</strong> ve <strong>iki rafı
+birleştirme</strong> vardır. Birleştirme, yanlışlıkla iki kez açılmış bir
+konumu tek çatı altına alır ve stok hareketleri kaybolmaz.</p>
+${sikHata([
+  {
+    hata: "Raf kodunu uzun ve karmaşık yapmak",
+    cozum: "Kod okunacak ve yazılacak. \u201cA-03\u201d iyi, \u201cDEPO-SOL-DUVAR-UST-RAF-3\u201d kötü. Uzun açıklama ADA yazılır, koda değil.",
+  },
+])}
+</section>
+
+<section id="kategori">
+${baslik("kategori")}
+<p><strong>Ayarlar → KDV Kategorileri.</strong> Her ürün bir kategoriye
+bağlanır ve <strong>KDV oranı o kategoriden okunur</strong> \u2014 ürün ürün
+elle girilmez.</p>
+${neZaman(
+  "Yeni bir ürün grubu almaya başladığında (oyuncak, elektronik, gıda) ve mevzuat bir oranı değiştirdiğinde.",
+)}
+<h3>Oran nereden çözülür &mdash; sıra kesindir</h3>
+<div class="formul"><b>ürün istisnası</b>  &rarr;  <b>kategori oranı</b>  &rarr;  varsayılan %20</div>
+<p>Bir üründe özel oran girilmişse o kazanır; yoksa kategorinin oranı; o da
+yoksa %20. Çözülen oran <strong>satış anında satışa yazılır</strong>: oran
+sonradan değişse eski satışların hesabı değişmez.</p>
+${sikHata([
+  {
+    hata: "Ürünü kategorisiz bırakmak",
+    cozum: "Kategorisi olmayan ürün varsayılan %20 ile hesaplanır. %1 ya da %10 grubundaysa KDV yanlış çıkar ve fark aylar sonra ödenecek KDV rakamında görünür.",
+  },
+])}
+</section>
+
+<section id="duzeltme">
+${baslik("duzeltme")}
+<p><strong>Ayarlar → Düzeltme nedenleri.</strong> Bir stok düzeltmesi
+girildiğinde seçilen <strong>neden</strong> listesini yönetir: sayım farkı,
+kırık ya da hasarlı, kayıp, numune gibi.</p>
+${neZaman("Yeni bir düzeltme sebebi ortaya çıktığında.")}
+<h3>Neden sebep zorunlu</h3>
+<p>Sebepsiz bir düzeltme, üç ay sonra <em>burada ne olmuştu</em> sorusuna
+cevap bırakmaz. Kapalı bir listeden seçtirmek ayrıca
+<strong>sayılabilir</strong> hâle getirir: hangi sebepten yılda kaç adet
+kaybettiğin ancak liste tutarlıysa ölçülebilir.</p>
+</section>
+
+<section id="kanalHesabi">
+${baslik("kanalHesabi")}
+<p><strong>Ayarlar → Kanal Hesapları.</strong> Hangi pazaryerinde hangi
+mağazayla satış yaptığını tanımlar. Bir <strong>kanal</strong> pazaryeridir;
+bir <strong>hesap</strong> o pazaryerindeki mağazandır.</p>
+${neZaman(
+  "İlk kurulumda ve yeni bir mağaza açtığında. Satış girebilmek için en az bir hesap gerekir \u2014 satış her zaman BİR hesaba bağlıdır.",
+)}
+<h3>Neden birden fazla hesap</h3>
+<p>Aynı pazaryerinde birden çok mağaza olabilir; alım limitleri hesap
+başınadır. Kesinti kuralları ve komisyon oranları da hesap bazında
+farklılaşabildiği için, satışın hangi mağazadan geldiği <strong>kârı doğrudan
+değiştirir</strong>.</p>
+<div class="ek-not dikkat"><div class="etiket">Alış hesabı, satış hesabı değildir</div>
+<p>Bazı hesaplar yalnız <strong>alım</strong> içindir. Komisyon oranı
+yüklerken alış hesabı seçilirse sistem reddeder: komisyon yalnız mal
+SATTIĞIN mağazada anlamlıdır.</p></div>
+${sikHata([
+  {
+    hata: "Satışı yanlış hesaba yazmak",
+    cozum: "Kanal değişince kesinti kuralları da değişir ve NET yanlış çıkar. Satış detayından hesabı düzeltirsen kâr yeniden hesaplanır.",
+  },
+])}
+</section>
+
+<section id="tedarikci">
+${baslik("tedarikci")}
+<p><strong>Ayarlar → Tedarikçiler.</strong> Mal aldığın yerlerin listesi.
+Alım kaydında tedarikçi seçilir; böylece bir ürünü kimden ve kaça aldığın
+sorusu geçmişe dönük cevaplanabilir.</p>
+${neZaman("Yeni bir yerden ilk kez mal aldığında.")}
+<h3>Ne işe yarar</h3>
+<p>Aynı ürünü iki tedarikçiden farklı fiyata alıyorsan, alım geçmişi bunu
+gösterir. Ayrıca bir iade ya da garanti durumunda malın <strong>nereden
+geldiği</strong> kayıtta durur, kutunun üstünde değil.</p>
+</section>
+
+<section id="kullanici">
+${baslik("kullanici")}
+<p><strong>Ayarlar → Kullanıcılar.</strong> Sisteme kimlerin girebileceğini
+yönetir. Her kullanıcının kendi e-postası, parolası ve bir
+<strong>rolü</strong> vardır.</p>
+${neZaman("Yeni biri işe başladığında ve biri ayrıldığında.")}
+<div class="ek-not dikkat"><div class="etiket">Ayrılan kullanıcı SİLİNMEZ</div>
+<p>Kullanıcı <strong>pasife alınır</strong>. Silinseydi o kişinin girdiği
+kayıtların kim tarafından yapıldığı bilgisi de kaybolurdu; defterin izi
+koparadı. Pasif kullanıcı giriş yapamaz ama geçmişteki imzası durur.</p></div>
+${sikHata([
+  {
+    hata: "Parolayı paylaşmak",
+    cozum: "İki kişi tek hesapla girerse hangi kaydı kimin yaptığı BİLİNEMEZ. Herkesin kendi hesabı olsun; sistemin izi ancak o zaman işe yarar.",
+  },
+])}
+</section>
+
+<section id="rol">
+${baslik("rol")}
+<p><strong>Ayarlar → Roller.</strong> Bir rolün hangi ekranları görebileceğini
+ve hangi işlemleri yapabileceğini belirler. Kullanıcıya rol verilir, izin
+değil; böylece on kişiye tek tek izin dağıtmak gerekmez.</p>
+${neZaman(
+  "Birden fazla kişi çalışmaya başladığında. Tek kullanıcılıyken bu ekran boş bir katmandır: zaten her şeyi görüyorsun.",
+)}
+<h3>Yetki iki bacaklıdır</h3>
+<p>Bir izin iki yerde yaşar: <strong>kodda</strong> ve
+<strong>veritabanında</strong>. İkincisi eksikse ekran menüde görünür ama
+tıklayınca açılmaz. Bu yüzden yeni bir izin eklendiğinde roller ekranından
+ilgili role işaretlenmesi gerekir.</p>
+${sikHata([
+  {
+    hata: "Rol adına bakıp yetkisi vardır saymak",
+    cozum: "Ölçüt İZİN KÜMESİDİR, rol adı değil. \u201cYönetici\u201d adlı bir rol, izinleri işaretlenmemişse hiçbir şey yapamaz. Ad bir etikettir, yetki değil.",
+  },
+])}
+</section>
+
 <section id="toplu">
 ${baslik("toplu")}
 <h3>İçe aktarma</h3>
@@ -1032,6 +1214,21 @@ stoktan daha kötüdür.</p></div>
 <li>Ürünler, Alımlar, Satışlar, Stok ve Giderler ekranlarında <strong>Excel indir</strong> düğmesi <strong>ekrandaki filtreyi uygular</strong>.</li>
 <li><strong>Ayarlar → Dışa Aktarma</strong> altında tüm veri tek dosyada iner.</li>
 </ul>
+</section>
+
+<section id="gecmisEkstre">
+${baslik("gecmisEkstre")}
+<p><strong>Ayarlar → Geçmiş ekstreler.</strong> Sistemi kullanmaya
+başlamadan ÖNCEKİ döneme ait kredi kartı ekstrelerini yükler. Böylece eski
+borçlar da kart borcu ekranında görünür.</p>
+${neZaman(
+  "Yalnız kuruluşta, bir kez. Sistem kullanılmaya başlandıktan sonraki alımlar zaten kendiliğinden doğru ekstreye düşer.",
+)}
+<div class="ek-not"><div class="etiket">Neden ayrı bir ekran</div>
+<p>Normal alımlar ekstreye <strong>kesim gününe göre</strong> kendiliğinden
+dağılır. Ama sistemden önceki borçların alım kaydı yoktur; onlar dışarıdan,
+toplu olarak girilmek zorundadır. İki yol karışsaydı aynı borç iki kez
+sayılabilirdi.</p></div>
 </section>
 
 <section id="yedek">

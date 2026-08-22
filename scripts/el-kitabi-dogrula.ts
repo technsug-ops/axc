@@ -111,6 +111,156 @@ console.log("\nEL KİTABI — DOĞRULAMA\n");
   );
 }
 
+// --- 2b) MENÜDEKİ HER SAYFA ANLATILIYOR MU ---------------------------------
+{
+  console.log("");
+  console.log("2b) MENÜ KAPSAMI — menüdeki her sayfanın bölümü var mı");
+  /**
+   * ⚠ KULLANICI KARARI 22.08.2026: "el kitabında menü barda mevcut bulunan
+   * TÜM sayfalar açıklanmalı."
+   *
+   * Bu kontrol olmadan kılavuz ekranın gerisinde SESSİZCE kalır — ve tam
+   * bu oldu: son iki haftada eklenen on ekranın hiçbiri kitapta yoktu,
+   * kimse fark etmedi. Menü kaynaktan okunuyor; elle tutulan bir liste
+   * aynı hatayı tekrar üretirdi.
+   */
+  const KENAR = readFileSync("src/components/app-sidebar.tsx", "utf8");
+  const menuAnahtarlari = [
+    ...KENAR.matchAll(/anahtar: "([a-zA-Z]+)"/g),
+  ].map((m) => m[1]!);
+  kontrol(
+    "menü kaynaktan okundu",
+    menuAnahtarlari.length > 20,
+    menuAnahtarlari.length,
+  );
+
+  /** İçerik modülündeki eşleme — `MENU_BOLUM`. */
+  const eslemeBlok = KAYNAK.slice(
+    KAYNAK.indexOf("export const MENU_BOLUM"),
+    KAYNAK.indexOf("const iki = (n: number)"),
+  );
+  kontrol("MENU_BOLUM eşlemesi bulundu", eslemeBlok.length > 200, eslemeBlok.length);
+
+  const eslenen = new Map<string, string | null>();
+  for (const m of eslemeBlok.matchAll(/^\s{2}([a-zA-Z]+): (?:"([a-zA-Z]+)"|null),/gm)) {
+    eslenen.set(m[1]!, m[2] ?? null);
+  }
+
+  /**
+   * ⚠ ÜÇ AYRI KUSUR, ÜÇÜ AYRI SAYILIR — "kapsanmadı" tek kefeye konsaydı
+   * en güçlü kanıt en zayıfla aynı ağırlığa inerdi.
+   */
+  const eslenmemis = menuAnahtarlari.filter((a) => !eslenen.has(a));
+  kontrol(
+    "menüdeki her sayfa MENU_BOLUM'de eşlenmiş",
+    eslenmemis.length === 0,
+    eslenmemis,
+  );
+
+  const govdedekiler = [...KAYNAK.matchAll(/<section id="([a-zA-Z]+)">/g)].map(
+    (m) => m[1]!,
+  );
+  const hedefiYok = [...eslenen.entries()]
+    .filter(([, b]) => b !== null && !govdedekiler.includes(b))
+    .map(([a, b]) => `${a} -> ${b}`);
+  kontrol(
+    "her eşlemenin hedef bölümü GERÇEKTEN var",
+    hedefiYok.length === 0,
+    hedefiYok,
+  );
+
+  /** Menüde olmayan bir anahtar eşlemede duruyorsa eşleme bayatlamış. */
+  const fazlalik = [...eslenen.keys()].filter(
+    (a) => !menuAnahtarlari.includes(a),
+  );
+  kontrol("eşlemede menüde OLMAYAN anahtar yok", fazlalik.length === 0, fazlalik);
+}
+
+// --- 2c) ŞAHSİLEŞTİRME YOK -------------------------------------------------
+{
+  console.log("");
+  console.log("2c) ŞAHSİLEŞTİRME — kitap kurulumun KİMLİĞİNİ yazmıyor");
+  /**
+   * ⚠ KULLANICI DÜZELTMESİ 22.08.2026: "el kitabı bu firmaya özel olmuş, bu
+   * şekilde uygun değil. Şahsileştirmeden yapılmalı; firmanın kanal
+   * hesapları var, raf sistemiyle ilgili bilgiler var."
+   *
+   * Anayasa: "firma adları yalnızca VERİ olabilir, YAPI olamaz." Belge
+   * mağaza adlarını, kişi adlarını, raf kodlarını ve satış sayılarını
+   * basıyordu; yani başkasına gösterilemez, ürün belgesi olarak
+   * kullanılamaz hâldeydi.
+   *
+   * ⚠ TEK SEFERLİK TEMİZLİK YETMEZ. Bir kez çıkarmak, yarın birinin
+   * "zaten veritabanında var" deyip geri koymasını engellemez. Kural
+   * kapıya bağlandı: bu alanlar TİPTE olamaz, bu tablolar veri katmanında
+   * SORGULANAMAZ. Sorgulanmayan veri yazılamaz.
+   */
+  const VERI = readFileSync("src/lib/el-kitabi/veri.ts", "utf8");
+
+  /** Tipte bulunmaması gereken alanlar — hepsi kurulum kimliği taşır. */
+  const YASAK_ALAN = [
+    "raflar",
+    "kanalHesaplari",
+    "kdvKategorileri",
+    "giderKategorileri",
+    "kargoFirmalari",
+    "kanalSkuOzeti",
+    "eslenmemisVaryant",
+    "sayimlar",
+    "tedarikciler",
+    "kullanicilar",
+  ];
+  const tiptekiler = YASAK_ALAN.filter((a) =>
+    new RegExp(`^\\s{2}${a}[?]?:`, "m").test(VERI),
+  );
+  kontrol(
+    "kurulum kimliği taşıyan alan TİPTE yok",
+    tiptekiler.length === 0,
+    tiptekiler,
+  );
+
+  /**
+   * ⚠ VE SORGUSU DA YOK. Alanı tipten çıkarıp sorguyu bırakmak, veriyi
+   * "az kalsın" hâlde tutar; biri onu yeniden bağlar. Okunmayan veri
+   * okunmaz.
+   */
+  const YASAK_SORGU = [
+    "prisma.location.",
+    "prisma.channelAccount.",
+    "prisma.category.",
+    "prisma.expenseCategory.",
+    "prisma.cargoCarrier.",
+    "prisma.user.",
+    "prisma.product.",
+    "prisma.productVariant.",
+    "prisma.sale.",
+    "prisma.channelSku.",
+  ];
+  const sorgulanan = YASAK_SORGU.filter((q) => VERI.includes(q));
+  kontrol(
+    "kurulum kimliği veri katmanında SORGULANMIYOR",
+    sorgulanan.length === 0,
+    sorgulanan,
+  );
+
+  /**
+   * İçerik tarafı da bu alanlara dokunmamalı — tip zaten engeller ama
+   * hata mesajı burada ÇOK daha anlaşılır çıkar.
+   */
+  const icerikte = YASAK_ALAN.filter((a) => KAYNAK.includes(`veri.${a}`));
+  kontrol("içerik bu alanları OKUMUYOR", icerikte.length === 0, icerikte);
+
+  /**
+   * Kalanın ne olduğu da yazılsın: pazaryeri kuralları KALIR, çünkü onlar
+   * firma bilgisi değil — Trendyol'un 13,19 TL sabit gideri kimseye özel
+   * değildir.
+   */
+  kontrol(
+    "pazaryeri kesinti kuralları KALDI (bunlar firma bilgisi değil)",
+    VERI.includes("kanalKesintileri") && VERI.includes("cezaTarifeleri"),
+  );
+}
+
 // --- 3) BOŞ BÖLÜM YOK -------------------------------------------------------
 {
   console.log("");
