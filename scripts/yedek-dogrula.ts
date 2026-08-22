@@ -78,6 +78,46 @@ async function main() {
   }
 
   // =========================================================================
+  console.log("\n1b) ÜRETİCİ BEKÇİSİ — listedeki tablo yedeğe YAZILIYOR mu");
+  // =========================================================================
+  {
+    /**
+     * ⚠ BU KONTROL 22.08.2026'DA EKLENDİ VE HEMEN GEREKLİ OLDUĞU GÖRÜLDÜ.
+     *
+     * Kapsam bekçisi (1) şemayı LİSTEYLE karşılaştırıyor. Ama yedeği üreten
+     * kod bir DÖNGÜ DEĞİL, elle yazılmış bir nesne (`yedek.ts`): her tablo
+     * için ayrı bir `findMany()` satırı var. Yani listeye tablo eklemek, o
+     * tablonun dosyaya GİRDİĞİ anlamına gelmiyor.
+     *
+     * `KomisyonTarifesi` eklenirken tam bu tuzağa düşüldü: kapsam bekçisi
+     * yeşile döndü, üretici hâlâ o tabloyu çekmiyordu. Liste ile üretici
+     * ayrışabildiği sürece "yedek:dogrula geçti" cümlesi hiçbir şey
+     * garanti etmez.
+     */
+    const uretici = readFileSync("src/lib/yedek.ts", "utf8");
+    const bas = uretici.indexOf("const tablolar: Record<string, unknown[]> = {");
+    const govde = uretici.slice(bas, uretici.indexOf("return {", bas));
+    kontrol("üretici gövdesi bulundu", bas >= 0 && govde.length > 500, govde.length);
+
+    const liste = YEDEK_TABLOLARI as readonly string[];
+    const cekilmeyen = liste.filter(
+      (t) => !new RegExp(`^\\s{4}${t}:`, "m").test(govde),
+    );
+    kontrol(
+      "listedeki her tablo üreticide ÇEKİLİYOR",
+      cekilmeyen.length === 0,
+      cekilmeyen,
+    );
+
+    /** Ters yön: üreticide olup listede olmayan tablo geri yüklemede kaybolur. */
+    const uretilenler = [...govde.matchAll(/^\s{4}([A-Z][A-Za-z]+):/gm)].map(
+      (m) => m[1]!,
+    );
+    const listedeYok = uretilenler.filter((t) => !liste.includes(t));
+    kontrol("üreticideki her tablo LİSTEDE var", listedeYok.length === 0, listedeYok);
+  }
+
+  // =========================================================================
   console.log("\n2) SIRA BEKÇİSİ — bağımlılık sırası doğru mu");
   // =========================================================================
   {

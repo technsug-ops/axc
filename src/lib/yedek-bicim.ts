@@ -49,6 +49,22 @@ export const YEDEK_TABLOLARI = [
   "CargoTariff",
   "ChannelAccount",
   "ChannelSku",
+  /**
+   * KOMİSYON TARİFESİ — `ChannelAccount`tan SONRA (ona bağlı), kalemi de
+   * `ProductVariant`tan sonra (isteğe bağlı `variantId` bağı var).
+   *
+   * ⚠ NİYE KRİTİK: Trendyol'un TAM DİLİMLİ ileri tarifesi satıcı panelinden
+   * ARŞİVE İNMİYOR. O hafta indirilmezse bir daha elde edilemez — yani bu
+   * iki tablo, kaybolursa YENİDEN ÜRETİLEMEYEN tek veri kümesi. Ötekiler
+   * en kötü ihtimalle pazaryerinden yeniden çekilir; bu çekilemez.
+   *
+   * ⚠ VE BU BOŞLUK BİR SÜRE AÇIK KALDI. `yedek:dogrula` kapsam bekçisi onu
+   * bulmuştu ve KIRMIZI yanıyordu; görülmemesinin sebebi bekçinin rutin
+   * doğrulama listesinde olmamasıydı (ölçüldü 21.08.2026: 36 bekçiden
+   * yalnız 7'si her teslimde koşuluyordu). Bekçi vardı, koşulmuyordu.
+   */
+  "KomisyonTarifesi",
+  "KomisyonTarifeKalemi",
   // --- gider ---
   "ExpenseTemplate",
   "Expense",
@@ -105,11 +121,17 @@ export const YEDEK_TABLOLARI = [
  *       kırmızı yandı; aynı pakette kapatıldı.
  *   3 — StockAdjustmentReason eklendi (12.08.2026). Bu kez unutulmadı:
  *       `yedek:dogrula` kapsam bekçisi migration'dan hemen sonra yakaladı.
+ *   6 — KomisyonTarifesi ve KomisyonTarifeKalemi eklendi (22.08.2026).
+ *       ⚠ BU KEZ UNUTULMUŞTU: bekçi kırmızı yanıyordu ama bekçinin kendisi
+ *       koşulmuyordu. Tarife verisi kaybolursa YENİDEN ÜRETİLEMEZ (tam
+ *       dilimli ileri tarife arşivden inmiyor), yani boşluk en pahalı
+ *       yerdeydi. Ders bekçiye değil RUTİNE yazıldı: artık her teslimde
+ *       `npm run bekci` bütün bekçileri koşuyor.
  *
  * Sürüm 1 dosyalar OKUNABİLİR kalır; geri yükleme ekranı eksik tabloları
  * tek tek sayar ve uyarır — sessizce "tamam" demez.
  */
-export const YEDEK_SURUMU = 5;
+export const YEDEK_SURUMU = 6;
 
 export type YedekDosyasi = {
   bicim: string;

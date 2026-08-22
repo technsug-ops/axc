@@ -76,8 +76,31 @@ export async function yedekUret(
     CargoTariff: tarifesiz ? [] : await istemci.cargoTariff.findMany(),
     ChannelAccount: await istemci.channelAccount.findMany(),
     ChannelSku: await istemci.channelSku.findMany(),
+    /**
+     * ⚠ KAYBOLURSA YENİDEN ÜRETİLEMEZ. Trendyol'un tam dilimli ileri
+     * tarifesi satıcı panelinden arşive İNMİYOR; o hafta indirilmezse bir
+     * daha elde edilemez. Yedekteki tek "geri getirilemez" veri kümesi bu.
+     */
+    KomisyonTarifesi: await istemci.komisyonTarifesi.findMany(),
+    KomisyonTarifeKalemi: await istemci.komisyonTarifeKalemi.findMany(),
     ExpenseTemplate: await istemci.expenseTemplate.findMany(),
     Expense: await istemci.expense.findMany(),
+    /**
+     * ⚠ ÜÇÜ DE 22.08.2026'DA EKLENDİ — ve üçü de LİSTEDE VARDI ama BURADA
+     * YOKTU. Yani kapsam bekçisi yeşil yanarken yedek dosyası bu tabloları
+     * hiç taşımıyordu.
+     *
+     * VE BU SESSİZ BİR EKSİKLİK DEĞİL, VERİ KAYBI YOLU: geri yükleme
+     * "dosyada olmayan tablo BOŞALIR" diyor (`geri-yukle-calistir.ts`).
+     * Yani bir yedekten dönülseydi kart ödemeleri, geçmiş ekstreler ve
+     * destek talepleri SİLİNİRDİ — kart borcu tamamen yanlış çıkardı.
+     *
+     * Bulan şey `1b) ÜRETİCİ BEKÇİSİ`: listeyi ÜRETİCİYLE karşılaştıran
+     * kontrol. Kapsam bekçisi (şema ↔ liste) bunu göremiyordu çünkü yanlış
+     * iki şeyi karşılaştırıyordu.
+     */
+    KartOdeme: await istemci.kartOdeme.findMany(),
+    GecmisEkstre: await istemci.gecmisEkstre.findMany(),
     Purchase: await istemci.purchase.findMany(),
     PurchaseItem: await istemci.purchaseItem.findMany(),
     Sale: await istemci.sale.findMany(),
@@ -93,6 +116,7 @@ export async function yedekUret(
     Compensation: await istemci.compensation.findMany(),
     // ⚠ SATIRLAR yedeklenir, DOSYALAR değil — dosyalar Blob'da kalır.
     // Aşağıdaki ek manifesti "neyin eksik olduğunu" sayıyla söyler.
+    Talep: await istemci.talep.findMany(),
     Attachment: await istemci.attachment.findMany(),
   };
 

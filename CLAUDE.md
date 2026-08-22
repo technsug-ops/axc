@@ -316,6 +316,20 @@ zorlaştıracak şekilde yazılmıyor.
   Doğrulama komutları çıkış koduyla kontrol edilir
   (`npm run x:dogrula > /dev/null 2>&1; echo $?`) ve push zinciri koda
   bağlanır.
+- **PUSH ÖNCESİ `npm run bekci` KOŞULUR — BÜTÜN bekçiler, seçilmişler değil.**
+  _Kullanıcı kararı 22.08.2026._ Depoda 42 doğrulama var ve hepsi çıkış kodu
+  üretiyor; ama her teslimde rutin koşulan yalnız **yedisiydi** (simulasyon ·
+  kar · panel · i18n · lint · tsc · build). Geri kalanı "dokunduğum alana
+  göre" koşuluyordu ve sonuç şu oldu: **iki bekçi bir süredir kırmızı yanıyordu
+  ve kimse görmüyordu** — `yerlesim:dogrula` ve `yedek:dogrula`.
+  İkincisi en pahalı yerdeydi: tarife tabloları yedeğe hiç girmiyordu ve
+  Trendyol'un tam dilimli ileri tarifesi arşivden **inmiyor**, yani kaybolsa
+  yeniden üretilemezdi.
+  **Tur ~65 saniye sürüyor.** Kod doğruydu; eksik olan koşma alışkanlığıydı ve
+  _"bir dahaki sefere hepsini koşarım"_ bir çözüm değil bir niyettir.
+  ⚠ Bekçi listesi `package.json`dan OKUNUR, elle tutulmaz — yoksa yarın
+  eklenen bir bekçi listeye yazılmadığı için sessizce koşulmaz ve aynı hata
+  bir kat yukarıda tekrarlanır.
 - Migration, silme, reset gibi geri dönüşsüz işlerde MUTLAKA onay iste
 - Her tamamlanan aşamada commit + push (mesaj formatı: tip: Türkçe açıklama).
   Push öncesi .env sızıntısı kontrolü.
