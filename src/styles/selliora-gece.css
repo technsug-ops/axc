@@ -1,0 +1,91 @@
+/* ============================================================
+   SELLIORA · GECE (karanlık tema)
+   Kobalt ile token ADLARI birebir aynıdır — yalnız değerler değişir.
+   Bileşen kodunda hiçbir değişiklik gerekmez.
+   ============================================================ */
+
+[data-tema="gece"], .dark {
+
+  /* --- yüzey merdiveni (0 en koyu → 2 en açık) --- */
+  --se-zemin:            #0E1626;
+  --se-kart:             #161F30;
+  --se-kart-2:           #1C2637;   /* açılır menü, modal — karttan AÇIK */
+  --se-satir:            #1D2839;
+  --se-baslik:           #1D2839;
+  --se-hover:            #212D40;
+  --se-secili:           #253347;
+
+  /* --- kabuk --- */
+  --se-kabuk:            #08101E;
+  --se-kabuk-secili:     #1A2740;
+  --se-kabuk-hover:      #141F33;
+  --se-kabuk-ink:        #E4EAF2;
+  --se-kabuk-ink2:       #8695A8;
+  --se-kabuk-cizgi:      #1B2637;
+
+  /* --- mürekkep --- */
+  --se-ink:              #E4EAF2;
+  --se-ink-2:            #8695A8;
+  --se-ink-3:            #66748A;
+  --se-ink-ters:         #0E1626;
+
+  /* --- çizgi --- */
+  --se-cizgi:            #273347;
+  --se-cizgi-2:          #37455A;
+  --se-cizgi-3:          #47576E;
+
+  /* --- vurgu: kimlik + eylem --- */
+  /* lacivert koyu zeminde kaybolur; aynı ailenin açık ucu kullanılır */
+  --se-vurgu:            #6FA8DC;
+  --se-vurgu-hover:      #86B7E4;
+  --se-vurgu-aktif:      #9BC5EA;
+  --se-vurgu-on:         #0E1626;
+  --se-vurgu-bg:         #1C2B3E;
+  --se-vurgu-cizgi:      #2E4459;
+
+  /* --- nötr rampa --- */
+  --se-notr:             #5A6B82;
+  --se-notr-2:           #3E4C61;
+  --se-notr-3:           #2B3648;
+  --se-notr-bg:          #232F42;
+
+  /* --- semantik: kâr --- */
+  --se-kar:              #4FBF94;
+  --se-kar-bg:           #133029;
+  --se-kar-cizgi:        #1F4A3C;
+
+  /* --- semantik: zarar --- */
+  --se-zarar:            #E8798A;
+  --se-zarar-bg:         #331E27;
+  --se-zarar-cizgi:      #4E2A36;
+
+  /* --- semantik: bilinmiyor / modellenmedi --- */
+  --se-bil:              #D6A93F;
+  --se-bil-ink:          #D6A93F;
+  --se-bil-bg:           #2F2718;
+  --se-bil-cizgi:        #493C22;
+
+  /* --- semantik: çelişki --- */
+  --se-celiski:          #E8798A;
+  --se-celiski-bg:       #8E2B3B;
+  --se-celiski-on:       #FFFFFF;
+
+  /* --- durum --- */
+  --se-odak:             #6FA8DC;
+  --se-odak-golge:       0 0 0 3px #24405C;
+  --se-pasif-bg:         #1A2434;
+  --se-pasif-ink:        #55637A;
+
+  /* --- gölge --- */
+  --se-golge-1:          0 1px 2px rgba(0, 0, 0, 0.32);
+  --se-golge-2:          0 4px 12px rgba(0, 0, 0, 0.42);
+  --se-golge-3:          0 12px 32px rgba(0, 0, 0, 0.52);
+
+  /* --- seçim ve kaydırma çubuğu --- */
+  --se-secim-bg:         #2E4459;
+  --se-secim-ink:        #E4EAF2;
+  --se-kaydirma:         #37455A;
+  --se-kaydirma-hover:   #47576E;
+
+  color-scheme: dark;
+}

@@ -26,10 +26,30 @@ import {
 import { OTURUM_CEREZI } from "@/lib/oturum-imza";
 import { oturumdakiKullanici } from "@/lib/oturum";
 import { BildirButonu } from "@/components/bildir-butonu";
+import { TemaSecici } from "@/components/tema-secici";
 import { UyariCani } from "@/components/uyari-cani";
 import { UYGULAMA } from "@/lib/uygulama";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+
+/**
+ * ⚠ TEMA REACT'TEN ÖNCE UYGULANIR — yoksa sayfa bir kare AÇIK temada
+ * çizilir, sonra karanlığa atlar (FOUC). Bu betik `<head>` içinde, hiçbir
+ * şey boyanmadan koşar.
+ *
+ * ⚠ `try/catch` ŞART: gizli sekmede `localStorage` erişimi HATA FIRLATIR
+ * (yalnız boş dönmez). Yakalanmazsa betik ölür ve tema hiç uygulanmaz.
+ *
+ * ⚠ VARSAYILAN KOBALT, ama cihaz karanlık istiyorsa GECE ile açılır:
+ * kullanıcı hiç seçim yapmadıysa sistemin tercihi bir cevaptır, "hiç
+ * cevap yok" değildir.
+ *
+ * ⚠ `.dark` SINIFI DA EKLENİR: durum renklerinin (`lib/renkler.ts`) koyu
+ * varyantları Tailwind'in `dark:` önekiyle yazılı ve o önek `.dark`
+ * atasına bakıyor. Yalnız `data-tema` yazsaydık yüzeyler kararır, yeşil
+ * ve kırmızı rozetler açık tema tonunda kalırdı.
+ */
+const TEMA_BETIGI = `(function(){try{var t=localStorage.getItem("selliora-tema");if(t!=="kobalt"&&t!=="gece"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"gece":"kobalt";}var k=document.documentElement;k.setAttribute("data-tema",t);if(t==="gece"){k.classList.add("dark");}}catch(e){}})();`;
 
 /**
  * Sekme başlıkları tek yerden yönetiliyor: alt sayfalar sadece kendi
@@ -80,7 +100,16 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
    */
   if (!kullanici) {
     return (
-      <html lang={dil} className={cn("font-sans", geist.variable)}>
+      <html
+        lang={dil}
+        className={cn("font-sans", geist.variable)}
+        /* Tema betiği `data-tema` ve `.dark` ekliyor; sunucu çıktısıyla
+           istemci ilk karesi bu yüzden AYRIŞIR ve bu beklenen hâldir. */
+        suppressHydrationWarning
+      >
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
+        </head>
         <body>
           <NextIntlClientProvider>{children}</NextIntlClientProvider>
         </body>
@@ -89,7 +118,16 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   }
 
   return (
-    <html lang={dil} className={cn("font-sans", geist.variable)}>
+    <html
+        lang={dil}
+        className={cn("font-sans", geist.variable)}
+        /* Tema betiği `data-tema` ve `.dark` ekliyor; sunucu çıktısıyla
+           istemci ilk karesi bu yüzden AYRIŞIR ve bu beklenen hâldir. */
+        suppressHydrationWarning
+      >
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
+        </head>
       <body>
         {/* Sözlük ve biçimler istemci bileşenlerine buradan akıyor. */}
         <NextIntlClientProvider>
@@ -140,6 +178,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                     sorgu koymak uygulamadaki her sayfayı bekletirdi.
                   */}
                   <div className="ms-auto flex items-center gap-2">
+                    {/* TEMA — Kobalt / Gece. Ayarlara gömülmedi: tema bir
+                        AYAR değil TERCİHTİR ve gün içinde değişir. */}
+                    <TemaSecici />
                     {/* EL KİTABI — üst çubukta kısayol (kullanıcı 22.08.2026).
                         Menüde de var ama menü kapalıyken ve mobilde görünmez;
                         oysa kılavuza tam olarak "bir şeyi bilmediğin anda"

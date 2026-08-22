@@ -126,7 +126,9 @@
     "not": "Not",
     "panel": "Panel",
     "kanalSku": "Kanal SKU",
-    "elKitabiKisayolu": "El Kitabı"
+    "elKitabiKisayolu": "El Kitabı",
+    "temaKobalta": "Aydınlık temaya geç",
+    "temaGeceye": "Karanlık temaya geç"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",

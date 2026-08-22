@@ -1,6 +1,22 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/* ══════════════════════════════════════════════════════════════════════
+   İKİ TEMA — KOBALT (gündüz) ve GECE (karanlık)
+   ----------------------------------------------------------------------
+   Kullanıcı 22.08.2026: _"şu andaki renk sistemi yeterli değil, sayfalar
+   çok beyaz, okumakta ve ayırt etmekte zorlanılıyor."_
+
+   ÖLÇÜLDÜ ve haklıydı: eski palette YÜZEY MERDİVENİ İKİ BASAMAKTI
+   (`--background` 0.968 · `--card` 1.0) ve ikisi de neredeyse beyazdı.
+   Zebra satır, tablo başlığı, üzerine gelme ve seçili satır için ayrı bir
+   ton YOKTU — hepsi aynı beyazın üstünde duruyordu. Kobalt'ta merdiven
+   YEDİ basamak: zemin · kart · kart-2 · satır · başlık · hover · seçili.
+
+   ⚠ İKİ DOSYA DA YALNIZ DEĞER TANIMLAR, token ADLARI birebir aynıdır.
+   Bileşen kodunda hiçbir değişiklik gerekmez — aşağıdaki köprü sayesinde. */
+@import "../styles/selliora-kobalt.css";
+@import "../styles/selliora-gece.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -47,79 +63,118 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   ⚠ RENK DEĞERLERİ BURADAN KALKTI — 22.08.2026, PALETE TAŞINDI.
+   ----------------------------------------------------------------------
+   Bu blokta 31 token oklch değeriyle yazılıydı. Köprü (aşağıda) hepsini
+   `--se-*` paletinden okuyor ve köprü SONRA geldiği için eski değerler
+   ARTIK HİÇBİR ŞEY YAPMIYORDU: ölü kod.
+
+   ⚠ VE ÖLÜ KOD SESSİZ DEĞİLDİ, ZARARLIYDI. `panel:dogrula`nın "aksan
+   rengi gri değil" kontrolü tam bu satırları okuyordu; yani ezilmiş bir
+   değere bakıp YEŞİL yanıyordu. Bekçi, ekranda görünmeyen bir rakamı
+   doğruluyordu. Bu yüzden değerler silindi ve bekçi paleti okuyacak
+   şekilde düzeltildi — iki iş birlikte yapılmazsa yalancı yeşil kalırdı.
+
+   ── SİLİNEN DEĞERLERİN GEREKÇELERİ KAYBOLMADI ────────────────────────
+   Buradaki kararlar palette KARŞILIĞINI buldu, o yüzden not olarak durur:
+
+   · "SAYFA GRİ, KART BEYAZ" (15.08.2026) — kart sayfanın ÜSTÜNE çıkmalı,
+     içine gömülmemeli. Kobalt bunu yedi basamaklı yüzey merdiveniyle
+     yapıyor: zemin → kart → kart-2 → satır → başlık → hover → seçili.
+     Eski palette bu merdiven İKİ basamaktı ve ikisi de beyaza yakındı;
+     kullanıcının "sayfalar çok beyaz, ayırt etmekte zorlanılıyor"
+     şikâyetinin kaynağı buydu.
+
+   · "AKSAN RENGİ" (15.08.2026) — sistemde hiç renk yoktu, `--primary`
+     siyahtı. Kobalt'ta vurgu `--se-vurgu` (#12356B) ve palet kuralı bunu
+     açıkça sınırlıyor: "kimlik + eylem. BAŞKA HİÇBİR ANLAM TAŞIMAZ."
+
+   · "KENARLIK KONTRASTI" (09.08.2026) — varsayılan kenarlık fazla
+     soluktu, girdi bir tık koyu olmalı. Köprü bunu koruyor:
+     `--border: --se-cizgi` · `--input: --se-cizgi-2`.
+
+   · "KÖŞE YARIÇAPI" — tasarım referansından (kart 9px, buton 7px,
+     rozet 5-6px). Renk DEĞİL, o yüzden `--radius` burada KALIYOR.
+   ══════════════════════════════════════════════════════════════════════ */
 :root {
-    /* SAYFA GRİ, KART BEYAZ — 15.08.2026'da ters çevrildi.
-       09.08.2026'da "kart sayfadan ayrılmıyor" denmişti ve kart
-       GRİLEŞTİRİLMİŞTİ. Ayrım geliyordu ama yanlış yönden: kart sayfanın
-       üstüne çıkmak yerine içine gömülüyordu, bütün ekran donuk bir griye
-       düşüyordu ve renkli rozetler bu gri üstünde iyice sönüyordu.
-       Doğrusu tersi: zemin geri çekilir, kart öne çıkar. Aynı ayrım, ama
-       kart artık bir yüzey; pastel rozetler de beyaz üstünde okunuyor.
-       Koyu temada kart ZATEN sayfadan açık — orada bir şey değişmiyor. */
-    --background: oklch(0.968 0.002 90);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    /* ══════════════════════════════════════════════════════════════════
-       AKSAN RENGİ — 15.08.2026'da eklendi.
-
-       Sistemde hiç renk yoktu: `--primary` siyahtı, bütün gri tonlar
-       chroma 0'dı. Kullanıcı "ayırt edici bir renk yok, bütünlük yok"
-       dedi — haklıydı, ekranda tutunacak tek bir ton bile yoktu.
-
-       AYRI BİR MARKA RENGİ UYDURULMADI: aksan, paletteki "bilgi"
-       mavisinin ta kendisi (#2F7FD1). Gerekçe — o mavi zaten "bilgi /
-       gidilecek yer" demek, bağlantı da tam olarak odur. Ayrı bir marka
-       tonu eklemek altıncı bir renk açar ve dört anlamlı rengin yanında
-       gürültü olurdu.
-
-       Bu tek token bütün uygulamayı renklendiriyor: `Baglanti` zaten
-       `text-primary` kullanıyor, butonlar ve aktif menü de öyle. */
-    --primary: oklch(0.55 0.15 254);
-    --primary-foreground: oklch(0.99 0 0);
-    /* Kart zemini 0.97 oldu; bu yuzeyler kartin UZERINDE duruyor,
-       aynı tonda kalırlarsa kaybolurlar. Bir kademe koyu. */
-    --secondary: oklch(0.94 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.94 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.94 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    /* KENARLIK KONTRASTI — bilerek shadcn varsayılanından koyu.
-       Açık temada kart zemini sayfayla aynı beyaz olduğu için kutunun
-       nerede başlayıp bittiğini SADECE kenarlık gösteriyor; varsayılan
-       0.922 bunun için fazla soluktu (kullanıcı geri bildirimi
-       09.08.2026). Giriş alanları bir tık daha koyu ki tıklanabilir
-       alanlar kart kenarlığından ayrışsın. */
-    --border: oklch(0.82 0 0);
-    --input: oklch(0.8 0 0);
-    /* Odak halkası da aksan: klavyeyle gezen kullanıcı nerede olduğunu
-       gri bir halkadan değil, sistemin kendi renginden görür. */
-    --ring: oklch(0.6 0.13 254);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    /* KÖŞE YARIÇAPI — tasarım referansından (Site Sayfaları.dc.html).
-       Referansta kart 9px, buton ve menü satırı 7px, rozet 5-6px. Buradaki
-       tek değer @theme'deki çarpanlarla (0.6 / 0.8 / 1 / 1.4) o üç ölçüyü
-       birden üretiyor: 5,4 · 7,2 · 9 · 12,6. Önceki 10px kartları
-       referanstan belirgin daha yuvarlak yapıyordu. */
     --radius: 0.5625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.55 0.15 254);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    /* Aktif menü satırı: mavi tint + mavi yazı. Gri bir vurgu "seçili"
-       demiyordu, sadece biraz kirli görünüyordu (ekran görüntüsü 15.08.2026). */
-    --sidebar-accent: oklch(0.952 0.022 254);
-    --sidebar-accent-foreground: oklch(0.42 0.13 254);
-    --sidebar-border: var(--border);
-    --sidebar-ring: oklch(0.6 0.13 254);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   KÖPRÜ — shadcn sözlüğü ⇄ Selliora paleti
+   ----------------------------------------------------------------------
+   ⚠ NİYE KÖPRÜ, NİYE YENİDEN YAZIM DEĞİL. Palet paketi kendi sözlüğünü
+   getiriyor (`--se-zemin`, `--se-kart`, `--se-vurgu`…) ve yanında 110
+   `se-*` bileşen sınıfı var. Uygulama ise shadcn bileşenleri kullanıyor:
+   her ekran zaten `bg-background`, `bg-card`, `text-muted-foreground`
+   yazıyor. Bileşenleri `se-*` sınıflarına çevirmek 58 dosyalık bir
+   yeniden yazım olurdu ve `panel:dogrula`nın 362 kontrolünü kırardı.
+
+   Bu blok iki sözlüğü BAĞLIYOR: shadcn token'ı paletten okur. Sonuç —
+   tek satır bileşen kodu değişmeden bütün uygulama tema değiştirir.
+
+   ⚠ DURUM RENKLERİ BURAYA GİRMEZ. Yeşil kâr / kırmızı zarar / kırmızı
+   uyarı `lib/renkler.ts`te ve kullanıcı kararı 22.08.2026: _"bu tamam,
+   buna bir değişiklik yapmana gerek yok."_ O dosyaya DOKUNULMUYOR; gece
+   temasında zaten yazılı olan `dark:` varyantları devreye giriyor
+   (aşağıdaki `.dark` eşlemesi sayesinde).
+   ══════════════════════════════════════════════════════════════════════ */
+:root,
+[data-tema="kobalt"],
+[data-tema="gece"] {
+    /* --- yüzeyler --- */
+    --background: var(--se-zemin);
+    --foreground: var(--se-ink);
+    --card: var(--se-kart);
+    --card-foreground: var(--se-ink);
+    --popover: var(--se-kart-2);
+    --popover-foreground: var(--se-ink);
+
+    /* --- vurgu: kimlik ve eylem --- */
+    --primary: var(--se-vurgu);
+    --primary-foreground: var(--se-vurgu-on);
+
+    /* İkincil yüzeyler kartın ÜZERİNDE durur; merdivenin başlık basamağı. */
+    --secondary: var(--se-notr-bg);
+    --secondary-foreground: var(--se-ink);
+    --muted: var(--se-baslik);
+    --muted-foreground: var(--se-ink-2);
+    --accent: var(--se-hover);
+    --accent-foreground: var(--se-ink);
+
+    --destructive: var(--se-zarar);
+
+    /* --- çizgiler --- */
+    --border: var(--se-cizgi);
+    /* Girdi çerçevesi bir tık koyu: tıklanabilir alan kart kenarından
+       ayrışsın (09.08.2026 geri bildirimi hâlâ geçerli). */
+    --input: var(--se-cizgi-2);
+    --ring: var(--se-odak);
+
+    /* --- kabuk: kenar çubuğu ve üst şerit --- */
+    /* ⚠ EN BÜYÜK GÖRSEL DEĞİŞİKLİK BURADA. Kenar çubuğu beyazdan KOYU
+       MAVİYE dönüyor. "Sayfalar çok beyaz" şikâyetinin en büyük tek
+       kalemi buydu: ekranın solunda 250px'lik beyaz bir alan vardı ve
+       içerikten hiç ayrışmıyordu. */
+    --sidebar: var(--se-kabuk);
+    --sidebar-foreground: var(--se-kabuk-ink);
+    --sidebar-primary: var(--se-kabuk-secili);
+    --sidebar-primary-foreground: var(--se-kabuk-ink);
+    --sidebar-accent: var(--se-kabuk-secili);
+    --sidebar-accent-foreground: var(--se-kabuk-ink);
+    --sidebar-border: var(--se-kabuk-cizgi);
+    --sidebar-ring: var(--se-odak);
+
+    /* --- grafik: NÖTR RAMPA ---
+       ⚠ Grafik dolgusu ANLAM TAŞIMAZ. Palet kuralı: "renk anlam
+       taşıyorsa, anlamı olmayan yerde kullanılamaz." Trendyol çubuğunun
+       mavi olması "TY türetilmiş bir kanal" demek değildir. */
+    --chart-1: var(--se-notr-3);
+    --chart-2: var(--se-notr-2);
+    --chart-3: var(--se-notr);
+    --chart-4: var(--se-ink-3);
+    --chart-5: var(--se-ink-2);
 }
 
 .dark {

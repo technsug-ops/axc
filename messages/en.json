@@ -126,7 +126,9 @@
     "not": "",
     "panel": "",
     "kanalSku": "",
-    "elKitabiKisayolu": ""
+    "elKitabiKisayolu": "",
+    "temaKobalta": "",
+    "temaGeceye": ""
   },
   "AlimDurumu": {
     "DRAFT": "",

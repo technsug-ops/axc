@@ -1,0 +1,93 @@
+/* ============================================================
+   SELLIORA · KOBALT (gündüz teması)
+   Sadece DEĞER tanımlar. Bileşenler selliora-bilesenler.css'te.
+   Gece temasıyla token ADLARI birebir aynıdır.
+   ============================================================ */
+
+:root,
+[data-tema="kobalt"] {
+
+  /* --- yüzey merdiveni (0 en koyu → 2 en açık) --- */
+  --se-zemin:            #F7F9FB;   /* sayfa arka planı */
+  --se-kart:             #FFFFFF;   /* kart, panel, tablo gövdesi */
+  --se-kart-2:           #FFFFFF;   /* açılır menü, modal, ipucu */
+  --se-satir:            #F3F6FA;   /* zebra satır */
+  --se-baslik:           #EDF1F6;   /* tablo başlığı, bölüm şeridi */
+  --se-hover:            #EFF3F8;   /* satır üzerine gelme */
+  --se-secili:           #E8EEF6;   /* seçili satır */
+
+  /* --- kabuk (kenar çubuğu, üst şerit) --- */
+  --se-kabuk:            #12356B;
+  --se-kabuk-secili:     #1D4784;
+  --se-kabuk-hover:      #183F79;
+  --se-kabuk-ink:        #FFFFFF;
+  --se-kabuk-ink2:       #A8BDD9;
+  --se-kabuk-cizgi:      #24497F;
+
+  /* --- mürekkep --- */
+  --se-ink:              #111820;   /* birincil metin, sayılar */
+  --se-ink-2:            #5C6B7E;   /* etiket, ikincil metin */
+  --se-ink-3:            #93A0AE;   /* yer tutucu, üst veri */
+  --se-ink-ters:         #FFFFFF;   /* koyu dolgu üzeri metin */
+
+  /* --- çizgi --- */
+  --se-cizgi:            #DDE1E6;   /* varsayılan saç teli */
+  --se-cizgi-2:          #C6CDD5;   /* girdi çerçevesi, vurgulu ayraç */
+  --se-cizgi-3:          #AAB4BF;   /* üzerine gelme */
+
+  /* --- vurgu: kimlik + eylem. BAŞKA HİÇBİR ANLAM TAŞIMAZ --- */
+  --se-vurgu:            #12356B;
+  --se-vurgu-hover:      #0E2A55;
+  --se-vurgu-aktif:      #0A2044;
+  --se-vurgu-on:         #FFFFFF;
+  --se-vurgu-bg:         #E8EEF6;
+  --se-vurgu-cizgi:      #B6C7DE;
+
+  /* --- nötr rampa: anlamı OLMAYAN her yer --- */
+  /* grafik dolgusu, ilerleme çubuğu, türetilmiş değer şeridi */
+  --se-notr:             #8496AB;
+  --se-notr-2:           #B4C0CE;
+  --se-notr-3:           #D4DBE3;
+  --se-notr-bg:          #EDF1F6;
+
+  /* --- semantik: kâr --- */
+  --se-kar:              #0E7350;
+  --se-kar-bg:           #E4F1EB;
+  --se-kar-cizgi:        #A9D6C3;
+
+  /* --- semantik: zarar --- */
+  --se-zarar:            #9E2436;
+  --se-zarar-bg:         #F8E9EB;
+  --se-zarar-cizgi:      #E3B4BB;
+
+  /* --- semantik: bilinmiyor / modellenmedi --- */
+  --se-bil:              #B8860B;   /* şerit, çizgi, ikon */
+  --se-bil-ink:          #8A6410;   /* açık zeminde metin */
+  --se-bil-bg:           #FAF1DC;
+  --se-bil-cizgi:        #E8D5A8;
+
+  /* --- semantik: çelişki (kaynak ile sistem uyuşmuyor) --- */
+  /* zarar ile aynı ton, DOLU zemin ile ayrışır — hue sayısı artmasın */
+  --se-celiski:          #9E2436;
+  --se-celiski-bg:       #9E2436;
+  --se-celiski-on:       #FFFFFF;
+
+  /* --- durum --- */
+  --se-odak:             #12356B;
+  --se-odak-golge:       0 0 0 3px #D6E2F1;
+  --se-pasif-bg:         #F0F2F5;
+  --se-pasif-ink:        #A9B2BC;
+
+  /* --- gölge (sadece yüzen katman) --- */
+  --se-golge-1:          0 1px 2px rgba(17, 24, 32, 0.05);
+  --se-golge-2:          0 4px 12px rgba(17, 24, 32, 0.08);
+  --se-golge-3:          0 12px 32px rgba(17, 24, 32, 0.12);
+
+  /* --- seçim ve kaydırma çubuğu --- */
+  --se-secim-bg:         #D6E2F1;
+  --se-secim-ink:        #111820;
+  --se-kaydirma:         #C6CDD5;
+  --se-kaydirma-hover:   #AAB4BF;
+
+  color-scheme: light;
+}

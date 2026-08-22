@@ -1924,9 +1924,49 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   // hatasından kırmızı yanıyordu.
   const kokBas = tema.indexOf(":root {");
   const acikTema = tema.slice(kokBas, tema.indexOf(".dark {", kokBas));
-  const kroma = (blok: string, ad: string) => {
-    const m = new RegExp(`--${ad}:\\s*oklch\\([0-9.]+\\s+([0-9.]+)`).exec(blok);
-    return m ? Number(m[1]) : NaN;
+  /**
+   * ⚠ TOKEN ARTIK PALETTEN OKUNUYOR — VE BU KONTROL BİR KEZ KÖR KALDI.
+   *
+   * 22.08.2026'da renk değerleri `globals.css`ten `styles/selliora-*.css`
+   * paletlerine taşındı ve `:root` bir KÖPRÜYE döndü (`--primary:
+   * var(--se-vurgu)`). Eski oklch satırları bir süre dosyada kaldı; köprü
+   * SONRA geldiği için ezilmişlerdi, yani ÖLÜ koddu — ama bu kontrol tam
+   * onları okuyup YEŞİL yanıyordu. Ekranda görünmeyen bir rakam
+   * doğrulanıyordu.
+   *
+   * Ölü satırlar silinince kontrol kırmızı yandı; doğrusu buydu. Şimdi
+   * zincir sonuna kadar izleniyor: token → `var(--se-*)` → palet dosyası
+   * → hex. Zincir kopuyorsa NaN döner ve kontrol kırmızı yanar — "bulamadım"
+   * sessizce "temiz" sayılmaz.
+   */
+  const KOBALT = readFileSync("src/styles/selliora-kobalt.css", "utf8");
+  const GECE = readFileSync("src/styles/selliora-gece.css", "utf8");
+
+  /** `#RRGGBB` → 0–1 aralığında üç kanal. */
+  const hexKanal = (hex: string): [number, number, number] => [
+    parseInt(hex.slice(1, 3), 16) / 255,
+    parseInt(hex.slice(3, 5), 16) / 255,
+    parseInt(hex.slice(5, 7), 16) / 255,
+  ];
+
+  /** Token'ı köprüden palete kadar izler; bulamazsa null. */
+  const paletHex = (blok: string, ad: string, palet: string): string | null => {
+    const kopru = new RegExp(`--${ad}:\\s*var\\((--se-[a-z0-9-]+)\\)`).exec(blok);
+    if (!kopru) return null;
+    const deger = new RegExp(`${kopru[1]}:\\s*(#[0-9A-Fa-f]{6})`).exec(palet);
+    return deger ? deger[1]! : null;
+  };
+
+  /**
+   * RENKLİ Mİ — kanallar arası en büyük fark. Gri tonda üç kanal eşittir
+   * (fark 0); renkli bir tonda ayrışırlar. oklch kroma'sının hex
+   * karşılığı olarak yeterli: sorulan şey "gri mi değil mi".
+   */
+  const kroma = (blok: string, ad: string, palet = KOBALT) => {
+    const hex = paletHex(blok, ad, palet);
+    if (hex === null) return NaN;
+    const [r, g, b] = hexKanal(hex);
+    return Math.max(r, g, b) - Math.min(r, g, b);
   };
   /**
    * AKTİF SEÇİM HER YERDE AKSAN RENGİNDE. 16.08.2026: sekme bileşeni renk
@@ -1946,12 +1986,117 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
   kontrol(
     "  ...koyu temada da renkli",
-    kroma(tema.slice(tema.indexOf(".dark {", kokBas)), "primary") > 0.05,
+    kroma(acikTema, "primary", GECE) > 0.05,
   );
   kontrol(
     "  ...aktif menü satırı da aksan tonunda (gri vurgu 'seçili' demiyor)",
     kroma(acikTema, "sidebar-accent") > 0.01,
   );
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  İKİ TEMA — KOBALT / GECE (22.08.2026)
+   * --------------------------------------------------------------------
+   *  Kullanıcı: _"sayfalar çok beyaz, okumakta ve ayırt etmekte
+   *  zorlanılıyor"_ ve _"panel kullanıcısı ikisinden birini istediği zaman
+   *  seçebilsin."_
+   * ════════════════════════════════════════════════════════════════════
+   */
+  {
+    /** İki palet AYNI token adlarını tanımlamalı — biri eksikse o token
+     *  öteki temada TANIMSIZ kalır ve tarayıcı miras alır: yüzey kararır
+     *  ama yazı açık kalır gibi sessiz kırıklar doğar. */
+    const adlar = (metin: string) =>
+      new Set([...metin.matchAll(/^\s*(--se-[a-z0-9-]+):/gm)].map((m) => m[1]!));
+    const kobaltAdlari = adlar(KOBALT);
+    const geceAdlari = adlar(GECE);
+    kontrol("Kobalt paleti okundu", kobaltAdlari.size > 40, kobaltAdlari.size);
+    const eksikGece = [...kobaltAdlari].filter((a) => !geceAdlari.has(a));
+    const eksikKobalt = [...geceAdlari].filter((a) => !kobaltAdlari.has(a));
+    kontrol("iki palet AYNI token adlarını tanımlıyor", eksikGece.length === 0, eksikGece);
+    kontrol("  ...ters yönde de", eksikKobalt.length === 0, eksikKobalt);
+
+    /**
+     * ⚠ YÜZEY MERDİVENİ ŞİKÂYETİN TA KENDİSİYDİ. Eski palette zemin ve
+     * kart neredeyse aynı beyazdı; zebra satır, tablo başlığı, hover ve
+     * seçili için ayrı ton YOKTU. Bu kontrol merdivenin BASAMAKLI
+     * kaldığını sabitler — biri yarın hepsini beyaza çekerse yakalanır.
+     */
+    const kobaltDeger = (ad: string) => {
+      const m = new RegExp(`${ad}:\\s*(#[0-9A-Fa-f]{6})`).exec(KOBALT);
+      return m ? m[1]! : null;
+    };
+    const merdiven = ["--se-zemin", "--se-kart", "--se-satir", "--se-baslik", "--se-hover", "--se-secili"];
+    const tonlar = merdiven.map(kobaltDeger);
+    kontrol("yüzey merdiveninin her basamağı tanımlı", tonlar.every((t) => t !== null), tonlar);
+    kontrol(
+      "  ...basamaklar BİRBİRİNDEN farklı (hepsi beyaz değil)",
+      new Set(tonlar).size >= 5,
+      { tekil: new Set(tonlar).size, tonlar },
+    );
+
+    /**
+     * ⚠ KABUK KOYU. "Sayfalar çok beyaz" şikâyetinin en büyük tek kalemi
+     * soldaki 250px'lik beyaz kenar çubuğuydu. Kabuk zeminden belirgin
+     * KOYU olmalı, yoksa ayrım yine kaybolur.
+     */
+    const luma = (hex: string | null) => {
+      if (hex === null) return NaN;
+      const [r, g, b] = hexKanal(hex);
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    kontrol(
+      "kenar çubuğu zeminden belirgin KOYU (beyaz duvar değil)",
+      luma(kobaltDeger("--se-zemin")) - luma(kobaltDeger("--se-kabuk")) > 0.3,
+      {
+        zemin: luma(kobaltDeger("--se-zemin")).toFixed(2),
+        kabuk: luma(kobaltDeger("--se-kabuk")).toFixed(2),
+      },
+    );
+
+    /** Gece teması gerçekten KOYU olmalı — ad değil, ölçü. */
+    const geceDeger = (ad: string) => {
+      const m = new RegExp(`${ad}:\\s*(#[0-9A-Fa-f]{6})`).exec(GECE);
+      return m ? m[1]! : null;
+    };
+    kontrol(
+      "Gece teması gerçekten koyu (zemin < 0,25 parlaklık)",
+      luma(geceDeger("--se-zemin")) < 0.25,
+      luma(geceDeger("--se-zemin")).toFixed(2),
+    );
+
+    /**
+     * ⚠ GECE PALETİ `.dark` SINIFINA DA BAĞLI OLMALI. Durum renkleri
+     * (`lib/renkler.ts`) koyu varyantlarını Tailwind'in `dark:` önekiyle
+     * taşıyor ve o önek `.dark` atasına bakıyor. Yalnız `data-tema`
+     * yazsaydık yüzeyler kararır, yeşil/kırmızı rozetler AÇIK tema
+     * tonunda kalırdı — koyu zeminde okunmazlardı.
+     */
+    kontrol("gece paleti .dark sınıfına da bağlı", GECE.includes('[data-tema="gece"], .dark'));
+
+    const duzen = readFileSync("src/app/layout.tsx", "utf8");
+    kontrol("tema seçici üst çubukta", duzen.includes("<TemaSecici />"));
+    /**
+     * ⚠ TEMA REACT'TEN ÖNCE UYGULANMALI (FOUC). Betik `<head>`te koşmazsa
+     * sayfa bir kare açık temada çizilir, sonra karanlığa atlar.
+     */
+    kontrol("FOUC betiği var", duzen.includes("TEMA_BETIGI"));
+    kontrol("  ...betik .dark sınıfını da ekliyor", /classList\.add\("dark"\)/.test(duzen));
+    /**
+     * ⚠ `try/catch` ŞART: gizli sekmede `localStorage` erişimi HATA
+     * FIRLATIR (boş dönmez). Yakalanmazsa betik ölür ve tema hiç uygulanmaz.
+     */
+    kontrol("  ...localStorage erişimi try/catch içinde", /try\{[^}]*localStorage/.test(duzen));
+    kontrol(
+      "  ...cihaz tercihi yedek olarak okunuyor",
+      duzen.includes("prefers-color-scheme"),
+    );
+
+    const secici = readFileSync("src/components/tema-secici.tsx", "utf8");
+    kontrol("seçici .dark sınıfını da çeviriyor", secici.includes('classList.toggle("dark"'));
+    kontrol("  ...seçim localStorage'a yazılıyor", secici.includes("localStorage.setItem"));
+    kontrol("  ...ekran okuyucu etiketi sözlükten", /aria-label=\{etiket\}/.test(secici));
+  }
 
   /**
    * DOYGUN ÇİP YALNIZ KÜÇÜK ALANDA. Çip sınıfları zemin olarak kullanılırsa
@@ -2242,9 +2387,16 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * gömülür ve pastel rozetler gri üstünde sönerdi — 15.08.2026'da tam
    * olarak bu yaşandı.
    */
+  /**
+   * ⚠ LUMA DA PALETTEN. Aynı taşınma; kontrolün sorusu değişmedi ("kart
+   * sayfadan AÇIK mı"), yalnız rakamın yeri değişti.
+   */
   const acikLuma = (ad: string) => {
-    const m = new RegExp(`--${ad}:\\s*oklch\\(([0-9.]+)`).exec(acikTema);
-    return m ? Number(m[1]) : NaN;
+    const hex = paletHex(acikTema, ad, KOBALT);
+    if (hex === null) return NaN;
+    const [r, g, b] = hexKanal(hex);
+    /** Göz yeşile daha duyarlı — basit ağırlıklı parlaklık yeterli. */
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
   kontrol(
     "açık temada KART sayfadan açık (kart yükselir, gömülmez)",
