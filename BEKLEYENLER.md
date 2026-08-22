@@ -67,7 +67,6 @@
 | **K7** | **`satis.veri.dogrula` ayrı izni** | **Faz 4 / RBAC.** Bugün `satis.duzenle` istiyor. Ayrı izin daha temiz ama iki bacaklı yetki işi doğurur ve tek kullanıcıda boş katmandır. |
 | **K10** | **Pano kodu ataması elle** | 🧹 Kodlar elle veriliyor ve 20.08'de **iki satır da `H6`** oldu; çakışan kimlik panoyu taranamaz yapar. Çare: en büyük numaranın bir fazlası — betik ya da tek kaynaklı sayaç. |
 | **K14t** | **TUZAK: hesap ADLA bulunuyor** | `panel.ts:251`. **Bugün güvenli** (arama kanal içinde, tek kanalda çakışan ad yok). **Açılış: tek bir kanala harf farkıyla ikinci hesap açılması** — MySQL harf duyarsız karşılaştırması o an ikisini birleştirir. |
-| **K30** | **iOS kurulum yolu ÖLÇÜLMEDİ** | 📱 **Elde iPhone yok.** Halil testi 22.08.2026: 8 maddenin 7'si geçti, madde 4 (iPhone · Safari) **denenemedi** — bu "geçti" değil, **ölçülmedi**. Sunucu tarafı ölçüldü ve doğru: `apple-touch-icon` 180×180 basılıyor, `apple-mobile-web-app-title` ve `-status-bar-style` var. ⚠ Ölçüldü ki Next **yalnız** yeni adı basıyor (`mobile-web-app-capable`, `metadata.js:606`); eski Safari yalnız `apple-mobile-web-app-capable`'a bakar ve bulamazsa kısayolu **adres çubuğuyla** açar. Eski etiket elle eklendi (sigorta, iddia değil) ve `pwa:dogrula` ile bağlandı. **Açılış şartı: bir iPhone eline geçmesi.** Ölçülecek: adres çubuğu gerçekten yok mu, simge doğru mu, uçak modunda "Bağlantı yok" çıkıyor mu. |
 | **K14c** | **Sessiz desen: kanal adına gömülü sözlük** | `canli-komisyon-envanter.ts:55`. Eşleşmezse **sessizce boş** döner ve boş dönüşü **makul görünür**. Düzeltilmiyor (iş değeri yok). **Açılış: kanal adının düzenlenmesi.** |
 
 ---
@@ -77,7 +76,8 @@
 Bunlar kapanmış ölçümlerin **bugün geçerli** özetleri; ayrıntı arşivde.
 
 - **PWA Halil testi (22.08.2026, gerçek cihaz — Android, canlı adres):**
-  8 maddenin **7'si geçti**, 1'i **ölçülemedi** (iPhone yok → K30). Geçenler:
+  **8/8 geçti.** İlk turda 7 madde ölçüldü, madde 4 (iPhone) cihaz yoktu;
+  aynı gün iPhone bulundu ve **sorunsuz** geçti. Ölçülenler:
   kurulum teklifi çıktı · simge ve adres çubuksuz açılış ✓ · sistem çubuğu
   temayla döndü ✓ · uçak modunda **rakam değil "Bağlantı yok"** çıktı ✓ ·
   bağlantı gelince panel açıldı ✓ · el kitabında bölüm ✓ · **bilgisayardan

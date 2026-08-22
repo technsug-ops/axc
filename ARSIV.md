@@ -18,6 +18,32 @@
 
 ---
 
+## ✅ PWA — KAPANDI 22.08.2026 (Halil testi geçti, iOS dahil)
+
+Uygulama telefona kurulabiliyor: manifest + simgeler + servis çalışanı.
+
+**Halil testi 8/8 geçti.** İlk turda 7 madde ölçüldü, madde 4 (iPhone ·
+Safari) cihaz olmadığı için **ölçülemedi** ve `K30` olarak panoda açık
+bırakıldı. Aynı gün iPhone bulundu ve test edildi: **sorun yok.**
+
+**Kararlar — yeniden açılmaz:**
+- **Çevrimdışı ÇALIŞMAZ, bilerek.** Önbelleğe giren tek küme
+  `/_next/static/`; adresinde içerik özeti olduğu için bayatlaması
+  imkânsız. Sayfa ve API cevabı ASLA saklanmıyor. Gerekçe `CLAUDE.md` →
+  "PWA var, çevrimdışı yok". Sahada doğrulandı (test maddesi 8):
+  bilgisayardan değiştirilen satış telefonda yenileyince YENİ rakamla
+  geldi.
+- **Kapı açıldı** (`proxy.ts`): tarayıcı manifest ve simgeleri çerezsiz
+  çeker; kapatılsa kurulum teklifi hiç çıkmaz ve ekranda hata görünmezdi.
+- **Eski iOS etiketi elle basılıyor** (`apple-mobile-web-app-capable`):
+  Next yalnız yeni adı basıyor (`metadata.js:606`), eski Safari sürümleri
+  yalnız eskisine bakar. Sigorta; gerekmediği sürümde etkisiz.
+
+Bekçi: `npm run pwa:dogrula` (61 kontrol, 25 mutasyon denendi, 25'i
+kırmızı).
+
+---
+
 ## ✅ FİYAT DENEMESİ — KAPANDI 22.08.2026 (Halil testi geçti)
 
 **Ne yapıldı.** "Bu ürünü şu fiyata satarsam elime ne kalır — ve hangi
