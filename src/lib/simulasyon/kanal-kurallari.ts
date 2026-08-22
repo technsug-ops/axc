@@ -140,17 +140,32 @@ export const SIMULASYON_KANALLARI: SimulasyonKanali[] = [
     ],
     kaynak: "OLCULDU",
     kaynakNotu:
-      "N11 hakediş ekstresi + KOMİSYON FATURASI (22.08.2026, n=3: ₺4.299 · ₺6.299 · ₺9.599, komisyon %10/%15/%16). Üçünde de Pazarlama Bedeli %1,2000 ve Pazaryeri Bedeli %0,8000; komisyona KDV eklenmiyor. Denklem kuruşuna kapandı. Matrah KDV DAHİL — stopaj satırıyla bağımsız doğrulandı.",
+      "N11 hakediş ekstresi + komisyon dökümü + RESMÎ E-FATURA DPE2026000325810 (22.08.2026, n=3: ₺4.299 · ₺6.299 · ₺9.599, komisyon %10/%15/%16). Pazarlama %1,2000 · Pazaryeri %0,8000, üçünde de aynı. Fatura kalemleri matrah+KDV olarak ayrılıyor ve toplamı hakedişteki kesintinin tam kendisi: kesilen tutarlar KDV DAHİL, içindeki KDV indirilebilir. Matrah tabanı stopaj satırıyla da bağımsız doğrulandı.",
     /**
-     * ⚠ GERİYE KALAN TEK SORU: komisyon tutarı KDV İÇERİYOR MU.
-     * Fatura komisyonu `oran × tutar` olarak veriyor ve üstüne KDV
-     * EKLEMİYOR — bu ölçüldü. Ama içinde indirilecek KDV olup olmadığını
-     * söylemiyor; motor bugün "içeriyor" varsayıyor (₺150 komisyonda ₺25).
-     * Yanlışsa NET-2 her N11 satışında ciro×%2,5 kadar kayar.
-     * Kapanışı komisyon faturasının KENDİSİ (PDF) getirir.
+     * ⚠ SON BELİRSİZLİK DE KAPANDI 22.08.2026 — resmî e-fatura okundu.
+     *
+     * Soru şuydu: hakedişten kesilen komisyon KDV İÇERİYOR MU? Motor
+     * "içeriyor" varsayıyordu (₺150 komisyonda ₺25) ve yanlış olsaydı
+     * NET-2 her N11 satışında ciro×%2,5 kadar kayardı.
+     *
+     * N11'in kestiği e-fatura (`DPE2026000325810`, 31.07.2026) üç kalemi
+     * de MATRAH + KDV olarak ayırıyor ve toplamı hakedişteki kesintinin
+     * TAM kendisi:
+     *
+     *     kalem                    matrah    +KDV%20   = KDV dahil   hakediş
+     *     KOMİSYON BEDELİ         2.425,49    485,10     2.910,59    2.910,59
+     *     PAZARLAMA HİZMET BED.     201,98     40,40       242,38      242,37
+     *     PAZARYERİ HİZMET BED.     134,64     26,93       161,57      161,57
+     *
+     * Yani hakedişten kesilen tutar KDV DAHİLDİR ve içindeki KDV
+     * indirilebilir (tutar/6). Motorun varsayımı DOĞRUYMUŞ — ve artık
+     * varsayım değil, ölçüm.
+     *
+     * ⚠ FATURA NUMARASI EXCEL'DEKİYLE AYNI (`DPE2026000325810`), yani iki
+     * belge aynı olayı anlatıyor. Bu, "aynı kümeyi mi kapsıyor" sorusunun
+     * cevabı — kapsam tartışması yok.
      */
-    belirsizlik:
-      "Komisyon tutarının indirilecek KDV içerip içermediği faturadan okunamadı; motor İÇERİYOR varsayıyor. Kesinti oranları (%1,20 · %0,80) üç satışta ölçüldü, bunlar kesin.",
+    belirsizlik: null,
   },
   {
     kod: "AMAZON",

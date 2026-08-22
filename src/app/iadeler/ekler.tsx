@@ -3,7 +3,8 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { FileText, Paperclip, TriangleAlert, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Paperclip, TriangleAlert, X } from "lucide-react";
+import { Document, Page, pdfjs } from "react-pdf";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,11 @@ import { ekiDogrula } from "@/lib/ekler";
 
 import { ekSil } from "./ek-actions";
 import { DURUM_YAZISI } from "@/lib/renkler";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url,
+).toString();
 
 /**
  * ============================================================================
@@ -32,6 +38,98 @@ export type EkSatiri = {
   sizeBytes: number;
   blobPath: string;
 };
+
+function PdfOnizleme({ ekId }: { ekId: string }) {
+  const t = useTranslations("Ekler");
+  const [acik, setAcik] = useState(false);
+  const [sayfa, setSayfa] = useState(1);
+  const [sayfaSayisi, setSayfaSayisi] = useState(0);
+  const [olcek, setOlcek] = useState(1);
+
+  if (!acik) {
+    return (
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-11 shrink-0 md:h-8"
+        onClick={() => setAcik(true)}
+      >
+        <FileText className="size-4" />
+        {t("pdfGoruntule")}
+      </Button>
+    );
+  }
+
+  return (
+    <div className="basis-full space-y-2 rounded-md border bg-muted/30 p-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-11 md:h-8"
+          disabled={sayfa <= 1}
+          onClick={() => setSayfa((deger) => deger - 1)}
+        >
+          <ChevronLeft className="size-4" />
+          {t("oncekiSayfa")}
+        </Button>
+        <span className="text-xs">
+          {t("sayfa", { mevcut: sayfa, toplam: sayfaSayisi || "..." })}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-11 md:h-8"
+          disabled={!sayfaSayisi || sayfa >= sayfaSayisi}
+          onClick={() => setSayfa((deger) => deger + 1)}
+        >
+          {t("sonrakiSayfa")}
+          <ChevronRight className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-11 md:h-8"
+          onClick={() => setOlcek((deger) => Math.min(deger + 0.2, 2))}
+        >
+          {t("yaklastir")}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-11 md:h-8"
+          onClick={() => setOlcek((deger) => Math.max(deger - 0.2, 0.6))}
+        >
+          {t("uzaklastir")}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-11 md:h-8"
+          onClick={() => setAcik(false)}
+        >
+          {t("pdfKapat")}
+        </Button>
+      </div>
+      <div className="max-h-[70vh] overflow-auto rounded border bg-white p-2">
+        <Document
+          file={`/api/ekler/${ekId}`}
+          loading={<p className="p-4 text-sm">{t("pdfYukleniyor")}</p>}
+          error={<p className="p-4 text-sm text-destructive">{t("pdfYuklenemedi")}</p>}
+          onLoadSuccess={({ numPages }) => setSayfaSayisi(numPages)}
+        >
+          <Page pageNumber={sayfa} scale={olcek} renderTextLayer={false} renderAnnotationLayer={false} />
+        </Document>
+      </div>
+    </div>
+  );
+}
 
 export function Ekler({
   hedefTipi,
@@ -157,7 +255,7 @@ export function Ekler({
       {ekler.length > 0 ? (
         <ul className="space-y-1">
           {ekler.map((e) => (
-            <li key={e.id} className="flex items-center gap-2 text-sm">
+            <li key={e.id} className="flex flex-wrap items-center gap-2 text-sm">
               <FileText className="text-muted-foreground size-4 shrink-0" />
               {/* ÖZEL DOSYA — ham Blob adresi verilmez, akış kendi
                   ucumuzdan ve oturum kontrolüyle geçer. */}
@@ -172,6 +270,7 @@ export function Ekler({
               <span className="text-muted-foreground text-xs whitespace-nowrap">
                 {(e.sizeBytes / 1024).toFixed(0)} KB
               </span>
+              {e.fileName.toLowerCase().endsWith(".pdf") ? <PdfOnizleme ekId={e.id} /> : null}
               <Button
                 type="button"
                 variant="ghost"

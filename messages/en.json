@@ -2355,7 +2355,16 @@
     "hataDEPO_YOK": "",
     "hataCOK_BUYUK": "",
     "yuklendi": "",
-    "secmeNotu": ""
+    "secmeNotu": "",
+    "pdfGoruntule": "",
+    "pdfKapat": "",
+    "oncekiSayfa": "",
+    "sonrakiSayfa": "",
+    "sayfa": "",
+    "yaklastir": "",
+    "uzaklastir": "",
+    "pdfYukleniyor": "",
+    "pdfYuklenemedi": ""
   },
   "Gorevler": {
     "baslik": "",

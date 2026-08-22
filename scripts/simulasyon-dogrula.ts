@@ -1331,23 +1331,32 @@ console.log("12) N11 KESİNTİLERİ — GERÇEK HAKEDİŞ EKSTRESİNDEN");
    */
   kontrol(
     "  ...kaynak notu belgeyi ve örneklemi yazıyor",
-    n11Kural.kaynakNotu.includes("KOMİSYON FATURASI") &&
+    n11Kural.kaynakNotu.includes("E-FATURA") &&
       n11Kural.kaynakNotu.includes("n=3"),
     n11Kural.kaynakNotu.slice(0, 60),
   );
   /**
-   * ⚠ ÖRNEKLEM BÜYÜDÜ AMA BELİRSİZLİK BİTMEDİ — ve susturulmadı. Geriye
-   * kalan soru komisyonun indirilecek KDV içerip içermediği; fatura bunu
-   * söylemiyor, motor "içeriyor" varsayıyor. Beyan edilmezse varsayım
-   * ölçülmüş gibi okunur.
+   * ⚠ BELİRSİZLİK KAPANDI — ve kapandığı için SUSTURULDU, gizlenmedi.
+   * Son soru "kesilen komisyon KDV içeriyor mu" idi; N11'in resmî
+   * e-faturası (`DPE2026000325810`) her kalemi matrah+KDV olarak ayırıyor
+   * ve toplamı hakedişteki kesintinin TAM kendisi:
+   *     komisyon  2.425,49 + 485,10 = 2.910,59  ↔ hakediş 2.910,59
+   *     pazarlama   201,98 +  40,40 =   242,38  ↔ hakediş   242,37
+   *     pazaryeri   134,64 +  26,93 =   161,57  ↔ hakediş   161,57
+   * Motorun varsayımı doğruymuş; artık varsayım değil ÖLÇÜM.
+   *
+   * ⚠ BOŞ BELİRSİZLİK "ölçülmedi" DEMEK DEĞİL — kaynak notu neyin
+   * ölçüldüğünü tek tek yazıyor. Boş bırakılan alan, doldurulmayı bekleyen
+   * değil KAPANMIŞ bir sorudur ve bunu kaynak notu kanıtlar.
    */
+  kontrol("belirsizlik kalmadı (fatura kapattı)", n11Kural.belirsizlik === null);
   kontrol(
-    "  ...kalan belirsizlik (komisyon KDV'si) beyan ediliyor",
-    (n11Kural.belirsizlik ?? "").includes("KDV içerip içermediği"),
+    "  ...ve resmî fatura kaynak notunda ADIYLA yazılı",
+    n11Kural.kaynakNotu.includes("DPE2026000325810"),
   );
   kontrol(
-    "  ...ama ölçülen oranların KESİN olduğu da yazıyor",
-    (n11Kural.belirsizlik ?? "").includes("üç satışta ölçüldü"),
+    "  ...KDV hükmü de yazılı (kesilen tutar KDV DAHİL)",
+    n11Kural.kaynakNotu.includes("KDV DAHİL"),
   );
   /** nesatilir'in rakamı artık hiçbir yerde kullanılmamalı. */
   kontrol(

@@ -2355,7 +2355,16 @@
     "hataDEPO_YOK": "Dosya deposu yapılandırılmamış; ek yüklenemedi. (Yönetici: BLOB_READ_WRITE_TOKEN eksik.)",
     "hataCOK_BUYUK": "Dosya çok büyük. Dosya başına sınır 4 MB.",
     "yuklendi": "✓ {dosya} yüklendi ve kayda eklendi. Ayrıca gönderme gerekmez.",
-    "secmeNotu": "Dosyayı seçer seçmez yüklenir; ayrı bir gönder düğmesi yoktur."
+    "secmeNotu": "Dosyayı seçer seçmez yüklenir; ayrı bir gönder düğmesi yoktur.",
+    "pdfGoruntule": "PDF'yi görüntüle",
+    "pdfKapat": "Önizlemeyi kapat",
+    "oncekiSayfa": "Önceki",
+    "sonrakiSayfa": "Sonraki",
+    "sayfa": "Sayfa {mevcut} / {toplam}",
+    "yaklastir": "Yaklaştır",
+    "uzaklastir": "Uzaklaştır",
+    "pdfYukleniyor": "PDF yükleniyor...",
+    "pdfYuklenemedi": "PDF görüntülenemedi. Dosyayı yeni sekmede açmayı deneyin."
   },
   "Gorevler": {
     "baslik": "Bugün ne yapmalıyım",
