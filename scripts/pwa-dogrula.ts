@@ -387,6 +387,21 @@ kontrol(
 );
 /** iOS manifest okumaz; ana ekran davranışı bu etiketten gelir. */
 kontrol("iOS ana ekran davranışı bildirilmiş", /appleWebApp:/.test(layout));
+/**
+ * ⚠ ESKİ iOS ETİKETİ ELLE BASILIYOR — VE BURADA BAĞLANIYOR.
+ *
+ * Next `appleWebApp.capable` için yalnız YENİ adı basıyor
+ * (`mobile-web-app-capable`); eski Safari sürümleri yalnız eski ada bakar ve
+ * bulamazsa kısayolu adres çubuğuyla açar. Etiket `layout.tsx`e elle kondu;
+ * elle konan şey elle de silinir, o yüzden kontrol altında.
+ *
+ * ⚠ İKİ KABUKTA DA OLMALI: giriş ekranı da telefonda kuruluyor.
+ */
+kontrol(
+  "  ...eski iOS etiketi her iki kabukta elle basılıyor",
+  [...layout.matchAll(/<meta\s+name="apple-mobile-web-app-capable"/g)].length ===
+    betikSayisi,
+);
 kontrol(
   "  ...iOS simgesi var",
   yorumsuz(oku("src/app/apple-icon.tsx")).includes("markaIkonu"),

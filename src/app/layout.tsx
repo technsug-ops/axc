@@ -134,6 +134,22 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           {/* ⚠ BETİKTEN ÖNCE: yukarıdaki betik bu etiketi arayıp içeriğini
               temaya göre değiştiriyor. Sonra gelseydi bulamazdı. */}
           <meta name="theme-color" content={KABUK_RENKLERI.kobalt} />
+          {/*
+            ⚠ ESKİ iOS ETİKETİ — ELLE, ÇÜNKÜ NEXT BASMIYOR.
+
+            `appleWebApp.capable` yalnız YENİ standardı basıyor
+            (`mobile-web-app-capable`; ölçüldü:
+            `node_modules/next/dist/lib/metadata/metadata.js:606`). Safari o
+            adı geç tanıdı; ondan önceki sürümler SADECE aşağıdaki eski ada
+            bakar ve bulamazsa kısayolu ADRES ÇUBUĞUYLA açar — yani "kurulmuş"
+            görünmez.
+
+            ⚠ BU YOL ÖLÇÜLMEDİ: elde iPhone yok (Halil testi 22.08.2026,
+            madde 4 "denenemedi"). Etiketin kendisi bir iddia değil sigorta:
+            gerekmediği sürümde etkisiz, gerektiği sürümde tek çare. Bir
+            iPhone eline geçtiğinde ölçülecek (bkz. BEKLEYENLER → K30).
+          */}
+          <meta name="apple-mobile-web-app-capable" content="yes" />
           <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
         </head>
         <body>
@@ -161,6 +177,22 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           {/* ⚠ BETİKTEN ÖNCE: yukarıdaki betik bu etiketi arayıp içeriğini
               temaya göre değiştiriyor. Sonra gelseydi bulamazdı. */}
           <meta name="theme-color" content={KABUK_RENKLERI.kobalt} />
+          {/*
+            ⚠ ESKİ iOS ETİKETİ — ELLE, ÇÜNKÜ NEXT BASMIYOR.
+
+            `appleWebApp.capable` yalnız YENİ standardı basıyor
+            (`mobile-web-app-capable`; ölçüldü:
+            `node_modules/next/dist/lib/metadata/metadata.js:606`). Safari o
+            adı geç tanıdı; ondan önceki sürümler SADECE aşağıdaki eski ada
+            bakar ve bulamazsa kısayolu ADRES ÇUBUĞUYLA açar — yani "kurulmuş"
+            görünmez.
+
+            ⚠ BU YOL ÖLÇÜLMEDİ: elde iPhone yok (Halil testi 22.08.2026,
+            madde 4 "denenemedi"). Etiketin kendisi bir iddia değil sigorta:
+            gerekmediği sürümde etkisiz, gerektiği sürümde tek çare. Bir
+            iPhone eline geçtiğinde ölçülecek (bkz. BEKLEYENLER → K30).
+          */}
+          <meta name="apple-mobile-web-app-capable" content="yes" />
           <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
         </head>
       <body>
