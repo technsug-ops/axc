@@ -54,11 +54,29 @@ Altı teslimde tamamlandı; hepsi 21–22.08.2026.
 **En düşük satış fiyatı en yüksek kârı veriyor** — ve sıralama iki
 hesapta da aynı. Bu terslik gözle görülmez; ekranın bütün varlık sebebi bu.
 
-⚠ **N11 farkı (₺12,39) AÇIK KALDI.** Bizim N11 kesintimiz `12,58`,
-kullanıcınınki `27,36`. N11 kuralımız nesatilir'dan **tek bir senaryodan**
-alındı ve hafızada _"referans · doğrulanmadı"_ diye duruyor. Gerçek bir N11
-ekstresi/ekranından geliyorsa **kullanıcınınki doğru, bizimki eksik**.
-_Soru soruldu, cevap gelmedi — bkz. BEKLEYENLER._
+⚠ **N11 FARKI (₺12,39) — ÖLÇÜT DÜŞTÜ, 22.08.2026.**
+
+İlk yazımda şöyle demiştim: _"Gerçek bir N11 ekstresinden geliyorsa
+kullanıcınınki doğru, bizimki eksik."_ **Bu çerçeve yanlıştı ve burada
+bilerek bırakılıyor** — kullanıcı sorunca kaynağı sordum, cevap:
+_"bir örnek olarak vermiştim."_ Yani `₺27,36` gerçek bir N11 rakamı değil.
+
+⚠ **VE NEREDEYSE MOTOR DEĞİŞTİRİLİYORDU.** Aritmetik kusursuz tutuyordu:
+`12,58 / 1.000 = %1,258` ve `%1,258 × 2.175 = 27,3615` — kullanıcının
+rakamıyla **0,0015 ₺** fark. Düzeltilmiş NET-2 de `554,07` çıkıyordu,
+onun `554`'üyle kuruşuna. Denklem kapanıyordu ve tam bu yüzden ikna
+ediciydi.
+
+**Melontik dersinin birebir tekrarı:** _"doğru çalışan bir motor, yanlış
+bir ölçüt uğruna bozulmak üzereydi."_ Ölçütün gerçekliği ölçümden ÖNCE
+sorulmalıydı; ben ölçümü yapıp sonra sordum.
+
+**GERİYE KALAN SORU BİZDEN KAYNAKLI VE GEÇERLİ:** `PAZARLAMA_HIZMET =
+12,58` tek bir senaryodan (nesatilir, satış ₺1.000) alındı ve kodun kendi
+notu _"sabit mi ciro yüzdesi mi ayırt edilemedi"_ diyor. Bu belirsizlik
+1.000 ₺ dışındaki her fiyatta N11 hesabını kaydırıyor. Kapanışı gerçek bir
+N11 ekstresi getirir — nesatilir'e ikinci bir senaryo girmek DEĞİL, çünkü
+o aynı kaynağın ikinci yoludur. _Bkz. BEKLEYENLER → H22._
 
 **Kararlar:**
 - **Buy box OTOMASYONU AÇILMADI** — kullanıcı: _"manuel gireceğim, ürün
