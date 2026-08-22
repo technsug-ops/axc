@@ -2123,6 +2123,49 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       ),
     );
 
+    /**
+     * ── MENÜ DÜZENİ — SIKLIĞA GÖRE (22.08.2026) ──────────────────────
+     * Kullanıcı: "menü bardakilerin bir kısmı devamlı görünür, bir kısmı
+     * dropdown ile bir kategorinin altına alınabilir."
+     */
+    const kenar = readFileSync("src/components/app-sidebar.tsx", "utf8");
+    const gunlukBlok = kenar.slice(
+      kenar.indexOf("const GUNLUK"),
+      kenar.indexOf("type MenuGrubu"),
+    );
+    const gunlukSayisi = [...gunlukBlok.matchAll(/anahtar: "/g)].length;
+    /**
+     * ⚠ HEP AÇIK LİSTE KISA KALMALI. Amaç 30 satırı kısaltmaktı; "günlük"
+     * kutusu şişerse eski hâle geri dönülmüş olur ve gruplama anlamını
+     * yitirir. Üst sınır kullanıcının onayladığı liste: 7.
+     */
+    kontrol(
+      "hep açık liste kısa (en fazla 7 öğe)",
+      gunlukSayisi > 0 && gunlukSayisi <= 7,
+      gunlukSayisi,
+    );
+    /**
+     * ⚠ AÇIK SAYFANIN GRUBU KENDİLİĞİNDEN AÇILIR. Kapalı kalsaydı kullanıcı
+     * bulunduğu yeri menüde göremezdi — "kayboldum" duygusu.
+     */
+    kontrol(
+      "açık sayfanın grubu kendiliğinden açılıyor",
+      /const acik = icindeSecili \|\| acikKayit\.has/.test(kenar),
+    );
+    /**
+     * ⚠ GRUP DURUMU HATIRLANIR. Her geçişte kapanan menü, açılır menü
+     * olmaktan çıkıp ENGELE döner.
+     */
+    kontrol(
+      "  ...grup durumu tarayıcıda hatırlanıyor",
+      kenar.includes("localStorage.setItem(MENU_ANAHTARI"),
+    );
+    /** Başlık tıklanabilir GÖRÜNÜR (İlke #2): düğme + ok + aria-expanded. */
+    kontrol(
+      "  ...başlık düğme ve aria-expanded taşıyor",
+      /aria-expanded=\{acik\}/.test(kenar) && kenar.includes("ChevronDown"),
+    );
+
     const duzen = readFileSync("src/app/layout.tsx", "utf8");
     kontrol("tema seçici üst çubukta", duzen.includes("<TemaSecici />"));
     /**

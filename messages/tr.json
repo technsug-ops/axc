@@ -672,7 +672,11 @@
     "talepler": "Destek talepleri",
     "gecmisEkstre": "Geçmiş ekstreler",
     "urunKarti": "Kârlılık kartı",
-    "simulasyon": "Fiyat denemesi"
+    "simulasyon": "Fiyat denemesi",
+    "grupPara": "Para",
+    "grupUrunKanal": "Ürün ve kanal",
+    "grupTanimlar": "Tanımlar",
+    "grupVeri": "Veri"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",

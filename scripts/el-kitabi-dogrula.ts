@@ -125,8 +125,15 @@ console.log("\nEL KİTABI — DOĞRULAMA\n");
    * aynı hatayı tekrar üretirdi.
    */
   const KENAR = readFileSync("src/components/app-sidebar.tsx", "utf8");
+  /**
+   * ⚠ MENÜ ÖĞESİ = BİR YERE GİDEN ÖĞE. Desen 22.08.2026'da daraltıldı:
+   * menü sıklığa göre gruplanınca grup BAŞLIKLARI da `anahtar:` taşımaya
+   * başladı ("Para", "Tanımlar"…) ve bu kontrol onları da sayfa sanıp
+   * "kılavuzda anlatılmamış" dedi. Başlık bir sayfa değildir; ölçüt
+   * `href`in VARLIĞIDIR, adın biçimi değil.
+   */
   const menuAnahtarlari = [
-    ...KENAR.matchAll(/anahtar: "([a-zA-Z]+)"/g),
+    ...KENAR.matchAll(/anahtar: "([a-zA-Z]+)",\s*href:/g),
   ].map((m) => m[1]!);
   kontrol(
     "menü kaynaktan okundu",

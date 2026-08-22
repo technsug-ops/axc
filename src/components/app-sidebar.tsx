@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   BarChart3,
   Banknote,
+  ChevronDown,
   BookOpen,
   MessageSquarePlus,
   Boxes,
@@ -67,171 +69,287 @@ type MenuOgesi = {
   aktif: boolean;
 };
 
-const OPERASYON: MenuOgesi[] = [
+/**
+ * ── MENÜ DÜZENİ: ÖLÇÜT "TEMA" DEĞİL, GİTME SIKLIĞI ──────────────────────
+ *
+ * Kullanıcı 22.08.2026: _"menü bardakilerin bir kısmı devamlı görünür, bir
+ * kısmı ise dropdown ile bir kategorinin altına alınabilir."_
+ *
+ * ⚠ ÖNCE SIKLIK, SONRA TEMA. Menü 30 öğeye çıkmıştı ve "Operasyon" grubu
+ * 17'sini birden kapsadığı için aslında GRUPLAMIYORDU. Konuya göre bölmek
+ * düzenli görünür ama asıl maliyet GÜNDE KAÇ TIK: bir açılır menü bir tık
+ * demek — haftada bir gidilen yer için bedava, günde beş kez gidilen yer
+ * için ceza. Bu yüzden önce sıklığa bölündü, tema her kutunun İÇİNDE
+ * sıralamayı belirliyor.
+ *
+ * Sonuç: 30 satır → 7 satır + 4 başlık.
+ */
+const GUNLUK: MenuOgesi[] = [
   { anahtar: "panel", href: "/", icon: LayoutDashboard, aktif: true },
-  { anahtar: "urunler", href: "/urunler", icon: Package, aktif: true },
-  /**
-   * ÜRÜN KÂRLILIK KARTI — magazada telefonla barkod okutup alim karari
-   * verilen ekran. Menude ust siralarda: kullanim ani "elimde urun var,
-   * alayim mi" anidir ve o an menuyu kaydirmak istemezsiniz.
-   */
-  { anahtar: "urunKarti", href: "/kart", icon: ScanBarcode, aktif: true },
-  /**
-   * FİYAT DENEMESİ — kârlılık kartının HEMEN ALTINDA (kullanıcı 21.08.2026).
-   * İkisi aynı ana ait: "elimde ürün var, alayım mı" ve "alırsam nereye
-   * koyayım". Menüde ayrı yerlere düşselerdi akış kopardı.
-   */
-  { anahtar: "simulasyon", href: "/simulasyon", icon: Calculator, aktif: true },
   { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
   { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
-  { anahtar: "iadeler", href: "/iadeler", icon: Undo2, aktif: true },
   { anahtar: "stok", href: "/stok", icon: Boxes, aktif: true },
+  { anahtar: "iadeler", href: "/iadeler", icon: Undo2, aktif: true },
+  /**
+   * KÂRLILIK KARTI ve FİYAT DENEMESİ — mağazada telefonla barkod okutup
+   * alım kararı verilen an. İkisi aynı ana ait: "elimde ürün var, alayım
+   * mı" ve "alırsam nereye koyayım". Açılır menüye girselerdi o an bir tık
+   * daha eklenirdi ve karar anı en çok tıkla en çok bozulan andır.
+   */
+  { anahtar: "urunKarti", href: "/kart", icon: ScanBarcode, aktif: true },
+  { anahtar: "simulasyon", href: "/simulasyon", icon: Calculator, aktif: true },
+];
+
+type MenuGrubu = {
+  /** Menü sözlüğündeki başlık anahtarı. */
+  anahtar: string;
+  ogeler: MenuOgesi[];
+};
+
+const GRUPLAR: MenuGrubu[] = [
   {
-    anahtar: "envanterDegeri",
-    href: "/envanter-degeri",
-    icon: Coins,
-    aktif: true,
+    anahtar: "grupPara",
+    ogeler: [
+      { anahtar: "giderler", href: "/giderler", icon: Wallet, aktif: true },
+      { anahtar: "kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
+      { anahtar: "kartBorcu", href: "/kart-borcu", icon: Landmark, aktif: true },
+      { anahtar: "hakedis", href: "/hakedis", icon: Banknote, aktif: true },
+      { anahtar: "tazminat", href: "/tazminat", icon: PackageX, aktif: true },
+      {
+        anahtar: "nakitTakvimi",
+        href: "/nakit-takvimi",
+        icon: CalendarClock,
+        aktif: true,
+      },
+      { anahtar: "rapor", href: "/rapor", icon: BarChart3, aktif: true },
+    ],
   },
-  { anahtar: "kanalSkulari", href: "/kanal-sku", icon: Tags, aktif: true },
-  { anahtar: "giderler", href: "/giderler", icon: Wallet, aktif: true },
-  { anahtar: "rapor", href: "/rapor", icon: BarChart3, aktif: true },
-  { anahtar: "kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
-  { anahtar: "kartBorcu", href: "/kart-borcu", icon: Landmark, aktif: true },
-  { anahtar: "tazminat", href: "/tazminat", icon: PackageX, aktif: true },
-  { anahtar: "hakedis", href: "/hakedis", icon: Banknote, aktif: true },
   {
-    anahtar: "nakitTakvimi",
-    href: "/nakit-takvimi",
-    icon: CalendarClock,
-    aktif: true,
+    anahtar: "grupUrunKanal",
+    ogeler: [
+      { anahtar: "urunler", href: "/urunler", icon: Package, aktif: true },
+      { anahtar: "kanalSkulari", href: "/kanal-sku", icon: Tags, aktif: true },
+      {
+        anahtar: "kanalHesaplari",
+        href: "/ayarlar/kanallar",
+        icon: Store,
+        aktif: true,
+      },
+      {
+        anahtar: "envanterDegeri",
+        href: "/envanter-degeri",
+        icon: Coins,
+        aktif: true,
+      },
+    ],
+  },
+  {
+    anahtar: "grupTanimlar",
+    ogeler: [
+      {
+        anahtar: "rafKonumlari",
+        href: "/ayarlar/konumlar",
+        icon: MapPin,
+        aktif: true,
+      },
+      {
+        anahtar: "kategoriler",
+        href: "/ayarlar/kategoriler",
+        icon: Percent,
+        aktif: true,
+      },
+      {
+        anahtar: "duzeltmeNedenleri",
+        href: "/ayarlar/duzeltme-nedenleri",
+        icon: ClipboardList,
+        aktif: true,
+      },
+      {
+        anahtar: "tedarikciler",
+        href: "/ayarlar/tedarikciler",
+        icon: Truck,
+        aktif: true,
+      },
+      {
+        anahtar: "kullanicilar",
+        href: "/ayarlar/kullanicilar",
+        icon: Users,
+        aktif: true,
+      },
+      { anahtar: "roller", href: "/ayarlar/roller", icon: ShieldCheck, aktif: true },
+    ],
+  },
+  {
+    anahtar: "grupVeri",
+    ogeler: [
+      {
+        anahtar: "veriAktarimi",
+        href: "/ayarlar/ice-aktarma",
+        icon: FileSpreadsheet,
+        aktif: true,
+      },
+      {
+        anahtar: "veriDisari",
+        href: "/ayarlar/disa-aktarma",
+        icon: Download,
+        aktif: true,
+      },
+      {
+        anahtar: "geriYukleme",
+        href: "/ayarlar/geri-yukleme",
+        icon: DatabaseBackup,
+        aktif: true,
+      },
+      {
+        anahtar: "gecmisEkstre",
+        href: "/ayarlar/gecmis-ekstre",
+        icon: FileSpreadsheet,
+        aktif: true,
+      },
+    ],
   },
 ];
 
-const AYARLAR: MenuOgesi[] = [
-  {
-    anahtar: "rafKonumlari",
-    href: "/ayarlar/konumlar",
-    icon: MapPin,
-    aktif: true,
-  },
-  {
-    anahtar: "kategoriler",
-    href: "/ayarlar/kategoriler",
-    icon: Percent,
-    aktif: true,
-  },
-  {
-    anahtar: "duzeltmeNedenleri",
-    href: "/ayarlar/duzeltme-nedenleri",
-    icon: ClipboardList,
-    aktif: true,
-  },
-  {
-    anahtar: "kanalHesaplari",
-    href: "/ayarlar/kanallar",
-    icon: Store,
-    aktif: true,
-  },
-  {
-    anahtar: "tedarikciler",
-    href: "/ayarlar/tedarikciler",
-    icon: Truck,
-    aktif: true,
-  },
-  {
-    anahtar: "veriAktarimi",
-    href: "/ayarlar/ice-aktarma",
-    icon: FileSpreadsheet,
-    aktif: true,
-  },
-  {
-    anahtar: "geriYukleme",
-    href: "/ayarlar/geri-yukleme",
-    icon: DatabaseBackup,
-    aktif: true,
-  },
-  {
-    anahtar: "kullanicilar",
-    href: "/ayarlar/kullanicilar",
-    icon: Users,
-    aktif: true,
-  },
-  {
-    anahtar: "roller",
-    href: "/ayarlar/roller",
-    icon: ShieldCheck,
-    aktif: true,
-  },
+/** En altta sabit — her zaman erişilebilir, hiçbir grubun içinde değil. */
+const ALT: MenuOgesi[] = [
   { anahtar: "elKitabi", href: "/el-kitabi", icon: BookOpen, aktif: true },
-  /* Destek talepleri — izin İSTEMEZ, herkes kendi bildirdiğinin nerede
-     olduğunu görebilmeli (bkz. talepler/page.tsx). */
   {
     anahtar: "talepler",
     href: "/talepler",
     icon: MessageSquarePlus,
     aktif: true,
   },
-  /* Geçmiş kart ekstresi aktarımı — veri.aktar izni. */
-  {
-    anahtar: "gecmisEkstre",
-    href: "/ayarlar/gecmis-ekstre",
-    icon: FileSpreadsheet,
-    aktif: true,
-  },
-  {
-    anahtar: "veriDisari",
-    href: "/ayarlar/disa-aktarma",
-    icon: Download,
-    aktif: true,
-  },
 ];
+
+/**
+ * ── AÇIK GRUPLAR TARAYICIDA HATIRLANIR ──────────────────────────────────
+ *
+ * ⚠ HER SAYFA GEÇİŞİNDE KAPANAN MENÜ, AÇILIR MENÜ OLMAKTAN ÇIKIP ENGELE
+ * DÖNER. Kullanıcı "Para"yı açar, hakedişe gider, geri döner ve yine kapalı
+ * bulur — üçüncü seferde menüye küser.
+ *
+ * ⚠ REACT DURUMU DEĞİL DIŞ KAYNAK. Tercih tarayıcıya ait ve sunucu bilmez;
+ * `useSyncExternalStore` tam bu iş için. `useEffect` + `setState` hem lint
+ * tarafından reddediliyor hem de yanlış mimari olurdu.
+ */
+const MENU_ANAHTARI = "selliora-menu-acik";
+const MENU_OLAYI = "selliora-menu-degisti";
+
+function menuAbone(geriCagir: () => void): () => void {
+  window.addEventListener(MENU_OLAYI, geriCagir);
+  window.addEventListener("storage", geriCagir);
+  return () => {
+    window.removeEventListener(MENU_OLAYI, geriCagir);
+    window.removeEventListener("storage", geriCagir);
+  };
+}
+
+/** ⚠ DİZE DÖNER, dizi değil: `useSyncExternalStore` anlık görüntüyü
+ *  değere göre karşılaştırır; her çağrıda yeni dizi dönseydi sonsuz
+ *  render olurdu. */
+function menuOku(): string {
+  try {
+    return localStorage.getItem(MENU_ANAHTARI) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/** Sunucuda tercih bilinmez; aktif grup zaten yoldan hesaplanıyor. */
+const menuSunucu = (): string => "";
 
 export function AppSidebar({ eposta }: { eposta?: string }) {
   const pathname = usePathname();
   const t = useTranslations("Uygulama");
   const tMenu = useTranslations("Menu");
 
-  function grupCiz(baslik: string, ogeler: MenuOgesi[]) {
+  const kayitli = useSyncExternalStore(menuAbone, menuOku, menuSunucu);
+  const acikKayit = new Set(kayitli.split(",").filter((a) => a !== ""));
+
+  const seciliMi = (oge: MenuOgesi) =>
+    oge.aktif && (pathname === oge.href || pathname.startsWith(`${oge.href}/`));
+
+  function grubuCevir(anahtar: string) {
+    const yeni = new Set(acikKayit);
+    if (yeni.has(anahtar)) yeni.delete(anahtar);
+    else yeni.add(anahtar);
+    try {
+      localStorage.setItem(MENU_ANAHTARI, [...yeni].join(","));
+    } catch {
+      /* Gizli sekmede yazılamayabilir — menü yine açılsın, sessiz kalsın. */
+    }
+    window.dispatchEvent(new Event(MENU_OLAYI));
+  }
+
+  function ogeCiz(oge: MenuOgesi) {
+    if (!oge.aktif) {
+      return (
+        <SidebarMenuItem key={oge.anahtar}>
+          <SidebarMenuButton disabled className="cursor-not-allowed opacity-50">
+            <oge.icon />
+            <span>{tMenu(oge.anahtar)}</span>
+          </SidebarMenuButton>
+          <SidebarMenuBadge className="text-muted-foreground">
+            {tMenu("yakinda")}
+          </SidebarMenuBadge>
+        </SidebarMenuItem>
+      );
+    }
+    return (
+      <SidebarMenuItem key={oge.anahtar}>
+        <SidebarMenuButton asChild isActive={seciliMi(oge)}>
+          <Link href={oge.href}>
+            <oge.icon />
+            <span>{tMenu(oge.anahtar)}</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
+
+  function duzCiz(ogeler: MenuOgesi[]) {
     return (
       <SidebarGroup>
-        <SidebarGroupLabel>{baslik}</SidebarGroupLabel>
         <SidebarGroupContent>
-          <SidebarMenu>
-            {ogeler.map((oge) => {
-              const seciliMi =
-                oge.aktif &&
-                (pathname === oge.href || pathname.startsWith(`${oge.href}/`));
-
-              if (!oge.aktif) {
-                return (
-                  <SidebarMenuItem key={oge.anahtar}>
-                    <SidebarMenuButton
-                      disabled
-                      className="cursor-not-allowed opacity-50"
-                    >
-                      <oge.icon />
-                      <span>{tMenu(oge.anahtar)}</span>
-                    </SidebarMenuButton>
-                    <SidebarMenuBadge className="text-muted-foreground">
-                      {tMenu("yakinda")}
-                    </SidebarMenuBadge>
-                  </SidebarMenuItem>
-                );
-              }
-
-              return (
-                <SidebarMenuItem key={oge.anahtar}>
-                  <SidebarMenuButton asChild isActive={seciliMi}>
-                    <Link href={oge.href}>
-                      <oge.icon />
-                      <span>{tMenu(oge.anahtar)}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
+          <SidebarMenu>{ogeler.map(ogeCiz)}</SidebarMenu>
         </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
+
+  function grupCiz(grup: MenuGrubu) {
+    /**
+     * ⚠ AÇIK SAYFANIN GRUBU KENDİLİĞİNDEN AÇILIR. `/hakedis`teyken "Para"
+     * kapalıysa kullanıcı bulunduğu yeri menüde GÖREMEZ — bu, olduğundan
+     * kötü hissettirir ve "kayboldum" duygusu üretir. Kayıtlı tercih
+     * bunun üstüne EKLENİR, yerine geçmez.
+     */
+    const icindeSecili = grup.ogeler.some(seciliMi);
+    const acik = icindeSecili || acikKayit.has(grup.anahtar);
+
+    return (
+      <SidebarGroup key={grup.anahtar}>
+        {/* ⚠ BAŞLIK TIKLANABİLİR GÖRÜNÜR (İlke #2): düğme, imleç ve ok.
+            Ok yönü açık/kapalıyı söyler — gizli tıklama alanı yok. */}
+        <SidebarGroupLabel asChild>
+          <button
+            type="button"
+            onClick={() => grubuCevir(grup.anahtar)}
+            aria-expanded={acik}
+            className="hover:bg-sidebar-accent flex w-full items-center justify-between rounded-md transition-colors"
+          >
+            <span>{tMenu(grup.anahtar)}</span>
+            <ChevronDown
+              className={`size-4 shrink-0 transition-transform ${acik ? "" : "-rotate-90"}`}
+              aria-hidden="true"
+            />
+          </button>
+        </SidebarGroupLabel>
+        {acik ? (
+          <SidebarGroupContent>
+            <SidebarMenu>{grup.ogeler.map(ogeCiz)}</SidebarMenu>
+          </SidebarGroupContent>
+        ) : null}
       </SidebarGroup>
     );
   }
@@ -261,8 +379,9 @@ export function AppSidebar({ eposta }: { eposta?: string }) {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {grupCiz(tMenu("operasyon"), OPERASYON)}
-        {grupCiz(tMenu("ayarlar"), AYARLAR)}
+        {duzCiz(GUNLUK)}
+        {GRUPLAR.map(grupCiz)}
+        {duzCiz(ALT)}
       </SidebarContent>
 
       {/* Kim olarak girildiği ve çıkış — her ekranda görünür (#1, #10). */}
