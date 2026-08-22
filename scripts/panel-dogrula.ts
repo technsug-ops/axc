@@ -2074,6 +2074,37 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      */
     kontrol("gece paleti .dark sınıfına da bağlı", GECE.includes('[data-tema="gece"], .dark'));
 
+    /**
+     * ⚠ KENARLIK KONTRASTI — ÇÖZÜLMÜŞ BİR SORUN GERİ GELDİĞİ İÇİN VAR.
+     *
+     * 09.08.2026: kullanıcı "kutuların kenarları görünmüyor" dedi,
+     * `--border` bilerek koyulaştırıldı (0.82) ve gerekçe bir YORUM olarak
+     * yazıldı. 22.08.2026: tema geçişi o kararı SESSİZCE geri aldı —
+     * paletin varsayılan çizgisi daha açıktı ve kullanıcı aynı şikâyeti
+     * ikinci kez etti ("her tarafta").
+     *
+     * Yorum bir sonraki paleti durdurmadı; ÖLÇÜM durdurur. Eşik uydurulmuş
+     * bir sayı değil: 09.08'de fiilen seçilen değerin farkı (0,180).
+     */
+    const kartLuma = luma(kobaltDeger("--se-kart"));
+    const cizgiLuma = luma(kobaltDeger(
+      /--border:\s*var\((--se-[a-z0-9-]+)\)/.exec(tema)?.[1] ?? "--se-cizgi",
+    ));
+    kontrol(
+      "kenarlık karttan yeterince ayrışıyor (09.08.2026 kararı korunuyor)",
+      kartLuma - cizgiLuma >= 0.18,
+      { kart: kartLuma.toFixed(3), cizgi: cizgiLuma.toFixed(3), fark: (kartLuma - cizgiLuma).toFixed(3) },
+    );
+    /** Girdi çerçevesi kart kenarlığından DAHA koyu — tıklanabilir alan ayrışsın. */
+    const girdiLuma = luma(kobaltDeger(
+      /--input:\s*var\((--se-[a-z0-9-]+)\)/.exec(tema)?.[1] ?? "--se-cizgi",
+    ));
+    kontrol(
+      "  ...girdi çerçevesi kart kenarlığından koyu",
+      girdiLuma < cizgiLuma,
+      { cizgi: cizgiLuma.toFixed(3), girdi: girdiLuma.toFixed(3) },
+    );
+
     const duzen = readFileSync("src/app/layout.tsx", "utf8");
     kontrol("tema seçici üst çubukta", duzen.includes("<TemaSecici />"));
     /**

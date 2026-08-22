@@ -145,11 +145,33 @@
 
     --destructive: var(--se-zarar);
 
-    /* --- çizgiler --- */
-    --border: var(--se-cizgi);
-    /* Girdi çerçevesi bir tık koyu: tıklanabilir alan kart kenarından
-       ayrışsın (09.08.2026 geri bildirimi hâlâ geçerli). */
-    --input: var(--se-cizgi-2);
+    /* ── ÇİZGİLER — RAMPADA BİR KADEME AŞAĞI (22.08.2026) ─────────────
+       ⚠ ÇÖZÜLMÜŞ BİR SORUN GERİ GELMİŞTİ. 09.08.2026'da kullanıcı
+       "kutuların kenarları görünmüyor" demişti ve `--border` bilerek
+       shadcn varsayılanından koyu yapılmıştı (0.82). Tema geçişi bunu
+       SESSİZCE geri aldı: paletin varsayılan çizgisi `--se-cizgi`
+       (#DDE1E6) o karardan DAHA AÇIK.
+
+       ÖLÇÜLDÜ — karttan (beyaz) parlaklık farkı:
+           eski --border      0,180
+           --se-cizgi         0,120   ⬅ %33 daha zayıf, şikâyetin kaynağı
+           --se-cizgi-2       0,200   ⬅ seçilen
+           --se-cizgi-3       0,299
+
+       Palet rampası bu basamakları zaten sunuyor; paletin değerlerini
+       değiştirmek yerine köprü bir kademe aşağı alındı — tasarımla
+       çatışmadan karar korunuyor.
+
+       Gecede de aynı kaydırma: --se-cizgi farkı 0,077 (çok zayıf),
+       --se-cizgi-2 0,146, --se-cizgi-3 0,215.
+
+       ⚠ VE BU KEZ KARAR BEKÇİYE BAĞLANDI. 09.08 kararı yalnız bir YORUM
+       olarak duruyordu; yorum bir sonraki paleti durdurmadı. Artık
+       `panel:dogrula` farkı ÖLÇÜYOR. */
+    --border: var(--se-cizgi-2);
+    /* Girdi çerçevesi bir tık daha koyu: tıklanabilir alan kart
+       kenarlığından ayrışsın (09.08.2026 geri bildirimi hâlâ geçerli). */
+    --input: var(--se-cizgi-3);
     --ring: var(--se-odak);
 
     /* --- kabuk: kenar çubuğu ve üst şerit --- */
