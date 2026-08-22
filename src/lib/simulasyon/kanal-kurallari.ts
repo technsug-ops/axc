@@ -88,18 +88,50 @@ export const SIMULASYON_KANALLARI: SimulasyonKanali[] = [
     ad: "N11",
     /** Komisyona KDV eklenmiyor — nesatilir çıktısında komisyon 150 (1000×%15). */
     komisyonKdvOrani: null,
-    kesintiler: [{ code: "PAZARLAMA_HIZMET", basis: "FIXED", amount: 12.58 }],
+    /**
+     * ⚠ SABİTTEN YÜZDEYE ÇEVRİLDİ 22.08.2026 — VE ESKİ HÂLİ NİYE YANLIŞTI:
+     *
+     * Önce `basis: "FIXED", amount: 12.58` yazıyordu ve şöyle savunuluyordu:
+     *     _"₺12,58 tek senaryodan geliyor; sabit mi ciro yüzdesi mi ayırt
+     *     edilemedi. Sabit varsayıldı ve BEYAN EDİLİYOR. Farklı bir fiyatla
+     *     İKİNCİ BİR HESAP gerekiyor."_
+     *
+     * O ikinci hesap geldi. Kullanıcı nesatilir'e ₺2.175'lik senaryoyu
+     * girdi ve çıkan kesinti **₺27,36** oldu:
+     *
+     *     12,58 / 1.000  = %1,258
+     *     %1,258 × 2.175 = 27,3615        fark 0,0015 ₺ (yuvarlama)
+     *
+     * İki nokta bir doğru kuruyor ve doğru SIFIRDAN geçiyor: sabit terim
+     * yok. Yani nesatilir bunu **ciro yüzdesi** olarak uyguluyor; bizim
+     * `FIXED` yazmamız referansı yanlış kopyalamaktı ve 1.000 ₺ dışındaki
+     * her fiyatta hesabı kaydırıyordu (2.175 ₺'de ₺14,78 eksik kesinti →
+     * NET-2 o kadar iyimser).
+     *
+     * ⚠ NE KANITLANDI, NE KANITLANMADI — ROZET DEĞİŞMİYOR:
+     * · KANITLANDI: nesatilir bunu yüzde olarak işletiyor (iki nokta, tam
+     *   uyum). Yani bizim modelimiz artık SEÇTİĞİMİZ referansa sadık.
+     * · KANITLANMADI: N11'in gerçekten %1,258 kestiği. Kaynak hâlâ tek ve
+     *   hâlâ nesatilir; `REFERANS` etiketi ve belirsizlik notu duruyor.
+     *   _"Bağımsızlık kaynağın ayrılığıyla ölçülür, yolun ayrılığıyla
+     *   değil"_ — aynı siteye ikinci kez sormak teyit değildir.
+     */
+    kesintiler: [
+      { code: "PAZARLAMA_HIZMET", basis: "SALE_AMOUNT", rate: 1.258 },
+    ],
     kaynak: "REFERANS",
     kaynakNotu:
-      "nesatilir.com (21.08.2026, tek senaryo: satış ₺1.000 · komisyon %15). Bizde N11 kesinti kuralı yok; ekstre geldiğinde ölçülecek.",
+      "nesatilir.com (21–22.08.2026, iki senaryo: satış ₺1.000 ve ₺2.175). İki nokta kesintinin SABİT değil ciro yüzdesi olduğunu gösterdi (%1,258). Oranın kendisi hâlâ nesatilir beyanı; N11 ekstresiyle doğrulanmadı.",
     /**
-     * ⚠ TEK VERİ NOKTASINDAN SABİT/YÜZDE AYRIMI YAPILAMAZ.
-     * ₺12,58 tek bir senaryodan geliyor (satış ₺1.000). Sabit tutar da
-     * olabilir, cironun %1,258'i de. İkisi 1.000 ₺'de aynı sonucu verir ve
-     * başka hiçbir fiyatta vermez. Sabit varsayıldı ve BEYAN EDİLİYOR.
+     * ⚠ KALAN BELİRSİZLİK: MATRAH.
+     * Her iki senaryo da %20 KDV'liydi. "%1,258 × KDV DAHİL tutar" ile
+     * "%1,5096 × KDV HARİÇ tutar" bu iki noktada AYNI sonucu verir ve
+     * ayırt edilemez. Ancak KDV oranı farklı bir üründe (%1 ya da %10)
+     * ayrışırlar. `SALE_AMOUNT` seçildi çünkü motorun bu tabanı KDV DAHİL
+     * sipariş tutarıdır ve HB ödeme gideri de öyle ölçülmüştü.
      */
     belirsizlik:
-      "₺12,58 tek senaryodan alındı; sabit mi ciro yüzdesi mi ayırt edilemedi. Farklı bir fiyatla ikinci bir hesap gerekiyor.",
+      "Oran nesatilir beyanı, N11 ekstresiyle doğrulanmadı. Ayrıca matrahın KDV dahil mi hariç mi olduğu ayırt edilemedi: iki senaryo da %20 KDV'liydi, farklı KDV oranlı bir ürün gerekiyor.",
   },
   {
     kod: "AMAZON",

@@ -507,7 +507,7 @@ function Alan({
  *
  *     alış 1000 · TY  buy box 2150 · komisyon %5  → NET-2 673,17
  *              · HB  buy box 2250 · komisyon %13 → NET-2 538,25
- *              · N11 buy box 2175 · komisyon %12 → NET-2 566,39
+ *              · N11 buy box 2175 · komisyon %12 → NET-2 554,07
  *
  * EN DÜŞÜK satış fiyatı EN YÜKSEK kârı veriyor. Fiyat sabitlenirse bu sonuç
  * doğmaz, oran sabitlenirse de doğmaz — ikisi birlikte değişmeli. Bu yüzden

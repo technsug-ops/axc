@@ -746,7 +746,7 @@ kargo 200 ₺:</p>
 <thead><tr><th>Pazaryeri</th><th>Buy box</th><th>Komisyon</th><th>Diğer kesinti</th><th>NET-2</th></tr></thead>
 <tbody>
 <tr><td><strong>Trendyol</strong></td><td>2.150 ₺</td><td>%5</td><td>13,19 ₺ sabit</td><td><span class="sayi"><strong>673,17 ₺</strong></span></td></tr>
-<tr><td>N11</td><td>2.175 ₺</td><td>%12</td><td>pazarlama gideri</td><td><span class="sayi">566,39 ₺</span></td></tr>
+<tr><td>N11</td><td>2.175 ₺</td><td>%12</td><td>pazarlama gideri</td><td><span class="sayi">554,07 ₺</span></td></tr>
 <tr><td>Hepsiburada</td><td>2.250 ₺</td><td>%13 <em>+KDV</em></td><td>12,60 ₺ + %0,8</td><td><span class="sayi">538,25 ₺</span></td></tr>
 </tbody></table></div>
 <p>En pahalıya satabildiğin yer Hepsiburada ama <strong>en çok para Trendyol'da

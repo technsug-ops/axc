@@ -845,7 +845,16 @@ console.log("9) KANAL BAŞINA BUY BOX FİYATI — asıl satış kararı burada")
   /** Büyüklükler de sabitlensin — kesinti kuralı sessizce kayarsa yakalansın. */
   yakin("TY NET-2 ~673", bul("TRENDYOL").net2!, 673.17, 0.02);
   yakin("HB NET-2 ~538", bul("HEPSIBURADA").net2!, 538.25, 0.02);
-  yakin("N11 NET-2 ~566", bul("N11").net2!, 566.39, 0.02);
+  /**
+   * ⚠ 566,39 -> 554,07 (22.08.2026). Rakam bozulmadı, KURAL düzeltildi:
+   * N11 pazarlama gideri SABİT (₺12,58) sanılıyordu, nesatilir'in ikinci
+   * senaryosu onun CİRO YÜZDESİ (%1,258) olduğunu gösterdi. Sabit hâlde
+   * 2.175 ₺'de ₺14,78 eksik kesiliyordu ve NET-2 o kadar iyimser çıkıyordu.
+   *
+   * ⚠ ESKİ DEĞER SİLİNMİYOR, NEDENİYLE BİRLİKTE DURUYOR: aynı senaryo iki
+   * farklı sayı vermiş görünürse, hangisinin neden geçerli olduğu okunabilsin.
+   */
+  yakin("N11 NET-2 ~554 (eski kural 566,39 idi)", bul("N11").net2!, 554.07, 0.02);
 
   /**
    * ── ORTAK FİYAT YEDEKTİR ────────────────────────────────────────────
@@ -1191,6 +1200,88 @@ console.log("11) HEPSİNİ TEMİZLE — tek düğme, HİÇBİR alan geride kalma
       dolulukGovdesi.includes(alan),
     );
   }
+}
+
+// ===========================================================================
+console.log("");
+console.log("12) N11 PAZARLAMA GİDERİ — SABİT DEĞİL, CİRO YÜZDESİ");
+// ===========================================================================
+{
+  /**
+   * ⚠ DÜZELTME 22.08.2026 ve NİYE GEREKTİ:
+   *
+   * Kural `FIXED ₺12,58` yazılıydı ve kodun kendi notu şunu söylüyordu:
+   *   "tek senaryodan geliyor; sabit mi ciro yüzdesi mi ayırt edilemedi.
+   *    Farklı bir fiyatla İKİNCİ BİR HESAP gerekiyor."
+   *
+   * İkinci hesap geldi (nesatilir, satış ₺2.175 → ₺27,36):
+   *   12,58 / 1.000  = %1,258
+   *   %1,258 × 2.175 = 27,3615      fark 0,0015 ₺
+   *
+   * İki nokta bir doğru kuruyor ve doğru SIFIRDAN geçiyor — sabit terim
+   * yok. `FIXED` yazmak referansı yanlış kopyalamaktı.
+   *
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERMELİ: iki FARKLI fiyat
+   * sınanıyor. Tek fiyatla sınansaydı sabit hâl de geçerdi — nitekim
+   * ₺1.000'de iki model AYNI sonucu veriyor ve altın senaryo bu yüzden
+   * değişmedi.
+   */
+  const pazarlama = (satis: number): number => {
+    const k = simulasyonKarsilastir(
+      {
+        kdvDahilMi: true,
+        alisFiyati: 500,
+        kdvOrani: 20,
+        kargoUcreti: null,
+        kanalFiyatlari: { N11: satis },
+        kanalOranlari: { N11: 12 },
+      },
+      BUGUN,
+    ).find((x) => x.kod === "N11")!;
+    return k.dokum.find((d) => d.kod === "PAZARLAMA_HIZMET")?.tutar ?? 0;
+  };
+
+  yakin("₺1.000'de kesinti 12,58 (altın senaryo korunuyor)", pazarlama(1000), 12.58, 0.01);
+  yakin("₺2.175'te kesinti 27,36 (ikinci senaryo)", pazarlama(2175), 27.36, 0.01);
+
+  /**
+   * ⚠ ASIL İDDİA "İKİ RAKAM DOĞRU" DEĞİL, "FİYATLA ÖLÇEKLENİYOR". Sabit
+   * bir kural her iki fiyatta da aynı tutarı verirdi; bunu doğrudan sın.
+   */
+  kontrol(
+    "kesinti fiyatla ÖLÇEKLENİYOR (sabit DEĞİL)",
+    Math.abs(pazarlama(2000) - pazarlama(1000)) > 1,
+    { "1000": pazarlama(1000).toFixed(2), "2000": pazarlama(2000).toFixed(2) },
+  );
+  /** Oran sabit kalmalı — iki fiyatta da aynı yüzde. */
+  yakin(
+    "  ...oran her fiyatta aynı (%1,258)",
+    (pazarlama(3000) / 3000) * 100,
+    1.258,
+    0.001,
+  );
+
+  /**
+   * ⚠ ROZET DEĞİŞMEDİ ve değişmemeli: nesatilir bunu yüzde olarak
+   * işletiyor diye N11'in gerçekten öyle kestiği KANITLANMADI. Kaynak hâlâ
+   * tek ve hâlâ nesatilir. "Bağımsızlık kaynağın ayrılığıyla ölçülür,
+   * yolun ayrılığıyla değil."
+   */
+  const n11Kural = SIMULASYON_KANALLARI.find((k) => k.kod === "N11")!;
+  kontrol("rozet hâlâ REFERANS (doğrulanmadı)", n11Kural.kaynak === "REFERANS");
+  kontrol(
+    "  ...belirsizlik hâlâ beyan ediliyor",
+    (n11Kural.belirsizlik ?? "").includes("doğrulanmadı"),
+  );
+  /**
+   * ⚠ VE MATRAH BELİRSİZLİĞİ DE YAZILI: iki senaryo da %20 KDV'liydi, yani
+   * "%1,258 × KDV DAHİL" ile "%1,5096 × KDV HARİÇ" ayırt edilemez. Farklı
+   * KDV oranlı bir ürün gerekiyor.
+   */
+  kontrol(
+    "  ...matrah belirsizliği de beyan ediliyor",
+    (n11Kural.belirsizlik ?? "").includes("KDV dahil mi hariç mi"),
+  );
 }
 
 console.log("");
