@@ -378,18 +378,37 @@ export function AppSidebar({ eposta }: { eposta?: string }) {
           </span>
         </Link>
       </SidebarHeader>
-      <SidebarContent>
+      {/* ⚠ MENÜ MARKADAN AYRIŞSIN (kullanıcı 22.08.2026: "biraz daha
+          aşağıdan başlayabilir"). Marka bloğu ile ilk satır bitişikti;
+          göz ikisini tek küme olarak okuyor ve "Panel" başlığın parçası
+          gibi görünüyordu. */}
+      <SidebarContent className="pt-3">
         {duzCiz(GUNLUK)}
         {GRUPLAR.map(grupCiz)}
-        {duzCiz(ALT)}
       </SidebarContent>
 
-      {/* Kim olarak girildiği ve çıkış — her ekranda görünür (#1, #10). */}
-      {eposta ? (
-        <SidebarFooter className="px-2 py-2">
-          <CikisButonu eposta={eposta} />
-        </SidebarFooter>
-      ) : null}
+      {/* ══════════════ ALT — SABİT, KAYMAZ ══════════════
+          Kullanıcı 22.08.2026: _"burası en altta mail yazan yerin üstünde
+          SABİT olarak dursun."_
+
+          ⚠ ÖNCE İÇERİĞİN İÇİNDEYDİ ve grupların ardından geliyordu: menü
+          uzayınca aşağı kayıyor, kısayken ortada asılı kalıyordu. İkisi de
+          yanlış — El Kitabı ve Destek talepleri "bir şey bilmediğin an"
+          gidilen yerler ve o an menüyü KAYDIRMAK istemezsin (İlke #9).
+
+          ⚠ ÇIKIŞTAN AYRI BİR BLOK: aynı `SidebarFooter` içinde ama kendi
+          kenarlığıyla. Yan yana konsalardı "çıkış" ile "el kitabı" aynı
+          ağırlıkta görünürdü; biri gündelik yardım, öteki oturumu bitiren
+          eylem. */}
+      <SidebarFooter className="gap-0 p-0">
+        <div className="px-2 py-2">{duzCiz(ALT)}</div>
+        {/* Kim olarak girildiği ve çıkış — her ekranda görünür (#1, #10). */}
+        {eposta ? (
+          <div className="border-sidebar-border border-t px-2 py-2">
+            <CikisButonu eposta={eposta} />
+          </div>
+        ) : null}
+      </SidebarFooter>
     </Sidebar>
   );
 }

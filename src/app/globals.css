@@ -128,6 +128,49 @@
     --se-kutu-cizgi: 1.667px;
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   SOL MENÜ ÖLÇÜLERİ — OKUNAKLILIK
+   ----------------------------------------------------------------------
+   Kullanıcı 22.08.2026: _"menü bar biraz daha aşağıdan başlayabilir ve
+   yazı puntoları biraz arttırılabilir."_
+
+   shadcn ilkeli menü satırını `h-8 text-sm` (32px / 14px) ve ikonu 16px
+   veriyor. Koyu kabukta bu ölçü açık zemindekinden daha küçük okunuyor:
+   ince yazı koyu zeminde ışık yaymadığı için gövde inceliyor.
+
+   ⚠ İLKEL BİLEŞENE DOKUNULMADI (`ui/sidebar.tsx`). Orası shadcn'den gelen
+   satıcı kodu; elle düzenlenirse bir sonraki güncellemede ya çakışır ya
+   sessizce geri döner. Ölçü BURADA, tek yerde ve yalnız SOL MENÜYE
+   kapsamlanmış olarak duruyor.
+
+   ⚠ 44 PX KURALI DA KAZANIYOR (İlke #8): satır 32 → 36 px. Telefonda menü
+   satırları zaten dokunma hedefi ve 32px sınırın altındaydı.
+   ══════════════════════════════════════════════════════════════════════ */
+[data-slot="sidebar"] [data-slot="sidebar-menu-button"] {
+    height: 2.25rem;
+    font-size: 0.9375rem;
+}
+[data-slot="sidebar"] [data-slot="sidebar-menu-button"] svg {
+    width: 1.125rem;
+    height: 1.125rem;
+}
+/* Grup başlığı: satırlardan küçük KALIR — hiyerarşi punto farkından okunur. */
+[data-slot="sidebar"] [data-slot="sidebar-group-label"] {
+    height: 2.25rem;
+    font-size: 0.8125rem;
+}
+
+/* ⚠ TELEFONDA 44 PX (İlke #8). Masaüstünde 36 px yeterli — fare hedefi
+   piksel hassasiyetinde. Dokunmatikte parmak öyle değil ve menü satırı
+   dokunma hedefidir; 36 px sınırın altında kalıyordu. Grup başlığı da
+   tıklanabilir olduğu için aynı ölçüye çıkar. */
+@media (max-width: 767px) {
+    [data-slot="sidebar"] [data-slot="sidebar-menu-button"],
+    [data-slot="sidebar"] [data-slot="sidebar-group-label"] {
+        height: 2.75rem;
+    }
+}
+
 @layer utilities {
     .border {
         border-width: var(--se-kutu-cizgi);

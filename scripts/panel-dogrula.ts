@@ -2166,6 +2166,20 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       /aria-expanded=\{acik\}/.test(kenar) && kenar.includes("ChevronDown"),
     );
 
+    /**
+     * ⚠ MENÜ SATIRI TELEFONDA 44 PX (Ilke #8). Masaustunde 36 px yeterli;
+     * dokunmatikte degil. Satir ve grup basligi ikisi de dokunma hedefi.
+     */
+    kontrol(
+      "menü satırı telefonda 44 px",
+      /max-width:\s*767px\)\s*\{[\s\S]{0,300}height:\s*2\.75rem/.test(tema),
+    );
+    /** İlkel bileşen ELLE DÜZENLENMEDİ — ölçü tek yerde, globals'ta. */
+    kontrol(
+      "  ...shadcn ilkeline dokunulmadı",
+      !readFileSync("src/components/ui/sidebar.tsx", "utf8").includes("0.9375rem"),
+    );
+
     const duzen = readFileSync("src/app/layout.tsx", "utf8");
     kontrol("tema seçici üst çubukta", duzen.includes("<TemaSecici />"));
     /**
