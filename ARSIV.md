@@ -18,6 +18,25 @@
 
 ---
 
+## ✅ 22.08.2026 KAPANANLAR — N11 · yerleşim · yedek
+
+Panodan gerekçesiyle indi (pano yalnız AÇIK kalemleri taşır).
+
+| # | İş | Sonuç |
+|---|---|---|
+| **H22** | ✅ **N11 kesintileri ÖLÇÜLDÜ — kapandı 22.08.2026** | Gerçek N11 hakediş ekstresi geldi ve denklem **kuruşuna** kapandı (9.599 − 1.535,84 − 115,19 − 76,79 − 79,99 = 7.791,19). Ölçülen: komisyon **%16** üstüne KDV yok · **Pazarlama Bedeli %1,20** · **Pazaryeri Bedeli %0,80** (bizde HİÇ yoktu) · vergi kesintisi = stopaj (KDV hariç %1). Matrah **KDV DAHİL** — stopaj satırıyla bağımsız doğrulandı. nesatilir'in `%1,258`i çürüdü. Simülasyon kuralı düzeltildi, rozet `REFERANS → OLCULDU`. ⚠ **KALAN İKİ İŞ, aşağıda K27 ve K28.** |
+| **K27** | ✅ **N11 kuralları DEFTERE geçti — 22.08.2026** | Canlıya yazıldı: `PAZARLAMA_HIZMET %1,20` · `PAZARYERI_BEDELI %0,80`, ikisi de `SALE_AMOUNT` (KDV dahil matrah). `AuditLog → N11_KESINTI_YAZ`. Geri alma yolu hazır: `npm run canli:n11-kesinti -- --geri --uygula`. ⚠ **GEÇMİŞ SATIŞLAR DEĞİŞMEDİ** — snapshot dokunulmazlığı korundu. İki N11 satışı (`284353754425` NET-2 138,04 · `283855414424` NET-2 664,31) hâlâ kesintisiz rakamı taşıyor; tazelenirse toplam **~₺80,80 düşer**. **Yeniden hesaplamak KULLANICI kararı** — bkz. K29. |
+| **K29** | ✅ **Geçmiş TAZELENDİ — 22.08.2026** | Kullanıcı kararı: _"doğru olana doğru, geçmişi de tazele."_ ⚠ **ÖNCE BİR ENGEL ÖLÇÜLDÜ:** motor kesintiyi `validFrom <= soldAt` ile süzüyor; kural bugüne yazıldığı için 15/19 Ağustos satışlarına HİÇ uygulanmıyordu — tazeleme tek kuruş değiştirmezdi. `validFrom` **kanıtın kapsadığı** tarihe çekildi (`01.07.2026` — komisyon faturasının dönemi, en eski satırı 03.07). Daha geriye GİDİLMEDİ: öncesi için kanıt yok. Sonuç: `284353754425` **138,04 → 107,22** · `283855414424` **664,31 → 614,33** (toplam **−80,80**). ⚠ **TAHMİN TUTTU:** uygulamadan önce −30,82 / −49,98 denmişti, aynen o çıktı. İz: `N11_KESINTI_GECMISE_AC` + `N11_KAR_TAZELE`. |
+| **K28** | ✅ **KAPANDI 22.08.2026 — motor DOĞRUYMUŞ** | Soru: hakedişten kesilen komisyon indirilecek KDV içeriyor mu? N11'in resmî e-faturası okundu (`DPE2026000325810`, 31.07.2026 — Excel'deki fatura numarasının **tam kendisi**, yani kapsam tartışması yok). Üç kalem de matrah+KDV olarak ayrılıyor ve toplamları hakedişteki kesintinin tam kendisi: komisyon `2.425,49 + 485,10 = 2.910,59` ↔ hakediş `2.910,59`. **Kesilen tutarlar KDV DAHİL**, içindeki KDV indirilebilir — motorun varsayımı doğruymuş, artık varsayım değil ölçüm. N11'in `belirsizlik` alanı **null** oldu: kanal tamamen ölçülü. |
+| **K23** | ✅ **KAPANDI 22.08.2026 — sütun katlandı** | Üç seçenekten **①** yapıldı (kullanıcı onayı). **Satışlar:** `Adet` ürün adının altına indi — alımlar zaten "ürün + toplam adet" düzenindeydi, yani ekranlar arası tutarlılık da kazanıldı (İlke #10). **Alımlar:** `Kart` tutarın altına ("ne kadar ödedim, hangi kartla"), kalem sayısı ürün hücresine (toplam adetin yanına). **Hiçbir bilgi düşmedi** — ikisi de kendi doğal komşusuna taşındı. ⚠ **Marj kapatılmadı:** 17.08.2026'da kullanıcı isteğiyle NET rozetinden ÇIKARILMIŞTI; geri koymak alınmış bir kararı bozmak olurdu. Mutasyon iki yönlü sınandı. `yerlesim:dogrula` 10/10 ve **bekçi turu 42/42 yeşil**. |
+| **K25** | ✅ **YEDEK BOŞLUĞU KAPANDI — 22.08.2026** | Tarife tabloları yedeğe eklendi (sürüm 5 → 6). ⚠ **VE LİSTEYE EKLEMEK YETMEDİ:** yedeği üreten kod bir döngü değil, elle yazılmış bir nesne — listeye tablo eklemek dosyaya veri koymuyordu. Yeni bekçi (`1b) ÜRETİCİ BEKÇİSİ`) bunu yakaladı ve **üç tablo daha** çıktı: `KartOdeme` · `GecmisEkstre` · `Talep`. Bunlar listede vardı, üreticide YOKTU. ⚠ Geri yükleme _"dosyada olmayan tablo BOŞALIR"_ diyor: bir yedekten dönülse **kart ödemeleri silinirdi** ve kart borcu tamamen yanlış çıkardı. Beşi de eklendi, mutasyonla sınandı, `yedek:dogrula` 30 → 33. |
+
+| **K18** | **Sipariş no çakışması — SİSTEM OPERATÖRÜ YANLIŞA ZORLADI** | ✅ **KÖK SEBEP BULUNDU + DÜZELTİLDİ 20.08.2026.** Kullanıcı anlattı: siparişi girdi → hata fark etti → **iptal etti** → aynı numarayla yeniden girmek istedi → sistem _"bu sipariş mevcut"_ deyip **reddetti** → başka çıkış olmadığı için sona `0` ekledi. **Bu parmak hatası DEĞİL, tasarım kusuru:** `satisKaydet`'teki çakışma kontrolü `iptalTarihi`yi süzmüyordu. **DÜZELTME (şemaya dokunulmadı):** kural saf işleve çıktı (`siparisNoCakismaHukmu`), iptalli çakışma artık **ayrı hüküm** veriyor ve ekran _"o satışın iptalini geri alın"_ diyip **iptalli satışa bağlantı** veriyor. Test: `iptal:dogrula` 38 → **43**, mutasyon (iptalTarihi görmezden gelinsin) **2 kontrolü kırmızı yaktı.** ⚠ **VERİ DÜZELTMESİ HALİL'DE:** `115180181780` iptal → `11518018178` iptali geri al. Numara yeniden adlandırılamaz (`Sale.code @unique`). |
+
+_(K18'in kalan veri düzeltmesi panoda AÇIK duruyor.)_
+
+---
+
 ## ✅ PWA — KAPANDI 22.08.2026 (Halil testi geçti, iOS dahil)
 
 Uygulama telefona kurulabiliyor: manifest + simgeler + servis çalışanı.
