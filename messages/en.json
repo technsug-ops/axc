@@ -2742,7 +2742,12 @@
     "adetNotu": "",
     "engel_STOK_YETMIYOR": "",
     "onayIcinNeden": "",
-    "onayIcinAciklama": ""
+    "onayIcinAciklama": "",
+    "tarifeden": "",
+    "tarifeYok": "",
+    "kargoFirmasiYok": "",
+    "tutarElle": "",
+    "tarifeOkunuyor": ""
   },
   "SatisIptali": {
     "iptalEt": "",

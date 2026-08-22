@@ -426,6 +426,96 @@ console.log("\nSATIŞ DÜZENLEME — DOĞRULAMA\n");
   );
 }
 
+// ===========================================================================
+console.log("");
+console.log("DESİ DEĞİŞİNCE KARGO ÜCRETİ TAZELENİYOR MU");
+// ===========================================================================
+{
+  /**
+   * ⚠ KULLANICI BİLDİRDİ 22.08.2026:
+   * _"Kargoda bizim yazdığımızdan farklı desi çıktı; 3 yazmışız, kargoda 5
+   * çıktı, 3'ü 5 yapıyorum. Bazen ben yüksek yazıyorum, kargodan nihai desi
+   * düşük geliyor. Desiye göre fiyat normalde değişmeli, fakat Selliora'da
+   * kargo ücreti DEĞİŞMİYOR."_
+   *
+   * KÖK SEBEP MOTORDA DEĞİL EKRANDAYDI. Motorun kuralı şu (`kar-yeniden.ts`):
+   *     elle girilen tutar VARSA tarifeyi EZER
+   * ve bu kural DOĞRU — kargodan farklı bir tutar ödenmiş olabilir. Ama
+   * düzenleme formu tutar alanını HER ZAMAN dolu gönderiyordu (mevcut ücret
+   * önceden yazılı), yani `cargoAmountManual` hiç null olmuyor ve tarife
+   * dalı HİÇ çalışmıyordu. Desiyi değiştirmek gerçekten hiçbir şey
+   * yapmıyordu.
+   *
+   * ⚠ MOTOR KURALINA DOKUNULMADI. Düzeltme ekranda: desi bırakılınca tutar
+   * tarifeden tazeleniyor, kullanıcı tutara dokunursa "elle" olup öyle
+   * kalıyor. Fiyat denemesindeki "elle > zemin" sırasının aynısı.
+   */
+  const form = readFileSync("src/app/satislar/[id]/duzenle-formu.tsx", "utf8");
+  const eylem = readFileSync("src/app/satislar/[id]/duzenle-actions.ts", "utf8");
+
+  kontrol("tarife okuma eylemi var", eylem.includes("export async function kargoTarifesiniOku"));
+  /**
+   * ⚠ EKRANIN KENDİ İZNİ. Var olan `kargoSecenekleriGetir` `satis.yaz`
+   * istiyor; bu ekran `satis.duzenle` ile açılıyor. Yanlış izin, düzeltme
+   * yetkisi olan ama satış yazamayan kullanıcıda ekranı SESSİZCE çalışmaz
+   * yapardı.
+   */
+  const eylemGovdesi = eylem.slice(eylem.indexOf("export async function kargoTarifesiniOku"));
+  kontrol(
+    "  ...ekranın kendi iznini istiyor (satis.duzenle)",
+    /yetkiIste\("satis\.duzenle"\)/.test(eylemGovdesi),
+  );
+  kontrol(
+    "  ...desi YUKARI yuvarlanıyor (kargo firmaları öyle hesaplar)",
+    eylemGovdesi.includes("Math.ceil"),
+  );
+  /**
+   * ⚠ TARİFE KDV HARİÇ SAKLANIR, EKRAN KDV DAHİL GÖSTERİR. Form kendi
+   * çarpanını yazsaydı motorla ayrışırdı: ekranda bir rakam, hesapta başka.
+   */
+  kontrol(
+    "  ...KDV çevrimi tek kaynaktan (kdvDahilKargo)",
+    eylemGovdesi.includes("kdvDahilKargo("),
+  );
+  /**
+   * ⚠ BULUNAMADI SESSİZ KALMAZ (İlke #5). Üç ayrı sonuç ayrı ayrı dönüyor:
+   * tarife var · bu desiyi taşımıyor · satışta kargo firması yok.
+   */
+  for (const tur of ["TARIFE_YOK", "FIRMA_YOK", "SATIS_YOK"]) {
+    kontrol(`  ...${tur} ayrı sonuç olarak dönüyor`, eylemGovdesi.includes(tur));
+  }
+
+  kontrol("form desi bırakılınca tarifeyi okuyor", form.includes("onBlur={desiBirakildi}"));
+  kontrol(
+    "  ...okunan tutar alana yazılıyor",
+    /setTutar\(String\(sonuc\.kdvDahil\)\)/.test(form),
+  );
+  /**
+   * ⚠ ELLE GİRİLEN TUTAR KORUNUR. Kullanıcı tutara dokunduysa tarife onu
+   * bir daha ezmemeli — kargodan farklı ödenen tutar girilebilmeli.
+   */
+  kontrol(
+    "  ...tutara dokununca ELLE oluyor",
+    /setTutarKaynagi\("ELLE"\)/.test(form),
+  );
+  kontrol(
+    "  ...rakamın kaynağı ekranda yazıyor",
+    form.includes("tarifeNotu") && form.includes('t("tutarElle")'),
+  );
+  /**
+   * ⚠ TARİFE BULUNAMAZSA ESKİ TUTAR SİLİNMEZ — kullanıcının elindeki tek
+   * rakamı da götürürdü. Yalnız NEDEN yenilenmediği yazılır.
+   */
+  const birakildi = form.slice(
+    form.indexOf("const desiBirakildi"),
+    form.indexOf("const yeniDegerler"),
+  );
+  kontrol(
+    "  ...tarife yoksa tutar SİLİNMİYOR",
+    !/tarifeYok[\s\S]{0,120}setTutar\(""\)/.test(birakildi),
+  );
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

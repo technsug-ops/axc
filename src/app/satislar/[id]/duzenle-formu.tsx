@@ -26,6 +26,7 @@ import {
   duzenlemeyiOnizle,
   duzenlemeyiUygula,
   type OnizlemeSonucu,
+  kargoTarifesiniOku,
 } from "./duzenle-actions";
 
 /**
@@ -83,6 +84,23 @@ export function DuzenleFormu({
   );
   const [desi, setDesi] = useState(kargoDesi === null ? "" : String(kargoDesi));
   const [tutar, setTutar] = useState(kargoTutar === null ? "" : String(kargoTutar));
+  /**
+   * ── KARGO TUTARI NEREDEN GELDİ ──────────────────────────────────────
+   * Kullanıcı 22.08.2026: _"kargoda bizim yazdığımızdan farklı desi çıktı,
+   * 3'ü 5 yapıyorum... fakat kargo ücreti değişmiyor."_
+   *
+   * Kök sebep motorda değil EKRANDAYDI: motorun kuralı "elle girilen tutar
+   * tarifeyi EZER" ve bu kural DOĞRU (kargodan farklı tutar ödenmiş
+   * olabilir). Ama form tutar alanını her zaman dolu gönderiyordu, yani
+   * tarife dalı HİÇ çalışmıyordu.
+   *
+   * Çözüm: desi değişince tutar TARİFEDEN tazelenir; kullanıcı tutara
+   * dokunursa "elle" olur ve tarife bir daha ezmez. Fiyat denemesindeki
+   * "elle > zemin" sırasının aynısı (İlke #10: aynı iş her ekranda aynı).
+   */
+  const [tutarKaynagi, setTutarKaynagi] = useState<"ELLE" | "TARIFE">("ELLE");
+  const [tarifeNotu, setTarifeNotu] = useState<string | null>(null);
+  const [tarifeOkunuyor, tarifeBasla] = useTransition();
   const [neden, setNeden] = useState<DuzenlemeNedeni | "">("");
   const [aciklama, setAciklama] = useState("");
   const [onizleme, setOnizleme] = useState<OnizlemeSonucu | null>(null);
@@ -109,6 +127,41 @@ export function DuzenleFormu({
     neden === "" ? null : neden,
     aciklama.trim() === "" ? null : aciklama,
   );
+
+  /**
+   * ⚠ ODAK ÇIKINCA OKUNUR, HER TUŞTA DEĞİL. Her tuşta sunucuya gitmek
+   * "3" yazarken "3" için, sonra "35" için iki ayrı sorgu demekti ve
+   * kullanıcı yazarken tutar zıplardı.
+   */
+  const desiBirakildi = () => {
+    const sayi = Number(desi);
+    if (desi.trim() === "" || !Number.isFinite(sayi) || sayi <= 0) {
+      setTarifeNotu(null);
+      return;
+    }
+    tarifeBasla(async () => {
+      const sonuc = await kargoTarifesiniOku(saleId, sayi);
+      if (sonuc.tur === "TARIFE") {
+        setOnizleme(null);
+        setTutar(String(sonuc.kdvDahil));
+        setTutarKaynagi("TARIFE");
+        setTarifeNotu(t("tarifeden", { desi: sonuc.desi }));
+        return;
+      }
+      /**
+       * ⚠ SESSİZ KALINMAZ (İlke #5). Tarife bulunamadıysa tutar OLDUĞU GİBİ
+       * bırakılır — eski değeri silmek, kullanıcının elindeki tek rakamı da
+       * götürürdü — ama NEDEN yenilenmediği ekranda yazar.
+       */
+      setTarifeNotu(
+        sonuc.tur === "TARIFE_YOK"
+          ? t("tarifeYok", { desi: sonuc.desi })
+          : sonuc.tur === "FIRMA_YOK"
+            ? t("kargoFirmasiYok")
+            : t("satisYok"),
+      );
+    });
+  };
 
   const yeniDegerler = () => ({
     fiyatlar: Object.fromEntries(
@@ -195,6 +248,7 @@ export function DuzenleFormu({
             value={desi}
             placeholder={t("desiIpucu")}
             onChange={(e) => degisti(setDesi)(e.target.value)}
+            onBlur={desiBirakildi}
             className="h-11"
           />
         </label>
@@ -206,9 +260,30 @@ export function DuzenleFormu({
             inputMode="decimal"
             value={tutar}
             placeholder={t("kargoIpucu")}
-            onChange={(e) => degisti(setTutar)(e.target.value)}
+            onChange={(e) => {
+              /** Tutara dokunmak onu ELLE yapar; tarife bir daha ezmez. */
+              setTutarKaynagi("ELLE");
+              setTarifeNotu(null);
+              degisti(setTutar)(e.target.value);
+            }}
             className="h-11"
           />
+          {/* ⚠ RAKAMIN KAYNAĞI YAZAR. "Tarifeden" ile "senin girdiğin"
+              karışırsa kullanıcı hangi tutarla hesaplandığını bilemez —
+              fiyat denemesindeki kuralın aynısı. */}
+          {tarifeOkunuyor ? (
+            <span className="text-muted-foreground block text-xs">
+              {t("tarifeOkunuyor")}
+            </span>
+          ) : tarifeNotu !== null ? (
+            <span className="text-muted-foreground block text-xs">
+              {tarifeNotu}
+            </span>
+          ) : tutarKaynagi === "ELLE" && tutar.trim() !== "" ? (
+            <span className="text-muted-foreground block text-xs">
+              {t("tutarElle")}
+            </span>
+          ) : null}
         </label>
       </div>
 

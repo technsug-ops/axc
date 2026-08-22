@@ -2742,7 +2742,12 @@
     "adetNotu": "artarsa stoktan düşer, azalırsa stoğa döner",
     "engel_STOK_YETMIYOR": "Stok yetmiyor — {urun} için {gereken} adet gerekiyor, elde {mevcut} adet var.",
     "onayIcinNeden": "Kaydetmek için bir neden seçin.",
-    "onayIcinAciklama": "\"Diğer\" seçildiğinde açıklama zorunludur."
+    "onayIcinAciklama": "\"Diğer\" seçildiğinde açıklama zorunludur.",
+    "tarifeden": "Tarifeden — {desi} desi",
+    "tarifeYok": "Bu firma {desi} desi taşımıyor — tutar değişmedi, elle yazın",
+    "kargoFirmasiYok": "Satışta kargo firması seçili değil — tarife okunamıyor",
+    "tutarElle": "senin girdiğin",
+    "tarifeOkunuyor": "Tarife okunuyor…"
   },
   "SatisIptali": {
     "iptalEt": "Satışı iptal et",
