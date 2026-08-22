@@ -18,6 +18,80 @@
 
 ---
 
+## ✅ FİYAT DENEMESİ — KAPANDI 22.08.2026 (Halil testi geçti)
+
+**Ne yapıldı.** "Bu ürünü şu fiyata satarsam elime ne kalır — ve hangi
+pazaryerinde en çok kalır?" sorusunu cevaplayan ekran (`/simulasyon`).
+Altı teslimde tamamlandı; hepsi 21–22.08.2026.
+
+**Zincir — her adımı kullanıcı geri bildirimi açtı:**
+
+1. Ekran yazıldı, sonra **baştan yazıldı** — _"bu nasıl kötü bir front
+   end dir yahu"_. İlk hâli GET formu + 8 sütunlu tabloydu.
+2. Barkod/SKU ile ürün çekme — alış maliyeti, komisyon ve satış geçmişi
+   defterden kendiliğinden geliyor. _nesatilir'in yapamayacağı şey buydu:
+   orada üç rakamı da kullanıcı bilmek zorunda._
+3. **Komisyon kanal başına** — ölçüldü: aynı üründe kanaldan kanala fark
+   ortanca 2 puan, **max 14,4 puan** (1.000 ₺'de ₺144).
+4. **Kanal kutuları görünmüyordu** — kullanıcı canlıda yakaladı. Kök
+   sebep sıralama tuzağıydı: kutular sonuç kutusunun içindeydi, sonuç
+   kutuları da kapı ORTAK oranı şart koştuğu için çizilmiyordu. Yani
+   _"kanal oranı YOKSA"_ etiketli alanı doldurmadan kanal oranı
+   girilemiyordu — ekran kendi etiketiyle çelişiyordu.
+5. **Buy box fiyatı kanal başına** — asıl iş değeri burada. Motor tek
+   fiyat alıyordu; kullanıcının sorusu ise her kanalın KENDİ buy box'ı.
+6. Görünüm: kartlar ayrıldı, gri gitti, renk **duruma** bağlandı, girdi
+   kutuları girdi gibi göründü (kenarlık + ₺/% birim işareti).
+
+**Kanıt — kullanıcının elle hesabı motorla tuttu** (alış 1.000, kargo 200):
+
+| Kanal | Buy box | Komisyon | Halil | Selliora NET-2 | Fark |
+|---|---|---|---|---|---|
+| Trendyol | 2.150 | %5 | 673,02 | **673,17** | +0,15 |
+| N11 | 2.175 | %12 | 554 | **566,39** | +12,39 |
+| Hepsiburada | 2.250 | %13 | 533,25 | **538,25** | +5,00 |
+
+**En düşük satış fiyatı en yüksek kârı veriyor** — ve sıralama iki
+hesapta da aynı. Bu terslik gözle görülmez; ekranın bütün varlık sebebi bu.
+
+⚠ **N11 farkı (₺12,39) AÇIK KALDI.** Bizim N11 kesintimiz `12,58`,
+kullanıcınınki `27,36`. N11 kuralımız nesatilir'dan **tek bir senaryodan**
+alındı ve hafızada _"referans · doğrulanmadı"_ diye duruyor. Gerçek bir N11
+ekstresi/ekranından geliyorsa **kullanıcınınki doğru, bizimki eksik**.
+_Soru soruldu, cevap gelmedi — bkz. BEKLEYENLER._
+
+**Kararlar:**
+- **Buy box OTOMASYONU AÇILMADI** — kullanıcı: _"manuel gireceğim, ürün
+  arama sırasında anlık takip ediyorum, otomasyona ihtiyacım şu an yok."_
+  Ölçüm yapıldı ve panoda duruyor: TY ürün listesinde `BuyBox Fiyatı`
+  kolonu VAR (189/189 canlı listede dolu, barkodlu), HB fiyat vermiyor
+  yalnız SIRA veriyor. Şema işi yapılmadı. **Açılış şartı:** elle takibin
+  yetersiz bulunması.
+- **Marka rengi kullanılmadı.** Trendyol'u turuncu yapmak, turuncunun
+  "uyarı" anlamını bu ekranda bozardı. Renk kanalın KİMLİĞİNE değil
+  HÜKMÜNE bağlı.
+- **Ortak satış fiyatı isteğe bağlı.** Kullanıcının elinde tek bir fiyat
+  yok, üç ayrı buy box var; ortak alanı şart koşan kapı onu olmayan bir
+  rakamı uydurmaya zorlardı.
+
+**Testler:** `simulasyon:dogrula` 82 → **139 kontrol**. On dört mutasyon
+denemesi, hepsi kırmızı yandı.
+
+⚠ **MUTASYON İKİ KEZ TESTİN KENDİSİNİ YAKALADI:**
+- `yakin()` `null` gelince **TypeError ile çöküyordu** — sonda ortada
+  ölüyor, geri kalan kontroller hiç koşmuyordu. Rapor "4 hata" diyordu;
+  düzeltilince aynı mutasyon **10 hata** verdi.
+- _"En düşük fiyatlı kanal kazanıyor"_ kontrolü **kördü**: bütün NET'ler
+  `null` olduğunda sıralama girdiyi bozmuyor, TRENDYOL zaten ilk sırada
+  ve kontrol yeşil kalıyordu.
+- `bg-card` kontrolü **yalancı yeşildi**: desen bloğun YORUMUNDA da
+  geçiyordu. İşaret `className`e bağlandı.
+
+**Halil testi ✓ 22.08.2026** — sekiz madde, gerçek cihaz + canlı adres.
+Kullanıcı onayı: _"bu testler ok"._
+
+---
+
 ## ✅ DEFTER ONARIMI — KAPANDI 20.08.2026 (K20 · K21 · K22)
 
 **Zincir:** sipariş no çakışması → kullanıcı numaraya `0` ekledi → iptal/geri

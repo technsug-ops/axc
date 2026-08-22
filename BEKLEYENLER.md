@@ -18,7 +18,6 @@
 | # | İş | Durum |
 |---|---|---|
 | **A3** | **AŞAMA 3 — pazaryeri API'si açılsın mı?** | ⏳ **GEREKÇE TAMAM, KARAR SENDE.** Ölçüm bitti, tartışılacak yeri kalmadı: **1–20 Ağustos'ta Trendyol'a 143 sipariş geldi, Selliora'da 38'i var** (sipariş numarasıyla birebir eşleştirme — barkod/pencere/alt küme tartışması yok). 105 sipariş sistemde hiç yok. Elle giriş, en aktif ayımızda bile yetişmiyor. **Keşif ağustosun kapanmasını beklemiyor** (TY API uçları · yetkilendirme · sınırlar · salt-okuma kapsamı). |
-| **H21** | **Pano bölünmesi** | ✅ **YAPILDI 20.08.2026** — bu dosya açık işler, [ARSIV.md](ARSIV.md) geçmiş. _Kalem bir sonraki turda silinecek._ |
 
 ---
 
@@ -32,6 +31,7 @@
 | **H16** | **Canlı tur** | Kart sırası · yapışkan çubuk · döküm görüntüsü · kıyas ibaresi — hepsi deploy'da, gerçek cihazda bakılacak. |
 | **H17** | **Yedek — ilk gece doğrulaması** | Dış zamanlayıcı kuruldu, test 200 verdi. `/ayarlar/disa-aktarma` → **kırmızı eksik gün kutusu kaybolmuş olmalı.** |
 | **H18** | **Melontik ölçütü** | Çapraz teyit için **gerçek** Melontik çıktısı. _Sunumdaki rakamlar demoydu; doğrulanmamış ölçüte göre motor bozulmak üzereydi._ |
+| **H22** | 🔴 **N11 kesinti kuralı — bizimki eksik olabilir** | **AÇIK SORU, cevap bekliyor.** Halil'in elle hesabında N11 "diğer giderler" **₺27,36**; bizim motorumuz **₺12,58** kesiyor (fark ₺12,39, marjın ~%2'si). ⚠ N11 kuralımız nesatilir'dan **TEK senaryodan** alındı ve hafızada _"referans · doğrulanmadı"_ diye duruyor — yani bizimki zaten zayıf tarafta. **Sorulacak:** `27,36` gerçek bir N11 ekstresinden/ekranından mı geliyor? Öyleyse kural düzeltilir. |
 | **H15** | **N11 ritmi** | Komisyonlar hangi sıklıkla değişiyor? Cevapsızken envanter "ölçülemedi" diyor. |
 
 ---
@@ -46,6 +46,8 @@
 | **K24** | 🕓 **Alım KDV oranı SNAPSHOT değil** | **AÇIK SINIR, beyan edildi 21.08.2026.** KDV sekmesi çalışıyor ama iki taraf farklı: **satış** oranı `SaleItem.vatRate` ile satış anında DONDURULMUŞ; **alım** oranı ürünün BUGÜNKÜ kategorisinden çözülüyor (`PurchaseItem`de oran alanı yok). Bir kategorinin oranı değişirse **geçmiş alımların KDV'si geriye dönük kayar** ve eski bir dönemin "ödenecek KDV"si bugün başka çıkar. Ekranda yazılı. **Çare:** `PurchaseItem.vatRate` snapshot alanı — şema işi, ayrı karar. ⚠ Bugün risk düşük: 18 kategorinin oranları mevzuata bağlı ve nadir değişir; ama değiştiğinde SESSİZ kayar. |
 | **K18** | **Sipariş no çakışması — SİSTEM OPERATÖRÜ YANLIŞA ZORLADI** | ✅ **KÖK SEBEP BULUNDU + DÜZELTİLDİ 20.08.2026.** Kullanıcı anlattı: siparişi girdi → hata fark etti → **iptal etti** → aynı numarayla yeniden girmek istedi → sistem _"bu sipariş mevcut"_ deyip **reddetti** → başka çıkış olmadığı için sona `0` ekledi. **Bu parmak hatası DEĞİL, tasarım kusuru:** `satisKaydet`'teki çakışma kontrolü `iptalTarihi`yi süzmüyordu. **DÜZELTME (şemaya dokunulmadı):** kural saf işleve çıktı (`siparisNoCakismaHukmu`), iptalli çakışma artık **ayrı hüküm** veriyor ve ekran _"o satışın iptalini geri alın"_ diyip **iptalli satışa bağlantı** veriyor. Test: `iptal:dogrula` 38 → **43**, mutasyon (iptalTarihi görmezden gelinsin) **2 kontrolü kırmızı yaktı.** ⚠ **VERİ DÜZELTMESİ HALİL'DE:** `115180181780` iptal → `11518018178` iptali geri al. Numara yeniden adlandırılamaz (`Sale.code @unique`). |
 | **K19** | **₺15 TAKİPÇİ KUPONU — kâr motorunda karşılığı yok** | 🕓 **ÖLÇÜLDÜ 20.08.2026, iş açılmadı.** Mağazayı takip edene **₺15 kupon** (tek sefer, tüm ürünler, amaç takipçi artırmak) — TY ve HB'de var. **TY dökümü: 144 satırın 52'sinde (%36) `İndirim Tutarı = 15,00`; `Trendyol İndirim Tutarı` 144/144 SIFIR → kuponu tamamen MAĞAZA ödüyor.** ✅ **KAYIT DOĞRU:** Halil `Faturalanacak Tutar`ı giriyor (4.185), yani kupon düşülmüş hâli — düzeltilecek bir şey yok. Bu, gece boyunca üç üründe çıkan **"bizde ₺15 eksik"** farkının da açıklamasıdır. ⚠ **İKİ AÇIK SORU:** ① **Komisyon tabanı** — TY komisyonu 4.200'den mi 4.185'ten mi alıyor? Bu dosyada komisyon TUTARI yok, ölçülemez → **H3** ödeme dosyasıyla bakılır. ② **Fiyatlama simülasyonu** kuponu bilmiyor: Halil 4.200 deneyince aracın gösterdiği NET, satışların %36'sında ₺15 fazla çıkıyor. Bu ürünün marjı ~₺190 olduğuna göre ₺15 **marjın ~%8'i** — HB'nin ₺12,60'ıyla aynı mertebede. |
+| **K25** | 🔴 **`yedek:dogrula` KIRMIZI — tarife tabloları yedeğe girmiyor** | **ÖLÇÜLDÜ 21.08.2026, iş açılmadı.** Bekçi diyor ki: `EKSİK: KomisyonTarifesi, KomisyonTarifeKalemi`. ⚠ **H10 ile doğrudan çakışıyor:** tam dilimli ileri tarife arşivden İNMİYOR — o hafta indirilmezse bir daha elde edilemez. Veritabanı giderse **o tarifeler kalıcı olarak kaybolur**, çünkü yedeğe hiç girmiyorlar. Bugüne kadar görülmemesinin sebebi: bu bekçi rutin doğrulama listesinde yoktu. **Karar gerekiyor:** iki tabloyu yedek listesine ekle. |
+| **K26** | 🧹 **`scripts/kart-dogrula.ts` HİÇ koşmuyor** | **ÖLÇÜLDÜ 21.08.2026.** 12 KB'lık "KART BORCU DOĞRULAMA" dosyası; kendi başlığında _"Çalıştırma: `npm run kart:dogrula`"_ yazıyor **ama o komut başka bir dosyayı koşuyor** (`urun-karti-dogrula.ts` — ürün kartı). İki farklı şey "kart" adını taşıyor ve biri sessizce yetim kalmış. Kart borcu tarafı `kart-odeme:dogrula` (121 kontrol) ile kısmen kapanıyor. **Karar:** ya npm girdisi açılır ya dosya silinir — ikisinden biri, ama _"duruyor"_ üçüncü seçenek değil. |
 | **K13c** | **HB'de zararına duran 6 ürün** | 🕓 Bugünkü fiyat + açık parti maliyetiyle NET-2 **negatif**: Philips 5000 10in1 (−46,11) · LEGO 101 Dalmaçyalı (−301,77) · LEGO Endgame (−289,07) · Hogwarts (−25,68) · LEGO "Yukarı Bak" (−291,92) · Hot Wheels Rhino (−58,13). **Fiyat mı yanlış maliyet mi — önce bakılır**, düzeltilmez. |
 | **H12/H13** | **Hakediş teyidinde önce bakılacak satışlar** | `11331575354` (i9000 Ultra · 17.06 · **₺12.960** · oran %2,70 · "iade var" rozetli) — **tek başına üçlüden büyük.** Ayrıca `11493262226` · `11492798173` · `11492628481`. |
 | **H14** | **Ödeme hizmeti hipotezi** | H2/K8 sırasında bakılacak: dosyada tahsilat/ödeme bedeli satırı var mı. |
@@ -91,4 +93,11 @@ Bunlar kapanmış ölçümlerin **bugün geçerli** özetleri; ayrıntı arşivd
 - **Fiyat farkı (aynı dosya):** bizim TY fiyatımız buy box'a göre ortanca
   **+%24,1** (p25 +5,6 · p75 +47,1 · max +177,2); **170/189 listede buy
   box'ın ÜSTÜNDEYİZ.** Kasıtlı mı bayat mı — sorulmadı.
+- **Bekçi taraması (21.08.2026, hepsi koşturuldu):** 36 `dogrula` betiğinden
+  **34'ü yeşil**, ikisi kırmızı (`yerlesim` → K23 · `yedek` → K25). Bütün
+  bekçiler çıkış kodu üretiyor — sorun kodda değil, **koşulmuyor olmasında**.
+  Her teslimde rutin olarak koşulan: `simulasyon · kar · panel · i18n · lint ·
+  tsc · build` = **7 tanesi**. Kalan 29'u yalnız dokunulan alana göre
+  koşuluyordu; `yedek:dogrula`nın kırmızısı bu yüzden görünmemişti.
+  _Yetim dosya: `kart-dogrula.ts` (K26), npm girdisi yok._
 - **Ölçüm anı:** rapor tarafı **donmuş**, sistem tarafı **akıyor** — aynı gün iki koşum 8→9 verdi. Her kıyasta iki damga yazılır.
