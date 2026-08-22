@@ -32,6 +32,27 @@ const ACIK_YOLLAR = [
   // Vercel Cron'un çağırdığı uç: kendi CRON_SECRET koruması var ve
   // tarayıcı oturumu taşıyamaz. Korumasız DEĞİL, farklı korumalı.
   "/api/yedek/otomatik",
+
+  // ── PWA: TARAYICI BUNLARI ÇEREZSİZ İSTER ──────────────────────────────
+  //
+  // ⚠ BU SATIRLAR OLMADAN KURULUM SESSİZCE ÇALIŞMAZ. Tarayıcı manifest'i
+  // ve simgeleri OTURUM ÇEREZİ GÖNDERMEDEN çeker (şartname böyle). Kapı
+  // onları `/giris`e yönlendirir, tarayıcı JSON yerine HTML alır ve
+  // "uygulamayı kur" teklifi HİÇ ÇIKMAZ. Ekranda hata da görünmez —
+  // kullanıcı yalnız "olmuyor" der.
+  //
+  // İçerikleri hassas değil: uygulama adı, sloganı ve marka simgesi.
+  // Zaten giriş ekranında da görünüyorlar.
+  "/manifest.webmanifest",
+  "/ikon",
+  "/icon",
+  "/apple-icon",
+  // Servis çalışanı dosyası: kayıt sırasında çerezsiz istenebilir ve
+  // JavaScript olarak sunulmak ZORUNDA (HTML dönerse kayıt reddedilir).
+  "/sw.js",
+  // Ağ yokken gösterilen sayfa. Servis çalışanı bunu ÇEREZSİZ önbelleğe
+  // alıyor (bkz. public/sw.js) — kapalı olsaydı yedek hiç oluşmazdı.
+  "/cevrimdisi",
 ];
 
 function acikMi(yol: string): boolean {

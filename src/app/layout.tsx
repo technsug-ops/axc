@@ -26,7 +26,9 @@ import {
 import { OTURUM_CEREZI } from "@/lib/oturum-imza";
 import { oturumdakiKullanici } from "@/lib/oturum";
 import { BildirButonu } from "@/components/bildir-butonu";
+import { SwKayit } from "@/components/sw-kayit";
 import { TemaSecici } from "@/components/tema-secici";
+import { KABUK_RENKLERI } from "@/lib/marka/renkler";
 import { UyariCani } from "@/components/uyari-cani";
 import { UYGULAMA } from "@/lib/uygulama";
 
@@ -48,8 +50,14 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
  * varyantları Tailwind'in `dark:` önekiyle yazılı ve o önek `.dark`
  * atasına bakıyor. Yalnız `data-tema` yazsaydık yüzeyler kararır, yeşil
  * ve kırmızı rozetler açık tema tonunda kalırdı.
+ *
+ * ⚠ TELEFONUN SİSTEM ÇUBUĞU DA BURADA BOYANIR. PWA olarak açıldığında
+ * üstteki saat/pil şeridi `<meta name="theme-color">` rengini alır. React
+ * bunu sonra düzeltseydi kullanıcı her açılışta bir kare YANLIŞ renk
+ * görürdü — koyu temada parlak mavi bir şerit. Meta etiketi betiğin
+ * HEMEN ÜSTÜNDE duruyor ki betik onu bulabilsin.
  */
-const TEMA_BETIGI = `(function(){try{var t=localStorage.getItem("selliora-tema");if(t!=="kobalt"&&t!=="gece"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"gece":"kobalt";}var k=document.documentElement;k.setAttribute("data-tema",t);if(t==="gece"){k.classList.add("dark");}}catch(e){}})();`;
+const TEMA_BETIGI = `(function(){try{var t=localStorage.getItem("selliora-tema");if(t!=="kobalt"&&t!=="gece"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"gece":"kobalt";}var k=document.documentElement;k.setAttribute("data-tema",t);if(t==="gece"){k.classList.add("dark");}var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute("content",t==="gece"?"${KABUK_RENKLERI.gece}":"${KABUK_RENKLERI.kobalt}");}}catch(e){}})();`;
 
 /**
  * Sekme başlıkları tek yerden yönetiliyor: alt sayfalar sadece kendi
@@ -65,6 +73,21 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s — ${UYGULAMA.ad}`,
     },
     description: t("slogan"),
+
+    /**
+     * ⚠ iOS MANİFESTİ OKUMAZ. iPhone'da "Ana Ekrana Ekle" davranışı bu üç
+     * etiketten gelir; manifest'teki `display: "standalone"` iOS'ta hiçbir
+     * şey yapmaz. Bunlar olmadan kısayol Safari'yi adres çubuğuyla açar ve
+     * kullanıcı "kurulmamış" sanır.
+     */
+    appleWebApp: {
+      capable: true,
+      title: UYGULAMA.ad,
+      /* `default`: sistem çubuğu kendi rengini korur ve yazısı okunur
+         kalır. `black-translucent` içeriği çubuğun ALTINA sokar ve üst
+         çubuğumuz saatin arkasında kalırdı. */
+      statusBarStyle: "default",
+    },
   };
 }
 
@@ -108,9 +131,18 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         suppressHydrationWarning
       >
         <head>
+          {/* ⚠ BETİKTEN ÖNCE: yukarıdaki betik bu etiketi arayıp içeriğini
+              temaya göre değiştiriyor. Sonra gelseydi bulamazdı. */}
+          <meta name="theme-color" content={KABUK_RENKLERI.kobalt} />
           <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
         </head>
         <body>
+          {/* ⚠ GİRİŞ EKRANINDA DA KAYIT YAPILIR. Kullanıcı uygulamayı
+              telefona kurmadan önce zaten giriş ekranını görüyor; kayıt
+              yalnız içeride yapılsaydı "kur" teklifi ilk girişten sonra
+              çıkardı ve çoğu kişi o anı kaçırırdı. Servis çalışanı veri
+              taşımadığı için burada olması bir şey sızdırmaz. */}
+          <SwKayit />
           <NextIntlClientProvider>{children}</NextIntlClientProvider>
         </body>
       </html>
@@ -126,9 +158,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         suppressHydrationWarning
       >
         <head>
+          {/* ⚠ BETİKTEN ÖNCE: yukarıdaki betik bu etiketi arayıp içeriğini
+              temaya göre değiştiriyor. Sonra gelseydi bulamazdı. */}
+          <meta name="theme-color" content={KABUK_RENKLERI.kobalt} />
           <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
         </head>
       <body>
+        <SwKayit />
         {/* Sözlük ve biçimler istemci bileşenlerine buradan akıyor. */}
         <NextIntlClientProvider>
           <TooltipProvider delayDuration={0}>

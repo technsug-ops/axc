@@ -5,6 +5,7 @@ import { Moon, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
+import { KABUK_RENKLERI } from "@/lib/marka/renkler";
 import {
   Tooltip,
   TooltipContent,
@@ -53,6 +54,19 @@ export function temayiUygula(tema: Tema) {
   const kok = document.documentElement;
   kok.setAttribute("data-tema", tema);
   kok.classList.toggle("dark", tema === "gece");
+
+  /**
+   * ⚠ TELEFONUN SİSTEM ÇUBUĞU DA DÖNER. Uygulama ana ekrandan (PWA olarak)
+   * açıldığında üstteki saat/pil şeridinin rengi bu etiketten okunur.
+   * Güncellenmeseydi gece temasına geçen kullanıcı koyu bir ekranın
+   * tepesinde parlak mavi bir şerit görürdü — ilk bakışta "yarım kalmış"
+   * duran tam olarak budur.
+   *
+   * İlk boyamayı `layout.tsx`teki betik yapıyor; burası yalnız DEĞİŞİMİ
+   * taşır, iki yer de aynı sabitten okuyor.
+   */
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", KABUK_RENKLERI[tema]);
 }
 
 /**

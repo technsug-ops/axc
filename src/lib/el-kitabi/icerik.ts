@@ -28,6 +28,7 @@ export const BOLUMLER = [
   { kimlik: "dusunce", ad: "Sistem nasıl düşünür" },
   { kimlik: "giris", ad: "Giriş ve güvenlik" },
   { kimlik: "kurulum", ad: "İlk kurulum" },
+  { kimlik: "telefon", ad: "Telefona kurma" },
   { kimlik: "panel", ad: "Panel — güne nereden bakılır" },
   { kimlik: "urun", ad: "Ürünler ve stok" },
   { kimlik: "stok", ad: "Stok — elimde ne var" },
@@ -381,6 +382,83 @@ her zaman kendi ekranlarında, <strong>güncel hâliyle</strong> görürsün:
 Ayarlar → <strong>Raf Konumları</strong> · <strong>KDV Kategorileri</strong> ·
 <strong>Kanal Hesapları</strong>. Kitaba kopyalansaydı bir ay sonra
 bayatlardı; ekran bayatlamaz.</p></div>
+</section>
+
+<section id="telefon">
+${baslik("telefon")}
+<p>Selliora'yı telefonunuza <strong>uygulama gibi</strong> kurabilirsiniz. Kurulunca
+ana ekranda kendi simgesiyle durur ve açıldığında tarayıcının adres çubuğu
+görünmez — ekranın tamamı işinize kalır. Ayrı bir program indirmezsiniz;
+kurulan şey sitenin kendisidir, yani her zaman güncel sürümdür.</p>
+
+${neZaman(
+  "Depoda telefonla çalışırken. Barkod okutmak, mal kabul yapmak ve mağazada fiyat denemesi yapmak için birincil cihaz telefondur.",
+)}
+
+<h3>Android (Chrome)</h3>
+${adimlar([
+  {
+    ad: "Siteyi açın ve giriş yapın",
+    ne: "Normal adresi tarayıcıda açmanız yeterli.",
+  },
+  {
+    ad: "Sağ üstteki üç noktaya dokunun",
+    ne: "Menüde <strong>Uygulamayı yükle</strong> ya da <strong>Ana ekrana ekle</strong> yazar. Chrome bunu kendiliğinden de teklif edebilir.",
+  },
+  {
+    ad: "Onaylayın",
+    ne: "Simge ana ekranda belirir. Bundan sonra oradan açılır.",
+  },
+])}
+
+<h3>iPhone (Safari)</h3>
+${adimlar([
+  {
+    ad: "Siteyi <strong>Safari</strong> ile açın",
+    ne: "iPhone'da bu adım Safari'ye özeldir; Chrome'dan kurulmaz.",
+  },
+  {
+    ad: "Alttaki paylaş düğmesine dokunun",
+    ne: "Yukarı ok işareti olan kare.",
+  },
+  {
+    ad: "<strong>Ana Ekrana Ekle</strong>",
+    ne: "Listeyi biraz aşağı kaydırmanız gerekebilir. Ekleyince simge ana ekranda çıkar.",
+  },
+])}
+
+<div class="ek-not"><div class="etiket">Şifre her seferinde sorulmaz</div>
+<p>Kurulan uygulama oturumunuzu hatırlar; telefonu kendiniz kilitliyorsanız
+ek bir şey yapmanız gerekmez. Telefonu kaybederseniz, bilgisayardan
+<strong>Ayarlar → Kullanıcılar</strong> ekranından parolanızı değiştirin —
+o telefondaki oturum anında düşer.</p></div>
+
+<h3>İnternet giderse ne olur</h3>
+<p>Selliora <strong>çevrimdışı çalışmaz ve bu bilerek böyledir.</strong> Bağlantı
+yoksa "Bağlantı yok" sayfası çıkar; rakam gösterilmez.</p>
+<div class="ek-not dikkat"><div class="etiket">Neden rakam göstermiyoruz</div>
+<p>Telefonda saklanmış bir kâr rakamının <strong>güncel mi eski mi</strong> olduğu
+anlaşılamaz. Dünkü NET-2'yi bugünkü gibi göstermektense hiç göstermemek
+doğrudur — yanlış bir rakama bakarak alım kararı vermek, hiç bakmamaktan
+pahalıdır. Bağlantı gelince kaldığınız yerden devam edersiniz.</p></div>
+
+${sikHata([
+  {
+    hata: "Menüde \"Uygulamayı yükle\" seçeneği çıkmıyor",
+    cozum:
+      "Sayfayı bir kez yenileyin. Bazı tarayıcılar teklifi siteyi birkaç kez ziyaret ettikten sonra gösterir. iPhone'da bu seçenek YOKTUR; oradaki yol <strong>Paylaş → Ana Ekrana Ekle</strong>'dir.",
+  },
+  {
+    hata: "iPhone'da eklendi ama adres çubuğuyla açılıyor",
+    cozum:
+      "Kısayol büyük ihtimalle Chrome'dan eklendi. Silin ve Safari ile tekrar ekleyin.",
+  },
+  {
+    hata: "Uygulama eski bir ekran gösteriyor",
+    cozum:
+      "Kapatıp yeniden açın. Veri her zaman canlı çekilir; ekranın kendisi (düğmeler, yerleşim) yeni sürümde tazelenir.",
+  },
+])}
 </section>
 
 <section id="panel">

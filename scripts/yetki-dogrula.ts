@@ -142,6 +142,19 @@ const SAYFA_ISTISNALARI = new Map<string, string>([
     "src/app/parola-degistir/page.tsx",
     "ilk girişte parola değiştirme — yetkisi henüz çözülemeyen kullanıcı da açabilmeli",
   ],
+  /**
+   * ⚠ ÇEVRİMDIŞI SAYFASI BİLEREK KORUMASIZ — VE HİÇBİR VERİ TAŞIMAZ.
+   *
+   * Servis çalışanı bunu kuruluşta ÇEREZSİZ olarak önbelleğe alıyor
+   * (`public/sw.js`); korumalı olsaydı yedek hiç oluşmaz ve telefon ağ
+   * kopunca tarayıcının kendi hata sayfasını gösterirdi.
+   *
+   * İstisna güvenli çünkü sayfa veritabanına HİÇ gitmiyor: içinde bir
+   * başlık, bir açıklama ve ana sayfaya bir bağlantı var. Yetki
+   * sorulacak bir şey yok. (Bkz. `scripts/pwa-dogrula.ts` — sayfanın veri
+   * taşımadığı ve JavaScript istemediği orada ayrıca sınanıyor.)
+   */
+  ["src/app/cevrimdisi/page.tsx", "çevrimdışı yedeği — veri taşımaz, çerezsiz önbelleğe alınır"],
 ]);
 {
   const korumasiz: string[] = [];

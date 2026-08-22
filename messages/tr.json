@@ -2923,5 +2923,11 @@
     "birimYuzde": "%",
     "hepsiniTemizle": "Hepsini temizle",
     "dokum_PAZARYERI_BEDELI": "Pazaryeri bedeli"
+  },
+  "Cevrimdisi": {
+    "baslik": "Bağlantı yok",
+    "aciklama": "Telefon şu anda internete ulaşamıyor. Bağlantı gelince kaldığınız yerden devam edebilirsiniz.",
+    "neden": "Rakamlar bilerek gösterilmiyor: bağlantı yokken ekrandaki bir tutarın güncel olup olmadığı anlaşılamaz.",
+    "yenidenDene": "Yeniden dene"
   }
 }
