@@ -305,23 +305,33 @@ kargo maliyeti yanlış hesaplanır.</p>
 <tr>
 <td><strong>Satıcı haklı bulundu</strong></td>
 <td>aynı ürün, müşteriye geri</td>
-<td>2 iş günü <code>(K)</code></td>
-<td><strong>Trendyol: satıcıya YANSITILMAZ</strong> · diğer pazaryerleri: satıcı öder <code>(K)</code></td>
+<td><strong>2 iş günü</strong></td>
+<td><strong>Trendyol: satıcıya YANSITILMAZ</strong> · diğer pazaryerleri: satıcı öder</td>
 </tr>
 <tr>
 <td><strong>Değişim (gerekçe E)</strong></td>
 <td><strong>yeni ürün</strong></td>
-<td>—</td>
-<td><strong>her yerde satıcı öder</strong> <code>(K)</code></td>
+<td><strong>2 iş günü</strong></td>
+<td><strong>her yerde satıcı öder</strong></td>
 </tr>
 <tr>
 <td><strong>Analiz bitti, geri gönderiliyor</strong></td>
 <td>aynı ürün</td>
-<td>—</td>
-<td><strong>her yerde satıcı öder</strong> <code>(K)</code></td>
+<td><strong>2 iş günü</strong></td>
+<td><strong>her yerde satıcı öder</strong></td>
 </tr>
 </tbody>
 </table></div>
+<p>Tümü <code>(K)</code>.</p>
+<p>⚠ <strong>SÜRE ÜÇÜNDE DE AYNI — 2 İŞ GÜNÜ</strong> <em>(kullanıcı düzeltmesi 23.08.2026;
+burada önce yalnız birinci satırda yazıyordu, ötekilerde "—" vardı ve bu
+yanlıştı).</em> Üç yol arasındaki fark <strong>süre değil, kargoyu ÖDEYEN taraf.</strong></p>
+<blockquote>
+<p>✅ <strong>MODELİ SADELEŞTİRİYOR.</strong> <code>islemSonTarihi</code> artık <code>ITIRAZ_KABUL</code>
+durumundaki HER kayıt için aynı anlamı taşıyor: <em>ürünü kargolama son
+tarihi.</em> Geliş yoluna göre değişen tek şey maliyet tarafı ve o zaten
+ayrı türetiliyor (<code>analizSonucu</code> / <code>itirazGerekcesi</code>). <strong>Şema değişmedi.</strong></p>
+</blockquote>
 <h3>Kargo sayısı — kanal farkı <code>(K)</code></h3>
 <p>Satıcının haklı bulunduğu ve ürünün müşteriye geri gönderildiği senaryoda:</p>
 <div class="tablo-kap"><table>
@@ -357,7 +367,9 @@ kesinti kuralları veri olarak tutulur").</p>
   <strong>c)</strong> Üründe sorun bulunamadı</li>
 <li>Sonuç: ya <strong>Reddedilen</strong> (kargo koduyla geri gönderim) ya <strong>Onaylanan</strong>
   (kapanır)</li>
-<li>⚠ Geri gönderim olursa <strong>kargo ücreti her yerde satıcıya aittir</strong></li>
+<li>⚠ Geri gönderim olursa <strong>kargo ücreti her yerde satıcıya aittir</strong> ve
+  gönderim için yine <strong>2 iş günü</strong> vardır <code>(K)</code> — bu süre "Reddedilen"e
+  hangi yoldan gelindiğine bakmaz (bkz. §5)</li>
 </ul>
 <hr />
 <h2>7. İade detayında duran alanlar <code>(E)</code></h2>
@@ -756,8 +768,20 @@ sanılmıştı; ikisi farklı sayaçlardı. Her biri <strong>hangi olayla başla
 <td><strong>28 gün</strong></td>
 <td>—</td>
 </tr>
+<tr>
+<td>5</td>
+<td><strong>Ürünü geri kargola</strong></td>
+<td>iade "Reddedilen"e düşünce (kargo kodu verilir)</td>
+<td><strong>2 iş günü</strong></td>
+<td>—</td>
+</tr>
 </tbody>
 </table></div>
+<p>⚠ <strong>5 NUMARA ÜÇ YOLA DA İŞLER</strong> — satıcı haklı · değişim · analiz sonrası
+(§5). Önce yalnız birinciye yazılmıştı, yanlıştı <code>(K)</code>.</p>
+<p>⚠ <strong>3 İLE 5 KARIŞTIRILMAZ:</strong> üçüncüsü <strong>gün</strong>, beşincisi <strong>İŞ GÜNÜ</strong> olarak
+söylendi ve öyle kaydedildi. İkisini "2 gün" diye eşitlemek, hafta sonuna
+denk gelen bir gönderimde yanlış son tarih üretirdi.</p>
 <h3>12.1 İkinci sayaç niye var — ve niye para tarafında</h3>
 <p><code>(K)</code> <em>"Kargoda yaşanacak sorundan müşteriyi korumak için."</em> İade kargoda
 kaybolursa müşteri parasız ve ürünsüz kalmasın diye pazaryeri <strong>süre

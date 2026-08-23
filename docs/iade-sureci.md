@@ -146,9 +146,20 @@ kargo maliyeti yanlış hesaplanır.
 
 | Geliş yolu | Ne gönderilir | Süre | Kargo kimden |
 |---|---|---|---|
-| **Satıcı haklı bulundu** | aynı ürün, müşteriye geri | 2 iş günü `(K)` | **Trendyol: satıcıya YANSITILMAZ** · diğer pazaryerleri: satıcı öder `(K)` |
-| **Değişim (gerekçe E)** | **yeni ürün** | — | **her yerde satıcı öder** `(K)` |
-| **Analiz bitti, geri gönderiliyor** | aynı ürün | — | **her yerde satıcı öder** `(K)` |
+| **Satıcı haklı bulundu** | aynı ürün, müşteriye geri | **2 iş günü** | **Trendyol: satıcıya YANSITILMAZ** · diğer pazaryerleri: satıcı öder |
+| **Değişim (gerekçe E)** | **yeni ürün** | **2 iş günü** | **her yerde satıcı öder** |
+| **Analiz bitti, geri gönderiliyor** | aynı ürün | **2 iş günü** | **her yerde satıcı öder** |
+
+Tümü `(K)`.
+
+⚠ **SÜRE ÜÇÜNDE DE AYNI — 2 İŞ GÜNÜ** _(kullanıcı düzeltmesi 23.08.2026;
+burada önce yalnız birinci satırda yazıyordu, ötekilerde "—" vardı ve bu
+yanlıştı)._ Üç yol arasındaki fark **süre değil, kargoyu ÖDEYEN taraf.**
+
+> ✅ **MODELİ SADELEŞTİRİYOR.** `islemSonTarihi` artık `ITIRAZ_KABUL`
+> durumundaki HER kayıt için aynı anlamı taşıyor: *ürünü kargolama son
+> tarihi.* Geliş yoluna göre değişen tek şey maliyet tarafı ve o zaten
+> ayrı türetiliyor (`analizSonucu` / `itirazGerekcesi`). **Şema değişmedi.**
 
 ### Kargo sayısı — kanal farkı `(K)`
 
@@ -175,7 +186,9 @@ Satıcının haklı bulunduğu ve ürünün müşteriye geri gönderildiği sena
   **c)** Üründe sorun bulunamadı
 - Sonuç: ya **Reddedilen** (kargo koduyla geri gönderim) ya **Onaylanan**
   (kapanır)
-- ⚠ Geri gönderim olursa **kargo ücreti her yerde satıcıya aittir**
+- ⚠ Geri gönderim olursa **kargo ücreti her yerde satıcıya aittir** ve
+  gönderim için yine **2 iş günü** vardır `(K)` — bu süre "Reddedilen"e
+  hangi yoldan gelindiğine bakmaz (bkz. §5)
 
 ---
 
@@ -367,6 +380,14 @@ sanılmıştı; ikisi farklı sayaçlardı. Her biri **hangi olayla başlar** ve
 | 2 | Kargo satıcıya ulaşsın | **müşteri kargoya verince** | **10 gün** | ⚠ **iade SEBEBİ NE OLURSA OLSUN ONAYLANIR**, müşteriye parası iade edilir → satıcı **KARGO ŞİRKETİNE tazmin talebi** açar |
 | 3 | Onay/red kararı | **iade satıcıya teslim edilince** | **2 gün** | iade otomatik onaylanır |
 | 4 | Analiz (servis) | pazaryeri analize alınca | **28 gün** | — |
+| 5 | **Ürünü geri kargola** | iade "Reddedilen"e düşünce (kargo kodu verilir) | **2 iş günü** | — |
+
+⚠ **5 NUMARA ÜÇ YOLA DA İŞLER** — satıcı haklı · değişim · analiz sonrası
+(§5). Önce yalnız birinciye yazılmıştı, yanlıştı `(K)`.
+
+⚠ **3 İLE 5 KARIŞTIRILMAZ:** üçüncüsü **gün**, beşincisi **İŞ GÜNÜ** olarak
+söylendi ve öyle kaydedildi. İkisini "2 gün" diye eşitlemek, hafta sonuna
+denk gelen bir gönderimde yanlış son tarih üretirdi.
 
 ### 12.1 İkinci sayaç niye var — ve niye para tarafında
 
