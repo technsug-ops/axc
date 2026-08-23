@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="tr"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>İade Süreci — Pazaryeri Gerçeği</title>
+<style>
+:root {
+  --zemin:#EDF1F6; --kart:#FFFFFF; --ink:#111820; --ink2:#5C6B7E;
+  --kabuk:#12356B; --kabuk2:#1D4784; --cizgi:#C6CDD5; --satir:#F3F6FA;
+  --gece:#0E1626; --gece-ink:#E4EAF2;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: "Segoe UI", "Noto Sans", system-ui, -apple-system, sans-serif;
+  color: var(--ink); background: var(--zemin); margin: 0;
+  font-size: 16px; line-height: 1.62;
+}
+.sayfa {
+  max-width: 62rem; margin: 0 auto; padding: 2.5rem 1.5rem 5rem;
+  background: var(--kart); min-height: 100vh;
+  box-shadow: 0 0 0 1px var(--cizgi);
+}
+h1 { font-size: 2rem; margin: 0 0 .35rem; color: var(--kabuk); letter-spacing: -.02em; }
+h2 {
+  font-size: 1.3rem; margin: 2.6rem 0 .7rem; color: var(--kabuk);
+  border-bottom: 2px solid var(--kabuk); padding-bottom: .3rem;
+}
+h3 { font-size: 1.05rem; margin: 1.6rem 0 .4rem; color: var(--kabuk2); }
+p { margin: 0 0 .7rem; }
+strong { color: #0A2044; }
+a { color: var(--kabuk); }
+
+blockquote {
+  margin: 1rem 0; padding: .8rem 1.1rem; border-left: 4px solid var(--kabuk);
+  background: var(--zemin); border-radius: 0 6px 6px 0;
+}
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Tablolar dar ekranda KENDİ kabında kayar — sayfa yana kaymaz. */
+.tablo-kap { overflow-x: auto; margin: .9rem 0 1.2rem; }
+table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+th, td { border: 1px solid var(--cizgi); padding: .5rem .65rem; text-align: left; vertical-align: top; }
+th { background: var(--kabuk); color: #fff; font-weight: 600; position: sticky; top: 0; }
+tbody tr:nth-child(even) { background: var(--satir); }
+
+pre {
+  background: var(--gece); color: var(--gece-ink); padding: 1rem 1.1rem;
+  border-radius: 8px; overflow-x: auto; margin: 1rem 0;
+  font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  font-size: .78rem; line-height: 1.45; white-space: pre;
+}
+code {
+  font-family: "Cascadia Mono", Consolas, monospace; font-size: .88em;
+  background: var(--zemin); padding: .1em .35em; border-radius: 3px;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+
+ul, ol { margin: 0 0 .7rem; padding-left: 1.4rem; }
+li { margin-bottom: .25rem; }
+hr { border: 0; border-top: 1px solid var(--cizgi); margin: 2rem 0; }
+
+/* Üretilmiş dosya uyarısı — elle düzenlenip kaynaktan ayrışmasın. */
+.uretildi {
+  background: #FFF6E5; border: 1px solid #E8C88A; color: #6B4E12;
+  border-radius: 6px; padding: .6rem .85rem; font-size: .82rem;
+  margin: 0 0 1.6rem;
+}
+.uretildi code { background: #F6E7C6; }
+
+@media print {
+  @page { size: A4; margin: 16mm 14mm; }
+  body { background: #fff; font-size: 9.6pt; line-height: 1.5; }
+  .sayfa { max-width: none; padding: 0; box-shadow: none; min-height: 0; }
+  .uretildi { display: none; }
+  h1 { font-size: 19pt; } h2 { font-size: 13pt; page-break-after: avoid; }
+  h3 { font-size: 10.6pt; page-break-after: avoid; }
+  .tablo-kap { overflow: visible; }
+  table { font-size: 8.7pt; }
+  th { position: static; }
+  tr, blockquote, pre { page-break-inside: avoid; }
+  pre { font-size: 7.4pt; }
+}
+</style>
+</head><body><div class="sayfa"><div class="uretildi">Bu dosya <code>iade-sureci.md</code> dosyasından ÜRETİLDİ. Elle düzenlemeyin — değişiklik kaynağa yapılır, sonra bu dosya yeniden üretilir.</div><h1>İade Süreci — Pazaryeri Gerçeği</h1>
+<blockquote>
+<p><strong>Bu belge sistemin nasıl çalıştığını değil, PAZARYERİNİN nasıl çalıştığını
+anlatır.</strong> Sistemi ona göre kuruyoruz; ikisi ayrıştığında kazanan bu belge.</p>
+<p><strong>Kaynak önceliği (CLAUDE.md):</strong> kanalın kendi ekranı &gt; kullanıcının
+operasyon bilgisi &gt; dış hesaplayıcı. Aşağıdaki her satırın kaynağı
+yanında yazar.</p>
+</blockquote>
+<p><strong>Yazıldı:</strong> 23.08.2026 · <strong>Kaynaklar:</strong>
+<code>(E)</code> Trendyol satıcı uygulaması ekran kaydı, 23.08.2026 01:47 ·
+<code>(B)</code> kullanıcının hazırladığı "İade Süreci" tablosu ·
+<code>(K)</code> kullanıcı anlatımı, 23.08.2026</p>
+<h2>KAPSAM — hangi kanal ne kadar biliniyor</h2>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th>Kanal</th>
+<th>Durum</th>
+<th>Not</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Trendyol</strong></td>
+<td>✅ <strong>ÖLÇÜLDÜ</strong></td>
+<td>Satıcı uygulaması ekran kaydı + kullanıcı anlatımı. Aşağıdaki her şey buradan.</td>
+</tr>
+<tr>
+<td><strong>Hepsiburada</strong></td>
+<td>⏳ <strong>GELİYOR</strong></td>
+<td>Kullanıcı 23.08.2026: <em>"çok benzer ama birkaç farklılık var, onu da göndereceğim."</em></td>
+</tr>
+<tr>
+<td><strong>N11</strong></td>
+<td>⛔ <strong>TECRÜBE YOK</strong></td>
+<td>Kullanıcı: <em>"henüz iade tecrübem yok, yaşadığımda vereceğim."</em> Süresiz bekler.</td>
+</tr>
+<tr>
+<td>Amazon · diğerleri</td>
+<td>⛔ görülmedi</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>⚠ <strong>TASARIM N11'İ BEKLEMEZ — AMA N11 HAKKINDA İDDİA DA KURMAZ.</strong>
+Durum makinesi <strong>ölçülmüş kanaldan</strong> (Trendyol) kurulur; kanal farkları
+<strong>veri</strong> olarak tutulur. Ölçülmemiş bir kanal için kural UYDURULMAZ:
+<code>ChannelFee</code>de zaten kullanılan rozet düzeni burada da geçerli —
+<code>OLCULDU</code> / <code>REFERANS</code> / <code>belirsizlik</code> (CLAUDE.md → "Kaynak önceliği:
+içerden gelen bilgi üsttedir"). N11'de ilk iade yaşandığında kural
+deftere geçer, o güne kadar <strong>beyanla boş durur.</strong></p>
+<p>⚠ Ortak sayılan tek şey <strong>AKIŞIN ŞEKLİ</strong> <code>(K)</code>: <em>"tüm pazaryerlerinin genel
+mantığı bu"</em> ve <em>"müşterinin iade oluşturabileceği seçenekler her
+pazaryerinde böyle."</em> <strong>Maliyet kuralları kanal kanal değişiyor</strong> — bkz. §5.</p>
+<hr />
+<h2>1. Durum akışı</h2>
+<pre><code>Talep Oluşturulan ──(müşteri 7 gün kargoya vermezse)──▶ İptal
+     │
+     │ müşteri kargoya verdi
+     ▼
+Kargoya Verilen
+     │
+     │ kargo satıcıya TESLİM edildi
+     │ &gt;&gt; 2 günlük onay/red süresi BURADA başlar (K)
+     ▼
+Aksiyon Bekleyen
+     │
+     ├── Onayla ─────────────────────────────▶ Onaylanan
+     │                                         iade kesinleşti, `Return` doğar
+     │
+     └── Reddet + 8 gerekçeden biri + paketleme videosu
+              │
+              ▼
+         İhtilaflı ── pazaryeri inceler
+              │
+              ├── satıcı haklı ────▶ Reddedilen
+              │                      + kargo kodu · 2 iş günü içinde geri yolla
+              │
+              └── &quot;servise gitsin&quot; ▶ Analiz (28 gün)
+                                        │ tamir / değişim / sorun yok
+                                        ├──▶ Reddedilen  (geri gönder)
+                                        └──▶ Onaylanan   (kapanır)
+</code></pre>
+<p><strong>Satıcı panelindeki sekmeler</strong> <code>(E)</code>: Tüm İadeler · Talep Oluşturulan ·
+Kargoya Verilen · Aksiyon Bekleyen · Onaylanan · Reddedilen · Analiz ·
+İhtilaflı · <strong>Askıda İadeler</strong></p>
+<p><strong>Üstteki üç sayaç</strong> <code>(E)</code>: Onay/Ret Bekleyen İadeler · Kargolanması Gereken
+Reddedilen İadeler · Teslim Alınması Gereken İadeler</p>
+<hr />
+<h2>2. Askıda İadeler — ayrı bir şey</h2>
+<p><code>(K)</code> <strong>"Aksiyon Bekleyen" ile AYNI DEĞİL.</strong> Aksiyon Bekleyen'de <em>senin</em>
+yapman gereken bir işlem vardır; <strong>Askıda</strong>, iadenin normal akıştan ÇIKMIŞ
+olduğu hâldir:</p>
+<ul>
+<li>kargo sürecinde problem</li>
+<li>iade sistemde normal statüye geçmemiş</li>
+<li>pazaryeri tarafından ek işlem/inceleme gerekiyor</li>
+<li>ücret iadesi ile ürünün iade statüsü arasında uyumsuzluk</li>
+<li>sistemsel/operasyonel nedenle standart akış tamamlanamamış</li>
+</ul>
+<p>⚠ <strong>Takip edilmesi önemli:</strong> burada kalan iade, ürünün ve bedelin normal
+kapanmasını geciktirir. Yani bu bir "arıza kutusu" ve boş kalması gerekir.</p>
+<hr />
+<h2>3. Müşterinin iade sebepleri (9)</h2>
+<p><code>(E)</code> — Trendyol müşteri uygulamasındaki "İade Sebebi Seçiniz" listesinin
+tamamı. <code>(K)</code>: bu liste her pazaryerinde aynı mantıkta.</p>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Sebep</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Beğenmedim</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Yanlış sipariş verdim</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Daha iyi bir fiyat mevcut</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Bedeni/Ebatı Büyük Geldi</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Bedeni/Ebatı Küçük Geldi</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Yanlış ürün gönderildi</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Ürünümün parçası/aksesuarı eksik gönderildi</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Kusurlu ürün gönderildi</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Vazgeçtim</td>
+</tr>
+</tbody>
+</table></div>
+<p>⚠ <strong>SEBEP, SATICININ SEÇENEĞİNİ DEĞİŞTİRMEZ</strong> <code>(K)</code>: <em>"sebep ne olursa
+olsun satıcının 2 seçeneği var — onayla, reddet."</em> Sebep <strong>yönlendiricidir</strong>
+(ne yapmalıyım), <strong>kapı değildir</strong>.</p>
+<hr />
+<h2>4. Satıcının ret (itiraz) gerekçeleri (8)</h2>
+<p><code>(K)</code> — "Reddet" seçilince açılan liste. Seçimle birlikte <strong>paketleme
+videosu ve diğer görseller</strong> yüklenir; iade <strong>İhtilaflı</strong>'ya taşınır.</p>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th>Kod</th>
+<th>Gerekçe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>Müşteriden gelen ürün kullanılmış</td>
+</tr>
+<tr>
+<td>B</td>
+<td>Müşteriden gelen iade yanlış</td>
+</tr>
+<tr>
+<td>C</td>
+<td>Müşteriden gelen ürün hijyen ürünü</td>
+</tr>
+<tr>
+<td>D</td>
+<td>İadeyi analize alacağım</td>
+</tr>
+<tr>
+<td>E</td>
+<td>Değişim yapacağım</td>
+</tr>
+<tr>
+<td>F</td>
+<td>Müşteriden gelen ürün hasarlı</td>
+</tr>
+<tr>
+<td>G</td>
+<td>Müşteriden gelen ürün eksik</td>
+</tr>
+<tr>
+<td>Ğ</td>
+<td>Siparişi kusurlu göndermedim</td>
+</tr>
+</tbody>
+</table></div>
+<p>⚠ <strong>D SEÇENEĞİ TALEPTİR, KARAR DEĞİL</strong> <code>(K)</code>: satıcı analizi <em>ister</em>, ama
+<strong>analiz kararını pazaryeri verir</strong>. Satıcı hiç istemese de pazaryeri
+analize alabilir.</p>
+<hr />
+<h2>5. "Reddedilen" TEK BİR DURUM DEĞİL — üç ayrı yoldan gelinir</h2>
+<p>Sekme adı aynı, <strong>gönderilen şey ve parayı ödeyen taraf farklı.</strong> Modelde
+durumu tek başına tutmak YETMEZ; <strong>nasıl gelindiği</strong> de tutulmalıdır, yoksa
+kargo maliyeti yanlış hesaplanır.</p>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th>Geliş yolu</th>
+<th>Ne gönderilir</th>
+<th>Süre</th>
+<th>Kargo kimden</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Satıcı haklı bulundu</strong></td>
+<td>aynı ürün, müşteriye geri</td>
+<td>2 iş günü <code>(K)</code></td>
+<td><strong>Trendyol: satıcıya YANSITILMAZ</strong> · diğer pazaryerleri: satıcı öder <code>(K)</code></td>
+</tr>
+<tr>
+<td><strong>Değişim (gerekçe E)</strong></td>
+<td><strong>yeni ürün</strong></td>
+<td>—</td>
+<td><strong>her yerde satıcı öder</strong> <code>(K)</code></td>
+</tr>
+<tr>
+<td><strong>Analiz bitti, geri gönderiliyor</strong></td>
+<td>aynı ürün</td>
+<td>—</td>
+<td><strong>her yerde satıcı öder</strong> <code>(K)</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3>Kargo sayısı — kanal farkı <code>(K)</code></h3>
+<p>Satıcının haklı bulunduğu ve ürünün müşteriye geri gönderildiği senaryoda:</p>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Ödenen kargo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Trendyol</strong></td>
+<td><strong>2</strong> — siparişin müşteriye gidiş kargosu + müşteriden gelen iade kargosu</td>
+</tr>
+<tr>
+<td><strong>Diğer pazaryerleri</strong></td>
+<td><strong>3</strong> — satış + iade + geri gönderim</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>Bu, mimari için iyi haber: <strong>akış tek, maliyet kuralı kanal bazlı.</strong> Kural
+koda gömülmez, <code>ChannelFee</code> gibi VERİ olarak tutulur (CLAUDE.md → "kanal
+kesinti kuralları veri olarak tutulur").</p>
+</blockquote>
+<hr />
+<h2>6. Analiz dalı</h2>
+<p><code>(K)</code> Pazaryeri "servise gitsin" derse iade <strong>Analiz</strong> sekmesine düşer.</p>
+<ul>
+<li>Satıcı ürünü servise gönderir · <strong>28 gün</strong> süresi vardır</li>
+<li>İşlem bitince satıcı üç seçenekten birini işaretler:
+  <strong>a)</strong> Ürün tamir edildi · <strong>b)</strong> Ürün değişim yapıldı ·
+  <strong>c)</strong> Üründe sorun bulunamadı</li>
+<li>Sonuç: ya <strong>Reddedilen</strong> (kargo koduyla geri gönderim) ya <strong>Onaylanan</strong>
+  (kapanır)</li>
+<li>⚠ Geri gönderim olursa <strong>kargo ücreti her yerde satıcıya aittir</strong></li>
+</ul>
+<hr />
+<h2>7. İade detayında duran alanlar <code>(E)</code></h2>
+<p>Trendyol'un iade detay ekranı şunları taşıyor — bizde karşılığı olmayanlar
+işaretli:</p>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th>Alan</th>
+<th>Örnek</th>
+<th>Bizde</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sipariş numarası</td>
+<td><code>#11475261428</code></td>
+<td>✓</td>
+</tr>
+<tr>
+<td>İade talep tarihi</td>
+<td>07.08.2026 19:12</td>
+<td>✓ (<code>noticedAt</code>)</td>
+</tr>
+<tr>
+<td><strong>Sipariş tarihi</strong></td>
+<td>04.08.2026 17:13</td>
+<td>✓ (<code>Sale.soldAt</code>)</td>
+</tr>
+<tr>
+<td>Alıcı adı</td>
+<td>esra telimen</td>
+<td>❌ tutulmuyor</td>
+</tr>
+<tr>
+<td><strong>Kargo firması</strong></td>
+<td>Aras</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Kargo kodu</strong></td>
+<td>7260035504348777</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>İade desi</strong></td>
+<td>1</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Satış tutarı</td>
+<td>1.919,00 ₺</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><strong>İndirim tutarı</strong></td>
+<td><strong>−15,00 ₺</strong></td>
+<td>⚠ bkz. aşağıda</td>
+</tr>
+<tr>
+<td>Faturalanmış tutar</td>
+<td>1.904,00 ₺</td>
+<td>✓ (girilen tutar)</td>
+</tr>
+<tr>
+<td>İade sebebi</td>
+<td>Bedeni/Ebatı Küçük Geldi</td>
+<td>⚠ enum karşılığı yok</td>
+</tr>
+<tr>
+<td><strong>Otomatik onaya kalan süre</strong></td>
+<td>19 gün 07:42</td>
+<td>❌ <strong>en kritik eksik</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>⚠ <strong><code>İndirim Tutarı −15,00 ₺</code> = takipçi kuponu (pano: K19).</strong> Kupon iade
+ekranında da görünüyor ve faturalanmış tutar üzerinden işliyor — yani
+kuponun izi satış ve iade taraflarında birlikte yaşıyor.</p>
+<hr />
+<h2>8. ÖLÇÜLMEMİŞ — iddia kurulmayacak alanlar</h2>
+<blockquote>
+<p>Bu bölüm bilerek var: <strong>ölçülmemiş bir sayının üstüne kural yazılmaz.</strong></p>
+</blockquote>
+<h3>8.1 Otomatik onay sayacı hangi andan sayıyor?</h3>
+<p>İki kaynak <strong>çelişiyor</strong> ve hiçbiri tek başına yeterli değil:</p>
+<ul>
+<li><code>(K)</code> <em>"İade satıcıya teslim edildiğinde <strong>2 günlük</strong> onay veya red süresi
+  başlar."</em></li>
+<li><code>(E)</code> Ekranda <strong>"Otomatik Onaya Kalan Süre"</strong> yazıyor ve değerler çok daha
+  büyük:</li>
+</ul>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th>İade</th>
+<th>Talep tarihi</th>
+<th>Kayıt anı</th>
+<th>Geçen</th>
+<th>Kalan</th>
+<th>Toplam</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>#11475261428</code></td>
+<td>07.08 19:12</td>
+<td>23.08 01:47</td>
+<td>15g 6s</td>
+<td>19g 7s</td>
+<td>~34,6 gün</td>
+</tr>
+<tr>
+<td><code>#11481463029</code></td>
+<td>15.08 18:27</td>
+<td>23.08 01:47</td>
+<td>7g 7s</td>
+<td>8g 10s</td>
+<td>~15,8 gün</td>
+</tr>
+</tbody>
+</table></div>
+<p>İkisi aynı toplamı vermiyor → sayaç <strong>talep tarihinden sabit bir süre
+saymıyor</strong>. Muhtemelen İKİ AYRI SAAT var (2 günlük aksiyon süresi + daha
+uzun bir otomatik onay süresi) ama <strong>n=2 ile hangi andan saydığı
+uydurulamaz.</strong></p>
+<p><strong>Kapanış şartı:</strong> "Aksiyon Bekleyen" sekmesindeki bir iadenin detayı —
+sayaç ve teslim tarihi aynı ekranda görünecek şekilde. O gelince ölçülür.</p>
+<h3>8.2 Diğer kanalların ekranı</h3>
+<p>Hepsiburada · N11 · Amazon için sekme adları, ihtilaf sonuçları ve analiz
+dalı <strong>görülmedi</strong>. Kullanıcı beyanı akışın ortak olduğu yönünde <code>(K)</code>;
+tasarım buna göre kurulacak ama <strong>kanal farkı VERİ olarak bırakılacak</strong> ki
+ilk belge geldiğinde kod değil satır değişsin.</p>
+<h3>8.3 İade hacmi</h3>
+<p><code>(E)</code> Trendyol paneli <strong>63 paket</strong> iade gösteriyor (49 onaylanan · 13
+reddedilen · 1 analiz). Sistemde <strong>5 işlenmiş iade + 9 bildirim</strong> var.</p>
+<p>⚠ <strong>"58 eksik" DENMEZ:</strong> pencereler farklı — Trendyol'unki 23.02.2026'ya
+kadar gidiyor, bizim ilk iademiz 03.07.2026. Kıyas ancak Trendyol'dan iade
+dökümü alınıp aynı pencereye indirgenince kurulur.
+<em>(CLAUDE.md → "kontrol tasarımı, veri kapsamı doğrulanmadan fark üretmez")</em></p>
+<hr />
+<h2>9. Sistemimizle karşılaştırma — açık boşluklar</h2>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Boşluk</th>
+<th>Etki</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Otomatik onay süresi tutulmuyor</strong></td>
+<td>Kaçarsa itiraz hakkı SESSİZCE düşer. Bir bildirimin en kritik alanı.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong><code>ITIRAZ_KABUL</code> yanlış modellenmiş</strong></td>
+<td>Şema <em>"lehe — ürün müşteride kalır, kapandı"</em> diyor. Gerçekte ürün BİZDE ve 2 iş günü içinde geri gönderilmeli. Para tarafı doğru (<code>Return</code> doğmuyor — ölçüldü), ama <strong>fiziksel iş görünmüyor</strong>.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Analiz dalı yok</strong></td>
+<td>28 gün, üç sonuç, kargo her zaman bizde.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>"Kargoya Verilen" aşaması yok</strong></td>
+<td><code>BEKLENIYOR</code> iki aşamayı birden kapsıyor; 7 gün kuralı takip edilemiyor.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Askıda İadeler karşılığı yok</strong></td>
+<td>Akıştan çıkmış iade hiçbir yerde görünmüyor.</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Ret gerekçesi tutulmuyor</strong></td>
+<td>8 gerekçeden hangisiyle itiraz edildiği kayıtta yok; "Reddedilen"e hangi yoldan gelindiği de bilinemiyor → <strong>kargo maliyeti hesaplanamaz</strong> (bkz. §5).</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Kargo firması/kodu/desisi yok</strong></td>
+<td>İade kargosunun maliyeti desiden çıkar; desi yoksa maliyet tahmin olur.</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Müşterinin 9 sebebi ile enum'umuz örtüşmüyor</strong></td>
+<td>Çoğu <code>DIGER</code>'e düşer; sebep bazlı yönlendirme yapılamaz.</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2>10. Sebep → aksiyon tablosu <code>(B)</code></h2>
+<p>Kullanıcının hazırladığı tablo. <strong>Sistemde henüz karşılığı yok</strong> — bugün
+"sıradaki adım" yalnız DURUMA göre yazılıyor, sebebe göre değil.</p>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th>İade sebebi</th>
+<th>İlk aksiyon</th>
+<th>Sonra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Almaktan vazgeçtim · Ürün beğenilmedi · Daha ucuz buldum</td>
+<td>Ürünü kontrol et → kullanılmamışsa stoğa al</td>
+<td>Kullanılmışsa itiraz et → kabul: geri kargola (TY'de ücret bize yansımaz) / red: ürün hurda, 2. el sat</td>
+</tr>
+<tr>
+<td>Yanlış ürün sipariş edildi</td>
+<td>Kontrol et → uygunsa stoğa al</td>
+<td>aynı</td>
+</tr>
+<tr>
+<td><strong>Yanlış ürün gönderildi</strong> (bizim hatamız)</td>
+<td>Kontrol et → stok düzelt / doğru ürünü gönder</td>
+<td>Müşteri değişim isterse doğru ürün gönderilir, <strong>kargo bizden</strong></td>
+</tr>
+<tr>
+<td><strong>Kusurlu ürün teslim edildi</strong></td>
+<td>Test et → servise gönder</td>
+<td>Analiz talep edilir; <strong>28 gün</strong> içinde dönüp kargolanmalı (<strong>kargo bize yansır</strong>). Pazaryeri analizi kabul etmezse iade onaylanır → <strong>pazaryerine tazmin talebi</strong></td>
+</tr>
+<tr>
+<td><strong>Ürün hasarlı</strong></td>
+<td>Hasarı kontrol et → itiraz et (paketleme videosu)</td>
+<td>Cezasız onay → <strong>kargo şirketine tazmin başvurusu</strong>. Cezalı onay → yine tazmin talebi</td>
+</tr>
+<tr>
+<td><strong>Eksik parça/aksesuar</strong></td>
+<td>Paketleme videosuna bak</td>
+<td>Eksik değilse video ile itiraz. Eksikse ve tedarik edilebiliyorsa <strong>2 gün içinde</strong> verilen kargo koduyla gönderilir (<strong>kargo bizden</strong>); tedarik edilemiyorsa cezalı onay</td>
+</tr>
+<tr>
+<td><strong>Boş paket geldi</strong></td>
+<td><strong>Kesinlikle itiraz et</strong>, kanıtları kaydet</td>
+<td>aynı akış</td>
+</tr>
+<tr>
+<td><strong>Ürün eksik geldi</strong></td>
+<td>Adetli siparişte video izlenir</td>
+<td>Eksikse tedarik, değilse itiraz</td>
+</tr>
+<tr>
+<td>Diğer</td>
+<td>Açıklama gir → manuel</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>⚠ Hasar ve eksik parça vakaları <strong>parası geri alınabilir</strong> olanlar
+(kargo tazminatı / tedarikçi tazminatı) — bugün hepsi <code>DIGER</code>'e düşüyor,
+yani en çok para kurtarılabilecek vakalar en az izlenen kutuda.</p></div></body></html>
