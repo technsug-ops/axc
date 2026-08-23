@@ -1,3 +1,4 @@
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
@@ -13,7 +14,6 @@ import { SayfalamaCubugu } from "@/components/sayfalama";
 import { UzunAd } from "@/components/uzun-ad";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -177,22 +177,12 @@ export default async function UrunlerSayfasi({
         </div>
       </div>
 
-      <form action="/urunler" className="flex flex-wrap gap-2">
-        <Input
-          name="q"
-          defaultValue={arama}
-          placeholder={t("aramaIpucu")}
-          className="max-w-sm min-w-48 flex-1"
-        />
-        <Button type="submit" variant="secondary">
-          {ortak("ara")}
-        </Button>
-        {arama ? (
-          <Button type="button" variant="ghost" asChild>
-            <Link href="/urunler">{ortak("temizle")}</Link>
-          </Button>
-        ) : null}
-      </form>
+      <KodAramaKutusu
+        temelAdres="/urunler"
+        baslangic={arama}
+        tasinanlar={{}}
+        ipucu={t("aramaIpucu")}
+      />
 
       {urunler.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">

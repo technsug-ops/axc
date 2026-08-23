@@ -977,9 +977,19 @@ console.log("\n6) BİLDİRİM LİSTESİ — BULUNABİLİRLİK");
     sayfa2.includes("bildirimAramaKosulu(bildirimArama)") &&
       sayfa2.includes("where: bildirimKosulu"),
   );
+  /**
+   * ⚠ KONTROL 23.08.2026'DA TAŞINDI. Arama kutusu ortak bileşene geçti
+   * (`KodAramaKutusu`) — kamera her kod alanında olsun diye (İlke #7).
+   * `name="bq"` artık ekranda değil, bileşenin parametresinde. Davranış
+   * aynı; desen yer değiştirdi.
+   */
   kontrol(
     "arama kutusu ekranda ve `bq` parametresini yazıyor",
-    sayfa2.includes('name="bq"') && sayfa2.includes("p.bq"),
+    /parametre="bq"/.test(sayfa2) && sayfa2.includes("p.bq"),
+  );
+  kontrol(
+    "  ...ve kamera taşıyan ortak kutuyu kullanıyor (İlke #7)",
+    /<KodAramaKutusu/.test(sayfa2),
   );
   /**
    * BEKLEYEN ROZETİ ARAMADAN BAĞIMSIZ: eskiden ekrandaki 50 kaydın içinden
@@ -1611,9 +1621,16 @@ console.log("\n10) AÇIK BİLDİRİM ÖLÇÜTÜ VE İADE EKRANI DÜZENİ");
    * ⚠ ARAMA SEKMEDEN DÜŞÜRMÜYOR. Gizli alanlar olmadan arama yapan
    * kullanıcı bildirim sekmesinden çıkar ve süzgeci sıfırlanır.
    */
+  /**
+   * ⚠ GİZLİ ALANLAR KALKTI, `tasinanlar` GELDİ. Arama artık ortak bileşenden
+   * geçiyor ve süzgeçleri gizli `<input>`larla değil adres üreterek taşıyor.
+   * Korunan şey aynı: arama yapan kullanıcı sekmeden düşmemeli ve "açık"
+   * süzgeci sıfırlanmamalı.
+   */
   kontrol(
     "arama sekmeyi ve durum süzgecini koruyor",
-    /name="sekme"/.test(bildirimBloku) && /name="bdurum"/.test(bildirimBloku),
+    /sekme: SEKME_BILDIRIM/.test(bildirimBloku) &&
+      /bdurum: bDurum/.test(bildirimBloku),
   );
 
   const sozluk10 = JSON.parse(readFileSync("messages/tr.json", "utf8"));

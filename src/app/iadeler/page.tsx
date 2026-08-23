@@ -1,3 +1,4 @@
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
@@ -17,7 +18,6 @@ import { DurumRozeti } from "@/components/durum-rozeti";
 import { BILDIRIM_DURUM_RENGI } from "@/lib/durum-renkleri";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -735,35 +735,20 @@ export default async function IadelerSayfasi({
           {/* ==================== BİLDİRİM ARAMASI ====================
               Sunucuda arar (bkz. sorgu). Diğer süzgeçler gizli alanlarla
               taşınır; arama yapmak dönem penceresini sıfırlamaz. */}
-          <form action="/iadeler" className="flex flex-wrap items-end gap-2">
-            {Object.entries(disaAktarmaParametreleri).map(([ad, deger]) =>
-              deger ? (
-                <input key={ad} type="hidden" name={ad} value={deger} />
-              ) : null,
-            )}
-            {/* ⚠ SEKME VE DURUM DA TAŞINIR. Yoksa arama yapınca kullanıcı
-                bildirim sekmesinden düşer ve "açık" süzgeci sıfırlanır —
-                aradığı kayda ulaşamaz. */}
-            <input type="hidden" name="sekme" value="bildirim" />
-            <input type="hidden" name="bdurum" value={bDurum} />
-            <Input
-              name="bq"
-              defaultValue={bildirimArama}
-              placeholder={tBildirim("aramaIpucu")}
-              className="max-w-xs min-w-44 flex-1"
-              autoComplete="off"
-            />
-            <Button type="submit" variant="secondary">
-              {ortak("ara")}
-            </Button>
-            {bildirimArama ? (
-              <Button type="button" variant="ghost" asChild>
-                <Link href={suzgecAdresi("/iadeler", p, { bq: "" })}>
-                  {ortak("temizle")}
-                </Link>
-              </Button>
-            ) : null}
-          </form>
+          {/* ⚠ TALEP NO DA BİR KODDUR — kamera burada da olmalı (İlke #7).
+                Sekme ve durum süzgeci `tasinanlar` ile korunuyor; eskiden
+                gizli alanlarla taşınıyordu. */}
+          <KodAramaKutusu
+            temelAdres="/iadeler"
+            baslangic={bildirimArama}
+            parametre="bq"
+            tasinanlar={{
+              ...disaAktarmaParametreleri,
+              sekme: SEKME_BILDIRIM,
+              bdurum: bDurum,
+            }}
+            ipucu={tBildirim("aramaIpucu")}
+          />
 
           {bildirimArama ? (
             <p className="text-muted-foreground text-xs">

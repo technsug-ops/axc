@@ -1,3 +1,4 @@
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { getTranslations } from "next-intl/server";
 import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { supheliVeriBulgusu } from "@/lib/uyari/faz2-veri";
@@ -27,7 +28,6 @@ import { MarjOlcegi } from "@/components/marj-olcegi";
 import { MarjRozeti } from "@/components/marj-rozeti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -41,7 +41,7 @@ import { gunMetni } from "@/lib/donem";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { satisKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
-import { suzgecAdresi } from "@/lib/suzgec";
+
 import { satisKalemToplamlari } from "@/lib/tutar";
 import {
   adetToplami,
@@ -475,33 +475,16 @@ export default async function SatislarSayfasi({
         </div>
       </div>
 
-      <form action="/satislar" className="flex flex-wrap items-end gap-2">
-        {/* SÜZGEÇLER ARAMADA KAYBOLMASIN: form gönderimi adresi baştan kurar,
-            gizli alanlar açık süzgeçleri taşır. Tek tek yazmak yerine
-            listeden üretiliyor — yeni bir süzgeç eklenince burada unutulan
-            alan sessizce filtreyi düşürürdü. */}
-        {Object.entries(formTasinanlar).map(([ad, deger]) =>
-          deger ? (
-            <input key={ad} type="hidden" name={ad} value={deger} />
-          ) : null,
-        )}
-        <Input
-          name="q"
-          defaultValue={arama}
-          placeholder={t("aramaIpucu")}
-          className="max-w-xs min-w-44 flex-1"
-        />
-        <Button type="submit" variant="secondary">
-          {ortak("ara")}
-        </Button>
-        {arama ? (
-          <Button type="button" variant="ghost" asChild>
-            <Link href={suzgecAdresi("/satislar", p, { q: "" })}>
-              {ortak("temizle")}
-            </Link>
-          </Button>
-        ) : null}
-      </form>
+      {/* ⚠ ARAMA KUTUSU ORTAK BİLEŞENE ALINDI (23.08.2026). Aynı blok
+          altı ekranda kopyalanmıştı ve ALTISINDA DA kamera unutulmuştu —
+          oysa anayasa (İlke #7) kod girilen her alanda kamera istiyor.
+          Tek gövde: yeni bir liste ekranı kamerayı bedava alır. */}
+      <KodAramaKutusu
+        temelAdres="/satislar"
+        baslangic={arama}
+        tasinanlar={formTasinanlar}
+        ipucu={t("aramaIpucu")}
+      />
 
       {/* ⚠ ÖLÇEK YALNIZ CİRO MARJINDA VE YALNIZ KÂR GÖRÜNÜRKEN.
           · Sermaye verimi (kat sayısı) bantlı değil — cetveli gösterirsem

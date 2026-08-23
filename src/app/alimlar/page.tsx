@@ -1,3 +1,4 @@
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
@@ -15,7 +16,6 @@ import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { DurumRozeti } from "@/components/durum-rozeti";
 import { ALIM_DURUM_RENGI } from "@/lib/durum-renkleri";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -29,7 +29,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { alimKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
-import { donusDegeri, donusTasiyan, suzgecAdresi } from "@/lib/suzgec";
+import { donusDegeri, donusTasiyan } from "@/lib/suzgec";
 import { kalemToplamlari } from "@/lib/tutar";
 import { adetToplami, suzgecToplami } from "@/lib/liste-toplami";
 import { ListeToplami } from "@/components/liste-toplami";
@@ -310,30 +310,16 @@ export default async function AlimlarSayfasi({
         </div>
       </div>
 
-      <form action="/alimlar" className="flex flex-wrap items-end gap-2">
-        {/* Açık süzgeçler arama gönderiminde kaybolmasın. */}
-        {Object.entries(formTasinanlar).map(([ad, deger]) =>
-          deger ? (
-            <input key={ad} type="hidden" name={ad} value={deger} />
-          ) : null,
-        )}
-        <Input
-          name="q"
-          defaultValue={arama}
-          placeholder={t("aramaIpucu")}
-          className="max-w-xs min-w-44 flex-1"
-        />
-        <Button type="submit" variant="secondary">
-          {ortak("ara")}
-        </Button>
-        {arama ? (
-          <Button type="button" variant="ghost" asChild>
-            <Link href={suzgecAdresi("/alimlar", p, { q: "" })}>
-              {ortak("temizle")}
-            </Link>
-          </Button>
-        ) : null}
-      </form>
+      {/* ⚠ ARAMA KUTUSU ORTAK BİLEŞENE ALINDI (23.08.2026). Aynı blok
+          altı ekranda kopyalanmıştı ve ALTISINDA DA kamera unutulmuştu —
+          oysa anayasa (İlke #7) kod girilen her alanda kamera istiyor.
+          Tek gövde: yeni bir liste ekranı kamerayı bedava alır. */}
+      <KodAramaKutusu
+        temelAdres="/alimlar"
+        baslangic={arama}
+        tasinanlar={formTasinanlar}
+        ipucu={t("aramaIpucu")}
+      />
 
       {/* DURUM SÜZGECİ ARTIK ORTAK ÇUBUKTA: kendi <select>'i vardı, iki
           farklı süzgeç görünümü aynı ekranda duruyordu (İlke #10). */}

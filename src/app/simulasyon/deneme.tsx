@@ -1,5 +1,6 @@
 "use client";
 
+import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Crown, Eraser, Info, Search, Trophy, X } from "lucide-react";
@@ -55,6 +56,7 @@ import {
  */
 export function Deneme({ bugun }: { bugun: string }) {
   const t = useTranslations("Simulasyon");
+  const ortak = useTranslations("Ortak");
   const bicim = useBicim();
 
   const [satis, setSatis] = useState("");
@@ -105,10 +107,21 @@ export function Deneme({ bugun }: { bugun: string }) {
    * Kullanıcı denemek için üstüne yazabilmeli; ekranın adı "fiyat DENEMESİ".
    * Dolan değerler bir başlangıç noktasıdır, bir hüküm değil.
    */
-  const ara = () => {
+  /**
+   * ⚠ KOD PARAMETRE OLARAK DA GELEBİLİR — VE BU BİR TUZAK ÖNLEMİ.
+   *
+   * Kamera okuduğunda önce `setKod(...)` çalışır, hemen ardından arama
+   * tetiklenir. React durumu SENKRON güncellenmediği için o an `kod` hâlâ
+   * ESKİ değeri taşır: kamera yeni barkodu okur, sistem bir öncekini
+   * arardı. Okunan kod doğrudan geçiriliyor; elle "Bul"a basıldığında
+   * parametre verilmez ve durumdaki değer kullanılır.
+   */
+  const ara = (okunan?: string) => {
+    const aranacak = (okunan ?? kod).trim();
+    if (aranacak === "") return;
     setAramaHatasi(null);
     basla(async () => {
-      const sonuc = await urunAra(kod);
+      const sonuc = await urunAra(aranacak);
       if (sonuc.tur !== "BULUNDU") {
         setUrun(null);
         setAramaHatasi(sonuc.mesaj);
@@ -254,21 +267,20 @@ export function Deneme({ bugun }: { bugun: string }) {
       <div className="space-y-2">
         <span className="text-sm font-medium">{t("araBaslik")}</span>
         <div className="flex flex-wrap gap-2">
-          <Input
+          {/* ⚠ USB OKUYUCU VE KAMERA AYNI KAPIDAN (İlke #7). Eskiden yalnız
+              Enter dinleniyordu; kamera yoktu ve depoda elde ürünle arama
+              yapmanın tek yolu kodu ELLE yazmaktı. `BarkodGirisi` ikisini
+              birden veriyor ve okunan kodu doğrudan `ara`ya geçiriyor. */}
+          <BarkodGirisi
+            className="min-w-0 flex-1"
             value={kod}
-            onChange={(e) => setKod(e.target.value)}
-            /* USB okuyucu Enter basar (İlke #7) — form yok, tuşu dinliyoruz. */
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                ara();
-              }
-            }}
+            onChange={setKod}
+            onOkundu={(okunan) => ara(okunan)}
             placeholder={t("araIpucu")}
-            className="h-11 min-w-0 flex-1"
+            kameraBasligi={ortak("barkodKamera")}
           />
           <Button
-            onClick={ara}
+            onClick={() => ara()}
             disabled={araniyor || kod.trim() === ""}
             className="h-11"
           >

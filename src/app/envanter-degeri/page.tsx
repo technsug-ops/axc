@@ -1,7 +1,8 @@
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import Link from "next/link";
 import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
-import { ArrowRight, Search, TriangleAlert } from "lucide-react";
+import { ArrowRight, TriangleAlert } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -16,8 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import { UzunAd } from "@/components/uzun-ad";
 import { bicimlendirici } from "@/lib/bicim";
 import { envanterVerisi } from "@/lib/envanter-veri";
@@ -110,30 +110,14 @@ export default async function EnvanterDegeriSayfasi({
           ⚠ SIRA DA ADRESTE: aramayı bozmadan sıra değişebilsin diye gizli
           alanla taşınıyor (İlke #10 — süzgeçler birbirini silmez). */}
       <div className="flex flex-wrap items-end gap-3">
-        <form method="get" className="flex flex-wrap items-end gap-2">
-          <input type="hidden" name="sira" value={sira} />
-          <div className="space-y-1">
-            <Label htmlFor="envanter-ara">{ortak("ara")}</Label>
-            <Input
-              id="envanter-ara"
-              name="q"
-              defaultValue={arama}
-              placeholder={t("aramaIpucu")}
-              className="w-full sm:w-80"
-            />
-          </div>
-          <Button type="submit" variant="outline" className="h-11 md:h-10">
-            <Search />
-            {ortak("ara")}
-          </Button>
-          {arama !== "" ? (
-            <Button asChild variant="ghost" className="h-11 md:h-10">
-              <Link href={`/envanter-degeri?sira=${sira}`}>
-                {ortak("temizle")}
-              </Link>
-            </Button>
-          ) : null}
-        </form>
+        {/* ⚠ ARAMA ORTAK BİLEŞENDEN — kamera dahil (İlke #7). Sıra
+            `tasinanlar` ile korunuyor: arama sırayı silmez. */}
+        <KodAramaKutusu
+          temelAdres="/envanter-degeri"
+          baslangic={arama}
+          tasinanlar={{ sira }}
+          ipucu={t("aramaIpucu")}
+        />
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-muted-foreground text-sm">{t("siralama")}</span>

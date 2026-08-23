@@ -548,8 +548,31 @@ console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
 
   const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
   kontrol("ekranda kod arama kutusu var", ekran.includes("urunAra("));
-  /** USB okuyucu Enter basar (İlke #7) — form olmadığı için tuş dinleniyor. */
-  kontrol("okuyucunun Enter'ı çalışıyor", /e\.key === "Enter"/.test(ekran));
+  /**
+   * USB okuyucu Enter basar (İlke #7).
+   *
+   * ⚠ KONTROL 23.08.2026'DA TAŞINDI. Eskiden ekranda `e.key === "Enter"`
+   * aranıyordu; kutu `BarkodGirisi`ye çevrilince Enter işleme O BİLEŞENİN
+   * İÇİNE geçti ve desen ekranda kalmadı. DAVRANIŞ DURUYOR, deseni
+   * bayatlamıştı — kontrol yeni yerine bağlandı.
+   *
+   * ⚠ VE ARTIK KAMERA DA ŞART: aynı kutu USB'yi de kamerayı da veriyor.
+   */
+  kontrol(
+    "okuyucunun Enter'ı çalışıyor (BarkodGirisi üstlendi)",
+    /<BarkodGirisi/.test(ekran) && /onOkundu=/.test(ekran),
+  );
+  const okuyucu = readFileSync("src/components/barkod-okuyucu.tsx", "utf8");
+  /**
+   * ⚠ DESEN KARŞILAŞTIRMA YÖNÜNE TAKILMASIN. İlk yazımda yalnız
+   * `key === "Enter"` aranıyordu; bileşen erken dönüş kalıbıyla
+   * (`if (e.key !== "Enter") return;`) yazılmış ve kontrol DOĞRU KODU
+   * kırmızı yaktı. Aranan şey Enter'ın ele alınması, eşitliğin yönü değil.
+   */
+  kontrol(
+    "  ...ve o bileşen gerçekten Enter dinliyor",
+    /key\s*[!=]==\s*"Enter"/.test(okuyucu),
+  );
   /**
    * ⚠ GERÇEK ZEMİN KARŞILAŞTIRMAYA ULAŞIYOR MU: ürün seçilince komisyon
    * tarifeden gelmeli. Zeminler geçirilmezse ekran sessizce kullanıcının

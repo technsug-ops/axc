@@ -1,11 +1,11 @@
 "use client";
 
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -72,31 +72,17 @@ export function KanalSkuFiltresi({
         </Select>
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const veri = new FormData(e.currentTarget);
-          git({ q: String(veri.get("q") ?? "") });
+      {/* ⚠ ARAMA ORTAK BİLEŞENDEN — kamera dahil (İlke #7). Hesap ve
+          "eksik oran" süzgeçleri `tasinanlar` ile korunuyor. */}
+      <KodAramaKutusu
+        temelAdres="/kanal-sku"
+        baslangic={arama}
+        tasinanlar={{
+          hesap: seciliHesap || undefined,
+          eksik: eksikOran ? "1" : undefined,
         }}
-        className="flex flex-wrap items-end gap-2"
-      >
-        <div className="space-y-1">
-          <Label htmlFor="ks-filtre-q" className="text-xs">
-            {ortak("ara")}
-          </Label>
-          <Input
-            id="ks-filtre-q"
-            name="q"
-            defaultValue={arama}
-            placeholder={t("aramaIpucu")}
-            className="w-56"
-            autoComplete="off"
-          />
-        </div>
-        <Button type="submit" variant="secondary">
-          {ortak("ara")}
-        </Button>
-      </form>
+        ipucu={t("aramaIpucu")}
+      />
 
       <Button
         type="button"
