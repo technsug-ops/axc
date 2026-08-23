@@ -300,6 +300,54 @@ kontrol(
   /caches\.delete\(ad\)/.test(etkinBloku) &&
     /startsWith\(SURUM\)/.test(etkinBloku),
 );
+/**
+ * ════════════════════════════════════════════════════════════════════════
+ *  GEZİNME ÖN YÜKLEMESİ — "SW AÇILIŞ VERGİSİ" ÖDENMESİN
+ * ------------------------------------------------------------------------
+ *  Kullanıcı 23.08.2026: _"dünden beri sekmeler yavaş açılıyor."_ Ölçüldü
+ *  ve suçlu buydu: tarayıcı boşta kalan servis çalışanını ~30 saniyede
+ *  kapatıyor; `respondWith` çağıran bir `fetch` dinleyicisi varsa sonraki
+ *  gezinmede önce SW ayağa kaldırılıyor ve ağ isteği ANCAK ONDAN SONRA
+ *  başlıyor. Her sekme açılışı bu vergiyi ödüyordu.
+ *
+ *  ⚠ SUÇLU TEMA DEĞİLDİ. Aynı gün tema da değişmişti ve ilk şüphe oraydı;
+ *  ölçüm onu eledi (CSS 95 KB, bir kez yükleniyor, önbellekte; arka uç
+ *  TTFB 160-466 ms). Yakın zamanlı iki değişiklikten görünür olanı
+ *  suçlamak kolaydı — ölçüm görünmeyeni gösterdi.
+ * ════════════════════════════════════════════════════════════════════════
+ */
+kontrol(
+  "gezinme ön yüklemesi AÇILIYOR (SW açılış vergisi ödenmesin)",
+  /navigationPreload\.enable\(\)/.test(etkinBloku),
+);
+/**
+ * ⚠ ÖZELLİK KONTROLÜ ŞART. Eski tarayıcılarda `navigationPreload` yok ve
+ * doğrudan çağırmak `activate`i DÜŞÜRÜR — servis çalışanı hiç etkinleşmez
+ * ve kullanıcı sessizce PWA'sız kalır.
+ */
+kontrol(
+  "  ...önce varlığı sınanıyor (eski tarayıcıda activate düşmesin)",
+  /if\s*\(self\.registration\.navigationPreload\)/.test(etkinBloku),
+);
+/**
+ * ⚠ AÇMAK YETMEZ, KULLANMAK GEREKİR. `enable()` çağrılıp `preloadResponse`
+ * okunmazsa tarayıcı isteği başlatır, biz onu ÇÖPE ATIP ikinci bir istek
+ * yaparız — yani hem yavaş kalır hem çift istek atılır.
+ */
+kontrol(
+  "  ...ve ön yüklenen cevap GERÇEKTEN kullanılıyor",
+  /await olay\.preloadResponse/.test(sayfaDali) &&
+    /if \(onYuklenen\) return onYuklenen/.test(sayfaDali),
+);
+/**
+ * ⚠ SÜRÜM ARTMALI. Sahadaki telefonlarda sürüm 1 kurulu; sürüm artmazsa
+ * yeni dosya devralmaz ve düzeltme kimseye ULAŞMAZ.
+ */
+kontrol(
+  "  ...sürüm artırılmış (eski SW sahadan çekilsin)",
+  !/SURUM = "selliora-sw-1"/.test(sw),
+);
+
 kontrol(
   "yeni sürüm beklemeden devralıyor (sahadan geri çekilebilir)",
   /skipWaiting\(\)/.test(sw) && /clients\.claim\(\)/.test(etkinBloku),

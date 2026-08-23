@@ -40,7 +40,7 @@
  * sürümün bütün önbelleklerini siler. Sürüm sabit kalsaydı hatalı bir
  * sürümün bıraktığı çöp telefonlarda yaşamaya devam ederdi.
  */
-const SURUM = "selliora-sw-1";
+const SURUM = "selliora-sw-2";
 const STATIK_ONBELLEK = `${SURUM}-statik`;
 const KABUK_ONBELLEK = `${SURUM}-kabuk`;
 
@@ -88,6 +88,28 @@ self.addEventListener("activate", (olay) => {
       await Promise.all(
         adlar.filter((ad) => !ad.startsWith(SURUM)).map((ad) => caches.delete(ad)),
       );
+      /**
+       * ⚠ GEZİNME ÖN YÜKLEMESİ — SÜRÜM 2'DE EKLENDİ, ÇÜNKÜ YAVAŞLATIYORDUK.
+       *
+       * Kullanıcı 23.08.2026: _"dünden beri sekmeler yavaş açılıyor."_
+       * Ölçüldü: arka uç temiz (TTFB 160-466 ms), CSS 95 KB ve bir kez
+       * yükleniyor. Sebep BURASIYDI.
+       *
+       * Tarayıcı boşta kalan servis çalışanını ~30 saniyede kapatır.
+       * `respondWith` çağıran bir `fetch` dinleyicisi varsa, sonraki
+       * gezinmede önce SW AYAĞA KALDIRILIR ve ağ isteği ancak ondan sonra
+       * başlar. Yani her sekme açılışı bir "SW açılış vergisi" ödüyordu —
+       * ve bu vergi tam olarak PWA yayına girdiği gün başladı.
+       *
+       * Ön yükleme bunu ortadan kaldırır: tarayıcı ağ isteğini SW
+       * açılışıyla PARALEL başlatır, biz de hazır cevabı alırız.
+       *
+       * ⚠ ÖZELLİK KONTROLÜ ŞART: eski tarayıcılarda `navigationPreload`
+       * yok ve doğrudan çağırmak `activate`i düşürür — SW hiç etkinleşmez.
+       */
+      if (self.registration.navigationPreload) {
+        await self.registration.navigationPreload.enable();
+      }
       await self.clients.claim();
     })(),
   );
@@ -120,6 +142,14 @@ self.addEventListener("fetch", (olay) => {
     olay.respondWith(
       (async () => {
         try {
+          /**
+           * ⚠ ÖNCE ÖN YÜKLENEN CEVAP. Tarayıcı bu isteği biz uyanırken
+           * çoktan başlatmış olabilir; onu kullanmak, aynı isteği ikinci
+           * kez yapmaktan hem hızlı hem ucuz. Yoksa (ön yükleme
+           * desteklenmiyorsa ya da kapalıysa) normal `fetch`e düşülür.
+           */
+          const onYuklenen = await olay.preloadResponse;
+          if (onYuklenen) return onYuklenen;
           return await fetch(istek);
         } catch {
           const yedek = await caches.match(CEVRIMDISI);
