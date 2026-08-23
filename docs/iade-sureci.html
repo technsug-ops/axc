@@ -94,6 +94,7 @@ yanında yazar.</p>
 <code>(E)</code> Trendyol satıcı uygulaması ekran kaydı, 23.08.2026 01:47 ·
 <code>(EH)</code> Hepsiburada satıcı paneli "Müşteri talepleri" ekranı, 23.08.2026 ·
 <code>(B)</code> kullanıcının hazırladığı "İade Süreci" tablosu ·
+<code>(EK)</code> Aras Kargo takip ekranı, 23.08.2026 ·
 <code>(K)</code> kullanıcı anlatımı, 23.08.2026</p>
 <h2>KAPSAM — hangi kanal ne kadar biliniyor</h2>
 <div class="tablo-kap"><table>
@@ -751,7 +752,7 @@ sanılmıştı; ikisi farklı sayaçlardı. Her biri <strong>hangi olayla başla
 <td>2</td>
 <td>Kargo satıcıya ulaşsın</td>
 <td><strong>müşteri kargoya verince</strong></td>
-<td><strong>10 gün</strong></td>
+<td><strong>10 gün</strong> ✅ <em>ölçüldü</em></td>
 <td>⚠ <strong>iade SEBEBİ NE OLURSA OLSUN ONAYLANIR</strong>, müşteriye parası iade edilir → satıcı <strong>KARGO ŞİRKETİNE tazmin talebi</strong> açar</td>
 </tr>
 <tr>
@@ -793,40 +794,90 @@ gitti; karşılığında <strong>kargo şirketinden tazmin</strong> talep edilir
 kapanırken bir <strong>tazminat kaydı doğması gerekir</strong> — bugün sistemde bu bağ
 yok (bkz. §9, madde 9).</p>
 </blockquote>
-<h3>12.2 Ölçüm — iki bağımsız kaynak, 2 dakika fark</h3>
-<p><code>#11481463029</code> iki ayrı kaynaktan okundu ve <strong>aynı bitişi</strong> verdi:</p>
+<h3>12.2 ÖLÇÜM — üç bağımsız kaynak, 10,0014 gün</h3>
+<p><code>#11481463029</code> sayacı <strong>üç ayrı kaynaktan</strong> okundu. Üçüncüsü kargo firmasının
+kendi takip ekranı — yani <strong>pazaryerinden bağımsız</strong>:</p>
 <div class="tablo-kap"><table>
 <thead>
 <tr>
 <th>Kaynak</th>
-<th>Okuma anı</th>
-<th>Kalan</th>
+<th>Veri</th>
 <th>Hesaplanan bitiş</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Video karesi <code>(E)</code></td>
-<td>23.08 01:47</td>
-<td>8g 10:47:35</td>
+<td>23.08 01:47, kalan 8g 10:47:35</td>
 <td>31.08.2026 <strong>12:34</strong></td>
 </tr>
 <tr>
 <td>Masaüstü ekranı <code>(EH)</code></td>
-<td>23.08 13:23</td>
-<td>7g 23:14:03</td>
+<td>23.08 13:23, kalan 7g 23:14:03</td>
 <td>31.08.2026 <strong>12:37</strong></td>
+</tr>
+<tr>
+<td><strong>Aras kargo takibi</strong> <code>(EK)</code></td>
+<td><em>"Gönderi yola çıktı"</em> <strong>21.08 12:35</strong> + 10 gün</td>
+<td>31.08.2026 <strong>12:35</strong></td>
 </tr>
 </tbody>
 </table></div>
-<p><strong>Fark 2 dakika</strong> — okuma anlarının yuvarlanmasından. Sayaç gerçek.</p>
-<p>⚠ <strong>"10 GÜN" KULLANICI BEYANIDIR, ARİTMETİKLE KANITLANMADI.</strong> 10 günlük
-saat başlangıcı <strong>21.08 12:37</strong>'ye düşüyor (talepten +5,8 gün) — yani
-müşteri o gün kargoya vermiş olmalı. Bu MAKUL ama tek başına kanıt değil:
-15 günlük bir saat de aynı bitişi verir (başlangıç 16.08, talepten +0,8
-gün) ve o da makuldür. Ayırt edici veri <strong>kargoya verilme tarihi</strong> ve o
-ekranda YOK — yalnız kargo takip kodu var. Kural kullanıcı beyanı olarak
-kayda geçti, aritmetik onunla <strong>çelişmiyor</strong>.</p>
+<p><strong>Üçü en fazla 2 dakika farkla aynı anı gösteriyor.</strong> Ölçülen süre:
+<strong>10,0014 gün.</strong></p>
+<h3>12.2.1 Rakip hipotezler ÇÜRÜTÜLDÜ</h3>
+<p>Belgenin önceki hâlinde <em>"'10 gün' kullanıcı beyanıdır, aritmetikle
+kanıtlanmadı; 15 günlük bir saat de aynı bitişi verir"</em> yazıyordu. <strong>Ayırt
+edici veri kargoya verilme tarihiydi ve o geldi.</strong> Kargoya verilmeden
+sayınca:</p>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th>Varsayılan süre</th>
+<th>Bitiş</th>
+<th>Ölçülenle fark</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7 gün</td>
+<td>28.08 12:35</td>
+<td>4.322 dakika ✗</td>
+</tr>
+<tr>
+<td><strong>10 gün</strong></td>
+<td><strong>31.08 12:35</strong></td>
+<td><strong>2 dakika ✅</strong></td>
+</tr>
+<tr>
+<td>12 gün</td>
+<td>02.09 12:35</td>
+<td>2.878 dakika ✗</td>
+</tr>
+<tr>
+<td>14 gün</td>
+<td>04.09 12:35</td>
+<td>5.758 dakika ✗</td>
+</tr>
+<tr>
+<td>15 gün</td>
+<td>05.09 12:35</td>
+<td>7.198 dakika ✗</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>✅ <strong>KURAL ARTIK BEYAN DEĞİL, ÖLÇÜM.</strong> Sayaç <strong>kargoya verilme anından</strong>
+başlıyor ve <strong>tam 10 gün</strong> sürüyor. 15 günlük hipotez, müşterinin
+kargoya 21.08'de verdiği ortaya çıkınca çöktü — o hipotez müşterinin
+16.08'de vermiş olmasını gerektiriyordu.</p>
+</blockquote>
+<p>⚠ <strong>BU BİLGİ ŞEMAYI DEĞİŞTİRMİYOR.</strong> <code>otomatikOnayTarihi</code> yine pazaryerinin
+söylediği tarih olarak KAYDEDİLİR, hesaplanmaz — çünkü öteki sayaçların
+(2 gün, 28 gün, 2 iş günü) çıpası farklı ve hepsini türetmeye kalkmak,
+bilmediğimiz kurallardan tarih uydurmak olur. Ama artık <strong>kontrol
+edilebilir</strong>: elle girilen tarih kargoya verilme + 10 günden belirgin
+sapıyorsa ekran soru sorabilir. <em>(Türetme değil, çapraz kontrol.)</em></p>
 <h3>12.3 Diğer kaydın sayacı — 28 günlük analiz saati</h3>
 <p><code>#11475261428</code> "Analiz" sekmesindeydi ve 28 günlük saatte oturuyor:
 bitiş 11.09 09:29, 28 gün geri → başlangıç <strong>14.08 09:29</strong>, yani talepten

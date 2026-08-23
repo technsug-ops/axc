@@ -33,7 +33,7 @@
 | **H18** | **Melontik ölçütü** | Çapraz teyit için **gerçek** Melontik çıktısı. _Sunumdaki rakamlar demoydu; doğrulanmamış ölçüte göre motor bozulmak üzereydi._ |
 | **H23** | **İadeler ekranı — sekmeli düzen** | ⏳ **TESLİM EDİLDİ 23.08.2026, ONAY BEKLİYOR.** Üç sekme (Bildirimler / İşlenmiş iadeler / Kırılım), durum süzgeci, süzgeç yalnız etkilediği sekmede. ⚠ **Panel rozeti 0 → 3 oldu** (ölçüt düzeltildi: `ITIRAZ_RED` bekleyen sayılmıyordu). Test listesi teslim raporunda, 9 madde. |
 | **H24** | **Tema görünürlüğü — üst çubuk + zemin** | ⏳ **TESLİM EDİLDİ 23.08.2026, ONAY BEKLİYOR.** Üst çubuk kabuk renginde (telefonda temanın göründüğü tek yer), sayfa zemini bir kademe koyu. Test listesi teslim raporunda, 8 madde. |
-| **H25** | **İade süreci — yalnız N11 kaldı** | ✅ **TY + HB ÖLÇÜLDÜ**, dört sayaç da çözüldü (`docs/iade-sureci.md` §12): 7 gün kargoya verme · **10 gün kargo ulaşsın** · 2 gün onay/red · 28 gün analiz. İki bağımsız kaynak 2 dakika farkla aynı bitişi verdi. ⏳ **Kalan:** N11 — iade tecrübesi yok, süresiz bekler. Tasarım beklemiyor; ölçülmemiş kanal `belirsizlik` beyanıyla boş duruyor. |
+| **H25** | **İade süreci — yalnız N11 kaldı** | ✅ **TY + HB ÖLÇÜLDÜ**, beş sayaç da çözüldü (`docs/iade-sureci.md` §12). ⚠ **10 günlük kargo saati ÖLÇÜLDÜ:** kargo takip ekranından gelen "yola çıktı 21.08 12:35" + 10 gün = 31.08 12:35; pazaryerinin sayacı 31.08 12:34–12:37 diyor → **üç bağımsız kaynak, 2 dakika fark, 10,0014 gün.** 7/12/14/15 günlük rakip hipotezler binlerce dakikayla çürüdü. ⏳ **Kalan:** N11 — tecrübe yok, süresiz bekler; tasarım beklemiyor. |
 | **H15** | **N11 ritmi** | Komisyonlar hangi sıklıkla değişiyor? Cevapsızken envanter "ölçülemedi" diyor. |
 
 ---

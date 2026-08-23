@@ -11,6 +11,7 @@
 `(E)` Trendyol satıcı uygulaması ekran kaydı, 23.08.2026 01:47 ·
 `(EH)` Hepsiburada satıcı paneli "Müşteri talepleri" ekranı, 23.08.2026 ·
 `(B)` kullanıcının hazırladığı "İade Süreci" tablosu ·
+`(EK)` Aras Kargo takip ekranı, 23.08.2026 ·
 `(K)` kullanıcı anlatımı, 23.08.2026
 
 ## KAPSAM — hangi kanal ne kadar biliniyor
@@ -377,7 +378,7 @@ sanılmıştı; ikisi farklı sayaçlardı. Her biri **hangi olayla başlar** ve
 | # | Sayaç | Başlangıç | Süre | ⏳ DOLARSA NE OLUR |
 |---|---|---|---|---|
 | 1 | Müşteri kargoya versin | iade talebi | **7 gün** | iade **iptal** olur |
-| 2 | Kargo satıcıya ulaşsın | **müşteri kargoya verince** | **10 gün** | ⚠ **iade SEBEBİ NE OLURSA OLSUN ONAYLANIR**, müşteriye parası iade edilir → satıcı **KARGO ŞİRKETİNE tazmin talebi** açar |
+| 2 | Kargo satıcıya ulaşsın | **müşteri kargoya verince** | **10 gün** ✅ *ölçüldü* | ⚠ **iade SEBEBİ NE OLURSA OLSUN ONAYLANIR**, müşteriye parası iade edilir → satıcı **KARGO ŞİRKETİNE tazmin talebi** açar |
 | 3 | Onay/red kararı | **iade satıcıya teslim edilince** | **2 gün** | iade otomatik onaylanır |
 | 4 | Analiz (servis) | pazaryeri analize alınca | **28 gün** | — |
 | 5 | **Ürünü geri kargola** | iade "Reddedilen"e düşünce (kargo kodu verilir) | **2 iş günü** | — |
@@ -401,24 +402,46 @@ kullanılmadan.
 > kapanırken bir **tazminat kaydı doğması gerekir** — bugün sistemde bu bağ
 > yok (bkz. §9, madde 9).
 
-### 12.2 Ölçüm — iki bağımsız kaynak, 2 dakika fark
+### 12.2 ÖLÇÜM — üç bağımsız kaynak, 10,0014 gün
 
-`#11481463029` iki ayrı kaynaktan okundu ve **aynı bitişi** verdi:
+`#11481463029` sayacı **üç ayrı kaynaktan** okundu. Üçüncüsü kargo firmasının
+kendi takip ekranı — yani **pazaryerinden bağımsız**:
 
-| Kaynak | Okuma anı | Kalan | Hesaplanan bitiş |
-|---|---|---|---|
-| Video karesi `(E)` | 23.08 01:47 | 8g 10:47:35 | 31.08.2026 **12:34** |
-| Masaüstü ekranı `(EH)` | 23.08 13:23 | 7g 23:14:03 | 31.08.2026 **12:37** |
+| Kaynak | Veri | Hesaplanan bitiş |
+|---|---|---|
+| Video karesi `(E)` | 23.08 01:47, kalan 8g 10:47:35 | 31.08.2026 **12:34** |
+| Masaüstü ekranı `(EH)` | 23.08 13:23, kalan 7g 23:14:03 | 31.08.2026 **12:37** |
+| **Aras kargo takibi** `(EK)` | _"Gönderi yola çıktı"_ **21.08 12:35** + 10 gün | 31.08.2026 **12:35** |
 
-**Fark 2 dakika** — okuma anlarının yuvarlanmasından. Sayaç gerçek.
+**Üçü en fazla 2 dakika farkla aynı anı gösteriyor.** Ölçülen süre:
+**10,0014 gün.**
 
-⚠ **"10 GÜN" KULLANICI BEYANIDIR, ARİTMETİKLE KANITLANMADI.** 10 günlük
-saat başlangıcı **21.08 12:37**'ye düşüyor (talepten +5,8 gün) — yani
-müşteri o gün kargoya vermiş olmalı. Bu MAKUL ama tek başına kanıt değil:
-15 günlük bir saat de aynı bitişi verir (başlangıç 16.08, talepten +0,8
-gün) ve o da makuldür. Ayırt edici veri **kargoya verilme tarihi** ve o
-ekranda YOK — yalnız kargo takip kodu var. Kural kullanıcı beyanı olarak
-kayda geçti, aritmetik onunla **çelişmiyor**.
+### 12.2.1 Rakip hipotezler ÇÜRÜTÜLDÜ
+
+Belgenin önceki hâlinde _"'10 gün' kullanıcı beyanıdır, aritmetikle
+kanıtlanmadı; 15 günlük bir saat de aynı bitişi verir"_ yazıyordu. **Ayırt
+edici veri kargoya verilme tarihiydi ve o geldi.** Kargoya verilmeden
+sayınca:
+
+| Varsayılan süre | Bitiş | Ölçülenle fark |
+|---|---|---|
+| 7 gün | 28.08 12:35 | 4.322 dakika ✗ |
+| **10 gün** | **31.08 12:35** | **2 dakika ✅** |
+| 12 gün | 02.09 12:35 | 2.878 dakika ✗ |
+| 14 gün | 04.09 12:35 | 5.758 dakika ✗ |
+| 15 gün | 05.09 12:35 | 7.198 dakika ✗ |
+
+> ✅ **KURAL ARTIK BEYAN DEĞİL, ÖLÇÜM.** Sayaç **kargoya verilme anından**
+> başlıyor ve **tam 10 gün** sürüyor. 15 günlük hipotez, müşterinin
+> kargoya 21.08'de verdiği ortaya çıkınca çöktü — o hipotez müşterinin
+> 16.08'de vermiş olmasını gerektiriyordu.
+
+⚠ **BU BİLGİ ŞEMAYI DEĞİŞTİRMİYOR.** `otomatikOnayTarihi` yine pazaryerinin
+söylediği tarih olarak KAYDEDİLİR, hesaplanmaz — çünkü öteki sayaçların
+(2 gün, 28 gün, 2 iş günü) çıpası farklı ve hepsini türetmeye kalkmak,
+bilmediğimiz kurallardan tarih uydurmak olur. Ama artık **kontrol
+edilebilir**: elle girilen tarih kargoya verilme + 10 günden belirgin
+sapıyorsa ekran soru sorabilir. _(Türetme değil, çapraz kontrol.)_
 
 ### 12.3 Diğer kaydın sayacı — 28 günlük analiz saati
 
