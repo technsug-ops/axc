@@ -86,15 +86,20 @@ hr { border: 0; border-top: 1px solid var(--cizgi); margin: 2rem 0; }
 <blockquote>
 <p><strong>Bu belge sistemin nasıl çalıştığını değil, PAZARYERİNİN nasıl çalıştığını
 anlatır.</strong> Sistemi ona göre kuruyoruz; ikisi ayrıştığında kazanan bu belge.</p>
-<p><strong>Kaynak önceliği (CLAUDE.md):</strong> kanalın kendi ekranı &gt; kullanıcının
-operasyon bilgisi &gt; dış hesaplayıcı. Aşağıdaki her satırın kaynağı
-yanında yazar.</p>
+<p><strong>Kaynak önceliği (CLAUDE.md):</strong> kanalın kendi ekranı <code>(E)</code> <code>(EH)</code> <strong>=</strong>
+kargo firmasının takip ekranı <code>(KG)</code> &gt; kullanıcının operasyon bilgisi
+<code>(K)</code> &gt; dış hesaplayıcı. Aşağıdaki her satırın kaynağı yanında yazar.</p>
+<p>⚠ <strong><code>(KG)</code> NİYE KANALLA AYNI SEVİYEDE:</strong> kargo firması <strong>kanaldan
+bağımsız üçüncü taraf.</strong> Kanalın söylediğini onun kaydıyla
+karşılaştırmak, sistemin kendi tutarlılığına bakmaktan başka bir şeydir
+— ve bu belgede tam olarak bu yapıldı (§12.2). İkisi birbirini
+doğrulayabilir; biri ötekinin üstünde değildir.</p>
 </blockquote>
 <p><strong>Yazıldı:</strong> 23.08.2026 · <strong>Kaynaklar:</strong>
 <code>(E)</code> Trendyol satıcı uygulaması ekran kaydı, 23.08.2026 01:47 ·
 <code>(EH)</code> Hepsiburada satıcı paneli "Müşteri talepleri" ekranı, 23.08.2026 ·
 <code>(B)</code> kullanıcının hazırladığı "İade Süreci" tablosu ·
-<code>(EK)</code> Aras Kargo takip ekranı, 23.08.2026 ·
+<code>(KG)</code> Aras Kargo takip ekranı, 23.08.2026 ·
 <code>(K)</code> kullanıcı anlatımı, 23.08.2026</p>
 <h2>KAPSAM — hangi kanal ne kadar biliniyor</h2>
 <div class="tablo-kap"><table>
@@ -293,12 +298,15 @@ analize alabilir.</p>
 <p>Sekme adı aynı, <strong>gönderilen şey ve parayı ödeyen taraf farklı.</strong> Modelde
 durumu tek başına tutmak YETMEZ; <strong>nasıl gelindiği</strong> de tutulmalıdır, yoksa
 kargo maliyeti yanlış hesaplanır.</p>
+<blockquote>
+<p><strong>Üç yolda da kargo koduyla 2 iş günü içinde gönderilir</strong> <code>(K)</code>.
+Değişken olan tek şey <strong>kargoyu kimin ödediği.</strong></p>
+</blockquote>
 <div class="tablo-kap"><table>
 <thead>
 <tr>
 <th>Geliş yolu</th>
 <th>Ne gönderilir</th>
-<th>Süre</th>
 <th>Kargo kimden</th>
 </tr>
 </thead>
@@ -306,27 +314,30 @@ kargo maliyeti yanlış hesaplanır.</p>
 <tr>
 <td><strong>Satıcı haklı bulundu</strong></td>
 <td>aynı ürün, müşteriye geri</td>
-<td><strong>2 iş günü</strong></td>
-<td><strong>Trendyol: satıcıya YANSITILMAZ</strong> · diğer pazaryerleri: satıcı öder</td>
+<td><strong>Trendyol: satıcıya YANSITILMAZ</strong> · <strong>TY dışı: satıcı öder — beyan <code>(K)</code>, kanal bazında ÖLÇÜLMEDİ</strong></td>
 </tr>
 <tr>
 <td><strong>Değişim (gerekçe E)</strong></td>
 <td><strong>yeni ürün</strong></td>
-<td><strong>2 iş günü</strong></td>
-<td><strong>her yerde satıcı öder</strong></td>
+<td><strong>her yerde satıcı öder</strong> <code>(K)</code></td>
 </tr>
 <tr>
 <td><strong>Analiz bitti, geri gönderiliyor</strong></td>
 <td>aynı ürün</td>
-<td><strong>2 iş günü</strong></td>
-<td><strong>her yerde satıcı öder</strong></td>
+<td><strong>her yerde satıcı öder</strong> <code>(K)</code></td>
 </tr>
 </tbody>
 </table></div>
-<p>Tümü <code>(K)</code>.</p>
-<p>⚠ <strong>SÜRE ÜÇÜNDE DE AYNI — 2 İŞ GÜNÜ</strong> <em>(kullanıcı düzeltmesi 23.08.2026;
-burada önce yalnız birinci satırda yazıyordu, ötekilerde "—" vardı ve bu
-yanlıştı).</em> Üç yol arasındaki fark <strong>süre değil, kargoyu ÖDEYEN taraf.</strong></p>
+<p>⚠ <strong>SÜRE SÜTUNU KALDIRILDI — ÜÇÜNDE DE AYNIYDI.</strong> Önce yalnız birinci
+satırda "2 iş günü" yazıyordu, ötekilerde "—" vardı ve bu YANLIŞTI
+<em>(kullanıcı düzeltmesi 23.08.2026).</em> Sabit bir değeri sütunda tutmak, onu
+değişkenmiş gibi gösterir; başlığa taşındı.</p>
+<p>⚠ <strong>KANAL ADI VERİLMİYOR — VE BU BİR TUTARLILIK DÜZELTMESİ.</strong> Burada önce
+<em>"diğer pazaryerleri: satıcı öder"</em> yazıyordu. Kapsam tablosu N11 için
+<em>"tecrübe yok"</em> derken §5'in onun adına kural yazması ÇELİŞKİYDİ. Doğrusu:
+kural TY için ölçüldü, ötesi <strong>beyandır ve kanal bazında ölçülmedi.</strong>
+Hepsiburada §11'de ölçüldü ama <strong>yalnız orada doğrulanan kısımlar</strong> ona
+yazılabilir; bu satır o kapsamda değil.</p>
 <blockquote>
 <p>✅ <strong>MODELİ SADELEŞTİRİYOR.</strong> <code>islemSonTarihi</code> artık <code>ITIRAZ_KABUL</code>
 durumundaki HER kayıt için aynı anlamı taşıyor: <em>ürünü kargolama son
@@ -340,16 +351,19 @@ ayrı türetiliyor (<code>analizSonucu</code> / <code>itirazGerekcesi</code>). <
 <tr>
 <th></th>
 <th>Ödenen kargo</th>
+<th>Kaynak</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><strong>Trendyol</strong></td>
 <td><strong>2</strong> — siparişin müşteriye gidiş kargosu + müşteriden gelen iade kargosu</td>
+<td><code>(K)</code>, TY için</td>
 </tr>
 <tr>
-<td><strong>Diğer pazaryerleri</strong></td>
+<td><strong>TY dışı</strong></td>
 <td><strong>3</strong> — satış + iade + geri gönderim</td>
+<td><code>(K)</code> <strong>beyan · kanal bazında ölçülmedi</strong></td>
 </tr>
 </tbody>
 </table></div>
@@ -525,8 +539,8 @@ dökümü alınıp aynı pencereye indirgenince kurulur.
 </tr>
 <tr>
 <td>9</td>
-<td><strong>Kargo tazminatı bağı yok</strong></td>
-<td>İade 10 günde ulaşmazsa otomatik onaylanır ve <strong>kargo şirketinden tazmin</strong> talep edilir (§12.1). Bu bir ALACAKTIR; bugün iade ile <code>Compensation</code> arasında bağ yok, yani kapanan iade sessizce kayıp görünür.</td>
+<td><strong>Kargo tazminatı bağı yok — ⚠ CANLI VAKA VAR</strong></td>
+<td><code>#11481463029</code>, 2 numaralı sayaçta ve <strong>31.08.2026 12:35'te doluyor</strong> (ölçüldü: Aras <code>(KG)</code> + TY ekranı). Dolarsa iade <strong>sebebi ne olursa olsun</strong> onaylanır, para gider, karşılığında kargo şirketinden tazmin doğar. Bugün iade ile <code>Compensation</code> arasında bağ yok → kapanan iade sistemde sessizce <strong>KAYIP</strong> görünür, oysa <strong>ALACAK</strong>. ⚠ Üstelik bu kayıt "parası geri alınabilir" sınıfında (§10): müşteri notu <em>"Parçası kırık"</em>, <strong>desi 8</strong>, ürün <strong>₺2.169</strong> — ve bugün <code>DIGER</code> kutusunda duruyor.</td>
 </tr>
 <tr>
 <td>10</td>
@@ -725,8 +739,8 @@ adıyla geldiği görülmedi. Ölçülmeden kalem açmak, adını uydurmak olur.
 <li><strong>Onaylanan iadede iade kargosu satıcıya ait</strong></li>
 </ul>
 <hr />
-<h2>12. SÜRELER — dört ayrı sayaç <code>(K)</code> <code>(E)</code> <code>(EH)</code></h2>
-<p>⚠ <strong>BUNLAR DÖRT AYRI SAAT VE BİRBİRİNE KARIŞTIRILIYOR.</strong> Belgenin ilk
+<h2>12. SÜRELER — BEŞ ayrı sayaç <code>(K)</code> <code>(E)</code> <code>(EH)</code> <code>(KG)</code></h2>
+<p>⚠ <strong>BUNLAR BEŞ AYRI SAAT VE BİRBİRİNE KARIŞTIRILIYOR.</strong> Belgenin ilk
 yazımında ekrandaki "19 gün" ile kullanıcının söylediği "2 gün" çelişki
 sanılmıştı; ikisi farklı sayaçlardı. Her biri <strong>hangi olayla başlar</strong> ve
 <strong>dolarsa ne olur</strong> — asıl ayrım burada.</p>
@@ -771,18 +785,36 @@ sanılmıştı; ikisi farklı sayaçlardı. Her biri <strong>hangi olayla başla
 </tr>
 <tr>
 <td>5</td>
-<td><strong>Ürünü geri kargola</strong></td>
-<td>iade "Reddedilen"e düşünce (kargo kodu verilir)</td>
+<td><strong>Geri gönderim</strong></td>
+<td>ret kararı / kargo kodunun düşmesi ⛔</td>
 <td><strong>2 iş günü</strong></td>
-<td>—</td>
+<td>⛔ <strong>BİLİNMİYOR</strong></td>
 </tr>
 </tbody>
 </table></div>
 <p>⚠ <strong>5 NUMARA ÜÇ YOLA DA İŞLER</strong> — satıcı haklı · değişim · analiz sonrası
 (§5). Önce yalnız birinciye yazılmıştı, yanlıştı <code>(K)</code>.</p>
-<p>⚠ <strong>3 İLE 5 KARIŞTIRILMAZ:</strong> üçüncüsü <strong>gün</strong>, beşincisi <strong>İŞ GÜNÜ</strong> olarak
-söylendi ve öyle kaydedildi. İkisini "2 gün" diye eşitlemek, hafta sonuna
-denk gelen bir gönderimde yanlış son tarih üretirdi.</p>
+<h3>12.0 Beşinci sayaçta İKİ BELİRSİZLİK — ölçülene kadar burada duracak</h3>
+<blockquote>
+<p>Bu iki soru cevaplanmadan beşinci sayaç ekranda <strong>son tarih olarak
+gösterilemez</strong>. Yanlış çıpadan hesaplanan bir son tarih, hiç
+göstermemekten kötüdür: operasyoncu ona güvenip geç kalır.</p>
+</blockquote>
+<p><strong>(a) BİRİM — "2 gün" ile "2 iş günü" aynı şey mi?</strong>
+3 numaralı sayaç <strong>"2 gün"</strong>, beşincisi <strong>"2 iş günü"</strong> olarak söylendi
+<code>(K)</code>. İkisini eşitlemek cazip ama <strong>Cuma akşamı düşen bir kargo kodunda
+fark iki gün eder</strong> — takvim günüyle sayarsak Pazar biter, iş günüyle
+sayarsak Salı. İkisi ayrı kaydedildi, birleştirilmedi.</p>
+<p><strong>(b) BAŞLANGIÇ ANI — ret kararı mı, kargo kodunun düşmesi mi?</strong>
+Sayaç, pazaryerinin <em>"satıcı haklı"</em> dediği anda mı başlıyor, yoksa kargo
+kodu panele düştüğünde mi? İkisi arasında saatler olabilir. Panelde ayrı
+ayrı görünüyorsa <strong>tek ekran görüntüsü çözer.</strong></p>
+<p><strong>⛔ DOLARSA NE OLUYOR — BİLİNMİYOR.</strong> Öteki dört sayacın sonucu ölçüldü
+(iptal · otomatik onay · otomatik onay · —); beşincisininki sorulmadı.
+Ceza mı kesiliyor, iade otomatik mi kapanıyor, bir şey olmuyor mu?
+<strong>Tahmin yazılmadı.</strong></p>
+<p><strong>Kapanış şartı:</strong> "Reddedilen" sekmesindeki bir iadenin detayı — <strong>ret
+tarihi, kargo kodu ve kalan süre aynı ekranda.</strong></p>
 <h3>12.1 İkinci sayaç niye var — ve niye para tarafında</h3>
 <p><code>(K)</code> <em>"Kargoda yaşanacak sorundan müşteriyi korumak için."</em> İade kargoda
 kaybolursa müşteri parasız ve ürünsüz kalmasın diye pazaryeri <strong>süre
@@ -794,90 +826,60 @@ gitti; karşılığında <strong>kargo şirketinden tazmin</strong> talep edilir
 kapanırken bir <strong>tazminat kaydı doğması gerekir</strong> — bugün sistemde bu bağ
 yok (bkz. §9, madde 9).</p>
 </blockquote>
-<h3>12.2 ÖLÇÜM — üç bağımsız kaynak, 10,0014 gün</h3>
-<p><code>#11481463029</code> sayacı <strong>üç ayrı kaynaktan</strong> okundu. Üçüncüsü kargo firmasının
-kendi takip ekranı — yani <strong>pazaryerinden bağımsız</strong>:</p>
+<h3>12.2 ✅ KAPANDI — üç bağımsız kaynak, 25 saniye</h3>
+<p><code>#11481463029</code> · Aras kargo kodu <code>7260035885654078</code>.</p>
+<p><strong><code>(KG)</code> Aras takibi:</strong> <em>"Gönderi yola çıktı"</em> — <strong>21.08.2026 12:35:00,
+Kocaeli.</strong> Bu, 2 numaralı sayacın çıpası.</p>
+<p>Pazaryerinin gösterdiği kalan süreden 10 gün geri sarınca:</p>
 <div class="tablo-kap"><table>
 <thead>
 <tr>
 <th>Kaynak</th>
-<th>Veri</th>
-<th>Hesaplanan bitiş</th>
+<th>Sayaç bitişi</th>
+<th>10 gün geri → başlangıç</th>
+<th><strong>Aras ile fark</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Video karesi <code>(E)</code></td>
-<td>23.08 01:47, kalan 8g 10:47:35</td>
-<td>31.08.2026 <strong>12:34</strong></td>
+<td>31.08 12:34:35</td>
+<td>21.08 <strong>12:34:35</strong></td>
+<td><strong>25 saniye</strong></td>
 </tr>
 <tr>
 <td>Masaüstü ekranı <code>(EH)</code></td>
-<td>23.08 13:23, kalan 7g 23:14:03</td>
-<td>31.08.2026 <strong>12:37</strong></td>
+<td>31.08 12:37:03</td>
+<td>21.08 <strong>12:37:03</strong></td>
+<td><strong>2 dakika</strong></td>
 </tr>
 <tr>
-<td><strong>Aras kargo takibi</strong> <code>(EK)</code></td>
-<td><em>"Gönderi yola çıktı"</em> <strong>21.08 12:35</strong> + 10 gün</td>
-<td>31.08.2026 <strong>12:35</strong></td>
+<td><strong>Aras takibi <code>(KG)</code></strong></td>
+<td>—</td>
+<td>21.08 <strong>12:35:00</strong></td>
+<td>—</td>
 </tr>
 </tbody>
 </table></div>
-<p><strong>Üçü en fazla 2 dakika farkla aynı anı gösteriyor.</strong> Ölçülen süre:
-<strong>10,0014 gün.</strong></p>
-<h3>12.2.1 Rakip hipotezler ÇÜRÜTÜLDÜ</h3>
-<p>Belgenin önceki hâlinde <em>"'10 gün' kullanıcı beyanıdır, aritmetikle
-kanıtlanmadı; 15 günlük bir saat de aynı bitişi verir"</em> yazıyordu. <strong>Ayırt
-edici veri kargoya verilme tarihiydi ve o geldi.</strong> Kargoya verilmeden
-sayınca:</p>
-<div class="tablo-kap"><table>
-<thead>
-<tr>
-<th>Varsayılan süre</th>
-<th>Bitiş</th>
-<th>Ölçülenle fark</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>7 gün</td>
-<td>28.08 12:35</td>
-<td>4.322 dakika ✗</td>
-</tr>
-<tr>
-<td><strong>10 gün</strong></td>
-<td><strong>31.08 12:35</strong></td>
-<td><strong>2 dakika ✅</strong></td>
-</tr>
-<tr>
-<td>12 gün</td>
-<td>02.09 12:35</td>
-<td>2.878 dakika ✗</td>
-</tr>
-<tr>
-<td>14 gün</td>
-<td>04.09 12:35</td>
-<td>5.758 dakika ✗</td>
-</tr>
-<tr>
-<td>15 gün</td>
-<td>05.09 12:35</td>
-<td>7.198 dakika ✗</td>
-</tr>
-</tbody>
-</table></div>
+<p><strong>15 günlük rakip hipotez ELENDİ:</strong> başlangıcı 16.08'e düşürüyordu, oysa
+gönderi 21.08'de yola çıktı. 7 · 12 · 14 günlük hipotezler de binlerce
+dakikayla sapıyor.</p>
 <blockquote>
-<p>✅ <strong>KURAL ARTIK BEYAN DEĞİL, ÖLÇÜM.</strong> Sayaç <strong>kargoya verilme anından</strong>
-başlıyor ve <strong>tam 10 gün</strong> sürüyor. 15 günlük hipotez, müşterinin
-kargoya 21.08'de verdiği ortaya çıkınca çöktü — o hipotez müşterinin
-16.08'de vermiş olmasını gerektiriyordu.</p>
+<p>✅ <strong><code>10 gün</code> ROZETİ <code>BEYAN</code> → <code>OLCULDU</code>.</strong> Sayaç <strong>kargoya verilme
+anından</strong> başlıyor ve <strong>10 gün</strong> sürüyor.</p>
 </blockquote>
-<p>⚠ <strong>BU BİLGİ ŞEMAYI DEĞİŞTİRMİYOR.</strong> <code>otomatikOnayTarihi</code> yine pazaryerinin
-söylediği tarih olarak KAYDEDİLİR, hesaplanmaz — çünkü öteki sayaçların
-(2 gün, 28 gün, 2 iş günü) çıpası farklı ve hepsini türetmeye kalkmak,
-bilmediğimiz kurallardan tarih uydurmak olur. Ama artık <strong>kontrol
-edilebilir</strong>: elle girilen tarih kargoya verilme + 10 günden belirgin
-sapıyorsa ekran soru sorabilir. <em>(Türetme değil, çapraz kontrol.)</em></p>
+<p>⚠ <strong>DOĞRULAMA SİSTEMİN KENDİ TUTARLILIĞIYLA DEĞİL, DIŞ KAYNAĞIN KENDİ
+ETİKETİYLE YAPILDI.</strong> Üç kaynağın ikisi Trendyol'un kendi ekranı — onlar
+birbirini doğrulasaydı yalnız <em>"TY kendi içinde tutarlı"</em> demiş olurduk
+(CLAUDE.md: <em>"bağımsızlık kaynağın ayrılığıyla ölçülür, yolun ayrılığıyla
+değil"</em>). Belirleyici olan <strong>üçüncüsü</strong>: kargo firmasının kendi kaydı,
+Trendyol'dan bağımsız.</p>
+<p>⚠ <strong>BU BİLGİ ŞEMAYI DEĞİŞTİRMİYOR.</strong> <code>otomatikOnayTarihi</code> yine
+pazaryerinin söylediği tarih olarak KAYDEDİLİR, hesaplanmaz — öteki dört
+sayacın çıpası farklı ve hepsini türetmeye kalkmak bilmediğimiz
+kurallardan tarih uydurmak olur. Ama artık <strong>çapraz kontrol edilebilir:</strong>
+elle girilen tarih, kargoya verilme + 10 günden belirgin sapıyorsa ekran
+soru sorabilir. <em>(Türetme değil, kontrol.)</em></p>
 <h3>12.3 Diğer kaydın sayacı — 28 günlük analiz saati</h3>
 <p><code>#11475261428</code> "Analiz" sekmesindeydi ve 28 günlük saatte oturuyor:
 bitiş 11.09 09:29, 28 gün geri → başlangıç <strong>14.08 09:29</strong>, yani talepten
