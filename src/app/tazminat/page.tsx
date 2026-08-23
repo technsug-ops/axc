@@ -22,6 +22,7 @@ import {
   acikMi,
   kalanTalepEdilebilirAdet,
   varsayilanTalepTutari,
+  karsiTarafAdi,
 } from "@/lib/tazminat";
 
 import { DurumSecici } from "./durum-secici";
@@ -322,7 +323,7 @@ export default async function TazminatSayfasi() {
                         <TableCell className="whitespace-nowrap">
                           {bicim.tarih(k.occurredAt)}
                         </TableCell>
-                        <TableCell>{k.supplier.name}</TableCell>
+                        <TableCell>{karsiTarafAdi(k) ?? t("karsiTarafYok")}</TableCell>
                         <TableCell className="max-w-[18rem]">
                           <span className="block truncate">
                             {talepUrunu(k)}
@@ -377,7 +378,7 @@ export default async function TazminatSayfasi() {
                   <ListeKarti
                     key={k.id}
                     baslik={talepUrunu(k)}
-                    altBaslik={`${k.supplier.name} · ${bicim.tarih(k.occurredAt)}`}
+                    altBaslik={`${karsiTarafAdi(k) ?? t("karsiTarafYok")} · ${bicim.tarih(k.occurredAt)}`}
                     alanlar={[
                       {
                         etiket: t("sutunAlim"),

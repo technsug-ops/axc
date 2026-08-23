@@ -1674,7 +1674,8 @@
     "listeNotu": "Talepler silinmez. Reddedilen talep de geçmiştir — \"bu hasarı istemiştik, kabul etmediler\" bilgisi kalır.",
     "talepYok": "talep yok",
     "kaynakIade": "iadeden",
-    "kaynakTedarikcisiz": "\"{kod}\" kaydının tedarikçisi bulunamadı; alacak kime yazılacağı belli değil. Bu ürünün alımında tedarikçi seçili olmalı."
+    "kaynakTedarikcisiz": "\"{kod}\" kaydının tedarikçisi bulunamadı; alacak kime yazılacağı belli değil. Bu ürünün alımında tedarikçi seçili olmalı.",
+    "karsiTarafYok": "karşı taraf yok"
   },
   "Hakedis": {
     "baslik": "Hakediş",

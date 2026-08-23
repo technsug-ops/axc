@@ -565,6 +565,9 @@ model CargoCarrier {
 
   tariffs CargoTariff[]
   sales   Sale[]
+
+  /// Kargo şirketinden istenen tazminatlar (iade kargoda kaybolduğunda).
+  compensations Compensation[]
 }
 
 model CargoTariff {
@@ -612,6 +615,8 @@ model ChannelAccount {
   /// Boşsa o hesabın satışları için beklenen tarih ÜRETİLMEZ — tahmin
   /// edilmiş bir tarih göstermektense boş bırakılır.
   /**
+   * /**
+   * /**
    * /**
    * /**
    * /**
@@ -1419,6 +1424,9 @@ model ReturnNotice {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// İadeden doğan tazminat talepleri (kargoda kaybolma, hasar).
+  compensations Compensation[]
+
   @@index([saleId])
   @@index([status])
   @@index([noticedAt])
@@ -1846,8 +1854,34 @@ model SettlementItem {
 model Compensation {
   id String @id @default(cuid())
 
-  supplierId String
-  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  /**
+   * ══════════════════════════════════════════════════════════════════════
+   * KARŞI TARAF ÜÇ TÜRDEN BİRİ OLABİLİR (23.08.2026)
+   * ----------------------------------------------------------------------
+   * Bu tablo "tedarikçiden tazmin" için yazılmıştı ve `supplierId`
+   * ZORUNLUYDU. İade süreci ölçülünce iki karşı taraf daha çıktı
+   * (docs/iade-sureci.md):
+   * · KARGO ŞİRKETİ — iade 10 günde ulaşmazsa pazaryeri sebebi ne olursa
+   * olsun onaylıyor, para gidiyor; tazmin kargodan istenir (§12.1).
+   * · PAZARYERİ — HB'de servis dalı "Hurda Geliri" ile bitiyor (§11.4).
+   * ⚠ Pazaryerleri ZATEN `Supplier` listesinde (arbitrajda onlardan da
+   * alım yapılıyor), yani o taraf ek alan GEREKTİRMEDİ.
+   * ⚠ KARGO FİRMALARI İKİNCİ KEZ `Supplier` OLARAK AÇILMADI. Aynı varlığın
+   * iki kimliği olur ve bir gün ayrışırlar — Soundcore vakasının aynısı
+   * (`194645027819` vs `194644037819`: benzer ad, farklı kimlik, iki ayrı
+   * hüküm). `CargoCarrier` zaten var (12 kayıt: ARAS · YURTICI · HEPSIJET…)
+   * ve kargo tarifesi ondan okunuyor; tazminat da ondan okur.
+   * ⚠ ÜÇÜ DE BOŞ BİR KAYIT ANLAMSIZDIR. Prisma bunu ifade edemiyor
+   * ("en az biri dolu" diye bir kısıt yok), bu yüzden kural UYGULAMA
+   * KATMANINDA duruyor.
+   * ══════════════════════════════════════════════════════════════════════
+   */
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  /// Karşı taraf kargo şirketiyse. `Supplier` DEĞİL — bkz. yukarıdaki not.
+  carrierId String?
+  carrier   CargoCarrier? @relation(fields: [carrierId], references: [id], onDelete: Restrict)
 
   /// Hangi alım kalemindeki hasar. Silinirse talep kaydı kalır.
   purchaseItemId String?
@@ -1860,6 +1894,16 @@ model Compensation {
   /// Bir talep ya alım kalemine ya iade kalemine bağlanır, ikisine değil.
   returnItemId String?
   returnItem   ReturnItem? @relation(fields: [returnItemId], references: [id], onDelete: SetNull)
+
+  /**
+   * HASARIN ÜÇÜNCÜ KAYNAĞI: iade BİLDİRİMİ.
+   * ⚠ `returnItemId` BU VAKADA İŞE YARAMIYOR. Kargoda kaybolan iadede
+   * `Return` HİÇ DOĞMUYOR (mal gelmedi, hüküm verilmedi) — dolayısıyla
+   * `ReturnItem` de yok ve bağlanacak bir şey kalmıyor. Oysa tam o anda
+   * bir ALACAK doğuyor. Bağ bir aşama yukarıya, bildirime kuruluyor.
+   */
+  returnNoticeId String?
+  returnNotice   ReturnNotice? @relation(fields: [returnNoticeId], references: [id], onDelete: SetNull)
 
   /// Talebe konu adet.
   quantity Int
@@ -1879,6 +1923,8 @@ model Compensation {
   @@index([status])
   @@index([purchaseItemId])
   @@index([returnItemId])
+  @@index([carrierId])
+  @@index([returnNoticeId])
 }
 
 /// Tekrarlayan gider ŞABLONU — gider DEĞİLDİR, hiçbir toplama girmez.

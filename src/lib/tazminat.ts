@@ -99,3 +99,49 @@ export function varsayilanTalepTutari(
   const yuvarlanmis = Math.round(adet * birimMaliyet * carpan) / carpan;
   return yuvarlanmis.toFixed(TUTAR_BASAMAK);
 }
+
+/**
+ * ============================================================================
+ *  KARŞI TARAF — "EN AZ BİRİ DOLU" KURALI
+ * ----------------------------------------------------------------------------
+ *  23.08.2026: tazminatın karşı tarafı ÜÇ türden biri olabilir hâle geldi
+ *  (docs/iade-sureci.md §12.1):
+ *
+ *    · tedarikçi   — mal bize bozuk geldi
+ *    · kargo       — iade 10 günde ulaşmadı, pazaryeri onayladı
+ *    · pazaryeri   — HB "Hurda Geliri"; ⚠ pazaryerleri ZATEN `Supplier`
+ *                    listesinde olduğu için ayrı alan gerekmedi
+ *
+ *  ⚠ BU KURAL ŞEMADA DEĞİL, BURADA — VE BİLEREK. `supplierId` zorunluluktan
+ *  çıkınca üç alanın da boş olduğu bir kayıt YAZILABİLİR hâle geldi ve
+ *  öyle bir kayıt ANLAMSIZDIR: kimden alacaklı olduğumuzu söylemeyen bir
+ *  alacak, alacak değildir. Prisma "en az biri dolu" kısıtını ifade
+ *  edemiyor (MySQL CHECK'i de şemadan yönetilemiyor), bu yüzden kapı
+ *  uygulama katmanında duruyor ve `tazminat:dogrula` onu sınıyor.
+ *
+ *  ⚠ SAF FONKSİYON: veritabanına gitmez, `Decimal` almaz. Hem sunucu
+ *  eylemi hem bekçi aynı gövdeyi çağırsın diye böyle — iki yerde iki
+ *  ölçüt olsaydı biri sessizce gevşerdi.
+ * ============================================================================
+ */
+export function karsiTarafGecerliMi(girdi: {
+  supplierId?: string | null;
+  carrierId?: string | null;
+}): boolean {
+  return Boolean(girdi.supplierId) || Boolean(girdi.carrierId);
+}
+
+/**
+ * Karşı tarafın ekranda görünen adı.
+ *
+ * ⚠ "—" DÖNMEZ, HANGİSİ OLDUĞUNU SÖYLER. Adsız satır yazılmaz (İlke #14);
+ * karşı tarafı olmayan bir tazminat zaten `karsiTarafGecerliMi`den
+ * geçemez, ama eski kayıtlar ya da bozuk veri için sessiz kalmak yerine
+ * görünür bir işaret bırakılır.
+ */
+export function karsiTarafAdi(kayit: {
+  supplier?: { name: string } | null;
+  carrier?: { name: string } | null;
+}): string | null {
+  return kayit.supplier?.name ?? kayit.carrier?.name ?? null;
+}
