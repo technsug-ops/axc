@@ -2275,17 +2275,27 @@
     "CAYMA": "Cayma hakkı",
     "KULLANILMIS_ITIRAZ": "Kullanılmış — itiraz",
     "YANLIS_URUN": "Yanlış ürün gönderildi",
-    "DIGER": "Diğer"
+    "DIGER": "Diğer",
+    "BEDEN_KUCUK": "Bedeni/ebatı küçük geldi",
+    "BEDEN_BUYUK": "Bedeni/ebatı büyük geldi",
+    "DAHA_UCUZ": "Daha iyi bir fiyat bulundu",
+    "PARCA_EKSIK": "Parça/aksesuar eksik gönderildi",
+    "URUN_EKSIK": "Ürün eksik geldi",
+    "HASARLI": "Ürün hasarlı",
+    "BOS_PAKET": "Boş paket geldi"
   },
   "BildirimDurumu": {
     "BEKLENIYOR": "Mal yolda",
     "MAL_GELDI": "Mal geldi",
     "ITIRAZ_ACILDI": "İtiraz açıldı",
     "ITIRAZ_INCELEMEDE": "İtiraz incelemede",
-    "ITIRAZ_KABUL": "İtiraz kabul (lehe)",
+    "ITIRAZ_KABUL": "İtiraz kazanıldı — geri gönderilecek",
     "ITIRAZ_RED": "İtiraz red (aleyhe)",
     "KAPANDI": "Kapandı",
-    "IPTAL": "İptal"
+    "IPTAL": "İptal",
+    "KARGOYA_VERILDI": "Kargoya verildi",
+    "ANALIZ": "Analizde (serviste)",
+    "ASKIDA": "Askıda — akış durdu"
   },
   "Bildirim2": {
     "aciklamaMetni": "Pazaryeri iade talebini bildirdi, mal henüz yolda. Bu kayıt stok ve kâr hesabına DOKUNMAZ; mal gelip hüküm verilince \"İadeyi işle\" ile gerçek iade açılır.",
@@ -2319,7 +2329,7 @@
     "iadeyiIsle": "İadeyi işle",
     "iadeIslendi": "İade işlendi",
     "iadeIsleSebepBekleniyor": "Mal gelmeden iade işlenemez — önce \"Mal geldi\" işaretlenir.",
-    "iadeIsleSebepItirazKabul": "İtiraz kazanıldı, ürün müşteride kaldı; iade işlenmez.",
+    "iadeIsleSebepItirazKabul": "İtiraz kazanıldı; iade işlenmez. Ürün sizde — kargo koduyla müşteriye geri gönderilecek.",
     "iadeIsleSebepIptal": "Bildirim iptal edildi, mal hiç gelmedi.",
     "iadeIsleSebepKapandi": "Bildirim kapandı.",
     "iadeIsleSebepDiger": "Bu durumda iade işlenemez.",
@@ -2343,7 +2353,9 @@
     "gecisOnayAciklama": "Bu durum değişikliği GERİ ALINAMAZ. Bildirim akışı ileri gider; önceki duruma dönüş yoktur. Devam etmek istiyor musunuz?",
     "gecisOnayla": "Evet, işaretle",
     "satisIpucu": "Sipariş numarasıyla arayın. Pazaryeri talep no (ör. nbkhuj) burada değil, aşağıdaki \"Pazaryeri talep no\" alanına yazılır.",
-    "satisPencereIpucu": "Sipariş numarasıyla arayın (ör. 11504122276). Ürün SKU'su veya talep no değil."
+    "satisPencereIpucu": "Sipariş numarasıyla arayın (ör. 11504122276). Ürün SKU'su veya talep no değil.",
+    "iadeIsleSebepAnaliz": "Ürün serviste; analiz sonuçlanmadan iade işlenmez.",
+    "iadeIsleSebepAskida": "İade akıştan çıkmış (askıda); önce durumu düzelmelidir."
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",
@@ -2357,9 +2369,15 @@
     "siradakiBekleniyor": "Sıradaki adım: mal elinize geçince \"Mal geldi olarak işaretle\"ye basın. İade ancak ondan sonra işlenebilir. Müşteri vazgeçtiyse \"Bildirimi iptal et\".",
     "siradakiMalGeldi": "Sıradaki adım: \"İadeyi işle\" ile iade formuna geçin. Ürün kullanılmış geldiyse önce \"İtiraz aç\".",
     "siradakiItiraz": "Sıradaki adım: pazaryerinden sonuç gelince kazanıldı ya da kaybedildi olarak işaretleyin.",
-    "siradakiItirazKabul": "İtiraz kazanıldı: ürün müşteride, para bizde. İade İŞLENMEZ; yapılacak tek şey bildirimi kapatmak.",
+    "siradakiItirazKabul": "Sıradaki adım: itirazı kazandınız ve ÜRÜN SİZDE. Pazaryeri panelinden kargo kodunu alıp ürünü 2 iş günü içinde müşteriye geri gönderin, sonra bildirimi kapatın.",
     "siradakiItirazRed": "İtiraz kaybedildi: normal iade akışı işler. \"İadeyi işle\" ile devam edin.",
-    "siradakiYok": "Bu bildirim kapandı; yapılacak işlem yok."
+    "siradakiYok": "Bu bildirim kapandı; yapılacak işlem yok.",
+    "KARGOYA_VERILDI": "Kargoya verildi olarak işaretle",
+    "ANALIZ": "Analize alındı olarak işaretle",
+    "ASKIDA": "Askıya alındı olarak işaretle",
+    "siradakiKargoyaVerildi": "Sıradaki adım: mal elinize geçince “Mal geldi olarak işaretle” düğmesine basın.",
+    "siradakiAnaliz": "Sıradaki adım: ürün serviste. 28 gün içinde sonuçlanıp kargolanması gerekir; sonuç gelince itirazın kazanıldığını ya da kaybedildiğini işaretleyin.",
+    "siradakiAskida": "Sıradaki adım: iade normal akıştan çıkmış. Pazaryeri panelinden sebebini görün (kargo problemi, statü uyumsuzluğu vb.); çözülünce kaldığı durumdan devam edin."
   },
   "Ekler": {
     "baslik": "Dosya ekleri ({sayi})",

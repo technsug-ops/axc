@@ -17,6 +17,8 @@
 
 import { readFileSync } from "node:fs";
 
+import { BILDIRIM_DURUM_RENGI } from "../src/lib/durum-renkleri";
+
 import {
   DEGISIM_GEREKCELERI,
   IADE_ISLE_SEBEP_ANAHTARI,
@@ -1174,14 +1176,42 @@ console.log("\n8) GERİ ALINAMAZ GEÇİŞ — ONAY ZORUNLU");
   /**
    * ÖNCE İDDİANIN KENDİSİ: bu makinede hiçbir kenar geriye gitmiyor mu?
    * Onay kuralının gerekçesi bu; gerekçe çürürse kural da gözden geçirilmeli.
+   *
+   * ⚠ TEK BEYAN EDİLMİŞ İSTİSNA: `ASKIDA` (23.08.2026).
+   *
+   * "Askıda İadeler" bizim SEÇTİĞİMİZ bir durum değil, iadenin BAŞINA GELEN
+   * bir durum (kargo problemi, statü uyumsuzluğu, pazaryerinin ek
+   * incelemesi — docs/iade-sureci.md §2). Arıza çözülünce iade kaldığı
+   * yerden devam eder; ileri bir kapıya zorlamak, çözülmüş bir iadeyi
+   * YANLIŞ duruma sokardı.
+   *
+   * ⚠ İSTİSNA ADIYLA BEYAN EDİLİYOR, ölçüt gevşetilmiyor: `ASKIDA` dışında
+   * geri dönüş çıkarsa kontrol yine kırmızı yanar. Beyan edilmeyen bir
+   * istisna, kuralın sessizce kalkması olurdu.
    */
-  let geriDonusVar = false;
+  const geriDonenler: string[] = [];
   for (const kaynak of durumlar) {
     for (const hedef of IZINLI_GECISLER[kaynak]) {
-      if (IZINLI_GECISLER[hedef].includes(kaynak)) geriDonusVar = true;
+      if (kaynak === "ASKIDA" || hedef === "ASKIDA") continue;
+      if (IZINLI_GECISLER[hedef].includes(kaynak)) {
+        geriDonenler.push(`${kaynak}<->${hedef}`);
+      }
     }
   }
-  kontrol("hiçbir geçiş geri alınamıyor (onay kuralının gerekçesi)", !geriDonusVar);
+  kontrol(
+    "ASKIDA dışında hiçbir geçiş geri alınamıyor (onay kuralının gerekçesi)",
+    geriDonenler.length === 0,
+    geriDonenler,
+  );
+  /**
+   * İSTİSNANIN KENDİSİ DE ÖLÇÜLÜR: `ASKIDA` gerçekten geri dönüşlü olmalı.
+   * Biri onu tek yönlü yapıp beyanı unutursa, yukarıdaki muafiyet sessizce
+   * bir hiçbir şeyi korumayan satıra döner.
+   */
+  kontrol(
+    "  ...ve ASKIDA gerçekten geri dönüşlü (istisna boşa yazılmamış)",
+    IZINLI_GECISLER.ASKIDA.some((h) => IZINLI_GECISLER[h].includes("ASKIDA")),
+  );
 
   for (const hedef of durumlar) {
     kontrol(`  ${hedef} geçişi onay istiyor`, gecisOnayIster(hedef));
@@ -1611,6 +1641,203 @@ console.log("\n10) AÇIK BİLDİRİM ÖLÇÜTÜ VE İADE EKRANI DÜZENİ");
     "ürün tablosu sıralama iddiası taşımıyor",
     sayfa10.includes('t("iadeEdilenUrunler")') &&
       !sayfa10.includes('t("enCokIade")'),
+  );
+
+
+  // ── PAZARYERİ AKIŞIYLA HİZALAMA (23.08.2026) ──────────────────────────
+  /**
+   * Kaynak: docs/iade-sureci.md. Modelimiz akışın yarısını tutuyordu;
+   * eksik aşamalar eklendi. Kontroller DEĞERDEN sınıyor — enum'un kendisi
+   * ve geçiş haritası, kaynak metni değil.
+   */
+  for (const yeni of ["KARGOYA_VERILDI", "ANALIZ", "ASKIDA"] as const) {
+    kontrol(
+      `akış aşaması modelde var: ${yeni}`,
+      (Object.keys(IZINLI_GECISLER) as string[]).includes(yeni),
+    );
+  }
+
+  /**
+   * ⚠ "KARGOYA VERİLDİ" ATLANABİLİR OLMALI. Bildirim geç girilmiş olabilir;
+   * operasyoncuyu var olmayan bir ara adıma zorlamak sırf model güzel
+   * görünsün diye fazladan tık demektir (İlke #9).
+   */
+  kontrol(
+    "  ...ama ara adım ZORUNLU değil (BEKLENIYOR'dan doğrudan MAL_GELDI)",
+    IZINLI_GECISLER.BEKLENIYOR.includes("MAL_GELDI"),
+  );
+
+  /**
+   * ⚠ ANALİZ DOĞRUDAN KAPANAMAZ. Sonuç ne olursa olsun yapılacak bir iş
+   * kalıyor — ürün geri gönderilecek ya da iade işlenecek — ve o iş kendi
+   * durumunda görünmeli. `KAPANDI` kısayolu, serviste 28 gün bekleyen bir
+   * ürünü tek tıkla "bitti" yapardı.
+   */
+  kontrol(
+    "analiz doğrudan KAPANDI'ya gidemiyor",
+    !IZINLI_GECISLER.ANALIZ.includes("KAPANDI"),
+  );
+  kontrol(
+    "  ...iki kapıdan birine gidiyor (geri gönder / iade onayla)",
+    IZINLI_GECISLER.ANALIZ.includes("ITIRAZ_KABUL") &&
+      IZINLI_GECISLER.ANALIZ.includes("ITIRAZ_RED"),
+  );
+
+  /**
+   * ⚠ ASKIDA HER AŞAMADAN ERİŞİLEBİLİR OLMALI. İadenin BAŞINA GELEN bir
+   * durum; yalnız bir aşamadan girilebilseydi, öteki aşamalarda takılan
+   * iade hiçbir yerde görünmezdi.
+   */
+  /**
+   * ⚠ ÖLÇÜT "BİRDEN ÇOK" DEĞİL, "HEPSİ" — mutasyon ilkini geçirdi.
+   * İlk yazımda `>= 4` denmişti; bir aşamadan ASKIDA kaldırıldığında sayı
+   * 4'te kaldı ve kontrol yeşil yandı. Uydurma bir alt sınır, kuralı
+   * korumaz. Doğru ölçüt ilkeseldir: askıya düşmek iadenin BAŞINA GELİR,
+   * yani AÇIK olan her aşamadan mümkün olmalı.
+   */
+  const acikAsamalar = ACIK_BILDIRIM_DURUMLARI.filter((d) => d !== "ASKIDA");
+  const askiyaGidemeyen = acikAsamalar.filter(
+    (d) => !IZINLI_GECISLER[d].includes("ASKIDA"),
+  );
+  kontrol(
+    "askıya AÇIK olan her aşamadan girilebiliyor",
+    askiyaGidemeyen.length === 0,
+    askiyaGidemeyen,
+  );
+
+  /**
+   * ⚠ YENİ AŞAMALAR "AÇIK" SAYILMALI. `ACIK_BILDIRIM_DURUMLARI` durum
+   * makinesinden türüyor, yani bu kendiliğinden doğru olmalı — ama tam da
+   * bu yüzden sınanır: türetme bozulursa üç yeni aşama sessizce bekleyen
+   * işlerden düşerdi ve panel rozeti eksik sayardı.
+   */
+  for (const yeni of ["KARGOYA_VERILDI", "ANALIZ", "ASKIDA"] as const) {
+    kontrol(
+      `  ...${yeni} bekleyen iş sayılıyor`,
+      ACIK_BILDIRIM_DURUMLARI.includes(yeni),
+    );
+  }
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  OLGUSAL DÜZELTME KİLİDİ — "ürün müşteride kalır" GERİ GELMESİN
+   * --------------------------------------------------------------------
+   *  Şema ve sözlük `ITIRAZ_KABUL` için _"ürün müşteride kalır"_ diyordu.
+   *  ÖLÇÜLDÜ ve YANLIŞ çıktı: ürün "Aksiyon Bekleyen" aşamasında bize
+   *  gelmişti; itirazı kazanınca kargo kodu alınıp 2 iş günü içinde geri
+   *  gönderiliyor (docs/iade-sureci.md §5).
+   *
+   *  Para tarafı zaten doğruydu (`Return` doğmuyor); yanlış olan GEREKÇEYDİ
+   *  ve o yüzden fiziksel iş görünmüyordu. Bu kontrol yanlış cümlenin geri
+   *  dönmesini engelliyor — bir yorum kendini savunamaz.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const sema = readFileSync("prisma/schema.prisma", "utf8");
+  /**
+   * ⚠ CÜMLEYİ ARAMAK YETMEZ — "ESKİ GEREKÇE SİLİNMEZ" KURALI VAR.
+   *
+   * Yanlış cümle, DÜZELTİLDİĞİ BEYAN EDİLEREK dosyada kalabilir (CLAUDE.md:
+   * _"Karar çevrildiğinde önceki savunma, NİYE çevrildiğiyle birlikte
+   * dosyada bırakılır"_). İlk yazımda düz arama yapıldı ve kontrol kendi
+   * düzeltme notumu suçladı.
+   *
+   * Doğru ölçüt: cümle geçiyorsa YAKININDA "YANLIŞ" beyanı olmalı. Yani
+   * yasak olan cümlenin VARLIĞI değil, HÜKÜM OLARAK kurulması.
+   */
+  /**
+   * ⚠ YAKINLIK PENCERESİ YETMEDİ — mutasyon geçti. İlk yazımda "±400
+   * karakterde YANLIŞ geçiyorsa muaf" denmişti; yanlış cümleyi düzeltme
+   * notunun HEMEN ÜSTÜNE koyan mutasyon o pencereye düştü ve kontrol
+   * yeşil kaldı. Yakınlık bir ölçüt değil, tesadüftür.
+   *
+   * Doğru ölçüt BİÇİMSEL: eski sürüm ALINTIDIR ve alıntı olarak yazılır
+   * (`_"..."_`). Önce bütün alıntılar metinden düşürülür; kalan yerde
+   * cümle geçiyorsa o bir HÜKÜMDÜR ve yasaktır.
+   */
+  const bayatCumle = (metin: string) => {
+    const alintisiz = metin.replace(/_"[\s\S]*?"_/g, " ");
+    return [...alintisiz.matchAll(/ürün müşteride kal[a-zı]*/gi)];
+  };
+  for (const [ad, yol] of [
+    ["şema", "prisma/schema.prisma"],
+    ["durum makinesi", "src/lib/iade/bildirim.ts"],
+  ] as const) {
+    const kacak = bayatCumle(readFileSync(yol, "utf8"));
+    kontrol(
+      `${ad}: 'ürün müşteride kalır' artık HÜKÜM olarak kurulmuyor`,
+      kacak.length === 0,
+      kacak.map((m) => m[0]),
+    );
+  }
+  const sozluk10b = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Bildirim2?: Record<string, string>;
+    BildirimGecisi?: Record<string, string>;
+    BildirimDurumu?: Record<string, string>;
+  };
+  kontrol(
+    "  ...sözlük de demiyor",
+    !/müşteride kald/i.test(
+      JSON.stringify([
+        sozluk10b.Bildirim2,
+        sozluk10b.BildirimGecisi,
+        sozluk10b.BildirimDurumu,
+      ]),
+    ),
+  );
+  /**
+   * VE DOĞRUSU YAZIYOR: kazanılan itirazdan sonra YAPILACAK İŞ var.
+   * "Yanlış cümle yok" tek başına yetmez — doğru cümlenin varlığı ayrı
+   * sınanır, yoksa metin sessizce boşalabilir.
+   */
+  kontrol(
+    "  ...ve yerine YAPILACAK İŞ yazıyor (kargo kodu + geri gönderim)",
+    /kargo kodu/i.test(sozluk10b.BildirimGecisi?.siradakiItirazKabul ?? "") &&
+      /geri gönder/i.test(
+        sozluk10b.BildirimGecisi?.siradakiItirazKabul ?? "",
+      ),
+  );
+
+  /**
+   * ⚠ İKİ SAAT, İKİ SÜTUN. `otomatikOnayTarihi` ONLARIN ne zaman otomatik
+   * onaylayacağı (olgu); `islemSonTarihi` BİZİM ne zamana kadar yapmamız
+   * gerektiği (yükümlülük). Tek sütuna sıkıştırılsaydı biri ötekini ezerdi.
+   */
+  for (const alan of ["otomatikOnayTarihi", "islemSonTarihi"]) {
+    kontrol(`şemada ayrı sütun: ${alan}`, sema.includes(`${alan} DateTime?`));
+  }
+  /**
+   * ⚠ OTOMATİK ONAY TARİHİ HESAPLANMAZ, KAYDEDİLİR. Kuralı ölçemedik
+   * (docs/iade-sureci.md §8.1: iki kayıt ~34,6 ve ~15,8 gün verdi).
+   * Bilmediğimiz bir kuraldan tarih türetmek, sistemin takip etmediği şey
+   * hakkında iddia kurmaktır. Kodda böyle bir türetme OLMAMALI.
+   */
+  const bildirimEylem = readFileSync(
+    "src/app/iadeler/bildirim-actions.ts",
+    "utf8",
+  );
+  kontrol(
+    "otomatik onay tarihi TÜRETİLMİYOR (gün ekleyerek hesaplanmıyor)",
+    !/otomatikOnayTarihi[^;]{0,120}gunEkle/.test(bildirimEylem),
+  );
+
+  /**
+   * ⚠ "GELİŞ YOLU" AYRI SÜTUN AÇMADAN TÜRETİLEBİLMELİ. "Reddedilen"e üç
+   * yoldan gelinir ve üçünde kargoyu ödeyen taraf farklıdır; ayrı bir
+   * sütun yerine `analizSonucu` + `itirazGerekcesi` yetiyor (şema
+   * merdiveninde bir basamak tasarruf).
+   */
+  for (const alan of ["itirazGerekcesi", "analizSonucu"]) {
+    kontrol(`  şemada var: ${alan}`, sema.includes(alan));
+  }
+  kontrol(
+    "  ...ayrı bir 'geliş yolu' sütunu AÇILMAMIŞ (türetiliyor)",
+    !/gelisYolu|reddedilmeYolu/i.test(sema),
+  );
+
+  /** Askıda KIRMIZI: sıradan bir ara durum değil, arıza. */
+  kontrol(
+    "askıda durumu OLUMSUZ renkte (sıradan bekleme değil)",
+    BILDIRIM_DURUM_RENGI.ASKIDA === "olumsuz",
   );
 
   kosanBolumler.push("acik-olcut-ve-duzen");

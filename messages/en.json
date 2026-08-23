@@ -2275,7 +2275,14 @@
     "CAYMA": "",
     "KULLANILMIS_ITIRAZ": "",
     "YANLIS_URUN": "",
-    "DIGER": ""
+    "DIGER": "",
+    "BEDEN_KUCUK": "",
+    "BEDEN_BUYUK": "",
+    "DAHA_UCUZ": "",
+    "PARCA_EKSIK": "",
+    "URUN_EKSIK": "",
+    "HASARLI": "",
+    "BOS_PAKET": ""
   },
   "BildirimDurumu": {
     "BEKLENIYOR": "",
@@ -2285,7 +2292,10 @@
     "ITIRAZ_KABUL": "",
     "ITIRAZ_RED": "",
     "KAPANDI": "",
-    "IPTAL": ""
+    "IPTAL": "",
+    "KARGOYA_VERILDI": "",
+    "ANALIZ": "",
+    "ASKIDA": ""
   },
   "Bildirim2": {
     "aciklamaMetni": "",
@@ -2343,7 +2353,9 @@
     "gecisOnayAciklama": "",
     "gecisOnayla": "",
     "satisIpucu": "",
-    "satisPencereIpucu": ""
+    "satisPencereIpucu": "",
+    "iadeIsleSebepAnaliz": "",
+    "iadeIsleSebepAskida": ""
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "",
@@ -2359,7 +2371,13 @@
     "siradakiItiraz": "",
     "siradakiItirazKabul": "",
     "siradakiItirazRed": "",
-    "siradakiYok": ""
+    "siradakiYok": "",
+    "KARGOYA_VERILDI": "",
+    "ANALIZ": "",
+    "ASKIDA": "",
+    "siradakiKargoyaVerildi": "",
+    "siradakiAnaliz": "",
+    "siradakiAskida": ""
   },
   "Ekler": {
     "baslik": "",

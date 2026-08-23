@@ -122,6 +122,15 @@ const GEREKCE_SIRASI: Record<ReturnReason, null> = {
   CAYMA: null,
   KULLANILMIS_ITIRAZ: null,
   YANLIS_URUN: null,
+  /* Pazaryerinin kendi listesinden — bkz. docs/iade-sureci.md §3.
+     Sıra formdaki sıradır; müşterinin en sık seçtikleri üstte. */
+  BEDEN_KUCUK: null,
+  BEDEN_BUYUK: null,
+  DAHA_UCUZ: null,
+  PARCA_EKSIK: null,
+  URUN_EKSIK: null,
+  HASARLI: null,
+  BOS_PAKET: null,
   DIGER: null,
 };
 
@@ -139,17 +148,28 @@ export async function iadeGerekceEtiketleri(): Promise<
     CAYMA: tGerekce("CAYMA"),
     KULLANILMIS_ITIRAZ: tGerekce("KULLANILMIS_ITIRAZ"),
     YANLIS_URUN: tGerekce("YANLIS_URUN"),
+    BEDEN_KUCUK: tGerekce("BEDEN_KUCUK"),
+    BEDEN_BUYUK: tGerekce("BEDEN_BUYUK"),
+    DAHA_UCUZ: tGerekce("DAHA_UCUZ"),
+    PARCA_EKSIK: tGerekce("PARCA_EKSIK"),
+    URUN_EKSIK: tGerekce("URUN_EKSIK"),
+    HASARLI: tGerekce("HASARLI"),
+    BOS_PAKET: tGerekce("BOS_PAKET"),
     DIGER: tGerekce("DIGER"),
   };
 }
 
+/** Sıra AKIŞIN sırasıdır (docs/iade-sureci.md §1) — tesadüfe bırakılmıyor. */
 const BILDIRIM_DURUM_SIRASI: Record<NoticeStatus, null> = {
   BEKLENIYOR: null,
+  KARGOYA_VERILDI: null,
   MAL_GELDI: null,
   ITIRAZ_ACILDI: null,
   ITIRAZ_INCELEMEDE: null,
+  ANALIZ: null,
   ITIRAZ_KABUL: null,
   ITIRAZ_RED: null,
+  ASKIDA: null,
   KAPANDI: null,
   IPTAL: null,
 };
@@ -164,11 +184,14 @@ export async function bildirimDurumEtiketleri(): Promise<
   const tBildirimDurumu = await getTranslations("BildirimDurumu");
   return {
     BEKLENIYOR: tBildirimDurumu("BEKLENIYOR"),
+    KARGOYA_VERILDI: tBildirimDurumu("KARGOYA_VERILDI"),
     MAL_GELDI: tBildirimDurumu("MAL_GELDI"),
     ITIRAZ_ACILDI: tBildirimDurumu("ITIRAZ_ACILDI"),
     ITIRAZ_INCELEMEDE: tBildirimDurumu("ITIRAZ_INCELEMEDE"),
+    ANALIZ: tBildirimDurumu("ANALIZ"),
     ITIRAZ_KABUL: tBildirimDurumu("ITIRAZ_KABUL"),
     ITIRAZ_RED: tBildirimDurumu("ITIRAZ_RED"),
+    ASKIDA: tBildirimDurumu("ASKIDA"),
     KAPANDI: tBildirimDurumu("KAPANDI"),
     IPTAL: tBildirimDurumu("IPTAL"),
   };
@@ -191,11 +214,14 @@ export async function bildirimGecisEtiketleri(): Promise<
   const tGecis = await getTranslations("BildirimGecisi");
   return {
     BEKLENIYOR: tGecis("BEKLENIYOR"),
+    KARGOYA_VERILDI: tGecis("KARGOYA_VERILDI"),
     MAL_GELDI: tGecis("MAL_GELDI"),
     ITIRAZ_ACILDI: tGecis("ITIRAZ_ACILDI"),
     ITIRAZ_INCELEMEDE: tGecis("ITIRAZ_INCELEMEDE"),
+    ANALIZ: tGecis("ANALIZ"),
     ITIRAZ_KABUL: tGecis("ITIRAZ_KABUL"),
     ITIRAZ_RED: tGecis("ITIRAZ_RED"),
+    ASKIDA: tGecis("ASKIDA"),
     KAPANDI: tGecis("KAPANDI"),
     IPTAL: tGecis("IPTAL"),
   };
@@ -214,11 +240,14 @@ export async function bildirimSiradakiAdim(): Promise<
   const tGecis = await getTranslations("BildirimGecisi");
   return {
     BEKLENIYOR: tGecis("siradakiBekleniyor"),
+    KARGOYA_VERILDI: tGecis("siradakiKargoyaVerildi"),
     MAL_GELDI: tGecis("siradakiMalGeldi"),
     ITIRAZ_ACILDI: tGecis("siradakiItiraz"),
     ITIRAZ_INCELEMEDE: tGecis("siradakiItiraz"),
+    ANALIZ: tGecis("siradakiAnaliz"),
     ITIRAZ_KABUL: tGecis("siradakiItirazKabul"),
     ITIRAZ_RED: tGecis("siradakiItirazRed"),
+    ASKIDA: tGecis("siradakiAskida"),
     KAPANDI: tGecis("siradakiYok"),
     IPTAL: tGecis("siradakiYok"),
   };

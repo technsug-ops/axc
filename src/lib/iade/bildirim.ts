@@ -28,23 +28,56 @@ import type { NoticeStatus, ReturnReason } from "@/generated/prisma/enums";
  * ledger'a yanlış kayıt yazdırır.
  */
 export const IZINLI_GECISLER: Record<NoticeStatus, NoticeStatus[]> = {
-  // Mal yolda. Ya gelir, ya müşteri vazgeçer.
-  BEKLENIYOR: ["MAL_GELDI", "IPTAL"],
   /**
-   * Mal geldi. Üç yol var: iade işlenir (KAPANDI), kullanılmış çıktı ve
-   * itiraz açılır, ya da hüküm beklenirken burada durur.
+   * "Talep Oluşturulan". Müşteri iade açtı, mal HENÜZ KARGODA DEĞİL.
+   * ⚠ `MAL_GELDI` doğrudan da açık: bildirim geç girilmiş olabilir ve
+   * operasyoncuyu var olmayan bir ara adıma zorlamak, sırf model güzel
+   * görünsün diye fazladan tık demektir (İlke #9).
+   */
+  BEKLENIYOR: ["KARGOYA_VERILDI", "MAL_GELDI", "IPTAL", "ASKIDA"],
+  /** "Kargoya Verilen": mal yolda. Müşteri 7 gün vermezse pazaryeri iptal eder. */
+  KARGOYA_VERILDI: ["MAL_GELDI", "IPTAL", "ASKIDA"],
+  /**
+   * "Aksiyon Bekleyen": mal elimizde. Üç yol — onayla (KAPANDI), reddet
+   * (ITIRAZ_ACILDI), ya da iade akıştan çıkar (ASKIDA).
    * İPTAL YOK: mal elimizde, "hiç olmadı" sayılamaz.
    */
-  MAL_GELDI: ["ITIRAZ_ACILDI", "KAPANDI"],
-  ITIRAZ_ACILDI: ["ITIRAZ_INCELEMEDE", "ITIRAZ_KABUL", "ITIRAZ_RED"],
-  ITIRAZ_INCELEMEDE: ["ITIRAZ_KABUL", "ITIRAZ_RED"],
+  MAL_GELDI: ["ITIRAZ_ACILDI", "KAPANDI", "ASKIDA"],
+  /** "İhtilaflı": pazaryeri inceliyor. ANALIZ kararını PAZARYERİ verir. */
+  ITIRAZ_ACILDI: [
+    "ITIRAZ_INCELEMEDE",
+    "ITIRAZ_KABUL",
+    "ITIRAZ_RED",
+    "ANALIZ",
+    "ASKIDA",
+  ],
+  ITIRAZ_INCELEMEDE: ["ITIRAZ_KABUL", "ITIRAZ_RED", "ANALIZ", "ASKIDA"],
   /**
-   * LEHE sonuç: ürün müşteride kalır, para bizde kalır. İade İŞLENMEZ —
-   * bu yüzden tek çıkışı KAPANDI ve o kapanışta `Return` doğmaz.
+   * "Analiz": ürün serviste, 28 gün. Sonuç ne olursa olsun iki kapıdan
+   * birine gider — geri gönderilir (ITIRAZ_KABUL) ya da iade onaylanır
+   * (ITIRAZ_RED). Doğrudan KAPANDI yok: her iki hâlde de yapılacak bir iş
+   * kalıyor ve o iş kendi durumunda görünmeli.
    */
-  ITIRAZ_KABUL: ["KAPANDI"],
-  /** ALEYHE sonuç: normal iade akışı işler, `Return` doğar. */
-  ITIRAZ_RED: ["KAPANDI"],
+  ANALIZ: ["ITIRAZ_KABUL", "ITIRAZ_RED", "ASKIDA"],
+  /**
+   * "Reddedilen" — satıcı haklı bulundu. ⚠ BU BİR KAPANIŞ DEĞİL, İŞ
+   * BAŞLANGICI: kargo kodu alınır, ürün 2 iş günü içinde müşteriye geri
+   * gönderilir. Kapanış o gönderim yapılınca yazılır.
+   */
+  ITIRAZ_KABUL: ["KAPANDI", "ASKIDA"],
+  /** İtirazımız reddedildi → normal iade akışı işler, `Return` doğar. */
+  ITIRAZ_RED: ["KAPANDI", "ASKIDA"],
+  /**
+   * "Askıda İadeler": iade normal akıştan ÇIKTI (kargo problemi, statü
+   * uyumsuzluğu, pazaryerinin ek incelemesi). Bizim seçtiğimiz bir durum
+   * değil, iadenin BAŞINA GELEN bir durum.
+   *
+   * ⚠ TEK GERİ DÖNÜŞLÜ DURUM BUDUR ve bilerek öyle. Arıza çözülünce iade
+   * kaldığı yerden devam eder; ileri bir kapıya zorlamak, çözülmüş bir
+   * iadeyi yanlış duruma sokardı. Bu istisna `rma:dogrula`da ADIYLA beyan
+   * edilir — "geri dönüş yok" değişmezi onun dışında geçerlidir.
+   */
+  ASKIDA: ["MAL_GELDI", "ITIRAZ_ACILDI", "KAPANDI", "IPTAL"],
   // Uç durumlar — buradan çıkış yok.
   KAPANDI: [],
   IPTAL: [],
@@ -99,9 +132,15 @@ export const ACIK_BILDIRIM_DURUMLARI: NoticeStatus[] = (
  * ITIRAZ_RED — itiraz kaybedildi, iade işlenecek.
  *
  * BEKLENIYOR'da KAPALI: mal gelmeden iade işlemek, gelmemiş malı stoğa
- * sokmak demek. ITIRAZ_KABUL'de KAPALI: ürün müşteride kaldı, iade YOK —
+ * sokmak demek. ITIRAZ_KABUL'de KAPALI: itirazı kazandık, iade DOĞMAZ —
  * burada düğmeyi açık bırakmak, kazanılmış bir itirazdan sonra ciroyu
  * yanlışlıkla düşürmenin en kolay yolu olurdu.
+ *
+ * ⚠ GEREKÇE DÜZELTİLDİ 23.08.2026 — eskiden burada _"ürün müşteride kaldı"_
+ * yazıyordu ve bu OLGUSAL OLARAK YANLIŞTI: ürün "Aksiyon Bekleyen"
+ * aşamasında bize geldi, elimizde. Kazanılan itirazdan sonra kargo koduyla
+ * müşteriye GERİ GÖNDERİLİYOR (docs/iade-sureci.md §5). Hüküm aynı kalıyor
+ * (iade işlenmez), sebebi düzeldi.
  */
 export const IADE_ISLENEBILIR: NoticeStatus[] = ["MAL_GELDI", "ITIRAZ_RED"];
 
@@ -118,7 +157,12 @@ export function iadeIslenebilirMi(durum: NoticeStatus): boolean {
  * toplanır: bildirim kapanınca rozet kendiliğinden düşer ve
  * "rezervasyonu serbest bırakmayı unutma" diye bir iş doğmaz.
  *
- * ITIRAZ_KABUL AÇIK SAYILMAZ: ürün müşteride kaldı, değişim gönderilmiyor.
+ * ITIRAZ_KABUL AÇIK SAYILMAZ: itiraz kazanıldı, değişim gönderilmiyor.
+ *
+ * ⚠ GEREKÇE DÜZELTİLDİ 23.08.2026 — eskiden _"ürün müşteride kaldı"_
+ * yazıyordu, YANLIŞTI (ürün bizde, geri gönderilecek). Sonuç değişmedi:
+ * geri giden ürün stoktan AYRILAN bir ürün değil, iadenin kendisidir —
+ * bu yüzden "ayrılmış" sayacına girmez.
  */
 export const AYRILMIS_SAYILAN_DURUMLAR: NoticeStatus[] = [
   "BEKLENIYOR",
@@ -355,9 +399,15 @@ export const IADE_ISLE_SEBEP_ANAHTARI: Record<NoticeStatus, string | null> = {
   MAL_GELDI: null,
   ITIRAZ_RED: null,
   BEKLENIYOR: "iadeIsleSebepBekleniyor",
+  /* Mal yolda — gelmemiş malı stoğa sokmak, olmayan bir girişi yazmaktır. */
+  KARGOYA_VERILDI: "iadeIsleSebepBekleniyor",
   ITIRAZ_ACILDI: "iadeIsleSebepItirazSuruyor",
   ITIRAZ_INCELEMEDE: "iadeIsleSebepItirazSuruyor",
+  /* Ürün serviste; hüküm analiz bitmeden verilemez. */
+  ANALIZ: "iadeIsleSebepAnaliz",
   ITIRAZ_KABUL: "iadeIsleSebepItirazKabul",
+  /* Akıştan çıkmış iade üzerinde defter işlemi yapılmaz — önce arıza çözülür. */
+  ASKIDA: "iadeIsleSebepAskida",
   KAPANDI: "iadeIsleSebepKapandi",
   IPTAL: "iadeIsleSebepIptal",
 };

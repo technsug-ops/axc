@@ -95,6 +95,21 @@ enum ReturnReason {
   CALISMIYOR // gelince servise/analize gider, hüküm sonra
   CAYMA // gelince muayene; sağlamsa onay
   KULLANILMIS_ITIRAZ // kullanılmış çıktı; pazaryerine itiraz edildi
+  /// ── PAZARYERİNİN KENDİ LİSTESİNDEN (docs/iade-sureci.md §3) ──
+  /// 23.08.2026: Trendyol müşteri uygulamasının "İade Sebebi Seçiniz"
+  /// listesi ölçüldü ve bizim 7 değerimizin çoğunun karşılığı çıkmadı;
+  /// hepsi `DIGER`e düşüyordu. En kötüsü, `DIGER`e düşenler tam da PARASI
+  /// GERİ ALINABİLİR olanlardı (hasar → kargo tazminatı, eksik parça →
+  /// tedarikçi). Aşağıdakiler eklendi; ESKİLER SİLİNMEDİ (mevcut kayıtlar
+  /// onlara bağlı ve `KULLANILMIS_ITIRAZ` gibi bazıları bizim
+  /// sınıflandırmamız, müşterinin sebebi değil).
+  BEDEN_BUYUK // "Bedeni/Ebatı Büyük Geldi"
+  BEDEN_KUCUK // "Bedeni/Ebatı Küçük Geldi"
+  DAHA_UCUZ // "Daha iyi bir fiyat mevcut"
+  PARCA_EKSIK // "Ürünümün parçası/aksesuarı eksik gönderildi"
+  HASARLI // ürün hasarlı — kargo şirketine tazmin başvurusu yolu açar
+  BOS_PAKET // boş paket geldi — kesinlikle itiraz edilir
+  URUN_EKSIK // adetli siparişte eksik geldi
   /// BİZİM HATAMIZ — A satıldı, B gönderildi. Dönen varyant satılandan
   /// FARKLIDIR. Kırılımda ayrı sayılır: bu bir DEPO HATASI metriğidir,
   /// müşteri caymasıyla aynı kefeye konmaz.
@@ -104,15 +119,60 @@ enum ReturnReason {
 
 /// BİLDİRİMİN AŞAMASI. Return'ün profitStatus'ü ile karıştırılmaz —
 /// bildirimde kâr hesabı YOKTUR, bu yüzden "hesaplanamayan" sayacına düşmez.
+/// Pazaryerinin sekmeleriyle eşleşir — bkz. docs/iade-sureci.md §1.
 enum NoticeStatus {
-  BEKLENIYOR // pazaryeri bildirdi, mal yolda
-  MAL_GELDI // geldi; muayene/servis sürüyor, hüküm yok
-  ITIRAZ_ACILDI // kullanılmış çıktı, kanıtla itiraz edildi
-  ITIRAZ_INCELEMEDE // pazaryeri inceliyor
-  ITIRAZ_KABUL // LEHE — ürün müşteride kalır, iade İŞLENMEZ, kâr etkisi doğmaz
-  ITIRAZ_RED // ALEYHE — normal iade akışı işler, Return doğar
+  BEKLENIYOR // "Talep Oluşturulan": müşteri iade açtı, mal henüz kargoda değil
+  KARGOYA_VERILDI // "Kargoya Verilen": mal yolda. ARA ADIM, atlanabilir.
+  MAL_GELDI // "Aksiyon Bekleyen": mal elimizde, onay/red kararı bekleniyor
+  ITIRAZ_ACILDI // "İhtilaflı": reddettik, kanıt yüklendi
+  ITIRAZ_INCELEMEDE // "İhtilaflı" (alt hâl): pazaryeri inceliyor
+  ANALIZ // "Analiz": pazaryeri servise göndermemizi istedi — 28 gün
+  /// "Reddedilen": İTİRAZIMIZ KABUL EDİLDİ, satıcı haklı bulundu.
+  ///
+  /// ⚠ 23.08.2026'DA GEREKÇE DÜZELTİLDİ. Burada eskiden şu yazıyordu:
+  /// _"LEHE — ürün müşteride kalır, iade İŞLENMEZ."_ Bu OLGUSAL OLARAK
+  /// YANLIŞTI: ürün "Aksiyon Bekleyen" aşamasında bize gelmişti ve
+  /// elimizde duruyor. Doğrusu — kargo kodu alınır ve ürün **2 iş günü
+  /// içinde müşteriye geri gönderilir**.
+  ///
+  /// Para tarafı zaten doğruydu (`Return` doğmuyor, ölçüldü); yanlış olan
+  /// gerekçeydi ve o yüzden FİZİKSEL İŞ görünmüyordu: sistem "kapandı"
+  /// derken depoda gönderilmeyi bekleyen ürün vardı.
+  ///
+  /// ⚠ ENUM ADI BİLEREK KORUNDU: "itirazımız kabul edildi" doğru bir
+  /// cümledir; yanlış olan yorumdu. Yeniden adlandırma veri göçü demekti
+  /// ve karşılığı yalnız isim güzelliği olurdu. Ekranda görünen etiket
+  /// sözlükten geliyor ve orada "Reddedilen — geri gönderilecek" yazar.
+  ITIRAZ_KABUL
+  ITIRAZ_RED // İtirazımız reddedildi → "Onaylanan"a gider, Return doğar
+  /// "Askıda İadeler": iade NORMAL AKIŞTAN ÇIKMIŞ. Kargo problemi, statü
+  /// uyumsuzluğu, pazaryerinin ek incelemesi… Bizim yapacağımız bir işlem
+  /// olduğu anlamına GELMEZ (o "Aksiyon Bekleyen"dir); burada kalan iade
+  /// ürünün ve bedelin kapanmasını geciktirir. Arıza kutusudur, boş kalmalı.
+  ASKIDA
   KAPANDI // iade işlendi (Return doğdu) ya da lehe kapandı
   IPTAL // müşteri vazgeçti, mal hiç gelmedi
+}
+
+/// Satıcı iadeyi REDDEDERKEN seçtiği gerekçe (docs/iade-sureci.md §4).
+/// ⚠ `ReturnReason` ile karıştırılmaz: o MÜŞTERİNİN sebebi, bu BİZİM
+/// itirazımız. İkisi ayrı listelerdir ve ayrı sorulara cevap verir.
+enum NoticeObjectionReason {
+  KULLANILMIS // Müşteriden gelen ürün kullanılmış
+  IADE_YANLIS // Müşteriden gelen iade yanlış
+  HIJYEN // Müşteriden gelen ürün hijyen ürünü
+  ANALIZ_TALEBI // İadeyi analize alacağım — TALEPTİR, kararı pazaryeri verir
+  DEGISIM // Değişim yapacağım — geri giden YENİ üründür, kargo her yerde bizde
+  HASARLI // Müşteriden gelen ürün hasarlı
+  EKSIK // Müşteriden gelen ürün eksik
+  KUSURSUZ_GONDERILDI // Siparişi kusurlu göndermedim
+}
+
+/// Analiz (servis) dalının sonucu — docs/iade-sureci.md §6.
+enum AnalysisResult {
+  TAMIR_EDILDI
+  DEGISIM_YAPILDI
+  SORUN_BULUNAMADI
 }
 
 enum ChannelType {
@@ -552,6 +612,7 @@ model ChannelAccount {
   /// Boşsa o hesabın satışları için beklenen tarih ÜRETİLMEZ — tahmin
   /// edilmiş bir tarih göstermektense boş bırakılır.
   /**
+   * /**
    * /**
    * /**
    * /**
@@ -1280,6 +1341,50 @@ model ReturnNotice {
   status    NoticeStatus @default(BEKLENIYOR)
   note      String?      @db.Text
 
+  /**
+   * PAZARYERİNİN BEYAN ETTİĞİ OTOMATİK ONAY TARİHİ.
+   * ⚠ HESAPLANMAZ, KAYDEDİLİR. Trendyol ekranda "Otomatik Onaya Kalan
+   * Süre: 19 gün 07:42" yazıyor; yani tarihi O söylüyor. Kuralı (kaç
+   * günden, hangi andan) ÖLÇEMEDİK — iki kayıt farklı toplam verdi
+   * (~34,6 ve ~15,8 gün, bkz. docs/iade-sureci.md §8.1). Bilmediğimiz bir
+   * kuraldan tarih türetmek, sistemin takip etmediği şey hakkında iddia
+   * kurmak olurdu; onun yerine pazaryerinin söylediği tarih yazılır.
+   * Boş olması NORMALDİR: kapanmış bildirimde sayaç yoktur.
+   */
+  otomatikOnayTarihi DateTime?
+
+  /**
+   * BİZİM YÜKÜMLÜLÜĞÜMÜZÜN son tarihi — `otomatikOnayTarihi`nden AYRI şey.
+   * · "Reddedilen"de → ürünü geri kargolama son tarihi (2 iş günü)
+   * · "Analiz"de     → servisten dönüp kargolanma son tarihi (28 gün)
+   * ⚠ İKİSİ TEK SÜTUNA SIKIŞTIRILMADI çünkü farklı şeyler: biri ONLARIN ne
+   * zaman otomatik onaylayacağı (olgu), öteki BİZİM ne zamana kadar
+   * yapmamız gerektiği (yükümlülük). Aynı anda ikisi de anlamlı olabilir.
+   */
+  islemSonTarihi DateTime?
+
+  /// Reddederken seçilen gerekçe. Yalnız itiraz dalında dolar.
+  itirazGerekcesi NoticeObjectionReason?
+
+  /**
+   * Analizden dönen sonuç.
+   * ⚠ AYNI ZAMANDA "GELİŞ YOLU" İŞARETİDİR. "Reddedilen" durumuna ÜÇ ayrı
+   * yoldan gelinir ve üçünde kargoyu ödeyen taraf farklıdır
+   * (docs/iade-sureci.md §5). Ayrı bir "geliş yolu" sütunu AÇILMADI, çünkü
+   * türetilebiliyor:
+   * `analizSonucu` dolu        → analiz sonrası (kargo her yerde bizde)
+   * `itirazGerekcesi = DEGISIM`→ değişim        (kargo her yerde bizde)
+   * ikisi de değil             → satıcı haklı   (TY'de bize yansımaz)
+   */
+  analizSonucu AnalysisResult?
+
+  /// İade kargosunun takip kodu — KİMLİK KODUDUR, listede tık-kopyala durur.
+  iadeKargoKodu String?
+
+  /// İade kargosunun desisi. Maliyet tarifeden bununla çözülür; elle girilen
+  /// tutar yine ezer (kargo firmasından farklı gelmiş olabilir).
+  iadeDesi Decimal? @db.Decimal(10, 2)
+
   /// DEĞİŞİM İÇİN AYRILAN ÜRÜN (senaryo 1, 2, 6).
   /// FİZİKSEL STOK VE FIFO'YA DOKUNMAZ — bu bir defter kaydı değil, niyet
   /// beyanıdır. Stok ekranındaki "ayrılmış N adet" rozeti açık
@@ -1319,6 +1424,9 @@ model ReturnNotice {
   @@index([noticedAt])
   @@index([reservedVariantId])
   @@index([userId])
+  /// "Süresi dolmak üzere olanlar" sorgusu — panel çanı buradan besleniyor.
+  @@index([otomatikOnayTarihi])
+  @@index([islemSonTarihi])
 }
 
 /// ============================================================================

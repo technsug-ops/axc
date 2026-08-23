@@ -46,12 +46,22 @@ export const ALIM_DURUM_RENGI: Record<PurchaseStatus, DurumRengi> = {
  */
 export const BILDIRIM_DURUM_RENGI: Record<NoticeStatus, DurumRengi> = {
   KAPANDI: "olumlu",
+  /* İtirazımız kabul edildi = lehimize. ⚠ Ama İŞ BİTMEDİ: ürün bizde ve
+     2 iş günü içinde geri gönderilmeli. Renk sonucu söyler, "sıradaki
+     adım" metni işi söyler; ikisi farklı sorulara cevap verir. */
   ITIRAZ_KABUL: "olumlu",
   MAL_GELDI: "bilgi",
+  KARGOYA_VERILDI: "bilgi",
   BEKLENIYOR: "uyari",
   ITIRAZ_ACILDI: "uyari",
   ITIRAZ_INCELEMEDE: "uyari",
+  /* Serviste geçen 28 gün — akış ilerliyor ama saat işliyor. */
+  ANALIZ: "uyari",
   ITIRAZ_RED: "olumsuz",
+  /* ⚠ ASKIDA KIRMIZI: bu bir "bekliyor" değil, iadenin akıştan ÇIKMIŞ
+     hâli. Ürünün ve paranın kapanmasını geciktirir; uyarı tonunda
+     bırakmak onu sıradan bir ara duruma benzetirdi. */
+  ASKIDA: "olumsuz",
   IPTAL: "notr",
 };
 
