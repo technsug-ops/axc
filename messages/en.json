@@ -1872,7 +1872,8 @@
     "operasyonOdenecek": "",
     "operasyonToplamKdv": "",
     "operasyonToplamKdvDevreden": "",
-    "operasyonKdvKaynak": ""
+    "operasyonKdvKaynak": "",
+    "operasyonToplamSeri": ""
   },
   "Envanter": {
     "baslik": "",

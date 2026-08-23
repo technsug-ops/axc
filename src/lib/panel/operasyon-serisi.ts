@@ -272,13 +272,28 @@ export function gorunumCoz(deger: string | undefined): OperasyonGorunumu {
 export function serileriKur(
   noktalar: OperasyonNoktasi[],
   gorunum: OperasyonGorunumu,
-): { alim: number[]; satis: number[]; ucuncu: number[] } {
+): {
+  alim: number[];
+  satis: number[];
+  ucuncu: number[];
+  /**
+   * ÜÇ SERİNİN TOPLAMI — "o gün kaç kalem iş yaptım" (kullanıcı 23.08.2026).
+   *
+   * ⚠ YALNIZ `adet` KİPİNDE DOLU, ÖTEKİLERDE `null` — ve bu bir eksiklik
+   * değil, kuralın kendisi. `ciro`da alım ile satış ZIT YÖNLERDİR: 100 TL
+   * alıp 150 TL satmak "250 TL iş" değildir. `kdv`de de indirilecek ile
+   * hesaplanan toplanmaz, ÇIKARILIR (zaten üçüncü seri o farkı çiziyor).
+   * Adette ise üçü de aynı birimde: KAÇ KAYIT. Toplanabilen tek kip bu.
+   */
+  toplam: number[] | null;
+} {
   if (gorunum === "ciro") {
     return {
       alim: noktalar.map((n) => n.alimTutar),
       satis: noktalar.map((n) => n.satisCiro),
       /** ⚠ SATIŞ − ALIM: pozitif "içeri para girdi" demek. */
       ucuncu: noktalar.map((n) => n.satisCiro - n.alimTutar),
+      toplam: null,
     };
   }
   if (gorunum === "kdv") {
@@ -292,12 +307,15 @@ export function serileriKur(
       alim: noktalar.map((n) => n.alimKdv),
       satis: noktalar.map((n) => n.satisKdv),
       ucuncu: noktalar.map((n) => n.satisKdv - n.alimKdv),
+      toplam: null,
     };
   }
   return {
     alim: noktalar.map((n) => n.alimAdet),
     satis: noktalar.map((n) => n.satisAdet),
     ucuncu: noktalar.map((n) => n.kargoAdet),
+    /** Aynı birim (kayıt sayısı) → toplanabilir. */
+    toplam: noktalar.map((n) => n.alimAdet + n.satisAdet + n.kargoAdet),
   };
 }
 

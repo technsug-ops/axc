@@ -47,6 +47,15 @@ export type UcSeriNoktasi = {
   a: number;
   b: number;
   c: number;
+  /**
+   * ÜÇ SERİNİN TOPLAMI — "o gün kaç kalem iş yaptım".
+   *
+   * ⚠ İSTEĞE BAĞLI VE BİLEREK: yalnız üç serinin toplanması ANLAMLI olduğu
+   * görünümde dolar. Ciro görünümünde alım ile satış zıt yönlerdir; ikisini
+   * toplamak "para hangi yöne aktı" sorusunu cevaplamaz, bulandırır.
+   * Kararı ÇAĞIRAN verir (bkz. `serileriKur`), grafik bilmez.
+   */
+  toplam?: number;
   /** Bu noktanın süzülmüş adresleri; yoksa nokta tıklanamaz. */
   adres?: { a: string; b: string; c: string };
 };
@@ -89,6 +98,7 @@ export function UcSeriliGrafik({
   bosMesaj,
   tabloAcMetni,
   ozet,
+  toplamAdi,
   tabloAcik = false,
 }: {
   noktalar: UcSeriNoktasi[];
@@ -109,6 +119,14 @@ export function UcSeriliGrafik({
    */
   ozet?: React.ReactNode;
   /**
+   * TOPLAM SERİSİNİN ADI. Verilirse VE noktalarda `toplam` varsa, kesikli
+   * bir çizgi ve tabloda bir sütun daha çizilir.
+   *
+   * ⚠ İKİSİ BİRLİKTE ARANIYOR: yalnız ad verilip veri gelmezse çizgi
+   * `NaN`a düşer ve grafik BOZUK çizilir — boş değil, bozuk.
+   */
+  toplamAdi?: string;
+  /**
    * Tablo VARSAYILAN AÇIK mı? Kural bileşende değil, saf işlevde
    * (`tabloAcikMi`) — eşik değişirse test kırmızı yansın diye.
    */
@@ -118,7 +136,21 @@ export function UcSeriliGrafik({
     return <p className="text-muted-foreground text-sm">{bosMesaj}</p>;
   }
 
-  const tumu = noktalar.flatMap((n) => [n.a, n.b, n.c]);
+  /**
+   * ⚠ İKİ ŞART BİRDEN: ad verilmiş VE her noktada sayı var. Biri eksikse
+   * toplam hiç çizilmez — yarım çizilen bir seri, olmayan bir seriden kötü.
+   */
+  const toplamVar =
+    toplamAdi !== undefined && noktalar.every((n) => typeof n.toplam === "number");
+  const toplamDeger = (n: UcSeriNoktasi) => n.toplam ?? 0;
+
+  /**
+   * ⚠ TOPLAM EKSENE DAHİL. Dahil edilmezse toplam çizgisi tavanı aşar ve
+   * grafiğin ÜSTÜNDEN taşar — okunmaz olur.
+   */
+  const tumu = noktalar.flatMap((n) =>
+    toplamVar ? [n.a, n.b, n.c, toplamDeger(n)] : [n.a, n.b, n.c],
+  );
   const tavanHam = Math.max(...tumu, 0);
   const tabanHam = Math.min(...tumu, 0);
   /**
@@ -166,6 +198,17 @@ export function UcSeriliGrafik({
             {s.ad}
           </span>
         ))}
+        {/* TOPLAM — kesikli, çünkü ölçülen bir şey değil TÜRETİLMİŞ.
+            Göstergedeki çizgi de kesikli ki grafiğe bakmadan anlaşılsın. */}
+        {toplamVar ? (
+          <span className="text-muted-foreground inline-flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="inline-block h-0 w-4 border-t-2 border-dashed border-current"
+            />
+            {toplamAdi}
+          </span>
+        ) : null}
       </div>
 
       <svg viewBox={`0 0 ${G.genislik} ${G.yukseklik}`} className="w-full">
@@ -236,6 +279,29 @@ export function UcSeriliGrafik({
             strokeWidth={2.5}
           />
         ))}
+
+        {/*
+          TOPLAM ÇİZGİSİ — KESİKLİ VE NÖTR RENKTE.
+
+          ⚠ Kesikli olması bir süs değil: bu çizgi ÖLÇÜLEN bir şey değil,
+          öteki üçünün TOPLAMI. Düz çizilseydi dördüncü bir ölçüm sanılır
+          ve "toplam neden satıştan büyük" diye sorulurdu.
+
+          ⚠ TIKLANAMAZ ve bu bilerek: tek bir toplamın süzülmüş karşılığı
+          YOK — tıklanınca alıma mı satışa mı kargoya mı gidileceği belirsiz.
+          Tıklanabilir görünüp hiçbir yere gitmemek, İlke #2'nin tersidir.
+        */}
+        {toplamVar ? (
+          <path
+            aria-hidden
+            d={yol(toplamDeger)}
+            fill="none"
+            className="text-muted-foreground"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeDasharray="6 4"
+          />
+        ) : null}
 
         {/* TIKLANABİLİR NOKTALAR — her seri için ayrı hedef. */}
         {seriler.map((s) =>
@@ -323,6 +389,17 @@ export function UcSeriliGrafik({
                     </span>
                   </th>
                 ))}
+                {toplamVar ? (
+                  <th className="py-1 pr-2 text-right font-normal">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        aria-hidden
+                        className="inline-block h-0 w-3 border-t-2 border-dashed border-current"
+                      />
+                      {toplamAdi}
+                    </span>
+                  </th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
@@ -352,6 +429,12 @@ export function UcSeriliGrafik({
                       </td>
                     );
                   })}
+                  {toplamVar ? (
+                    /* Toplam KALIN: satırın hükmü bu, gözün duracağı yer. */
+                    <td className="py-1 pr-2 text-right font-semibold tabular-nums">
+                      {bicimle(toplamDeger(n))}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>

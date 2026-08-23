@@ -2117,6 +2117,13 @@ export default async function AnaSayfa({
                 a: operasyonSeri.alim[i] ?? 0,
                 b: operasyonSeri.satis[i] ?? 0,
                 c: operasyonSeri.ucuncu[i] ?? 0,
+                /* ⚠ YALNIZ ADET KİPİNDE DOLU — `serileriKur` öteki kiplerde
+                   `null` döner ve grafik toplam çizgisini hiç çizmez. Ciroda
+                   alım ile satış zıt yönlerdir; toplamak "para hangi yöne
+                   aktı" sorusunu bulandırırdı. */
+                ...(operasyonSeri.toplam
+                  ? { toplam: operasyonSeri.toplam[i] ?? 0 }
+                  : {}),
                 /* ⚠ FARK ÇİZGİSİ TIKLANMAZ: tek bir listeye karşılığı yok
                    (iki kümenin farkı). Sessiz kalmasın diye adres hiç
                    verilmiyor — nokta çizilir ama link olmaz. */
@@ -2143,6 +2150,10 @@ export default async function AnaSayfa({
                         ),
                       },
               }))}
+              /* Ad verilmezse grafik toplamı hiç çizmez — iki şart birlikte. */
+              toplamAdi={
+                operasyonSeri.toplam ? t("operasyonToplamSeri") : undefined
+              }
               tabloAcik={tabloAcikMi(operasyonGunleri.length)}
               /* AKORDİYON BAŞLIĞI — kaç satır olduğunu söylüyor ki
                  açmadan önce beklenti kurulsun (İlke #5). */

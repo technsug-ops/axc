@@ -22,6 +22,7 @@ import { readFileSync } from "node:fs";
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
 import { kdvHaric } from "../src/lib/kar";
 import { karOrani, kutuOranlari } from "../src/lib/panel/kar-orani";
+import { serileriKur } from "../src/lib/panel/operasyon-serisi";
 import {
   envanterAra,
   envanterHesapla,
@@ -2991,6 +2992,100 @@ console.log("\nKART SIRASI VE YAPIŞKAN ÇUBUK");
   kontrol("  ...tek satır (truncate)", /truncate/.test(cubuk));
   /** Dokunma hedefi 44 px — İlke #8, yapışkan olması bunu düşürmez. */
   kontrol("dokunma hedefi h-11 kaldı", /h-11 w-full justify-between md:hidden/.test(cubuk));
+}
+
+
+// ===========================================================================
+console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
+// ===========================================================================
+/**
+ * Kullanıcı 23.08.2026: _"adet kısmında yapılan işleri hangi iş olduğuna
+ * BAKMAKSIZIN toplasın; gün sonunda kaç kalem iş yapmışım görmek
+ * istiyorum. Grafikte de kesikli çizgilerle toplam görünsün."_
+ */
+{
+  const nokta = (alim: number, satis: number, kargo: number) => ({
+    anahtar: "x",
+    baslangic: new Date(2026, 7, 17),
+    sonGun: new Date(2026, 7, 17),
+    alimAdet: alim,
+    alimTutar: 100,
+    satisAdet: satis,
+    satisCiro: 250,
+    kargoAdet: kargo,
+    kargoCiro: 0,
+    alimKdv: 20,
+    satisKdv: 50,
+  });
+  /* Kullanıcının ekran görüntüsündeki ilk üç gün — rakamlar oradan. */
+  const noktalar = [nokta(11, 13, 12), nokta(6, 6, 9), nokta(14, 5, 4)];
+
+  const adet = serileriKur(noktalar, "adet");
+  kontrol("adet kipinde toplam serisi DOLU", adet.toplam !== null);
+  kontrol(
+    "  ...toplam = alım + satış + kargo",
+    JSON.stringify(adet.toplam) === JSON.stringify([36, 21, 23]),
+    adet.toplam,
+  );
+
+  /**
+   * ⚠ ASIL KONTROL BU. Ciroda alım ile satış ZIT YÖNLERDİR: 100 TL alıp
+   * 250 TL satmak "350 TL iş" değildir. KDV'de de indirilecek ile
+   * hesaplanan toplanmaz, ÇIKARILIR (üçüncü seri zaten o farkı çiziyor).
+   * Toplanabilen tek kip adet — üçü de aynı birimde: KAÇ KAYIT.
+   */
+  for (const kip of ["ciro", "kdv"] as const) {
+    kontrol(
+      `${kip} kipinde toplam çizilmiyor (zıt yönler toplanmaz)`,
+      serileriKur(noktalar, kip).toplam === null,
+    );
+  }
+
+  const grafik = readFileSync("src/components/uc-serili-grafik.tsx", "utf8");
+  const toplamBloku = grafik.slice(
+    grafik.indexOf("TOPLAM ÇİZGİSİ"),
+    grafik.indexOf("TIKLANABİLİR NOKTALAR"),
+  );
+  kontrol("toplam çizgisi bloğu kesilebildi", toplamBloku.length > 0);
+  /**
+   * ⚠ KESİKLİ OLMASI SÜS DEĞİL: bu çizgi ÖLÇÜLEN bir şey değil, ötekilerin
+   * TOPLAMI. Düz çizilseydi dördüncü bir ölçüm sanılır ve "toplam neden
+   * satıştan büyük" diye sorulurdu.
+   */
+  kontrol(
+    "  ...KESİKLİ çiziliyor (türetilmiş olduğu görünsün)",
+    /strokeDasharray/.test(toplamBloku),
+  );
+  /**
+   * ⚠ TIKLANAMAZ VE BU BİLEREK: tek bir toplamın süzülmüş karşılığı yok —
+   * tıklanınca alıma mı satışa mı kargoya mı gidileceği belirsiz.
+   * Tıklanabilir görünüp hiçbir yere gitmemek İlke #2'nin tersidir.
+   */
+  kontrol("  ...tıklanabilir DEĞİL (gidilecek tek liste yok)", !/<a\s/.test(toplamBloku));
+  /**
+   * ⚠ EKSENE DAHİL OLMALI. Değilse toplam çizgisi tavanı aşar ve grafiğin
+   * ÜSTÜNDEN taşar — okunmaz olur.
+   */
+  kontrol(
+    "toplam Y eksenine dahil (grafikten taşmasın)",
+    /toplamVar[\s\S]{0,80}toplamDeger\(n\)\]/.test(grafik),
+  );
+  /**
+   * ⚠ İKİ ŞART BİRLİKTE: ad verilmiş VE her noktada sayı var. Biri eksikse
+   * çizgi `NaN`a düşer ve grafik boş değil BOZUK çizilir.
+   */
+  kontrol(
+    "ad ve veri BİRLİKTE aranıyor (yarım seri çizilmez)",
+    /toplamAdi !== undefined &&[\s\S]{0,60}noktalar\.every/.test(grafik),
+  );
+  /** Tabloda da sütun — grafik okunamayan için asıl okunabilir hâl. */
+  kontrol("tabloda da toplam sütunu var", /toplamVar \? \([\s\S]{0,40}<th/.test(grafik));
+
+  const panel = readFileSync("src/app/page.tsx", "utf8");
+  kontrol(
+    "panel toplam adını YALNIZ seri varken veriyor",
+    /operasyonSeri\.toplam \? t\("operasyonToplamSeri"\) : undefined/.test(panel),
+  );
 }
 
 // ===========================================================================

@@ -1872,7 +1872,8 @@
     "operasyonOdenecek": "Ödenecek KDV",
     "operasyonToplamKdv": "Dönem toplamı — hesaplanan {hesaplanan} · indirilecek {indirilecek} · ÖDENECEK {sonuc}",
     "operasyonToplamKdvDevreden": "Dönem toplamı — hesaplanan {hesaplanan} · indirilecek {indirilecek} · DEVREDEN {sonuc} (ödeme yok, sonraki aya aktarılır)",
-    "operasyonKdvKaynak": "Satış KDV oranı satış anında kaydedilmiş orandır (değişmez). Alım KDV oranı ürünün BUGÜNKÜ kategorisinden çözülür — kategori oranı değişirse geçmiş alımların KDV'si de değişir."
+    "operasyonKdvKaynak": "Satış KDV oranı satış anında kaydedilmiş orandır (değişmez). Alım KDV oranı ürünün BUGÜNKÜ kategorisinden çözülür — kategori oranı değişirse geçmiş alımların KDV'si de değişir.",
+    "operasyonToplamSeri": "Toplam iş"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
