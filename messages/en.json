@@ -2405,7 +2405,16 @@
     "kargoKoduYaz": "",
     "askidaBaslik": "",
     "askidaAciklama": "",
-    "askidaYok": ""
+    "askidaYok": "",
+    "bildirimTavaniDoldu": "",
+    "tavanIstisnasiOnay": "",
+    "tavanUyarisi": "",
+    "degisimUrunuZorunlu": "",
+    "degisimAdetGecersiz": "",
+    "degisimUrunuBaslik": "",
+    "degisimUrunuAciklama": "",
+    "degisimUrunuSec": "",
+    "eksikTavanOnayi": ""
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "",

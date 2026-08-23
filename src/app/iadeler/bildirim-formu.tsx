@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 
 import { AranabilirSecim } from "@/components/aranabilir-secim";
+import { BILDIRIM_TAVANI } from "@/lib/iade/bildirim";
 import { HataOzeti } from "@/components/hata-ozeti";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,16 @@ import { bildirimOlustur, type BildirimDurumu } from "./bildirim-actions";
 import type { ReturnReason } from "@/generated/prisma/enums";
 import { DURUM_KUTUSU } from "@/lib/renkler";
 
-export type SatisSecenegi = { id: string; etiket: string };
+export type SatisSecenegi = {
+  id: string;
+  etiket: string;
+  /**
+   * O SATIŞTA ZATEN KAÇ BİLDİRİM VAR. Seçim listesinde görünür: kullanıcı
+   * aynı iadeyi tekrar tekrar seçebiliyordu ve hiçbir yerde "bunu zaten
+   * girdin" yazmıyordu (kullanıcı bildirimi 23.08.2026).
+   */
+  bildirimSayisi: number;
+};
 export type VaryantSecenegi = {
   id: string;
   etiket: string;
@@ -98,6 +108,7 @@ export function BildirimFormu({
   const [adet, setAdet] = useState("1");
   const [not, setNot] = useState("");
   const [donenId, setDonenId] = useState("");
+  const [tavanOnayi, setTavanOnayi] = useState(false);
 
   /**
    * DÖNEN ÜRÜN yalnız YANLIS_URUN gerekçesinde sorulur: 6. senaryonun
@@ -129,13 +140,28 @@ export function BildirimFormu({
     setGerekce("");
     setVaryantId("");
     setDonenId("");
+    setTavanOnayi(false);
     setAdet("1");
     setNot("");
     router.refresh();
   }
 
+  /**
+   * TAVAN — seçilen satışta zaten `BILDIRIM_TAVANI` bildirim varsa kayıt
+   * durur ve SEBEBİ yazar. Mutlak kilit değil: tavan bir BEYAN, ve kuralın
+   * yanıldığı gün operasyoncu kilitlenmemeli. Anayasa (20.08.2026): uyarı
+   * sorar, kullanıcı ısrar ederse istisna KAYDA GEÇER.
+   *
+   * ⚠ ONAY BİR SONRAKİ KAYDA TAŞINMAZ: kutu her kayıtta yeniden işaretlenir.
+   */
+  const seciliSatis = satislar.find((s) => s.id === satisId) ?? null;
+  const tavanDoldu =
+    seciliSatis !== null && seciliSatis.bildirimSayisi >= BILDIRIM_TAVANI;
+  if (tavanDoldu && !tavanOnayi) eksikler.push(t("eksikTavanOnayi"));
+
   const veri = JSON.stringify({
     saleId: satisId,
+    tavanIstisnasi: tavanDoldu && tavanOnayi,
     code: kod,
     noticedAt: tarih,
     reason: gerekce,
@@ -148,6 +174,27 @@ export function BildirimFormu({
   return (
     <form action={gonder} className="space-y-4">
       <input type="hidden" name="veri" value={veri} />
+
+      {/*
+        TAVAN İSTİSNASI — açık onay olmadan kayıt ilerlemez (İlke #6 ve
+        20.08.2026 kararı). Kutu işaretlenmeden düğme kapalı kalır ve
+        NEDEN kapalı olduğu eksikler listesinde yazar; sessiz kilit yok.
+      */}
+      {tavanDoldu ? (
+        <label className="flex items-start gap-2 rounded-md border p-3 text-sm">
+          <input
+            type="checkbox"
+            checked={tavanOnayi}
+            onChange={(e) => setTavanOnayi(e.target.checked)}
+            className="mt-1 size-4"
+          />
+          <span>
+            {t("tavanIstisnasiOnay", {
+              adet: seciliSatis?.bildirimSayisi ?? 0,
+            })}
+          </span>
+        </label>
+      ) : null}
 
       <HataOzeti hatalar={durum.hatalar} />
 
@@ -164,6 +211,15 @@ export function BildirimFormu({
             secenekler={satislar.map((s) => ({
               deger: s.id,
               etiket: s.etiket,
+              /* ⚠ SEÇMEDEN ÖNCE GÖRÜNSÜN. Bilgiyi seçimden SONRA vermek,
+                 yanlış seçimi düzeltmeye zorlar; alt satır bedava. */
+              altEtiket:
+                s.bildirimSayisi > 0
+                  ? t("tavanUyarisi", {
+                      adet: s.bildirimSayisi,
+                      tavan: BILDIRIM_TAVANI,
+                    })
+                  : undefined,
             }))}
             seciliDeger={satisId}
             onSec={setSatisId}

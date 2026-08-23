@@ -17,11 +17,15 @@ import {
 } from "@/lib/etiketler";
 import {
   AYRILMIS_SAYILAN_DURUMLAR,
+  BILDIRIM_TAVANI,
+  TAVAN_ISTISNASI_EYLEMI,
+  bildirimTavaniDoldu,
   analizSonucuIstenirMi,
   ayirmaMumkunMu,
   ayrilmisAdetler,
   donenUrunZorunluMu,
   gecisGecerliMi,
+  itirazDegisimUrunuIster,
   itirazGerekcesiGerekliMi,
   kapaliMi,
   serbestStok,
@@ -91,6 +95,12 @@ function semaKur(t: Ceviri) {
      */
     returnedVariantId: z.string().nullable(),
     note: z.string().trim(),
+    /**
+     * TAVAN İSTİSNASI — kullanıcı ısrar ettiyse `true`. Onay bir sonraki
+     * kayda TAŞINMAZ: her kayıt kendi bayrağını taşır, "bir kez onayladım,
+     * artık sorma" yoktur.
+     */
+    tavanIstisnasi: z.boolean(),
   });
 }
 
@@ -111,7 +121,12 @@ export async function bildirimOlustur(
     return { hatalar: [t("formOkunamadi")] };
   }
 
-  const sonuc = semaKur(t).safeParse(json);
+  /* Eski istemciden gelen istek bayrağı taşımayabilir — varsayılan HAYIR. */
+  const govde =
+    typeof json === "object" && json !== null
+      ? { tavanIstisnasi: false, ...(json as Record<string, unknown>) }
+      : json;
+  const sonuc = semaKur(t).safeParse(govde);
   if (!sonuc.success) {
     return { hatalar: sonuc.error.issues.map((i) => i.message) };
   }
@@ -125,6 +140,36 @@ export async function bildirimOlustur(
     select: { id: true },
   });
   if (!satis) return { hatalar: [t("satisBulunamadi")] };
+
+  /**
+   * ⚠ AYNI SATIŞA EN FAZLA `BILDIRIM_TAVANI` BİLDİRİM. Kullanıcı aynı iadeyi
+   * tekrar tekrar seçip kaydedebiliyordu ve hiçbir şey engellemiyordu.
+   *
+   * Tavanın kaynağı ve niye "satılan adet" OLMADIĞI `lib/iade/bildirim.ts`te
+   * ölçümüyle yazılı — kısaca: bildirimi olan 8 satışın hepsi 1 adetlik ve
+   * dördü birden fazla bildirim taşıyor, yani adet sınırı bugünkü gerçek
+   * kayıtları engellerdi.
+   *
+   * ⚠ MUTLAK KİLİT DEĞİL — İSTİSNA İZ BIRAKARAK GEÇER. Tavan bir BEYAN
+   * (pazaryeri belgesiyle doğrulanmadı); mutlak kilit, kuralın yanıldığı gün
+   * operasyoncuyu kilitler ve gerçek bir olay hiç kaydedilemez. Anayasa
+   * (20.08.2026): _"uyarı sorar, kullanıcı ısrar ederse istisna kaydedilir"_
+   * — eşik yerinde kalır, onay bir sonraki kayda TAŞINMAZ, sebep ekranda
+   * yazar ve istisna iz bırakır.
+   */
+  const mevcutBildirimSayisi = await prisma.returnNotice.count({
+    where: { saleId: veri.saleId },
+  });
+  if (bildirimTavaniDoldu(mevcutBildirimSayisi) && !veri.tavanIstisnasi) {
+    return {
+      hatalar: [
+        t("bildirimTavaniDoldu", {
+          adet: mevcutBildirimSayisi,
+          tavan: BILDIRIM_TAVANI,
+        }),
+      ],
+    };
+  }
 
   /**
    * AYRILAN ÜRÜN VARSA ADEDİ DE OLMALI — ve tersi. Yarım beyan, stok
@@ -237,6 +282,30 @@ export async function bildirimOlustur(
     },
   });
 
+  /**
+   * ⚠ İSTİSNA İZ BIRAKIR. "Devam edilsin" demek, kaydın SESSİZCE geçmesi
+   * demek değildir; üç ay sonra "bu satışta niye dört bildirim var"
+   * sorusunun cevabı olmalı (anayasa, 20.08.2026).
+   */
+  if (veri.tavanIstisnasi && bildirimTavaniDoldu(mevcutBildirimSayisi)) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: kullanici?.id ?? null,
+          action: TAVAN_ISTISNASI_EYLEMI,
+          targetType: "Sale",
+          targetId: veri.saleId,
+          detail: JSON.stringify({
+            mevcutBildirim: mevcutBildirimSayisi,
+            tavan: BILDIRIM_TAVANI,
+          }),
+        },
+      });
+    } catch (e) {
+      console.error("[iade] tavan istisnası izi yazılamadı:", e);
+    }
+  }
+
   revalidatePath("/iadeler");
   // Ayrılmış rozet stok ekranından okunuyor.
   revalidatePath("/stok");
@@ -263,7 +332,13 @@ export async function bildirimDurumuGuncelle(
    * `itirazGerekcesi` ITIRAZ_ACILDI'ya geçerken ZORUNLU; `analizSonucu`
    * ANALİZ'den çıkarken sorulur ama boş geçilebilir.
    */
-  ek?: { itirazGerekcesi?: string; analizSonucu?: string },
+  ek?: {
+    itirazGerekcesi?: string;
+    analizSonucu?: string;
+    /** "Değişim yapacağım" seçilince gönderilecek YENİ ürün. */
+    degisimVaryantId?: string;
+    degisimAdet?: number;
+  },
 ): Promise<{ hata?: string }> {
   await yetkiIste("iade.yaz");
   const t = await getTranslations("Bildirim2");
@@ -307,6 +382,8 @@ export async function bildirimDurumuGuncelle(
   const yazilacakEk: {
     itirazGerekcesi?: NoticeObjectionReason;
     analizSonucu?: AnalysisResult;
+    reservedVariantId?: string;
+    reservedQuantity?: number;
   } = {};
 
   if (itirazGerekcesiGerekliMi(hedef)) {
@@ -316,6 +393,65 @@ export async function bildirimDurumuGuncelle(
       return { hata: t("itirazGerekcesiTanimsiz") };
     }
     yazilacakEk.itirazGerekcesi = secim;
+
+    /**
+     * ⚠ "DEĞİŞİM YAPACAĞIM" DEYİP NE GÖNDERECEĞİNİ SÖYLEMEMEK, YARIM BEYANDIR.
+     * Kullanıcı 23.08.2026: _"itiraz seçeneklerinden değişimi seçiyorum,
+     * sonra değişim ürünü seçin demesi lazım."_
+     *
+     * ⚠ VE AYIRMA KURALI BURADA DA GEÇERLİ: olmayan malı taahhüt etmek boş
+     * bir hazırlık kaydıdır ve stok ekranındaki rozeti yalancı yapar. Ölçüt
+     * SERBEST STOK — mevcut stok eksi DİĞER açık bildirimlerde ayrılmış adet;
+     * yalnız mevcuda bakılsaydı 1 adetlik mal iki bildirime ayrı ayrı
+     * taahhüt edilebilirdi.
+     */
+    if (itirazDegisimUrunuIster(secim)) {
+      const varyantId = (ek?.degisimVaryantId ?? "").trim();
+      const adet = ek?.degisimAdet ?? 0;
+      if (!varyantId) return { hata: t("degisimUrunuZorunlu") };
+      if (!Number.isInteger(adet) || adet < 1) {
+        return { hata: t("degisimAdetGecersiz") };
+      }
+
+      const varyant = await prisma.productVariant.findUnique({
+        where: { id: varyantId },
+        select: { id: true, sku: true },
+      });
+      if (!varyant) return { hata: t("ayrilanUrunBulunamadi") };
+
+      const mevcutStok = await varyantStogu(varyantId);
+      const digerBildirimler = await prisma.returnNotice.findMany({
+        where: {
+          reservedVariantId: varyantId,
+          status: { in: AYRILMIS_SAYILAN_DURUMLAR },
+          NOT: { id: bildirimId },
+        },
+        select: { status: true, reservedVariantId: true, reservedQuantity: true },
+      });
+      const zatenAyrilmis =
+        ayrilmisAdetler(
+          digerBildirimler.map((b) => ({
+            durum: b.status,
+            reservedVariantId: b.reservedVariantId,
+            reservedQuantity: b.reservedQuantity,
+          })),
+        ).get(varyantId) ?? 0;
+
+      if (!ayirmaMumkunMu({ mevcutStok, zatenAyrilmis, istenen: adet })) {
+        return {
+          hata: t("ayrilanStokYetersiz", {
+            sku: varyant.sku,
+            stok: mevcutStok,
+            ayrilmis: zatenAyrilmis,
+            serbest: Math.max(0, serbestStok(mevcutStok, zatenAyrilmis)),
+            istenen: adet,
+          }),
+        };
+      }
+
+      yazilacakEk.reservedVariantId = varyantId;
+      yazilacakEk.reservedQuantity = adet;
+    }
   }
 
   if (analizSonucuIstenirMi(bildirim.status)) {

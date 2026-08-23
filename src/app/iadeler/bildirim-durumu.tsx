@@ -16,17 +16,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { AranabilirSecim } from "@/components/aranabilir-secim";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   analizSonucuIstenirMi,
   gecisOnayIster,
+  itirazDegisimUrunuIster,
   itirazGerekcesiGerekliMi,
 } from "@/lib/iade/bildirim";
 
 import { bildirimDurumuGuncelle } from "./bildirim-actions";
 
-import type { NoticeStatus } from "@/generated/prisma/enums";
+import type {
+  NoticeObjectionReason,
+  NoticeStatus,
+} from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
@@ -63,6 +69,7 @@ export function BildirimDurumu({
   iadeIsle,
   itirazGerekceleri,
   analizSonuclari,
+  stoktakiVaryantlar,
 }: {
   bildirimId: string;
   /** Kaydın ŞU ANKİ durumu — analiz sonucu buna göre sorulur. */
@@ -71,6 +78,8 @@ export function BildirimDurumu({
   /** Etiketler sunucudan gelir; ham enum ekranda görünmez. */
   itirazGerekceleri: { deger: string; etiket: string }[];
   analizSonuclari: { deger: string; etiket: string }[];
+  /** Stoğu olan varyantlar — "Değişim yapacağım" seçilirse buradan seçilir. */
+  stoktakiVaryantlar: { deger: string; etiket: string; altEtiket?: string }[];
   /**
    * "İadeyi işle" — AŞAMA B'ye geçiş. Açıksa adres verilir (ön-dolu iade
    * formu), kapalıysa sebep.
@@ -84,6 +93,8 @@ export function BildirimDurumu({
   const [hata, setHata] = useState<string | null>(null);
   const [gerekce, setGerekce] = useState("");
   const [analiz, setAnaliz] = useState("");
+  const [degisimVaryant, setDegisimVaryant] = useState("");
+  const [degisimAdet, setDegisimAdet] = useState(1);
 
   const git = (hedef: NoticeStatus) => {
     setHata(null);
@@ -91,11 +102,15 @@ export function BildirimDurumu({
       const sonuc = await bildirimDurumuGuncelle(bildirimId, hedef, undefined, {
         itirazGerekcesi: gerekce,
         analizSonucu: analiz,
+        degisimVaryantId: degisimVaryant,
+        degisimAdet,
       });
       if (sonuc.hata) setHata(sonuc.hata);
       else {
         setGerekce("");
         setAnaliz("");
+        setDegisimVaryant("");
+        setDegisimAdet(1);
         router.refresh();
       }
     });
@@ -195,6 +210,40 @@ export function BildirimDurumu({
                     </div>
                   ) : null}
 
+                  {/*
+                    DEĞİŞİM ÜRÜNÜ — "Değişim yapacağım" seçilince açılır.
+                    ⚠ "Değişim yapacağım" deyip ne göndereceğini söylememek
+                    yarım beyandır; iade formu o ürünü ön-dolu getiremez ve
+                    stok ekranındaki "ayrılmış" rozeti hiç doğmaz.
+                  */}
+                  {itirazGerekcesiGerekliMi(s.hedef) &&
+                  itirazDegisimUrunuIster(gerekce as NoticeObjectionReason) ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">
+                        {t("degisimUrunuBaslik")} *
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {t("degisimUrunuAciklama")}
+                      </p>
+                      <AranabilirSecim
+                        id={`degisim-${bildirimId}`}
+                        etiket={t("degisimUrunuSec")}
+                        secenekler={stoktakiVaryantlar}
+                        seciliDeger={degisimVaryant}
+                        onSec={setDegisimVaryant}
+                      />
+                      <Input
+                        type="number"
+                        min={1}
+                        value={degisimAdet}
+                        onChange={(e) =>
+                          setDegisimAdet(Number(e.target.value) || 1)
+                        }
+                        className="h-11 max-w-24 md:h-9"
+                      />
+                    </div>
+                  ) : null}
+
                   {/* ANALİZ SONUCU — sorulur, boş geçilebilir. */}
                   {analizSorulur ? (
                     <div className="space-y-1">
@@ -225,7 +274,12 @@ export function BildirimDurumu({
                       */
                       disabled={
                         bekliyor ||
-                        (itirazGerekcesiGerekliMi(s.hedef) && gerekce === "")
+                        (itirazGerekcesiGerekliMi(s.hedef) && gerekce === "") ||
+                        (itirazGerekcesiGerekliMi(s.hedef) &&
+                          itirazDegisimUrunuIster(
+                            gerekce as NoticeObjectionReason,
+                          ) &&
+                          degisimVaryant === "")
                       }
                     >
                       {t("gecisOnayla")}

@@ -1,4 +1,5 @@
-import type { NoticeStatus, ReturnReason } from "@/generated/prisma/enums";
+import type { NoticeObjectionReason,
+  NoticeStatus, ReturnReason } from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
@@ -450,3 +451,64 @@ export function itirazGerekcesiGerekliMi(hedef: NoticeStatus): boolean {
 export function analizSonucuIstenirMi(mevcut: NoticeStatus): boolean {
   return mevcut === "ANALIZ";
 }
+
+/**
+ * ============================================================================
+ *  AYNI SATIŞA KAÇ BİLDİRİM AÇILABİLİR (K31 ek)
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı 23.08.2026: _"Aynı ürünü müşteri 3 defa iade edebiliyor, ben
+ *  şimdi aynı iadeyi seçip seçip duruyorum, 3'ten sonra seçtirmemeli."_
+ *
+ *  ⚠ ÖNCE "SATILAN ADET" HİPOTEZİ DENENDİ VE VERİ ONU ÇÜRÜTTÜ. Sınırın
+ *  satılan adet olması en doğal türetmeydi (satılandan fazlası iade
+ *  edilemez); canlı ölçüm bunu reddetti — bildirimi olan 8 satışın HEPSİ
+ *  1 adetlik ve DÖRDÜ birden fazla bildirim taşıyor:
+ *
+ *      satılan 1 · bildirim 2  → 11473322212, 11502693455
+ *      satılan 1 · bildirim 3  → 11504122276, 11467064391
+ *
+ *  Yani müşteri aynı TEK ürün için birden çok iade talebi açabiliyor; adet
+ *  sınırı koysaydık BUGÜN VAR OLAN gerçek kayıtları engellemiş olurduk.
+ *
+ *  ⚠ TAVANIN KAYNAĞI: kullanıcı beyanı `(K)` — rozet **BEYAN**, pazaryeri
+ *  belgesiyle doğrulanmadı. Canlı veri beyanla TUTARLI (n=8 satış, 14
+ *  bildirim; gözlenen en yüksek değer 3 ve iki satış tam 3'te). Tutarlılık
+ *  doğruluk değildir ama tavanı bugün hiçbir kayıt AŞMIYOR — yani kural
+ *  geçmişi bozmuyor. Pazaryeri belgesi geldiğinde bu sayı deftere geçer.
+ * ============================================================================
+ */
+export const BILDIRIM_TAVANI = 3;
+
+/**
+ * ⚠ İPTAL EDİLMİŞ BİLDİRİM DE SAYILIR. Tavan "kaç iade TALEBİ açılabilir"
+ * sorusunun cevabı; iptal olmuş bir talep de açılmış bir taleptir. Saymamak,
+ * iptal edip yeniden açarak tavanı sınırsız aşmanın yolunu bırakırdı.
+ */
+export function bildirimTavaniDoldu(mevcutSayi: number): boolean {
+  return mevcutSayi >= BILDIRIM_TAVANI;
+}
+
+/**
+ * SATICI "DEĞİŞİM YAPACAĞIM" DERSE DEĞİŞİM ÜRÜNÜ SORULUR.
+ *
+ * Kullanıcı 23.08.2026: _"itiraz seçeneklerinden değişimi seçiyorum, sonra
+ * değişim ürünü seçin demesi lazım."_
+ *
+ * ⚠ MÜŞTERİNİN GEREKÇESİNDEN AYRI BİR KAPI. `degisimAyrilirMi` MÜŞTERİNİN
+ * iade sebebine bakar (bildirim açılırken); bu ise SATICININ itiraz
+ * gerekçesine bakar (itiraz açılırken). Aynı fiziksel iş — müşteriye YENİ
+ * ürün gidecek — ama akışın iki farklı anında doğuyor ve ikisi de olabilir:
+ * müşteri "daha ucuz buldum" der (değişim değil), biz "değişim yapacağım"
+ * diye itiraz ederiz.
+ *
+ * ⚠ VE BU KARARIN PARASI VAR (docs §5): değişimde geri giden YENİ üründür ve
+ * kargo HER KANALDA satıcıya aittir.
+ */
+export function itirazDegisimUrunuIster(
+  gerekce: NoticeObjectionReason,
+): boolean {
+  return gerekce === "DEGISIM";
+}
+
+/** `AuditLog.action` — tavan aşılarak kaydedilen bildirimin izi. */
+export const TAVAN_ISTISNASI_EYLEMI = "IADE_TAVAN_ISTISNASI";

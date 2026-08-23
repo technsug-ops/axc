@@ -38,7 +38,10 @@ import {
   gecerliItirazGerekcesi,
 } from "../src/lib/etiketler";
 import {
+  BILDIRIM_TAVANI,
   analizSonucuIstenirMi,
+  bildirimTavaniDoldu,
+  itirazDegisimUrunuIster,
   itirazGerekcesiGerekliMi,
 } from "../src/lib/iade/bildirim";
 import {
@@ -90,7 +93,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 14;
+const BOLUM_SAYISI = 15;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -2623,6 +2626,204 @@ console.log("\n14) KARGOLANACAK KUTUSU (K31 ②) VE ASKIDA (③)");
   );
 
   kosanBolumler.push("kargolanacak-ve-aski");
+}
+
+// ===========================================================================
+console.log("\n15) BİLDİRİM TAVANI VE İTİRAZDA DEĞİŞİM ÜRÜNÜ");
+// ===========================================================================
+/**
+ * Kullanıcı 23.08.2026, iki bildirim:
+ *  ① _"itiraz seçeneklerinden değişimi seçiyorum, sonra değişim ürünü seçin
+ *     demesi lazım"_
+ *  ② _"Aynı ürünü müşteri 3 defa iade edebiliyor, ben şimdi aynı iadeyi
+ *     seçip seçip duruyorum, 3'ten sonra seçtirmemeli"_
+ */
+{
+  /**
+   * ⚠ TAVAN "SATILAN ADET" DEĞİL — VE BU BİR ÖLÇÜM SONUCUDUR, TERCİH DEĞİL.
+   * En doğal türetme "satılandan fazlası iade edilemez" idi; canlı ölçüm
+   * onu ÇÜRÜTTÜ: bildirimi olan 8 satışın hepsi 1 adetlik ve dördü birden
+   * fazla bildirim taşıyor (2, 2, 3, 3). Adet sınırı koysaydık BUGÜN VAR
+   * OLAN gerçek kayıtları engellerdik.
+   *
+   * Tavanın kaynağı kullanıcı beyanı `(K)` — rozet BEYAN, pazaryeri
+   * belgesiyle doğrulanmadı. Ölçülen en yüksek değer 3 ve hiçbir kayıt
+   * tavanı AŞMIYOR: kural geçmişi bozmuyor.
+   */
+  kontrol("tavan 3", BILDIRIM_TAVANI === 3);
+  kontrol("2 bildirimde tavan DOLMADI", !bildirimTavaniDoldu(2));
+  kontrol("3 bildirimde tavan DOLDU", bildirimTavaniDoldu(3));
+  /**
+   * ⚠ AYRIMIN ÖTEKİ YAKASI: tavanı AŞMIŞ bir kayıt da dolu sayılmalı.
+   * `=== BILDIRIM_TAVANI` diye yazılsaydı, istisnayla 4'e çıkmış bir satışta
+   * kural SESSİZCE düşer ve beşinci bildirim hiç sorulmadan geçerdi.
+   */
+  kontrol("  ...4 bildirimde de DOLU (eşitlik değil, en az)", bildirimTavaniDoldu(4));
+
+  /**
+   * ⚠ İTİRAZDA DEĞİŞİM YALNIZ `DEGISIM` GEREKÇESİNDE SORULUR. Sekiz
+   * gerekçenin ötekilerinde geri giden mal AYNI üründür; ürün seçtirmek
+   * cevaplanacak yanlış bir soru olurdu.
+   */
+  kontrol("değişim ürünü YALNIZ DEGISIM gerekçesinde soruluyor", itirazDegisimUrunuIster("DEGISIM"));
+  const yanlisSoran = ITIRAZ_GEREKCELERI.filter(
+    (g) => g !== "DEGISIM" && itirazDegisimUrunuIster(g),
+  );
+  kontrol("  ...başka gerekçede sorulmuyor", yanlisSoran.length === 0, yanlisSoran);
+
+  const eylemK5 = readFileSync("src/app/iadeler/bildirim-actions.ts", "utf8");
+
+  /** Tavan SUNUCUDA da uygulanıyor — ekranda pasif düğme yetki değildir. */
+  const tavanBlok = eylemK5.slice(
+    eylemK5.indexOf("const mevcutBildirimSayisi"),
+    eylemK5.indexOf("YANLIS_URUN'DA DÖNEN ÜRÜN ZORUNLU"),
+  );
+  kontrol("tavan bloğu kesilebildi", tavanBlok.length > 0);
+  kontrol(
+    "  ...sunucu tavanı sayıyor ve engelliyor",
+    /bildirimTavaniDoldu\(mevcutBildirimSayisi\)/.test(tavanBlok) &&
+      /bildirimTavaniDoldu/.test(tavanBlok),
+  );
+  /**
+   * ⚠ MUTLAK KİLİT DEĞİL. Tavan bir BEYAN; kuralın yanıldığı gün mutlak
+   * kilit operasyoncuyu kilitler ve gerçek bir olay hiç kaydedilemez.
+   * Anayasa (20.08.2026): uyarı sorar, kullanıcı ısrar ederse istisna
+   * KAYDA GEÇER.
+   */
+  kontrol(
+    "  ...istisna yolu var (mutlak kilit değil)",
+    /!veri\.tavanIstisnasi/.test(tavanBlok),
+  );
+  /**
+   * ⚠ İŞARET ÇAĞRI YERİNE BAĞLANIR, ADA DEĞİL — MUTASYONLA ÖĞRENİLDİ.
+   *
+   * İlk hâli dosyanın tamamında `TAVAN_ISTISNASI_EYLEMI` arıyordu. Eylem
+   * adını başka bir dizeye çeviren mutasyon YEŞİL KALDI: sabit hâlâ IMPORT
+   * satırında geçiyordu. Aynı tuzak bu depoda `revalidatePath` ile de
+   * yaşanmıştı — desen adı değil KULLANIMI aranır.
+   */
+  const istisnaBloku = eylemK5.slice(
+    eylemK5.indexOf("if (veri.tavanIstisnasi &&"),
+    eylemK5.indexOf('revalidatePath("/iadeler")', eylemK5.indexOf("if (veri.tavanIstisnasi &&")),
+  );
+  kontrol("istisna izi bloğu kesilebildi", istisnaBloku.length > 0);
+  kontrol(
+    "  ...istisna İZ BIRAKIYOR (eylem adı çağrı yerinde)",
+    /action: TAVAN_ISTISNASI_EYLEMI,/.test(istisnaBloku),
+  );
+  /** İz satışa bağlı ve kaç bildirim olduğunu taşıyor — üç ay sonra okunabilsin. */
+  kontrol(
+    "  ...ve iz satışa bağlı, sayıyı taşıyor",
+    /targetType: "Sale"/.test(istisnaBloku) &&
+      /mevcutBildirim: mevcutBildirimSayisi/.test(istisnaBloku),
+  );
+
+  /**
+   * ⚠ İPTAL EDİLMİŞ BİLDİRİM DE SAYILIR. Saymasaydık, iptal edip yeniden
+   * açarak tavan sınırsız aşılabilirdi. Sayımda durum süzgeci OLMAMALI.
+   */
+  /**
+   * ⚠ İPTAL EDİLMİŞ BİLDİRİM DE SAYILIR. Saymasaydık, iptal edip yeniden
+   * açarak tavan sınırsız aşılabilirdi.
+   *
+   * ⚠ DİLİM SAYIM ÇAĞRISINA DARALTILDI. İlk hâli tavan bloğunun tamamına
+   * bakıyordu ve o blok, AYRILAN ÜRÜN doğrulamasındaki
+   * `status: { in: AYRILMIS_SAYILAN_DURUMLAR }` süzgecini de içine alıyordu:
+   * kontrol doğru davranışta KIRMIZI yandı. Aranan şey sayımın kendisi,
+   * onu çevreleyen kod değil.
+   */
+  const sayimBasi = eylemK5.indexOf("prisma.returnNotice.count(");
+  const sayimCagrisi = eylemK5.slice(
+    sayimBasi,
+    eylemK5.indexOf("});", sayimBasi),
+  );
+  kontrol("sayım çağrısı kesilebildi", sayimCagrisi.length > 0);
+  kontrol(
+    "  ...aynı satışın TÜM bildirimleri sayılıyor",
+    /where: \{ saleId: veri\.saleId \}/.test(sayimCagrisi),
+  );
+  kontrol(
+    "  ...ve durum SÜZÜLMÜYOR (iptal edilmiş de sayılır)",
+    !/status/.test(sayimCagrisi),
+  );
+
+  /** Değişim ürünü sunucuda ZORUNLU ve stok kuralı uygulanıyor. */
+  const degisimBlok = eylemK5.slice(
+    eylemK5.indexOf("if (itirazDegisimUrunuIster(secim))"),
+    eylemK5.indexOf("if (analizSonucuIstenirMi(bildirim.status))"),
+  );
+  kontrol("değişim bloğu kesilebildi", degisimBlok.length > 0);
+  kontrol(
+    "  ...ürün seçilmeden geçilemiyor",
+    /degisimUrunuZorunlu/.test(degisimBlok),
+  );
+  /**
+   * ⚠ OLMAYAN MAL TAAHHÜT EDİLEMEZ — ve ölçüt SERBEST STOK. Yalnız mevcuda
+   * bakılsaydı 1 adetlik mal iki bildirime ayrı ayrı taahhüt edilebilirdi
+   * ve ikisi de "hazır" görünürdü (14.08.2026 vakası).
+   */
+  kontrol(
+    "  ...serbest stok kuralı uygulanıyor (ortak fonksiyondan)",
+    /ayirmaMumkunMu\(\{ mevcutStok, zatenAyrilmis, istenen: adet \}\)/.test(
+      degisimBlok,
+    ),
+  );
+  kontrol(
+    "  ...ve seçim kayda YAZILIYOR",
+    /yazilacakEk\.reservedVariantId = varyantId/.test(degisimBlok),
+  );
+
+  // ── EKRAN ────────────────────────────────────────────────────────────
+  const durumEkraniK5 = readFileSync(
+    "src/app/iadeler/bildirim-durumu.tsx",
+    "utf8",
+  );
+  const ekranKodK5 = durumEkraniK5
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol(
+    "diyalogda değişim ürünü seçimi VAR",
+    /itirazDegisimUrunuIster\(gerekce as NoticeObjectionReason\)/.test(ekranKodK5),
+  );
+  kontrol(
+    "  ...ürün seçilmeden onay düğmesi basılamıyor",
+    /degisimVaryant === ""/.test(ekranKodK5),
+  );
+
+  const formK5 = readFileSync("src/app/iadeler/bildirim-formu.tsx", "utf8");
+  const formKod = formK5
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  /**
+   * ⚠ SAYI SEÇİMDEN ÖNCE GÖRÜNÜR. Seçimden sonra söylemek, yanlış seçimi
+   * düzeltmeye zorlar; alt satır bedava.
+   */
+  kontrol(
+    "satış listesinde mevcut bildirim sayısı görünüyor",
+    /altEtiket:[\s\S]{0,120}tavanUyarisi/.test(formKod),
+  );
+  kontrol(
+    "  ...tavan dolduğunda onay kutusu çıkıyor",
+    /\{tavanDoldu \?/.test(formKod) && /tavanIstisnasiOnay/.test(formKod),
+  );
+  /**
+   * ⚠ SEBEP EKRANDA YAZILI (İlke #5). Kilitli düğme sessiz kalmaz: neden
+   * ilerlemediği eksikler listesinde duruyor.
+   */
+  kontrol(
+    "  ...onaysızken sebep eksikler listesinde yazıyor",
+    /eksikler\.push\(t\("eksikTavanOnayi"\)\)/.test(formKod),
+  );
+  /**
+   * ⚠ ONAY BİR SONRAKİ KAYDA TAŞINMAZ. Kayıt başarılıysa kutu sıfırlanır;
+   * "bir kez onayladım, artık sorma" yoktur.
+   */
+  kontrol(
+    "  ...onay bir sonraki kayda TAŞINMIYOR",
+    /setTavanOnayi\(false\)/.test(formKod),
+  );
+
+  kosanBolumler.push("tavan-ve-degisim");
 }
 
 if (kosanBolumler.length !== BOLUM_SAYISI) {

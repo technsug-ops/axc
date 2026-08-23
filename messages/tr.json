@@ -2405,7 +2405,16 @@
     "kargoKoduYaz": "Kaydet",
     "askidaBaslik": "Askıda",
     "askidaAciklama": "Süreç durdu: saat işlemiyor ve sıradaki adım belli değil. Burasının boş olması beklenir.",
-    "askidaYok": "Askıda iade yok."
+    "askidaYok": "Askıda iade yok.",
+    "bildirimTavaniDoldu": "Bu satışta zaten {adet} iade bildirimi var; tavan {tavan}. Gerçekten yeni bir talep açıldıysa aşağıdaki kutuyu işaretleyip devam edebilirsin — istisna kayda geçer.",
+    "tavanIstisnasiOnay": "Bu satışta {adet} bildirim var, yine de yeni bildirim aç",
+    "tavanUyarisi": "Bu satışta zaten {adet} bildirim var (tavan {tavan}).",
+    "degisimUrunuZorunlu": "Değişim yapacaksan gönderilecek ürünü seç.",
+    "degisimAdetGecersiz": "Değişim adedi en az 1 olmalı.",
+    "degisimUrunuBaslik": "Değişim ürünü",
+    "degisimUrunuAciklama": "Müşteriye gönderilecek YENİ ürün. Fiziksel stoğa dokunmaz — ayrılmış olarak işaretlenir.",
+    "degisimUrunuSec": "Ürün seçin",
+    "eksikTavanOnayi": "Tavan doldu — devam etmek için onay kutusunu işaretle."
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",

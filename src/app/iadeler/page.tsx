@@ -607,6 +607,13 @@ export default async function IadelerSayfasi({
         channelAccount: {
           select: { name: true, channel: { select: { name: true } } },
         },
+        /**
+         * O SATIŞTA KAÇ BİLDİRİM VAR — SEÇİM LİSTESİNDE GÖRÜNSÜN.
+         * Kullanıcı aynı iadeyi tekrar tekrar seçebiliyordu ve hiçbir yerde
+         * "bunu zaten girdin" yazmıyordu. Sayı seçimden ÖNCE görünür;
+         * seçimden sonra söylemek yanlış seçimi düzeltmeye zorlar.
+         */
+        _count: { select: { returnNotices: true } },
       },
     }),
     /**
@@ -689,6 +696,21 @@ export default async function IadelerSayfasi({
       bildirimId: k.id,
       siparisNo: k.sale.code,
       urun: urunAdi(k),
+    }));
+
+  /**
+   * STOĞU OLAN VARYANTLAR — HEM FORM HEM İTİRAZ DİYALOĞU AYNI LİSTEDEN.
+   *
+   * ⚠ İKİ YERDE İKİ LİSTE OLSAYDI biri "stoğu olanlar", öteki "hepsi"
+   * olabilir ve aynı ürün bir ekranda seçilip ötekinde seçilemezdi.
+   * Gönderilemeyecek mal ayrılamaz — kural tek.
+   */
+  const degisimSecenekleri = formVaryantlari
+    .filter((v) => (formStoklari.get(v.id) ?? 0) > 0)
+    .map((v) => ({
+      deger: v.id,
+      etiket: `${v.product.name} (${v.sku})`,
+      altEtiket: tBildirim("stokMetni", { sayi: formStoklari.get(v.id) ?? 0 }),
     }));
 
   const itirazEtiketleri = await itirazGerekceEtiketleri();
@@ -849,6 +871,7 @@ export default async function IadelerSayfasi({
               satislar={formSatislari.map((s) => ({
                 id: s.id,
                 etiket: `${s.code ?? tBildirim("siparisNoYok")} · ${bicim.tarih(s.soldAt)} · ${s.channelAccount.channel.name} — ${s.channelAccount.name}`,
+                bildirimSayisi: s._count.returnNotices,
               }))}
               satisSiniriDoldu={formSatislari.length === SATIS_LISTE_SINIRI}
               /**
@@ -1023,6 +1046,7 @@ export default async function IadelerSayfasi({
                     mevcutDurum={b.status}
                     itirazGerekceleri={itirazSecenekleri}
                     analizSonuclari={analizSecenekleri}
+                    stoktakiVaryantlar={degisimSecenekleri}
                     iadeIsle={{
                       acik: iadeIslenebilirMi(b.status) && b.returnId === null,
                       /**
