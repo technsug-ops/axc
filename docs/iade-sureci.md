@@ -38,26 +38,32 @@ pazaryerinde böyle."_ **Maliyet kuralları kanal kanal değişiyor** — bkz. �
 ## 1. Durum akışı
 
 ```
- Talep Oluşturulan ──müşteri 7 gün kargoya vermezse──▶ İptal
-        │ müşteri kargoya verdi
-        ▼
-  Kargoya Verilen
-        │ kargo satıcıya TESLİM edildi   ⏳ 2 günlük onay/red süresi BURADA başlar (K)
-        ▼
-  Aksiyon Bekleyen ─────────────────────┐
-        │                               │
-     Onayla                          Reddet  (8 gerekçeden biri + paketleme videosu)
-        │                               ▼
-        │                          İhtilaflı        ← pazaryeri inceler
-        │                          │        │
-        │                 satıcı haklı    pazaryeri "servise gitsin" der
-        │                          ▼        ▼
-        │                    Reddedilen    Analiz  (28 gün)
-        │                    + kargo kodu    │ tamir / değişim / sorun yok
-        │                    2 iş günü       ├──▶ Reddedilen (geri gönder)
-        │                    içinde yolla    └──▶ Onaylanan
-        ▼
-   Onaylanan  (iade kesinleşti — bizde `Return` doğar)
+Talep Oluşturulan ──(müşteri 7 gün kargoya vermezse)──▶ İptal
+     │
+     │ müşteri kargoya verdi
+     ▼
+Kargoya Verilen
+     │
+     │ kargo satıcıya TESLİM edildi
+     │ >> 2 günlük onay/red süresi BURADA başlar (K)
+     ▼
+Aksiyon Bekleyen
+     │
+     ├── Onayla ─────────────────────────────▶ Onaylanan
+     │                                         iade kesinleşti, `Return` doğar
+     │
+     └── Reddet + 8 gerekçeden biri + paketleme videosu
+              │
+              ▼
+         İhtilaflı ── pazaryeri inceler
+              │
+              ├── satıcı haklı ────▶ Reddedilen
+              │                      + kargo kodu · 2 iş günü içinde geri yolla
+              │
+              └── "servise gitsin" ▶ Analiz (28 gün)
+                                        │ tamir / değişim / sorun yok
+                                        ├──▶ Reddedilen  (geri gönder)
+                                        └──▶ Onaylanan   (kapanır)
 ```
 
 **Satıcı panelindeki sekmeler** `(E)`: Tüm İadeler · Talep Oluşturulan ·
