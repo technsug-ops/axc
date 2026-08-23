@@ -145,8 +145,67 @@ export const ACIK_BILDIRIM_DURUMLARI: NoticeStatus[] = (
  */
 export const IADE_ISLENEBILIR: NoticeStatus[] = ["MAL_GELDI", "ITIRAZ_RED"];
 
-export function iadeIslenebilirMi(durum: NoticeStatus): boolean {
-  return IADE_ISLENEBILIR.includes(durum);
+/**
+ * ⚠ İKİ İSTİSNA EKLENDİ 23.08.2026 — KULLANICI BİLDİRDİ, ÖLÇÜMLE DOĞRULANDI.
+ *
+ * Kullanıcı: _"değişim için bir ürün seçtim, onu kargolayıp yolladım,
+ * bildirimi de kapattım ama değişim için seçtiğim ürünün stoğu aynı kaldı."_
+ *
+ * SEBEP: `EXCHANGE_OUT` hareketini YALNIZ AŞAMA B (`iadeKaydet`) yazıyor ve
+ * AŞAMA B bu durumlardan ERİŞİLEMİYORDU. Ayırma bir NİYET BEYANIDIR —
+ * fiziksel stoğa dokunmaz — ama niyetin gerçekleştiği an hiçbir yerde
+ * kaydedilmiyordu; ürün depodan çıkıyor, defter bunu hiç öğrenmiyordu.
+ *
+ * ÖLÇÜLDÜ (canlı, 23.08.2026): ayrılan ürünü olan 6 bildirimden İKİSİ
+ * kapanmış ve iadesi hiç işlenmemiş (`11473322212` · `11504122276`);
+ * canlıda toplam `EXCHANGE_OUT` hareketi 1.
+ *
+ * İSTİSNA 1 — `ITIRAZ_KABUL` + gerekçe `DEGISIM`: itirazı kazandık ama
+ * "değişim yapacağım" dedik, yani müşteriye YENİ ürün gidiyor. O ürün
+ * depodan fiziksel olarak çıkar ve `EXCHANGE_OUT` yazılmak ZORUNDADIR.
+ * ⚠ Öteki `ITIRAZ_KABUL` yolları KAPALI kalıyor (satıcı haklı / analiz
+ * bitti): oralarda geri giden AYNI üründür, stoğumuza hiç girmemiştir ve
+ * çıkışı da yoktur. Düğmeyi hepsine açmak, kazanılmış bir itirazdan sonra
+ * ciroyu yanlışlıkla düşürmenin en kolay yolu olurdu.
+ *
+ * İSTİSNA 2 — `KAPANDI` ama AYRILAN ÜRÜN HİÇ DÜŞMEMİŞ: dosya kapanmış
+ * görünüyor ama aslında bitmemiştir. Eksik hareketi yazmak defteri BOZMAZ,
+ * DÜZELTİR. ⚠ Kapsam dar tutuldu: yalnız ayrılmış ve düşmemiş kayıt;
+ * "kapanmış her bildirim işlenebilir" deseydik, hiçbir şeyin kıpırdamaması
+ * gereken kapanışlarda ciro sessizce bozulabilirdi.
+ */
+export function iadeIslenebilirMi(
+  durum: NoticeStatus,
+  ek?: {
+    /** Satıcının itiraz gerekçesi — `DEGISIM` ise YENİ ürün çıkıyor. */
+    itirazGerekcesi?: NoticeObjectionReason | null;
+    /** Ayrılan ürün var ve henüz stoktan düşülmedi. */
+    ayrilmisBekliyor?: boolean;
+  },
+): boolean {
+  if (IADE_ISLENEBILIR.includes(durum)) return true;
+  if (durum === "ITIRAZ_KABUL" && ek?.itirazGerekcesi === "DEGISIM") return true;
+  if (durum === "KAPANDI" && ek?.ayrilmisBekliyor === true) return true;
+  return false;
+}
+
+/**
+ * AYRILAN ÜRÜN DÜŞMEYİ BEKLİYOR MU — sessiz kaybın tek ölçütü.
+ *
+ * ⚠ İKİ ŞART BİRDEN: ayrılmış bir ürün VAR ve iade HİÇ işlenmemiş
+ * (`returnId` boş). Yalnız birine bakmak yanlış olurdu — ayrılmamış bir
+ * kayıtta beklenecek bir şey yok, işlenmiş bir kayıtta hareket zaten yazıldı.
+ */
+export function ayrilmisDusmeyiBekliyor(bildirim: {
+  reservedVariantId: string | null;
+  reservedQuantity: number;
+  returnId: string | null;
+}): boolean {
+  return (
+    bildirim.reservedVariantId !== null &&
+    bildirim.reservedQuantity > 0 &&
+    bildirim.returnId === null
+  );
 }
 
 /**

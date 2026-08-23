@@ -2414,7 +2414,8 @@
     "degisimUrunuBaslik": "Değişim ürünü",
     "degisimUrunuAciklama": "Müşteriye gönderilecek YENİ ürün. Fiziksel stoğa dokunmaz — ayrılmış olarak işaretlenir.",
     "degisimUrunuSec": "Ürün seçin",
-    "eksikTavanOnayi": "Tavan doldu — devam etmek için onay kutusunu işaretle."
+    "eksikTavanOnayi": "Tavan doldu — devam etmek için onay kutusunu işaretle.",
+    "ayrilmisDusmedi": "Ayrılan {adet} adet ürün STOKTAN DÜŞÜLMEDİ — \"İadeyi işle\" ile kaydet."
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",

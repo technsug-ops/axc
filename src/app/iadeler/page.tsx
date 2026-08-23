@@ -53,6 +53,7 @@ import {
   DEGISIM_GEREKCELERI,
   gecisGecerliMi,
   IADE_ISLE_SEBEP_ANAHTARI,
+  ayrilmisDusmeyiBekliyor,
   iadeIslenebilirMi,
 } from "@/lib/iade/bildirim";
 import { BildirimFormu } from "./bildirim-formu";
@@ -500,6 +501,7 @@ export default async function IadelerSayfasi({
       /* K31 ② — kargolanacak kutusu bu alandan türetiliyor. */
       iadeKargoKodu: true,
       note: true,
+      reservedVariantId: true,
       reservedQuantity: true,
       returnId: true,
       returnedVariant: {
@@ -1016,6 +1018,26 @@ export default async function IadelerSayfasi({
                   </p>
 
                   {/*
+                    ⚠ AYRILAN ÜRÜN DÜŞMEYİ BEKLİYOR — SESSİZ KAYIP UYARISI.
+
+                    Kullanıcı 23.08.2026: değişim için ürün ayırdı, kargoladı,
+                    bildirimi kapattı — ve stok aynı kaldı. Ayırma bir NİYET
+                    beyanıdır (fiziksel stoğa dokunmaz), ama niyetin
+                    gerçekleştiği an hiçbir yerde kaydedilmiyordu.
+
+                    ⚠ BU GERÇEK BİR KAYIP: ürün depodan çıktı, defter
+                    bilmiyor. Kırmızı olması doğru — "siparişte yok" gibi
+                    yorumlanabilir bir bilgi değil, ölçülmüş bir eksik.
+                  */}
+                  {ayrilmisDusmeyiBekliyor(b) ? (
+                    <p className={`text-xs ${DURUM_YAZISI.olumsuz}`}>
+                      {tBildirim("ayrilmisDusmedi", {
+                        adet: b.reservedQuantity,
+                      })}
+                    </p>
+                  ) : null}
+
+                  {/*
                     RET GEREKÇESİ VE ANALİZ SONUCU (K31 ④).
 
                     ⚠ YAZILIP GÖRÜNMEYEN ALAN, YAZILMAMIŞ GİBİDİR. Bu iki
@@ -1058,7 +1080,17 @@ export default async function IadelerSayfasi({
                     analizSonuclari={analizSecenekleri}
                     stoktakiVaryantlar={degisimSecenekleri}
                     iadeIsle={{
-                      acik: iadeIslenebilirMi(b.status) && b.returnId === null,
+                      /**
+                       * ⚠ BAĞLAM VERİLİYOR. `ITIRAZ_KABUL`de düğme yalnız
+                       * gerekçe DEGISIM ise açılır (yeni ürün çıkıyor);
+                       * `KAPANDI`da yalnız ayrılan ürün hiç düşmediyse
+                       * (dosya kapanmış görünüyor ama bitmemiş).
+                       */
+                      acik:
+                        iadeIslenebilirMi(b.status, {
+                          itirazGerekcesi: b.itirazGerekcesi,
+                          ayrilmisBekliyor: ayrilmisDusmeyiBekliyor(b),
+                        }) && b.returnId === null,
                       /**
                        * ÖN-DOLU GEÇİŞ: bildirimin kimliği adreste taşınıyor;
                        * iade formu gerekçeyi ve YANLIS_URUN'da dönen varyantı

@@ -40,6 +40,7 @@ import {
 import {
   BILDIRIM_TAVANI,
   analizSonucuIstenirMi,
+  ayrilmisDusmeyiBekliyor,
   bildirimTavaniDoldu,
   itirazDegisimUrunuIster,
   itirazGerekcesiGerekliMi,
@@ -93,7 +94,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 15;
+const BOLUM_SAYISI = 16;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -2824,6 +2825,138 @@ console.log("\n15) BİLDİRİM TAVANI VE İTİRAZDA DEĞİŞİM ÜRÜNÜ");
   );
 
   kosanBolumler.push("tavan-ve-degisim");
+}
+
+// ===========================================================================
+console.log("\n16) AYRILAN DEĞİŞİM ÜRÜNÜ STOKTAN DÜŞMELİ");
+// ===========================================================================
+/**
+ * KULLANICI BİLDİRDİ 23.08.2026: _"değişim için bir ürün seçtim, onu
+ * kargolayıp yolladım, bildirimi de kapattım ama değişim için seçtiğim
+ * ürünün stoğu aynı kaldı."_
+ *
+ * SEBEP: `EXCHANGE_OUT` hareketini YALNIZ AŞAMA B (`iadeKaydet`) yazıyor ve
+ * AŞAMA B o durumlardan ERİŞİLEMİYORDU. Ayırma bir NİYET beyanıdır —
+ * fiziksel stoğa dokunmaz — ama niyetin GERÇEKLEŞTİĞİ an hiçbir yerde
+ * kaydedilmiyordu: ürün depodan çıkıyor, defter hiç öğrenmiyordu.
+ *
+ * ÖLÇÜLDÜ (canlı): ayrılan ürünü olan 6 bildirimin İKİSİ kapanmış ve iadesi
+ * hiç işlenmemiş; toplam `EXCHANGE_OUT` hareketi 1.
+ */
+{
+  const temelB = {
+    reservedVariantId: "v1",
+    reservedQuantity: 1,
+    returnId: null as string | null,
+  };
+
+  /**
+   * ⚠ İKİ ŞART BİRDEN. Yalnız birine bakmak yanlış olurdu: ayrılmamış bir
+   * kayıtta beklenecek şey yok, işlenmiş bir kayıtta hareket zaten yazıldı.
+   */
+  kontrol("ayrılmış + işlenmemiş → BEKLİYOR", ayrilmisDusmeyiBekliyor(temelB));
+  kontrol(
+    "  ...iade işlenmişse beklemiyor",
+    !ayrilmisDusmeyiBekliyor({ ...temelB, returnId: "r1" }),
+  );
+  kontrol(
+    "  ...ayrılan ürün yoksa beklemiyor",
+    !ayrilmisDusmeyiBekliyor({ ...temelB, reservedVariantId: null }),
+  );
+  /**
+   * ⚠ AYRIMI GÖSTEREN ÖRNEK: varyant DOLU ama adet 0. Yalnız
+   * `reservedVariantId !== null` diye bakan bir uygulama bunu "bekliyor"
+   * sayar ve düşülecek bir şey olmadığı hâlde kırmızı yanardı.
+   */
+  kontrol(
+    "  ...adet 0 ise beklemiyor (yarım kayıt)",
+    !ayrilmisDusmeyiBekliyor({ ...temelB, reservedQuantity: 0 }),
+  );
+
+  /**
+   * ⚠ İSTİSNA 1 — `ITIRAZ_KABUL` + `DEGISIM`: müşteriye YENİ ürün gidiyor,
+   * `EXCHANGE_OUT` yazılmak zorunda.
+   */
+  kontrol(
+    "ITIRAZ_KABUL + DEGISIM → iade işlenebilir",
+    iadeIslenebilirMi("ITIRAZ_KABUL", { itirazGerekcesi: "DEGISIM" }),
+  );
+  /**
+   * ⚠ VE ÖTEKİ İTİRAZ YOLLARI KAPALI KALMALI. Satıcı haklı bulunduğunda ya
+   * da analiz bittiğinde geri giden AYNI üründür; stoğumuza hiç girmemiştir
+   * ve çıkışı da yoktur. Düğmeyi hepsine açmak, kazanılmış bir itirazdan
+   * sonra ciroyu yanlışlıkla düşürmenin en kolay yolu olurdu.
+   */
+  const yanlisAcilan = ITIRAZ_GEREKCELERI.filter(
+    (g) => g !== "DEGISIM" && iadeIslenebilirMi("ITIRAZ_KABUL", { itirazGerekcesi: g }),
+  );
+  kontrol(
+    "  ...öteki itiraz gerekçelerinde KAPALI",
+    yanlisAcilan.length === 0,
+    yanlisAcilan,
+  );
+  kontrol(
+    "  ...gerekçe yoksa da KAPALI",
+    !iadeIslenebilirMi("ITIRAZ_KABUL"),
+  );
+
+  /**
+   * ⚠ İSTİSNA 2 — `KAPANDI` ama ayrılan ürün hiç düşmemiş: dosya kapanmış
+   * GÖRÜNÜYOR ama bitmemiştir. Eksik hareketi yazmak defteri bozmaz, düzeltir.
+   */
+  kontrol(
+    "KAPANDI + ayrılmış bekliyor → iade işlenebilir",
+    iadeIslenebilirMi("KAPANDI", { ayrilmisBekliyor: true }),
+  );
+  /**
+   * ⚠ KAPSAM DAR: "kapanmış her bildirim işlenebilir" deseydik, hiçbir şeyin
+   * kıpırdamaması gereken kapanışlarda ciro sessizce bozulabilirdi.
+   */
+  kontrol(
+    "  ...bekleyen yoksa KAPANDI hâlâ kapalı",
+    !iadeIslenebilirMi("KAPANDI", { ayrilmisBekliyor: false }) &&
+      !iadeIslenebilirMi("KAPANDI"),
+  );
+  kontrol(
+    "  ...IPTAL hiçbir koşulda açılmıyor",
+    !iadeIslenebilirMi("IPTAL", { ayrilmisBekliyor: true, itirazGerekcesi: "DEGISIM" }),
+  );
+
+  /** Eski davranış korunuyor — iki temel durum hâlâ açık. */
+  kontrol(
+    "MAL_GELDI ve ITIRAZ_RED hâlâ açık",
+    iadeIslenebilirMi("MAL_GELDI") && iadeIslenebilirMi("ITIRAZ_RED"),
+  );
+
+  // ── EKRAN ────────────────────────────────────────────────────────────
+  const listeK6 = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  /**
+   * ⚠ SESSİZ KAYIP GÖRÜNÜR OLMALI. Ürün depodan çıktı, defter bilmiyor —
+   * bu gerçek bir eksik ve kırmızı olması doğru. ("Siparişte yok" gibi
+   * yorumlanabilir bir bilgi değil.)
+   */
+  kontrol(
+    "düşmemiş ayırma ekranda UYARIYOR",
+    /ayrilmisDusmeyiBekliyor\(b\) \?/.test(listeK6) &&
+      /ayrilmisDusmedi/.test(listeK6),
+  );
+  kontrol(
+    "  ...ve kırmızı (ölçülmüş bir eksik)",
+    /DURUM_YAZISI\.olumsuz[\s\S]{0,80}ayrilmisDusmedi/.test(listeK6),
+  );
+  /**
+   * ⚠ DÜĞME BAĞLAM ALMALI. Bağlamsız çağrılsaydı kural doğru olur ama
+   * ekrana hiç ulaşmazdı — "kural çalışıyor" ile "kuralın sonucu kullanıcıya
+   * ulaşıyor" ayrı iki testtir (19.08.2026 dersi).
+   */
+  kontrol(
+    "işle düğmesi BAĞLAMLA çağrılıyor",
+    /iadeIslenebilirMi\(b\.status, \{[\s\S]{0,200}ayrilmisBekliyor: ayrilmisDusmeyiBekliyor\(b\)/.test(
+      listeK6,
+    ),
+  );
+
+  kosanBolumler.push("ayrilmis-dusmedi");
 }
 
 if (kosanBolumler.length !== BOLUM_SAYISI) {
