@@ -41,6 +41,11 @@ import {
   analizSonucuIstenirMi,
   itirazGerekcesiGerekliMi,
 } from "../src/lib/iade/bildirim";
+import {
+  askidaMi,
+  kargolamaDogurur,
+  kargolamaDurumu,
+} from "../src/lib/iade/kargolama";
 
 import {
   DEGISIM_GEREKCELERI,
@@ -85,7 +90,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 13;
+const BOLUM_SAYISI = 14;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -2433,6 +2438,191 @@ console.log("\n13) RET GEREKÇESİ (8) VE ANALİZ SONUCU (3) — K31 ④");
   );
 
   kosanBolumler.push("ret-gerekcesi-ve-analiz");
+}
+
+// ===========================================================================
+console.log("\n14) KARGOLANACAK KUTUSU (K31 ②) VE ASKIDA (③)");
+// ===========================================================================
+/**
+ * İtirazımız kabul edildiğinde ürün BİZDE kalır ve müşteriye geri gönderilir
+ * (`docs/iade-sureci.md` §5): pazaryeri bir KARGO KODU atar, ürün 2 iş günü
+ * içinde o kodla gider.
+ *
+ * ⚠ BU FİZİKSEL İŞ HİÇBİR YERDE GÖRÜNMÜYORDU. Rozette "İtiraz kabul"
+ * yazması bir SONUÇ gibi okunuyordu; oysa orada elimizde duran bir ürün ve
+ * işleyen bir süre var.
+ *
+ * ⚠ YENİ DURUM/ALAN AÇILMADI — kural TÜRETİLDİ. `iadeKargoKodu` da o güne
+ * kadar ölü bir sütundu (sıfır okuyucu, sıfır yazıcı).
+ */
+{
+  /**
+   * ⚠ KURAL DAR VE BU BİLEREK. `ITIRAZ_RED`de de dosya kapanışa gider ama
+   * ürün MÜŞTERİYE GİTMEZ: itirazımız reddedilmiştir, iade onaylanır, mal
+   * bizde kalır. Kutuya onu da koysaydık yapılmayacak bir iş her gün listede
+   * durur ve kutu okunmaz olurdu.
+   */
+  kontrol("kargolama işi YALNIZ ITIRAZ_KABUL'de doğuyor", kargolamaDogurur("ITIRAZ_KABUL"));
+  const yanlisDogural = BILDIRIM_DURUMLARI.filter(
+    (d) => d !== "ITIRAZ_KABUL" && kargolamaDogurur(d),
+  );
+  kontrol(
+    "  ...başka hiçbir durumda doğmuyor (ITIRAZ_RED dahil)",
+    yanlisDogural.length === 0,
+    yanlisDogural,
+  );
+
+  /**
+   * ⚠ ÖLÇÜT KARGO KODUNUN VARLIĞI, AYRI BİR BAYRAK DEĞİL. İkinci bir
+   * "gönderildi" alanı iki gerçek demekti: kodu olan ama bayrağı boş bir
+   * kayıt hangisidir? Kodun kendisi olayın kanıtı.
+   */
+  kontrol(
+    "kod yoksa GÖNDERIME HAZIR",
+    kargolamaDurumu({ status: "ITIRAZ_KABUL", iadeKargoKodu: null }) ===
+      "GONDERIME_HAZIR",
+  );
+  kontrol(
+    "  ...kod varsa KARGODA",
+    kargolamaDurumu({ status: "ITIRAZ_KABUL", iadeKargoKodu: "TY-123" }) ===
+      "KARGODA",
+  );
+  /**
+   * ⚠ AYRIMI GÖSTEREN ÖRNEK: boşluklardan ibaret bir kod, kod DEĞİLDİR.
+   * `iadeKargoKodu` serbest metin; `!== null` diye bakan bir uygulama
+   * boşluğu "gönderildi" sayar ve iş sessizce kutudan düşerdi.
+   */
+  kontrol(
+    "  ...yalnız boşluk kod SAYILMIYOR",
+    kargolamaDurumu({ status: "ITIRAZ_KABUL", iadeKargoKodu: "   " }) ===
+      "GONDERIME_HAZIR",
+  );
+  kontrol(
+    "kargolama doğurmayan durum kutuya GİRMİYOR",
+    kargolamaDurumu({ status: "ITIRAZ_RED", iadeKargoKodu: "TY-9" }) === null,
+  );
+
+  /** Askı ayrı bir şey: süreç durdu, saat işlemiyor. */
+  kontrol("askı yalnız ASKIDA durumunda", askidaMi("ASKIDA"));
+  kontrol(
+    "  ...başka durumda değil",
+    BILDIRIM_DURUMLARI.filter((d) => d !== "ASKIDA").every((d) => !askidaMi(d)),
+  );
+  /**
+   * ⚠ ASKIDA SAYAÇ İŞLEMEZ — iki modül aynı şeyi söylemeli. Askıdaki bir
+   * kayda saat işletmek, durmuş bir sürece son tarih uydurmak olurdu.
+   */
+  kontrol(
+    "askıdaki kayıtta sayaç da işlemiyor (iki modül tutarlı)",
+    DURUM_SAYACI.ASKIDA === null,
+  );
+
+  // ── EKRAN ────────────────────────────────────────────────────────────
+  const kutu = readFileSync("src/app/iadeler/kargolanacak-kutusu.tsx", "utf8");
+  const kutuKod = kutu
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+
+  /**
+   * ⚠ AÇIK SIFIR (13.08.2026 dersi). Kutu boşken GİZLENMEZ, "yok" yazar.
+   * Bir şeyin YOKLUĞUNDAN "sorun yok" sonucu çıkarmak imkânsızdır —
+   * kullanıcı boş bir bölümü "ekran bozuk" diye okur. İKİ kutu için de
+   * ayrı ayrı sınanıyor: birini gizleyen mutasyon ötekiyle ayakta kalmasın.
+   */
+  for (const [ad, bos] of [
+    ["kargolanacak", "kargolanacakYok"],
+    ["askıda", "askidaYok"],
+  ] as [string, string][]) {
+    kontrol(
+      `${ad} kutusu BOŞKEN de yazıyor (açık sıfır)`,
+      new RegExp(`length === 0 \\?[\\s\\S]{0,200}t\\("${bos}"\\)`).test(kutuKod),
+    );
+  }
+
+  kontrol(
+    "kargo kodu ekrandan yazılabiliyor",
+    /bildirimKargoKoduYaz\(satir\.bildirimId, kod\)/.test(kutuKod),
+  );
+  /**
+   * ⚠ İKİ HÂL DE NÖTR. "Gönderime hazır" bir gecikme değil SIRADAKİ ADIM:
+   * pazaryeri kodu henüz atamamış olabilir. Kırmızı göstermek, bizim
+   * yapmadığımız bir işi suçlamak olurdu.
+   */
+  /**
+   * ⚠ DİLİM İŞARETİN ÖNÜNDEN BAŞLAR — MUTASYONLA ÖĞRENİLDİ.
+   *
+   * İlk hâli `satir.durum === "KARGODA"` ifadesinden İLERİ kesiyordu; oysa
+   * aranan şey (`className`) o ifadenin ÖNÜNDE duruyor. Sınıfı
+   * `text-destructive` yapan mutasyon dilimin dışında kaldı ve kontrol
+   * YEŞİL KALDI. Doğru sınır: ifadeyi saran etiketin AÇILIŞI.
+   */
+  const halIndeks = kutuKod.indexOf('satir.durum === "KARGODA"');
+  const halBloku = kutuKod.slice(
+    kutuKod.lastIndexOf("<span", halIndeks),
+    kutuKod.indexOf("</span>", halIndeks),
+  );
+  kontrol("iki hâl bloğu kesilebildi", halBloku.length > 0);
+  kontrol(
+    "  ...ikisi de NÖTR (gönderime hazır bir suçlama değil)",
+    !/destructive|text-red/.test(halBloku),
+  );
+  /**
+   * ⚠ İKİNCİ KAT — DOSYA GENELİ. Dilim ne kadar doğru kesilse de tek bir
+   * konuma bağlı kalır; kırmızı sınıf başka bir satıra taşınırsa yine
+   * kaçardı. Kutuda ham kırmızı sınıf HİÇ olmamalı: askı sayısı bile
+   * jetondan (`DURUM_YAZISI.olumsuz`) geliyor, elle yazılmış sınıftan değil.
+   */
+  kontrol(
+    "  ...kutuda ham kırmızı sınıf hiç yok (renk jetondan gelir)",
+    !/text-destructive|text-red-|bg-red-/.test(kutuKod),
+  );
+
+  /**
+   * ⚠ KUTU LİSTEDEN TÜRETİLMİYOR — AYRI SORGU. Ekrandaki liste en yeni 50
+   * ile sınırlı ve süzgeç uygulanmış; kutuyu ondan süzseydik 51. sıradaki
+   * bir "kargolanması gereken" iade SESSİZCE görünmezdi. (Bekleyen
+   * sayacında aynı tuzak 15.08'de yaşanmıştı.)
+   */
+  const listeK2 = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  kontrol(
+    "kutu AYRI sorgudan besleniyor (50'lik listeden değil)",
+    /where: \{ status: \{ in: \["ITIRAZ_KABUL", "ASKIDA"\] \} \}/.test(listeK2),
+  );
+  kontrol(
+    "  ...ve bildirimler sekmesinde çiziliyor",
+    /<KargolanacakKutusu/.test(listeK2),
+  );
+
+  /**
+   * ⚠ KARGOYA_VERILDI ATLANABİLİR ARA ADIM (③). Hepsiburada'da bu aşama YOK
+   * (§11.2); zorunlu olsaydı her HB iadesinde fazladan bir tık doğardı.
+   * Ölçüt: BEKLENIYOR'dan doğrudan MAL_GELDI'ye geçilebiliyor mu.
+   */
+  kontrol(
+    "KARGOYA_VERILDI aşaması var",
+    IZINLI_GECISLER.BEKLENIYOR.includes("KARGOYA_VERILDI"),
+  );
+  kontrol(
+    "  ...ama ATLANABİLİR (BEKLENIYOR → MAL_GELDI açık)",
+    IZINLI_GECISLER.BEKLENIYOR.includes("MAL_GELDI"),
+  );
+
+  /**
+   * ⚠ YENİ SÜTUN AÇILMADI. Kargolama durumu `iadeKargoKodu`dan türetiliyor;
+   * biri yarın bir bayrak eklerse burası kırmızı yanar ve karar yeniden
+   * konuşulur.
+   */
+  const semaK2 = readFileSync("prisma/schema.prisma", "utf8");
+  const modelK2 = semaK2.slice(
+    semaK2.indexOf("model ReturnNotice {"),
+    semaK2.indexOf("model ReturnItem {"),
+  );
+  kontrol(
+    "kargolama için bayrak sütunu AÇILMADI (koddan türetiliyor)",
+    !/gonderildi\s+Boolean|kargolandi\s+Boolean/.test(modelK2),
+  );
+
+  kosanBolumler.push("kargolanacak-ve-aski");
 }
 
 if (kosanBolumler.length !== BOLUM_SAYISI) {

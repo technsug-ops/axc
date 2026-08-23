@@ -26,6 +26,7 @@ import {
   kapaliMi,
   serbestStok,
 } from "@/lib/iade/bildirim";
+import { kargolamaDogurur } from "@/lib/iade/kargolama";
 import { oturumdakiKullanici } from "@/lib/oturum";
 import { prisma } from "@/lib/prisma";
 import { varyantStogu } from "@/lib/stok";
@@ -562,5 +563,55 @@ export async function bildirimSonTarihiYaz(
   revalidatePath("/iadeler");
   revalidatePath(`/satislar/${bildirim.saleId}`);
   revalidatePath("/");
+  return {};
+}
+
+/**
+ * ============================================================================
+ *  İADE KARGO KODU (K31 ②)
+ * ----------------------------------------------------------------------------
+ *  Pazaryeri, satıcı haklı bulunduğunda bir KARGO KODU atar ve ürün o kodla
+ *  2 iş günü içinde müşteriye geri gönderilir (`docs/iade-sureci.md` §5).
+ *
+ *  ⚠ KOD DIŞARIDAN GELİR, ÜRETİLMEZ. Pazaryerinin verdiği kimliktir;
+ *  sistemin uydurduğu bir numara kargo firmasında karşılığı olmayan bir
+ *  değer olurdu.
+ *
+ *  ⚠ "GÖNDERİLDİ" DİYE AYRI BİR BAYRAK AÇILMADI. Kodun VARLIĞI olayın
+ *  kanıtıdır; ikinci bir alan iki gerçek demekti ve biri gün gelip
+ *  ötekinden ayrışırdı (kodu var ama bayrağı boş kayıt hangisidir?).
+ * ============================================================================
+ */
+export async function bildirimKargoKoduYaz(
+  bildirimId: string,
+  kod: string,
+): Promise<{ hata?: string }> {
+  await yetkiIste("iade.yaz");
+  const t = await getTranslations("Bildirim2");
+
+  const bildirim = await prisma.returnNotice.findUnique({
+    where: { id: bildirimId },
+    select: { id: true, saleId: true, status: true },
+  });
+  if (!bildirim) return { hata: t("bulunamadi") };
+
+  /**
+   * ⚠ KURAL SAF MODÜLDEN. Kargolama işi yalnız `ITIRAZ_KABUL`de doğar;
+   * başka bir durumda kod yazmak, kutuya hiç girmeyecek bir veri
+   * biriktirmek olurdu.
+   */
+  if (!kargolamaDogurur(bildirim.status)) {
+    return { hata: t("kargoKoduDurumUygunDegil") };
+  }
+
+  /* Boş gönderim = kodu KALDIR. Yanlış girilen kod silinebilmeli. */
+  const temiz = kod.trim();
+  await prisma.returnNotice.update({
+    where: { id: bildirimId },
+    data: { iadeKargoKodu: temiz === "" ? null : temiz },
+  });
+
+  revalidatePath("/iadeler");
+  revalidatePath(`/satislar/${bildirim.saleId}`);
   return {};
 }

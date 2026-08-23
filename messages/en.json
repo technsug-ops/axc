@@ -2270,7 +2270,8 @@
     "islenmisNotu": "",
     "kirilimNotu": "",
     "kirilimBos": "",
-    "iadeEdilenUrunler": ""
+    "iadeEdilenUrunler": "",
+    "urunBelirtilmemis": ""
   },
   "IadeGerekcesi": {
     "DEGISIM": "",
@@ -2392,7 +2393,19 @@
     "analizSonucuSec": "",
     "analizSonucuTanimsiz": "",
     "itirazGerekcesiRozet": "",
-    "analizSonucuRozet": ""
+    "analizSonucuRozet": "",
+    "kargoKoduDurumUygunDegil": "",
+    "kargolanacakBaslik": "",
+    "kargolanacakAciklama": "",
+    "kargolanacakYok": "",
+    "gonderimeHazir": "",
+    "kargoda": "",
+    "kargoKodu": "",
+    "kargoKoduIpucu": "",
+    "kargoKoduYaz": "",
+    "askidaBaslik": "",
+    "askidaAciklama": "",
+    "askidaYok": ""
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "",

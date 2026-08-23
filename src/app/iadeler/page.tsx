@@ -59,9 +59,15 @@ import { BildirimFormu } from "./bildirim-formu";
 import { Ekler } from "./ekler";
 import { EK_SINIRLARI } from "@/lib/ekler";
 
+import { askidaMi, kargolamaDurumu } from "@/lib/iade/kargolama";
 import { isleyenSayac, sayacRengi } from "@/lib/iade/sayac";
 import { BildirimDurumu } from "./bildirim-durumu";
 import { SayacRozeti, type SayacGorunumu } from "./sayac-rozeti";
+import {
+  KargolanacakKutusu,
+  type AskidaSatir,
+  type KargolanacakSatir,
+} from "./kargolanacak-kutusu";
 
 /**
  * BİLDİRİMİ EKRANIN ANLAYACAĞI ŞEKLE ÇEVİRİR.
@@ -491,6 +497,8 @@ export default async function IadelerSayfasi({
       /* K31 ④ — ret gerekçesi ve analiz sonucu. */
       itirazGerekcesi: true,
       analizSonucu: true,
+      /* K31 ② — kargolanacak kutusu bu alandan türetiliyor. */
+      iadeKargoKodu: true,
       note: true,
       reservedQuantity: true,
       returnId: true,
@@ -634,6 +642,55 @@ export default async function IadelerSayfasi({
    * ayrışabilirdi; 23.08.2026'da iade gerekçelerinde tam bu oldu ve kayıt
    * sessizce düşüyordu.
    */
+  /**
+   * KARGOLANACAK VE ASKIDAKİ KAYITLAR — AYRI SORGU, LİSTEDEN BAĞIMSIZ.
+   *
+   * ⚠ EKRANDAKİ 50 KAYDIN İÇİNDEN SÜZÜLMÜYOR. Liste en yeni 50 ile sınırlı
+   * ve arama/süzgeç uygulanmış; kutuyu ondan türetseydik 51. sıradaki bir
+   * "kargolanması gereken" iade SESSİZCE görünmezdi — ve tam da görünmesi
+   * gereken şey odur. (Bekleyen sayacında aynı tuzak 15.08'de yaşanmıştı.)
+   */
+  const kargoVeAski = await prisma.returnNotice.findMany({
+    where: { status: { in: ["ITIRAZ_KABUL", "ASKIDA"] } },
+    orderBy: { noticedAt: "asc" },
+    select: {
+      id: true,
+      status: true,
+      iadeKargoKodu: true,
+      sale: { select: { code: true } },
+      returnedVariant: { select: { product: { select: { name: true } } } },
+      reservedVariant: { select: { product: { select: { name: true } } } },
+    },
+  });
+
+  const urunAdi = (k: (typeof kargoVeAski)[number]) =>
+    k.returnedVariant?.product.name ??
+    k.reservedVariant?.product.name ??
+    t("urunBelirtilmemis");
+
+  const kargolanacaklar: KargolanacakSatir[] = kargoVeAski
+    .map((k) => {
+      const durum = kargolamaDurumu(k);
+      return durum
+        ? {
+            bildirimId: k.id,
+            siparisNo: k.sale.code,
+            urun: urunAdi(k),
+            kargoKodu: k.iadeKargoKodu,
+            durum,
+          }
+        : null;
+    })
+    .filter((x): x is KargolanacakSatir => x !== null);
+
+  const askidakiler: AskidaSatir[] = kargoVeAski
+    .filter((k) => askidaMi(k.status))
+    .map((k) => ({
+      bildirimId: k.id,
+      siparisNo: k.sale.code,
+      urun: urunAdi(k),
+    }));
+
   const itirazEtiketleri = await itirazGerekceEtiketleri();
   const analizEtiketleri = await analizSonucuEtiketleri();
   const itirazSecenekleri = ITIRAZ_GEREKCELERI.map((g) => ({
@@ -748,6 +805,16 @@ export default async function IadelerSayfasi({
   const bildirimIcerigi = (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">{t("bildirimNotu")}</p>
+
+      {/*
+        KARGOLANACAK + ASKIDA (K31 ② ve ③). Fiziksel iş ve arıza kutusu
+        listenin ÜSTÜNDE: ikisi de "şimdi ne yapmalıyım" sorusunun cevabı ve
+        elli satırın altında kalırlarsa hiç görülmezler.
+      */}
+      <KargolanacakKutusu
+        satirlar={kargolanacaklar}
+        askidakiler={askidakiler}
+      />
 
       {/* DURUM SÜZGECİ — uygulamanın her yerindeki süzgeç düğmesiyle AYNI
           görünüm (İlke #10). Bağlantı, düğme değil: seçim adreste yaşar. */}

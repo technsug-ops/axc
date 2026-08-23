@@ -2270,7 +2270,8 @@
     "islenmisNotu": "Mal gelip hüküm verilmiş iadeler. Aşağıdaki rakamlar üstteki süzgece bağlıdır.",
     "kirilimNotu": "Hangi pazaryeri ve hangi ürün iade üretiyor. Üstteki dönem süzgeci burada da geçerlidir.",
     "kirilimBos": "Bu dönemde kırılım çıkaracak iade yok.",
-    "iadeEdilenUrunler": "İade edilen ürünler"
+    "iadeEdilenUrunler": "İade edilen ürünler",
+    "urunBelirtilmemis": "Ürün belirtilmemiş"
   },
   "IadeGerekcesi": {
     "DEGISIM": "Değişim",
@@ -2392,7 +2393,19 @@
     "analizSonucuSec": "Sonuç seçin",
     "analizSonucuTanimsiz": "Bu analiz sonucu sistemde tanımlı değil.",
     "itirazGerekcesiRozet": "Ret gerekçesi: {gerekce}",
-    "analizSonucuRozet": "Analiz: {sonuc}"
+    "analizSonucuRozet": "Analiz: {sonuc}",
+    "kargoKoduDurumUygunDegil": "Kargo kodu yalnız itirazı kabul edilmiş iadeye yazılır.",
+    "kargolanacakBaslik": "Kargolanması gereken",
+    "kargolanacakAciklama": "İtirazımız kabul edildi — ürün bizde ve müşteriye geri gönderilecek. Pazaryerinin verdiği kargo koduyla 2 iş günü içinde gönderilir.",
+    "kargolanacakYok": "Kargolanması gereken iade yok.",
+    "gonderimeHazir": "Gönderime hazır",
+    "kargoda": "Kargoda",
+    "kargoKodu": "İade kargo kodu",
+    "kargoKoduIpucu": "Pazaryerinin verdiği kod",
+    "kargoKoduYaz": "Kaydet",
+    "askidaBaslik": "Askıda",
+    "askidaAciklama": "Süreç durdu: saat işlemiyor ve sıradaki adım belli değil. Burasının boş olması beklenir.",
+    "askidaYok": "Askıda iade yok."
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",
