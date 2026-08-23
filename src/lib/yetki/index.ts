@@ -132,6 +132,26 @@ export async function yetkiIste(izin: Izin): Promise<YetkiBaglami> {
 }
 
 /**
+ * Oturumdaki kullanıcı ilk parolasını değiştirmek zorunda mı?
+ *
+ * ⚠ KULLANIMLARININ ÜSTÜNDE DURUYOR VE BU BİLEREK. `sayfaIzni` ile
+ * `sayfaGirisi` bunu çağırıyor; aşağıda tanımlıyken pratikte sorun yoktu
+ * (fonksiyonlar modül değerlendirmesinden SONRA çağrılıyor) ama
+ * `no-use-before-define` kuralı 23.08.2026'da açıldığında burayı işaretledi.
+ * İstisna yazmak yerine tanım yukarı alındı: kuralın istisnası olmaması,
+ * onu bir sonraki gerçek tuzakta güvenilir kılan şey.
+ */
+export const parolaDegismeliMi = cache(async (): Promise<boolean> => {
+  const kullanici = await oturumdakiKullanici();
+  if (!kullanici) return false;
+  const kayit = await prisma.user.findUnique({
+    where: { id: kullanici.id },
+    select: { mustChangePassword: true },
+  });
+  return kayit?.mustChangePassword ?? false;
+});
+
+/**
  * SAYFA KORUMASI — her korumalı sayfanın ilk satırı.
  *
  *     export default async function AlimlarSayfasi() {
@@ -171,17 +191,6 @@ export async function sayfaGirisi(): Promise<YetkiBaglami> {
   if (!baglam) notFound();
   return baglam;
 }
-
-/** Oturumdaki kullanıcı ilk parolasını değiştirmek zorunda mı? */
-export const parolaDegismeliMi = cache(async (): Promise<boolean> => {
-  const kullanici = await oturumdakiKullanici();
-  if (!kullanici) return false;
-  const kayit = await prisma.user.findUnique({
-    where: { id: kullanici.id },
-    select: { mustChangePassword: true },
-  });
-  return kayit?.mustChangePassword ?? false;
-});
 
 /**
  * API UCU KORUMASI — her route handler'ın ilk satırı.

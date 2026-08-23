@@ -698,21 +698,6 @@ export default async function IadelerSayfasi({
       urun: urunAdi(k),
     }));
 
-  /**
-   * STOĞU OLAN VARYANTLAR — HEM FORM HEM İTİRAZ DİYALOĞU AYNI LİSTEDEN.
-   *
-   * ⚠ İKİ YERDE İKİ LİSTE OLSAYDI biri "stoğu olanlar", öteki "hepsi"
-   * olabilir ve aynı ürün bir ekranda seçilip ötekinde seçilemezdi.
-   * Gönderilemeyecek mal ayrılamaz — kural tek.
-   */
-  const degisimSecenekleri = formVaryantlari
-    .filter((v) => (formStoklari.get(v.id) ?? 0) > 0)
-    .map((v) => ({
-      deger: v.id,
-      etiket: `${v.product.name} (${v.sku})`,
-      altEtiket: tBildirim("stokMetni", { sayi: formStoklari.get(v.id) ?? 0 }),
-    }));
-
   const itirazEtiketleri = await itirazGerekceEtiketleri();
   const analizEtiketleri = await analizSonucuEtiketleri();
   const itirazSecenekleri = ITIRAZ_GEREKCELERI.map((g) => ({
@@ -727,6 +712,31 @@ export default async function IadelerSayfasi({
   const gecisEtiketleri = await bildirimGecisEtiketleri();
   const siradakiAdimlar = await bildirimSiradakiAdim();
   const tBildirim = await getTranslations("Bildirim2");
+
+  /**
+   * STOĞU OLAN VARYANTLAR — HEM FORM HEM İTİRAZ DİYALOĞU AYNI LİSTEDEN.
+   *
+   * ⚠ İKİ YERDE İKİ LİSTE OLSAYDI biri "stoğu olanlar", öteki "hepsi"
+   * olabilir ve aynı ürün bir ekranda seçilip ötekinde seçilemezdi.
+   * Gönderilemeyecek mal ayrılamaz — kural tek.
+   *
+   * ⚠ KONUMU `tBildirim`DEN SONRA VE BU ZORUNLU. Blok önce yukarıda
+   * duruyordu ve `tBildirim` daha aşağıda tanımlanıyordu: `.map()` HEMEN
+   * çalıştığı için canlıda "Cannot access 'tBildirim' before
+   * initialization" hatası verdi ve `/iadeler` 500 döndü.
+   *
+   * ⚠ NE `tsc` NE 45 BEKÇİ NE `build` GÖRDÜ: kullanım bir ok fonksiyonunun
+   * içinde olduğu için TypeScript'in "bildirimden önce kullanım" kontrolü
+   * sırayı takip edemiyor. Bekçisi `no-use-before-define` (eslint).
+   */
+  const degisimSecenekleri = formVaryantlari
+    .filter((v) => (formStoklari.get(v.id) ?? 0) > 0)
+    .map((v) => ({
+      deger: v.id,
+      etiket: `${v.product.name} (${v.sku})`,
+      altEtiket: tBildirim("stokMetni", { sayi: formStoklari.get(v.id) ?? 0 }),
+    }));
+
 
   /**
    * KAPALI GEÇİŞİN SEBEBİ — mimar kuralı: pasif düğme sebepsiz kalmaz.
