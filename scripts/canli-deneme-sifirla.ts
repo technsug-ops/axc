@@ -6,6 +6,17 @@
  *  deneme testi yaptık, bütün denemeleri sıfırlayabilir misin, ortalık çok
  *  karıştı."_
  *
+ *  ⚠⚠ SONRADAN DÜZELTİLDİ — 11467064391 GERÇEK ÇIKTI.
+ *  Kullanıcı üçünü de "deneme" diye bildirmişti; koştuktan sonra
+ *  `11467064391`in GERÇEK bir iade olduğunu söyledi ve o sipariş
+ *  `canli-11467-geri-yukle.ts` ile birebir eski hâline döndürüldü
+ *  (NET ve stok kuruşuna tuttu).
+ *
+ *  ⚠ DERS: "hepsi test" bir BEYANDIR ve toplu uygulanmadan önce
+ *  kalem kalem teyit edilmeliydi. Betiğin izi (`DENEME_GERI_ALINDI`,
+ *  her bildirimin ÖNCEKİ durumu + serbest bırakılan adet) olmasaydı geri
+ *  yükleme YAZILAMAZDI. "İstisna iz bırakır" kuralının bedeli burada ölçüldü.
+ *
  *  ⚠ SİLME YOK — VE GEREKÇESİ İLKE DEĞİL, VERİ. `Return` silinseydi
  *  `ReturnItem` cascade ile giderdi; `StockMovement.returnItemId` ise
  *  `SetNull`. Sonuç: stok hareketleri KALIR ve hiçbir iadeye bağlı olmaz —
