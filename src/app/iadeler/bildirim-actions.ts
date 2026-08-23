@@ -24,16 +24,20 @@ import {
   ayirmaMumkunMu,
   ayrilmisAdetler,
   donenUrunZorunluMu,
+  DEGISIM_GONDERILDI_EYLEMI,
+  degisimGonderilebilirMi,
   gecisGecerliMi,
   itirazDegisimUrunuIster,
   itirazGerekcesiGerekliMi,
   kapaliMi,
+  onDoluHedefKalem,
   serbestStok,
 } from "@/lib/iade/bildirim";
 import { kargolamaDogurur } from "@/lib/iade/kargolama";
 import { oturumdakiKullanici } from "@/lib/oturum";
+import { satisKarTazele } from "@/lib/kar-yeniden";
 import { prisma } from "@/lib/prisma";
-import { varyantStogu } from "@/lib/stok";
+import { acikPartiler, fifoDagit, varyantStogu } from "@/lib/stok";
 import { yetkiIste } from "@/lib/yetki";
 
 import type {
@@ -750,4 +754,173 @@ export async function bildirimKargoKoduYaz(
   revalidatePath("/iadeler");
   revalidatePath(`/satislar/${bildirim.saleId}`);
   return {};
+}
+
+/**
+ * ============================================================================
+ *  DEĞİŞİM ÜRÜNÜ GÖNDERİLDİ (K37)
+ * ----------------------------------------------------------------------------
+ *  Ayrılan ürün müşteriye gönderildi: `EXCHANGE_OUT` hareketi FIFO'dan
+ *  doğrudan yazılır, iade formuna hiç uğramaz.
+ *
+ *  ⚠ NİYE AYRI YOL: değişimde giden mal bir İADE DEĞİL, bir ÇIKIŞTIR. İade
+ *  formu "kaç adet daha iade edilebilir" diye soruyor ve satışın iade hakkı
+ *  dolduğunda kapanıyor — kullanıcı 23.08.2026'da bu duvara iki ayrı satışta
+ *  çarptı. Kalan iade hakkı, iadeyle ilgisi olmayan bir stok çıkışını
+ *  engellememeli.
+ *
+ *  ⚠ MALİYET SATIŞIN NET'İNE GİDER (mimar kararı K36): hareket `saleItemId`
+ *  taşır ve `kalemMaliyeti` tip bakmadan topladığı için maliyet kendiliğinden
+ *  o satışın NET'ine girer. _Gerekçe: değişim o satışı kurtarmanın bedelidir;
+ *  ayrı cebe konursa satış kârlı görünür, değildir._
+ *
+ *  ⚠ BİLDİRİM BAĞI `AuditLog`TA VE YAPILANDIRILMIŞ. `StockMovement`ta
+ *  `returnNoticeId` sütunu yok; şema açmak yerine iz `AuditLog`a JSON olarak
+ *  yazılıyor (merdiven birinci basamak, K2 deseni). Serbest metin `note` tek
+ *  başına yetmez — üç ay sonra aranamaz.
+ * ============================================================================
+ */
+export async function degisimUrunuGonderildi(
+  bildirimId: string,
+): Promise<{ hata?: string; dusen?: number }> {
+  await yetkiIste("iade.yaz");
+  const t = await getTranslations("Bildirim2");
+
+  const bildirim = await prisma.returnNotice.findUnique({
+    where: { id: bildirimId },
+    select: {
+      id: true,
+      status: true,
+      reservedVariantId: true,
+      reservedQuantity: true,
+      saleId: true,
+      sale: {
+        select: {
+          code: true,
+          items: { select: { id: true, variantId: true } },
+        },
+      },
+    },
+  });
+  if (!bildirim) return { hata: t("bulunamadi") };
+
+  const zatenGonderildi = await degisimIziVarMi(bildirimId);
+  if (
+    !degisimGonderilebilirMi({
+      status: bildirim.status,
+      reservedVariantId: bildirim.reservedVariantId,
+      reservedQuantity: bildirim.reservedQuantity,
+      degisimGonderildiMi: zatenGonderildi,
+    })
+  ) {
+    return { hata: t("degisimGonderilemez") };
+  }
+
+  const varyantId = bildirim.reservedVariantId!;
+  const adet = bildirim.reservedQuantity;
+
+  /**
+   * HANGİ SATIŞ KALEMİNE BAĞLANACAK — ORTAK KURALDAN.
+   *
+   * `onDoluHedefKalem` ayrılan varyantla eşleşen kalemi seçer; eşleşme yoksa
+   * ve satış TEK kalemliyse onu alır. Belirsizse `null` döner ve BİZ TAHMİN
+   * ETMEYİZ: yanlış kaleme yazılan bir maliyet, sessizce yanlış NET demektir.
+   */
+  const hedefKalemId = onDoluHedefKalem({
+    kalemler: bildirim.sale.items.map((k) => ({
+      saleItemId: k.id,
+      variantId: k.variantId,
+    })),
+    ayrilanVaryantId: varyantId,
+  });
+  if (hedefKalemId === null) return { hata: t("degisimHedefBelirsiz") };
+
+  const kullanici = await oturumdakiKullanici();
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const partiler = await acikPartiler(tx, varyantId);
+      const dagitim = fifoDagit(partiler, adet);
+      if (!dagitim.yeterliMi) {
+        throw new Error(`STOK_YETERSIZ:${dagitim.mevcut}`);
+      }
+
+      /**
+       * ⚠ HER PARTİ İÇİN AYRI HAREKET. Parti izi (`sourceMovementId`)
+       * korunur ve maliyet o partinin GERÇEK birim maliyetidir — liste
+       * fiyatı ya da güncel maliyet değil.
+       */
+      for (const pay of dagitim.dagitim) {
+        await tx.stockMovement.create({
+          data: {
+            variantId: varyantId,
+            type: "EXCHANGE_OUT",
+            quantityDelta: -pay.adet,
+            occurredAt: new Date(),
+            saleItemId: hedefKalemId,
+            sourceMovementId: pay.parti.hareketId,
+            locationId: pay.parti.locationId,
+            unitCostAmount: pay.parti.birimMaliyet,
+            unitCostCurrency: pay.parti.birimMaliyetParaBirimi,
+            userId: kullanici?.id ?? null,
+            note: `Değişim ürünü gönderildi · bildirim ${bildirimId}`,
+          },
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          userId: kullanici?.id ?? null,
+          action: DEGISIM_GONDERILDI_EYLEMI,
+          targetType: "ReturnNotice",
+          targetId: bildirimId,
+          detail: JSON.stringify({
+            siparisNo: bildirim.sale.code,
+            saleItemId: hedefKalemId,
+            variantId: varyantId,
+            adet,
+            partiler: dagitim.dagitim.map((p) => ({
+              hareketId: p.parti.hareketId,
+              adet: p.adet,
+              birimMaliyet: p.parti.birimMaliyet,
+            })),
+          }),
+        },
+      });
+    });
+  } catch (e) {
+    const mesaj = String(e);
+    if (mesaj.includes("STOK_YETERSIZ")) {
+      return {
+        hata: t("degisimStokYetersiz", {
+          mevcut: mesaj.split("STOK_YETERSIZ:")[1]?.split("\n")[0] ?? "0",
+          istenen: adet,
+        }),
+      };
+    }
+    console.error("[iade] değişim çıkışı yazılamadı:", e);
+    return { hata: t("degisimYazilamadi") };
+  }
+
+  /**
+   * ⚠ KÂR TAZELENİR. Maliyet satışın NET'ine girdi; damgayı güncellemezsek
+   * ekran eski rakamı gösterir ve "kaydettim ama değişmedi" denir.
+   * (Anayasa: kanal taşımasında tam bu yaşandı.)
+   */
+  await satisKarTazele(bildirim.saleId);
+
+  revalidatePath("/iadeler");
+  revalidatePath("/stok");
+  revalidatePath(`/satislar/${bildirim.saleId}`);
+  revalidatePath("/");
+  return { dusen: adet };
+}
+
+/** Bu bildirim için değişim çıkışı daha önce yazıldı mı — iz `AuditLog`ta. */
+async function degisimIziVarMi(bildirimId: string): Promise<boolean> {
+  const iz = await prisma.auditLog.findFirst({
+    where: { action: DEGISIM_GONDERILDI_EYLEMI, targetId: bildirimId },
+    select: { id: true },
+  });
+  return iz !== null;
 }

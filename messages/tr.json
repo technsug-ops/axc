@@ -2416,7 +2416,14 @@
     "degisimUrunuSec": "Ürün seçin",
     "eksikTavanOnayi": "Tavan doldu — devam etmek için onay kutusunu işaretle.",
     "ayrilmisDusmedi": "Ayrılan {adet} adet ürün STOKTAN DÜŞÜLMEDİ — \"İadeyi işle\" ile kaydet.",
-    "aramaBaskaSuzgecte": "Bu süzgeçte yok ama aramaya uyan {sayi} bildirim VAR — \"Hepsi\" süzgecine bakın."
+    "aramaBaskaSuzgecte": "Bu süzgeçte yok ama aramaya uyan {sayi} bildirim VAR — \"Hepsi\" süzgecine bakın.",
+    "degisimGonderildi": "Değişim ürünü gönderildi ({urun})",
+    "degisimDusuldu": "{adet} adet {urun} stoktan düşüldü; maliyeti satışın NET'ine işlendi.",
+    "degisimGonderilemez": "Bu bildirimde gönderilecek ayrılmış ürün yok ya da çıkış zaten yazılmış.",
+    "degisimHedefBelirsiz": "Hangi satış kalemine yazılacağı belirsiz — çok kalemli satışta eşleşme kurulamadı.",
+    "degisimStokYetersiz": "Stok yetersiz: {mevcut} adet var, {istenen} adet gerekiyor.",
+    "degisimYazilamadi": "Değişim çıkışı yazılamadı.",
+    "degisimKargoBeklemede": "Değişim kargosu henüz iadenin NET'inde — satışa taşınması bekliyor (K36b)."
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",

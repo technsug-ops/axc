@@ -2416,7 +2416,14 @@
     "degisimUrunuSec": "",
     "eksikTavanOnayi": "",
     "ayrilmisDusmedi": "",
-    "aramaBaskaSuzgecte": ""
+    "aramaBaskaSuzgecte": "",
+    "degisimGonderildi": "",
+    "degisimDusuldu": "",
+    "degisimGonderilemez": "",
+    "degisimHedefBelirsiz": "",
+    "degisimStokYetersiz": "",
+    "degisimYazilamadi": "",
+    "degisimKargoBeklemede": ""
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "",

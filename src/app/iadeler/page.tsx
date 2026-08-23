@@ -53,6 +53,7 @@ import {
   DEGISIM_GEREKCELERI,
   gecisGecerliMi,
   IADE_ISLE_SEBEP_ANAHTARI,
+  DEGISIM_GONDERILDI_EYLEMI,
   ayrilmisDusmeyiBekliyor,
   iadeIslenebilirMi,
 } from "@/lib/iade/bildirim";
@@ -64,6 +65,7 @@ import { askidaMi, kargolamaDurumu } from "@/lib/iade/kargolama";
 import { isleyenSayac, sayacRengi } from "@/lib/iade/sayac";
 import { BildirimDurumu } from "./bildirim-durumu";
 import { SayacRozeti, type SayacGorunumu } from "./sayac-rozeti";
+import { DegisimGonder } from "./degisim-gonder";
 import {
   KargolanacakKutusu,
   type AskidaSatir,
@@ -530,6 +532,21 @@ export default async function IadelerSayfasi({
    * teorik olarak farklı güne düşebilirdi — ve gece yarısını geçen bir
    * koşumda "1 gün kaldı" ile "bugün doluyor" aynı listede yan yana çıkardı.
    */
+  /**
+   * DEĞİŞİM ÇIKIŞI YAZILMIŞ BİLDİRİMLER — TEK SORGU (K37).
+   * İz `AuditLog`ta; satır başına sorgu 50 gidiş-geliş demekti.
+   */
+  const degisimYazilanlar = new Set(
+    (
+      await prisma.auditLog.findMany({
+        where: { action: DEGISIM_GONDERILDI_EYLEMI },
+        select: { targetId: true },
+      })
+    )
+      .map((i) => i.targetId)
+      .filter((x): x is string => x !== null),
+  );
+
   const bugunAn = new Date();
   const sayaclar = new Map<string, SayacGorunumu | null>(
     bildirimKayitlari.map((b) => [b.id, sayacGorunumu(b, bugunAn)]),
@@ -1057,12 +1074,15 @@ export default async function IadelerSayfasi({
                     bilmiyor. Kırmızı olması doğru — "siparişte yok" gibi
                     yorumlanabilir bir bilgi değil, ölçülmüş bir eksik.
                   */}
-                  {ayrilmisDusmeyiBekliyor(b) ? (
-                    <p className={`text-xs ${DURUM_YAZISI.olumsuz}`}>
-                      {tBildirim("ayrilmisDusmedi", {
-                        adet: b.reservedQuantity,
-                      })}
-                    </p>
+                  {ayrilmisDusmeyiBekliyor(b) &&
+                  !degisimYazilanlar.has(b.id) &&
+                  b.status !== "IPTAL" ? (
+                    <DegisimGonder
+                      bildirimId={b.id}
+                      urun={b.reservedVariant?.sku ?? ""}
+                      adet={b.reservedQuantity}
+                      kargoUyarisi={tBildirim("degisimKargoBeklemede")}
+                    />
                   ) : null}
 
                   {/*

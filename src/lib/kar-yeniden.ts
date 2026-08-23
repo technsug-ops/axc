@@ -1,4 +1,5 @@
 import { kalemMaliyeti } from "@/lib/kalem-maliyeti";
+import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { karHesapla, type KarGirdisi, type KarSonucu } from "@/lib/kar";
 import { kdvHaricKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
@@ -271,4 +272,45 @@ export async function karYenidenYaz(
   });
 
   return true;
+}
+
+/**
+ * SATIŞIN KÂRINI TAZELE — GİRDİYİ KAYITTAN KURAR.
+ *
+ * ⚠ ORTAK GÖVDE, ÜÇÜNCÜ KOPYA DEĞİL. Bu girdi kurulumu (`items` →
+ * `commissionRate`, kargo firması/desi, KDV dahil kargo) hesap değiştirme ve
+ * yeniden hesapla yollarında zaten iki kez yazılıydı. Üçüncüsünü elle
+ * yazsaydık aynı satış üç yoldan üç türlü hesaplanabilirdi.
+ *
+ * ⚠ KOMİSYON ORANI TAŞINMAZ: kalemdeki snapshot oran korunur — oran
+ * değişikliği ayrı bir düzeltmedir ve kendi ekranından yapılır.
+ */
+export async function satisKarTazele(saleId: string): Promise<boolean> {
+  const satis = await prisma.sale.findUnique({
+    where: { id: saleId },
+    select: {
+      cargoCarrierId: true,
+      cargoDesi: true,
+      cargoAmount: true,
+      items: { select: { id: true, commissionRate: true } },
+    },
+  });
+  if (!satis) return false;
+
+  return karYenidenYaz({
+    saleId,
+    kalemler: satis.items.map((k) => ({
+      saleItemId: k.id,
+      commissionRate:
+        k.commissionRate === null ? null : Number(k.commissionRate.toString()),
+      commissionAmount: null,
+    })),
+    cargoCarrierId: satis.cargoCarrierId,
+    cargoDesi:
+      satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
+    /** DB KDV hariç saklar; motor KDV dahil bekler (`lib/kargo-kdv.ts`). */
+    cargoAmountManual: kdvDahilKargo(
+      satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
+    ),
+  });
 }

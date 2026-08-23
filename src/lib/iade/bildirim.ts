@@ -571,3 +571,32 @@ export function itirazDegisimUrunuIster(
 
 /** `AuditLog.action` — tavan aşılarak kaydedilen bildirimin izi. */
 export const TAVAN_ISTISNASI_EYLEMI = "IADE_TAVAN_ISTISNASI";
+
+/** `AuditLog.action` — değişim ürününün gönderildiği izi. */
+export const DEGISIM_GONDERILDI_EYLEMI = "IADE_DEGISIM_GONDERILDI";
+
+/**
+ * DEĞİŞİM ÜRÜNÜ GÖNDERİLEBİLİR Mİ (K37).
+ *
+ * ⚠ NİYE AYRI BİR YOL — VE NİYE İADE FORMU DEĞİL. Değişimde giden ürün bir
+ * İADE DEĞİL, bir ÇIKIŞTIR. İade formu "bu satıştan kaç adet daha iade
+ * edilebilir" diye soruyor; satışın iade hakkı dolduğunda form
+ * _"Tamamı iade edildi"_ deyip kapanıyor ve iadeyle hiç ilgisi olmayan bir
+ * stok çıkışı kaydedilemiyor. Kullanıcı 23.08.2026'da bu duvara İKİ ayrı
+ * satışta çarptı (`11473322212`, `11467064391`).
+ *
+ * ⚠ ÜÇ ŞART BİRDEN:
+ *   · ayrılmış bir ürün VAR (gönderilecek mal belli)
+ *   · henüz gönderilmemiş (`degisimGonderildi` izi yok)
+ *   · bildirim iptal DEĞİL — iptal edilmiş talep için mal çıkmaz
+ */
+export function degisimGonderilebilirMi(bildirim: {
+  status: NoticeStatus;
+  reservedVariantId: string | null;
+  reservedQuantity: number;
+  degisimGonderildiMi: boolean;
+}): boolean {
+  if (bildirim.status === "IPTAL") return false;
+  if (bildirim.degisimGonderildiMi) return false;
+  return bildirim.reservedVariantId !== null && bildirim.reservedQuantity > 0;
+}

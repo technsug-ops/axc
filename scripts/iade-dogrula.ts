@@ -547,9 +547,27 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
     kontrol("değişim: STOPAJ_IADE YAZILMAZ", !varMi("STOPAJ_IADE"));
     kontrol("değişim: ODEME_GIDERI_IADE YAZILMAZ", !varMi("ODEME_GIDERI_IADE"));
 
-    // --- MAL TARAFI İŞLER: eski mal döner, yenisi çıkar ---
+    // --- MAL TARAFI İŞLER: eski mal döner ---
     yakin("değişim: eski malın maliyeti geri", satir(satirlari, "MALIYET_GERI"), 1799);
-    yakin("değişim: yeni malın maliyeti gider", satir(satirlari, "DEGISIM_MALIYET"), -1799);
+    /**
+     * ⚠ BEKLENTİ ÇEVRİLDİ — K36a, 23.08.2026. ESKİ İDDİA SİLİNMEDİ:
+     *     yakin("değişim: yeni malın maliyeti gider", …"DEGISIM_MALIYET", -1799)
+     * Yeni malın maliyetinin GİDER olduğu doğruydu; YERİ yanlıştı.
+     *
+     * MİMAR KARARI: değişim maliyeti SATIŞIN NET'ine yazılır, iadenin değil.
+     * _Gerekçe: değişim o satışı kurtarmanın bedelidir; ayrı cebe konursa
+     * satış kârlı görünür, değildir._ Hurdadan farkı: hurdada satış ÖLDÜ
+     * (dönem kalemi), değişimde satış YAŞIYOR (satışın maliyeti).
+     *
+     * ⚠ ÇİFT SAYIM KONTROLÜ — MİMARIN İSTEDİĞİ SENARYO. `EXCHANGE_OUT`
+     * hareketi artık `saleItemId` taşıyor ve `kalemMaliyeti` tip bakmadan
+     * topluyor; maliyet satışın NET'ine oradan giriyor. Bu satır geri
+     * gelirse AYNI LİRA İKİ KEZ sayılır — bir kez harekette, bir kez burada.
+     */
+    kontrol(
+      "değişim maliyeti İADEDE YAZILMAZ (satışın NET'ine gider — çift sayım kapısı)",
+      !varMi("DEGISIM_MALIYET"),
+    );
 
     // --- TEK GERÇEK GİDER: GİT-GEL KARGO ---
     yakin("değişim: iade kargosu", satir(dg.genelSatirlar, "IADE_KARGO"), -163);
@@ -559,10 +577,18 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
       -150,
     );
 
-    // Maliyetler eşitlendiği için net etki YALNIZ kargodur.
-    yakin("değişim NET-1 = sadece kargo", dg.net1Etkisi, -313);
-    // KDV: ciro/komisyon dokunulmadığı için yalnız kargo KDV'si indirilir.
-    yakin("değişim NET-2", dg.net2Etkisi, -260.83);
+    /**
+     * ⚠ NET BEKLENTİLERİ K36a İLE DEĞİŞTİ — eski değerler yorumda duruyor ki
+     * fark okunabilsin:
+     *     net1Etkisi −313      → +1486   (fark tam +1799 = malın maliyeti)
+     *     net2Etkisi −260,83   → +1538,17
+     *
+     * İadenin NET'i ARTTI çünkü malın maliyeti artık burada yazılmıyor;
+     * aynı 1799 satışın NET'inde eksiliyor. Toplam etki değişmedi, YERİ
+     * değişti. İki rakamın toplamı korunuyor: −313 + 1799 = 1486.
+     */
+    yakin("değişim NET-1 (maliyet satışa taşındı)", dg.net1Etkisi, 1486);
+    yakin("değişim NET-2 (maliyet satışa taşındı)", dg.net2Etkisi, 1538.17);
 
     // Aynı senaryo İADE olsaydı (değişim ürünü yok) ciro düşerdi —
     // iki davranışın FARKLI olduğu burada kilitlenir.
@@ -601,28 +627,30 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
     );
   }
 
-  // Değişim: yerine giden ürünün maliyeti giderdir.
-  const d = iadeEtkisiHesapla(
-    lego({ kalemler: [{ ...lego().kalemler[0], degisimMaliyeti: 900 }] }),
-  );
-  yakin(
-    "değişim maliyeti gider",
-    satir(d.kalemSatirlari[0], "DEGISIM_MALIYET"),
-    -900,
-  );
-
-  // Değişim itirazlı iadede de giderdir (satış ayakta ama mal gitti).
-  const di = iadeEtkisiHesapla(
-    lego({
-      returnType: "DISPUTED",
-      kalemler: [{ ...lego().kalemler[0], degisimMaliyeti: 900 }],
-    }),
-  );
-  yakin(
-    "DISPUTED'da da değişim maliyeti gider",
-    satir(di.kalemSatirlari[0], "DEGISIM_MALIYET"),
-    -900,
-  );
+  /**
+   * ⚠ ÇİFT SAYIM KAPISI — HER İKİ SENARYODA DA. Eski iddia şuydu:
+   *     "değişim maliyeti gider"           → DEGISIM_MALIYET = −900
+   *     "DISPUTED'da da değişim maliyeti gider" → DEGISIM_MALIYET = −900
+   *
+   * K36a ile maliyet SATIŞIN NET'ine taşındı (`EXCHANGE_OUT` + `saleItemId`).
+   * İki senaryo AYRI AYRI sınanıyor: yalnız birine bakan bir kontrol,
+   * ötekine satırı geri koyan bir mutasyonu kaçırırdı.
+   */
+  for (const [ad, tip] of [
+    ["NORMAL", "NORMAL"],
+    ["DISPUTED", "DISPUTED"],
+  ] as [string, "NORMAL" | "DISPUTED"][]) {
+    const cift = iadeEtkisiHesapla(
+      lego({
+        returnType: tip,
+        kalemler: [{ ...lego().kalemler[0], degisimMaliyeti: 900 }],
+      }),
+    );
+    kontrol(
+      `${ad}: değişim maliyeti iadede YAZILMAZ (çift sayım kapısı)`,
+      !cift.kalemSatirlari[0].some((x) => x.code === "DEGISIM_MALIYET"),
+    );
+  }
 
   // Maliyeti bilinmeyen parti -> NO_COST
   const nc = iadeEtkisiHesapla(

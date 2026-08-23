@@ -282,13 +282,33 @@ export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
       }
     }
 
-    // Değişim: yerine giden ürünün maliyeti her senaryoda giderdir.
-    if (kalem.degisimMaliyeti !== null && kalem.degisimMaliyeti > 0) {
-      satirlar.push({
-        code: "DEGISIM_MALIYET",
-        tutar: -kalem.degisimMaliyeti,
-      });
-    }
+    /**
+     * ⚠ DEĞİŞİM MALİYETİ ARTIK BURADA YAZILMIYOR — K36a, 23.08.2026.
+     *
+     * Eskiden şu satır vardı:
+     *     satirlar.push({ code: "DEGISIM_MALIYET", tutar: -kalem.degisimMaliyeti })
+     * ve yorumu şuydu: _"Değişim: yerine giden ürünün maliyeti her senaryoda
+     * giderdir."_ Gider olduğu doğruydu; YERİ yanlıştı.
+     *
+     * MİMAR KARARI: değişim maliyeti **SATIŞIN** NET'ine yazılır, iadenin
+     * değil. _Gerekçe: değişim o satışı kurtarmanın bedelidir; ayrı cebe
+     * konursa satış kârlı görünür, değildir._ Hurdadan farkı da böyle
+     * konuldu: hurdada satış ÖLDÜ (dönem kalemi), değişimde satış YAŞIYOR.
+     *
+     * NASIL: `EXCHANGE_OUT` hareketi artık `saleItemId` taşıyor ve
+     * `kalemMaliyeti` tip bakmadan topladığı için maliyet kendiliğinden
+     * satışın NET'ine giriyor.
+     *
+     * ⚠ BU SATIR KALSAYDI AYNI LİRA İKİ KEZ SAYILIRDI — bir kez satışın
+     * maliyetinde (hareket üzerinden), bir kez burada. Kaldırma ile bağ
+     * ekleme AYNI pakette yapılmak zorundaydı.
+     *
+     * ⚠ KARGO HENÜZ TAŞINMADI (K36b): değişimin yeniden gönderim kargosu
+     * hâlâ AŞAĞIDA, iadenin NET'inde. `SaleFee` satırları her yeniden
+     * hesapta silinip motor tarafından yeniden üretildiği için kargo ancak
+     * motorun kendisi iadeleri okursa satışa taşınabilir. Geçici tutarsızlık
+     * BİLEREK görünür: ekranda pirinç kesikli satır bunu söylüyor.
+     */
 
     kalemSatirlari.push(satirlar);
   }
@@ -852,6 +872,20 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
               type: "EXCHANGE_OUT",
               quantityDelta: -pay.adet,
               occurredAt: girdi.occurredAt,
+              /**
+               * ⚠ İKİ BAĞ BİRDEN — K36a, 23.08.2026.
+               *
+               * `saleItemId` YENİ: maliyet bu bağ sayesinde SATIŞIN NET'ine
+               * giriyor (`kalemMaliyeti` tip bakmaz, bağ varsa sayar).
+               * Karşılığında `DEGISIM_MALIYET` satırı iadenin kâr
+               * dökümünden kaldırıldı — yoksa aynı lira iki kez sayılırdı.
+               *
+               * `returnItemId` KALIYOR: hangi iadeden doğduğu izi kaybolmaz.
+               * ⚠ Bu bağ fire raporunda dışlama ölçütü ama burada zararsız:
+               * dışlama yalnız `ADJUSTMENT`/`COUNT_CORRECTION` tiplerine
+               * bakıyor, `EXCHANGE_OUT` zaten o kümede değil.
+               */
+              saleItemId: kalem.id,
               returnItemId: iadeKalemi.id,
               sourceMovementId: pay.parti.hareketId,
               locationId: pay.parti.locationId,

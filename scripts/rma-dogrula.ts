@@ -3002,14 +3002,54 @@ console.log("\n16) AYRILAN DEĞİŞİM ÜRÜNÜ STOKTAN DÜŞMELİ");
    * bu gerçek bir eksik ve kırmızı olması doğru. ("Siparişte yok" gibi
    * yorumlanabilir bir bilgi değil.)
    */
+  /**
+   * ⚠ DAVRANIŞ DURUYOR, DESEN YER DEĞİŞTİRDİ (23.08.2026). Uyarı metni
+   * `page.tsx`ten `degisim-gonder.tsx`e taşındı çünkü artık yanında bir
+   * DÜĞME var (K37). Kontrol eski yerine bakmaya devam etseydi doğru
+   * davranışta kırmızı yanardı; yeni yerine bağlandı.
+   */
   kontrol(
-    "düşmemiş ayırma ekranda UYARIYOR",
-    /ayrilmisDusmeyiBekliyor\(b\) \?/.test(listeK6) &&
-      /ayrilmisDusmedi/.test(listeK6),
+    "düşmemiş ayırma satırda GÖSTERİLİYOR (koşul yerinde)",
+    /ayrilmisDusmeyiBekliyor\(b\) &&/.test(listeK6) &&
+      /<DegisimGonder/.test(listeK6),
+  );
+  const degisimEkrani = readFileSync(
+    "src/app/iadeler/degisim-gonder.tsx",
+    "utf8",
+  );
+  kontrol(
+    "  ...uyarı metni yazılıyor",
+    /ayrilmisDusmedi/.test(degisimEkrani),
   );
   kontrol(
     "  ...ve kırmızı (ölçülmüş bir eksik)",
-    /DURUM_YAZISI\.olumsuz[\s\S]{0,80}ayrilmisDusmedi/.test(listeK6),
+    /DURUM_YAZISI\.olumsuz[\s\S]{0,80}ayrilmisDusmedi/.test(degisimEkrani),
+  );
+  /**
+   * ⚠ ZATEN YAZILMIŞ ÇIKIŞ İÇİN DÜĞME GÖSTERİLMEZ — aynı mal iki kez
+   * düşülemez. İz `AuditLog`ta ve ekran onu okuyor.
+   */
+  kontrol(
+    "  ...çıkışı yazılmış bildirimde düğme YOK",
+    /!degisimYazilanlar\.has\(b\.id\)/.test(listeK6),
+  );
+  /**
+   * ⚠ GEÇİCİ TUTARSIZLIK SESSİZ BIRAKILMAZ (mimar şartı). K36a malın
+   * maliyetini satışa taşıdı, kargo hâlâ iadede — ekran neyi taşımadığını
+   * KENDİSİ söylüyor.
+   */
+  /**
+   * ⚠ İKİ PARÇA, İKİ DOSYA — VE İKİSİ AYRI SINANIYOR. Metin `page.tsx`ten
+   * prop olarak geçiyor, kesikli şerit bileşende çiziliyor. Tek dosyaya
+   * bakan bir kontrol, ötekini kaldıran mutasyonu kaçırırdı.
+   */
+  kontrol(
+    "  ...kargo uyarısı ekrana GEÇİRİLİYOR",
+    /kargoUyarisi=\{tBildirim\("degisimKargoBeklemede"\)\}/.test(listeK6),
+  );
+  kontrol(
+    "  ...ve pirinç kesikli şeritte ÇİZİLİYOR",
+    /border-dashed[\s\S]{0,120}\{kargoUyarisi\}/.test(degisimEkrani),
   );
   /**
    * ⚠ DÜĞME BAĞLAM ALMALI. Bağlamsız çağrılsaydı kural doğru olur ama
@@ -3021,6 +3061,53 @@ console.log("\n16) AYRILAN DEĞİŞİM ÜRÜNÜ STOKTAN DÜŞMELİ");
     /iadeIslenebilirMi\(b\.status, \{[\s\S]{0,200}ayrilmisBekliyor: ayrilmisDusmeyiBekliyor\(b\)/.test(
       listeK6,
     ),
+  );
+
+  /**
+   * ⚠ K36a'NIN ÇEKİRDEĞİ — VE MUTASYONLA BULUNDU.
+   *
+   * Değişim maliyeti artık iadenin kâr dökümüne YAZILMIYOR; satışın NET'ine
+   * yalnızca `EXCHANGE_OUT` hareketinin `saleItemId` bağı üzerinden giriyor
+   * (`kalemMaliyeti` tip bakmaz, bağ varsa sayar).
+   *
+   * Bu bağı kaldıran mutasyon önce YEŞİL KALDI — ve o hâlde maliyet ne
+   * iadede ne satışta yazılırdı, yani KAYBOLURDU. İki değişiklik (bağ ekleme
+   * + satır kaldırma) birbirine bağımlı; kontrol ikisini birden tutuyor.
+   */
+  const iadeMotoru = readFileSync("src/lib/iade.ts", "utf8");
+  const exBasi = iadeMotoru.indexOf('type: "EXCHANGE_OUT"');
+  const exBloku = iadeMotoru.slice(exBasi, iadeMotoru.indexOf("});", exBasi));
+  kontrol("EXCHANGE_OUT bloğu kesilebildi", exBasi > -1 && exBloku.length > 0);
+  kontrol(
+    "  ...hareket SATIŞ KALEMİNE bağlı (maliyet satışın NET'ine girsin)",
+    /saleItemId: kalem\.id,/.test(exBloku),
+  );
+  kontrol(
+    "  ...iade bağı da korunuyor (hangi iadeden doğduğu kaybolmasın)",
+    /returnItemId: iadeKalemi\.id,/.test(exBloku),
+  );
+  /** Yeni düğme yolu da AYNI bağı kurar — iki yol tek yere yazar. */
+  const dugmeEylemi = readFileSync(
+    "src/app/iadeler/bildirim-actions.ts",
+    "utf8",
+  );
+  const dugmeBloku = dugmeEylemi.slice(
+    dugmeEylemi.indexOf('type: "EXCHANGE_OUT"'),
+    dugmeEylemi.indexOf("});", dugmeEylemi.indexOf('type: "EXCHANGE_OUT"')),
+  );
+  kontrol(
+    "düğme yolu da satış kalemine bağlıyor (iki yol tek yere)",
+    /saleItemId: hedefKalemId,/.test(dugmeBloku),
+  );
+  kontrol(
+    "  ...ve FIFO partisinden maliyet alıyor (liste fiyatı değil)",
+    /unitCostAmount: pay\.parti\.birimMaliyet,/.test(dugmeBloku) &&
+      /sourceMovementId: pay\.parti\.hareketId,/.test(dugmeBloku),
+  );
+  /** Çıkıştan sonra kâr damgası tazelenmezse ekran eski rakamı gösterir. */
+  kontrol(
+    "  ...çıkıştan sonra kâr TAZELENİYOR",
+    /await satisKarTazele\(bildirim\.saleId\);/.test(dugmeEylemi),
   );
 
   kosanBolumler.push("ayrilmis-dusmedi");
