@@ -12,11 +12,26 @@
 `(B)` kullanıcının hazırladığı "İade Süreci" tablosu ·
 `(K)` kullanıcı anlatımı, 23.08.2026
 
-⚠ **KAPSAM: yalnız TRENDYOL ölçüldü.** Hepsiburada · N11 · Amazon · diğerleri
-için ekran görülmedi. Kullanıcı beyanı: _"tüm pazaryerlerinin genel mantığı
-bu"_ ve _"müşterinin iade oluşturabileceği seçenekler her pazaryerinde
-böyle"_ `(K)`. **Ortak sayılan tek şey AKIŞIN ŞEKLİ; maliyet kuralları
-kanal kanal değişiyor ve aşağıda ayrı tabloda.**
+## KAPSAM — hangi kanal ne kadar biliniyor
+
+| Kanal | Durum | Not |
+|---|---|---|
+| **Trendyol** | ✅ **ÖLÇÜLDÜ** | Satıcı uygulaması ekran kaydı + kullanıcı anlatımı. Aşağıdaki her şey buradan. |
+| **Hepsiburada** | ⏳ **GELİYOR** | Kullanıcı 23.08.2026: _"çok benzer ama birkaç farklılık var, onu da göndereceğim."_ |
+| **N11** | ⛔ **TECRÜBE YOK** | Kullanıcı: _"henüz iade tecrübem yok, yaşadığımda vereceğim."_ Süresiz bekler. |
+| Amazon · diğerleri | ⛔ görülmedi | — |
+
+⚠ **TASARIM N11'İ BEKLEMEZ — AMA N11 HAKKINDA İDDİA DA KURMAZ.**
+Durum makinesi **ölçülmüş kanaldan** (Trendyol) kurulur; kanal farkları
+**veri** olarak tutulur. Ölçülmemiş bir kanal için kural UYDURULMAZ:
+`ChannelFee`de zaten kullanılan rozet düzeni burada da geçerli —
+`OLCULDU` / `REFERANS` / `belirsizlik` (CLAUDE.md → "Kaynak önceliği:
+içerden gelen bilgi üsttedir"). N11'de ilk iade yaşandığında kural
+deftere geçer, o güne kadar **beyanla boş durur.**
+
+⚠ Ortak sayılan tek şey **AKIŞIN ŞEKLİ** `(K)`: _"tüm pazaryerlerinin genel
+mantığı bu"_ ve _"müşterinin iade oluşturabileceği seçenekler her
+pazaryerinde böyle."_ **Maliyet kuralları kanal kanal değişiyor** — bkz. §5.
 
 ---
 
