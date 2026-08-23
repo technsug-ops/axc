@@ -92,6 +92,7 @@ yanında yazar.</p>
 </blockquote>
 <p><strong>Yazıldı:</strong> 23.08.2026 · <strong>Kaynaklar:</strong>
 <code>(E)</code> Trendyol satıcı uygulaması ekran kaydı, 23.08.2026 01:47 ·
+<code>(EH)</code> Hepsiburada satıcı paneli "Müşteri talepleri" ekranı, 23.08.2026 ·
 <code>(B)</code> kullanıcının hazırladığı "İade Süreci" tablosu ·
 <code>(K)</code> kullanıcı anlatımı, 23.08.2026</p>
 <h2>KAPSAM — hangi kanal ne kadar biliniyor</h2>
@@ -111,8 +112,8 @@ yanında yazar.</p>
 </tr>
 <tr>
 <td><strong>Hepsiburada</strong></td>
-<td>⏳ <strong>GELİYOR</strong></td>
-<td>Kullanıcı 23.08.2026: <em>"çok benzer ama birkaç farklılık var, onu da göndereceğim."</em></td>
+<td>✅ <strong>ÖLÇÜLDÜ</strong></td>
+<td>Satıcı paneli ekran görüntüsü + kullanıcı anlatımı, 23.08.2026. Akış aynı, <strong>üç yapısal fark</strong> var — bkz. §11.</td>
 </tr>
 <tr>
 <td><strong>N11</strong></td>
@@ -441,55 +442,72 @@ kuponun izi satış ve iade taraflarında birlikte yaşıyor.</p>
 <blockquote>
 <p>Bu bölüm bilerek var: <strong>ölçülmemiş bir sayının üstüne kural yazılmaz.</strong></p>
 </blockquote>
-<h3>8.1 Otomatik onay sayacı hangi andan sayıyor?</h3>
-<p>İki kaynak <strong>çelişiyor</strong> ve hiçbiri tek başına yeterli değil:</p>
+<h3>8.1 Otomatik onay sayaçları — biri çözüldü, biri açık</h3>
+<p>⚠ <strong>ÖNCE BİR YANLIŞ ANLAMA DÜZELTİLDİ (23.08.2026).</strong> Burada <em>"kullanıcı 2
+gün diyor, ekran 19 gün gösteriyor, çelişki var"</em> yazıyordu. <strong>Çelişki
+yoktu</strong> — iki farklı sayaç birbirine karıştırılmıştı <code>(K)</code>:</p>
 <ul>
-<li><code>(K)</code> <em>"İade satıcıya teslim edildiğinde <strong>2 günlük</strong> onay veya red süresi
-  başlar."</em></li>
-<li><code>(E)</code> Ekranda <strong>"Otomatik Onaya Kalan Süre"</strong> yazıyor ve değerler çok daha
-  büyük:</li>
+<li><strong>2 gün</strong> → iade satıcıya <strong>ilk teslim edildiğinde</strong> başlayan onay/red
+  süresi ("Aksiyon Bekleyen" aşaması).</li>
+<li><strong>19 gün</strong> → o iade <strong>zaten serviste</strong> ve bu, <strong>28 günlük analiz
+  süresinden</strong> kalan.</li>
 </ul>
+<p>Aritmetikle sınandı ve <strong>birinci kayıt tam oturuyor</strong>:</p>
 <div class="tablo-kap"><table>
 <thead>
 <tr>
 <th>İade</th>
-<th>Talep tarihi</th>
-<th>Kayıt anı</th>
-<th>Geçen</th>
-<th>Kalan</th>
-<th>Toplam</th>
+<th>Sayaç bitişi</th>
+<th>28 gün geri sarılınca başlangıç</th>
+<th>Talebe göre</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>#11475261428</code></td>
-<td>07.08 19:12</td>
-<td>23.08 01:47</td>
-<td>15g 6s</td>
-<td>19g 7s</td>
-<td>~34,6 gün</td>
-</tr>
-<tr>
-<td><code>#11481463029</code></td>
-<td>15.08 18:27</td>
-<td>23.08 01:47</td>
-<td>7g 7s</td>
-<td>8g 10s</td>
-<td>~15,8 gün</td>
+<td>11.09.2026 09:29</td>
+<td>14.08.2026 09:29</td>
+<td>talepten <strong>+6,6 gün</strong> ✅ akış süresiyle uyumlu</td>
 </tr>
 </tbody>
 </table></div>
-<p>İkisi aynı toplamı vermiyor → sayaç <strong>talep tarihinden sabit bir süre
-saymıyor</strong>. Muhtemelen İKİ AYRI SAAT var (2 günlük aksiyon süresi + daha
-uzun bir otomatik onay süresi) ama <strong>n=2 ile hangi andan saydığı
-uydurulamaz.</strong></p>
-<p><strong>Kapanış şartı:</strong> "Aksiyon Bekleyen" sekmesindeki bir iadenin detayı —
-sayaç ve teslim tarihi aynı ekranda görünecek şekilde. O gelince ölçülür.</p>
+<p><strong>AMA İKİNCİ KAYIT OTURMUYOR</strong> — ve bu hâlâ açık:</p>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th>İade</th>
+<th>Sayaç bitişi</th>
+<th>28 gün geri</th>
+<th>15 gün geri</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>#11481463029</code></td>
+<td>31.08.2026 12:34</td>
+<td>03.08 12:34 → <strong>talepten 12 gün ÖNCE, imkânsız</strong></td>
+<td>16.08 12:34 → talepten <strong>+0,8 gün</strong>, makul</td>
+</tr>
+</tbody>
+</table></div>
+<p>Yani bu kayıt 28 günlük analiz saatinde OLAMAZ; <strong>~15 günlük</strong> başka bir
+sayaçta duruyor. Videoda "Analiz" sekmesi <strong>1 ürün</strong> gösteriyordu ve o
+birinci kayıttı; ikincisi (Baby Bebek Parkı, "parça eksik") başka
+sekmedeydi.</p>
+<p><strong>AÇIK SORU:</strong> Analiz dışındaki bekleyen iadelerde de bir otomatik onay
+sayacı işliyor mu (~15 gün gibi), yoksa ikinci kaydın sayacı başka bir
+şeyi mi ölçüyor? <strong>Kapanış şartı:</strong> "Aksiyon Bekleyen" ya da "Kargoya
+Verilen" sekmesindeki bir iadenin detayı — sayaç ve teslim tarihi aynı
+ekranda.</p>
+<p>⚠ Bu belirsizlik ŞEMAYI ETKİLEMİYOR: <code>otomatikOnayTarihi</code> hesaplanmıyor,
+pazaryerinin söylediği tarih kaydediliyor. Kuralı bilmeden de doğru veri
+tutulur; kural öğrenilince yalnız uyarı metni netleşir.</p>
 <h3>8.2 Diğer kanalların ekranı</h3>
-<p>Hepsiburada · N11 · Amazon için sekme adları, ihtilaf sonuçları ve analiz
-dalı <strong>görülmedi</strong>. Kullanıcı beyanı akışın ortak olduğu yönünde <code>(K)</code>;
-tasarım buna göre kurulacak ama <strong>kanal farkı VERİ olarak bırakılacak</strong> ki
-ilk belge geldiğinde kod değil satır değişsin.</p>
+<p><strong>Hepsiburada ÖLÇÜLDÜ</strong> (23.08.2026) — bkz. §11. <strong>N11 · Amazon</strong> için ekran
+görülmedi; N11'de kullanıcının henüz iade tecrübesi yok ve <strong>süresiz
+bekler</strong>. Tasarım onları BEKLEMEZ ama haklarında iddia da kurmaz: kanal
+farkı VERİ olarak durur, ölçülmemiş kanal <code>belirsizlik</code> beyanıyla boş
+kalır.</p>
 <h3>8.3 İade hacmi</h3>
 <p><code>(E)</code> Trendyol paneli <strong>63 paket</strong> iade gösteriyor (49 onaylanan · 13
 reddedilen · 1 analiz). Sistemde <strong>5 işlenmiş iade + 9 bildirim</strong> var.</p>
@@ -612,4 +630,130 @@ dökümü alınıp aynı pencereye indirgenince kurulur.
 </table></div>
 <p>⚠ Hasar ve eksik parça vakaları <strong>parası geri alınabilir</strong> olanlar
 (kargo tazminatı / tedarikçi tazminatı) — bugün hepsi <code>DIGER</code>'e düşüyor,
-yani en çok para kurtarılabilecek vakalar en az izlenen kutuda.</p></div></body></html>
+yani en çok para kurtarılabilecek vakalar en az izlenen kutuda.</p>
+<hr />
+<h2>11. HEPSİBURADA — aynı akış, üç yapısal fark <code>(EH)</code> <code>(K)</code></h2>
+<p>Sekmeler: <strong>Ürün bekleniyor</strong> · <strong>Yanıtlanacak</strong> · <strong>Gönderime hazır</strong> ·
+<strong>Kargoda</strong> · <strong>Sonuçlandı</strong> (379) · <strong>Hepsiburada bekleniyor</strong> ·
+<strong>Servis sürecinde</strong></p>
+<h3>11.1 Eşleme</h3>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th>Hepsiburada</th>
+<th>Trendyol</th>
+<th>Bizdeki durum</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Ürün bekleniyor</strong></td>
+<td>Talep Oluşturulan <strong>+</strong> Kargoya Verilen</td>
+<td><code>BEKLENIYOR</code> (+ isteğe bağlı <code>KARGOYA_VERILDI</code>)</td>
+</tr>
+<tr>
+<td><strong>Yanıtlanacak</strong></td>
+<td>Aksiyon Bekleyen</td>
+<td><code>MAL_GELDI</code></td>
+</tr>
+<tr>
+<td><strong>Hepsiburada bekleniyor</strong></td>
+<td>İhtilaflı</td>
+<td><code>ITIRAZ_ACILDI</code> / <code>ITIRAZ_INCELEMEDE</code></td>
+</tr>
+<tr>
+<td><strong>Gönderime hazır</strong></td>
+<td>Reddedilen (henüz kargolanmadı)</td>
+<td><code>ITIRAZ_KABUL</code>, <code>iadeKargoKodu</code> <strong>boş</strong></td>
+</tr>
+<tr>
+<td><strong>Kargoda</strong></td>
+<td>(TY'de ayrı sekme yok — üstteki sayaç)</td>
+<td><code>ITIRAZ_KABUL</code>, <code>iadeKargoKodu</code> <strong>dolu</strong></td>
+</tr>
+<tr>
+<td><strong>Sonuçlandı</strong></td>
+<td>Onaylanan</td>
+<td><code>KAPANDI</code></td>
+</tr>
+<tr>
+<td><strong>Servis sürecinde</strong></td>
+<td>Analiz</td>
+<td><code>ANALIZ</code> — ⚠ ama sonu farklı, bkz. §11.4</td>
+</tr>
+</tbody>
+</table></div>
+<h3>11.2 FARK 1 — kargoya verilme ayrı aşama DEĞİL</h3>
+<p><code>(K)</code> Müşteri kargoya verdiğinde iade <strong>"Ürün bekleniyor"da kalmaya devam
+eder.</strong> Trendyol bunu ayrı sekmeye alıyor, Hepsiburada almıyor.</p>
+<blockquote>
+<p>✅ <strong>TASARIM DOĞRULANDI.</strong> <code>KARGOYA_VERILDI</code> bizde <strong>atlanabilir</strong> ara adım
+olarak kuruldu (zorunlu olsaydı HB'de hiç kullanılmayan bir aşama
+operasyoncuya fazladan tık olurdu). Kanal farkı modeli bozmuyor.</p>
+</blockquote>
+<h3>11.3 FARK 2 — geri gönderim İKİ sekmeye bölünmüş</h3>
+<p><code>(K)</code> Satıcı haklı bulunursa iade önce <strong>"Gönderime hazır"a</strong>, biz
+kargoladığımızda <strong>"Kargoda"ya</strong> geçer. Trendyol'da bu tek sekme
+("Reddedilen") + üstte bir sayaç ("Kargolanması Gereken").</p>
+<blockquote>
+<p>✅ <strong>YENİ DURUM GEREKMEDİ.</strong> Ayrım <code>iadeKargoKodu</code> alanından TÜRETİLİYOR:
+boşsa "gönderime hazır", doluysa "kargoda". Merdivende bir basamak daha
+tasarruf — yeni bir <code>NoticeStatus</code> değeri açmak, iki kanalın sekme
+sayısını modele gömmek olurdu.</p>
+</blockquote>
+<h3>11.4 FARK 3 — SERVİS DALI BAŞKA BİTİYOR: "Hurda Geliri"</h3>
+<p>⚠ <strong>EN BÜYÜK FARK BU VE PARA TARAFINDA.</strong></p>
+<p><code>(K)</code> HB'de servis sekmesi <strong>genelde kullanılmaz.</strong> Örnek: çalışmıyor diye
+iade edilen bir blender'ı satıcı, kullanım hatası mı diye analize almak
+ister. İade kısa süreliğine <strong>"Servis sürecinde"</strong> sekmesine alınır —</p>
+<p><strong>ama Hepsiburada servis sürecini BEKLEMEDEN müşteriye parayı iade eder.</strong></p>
+<p>Bundan sonrası Trendyol'da hiç olmayan bir yol:</p>
+<ol>
+<li>Satıcı <strong>Hepsiburada'ya tazmin talebinde</strong> bulunur</li>
+<li>Talep kabul edilirse satıcı <strong>Hepsiburada'ya FATURA keser</strong></li>
+<li>İade ürün <strong>Hepsiburada'nın deposuna</strong> gönderilir</li>
+<li>Depoya ulaştıktan sonra tutar hakedişlere <strong>"Hurda Geliri"</strong> olarak eklenir</li>
+</ol>
+<div class="tablo-kap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Trendyol</th>
+<th>Hepsiburada</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Analiz sonu</td>
+<td>ürün <strong>müşteriye</strong> geri (ya da iade onaylanır)</td>
+<td>ürün <strong>pazaryerinin deposuna</strong>, karşılığı <strong>Hurda Geliri</strong></td>
+</tr>
+<tr>
+<td>Para</td>
+<td>iade tutarı geri alınır ya da kaybedilir</td>
+<td><strong>fatura kesilir</strong>, hakedişe gelir kalemi düşer</td>
+</tr>
+<tr>
+<td>Bizde karşılığı</td>
+<td><code>ANALIZ</code> → <code>ITIRAZ_KABUL</code> / <code>ITIRAZ_RED</code></td>
+<td>⛔ <strong>YOK</strong> — bkz. aşağıdaki açık kalem</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⛔ <strong>AÇIK — MODELDE KARŞILIĞI YOK.</strong> İki eksik:
+① İadenin <strong>tazminat talebine</strong> bağlanması (<code>Compensation</code> modeli var,
+bağ yok). ② <strong>"Hurda Geliri"</strong> hakediş kaleminin tanınması — bu bir
+GELİR kalemi ve bugün hakediş tarafında böyle bir tür yok.
+⚠ Bu iş <strong>AÇILMADI</strong>: hurda gelirinin hakediş dosyasında hangi satır
+adıyla geldiği görülmedi. Ölçülmeden kalem açmak, adını uydurmak olur.</p>
+</blockquote>
+<h3>11.5 Aynı olanlar</h3>
+<ul>
+<li><strong>Müşterinin iade sebepleri</strong> — <code>(K)</code> "Trendyol dosyasında bahsedilen
+  iade sebepleri aynı"</li>
+<li><strong>Satıcının 2 seçeneği</strong> — onayla / reddet, sebep ne olursa olsun</li>
+<li><strong>2 günlük onay/red süresi</strong> — iade teslim edildiğinde başlar</li>
+<li><strong>Satıcının ret gerekçeleri</strong> — <code>(K)</code> "Trendyol'daki seçenekler aynı"</li>
+<li><strong>Onaylanan iadede iade kargosu satıcıya ait</strong></li>
+</ul></div></body></html>

@@ -9,6 +9,7 @@
 
 **Yazıldı:** 23.08.2026 · **Kaynaklar:**
 `(E)` Trendyol satıcı uygulaması ekran kaydı, 23.08.2026 01:47 ·
+`(EH)` Hepsiburada satıcı paneli "Müşteri talepleri" ekranı, 23.08.2026 ·
 `(B)` kullanıcının hazırladığı "İade Süreci" tablosu ·
 `(K)` kullanıcı anlatımı, 23.08.2026
 
@@ -17,7 +18,7 @@
 | Kanal | Durum | Not |
 |---|---|---|
 | **Trendyol** | ✅ **ÖLÇÜLDÜ** | Satıcı uygulaması ekran kaydı + kullanıcı anlatımı. Aşağıdaki her şey buradan. |
-| **Hepsiburada** | ⏳ **GELİYOR** | Kullanıcı 23.08.2026: _"çok benzer ama birkaç farklılık var, onu da göndereceğim."_ |
+| **Hepsiburada** | ✅ **ÖLÇÜLDÜ** | Satıcı paneli ekran görüntüsü + kullanıcı anlatımı, 23.08.2026. Akış aynı, **üç yapısal fark** var — bkz. §11. |
 | **N11** | ⛔ **TECRÜBE YOK** | Kullanıcı: _"henüz iade tecrübem yok, yaşadığımda vereceğim."_ Süresiz bekler. |
 | Amazon · diğerleri | ⛔ görülmedi | — |
 
@@ -208,34 +209,51 @@ kuponun izi satış ve iade taraflarında birlikte yaşıyor.
 
 > Bu bölüm bilerek var: **ölçülmemiş bir sayının üstüne kural yazılmaz.**
 
-### 8.1 Otomatik onay sayacı hangi andan sayıyor?
+### 8.1 Otomatik onay sayaçları — biri çözüldü, biri açık
 
-İki kaynak **çelişiyor** ve hiçbiri tek başına yeterli değil:
+⚠ **ÖNCE BİR YANLIŞ ANLAMA DÜZELTİLDİ (23.08.2026).** Burada _"kullanıcı 2
+gün diyor, ekran 19 gün gösteriyor, çelişki var"_ yazıyordu. **Çelişki
+yoktu** — iki farklı sayaç birbirine karıştırılmıştı `(K)`:
 
-- `(K)` _"İade satıcıya teslim edildiğinde **2 günlük** onay veya red süresi
-  başlar."_
-- `(E)` Ekranda **"Otomatik Onaya Kalan Süre"** yazıyor ve değerler çok daha
-  büyük:
+- **2 gün** → iade satıcıya **ilk teslim edildiğinde** başlayan onay/red
+  süresi ("Aksiyon Bekleyen" aşaması).
+- **19 gün** → o iade **zaten serviste** ve bu, **28 günlük analiz
+  süresinden** kalan.
 
-| İade | Talep tarihi | Kayıt anı | Geçen | Kalan | Toplam |
-|---|---|---|---|---|---|
-| `#11475261428` | 07.08 19:12 | 23.08 01:47 | 15g 6s | 19g 7s | ~34,6 gün |
-| `#11481463029` | 15.08 18:27 | 23.08 01:47 | 7g 7s | 8g 10s | ~15,8 gün |
+Aritmetikle sınandı ve **birinci kayıt tam oturuyor**:
 
-İkisi aynı toplamı vermiyor → sayaç **talep tarihinden sabit bir süre
-saymıyor**. Muhtemelen İKİ AYRI SAAT var (2 günlük aksiyon süresi + daha
-uzun bir otomatik onay süresi) ama **n=2 ile hangi andan saydığı
-uydurulamaz.**
+| İade | Sayaç bitişi | 28 gün geri sarılınca başlangıç | Talebe göre |
+|---|---|---|---|
+| `#11475261428` | 11.09.2026 09:29 | 14.08.2026 09:29 | talepten **+6,6 gün** ✅ akış süresiyle uyumlu |
 
-**Kapanış şartı:** "Aksiyon Bekleyen" sekmesindeki bir iadenin detayı —
-sayaç ve teslim tarihi aynı ekranda görünecek şekilde. O gelince ölçülür.
+**AMA İKİNCİ KAYIT OTURMUYOR** — ve bu hâlâ açık:
+
+| İade | Sayaç bitişi | 28 gün geri | 15 gün geri |
+|---|---|---|---|
+| `#11481463029` | 31.08.2026 12:34 | 03.08 12:34 → **talepten 12 gün ÖNCE, imkânsız** | 16.08 12:34 → talepten **+0,8 gün**, makul |
+
+Yani bu kayıt 28 günlük analiz saatinde OLAMAZ; **~15 günlük** başka bir
+sayaçta duruyor. Videoda "Analiz" sekmesi **1 ürün** gösteriyordu ve o
+birinci kayıttı; ikincisi (Baby Bebek Parkı, "parça eksik") başka
+sekmedeydi.
+
+**AÇIK SORU:** Analiz dışındaki bekleyen iadelerde de bir otomatik onay
+sayacı işliyor mu (~15 gün gibi), yoksa ikinci kaydın sayacı başka bir
+şeyi mi ölçüyor? **Kapanış şartı:** "Aksiyon Bekleyen" ya da "Kargoya
+Verilen" sekmesindeki bir iadenin detayı — sayaç ve teslim tarihi aynı
+ekranda.
+
+⚠ Bu belirsizlik ŞEMAYI ETKİLEMİYOR: `otomatikOnayTarihi` hesaplanmıyor,
+pazaryerinin söylediği tarih kaydediliyor. Kuralı bilmeden de doğru veri
+tutulur; kural öğrenilince yalnız uyarı metni netleşir.
 
 ### 8.2 Diğer kanalların ekranı
 
-Hepsiburada · N11 · Amazon için sekme adları, ihtilaf sonuçları ve analiz
-dalı **görülmedi**. Kullanıcı beyanı akışın ortak olduğu yönünde `(K)`;
-tasarım buna göre kurulacak ama **kanal farkı VERİ olarak bırakılacak** ki
-ilk belge geldiğinde kod değil satır değişsin.
+**Hepsiburada ÖLÇÜLDÜ** (23.08.2026) — bkz. §11. **N11 · Amazon** için ekran
+görülmedi; N11'de kullanıcının henüz iade tecrübesi yok ve **süresiz
+bekler**. Tasarım onları BEKLEMEZ ama haklarında iddia da kurmaz: kanal
+farkı VERİ olarak durur, ölçülmemiş kanal `belirsizlik` beyanıyla boş
+kalır.
 
 ### 8.3 İade hacmi
 
@@ -284,3 +302,82 @@ Kullanıcının hazırladığı tablo. **Sistemde henüz karşılığı yok** �
 ⚠ Hasar ve eksik parça vakaları **parası geri alınabilir** olanlar
 (kargo tazminatı / tedarikçi tazminatı) — bugün hepsi `DIGER`'e düşüyor,
 yani en çok para kurtarılabilecek vakalar en az izlenen kutuda.
+
+---
+
+## 11. HEPSİBURADA — aynı akış, üç yapısal fark `(EH)` `(K)`
+
+Sekmeler: **Ürün bekleniyor** · **Yanıtlanacak** · **Gönderime hazır** ·
+**Kargoda** · **Sonuçlandı** (379) · **Hepsiburada bekleniyor** ·
+**Servis sürecinde**
+
+### 11.1 Eşleme
+
+| Hepsiburada | Trendyol | Bizdeki durum |
+|---|---|---|
+| **Ürün bekleniyor** | Talep Oluşturulan **+** Kargoya Verilen | `BEKLENIYOR` (+ isteğe bağlı `KARGOYA_VERILDI`) |
+| **Yanıtlanacak** | Aksiyon Bekleyen | `MAL_GELDI` |
+| **Hepsiburada bekleniyor** | İhtilaflı | `ITIRAZ_ACILDI` / `ITIRAZ_INCELEMEDE` |
+| **Gönderime hazır** | Reddedilen (henüz kargolanmadı) | `ITIRAZ_KABUL`, `iadeKargoKodu` **boş** |
+| **Kargoda** | (TY'de ayrı sekme yok — üstteki sayaç) | `ITIRAZ_KABUL`, `iadeKargoKodu` **dolu** |
+| **Sonuçlandı** | Onaylanan | `KAPANDI` |
+| **Servis sürecinde** | Analiz | `ANALIZ` — ⚠ ama sonu farklı, bkz. §11.4 |
+
+### 11.2 FARK 1 — kargoya verilme ayrı aşama DEĞİL
+
+`(K)` Müşteri kargoya verdiğinde iade **"Ürün bekleniyor"da kalmaya devam
+eder.** Trendyol bunu ayrı sekmeye alıyor, Hepsiburada almıyor.
+
+> ✅ **TASARIM DOĞRULANDI.** `KARGOYA_VERILDI` bizde **atlanabilir** ara adım
+> olarak kuruldu (zorunlu olsaydı HB'de hiç kullanılmayan bir aşama
+> operasyoncuya fazladan tık olurdu). Kanal farkı modeli bozmuyor.
+
+### 11.3 FARK 2 — geri gönderim İKİ sekmeye bölünmüş
+
+`(K)` Satıcı haklı bulunursa iade önce **"Gönderime hazır"a**, biz
+kargoladığımızda **"Kargoda"ya** geçer. Trendyol'da bu tek sekme
+("Reddedilen") + üstte bir sayaç ("Kargolanması Gereken").
+
+> ✅ **YENİ DURUM GEREKMEDİ.** Ayrım `iadeKargoKodu` alanından TÜRETİLİYOR:
+> boşsa "gönderime hazır", doluysa "kargoda". Merdivende bir basamak daha
+> tasarruf — yeni bir `NoticeStatus` değeri açmak, iki kanalın sekme
+> sayısını modele gömmek olurdu.
+
+### 11.4 FARK 3 — SERVİS DALI BAŞKA BİTİYOR: "Hurda Geliri"
+
+⚠ **EN BÜYÜK FARK BU VE PARA TARAFINDA.**
+
+`(K)` HB'de servis sekmesi **genelde kullanılmaz.** Örnek: çalışmıyor diye
+iade edilen bir blender'ı satıcı, kullanım hatası mı diye analize almak
+ister. İade kısa süreliğine **"Servis sürecinde"** sekmesine alınır —
+
+**ama Hepsiburada servis sürecini BEKLEMEDEN müşteriye parayı iade eder.**
+
+Bundan sonrası Trendyol'da hiç olmayan bir yol:
+
+1. Satıcı **Hepsiburada'ya tazmin talebinde** bulunur
+2. Talep kabul edilirse satıcı **Hepsiburada'ya FATURA keser**
+3. İade ürün **Hepsiburada'nın deposuna** gönderilir
+4. Depoya ulaştıktan sonra tutar hakedişlere **"Hurda Geliri"** olarak eklenir
+
+| | Trendyol | Hepsiburada |
+|---|---|---|
+| Analiz sonu | ürün **müşteriye** geri (ya da iade onaylanır) | ürün **pazaryerinin deposuna**, karşılığı **Hurda Geliri** |
+| Para | iade tutarı geri alınır ya da kaybedilir | **fatura kesilir**, hakedişe gelir kalemi düşer |
+| Bizde karşılığı | `ANALIZ` → `ITIRAZ_KABUL` / `ITIRAZ_RED` | ⛔ **YOK** — bkz. aşağıdaki açık kalem |
+
+> ⛔ **AÇIK — MODELDE KARŞILIĞI YOK.** İki eksik:
+> ① İadenin **tazminat talebine** bağlanması (`Compensation` modeli var,
+> bağ yok). ② **"Hurda Geliri"** hakediş kaleminin tanınması — bu bir
+> GELİR kalemi ve bugün hakediş tarafında böyle bir tür yok.
+> ⚠ Bu iş **AÇILMADI**: hurda gelirinin hakediş dosyasında hangi satır
+> adıyla geldiği görülmedi. Ölçülmeden kalem açmak, adını uydurmak olur.
+
+### 11.5 Aynı olanlar
+
+- **Müşterinin iade sebepleri** — `(K)` "Trendyol dosyasında bahsedilen
+  iade sebepleri aynı"
+- **Satıcının 2 seçeneği** — onayla / reddet, sebep ne olursa olsun
+- **2 günlük onay/red süresi** — iade teslim edildiğinde başlar
+- **Satıcının ret gerekçeleri** — `(K)` "Trendyol'daki seçenekler aynı"
+- **Onaylanan iadede iade kargosu satıcıya ait**
