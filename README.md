@@ -54,3 +54,6 @@ Kamera ile barkod okuma güvenli bağlantı (https) ister; yerel ağda `http`
   kullanıcı kolaylığı ilkeleri, faz sırası, commit düzeni
 - `BEKLEYENLER.md` — **yalnız AÇIK işler** (kısa, tek ekran)
 - `ARSIV.md` — kapanmış işler, kararlar ve dersler (gerekçeleriyle)
+- `docs/iade-sureci.md` — **pazaryerinin** iade akışı: durumlar, sebepler,
+  itiraz gerekçeleri, kargo maliyetinin kanal farkı. Sistemin nasıl çalıştığını
+  değil, karşımızdakinin nasıl çalıştığını anlatır.
