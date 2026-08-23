@@ -8,7 +8,10 @@ import { z } from "zod";
 import type { CompensationStatus, Currency } from "@/generated/prisma/enums";
 import { gunMetninden } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
-import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
+import {
+  kalanTalepEdilebilirAdet,
+  karsiTarafGecerliMi,
+} from "@/lib/tazminat";
 
 export type TazminatDurumu = {
   hatalar?: string[];
@@ -210,6 +213,27 @@ export async function tazminatAc(
   }
   if (veri.quantity > kalan) {
     return { hatalar: [t("adetKalandanFazla", { kalan })] };
+  }
+
+  /**
+   * ⚠ KARŞI TARAFSIZ TALEP YAZILMAZ — VE BU KAPI 23.08.2026'DA AÇILDI.
+   *
+   * `supplierId` o güne kadar ŞEMADA ZORUNLUYDU; kargo şirketi de karşı
+   * taraf olabilsin diye nullable'a çevrildi (K33). Zorunluluk kalkınca
+   * bir kapı açıldı: karşı tarafı olmayan bir talep artık YAZILABİLİR ve
+   * öyle bir kayıt ANLAMSIZDIR — kimden alacaklı olduğumuzu söylemeyen
+   * bir alacak, alacak değildir.
+   *
+   * ⚠ KURAL BURADA DEĞİL, `lib/tazminat.ts`TE — ve bilerek. Bekçi de
+   * oradan çağırıyor; iki yerde iki ölçüt olsaydı biri sessizce gevşerdi.
+   *
+   * ⚠ SESSİZ DÜŞMEZ (İlke #5): kalem tedarikçisiz geldiyse kullanıcı NEDEN
+   * açılamadığını görür. Alım kaydında tedarikçi boş olabiliyor
+   * (`purchase.supplierId` nullable) — o zaman talebin kime açılacağı
+   * belli değildir ve bunu söylemek gerekir.
+   */
+  if (!karsiTarafGecerliMi({ supplierId: kalem.tedarikciId })) {
+    return { hatalar: [t("karsiTarafYokHata")] };
   }
 
   try {

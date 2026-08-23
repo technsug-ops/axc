@@ -230,6 +230,62 @@ console.log("\n4) KARŞI TARAF — ÜÇ TÜRDEN BİRİ, AMA EN AZ BİRİ");
     !kargoAdlari.some((k) => new RegExp(`code:\\s*"${k}"`).test(seedTedarikci)),
   );
 
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  KURAL YAZILDI MI DEĞİL — KAPIYA TAKILDI MI
+   * --------------------------------------------------------------------
+   *  ⚠ 23.08.2026'DA TAM BU TUZAĞA DÜŞÜLDÜ. `karsiTarafGecerliMi` yazıldı,
+   *  saf fonksiyon olarak sınandı ve yukarıdaki altı kontrol YEŞİL yandı —
+   *  ama fonksiyon HİÇBİR YERDEN ÇAĞRILMIYORDU. Yani kural vardı, kapı
+   *  yoktu; karşı tarafsız kayıt yine yazılabilirdi.
+   *
+   *  Deponun dersi: _"düzeltme yolu, tüm okuyuculara ulaştığı ÖLÇÜLMEDEN
+   *  'var' sayılmaz."_ Saf mantığı sınamak yetmez, ÇAĞRILDIĞI da sınanır.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const eylem = readFileSync("src/app/tazminat/actions.ts", "utf8");
+  kontrol(
+    "kural KAPIYA takılı (action gerçekten çağırıyor)",
+    /if\s*\(!karsiTarafGecerliMi\(/.test(eylem),
+  );
+  /**
+   * ⚠ ÇAĞRI, YAZMADAN ÖNCE OLMALI. Sonra çağrılsaydı kayıt zaten
+   * yazılmış olurdu ve kontrol hiçbir şeyi engellemezdi.
+   */
+  const kapiYeri = eylem.indexOf("karsiTarafGecerliMi(");
+  const yazmaYeri = eylem.indexOf("prisma.compensation.create(");
+  kontrol(
+    "  ...ve YAZMADAN ÖNCE çağrılıyor",
+    kapiYeri !== -1 && yazmaYeri !== -1 && kapiYeri < yazmaYeri,
+    { kapiYeri, yazmaYeri },
+  );
+  /** Sessiz düşmez: kullanıcı NEDEN açılamadığını görür (İlke #5). */
+  const sozlukT = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Tazminat?: Record<string, string>;
+  };
+  /**
+   * ⚠ "UZUNLUK > 20" BİR ÖLÇÜT DEĞİL — MUTASYON GEÇTİ. İlk yazımda mesajın
+   * uzunluğuna bakılıyordu; metni "Hata…" ile başlatan mutasyon o eşiği
+   * rahatça aştı ve kontrol yeşil kaldı. Uzunluk, açıklayıcılığın vekili
+   * olamaz.
+   *
+   * Doğru ölçüt İÇERİK: mesaj (a) NEYİN eksik olduğunu adıyla söylemeli,
+   * (b) NE YAPILACAĞINI söylemeli. İlke #5'in istediği tam olarak bu ikisi.
+   */
+  const sebepMetni = sozlukT.Tazminat?.karsiTarafYokHata ?? "";
+  kontrol(
+    "  ...sebep ekranda yazıyor (sessiz başarısızlık yok)",
+    /karsiTarafYokHata/.test(eylem),
+  );
+  kontrol(
+    "  ...mesaj NEYİN eksik olduğunu söylüyor",
+    /tedarikçi/i.test(sebepMetni),
+  );
+  kontrol(
+    "  ...ve NE YAPILACAĞINI söylüyor",
+    /(girip|ekleyip|tanımlay|deneyin)/i.test(sebepMetni),
+  );
+
   kosanBolumler.push("karsi-taraf");
 }
 

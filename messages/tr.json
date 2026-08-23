@@ -1675,7 +1675,8 @@
     "talepYok": "talep yok",
     "kaynakIade": "iadeden",
     "kaynakTedarikcisiz": "\"{kod}\" kaydının tedarikçisi bulunamadı; alacak kime yazılacağı belli değil. Bu ürünün alımında tedarikçi seçili olmalı.",
-    "karsiTarafYok": "karşı taraf yok"
+    "karsiTarafYok": "karşı taraf yok",
+    "karsiTarafYokHata": "Bu kalemin tedarikçisi belli değil; talep kime açılacağı bilinmeden kaydedilemez. Alım kaydına tedarikçi girip tekrar deneyin."
   },
   "Hakedis": {
     "baslik": "Hakediş",
