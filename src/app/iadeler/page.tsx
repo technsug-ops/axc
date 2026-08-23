@@ -541,13 +541,28 @@ export default async function IadelerSayfasi({
    * gösterirdi ve rakam yalan olurdu. Rozet her zaman TÜM açık bildirimleri
    * sayar.
    */
-  const [bekleyenBildirimler, bildirimToplami] = await Promise.all([
+  const [bekleyenBildirimler, bildirimToplami, aramaTumSuzgecler] =
+    await Promise.all([
     prisma.returnNotice.count({
       where: { status: { in: ACIK_BILDIRIM_DURUMLARI } },
     }),
     /** Aramaya uyan toplam — 50'lik pencerenin dışında kalan var mı. */
     prisma.returnNotice.count({ where: bildirimKosulu }),
-  ]);
+    /**
+     * ⚠ SÜZGEÇSİZ SAYIM — "0 kayıt" DEMENİN DÜRÜST HÂLİ.
+     *
+     * Kullanıcı 23.08.2026 sipariş numarasıyla aradı ve _"0 kayıt"_ gördü;
+     * kayıt VARDI, yalnız "Açık" süzgecinin dışındaydı (kapanmıştı). Ekran
+     * "bulunamadı" diyordu ama bulunamamanın SEBEBİNİ söylemiyordu — ve
+     * kullanıcı haklı olarak sistemin kaydı kaybettiğini düşündü.
+     *
+     * Anayasa İlke #5: _"sessiz başarısızlık yasaktır — bir şey olmadıysa
+     * NEDEN olmadığı ekranda yazar."_ Bu sayım tam o cümleyi kurabilmek için.
+     */
+    prisma.returnNotice.count({
+      where: bildirimAramaKosulu(bildirimArama),
+    }),
+    ]);
 
   /**
    * EKLER — bildirim başına, TEK SORGUDA. Satır satır sorgu atmak 50
@@ -939,7 +954,20 @@ export default async function IadelerSayfasi({
           ) : null}
           {bildirimKayitlari.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              {bildirimArama ? tBildirim("aramaSonucYok") : bosBildirimMetni}
+              {/*
+                ⚠ "BULUNAMADI" DEMEK YETMEZ, NEDEN BULUNAMADIĞI YAZAR.
+                Kullanıcı sipariş numarasıyla aradı, kayıt VARDI ama "Açık"
+                süzgecinin dışındaydı (kapanmıştı) ve ekran yalnızca
+                "0 kayıt" dedi — kullanıcı sistemin kaydı kaybettiğini sandı.
+                Anayasa İlke #5.
+              */}
+              {bildirimArama
+                ? aramaTumSuzgecler > 0
+                  ? tBildirim("aramaBaskaSuzgecte", {
+                      sayi: aramaTumSuzgecler,
+                    })
+                  : tBildirim("aramaSonucYok")
+                : bosBildirimMetni}
             </p>
           ) : (
             <div className="space-y-3">

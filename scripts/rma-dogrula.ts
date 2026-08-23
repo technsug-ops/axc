@@ -822,7 +822,24 @@ console.log("\n5) İADE FORMU — ÖN-DOLU GEÇİŞ (T4/14 CANLI HATASI)");
     }),
   );
 
-  // --- ÖN-DOLU HANGİ DURUMDA HİÇ OLMAZ ---
+  /**
+   * --- ÖN-DOLU ÖLÇÜTÜ: GEREKÇE DEĞİL, VERİ (düzeltildi 23.08.2026) ---
+   *
+   * ⚠ BURADA ESKİDEN TERS BİR İDDİA VARDI: _"DEGISIM/DEGISIM_KUSURLU/CAYMA/
+   * CALISMIYOR gerekçesinde ön-dolu ÜRÜN yazılmaz."_ Yazıldığı gün doğruydu —
+   * ayırma yalnız `YANLIS_URUN`da doğuyordu. Ama bu bir GÜVENLİK kuralı değil
+   * bir KAPSAM BEYANIYDI ve kapsam iki kez genişledi: müşterinin `DEGISIM` /
+   * `DEGISIM_KUSURLU` sebepleri ve satıcının `DEGISIM` itirazı da ürün
+   * ayırıyor.
+   *
+   * Sonuç canlıda görüldü: ayrılan ürün forma hiç taşınmadı, kullanıcı
+   * doldurmadı, `EXCHANGE_OUT` yazılmadı — ürün depodan çıktı, defter
+   * öğrenmedi.
+   *
+   * ⚠ ESKİ İDDİA SİLİNMEDİ, ÇEVRİLDİ VE NİYE ÇEVRİLDİĞİ YAZILDI (anayasa:
+   * _"eski gerekçe silinmez"_) — yoksa aynı daraltma altı ay sonra yeniden
+   * keşfedilip yeniden uygulanır.
+   */
   for (const g of ["DEGISIM", "DEGISIM_KUSURLU", "CAYMA", "CALISMIYOR"] as const) {
     const s = iadeFormuOnDolu({
       bildirim: {
@@ -832,11 +849,61 @@ console.log("\n5) İADE FORMU — ÖN-DOLU GEÇİŞ (T4/14 CANLI HATASI)");
       },
       kalemler: [{ saleItemId: T4_KALEM, variantId: T4_AYRILAN }],
     });
+    /** AYRILAN ürün her gerekçede taşınır — `EXCHANGE_OUT`un tek girdisi bu. */
     kontrol(
-      `  ${g} gerekçesinde ön-dolu ÜRÜN yazılmaz`,
-      s.donenVaryantId === "" && s.gonderilecekVaryantId === "" && !s.urunVar,
+      `  ${g}: ayrılan ürün forma TAŞINIR`,
+      s.gonderilecekVaryantId === T4_AYRILAN && s.urunVar,
+      s,
+    );
+    /**
+     * ⚠ DÖNEN ürün YALNIZ `YANLIS_URUN`da anlamlı: öteki gerekçelerde geri
+     * gelen mal satılan malın KENDİSİDİR. Taşısaydık form "başka bir ürün
+     * döndü" derdi ve defter düzeltmesi yanlış varyanta yazılırdı.
+     */
+    kontrol(
+      `  ${g}: DÖNEN ürün taşınmaz (satılan malın kendisi döner)`,
+      s.donenVaryantId === "",
+    );
+    /**
+     * ⚠ ADET ÖN-DOLU DEĞİL. Form bu değeri "SAĞLAM adet"e de yazıyor;
+     * `HASARLI` bir iadede "1 sağlam" varsayımı hasarlı malı STOĞA SOKARDI
+     * (`RETURN_IN` yalnız sağlam adetten yazılır).
+     */
+    kontrol(
+      `  ${g}: adet UYDURULMAZ (sağlam/hasarlı ayrımı kullanıcının)`,
+      s.adet === "",
     );
   }
+
+  /** `YANLIS_URUN` eski davranışını AYNEN korur — orada mal kesin sağlam döner. */
+  {
+    const y = iadeFormuOnDolu({
+      bildirim: {
+        reason: "YANLIS_URUN",
+        returnedVariantId: T4_DONEN,
+        reservedVariantId: T4_AYRILAN,
+      },
+      kalemler: [{ saleItemId: T4_KALEM, variantId: T4_AYRILAN }],
+    });
+    kontrol(
+      "  YANLIS_URUN: dönen ürün DE taşınır ve adet 1 kalır",
+      y.donenVaryantId === T4_DONEN && y.adet === "1",
+      y,
+    );
+  }
+
+  /** Ayrılan ürün YOKSA taşınacak bir şey de yok. */
+  kontrol(
+    "  ayırma yoksa ön-dolu yok",
+    iadeFormuOnDolu({
+      bildirim: {
+        reason: "CAYMA",
+        returnedVariantId: null,
+        reservedVariantId: null,
+      },
+      kalemler: [{ saleItemId: T4_KALEM, variantId: T4_AYRILAN }],
+    }).urunVar === false,
+  );
   kontrol(
     "bildirim yoksa ön-dolu yok",
     iadeFormuOnDolu({ bildirim: null, kalemler: [] }).urunVar === false,

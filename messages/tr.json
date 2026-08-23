@@ -2415,7 +2415,8 @@
     "degisimUrunuAciklama": "Müşteriye gönderilecek YENİ ürün. Fiziksel stoğa dokunmaz — ayrılmış olarak işaretlenir.",
     "degisimUrunuSec": "Ürün seçin",
     "eksikTavanOnayi": "Tavan doldu — devam etmek için onay kutusunu işaretle.",
-    "ayrilmisDusmedi": "Ayrılan {adet} adet ürün STOKTAN DÜŞÜLMEDİ — \"İadeyi işle\" ile kaydet."
+    "ayrilmisDusmedi": "Ayrılan {adet} adet ürün STOKTAN DÜŞÜLMEDİ — \"İadeyi işle\" ile kaydet.",
+    "aramaBaskaSuzgecte": "Bu süzgeçte yok ama aramaya uyan {sayi} bildirim VAR — \"Hepsi\" süzgecine bakın."
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",

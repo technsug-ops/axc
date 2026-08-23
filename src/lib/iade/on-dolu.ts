@@ -67,9 +67,28 @@ export function iadeFormuOnDolu(girdi: {
   kalemler: OnDoluKalemi[];
 }): OnDoluSonucu {
   const { bildirim, kalemler } = girdi;
-  if (bildirim === null || bildirim.reason !== "YANLIS_URUN") return ON_DOLU_YOK;
+  if (bildirim === null) return ON_DOLU_YOK;
 
-  const donen = bildirim.returnedVariantId ?? "";
+  /**
+   * ⚠ AYRILAN ÜRÜN HER GEREKÇEDE TAŞINIR — 23.08.2026'DA DÜZELTİLDİ.
+   *
+   * Kural eskiden `reason !== "YANLIS_URUN"` ise HİÇBİR ŞEY taşımıyordu.
+   * Yazıldığı gün doğruydu: ayırma yalnız `YANLIS_URUN`da doğuyordu. Sonra
+   * iki kapı daha açıldı ve kural onları hiç görmedi:
+   *   · müşterinin `DEGISIM` / `DEGISIM_KUSURLU` sebepleri
+   *   · SATICININ itiraz gerekçesi `DEGISIM` (23.08.2026'da eklendi)
+   *
+   * Kullanıcı bildirdi: müşteri sebebi `HASARLI`, satıcı itirazı `DEGISIM`,
+   * ayrılan ürün `axcali1610`. Form değişim alanını BOŞ açtı, kullanıcı
+   * doldurmadı, `EXCHANGE_OUT` hiç yazılmadı — ürün depodan çıktı, defter
+   * öğrenmedi.
+   *
+   * ⚠ ÖLÇÜT ARTIK GEREKÇE DEĞİL VERİ: ayrılmış bir ürün varsa taşınır.
+   * Gerekçe listesine bağlı bir kural, yarın üçüncü bir kapı açıldığında
+   * yine sessizce dışarıda bırakırdı.
+   */
+  const donen =
+    bildirim.reason === "YANLIS_URUN" ? (bildirim.returnedVariantId ?? "") : "";
   const gonderilecek = bildirim.reservedVariantId ?? "";
   const urunVar = donen !== "" || gonderilecek !== "";
   if (!urunVar) return ON_DOLU_YOK;
@@ -91,8 +110,19 @@ export function iadeFormuOnDolu(girdi: {
     /**
      * ADET 1 — amaç kolaylık değil GÖRÜNÜRLÜK. Ürün alanları adet girilene
      * kadar çizilmiyordu; seçili gelen ürün ekranda hiç görünmüyordu.
+     *
+     * ⚠ AMA YALNIZ `YANLIS_URUN`DA — VE BU SINIR BİLEREK DAR (23.08.2026).
+     * Form bu değeri hem "iade adedi" hem "SAĞLAM adet" alanına yazıyor.
+     * `YANLIS_URUN`da mal kesin sağlam döner: yanlış ürün gönderilmiştir,
+     * malın kusuru yoktur. Orada varsayım güvenli.
+     *
+     * `HASARLI` gibi bir sebeple gelen malın sağlam mı hasarlı mı olduğunu
+     * SİSTEM BİLEMEZ. "1 sağlam" diye ön-doldursaydık ve kullanıcı düzeltmeyi
+     * unutsaydı, HASARLI MAL STOĞA GİRERDİ (`RETURN_IN` yalnız sağlam
+     * adetten yazılır) — bir kaybı düzeltirken başka bir kaydı bozardık.
+     * Boş bırakmak, bilinmeyeni uydurmamaktır.
      */
-    adet: "1",
+    adet: bildirim.reason === "YANLIS_URUN" ? "1" : "",
     urunVar: true,
   };
 }
