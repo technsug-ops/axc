@@ -28,6 +28,7 @@ import {
   Percent,
   Receipt,
   ScanBarcode,
+  ScanSearch,
   ShieldCheck,
   ShoppingCart,
   Store,
@@ -128,6 +129,20 @@ const GRUPLAR: MenuGrubu[] = [
     anahtar: "grupUrunKanal",
     ogeler: [
       { anahtar: "urunler", href: "/urunler", icon: Package, aktif: true },
+      /**
+       * BARKOD OKUT (K34a) — GRUPTA, GÜNLÜK LİSTEDE DEĞİL.
+       *
+       * ⚠ SIKLIĞA GÖRE GÜNLÜK LİSTEYE AİT: depoda paket başına en az bir kez
+       * açılıyor (~30/gün, hedef 150). Ama hep açık liste kullanıcının
+       * ONAYLADIĞI YEDİ satır (22.08.2026) ve bir bekçi bunu sabitliyor.
+       * Sekizinciyi eklemek, kullanıcının verdiği bir kararı kendi işime
+       * uydurmak olurdu — eşiği soruyu soran koyamaz.
+       *
+       * Bu yüzden şimdilik grupta duruyor ve takas kullanıcıya SORULDU:
+       * `okut`, `urunKarti`/`simulasyon`dan daha sık açılan bir ekran.
+       * Karar gelirse tek satırlık iş.
+       */
+      { anahtar: "okut", href: "/okut", icon: ScanSearch, aktif: true },
       { anahtar: "kanalSkulari", href: "/kanal-sku", icon: Tags, aktif: true },
       {
         anahtar: "kanalHesaplari",

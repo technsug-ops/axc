@@ -32,6 +32,7 @@ export const BOLUMLER = [
   { kimlik: "panel", ad: "Panel — güne nereden bakılır" },
   { kimlik: "urun", ad: "Ürünler ve stok" },
   { kimlik: "stok", ad: "Stok — elimde ne var" },
+  { kimlik: "okuma", ad: "Barkod okut — sistem ne biliyor" },
   { kimlik: "kanalSku", ad: "Kanal SKU — ne işe yarar" },
   { kimlik: "komisyon", ad: "Komisyon oranı ve tarife" },
   { kimlik: "alim", ad: "Alım ve mal kabul" },
@@ -86,6 +87,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   satislar: "satis",
   iadeler: "iade",
   stok: "stok",
+  okut: "okuma",
   envanterDegeri: "envanter",
   kanalSkulari: "kanalSku",
   giderler: "gider",
@@ -557,6 +559,49 @@ ${sikHata([
   {
     hata: "Rafı boş bırakmak",
     cozum: "Raf yazılmazsa toplama sırasında malı aramak zorunda kalırsın. Depo büyüdükçe bu dakikalar toplanır.",
+  },
+])}
+</section>
+
+<section id="okuma">
+${baslik("okuma")}
+<p><strong>Sol menü &rarr; Barkod okut.</strong> Elindeki ürünü okutursun;
+sistem o barkod hakkında <strong>ne bildiğini</strong> söyler. Hepsi bu.
+Hiçbir şey engellenmez, hiçbir kayıt değişmez, onay istenmez.</p>
+${neZaman(
+  "Depoda paket hazırlarken. Kutuyu eline aldığında okut, ekranda ne yazdığına bak, paketlemeye devam et.",
+)}
+<h3>Bu ekran seni DURDURMAZ</h3>
+<p>Bir uyarı ekranı değildir. &quot;Yanlış ürün&quot; demez, &quot;emin
+misin&quot; diye sormaz, bir düğmeyi kilitlemez. Sebebi basit: sistemdeki
+satış defteri bugün <strong>eksik</strong>. Uyarı koysaydık çoğu zaman
+<em>hakl&#305; olarak</em> çalardı, sen her seferinde geçerdin ve iki
+haftada uyarıyı okumadan tıklamayı öğrenirdin. O noktada uyarı işe
+yaramaz hâle gelirdi &mdash; hem de tam gerektiği gün.</p>
+<div class="ek-not"><div class="etiket">Asıl işi ölçmek</div>
+<p>Her okuma kayda geçer ve dört gruba ayrılır: ürün <strong>açık siparişte
+var</strong>, ürün <strong>açık siparişte yok</strong>, kod tanınmadı ama
+sen ürünü <strong>gösterdin</strong>, ya da <strong>hüküm verilemedi</strong>.
+Bir hafta sonra bu dağılım, defterin ne kadarının eksik olduğunu
+<em>pazaryerinden de sistemden de bağımsız</em> olarak söyler.</p></div>
+<h3>Kod bulunamazsa</h3>
+<p>Ekran sadece &quot;bu kod dört alanın hiçbirinde bulunamadı&quot; der.
+Altında isteğe bağlı bir arama kutusu çıkar: elindeki ürünün hangisi
+olduğunu biliyorsan gösterebilirsin. <strong>İstersen atla</strong> &mdash;
+hiçbir şey beklemiyor, paketlemeye devam edebilirsin.</p>
+<p>Gösterdiğinde sistem &quot;bu kod bu ürüne ait&quot; diye kaydeder.
+<strong>Neden</strong> tutmadığını sormaz: ürünün barkodu gerçekten farklı
+olabilir, kayıtta yanlış girilmiş olabilir, ya da o parti farklı bir
+barkodla gelmiş olabilir. Bunlar farklı işlere yol açar; birkaç vaka
+birikince hangisi olduğu kendiliğinden görünür hâle gelir.</p>
+${sikHata([
+  {
+    hata: "\u0022Aç\u0131k siparişte yok\u0022 yaz\u0131nca ürünü paketlememek",
+    cozum: "Bu bir hata mesaj\u0131 de\u011fildir. Sat\u0131ş sisteme girilmemiş olabilir; ürünün bugün paketlenmiyor olmas\u0131 da mümkündür. Ekran hangisi oldu\u011funu bilemez ve iddia etmez \u2014 sen işine devam et.",
+  },
+  {
+    hata: "Bulunamayan her kod için ürün göstermek zorunda hissetmek",
+    cozum: "Zorunlu de\u011fil. Acelen varsa atla; kay\u0131t yine tutulur ve raporda \u0022hüküm verilemedi\u0022 taraf\u0131nda say\u0131l\u0131r.",
   },
 ])}
 </section>

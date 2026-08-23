@@ -20,7 +20,7 @@ import { prisma } from "@/lib/prisma";
 import { varyantStogu } from "@/lib/stok";
 import { yetkiIste } from "@/lib/yetki";
 
-import type { NoticeStatus, ReturnReason } from "@/generated/prisma/enums";
+import type { NoticeStatus } from "@/generated/prisma/enums";
 
 /**
  * ============================================================================

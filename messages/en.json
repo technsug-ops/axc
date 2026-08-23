@@ -676,7 +676,8 @@
     "grupPara": "",
     "grupUrunKanal": "",
     "grupTanimlar": "",
-    "grupVeri": ""
+    "grupVeri": "",
+    "okut": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -2965,5 +2966,39 @@
     "aciklama": "",
     "neden": "",
     "yenidenDene": ""
+  },
+  "Okuma": {
+    "baslik": "",
+    "aciklama": "",
+    "ipucu": "",
+    "kameraBasligi": "",
+    "okut": "",
+    "sonOkuma": "",
+    "hangiAlan": "",
+    "alanBarcode": "",
+    "alanCompanySku": "",
+    "alanSku": "",
+    "alanChannelSku": "",
+    "acikSiparisler": "",
+    "acikSiparisYok": "",
+    "siparisSatiri": "",
+    "kodsuzSiparis": "",
+    "bulunamadi": "",
+    "gosterTeklifi": "",
+    "gosterAra": "",
+    "gosterSec": "",
+    "eslestirildi": "",
+    "eslestirmeOlmadi": "",
+    "kovaACIK_SIPARISTE_VAR": "",
+    "kovaACIK_SIPARISTE_YOK": "",
+    "kovaESLESTIRILDI": "",
+    "kovaBILINMEYEN": "",
+    "raporBaslik": "",
+    "raporHafta": "",
+    "raporToplam": "",
+    "raporBos": "",
+    "raporCozulemeyen": "",
+    "raporNot": "",
+    "izYazilamadi": ""
   }
 }

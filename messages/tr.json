@@ -676,7 +676,8 @@
     "grupPara": "Para",
     "grupUrunKanal": "Ürün ve kanal",
     "grupTanimlar": "Tanımlar",
-    "grupVeri": "Veri"
+    "grupVeri": "Veri",
+    "okut": "Barkod okut"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -2965,5 +2966,39 @@
     "aciklama": "Telefon şu anda internete ulaşamıyor. Bağlantı gelince kaldığınız yerden devam edebilirsiniz.",
     "neden": "Rakamlar bilerek gösterilmiyor: bağlantı yokken ekrandaki bir tutarın güncel olup olmadığı anlaşılamaz.",
     "yenidenDene": "Yeniden dene"
+  },
+  "Okuma": {
+    "baslik": "Barkod okut",
+    "aciklama": "Elindeki ürünü okut; sistemin o barkod hakkında ne bildiğini gösterir. Hiçbir şey engellenmez, hiçbir kayıt değişmez — okuma yalnız kayda geçer.",
+    "ipucu": "Barkod okut veya yaz",
+    "kameraBasligi": "Ürün barkodunu okut",
+    "okut": "Okut",
+    "sonOkuma": "Son okuma",
+    "hangiAlan": "Şurada bulundu",
+    "alanBarcode": "Barkod (EAN)",
+    "alanCompanySku": "Firma SKU",
+    "alanSku": "SKU",
+    "alanChannelSku": "Kanal SKU",
+    "acikSiparisler": "Kargoya verilmemiş siparişler",
+    "acikSiparisYok": "Bu ürün, kargoya verilmemiş hiçbir siparişte geçmiyor.",
+    "siparisSatiri": "{kod} · {adet} adet · {kanal}",
+    "kodsuzSiparis": "(sipariş no girilmemiş)",
+    "bulunamadi": "Bu kod dört alanın hiçbirinde bulunamadı: Barkod (EAN), Firma SKU, SKU, Kanal SKU.",
+    "gosterTeklifi": "Elindeki ürünün hangisi olduğunu biliyorsan gösterebilirsin. İstersen atla — hiçbir şey beklemiyor.",
+    "gosterAra": "Ürünü ara (ad veya kod)",
+    "gosterSec": "Bu ürün",
+    "eslestirildi": "Eşleştirildi. Kayıt güncellendi.",
+    "eslestirmeOlmadi": "Eşleştirme yazılamadı; okuma kaydı olduğu gibi duruyor.",
+    "kovaACIK_SIPARISTE_VAR": "Açık siparişte var",
+    "kovaACIK_SIPARISTE_YOK": "Açık siparişte yok",
+    "kovaESLESTIRILDI": "Eşleştirildi",
+    "kovaBILINMEYEN": "Hüküm verilemedi",
+    "raporBaslik": "Son dört hafta",
+    "raporHafta": "Hafta",
+    "raporToplam": "Toplam",
+    "raporBos": "Bu pencerede hiç okuma yok.",
+    "raporCozulemeyen": "{adet} kayıt çözülemedi ve hiçbir kovaya sayılmadı.",
+    "raporNot": "Yüzdelerin paydası o haftanın TOPLAM okumasıdır. “Hüküm verilemedi” bir bulgu değildir: kod tanınmadı ve ürün de gösterilmedi — elimizdeki malın katalogda başka bir barkodla durup durmadığını bilmiyoruz.",
+    "izYazilamadi": "Okuma kaydedilemedi; sonuç yine de doğru."
   }
 }

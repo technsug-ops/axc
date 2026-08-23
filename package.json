@@ -90,7 +90,8 @@
     "kamera:dogrula": "tsx scripts/kamera-dogrula.ts",
     "pwa:dogrula": "tsx scripts/pwa-dogrula.ts",
     "canli:eksik-siparis": "tsx scripts/canli-eksik-siparis.ts",
-    "canli:eksik-liste": "tsx scripts/canli-eksik-liste.ts"
+    "canli:eksik-liste": "tsx scripts/canli-eksik-liste.ts",
+    "okuma:dogrula": "tsx scripts/okuma-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
