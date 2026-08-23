@@ -1155,6 +1155,57 @@ uygulayacağım küme onunla AYNI mı? Farklıysa eşik değil, **ölçüt** yan
 ⚠ Bu, "eşik dağılımın gediğine konur" kuralının kardeşi ve ondan
 önceliklidir: **önce doğru dağılımı seçersin, sonra gediğini ararsın.**
 
+### BİR OKUMA, OKUNAN DEĞERİ DOĞRUDAN TAŞIR (KESİN KURAL)
+
+_Ders 23.08.2026, kamera vakası._ Dışarıdan gelen bir okuma (barkod, QR,
+dosya, ölçüm) **ara bir duruma yazılıp oradan okunursa**, okuma anı ile
+kullanım anı arasında bir gecikme doğar — ve sonuç **makul görünerek**
+yanlış çıkar.
+
+**Vaka:** fiyat denemesinde kamera barkodu okuyor, `setKod(...)` çağrılıyor,
+hemen ardından arama tetikleniyordu. React durumu senkron güncellenmediği
+için o an `kod` **hâlâ eski değeri** taşıyordu: kamera yeni barkodu okur,
+sistem **bir öncekini** arardı. Ekranda hata yok, kilitlenme yok — yalnız
+yanlış ürün gelir ve kimse sebebini anlamaz.
+
+> **KURAL:** okunan değer, onu kullanacak yere **parametre olarak** geçer.
+> Durum yalnız EKRANI beslemek içindir, kararı beslemek için değil.
+
+⚠ Aynı tuzağın kardeşi: `onClick={ara}` yazmak. Tıklama olayı ilk
+parametreye düşer ve fonksiyon onu "okunan kod" sanar. Bu vakada TypeScript
+yakaladı; yakalamayabilirdi de.
+
+---
+
+### BEKÇİ ÖLÇÜTÜ ELLE TUTULAN LİSTE DEĞİL, TERSTEN KURULUR (KESİN KURAL)
+
+_Ders 23.08.2026, kamera vakası._ Bir kuralın koşan karşılığını yazarken
+_"şu altı ekranda var mı"_ diye saymak, **yedinci ekran eklendiğinde sessizce
+yeşil kalır.** Liste bakım ister ve bakımı unutulan liste, koruduğunu sandığı
+şeyi korumaz.
+
+**Vaka:** anayasa (İlke #7) _"kod girilebilen her alan kamera destekler"_
+diyordu. Kamera formlarda vardı; **liste aramalarının ALTISINDA DA yoktu.**
+Kural yazılıydı, koşan bir ölçütü yoktu.
+
+Doğru ölçüt sayım değil, **desen yasağı**:
+
+> _"Kod arayan bir kutu, kamera taşıyan ortak bileşeni kullanmak
+> ZORUNDA — çıplak `<input name="q">` hiçbir yerde kalamaz."_
+
+Böyle kurulunca yarın eklenen ekran da yakalanır; kimse listeye eklemeyi
+hatırlamak zorunda değildir. **Düzeltilecek olan satır değil DESENDİR.**
+
+⚠ Bu, "tip listesi değil, BAĞ" ve `sw.js`teki "izin listesi, yasak listesi
+değil" derslerinin bekçi tarafındaki hâli — üçü aynı kökten.
+
+⚠ **VE ÖLÇÜT DE MUTASYONLA SINANIR.** Aynı gün iki ölçüt gevşek çıktı:
+biri yalnız `<Input>` arıyordu (düz `<input>` kaçtı), öteki deseni dosyanın
+tamamında arıyordu (aynı desen "temizle" satırında da geçiyor ve mutasyonu
+ayakta tutuyordu).
+
+---
+
 ### EŞİK, DAĞILIMIN GEDİĞİNE KONUR — GÖVDESİNE DEĞİL (KESİN KURAL)
 
 _Ders 19.08.2026._ Bir uyarı eşiği seçilirken sorulacak soru "hangi sayı
@@ -1468,6 +1519,14 @@ motor, yanlış bir ölçüt uğruna bozulmak üzereydi.
   kâr motoru hesaplar, ekran gösterir, test sınar — üçü de aynı kaynaktan
   besleniyorsa **bağımsız doğrulama yapılmamış** demektir.
 
+> ⚠ **İKİNCİ VAKA 23.08.2026 — VE BU SEFER KURAL SINAVI GEÇTİ.** İade
+> sayacı üç kaynaktan okundu ve üçü de aynı anı gösterdi. Ama üçün **ikisi
+> Trendyol'un kendi ekranıydı** (uygulama + masaüstü); onların örtüşmesi
+> yalnız _"TY kendi içinde tutarlı"_ derdi. Doğrulamayı geçerli kılan
+> **üçüncüsüydü: Aras Kargo'nun kendi takip kaydı** — kanaldan bağımsız.
+> `10 gün` rozeti `BEYAN`dan `OLCULDU`ya bu yüzden geçti, üç kaynak
+> olduğu için değil. _(Ayrıntı: `docs/iade-sureci.md` §12.2.)_
+>
 > **BAĞIMSIZLIK, KAYNAĞIN AYRILIĞIYLA ÖLÇÜLÜR — YOLUN AYRILIĞIYLA DEĞİL.**
 > _Mimar düzeltmesi 19.08.2026._ Tarife yazımından sonra "iki bağımsız yol
 > aynı sonucu verdi" dedim: `dilimBul(1999)` %18, `ChannelSku.commissionRate`
