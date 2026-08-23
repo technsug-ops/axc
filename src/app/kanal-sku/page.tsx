@@ -328,89 +328,94 @@ export default async function KanalSkuSayfasi({
             <Table>
               <TableHeader>
                 <TableRow>
+                  {/*
+                    ⚠ DÖRT SÜTUN — YEDİDEN İNDİRİLDİ (kullanıcı 23.08.2026:
+                    _"kötü bir seçim; ürün isimlerini gerekiyorsa iki satır
+                    yap ama tüm bilgiyi sağa scroll yapmadan görmek
+                    istiyorum"_).
+
+                    İlk sürümde kanal kodu ve komisyon AYRI sütun olarak
+                    eklenmişti ve tablo yedi sütuna çıkıp yatay kaydırma
+                    gerektiriyordu. Deponun kendi kuralı bunu zaten söylüyor
+                    (`yerlesim-dogrula.ts`): _"Yeni bir sütun gerekiyorsa çare
+                    sütun eklemek değil, ilişkili iki bilgiyi tek hücrede ÜST
+                    ÜSTE koymaktır."_ Kuralı yazmıştık, uygulamamıştık.
+
+                    Eşleştirme ilişkiye göre:
+                      Ürün    = ürün adı + SKU        (hangi mal)
+                      Kanal   = hesap + kanal kodu    (nerede, hangi kodla)
+                      Komisyon= oran + güncelleme     (kaç, ne zamandan beri)
+                  */}
                   <TableHead>{t("sutunUrun")}</TableHead>
-                  {/*
-                    ⚠ KANAL KODU EKRANIN VAR OLMA SEBEBİ — VE LİSTEDE YOKTU.
-                    Sayfanın adı "Kanal Kodları" ama tabloda bizim iç SKU'muz
-                    vardı; kanal kodunu görmek için her satırı TEK TEK
-                    düzenleme penceresinden açmak gerekiyordu. İlke #3
-                    (kimlik kodları listede) ve #9 (az tıkla) ihlaliydi.
-                    Sözlük anahtarı (`sutunKanalKodu`) zaten yazılıydı —
-                    sütun niyet edilmiş, hiç çizilmemişti.
-                  */}
-                  <TableHead>{t("sutunKanalKodu")}</TableHead>
-                  <TableHead>{ortak("sku")}</TableHead>
                   <TableHead>{t("sutunHesap")}</TableHead>
-                  {/*
-                    ⚠ KOMİSYON ORANI DA GİZLİYDİ. Satırdaki tek komisyon
-                    sinyali "oran eksik" rozetiydi ve canlıda ölçüldü: eksik
-                    oran sayısı SIFIR — yani o rozet hiç yanmıyor. Ekran
-                    komisyon hakkında hiçbir şey söylemiyordu.
-                  */}
                   <TableHead className="text-right">{t("sutunOran")}</TableHead>
-                  <TableHead>{t("sutunGuncelleme")}</TableHead>
                   <TableHead>{ortak("eylemler")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {kayitlar.map((kayit) => (
                   <TableRow key={kayit.id}>
-                    <TableCell>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span>{urunAdi(kayit)}</span>
-                        {kayit.commissionRate === null &&
-                        kayit.channelAccount.satisIcin ? (
-                          <Badge
-                            variant="outline"
-                            className={`${DURUM_YAZISI.uyari} border-current/40`}
-                          >
-                            {t("eksikOranRozeti")}
-                          </Badge>
-                        ) : null}
+                    {/*
+                      ⚠ ÜRÜN ADI SARIYOR, KIRPILMIYOR. `IkiSatir` bileşeni
+                      `truncate` kullanıyor (tek satır + "…" + ipucu); burada
+                      ad UZUN ve kullanıcı onu OKUMAK istiyor. `line-clamp-2`
+                      en fazla iki satıra sarar, `whitespace-normal` hücrenin
+                      varsayılan `whitespace-nowrap`ını ezer.
+                    */}
+                    <TableCell className="max-w-[26rem] whitespace-normal">
+                      <div className="line-clamp-2">{urunAdi(kayit)}</div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                        <KopyalanabilirKod
+                          deger={kayit.variant.sku}
+                          etiket={ortak("sku")}
+                        />
                         {!kayit.isActive ? (
                           <Badge variant="secondary">{ortak("pasif")}</Badge>
                         ) : null}
                       </div>
                     </TableCell>
-                    {/* Kimlik kodu: tek tıkla kopyalanır (İlke #4). */}
-                    <TableCell className="font-mono text-xs whitespace-nowrap">
-                      <KopyalanabilirKod
-                        deger={kayit.channelSku}
-                        etiket={t("sutunKanalKodu")}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <KopyalanabilirKod
-                        deger={kayit.variant.sku}
-                        etiket={ortak("sku")}
-                      />
-                    </TableCell>
-                    <TableCell className="text-muted-foreground whitespace-nowrap">
-                      <span className="flex items-center gap-2">
-                        {hesapAdi(kayit)}
-                        {/* Rol rozeti: aynı listede alış ve satış kodları yan
-                            yana duruyor, hangisi olduğu görünmeli. */}
+
+                    {/*
+                      KANAL = hesap + o hesaptaki KOD. İkisi aynı soruyu
+                      cevaplıyor: "bu ürün nerede, hangi kodla satılıyor".
+                      Rol rozeti kalıyor — aynı listede alış ve satış kodları
+                      yan yana duruyor, hangisi olduğu görünmeli.
+                    */}
+                    <TableCell className="whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          {hesapAdi(kayit)}
+                        </span>
                         <Badge variant="outline" className="text-xs">
                           {kayit.channelAccount.satisIcin
                             ? t("rolSatis")
                             : t("rolAlis")}
                         </Badge>
-                      </span>
+                      </div>
+                      <div className="mt-0.5 font-mono text-xs">
+                        <KopyalanabilirKod
+                          deger={kayit.channelSku}
+                          etiket={t("sutunKanalKodu")}
+                        />
+                      </div>
                     </TableCell>
+
                     {/*
-                      ⚠ RAKAM SÜTUNU SAĞA YASLI VE `tabular-nums`. Oranlar
-                      alt alta karşılaştırılıyor; ondalıklı (%13,5) ve tam
-                      (%18) oranlar canlıda karışık (629/2182 ondalıklı) ve
-                      sola yaslı yazıldığında virgüller hizalanmaz.
+                      ⚠ ORAN SAĞA YASLI VE `tabular-nums`: oranlar alt alta
+                      karşılaştırılıyor ve canlıda 629/2182'si ondalıklı
+                      (%13,5 ↔ %18). Sola yaslı yazılsa virgüller hizalanmaz.
+                      Altındaki tarih "bu oran ne zamandan beri" sorusunun
+                      cevabı — oranla aynı hücrede olması gereken bilgi.
                     */}
-                    <TableCell className="text-right tabular-nums whitespace-nowrap">
-                      {komisyonMetni(kayit)}
+                    <TableCell className="text-right whitespace-nowrap">
+                      <div className="tabular-nums">{komisyonMetni(kayit)}</div>
+                      <div className="text-muted-foreground mt-0.5 text-xs">
+                        {kayit.commissionUpdatedAt
+                          ? bicim.tarih(kayit.commissionUpdatedAt)
+                          : t("hicGuncellenmedi")}
+                      </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
-                      {kayit.commissionUpdatedAt
-                        ? bicim.tarih(kayit.commissionUpdatedAt)
-                        : t("hicGuncellenmedi")}
-                    </TableCell>
+
                     <TableCell>{duzenleyici(kayit)}</TableCell>
                   </TableRow>
                 ))}

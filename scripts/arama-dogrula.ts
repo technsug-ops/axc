@@ -154,9 +154,22 @@ console.log("\nKANAL KODLARI EKRANI — KİMLİK VE ORAN LİSTEDE");
   const baslikBloku = /<TableHeader>([\s\S]*?)<\/TableHeader>/.exec(ekranKod);
   kontrol("başlık satırı kesilebildi", baslikBloku !== null);
   const basliklar = baslikBloku?.[1] ?? "";
+  /**
+   * ⚠ ÖLÇÜT BAŞLIK SATIRINDAN GÖVDEYE ÇEVRİLDİ — 23.08.2026.
+   *
+   * İlk hâli "kanal kodu için AYRI bir `<TableHead>` var mı" diye soruyordu.
+   * O, çözümün BİR BİÇİMİNİ sabitliyordu; kullanıcının istediği ise şuydu:
+   * _"tüm bilgiyi sağa scroll yapmadan görmek istiyorum."_ Yedi sütun o
+   * isteği KARŞILAMIYORDU ve ölçüt yedi sütunu koruyordu.
+   *
+   * Doğru ölçüt: bilgi GÖVDEDE görünüyor mu (aşağıda ayrıca sınanıyor) ve
+   * tablo yatay kaydırma gerektirmeyecek kadar dar mı. Başlığın kaç parça
+   * olduğu bir uygulama ayrıntısı.
+   */
+  const basliksayisi = (basliklar.match(/<TableHead[\s>]/g) ?? []).length;
   kontrol(
-    "KANAL KODU sütunu var (ekranın var olma sebebi)",
-    /t\("sutunKanalKodu"\)/.test(basliklar),
+    `tablo DAR: ${basliksayisi} sütun (yatay kaydırma istemeyecek kadar)`,
+    basliksayisi <= 4,
   );
   kontrol("KOMİSYON sütunu var", /t\("sutunOran"\)/.test(basliklar));
 
@@ -181,9 +194,32 @@ console.log("\nKANAL KODLARI EKRANI — KİMLİK VE ORAN LİSTEDE");
     /<KopyalanabilirKod[\s\S]{0,120}deger=\{kayit\.channelSku\}/.test(govde),
   );
   /** Rakam sütunu hizalı — virgüller alt alta gelsin (629/2182 ondalıklı). */
+  /**
+   * ⚠ İKİ SINIF İKİ AYRI ÖĞEDE — dört sütuna inerken hücre `text-right`,
+   * içindeki rakam `tabular-nums` oldu. Tek bitişik desen arayan ölçüt
+   * DOĞRU davranışta kırmızı yandı; ikisi ayrı ayrı aranıyor.
+   */
+  const oranHucresi = govde.slice(
+    govde.indexOf("komisyonMetni(kayit)") - 400,
+    govde.indexOf("komisyonMetni(kayit)") + 80,
+  );
+  kontrol("oran hücresi kesilebildi", oranHucresi.length > 0);
+  kontrol("  ...hücre SAĞA yaslı", /text-right/.test(oranHucresi));
+  kontrol("  ...rakam tabular-nums (virgüller hizalansın)", /tabular-nums/.test(oranHucresi));
+
+  /**
+   * ⚠ ÜRÜN ADI SARIYOR, KIRPILMIYOR. Kullanıcı: _"ürün isimlerini gerekiyorsa
+   * iki satır yap."_ Hücrenin varsayılanı `whitespace-nowrap` (para/tarih
+   * bölünmesin diye); ürün adında ezilmesi gerekiyor, yoksa ad tek satırda
+   * uzar ve tabloyu yana taşırır.
+   */
   kontrol(
-    "  ...oran sağa yaslı ve tabular-nums",
-    /text-right tabular-nums[\s\S]{0,120}komisyonMetni/.test(govde),
+    "ürün adı SARIYOR (nowrap eziliyor)",
+    /whitespace-normal/.test(govde),
+  );
+  kontrol(
+    "  ...en fazla iki satır (satır yüksekliği patlamasın)",
+    /line-clamp-2/.test(govde),
   );
 
   /**
