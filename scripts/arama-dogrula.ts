@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import {
   KOD_ROLLERI,
   aramaKosulu,
@@ -124,6 +125,117 @@ kontrol(
   "barkodu olmayan varyantta boş ayraç kalmıyor",
   !kodDizisi({ ...ornek, barcode: null, kanalKodlari: [] }).includes("· ·"),
 );
+
+// ===========================================================================
+console.log("\nKANAL KODLARI EKRANI — KİMLİK VE ORAN LİSTEDE");
+// ===========================================================================
+/**
+ * Kullanıcı 23.08.2026: _"Kanal Kodları sayfası efektif ve kaliteli bir
+ * front end'e sahip değil."_
+ *
+ * ÖLÇÜLDÜ: ekranın adı "Kanal Kodları" ama tabloda KANAL KODU YOKTU — bizim
+ * iç SKU'muz vardı. Komisyon oranı da yoktu; satırdaki tek komisyon sinyali
+ * "oran eksik" rozetiydi ve canlıda eksik oran sayısı **SIFIR**, yani o rozet
+ * hiç yanmıyordu. İkisini görmek için her satırı TEK TEK düzenleme
+ * penceresinden açmak gerekiyordu (2.182 eşleme).
+ *
+ * Anayasa İlke #3 (kimlik kodları listede) ve #9 (az tıkla).
+ *
+ * ⚠ SÖZLÜK ANAHTARLARI ZATEN VARDI (`sutunKanalKodu`, `sutunOran`): sütunlar
+ * niyet edilmiş, hiç çizilmemişti. "Yazılıp görünmeyen alan, yazılmamış
+ * gibidir" — bu, aynı gün iade tarafında dört sütun çiftinde de çıkan desen.
+ */
+{
+  const ekran = readFileSync("src/app/kanal-sku/page.tsx", "utf8");
+  const ekranKod = ekran
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+
+  const baslikBloku = /<TableHeader>([\s\S]*?)<\/TableHeader>/.exec(ekranKod);
+  kontrol("başlık satırı kesilebildi", baslikBloku !== null);
+  const basliklar = baslikBloku?.[1] ?? "";
+  kontrol(
+    "KANAL KODU sütunu var (ekranın var olma sebebi)",
+    /t\("sutunKanalKodu"\)/.test(basliklar),
+  );
+  kontrol("KOMİSYON sütunu var", /t\("sutunOran"\)/.test(basliklar));
+
+  /**
+   * ⚠ BAŞLIK YETMEZ, HÜCRE DE OLMALI. Yalnız başlığa bakan bir kontrol,
+   * hücreyi boşaltan mutasyonu kaçırırdı: tabloda sütun görünür, içi boş.
+   */
+  const govdeBloku = /<TableBody>([\s\S]*?)<\/TableBody>/.exec(ekranKod);
+  kontrol("gövde bloğu kesilebildi", govdeBloku !== null);
+  const govde = govdeBloku?.[1] ?? "";
+  kontrol(
+    "  ...kanal kodu hücresi DEĞERİ basıyor",
+    /deger=\{kayit\.channelSku\}/.test(govde),
+  );
+  kontrol(
+    "  ...komisyon hücresi DEĞERİ basıyor",
+    /komisyonMetni\(kayit\)/.test(govde),
+  );
+  /** Kimlik kodu tek tıkla kopyalanır (İlke #4). */
+  kontrol(
+    "  ...kanal kodu KOPYALANABİLİR",
+    /<KopyalanabilirKod[\s\S]{0,120}deger=\{kayit\.channelSku\}/.test(govde),
+  );
+  /** Rakam sütunu hizalı — virgüller alt alta gelsin (629/2182 ondalıklı). */
+  kontrol(
+    "  ...oran sağa yaslı ve tabular-nums",
+    /text-right tabular-nums[\s\S]{0,120}komisyonMetni/.test(govde),
+  );
+
+  /**
+   * ⚠ TELEFONDA DA GÖRÜNMELİ (İlke #8: mobil eşit vatandaş). Masaüstü
+   * tablosu `md:block`, mobil kart `md:hidden` — biri düzeltilip öteki
+   * unutulursa telefonda ekran yine eski hâlinde kalır.
+   */
+  const mobilBloku = ekranKod.slice(ekranKod.indexOf("md:hidden"));
+  kontrol("mobil kart bloğu kesilebildi", mobilBloku.length > 0);
+  kontrol(
+    "  ...telefonda da kanal kodu var",
+    /etiket: t\("sutunKanalKodu"\)/.test(mobilBloku),
+  );
+  kontrol(
+    "  ...telefonda da komisyon var",
+    /etiket: t\("sutunOran"\)/.test(mobilBloku),
+  );
+
+  /**
+   * ⚠ BOŞLUK SESSİZ BIRAKILMAZ (İlke #5) — VE İKİ BOŞLUK FARKLI ŞEY SÖYLER:
+   *   · ALIŞ hesabı  → komisyon KAVRAM OLARAK yok (tedarikçi katalog kodu)
+   *   · SATIŞ hesabı → oran GİRİLMEMİŞ, doldurulması gerekir
+   * Tek "—" ikisini aynı kefeye koyar ve düzeltilecek olan kaybolur.
+   */
+  const hucreBloku = ekranKod.slice(
+    ekranKod.indexOf("function komisyonMetni"),
+    ekranKod.indexOf("function duzenleyici"),
+  );
+  kontrol("komisyon hücresi bloğu kesilebildi", hucreBloku.length > 0);
+  kontrol(
+    "  ...iki boş hâl AYRI söyleniyor",
+    /eksikOranRozeti/.test(hucreBloku) && /oranAlisHesabinda/.test(hucreBloku),
+  );
+  kontrol(
+    "  ...ayrım hesabın ROLÜNDEN geliyor",
+    /satisIcin/.test(hucreBloku),
+  );
+
+  /**
+   * ⚠ BANT UYARISI LİSTEDE OLMAMALI — ÖLÇÜLDÜ VE ELENDİ.
+   * `bantDisiMi` canlıda 577/1077 Hepsiburada satırında yanıyordu (%53,6).
+   * Sebebi kural değil KAPSAM: bant HB hakediş komisyonlarından kuruluyor
+   * (medyan %20,45), buradaki oranların medyanı %15 — iki farklı popülasyon.
+   * Ayrıca bant yalnız HB'de var; TY (1057) ve N11 (48) için hiç yok.
+   * Yarısında yanan uyarı okunmaz olur ve rozetin tamamına olan güveni
+   * götürür ("yanlış uyarı, uyarısızlıktan kötüdür").
+   */
+  kontrol(
+    "liste satırında bant uyarısı YOK (%53,6 yalancı pozitif ölçüldü)",
+    !/bantDisiMi/.test(govde),
+  );
+}
 
 console.log("");
 console.log("=".repeat(70));

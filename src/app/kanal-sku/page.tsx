@@ -154,6 +154,35 @@ export default async function KanalSkuSayfasi({
       : String(Number(kayit.commissionRate.toString()));
   }
 
+  /**
+   * KOMİSYON HÜCRESİ — ORAN YA DA SEBEBİ.
+   *
+   * ⚠ BOŞLUK SESSİZ BIRAKILMAZ (İlke #5). İki ayrı "oran yok" hâli var ve
+   * ikisi farklı şey söyler:
+   *   · ALIŞ hesabı  → komisyon KAVRAM OLARAK yok; tedarikçi katalog kodudur
+   *   · SATIŞ hesabı → oran GİRİLMEMİŞ; eksik veri, doldurulması gerekir
+   * İkisini tek "—" ile göstermek, düzeltilecek olanı düzeltilemeyecek
+   * olanla aynı kefeye koyardı.
+   *
+   * ⚠ BANT UYARISI BURAYA KONMADI — ÖLÇÜLDÜ VE ELENDİ. `bantDisiMi` kuralı
+   * canlıda **577/1077 Hepsiburada satırında** yanıyordu (%53,6). Sebebi
+   * kural değil KAPSAM: bant HB hakediş komisyonlarından kuruluyor (medyan
+   * %20,45) ama buradaki oranların medyanı %15 — iki farklı popülasyon.
+   * Ayrıca bant yalnız HB'de var; TY (1057) ve N11 (48) için hiç yok, yani
+   * onların "temiz" görünmesi kıyas OLMAMASINDAN. Yarısında yanan bir uyarı
+   * okunmaz olur ve rozetin tamamına olan güveni götürür.
+   */
+  function komisyonMetni(kayit: (typeof kayitlar)[number]) {
+    if (kayit.commissionRate !== null) {
+      return `%${Number(kayit.commissionRate.toString())}`;
+    }
+    return kayit.channelAccount.satisIcin ? (
+      <span className={DURUM_YAZISI.uyari}>{t("eksikOranRozeti")}</span>
+    ) : (
+      <span className="text-muted-foreground">{t("oranAlisHesabinda")}</span>
+    );
+  }
+
   function duzenleyici(kayit: (typeof kayitlar)[number]) {
     return (
       <SatirDuzenle
@@ -300,8 +329,25 @@ export default async function KanalSkuSayfasi({
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("sutunUrun")}</TableHead>
+                  {/*
+                    ⚠ KANAL KODU EKRANIN VAR OLMA SEBEBİ — VE LİSTEDE YOKTU.
+                    Sayfanın adı "Kanal Kodları" ama tabloda bizim iç SKU'muz
+                    vardı; kanal kodunu görmek için her satırı TEK TEK
+                    düzenleme penceresinden açmak gerekiyordu. İlke #3
+                    (kimlik kodları listede) ve #9 (az tıkla) ihlaliydi.
+                    Sözlük anahtarı (`sutunKanalKodu`) zaten yazılıydı —
+                    sütun niyet edilmiş, hiç çizilmemişti.
+                  */}
+                  <TableHead>{t("sutunKanalKodu")}</TableHead>
                   <TableHead>{ortak("sku")}</TableHead>
                   <TableHead>{t("sutunHesap")}</TableHead>
+                  {/*
+                    ⚠ KOMİSYON ORANI DA GİZLİYDİ. Satırdaki tek komisyon
+                    sinyali "oran eksik" rozetiydi ve canlıda ölçüldü: eksik
+                    oran sayısı SIFIR — yani o rozet hiç yanmıyor. Ekran
+                    komisyon hakkında hiçbir şey söylemiyordu.
+                  */}
+                  <TableHead className="text-right">{t("sutunOran")}</TableHead>
                   <TableHead>{t("sutunGuncelleme")}</TableHead>
                   <TableHead>{ortak("eylemler")}</TableHead>
                 </TableRow>
@@ -326,6 +372,13 @@ export default async function KanalSkuSayfasi({
                         ) : null}
                       </div>
                     </TableCell>
+                    {/* Kimlik kodu: tek tıkla kopyalanır (İlke #4). */}
+                    <TableCell className="font-mono text-xs whitespace-nowrap">
+                      <KopyalanabilirKod
+                        deger={kayit.channelSku}
+                        etiket={t("sutunKanalKodu")}
+                      />
+                    </TableCell>
                     <TableCell>
                       <KopyalanabilirKod
                         deger={kayit.variant.sku}
@@ -343,6 +396,15 @@ export default async function KanalSkuSayfasi({
                             : t("rolAlis")}
                         </Badge>
                       </span>
+                    </TableCell>
+                    {/*
+                      ⚠ RAKAM SÜTUNU SAĞA YASLI VE `tabular-nums`. Oranlar
+                      alt alta karşılaştırılıyor; ondalıklı (%13,5) ve tam
+                      (%18) oranlar canlıda karışık (629/2182 ondalıklı) ve
+                      sola yaslı yazıldığında virgüller hizalanmaz.
+                    */}
+                    <TableCell className="text-right tabular-nums whitespace-nowrap">
+                      {komisyonMetni(kayit)}
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
                       {kayit.commissionUpdatedAt
@@ -379,6 +441,20 @@ export default async function KanalSkuSayfasi({
                 }
                 altBaslik={hesapAdi(kayit)}
                 alanlar={[
+                  /*
+                    ⚠ TELEFONDA DA AYNI İKİ BİLGİ (İlke #8: mobil eşit
+                    vatandaş). Kanal kodu İLK sırada: ekranın adı bu ve
+                    depoda/telefonda aranan şey o.
+                  */
+                  {
+                    etiket: t("sutunKanalKodu"),
+                    deger: (
+                      <KopyalanabilirKod
+                        deger={kayit.channelSku}
+                        etiket={t("sutunKanalKodu")}
+                      />
+                    ),
+                  },
                   {
                     etiket: ortak("sku"),
                     deger: (
@@ -386,6 +462,12 @@ export default async function KanalSkuSayfasi({
                         deger={kayit.variant.sku}
                         etiket={ortak("sku")}
                       />
+                    ),
+                  },
+                  {
+                    etiket: t("sutunOran"),
+                    deger: (
+                      <span className="tabular-nums">{komisyonMetni(kayit)}</span>
                     ),
                   },
                   {

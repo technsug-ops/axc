@@ -112,10 +112,33 @@ console.log("\n3) SÜTUN BÜTÇESİ — liste tabloları tek ekrana sığıyor m
    * bilgiyi tek hücrede üst üste koymaktır (components/iki-satir.tsx).
    */
   const TAVAN = 7;
+  /**
+   * ⚠ ELLE TUTULAN LİSTE — VE BUNUN BİLİNEN BİR BEDELİ VAR.
+   *
+   * Anayasa elle tutulan bekçi listelerini yasaklıyor ("ölçüt tersten
+   * kurulur"), ve haklı: `/kanal-sku` 23.08.2026'da yedi sütuna çıktı, bu
+   * liste onu HİÇ görmüyordu. Eklendi.
+   *
+   * ⚠ AMA ÖLÇÜT KÖRLEMESİNE TERSİNE ÇEVRİLMEDİ — ÖLÇÜLDÜ VE ÇEVİRME ELENDİ.
+   * `src/app` altında `<TableHeader>` taşıyan 20 sayfa var ve YEDİSİ zaten
+   * tavanın üstünde (8–9 sütun): `iadeler` 9 · `stok` · `kartlar` ·
+   * `giderler` · `envanter-degeri` · `ayarlar/kanallar` · `alimlar/[id]` 8.
+   * Ölçütü hepsine uygulamak yedi ekranı birden kırmızı yakardı.
+   *
+   * ⚠ VE BU BİR HÜKÜM DEĞİL: tavan (7) BU ÜÇ EKRANIN içerik genişliğine
+   * göre ölçüldü ("~1045px'e sığıyor"). Sütunları dar olan bir ekran (rozet,
+   * ikon, kısa sayı) sekiz sütunla da sığabilir. Gerçek ölçüt piksel
+   * genişliği ve o tarayıcı ister — projede otomasyon yok. Yani sayı bir
+   * VEKİLDİR ve vekil, ölçüldüğü kümenin dışına uygulanamaz.
+   *
+   * ⛔ Yedi ekranın durumu panoda AÇIK kalem (gerçek cihazda bakılacak);
+   * burada sessizce "sorun yok" da denmiyor, uydurma kırmızı da yakılmıyor.
+   */
   const LISTELER = [
     "src/app/alimlar/page.tsx",
     "src/app/satislar/page.tsx",
     "src/app/urunler/page.tsx",
+    "src/app/kanal-sku/page.tsx",
   ];
 
   for (const yol of LISTELER) {
