@@ -3110,6 +3110,73 @@ console.log("\n16) AYRILAN DEĞİŞİM ÜRÜNÜ STOKTAN DÜŞMELİ");
     /await satisKarTazele\(bildirim\.saleId\);/.test(dugmeEylemi),
   );
 
+  /**
+   * ── K38: HURDA DÜŞÜŞÜ — ÇİFT GİDER KAPISI ────────────────────────────
+   *
+   * Halil hükmü 23.08.2026: `11473322212`'den dönen kırık `axcali1672` çöp.
+   *
+   * ⚠ ZARAR HAREKETİN KENDİSİNDEN DOĞAR. Rapor "fire zararı"nı stok
+   * defterinden türetiyor (`ADJUSTMENT`/`COUNT_CORRECTION`, FIFO maliyeti).
+   * Betik ayrıca bir `Expense` satırı yazsaydı AYNI ZARAR İKİ KEZ görünürdü —
+   * ve Halil eskiden elle iade giderine yazıyordu, bu alışkanlığın yerine
+   * geçen mekanizma tam da bu.
+   */
+  const hurdaBetigi = readFileSync(
+    "scripts/canli-hurda-axcali1672.ts",
+    "utf8",
+  );
+  kontrol(
+    "hurda betiği ELLE GİDER YAZMIYOR (çift sayım kapısı)",
+    !/expense\.create/i.test(hurdaBetigi),
+  );
+  /**
+   * ⚠ `returnItemId` YOK VE BU ZORUNLU. Rapor, iade bağı olan düzeltmeleri
+   * fire toplamından bilerek dışlıyor (o para iadenin NET-2'sinde zaten
+   * var). Hurdayı iadeye bağlasaydık HİÇBİR YERE yazılmazdı.
+   */
+  const hurdaYazma = hurdaBetigi.slice(
+    hurdaBetigi.indexOf("tx.stockMovement.create"),
+    hurdaBetigi.indexOf("tx.auditLog.create"),
+  );
+  kontrol("hurda yazma bloğu kesilebildi", hurdaYazma.length > 0);
+  kontrol(
+    "  ...hareket iade bağı TAŞIMIYOR (fire zararına girsin)",
+    !/returnItemId:/.test(hurdaYazma),
+  );
+  kontrol(
+    "  ...FIFO partisinden maliyet alıyor",
+    /unitCostAmount: pay\.parti\.birimMaliyet/.test(hurdaYazma) &&
+      /sourceMovementId: pay\.parti\.hareketId/.test(hurdaYazma),
+  );
+  /**
+   * ⚠ BAĞ `AuditLog`TA VE YAPILANDIRILMIŞ. Serbest metin `note` tek başına
+   * yetmez — üç ay sonra "hangi hurdalar hangi siparişten" aranabilmeli.
+   */
+  const hurdaIzi = hurdaBetigi.slice(
+    hurdaBetigi.indexOf("tx.auditLog.create"),
+    hurdaBetigi.indexOf("const sonrakiStok"),
+  );
+  for (const alan of ["siparisNo", "bildirimId", "hukum", "birimMaliyet"]) {
+    kontrol(`  ...izde ${alan} var`, new RegExp(`${alan}:`).test(hurdaIzi));
+  }
+  /** ⚠ İKİNCİ KEZ KOŞUM ENGELLİ — aynı mal iki kez hurdaya düşmez. */
+  /**
+   * ⚠ KOŞULUN KENDİSİ ARANIR — MUTASYONLA ÖĞRENİLDİ. İlk hâli
+   * `oncekiIz … "betik durdu"` diye GENİŞ bir aralığa bakıyordu; `if (false)`
+   * yapan mutasyon yeşil kaldı çünkü iki kelime dosyanın AYRI yerlerinde
+   * duruyordu ve desen ikisini birleştirip eşleşti.
+   */
+  kontrol(
+    "  ...ikinci koşum engelli (önceki iz varsa durur)",
+    /if \(oncekiIz\) \{/.test(hurdaBetigi),
+  );
+  /** ⚠ KİMLİĞE KİLİTLİ — genel araç değil (istisnayı kurala çevirmez). */
+  kontrol(
+    "  ...kimliğe kilitli (SKU ve sipariş sabit)",
+    /const SKU = "axcali1672"/.test(hurdaBetigi) &&
+      /const SIPARIS_NO = "11473322212"/.test(hurdaBetigi),
+  );
+
   kosanBolumler.push("ayrilmis-dusmedi");
 }
 
