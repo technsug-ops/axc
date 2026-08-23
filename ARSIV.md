@@ -37,6 +37,39 @@ _(K18'in kalan veri düzeltmesi panoda AÇIK duruyor.)_
 
 ---
 
+## ✅ K33 TAZMİNAT KARŞI TARAFI — KAPANDI 23.08.2026
+
+İade 10 günde ulaşmazsa pazaryeri **sebebi ne olursa olsun** onaylıyor,
+para gidiyor; karşılığında kargo şirketinden tazmin isteniyor. Bu bir
+KAYIP değil ALACAK ama sistemde bağ yoktu — kapanan iade sessizce kayıp
+görünüyordu.
+
+**Şema (canlıda):** `carrierId` (→ `CargoCarrier`) · `returnNoticeId`
+(→ `ReturnNotice`) eklendi, `supplierId` zorunluluktan çıktı. Göç sonrası
+sayım **8/8 tuttu, sapma 0.**
+
+⚠ **KARGO FİRMALARI İKİNCİ KEZ `Supplier` OLARAK AÇILMADI** — aynı
+varlığın iki kimliği bir gün ayrışır (Soundcore vakası). `CargoCarrier`
+zaten vardı.
+
+⚠ **`returnItemId` KALDIRILMADI:** ikisi ayrı soruya cevap veriyor —
+biri _"iade işlendi, kalemi hasarlı"_, öteki _"iade HİÇ GELMEDİ ama alacak
+doğdu"_. Bu vakada `Return` hiç doğmuyor.
+
+⚠ **YAKALANAN TUZAK — KURAL VARDI, KAPI YOKTU.** `karsiTarafGecerliMi`
+yazıldı, saf fonksiyon olarak sınandı ve **altı kontrol yeşil yandı** —
+ama fonksiyon hiçbir yerden çağrılmıyordu. Şimdi `talepAç` içinde,
+yazmadan ÖNCE. Bekçi üçünü de sınıyor: çağrılıyor mu · yazmadan önce mi ·
+sebep ekranda yazıyor mu.
+
+⚠ **İKİNCİ TUZAK:** _"mesaj uzunluğu > 20"_ diye bir kontrol yazılmıştı ve
+mutasyon onu geçti. **Uzunluk, açıklayıcılığın vekili olamaz** — ölçüt
+içeriğe çevrildi (neyin eksik olduğu + ne yapılacağı).
+
+`tazminat:dogrula` 3 → **39 kontrol** · 12 mutasyon, hepsi kırmızı.
+
+---
+
 ## ✅ PWA — KAPANDI 22.08.2026 (Halil testi geçti, iOS dahil)
 
 Uygulama telefona kurulabiliyor: manifest + simgeler + servis çalışanı.
