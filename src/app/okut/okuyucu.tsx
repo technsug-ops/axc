@@ -7,6 +7,9 @@ import { varyantAra } from "@/app/varyant-arama";
 import {
   barkoduOkut,
   okumayiEslestir,
+  paketlemeyiGeriAl,
+  paketlendiIsaretle,
+  type AcikSiparis,
   type OkumaSonucu,
 } from "@/app/okut/actions";
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
@@ -41,6 +44,10 @@ export function Okuyucu() {
   const [adaylar, setAdaylar] = useState<VaryantSonucu[]>([]);
   const [eslesmeNotu, setEslesmeNotu] = useState<string | null>(null);
 
+  /* Sipariş bulunamadığında ürün kartı GİZLİ başlar (İŞ 1). */
+  const [detayAcik, setDetayAcik] = useState(false);
+  const [paketNotu, setPaketNotu] = useState<string | null>(null);
+
   /**
    * ⚠ OKUNAN DEĞER PARAMETRE OLARAK GEÇER — DURUMDAN OKUNMAZ.
    * Fiyat denemesinde tam bu tuzağa düşülmüştü: kamera `setKod` çağırıp
@@ -57,6 +64,8 @@ export function Okuyucu() {
       setSorgu("");
       setAdaylar([]);
       setEslesmeNotu(null);
+      setDetayAcik(false);
+      setPaketNotu(null);
     });
   };
 
@@ -81,6 +90,29 @@ export function Okuyucu() {
   };
 
   /**
+   * PAKETLEME İŞARETİ — SATIRA BAĞLI (İŞ 2).
+   *
+   * ⚠ Cevap geldikten sonra ekranı yeniden çizmek için okuma TAZELENİYOR:
+   * "hazırlanıyor" işareti `AuditLog` izinden TÜRETİLİYOR, istemcide
+   * tutulan bir bayraktan değil. İstemcide ayrıca tutsaydık iki gerçek
+   * olurdu ve biri gün gelip ötekinden ayrışırdı.
+   */
+  const paketle = (siparis: AcikSiparis) => {
+    if (!sonuc) return;
+    setPaketNotu(null);
+    basla(async () => {
+      const cevap = siparis.hazirlaniyor
+        ? await paketlemeyiGeriAl(siparis.saleId)
+        : await paketlendiIsaretle(siparis.saleId, sonuc.kod, sonuc.alan);
+      if ("hata" in cevap) {
+        setPaketNotu(t("paketlemeOlmadi"));
+        return;
+      }
+      setSonuc(await barkoduOkut(sonuc.kod));
+    });
+  };
+
+  /**
    * ⚠ ALAN ETİKETLERİ EXHAUSTIVE `Record` — şemaya beşinci bir kod rolü
    * eklenirse burası DERLENMEZ. Ham enum ("channelSku") ekranda görünmesi
    * bu kilit sayesinde imkânsız.
@@ -91,6 +123,8 @@ export function Okuyucu() {
     sku: t("alanSku"),
     channelSku: t("alanChannelSku"),
   };
+
+  const siparisVar = (sonuc?.siparisler.length ?? 0) > 0;
 
   return (
     <div className="space-y-4">
@@ -106,7 +140,7 @@ export function Okuyucu() {
           autoFocus
         />
         {/*
-          ⚠ onClick={okut} YAZILAMAZ: tıklama olayı ilk parametreye düşer ve
+          ⚠ onClick&#123;okut&#125; YAZILAMAZ: tıklama olayı ilk parametreye düşer ve
           fonksiyon onu "okunan kod" sanar. Fiyat denemesinde TypeScript
           yakalamıştı; burada baştan doğru yazıldı.
         */}
@@ -124,79 +158,146 @@ export function Okuyucu() {
 
           {sonuc.urun ? (
             <div className="space-y-3">
-              <div>
-                <p className="font-medium">{sonuc.urun.urunAdi}</p>
-                {sonuc.urun.varyantAdi ? (
-                  <p className="text-sm text-muted-foreground">
-                    {sonuc.urun.varyantAdi}
-                  </p>
-                ) : null}
-              </div>
+              {siparisVar ? (
+                /* Sipariş varsa asıl bilgi ürünün kendisi — kart açık gelir. */
+                <div>
+                  <p className="font-medium">{sonuc.urun.urunAdi}</p>
+                  {sonuc.urun.varyantAdi ? (
+                    <p className="text-sm text-muted-foreground">
+                      {sonuc.urun.varyantAdi}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                /*
+                  ⚠ SİPARİŞSİZ OKUMADA SADE EKRAN (İŞ 1, mimar kararı
+                  23.08.2026). Tam ürün kartı dökülmüyor: BÜYÜK tek mesaj,
+                  altında KÜÇÜK tek satır, kalan detay "Detay" ile açılıyor.
 
-              <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-                {sonuc.alan ? (
-                  <>
-                    <dt className="text-muted-foreground">{t("hangiAlan")}</dt>
-                    <dd>{alanAdi[sonuc.alan]}</dd>
-                  </>
-                ) : null}
-                <dt className="text-muted-foreground">{t("alanSku")}</dt>
-                <dd>
-                  <KopyalanabilirKod
-                    deger={sonuc.urun.sku}
-                    etiket={t("alanSku")}
-                  />
-                </dd>
-                <dt className="text-muted-foreground">
-                  {t("alanCompanySku")}
-                </dt>
-                <dd>
-                  <KopyalanabilirKod
-                    deger={sonuc.urun.companySku}
-                    etiket={t("alanCompanySku")}
-                  />
-                </dd>
-                {sonuc.urun.barcode ? (
-                  <>
-                    <dt className="text-muted-foreground">
-                      {t("alanBarcode")}
-                    </dt>
-                    <dd>
-                      <KopyalanabilirKod
-                        deger={sonuc.urun.barcode}
-                        etiket={t("alanBarcode")}
-                      />
-                    </dd>
-                  </>
-                ) : null}
-              </dl>
+                  ⚠ VE RENK NÖTR — çarpı yok, uyarı işareti yok, kırmızı yok.
+                  Defter %72 eksikken "siparişte yok" çoğunlukla "satış
+                  girilmemiş" demektir. Kırmızı gösterilseydi kullanıcı iki
+                  haftada okumadan geçmeyi öğrenir ve işaret GERÇEK yanlış
+                  üründe görünmez olurdu. Uyarı katmanı K34'tür; açılış şartı
+                  defterin kapanması.
 
-              <div>
-                <p className="text-sm font-medium">{t("acikSiparisler")}</p>
-                {sonuc.siparisler.length === 0 ? (
-                  /*
-                    ⚠ NÖTR DİL, NÖTR RENK. "Açık siparişte yok" bilgidir;
-                    satışın girilmemiş olması KADAR, ürünün bugün
-                    paketlenmiyor olması da mümkündür. Hangisi olduğunu bu
-                    ekran BİLEMEZ ve iddia etmez.
-                  */
-                  <p className="text-sm text-muted-foreground">
-                    {t("acikSiparisYok")}
+                  ⚠ KAYIT DEĞİŞMEDİ: kova hâlâ ACIK_SIPARISTE_YOK. Sadeleşen
+                  ekran, ölçüm değil.
+                */
+                <div className="space-y-1">
+                  <p className="text-lg font-medium">
+                    {t("siparistteYokBaslik")}
                   </p>
-                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t("tanindi", {
+                      ad: sonuc.urun.urunAdi,
+                      alan: sonuc.alan ? alanAdi[sonuc.alan] : t("alanSku"),
+                    })}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-11 px-2 md:h-7"
+                    onClick={() => setDetayAcik((o) => !o)}
+                  >
+                    {detayAcik ? t("detayGizle") : t("detay")}
+                  </Button>
+                </div>
+              )}
+
+              {siparisVar || detayAcik ? (
+                <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+                  {sonuc.alan ? (
+                    <>
+                      <dt className="text-muted-foreground">{t("hangiAlan")}</dt>
+                      <dd>{alanAdi[sonuc.alan]}</dd>
+                    </>
+                  ) : null}
+                  <dt className="text-muted-foreground">{t("alanSku")}</dt>
+                  <dd>
+                    <KopyalanabilirKod
+                      deger={sonuc.urun.sku}
+                      etiket={t("alanSku")}
+                    />
+                  </dd>
+                  <dt className="text-muted-foreground">
+                    {t("alanCompanySku")}
+                  </dt>
+                  <dd>
+                    <KopyalanabilirKod
+                      deger={sonuc.urun.companySku}
+                      etiket={t("alanCompanySku")}
+                    />
+                  </dd>
+                  {sonuc.urun.barcode ? (
+                    <>
+                      <dt className="text-muted-foreground">
+                        {t("alanBarcode")}
+                      </dt>
+                      <dd>
+                        <KopyalanabilirKod
+                          deger={sonuc.urun.barcode}
+                          etiket={t("alanBarcode")}
+                        />
+                      </dd>
+                    </>
+                  ) : null}
+                </dl>
+              ) : null}
+
+              {siparisVar ? (
+                <div>
+                  <p className="text-sm font-medium">{t("acikSiparisler")}</p>
                   <ul className="mt-1 space-y-1 text-sm">
-                    {sonuc.siparisler.map((s, i) => (
-                      <li key={`${s.kod ?? "kodsuz"}-${i}`}>
-                        {t("siparisSatiri", {
-                          kod: s.kod ?? t("kodsuzSiparis"),
-                          adet: s.adet,
-                          kanal: s.kanal,
-                        })}
+                    {sonuc.siparisler.map((s) => (
+                      <li
+                        key={s.saleId}
+                        className="flex flex-wrap items-center gap-2"
+                      >
+                        <span>
+                          {t("siparisSatiri", {
+                            kod: s.kod ?? t("kodsuzSiparis"),
+                            adet: s.adet,
+                            kanal: s.kanal,
+                          })}
+                        </span>
+                        {s.hazirlaniyor ? (
+                          <span className="text-muted-foreground">
+                            {t("paketlendiIsareti")}
+                          </span>
+                        ) : null}
+                        {/*
+                          ⚠ TUŞ SATIRIN YANINDA, OKUMANIN DEĞİL. Barkod ÜRÜNÜ
+                          söyler, SİPARİŞİ söylemez: aynı ürün üç açık
+                          siparişte geçiyorsa hangisine paketlendiğini yalnız
+                          kullanıcı bilir. Okumaya bağlı tek bir tuş, sistemin
+                          bilmediği bir seçimi kendi yapması olurdu.
+
+                          ⚠ KAPI DEĞİL: tuşa basmadan da paketlenebilir.
+                        */}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={s.hazirlaniyor ? "ghost" : "secondary"}
+                          className="h-11 md:h-7"
+                          disabled={bekliyor}
+                          onClick={() => paketle(s)}
+                        >
+                          {s.hazirlaniyor
+                            ? t("paketlemeGeriAl")
+                            : t("paketlendi")}
+                        </Button>
                       </li>
                     ))}
                   </ul>
-                )}
-              </div>
+                  {paketNotu ? (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {paketNotu}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-3">

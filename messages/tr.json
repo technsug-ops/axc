@@ -3022,6 +3022,14 @@
     "raporBos": "Bu pencerede hiç okuma yok.",
     "raporCozulemeyen": "{adet} kayıt çözülemedi ve hiçbir kovaya sayılmadı.",
     "raporNot": "Yüzdelerin paydası o haftanın TOPLAM okumasıdır. “Hüküm verilemedi” bir bulgu değildir: kod tanınmadı ve ürün de gösterilmedi — elimizdeki malın katalogda başka bir barkodla durup durmadığını bilmiyoruz.",
-    "izYazilamadi": "Okuma kaydedilemedi; sonuç yine de doğru."
+    "izYazilamadi": "Okuma kaydedilemedi; sonuç yine de doğru.",
+    "siparistteYokBaslik": "Kargoya verilmemiş siparişte geçmiyor",
+    "tanindi": "Tanındı: {ad} · {alan}",
+    "detay": "Detay",
+    "detayGizle": "Gizle",
+    "paketlendi": "Paketlendi",
+    "paketlendiIsareti": "Hazırlanıyor",
+    "paketlemeGeriAl": "Geri al",
+    "paketlemeOlmadi": "İşaretlenemedi; sipariş bulunamadı."
   }
 }

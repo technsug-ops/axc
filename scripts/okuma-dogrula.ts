@@ -28,11 +28,17 @@ import {
   toplamOkuma,
 } from "../src/lib/okuma/kova";
 import { haftaAnahtari, pazartesiBasi } from "../src/lib/okuma/rapor";
+import {
+  PAKETLENDI_EYLEMI,
+  PAKETLEME_GERI_ALINDI_EYLEMI,
+  hazirlananSiparisler,
+  hazirlaniyorMu,
+} from "../src/lib/okuma/paketleme";
 
 let calisan = 0;
 let basarisiz = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 8;
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   calisan += 1;
@@ -445,6 +451,231 @@ console.log("\n6) UYARISIZLIK SÖZÜ — VE KAMERA");
   );
 
   kosanBolumler.push("uyarisizlik-ve-kamera");
+}
+
+// ===========================================================================
+console.log("\n7) SİPARİŞSİZ OKUMADA SADE EKRAN (İŞ 1)");
+// ===========================================================================
+/**
+ * Mimar kararı 23.08.2026: siparişe konu olmayan ürün okutulduğunda tam ürün
+ * kartı DÖKÜLMESİN — büyük tek mesaj, altında küçük tek satır, kalan detay
+ * "Detay" ile açılsın.
+ *
+ * ⚠ VE RENK NÖTR KALSIN. Defter %72 eksikken "siparişte yok" çoğunlukla
+ * "satış girilmemiş" demektir. Kırmızı gösterilseydi kullanıcı iki haftada
+ * okumadan geçmeyi öğrenir ve işaret GERÇEK yanlış üründe görünmez olurdu.
+ *
+ * ⚠ ÖLÇÜM DEĞİŞMEDİ. Sadeleşen ekran; kova hâlâ `ACIK_SIPARISTE_YOK`.
+ */
+{
+  kontrol(
+    "sipariş yokken BÜYÜK tek mesaj basılıyor",
+    /text-lg font-medium">\s*\{t\("siparistteYokBaslik"\)\}/.test(okuyucuKod),
+  );
+  /**
+   * ⚠ ANAHTAR DEĞİL, DEĞER ARANIR — MUTASYONLA ÖĞRENİLDİ.
+   *
+   * İlk hâli `alan:` anahtarının varlığına bakıyordu. `alan: ""` yapan bir
+   * mutasyon YEŞİL KALDI: anahtar duruyordu, taşıdığı bilgi yok olmuştu.
+   * Anayasa: _"deseni dosyada değil KULLANIM bloğunda ara"_ — ve burada
+   * blok, çağrının kendisi.
+   */
+  const tanindiBloku = okuyucuKod.slice(
+    okuyucuKod.indexOf('t("tanindi"'),
+    okuyucuKod.indexOf('{detayAcik ?'),
+  );
+  kontrol("tanındı çağrısı kesilebildi", tanindiBloku.length > 0);
+  kontrol(
+    "  ...ÜRÜN ADI gerçekten veriliyor",
+    /ad: sonuc\.urun\.urunAdi/.test(tanindiBloku),
+  );
+  kontrol(
+    "  ...HANGİ ALAN gerçekten veriliyor (etiket sözlüğünden)",
+    /alan: [\s\S]{0,40}alanAdi\[/.test(tanindiBloku),
+  );
+  /**
+   * ⚠ KALAN DETAY GİZLİ BAŞLAR. Koşul hem sipariş varlığını hem açma
+   * düğmesini içeriyor: yalnız `detayAcik` aransaydı, siparişli durumda
+   * kartı kapatan bir mutasyon yeşil kalırdı.
+   */
+  kontrol(
+    "  ...kalan detay siparişsizken GİZLİ, 'Detay' ile açılıyor",
+    /\{siparisVar \|\| detayAcik \? \(/.test(okuyucuKod),
+  );
+  kontrol(
+    "  ...açma düğmesi var ve durumu değiştiriyor",
+    /setDetayAcik\(\(o\) => !o\)/.test(okuyucuKod),
+  );
+  /**
+   * ⚠ SADELEŞME ÖLÇÜMÜ BOZMAZ. Kova kuralı değişmedi: tanınan ama açık
+   * siparişi olmayan kod hâlâ `ACIK_SIPARISTE_YOK`.
+   */
+  kontrol(
+    "kova kuralı DEĞİŞMEDİ (ekran sadeleşti, ölçüm değil)",
+    ilkKova({ bulunduMu: true, acikSiparisVar: false }) === "ACIK_SIPARISTE_YOK",
+  );
+
+  kosanBolumler.push("sade-ekran");
+}
+
+// ===========================================================================
+console.log("\n8) PAKETLEME İZİ (İŞ 2)");
+// ===========================================================================
+/**
+ * "Paketlendi" tuşu siparişi `HAZIRLANIYOR` izine geçirir.
+ *
+ * ⚠ ŞEMA DEĞİŞMEDİ — K34a ile AYNI MERDİVEN BASAMAĞI: iz `AuditLog`ta,
+ * ekrandaki işaret ondan TÜRETİLİYOR. Yeni durum sütunu açılmadı.
+ *
+ * ⚠ SİLME YOK: geri alma ikinci bir kayıt yazar, ilkini silmez.
+ */
+{
+  const an = (dk: number) => new Date(Date.UTC(2026, 7, 23, 10, dk));
+  const P = PAKETLENDI_EYLEMI;
+  const G = PAKETLEME_GERI_ALINDI_EYLEMI;
+
+  kontrol("iz yoksa hazırlanmıyor", !hazirlaniyorMu([]));
+  kontrol("paketlendi izi varsa hazırlanıyor", hazirlaniyorMu([{ action: P, createdAt: an(1) }]));
+  kontrol(
+    "geri alınmışsa hazırlanmıyor",
+    !hazirlaniyorMu([
+      { action: P, createdAt: an(1) },
+      { action: G, createdAt: an(2) },
+    ]),
+  );
+  kontrol(
+    "geri alınıp TEKRAR işaretlenmişse hazırlanıyor",
+    hazirlaniyorMu([
+      { action: P, createdAt: an(1) },
+      { action: G, createdAt: an(2) },
+      { action: P, createdAt: an(3) },
+    ]),
+  );
+  /**
+   * ⚠ AYRIMI GÖSTEREN ÖRNEK — SIRASI BOZUK GİRDİ. Uygulama "dizinin SON
+   * elemanını al" diye yazılsaydı yukarıdaki testlerin hepsi geçer, bu
+   * kırılırdı. Veritabanı sırasız dönebilir; ölçüt ZAMAN DAMGASI olmalı.
+   */
+  kontrol(
+    "sıralama zaman damgasından, dizi sırasından DEĞİL",
+    !hazirlaniyorMu([
+      { action: G, createdAt: an(2) },
+      { action: P, createdAt: an(1) },
+    ]),
+  );
+  /**
+   * ⚠ EŞİT ZAMANDA "GERİ ALINDI" KAZANIR — ve bu bir risk kararıdır:
+   * yanlışlıkla "hazırlanıyor" göstermek birinin paketi hazır sanıp
+   * ATLAMASINA yol açabilir; tersi en fazla bir kez fazladan baktırır.
+   */
+  kontrol(
+    "eşit zaman damgasında GERİ ALMA kazanır (güvenli yön)",
+    !hazirlaniyorMu([
+      { action: P, createdAt: an(5) },
+      { action: G, createdAt: an(5) },
+    ]),
+  );
+  /**
+   * ⚠ ÖRNEK AYRIMIN İKİ YAKASINI GÖSTERMELİ — MUTASYONLA ÖĞRENİLDİ.
+   *
+   * İlk hâli tek başına bir `SATIS_IPTAL` izi veriyordu ve cevabı `false`
+   * bekliyordu. Yabancı eylemi SAYAN bir mutasyon yine `false` döndürüyordu
+   * (çünkü "SATIS_IPTAL" zaten `PAKETLENDI` değil) — test YEŞİL KALDI.
+   *
+   * Ayrımı gösteren örnek şu: paketlendi izi VAR ve yabancı eylem ondan
+   * DAHA YENİ. Doğru davranış yabancıyı yok sayıp "hazırlanıyor" demek;
+   * sayan bir uygulama onu en yeni sanıp "hazırlanmıyor" derdi.
+   */
+  kontrol(
+    "yabancı eylem izi karıştırmıyor (daha yeni olsa bile)",
+    hazirlaniyorMu([
+      { action: P, createdAt: an(1) },
+      { action: "SATIS_IPTAL", createdAt: an(9) },
+    ]),
+  );
+  kontrol(
+    "  ...tek başına yabancı eylem hazırlanıyor demek değil",
+    !hazirlaniyorMu([{ action: "SATIS_IPTAL", createdAt: an(9) }]),
+  );
+
+  /** Satış başına gruplama — üç sipariş tek sorgudan çözülür. */
+  const kume = hazirlananSiparisler([
+    { action: P, createdAt: an(1), targetId: "a" },
+    { action: P, createdAt: an(1), targetId: "b" },
+    { action: G, createdAt: an(2), targetId: "b" },
+    { action: P, createdAt: an(1), targetId: null },
+  ]);
+  kontrol(
+    "gruplama satış başına doğru çözüyor",
+    kume.has("a") && !kume.has("b") && kume.size === 1,
+    [...kume],
+  );
+
+  /**
+   * ⚠ TUŞ SATIRIN YANINDA, OKUMANIN DEĞİL. Barkod ÜRÜNÜ söyler, SİPARİŞİ
+   * söylemez: aynı ürün üç açık siparişte geçiyorsa hangisine paketlendiğini
+   * yalnız kullanıcı bilir. Ölçüt, işaretin `saleId` ile çağrılması.
+   */
+  const siparisBloku = okuyucuKod.slice(
+    okuyucuKod.indexOf("sonuc.siparisler.map"),
+    okuyucuKod.indexOf("{paketNotu ?"),
+  );
+  kontrol("sipariş satırı bloğu kesilebildi", siparisBloku.length > 0);
+  kontrol(
+    "  ...tuş HER SATIRDA ve satırın siparişine bağlı",
+    /onClick=\{\(\) => paketle\(s\)\}/.test(siparisBloku),
+  );
+  kontrol(
+    "  ...hazırlanıyor işareti SUNUCUDAN gelen izden okunuyor",
+    /s\.hazirlaniyor/.test(siparisBloku),
+  );
+  kontrol(
+    "paketleme çağrısı satışa bağlanıyor (okumaya değil)",
+    /paketlendiIsaretle\(siparis\.saleId/.test(okuyucuKod) &&
+      /paketlemeyiGeriAl\(siparis\.saleId\)/.test(okuyucuKod),
+  );
+
+  /**
+   * ⚠ KAPI DEĞİL. Tuş bir kontrol değil bir izdir; hiçbir akış
+   * engellenmiyor, hiçbir uyarı çıkmıyor. (Uyarı dili yasağı 6. bölümde
+   * dosyanın tamamı için zaten sınanıyor.)
+   */
+  kontrol(
+    "paketleme bir KAPI değil (zorunlu alan yok)",
+    !/\brequired\b/.test(okuyucuKod),
+  );
+
+  const paketEylem = readFileSync("src/app/okut/actions.ts", "utf8");
+  kontrol(
+    "iz AuditLog'a yazılıyor, satışa bağlı",
+    /targetType: "Sale"/.test(paketEylem),
+  );
+  /**
+   * ⚠ SİLME YOK. Geri alma, ilk kaydı silmek yerine TERS kayıt yazar.
+   * `deleteMany`/`delete` görünürse ledger ilkesi çiğnenmiş demektir.
+   */
+  kontrol(
+    "  ...geri alma SİLMİYOR, ters kayıt yazıyor",
+    /paketlemeIziYaz\(PAKETLEME_GERI_ALINDI_EYLEMI/.test(paketEylem) &&
+      !/auditLog\.delete/.test(paketEylem),
+  );
+  /** Detay yapılandırılmış — K34a ④ ile aynı kural. */
+  kontrol(
+    "  ...detail yapılandırılmış (serbest metin değil)",
+    /detail: okuma \? JSON\.stringify\(okuma\) : null/.test(paketEylem),
+  );
+
+  /**
+   * ⚠ ŞEMA DEĞİŞMEDİ. Karar: paketleme durumu `AuditLog`ta yaşar. Biri
+   * yarın `Sale`'e bir durum sütunu eklerse burası kırmızı yanar.
+   */
+  const semaPaket = readFileSync("prisma/schema.prisma", "utf8");
+  kontrol(
+    "paketleme için yeni model/enum/sütun AÇILMADI",
+    !/model Paketleme|enum Paketleme|hazirlaniyor\s+Boolean/.test(semaPaket),
+  );
+
+  kosanBolumler.push("paketleme-izi");
 }
 
 if (kosanBolumler.length !== BOLUM_SAYISI) {

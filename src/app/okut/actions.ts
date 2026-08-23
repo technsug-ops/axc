@@ -5,6 +5,12 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { bulunanAlan, kaydiOku, kaydiYaz } from "@/lib/okuma/kayit";
 import {
+  PAKETLEME_EYLEMLERI,
+  PAKETLENDI_EYLEMI,
+  PAKETLEME_GERI_ALINDI_EYLEMI,
+  hazirlananSiparisler,
+} from "@/lib/okuma/paketleme";
+import {
   eslestirilebilirMi,
   eylemKovasi,
   ilkKova,
@@ -31,11 +37,18 @@ import { yetkiIste } from "@/lib/yetki";
  */
 
 export type AcikSiparis = {
+  /** Satış kimliği — "Paketlendi" izi BUNA bağlanır, okumaya değil. */
+  saleId: string;
   /** Sipariş numarası — pazaryerinin kodu. Girilmemiş olabilir. */
   kod: string | null;
   adet: number;
   satisTarihi: Date;
   kanal: string;
+  /**
+   * `AuditLog` izinden TÜRETİLİR — yeni durum sütunu açılmadı.
+   * En yeni iz `PAKETLENDI` ise doğru, `PAKETLEME_GERI_ALINDI` ise yanlış.
+   */
+  hazirlaniyor: boolean;
 };
 
 export type OkumaSonucu = {
@@ -99,6 +112,7 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
           quantity: true,
           sale: {
             select: {
+              id: true,
               code: true,
               soldAt: true,
               channelAccount: {
@@ -112,11 +126,30 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
       })
     : [];
 
+  /**
+   * PAKETLEME İZLERİ TEK SORGUDA. Satış başına ayrı sorgu atmak, üç açık
+   * siparişi olan bir üründe üç gidiş-dönüş demekti.
+   */
+  const hazirlananlar = kalemler.length
+    ? hazirlananSiparisler(
+        await prisma.auditLog.findMany({
+          where: {
+            action: { in: [...PAKETLEME_EYLEMLERI] },
+            targetType: "Sale",
+            targetId: { in: kalemler.map((k) => k.sale.id) },
+          },
+          select: { action: true, createdAt: true, targetId: true },
+        }),
+      )
+    : new Set<string>();
+
   const siparisler: AcikSiparis[] = kalemler.map((k) => ({
+    saleId: k.sale.id,
     kod: k.sale.code,
     adet: k.quantity,
     satisTarihi: k.sale.soldAt,
     kanal: `${k.sale.channelAccount.channel.name} — ${k.sale.channelAccount.name}`,
+    hazirlaniyor: hazirlananlar.has(k.sale.id),
   }));
 
   const kova = ilkKova({
@@ -215,5 +248,83 @@ async function iziYaz(
      */
     console.error("[okuma] iz yazılamadı:", e);
     return null;
+  }
+}
+
+/**
+ * ============================================================================
+ *  PAKETLENDİ — VE GERİ ALMA (K34a ek, İŞ 2)
+ * ----------------------------------------------------------------------------
+ *  ⚠ SATIŞA BAĞLANIR, OKUMAYA DEĞİL. Barkod ÜRÜNÜ söyler, SİPARİŞİ söylemez;
+ *  aynı ürün üç açık siparişte geçiyorsa hangisine paketlendiğini yalnız
+ *  kullanıcı bilir. Bu yüzden `saleId` parametredir ve tuş satırın yanındadır.
+ *
+ *  ⚠ KAPI DEĞİL. Tuşa basmadan da paketlenebilir; hiçbir akış engellenmiyor,
+ *  hiçbir uyarı çıkmıyor. Bu bir İZ, bir kontrol değil.
+ * ============================================================================
+ */
+export async function paketlendiIsaretle(
+  saleId: string,
+  kod: string,
+  alan: KodRolu | null,
+): Promise<{ ok: true } | { hata: "satis-yok" }> {
+  await yetkiIste("stok.gor");
+
+  const satis = await prisma.sale.findUnique({
+    where: { id: saleId },
+    select: { id: true },
+  });
+  if (!satis) return { hata: "satis-yok" };
+
+  await paketlemeIziYaz(PAKETLENDI_EYLEMI, saleId, { kod, alan });
+  revalidatePath("/okut");
+  return { ok: true };
+}
+
+/**
+ * ⚠ SİLME YOK — TERS KAYIT. Yanlış tuşa basıldığında önceki iz silinmez;
+ * ikinci bir kayıt yazılır ve okuma en yenisini alır. Bir paketin kaç kez
+ * işaretlenip geri alındığı kendi başına bilgidir.
+ */
+export async function paketlemeyiGeriAl(
+  saleId: string,
+): Promise<{ ok: true } | { hata: "satis-yok" }> {
+  await yetkiIste("stok.gor");
+
+  const satis = await prisma.sale.findUnique({
+    where: { id: saleId },
+    select: { id: true },
+  });
+  if (!satis) return { hata: "satis-yok" };
+
+  await paketlemeIziYaz(PAKETLEME_GERI_ALINDI_EYLEMI, saleId, null);
+  revalidatePath("/okut");
+  return { ok: true };
+}
+
+async function paketlemeIziYaz(
+  eylem: string,
+  saleId: string,
+  okuma: { kod: string; alan: KodRolu | null } | null,
+): Promise<void> {
+  try {
+    const kullanici = await oturumdakiKullanici();
+    await prisma.auditLog.create({
+      data: {
+        userId: kullanici?.id ?? null,
+        action: eylem,
+        targetType: "Sale",
+        targetId: saleId,
+        /**
+         * ⚠ YAPILANDIRILMIŞ, SERBEST METİN DEĞİL — K34a ④ ile aynı kural.
+         * "Hangi barkodla paketlendi" sorusu ileride metin ayrıştırmaya
+         * dönmesin diye şekil bugün sabitleniyor.
+         */
+        detail: okuma ? JSON.stringify(okuma) : null,
+      },
+    });
+  } catch (e) {
+    /* İz tutulamadıysa paket yine hazırlanır; operasyon ölçüm için durmaz. */
+    console.error("[okuma] paketleme izi yazılamadı:", e);
   }
 }

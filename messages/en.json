@@ -3022,6 +3022,14 @@
     "raporBos": "",
     "raporCozulemeyen": "",
     "raporNot": "",
-    "izYazilamadi": ""
+    "izYazilamadi": "",
+    "siparistteYokBaslik": "",
+    "tanindi": "",
+    "detay": "",
+    "detayGizle": "",
+    "paketlendi": "",
+    "paketlendiIsareti": "",
+    "paketlemeGeriAl": "",
+    "paketlemeOlmadi": ""
   }
 }
