@@ -209,43 +209,11 @@ kuponun izi satış ve iade taraflarında birlikte yaşıyor.
 
 > Bu bölüm bilerek var: **ölçülmemiş bir sayının üstüne kural yazılmaz.**
 
-### 8.1 Otomatik onay sayaçları — biri çözüldü, biri açık
+### 8.1 Sayaçlar — ÇÖZÜLDÜ 23.08.2026
 
-⚠ **ÖNCE BİR YANLIŞ ANLAMA DÜZELTİLDİ (23.08.2026).** Burada _"kullanıcı 2
-gün diyor, ekran 19 gün gösteriyor, çelişki var"_ yazıyordu. **Çelişki
-yoktu** — iki farklı sayaç birbirine karıştırılmıştı `(K)`:
-
-- **2 gün** → iade satıcıya **ilk teslim edildiğinde** başlayan onay/red
-  süresi ("Aksiyon Bekleyen" aşaması).
-- **19 gün** → o iade **zaten serviste** ve bu, **28 günlük analiz
-  süresinden** kalan.
-
-Aritmetikle sınandı ve **birinci kayıt tam oturuyor**:
-
-| İade | Sayaç bitişi | 28 gün geri sarılınca başlangıç | Talebe göre |
-|---|---|---|---|
-| `#11475261428` | 11.09.2026 09:29 | 14.08.2026 09:29 | talepten **+6,6 gün** ✅ akış süresiyle uyumlu |
-
-**AMA İKİNCİ KAYIT OTURMUYOR** — ve bu hâlâ açık:
-
-| İade | Sayaç bitişi | 28 gün geri | 15 gün geri |
-|---|---|---|---|
-| `#11481463029` | 31.08.2026 12:34 | 03.08 12:34 → **talepten 12 gün ÖNCE, imkânsız** | 16.08 12:34 → talepten **+0,8 gün**, makul |
-
-Yani bu kayıt 28 günlük analiz saatinde OLAMAZ; **~15 günlük** başka bir
-sayaçta duruyor. Videoda "Analiz" sekmesi **1 ürün** gösteriyordu ve o
-birinci kayıttı; ikincisi (Baby Bebek Parkı, "parça eksik") başka
-sekmedeydi.
-
-**AÇIK SORU:** Analiz dışındaki bekleyen iadelerde de bir otomatik onay
-sayacı işliyor mu (~15 gün gibi), yoksa ikinci kaydın sayacı başka bir
-şeyi mi ölçüyor? **Kapanış şartı:** "Aksiyon Bekleyen" ya da "Kargoya
-Verilen" sekmesindeki bir iadenin detayı — sayaç ve teslim tarihi aynı
-ekranda.
-
-⚠ Bu belirsizlik ŞEMAYI ETKİLEMİYOR: `otomatikOnayTarihi` hesaplanmıyor,
-pazaryerinin söylediği tarih kaydediliyor. Kuralı bilmeden de doğru veri
-tutulur; kural öğrenilince yalnız uyarı metni netleşir.
+Burada bir "çelişki" yazılıydı ve **çelişki bendeydi, kaynakta değil**:
+farklı sayaçlar birbirine karıştırılmıştı. Dördü de ayrı ayrı çözüldü —
+**bkz. §12**. Bu bölüm kapandı.
 
 ### 8.2 Diğer kanalların ekranı
 
@@ -279,6 +247,8 @@ _(CLAUDE.md → "kontrol tasarımı, veri kapsamı doğrulanmadan fark üretmez"
 | 6 | **Ret gerekçesi tutulmuyor** | 8 gerekçeden hangisiyle itiraz edildiği kayıtta yok; "Reddedilen"e hangi yoldan gelindiği de bilinemiyor → **kargo maliyeti hesaplanamaz** (bkz. §5). |
 | 7 | **Kargo firması/kodu/desisi yok** | İade kargosunun maliyeti desiden çıkar; desi yoksa maliyet tahmin olur. |
 | 8 | **Müşterinin 9 sebebi ile enum'umuz örtüşmüyor** | Çoğu `DIGER`'e düşer; sebep bazlı yönlendirme yapılamaz. |
+| 9 | **Kargo tazminatı bağı yok** | İade 10 günde ulaşmazsa otomatik onaylanır ve **kargo şirketinden tazmin** talep edilir (§12.1). Bu bir ALACAKTIR; bugün iade ile `Compensation` arasında bağ yok, yani kapanan iade sessizce kayıp görünür. |
+| 10 | **Müşterinin notu ve görseli tutulmuyor** | İtiraz kararı bunlara bakılarak veriliyor (§13); bizde yok. |
 
 ---
 
@@ -381,3 +351,88 @@ Bundan sonrası Trendyol'da hiç olmayan bir yol:
 - **2 günlük onay/red süresi** — iade teslim edildiğinde başlar
 - **Satıcının ret gerekçeleri** — `(K)` "Trendyol'daki seçenekler aynı"
 - **Onaylanan iadede iade kargosu satıcıya ait**
+
+---
+
+## 12. SÜRELER — dört ayrı sayaç `(K)` `(E)` `(EH)`
+
+⚠ **BUNLAR DÖRT AYRI SAAT VE BİRBİRİNE KARIŞTIRILIYOR.** Belgenin ilk
+yazımında ekrandaki "19 gün" ile kullanıcının söylediği "2 gün" çelişki
+sanılmıştı; ikisi farklı sayaçlardı. Her biri **hangi olayla başlar** ve
+**dolarsa ne olur** — asıl ayrım burada.
+
+| # | Sayaç | Başlangıç | Süre | ⏳ DOLARSA NE OLUR |
+|---|---|---|---|---|
+| 1 | Müşteri kargoya versin | iade talebi | **7 gün** | iade **iptal** olur |
+| 2 | Kargo satıcıya ulaşsın | **müşteri kargoya verince** | **10 gün** | ⚠ **iade SEBEBİ NE OLURSA OLSUN ONAYLANIR**, müşteriye parası iade edilir → satıcı **KARGO ŞİRKETİNE tazmin talebi** açar |
+| 3 | Onay/red kararı | **iade satıcıya teslim edilince** | **2 gün** | iade otomatik onaylanır |
+| 4 | Analiz (servis) | pazaryeri analize alınca | **28 gün** | — |
+
+### 12.1 İkinci sayaç niye var — ve niye para tarafında
+
+`(K)` _"Kargoda yaşanacak sorundan müşteriyi korumak için."_ İade kargoda
+kaybolursa müşteri parasız ve ürünsüz kalmasın diye pazaryeri **süre
+dolunca iadeyi otomatik onaylıyor** — sebep ne olursa olsun, itiraz hakkı
+kullanılmadan.
+
+> ⚠ **BU BİZİM İÇİN BİR KAYIP DEĞİL, BİR ALACAKTIR.** Ürün gelmedi ama para
+> gitti; karşılığında **kargo şirketinden tazmin** talep edilir. Yani iade
+> kapanırken bir **tazminat kaydı doğması gerekir** — bugün sistemde bu bağ
+> yok (bkz. §9, madde 9).
+
+### 12.2 Ölçüm — iki bağımsız kaynak, 2 dakika fark
+
+`#11481463029` iki ayrı kaynaktan okundu ve **aynı bitişi** verdi:
+
+| Kaynak | Okuma anı | Kalan | Hesaplanan bitiş |
+|---|---|---|---|
+| Video karesi `(E)` | 23.08 01:47 | 8g 10:47:35 | 31.08.2026 **12:34** |
+| Masaüstü ekranı `(EH)` | 23.08 13:23 | 7g 23:14:03 | 31.08.2026 **12:37** |
+
+**Fark 2 dakika** — okuma anlarının yuvarlanmasından. Sayaç gerçek.
+
+⚠ **"10 GÜN" KULLANICI BEYANIDIR, ARİTMETİKLE KANITLANMADI.** 10 günlük
+saat başlangıcı **21.08 12:37**'ye düşüyor (talepten +5,8 gün) — yani
+müşteri o gün kargoya vermiş olmalı. Bu MAKUL ama tek başına kanıt değil:
+15 günlük bir saat de aynı bitişi verir (başlangıç 16.08, talepten +0,8
+gün) ve o da makuldür. Ayırt edici veri **kargoya verilme tarihi** ve o
+ekranda YOK — yalnız kargo takip kodu var. Kural kullanıcı beyanı olarak
+kayda geçti, aritmetik onunla **çelişmiyor**.
+
+### 12.3 Diğer kaydın sayacı — 28 günlük analiz saati
+
+`#11475261428` "Analiz" sekmesindeydi ve 28 günlük saatte oturuyor:
+bitiş 11.09 09:29, 28 gün geri → başlangıç **14.08 09:29**, yani talepten
++6,6 gün. Akış süresiyle uyumlu (kargoya verilme → teslim → ret → ihtilaf
+→ analiz).
+
+---
+
+## 13. "Kargoya Verilen" ekranında duran alanlar `(EH)`
+
+Trendyol'un liste ekranı, iade detayından **fazlasını** taşıyor:
+
+| Alan | Örnek | Bizde |
+|---|---|---|
+| Sipariş tarihi | 06.08.2026 17:04 | ✓ |
+| İade talep tarihi | 15.08.2026 18:27 | ✓ |
+| Alıcı adı | Hilal Sarı Ersöz | ❌ |
+| **Stok kodu** | `HBCV00000LCK69` | ✓ (bizim kodumuz) |
+| Barkod | `TXF40A13303184` | ✓ |
+| **Kargo firması + kod** | Aras · `7260035885654078` | ⏳ kod alanı eklendi |
+| Kargo türü | "Trendyol anlaşmalı kargo" | ❌ — kargoyu pazaryeri atıyor |
+| **Desi** | **8** — ve ekranda DEĞİŞTİRİLEBİLİR | ⏳ alan eklendi |
+| **Müşteri notu** | _"Parçası kırık, montaj deneyemedik bile."_ | ❌ |
+| **Müşteri görseli** | "Görsel - 1" | ❌ |
+| Otomatik onaya kalan | 7 gün 23:14:03 | ⏳ alan eklendi |
+| Eylem düğmesi | **"İadeyi Teslim Aldım"** | = bizde `MAL_GELDI` geçişi |
+
+⚠ **DESİ 8, ÜRÜN ₺2.169.** İade kargosu desiyle fiyatlanıyor ve 8 desi ucuz
+değil — `iadeDesi` alanının niye eklendiği tam olarak bu. Ekranda
+değiştirilebilir olması da anlamlı: pazaryerinin yazdığı desi yanlışsa
+düzeltiliyor ve maliyet ona göre çıkıyor.
+
+⚠ **MÜŞTERİ NOTU VE GÖRSELİ TUTULMUYOR.** Bunlar müşterinin KANITI —
+bizim paketleme videomuzun karşı tarafı. İtiraz kararını verirken okunan
+şey bu. Bugün sistemde yok; açılmadı çünkü önce itiraz akışının ekranı
+gerekiyor.
