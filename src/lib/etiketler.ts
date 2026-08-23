@@ -137,6 +137,25 @@ const GEREKCE_SIRASI: Record<ReturnReason, null> = {
 /** Formdaki sıra — şemadaki sırayla aynı, tesadüfe bırakılmıyor. */
 export const IADE_GEREKCELERI = Object.keys(GEREKCE_SIRASI) as ReturnReason[];
 
+/**
+ * FORMUN SUNDUĞU GEREKÇE, SUNUCUNUN KABUL ETTİĞİ GEREKÇEDİR.
+ *
+ * ⚠ 23.08.2026 CANLI HATASI. Sunucu doğrulaması elle yazılmış YEDİ değerlik
+ * bir `z.enum` dizisiydi; şemaya yedi gerekçe eklenince açılır liste onları
+ * gösterdi (bu taraf exhaustive `Record` ile derleyici kilidi altında) ama
+ * sunucu tanımadı. Kullanıcı "Ürün hasarlı"yı seçiyor, kayıt sessizce
+ * reddediliyordu.
+ *
+ * Yüklem BURADA — listenin yanında — bilerek: `"use server"` dosyaları
+ * yalnız async fonksiyon dışa aktarabildiği için orada dursaydı bekçi
+ * DAVRANIŞI ölçemez, yalnız metin arayabilirdi. Bekçi bunu çağırıp
+ * `IADE_GEREKCELERI`nin her değerini tek tek sınıyor: liste yeniden elle
+ * yazılırsa eksik değerler kırmızı yanar.
+ */
+export function gecerliIadeGerekcesi(deger: string): deger is ReturnReason {
+  return (IADE_GEREKCELERI as string[]).includes(deger);
+}
+
 export async function iadeGerekceEtiketleri(): Promise<
   Record<ReturnReason, string>
 > {

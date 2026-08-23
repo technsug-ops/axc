@@ -93,7 +93,31 @@ console.log("\n1) KORUMASIZ ACTION BEKÇİSİ");
 
   for (const yol of KAYNAKLAR) {
     const icerik = readFileSync(yol, "utf8");
-    if (!icerik.includes('"use server"')) continue;
+    /**
+     * ⚠ DİREKTİF YORUMDA DEĞİL, KODDA ARANIR — 23.08.2026'da yakalandı.
+     *
+     * Kontrol dosyanın TAMAMINDA `"use server"` dizesini arıyordu. Bir
+     * dosyanın AÇIKLAMASINDA bu direktiften söz etmek (ör. _"`"use server"`
+     * dosyaları yalnız async fonksiyon dışa aktarabilir"_) onu action
+     * modülü sanmaya yetiyordu; içindeki bütün `export async function`lar
+     * birden "korumasız action" diye kırmızı yandı.
+     *
+     * ÖLÇÜLDÜ: 38 dosyada direktif dosya başında (gerçek action modülü),
+     * 0 dosyada satır içi, 3 dosyada YALNIZ YORUMDA. Üçünden ikisi
+     * (`varyant-ozet.ts`, `kart-odeme/kategori.ts`) bu düzeltmeden ÖNCE de
+     * yanlış eşleşiyordu — içlerinde `export async function` olmadığı için
+     * zararsız kalmıştı. Yani kusur yeni değil, GÖRÜNÜR olduğu an yeni.
+     *
+     * ⚠ SATIR İÇİ KULLANIM DIŞLANMADI: direktif "dosya başında olsun" diye
+     * aranmıyor, yorumsuz KODDA aranıyor. Bugün 0 örnek var ama bir bileşen
+     * içine gömülü action yazıldığı gün bu kontrol onu yine görür.
+     * (Anayasa: _"kaynak tarayan kontrol, deseni dosyada değil KULLANIM
+     * bloğunda arar"_.)
+     */
+    const kod = icerik
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/(^|[^:])\/\/.*/g, "$1");
+    if (!kod.includes('"use server"') && !kod.includes("'use server'")) continue;
 
     // Her export edilen async fonksiyon bir action'dır.
     const desen = /export async function (\w+)\s*\([\s\S]*?\)\s*:?[\s\S]*?\{/g;

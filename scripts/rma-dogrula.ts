@@ -18,6 +18,10 @@
 import { readFileSync } from "node:fs";
 
 import { BILDIRIM_DURUM_RENGI } from "../src/lib/durum-renkleri";
+import {
+  IADE_GEREKCELERI,
+  gecerliIadeGerekcesi,
+} from "../src/lib/etiketler";
 
 import {
   DEGISIM_GEREKCELERI,
@@ -62,7 +66,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 10;
+const BOLUM_SAYISI = 11;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1858,6 +1862,104 @@ console.log("\n10) AÇIK BİLDİRİM ÖLÇÜTÜ VE İADE EKRANI DÜZENİ");
   );
 
   kosanBolumler.push("acik-olcut-ve-duzen");
+}
+
+// ===========================================================================
+console.log("\n11) FORMUN SUNDUĞU GEREKÇE = SUNUCUNUN KABUL ETTİĞİ GEREKÇE");
+// ===========================================================================
+/**
+ * CANLI HATA 23.08.2026 — kullanıcı bildirdi: _"ürün hasarlı gerekçesini
+ * seçiyorum ama kaydetmiyor, gerekçe ekranı siliniyor bu uyarı çıkıyor"_
+ * (_"Gerekçe seçilmeli."_).
+ *
+ * SEBEP: sunucu doğrulaması elle yazılmış YEDİ değerlik bir `z.enum`
+ * dizisiydi. Şemaya yedi yeni gerekçe eklendi (`HASARLI`, `BOS_PAKET`,
+ * `PARCA_EKSIK`…); açılır liste onları GÖSTERDİ — o taraf
+ * `Record<ReturnReason, string>` ile derleyici kilidi altında — ama sunucu
+ * TANIMADI ve kaydı reddetti.
+ *
+ * ⚠ NİYE HİÇBİR TEST YAKALAMADI: iki liste iki ayrı yerdeydi ve ikisi de
+ * KENDİ İÇİNDE doğruydu. Kilit yalnız BİR tarafta vardı; öteki taraf
+ * derleyicinin görmediği bir dize dizisiydi. Anayasa: _"tip listesi değil,
+ * BAĞ"_ — elle sayılan her liste, yarın eklenecek değeri sessizce dışarıda
+ * bırakır.
+ *
+ * ⚠ VE ÖLÇÜT METİN DEĞİL DAVRANIŞ. "Dosyada `IADE_GEREKCELERI` geçiyor mu"
+ * diye baksaydık, biri yüklemin içine yeniden elle liste yazdığında desen
+ * ayakta kalır ve kontrol yeşil yanardı. Yüklem ÇAĞRILIYOR ve formun
+ * sunduğu her değer tek tek sınanıyor.
+ */
+{
+  const reddedilenler = IADE_GEREKCELERI.filter((g) => !gecerliIadeGerekcesi(g));
+  kontrol(
+    `sunucu, formun sunduğu ${IADE_GEREKCELERI.length} gerekçenin HEPSİNİ kabul ediyor`,
+    reddedilenler.length === 0,
+    reddedilenler,
+  );
+
+  /** Kapı gerçekten kapı mı — her şeyi kabul eden yüklem yüklem değildir. */
+  kontrol(
+    "  ...tanımsız değer REDDEDİLİYOR (yüklem hep true dönmüyor)",
+    !gecerliIadeGerekcesi("BOYLE_BIR_GEREKCE_YOK"),
+  );
+
+  /**
+   * ŞEMA BÜYÜRSE FORM DA BÜYÜMELİ. Derleyici bunu zaten zorluyor
+   * (`Record<ReturnReason, …>` exhaustive), ama kilit sessizce gevşetilirse
+   * — biri `Partial<>` yazarsa — burada görünür.
+   */
+  const iadeSema = readFileSync("prisma/schema.prisma", "utf8");
+  const gerekceGovdesi = iadeSema.slice(
+    iadeSema.indexOf("enum ReturnReason {"),
+    iadeSema.indexOf("}", iadeSema.indexOf("enum ReturnReason {")),
+  );
+  const semaGerekceleri = gerekceGovdesi
+    .split("\n")
+    .map((satir) => satir.replace(/\/\/.*$/, "").trim())
+    .filter((satir) => /^[A-Z][A-Z0-9_]*$/.test(satir));
+  const formsuzlar = semaGerekceleri.filter(
+    (d) => !(IADE_GEREKCELERI as string[]).includes(d),
+  );
+  kontrol(
+    `şemadaki ${semaGerekceleri.length} gerekçenin hepsi formda`,
+    semaGerekceleri.length > 0 && formsuzlar.length === 0,
+    formsuzlar,
+  );
+
+  /**
+   * İKİ HATA AYRI SÖYLENİR. Boş bırakmak ile tanınmayan değer aynı mesajı
+   * verirse ikinci durum birinci gibi görünür — kullanıcı seçtiği hâlde
+   * "seçmedin" cevabı alır ve sistemin sustuğu yer hiç açılmaz. Bu hatanın
+   * KEŞFEDİLMESİNİ geciktiren şey tam olarak buydu.
+   */
+  const gerekceEylemi = readFileSync(
+    "src/app/iadeler/bildirim-actions.ts",
+    "utf8",
+  );
+  const gerekceBloku = gerekceEylemi.slice(
+    gerekceEylemi.indexOf("reason: z"),
+    gerekceEylemi.indexOf("/** Değişim için ayrılan ürün"),
+  );
+  kontrol("gerekçe bloğu kesilebildi", gerekceBloku.length > 0);
+  kontrol(
+    "  ...BOŞ gerekçe ayrı mesaj veriyor",
+    /\.min\(1, t\("gerekceZorunlu"\)\)/.test(gerekceBloku),
+  );
+  kontrol(
+    "  ...TANIMSIZ gerekçe ayrı mesaj veriyor",
+    /gerekceTanimsiz/.test(gerekceBloku),
+  );
+  /**
+   * ⚠ İKİNCİ ŞART ELLE LİSTEYE DÖNÜŞÜ ENGELLER: blokta büyük harfli bir
+   * enum dizesi geçiyorsa birileri kümeyi yeniden oraya yazmış demektir.
+   */
+  kontrol(
+    "  ...kabul kümesi ORTAK yüklemden geliyor (elle liste değil)",
+    /\.refine\(gecerliIadeGerekcesi/.test(gerekceBloku) &&
+      !/"[A-Z][A-Z0-9_]{3,}"/.test(gerekceBloku),
+  );
+
+  kosanBolumler.push("gerekce-kapisi");
 }
 
 if (kosanBolumler.length !== BOLUM_SAYISI) {

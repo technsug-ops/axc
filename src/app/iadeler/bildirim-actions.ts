@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { gunMetninden } from "@/lib/donem";
+import { gecerliIadeGerekcesi } from "@/lib/etiketler";
 import {
   AYRILMIS_SAYILAN_DURUMLAR,
   ayirmaMumkunMu,
@@ -19,7 +20,7 @@ import { prisma } from "@/lib/prisma";
 import { varyantStogu } from "@/lib/stok";
 import { yetkiIste } from "@/lib/yetki";
 
-import type { NoticeStatus } from "@/generated/prisma/enums";
+import type { NoticeStatus, ReturnReason } from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
@@ -45,18 +46,26 @@ function semaKur(t: Ceviri) {
     /** Pazaryerindeki talep numarası — dış dünyanın kimliği, boş olabilir. */
     code: z.string().trim().max(191),
     noticedAt: z.string().min(1, t("tarihZorunlu")),
-    reason: z.enum(
-      [
-        "DEGISIM",
-        "DEGISIM_KUSURLU",
-        "CALISMIYOR",
-        "CAYMA",
-        "KULLANILMIS_ITIRAZ",
-        "YANLIS_URUN",
-        "DIGER",
-      ],
-      { message: t("gerekceZorunlu") },
-    ),
+    /**
+     * ⚠ GEREKÇE LİSTESİ ELLE YAZILMAZ — FORMUN OKUDUĞU KAYNAKTAN GELİR.
+     *
+     * 23.08.2026 canlı hatası: burada elle tutulan YEDİ değerlik bir dizi
+     * vardı. Şemaya yedi yeni gerekçe eklendi (`HASARLI`, `BOS_PAKET`…),
+     * açılır liste onları gösterdi — çünkü o taraf `Record<ReturnReason,
+     * null>` ile DERLEYİCİ KİLİDİ altında — ama sunucu tanımadı ve kaydı
+     * reddetti. Kullanıcı "Ürün hasarlı"yı seçiyor, ekran _"Gerekçe
+     * seçilmeli"_ diyordu: seçilmiş bir alan için seçilmedi denmesi, hatayı
+     * kullanıcının üstüne atıp asıl sebebi GİZLİYORDU.
+     *
+     * Kilit artık tek: `IADE_GEREKCELERI` de `etiketler.ts`teki exhaustive
+     * `Record`tan türüyor. Şemaya sekizinci gerekçe eklenirse ORASI
+     * derlenmez; düzeltilince form da sunucu da onu aynı anda tanır.
+     * İki listenin ayrışması yapısal olarak imkânsız.
+     */
+    reason: z
+      .string()
+      .min(1, t("gerekceZorunlu"))
+      .refine(gecerliIadeGerekcesi, { message: t("gerekceTanimsiz") }),
     /** Değişim için ayrılan ürün — FİZİKSEL STOĞA DOKUNMAZ, niyet beyanıdır. */
     reservedVariantId: z.string().nullable(),
     reservedQuantity: z.number().int().min(0),

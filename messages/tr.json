@@ -2310,6 +2310,7 @@
     "gerekce": "Gerekçe",
     "gerekceSecin": "Gerekçe seçin",
     "gerekceZorunlu": "Gerekçe seçilmeli.",
+    "gerekceTanimsiz": "Bu gerekçe sistemde tanımlı değil. Listeden yeniden seçin; sorun sürerse bildirin.",
     "talepNo": "Pazaryeri talep no",
     "talepNoIpucu": "örn. TY-4432259217",
     "bildirimTarihi": "Bildirim tarihi",
