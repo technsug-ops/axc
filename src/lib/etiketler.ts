@@ -1,6 +1,8 @@
 import { getTranslations } from "next-intl/server";
 
 import type {
+  AnalysisResult,
+  NoticeObjectionReason,
   NoticeStatus,
   PurchaseStatus,
   ReturnReason,
@@ -269,5 +271,88 @@ export async function bildirimSiradakiAdim(): Promise<
     ASKIDA: tGecis("siradakiAskida"),
     KAPANDI: tGecis("siradakiYok"),
     IPTAL: tGecis("siradakiYok"),
+  };
+}
+
+/**
+ * ============================================================================
+ *  SATICININ RET (İTİRAZ) GEREKÇELERİ — 8 · ve ANALİZ SONUÇLARI — 3
+ * ----------------------------------------------------------------------------
+ *  Kaynak: `docs/iade-sureci.md` §4 ve §6 (kullanıcı anlatımı `(K)`).
+ *
+ *  ⚠ AYNI DERLEYİCİ KİLİDİ — VE SEBEBİ AYNI GÜN ÖĞRENİLDİ. 23.08.2026'da
+ *  iade gerekçelerinde tam bu ayrışma yaşandı: açılır liste 14 değer
+ *  gösteriyordu, sunucu elle yazılmış 7'lik bir listeyle doğruluyordu ve
+ *  kayıt SESSİZCE düşüyordu. Burada kabul kümesi de etiket kümesi de TEK
+ *  exhaustive `Record`tan türüyor; ikisinin ayrışması yapısal olarak
+ *  imkânsız.
+ * ============================================================================
+ */
+
+/** Sıra ekrandaki sıradır — §4'teki A–Ğ dizilişi. */
+const ITIRAZ_SIRASI: Record<NoticeObjectionReason, null> = {
+  KULLANILMIS: null,
+  IADE_YANLIS: null,
+  HIJYEN: null,
+  ANALIZ_TALEBI: null,
+  DEGISIM: null,
+  HASARLI: null,
+  EKSIK: null,
+  KUSURSUZ_GONDERILDI: null,
+};
+
+export const ITIRAZ_GEREKCELERI = Object.keys(
+  ITIRAZ_SIRASI,
+) as NoticeObjectionReason[];
+
+export function gecerliItirazGerekcesi(
+  deger: string,
+): deger is NoticeObjectionReason {
+  return (ITIRAZ_GEREKCELERI as string[]).includes(deger);
+}
+
+export async function itirazGerekceEtiketleri(): Promise<
+  Record<NoticeObjectionReason, string>
+> {
+  /**
+   * ⚠ DEĞİŞKEN ADI AYIRT EDİCİ OLMALI — dosyanın kuralı bu. `i18n:kontrol`
+   * ad alanını DEĞİŞKEN ADINDAN çözüyor; iki fonksiyon da `t` deseydi
+   * ikincisi birincisini ezer ve bekçi anahtarları yanlış ad alanında arar.
+   * (23.08.2026'da tam bu oldu: 8 anahtar `AnalizSonucu` altında aranıp
+   * "eksik" bulundu.)
+   */
+  const tItiraz = await getTranslations("ItirazGerekcesi");
+  return {
+    KULLANILMIS: tItiraz("KULLANILMIS"),
+    IADE_YANLIS: tItiraz("IADE_YANLIS"),
+    HIJYEN: tItiraz("HIJYEN"),
+    ANALIZ_TALEBI: tItiraz("ANALIZ_TALEBI"),
+    DEGISIM: tItiraz("DEGISIM"),
+    HASARLI: tItiraz("HASARLI"),
+    EKSIK: tItiraz("EKSIK"),
+    KUSURSUZ_GONDERILDI: tItiraz("KUSURSUZ_GONDERILDI"),
+  };
+}
+
+const ANALIZ_SIRASI: Record<AnalysisResult, null> = {
+  TAMIR_EDILDI: null,
+  DEGISIM_YAPILDI: null,
+  SORUN_BULUNAMADI: null,
+};
+
+export const ANALIZ_SONUCLARI = Object.keys(ANALIZ_SIRASI) as AnalysisResult[];
+
+export function gecerliAnalizSonucu(deger: string): deger is AnalysisResult {
+  return (ANALIZ_SONUCLARI as string[]).includes(deger);
+}
+
+export async function analizSonucuEtiketleri(): Promise<
+  Record<AnalysisResult, string>
+> {
+  const tAnaliz = await getTranslations("AnalizSonucu");
+  return {
+    TAMIR_EDILDI: tAnaliz("TAMIR_EDILDI"),
+    DEGISIM_YAPILDI: tAnaliz("DEGISIM_YAPILDI"),
+    SORUN_BULUNAMADI: tAnaliz("SORUN_BULUNAMADI"),
   };
 }

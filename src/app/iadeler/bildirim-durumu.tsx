@@ -18,7 +18,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { gecisOnayIster } from "@/lib/iade/bildirim";
+import {
+  analizSonucuIstenirMi,
+  gecisOnayIster,
+  itirazGerekcesiGerekliMi,
+} from "@/lib/iade/bildirim";
 
 import { bildirimDurumuGuncelle } from "./bildirim-actions";
 
@@ -54,11 +58,19 @@ export type DurumSecenegi = {
 
 export function BildirimDurumu({
   bildirimId,
+  mevcutDurum,
   secenekler,
   iadeIsle,
+  itirazGerekceleri,
+  analizSonuclari,
 }: {
   bildirimId: string;
+  /** Kaydın ŞU ANKİ durumu — analiz sonucu buna göre sorulur. */
+  mevcutDurum: NoticeStatus;
   secenekler: DurumSecenegi[];
+  /** Etiketler sunucudan gelir; ham enum ekranda görünmez. */
+  itirazGerekceleri: { deger: string; etiket: string }[];
+  analizSonuclari: { deger: string; etiket: string }[];
   /**
    * "İadeyi işle" — AŞAMA B'ye geçiş. Açıksa adres verilir (ön-dolu iade
    * formu), kapalıysa sebep.
@@ -70,15 +82,32 @@ export function BildirimDurumu({
   const router = useRouter();
   const [bekliyor, basla] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
+  const [gerekce, setGerekce] = useState("");
+  const [analiz, setAnaliz] = useState("");
 
   const git = (hedef: NoticeStatus) => {
     setHata(null);
     basla(async () => {
-      const sonuc = await bildirimDurumuGuncelle(bildirimId, hedef);
+      const sonuc = await bildirimDurumuGuncelle(bildirimId, hedef, undefined, {
+        itirazGerekcesi: gerekce,
+        analizSonucu: analiz,
+      });
       if (sonuc.hata) setHata(sonuc.hata);
-      else router.refresh();
+      else {
+        setGerekce("");
+        setAnaliz("");
+        router.refresh();
+      }
     });
   };
+
+  /**
+   * ⚠ KURAL SAF MODÜLDEN — ekran da sunucu da AYNI fonksiyonu çağırıyor.
+   * İki yerde iki ölçüt olsaydı, ekran sormadan gönderir ve sunucu sessizce
+   * reddederdi; kullanıcı "kaydetmiyor" derdi ve sebebi görünmezdi.
+   * (23.08.2026'da iade gerekçesinde tam bu yaşandı.)
+   */
+  const analizSorulur = analizSonucuIstenirMi(mevcutDurum);
 
   return (
     <div className="flex flex-col gap-2">
@@ -140,12 +169,64 @@ export function BildirimDurumu({
                       {t("gecisOnayAciklama")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
+
+                  {/*
+                    RET GEREKÇESİ — ZORUNLU (K31 ④). Pazaryeri de gerekçesiz
+                    itiraz kurdurmuyor; bizim kaydımızda kurulabilseydi
+                    defterimiz pazaryerinden daha az şey bilirdi.
+                    ⚠ Ve gerekçe MALİYET tarafını belirliyor: "Değişim"
+                    seçilirse kargo her kanalda satıcıya ait, satıcı haklı
+                    bulunduğunda Trendyol yansıtmıyor (docs §5).
+                  */}
+                  {itirazGerekcesiGerekliMi(s.hedef) ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">
+                        {t("itirazGerekcesiBaslik")} *
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {t("itirazGerekcesiAciklama")}
+                      </p>
+                      <Secim
+                        deger={gerekce}
+                        onDegisim={setGerekce}
+                        ipucu={t("itirazGerekcesiSec")}
+                        secenekler={itirazGerekceleri}
+                      />
+                    </div>
+                  ) : null}
+
+                  {/* ANALİZ SONUCU — sorulur, boş geçilebilir. */}
+                  {analizSorulur ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">
+                        {t("analizSonucuBaslik")}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {t("analizSonucuAciklama")}
+                      </p>
+                      <Secim
+                        deger={analiz}
+                        onDegisim={setAnaliz}
+                        ipucu={t("analizSonucuSec")}
+                        secenekler={analizSonuclari}
+                      />
+                    </div>
+                  ) : null}
+
                   <AlertDialogFooter>
                     <AlertDialogCancel>{ortak("vazgec")}</AlertDialogCancel>
                     <Button
                       type="button"
                       onClick={() => git(s.hedef)}
-                      disabled={bekliyor}
+                      /*
+                        ⚠ SEBEP EKRANDA YAZILI (İlke #5): kilitli düğme sessiz
+                        kalmaz — gerekçe seçilmediği için basılamadığı
+                        yukarıdaki zorunlu alandan okunuyor.
+                      */
+                      disabled={
+                        bekliyor ||
+                        (itirazGerekcesiGerekliMi(s.hedef) && gerekce === "")
+                      }
                     >
                       {t("gecisOnayla")}
                     </Button>
@@ -191,5 +272,39 @@ export function BildirimDurumu({
         </p>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Küçük seçim kutusu — iki yerde kullanıldığı için ayrı.
+ *
+ * ⚠ HAM ENUM EKRANA ÇIKMAZ: etiketler sunucudan, exhaustive `Record`tan
+ * gelen sözlükle çözülüp geliyor. Burada `deger` yalnız gönderilecek
+ * anahtardır, gösterilen şey `etiket`tir.
+ */
+function Secim({
+  deger,
+  onDegisim,
+  ipucu,
+  secenekler,
+}: {
+  deger: string;
+  onDegisim: (yeni: string) => void;
+  ipucu: string;
+  secenekler: { deger: string; etiket: string }[];
+}) {
+  return (
+    <select
+      value={deger}
+      onChange={(e) => onDegisim(e.target.value)}
+      className="border-input bg-background h-11 w-full rounded-md border px-2 text-sm md:h-9"
+    >
+      <option value="">{ipucu}</option>
+      {secenekler.map((s) => (
+        <option key={s.deger} value={s.deger}>
+          {s.etiket}
+        </option>
+      ))}
+    </select>
   );
 }

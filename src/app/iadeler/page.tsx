@@ -40,7 +40,11 @@ import {
   bildirimDurumEtiketleri,
   bildirimGecisEtiketleri,
   bildirimSiradakiAdim,
+  ANALIZ_SONUCLARI,
+  ITIRAZ_GEREKCELERI,
+  analizSonucuEtiketleri,
   iadeGerekceEtiketleri,
+  itirazGerekceEtiketleri,
   iadeTuruEtiketleri,
 } from "@/lib/etiketler";
 import {
@@ -484,6 +488,9 @@ export default async function IadelerSayfasi({
       /* K31 ① — son tarih sayacı bu iki sütundan okunur. */
       otomatikOnayTarihi: true,
       islemSonTarihi: true,
+      /* K31 ④ — ret gerekçesi ve analiz sonucu. */
+      itirazGerekcesi: true,
+      analizSonucu: true,
       note: true,
       reservedQuantity: true,
       returnId: true,
@@ -617,6 +624,26 @@ export default async function IadelerSayfasi({
   const formStoklari = await varyantStoklari(formVaryantlari.map((v) => v.id));
 
   const gerekceEtiketleri = await iadeGerekceEtiketleri();
+
+  /**
+   * RET GEREKÇESİ (8) ve ANALİZ SONUCU (3) — K31 ④.
+   *
+   * ⚠ LİSTE SUNUCUDA KURULUR VE SIRASI KAYNAKTAN GELİR (`ITIRAZ_GEREKCELERI`,
+   * `ANALIZ_SONUCLARI` — ikisi de exhaustive `Record`tan türüyor). İstemciye
+   * elle yazılmış bir dizi geçseydi, sunucunun kabul ettiği kümeyle
+   * ayrışabilirdi; 23.08.2026'da iade gerekçelerinde tam bu oldu ve kayıt
+   * sessizce düşüyordu.
+   */
+  const itirazEtiketleri = await itirazGerekceEtiketleri();
+  const analizEtiketleri = await analizSonucuEtiketleri();
+  const itirazSecenekleri = ITIRAZ_GEREKCELERI.map((g) => ({
+    deger: g,
+    etiket: itirazEtiketleri[g],
+  }));
+  const analizSecenekleri = ANALIZ_SONUCLARI.map((a) => ({
+    deger: a,
+    etiket: analizEtiketleri[a],
+  }));
   const durumEtiketleri = await bildirimDurumEtiketleri();
   const gecisEtiketleri = await bildirimGecisEtiketleri();
   const siradakiAdimlar = await bildirimSiradakiAdim();
@@ -889,6 +916,32 @@ export default async function IadelerSayfasi({
                   </p>
 
                   {/*
+                    RET GEREKÇESİ VE ANALİZ SONUCU (K31 ④).
+
+                    ⚠ YAZILIP GÖRÜNMEYEN ALAN, YAZILMAMIŞ GİBİDİR. Bu iki
+                    sütun K31 migration'ında açıldı ve 23.08'e kadar ÖLÜ
+                    durdu: sıfır okuyucu, sıfır yazıcı. Kaydediliyor olması
+                    yetmez — kullanıcı üç ay sonra "bu iadeyi hangi
+                    gerekçeyle reddetmiştim" diye sorduğunda cevabı EKRANDA
+                    bulmalı.
+                  */}
+                  {b.itirazGerekcesi || b.analizSonucu ? (
+                    <p className="text-muted-foreground text-xs">
+                      {b.itirazGerekcesi
+                        ? tBildirim("itirazGerekcesiRozet", {
+                            gerekce: itirazEtiketleri[b.itirazGerekcesi],
+                          })
+                        : null}
+                      {b.itirazGerekcesi && b.analizSonucu ? " · " : null}
+                      {b.analizSonucu
+                        ? tBildirim("analizSonucuRozet", {
+                            sonuc: analizEtiketleri[b.analizSonucu],
+                          })
+                        : null}
+                    </p>
+                  ) : null}
+
+                  {/*
                     SON TARİH SAYACI (K31 ①). Her bildirimde AYNI ANDA TEK bir
                     saat işler ve hangisi olduğunu durum söyler. Sayaç yoksa
                     hiç çizilmez — "saat işlemiyor" ile "süre bitti" aynı şey
@@ -900,6 +953,9 @@ export default async function IadelerSayfasi({
 
                   <BildirimDurumu
                     bildirimId={b.id}
+                    mevcutDurum={b.status}
+                    itirazGerekceleri={itirazSecenekleri}
+                    analizSonuclari={analizSecenekleri}
                     iadeIsle={{
                       acik: iadeIslenebilirMi(b.status) && b.returnId === null,
                       /**

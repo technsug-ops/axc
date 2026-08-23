@@ -10,13 +10,19 @@ import {
   SAYAC_KURALLARI,
   SON_TARIH_EYLEMI,
 } from "@/lib/iade/sayac";
-import { gecerliIadeGerekcesi } from "@/lib/etiketler";
+import {
+  gecerliAnalizSonucu,
+  gecerliIadeGerekcesi,
+  gecerliItirazGerekcesi,
+} from "@/lib/etiketler";
 import {
   AYRILMIS_SAYILAN_DURUMLAR,
+  analizSonucuIstenirMi,
   ayirmaMumkunMu,
   ayrilmisAdetler,
   donenUrunZorunluMu,
   gecisGecerliMi,
+  itirazGerekcesiGerekliMi,
   kapaliMi,
   serbestStok,
 } from "@/lib/iade/bildirim";
@@ -25,7 +31,11 @@ import { prisma } from "@/lib/prisma";
 import { varyantStogu } from "@/lib/stok";
 import { yetkiIste } from "@/lib/yetki";
 
-import type { NoticeStatus } from "@/generated/prisma/enums";
+import type {
+  AnalysisResult,
+  NoticeObjectionReason,
+  NoticeStatus,
+} from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
@@ -247,6 +257,12 @@ export async function bildirimDurumuGuncelle(
    * ekranda _"çıpa girilmedi"_ yazar — uydurulmaz (mimar şartı ③).
    */
   cipaTarihi?: string,
+  /**
+   * RET GEREKÇESİ (8) ve ANALİZ SONUCU (3) — K31 ④.
+   * `itirazGerekcesi` ITIRAZ_ACILDI'ya geçerken ZORUNLU; `analizSonucu`
+   * ANALİZ'den çıkarken sorulur ama boş geçilebilir.
+   */
+  ek?: { itirazGerekcesi?: string; analizSonucu?: string },
 ): Promise<{ hata?: string }> {
   await yetkiIste("iade.yaz");
   const t = await getTranslations("Bildirim2");
@@ -275,6 +291,44 @@ export async function bildirimDurumuGuncelle(
    * onu iade formuna götürür.
    */
   /**
+   * ── RET GEREKÇESİ VE ANALİZ SONUCU (K31 ④) ─────────────────────────────
+   *
+   * ⚠ KABUL KÜMESİ FORMUN OKUDUĞU KAYNAKTAN GELİR. 23.08.2026'da iade
+   * gerekçelerinde tam tersi yaşandı: açılır liste 14 değer sunuyor, sunucu
+   * elle yazılmış 7'lik bir diziyle doğruluyordu ve kayıt SESSİZCE
+   * düşüyordu. Burada iki taraf da `etiketler.ts`teki exhaustive `Record`tan
+   * türüyor.
+   *
+   * ⚠ VE İKİ HATA AYRI SÖYLENİR: boş bırakmak ile TANINMAYAN bir değer
+   * göndermek aynı mesajı verirse, ikinci durum birinci gibi görünür ve
+   * kullanıcı seçtiği hâlde "seçmedin" cevabı alır.
+   */
+  const yazilacakEk: {
+    itirazGerekcesi?: NoticeObjectionReason;
+    analizSonucu?: AnalysisResult;
+  } = {};
+
+  if (itirazGerekcesiGerekliMi(hedef)) {
+    const secim = (ek?.itirazGerekcesi ?? "").trim();
+    if (!secim) return { hata: t("itirazGerekcesiZorunlu") };
+    if (!gecerliItirazGerekcesi(secim)) {
+      return { hata: t("itirazGerekcesiTanimsiz") };
+    }
+    yazilacakEk.itirazGerekcesi = secim;
+  }
+
+  if (analizSonucuIstenirMi(bildirim.status)) {
+    const secim = (ek?.analizSonucu ?? "").trim();
+    /* Boş geçilebilir — zorunlu tutulmadığının gerekçesi kuralın yanında. */
+    if (secim) {
+      if (!gecerliAnalizSonucu(secim)) {
+        return { hata: t("analizSonucuTanimsiz") };
+      }
+      yazilacakEk.analizSonucu = secim;
+    }
+  }
+
+  /**
    * ── SON TARİH TÜRETMESİ (K31 ①) ────────────────────────────────────────
    *
    * Hedef durumun sayacı varsa ve o sayaç bir sütunda yaşıyorsa, son tarih
@@ -293,6 +347,7 @@ export async function bildirimDurumuGuncelle(
     where: { id: bildirimId },
     data: {
       status: hedef,
+      ...yazilacakEk,
       ...(turetme?.yazilacak ?? {}),
     },
   });

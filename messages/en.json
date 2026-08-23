@@ -2381,7 +2381,18 @@
     "panelTarihi": "",
     "panelTarihiAciklama": "",
     "panelTarihiKaydet": "",
-    "turetilmisNot": ""
+    "turetilmisNot": "",
+    "itirazGerekcesiBaslik": "",
+    "itirazGerekcesiAciklama": "",
+    "itirazGerekcesiSec": "",
+    "itirazGerekcesiZorunlu": "",
+    "itirazGerekcesiTanimsiz": "",
+    "analizSonucuBaslik": "",
+    "analizSonucuAciklama": "",
+    "analizSonucuSec": "",
+    "analizSonucuTanimsiz": "",
+    "itirazGerekcesiRozet": "",
+    "analizSonucuRozet": ""
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "",
@@ -3031,5 +3042,20 @@
     "paketlendiIsareti": "",
     "paketlemeGeriAl": "",
     "paketlemeOlmadi": ""
+  },
+  "ItirazGerekcesi": {
+    "KULLANILMIS": "",
+    "IADE_YANLIS": "",
+    "HIJYEN": "",
+    "ANALIZ_TALEBI": "",
+    "DEGISIM": "",
+    "HASARLI": "",
+    "EKSIK": "",
+    "KUSURSUZ_GONDERILDI": ""
+  },
+  "AnalizSonucu": {
+    "TAMIR_EDILDI": "",
+    "DEGISIM_YAPILDI": "",
+    "SORUN_BULUNAMADI": ""
   }
 }

@@ -411,3 +411,42 @@ export const IADE_ISLE_SEBEP_ANAHTARI: Record<NoticeStatus, string | null> = {
   KAPANDI: "iadeIsleSebepKapandi",
   IPTAL: "iadeIsleSebepIptal",
 };
+
+/**
+ * ============================================================================
+ *  RET GEREKÇESİ VE ANALİZ SONUCU — HANGİ GEÇİŞTE SORULUR (K31 ④)
+ * ----------------------------------------------------------------------------
+ *  Kaynak: `docs/iade-sureci.md` §4 ve §6, kullanıcı anlatımı `(K)`.
+ * ============================================================================
+ */
+
+/**
+ * RET GEREKÇESİ ZORUNLUDUR — ÇÜNKÜ PAZARYERİ DE ZORUNLU TUTUYOR.
+ *
+ * `(K)`: _"Reddet seçilince açılan liste... seçeneklerinden uygun olanı
+ * seçer, delillerini yükleyerek itiraz eder. Bu iade satıcının itiraz
+ * etmesiyle İhtilaflı sekmesine taşınır."_ Yani gerekçesiz bir itiraz
+ * pazaryerinde de kurulamıyor; bizim kaydımızda kurulabilseydi defterimiz
+ * pazaryerinden daha az şey bilirdi.
+ *
+ * ⚠ VE GEREKÇE MALİYET TARAFINI BELİRLİYOR: `DEGISIM` (E) seçilirse geri
+ * giden YENİ üründür ve kargo HER KANALDA satıcıya aittir; satıcı haklı
+ * bulunduğunda ise Trendyol kargoyu yansıtmaz (§5). Aynı durumun iki farklı
+ * parası var ve ayıran şey bu alan.
+ */
+export function itirazGerekcesiGerekliMi(hedef: NoticeStatus): boolean {
+  return hedef === "ITIRAZ_ACILDI";
+}
+
+/**
+ * ANALİZ SONUCU SORULUR AMA ZORUNLU DEĞİL.
+ *
+ * ⚠ ZORUNLU TUTULMADI VE BU ÖLÇÜLMEMİŞLİĞİN SONUCU: pazaryerinin bu alanı
+ * zorunlu tutup tutmadığını GÖRMEDİK. Zorunlu kılsaydık, ölçmediğimiz bir
+ * kuralı operasyoncuya dayatmış olurduk — ve süresi dolmak üzere olan bir
+ * kaydı kapatamayan kullanıcı, sistemi bırakıp pazaryeri panelinden işini
+ * görürdü. Sorulur, boş geçilebilir, sonradan yazılabilir.
+ */
+export function analizSonucuIstenirMi(mevcut: NoticeStatus): boolean {
+  return mevcut === "ANALIZ";
+}

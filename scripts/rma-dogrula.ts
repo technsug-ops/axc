@@ -29,10 +29,18 @@ import {
 } from "../src/lib/iade/sayac";
 
 import {
+  ANALIZ_SONUCLARI,
   BILDIRIM_DURUMLARI,
   IADE_GEREKCELERI,
+  ITIRAZ_GEREKCELERI,
+  gecerliAnalizSonucu,
   gecerliIadeGerekcesi,
+  gecerliItirazGerekcesi,
 } from "../src/lib/etiketler";
+import {
+  analizSonucuIstenirMi,
+  itirazGerekcesiGerekliMi,
+} from "../src/lib/iade/bildirim";
 
 import {
   DEGISIM_GEREKCELERI,
@@ -77,7 +85,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 12;
+const BOLUM_SAYISI = 13;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -2235,6 +2243,196 @@ console.log("\n12) SON TARİH SAYAÇLARI (K31 ①)");
   );
 
   kosanBolumler.push("son-tarih-sayaclari");
+}
+
+// ===========================================================================
+console.log("\n13) RET GEREKÇESİ (8) VE ANALİZ SONUCU (3) — K31 ④");
+// ===========================================================================
+/**
+ * KULLANICI BİLDİRDİ 23.08.2026: _"iadeye itiraz edince açılan ekranda
+ * normalde red sebepleri olması lazım — ürün kullanılmış, hijyen ürün falan
+ * — sonra onlardan birini seçince iade ihtilaflıya düşecek."_
+ *
+ * ÖLÇÜLDÜ: `itirazGerekcesi` ve `analizSonucu` sütunları K31 migration'ında
+ * açılmış ve ÖLÜ DURUYORDU — sıfır okuyucu, sıfır yazıcı. Aynı gün
+ * `otomatikOnayTarihi`/`islemSonTarihi` için de aynısı çıkmıştı: şemaya alan
+ * eklemek, o alanın teslim edildiği anlamına gelmiyor.
+ *
+ * ⚠ VE GEREKÇE PARA TARAFINI BELİRLİYOR (docs §5): `DEGISIM` seçilirse geri
+ * giden YENİ üründür ve kargo HER KANALDA satıcıya aittir; satıcı haklı
+ * bulunduğunda Trendyol kargoyu yansıtmaz. Aynı durumun iki farklı parası
+ * var ve ayıran şey bu alan.
+ */
+{
+  kontrol("sekiz ret gerekçesi tanımlı", ITIRAZ_GEREKCELERI.length === 8, ITIRAZ_GEREKCELERI);
+  kontrol("üç analiz sonucu tanımlı", ANALIZ_SONUCLARI.length === 3, ANALIZ_SONUCLARI);
+
+  /**
+   * ⚠ SUNUCU, FORMUN SUNDUĞU HER DEĞERİ KABUL ETMELİ — VE BU ÖLÇÜT
+   * DAVRANIŞSALDIR: yüklem tek tek ÇAĞRILIYOR. Metin araması yapsaydık,
+   * biri yüklemin içine elle liste yazdığında desen ayakta kalır ve kontrol
+   * yeşil yanardı. (23.08.2026'da iade gerekçelerinde tam bu ayrışma
+   * yaşandı: form 14 sunuyor, sunucu 7 kabul ediyordu.)
+   */
+  const redItiraz = ITIRAZ_GEREKCELERI.filter((g) => !gecerliItirazGerekcesi(g));
+  kontrol(
+    "sunucu, formun sunduğu 8 ret gerekçesinin HEPSİNİ kabul ediyor",
+    redItiraz.length === 0,
+    redItiraz,
+  );
+  const redAnaliz = ANALIZ_SONUCLARI.filter((a) => !gecerliAnalizSonucu(a));
+  kontrol(
+    "sunucu, formun sunduğu 3 analiz sonucunun HEPSİNİ kabul ediyor",
+    redAnaliz.length === 0,
+    redAnaliz,
+  );
+  kontrol(
+    "  ...tanımsız değerler REDDEDİLİYOR (yüklemler hep true dönmüyor)",
+    !gecerliItirazGerekcesi("BOYLE_BIR_GEREKCE_YOK") &&
+      !gecerliAnalizSonucu("BOYLE_BIR_SONUC_YOK"),
+  );
+
+  /** Şema büyürse form da büyümeli — kilit gevşetilirse burada görünür. */
+  for (const [ad, kod, liste] of [
+    ["NoticeObjectionReason", "enum NoticeObjectionReason {", ITIRAZ_GEREKCELERI],
+    ["AnalysisResult", "enum AnalysisResult {", ANALIZ_SONUCLARI],
+  ] as [string, string, readonly string[]][]) {
+    const semaK4 = readFileSync("prisma/schema.prisma", "utf8");
+    const govde = semaK4.slice(
+      semaK4.indexOf(kod),
+      semaK4.indexOf("}", semaK4.indexOf(kod)),
+    );
+    const degerler = govde
+      .split("\n")
+      .map((satir) => satir.replace(/\/\/.*$/, "").trim())
+      .filter((satir) => /^[A-Z][A-Z0-9_]*$/.test(satir));
+    const formsuz = degerler.filter((d) => !liste.includes(d));
+    kontrol(
+      `${ad}: şemadaki ${degerler.length} değerin hepsi formda`,
+      degerler.length > 0 && formsuz.length === 0,
+      formsuz,
+    );
+  }
+
+  /**
+   * ⚠ RET GEREKÇESİ ZORUNLU, ANALİZ SONUCU DEĞİL — ve ikisi AYRI sınanıyor.
+   * Tek bir "sorulur mu" ölçütü olsaydı, analiz sonucunu da zorunlu yapan
+   * bir mutasyon yakalanmazdı; o mutasyon süresi dolmak üzere olan bir kaydı
+   * kapatamayan kullanıcıyı sistemden kaçırırdı.
+   */
+  kontrol(
+    "ret gerekçesi YALNIZ ITIRAZ_ACILDI'ya geçerken zorunlu",
+    itirazGerekcesiGerekliMi("ITIRAZ_ACILDI") &&
+      BILDIRIM_DURUMLARI.filter((d) => d !== "ITIRAZ_ACILDI").every(
+        (d) => !itirazGerekcesiGerekliMi(d),
+      ),
+  );
+  kontrol(
+    "analiz sonucu YALNIZ ANALIZ'den çıkarken soruluyor",
+    analizSonucuIstenirMi("ANALIZ") &&
+      BILDIRIM_DURUMLARI.filter((d) => d !== "ANALIZ").every(
+        (d) => !analizSonucuIstenirMi(d),
+      ),
+  );
+
+  const eylemK4 = readFileSync("src/app/iadeler/bildirim-actions.ts", "utf8");
+  const gerekceBlok = eylemK4.slice(
+    eylemK4.indexOf("if (itirazGerekcesiGerekliMi(hedef))"),
+    eylemK4.indexOf("── SON TARİH TÜRETMESİ"),
+  );
+  kontrol("gerekçe doğrulama bloğu kesilebildi", gerekceBlok.length > 0);
+  /**
+   * ⚠ İKİ HATA AYRI SÖYLENİR. Boş bırakmak ile TANINMAYAN değer aynı mesajı
+   * verirse, ikinci durum birinci gibi görünür: kullanıcı seçtiği hâlde
+   * "seçmedin" cevabı alır ve sistemin sustuğu yer hiç açılmaz.
+   */
+  kontrol(
+    "  ...BOŞ gerekçe ayrı mesaj veriyor",
+    /itirazGerekcesiZorunlu/.test(gerekceBlok),
+  );
+  kontrol(
+    "  ...TANIMSIZ gerekçe ayrı mesaj veriyor",
+    /itirazGerekcesiTanimsiz/.test(gerekceBlok),
+  );
+  kontrol(
+    "  ...kabul kümesi ORTAK yüklemden (elle liste değil)",
+    /gecerliItirazGerekcesi\(secim\)/.test(gerekceBlok) &&
+      !/"[A-Z][A-Z0-9_]{4,}"/.test(gerekceBlok),
+  );
+  /**
+   * ⚠ VARLIK DEĞİL, YOKLUK ARANIR — MUTASYONLA ÖĞRENİLDİ.
+   *
+   * İlk hâli yalnız `if (secim) {` bloğunun VARLIĞINA bakıyordu. Analiz
+   * sonucunu ZORUNLU yapan bir mutasyon o bloğu koruyup ÖNÜNE bir erken
+   * dönüş ekledi ve kontrol YEŞİL KALDI. Zorunlu tutulsaydı, süresi dolmak
+   * üzere olan bir kaydı kapatamayan kullanıcı sistemi bırakıp pazaryeri
+   * panelinden işini görürdü — ve biz onu hiç öğrenemezdik.
+   */
+  const analizBlok = eylemK4.slice(
+    eylemK4.indexOf("if (analizSonucuIstenirMi(bildirim.status))"),
+    eylemK4.indexOf("── SON TARİH TÜRETMESİ"),
+  );
+  kontrol("analiz bloğu kesilebildi", analizBlok.length > 0);
+  kontrol(
+    "  ...boş seçim SESSİZCE geçiliyor (blok var)",
+    /if \(secim\) \{/.test(analizBlok),
+  );
+  kontrol(
+    "  ...ve boş seçimi REDDEDEN bir dal YOK (zorunlu değil)",
+    !/!secim/.test(analizBlok),
+  );
+
+  /** Seçilen değer gerçekten YAZILIYOR mu — kural doğru ama yazılmıyorsa boş. */
+  kontrol(
+    "seçim kayda yazılıyor",
+    /\.\.\.yazilacakEk,/.test(eylemK4) &&
+      /yazilacakEk\.itirazGerekcesi = secim/.test(eylemK4),
+  );
+
+  // ── EKRAN ────────────────────────────────────────────────────────────
+  const durumEkrani = readFileSync("src/app/iadeler/bildirim-durumu.tsx", "utf8");
+  const ekranKod = durumEkrani
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol(
+    "diyalogda ret gerekçesi seçimi VAR",
+    /itirazGerekcesiGerekliMi\(s\.hedef\) \? \(/.test(ekranKod),
+  );
+  kontrol(
+    "  ...ve gerekçe seçilmeden onay düğmesi basılamıyor",
+    /itirazGerekcesiGerekliMi\(s\.hedef\) && gerekce === ""/.test(ekranKod),
+  );
+  kontrol(
+    "diyalogda analiz sonucu seçimi VAR",
+    /\{analizSorulur \? \(/.test(ekranKod),
+  );
+  /**
+   * ⚠ EKRAN VE SUNUCU AYNI KURALI ÇAĞIRIYOR. İki yerde iki ölçüt olsaydı
+   * ekran sormadan gönderir, sunucu sessizce reddederdi — kullanıcı
+   * "kaydetmiyor" der ve sebebi hiçbir yerde görünmezdi.
+   */
+  kontrol(
+    "ekran kuralı SAF MODÜLDEN çağırıyor (kopya kural yok)",
+    /from "@\/lib\/iade\/bildirim"/.test(ekranKod) &&
+      !/hedef === "ITIRAZ_ACILDI"/.test(ekranKod),
+  );
+
+  /**
+   * ⚠ YAZILIP GÖRÜNMEYEN ALAN, YAZILMAMIŞ GİBİDİR. Bu iki sütun tam da
+   * "kaydediliyor ama hiçbir yerde okunmuyor" durumundaydı.
+   */
+  const listeEkrani = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  kontrol(
+    "seçilen gerekçe LİSTEDE görünüyor",
+    /itirazGerekcesiRozet/.test(listeEkrani) &&
+      /itirazGerekcesi: true/.test(listeEkrani),
+  );
+  kontrol(
+    "  ...analiz sonucu da görünüyor",
+    /analizSonucuRozet/.test(listeEkrani) && /analizSonucu: true/.test(listeEkrani),
+  );
+
+  kosanBolumler.push("ret-gerekcesi-ve-analiz");
 }
 
 if (kosanBolumler.length !== BOLUM_SAYISI) {

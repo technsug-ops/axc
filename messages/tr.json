@@ -2381,7 +2381,18 @@
     "panelTarihi": "Pazaryerinin yazdığı tarih",
     "panelTarihiAciklama": "Pazaryeri panelinde yazan tarihi girersen bizim hesabımızı EZER — onların beyanı üsttedir.",
     "panelTarihiKaydet": "Tarihi yaz",
-    "turetilmisNot": "Bu tarih hesaplandı, pazaryeri beyanı değil."
+    "turetilmisNot": "Bu tarih hesaplandı, pazaryeri beyanı değil.",
+    "itirazGerekcesiBaslik": "Ret gerekçesi",
+    "itirazGerekcesiAciklama": "Pazaryerinde hangi gerekçeyi seçtiysen onu işaretle. Delilleri (paketleme videosu, görseller) pazaryeri panelinden yüklüyorsun; sistem gerekçeyi kayda geçiyor.",
+    "itirazGerekcesiSec": "Gerekçe seçin",
+    "itirazGerekcesiZorunlu": "Ret gerekçesi seçilmeli.",
+    "itirazGerekcesiTanimsiz": "Bu gerekçe sistemde tanımlı değil.",
+    "analizSonucuBaslik": "Analiz sonucu",
+    "analizSonucuAciklama": "Servis işlemi bittiyse sonucu işaretle. Bilmiyorsan boş bırak — sonra da yazılabilir.",
+    "analizSonucuSec": "Sonuç seçin",
+    "analizSonucuTanimsiz": "Bu analiz sonucu sistemde tanımlı değil.",
+    "itirazGerekcesiRozet": "Ret gerekçesi: {gerekce}",
+    "analizSonucuRozet": "Analiz: {sonuc}"
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",
@@ -3031,5 +3042,20 @@
     "paketlendiIsareti": "Hazırlanıyor",
     "paketlemeGeriAl": "Geri al",
     "paketlemeOlmadi": "İşaretlenemedi; sipariş bulunamadı."
+  },
+  "ItirazGerekcesi": {
+    "KULLANILMIS": "Müşteriden gelen ürün kullanılmış",
+    "IADE_YANLIS": "Müşteriden gelen iade yanlış",
+    "HIJYEN": "Müşteriden gelen ürün hijyen ürünü",
+    "ANALIZ_TALEBI": "İadeyi analize alacağım",
+    "DEGISIM": "Değişim yapacağım",
+    "HASARLI": "Müşteriden gelen ürün hasarlı",
+    "EKSIK": "Müşteriden gelen ürün eksik",
+    "KUSURSUZ_GONDERILDI": "Siparişi kusurlu göndermedim"
+  },
+  "AnalizSonucu": {
+    "TAMIR_EDILDI": "Ürün tamir edildi",
+    "DEGISIM_YAPILDI": "Ürün değişim yapıldı",
+    "SORUN_BULUNAMADI": "Üründe sorun bulunamadı"
   }
 }
