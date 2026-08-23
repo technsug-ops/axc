@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
-import { gunMetninden } from "@/lib/donem";
+import { gunDegeri, gunEkle, gunMetninden, isTakvimGunu } from "@/lib/donem";
+import {
+  DURUM_SAYACI,
+  SAYAC_KURALLARI,
+  SON_TARIH_EYLEMI,
+} from "@/lib/iade/sayac";
 import { gecerliIadeGerekcesi } from "@/lib/etiketler";
 import {
   AYRILMIS_SAYILAN_DURUMLAR,
@@ -234,6 +239,14 @@ export async function bildirimOlustur(
 export async function bildirimDurumuGuncelle(
   bildirimId: string,
   hedef: NoticeStatus,
+  /**
+   * ÇIPA TARİHİ — YALNIZ ÇIPASI BİZDE DOĞMAYAN SAYAÇ İÇİN (`ELLE_GIRILIR`).
+   *
+   * Kargoya veren MÜŞTERİDİR; biz bir düğmeye basmıyoruz, dolayısıyla
+   * "geçiş anı" o olayın anı değildir. Boş bırakılırsa sayaç BOŞ durur ve
+   * ekranda _"çıpa girilmedi"_ yazar — uydurulmaz (mimar şartı ③).
+   */
+  cipaTarihi?: string,
 ): Promise<{ hata?: string }> {
   await yetkiIste("iade.yaz");
   const t = await getTranslations("Bildirim2");
@@ -261,13 +274,238 @@ export async function bildirimDurumuGuncelle(
    * konu kapandı" diyebilir; ama iade işlemek isterse "İadeyi işle" düğmesi
    * onu iade formuna götürür.
    */
+  /**
+   * ── SON TARİH TÜRETMESİ (K31 ①) ────────────────────────────────────────
+   *
+   * Hedef durumun sayacı varsa ve o sayaç bir sütunda yaşıyorsa, son tarih
+   * BURADA hesaplanır. Sistemin kaydettiği bir "olay anı" olmadığı için
+   * çıpa ya geçiş anıdır ya elle girilen tarihtir.
+   *
+   * ⚠ ÖTEKİ SÜTUN TEMİZLENMEZ. Okuma `status`e göre yapılıyor
+   * (`isleyenSayac`), yani aktif olmayan sütun hiç okunmaz. Silmek ise
+   * pazaryerinin beyan ettiği bir tarihi yok etmek olabilirdi — ve o beyan
+   * bizim hesabımızdan ÜSTÜNDÜR.
+   */
+  const turetme = sonTarihTuret(hedef, cipaTarihi);
+  if (turetme?.hata) return { hata: t(turetme.hata) };
+
   await prisma.returnNotice.update({
     where: { id: bildirimId },
-    data: { status: hedef },
+    data: {
+      status: hedef,
+      ...(turetme?.yazilacak ?? {}),
+    },
   });
+
+  /**
+   * ⚠ TÜRETMENİN İZİ BIRAKILIR (mimar şartı ②). Ekranda duran tarih bir
+   * OLGU değil bir HESAPTIR; üç ay sonra "bu tarih nereden çıktı" sorusunun
+   * cevabı olmalı. Hangi geçişte, hangi kuralla, hangi andan hesaplandığı
+   * yazılıyor — ve `kaynak: "TURETME"`, çünkü pazaryeri beyanı geldiğinde
+   * o beyan bunu ezecek ve ikisi izde ayırt edilebilmeli.
+   */
+  if (turetme?.iz) {
+    try {
+      const kullanici = await oturumdakiKullanici();
+      await prisma.auditLog.create({
+        data: {
+          userId: kullanici?.id ?? null,
+          action: SON_TARIH_EYLEMI,
+          targetType: "ReturnNotice",
+          targetId: bildirimId,
+          detail: JSON.stringify(turetme.iz),
+        },
+      });
+    } catch (e) {
+      /* İz tutulamadıysa geçiş yine geçerlidir; sayaç ekranda doğru durur. */
+      console.error("[iade] son tarih izi yazılamadı:", e);
+    }
+  }
 
   revalidatePath("/iadeler");
   revalidatePath("/stok");
   revalidatePath(`/satislar/${bildirim.saleId}`);
+  revalidatePath("/");
+  return {};
+}
+
+type Turetme = {
+  yazilacak?: Record<string, Date | null>;
+  iz?: Record<string, string | number | null>;
+  hata?: string;
+};
+
+/**
+ * HEDEF DURUMUN SAYACINDAN SON TARİH ÜRETİR.
+ *
+ * ⚠ SAF DEĞİL AMA KURALSIZ DA DEĞİL: kuralların hepsi `lib/iade/sayac.ts`ten
+ * geliyor. Gün sayısı, çıpa türü ve sütun adı buraya KOPYALANMIYOR — iki
+ * yerde iki kural olsaydı biri sessizce eskirdi.
+ */
+function sonTarihTuret(hedef: NoticeStatus, cipaTarihi?: string): Turetme | null {
+  const tur = DURUM_SAYACI[hedef];
+  if (!tur) return null;
+
+  const kural = SAYAC_KURALLARI[tur];
+  /* Ölçülmemiş ya da saklanmayan sayaç: yazacak bir şey yok. */
+  if (kural.gun === null || kural.sutun === null) return null;
+
+  if (kural.cipa === "ELLE_GIRILIR") {
+    /**
+     * ⚠ BOŞ BIRAKMAK GEÇERLİ BİR CEVAPTIR. Kargoya veriliş tarihi bizde
+     * doğmuyor; bilinmiyorsa sayaç boş durur. Geçişi engellemek, bilmediği
+     * bir tarihi uydurmaya zorlardı.
+     */
+    if (!cipaTarihi?.trim()) return null;
+    const cipa = gunMetninden(cipaTarihi);
+    if (!cipa) return { hata: "cipaTarihiGecersiz" };
+    const sonTarih = gunEkle(cipa, kural.gun);
+    return {
+      yazilacak: { [kural.sutun]: sonTarih },
+      iz: {
+        kaynak: "TURETME",
+        hedefDurum: hedef,
+        sayac: tur,
+        kural: `elle girilen çıpa + ${kural.gun} gün`,
+        cipa: cipa.toISOString(),
+        sonTarih: sonTarih.toISOString(),
+      },
+    };
+  }
+
+  if (kural.cipa === "GECIS_ANI") {
+    const cipa = gunDegeri(isTakvimGunu(new Date()));
+    const sonTarih = gunEkle(cipa, kural.gun);
+    return {
+      yazilacak: { [kural.sutun]: sonTarih },
+      iz: {
+        kaynak: "TURETME",
+        hedefDurum: hedef,
+        sayac: tur,
+        kural: `geçiş anı + ${kural.gun} gün`,
+        cipa: cipa.toISOString(),
+        sonTarih: sonTarih.toISOString(),
+      },
+    };
+  }
+
+  return null;
+}
+
+/**
+ * ÇIPA GİRİŞİ — SİSTEM KURALI UYGULAR, TARİHİ KULLANICI VERİR.
+ *
+ * Yalnız çıpası bizde doğmayan sayaç için (`ELLE_GIRILIR`): kargoya veren
+ * müşteridir, biz o anı bilmiyoruz. Kullanıcı tarihi girer, kuralı
+ * (`+10 gün`) SİSTEM uygular — böylece hesap tek yerde kalır ve kullanıcı
+ * kafadan gün saymaz.
+ *
+ * ⚠ AKTİF SAYAÇTAN OKUNUR, PARAMETREYLE GELMEZ. Hangi kuralın uygulanacağı
+ * bildirimin O ANKİ durumundan çözülüyor; istemciden "kaç gün ekle" bilgisi
+ * gelseydi, elle kurulmuş bir istek kuralı istediği gibi eğebilirdi.
+ */
+export async function bildirimCipasiYaz(
+  bildirimId: string,
+  tarihMetni: string,
+): Promise<{ hata?: string }> {
+  await yetkiIste("iade.yaz");
+  const t = await getTranslations("Bildirim2");
+
+  const bildirim = await prisma.returnNotice.findUnique({
+    where: { id: bildirimId },
+    select: { id: true, status: true, saleId: true },
+  });
+  if (!bildirim) return { hata: t("bulunamadi") };
+
+  const turetme = sonTarihTuret(bildirim.status, tarihMetni);
+  if (turetme?.hata) return { hata: t(turetme.hata) };
+  if (!turetme?.yazilacak) return { hata: t("cipaTarihiGecersiz") };
+
+  await prisma.returnNotice.update({
+    where: { id: bildirimId },
+    data: turetme.yazilacak,
+  });
+
+  try {
+    const kullanici = await oturumdakiKullanici();
+    await prisma.auditLog.create({
+      data: {
+        userId: kullanici?.id ?? null,
+        action: SON_TARIH_EYLEMI,
+        targetType: "ReturnNotice",
+        targetId: bildirimId,
+        detail: JSON.stringify(turetme.iz ?? {}),
+      },
+    });
+  } catch (e) {
+    console.error("[iade] çıpa izi yazılamadı:", e);
+  }
+
+  revalidatePath("/iadeler");
+  revalidatePath(`/satislar/${bildirim.saleId}`);
+  revalidatePath("/");
+  return {};
+}
+
+/**
+ * ============================================================================
+ *  PAZARYERİ BEYANI — TÜRETMEYİ EZER
+ * ----------------------------------------------------------------------------
+ *  Mimar şartı ②: _"Panel ile ayrışırsa KAZANAN PANEL."_ Ve bu, anayasanın
+ *  kaynak önceliği kuralının aynısı: kanalın kendi belgesi bizim hesabımızın
+ *  ÜSTÜNDEDİR. Trendyol ekranda "Otomatik Onaya Kalan Süre: 19 gün" yazıyorsa
+ *  o tarih geçerlidir — bizim `+10 gün` hesabımız değil.
+ *
+ *  ⚠ ESKİ İZ SİLİNMEZ, YENİSİ YAZILIR. Bir tarihin önce türetilip sonra
+ *  panelden düzeltilmiş olması KENDİ BAŞINA bilgidir: kuralımızın ne kadar
+ *  tuttuğunu ancak ikisi de dururken ölçebiliriz.
+ * ============================================================================
+ */
+export async function bildirimSonTarihiYaz(
+  bildirimId: string,
+  sutun: "otomatikOnayTarihi" | "islemSonTarihi",
+  tarihMetni: string,
+): Promise<{ hata?: string }> {
+  await yetkiIste("iade.yaz");
+  const t = await getTranslations("Bildirim2");
+
+  const bildirim = await prisma.returnNotice.findUnique({
+    where: { id: bildirimId },
+    select: { id: true, saleId: true },
+  });
+  if (!bildirim) return { hata: t("bulunamadi") };
+
+  /* Boş gönderim = tarihi KALDIR. Yanlış girilen bir tarih silinebilmeli. */
+  const temiz = tarihMetni.trim();
+  const tarih = temiz === "" ? null : gunMetninden(temiz);
+  if (temiz !== "" && !tarih) return { hata: t("cipaTarihiGecersiz") };
+
+  await prisma.returnNotice.update({
+    where: { id: bildirimId },
+    data: { [sutun]: tarih },
+  });
+
+  try {
+    const kullanici = await oturumdakiKullanici();
+    await prisma.auditLog.create({
+      data: {
+        userId: kullanici?.id ?? null,
+        action: SON_TARIH_EYLEMI,
+        targetType: "ReturnNotice",
+        targetId: bildirimId,
+        detail: JSON.stringify({
+          kaynak: "PANEL",
+          sutun,
+          sonTarih: tarih ? tarih.toISOString() : null,
+        }),
+      },
+    });
+  } catch (e) {
+    console.error("[iade] panel tarihi izi yazılamadı:", e);
+  }
+
+  revalidatePath("/iadeler");
+  revalidatePath(`/satislar/${bildirim.saleId}`);
+  revalidatePath("/");
   return {};
 }

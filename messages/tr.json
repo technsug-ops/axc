@@ -2360,7 +2360,28 @@
     "satisIpucu": "Sipariş numarasıyla arayın. Pazaryeri talep no (ör. nbkhuj) burada değil, aşağıdaki \"Pazaryeri talep no\" alanına yazılır.",
     "satisPencereIpucu": "Sipariş numarasıyla arayın (ör. 11504122276). Ürün SKU'su veya talep no değil.",
     "iadeIsleSebepAnaliz": "Ürün serviste; analiz sonuçlanmadan iade işlenmez.",
-    "iadeIsleSebepAskida": "İade akıştan çıkmış (askıda); önce durumu düzelmelidir."
+    "iadeIsleSebepAskida": "İade akıştan çıkmış (askıda); önce durumu düzelmelidir.",
+    "cipaTarihiGecersiz": "Tarih okunamadı.",
+    "sonTarihBaslik": "Son tarih",
+    "sayacMUSTERI_KARGOYA_VERSIN": "Müşteri kargoya versin",
+    "sayacKARGO_ULASSIN": "Kargo bize ulaşsın",
+    "sayacONAY_RED_KARARI": "Onay/red kararı",
+    "sayacANALIZ": "Analiz",
+    "sayacGERI_GONDERIM": "Geri gönderim",
+    "sonucIPTAL": "dolarsa iade iptal olur",
+    "sonucOTOMATIK_ONAY": "dolarsa OTOMATİK ONAYLANIR",
+    "sonucBILINMIYOR": "süre ölçülmedi",
+    "kalanGun": "{gun} gün kaldı",
+    "gecti": "{gun} gün GEÇTİ",
+    "bugunDoluyor": "bugün doluyor",
+    "bosOLCULMEDI": "Geri gönderim bekliyor — süre ölçülmedi",
+    "bosCIPA_GIRILMEDI": "Çıpa girilmedi — kargoya veriliş tarihi bilinmiyor",
+    "cipaGir": "Kargoya veriliş tarihi",
+    "cipaGirAciklama": "Müşteri kargoya ne zaman verdi? Bilinmiyorsa boş bırak — sayaç boş kalır, tarih uydurulmaz.",
+    "panelTarihi": "Pazaryerinin yazdığı tarih",
+    "panelTarihiAciklama": "Pazaryeri panelinde yazan tarihi girersen bizim hesabımızı EZER — onların beyanı üsttedir.",
+    "panelTarihiKaydet": "Tarihi yaz",
+    "turetilmisNot": "Bu tarih hesaplandı, pazaryeri beyanı değil."
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",
@@ -2538,7 +2559,9 @@
     "grup_notr": "Bilgi — rozete girmez",
     "baslik_zararinaSatis": "{sayi} satış kalemi zararına kapandı",
     "eylem_zararinaSatis": "NET-2 eksi — fiyat, maliyet ya da komisyon oranını kontrol et",
-    "izDogumu": "Doğrulama izi {tarih} tarihinde açıldı — ondan öncesi için “doğrulanmadı” hüküm değildir."
+    "izDogumu": "Doğrulama izi {tarih} tarihinde açıldı — ondan öncesi için “doğrulanmadı” hüküm değildir.",
+    "baslik_iadeSayaciDoluyor": "{sayi} iade bildiriminde süre doluyor",
+    "eylem_iadeSayaciDoluyor": "Süre dolarsa pazaryeri OTOMATİK ONAYLAR — iade ciroya işler, itiraz hakkı biter"
   },
   "Talep": {
     "bildirEtiketi": "Hata veya istek bildir",

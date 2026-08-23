@@ -10,6 +10,7 @@ import { izinVarMi } from "@/lib/yetki";
 import { kanalKodsuzStokluVaryantlar, supheliVeriBulgusu } from "./faz2-veri";
 import { izneGoreSuz, nakitAcigiOlcumu, uyarilariKur } from "./kurallar";
 import { maliyetsizVaryantlar } from "./maliyetsiz-stok";
+import { iadeSayaciOlcumu } from "./iade-sayaci";
 import { yedekOlcumu } from "./yedek";
 import type { Uyari } from "./turler";
 
@@ -189,7 +190,15 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
     bugun,
   );
 
+  /**
+   * İADE SAYAÇLARI — ekranla AYNI gövdeden (bkz. uyari/iade-sayaci.ts).
+   * `bugun` buraya zaten iş takvimi günü olarak geliyor; sonda ile ekran
+   * arasında parametre farkı doğamaz.
+   */
+  const iadeSayaci = await iadeSayaciOlcumu(bugun);
+
   const uyarilar = uyarilariKur({
+    iadeSayaciDoluyor: iadeSayaci,
     nakitAcigi: nakitAcigiOlcumu(takvim.netPozisyon),
     yedekEski: yedek.yedekEski,
     yedekYok: yedek.yedekYok,

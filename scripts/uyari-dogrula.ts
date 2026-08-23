@@ -79,6 +79,7 @@ const bos: UyariOlcumleri = {
   kanalKodsuzStok: { sayi: 0 },
   hakedisBaglanmamis: { sayi: 0 },
   zararinaSatis: { sayi: 0 },
+  iadeSayaciDoluyor: { sayi: 0 },
 };
 
 const parti = (kalanAdet: number, birimMaliyet: string | null): Parti => ({
@@ -120,6 +121,7 @@ console.log("=".repeat(70));
       kanalKodsuzStok: { sayi: 0 },
   hakedisBaglanmamis: { sayi: 0 },
   zararinaSatis: { sayi: 0 },
+  iadeSayaciDoluyor: { sayi: 0 },
   });
   kontrol("beş ölçüm → beş uyarı", dolu.length === 5, dolu.length);
   kontrol("hepsi FAZ 1'de kırmızı", dolu.every((u) => u.seviye === "kirmizi"));
@@ -287,6 +289,7 @@ console.log("=".repeat(70));
       kanalKodsuzStok: { sayi: 0 },
   hakedisBaglanmamis: { sayi: 0 },
   zararinaSatis: { sayi: 0 },
+  iadeSayaciDoluyor: { sayi: 0 },
     cevapsizTalep: { sayi: 0 },
   });
   const kisitli = izneGoreSuz(hepsi, () => false);

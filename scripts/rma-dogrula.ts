@@ -19,6 +19,17 @@ import { readFileSync } from "node:fs";
 
 import { BILDIRIM_DURUM_RENGI } from "../src/lib/durum-renkleri";
 import {
+  DURUM_SAYACI,
+  SAYAC_KURALLARI,
+  SAYAC_TURLERI,
+  acilEsigi,
+  acilMi,
+  isleyenSayac,
+  sayacRengi,
+} from "../src/lib/iade/sayac";
+
+import {
+  BILDIRIM_DURUMLARI,
   IADE_GEREKCELERI,
   gecerliIadeGerekcesi,
 } from "../src/lib/etiketler";
@@ -66,7 +77,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 11;
+const BOLUM_SAYISI = 12;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1960,6 +1971,270 @@ console.log("\n11) FORMUN SUNDUĞU GEREKÇE = SUNUCUNUN KABUL ETTİĞİ GEREKÇE
   );
 
   kosanBolumler.push("gerekce-kapisi");
+}
+
+// ===========================================================================
+console.log("\n12) SON TARİH SAYAÇLARI (K31 ①)");
+// ===========================================================================
+/**
+ * Süresi dolan bir iade bildirimi pazaryeri tarafından OTOMATİK ONAYLANIR:
+ * tutar ciromuzdan düşer ve itiraz hakkı biter. Yani bu sayaçlar bir
+ * "hatırlatma" değil, PARA KORUMASIDIR.
+ *
+ * ⚠ YAZILAN HER TARİH TÜRETMEDİR, ÇIPA DEĞİL (mimar kararı 23.08.2026).
+ * Sistemin kaydettiği bir olay anı yok; geçiş anından kural uygulanıyor ve
+ * K31 migration'ında açılıp ÖLÜ DURAN iki sütuna yazılıyor (ölçüldü:
+ * değişiklikten önce sıfır okuyucu, sıfır yazıcı).
+ */
+{
+  const gun = (yil: number, ay: number, g: number) => new Date(Date.UTC(yil, ay - 1, g));
+  const temel = {
+    noticedAt: gun(2026, 8, 1),
+    otomatikOnayTarihi: null,
+    islemSonTarihi: null,
+  };
+
+  /**
+   * ⚠ EXHAUSTIVE EŞLEME. Şemaya on ikinci bir durum eklenip sayacı
+   * yazılmazsa TypeScript zaten derlemez; burada gevşetilmediği görülüyor
+   * (biri `Partial<>` yazarsa kilit sessizce düşerdi).
+   */
+  const eslenmeyen = BILDIRIM_DURUMLARI.filter((d) => !(d in DURUM_SAYACI));
+  kontrol(
+    `${BILDIRIM_DURUMLARI.length} durumun hepsi sayaç eşlemesinde`,
+    eslenmeyen.length === 0,
+    eslenmeyen,
+  );
+
+  /** Beş sayaç: dördü ölçüldü, biri ÖLÇÜLMEDİ. */
+  const olculen = SAYAC_TURLERI.filter((t) => SAYAC_KURALLARI[t].gun !== null);
+  kontrol("dört sayaç ölçüldü", olculen.length === 4, olculen);
+  kontrol(
+    "geri gönderim ÖLÇÜLMEDİ (gün yok)",
+    SAYAC_KURALLARI.GERI_GONDERIM.gun === null,
+  );
+  /**
+   * ⚠ VE ÖLÇÜLMEMİŞ SAYAÇ TARİH SAKLAYAMAZ. Sütunu olsaydı biri oraya bir
+   * tarih yazabilir ve ekranda ölçülmüş gibi görünürdü — mimar şartı: yanlış
+   * çıpadan hesaplanan son tarih, hiç göstermemekten KÖTÜDÜR.
+   */
+  kontrol(
+    "  ...ve sütunu YOK (yanlışlıkla tarih yazılamaz)",
+    SAYAC_KURALLARI.GERI_GONDERIM.sutun === null,
+  );
+
+  /** Ölçülmüş gün sayıları — kaynak: docs/iade-sureci.md. */
+  kontrol("müşteri kargoya versin = 7 gün", SAYAC_KURALLARI.MUSTERI_KARGOYA_VERSIN.gun === 7);
+  kontrol("kargo bize ulaşsın = 10 gün", SAYAC_KURALLARI.KARGO_ULASSIN.gun === 10);
+  kontrol("onay/red kararı = 2 gün", SAYAC_KURALLARI.ONAY_RED_KARARI.gun === 2);
+  kontrol("analiz = 28 gün", SAYAC_KURALLARI.ANALIZ.gun === 28);
+
+  /**
+   * ⚠ SONUÇ YAZILI OLMALI. "3 gün kaldı" tek başına bir uyarı değildir:
+   * süre dolunca İADE İPTAL OLMASI (lehimize) ile OTOMATİK ONAYLANMASI
+   * (para kaybı) bambaşka iki şeydir ve aynı tepkiyi gerektirmez.
+   */
+  kontrol(
+    "müşteri sayacı dolunca iade İPTAL olur (lehimize)",
+    SAYAC_KURALLARI.MUSTERI_KARGOYA_VERSIN.sonuc === "IPTAL",
+  );
+  kontrol(
+    "ötekiler dolunca OTOMATİK ONAY (para kaybı)",
+    (["KARGO_ULASSIN", "ONAY_RED_KARARI", "ANALIZ"] as const).every(
+      (t) => SAYAC_KURALLARI[t].sonuc === "OTOMATIK_ONAY",
+    ),
+  );
+
+  /**
+   * ⚠ ÇIPASI KAYITTA OLAN SAYAÇ SAKLANMAZ, HESAPLANIR. `noticedAt` zaten
+   * kayıtta; son tarihi ayrıca yazmak aynı gerçeği iki yere koymak olurdu ve
+   * biri gün gelip ötekinden ayrışırdı.
+   */
+  kontrol(
+    "bildirim tarihinden gelen sayaç SAKLANMIYOR",
+    SAYAC_KURALLARI.MUSTERI_KARGOYA_VERSIN.sutun === null &&
+      SAYAC_KURALLARI.MUSTERI_KARGOYA_VERSIN.cipa === "BILDIRIM_TARIHI",
+  );
+  /**
+   * ⚠ ÇIPASI BİZDE DOĞMAYAN SAYAÇ ELLE GİRİLİR. Kargoya veren MÜŞTERİDİR;
+   * "geçiş anı" o olayın anı değildir ve geçiş anından hesaplamak sessizce
+   * yanlış bir son tarih üretirdi.
+   */
+  kontrol(
+    "kargo sayacının çıpası ELLE giriliyor (bizde doğmuyor)",
+    SAYAC_KURALLARI.KARGO_ULASSIN.cipa === "ELLE_GIRILIR",
+  );
+
+  // ── İŞLEYEN SAYAÇ ────────────────────────────────────────────────────
+  const bekleyen = isleyenSayac({ ...temel, status: "BEKLENIYOR" }, gun(2026, 8, 1));
+  kontrol(
+    "BEKLENIYOR → müşteri sayacı, 01.08 + 7 = 08.08",
+    bekleyen?.sonTarih?.toISOString().slice(0, 10) === "2026-08-08",
+    bekleyen?.sonTarih?.toISOString(),
+  );
+  kontrol("  ...kalan 7 gün", bekleyen?.kalanGun === 7);
+
+  /**
+   * ⚠ ÇIPA GİRİLMEMİŞSE TARİH UYDURULMAZ — ve boşluğun SEBEBİ yazılır.
+   * "Tarih yok" iki apayrı şey olabilir: kural ÖLÇÜLMEDİ ya da veri EKSİK.
+   * Tek kefeye konsaydı ikisi de düzeltilmezdi.
+   */
+  const cipasiz = isleyenSayac({ ...temel, status: "KARGOYA_VERILDI" }, gun(2026, 8, 1));
+  kontrol(
+    "KARGOYA_VERILDI + çıpa yok → tarih YOK, sebep CIPA_GIRILMEDI",
+    cipasiz?.sonTarih === null && cipasiz?.bosluk === "CIPA_GIRILMEDI",
+    cipasiz,
+  );
+  const cipali = isleyenSayac(
+    { ...temel, status: "KARGOYA_VERILDI", otomatikOnayTarihi: gun(2026, 8, 20) },
+    gun(2026, 8, 1),
+  );
+  kontrol(
+    "  ...çıpa girilince sütundan okunuyor",
+    cipali?.sonTarih?.toISOString().slice(0, 10) === "2026-08-20" &&
+      cipali?.bosluk === null,
+  );
+
+  const geri = isleyenSayac({ ...temel, status: "ITIRAZ_KABUL" }, gun(2026, 8, 1));
+  kontrol(
+    "ITIRAZ_KABUL → satır VAR, tarih YOK, sebep OLCULMEDI",
+    geri !== null && geri.sonTarih === null && geri.bosluk === "OLCULMEDI",
+    geri,
+  );
+
+  /**
+   * ⚠ AYRIMIN ÖTEKİ YAKASI: sayacı olmayan durumda `null` döner. "Saat
+   * işlemiyor" ile "süre bitti" aynı şey değildir; boş bir sayaç satırı
+   * ikincisi gibi okunurdu.
+   */
+  kontrol(
+    "KAPANDI → sayaç YOK (null)",
+    isleyenSayac({ ...temel, status: "KAPANDI" }, gun(2026, 8, 1)) === null,
+  );
+  kontrol(
+    "ASKIDA → sayaç YOK (süreç durdu, saat işletmek yanlış bilgi olur)",
+    isleyenSayac({ ...temel, status: "ASKIDA" }, gun(2026, 8, 1)) === null,
+  );
+
+  // ── EŞİK VE RENK ─────────────────────────────────────────────────────
+  /**
+   * ⚠ EŞİK SAYACIN KENDİ UZUNLUĞUNA BAĞLI ve bu bir SÖZLEŞME (ölçüm değil,
+   * öyle beyan ediliyor). Sabit gün seçilseydi: "3 gün kala uyar" kuralı
+   * 2 GÜNLÜK sayaçta HİÇ yanmaz, 28 günlükte ayın çeyreğinde yanardı.
+   */
+  kontrol("eşik 7 günlükte 2", acilEsigi(7) === 2);
+  kontrol("eşik 10 günlükte 3", acilEsigi(10) === 3);
+  kontrol("eşik 28 günlükte 7", acilEsigi(28) === 7);
+  kontrol("eşik 2 günlükte EN AZ 1 (çeyrek yarım gün ederdi)", acilEsigi(2) === 1);
+
+  const rahat = isleyenSayac({ ...temel, status: "BEKLENIYOR" }, gun(2026, 8, 1));
+  const yakin = isleyenSayac({ ...temel, status: "BEKLENIYOR" }, gun(2026, 8, 7));
+  const gecmis = isleyenSayac({ ...temel, status: "BEKLENIYOR" }, gun(2026, 8, 12));
+  kontrol("süre rahatken nötr", rahat !== null && sayacRengi(rahat) === "notr");
+  kontrol(
+    "  ...eşiğe girince ZARAR rengi",
+    yakin !== null && sayacRengi(yakin) === "olumsuz",
+  );
+  kontrol(
+    "  ...süre geçmişse de ZARAR",
+    gecmis !== null && sayacRengi(gecmis) === "olumsuz",
+  );
+
+  /**
+   * ⚠ BİLİNMEYEN ACİL SAYILMAZ — BU BÖLÜMÜN EN ÖNEMLİ SATIRI.
+   * Kalan süresi BİLİNMEYEN bir kaydı çana düşürmek, kullanıcıya
+   * cevaplayamayacağı bir uyarı vermektir; okunmayan uyarı rozetin
+   * tamamına olan güveni götürür.
+   */
+  kontrol("ölçülmemiş sayaç ACİL DEĞİL", geri !== null && !acilMi(geri));
+  kontrol("  ...çıpasız sayaç da ACİL DEĞİL", cipasiz !== null && !acilMi(cipasiz));
+  kontrol("  ...ama ölçülmüş ve yakın olan ACİL", yakin !== null && acilMi(yakin));
+
+  /**
+   * ⚠ SAAT DİLİMİ. `noticedAt` bir ANDIR; İstanbul'da 2 Ağustos 00:30 olan
+   * bir an UTC'de 1 Ağustos 21:30'dur. Gün UTC'ye göre kesilseydi son tarih
+   * BİR GÜN ERKEN çıkar ve rakam makul göründüğü için fark edilmezdi.
+   */
+  const geceYarisi = isleyenSayac(
+    { ...temel, noticedAt: new Date("2026-08-01T21:30:00Z"), status: "BEKLENIYOR" },
+    gun(2026, 8, 1),
+  );
+  kontrol(
+    "gece yarısını geçen an İSTANBUL gününe göre çözülüyor",
+    geceYarisi?.sonTarih?.toISOString().slice(0, 10) === "2026-08-09",
+    geceYarisi?.sonTarih?.toISOString(),
+  );
+
+  // ── EKRAN VE ÇAN ─────────────────────────────────────────────────────
+  const rozet = readFileSync("src/app/iadeler/sayac-rozeti.tsx", "utf8");
+  const rozetKod = rozet
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol(
+    "ekran SONUCU da yazıyor (gün sayısı tek başına uyarı değil)",
+    /t\(`sonuc\$\{sayac\.sonuc\}`\)/.test(rozetKod),
+  );
+  kontrol(
+    "boş sayaç SEBEBİNİ yazıyor",
+    /t\(`bos\$\{sayac\.bosluk/.test(rozetKod),
+  );
+  kontrol(
+    "türetilmiş tarih türetme olduğunu SÖYLÜYOR",
+    /turetilmisNot/.test(rozetKod),
+  );
+  /** Panel beyanı türetmeyi ezebilmeli — yoksa "kazanan panel" kuralı sözde kalır. */
+  kontrol(
+    "pazaryeri tarihi elle yazılabiliyor (panel türetmeyi ezer)",
+    /bildirimSonTarihiYaz\(/.test(rozetKod),
+  );
+  kontrol(
+    "çıpa da elle girilebiliyor (kargoya veriliş)",
+    /bildirimCipasiYaz\(/.test(rozetKod),
+  );
+
+  /**
+   * ⚠ ÇAN VE EKRAN AYNI GÖVDEDEN GEÇER. Bu depoda tersi yaşandı: sonda
+   * `new Date()`, ekran iş takvimi günü kullanıyordu ve iki DOĞRU sayı
+   * (83 ↔ 67) çelişiyormuş gibi göründü.
+   */
+  const can = readFileSync("src/lib/uyari/iade-sayaci.ts", "utf8");
+  kontrol(
+    "panel çanı ekranla AYNI ölçütü çağırıyor",
+    /isleyenSayac\(/.test(can) && /acilMi\(/.test(can),
+  );
+  kontrol(
+    "  ...ve yalnız AÇIK bildirimlere bakıyor",
+    /ACIK_BILDIRIM_DURUMLARI/.test(can),
+  );
+
+  /**
+   * ⚠ ŞEMA DEĞİŞMEDİ. Karar: ölü duran iki sütun kullanılacak, yeni sütun
+   * açılmayacak (mimar şartı ①). Biri yarın çıpa sütunu eklerse burası
+   * kırmızı yanar ve karar yeniden konuşulur.
+   */
+  const semaMetni = readFileSync("prisma/schema.prisma", "utf8");
+  const bildirimModeli = semaMetni.slice(
+    semaMetni.indexOf("model ReturnNotice {"),
+    semaMetni.indexOf("model ReturnItem {"),
+  );
+  kontrol("bildirim modeli kesilebildi", bildirimModeli.length > 0);
+  kontrol(
+    "  ...sayaç için YENİ SÜTUN açılmadı",
+    !/kargoyaVerisTarihi|teslimTarihi|analizBaslangic/.test(bildirimModeli),
+  );
+
+  /** Türetmenin izi bırakılıyor mu — tarih bir OLGU değil bir HESAP. */
+  const eylemMetni = readFileSync("src/app/iadeler/bildirim-actions.ts", "utf8");
+  kontrol(
+    "türetme AuditLog'a iz bırakıyor",
+    /SON_TARIH_EYLEMI/.test(eylemMetni) && /kural: `geçiş anı \+ \$\{kural\.gun\} gün`/.test(eylemMetni),
+  );
+  kontrol(
+    "  ...izde kaynak TÜRETME mi PANEL mi ayırt ediliyor",
+    /kaynak: "TURETME"/.test(eylemMetni) && /kaynak: "PANEL"/.test(eylemMetni),
+  );
+
+  kosanBolumler.push("son-tarih-sayaclari");
 }
 
 if (kosanBolumler.length !== BOLUM_SAYISI) {

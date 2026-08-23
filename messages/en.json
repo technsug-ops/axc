@@ -2360,7 +2360,28 @@
     "satisIpucu": "",
     "satisPencereIpucu": "",
     "iadeIsleSebepAnaliz": "",
-    "iadeIsleSebepAskida": ""
+    "iadeIsleSebepAskida": "",
+    "cipaTarihiGecersiz": "",
+    "sonTarihBaslik": "",
+    "sayacMUSTERI_KARGOYA_VERSIN": "",
+    "sayacKARGO_ULASSIN": "",
+    "sayacONAY_RED_KARARI": "",
+    "sayacANALIZ": "",
+    "sayacGERI_GONDERIM": "",
+    "sonucIPTAL": "",
+    "sonucOTOMATIK_ONAY": "",
+    "sonucBILINMIYOR": "",
+    "kalanGun": "",
+    "gecti": "",
+    "bugunDoluyor": "",
+    "bosOLCULMEDI": "",
+    "bosCIPA_GIRILMEDI": "",
+    "cipaGir": "",
+    "cipaGirAciklama": "",
+    "panelTarihi": "",
+    "panelTarihiAciklama": "",
+    "panelTarihiKaydet": "",
+    "turetilmisNot": ""
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "",
@@ -2538,7 +2559,9 @@
     "grup_notr": "",
     "baslik_zararinaSatis": "",
     "eylem_zararinaSatis": "",
-    "izDogumu": ""
+    "izDogumu": "",
+    "baslik_iadeSayaciDoluyor": "",
+    "eylem_iadeSayaciDoluyor": ""
   },
   "Talep": {
     "bildirEtiketi": "",

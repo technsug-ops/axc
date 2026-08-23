@@ -68,6 +68,19 @@ export const UYARI_ANAHTARLARI = [
    */
   "veriSupheli",
   /**
+   * İADE SAYACI DOLMAK ÜZERE — K31 ① (23.08.2026).
+   *
+   * Bir iade bildiriminin süresi dolduğunda pazaryeri OTOMATİK ONAYLAR:
+   * iade ciromuzdan düşer ve itiraz hakkı biter. Yani bu, gecikmiş bir iş
+   * değil DOĞRUDAN PARA KAYBIDIR — ve tam da Faz 1'in "para riski" ölçütü.
+   *
+   * ⚠ YALNIZ ÖLÇÜLMÜŞ SAYAÇ ÇANA DÜŞER. Süresi ölçülmemiş (geri gönderim)
+   * ya da çıpası girilmemiş (kargoya veriliş) bir sayaç, kalan süresi
+   * BİLİNMEDİĞİ için acil sayılamaz. Bilinmeyeni acil ilan etmek, çanı
+   * cevaplanamayan bir uyarıyla doldurmak olurdu.
+   */
+  "iadeSayaciDoluyor",
+  /**
    * ⚠ `supheliOran` KALDIRILDI 20.08.2026 — ölçütü çürüdü.
    *
    * Uyarı "oran %3'ün altındaysa şüpheli" diyordu ve DÖRT DOĞRU KAYDI
@@ -142,6 +155,7 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
   yedekYok: "/ayarlar/disa-aktarma",
   /** Süzgeç eşiği `veri-supheli.ts`ten okunur — listede kopyalanmaz. */
   veriSupheli: "/satislar?veri=supheli",
+  iadeSayaciDoluyor: "/iadeler?sekme=bildirimler&durum=acik",
   /**
    * ⚠ `/kanal-sku?eksik=1` DEĞİL — o süzgeç "oranı eksik KOD" demek,
    * bizim uyarımız "kodu HİÇ OLMAYAN varyant". Oraya götürseydik sayı 2
@@ -183,6 +197,7 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   yedekEski: "kirmizi",
   yedekYok: "kirmizi",
   veriSupheli: "amber",
+  iadeSayaciDoluyor: "kirmizi",
   kanalKodsuzStok: "notr",
   /** Muafiyet beyanı — sorun değil, bilgi. Rozete girmez. */
   hakedisBaglanmamis: "notr",
@@ -210,6 +225,7 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   yedekYok: "veri.aktar",
   /** İkisi de NET/oran taşıyor — depocuya kâr bilgisi sızmaz. */
   veriSupheli: "satis.kar.gor",
+  iadeSayaciDoluyor: "iade.gor",
   /** Kanal kodu OPERASYONEL — içinde kâr yok, depocu görüp açabilir. */
   kanalKodsuzStok: null,
   hakedisBaglanmamis: "satis.kar.gor",

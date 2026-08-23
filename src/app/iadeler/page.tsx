@@ -55,7 +55,43 @@ import { BildirimFormu } from "./bildirim-formu";
 import { Ekler } from "./ekler";
 import { EK_SINIRLARI } from "@/lib/ekler";
 
+import { isleyenSayac, sayacRengi } from "@/lib/iade/sayac";
 import { BildirimDurumu } from "./bildirim-durumu";
+import { SayacRozeti, type SayacGorunumu } from "./sayac-rozeti";
+
+/**
+ * BİLDİRİMİ EKRANIN ANLAYACAĞI ŞEKLE ÇEVİRİR.
+ *
+ * ⚠ KURAL BURADA YAZILMAZ — `lib/iade/sayac.ts`ten gelir. Gün sayısı, çıpa
+ * türü ve sütun adı bu dosyaya KOPYALANMIYOR; iki yerde iki kural olsaydı
+ * biri sessizce eskirdi ve ekran, sunucunun yazdığından başka bir tarih
+ * gösterirdi.
+ */
+function sayacGorunumu(
+  b: {
+    id: string;
+    status: NoticeStatus;
+    noticedAt: Date;
+    otomatikOnayTarihi: Date | null;
+    islemSonTarihi: Date | null;
+  },
+  bugun: Date,
+): SayacGorunumu | null {
+  const durum = isleyenSayac(b, bugun);
+  if (!durum) return null;
+  return {
+    bildirimId: b.id,
+    tur: durum.tur,
+    sonuc: durum.kural.sonuc,
+    /* Sunucu bileşeninden istemciye geçen her şey düz veri olmalı. */
+    sonTarih: durum.sonTarih ? durum.sonTarih.toISOString() : null,
+    kalanGun: durum.kalanGun,
+    bosluk: durum.bosluk,
+    renk: sayacRengi(durum),
+    sutun: durum.kural.sutun,
+    cipaElle: durum.kural.cipa === "ELLE_GIRILIR",
+  };
+}
 import {
   iadeSatirVerisi,
   iadeToplamlari,
@@ -445,6 +481,9 @@ export default async function IadelerSayfasi({
       noticedAt: true,
       reason: true,
       status: true,
+      /* K31 ① — son tarih sayacı bu iki sütundan okunur. */
+      otomatikOnayTarihi: true,
+      islemSonTarihi: true,
       note: true,
       reservedQuantity: true,
       returnId: true,
@@ -465,6 +504,19 @@ export default async function IadelerSayfasi({
       },
     },
   });
+
+  /**
+   * SON TARİH SAYAÇLARI — TEK YERDE HESAPLANIR (K31 ①).
+   *
+   * ⚠ "ŞU AN" TEK KEZ ALINIR ve bütün satırlara aynı an verilir. Her satır
+   * kendi `new Date()`ini çağırsaydı, listenin başındaki ile sonundaki kayıt
+   * teorik olarak farklı güne düşebilirdi — ve gece yarısını geçen bir
+   * koşumda "1 gün kaldı" ile "bugün doluyor" aynı listede yan yana çıkardı.
+   */
+  const bugunAn = new Date();
+  const sayaclar = new Map<string, SayacGorunumu | null>(
+    bildirimKayitlari.map((b) => [b.id, sayacGorunumu(b, bugunAn)]),
+  );
 
   /**
    * BEKLEYEN SAYACI ARAMADAN BAĞIMSIZ. Eskiden ekrandaki 50 kaydın içinden
@@ -835,6 +887,16 @@ export default async function IadelerSayfasi({
                   <p className="text-muted-foreground text-xs">
                     {siradakiAdimlar[b.status]}
                   </p>
+
+                  {/*
+                    SON TARİH SAYACI (K31 ①). Her bildirimde AYNI ANDA TEK bir
+                    saat işler ve hangisi olduğunu durum söyler. Sayaç yoksa
+                    hiç çizilmez — "saat işlemiyor" ile "süre bitti" aynı şey
+                    değildir ve boş bir satır ikincisi gibi okunurdu.
+                  */}
+                  {sayaclar.get(b.id) ? (
+                    <SayacRozeti sayac={sayaclar.get(b.id)!} />
+                  ) : null}
 
                   <BildirimDurumu
                     bildirimId={b.id}
