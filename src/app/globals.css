@@ -17,6 +17,7 @@
    Bileşen kodunda hiçbir değişiklik gerekmez — aşağıdaki köprü sayesinde. */
 @import "../styles/selliora-kobalt.css";
 @import "../styles/selliora-gece.css";
+@import "../styles/selliora-kagit.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -288,7 +289,12 @@
    ══════════════════════════════════════════════════════════════════════ */
 :root,
 [data-tema="kobalt"],
-[data-tema="gece"] {
+[data-tema="gece"],
+/* ⚠ ÜÇÜNCÜ TEMA KÖPRÜYE DE YAZILIR (24.08.2026). Yalnız `--se-*` dosyasını
+   eklemek yetmez: shadcn token'ları bu seçiciden okuyor ve tema adı burada
+   yoksa uygulama VARSAYILAN (kobalt) yüzeylerle çizilir — kağıt paleti
+   yüklenir ama hiçbir yere bağlanmaz. */
+[data-tema="kagit"] {
     /* --- yüzeyler --- */
     --background: var(--se-zemin);
     --foreground: var(--se-ink);

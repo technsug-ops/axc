@@ -1,0 +1,130 @@
+/* ============================================================
+   SELLIORA · KAĞIT (üçüncü tema — sıcak nötr gündüz)
+   Sadece DEĞER tanımlar. Bileşenler selliora-bilesenler.css'te.
+   Kobalt ve Gece ile token ADLARI birebir aynıdır.
+   ------------------------------------------------------------
+   ⚠ NİYE ÜÇÜNCÜ TEMA, NİYE MEVCUT RENKLERİ DEĞİŞTİRME (24.08.2026):
+   Kullanıcı kartın temaya oturmasını istedi. İlk önerim `lib/renkler.ts`in
+   42 gömülü rengini token'a çevirmekti — 88 dosya, 276 kullanım yeri.
+   Kullanıcı daha iyisini önerdi: "başka bir tema olarak kaydedemez miyiz?"
+
+   ⚠ VE O ÖNERİ DURAN BİR KARARI DA KORUDU. `globals.css`te yazılı:
+   _"kullanıcı kararı 22.08.2026: durum renklerine değişiklik yapmana
+   gerek yok — o dosyaya DOKUNULMUYOR."_ İlk önerim tam onu geri
+   alıyordu ve bunu kontrol etmeden önermiştim.
+
+   ⚠ SEMANTİK TOKENLAR TEMALAR ARASI DEĞİŞİR — VE BU DOĞRU. Ölçüldü:
+   gece yeşili `#4FBF94`, kobalt yeşili `#0E7350`. Aynı ANLAM, farklı
+   zeminde okunur kalsın diye farklı DEĞER. "Her temada aynı hex" demek,
+   koyu zeminde okunmayan bir yeşil demekti.
+
+   ⚠ KARAKTER: kobalt mavi-kurumsal, gece koyu. Bu setin boşluğu SICAK
+   NÖTR gündüzdü. Gerekçe işlevsel, süs değil: yeşil kâr ve kırmızı zarar
+   mavi-gri zemine göre sıcak nötr zeminde daha net ayrışıyor — mavi
+   zemin yeşilin tonuna yakın düşüyor.
+   ============================================================ */
+
+[data-tema="kagit"] {
+  /* --- yüzey merdiveni (0 en koyu → 2 en açık) --- */
+  /**
+   * ⚠ ZEMİN–KART FARKI ÖLÇÜLDÜ, GÖZLE SEÇİLMEDİ. Kobalt'ta 23.08'de tam
+   * bu tuzağa düşülmüştü: kart ile sayfa farkı, tablodaki iki komşu
+   * satırın farkından ZAYIFTI ve kart "kart" gibi durmuyordu.
+   * Kağıt'ta aynı ölçü korunuyor (bkz. `tema:dogrula`).
+   */
+  --se-zemin:            #F2EEE6;   /* sayfa arka planı */
+  --se-kart:             #FFFDF8;   /* kart, panel, tablo gövdesi */
+  --se-kart-2:           #FFFDF8;   /* açılır menü, modal, ipucu */
+  --se-satir:            #F8F5EE;   /* zebra satır */
+  --se-baslik:           #F2EEE6;   /* tablo başlığı, bölüm şeridi */
+  --se-hover:            #F5F1E9;   /* satır üzerine gelme */
+  --se-secili:           #EFE8DB;   /* seçili satır */
+
+  /* --- kabuk: üst çubuk ve sol menü --- */
+  /**
+   * ⚠ KABUK KOYU KALIYOR. Telefonda temanın göründüğü tek yer üst çubuk
+   * (kullanıcı bulgusu 23.08.2026); açık kabuk, uygulamayı kimliksiz
+   * bırakırdı. Kobalt'ta lacivert olan burada koyu kahve.
+   */
+  --se-kabuk:            #3A2E24;
+  --se-kabuk-secili:     #4C3C2F;
+  --se-kabuk-hover:      #45362A;
+  --se-kabuk-ink:        #FFFDF8;
+  --se-kabuk-ink2:       #C7B7A2;
+  --se-kabuk-cizgi:      #55432F;
+
+  /* --- mürekkep --- */
+  --se-ink:              #221F1A;   /* birincil metin, sayılar */
+  --se-ink-2:            #6A6357;   /* etiket, ikincil metin */
+  --se-ink-3:            #9F9788;   /* yer tutucu, üst veri */
+  --se-ink-ters:         #FFFDF8;   /* koyu dolgu üzeri metin */
+
+  /* --- çizgiler --- */
+  --se-cizgi:            #E3DCD0;   /* varsayılan saç teli */
+  --se-cizgi-2:          #CEC5B6;   /* girdi çerçevesi, vurgulu ayraç */
+  --se-cizgi-3:          #B4A996;   /* üzerine gelme */
+
+  /* --- vurgu: kimlik ve eylem --- */
+  /**
+   * ⚠ BAKIR — kobalt'ın lacivertinden ve gece'nin mavisinden AYRI.
+   * Üç tema aynı vurguyu paylaşsaydı, tema değiştirmenin görünür tek
+   * karşılığı zemin olurdu ve seçim anlamsızlaşırdı.
+   */
+  --se-vurgu:            #9A5B2D;
+  --se-vurgu-hover:      #834C25;
+  --se-vurgu-aktif:      #6C3E1E;
+  --se-vurgu-on:         #FFFDF8;
+  --se-vurgu-bg:         #F6E9DC;
+  --se-vurgu-cizgi:      #DFC3A5;
+
+  /* --- nötr rampa: anlamı OLMAYAN her yer --- */
+  --se-notr:             #98907F;
+  --se-notr-2:           #C1B9A9;
+  --se-notr-3:           #DED7C9;
+  --se-notr-bg:          #F2EEE6;
+
+  /* --- semantik: kâr --- */
+  /**
+   * ⚠ ANLAM AYNI, DEĞER ZEMİNE GÖRE. Kobalt'takiyle aynı yeşil ailesi;
+   * yalnız zemin/çizgi tonları sıcak tarafa çekildi ki kâğıt zeminde
+   * "yamalı" durmasın.
+   */
+  --se-kar:              #0E7350;
+  --se-kar-bg:           #E7F0E7;
+  --se-kar-cizgi:        #A9D3BD;
+
+  /* --- semantik: zarar --- */
+  --se-zarar:            #9E2436;
+  --se-zarar-bg:         #F8EAE7;
+  --se-zarar-cizgi:      #E3B4B0;
+
+  /* --- semantik: bilinmiyor / modellenmedi --- */
+  /** Pirinç — kanıt şeridinde "modellenmemiş" rengi. */
+  --se-bil:              #B8860B;   /* şerit, çizgi, ikon */
+  --se-bil-ink:          #8A6410;   /* açık zeminde metin */
+  --se-bil-bg:           #FAF2DC;
+  --se-bil-cizgi:        #E8D5A5;
+
+  /* --- semantik: çelişki (kaynak ile sistem uyuşmuyor) --- */
+  --se-celiski:          #9E2436;
+  --se-celiski-bg:       #9E2436;
+  --se-celiski-on:       #FFFDF8;
+
+  /* --- durum --- */
+  --se-odak:             #9A5B2D;
+  --se-odak-golge:       0 0 0 3px #F0DCC5;
+  --se-pasif-bg:         #F0ECE3;
+  --se-pasif-ink:        #ADA598;
+
+  /* --- gölge (sadece yüzen katman) --- */
+  /** ⚠ SICAK GÖLGE: nötr gri gölge kâğıt zeminde mavimsi görünür. */
+  --se-golge-1:          0 1px 2px rgba(34, 31, 26, 0.05);
+  --se-golge-2:          0 4px 12px rgba(34, 31, 26, 0.08);
+  --se-golge-3:          0 12px 32px rgba(34, 31, 26, 0.12);
+
+  /* --- seçim ve kaydırma çubuğu --- */
+  --se-secim-bg:         #F0DCC5;
+  --se-secim-ink:        #221F1A;
+  --se-kaydirma:         #CEC5B6;
+  --se-kaydirma-hover:   #B4A996;
+}

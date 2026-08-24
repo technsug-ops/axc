@@ -128,7 +128,8 @@
     "kanalSku": "Kanal SKU",
     "elKitabiKisayolu": "El Kitabı",
     "temaKobalta": "Aydınlık temaya geç",
-    "temaGeceye": "Karanlık temaya geç"
+    "temaGeceye": "Karanlık temaya geç",
+    "temaKagida": "Kağıt temasına geç"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",

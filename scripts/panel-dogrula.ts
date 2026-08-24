@@ -2483,7 +2483,21 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      * ⚠ `try/catch` ŞART: gizli sekmede `localStorage` erişimi HATA
      * FIRLATIR (boş dönmez). Yakalanmazsa betik ölür ve tema hiç uygulanmaz.
      */
-    kontrol("  ...localStorage erişimi try/catch içinde", /try\{[^}]*localStorage/.test(duzen));
+    /**
+     * ⚠ ÖLÇÜT DİLİME ÇEVRİLDİ (24.08.2026). Eski desen `/try\{[^}]*localStorage/`
+     * idi — yani `try{` ile `localStorage` arasında HİÇ `}` olmadığını
+     * varsayıyordu. Üçüncü tema gelince betiğe bir nesne sabiti girdi ve
+     * kontrol kırmızı yandı; oysa `localStorage` HÂLÂ try içindeydi.
+     * Ölçüt artık try gövdesini kesip içinde arıyor — biçim değişse de
+     * davranışı ölçer.
+     */
+    const tryBasi = duzen.indexOf("try{");
+    const tryGovdesi = duzen.slice(tryBasi, duzen.indexOf("catch", tryBasi));
+    kontrol("  ...try gövdesi kesilebildi", tryBasi > 0 && tryGovdesi.length > 20);
+    kontrol(
+      "  ...localStorage erişimi try/catch içinde",
+      tryGovdesi.includes("localStorage"),
+    );
     kontrol(
       "  ...cihaz tercihi yedek olarak okunuyor",
       duzen.includes("prefers-color-scheme"),

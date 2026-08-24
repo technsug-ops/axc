@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { TEMALAR } from "../src/components/tema-secici";
 
 /**
  * ============================================================================
@@ -187,10 +188,14 @@ console.log("3) RENKLER PALETLE AYRIŞMIYOR MU");
  * okunamadığı için hex KOPYA duruyor; kopyayı bu kontrol bağlıyor.
  */
 const renkler = yorumsuz(oku("src/lib/marka/renkler.ts"));
-for (const [tema, dosya] of [
-  ["kobalt", "src/styles/selliora-kobalt.css"],
-  ["gece", "src/styles/selliora-gece.css"],
-] as const) {
+/**
+ * ⚠ LİSTE ELLE TUTULMAZ, `TEMALAR`DAN OKUNUR (24.08.2026). Elle tutulan
+ * liste, yarın eklenen dördüncü temayı sessizce dışarıda bırakır ve o
+ * temanın kabuk rengi paletten ayrışsa kimse görmez.
+ * (Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)
+ */
+for (const tema of TEMALAR) {
+  const dosya = `src/styles/selliora-${tema}.css`;
   const paletten = /--se-kabuk:\s*(#[0-9A-Fa-f]{6})/
     .exec(oku(dosya))?.[1]
     ?.toUpperCase();
@@ -201,6 +206,114 @@ for (const [tema, dosya] of [
     `${tema}: kabuk rengi paletle aynı`,
     paletten !== undefined && paletten === yazilan,
     { paletten, yazilan },
+  );
+}
+
+/**
+ * ⚠ HER TEMA AYNI TOKEN SETİNİ TANIMLAR. Eksik bir token, o temada
+ * çözümlenemeyen bir `var()` demektir — yüzey renksiz kalır ve hata
+ * vermez, sessizce bozulur.
+ */
+{
+  const tokenSeti = (yol: string) =>
+    new Set(
+      [...oku(yol).matchAll(/(--se-[a-z0-9-]+):/g)].map((m) => m[1]),
+    );
+  const temel = tokenSeti("src/styles/selliora-kobalt.css");
+  kontrol(`kobalt token seti dolu (${temel.size})`, temel.size > 40);
+  for (const tema of TEMALAR) {
+    if (tema === "kobalt") continue;
+    const bu = tokenSeti(`src/styles/selliora-${tema}.css`);
+    const eksik = [...temel].filter((t) => !bu.has(t));
+    kontrol(`${tema}: eksik token YOK (${bu.size})`, eksik.length === 0, eksik);
+  }
+}
+
+/**
+ * ⚠ KÖPRÜ SEÇİCİSİ HER TEMAYI SAYAR. Palet dosyası eklenip köprüye
+ * yazılmazsa `--se-*` yüklenir ama shadcn token'larına HİÇ bağlanmaz:
+ * uygulama varsayılan yüzeylerle çizilir ve tema seçilmiş görünür.
+ */
+{
+  const kopru = oku("src/app/globals.css");
+  for (const tema of TEMALAR) {
+    kontrol(
+      `${tema}: köprü seçicisinde var`,
+      kopru.includes(`[data-tema="${tema}"]`),
+    );
+    kontrol(
+      `  ...${tema}: paleti import ediliyor`,
+      kopru.includes(`selliora-${tema}.css`),
+    );
+  }
+}
+
+/**
+ * ⚠ KOYU TEMA LİSTESİ AÇIK OLMALI, ADDAN TÜRETİLMEMELİ. `.dark` sınıfı
+ * durum renklerinin `dark:` varyantını açıyor; açık bir tema yanlışlıkla
+ * koyu sayılsaydı yeşil/kârmızı rozetler açık zeminde SOLUK kalırdı.
+ */
+{
+  const secici = oku("src/components/tema-secici.tsx");
+  kontrol(
+    "koyu tema listesi AÇIK yazılı (addan türetilmiyor)",
+    /KOYU_TEMALAR: readonly Tema\[\] = \[/.test(secici),
+  );
+  /**
+   * ⚠ LİSTENİN YAZILI OLMASI YETMEZ — İÇERİĞİ PALETTEN DOĞRULANIR.
+   * İlk yazım yalnız "liste var mı" diye soruyordu ve `kagit`i listeye
+   * ekleyen mutasyon YEŞİL KALDI. Açık bir tema koyu sayılırsa `.dark`
+   * devreye girer ve durum renkleri açık zeminde SOLUK kalır — okunmaz.
+   *
+   * Ölçüt elle liste değil, ÖLÇÜM: temanın kendi zemininin parlaklığı.
+   * Dördüncü tema eklendiğinde de bedava doğru çalışır.
+   */
+  {
+    const parlaklik = (hex: string) => {
+      const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+      const d = c.map((x) =>
+        x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4,
+      );
+      return 0.2126 * d[0] + 0.7152 * d[1] + 0.0722 * d[2];
+    };
+    const beyanEdilen = new Set(
+      [...(/KOYU_TEMALAR: readonly Tema\[\] = \[([^\]]*)\]/.exec(secici)?.[1] ??
+        "").matchAll(/"([a-z]+)"/g)].map((m) => m[1]),
+    );
+    for (const tema of TEMALAR) {
+      const zemin = /--se-zemin:\s*(#[0-9A-Fa-f]{6})/.exec(
+        oku(`src/styles/selliora-${tema}.css`),
+      )?.[1];
+      if (!zemin) {
+        kontrol(`${tema}: zemin rengi okunamadı`, false);
+        continue;
+      }
+      const olculenKoyu = parlaklik(zemin) < 0.2;
+      kontrol(
+        `${tema}: koyu/açık beyanı PALETLE tutuyor (zemin ${zemin})`,
+        olculenKoyu === beyanEdilen.has(tema),
+        { olculenKoyu, beyanEdilen: beyanEdilen.has(tema) },
+      );
+    }
+  }
+  kontrol(
+    "  ...`.dark` o listeden karar veriyor",
+    /classList\.toggle\("dark", koyuMu\(tema\)\)/.test(secici),
+  );
+  /** Üç temada "öteki" yoktur — düğme DÖNGÜ olmalı. */
+  kontrol(
+    "tema düğmesi döngü (ikili anahtar değil)",
+    /sonrakiTema\(tema\)/.test(secici) &&
+      !/tema === "gece" \? "kobalt" : "gece"/.test(secici),
+  );
+  /** Etiket ve ikon exhaustive: dördüncü tema derlenmeden eklenemez. */
+  kontrol(
+    "hedef etiketi exhaustive Record",
+    /hedefEtiketi: Record<Tema, string>/.test(secici),
+  );
+  kontrol(
+    "ikon eşlemesi exhaustive",
+    /satisfies Record<Tema, React\.ReactNode>/.test(secici),
   );
 }
 
@@ -423,10 +536,37 @@ kontrol(
     metaYerleri.every((y, i) => y < betikYerleri[i]),
   { metaYerleri, betikYerleri },
 );
+/**
+ * ⚠ ÖLÇÜT ESKİDİ, KOD DEĞİL (24.08.2026). Eski desen `KABUK_RENKLERI.gece`
+ * arıyordu — yani betiğin İKİLİ bir ternary olduğunu varsayıyordu. Üçüncü
+ * tema gelince betik haritadan okumaya çevrildi (`g[t]`) ve kontrol kırmızı
+ * yandı; davranış AYNI, üstelik dördüncü tema bedava çalışıyor.
+ *
+ * Ölçüt artık niyete bakıyor: renk KABUK_RENKLERI'nden geliyor mu ve tek
+ * tema adına gömülü değil mi.
+ */
 kontrol(
-  "  ...betik rengi temaya göre yazıyor",
-  /theme-color[\s\S]{0,200}KABUK_RENKLERI\.gece/.test(layout),
+  "  ...betik rengi KABUK_RENKLERI'nden okuyor",
+  /theme-color[\s\S]{0,300}g\[t\]/.test(layout) &&
+    /KABUK_JSON/.test(layout),
 );
+/**
+ * ⚠ DESEN DOSYADA DEĞİL, BETİK GÖVDESİNDE ARANIR. İlk yazım bütün
+ * `layout.tsx`te `KABUK_RENKLERI.<tema>` arıyordu ve KIRMIZI yandı — ama
+ * bulduğu şey MEŞRUYDU: sunucu tarafı `<meta>` varsayılanı (betik
+ * koşmadan önceki hâl, bilinçli olarak kobalt). Ölçüt yalnız açılış
+ * betiğine daraltıldı; orada tek tema adına gömülü renk KALMAMALI.
+ * (Anayasa: kaynak tarayan kontrol, deseni kullanım bloğunda arar.)
+ */
+{
+  const betikBasi = layout.indexOf("const TEMA_BETIGI");
+  const betikGovdesi = layout.slice(betikBasi, layout.indexOf("`;", betikBasi));
+  kontrol("açılış betiği kesilebildi", betikBasi > 0 && betikGovdesi.length > 80);
+  kontrol(
+    "  ...betikte tek tema adına gömülü renk YOK",
+    !/KABUK_RENKLERI\.(gece|kobalt|kagit)/.test(betikGovdesi),
+  );
+}
 kontrol(
   "  ...tema değişince renk de dönüyor",
   /meta\.setAttribute\("content",\s*KABUK_RENKLERI\[tema\]\)/.test(

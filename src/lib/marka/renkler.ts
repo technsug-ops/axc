@@ -23,6 +23,8 @@ export const KABUK_RENKLERI = {
   kobalt: "#12356B",
   /** `selliora-gece.css` → `--se-kabuk` */
   gece: "#08101E",
+  /** `selliora-kagit.css` → `--se-kabuk` */
+  kagit: "#3A2E24",
 } as const;
 
 /** Kabuk üstündeki yazı — iki temada da beyaza yakın; simge tek çizim. */

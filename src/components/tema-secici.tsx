@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Moon, Sun } from "lucide-react";
+import { FileText, Moon, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,27 @@ import {
  * ============================================================================
  */
 
-export type Tema = "kobalt" | "gece";
+export const TEMALAR = ["kobalt", "gece", "kagit"] as const;
+export type Tema = (typeof TEMALAR)[number];
+
+/**
+ * ⚠ KOYU TEMA LİSTESİ AYRI VE AÇIK. `.dark` sınıfı, hangi temanın KOYU
+ * olduğuna bağlı — tema ADINDAN türetilemez. Üçüncü tema (kağıt) AÇIK bir
+ * tema; `tema !== "kobalt"` gibi bir ölçüt yazsaydık kağıt yanlışlıkla
+ * koyu sayılır ve durum renkleri `dark:` varyantına düşerdi: açık zeminde
+ * okunmayan soluk yeşil/kırmızı.
+ */
+export const KOYU_TEMALAR: readonly Tema[] = ["gece"];
+
+export function koyuMu(tema: Tema): boolean {
+  return KOYU_TEMALAR.includes(tema);
+}
+
+/** Döngü sırası — düğme buradan ilerler. */
+export function sonrakiTema(tema: Tema): Tema {
+  const i = TEMALAR.indexOf(tema);
+  return TEMALAR[(i + 1) % TEMALAR.length];
+}
 
 export const TEMA_ANAHTARI = "selliora-tema";
 
@@ -53,7 +73,7 @@ export const TEMA_ANAHTARI = "selliora-tema";
 export function temayiUygula(tema: Tema) {
   const kok = document.documentElement;
   kok.setAttribute("data-tema", tema);
-  kok.classList.toggle("dark", tema === "gece");
+  kok.classList.toggle("dark", koyuMu(tema));
 
   /**
    * ⚠ TELEFONUN SİSTEM ÇUBUĞU DA DÖNER. Uygulama ana ekrandan (PWA olarak)
@@ -92,10 +112,19 @@ function abone(geriCagir: () => void): () => void {
   return () => gozlemci.disconnect();
 }
 
-const anlikOku = (): Tema =>
-  document.documentElement.getAttribute("data-tema") === "gece"
-    ? "gece"
+/**
+ * ⚠ LİSTEDEN DOĞRULANIR, TEK TEMA ADIYLA KARŞILAŞTIRILMAZ (24.08.2026).
+ * Eski hâli `=== "gece" ? "gece" : "kobalt"` idi: üçüncü tema yazılıyken
+ * bile "kobalt" okurdu, düğme yanlış ikonu gösterir ve döngü baştan
+ * başlardı. Ölçüt artık `TEMALAR` listesi — dördüncü tema eklendiğinde de
+ * bedava doğru çalışır.
+ */
+const anlikOku = (): Tema => {
+  const ham = document.documentElement.getAttribute("data-tema");
+  return (TEMALAR as readonly string[]).includes(ham ?? "")
+    ? (ham as Tema)
     : "kobalt";
+};
 
 /** Sunucuda DOM yok; varsayılan Kobalt — betik istemcide düzeltir. */
 const sunucudaOku = (): Tema => "kobalt";
@@ -105,7 +134,11 @@ export function TemaSecici() {
   const tema = useSyncExternalStore(abone, anlikOku, sunucudaOku);
 
   const cevir = () => {
-    const yeni: Tema = tema === "gece" ? "kobalt" : "gece";
+    /**
+     * ⚠ İKİLİ ANAHTAR DÖNGÜYE ÇEVRİLDİ (24.08.2026). Üç temada "öteki"
+     * diye bir şey yok; `gece ? kobalt : gece` üçüncüyü hiç göstermezdi.
+     */
+    const yeni: Tema = sonrakiTema(tema);
     temayiUygula(yeni);
     try {
       localStorage.setItem(TEMA_ANAHTARI, yeni);
@@ -114,8 +147,18 @@ export function TemaSecici() {
     }
   };
 
-  /** Etiket HEDEFİ söyler: düğme "neye geçeceğini" anlatır, ne olduğunu değil. */
-  const etiket = tema === "gece" ? t("temaKobalta") : t("temaGeceye");
+  /**
+   * Etiket HEDEFİ söyler: düğme "neye geçeceğini" anlatır, ne olduğunu değil.
+   *
+   * ⚠ EXHAUSTIVE `Record` — dördüncü tema eklenince DERLENMEZ. Etiket
+   * eksik kalsaydı düğme "undefined"a geçmeyi teklif ederdi.
+   */
+  const hedefEtiketi: Record<Tema, string> = {
+    kobalt: t("temaKobalta"),
+    gece: t("temaGeceye"),
+    kagit: t("temaKagida"),
+  };
+  const etiket = hedefEtiketi[sonrakiTema(tema)];
 
   return (
     <Tooltip>
@@ -130,11 +173,20 @@ export function TemaSecici() {
         >
           {/* Sunucuda Kobalt varsayılır; betik istemcide düzeltir. Düğme
               her hâlükârda bir ikon taşır, yerleşim zıplamaz. */}
-          {tema === "gece" ? (
-            <Sun className="size-4" />
-          ) : (
-            <Moon className="size-4" />
-          )}
+          {/*
+            İKON MEVCUT TEMAYI gösterir, hedefi değil — etiket zaten hedefi
+            söylüyor. Üç temanın üçü de kendi ikonunu taşır; exhaustive
+            `Record` olduğu için dördüncü tema eklenince derlenmez.
+          */}
+          {
+            (
+              {
+                kobalt: <Moon className="size-4" />,
+                gece: <Sun className="size-4" />,
+                kagit: <FileText className="size-4" />,
+              } satisfies Record<Tema, React.ReactNode>
+            )[tema]
+          }
         </Button>
       </TooltipTrigger>
       <TooltipContent>{etiket}</TooltipContent>

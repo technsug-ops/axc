@@ -57,7 +57,17 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
  * görürdü — koyu temada parlak mavi bir şerit. Meta etiketi betiğin
  * HEMEN ÜSTÜNDE duruyor ki betik onu bulabilsin.
  */
-const TEMA_BETIGI = `(function(){try{var t=localStorage.getItem("selliora-tema");if(t!=="kobalt"&&t!=="gece"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"gece":"kobalt";}var k=document.documentElement;k.setAttribute("data-tema",t);if(t==="gece"){k.classList.add("dark");}var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute("content",t==="gece"?"${KABUK_RENKLERI.gece}":"${KABUK_RENKLERI.kobalt}");}}catch(e){}})();`;
+/**
+ * ⚠ ÜÇÜNCÜ TEMA BURAYA DA YAZILIR (24.08.2026). Bu betik React yüklenmeden
+ * ÖNCE koşuyor ve temayı `<html>`e basıyor. Adı tanımasaydı kağıt teması
+ * seçili bir kullanıcı her açılışta kobalt görürdü — seçim kaydedilmiş
+ * ama uygulanmamış olurdu.
+ *
+ * ⚠ KABUK RENGİ DE ÜÇE ÇIKTI: telefonun sistem çubuğu bu etiketten
+ * okunuyor; eksik kalsaydı kağıt temasında çubuk lacivert kalırdı.
+ */
+const KABUK_JSON = JSON.stringify(KABUK_RENKLERI);
+const TEMA_BETIGI = `(function(){var g=${KABUK_JSON};try{var t=localStorage.getItem("selliora-tema");if(!g[t]){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"gece":"kobalt";}var k=document.documentElement;k.setAttribute("data-tema",t);if(t==="gece"){k.classList.add("dark");}var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute("content",g[t]);}}catch(e){}})();`;
 
 /**
  * Sekme başlıkları tek yerden yönetiliyor: alt sayfalar sadece kendi
