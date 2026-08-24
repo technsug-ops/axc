@@ -34,7 +34,8 @@ import { haftaAnahtari, pazartesiBasi } from "../src/lib/okuma/rapor";
  *
  * `npx prisma format` dosyayı CRLF'e çevirdi ve enum ayrıştıran kontrol
  * SESSİZCE 0 değer buldu: `split("
-")` sonrası satırlar `` ile
+")` sonrası satırlar `
+` ile
  * bitiyor, `/\/\/.*$/` deseni `$`i bulamadığı için yorum SİLİNMİYOR ve
  * `^[A-Z_]+$` testi düşüyor.
  *
@@ -504,9 +505,18 @@ console.log("\n7) SİPARİŞSİZ OKUMADA SADE EKRAN (İŞ 1)");
     okuyucuKod.indexOf('{detayAcik ?'),
   );
   kontrol("tanındı çağrısı kesilebildi", tanindiBloku.length > 0);
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ, KOD DEĞİL (24.08.2026). K41① ile gönderi numarası
+   * eklenince `sonuc.urun` artık `null` olabiliyor (kod bir SATIŞ kimliği
+   * olabilir) ve dereference `sonuc.urun?.urunAdi ?? ""` oldu. Davranış
+   * aynı — ürün varsa adı VERİLİYOR; değişen tek şey erişim biçimi.
+   *
+   * Bekçi kırmızı yandı ve HAKLIYDI: sessiz kalmadı. Ölçüt güncellendi,
+   * bekçi SUSTURULMADI — niyet hâlâ "sabit metin değil, gerçek ad".
+   */
   kontrol(
     "  ...ÜRÜN ADI gerçekten veriliyor",
-    /ad: sonuc\.urun\.urunAdi/.test(tanindiBloku),
+    /ad: sonuc\.urun\??\.urunAdi/.test(tanindiBloku),
   );
   kontrol(
     "  ...HANGİ ALAN gerçekten veriliyor (etiket sözlüğünden)",
@@ -538,6 +548,88 @@ console.log("\n7) SİPARİŞSİZ OKUMADA SADE EKRAN (İŞ 1)");
 }
 
 // ===========================================================================
+// ===========================================================================
+//  K41① — GÖNDERİ NUMARASINDAN BULUNAN SİPARİŞ EKRANA ÇİZİLİYOR MU
+// ===========================================================================
+{
+  /**
+   * ⚠ CANLIDA ÇIKAN HATA — 24.08.2026, testin 4. adımı düştü.
+   *
+   * Gönderi numarası okutulunca `barkoduOkut` siparişi BULUYOR ama ekran
+   * çizmiyordu: dış koşul her şeyi `sonuc.urun`a sarmıştı ve kod bir SATIŞ
+   * kimliğiyse `urun` boş kalıyor. Kullanıcı "bu kod dört alanın hiçbirinde
+   * bulunamadı" görüyordu — sipariş elde olmasına rağmen.
+   *
+   * ⚠ SUNUCU DOĞRUYDU, EKRAN YANLIŞTI. Bu yüzden kontrol sorguya değil
+   * ÇİZİME bakıyor: "bulundu" hükmü iki kaynaktan da geliyor mu.
+   */
+  const ekran = readFileSync("src/app/okut/okuyucu.tsx", "utf8");
+  const ekranKodu = ekran.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, " ");
+
+  kontrol(
+    "sonuç bloğu ÜRÜN YOKKEN de çiziliyor (sipariş varsa)",
+    /\{sonuc\.urun \|\| siparisVar \?/.test(ekranKodu),
+  );
+  /**
+   * ⚠ ÜÇ DAL AYRI: ürün+sipariş · yalnız sipariş · yalnız ürün.
+   * Orta dal olmadan gönderi numarası okuması boş bir kutu çizerdi.
+   */
+  kontrol(
+    "  ...yalnız SİPARİŞ bulunduğunda kendi dalı var",
+    /\{siparisVar && sonuc\.urun \?[\s\S]{0,900}\) : siparisVar \? \(/.test(
+      ekranKodu,
+    ),
+  );
+  const siparisDali = ekranKodu.slice(
+    ekranKodu.indexOf(") : siparisVar ? ("),
+    ekranKodu.indexOf(") : siparisVar ? (") + 700,
+  );
+  kontrol("  ...sipariş dalı kesilebildi", siparisDali.length > 100);
+  kontrol(
+    "  ...'sipariş bulundu' EKRANDA yazıyor",
+    /t\("siparisBulundu"\)/.test(siparisDali),
+  );
+  /**
+   * ⚠ HANGİ ALANDAN BULUNDUĞU SÖYLENİR. Kullanıcı kodun neden eşleştiğini
+   * bilmezse yanlış kutuyu paketleyebilir.
+   */
+  kontrol(
+    "  ...ve HANGİ ALANDAN bulunduğu söyleniyor",
+    /t\("siparisBulunduAlan"[\s\S]{0,120}alanAdi\[/.test(siparisDali),
+  );
+  /**
+   * ⚠ ÜRÜN KİMLİĞİ SATIRLARI ÜRÜNE BAĞLI KALMALI. Gönderi numarasından
+   * gelen okumada varyant YOKTUR; boş SKU/barkod satırı, olmayan bir
+   * bilgiyi varmış gibi sunardı.
+   */
+  kontrol(
+    "SKU/Firma SKU satırları ÜRÜN varsa çiziliyor",
+    /\{sonuc\.urun \?\s*\(\s*<>[\s\S]{0,400}alanSku/.test(ekranKodu),
+  );
+  kontrol(
+    "  ...barkod satırı da ürüne bağlı (opsiyonel erişim)",
+    /sonuc\.urun\?\.barcode/.test(ekranKodu),
+  );
+
+  /**
+   * ⚠ "BULUNAMADI" MESAJI BEŞİNCİ ALANI DA SAYIYOR. Dört alan yazan bir
+   * cümle, gönderi numarasının aranmadığını söylerdi — metin sahip olmadığı
+   * anlamı iddia etmiş olurdu.
+   */
+  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Okuma: Record<string, string>;
+  };
+  kontrol(
+    "'bulunamadı' metni gönderi numarasını da sayıyor",
+    /gönderi numarası/.test(sozluk.Okuma.bulunamadi),
+    sozluk.Okuma.bulunamadi,
+  );
+  kontrol(
+    "  ...ve artık 'dört alan' demiyor",
+    !/dört alan/.test(sozluk.Okuma.bulunamadi),
+  );
+}
+
 console.log("\n8) PAKETLEME İZİ (İŞ 2)");
 // ===========================================================================
 /**

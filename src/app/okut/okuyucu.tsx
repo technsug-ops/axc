@@ -194,9 +194,22 @@ export function Okuyucu() {
             <KopyalanabilirKod deger={sonuc.kod} etiket={t("ipucu")} />
           </div>
 
-          {sonuc.urun ? (
+          {/*
+            ⚠ KOŞUL "ÜRÜN BULUNDU MU" DEĞİL, "BİR ŞEY BULUNDU MU" (24.08.2026).
+
+            K41① ile gönderi numarası eklendi ve canlıda hemen çıktı: kod bir
+            SATIŞ kimliğiyse `urun` boş kalıyor, ama `siparisler` DOLU. Eski
+            koşul her şeyi `sonuc.urun`a sarmıştı, dolayısıyla bulunmuş bir
+            sipariş HİÇ ÇİZİLMİYOR ve ekran "dört alanın hiçbirinde
+            bulunamadı" diyordu — bulunmuş olmasına rağmen.
+
+            ⚠ ÜRÜN KİMLİĞİ SATIRLARI `sonuc.urun`A BAĞLI KALIYOR: gönderi
+            numarasından gelen okumada SKU/barkod YOKTUR ve boş satır
+            göstermek, olmayan bir bilgiyi varmış gibi sunardı.
+          */}
+          {sonuc.urun || siparisVar ? (
             <div className="space-y-3">
-              {siparisVar ? (
+              {siparisVar && sonuc.urun ? (
                 /* Sipariş varsa asıl bilgi ürünün kendisi — kart açık gelir. */
                 <div>
                   <p className="font-medium">{sonuc.urun.urunAdi}</p>
@@ -205,6 +218,20 @@ export function Okuyucu() {
                       {sonuc.urun.varyantAdi}
                     </p>
                   ) : null}
+                </div>
+              ) : siparisVar ? (
+                /*
+                  GÖNDERİ NUMARASINDAN BULUNDU — ürün değil SİPARİŞ.
+                  ⚠ Hangi alandan bulunduğu SÖYLENİR; kullanıcı kodun neden
+                  eşleştiğini bilmezse yanlış kutuyu paketleyebilir.
+                */
+                <div className="space-y-1">
+                  <p className="text-lg font-medium">{t("siparisBulundu")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("siparisBulunduAlan", {
+                      alan: sonuc.alan ? alanAdi[sonuc.alan] : t("alanSku"),
+                    })}
+                  </p>
                 </div>
               ) : (
                 /*
@@ -228,7 +255,7 @@ export function Okuyucu() {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {t("tanindi", {
-                      ad: sonuc.urun.urunAdi,
+                      ad: sonuc.urun?.urunAdi ?? "",
                       alan: sonuc.alan ? alanAdi[sonuc.alan] : t("alanSku"),
                     })}
                   </p>
@@ -252,23 +279,32 @@ export function Okuyucu() {
                       <dd>{alanAdi[sonuc.alan]}</dd>
                     </>
                   ) : null}
-                  <dt className="text-muted-foreground">{t("alanSku")}</dt>
-                  <dd>
-                    <KopyalanabilirKod
-                      deger={sonuc.urun.sku}
-                      etiket={t("alanSku")}
-                    />
-                  </dd>
-                  <dt className="text-muted-foreground">
-                    {t("alanCompanySku")}
-                  </dt>
-                  <dd>
-                    <KopyalanabilirKod
-                      deger={sonuc.urun.companySku}
-                      etiket={t("alanCompanySku")}
-                    />
-                  </dd>
-                  {sonuc.urun.barcode ? (
+                  {/*
+                    ⚠ ÜRÜN KİMLİĞİ SATIRLARI YALNIZ ÜRÜN BULUNDUYSA. Gönderi
+                    numarasından gelen okumada varyant YOKTUR; boş SKU/barkod
+                    satırı göstermek, olmayan bir bilgiyi varmış gibi sunardı.
+                  */}
+                  {sonuc.urun ? (
+                    <>
+                      <dt className="text-muted-foreground">{t("alanSku")}</dt>
+                      <dd>
+                        <KopyalanabilirKod
+                          deger={sonuc.urun.sku}
+                          etiket={t("alanSku")}
+                        />
+                      </dd>
+                      <dt className="text-muted-foreground">
+                        {t("alanCompanySku")}
+                      </dt>
+                      <dd>
+                        <KopyalanabilirKod
+                          deger={sonuc.urun.companySku}
+                          etiket={t("alanCompanySku")}
+                        />
+                      </dd>
+                    </>
+                  ) : null}
+                  {sonuc.urun?.barcode ? (
                     <>
                       <dt className="text-muted-foreground">
                         {t("alanBarcode")}

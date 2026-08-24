@@ -21,6 +21,7 @@ import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
 import { hazirlananSiparisKimlikleri } from "@/lib/panel/gorev-verisi";
 import { KargoDurumu } from "./kargo-durumu";
+import { TopluKargo } from "./toplu-kargo";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { UzunAd } from "@/components/uzun-ad";
@@ -583,6 +584,26 @@ export default async function SatislarSayfasi({
           },
         ]}
       />
+
+      {/*
+        TOPLU "KARGOYA VERİLDİ" — kullanıcı isteği 24.08.2026.
+
+        ⚠ KÜME SUNUCUDA SÜZÜLÜYOR: ekranda "Tüm Kargo" seçiliyken listede
+        ZATEN kargoya verilmiş siparişler de var. Düğme yalnız
+        `shippedAt === null` ve iptal edilmemiş olanları alır — yoksa
+        verilmiş siparişlerin kargo TARİHİ bugüne kayar ve panelin
+        "hangi gün kargoladım" sayacı bozulurdu.
+
+        ⚠ SÜZGECE BAĞLI, "TÜM DEFTER"E DEĞİL: ekranda ne varsa onun
+        üzerinde çalışır (İlke #15'in kardeşi).
+      */}
+      <div className="flex justify-end">
+        <TopluKargo
+          kimlikler={satislar
+            .filter((s) => s.shippedAt === null && s.iptalTarihi === null)
+            .map((s) => s.id)}
+        />
+      </div>
 
       {/* Hangi süzgecin açık olduğu EKRANDA yazar (#5). */}
       {karEksik ? (

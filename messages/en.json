@@ -900,7 +900,14 @@
     "gonderiNoZatenBos": "",
     "gonderiNoSatisYok": "",
     "gonderiNoIptalli": "",
-    "gonderiNoCakisma": ""
+    "gonderiNoCakisma": "",
+    "topluKargoDugme": "",
+    "topluKargoBaslik": "",
+    "topluKargoAciklama": "",
+    "topluKargoOnayla": "",
+    "topluKargoSonuc": "",
+    "topluKargoBos": "",
+    "topluKargoBosIstek": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -3104,7 +3111,9 @@
     "paketlendiIsareti": "",
     "paketlemeGeriAl": "",
     "paketlemeOlmadi": "",
-    "alanShipmentCode": ""
+    "alanShipmentCode": "",
+    "siparisBulundu": "",
+    "siparisBulunduAlan": ""
   },
   "ItirazGerekcesi": {
     "KULLANILMIS": "",

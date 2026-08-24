@@ -277,3 +277,50 @@ export async function kargoDurumuGuncelle(
   return {};
 }
 
+/**
+ * ============================================================================
+ *  TOPLU "KARGOYA VERİLDİ" — EKRANDAKİLERİ TEK TIKLA İŞARETLE
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı 24.08.2026: _"hepsini birden kargoya verildi işaretlesin."_
+ *
+ *  ⚠ İSTEMCİDEN GELEN LİSTEYE GÜVENİLMEZ. Kimlikler ekrandan geliyor ama
+ *  süzgeç SUNUCUDA bir kez daha uygulanıyor: yalnız `shippedAt: null` ve
+ *  `iptalTarihi: null` olanlar işaretlenir.
+ *
+ *  ⚠ NİYE ŞART: ekranda süzgeç "Tüm Kargo" iken ZATEN kargoya verilmiş
+ *  siparişler de listede. Onları da yazsaydık kargo TARİHLERİ bugüne kayardı
+ *  — panelin "hangi gün kargoladım" sayacı bozulur ve geri alınması tek tek
+ *  elle olurdu. Ekran bunu zaten süzüyor; sunucu SUSMAZ, kendi de süzer.
+ *  (Anayasa: düğmeyi gizlemek, kuralı koymak değildir.)
+ *
+ *  ⚠ TARİH İŞ TAKVİMİNDEN — tarayıcının saatinden DEĞİL. Kullanıcı
+ *  Almanya'da, operasyon Türkiye'de; gece yarısından sonra tarayıcı saati
+ *  bir gün geriye yazardı. Tek satırlık işaretlemeyle AYNI gövde.
+ * ============================================================================
+ */
+export async function topluKargoyaVerildi(
+  kimlikler: string[],
+): Promise<{ hata?: string; isaretlenen?: number }> {
+  await yetkiIste("satis.duzenle");
+  const t = await getTranslations("Satis");
+
+  const temiz = [...new Set(kimlikler.filter((k) => k.trim() !== ""))];
+  if (temiz.length === 0) return { hata: t("topluKargoBosIstek") };
+
+  const gun = gunDegeri(isTakvimGunu(new Date()));
+
+  const sonuc = await prisma.sale.updateMany({
+    where: {
+      id: { in: temiz },
+      /** ⚠ SUNUCU SÜZGECİ — istemci ne gönderirse göndersin. */
+      shippedAt: null,
+      iptalTarihi: null,
+    },
+    data: { shippedAt: gun },
+  });
+
+  revalidatePath("/satislar");
+  /** Panel kutusu bu sayıdan besleniyor. */
+  revalidatePath("/");
+  return { isaretlenen: sonuc.count };
+}

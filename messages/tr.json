@@ -900,7 +900,14 @@
     "gonderiNoZatenBos": "Gönderi numarası zaten boştu.",
     "gonderiNoSatisYok": "Satış bulunamadı.",
     "gonderiNoIptalli": "İptal edilmiş satışa gönderi numarası yazılamaz.",
-    "gonderiNoCakisma": "Bu gönderi numarası {siparis} numaralı satışta zaten kayıtlı. Aynı kod iki satışta olamaz — okutulduğunda hangisinin doğru olduğu bilinemez."
+    "gonderiNoCakisma": "Bu gönderi numarası {siparis} numaralı satışta zaten kayıtlı. Aynı kod iki satışta olamaz — okutulduğunda hangisinin doğru olduğu bilinemez.",
+    "topluKargoDugme": "{sayi} siparişi kargoya verildi işaretle",
+    "topluKargoBaslik": "Kargoya verildi işaretlensin mi?",
+    "topluKargoAciklama": "Ekrandaki {sayi} sipariş bugünün tarihiyle kargoya verildi olarak işaretlenecek. Zaten işaretli olanlara ve iptal edilmiş satışlara DOKUNULMAZ. Geri alma tek tek satırdan yapılır — toplu geri alma yoktur.",
+    "topluKargoOnayla": "Evet, işaretle",
+    "topluKargoSonuc": "✓ {sayi} sipariş kargoya verildi olarak işaretlendi.",
+    "topluKargoBos": "Bu süzgeçte kargoya verilecek sipariş yok.",
+    "topluKargoBosIstek": "İşaretlenecek sipariş seçilmedi."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -3079,7 +3086,7 @@
     "acikSiparisYok": "Bu ürün, kargoya verilmemiş hiçbir siparişte geçmiyor.",
     "siparisSatiri": "{kod} · {adet} adet · {kanal}",
     "kodsuzSiparis": "(sipariş no girilmemiş)",
-    "bulunamadi": "Bu kod dört alanın hiçbirinde bulunamadı: Barkod (EAN), Firma SKU, SKU, Kanal SKU.",
+    "bulunamadi": "Bu kod hiçbir alanda bulunamadı: Barkod (EAN), Firma SKU, SKU, Kanal SKU, gönderi numarası.",
     "gosterTeklifi": "Elindeki ürünün hangisi olduğunu biliyorsan gösterebilirsin. İstersen atla — hiçbir şey beklemiyor.",
     "gosterAra": "Ürünü ara (ad veya kod)",
     "gosterSec": "Bu ürün",
@@ -3104,7 +3111,9 @@
     "paketlendiIsareti": "Hazırlanıyor",
     "paketlemeGeriAl": "Geri al",
     "paketlemeOlmadi": "İşaretlenemedi; sipariş bulunamadı.",
-    "alanShipmentCode": "gönderi numarası"
+    "alanShipmentCode": "gönderi numarası",
+    "siparisBulundu": "Sipariş bulundu",
+    "siparisBulunduAlan": "{alan} ile eşleşti. Aşağıdan paketlendi olarak işaretleyebilirsiniz."
   },
   "ItirazGerekcesi": {
     "KULLANILMIS": "Müşteriden gelen ürün kullanılmış",
