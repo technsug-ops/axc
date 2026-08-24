@@ -95,6 +95,9 @@
     "canli:k36b-kuru-kosum": "tsx scripts/canli-k36b-kuru-kosum.ts",
     "canli:k39-adaylar": "tsx scripts/canli-k39-adaylar.ts",
     "canli:parti-izi": "tsx scripts/canli-parti-izi.ts",
+    "canli:ne-olurdu": "tsx scripts/canli-ne-olurdu.ts",
+    "canli:satis-iptal-raporu": "tsx scripts/canli-satis-iptal-raporu.ts",
+    "canli:hareket-gecmisi": "tsx scripts/canli-hareket-gecmisi.ts",
     "canli:pazaryeri-listesi": "tsx scripts/canli-pazaryeri-listesi.ts",
     "canli:eksik-liste": "tsx scripts/canli-eksik-liste.ts",
     "okuma:dogrula": "tsx scripts/okuma-dogrula.ts"
