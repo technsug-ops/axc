@@ -52,6 +52,7 @@ import {
   bildirimAramaKosulu,
   DEGISIM_GEREKCELERI,
   gecisGecerliMi,
+  kapaliMi,
   IADE_ISLE_SEBEP_ANAHTARI,
   DEGISIM_GONDERILDI_EYLEMI,
   ayrilmisDusmeyiBekliyor,
@@ -1169,8 +1170,30 @@ export default async function IadelerSayfasi({
                       sebep: iadeIsleSebebi(b.status),
                       etiket: tBildirim("iadeyiIsle"),
                     }}
-                    secenekler={BILDIRIM_DURUMLARI.filter(
-                      (hedef) => hedef !== b.status,
+                    /*
+                      ⚠ KAPALI BİLDİRİMDE GENEL GEÇİŞ DÜĞMESİ ÇİZİLMEZ
+                      (24.08.2026 — canlıda çıkan hata).
+
+                      `KAPANDI: ["IPTAL"]` geçişi K39 ile açılınca bu liste
+                      onu ANLAMLI BİR HEDEF sanıp her kapanmış bildirime
+                      "İptal" düğmesi koydu. Ama `durumDegistir` kapalı
+                      bildirimin HİÇBİR geçişini kabul etmiyor (`kapaliMi`
+                      kapısı) — yani basılan ama çalışmayan bir düğme doğdu.
+                      Kullanıcı `11471381662`de gördü: korunması gereken bir
+                      kayıtta iptal düğmesi çıkıyordu.
+
+                      ⚠ ÖLÇÜT SUNUCUNUNKİYLE AYNI GÖVDEDEN: `kapaliMi`.
+                      "KAPANDI'yı ayrıca ele al" diye elle bir istisna
+                      yazsaydık, yarın eklenen ikinci bir düzeltme geçişi
+                      aynı hatayı tekrar doğururdu.
+
+                      ⚠ DÜZELTME YOLU KAYBOLMUYOR: iptal kendi düğmesinde
+                      yaşıyor (`BildirimIptal`) ve orada gerekçe ZORUNLU.
+                      Genel geçiş düğmesi gerekçe sormuyordu.
+                    */
+                    secenekler={(kapaliMi(b.status)
+                      ? []
+                      : BILDIRIM_DURUMLARI.filter((hedef) => hedef !== b.status)
                     )
                       .filter((hedef) =>
                         // Yalnız anlamlı hedefler: izinli olanlar + iki

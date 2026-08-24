@@ -3312,6 +3312,29 @@ console.log("\n17) K39 — KAPANMIŞ BİLDİRİMİ İPTAL ET (24.08.2026)");
     iptalDugmeBasi + 220,
   );
   kontrol("iptal düğmesi ekranda ÇİZİLİYOR", iptalDugmeBasi > 0);
+
+  /**
+   * ⚠ CANLIDA ÇIKAN HATA — 24.08.2026, TESTİN 3. ADIMI DÜŞTÜ.
+   *
+   * `KAPANDI: ["IPTAL"]` geçişi açılınca, durum makinesinden düğme ÜRETEN
+   * genel liste onu "anlamlı hedef" sanıp HER kapanmış bildirime bir
+   * "İptal" düğmesi koydu — korunması gereken `11471381662` dahil. Ama
+   * `durumDegistir` kapalı bildirimin hiçbir geçişini kabul etmiyor:
+   * basılan ama çalışmayan bir düğme, yani SESSİZ BAŞARISIZLIK (İlke #5).
+   *
+   * ⚠ BU KONTROLÜ İLK TUR KAÇIRDI ve sebebi öğretici: kuralı, eylemi ve
+   * KENDİ diyaloğumu sınadım; **var olan ekranla ETKİLEŞİMİNİ** sınamadım.
+   * Yeni bir geçiş açmak, o geçişi listeleyen her ekranı da değiştirir.
+   */
+  kontrol(
+    "kapalı bildirimde GENEL geçiş düğmesi önerilmiyor",
+    /kapaliMi\(b\.status\)\s*\?\s*\[\]/.test(iptalListeKodu),
+  );
+  /** ⚠ Ölçüt sunucununkiyle AYNI gövdeden — elle "KAPANDI" istisnası değil. */
+  kontrol(
+    "  ...ölçüt kapaliMi (elle durum adı istisnası DEĞİL)",
+    !/hedef !== "IPTAL"/.test(iptalListeKodu),
+  );
   kontrol(
     "  ...koşulu SONUCUYLA birlikte (işlenmiş iadede gizli)",
     /b\.returnId === null[\s\S]{0,160}<BildirimIptal/.test(iptalDugmeBloku),
