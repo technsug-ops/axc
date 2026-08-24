@@ -2832,7 +2832,16 @@
     "deneMesafe": "Mevcut fiyatın %{pay} altı.",
     "deneMesafeUzak": "⚠ Mevcut fiyatın %{pay} altı — sınır UZAK, büyük bir indirim gerekir.",
     "partiTukendi": "bu alımdan stok kalmadı",
-    "beyanFiyatYok": "Satış fiyatı girilmedi — NET hesaplanamadı"
+    "beyanFiyatYok": "Satış fiyatı girilmedi — NET hesaplanamadı",
+    "kdvSatiri": "KDV %{oran} ({kaynak})",
+    "kdvKaynakURUN": "ürün istisnası",
+    "kdvKaynakKATEGORI": "kategoriden",
+    "kdvKaynakVARSAYILAN": "varsayılan",
+    "kategoriSatiri": "kategori: {ad}",
+    "kategoriYok": "kategori girilmemiş",
+    "desiSatiri": "desi {desi}",
+    "desiYok": "desi girilmemiş",
+    "urunSayfasi": "Düzenle / alım gir →"
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

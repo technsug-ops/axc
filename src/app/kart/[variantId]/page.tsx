@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Boxes, Lock, PackageSearch, TriangleAlert } from "lucide-react";
 
+import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
 import { bicimlendirici } from "@/lib/bicim";
@@ -154,6 +155,52 @@ export default async function KartSayfasi({
           {varyant.barcode ? (
             <KopyalanabilirKod deger={varyant.barcode} etiket={t("barkod")} />
           ) : null}
+        </div>
+
+        {/*
+          ═══ ÜRÜN KÜNYESİ — KDV · KATEGORİ · DESİ (24.08.2026) ═══
+
+          Kullanıcı: _"bunlar sadece ürün sayfasında var; karta eklersen iş
+          hallolur."_
+
+          ⚠ KART OKUMA YÜZEYİ, SAYFA EYLEM YÜZEYİ. Üçü de BİLGİ olarak
+          giriyor; "Alım gir / Düzenle / Sil" karta GİRMEDİ ve girmeyecek —
+          bekçi bunu koşulur hâlde tutuyor. Karttan sayfaya tek SESSİZ
+          bağlantı var, düğme değil.
+
+          ⚠ KDV ORANININ YANINDA KAYNAĞI DA YAZIYOR. Çıplak "%20" hangi
+          halkadan geldiğini söylemez; kullanıcı ürüne istisna mı girilmiş,
+          kategoriden mi geliyor, yoksa varsayılana mı düşmüş — bunu
+          bilmeden oranı düzeltemez. (Anayasa: metin, sayının gerçekten
+          ölçtüğü şeyi söyler.)
+
+          ⚠ RENK NÖTR: bunlar hüküm değil künye. Yeşil/kırmızı bir şey
+          iddia ederdi.
+        */}
+        <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          <span>
+            {t("kdvSatiri", {
+              oran: bicim.sayi(kdvOrani),
+              kaynak: t(`kdvKaynak${veri.kdvKaynagi}`),
+            })}
+          </span>
+          <span aria-hidden>·</span>
+          <span>
+            {veri.kategoriAdi
+              ? t("kategoriSatiri", { ad: veri.kategoriAdi })
+              : t("kategoriYok")}
+          </span>
+          <span aria-hidden>·</span>
+          <span>
+            {veri.desi === null
+              ? t("desiYok")
+              : t("desiSatiri", { desi: bicim.sayi(veri.desi) })}
+          </span>
+          <span aria-hidden>·</span>
+          {/* Tek sessiz bağlantı: eylemler ürün sayfasında. */}
+          <Baglanti href={`/urunler/${veri.urunId}`}>
+            {t("urunSayfasi")}
+          </Baglanti>
         </div>
       </div>
 

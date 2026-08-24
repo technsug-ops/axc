@@ -42,6 +42,20 @@ export type KartVerisi = {
   urunId: string;
   /** Raf konumu — `ProductVariant.location`. */
   rafKodu: string | null;
+  /**
+   * ÜRÜN KÜNYESİ — kategori · desi · KDV kaynağı (24.08.2026).
+   *
+   * ⚠ KART OKUMA YÜZEYİ, SAYFA EYLEM YÜZEYİ. Bu üçü BİLGİ olarak giriyor;
+   * "Alım gir / Düzenle / Sil" karta GİRMEZ, ürün sayfasında kalır.
+   *
+   * ⚠ `kdvKaynagi` ORANIN KENDİSİ DEĞİL, NEREDEN GELDİĞİ. Oran zaten
+   * `varyantKdvOrani` ile çözülüyor (ürün istisnası > kategori > %20);
+   * kartta ikinci bir oran hesaplamak, defterle çelişebilecek ikinci bir
+   * gerçek olurdu. Burada yalnız kaynak söyleniyor.
+   */
+  kategoriAdi: string | null;
+  desi: number | null;
+  kdvKaynagi: "URUN" | "KATEGORI" | "VARSAYILAN";
   eldekiAdet: number;
   /** En eski açık partinin yaşı; parti yoksa null. */
   yasGun: number | null;
@@ -78,7 +92,28 @@ export async function kartVerisiniTopla(
     where: { id: variantId },
     select: {
       ...VARYANT_SECIMI,
-      product: { select: { id: true, name: true, brand: true } },
+      /**
+       * ⚠ KATEGORİ · KDV · DESİ KARTA GİRDİ (24.08.2026).
+       *
+       * Kullanıcı: _"bunlar sadece ürün sayfasında var; karta eklersen iş
+       * hallolur."_ Kart bir OKUMA yüzeyi; bu üçü de okunacak bilgi.
+       *
+       * ⚠ KDV ORANI ÜRÜN İSTİSNASI > KATEGORİ > %20 sırasıyla çözülür ve
+       * kartta zaten `varyantKdvOrani` ile HESAPLANIYOR. Burada çekilen
+       * `vatRate`, o zincirin İLK halkası (ürün istisnası) — kartta oranın
+       * NEREDEN geldiğini söyleyebilmek için gerekiyor. İkisi çelişmez;
+       * biri sonuç, öteki kaynak.
+       */
+      product: {
+        select: {
+          id: true,
+          name: true,
+          brand: true,
+          desi: true,
+          vatRateOverride: true,
+          category: { select: { name: true, vatRate: true } },
+        },
+      },
       location: { select: { code: true } },
     },
   });
@@ -299,6 +334,20 @@ export async function kartVerisiniTopla(
     varyant: varyantiOzetle(varyant),
     urunId: varyant.product.id,
     rafKodu: varyant.location?.code ?? null,
+    kategoriAdi: varyant.product.category?.name ?? null,
+    desi:
+      varyant.product.desi === null ? null : Number(varyant.product.desi),
+    /**
+     * ⚠ SIRA ANAYASADAN: ürün istisnası > kategori oranı > varsayılan %20.
+     * Kartta gösterilen ORAN başka yerden (varyantKdvOrani) geliyor; burada
+     * yalnız o oranın hangi halkadan çıktığı söyleniyor.
+     */
+    kdvKaynagi:
+      varyant.product.vatRateOverride !== null
+        ? "URUN"
+        : varyant.product.category?.vatRate != null
+          ? "KATEGORI"
+          : "VARSAYILAN",
     eldekiAdet: stokToplami._sum.quantityDelta ?? 0,
     yasGun: yas,
     yasBandi: yas === null ? null : yasBandi(yas),

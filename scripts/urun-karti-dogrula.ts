@@ -559,6 +559,97 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
   );
 }
 
+// ===========================================================================
+//  KART KÜNYESİ — KDV · KATEGORİ · DESİ (24.08.2026)
+// ===========================================================================
+{
+  const kartEkrani = readFileSync(
+    "src/app/kart/[variantId]/page.tsx",
+    "utf8",
+  );
+  const kartKodu = kartEkrani.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, " ");
+
+  kontrol("kartta KDV oranı yazıyor", /t\("kdvSatiri"/.test(kartKodu));
+  /**
+   * ⚠ ÇIPLAK ORAN YETMEZ — KAYNAĞI DA YAZAR. "%20" hangi halkadan geldiğini
+   * söylemez; kullanıcı ürüne istisna mı girilmiş, kategoriden mi geliyor,
+   * varsayılana mı düşmüş bilmeden oranı düzeltemez.
+   */
+  kontrol(
+    "  ...ve oranın KAYNAĞI da söyleniyor",
+    /kdvKaynak\$\{veri\.kdvKaynagi\}|kdvKaynak\$\{/.test(kartKodu),
+  );
+  /**
+   * ⚠ `OR` DEĞİL `AND` — iki dal da ARANIR (mutasyon bulgusu 24.08.2026).
+   * İlk yazım `/kategoriSatiri|kategoriYok/` idi; DOLU dalı silen mutasyon
+   * BOŞ dalıyla ayakta kaldı ve kontrol yeşil yandı. Değer dalı ile boş
+   * dalı ayrı ayrı sınanmadıkça, ikisinden biri sessizce kaybolabilir.
+   */
+  kontrol(
+    "kartta kategori DEĞERİ yazıyor",
+    /t\("kategoriSatiri", \{ ad: veri\.kategoriAdi \}\)/.test(kartKodu),
+  );
+  kontrol(
+    "  ...ve boş kategori dalı da var",
+    /t\("kategoriYok"\)/.test(kartKodu),
+  );
+  kontrol(
+    "kartta desi DEĞERİ yazıyor",
+    /t\("desiSatiri", \{ desi: bicim\.sayi\(veri\.desi\) \}\)/.test(kartKodu),
+  );
+  kontrol("  ...ve boş desi dalı da var", /t\("desiYok"\)/.test(kartKodu));
+  /**
+   * ⚠ BOŞ DEĞER "GİRİLMEMİŞ" DER, SIFIRA DÜŞMEZ. Desi yoksa "0" yazmak,
+   * ölçülmüş bir sıfır gibi okunurdu.
+   */
+  /** ⚠ BOŞ DEĞER "girilmemiş" der, SIFIRA DÜŞMEZ — 0 ölçülmüş gibi okunurdu. */
+  kontrol(
+    "  ...boş dal 'girilmemiş' diyor, sıfır YAZMIYOR",
+    !/desi 0|kategori: 0/.test(kartKodu),
+  );
+
+  /**
+   * ⚠ KART OKUMA YÜZEYİ — EYLEM DÜĞMESİ GİRMEZ. "Alım gir / Düzenle / Sil"
+   * ürün sayfasında kalır; karta girerse kart bir eylem paneline döner ve
+   * okunurluğu kaybolur. Bu kontrol koşulur hâlde tutuyor.
+   */
+  for (const yasak of [
+    "AlertDialog",
+    "urunSil",
+    "silAction",
+    "/duzenle",
+    "/alimlar/yeni",
+  ]) {
+    kontrol(
+      `kartta EYLEM yok: ${yasak}`,
+      !kartKodu.includes(yasak),
+    );
+  }
+  /** Tek sessiz bağlantı: sayfaya geçiş. Düğme değil, link. */
+  kontrol(
+    "karttan ürün sayfasına SESSİZ bağlantı var",
+    /urunSayfasi/.test(kartKodu) && /<Baglanti/.test(kartKodu),
+  );
+
+  /**
+   * ⚠ GÖMÜLÜ RENK KALMAZ. Kartta bugün sıfır; bu kontrol onu KALICI yapıyor
+   * — yarın eklenen bir `#RRGGBB` ya da ham Tailwind rengi kırmızı yanar.
+   * Renk tek kaynaktan (`lib/renkler`) gelir, ekranda elle yazılmaz.
+   */
+  const kartHam = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
+  const hexler = kartHam.match(/#[0-9a-fA-F]{6}\b/g) ?? [];
+  kontrol(`kartta gömülü hex YOK (${hexler.length})`, hexler.length === 0, hexler);
+  const hamRenkler =
+    kartHam.match(
+      /\b(?:text|bg|border|ring)-(?:red|green|blue|amber|yellow|emerald|rose|orange|slate|gray|zinc|neutral)-\d{2,3}\b/g,
+    ) ?? [];
+  kontrol(
+    `kartta ham Tailwind rengi YOK (${hamRenkler.length})`,
+    hamRenkler.length === 0,
+    hamRenkler,
+  );
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

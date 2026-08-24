@@ -2832,7 +2832,16 @@
     "deneMesafe": "",
     "deneMesafeUzak": "",
     "partiTukendi": "",
-    "beyanFiyatYok": ""
+    "beyanFiyatYok": "",
+    "kdvSatiri": "",
+    "kdvKaynakURUN": "",
+    "kdvKaynakKATEGORI": "",
+    "kdvKaynakVARSAYILAN": "",
+    "kategoriSatiri": "",
+    "kategoriYok": "",
+    "desiSatiri": "",
+    "desiYok": "",
+    "urunSayfasi": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",
