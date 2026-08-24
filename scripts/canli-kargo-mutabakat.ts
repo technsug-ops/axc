@@ -139,6 +139,16 @@ async function main() {
       düzenidir. Eşik UYDURULMAZ — dağılım olduğu gibi basılır ve hükmü
       okuyan verir. (Anayasa: "eşiği soruyu soran koyamaz".) */
   const farklar: number[] = [];
+  /**
+   * ⚠ (c) KOVASININ SİPARİŞ NUMARALARI BASILIR — sayı yetmez.
+   *
+   * Bu numaralar defter kapatma işinde ÇAPRAZ KONTROL olacak: kargo
+   * faturasında görülen sipariş, eksik-sipariş içe aktarım listesinde de
+   * var mı? Yoksa BEŞİNCİ bir boşluk türü bulunmuş demektir — dökümde de
+   * olmayan sipariş. Sayıyı basıp numarayı saklamak, o kontrolü
+   * imkânsız kılardı.
+   */
+  const kapsamDisi: string[] = [];
 
   for (const s of satirlar) {
     const satis = await prisma.sale.findFirst({
@@ -166,6 +176,7 @@ async function main() {
 
     if (!satis) {
       c += 1;
+      if (!kapsamDisi.includes(s.siparisNo)) kapsamDisi.push(s.siparisNo);
       detay.push(
         `  ${s.siparisNo.padEnd(13)} ${s.tutar.toFixed(2).padStart(9)} ${s.tur.padEnd(19)} ` +
           `(c) SATIŞ DEFTERDE YOK — kapsam boşluğu`,
@@ -239,6 +250,17 @@ async function main() {
       console.log("      büyük olasılıkla kuruş yuvarlaması. Ayrı ele alınır.");
     }
   }
+  if (kapsamDisi.length > 0) {
+    console.log("");
+    console.log(`  (c) DEFTERDE OLMAYAN SİPARİŞLER (${kapsamDisi.length} farklı numara):`);
+    console.log(`    ${kapsamDisi.join(" · ")}`);
+    console.log("    ⚠ ÇAPRAZ KONTROL İÇİN: bu numaralar eksik-sipariş içe aktarım");
+    console.log("      listesinde de var mı? Yoksa BEŞİNCİ boşluk türü — dökümde");
+    console.log("      de olmayan sipariş.");
+    console.log("    ⚠ VE BU SATIRLARIN KARGO GİDERİ FİİLEN ÖDENMİŞ: görünmeyen");
+    console.log("      ciro değil, hiçbir satışa bağlanamayan GERÇEK PARA.");
+  }
+
   console.log("");
   console.log("  ⚠ TEK 'TUTMUYOR' RAKAMI BASILMADI: (b) (c) (d) farklı işlere yol açar.");
   console.log("    (b) girilecek bacak · (c) girilmemiş satış · (d) incelenecek sayı.");

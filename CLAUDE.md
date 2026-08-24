@@ -1443,6 +1443,36 @@ Bu, "kaydedilen ≠ görünen" ve "ölçüt de kaynağıyla anılır" derslerini
 zaman eksenindeki kardeşidir: **bir verinin yokluğu, ancak o veriyi
 üreten mekanizma o sırada ÇALIŞIYORSA anlam taşır.**
 
+### TOPLAM RAKAM YORUM KALDIRIR, SATIR KALDIRMAZ (KESİN KURAL)
+
+_Ders 24.08.2026, kargo faturası vakası._ Bir toplamdan yapılan çıkarım kaç
+kez tutarlı görünürse görünsün, kaynağın **satır düzeyindeki belgesi**
+gelene kadar teşhis değil **varsayımdır**. Toplam, birden çok yorumu aynı
+anda taşıyabilir; satır taşıyamaz.
+
+**Vaka:** Trendyol paneli `11473322212` için `Kargo −315,74` diyordu, bizim
+defterimizde `141,42` vardı. Aradaki `174,32`den iki teşhis üretildi ve
+ikisi de tutarlı görünüyordu:
+
+1. _"TY kendi kargo tarifesini uyguluyor, biz Aras tarifemizi"_ — çünkü
+   `315,74 ÷ 2 = 157,87` temiz bir sayıydı ve iki bacağı açıklıyordu.
+2. _"TY zaten Kargo sütununda kesmiş; elle yazmak çift sayım olur"_ —
+   çünkü toplam iki bacağı da içeriyor görünüyordu.
+
+**Fatura DETAYI ikisini birden çürüttü.** Satırlar şunu dedi:
+`141,42` (Gönderi, 5 desi) ve `174,32` (**Değişim Gönderisi**, 8 desi) —
+yani bizim rakamımız **kuruşuna doğruydu**, eksik olan yalnız ikinci
+bacaktı ve yazmak çift sayım **değil** tamamlama olurdu.
+
+> **ÖLÇÜT:** elimdeki şey bir TOPLAM mı, bir SATIR mı? Toplamsa üretilen
+> cümle _"şu olabilir"_ kipinde kalır ve iş açmaz. Satır gelmeden
+> düzeltmeye kalkmak, doğru çalışan bir motoru yanlış bir yorum uğruna
+> bozmaktır.
+
+⚠ Bu, _"iç tutarlılık kaymayı gizler"_ dersinin tersten hâli: orada tutarlı
+görünen ÇIKTI hatayı saklıyordu, burada tutarlı görünen YORUM. İkisinin de
+çaresi aynı — kaynağın kendi yazdığıyla göz göze karşılaştırmak.
+
 ### KAYNAK ÖNCELİĞİ: İÇERDEN GELEN BİLGİ ÜSTTEDİR (KESİN KURAL)
 
 _Kullanıcı kararı 22.08.2026._ Bir pazaryeri kuralı yazılırken kaynaklar
