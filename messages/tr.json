@@ -2546,7 +2546,12 @@
     "acikYokKisa": "fazla",
     "yuruyenBakiye": "yürüyen",
     "enDipEtiketi": "En dip nokta",
-    "enDipAciklama": "Bu pencerede kasanızın bugüne göre en aşağıda olacağı gün. Dönem sonu artı olsa bile arada çukura düşülebilir — para 20'sinde girip borç 12'sinde ödeniyorsa, 12'sinde para yoktur."
+    "enDipAciklama": "Bu pencerede kasanızın bugüne göre en aşağıda olacağı gün. Dönem sonu artı olsa bile arada çukura düşülebilir — para 20'sinde girip borç 12'sinde ödeniyorsa, 12'sinde para yoktur.",
+    "kaynakBandi": "Girişler kanal belgesinden okunuyor — {parti} hakediş partisi ({ilk} – {son}).",
+    "ufukSatiri": "Takvimin ufku {vade}; bundan sonrası yok değil, GÖRÜNMÜYOR.",
+    "ufukYok": "Hiçbir kalemde vade yok — takvim giriş gösteremiyor.",
+    "pirincBaslik": "Vadesi geçmiş, ödemesi ölçülmemiş: {tutar}",
+    "pirincNotu": "Bu tutar beklenen girişe DAHİL DEĞİL. Kanal ödemiş ve dosyaya düşmemiş olabilir; sistem bunu bilmiyor, o yüzden \"geciken alacak\" demiyor."
   },
   "KartOdeme": {
     "odemeIsaretle": "Ödendi işaretle",

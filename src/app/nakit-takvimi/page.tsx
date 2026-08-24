@@ -3,7 +3,6 @@ import { getTranslations } from "next-intl/server";
 import { AlertTriangle } from "lucide-react";
 
 import { GeriBaglanti } from "@/components/baglanti";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bicimlendirici } from "@/lib/bicim";
 import { gunMetninden } from "@/lib/donem";
@@ -14,7 +13,11 @@ import {
   type TakvimPenceresi,
 } from "@/lib/panel/nakit-takvimi";
 import { gunuDokumle } from "@/lib/panel/takvim-gruplama";
-import { takvimBugunu, takvimSatirlariniTopla } from "@/lib/panel/takvim-verisi";
+import {
+  sonHakedisPartisi,
+  takvimBugunu,
+  takvimSatirlariniTopla,
+} from "@/lib/panel/takvim-verisi";
 import { sayfaIzni } from "@/lib/yetki";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
@@ -61,7 +64,32 @@ export default async function NakitTakvimiSayfasi({
   });
 
   const para = (n: number) => bicim.para(n, TAKVIM_PARA_BIRIMI);
-  const acikMi = takvim.netPozisyon < 0;
+
+  /**
+   * ══════════════════════════════════════════════════════════════════════
+   *  "AÇIK YOK" ÜÇ ŞARTA BAĞLI — MİMAR KARARI 24.08.2026
+   * ----------------------------------------------------------------------
+   *  Ekran `+₺54.949 · açık yok` diyordu; ölçülen dip 27.08'de −₺161.383.
+   *  Yani ekran **yanlış cevap veriyordu** ve kullanıcı ona bakıp karar
+   *  veriyordu — susan bir ekrandan tehlikeli.
+   *
+   *  Üç şart, üçü de gerekli:
+   *  ① `netPozisyon >= 0` — dönem sonu artı
+   *  ② `enDip.bakiye >= 0` — ARADA da çukura düşülmüyor. Bu şart olmadan
+   *     "20'sinde para giriyor, 12'sinde kart ödeniyor" durumu görünmez;
+   *     dönem sonu artı olsa bile 12'sinde para YOKTUR.
+   *  ③ PİRİNÇ KOVA BOŞ — vadesi geçmiş, ödemesi ölçülmemiş kalem varsa
+   *     "açık yok" denemez: o para gelmemiş de olabilir.
+   * ══════════════════════════════════════════════════════════════════════
+   */
+  const pirincVar = takvim.gecikmisGirecek !== 0;
+  const acikMi =
+    takvim.netPozisyon < 0 ||
+    (takvim.enDip?.bakiye ?? 0) < 0 ||
+    pirincVar;
+
+  /** Hakediş dosyası DONMUŞ kaynak — takvimin ufku son partiyle biter. */
+  const sonParti = await sonHakedisPartisi();
   const doluGunler = takvim.gunler.filter((g) => g.satirlar.length > 0);
 
   /** Öbek satırının metni: "Hakediş (rapor) · 23 kalem". */
@@ -93,6 +121,57 @@ export default async function NakitTakvimiSayfasi({
           </Link>
         ))}
       </div>
+
+      {/*
+        ═══ KALICI KAYNAK BANDI — MİMAR ŞARTI 24.08.2026 ═══
+
+        ⚠ HAKEDİŞ DOSYASI DONMUŞ KAYNAK. Girişler yalnız ondan okunuyor;
+        takvimin ufku son partinin taşıdığı en son vadede biter. Bundan
+        sonrası **yok değil, GÖRÜNMÜYOR** — ve bant bunu söylemezse
+        kullanıcı boş ufku "para gelmiyor" diye okur, olmayan bir açığa
+        hazırlanır.
+
+        ⚠ BANT KALICI, KOŞULLU DEĞİL: "bugün sorun yok" diye gizlenirse
+        kaynağın sınırı da gizlenmiş olur.
+      */}
+      <div className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.bilgi}`}>
+        {t("kaynakBandi", {
+          parti: sonParti.partiSayisi,
+          ilk:
+            sonParti.ilkParti === null
+              ? "—"
+              : bicim.tarih(sonParti.ilkParti),
+          son:
+            sonParti.sonParti === null
+              ? "—"
+              : bicim.tarih(sonParti.sonParti),
+        })}{" "}
+        {sonParti.sonVade === null
+          ? t("ufukYok")
+          : t("ufukSatiri", { vade: bicim.tarih(sonParti.sonVade) })}
+      </div>
+
+      {/*
+        ═══ PİRİNÇ KOVA — VADESİ GEÇMİŞ, ÖDEMESİ ÖLÇÜLMEMİŞ ═══
+
+        ⚠ "GECİKEN ALACAK" DEĞİL. Sistem bu kalemler hakkında ödendi mi
+        bilmiyor; `paidAt` boş olması "hâlâ bekliyor" demek değil — kanal
+        ödemiş ve dosyaya düşmemiş olabilir. Bu yüzden hüküm verilmiyor,
+        yalnız beyan ediliyor.
+
+        ⚠ BEKLENEN GİRİŞE DAHİL DEĞİL. Dahil olsaydı takvim ₺779 bin
+        fazla iyimser çıkardı — bugünkü yanlış cevabın kaynağı buydu.
+      */}
+      {takvim.gecikmisGirecek !== 0 ? (
+        <div className="rounded-md border border-dashed p-3 text-sm">
+          <span className={`font-medium ${DURUM_YAZISI.uyari}`}>
+            {t("pirincBaslik", { tutar: para(takvim.gecikmisGirecek) })}
+          </span>
+          <p className="text-muted-foreground mt-1 text-xs">
+            {t("pirincNotu")}
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Kutu etiket={t("cikacak")} deger={para(takvim.cikacakToplam)} />
@@ -167,7 +246,6 @@ export default async function NakitTakvimiSayfasi({
               satirlar={takvim.gecikmis}
               para={para}
               obekAdi={obekAdi}
-              tahminEtiketi={t("tahminRozeti")}
             />
           </CardContent>
         </Card>
@@ -224,7 +302,6 @@ export default async function NakitTakvimiSayfasi({
                     satirlar={g.satirlar}
                     para={para}
                     obekAdi={obekAdi}
-                    tahminEtiketi={t("tahminRozeti")}
                   />
                 </CardContent>
               </Card>
@@ -247,7 +324,6 @@ export default async function NakitTakvimiSayfasi({
               satirlar={takvim.vadesizler}
               para={para}
               obekAdi={obekAdi}
-              tahminEtiketi={t("tahminRozeti")}
               tutarGizle
             />
           </CardContent>
@@ -289,13 +365,11 @@ function Dokum({
   satirlar,
   para,
   obekAdi,
-  tahminEtiketi,
   tutarGizle,
 }: {
   satirlar: Parameters<typeof gunuDokumle>[0];
   para: (n: number) => string;
   obekAdi: (kaynak: string, adet: number) => string;
-  tahminEtiketi: string;
   tutarGizle?: boolean;
 }) {
   const dokum = gunuDokumle(satirlar);
@@ -313,15 +387,16 @@ function Dokum({
    * tamamı 16 kod için harcanmaz.
    */
   if (tutarGizle) {
-    const tumuTahmin = dokum.tekil.every((s) => s.kaynak === "HAKEDIS_TAHMIN");
+    /**
+     * ⚠ TAHMİN ROZETİ TAMAMEN KALDIRILDI (24.08.2026). Girişler artık
+     * YALNIZ kanal belgesinden geliyor; "tahmin" diye bir kaynak yok.
+     *
+     * ⚠ `{false ? (...)}` bırakılmadı — koşulu öldürüp deseni bırakmak,
+     * anayasadaki "yalancı yeşil"in ta kendisi: bekçi `tahminEtiketi`
+     * anahtarını dosyada bulur ve rozet çizilmediği hâlde yeşil yanar.
+     */
     return (
       <div className="space-y-2">
-        {/* Rozet satır satır tekrarlanmıyor; hepsi aynıysa BİR KEZ yazılıyor. */}
-        {tumuTahmin && dokum.tekil.length > 0 ? (
-          <Badge variant="outline" className="text-[10px]">
-            {tahminEtiketi}
-          </Badge>
-        ) : null}
         <ul className="flex flex-wrap gap-1.5">
           {dokum.tekil.map((s, i) => (
             /* `min-w-0`: <li> bir flex öğesi, varsayılan min-width'i `auto`
@@ -335,11 +410,6 @@ function Dokum({
                 <span className="truncate underline underline-offset-2">
                   {s.baslik}
                 </span>
-                {!tumuTahmin && s.kaynak === "HAKEDIS_TAHMIN" ? (
-                  <Badge variant="outline" className="text-[10px]">
-                    {tahminEtiketi}
-                  </Badge>
-                ) : null}
               </Link>
             </li>
           ))}
@@ -369,11 +439,6 @@ function Dokum({
             <Link href={s.adres} className="truncate underline underline-offset-2">
               {s.baslik}
             </Link>
-            {s.kaynak === "HAKEDIS_TAHMIN" ? (
-              <Badge variant="outline" className="text-[10px]">
-                {tahminEtiketi}
-              </Badge>
-            ) : null}
           </span>
           <Tutar yon={s.yon} tutar={s.tutar} para={para} />
         </li>

@@ -40,10 +40,33 @@ export type TakvimYonu = "CIKACAK" | "GIRECEK";
 export type TakvimKaynagi =
   /** Kredi kartı ekstresi — son ödeme günü. */
   | "KART"
-  /** Pazaryeri raporundan gelen, ödenmemiş hakediş kalemi. Vade KESİN. */
-  | "HAKEDIS_RAPOR"
-  /** Rapora henüz düşmemiş satış; vade kanal ayarından TAHMİN. */
-  | "HAKEDIS_TAHMIN";
+  /**
+   * Pazaryeri hakediş kalemi — vade ve tutar KANAL BELGESİNDEN. Ölçülmüş.
+   *
+   * ⚠ TEK GİRİŞ KAYNAĞI BUDUR (mimar kararı 24.08.2026).
+   */
+  | "HAKEDIS_RAPOR";
+
+/**
+ * ============================================================================
+ *  NAKİT ≠ KÂR — GİRİŞ TARAFI SATIŞ DEFTERİNDEN TÜRETİLMEZ
+ * ----------------------------------------------------------------------------
+ *  _Mimar kararı 24.08.2026._ Girişler **hakediş kalemlerinden** okunur:
+ *  vade + tutar, kanal belgesi rozetiyle. Satış defterinden TAHMİN
+ *  üretilmez.
+ *
+ *  ⚠ BAĞSIZ KALEM NAKİT İÇİN GEÇERLİDİR. Bir hakediş kalemi hiçbir satışa
+ *  bağlı olmasa bile kanal o parayı ödeyecektir — **bağ kârın sorusudur,
+ *  nakdin değil.** Defterimiz %48 dolu (K20 ölçümü) ama kanal, girilmemiş
+ *  satışın parasını da ödüyor ve o para hakediş dosyasında duruyor.
+ *
+ *  ⚠ ESKİ MODEL NİYE DÜŞTÜ: `HAKEDIS_TAHMIN` rapora düşmemiş satışlardan
+ *  vade TAHMİN ediyordu. İki kusuru vardı — ① defterin eksik olduğu
+ *  ölçüldükten sonra tahmin, eksik defterin üstüne kurulmuş oluyordu;
+ *  ② tahmini gerçek vadeyle aynı toplama katmak, ölçülmüş bir sayıyla
+ *  uydurulmuş bir sayıyı tek rakamda birleştirmekti.
+ * ============================================================================
+ */
 
 export type TakvimSatiri = {
   yon: TakvimYonu;
@@ -101,6 +124,11 @@ export type NakitTakvimi = {
    */
   enDip: { gun: string; bakiye: number } | null;
   gecikmisCikacak: number;
+  /**
+   * PİRİNÇ KOVA — vadesi geçmiş girişler. ⚠ `girecekToplam`A VE
+   * `netPozisyon`A DAHİL DEĞİL. "Ödeme ölçülmedi" demek; ne alacak ne
+   * tahsil edilmiş sayılır (mimar kararı 24.08.2026).
+   */
   gecikmisGirecek: number;
   /** Vadesi bilinmeyen satırlar — toplamlara GİRMEZ. */
   vadesizler: TakvimSatiri[];
@@ -185,13 +213,27 @@ export function nakitTakvimiKur(girdi: {
   const gecikmisGirecek = toplam(gecikmis, "GIRECEK");
 
   /**
-   * YÜRÜYEN BAKİYE — gecikmiş bakiyesinden başlar, gün gün birikir.
+   * ══════════════════════════════════════════════════════════════════════
+   *  VADESİ GEÇMİŞ GİRİŞ BEKLENEN GİRİŞE SAYILMAZ — MİMAR KARARI 24.08.2026
+   * ----------------------------------------------------------------------
+   *  Vadesi geçmiş bir hakediş kalemi hakkında sistem şunu BİLMİYOR:
+   *  ödendi mi, gecikti mi, mahsup mu edildi. `paidAt` boş olması "hâlâ
+   *  bekliyor" demek DEĞİL — kanal ödemiş ve dosyaya düşmemiş olabilir.
    *
-   * ⚠ SON GÜNÜN BAKİYESİ `netPozisyon`A EŞİT OLMAK ZORUNDA. İkisi aynı
-   * ekranda yan yana duruyor; ayrışırlarsa kullanıcı hangisine güveneceğini
-   * bilemez. Bekçi bu eşitliği kuruşuna sabitliyor.
+   *  ⚠ Bu yüzden "geciken alacak" diye HÜKÜM VERİLMEZ. Ayrı bir kovada,
+   *  PİRİNÇ (modellenmemiş) rozetiyle durur: _"vadesi geçti, ödeme
+   *  ölçülmedi."_
+   *
+   *  ⚠ VE BEKLENEN GİRİŞE KATILMAZ. Katılsaydı takvim ₺779 bin fazla
+   *  iyimser çıkardı ve "açık yok" derdi — tam olarak bugünkü hatanın
+   *  kaynağı buydu.
+   *
+   *  ⚠ ÇIKIŞ TARAFI FARKLI: vadesi geçmiş bir KART BORCU hâlâ borçtur;
+   *  ödenmediyse ödenecektir. O yüzden gecikmiş çıkışlar yürüyen bakiyeye
+   *  GİRER, gecikmiş girişler girmez. Asimetri bilinçli.
+   * ══════════════════════════════════════════════════════════════════════
    */
-  let yuruyen = gecikmisGirecek - gecikmisCikacak;
+  let yuruyen = -gecikmisCikacak;
   let enDip: { gun: string; bakiye: number } | null = null;
   for (const g of gunler) {
     yuruyen += g.girecek - g.cikacak;
@@ -205,7 +247,13 @@ export function nakitTakvimiKur(girdi: {
   const pencereGirecek = gunler.reduce((t, g) => t + g.girecek, 0);
 
   const cikacakToplam = pencereCikacak + gecikmisCikacak;
-  const girecekToplam = pencereGirecek + gecikmisGirecek;
+  /**
+   * ⚠ TANIM DEĞİŞTİ: `girecekToplam` artık YALNIZ BEKLENEN girişi sayar.
+   * Vadesi geçmiş giriş (`gecikmisGirecek`) pirinç kovada ayrı durur.
+   * Eskiden ikisi toplanıyordu ve `netPozisyon` bu yüzden ₺779 bin
+   * iyimserdi.
+   */
+  const girecekToplam = pencereGirecek;
 
   return {
     gecikmis,

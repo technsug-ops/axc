@@ -2546,7 +2546,12 @@
     "acikYokKisa": "",
     "yuruyenBakiye": "",
     "enDipEtiketi": "",
-    "enDipAciklama": ""
+    "enDipAciklama": "",
+    "kaynakBandi": "",
+    "ufukSatiri": "",
+    "ufukYok": "",
+    "pirincBaslik": "",
+    "pirincNotu": ""
   },
   "KartOdeme": {
     "odemeIsaretle": "",

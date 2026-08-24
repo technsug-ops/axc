@@ -1448,12 +1448,28 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     satirlar: [
       s({ yon: "CIKACAK", tutar: 1000, tarih: gun(20) }),
       s({ yon: "GIRECEK", tutar: 400, tarih: gun(18), kaynak: "HAKEDIS_RAPOR" }),
-      // GECİKMİŞ — toplama GİRER (mimar kararı 14.08.2026).
+      /**
+       * ⚠ KARAR ÇEVRİLDİ 24.08.2026 — ESKİ GEREKÇE SİLİNMEDİ.
+       *
+       * ESKİ (14.08.2026): _"gecikmiş toplama GİRER"_ — vadesi geçmiş bir
+       * hakediş kalemi hâlâ alacaktır, toplamdan düşmek onu yok saymaktır.
+       *
+       * NİYE ÇEVRİLDİ: sistem o kalem hakkında ödendi mi BİLMİYOR.
+       * `paidAt` boş olması "hâlâ bekliyor" demek değil — kanal ödemiş ve
+       * dosyaya düşmemiş olabilir. Ölçüldü (24.08): vadesi geçmiş NET
+       * ₺779.244,05 ve bu tutar beklenen girişe sayıldığı için ekran
+       * `+₺54.949 · açık yok` diyordu; ölçülen dip ise −₺161.383'tü.
+       *
+       * Yani eski kural bir şeyi yok saymamak için konmuştu ama sonucu
+       * **ölçülmemiş bir parayı ölçülmüş gibi göstermek** oldu. Yeni kural
+       * onu silmiyor, PİRİNÇ KOVAYA taşıyor: görünür kalıyor, toplama
+       * girmiyor.
+       */
       s({ yon: "GIRECEK", tutar: 250, tarih: gun(10), kaynak: "HAKEDIS_RAPOR" }),
       // Pencere DIŞI (14 gün = 14–27 Ağustos) — sayılmaz.
       s({ yon: "CIKACAK", tutar: 9999, tarih: gun(30) }),
       // Vadesi bilinmiyor — sayılmaz, "?" listesinde durur.
-      s({ yon: "GIRECEK", tutar: 777, tarih: null, kaynak: "HAKEDIS_TAHMIN" }),
+      s({ yon: "GIRECEK", tutar: 777, tarih: null, kaynak: "HAKEDIS_RAPOR" }),
       // TRY değil — kur çevrilmez, toplama karışmaz.
       s({ yon: "GIRECEK", tutar: 555, tarih: gun(19), paraBirimi: "EUR" }),
     ],
@@ -1462,8 +1478,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   });
 
   yakin("çıkacak toplamı", t1.cikacakToplam, 1000);
-  yakin("girecek toplamı (gecikmiş DAHİL)", t1.girecekToplam, 650);
-  yakin("net pozisyon = girecek − çıkacak", t1.netPozisyon, -350);
+  yakin("girecek toplamı (gecikmiş HARİÇ — 24.08 kararı)", t1.girecekToplam, 400);
+  yakin("net pozisyon = girecek − çıkacak", t1.netPozisyon, -600);
   kontrol("açık varsa net EKSİ", t1.netPozisyon < 0, t1.netPozisyon);
 
   kontrol("gecikmiş ayrı listede", t1.gecikmis.length === 1, t1.gecikmis.length);
@@ -1729,47 +1745,36 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * yani yalnız kimliğe bakan kapı HİÇ devreye girmiyordu; çakışma
    * olmaması tesadüftü. Sipariş numarası ikinci anahtar olarak eklendi.
    */
-  kontrol(
-    "çift sayım kapısı SATIŞ KİMLİĞİNE bakıyor",
-    veriKaynagi.includes("id: { notIn: [...raporluSatisIdleri] }"),
-  );
-  kontrol(
-    "  ...ve SİPARİŞ NUMARASINA da bakıyor (eşleştirme yapılmadan da korur)",
-    veriKaynagi.includes("NOT: { code: { in: [...raporluSiparisNolari] } }"),
-  );
   /**
-   * ════════════════════════════════════════════════════════════════════
-   *  BU KONTROL VARSAYIMI KİLİTLİYORDU — ARTIK KAYDI KİLİTLİYOR
-   * --------------------------------------------------------------------
-   *  Eski hâli `if (ekstre.gecmisMi) continue;` satırının VARLIĞINI
-   *  arıyordu, yani "geçmiş ekstreyi görmezden gel" varsayımının bozulmadan
-   *  durduğunu doğruluyordu. O gün doğruydu: sistemde ödeme kaydı yoktu ve
-   *  varsayım bilinçliydi.
+   * ⚠ ÇİFT SAYIM KAPISI KALDIRILDI — ÇÜNKÜ İKİNCİ KAYNAK KALMADI
+   * (24.08.2026).
    *
-   *  `KartOdeme` gelince varsayımın ömrü bitti. Test şimdi tersini tutuyor:
-   *  ekstre KAYITLA kapanmalı (kalan), takvime giren tutar da ödenen düşülmüş
-   *  olmalı. Eski satırın geri gelmediği de ayrıca sınanır — sessizce geri
-   *  dönmesi, gerçek borcu yeniden görünmez yapardı.
-   * ════════════════════════════════════════════════════════════════════
+   * ESKİ GEREKÇE (15.08.2026, silinmiyor): takvim hem RAPORDAN hem
+   * TAHMİNDEN giriş üretiyordu; aynı sipariş iki yoldan girerse para iki
+   * kez "girecek" sayılırdı. Kapı iki anahtarlıydı (satış kimliği +
+   * sipariş numarası) ve canlıda ölçülmüştü: 110 kalemin hiçbiri bağlı
+   * değildi, yani tek anahtar hiç devreye girmiyordu.
+   *
+   * NİYE GEREKSİZLEŞTİ: `HAKEDIS_TAHMIN` kaynağı tamamen kaldırıldı.
+   * Girişin TEK kaynağı hakediş kalemleri; aynı paranın iki yoldan
+   * girmesi artık İMKÂNSIZ. Kapıyı korumak, olmayan bir riske karşı
+   * kod tutmak olurdu.
+   *
+   * ⚠ RİSK GERİ GELİRSE: ikinci bir giriş kaynağı açıldığı gün bu kapı
+   * da geri gelir. Açılış şartı budur.
    */
   /**
-   * ════════════════════════════════════════════════════════════════════
-   *  MOBİLDE TAŞMA — GRID ÖĞESİNİN min-width'i AUTO'DUR (16.08.2026)
-   * --------------------------------------------------------------------
-   *  Kullanıcı telefondan panele baktı: yaşlanma listesinde ürün adları
-   *  kısalmıyor, satır kartı taşıyor, sağdaki rakam ekranın dışında
-   *  kalıyordu. İçeride `min-w-0` ve `truncate` VARDI ama hiç devreye
-   *  giremiyordu.
-   *
-   *  Sebep: `genis` kipte <ul> bir GRID ve <li> grid öğesi oluyor. Grid ve
-   *  flex öğelerinin varsayılan `min-width` değeri `auto`dur — içeriğinden
-   *  dar olmayı reddeder. Kısaltma zincirinin EN DIŞTAKİ halkası eksikti.
-   *
-   *  Dar (`divide-y`) kipte <li> blok öğesi olduğundan hata görünmüyordu:
-   *  yalnız tam genişlikteki listede, yalnız telefonda çıkıyordu. Masaüstü
-   *  bakışı bu kusuru göremezdi.
-   * ════════════════════════════════════════════════════════════════════
+   * ⚠ ÖLÇÜT ADA DEĞİL KULLANIMA BAĞLI. İlk yazım adı dosyanın tamamında
+   * arıyordu ve KIRMIZI yandı — kalan tek geçiş, kaldırma gerekçesini
+   * anlatan YORUMDU. Ad bir dosyada geçiyor olabilir; önemli olan
+   * ÜRETİLİYOR mu. (Aynı tuzak `"use server"` bekçisinde de yaşandı.)
    */
+  kontrol(
+    "giriş kaynağı TEK (çift sayım yapısal olarak imkânsız)",
+    !/kaynak:\s*"HAKEDIS_TAHMIN"/.test(
+      readFileSync("src/lib/panel/takvim-verisi.ts", "utf8"),
+    ),
+  );
   const panelKartlari = readFileSync("src/app/panel-kartlari.tsx", "utf8");
   kontrol(
     "panel listesi satırı daralabiliyor (grid öğesinde min-w-0)",
@@ -1799,11 +1804,165 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     "  ...ters kayıtlar süzülmüyor (düzeltme görünür kalır)",
     !veriKaynagi.includes("isReversal: false"),
   );
+  /**
+   * ⚠ ÖLÇÜT DARALDI, NİYET AYNI (24.08.2026).
+   *
+   * ESKİ HÂLİ üç motoru birden arıyordu: `kartBorcuHesapla` ·
+   * `beklenenHakedis` · `beklenenVade`. Son ikisi TAHMİN bloğunun
+   * yardımcılarıydı; blok kaldırıldığı için artık çağrılmıyorlar ve
+   * kontrol kırmızı yandı.
+   *
+   * NİYET DEĞİŞMEDİ: "takvim kendi motorunu icat etmesin, mevcut
+   * motorlardan beslensin". Kart tarafı hâlâ öyle. Hakediş tarafında
+   * motor GEREKMİYOR artık — vade ve tutar kanal belgesinden GELİYOR,
+   * hesaplanmıyor. Hesaplanmayan bir şey için motor aramak, olmayan
+   * bir bağımlılığı zorunlu tutmak olurdu.
+   */
   kontrol(
-    "ikinci motor açılmamış — kart ve hakediş mevcut motorlardan",
-    veriKaynagi.includes("kartBorcuHesapla(") &&
-      veriKaynagi.includes("beklenenHakedis(") &&
-      veriKaynagi.includes("beklenenVade("),
+    "kart tarafı mevcut motordan besleniyor (ikinci motor yok)",
+    veriKaynagi.includes("kartBorcuHesapla("),
+  );
+  /**
+   * ⚠ VE HAKEDİŞ TARAFI HESAPLAMIYOR — OKUYOR. Vade `dueDate`ten, tutar
+   * `amount`tan geliyor. Buraya bir hesap girerse "kanal belgesinden
+   * okunuyor" iddiası çürür.
+   */
+  kontrol(
+    "  ...hakediş tarafı vadeyi HESAPLAMIYOR, okuyor",
+    !veriKaynagi.includes("beklenenVade(") &&
+      veriKaynagi.includes("tarih: k.dueDate"),
+  );
+
+
+  /**
+   * ── "AÇIK YOK" ÜÇ ŞARTA BAĞLI (mimar kararı 24.08.2026) ──────────────
+   *
+   * Ekran `+₺54.949 · açık yok` diyordu; ölçülen dip −₺161.383'tü. Rakam
+   * gösteren ve rakamı yanlış olan ekran, SUSAN ekrandan tehlikelidir —
+   * kullanıcı ona bakıp karar verir.
+   */
+  const takvimEkran = readFileSync("src/app/nakit-takvimi/page.tsx", "utf8");
+  const acikBasi = takvimEkran.indexOf("const acikMi =");
+  const acikBloku = takvimEkran.slice(acikBasi, acikBasi + 220);
+  kontrol("açık ölçütü kesilebildi", acikBasi > 0);
+  kontrol(
+    "  ...① dönem sonu eksiyse AÇIK",
+    /netPozisyon < 0/.test(acikBloku),
+  );
+  /**
+   * ⚠ İKİNCİ ŞART OLMADAN ÇUKUR GÖRÜNMEZ: "20'sinde para giriyor,
+   * 12'sinde kart ödeniyor" durumunda dönem sonu artı olsa bile 12'sinde
+   * para YOKTUR.
+   */
+  kontrol(
+    "  ...② ARADA çukura düşülüyorsa AÇIK (dip < 0)",
+    /enDip\?\.bakiye \?\? 0\) < 0/.test(acikBloku),
+  );
+  /**
+   * ⚠ ÜÇÜNCÜ ŞART: pirinç kova doluysa "açık yok" denemez — o para
+   * gelmemiş de olabilir, sistem bilmiyor.
+   */
+  kontrol(
+    "  ...③ pirinç kova doluysa AÇIK",
+    /pirincVar/.test(acikBloku),
+  );
+
+  /**
+   * ⚠ PİRİNÇ KOVA BEKLENEN GİRİŞE KATILMAZ. Katılsaydı takvim ₺801 bin
+   * fazla iyimser çıkardı (ölçüldü 24.08).
+   */
+  const takvimGovde = readFileSync("src/lib/panel/nakit-takvimi.ts", "utf8");
+  /**
+   * ⚠ NEGATİF KALEM ATILMAZ — İYİMSER TAKVİM ÜRETİR.
+   *
+   * Eski kod `tutar <= 0` olanı atıyordu. `IADE_TUTARI −7.025,75`
+   * atılınca aynı siparişin `SIPARIS_TUTARI +7.025,75`'i tek başına
+   * kalıyor ve kanal o parayı ödeyecekmiş gibi duruyordu — oysa iade
+   * onu geri almış. Ölçüldü (24.08): bekleyen kalemlerde IADE −11.434 ·
+   * KUPON −3.660 · PROMOSYON −222 · İNDİRİM −28.
+   *
+   * ⚠ SIFIR ATILIR, NEGATİF ATILMAZ — ayrım tam burada.
+   */
+  /**
+   * ⚠ YORUMLAR SOYULUR. İlk yazım ham dosyada `tutar <= 0` arıyordu ve
+   * KIRMIZI yandı — desen, o kodun NİYE kaldırıldığını anlatan KENDİ
+   * yorumumda geçiyordu. Bu tuzağa bugün üçüncü kez düşüldü
+   * (`"use server"` · `HAKEDIS_TAHMIN` · burası).
+   */
+  /**
+   * ⚠ ÖNCE DESENİ SAY — anayasanın 0. maddesi, bugün atlandı.
+   *
+   * `if (tutar <= 0) continue;` bu dosyada İKİ kez geçiyor: biri KART
+   * BORCU bloğunda ve MEŞRU (sıfır tutarlı alım borç değildir), öteki
+   * hakediş bloğundaydı ve kaldırıldı. Dosyanın tamamında arayan ölçüt,
+   * meşru olanı bulup kırmızı yandı.
+   *
+   * ⚠ Yorumlar da soyuluyor: aynı desen, kaldırma gerekçesini anlatan
+   * yorumda da geçiyor. Bu tuzağa bugün ÜÇ kez düşüldü.
+   */
+  const takvimVeriHam = readFileSync(
+    "src/lib/panel/takvim-verisi.ts",
+    "utf8",
+  );
+  const hakedisBasi = takvimVeriHam.indexOf("const raporKalemleri");
+  const hakedisBloku = takvimVeriHam
+    .slice(
+      hakedisBasi,
+      takvimVeriHam.indexOf("TAHMİN BLOĞU KALDIRILDI", hakedisBasi),
+    )
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\/\/[^\n]*/g, " ");
+  kontrol(
+    "hakediş bloğu kesilebildi",
+    hakedisBasi > 0 && hakedisBloku.length > 100,
+  );
+  kontrol(
+    "negatif hakediş kalemi ATILMIYOR (iade/kupon girişten düşer)",
+    /if \(tutar === 0\) continue;/.test(hakedisBloku) &&
+      !/if \(tutar <= 0\) continue;/.test(hakedisBloku),
+  );
+
+  kontrol(
+    "girecekToplam gecikmişi İÇERMİYOR",
+    /const girecekToplam = pencereGirecek;/.test(takvimGovde),
+  );
+  /**
+   * ⚠ ASİMETRİ BİLİNÇLİ: gecikmiş ÇIKIŞ hâlâ borçtur, yürüyen bakiyeye
+   * girer; gecikmiş GİRİŞ girmez.
+   */
+  kontrol(
+    "  ...ama gecikmiş ÇIKIŞ yürüyen bakiyeye giriyor",
+    /let yuruyen = -gecikmisCikacak;/.test(takvimGovde),
+  );
+
+  /** Kalıcı kaynak bandı — donmuş kaynağın ufku ekranda yazar. */
+  /**
+   * ⚠ DESEN ÇAĞRIYA DEĞİL ÇİZİME BAĞLI. İlk yazım `t("kaynakBandi"`
+   * arıyordu ve `{false && t("kaynakBandi"...` yazan mutasyon YEŞİL
+   * KALDI — bant çizilmiyordu ama anahtar dosyada duruyordu.
+   * (Anayasa: koşul öldürülür, desen kalır.)
+   */
+  const bantBasi = takvimEkran.indexOf('{t("kaynakBandi"');
+  kontrol(
+    "kalıcı kaynak bandı ÇİZİLİYOR (donmuş kaynak beyanı)",
+    bantBasi > 0,
+  );
+  kontrol(
+    "  ...ve bir kutunun İÇİNDE (metin havada değil)",
+    bantBasi > 0 &&
+      /DURUM_KUTUSU\.bilgi[\s\S]{0,80}\{t\("kaynakBandi"/.test(takvimEkran),
+  );
+  kontrol(
+    "  ...ve takvimin UFKU yazıyor",
+    /ufukSatiri|ufukYok/.test(takvimEkran),
+  );
+  /**
+   * ⚠ BANT KOŞULSUZ: "bugün sorun yok" diye gizlenirse kaynağın sınırı da
+   * gizlenmiş olur.
+   */
+  kontrol(
+    "  ...bant KOŞULSUZ çiziliyor",
+    !/\{[^}]*\?\s*\(\s*<div[^>]*>\s*\{t\("kaynakBandi"/.test(takvimEkran),
   );
 
   // ------------------- İSİMSİZ SATIR YAZILMAZ (14.08.2026 kusuru) -------------
@@ -1830,7 +1989,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     adsiz(959.15),
     adsiz(2471.4),
     s({ yon: "CIKACAK", tutar: 1500, baslik: "Garanti ••4321" }),
-    s({ yon: "GIRECEK", tutar: 300, baslik: "11504122276", kaynak: "HAKEDIS_TAHMIN" }),
+    s({ yon: "GIRECEK", tutar: 300, baslik: "11504122276", kaynak: "HAKEDIS_RAPOR" }),
   ]);
 
   kontrol("adı olan satır TEK TEK duruyor", dokum.tekil.length === 2, dokum.tekil.length);

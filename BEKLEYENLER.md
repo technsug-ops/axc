@@ -19,9 +19,11 @@
 > ekrandan tehlikelidir: kullanıcı ona bakıp karar verir. Bu etiketi
 > taşıyan kalem varken yeni bir cephe açılmaz — önce yanlış cevap susar.
 
-| Ekran | Ne gösteriyor | Ne olmalı |
-|---|---|---|
-| **Nakit takvimi** | `+₺54.949 · açık yok` | ölçülen dip **27.08'de −₺161.383** |
+| Ekran | Durum |
+|---|---|
+| **Nakit takvimi** | ✅ **ETİKET KALKTI 24.08.2026** — ekranın verdiği cevap, koşumun ölçtüğü diple **aynı**: 14 gün `−₺143.485,15` (dip 03.09) · 30 gün `−₺242.975,35` (dip 18.09). "Açık yok" artık yazılamıyor. |
+
+> **Şu an bu etiketi taşıyan kalem YOK.**
 
 ---
 
@@ -30,7 +32,7 @@
 | # | İş | Durum |
 |---|---|---|
 | 1 | **K20 sayımı** | ✅ **[KOŞTU 24.08.2026]** — `npm run canli:k20-sayim` |
-| 2 | **Nakit takvimi düzeltmesi** | ⏳ K20 sonucu geldi, komut bekleniyor |
+| 2 | **Nakit takvimi düzeltmesi** | ✅ **[KOŞTU 24.08.2026]** — girişler kanal belgesinden, tahmin kaldırıldı |
 | 3 | **Halil'de dört madde** | ⏳ API anahtarı · `11473322212` değişim düğmesi · 31.08 sayacı · test 4 (`7260036314074719`) |
 | 4 | **H10 Salı tarifesi** + kalıcı telefon hatırlatıcısı | ⏳ |
 | 5 | **A3-① HealthCheck** | ⏳ komut hazır, **anahtar gelince koşar** |
@@ -101,6 +103,7 @@
 
 | # | İş | Açılış şartı |
 |---|---|---|
+| **K42** | **Yönlendirmeli paketleme — 🔴 KİLİTLİ, kod YOK** | 📦 **Halil tarifi 24.08.2026:** pazaryeri etiketindeki kargo kodu okutulur → sistem **ürün adı + adet + RAF** söyler → raftan alınan ürünün barkodu okutulur → eşleşirse görsel/sesli onay → *paketlendi*. **İki okutma, sıfır ezber** — yeni eleman tarifle çalışabilir. **Mevcut parçalar:** kargo kodundan sipariş bulma [K41① canlı] · ürün teyidi [K34a canlı] · paketlendi izi [K37 canlı]. ⚠ **"EKSİK HALKA: RAF" İDDİASI ÖLÇÜLDÜ VE ÇÜRÜDÜ (24.08.2026):** ① *"şemada varyanta konum alanı"* — **ZATEN VAR**: `ProductVariant.locationId` → `Location{ code, name }`, ürün sayfasında `Raf: A19` diye görünüyor, kârlılık kartında `rafKodu` basılıyor. ② *"1080 ürünün fiziksel adreslenmesi (BÜYÜK)"* — **1091 aktif varyantın 1090'ı raflı (%99,9)**, 41 tanımlı raf, ve **stokta olan 118 varyantın RAFSIZI SIFIR.** Yani büyük operasyon işi **bitmiş.** ⏭ **Gerçek eksik parça yalnız AKIŞ**: üç canlı parçayı tek ekranda birleştiren yönlendirme + eşleşme onayı. ⛔ **AÇILIŞ ŞARTI DEĞİŞMEDİ:** API-öncesi kapanış listesi bitmeden kod yazılmaz. |
 | **H20** | **`soldAt` saat taşımıyor** | 🕓 **VERİ GELDİ, KARAR AÇIK.** TY sipariş dökümü saat taşıyor (144/144) ve K9'un iki sınır kalemi çözüldü (`11475234462` → 04.08 17:04 · `11518039572` → 18.08 20:58; ikisi de 08:00 sonrası → yeni pencere). **Şemaya saat ALINMADI.** Açılış: içe aktarma yazıldığında saat de alınsın mı — ayrı karar.<br>🔎 **CEVAP VERİDEN GELDİ 24.08.2026:** TY API'sinde `orderDate` **epoch milisaniye, GMT+3** — yani saat **var ve API veriyor**. Karar artık teorik değil; A3 yazılırken saat alınacak mı, o an belli olur. |
 | **K6** | **Eşik yeniden ölçümü** | Satış kalemi **200'ü geçince.** `veri-supheli.ts` eşikleri n=40 tabanından çıktı (p95 %154, p5 %44,8). Araç: `canli:bekleme-olcum`. _Eşik kaynağıyla anılır; taban büyüyünce kaynak eskir._ |
 | **K7** | **`satis.veri.dogrula` ayrı izni** | **Faz 4 / RBAC.** Bugün `satis.duzenle` istiyor. Ayrı izin daha temiz ama iki bacaklı yetki işi doğurur ve tek kullanıcıda boş katmandır. |

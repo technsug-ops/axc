@@ -1,11 +1,8 @@
-import { gunEkle, gunDegeri, isTakvimGunu } from "@/lib/donem";
-import { beklenenHakedis, beklenenVade } from "@/lib/hakedis/eslestir";
-import { satisCikisMaliyeti } from "@/lib/iade";
 import { kartBorcuHesapla, type BorcAlimi } from "@/lib/kart-borcu";
+import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
 
 import {
-  TAKVIM_PARA_BIRIMI,
   type TakvimSatiri,
 } from "./nakit-takvimi";
 
@@ -44,8 +41,6 @@ import {
  * ============================================================================
  */
 
-/** Tahmin üretilirken geriye kaç gün bakılır. */
-const TAHMIN_GERIYE_GUN = 120;
 
 export async function takvimSatirlariniTopla(
   bugun: Date,
@@ -196,9 +191,23 @@ export async function takvimSatirlariniTopla(
     const siparisNo = (k.orderNo ?? "").trim();
     if (siparisNo) raporluSiparisNolari.add(siparisNo);
     const tutar = Number(k.amount.toString());
-    // Negatif kalem (kesinti/mahsup) girecek para değildir; takvimi
-    // yanıltmasın diye alınmaz — hakediş ekranında zaten görünüyor.
-    if (tutar <= 0) continue;
+    /**
+     * ⚠ NEGATİF KALEM ARTIK ALINIYOR — mimar kararı 24.08.2026.
+     *
+     * Eski kod `tutar <= 0` olanı ATIYORDU ve gerekçesi şuydu: "negatif
+     * kalem girecek para değildir". Doğru görünüyordu ama takvimi
+     * İYİMSER yapıyordu: `IADE_TUTARI −7.025,75` atılınca aynı siparişin
+     * `SIPARIS_TUTARI +7.025,75`'i tek başına kalıyor ve kanal o parayı
+     * ödeyecekmiş gibi duruyordu — oysa iade onu geri almış.
+     *
+     * Ölçüldü (24.08): bekleyen kalemlerde `IADE_TUTARI −11.434,09` ·
+     * `KUPON −3.660,50` · `PROMOSYON −222` · `INDIRIM −28,20`. Hepsi
+     * girecek paradan DÜŞER.
+     *
+     * ⚠ SIFIR ATILIR, NEGATİF ATILMAZ: sıfır tutarlı kalem takvime bir
+     * şey katmaz ama satır sayısını şişirir.
+     */
+    if (tutar === 0) continue;
     satirlar.push({
       yon: "GIRECEK",
       kaynak: "HAKEDIS_RAPOR",
@@ -210,86 +219,27 @@ export async function takvimSatirlariniTopla(
     });
   }
 
-  // -------------------------------------------------- HAKEDİŞ — TAHMİN
   /**
-   * Rapora düşmemiş satışlar. ÇİFT SAYIM KAPISI: rapordan kalemi olan
-   * satış buraya GİRMEZ (`raporluSatisIdleri`).
+   * ══════════════════════════════════════════════════════════════════════
+   *  TAHMİN BLOĞU KALDIRILDI — MİMAR KARARI 24.08.2026
+   * ----------------------------------------------------------------------
+   *  Burada `HAKEDIS_TAHMIN` satırları üretiliyordu: rapora düşmemiş
+   *  satışlardan, kanal ayarındaki `payoutDays` ile vade TAHMİN edilerek.
+   *
+   *  ⚠ NİYE DÜŞTÜ — İKİ SEBEP:
+   *  ① **Nakit ≠ kâr.** Girişler kanal belgesinden okunur; satış
+   *     defterinden türetilmez. Tahmin, ölçülmüş bir vadeyle uydurulmuş
+   *     bir vadeyi aynı toplama katıyordu.
+   *  ② **Defter eksik ölçüldü** (K20: TY 01–20.08'de döküm 147 adet,
+   *     bizde 71 — %48). Tahmin, eksik defterin üstüne kuruluyordu:
+   *     girilmemiş satışın parası tahmine HİÇ girmiyor, ama kanal onu
+   *     ödüyor ve hakediş dosyasında duruyor.
+   *
+   *  ⚠ VE ÇİFT SAYIM KAPISI DA GEREKSİZLEŞTİ: tek kaynak kaldığı için
+   *  aynı para iki yoldan girmesi imkânsız. `raporluSatisIdleri` /
+   *  `raporluSiparisNolari` kümeleri artık kullanılmıyor.
+   * ══════════════════════════════════════════════════════════════════════
    */
-  const geriye = gunEkle(bugun, -TAHMIN_GERIYE_GUN);
-  const satislar = await prisma.sale.findMany({
-    where: {
-      /**
-       * İPTAL EDİLEN SATIŞTAN PARA GELMEZ. Tahmine girseydi takvim var
-       * olmayan bir tahsilatı beklerdi ve nakit açığı uyarısı geç yanardı.
-       */
-      iptalTarihi: null,
-      soldAt: { gte: geriye },
-      net1Amount: { not: null },
-      // İKİ ANAHTAR: eşleşmiş satış kimliği VE rapordaki sipariş numarası.
-      id: { notIn: [...raporluSatisIdleri] },
-      NOT: { code: { in: [...raporluSiparisNolari] } },
-    },
-    select: {
-      id: true,
-      code: true,
-      soldAt: true,
-      net1Amount: true,
-      profitCurrency: true,
-      channelAccount: {
-        select: { payoutDays: true, payoutDaysAreBusinessDays: true },
-      },
-      items: {
-        select: {
-          /**
-           * SÜZGEÇ YOK — 17.08.2026. `type: "SALE_OUT"` süzgeci adet
-           * azaltmanın ayna girişini görmüyor ve nakit takvimi maliyeti
-           * fazla sayıyordu (aynı kök: satış 11513025054).
-           */
-          stockMovements: {
-            select: { quantityDelta: true, unitCostAmount: true },
-          },
-        },
-      },
-    },
-  });
-
-  for (const s of satislar) {
-    const vade = beklenenVade(
-      s.soldAt,
-      null,
-      s.channelAccount.payoutDays,
-      s.channelAccount.payoutDaysAreBusinessDays,
-    );
-
-    /**
-     * MALİYET BİLİNMİYORSA TUTAR ÜRETİLMEZ. "Planlı tarih, tutar yok"
-     * satırı takvime GİRMEZ (sözleşme); vadesiz listesinde durur.
-     */
-    let maliyet: number | null = 0;
-    for (const k of s.items) {
-      const kalemMaliyeti = satisCikisMaliyeti(k.stockMovements);
-      if (kalemMaliyeti === null) {
-        maliyet = null;
-        break;
-      }
-      maliyet += kalemMaliyeti;
-    }
-
-    const net1 = Number(s.net1Amount!.toString());
-    const tutar = maliyet === null ? null : beklenenHakedis(net1, maliyet);
-
-    satirlar.push({
-      yon: "GIRECEK",
-      kaynak: "HAKEDIS_TAHMIN",
-      // Vade ya da tutar bilinmiyorsa satır VADESİZ sayılır: sıfır
-      // varsaymak yerine "?" ile görünür.
-      tarih: tutar === null ? null : (vade?.tarih ?? null),
-      tutar: tutar ?? 0,
-      paraBirimi: s.profitCurrency ?? TAKVIM_PARA_BIRIMI,
-      baslik: s.code ?? "—",
-      adres: `/satislar/${s.id}`,
-    });
-  }
 
   return satirlar;
 }
@@ -297,4 +247,48 @@ export async function takvimSatirlariniTopla(
 /** Panelin kullandığı "bugün" — iş takvimi (Europe/Istanbul). */
 export function takvimBugunu(): Date {
   return gunDegeri(isTakvimGunu(new Date()));
+}
+
+/**
+ * ============================================================================
+ *  TAKVİMİN UFKU — SON HAKEDİŞ PARTİSİ (24.08.2026)
+ * ----------------------------------------------------------------------------
+ *  ⚠ HAKEDİŞ DOSYASI DONMUŞ KAYNAK. Girişler artık YALNIZ o dosyadan
+ *  okunuyor; dolayısıyla takvimin görebildiği en son gün, son partinin
+ *  taşıdığı en son vadedir. Bundan sonrası **yok değil, GÖRÜNMÜYOR** ve
+ *  ikisi apayrı şey.
+ *
+ *  Ekran bunu kendisi söylemek zorunda: "son parti X — bundan sonrası
+ *  görünmüyor". Söylemezse kullanıcı boş bir ufku "para gelmiyor" diye
+ *  okur ve olmayan bir açığa hazırlanır.
+ *  (Anayasa: donmuş kaynak akan kaynakla karşılaştırılırken iki damga.)
+ * ============================================================================
+ */
+export type HakedisUfku = {
+  partiSayisi: number;
+  /** En eski ve en yeni parti — dosyanın dönemi. */
+  ilkParti: Date | null;
+  sonParti: Date | null;
+  /** Kalemlerin taşıdığı EN SON vade — takvimin gerçek ufku. */
+  sonVade: Date | null;
+};
+
+export async function sonHakedisPartisi(): Promise<HakedisUfku> {
+  const [partiler, sonVadeli] = await Promise.all([
+    prisma.settlement.findMany({
+      select: { createdAt: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.settlementItem.findFirst({
+      where: { dueDate: { not: null } },
+      select: { dueDate: true },
+      orderBy: { dueDate: "desc" },
+    }),
+  ]);
+  return {
+    partiSayisi: partiler.length,
+    ilkParti: partiler[0]?.createdAt ?? null,
+    sonParti: partiler[partiler.length - 1]?.createdAt ?? null,
+    sonVade: sonVadeli?.dueDate ?? null,
+  };
 }
