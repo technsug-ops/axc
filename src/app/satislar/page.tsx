@@ -840,7 +840,22 @@ export default async function SatislarSayfasi({
                 key={satis.id}
                 baslik={
                   <span className="flex flex-wrap items-center gap-2">
-                    <Baglanti href={`/satislar/${satis.id}`}>
+                    {/*
+                      ⚠ MOBİL KART AYRI KOD YOLU — TABLOYLA AYNI HEDEFE
+                      BAĞLANIR (kullanıcı bulgusu 24.08.2026: "mobilde
+                      ürüne tıkladığında kârlılık kartına gitmiyor").
+
+                      Tablo `UzunAd` üzerinden `kartAdresi`ye bağlanmıştı;
+                      mobil kart elle `/satislar/{id}` yazıyordu ve
+                      dokunulmadığı için ESKİ hedefte kaldı. Aynı bilgi
+                      iki ekranda iki farklı yere gidiyordu (İlke #10).
+
+                      ⚠ Belirsizken satış detayına düşer — ad düz metin
+                      kalmaz, çünkü mobilde satır tıklaması tek erişim yolu.
+                    */}
+                    <Baglanti
+                      href={kartAdresi(satis.items) ?? `/satislar/${satis.id}`}
+                    >
                       {urunOzeti(satis)}
                     </Baglanti>
                     {satis.returns.length ? (

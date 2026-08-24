@@ -324,7 +324,18 @@ export default async function UrunlerSayfasi({
                 <ListeKarti
                   key={urun.id}
                   baslik={
-                    <Baglanti href={`/urunler/${urun.id}`}>
+                    /*
+                      ⚠ MOBİLDE DE KART — tabloyla AYNI kuraldan.
+                      Belirsizken (çok varyantlı ürün) ürün sayfasına
+                      düşer; seçim kullanıcıda kalır.
+                    */
+                    <Baglanti
+                      href={
+                        kartAdresi(
+                          urun.variants.map((v) => ({ variantId: v.id })),
+                        ) ?? `/urunler/${urun.id}`
+                      }
+                    >
                       {urun.name}
                     </Baglanti>
                   }

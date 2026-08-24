@@ -591,16 +591,44 @@ console.log("");
    * ⚠ ÜÇ EKRAN DA AYNI GÖVDEDEN GEÇER. Biri elle adres kursaydı, kural
    * değiştiğinde o ekran sessizce eski kalırdı (K34a dersi).
    */
-  for (const [ad, yol] of [
-    ["satışlar", "src/app/satislar/page.tsx"],
-    ["alımlar", "src/app/alimlar/page.tsx"],
-    ["ürünler", "src/app/urunler/page.tsx"],
+  /**
+   * ⚠ MASAÜSTÜ VE MOBİL AYRI KOD YOLU — İKİSİ DE SAYILIR (24.08.2026).
+   *
+   * İlk yazım yalnız "dosyada `kartAdresi` geçiyor mu" diye soruyordu ve
+   * YEŞİL YANDI: tablo bağlıydı, mobil kart elle `/satislar/{id}` yazıyordu.
+   * Kullanıcı telefonda buldu — aynı bilgi iki ekranda iki farklı yere
+   * gidiyordu (İlke #10) ve telefonda karta erişimin başka yolu yoktu.
+   *
+   * Ölçüt artık ÇAĞRI SAYIYOR: her ekranda en az iki kez (tablo + mobil).
+   * Yarın üçüncü bir görünüm eklenirse sayı tutmaz ve kontrol yakalar.
+   */
+  for (const [ad, yol, enAz] of [
+    ["satışlar", "src/app/satislar/page.tsx", 2],
+    ["alımlar", "src/app/alimlar/page.tsx", 2],
+    ["ürünler", "src/app/urunler/page.tsx", 2],
   ] as const) {
     const kaynak = readFileSync(yol, "utf8");
-    kontrol(`${ad}: ürün adı ortak kart kuralını çağırıyor`, /kartAdresi\(/.test(kaynak));
+    const cagri = (kaynak.match(/kartAdresi\(/g) ?? []).length;
+    kontrol(
+      `${ad}: kart kuralı ${enAz} yerde çağrılıyor (tablo + mobil) — ${cagri}`,
+      cagri >= enAz,
+    );
     kontrol(
       `  ...${ad}: elle /kart/ adresi kurmuyor`,
       !/href=\{`\/kart\//.test(kaynak),
+    );
+    /**
+     * ⚠ MOBİL BLOK AYRICA SINANIR. Sayı tutup ikisinin de TABLODA olması
+     * mümkün; `md:hidden` bloğunun içinde çağrı var mı diye bakılıyor.
+     */
+    const mobilBasi = kaynak.indexOf("md:hidden");
+    kontrol(
+      `  ...${ad}: mobil blok bulundu`,
+      mobilBasi > 0,
+    );
+    kontrol(
+      `  ...${ad}: MOBİL blokta da kart kuralı var`,
+      mobilBasi > 0 && /kartAdresi\(/.test(kaynak.slice(mobilBasi)),
     );
   }
 

@@ -567,7 +567,23 @@ export default async function AlimlarSayfasi({
                      öncelik sırası ad > kod olduğu için kalem sayısından
                      ÖNCE geliyor: "ne alındı" sorusu "kaç kalem"den
                      önemlidir. */
-                  { etiket: ortak("urun"), deger: urunOzeti(alim) },
+                  {
+                    etiket: ortak("urun"),
+                    /*
+                      ⚠ MOBİLDE DE KÂRLILIK KARTINA GİDER (24.08.2026).
+                      Tabloda bağlıydı, mobilde DÜZ METİNDİ — aynı bilgi
+                      iki ekranda iki farklı şey yapıyordu (İlke #10) ve
+                      telefonda karta erişimin başka yolu yoktu.
+                    */
+                    deger: (() => {
+                      const adres = kartAdresi(alim.items);
+                      return adres ? (
+                        <Baglanti href={adres}>{urunOzeti(alim)}</Baglanti>
+                      ) : (
+                        urunOzeti(alim)
+                      );
+                    })(),
+                  },
                   /* MOBİLDE DE VAR (İlke #8): adet kalem sayısından ÖNCE —
                      "kaç tane" sorusu "kaç satır"dan sık sorulur. */
                   { etiket: ortak("adet"), deger: toplamAdet(alim) },
