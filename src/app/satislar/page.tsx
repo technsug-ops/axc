@@ -20,6 +20,7 @@ import {
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
 import { hazirlananSiparisKimlikleri } from "@/lib/panel/gorev-verisi";
+import { kartAdresi } from "@/lib/kart-adresi";
 import { KargoDurumu } from "./kargo-durumu";
 import { TopluKargo } from "./toplu-kargo";
 import { ListeKarti } from "@/components/liste-karti";
@@ -764,6 +765,10 @@ export default async function SatislarSayfasi({
                     <TableCell>
                       <UzunAd
                         metin={urunOzeti(satis)}
+                        /* Ürün adı → KÂRLILIK KARTI, arada tıklama yok (İlke #9).
+                           Varyant tekil değilse `null` döner ve ad düz metin
+                           kalır — belirsizken yanlış kartı açmaktansa açmamak. */
+                        href={kartAdresi(satis.items) ?? undefined}
                         ek={
                           satis.returns.length ? (
                             <DurumRozeti durum="uyari">

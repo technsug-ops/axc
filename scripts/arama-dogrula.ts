@@ -9,6 +9,7 @@ import {
   kodKosulu,
   satisKodKosulu,
 } from "../src/lib/varyant-arama-kurali";
+import { kartAdresi } from "../src/lib/kart-adresi";
 import { kodDizisi } from "../src/lib/varyant-ozet";
 
 /**
@@ -16,7 +17,8 @@ import { kodDizisi } from "../src/lib/varyant-ozet";
  *
  * `npx prisma format` dosyayı CRLF'e çevirdi ve enum ayrıştıran kontrol
  * SESSİZCE 0 değer buldu: `split("
-")` sonrası satırlar `` ile
+")` sonrası satırlar `
+` ile
  * bitiyor, `/\/\/.*$/` deseni `$`i bulamadığı için yorum SİLİNMİYOR ve
  * `^[A-Z_]+$` testi düşüyor.
  *
@@ -555,6 +557,64 @@ console.log("");
   kontrol(
     "/satislar araması gönderi numarasını da buluyor",
     /\{ shipmentCode: \{ contains: arama \} \}/.test(suzgec),
+  );
+}
+
+// ===========================================================================
+//  ÜRÜN ADI → KÂRLILIK KARTI (kullanıcı isteği 24.08.2026)
+// ===========================================================================
+{
+  /**
+   * ⚠ KART VARYANT SEVİYESİNDE. Tekil değilse bağlantı KURULMAZ — belirsizken
+   * "ilkini al" demek, kullanıcıyı sessizce yanlış kartın önüne koymaktı.
+   */
+  kontrol(
+    "tek varyantta kart adresi kuruluyor",
+    kartAdresi([{ variantId: "v1" }]) === "/kart/v1",
+  );
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMI GÖSTERİYOR: aynı varyant iki kalemde geçerse kart
+   * hâlâ BELİRSİZ DEĞİLDİR. Bu satır olmasaydı "kalem sayısı 1 olmalı"
+   * yazan bir mutasyon yeşil kalırdı.
+   */
+  kontrol(
+    "  ...aynı varyant iki kalemde olsa da tekil sayılıyor",
+    kartAdresi([{ variantId: "v1" }, { variantId: "v1" }]) === "/kart/v1",
+  );
+  kontrol(
+    "İKİ FARKLI varyantta bağlantı kurulmuyor (belirsiz)",
+    kartAdresi([{ variantId: "v1" }, { variantId: "v2" }]) === null,
+  );
+  kontrol("boş kalemde bağlantı yok", kartAdresi([]) === null);
+
+  /**
+   * ⚠ ÜÇ EKRAN DA AYNI GÖVDEDEN GEÇER. Biri elle adres kursaydı, kural
+   * değiştiğinde o ekran sessizce eski kalırdı (K34a dersi).
+   */
+  for (const [ad, yol] of [
+    ["satışlar", "src/app/satislar/page.tsx"],
+    ["alımlar", "src/app/alimlar/page.tsx"],
+    ["ürünler", "src/app/urunler/page.tsx"],
+  ] as const) {
+    const kaynak = readFileSync(yol, "utf8");
+    kontrol(`${ad}: ürün adı ortak kart kuralını çağırıyor`, /kartAdresi\(/.test(kaynak));
+    kontrol(
+      `  ...${ad}: elle /kart/ adresi kurmuyor`,
+      !/href=\{`\/kart\//.test(kaynak),
+    );
+  }
+
+  /**
+   * ⚠ ÜRÜNLERDE BELİRSİZ OLUNCA ÜRÜN SAYFASINA DÜŞER, bağlantı KAYBOLMAZ.
+   * Satış/alımda kayıt zaten tek varyantlı; orada düşülecek bir yer yok ve
+   * ad düz metin kalır.
+   */
+  const urunlerKaynak = readFileSync("src/app/urunler/page.tsx", "utf8");
+  kontrol(
+    "ürünler: belirsizken ürün sayfasına düşüyor (bağlantı kaybolmuyor)",
+    /kartAdresi\([\s\S]{0,120}\) \?\? `\/urunler\/\$\{urun\.id\}`/.test(
+      urunlerKaynak,
+    ),
   );
 }
 

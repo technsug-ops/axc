@@ -12,6 +12,7 @@ import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { SayfalamaCubugu } from "@/components/sayfalama";
 import { UzunAd } from "@/components/uzun-ad";
+import { kartAdresi } from "@/lib/kart-adresi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -231,7 +232,23 @@ export default async function UrunlerSayfasi({
                           ust={
                             <UzunAd
                               metin={urun.name}
-                              href={`/urunler/${urun.id}`}
+                              /*
+                                ⚠ ÜRÜN ADI → KÂRLILIK KARTI (kullanıcı isteği
+                                24.08.2026): _"arada başka tıklama olmasın."_
+
+                                ⚠ AMA KART VARYANT SEVİYESİNDE. Ölçüldü:
+                                1080 ürünün 1076'sı tek varyantlı → doğrudan
+                                karta gider. Çok varyantlı 4 üründe hangi
+                                varyantın kartı açılacağı BELİRSİZ; orada
+                                ürün sayfası açılır ve kullanıcı varyantı
+                                kendisi seçer. Belirsizken tahmin etmek,
+                                sessizce YANLIŞ kartı açmak olurdu.
+                              */
+                              href={
+                                kartAdresi(
+                                  urun.variants.map((v) => ({ variantId: v.id })),
+                                ) ?? `/urunler/${urun.id}`
+                              }
                               ek={
                             <>
                               {!urun.isActive ? (

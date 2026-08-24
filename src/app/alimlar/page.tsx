@@ -11,6 +11,7 @@ import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
 import { UzunAd } from "@/components/uzun-ad";
+import { kartAdresi } from "@/lib/kart-adresi";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { DurumRozeti } from "@/components/durum-rozeti";
@@ -463,7 +464,12 @@ export default async function AlimlarSayfasi({
                         duruyor. Ayrı sütunda göz ürün ile sayı arasında
                         gidip geliyordu. */}
                     <TableCell className="min-w-0 max-w-[22rem]">
-                      <UzunAd metin={urunOzeti(alim)} />
+                      <UzunAd
+                        metin={urunOzeti(alim)}
+                        /* Ürün adı → KÂRLILIK KARTI (İlke #9). Satışlarla
+                           AYNI gövdeden; iki ekran ayrışmasın. */
+                        href={kartAdresi(alim.items) ?? undefined}
+                      />
                       <div className="text-muted-foreground text-xs tabular-nums">
                         {t("toplamAdet", { sayi: toplamAdet(alim) })}
                         {" · "}
