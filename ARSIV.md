@@ -3749,3 +3749,68 @@ her kart GÖREREK onaylandı.
 | K13c | **HB'de zararına duran 6 ürün** | 🕓 **YAN BULGU 20.08.2026, K13b'den.** Bugünkü fiyat + açık parti maliyetiyle NET-2 **negatif**: Philips 5000 10in1 (−46,11) · LEGO 101 Dalmaçyalı (−301,77) · LEGO Endgame (−289,07) · Hogwarts Şatosu (−25,68) · LEGO "Yukarı Bak" (−291,92) · Hot Wheels Rhino (−58,13). Bunlar orana karıştırılmadı, **ayrı duruyor.** İş açılmadı — fiyat mı maliyet mi yanlış, önce bakılır. |
 | — | **ŞEMA BULGUSU (kayıt, iş değil)** | Sistemde **"güncel satış fiyatı" alanı YOK** — `ProductVariant` / `ChannelSku` / `Product` üçünde de listeleme fiyatı yok. Şemadaki tek fiyat `SaleItem.unitPriceAmount` = geçmiş bir satışın fiyatı. Fiyat kartı `baslangicFiyati={null}` alıyor; fiyatı Halil elle giriyor. **SONUÇ: fiyatlama simülasyonunun girdisi kayıt dışı bir insan sayısıdır** — aynı ürüne iki gün arka arkaya bakılırsa aynı sonucun çıkacağı garanti değil. Bugün iş açılmıyor, **soru olarak duruyor.** |
 | — | **ADLANDIRMA (bilgi bankası)** | TY sabit gideri = **`SABIT_GIDER` ₺13,19 · PER_PACKAGE** · HB sabit gideri = **`HIZMET_BEDELI` ₺12,60 · PER_SALE**. İkisi iki ayrı komutta karıştırıldı; **kural adı koddan teyit edilmeden komuta yazılmaz.** |
+
+---
+
+## ⛔ FIFO DEĞİŞMEZ — KAPANDI 24.08.2026, YENİDEN AÇILMAZ
+
+**Kullanıcı kararı:** _"Hayır, değiştirme FIFO'yu. Sadece durumu anlattım."_
+
+### Soru neydi
+
+Kullanıcı `/satislar?kar=zarar` listesinde `11491734874`ün zararda
+görünmesini sorguladı ve işleyişi anlattı: aynı üründen üç ayrı maliyetle
+alım yapılmış, **buybox'a bakarak fiziken EN UCUZ partiden gönderilmiş**,
+ama sistem en eski partiyi düşmüş. Soru: _"Ortalama satın alım fiyatına
+göre mi belirleniyor kâr?"_
+
+### Cevap — ölçüldü, varsayılmadı
+
+**Ortalama DEĞİL, FIFO.** `npm run canli:parti-izi 11491734874`:
+
+    LEGO NINJAGO 71863 (axcali1665) — bütün girişler, FIFO sırası
+      29.07  +2 × ₺1.022,98   kalan 0   ← 10.08 satışı BUNU tüketti
+      29.07  +2 × ₺1.048,00   kalan 0
+      07.08  +2 × ₺873,99     kalan 2   ← DOKUNULMAMIŞ
+      18.08  +1 × ₺1.074,00   kalan 1
+
+    satış ₺1.232 · maliyet ₺1.022,98 · NET-2 −23,30
+    fark ₺148,99 — NET'i eksiden artıya çeviren tam bu
+
+⚠ Kullanıcının hatırladığı rakamlar (`1060 · 1060 · 874`) defterdekiyle
+birebir DEĞİL (`1.022,98 · 1.048 · 873,99`). Yakın ama aynı değil; ölçüm
+hatırlamanın yerine geçti.
+
+### Bilinen sonuç — kabul edildi, gizlenmedi
+
+FIFO korunduğu için şu üçü **bilerek** yaşıyor:
+
+1. **Satır bazında NET kayabilir** — fiziken ucuz parti gönderilip pahalı
+   parti düşülünce o satış zararda görünür. Toplamda kâr aynı çıkar;
+   **hangi satırın taşıdığı** değişir.
+2. **Parti kalıntısı fiziksel gerçekle ayrışabilir** — toplam adet doğru,
+   hangi maliyetle durduğu yanlış olabilir.
+3. **Fiyat kararının geri bildirimi zayıflar** — kullanıcı buybox'a bakıp
+   belirli bir partinin maliyetiyle karar veriyor; sistem başka maliyet
+   yazınca o kararın iyi olup olmadığını söyleyemiyor.
+
+### Elenen seçenekler ve NİYE elendi
+
+- **Satışta parti seçimi (specific identification)** — fiziksel gerçeği
+  birebir yakalardı ama satış formuna her seferinde bir adım daha ekler
+  (İlke #9'a doğrudan bedel) ve depoda hız kaybettirir.
+- **Sonradan parti taşıma** — nadir vakada işe yarar, günlük akışta
+  düzeltme borcu üretir.
+- **Ortalama maliyet** — hiç önerilmedi; anayasa FIFO diyor ve iki yöntemi
+  karıştırmak defterde ikinci bir gerçek doğururdu.
+
+⚠ **BÜYÜKLÜK ÖLÇÜLMEDİ.** "Kaç satışta FIFO daha ucuz bir partiyi atladı"
+sorusu soruldu, kullanıcı ölçüme gerek görmedi. Yani bu kalem
+_"ölçüldü ve önemsiz çıktı"_ diye değil, **"kural korunacak, büyüklüğü
+merak edilmedi"** diye kapandı. İkisi farklı şeydir ve karıştırılmamalıdır.
+
+> **BU KALEM YENİDEN AÇILMAZ.** Yeniden açılması için gereken: kullanıcının
+> kendi isteği, ya da satır bazlı sapmanın bir KARARI bozduğunun
+> gösterilmesi (ör. doğru fiyatlanmış bir ürünün sürekli zararda görünüp
+> listeden çıkarılması). "Rakam kaymış görünüyor" tek başına yeterli
+> değildir — kayma FIFO'nun bilinen ve kabul edilmiş sonucudur.
