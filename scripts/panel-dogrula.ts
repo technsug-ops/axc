@@ -17,7 +17,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
 import { kdvHaric } from "../src/lib/kar";
@@ -33,10 +33,17 @@ import {
 import {
   bekleyenToplam,
   GOREV_ADRESLERI,
+  GOREV_ANAHTARLARI,
+  GOREV_GRUBU,
   gorevleriKur,
   grubunGorevleri,
   hepsiTemizMi,
 } from "../src/lib/panel/bugun-ne-yapmaliyim";
+import {
+  tarifeKapsami,
+  tarifeUyarisiVarMi,
+  UYARI_GUNU,
+} from "../src/lib/panel/tarife-penceresi";
 import {
   nakitTakvimiKur,
   type TakvimSatiri,
@@ -1665,12 +1672,24 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     malKabulBekleyen: 2,
     karHesaplanamayan: 0,
     oransizKanalSku: 1,
+    tarifePenceresi: 0,
   });
-  kontrol("beş görev de üretiliyor", gorevler.length === 5, gorevler.length);
+  kontrol(
+    "altı görev de üretiliyor",
+    gorevler.length === 6,
+    gorevler.length,
+  );
   /** AÇIK SIFIR: sıfır olan satır GİZLENMEZ, temiz işaretlenir. */
   kontrol(
     "sıfır olan satır listeden DÜŞMÜYOR",
-    gorevler.filter((g) => g.temizMi).length === 2,
+    /**
+     * ⚠ SAYI SABİT DEĞİL, ÖRNEKTEN TÜRETİLİYOR. Önce `=== 2` yazılıydı
+     * ve altıncı görev eklenince kırmızı yandı — kod doğruydu, ÖLÇÜT
+     * bayatlamıştı. Elle tutulan sayı, her yeni görevde aynı bakımı ister.
+     */
+    gorevler.filter((g) => g.temizMi).length ===
+      gorevler.filter((g) => g.sayi === 0).length,
+    gorevler.filter((g) => g.temizMi).length,
   );
   kontrol(
     "her görevin süzülü adresi var",
@@ -1684,9 +1703,14 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   const tedarik = grubunGorevleri(gorevler, "TEDARIK");
   kontrol(
     "her görev tam olarak BİR kartta",
+    /**
+     * ⚠ ÖLÇÜT BÖLÜNME, SAYI DEĞİL. `2 + 3` yazılıydı; altıncı görev
+     * eklenince kırmızı yandı. Asıl sınanmak istenen şey "her görev bir
+     * ve yalnız bir kartta" idi — o da toplamla ve kesişimin boşluğuyla
+     * ölçülür, elle sayılan iki rakamla değil.
+     */
     sevkiyat.length + tedarik.length === gorevler.length &&
-      sevkiyat.length === 2 &&
-      tedarik.length === 3,
+      sevkiyat.every((g) => !tedarik.includes(g)),
     { sevkiyat: sevkiyat.length, tedarik: tedarik.length },
   );
   kontrol(
@@ -1695,9 +1719,14 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     sevkiyat.map((g) => g.anahtar),
   );
   kontrol(
-    "mal kabul · kâr · oran TEDARİK kartında",
+    "TEDARİK kartı: sevkiyat DIŞINDA kalan her görev",
+    /**
+     * ⚠ TÜMLEYEN İLE ÖLÇÜLÜYOR, LİSTEYLE DEĞİL ("tip listesi değil, BAĞ").
+     * Elle yazılan üç ad, dördüncü TEDARİK görevi eklendiğinde sessizce
+     * bayatlıyordu. Ölçüt artık şu: SEVKIYAT olmayan her görev burada.
+     */
     tedarik.map((g) => g.anahtar).join(",") ===
-      "malKabulBekleyen,karHesaplanamayan,oransizKanalSku",
+      GOREV_ANAHTARLARI.filter((a) => GOREV_GRUBU[a] === "TEDARIK").join(","),
     tedarik.map((g) => g.anahtar),
   );
   /** Kart rozeti kendi kartının bekleyenini sayar — ötekininkini değil. */
@@ -1733,9 +1762,184 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
         malKabulBekleyen: 0,
         karHesaplanamayan: 0,
         oransizKanalSku: 0,
+        tarifePenceresi: 0,
       }),
     ),
   );
+
+  // --------------------------- TARİFE PENCERESİ (K47) ---------------------------
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR. Tek pencereyle
+   * sınasaydık "bitiş günü DAHİL" kuralını hiçbir mutasyon kıramazdı:
+   * bugünü kapsayan ve kapsamayan iki pencere birlikte lazım.
+   */
+  {
+    const bugun = new Date("2026-08-25T09:00:00.000Z");
+    const g = (m: string) => new Date(`${m}T00:00:00.000Z`);
+
+    /** ① BİTİŞ GÜNÜ DAHİL — bugün biten pencere HÂLÂ kapsıyor. */
+    const bugunBiten = tarifeKapsami(
+      [{ kanalAdi: "Trendyol", sonBitis: g("2026-08-25") }],
+      bugun,
+    );
+    kontrol(
+      "bitiş günü DAHİL — bugün biten pencere kapsamsız SAYILMAZ",
+      bugunBiten.kapsamsizKanal === 0 && bugunBiten.kalanGun === 0,
+      bugunBiten,
+    );
+
+    /** ② DÜN BİTEN pencere kapsamsız. Ayrımın öteki yakası. */
+    const dunBiten = tarifeKapsami(
+      [{ kanalAdi: "Trendyol", sonBitis: g("2026-08-24") }],
+      bugun,
+    );
+    kontrol(
+      "dün biten pencere KAPSAMSIZ sayılır",
+      dunBiten.kapsamsizKanal === 1 &&
+        dunBiten.kalanGun === null &&
+        dunBiten.kapsamsizAdlar[0] === "Trendyol",
+      dunBiten,
+    );
+
+    /**
+     * ③ KALAN GÜN = EN YAKIN BİTİŞ, en uzak değil.
+     * ⚠ İki kanal FARKLI günde bitiyor; eşit olsalardı `Math.min` yerine
+     * `Math.max` yazan bir mutasyon yeşil kalırdı.
+     */
+    const ikiKanal = tarifeKapsami(
+      [
+        { kanalAdi: "Trendyol", sonBitis: g("2026-08-27") },
+        { kanalAdi: "Hepsiburada", sonBitis: g("2026-09-10") },
+      ],
+      bugun,
+    );
+    kontrol(
+      "kalan gün EN YAKIN bitişten (2 ≠ 16)",
+      ikiKanal.kapsamsizKanal === 0 && ikiKanal.kalanGun === 2,
+      ikiKanal,
+    );
+
+    /** ④ HİÇ TARİFE YOKSA hüküm verilmez — uyarı da yanmaz. */
+    const bos = tarifeKapsami([], bugun);
+    kontrol(
+      "tarifesi olmayan kanal kümeye GİRMEZ — sonsuz uyarı doğmaz",
+      bos.kapsamsizKanal === 0 &&
+        bos.kalanGun === null &&
+        !tarifeUyarisiVarMi(bos),
+      bos,
+    );
+
+    /**
+     * ⑤ EŞİK — ölçülen değere göre: TY penceresi 5 günlük, dosya
+     * bitmeden 3 gün önce yayımlanıyor. Eşiğin İKİ yakası da sınanıyor.
+     */
+    kontrol(
+      `eşik ${UYARI_GUNU} gün — ${UYARI_GUNU} gün kala uyarı YANAR`,
+      tarifeUyarisiVarMi({
+        kapsamsizKanal: 0,
+        kalanGun: UYARI_GUNU,
+        kapsamsizAdlar: [],
+      }),
+    );
+    kontrol(
+      `eşik ${UYARI_GUNU} gün — ${UYARI_GUNU + 1} gün kala uyarı YANMAZ`,
+      !tarifeUyarisiVarMi({
+        kapsamsizKanal: 0,
+        kalanGun: UYARI_GUNU + 1,
+        kapsamsizAdlar: [],
+      }),
+    );
+
+    /**
+     * ⑥ SAYI 0 AMA ACELE → SATIR TEMİZ SAYILMAZ.
+     * ⚠ BU MADDE OLMADAN uyarı, tam kaçırılmaması gereken gün "temiz ✓"
+     * yazardı — anayasa: "yanlış cevap veren ekran".
+     */
+    const aceleGorev = gorevleriKur(
+      {
+        kargoBekleyen: 0,
+        iadeBildirimi: 0,
+        malKabulBekleyen: 0,
+        karHesaplanamayan: 0,
+        oransizKanalSku: 0,
+        tarifePenceresi: 0,
+      },
+      undefined,
+      { tarifePenceresi: { kalanGun: 0, aceleMi: true } },
+    ).find((x) => x.anahtar === "tarifePenceresi")!;
+    kontrol(
+      "sayı 0 + acele → satır TEMİZ SAYILMAZ",
+      aceleGorev.temizMi === false && aceleGorev.kalanGun === 0,
+      aceleGorev,
+    );
+    /** Ayrımın öteki yakası: acele değilse 0 gerçekten temizdir. */
+    const sakinGorev = gorevleriKur(
+      {
+        kargoBekleyen: 0,
+        iadeBildirimi: 0,
+        malKabulBekleyen: 0,
+        karHesaplanamayan: 0,
+        oransizKanalSku: 0,
+        tarifePenceresi: 0,
+      },
+      undefined,
+      { tarifePenceresi: { kalanGun: 9, aceleMi: false } },
+    ).find((x) => x.anahtar === "tarifePenceresi")!;
+    kontrol(
+      "acele değilse sayı 0 TEMİZ sayılır",
+      sakinGorev.temizMi === true,
+      sakinGorev,
+    );
+
+    /**
+     * ⑦ EKRAN-VERİ BAĞI — K47'nin ASIL dersi. Görev satırının adresi
+     * VAR OLAN bir ekrana gitmeli; gitmezse uyarı kullanıcıyı çıkmaza
+     * götürür.
+     *
+     * ⚠ DOSYANIN VARLIĞI ARANIYOR, KAYNAKTA DESEN DEĞİL: adres bir
+     * rotadır ve rotanın karşılığı bir `page.tsx` dosyasıdır.
+     */
+    const tarifeAdresi = GOREV_ADRESLERI.tarifePenceresi;
+    const sayfaYolu = `src/app${tarifeAdresi.split("?")[0]}/page.tsx`;
+    kontrol(
+      `görev adresi VAR OLAN ekrana gidiyor (${sayfaYolu})`,
+      existsSync(sayfaYolu),
+      sayfaYolu,
+    );
+
+    /**
+     * ⑧ PANEL SATIRI GERÇEKTEN BAĞLI MI — "acele" kararı ekrana ULAŞIYOR mu.
+     *
+     * ⚠ DESEN KULLANIM BLOĞUNDA ARANIYOR, DOSYANIN TAMAMINDA DEĞİL.
+     * `tarifePenceresi` kelimesi `page.tsx`te import satırında da geçebilir;
+     * ölçüt `sureler={{` bloğunun İÇİNDE `tarifeUyarisiVarMi` çağrısıdır.
+     */
+    const panelKaynagi = readFileSync("src/app/page.tsx", "utf8");
+    const sureBasi = panelKaynagi.indexOf("sureler={{");
+    const sureBloku =
+      sureBasi < 0 ? "" : panelKaynagi.slice(sureBasi, sureBasi + 400);
+    kontrol(
+      "panel satırı acele kararını SAF KURALDAN alıyor",
+      sureBasi >= 0 &&
+        sureBloku.includes("tarifeUyarisiVarMi(") &&
+        sureBloku.includes("tarifePenceresi:"),
+      { sureBasi, uzunluk: sureBloku.length },
+    );
+
+    /**
+     * ⑨ KUTUCUK SÜRE METNİNİ ÇİZİYOR MU. Kural doğru çalışıp ekrana
+     * bağlanmazsa "doğru davranışın GÖRÜNMEZLİĞİ" doğar — o da yalancı
+     * yeşildir.
+     */
+    const kutuKaynagi = readFileSync("src/app/gorev-kutusu.tsx", "utf8");
+    const dalBasi = kutuKaynagi.indexOf("sureMetni !== undefined ? (");
+    kontrol(
+      "görev kutucuğu süre metnini ÇİZİYOR",
+      dalBasi >= 0 &&
+        kutuKaynagi.slice(dalBasi, dalBasi + 700).includes("{sureMetni}"),
+      { dalBasi },
+    );
+  }
 
   // --------------------------- ÇİFT SAYIM KAPISI ---------------------------
   const veriKaynagi = readFileSync("src/lib/panel/takvim-verisi.ts", "utf8");

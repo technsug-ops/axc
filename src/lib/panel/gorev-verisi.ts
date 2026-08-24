@@ -6,6 +6,10 @@ import {
   PAKETLEME_EYLEMLERI,
   hazirlananSiparisler,
 } from "@/lib/okuma/paketleme";
+import {
+  tarifeKapsami,
+  type TarifeKapsami,
+} from "@/lib/panel/tarife-penceresi";
 import { prisma } from "@/lib/prisma";
 
 import type { GorevAnahtari } from "./bugun-ne-yapmaliyim";
@@ -173,6 +177,50 @@ export async function paketlenenSiparisSayisi(): Promise<number> {
   });
 }
 
+/**
+ * TARİFE PENCERESİ KAPSAMI — TEK TÜRETME NOKTASI (K47).
+ *
+ * ⚠ AYRI FONKSİYON, ÇÜNKÜ İKİ FARKLI ŞEY LAZIM. Görev kutusunun sayısı
+ * yalnız `kapsamsizKanal`; satırın kendisi ayrıca `kalanGun`u yazıyor
+ * ("2 gün kaldı"). `gorevSayilariniTopla` sözleşmesi gereği yalnız sayı
+ * döndürüyor ve iki çağıranı var (`page.tsx` · `uyari/topla.ts`) — dönüş
+ * şeklini değiştirmek ikisini birden kırardı.
+ *
+ * "En geç bitiş" türetmesi yalnız BURADA yapılıyor; iki yerde yapılsaydı
+ * bir gün biri değişir, öteki değişmez ve panel ile uyarı merkezi farklı
+ * gün sayardı.
+ */
+export async function tarifeKapsaminiOlc(): Promise<TarifeKapsami> {
+  /**
+   * ⚠ SORGU TARİFE TABLOSUNDAN BAŞLIYOR, KANAL TABLOSUNDAN DEĞİL.
+   * Kanaldan başlasaydık hiç tarifesi olmayan Hepsiburada da kümeye girer
+   * ve uyarı sonsuza kadar kırmızı yanardı — anayasa: "sonsuza kadar yanan
+   * uyarı olmaz". HB'nin ilk tarifesi yüklendiği gün kanal kendiliğinden
+   * kümeye girer.
+   */
+  const tarifeler = await prisma.komisyonTarifesi.findMany({
+    select: {
+      pencereBitis: true,
+      channelAccount: { select: { channel: { select: { name: true } } } },
+    },
+  });
+
+  /** Kanal başına EN GEÇ bitiş — kural katmanının beklediği şekil. */
+  const enGec = new Map<string, Date>();
+  for (const t of tarifeler) {
+    const ad = t.channelAccount?.channel.name ?? "(kanalsız)";
+    const onceki = enGec.get(ad);
+    if (onceki === undefined || t.pencereBitis > onceki) {
+      enGec.set(ad, t.pencereBitis);
+    }
+  }
+
+  return tarifeKapsami(
+    [...enGec].map(([kanalAdi, sonBitis]) => ({ kanalAdi, sonBitis })),
+    new Date(),
+  );
+}
+
 export async function gorevSayilariniTopla(): Promise<
   Record<GorevAnahtari, number>
 > {
@@ -182,6 +230,7 @@ export async function gorevSayilariniTopla(): Promise<
     malKabulBekleyen,
     karHesaplanamayan,
     oransizKanalSku,
+    tarifeKapsam,
   ] = await Promise.all([
     // `/satislar?kargo=bekleyen` ile aynı koşul.
     prisma.sale.count({ where: { shippedAt: null, iptalTarihi: null } }),
@@ -224,6 +273,8 @@ export async function gorevSayilariniTopla(): Promise<
       where: { commissionRate: null, channelAccount: { satisIcin: true } },
     }),
 
+    tarifeKapsaminiOlc(),
+
   ]);
 
   return {
@@ -232,5 +283,6 @@ export async function gorevSayilariniTopla(): Promise<
     malKabulBekleyen,
     karHesaplanamayan,
     oransizKanalSku,
+    tarifePenceresi: tarifeKapsam.kapsamsizKanal,
   };
 }

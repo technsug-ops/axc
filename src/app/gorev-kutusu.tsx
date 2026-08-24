@@ -53,6 +53,7 @@ function GorevKutucugu({
   temizMetni,
   ilerlemeMetni,
   ilerlemeAdresi,
+  sureMetni,
 }: {
   gorev: Gorev;
   etiket: string;
@@ -61,6 +62,15 @@ function GorevKutucugu({
   ilerlemeMetni: string;
   /** İlerleme rakamının kendi listesi; yoksa rakam düz yazı kalır. */
   ilerlemeAdresi?: string;
+  /**
+   * SÜRE METNİ — "2 gün kaldı" / "Bugün son gün".
+   *
+   * ⚠ SAYI YERİNE GEÇER, YANINA DEĞİL. Tarife satırında bekleyen kanal
+   * sayısı 0 olsa bile iş bekliyor olabilir (pencere bugün bitiyor).
+   * Büyük bir "0" basıp yanına "bugün son gün" yazsaydık ekran kendi
+   * kendisiyle çelişirdi.
+   */
+  sureMetni?: string;
 }) {
   /**
    * ⚠ İÇ İÇE <a> YAZILAMAZ — kutunun tamamı zaten bir bağlantı ve
@@ -93,6 +103,18 @@ function GorevKutucugu({
         >
           <Check className="size-4" />
           {temizMetni}
+        </span>
+      ) : sureMetni !== undefined ? (
+        /*
+          SÜRELİ GÖREV — rakam değil, kalan gün yazar.
+          ⚠ `sayi > 0` ise (pencere ZATEN bitmiş) süre metni gelmez ve
+          aşağıdaki normal rakam dalı çalışır; "bitti" hâlini "0 gün kaldı"
+          diye yazmak, geçmiş bir kaybı gelecekteki bir iş gibi gösterirdi.
+        */
+        <span
+          className={`inline-flex w-fit items-center rounded-md px-1.5 py-0.5 text-sm font-semibold ${DURUM_ZEMINI.uyari}`}
+        >
+          {sureMetni}
         </span>
       ) : (
         <span className="inline-flex flex-wrap items-baseline gap-2">
@@ -192,6 +214,18 @@ async function TekKart({
               temizMetni={t("temiz")}
               ilerlemeMetni={t("ilerleme", { sayi: g.ilerleme ?? 0 })}
               ilerlemeAdresi={ilerlemeAdresleri?.[g.anahtar]}
+              /*
+                ⚠ SÜRE YALNIZ "ACELE AMA SAYISI 0" HÂLİNDE. Kapsamsız kanal
+                varsa (`sayi > 0`) o rakam basılır — pencere çoktan bitmiş
+                demektir ve kalan gün diye bir şey yoktur.
+              */
+              sureMetni={
+                g.kalanGun !== null && g.aceleMi && g.sayi === 0
+                  ? g.kalanGun === 0
+                    ? t("sonGun")
+                    : t("kalanGun", { gun: g.kalanGun })
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -204,14 +238,19 @@ export async function GorevKutusu({
   sayilar,
   ilerlemeler,
   ilerlemeAdresleri,
+  sureler,
 }: {
   sayilar: Record<GorevAnahtari, number>;
   /** Görev başına ilerleme — bugün yalnız `kargoBekleyen`. */
   ilerlemeler?: Partial<Record<GorevAnahtari, number>>;
   /** İlerleme rakamının kendi süzülü listesi. */
   ilerlemeAdresleri?: Partial<Record<GorevAnahtari, string>>;
+  /** Süreli görevlerin kalan günü ve acele hâli — bugün yalnız tarife. */
+  sureler?: Partial<
+    Record<GorevAnahtari, { kalanGun: number | null; aceleMi: boolean }>
+  >;
 }) {
-  const gorevler = gorevleriKur(sayilar, ilerlemeler);
+  const gorevler = gorevleriKur(sayilar, ilerlemeler, sureler);
 
   /**
    * ⚠ YAN YANA DEĞİL, ALT ALTA (kullanıcı düzeltmesi 21.08.2026).

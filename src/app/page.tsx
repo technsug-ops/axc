@@ -96,8 +96,10 @@ import { GorevKutusu } from "./gorev-kutusu";
 import {
   donemAlimi,
   gorevSayilariniTopla,
+  tarifeKapsaminiOlc,
   paketlenenSiparisSayisi,
 } from "@/lib/panel/gorev-verisi";
+import { tarifeUyarisiVarMi } from "@/lib/panel/tarife-penceresi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { izinVarMi } from "@/lib/yetki";
 import {
@@ -1248,8 +1250,18 @@ export default async function AnaSayfa({
    *  - Takvim İLERİYE bakar; dönem süzgeci geçmişi süzer. Aynı düğmeye
    *    bağlansalardı "bugün" seçilince takvim boşalırdı. Ekranda da yazıyor.
    */
-  const [gorevSayilari, paketlenen, alim, kiyasAlim] = await Promise.all([
+  const [gorevSayilari, tarifeKapsam, paketlenen, alim, kiyasAlim] =
+    await Promise.all([
     gorevSayilariniTopla(),
+
+    /**
+     * TARİFE PENCERESİ — görev satırının SÜRE tarafı (K47).
+     *
+     * ⚠ SAYI `gorevSayilariniTopla` İÇİNDE ZATEN VAR; burada gereken
+     * KALAN GÜN. Aynı türetme iki yerde yapılmıyor — ikisi de
+     * `tarifeKapsaminiOlc()` çağırıyor.
+     */
+    tarifeKapsaminiOlc(),
 
     /**
      * PAKETLEME İLERLEMESİ — "kargoya verilecek 15 · paketlenen 1".
@@ -1705,6 +1717,17 @@ export default async function AnaSayfa({
               */
               ilerlemeAdresleri={{
                 kargoBekleyen: "/satislar?kargo=bekleyen&paket=hazirlanan",
+              }}
+              /*
+                ⚠ "ACELE" KARARI SAF KURALDAN GELİYOR, BURADA
+                TÜRETİLMİYOR. Eşiği (`UYARI_GUNU`) ekranda yazsaydık
+                panel ile uyarı merkezi bir gün ayrışabilirdi.
+              */
+              sureler={{
+                tarifePenceresi: {
+                  kalanGun: tarifeKapsam.kalanGun,
+                  aceleMi: tarifeUyarisiVarMi(tarifeKapsam),
+                },
               }}
             />
           </div>

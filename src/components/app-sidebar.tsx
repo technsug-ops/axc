@@ -221,6 +221,12 @@ const GRUPLAR: MenuGrubu[] = [
         icon: FileSpreadsheet,
         aktif: true,
       },
+      {
+        anahtar: "tarife",
+        href: "/ayarlar/tarife",
+        icon: Percent,
+        aktif: true,
+      },
     ],
   },
 ];

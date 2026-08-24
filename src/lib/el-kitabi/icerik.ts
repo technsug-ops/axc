@@ -57,6 +57,7 @@ export const BOLUMLER = [
   { kimlik: "rol", ad: "Ayarlar — Roller" },
   { kimlik: "toplu", ad: "Toplu veri aktarımı" },
   { kimlik: "gecmisEkstre", ad: "Ayarlar — Geçmiş ekstreler" },
+  { kimlik: "tarife", ad: "Ayarlar — Komisyon tarifesi" },
   { kimlik: "yedek", ad: "Yedek" },
   { kimlik: "sorun", ad: "Bir şey ters giderse" },
   { kimlik: "sozluk", ad: "Sözlük" },
@@ -111,6 +112,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   roller: "rol",
   talepler: "talep",
   gecmisEkstre: "gecmisEkstre",
+  tarife: "tarife",
   /** Kitabın KENDİSİ — kendi kendini anlatan bölüm açmak tekrar olurdu. */
   elKitabi: null,
 };
@@ -1352,6 +1354,29 @@ ${neZaman(
 dağılır. Ama sistemden önceki borçların alım kaydı yoktur; onlar dışarıdan,
 toplu olarak girilmek zorundadır. İki yol karışsaydı aynı borç iki kez
 sayılabilirdi.</p></div>
+</section>
+
+<section id="tarife">
+${baslik("tarife")}
+<p><strong>Ayarlar → Komisyon tarifesi.</strong> Pazaryerinin yayımladığı
+tam dilimli komisyon dosyasını yükler. Fiyat denemesi bu dilimleri kullanır:
+"bu ürünü 1.750'ye satarsam komisyon kaç olur" sorusunun cevabı buradan gelir.</p>
+${neZaman(
+  "Her hafta. Trendyol Salı, Hepsiburada Çarşamba yayımlıyor. Panelde “Komisyon tarifesi” kutusu turuncuya döndüğünde.",
+)}
+<div class="ek-not dikkat"><div class="etiket">Kaçırılan hafta geri gelmez</div>
+<p>Bu dosya <strong>arşivden inmiyor</strong>. O hafta indirilmezse bir daha
+elde edilemez ve o döneme ait satışlarda fiyat denemesi hüküm veremez —
+susar, yanlış rakam vermez.</p></div>
+<div class="ek-not"><div class="etiket">Yüklemeden önce ne yazılacağını görürsünüz</div>
+<p>Önce <strong>Göster</strong> düğmesi dosyayı okur ve ne yazılacağını sayar:
+okunan satır, yazılacak kalem, eşleşen ürün ve <strong>bağsız ürün</strong>.
+Bağsız, dosyada geçen ama sizde kaydı olmayan barkod demektir; o ürünler için
+tarife yazılmaz. Rakamlar beklediğiniz gibiyse <strong>Yükle</strong>.</p></div>
+<div class="ek-not"><div class="etiket">Aynı haftayı ikinci kez yüklersem</div>
+<p>Üzerine yazılır — eski kalemler silinir, dosyadaki hâli geçerli olur.
+Ekran bunu yüklemeden önce söyler. İlk yükleme eksik geldiyse düzeltmenin
+yolu budur.</p></div>
 </section>
 
 <section id="yedek">
