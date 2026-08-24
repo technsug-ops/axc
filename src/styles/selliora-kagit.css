@@ -27,18 +27,38 @@
 [data-tema="kagit"] {
   /* --- yüzey merdiveni (0 en koyu → 2 en açık) --- */
   /**
+   * ⚠ BİR KADEME KOYULAŞTIRILDI — 24.08.2026, kullanıcı: _"kağıtta
+   * parlaklık çok fazla."_
+   *
+   * ÖLÇÜLDÜ, gözle ayarlanmadı: zemin parlaklığı `0.8574 → 0.7640`
+   * (%10,9 düşüş), kart `0.9829 → 0.8987` (%8,6). Kobalt zemini 0.8757 —
+   * yani kağıt artık ikisinin de altında ve setin "yumuşak" ucu.
+   *
+   * ⚠ ZEBRA GÜCÜ KORUNDU: kart–zebra farkı `0.0797`, kobalt'ta `0.0813`.
+   * Yalnız zemini koyultsaydım zebra silikleşir ve tablo satırları
+   * ayrışmazdı — parlaklığı düşürmenin sessiz bedeli tam bu olurdu.
+   *
+   * ⚠ SEMANTİK ZEMİNLER DE İNDİ. `bil-bg` eski hâlinde (0.8900) yeni
+   * karttan (0.8987) neredeyse parlaktı; olduğu gibi bırakılsaydı uyarı
+   * kutuları kartın üstünde PARLARDI. Hepsi karttan koyu tutuldu.
+   *
+   * ⚠ MÜREKKEP DE KOYULAŞTI ve kontrast ARTTI: ink 15.34:1 · ink-2
+   * 5.97:1 · ink-3 3.26:1 (kobalt: 17.87 · 5.44 · 2.66). İkincil ve
+   * üçüncül metin kobalt'takinden daha okunur.
+   */
+  /**
    * ⚠ ZEMİN–KART FARKI ÖLÇÜLDÜ, GÖZLE SEÇİLMEDİ. Kobalt'ta 23.08'de tam
    * bu tuzağa düşülmüştü: kart ile sayfa farkı, tablodaki iki komşu
    * satırın farkından ZAYIFTI ve kart "kart" gibi durmuyordu.
    * Kağıt'ta aynı ölçü korunuyor (bkz. `tema:dogrula`).
    */
-  --se-zemin:            #F2EEE6;   /* sayfa arka planı */
-  --se-kart:             #FFFDF8;   /* kart, panel, tablo gövdesi */
-  --se-kart-2:           #FFFDF8;   /* açılır menü, modal, ipucu */
-  --se-satir:            #F8F5EE;   /* zebra satır */
-  --se-baslik:           #F2EEE6;   /* tablo başlığı, bölüm şeridi */
-  --se-hover:            #F5F1E9;   /* satır üzerine gelme */
-  --se-secili:           #EFE8DB;   /* seçili satır */
+  --se-zemin:            #E8E2D6;   /* sayfa arka planı */
+  --se-kart:             #F7F3EB;   /* kart, panel, tablo gövdesi */
+  --se-kart-2:           #F7F3EB;   /* açılır menü, modal, ipucu */
+  --se-satir:            #EFE9DE;   /* zebra satır */
+  --se-baslik:           #E8E2D6;   /* tablo başlığı, bölüm şeridi */
+  --se-hover:            #ECE6D9;   /* satır üzerine gelme */
+  --se-secili:           #E0D8C8;   /* seçili satır */
 
   /* --- kabuk: üst çubuk ve sol menü --- */
   /**
@@ -49,20 +69,20 @@
   --se-kabuk:            #3A2E24;
   --se-kabuk-secili:     #4C3C2F;
   --se-kabuk-hover:      #45362A;
-  --se-kabuk-ink:        #FFFDF8;
+  --se-kabuk-ink:        #F7F3EB;
   --se-kabuk-ink2:       #C7B7A2;
   --se-kabuk-cizgi:      #55432F;
 
   /* --- mürekkep --- */
-  --se-ink:              #221F1A;   /* birincil metin, sayılar */
-  --se-ink-2:            #6A6357;   /* etiket, ikincil metin */
-  --se-ink-3:            #9F9788;   /* yer tutucu, üst veri */
-  --se-ink-ters:         #FFFDF8;   /* koyu dolgu üzeri metin */
+  --se-ink:              #1F1C17;   /* birincil metin, sayılar */
+  --se-ink-2:            #635C50;   /* etiket, ikincil metin */
+  --se-ink-3:            #8E8676;   /* yer tutucu, üst veri */
+  --se-ink-ters:         #F7F3EB;   /* koyu dolgu üzeri metin */
 
   /* --- çizgiler --- */
-  --se-cizgi:            #E3DCD0;   /* varsayılan saç teli */
-  --se-cizgi-2:          #CEC5B6;   /* girdi çerçevesi, vurgulu ayraç */
-  --se-cizgi-3:          #B4A996;   /* üzerine gelme */
+  --se-cizgi:            #D9D1C2;   /* varsayılan saç teli */
+  --se-cizgi-2:          #C4BAA7;   /* girdi çerçevesi, vurgulu ayraç */
+  --se-cizgi-3:          #A99D87;   /* üzerine gelme */
 
   /* --- vurgu: kimlik ve eylem --- */
   /**
@@ -73,15 +93,15 @@
   --se-vurgu:            #9A5B2D;
   --se-vurgu-hover:      #834C25;
   --se-vurgu-aktif:      #6C3E1E;
-  --se-vurgu-on:         #FFFDF8;
-  --se-vurgu-bg:         #F6E9DC;
-  --se-vurgu-cizgi:      #DFC3A5;
+  --se-vurgu-on:         #F7F3EB;
+  --se-vurgu-bg:         #EEDFCE;
+  --se-vurgu-cizgi:      #D6B896;
 
   /* --- nötr rampa: anlamı OLMAYAN her yer --- */
-  --se-notr:             #98907F;
-  --se-notr-2:           #C1B9A9;
-  --se-notr-3:           #DED7C9;
-  --se-notr-bg:          #F2EEE6;
+  --se-notr:             #8E8676;
+  --se-notr-2:           #B7AE9C;
+  --se-notr-3:           #D5CDBC;
+  --se-notr-bg:          #E8E2D6;
 
   /* --- semantik: kâr --- */
   /**
@@ -90,31 +110,31 @@
    * "yamalı" durmasın.
    */
   --se-kar:              #0E7350;
-  --se-kar-bg:           #E7F0E7;
-  --se-kar-cizgi:        #A9D3BD;
+  --se-kar-bg:           #E1EBDF;
+  --se-kar-cizgi:        #9FC9B2;
 
   /* --- semantik: zarar --- */
   --se-zarar:            #9E2436;
-  --se-zarar-bg:         #F8EAE7;
-  --se-zarar-cizgi:      #E3B4B0;
+  --se-zarar-bg:         #F1E0DC;
+  --se-zarar-cizgi:      #DBA9A5;
 
   /* --- semantik: bilinmiyor / modellenmedi --- */
   /** Pirinç — kanıt şeridinde "modellenmemiş" rengi. */
   --se-bil:              #B8860B;   /* şerit, çizgi, ikon */
   --se-bil-ink:          #8A6410;   /* açık zeminde metin */
-  --se-bil-bg:           #FAF2DC;
-  --se-bil-cizgi:        #E8D5A5;
+  --se-bil-bg:           #F2E8CE;
+  --se-bil-cizgi:        #DFCA97;
 
   /* --- semantik: çelişki (kaynak ile sistem uyuşmuyor) --- */
   --se-celiski:          #9E2436;
   --se-celiski-bg:       #9E2436;
-  --se-celiski-on:       #FFFDF8;
+  --se-celiski-on:       #F7F3EB;
 
   /* --- durum --- */
   --se-odak:             #9A5B2D;
-  --se-odak-golge:       0 0 0 3px #F0DCC5;
-  --se-pasif-bg:         #F0ECE3;
-  --se-pasif-ink:        #ADA598;
+  --se-odak-golge:       0 0 0 3px #E8D2B8;
+  --se-pasif-bg:         #E9E4DA;
+  --se-pasif-ink:        #A29A8B;
 
   /* --- gölge (sadece yüzen katman) --- */
   /** ⚠ SICAK GÖLGE: nötr gri gölge kâğıt zeminde mavimsi görünür. */
@@ -123,8 +143,8 @@
   --se-golge-3:          0 12px 32px rgba(34, 31, 26, 0.12);
 
   /* --- seçim ve kaydırma çubuğu --- */
-  --se-secim-bg:         #F0DCC5;
-  --se-secim-ink:        #221F1A;
-  --se-kaydirma:         #CEC5B6;
-  --se-kaydirma-hover:   #B4A996;
+  --se-secim-bg:         #E8D2B8;
+  --se-secim-ink:        #1F1C17;
+  --se-kaydirma:         #C4BAA7;
+  --se-kaydirma-hover:   #A99D87;
 }

@@ -230,6 +230,49 @@ for (const tema of TEMALAR) {
 }
 
 /**
+ * ⚠ SEMANTİK ZEMİN, KARTTAN PARLAK OLAMAZ (24.08.2026).
+ *
+ * Kağıt koyulaştırılırken çıktı: `--se-bil-bg` eski hâlinde (0.8900) yeni
+ * karttan (0.8987) neredeyse parlaktı. Bırakılsaydı uyarı kutuları kartın
+ * ÜSTÜNDE parlar, göz onları "daha yakın" okurdu — oysa kutu kartın
+ * İÇİNDE. Parlaklık merdiveni derinlik bildirir; ters çevrilince yerleşim
+ * yalan söyler.
+ *
+ * ⚠ ÖLÇÜLÜR, GÖZLE BAKILMAZ. Yeni tema eklendiğinde de bedava koşar.
+ */
+{
+  const parlaklik2 = (hex: string) => {
+    const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+    const d = c.map((x) =>
+      x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4,
+    );
+    return 0.2126 * d[0] + 0.7152 * d[1] + 0.0722 * d[2];
+  };
+  for (const tema of TEMALAR) {
+    const metin = oku(`src/styles/selliora-${tema}.css`);
+    const kart = /--se-kart:\s*(#[0-9A-Fa-f]{6})/.exec(metin)?.[1];
+    if (!kart) {
+      kontrol(`${tema}: kart rengi okunamadı`, false);
+      continue;
+    }
+    /** Koyu temada zemin karttan AÇIK olur — yön tersine döner. */
+    const koyuTema = parlaklik2(kart) < 0.2;
+    const parlayan: string[] = [];
+    for (const m of metin.matchAll(
+      /(--se-[a-z0-9-]*-bg):\s*(#[0-9A-Fa-f]{6})/g,
+    )) {
+      const fark = parlaklik2(m[2]) - parlaklik2(kart);
+      if (koyuTema ? fark < 0 : fark > 0) parlayan.push(`${m[1]}=${m[2]}`);
+    }
+    kontrol(
+      `${tema}: hiçbir *-bg karttan parlak değil`,
+      parlayan.length === 0,
+      parlayan,
+    );
+  }
+}
+
+/**
  * ⚠ KÖPRÜ SEÇİCİSİ HER TEMAYI SAYAR. Palet dosyası eklenip köprüye
  * yazılmazsa `--se-*` yüklenir ama shadcn token'larına HİÇ bağlanmaz:
  * uygulama varsayılan yüzeylerle çizilir ve tema seçilmiş görünür.
