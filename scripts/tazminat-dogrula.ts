@@ -1,4 +1,23 @@
 import { readFileSync } from "node:fs";
+
+/**
+ * ⚠ ŞEMA SATIR SONUNDAN BAĞIMSIZ OKUNUR (24.08.2026).
+ *
+ * `npx prisma format` dosyayı CRLF'e çevirdi ve enum ayrıştıran kontrol
+ * SESSİZCE 0 değer buldu: `split("
+")` sonrası satırlar `` ile
+ * bitiyor, `/\/\/.*$/` deseni `$`i bulamadığı için yorum SİLİNMİYOR ve
+ * `^[A-Z_]+$` testi düşüyor.
+ *
+ * Kontrol yanlış değildi — okuduğu METİN değişmişti. Windows'ta çalışan
+ * her checkout'ta aynı tuzak var; bu yüzden düzeltme tek satırda değil,
+ * OKUMA KAPISINDA yapılıyor.
+ */
+function semaMetni(): string {
+  return readFileSync("prisma/schema.prisma", "utf8")
+    .split("\r\n")
+    .join("\n");
+}
 /**
  * ============================================================================
  *  TAZMİNAT DOĞRULAMA
@@ -184,7 +203,7 @@ console.log("\n4) KARŞI TARAF — ÜÇ TÜRDEN BİRİ, AMA EN AZ BİRİ");
   );
 
   // ── ŞEMA ↔ KURAL BAĞI ────────────────────────────────────────────────
-  const sema = readFileSync("prisma/schema.prisma", "utf8");
+  const sema = semaMetni();
   const blok = sema.slice(
     sema.indexOf("model Compensation {"),
     sema.indexOf("\n}", sema.indexOf("model Compensation {")),

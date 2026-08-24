@@ -628,6 +628,7 @@ model ChannelAccount {
    * /**
    * /**
    * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -1030,6 +1031,19 @@ model Sale {
   /// Pazaryerindeki sipariş numarası. Girilmesi zorunlu değil; girilirse
   /// benzersizdir (MySQL'de NULL'lar tekrarlanabilir, bu bilinçli).
   code String? @unique
+
+  /// GÖNDERİ (TAKİP) NUMARASI — kargo/pazaryeri kodu, K41① 24.08.2026.
+  ///
+  /// Sipariş no ile AYNI KALIP: boş bırakılabilir, GİRİLİRSE BENZERSİZ.
+  /// Benzersizlik şart — aynı kod iki satışta olsaydı okutma İKİ sonuç
+  /// döndürür ve hangisinin doğru olduğu bilinemezdi.
+  ///
+  /// ⚠ NULLABLE @unique: MySQL birden çok NULL'a izin verir; `code` ile
+  /// birebir aynı davranış, yeni bir kural değil.
+  ///
+  /// ⚠ GERİ DOLDURULMAZ. Kod pazaryerinde/kargoda SONRADAN oluşuyor;
+  /// var olan 125 satışta boş kalması doğrudur — uydurulamaz.
+  shipmentCode String? @unique
 
   /// Satış her zaman bir kanal hesabından yapılır — hangi pazaryerinin
   /// hangi mağazasından satıldığı kâr ve hakediş hesabının temelidir.

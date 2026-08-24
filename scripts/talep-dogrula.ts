@@ -15,6 +15,25 @@
 
 import { readFileSync } from "node:fs";
 
+/**
+ * ⚠ ŞEMA SATIR SONUNDAN BAĞIMSIZ OKUNUR (24.08.2026).
+ *
+ * `npx prisma format` dosyayı CRLF'e çevirdi ve enum ayrıştıran kontrol
+ * SESSİZCE 0 değer buldu: `split("
+")` sonrası satırlar `` ile
+ * bitiyor, `/\/\/.*$/` deseni `$`i bulamadığı için yorum SİLİNMİYOR ve
+ * `^[A-Z_]+$` testi düşüyor.
+ *
+ * Kontrol yanlış değildi — okuduğu METİN değişmişti. Windows'ta çalışan
+ * her checkout'ta aynı tuzak var; bu yüzden düzeltme tek satırda değil,
+ * OKUMA KAPISINDA yapılıyor.
+ */
+function semaMetni(): string {
+  return readFileSync("prisma/schema.prisma", "utf8")
+    .split("\r\n")
+    .join("\n");
+}
+
 import {
   GECISLER,
   TALEP_DURUMLARI,
@@ -491,7 +510,7 @@ console.log("=".repeat(70));
    *  notun yazıldığı anı değil kaydın en son dokunulduğu anı söyler.
    * ════════════════════════════════════════════════════════════════════
    */
-  const sema = readFileSync("prisma/schema.prisma", "utf8");
+  const sema = semaMetni();
   kontrol(
     "çözüm notunun YAZARI tutuluyor (Faz 2 göçü için)",
     sema.includes("cozumNotuYazanId String?"),

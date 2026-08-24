@@ -17,7 +17,11 @@ import {
   kovaEylemi,
   type OkumaKovasi,
 } from "@/lib/okuma/kova";
-import { kodKosulu, type KodRolu } from "@/lib/varyant-arama-kurali";
+import {
+  kodKosulu,
+  satisKodKosulu,
+  type KodRolu,
+} from "@/lib/varyant-arama-kurali";
 import {
   VARYANT_SECIMI,
   varyantiOzetle,
@@ -90,6 +94,46 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
    * kurmaktır (anayasa: _"sistem, defterinde takip etmediği şey hakkında
    * iddia kurmaz"_).
    */
+  /**
+   * ════════════════════════════════════════════════════════════════════════
+   *  SATIŞ KİMLİĞİYLE OKUTMA — GÖNDERİ NUMARASI (K41①, 24.08.2026)
+   * ------------------------------------------------------------------------
+   *  Varyant bulunamadıysa kod bir SATIŞ kimliği olabilir: gönderi (takip)
+   *  numarası ya da sipariş numarası. Depoda elindeki kâğıtta hangisi
+   *  yazıyorsa onu okutur.
+   *
+   *  ⚠ YALNIZ VARYANT BULUNAMADIYSA SORULUR. Önce varyant denenir çünkü
+   *  günlük iş ürün okutmaktır; her okumada iki sorgu atmak, %99'unda
+   *  gereksiz bir gidiş-dönüş olurdu.
+   *
+   *  ⚠ SONUÇ TEKİLDİR — `shipmentCode` ve `code` ikisi de `@unique`.
+   *  Bu yüzden "Paketlendi" düğmesi elle sipariş seçimi olmadan doğrudan
+   *  o satıra bağlanabiliyor.
+   *
+   *  ⚠ İPTAL EDİLMİŞ SATIŞ AÇIK SİPARİŞ SAYILMAZ — süzgeç aşağıdaki
+   *  kalem sorgusuyla AYNI: `shippedAt: null, iptalTarihi: null`.
+   * ════════════════════════════════════════════════════════════════════════
+   */
+  const satisKaydi = varyant
+    ? null
+    : await prisma.sale.findFirst({
+        where: {
+          OR: satisKodKosulu(temiz),
+          shippedAt: null,
+          iptalTarihi: null,
+        },
+        select: {
+          id: true,
+          code: true,
+          shipmentCode: true,
+          soldAt: true,
+          items: { select: { quantity: true } },
+          channelAccount: {
+            select: { name: true, channel: { select: { name: true } } },
+          },
+        },
+      });
+
   const kalemler = varyant
     ? await prisma.saleItem.findMany({
         where: {
@@ -143,6 +187,32 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
       )
     : new Set<string>();
 
+  /**
+   * ⚠ SATIŞTAN GELEN SİPARİŞ DE AYNI LİSTEYE GİRER. Ayrı bir yol yazsaydık
+   * "Paketlendi" düğmesi iki farklı yerde iki farklı davranış kazanırdı.
+   */
+  const satistanGelen: AcikSiparis[] = satisKaydi
+    ? [
+        {
+          saleId: satisKaydi.id,
+          kod: satisKaydi.code,
+          adet: satisKaydi.items.reduce((t, k) => t + k.quantity, 0),
+          satisTarihi: satisKaydi.soldAt,
+          kanal: `${satisKaydi.channelAccount.channel.name} — ${satisKaydi.channelAccount.name}`,
+          hazirlaniyor: hazirlananSiparisler(
+            await prisma.auditLog.findMany({
+              where: {
+                action: { in: [...PAKETLEME_EYLEMLERI] },
+                targetType: "Sale",
+                targetId: satisKaydi.id,
+              },
+              select: { action: true, createdAt: true, targetId: true },
+            }),
+          ).has(satisKaydi.id),
+        },
+      ]
+    : [];
+
   const siparisler: AcikSiparis[] = kalemler.map((k) => ({
     saleId: k.sale.id,
     kod: k.sale.code,
@@ -152,12 +222,35 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
     hazirlaniyor: hazirlananlar.has(k.sale.id),
   }));
 
+  /**
+   * ⚠ İKİ KAYNAK TEK LİSTEDE BİRLEŞİR. Varyanttan gelen kalemler ya da
+   * satış kimliğinden gelen tekil sipariş — hangisi doluysa o.
+   */
+  const tumSiparisler = [...siparisler, ...satistanGelen];
+
+  /**
+   * ⚠ KOVA "BULUNDU MU" SORUSUNU İKİ KAYNAKTAN BİRDEN CEVAPLAR. Yalnız
+   * varyanta baksaydı, gönderi numarasından bulunan bir sipariş
+   * `BILINMEYEN` kovasına düşerdi ve haftalık kapsama ölçümü yanlış
+   * çıkardı — bulunmuş bir kod "bulunamadı" diye sayılırdı.
+   */
   const kova = ilkKova({
-    bulunduMu: varyant !== null,
-    acikSiparisVar: siparisler.length > 0,
+    bulunduMu: varyant !== null || satisKaydi !== null,
+    acikSiparisVar: tumSiparisler.length > 0,
   });
 
-  const alan = varyant ? bulunanAlan(temiz, varyant) : null;
+  /**
+   * ⚠ HANGİ ALANDA BULUNDUĞU SÖYLENİR — satış kimliğinde de.
+   * Kullanıcı "gönderi numarasından bulundu" görmezse, kodun neden
+   * eşleştiğini bilemez ve yanlış kutuyu paketleyebilir.
+   */
+  const alan: KodRolu | null = varyant
+    ? bulunanAlan(temiz, varyant)
+    : satisKaydi
+      ? satisKaydi.shipmentCode === temiz
+        ? "shipmentCode"
+        : null
+      : null;
   const izId = await iziYaz(kova, {
     kod: temiz,
     alan,
@@ -172,7 +265,7 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
     kova,
     alan,
     urun: varyant ? varyantiOzetle(varyant) : null,
-    siparisler,
+    siparisler: tumSiparisler,
   };
 }
 

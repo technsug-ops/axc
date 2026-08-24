@@ -22,6 +22,25 @@ import {
 import { readFileSync } from "node:fs";
 
 import { BILDIRIM_DURUM_RENGI } from "../src/lib/durum-renkleri";
+
+/**
+ * ⚠ ŞEMA SATIR SONUNDAN BAĞIMSIZ OKUNUR (24.08.2026).
+ *
+ * `npx prisma format` dosyayı CRLF'e çevirdi ve enum ayrıştıran kontrol
+ * SESSİZCE 0 değer buldu: `split("
+")` sonrası satırlar `` ile
+ * bitiyor, `/\/\/.*$/` deseni `$`i bulamadığı için yorum SİLİNMİYOR ve
+ * `^[A-Z_]+$` testi düşüyor.
+ *
+ * Kontrol yanlış değildi — okuduğu METİN değişmişti. Windows'ta çalışan
+ * her checkout'ta aynı tuzak var; bu yüzden düzeltme tek satırda değil,
+ * OKUMA KAPISINDA yapılıyor.
+ */
+function semaMetni(): string {
+  return readFileSync("prisma/schema.prisma", "utf8")
+    .split("\r\n")
+    .join("\n");
+}
 import {
   DURUM_SAYACI,
   SAYAC_KURALLARI,
@@ -1854,7 +1873,7 @@ console.log("\n10) AÇIK BİLDİRİM ÖLÇÜTÜ VE İADE EKRANI DÜZENİ");
    *  dönmesini engelliyor — bir yorum kendini savunamaz.
    * ════════════════════════════════════════════════════════════════════
    */
-  const sema = readFileSync("prisma/schema.prisma", "utf8");
+  const sema = semaMetni();
   /**
    * ⚠ CÜMLEYİ ARAMAK YETMEZ — "ESKİ GEREKÇE SİLİNMEZ" KURALI VAR.
    *
@@ -2009,7 +2028,7 @@ console.log("\n11) FORMUN SUNDUĞU GEREKÇE = SUNUCUNUN KABUL ETTİĞİ GEREKÇE
    * (`Record<ReturnReason, …>` exhaustive), ama kilit sessizce gevşetilirse
    * — biri `Partial<>` yazarsa — burada görünür.
    */
-  const iadeSema = readFileSync("prisma/schema.prisma", "utf8");
+  const iadeSema = semaMetni();
   const gerekceGovdesi = iadeSema.slice(
     iadeSema.indexOf("enum ReturnReason {"),
     iadeSema.indexOf("}", iadeSema.indexOf("enum ReturnReason {")),
@@ -2302,10 +2321,10 @@ console.log("\n12) SON TARİH SAYAÇLARI (K31 ①)");
    * açılmayacak (mimar şartı ①). Biri yarın çıpa sütunu eklerse burası
    * kırmızı yanar ve karar yeniden konuşulur.
    */
-  const semaMetni = readFileSync("prisma/schema.prisma", "utf8");
-  const bildirimModeli = semaMetni.slice(
-    semaMetni.indexOf("model ReturnNotice {"),
-    semaMetni.indexOf("model ReturnItem {"),
+  const semaGovdesi = semaMetni();
+  const bildirimModeli = semaGovdesi.slice(
+    semaGovdesi.indexOf("model ReturnNotice {"),
+    semaGovdesi.indexOf("model ReturnItem {"),
   );
   kontrol("bildirim modeli kesilebildi", bildirimModeli.length > 0);
   kontrol(
@@ -2379,7 +2398,7 @@ console.log("\n13) RET GEREKÇESİ (8) VE ANALİZ SONUCU (3) — K31 ④");
     ["NoticeObjectionReason", "enum NoticeObjectionReason {", ITIRAZ_GEREKCELERI],
     ["AnalysisResult", "enum AnalysisResult {", ANALIZ_SONUCLARI],
   ] as [string, string, readonly string[]][]) {
-    const semaK4 = readFileSync("prisma/schema.prisma", "utf8");
+    const semaK4 = semaMetni();
     const govde = semaK4.slice(
       semaK4.indexOf(kod),
       semaK4.indexOf("}", semaK4.indexOf(kod)),
@@ -2689,7 +2708,7 @@ console.log("\n14) KARGOLANACAK KUTUSU (K31 ②) VE ASKIDA (③)");
    * biri yarın bir bayrak eklerse burası kırmızı yanar ve karar yeniden
    * konuşulur.
    */
-  const semaK2 = readFileSync("prisma/schema.prisma", "utf8");
+  const semaK2 = semaMetni();
   const modelK2 = semaK2.slice(
     semaK2.indexOf("model ReturnNotice {"),
     semaK2.indexOf("model ReturnItem {"),

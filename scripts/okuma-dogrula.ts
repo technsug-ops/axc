@@ -28,6 +28,25 @@ import {
   toplamOkuma,
 } from "../src/lib/okuma/kova";
 import { haftaAnahtari, pazartesiBasi } from "../src/lib/okuma/rapor";
+
+/**
+ * ⚠ ŞEMA SATIR SONUNDAN BAĞIMSIZ OKUNUR (24.08.2026).
+ *
+ * `npx prisma format` dosyayı CRLF'e çevirdi ve enum ayrıştıran kontrol
+ * SESSİZCE 0 değer buldu: `split("
+")` sonrası satırlar `` ile
+ * bitiyor, `/\/\/.*$/` deseni `$`i bulamadığı için yorum SİLİNMİYOR ve
+ * `^[A-Z_]+$` testi düşüyor.
+ *
+ * Kontrol yanlış değildi — okuduğu METİN değişmişti. Windows'ta çalışan
+ * her checkout'ta aynı tuzak var; bu yüzden düzeltme tek satırda değil,
+ * OKUMA KAPISINDA yapılıyor.
+ */
+function semaMetni(): string {
+  return readFileSync("prisma/schema.prisma", "utf8")
+    .split("\r\n")
+    .join("\n");
+}
 import {
   PAKETLENDI_EYLEMI,
   PAKETLEME_GERI_ALINDI_EYLEMI,
@@ -440,7 +459,7 @@ console.log("\n6) UYARISIZLIK SÖZÜ — VE KAMERA");
    * (merdiven birinci basamak). Biri yarın "kendi tablosu olsun" derse
    * burası kırmızı yanar ve karar yeniden konuşulur.
    */
-  const sema = readFileSync("prisma/schema.prisma", "utf8");
+  const sema = semaMetni();
   kontrol(
     "okuma için yeni model/enum AÇILMADI (AuditLog taşıyor)",
     !/model Okuma|enum Okuma/.test(sema),
@@ -669,7 +688,7 @@ console.log("\n8) PAKETLEME İZİ (İŞ 2)");
    * ⚠ ŞEMA DEĞİŞMEDİ. Karar: paketleme durumu `AuditLog`ta yaşar. Biri
    * yarın `Sale`'e bir durum sütunu eklerse burası kırmızı yanar.
    */
-  const semaPaket = readFileSync("prisma/schema.prisma", "utf8");
+  const semaPaket = semaMetni();
   kontrol(
     "paketleme için yeni model/enum/sütun AÇILMADI",
     !/model Paketleme|enum Paketleme|hazirlaniyor\s+Boolean/.test(semaPaket),

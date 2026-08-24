@@ -187,6 +187,12 @@ export function satisKosulu(
             {
               OR: [
                 { code: { contains: arama } },
+                /**
+                 * GÖNDERİ (TAKİP) NUMARASI — K41①, 24.08.2026.
+                 * Depoda elindeki kâğıtta hangisi yazıyorsa onu arar;
+                 * "hangi kod hangi kutuya ait" ezberlemek zorunda kalmaz.
+                 */
+                { shipmentCode: { contains: arama } },
                 { items: { some: { variant: { sku: { contains: arama } } } } },
                 {
                   items: {

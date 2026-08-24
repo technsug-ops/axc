@@ -889,7 +889,18 @@
     "cakisanSatisIptalliMetni": "",
     "cakisanSatisIptaliGeriAl": "",
     "adetToplami": "",
-    "toplamAdet": ""
+    "toplamAdet": "",
+    "gonderiNo": "",
+    "gonderiNoIpucu": "",
+    "gonderiNoKamera": "",
+    "gonderiNoNotu": "",
+    "gonderiNoKaydet": "",
+    "gonderiNoKaydedildi": "",
+    "gonderiNoSilindi": "",
+    "gonderiNoZatenBos": "",
+    "gonderiNoSatisYok": "",
+    "gonderiNoIptalli": "",
+    "gonderiNoCakisma": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -3092,7 +3103,8 @@
     "paketlendi": "",
     "paketlendiIsareti": "",
     "paketlemeGeriAl": "",
-    "paketlemeOlmadi": ""
+    "paketlemeOlmadi": "",
+    "alanShipmentCode": ""
   },
   "ItirazGerekcesi": {
     "KULLANILMIS": "",

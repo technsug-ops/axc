@@ -60,6 +60,8 @@ function satisSemasiKur(t: Ceviri) {
   return z.object({
     // Kanal sipariş numarası opsiyoneldir; girilirse benzersizdir.
     code: z.string().trim().max(191),
+    /** GÖNDERİ (TAKİP) NUMARASI — sipariş no ile aynı kalıp (K41①). */
+    shipmentCode: z.string().trim().max(191).default(""),
     soldAt: z.string().min(1, t("tarihZorunlu")),
     channelAccountId: z.string().min(1, t("kanalHesabiZorunlu")),
     note: z.string().trim(),
@@ -135,6 +137,11 @@ export async function satisOlustur(
     // bkz. src/lib/satis.ts. Yarım satış kaydı oluşamaz.
     yeniId = await satisKaydet({
       code: veri.code || null,
+      /**
+       * ⚠ BOŞ İSE null — boş dize DEĞİL. `@unique` sütunda boş dize İKİNCİ
+       * kayıtta çakışırdı; NULL'lar çakışmaz. `code` ile aynı kalıp.
+       */
+      shipmentCode: veri.shipmentCode || null,
       channelAccountId: veri.channelAccountId,
       soldAt: tarih,
       note: veri.note || null,

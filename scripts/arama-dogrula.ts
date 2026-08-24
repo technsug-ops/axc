@@ -1,11 +1,34 @@
 import { readFileSync } from "node:fs";
 import {
   KOD_ROLLERI,
+  ROL_KAPSAMI,
+  SATIS_ROLLERI,
+  VARYANT_ROLLERI,
   aramaKosulu,
   kapsananRoller,
   kodKosulu,
+  satisKodKosulu,
 } from "../src/lib/varyant-arama-kurali";
 import { kodDizisi } from "../src/lib/varyant-ozet";
+
+/**
+ * ⚠ ŞEMA SATIR SONUNDAN BAĞIMSIZ OKUNUR (24.08.2026).
+ *
+ * `npx prisma format` dosyayı CRLF'e çevirdi ve enum ayrıştıran kontrol
+ * SESSİZCE 0 değer buldu: `split("
+")` sonrası satırlar `` ile
+ * bitiyor, `/\/\/.*$/` deseni `$`i bulamadığı için yorum SİLİNMİYOR ve
+ * `^[A-Z_]+$` testi düşüyor.
+ *
+ * Kontrol yanlış değildi — okuduğu METİN değişmişti. Windows'ta çalışan
+ * her checkout'ta aynı tuzak var; bu yüzden düzeltme tek satırda değil,
+ * OKUMA KAPISINDA yapılıyor.
+ */
+function semaMetni(): string {
+  return readFileSync("prisma/schema.prisma", "utf8")
+    .split("\r\n")
+    .join("\n");
+}
 
 /**
  * ============================================================================
@@ -46,9 +69,15 @@ console.log("=".repeat(70));
 /**
  * ANAYASADAKİ ÜÇ KOD ROLÜ + KANAL SKU. Biri unutulursa kullanıcı elindeki
  * kodla ürünü bulamaz ve "sistem çalışmıyor" der — haklı olarak.
+ *
+ * ⚠ DÖNGÜ `KOD_ROLLERI` DEĞİL `VARYANT_ROLLERI` (24.08.2026). Beşinci rol
+ * (`shipmentCode`) eklendiğinde bu iki kontrol KIRMIZI yandı ve HAKLIYDI:
+ * ölçüt "her rol varyant koşulunda aranıyor mu" diyordu, oysa gönderi
+ * numarası bir SATIŞ kimliği. Ölçüt kapsamına bağlandı — rol eklendiğinde
+ * kontrol hâlâ yakalar, ama yanlış tabloda aramaz.
  */
 const serbest = kapsananRoller(aramaKosulu("ABC"));
-for (const rol of KOD_ROLLERI) {
+for (const rol of VARYANT_ROLLERI) {
   kontrol(`serbest arama ${rol} alanını kapsıyor`, serbest.includes(rol));
 }
 kontrol(
@@ -57,8 +86,14 @@ kontrol(
 );
 
 const okutma = kapsananRoller(kodKosulu("ABC"));
-for (const rol of KOD_ROLLERI) {
+for (const rol of VARYANT_ROLLERI) {
   kontrol(`okutulan kod ${rol} alanını kapsıyor`, okutma.includes(rol));
+}
+
+/** ⚠ SATIŞ KAPSAMLI ROLLER DE AYNI TİTİZLİKLE SINANIR — dışarıda kalmasın. */
+const satisOkutma = kapsananRoller(satisKodKosulu("ABC"));
+for (const rol of SATIS_ROLLERI) {
+  kontrol(`satış okutması ${rol} alanını kapsıyor`, satisOkutma.includes(rol));
 }
 
 /**
@@ -352,6 +387,177 @@ console.log("\nKANAL KODLARI EKRANI — KİMLİK VE ORAN LİSTEDE");
 }
 
 console.log("");
+// ===========================================================================
+//  K41① GÖNDERİ NUMARASI — BEŞİNCİ KOD ROLÜ (24.08.2026)
+// ===========================================================================
+{
+  /**
+   * ⚠ ROL LİSTESİ TEK KAYIT YERİ. Komut _"ayrı liste yazma"_ diyordu ve
+   * `kodKosulu` VARYANT sorguladığı için gönderi numarası oraya doğrudan
+   * eklenemedi. Niyet `ROL_KAPSAMI` ile korundu: liste bir tane, yayım
+   * kapsama göre ayrılıyor.
+   */
+  kontrol(
+    "shipmentCode KOD_ROLLERI'nde (tek kayıt yeri)",
+    (KOD_ROLLERI as readonly string[]).includes("shipmentCode"),
+  );
+  /**
+   * ⚠ EXHAUSTIVE KONTROLÜN KENDİSİ SINANIR. `ROL_KAPSAMI`den bir rol
+   * düşerse derleyici yakalar — ama derleyiciye güvenmek, bu dosyanın
+   * kontrolü olmadan "yakalanır" varsaymaktır. Burada KAPSAM sayılıyor:
+   * her rolün bir kapsamı OLMALI, eksiksiz.
+   */
+  const kapsamsiz = KOD_ROLLERI.filter((r) => ROL_KAPSAMI[r] === undefined);
+  kontrol(
+    "HER rolün kapsamı tanımlı (exhaustive Record eksiksiz)",
+    kapsamsiz.length === 0,
+  );
+  kontrol(
+    "  ...dört ürün rolü VARYANT kapsamında",
+    VARYANT_ROLLERI.length === 4 &&
+      ["sku", "companySku", "barcode", "channelSku"].every((r) =>
+        (VARYANT_ROLLERI as readonly string[]).includes(r),
+      ),
+  );
+  kontrol(
+    "  ...gönderi numarası SATIS kapsamında",
+    SATIS_ROLLERI.length === 1 && SATIS_ROLLERI[0] === "shipmentCode",
+  );
+
+  /**
+   * ⚠ VARYANT KOŞULU KİRLENMEMELİ. `shipmentCode` oraya sızarsa beş çağıran
+   * birden geçersiz sorgu üretir (okut · varyant-arama · kart-arama ·
+   * urun-zemini · kart-arama-verisi).
+   */
+  kontrol(
+    "kodKosulu'na SATIŞ alanı SIZMIYOR",
+    !JSON.stringify(kodKosulu("X")).includes("shipmentCode"),
+  );
+  kontrol(
+    "satisKodKosulu gönderi numarasını arıyor",
+    JSON.stringify(satisKodKosulu("X")).includes("shipmentCode"),
+  );
+  /**
+   * ⚠ SİPARİŞ NUMARASI DA ARANIR: depoda elindeki kâğıtta hangisi yazıyorsa
+   * onu okutur. Yalnız gönderi numarası aramak, kullanıcıyı hangi kodun
+   * hangi kutuya ait olduğunu ezberlemeye zorlardı.
+   */
+  kontrol(
+    "  ...ve sipariş numarasını da arıyor",
+    JSON.stringify(satisKodKosulu("X")).includes('"code"'),
+  );
+
+  // ── ŞEMA: BENZERSİZ ──────────────────────────────────────────────────
+  const sema = semaMetni();
+  const saleBloku = sema.slice(
+    sema.indexOf("model Sale {"),
+    sema.indexOf("model Sale {") + 3000,
+  );
+  /**
+   * ⚠ BENZERSİZLİK ŞART: aynı kod iki satışa girilirse okutma İKİ sonuç
+   * döndürür ve hangisinin doğru olduğu bilinemez — depoda yanlış kutu
+   * paketlenir.
+   */
+  kontrol(
+    "shipmentCode BENZERSİZ (aynı kod iki satışa giremez)",
+    /shipmentCode\s+String\?\s+@unique/.test(saleBloku),
+  );
+  kontrol(
+    "  ...ve NULLABLE (boş bırakılabilir)",
+    /shipmentCode\s+String\?/.test(saleBloku),
+  );
+
+  // ── SUNUCU: ÇAKIŞMA HÜKMÜ ────────────────────────────────────────────
+  const satisLib = readFileSync("src/lib/satis.ts", "utf8");
+  kontrol(
+    "kayıt sırasında çakışma SORULUYOR (ham DB hatasına bırakılmıyor)",
+    /where: \{ shipmentCode: girdi\.shipmentCode \}/.test(satisLib),
+  );
+  kontrol(
+    "  ...hüküm sipariş numarasıyla AYNI gövdeden",
+    /siparisNoCakismaHukmu\(cakisan\)[\s\S]{0,200}girdi\.shipmentCode/.test(
+      satisLib,
+    ),
+  );
+
+  const gonderiEylemi = readFileSync(
+    "src/app/satislar/[id]/gonderi-no-actions.ts",
+    "utf8",
+  );
+  kontrol(
+    "sonradan girişte de çakışma sorgulanıyor",
+    /where: \{ shipmentCode: kod \}/.test(gonderiEylemi),
+  );
+  /** ⚠ AYNI SATIŞA AYNI KOD ÇAKIŞMA DEĞİLDİR — form iki kez gönderilebilir. */
+  kontrol(
+    "  ...ama AYNI satışa aynı kod çakışma sayılmıyor",
+    /cakisan\.id !== saleId/.test(gonderiEylemi),
+  );
+  kontrol(
+    "  ...boş değer null yazılıyor (boş dize @unique'te çakışırdı)",
+    /shipmentCode: null/.test(gonderiEylemi),
+  );
+
+  // ── /okut: SATIŞ KİMLİĞİ ARAMASI ─────────────────────────────────────
+  const okutEylemi = readFileSync("src/app/okut/actions.ts", "utf8");
+  kontrol(
+    "/okut varyant bulunamazsa SATIŞ kimliğinde arıyor",
+    /satisKodCosulu|satisKodKosulu\(temiz\)/.test(okutEylemi),
+  );
+  /**
+   * ⚠ KOVA İKİ KAYNAĞI DA SAYAR. Yalnız varyanta baksaydı, gönderi
+   * numarasından bulunan sipariş `BILINMEYEN` kovasına düşerdi ve haftalık
+   * kapsama ölçümü bulunmuş bir kodu "bulunamadı" diye sayardı.
+   */
+  kontrol(
+    "  ...kova İKİ kaynağı da 'bulundu' sayıyor",
+    /bulunduMu: varyant !== null \|\| satisKaydi !== null/.test(okutEylemi),
+  );
+  /**
+   * ⚠ HANGİ ALANDA BULUNDUĞU SÖYLENİR. Kullanıcı "gönderi numarasından
+   * bulundu" görmezse kodun neden eşleştiğini bilemez ve yanlış kutuyu
+   * paketleyebilir.
+   */
+  kontrol(
+    "  ...gönderi numarasından bulunduğu İŞARETLENİYOR",
+    /satisKaydi\.shipmentCode === temiz[\s\S]{0,60}"shipmentCode"/.test(
+      okutEylemi,
+    ),
+  );
+  const okuyucu = readFileSync("src/app/okut/okuyucu.tsx", "utf8");
+  kontrol(
+    "  ...ve EKRANDA yazıyor (alanAdi sözlüğünde)",
+    /shipmentCode: t\("alanShipmentCode"\)/.test(okuyucu),
+  );
+
+  // ── FORM: OKUNAN DEĞER DOĞRUDAN TAŞINIR ──────────────────────────────
+  const gonderiFormu = readFileSync(
+    "src/app/satislar/[id]/gonderi-no.tsx",
+    "utf8",
+  );
+  /**
+   * ⚠ ARA DURUMDAN OKUMA YASAK. React durumu senkron güncellenmiyor;
+   * `setKod(x)` deyip hemen `kaydet()` çağırmak BİR ÖNCEKİ değeri
+   * kaydederdi (fiyat denemesi vakası).
+   */
+  kontrol(
+    "okunan değer PARAMETREYLE taşınıyor (ara durumdan okunmuyor)",
+    /const kaydet = \(deger: string\)/.test(gonderiFormu) &&
+      /gonderiNoKaydet\(saleId, deger\)/.test(gonderiFormu),
+  );
+  kontrol(
+    "  ...okuma anında doğrudan o değerle kaydediliyor",
+    /onOkundu=\{\(okunan\) => \{[\s\S]{0,120}kaydet\(okunan\)/.test(gonderiFormu),
+  );
+
+  // ── /satislar ARAMASI ────────────────────────────────────────────────
+  const suzgec = readFileSync("src/lib/liste-suzgeci.ts", "utf8");
+  kontrol(
+    "/satislar araması gönderi numarasını da buluyor",
+    /\{ shipmentCode: \{ contains: arama \} \}/.test(suzgec),
+  );
+}
+
 console.log("=".repeat(70));
 if (kalan === 0) {
   console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

@@ -19,6 +19,25 @@ import { readFileSync } from "node:fs";
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
 import { raporHesapla } from "../src/lib/rapor";
 import { bantDisiMi, komisyonBandi } from "../src/lib/komisyon-bandi";
+
+/**
+ * ⚠ ŞEMA SATIR SONUNDAN BAĞIMSIZ OKUNUR (24.08.2026).
+ *
+ * `npx prisma format` dosyayı CRLF'e çevirdi ve enum ayrıştıran kontrol
+ * SESSİZCE 0 değer buldu: `split("
+")` sonrası satırlar `` ile
+ * bitiyor, `/\/\/.*$/` deseni `$`i bulamadığı için yorum SİLİNMİYOR ve
+ * `^[A-Z_]+$` testi düşüyor.
+ *
+ * Kontrol yanlış değildi — okuduğu METİN değişmişti. Windows'ta çalışan
+ * her checkout'ta aynı tuzak var; bu yüzden düzeltme tek satırda değil,
+ * OKUMA KAPISINDA yapılıyor.
+ */
+function semaMetni(): string {
+  return readFileSync("prisma/schema.prisma", "utf8")
+    .split("\r\n")
+    .join("\n");
+}
 import {
   duzeltmeOzeti,
   duzeltmeyiDogrula,
@@ -521,7 +540,7 @@ console.log("\n5) NEDEN YÖNÜ — ANLAMSIZ BİLEŞİM KURULAMAZ");
     "src/app/stok/[variantId]/page.tsx",
     "utf8",
   );
-  const sema = readFileSync("prisma/schema.prisma", "utf8");
+  const sema = semaMetni();
 
   const yonu = (ad: string) => {
     const yer = seed.indexOf(`name: "${ad}"`);

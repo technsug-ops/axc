@@ -124,6 +124,8 @@ export function Okuyucu() {
     companySku: t("alanCompanySku"),
     sku: t("alanSku"),
     channelSku: t("alanChannelSku"),
+    /** K41① — satış kimliği; ürün rolü değil ama aynı sözlükten okunur. */
+    shipmentCode: t("alanShipmentCode"),
   };
 
   const siparisVar = (sonuc?.siparisler.length ?? 0) > 0;

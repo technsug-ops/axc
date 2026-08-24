@@ -156,6 +156,7 @@ export function SatisFormu({
    * Varsayılan "1": bölünmemiş sipariş zaten tek pakettir.
    */
   const [paketSayisi, setPaketSayisi] = useState("1");
+  const [shipmentCode, setShipmentCode] = useState("");
   const [kargoSecenekleri, setKargoSecenekleri] = useState<KargoSecenegi[]>([]);
 
   /** Seçili kanal hesabının para birimi, yeni kalemler için varsayılan olur. */
@@ -359,6 +360,7 @@ export function SatisFormu({
 
   const gonderilecek = {
     code,
+    shipmentCode,
     soldAt,
     channelAccountId,
     note,
@@ -429,6 +431,32 @@ export function SatisFormu({
               />
               <p className="text-muted-foreground text-xs">
                 {t("siparisNoNotu")}
+              </p>
+            </div>
+
+            {/*
+              GÖNDERİ (TAKİP) NUMARASI — K41①, 24.08.2026.
+
+              ⚠ SİPARİŞ NO İLE AYNI KALIP: isteğe bağlı, girilirse benzersiz,
+              okutulabilir. Farklı bir kalıp kurmak, iki kod alanını iki ayrı
+              şey gibi gösterirdi (İlke #10: aynı işlem her yerde aynı görünür).
+
+              ⚠ BOŞ BIRAKILABİLİR ve bu BEKLENEN durumdur: kod pazaryerinde
+              satıştan SONRA oluşuyor. Bu yüzden satış düzenleme ekranından
+              sonradan da girilebiliyor — zorunlu yapmak, kodu henüz olmayan
+              bir satışı kaydettirmemek olurdu.
+            */}
+            <div className="space-y-2">
+              <Label htmlFor="satis-gonderi">{t("gonderiNo")}</Label>
+              <BarkodGirisi
+                id="satis-gonderi"
+                value={shipmentCode}
+                onChange={setShipmentCode}
+                placeholder={t("gonderiNoIpucu")}
+                kameraBasligi={t("gonderiNoKamera")}
+              />
+              <p className="text-muted-foreground text-xs">
+                {t("gonderiNoNotu")}
               </p>
             </div>
 

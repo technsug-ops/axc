@@ -186,6 +186,7 @@ async function ucanUca() {
     // --- 5 adet sat: 3 eski partiden + 2 yeni partiden gelmeli ---
     const satisId = await satisKaydet({
       code: `${ONEK}SIP-1`,
+      shipmentCode: null,
       channelAccountId: hesap.id,
       soldAt: new Date("2026-03-01"),
       note: null,
@@ -248,6 +249,7 @@ async function ucanUca() {
     try {
       await satisKaydet({
         code: `${ONEK}SIP-2`,
+        shipmentCode: null,
         channelAccountId: hesap.id,
         soldAt: new Date("2026-03-02"),
         note: null,
@@ -299,6 +301,7 @@ async function ucanUca() {
     try {
       await satisKaydet({
         code: `${ONEK}SIP-3`,
+        shipmentCode: null,
         channelAccountId: hesap.id,
         soldAt: new Date("2026-03-03"),
         note: null,
@@ -338,6 +341,7 @@ async function ucanUca() {
     // --- Aynı varyant iki kalemde, toplam stoğa sığıyor ---
     const cokKalemId = await satisKaydet({
       code: `${ONEK}SIP-4`,
+      shipmentCode: null,
       channelAccountId: hesap.id,
       soldAt: new Date("2026-03-04"),
       note: null,
@@ -382,6 +386,7 @@ async function ucanUca() {
     try {
       await satisKaydet({
         code: `${ONEK}SIP-1`,
+        shipmentCode: null,
         channelAccountId: hesap.id,
         soldAt: new Date("2026-03-05"),
         note: null,

@@ -12,6 +12,7 @@ import {
 } from "@/components/iade-blogu";
 import { KarBlogu, type KarBloguVerisi } from "@/components/kar-blogu";
 
+import { GonderiNo } from "./gonderi-no";
 import { HesapDegistir } from "./hesap-degistir";
 import { YenidenHesapla } from "./yeniden-hesapla";
 import { DuzenleFormu } from "./duzenle-formu";
@@ -357,7 +358,21 @@ export default async function SatisDetaySayfasi({
                 />
               ) : null}
             </h1>
-            <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
+            {/*
+              GÖNDERİ (TAKİP) NUMARASI — SONRADAN GİRİLEBİLİR (K41①).
+
+              ⚠ SİPARİŞ NUMARASININ HEMEN ALTINDA: ikisi de aynı siparişin
+              kimliği ve depoda ikisi de okutuluyor. Ayrı bir sekmeye ya da
+              düzenleme ekranına gizlemek, "bilgiye ulaşmak için detaya
+              girmek" demekti (İlke #9).
+
+              ⚠ KOD BURADA YAZILIR ÇÜNKÜ SONRADAN OLUŞUYOR — pazaryeri
+              kargo kodunu satıştan sonra veriyor.
+            */}
+            <div className="mt-2 max-w-md">
+              <GonderiNo saleId={satis.id} mevcut={satis.shipmentCode} />
+            </div>
+            <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-2 text-sm">
               <span>{bicim.tarih(satis.soldAt)}</span>
               <span>·</span>
               <span>

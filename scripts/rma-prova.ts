@@ -145,6 +145,7 @@ async function main() {
     console.log("\n1) SATIŞ — A satılıyor");
     satisId = await satisKaydet({
       code: `${ON_EK}SIP1`,
+      shipmentCode: null,
       channelAccountId: hesap.id,
       soldAt: bugun,
       note: null,

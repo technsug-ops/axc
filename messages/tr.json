@@ -889,7 +889,18 @@
     "cakisanSatisIptalliMetni": "Bu sipariş numarası iptal edilmiş bir satışta duruyor. Aynı numara ikinci kez kullanılamaz; numarayı değiştirmek (ör. sonuna rakam eklemek) satışın pazaryeri ödemesiyle eşleşmesini kalıcı olarak bozar. Doğrusu: o satışı açıp \"İptali geri al\" deyin, gerekiyorsa sonra düzenleyin.",
     "cakisanSatisIptaliGeriAl": "İptalli satışa git",
     "adetToplami": "Toplam satış adedi",
-    "toplamAdet": "{sayi} adet"
+    "toplamAdet": "{sayi} adet",
+    "gonderiNo": "Gönderi numarası",
+    "gonderiNoIpucu": "Kargo takip no (okutabilirsiniz)",
+    "gonderiNoKamera": "Gönderi numarasını okut",
+    "gonderiNoNotu": "Boş bırakılabilir; girilirse benzersiz olmalıdır. Kargo kodu satıştan sonra oluşuyorsa sonradan da girilebilir.",
+    "gonderiNoKaydet": "Kaydet",
+    "gonderiNoKaydedildi": "✓ Gönderi numarası kaydedildi.",
+    "gonderiNoSilindi": "✓ Gönderi numarası temizlendi.",
+    "gonderiNoZatenBos": "Gönderi numarası zaten boştu.",
+    "gonderiNoSatisYok": "Satış bulunamadı.",
+    "gonderiNoIptalli": "İptal edilmiş satışa gönderi numarası yazılamaz.",
+    "gonderiNoCakisma": "Bu gönderi numarası {siparis} numaralı satışta zaten kayıtlı. Aynı kod iki satışta olamaz — okutulduğunda hangisinin doğru olduğu bilinemez."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -3092,7 +3103,8 @@
     "paketlendi": "Paketlendi",
     "paketlendiIsareti": "Hazırlanıyor",
     "paketlemeGeriAl": "Geri al",
-    "paketlemeOlmadi": "İşaretlenemedi; sipariş bulunamadı."
+    "paketlemeOlmadi": "İşaretlenemedi; sipariş bulunamadı.",
+    "alanShipmentCode": "gönderi numarası"
   },
   "ItirazGerekcesi": {
     "KULLANILMIS": "Müşteriden gelen ürün kullanılmış",

@@ -40,6 +40,11 @@ export type SatisKalemGirdisi = {
 
 export type SatisGirdisi = {
   code: string | null;
+  /**
+   * GÖNDERİ (TAKİP) NUMARASI — K41①, 24.08.2026.
+   * Sipariş no ile AYNI KALIP: boş bırakılabilir, GİRİLİRSE BENZERSİZ.
+   */
+  shipmentCode: string | null;
   channelAccountId: string;
   soldAt: Date;
   note: string | null;
@@ -153,6 +158,25 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
         throw new SiparisNoCakismasiHatasi(girdi.code, hukum);
     }
 
+    /**
+     * ⚠ GÖNDERİ NUMARASI ÇAKIŞMASI — AYNI ÖLÇÜT, AYNI GÖVDE.
+     *
+     * Aynı kod ikinci bir satışa girilirse okutma İKİ sonuç döndürür ve
+     * hangisinin doğru olduğu bilinemez. Veritabanı `@unique` ile zaten
+     * engelliyor ama ham Prisma hatası ekranda anlamsız görünürdü;
+     * hüküm burada, sipariş numarasıyla AYNI kuraldan (`siparisNoCakismaHukmu`)
+     * geçiyor — iptal edilmiş bir satışın kodu yeniden kullanılabilir.
+     */
+    if (girdi.shipmentCode) {
+      const cakisan = await tx.sale.findUnique({
+        where: { shipmentCode: girdi.shipmentCode },
+        select: { id: true, iptalTarihi: true },
+      });
+      const hukum = siparisNoCakismaHukmu(cakisan);
+      if (hukum.tur !== "YOK")
+        throw new SiparisNoCakismasiHatasi(girdi.shipmentCode, hukum);
+    }
+
     // Aynı varyant birden fazla kalemde geçebilir; partilerin kalan durumu
     // kalemler arasında taşınmalı ki aynı parti iki kez tüketilmesin.
     const partiDurumu = new Map<string, Parti[]>();
@@ -192,6 +216,7 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
     const satis = await tx.sale.create({
       data: {
         code: girdi.code,
+        shipmentCode: girdi.shipmentCode,
         channelAccountId: girdi.channelAccountId,
         soldAt: girdi.soldAt,
         note: girdi.note,
