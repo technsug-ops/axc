@@ -3814,3 +3814,5 @@ merak edilmedi"** diye kapandı. İkisi farklı şeydir ve karıştırılmamalı
 > gösterilmesi (ör. doğru fiyatlanmış bir ürünün sürekli zararda görünüp
 > listeden çıkarılması). "Rakam kaymış görünüyor" tek başına yeterli
 > değildir — kayma FIFO'nun bilinen ve kabul edilmiş sonucudur.
+
+| **K47** | **Tarife yükleme ekranı** | ✅ **KAPANDI 25.08.2026** — `/ayarlar/tarife` yazıldı. **Açılış sebebi:** panele *"tarife penceresi bitiyor"* satırı eklenecekti, ölçüldü ve yükleyecek ekran olmadığı görüldü (`grep -rln "komisyonTarifesi" src/app` → 0). Uyarı, kullanıcının yapamayacağı bir işi hatırlatacaktı. **İkisi birlikte teslim edildi**: ekran + panel satırı. Yeni mantık yazılmadı — `tarifeDenetle()`/`tarifeYaz()` zaten dışa açıktı ve betik de aynı gövdeyi çağırıyor. Yeni izin açılmadı (`kanalsku.yaz`). **8 mutasyonun 8'i yakalandı.** Yan bulgu: `canli-tarife-yukle.ts:13` olmayan bir ekrana atıf yapıyordu; yorum düzeltilmedi ama ekran artık gerçekten var. |
