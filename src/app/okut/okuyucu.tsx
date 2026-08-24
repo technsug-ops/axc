@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 
 import { varyantAra } from "@/app/varyant-arama";
@@ -34,7 +34,9 @@ import type { VaryantSonucu } from "@/lib/varyant-ozet";
  */
 export function Okuyucu() {
   const t = useTranslations("Okuma");
+  const ortak = useTranslations("Ortak");
 
+  const kutuOdagi = useRef<HTMLInputElement>(null);
   const [kod, setKod] = useState("");
   const [sonuc, setSonuc] = useState<OkumaSonucu | null>(null);
   const [bekliyor, basla] = useTransition();
@@ -133,6 +135,7 @@ export function Okuyucu() {
           className="max-w-sm min-w-48 flex-1"
           value={kod}
           onChange={setKod}
+          inputRef={kutuOdagi}
           /* Enter (USB okuyucu) ve kamera aynı yola çıkar — okunan kod parametreyle. */
           onOkundu={(okunan) => okut(okunan)}
           placeholder={t("ipucu")}
@@ -147,6 +150,39 @@ export function Okuyucu() {
         <Button type="button" onClick={() => okut()} disabled={bekliyor}>
           {t("okut")}
         </Button>
+        {/*
+          TEMİZLE — KUTUYU DA BOŞALTIR (kullanıcı isteği 24.08.2026).
+
+          _"temizlenince sadece alttaki veriler değil arama çubuğunda yazan
+          barkod da silinse iyi olur; diğer taraflarda barkod silinmiyor,
+          elle siliyorsun."_ Depoda sıradaki ürünü okutmadan önce kutuyu
+          elle silmek gereksiz bir adım (İlke #9).
+
+          ⚠ ODAK KUTUYA GERİ VERİLİYOR: temizledikten sonraki tek işlem
+          yeni bir kod okutmak. Odağı bırakmak, USB okuyucunun gönderdiği
+          tuşların HİÇBİR YERE gitmemesi demekti.
+
+          ⚠ OKUNACAK BİR ŞEY YOKKEN GÖRÜNMEZ: boş ekranda duran bir Temizle,
+          basılacak bir şey varmış izlenimi verirdi.
+        */}
+        {kod || sonuc ? (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              setKod("");
+              setSonuc(null);
+              setSorgu("");
+              setAdaylar([]);
+              setEslesmeNotu(null);
+              setDetayAcik(false);
+              setPaketNotu(null);
+              kutuOdagi.current?.focus();
+            }}
+          >
+            {ortak("temizle")}
+          </Button>
+        ) : null}
       </div>
 
       {sonuc ? (

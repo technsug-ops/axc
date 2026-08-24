@@ -51,10 +51,13 @@ function GorevKutucugu({
   gorev,
   etiket,
   temizMetni,
+  ilerlemeMetni,
 }: {
   gorev: Gorev;
   etiket: string;
   temizMetni: string;
+  /** "3 paketlendi" — ilerlemesi olmayan görevde kullanılmaz. */
+  ilerlemeMetni: string;
 }) {
   return (
     <Link
@@ -76,10 +79,31 @@ function GorevKutucugu({
           {temizMetni}
         </span>
       ) : (
-        <span
-          className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-2xl leading-none font-semibold tabular-nums ${DURUM_ZEMINI.uyari}`}
-        >
-          {gorev.sayi}
+        <span className="inline-flex flex-wrap items-baseline gap-2">
+          <span
+            className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-2xl leading-none font-semibold tabular-nums ${DURUM_ZEMINI.uyari}`}
+          >
+            {gorev.sayi}
+          </span>
+          {/*
+            İLERLEME — "kaç tanesi hazır". Bekleyen sayısı tek başına yol
+            aldığını göstermiyordu: 15 sipariş paketlenirken rakam 15'te
+            duruyor (kargoya verilene kadar düşmüyor).
+
+            ⚠ HEPSİ HAZIRSA YEŞİL. "15 / 15" ile "15 / 3" aynı renkte
+            durursa, bitmiş iş bitmemiş gibi okunur.
+          */}
+          {gorev.ilerleme !== null ? (
+            <span
+              className={`text-sm font-medium tabular-nums ${
+                gorev.ilerleme >= gorev.sayi
+                  ? DURUM_YAZISI.olumlu
+                  : "text-muted-foreground"
+              }`}
+            >
+              {ilerlemeMetni}
+            </span>
+          ) : null}
         </span>
       )}
       <span className="text-muted-foreground text-[11px] leading-tight break-words hyphens-auto">
@@ -134,6 +158,7 @@ async function TekKart({
               gorev={g}
               etiket={t(g.anahtar)}
               temizMetni={t("temiz")}
+              ilerlemeMetni={t("ilerleme", { sayi: g.ilerleme ?? 0 })}
             />
           ))}
         </div>
@@ -144,10 +169,13 @@ async function TekKart({
 
 export async function GorevKutusu({
   sayilar,
+  ilerlemeler,
 }: {
   sayilar: Record<GorevAnahtari, number>;
+  /** Görev başına ilerleme — bugün yalnız `kargoBekleyen`. */
+  ilerlemeler?: Partial<Record<GorevAnahtari, number>>;
 }) {
-  const gorevler = gorevleriKur(sayilar);
+  const gorevler = gorevleriKur(sayilar, ilerlemeler);
 
   /**
    * ⚠ YAN YANA DEĞİL, ALT ALTA (kullanıcı düzeltmesi 21.08.2026).

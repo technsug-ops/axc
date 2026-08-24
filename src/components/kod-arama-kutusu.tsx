@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
@@ -84,11 +83,30 @@ export function KodAramaKutusu({
       <Button type="button" variant="secondary" onClick={() => ara(sorgu)}>
         {ortak("ara")}
       </Button>
-      {baslangic ? (
-        <Button type="button" variant="ghost" asChild>
-          <Link href={suzgecAdresi(temelAdres, tasinanlar, { [parametre]: "" })}>
-            {ortak("temizle")}
-          </Link>
+      {/*
+        ⚠ TEMİZLE ARTIK KUTUYU DA BOŞALTIYOR (24.08.2026).
+
+        Kullanıcı: _"diğer taraflarda barkod silinmiyor, sadece aranan
+        kayıtlar gidiyor; barkod arama çubuğuna elle siliyorsun."_ Haklıydı
+        ve sebebi görünmezdi: Temizle bir `<Link>`ti, adrese boş `q` yazıp
+        listeyi boşaltıyordu — ama istemci tarafı yönlendirmede bileşen
+        yeniden KURULMUYOR, dolayısıyla `useState(baslangic)` ilk değerinde
+        kalıyordu. Ekranda liste temizleniyor, kutuda barkod duruyordu.
+
+        ⚠ ALTI EKRANIN ALTISINDA BİRDEN DÜZELİYOR — hata tek tek ekranlarda
+        değil, ortak gövdedeydi. (İlke #10: aynı işlem her ekranda aynı
+        çalışır.)
+      */}
+      {baslangic || sorgu ? (
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            setSorgu("");
+            ara("");
+          }}
+        >
+          {ortak("temizle")}
         </Button>
       ) : null}
     </div>

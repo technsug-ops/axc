@@ -1946,10 +1946,22 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     "panelde nakit özeti KALMADI (taşındı, kopyalanmadı)",
     !panelSayfasi.includes("<NakitOzeti"),
   );
-  /** Görev kutusu OPERASYONEL: izne bağlanmamalı. */
+  /**
+   * Görev kutusu OPERASYONEL: izne bağlanmamalı — depocu da görür.
+   *
+   * ⚠ ÖLÇÜT TEK SATIRLIK JSX METNİNDEN ÇEVRİLDİ (24.08.2026). Eski hâli
+   * `"<GorevKutusu sayilar={gorevSayilari} />"` dizesini arıyordu ve bileşene
+   * ikinci bir prop eklenip satır çok satıra bölününce KIRMIZI yandı — oysa
+   * izinle hiçbir ilgisi olmayan bir biçim değişikliğiydi. Ölçüt artık
+   * BİÇİMİ değil DAVRANIŞI sınıyor: kutu çiziliyor mu ve önünde bir izin
+   * kapısı var mı.
+   */
+  const gorevKutusuYeri = panelSayfasi.indexOf("<GorevKutusu");
+  kontrol("görev kutusu panelde ÇİZİLİYOR", gorevKutusuYeri > 0);
   kontrol(
     "görev kutusu izinsiz de görünüyor (operasyonel sayılar)",
-    panelSayfasi.includes("<GorevKutusu sayilar={gorevSayilari} />"),
+    gorevKutusuYeri > 0 &&
+      !/karGorunur/.test(panelSayfasi.slice(gorevKutusuYeri - 600, gorevKutusuYeri)),
   );
 
   // ------------------------- RENK SİSTEMİ (15.08.2026) -------------------------
@@ -3210,6 +3222,80 @@ console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
   );
   /** Tabloda da sütun — grafik okunamayan için asıl okunabilir hâl. */
   kontrol("tabloda da toplam sütunu var", /toplamVar \? \([\s\S]{0,40}<th/.test(grafik));
+
+  /**
+   * ── PAKETLEME İLERLEME SAYACI (24.08.2026) ───────────────────────────
+   *
+   * Kullanıcı: _"kargoya verilecek 15 · paketlenen 0 → 1 sipariş
+   * paketlenince kargoya verilecek 15 · paketlenen 1; bu sayılar eşit
+   * olana kadar devam."_
+   *
+   * ⚠ ASIL RİSK SAYIM DEĞİL KAPSAM. İki sayı FARKLI kümeden gelirse
+   * hiç eşitlenmezler ve sayaç paydayı aşabilir — "15/17" gibi. Aşağıdaki
+   * ilk kontrol tam da bunu sabitliyor.
+   */
+  {
+    const veri = readFileSync("src/lib/panel/gorev-verisi.ts", "utf8");
+    const bas = veri.indexOf("export async function paketlenenSiparisSayisi");
+    const govde = veri.slice(bas, veri.indexOf("\nexport ", bas + 10));
+    kontrol("paketlenen sayacının gövdesi kesilebildi", bas > 0 && govde.length > 100);
+
+    /**
+     * ⚠ DESEN DOSYADA ÜÇ KEZ GEÇİYOR (`shippedAt: null`) — bu yüzden
+     * dosyada değil, YALNIZ bu fonksiyonun gövdesinde aranıyor. Dosya
+     * genelinde arayan bir kontrol, sayaçtan silinse bile öteki iki
+     * kullanımı bulup yeşil kalırdı.
+     */
+    kontrol(
+      "pay, paydayla AYNI kümeden sayılıyor (kargoya verilmemiş)",
+      /shippedAt: null/.test(govde),
+    );
+    kontrol(
+      "  ...iptaller ikisinden de dışarıda",
+      /iptalTarihi: null/.test(govde),
+    );
+    /** Kural okuma ekranıyla AYNI gövdeden geçiyor — iki ayrı "en yeni iz" yorumu doğmasın. */
+    kontrol(
+      "  ...ve ortak kuraldan geçiyor (elle 'en yeni iz' yorumu yok)",
+      /hazirlananSiparisler\(/.test(govde),
+    );
+
+    const kutu = readFileSync("src/app/gorev-kutusu.tsx", "utf8");
+    const kutuKodu = kutu.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
+    /**
+     * ⚠ İLERLEMESİ OLMAYAN GÖREVDE HİÇ ÇİZİLMEZ. `?? 0` ile çizilseydi
+     * beş görevin dördünde "0 paketlendi" yazardı — paketlenecek bir şeyi
+     * olmayan görevlerde uydurulmuş bir sıfır.
+     */
+    kontrol(
+      "ilerleme YALNIZ tanımlıysa çiziliyor (uydurma 0 yok)",
+      /gorev\.ilerleme !== null \?/.test(kutuKodu),
+    );
+    /**
+     * ⚠ BİTİŞ, BAŞLANGIÇTAN SONRA ARANIYOR. `ilerlemeMetni` dosyada İKİ kez
+     * geçiyor: önce prop imzasında, sonra çizimde. Argümansız `indexOf`
+     * imzadakini bulup dilimi TERS çeviriyor ve blok boş kalıyordu —
+     * doğru davranışta kırmızı yanan bir kontrol.
+     */
+    const ilerlemeBasi = kutuKodu.indexOf("gorev.ilerleme !== null ?");
+    const ilerlemeBloku = kutuKodu.slice(
+      ilerlemeBasi,
+      kutuKodu.indexOf("ilerlemeMetni", ilerlemeBasi) + 40,
+    );
+    kontrol("ilerleme bloku kesilebildi", ilerlemeBasi > 0 && ilerlemeBloku.length > 60);
+    kontrol("  ...ve sayı ekrana BASILIYOR", /\{ilerlemeMetni\}/.test(ilerlemeBloku));
+    /**
+     * ⚠ EŞİTLENİNCE YEŞİL. "15 / 15" ile "15 / 3" aynı renkte dursaydı
+     * bitmiş iş bitmemiş gibi okunurdu; kullanıcının istediği tam olarak
+     * "bu sayılar eşit olana kadar devam" sinyaliydi.
+     */
+    kontrol(
+      "  ...hepsi paketlenince YEŞİL, değilse nötr",
+      /gorev\.ilerleme >= gorev\.sayi[\s\S]{0,80}DURUM_YAZISI\.olumlu/.test(
+        ilerlemeBloku,
+      ),
+    );
+  }
 
   const panel = readFileSync("src/app/page.tsx", "utf8");
   kontrol(

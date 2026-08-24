@@ -93,7 +93,11 @@ import { prisma } from "@/lib/prisma";
 import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
-import { donemAlimi, gorevSayilariniTopla } from "@/lib/panel/gorev-verisi";
+import {
+  donemAlimi,
+  gorevSayilariniTopla,
+  paketlenenSiparisSayisi,
+} from "@/lib/panel/gorev-verisi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { izinVarMi } from "@/lib/yetki";
 import {
@@ -1244,8 +1248,18 @@ export default async function AnaSayfa({
    *  - Takvim İLERİYE bakar; dönem süzgeci geçmişi süzer. Aynı düğmeye
    *    bağlansalardı "bugün" seçilince takvim boşalırdı. Ekranda da yazıyor.
    */
-  const [gorevSayilari, alim, kiyasAlim] = await Promise.all([
+  const [gorevSayilari, paketlenen, alim, kiyasAlim] = await Promise.all([
     gorevSayilariniTopla(),
+
+    /**
+     * PAKETLEME İLERLEMESİ — "kargoya verilecek 15 · paketlenen 1".
+     *
+     * ⚠ AYRI SAYI, AYRI GÖREV DEĞİL. Bu bir iş kalemi değil, var olan
+     * `kargoBekleyen` görevinin ne kadarının hazır olduğu. Yeni bir görev
+     * anahtarı açsaydık dört exhaustive haritaya birden dokunmak gerekirdi
+     * ve panelde 0'ken de duran bir satır daha doğardı.
+     */
+    paketlenenSiparisSayisi(),
     /**
      * ALIM ADEDİ — dönem kartının ilk kutusu (kullanıcı isteği
      * 20–21.08.2026: _"burası da günlük bir emek"_).
@@ -1678,7 +1692,10 @@ export default async function AnaSayfa({
         <div className="grid min-w-0 gap-4 xl:grid-cols-5">
           {/* Operasyonel sayılar — `satis.kar.gor` İSTEMEZ, depocu da görür. */}
           <div className="min-w-0 xl:col-span-2">
-            <GorevKutusu sayilar={gorevSayilari} />
+            <GorevKutusu
+              sayilar={gorevSayilari}
+              ilerlemeler={{ kargoBekleyen: paketlenen }}
+            />
           </div>
 
           {/* PAZARYERİ PERFORMANSI — para bloğu, izne bağlı.

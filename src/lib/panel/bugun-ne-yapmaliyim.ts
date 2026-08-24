@@ -84,9 +84,27 @@ export type Gorev = {
   grup: GorevGrubu;
   /** 0 ise ekran "temiz ✓" yazar; satır yine de ÇİZİLİR. */
   temizMi: boolean;
+  /**
+   * İLERLEME — kaç tanesi hazır. `null` = o görevde ilerleme kavramı yok.
+   *
+   * Kullanıcı 24.08.2026: _"kargoya verilecek 15 · paketlenen 1; bu sayılar
+   * eşit olana kadar devam."_ Bekleyen sayısı tek başına "ne kadar yol
+   * aldım" sorusuna cevap vermiyordu: 15 sipariş paketlenirken sayı 15'te
+   * duruyor (kargoya verilene kadar düşmüyor) ve ilerleme görünmüyordu.
+   *
+   * ⚠ YENİ GÖREV ANAHTARI AÇILMADI. Öyle yapsaydık `GOREV_GRUBU`,
+   * `GOREV_ADRESLERI` ve iki sözlük dosyası — dört exhaustive haritaya
+   * birden dokunmak gerekirdi; oysa bu bir görev değil, var olan görevin
+   * İLERLEMESİ.
+   */
+  ilerleme: number | null;
 };
 
-export function gorevleriKur(sayilar: Record<GorevAnahtari, number>): Gorev[] {
+export function gorevleriKur(
+  sayilar: Record<GorevAnahtari, number>,
+  /** Görev başına ilerleme — bugün yalnız `kargoBekleyen` için var. */
+  ilerlemeler?: Partial<Record<GorevAnahtari, number>>,
+): Gorev[] {
   return GOREV_ANAHTARLARI.map((anahtar) => {
     const sayi = sayilar[anahtar] ?? 0;
     return {
@@ -95,6 +113,7 @@ export function gorevleriKur(sayilar: Record<GorevAnahtari, number>): Gorev[] {
       adres: GOREV_ADRESLERI[anahtar],
       grup: GOREV_GRUBU[anahtar],
       temizMi: sayi === 0,
+      ilerleme: ilerlemeler?.[anahtar] ?? null,
     };
   });
 }

@@ -122,9 +122,91 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
     "  ...açık süzgeçler ARAMADA korunuyor",
     /suzgecAdresi\(temelAdres, tasinanlar/.test(araGovdesi),
   );
+  /**
+   * ── TEMİZLE KUTUYU DA BOŞALTIR (24.08.2026) ──────────────────────────
+   *
+   * Kullanıcı: _"diğer taraflarda barkod silinmiyor, sadece aranan kayıtlar
+   * gidiyor; barkod arama çubuğuna elle siliyorsun."_
+   *
+   * ⚠ ESKİ ÖLÇÜT BURADA İKİ `suzgecAdresi` ÇAĞRISI SAYIYORDU — biri arama,
+   * biri Temizle bağlantısı. O sayım bir ÇÖZÜM BİÇİMİNİ sabitliyordu:
+   * Temizle kendi adresini kuruyorsa iki çağrı olur. Temizle artık aynı
+   * `ara()` gövdesinden geçtiği için süzgeç korumasını MİRAS ALIYOR ve
+   * çağrı bire indi. Ölçüt biçimi değil davranışı sınıyor.
+   */
+  /**
+   * ⚠ DİLİM ÇİZİM KOŞULUNDAN BAŞLAR. 400 karakter geriden başlayan ilk
+   * yazım koşulu kapsamıyordu ve `{false ? (` mutasyonu YEŞİL KALDI —
+   * düğme hiç çizilmezken `setSorgu("")` dosyada duruyordu. (/okut'ta da
+   * aynı körlük çıktı; ikisi de aynı kökten.)
+   */
+  const temizleKosulu = kutu.indexOf("{baslangic || sorgu ? (");
+  const temizleBasi = kutu.indexOf('ortak("temizle")', temizleKosulu);
+  const temizleBloku = kutu.slice(temizleKosulu, temizleBasi + 40);
   kontrol(
-    "  ...ve TEMİZLE bağlantısında da korunuyor",
-    [...kutu.matchAll(/suzgecAdresi\(temelAdres, tasinanlar/g)].length === 2,
+    "TEMİZLE düğmesi çiziliyor (yazılmış bir şey varken)",
+    temizleKosulu > 0 && temizleBasi > temizleKosulu,
+  );
+  /**
+   * ⚠ İKİSİ BİRDEN: durumu boşaltmak listeyi tazelemez, adrese gitmek de
+   * kutuyu boşaltmaz (istemci yönlendirmesinde bileşen yeniden kurulmuyor —
+   * hatanın kökü tam buydu). Biri eksikse yarısı düzelmiş olur.
+   */
+  kontrol(
+    "TEMİZLE arama kutusunu da boşaltıyor (elle silme yok)",
+    /setSorgu\(""\)/.test(temizleBloku),
+  );
+  kontrol(
+    "  ...ve listeyi de tazeliyor (aynı gövdeden, süzgeçler korunur)",
+    /ara\(""\)/.test(temizleBloku),
+  );
+  /**
+   * ⚠ SÜZGEÇ KORUMASI HÂLÂ ARAMA GÖVDESİNDE — Temizle oradan geçtiği için
+   * yukarıdaki `araGovdesi` kontrolü ikisini birden kapsıyor.
+   */
+  kontrol(
+    "  ...temizle bir <Link> DEĞİL (yönlendirme kutuyu boşaltmaz)",
+    !/<Link/.test(temizleBloku),
+  );
+
+
+  /**
+   * ── /okut EKRANININ TEMİZLESİ ────────────────────────────────────────
+   * Aynı işlem her ekranda aynı çalışır (İlke #10). Okuma ekranı ortak
+   * bileşeni kullanmıyor (sonucu adrese değil duruma yazıyor), bu yüzden
+   * kendi Temizlesi ayrıca sınanıyor.
+   */
+  const okuyucu = readFileSync("src/app/okut/okuyucu.tsx", "utf8");
+  /**
+   * ⚠ DİLİM ÇİZİM KOŞULUNDAN BAŞLIYOR — 700 karakter geriden değil.
+   *
+   * İlk yazımda dilim düğmenin İÇİNDEN başlıyordu ve koşulu kapsamıyordu:
+   * `{kod || sonuc ? (` yerine `{false ? (` yazan mutasyon YEŞİL KALDI.
+   * Düğme hiç çizilmiyordu ama `setKod("")` dosyada duruyordu ve kontrol
+   * onu buluyordu. (Anayasa: "koşul öldürülür, desen kalır".)
+   */
+  const okutKosulu = okuyucu.indexOf("{kod || sonuc ? (");
+  const okutTemizleBasi = okuyucu.indexOf('ortak("temizle")', okutKosulu);
+  const okutTemizle = okuyucu.slice(okutKosulu, okutTemizleBasi + 40);
+  kontrol(
+    "/okut temizle DÜĞMESİ çiziliyor (okunacak bir şey varken)",
+    okutKosulu > 0 && okutTemizleBasi > okutKosulu,
+  );
+  kontrol(
+    "/okut TEMİZLE barkod kutusunu boşaltıyor",
+    /setKod\(""\)/.test(okutTemizle),
+  );
+  kontrol(
+    "  ...ve alttaki sonucu da siliyor",
+    /setSonuc\(null\)/.test(okutTemizle),
+  );
+  /**
+   * ⚠ ODAK KUTUYA DÖNÜYOR: temizledikten sonraki tek iş yeni kod okutmak.
+   * Odak bırakılsaydı USB okuyucunun tuşları hiçbir yere gitmezdi.
+   */
+  kontrol(
+    "  ...odak kutuya geri veriliyor (USB okuyucu yazabilsin)",
+    /kutuOdagi\.current\?\.focus\(\)/.test(okutTemizle),
   );
 
   /** Ortak bileşeni kullanan ekranlar — en az altı liste ekranı olmalı. */

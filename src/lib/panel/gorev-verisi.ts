@@ -2,6 +2,10 @@ import { ACIK_BILDIRIM_DURUMLARI } from "@/lib/iade/bildirim";
 import { suzgecToplami } from "@/lib/liste-toplami";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { kalemToplamlari, type ParaToplami } from "@/lib/tutar";
+import {
+  PAKETLEME_EYLEMLERI,
+  hazirlananSiparisler,
+} from "@/lib/okuma/paketleme";
 import { prisma } from "@/lib/prisma";
 
 import type { GorevAnahtari } from "./bugun-ne-yapmaliyim";
@@ -128,6 +132,41 @@ export async function donemAlimi(pencere: {
           }, 0),
       })),
   };
+}
+
+/**
+ * ============================================================================
+ *  PAKETLENEN SİPARİŞ SAYISI — GÜNÜN İLERLEME SAYACI
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı 24.08.2026: _"kargoya verilecek 15 · paketlenen 0; bir sipariş
+ *  paketlendikten sonra kargoya verilecek 15 · paketlenen 1 — bu sayılar
+ *  eşit olana kadar devam. Bu şekilde daha pratik ve kontrollü olur."_
+ *
+ *  ⚠ AYNI KÜMEDEN SAYILIR — YOKSA HİÇ EŞİTLENMEZLER. Payda "kargoya
+ *  verilmemiş sipariş" (`shippedAt: null`); pay da o kümenin İÇİNDEN
+ *  sayılıyor. Bütün paketleme izlerini saysaydık, kargoya verilmiş eski
+ *  siparişler de paya girer ve sayaç paydayı aşardı — ilerleme çubuğu
+ *  %140 gösteren bir şey olurdu.
+ *
+ *  ⚠ İZ `AuditLog`TA, DURUM SÜTUNU AÇILMADI (K34a kararı). En yeni iz
+ *  `PAKETLENDI` ise sipariş hazırlanıyor; `PAKETLEME_GERI_ALINDI` ise değil.
+ *  Kural `lib/okuma/paketleme.ts`te ve okuma ekranıyla AYNI gövdeden geçiyor.
+ *
+ *  ⚠ `in` LİSTESİ BUGÜN KÜÇÜK. Paketleme izi olan sipariş sayısı kadar
+ *  büyür; hacim artarsa bu sorgu bir alt sorguya çevrilir. Bugün ~30
+ *  paket/gün için gereksiz karmaşıklık olurdu.
+ */
+export async function paketlenenSiparisSayisi(): Promise<number> {
+  const izler = await prisma.auditLog.findMany({
+    where: { action: { in: [...PAKETLEME_EYLEMLERI] }, targetType: "Sale" },
+    select: { action: true, createdAt: true, targetId: true },
+  });
+  const hazirlananlar = [...hazirlananSiparisler(izler)];
+  if (hazirlananlar.length === 0) return 0;
+
+  return prisma.sale.count({
+    where: { id: { in: hazirlananlar }, shippedAt: null, iptalTarihi: null },
+  });
 }
 
 export async function gorevSayilariniTopla(): Promise<
