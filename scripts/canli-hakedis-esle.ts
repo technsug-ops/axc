@@ -363,6 +363,48 @@ async function main() {
     yazilan += sonuc.count;
   }
 
+  /**
+   * ⚠ İZ BIRAKILIR — 24.08.2026, kullanıcı şartı: _"bu, motorun İLK
+   * başarılı yazımı, AuditLog izi düşsün."_
+   *
+   * Bağ kurmak sessiz bir işlem: hiçbir tutar değişmiyor, hiçbir ekran
+   * kırmızı yanmıyor. Üç ay sonra "bu kalem niye şu satışa bağlı"
+   * sorulduğunda cevabın bir yerde durması gerekiyor — hangi koşum,
+   * kaç kalem, hangi siparişler.
+   *
+   * ⚠ İZ YAZILAMAZSA BAĞ GERİ ALINMAZ. Bağın kendisi doğru; izsiz kalması
+   * bir kusurdur ama yanlış değildir. Bu yüzden hata yutulmuyor, EKRANDA
+   * yazıyor — sessiz kalmak, izin var sanılmasına yol açardı.
+   */
+  if (yazilan > 0) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: "HAKEDIS_ESLESTIRME",
+          targetType: "SettlementItem",
+          targetId: baglanacak.find((b) => b.olur)?.kalemId ?? "toplu",
+          detail: JSON.stringify({
+            yazilanKalem: yazilan,
+            adaySayisi: ozet.baglanacak,
+            karsiligiYok: ozet.karsiligiYok,
+            siparisler: [
+              ...new Set(
+                baglanacak.filter((b) => b.olur).map((b) => b.kod),
+              ),
+            ],
+            not: "Bağ yalnız kurulur; tutar/vade/kâr/stok DEĞİŞMEZ.",
+          }),
+        },
+      });
+      console.log("  ✓ iz yazıldı (AuditLog · HAKEDIS_ESLESTIRME)");
+    } catch (e) {
+      console.log(
+        `  ⚠ İZ YAZILAMADI: ${e instanceof Error ? e.message : e}`,
+      );
+      console.log("    Bağlar YAZILDI ve doğru; yalnız izi düşmedi.");
+    }
+  }
+
   console.log(`  ✓ ${yazilan} kalem bağlandı.`);
   if (yazilan !== ozet.baglanacak) {
     console.log(

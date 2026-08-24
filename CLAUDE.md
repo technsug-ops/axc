@@ -1451,7 +1451,8 @@ hata vermez — **sessizce boş bulur** ve boş bulmak "temiz" gibi görünür.
 
 **Vaka:** `npx prisma format` şemayı CRLF'e çevirdi. Enum ayrıştıran kontrol
 `split("
-")` yapıyordu; satırlar `` ile bitince `/\/\/.*$/` deseni `$`i
+")` yapıyordu; satırlar `
+` ile bitince `/\/\/.*$/` deseni `$`i
 bulamadı, yorum SİLİNMEDİ ve `^[A-Z_]+$` testi düştü. Sonuç:
 
     "NoticeObjectionReason: şemadaki 0 değerin hepsi formda"  → KIRMIZI
@@ -1490,6 +1491,44 @@ _"her rol varyant koşulunda aranıyor mu"_. Ölçüt kapsama bağlandı
 > gevşetmek, ölçütü güncellemek değil **ölçmeyi bırakmaktır**. Eskiyen ölçüt
 > güncellenir; güncellenirken NİYE eskidiği yazılır, yoksa altı ay sonra
 > "burada niye böyle bir istisna var" sorusu cevapsız kalır.
+
+### AÇIKLAMA, AÇIKLANACAK ŞEYİN VARLIĞINI ÖNCE SINAR (KESİN KURAL)
+
+_Ders 24.08.2026._ Bir raporun "bu şey neden böyle" bölümü, o şeyin **var
+olduğunu** varsayar. Varsayım sınanmazsa rapor **olmayan bir şeyin kaynağını
+açıklar** — ve açıklama akıcı olduğu için kimse durup "peki gerçekten var mı"
+diye sormaz.
+
+**Vaka:** hakediş ölçüm betiği "③ MEVCUT BAĞLARIN KAYNAĞI" başlığı altında
+şunu basıyordu:
+
+> _"İz yok — o hâlde mevcut bağlar YÜKLEME ANINDA kurulmuş demektir."_
+
+Cümle mantıklıydı. Ama **bağlı kalem sayısı 0'dı.** Açıklanan şey yoktu;
+rapor var olmayan bağların nasıl kurulduğunu anlatıyordu. Doğrusu şuydu:
+_"bağ yok, açıklanacak bir kaynak da yok"_ — ve o cümle çok daha fazlasını
+söylüyor: rapor HER SEFERİNDE satışlardan önce yüklenmiş, yükleme anındaki
+eşleştirme **13 partide 13 kez** boşa atmış.
+
+> **KURAL:** her "neden/nasıl" bölümü, kendi öznesinin sayımıyla başlar.
+> Sayı sıfırsa açıklama YAZILMAZ; sıfırın kendisi bulgudur ve genellikle
+> açıklamadan daha çok şey söyler.
+
+### BİR SAYI ETİKETİYLE TAŞINIR (KESİN KURAL)
+
+_Ders 24.08.2026._ Aynı rakam, iki farklı etiketle iki farklı **iddia**
+olur. Etiket taşınırken düşerse sayı doğru kalır ama iddia yanlışa döner —
+ve kimse sayıyı sorgulamaz, çünkü sayı gerçekten ölçülmüştür.
+
+**Vaka:** bir ölçüm _"5 farklı sipariş numarası eşleşiyor"_ dedi
+(**bağlanabilecek**). Bir sonraki turda bu _"bugün 5 eşleşme var"_ diye
+aktarıldı (**bağlı**). Sonra ölçüldü: bağlı **0**, bağlanabilecek **8
+kalem / 5 sipariş**. Üç sayı da doğruydu; taşınan cümle yanlıştı.
+
+> **KONTROL SORUSU:** bu sayının başındaki fiil ne — _olabilir_ mi, _oldu_
+> mu? İkisi arasındaki fark, iş açıp açmamaktır. Ve birim de etikettir:
+> "5 sipariş" ile "8 kalem" aynı olgunun iki ölçüsüdür; hangisi
+> yazılıyorsa o yazılır.
 
 ### TOPLAM RAKAM YORUM KALDIRIR, SATIR KALDIRMAZ (KESİN KURAL)
 
