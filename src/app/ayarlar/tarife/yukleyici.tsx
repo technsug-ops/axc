@@ -3,10 +3,11 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 
-import { Badge } from "@/components/ui/badge";
+import { DurumRozeti } from "@/components/durum-rozeti";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DURUM_YAZISI } from "@/lib/renkler";
 
 import { tarifeOnizle, tarifeyiYaz } from "./eylemler";
 
@@ -181,7 +182,7 @@ export function Yukleyici({
           ) : null}
 
           {onizleme.dahaOnceYuklendi ? (
-            <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+            <p className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
               {t("dahaOnceYuklendi")}
             </p>
           ) : null}
@@ -191,7 +192,7 @@ export function Yukleyici({
       {yazildi ? (
         <div className="border-border space-y-2 rounded-lg border p-4">
           <div className="flex items-center gap-2">
-            <Badge>{t("yazildiBaslik")}</Badge>
+            <DurumRozeti durum="olumlu">{t("yazildiBaslik")}</DurumRozeti>
           </div>
           <p className="text-sm">
             {t("yazildiOzet", {
@@ -210,12 +211,12 @@ export function Yukleyici({
             <p className="text-muted-foreground text-xs">{t("arsivYazildi")}</p>
           ) : null}
           {arsiv === "DEPO_YOK" ? (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
+            <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
               {t("arsivDepoYok")}
             </p>
           ) : null}
           {arsiv === "HATA" ? (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
+            <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
               {t("arsivHata")}
             </p>
           ) : null}

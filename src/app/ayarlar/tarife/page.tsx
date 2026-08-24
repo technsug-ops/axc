@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import { Badge } from "@/components/ui/badge";
+import { DurumRozeti } from "@/components/durum-rozeti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { UYARI_GUNU } from "@/lib/panel/tarife-penceresi";
@@ -116,20 +116,24 @@ export default async function TarifeSayfasi() {
                       kalem: x._count.kalemler,
                     })}
                   </span>
+                  {/*
+                    ⚠ RENK SİSTEMİNDEN, HAM TAILWIND'DEN DEĞİL. İlk yazımda
+                    ham bir amber sınıfı kullanıldı ve `panel:dogrula`
+                    yakaladı — ama ancak COMMIT'ten SONRA: tarama
+                    `git ls-files` okuyor, izlenmeyen dosya görünmüyor.
+                    (Sınıf adı burada YAZILMIYOR: taramanın kendi deseni
+                    yorumun içinde de eşleşir ve yalancı kırmızı üretir.)
+                  */}
                   {kalan < 0 ? (
-                    <Badge variant="outline" className="text-muted-foreground">
-                      {t("bitti")}
-                    </Badge>
+                    <DurumRozeti durum="notr">{t("bitti")}</DurumRozeti>
                   ) : kalan === 0 ? (
-                    <Badge className="bg-amber-500 text-white hover:bg-amber-500">
-                      {t("sonGun")}
-                    </Badge>
+                    <DurumRozeti durum="uyari">{t("sonGun")}</DurumRozeti>
                   ) : kalan <= UYARI_GUNU ? (
-                    <Badge className="bg-amber-500 text-white hover:bg-amber-500">
+                    <DurumRozeti durum="uyari">
                       {t("kalanGun", { gun: kalan })}
-                    </Badge>
+                    </DurumRozeti>
                   ) : (
-                    <Badge variant="secondary">{t("guncel")}</Badge>
+                    <DurumRozeti durum="olumlu">{t("guncel")}</DurumRozeti>
                   )}
                 </div>
               );

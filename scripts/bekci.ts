@@ -31,6 +31,30 @@
  *  · `canli:*`  — canlı veritabanı ister; bekçi değil ölçüm/bakım aracı
  *  · `*:prova`  — deneme betiği, hüküm vermez
  *  · `build`    — ayrı ve uzun; push zincirinde kendi başına koşar
+ *
+ *  ── `tsc` NİYE GİRDİ (K48, kullanıcı kararı 25.08.2026) ─────────────────
+ *  Bu tur bir kez **45/45 YEŞİL** dedi ve aynı anda `npm run build`
+ *  `Expected ',', got 'ident'` ile düştü: el kitabındaki bir dizgede tırnak
+ *  hatası vardı. Bekçilerin hiçbiri derlemeye bakmıyordu — liste
+ *  `package.json`dan okunuyor ve orada `tsc` diye bir girdi YOKTU.
+ *
+ *  ⚠ SINIFIN ÜÇÜNCÜ VAKASIYDI: JSDoc içindeki `"use server"` sabiti ·
+ *  `prisma format`ın CRLF'i · bugünkü tırnak. Üçünde de bekçi yeşildi ve
+ *  bozukluk başka bir kapıdan çıktı.
+ *
+ *  ⚠ BEDELİ ÖLÇÜLDÜ: tur **69sn → 81sn**, `tsc` adımı **9–12sn**.
+ *  Kullanıcı kararı bu adım "~41sn" TAHMİN edilerek verilmişti
+ *  (_"yeşilin güvenilirliği 41 saniyeden pahalı"_); ölçünce gerçek bedel
+ *  **+12sn** çıktı — karar aynı yönde, ama rakam sessizce değiştirilmiyor:
+ *  tahmini bilen biri için kaynaksız bir sayı doğmasın.
+ *
+ *  ⚠ TAHMİN NİYE ŞİŞTİ: `tsc --noEmit` soğuk koşumda daha uzun sürüyor
+ *  sanılmıştı; ölçüm (25.08, üç ardışık koşum) 9.0 · 8.8 · 12.0sn verdi.
+ *  Bekçi bunları SERİ koşuyor (`for` + `spawnSync`), yani örtüşme de yok —
+ *  12sn doğrudan tura ekleniyor ve fazlası değil.
+ *
+ *  Süre gerçekten sorun olursa çözüm `tsc`yi ÇIKARMAK DEĞİL, incremental
+ *  derlemeyi ölçmektir — çıkarmak, ölçmeyi bırakmak olur.
  * ============================================================================
  */
 
