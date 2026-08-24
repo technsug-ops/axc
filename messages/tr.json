@@ -2509,7 +2509,10 @@
     "kaynak_HAKEDIS_RAPOR": "Hakediş (rapor)",
     "kaynak_HAKEDIS_TAHMIN": "Hakediş (tahmin)",
     "acikVarKisa": "açık",
-    "acikYokKisa": "fazla"
+    "acikYokKisa": "fazla",
+    "yuruyenBakiye": "yürüyen",
+    "enDipEtiketi": "En dip nokta",
+    "enDipAciklama": "Bu pencerede kasanızın bugüne göre en aşağıda olacağı gün. Dönem sonu artı olsa bile arada çukura düşülebilir — para 20'sinde girip borç 12'sinde ödeniyorsa, 12'sinde para yoktur."
   },
   "KartOdeme": {
     "odemeIsaretle": "Ödendi işaretle",

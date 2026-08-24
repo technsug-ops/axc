@@ -1494,6 +1494,136 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
 
   /** 30 günlük pencerede dışarıda kalan satır İÇERİ girer. */
+  /**
+   * ── YÜRÜYEN BAKİYE VE EN DİP NOKTA (24.08.2026) ─────────────────────
+   *
+   * Kullanıcı: nakit takviminin front end'i yetersiz. Eksik olan tek şey
+   * biçim değildi: takvim gün gün "ne çıkacak / ne girecek" diyordu ama
+   * **"o güne kadar nereye geldim"** sorusuna cevap vermiyordu.
+   *
+   * ⚠ ASIL SORU DÖNEM SONU DEĞİL, ÇUKUR. Net pozitif olsa bile arada
+   * çukura düşülebilir: para 20'sinde giriyor, kart borcu 12'sinde
+   * ödeniyorsa 12'sinde para YOKTUR. Yalnız toplam gösteren bir takvim o
+   * günü hiç söylemez.
+   */
+  {
+    /**
+     * ⚠ ÖRNEK VERİ AYRIMI GÖSTERİYOR: dönem sonu ARTI (+400) ama arada
+     * EKSİYE düşüyor. Yalnız net pozisyona bakan bir kontrol bu senaryoyu
+     * ayırt edemezdi — çukurlu ve çukursuz takvim aynı görünürdü.
+     */
+    const cukur = nakitTakvimiKur({
+      satirlar: [
+        s({ yon: "CIKACAK", tutar: 1000, tarih: gun(16) }),
+        s({ yon: "GIRECEK", tutar: 1400, tarih: gun(20), kaynak: "HAKEDIS_RAPOR" }),
+      ],
+      bugun: BUG,
+      pencereGun: 14,
+    });
+
+    kontrol("çukur senaryosunda dönem sonu ARTI", cukur.netPozisyon === 400);
+    kontrol(
+      "  ...ama en dip EKSİ (çukur görünüyor)",
+      cukur.enDip !== null && cukur.enDip.bakiye === -1000,
+      cukur.enDip,
+    );
+    kontrol(
+      "  ...ve dip GÜNÜ doğru (çıkışın olduğu gün)",
+      cukur.enDip?.gun === gun(16).toISOString().slice(0, 10),
+      cukur.enDip?.gun,
+    );
+
+    /**
+     * ⚠ SON GÜNÜN YÜRÜYEN BAKİYESİ `netPozisyon`A EŞİT OLMAK ZORUNDA.
+     * İkisi aynı ekranda yan yana duruyor; ayrışırlarsa kullanıcı hangisine
+     * güveneceğini bilemez. Bu eşitlik kuruşuna sabitleniyor.
+     */
+    const sonGun = cukur.gunler[cukur.gunler.length - 1];
+    kontrol(
+      "son günün yürüyen bakiyesi = netPozisyon",
+      sonGun.yuruyenBakiye === cukur.netPozisyon,
+      { yuruyen: sonGun.yuruyenBakiye, net: cukur.netPozisyon },
+    );
+
+    /**
+     * ⚠ GECİKMİŞLERDEN BAŞLAR. `netPozisyon` onları içeriyor; yürüyen bakiye
+     * sıfırdan başlasaydı yukarıdaki eşitlik BOZULURDU ve aynı ekranda iki
+     * farklı rakam olurdu.
+     */
+    const gecikmisli = nakitTakvimiKur({
+      satirlar: [
+        // Vadesi GEÇMİŞ çıkış — pencereden önce.
+        s({ yon: "CIKACAK", tutar: 500, tarih: gun(10) }),
+        s({ yon: "GIRECEK", tutar: 900, tarih: gun(18), kaynak: "HAKEDIS_RAPOR" }),
+      ],
+      bugun: BUG,
+      pencereGun: 14,
+    });
+    kontrol(
+      "gecikmiş, yürüyen bakiyenin BAŞLANGICINDA",
+      gecikmisli.gunler[0].yuruyenBakiye === -500,
+      gecikmisli.gunler[0].yuruyenBakiye,
+    );
+    kontrol(
+      "  ...ve son gün yine netPozisyon'u tutuyor",
+      gecikmisli.gunler[gecikmisli.gunler.length - 1].yuruyenBakiye ===
+        gecikmisli.netPozisyon,
+    );
+
+    /**
+     * ⚠ AYNI DİP İKİ GÜN SÜRERSE ERKEN OLANI UYARIR. Geç olanı seçmek,
+     * kullanıcıya hazırlanmak için daha az zaman bırakırdı.
+     */
+    const duz = nakitTakvimiKur({
+      satirlar: [s({ yon: "CIKACAK", tutar: 300, tarih: gun(15) })],
+      bugun: BUG,
+      pencereGun: 14,
+    });
+    kontrol(
+      "aynı dip sürüyorsa ERKEN gün bildiriliyor",
+      duz.enDip?.gun === gun(15).toISOString().slice(0, 10),
+      duz.enDip?.gun,
+    );
+
+    /** Boş pencerede dip YOK — uydurulmuş bir sıfır günü gösterilmez. */
+    const bos = nakitTakvimiKur({ satirlar: [], bugun: BUG, pencereGun: 14 });
+    kontrol(
+      "hareketsiz pencerede dip 0 ve ilk gün (uydurma yok)",
+      bos.enDip !== null && bos.enDip.bakiye === 0,
+    );
+
+    // ── EKRAN ──────────────────────────────────────────────────────────
+    const takvimEkrani = readFileSync("src/app/nakit-takvimi/page.tsx", "utf8");
+    const ekranKodu = takvimEkrani
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+      .replace(/\/\*[\s\S]*?\*\//g, " ");
+    kontrol(
+      "gün kartında yürüyen bakiye YAZIYOR",
+      /t\("yuruyenBakiye"\)[\s\S]{0,60}g\.yuruyenBakiye/.test(ekranKodu),
+    );
+    kontrol(
+      "  ...eksi bakiye vurgulanıyor, artı nötr",
+      /g\.yuruyenBakiye < 0 \? DURUM_YAZISI\.olumsuz/.test(ekranKodu),
+    );
+    kontrol("en dip kutusu VAR", /enDipEtiketi/.test(ekranKodu));
+    /**
+     * ⚠ YALNIZ DİP EKSİYSE UYARI RENGİ. Pozitif bir dip "en az şu kadar
+     * rahatsınız" demektir; kırmızı göstermek her ekranda yanan bir uyarı
+     * olurdu ve rozetin tamamına olan güveni götürürdü.
+     */
+    kontrol(
+      "  ...uyarı rengi YALNIZ dip eksiyken",
+      /takvim\.enDip\.bakiye < 0 \? DURUM_KUTUSU\.olumsuz/.test(ekranKodu),
+    );
+    /**
+     * ⚠ SAYININ GÖRELİ OLDUĞU EKRANDA YAZIYOR. Sistem banka bakiyesi
+     * tutmuyor; rakam "kasanızda şu kadar olacak" değil "bugüne göre şu
+     * kadar aşağıda olacaksınız" demek. Mutlak sanılırsa parası olmayan
+     * kendini borçlu, borçlu olan kendini rahat sanar.
+     */
+    kontrol("  ...göreli olduğu açıklamada yazıyor", /enDipAciklama/.test(ekranKodu));
+  }
+
   const t2 = nakitTakvimiKur({
     satirlar: [s({ yon: "CIKACAK", tutar: 9999, tarih: gun(30) })],
     bugun: BUG,

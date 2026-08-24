@@ -2509,7 +2509,10 @@
     "kaynak_HAKEDIS_RAPOR": "",
     "kaynak_HAKEDIS_TAHMIN": "",
     "acikVarKisa": "",
-    "acikYokKisa": ""
+    "acikYokKisa": "",
+    "yuruyenBakiye": "",
+    "enDipEtiketi": "",
+    "enDipAciklama": ""
   },
   "KartOdeme": {
     "odemeIsaretle": "",

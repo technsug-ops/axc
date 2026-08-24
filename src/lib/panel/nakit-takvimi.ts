@@ -64,6 +64,20 @@ export type TakvimGunu = {
   satirlar: TakvimSatiri[];
   cikacak: number;
   girecek: number;
+  /**
+   * O GÜNÜN SONUNDAKİ YÜRÜYEN BAKİYE — gecikmiş dahil, birikimli.
+   *
+   * ⚠ MUTLAK DEĞİL GÖRELİ. Sistem banka/kasa bakiyesi tutmuyor (ölçüldü
+   * 24.08.2026: öyle bir model yok). Bu yüzden sayı "kasanızda şu kadar
+   * olacak" DEMEZ; _"bugüne göre şu kadar aşağıda/yukarıda olacaksınız"_
+   * der. Mutlak sanılırsa, parası olmayan biri kendini borçlu, borçlu olan
+   * kendini rahat sanar.
+   *
+   * ⚠ GECİKMİŞLERDEN BAŞLAR. `netPozisyon` onları zaten içeriyor; başlangıcı
+   * sıfır alsaydık son günün yürüyen bakiyesi `netPozisyon`u TUTMAZDI ve
+   * aynı ekranda iki farklı rakam olurdu.
+   */
+  yuruyenBakiye: number;
 };
 
 export type NakitTakvimi = {
@@ -75,6 +89,17 @@ export type NakitTakvimi = {
   girecekToplam: number;
   /** girecek − çıkacak. Eksiyse o pencerede açık var demektir. */
   netPozisyon: number;
+  /**
+   * EN DİP NOKTA — yürüyen bakiyenin en düşük olduğu gün.
+   *
+   * ⚠ NAKİT TAKVİMİNİN ASIL SORUSU BU. Dönem sonu neti pozitif olsa bile
+   * arada bir çukura düşülebilir: para 20'sinde giriyor ama kart borcu
+   * 12'sinde ödeniyorsa, 12'sinde para YOKTUR. Yalnız toplam gösteren bir
+   * takvim o günü hiç söylemez.
+   *
+   * `null` = pencere boş (hiç gün yok).
+   */
+  enDip: { gun: string; bakiye: number } | null;
   gecikmisCikacak: number;
   gecikmisGirecek: number;
   /** Vadesi bilinmeyen satırlar — toplamlara GİRMEZ. */
@@ -150,11 +175,32 @@ export function nakitTakvimiKur(girdi: {
       satirlar: gunSatirlari,
       cikacak: toplam(gunSatirlari, "CIKACAK"),
       girecek: toplam(gunSatirlari, "GIRECEK"),
+      /* Aşağıdaki döngüde dolduruluyor — gecikmiş bakiyesinden başlaması
+         gerektiği için burada hesaplanamaz. */
+      yuruyenBakiye: 0,
     });
   }
 
   const gecikmisCikacak = toplam(gecikmis, "CIKACAK");
   const gecikmisGirecek = toplam(gecikmis, "GIRECEK");
+
+  /**
+   * YÜRÜYEN BAKİYE — gecikmiş bakiyesinden başlar, gün gün birikir.
+   *
+   * ⚠ SON GÜNÜN BAKİYESİ `netPozisyon`A EŞİT OLMAK ZORUNDA. İkisi aynı
+   * ekranda yan yana duruyor; ayrışırlarsa kullanıcı hangisine güveneceğini
+   * bilemez. Bekçi bu eşitliği kuruşuna sabitliyor.
+   */
+  let yuruyen = gecikmisGirecek - gecikmisCikacak;
+  let enDip: { gun: string; bakiye: number } | null = null;
+  for (const g of gunler) {
+    yuruyen += g.girecek - g.cikacak;
+    g.yuruyenBakiye = yuruyen;
+    /* İLK en düşük gün tutulur: aynı dip iki gün sürerse ERKEN olanı uyarır. */
+    if (enDip === null || yuruyen < enDip.bakiye) {
+      enDip = { gun: g.gun, bakiye: yuruyen };
+    }
+  }
   const pencereCikacak = gunler.reduce((t, g) => t + g.cikacak, 0);
   const pencereGirecek = gunler.reduce((t, g) => t + g.girecek, 0);
 
@@ -167,6 +213,7 @@ export function nakitTakvimiKur(girdi: {
     cikacakToplam,
     girecekToplam,
     netPozisyon: girecekToplam - cikacakToplam,
+    enDip,
     gecikmisCikacak,
     gecikmisGirecek,
     vadesizler,

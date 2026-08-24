@@ -117,6 +117,40 @@ export default async function NakitTakvimiSayfasi({
         </div>
       </div>
 
+      {/*
+        EN DİP NOKTA — NAKİT TAKVİMİNİN ASIL SORUSU.
+        Dönem sonu neti pozitif olsa bile arada çukura düşülebilir: para
+        20'sinde giriyor ama kart borcu 12'sinde ödeniyorsa, 12'sinde para
+        YOKTUR. Yalnız toplam gösteren bir takvim o günü hiç söylemez.
+
+        ⚠ YALNIZ DİP EKSİYSE UYARI RENGİ. Pozitif bir dip "en az şu kadar
+        rahatsınız" demektir; kırmızı göstermek her ekranda yanan bir uyarı
+        olurdu.
+      */}
+      {takvim.enDip ? (
+        <div
+          className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-lg border p-4 ${
+            takvim.enDip.bakiye < 0 ? DURUM_KUTUSU.olumsuz : "bg-card"
+          }`}
+        >
+          <span className={takvim.enDip.bakiye < 0 ? "text-xs" : "text-muted-foreground text-xs"}>
+            {t("enDipEtiketi")}
+          </span>
+          <span className="text-xl font-semibold tabular-nums">
+            {para(takvim.enDip.bakiye)}
+          </span>
+          <span className={takvim.enDip.bakiye < 0 ? "text-sm" : "text-muted-foreground text-sm"}>
+            {(() => {
+              const d = gunMetninden(takvim.enDip.gun);
+              return d ? bicim.tarih(d) : takvim.enDip.gun;
+            })()}
+          </span>
+          <span className="text-muted-foreground w-full text-xs">
+            {t("enDipAciklama")}
+          </span>
+        </div>
+      ) : null}
+
       <p className="text-muted-foreground text-xs">{t("kartSiniriNotu")}</p>
 
       {/* --------------------------- GECİKMİŞ --------------------------- */}
@@ -166,6 +200,22 @@ export default async function NakitTakvimiSayfasi({
                           {t("girecek")}: {para(g.girecek)}
                         </span>
                       ) : null}
+                      {/*
+                        YÜRÜYEN BAKİYE — o günün SONUNDAKİ birikimli durum.
+                        Günlük çıkacak/girecek "o gün ne oldu" der; yürüyen
+                        bakiye "o güne kadar nereye geldin" der. Kart borcu
+                        ödemesinin sizi çukura sokup sokmadığı ancak
+                        ikincisinden görülür.
+                        ⚠ Eksiyse vurgulanıyor; artıysa nötr — her satırda
+                        yanan bir renk okunmaz olur.
+                      */}
+                      <span
+                        className={`font-medium tabular-nums ${
+                          g.yuruyenBakiye < 0 ? DURUM_YAZISI.olumsuz : ""
+                        }`}
+                      >
+                        {t("yuruyenBakiye")}: {para(g.yuruyenBakiye)}
+                      </span>
                     </span>
                   </CardTitle>
                 </CardHeader>
