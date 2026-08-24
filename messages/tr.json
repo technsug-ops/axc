@@ -1386,7 +1386,8 @@
     "bantNotu": "Bu oranlar hakediş dosyalarınızdaki gerçek kesintilerden hesaplandı — tahmin değil. Her hakediş yüklemesinden sonra kendiliğinden güncellenir. Ürün bazında değil KANAL bazındadır; bir ürünün oranı kampanyaya göre bandın dışında olabilir.",
     "bantIpucu": "Bu hesapta tipik oran %{medyan}.",
     "bantDisi": "Alışılmadık: bu hesapta oranlar genelde %{alt} – %{ust} arasında. Yine de kaydedebilirsiniz.",
-    "oranAlisHesabinda": "alış hesabı — komisyon yok"
+    "oranAlisHesabinda": "alış hesabı — komisyon yok",
+    "duzenle": "Düzenle"
   },
   "Komisyon": {
     "baslik": "Komisyon oranı içe aktarma",

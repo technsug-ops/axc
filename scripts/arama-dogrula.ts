@@ -267,6 +267,84 @@ console.log("\nKANAL KODLARI EKRANI — KİMLİK VE ORAN LİSTEDE");
    * Yarısında yanan uyarı okunmaz olur ve rozetin tamamına olan güveni
    * götürür ("yanlış uyarı, uyarısızlıktan kötüdür").
    */
+  /**
+   * ── SATIR BİR TABLO SATIRIDIR, YARIM KALMIŞ BİR FORM DEĞİL ──────────
+   *
+   * Kullanıcı 24.08.2026: _"hiç mi düzen görmedin, değiştir ve optimize et."_
+   *
+   * ÖLÇÜLDÜ: 2.182 satırın HER BİRİNDE iki `<Input>` + üç düğme + koşullu bir
+   * uyarı metni çiziliyordu. Satır yükseklikleri uyarıya göre değişiyor,
+   * "Sil" alt satıra kaçıyordu.
+   *
+   * ⚠ VE BİLGİ ZATEN ORADAYDI — OKUNUR DEĞİL, YAZILIR HÂLDE. Kanal kodu ve
+   * oran birer input kutusunun içindeydi. Sütun olarak eklenince aynı değer
+   * İKİ KEZ göründü. Doğru bölüşüm: **liste OKUR, diyalog YAZAR.**
+   */
+  const editor = readFileSync("src/app/kanal-sku/satir-duzenle.tsx", "utf8");
+  const editorKod = editor
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  const satirBloku = editorKod.slice(
+    editorKod.indexOf("return ("),
+    editorKod.indexOf("<DialogContent>"),
+  );
+  kontrol("satır bloğu kesilebildi", satirBloku.length > 0);
+  kontrol(
+    "  ...satırda AÇIK form alanı YOK (input diyalogta)",
+    !/<Input/.test(satirBloku),
+  );
+  /**
+   * ⚠ İLKE #1 KORUNUYOR: gizlenen şey EYLEM değil FORM ALANI. Üç eylem de
+   * satırda ikon olarak duruyor — düzenle · pasife al · sil.
+   */
+  /**
+   * ⚠ ÜÇ İKON ÜÇ AYRI YERDE — DİLİMLE ARANMAZ. Satırın kendi işaretlemesi
+   * `Dialog` · `form(Power)` · `AlertDialog` diye sıralanıyor ve diyalog
+   * GÖVDELERİ araya giriyor; ilk `<DialogContent>`e kadar kesen bir dilim
+   * son iki ikonu dışarıda bırakıyor (ilk sürüm bu yüzden DOĞRU davranışta
+   * kırmızı yandı). Ölçüt ikonların KENDİSİNE bağlandı.
+   */
+  /**
+   * ⚠ HER İKON KENDİ TETİKLEYİCİSİNE BAĞLI ARANIR — MUTASYONLA ÖĞRENİLDİ.
+   * `<Trash2>` dosyada İKİ yerde: satır ikonu ve onay diyaloğunun kırmızı
+   * düğmesi. Dosya geneli arayan ölçüt, satır ikonunu SİLEN mutasyonu
+   * kaçırdı — ötekini buluyordu. ("Aynı desen birden çok yerde geçiyorsa
+   * işaret çağrı yerine bağlanır.")
+   */
+  kontrol(
+    "  ...düzenle ikonu satırda (diyaloğu açıyor)",
+    /<DialogTrigger asChild>[\s\S]{0,400}<Pencil/.test(editorKod),
+  );
+  kontrol(
+    "  ...sil ikonu satırda (onay diyaloğunu açıyor)",
+    /<AlertDialogTrigger asChild>[\s\S]{0,400}<Trash2/.test(editorKod),
+  );
+  kontrol(
+    "  ...pasife al ikonu satırda",
+    /<PowerOff className="size-4" \/>/.test(editorKod),
+  );
+  /**
+   * ⚠ İKONLAR TELEFONDA 44px. Anayasa İlke #8 `icon-sm`/`icon-xs`in mobilde
+   * tek başına kullanılmasını yasaklıyor; ölçüt `h-11` (44px) + `md:` ile
+   * masaüstünde küçülme.
+   */
+  const ikonSayisi = (editorKod.match(/h-11 w-11 p-0 md:h-8 md:w-8/g) ?? []).length;
+  kontrol(
+    `  ...üç ikon da telefonda 44px (bulunan: ${ikonSayisi})`,
+    ikonSayisi >= 3,
+  );
+  /** Form gerçekten diyalogta ve kaydediyor. */
+  kontrol(
+    "düzenleme formu DİYALOGTA",
+    /<DialogContent>[\s\S]*?name="channelSku"/.test(editorKod) &&
+      /<DialogContent>[\s\S]*?name="commissionRate"/.test(editorKod),
+  );
+  /** ⚠ Bant uyarısı diyalogta KALIYOR — orada doğru yerde. */
+  kontrol(
+    "  ...bant uyarısı diyalogta duruyor (listede değil)",
+    /<DialogContent>[\s\S]*?bantUyarisi/.test(editorKod),
+  );
+
   kontrol(
     "liste satırında bant uyarısı YOK (%53,6 yalancı pozitif ölçüldü)",
     !/bantDisiMi/.test(govde),
