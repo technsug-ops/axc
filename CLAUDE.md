@@ -1443,6 +1443,54 @@ Bu, "kaydedilen ≠ görünen" ve "ölçüt de kaynağıyla anılır" derslerini
 zaman eksenindeki kardeşidir: **bir verinin yokluğu, ancak o veriyi
 üreten mekanizma o sırada ÇALIŞIYORSA anlam taşır.**
 
+### METNİ OKUYAN KONTROL, METNİN GELİŞ BİÇİMİNDEN BAĞIMSIZ OKUR (KESİN KURAL)
+
+_Ders 24.08.2026._ Bir kontrolün ölçtüğü şey hiç değişmeden, **okuduğu
+baytlar** değişebilir: satır sonu (CRLF/LF), BOM, kodlama. O anda kontrol
+hata vermez — **sessizce boş bulur** ve boş bulmak "temiz" gibi görünür.
+
+**Vaka:** `npx prisma format` şemayı CRLF'e çevirdi. Enum ayrıştıran kontrol
+`split("
+")` yapıyordu; satırlar `` ile bitince `/\/\/.*$/` deseni `$`i
+bulamadı, yorum SİLİNMEDİ ve `^[A-Z_]+$` testi düştü. Sonuç:
+
+    "NoticeObjectionReason: şemadaki 0 değerin hepsi formda"  → KIRMIZI
+
+Şanslıydık: kontrol `degerler.length > 0` şartını da taşıyordu ve kırmızı
+yandı. O şart olmasaydı **0 değerin hepsi formdadır** — boş küme her koşulu
+sağlar — ve kontrol sonsuza kadar yeşil yanardı.
+
+> **KURAL:** dosya okuyan her kontrol, okumayı **tek bir kapıdan** yapar ve
+> o kapı biçimi normalleştirir. Düzeltme, deseni tek tek yamamak değil,
+> **okuma kapısını** kurmaktır — yoksa yarın sekizinci bekçi aynı tuzağa
+> düşer.
+
+⚠ **VE "0 BULDUM" İLE "OKUYAMADIM" AYRI SÖYLENİR.** Ayırt edilemiyorsa okuma
+kapısı eksiktir. _("Boş sonuç ile temiz sonucu ayırt edemeyen denetim,
+denetim değildir" kuralının metin okuma tarafı.)_
+
+### BEKÇİNİN KIRMIZISI HER ZAMAN "KOD YANLIŞ" DEMEZ (KESİN KURAL)
+
+_Ders 24.08.2026._ Kırmızı yanan bir bekçi iki farklı şey söylüyor olabilir:
+
+- **"kod yanlış"** — davranış bozuldu, kodu düzelt
+- **"ölçütüm eskidi"** — davranış doğru, ölçüt artık yanlış şeyi ölçüyor
+
+**İkisi de DURDURUR ve ikisi de DOĞRUDUR.** Bekçi haklı olmak için değil,
+**sessiz kalmamak** için vardır.
+
+**Vaka:** beşinci kod rolü (`shipmentCode`) eklenince iki bekçi kırmızı yandı:
+_"serbest arama shipmentCode alanını kapsıyor"_ ve _"okutulan kod
+shipmentCode alanını kapsıyor"_. Kod doğruydu — gönderi numarası bir SATIŞ
+kimliği ve varyant koşulunda aranması **yanlış olurdu**. Eskiyen şey ölçüttü:
+_"her rol varyant koşulunda aranıyor mu"_. Ölçüt kapsama bağlandı
+(`VARYANT_ROLLERI`), satış rolleri için ayrı döngü açıldı.
+
+> **YAPILMAYACAK ŞEY: BEKÇİYİ SUSTURMAK.** Kontrolü silmek ya da beklentiyi
+> gevşetmek, ölçütü güncellemek değil **ölçmeyi bırakmaktır**. Eskiyen ölçüt
+> güncellenir; güncellenirken NİYE eskidiği yazılır, yoksa altı ay sonra
+> "burada niye böyle bir istisna var" sorusu cevapsız kalır.
+
 ### TOPLAM RAKAM YORUM KALDIRIR, SATIR KALDIRMAZ (KESİN KURAL)
 
 _Ders 24.08.2026, kargo faturası vakası._ Bir toplamdan yapılan çıkarım kaç
