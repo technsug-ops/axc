@@ -17,8 +17,11 @@ import {
 } from "@/lib/etiketler";
 import {
   AYRILMIS_SAYILAN_DURUMLAR,
+  BILDIRIM_IPTAL_EYLEMI,
   BILDIRIM_TAVANI,
   TAVAN_ISTISNASI_EYLEMI,
+  bildirimIptalEdilebilirMi,
+  iptalGerekcesiGecerliMi,
   bildirimTavaniDoldu,
   analizSonucuIstenirMi,
   ayirmaMumkunMu,
@@ -923,4 +926,85 @@ async function degisimIziVarMi(bildirimId: string): Promise<boolean> {
     select: { id: true },
   });
   return iz !== null;
+}
+
+/**
+ * ============================================================================
+ *  K39 — KAPANMIŞ BİLDİRİMİ İPTAL ET (düzeltme yolu, 24.08.2026)
+ * ----------------------------------------------------------------------------
+ *  ⚠ NİYE AYRI EYLEM: `durumDegistir` kapalı bildirimi reddediyor ve
+ *  reddetmeye DEVAM ETMELİ — o kapıyı gevşetmek kapanmış her bildirimi
+ *  keyfî geçişlere açardı. Bu düzeltme kendi dar kapısından geçiyor.
+ *
+ *  ⚠ İPTAL, İADEYİ GERİ ALMAZ. Yalnız bildirimin DURUMUNU düzeltir; stok,
+ *  para ve NET damgası dokunulmadan kalır. Bu yüzden işlenmiş iadesi olan
+ *  bildirim (`returnId` dolu) buradan geçemez — geçseydi iade sahipsiz
+ *  kalırdı: iade yaşamaya devam eder, doğuran bildirim "hiç olmadı" derdi.
+ *
+ *  ⚠ "TEST" İŞARETİ KONMAZ (mimar kararı): ikinci bir doğruluk kanalı
+ *  açılmıyor. Durum tek dildir; kaydın gerçeği değiştiyse DURUMU değişir.
+ *  Sebep serbest metinde yaşar, şemada bayrak olarak değil.
+ * ============================================================================
+ */
+export async function kapanmisBildirimiIptalEt(
+  bildirimId: string,
+  gerekce: string,
+): Promise<{ hata?: string; tamam?: true }> {
+  await yetkiIste("iade.yaz");
+  const t = await getTranslations("Bildirim2");
+
+  const bildirim = await prisma.returnNotice.findUnique({
+    where: { id: bildirimId },
+    select: { id: true, status: true, returnId: true, saleId: true },
+  });
+  if (!bildirim) return { hata: t("bulunamadi") };
+
+  /**
+   * ⚠ İKİ RET SEBEBİ AYRI SÖYLENİR. "Bu durumdan iptal edilemez" ile
+   * "iadesi işlenmiş" aynı mesajı verseydi, kullanıcı hangisini
+   * düzelteceğini bilemezdi (İlke #5: sessiz başarısızlık yasak).
+   */
+  if (bildirim.status !== "KAPANDI") {
+    return { hata: t("iptalYalnizKapanmista") };
+  }
+  if (!bildirimIptalEdilebilirMi(bildirim)) {
+    return { hata: t("iptalIslenmisIade") };
+  }
+  if (!iptalGerekcesiGecerliMi(gerekce)) {
+    return { hata: t("iptalGerekcesiZorunlu") };
+  }
+
+  const kullanici = await oturumdakiKullanici();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.returnNotice.update({
+      where: { id: bildirimId },
+      data: { status: "IPTAL" },
+    });
+    /**
+     * ⚠ ÖNCEKİ DURUM DA YAZILIR. Yalnız "iptal edildi" demek, üç ay sonra
+     * bakan birine neyin iptal edildiğini söylemez; `KAPANDI`dan mı yoksa
+     * başka bir yerden mi geldiği kaydın hikâyesidir.
+     */
+    await tx.auditLog.create({
+      data: {
+        userId: kullanici?.id ?? null,
+        action: BILDIRIM_IPTAL_EYLEMI,
+        targetType: "ReturnNotice",
+        targetId: bildirimId,
+        detail: JSON.stringify({
+          oncekiDurum: bildirim.status,
+          yeniDurum: "IPTAL",
+          gerekce: gerekce.trim(),
+          saleId: bildirim.saleId,
+          returnId: bildirim.returnId,
+        }),
+      },
+    });
+  });
+
+  revalidatePath("/iadeler");
+  revalidatePath(`/satislar/${bildirim.saleId}`);
+  revalidatePath("/");
+  return { tamam: true };
 }

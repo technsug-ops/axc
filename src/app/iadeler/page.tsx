@@ -65,6 +65,7 @@ import { askidaMi, kargolamaDurumu } from "@/lib/iade/kargolama";
 import { isleyenSayac, sayacRengi } from "@/lib/iade/sayac";
 import { BildirimDurumu } from "./bildirim-durumu";
 import { SayacRozeti, type SayacGorunumu } from "./sayac-rozeti";
+import { BildirimIptal } from "./bildirim-iptal";
 import { DegisimGonder } from "./degisim-gonder";
 import {
   KargolanacakKutusu,
@@ -1083,6 +1084,26 @@ export default async function IadelerSayfasi({
                       adet={b.reservedQuantity}
                       kargoUyarisi={tBildirim("degisimKargoBeklemede")}
                     />
+                  ) : null}
+
+                  {/*
+                    KAPANMIŞ BİLDİRİMİ İPTAL ET (K39, 24.08.2026).
+
+                    ⚠ YALNIZ İŞLENMİŞ İADESİ OLMAYANDA GÖRÜNÜR. `returnId`
+                    doluysa arkasında gerçek bir iade var — stok yazılmış,
+                    kesinti dökümü üretilmiş, NET damgası değişmiş. Onu
+                    iptal etmek iadeyi SAHİPSİZ bırakırdı: iade yaşamaya
+                    devam eder, doğuran bildirim "hiç olmadı" der.
+
+                    ⚠ DÜĞMEYİ GİZLEMEK, KURALI KOYMAK DEĞİLDİR — sunucu
+                    aynı kontrolü kendi yapıyor. Buradaki gizleme yalnız
+                    basılamayacak bir düğmeyi göstermemek için (İlke #5:
+                    basılan ama çalışmayan düğme, sessiz başarısızlıktır).
+                  */}
+                  {b.status === "KAPANDI" && b.returnId === null ? (
+                    <div className="mt-1">
+                      <BildirimIptal bildirimId={b.id} />
+                    </div>
                   ) : null}
 
                   {/*

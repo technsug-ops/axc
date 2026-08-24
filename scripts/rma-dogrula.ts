@@ -68,6 +68,8 @@ import {
   gecisOnayIster,
   iadeIslenebilirMi,
   itirazAcilabilirMi,
+  bildirimIptalEdilebilirMi,
+  iptalGerekcesiGecerliMi,
   kapaliMi,
   kapanistaIadeDogarMi,
   onDoluHedefKalem,
@@ -94,7 +96,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 16;
+const BOLUM_SAYISI = 17;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -3178,6 +3180,179 @@ console.log("\n16) AYRILAN DEĞİŞİM ÜRÜNÜ STOKTAN DÜŞMELİ");
   );
 
   kosanBolumler.push("ayrilmis-dusmedi");
+}
+
+console.log("\n17) K39 — KAPANMIŞ BİLDİRİMİ İPTAL ET (24.08.2026)");
+{
+  /**
+   * ⚠ EN ÖNEMLİ KONTROL BU: `kapaliMi` ARTIK TÜRETİLMİYOR.
+   *
+   * Eskiden `kapaliMi` = "ileri geçişi kalmamış" demekti ve bu ikisi
+   * TESADÜFEN aynı şeydi. `KAPANDI`ya düzeltme çıkışı eklenince tesadüf
+   * bozuldu; türetilmiş hâlde `kapaliMi("KAPANDI")` **false** dönerdi ve
+   * İKİ SESSİZ SONUÇ doğardı:
+   *   ① panel çanı kapanmış her bildirimi "bekleyen iş" sayardı,
+   *   ② `durumDegistir`in kapalı-bildirim kapısı açılırdı.
+   * İkisi de ekranda hata vermeden yanlış çalışırdı.
+   */
+  kontrol(
+    "KAPANDI'nın ÇIKIŞI VAR ama hâlâ KAPALI sayılıyor",
+    IZINLI_GECISLER.KAPANDI.length > 0 && kapaliMi("KAPANDI"),
+    { cikislar: IZINLI_GECISLER.KAPANDI, kapali: kapaliMi("KAPANDI") },
+  );
+  kontrol(
+    "  ...ve panel çanı KAPANDI'yı bekleyen iş SAYMIYOR",
+    !ACIK_BILDIRIM_DURUMLARI.includes("KAPANDI"),
+  );
+  /**
+   * ⚠ TEK ÇIKIŞ: `IPTAL`. Başka bir hedef eklenirse kapanmış bildirim
+   * yeniden akışa sokulabilir olurdu — "geri dönüş yok" değişmezinin ihlali.
+   */
+  kontrol(
+    "KAPANDI'nın TEK çıkışı IPTAL (yeniden akışa sokulamaz)",
+    IZINLI_GECISLER.KAPANDI.length === 1 &&
+      IZINLI_GECISLER.KAPANDI[0] === "IPTAL",
+    IZINLI_GECISLER.KAPANDI,
+  );
+  kontrol("IPTAL uç durum kalıyor", IZINLI_GECISLER.IPTAL.length === 0);
+
+  /**
+   * ⚠ ÖLÇÜT "HANGİ VERİYİ BOZAR": `returnId` doluysa arkasında işlenmiş bir
+   * iade var. Bildirimi iptal etmek onu SAHİPSİZ bırakır.
+   */
+  kontrol(
+    "işlenmiş iadesi OLMAYAN kapanmış bildirim iptal EDİLEBİLİR",
+    bildirimIptalEdilebilirMi({ status: "KAPANDI", returnId: null }),
+  );
+  kontrol(
+    "işlenmiş iadesi OLAN kapanmış bildirim iptal EDİLEMEZ",
+    !bildirimIptalEdilebilirMi({ status: "KAPANDI", returnId: "r1" }),
+  );
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMI GÖSTERİYOR: `BEKLENIYOR` da IPTAL'e gidebiliyor —
+   * yani bu kontrol "geçiş var mı"yı değil "bu KAPI ondan geçirir mi"yi
+   * sınıyor. Ayrım olmasaydı `status !== "KAPANDI"` satırını silen mutasyon
+   * yeşil kalırdı.
+   */
+  kontrol(
+    "BEKLENIYOR bu kapıdan geçmez (normal akış, düzeltme değil)",
+    gecisGecerliMi("BEKLENIYOR", "IPTAL") &&
+      !bildirimIptalEdilebilirMi({ status: "BEKLENIYOR", returnId: null }),
+  );
+  kontrol(
+    "MAL_GELDI bu kapıdan geçmez",
+    !bildirimIptalEdilebilirMi({ status: "MAL_GELDI", returnId: null }),
+  );
+  kontrol(
+    "zaten IPTAL olan tekrar geçmez",
+    !bildirimIptalEdilebilirMi({ status: "IPTAL", returnId: null }),
+  );
+
+  kontrol("boş gerekçe REDDEDİLİR", !iptalGerekcesiGecerliMi(""));
+  kontrol("boşluk dolu gerekçe REDDEDİLİR", !iptalGerekcesiGecerliMi("     "));
+  kontrol("kısa gerekçe REDDEDİLİR", !iptalGerekcesiGecerliMi("test"));
+  kontrol(
+    "yeterli gerekçe kabul edilir",
+    iptalGerekcesiGecerliMi("Test denemesi, gerçek vaka 11473322212"),
+  );
+
+  // ── EYLEM ──────────────────────────────────────────────────────────────
+  const iptalEylemi = readFileSync(
+    "src/app/iadeler/bildirim-actions.ts",
+    "utf8",
+  );
+  const iptalBasi = iptalEylemi.indexOf(
+    "export async function kapanmisBildirimiIptalEt",
+  );
+  const iptalGovdesi = iptalEylemi.slice(iptalBasi, iptalBasi + 3200);
+  kontrol("iptal eyleminin gövdesi kesilebildi", iptalBasi > 0);
+  kontrol("  ...izin İSTİYOR", /yetkiIste\("iade\.yaz"\)/.test(iptalGovdesi));
+  kontrol(
+    "  ...ortak kuralı çağırıyor (elle kopya koşul yok)",
+    /bildirimIptalEdilebilirMi\(bildirim\)/.test(iptalGovdesi),
+  );
+  kontrol(
+    "  ...gerekçeyi ortak kuralla sınıyor",
+    /iptalGerekcesiGecerliMi\(gerekce\)/.test(iptalGovdesi),
+  );
+  /** ⚠ İZ BIRAKMADAN DURUM DEĞİŞTİRİLMEZ. */
+  kontrol(
+    "  ...AuditLog'a ÖNCEKİ durumu da yazıyor",
+    /oncekiDurum: bildirim\.status/.test(iptalGovdesi),
+  );
+  kontrol(
+    "  ...gerekçeyi de yazıyor",
+    /gerekce: gerekce\.trim\(\)/.test(iptalGovdesi),
+  );
+  kontrol(
+    "  ...kim yaptığı yazılıyor",
+    /userId: kullanici\?\.id/.test(iptalGovdesi),
+  );
+  /** ⚠ DURUM VE İZ AYNI İŞLEMDE — ayrışırsa izsiz iptal doğar. */
+  kontrol("  ...durum ve iz TEK işlemde", /\$transaction/.test(iptalGovdesi));
+  /** ⚠ İKİ RET SEBEBİ AYRI MESAJ VERİR (İlke #5). */
+  kontrol(
+    "  ...iki ret sebebi AYRI mesaj",
+    /iptalYalnizKapanmista/.test(iptalGovdesi) &&
+      /iptalIslenmisIade/.test(iptalGovdesi),
+  );
+  /** ⚠ PARA VE STOK DOKUNULMAZ: yalnız bildirimin DURUMU düzeltilir. */
+  kontrol("  ...stok hareketi YAZMIYOR", !/stockMovement/.test(iptalGovdesi));
+  kontrol(
+    "  ...kâr damgasına DOKUNMUYOR",
+    !/satisKarTazele/.test(iptalGovdesi),
+  );
+
+  // ── EKRAN ──────────────────────────────────────────────────────────────
+  const iptalListe = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  const iptalListeKodu = iptalListe.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
+  const iptalDugmeBasi = iptalListeKodu.indexOf('b.status === "KAPANDI"');
+  const iptalDugmeBloku = iptalListeKodu.slice(
+    iptalDugmeBasi,
+    iptalDugmeBasi + 220,
+  );
+  kontrol("iptal düğmesi ekranda ÇİZİLİYOR", iptalDugmeBasi > 0);
+  kontrol(
+    "  ...koşulu SONUCUYLA birlikte (işlenmiş iadede gizli)",
+    /b\.returnId === null[\s\S]{0,160}<BildirimIptal/.test(iptalDugmeBloku),
+  );
+
+  // ── DİYALOG ────────────────────────────────────────────────────────────
+  const diyalog = readFileSync("src/app/iadeler/bildirim-iptal.tsx", "utf8");
+  /**
+   * ⚠ DESEN DOSYADA ÜÇ KEZ GEÇİYOR — import satırı, eşik hesabı ve uyarı
+   * metninin parametresi. Dosyanın tamamında arayan ilk yazım, eşiği elle
+   * `10` yazan mutasyonu KAÇIRDI: öteki iki geçiş deseni ayakta tutuyordu.
+   * Ölçüt `yeterli` HESABINA daraltıldı — ikinci bir gerçek orada doğar.
+   */
+  const esikSatiri = diyalog.slice(
+    diyalog.indexOf("const yeterli"),
+    diyalog.indexOf("const yeterli") + 120,
+  );
+  kontrol("eşik hesabı kesilebildi", esikSatiri.length > 20);
+  kontrol(
+    "diyalog eşiği SUNUCUDAN okuyor (ikinci gerçek yok)",
+    /IPTAL_GEREKCESI_ENAZ/.test(esikSatiri) &&
+      /from "@\/lib\/iade\/bildirim"/.test(diyalog),
+  );
+  /** ⚠ Ve elle yazılmış bir sayı OLMAMALI — mutasyonun tam yaptığı şey. */
+  kontrol(
+    "  ...eşikte elle yazılmış sayı YOK",
+    !/length >= \d/.test(esikSatiri),
+    esikSatiri.trim(),
+  );
+  const diyalogDugme = diyalog.slice(diyalog.indexOf("<DialogFooter>"));
+  kontrol(
+    "  ...gerekçe yetersizken düğme KİLİTLİ",
+    /disabled=\{!yeterli \|\| bekliyor\}/.test(diyalogDugme),
+  );
+  /** ⚠ KİLİTLİ DÜĞME SESSİZ KALMAZ — niye basılmadığı ekranda yazar. */
+  kontrol(
+    "  ...ve NİYE kilitli olduğu yazıyor",
+    /!yeterli \?[\s\S]{0,200}iptalGerekcesiKisa/.test(diyalog),
+  );
+
+  kosanBolumler.push("k39-iptal");
 }
 
 if (kosanBolumler.length !== BOLUM_SAYISI) {

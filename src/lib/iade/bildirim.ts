@@ -79,10 +79,42 @@ export const IZINLI_GECISLER: Record<NoticeStatus, NoticeStatus[]> = {
    * edilir — "geri dönüş yok" değişmezi onun dışında geçerlidir.
    */
   ASKIDA: ["MAL_GELDI", "ITIRAZ_ACILDI", "KAPANDI", "IPTAL"],
-  // Uç durumlar — buradan çıkış yok.
-  KAPANDI: [],
+  /**
+   * "Kapandı" — iş akışı bitti. TEK ÇIKIŞ: `IPTAL`, ve o bir ilerleme
+   * değil bir DÜZELTMEDİR (K39, 24.08.2026).
+   *
+   * ⚠ NİYE AÇILDI: `11473322212` üstünde test denemelerinden bildirimler
+   * birikti; `KAPANDI`nın hiçbir çıkışı olmadığı için düzeltilemiyorlardı
+   * ve test artığının kırmızı _"ayrılan ürün düşülmedi"_ uyarısı gerçek
+   * uyarının değerini düşürüyordu.
+   *
+   * ⚠ MİMAR KARARI: "test" İŞARETİ KONMAZ — _"ikinci doğruluk kanalı
+   * açılmaz; durum tek dildir, kayıt gerçeği değiştiyse DURUMU değişir."_
+   * Bu yüzden geçiş ayrı bir bayrak değil, durum makinesinin kendisinde.
+   *
+   * ⚠ AMA NORMAL GEÇİŞ YOLUNDAN GİTMEZ: `durumDegistir` kapalı bildirimi
+   * reddediyor ve öyle KALMALI — o kapı gevşerse kapanmış her bildirim
+   * keyfî geçişlere açılır. Düzeltme kendi dar eylemine bağlı ve
+   * `bildirimIptalEdilebilirMi` ile korunuyor.
+   */
+  KAPANDI: ["IPTAL"],
   IPTAL: [],
 };
+
+/**
+ * UÇ DURUMLAR — iş akışının bittiği yerler.
+ *
+ * ⚠ ARTIK GEÇİŞ LİSTESİNDEN TÜRETİLMİYOR (24.08.2026). `kapaliMi` eskiden
+ * _"ileri geçişi kalmamış"_ demekti ve bu ikisi TESADÜFEN aynı şeydi.
+ * `KAPANDI`ya düzeltme çıkışı eklenince tesadüf bozuldu: türetilmiş hâlde
+ * `kapaliMi("KAPANDI")` **false** dönerdi ve bunun iki sessiz sonucu olurdu —
+ *   ① `ACIK_BILDIRIM_DURUMLARI` KAPANDI'yı içine alır, panel çanı kapanmış
+ *      her bildirimi "bekleyen iş" diye sayardı;
+ *   ② `durumDegistir`in kapalı-bildirim kapısı açılırdı.
+ * İkisi de ekranda hata vermeden yanlış çalışırdı. Ölçüt artık AÇIKÇA
+ * yazılı: kapalı olmak, çıkışı olmamak değildir.
+ */
+export const UC_DURUMLAR: readonly NoticeStatus[] = ["KAPANDI", "IPTAL"];
 
 /** Bu geçiş yapılabilir mi? */
 export function gecisGecerliMi(
@@ -92,10 +124,42 @@ export function gecisGecerliMi(
   return IZINLI_GECISLER[mevcut].includes(hedef);
 }
 
-/** Kapanmış/iptal edilmiş bildirim değiştirilemez. */
+/** Kapanmış/iptal edilmiş bildirim NORMAL akışta değiştirilemez. */
 export function kapaliMi(durum: NoticeStatus): boolean {
-  return IZINLI_GECISLER[durum].length === 0;
+  return UC_DURUMLAR.includes(durum);
 }
+
+/**
+ * ============================================================================
+ *  K39 — KAPANMIŞ BİLDİRİM İPTAL EDİLEBİLİR Mİ? (24.08.2026)
+ * ----------------------------------------------------------------------------
+ *  ⚠ ÖLÇÜT "HANGİ İLKEYİ ÇİĞNER" DEĞİL, "HANGİ VERİYİ BOZAR".
+ *  `returnId` DOLUYSA arkasında işlenmiş bir iade var: stok hareketleri
+ *  yazılmış, kesinti dökümü üretilmiş, NET damgası değişmiş. Bildirimi iptal
+ *  etmek o iadeyi SAHİPSİZ bırakır — iade yaşamaya devam eder, doğuran
+ *  bildirim "hiç olmadı" der. Bozulan şey bir ilke değil, defterin kendisi.
+ *
+ *  ⚠ İPTAL, İADEYİ GERİ ALMAZ. Bu geçiş yalnız BİLDİRİMİ düzeltir; para ya
+ *  da stok tarafında hiçbir şeye dokunmaz. İşlenmiş bir iadeyi geri almak
+ *  ayrı bir iştir ve bu kapıdan yapılamaz.
+ * ============================================================================
+ */
+export function bildirimIptalEdilebilirMi(bildirim: {
+  status: NoticeStatus;
+  returnId: string | null;
+}): boolean {
+  if (!gecisGecerliMi(bildirim.status, "IPTAL")) return false;
+  /** Yalnız KAPANDI'dan gelen iptal düzeltmedir; ötekiler normal akış. */
+  if (bildirim.status !== "KAPANDI") return false;
+  return bildirim.returnId === null;
+}
+
+/** İptal gerekçesi — boş geçilemez, üç ay sonra "bu neden böyle"nin cevabı. */
+export const IPTAL_GEREKCESI_ENAZ = 10;
+export function iptalGerekcesiGecerliMi(gerekce: string): boolean {
+  return gerekce.trim().length >= IPTAL_GEREKCESI_ENAZ;
+}
+export const BILDIRIM_IPTAL_EYLEMI = "BILDIRIM_KAPANDI_IPTAL";
 
 /**
  * ============================================================================

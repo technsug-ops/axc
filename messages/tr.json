@@ -2428,7 +2428,17 @@
     "degisimHedefBelirsiz": "Hangi satış kalemine yazılacağı belirsiz — çok kalemli satışta eşleşme kurulamadı.",
     "degisimStokYetersiz": "Stok yetersiz: {mevcut} adet var, {istenen} adet gerekiyor.",
     "degisimYazilamadi": "Değişim çıkışı yazılamadı.",
-    "degisimKargoBeklemede": "Değişim kargosu henüz iadenin NET'inde — satışa taşınması bekliyor (K36b)."
+    "degisimKargoBeklemede": "Değişim kargosu henüz iadenin NET'inde — satışa taşınması bekliyor (K36b).",
+    "iptalEt": "İptal et",
+    "iptalBaslik": "Kapanmış bildirimi iptal et",
+    "iptalAciklama": "Bu bildirim iptal edilmiş sayılır ve bekleyen iş listesinden çıkar. Stok, para ve kâr hesabına DOKUNULMAZ — yalnız bildirimin durumu düzeltilir.",
+    "iptalGerekcesi": "Gerekçe (zorunlu)",
+    "iptalGerekcesiIpucu": "örn. Test denemesi — gerçek vaka 11473322212'nin işlenen iadesi",
+    "iptalGerekcesiKisa": "Gerekçe en az {enaz} karakter olmalı; üç ay sonra \"bunu neden iptal ettik\" sorusunun cevabı bu metin olacak.",
+    "iptalOnayla": "İptal et",
+    "iptalYalnizKapanmista": "Yalnız kapanmış bildirimler bu yoldan iptal edilebilir.",
+    "iptalIslenmisIade": "Bu bildirimin iadesi işlenmiş; iptal edilirse iade sahipsiz kalır. Önce iadenin kendisi ele alınmalı.",
+    "iptalGerekcesiZorunlu": "Gerekçe yazılmadan iptal edilemez."
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "Mal yolda olarak işaretle",

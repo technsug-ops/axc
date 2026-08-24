@@ -2428,7 +2428,17 @@
     "degisimHedefBelirsiz": "",
     "degisimStokYetersiz": "",
     "degisimYazilamadi": "",
-    "degisimKargoBeklemede": ""
+    "degisimKargoBeklemede": "",
+    "iptalEt": "",
+    "iptalBaslik": "",
+    "iptalAciklama": "",
+    "iptalGerekcesi": "",
+    "iptalGerekcesiIpucu": "",
+    "iptalGerekcesiKisa": "",
+    "iptalOnayla": "",
+    "iptalYalnizKapanmista": "",
+    "iptalIslenmisIade": "",
+    "iptalGerekcesiZorunlu": ""
   },
   "BildirimGecisi": {
     "BEKLENIYOR": "",
