@@ -7,14 +7,15 @@ import { Ban } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { IPTAL_GEREKCESI_ENAZ } from "@/lib/iade/bildirim";
 import { DURUM_YAZISI } from "@/lib/renkler";
@@ -40,6 +41,16 @@ import { kapanmisBildirimiIptalEt } from "./bildirim-actions";
  *
  *  ⚠ YIKICI EYLEM = ONAY (İlke #6): diyalog açılır, gerekçe yazılmadan
  *  düğme basılmaz ve NİYE basılmadığı ekranda yazar (İlke #5).
+ *
+ *  ⚠ `AlertDialog`, `Dialog` DEĞİL — ve bu iki sebepten (24.08.2026).
+ *  ① İLKE: yıkıcı/geri alınamaz eylemin ilkeli `AlertDialog`tır; aynı
+ *     ayrım `satir-duzenle.tsx`te de var (düzenleme `Dialog`, silme
+ *     `AlertDialog`).
+ *  ② ÖLÇÜM: ilk sürüm `Dialog` ile yazıldı ve CANLIDA AÇILMADI — düğme
+ *     görünüyor, tıklanınca hiçbir şey olmuyordu (kullanıcı, 24.08).
+ *     Kök neden kaynak okuyarak bulunamadı; ama aynı kartta `AlertDialog`
+ *     kullanan `bildirim-durumu.tsx`in geçiş onayları ÇALIŞIYOR, yani
+ *     tıklama o kartta düğmelere ULAŞIYOR. Kanıtlanmış ilkele geçildi.
  * ============================================================================
  */
 export function BildirimIptal({ bildirimId }: { bildirimId: string }) {
@@ -73,8 +84,8 @@ export function BildirimIptal({ bildirimId }: { bildirimId: string }) {
   };
 
   return (
-    <Dialog open={acik} onOpenChange={setAcik}>
-      <DialogTrigger asChild>
+    <AlertDialog open={acik} onOpenChange={setAcik}>
+      <AlertDialogTrigger asChild>
         <Button
           type="button"
           size="sm"
@@ -84,12 +95,12 @@ export function BildirimIptal({ bildirimId }: { bildirimId: string }) {
           <Ban className="size-4" />
           {t("iptalEt")}
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("iptalBaslik")}</DialogTitle>
-          <DialogDescription>{t("iptalAciklama")}</DialogDescription>
-        </DialogHeader>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("iptalBaslik")}</AlertDialogTitle>
+          <AlertDialogDescription>{t("iptalAciklama")}</AlertDialogDescription>
+        </AlertDialogHeader>
 
         <label className="block space-y-1">
           <span className="text-sm font-medium">{t("iptalGerekcesi")}</span>
@@ -113,7 +124,10 @@ export function BildirimIptal({ bildirimId }: { bildirimId: string }) {
           </p>
         ) : null}
 
-        <DialogFooter>
+        <AlertDialogFooter>
+          {/* Vazgeçmek her zaman AÇIK bir yol olmalı — kapatma ikonuna
+              bel bağlanmaz (İlke #2). */}
+          <AlertDialogCancel>{ortak("vazgec")}</AlertDialogCancel>
           <Button
             type="button"
             variant="destructive"
@@ -124,8 +138,8 @@ export function BildirimIptal({ bildirimId }: { bildirimId: string }) {
             <Ban className="size-4" />
             {bekliyor ? ortak("kaydediliyor") : t("iptalOnayla")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

@@ -3341,7 +3341,16 @@ console.log("\n17) K39 — KAPANMIŞ BİLDİRİMİ İPTAL ET (24.08.2026)");
     !/length >= \d/.test(esikSatiri),
     esikSatiri.trim(),
   );
-  const diyalogDugme = diyalog.slice(diyalog.indexOf("<DialogFooter>"));
+  /**
+   * ⚠ ÖLÇÜT İLKELİN ADINA DEĞİL, ONAY DÜĞMESİNE BAĞLI. İlk yazım
+   * `<DialogFooter>` arıyordu; bileşen `AlertDialog`a çevrilince (canlıda
+   * `Dialog` açılmıyordu) kontrol KIRMIZI yandı — oysa davranış aynıydı.
+   * Kontrol artık `iptalOnayla` düğmesini kesiyor: hangi ilkel kullanılırsa
+   * kullanılsın, kilit kuralı aynı yerde yaşıyor.
+   */
+  const onaylaYeri = diyalog.indexOf('t("iptalOnayla")');
+  const diyalogDugme = diyalog.slice(onaylaYeri - 400, onaylaYeri + 40);
+  kontrol("onay düğmesi kesilebildi", onaylaYeri > 0);
   kontrol(
     "  ...gerekçe yetersizken düğme KİLİTLİ",
     /disabled=\{!yeterli \|\| bekliyor\}/.test(diyalogDugme),
