@@ -3254,10 +3254,42 @@ console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
       "  ...iptaller ikisinden de dışarıda",
       /iptalTarihi: null/.test(govde),
     );
-    /** Kural okuma ekranıyla AYNI gövdeden geçiyor — iki ayrı "en yeni iz" yorumu doğmasın. */
+    /**
+     * Kural okuma ekranıyla AYNI gövdeden geçiyor — iki ayrı "en yeni iz"
+     * yorumu doğmasın.
+     *
+     * ⚠ ZİNCİR İKİ ADIMA ÇIKTI (24.08.2026): sayaç ile satış listesinin
+     * paketleme süzgeci AYNI kümeyi istediği için kimlik çözümü
+     * `hazirlananSiparisKimlikleri()`e ayrıldı. Bu yüzden İKİ HALKA da
+     * ayrı sınanıyor — sayaç doğru fonksiyonu çağırıyor mu, VE o fonksiyon
+     * ortak kuralı kullanıyor mu. Yalnız birini sınamak, ötekini
+     * kopyalanmış bir yoruma çevirebilirdi.
+     */
     kontrol(
-      "  ...ve ortak kuraldan geçiyor (elle 'en yeni iz' yorumu yok)",
-      /hazirlananSiparisler\(/.test(govde),
+      "  ...sayaç ortak kimlik çözümünü çağırıyor",
+      /hazirlananSiparisKimlikleri\(\)/.test(govde),
+    );
+    const cozumBasi = veri.indexOf(
+      "export async function hazirlananSiparisKimlikleri",
+    );
+    const cozumGovdesi = veri.slice(
+      cozumBasi,
+      veri.indexOf("\nexport ", cozumBasi + 10),
+    );
+    kontrol("kimlik çözümünün gövdesi kesilebildi", cozumBasi > 0);
+    kontrol(
+      "  ...ve o da ortak kuraldan geçiyor (elle 'en yeni iz' yorumu yok)",
+      /hazirlananSiparisler\(/.test(cozumGovdesi),
+    );
+    /**
+     * ⚠ KİMLİK ÇÖZÜMÜ KÜME DARALTMAZ. Daraltsaydı satış listesindeki
+     * `paket=bekleyen` (kümenin DIŞI) yanlış çalışırdı: kargoya verilmiş
+     * ama paketlenmiş eski siparişler "paketlenmemiş" sayılırdı. Daraltma
+     * çağıranın işi — sayaç `shippedAt`i kendi ekliyor.
+     */
+    kontrol(
+      "  ...ve kimlik çözümü küme DARALTMIYOR (daraltma çağıranın işi)",
+      !/shippedAt/.test(cozumGovdesi),
     );
 
     const kutu = readFileSync("src/app/gorev-kutusu.tsx", "utf8");

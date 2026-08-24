@@ -19,6 +19,7 @@ import {
 } from "@/lib/renkler";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
+import { hazirlananSiparisKimlikleri } from "@/lib/panel/gorev-verisi";
 import { KargoDurumu } from "./kargo-durumu";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
@@ -78,6 +79,8 @@ export default async function SatislarSayfasi({
     hesap?: string;
     iade?: string;
     kargo?: string;
+    /** "hazirlanan" | "bekleyen" — /okut ekranında paketlendi işareti. */
+    paket?: string;
     /** "1" → iptal edilenler de listelenir (varsayılan: gizli). */
     iptal?: string;
     /** "ciro" | "sermaye" — marj göstergesinin ölçüsü. */
@@ -132,8 +135,21 @@ export default async function SatislarSayfasi({
       : null;
   const supheliIdler = supheliBulgu?.saleIdleri;
 
+  /**
+   * PAKETLENMİŞ SİPARİŞ KÜMESİ — YALNIZ SÜZGEÇ AÇIKKEN çözülür.
+   *
+   * ⚠ Her satış açılışında koşsaydı, hiç kullanılmayan bir süzgeç için her
+   * sayfa yüklemesinde bütün paketleme izleri okunurdu (şüpheli veri
+   * süzgeciyle aynı gerekçe). Küme, panelin sayacını besleyen gövdenin
+   * AYNISINDAN geliyor — iki ayrı "hazırlanıyor" yorumu doğmasın diye.
+   */
+  const paketliIdler =
+    p.paket === "hazirlanan" || p.paket === "bekleyen"
+      ? await hazirlananSiparisKimlikleri()
+      : undefined;
+
   // EKRAN VE EXCEL AYNI KOŞULU KULLANIR (bkz. lib/liste-suzgeci.ts).
-  const { kosul, pencere } = satisKosulu(p, new Date(), supheliIdler);
+  const { kosul, pencere } = satisKosulu(p, new Date(), supheliIdler, paketliIdler);
 
   // Süzgeç seçenekleri VERİDEN gelir: olmayan bir seçeneğe tıklanıp boş
   // liste görülmesin.
@@ -337,6 +353,22 @@ export default async function SatislarSayfasi({
       ],
     },
     /**
+     * PAKETLEME SÜZGECİ — panelin "N paketlendi" rakamı buraya bağlanıyor.
+     *
+     * ⚠ KARGO SÜZGECİNDEN AYRI DURUYOR ve öyle kalmalı: "paketlendi" ile
+     * "kargoya verildi" iki ayrı adım. Tek süzgeçte birleştirilseydi
+     * "paketlendi ama henüz verilmedi" — yani depoda BUGÜN bakılacak küme —
+     * ifade edilemezdi.
+     */
+    {
+      ad: "paket",
+      etiket: t("paketSuzgeci"),
+      secenekler: [
+        { deger: "hazirlanan", etiket: t("paketSuzgeciHazirlanan") },
+        { deger: "bekleyen", etiket: t("paketSuzgeciBekleyen") },
+      ],
+    },
+    /**
      * İPTAL SÜZGECİ — varsayılan GİZLİ. İptal edilen satış ciroya girmez ve
      * listede de görünmez; ama kayıt SİLİNMEZ, bu süzgeçle geri gelir.
      * Tek seçenek: "göster". Kapalıyken gizli olması varsayılan davranış
@@ -368,6 +400,7 @@ export default async function SatislarSayfasi({
     hesap: p.hesap,
     iade: p.iade,
     kargo: p.kargo,
+    paket: p.paket,
     iptal: p.iptal,
     marj: p.marj,
     pencere: p.pencere,

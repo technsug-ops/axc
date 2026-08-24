@@ -156,12 +156,16 @@ export async function donemAlimi(pencere: {
  *  büyür; hacim artarsa bu sorgu bir alt sorguya çevrilir. Bugün ~30
  *  paket/gün için gereksiz karmaşıklık olurdu.
  */
-export async function paketlenenSiparisSayisi(): Promise<number> {
+export async function hazirlananSiparisKimlikleri(): Promise<string[]> {
   const izler = await prisma.auditLog.findMany({
     where: { action: { in: [...PAKETLEME_EYLEMLERI] }, targetType: "Sale" },
     select: { action: true, createdAt: true, targetId: true },
   });
-  const hazirlananlar = [...hazirlananSiparisler(izler)];
+  return [...hazirlananSiparisler(izler)];
+}
+
+export async function paketlenenSiparisSayisi(): Promise<number> {
+  const hazirlananlar = await hazirlananSiparisKimlikleri();
   if (hazirlananlar.length === 0) return 0;
 
   return prisma.sale.count({

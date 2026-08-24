@@ -1695,6 +1695,17 @@ export default async function AnaSayfa({
             <GorevKutusu
               sayilar={gorevSayilari}
               ilerlemeler={{ kargoBekleyen: paketlenen }}
+              /*
+                ⚠ ADRES KUTUNUN KENDİ HEDEFİNİ DARALTIYOR, DEĞİŞTİRMİYOR:
+                `kargo=bekleyen` korunuyor, üstüne `paket=hazirlanan`
+                ekleniyor. Yalnız `paket=hazirlanan` yazsaydık kargoya
+                VERİLMİŞ eski siparişler de listeye girer, liste rakamdan
+                büyük çıkardı — sayının tıklanınca kendini doğrulamaması
+                en sinsi hata olurdu.
+              */
+              ilerlemeAdresleri={{
+                kargoBekleyen: "/satislar?kargo=bekleyen&paket=hazirlanan",
+              }}
             />
           </div>
 

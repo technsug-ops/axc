@@ -118,6 +118,8 @@ export function satisKosulu(
   an: Date = new Date(),
   /** `veri=supheli` için dışarıdan hesaplanmış satış kimlikleri. */
   supheliIdler?: string[],
+  /** `paket=…` için hazırlanmış (paketlenmiş) satış kimlikleri. */
+  paketliIdler?: string[],
 ): { kosul: Prisma.SaleWhereInput; pencere: PencereCozumu } {
   const pencere = pencereCoz(p, an);
 
@@ -129,6 +131,24 @@ export function satisKosulu(
   const iptal = temiz(p.iptal);
   const kargo = temiz(p.kargo);
   const veri = temiz(p.veri);
+  const paket = temiz(p.paket);
+
+  /**
+   * ═══════════════════════════════════════════════════════════════════════
+   *  KİMLİK KÜMESİ KOŞULLARI TEK YERDE TOPLANIR (24.08.2026)
+   * -----------------------------------------------------------------------
+   *  ⚠ İKİ SÜZGEÇ AYNI ALANA YAZIYOR: `veri=supheli` ve `paket=…` ikisi de
+   *  `id` üzerinden süzüyor. Nesneye düz `id:` olarak konsalardı ikincisi
+   *  birincisini EZERDİ ve süzgeçlerden biri **sessizce** kaybolurdu —
+   *  ekranda hata yok, yalnız yanlış liste. (`arama` ile `kar=eksik`
+   *  arasında 17.08.2026'da yaşanan `OR` ezilmesinin aynısı.)
+   *
+   *  Bu yüzden kimlik koşulları bir diziye toplanıp tek `AND` olarak
+   *  yazılıyor; yarın üçüncü bir kimlik süzgeci eklendiğinde de bedava
+   *  doğru çalışır.
+   * ═══════════════════════════════════════════════════════════════════════
+   */
+  const veKosullari: Prisma.SaleWhereInput[] = [];
 
   const kosul: Prisma.SaleWhereInput = {
     // Süzgeç kapalıysa alan HİÇ yazılmaz; `undefined` koşulu Prisma'da
@@ -290,9 +310,34 @@ export function satisKosulu(
      * ama hiç sonuç yoktur ve liste boş çıkar — doğru davranış budur.
      * "Süzgeç yokmuş gibi hepsini göster" sessiz bir kayıp olurdu.
      */
-    ...(veri === "supheli" ? { id: { in: supheliIdler ?? [] } } : {}),
-
   };
+
+  if (veri === "supheli") {
+    veKosullari.push({ id: { in: supheliIdler ?? [] } });
+  }
+
+  /**
+   * PAKETLEME SÜZGECİ — panelin "N paketlendi" rakamı buraya bağlanır.
+   *
+   * ⚠ KÜME DIŞARIDAN GELİR (`paketliIdler`), çünkü paketleme bir SÜTUN
+   * değil `AuditLog` izi: en yeni iz `PAKETLENDI` mi yoksa
+   * `PAKETLEME_GERI_ALINDI` mı — SQL'de ifade edilmiyor. Küme, panelin
+   * sayacını besleyen gövdenin AYNISINDAN çözülüyor; iki ayrı "hazırlanıyor"
+   * yorumu doğmasın diye.
+   *
+   * ⚠ `bekleyen` = kümenin DIŞI. Boş dizide `notIn: []` herkesi geçirir
+   * (hiçbiri paketlenmemişse hepsi bekliyordur — doğru), `in: []` ise
+   * kimseyi geçirmez (paketlenen yoksa liste boş — o da doğru).
+   */
+  if (paket === "hazirlanan") {
+    veKosullari.push({ id: { in: paketliIdler ?? [] } });
+  } else if (paket === "bekleyen") {
+    veKosullari.push({ id: { notIn: paketliIdler ?? [] } });
+  }
+
+  if (veKosullari.length > 0) {
+    kosul.AND = [...(Array.isArray(kosul.AND) ? kosul.AND : []), ...veKosullari];
+  }
 
   return { kosul, pencere };
 }

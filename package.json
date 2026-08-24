@@ -91,6 +91,7 @@
     "pwa:dogrula": "tsx scripts/pwa-dogrula.ts",
     "canli:eksik-siparis": "tsx scripts/canli-eksik-siparis.ts",
     "canli:hakedis-ortusme": "tsx scripts/canli-hakedis-ortusme.ts",
+    "canli:paketleme-mutabakat": "tsx scripts/canli-paketleme-mutabakat.ts",
     "canli:pazaryeri-listesi": "tsx scripts/canli-pazaryeri-listesi.ts",
     "canli:eksik-liste": "tsx scripts/canli-eksik-liste.ts",
     "okuma:dogrula": "tsx scripts/okuma-dogrula.ts"

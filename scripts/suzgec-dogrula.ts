@@ -54,7 +54,7 @@ let calisan = 0;
  * koşmamasını yakalamak için var; artırmayı unutmak "yarım kaldı" der ve
  * doğru davranır — eksik bırakmak yeşil yanardı.
  */
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -899,3 +899,137 @@ console.log("\nGERİ DÖNÜŞ — zincir ekranlarda kurulu mu");
 }
 
 kosanBolumler.push("geri dönüş");
+
+// ===========================================================================
+//  PAKETLEME SÜZGECİ — panelin "N paketlendi" rakamının hedefi (24.08.2026)
+// ===========================================================================
+{
+  const P = ["a", "b", "c"];
+
+  /**
+   * ⚠ ASIL SINANAN: İKİ KİMLİK SÜZGECİ BİRBİRİNİ EZMİYOR.
+   *
+   * `veri=supheli` ve `paket=…` ikisi de `id` üzerinden süzüyor. Düz
+   * `id:` olarak yazılsalardı ikincisi birincisini sessizce EZERDİ —
+   * ekranda hata yok, yalnız yanlış liste. İkisi birlikte açıkken
+   * HER İKİ küme de koşulda görünmeli.
+   */
+  const { kosul: ikisi } = satisKosulu(
+    { veri: "supheli", paket: "hazirlanan" },
+    new Date(),
+    ["s1", "s2"],
+    ["p1"],
+  );
+  const veler = Array.isArray(ikisi.AND) ? ikisi.AND : [];
+  const metin = JSON.stringify(veler);
+  kontrol(
+    "şüpheli + paket birlikte: İKİSİ de koşulda (biri ötekini ezmiyor)",
+    metin.includes("s1") && metin.includes("p1"),
+    metin,
+  );
+
+  /**
+   * ⚠ ARAMA DA EZİLMEMELİ: `arama` zaten kendi `AND`ini yazıyordu; kimlik
+   * koşulları onun ÜSTÜNE ekleniyor, yerine geçmiyor.
+   */
+  const { kosul: aramali } = satisKosulu(
+    { q: "ABC123", paket: "hazirlanan" },
+    new Date(),
+    undefined,
+    ["p9"],
+  );
+  const aMetin = JSON.stringify(Array.isArray(aramali.AND) ? aramali.AND : []);
+  kontrol(
+    "arama + paket birlikte: arama bloğu KORUNUYOR",
+    aMetin.includes("ABC123") && aMetin.includes("p9"),
+    aMetin,
+  );
+
+  /**
+   * ⚠ İKİ YÖN BİRBİRİNİN TÜMLEYENİ. `hazirlanan` kümenin İÇİ, `bekleyen`
+   * DIŞI. Aynı yöne bakan iki süzgeç, "kaç tane kaldı" sorusunu
+   * cevaplayamazdı.
+   */
+  const { kosul: hazir } = satisKosulu({ paket: "hazirlanan" }, new Date(), undefined, P);
+  const { kosul: bekle } = satisKosulu({ paket: "bekleyen" }, new Date(), undefined, P);
+  kontrol(
+    "paket=hazirlanan → kümenin İÇİ (in)",
+    JSON.stringify(hazir.AND).includes('"in"'),
+  );
+  kontrol(
+    "paket=bekleyen → kümenin DIŞI (notIn)",
+    JSON.stringify(bekle.AND).includes('"notIn"'),
+  );
+
+  /** Süzgeç kapalıyken hiçbir kimlik koşulu yazılmaz. */
+  const { kosul: kapali } = satisKosulu({}, new Date(), undefined, P);
+  kontrol(
+    "süzgeç kapalıyken kimlik koşulu YOK",
+    !JSON.stringify(kapali.AND ?? []).includes("notIn"),
+  );
+
+  /**
+   * ── PANELİN RAKAMI KENDİ LİSTESİNE GİDİYOR MU ──────────────────────
+   *
+   * ⚠ ADRES `kargo=bekleyen`İ KORUMALI. Yalnız `paket=hazirlanan` yazsaydı
+   * kargoya VERİLMİŞ eski siparişler de listeye girerdi ve liste rakamdan
+   * BÜYÜK çıkardı — sayı tıklanınca kendini yalanlardı.
+   */
+  const panel = readFileSync("src/app/page.tsx", "utf8");
+  const adresYeri = panel.indexOf("ilerlemeAdresleri={{");
+  const adresBloku = panel.slice(adresYeri, adresYeri + 200);
+  kontrol("panel ilerleme adresi veriyor", adresYeri > 0);
+  kontrol(
+    "  ...adres kargo=bekleyen'i KORUYOR (payda daralmıyor)",
+    /kargo=bekleyen/.test(adresBloku),
+  );
+  kontrol(
+    "  ...ve paket=hazirlanan ile DARALIYOR",
+    /paket=hazirlanan/.test(adresBloku),
+  );
+
+  /**
+   * ⚠ RAKAM GERÇEKTEN BAĞLANTI OLMALI (İlke #2). Düz `<span>` kalsaydı
+   * tıklanabilir görünmez ve kullanıcı listenin varlığını bilemezdi.
+   */
+  const kutu = readFileSync("src/app/gorev-kutusu.tsx", "utf8");
+  const kutuKodu = kutu.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, " ");
+  const ilerlemeBasi = kutuKodu.indexOf("gorev.ilerleme !== null ?");
+  const ilerlemeBloku = kutuKodu.slice(
+    ilerlemeBasi,
+    kutuKodu.indexOf("ilerlemeMetni", ilerlemeBasi) + 40,
+  );
+  kontrol("ilerleme bloku kesilebildi", ilerlemeBasi > 0);
+  kontrol(
+    "ilerleme rakamı BAĞLANTI (düz yazı değil)",
+    /<Link/.test(ilerlemeBloku) && /ilerlemeAdresi/.test(ilerlemeBloku),
+  );
+  /**
+   * ⚠ `z-10` OLMADAN YANLIŞ LİSTE AÇILIR. Kutunun tamamını kaplayan
+   * yayılan bağlantı bu linkin ÜSTÜNDE kalırsa tıklama ana hedefe gider:
+   * düğme çalışıyormuş gibi görünür ama süzgeçsiz listeyi açar.
+   */
+  kontrol(
+    "  ...yayılan bağlantının ÜSTÜNDE (z-10)",
+    /z-10/.test(ilerlemeBloku),
+  );
+  /**
+   * ⚠ İÇ İÇE <a> GEÇERSİZ HTML. Kap artık <div>; ana bağlantı
+   * `absolute inset-0` ile kutuyu kaplıyor.
+   */
+  kontrol(
+    "kutu kabı <div> (iç içe bağlantı yok)",
+    /className="hover:bg-muted\/60 relative/.test(kutuKodu),
+  );
+  kontrol(
+    "  ...ana bağlantı kutunun tamamını kaplıyor",
+    /absolute inset-0/.test(kutuKodu),
+  );
+  /** Telefonda dokunma alanı — anayasa #8. */
+  kontrol(
+    "  ...ilerleme bağlantısı telefonda 44px",
+    /min-h-11/.test(ilerlemeBloku),
+  );
+}
+
+kosanBolumler.push("paketleme süzgeci");

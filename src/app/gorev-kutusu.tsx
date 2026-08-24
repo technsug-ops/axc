@@ -52,24 +52,40 @@ function GorevKutucugu({
   etiket,
   temizMetni,
   ilerlemeMetni,
+  ilerlemeAdresi,
 }: {
   gorev: Gorev;
   etiket: string;
   temizMetni: string;
   /** "3 paketlendi" — ilerlemesi olmayan görevde kullanılmaz. */
   ilerlemeMetni: string;
+  /** İlerleme rakamının kendi listesi; yoksa rakam düz yazı kalır. */
+  ilerlemeAdresi?: string;
 }) {
+  /**
+   * ⚠ İÇ İÇE <a> YAZILAMAZ — kutunun tamamı zaten bir bağlantı ve
+   * "N paketlendi" onun İÇİNDE ikinci bir bağlantı olacak. Geçersiz HTML;
+   * tarayıcı iç bağlantıyı dışarı atıp yerleşimi bozuyor.
+   *
+   * Çözüm "yayılan bağlantı" deseni: kap `relative`, ana bağlantı
+   * `after:absolute after:inset-0` ile bütün kutuyu kaplıyor, ilerleme
+   * bağlantısı `relative z-10` ile onun ÜSTÜNDE duruyor. Kutunun her yeri
+   * tıklanabilir kalıyor (diğer dört kutuda hiçbir şey değişmiyor),
+   * rakamın kendi hedefi de çalışıyor.
+   */
   return (
-    <Link
-      href={gorev.adres}
+    <div
       /**
        * `min-w-0` ŞART (15.08.2026): ızgara hücresinin varsayılan en küçük
        * genişliği "auto"dur, yani içeriği kadar. Uzun etiket ("Komisyon
        * oranı boş kanal SKU") hücreyi kendi genişliğine zorluyor ve yazı
        * kutunun dışına taşıyordu.
        */
-      className="hover:bg-muted/60 flex min-h-11 min-w-0 flex-col justify-center gap-1 rounded-lg border p-3"
+      className="hover:bg-muted/60 relative flex min-h-11 min-w-0 flex-col justify-center gap-1 rounded-lg border p-3"
     >
+      <Link href={gorev.adres} className="absolute inset-0 rounded-lg">
+        <span className="sr-only">{etiket}</span>
+      </Link>
       {gorev.temizMi ? (
         /* İŞARET + RENK BİRLİKTE: temizde ✓ ikonu, bekleyende rakam. */
         <span
@@ -94,22 +110,36 @@ function GorevKutucugu({
             durursa, bitmiş iş bitmemiş gibi okunur.
           */}
           {gorev.ilerleme !== null ? (
-            <span
-              className={`text-sm font-medium tabular-nums ${
+            /*
+              ⚠ RAKAM TIKLANABİLİR OLMALI (İlke #2 + #9). Kullanıcı
+              24.08.2026: _"15 paketlenen tıklayınca liste çıksa, kontrol
+              ederken bakarız."_ Düz metin gibi duran bir sayı, arkasında
+              liste olduğunu söylemez.
+
+              ⚠ `z-10` ŞART: yayılan ana bağlantı bütün kutuyu kaplıyor;
+              bu link onun altında kalsaydı tıklama ana hedefe giderdi ve
+              düğme çalışıyormuş gibi görünüp YANLIŞ listeyi açardı.
+
+              ⚠ Telefonda dokunma alanı: `min-h-11` (44px) — anayasa
+              ölçüsü. Rakamın kendisi küçük yazı.
+            */
+            <Link
+              href={ilerlemeAdresi ?? gorev.adres}
+              className={`relative z-10 inline-flex min-h-11 items-center rounded-md px-1 text-sm font-medium tabular-nums underline-offset-2 hover:underline ${
                 gorev.ilerleme >= gorev.sayi
                   ? DURUM_YAZISI.olumlu
                   : "text-muted-foreground"
               }`}
             >
               {ilerlemeMetni}
-            </span>
+            </Link>
           ) : null}
         </span>
       )}
       <span className="text-muted-foreground text-[11px] leading-tight break-words hyphens-auto">
         {etiket}
       </span>
-    </Link>
+    </div>
   );
 }
 
@@ -118,11 +148,13 @@ async function TekKart({
   gorevler,
   baslikAnahtari,
   Ikon,
+  ilerlemeAdresleri,
 }: {
   grup: GorevGrubu;
   gorevler: Gorev[];
   baslikAnahtari: string;
   Ikon: typeof Truck;
+  ilerlemeAdresleri?: Partial<Record<GorevAnahtari, string>>;
 }) {
   const t = await getTranslations("Gorevler");
   const kartinkiler = grubunGorevleri(gorevler, grup);
@@ -159,6 +191,7 @@ async function TekKart({
               etiket={t(g.anahtar)}
               temizMetni={t("temiz")}
               ilerlemeMetni={t("ilerleme", { sayi: g.ilerleme ?? 0 })}
+              ilerlemeAdresi={ilerlemeAdresleri?.[g.anahtar]}
             />
           ))}
         </div>
@@ -170,10 +203,13 @@ async function TekKart({
 export async function GorevKutusu({
   sayilar,
   ilerlemeler,
+  ilerlemeAdresleri,
 }: {
   sayilar: Record<GorevAnahtari, number>;
   /** Görev başına ilerleme — bugün yalnız `kargoBekleyen`. */
   ilerlemeler?: Partial<Record<GorevAnahtari, number>>;
+  /** İlerleme rakamının kendi süzülü listesi. */
+  ilerlemeAdresleri?: Partial<Record<GorevAnahtari, string>>;
 }) {
   const gorevler = gorevleriKur(sayilar, ilerlemeler);
 
@@ -191,12 +227,14 @@ export async function GorevKutusu({
   return (
     <div className="grid min-w-0 gap-4">
       <TekKart
+        ilerlemeAdresleri={ilerlemeAdresleri}
         grup="SEVKIYAT"
         gorevler={gorevler}
         baslikAnahtari="baslikSevkiyat"
         Ikon={Truck}
       />
       <TekKart
+        ilerlemeAdresleri={ilerlemeAdresleri}
         grup="TEDARIK"
         gorevler={gorevler}
         baslikAnahtari="baslikTedarik"
