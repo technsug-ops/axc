@@ -15,6 +15,10 @@
  * ============================================================================
  */
 
+import {
+  kanalNormaldeOderMi,
+  yenidenGonderimSorulurMu,
+} from "../src/lib/iade/yeniden-gonderim";
 import { readFileSync } from "node:fs";
 
 import { BILDIRIM_DURUM_RENGI } from "../src/lib/durum-renkleri";
@@ -96,7 +100,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 17;
+const BOLUM_SAYISI = 18;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -3385,6 +3389,71 @@ console.log("\n17) K39 — KAPANMIŞ BİLDİRİMİ İPTAL ET (24.08.2026)");
   );
 
   kosanBolumler.push("k39-iptal");
+}
+
+console.log("\n18) YENİDEN GÖNDERİM KARGOSU — ALAN NE ZAMAN SORULUR (24.08.2026)");
+{
+  /**
+   * ⚠ VAKA: `11473322212` üç kargo ödedi (gönderme · iade · yeniden
+   * gönderme) ama üçüncüsü hiçbir yere yazılamıyordu. Alan ŞEMADA VARDI;
+   * iki kapı birden kapalıydı — blok yalnız DISPUTED'da çiziliyordu (o
+   * iade NORMAL'di) ve input kanal politikası false ise DISABLED'dı.
+   */
+  kontrol(
+    "DEĞİŞİM varsa sorulur — iade tipi NORMAL olsa bile",
+    yenidenGonderimSorulurMu({ returnType: "NORMAL", degisimVar: true }),
+  );
+  kontrol(
+    "  ...DISPUTED'da değişim olmasa da sorulur (aynı ürün geri gidiyor)",
+    yenidenGonderimSorulurMu({ returnType: "DISPUTED", degisimVar: false }),
+  );
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMI GÖSTERİYOR: bu satır olmasaydı `return true`
+   * yazan mutasyon yeşil kalırdı. Para iadesinde müşteriye giden bir şey
+   * yok; boş kutu "doldurulacak bir şey var" sanılırdı.
+   */
+  kontrol(
+    "para iadesinde SORULMAZ (müşteriye mal çıkmıyor)",
+    !yenidenGonderimSorulurMu({ returnType: "NORMAL", degisimVar: false }),
+  );
+
+  /**
+   * ⚠ POLİTİKA KİLİT DEĞİL İPUCU. Kanal ne yapılmasını BEKLEDİĞİNİ söyler;
+   * defter ne OLDUĞUNU yazar. Beklentiyle gerçeği kayıt dışı bırakmak
+   * defteri bozuyordu — vaka tam buydu.
+   */
+  kontrol(
+    "kanal ödemiyorsa 'normalde satıcı öder' notu",
+    kanalNormaldeOderMi(false),
+  );
+  kontrol("kanal ödüyorsa not tersine döner", !kanalNormaldeOderMi(true));
+
+  const form = readFileSync(
+    "src/app/satislar/[id]/iade/iade-formu.tsx",
+    "utf8",
+  );
+  const formKodu = form.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
+  const blokBasi = formKodu.indexOf("yenidenGonderimSorulurMu({");
+  const yenidenBloku = formKodu.slice(blokBasi, blokBasi + 900);
+  kontrol("form ortak kuralı çağırıyor (elle kopya koşul yok)", blokBasi > 0);
+  kontrol(
+    "  ...ve değişim durumunu geçiriyor",
+    /degisimVar/.test(yenidenBloku),
+  );
+  /**
+   * ⚠ EN ÖNEMLİSİ: INPUT ARTIK DISABLED DEĞİL. Kilit geri gelirse
+   * gerçekten ödenmiş bir gider yine yazılamaz olur.
+   */
+  kontrol(
+    "  ...input KİLİTLİ DEĞİL (ödenmiş gider yazılabilir)",
+    !/disabled=\{!yenidenGonderimGorunur\}/.test(yenidenBloku),
+  );
+  kontrol(
+    "  ...değişimde kendi notu çıkıyor",
+    /yenidenGonderimDegisimNotu/.test(yenidenBloku),
+  );
+
+  kosanBolumler.push("yeniden-gonderim");
 }
 
 if (kosanBolumler.length !== BOLUM_SAYISI) {

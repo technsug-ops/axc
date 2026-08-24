@@ -1050,7 +1050,8 @@
     "onDoluOzetiBaslik": "",
     "onDoluDonen": "",
     "onDoluGonderilecek": "",
-    "donenMaliyetYok": ""
+    "donenMaliyetYok": "",
+    "yenidenGonderimDegisimNotu": ""
   },
   "Gider": {
     "baslik": "",

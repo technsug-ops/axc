@@ -1050,7 +1050,8 @@
     "onDoluOzetiBaslik": "Bildirimden gelindi — aşağıdaki alanlar hazır dolduruldu",
     "onDoluDonen": "Geri gelen (yanlış giden) ürün: {urun}",
     "onDoluGonderilecek": "Değişimde gidecek ürün: {urun}",
-    "donenMaliyetYok": "{urun} için sistemde hiç stok hareketi yok, bu yüzden geri gelen malın maliyeti bilinmiyor. Bu bir stok yetersizliği DEĞİLDİR — geri gelen malın stoğu 0 olabilir. Eksik olan maliyettir: önce bu ürüne bir alım (stok girişi) girin, sonra iadeyi kaydedin."
+    "donenMaliyetYok": "{urun} için sistemde hiç stok hareketi yok, bu yüzden geri gelen malın maliyeti bilinmiyor. Bu bir stok yetersizliği DEĞİLDİR — geri gelen malın stoğu 0 olabilir. Eksik olan maliyettir: önce bu ürüne bir alım (stok girişi) girin, sonra iadeyi kaydedin.",
+    "yenidenGonderimDegisimNotu": "Değişimde yeni ürünün kargosunu satıcı öder. Ödediğiniz tutarı girin — girilmezse bu gider defterde hiç görünmez."
   },
   "Gider": {
     "baslik": "Giderler",

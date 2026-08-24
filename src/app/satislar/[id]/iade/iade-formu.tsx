@@ -7,6 +7,10 @@ import { Calculator, Undo2 } from "lucide-react";
 
 import { AranabilirSecim } from "@/components/aranabilir-secim";
 import {
+  kanalNormaldeOderMi,
+  yenidenGonderimSorulurMu,
+} from "@/lib/iade/yeniden-gonderim";
+import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
@@ -641,7 +645,25 @@ export function IadeFormu({
               </p>
             </div>
 
-            {returnType === "DISPUTED" ? (
+            {/*
+              YENİDEN GÖNDERİM KARGOSU — İKİ KAPI DA DÜZELTİLDİ (24.08.2026).
+
+              ⚠ Kullanıcı vakası `11473322212`: üç kargo ödendi (gönderme ·
+              iade · yeniden gönderme), defterde yalnız ikisi vardı. Alan
+              ŞEMADA VARDI ama iki kapı birden kapalıydı:
+                ① blok yalnız `DISPUTED` iadede çiziliyordu — o iade
+                   NORMAL'di, blok hiç görünmedi;
+                ② input `disputedReshipPaidBySeller` false ise DISABLED'dı
+                   ve Trendyol'da false.
+
+              ⚠ ÖLÇÜT ARTIK "MÜŞTERİYE MAL ÇIKIYOR MU": değişimde YENİ ürün
+              çıkar ve kargosunu biz öderiz — iade tipinden bağımsız.
+
+              ⚠ POLİTİKA KİLİT DEĞİL İPUCU: kanal ne yapılmasını BEKLEDİĞİNİ
+              söyler, defter ne OLDUĞUNU yazar. Beklentiyle gerçeği kayıt
+              dışı bırakmak defteri bozuyordu.
+            */}
+            {yenidenGonderimSorulurMu({ returnType, degisimVar }) ? (
               <div className="space-y-2">
                 <Label htmlFor="yeniden-gonderim">
                   {t("yenidenGonderim")}
@@ -651,13 +673,14 @@ export function IadeFormu({
                   value={yenidenGonderim}
                   inputMode="decimal"
                   placeholder={t("kargoIpucu")}
-                  disabled={!yenidenGonderimGorunur}
                   onChange={(e) => setYenidenGonderim(e.target.value)}
                 />
                 <p className="text-muted-foreground text-xs">
-                  {yenidenGonderimGorunur
-                    ? t("yenidenGonderimNotu")
-                    : t("yenidenGonderimNotuYok")}
+                  {degisimVar
+                    ? t("yenidenGonderimDegisimNotu")
+                    : kanalNormaldeOderMi(yenidenGonderimGorunur)
+                      ? t("yenidenGonderimNotuYok")
+                      : t("yenidenGonderimNotu")}
                 </p>
               </div>
             ) : null}
