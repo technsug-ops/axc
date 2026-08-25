@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/tooltip";
 import { OTURUM_CEREZI } from "@/lib/oturum-imza";
 import { oturumdakiKullanici } from "@/lib/oturum";
+import { menuDuzeni } from "@/lib/menu/okuma";
+import { yetkiBaglami } from "@/lib/yetki";
 import { BildirButonu } from "@/components/bildir-butonu";
 import { SwKayit } from "@/components/sw-kayit";
 import { TemaSecici } from "@/components/tema-secici";
@@ -121,6 +123,20 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const oturumCerezi = cerezler.get(OTURUM_CEREZI)?.value;
   const kullanici = await oturumdakiKullanici().catch(() => null);
 
+  /**
+   * MENÜ DÜZENİ — SUNUCUDA ÇÖZÜLÜR (K51, 25.08.2026).
+   *
+   * ⚠ İSTEMCİDE ÇÖZÜLSEYDİ menü ilk boyamada varsayılan sırayla çizilir,
+   * sonra kullanıcının sırasına ATLARDI: her sayfa açılışında gözle görülür
+   * bir zıplama.
+   *
+   * ⚠ HATA MENÜYÜ DÜŞÜREMEZ — `menuDuzeni` kendi içinde geri çekiliyor ve
+   * varsayılan düzenle dönüyor. Menü her sayfada çiziliyor; bir okuma
+   * hatasının bütün uygulamayı 500'e düşürmesi kabul edilemez.
+   */
+  const baglam = kullanici ? await yetkiBaglami().catch(() => null) : null;
+  const duzen = await menuDuzeni(baglam?.companyId ?? null);
+
   if (oturumCerezi && !kullanici) redirect("/cikis");
 
   /**
@@ -211,7 +227,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <NextIntlClientProvider>
           <TooltipProvider delayDuration={0}>
             <SidebarProvider>
-              <AppSidebar eposta={kullanici.email} />
+              <AppSidebar eposta={kullanici.email} duzen={duzen} />
               {/*
                 `min-w-0` ZORUNLU — yoksa SAYFA yana kayar.
                 _Kullanıcı 14.08.2026'da canlıda yakaladı: /alimlar,

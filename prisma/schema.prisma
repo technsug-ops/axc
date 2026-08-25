@@ -2145,6 +2145,42 @@ model Company {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /**
+   * MENÜ DÜZENİ — SIRA VE GRUPLAMA, JSON METİN (K51, 25.08.2026).
+   *
+   * ⚠ NİYE AÇILDI: menü sırası ÜÇ KEZ koddan değişti (22.08 yedi kalem ·
+   * 25.08 `Paketle` · 25.08 kullanıcı sırayı birebir verdi). Her seferinde
+   * iki dosya elden geçti, bir bekçi sınırı elle artırıldı ve bir deploy
+   * beklendi. Sıralamak bir KOD işi değildir.
+   *
+   * ⚠ MERDİVEN ÖLÇÜLDÜ, SÜTUNA EN SON GELİNDİ:
+   *   ① Mevcut alan: `Company`de serbest metin YOK (ölçüldü, 6 kolon). ✗
+   *   ② `AuditLog`: current-state deposu DEĞİL — menü HER RENDER'da
+   *      okunuyor, `ORDER BY createdAt DESC LIMIT 1` gerekirdi ve o tablo
+   *      "geriye bakmak" için (232 satır, sürekli büyüyor). ✗
+   *   ③ Türetilebilir mi: hayır, tercih. ✗
+   *   ④ SÜTUN ✓ — ve YENİ TABLO DEĞİL: mevcut tabloya tek nullable metin.
+   *
+   * ⚠ FİRMA DÜZLEMİNDE, KULLANICI DÜZLEMİNDE DEĞİL. Menü sırası bir
+   * operasyon standardıdır ("herkes aynı menüyü görsün"); kullanıcının
+   * göremeyeceği ekranları zaten RBAC gizliyor. İleride kişisel tercih
+   * istenirse `User.menuDuzeni` ÜSTTE ezen bir katman olarak eklenir —
+   * bu sütun kaldırılmaz.
+   *
+   * ⚠ `null` = KULLANICI HİÇ DÜZENLEMEDİ. Varsayılan düzen koddadır ve
+   * bu bir eksiklik değildir.
+   *
+   * ⚠ SORGULANMAZ, BÜTÜN OKUNUR: indeks yok (firma PK ile geliyor) ve
+   * JSON şeması yok. Bu veri gruplanmıyor, toplanmıyor, süzülmüyor —
+   * bir kerede okunup bir kerede yazılıyor. Sorgu ihtiyacı doğduğu gün
+   * yapı kararı yeniden verilir.
+   *
+   * ⚠ BİÇİM V2'Yİ TAŞIR: grup kaydı isteğe bağlı `ad` alanı kabul eder
+   * (kullanıcının açtığı grubun adı). V1 yazmıyor, ama reddetmiyor —
+   * böylece V2 bir göç değil GENİŞLEME olur.
+   */
+  menuDuzeni String? @db.Text
+
   uyelikler UserCompanyRole[]
   auditLogs AuditLog[]
   talepler  Talep[]

@@ -45,7 +45,8 @@
     "gecmisEkstre": "",
     "tarife": "",
     "urunKarti": "",
-    "simulasyon": ""
+    "simulasyon": "",
+    "menuDuzeni": ""
   },
   "Ortak": {
     "kapat": "",
@@ -682,7 +683,8 @@
     "grupVeri": "",
     "okut": "",
     "paketle": "",
-    "depoKurulumu": ""
+    "depoKurulumu": "",
+    "menuDuzeni": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -3324,5 +3326,30 @@
     "hataHEDEF_SABLONA_UYMUYOR": "",
     "hataKAYNAK_HEDEF_AYNI": "",
     "hataSayimTutmadi": ""
+  },
+  "MenuDuzeni": {
+    "baslik": "",
+    "aciklama": "",
+    "gunlukListe": "",
+    "gunlukNotu": "",
+    "gunlukBos": "",
+    "grupBos": "",
+    "kilitli": "",
+    "yukariTasi": "",
+    "asagiTasi": "",
+    "yerSec": "",
+    "degisiklikYok": "",
+    "kaydedilmemis": "",
+    "kaydedildi": "",
+    "kaydedilemedi": "",
+    "bozukGovde": "",
+    "dusurulemez": "",
+    "sifirla": "",
+    "sifirlaNotu": "",
+    "sifirlaOnayBaslik": "",
+    "sifirlaOnayMetni": "",
+    "sifirlandi": "",
+    "yeniGelen": "",
+    "taninmayan": ""
   }
 }

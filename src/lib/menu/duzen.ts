@@ -46,10 +46,39 @@ export type KatalogOgesi = {
 /** Koddan gelen grup sırası — kullanıcı düzenlemediyse geçerli. */
 export type KatalogGrubu = { anahtar: string };
 
-/** Kaydedilen düzen — YALNIZ anahtar taşır, ekran tanımı taşımaz. */
+/**
+ * Kaydedilen düzen — YALNIZ anahtar taşır, ekran tanımı taşımaz.
+ *
+ * ⚠ BİÇİM V2'Yİ BUGÜNDEN TAŞIR (kullanıcı şartı 25.08.2026): _"menuDuzeni
+ * biçimi V2'yi taşıyacak yapıda olsun — V2 göç değil GENİŞLEME olsun."_
+ *
+ * V1 grup adlarını sözlükten çözüyor (`Menu.grupPara`). V2'de kullanıcı
+ * kendi grubunu açacak ve ona bir AD verecek; o ad sözlüğe giremez, çünkü
+ * kullanıcı verisidir (anayasa: veri çevrilmez).
+ *
+ * Bu yüzden grup kaydı **bugünden** isteğe bağlı bir `ad` alanı kabul
+ * ediyor. V1 onu YAZMIYOR ve OKUMUYOR — ama **reddetmiyor.** Reddetseydi
+ * V2'den sonra bir geri alma (rollback) bütün düzeni geçersiz sayar ve
+ * kullanıcının sırası tek seferde silinirdi.
+ *
+ * ⚠ VE BU İDDİA PROVA EDİLDİ, VARSAYILMADI: bekçi V2 şekilli bir kaydı
+ * V1 gövdesinden geçiriyor ve hem kabul edildiğini hem sıranın korunduğunu
+ * ölçüyor. _(Anayasa: "ileri uyumluluk iddiası taşıyan her teslimde göç
+ * bugünden yazılır ve gerçek veriyle prova edilir.")_
+ */
 export type KayitliDuzen = {
   gunluk: string[];
-  gruplar: { anahtar: string; ogeler: string[] }[];
+  gruplar: KayitliGrup[];
+};
+
+export type KayitliGrup = {
+  anahtar: string;
+  /**
+   * V2 — kullanıcının verdiği ad. V1'de HİÇ yazılmaz; varsa da okunmaz.
+   * Burada durmasının tek sebebi, V2'nin göç değil genişleme olması.
+   */
+  ad?: string;
+  ogeler: string[];
 };
 
 export type CozulmusDuzen = {
@@ -182,6 +211,14 @@ export function duzenGecerliMi(deger: unknown): deger is KayitliDuzen {
   return d.gruplar.every((g) => {
     if (typeof g !== "object" || g === null) return false;
     const gg = g as Record<string, unknown>;
+    /**
+     * ⚠ `ad` V2 ALANI — VARSA KABUL EDİLİR, YOKSA DA. V1 onu hiç yazmıyor
+     * ama reddetseydi V2'den geri dönüşte bütün düzen geçersiz sayılır ve
+     * kullanıcının sırası tek seferde silinirdi.
+     * ⚠ Tipi yine de sınanır: `ad: 5` bozuk bir kayıttır. "Bilmediğim alanı
+     * kabul et" ile "her şeyi kabul et" farklı şeyler.
+     */
+    if (gg.ad !== undefined && typeof gg.ad !== "string") return false;
     return (
       typeof gg.anahtar === "string" &&
       Array.isArray(gg.ogeler) &&

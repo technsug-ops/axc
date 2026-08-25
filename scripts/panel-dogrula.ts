@@ -23,6 +23,12 @@ import {
   duzeniCoz,
   duzeniOku,
 } from "../src/lib/menu/duzen";
+import {
+  MENU_ADRESLERI,
+  MENU_GRUPLARI,
+  MENU_KATALOGU,
+  MENUDEN_DUSURULEMEZ,
+} from "../src/lib/menu/katalog";
 
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
 import { kdvHaric } from "../src/lib/kar";
@@ -2783,59 +2789,6 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     );
 
     /**
-     * ── MENÜ DÜZENİ — SIKLIĞA GÖRE (22.08.2026) ──────────────────────
-     * Kullanıcı: "menü bardakilerin bir kısmı devamlı görünür, bir kısmı
-     * dropdown ile bir kategorinin altına alınabilir."
-     */
-    const kenar = readFileSync("src/components/app-sidebar.tsx", "utf8");
-    const gunlukBlok = kenar.slice(
-      kenar.indexOf("const GUNLUK"),
-      kenar.indexOf("type MenuGrubu"),
-    );
-    const gunlukSayisi = [...gunlukBlok.matchAll(/anahtar: "/g)].length;
-    /**
-     * ⚠ HEP AÇIK LİSTE KISA KALMALI. Amaç 30 satırı kısaltmaktı; "günlük"
-     * kutusu şişerse eski hâle geri dönülmüş olur ve gruplama anlamını
-     * yitirir.
-     *
-     * ⚠ SINIR 7 → 8 → 9 (25.08.2026, aynı gün iki kez) — VE HER İKİSİNİN
-     * DE KAYNAĞI YAZILI. Bu sayı bir ÖLÇÜM DEĞİL, **kullanıcının onayladığı
-     * listenin uzunluğu**:
-     *   · 22.08 → 7 kalem onaylandı
-     *   · 25.08 → `Paketle` günlük listeye alındı (8). Gerekçe kullanıcının:
-     *     _paketleme satışın devamıdır, menü ekranların benzerliğine göre
-     *     değil işin sırasına göre dizilir._
-     *   · 25.08 → kullanıcı listeyi BİREBİR verdi (9): Panel · Satış ·
-     *     Alımlar · Ürünler · Stok · İade · Paketleme · Barkod okut ·
-     *     Fiyat Denemesi. `urunler` ve `okut` gruptan çıktı, `urunKarti`
-     *     gruba girdi.
-     * Ölçütün kaynağı değişti, o yüzden ölçüt değişti; kod yanlış değildi.
-     *
-     * ⚠ VE BU SINIR "KOLAYLIK" İÇİN OYNAMAZ. Her artış AÇIK BİR KULLANICI
-     * KARARINA dayanır ve buraya gerekçesiyle yazılır; yoksa sınır bin
-     * küçük adımla ölür ve gruplama anlamını yitirir — yani tam da
-     * korumak için kondu­ğu şey kaybolur.
-     *
-     * ⏭ Kalıcı çözüm K51: menü sırası ve grupları AYARDAN düzenlenebilir
-     * olunca bu sabit liste VERİYE döner ve sınır tartışması kapanır.
-     */
-    kontrol(
-      "hep açık liste kısa (en fazla 9 öğe)",
-      gunlukSayisi > 0 && gunlukSayisi <= 9,
-      gunlukSayisi,
-    );
-    /**
-     * ⚠ SIRA DA SINANIYOR, YALNIZ SAYI DEĞİL. Sayı sınırı listenin
-     * UZAMASINI durdurur ama İÇİNİN karışmasını durdurmaz: bir düzenleme
-     * sırasında iki satırın yeri değişse hiçbir bekçi bunu görmezdi ve
-     * kullanıcının açıkça verdiği sıra sessizce bozulurdu.
-     *
-     * ⚠ VE BU LİSTE ELLE TUTULAN BİR BEKÇİ LİSTESİ DEĞİL — kullanıcının
-     * 25.08.2026'da BİREBİR yazdığı sıranın kendisi. Değişmesi için yeni
-     * bir kullanıcı kararı gerekir; o gün bu satır da gerekçesiyle
-     * güncellenir.
-     */
-    /**
      * ═══ K51 — MENÜ DÜZENİ SAF KURALI (25.08.2026) ══════════════════════
      * ⚠ EN KRİTİK KİLİT: kayıtlı düzen bir ekranı GİZLEYEMEZ. Katalog
      * koddadır, kayıt yalnız SIRAYI söyler. Tersi yapılsaydı koda eklenen
@@ -2969,28 +2922,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
         tumu(bosKayit),
       );
 
-      /**
-       * ⚠ BOZUK JSON ÇÖKERTMEZ — menü HER SAYFADA çiziliyor, yani tek bozuk
-       * karakter bütün uygulamayı 500'e düşürürdü.
-       *
-       * ⚠ ÇAĞRI SARILARAK SINANIYOR: `catch` kaldırıldığında argüman
-       * `kontrol`a girmeden fırlıyordu ve bekçi ADSIZ bir yığın iziyle
-       * ölüyordu. Kırmızıydı ama NE olduğunu söylemiyordu; adı olan bir
-       * kırmızı, çöken bir kırmızıdan daha iyidir.
-       */
-      const guvenliOku = (m: string | null) => {
-        try {
-          return { tamam: true as const, deger: duzeniOku(m) };
-        } catch {
-          return { tamam: false as const, deger: null };
-        }
-      };
-      const bozuk = guvenliOku("{bozuk");
-      kontrol(
-        "bozuk JSON `null` dönüyor (ÇÖKMÜYOR)",
-        bozuk.tamam && bozuk.deger === null,
-        bozuk.tamam ? bozuk.deger : "FIRLATTI",
-      );
+      /** ⚠ BOZUK JSON ÇÖKERTMEZ — menü her sayfada çiziliyor. */
+      kontrol("bozuk JSON `null` dönüyor (çökmüyor)", duzeniOku("{bozuk") === null);
       kontrol("  ...boş metin de `null`", duzeniOku("") === null && duzeniOku(null) === null);
       /** ⚠ ŞEKLİ TUTMAYAN JSON da reddedilir — `parse` başarılı olsa bile. */
       kontrol(
@@ -3005,27 +2938,225 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
         "  ...ve doğrulama SUNUCU tarafında (istemciye güvenilmiyor)",
         duzenGecerliMi({ gunluk: [], gruplar: [{ anahtar: "g", ogeler: [1] }] }) === false,
       );
+
+      /**
+       * ═══ V2 İLERİ UYUMLULUK — İDDİA DEĞİL PROVA ═══════════════════════
+       * Kullanıcı şartı: _"menuDuzeni biçimi V2'yi taşıyacak yapıda olsun —
+       * V2 göç değil GENİŞLEME olsun."_
+       *
+       * ⚠ ANAYASA YAZMAKLA YETİNMEYİ YASAKLIYOR: _"ileri uyumluluk iddiası
+       * taşıyan her teslimde göç bugünden yazılır ve gerçek veriyle PROVA
+       * EDİLİR."_ Destek modülünde tam bu atlanmıştı: sözleşme doğruydu,
+       * göç sorgusu YAZILINCA boşluk çıktı.
+       *
+       * Prova: V2'nin yazacağı şekli (grup adı taşıyan kayıt) BUGÜNKÜ
+       * gövdeden geçir. Kabul edilmeli VE sıra korunmalı.
+       */
+      const v2Kayit = {
+        gunluk: ["satislar", "panel"],
+        gruplar: [
+          { anahtar: "grupPara", ad: "Finans", ogeler: ["rapor", "giderler"] },
+        ],
+      };
+      kontrol(
+        "V2 şekilli kayıt (grup adı taşıyan) V1'de REDDEDİLMİYOR",
+        duzenGecerliMi(v2Kayit),
+      );
+      const v2Cozum = duzeniCoz(K, G, v2Kayit);
+      kontrol(
+        "  ...ve sıra KORUNUYOR (geri alma düzeni silmiyor)",
+        JSON.stringify(v2Cozum.gunluk) === JSON.stringify(["satislar", "panel"]) &&
+          JSON.stringify(v2Cozum.gruplar[0]?.ogeler) ===
+            JSON.stringify(["rapor", "giderler"]),
+        v2Cozum,
+      );
+      /**
+       * ⚠ AMA TİP YİNE SINANIR: `ad: 5` bozuk bir kayıttır. "Bilmediğim
+       * alanı kabul et" ile "her şeyi kabul et" farklı şeyler.
+       */
+      kontrol(
+        "  ...ama bozuk tipli `ad` yine reddediliyor",
+        duzenGecerliMi({
+          gunluk: [],
+          gruplar: [{ anahtar: "g", ad: 5, ogeler: [] }],
+        }) === false,
+      );
+      /**
+       * ⚠ VE YAZMA EYLEMİ `ad` ALANINI KORUYOR — V1 onu yazmıyor ama
+       * SİLMİYOR da. Silseydi V2'de verilen grup adı, V1'den yapılan tek
+       * bir kaydetmede kaybolurdu: "genişleme" iddiası orada çürürdü.
+       */
+      kontrol(
+        "  ...ve yazma eylemi `ad` alanını KORUYOR (silmiyor)",
+        readFileSync("src/app/ayarlar/menu/eylemler.ts", "utf8").includes(
+          "...(g.ad === undefined ? {} : { ad: g.ad })",
+        ),
+      );
     }
 
-    const SIRA = [
-      "panel",
-      "satislar",
-      "alimlar",
-      "urunler",
-      "stok",
-      "iadeler",
-      "paketle",
-      "okut",
-      "simulasyon",
-    ];
-    const gercekSira = [...gunlukBlok.matchAll(/anahtar: "([a-zA-Z]+)"/g)].map(
-      (m) => m[1]!,
-    );
-    kontrol(
-      "günlük liste kullanıcının verdiği SIRADA",
-      gercekSira.join(",") === SIRA.join(","),
-      gercekSira,
-    );
+    /**
+     * ═══ MENÜ DÜZENİ — ÖLÇÜT DEĞİŞTİ (K51, 25.08.2026) ══════════════════
+     *
+     * ⚠ İKİ ESKİ KONTROL KALDIRILDI VE NİYE KALDIRILDIĞI YAZILI:
+     *   ① _"hep açık liste kısa (en fazla N öğe)"_
+     *   ② _"günlük liste kullanıcının verdiği SIRADA"_ (elle tutulan dizi)
+     *
+     * İkisi de KODDAKİ sabit listeyi ölçüyordu. Menü artık VERİ: sıra ve
+     * gruplama `Company.menuDuzeni`de yaşıyor ve kullanıcı `/ayarlar/menu`den
+     * değiştiriyor. Kodda ölçülecek bir sıra kalmadı.
+     *
+     * ⚠ VE BU "BEKÇİYİ SUSTURMAK" DEĞİL, ÖLÇÜTÜ TAŞIMAK. Eski kontroller
+     * TERCİHİ (kaç öğe, hangi sıra) polisliyordu; tercih artık kullanıcının.
+     * Yeni kontroller YAPIYI polisliyor: hiçbir ekran kaybolamaz, hiçbir
+     * katalog kalemi çizilemez hâlde kalamaz. Koruduğumuz şey daha dar ama
+     * daha doğru.
+     *
+     * ⚠ SINIR TARTIŞMASI DA BÖYLECE KAPANDI: "7 → 8 → 9" üç kez elle
+     * artırılmıştı ve her artış bir kullanıcı kararına dayanıyordu. Artık
+     * sınır diye bir şey yok — liste kullanıcının.
+     */
+    /**
+     * ⚠ BLOK DIŞINDA — aşağıdaki menü davranışı kontrolleri de bu kaynağı
+     * okuyor. Blok içinde bırakılınca betik "kenar is not defined" ile
+     * ÇÖKTÜ (25.08.2026); çökme sessiz geçmedi ama blok kapsamlı bir tanım
+     * aynı sessizlikle yanlış dosyayı da okuyabilirdi.
+     */
+    const kenar = readFileSync("src/components/app-sidebar.tsx", "utf8");
+    const SOZLUK = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+      Menu?: Record<string, string>;
+    };
+    {
+
+      /**
+       * ⚠ SABİT LİSTE GERİ GELMEMELİ. Biri gün gelip `const GUNLUK = [...]`
+       * yazarsa menü sessizce ikiye bölünür: biri veriden, biri koddan.
+       */
+      kontrol(
+        "kenar çubuğunda SABİT menü listesi kalmadı",
+        !kenar.includes("const GUNLUK: MenuOgesi[]") &&
+          !kenar.includes("const GRUPLAR: MenuGrubu[]"),
+      );
+      kontrol(
+        "  ...ve düzen SUNUCUDAN geliyor (prop)",
+        kenar.includes("duzen: CozulmusDuzen") &&
+          kenar.includes("anahtarlariCiz(duzen.gunluk)"),
+      );
+
+      /**
+       * ⚠ İKON EŞLEMESİ TAM OLMALI. Katalogda olup ikonu olmayan bir kalem
+       * `ogeKur` içinde `null` döner ve satır SESSİZCE ÇİZİLMEZ — ekran
+       * canlıda var, menüde yok. Yetki tuzağının menü hâli.
+       */
+      const ikonsuz = MENU_KATALOGU.filter(
+        (o) => !new RegExp(`^\\s*${o.anahtar}:\\s*[A-Z]`, "m").test(kenar),
+      ).map((o) => o.anahtar);
+      kontrol("katalogdaki her ekranın İKONU var", ikonsuz.length === 0, ikonsuz);
+
+      /** ⚠ ADRESİ olmayan kalem de çizilemez. */
+      const adressiz = MENU_KATALOGU.filter(
+        (o) => !MENU_ADRESLERI[o.anahtar],
+      ).map((o) => o.anahtar);
+      kontrol("katalogdaki her ekranın ADRESİ var", adressiz.length === 0, adressiz);
+
+      /** ⚠ ETİKETİ olmayan kalem menüde anahtarıyla görünürdü. */
+      const etiketsiz = MENU_KATALOGU.filter(
+        (o) => !SOZLUK.Menu?.[o.anahtar],
+      ).map((o) => o.anahtar);
+      kontrol("katalogdaki her ekranın SÖZLÜK ETİKETİ var", etiketsiz.length === 0, etiketsiz);
+
+      /** ⚠ Grup başlıklarının da etiketi olmalı. */
+      const grupsuzEtiket = MENU_GRUPLARI.filter(
+        (g) => !SOZLUK.Menu?.[g.anahtar],
+      ).map((g) => g.anahtar);
+      kontrol("her GRUBUN sözlük etiketi var", grupsuzEtiket.length === 0, grupsuzEtiket);
+
+      /**
+       * ⚠ VARSAYILAN GRUP TANIMLI OLMALI. Yazım hatası olan bir grup adı
+       * ekranı günlüğe düşürür — kaybolmaz ama kullanıcının beklemediği
+       * yerde belirir.
+       */
+      const bilinenGrup = new Set(MENU_GRUPLARI.map((g) => g.anahtar));
+      const yanlisGrup = MENU_KATALOGU.filter(
+        (o) => o.varsayilanGrup !== null && !bilinenGrup.has(o.varsayilanGrup),
+      ).map((o) => `${o.anahtar}→${o.varsayilanGrup}`);
+      kontrol("her varsayılan grup TANIMLI", yanlisGrup.length === 0, yanlisGrup);
+
+      /** ⚠ Katalogda mükerrer anahtar olamaz — çözüm ikincisini yutar. */
+      const sayac = new Map<string, number>();
+      for (const o of MENU_KATALOGU) {
+        sayac.set(o.anahtar, (sayac.get(o.anahtar) ?? 0) + 1);
+      }
+      const mukerrer = [...sayac].filter(([, n]) => n > 1).map(([a]) => a);
+      kontrol("katalogda MÜKERRER anahtar yok", mukerrer.length === 0, mukerrer);
+
+      /**
+       * ⚠ DÜŞÜRÜLEMEZ EKRANLAR KATALOGDA OLMALI. Listede olup katalogda
+       * olmayan bir anahtar, hiçbir şeyi korumayan bir kilittir.
+       */
+      const katalogKume = new Set(MENU_KATALOGU.map((o) => o.anahtar));
+      const yetimKilit = MENUDEN_DUSURULEMEZ.filter((a) => !katalogKume.has(a));
+      kontrol(
+        "düşürülemez ekranların hepsi KATALOGDA",
+        yetimKilit.length === 0,
+        yetimKilit,
+      );
+      /**
+       * ⚠ VE MENÜ DÜZENİ EKRANININ KENDİSİ KİLİTLİ OLMALI: menüden
+       * düşürülebilseydi kullanıcı kendi menüsünü kilitler ve bir daha
+       * açamazdı — geri dönüşü olmayan bir ayar.
+       */
+      kontrol(
+        "  ...ve `menuDuzeni` ekranı KİLİTLİ (kullanıcı kendini dışarıda bırakamaz)",
+        (MENUDEN_DUSURULEMEZ as readonly string[]).includes("menuDuzeni"),
+      );
+
+      /**
+       * ⚠ YAZMA EYLEMİ KİLİDİ UYGULUYOR MU — beyan yetmez, kod ölçülür.
+       */
+      const eylem = readFileSync("src/app/ayarlar/menu/eylemler.ts", "utf8");
+      kontrol(
+        "kaydetme eylemi DÜŞÜRÜLEMEZ kilidini uyguluyor",
+        eylem.includes("MENUDEN_DUSURULEMEZ.filter(") &&
+          eylem.includes('t("dusurulemez"'),
+      );
+      /** ⚠ Doğrulama SUNUCUDA — istemcinin şekline güvenilmez. */
+      kontrol(
+        "  ...ve gövde SUNUCUDA doğrulanıyor",
+        eylem.includes("duzenGecerliMi(cozulen)"),
+      );
+      /** ⚠ Bütün sayfalar tazelenmeli — menü her sayfada çiziliyor. */
+      kontrol(
+        "  ...ve kayıt sonrası TÜM düzen tazeleniyor",
+        eylem.includes('revalidatePath("/", "layout")'),
+      );
+      /** ⚠ YENİ İZİN AÇILMADI — mevcut `ayar.yaz` kullanılıyor. */
+      /**
+       * ⚠ İZİN SABİTİ `katalog.ts`TE — `"use server"` dosyası sabit dışa
+       * aktaramıyor. Önce `eylemler.ts`teydi ve `tsc` + 51 bekçi YEŞİLKEN
+       * `npm run build` düştü. Ölçüt onunla birlikte taşındı.
+       */
+      kontrol(
+        "  ...ve YENİ İZİN açılmamış (mevcut ayar.yaz)",
+        readFileSync("src/lib/menu/katalog.ts", "utf8").includes(
+          'MENU_IZNI = "ayar.yaz"',
+        ) && eylem.includes("yetkiIste(MENU_IZNI)"),
+      );
+
+      /**
+       * ⚠ EKRAN GERÇEKTEN VAR MI — "ayarlardan düzenlenir" bir SÖZDÜR.
+       * Sözün karşılığı olmadan katalogda satır açmak, olmayan bir ekrana
+       * link göstermek olurdu.
+       */
+      kontrol(
+        "menü düzeni EKRANI var",
+        existsSync("src/app/ayarlar/menu/page.tsx"),
+      );
+      kontrol(
+        "  ...ve katalogda yeri var (menüden ulaşılabiliyor)",
+        katalogKume.has("menuDuzeni"),
+      );
+    }
+
     /**
      * ⚠ AÇIK SAYFANIN GRUBU KENDİLİĞİNDEN AÇILIR. Kapalı kalsaydı kullanıcı
      * bulunduğu yeri menüde göremezdi — "kayboldum" duygusu.

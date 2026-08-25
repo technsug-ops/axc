@@ -1,0 +1,43 @@
+-- ============================================================================
+--  MENÜ DÜZENİ — SIRA VE GRUPLAMA AYARDAN (K51)
+-- ----------------------------------------------------------------------------
+--  Kullanıcı 25.08.2026: _"ayarlar kısmında bu butonların yerlerini
+--  değiştirebilecek bir özellik olsun."_
+--
+--  ⚠ NİYE: menü sırası ÜÇ KEZ koddan değişti (22.08 yedi kalem · 25.08
+--  `Paketle` · 25.08 kullanıcı sırayı birebir verdi). Her seferinde iki
+--  dosya elden geçti, bir bekçi sınırı ELLE artırıldı ve bir deploy
+--  beklendi. Sıralamak bir KOD işi değildir.
+--
+--  ⚠ MERDİVEN ÖLÇÜLDÜ, SÜTUNA EN SON GELİNDİ:
+--    ① Mevcut alan — `Company` kolonları ölçüldü: id · name · code ·
+--       isActive · createdAt · updatedAt. Serbest metin alanı YOK. ✗
+--    ② `AuditLog` (K2 deseni) — current-state deposu DEĞİL. Menü HER
+--       RENDER'da okunuyor; orada tutulsaydı her sayfa açılışında
+--       `ORDER BY createdAt DESC LIMIT 1` gerekirdi (232 satır, sürekli
+--       büyüyor) ve semantik de yanlış olurdu: `AuditLog` NE OLDUĞUNU
+--       kaydeder, NE OLDUĞUNUN kendisi değildir. ✗
+--    ③ Türetilebilir mi — hayır, saf tercih. ✗
+--    ④ SÜTUN ✓ — ve YENİ TABLO DEĞİL: mevcut tabloya tek nullable metin.
+--
+--  ⚠ İNDEKS YOK ve bu bilinçli: bu veri gruplanmıyor, toplanmıyor,
+--  süzülmüyor. Firma PK ile geliyor, bütün olarak okunup bütün olarak
+--  yazılıyor. Sorgu ihtiyacı doğduğu gün yapı kararı YENİDEN verilir.
+--
+--  ⚠ `NULL` = KULLANICI HİÇ DÜZENLEMEDİ. Varsayılan düzen KODDADIR.
+--  Geri doldurma YOK — doldurulacak bir bilgi yok, varsayılan zaten
+--  çalışıyor. Ve bu, "geri doldurma yasağı"nın değil, gereksizliğinin
+--  örneği: `null` burada bilgi eksikliği değil, MEŞRU BİR HÂL.
+--
+--  ⚠ FİRMA DÜZLEMİNDE. Menü sırası bir operasyon standardıdır; kullanıcının
+--  göremeyeceği ekranları zaten RBAC gizliyor. Kişisel tercih istenirse
+--  `User.menuDuzeni` ÜSTTE EZEN bir katman olarak eklenir, bu sütun
+--  kaldırılmaz.
+--
+--  ⚠ EN KRİTİK KURAL KODDA, BURADA DEĞİL: kayıtlı düzen bir ekranı
+--  GİZLEYEMEZ. Katalog koddadır; kayıt yalnız SIRAYI söyler. Tersi
+--  yapılsaydı koda eklenen yeni bir ekran menüde hiç görünmezdi —
+--  `/iadeler`in 13.08'de sessizce kaybolmasının menü hâli.
+-- ============================================================================
+
+ALTER TABLE `Company` ADD COLUMN `menuDuzeni` TEXT NULL;

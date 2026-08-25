@@ -36,6 +36,7 @@
     "20260823160000_tazminat_karsi_taraf",
     "20260824120000_gonderi_numarasi",
     "20260825120000_gider_kartla_odeme",
-    "20260825160000_gider_odeme_yontemi"
+    "20260825160000_gider_odeme_yontemi",
+    "20260825200000_menu_duzeni"
   ]
 }

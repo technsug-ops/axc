@@ -17,6 +17,8 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+import { MENU_KATALOGU } from "../src/lib/menu/katalog";
+
 let gecen = 0;
 let kalan = 0;
 
@@ -124,17 +126,37 @@ console.log("\nEL KİTABI — DOĞRULAMA\n");
    * kimse fark etmedi. Menü kaynaktan okunuyor; elle tutulan bir liste
    * aynı hatayı tekrar üretirdi.
    */
-  const KENAR = readFileSync("src/components/app-sidebar.tsx", "utf8");
   /**
-   * ⚠ MENÜ ÖĞESİ = BİR YERE GİDEN ÖĞE. Desen 22.08.2026'da daraltıldı:
-   * menü sıklığa göre gruplanınca grup BAŞLIKLARI da `anahtar:` taşımaya
-   * başladı ("Para", "Tanımlar"…) ve bu kontrol onları da sayfa sanıp
-   * "kılavuzda anlatılmamış" dedi. Başlık bir sayfa değildir; ölçüt
-   * `href`in VARLIĞIDIR, adın biçimi değil.
+   * ⚠ MENÜ KAYNAĞI DEĞİŞTİ — VE BEKÇİ BUNU KIRMIZI YANARAK SÖYLEDİ
+   * (25.08.2026, K51). Eskiden `app-sidebar.tsx` METNİ taranıyordu; menü
+   * VERİYE dönünce o dosyada sayfa listesi kalmadı ve kontrol "2 öğe
+   * buldum" diyerek düştü.
+   *
+   * ⚠ KOD YANLIŞ DEĞİLDİ, ÖLÇÜT ESKİMİŞTİ — ve doğru davranış susturmak
+   * değil, ölçütü TAŞIMAK: liste artık `MENU_KATALOGU`dan İÇERİ ALINIYOR.
+   * Hem daha doğru (kaynağın kendisi) hem daha sağlam (metin deseni değil,
+   * tipi olan bir dizi).
+   *
+   * ⚠ VE GRUP BAŞLIĞI SORUNU KENDİLİĞİNDEN KAYBOLDU: katalogda yalnız
+   * SAYFALAR var; grup başlıkları ayrı listede (`MENU_GRUPLARI`). Eski
+   * desen onları sayfa sanıp ayrıca daraltılmak zorunda kalmıştı.
    */
+  /**
+   * ⚠ ALT BLOK KATALOGDA DEĞİL — VE OLMAMALI. `El kitabı` ile `Destek
+   * talepleri` menünün EN ALTINDA sabit duruyor (kullanıcı kararı
+   * 22.08.2026: _"burası en altta mail yazan yerin üstünde SABİT olarak
+   * dursun"_). Sıralanabilir olsalardı "bir şey bilmediğin an" gidilen iki
+   * yer kullanıcının dizilimine göre kayardı.
+   *
+   * Ama KILAVUZ açısından ikisi de birer sayfadır ve bölümü olmalı; bu
+   * yüzden kümeye burada ekleniyorlar. Liste ELLE tutuluyor ve bu bilinçli:
+   * alt blok üç öğeyi geçmeyecek kadar dar ve kod tarafında da sabit.
+   */
+  const ALT_ANAHTARLAR = ["elKitabi", "talepler"];
   const menuAnahtarlari = [
-    ...KENAR.matchAll(/anahtar: "([a-zA-Z]+)",\s*href:/g),
-  ].map((m) => m[1]!);
+    ...MENU_KATALOGU.map((o) => o.anahtar),
+    ...ALT_ANAHTARLAR,
+  ];
   kontrol(
     "menü kaynaktan okundu",
     menuAnahtarlari.length > 20,

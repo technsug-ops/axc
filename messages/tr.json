@@ -45,7 +45,8 @@
     "gecmisEkstre": "Geçmiş ekstreler",
     "tarife": "Komisyon tarifesi",
     "urunKarti": "Ürün kârlılık kartı",
-    "simulasyon": "Fiyat denemesi"
+    "simulasyon": "Fiyat denemesi",
+    "menuDuzeni": "Menü düzeni"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -682,7 +683,8 @@
     "grupVeri": "Veri",
     "okut": "Barkod okut",
     "paketle": "Paketle",
-    "depoKurulumu": "Depo kurulumu"
+    "depoKurulumu": "Depo kurulumu",
+    "menuDuzeni": "Menü düzeni"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -3324,5 +3326,30 @@
     "hataHEDEF_SABLONA_UYMUYOR": "{kod} şablona uymuyor; hedef ancak yeni şablonla üretilmiş bir raf olabilir.",
     "hataKAYNAK_HEDEF_AYNI": "{kod} kendisine hedef seçilmiş.",
     "hataSayimTutmadi": "Taşıma GERİ ALINDI: taşınması gereken ürün sayısı ile taşınan sayı tutmadı. Bir bağ düşmüş olabilir — hiçbir şey değiştirilmedi."
+  },
+  "MenuDuzeni": {
+    "baslik": "Menü düzeni",
+    "aciklama": "Sol menüdeki sıralamayı ve hangi başlığın hangi grupta duracağını buradan değiştirirsiniz. Kaydedene kadar hiçbir şey değişmez.",
+    "gunlukListe": "Hep açık liste",
+    "gunlukNotu": "Bu başlıklar menüde her zaman görünür; gruba alınanlar açılır başlığın altında durur.",
+    "gunlukBos": "Hep açık listede hiçbir başlık yok — hepsi gruplara alınmış. Menü yine çalışır.",
+    "grupBos": "Bu grupta başlık yok; boşken menüde görünmez. İçine bir başlık taşıyınca geri gelir.",
+    "kilitli": "(menüden kaldırılamaz)",
+    "yukariTasi": "{ad} — yukarı taşı",
+    "asagiTasi": "{ad} — aşağı taşı",
+    "yerSec": "{ad} — hangi grupta duracak",
+    "degisiklikYok": "Değişiklik yok — kaydedilecek bir şey bulunmuyor.",
+    "kaydedilmemis": "Kaydedilmemiş değişiklik var.",
+    "kaydedildi": "Menü düzeni kaydedildi.",
+    "kaydedilemedi": "Menü düzeni kaydedilemedi.",
+    "bozukGovde": "Gönderilen düzen okunamadı. Sayfayı yenileyip yeniden deneyin.",
+    "dusurulemez": "{adet} başlık menüden kaldırılamaz (Panel ve Menü düzeni). Onlar olmadan bu ekrana bir daha ulaşamazdınız.",
+    "sifirla": "Varsayılana dön",
+    "sifirlaNotu": "Kendi sıranızı silip sistemin varsayılan düzenine dönersiniz.",
+    "sifirlaOnayBaslik": "Menü düzeni sıfırlansın mı?",
+    "sifirlaOnayMetni": "Dizdiğiniz sıra silinir ve sistemin varsayılan düzeni geçerli olur. Bu işlem geri alınamaz, ama sırayı yeniden dizebilirsiniz.",
+    "sifirlandi": "Menü düzeni varsayılana döndürüldü.",
+    "yeniGelen": "{adet} yeni ekran eklendi ve varsayılan yerine kondu: {adlar}. İstediğiniz yere taşıyabilirsiniz.",
+    "taninmayan": "Kayıtta artık var olmayan {adet} başlık bulundu ve yok sayıldı. Kaydettiğinizde temizlenir."
   }
 }

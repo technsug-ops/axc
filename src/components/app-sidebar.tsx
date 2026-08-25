@@ -21,6 +21,7 @@ import {
   FileSpreadsheet,
   Landmark,
   LayoutDashboard,
+  ListOrdered,
   MapPin,
   Package,
   PackageX,
@@ -54,6 +55,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { CikisButonu } from "@/components/cikis-butonu";
+import { MENU_ADRESLERI } from "@/lib/menu/katalog";
+import type { CozulmusDuzen } from "@/lib/menu/duzen";
 import { UYGULAMA } from "@/lib/uygulama";
 
 /**
@@ -73,193 +76,76 @@ type MenuOgesi = {
 };
 
 /**
- * ── MENÜ DÜZENİ: ÖLÇÜT "TEMA" DEĞİL, GİTME SIKLIĞI ──────────────────────
+ * ── MENÜ ARTIK VERİ (K51, 25.08.2026) ───────────────────────────────────
  *
- * Kullanıcı 22.08.2026: _"menü bardakilerin bir kısmı devamlı görünür, bir
- * kısmı ise dropdown ile bir kategorinin altına alınabilir."_
+ * Sıra ve gruplama `/ayarlar/menu`den düzenleniyor ve `Company.menuDuzeni`
+ * içinde yaşıyor. Bu dosyada kalan tek şey İKON EŞLEMESİ.
  *
- * ⚠ ÖNCE SIKLIK, SONRA TEMA. Menü 30 öğeye çıkmıştı ve "Operasyon" grubu
- * 17'sini birden kapsadığı için aslında GRUPLAMIYORDU. Konuya göre bölmek
- * düzenli görünür ama asıl maliyet GÜNDE KAÇ TIK: bir açılır menü bir tık
- * demek — haftada bir gidilen yer için bedava, günde beş kez gidilen yer
- * için ceza. Bu yüzden önce sıklığa bölündü, tema her kutunun İÇİNDE
- * sıralamayı belirliyor.
+ * ⚠ NİYE TAŞINDI: menü sırası ÜÇ KEZ koddan değişti (22.08 yedi kalem ·
+ * 25.08 `Paketle` · 25.08 kullanıcı sırayı birebir verdi). Her seferinde
+ * iki dosya elden geçti, bir bekçi sınırı ELLE artırıldı, bir deploy
+ * beklendi. Sıralamak bir kod işi değildir.
  *
- * Sonuç: 30 satır → 7 satır + 4 başlık.
+ * ⚠ AMA KATALOG KODDA KALDI (`lib/menu/katalog.ts`): kullanıcı SIRAYI
+ * değiştirir, hangi ekranların VAR OLDUĞUNU değiştirmez. Tersi yapılsaydı
+ * koda eklenen yeni bir ekran menüde HİÇ görünmezdi.
+ *
+ * ⚠ İKON BURADA ÇÜNKÜ SAF DEĞİL. Katalog modülü bekçinin içeri alabilmesi
+ * için saf kalmalı; ikon bir React bileşenidir. Bekçi bu eşlemenin TAM
+ * olduğunu ayrıca ölçüyor — ikonsuz bir katalog kalemi çizilemezdi.
  */
-const GUNLUK: MenuOgesi[] = [
-  /*
-    ═══ SIRA KULLANICININ — 25.08.2026, birebir verildi ═══════════════════
-    "Panel · Satış · Alımlar · Ürünler · Stok · İade · Paketleme ·
-     Barkod okut · Fiyat Denemesi"
+const MENU_IKONLARI: Record<string, typeof Package> = {
+  panel: LayoutDashboard,
+  satislar: Receipt,
+  alimlar: ShoppingCart,
+  urunler: Package,
+  stok: Boxes,
+  iadeler: Undo2,
+  paketle: PackageCheck,
+  okut: ScanSearch,
+  simulasyon: Calculator,
 
-    ⚠ SIRA GEREKÇE İSTEMEZ, ÇÜNKÜ SIRAYI İŞİ YAPAN BİLİR. Önceki dizilim
-    benim çıkarımlarımla kurulmuştu (alım önce, çünkü stok önce gelir);
-    kullanıcı günü tersten yaşıyor: gün SATIŞLA açılıyor.
+  giderler: Wallet,
+  kartlar: CreditCard,
+  kartBorcu: Landmark,
+  hakedis: Banknote,
+  tazminat: PackageX,
+  nakitTakvimi: CalendarClock,
+  rapor: BarChart3,
 
-    ⚠ İKİ EKRAN GRUPTAN GÜNLÜĞE ÇIKTI — `urunler` ve `okut`. İkincisi
-    22.08'de "sıklığa göre günlük listeye ait" diye işaretlenmiş ve karar
-    kullanıcıya SORULMUŞTU; cevap bu listeyle geldi.
+  urunKarti: ScanBarcode,
+  kanalSkulari: Tags,
+  kanalHesaplari: Store,
+  envanterDegeri: Coins,
 
-    ⚠ VE BİR EKRAN GÜNLÜKTEN ÇIKTI: `urunKarti` (Kârlılık kartı) listede
-    YOK. Silinmedi — "Ürün ve kanal" grubuna taşındı, adresi ve davranışı
-    aynı. Geri alınması tek satır.
-  */
-  { anahtar: "panel", href: "/", icon: LayoutDashboard, aktif: true },
-  { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
-  { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
-  { anahtar: "urunler", href: "/urunler", icon: Package, aktif: true },
-  { anahtar: "stok", href: "/stok", icon: Boxes, aktif: true },
-  { anahtar: "iadeler", href: "/iadeler", icon: Undo2, aktif: true },
-  { anahtar: "paketle", href: "/paketle", icon: PackageCheck, aktif: true },
-  /*
-    ⚠ KÖPRÜ BU TAŞIMADAN ETKİLENMEZ: `/okut`taki "Yönlendirmeli paketle"
-    düğmesi menüden bağımsız, doğrudan adrese gider.
-  */
-  { anahtar: "okut", href: "/okut", icon: ScanSearch, aktif: true },
-  { anahtar: "simulasyon", href: "/simulasyon", icon: Calculator, aktif: true },
-];
+  depoKurulumu: Warehouse,
+  rafKonumlari: MapPin,
+  kategoriler: Percent,
+  duzeltmeNedenleri: ClipboardList,
+  tedarikciler: Truck,
+  kullanicilar: Users,
+  roller: ShieldCheck,
+  menuDuzeni: ListOrdered,
 
-type MenuGrubu = {
-  /** Menü sözlüğündeki başlık anahtarı. */
-  anahtar: string;
-  ogeler: MenuOgesi[];
+  veriAktarimi: FileSpreadsheet,
+  veriDisari: Download,
+  geriYukleme: DatabaseBackup,
+  gecmisEkstre: FileSpreadsheet,
+  tarife: Percent,
 };
 
-const GRUPLAR: MenuGrubu[] = [
-  {
-    anahtar: "grupPara",
-    ogeler: [
-      { anahtar: "giderler", href: "/giderler", icon: Wallet, aktif: true },
-      { anahtar: "kartlar", href: "/kartlar", icon: CreditCard, aktif: true },
-      { anahtar: "kartBorcu", href: "/kart-borcu", icon: Landmark, aktif: true },
-      { anahtar: "hakedis", href: "/hakedis", icon: Banknote, aktif: true },
-      { anahtar: "tazminat", href: "/tazminat", icon: PackageX, aktif: true },
-      {
-        anahtar: "nakitTakvimi",
-        href: "/nakit-takvimi",
-        icon: CalendarClock,
-        aktif: true,
-      },
-      { anahtar: "rapor", href: "/rapor", icon: BarChart3, aktif: true },
-    ],
-  },
-  {
-    anahtar: "grupUrunKanal",
-    ogeler: [
-      /**
-       * KÂRLILIK KARTI — GÜNLÜK LİSTEDEN BURAYA TAŞINDI (25.08.2026).
-       *
-       * ⚠ SİLİNMEDİ, TAŞINDI. Kullanıcının verdiği günlük listede yoktu;
-       * listeyi birebir uygulamak, listede olmayanı da yerinden almak
-       * demek. Ekran, adresi (`/kart`) ve davranışı aynen duruyor.
-       *
-       * ⚠ VE ESKİ GEREKÇE SİLİNMİYOR: bu ekran _"mağazada telefonla barkod
-       * okutup alım kararı verilen an"_ diye günlük listeye konmuştu ve o
-       * gerekçe hâlâ makul. Kullanıcı listesinde yoksa gerekçe çürüdüğü
-       * için değil, kullanıcı gününü daha iyi bildiği için burada. Geri
-       * alınması tek satır. _(Anayasa: "karar çevrildiğinde önceki savunma
-       * dosyada bırakılır.")_
-       */
-      { anahtar: "urunKarti", href: "/kart", icon: ScanBarcode, aktif: true },
-      { anahtar: "kanalSkulari", href: "/kanal-sku", icon: Tags, aktif: true },
-      {
-        anahtar: "kanalHesaplari",
-        href: "/ayarlar/kanallar",
-        icon: Store,
-        aktif: true,
-      },
-      {
-        anahtar: "envanterDegeri",
-        href: "/envanter-degeri",
-        icon: Coins,
-        aktif: true,
-      },
-    ],
-  },
-  {
-    anahtar: "grupTanimlar",
-    ogeler: [
-      {
-        /*
-          ⚠ DEPO KURULUMU, RAF KONUMLARININ ÜSTÜNDE — İŞİN SIRASI.
-          Önce depo çizilir (bölüm/ünite/göz → kodlar üretilir), sonra
-          tek tek konumlar yönetilir. Menü işin sırasına göre dizilir.
-        */
-        anahtar: "depoKurulumu",
-        href: "/ayarlar/depo",
-        icon: Warehouse,
-        aktif: true,
-      },
-      {
-        anahtar: "rafKonumlari",
-        href: "/ayarlar/konumlar",
-        icon: MapPin,
-        aktif: true,
-      },
-      {
-        anahtar: "kategoriler",
-        href: "/ayarlar/kategoriler",
-        icon: Percent,
-        aktif: true,
-      },
-      {
-        anahtar: "duzeltmeNedenleri",
-        href: "/ayarlar/duzeltme-nedenleri",
-        icon: ClipboardList,
-        aktif: true,
-      },
-      {
-        anahtar: "tedarikciler",
-        href: "/ayarlar/tedarikciler",
-        icon: Truck,
-        aktif: true,
-      },
-      {
-        anahtar: "kullanicilar",
-        href: "/ayarlar/kullanicilar",
-        icon: Users,
-        aktif: true,
-      },
-      { anahtar: "roller", href: "/ayarlar/roller", icon: ShieldCheck, aktif: true },
-    ],
-  },
-  {
-    anahtar: "grupVeri",
-    ogeler: [
-      {
-        anahtar: "veriAktarimi",
-        href: "/ayarlar/ice-aktarma",
-        icon: FileSpreadsheet,
-        aktif: true,
-      },
-      {
-        anahtar: "veriDisari",
-        href: "/ayarlar/disa-aktarma",
-        icon: Download,
-        aktif: true,
-      },
-      {
-        anahtar: "geriYukleme",
-        href: "/ayarlar/geri-yukleme",
-        icon: DatabaseBackup,
-        aktif: true,
-      },
-      {
-        anahtar: "gecmisEkstre",
-        href: "/ayarlar/gecmis-ekstre",
-        icon: FileSpreadsheet,
-        aktif: true,
-      },
-      {
-        anahtar: "tarife",
-        href: "/ayarlar/tarife",
-        icon: Percent,
-        aktif: true,
-      },
-    ],
-  },
-];
+/** Anahtardan çizilebilir öğe kurar. Adres ve ikon TEK kaynaktan. */
+function ogeKur(anahtar: string): MenuOgesi | null {
+  const href = MENU_ADRESLERI[anahtar];
+  const icon = MENU_IKONLARI[anahtar];
+  /**
+   * ⚠ EKSİK EŞLEME SESSİZCE ÇİZİLMEZ — ve bu bir kayıp DEĞİL: katalogda
+   * olup ikonu/adresi olmayan bir anahtar zaten bekçiyi kırmızı yakar.
+   * Burada `null` dönmek, canlıda çökmek yerine o satırı atlamaktır.
+   */
+  if (!href || !icon) return null;
+  return { anahtar, href, icon, aktif: true };
+}
 
 /** En altta sabit — her zaman erişilebilir, hiçbir grubun içinde değil. */
 const ALT: MenuOgesi[] = [
@@ -335,7 +221,20 @@ function menuYaz(deger: string): void {
 /** Sunucuda tercih bilinmez; aktif grup zaten yoldan hesaplanıyor. */
 const menuSunucu = (): string => "";
 
-export function AppSidebar({ eposta }: { eposta?: string }) {
+export function AppSidebar({
+  eposta,
+  duzen,
+}: {
+  eposta?: string;
+  /**
+   * SUNUCUDA ÇÖZÜLMÜŞ DÜZEN — katalog (kod) + kayıt (veri).
+   *
+   * ⚠ ÇÖZÜM SUNUCUDA YAPILIR, BURADA DEĞİL. İstemcide çözülseydi menü ilk
+   * boyamada varsayılan sırayla çizilir, sonra kullanıcının sırasına
+   * ATLARDI — her sayfa açılışında gözle görülür bir zıplama.
+   */
+  duzen: CozulmusDuzen;
+}) {
   const pathname = usePathname();
   const t = useTranslations("Uygulama");
   const tMenu = useTranslations("Menu");
@@ -384,6 +283,12 @@ export function AppSidebar({ eposta }: { eposta?: string }) {
     window.dispatchEvent(new Event(MENU_OLAYI));
   }
 
+  function anahtarCiz(anahtar: string) {
+    const oge = ogeKur(anahtar);
+    if (!oge) return null;
+    return ogeCiz(oge);
+  }
+
   function ogeCiz(oge: MenuOgesi) {
     if (!oge.aktif) {
       return (
@@ -420,14 +325,28 @@ export function AppSidebar({ eposta }: { eposta?: string }) {
     );
   }
 
-  function grupCiz(grup: MenuGrubu) {
+  /** Anahtar listesinden düz blok — günlük (hep açık) liste. */
+  function anahtarlariCiz(anahtarlar: string[]) {
+    return (
+      <SidebarGroup>
+        <SidebarGroupContent>
+          <SidebarMenu>{anahtarlar.map(anahtarCiz)}</SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
+
+  function grupCiz(grup: { anahtar: string; ogeler: string[] }) {
     /**
      * ⚠ AÇIK SAYFANIN GRUBU KENDİLİĞİNDEN AÇILIR. `/hakedis`teyken "Para"
      * kapalıysa kullanıcı bulunduğu yeri menüde GÖREMEZ — bu, olduğundan
      * kötü hissettirir ve "kayboldum" duygusu üretir. Kayıtlı tercih
      * bunun üstüne EKLENİR, yerine geçmez.
      */
-    const icindeSecili = grup.ogeler.some(seciliMi);
+    const icindeSecili = grup.ogeler.some((a) => {
+      const o = ogeKur(a);
+      return o !== null && seciliMi(o);
+    });
     /**
      * ⚠ SIRA ÖNEMLİ: AÇIK TERCİH ÖNCE SORULUR. Kullanıcı bu grubu bilerek
      * kapattıysa, içinde bulunduğu sayfa olsa bile kapalı kalır — kararı
@@ -436,6 +355,14 @@ export function AppSidebar({ eposta }: { eposta?: string }) {
     const acik = kapaliKayit.has(grup.anahtar)
       ? false
       : icindeSecili || acikKayit.has(grup.anahtar);
+
+    /**
+     * ⚠ BOŞ GRUP ÇİZİLMEZ. Kullanıcı bir grubun bütün öğelerini başka yere
+     * taşıyabilir; geriye kalan başlık tıklanınca HİÇBİR ŞEY açmayan bir
+     * düğme olurdu — sessiz başarısızlık (İlke #5). Grup kaybolmaz, yalnız
+     * boşken görünmez; içine bir öğe taşındığı an geri gelir.
+     */
+    if (grup.ogeler.length === 0) return null;
 
     return (
       <SidebarGroup key={grup.anahtar}>
@@ -457,7 +384,7 @@ export function AppSidebar({ eposta }: { eposta?: string }) {
         </SidebarGroupLabel>
         {acik ? (
           <SidebarGroupContent>
-            <SidebarMenu>{grup.ogeler.map(ogeCiz)}</SidebarMenu>
+            <SidebarMenu>{grup.ogeler.map(anahtarCiz)}</SidebarMenu>
           </SidebarGroupContent>
         ) : null}
       </SidebarGroup>
@@ -493,8 +420,8 @@ export function AppSidebar({ eposta }: { eposta?: string }) {
           göz ikisini tek küme olarak okuyor ve "Panel" başlığın parçası
           gibi görünüyordu. */}
       <SidebarContent className="pt-3">
-        {duzCiz(GUNLUK)}
-        {GRUPLAR.map(grupCiz)}
+        {anahtarlariCiz(duzen.gunluk)}
+        {duzen.gruplar.map(grupCiz)}
       </SidebarContent>
 
       {/* ══════════════ ALT — SABİT, KAYMAZ ══════════════

@@ -57,6 +57,7 @@ export const BOLUMLER = [
   { kimlik: "tedarikci", ad: "Ayarlar — Tedarikçiler" },
   { kimlik: "kullanici", ad: "Ayarlar — Kullanıcılar" },
   { kimlik: "rol", ad: "Ayarlar — Roller" },
+  { kimlik: "menu", ad: "Ayarlar — Menü düzeni" },
   { kimlik: "toplu", ad: "Toplu veri aktarımı" },
   { kimlik: "gecmisEkstre", ad: "Ayarlar — Geçmiş ekstreler" },
   { kimlik: "tarife", ad: "Ayarlar — Komisyon tarifesi" },
@@ -114,6 +115,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   veriDisari: "yedek",
   kullanicilar: "kullanici",
   roller: "rol",
+  menuDuzeni: "menu",
   talepler: "talep",
   gecmisEkstre: "gecmisEkstre",
   tarife: "tarife",
@@ -1516,6 +1518,47 @@ ${sikHata([
   {
     hata: "Rol adına bakıp yetkisi vardır saymak",
     cozum: "Ölçüt İZİN KÜMESİDİR, rol adı değil. \u201cYönetici\u201d adlı bir rol, izinleri işaretlenmemişse hiçbir şey yapamaz. Ad bir etikettir, yetki değil.",
+  },
+])}
+</section>
+
+<section id="menu">
+${baslik("menu")}
+${neZaman(
+  "Sol menüdeki sıra size ters geldiğinde. Günlük işinizde en çok açtığınız ekranlar en üstte olmalı.",
+)}
+<p><strong>Ayarlar → Menü düzeni.</strong> Sol menüdeki sıralamayı ve hangi
+başlığın hangi grupta duracağını buradan değiştirirsiniz. Eskiden bu bir kod
+değişikliğiydi; artık sizin elinizde.</p>
+<ul>
+<li><strong>Yukarı/aşağı okları</strong> sırayı değiştirir — bir tık bir adım.</li>
+<li><strong>Yanındaki açılır liste</strong> o başlığın hangi grupta duracağını
+seçer. <em>Hep açık liste</em>yi seçerseniz menüde her zaman görünür.</li>
+<li><strong>Kaydedene kadar hiçbir şey değişmez.</strong> Deneyip vazgeçmek
+serbest — sayfadan çıkarsanız eski düzen yerinde kalır.</li>
+</ul>
+<div class="ek-not"><div class="etiket">Sürükle-bırak niye yok</div>
+<p>Telefonda parmakla tutup kaydırmak sayfayı da kaydırır. Ok düğmeleri her
+cihazda aynı çalışır ve yanlış bastığınızda geri alması yine bir tık.</p></div>
+<div class="ek-not dikkat"><div class="etiket">İki başlık kaldırılamaz</div>
+<p><strong>Panel</strong> ve <strong>Menü düzeni</strong> menüden
+düşürülemez. Menü düzenini menüden kaldırsaydınız bu ekrana bir daha
+ulaşamaz, düzeni geri alamazdınız.</p></div>
+<div class="ek-not"><div class="etiket">Yeni ekran eklenirse</div>
+<p>Sisteme yeni bir ekran geldiğinde menüde <strong>kendiliğinden görünür</strong>
+ve bu sayfa size <em>"şu ekran eklendi, varsayılan yerine kondu"</em> der.
+Sizin sıranız bozulmaz; yeni gelen listenin sonuna eklenir, istediğiniz yere
+taşırsınız.</p></div>
+<p><strong>Varsayılana dön</strong> düğmesi kendi sıranızı silip sistemin
+düzenine geri döner. Onay sorar.</p>
+${sikHata([
+  {
+    hata: "Sırayı değiştirip kaydetmeden sayfadan çıkmak",
+    cozum: "Değişiklik kaybolur. Ekran altta “Kaydedilmemiş değişiklik var” diye yazar; kaydet düğmesi ancak değişiklik varken açılır.",
+  },
+  {
+    hata: "Bir grubun bütün başlıklarını taşıyıp grubu boş bırakmak",
+    cozum: "Sorun değil: boş grup menüde görünmez. İçine bir başlık taşıdığınız an geri gelir.",
   },
 ])}
 </section>
