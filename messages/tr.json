@@ -3139,9 +3139,10 @@
     "siparisBulunduAlan": "{alan} ile eşleşti. Aşağıdan paketlendi olarak işaretleyebilirsiniz.",
     "yonlendirmeliPaketle": "Yönlendirmeli paketle",
     "rafBulundu": "Raf {kod}",
-    "rafKayitNotu": "Bu rafa KAYITLI {adet} ürün. Adetler defterden okunuyor — fiziksel sayım değil; kaydedilmeden taşınan ürünü sistem bilemez.",
-    "rafBos": "Bu rafa kayıtlı ürün yok.",
-    "rafAdet": "Adet"
+    "rafKayitNotu": "Rafta {adet} ürün var. Adetler defterden okunuyor — fiziksel sayım değil; kaydedilmeden taşınan ürünü sistem bilemez.",
+    "rafBos": "Bu rafta stokta ürün yok.",
+    "rafAdet": "Adet",
+    "rafStoksuz": "Ayrıca {adet} ürün bu rafa kayıtlı ama STOĞU YOK — rafta bulamazsınız. Bağ duruyor; yeni stok gelince buraya döner."
   },
   "ItirazGerekcesi": {
     "KULLANILMIS": "Müşteriden gelen ürün kullanılmış",
@@ -3268,6 +3269,33 @@
     "hataKISALTMA_KURALSIZ": "Kısaltma yalnız BÜYÜK HARF ve rakam olabilir (en fazla 6). Boşluk ve Türkçe karakter barkoda giremez.",
     "hataUNITE_GECERSIZ": "Ünite sayısı 1 ile 99 arasında bir tam sayı olmalı.",
     "hataGOZ_GECERSIZ": "Göz sayısı 1 ile 99 arasında bir tam sayı olmalı.",
-    "hataSinir": "Bu düzen {toplam} raf üretir ve üst sınır 2000. Bölümü ikiye ayırın."
+    "hataSinir": "Bu düzen {toplam} raf üretir ve üst sınır 2000. Bölümü ikiye ayırın.",
+    "goceGit": "{adet} eski rafı yeni şablona taşı"
+  },
+  "Goc": {
+    "baslik": "Raf göçü",
+    "aciklama": "Eski raflardaki ürünleri yeni şablona göre üretilmiş raflara taşır. Hangi eski rafın hangi yeni rafa denk geldiğini YALNIZ SİZ bilirsiniz — sistem tahmin etmez. Onaylamadan hiçbir ürün taşınmaz.",
+    "depoyaGit": "Önce depo düzenini çizmek için: Depo kurulumu",
+    "kaynakYok": "Şablona uymayan raf yok — taşınacak bir şey kalmamış.",
+    "hedefYok": "Şablona uygun HEDEF raf yok. Önce Depo kurulumu ekranından düzeni çizip rafları açın; sonra buraya dönün.",
+    "eslemeNotu": "Her eski rafın karşısına gideceği yeni rafı seçin. Boş bıraktığınız raf DOKUNULMADAN kalır.",
+    "varyantSayisi": "{adet} ürün kayıtlı",
+    "hedefSec": "Hedef raf",
+    "tasima": "— taşıma —",
+    "onizle": "Önce göster",
+    "hesaplaniyor": "Hesaplanıyor…",
+    "uygula": "{adet} ürünü taşı",
+    "onizlemeBaslik": "Ne olacak",
+    "tasinacakRaf": "Taşınacak raf",
+    "tasinacakVaryant": "Taşınacak ürün",
+    "atlanacakRaf": "Dokunulmayacak",
+    "pasifNotu": "Boşalan raflar SİLİNMEZ, pasife alınır — o raflara dair geçmiş kayıtlar sahipsiz kalmasın. Gerçekten silmek isterseniz Raf Konumları ekranından tek tek yaparsınız.",
+    "tasindiBaslik": "Taşındı",
+    "tasindiOzet": "{raf} raf taşındı, {varyant} ürünün konumu güncellendi, {pasif} eski raf pasife alındı.",
+    "hataEslemeYok": "Hiçbir raf için hedef seçilmedi — taşınacak bir şey yok.",
+    "hataHEDEF_TEKRAR": "{kod} rafı birden çok kaynağa hedef seçilmiş. İki fiziksel rafı tek rafa çökertmek ürünleri karıştırır ve geri alınamaz; gerçekten istiyorsanız iki turda yapın.",
+    "hataHEDEF_SABLONA_UYMUYOR": "{kod} şablona uymuyor; hedef ancak yeni şablonla üretilmiş bir raf olabilir.",
+    "hataKAYNAK_HEDEF_AYNI": "{kod} kendisine hedef seçilmiş.",
+    "hataSayimTutmadi": "Taşıma GERİ ALINDI: taşınması gereken ürün sayısı ile taşınan sayı tutmadı. Bir bağ düşmüş olabilir — hiçbir şey değiştirilmedi."
   }
 }

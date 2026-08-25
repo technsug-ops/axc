@@ -94,6 +94,13 @@ export type RafKaydi = {
      */
     adet: number;
   }[];
+  /**
+   * Bu rafa KAYITLI ama stoğu bitmiş ürün sayısı. Listede GÖRÜNMEZLER
+   * (rafta fiilen yoklar) ama sayıları yazılır — bağ duruyor ve yeni
+   * stok gelince buraya dönecekler. Sessizce gizlemek, var olan bir
+   * kaydı görünmez yapmak olurdu.
+   */
+  stoksuz: number;
 };
 
 export type OkumaSonucu = {
@@ -351,6 +358,30 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
         stoklar.map((s) => [s.variantId, s._sum.quantityDelta ?? 0]),
       );
 
+      const hepsi = raf.variants.map((v) => ({
+        sku: v.sku,
+        companySku: v.companySku,
+        barcode: v.barcode,
+        urunAdi: v.product.name,
+        varyantAdi: v.name,
+        adet: adetler.get(v.id) ?? 0,
+      }));
+
+      /**
+       * ⚠ STOĞU BİTMİŞ ÜRÜN RAFTA GÖRÜNMEZ (kullanıcı kararı 25.08.2026):
+       * _"satılmış ve stoktan düşmüş ürünler rafta olmamalı."_ Doğru: rafın
+       * başında duran kişinin sorusu **"burada ne VAR"**dır; olmayan bir
+       * ürünü listelemek onu aratır.
+       *
+       * ⚠ AMA SESSİZCE GİZLENMEZ — SAYISI YAZILIR (İlke #5 · "açık sıfır").
+       * Bağ duruyor: ürünün YERİ hâlâ bu raf ve yeni stok gelince buraya
+       * dönecek. Listeden çıkarıp hiç söylememek, var olan bir kaydı
+       * görünmez yapmak olurdu; ekran "N ürün bu rafa kayıtlı ama stokta
+       * yok" diyor.
+       *
+       * ⚠ NEGATİF DE BURAYA DÜŞER (`<= 0`): eksi stok bir veri sorunudur ve
+       * rafta "var" gibi göstermek onu gizlerdi.
+       */
       return {
         izId: null,
         kod: temiz,
@@ -363,14 +394,8 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
           kod: raf.code,
           ad: raf.name,
           aktif: raf.isActive,
-          urunler: raf.variants.map((v) => ({
-            sku: v.sku,
-            companySku: v.companySku,
-            barcode: v.barcode,
-            urunAdi: v.product.name,
-            varyantAdi: v.name,
-            adet: adetler.get(v.id) ?? 0,
-          })),
+          urunler: hepsi.filter((u) => u.adet > 0),
+          stoksuz: hepsi.filter((u) => u.adet <= 0).length,
         },
       };
     }

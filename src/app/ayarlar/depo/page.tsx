@@ -77,10 +77,20 @@ export default async function DepoSayfasi() {
           </p>
         ) : null}
 
-        <p className="text-muted-foreground text-sm">
+        <p className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <Link href="/ayarlar/konumlar" className="underline underline-offset-4">
             {t("konumlaraGit")}
           </Link>
+          {/*
+            ⚠ GÖÇ MENÜYE AYRI SATIR OLARAK EKLENMEDİ: bir KERELİK iştir,
+            kalıcı bir menü satırı hak etmiyor. Buradan girilir — ve yalnız
+            şablona uymayan raf VARSA anlamlı, o yüzden koşullu.
+          */}
+          {uymayan.length > 0 ? (
+            <Link href="/ayarlar/depo/goc" className="underline underline-offset-4">
+              {t("goceGit", { adet: uymayan.length })}
+            </Link>
+          ) : null}
         </p>
       </section>
     </div>

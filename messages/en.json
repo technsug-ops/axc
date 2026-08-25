@@ -3141,7 +3141,8 @@
     "rafBulundu": "",
     "rafKayitNotu": "",
     "rafBos": "",
-    "rafAdet": ""
+    "rafAdet": "",
+    "rafStoksuz": ""
   },
   "ItirazGerekcesi": {
     "KULLANILMIS": "",
@@ -3268,6 +3269,33 @@
     "hataKISALTMA_KURALSIZ": "",
     "hataUNITE_GECERSIZ": "",
     "hataGOZ_GECERSIZ": "",
-    "hataSinir": ""
+    "hataSinir": "",
+    "goceGit": ""
+  },
+  "Goc": {
+    "baslik": "",
+    "aciklama": "",
+    "depoyaGit": "",
+    "kaynakYok": "",
+    "hedefYok": "",
+    "eslemeNotu": "",
+    "varyantSayisi": "",
+    "hedefSec": "",
+    "tasima": "",
+    "onizle": "",
+    "hesaplaniyor": "",
+    "uygula": "",
+    "onizlemeBaslik": "",
+    "tasinacakRaf": "",
+    "tasinacakVaryant": "",
+    "atlanacakRaf": "",
+    "pasifNotu": "",
+    "tasindiBaslik": "",
+    "tasindiOzet": "",
+    "hataEslemeYok": "",
+    "hataHEDEF_TEKRAR": "",
+    "hataHEDEF_SABLONA_UYMUYOR": "",
+    "hataKAYNAK_HEDEF_AYNI": "",
+    "hataSayimTutmadi": ""
   }
 }

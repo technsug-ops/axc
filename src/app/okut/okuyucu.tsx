@@ -17,7 +17,7 @@ import {
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
-import { DURUM_KUTUSU } from "@/lib/renkler";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import type { KodRolu } from "@/lib/varyant-arama-kurali";
 import type { VaryantSonucu } from "@/lib/varyant-ozet";
 
@@ -233,6 +233,17 @@ export function Okuyucu() {
                 <p className="text-muted-foreground text-xs">
                   {t("rafKayitNotu", { adet: sonuc.raf.urunler.length })}
                 </p>
+                {/*
+                  ⚠ STOĞU BİTMİŞLER LİSTEDE YOK AMA SAYILARI YAZIYOR.
+                  Rafta fiilen bulunmayan ürünü listelemek onu aratır; hiç
+                  söylememek ise var olan bir kaydı görünmez yapardı.
+                  Bağ duruyor: yeni stok gelince bu rafa dönecekler.
+                */}
+                {sonuc.raf.stoksuz > 0 ? (
+                  <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
+                    {t("rafStoksuz", { adet: sonuc.raf.stoksuz })}
+                  </p>
+                ) : null}
               </div>
 
               {sonuc.raf.urunler.length === 0 ? (

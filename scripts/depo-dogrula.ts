@@ -10,6 +10,14 @@ import {
   uretimPlani,
   type BolumTarifi,
 } from "../src/lib/depo/sablon";
+import {
+  eskiRaflar,
+  gocPlani,
+  sayimTutuyorMu,
+  yeniRaflar,
+  type HedefRaf,
+  type KaynakRaf,
+} from "../src/lib/depo/goc";
 
 /**
  * ============================================================================
@@ -191,6 +199,96 @@ const TARIF: BolumTarifi = { ad: "Salon", kisaltma: "SLN", uniteSayisi: 2, gozSa
   kontrol("şablon deseni tanımlı", KOD_SABLONU.source.length > 10);
   /** ⚠ Şablon önek İSTİYOR — öneksiz kod raf modunu tetikleyemez. */
   kontrol("şablon öneksiz kodu reddediyor", !KOD_SABLONU.test("SLN1-1"));
+}
+
+// --- 7) RAF GÖÇÜ (K50 ⑦) ---------------------------------------------------
+/**
+ * ⚠ BU BİR VERİ TAŞIMA İŞİ — 1090 ürünün konum bağı söz konusu. Yanlış
+ * eşleme sessizce yanlış konum üretir ve kimse fark etmez: ürün depoda
+ * aranır, bulunmaz.
+ */
+{
+  console.log("\n7) RAF GÖÇÜ");
+  const KAYNAK: KaynakRaf[] = [
+    { id: "e1", kod: "A5", ad: "OFİS", varyant: 6 },
+    { id: "e2", kod: "A10", ad: "OFİS", varyant: 3 },
+  ];
+  const HEDEF: HedefRaf[] = [
+    { id: "y1", kod: "RAF-OFIS1-1" },
+    { id: "y2", kod: "RAF-OFIS1-2" },
+  ];
+
+  /** ⚠ ESKİ/YENİ AYRIMI ŞABLONLA — göz kararıyla değil. */
+  const karisik = [...KAYNAK, ...HEDEF.map((h) => ({ ...h, ad: null, varyant: 0 }))];
+  kontrol("eski raflar şablonla ayrılıyor", eskiRaflar(karisik).length === 2);
+  kontrol("yeni raflar şablonla ayrılıyor", yeniRaflar(karisik).length === 2);
+
+  const plan = gocPlani(KAYNAK, HEDEF, [
+    { kaynakId: "e1", hedefId: "y1" },
+    { kaynakId: "e2", hedefId: null },
+  ]);
+  kontrol("eşleşen taşınacak", plan.tasinacak.length === 1, plan.tasinacak);
+  /** ⚠ EŞLEŞTİRİLMEYEN DOKUNULMADAN KALIR — "taşıma" varsayılan olamaz. */
+  kontrol("  ...eşleştirilmeyen ATLANIR", plan.atlanacak.length === 1);
+  kontrol("  ...varyant toplamı doğru", plan.varyantToplami === 6, plan.varyantToplami);
+
+  /**
+   * ⚠ İKİ KAYNAK AYNI HEDEFE GÖNDERİLEMEZ. Neredeyse her zaman yazım
+   * hatasıdır ve iki fiziksel raf tek rafa çökerse ürünler karışır —
+   * geri almanın yolu yoktur.
+   */
+  const cakisan = gocPlani(KAYNAK, HEDEF, [
+    { kaynakId: "e1", hedefId: "y1" },
+    { kaynakId: "e2", hedefId: "y1" },
+  ]);
+  kontrol(
+    "iki kaynak aynı hedefe → HATA",
+    cakisan.hatalar.some((h) => h.tur === "HEDEF_TEKRAR"),
+    cakisan.hatalar,
+  );
+
+  /** ⚠ HEDEF ŞABLONA UYMAK ZORUNDA — eski rafa taşımak göçü anlamsız kılar. */
+  const kotuHedef = gocPlani(KAYNAK, [{ id: "e2", kod: "A10" }], [
+    { kaynakId: "e1", hedefId: "e2" },
+  ]);
+  kontrol(
+    "şablona uymayan hedef → HATA",
+    kotuHedef.hatalar.some((h) => h.tur === "HEDEF_SABLONA_UYMUYOR"),
+    kotuHedef.hatalar,
+  );
+
+  /** ⚠ ÖNCE/SONRA SAYIM — bağ kaybı VARSAYILMAZ, ölçülür. */
+  kontrol("sayım tutuyorsa geçer", sayimTutuyorMu(6, 6));
+  kontrol("sayım tutmuyorsa düşer", !sayimTutuyorMu(6, 5));
+
+  // ── SUNUCU EYLEMİ ──────────────────────────────────────────────────
+  const gocEylem = readFileSync("src/app/ayarlar/depo/goc/eylemler.ts", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+
+  const onizleBas = gocEylem.indexOf("export async function gocuOnizle");
+  const uygulaBas = gocEylem.indexOf("export async function gocuUygula");
+  kontrol("iki adım da tanımlı", onizleBas >= 0 && uygulaBas > onizleBas);
+  kontrol(
+    "  önizleme HİÇBİR ŞEY TAŞIMIYOR",
+    !gocEylem.slice(onizleBas, uygulaBas).includes("updateMany"),
+  );
+
+  const uygulaBlok = gocEylem.slice(uygulaBas);
+  /** ⚠ TEK İŞLEM: yarıda kalırsa bazı ürün yeni, bazısı eski rafta olur. */
+  kontrol("taşıma TEK İŞLEMDE ($transaction)", uygulaBlok.includes("$transaction"));
+  /** ⚠ SAYIM TUTMAZSA GERİ ALINIR — `throw` işlemi geri sarar. */
+  kontrol(
+    "sayım tutmazsa GERİ ALINIYOR",
+    /sayimTutuyorMu\([\s\S]{0,120}throw new Error/.test(uygulaBlok),
+  );
+  /** ⚠ BOŞALAN RAF SİLİNMEZ, PASİFE ALINIR. */
+  kontrol("boşalan raf PASİFE alınıyor", /isActive:\s*false/.test(uygulaBlok));
+  kontrol(
+    "  ...ve SİLİNMİYOR",
+    !uygulaBlok.includes("location.delete") && !uygulaBlok.includes("deleteMany"),
+  );
+  kontrol("izin isteniyor", /yetkiIste\("ayar\.yaz"\)/.test(gocEylem));
 }
 
 console.log("");

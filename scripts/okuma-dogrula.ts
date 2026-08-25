@@ -623,6 +623,25 @@ console.log("\n7) SİPARİŞSİZ OKUMADA SADE EKRAN (İŞ 1)");
     "  ...ve o hesap KULLANILIYOR (sabit değil)",
     /adet:\s*adetler\.get\(/.test(okutEylem),
   );
+
+  /**
+   * ── STOĞU BİTMİŞ ÜRÜN RAFTA GÖRÜNMEZ (kullanıcı kararı 25.08.2026) ─────
+   * _"Satılmış ve stoktan düşmüş ürünler rafta olmamalı."_ Rafın başındaki
+   * kişinin sorusu "burada ne VAR"dır; olmayan ürünü listelemek onu aratır.
+   *
+   * ⚠ AMA SESSİZCE GİZLENMEZ — sayısı yazılır. Bağ duruyor: ürünün yeri
+   * hâlâ o raf ve yeni stok gelince oraya dönecek. Listeden çıkarıp hiç
+   * söylememek, var olan bir kaydı görünmez yapmak olurdu.
+   */
+  kontrol(
+    "stoksuz ürün listeden SÜZÜLÜYOR",
+    /urunler:\s*hepsi\.filter\(\(u\)\s*=>\s*u\.adet\s*>\s*0\)/.test(okutEylem),
+  );
+  kontrol(
+    "  ...ve sayısı AYRICA taşınıyor (sessiz gizleme yok)",
+    /stoksuz:\s*hepsi\.filter\(\(u\)\s*=>\s*u\.adet\s*<=\s*0\)\.length/.test(okutEylem),
+  );
+  kontrol("  ...ve ekranda YAZIYOR", ekranKodu.includes("rafStoksuz"));
   /**
    * ⚠ ÜÇ DAL AYRI: ürün+sipariş · yalnız sipariş · yalnız ürün.
    * Orta dal olmadan gönderi numarası okuması boş bir kutu çizerdi.
