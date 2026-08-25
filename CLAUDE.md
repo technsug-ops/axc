@@ -714,6 +714,19 @@ kimlikler işlevsizdi.
 _Bu kural elle atamayla korunamıyor: kimlik çakışması aynı gün içinde
 tekrar üretildi (bkz. BEKLEYENLER → K10, kod atamasını otomatikleştir)._
 
+⚠ **VE EN SIK ÜRETEN DESEN BULUNDU: İKİ FAZLI TESLİM.** 25–26.08.2026'da
+aynı hata **iki kez** yapıldı — `K51` + `K51 geri bildirimi`, sonra `K53` +
+`K53-②`. İkisinde de bir kalem iki turda teslim edildi ve ikinci tur
+kendine SATIR açtı. Panoyu tarayan için sonuç aynı: _"K53'e bak"_ dendiğinde
+hangi satır belirsiz.
+
+> **KURAL:** bir kalemin ikinci fazı YENİ SATIR DEĞİL, aynı satırın
+> **DEVAMIDIR** (`─── ② …` diye eklenir). Kimlik kalemin kendisine aittir,
+> teslim turuna değil.
+
+_Bekçi ikisini de yakaladı ve ikisinde de push durdu — kural yazılı olduğu
+için değil, KOŞTUĞU için tuttu._
+
 ### SİLME KARARI: İLKE İHLALİ DEĞİL, VERİ BOZAN İŞLEM (KESİN KURAL)
 
 _Mimar düzeltmesi 20.08.2026._ "Kayıt silinmez" kuralı savunulurken
