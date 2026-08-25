@@ -12,6 +12,15 @@ import {
   tarifePlaniKur,
   yazilabilirMi,
 } from "../src/lib/komisyon/tarife-plan";
+import {
+  BOSLUK_OLCUMU,
+  DIKIS_TAVANI_SAAT,
+  bosluklariBul,
+} from "../src/lib/komisyon/kapsam-boslugu";
+import {
+  tarifeKapsami,
+  tarifeUyarisiVarMi,
+} from "../src/lib/panel/tarife-penceresi";
 
 /**
  * ============================================================================
@@ -632,6 +641,298 @@ console.log("\nKOMİSYON TARİFESİ — DOĞRULAMA\n");
     "tek blok (3 Gün) dosyası hâlâ okunuyor",
     ucuncuTek.pencere?.baslangic.toISOString() === "2026-08-14T05:00:00.000Z",
     ucuncuTek.pencere?.baslangic.toISOString(),
+  );
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("K49) KAPSAM BOŞLUĞU — PENCERELER ARASINDAKİ DELİK");
+console.log("=".repeat(70));
+
+/**
+ * ⚠ NİYE VAR: ekran üç pencereyi de AYRI AYRI doğru gösteriyordu ama
+ * aralarındaki 72 saatlik deliği hiç söylemiyordu. Delik ancak
+ * veritabanına ELLE bakınca göründü — yani ekran, olmayan bir şeyi
+ * göstermiyor değildi; VAR OLAN bir eksiği göstermiyordu.
+ */
+{
+  /** ⚠ CANLI ÖLÇÜMÜN KENDİSİ — uydurma örnek değil (25.08.2026). */
+  const HESAP = "hesap-ty";
+  const AD = "Trendyol — AXCALI";
+  const P = (bas: string, bit: string, hesapId = HESAP, hesapAdi = AD) => ({
+    hesapId,
+    hesapAdi,
+    baslangic: new Date(bas),
+    bitis: new Date(bit),
+  });
+
+  const canli = [
+    P("2026-08-14T05:00:00Z", "2026-08-18T04:59:00Z"),
+    P("2026-08-21T05:00:00Z", "2026-08-25T04:59:00Z"),
+    P("2026-08-25T05:00:00Z", "2026-09-01T04:59:00Z"),
+  ];
+
+  const b = bosluklariBul(canli);
+  kontrol("canlı veride TAM 1 boşluk bulunuyor", b.length === 1, b.length);
+  /**
+   * ⚠ TAM DEĞER 72 SAAT 1 DAKİKA (72,0167), 72 DEĞİL — ve bu doğru:
+   * boşluk `04:59:00`da başlayıp `05:00:00`da bittiği için kaynak
+   * dosyanın 60 saniyelik dikişi de boşluğun İÇİNDE kalıyor. Ekran
+   * `toFixed(1)` ile "72,0" yazıyor; test HAM değeri sınıyor ki
+   * yuvarlamanın arkasına bir hata saklanmasın.
+   */
+  kontrol(
+    "  ...süresi 72 saat 1 dakika (ekranda 72,0)",
+    b[0] !== undefined && Math.abs(b[0].saat - 72 - 1 / 60) < 1e-9,
+    b[0]?.saat,
+  );
+  /**
+   * ⚠ GÜN SAYIMI EŞİKSİZ VE UÇLAR SAYILMAZ: 18.08 saat 07:59'a kadar,
+   * 21.08 saat 08:00'den sonra KAPSANIYOR. Onları da saysaydık "4 gün
+   * tarifesiz" derdik ve iki günü haksız yere kayıp ilan ederdik.
+   */
+  kontrol(
+    "  ...TAM kapsamsız günler yalnız 19 ve 20 Ağustos",
+    JSON.stringify(b[0]?.tamGunler) === JSON.stringify(["2026-08-19", "2026-08-20"]),
+    b[0]?.tamGunler,
+  );
+  kontrol(
+    "  ...boşluğun ucunda SAAT var (07:59 / 08:00 ayrımı korunuyor)",
+    b[0]?.baslar.toISOString() === "2026-08-18T04:59:00.000Z" &&
+      b[0]?.biter.toISOString() === "2026-08-21T05:00:00.000Z",
+  );
+
+  /**
+   * ⚠ 60 SANİYELİK DİKİŞ DELİK DEĞİL. Kaynak dosya pencereyi 07:59
+   * bitirip 08:00 başlatıyor; bu biçim artefaktı delik sayılsaydı ekran
+   * HER HAFTA kırmızı yanar ve gerçek delik gürültüde kaybolurdu.
+   */
+  const dikis = bosluklariBul([
+    P("2026-08-21T05:00:00Z", "2026-08-25T04:59:00Z"),
+    P("2026-08-25T05:00:00Z", "2026-09-01T04:59:00Z"),
+  ]);
+  kontrol("60 saniyelik DİKİŞ delik sayılmıyor", dikis.length === 0, dikis.length);
+
+  /** ⚠ Ama eşiğin ÜSTÜ delik sayılır — eşik iki yönden de sınanır. */
+  const ikiSaat = bosluklariBul([
+    P("2026-08-21T05:00:00Z", "2026-08-25T04:00:00Z"),
+    P("2026-08-25T06:01:00Z", "2026-09-01T04:59:00Z"),
+  ]);
+  kontrol("  ...ama 2 saatlik ara DELİK sayılıyor", ikiSaat.length === 1, ikiSaat.length);
+  kontrol(
+    "  ...ve tam gün yoksa 0 yazıyor (uydurulmuyor)",
+    ikiSaat[0]?.tamGunler.length === 0,
+    ikiSaat[0]?.tamGunler,
+  );
+
+  /**
+   * ⚠ HESAPLAR BİRBİRİNİN BOŞLUĞUNU KAPATMAZ. Karıştırılsaydı Trendyol'un
+   * deliği Hepsiburada'nın penceresiyle dolmuş görünürdü; oysa her hesabın
+   * tarifesi kendine ait ve biri ötekinin komisyonunu söylemez.
+   */
+  const ikiHesap = bosluklariBul([
+    P("2026-08-14T05:00:00Z", "2026-08-18T04:59:00Z", "ty", "Trendyol"),
+    P("2026-08-21T05:00:00Z", "2026-08-25T04:59:00Z", "ty", "Trendyol"),
+    /** HB penceresi tam TY'nin deliğini kaplıyor — yine de kapatmamalı. */
+    P("2026-08-18T05:00:00Z", "2026-08-21T04:59:00Z", "hb", "Hepsiburada"),
+  ]);
+  kontrol(
+    "başka hesabın penceresi boşluğu KAPATMIYOR",
+    ikiHesap.length === 1 && ikiHesap[0]!.hesapId === "ty",
+    ikiHesap.map((x) => x.hesapId),
+  );
+
+  /** ⚠ ÖRTÜŞME DELİK DEĞİL — aynı güne iki dosya yüklenmiş olabilir. */
+  const ortusen = bosluklariBul([
+    P("2026-08-14T05:00:00Z", "2026-08-20T04:59:00Z"),
+    P("2026-08-18T05:00:00Z", "2026-08-25T04:59:00Z"),
+  ]);
+  kontrol("örtüşen pencereler delik üretmiyor", ortusen.length === 0, ortusen.length);
+
+  /**
+   * ⚠ KAPSANAN PENCERE SAHTE DELİK ÜRETMEZ. Kısa bir düzeltme yüklemesi
+   * uzun bir pencerenin İÇİNDE kalabilir; düz "önceki.bitiş" kıyası
+   * yapılsaydı ondan sonraki pencere delik gibi görünürdü.
+   */
+  const kapsanan = bosluklariBul([
+    P("2026-08-14T05:00:00Z", "2026-08-25T04:59:00Z"),
+    P("2026-08-16T05:00:00Z", "2026-08-17T04:59:00Z"),
+    P("2026-08-25T05:00:00Z", "2026-09-01T04:59:00Z"),
+  ]);
+  kontrol(
+    "içine gömülü pencere SAHTE delik üretmiyor",
+    kapsanan.length === 0,
+    kapsanan.map((x) => x.saat),
+  );
+
+  /** ⚠ TEK PENCERE ve BOŞ LİSTE çökmez, delik de üretmez. */
+  kontrol("tek pencere -> 0 boşluk", bosluklariBul([canli[0]!]).length === 0);
+  kontrol("boş liste -> 0 boşluk", bosluklariBul([]).length === 0);
+
+  /** ⚠ SIRALAMA GİRDİYE BAĞLI OLMAMALI — ekran desc, kural asc bekliyor. */
+  const tersSira = bosluklariBul([...canli].reverse());
+  kontrol(
+    "girdi ters sırada gelse de aynı sonuç",
+    tersSira.length === 1 &&
+      Math.abs(tersSira[0]!.saat - b[0]!.saat) < 1e-9 &&
+      JSON.stringify(tersSira[0]!.tamGunler) === JSON.stringify(b[0]!.tamGunler),
+    tersSira.map((x) => x.saat),
+  );
+
+  /** ⚠ EŞİK KAYNAĞIYLA ANILIR — sayı ölçümünden koparılmasın. */
+  kontrol(
+    "eşik ölçümüyle birlikte beyan edilmiş",
+    BOSLUK_OLCUMU.dikisSaat < DIKIS_TAVANI_SAAT &&
+      DIKIS_TAVANI_SAAT < BOSLUK_OLCUMU.delikSaat,
+    { dikis: BOSLUK_OLCUMU.dikisSaat, esik: DIKIS_TAVANI_SAAT, delik: BOSLUK_OLCUMU.delikSaat },
+  );
+}
+
+console.log("");
+console.log("K49b) EKRAN — DELİK GERÇEKTEN ÇİZİLİYOR MU");
+{
+  const EKRAN = readFileSync("src/app/ayarlar/tarife/page.tsx", "utf8");
+
+  /**
+   * ⚠ İŞARET RENDER YERİNE BAĞLI, IMPORT'A DEĞİL. `bosluklariBul` kelimesi
+   * import satırında da geçiyor; onu aramak, çağrı silinse bile yeşil
+   * kalırdı. (Anayasa tablosu, 5. vaka: `revalidatePath` import satırında.)
+   */
+  kontrol(
+    "ekran boşluk kuralını ÇAĞIRIYOR (import değil, çağrı)",
+    EKRAN.includes("const bosluklar = bosluklariBul("),
+  );
+
+  /**
+   * ⚠ BOŞLUK BÜTÜN GEÇMİŞTEN HESAPLANIR. Kesilmiş listeden (take:10)
+   * hesaplansaydı 11. pencerenin öncesindeki delik hiç doğmaz ve ekran
+   * "kapsam kesintisiz" derdi — sayfalamanın ürettiği yalancı yeşil.
+   */
+  {
+    const bas = EKRAN.indexOf("const bosluklar = bosluklariBul(");
+    const blok = EKRAN.slice(bas, bas + 400);
+    kontrol(
+      "  ...ve BÜTÜN pencerelerden (take:10'dan DEĞİL)",
+      blok.includes("tumPencereler"),
+    );
+    /** ⚠ O sorgunun kendisinde `take` OLMAMALI. */
+    const sorguBas = EKRAN.indexOf("prisma.komisyonTarifesi.findMany", EKRAN.indexOf("LISTE_TAVANI,"));
+    const sorgu = sorguBas < 0 ? "" : EKRAN.slice(sorguBas, sorguBas + 500);
+    kontrol("  ...ve o sorgu SINIRSIZ (take yok)", sorgu !== "" && !sorgu.includes("take:"));
+  }
+
+  /** ⚠ DELİK SATIRI GERÇEKTEN ÇİZİLİYOR — koşul öldürülürse kırmızı yanar. */
+  {
+    const bas = EKRAN.indexOf("{onundeki.map((b) => (");
+    const blok = bas < 0 ? "" : EKRAN.slice(bas, bas + 700);
+    kontrol("delik SATIRI listenin içinde çiziliyor", blok.includes("boslukMetni("));
+    kontrol(
+      "  ...ve renk sisteminden geliyor (ham Tailwind değil)",
+      blok.includes("DURUM_KUTUSU.olumsuz"),
+    );
+  }
+
+  /** ⚠ ÖZET KUTUSU — hüküm önce (İlke #13). */
+  {
+    const bas = EKRAN.indexOf("bosluklar.length === 0 ? (");
+    const blok = bas < 0 ? "" : EKRAN.slice(bas, bas + 900);
+    /** AÇIK SIFIR: boşluk yokken de satır var, sessiz kalmıyor. */
+    kontrol("boşluk YOKKEN de yazıyor (açık sıfır)", blok.includes("boslukYok"));
+    kontrol("  ...boşluk VARKEN özet sayıyı basıyor", blok.includes("boslukOzet"));
+    /**
+     * ⚠ "KAPANMAZ" AÇIKÇA YAZAR: dosya arşivden inmiyor. Yazmasaydı
+     * kullanıcı bunu bir GÖREV sanıp yapamayacağı bir işe girişirdi —
+     * anayasa: "kural doğru mu değil, teslim edilebilir mi".
+     */
+    /**
+     * ⚠ AYRI DİLİM: "kapanmaz" cümlesi özet kutusunun İÇİNDE ama araya
+     * uzun bir yorum giriyor; 900 karakterlik dilim onu kaçırdı ve kontrol
+     * kırmızı yandı. Kelimeyi dosyanın tamamında aramak yerine ÖZET
+     * SAYISINDAN ileriye bakılıyor — böylece cümle özet kutusundan
+     * çıkarılırsa kontrol yine kırmızı yanar.
+     */
+    const ozetBas = EKRAN.indexOf('t("boslukOzet"');
+    const ozetBlok = ozetBas < 0 ? "" : EKRAN.slice(ozetBas, ozetBas + 900);
+    kontrol("  ...ve KAPATILAMAZ olduğunu söylüyor", ozetBlok.includes("boslukKapanmaz"));
+  }
+
+  /** ⚠ KESİLEN LİSTENİN SINIRI YAZILIR — özet ile döküm ayrışmasın. */
+  kontrol(
+    "listelenemeyen boşluk SAYISI yazılıyor",
+    EKRAN.includes("boslukGizlenen") && EKRAN.includes("gizlenen > 0"),
+  );
+
+  /**
+   * ⚠ UÇ DAMGASINDA SAAT VAR. `.slice(0,10)` yapılsaydı 72 saatlik delik
+   * "18→21, arada bir şey yok" diye okunurdu — ekranın zaten bir kez
+   * düştüğü tuzağın aynısı, ters yönde.
+   */
+  {
+    const bas = EKRAN.indexOf("function damga(");
+    const govde = bas < 0 ? "" : EKRAN.slice(bas, bas + 500);
+    kontrol("boşluk ucu SAAT taşıyor (tarih kırpması değil)", govde.includes("minute:"));
+    kontrol(
+      "  ...ve saat İSTANBUL'dan okunuyor (ortamdan değil)",
+      govde.includes('"Europe/Istanbul"'),
+    );
+  }
+}
+
+console.log("");
+console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAKAR");
+/**
+ * ⚠ İKİ YÖN DE SINANIR — komut birebir bunu istedi.
+ *
+ * YANLIŞ YANMA: kapanamayacak bir delik görev kutusunda sonsuza kadar
+ * yanardı ve rozetin tamamına olan güveni götürürdü ("sonsuza kadar yanan
+ * uyarı olmaz").
+ *
+ * YANLIŞ SUSMA: delik görünür olsun diye rozet gevşetilseydi, asıl iş —
+ * bu haftanın dosyasını indirmek — sessizce kaçardı.
+ */
+{
+  const PANEL = readFileSync("src/lib/panel/gorev-verisi.ts", "utf8");
+  kontrol(
+    "panel görev verisi boşluk kuralını ÇAĞIRMIYOR (delik görev değil)",
+    !PANEL.includes("bosluklariBul"),
+  );
+
+  const bugun = new Date("2026-08-25T09:00:00Z");
+
+  /**
+   * ⚠ DELİKLİ AMA GÜNCEL: 72 saatlik boşluk VAR, ama bugünü kapsayan
+   * pencere de var. Rozet YANMAMALI — yapılacak iş yok.
+   */
+  const delikliAmaGuncel = tarifeKapsami(
+    [{ kanalAdi: "Trendyol", sonBitis: new Date("2026-09-01T04:59:00Z") }],
+    bugun,
+  );
+  kontrol(
+    "geçmişte delik VAR + pencere güncel -> rozet YANMIYOR",
+    tarifeUyarisiVarMi(delikliAmaGuncel) === false,
+    delikliAmaGuncel,
+  );
+
+  /** ⚠ VE ROZET SAĞIR DEĞİL: pencere bitmişse yine yanıyor. */
+  const bitmis = tarifeKapsami(
+    [{ kanalAdi: "Trendyol", sonBitis: new Date("2026-08-18T04:59:00Z") }],
+    bugun,
+  );
+  kontrol(
+    "  ...ama pencere BİTMİŞSE yanıyor (yanlış susma yok)",
+    tarifeUyarisiVarMi(bitmis) === true,
+    bitmis,
+  );
+
+  /** ⚠ VE bitmeye 3 gün kala da yanıyor — eşiğin kendisi sınanır. */
+  const yaklasan = tarifeKapsami(
+    [{ kanalAdi: "Trendyol", sonBitis: new Date("2026-08-28T04:59:00Z") }],
+    bugun,
+  );
+  kontrol(
+    "  ...ve bitişe 3 gün kala yanıyor",
+    tarifeUyarisiVarMi(yaklasan) === true,
+    yaklasan,
   );
 }
 

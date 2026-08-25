@@ -1581,6 +1581,33 @@ tarife yazılmaz. Rakamlar beklediğiniz gibiyse <strong>Yükle</strong>.</p></d
 <p>Üzerine yazılır — eski kalemler silinir, dosyadaki hâli geçerli olur.
 Ekran bunu yüklemeden önce söyler. İlk yükleme eksik geldiyse düzeltmenin
 yolu budur.</p></div>
+
+<h3>Kapsam boşluğu — kaçırdığınız haftalar</h3>
+<p>Yüklü pencerelerin listesinin üstünde tek satırlık bir <strong>hüküm</strong>
+durur: kapsam kesintisiz mi, yoksa arada boşluk var mı. Boşluk varsa listenin
+<strong>içinde</strong>, tam ilgili iki pencerenin arasında kırmızı bir satır
+çıkar ve şunu yazar: hangi kanal · hangi saatten hangi saate · kaç saat ·
+kaç tam gün · <strong>o aralıkta kaç satış olduğu</strong>.</p>
+<div class="ek-not dikkat"><div class="etiket">Bu satır bir görev DEĞİL</div>
+<p>Boşluk <strong>kapatılamaz</strong> — dosya arşivden inmiyor. Satırın işi
+sizi indirmeye göndermek değil, o dönemin satışlarında fiyat denemesinin
+<strong>niye sustuğunu</strong> söylemek. Kapanmayacağı için panelde de
+görünmez: kapanamayan bir uyarı görev kutusunda sonsuza kadar yanar ve
+diğer uyarılara olan güveni götürür.</p></div>
+<p><strong>Saatler önemlidir.</strong> Pencere <em>08:00</em>'de başlar,
+<em>07:59</em>'da biter. Yalnız tarihe bakılırsa <code>18 → 21</code> arası
+bitişik görünür; aradaki <strong>72 saat</strong> ancak saatle görülür.
+Bu yüzden boşluk satırı tarihi saatiyle birlikte yazar.</p>
+${sikHata([
+  {
+    hata: "Kırmızı boşluk satırını görüp o haftanın dosyasını indirmeye çalışmak",
+    cozum: "İnmez. Tam dilimli ileri tarife yalnız yayımlandığı hafta indirilebilir; satır geçmişin kaydıdır, yapılacak iş değil.",
+  },
+  {
+    hata: "Yalnız tarihlere bakıp “aralık yok” sanmak",
+    cozum: "Pencere 07:59'da bitip 08:00'de başlar. 18 ile 21 bitişik GÖRÜNÜR ama arada 72 saat vardır; saati okuyun.",
+  },
+])}
 </section>
 
 <section id="yedek">

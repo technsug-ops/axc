@@ -3220,7 +3220,12 @@
     "hataSutunEksikListe": "",
     "hataPencereYok": "",
     "hataSatirYok": "",
-    "hataDosyaOkunamadi": ""
+    "hataDosyaOkunamadi": "",
+    "boslukYok": "",
+    "boslukOzet": "",
+    "boslukKapanmaz": "",
+    "boslukSatir": "",
+    "boslukGizlenen": ""
   },
   "Paketle": {
     "baslik": "",

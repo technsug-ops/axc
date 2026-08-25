@@ -1238,6 +1238,42 @@ biçimleri · rol kapsamı · bekçi ölçütleri.)
 _"Gerekçe listesi" vakasının donanım hâli — orada enum listesi eskimişti,
 burada semboloji listesi._
 
+### "DOKUNMUYOR" İDDİASI DA BİR DAVRANIŞTIR (KESİN KURAL)
+
+_Ders 25.08.2026._ Bir kodun bir şeyi **yaptığı** sınanır da, bir şeyi
+**yapmadığı** sınanmaz — çünkü yokluk göze görünmez. Oysa "X'e dokunmuyor"
+cümlesi bir iddiadır ve iddia, **X'e sessizce dokunan bir mutasyonla**
+sınanmadıkça doğru sayılmaz.
+
+**Vaka:** gider formundaki `yontemSec` için şu yazılıydı — _"kart seçili
+değilken kart bilgisi TEMİZLENMEZ; nakite basmak kartı silseydi kullanıcının
+kart borcu hiçbir uyarı olmadan azalırdı."_ Gerekçe doğruydu, kod da doğruydu.
+Ama bekçi bunu **hiç ölçmüyordu**: fonksiyonu kartı da temizleyecek şekilde
+değiştiren mutasyon **yeşil geçti**. Yani en pahalı davranış — sessiz veri
+kaybı — beyanla korunuyordu, ölçümle değil.
+
+> **KURAL:** bir teslimde _"şuna dokunmuyor"_, _"şunu değiştirmiyor"_,
+> _"şu hesaba girmiyor"_ dendiği her yerde **o dokunuşu yapan bir mutasyon
+> denenir.** Yeşil kalıyorsa iddia korumasızdır ve kontrol eksiktir.
+
+**İKİ AYRI MUTASYON GEREKİR — VE ÇOĞU ZAMAN YALNIZ BİRİ YAZILIR:**
+
+| Yön | Mutasyon | Neyi yakalar |
+|---|---|---|
+| **Yanlış susma** | davranışı KALDIR | özellik sessizce düştü |
+| **Yanlış yanma** | davranışı FAZLADAN YAP | dokunmaması gereken yere dokundu |
+
+_K49'da ikisi de yazıldı:_ panelin geçmiş bir tarife deliğini **görev
+saymadığı** (kapanamayan uyarı sonsuza kadar yanardı) ve aynı panelin **biten
+pencerede hâlâ yandığı** ayrı ayrı sınandı. Yalnız biri yazılsaydı öteki yön
+serbest kalırdı.
+
+⚠ Bu, _"muafiyetin uygulanması ve beyanı ayrı sınanır"_ dersinin genel hâli:
+orada doğru davranışın **görünmezliği** yalancı yeşildi, burada doğru
+davranışın **ölçülmemişliği**.
+
+---
+
 ### ZİNCİR, HALKALARININ VARLIĞIYLA DEĞİL BAĞLANTISIYLA SINANIR (KESİN KURAL)
 
 _Ders 25.08.2026, gider formu vakası._ Bir değerin uçtan uca aktığını sınayan
