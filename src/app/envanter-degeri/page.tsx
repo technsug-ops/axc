@@ -21,8 +21,8 @@ import {
 import { UzunAd } from "@/components/uzun-ad";
 import { bicimlendirici } from "@/lib/bicim";
 import { envanterVerisi } from "@/lib/envanter-veri";
-import { enGecGun, gelecekMi, tarihCoz } from "@/lib/envanter-tarih";
-import { gunMetni } from "@/lib/donem";
+import { aralikCoz, enGecGun } from "@/lib/envanter-tarih";
+import { envanterAraligi } from "@/lib/envanter-aralik";
 import {
   ENVANTER_SIRALARI,
   envanterAra,
@@ -31,6 +31,7 @@ import {
 } from "@/lib/envanter";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
+import { AralikGorunumu } from "./aralik-gorunumu";
 import { TarihSecici } from "./tarih-secici";
 
 /**
@@ -52,7 +53,13 @@ export async function generateMetadata() {
 export default async function EnvanterDegeriSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sira?: string; tarih?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    sira?: string;
+    tarih?: string;
+    bas?: string;
+    bit?: string;
+  }>;
 }) {
   await sayfaIzni("envanter.gor");
   const parametreler = await searchParams;
@@ -72,15 +79,38 @@ export default async function EnvanterDegeriSayfasi({
    * tarihin sonucunu DOĞRU sanırdı.
    */
   const an = new Date();
-  const tarih = tarihCoz(parametreler.tarih);
-  const gecersizTarih =
-    tarih.tur === "GECERSIZ" ||
-    (tarih.tur === "TARIHLI" && gelecekMi(tarih.sinir, an));
-  const sinir =
-    tarih.tur === "TARIHLI" && !gecersizTarih ? tarih.sinir : undefined;
-  const seciliTarih = sinir ? gunMetni(sinir) : "";
+  /**
+   * ⚠ TEK GÖVDE ÜÇ KİPİ DE ÇÖZÜYOR: bugün · tek tarih · aralık. Ayrı ayrı
+   * çözülseydi ekran bir sınır, Excel başka sınır kullanabilirdi.
+   */
+  const kip = aralikCoz(
+    {
+      tarih: parametreler.tarih,
+      bas: parametreler.bas,
+      bit: parametreler.bit,
+    },
+    an,
+  );
+  const gecersizTarih = kip.tur === "GECERSIZ";
+  const sinir = kip.tur === "TEK" ? kip.sinir : undefined;
+  const seciliTarih = kip.tur === "TEK" ? kip.metin : "";
+  const seciliBas = kip.tur === "ARALIK" ? kip.basMetin : "";
+  const seciliBit = kip.tur === "ARALIK" ? kip.bitMetin : "";
 
-  const { sonuc, kimlikler } = await envanterVerisi(sinir);
+  /**
+   * ⚠ ARALIK KİPİNDE TEK FOTOĞRAF SORGUSU KOŞMAZ. Koşsaydı boşuna bir
+   * üçüncü okuma yapılır ve o okuma ekranda hiç görünmezdi — ama sayfayı
+   * yavaşlatırdı.
+   */
+  const aralik =
+    kip.tur === "ARALIK"
+      ? await envanterAraligi(kip.acilisSiniri, kip.kapanisSiniri)
+      : null;
+
+  const { sonuc, kimlikler } =
+    kip.tur === "ARALIK"
+      ? { sonuc: { bloklar: [], bilinmeyenler: [], bilinmeyenToplamAdet: 0 }, kimlikler: new Map() }
+      : await envanterVerisi(sinir);
 
   /**
    * ── ARAMA VE SIRALAMA (kullanıcı isteği 21.08.2026) ────────────────────
@@ -130,7 +160,11 @@ export default async function EnvanterDegeriSayfasi({
         */}
         <ExcelIndir
           liste="envanter-degeri"
-          parametreler={{ tarih: seciliTarih }}
+          parametreler={{
+            tarih: seciliTarih,
+            bas: seciliBas,
+            bit: seciliBit,
+          }}
         />
       </div>
 
@@ -148,6 +182,8 @@ export default async function EnvanterDegeriSayfasi({
       {/* ⚠ TARİH SEÇİCİ — arama ve sıra korunarak (İlke #10). */}
       <TarihSecici
         baslangic={seciliTarih}
+        aralikBas={seciliBas}
+        aralikBit={seciliBit}
         enGec={enGecGun(an)}
         tasinanlar={{ q: parametreler.q ?? "", sira: parametreler.sira ?? "" }}
       />
@@ -159,7 +195,15 @@ export default async function EnvanterDegeriSayfasi({
       {gecersizTarih ? (
         <p className={`flex gap-2 rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
           <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-          <span>{t("tarihGecersiz")}</span>
+          {/*
+            ⚠ SEBEP AYRI AYRI SÖYLENİR. Tek bir "tarih geçersiz" mesajı,
+            kullanıcının NE yanlış yaptığını gizlerdi: eksik uç mu, ters
+            sıra mı, gelecek mi? Sessiz başarısızlığın kardeşi, sebepsiz
+            başarısızlıktır (İlke #5).
+          */}
+          <span>
+            {kip.tur === "GECERSIZ" ? t(`tarihHata_${kip.sebep}`) : ""}
+          </span>
         </p>
       ) : null}
 
@@ -216,9 +260,29 @@ export default async function EnvanterDegeriSayfasi({
         </div>
       </div>
 
+      {/*
+        ═══ ARALIK KİPİ — AÇILIŞ · KAPANIŞ · FARK ══════════════════════════
+        ⚠ AYRI GÖRÜNÜM, AYRI SORU. Tek fotoğraf "şu an ne var" der; aralık
+        "dönemde ne değişti" der. İkisini aynı tabloya sıkıştırmak, iki
+        farklı soruyu tek cevapla geçiştirmek olurdu.
+      */}
+      {aralik ? (
+        <>
+          {/* ⚠ SINIR ÖRNEKLE — metin ve süzgeç AYNI gövdeden (İlke #5). */}
+          <p className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.bilgi}`}>
+            {t("aralikSiniri", { bas: seciliBas, bit: seciliBit })}
+          </p>
+          <AralikGorunumu
+            sonuc={aralik}
+            basMetin={seciliBas}
+            bitMetin={seciliBit}
+          />
+        </>
+      ) : null}
+
       {/* ⚠ ARAMA BOŞ DÖNDÜYSE SEBEBİ YAZAR — sessiz boş tablo yok (#5).
           "Kayıt yok" ile "aramanız eşleşmedi" farklı şeylerdir. */}
-      {aramaBos ? (
+      {aralik === null && aramaBos ? (
         <Card>
           <CardContent className="text-muted-foreground py-8 text-center text-sm">
             {t("aramaBos", { arama })}
@@ -226,7 +290,7 @@ export default async function EnvanterDegeriSayfasi({
         </Card>
       ) : null}
 
-      {bosMu ? (
+      {aralik === null && bosMu ? (
         <Card>
           <CardContent className="text-muted-foreground py-8 text-center text-sm">
             {t("bos")}

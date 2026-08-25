@@ -25,6 +25,7 @@ import {
 } from "../src/lib/menu/duzen";
 import {
   YASAK_KELIME,
+  aralikCoz,
   gelecekMi,
   tarihCoz,
 } from "../src/lib/envanter-tarih";
@@ -4275,6 +4276,7 @@ console.log("=".repeat(70));
 
   /** ── DİL KURALI: "DEĞER/FOTOĞRAF", "SAYIM" DEĞİL ──────────────────── */
   const ekran = readFileSync("src/app/envanter-degeri/page.tsx", "utf8");
+  const disa = readFileSync("src/lib/disa-aktarma/listeler.ts", "utf8");
   const SOZ = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
     Envanter?: Record<string, string>;
     Basliklar?: Record<string, string>;
@@ -4340,21 +4342,223 @@ console.log("=".repeat(70));
   );
 
   /** ── GEÇERSİZ TARİH EKRANDA SÖYLENİYOR ────────────────────────────── */
+  /**
+   * ⚠ ÖLÇÜT GÜNCELLENDİ (K53-②): tek bir `tarihGecersiz` mesajı yerine
+   * SEBEBE göre dört ayrı mesaj var (okunamadı · eksik uç · ters · gelecek).
+   * Kontrol eski anahtarı arıyordu ve kırmızı yandı — kod yanlış değildi,
+   * mesaj TEKİLDEN ÇOĞULA geçmişti.
+   * ⚠ VE GENİŞLEDİ: artık yalnız "bir mesaj var mı" değil, "sebebe göre
+   * SEÇİLİYOR mu" ölçülüyor.
+   */
   kontrol(
     "geçersiz/gelecek tarih EKRANDA söyleniyor (sessizce bugüne düşmüyor)",
-    ekran.includes("{gecersizTarih ? (") && ekran.includes('t("tarihGecersiz")'),
+    ekran.includes("{gecersizTarih ? (") &&
+      ekran.includes("t(`tarihHata_${kip.sebep}`)"),
   );
 
+  /** ═══ K53-② ARALIK MODU — İKİ FOTOĞRAF + FARK ═══════════════════════ */
+  {
+    const AN = new Date("2026-08-26T12:00:00Z");
+
+    /** ⚠ GERİYE UYUMLULUK: tek tarih davranışı BOZULMADI. */
+    const tek = aralikCoz({ tarih: "2026-06-01" }, AN);
+    kontrol(
+      "tek tarih davranışı KORUNUYOR (geriye uyumlu)",
+      tek.tur === "TEK" && tek.metin === "2026-06-01",
+      tek,
+    );
+    kontrol("hiçbir şey verilmezse BUGÜN", aralikCoz({}, AN).tur === "BUGUN");
+
+    const a = aralikCoz({ bas: "2026-06-01", bit: "2026-07-31" }, AN);
+    kontrol("iki uç verilince ARALIK çözülüyor", a.tur === "ARALIK", a.tur);
+
+    /**
+     * ⚠ EN KRİTİK SINIR: KAPANIŞ, BİTİŞ GÜNÜNÜN **SONU**. Gün BAŞI
+     * yapılsaydı bitiş gününün hareketleri kaybolur ve rakam bir gün eksik
+     * çıkardı — makul göründüğü için de kimse sorgulamazdı.
+     *
+     * ⚠ CANLI ÖLÇÜM BUNU GÖSTERDİ: `01.06 → 31.07` kapanışı **526**,
+     * `01.06 → 01.08` kapanışı **529**. Aradaki 3 adet, 1 Ağustos'ta giren
+     * mal — sınır bir gün kaysa sessizce kaybolurdu.
+     */
+    kontrol(
+      "AÇILIŞ sınırı = başlangıç gününün BAŞI",
+      a.tur === "ARALIK" &&
+        a.acilisSiniri.toISOString() === "2026-06-01T00:00:00.000Z",
+      a.tur === "ARALIK" ? a.acilisSiniri.toISOString() : a,
+    );
+    kontrol(
+      "KAPANIŞ sınırı = bitiş gününün SONU (ertesi gün başı)",
+      a.tur === "ARALIK" &&
+        a.kapanisSiniri.toISOString() === "2026-08-01T00:00:00.000Z",
+      a.tur === "ARALIK" ? a.kapanisSiniri.toISOString() : a,
+    );
+    /** ⚠ VE İKİ SINIR AYNI KURALLA KURULMUYOR — asimetri bilinçli. */
+    kontrol(
+      "  ...yani bitiş günü DÖNEME DAHİL",
+      a.tur === "ARALIK" &&
+        a.kapanisSiniri.getTime() - a.acilisSiniri.getTime() === 61 * 86_400_000,
+    );
+
+    /**
+     * ⚠ TEK UÇ = HATA, VARSAYIM DEĞİL (Halil şartı: baz tarih kabul
+     * edilemez). Tamamlansaydı kullanıcının seçmediği bir sınırdan rakam
+     * üretilir ve o rakam "seçtiğim dönem" diye okunurdu.
+     */
+    const eksik = aralikCoz({ bas: "2026-06-01" }, AN);
+    kontrol(
+      "tek uç REDDEDİLİYOR (baz tarih varsayılmıyor)",
+      eksik.tur === "GECERSIZ" && eksik.sebep === "EKSIK_UC",
+      eksik,
+    );
+    kontrol(
+      "  ...öteki uç da aynı",
+      (() => {
+        const x = aralikCoz({ bit: "2026-06-01" }, AN);
+        return x.tur === "GECERSIZ" && x.sebep === "EKSIK_UC";
+      })(),
+    );
+
+    /** ⚠ TERS SIRA ENGELLENİYOR — ve sebebi AYRI söyleniyor. */
+    const ters = aralikCoz({ bas: "2026-07-31", bit: "2026-06-01" }, AN);
+    kontrol(
+      "başlangıç > bitiş REDDEDİLİYOR",
+      ters.tur === "GECERSIZ" && ters.sebep === "TERS",
+      ters,
+    );
+    /** ⚠ AYNI GÜN GEÇERLİ: tek günlük dönem meşrudur. */
+    kontrol(
+      "  ...ama AYNI GÜN geçerli (tek günlük dönem)",
+      aralikCoz({ bas: "2026-06-01", bit: "2026-06-01" }, AN).tur === "ARALIK",
+    );
+    /** ⚠ GELECEK reddediliyor ve sebebi AYRI. */
+    const gelecek = aralikCoz({ bas: "2026-06-01", bit: "2026-12-01" }, AN);
+    kontrol(
+      "gelecek uç REDDEDİLİYOR",
+      gelecek.tur === "GECERSIZ" && gelecek.sebep === "GELECEK",
+      gelecek,
+    );
+
+    /**
+     * ⚠ HER SEBEP AYRI MESAJ. Tek bir "tarih geçersiz" mesajı kullanıcının
+     * NE yanlış yaptığını gizlerdi — sessiz başarısızlığın kardeşi,
+     * SEBEPSİZ başarısızlıktır (İlke #5).
+     */
+    for (const sebep of ["OKUNAMADI", "EKSIK_UC", "TERS", "GELECEK"]) {
+      kontrol(
+        `  hata sebebi "${sebep}" sözlükte`,
+        Boolean(SOZ.Envanter?.[`tarihHata_${sebep}`]),
+      );
+    }
+    kontrol(
+      "  ...ve ekran sebebe göre mesaj seçiyor",
+      ekran.includes("t(`tarihHata_${kip.sebep}`)"),
+    );
+
+    /**
+     * ⚠ FARK, İKİ FOTOĞRAFIN ÇIKARMASI — ÜÇÜNCÜ SORGU YOK. Ayrı sorgudan
+     * türetilseydi üç rakam üretilirdi ve üçüncüsü bir gün ötekilerden
+     * ayrıştığında hangisinin doğru olduğu anlaşılmazdı.
+     */
+    const aralikGovde = readFileSync("src/lib/envanter-aralik.ts", "utf8");
+    kontrol(
+      "fark = kapanış − açılış (üçüncü sorgu YOK)",
+      aralikGovde.includes("farkAdet: kapanisAdet - acilisAdet"),
+    );
+    /**
+     * ⚠ ÖLÇÜT ÇAĞRI YERİNE BAĞLI, SAYIMA DEĞİL — VE İLK HÂLİ KIRMIZI YANDI.
+     * `envanterVerisi(` deseni `Awaited<ReturnType<typeof envanterVerisi>>`
+     * içinde de geçiyor; sayım 2 değil 3 çıkıyordu. Sayı saymak yerine İKİ
+     * ÇAĞRININ KENDİSİ aranıyor — ve üçüncü bir sınırla çağrılmadığı da.
+     */
+    kontrol(
+      "  ...ve AYNI motor iki kez koşuyor",
+      aralikGovde.includes("envanterVerisi(acilisSiniri)") &&
+        aralikGovde.includes("envanterVerisi(kapanisSiniri)") &&
+        !aralikGovde.includes("acikPartilerToplu("),
+    );
+
+    /**
+     * ⚠ İÇ TUTARLILIK ÇAPRAZI — ve HÜKÜM VERMİYOR. K54'ün bilinen +2'si
+     * `20–25.08` penceresinde kendiliğinden görünür oluyor; ölçüldü.
+     */
+    kontrol(
+      "iç tutarlılık çaprazı LEDGER netiyle kuruluyor",
+      aralikGovde.includes("prisma.stockMovement.aggregate") &&
+        aralikGovde.includes("tutuyorMu: farkAdet === ledgerNet"),
+    );
+    kontrol(
+      "  ...ve sınırları EKRANLA aynı (gte açılış / lt kapanış)",
+      aralikGovde.includes("occurredAt: { gte: acilisSiniri, lt: kapanisSiniri }"),
+    );
+    const gorunum = readFileSync(
+      "src/app/envanter-degeri/aralik-gorunumu.tsx",
+      "utf8",
+    );
+    kontrol(
+      "  ...ayrışma EKRANDA söyleniyor",
+      gorunum.includes('t("caprazAyrisma"'),
+    );
+    /** ⚠ AÇIK SIFIR: tutuyorsa da yazar — "kontrol edildi" ile "edilmedi" ayrı. */
+    kontrol(
+      "  ...ve TUTUYORSA da yazıyor (açık sıfır)",
+      gorunum.includes('t("caprazTemiz"'),
+    );
+    /** ⚠ HÜKÜM VERMİYOR — yalnız işaret. */
+    kontrol(
+      "  ...ama HÜKÜM vermiyor (hangi defter doğru denmiyor)",
+      (SOZ.Envanter?.caprazNotu ?? "").includes("hüküm değil"),
+    );
+
+    /** ⚠ SINIR EKRANDA ÖRNEKLE — metin ile süzgeç aynı gövdeden. */
+    kontrol(
+      "aralık sınırı ekranda ÖRNEKLE yazıyor",
+      ekran.includes('t("aralikSiniri"') &&
+        (SOZ.Envanter?.aralikSiniri ?? "").includes("DAHİL"),
+    );
+
+    /** ⚠ EXCEL ÜÇ SAYFA — açılış · kapanış · fark. */
+    kontrol(
+      "Excel ÜÇ sayfa üretiyor (açılış · kapanış · fark)",
+      disa.includes("async function aralikSayfalari") &&
+        disa.includes('tEnvanter("acilis")') &&
+        disa.includes('tEnvanter("kapanis")') &&
+        disa.includes('tEnvanter("fark")'),
+    );
+    /**
+     * ⚠ ÇAPRAZ ŞERHİ DOSYANIN İÇİNDE. Ekranda uyarı görüp dosyayı indiren
+     * biri, dosyada o uyarıyı bulamazsa temiz sanır.
+     */
+    kontrol(
+      "  ...ve çapraz şerhi DOSYAYA da giriyor",
+      disa.includes('tEnvanter("caprazAyrisma"') &&
+        disa.includes('tEnvanter("fotografSerhi")'),
+    );
+    /** ⚠ Ve dosya AYNI gövdeden besleniyor — ekranla ayrışamaz. */
+    kontrol(
+      "  ...ve dosya EKRANLA aynı gövdeyi çağırıyor",
+      disa.includes("envanterAraligi(") && disa.includes("aralikCoz("),
+    );
+  }
+
   /** ── EXCEL AYNI SINIRI TAŞIYOR ────────────────────────────────────── */
-  const disa = readFileSync("src/lib/disa-aktarma/listeler.ts", "utf8");
+  /**
+   * ⚠ ÖLÇÜT GÜNCELLENDİ — VE NİYE ESKİDİĞİ YAZILI (K53-②, 26.08.2026).
+   * İlk hâli tek parametreye bakıyordu (`{{ tarih: seciliTarih }}`); aralık
+   * kipi gelince ekran üç parametre taşımaya başladı ve kontrol KIRMIZI
+   * yandı. Kod yanlış değildi, ölçüt K53-① dünyasına bakıyordu.
+   * ⚠ SUSTURULMADI, GENİŞLETİLDİ: artık ÜÇ parametrenin de taşındığı
+   * ölçülüyor — eskisinden GÜÇLÜ.
+   */
   kontrol(
-    "Excel indirmesi AYNI tarihi taşıyor",
-    ekran.includes("parametreler={{ tarih: seciliTarih }}") &&
-      disa.includes("envanterVerisi(sinir)"),
+    "Excel indirmesi AYNI tarihleri taşıyor (tek + aralık)",
+    ekran.includes("tarih: seciliTarih") &&
+      ekran.includes("bas: seciliBas") &&
+      ekran.includes("bit: seciliBit"),
   );
   kontrol(
     "  ...ve sınırı AYNI gövdeden çözüyor (ikinci yorum yok)",
-    disa.includes("tarihCoz(p.tarih)") && disa.includes("gelecekMi("),
+    disa.includes("aralikCoz(") && disa.includes("envanterVerisi(sinir)"),
   );
 }
 

@@ -34,7 +34,10 @@ export async function GET(
     const sayfalar = [];
     for (const anahtar of LISTELER) {
       // Tam dökümde filtre uygulanmaz: amaç her şeyi vermek.
-      sayfalar.push(await listeSayfasi(anahtar, {}));
+      /** ⚠ "Tümü" indirmesinde parametre YOK — hepsi bugünün fotoğrafı. */
+      const c = await listeSayfasi(anahtar, {});
+      if (Array.isArray(c)) sayfalar.push(...c);
+      else sayfalar.push(c);
     }
     const icerik = await xlsxUret(sayfalar);
     return new Response(new Uint8Array(icerik), {
@@ -46,10 +49,16 @@ export async function GET(
     return new Response(t("bilinmeyenListe"), { status: 404 });
   }
 
-  const sayfa = await listeSayfasi(liste, parametreler);
-  const icerik = await xlsxUret([sayfa]);
+  /**
+   * ⚠ TEK SAYFA DA ÇOK SAYFA DA OLABİLİR (K53-② aralık kipi üç sayfa
+   * üretiyor). Dosya adı İLK sayfadan alınır; aralıkta o "Açılış <tarih>"
+   * olur ve dosyanın hangi döneme ait olduğu adından okunur.
+   */
+  const cikti = await listeSayfasi(liste, parametreler);
+  const sayfalar = Array.isArray(cikti) ? cikti : [cikti];
+  const icerik = await xlsxUret(sayfalar);
 
   return new Response(new Uint8Array(icerik), {
-    headers: indirmeBasliklari(`${sayfa.ad}.xlsx`),
+    headers: indirmeBasliklari(`${sayfalar[0]?.ad ?? liste}.xlsx`),
   });
 }

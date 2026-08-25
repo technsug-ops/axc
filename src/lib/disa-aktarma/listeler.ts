@@ -10,7 +10,8 @@ import {
   type PencereTuru,
 } from "@/lib/donem";
 import { envanterVerisi } from "@/lib/envanter-veri";
-import { gelecekMi, tarihCoz } from "@/lib/envanter-tarih";
+import { aralikCoz } from "@/lib/envanter-tarih";
+import { envanterAraligi } from "@/lib/envanter-aralik";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { odemeMetni } from "@/lib/gider-odemesi";
 import { prisma } from "@/lib/prisma";
@@ -53,10 +54,16 @@ const sayi = (d: { toString(): string } | null | undefined) =>
 
 const gun = (d: Date | null | undefined) => (d ? gunMetni(d) : "");
 
+/**
+ * ⚠ DÖNÜŞ `Sayfa | Sayfa[]` — ARALIK KİPİ ÜÇ SAYFA ÜRETİYOR (K53-②):
+ * açılış · kapanış · fark. Tek sayfaya sıkıştırılsaydı üç farklı soru aynı
+ * tabloya girer ve muhasebeci hangi sütunun hangi tarihe ait olduğunu
+ * dosyanın içinden çıkaramazdı.
+ */
 export async function listeSayfasi(
   liste: ListeAnahtari,
   p: Parametreler,
-): Promise<Sayfa> {
+): Promise<Sayfa | Sayfa[]> {
   switch (liste) {
     case "urunler":
       return urunlerSayfasi(p);
@@ -214,19 +221,137 @@ async function iadelerSayfasi(p: Parametreler): Promise<Sayfa> {
  * yazsaydı muhasebeciye doğru sayı yanlış etiketle giderdi ve kimse fark
  * etmezdi — dosyanın kendisi bir belge.
  */
-async function envanterDegeriSayfasi(p: Parametreler): Promise<Sayfa> {
+/**
+ * ARALIK — ÜÇ SAYFA: açılış · kapanış · fark.
+ *
+ * ⚠ FARK SAYFASI AYRI SORGUDAN GELMİYOR — `envanterAraligi` iki fotoğrafın
+ * çıkarmasını veriyor. Üçüncü bir hesap yolu açılsaydı dosyadaki fark,
+ * ekrandakinden ayrışabilirdi.
+ *
+ * ⚠ ÇAPRAZ SONUCU DA DOSYAYA GİRER. Ekranda uyarı görüp dosyayı indiren
+ * biri, dosyada o uyarıyı bulamazsa temiz sanır — belge kendi şerhini
+ * taşımak zorunda.
+ */
+async function aralikSayfalari(
+  acilisSiniri: Date,
+  kapanisSiniri: Date,
+  basMetin: string,
+  bitMetin: string,
+): Promise<Sayfa[]> {
+  const tBaslik = await getTranslations("Basliklar");
+  const ortak = await getTranslations("Ortak");
+  const tEnvanter = await getTranslations("Envanter");
+
+  const a = await envanterAraligi(acilisSiniri, kapanisSiniri);
+  const tumSatirlar = a.bloklar.flatMap((b) => b.satirlar);
+  const kimlik = (id: string) => a.kimlikler.get(id);
+
+  const basliklar = [
+    ortak("urun"),
+    ortak("sku"),
+    ortak("adet"),
+    ortak("tutar"),
+    ortak("paraBirimi"),
+  ];
+
+  /** Bir fotoğrafın sayfası — açılış ya da kapanış. */
+  const fotografSayfasi = (
+    ad: string,
+    adetAl: (s: (typeof tumSatirlar)[number]) => number,
+    degerAl: (s: (typeof tumSatirlar)[number]) => number | null,
+  ): Sayfa => ({
+    ad,
+    basliklar,
+    satirlar: tumSatirlar.map((s) => [
+      kimlik(s.variantId)?.urunAdi,
+      kimlik(s.variantId)?.sku,
+      adetAl(s),
+      degerAl(s) === null ? tEnvanter("hesaplanamadi") : String(degerAl(s)),
+      s.paraBirimi,
+    ]),
+  });
+
+  return [
+    fotografSayfasi(
+      `${tEnvanter("acilis")} ${basMetin}`,
+      (s) => s.acilisAdet,
+      (s) => s.acilisDeger,
+    ),
+    fotografSayfasi(
+      `${tEnvanter("kapanis")} ${bitMetin}`,
+      (s) => s.kapanisAdet,
+      (s) => s.kapanisDeger,
+    ),
+    {
+      ad: `${tEnvanter("fark")} ${basMetin} ${bitMetin}`,
+      basliklar: [
+        ortak("urun"),
+        ortak("sku"),
+        tEnvanter("acilis"),
+        tEnvanter("kapanis"),
+        tEnvanter("fark"),
+        tEnvanter("farkDegeri"),
+        ortak("paraBirimi"),
+      ],
+      satirlar: [
+        ...tumSatirlar.map((s) => [
+          kimlik(s.variantId)?.urunAdi,
+          kimlik(s.variantId)?.sku,
+          s.acilisAdet,
+          s.kapanisAdet,
+          s.farkAdet,
+          s.farkDeger === null ? tEnvanter("hesaplanamadi") : String(s.farkDeger),
+          s.paraBirimi,
+        ]),
+        /**
+         * ⚠ ÇAPRAZ ŞERHİ DOSYANIN İÇİNDE. Ekranda uyarı görüp dosyayı
+         * indiren biri, dosyada o uyarıyı bulamazsa temiz sanır.
+         */
+        [],
+        [
+          a.capraz.tutuyorMu
+            ? tEnvanter("caprazTemiz", { adet: String(a.capraz.farkAdet) })
+            : tEnvanter("caprazAyrisma", {
+                fark: String(a.capraz.farkAdet),
+                ledger: String(a.capraz.ledgerNet),
+                sapma: String(a.capraz.farkAdet - a.capraz.ledgerNet),
+              }),
+        ],
+        [tEnvanter("fotografSerhi")],
+      ],
+    },
+  ];
+}
+
+/**
+ * ⚠ DÖNÜŞ `Sayfa | Sayfa[]` — aralık kipinde ÜÇ sayfa (açılış · kapanış ·
+ * fark), tek tarih ve bugün kipinde TEK sayfa.
+ */
+async function envanterDegeriSayfasi(
+  p: Parametreler,
+): Promise<Sayfa | Sayfa[]> {
   const t = await getTranslations("IceAktarma");
   const tEnvanter = await getTranslations("Envanter");
   const tBaslik = await getTranslations("Basliklar");
   const ortak = await getTranslations("Ortak");
 
   /** ⚠ Geçersiz tarih sessizce bugüne düşmez — ekranla AYNI gövde çözüyor. */
-  const tarih = tarihCoz(p.tarih);
-  const sinir =
-    tarih.tur === "TARIHLI" && !gelecekMi(tarih.sinir, new Date())
-      ? tarih.sinir
-      : undefined;
+  const kip = aralikCoz(
+    { tarih: p.tarih, bas: p.bas, bit: p.bit },
+    new Date(),
+  );
 
+  /**
+   * ═══ ARALIK KİPİ — ÜÇ SAYFA ═══════════════════════════════════════════
+   * ⚠ EKRANLA AYNI GÖVDE (`envanterAraligi`). Ayrı yazılsaydı dosya ile
+   * ekran bir gün ayrışır ve muhasebeciye giden belge, kullanıcının
+   * gördüğünden farklı olurdu.
+   */
+  if (kip.tur === "ARALIK") {
+    return aralikSayfalari(kip.acilisSiniri, kip.kapanisSiniri, kip.basMetin, kip.bitMetin);
+  }
+
+  const sinir = kip.tur === "TEK" ? kip.sinir : undefined;
   const { sonuc, kimlikler } = await envanterVerisi(sinir);
 
   const satirlar: (string | number | null | undefined)[][] = [];
