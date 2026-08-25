@@ -18,6 +18,11 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import {
+  duzenGecerliMi,
+  duzeniCoz,
+  duzeniOku,
+} from "../src/lib/menu/duzen";
 
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
 import { kdvHaric } from "../src/lib/kar";
@@ -2830,6 +2835,178 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      * bir kullanıcı kararı gerekir; o gün bu satır da gerekçesiyle
      * güncellenir.
      */
+    /**
+     * ═══ K51 — MENÜ DÜZENİ SAF KURALI (25.08.2026) ══════════════════════
+     * ⚠ EN KRİTİK KİLİT: kayıtlı düzen bir ekranı GİZLEYEMEZ. Katalog
+     * koddadır, kayıt yalnız SIRAYI söyler. Tersi yapılsaydı koda eklenen
+     * yeni bir ekran menüde hiç görünmezdi ve kimse ayarlara girip
+     * eklemeyi düşünmezdi — `/iadeler`in 13.08'de sessizce kaybolmasının
+     * menü hâli.
+     */
+    {
+      const K = [
+        { anahtar: "panel", varsayilanGrup: null },
+        { anahtar: "satislar", varsayilanGrup: null },
+        { anahtar: "giderler", varsayilanGrup: "grupPara" },
+        { anahtar: "rapor", varsayilanGrup: "grupPara" },
+      ];
+      const G = [{ anahtar: "grupPara" }];
+      /** Çözülmüş düzendeki BÜTÜN anahtarlar — hiçbiri kaybolmamalı. */
+      const tumu = (d: ReturnType<typeof duzeniCoz>) =>
+        [...d.gunluk, ...d.gruplar.flatMap((g) => g.ogeler)].sort();
+
+      const varsayilan = duzeniCoz(K, G, null);
+      kontrol(
+        "kayıt YOKKEN saf varsayılan düzen çıkıyor",
+        JSON.stringify(varsayilan.gunluk) === JSON.stringify(["panel", "satislar"]) &&
+          JSON.stringify(varsayilan.gruplar[0]?.ogeler) ===
+            JSON.stringify(["giderler", "rapor"]),
+        varsayilan,
+      );
+      /** ⚠ Kayıt yokken "yeni gelen" DE olmaz — varsayılan yeni değildir. */
+      kontrol(
+        "  ...ve hiçbiri 'yeni gelen' sayılmıyor",
+        varsayilan.yeniGelenler.length === 0,
+      );
+
+      const degistirilmis = duzeniCoz(K, G, {
+        gunluk: ["satislar", "panel"],
+        gruplar: [{ anahtar: "grupPara", ogeler: ["rapor", "giderler"] }],
+      });
+      kontrol(
+        "kullanıcının SIRASI uygulanıyor (günlük + grup içi)",
+        JSON.stringify(degistirilmis.gunluk) === JSON.stringify(["satislar", "panel"]) &&
+          JSON.stringify(degistirilmis.gruplar[0]?.ogeler) ===
+            JSON.stringify(["rapor", "giderler"]),
+        degistirilmis,
+      );
+
+      /**
+       * ⚠ YENİ EKRAN KENDİLİĞİNDEN GÖRÜNÜR — bu kontrol yoksa özellik
+       * ilerideki her ekranı sessizce yutar.
+       */
+      const yeniIle = duzeniCoz(
+        [...K, { anahtar: "yeniEkran", varsayilanGrup: null }],
+        G,
+        {
+          gunluk: ["satislar", "panel"],
+          gruplar: [{ anahtar: "grupPara", ogeler: ["giderler", "rapor"] }],
+        },
+      );
+      kontrol(
+        "koda eklenen YENİ ekran menüde GÖRÜNÜYOR",
+        yeniIle.gunluk.includes("yeniEkran"),
+        yeniIle.gunluk,
+      );
+      /** ⚠ VE SESSİZ EKLENMİYOR: ekran bunu söyleyebilmeli. */
+      kontrol(
+        "  ...ve 'yeni geldi' diye BEYAN ediliyor",
+        yeniIle.yeniGelenler.includes("yeniEkran"),
+      );
+      /** ⚠ Grup varsayılanlı yeni ekran da kaybolmuyor. */
+      const yeniGrupta = duzeniCoz(
+        [...K, { anahtar: "yeniRapor", varsayilanGrup: "grupPara" }],
+        G,
+        { gunluk: ["panel", "satislar"], gruplar: [{ anahtar: "grupPara", ogeler: ["giderler"] }] },
+      );
+      kontrol(
+        "  ...grup varsayılanlı yeni ekran GRUBUNDA görünüyor",
+        yeniGrupta.gruplar[0]?.ogeler.includes("yeniRapor") === true,
+        yeniGrupta.gruplar[0]?.ogeler,
+      );
+      /**
+       * ⚠ VARSAYILAN GRUBU YANLIŞ YAZILMIŞ EKRAN DA KAYBOLMAZ — günlüğe
+       * düşer. Bir yazım hatasının ekranı menüden düşürmesi, sessiz kaybın
+       * ta kendisi olurdu.
+       */
+      const hataliGrup = duzeniCoz(
+        [...K, { anahtar: "yetim", varsayilanGrup: "olmayanGrup" }],
+        G,
+        null,
+      );
+      kontrol(
+        "  ...grubu bulunamayan ekran GÜNLÜĞE düşüyor (kaybolmuyor)",
+        hataliGrup.gunluk.includes("yetim"),
+        hataliGrup.gunluk,
+      );
+
+      /** ⚠ KALDIRILMIŞ ekranın kaydı YOK SAYILIR ve SAYILIR. */
+      const eskiKayit = duzeniCoz(K, G, {
+        gunluk: ["panel", "olmayanEkran", "satislar"],
+        gruplar: [{ anahtar: "grupPara", ogeler: ["giderler", "rapor"] }],
+      });
+      kontrol(
+        "kaldırılmış ekranın kaydı YOK SAYILIYOR",
+        !eskiKayit.gunluk.includes("olmayanEkran"),
+        eskiKayit.gunluk,
+      );
+      kontrol(
+        "  ...ve tanınmayan olarak SAYILIYOR (sessizce yutulmuyor)",
+        eskiKayit.taninmayanlar.includes("olmayanEkran"),
+      );
+
+      /** ⚠ AYNI ANAHTAR İKİ YERDE DURAMAZ — çoğalan menü bozukluğu gizler. */
+      const cift = duzeniCoz(K, G, {
+        gunluk: ["panel", "giderler", "satislar"],
+        gruplar: [{ anahtar: "grupPara", ogeler: ["giderler", "rapor"] }],
+      });
+      kontrol(
+        "aynı öğe İKİ YERDE görünmüyor (ilki kazanır)",
+        cift.gunluk.filter((x) => x === "giderler").length === 1 &&
+          !cift.gruplar[0]!.ogeler.includes("giderler"),
+        cift,
+      );
+
+      /**
+       * ⚠ BOŞ KAYIT MENÜYÜ BOŞALTAMAZ. Bu, özelliğin en tehlikeli hâli:
+       * kullanıcı her şeyi silse bile ekranlara ulaşabilmeli.
+       */
+      const bosKayit = duzeniCoz(K, G, { gunluk: [], gruplar: [] });
+      kontrol(
+        "BOŞ kayıt hiçbir ekranı düşürmüyor",
+        JSON.stringify(tumu(bosKayit)) ===
+          JSON.stringify(["giderler", "panel", "rapor", "satislar"]),
+        tumu(bosKayit),
+      );
+
+      /**
+       * ⚠ BOZUK JSON ÇÖKERTMEZ — menü HER SAYFADA çiziliyor, yani tek bozuk
+       * karakter bütün uygulamayı 500'e düşürürdü.
+       *
+       * ⚠ ÇAĞRI SARILARAK SINANIYOR: `catch` kaldırıldığında argüman
+       * `kontrol`a girmeden fırlıyordu ve bekçi ADSIZ bir yığın iziyle
+       * ölüyordu. Kırmızıydı ama NE olduğunu söylemiyordu; adı olan bir
+       * kırmızı, çöken bir kırmızıdan daha iyidir.
+       */
+      const guvenliOku = (m: string | null) => {
+        try {
+          return { tamam: true as const, deger: duzeniOku(m) };
+        } catch {
+          return { tamam: false as const, deger: null };
+        }
+      };
+      const bozuk = guvenliOku("{bozuk");
+      kontrol(
+        "bozuk JSON `null` dönüyor (ÇÖKMÜYOR)",
+        bozuk.tamam && bozuk.deger === null,
+        bozuk.tamam ? bozuk.deger : "FIRLATTI",
+      );
+      kontrol("  ...boş metin de `null`", duzeniOku("") === null && duzeniOku(null) === null);
+      /** ⚠ ŞEKLİ TUTMAYAN JSON da reddedilir — `parse` başarılı olsa bile. */
+      kontrol(
+        "  ...şekli tutmayan JSON reddediliyor",
+        duzeniOku('{"gunluk":"metin","gruplar":[]}') === null,
+      );
+      kontrol(
+        "  ...geçerli JSON kabul ediliyor",
+        duzeniOku('{"gunluk":["a"],"gruplar":[]}') !== null,
+      );
+      kontrol(
+        "  ...ve doğrulama SUNUCU tarafında (istemciye güvenilmiyor)",
+        duzenGecerliMi({ gunluk: [], gruplar: [{ anahtar: "g", ogeler: [1] }] }) === false,
+      );
+    }
+
     const SIRA = [
       "panel",
       "satislar",

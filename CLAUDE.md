@@ -1157,6 +1157,43 @@ uygulayacağım küme onunla AYNI mı? Farklıysa eşik değil, **ölçüt** yan
 ⚠ Bu, "eşik dağılımın gediğine konur" kuralının kardeşi ve ondan
 önceliklidir: **önce doğru dağılımı seçersin, sonra gediğini ararsın.**
 
+### ŞEMADAKİ ALAN DA BİR İDDİADIR — YAZICISI YOKSA VAAT BOŞTUR (KESİN KURAL)
+
+_Mimar kararı 25.08.2026, K52._ Bir sütun açmak, o bilginin **tutulduğunu
+iddia etmektir.** İddiayı yapan şema, yerine getiren koddur; ikisi
+ayrıştığında ortaya **taşımadığı bilgiyi vaat eden bir alan** çıkar.
+
+**Vaka:** `SaleItem.commissionTarifeId` şemada duruyor ve yorumu net —
+_"bu tarifeden oran snapshot'lamış satış kalemleri."_ Ölçüldü: uygulamada
+**sıfır atama**, canlıda **0/140 kalem** dolu — kapsanan pencerede duran 31
+kalemde de boş. Yani sistem, yaptığını söylediği şeyi **hiç yapmıyor.**
+
+⚠ **TEHLİKE BUGÜN DEĞİL, YARIN.** Alan bugün zararsız: oran zaten
+`SaleItem.commissionRate`'te donuyor ve doğruluk oradan geliyor. Ama alanı
+gören biri _"demek ki köken izi tutuluyor"_ diye okur ve **üstüne akıl
+yürütür** — bir denetim yazar, bir rapor kurar, bir göç planlar. Boş bir
+alan sessiz değildir; **yanlış bir cevap verir.**
+
+> **KURAL:** yazıcısı olmayan alan iki şeyden biri olur — **bağlanır** ya da
+> **kaldırılır.** Üçüncü seçenek ("dursun, ileride lazım olur") bir karar
+> değil, kararın ertelenmesidir; ve alan durduğu **her ay yanıltıcılığı
+> artar**, çünkü onu boş bırakan gerekçeyi hatırlayan kişi sayısı azalır.
+
+**BEKLEMEYE ALINACAKSA ŞARTI YAZILIR.** K52 bekliyor ve açılış şartı
+panoda: _bir oran itirazı ya da denetim, "bu oran nereden geldi" sorusunu
+gerçekten sorduğunda._ Şartsız bekleyen alan, unutulmuş alandır.
+
+⚠ **VE BU, "KAYDETME KARARI TÜKETİCİSİ DOĞDUĞUNDA VERİLİR" KURALININ
+BORCUDUR:** orada tüketicisi olmayan veri kaydedilmiyordu; burada tüketicisi
+doğmadan **alan zaten açılmış** ve boş kalmış. İkisi aynı ölçütün iki
+zamanı — biri açmadan önce sorar, öteki açtıktan sonra hesap sorar.
+
+_(Kardeşleri: "kolon başlığı bir iddiadır" — orada EKRANDAKİ başlık boş bir
+söz veriyordu; K31'de bulunan üç ölü sütun; ve genel olarak şemanın söyleyip
+kodun tutmadığı her vaat.)_
+
+---
+
 ### KOLON BAŞLIĞI DA BİR İDDİADIR — VEKİL ALAN GÖSTERİLMEZ (KESİN KURAL)
 
 _Mimar kararı 25.08.2026._ Bir sütun/etiket yazmak, **o verinin elimizde
