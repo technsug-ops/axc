@@ -1157,7 +1157,15 @@
     "sablonAktif": "",
     "sablondanEklendi": "",
     "sablonZatenEklendi": "",
-    "eklendi": ""
+    "eklendi": "",
+    "taksitSayiOlmali": "",
+    "taksitAralik": "",
+    "kartEtiketi": "",
+    "kartYok": "",
+    "kartNotu": "",
+    "taksitEtiketi": "",
+    "taksitIpucu": "",
+    "taksitNotu": ""
   },
   "Rapor": {
     "baslik": "",

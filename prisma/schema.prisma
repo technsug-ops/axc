@@ -739,6 +739,14 @@ model CreditCard {
   updatedAt DateTime @updatedAt
 
   purchases       Purchase[]
+  /**
+   * KARTLA ÖDENEN GİDERLER (25.08.2026).
+   * ⚠ Kullanıcı: _"giderleri ve vergileri de kartla ödüyorum."_ Bu bağ
+   * olmadan kart borcu YALNIZ alımlardan hesaplanıyordu ve kartla ödenen
+   * her gider borçta görünmüyordu — kart borcu ve nakit takvimi o kadar
+   * eksik gösteriyordu.
+   */
+  giderler        Expense[]
   odemeler        KartOdeme[]
   gecmisEkstreler GecmisEkstre[]
 
@@ -1644,9 +1652,45 @@ model Expense {
   /// Tekil: bir ödemenin faizi tek bir gidere yazılır.
   kartOdemesi KartOdeme?
 
+  /**
+   * GİDER HANGİ KARTLA ÖDENDİ (25.08.2026).
+   *
+   * ⚠ NİYE AÇILDI: kullanıcı _"giderleri ve vergileri de kartla ödüyorum,
+   * bugün 4-5 binlik vergi ödedim"_ dedi. Kart borcu `kartBorcuHesapla`
+   * ile YALNIZ alımlardan hesaplanıyordu; kartla ödenen gider borçta hiç
+   * görünmüyor, kart borcu ve NAKİT TAKVİMİ o kadar eksik çıkıyordu.
+   *
+   * ⚠ `kartOdemesi` ALANIYLA KARIŞTIRILMAZ — o TERS yöndedir: kart
+   * ekstresi ödenirken doğan gecikme faizini gidere bağlar. Bu alan ise
+   * "bu gideri şu kartla ödedim" der ve karta BORÇ yazar.
+   *
+   * ⚠ ADLAR ALIMLA BİREBİR AYNI (`creditCardId` · `installmentCount`):
+   * iki yerde iki farklı ad, iki farklı zihin modeli demekti. Aynı ad,
+   * aynı anlam, aynı hesap (`BorcAlimi`).
+   *
+   * ⚠ MERDİVEN ÖLÇÜLDÜ, SÜTUNA EN SON GELİNDİ: ① mevcut alan taşımıyor
+   * (`kartOdemesi` ters yönde) · ② serbest metin yetmez — borç hesabı
+   * SORGU istiyor, geriye bakış değil · ③ türetilemez, hangi giderin
+   * hangi kartla ödendiği hiçbir yerden çıkmıyor.
+   */
+  creditCardId String?
+  creditCard   CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+
+  /**
+   * Taksit sayısı. 1 = tek çekim.
+   *
+   * ⚠ İLK KARARDA "TAKSİT GEREK YOK" DENMİŞTİ, KULLANICI DÜZELTTİ ve
+   * gerekçesi net: _"devlete peşin kartla ödüyorum, sonra banka
+   * uygulamasına girip taksit seçeneği varsa böldürüyorum."_ Yani taksit
+   * ödeme ANINDA değil, sonradan bankada seçiliyor — ama karta yansıyan
+   * borç taksitli. Tek çekim varsayılsaydı borç yanlış aya yığılırdı.
+   */
+  installmentCount Int @default(1)
+
   @@index([spentAt])
   @@index([categoryId])
   @@index([templateId])
+  @@index([creditCardId])
 }
 
 // ============================================================================

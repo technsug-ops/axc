@@ -1,4 +1,5 @@
 import { kartBorcuHesapla, type BorcAlimi } from "@/lib/kart-borcu";
+import { giderleriBorcaCevir } from "@/lib/kart-gideri";
 import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
 
@@ -48,7 +49,8 @@ export async function takvimSatirlariniTopla(
   const satirlar: TakvimSatiri[] = [];
 
   // ---------------------------------------------------------------- KARTLAR
-  const [kartlar, kartAlimlari, kartOdemeleri] = await Promise.all([
+  const [kartlar, kartAlimlari, kartOdemeleri, kartGiderleri] =
+    await Promise.all([
     prisma.creditCard.findMany({
       where: { isActive: true },
       orderBy: { label: "asc" },
@@ -79,6 +81,25 @@ export async function takvimSatirlariniTopla(
     prisma.kartOdeme.findMany({
       select: { cardId: true, donem: true, odenenAnaBorc: true },
     }),
+    /**
+     * KARTLA ÖDENEN GİDERLER (25.08.2026).
+     * ⚠ Bunlar olmadan nakit takvimi kart borcunu EKSİK gösteriyordu:
+     * kullanıcı vergileri kartla ödüyor ve o tutarlar hiçbir yerde yoktu.
+     */
+    prisma.expense.findMany({
+      where: { creditCardId: { not: null } },
+      select: {
+        id: true,
+        spentAt: true,
+        amount: true,
+        currency: true,
+        creditCardId: true,
+        installmentCount: true,
+        description: true,
+        category: { select: { name: true } },
+      },
+      orderBy: { spentAt: "asc" },
+    }),
   ]);
 
   for (const kart of kartlar) {
@@ -101,6 +122,15 @@ export async function takvimSatirlariniTopla(
         taksitSayisi: a.installmentCount,
       });
     }
+
+    /**
+     * ⚠ GİDERLER DE AYNI DİZİYE — motor alım/gider ayrımı yapmaz ve
+     * yapmasına gerek yok: karta düşen borç, borçtur. Dönüşüm tek gövdede
+     * (`lib/kart-gideri.ts`) çünkü aynı çeviri dört çağrı yerinde var.
+     */
+    borcAlimlari.push(
+      ...giderleriBorcaCevir(kartGiderleri, kart.id, kart.currency).borclar,
+    );
 
     const sonuc = kartBorcuHesapla(
       borcAlimlari,

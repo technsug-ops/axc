@@ -21,6 +21,7 @@ import {
   sonOdemeTarihi,
   type BorcAlimi,
 } from "@/lib/kart-borcu";
+import { giderleriBorcaCevir } from "@/lib/kart-gideri";
 import {
   birlesikToplamlar,
   ekstreleriBirlestir,
@@ -121,6 +122,26 @@ export default async function KartBorcuSayfasi({
    * Ödeme kaydı geldiği için "geçmiş ekstreler ödenmiş sayılır" varsayımı
    * artık gerekmiyor: hangi ekstreye ne ödendiği GERÇEK kayıttan okunuyor.
    */
+  /**
+   * KARTLA ÖDENEN GİDERLER (25.08.2026).
+   * ⚠ Kullanıcı: _"giderleri ve vergileri de kartla ödüyorum."_ Bunlar
+   * olmadan kart borcu YALNIZ alımlardan hesaplanıyor ve eksik çıkıyordu.
+   */
+  const kartGiderleri = await prisma.expense.findMany({
+    where: { creditCardId: { not: null } },
+    select: {
+      id: true,
+      spentAt: true,
+      amount: true,
+      currency: true,
+      creditCardId: true,
+      installmentCount: true,
+      description: true,
+      category: { select: { name: true } },
+    },
+    orderBy: { spentAt: "asc" },
+  });
+
   const odemeler = await prisma.kartOdeme.findMany({
     orderBy: { odemeTarihi: "asc" },
     select: {
@@ -237,6 +258,10 @@ export default async function KartBorcuSayfasi({
         taksitSayisi: a.installmentCount,
       });
     }
+    /** ⚠ Giderler de aynı diziye — karta düşen borç, borçtur. */
+    borclar.push(
+      ...giderleriBorcaCevir(kartGiderleri, kart.id, kart.currency).borclar,
+    );
     const limit =
       kart.creditLimitCurrency === kart.currency
         ? sayi(kart.creditLimitAmount)
@@ -565,6 +590,21 @@ export default async function KartBorcuSayfasi({
                 tutar,
                 taksitSayisi: a.installmentCount,
               });
+            }
+
+            /**
+             * ⚠ GİDERLER DE BURAYA — ve atlanan farklı para birimli
+             * giderler AYNI sayaca eklenir: kullanıcı "şu kadar kalem
+             * sayıma girmedi" bilgisini tek yerden okusun.
+             */
+            {
+              const giderSonuc = giderleriBorcaCevir(
+                kartGiderleri,
+                kart.id,
+                kart.currency,
+              );
+              borcAlimlari.push(...giderSonuc.borclar);
+              farkliParaBirimiSayisi += giderSonuc.farkliParaBirimi;
             }
 
             const sonuc = kartBorcuHesapla(

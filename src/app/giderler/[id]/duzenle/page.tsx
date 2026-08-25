@@ -35,6 +35,17 @@ export default async function GiderDuzenleSayfasi({
   if (!gider) notFound();
 
   // Pasif kategoriler listede DURUR — geçmiş gider kategorisiz kalmasın.
+  /**
+   * AKTİF KARTLAR — gider kartla ödenebilsin diye (25.08.2026).
+   * ⚠ Yalnız aktif olanlar: pasife alınmış bir karta yeni borç yazılmaz.
+   */
+  const kartlar = (
+    await prisma.creditCard.findMany({
+      where: { isActive: true },
+      select: { id: true, label: true },
+      orderBy: { label: "asc" },
+    })
+  ).map((k) => ({ id: k.id, ad: k.label }));
   const kategoriler: KategoriSecenegi[] = kayitlar
     .filter((k) => k.isActive || k.id === gider.categoryId)
     .map((k) => ({
@@ -54,6 +65,7 @@ export default async function GiderDuzenleSayfasi({
       <Card>
         <CardContent>
           <GiderFormu
+            kartlar={kartlar}
             kategoriler={kategoriler}
             bugun={tarihGirdisi(new Date())}
             baslangic={{
@@ -66,6 +78,8 @@ export default async function GiderDuzenleSayfasi({
               currency: gider.currency,
               vatRate: String(Number(gider.vatRate.toString())),
               description: gider.description ?? "",
+              creditCardId: gider.creditCardId ?? "",
+              installmentCount: String(gider.installmentCount),
             }}
           />
         </CardContent>

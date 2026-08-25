@@ -49,14 +49,21 @@ export type GiderBaslangici = {
   currency: string;
   vatRate: string;
   description: string;
+  creditCardId: string;
+  installmentCount: string;
 };
+
+export type KartSecenegi = { id: string; ad: string };
 
 export function GiderFormu({
   kategoriler,
+  kartlar,
   bugun,
   baslangic,
 }: {
   kategoriler: KategoriSecenegi[];
+  /** Aktif kartlar — boşsa kart alanı hiç çizilmez. */
+  kartlar: KartSecenegi[];
   /** Yeni kayıtta varsayılan tarih — İŞ saat diliminde bugün. */
   bugun: string;
   /** Doluysa düzenleme kipi. */
@@ -79,6 +86,10 @@ export function GiderFormu({
     amount: "",
     vatRate: "",
     description: "",
+    /** ⚠ Varsayılan BOŞ: her gider kartla ödenmiyor. */
+    creditCardId: "",
+    /** ⚠ Varsayılan 1 = tek çekim. */
+    installmentCount: "1",
   };
 
   const [alanlar, setAlanlar] = useState(
@@ -89,6 +100,8 @@ export function GiderFormu({
           amount: baslangic.amount,
           vatRate: baslangic.vatRate,
           description: baslangic.description,
+          creditCardId: baslangic.creditCardId,
+          installmentCount: baslangic.installmentCount,
         }
       : BOS,
   );
@@ -214,6 +227,63 @@ export function GiderFormu({
       </div>
 
       <p className="text-muted-foreground text-xs">{t("kdvOraniNotu")}</p>
+
+      {/*
+        KARTLA ÖDEME (25.08.2026) — kullanıcı: _"giderleri ve vergileri de
+        kartla ödüyorum."_ Bu alan olmadan kartla ödenen gider kart borcuna
+        HİÇ girmiyordu; kart borcu ve nakit takvimi o kadar eksik çıkıyordu.
+
+        ⚠ KART YOKSA ALAN HİÇ ÇİZİLMEZ. Boş bir seçici, olmayan bir imkânı
+        varmış gibi gösterirdi (İlke #11'in kardeşi).
+      */}
+      {kartlar.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="gider-kart">{t("kartEtiketi")}</Label>
+            <select
+              id="gider-kart"
+              name="creditCardId"
+              value={alanlar.creditCardId}
+              onChange={(e) =>
+                setAlanlar((o) => ({ ...o, creditCardId: e.target.value }))
+              }
+              className="border-input bg-background h-11 w-full rounded-md border px-3 text-sm md:h-9"
+            >
+              {/* ⚠ VARSAYILAN BOŞ: her gider kartla ödenmiyor. */}
+              <option value="">{t("kartYok")}</option>
+              {kartlar.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.ad}
+                </option>
+              ))}
+            </select>
+            <p className="text-muted-foreground text-xs">{t("kartNotu")}</p>
+          </div>
+
+          {/*
+            ⚠ TAKSİT YALNIZ KART SEÇİLİNCE GÖRÜNÜR. Kartsız bir giderde
+            "taksit" sorusu anlamsızdır ve boş bir alan doldurulacak bir şey
+            varmış gibi durur.
+          */}
+          {alanlar.creditCardId ? (
+            <div className="space-y-2">
+              <Label htmlFor="gider-taksit">{t("taksitEtiketi")}</Label>
+              <Input
+                id="gider-taksit"
+                name="installmentCount"
+                inputMode="numeric"
+                value={alanlar.installmentCount}
+                onChange={(e) =>
+                  setAlanlar((o) => ({ ...o, installmentCount: e.target.value }))
+                }
+                placeholder={t("taksitIpucu")}
+                autoComplete="off"
+              />
+              <p className="text-muted-foreground text-xs">{t("taksitNotu")}</p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="space-y-2">
         <Label htmlFor="gider-aciklama">

@@ -915,6 +915,53 @@ console.log("=".repeat(70));
 
 console.log("");
 console.log("=".repeat(70));
+// --- KARTLA ÖDENEN GİDER, KART BORCUNA GİRER (25.08.2026) ------------------
+/**
+ * ⚠ ÖLÇÜLEN BOŞLUK: `kartBorcuHesapla` YALNIZ alımlardan besleniyordu.
+ * Kullanıcı vergileri kartla ödüyor ve o tutarlar kart borcunda HİÇ
+ * görünmüyordu — kart borcu ekranı ve NAKİT TAKVİMİ eksik gösteriyordu.
+ *
+ * ⚠ DÖNÜŞÜM TEK GÖVDEDE, ÇAĞRI YERİ ÇOK. Her birinde ayrı yazılsaydı biri
+ * gün gelip ötekinden ayrışır, iki ekran aynı kart için farklı borç
+ * gösterir ve hangisinin doğru olduğu anlaşılmazdı.
+ */
+{
+  console.log("");
+  console.log("KARTLA ÖDENEN GİDER → KART BORCU");
+
+  const yorumsuz = (yol: string) =>
+    readFileSync(yol, "utf8")
+      .replace(/[/][*][^]*?[*][/]/g, "")
+      .replace(/^\s*[/][/].*$/gm, "");
+
+  const saf = yorumsuz("src/lib/kart-gideri.ts");
+
+  /** ⚠ PARA BİRİMİ ÇEVRİLMEZ — kur uydurmak olurdu (anayasa). */
+  kontrol("farklı para birimli gider SAYIMA GİRMEZ", saf.includes("g.currency !== kartParaBirimi"));
+  kontrol("  ...ve atlanan SAYILIR (sessizce düşmez)", saf.includes("farkliParaBirimi++"));
+  /** ⚠ Başka kartın gideri bu kartın borcuna yazılmaz. */
+  kontrol("yalnız O kartın giderleri", saf.includes("g.creditCardId !== kartId"));
+  /** ⚠ Taksit taşınmalı — 1 varsayılsaydı borç yanlış aya yığılırdı. */
+  kontrol("taksit sayısı TAŞINIYOR", saf.includes("taksitSayisi: g.installmentCount"));
+
+  /**
+   * ⚠ HER ÇAĞRI YERİ BAĞLI OLMALI. Biri unutulursa o ekran eksik borç
+   * gösterir ve hangisinin doğru olduğu anlaşılmaz.
+   */
+  for (const yol of ["src/app/kart-borcu/page.tsx", "src/lib/panel/takvim-verisi.ts"]) {
+    const icerik = yorumsuz(yol);
+    kontrol(`  ${yol} giderleri borca katıyor`, icerik.includes("giderleriBorcaCevir("));
+    kontrol(`    ...ve kartla ödenen giderleri SORGULUYOR`, icerik.includes("creditCardId: { not: null }"));
+  }
+
+  /** ⚠ FORM SORMAZSA ALAN HİÇ DOLMAZ — zincirin ilk halkası. */
+  const form = yorumsuz("src/app/giderler/gider-formu.tsx");
+  kontrol("gider formu KART soruyor", form.includes('name="creditCardId"'));
+  kontrol("  ...ve TAKSİT soruyor", form.includes('name="installmentCount"'));
+  const eylem = yorumsuz("src/app/giderler/actions.ts");
+  kontrol("gider eylemi kart alanını YAZIYOR", eylem.includes("creditCardId: veri.creditCardId"));
+}
+
 if (kalan === 0) {
   console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
 } else {

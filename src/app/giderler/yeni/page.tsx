@@ -35,6 +35,17 @@ export default async function YeniGiderSayfasi() {
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
 
+  /**
+   * AKTİF KARTLAR — gider kartla ödenebilsin diye (25.08.2026).
+   * ⚠ Yalnız aktif olanlar: pasife alınmış bir karta yeni borç yazılmaz.
+   */
+  const kartlar = (
+    await prisma.creditCard.findMany({
+      where: { isActive: true },
+      select: { id: true, label: true },
+      orderBy: { label: "asc" },
+    })
+  ).map((k) => ({ id: k.id, ad: k.label }));
   const kategoriler: KategoriSecenegi[] = kayitlar.map((k) => ({
     id: k.id,
     ad: k.name,
@@ -66,6 +77,7 @@ export default async function YeniGiderSayfasi() {
           <CardContent>
             <GiderFormu
               kategoriler={kategoriler}
+              kartlar={kartlar}
               bugun={tarihGirdisi(new Date())}
             />
           </CardContent>

@@ -64,6 +64,29 @@ function tutarSemasiKur(t: Ceviri) {
 function giderSemasiKur(t: Ceviri) {
   return tutarSemasiKur(t).extend({
     spentAt: z.string().min(1, t("tarihZorunlu")),
+    /**
+     * KARTLA ÖDEME — YALNIZ GİDERDE, ŞABLONDA DEĞİL (25.08.2026).
+     *
+     * ⚠ ORTAK ŞEMAYA KONMADI ve sebebi ölçüldü: `tutarSemasiKur` şablon
+     * tarafından da kullanılıyor ve `ExpenseTemplate`te kart alanı YOK.
+     * Ortağa koysaydık şablon formu var olmayan bir alanı doğrulamaya
+     * çalışırdı — bir gün sessizce kırılırdı.
+     *
+     * ⚠ Boş = nakit/havale. Zorunlu yapmak, kartla ödenmeyen gideri
+     * girmeyi imkânsız kılardı.
+     */
+    creditCardId: z.string().optional(),
+    /**
+     * ⚠ TAKSİT VAR ÇÜNKÜ KULLANICI SONRADAN BÖLDÜRÜYOR: _"devlete peşin
+     * kartla ödüyorum, sonra banka uygulamasına girip taksit seçeneği
+     * varsa böldürüyorum."_ Ödeme anında tek çekim görünse de karta
+     * yansıyan borç taksitli; 1 varsayılsaydı borç yanlış aya yığılırdı.
+     */
+    installmentCount: z
+      .number({ message: t("taksitSayiOlmali") })
+      .int(t("taksitSayiOlmali"))
+      .min(1, t("taksitAralik"))
+      .max(36, t("taksitAralik")),
   });
 }
 
@@ -116,6 +139,9 @@ export async function giderEkle(
         currency: veri.currency as Currency,
         vatRate: String(veri.vatRate),
         description: veri.description?.trim() || null,
+        /** ⚠ Boş dize `null`a çevrilir: "seçilmedi" ile "" aynı şey değil. */
+        creditCardId: veri.creditCardId?.trim() || null,
+        installmentCount: veri.installmentCount,
       },
     });
   } catch (e) {
@@ -163,6 +189,9 @@ export async function giderGuncelle(
         currency: veri.currency as Currency,
         vatRate: String(veri.vatRate),
         description: veri.description?.trim() || null,
+        /** ⚠ Boş dize `null`a çevrilir: "seçilmedi" ile "" aynı şey değil. */
+        creditCardId: veri.creditCardId?.trim() || null,
+        installmentCount: veri.installmentCount,
       },
     });
   } catch (e) {
