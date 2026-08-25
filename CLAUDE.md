@@ -1238,6 +1238,95 @@ biçimleri · rol kapsamı · bekçi ölçütleri.)
 _"Gerekçe listesi" vakasının donanım hâli — orada enum listesi eskimişti,
 burada semboloji listesi._
 
+### KAPANAMAYACAK KAYIP, GÖREV DEĞİL KAYITTIR (KESİN KURAL)
+
+_Mimar kararı 25.08.2026, K49._ Bir eksiklik gerçek olabilir, ölçülmüş
+olabilir, para değeri bile taşıyabilir — ve **yine de görev kutusuna
+girmez.** Ölçüt doğruluk değil, **kapatılabilirliktir.**
+
+> **GÖREV KUTUSUNDAKİ HER MADDE KAPATILABİLİR OLMALIDIR.** Kapatılamayan
+> madde kendi başına zararsız değildir: kutunun **tamamına** olan güveni
+> eritir. Bir kez "bu satır zaten hep duruyor" denen kutuda ikinci satır da
+> okunmaz olur.
+
+**Vaka:** tarife penceresinde 72 saatlik delik ölçüldü — gerçek, o aralıkta
+14 satış var. Ama kaçırılan dosya **arşivden inmiyor**: delik hiçbir eylemle
+kapanmaz. Panele konsaydı sonsuza kadar turuncu yanardı.
+
+Çözüm delik saklamak değil, **yerini değiştirmek**: uyarı kutusuna değil
+**tutanağa** yazıldı. Tarife ekranında, ilgili iki pencerenin tam arasında,
+kalıcı ve kırmızı — kaybolmuyor ama iş de istemiyor.
+
+**AYIRT EDİCİ SORU:** bu satırı okuyan biri bugün ne YAPABİLİR?
+· bir şey yapabiliyorsa → **görev** (uyarı kutusu)
+· hiçbir şey yapamıyorsa → **kayıt** (tutanak, ilgili ekranda)
+
+⚠ Ve kayıt olduğu **ekranda yazar**: _"bu boşluk KAPATILAMAZ"_. Yazmasaydı
+kullanıcı onu bir görev sanıp yapamayacağı bir işe girişirdi — _"kural doğru
+mu değil, teslim edilebilir mi"_ kuralının uyarı tarafı.
+
+---
+
+### TUTANAK, KUSUR İLE SINIRI AYIRT ETTİRİR (KESİN KURAL)
+
+_Kullanıcı düzeltmesi 25.08.2026._ Bir eksikliği kaydeden metin, o
+eksikliğin **kimin eksikliği olduğunu** da söylemek zorundadır. Söylemezse
+okuyan **kendini suçlar** — ve arıza, yanlış tarafta kapanır.
+
+**Vaka:** 72 saatlik tarife deliğinin kaydı kullanıcıya _"ara verdin"_ diye
+okundu. Kronoloji **tam tersini** söylüyordu ve ölçüldü:
+
+    sistemin İLK tarife kaydı    18.08.2026 14:36
+      ↑ üstelik GERİYE DÖNÜK: yüklediği pencere o sabah 07:59'da bitmişti
+    delik penceresi açıldı       18.08.2026 08:00
+      ↑ sistemde henüz TEK BİR TARİFE BİLE YOKKEN, 6,6 saat önce
+
+    21.08 penceresi → yüklendi 22.08 00:50  (pencere AÇIKKEN)
+    25.08 penceresi → yüklendi 25.08 03:00  (pencere BAŞLAMADAN)
+    → rutin kurulduğundan beri kaçan pencere: **0**
+
+Yani atlanmış bir indirme değil, **sistemin görüş alanının başlangıç
+sınırı.** Kayıt artık bunu kendisi söylüyor.
+
+> **KURAL:** sistemin kuruluşundan ÖNCEKİ boşluk ihmal değil, **görüş
+> alanının başlangıcıdır** — ve bunu okuyanın çıkarmasına bırakılmaz, kayıt
+> yazar.
+
+⚠ **VE SINIR VERİDEN GELİR, TARİH GÖMÜLEREK DEĞİL.** "21.08'den öncesi
+muaf" diye sabit bir tarih bugün doğru, altı ay sonra anlamsız bir istisna
+olurdu. Ölçüt **sistemin ilk kaydının anı** — ve `pencereBaslangic` değil
+`yuklendiAt`: ilk yükleme geriye dönüktü, pencere tarihine bakan bir ölçüt
+bunu göremezdi.
+
+⚠ **MUAFİYET SINIRSIZ DEĞİL:** rutin kurulduktan SONRA kaçan pencere hâlâ
+kusurdur ve öyle yazar. "Hepsini affet" ölçütü, ileride gerçek bir kaçışı da
+sınır diye etiketler ve uyarıyı işlevsizleştirirdi.
+
+_(Bu, "yeni izin doğum tarihi beyan edilir" kuralının TUTANAK tarafı: orada
+verinin yokluğu hüküm sayılmıyordu, burada boşluğun kendisi suç sayılmıyor.)_
+
+---
+
+### KAYIP ABARTISI, KAYIP KÜÇÜLTMESİ KADAR YANLIŞTIR — VE DAHA SİNSİDİR (KESİN KURAL)
+
+_Ders 25.08.2026._ Bir zararı olduğundan **küçük** göstermek açık bir hatadır
+ve aranır. Olduğundan **büyük** göstermek de aynı ölçüde hatadır — ama kimse
+_"bu rakam abartılmış olabilir mi"_ diye kontrol etmez. Kötü haber, iyi
+haberden daha az sorgulanır.
+
+**Vaka:** tarife deliğine düşen satışlar sayılırken sorgu **iptal süzgeci
+taşımıyordu** ve ekrana **16** basılacaktı. `iptal:bekci` yakaladı; iptal
+edilmiş satışta zaten kâr hesaplanmıyor, yani o iki kayıt hiçbir şey
+kaybetmiyor. Geçerli rakam **14**.
+
+> **ÖLÇÜT:** bir kayıp rakamı yazarken sorulur — bu sayının içinde
+> **kaybetmeyen** kayıt var mı? Varsa sayı kaybı değil, kümeyi ölçüyor.
+
+⚠ Ve düşüş **sessizce yapılmaz**: 16'nın niye 14'e indiği yazılır. Elinde
+eski rakam olan biri için kaynaksız bir sayı doğmasın.
+
+---
+
 ### "DOKUNMUYOR" İDDİASI DA BİR DAVRANIŞTIR (KESİN KURAL)
 
 _Ders 25.08.2026._ Bir kodun bir şeyi **yaptığı** sınanır da, bir şeyi

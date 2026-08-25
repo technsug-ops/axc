@@ -4,7 +4,11 @@ import { TriangleAlert } from "lucide-react";
 import { DurumRozeti } from "@/components/durum-rozeti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { gunDegeri, isTakvimGunu } from "@/lib/donem";
-import { bosluklariBul, type Bosluk } from "@/lib/komisyon/kapsam-boslugu";
+import {
+  bosluklariBul,
+  gorusSiniriMi,
+  type Bosluk,
+} from "@/lib/komisyon/kapsam-boslugu";
 import { UYARI_GUNU } from "@/lib/panel/tarife-penceresi";
 import { prisma } from "@/lib/prisma";
 import { DURUM_KUTUSU } from "@/lib/renkler";
@@ -56,7 +60,7 @@ export default async function TarifeSayfasi() {
   await sayfaIzni("kanalsku.yaz");
   const t = await getTranslations("Tarife");
 
-  const [hesaplar, tarifeler, tumPencereler] = await Promise.all([
+  const [hesaplar, tarifeler, tumPencereler, ilkKayit] = await Promise.all([
     prisma.channelAccount.findMany({
       where: { satisIcin: true, isActive: true },
       select: { id: true, name: true, channel: { select: { name: true } } },
@@ -98,6 +102,15 @@ export default async function TarifeSayfasi() {
       },
       orderBy: { pencereBaslangic: "asc" },
     }),
+    /**
+     * SİSTEMİN GÖRÜŞ SINIRI — ilk tarife kaydının ANI.
+     *
+     * ⚠ `pencereBaslangic` DEĞİL `yuklendiAt`. Soru "en eski pencere hangisi"
+     * değil, "sistem ne zaman tarife bilmeye başladı". İlk yükleme GERİYE
+     * DÖNÜK olabilir (nitekim öyleydi: 14–18.08 penceresi, bittikten 6,6
+     * saat SONRA yüklendi) ve pencere tarihine bakan bir ölçüt bunu görmez.
+     */
+    prisma.komisyonTarifesi.aggregate({ _min: { yuklendiAt: true } }),
   ]);
 
   const bosluklar = bosluklariBul(
@@ -148,6 +161,8 @@ export default async function TarifeSayfasi() {
       : 0;
   const gosterilen = bosluklar.filter((b) => b.biter.getTime() >= enEski);
   const gizlenen = bosluklar.length - gosterilen.length;
+
+  const ilkKayitAni = ilkKayit._min.yuklendiAt ?? null;
 
   /** Saat/gün metni — boşluk satırının gövdesi. */
   function boslukMetni(b: Bosluk, satis: number): string {
@@ -281,12 +296,32 @@ export default async function TarifeSayfasi() {
                       className={`flex gap-2 rounded-md p-2 text-xs ${DURUM_KUTUSU.olumsuz}`}
                     >
                       <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
-                      <span className="tabular-nums">
-                        {boslukMetni(
-                          b,
-                          satisSayilari[bosluklar.indexOf(b)] ?? 0,
-                        )}
-                      </span>
+                      <div className="space-y-1">
+                        <span className="block tabular-nums">
+                          {boslukMetni(
+                            b,
+                            satisSayilari[bosluklar.indexOf(b)] ?? 0,
+                          )}
+                        </span>
+                        {/*
+                          ⚠ KUSUR İLE SINIR AYIRT EDİLİR (kullanıcı düzeltmesi
+                          25.08.2026). Kayıt ilk hâlinde _"ara verdin"_ diye
+                          okundu; oysa bu boşluk, sistemde HENÜZ TEK BİR TARİFE
+                          BİLE YOKKEN açıldı. Atlanmış bir indirme değil,
+                          sistemin GÖRÜŞ ALANININ BAŞLANGIÇ SINIRI.
+
+                          ⚠ Ölçüt tarih gömülerek değil VERİDEN kuruluyor
+                          (`min(yuklendiAt)`), yoksa bugün doğru olan istisna
+                          altı ay sonra anlamsız bir muafiyete dönerdi.
+                        */}
+                        {gorusSiniriMi(b, ilkKayitAni) ? (
+                          <span className="block">
+                            {t("boslukGorusSiniri", {
+                              ilk: ilkKayitAni ? damga(ilkKayitAni) : "—",
+                            })}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                   ))}
 

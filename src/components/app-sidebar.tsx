@@ -88,30 +88,35 @@ type MenuOgesi = {
  * Sonuç: 30 satır → 7 satır + 4 başlık.
  */
 const GUNLUK: MenuOgesi[] = [
-  { anahtar: "panel", href: "/", icon: LayoutDashboard, aktif: true },
-  { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
-  { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
   /*
-    ⚠ SATIŞIN HEMEN ALTINDA — KULLANICI KARARI 25.08.2026.
+    ═══ SIRA KULLANICININ — 25.08.2026, birebir verildi ═══════════════════
+    "Panel · Satış · Alımlar · Ürünler · Stok · İade · Paketleme ·
+     Barkod okut · Fiyat Denemesi"
 
-    Önce "Barkod okut"un altında, "Ürün ve kanal" grubundaydı; gerekçe
-    _"ikisi aynı refleks"_ idi. Kullanıcı gününü anlattı ve gerekçe düştü:
-    paketleme SATIŞIN devamıdır — sipariş girilir, sonra kutu hazırlanır.
-    Menü, ekranların BENZERLİĞİNE göre değil İŞİN SIRASINA göre dizilir.
+    ⚠ SIRA GEREKÇE İSTEMEZ, ÇÜNKÜ SIRAYI İŞİ YAPAN BİLİR. Önceki dizilim
+    benim çıkarımlarımla kurulmuştu (alım önce, çünkü stok önce gelir);
+    kullanıcı günü tersten yaşıyor: gün SATIŞLA açılıyor.
 
-    ⚠ Köprü bu taşımadan etkilenmez: `/okut`taki "Yönlendirmeli paketle"
-    düğmesi menüden bağımsız, doğrudan adrese gider.
+    ⚠ İKİ EKRAN GRUPTAN GÜNLÜĞE ÇIKTI — `urunler` ve `okut`. İkincisi
+    22.08'de "sıklığa göre günlük listeye ait" diye işaretlenmiş ve karar
+    kullanıcıya SORULMUŞTU; cevap bu listeyle geldi.
+
+    ⚠ VE BİR EKRAN GÜNLÜKTEN ÇIKTI: `urunKarti` (Kârlılık kartı) listede
+    YOK. Silinmedi — "Ürün ve kanal" grubuna taşındı, adresi ve davranışı
+    aynı. Geri alınması tek satır.
   */
-  { anahtar: "paketle", href: "/paketle", icon: PackageCheck, aktif: true },
+  { anahtar: "panel", href: "/", icon: LayoutDashboard, aktif: true },
+  { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
+  { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
+  { anahtar: "urunler", href: "/urunler", icon: Package, aktif: true },
   { anahtar: "stok", href: "/stok", icon: Boxes, aktif: true },
   { anahtar: "iadeler", href: "/iadeler", icon: Undo2, aktif: true },
-  /**
-   * KÂRLILIK KARTI ve FİYAT DENEMESİ — mağazada telefonla barkod okutup
-   * alım kararı verilen an. İkisi aynı ana ait: "elimde ürün var, alayım
-   * mı" ve "alırsam nereye koyayım". Açılır menüye girselerdi o an bir tık
-   * daha eklenirdi ve karar anı en çok tıkla en çok bozulan andır.
-   */
-  { anahtar: "urunKarti", href: "/kart", icon: ScanBarcode, aktif: true },
+  { anahtar: "paketle", href: "/paketle", icon: PackageCheck, aktif: true },
+  /*
+    ⚠ KÖPRÜ BU TAŞIMADAN ETKİLENMEZ: `/okut`taki "Yönlendirmeli paketle"
+    düğmesi menüden bağımsız, doğrudan adrese gider.
+  */
+  { anahtar: "okut", href: "/okut", icon: ScanSearch, aktif: true },
   { anahtar: "simulasyon", href: "/simulasyon", icon: Calculator, aktif: true },
 ];
 
@@ -142,21 +147,21 @@ const GRUPLAR: MenuGrubu[] = [
   {
     anahtar: "grupUrunKanal",
     ogeler: [
-      { anahtar: "urunler", href: "/urunler", icon: Package, aktif: true },
       /**
-       * BARKOD OKUT (K34a) — GRUPTA, GÜNLÜK LİSTEDE DEĞİL.
+       * KÂRLILIK KARTI — GÜNLÜK LİSTEDEN BURAYA TAŞINDI (25.08.2026).
        *
-       * ⚠ SIKLIĞA GÖRE GÜNLÜK LİSTEYE AİT: depoda paket başına en az bir kez
-       * açılıyor (~30/gün, hedef 150). Ama hep açık liste kullanıcının
-       * ONAYLADIĞI YEDİ satır (22.08.2026) ve bir bekçi bunu sabitliyor.
-       * Sekizinciyi eklemek, kullanıcının verdiği bir kararı kendi işime
-       * uydurmak olurdu — eşiği soruyu soran koyamaz.
+       * ⚠ SİLİNMEDİ, TAŞINDI. Kullanıcının verdiği günlük listede yoktu;
+       * listeyi birebir uygulamak, listede olmayanı da yerinden almak
+       * demek. Ekran, adresi (`/kart`) ve davranışı aynen duruyor.
        *
-       * Bu yüzden şimdilik grupta duruyor ve takas kullanıcıya SORULDU:
-       * `okut`, `urunKarti`/`simulasyon`dan daha sık açılan bir ekran.
-       * Karar gelirse tek satırlık iş.
+       * ⚠ VE ESKİ GEREKÇE SİLİNMİYOR: bu ekran _"mağazada telefonla barkod
+       * okutup alım kararı verilen an"_ diye günlük listeye konmuştu ve o
+       * gerekçe hâlâ makul. Kullanıcı listesinde yoksa gerekçe çürüdüğü
+       * için değil, kullanıcı gününü daha iyi bildiği için burada. Geri
+       * alınması tek satır. _(Anayasa: "karar çevrildiğinde önceki savunma
+       * dosyada bırakılır.")_
        */
-      { anahtar: "okut", href: "/okut", icon: ScanSearch, aktif: true },
+      { anahtar: "urunKarti", href: "/kart", icon: ScanBarcode, aktif: true },
       { anahtar: "kanalSkulari", href: "/kanal-sku", icon: Tags, aktif: true },
       {
         anahtar: "kanalHesaplari",

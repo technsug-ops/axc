@@ -16,6 +16,7 @@ import {
   BOSLUK_OLCUMU,
   DIKIS_TAVANI_SAAT,
   bosluklariBul,
+  gorusSiniriMi,
 } from "../src/lib/komisyon/kapsam-boslugu";
 import {
   tarifeKapsami,
@@ -779,6 +780,40 @@ console.log("=".repeat(70));
     tersSira.map((x) => x.saat),
   );
 
+  /**
+   * ═══ GÖRÜŞ SINIRI MI, KAÇIRILMIŞ İNDİRME Mİ ═══════════════════════════
+   * ⚠ TUTANAK KUSUR İLE SINIRI AYIRT ETTİRMEK ZORUNDA. Kayıt ilk hâlinde
+   * kullanıcıya _"ara verdin"_ diye okundu; kronoloji bunun TERSİNİ söylüyor.
+   *
+   * ÖLÇÜLEN (canlı): sistemin ilk tarife kaydı **18.08.2026 14:36** ve o
+   * kayıt bile GERİYE DÖNÜK (yüklenen pencere o sabah 07:59'da bitmişti).
+   * Delik penceresi **18.08 08:00**'de açıldı — yani sistemde henüz TEK BİR
+   * TARİFE BİLE YOKKEN, 6,6 saat önce.
+   */
+  const ILK_KAYIT = new Date("2026-08-18T11:36:00Z");
+  kontrol(
+    "sistem doğmadan açılan boşluk GÖRÜŞ SINIRI sayılıyor",
+    gorusSiniriMi(b[0]!, ILK_KAYIT) === true,
+  );
+  /**
+   * ⚠ VE MUAFİYET SINIRSIZ DEĞİL: rutin kurulduktan SONRA kaçan bir pencere
+   * hâlâ kusurdur. Ölçüt "hepsini affet" olsaydı ileride gerçek bir kaçış
+   * da sınır diye etiketlenir ve uyarı işlevsizleşirdi.
+   */
+  const sonraki = bosluklariBul([
+    P("2026-09-01T05:00:00Z", "2026-09-08T04:59:00Z"),
+    P("2026-09-15T05:00:00Z", "2026-09-22T04:59:00Z"),
+  ]);
+  kontrol(
+    "  ...ama rutinden SONRAKİ kaçış sınır SAYILMIYOR (kusur kalır)",
+    sonraki.length === 1 && gorusSiniriMi(sonraki[0]!, ILK_KAYIT) === false,
+  );
+  /** ⚠ HİÇ KAYIT YOKKEN hüküm verilmez — sınır da iddia edilmez. */
+  kontrol(
+    "  ...ilk kayıt bilinmiyorsa sınır İDDİA EDİLMİYOR",
+    gorusSiniriMi(b[0]!, null) === false,
+  );
+
   /** ⚠ EŞİK KAYNAĞIYLA ANILIR — sayı ölçümünden koparılmasın. */
   kontrol(
     "eşik ölçümüyle birlikte beyan edilmiş",
@@ -855,6 +890,31 @@ console.log("K49b) EKRAN — DELİK GERÇEKTEN ÇİZİLİYOR MU");
     const ozetBlok = ozetBas < 0 ? "" : EKRAN.slice(ozetBas, ozetBas + 900);
     kontrol("  ...ve KAPATILAMAZ olduğunu söylüyor", ozetBlok.includes("boslukKapanmaz"));
   }
+
+  /**
+   * ⚠ SINIR CÜMLESİ GERÇEKTEN ÇİZİLİYOR MU — render koşuluna bağlı.
+   * Kayıt kusur ile sınırı ayırt ettirmezse okuyan kendini suçlar; hata
+   * mesajının yanlış tarafı göstermesiyle aynı sınıf.
+   */
+  {
+    const bas = EKRAN.indexOf("{gorusSiniriMi(b, ilkKayitAni) ? (");
+    const blok = bas < 0 ? "" : EKRAN.slice(bas, bas + 500);
+    kontrol(
+      "görüş sınırı cümlesi ÇİZİLİYOR (kusur ile sınır ayrılıyor)",
+      blok.includes("boslukGorusSiniri"),
+    );
+  }
+  /**
+   * ⚠ SINIR VERİDEN GELİR, TARİH GÖMÜLEREK DEĞİL. Ekranda "21.08" gibi bir
+   * sabit tarih arasaydık bugün doğru, altı ay sonra anlamsız bir muafiyet
+   * olurdu. Ölçüt ilk YÜKLEME anı — ve `pencereBaslangic` DEĞİL: ilk yükleme
+   * geriye dönüktü, pencere tarihine bakan ölçüt bunu görmez.
+   */
+  kontrol(
+    "  ...ve sınır VERİDEN okunuyor (_min.yuklendiAt)",
+    EKRAN.includes("_min: { yuklendiAt: true }") &&
+      EKRAN.includes("ilkKayit._min.yuklendiAt"),
+  );
 
   /** ⚠ KESİLEN LİSTENİN SINIRI YAZILIR — özet ile döküm ayrışmasın. */
   kontrol(

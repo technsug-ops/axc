@@ -2793,11 +2793,17 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      * kutusu şişerse eski hâle geri dönülmüş olur ve gruplama anlamını
      * yitirir.
      *
-     * ⚠ SINIR 7 → 8 (25.08.2026) — VE NİYE ESKİDİĞİ YAZILI. Bu sayı bir
-     * ölçüm değil, **kullanıcının onayladığı listenin uzunluğu**: 22.08'de
-     * yedi kalem onaylanmıştı. Kullanıcı 25.08'de `Paketle`yi günlük listeye
-     * aldı ve gerekçesini verdi — _paketleme satışın devamıdır, menü
-     * ekranların benzerliğine göre değil işin sırasına göre dizilir._
+     * ⚠ SINIR 7 → 8 → 9 (25.08.2026, aynı gün iki kez) — VE HER İKİSİNİN
+     * DE KAYNAĞI YAZILI. Bu sayı bir ÖLÇÜM DEĞİL, **kullanıcının onayladığı
+     * listenin uzunluğu**:
+     *   · 22.08 → 7 kalem onaylandı
+     *   · 25.08 → `Paketle` günlük listeye alındı (8). Gerekçe kullanıcının:
+     *     _paketleme satışın devamıdır, menü ekranların benzerliğine göre
+     *     değil işin sırasına göre dizilir._
+     *   · 25.08 → kullanıcı listeyi BİREBİR verdi (9): Panel · Satış ·
+     *     Alımlar · Ürünler · Stok · İade · Paketleme · Barkod okut ·
+     *     Fiyat Denemesi. `urunler` ve `okut` gruptan çıktı, `urunKarti`
+     *     gruba girdi.
      * Ölçütün kaynağı değişti, o yüzden ölçüt değişti; kod yanlış değildi.
      *
      * ⚠ VE BU SINIR "KOLAYLIK" İÇİN OYNAMAZ. Her artış AÇIK BİR KULLANICI
@@ -2809,9 +2815,39 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      * olunca bu sabit liste VERİYE döner ve sınır tartışması kapanır.
      */
     kontrol(
-      "hep açık liste kısa (en fazla 8 öğe)",
-      gunlukSayisi > 0 && gunlukSayisi <= 8,
+      "hep açık liste kısa (en fazla 9 öğe)",
+      gunlukSayisi > 0 && gunlukSayisi <= 9,
       gunlukSayisi,
+    );
+    /**
+     * ⚠ SIRA DA SINANIYOR, YALNIZ SAYI DEĞİL. Sayı sınırı listenin
+     * UZAMASINI durdurur ama İÇİNİN karışmasını durdurmaz: bir düzenleme
+     * sırasında iki satırın yeri değişse hiçbir bekçi bunu görmezdi ve
+     * kullanıcının açıkça verdiği sıra sessizce bozulurdu.
+     *
+     * ⚠ VE BU LİSTE ELLE TUTULAN BİR BEKÇİ LİSTESİ DEĞİL — kullanıcının
+     * 25.08.2026'da BİREBİR yazdığı sıranın kendisi. Değişmesi için yeni
+     * bir kullanıcı kararı gerekir; o gün bu satır da gerekçesiyle
+     * güncellenir.
+     */
+    const SIRA = [
+      "panel",
+      "satislar",
+      "alimlar",
+      "urunler",
+      "stok",
+      "iadeler",
+      "paketle",
+      "okut",
+      "simulasyon",
+    ];
+    const gercekSira = [...gunlukBlok.matchAll(/anahtar: "([a-zA-Z]+)"/g)].map(
+      (m) => m[1]!,
+    );
+    kontrol(
+      "günlük liste kullanıcının verdiği SIRADA",
+      gercekSira.join(",") === SIRA.join(","),
+      gercekSira,
     );
     /**
      * ⚠ AÇIK SAYFANIN GRUBU KENDİLİĞİNDEN AÇILIR. Kapalı kalsaydı kullanıcı

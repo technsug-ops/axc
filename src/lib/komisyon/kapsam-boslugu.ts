@@ -178,3 +178,39 @@ export function bosluklariBul(pencereler: readonly Pencere[]): Bosluk[] {
   /** En yeni delik üstte — ekran ters kronolojik listeliyor. */
   return bosluklar.sort((a, b) => b.baslar.getTime() - a.baslar.getTime());
 }
+
+/**
+ * ============================================================================
+ *  GÖRÜŞ SINIRI MI, KAÇIRILMIŞ İNDİRME Mİ? (kullanıcı düzeltmesi 25.08.2026)
+ * ----------------------------------------------------------------------------
+ *  ⚠ TUTANAK, KUSUR İLE SINIRI AYIRT ETTİRMEK ZORUNDA. Delik kaydı ilk
+ *  hâlinde Halil'e _"ara verdin"_ diye okundu. Oysa kronoloji bunun TERSİNİ
+ *  söylüyor ve ölçüldü:
+ *
+ *    sistemin İLK tarife kaydı   18.08.2026 14:36
+ *      ↑ üstelik GERİYE DÖNÜK: yüklenen pencere (14–18.08) o sabah 07:59'da
+ *        ÇOKTAN BİTMİŞTİ
+ *    delik penceresi açıldı      18.08.2026 08:00
+ *      ↑ yani sistemde HENÜZ TEK BİR TARİFE BİLE YOKKEN, 6,6 saat önce
+ *
+ *    21.08 penceresi  → yüklendi 22.08 00:50  (pencere AÇIKKEN)
+ *    25.08 penceresi  → yüklendi 25.08 03:00  (pencere BAŞLAMADAN önce)
+ *    → rutin kurulduğundan beri KAÇAN PENCERE: 0
+ *
+ *  ⚠ ÖLÇÜT TARİH GÖMÜLEREK YAZILMAZ. "21.08'den öncesi muaf" diye sabit bir
+ *  tarih koysaydık bugün doğru, altı ay sonra anlamsız bir istisna olurdu.
+ *  Sınır VERİDEN gelir: sistemin ilk tarife kaydının ANI. O andan ÖNCE
+ *  açılmış bir boşluk, kimsenin atlamadığı bir boşluktur — atlanabilmesi
+ *  için önce sistemin var olması gerekirdi.
+ * ============================================================================
+ */
+export function gorusSiniriMi(bosluk: Bosluk, ilkKayitAni: Date | null): boolean {
+  if (ilkKayitAni === null) return false;
+  /**
+   * ⚠ `<=` DEĞİL `<` DE OLABİLİRDİ — fark etmez ve fark etmediği için
+   * sınanmıyor: boşluğun başlangıcı ile ilk kaydın anı aynı milisaniyeye
+   * düşerse hangi tarafa saydığımızın hiçbir sonucu yok. Sınanan şey
+   * ÖNCE/SONRA ayrımı.
+   */
+  return bosluk.baslar.getTime() <= ilkKayitAni.getTime();
+}

@@ -3225,7 +3225,8 @@
     "boslukOzet": "{adet} kapsam boşluğu · {gun} tam gün tarifesiz",
     "boslukKapanmaz": "Bu boşluk KAPATILAMAZ: kaçırılan tarife dosyası arşivden inmiyor. Satır bir görev değil, kapsamın kaydıdır — o dönemin satışlarında Fiyat dene hüküm veremez.",
     "boslukSatir": "{kanal} · {baslangic} → {bitis} arası KAPSAMSIZ ({saat} saat · {gun} tam gün) — bu aralıkta {satis} satış var, tarifesi yok.",
-    "boslukGizlenen": "{adet} boşluk daha var ama listelenen pencerelerin dışında kalıyor. Özetteki sayı hepsini kapsar."
+    "boslukGizlenen": "{adet} boşluk daha var ama listelenen pencerelerin dışında kalıyor. Özetteki sayı hepsini kapsar.",
+    "boslukGorusSiniri": "Bu aralık, sistemin ilk tarife kaydından ({ilk}) ÖNCEDİR — kaçırılmış bir indirme değil, sistemin görüş alanının başlangıç sınırı. Rutin kurulduğundan beri kaçan pencere yok."
   },
   "Paketle": {
     "baslik": "Yönlendirmeli paketleme",
