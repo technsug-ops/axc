@@ -83,6 +83,18 @@ export function MenuDuzenleyici({
   const [onayAcik, setOnayAcik] = useState(false);
   const [duzen, setDuzen] = useState<BaslangicDuzeni>(baslangic);
   const [degisti, setDegisti] = useState(false);
+  /**
+   * SON DOKUNULAN SATIR — ANLIK GERİ BİLDİRİM (canlı bulgu 25.08.2026).
+   *
+   * ⚠ KULLANICI "ok'a bastım, bir şey olmadı" DEDİ ve haklıydı: taşıma
+   * ÇALIŞIYORDU ama görünmüyordu. İki sebep birden:
+   *   ① Sol menü kaydedene kadar değişmiyor (tasarım gereği) ve kullanıcı
+   *      oraya bakıyordu.
+   *   ② "Kaydedilmemiş değişiklik var" yazısı ~30 satırın ALTINDAydı,
+   *      yani ekranın dışında.
+   * Doğru davranışın GÖRÜNMEZLİĞİ, yanlış davranışla aynı şeydir.
+   */
+  const [sonDokunulan, setSonDokunulan] = useState<string | null>(null);
 
   /** Sıfırlama başarılıysa diyalog kapanır; menü zaten tazelenmiş olur. */
   const [sonSifirla, setSonSifirla] = useState(sifirlaDurumu);
@@ -122,6 +134,7 @@ export function MenuDuzenleyici({
 
   function tasi(anahtar: string, yon: -1 | 1) {
     setDegisti(true);
+    setSonDokunulan(anahtar);
     setDuzen((o) => {
       if (o.gunluk.includes(anahtar)) {
         return { ...o, gunluk: kaydir(o.gunluk, anahtar, yon) };
@@ -145,6 +158,7 @@ export function MenuDuzenleyici({
    */
   function yereTasi(anahtar: string, hedef: string) {
     setDegisti(true);
+    setSonDokunulan(anahtar);
     setDuzen((o) => {
       const gunluk = o.gunluk.filter((a) => a !== anahtar);
       const gruplar = o.gruplar.map((g) => ({
@@ -167,7 +181,14 @@ export function MenuDuzenleyici({
     return (
       <li
         key={anahtar}
-        className="flex flex-wrap items-center gap-2 rounded-md border p-2"
+        /**
+         * ⚠ SON TAŞINAN SATIR VURGULANIR. Uzun bir listede iki komşu satırın
+         * yer değiştirmesi gözden kaçıyor; vurgu "bastığın tuş işe yaradı"
+         * demenin en kısa yolu.
+         */
+        className={`flex flex-wrap items-center gap-2 rounded-md border p-2 transition-colors ${
+          sonDokunulan === anahtar ? "border-primary bg-primary/10" : ""
+        }`}
       >
         <span className="min-w-0 flex-1 truncate text-sm font-medium">
           {etiketler[anahtar] ?? anahtar}
@@ -229,6 +250,14 @@ export function MenuDuzenleyici({
           <h2 className="text-sm font-semibold">{t("gunlukListe")}</h2>
           <p className="text-muted-foreground text-xs">{t("gunlukNotu")}</p>
           {/*
+            ⚠ SOL MENÜNÜN NE ZAMAN DEĞİŞECEĞİ YAZAR. Yazmasaydı kullanıcı
+            oka basıp SOL MENÜYE bakar, orada bir şey değişmediğini görür ve
+            düğmenin bozuk olduğunu sanır — 25.08.2026'da tam bu oldu.
+            ⚠ Ve uç satırların oklarının niye kapalı olduğu da burada:
+            kilitli düğme sessiz kalmaz (İlke #5).
+          */}
+          <p className="text-muted-foreground text-xs">{t("menuNeZaman")}</p>
+          {/*
             ⚠ AÇIK SIFIR: liste boşalırsa satır gizlenmez, ne olduğu yazar.
             Kullanıcı her şeyi gruplara taşıyabilir ve bu MEŞRUDUR — menü
             yine çalışır, yalnız hep açık liste boş kalır.
@@ -267,7 +296,14 @@ export function MenuDuzenleyici({
           </p>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-3">
+        {/*
+          ⚠ ŞERİT YAPIŞKAN — LİSTE UZUN. Günlük liste + dört grup ~30 satır
+          ediyor; kaydet düğmesi ve "kaydedilmemiş değişiklik var" yazısı en
+          altta kalınca EKRANIN DIŞINDA kalıyordu. Kullanıcı bir satırı
+          taşıyıp hiçbir geri bildirim göremiyordu (İlke #9: az tıkla — ve
+          #5: sonuç görünür bildirilir).
+        */}
+        <div className="bg-background sticky bottom-0 flex flex-wrap items-center gap-3 border-t py-3">
           <Button type="submit" disabled={bekliyor || !degisti}>
             <Save />
             {bekliyor ? ortak("kaydediliyor") : ortak("degisiklikleriKaydet")}

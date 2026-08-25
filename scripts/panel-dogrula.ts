@@ -3024,6 +3024,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     const kenar = readFileSync("src/components/app-sidebar.tsx", "utf8");
     const SOZLUK = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
       Menu?: Record<string, string>;
+      MenuDuzeni?: Record<string, string>;
     };
     {
 
@@ -3150,6 +3151,45 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       kontrol(
         "menü düzeni EKRANI var",
         existsSync("src/app/ayarlar/menu/page.tsx"),
+      );
+
+      /**
+       * ═══ GERİ BİLDİRİM — DOĞRU DAVRANIŞIN GÖRÜNMEZLİĞİ DE KUSURDUR ═══
+       * ⚠ CANLI BULGU 25.08.2026: kullanıcı _"oka bastım, bir üste çıkmıyor"_
+       * dedi. Taşıma ÇALIŞIYORDU; görünmüyordu. İki sebep birden:
+       *   ① sol menü kaydedene kadar değişmiyor (tasarım) ve kullanıcı oraya
+       *      bakıyordu — ekran bunu SÖYLEMİYORDU
+       *   ② "kaydedilmemiş değişiklik var" ~30 satırın altında, ekran dışında
+       * Anayasa bu sınıfı adıyla anıyor: _"muafiyetin uygulanması ve beyanı
+       * ayrı sınanır — doğru davranışın GÖRÜNMEZLİĞİ de yalancı yeşildir."_
+       */
+      const duzenleyici = readFileSync(
+        "src/app/ayarlar/menu/duzenleyici.tsx",
+        "utf8",
+      );
+      kontrol(
+        "taşınan satır VURGULANIYOR (basılan tuş işe yaradı mı görünür)",
+        duzenleyici.includes("setSonDokunulan(anahtar)") &&
+          duzenleyici.includes("sonDokunulan === anahtar"),
+      );
+      kontrol(
+        "  ...ve iki taşıma yolu da işaretliyor (ok + grup seçici)",
+        (duzenleyici.match(/setSonDokunulan\(anahtar\)/g) ?? []).length >= 2,
+      );
+      /** ⚠ Kaydet şeridi ekran dışında kalmamalı — liste uzun. */
+      kontrol(
+        "kaydet şeridi YAPIŞKAN (uzun listede ekran dışında kalmıyor)",
+        duzenleyici.includes("sticky bottom-0"),
+      );
+      /**
+       * ⚠ SOL MENÜNÜN NE ZAMAN DEĞİŞECEĞİ EKRANDA YAZAR. Yazmasaydı
+       * kullanıcı oka basıp sol menüye bakar ve düğmeyi bozuk sanardı —
+       * tam olarak yaşanan şey.
+       */
+      kontrol(
+        "  ...ve sol menünün NE ZAMAN değişeceği yazıyor",
+        duzenleyici.includes('t("menuNeZaman")') &&
+          (SOZLUK.MenuDuzeni?.menuNeZaman ?? "").includes("kaydettikten sonra"),
       );
       kontrol(
         "  ...ve katalogda yeri var (menüden ulaşılabiliyor)",

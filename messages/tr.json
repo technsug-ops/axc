@@ -3350,6 +3350,7 @@
     "sifirlaOnayMetni": "Dizdiğiniz sıra silinir ve sistemin varsayılan düzeni geçerli olur. Bu işlem geri alınamaz, ama sırayı yeniden dizebilirsiniz.",
     "sifirlandi": "Menü düzeni varsayılana döndürüldü.",
     "yeniGelen": "{adet} yeni ekran eklendi ve varsayılan yerine kondu: {adlar}. İstediğiniz yere taşıyabilirsiniz.",
-    "taninmayan": "Kayıtta artık var olmayan {adet} başlık bulundu ve yok sayıldı. Kaydettiğinizde temizlenir."
+    "taninmayan": "Kayıtta artık var olmayan {adet} başlık bulundu ve yok sayıldı. Kaydettiğinizde temizlenir.",
+    "menuNeZaman": "Oklarla sırayı değiştirdiğinizde SOL MENÜ hemen değişmez — kaydettikten sonra değişir. Taşıdığınız satır burada mavi çerçeveyle işaretlenir. En üstteki satırın yukarı, en alttakinin aşağı oku kapalıdır: gidecek yer yok."
   }
 }
