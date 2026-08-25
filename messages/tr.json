@@ -689,7 +689,8 @@
     "bulunamadi": "Kullanılabilir bir kamera bulunamadı. Kodu elle yazabilirsiniz.",
     "acilamadi": "Kamera açılamadı. Sayfa güvenli bağlantıda (https veya localhost) olmalı. Kodu elle yazabilirsiniz.",
     "yonerge": "Kodu kameranın ortasına getirin. Okunduğunda pencere kendiliğinden kapanır.",
-    "aciliyor": "Kamera açılıyor..."
+    "aciliyor": "Kamera açılıyor...",
+    "cozucuHatasi": "Barkod çözücü çalışmadı: {sebep}. Kodu elle yazabilirsiniz."
   },
   "Satis": {
     "urunSecilmeli": "Ürün seçilmeli",

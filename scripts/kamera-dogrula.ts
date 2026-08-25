@@ -300,6 +300,51 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
     "  çizgili (1B) kod tercih ediliyor",
     /\.find\(\s*\(s\)\s*=>\s*!\w+\.has\(String\(s\.format\)\)\s*\)/.test(okuyucu),
   );
+
+  /**
+   * ⚠ ÇÖZÜNÜRLÜK İSTENİR (canlı bulgu 25.08.2026). Yalnız `facingMode`
+   * istendiğinde tarayıcı çoğu cihazda 640×480 veriyor. Ürün barkodu
+   * (~95 modül) o çözünürlükte okunuyor, KARGO barkodu (~220 modül, üstelik
+   * A4'ün köşesinde) okunmuyordu — modül başına ~3 piksel kalıyor.
+   */
+  kontrol(
+    "kamera ÇÖZÜNÜRLÜK istiyor (kargo barkodu için şart)",
+    /width:\s*\{\s*ideal:/.test(okuyucu) && /height:\s*\{\s*ideal:/.test(okuyucu),
+  );
+  /**
+   * ⚠ VE `ideal` KULLANILIR, `min` DEĞİL — `min` desteklemeyen cihazda
+   * `OverconstrainedError` atar ve kamera HİÇ açılmaz. Dar çözünürlüklü
+   * okuma, hiç okumamaktan iyidir.
+   */
+  kontrol(
+    "  ...ve `min` ile kilitlenmiyor (cihaz dışlanmaz)",
+    !/width:\s*\{\s*min:/.test(okuyucu),
+  );
+
+  /**
+   * ⚠ SESSİZ YUTMA YASAK (İlke #5). Tarama döngüsündeki `catch` boştu ve
+   * HER KAREYİ sessizce yutuyordu: çözücü hiç çalışmasa bile kamera açık
+   * kalır, hiçbir şey olmaz, teşhis edilecek tek iz kalmazdı. 25.08'de tam
+   * bu yaşandı — "kameralar okumuyor" bildirildi, elimizde hata kaydı yoktu.
+   *
+   * ⚠ ÖLÇÜT DAVRANIŞA BAĞLI: `catch` bloğu bir HATA ELE ALMA yapmalı.
+   * Yalnız "catch var mı" demek yetmez; boş `catch {}` da vardır.
+   */
+  /**
+   * ⚠ DESEN TARAMA DÖNGÜSÜNE DARALTILDI. İlk yazımda dosyanın tamamında
+   * `catch (e) … setHata(` aranıyordu ve mutasyon YEŞİL KALDI: kamerayı
+   * AÇARKEN kullanılan başka bir `catch (e)` de `setHata` çağırıyor ve
+   * deseni ayakta tutuyordu. Aynı desen birden çok yerde geçiyorsa
+   * kullanım bloğuna inilir — kaçıncı kez.
+   */
+  const cozumBasi = okuyucu.indexOf("kareyiCozumle(canvas, video)");
+  const cozumBloku = cozumBasi < 0 ? "" : okuyucu.slice(cozumBasi, cozumBasi + 700);
+  kontrol("tarama döngüsü bulundu", cozumBasi >= 0);
+  kontrol(
+    "  ...ve hatayı SESSİZCE yutmuyor",
+    /catch\s*\(\w+\)\s*\{[\s\S]{0,500}?setHata\(/.test(cozumBloku),
+    cozumBloku.slice(0, 90),
+  );
 }
 
 console.log("");

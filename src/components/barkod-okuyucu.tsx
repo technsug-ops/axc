@@ -136,6 +136,11 @@ function KameraDiyalogu({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  /**
+   * ⚠ ÇÖZÜCÜ HATASI YALNIZ BİR KEZ GÖSTERİLİR. Saniyede dört kare düşüyor;
+   * her karede uyarı basmak ekranı hata seliyle doldurur ve bilgi vermez.
+   */
+  const cozucuHatasi = useRef(false);
   const t = useTranslations("Kamera");
   const [hata, setHata] = useState<string | null>(null);
   const [hazir, setHazir] = useState(false);
@@ -158,11 +163,50 @@ function KameraDiyalogu({
       }
 
       try {
+        /**
+         * ⚠ ÇÖZÜNÜRLÜK İSTENİR — VE SEBEBİ ÖLÇÜLDÜ (25.08.2026).
+         *
+         * Önce yalnız `facingMode` isteniyordu; tarayıcı varsayılanı çoğu
+         * cihazda **640×480**. Halil bildirdi: ürün barkodu okunuyor, KARGO
+         * barkodu okunmuyor. Aradaki fark yoğunluk:
+         *   · EAN-13 ürün barkodu ~95 modül → 640 pikselde modül başına ~6 px
+         *   · 16 haneli kargo barkodu ~220 modül, üstelik A4'ün köşesinde
+         *     → modül başına ~3 px, güvenilir çözümün altında
+         * Yani kamera çalışıyordu; ÇÖZÜNÜRLÜK yetmiyordu.
+         *
+         * ⚠ `ideal` KULLANILIYOR, `min` DEĞİL. `min` verseydik desteklemeyen
+         * cihaz `OverconstrainedError` atar ve kamera HİÇ açılmazdı — dar
+         * çözünürlüklü bir okuma, hiç okumamaktan iyidir.
+         */
         stream = await navigator.mediaDevices.getUserMedia({
-          // Telefonda arka kamera tercih edilir.
-          video: { facingMode: "environment" },
+          video: {
+            // Telefonda arka kamera tercih edilir.
+            facingMode: "environment",
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
           audio: false,
         });
+
+        /**
+         * ⚠ SÜREKLİ ODAK — İSTEĞE BAĞLI, DESTEKLEMEYEN CİHAZDA SESSİZ DÜŞER.
+         * Kargo etiketi genelde masada duruyor ve telefon yaklaştırılıyor;
+         * sabit odakta yakın mesafe bulanık kalır. Standart dışı bir kısıt
+         * olduğu için `try` içinde: başarısız olursa akış aynen sürer.
+         */
+        try {
+          const iz = stream.getVideoTracks()[0];
+          /**
+           * ⚠ `focusMode` TİPLERDE YOK — standart dışı ama yaygın desteklenen
+           * bir kısıt. `unknown` üzerinden dönüştürülüyor; desteklemeyen
+           * tarayıcı sessizce yok sayar ya da atar, ikisi de zararsız.
+           */
+          await iz?.applyConstraints({
+            advanced: [{ focusMode: "continuous" }],
+          } as unknown as MediaTrackConstraints);
+        } catch {
+          /* Odak kısıtı desteklenmiyor — kamera yine çalışır. */
+        }
       } catch (e) {
         const ad = e instanceof Error ? e.name : "";
         if (ad === "NotAllowedError" || ad === "SecurityError") {
@@ -199,8 +243,27 @@ function KameraDiyalogu({
             onOkundu(kod);
             onKapat();
           }
-        } catch {
-          // Tek bir karenin çözümlenememesi normal; sessiz geç.
+        } catch (e) {
+          /**
+           * ⚠ SESSİZ YUTMA KALDIRILDI (İlke #5 — sessiz başarısızlık yasak).
+           *
+           * Burada `catch {}` vardı ve HER KAREYİ sessizce yutuyordu. Çözücü
+           * bir sebeple hiç çalışmasaydı (wasm yüklenmedi, biçim tanınmadı)
+           * kamera açık kalır, hiçbir şey olmaz ve kullanıcı "okumuyor" der —
+           * teşhis edilecek tek bir iz kalmazdı. Bugün tam bu yaşandı:
+           * "kameralar barkodları okumuyor" bildirildi ve elimizde hiçbir
+           * hata kaydı yoktu.
+           *
+           * ⚠ AMA HER KAREDE UYARI GÖSTERİLMEZ: saniyede dört kare düşüyor,
+           * ekranı hata seliyle doldurmak da bilgi vermezdi. YALNIZ İLK hata
+           * gösteriliyor — "bir şey ters gitti"yi söylemeye o yeter.
+           */
+          if (!iptal && !cozucuHatasi.current) {
+            cozucuHatasi.current = true;
+            const mesaj = e instanceof Error ? e.message : String(e);
+            console.error("[barkod] çözücü hatası:", mesaj);
+            setHata(t("cozucuHatasi", { sebep: mesaj.slice(0, 120) }));
+          }
         } finally {
           okumaSuruyor = false;
         }
