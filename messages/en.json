@@ -3202,7 +3202,6 @@
     "kargoKoduIpucu": "",
     "urunKoduEtiketi": "",
     "urunKoduIpucu": "",
-    "siparisBulunamadi": "",
     "eslesti": "",
     "eslesmedi": "",
     "siparisNo": "",
@@ -3218,6 +3217,9 @@
     "paketlendiKilitli": "",
     "zatenHazirlaniyor": "",
     "geriAl": "",
-    "bastanBasla": ""
+    "bastanBasla": "",
+    "bulunamadiHicYok": "",
+    "bulunamadiKargoyaVerilmis": "",
+    "bulunamadiIptal": ""
   }
 }

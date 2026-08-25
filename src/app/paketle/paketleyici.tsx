@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { MapPin, PackageCheck, RotateCcw } from "lucide-react";
 
-import { paketlemeIcinAra } from "@/app/paketle/actions";
+import { paketlemeIcinAra, type PaketAramasi } from "@/app/paketle/actions";
 import {
   paketlemeyiGeriAl,
   paketlendiIsaretle,
@@ -94,7 +94,13 @@ export function Paketleyici() {
   /** `null` = henüz okutulmadı · `true/false` = son okumanın sonucu. */
   const [sonOkumaEslestiMi, setSonOkuma] = useState<boolean | null>(null);
   const [okunmayanKod, setOkunmayanKod] = useState<string | null>(null);
-  const [bulunamadi, setBulunamadi] = useState(false);
+  /**
+   * ⚠ "BULUNAMADI" TEK BAYRAK DEĞİL, SEBEBİ TAŞIYAN BİR DEĞER. Üç apayrı
+   * durum (hiç yok · kargoya verilmiş · iptal) tek cümleye sıkışınca
+   * kullanıcı yanlış işe yönelir: kodu yeniden okutur, oysa yapılacak şey
+   * satışa gönderi numarasını girmektir. (Canlı vaka 25.08.2026, HB etiketi.)
+   */
+  const [bulunamadi, setBulunamadi] = useState<Exclude<PaketAramasi, { durum: "BULUNDU" }> | null>(null);
   const [bekliyor, basla] = useTransition();
 
   const adim = siradakiAdim({ siparis, sonOkumaEslestiMi });
@@ -105,12 +111,12 @@ export function Paketleyici() {
     if (!aranacak) return;
     basla(async () => {
       const cevap = await paketlemeIcinAra(aranacak);
-      setSiparis(cevap);
-      setBulunamadi(cevap === null);
+      setSiparis(cevap.durum === "BULUNDU" ? cevap.siparis : null);
+      setBulunamadi(cevap.durum === "BULUNDU" ? null : cevap);
       setSonOkuma(null);
       setOkunmayanKod(null);
       setUrunKodu("");
-      if (cevap) urunOdagi.current?.focus();
+      if (cevap.durum === "BULUNDU") urunOdagi.current?.focus();
     });
   };
 
@@ -162,7 +168,7 @@ export function Paketleyici() {
     setUrunKodu("");
     setSonOkuma(null);
     setOkunmayanKod(null);
-    setBulunamadi(false);
+    setBulunamadi(null);
     kargoOdagi.current?.focus();
   };
 
@@ -193,10 +199,20 @@ export function Paketleyici() {
           kameraBasligi={t("kargoKoduEtiketi")}
         />
 
-        {/* ⚠ SESSİZ BAŞARISIZLIK YASAK (İlke #5): NİYE bulunamadığı yazar. */}
+        {/*
+          ⚠ SESSİZ BAŞARISIZLIK YASAK (İlke #5) — VE "BULUNAMADI" ÜÇE AYRILIR.
+          Tek cümle üç sebebi birden anlatamaz; kullanıcı hangi işi yapacağını
+          bilemez. Sunucu sebebi ÖLÇÜP gönderiyor, ekran yalnız çiziyor.
+        */}
         {bulunamadi ? (
           <p className={`text-sm ${DURUM_YAZISI.notr}`} role="status">
-            {t("siparisBulunamadi")}
+            {bulunamadi.durum === "HIC_YOK"
+              ? t("bulunamadiHicYok")
+              : bulunamadi.durum === "KARGOYA_VERILMIS"
+                ? t("bulunamadiKargoyaVerilmis", {
+                    siparis: bulunamadi.siparisKodu ?? "—",
+                  })
+                : t("bulunamadiIptal", { siparis: bulunamadi.siparisKodu ?? "—" })}
           </p>
         ) : null}
       </div>

@@ -3202,7 +3202,6 @@
     "kargoKoduIpucu": "örn. 7260036314074719",
     "urunKoduEtiketi": "Raftan aldığınız ürünün kodu",
     "urunKoduIpucu": "barkod, Firma SKU ya da SKU",
-    "siparisBulunamadi": "Bu kodla paketlenmeyi bekleyen sipariş bulunamadı. Kod kargoya verilmiş ya da iptal edilmiş bir siparişe ait olabilir — o siparişler burada çıkmaz.",
     "eslesti": "Eşleşti — doğru ürün. Paketleyebilirsiniz.",
     "eslesmedi": "Okutulan kod ({kod}) bu siparişte yok. Başka bir ürün okutabilirsiniz; hiçbir şey engellenmedi.",
     "siparisNo": "Sipariş no",
@@ -3218,6 +3217,9 @@
     "paketlendiKilitli": "Önce raftan aldığınız ürünü okutun — doğru ürünü aldığınızı kimse doğrulamadan paketlendi işareti atılmaz.",
     "zatenHazirlaniyor": "Zaten paketlendi",
     "geriAl": "Paketlendi işaretini geri al",
-    "bastanBasla": "Yeni kutu"
+    "bastanBasla": "Yeni kutu",
+    "bulunamadiHicYok": "Bu kod sistemde HİÇBİR satışta bulunamadı. En sık sebebi: o satışa gönderi numarası henüz girilmemiş olmasıdır — satış detayından girip tekrar deneyin. Kargo etiketindeki numara ile sisteme yazılan numara farklı da olabilir.",
+    "bulunamadiKargoyaVerilmis": "Bu kod {siparis} numaralı siparişe ait — ama o sipariş KARGOYA VERİLMİŞ olarak işaretli. Paketlenecek siparişler burada çıkmaz.",
+    "bulunamadiIptal": "Bu kod {siparis} numaralı siparişe ait — ama o sipariş İPTAL edilmiş."
   }
 }

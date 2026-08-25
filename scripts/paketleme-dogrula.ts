@@ -232,6 +232,18 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   /** ⚠ RAF AKIŞIN ÇIKTISI — ekranda görünmek ZORUNDA. */
   kontrol("raf kodu ekrana basılıyor", yorumsuz.includes("kalem.rafKodu"));
   kontrol("rafsız kalem ayrıca söyleniyor", yorumsuz.includes("rafGirilmemis"));
+  /**
+   * ⚠ "BULUNAMADI" ÜÇE AYRILIR (canlı vaka 25.08.2026, HB kargo etiketi).
+   * Ekran tek cümle basıyordu ve üç apayrı sebebi yutuyordu; kullanıcı
+   * hangi işi yapacağını bilemiyordu. Üç ayrı anahtar ÜÇÜ DE çizilmeli.
+   */
+  for (const anahtar of [
+    "bulunamadiHicYok",
+    "bulunamadiKargoyaVerilmis",
+    "bulunamadiIptal",
+  ]) {
+    kontrol(`  ekran ${anahtar} çiziyor`, yorumsuz.includes(anahtar));
+  }
 
   /**
    * ⚠ SESLİ ONAY — Halil tarifinin parçası, sessizce düşmemeli.
@@ -275,6 +287,67 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   kontrol(
     "paketlendi izi BURADA yazılmıyor (tek kapı korunuyor)",
     !yorumsuz.includes("auditLog.create"),
+  );
+  /**
+   * ⚠ SEBEP ÖLÇÜLÜR, TAHMİN EDİLMEZ. "Hiç yok" ile "var ama listede değil"
+   * ancak SÜZGEÇSİZ ikinci bir aramayla ayrılır. Desen TİPE değil DÖNÜŞE
+   * bağlı: birlik tanımı (${"durum: HIC_YOK"} gibi) dosyada zaten geçiyor
+   * ve dönüş silinse bile ayakta kalırdı.
+   */
+  for (const donus of [
+    `return { durum: "HIC_YOK" }`,
+    `return { durum: "KARGOYA_VERILMIS"`,
+    `return { durum: "IPTAL"`,
+  ]) {
+    kontrol(`  sunucu ${donus.slice(9, 40)} döndürüyor`, yorumsuz.includes(donus));
+  }
+  kontrol(
+    "sebep ÖLÇÜLÜYOR — süzgeçsiz ikinci arama var",
+    yorumsuz.includes("const disarida = await prisma.sale.findFirst"),
+  );
+  /**
+   * ⚠ DESEN "where" BLOĞUNA DARALTILIYOR. İlk yazımda 240 karakterlik bir
+   * pencereye bakıyordu ve KIRMIZI yandı — çünkü ikinci sorgu o alanları
+   * SEÇİYOR (sebebi ayırt etmek için), SÜZMÜYOR. Kontrol doğru şeye
+   * bakmıyordu; ölçüt düzeltildi, kod değil.
+   */
+  kontrol(
+    "  ...ve o aramanın WHERE bloğu süzgeçsiz",
+    (() => {
+      const bas = yorumsuz.indexOf("const disarida");
+      if (bas < 0) return false;
+      const wBas = yorumsuz.indexOf("where:", bas);
+      const sSon = yorumsuz.indexOf("select:", wBas);
+      if (wBas < 0 || sSon < 0) return false;
+      const wBlok = yorumsuz.slice(wBas, sSon);
+      return !wBlok.includes("shippedAt") && !wBlok.includes("iptalTarihi");
+    })(),
+  );
+
+  /** ⚠ MESAJ, KULLANICININ YAPACAĞI İŞİ ADIYLA SÖYLEMELİ (İlke #5). */
+  const paketSozluk = (
+    JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+      Paketle: Record<string, string>;
+    }
+  ).Paketle;
+  for (const anahtar of [
+    "bulunamadiHicYok",
+    "bulunamadiKargoyaVerilmis",
+    "bulunamadiIptal",
+  ]) {
+    kontrol(
+      `  ${anahtar} sözlükte ve dolu`,
+      typeof paketSozluk[anahtar] === "string" && paketSozluk[anahtar].length > 20,
+    );
+  }
+  kontrol(
+    "HIC_YOK mesajı GÖNDERİ NUMARASI eksikliğini adıyla anıyor",
+    (paketSozluk.bulunamadiHicYok ?? "").toLowerCase().includes("gönderi numarası"),
+  );
+  /** ⚠ ÜÇ SEBEBİ YUTAN ESKİ TEK CÜMLE GERİ GELMEMELİ. */
+  kontrol(
+    "eski tek cümle sözlükten kalktı",
+    !("siparisBulunamadi" in paketSozluk),
   );
 }
 
