@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
 import { gunDegeri, isTakvimGunu } from "@/lib/donem";
+import { ENGEL_ANAHTARI } from "@/lib/komisyon/tarife-engeli";
 import { tarifeDenetle, tarifeYaz } from "@/lib/komisyon/tarife-yaz";
 import { yetkiIste } from "@/lib/yetki";
 
@@ -42,7 +43,7 @@ export async function tarifeOnizle(form: FormData) {
 
   const bayt = Buffer.from(await dosya.arrayBuffer());
   const sonuc = await tarifeDenetle(bayt, hesapId, bugunku());
-  return ozetle(sonuc);
+  return ozetle(sonuc, t);
 }
 
 /** Adım 2 — yazma. Kullanıcı planı GÖRDÜKTEN sonra. */
@@ -103,7 +104,7 @@ export async function tarifeyiYaz(form: FormData) {
     revalidatePath("/");
   }
 
-  return { ...ozetle(sonuc), arsiv };
+  return { ...ozetle(sonuc, t), arsiv };
 }
 
 /**
@@ -117,9 +118,35 @@ function bugunku(): Date {
   return gunDegeri(isTakvimGunu(new Date()));
 }
 
+type Ceviri = Awaited<ReturnType<typeof getTranslations<"Tarife">>>;
+
+/**
+ * ENGEL KODU → TÜRKÇE CÜMLE — TEK KAPI.
+ *
+ * ⚠ NİYE VAR (canlı hata 25.08.2026): `engel` alanı KARIŞIK taşıyordu —
+ * dosya/hesap kontrolleri `t(...)` ile Türkçe metin koyuyor, `ozetle` ise
+ * `yazilabilirMi`nin KODUNU olduğu gibi geçiriyordu. Kullanıcı Hepsiburada
+ * "Avantajlı Teklifler" dosyasını yükleyince ekranda ham `SUTUN_EKSIK`
+ * yazdı: bir operasyoncuya hiçbir şey söylemeyen, ne olduğu ve ne yapılacağı
+ * belirsiz bir kod (İlke #5 — sessiz başarısızlık yasak; i18n — koda gömülü
+ * metin yasak).
+ *
+ * ⚠ EXHAUSTIVE `switch`: `YazimEngeli`ye dördüncü bir kod eklenirse burası
+ * DERLENMEZ. Elle sayılan bir liste, yarın eklenecek kodu sessizce ham
+ * hâlde ekrana bırakırdı — "tip listesi değil, BAĞ".
+ */
+function engelMetni(
+  engel: Extract<Awaited<ReturnType<typeof tarifeDenetle>>, { durum: "HATA" }>,
+  t: Ceviri,
+): string {
+  /* Eşleme `lib/komisyon/tarife-engeli.ts`te — bekçi oradan sınıyor. */
+  return t(ENGEL_ANAHTARI[engel.kod] as Parameters<Ceviri>[0]);
+}
+
 /** Sunucu tipini istemciye taşınabilir düz veriye indirger. */
 function ozetle(
   sonuc: Awaited<ReturnType<typeof tarifeDenetle>>,
+  t: Ceviri,
 ):
   | { durum: "HATA"; engel: string; eksikler?: string[] }
   | {
@@ -151,7 +178,13 @@ function ozetle(
       yuklemeSayisi: number;
     } {
   if (sonuc.durum === "HATA") {
-    return { durum: "HATA", engel: sonuc.engel, eksikler: sonuc.eksikler };
+    /* ⚠ KOD DEĞİL CÜMLE. Ham kod ekrana çıkmaz; eksik sütunlar AYRI taşınır
+       ki kullanıcı "hangi sütun" sorusunu ekrandan cevaplayabilsin. */
+    return {
+      durum: "HATA",
+      engel: engelMetni(sonuc, t),
+      eksikler: sonuc.eksikler,
+    };
   }
   if (sonuc.durum === "ONIZLEME") {
     const p = sonuc.okuma.pencere;

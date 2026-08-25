@@ -128,10 +128,22 @@ export function Yukleyici({
         ) : null}
       </div>
 
+      {/*
+        ⚠ HATA CÜMLE OLARAK GELİR, KOD OLARAK DEĞİL. 25.08.2026'da ekran ham
+        `SUTUN_EKSIK` bastı: doğru teşhis, okunamaz mesaj. Çeviri sunucuda
+        `engelMetni` ile yapılıyor; burada yalnız ÇİZİLİYOR.
+        ⚠ Ve eksik sütunlar AYRI satırda: "sütunlar bulunamadı" cümlesi tek
+        başına HANGİ sütun sorusunu cevaplamıyor (İlke #5).
+      */}
       {sonuc?.durum === "HATA" ? (
-        <p className="text-destructive text-sm" role="alert">
-          {sonuc.engel}
-        </p>
+        <div className="space-y-1" role="alert">
+          <p className="text-destructive text-sm">{sonuc.engel}</p>
+          {"eksikler" in sonuc && sonuc.eksikler && sonuc.eksikler.length > 0 ? (
+            <p className="text-muted-foreground text-xs">
+              {t("hataSutunEksikListe", { sutunlar: sonuc.eksikler.join(" · ") })}
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {onizleme ? (

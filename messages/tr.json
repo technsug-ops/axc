@@ -3185,6 +3185,11 @@
     "arsivHata": "Ham dosya arşivlenemedi. Tarife yazıldı; dosyanın kendi kopyasını saklayın.",
     "hataDosyaSecilmedi": "Dosya seçilmedi.",
     "hataHesapSecilmedi": "Kanal hesabı seçilmedi.",
-    "yukleniyor": "Okunuyor…"
+    "yukleniyor": "Okunuyor…",
+    "hataSutunEksik": "Bu dosyada tarife sütunları bulunamadı. Bu ekran bugün YALNIZ pazaryerinin ürün komisyon tarifesi dosyasını (dilim/limit sütunlu) okuyabiliyor — kampanya ya da teklif dosyaları farklı yapıdadır ve henüz desteklenmiyor.",
+    "hataSutunEksikListe": "Bulunamayan sütunlar: {sutunlar}",
+    "hataPencereYok": "Dosyada geçerlilik penceresi (tarih aralığı) yok. Hangi aralığa ait olduğu bilinmeyen bir tarife yazılamaz — sonradan \"güncel mi bayat mı\" sorusu cevaplanamaz.",
+    "hataSatirYok": "Dosyada okunacak ürün satırı yok.",
+    "hataDosyaOkunamadi": "Dosya okunamadı. Beklenen biçim .xlsx — dosyanın bozuk olmadığından ve pazaryerinden indirildiği hâlde olduğundan emin olun."
   }
 }

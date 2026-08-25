@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+
+import { ENGEL_ANAHTARI } from "../src/lib/komisyon/tarife-engeli";
 import {
   dilimBul,
   pencereCoz,
@@ -427,6 +430,47 @@ console.log("\nKOMİSYON TARİFESİ — DOĞRULAMA\n");
   const eksikli = { ...saglam, eksikSutunlar: ["BARKOD"] };
   const e = yazilabilirMi(eksikli);
   kontrol("eksik sütun REDDEDİLİR", !e.olur && e.engel === "SUTUN_EKSIK");
+}
+
+// --- 10b) ENGEL KODU EKRANA HAM ÇIKMAZ -------------------------------------
+/**
+ * ⚠ CANLI HATA 25.08.2026: kullanıcı Hepsiburada teklif dosyasını yükledi ve
+ * ekranda yalnız `SUTUN_EKSIK` yazdı. Teşhis doğruydu, mesaj okunamazdı.
+ * Bu blok o sınıfı kapatıyor: her engel kodunun bir SÖZLÜK CÜMLESİ olmalı ve
+ * o cümle kodun KENDİSİ olmamalı.
+ */
+{
+  console.log("\n10b) ENGEL KODU → TÜRKÇE CÜMLE");
+  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Tarife: Record<string, string>;
+  };
+  const kodlar = Object.keys(ENGEL_ANAHTARI);
+  kontrol("dört engel kodu da eşlenmiş", kodlar.length === 4, kodlar);
+
+  for (const [kod, anahtar] of Object.entries(ENGEL_ANAHTARI)) {
+    const metin = sozluk.Tarife[anahtar];
+    kontrol(`  ${kod} → sözlükte var`, typeof metin === "string" && metin.length > 0, anahtar);
+    /* ⚠ ASIL KONTROL: cümle kodun KENDİSİ olmamalı — "SUTUN_EKSIK" yazan bir
+       sözlük girdisi bugünkü hatayı aynen üretirdi. */
+    kontrol(
+      `  ${kod} → cümle, kod DEĞİL`,
+      typeof metin === "string" && !metin.includes(kod),
+      metin?.slice(0, 40),
+    );
+    kontrol(`  ${kod} → en az üç kelime`, (metin ?? "").trim().split(/\s+/).length >= 3);
+  }
+
+  /* ⚠ VE EKRAN BU KAPIDAN GEÇMELİ. Desen ADA değil KULLANIMA bağlanıyor:
+     "ENGEL_ANAHTARI" kelimesi import satırında da geçiyor. */
+  const eylem = readFileSync("src/app/ayarlar/tarife/eylemler.ts", "utf8");
+  kontrol(
+    "ekran engeli ENGEL_ANAHTARI üzerinden çeviriyor",
+    eylem.includes("ENGEL_ANAHTARI[engel.kod]"),
+  );
+  kontrol(
+    "ham `engel` alanı ekrana geçirilmiyor",
+    !/engel:\s*sonuc\.engel/.test(eylem),
+  );
 }
 
 // --- 11) RAPOR METNİ — BAĞSIZ SAYISI HER ZAMAN YAZAR ------------------------

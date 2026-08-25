@@ -43,6 +43,15 @@ import {
 export type TarifeYuklemeSonucu =
   | {
       durum: "HATA";
+      /**
+       * MAKİNE OKUNUR KOD — ekran bunu Türkçeye çevirir.
+       * ⚠ 25.08.2026 canlı hatası: yalnız `engel` vardı ve ekran onu OLDUĞU
+       * GİBİ basıyordu; kullanıcı Hepsiburada teklif dosyasını yükleyince
+       * ham `SUTUN_EKSIK` gördü. Kod ile insan cümlesi AYRI alanlar: betik
+       * kodu/ham metni yazar, ekran çeviriyi.
+       */
+      kod: "DOSYA_OKUNAMADI" | "SUTUN_EKSIK" | "PENCERE_YOK" | "SATIR_YOK";
+      /** Betik çıktısı için ham metin — ekranda GÖSTERİLMEZ. */
       engel: string;
       eksikler?: string[];
     }
@@ -93,7 +102,11 @@ export async function tarifeDenetle(
     }
     veri = secilen ?? (sayfalar[0]?.data ?? []);
   } catch (e) {
-    return { durum: "HATA", engel: `DOSYA_OKUNAMADI: ${String(e).slice(0, 200)}` };
+    return {
+      durum: "HATA",
+      kod: "DOSYA_OKUNAMADI",
+      engel: `DOSYA_OKUNAMADI: ${String(e).slice(0, 200)}`,
+    };
   }
 
   const okuma = tarifeOku(veri, bugun);
@@ -101,6 +114,7 @@ export async function tarifeDenetle(
   if (!izin.olur) {
     return {
       durum: "HATA",
+      kod: izin.engel,
       engel: izin.engel,
       eksikler: "eksikler" in izin ? izin.eksikler : undefined,
     };

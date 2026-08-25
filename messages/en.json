@@ -3185,6 +3185,11 @@
     "arsivHata": "",
     "hataDosyaSecilmedi": "",
     "hataHesapSecilmedi": "",
-    "yukleniyor": ""
+    "yukleniyor": "",
+    "hataSutunEksik": "",
+    "hataSutunEksikListe": "",
+    "hataPencereYok": "",
+    "hataSatirYok": "",
+    "hataDosyaOkunamadi": ""
   }
 }
