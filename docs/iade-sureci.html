@@ -788,13 +788,13 @@ sanılmıştı; ikisi farklı sayaçlardı. Her biri <strong>hangi olayla başla
 <td><strong>Geri gönderim</strong></td>
 <td><strong>karar anı</strong> — analizden dönene seçenek seçilince <code>(K)</code></td>
 <td><strong>2 iş günü</strong> <code>(K)</code></td>
-<td>⛔ <strong>BİLİNMİYOR</strong></td>
+<td>⚠ <strong>OTOMATİK ONAY + CEZA</strong> — iade, MÜŞTERİNİN açtığı sebeple kapanır ve o sebebin cezası uygulanır; müşteriye parası yatırılır <code>(K)</code></td>
 </tr>
 </tbody>
 </table></div>
 <p>⚠ <strong>5 NUMARA ÜÇ YOLA DA İŞLER</strong> — satıcı haklı · değişim · analiz sonrası
 (§5). Önce yalnız birinciye yazılmıştı, yanlıştı <code>(K)</code>.</p>
-<h3>12.0 Beşinci sayaç — İKİ SORU KAPANDI, BİRİ AÇIK <code>(K)</code> 25.08.2026</h3>
+<h3>12.0 Beşinci sayaç — ÜÇ SORUNUN ÜÇÜ DE CEVAPLANDI <code>(K)</code> 25.08.2026</h3>
 <blockquote>
 <p>Kapı şuydu: <em>"bu iki soru cevaplanmadan beşinci sayaç ekranda son tarih
 olarak gösterilemez."</em> <strong>İkisi de cevaplandı.</strong> Ama cevap ÖLÇÜM değil
@@ -837,22 +837,35 @@ kendi açıklaması bu işi zaten bekliyor.</p>
 analiz olmadan "satıcı haklı" çıkan iki yolda çıpanın yine karar anı
 olduğu <strong>varsayılmadı.</strong> Aynısı saymak, ölçülen kümenin dışına ölçüt
 uygulamak olurdu.</p>
-<p><strong>⛔ (c) DOLARSA NE OLUYOR — HÂLÂ BİLİNMİYOR.</strong> Öteki dört sayacın sonucu
-yazılı (iptal · otomatik onay · otomatik onay · —); beşincisininki
-sorulmadı. Ceza mı kesiliyor, iade otomatik mi kapanıyor, hiçbir şey mi
-olmuyor? <strong>Tahmin yazılmadı.</strong></p>
+<p><strong>(c) DOLARSA NE OLUYOR ✅ — CEVAPLANDI <code>(K)</code> 25.08.2026.</strong> Ve cevap
+sorulan şıkların hiçbiri değil:</p>
+<blockquote>
+<p><em>"İade otomatik olarak müşterinin açtığı seçenekten kapanır. Mesela
+müşteri kusurlu üründen açmışsa ve biz 'değişim yapacağız' deyip ürün
+göndermediysek, <strong>kusurlu ürün gönderme cezası ile</strong> iade kapanır,
+müşteriye parası yatırılır."</em></p>
+</blockquote>
+<p>⚠ <strong>SONUCU BİZİM EYLEMİMİZ DEĞİL, MÜŞTERİNİN SEBEBİ BELİRLİYOR.</strong> "Ceza
+kesilir" demek eksik olurdu: kesilen ceza <strong>iadenin hangi kapıdan
+açıldığına</strong> bağlı. Aynı gecikme, sebebi <em>"Beğenmedim"</em> olan bir iadede
+başka, <em>"Kusurlu ürün gönderildi"</em> olan bir iadede başka sonuç doğurur.</p>
+<p>⚠ <strong>BU, BEŞ SAYACIN EN PAHALISI.</strong> 2 ve 3 numara dolunca iade onaylanır
+(mal yok, para gitti). Beşinci dolduğunda <strong>mal BİZDE kalır, para yine
+gider, üstüne ceza biner</strong> — yani tek kayıpla değil üç kayıpla kapanır.</p>
+<p>⛔ <strong>AMA CEZANIN KENDİSİ ÖLÇÜLMEDİ.</strong> Hangi sebep hangi cezayı doğuruyor,
+tutarı ne — bunların hiçbiri bizim defterimizde takip edilmiyor. Sistem
+<strong>mekanizmayı</strong> yazar, <strong>rakamı YAZMAZ</strong> (<em>"sistem, kendi defterinde takip
+etmediği şey hakkında iddia kurmaz"</em>). Ceza tarifesi bir gün ölçülürse
+ayrı kalem olarak açılır.</p>
 <p>⚠ Ve bu satır bugün <strong>bekçisiz</strong>: <code>rma:dogrula</code> dört sayacın sonucunu
-adıyla sınıyor, beşincisininkini sınamıyor — biri <code>BILINMIYOR</code>u bir
-tahminle değiştirse hiçbir kontrol kırmızı yanmaz. Sayaç koda girerken
-o kontrol de yazılır.</p>
-<p><strong>Kalan iki şart:</strong></p>
-<ol>
-<li><strong>(c) cevaplanacak.</strong> Sonucu bilinmeyen bir sayaç ekranda "kaç gün
-  kaldı" yazar ama <em>"dolarsa ne olur"</em> satırı boş kalır — ve K31'in
-  kuralı şuydu: <em>"3 gün kaldı" tek başına uyarı değildir.</em></li>
-<li><strong>Rozet <code>BEYAN</code> → <code>OLCULDU</code>.</strong> "Reddedilen" sekmesinden tek ekran
-  görüntüsü: <strong>karar tarihi, kargo kodu ve kalan süre aynı ekranda.</strong></li>
-</ol>
+adıyla sınıyor, beşincisininkini sınamıyor — biri sonucu bir tahminle
+değiştirse hiçbir kontrol kırmızı yanmaz. Sayaç koda girerken o kontrol
+de yazılır.</p>
+<p><strong>Üç sorunun ÜÇÜ de cevaplandı. Kalan tek şart:</strong></p>
+<p><strong>Rozet <code>BEYAN</code> → <code>OLCULDU</code>.</strong> Üçü de tek kaynaktan (kullanıcı anlatımı)
+geliyor; §12.2'deki <code>10 gün</code> üç bağımsız kaynakla terfi etmişti.
+"Reddedilen" sekmesinden tek ekran görüntüsü yeter: <strong>karar tarihi,
+kargo kodu ve kalan süre aynı karede.</strong></p>
 <h3>12.1 İkinci sayaç niye var — ve niye para tarafında</h3>
 <p><code>(K)</code> <em>"Kargoda yaşanacak sorundan müşteriyi korumak için."</em> İade kargoda
 kaybolursa müşteri parasız ve ürünsüz kalmasın diye pazaryeri <strong>süre

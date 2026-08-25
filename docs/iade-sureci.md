@@ -396,12 +396,12 @@ sanılmıştı; ikisi farklı sayaçlardı. Her biri **hangi olayla başlar** ve
 | 2 | Kargo satıcıya ulaşsın | **müşteri kargoya verince** | **10 gün** ✅ *ölçüldü* | ⚠ **iade SEBEBİ NE OLURSA OLSUN ONAYLANIR**, müşteriye parası iade edilir → satıcı **KARGO ŞİRKETİNE tazmin talebi** açar |
 | 3 | Onay/red kararı | **iade satıcıya teslim edilince** | **2 gün** | iade otomatik onaylanır |
 | 4 | Analiz (servis) | pazaryeri analize alınca | **28 gün** | — |
-| 5 | **Geri gönderim** | **karar anı** — analizden dönene seçenek seçilince `(K)` | **2 iş günü** `(K)` | ⛔ **BİLİNMİYOR** |
+| 5 | **Geri gönderim** | **karar anı** — analizden dönene seçenek seçilince `(K)` | **2 iş günü** `(K)` | ⚠ **OTOMATİK ONAY + CEZA** — iade, MÜŞTERİNİN açtığı sebeple kapanır ve o sebebin cezası uygulanır; müşteriye parası yatırılır `(K)` |
 
 ⚠ **5 NUMARA ÜÇ YOLA DA İŞLER** — satıcı haklı · değişim · analiz sonrası
 (§5). Önce yalnız birinciye yazılmıştı, yanlıştı `(K)`.
 
-### 12.0 Beşinci sayaç — İKİ SORU KAPANDI, BİRİ AÇIK `(K)` 25.08.2026
+### 12.0 Beşinci sayaç — ÜÇ SORUNUN ÜÇÜ DE CEVAPLANDI `(K)` 25.08.2026
 
 > Kapı şuydu: _"bu iki soru cevaplanmadan beşinci sayaç ekranda son tarih
 > olarak gösterilemez."_ **İkisi de cevaplandı.** Ama cevap ÖLÇÜM değil
@@ -449,23 +449,40 @@ analiz olmadan "satıcı haklı" çıkan iki yolda çıpanın yine karar anı
 olduğu **varsayılmadı.** Aynısı saymak, ölçülen kümenin dışına ölçüt
 uygulamak olurdu.
 
-**⛔ (c) DOLARSA NE OLUYOR — HÂLÂ BİLİNMİYOR.** Öteki dört sayacın sonucu
-yazılı (iptal · otomatik onay · otomatik onay · —); beşincisininki
-sorulmadı. Ceza mı kesiliyor, iade otomatik mi kapanıyor, hiçbir şey mi
-olmuyor? **Tahmin yazılmadı.**
+**(c) DOLARSA NE OLUYOR ✅ — CEVAPLANDI `(K)` 25.08.2026.** Ve cevap
+sorulan şıkların hiçbiri değil:
+
+> _"İade otomatik olarak müşterinin açtığı seçenekten kapanır. Mesela
+> müşteri kusurlu üründen açmışsa ve biz 'değişim yapacağız' deyip ürün
+> göndermediysek, **kusurlu ürün gönderme cezası ile** iade kapanır,
+> müşteriye parası yatırılır."_
+
+⚠ **SONUCU BİZİM EYLEMİMİZ DEĞİL, MÜŞTERİNİN SEBEBİ BELİRLİYOR.** "Ceza
+kesilir" demek eksik olurdu: kesilen ceza **iadenin hangi kapıdan
+açıldığına** bağlı. Aynı gecikme, sebebi _"Beğenmedim"_ olan bir iadede
+başka, _"Kusurlu ürün gönderildi"_ olan bir iadede başka sonuç doğurur.
+
+⚠ **BU, BEŞ SAYACIN EN PAHALISI.** 2 ve 3 numara dolunca iade onaylanır
+(mal yok, para gitti). Beşinci dolduğunda **mal BİZDE kalır, para yine
+gider, üstüne ceza biner** — yani tek kayıpla değil üç kayıpla kapanır.
+
+⛔ **AMA CEZANIN KENDİSİ ÖLÇÜLMEDİ.** Hangi sebep hangi cezayı doğuruyor,
+tutarı ne — bunların hiçbiri bizim defterimizde takip edilmiyor. Sistem
+**mekanizmayı** yazar, **rakamı YAZMAZ** (_"sistem, kendi defterinde takip
+etmediği şey hakkında iddia kurmaz"_). Ceza tarifesi bir gün ölçülürse
+ayrı kalem olarak açılır.
 
 ⚠ Ve bu satır bugün **bekçisiz**: `rma:dogrula` dört sayacın sonucunu
-adıyla sınıyor, beşincisininkini sınamıyor — biri `BILINMIYOR`u bir
-tahminle değiştirse hiçbir kontrol kırmızı yanmaz. Sayaç koda girerken
-o kontrol de yazılır.
+adıyla sınıyor, beşincisininkini sınamıyor — biri sonucu bir tahminle
+değiştirse hiçbir kontrol kırmızı yanmaz. Sayaç koda girerken o kontrol
+de yazılır.
 
-**Kalan iki şart:**
+**Üç sorunun ÜÇÜ de cevaplandı. Kalan tek şart:**
 
-1. **(c) cevaplanacak.** Sonucu bilinmeyen bir sayaç ekranda "kaç gün
-   kaldı" yazar ama _"dolarsa ne olur"_ satırı boş kalır — ve K31'in
-   kuralı şuydu: _"3 gün kaldı" tek başına uyarı değildir._
-2. **Rozet `BEYAN` → `OLCULDU`.** "Reddedilen" sekmesinden tek ekran
-   görüntüsü: **karar tarihi, kargo kodu ve kalan süre aynı ekranda.**
+**Rozet `BEYAN` → `OLCULDU`.** Üçü de tek kaynaktan (kullanıcı anlatımı)
+geliyor; §12.2'deki `10 gün` üç bağımsız kaynakla terfi etmişti.
+"Reddedilen" sekmesinden tek ekran görüntüsü yeter: **karar tarihi,
+kargo kodu ve kalan süre aynı karede.**
 
 ### 12.1 İkinci sayaç niye var — ve niye para tarafında
 
