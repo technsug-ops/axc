@@ -42,7 +42,35 @@ prepareZXingModule({
   overrides: { locateFile: () => "/zxing_reader.wasm" },
 });
 
-const DESTEKLENEN_FORMATLAR = ["EAN13", "EAN8", "Code128", "QRCode"] as const;
+/**
+ * OKUNAN BİÇİMLER — İKİ AYRI DÜNYA.
+ *
+ * ⚠ LİSTE ÜRÜN KODLARI İÇİN KURULMUŞTU VE KAPSAM GENİŞLEYİNCE GENİŞLEMEDİ.
+ * İlk hâli `EAN13 · EAN8 · Code128 · QRCode` idi ve o gün ekran yalnız ÜRÜN
+ * okuyordu. K41① ile **kargo etiketi** akışa girdi (`/okut`, `/paketle`) —
+ * kargo etiketleri başka semboloji kullanır ve liste hiç güncellenmedi.
+ *
+ * Canlı bulgu 25.08.2026: Hepsiburada `hepsiJET` etiketi kamerayla
+ * okunmuyor. Etiketteki numara **14 hane** (`62755096992291`) — bu klasik
+ * bir `ITF-14` uzunluğu ve `ITF` listede YOKTU. Okuyucu tanımadığı bir
+ * sembolojiyi "bulamadım" diye geçer; ekranda hata da çıkmaz, hiçbir şey
+ * olmaz. Tam olarak kullanıcının anlattığı hâl.
+ *
+ * ⚠ HANGİ SEMBOLOJİ OLDUĞU ÖLÇÜLMEDİ — VE BU YAZILI. Etiketin gerçekte
+ * `ITF` mi `Code128` mi olduğunu ölçemedim (elimde dosya olarak yok).
+ * Bu yüzden TEK bir biçim eklenmedi: kargo etiketlerinde yaygın olan
+ * ailenin tamamı açıldı. Genişletmenin bedeli yok (okuyucu zaten tarıyor),
+ * dar bırakmanın bedeli okunmayan etiket.
+ */
+const URUN_FORMATLARI = ["EAN13", "EAN8", "Code128", "QRCode"] as const;
+
+/** Kargo/lojistik etiketlerinde yaygın olanlar. */
+const KARGO_FORMATLARI = ["ITF", "Code39", "Code93", "DataMatrix", "PDF417"] as const;
+
+const DESTEKLENEN_FORMATLAR = [
+  ...URUN_FORMATLARI,
+  ...KARGO_FORMATLARI,
+] as const;
 
 /** Kamera karesini çözümler; kod bulursa metnini döner. */
 async function kareyiCozumle(
@@ -60,14 +88,35 @@ async function kareyiCozumle(
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
+  /**
+   * ⚠ TEK SEMBOL ARAMA KALDIRILDI. Kargo etiketinde BİRDEN ÇOK kod var
+   * (hepsiJET örneği: üstte QR, altta çizgili barkod, yanda ikinci bir
+   * kare kod). `maxNumberOfSymbols: 1` ile okuyucu HANGİSİNİ bulursa onu
+   * döndürüyordu — ve QR çoğu kargo etiketinde takip numarası DEĞİL, bir
+   * paket/adres demeti taşır. O değer arandığında hiçbir şey bulunmaz ve
+   * kullanıcıya "okumadı" gibi görünür.
+   */
   const sonuclar = await readBarcodes(imageData, {
     formats: [...DESTEKLENEN_FORMATLAR],
     tryHarder: true,
-    maxNumberOfSymbols: 1,
+    maxNumberOfSymbols: 4,
   });
 
-  const gecerli = sonuclar.find((s) => s.isValid && s.text);
-  return gecerli?.text ?? null;
+  const gecerliler = sonuclar.filter((s) => s.isValid && s.text);
+  if (gecerliler.length === 0) return null;
+
+  /**
+   * ⚠ ÇİZGİLİ (1B) KOD ÖNCELİKLİ — TAHMİN DEĞİL, ETİKET GERÇEĞİ.
+   * Kargo etiketlerinde takip numarası çizgili barkotta yazar; kare kod
+   * (QR/DataMatrix) genelde başka bir demet taşır. Ürün etiketlerinde ise
+   * zaten tek kod olur ve bu tercih hiçbir şeyi değiştirmez.
+   *
+   * ⚠ RAF ETİKETİMİZDE İKİSİ AYNI DEĞERİ TAŞIYACAK (K50 EK-2), yani orada
+   * da tercih zararsız — hangisi okunursa okunsun sonuç aynı.
+   */
+  const kareKodlar = new Set(["QRCode", "DataMatrix", "PDF417", "Aztec"]);
+  const cizgili = gecerliler.find((s) => !kareKodlar.has(String(s.format)));
+  return (cizgili ?? gecerliler[0]).text;
 }
 
 // ---------------------------------------------------------------------------

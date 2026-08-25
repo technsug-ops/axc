@@ -248,6 +248,60 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
   );
 }
 
+// --- BİÇİM KAPSAMI — ÜRÜN **VE** KARGO ------------------------------------
+/**
+ * ⚠ CANLI BULGU 25.08.2026: `hepsiJET` etiketi kamerayla okunmadı. Biçim
+ * listesi ÜRÜN kodları için kurulmuştu (`EAN13 · EAN8 · Code128 · QRCode`)
+ * ve K41① ile kargo etiketi akışa girince GENİŞLEMEDİ. Okuyucu tanımadığı
+ * bir sembolojiyi sessizce geçer — ekranda hata çıkmaz, hiçbir şey olmaz.
+ *
+ * ⚠ ÖLÇÜT SAYIM DEĞİL, İKİ KÜMENİN DE VARLIĞI. "Kaç biçim var" diye saymak
+ * yarın biri ürün biçimini silip kargo biçimi eklediğinde yeşil kalırdı.
+ */
+{
+  console.log("\nBİÇİM KAPSAMI — ürün VE kargo etiketleri");
+  const ham = readFileSync("src/components/barkod-okuyucu.tsx", "utf8");
+  /**
+   * ⚠ YORUM AYIKLANIR — YOKSA AÇIKLAMA KENDİNİ İHLAL SANDIRIR. İlk yazımda
+   * kontrol dosyanın tamamını tarıyordu ve TEMİZ koşumda kırmızı yandı:
+   * eski davranışı ANLATAN yorum (`maxNumberOfSymbols: 1`) deseni
+   * eşleştiriyordu. Bir yasağı açıklayan cümle, yasağı çiğnemiş değildir.
+   */
+  const okuyucu = ham
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+
+  for (const bicim of ["EAN13", "Code128", "QRCode"]) {
+    kontrol(`  ürün biçimi ${bicim} destekleniyor`, okuyucu.includes(`"${bicim}"`));
+  }
+  /** ⚠ 14 haneli kargo numarası klasik ITF-14'tür — bu satır o vakanın bekçisi. */
+  for (const bicim of ["ITF", "Code39", "DataMatrix"]) {
+    kontrol(`  kargo biçimi ${bicim} destekleniyor`, okuyucu.includes(`"${bicim}"`));
+  }
+
+  /**
+   * ⚠ TEK SEMBOL ARAMAYA GERİ DÖNÜLMEZ. Kargo etiketinde birden çok kod var;
+   * tek sembolle okuyucu yanlış olanı (genelde QR) döndürür ve aranan değer
+   * bulunamaz — kullanıcıya "okumadı" gibi görünür.
+   */
+  kontrol(
+    "  tek sembolle sınırlanmıyor",
+    !/maxNumberOfSymbols:\s*1\b/.test(okuyucu),
+  );
+  /**
+   * ⚠ VE ÇİZGİLİ KOD TERCİHİ DURUYOR — takip numarası orada yazar.
+   *
+   * ⚠ ÖLÇÜT ADA DEĞİL DAVRANIŞA BAĞLI. İlk yazımda yalnız `kareKodlar`
+   * kelimesi aranıyordu ve mutasyon YEŞİL KALDI: değişkenin TANIMI yeniden
+   * adlandırılınca kullanım yerindeki kelime deseni ayakta tuttu. Aranan şey
+   * artık seçimin kendisi — "biçimi kare kod kümesinde OLMAYAN ilk sonucu al".
+   */
+  kontrol(
+    "  çizgili (1B) kod tercih ediliyor",
+    /\.find\(\s*\(s\)\s*=>\s*!\w+\.has\(String\(s\.format\)\)\s*\)/.test(okuyucu),
+  );
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
