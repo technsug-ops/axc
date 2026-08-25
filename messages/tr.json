@@ -684,7 +684,8 @@
     "okut": "Barkod okut",
     "paketle": "Paketle",
     "depoKurulumu": "Depo kurulumu",
-    "menuDuzeni": "Menü düzeni"
+    "menuDuzeni": "Menü düzeni",
+    "grupAyarlar": "Ayarlar"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",

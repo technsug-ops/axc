@@ -76,6 +76,21 @@ export const MENU_GRUPLARI: KatalogGrubu[] = [
   { anahtar: "grupUrunKanal" },
   { anahtar: "grupTanimlar" },
   { anahtar: "grupVeri" },
+  /**
+   * AYARLAR — SİSTEMİN KENDİSİ (kullanıcı isteği 25.08.2026).
+   *
+   * ⚠ NİYE AYRI: `Tanımlar` İŞ VERİSİ tanımlar (raf, kategori, tedarikçi —
+   * operasyonun konuştuğu şeyler). Kullanıcı/rol/menü düzeni ise sistemin
+   * KENDİ ayarları; ikisini aynı başlık altında toplamak "tedarikçi ile
+   * menü sırası aynı cins şeydir" demekti.
+   *
+   * ⚠ VE BU BİR KEŞİF SORUNUYDU: kullanıcı `Menü düzeni` ekranını
+   * `Ayarlar` altında aradı, orada öyle bir başlık yoktu ve ekrana
+   * ulaşamadı. Menü, aranan yere göre dizilir.
+   *
+   * ⚠ EN SONDA — sıklık sırası: buraya ayda bir girilir.
+   */
+  { anahtar: "grupAyarlar" },
 ];
 
 /**
@@ -120,15 +135,6 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "kategoriler", varsayilanGrup: "grupTanimlar" },
   { anahtar: "duzeltmeNedenleri", varsayilanGrup: "grupTanimlar" },
   { anahtar: "tedarikciler", varsayilanGrup: "grupTanimlar" },
-  { anahtar: "kullanicilar", varsayilanGrup: "grupTanimlar" },
-  { anahtar: "roller", varsayilanGrup: "grupTanimlar" },
-  /**
-   * ⚠ MENÜ DÜZENİ EKRANI KENDİ KATALOĞUNDA — ve bu bir döngü değil,
-   * ZORUNLULUK: ekrana ulaşmanın tek yolu menü. Menüden düşürülebilseydi
-   * kullanıcı kendi menüsünü kilitleyip bir daha açamazdı.
-   * Bekçi bunu ayrıca ölçüyor.
-   */
-  { anahtar: "menuDuzeni", varsayilanGrup: "grupTanimlar" },
 
   // ── VERİ ────────────────────────────────────────────────────────────────
   { anahtar: "veriAktarimi", varsayilanGrup: "grupVeri" },
@@ -136,6 +142,20 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "geriYukleme", varsayilanGrup: "grupVeri" },
   { anahtar: "gecmisEkstre", varsayilanGrup: "grupVeri" },
   { anahtar: "tarife", varsayilanGrup: "grupVeri" },
+
+  // ── AYARLAR — sistemin kendisi ──────────────────────────────────────────
+  { anahtar: "kullanicilar", varsayilanGrup: "grupAyarlar" },
+  { anahtar: "roller", varsayilanGrup: "grupAyarlar" },
+  /**
+   * ⚠ MENÜ DÜZENİ EKRANI KENDİ KATALOĞUNDA — ve bu bir döngü değil,
+   * ZORUNLULUK: ekrana ulaşmanın tek yolu menü. Menüden düşürülebilseydi
+   * kullanıcı kendi menüsünü kilitleyip bir daha açamazdı.
+   * Bekçi bunu ayrıca ölçüyor.
+   *
+   * ⚠ VE ARTIK `Ayarlar` ALTINDA: kullanıcı onu tam orada aradı ve
+   * bulamadı. Bir ekranın nerede olması gerektiğini, onu arayan söyler.
+   */
+  { anahtar: "menuDuzeni", varsayilanGrup: "grupAyarlar" },
 ];
 
 /**
