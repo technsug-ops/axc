@@ -58,10 +58,24 @@ export type AcikSiparis = {
 /**
  * RAF OKUMASI (K50 ⑤) — "kayıt", envanter DEĞİL.
  *
- * ⚠ ADET İDDİASI YOK. Bu liste, o rafa KAYITLI varyantları söyler; kaç adet
- * durduğunu SÖYLEMEZ. Çıkışlar rafı boşaltmıyor (raf konum kaydıdır, adet
- * defteri değil) — "envanter" desek, sistemin takip etmediği bir şey
- * hakkında iddia kurmuş olurduk. Ekran başlığı bunu açıkça yazar.
+ * ⚠ ÖNCE "ADET İDDİASI YOK" YAZIYORDU — KARAR ÇEVRİLDİ 25.08.2026, VE ESKİ
+ * GEREKÇE SİLİNMİYOR. Şöyle savunulmuştu: _"çıkışlar rafı boşaltmıyor, adet
+ * defteri değil; 'envanter' desek takip etmediğimiz şey hakkında iddia
+ * kurmuş oluruz."_
+ *
+ * Kullanıcı vakası bu savunmayı çürüttü: _"aynı üründen kaç tane olursa
+ * olsun tek kayıt var ama yanında adet yazmıyor; bu ürünün stoğu dün bitti."_
+ * Adetsiz liste, **stoğu sıfırlanmış ürünü hâlâ rafta duruyormuş gibi
+ * gösteriyordu** — yani sessizce YANLIŞ bilgi veriyordu.
+ *
+ * ⚠ VE ADET GÖSTERMEK UYDURMA DEĞİL, ŞEMANIN LİSANS VERDİĞİ BİR TÜRETME:
+ * şema _"varyant başına TEK konum — bilerek basit tutuldu"_ diyor. Bir
+ * varyantın defterdeki stoğunun tamamı o rafta sayılır. Rafa özel bir sayaç
+ * uydurulmuyor; ledger okunuyor.
+ *
+ * ⚠ AMA HÂLÂ "ENVANTER" DEĞİL: bu bir LEDGER sayısıdır, fiziksel sayım
+ * değil. Biri ürünü kaydetmeden başka rafa taşıdıysa sistem bilemez — ve
+ * ekran bunu da söylüyor.
  */
 export type RafKaydi = {
   kod: string;
@@ -73,6 +87,12 @@ export type RafKaydi = {
     barcode: string | null;
     urunAdi: string;
     varyantAdi: string | null;
+    /**
+     * Defterdeki stok (`quantityDelta` toplamı). Varyant başına TEK konum
+     * olduğu için bu, o rafın stoğudur. `0` da GÖSTERİLİR: "bu rafa kayıtlı
+     * ama elde kalmamış" bir bilgidir.
+     */
+    adet: number;
   }[];
 };
 
@@ -286,6 +306,8 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
         variants: {
           where: { isActive: true },
           select: {
+            /** ⚠ Stok gruplaması varyant kimliğine bağlı — seçilmek zorunda. */
+            id: true,
             sku: true,
             companySku: true,
             barcode: true,
@@ -297,6 +319,38 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
       },
     });
     if (raf) {
+      /**
+       * ⚠ ADET GÖSTERİLİYOR — VE BU BİR UYDURMA DEĞİL, ŞEMANIN İZİN
+       * VERDİĞİ BİR TÜRETME (kullanıcı isteği 25.08.2026).
+       *
+       * Şema açıkça diyor: _"varyant başına TEK konum — bilerek basit
+       * tutuldu."_ Yani bir varyantın defterdeki stoğunun TAMAMI o rafta
+       * duruyor sayılır. Sayı ledger'dan (`quantityDelta` toplamı) geliyor;
+       * rafa özel bir sayaç UYDURULMUYOR.
+       *
+       * ⚠ NİYE ÖNEMLİ — KULLANICI VAKASI: "aynı üründen kaç tane olursa
+       * olsun tek kayıt var ama yanında adet yazmıyor; bu ürünün stoğu dün
+       * bitti." Adetsiz liste, **stoğu sıfırlanmış ürünü hâlâ rafta duruyor
+       * gibi gösteriyordu.** Şimdi `0` yazıyor ve bu bir BİLGİ: "bu ürün bu
+       * rafa kayıtlı ama elde kalmamış".
+       *
+       * ⚠ AMA BU BİR LEDGER SAYISIDIR, FİZİKSEL SAYIM DEĞİL. Biri ürünü
+       * kaydetmeden başka rafa taşıdıysa sistem bunu bilemez — ekran bunu
+       * da söylüyor.
+       */
+      const varyantIdleri = raf.variants.map((v) => v.id);
+      const stoklar =
+        varyantIdleri.length === 0
+          ? []
+          : await prisma.stockMovement.groupBy({
+              by: ["variantId"],
+              where: { variantId: { in: varyantIdleri } },
+              _sum: { quantityDelta: true },
+            });
+      const adetler = new Map(
+        stoklar.map((s) => [s.variantId, s._sum.quantityDelta ?? 0]),
+      );
+
       return {
         izId: null,
         kod: temiz,
@@ -315,6 +369,7 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
             barcode: v.barcode,
             urunAdi: v.product.name,
             varyantAdi: v.name,
+            adet: adetler.get(v.id) ?? 0,
           })),
         },
       };

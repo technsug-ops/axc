@@ -578,6 +578,51 @@ console.log("\n7) SİPARİŞSİZ OKUMADA SADE EKRAN (İŞ 1)");
     "sonuç bloğu ÜRÜN YOKKEN de çiziliyor (sipariş varsa)",
     /sonuc\.urun \|\| siparisVar \?/.test(ekranKodu),
   );
+
+  /**
+   * ── RAF MODU (K50 ⑤) — ADET GÖSTERİLİR ────────────────────────────────
+   * ⚠ KULLANICI VAKASI 25.08.2026: _"aynı üründen kaç tane olursa olsun tek
+   * kayıt var ama yanında adet yazmıyor; bu ürünün stoğu dün bitti."_
+   * Adetsiz liste, stoğu sıfırlanmış ürünü hâlâ rafta duruyormuş gibi
+   * gösteriyordu — sessizce yanlış bilgi.
+   *
+   * ⚠ VE SIFIR GÖRÜNÜR OLMALI: `0` bir eksiklik değil, BİLGİDİR ("bu rafa
+   * kayıtlı ama elde kalmamış"). Gri bir kutuda kaybolursa vaka geri gelir.
+   */
+  /**
+   * ⚠ DESEN ÇİZİME BAĞLI, ADA DEĞİL. İlk yazımda yalnız `u.adet` aranıyordu
+   * ve mutasyon (`{u.adet}` → `{null}`) YEŞİL KALDI: aynı ad, sıfır rengini
+   * seçen koşulda (`u.adet <= 0 ?`) da geçiyor ve deseni ayakta tutuyordu.
+   * Aranan şey artık RAKAMIN BASILDIĞI yer.
+   */
+  kontrol(
+    "raf listesinde ADET BASILIYOR",
+    /tabular-nums[^>]*>\{u\.adet\}/.test(ekranKodu),
+  );
+  kontrol(
+    "  ...ve SIFIR ayrı renkte (kaybolmuyor)",
+    /u\.adet\s*<=\s*0\s*\?/.test(ekranKodu),
+  );
+
+  /**
+   * ⚠ ADET DEFTERDEN TÜRETİLİR — rafa özel bir sayaç UYDURULMAZ.
+   *
+   * ⚠ VE ÖLÇÜT SORGUNUN VARLIĞINA DEĞİL, SONUCUNUN KULLANILMASINA BAĞLI.
+   * İlk yazımda yalnız `groupBy … quantityDelta` aranıyordu; sabit değer
+   * döndüren mutasyon (`adet: 1`) sorguyu yerinde bıraktığı için YEŞİL
+   * KALDI. Ölçülen şey artık hesabın EKRANA ULAŞMASI.
+   */
+  const okutEylem = readFileSync("src/app/okut/actions.ts", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+  kontrol(
+    "adet DEFTERDEN okunuyor (quantityDelta toplamı)",
+    /groupBy\([\s\S]{0,200}quantityDelta/.test(okutEylem),
+  );
+  kontrol(
+    "  ...ve o hesap KULLANILIYOR (sabit değil)",
+    /adet:\s*adetler\.get\(/.test(okutEylem),
+  );
   /**
    * ⚠ ÜÇ DAL AYRI: ürün+sipariş · yalnız sipariş · yalnız ürün.
    * Orta dal olmadan gönderi numarası okuması boş bir kutu çizerdi.

@@ -3139,8 +3139,9 @@
     "siparisBulunduAlan": "{alan} ile eşleşti. Aşağıdan paketlendi olarak işaretleyebilirsiniz.",
     "yonlendirmeliPaketle": "Yönlendirmeli paketle",
     "rafBulundu": "Raf {kod}",
-    "rafKayitNotu": "Bu rafa KAYITLI {adet} ürün. Bu bir konum kaydıdır, adet sayımı değil — çıkışlar rafı boşaltmaz.",
-    "rafBos": "Bu rafa kayıtlı ürün yok."
+    "rafKayitNotu": "Bu rafa KAYITLI {adet} ürün. Adetler defterden okunuyor — fiziksel sayım değil; kaydedilmeden taşınan ürünü sistem bilemez.",
+    "rafBos": "Bu rafa kayıtlı ürün yok.",
+    "rafAdet": "Adet"
   },
   "ItirazGerekcesi": {
     "KULLANILMIS": "Müşteriden gelen ürün kullanılmış",

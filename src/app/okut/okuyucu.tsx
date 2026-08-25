@@ -17,6 +17,7 @@ import {
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
+import { DURUM_KUTUSU } from "@/lib/renkler";
 import type { KodRolu } from "@/lib/varyant-arama-kurali";
 import type { VaryantSonucu } from "@/lib/varyant-ozet";
 
@@ -239,7 +240,11 @@ export function Okuyucu() {
               ) : (
                 <ul className="space-y-2">
                   {sonuc.raf.urunler.map((u) => (
-                    <li key={u.sku} className="rounded-md border p-2.5">
+                    <li
+                      key={u.sku}
+                      className="flex flex-wrap items-start justify-between gap-2 rounded-md border p-2.5"
+                    >
+                      <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium">
                         {u.urunAdi}
                         {u.varyantAdi ? (
@@ -260,6 +265,24 @@ export function Okuyucu() {
                             <KopyalanabilirKod deger={u.barcode} etiket={t("alanBarcode")} />
                           </span>
                         ) : null}
+                      </div>
+                      </div>
+                      {/*
+                        ⚠ ADET KOMPAKT KUTUCUKTA (İlke #12) — tam genişlik
+                        "etiket solda, rakam sağda" satırı yasak.
+
+                        ⚠ SIFIR GÖRÜNÜR OLMALI: kullanıcı vakası tam buydu —
+                        "bu ürünün stoğu dün bitti" ama liste onu hâlâ rafta
+                        duruyor gibi gösteriyordu. Sıfır bir eksiklik değil,
+                        BİLGİDİR: "bu rafa kayıtlı, elde kalmamış".
+                      */}
+                      <div
+                        className={`shrink-0 rounded-md px-2.5 py-1.5 text-center ${
+                          u.adet <= 0 ? DURUM_KUTUSU.uyari : "bg-muted/40"
+                        }`}
+                      >
+                        <p className="text-muted-foreground text-xs">{t("rafAdet")}</p>
+                        <p className="text-base font-semibold tabular-nums">{u.adet}</p>
                       </div>
                     </li>
                   ))}
