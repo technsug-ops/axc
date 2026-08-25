@@ -396,35 +396,76 @@ sanılmıştı; ikisi farklı sayaçlardı. Her biri **hangi olayla başlar** ve
 | 2 | Kargo satıcıya ulaşsın | **müşteri kargoya verince** | **10 gün** ✅ *ölçüldü* | ⚠ **iade SEBEBİ NE OLURSA OLSUN ONAYLANIR**, müşteriye parası iade edilir → satıcı **KARGO ŞİRKETİNE tazmin talebi** açar |
 | 3 | Onay/red kararı | **iade satıcıya teslim edilince** | **2 gün** | iade otomatik onaylanır |
 | 4 | Analiz (servis) | pazaryeri analize alınca | **28 gün** | — |
-| 5 | **Geri gönderim** | ret kararı / kargo kodunun düşmesi ⛔ | **2 iş günü** | ⛔ **BİLİNMİYOR** |
+| 5 | **Geri gönderim** | **karar anı** — analizden dönene seçenek seçilince `(K)` | **2 iş günü** `(K)` | ⛔ **BİLİNMİYOR** |
 
 ⚠ **5 NUMARA ÜÇ YOLA DA İŞLER** — satıcı haklı · değişim · analiz sonrası
 (§5). Önce yalnız birinciye yazılmıştı, yanlıştı `(K)`.
 
-### 12.0 Beşinci sayaçta İKİ BELİRSİZLİK — ölçülene kadar burada duracak
+### 12.0 Beşinci sayaç — İKİ SORU KAPANDI, BİRİ AÇIK `(K)` 25.08.2026
 
-> Bu iki soru cevaplanmadan beşinci sayaç ekranda **son tarih olarak
-> gösterilemez**. Yanlış çıpadan hesaplanan bir son tarih, hiç
-> göstermemekten kötüdür: operasyoncu ona güvenip geç kalır.
+> Kapı şuydu: _"bu iki soru cevaplanmadan beşinci sayaç ekranda son tarih
+> olarak gösterilemez."_ **İkisi de cevaplandı.** Ama cevap ÖLÇÜM değil
+> **BEYAN** — kullanıcı anlatımı `(K)`, tek kaynak, ekran görüntüsüyle
+> doğrulanmadı. Rozet bu yüzden `BEYAN` kalıyor: §12.2'deki `10 gün`
+> `OLCULDU`ya **üç bağımsız kaynakla** geçmişti, burada bir kaynak var.
 
-**(a) BİRİM — "2 gün" ile "2 iş günü" aynı şey mi?**
-3 numaralı sayaç **"2 gün"**, beşincisi **"2 iş günü"** olarak söylendi
-`(K)`. İkisini eşitlemek cazip ama **Cuma akşamı düşen bir kargo kodunda
-fark iki gün eder** — takvim günüyle sayarsak Pazar biter, iş günüyle
-sayarsak Salı. İkisi ayrı kaydedildi, birleştirilmedi.
+**(a) BİRİM ✅ — "2 İŞ GÜNÜ", takvim günü değil.** `(K)` 25.08.2026.
+3 numaralı sayaçla ("2 gün") eşitlenmedi; ikisi ayrı duruyor. Fark gerçek:
+**Cuma akşamı düşen bir kararda iki gün eder** — takvim günüyle sayarsak
+Pazar biter, iş günüyle Salı.
 
-**(b) BAŞLANGIÇ ANI — ret kararı mı, kargo kodunun düşmesi mi?**
-Sayaç, pazaryerinin _"satıcı haklı"_ dediği anda mı başlıyor, yoksa kargo
-kodu panele düştüğünde mi? İkisi arasında saatler olabilir. Panelde ayrı
-ayrı görünüyorsa **tek ekran görüntüsü çözer.**
+⚠ **TESLİM EDİLEBİLİRLİK ÖLÇÜLDÜ — iki eksik çıktı, ikisi de kod tarafında:**
 
-**⛔ DOLARSA NE OLUYOR — BİLİNMİYOR.** Öteki dört sayacın sonucu ölçüldü
-(iptal · otomatik onay · otomatik onay · —); beşincisininki sorulmadı.
-Ceza mı kesiliyor, iade otomatik mi kapanıyor, bir şey olmuyor mu?
-**Tahmin yazılmadı.**
+1. `isGunuEkle` (`src/lib/donem.ts`) **var** ve hakediş vadesinde zaten
+   kullanılıyor. Ama **resmî tatilleri saymıyor, yalnız hafta sonunu** —
+   araya bayram girerse son tarih 1–2 gün ERKEN çıkar. Bu sayaçta erken
+   çıkmak lehimize (uyarı erken yanar), ama uydurma değil **bilinen bir
+   sapma** olarak beyan edilir.
+2. `SAYAC_KURALLARI`nda **birim alanı YOK.** Öteki dört sayaç takvim günü
+   ve hesap `gunEkle` ile yapılıyor; "2" olduğu gibi yazılırsa **2 takvim
+   günü** olur ve tam da yukarıdaki Cuma vakasında yanılır. Birim ayrımı
+   açılmadan bu sayı koda GİRMEZ.
 
-**Kapanış şartı:** "Reddedilen" sekmesindeki bir iadenin detayı — **ret
-tarihi, kargo kodu ve kalan süre aynı ekranda.**
+**(b) ÇIPA ✅ — KARAR ANI, kargo kodu DEĞİL.** `(K)` 25.08.2026:
+_"Analizden dönen ürün seçeneklerden biri seçildiğinde."_
+
+⚠ **VE İKİ ADAY ÇIPA ARASINDAKİ MESAFE ÖLÇEĞİYLE VERİLDİ: SAAT, GÜN DEĞİL.**
+Seçimden sonra kayıt nihai karar için kısa süre **İhtilaflı**'da bekler,
+sonra aksiyon alınır — **~1 saat**, ve _"net değil"_ diye beyan edildi
+`(K)`. Yani _"karar anı mı, kargo kodu mu"_ sorusunun bedeli saatlerle
+ölçülüyor. ⚠ Ama gece yarısını geçerse **1 iş günü** eder; gün sınırı
+İstanbul gününe göre çizilir (anayasa).
+
+**Sistemdeki karşılığı zaten var — şema DEĞİŞMİYOR.** Seçenek
+`ANALIZ → ITIRAZ_KABUL` geçişinde soruluyor
+(`analizSonucuIstenirMi` → `status === "ANALIZ"`), yani çıpa `GECIS_ANI`:
+desteklenen bir tür. Son tarih `islemSonTarihi`ye yazılır ve o sütunun
+kendi açıklaması bu işi zaten bekliyor.
+
+⚠ **KAPSAM AÇIK KALDI — BEYAN BİR YOLU ANLATIYOR, SAYAÇ ÜÇ YOLDA İŞLİYOR.**
+`ITIRAZ_KABUL`e üç durumdan geliniyor: `ITIRAZ_ACILDI` ·
+`ITIRAZ_INCELEMEDE` · `ANALIZ`. Beyan **analiz yolunu** anlatıyor;
+analiz olmadan "satıcı haklı" çıkan iki yolda çıpanın yine karar anı
+olduğu **varsayılmadı.** Aynısı saymak, ölçülen kümenin dışına ölçüt
+uygulamak olurdu.
+
+**⛔ (c) DOLARSA NE OLUYOR — HÂLÂ BİLİNMİYOR.** Öteki dört sayacın sonucu
+yazılı (iptal · otomatik onay · otomatik onay · —); beşincisininki
+sorulmadı. Ceza mı kesiliyor, iade otomatik mi kapanıyor, hiçbir şey mi
+olmuyor? **Tahmin yazılmadı.**
+
+⚠ Ve bu satır bugün **bekçisiz**: `rma:dogrula` dört sayacın sonucunu
+adıyla sınıyor, beşincisininkini sınamıyor — biri `BILINMIYOR`u bir
+tahminle değiştirse hiçbir kontrol kırmızı yanmaz. Sayaç koda girerken
+o kontrol de yazılır.
+
+**Kalan iki şart:**
+
+1. **(c) cevaplanacak.** Sonucu bilinmeyen bir sayaç ekranda "kaç gün
+   kaldı" yazar ama _"dolarsa ne olur"_ satırı boş kalır — ve K31'in
+   kuralı şuydu: _"3 gün kaldı" tek başına uyarı değildir._
+2. **Rozet `BEYAN` → `OLCULDU`.** "Reddedilen" sekmesinden tek ekran
+   görüntüsü: **karar tarihi, kargo kodu ve kalan süre aynı ekranda.**
 
 ### 12.1 İkinci sayaç niye var — ve niye para tarafında
 

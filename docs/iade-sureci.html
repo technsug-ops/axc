@@ -786,35 +786,73 @@ sanılmıştı; ikisi farklı sayaçlardı. Her biri <strong>hangi olayla başla
 <tr>
 <td>5</td>
 <td><strong>Geri gönderim</strong></td>
-<td>ret kararı / kargo kodunun düşmesi ⛔</td>
-<td><strong>2 iş günü</strong></td>
+<td><strong>karar anı</strong> — analizden dönene seçenek seçilince <code>(K)</code></td>
+<td><strong>2 iş günü</strong> <code>(K)</code></td>
 <td>⛔ <strong>BİLİNMİYOR</strong></td>
 </tr>
 </tbody>
 </table></div>
 <p>⚠ <strong>5 NUMARA ÜÇ YOLA DA İŞLER</strong> — satıcı haklı · değişim · analiz sonrası
 (§5). Önce yalnız birinciye yazılmıştı, yanlıştı <code>(K)</code>.</p>
-<h3>12.0 Beşinci sayaçta İKİ BELİRSİZLİK — ölçülene kadar burada duracak</h3>
+<h3>12.0 Beşinci sayaç — İKİ SORU KAPANDI, BİRİ AÇIK <code>(K)</code> 25.08.2026</h3>
 <blockquote>
-<p>Bu iki soru cevaplanmadan beşinci sayaç ekranda <strong>son tarih olarak
-gösterilemez</strong>. Yanlış çıpadan hesaplanan bir son tarih, hiç
-göstermemekten kötüdür: operasyoncu ona güvenip geç kalır.</p>
+<p>Kapı şuydu: <em>"bu iki soru cevaplanmadan beşinci sayaç ekranda son tarih
+olarak gösterilemez."</em> <strong>İkisi de cevaplandı.</strong> Ama cevap ÖLÇÜM değil
+<strong>BEYAN</strong> — kullanıcı anlatımı <code>(K)</code>, tek kaynak, ekran görüntüsüyle
+doğrulanmadı. Rozet bu yüzden <code>BEYAN</code> kalıyor: §12.2'deki <code>10 gün</code>
+<code>OLCULDU</code>ya <strong>üç bağımsız kaynakla</strong> geçmişti, burada bir kaynak var.</p>
 </blockquote>
-<p><strong>(a) BİRİM — "2 gün" ile "2 iş günü" aynı şey mi?</strong>
-3 numaralı sayaç <strong>"2 gün"</strong>, beşincisi <strong>"2 iş günü"</strong> olarak söylendi
-<code>(K)</code>. İkisini eşitlemek cazip ama <strong>Cuma akşamı düşen bir kargo kodunda
-fark iki gün eder</strong> — takvim günüyle sayarsak Pazar biter, iş günüyle
-sayarsak Salı. İkisi ayrı kaydedildi, birleştirilmedi.</p>
-<p><strong>(b) BAŞLANGIÇ ANI — ret kararı mı, kargo kodunun düşmesi mi?</strong>
-Sayaç, pazaryerinin <em>"satıcı haklı"</em> dediği anda mı başlıyor, yoksa kargo
-kodu panele düştüğünde mi? İkisi arasında saatler olabilir. Panelde ayrı
-ayrı görünüyorsa <strong>tek ekran görüntüsü çözer.</strong></p>
-<p><strong>⛔ DOLARSA NE OLUYOR — BİLİNMİYOR.</strong> Öteki dört sayacın sonucu ölçüldü
-(iptal · otomatik onay · otomatik onay · —); beşincisininki sorulmadı.
-Ceza mı kesiliyor, iade otomatik mi kapanıyor, bir şey olmuyor mu?
-<strong>Tahmin yazılmadı.</strong></p>
-<p><strong>Kapanış şartı:</strong> "Reddedilen" sekmesindeki bir iadenin detayı — <strong>ret
-tarihi, kargo kodu ve kalan süre aynı ekranda.</strong></p>
+<p><strong>(a) BİRİM ✅ — "2 İŞ GÜNÜ", takvim günü değil.</strong> <code>(K)</code> 25.08.2026.
+3 numaralı sayaçla ("2 gün") eşitlenmedi; ikisi ayrı duruyor. Fark gerçek:
+<strong>Cuma akşamı düşen bir kararda iki gün eder</strong> — takvim günüyle sayarsak
+Pazar biter, iş günüyle Salı.</p>
+<p>⚠ <strong>TESLİM EDİLEBİLİRLİK ÖLÇÜLDÜ — iki eksik çıktı, ikisi de kod tarafında:</strong></p>
+<ol>
+<li><code>isGunuEkle</code> (<code>src/lib/donem.ts</code>) <strong>var</strong> ve hakediş vadesinde zaten
+  kullanılıyor. Ama <strong>resmî tatilleri saymıyor, yalnız hafta sonunu</strong> —
+  araya bayram girerse son tarih 1–2 gün ERKEN çıkar. Bu sayaçta erken
+  çıkmak lehimize (uyarı erken yanar), ama uydurma değil <strong>bilinen bir
+  sapma</strong> olarak beyan edilir.</li>
+<li><code>SAYAC_KURALLARI</code>nda <strong>birim alanı YOK.</strong> Öteki dört sayaç takvim günü
+  ve hesap <code>gunEkle</code> ile yapılıyor; "2" olduğu gibi yazılırsa <strong>2 takvim
+  günü</strong> olur ve tam da yukarıdaki Cuma vakasında yanılır. Birim ayrımı
+  açılmadan bu sayı koda GİRMEZ.</li>
+</ol>
+<p><strong>(b) ÇIPA ✅ — KARAR ANI, kargo kodu DEĞİL.</strong> <code>(K)</code> 25.08.2026:
+<em>"Analizden dönen ürün seçeneklerden biri seçildiğinde."</em></p>
+<p>⚠ <strong>VE İKİ ADAY ÇIPA ARASINDAKİ MESAFE ÖLÇEĞİYLE VERİLDİ: SAAT, GÜN DEĞİL.</strong>
+Seçimden sonra kayıt nihai karar için kısa süre <strong>İhtilaflı</strong>'da bekler,
+sonra aksiyon alınır — <strong>~1 saat</strong>, ve <em>"net değil"</em> diye beyan edildi
+<code>(K)</code>. Yani <em>"karar anı mı, kargo kodu mu"</em> sorusunun bedeli saatlerle
+ölçülüyor. ⚠ Ama gece yarısını geçerse <strong>1 iş günü</strong> eder; gün sınırı
+İstanbul gününe göre çizilir (anayasa).</p>
+<p><strong>Sistemdeki karşılığı zaten var — şema DEĞİŞMİYOR.</strong> Seçenek
+<code>ANALIZ → ITIRAZ_KABUL</code> geçişinde soruluyor
+(<code>analizSonucuIstenirMi</code> → <code>status === "ANALIZ"</code>), yani çıpa <code>GECIS_ANI</code>:
+desteklenen bir tür. Son tarih <code>islemSonTarihi</code>ye yazılır ve o sütunun
+kendi açıklaması bu işi zaten bekliyor.</p>
+<p>⚠ <strong>KAPSAM AÇIK KALDI — BEYAN BİR YOLU ANLATIYOR, SAYAÇ ÜÇ YOLDA İŞLİYOR.</strong>
+<code>ITIRAZ_KABUL</code>e üç durumdan geliniyor: <code>ITIRAZ_ACILDI</code> ·
+<code>ITIRAZ_INCELEMEDE</code> · <code>ANALIZ</code>. Beyan <strong>analiz yolunu</strong> anlatıyor;
+analiz olmadan "satıcı haklı" çıkan iki yolda çıpanın yine karar anı
+olduğu <strong>varsayılmadı.</strong> Aynısı saymak, ölçülen kümenin dışına ölçüt
+uygulamak olurdu.</p>
+<p><strong>⛔ (c) DOLARSA NE OLUYOR — HÂLÂ BİLİNMİYOR.</strong> Öteki dört sayacın sonucu
+yazılı (iptal · otomatik onay · otomatik onay · —); beşincisininki
+sorulmadı. Ceza mı kesiliyor, iade otomatik mi kapanıyor, hiçbir şey mi
+olmuyor? <strong>Tahmin yazılmadı.</strong></p>
+<p>⚠ Ve bu satır bugün <strong>bekçisiz</strong>: <code>rma:dogrula</code> dört sayacın sonucunu
+adıyla sınıyor, beşincisininkini sınamıyor — biri <code>BILINMIYOR</code>u bir
+tahminle değiştirse hiçbir kontrol kırmızı yanmaz. Sayaç koda girerken
+o kontrol de yazılır.</p>
+<p><strong>Kalan iki şart:</strong></p>
+<ol>
+<li><strong>(c) cevaplanacak.</strong> Sonucu bilinmeyen bir sayaç ekranda "kaç gün
+  kaldı" yazar ama <em>"dolarsa ne olur"</em> satırı boş kalır — ve K31'in
+  kuralı şuydu: <em>"3 gün kaldı" tek başına uyarı değildir.</em></li>
+<li><strong>Rozet <code>BEYAN</code> → <code>OLCULDU</code>.</strong> "Reddedilen" sekmesinden tek ekran
+  görüntüsü: <strong>karar tarihi, kargo kodu ve kalan süre aynı ekranda.</strong></li>
+</ol>
 <h3>12.1 İkinci sayaç niye var — ve niye para tarafında</h3>
 <p><code>(K)</code> <em>"Kargoda yaşanacak sorundan müşteriyi korumak için."</em> İade kargoda
 kaybolursa müşteri parasız ve ürünsüz kalmasın diye pazaryeri <strong>süre
