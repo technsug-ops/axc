@@ -444,6 +444,116 @@ console.log("\nEL KİTABI — DOĞRULAMA\n");
   );
 }
 
+// --- 8) GİDER BÖLÜMÜ — SORULAN SORULARIN CEVABI YAZILI MI ------------------
+/**
+ * ⚠ NİYE VAR: kullanıcı 25.08.2026'da sordu — _"KDV yazmayın diyor; KDV
+ * çıkmadığı zaman ödenen damga vergisi var, 791 TL, onu yazıyor muyuz? Bir de
+ * gelir vergisini yazıyor muyuz? Kitapta detay yok."_ Kitap gerçekten
+ * susuyordu ve kullanıcı doğru soruyu sorup cevapsız kaldı.
+ *
+ * ⚠ ÖLÇÜT BÖLÜME DARALTILIYOR, dosyanın tamamına değil: "damga vergisi" gibi
+ * bir ifade kitabın başka bir yerinde geçse bekçi yeşil yanardı ve gider
+ * bölümü boş kalırdı. (Beş kez düşülen tuzak.)
+ */
+{
+  console.log("");
+  console.log("8) GİDER BÖLÜMÜ — vergi ve ödeme yöntemi anlatılıyor mu");
+  const bas = KAYNAK.indexOf('<section id="gider">');
+  const son = KAYNAK.indexOf("<section id=", bas + 20);
+  const bolum = bas < 0 ? "" : KAYNAK.slice(bas, son < 0 ? undefined : son);
+  kontrol("gider bölümü okundu", bolum.length > 500, bolum.length);
+
+  /**
+   * ⚠ HANGİ VERGİ NEREYE — kullanıcının sorduğu şey birebir bu.
+   *
+   * ⚠ VE İŞARET SATIRA BAĞLI, KELİMEYE DEĞİL — BU KONTROL BİR KEZ KÖR ÇIKTI
+   * (25.08.2026). İlk hâli bölümde `"Damga vergisi"` arıyordu; ölçüldü ki
+   * ifade bölümde ÜÇ KEZ geçiyor (tablo satırı · dikkat kutusu · sık hata).
+   * Tablo satırını silen mutasyon YEŞİL geçti: desen ötekilerde ayaktaydı.
+   * Anayasa tablosundaki ikinci bozulma biçimi — _"aynı desen birden çok
+   * yerde geçer; birini bozan mutasyon ötekini ayakta bırakır."_
+   *
+   * Doğrusu: satırları AYIRIP her satırın KENDİ hükmünü sınamak.
+   */
+  const satirlar = [...bolum.matchAll(/<tr>([^]*?)<\/tr>/g)].map((m) =>
+    [...m[1]!.matchAll(/<td>([^]*?)<\/td>/g)].map((h) => h[1]!),
+  );
+  /**
+   * ⚠ ANAHTAR İLK HÜCREDE ARANIR, SATIRIN TAMAMINDA DEĞİL — VE BU KONTROL
+   * ÜÇÜNCÜ DENEMEDE TUTTU. İkinci hâli satırın tamamında arıyordu; MTV
+   * satırının GEREKÇE hücresinde _"Damga vergisiyle aynı mantık"_ yazıyor.
+   * Damga satırını silen mutasyon MTV satırını buluyor, o da EVET/0 taşıdığı
+   * için bekçi YEŞİL kalıyordu. Kalem adı satırın KİMLİĞİDİR; gerekçe metni
+   * değil.
+   */
+  const satirBul = (anahtar: string) =>
+    satirlar.find((h) => (h[0] ?? "").includes(anahtar)) ?? [];
+
+  for (const [ad, anahtar, hukum] of [
+    ["damga vergisi satırı YAZILIR diyor", "Damga vergisi", "EVET"],
+    ["ödenen gelir vergisi satırı YAZILIR diyor", "Ödediğiniz gelir vergisi", "EVET"],
+    ["ödenecek KDV satırı YAZILMAZ diyor", "Ödenecek KDV", "HAYIR"],
+    ["stopaj satırı YAZILMAZ diyor", "Stopaj", "HAYIR"],
+  ] as const) {
+    const satir = satirBul(anahtar);
+    /** ⚠ HÜKÜM İKİNCİ HÜCREDEDİR ("yazılır mı") — üçüncü, dördüncü değil. */
+    kontrol(
+      ad,
+      satir.length >= 2 && satir[1]!.includes(`<strong>${hukum}</strong>`),
+      satir[0]?.slice(0, 70),
+    );
+  }
+
+  /**
+   * ⚠ KDV ORANI 0 — ve bu, hükmün AYRILMAZ parçası. Damga vergisine %20
+   * yazılırsa 791 TL'nin 131 TL'si "indirilecek KDV" sanılır ve net'ten
+   * eksik düşer. Kontrol, oranı SATIRIN İÇİNDE arar.
+   */
+  {
+    const satir = satirBul("Damga vergisi");
+    /** ⚠ ORAN ÜÇÜNCÜ HÜCREDE — satırın herhangi bir yerinde değil. */
+    kontrol(
+      "  ...ve AYNI SATIRIN KDV hücresinde 0 yazıyor",
+      satir.length >= 3 && satir[2]!.includes("<strong>0</strong>"),
+      satir[2],
+    );
+  }
+
+  /**
+   * ⚠ FARK BLOĞU: kâr motorunun REDDEDİLMİŞ varsayımsal %15'i ile fiilen
+   * ödenen gelir vergisi ayrı şeylerdir. Ayrım yazılmazsa kullanıcı ikisini
+   * tek şey sanar ve ya gerçek vergiyi yazmaz ya olmayan bir kesinti arar.
+   */
+  kontrol(
+    "varsayımsal %15 ile ÖDENEN vergi AYRIMI yazılı",
+    bolum.includes("%15 gelir vergisi") && bolum.includes("kullanılmıyor"),
+  );
+
+  /** ⚠ KART + TAKSİT AKIŞI — kullanıcının kendi anlattığı sırayla. */
+  kontrol(
+    "kartla ödeme akışı yazılı (kart borcuna girer)",
+    bolum.includes("Nasıl ödendi?") && bolum.includes("kart listesi"),
+  );
+  kontrol(
+    "  ...ve 'bankada sonradan böldürme' akışı yazılı",
+    bolum.includes("böldürürsünüz") && bolum.includes("taksit sayısını"),
+  );
+  /** ⚠ PARA BİRİMİ ÇEVRİLMEZ ve atlanan SAYILIR — sessizce düşmez. */
+  kontrol(
+    "para birimi kuralı yazılı (atlanan sayılır)",
+    bolum.includes("kur çevirmez") && bolum.includes("atlanan"),
+  );
+  /** ⚠ "BELİRTİLMEDİ" NE DEMEK — boşluk hata değil, bilgi yokluğu. */
+  kontrol(
+    "'Belirtilmedi'nin anlamı yazılı",
+    bolum.includes("Belirtilmedi") && bolum.includes("hata değil"),
+  );
+  kontrol(
+    "  ...ve kartın varlığından yöntem ÇIKARILMADIĞI yazılı",
+    bolum.includes("çıkarmaz"),
+  );
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

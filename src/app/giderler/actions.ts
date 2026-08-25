@@ -9,7 +9,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { gunMetninden, isTakvimGunu, gunDegeri } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
 
-import type { Currency } from "@/generated/prisma/enums";
+import type { Currency, OdemeYontemi } from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
@@ -94,6 +94,55 @@ function giderSemasiKur(t: Ceviri) {
       .min(1, t("taksitAralik"))
       .max(36, t("taksitAralik"))
       .optional(),
+    /**
+     * ÖDEME YÖNTEMİ — NAKİT | HAVALE | KART (25.08.2026).
+     *
+     * ⚠ BOŞ DİZE DÖRDÜNCÜ BİR SEÇENEK DEĞİL, SEÇİM YOKLUĞUDUR. Alan
+     * açılmadan önce girilmiş giderlerde yöntem BİLİNMİYOR; form onu
+     * "belirtilmedi" olarak taşır ve `null` yazılır. "Nakit" varsayılsaydı
+     * sistem bilmediği bir şeyi veri kılığında saklardı.
+     */
+    odemeYontemi: z.enum(["", "NAKIT", "HAVALE", "KART"]).optional(),
+  }).superRefine((veri, ctx) => {
+    /**
+     * ⚠ TUTARLILIK ZOD'DA BAĞLANIR, VERİTABANI KISITIYLA DEĞİL. MySQL'de
+     * koşullu CHECK bakımı pahalı ve `null` (belirtilmedi) üçüncü bir hâl
+     * olarak kuralın dışında kalıyor.
+     */
+    const kartVar = Boolean(veri.creditCardId?.trim());
+
+    /** ⚠ KART dedi ama kart seçmedi — hangi kartın borcu olduğu belirsiz. */
+    if (veri.odemeYontemi === "KART" && !kartVar) {
+      ctx.addIssue({
+        code: "custom",
+        message: t("odemeKartZorunlu"),
+        path: ["creditCardId"],
+      });
+    }
+
+    /**
+     * ⚠ NAKİT/HAVALE dedi ama kart da seçili — ÇELİŞKİ, ve sessizce
+     * çözülmez. Kartı kendiliğinden silseydik kullanıcının kart borcu
+     * hiçbir uyarı olmadan azalırdı; yöntemi kendiliğinden KART yapsaydık
+     * kullanıcının seçimini ezerdik. Soruyu KULLANICI cevaplar (İlke #5).
+     */
+    if (
+      (veri.odemeYontemi === "NAKIT" || veri.odemeYontemi === "HAVALE") &&
+      kartVar
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: t("odemeKartCelisik"),
+        path: ["odemeYontemi"],
+      });
+    }
+
+    /**
+     * ⚠ `""` (belirtilmedi) İÇİN KURAL YOK — BİLEREK. Eski bir gider
+     * kartlıysa ve yöntemi bilinmiyorsa, kaydı açıp kapatmak onu ne
+     * çelişkiye düşürmeli ne de kartını silmeli. Bilinmeyen, yanlış
+     * değildir.
+     */
   });
 }
 
@@ -133,7 +182,22 @@ function formuOku(formData: FormData) {
       const ham = String(formData.get("installmentCount") ?? "").trim();
       return ham === "" ? undefined : sayiyaCevir(ham);
     })(),
+    /**
+     * ⚠ ZİNCİRİN ORTASI — bu satır unutulursa yöntem HİÇ kaydedilmez ve
+     * ekran her kaydı "belirtilmedi" gösterir; kullanıcı seçtiğini sanır.
+     * Tam olarak 25.08.2026'da kart/taksit alanlarında yaşanan hata.
+     */
+    odemeYontemi: String(formData.get("odemeYontemi") ?? ""),
   };
+}
+
+/**
+ * Boş dize -> `null`. "Seçilmedi" ile "" aynı şey değil; veritabanına
+ * gidecek olan `null`dur (belirtilmedi).
+ */
+function odemeYontemiDegeri(ham: string | undefined) {
+  const temiz = (ham ?? "").trim();
+  return temiz === "" ? null : (temiz as OdemeYontemi);
 }
 
 export async function giderEkle(
@@ -172,6 +236,8 @@ export async function giderEkle(
         creditCardId: veri.creditCardId?.trim() || null,
         /** ⚠ Boş = tek çekim. */
         installmentCount: veri.installmentCount ?? 1,
+        /** ⚠ Boş = BELİRTİLMEDİ (`null`) — "Nakit" varsayılmaz. */
+        odemeYontemi: odemeYontemiDegeri(veri.odemeYontemi),
       },
     });
   } catch (e) {
@@ -223,6 +289,8 @@ export async function giderGuncelle(
         creditCardId: veri.creditCardId?.trim() || null,
         /** ⚠ Boş = tek çekim. */
         installmentCount: veri.installmentCount ?? 1,
+        /** ⚠ Boş = BELİRTİLMEDİ (`null`) — "Nakit" varsayılmaz. */
+        odemeYontemi: odemeYontemiDegeri(veri.odemeYontemi),
       },
     });
   } catch (e) {

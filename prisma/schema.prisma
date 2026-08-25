@@ -240,6 +240,27 @@ enum VeriKaynagi {
   ELLE // kullanıcı doğrudan girdi
 }
 
+/// GİDER NASIL ÖDENDİ (25.08.2026).
+///
+/// ⚠ NİYE SAKLANIYOR — SAKLAMAMANIN BEDELİ ÖLÇÜLDÜ: form üç seçenek
+/// gösterip seçimi saklamasaydı, düzenlemeye girildiğinde "Havale" seçilmiş
+/// bir gider ekranda başka türlü görünürdü. Ekranın yanlış bir şey
+/// göstermesi, bir sütundan pahalıdır.
+///
+/// ⚠ `null` = BELİRTİLMEDİ ve bu bir DEĞER DEĞİL, BİLGİ YOKLUĞUDUR.
+/// 25.08.2026 öncesi girilen giderlerde alan boştur; ekran "belirtilmedi"
+/// der. "Nakit" VARSAYILMAZ — sistemin bilmediği bir şeyi uydurması,
+/// bilmediğini söylemesinden kötüdür. (Geri doldurma bilinçli olarak YOK.)
+///
+/// ⚠ BU ALAN HİÇBİR HESABA GİRMEZ — bilinçli. Kart borcu ve nakit takvimi
+/// `creditCardId`den yürür; bu alan yalnız BEYAN ve GÖRÜNÜM taşır. İleride
+/// "nakit mi bankadan mı" raporu istenirse o gün hesaba bağlanır.
+enum OdemeYontemi {
+  NAKIT // kasadan nakit
+  HAVALE // banka havalesi/EFT
+  KART // kredi kartı — `creditCardId` ile birlikte anlamlıdır
+}
+
 enum PurchaseStatus {
   DRAFT // taslak
   ORDERED // sipariş verildi, henüz hiçbir kalem gelmedi
@@ -1686,6 +1707,21 @@ model Expense {
    * borç taksitli. Tek çekim varsayılsaydı borç yanlış aya yığılırdı.
    */
   installmentCount Int @default(1)
+
+  /**
+   * ÖDEME YÖNTEMİ — NAKİT | HAVALE | KART (25.08.2026).
+   *
+   * ⚠ `null` = BELİRTİLMEDİ. Alan açılmadan önceki giderler boş kalır ve
+   * ekran "belirtilmedi" der; "Nakit" varsayılmaz.
+   *
+   * ⚠ `creditCardId` İLE TUTARLILIK UYGULAMA KATMANINDA BAĞLIDIR (zod):
+   * KART seçiliyse kart zorunlu, KART değilse kart temizlenir. Veritabanı
+   * kısıtıyla kurulmadı çünkü MySQL'de koşullu CHECK bakımı pahalı ve
+   * `null` üçüncü bir hâl olarak kuralın dışında kalıyor.
+   *
+   * ⚠ HESABA GİRMEZ — borç `creditCardId`den yürür. Bu alan beyan/görünüm.
+   */
+  odemeYontemi OdemeYontemi?
 
   @@index([spentAt])
   @@index([categoryId])

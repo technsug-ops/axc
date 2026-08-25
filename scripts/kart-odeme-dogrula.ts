@@ -11,6 +11,7 @@ import {
   tersKayit,
 } from "../src/lib/kart-odeme/hesap";
 import { readFileSync } from "node:fs";
+import { odemeMetni } from "../src/lib/gider-odemesi";
 
 /**
  * ============================================================================
@@ -991,6 +992,259 @@ console.log("=".repeat(70));
       const blok = eylem.slice(bas, bas + 320);
       return blok.includes(".optional()");
     })(),
+  );
+}
+
+console.log("");
+console.log("=".repeat(70));
+// --- ÖDEME YÖNTEMİ — NAKİT | HAVALE | KART (25.08.2026) --------------------
+/**
+ * ⚠ NİYE VAR: kullanıcı _"havale ile ödeme veya cash ödeme ana kategorileri
+ * olmalı, kartla ödeme tıklanırsa altta kartlar açılsın"_ dedi. Yöntem
+ * SAKLANIYOR — saklanmasaydı düzenleme ekranı seçilmiş bir yöntemi başka
+ * türlü gösterirdi.
+ *
+ * ⚠ EN KRİTİK KİLİT: yöntem BOŞ ama kart DOLU olan eski kayıtta ekran
+ * "Kartla" DEMEZ. Kartın varlığından yöntemi çıkarmak bir ÇIKARIMDIR;
+ * kayıtta yazan şey yokluktur.
+ */
+{
+  console.log("");
+  console.log("GİDER ÖDEME YÖNTEMİ");
+
+  const yorumsuz = (yol: string) =>
+    readFileSync(yol, "utf8")
+      .replace(/[/][*][^]*?[*][/]/g, "")
+      .replace(/^\s*[/][/].*$/gm, "");
+
+  /**
+   * ⚠ DAVRANIŞ ÖLÇÜLÜYOR, KAYNAK DEĞİL. Metin gövdesi saf bir fonksiyon
+   * olduğu için ÇAĞRILABİLİYOR — desen aramaktan kat kat güçlü.
+   */
+  const M = {
+    nakit: "Nakit",
+    havale: "Havale",
+    kart: "Kartla",
+    belirtilmedi: "Belirtilmedi",
+    taksit: (adet: number) => `${adet} taksit`,
+  };
+
+  kontrol(
+    "yöntem YOK + kart VAR -> 'Kartla' DEMEZ (çıkarım yapmaz)",
+    !odemeMetni(
+      { odemeYontemi: null, kartAdi: "Garanti", installmentCount: 1 },
+      M,
+    ).includes("Kartla"),
+    odemeMetni(
+      { odemeYontemi: null, kartAdi: "Garanti", installmentCount: 1 },
+      M,
+    ),
+  );
+  kontrol(
+    "  ...ama KARTI DA GİZLEMEZ (iki olgu, ikisi de yazılır)",
+    odemeMetni(
+      { odemeYontemi: null, kartAdi: "Garanti", installmentCount: 1 },
+      M,
+    ) === "Belirtilmedi · Garanti",
+  );
+  kontrol(
+    "yöntem YOK + kart YOK -> 'Belirtilmedi'",
+    odemeMetni({ odemeYontemi: null, kartAdi: null, installmentCount: 1 }, M) ===
+      "Belirtilmedi",
+  );
+  kontrol(
+    "NAKIT ve HAVALE ayrı metin üretir (ayrım kayboluyor mu)",
+    odemeMetni({ odemeYontemi: "NAKIT", kartAdi: null, installmentCount: 1 }, M) !==
+      odemeMetni(
+        { odemeYontemi: "HAVALE", kartAdi: null, installmentCount: 1 },
+        M,
+      ),
+  );
+  kontrol(
+    "KART + taksit>1 -> taksit yazılır",
+    odemeMetni(
+      { odemeYontemi: "KART", kartAdi: "Garanti", installmentCount: 3 },
+      M,
+    ) === "Kartla · Garanti · 3 taksit",
+  );
+  /** ⚠ Tek çekimde "1 taksit" yazmak gürültüdür — bilgi taşımaz. */
+  kontrol(
+    "  ...tek çekimde taksit YAZILMAZ",
+    !odemeMetni(
+      { odemeYontemi: "KART", kartAdi: "Garanti", installmentCount: 1 },
+      M,
+    ).includes("taksit"),
+  );
+
+  /**
+   * ⚠ ZİNCİR — FORM SORAR, EYLEM OKUR, YAZMA KULLANIR.
+   * Ortası kopuk zincir iki ucu yeşilken de kopuktur (25.08.2026 vakası).
+   */
+  const form = yorumsuz("src/app/giderler/gider-formu.tsx");
+  kontrol("form ÖDEME YÖNTEMİNİ soruyor", form.includes('name="odemeYontemi"'));
+  for (const deger of ["NAKIT", "HAVALE", "KART"]) {
+    kontrol(`  ...${deger} seçeneği var`, form.includes(`deger: "${deger}"`));
+  }
+  const eylem = yorumsuz("src/app/giderler/actions.ts");
+  kontrol(
+    "  ...ve formdan OKUNUYOR (zincirin ortası)",
+    eylem.includes('formData.get("odemeYontemi")'),
+  );
+  kontrol(
+    "  ...ve YAZILIYOR",
+    eylem.includes("odemeYontemi: odemeYontemiDegeri("),
+  );
+
+  /**
+   * ⚠ BOŞ -> `null`. Boş dizeyi olduğu gibi yazsaydık enum'a düşer ve
+   * "belirtilmedi" hâli hiç doğmazdı.
+   */
+  kontrol(
+    "boş seçim `null` yazılıyor ('Nakit' varsayılmıyor)",
+    (() => {
+      const bas = eylem.indexOf("function odemeYontemiDegeri");
+      if (bas < 0) return false;
+      const blok = eylem.slice(bas, bas + 300);
+      return blok.includes("null") && !blok.includes('"NAKIT"');
+    })(),
+  );
+
+  /** ⚠ DÜZENLEME EKRANI DEĞERİ GERİ VERMELİ — yoksa açıp kapatmak siler. */
+  const duzenle = yorumsuz("src/app/giderler/[id]/duzenle/page.tsx");
+  kontrol(
+    "düzenleme ekranı yöntemi forma GERİ VERİYOR",
+    duzenle.includes("odemeYontemi: gider.odemeYontemi"),
+  );
+
+  /**
+   * ⚠ TUTARLILIK KURALLARI — superRefine BLOĞUNUN İÇİNDE aranır, dosyanın
+   * tamamında değil. Aynı anahtar kelimeler şema alanında da geçiyor.
+   */
+  {
+    const bas = eylem.indexOf("superRefine");
+    const blok = bas < 0 ? "" : eylem.slice(bas, bas + 1600);
+    kontrol(
+      "KART seçilip kart seçilmemesi REDDEDİLİYOR",
+      blok.includes('veri.odemeYontemi === "KART"') &&
+        blok.includes("odemeKartZorunlu"),
+    );
+    kontrol(
+      "NAKİT/HAVALE + kart ÇELİŞKİSİ reddediliyor",
+      blok.includes('veri.odemeYontemi === "NAKIT"') &&
+        blok.includes("odemeKartCelisik"),
+    );
+  }
+
+  /**
+   * ⚠ ÇELİŞKİ FORMDA DA SÖYLENİYOR — sunucuya gidip hata almak gereksiz tur.
+   *
+   * ⚠ VE İŞARET RENDER YERİNE BAĞLI, TANIMA DEĞİL — BU KONTROL BİR KEZ KÖR
+   * ÇIKTI (25.08.2026). İlk hâli `const celiski =` arıyordu; mutasyon
+   * `{celiski ? (` yerine `{false ? (` yazınca dal HİÇ ÇİZİLMEDİ ama tanım
+   * dosyada durduğu için bekçi YEŞİL kaldı. Anayasa tablosundaki birinci
+   * bozulma biçiminin aynısı: _"koşul öldürülür, desen kalır."_
+   */
+  const celiskiBlogu = (() => {
+    const bas = form.indexOf("{celiski ? (");
+    return bas < 0 ? "" : form.slice(bas, bas + 900);
+  })();
+  kontrol(
+    "çelişki uyarısı GERÇEKTEN ÇİZİLİYOR (render koşuluna bağlı)",
+    celiskiBlogu !== "" && celiskiBlogu.includes("odemeKartCelisik"),
+  );
+  kontrol(
+    "  ...ve koşulu iki yöntemi de kapsıyor",
+    (() => {
+      const bas = form.indexOf("const celiski =");
+      if (bas < 0) return false;
+      const blok = form.slice(bas, bas + 240);
+      return (
+        blok.includes('"NAKIT"') &&
+        blok.includes('"HAVALE"') &&
+        blok.includes("creditCardId")
+      );
+    })(),
+  );
+  /** ⚠ VE KART SESSİZCE SİLİNMİYOR — kullanıcı tek tıkla kaldırıyor. */
+  kontrol(
+    "  ...ve kartı SESSİZCE silmiyor (kullanıcı kaldırıyor)",
+    celiskiBlogu.includes("kartiKaldir") &&
+      celiskiBlogu.includes('creditCardId: ""'),
+  );
+
+  /**
+   * ⚠ YÖNTEM SEÇİMİ KARTA DOKUNMUYOR — VE BU KONTROL DE SONRADAN EKLENDİ.
+   * Mutasyon (`yontemSec` nakit seçilince kartı temizlesin) YEŞİL geçti:
+   * davranış beyan edilmişti, ölçülmüyordu. Sessiz silme tam da kaçınılan
+   * şey — kullanıcının kart borcu hiçbir uyarı olmadan azalırdı.
+   */
+  {
+    const bas = form.indexOf("function yontemSec(");
+    const govde = bas < 0 ? "" : form.slice(bas, form.indexOf("}", bas) + 1);
+    kontrol(
+      "yöntem seçimi KARTA DOKUNMUYOR (sessiz silme yok)",
+      govde !== "" && !govde.includes("creditCardId"),
+      govde.includes("creditCardId") ? govde.trim() : undefined,
+    );
+  }
+
+  /**
+   * ⚠ KART LİSTESİ GERÇEKTEN AÇILIYOR MU — render koşuluna bağlı.
+   * Kullanıcının istediği davranış tam olarak buydu: _"kartla ödeme
+   * tıklanırsa altta kartlar açılsın."_ Koşul öldürülürse kart hiç
+   * seçilemez ve gider kart borcuna hiç girmez.
+   */
+  {
+    const bas = form.indexOf('{alanlar.odemeYontemi === "KART" || alanlar.creditCardId ? (');
+    const blok = bas < 0 ? "" : form.slice(bas, bas + 2200);
+    kontrol(
+      "KART seçilince kart listesi AÇILIYOR (render koşulu canlı)",
+      blok !== "" && blok.includes('name="creditCardId"'),
+    );
+    /**
+     * ⚠ VE ESKİ KARTLI KAYIT DA AÇIYOR (`|| alanlar.creditCardId`). Bu şart
+     * düşerse yöntemi "belirtilmedi" olan kartlı bir gider açıldığında kart
+     * görünmez; kaydı açıp kapatmak kartı sessizce kaybettirir.
+     */
+    kontrol(
+      "  ...kart zaten seçiliyse de açılıyor (eski kayıt kartını kaybetmez)",
+      form.includes('alanlar.odemeYontemi === "KART" || alanlar.creditCardId'),
+    );
+  }
+
+  /** ⚠ ESKİ KAYIT AÇIKLAMASI ÇİZİLİYOR MU — boşluğun NEDENİ ekranda. */
+  {
+    const bas = form.indexOf('{duzenleme && alanlar.odemeYontemi === "" ? (');
+    const blok = bas < 0 ? "" : form.slice(bas, bas + 400);
+    kontrol(
+      "eski kayıtta 'niye boş' açıklaması ÇİZİLİYOR",
+      blok.includes("odemeYontemiBelirtilmediNotu"),
+    );
+  }
+
+  /**
+   * ⚠ EKRAN VE EXCEL AYNI GÖVDEYİ ÇAĞIRIR. Ayrı yazılsalardı liste bir şey,
+   * inen dosya başka şey söylerdi — alım aramasında tam olarak bu yaşandı.
+   */
+  for (const yol of [
+    "src/app/giderler/page.tsx",
+    "src/lib/disa-aktarma/listeler.ts",
+  ]) {
+    kontrol(
+      `  ${yol} ORTAK metin gövdesini çağırıyor`,
+      yorumsuz(yol).includes("odemeMetni("),
+    );
+  }
+
+  /**
+   * ⚠ BEYAN KİLİTLENİYOR: bu alan HİÇBİR HESABA GİRMEZ (bilinçli karar,
+   * panoya yazıldı). Borç `creditCardId`den yürür. Biri gün gelip yöntemi
+   * hesaba bağlarsa bu kontrol kırmızı yanar ve karar YENİDEN VERİLİR —
+   * sessizce değişmez.
+   */
+  kontrol(
+    "ödeme yöntemi BORÇ HESABINA girmiyor (beyan, hesap değil)",
+    !yorumsuz("src/lib/kart-gideri.ts").includes("odemeYontemi"),
   );
 }
 

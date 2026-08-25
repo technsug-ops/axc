@@ -1052,6 +1052,83 @@ raporunda sabit giderlerin ayrı toplanmasını sağlar.</p>
 tanımlarsınız, her ay tek dokunuşla eklersiniz. Sistem
 <strong>kendiliğinden kayıt üretmez</strong>. Aynı şablondan o ay zaten gider
 girilmişse düğme pasifleşir — kirayı ikinci kez girmiş olmazsınız.</p>
+
+<h3>Hangi vergi buraya yazılır, hangisi yazılmaz</h3>
+<p>Bu soru en çok karıştıran yer, çünkü <strong>üç ayrı şey aynı kelimeyle
+anılıyor.</strong> Ölçüt tek: <strong>kasadan para çıktı mı?</strong></p>
+<div class="ek-tablo"><table>
+<thead><tr><th>Kalem</th><th>Gider olarak yazılır mı</th><th>KDV oranı</th><th>Neden</th></tr></thead>
+<tbody>
+<tr><td><strong>Damga vergisi</strong> (ör. 791&nbsp;TL)</td><td><strong>EVET</strong> — Vergi kategorisi</td><td><strong>0</strong></td><td>Kasadan çıkan gerçek para. İçinde KDV yok, o yüzden oranı 0 girilir ve tutarın <strong>tamamı</strong> net'ten düşer.</td></tr>
+<tr><td><strong>MTV, harç, ceza</strong></td><td><strong>EVET</strong> — Vergi kategorisi</td><td><strong>0</strong></td><td>Damga vergisiyle aynı mantık.</td></tr>
+<tr><td><strong>Ödediğiniz gelir vergisi</strong></td><td><strong>EVET</strong> — Vergi kategorisi</td><td><strong>0</strong></td><td>Devlete fiilen ödediğiniz tutar. Ne zaman ödediyseniz o tarihe yazılır.</td></tr>
+<tr><td><strong>Ödenecek KDV</strong></td><td><strong>HAYIR</strong></td><td>—</td><td>NET-2 hesabı ödenecek KDV'yi <strong>zaten düşüyor</strong>. Buraya da yazarsanız aynı para iki kez düşer ve ay olduğundan kötü görünür.</td></tr>
+<tr><td><strong>Stopaj</strong></td><td><strong>HAYIR</strong></td><td>—</td><td>Satış başına NET-1 hesabında zaten kesiliyor.</td></tr>
+</tbody></table></div>
+<div class="ek-not dikkat"><div class="etiket">Karıştırmayın</div>
+<p>Kâr ekranlarında bir zamanlar konuşulan <strong>“%15 gelir vergisi”</strong>
+bir <strong>varsayımdı</strong> ve <strong>kullanılmıyor</strong> — hiçbir
+hesaba girmiyor, hiçbir ekranda görünmüyor. Sizin ödediğiniz gerçek gelir
+vergisi ise apayrı bir şeydir ve <strong>gider olarak yazılır</strong>. İkisinin
+tek ortak yanı adıdır.</p></div>
+
+<h3>Gideri kartla ödediyseniz</h3>
+<p>Gider formunda <strong>“Nasıl ödendi?”</strong> diye sorulur ve üç cevap
+vardır: <strong>Nakit</strong> · <strong>Havale / EFT</strong> ·
+<strong>Kartla</strong>. <strong>Kartla</strong>'yı seçince altta
+<strong>kart listesi</strong> açılır.</p>
+<ul>
+<li>Kart seçtiğiniz an bu tutar <strong>o kartın borcuna</strong> ve
+<strong>nakit takvimine</strong> girer. Seçmezseniz girmez — sistem hangi
+kartla ödediğinizi tahmin etmez.</li>
+<li><strong>Taksit sayısı isteğe bağlıdır.</strong> Boş bırakırsanız tek çekim
+sayılır.</li>
+</ul>
+<div class="ek-not"><div class="etiket">Gerçek akış</div>
+<p>Vergiyi devlete <strong>peşin</strong> kartla ödersiniz, sonra banka
+uygulamasına girip <strong>taksite böldürürsünüz</strong>. Karta yansıyan borç
+artık taksitlidir. O yüzden taksit sayısını <strong>böldürdükten sonra</strong>
+gidere yazın: borç doğru aylara dağılsın, hepsi tek aya yığılmasın. Kayıt
+girilmişse <strong>Giderler → düzenle</strong> ile taksit sayısını sonradan da
+yazabilirsiniz.</p></div>
+<div class="ek-not dikkat"><div class="etiket">Para birimi çevrilmez</div>
+<p>EUR bir gideri TRY bir karta yazamazsınız — sistem kur çevirmez, çünkü
+uydurma bir rakam üretmiş olurdu. Böyle bir kayıt <strong>kart borcuna
+girmez</strong> ve kart borcu ekranında <strong>“atlanan” sayısında</strong>
+görünür: sessizce kaybolmaz, size söylenir.</p></div>
+
+<h3>“Belirtilmedi” ne demek</h3>
+<p>Ödeme yöntemi alanı <strong>25.08.2026'da</strong> açıldı. Ondan önce
+girdiğiniz giderlerin nasıl ödendiğini sistem <strong>bilmiyor</strong> ve
+listede <strong>“Belirtilmedi”</strong> yazar.</p>
+<ul>
+<li>Bu bir <strong>hata değil</strong>: sistem “Nakit” diye tahmin etmek yerine
+bilmediğini söylüyor. Tahmin etseydi bir daha hiç sorgulamazdınız.</li>
+<li>Eski bir kayıtta <strong>kart seçili ama yöntem boşsa</strong> liste
+<strong>“Belirtilmedi · Garanti”</strong> gibi yazar — kartı gizlemez, ama
+kartın varlığından “Kartla ödendi” sonucunu da <strong>çıkarmaz</strong>.</li>
+<li>Biliyorsanız kaydı <strong>düzenleyip</strong> işaretleyebilirsiniz. Zorunlu
+değildir; hiçbir hesap bu alandan yürümez. Kart borcunu belirleyen şey
+<strong>seçilen karttır</strong>, bu alan değil.</li>
+</ul>
+${sikHata([
+  {
+    hata: "Ödenecek KDV'yi gider olarak girmek",
+    cozum: "NET-2 zaten düşüyor; ikinci kez düşer ve ay olduğundan kötü görünür. “Vergi” kategorisi damga vergisi, MTV, harç gibi KDV DIŞI kalemler içindir.",
+  },
+  {
+    hata: "Damga vergisine %20 KDV yazmak",
+    cozum: "İçinde KDV yok. Oranı 0 girin ki tutarın tamamı net'ten düşsün; %20 yazarsanız 791 TL'nin 131 TL'si “indirilecek KDV” sanılır.",
+  },
+  {
+    hata: "Kartla ödenen gideri kart seçmeden kaydetmek",
+    cozum: "Tutar kart borcuna ve nakit takvimine hiç girmez; ay sonunda beklediğinizden fazla ödeme çıkar. Formda “Kartla” seçip kartı işaretleyin.",
+  },
+  {
+    hata: "Bankada taksite böldürüp gidere tek çekim yazmak",
+    cozum: "Borcun tamamı tek aya yığılır ve nakit takvimi o ayı olduğundan ağır gösterir. Böldürdükten sonra taksit sayısını düzenleyin.",
+  },
+])}
 </section>
 
 <section id="kartBorcu">

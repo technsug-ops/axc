@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import { ayKaydir, gunDegeri, isTakvimGunu } from "@/lib/donem";
+import { odemeMetni } from "@/lib/gider-odemesi";
 import { kdvAyir } from "@/lib/kar";
 import { prisma } from "@/lib/prisma";
 
@@ -88,6 +89,8 @@ export default async function GiderlerSayfasi({
       include: {
         category: { select: { name: true, isFixed: true } },
         template: { select: { name: true } },
+        /** Ödeme satırında kartın ADI görünsün — "cuid" hiçbir şey söylemez. */
+        creditCard: { select: { label: true } },
       },
       orderBy: [{ spentAt: "desc" }, { createdAt: "desc" }],
     }),
@@ -133,6 +136,36 @@ export default async function GiderlerSayfasi({
 
   function aciklamaMetni(kayit: (typeof kayitlar)[number]) {
     return kayit.description ?? kayit.template?.name ?? t("aciklamaYok");
+  }
+
+  /**
+   * ÖDEME YÖNTEMİ SATIRI.
+   *
+   * ⚠ METİN GÖVDESİ ORTAK (`lib/gider-odemesi.ts`) — Excel dışa aktarma da
+   * aynı gövdeyi çağırır. Ayrı yazılsalardı liste bir şey, inen dosya başka
+   * şey söylerdi.
+   *
+   * ⚠ VE SÜTUN AÇILMADI. Bu tablo zaten 8 sütunla tavanın (7) üstünde;
+   * dokuzuncu sütun sayfayı yatay kaydırırdı (bkz. yerlesim:dogrula).
+   * Bilgi, ilişkili olduğu açıklama hücresinin ikinci satırına kondu.
+   */
+  const odemeMetinleri = {
+    nakit: t("odemeNakit"),
+    havale: t("odemeHavale"),
+    kart: t("odemeKart"),
+    belirtilmedi: t("odemeYontemiBelirtilmedi"),
+    taksit: (adet: number) => t("taksitOzet", { adet }),
+  };
+
+  function odemeSatiri(kayit: (typeof kayitlar)[number]) {
+    return odemeMetni(
+      {
+        odemeYontemi: kayit.odemeYontemi,
+        kartAdi: kayit.creditCard?.label ?? null,
+        installmentCount: kayit.installmentCount,
+      },
+      odemeMetinleri,
+    );
   }
 
   function eylemler(kayit: (typeof kayitlar)[number]) {
@@ -287,8 +320,13 @@ export default async function GiderlerSayfasi({
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground max-w-64 truncate">
-                        {aciklamaMetni(kayit)}
+                      <TableCell className="text-muted-foreground max-w-64">
+                        <span className="block truncate">
+                          {aciklamaMetni(kayit)}
+                        </span>
+                        <span className="block truncate text-xs">
+                          {odemeSatiri(kayit)}
+                        </span>
                       </TableCell>
                       <TableCell className="text-right font-medium whitespace-nowrap">
                         {bicim.para(tutar, kayit.currency)}
@@ -346,6 +384,7 @@ export default async function GiderlerSayfasi({
                       etiket: t("sutunNetDusen"),
                       deger: bicim.para(netDusen, kayit.currency),
                     },
+                    { etiket: t("sutunOdeme"), deger: odemeSatiri(kayit) },
                   ]}
                   eylemler={eylemler(kayit)}
                 />

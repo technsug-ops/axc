@@ -53,3 +53,11 @@ veri/ozel/
 
 # Ölçüm çıktıları — GERÇEK TİCARİ VERİ. Depo herkese açık; asla commit edilmez.
 raporlar/
+
+# Geçici ölçüm betikleri — MEKANİZMA, ALIŞKANLIK DEĞİL.
+# 24.08.2026'da bir ölçüm betiği commit'e sızdı: silme komutu yazma
+# komutuyla aynı zincirde koşunca dosya doğmadan çalıştı. "Bir dahaki sefere
+# silerim" bir niyettir; niyet unutulur, .gitignore unutmaz.
+# BENIOKU.md İSTİSNA — klasörün kendisi depoda görünsün diye.
+/scripts/tmp/*
+!/scripts/tmp/BENIOKU.md

@@ -1,0 +1,40 @@
+-- ============================================================================
+--  GİDER ÖDEME YÖNTEMİ — NAKİT | HAVALE | KART
+-- ----------------------------------------------------------------------------
+--  Kullanıcı 25.08.2026: _"havale ile ödeme veya cash ödeme ana kategorileri
+--  olmalı, kartla ödeme tıklanırsa altta kartlar açılsın."_
+--
+--  ⚠ NİYE SAKLANIYOR — SAKLAMAMANIN BEDELİ ÖLÇÜLDÜ. Form üç seçenek gösterip
+--  seçimi saklamasaydı, düzenlemeye girildiğinde "Havale" seçilmiş bir gider
+--  ekranda başka türlü görünürdü: sistem bilmediği için "kart yok" hâlini
+--  gösterir, kullanıcı ise seçtiğini sanır. Ekranın YANLIŞ bir şey
+--  göstermesi, bir sütundan pahalıdır.
+--
+--  ⚠ MERDİVEN İNİLDİ (şema en pahalı çözümdür):
+--    ① Mevcut alan: `creditCardId` yalnız KART'ı ayırt eder — NAKİT ile
+--       HAVALE ikisi de "kart yok" demek, ayrım YOK. ✗
+--    ② Serbest metin (`description`): kullanıcı yazdığı sürece çalışır,
+--       yazmadığında sessizce kaybolur; ve düzenleme formu onu geri
+--       seçemez — tam çözülmek istenen sorun. ✗
+--    ③ Türetme: nakit mi havale mi, sistemde HİÇBİR yerden çıkmıyor. ✗
+--    ④ SÜTUN ✓ — ve yeni tablo DEĞİL: tek alanlık kapalı küme.
+--
+--  ⚠ `NULL` = BELİRTİLMEDİ, GERİ DOLDURMA YOK ve bu BİLİNÇLİ.
+--  Bu alandan önce girilmiş giderlerin nasıl ödendiğini sistem BİLMİYOR.
+--  Hepsine "NAKIT" yazmak, bilinmeyeni veri kılığında saklamak olurdu:
+--  ekran emin görünür, dayanağı yoktur. Boş kalır, ekran "belirtilmedi"
+--  der, kullanıcı isterse tek tek girer.
+--  _("Yeni izin doğum tarihi beyan edilir" kuralının veri tarafı: bu alanın
+--  doğum tarihi 25.08.2026'dır; ondan öncesi için boşluk HÜKÜM DEĞİLDİR.)_
+--
+--  ⚠ HİÇBİR HESABA GİRMEZ — bilinçli ve panoya yazıldı. Kart borcu ve nakit
+--  takvimi `creditCardId`den yürür; bu alan beyan/görünüm taşır. Hesaba
+--  bağlansaydı bugün NULL olan 10 gider hesabı da belirsizleştirirdi.
+--
+--  ⚠ CHECK KISITI KONULMADI. "KART ise creditCardId dolu" kuralı uygulama
+--  katmanında (zod) yaşıyor: MySQL'de koşullu CHECK bakımı pahalı ve NULL
+--  üçüncü bir hâl olarak kuralın dışında kalıyor. Kısıt yerine BEKÇİ var.
+-- ============================================================================
+
+ALTER TABLE `Expense`
+  ADD COLUMN `odemeYontemi` ENUM('NAKIT', 'HAVALE', 'KART') NULL;

@@ -11,6 +11,7 @@ import {
 } from "@/lib/donem";
 import { envanterVerisi } from "@/lib/envanter-veri";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
+import { odemeMetni } from "@/lib/gider-odemesi";
 import { prisma } from "@/lib/prisma";
 
 import type { Sayfa } from "./xlsx";
@@ -563,9 +564,24 @@ async function giderlerSayfasi(p: Parametreler): Promise<Sayfa> {
     include: {
       category: { select: { name: true, isFixed: true } },
       template: { select: { name: true } },
+      /** Ödeme sütunu için kartın ADI — "cuid" hiçbir şey söylemez. */
+      creditCard: { select: { label: true } },
     },
     orderBy: { spentAt: "desc" },
   });
+
+  /**
+   * ⚠ EKRANLA AYNI GÖVDE (`lib/gider-odemesi.ts`). Ayrı yazılsaydı liste
+   * bir şey, inen dosya başka şey söylerdi — alım aramasında tam olarak bu
+   * yaşandı ve kural oradan geliyor.
+   */
+  const odemeMetinleri = {
+    nakit: tGider("odemeNakit"),
+    havale: tGider("odemeHavale"),
+    kart: tGider("odemeKart"),
+    belirtilmedi: tGider("odemeYontemiBelirtilmedi"),
+    taksit: (adet: number) => tGider("taksitOzet", { adet }),
+  };
 
   const satirlar = giderler.map((g) => [
     gun(g.spentAt),
@@ -575,6 +591,14 @@ async function giderlerSayfasi(p: Parametreler): Promise<Sayfa> {
     sayi(g.amount),
     g.currency,
     sayi(g.vatRate),
+    odemeMetni(
+      {
+        odemeYontemi: g.odemeYontemi,
+        kartAdi: g.creditCard?.label ?? null,
+        installmentCount: g.installmentCount,
+      },
+      odemeMetinleri,
+    ),
   ]);
 
   return {
@@ -587,6 +611,7 @@ async function giderlerSayfasi(p: Parametreler): Promise<Sayfa> {
       ortak("tutar"),
       ortak("paraBirimi"),
       tGider("kdvOraniEtiketi"),
+      tGider("sutunOdeme"),
     ],
     satirlar,
   };

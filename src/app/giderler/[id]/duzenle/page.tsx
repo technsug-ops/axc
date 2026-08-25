@@ -80,6 +80,13 @@ export default async function GiderDuzenleSayfasi({
               description: gider.description ?? "",
               creditCardId: gider.creditCardId ?? "",
               installmentCount: String(gider.installmentCount),
+              /**
+               * ⚠ `null` -> `""` (BELİRTİLMEDİ). Alan 25.08.2026'da açıldı;
+               * ondan önceki giderlerde yöntem BİLİNMİYOR. Burada "NAKIT"
+               * yazılsaydı sistem bilmediği bir şeyi seçilmiş gibi
+               * gösterirdi — ve kullanıcı bir daha hiç sorgulamazdı.
+               */
+              odemeYontemi: gider.odemeYontemi ?? "",
             }}
           />
         </CardContent>

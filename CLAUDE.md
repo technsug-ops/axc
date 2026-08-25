@@ -486,7 +486,7 @@ sonra yeniden keşfedilip yeniden uygulanmasına yol açar.
 
 ### KAYNAK TARAYAN KONTROL, DESENİ DOSYADA DEĞİL KULLANIM BLOĞUNDA ARAR (KESİN KURAL)
 
-_Ders 19–20.08.2026, **beş tekrardan sonra**._ Bir ekran davranışını kaynak
+_Ders 19–20.08.2026, **beş tekrardan sonra** — ve 25.08'de iki kez daha._ Bir ekran davranışını kaynak
 metni tarayarak sınayan kontrol, aradığı deseni **dosyanın tamamında**
 ararsa yalancı yeşil üretir. Desenin dosyada BULUNMASI, o davranışın
 GERÇEKLEŞTİĞİNİ göstermez.
@@ -506,6 +506,8 @@ GERÇEKLEŞTİĞİNİ göstermez.
 | 3 | Boş şüpheli mesajı süzgece bağlı mı | `p.veri === "supheli"` İKİ yerde (küme hesabı + boş mesaj); biri bozulunca öteki testi geçiriyordu |
 | 4 | Kâr/zarar cümlesi maliyeti veriyor mu | `satis: bicim.para(fiyat` hem kâr hem zarar cümlesinde; birini silmek yakalanmıyordu |
 | 5 | Kanal taşıması kârı tazeliyor mu | Sıra kontrolü `revalidatePath` arıyordu — o kelime **IMPORT satırında da** geçiyor; `indexOf` onu buluyor ve kontrol hep yanlış konuma bakıyordu |
+| 6 | Gider formu çelişkiyi söylüyor mu | Kontrol `const celiski =` arıyordu; mutasyon **render koşulunu** `{false ? (` yaptı — dal hiç çizilmedi, tanım dosyada kaldı, bekçi yeşil |
+| 7 | El kitabı damga vergisini anlatıyor mu | `"Damga vergisi"` bölümde **üç kez** geçiyor (tablo · dikkat kutusu · sık hata). Tablo satırını silen mutasyon ötekileri buldu. Satıra daraltıldı — **yine yeşil kaldı**: MTV satırının GEREKÇE hücresinde _"Damga vergisiyle aynı mantık"_ yazıyor. Ancak **ilk hücreye** (kalem adı) bağlanınca kırmızı yandı |
 
 **YÖNTEM — kontrol yazarken:**
 0. ⚠ **ÖNCE DESENİ SAY.** Aradığın metin dosyada kaç kere geçiyor?
@@ -1235,6 +1237,56 @@ biçimleri · rol kapsamı · bekçi ölçütleri.)
 
 _"Gerekçe listesi" vakasının donanım hâli — orada enum listesi eskimişti,
 burada semboloji listesi._
+
+### ZİNCİR, HALKALARININ VARLIĞIYLA DEĞİL BAĞLANTISIYLA SINANIR (KESİN KURAL)
+
+_Ders 25.08.2026, gider formu vakası._ Bir değerin uçtan uca aktığını sınayan
+kontrol, zincirin **iki ucuna** bakmakla yetinirse **ortası kopukken de yeşil
+yanar.** İki uç da gerçekten oradadır; eksik olan, aralarındaki bağdır.
+
+**Vaka:** gidere kart ve taksit alanları eklendi. Bekçi iki şeyi soruyordu ve
+ikisi de DOĞRUYDU:
+
+1. **formda alan var mı** — `name="installmentCount"` ✓
+2. **yazmada kullanılıyor mu** — `installmentCount: veri.installmentCount` ✓
+
+Ama `formuOku()` o alanı **formdan hiç okumuyordu.** `veri.installmentCount`
+her seferinde `undefined` geldi, zod _"Taksit sayısı tam sayı olmalı"_ diyerek
+düştü ve kullanıcı **hiçbir gideri kaydedemedi** — canlıda.
+
+> **KURAL:** bir veri yolu sınanırken **her halka ayrı ayrı** sorulur:
+> **sorar mı · OKUR MU · doğrular mı · yazar mı · geri verir mi.**
+> Orta halkalar en kolay unutulanlardır çünkü ekranda görünmezler: form
+> doğru çizilir, şema doğru yazılır, arada bir satır eksiktir.
+
+⚠ **VE "GERİ VERİR Mİ" DE BİR HALKADIR.** Düzenleme ekranı kaydı forma geri
+vermezse, kullanıcı kaydı açıp kapattığında değer **sessizce silinir** — hiçbir
+hata çıkmaz, kimse bakmaz. Yazma yolu tek başına yeterli değildir.
+
+---
+
+### KALICILIK KATMANI, ÇALIŞMA KATMANININ ÖNKOŞULU YAPILMAZ (KESİN KURAL)
+
+_Ders 25.08.2026, menü vakası._ Bir tercihin **hatırlanması** ile **çalışması**
+iki ayrı iştir. İkisi tek katmana bağlanırsa, hatırlama düştüğü an **özellik de
+düşer** — ve düşüşü sessizdir.
+
+**Vaka:** sol menüdeki grupların açık/kapalı hâli **yalnız `localStorage`'ta**
+yaşıyordu. Yazma başarısız olursa (gizli sekme · site verisi engeli · kota)
+`catch {}` onu **sessizce yutuyor**, okuma hep boş dönüyor ve hiçbir grup
+açılmıyordu. Kullanıcı için görünen şey şuydu: _"kategori açılıp kapanmıyor"_ —
+yani düğme bozuk sanıldı, oysa bozuk olan **deponun kendisiydi.**
+
+> **KURAL:** gerçeğin kaynağı **BELLEK**, depolama yalnız **KALICILIK**tır.
+> Depolama çalışmasa da özellik o oturum boyunca çalışır; tercih sekme
+> kapanınca unutulur ve bu, **hiç çalışmamaktan kat kat iyidir.**
+
+⚠ **SESSİZ YUTMA SINIFININ ÜÇÜNCÜ ÜYESİ.** Aynı kökten: kameranın tarama
+döngüsündeki `catch` (hata yutuluyordu, "okumuyor" sanıldı) · `catch {}` ile
+gizlenen depolama · genel olarak **hata yutan her boş blok**. Ölçüt: bir
+`catch` bloğu boşsa, orada ne olduğunu **hiç kimse** öğrenemez.
+
+---
 
 ### BİR OKUMA, OKUNAN DEĞERİ DOĞRUDAN TAŞIR (KESİN KURAL)
 
