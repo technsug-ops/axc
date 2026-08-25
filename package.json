@@ -37,6 +37,7 @@
     "arama:dogrula": "tsx scripts/arama-dogrula.ts",
     "api:dogrula": "tsx scripts/api-dogrula.ts",
     "dagilim:dogrula": "tsx scripts/dagilim-dogrula.ts",
+    "depo:dogrula": "tsx scripts/depo-dogrula.ts",
     "karsilastirma:dogrula": "tsx scripts/karsilastirma-dogrula.ts",
     "suzgec:dogrula": "tsx scripts/suzgec-dogrula.ts",
     "rma:dogrula": "tsx scripts/rma-dogrula.ts",

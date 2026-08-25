@@ -49,6 +49,7 @@ export const BOLUMLER = [
   { kimlik: "envanter", ad: "Envanter değeri" },
   { kimlik: "rapor", ad: "Dönem raporu" },
   { kimlik: "talep", ad: "Destek talepleri" },
+  { kimlik: "depo", ad: "Ayarlar — Depo kurulumu" },
   { kimlik: "raf", ad: "Ayarlar — Raf Konumları" },
   { kimlik: "kategori", ad: "Ayarlar — KDV Kategorileri" },
   { kimlik: "duzeltme", ad: "Ayarlar — Düzeltme nedenleri" },
@@ -101,6 +102,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   tazminat: "tazminat",
   hakedis: "hakedis",
   nakitTakvimi: "nakit",
+  depoKurulumu: "depo",
   rafKonumlari: "raf",
   kategoriler: "kategori",
   duzeltmeNedenleri: "duzeltme",
@@ -1252,6 +1254,58 @@ ${sikHata([
   {
     hata: "“Bir ara olmuştu” diye yazmak",
     cozum: "Tekrarlanamayan bir sorun aranamaz. Hangi kayıtta, hangi tarihte olduğu yazılırsa bakılabilir; yazılmazsa talep açık kalır ve kimseye faydası olmaz.",
+  },
+])}
+</section>
+
+<section id="depo">
+${baslik("depo")}
+<p><strong>Sol menü &rarr; Tanımlar &rarr; Depo kurulumu.</strong> Deponuzun
+düzenini bir kez tarif edersiniz, sistem <strong>raf kodlarını üretir</strong>.
+Her firmanın deposu farklıdır &mdash; bu yüzden şablon sisteme gömülü değil,
+siz çiziyorsunuz.</p>
+${neZaman(
+  "Depoyu ilk kurarken, ve sonradan raf/ünite eklediğinizde. Yılda birkaç kez açılır.",
+)}
+<h3>Üç şey soruyor</h3>
+<p><strong>Bölüm adı</strong> &mdash; serbest: &quot;Salon&quot;, &quot;Depo-2&quot;.
+Ekranlarda bu görünür.</p>
+<p><strong>Kısaltma</strong> &mdash; raf kodunun içine giren kısa hâli:
+<code>SLN</code>. Yalnız büyük harf ve rakam; boşluk ve Türkçe karakter
+<strong>olmaz</strong>, çünkü barkod onları taşıyamaz.</p>
+<p><strong>Ünite ve göz sayısı</strong> &mdash; kaç raf iskeleti, her birinde kaç
+kat.</p>
+<p>Bunlardan şunu üretir: <code>RAF-SLN1-1</code>, <code>RAF-SLN1-2</code>,
+<code>RAF-SLN2-1</code> &hellip;</p>
+<div class="ek-not dikkat"><div class="etiket">Kısaltma sonradan değişmez</div>
+<p>Kısaltma <strong>basılı etiketin içinde</strong>. Değiştirilseydi raflardaki
+bütün etiketler yalan söylemeye başlardı. Bölümün <em>görünen adı</em>
+değişebilir, kısaltması değişemez &mdash; ekran bunu kurarken de söyler.</p></div>
+<h3>Göz numarası neden yerden yukarı</h3>
+<p><strong>1 = en alt kat.</strong> Üste kat eklerseniz mevcut etiketlerin
+<strong>hiçbiri değişmez</strong>. Üstten saysaydık bir kat eklediğinizde bütün
+numaralar kayar ve yapıştırdığınız etiketleri sökmeniz gerekirdi.</p>
+<h3>Onaysız hiçbir raf açılmaz</h3>
+<p><strong>Önce göster</strong>&apos;e bastığınızda ekran ne olacağını söyler:
+kaç kod üretilecek, kaçı yeni, kaçı <strong>zaten var</strong>. Zaten olanların
+<strong>üstüne yazılmaz</strong> &mdash; onların üstünde ürün olabilir ve
+etiketleri basılmış olabilir. Rakamlar doğruysa <strong>&quot;N rafı aç&quot;</strong>.</p>
+<h3>Sonra ne olur</h3>
+<p><a href="#raf">Raf Konumları</a> ekranından etiketleri yazdırır, raflara
+yapıştırırsınız. Sonra <a href="#okuma">Barkod okut</a> ile bir rafı okutunca
+o rafa kayıtlı ürünleri görürsünüz.</p>
+${sikHata([
+  {
+    hata: "Kısaltmaya Türkçe karakter yazmak",
+    cozum: "Barkod Ç, Ğ, İ, Ö, Ş, Ü taşıyamaz. Kısaltmayı SLN, DEPO2 gibi yazın.",
+  },
+  {
+    hata: "Düzen değişince kısaltmayı değiştirmeye çalışmak",
+    cozum: "Değişmez. Yeni bir bölüm açıp ürünleri oraya taşıyın; eski bölüm boşalınca silinir.",
+  },
+  {
+    hata: "\"Zaten var\" satırını hata sanmak",
+    cozum: "Hata değil, koruma. Var olan raflar korunuyor; yalnız eksikler açılıyor.",
   },
 ])}
 </section>

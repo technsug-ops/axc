@@ -36,6 +36,7 @@ import {
   Truck,
   Users,
   Tags,
+  Warehouse,
   Wallet,
 } from "lucide-react";
 
@@ -174,6 +175,17 @@ const GRUPLAR: MenuGrubu[] = [
   {
     anahtar: "grupTanimlar",
     ogeler: [
+      {
+        /*
+          ⚠ DEPO KURULUMU, RAF KONUMLARININ ÜSTÜNDE — İŞİN SIRASI.
+          Önce depo çizilir (bölüm/ünite/göz → kodlar üretilir), sonra
+          tek tek konumlar yönetilir. Menü işin sırasına göre dizilir.
+        */
+        anahtar: "depoKurulumu",
+        href: "/ayarlar/depo",
+        icon: Warehouse,
+        aktif: true,
+      },
       {
         anahtar: "rafKonumlari",
         href: "/ayarlar/konumlar",
