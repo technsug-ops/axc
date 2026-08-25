@@ -33,6 +33,7 @@
     "simulasyon:dogrula": "tsx scripts/simulasyon-dogrula.ts",
     "komisyon:prova": "tsx scripts/komisyon-prova.ts",
     "panel:dogrula": "tsx scripts/panel-dogrula.ts",
+    "pano:dogrula": "tsx scripts/pano-dogrula.ts",
     "arama:dogrula": "tsx scripts/arama-dogrula.ts",
     "dagilim:dogrula": "tsx scripts/dagilim-dogrula.ts",
     "karsilastirma:dogrula": "tsx scripts/karsilastirma-dogrula.ts",
