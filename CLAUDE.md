@@ -1155,6 +1155,29 @@ uygulayacağım küme onunla AYNI mı? Farklıysa eşik değil, **ölçüt** yan
 ⚠ Bu, "eşik dağılımın gediğine konur" kuralının kardeşi ve ondan
 önceliklidir: **önce doğru dağılımı seçersin, sonra gediğini ararsın.**
 
+### KOLON BAŞLIĞI DA BİR İDDİADIR — VEKİL ALAN GÖSTERİLMEZ (KESİN KURAL)
+
+_Mimar kararı 25.08.2026._ Bir sütun/etiket yazmak, **o verinin elimizde
+olduğunu iddia etmektir.** Veri yoksa başlık da yazılmaz — ve **benzer bir
+alan vekil olarak gösterilmez.**
+
+**Vaka:** raf modu (K50 ⑤) *"son yerleştirme tarihi"* istiyordu. Elimizde
+`ProductVariant.updatedAt` vardı ve doldurmak kolaydı. Ama `updatedAt`
+**"en son dokunulan an"**dır — fiyat düzeltilse, ad değişse, kanal kodu
+eklense o damga da değişir. **"En son yerleştirilen an" DEĞİLDİR.**
+
+Vekil gösterilseydi ekranda makul bir tarih dururdu ve kimse sorgulamazdı;
+depocu o tarihe bakıp *"bu ürün geçen hafta yerleştirilmiş"_ derdi — oysa
+sistem bunu hiç bilmiyor. **Sütun boş kaldı ve NİYE boş olduğu koda
+yazıldı**; yerleştirme izi (K50 ③) gelince gerçek değeriyle dolacak.
+
+> **KONTROL SORUSU:** bu başlığın altındaki değeri ÜRETEN mekanizma var mı?
+> Yoksa başlık bir SÖZDÜR ve sistem o sözü tutamaz.
+
+_Bu, "`İşlem Tarihi` ödeme günü değildir" dersinin (dış kaynak tarafı) İÇ
+sistemdeki kardeşi: orada başkasının kolon adına güvenilmişti, burada kendi
+alanımız vekil yapılmak üzereydi._
+
 ### ÖLÇÜM İLE KARAR ARASINDAKİ BORU DA ÖLÇÜMÜN PARÇASIDIR (KESİN KURAL)
 
 _Mimar kararı 25.08.2026._ **Kırmızı yanan ama durdurmayan bekçi, yok
