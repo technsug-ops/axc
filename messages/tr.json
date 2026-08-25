@@ -680,7 +680,8 @@
     "grupUrunKanal": "Ürün ve kanal",
     "grupTanimlar": "Tanımlar",
     "grupVeri": "Veri",
-    "okut": "Barkod okut"
+    "okut": "Barkod okut",
+    "paketle": "Paketle"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -3191,5 +3192,32 @@
     "hataPencereYok": "Dosyada geçerlilik penceresi (tarih aralığı) yok. Hangi aralığa ait olduğu bilinmeyen bir tarife yazılamaz — sonradan \"güncel mi bayat mı\" sorusu cevaplanamaz.",
     "hataSatirYok": "Dosyada okunacak ürün satırı yok.",
     "hataDosyaOkunamadi": "Dosya okunamadı. Beklenen biçim .xlsx — dosyanın bozuk olmadığından ve pazaryerinden indirildiği hâlde olduğundan emin olun."
+  },
+  "Paketle": {
+    "baslik": "Yönlendirmeli paketleme",
+    "aciklama": "Pazaryeri etiketindeki kargo kodunu okutun; sistem hangi üründen kaç adet ve HANGİ RAFTAN alınacağını söyler. Raftan aldığınız ürünü okutun — eşleşirse onay verir. İki okutma, ezber yok.",
+    "adim1": "1. Kargo kodu",
+    "adim2": "2. Raftan al ve okut",
+    "kargoKoduEtiketi": "Kargo ya da sipariş numarası",
+    "kargoKoduIpucu": "örn. 7260036314074719",
+    "urunKoduEtiketi": "Raftan aldığınız ürünün kodu",
+    "urunKoduIpucu": "barkod, Firma SKU ya da SKU",
+    "siparisBulunamadi": "Bu kodla paketlenmeyi bekleyen sipariş bulunamadı. Kod kargoya verilmiş ya da iptal edilmiş bir siparişe ait olabilir — o siparişler burada çıkmaz.",
+    "eslesti": "Eşleşti — doğru ürün. Paketleyebilirsiniz.",
+    "eslesmedi": "Okutulan kod ({kod}) bu siparişte yok. Başka bir ürün okutabilirsiniz; hiçbir şey engellenmedi.",
+    "siparisNo": "Sipariş no",
+    "gonderiNo": "Gönderi no",
+    "sku": "SKU",
+    "firmaSku": "Firma SKU",
+    "barkod": "Barkod",
+    "adet": "Adet",
+    "raf": "Raf",
+    "rafYok": "girilmemiş",
+    "rafGirilmemis": "{adet} kalemin rafı girilmemiş — ürünü kendiniz bulmanız gerekiyor. Akış durmadı.",
+    "paketlendi": "Paketlendi",
+    "paketlendiKilitli": "Önce raftan aldığınız ürünü okutun — doğru ürünü aldığınızı kimse doğrulamadan paketlendi işareti atılmaz.",
+    "zatenHazirlaniyor": "Zaten paketlendi",
+    "geriAl": "Paketlendi işaretini geri al",
+    "bastanBasla": "Yeni kutu"
   }
 }

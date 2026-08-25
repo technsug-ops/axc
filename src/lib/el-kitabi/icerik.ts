@@ -33,6 +33,7 @@ export const BOLUMLER = [
   { kimlik: "urun", ad: "Ürünler ve stok" },
   { kimlik: "stok", ad: "Stok — elimde ne var" },
   { kimlik: "okuma", ad: "Barkod okut — sistem ne biliyor" },
+  { kimlik: "paketleme", ad: "Yönlendirmeli paketleme" },
   { kimlik: "kanalSku", ad: "Kanal SKU — ne işe yarar" },
   { kimlik: "komisyon", ad: "Komisyon oranı ve tarife" },
   { kimlik: "alim", ad: "Alım ve mal kabul" },
@@ -89,6 +90,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   iadeler: "iade",
   stok: "stok",
   okut: "okuma",
+  paketle: "paketleme",
   envanterDegeri: "envanter",
   kanalSkulari: "kanalSku",
   giderler: "gider",
@@ -604,6 +606,58 @@ ${sikHata([
   {
     hata: "Bulunamayan her kod için ürün göstermek zorunda hissetmek",
     cozum: "Zorunlu de\u011fil. Acelen varsa atla; kay\u0131t yine tutulur ve raporda \u0022hüküm verilemedi\u0022 taraf\u0131nda say\u0131l\u0131r.",
+  },
+])}
+</section>
+
+<section id="paketleme">
+${baslik("paketleme")}
+<p><strong>Sol menü &rarr; Paketle.</strong> Bu ekran sana paketi
+<strong>tarif eder</strong>: hangi üründen kaç adet, hangi raftan. Ezberlemen
+gereken hiçbir şey yok &mdash; iki okutma yeter.</p>
+${neZaman(
+  "Kargo etiketi elinde, kutuyu hazırlamaya başladığında. Yeni bir eleman da bu ekranla tarifsiz çalışabilir.",
+)}
+<h3>İki okutma</h3>
+<p><strong>1.</strong> Pazaryeri etiketindeki <strong>kargo kodunu</strong> okut.
+Sistem siparişi bulur ve sana <strong>ürün adını, adedini ve RAFI</strong> söyler.</p>
+<p><strong>2.</strong> O raftan aldığın ürünün üstündeki <strong>barkodu</strong>
+okut. Doğruysa ekran yeşile döner ve <strong>bip</strong> sesi gelir; yanlışsa
+daha kalın bir ses duyarsın. Kulakla ayırt edebilirsin &mdash; ekrana bakman
+gerekmez.</p>
+<p>Sonra <strong>Paketlendi</strong> tuşuna bas. Bitti.</p>
+<div class="ek-not"><div class="etiket">Ürünü okutmadan paketleyemezsin</div>
+<p>Bu bilerek böyle. Kargo kodunu okutup ürünü okutmadan &quot;paketlendi&quot;
+demek, bu ekranın <em>tek işini</em> atlamak olurdu: doğru ürünü aldığını
+kimse doğrulamamış olur. Tuş kilitliyse altında <strong>niye kilitli olduğu
+yazar</strong>.</p></div>
+<h3>Okuttuğun ürün siparişte yoksa</h3>
+<p>Ekran gri bir kutuda &quot;bu siparişte yok&quot; der ve <strong>durur
+orada</strong>. Kırmızı yanmaz, seni engellemez, başka bir ürün okutabilirsin.
+Sebebi <a href="#okuma">Barkod okut</a> bölümündekiyle aynı: satış defteri
+bugün eksik, kırmızı bir uyarı çoğu zaman haksız yere çalar ve iki haftada
+okumadan geçmeyi öğrenirsin.</p>
+<h3>Raf yazmıyorsa</h3>
+<p>&quot;Raf girilmemiş&quot; yazar ve ürünü kendin bulman gerekir. Akış
+durmaz. Rafı <a href="#raf">Ayarlar &rarr; Raf Konumları</a>ndan tanımlayıp
+ürün kartından seçebilirsin &mdash; bir kez yaparsın, hep işine yarar.</p>
+<h3>Kod bulunamazsa</h3>
+<p>&quot;Paketlenmeyi bekleyen sipariş bulunamadı&quot; der. En sık sebebi:
+o sipariş <strong>zaten kargoya verilmiş</strong> ya da <strong>iptal
+edilmiş</strong>. Bu ekran yalnız <em>paketlenmeyi bekleyen</em> siparişleri
+gösterir.</p>
+${sikHata([
+  {
+    hata: "Ürünü okutmadan Paketlendi aramak",
+    cozum: "Tuş bilerek kilitli. Önce raftan aldığın ürünü okut; doğrulama olmadan işaret atılmaz.",
+  },
+  {
+    hata: "Sipariş numarası yerine sadece kargo kodunu denemek",
+    cozum: "İkisi de olur. Elindeki kâğıtta hangisi yazıyorsa onu okut.",
+  },
+  {
+    hata: "Gri &quot;siparişte yok&quot; kutusunu hata sanmak",
+    cozum: "Hata değil, bilgi. Yanlış kutuyu almış olabilirsin ya da o ürün sisteme hiç girilmemiş olabilir. Akış devam eder.",
   },
 ])}
 </section>

@@ -680,7 +680,8 @@
     "grupUrunKanal": "",
     "grupTanimlar": "",
     "grupVeri": "",
-    "okut": ""
+    "okut": "",
+    "paketle": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -3191,5 +3192,32 @@
     "hataPencereYok": "",
     "hataSatirYok": "",
     "hataDosyaOkunamadi": ""
+  },
+  "Paketle": {
+    "baslik": "",
+    "aciklama": "",
+    "adim1": "",
+    "adim2": "",
+    "kargoKoduEtiketi": "",
+    "kargoKoduIpucu": "",
+    "urunKoduEtiketi": "",
+    "urunKoduIpucu": "",
+    "siparisBulunamadi": "",
+    "eslesti": "",
+    "eslesmedi": "",
+    "siparisNo": "",
+    "gonderiNo": "",
+    "sku": "",
+    "firmaSku": "",
+    "barkod": "",
+    "adet": "",
+    "raf": "",
+    "rafYok": "",
+    "rafGirilmemis": "",
+    "paketlendi": "",
+    "paketlendiKilitli": "",
+    "zatenHazirlaniyor": "",
+    "geriAl": "",
+    "bastanBasla": ""
   }
 }

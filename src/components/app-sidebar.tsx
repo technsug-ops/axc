@@ -28,6 +28,7 @@ import {
   Percent,
   Receipt,
   ScanBarcode,
+  PackageCheck,
   ScanSearch,
   ShieldCheck,
   ShoppingCart,
@@ -143,6 +144,13 @@ const GRUPLAR: MenuGrubu[] = [
        * Karar gelirse tek satırlık iş.
        */
       { anahtar: "okut", href: "/okut", icon: ScanSearch, aktif: true },
+      /*
+        ⚠ OKUTMA EKRANININ HEMEN ALTINDA — İKİSİ AYRI İŞ AMA AYNI REFLEKS.
+        `/okut` "bu kod ne" diye sorar, `/paketle` "bu kutuyu nasıl
+        paketlerim". Menüde ayırmak, depoda telefonu eline alan kişiyi iki
+        farklı yerde aratırdı (İlke #10 — aynı iş aynı yerde).
+      */
+      { anahtar: "paketle", href: "/paketle", icon: PackageCheck, aktif: true },
       { anahtar: "kanalSkulari", href: "/kanal-sku", icon: Tags, aktif: true },
       {
         anahtar: "kanalHesaplari",
