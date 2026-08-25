@@ -960,6 +960,38 @@ console.log("=".repeat(70));
   kontrol("  ...ve TAKSİT soruyor", form.includes('name="installmentCount"'));
   const eylem = yorumsuz("src/app/giderler/actions.ts");
   kontrol("gider eylemi kart alanını YAZIYOR", eylem.includes("creditCardId: veri.creditCardId"));
+  /**
+   * ⚠ ZİNCİRİN ORTASI — CANLI HATA 25.08.2026.
+   * Bekçi zincirin İKİ UCUNU sınıyordu (formda alan var mı · yazmada
+   * kullanılıyor mu) ama ORTASINI değil: değer formdan HİÇ OKUNMUYORDU.
+   * `veri.installmentCount` hep `undefined` geldi ve gider formu her
+   * kayıtta düştü — kullanıcı hiçbir gideri kaydedemedi.
+   *
+   * Bir zincir, halkalarının VARLIĞIYLA değil BAĞLANTISIYLA sınanır.
+   */
+  kontrol(
+    "  ...ve kart alanı formdan OKUNUYOR (zincirin ortası)",
+    eylem.includes('formData.get("creditCardId")'),
+  );
+  kontrol(
+    "  ...taksit de formdan OKUNUYOR",
+    eylem.includes('formData.get("installmentCount")'),
+  );
+  /** ⚠ Taksit İSTEĞE BAĞLI: boş bırakmak meşru bir cevap (tek çekim). */
+  kontrol(
+    "taksit İSTEĞE BAĞLI (boş bırakılabilir)",
+    (() => {
+      /**
+       * ⚠ REGEX KULLANILMADI — BİLEREK. Bu dosyaya desen yazarken kaçışlar
+       * üç kez yendi (`[\s\S]` → `[sS]`). Dizin araması kaçış istemez ve
+       * aynı şeyi ölçer: şema bloğunun İÇİNDE `.optional()` var mı.
+       */
+      const bas = eylem.indexOf("installmentCount: z");
+      if (bas < 0) return false;
+      const blok = eylem.slice(bas, bas + 320);
+      return blok.includes(".optional()");
+    })(),
+  );
 }
 
 if (kalan === 0) {

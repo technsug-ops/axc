@@ -82,11 +82,18 @@ function giderSemasiKur(t: Ceviri) {
      * varsa böldürüyorum."_ Ödeme anında tek çekim görünse de karta
      * yansıyan borç taksitli; 1 varsayılsaydı borç yanlış aya yığılırdı.
      */
+    /**
+     * ⚠ İSTEĞE BAĞLI — kullanıcı kararı 25.08.2026. Boş bırakılırsa TEK
+     * ÇEKİM (1) sayılır. Zorunlu olduğu ilk hâlinde form "tam sayı olmalı"
+     * diyerek DÜŞÜYORDU ve gider hiç kaydedilemiyordu: taksit, kartla
+     * ödemeyenler için anlamsız bir zorunluluk.
+     */
     installmentCount: z
       .number({ message: t("taksitSayiOlmali") })
       .int(t("taksitSayiOlmali"))
       .min(1, t("taksitAralik"))
-      .max(36, t("taksitAralik")),
+      .max(36, t("taksitAralik"))
+      .optional(),
   });
 }
 
@@ -104,6 +111,28 @@ function formuOku(formData: FormData) {
     currency: String(formData.get("currency") ?? "TRY"),
     vatRate: sayiyaCevir(formData.get("vatRate")),
     description: String(formData.get("description") ?? ""),
+    /**
+     * ⚠ BU İKİ SATIR EKSİKTİ VE CANLI HATA ÜRETTİ (25.08.2026).
+     * Şema alanları doğruluyordu, yazma onları kullanıyordu — ama ARADA
+     * OKUMA YOKTU. `veri.installmentCount` hep `undefined` geldi ve form
+     * her kayıtta _"Taksit sayısı tam sayı olmalı"_ ile düştü; kullanıcı
+     * gideri hiç kaydedemedi.
+     *
+     * ⚠ BEKÇİ NİYE YAKALAMADI: zincirin İKİ UCUNU sınıyordu (formda alan
+     * var mı · yazmada kullanılıyor mu) ama ORTASINI değil. Kontrol
+     * eklendi — bir zincir, halkalarının varlığıyla değil BAĞLANTISIYLA
+     * sınanır.
+     */
+    creditCardId: String(formData.get("creditCardId") ?? ""),
+    /**
+     * ⚠ BOŞ BIRAKILIRSA `undefined` — `NaN` DEĞİL. `sayiyaCevir` boş
+     * dizede `NaN` döndürüyor ve zod onu "tam sayı olmalı" diye
+     * reddederdi; oysa boş bırakmak MEŞRU bir cevap (tek çekim).
+     */
+    installmentCount: (() => {
+      const ham = String(formData.get("installmentCount") ?? "").trim();
+      return ham === "" ? undefined : sayiyaCevir(ham);
+    })(),
   };
 }
 
@@ -141,7 +170,8 @@ export async function giderEkle(
         description: veri.description?.trim() || null,
         /** ⚠ Boş dize `null`a çevrilir: "seçilmedi" ile "" aynı şey değil. */
         creditCardId: veri.creditCardId?.trim() || null,
-        installmentCount: veri.installmentCount,
+        /** ⚠ Boş = tek çekim. */
+        installmentCount: veri.installmentCount ?? 1,
       },
     });
   } catch (e) {
@@ -191,7 +221,8 @@ export async function giderGuncelle(
         description: veri.description?.trim() || null,
         /** ⚠ Boş dize `null`a çevrilir: "seçilmedi" ile "" aynı şey değil. */
         creditCardId: veri.creditCardId?.trim() || null,
-        installmentCount: veri.installmentCount,
+        /** ⚠ Boş = tek çekim. */
+        installmentCount: veri.installmentCount ?? 1,
       },
     });
   } catch (e) {

@@ -2817,9 +2817,49 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      * ⚠ AÇIK SAYFANIN GRUBU KENDİLİĞİNDEN AÇILIR. Kapalı kalsaydı kullanıcı
      * bulunduğu yeri menüde göremezdi — "kayboldum" duygusu.
      */
+    /**
+     * ⚠ ÖLÇÜT GÜNCELLENDİ 25.08.2026 — VE NİYE ESKİDİĞİ YAZILI.
+     * Önce tam olarak `const acik = icindeSecili || acikKayit.has` deseni
+     * aranıyordu. O ifade AÇIK SAYFANIN GRUBUNU ZORLA açık tutuyordu:
+     * kullanıcı `/ayarlar/...` sayfalarındayken "Tanımlar" başlığına
+     * basıyor ve HİÇBİR ŞEY OLMUYORDU (canlı bulgu, Halil). Tıklanınca bir
+     * şey yapmayan düğme sessiz başarısızlıktır (İlke #5).
+     *
+     * ⚠ DAVRANIŞ KALDIRILMADI, ÜSTÜNE AÇIK TERCİH KONDU — ve ölçüt artık
+     * İKİSİNİ BİRDEN sınıyor, yani eskisinden GÜÇLÜ:
+     *   ① otomatik açılma hâlâ var (bulunduğun yeri görmelisin)
+     *   ② açık kapatma tercihi ONU YENİYOR (düğme çalışmalı)
+     */
     kontrol(
       "açık sayfanın grubu kendiliğinden açılıyor",
-      /const acik = icindeSecili \|\| acikKayit\.has/.test(kenar),
+      /icindeSecili \|\| acikKayit\.has/.test(kenar),
+    );
+    kontrol(
+      "  ...ama AÇIKÇA kapatma tercihi onu YENİYOR (düğme çalışıyor)",
+      /kapaliKayit\.has\(grup\.anahtar\)\s*\n?\s*\?\s*false/.test(kenar),
+    );
+    /** ⚠ Ve tercih HER İKİ YÖNDE de kaydedilir; yoksa kapatma unutulur. */
+    kontrol(
+      "  ...ve kapatma tercihi KAYDEDİLİYOR",
+      /suAnAcikMi \? `-\$\{anahtar\}` : anahtar/.test(kenar),
+    );
+    /**
+     * ⚠ MENÜ DEPOLAMAYA BAĞIMLI OLAMAZ (canlı bulgu 25.08.2026).
+     * Kullanıcı: _"para kategorisi açılıp kapanmıyor."_ Durum YALNIZ
+     * `localStorage`ta yaşıyordu; yazma başarısız olursa (gizli sekme ·
+     * site verisi engeli · kota) `catch {}` onu SESSİZCE yutuyor, okuma
+     * hep boş dönüyor ve hiçbir grup açılmıyordu — düğme bozukmuş gibi.
+     *
+     * Gerçeğin kaynağı BELLEK, depolama yalnız KALICILIK. Depolama
+     * çalışmasa da menü o oturum boyunca çalışır.
+     */
+    kontrol(
+      "menü depolama olmadan da çalışıyor (bellek yedeği)",
+      kenar.includes("if (bellekteki !== null) return bellekteki;"),
+    );
+    kontrol(
+      "  ...ve tercih HER ZAMAN belleğe yazılıyor",
+      /function menuYaz[\s\S]{0,200}bellekteki = deger;/.test(kenar),
     );
     /**
      * ⚠ GRUP DURUMU HATIRLANIR. Her geçişte kapanan menü, açılır menü

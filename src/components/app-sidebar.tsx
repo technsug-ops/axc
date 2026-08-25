@@ -293,11 +293,37 @@ function menuAbone(geriCagir: () => void): () => void {
 /** ⚠ DİZE DÖNER, dizi değil: `useSyncExternalStore` anlık görüntüyü
  *  değere göre karşılaştırır; her çağrıda yeni dizi dönseydi sonsuz
  *  render olurdu. */
+/**
+ * ⚠ BELLEK YEDEĞİ — MENÜ DEPOLAMAYA BAĞIMLI OLAMAZ (canlı bulgu 25.08.2026).
+ *
+ * Kullanıcı: _"para kategorisi açılıp kapanmıyor."_ Sebep şuydu: durum
+ * YALNIZ `localStorage`ta yaşıyordu ve yazma bir sebeple başarısız olursa
+ * (gizli sekme · site verisi engeli · kota) `catch {}` onu SESSİZCE
+ * yutuyordu. Okuma hep "" dönüyor, hiçbir grup açılmıyor ve düğme
+ * bozukmuş gibi görünüyordu.
+ *
+ * ⚠ ÇARE: gerçeğin kaynağı BELLEK, depolama yalnız KALICILIK. Depolama
+ * çalışmıyorsa menü o oturum boyunca yine de çalışır — tercih sekme
+ * kapanınca unutulur, ama bu "hiç çalışmamak"tan kat kat iyidir.
+ */
+let bellekteki: string | null = null;
+
 function menuOku(): string {
+  if (bellekteki !== null) return bellekteki;
   try {
     return localStorage.getItem(MENU_ANAHTARI) ?? "";
   } catch {
     return "";
+  }
+}
+
+/** Belleğe HER ZAMAN yazar; depolama isteğe bağlıdır. */
+function menuYaz(deger: string): void {
+  bellekteki = deger;
+  try {
+    localStorage.setItem(MENU_ANAHTARI, deger);
+  } catch {
+    /* Kalıcılık yok — menü yine çalışır, tercih sekmeyle sınırlı kalır. */
   }
 }
 
@@ -310,20 +336,46 @@ export function AppSidebar({ eposta }: { eposta?: string }) {
   const tMenu = useTranslations("Menu");
 
   const kayitli = useSyncExternalStore(menuAbone, menuOku, menuSunucu);
-  const acikKayit = new Set(kayitli.split(",").filter((a) => a !== ""));
+  /**
+   * ÜÇ DURUM: kayıt yok (otomatik) · AÇIKÇA açık · AÇIKÇA kapalı.
+   *
+   * ⚠ NİYE ÜÇ (canlı bulgu 25.08.2026): önce yalnız "açık" kaydı vardı ve
+   * açık sayfanın grubu ZORLA açık tutuluyordu (`icindeSecili || …`).
+   * Sonuç: kullanıcı `/ayarlar/...` sayfalarındayken "Tanımlar" başlığına
+   * basıyor ve HİÇBİR ŞEY OLMUYOR — grup kapanmıyordu. Tıklanınca bir şey
+   * yapmayan düğme, sessiz başarısızlıktır (İlke #5).
+   *
+   * ⚠ VE OTOMATİK AÇILMA KALDIRILMADI, YALNIZ AÇIK BİR TERCİHE YENİLİYOR.
+   * Gerekçesi hâlâ geçerli: bulunduğun sayfayı menüde görememek
+   * "kayboldum" duygusu üretir. Ama kullanıcı BİLEREK kapattıysa o karar
+   * kazanır — tercih, varsayılanın üstündedir.
+   *
+   * ⚠ Depolama biçimi geriye uyumlu: `-` öneki AÇIKÇA KAPALI demek.
+   * Eski kayıtların hepsi öneksiz, yani "açık" olarak okunmaya devam eder.
+   */
+  const kayitliKume = new Set(kayitli.split(",").filter((a) => a !== ""));
+  const acikKayit = new Set(
+    [...kayitliKume].filter((a) => !a.startsWith("-")),
+  );
+  const kapaliKayit = new Set(
+    [...kayitliKume].filter((a) => a.startsWith("-")).map((a) => a.slice(1)),
+  );
 
   const seciliMi = (oge: MenuOgesi) =>
     oge.aktif && (pathname === oge.href || pathname.startsWith(`${oge.href}/`));
 
-  function grubuCevir(anahtar: string) {
-    const yeni = new Set(acikKayit);
-    if (yeni.has(anahtar)) yeni.delete(anahtar);
-    else yeni.add(anahtar);
-    try {
-      localStorage.setItem(MENU_ANAHTARI, [...yeni].join(","));
-    } catch {
-      /* Gizli sekmede yazılamayabilir — menü yine açılsın, sessiz kalsın. */
-    }
+  /**
+   * ⚠ TERCİH HER İKİ YÖNDE DE KAYDEDİLİR. Yalnız "açık" kaydedilseydi
+   * kapatma isteği hiçbir yere yazılmaz ve otomatik açılma onu ezerdi —
+   * düğme çalışmıyormuş gibi görünürdü. Tam olarak yaşanan buydu.
+   */
+  function grubuCevir(anahtar: string, suAnAcikMi: boolean) {
+    const yeni = new Set(
+      [...kayitliKume].filter((a) => a !== anahtar && a !== `-${anahtar}`),
+    );
+    yeni.add(suAnAcikMi ? `-${anahtar}` : anahtar);
+    /** ⚠ Belleğe her zaman yazılır; depolama başarısız olsa da menü çalışır. */
+    menuYaz([...yeni].join(","));
     window.dispatchEvent(new Event(MENU_OLAYI));
   }
 
@@ -371,7 +423,14 @@ export function AppSidebar({ eposta }: { eposta?: string }) {
      * bunun üstüne EKLENİR, yerine geçmez.
      */
     const icindeSecili = grup.ogeler.some(seciliMi);
-    const acik = icindeSecili || acikKayit.has(grup.anahtar);
+    /**
+     * ⚠ SIRA ÖNEMLİ: AÇIK TERCİH ÖNCE SORULUR. Kullanıcı bu grubu bilerek
+     * kapattıysa, içinde bulunduğu sayfa olsa bile kapalı kalır — kararı
+     * o verdi ve düğme çalışıyor olmalı.
+     */
+    const acik = kapaliKayit.has(grup.anahtar)
+      ? false
+      : icindeSecili || acikKayit.has(grup.anahtar);
 
     return (
       <SidebarGroup key={grup.anahtar}>
@@ -380,7 +439,7 @@ export function AppSidebar({ eposta }: { eposta?: string }) {
         <SidebarGroupLabel asChild>
           <button
             type="button"
-            onClick={() => grubuCevir(grup.anahtar)}
+            onClick={() => grubuCevir(grup.anahtar, acik)}
             aria-expanded={acik}
             className="hover:bg-sidebar-accent flex w-full items-center justify-between rounded-md transition-colors"
           >

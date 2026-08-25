@@ -1163,9 +1163,9 @@
     "kartEtiketi": "Hangi kartla ödendi?",
     "kartYok": "Kartla ödenmedi (nakit/havale)",
     "kartNotu": "Kart seçerseniz bu tutar o kartın borcuna ve nakit takvimine girer.",
-    "taksitEtiketi": "Taksit sayısı",
+    "taksitEtiketi": "Taksit sayısı (isteğe bağlı)",
     "taksitIpucu": "örn. 3",
-    "taksitNotu": "1 = tek çekim. Bankada sonradan böldürdüyseniz taksit sayısını buraya yazın — borç doğru aylara dağılsın."
+    "taksitNotu": "Boş bırakırsanız tek çekim sayılır. Bankada sonradan böldürdüyseniz taksit sayısını yazın — borç doğru aylara dağılsın."
   },
   "Rapor": {
     "baslik": "Dönem raporu",
