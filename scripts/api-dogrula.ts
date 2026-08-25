@@ -155,6 +155,47 @@ for (const yol of apiDosyalari) {
  * **hangi satırı dolduracağı** söyleniyor. Bir değişkenin adı sır değildir;
  * yardım metnini yasaklamak, yardımı yasaklamak olurdu.
  */
+// --- 2b) KENDİNİ "SALT OKUMA" İLAN EDEN API UCU YAZMAZ ----------------------
+/**
+ * ⚠ ÖLÇÜT BEYANA BAĞLI, LİSTEYE DEĞİL. Bir API dosyası başlığında kendini
+ * **SALT OKUMA** diye ilan ediyorsa, o beyan SINANIR. Elle dosya listesi
+ * tutsaydık, yarın eklenen ölçüm ucu listeye yazılmadığı için korumasız
+ * kalırdı (23.08 dersi: ölçüt tersten kurulur).
+ *
+ * ⚠ NİYE GEREKLİ: yerel bağlantı reddedildiği için ölçümler artık canlının
+ * kendi havuzundan, bir API ucundan koşuyor (`/api/olcum`). Ölçüm ucunun
+ * yazma yeteneği olmamalı — bir gün biri "şunu da düzeltiverelim" derse
+ * bekçi durdurur.
+ */
+console.log("\n2b) SALT OKUMA BEYANI OLAN API UCU YAZMAZ");
+
+const beyanliUclar = dosyalar("src/app/api").filter((y) => {
+  try {
+    return readFileSync(y, "utf8").includes("SALT OKUMA");
+  } catch {
+    return false;
+  }
+});
+
+kontrol("beyanlı uç bulundu", beyanliUclar.length > 0, beyanliUclar);
+
+for (const yol of beyanliUclar) {
+  const y = yorumsuzla(readFileSync(yol, "utf8"));
+  const bulunanlar = YAZMA_IZI.filter((d) => y.includes(d));
+  kontrol(`  ${yol} — yazma çağrısı yok`, bulunanlar.length === 0, bulunanlar);
+  /**
+   * ⚠ VE KORUMASIZ AÇIK BIRAKILMAZ: sır kontrolü olmadan uç yayına girmez.
+   *
+   * ⚠ DESEN OKUMAYA BAĞLI, ADA DEĞİL. İlk yazımda yalnız `CRON_SECRET`
+   * aranıyordu ve mutasyon (`const sir = "acik"`) YEŞİL KALDI: o kelime
+   * KAPALI hata mesajının METNİNDE de geçiyor ve deseni ayakta tutuyordu.
+   * Aynı sınıf, kaçıncı kez — desen ADA değil KULLANIMA bağlanır.
+   */
+  kontrol(`    ...ve sır ORTAMDAN okunuyor`, y.includes("process.env.CRON_SECRET"));
+  /** ⚠ Ve okunan sır GERÇEKTEN karşılaştırılıyor — okuyup atmak korumaz. */
+  kontrol(`    ...ve karşılaştırılıyor`, /Bearer \$\{sir\}/.test(y));
+}
+
 console.log("\n3) ANAHTAR DEĞERİ EKRANA BASILMIYOR");
 
 for (const yol of apiDosyalari) {
