@@ -566,9 +566,17 @@ console.log("\n7) SİPARİŞSİZ OKUMADA SADE EKRAN (İŞ 1)");
   const ekran = readFileSync("src/app/okut/okuyucu.tsx", "utf8");
   const ekranKodu = ekran.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, " ");
 
+  /**
+   * ⚠ DESEN GÜNCELLENDİ 25.08.2026 — VE NİYE ESKİDİĞİ YAZILI.
+   * Önce `{sonuc.urun || siparisVar ?` aranıyordu, yani koşulun BLOĞUN İLK
+   * dalı olduğu varsayılıyordu. K50 ⑤ ile RAF dalı öne geçti ve koşul
+   * `: sonuc.urun || siparisVar ?` hâline geldi — **davranış aynı, konum
+   * değişti.** Kontrol açılış süslü parantezine değil KOŞULUN KENDİSİNE
+   * bağlandı; dal silinirse ifade kaybolur ve kontrol yine kırmızı yanar.
+   */
   kontrol(
     "sonuç bloğu ÜRÜN YOKKEN de çiziliyor (sipariş varsa)",
-    /\{sonuc\.urun \|\| siparisVar \?/.test(ekranKodu),
+    /sonuc\.urun \|\| siparisVar \?/.test(ekranKodu),
   );
   /**
    * ⚠ ÜÇ DAL AYRI: ürün+sipariş · yalnız sipariş · yalnız ürün.
