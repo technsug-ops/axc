@@ -2945,7 +2945,23 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    */
   const HAM_RENK =
     /\b(?:dark:)?(?:bg|text|border|ring)-(?:amber|yellow|orange|emerald|green|teal|red|rose|blue|sky)-\d/;
-  const kaynakDosyalari = execSync("git ls-files", { encoding: "utf8" })
+  /**
+   * ⚠ İZLENMEYEN DOSYA DA TARANIR (`--others --exclude-standard`).
+   *
+   * Düz `git ls-files` YALNIZ izlenen dosyaları verir; yeni yazılmış bir
+   * ekran commit edilene kadar bu taramaya HİÇ girmez. 25.08.2026'da tam
+   * bu oldu: `/ayarlar/tarife`nin iki dosyası ham renk sınıfı taşıyordu,
+   * tur **45/45 yeşil** dedi ve ihlal ancak COMMIT'ten SONRA kırmızı
+   * yandı. Yani "push öncesi bekçi koş" ritüeli, dosyayı henüz eklememiş
+   * biri için yanlış cevap veriyordu.
+   *
+   * `--exclude-standard` şart: onsuz `node_modules` ve `.next` de listeye
+   * girer, tarama dakikalarca sürer.
+   */
+  const kaynakDosyalari = execSync(
+    "git ls-files --cached --others --exclude-standard",
+    { encoding: "utf8" },
+  )
     .split("\n")
     .filter((y) => y.startsWith("src/") && /\.tsx?$/.test(y));
   /**
