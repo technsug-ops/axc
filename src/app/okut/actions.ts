@@ -55,6 +55,27 @@ export type AcikSiparis = {
   hazirlaniyor: boolean;
 };
 
+/**
+ * RAF OKUMASI (K50 ⑤) — "kayıt", envanter DEĞİL.
+ *
+ * ⚠ ADET İDDİASI YOK. Bu liste, o rafa KAYITLI varyantları söyler; kaç adet
+ * durduğunu SÖYLEMEZ. Çıkışlar rafı boşaltmıyor (raf konum kaydıdır, adet
+ * defteri değil) — "envanter" desek, sistemin takip etmediği bir şey
+ * hakkında iddia kurmuş olurduk. Ekran başlığı bunu açıkça yazar.
+ */
+export type RafKaydi = {
+  kod: string;
+  ad: string | null;
+  aktif: boolean;
+  urunler: {
+    sku: string;
+    companySku: string;
+    barcode: string | null;
+    urunAdi: string;
+    varyantAdi: string | null;
+  }[];
+};
+
 export type OkumaSonucu = {
   /** `AuditLog` satırının kimliği — eşleştirme bu ize bağlanır. */
   izId: string | null;
@@ -63,6 +84,8 @@ export type OkumaSonucu = {
   alan: KodRolu | null;
   urun: VaryantSonucu | null;
   siparisler: AcikSiparis[];
+  /** Dolu ise okutulan kod bir RAF kodudur; ürün/sipariş yerine bu çizilir. */
+  raf?: RafKaydi;
 };
 
 
@@ -227,6 +250,76 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
    * satış kimliğinden gelen tekil sipariş — hangisi doluysa o.
    */
   const tumSiparisler = [...siparisler, ...satistanGelen];
+
+  /**
+   * ════════════════════════════════════════════════════════════════════════
+   *  RAF MODU (K50 ⑤, 25.08.2026)
+   * ------------------------------------------------------------------------
+   *  Canlı bulgu (Halil): _"raf etiketleri okutulduğunda raftakiler şu anda
+   *  çıkmıyor."_ Etiketler zaten vardı (`/ayarlar/konumlar/etiketler`, QR
+   *  içeriği ham raf kodu) ama OKUMA tarafı hiç yazılmamıştı.
+   *
+   *  ⚠ EN SONA SORULUR. Önce ürün, sonra satış, en son raf: günlük iş ürün
+   *  okutmaktır ve her okumada üç sorgu atmak %99'unda gereksizdir.
+   *
+   *  ⚠ VE ÖLÇÜM KOVALARINA GİRMEZ — `iziYaz`dan ÖNCE dönülüyor. Bu ekranın
+   *  asıl ürünü haftalık KAPSAM ÖLÇÜMÜ: _"okuttuğum ürünlerin yüzde kaçının
+   *  açık siparişi defterde var."_ Bir RAF okuması bir ürün okuması değildir;
+   *  kovaya girseydi `BILINMEYEN` şişer ve ölçüm "defter eksik" derken
+   *  aslında "raf okutuldu" demiş olurdu. Ölçüm aletini kendi eklediğimiz
+   *  özellikle bozamayız.
+   *
+   *  ⚠ "SON YERLEŞTİRME TARİHİ" GÖSTERİLMİYOR — çünkü YOK. K50 ⑤ onu
+   *  istiyor ama yerleştirme izi (`/yerlestir`, madde ③) henüz yazılmadı;
+   *  `updatedAt` "en son dokunulan an"dır, "en son yerleştirilen an" değil.
+   *  Olmayan bir alanı benzeriyle doldurmak, kolon başlığını iddiaya
+   *  çevirmek olurdu. Madde ③ gelince eklenir.
+   * ════════════════════════════════════════════════════════════════════════
+   */
+  if (!varyant && !satisKaydi) {
+    const raf = await prisma.location.findFirst({
+      where: { code: temiz },
+      select: {
+        code: true,
+        name: true,
+        isActive: true,
+        variants: {
+          where: { isActive: true },
+          select: {
+            sku: true,
+            companySku: true,
+            barcode: true,
+            name: true,
+            product: { select: { name: true } },
+          },
+          orderBy: { sku: "asc" },
+        },
+      },
+    });
+    if (raf) {
+      return {
+        izId: null,
+        kod: temiz,
+        /** ⚠ Kova YAZILMADI; bu değer yalnız tipi doldurur, sayıma girmez. */
+        kova: "BILINMEYEN",
+        alan: null,
+        urun: null,
+        siparisler: [],
+        raf: {
+          kod: raf.code,
+          ad: raf.name,
+          aktif: raf.isActive,
+          urunler: raf.variants.map((v) => ({
+            sku: v.sku,
+            companySku: v.companySku,
+            barcode: v.barcode,
+            urunAdi: v.product.name,
+            varyantAdi: v.name,
+          })),
+        },
+      };
+    }
+  }
 
   /**
    * ⚠ KOVA "BULUNDU MU" SORUSUNU İKİ KAYNAKTAN BİRDEN CEVAPLAR. Yalnız

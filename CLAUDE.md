@@ -1155,6 +1155,64 @@ uygulayacağım küme onunla AYNI mı? Farklıysa eşik değil, **ölçüt** yan
 ⚠ Bu, "eşik dağılımın gediğine konur" kuralının kardeşi ve ondan
 önceliklidir: **önce doğru dağılımı seçersin, sonra gediğini ararsın.**
 
+### ÖLÇÜM İLE KARAR ARASINDAKİ BORU DA ÖLÇÜMÜN PARÇASIDIR (KESİN KURAL)
+
+_Mimar kararı 25.08.2026._ **Kırmızı yanan ama durdurmayan bekçi, yok
+hükmündedir.** Ölçümün doğru olması yetmez; ölçümün SONUCUNUN kararı
+gerçekten değiştirdiği de sınanmalıdır.
+
+**Vaka:** bekçi kırmızı yanmasına rağmen bir push gitti. Ölçüm doğruydu,
+ekranda da göründü — ama komut şöyle yazılmıştı:
+
+    npm run bekci > log; echo $?; git commit && git push
+
+Bekçinin çıkış kodu **`echo`ya gitti, ZİNCİRE değil**. Bu, anayasadaki
+_"hiçbir doğrulama boru sonuna güvenmez"_ dersinin (`| tail -2` vakası)
+ikinci hâli: orada `tail` yutmuştu, burada `echo`. Desen aynı — **ölçüm ile
+karar arasına araya giren her şey ölçümün bir parçasıdır.**
+
+> **ZİNCİR (`&&`) İNSAN DİSİPLİNİ, HOOK MEKANİZMADIR — GÜVENLİK
+> MEKANİZMAYA BAĞLANIR.** Alışkanlık yedek katman olarak kalır ama tek
+> dayanak olamaz: boru bir kez yanlış kurulduğunda alışkanlık sessizce
+> devre dışı kalır ve bunu kimse fark etmez.
+
+**Uygulama:** `.githooks/pre-push` → `npm run bekci` sıfır dönmeden push
+geçmez. Hook `core.hooksPath` ile kurulur (`package.json` → `prepare`), yani
+**depoyla birlikte gelir** — kişisel makineye kurulan bir alışkanlık değil.
+
+⚠ **VE HOOK'UN KENDİSİ DE MUTASYONLA SINANIR** (25.08: kasıtlı derleme
+hatasıyla push denendi, `exit 1` ile reddedildi). Sınanmamış bir kapı,
+kapı olduğunu iddia eden bir kapıdır.
+
+⚠ **DÜRÜSTLÜK NOTU:** `git push --no-verify` bu kapıyı atlar ve git'ten
+kaldırılamaz. Yani koruma _"mekanik olarak imkânsız"_ değil, **"kazayla
+imkânsız"**. Kasıtlı atlama bir KARARDIR; kapıyı "aşılamaz" diye anlatmak,
+sahip olmadığı bir güvenceyi iddia etmek olurdu.
+
+### KAPSAM GENİŞLEMESİ, BAĞIMLI LİSTELERİN DE GENİŞLEMESİDİR (KESİN KURAL)
+
+_Ders 25.08.2026, kamera vakası._ Bir akışa yeni bir **kod türü** girdiğinde,
+o kodu okuyan her katmanın listesi de genişlemek zorundadır. Genişlemezse
+**okuyucu tanımadığı biçimi sessizce geçer** — hata vermez, uyarmaz, hiçbir
+şey olmaz.
+
+**Vaka:** kamera okuyucusunun biçim listesi ÜRÜN kodları için kurulmuştu
+(`EAN13 · EAN8 · Code128 · QRCode`) ve o gün ekran yalnız ürün okuyordu.
+K41① ile **kargo etiketi** akışa girdi (`/okut`, `/paketle`) ama liste hiç
+güncellenmedi. Hepsiburada `hepsiJET` etiketi okunmadı; numara **14 hane**
+(`62755096992291`) — klasik `ITF-14` ve `ITF` listede yoktu.
+
+> **SESSİZ GEÇİŞ, EN PAHALI BAŞARISIZLIKTIR:** kullanıcı kamerayı açar,
+> bekler, hiçbir şey olmaz ve sistemin bozuk olduğunu düşünür. Kırmızı bir
+> hata mesajı olsaydı sebep ilk günde bulunurdu.
+
+**KONTROL SORUSU — akışa yeni bir kod türü eklerken:** bu kodu kaç katman
+okuyor, ve **hepsinin listesi** genişledi mi? (Arama koşulu · okuyucu
+biçimleri · rol kapsamı · bekçi ölçütleri.)
+
+_"Gerekçe listesi" vakasının donanım hâli — orada enum listesi eskimişti,
+burada semboloji listesi._
+
 ### BİR OKUMA, OKUNAN DEĞERİ DOĞRUDAN TAŞIR (KESİN KURAL)
 
 _Ders 23.08.2026, kamera vakası._ Dışarıdan gelen bir okuma (barkod, QR,

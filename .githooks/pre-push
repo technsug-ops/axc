@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# ============================================================================
+#  PUSH KAPISI — BEKÇİ KIRMIZIYKEN PUSH GEÇMEZ
+# ----------------------------------------------------------------------------
+#  NİYE VAR (25.08.2026): bekçi kırmızı yanmasına rağmen bir push gitti.
+#  Sebep ölçüm değil, ÖLÇÜMÜN BORUSUYDU — komut şöyle yazılmıştı:
+#
+#      npm run bekci > log; echo $?; git commit && git push
+#
+#  Bekçinin çıkış kodu `echo`ya gitti, ZİNCİRE değil. Kırmızı ekranda
+#  göründü ve push'u durdurmadı.
+#
+#  ⚠ ZİNCİR (&&) İNSAN DİSİPLİNİ, HOOK MEKANİZMADIR. Alışkanlık yedek
+#  katman olarak kalır ama güvenlik ona yaslanmaz: boru yanlış kurulsa
+#  bile bu kapı durdurur.
+#
+#  ⚠ DÜRÜSTLÜK NOTU: `git push --no-verify` bu kapıyı atlar ve git'ten
+#  kaldırılamaz. Yani "mekanik olarak imkânsız" değil, "kazayla imkânsız".
+#  Kasıtlı atlama bir KARARDIR ve kararın sahibi onu bilerek verir.
+#
+#  Kurulum `package.json` → `prepare` ile yapılır (core.hooksPath).
+# ============================================================================
+
+echo ""
+echo "── PUSH KAPISI: bekçi turu koşuyor (~2 dk) ─────────────────────────"
+
+if ! npm run bekci; then
+  echo ""
+  echo "⛔ PUSH DURDURULDU — bekçi kırmızı."
+  echo "   Kırmızı yanan kontrolü düzeltin ve tekrar deneyin."
+  echo "   Ölçüt eskimişse ölçütü güncelleyin; SUSTURMAYIN."
+  echo ""
+  exit 1
+fi
+
+echo ""
+echo "✓ bekçi yeşil — push devam ediyor."
+echo ""
+exit 0

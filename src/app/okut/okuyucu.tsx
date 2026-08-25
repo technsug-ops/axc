@@ -209,7 +209,64 @@ export function Okuyucu() {
             numarasından gelen okumada SKU/barkod YOKTUR ve boş satır
             göstermek, olmayan bir bilgiyi varmış gibi sunardı.
           */}
-          {sonuc.urun || siparisVar ? (
+          {/*
+            RAF OKUMASI (K50 ⑤) — ÜRÜN/SİPARİŞ DALINDAN ÖNCE.
+            ⚠ Okutulan kod bir RAF ise ürün kartı hiç çizilmez: o okumada
+            varyant YOKTUR ve boş SKU satırı göstermek, olmayan bir bilgiyi
+            varmış gibi sunmak olurdu.
+          */}
+          {sonuc.raf ? (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <p className="text-lg font-medium">
+                  {t("rafBulundu", { kod: sonuc.raf.kod })}
+                </p>
+                {sonuc.raf.ad ? (
+                  <p className="text-muted-foreground text-sm">{sonuc.raf.ad}</p>
+                ) : null}
+                {/*
+                  ⚠ BAŞLIK "KAYIT", "ENVANTER" DEĞİL — ve sebebi burada yazar.
+                  Çıkışlar rafı boşaltmıyor; adet iddiası kurmak, sistemin
+                  takip etmediği bir şey hakkında konuşmak olurdu.
+                */}
+                <p className="text-muted-foreground text-xs">
+                  {t("rafKayitNotu", { adet: sonuc.raf.urunler.length })}
+                </p>
+              </div>
+
+              {sonuc.raf.urunler.length === 0 ? (
+                <p className="text-muted-foreground text-sm">{t("rafBos")}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {sonuc.raf.urunler.map((u) => (
+                    <li key={u.sku} className="rounded-md border p-2.5">
+                      <p className="text-sm font-medium">
+                        {u.urunAdi}
+                        {u.varyantAdi ? (
+                          <span className="text-muted-foreground"> · {u.varyantAdi}</span>
+                        ) : null}
+                      </p>
+                      <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                        <span>
+                          {t("alanSku")}: <KopyalanabilirKod deger={u.sku} etiket={t("alanSku")} />
+                        </span>
+                        <span>
+                          {t("alanCompanySku")}:{" "}
+                          <KopyalanabilirKod deger={u.companySku} etiket={t("alanCompanySku")} />
+                        </span>
+                        {u.barcode ? (
+                          <span>
+                            {t("alanBarcode")}:{" "}
+                            <KopyalanabilirKod deger={u.barcode} etiket={t("alanBarcode")} />
+                          </span>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : sonuc.urun || siparisVar ? (
             <div className="space-y-3">
               {siparisVar && sonuc.urun ? (
                 /* Sipariş varsa asıl bilgi ürünün kendisi — kart açık gelir. */

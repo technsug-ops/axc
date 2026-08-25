@@ -3135,7 +3135,10 @@
     "alanShipmentCode": "gönderi numarası",
     "siparisBulundu": "Sipariş bulundu",
     "siparisBulunduAlan": "{alan} ile eşleşti. Aşağıdan paketlendi olarak işaretleyebilirsiniz.",
-    "yonlendirmeliPaketle": "Yönlendirmeli paketle"
+    "yonlendirmeliPaketle": "Yönlendirmeli paketle",
+    "rafBulundu": "Raf {kod}",
+    "rafKayitNotu": "Bu rafa KAYITLI {adet} ürün. Bu bir konum kaydıdır, adet sayımı değil — çıkışlar rafı boşaltmaz.",
+    "rafBos": "Bu rafa kayıtlı ürün yok."
   },
   "ItirazGerekcesi": {
     "KULLANILMIS": "Müşteriden gelen ürün kullanılmış",

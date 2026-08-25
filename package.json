@@ -109,7 +109,8 @@
     "canli:pazaryeri-listesi": "tsx scripts/canli-pazaryeri-listesi.ts",
     "canli:eksik-liste": "tsx scripts/canli-eksik-liste.ts",
     "okuma:dogrula": "tsx scripts/okuma-dogrula.ts",
-    "paketleme:dogrula": "tsx scripts/paketleme-dogrula.ts"
+    "paketleme:dogrula": "tsx scripts/paketleme-dogrula.ts",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

@@ -3135,7 +3135,10 @@
     "alanShipmentCode": "",
     "siparisBulundu": "",
     "siparisBulunduAlan": "",
-    "yonlendirmeliPaketle": ""
+    "yonlendirmeliPaketle": "",
+    "rafBulundu": "",
+    "rafKayitNotu": "",
+    "rafBos": ""
   },
   "ItirazGerekcesi": {
     "KULLANILMIS": "",
