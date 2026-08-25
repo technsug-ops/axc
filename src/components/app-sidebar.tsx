@@ -90,6 +90,18 @@ const GUNLUK: MenuOgesi[] = [
   { anahtar: "panel", href: "/", icon: LayoutDashboard, aktif: true },
   { anahtar: "alimlar", href: "/alimlar", icon: ShoppingCart, aktif: true },
   { anahtar: "satislar", href: "/satislar", icon: Receipt, aktif: true },
+  /*
+    ⚠ SATIŞIN HEMEN ALTINDA — KULLANICI KARARI 25.08.2026.
+
+    Önce "Barkod okut"un altında, "Ürün ve kanal" grubundaydı; gerekçe
+    _"ikisi aynı refleks"_ idi. Kullanıcı gününü anlattı ve gerekçe düştü:
+    paketleme SATIŞIN devamıdır — sipariş girilir, sonra kutu hazırlanır.
+    Menü, ekranların BENZERLİĞİNE göre değil İŞİN SIRASINA göre dizilir.
+
+    ⚠ Köprü bu taşımadan etkilenmez: `/okut`taki "Yönlendirmeli paketle"
+    düğmesi menüden bağımsız, doğrudan adrese gider.
+  */
+  { anahtar: "paketle", href: "/paketle", icon: PackageCheck, aktif: true },
   { anahtar: "stok", href: "/stok", icon: Boxes, aktif: true },
   { anahtar: "iadeler", href: "/iadeler", icon: Undo2, aktif: true },
   /**
@@ -144,13 +156,6 @@ const GRUPLAR: MenuGrubu[] = [
        * Karar gelirse tek satırlık iş.
        */
       { anahtar: "okut", href: "/okut", icon: ScanSearch, aktif: true },
-      /*
-        ⚠ OKUTMA EKRANININ HEMEN ALTINDA — İKİSİ AYRI İŞ AMA AYNI REFLEKS.
-        `/okut` "bu kod ne" diye sorar, `/paketle` "bu kutuyu nasıl
-        paketlerim". Menüde ayırmak, depoda telefonu eline alan kişiyi iki
-        farklı yerde aratırdı (İlke #10 — aynı iş aynı yerde).
-      */
-      { anahtar: "paketle", href: "/paketle", icon: PackageCheck, aktif: true },
       { anahtar: "kanalSkulari", href: "/kanal-sku", icon: Tags, aktif: true },
       {
         anahtar: "kanalHesaplari",

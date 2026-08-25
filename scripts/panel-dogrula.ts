@@ -2791,11 +2791,26 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     /**
      * ⚠ HEP AÇIK LİSTE KISA KALMALI. Amaç 30 satırı kısaltmaktı; "günlük"
      * kutusu şişerse eski hâle geri dönülmüş olur ve gruplama anlamını
-     * yitirir. Üst sınır kullanıcının onayladığı liste: 7.
+     * yitirir.
+     *
+     * ⚠ SINIR 7 → 8 (25.08.2026) — VE NİYE ESKİDİĞİ YAZILI. Bu sayı bir
+     * ölçüm değil, **kullanıcının onayladığı listenin uzunluğu**: 22.08'de
+     * yedi kalem onaylanmıştı. Kullanıcı 25.08'de `Paketle`yi günlük listeye
+     * aldı ve gerekçesini verdi — _paketleme satışın devamıdır, menü
+     * ekranların benzerliğine göre değil işin sırasına göre dizilir._
+     * Ölçütün kaynağı değişti, o yüzden ölçüt değişti; kod yanlış değildi.
+     *
+     * ⚠ VE BU SINIR "KOLAYLIK" İÇİN OYNAMAZ. Her artış AÇIK BİR KULLANICI
+     * KARARINA dayanır ve buraya gerekçesiyle yazılır; yoksa sınır bin
+     * küçük adımla ölür ve gruplama anlamını yitirir — yani tam da
+     * korumak için kondu­ğu şey kaybolur.
+     *
+     * ⏭ Kalıcı çözüm K51: menü sırası ve grupları AYARDAN düzenlenebilir
+     * olunca bu sabit liste VERİYE döner ve sınır tartışması kapanır.
      */
     kontrol(
-      "hep açık liste kısa (en fazla 7 öğe)",
-      gunlukSayisi > 0 && gunlukSayisi <= 7,
+      "hep açık liste kısa (en fazla 8 öğe)",
+      gunlukSayisi > 0 && gunlukSayisi <= 8,
       gunlukSayisi,
     );
     /**
