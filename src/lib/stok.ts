@@ -152,18 +152,42 @@ export async function acikPartiler(
  * atmak yüzlerce gidiş-geliş demekti. Türetme kuralı `acikPartiler` ile
  * AYNIDIR — tek gövde, iki giriş; iki ayrı FIFO tanımı doğmasın diye.
  *
+ * ── TARİHLİ FOTOĞRAF (K53, 25.08.2026) ──────────────────────────────────
+ * `sinir` verilirse defter O ANA KADAR okunur: "1 Haziran açılışında elimde
+ * ne vardı" sorusunun cevabı.
+ *
+ * ⚠ İKİNCİ BİR MOTOR AÇILMADI — kullanıcı şartı. Aynı gövde
+ * PARAMETRELENDİ. İki ayrı FIFO tanımı bir gün ayrışır ve o gün hangisinin
+ * doğru olduğu anlaşılmaz.
+ *
+ * ⚠ SÜZGEÇ İKİ SORGUYA DA UYGULANIR — VE ASIL TUZAK BU. Yalnız GİRİŞLERE
+ * uygulansaydı, temmuzda tüketilmiş bir parti 1 Haziran fotoğrafında da
+ * TÜKETİLMİŞ görünürdü: stok olduğundan düşük çıkar ve rakam makul
+ * göründüğü için kimse fark etmezdi.
+ *
+ * ⚠ VE SÜZGEÇ `occurredAt`TEN — `createdAt`ten DEĞİL. Rapor "o gün ne
+ * OLMUŞTU"yu kurar, "o gün sistemde ne GÖRÜNÜYORDU"yu değil. Sonradan
+ * girilmiş ama iş tarihi eski olan kayıt DAHİLDİR; kayıt anına bakan bir
+ * süzgeç, geç girilen her alımı fotoğrafın dışında bırakırdı.
+ *
  * @param variantIdleri  null verilirse BÜTÜN varyantlar.
+ * @param sinir          verilirse yalnız bu ANDAN ÖNCEKİ hareketler.
  */
 export async function acikPartilerToplu(
   db: IslemIstemcisi,
   variantIdleri: string[] | null,
+  sinir?: Date,
 ): Promise<Map<string, Parti[]>> {
   if (variantIdleri !== null && variantIdleri.length === 0) return new Map();
+
+  /** ⚠ `lt` — seçilen günün BAŞLANGICI itibarıyla (o gün henüz yaşanmadı). */
+  const tarihKosulu = sinir ? { occurredAt: { lt: sinir } } : {};
 
   const girisler = await db.stockMovement.findMany({
     where: {
       ...(variantIdleri === null ? {} : { variantId: { in: variantIdleri } }),
       quantityDelta: { gt: 0 },
+      ...tarihKosulu,
     },
     orderBy: [{ occurredAt: "asc" }, { createdAt: "asc" }],
     select: {
@@ -179,9 +203,18 @@ export async function acikPartilerToplu(
 
   if (girisler.length === 0) return new Map();
 
+  /**
+   * ⚠ TÜKETİMLERE DE AYNI SÜZGEÇ. Bu satır olmadan tarihli fotoğraf
+   * SESSİZCE YANLIŞ olurdu: 1 Haziran'da elde duran bir parti, temmuzda
+   * satıldığı için o fotoğrafta da tükenmiş görünürdü. Rakam makul çıkar,
+   * kimse sorgulamaz — en pahalı hata biçimi.
+   */
   const tuketimler = await db.stockMovement.groupBy({
     by: ["sourceMovementId"],
-    where: { sourceMovementId: { in: girisler.map((g) => g.id) } },
+    where: {
+      sourceMovementId: { in: girisler.map((g) => g.id) },
+      ...tarihKosulu,
+    },
     _sum: { quantityDelta: true },
   });
 

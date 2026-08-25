@@ -1959,7 +1959,14 @@
     "sira_eski": "",
     "sira_yeni": "",
     "aramaIpucu": "",
-    "aramaBos": ""
+    "aramaBos": "",
+    "tarihEtiketi": "",
+    "buguneDon": "",
+    "tarihGecersiz": "",
+    "fotografSerhi": "",
+    "kapsamSerhi": "",
+    "sinirAciklamasi": "",
+    "tarihliBaslik": ""
   },
   "GeriYukleme": {
     "baslik": "",

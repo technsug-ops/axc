@@ -1959,7 +1959,14 @@
     "sira_eski": "En eski girişe göre",
     "sira_yeni": "En yeni girişe göre",
     "aramaIpucu": "Ürün adı, SKU, firma SKU veya barkod…",
-    "aramaBos": "\"{arama}\" ile eşleşen ürün yok. Aramayı temizleyip listenin tamamına dönebilirsiniz."
+    "aramaBos": "\"{arama}\" ile eşleşen ürün yok. Aramayı temizleyip listenin tamamına dönebilirsiniz.",
+    "tarihEtiketi": "Tarih (isteğe bağlı)",
+    "buguneDon": "Bugüne dön",
+    "tarihGecersiz": "Seçilen tarih okunamadı ya da gelecekte. Bugünün rakamları gösteriliyor — seçtiğiniz tarihin değil.",
+    "fotografSerhi": "Bu, kayıtlardan kurulmuş bir defter fotoğrafıdır — fiziksel sayım değildir. Rafta ne olduğunu değil, deftere ne yazıldığını gösterir.",
+    "kapsamSerhi": "Defterin bu dönemdeki kapsamı doğrulanmadı; girilmemiş satış, stoğu olduğundan YÜKSEK gösterir.",
+    "sinirAciklamasi": "{tarih} tarihinin BAŞLANGICI itibarıyla — yani bir önceki günün sonundaki hâl.",
+    "tarihliBaslik": "{tarih} açılışı"
   },
   "GeriYukleme": {
     "baslik": "Yedekten geri yükleme",

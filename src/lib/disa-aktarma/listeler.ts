@@ -10,6 +10,7 @@ import {
   type PencereTuru,
 } from "@/lib/donem";
 import { envanterVerisi } from "@/lib/envanter-veri";
+import { gelecekMi, tarihCoz } from "@/lib/envanter-tarih";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { odemeMetni } from "@/lib/gider-odemesi";
 import { prisma } from "@/lib/prisma";
@@ -68,7 +69,7 @@ export async function listeSayfasi(
     case "giderler":
       return giderlerSayfasi(p);
     case "envanter-degeri":
-      return envanterDegeriSayfasi();
+      return envanterDegeriSayfasi(p);
     case "iadeler":
       return iadelerSayfasi(p);
   }
@@ -206,13 +207,27 @@ async function iadelerSayfasi(p: Parametreler): Promise<Sayfa> {
  * Değeri bilinmeyen partiler dosyada da AYRI satırlarda ve tutar sütunları
  * boş olarak durur — sıfır yazmak "bedava mal" demek olurdu.
  */
-async function envanterDegeriSayfasi(): Promise<Sayfa> {
+/**
+ * @param p `tarih=YYYY-MM-DD` verilirse TARİHLİ FOTOĞRAF (K53).
+ *
+ * ⚠ EKRANLA AYNI SINIR. Dosya bugünün rakamını taşıyıp adında "1 Haziran"
+ * yazsaydı muhasebeciye doğru sayı yanlış etiketle giderdi ve kimse fark
+ * etmezdi — dosyanın kendisi bir belge.
+ */
+async function envanterDegeriSayfasi(p: Parametreler): Promise<Sayfa> {
   const t = await getTranslations("IceAktarma");
   const tEnvanter = await getTranslations("Envanter");
   const tBaslik = await getTranslations("Basliklar");
   const ortak = await getTranslations("Ortak");
 
-  const { sonuc, kimlikler } = await envanterVerisi();
+  /** ⚠ Geçersiz tarih sessizce bugüne düşmez — ekranla AYNI gövde çözüyor. */
+  const tarih = tarihCoz(p.tarih);
+  const sinir =
+    tarih.tur === "TARIHLI" && !gelecekMi(tarih.sinir, new Date())
+      ? tarih.sinir
+      : undefined;
+
+  const { sonuc, kimlikler } = await envanterVerisi(sinir);
 
   const satirlar: (string | number | null | undefined)[][] = [];
 

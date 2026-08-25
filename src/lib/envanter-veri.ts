@@ -38,10 +38,16 @@ export type EnvanterVerisi = {
   kimlikler: Map<string, VaryantKimligi>;
 };
 
-export async function envanterVerisi(): Promise<EnvanterVerisi> {
+/**
+ * @param sinir Verilirse TARİHLİ FOTOĞRAF: o ana kadarki defter okunur.
+ *              Verilmezse bugünkü hâl.
+ *
+ * ⚠ AYNI GÖVDE — ikinci bir hesap yolu açılmadı (kullanıcı şartı K53).
+ */
+export async function envanterVerisi(sinir?: Date): Promise<EnvanterVerisi> {
   // Stokta kalan partisi olan HER varyant — pasif varyant da dahil.
   // Pasife alınmış ürünün deposunda malı duruyorsa parası da duruyordur.
-  const partiler = await acikPartilerToplu(prisma, null);
+  const partiler = await acikPartilerToplu(prisma, null, sinir);
   const idler = [...partiler.keys()];
 
   if (idler.length === 0) {

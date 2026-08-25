@@ -24,6 +24,11 @@ import {
   duzeniOku,
 } from "../src/lib/menu/duzen";
 import {
+  YASAK_KELIME,
+  gelecekMi,
+  tarihCoz,
+} from "../src/lib/envanter-tarih";
+import {
   MENU_ADRESLERI,
   MENU_GRUPLARI,
   MENU_KATALOGU,
@@ -4165,6 +4170,191 @@ console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
   kontrol(
     "panel toplam adını YALNIZ seri varken veriyor",
     /operasyonSeri\.toplam \? t\("operasyonToplamSeri"\) : undefined/.test(panel),
+  );
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
+console.log("=".repeat(70));
+/**
+ * ⚠ NİYE VAR: kullanıcı bir tarih seçip "o gün elimde ne vardı" sorusunu
+ * soruyor ve cevap MUHASEBEYE GİDEN BİR BELGE oluyor. Yanlış bir rakam
+ * burada sessizce doğru görünür.
+ */
+{
+  /** ── SAF KURAL: SINIRIN ÇÖZÜMÜ ─────────────────────────────────────── */
+  kontrol("tarih boşsa BUGÜN", tarihCoz(undefined).tur === "BUGUN");
+  kontrol("  ...boş dize de BUGÜN", tarihCoz("  ").tur === "BUGUN");
+  const g = tarihCoz("2026-06-01");
+  kontrol(
+    "geçerli tarih TARİHLİ çözülüyor",
+    g.tur === "TARIHLI" && g.sinir.toISOString() === "2026-06-01T00:00:00.000Z",
+    g,
+  );
+  /**
+   * ⚠ GEÇERSİZ TARİH SESSİZCE BUGÜNE DÜŞMEZ. Düşseydi kullanıcı yanlış
+   * yazdığı bir tarihin sonucunu DOĞRU sanırdı: ekranda "1 Hazran" yazar,
+   * rakam bugünün rakamı olurdu.
+   */
+  kontrol("bozuk tarih GEÇERSİZ (bugüne düşmüyor)", tarihCoz("1 Hazran").tur === "GECERSIZ");
+  kontrol("  ...taşan tarih de GEÇERSİZ", tarihCoz("2026-02-31").tur === "GECERSIZ");
+
+  /**
+   * ⚠ GELECEK TARİH SEÇİLEMEZ — doğru sayı yanlış etiketle çıkardı.
+   * ⚠ AMA BUGÜN GELECEK DEĞİLDİR: "bu sabah elimde ne vardı" meşru bir soru.
+   */
+  const bugun = new Date("2026-08-25T15:00:00Z");
+  kontrol(
+    "yarın GELECEK sayılıyor",
+    gelecekMi(new Date("2026-08-26T00:00:00Z"), bugun),
+  );
+  kontrol(
+    "  ...ama BUGÜN gelecek DEĞİL (bu sabahki hâl sorulabilir)",
+    !gelecekMi(new Date("2026-08-25T00:00:00Z"), bugun),
+  );
+  kontrol("  ...dün de gelecek değil", !gelecekMi(new Date("2026-08-24T00:00:00Z"), bugun));
+
+  /** ── MOTOR: SÜZGEÇ NEREYE BAĞLI ───────────────────────────────────── */
+  const stok = readFileSync("src/lib/stok.ts", "utf8");
+
+  /**
+   * ⚠ EN KRİTİK KİLİT: SÜZGEÇ TÜKETİMLERE DE UYGULANIR. Yalnız GİRİŞLERE
+   * uygulansaydı, temmuzda tüketilmiş bir parti 1 Haziran fotoğrafında da
+   * TÜKENMİŞ görünürdü — stok olduğundan DÜŞÜK çıkar ve rakam makul
+   * göründüğü için kimse fark etmez.
+   */
+  {
+    const bas2 = stok.indexOf("const tuketimler = await db.stockMovement.groupBy");
+    const blok = bas2 < 0 ? "" : stok.slice(bas2, bas2 + 400);
+    kontrol(
+      "tarih süzgeci TÜKETİMLERE de uygulanıyor (en kritik kilit)",
+      blok.includes("...tarihKosulu"),
+    );
+  }
+  /** ⚠ Ve girişlere de — ikisi birden. */
+  {
+    const bas2 = stok.indexOf("const girisler = await db.stockMovement.findMany");
+    const blok = bas2 < 0 ? "" : stok.slice(bas2, bas2 + 400);
+    kontrol("  ...ve GİRİŞLERE de", blok.includes("...tarihKosulu"));
+  }
+
+  /**
+   * ⚠ SÜZGEÇ `occurredAt`TEN, `createdAt`TEN DEĞİL. Rapor "o gün ne
+   * OLMUŞTU"yu kurar, "o gün sistemde ne GÖRÜNÜYORDU"yu değil. Sonradan
+   * girilmiş ama iş tarihi eski olan kayıt DAHİLDİR; kayıt anına bakan bir
+   * süzgeç geç girilen her alımı fotoğrafın dışında bırakırdı.
+   * ⚠ CANLI ÖLÇÜM BUNU ZORUNLU KILIYOR: 320 `PURCHASE_IN` hareketinin
+   * **241'inde** `occurredAt` ile `createdAt` FARKLI gün.
+   */
+  {
+    const bas2 = stok.indexOf("const tarihKosulu = sinir");
+    const blok = bas2 < 0 ? "" : stok.slice(bas2, bas2 + 200);
+    kontrol(
+      "süzgeç İŞ TARİHİNDEN (`occurredAt`) kuruluyor",
+      blok.includes("occurredAt: { lt: sinir }"),
+    );
+    kontrol("  ...`createdAt` KULLANILMIYOR", !blok.includes("createdAt"));
+  }
+
+  /**
+   * ⚠ İKİNCİ BİR FIFO GÖVDESİ AÇILMADI — kullanıcı şartı. İki ayrı FIFO
+   * tanımı bir gün ayrışır ve o gün hangisinin doğru olduğu anlaşılmaz.
+   */
+  kontrol(
+    "İKİNCİ FIFO gövdesi yok (mevcut motor parametrelendi)",
+    (stok.match(/export async function acikPartilerToplu/g) ?? []).length === 1 &&
+      !stok.includes("acikPartilerTarihli"),
+  );
+  kontrol(
+    "  ...ve envanterVerisi AYNI motoru çağırıyor",
+    readFileSync("src/lib/envanter-veri.ts", "utf8").includes(
+      "acikPartilerToplu(prisma, null, sinir)",
+    ),
+  );
+
+  /** ── DİL KURALI: "DEĞER/FOTOĞRAF", "SAYIM" DEĞİL ──────────────────── */
+  const ekran = readFileSync("src/app/envanter-degeri/page.tsx", "utf8");
+  const SOZ = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Envanter?: Record<string, string>;
+    Basliklar?: Record<string, string>;
+  };
+  /**
+   * ⚠ BAŞLIK BİR İDDİADIR. "Sayım" demek, yapılmamış bir işi yapılmış
+   * göstermek olur: bu ekran rafta ne olduğunu değil, deftere ne
+   * yazıldığını söyler.
+   * ⚠ ÖLÇÜT SÖZLÜKTEN — koda gömülü metin zaten yasak, dolayısıyla
+   * kullanıcının GÖRDÜĞÜ metin buradadır.
+   */
+  for (const [ad, metin] of [
+    ["ekran başlığı", SOZ.Envanter?.baslik ?? ""],
+    ["ekran açıklaması", SOZ.Envanter?.aciklama ?? ""],
+    ["sekme başlığı", SOZ.Basliklar?.envanterDegeri ?? ""],
+  ] as const) {
+    kontrol(
+      `${ad} "sayım" demiyor`,
+      metin !== "" && !metin.toLocaleLowerCase("tr").includes(YASAK_KELIME),
+      metin,
+    );
+  }
+  /** ⚠ VE ŞERH BUNU AÇIKÇA SÖYLÜYOR — susmak yetmez, söylemek gerekir. */
+  kontrol(
+    "kalıcı şerh 'sayım değildir' diyor",
+    (SOZ.Envanter?.fotografSerhi ?? "").includes("sayım değildir"),
+  );
+  /**
+   * ⚠ ŞERH KOŞULSUZ ÇİZİLİYOR — tarih seçilmese de. Bugünün rakamı da bir
+   * defter fotoğrafıdır; şerhi yalnız tarihliye bağlamak, bugünkü ekranı
+   * "gerçek sayım" gibi bırakırdı.
+   */
+  {
+    const bas2 = ekran.indexOf('{t("fotografSerhi")}');
+    const onceki = bas2 < 0 ? "" : ekran.slice(Math.max(0, bas2 - 300), bas2);
+    kontrol(
+      "  ...ve KOŞULSUZ çiziliyor (bugün de fotoğraftır)",
+      bas2 > 0 && !onceki.includes("sinir ?"),
+    );
+  }
+
+  /** ── PİRİNÇ ŞERH: KAPSAM DOĞRULANMADI ─────────────────────────────── */
+  {
+    const bas2 = ekran.indexOf('{t("kapsamSerhi")}');
+    const blok = bas2 < 0 ? "" : ekran.slice(Math.max(0, bas2 - 500), bas2 + 300);
+    kontrol("kapsam şerhi çiziliyor", bas2 > 0);
+    kontrol("  ...ve SINIR açıkça yazıyor", blok.includes("sinirAciklamasi"));
+    /**
+     * ⚠ ŞERH AY ADI VERMİYOR — bilerek. Ağustos için %48 ölçüldü; öteki
+     * aylar ÖLÇÜLMEDİ. Ölçülmemiş bir aya rakam yakıştırmak, ölçüleni de
+     * şüpheli yapardı.
+     */
+    kontrol(
+      "  ...ve ÖLÇÜLMEMİŞ aya rakam yakıştırmıyor",
+      !(SOZ.Envanter?.kapsamSerhi ?? "").match(/%\d/),
+      SOZ.Envanter?.kapsamSerhi,
+    );
+  }
+  /** ⚠ SINIR ÖRNEKLE YAZILI: bir gün kayması ay kapanışını kaydırır. */
+  kontrol(
+    "sınır 'BAŞLANGICI itibarıyla' diye yazılı",
+    (SOZ.Envanter?.sinirAciklamasi ?? "").includes("BAŞLANGICI"),
+  );
+
+  /** ── GEÇERSİZ TARİH EKRANDA SÖYLENİYOR ────────────────────────────── */
+  kontrol(
+    "geçersiz/gelecek tarih EKRANDA söyleniyor (sessizce bugüne düşmüyor)",
+    ekran.includes("{gecersizTarih ? (") && ekran.includes('t("tarihGecersiz")'),
+  );
+
+  /** ── EXCEL AYNI SINIRI TAŞIYOR ────────────────────────────────────── */
+  const disa = readFileSync("src/lib/disa-aktarma/listeler.ts", "utf8");
+  kontrol(
+    "Excel indirmesi AYNI tarihi taşıyor",
+    ekran.includes("parametreler={{ tarih: seciliTarih }}") &&
+      disa.includes("envanterVerisi(sinir)"),
+  );
+  kontrol(
+    "  ...ve sınırı AYNI gövdeden çözüyor (ikinci yorum yok)",
+    disa.includes("tarihCoz(p.tarih)") && disa.includes("gelecekMi("),
   );
 }
 

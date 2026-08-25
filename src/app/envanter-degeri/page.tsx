@@ -21,6 +21,8 @@ import {
 import { UzunAd } from "@/components/uzun-ad";
 import { bicimlendirici } from "@/lib/bicim";
 import { envanterVerisi } from "@/lib/envanter-veri";
+import { enGecGun, gelecekMi, tarihCoz } from "@/lib/envanter-tarih";
+import { gunMetni } from "@/lib/donem";
 import {
   ENVANTER_SIRALARI,
   envanterAra,
@@ -28,6 +30,8 @@ import {
   siralamaCoz,
 } from "@/lib/envanter";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+
+import { TarihSecici } from "./tarih-secici";
 
 /**
  * ============================================================================
@@ -48,7 +52,7 @@ export async function generateMetadata() {
 export default async function EnvanterDegeriSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sira?: string }>;
+  searchParams: Promise<{ q?: string; sira?: string; tarih?: string }>;
 }) {
   await sayfaIzni("envanter.gor");
   const parametreler = await searchParams;
@@ -57,7 +61,26 @@ export default async function EnvanterDegeriSayfasi({
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
 
-  const { sonuc, kimlikler } = await envanterVerisi();
+  /**
+   * ── TARİHLİ FOTOĞRAF (K53, 25.08.2026) ───────────────────────────────
+   * Kullanıcı bir tarih seçer; ekran O ANA KADARKİ defteri kurar.
+   *
+   * ⚠ AYNI MOTOR PARAMETRELENDİ — ikinci bir hesap yolu AÇILMADI. İki ayrı
+   * FIFO tanımı bir gün ayrışır ve o gün hangisinin doğru olduğu anlaşılmaz.
+   *
+   * ⚠ GEÇERSİZ TARİH SESSİZCE BUGÜNE DÜŞMEZ: kullanıcı yanlış yazdığı bir
+   * tarihin sonucunu DOĞRU sanırdı.
+   */
+  const an = new Date();
+  const tarih = tarihCoz(parametreler.tarih);
+  const gecersizTarih =
+    tarih.tur === "GECERSIZ" ||
+    (tarih.tur === "TARIHLI" && gelecekMi(tarih.sinir, an));
+  const sinir =
+    tarih.tur === "TARIHLI" && !gecersizTarih ? tarih.sinir : undefined;
+  const seciliTarih = sinir ? gunMetni(sinir) : "";
+
+  const { sonuc, kimlikler } = await envanterVerisi(sinir);
 
   /**
    * ── ARAMA VE SIRALAMA (kullanıcı isteği 21.08.2026) ────────────────────
@@ -100,8 +123,62 @@ export default async function EnvanterDegeriSayfasi({
             {t("aciklama")}
           </p>
         </div>
-        <ExcelIndir liste="envanter-degeri" />
+        {/*
+          ⚠ İNDİRİLEN DOSYA EKRANDAKİ TARİHİ TAŞIR. Taşımasaydı muhasebeciye
+          "1 Haziran envanteri" diye BUGÜNÜN dosyası gönderilirdi — doğru
+          sayı, yanlış etiket ve kimse fark etmez.
+        */}
+        <ExcelIndir
+          liste="envanter-degeri"
+          parametreler={{ tarih: seciliTarih }}
+        />
       </div>
+
+      {/*
+        ═══ KALICI ŞERH — BU BİR SAYIM DEĞİL ═════════════════════════════
+        ⚠ Kullanıcı şartı 25.08.2026. Ekran kayıtlardan kurulmuş bir DEFTER
+        FOTOĞRAFIDIR; rafta ne olduğunu söylemez, deftere ne yazıldığını
+        söyler. "Sayım" demek yapılmamış bir işi yapılmış göstermek olurdu
+        ve bu ekran muhasebeye giden bir belgeye dönüşüyor.
+        ⚠ ŞERH KOŞULLU DEĞİL — tarih seçilmese de yazar: bugünün rakamı da
+        bir defter fotoğrafıdır.
+      */}
+      <p className="text-muted-foreground text-sm">{t("fotografSerhi")}</p>
+
+      {/* ⚠ TARİH SEÇİCİ — arama ve sıra korunarak (İlke #10). */}
+      <TarihSecici
+        baslangic={seciliTarih}
+        enGec={enGecGun(an)}
+        tasinanlar={{ q: parametreler.q ?? "", sira: parametreler.sira ?? "" }}
+      />
+
+      {/*
+        ⚠ GEÇERSİZ/GELECEK TARİH SESSİZ GEÇMEZ. Sessizce bugüne düşseydi
+        kullanıcı yanlış bir tarihin sonucunu doğru sanırdı.
+      */}
+      {gecersizTarih ? (
+        <p className={`flex gap-2 rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+          <span>{t("tarihGecersiz")}</span>
+        </p>
+      ) : null}
+
+      {/*
+        ═══ PİRİNÇ ŞERH — KAPSAM DOĞRULANMADI ════════════════════════════
+        ⚠ Kullanıcı şartı: girilmemiş satış, stoğu olduğundan YÜKSEK
+        gösterir. Ağustos için %48 ÖLÇÜLDÜ (döküm 147 adet, defterde 71);
+        öteki aylar ölçülmedi, o yüzden **ay adı verilmeden** genel yazılıyor.
+        Ölçülmemiş bir aya rakam yakıştırmak, ölçüleni de şüpheli yapardı.
+      */}
+      {sinir ? (
+        <p className={`flex gap-2 rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+          <span>
+            {t("kapsamSerhi")}{" "}
+            <strong>{t("sinirAciklamasi", { tarih: seciliTarih })}</strong>
+          </span>
+        </p>
+      ) : null}
 
       {/* ══════════ ARAMA VE SIRALAMA (kullanıcı isteği 21.08.2026) ══════════
           ⚠ FORM, İSTEMCİ BİLEŞENİ DEĞİL: `method="get"` ile arama adrese
