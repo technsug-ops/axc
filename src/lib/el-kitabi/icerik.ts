@@ -569,6 +569,16 @@ ${sikHata([
 
 <section id="okuma">
 ${baslik("okuma")}
+<div class="ek-not"><div class="etiket">Bu ekran mı, öteki mi</div>
+<p><strong>Bu ekran:</strong> elinde bir kod var ve <em>ne olduğunu</em>
+bilmiyorsun. Ürün mü, sipariş mi, kayıtlı mı &mdash; sistem ne biliyorsa onu
+söyler.</p>
+<p><strong>Öteki ekran</strong> (<a href="#paketleme">Yönlendirmeli
+paketleme</a>): kutuyu hazırlıyorsun ve <em>hangi raftan ne alacağını</em>
+soruyorsun.</p>
+<p>Kararsızsan buradan başla: okuttuğun kod bir sipariş çıkarsa ekranda
+<strong>&quot;Yönlendirmeli paketle&quot;</strong> düğmesi belirir ve seni
+oraya sipariş yüklenmiş hâlde götürür.</p></div>
 <p><strong>Sol menü &rarr; Barkod okut.</strong> Elindeki ürünü okutursun;
 sistem o barkod hakkında <strong>ne bildiğini</strong> söyler. Hepsi bu.
 Hiçbir şey engellenmez, hiçbir kayıt değişmez, onay istenmez.</p>
@@ -612,6 +622,15 @@ ${sikHata([
 
 <section id="paketleme">
 ${baslik("paketleme")}
+<div class="ek-not"><div class="etiket">Bu ekran mı, öteki mi</div>
+<p><strong>Bu ekran:</strong> kargo etiketi elinde, kutuyu hazırlıyorsun.
+Sistem sana <em>hangi raftan ne alacağını</em> söyler ve doğru ürünü
+aldığını <em>okutarak doğrular</em>.</p>
+<p><strong>Öteki ekran</strong> (<a href="#okuma">Barkod okut</a>): elinde
+bir kod var ama ne olduğunu bilmiyorsun &mdash; ürün mü, sipariş mi.</p>
+<p>⚠ Buraya <strong>ürün barkodu</strong> okutursan bir şey bulamaz: bu
+ekranın ilk adımı <strong>kargo ya da sipariş numarasıdır</strong>. Ürün
+barkodu ikinci adımda okutulur.</p></div>
 <p><strong>Sol menü &rarr; Paketle.</strong> Bu ekran sana paketi
 <strong>tarif eder</strong>: hangi üründen kaç adet, hangi raftan. Ezberlemen
 gereken hiçbir şey yok &mdash; iki okutma yeter.</p>

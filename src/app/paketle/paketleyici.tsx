@@ -82,15 +82,29 @@ function tonCal(eslesti: boolean) {
   }
 }
 
-export function Paketleyici() {
+/**
+ * ⚠ BAŞLANGIÇ DEĞERİ SUNUCUDAN GELİR, İSTEMCİDE İKİNCİ KEZ ARANMAZ.
+ * `?kod=` ile gelindiğinde arama sayfada (sunucuda) yapılıyor ve sonucu
+ * buraya hazır düşüyor. İstemcide `useEffect` ile tekrar aramak, aynı
+ * kodu iki kez sorgulamak ve ekranın bir an boş görünmesi demekti.
+ */
+export function Paketleyici({
+  baslangicKodu = "",
+  baslangic = null,
+}: {
+  baslangicKodu?: string;
+  baslangic?: PaketAramasi | null;
+} = {}) {
   const t = useTranslations("Paketle");
 
   const kargoOdagi = useRef<HTMLInputElement>(null);
   const urunOdagi = useRef<HTMLInputElement>(null);
 
-  const [kargoKodu, setKargoKodu] = useState("");
+  const [kargoKodu, setKargoKodu] = useState(baslangicKodu);
   const [urunKodu, setUrunKodu] = useState("");
-  const [siparis, setSiparis] = useState<PaketSiparisi | null>(null);
+  const [siparis, setSiparis] = useState<PaketSiparisi | null>(
+    baslangic?.durum === "BULUNDU" ? baslangic.siparis : null,
+  );
   /** `null` = henüz okutulmadı · `true/false` = son okumanın sonucu. */
   const [sonOkumaEslestiMi, setSonOkuma] = useState<boolean | null>(null);
   const [okunmayanKod, setOkunmayanKod] = useState<string | null>(null);
@@ -100,7 +114,10 @@ export function Paketleyici() {
    * kullanıcı yanlış işe yönelir: kodu yeniden okutur, oysa yapılacak şey
    * satışa gönderi numarasını girmektir. (Canlı vaka 25.08.2026, HB etiketi.)
    */
-  const [bulunamadi, setBulunamadi] = useState<Exclude<PaketAramasi, { durum: "BULUNDU" }> | null>(null);
+  const [bulunamadi, setBulunamadi] = useState<Exclude<
+    PaketAramasi,
+    { durum: "BULUNDU" }
+  > | null>(baslangic && baslangic.durum !== "BULUNDU" ? baslangic : null);
   const [bekliyor, basla] = useTransition();
 
   const adim = siradakiAdim({ siparis, sonOkumaEslestiMi });

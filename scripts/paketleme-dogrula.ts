@@ -351,6 +351,63 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   );
 }
 
+// --- 8) KÖPRÜ: /okut → /paketle, TEK YÖNLÜ ---------------------------------
+/**
+ * ⚠ KÖPRÜ YALNIZ SİPARİŞ DALINDA. Kod bir ÜRÜN çıktığında yönlendirmeli
+ * paketlemeye geçmek anlamsız: bir ürünün üç açık siparişi olabilir ve
+ * hangisinin paketleneceğini sistem BİLEMEZ. Ürün dalında düğme göstermek,
+ * sistemin bilmediği bir seçimi kendi yapması olurdu.
+ *
+ * ⚠ VE TEK YÖNLÜ. /paketle içinden /okut a dönüş düğmesi açılmaz — akışın
+ * ortasında ölçüm ekranına düşen bir teyit okuması, kova karışmasını arka
+ * kapıdan geri getirirdi (mimar kararı 25.08.2026).
+ */
+{
+  console.log("");
+  console.log("8) KÖPRÜ — TEK YÖNLÜ, YALNIZ SİPARİŞ DALINDA");
+  const okuyucu = readFileSync("src/app/okut/okuyucu.tsx", "utf8");
+  const oY = okuyucu
+    .replace(/[/][*][^]*?[*][/]/g, "")
+    .replace(/[{][/][*][^]*?[*][/][}]/g, "");
+
+  const kopruSayisi = oY.split("/paketle?kod=").length - 1;
+  kontrol("köprü düğmesi var", kopruSayisi >= 1);
+  /** ⚠ TEK YERDE: ikinci bir kopya, biri bozulunca ötekini ayakta bırakır. */
+  kontrol("  ...ve TEK yerde", kopruSayisi === 1, kopruSayisi);
+
+  /**
+   * ⚠ KONUM SINANIYOR, VARLIK DEĞİL. Desen dosyanın herhangi bir yerinde
+   * olabilir; asıl soru HANGİ DALDA olduğu. Sipariş dalı
+   * "siparisBulundu" ile başlıyor, ürünsüz dal "siparistteYokBaslik" ile.
+   */
+  const satisDali = oY.indexOf("t(" + JSON.stringify("siparisBulundu") + ")");
+  const urunsuzDal = oY.indexOf("siparistteYokBaslik");
+  const kopru = oY.indexOf("/paketle?kod=");
+  kontrol("sipariş dalı bulundu", satisDali >= 0);
+  kontrol("ürünsüz dal bulundu", urunsuzDal >= 0);
+  kontrol(
+    "köprü SİPARİŞ dalının İÇİNDE",
+    satisDali >= 0 && urunsuzDal > satisDali && kopru > satisDali && kopru < urunsuzDal,
+    { satisDali, kopru, urunsuzDal },
+  );
+
+  /** ⚠ ADRESLE GELEN KOD, ELLE OKUTULANLA AYNI KAPIDAN GİRER. */
+  const sayfa = readFileSync("src/app/paketle/page.tsx", "utf8");
+  const sY = sayfa.replace(/[/][*][^]*?[*][/]/g, "");
+  kontrol("?kod= aynı arama işlevinden geçiyor", sY.includes("paketlemeIcinAra("));
+  kontrol("  ...ve searchParams okunuyor", sY.includes("searchParams"));
+
+  /** ⚠ TERS YÖN AÇILMAMALI. */
+  const ekranY = readFileSync("src/app/paketle/paketleyici.tsx", "utf8")
+    .replace(/[/][*][^]*?[*][/]/g, "")
+    .replace(/[{][/][*][^]*?[*][/][}]/g, "");
+  kontrol(
+    "KÖPRÜ TEK YÖNLÜ — /paketle içinden /okut a bağlantı YOK",
+    !ekranY.includes("href=" + JSON.stringify("/okut")) &&
+      !ekranY.includes(`href={` + JSON.stringify("/okut")),
+  );
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

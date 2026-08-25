@@ -3134,7 +3134,8 @@
     "paketlemeOlmadi": "İşaretlenemedi; sipariş bulunamadı.",
     "alanShipmentCode": "gönderi numarası",
     "siparisBulundu": "Sipariş bulundu",
-    "siparisBulunduAlan": "{alan} ile eşleşti. Aşağıdan paketlendi olarak işaretleyebilirsiniz."
+    "siparisBulunduAlan": "{alan} ile eşleşti. Aşağıdan paketlendi olarak işaretleyebilirsiniz.",
+    "yonlendirmeliPaketle": "Yönlendirmeli paketle"
   },
   "ItirazGerekcesi": {
     "KULLANILMIS": "Müşteriden gelen ürün kullanılmış",

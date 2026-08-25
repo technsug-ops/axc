@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { PackageCheck } from "lucide-react";
 
 import { varyantAra } from "@/app/varyant-arama";
 import {
@@ -225,13 +227,36 @@ export function Okuyucu() {
                   ⚠ Hangi alandan bulunduğu SÖYLENİR; kullanıcı kodun neden
                   eşleştiğini bilmezse yanlış kutuyu paketleyebilir.
                 */
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <p className="text-lg font-medium">{t("siparisBulundu")}</p>
                   <p className="text-sm text-muted-foreground">
                     {t("siparisBulunduAlan", {
                       alan: sonuc.alan ? alanAdi[sonuc.alan] : t("alanSku"),
                     })}
                   </p>
+                  {/*
+                    KÖPRÜ → /paketle (K46 rötuşu, 25.08.2026).
+
+                    ⚠ YALNIZ BU DALDA. Kod bir SİPARİŞ çıktığında yönlendirmeli
+                    paketlemeye geçmek anlamlı; ÜRÜN çıktığında değil — bir
+                    ürünün üç açık siparişi olabilir ve hangisinin paketleneceğini
+                    sistem bilemez. Ürün dalında düğme göstermek, sistemin
+                    bilmediği bir seçimi kendi yapması olurdu.
+
+                    ⚠ KÖPRÜ TEK YÖNLÜ: /paketle içinden buraya dönüş düğmesi
+                    AÇILMADI. Akışın ortasında ölçüm ekranına düşen bir teyit
+                    okuması, kova karışmasını arka kapıdan geri getirirdi.
+
+                    ⚠ Kod adrese taşınıyor ama SÜZGEÇ aynı: /paketle onu yine
+                    `paketlemeIcinAra` ile arıyor (kargoya verilmemiş + iptal
+                    değil). Adresle gelen kod, elle okutulanla aynı kapıdan girer.
+                  */}
+                  <Button asChild variant="secondary" className="min-h-11">
+                    <Link href={`/paketle?kod=${encodeURIComponent(sonuc.kod)}`}>
+                      <PackageCheck className="size-4" />
+                      {t("yonlendirmeliPaketle")}
+                    </Link>
+                  </Button>
                 </div>
               ) : (
                 /*
