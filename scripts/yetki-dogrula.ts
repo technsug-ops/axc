@@ -224,6 +224,10 @@ const API_ISTISNALARI = new Map<string, string>([
     "src/app/api/yedek/otomatik/route.ts",
     "Vercel Cron çağırır; kendi CRON_SECRET koruması var, tarayıcı oturumu taşıyamaz",
   ],
+  [
+    "src/app/api/olcum/route.ts",
+    "curl ile çağrılır (yerel makineden canlı veritabanına TCP reddi var: ECONNREFUSED); tarayıcı oturumu taşıyamaz. Kendi CRON_SECRET koruması var ve sır tanımsızsa uç KAPALI döner. SALT OKUMA: `api:dogrula` bu dosyada prisma yazma çağrısını KIRMIZI yakar.",
+  ],
 ]);
 {
   const korumasiz: string[] = [];
