@@ -63,6 +63,9 @@ type ApiPaket = {
   status: string;
   cargoTrackingNumber: number | null;
   shipmentPackageId: number;
+  /** Bolunmus paketin KOKU. `null` = bolunme yok. */
+  originPackageIds: number[] | null;
+  createdBy: string;
   lines: ApiKalem[];
 };
 
@@ -184,9 +187,36 @@ async function main() {
   );
   const pencereDisi = apiKayitlari.size - paketler.length;
 
+  /**
+   * ═══ BOLUNMUS SIPARISIN EBEVEYNI SAYIMA GIRMEZ ══════════════════════
+   * ⚠ CANLI BULGU 26.08.2026 — VE ARACIN GERCEK BIR KUSURUYDU.
+   * `11522079868` siparisinde API UC paket dondurdu:
+   *     4090482527  createdBy=order-creation  UnPacked   2 adet  7798
+   *     4090491834  createdBy=split           Delivered  1 adet  3899
+   *     4090491835  createdBy=split           Delivered  1 adet  3899
+   * Ucunu toplayinca **15.596** cikiyordu; siparisin gercegi **7.798**.
+   * Yani arac ebeveyni VE cocuklarini birlikte sayiyordu — ve defter
+   * `paketSayisi: 2` ile DOGRUYU soyluyordu.
+   *
+   * ⚠ OLCUT `createdBy` DEGIL, BAG. "`order-creation` olani at" demek
+   * bolunmemis siparislerin HEPSINI atardi. Dogru olcut iliskidir: bir
+   * paketin kimligi BASKA bir paketin `originPackageIds`inde geciyorsa o
+   * paket EBEVEYNDIR ve yerini cocuklari almistir.
+   * _(Anayasa: "tip listesi degil, BAG".)_
+   */
+  const ebeveynler = new Set<number>();
+  for (const p of paketler) {
+    if (Array.isArray(p.originPackageIds)) {
+      for (const id of p.originPackageIds) ebeveynler.add(Number(id));
+    }
+  }
+  const sayilanPaketler = paketler.filter(
+    (p) => !ebeveynler.has(p.shipmentPackageId),
+  );
+
   /** ⚠ PAKET ≠ SİPARİŞ. Bölünmüş sipariş iki paket olarak geliyor. */
   const apiHarita = new Map<string, ApiSiparis>();
-  for (const p of paketler) {
+  for (const p of sayilanPaketler) {
     const no = String(p.orderNumber);
     const kalemAdet = (p.lines ?? []).reduce((t, l) => t + (l.quantity ?? 0), 0);
     const tutar = kurus((p.grossAmount ?? 0) - (p.totalDiscount ?? 0));
@@ -301,7 +331,7 @@ async function main() {
   console.log(`  defter tarafı    \`soldAt\` bu aralıkta · İPTALLER DAHİL (ayrı işaretli)`);
   console.log(`  API okuma anı    ${okumaAni.toISOString()}`);
   console.log(`  ⚠ API tarafı DONMUŞ bir fotoğraf, defter AKIYOR — iki damga da yukarıda.`);
-  console.log(`\n  API paket        ${paketler.length}`);
+  console.log(`\n  API paket        ${paketler.length}   (bolunme EBEVEYNI elendi: ${ebeveynler.size})`);
   console.log(`  API sipariş      ${apiHarita.size}   (bölünmüş: ${[...apiHarita.values()].filter((x) => x.paketSayisi > 1).length})`);
   console.log(`  defter satış     ${defterSatislari.length}   (iptalli: ${defterSatislari.filter((s) => s.iptalTarihi).length})`);
   /**

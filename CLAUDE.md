@@ -1465,6 +1465,98 @@ gizlenen depolama · genel olarak **hata yutan her boş blok**. Ölçüt: bir
 
 ---
 
+### BİR KAYNAĞIN LİSTESİ KENDİ TAMLIĞINI KANITLAYAMAZ (KESİN KURAL)
+
+_Mimar kararı 26.08.2026, A3-②._ Bir uç "hata yok" diyor, `totalPages: 1`
+yazıyor ve bir liste veriyorsa — bu listenin **TAM olduğu** hiçbir yerde
+kanıtlanmış değildir. Tamlık, **kaynağın kendi beyanıyla değil ÇAPRAZ bir
+kaynakla** sınanır.
+
+**Vaka:** Trendyol sipariş ucu, 90 günlük tek pencerede `114` kayıt ve
+`totalPages: 1` döndürdü. Hiçbir hata yok. Aynı aralık 7 günlük dilimlere
+bölününce **804 farklı sipariş** çıktı — **yedi kat.** Uç yalan söylemedi;
+biz "hata yok" ile "tam" arasındaki farkı sormadık.
+
+    tek 90 gün → 114        14 gün dilim → 234
+    7 gün dilim → 234       3 gün dilim → 260       1 gün → 198 (5 hata)
+
+⚠ **DİLİM KÜÇÜLDÜKÇE SAYIM BÜYÜDÜ VE YAKINSAMADI.** Yakınsama olmadan
+"liste tamam" denemez; denirse yanlış bir tamlık iddiası, üstüne kurulan
+her rakamı da kirletir.
+
+> **KURAL:** enumerasyon (bir kümenin TAMAMINI listeleme) iddiası,
+> **bağımsız bir kaynakla çaprazlanmadan** kabul edilmez. Ve çapraz sonuç
+> verene kadar liste bir **ALT SINIRDIR** — ekranda, raporda, panoda öyle
+> yazar.
+
+**ÇAPRAZ SONUCU (aynı gün, ölçüldü):** kanalın hakediş satırlarındaki 283
+sipariş numarasından **70'i** API dilimlemesinin bulamadığı siparişler
+çıktı — ve hepsinin hakediş anı temmuz, yani paketleri pencerenin İÇİNDE
+değiştirilmiş olmalıydı. **Dilimleme eksik.** Çapraz kurulmasaydı `123`
+rakamı "eksik sipariş sayısı" diye yayımlanacaktı.
+
+⚠ **VE ÇAPRAZIN KENDİSİ DE KİRLENEBİLİR** — bkz. bir alttaki kural.
+
+---
+
+### KİMLİK CİNSİ AYRILMADAN KIYAS KURULMAZ (KESİN KURAL)
+
+_Ders 26.08.2026._ İki liste aynı sütun adını taşıyor diye aynı CİNS
+kimliği taşımaz. Karıştırıldığında çıkan sayı "bulunamadı" değil
+**"karşılaştırılamadı"**dır — ve ikisi ekranda aynı görünür.
+
+**Vaka:** `SettlementItem.orderNo` iki farklı cins kimlik taşıyor ve bu
+ölçüldü:
+
+    283 × 11 hane, ilk hane "1"   → gerçek TY sipariş numarası
+    148 × 10 hane, ilk hane "4"   → PAKET kimliği (shipmentPackageId)
+
+Çapraz sınama ikisini tek kefeye koyunca **"134 sipariş bulunamadı"** dedi.
+O rakamın yarısı, sipariş numarasıyla paket kimliğinin kıyaslanmasıydı.
+Biçime göre ayrılınca gerçek sayı **70** çıktı — ve 148'i **ayrı kova**
+olarak "kıyasa girmez" diye yazıldı.
+
+> **KONTROL SORUSU:** bu iki sütun aynı CİNS kimliği mi taşıyor? Cevabı
+> ölçmeden verilen her "eşleşmedi" sayısı, kendi kirini de içerir.
+
+⚠ **VE BULGU KENDİ BAŞINA İŞ AÇAR:** tek bir kolonda iki cins kimlik
+tutmak, o kolonu okuyan HER sorguyu sessizce kirletir. _(Bkz. BEKLEYENLER
+→ A3-②.)_
+
+_(Bu, "benzer ad aynı kimlik değildir" ve "sıfır üç farklı şey olabilir"
+derslerinin kıyas tarafı.)_
+
+---
+
+### DİZE, DAVRANIŞIN VEKİLİDİR — VE REFAKTÖR VEKİLİ ESKİTİR (KESİN KURAL)
+
+_Ders 26.08.2026._ Kaynak tarayan bir bekçi, aradığı davranışı çoğu zaman
+bir **dize** üzerinden bulur. O dize davranışın **vekilidir**; iyi bir
+refaktör vekili ortadan kaldırıp davranışı yerinde bırakabilir — ve bekçi
+**körelir, kırmızı bile yanmadan.**
+
+**Vaka:** `api:dogrula` API dosyalarını `"apigw.trendyol.com"` dizesine göre
+buluyordu. A3-②'de bütün çağrılar **tek istemci modülüne** toplandı (ki bu
+güvenlik çerçevesinin kendi şartıydı) ve `canli-ty-mutabakat.ts` o dizeyi
+artık içermez oldu: **taranmadı.** Oysa o dosya `prisma` kullanıyor ve
+yazma yasağı tam orada gerekliydi.
+
+> **KURAL:** ölçüt **davranışa** bağlanır, dizeye değil. Burada doğru ölçüt
+> _"API'ye ULAŞAN dosya"_ oldu: taban adresi doğrudan yazan **YA DA**
+> istemci modülünü içeri alan.
+
+⚠ **İYİ BİR REFAKTÖR BEKÇİYİ KÖR ETMEMELİ.** Bir yapıyı düzeltirken
+sorulacak ek soru: _bu düzeltme, hangi bekçinin aradığı izi siliyor?_
+
+⚠ **VE ÖLÇÜT GEVŞETİLMEDİ, AYRILDI.** `GET açıkça yazılı` kontrolü aynı
+refaktörde altı dosyada kırmızı yandı: istemciyi çağıran dosyalarda `fetch`
+yok, dolayısıyla `method: "GET"` de yok. Doğru cevap susturmak değil
+**sınıflandırmaktı** — `fetch` çağıran dosya GET yazmalı, yalnız istemciyi
+çağıran dosyada **hiçbir HTTP fiili geçmemeli**. İkincisine "GET yaz"
+demek, olmayan bir `fetch` için tören istemekti.
+
+---
+
 ### PARA RAKAMI TABANIYLA BİRLİKTE YAZILIR (KESİN KURAL)
 
 _Canlı bulgu 26.08.2026._ Aynı stok, aynı an, aynı motor — **iki farklı

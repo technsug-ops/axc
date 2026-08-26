@@ -89,13 +89,62 @@ düştü, **(b) 26 → 83**'e çıktı. Eski 74'ün tamamı enumerasyon artefakt
   `₺15` takipçi kuponu (**K19**). Diğer ikisi **tek tek bakılacak** —
   `−7.798` büyük ve açıklanmadı.
 
+### ⚠ İKİ AÇIKLANMAMIŞ SAPMA — DOSYA AÇILDI, BİRİ ARACIN KUSURU ÇIKTI
+
+**`−7.798,00` → ARACIN KUSURUYDU, VERİ DEĞİL.** `11522079868` siparişinde API
+**üç paket** döndürdü: `4090482527` (`order-creation`, UnPacked, 2 adet) ve
+onun bölünmüşleri `4090491834` + `4090491835` (`split`, Delivered, 1'er adet).
+Araç üçünü de topluyor, **15.596** çıkarıyordu; siparişin gerçeği **7.798** ve
+**defter `paketSayisi: 2` ile DOĞRUYU söylüyordu.**
+⚠ **ÖLÇÜT `createdBy` DEĞİL, BAĞ:** _"`order-creation` olanı at"_ demek
+bölünmemiş siparişlerin hepsini atardı. Doğru ölçüt ilişkidir — bir paketin
+kimliği başka bir paketin `originPackageIds`inde geçiyorsa o **EBEVEYNDİR** ve
+yerini çocukları almıştır. Düzeltildi: **(b) 83→84 · (c) 22→21**, sapma kayboldu.
+
+**`−21,00` → AÇIKLANAMADI, UYDURULMADI.** `11467475277` · 01.08 · tek kalem
+`8720689013949` · 1 adet · API `1.833,00` · defter `1.812,00` · **indirim 0 ·
+iade yok · tek paket.** İki taraf da tek satır; fark neden 21, görünmüyor.
+⏭ **Halil'in faturasından bakılacak** — kaynak sırasında fatura 1. basamak.
+
+### ⚠ ENUMERASYON TAMLIĞI — ÇAPRAZ KURULDU, CEVAP: EKSİK
+
+| Kaynak | Sayı |
+|---|---|
+| ① API dilimlemesi (3 günlük, 60 gün) | **497** farklı sipariş no |
+| ② Hakediş satırları | 431 `orderNo` → **283 sipariş numarası biçiminde** · **148 BAŞKA CİNS ⛔ kıyasa girmez** |
+| ③ Defter (tüm TY geçmişi) | **110** |
+
+**ÇAPRAZ: hakedişte VAR · API dilimlemesinde YOK = 70.** Hepsinin hakediş anı
+**21–26 Temmuz**, yani paketleri API'nin 60 günlük değişiklik penceresinin
+**içinde** dokunulmuş olmalıydı. Sınıra yakın 0, açıkça eski 0.
+
+> **⛔ DİLİMLEME EKSİK. `123` rakamı bir ALT SINIRDIR ve öyle yazılacak.**
+
+⚠ **VE ÇAPRAZIN KENDİSİ ÖNCE KİRLİ ÇIKTI:** ilk koşum **"134 bulunamadı"**
+dedi; ölçüldü ki `SettlementItem.orderNo` **iki cins kimlik** taşıyor
+(283 × `1…` 11 hane = sipariş no · **148 × `4…` 10 hane = PAKET kimliği**).
+Biçime göre ayrılınca gerçek sayı **70**. _"Bulunamadı"_ ile
+_"karşılaştırılamadı"_ ayrı sayıldı.
+
+### 🆕 A3-③a — `SettlementItem.orderNo` tek kolonda İKİ CİNS KİMLİK
+
+⚠ **BULGU KENDİ BAŞINA İŞ AÇIYOR.** Tek kolonda iki cins kimlik tutmak, o
+kolonu okuyan **her sorguyu sessizce kirletir** — K8 eşleştirmesi de o kolonu
+okuyor. ⏭ Hakediş içe aktarımının hangi durumda paket kimliği yazdığı
+ölçülecek; çare muhtemelen **ayırt edici sütun** (`kimlikTuru`), yeni tablo
+değil.
+
 ### ⏭ SIRADAKİ — VE ONAY KAPISI
 
 **(a) kovası içe aktarmanın kuru koşumunu doğuruyor.** Yazma ancak Halil'in
 onayından sonra (kendi çerçevesi: _"içe aktarma başlamadan önce kuru koşum
 raporu + onayım"_).
-⛔ **ÖNCE ENUMERASYON TAMLIĞI:** 123 rakamı bir ALT SINIR; kuru koşum
-raporunda bu açıkça yazılacak.
+⛔ **ENUMERASYON TAMLIĞI ÖLÇÜLDÜ VE SAĞLANMADI:** çapraz, API dilimlemesinin
+bulamadığı **70 sipariş** gösterdi. `123` bir ALT SINIRDIR ve kuru koşum
+raporunda sayıyla desteklenerek öyle yazılacak.
+⏭ **Sıradaki adım kod değil ÖLÇÜM:** dilim 3 günün altına indirilince hata
+alıyor (1 günde 5 hata); dolayısıyla çare dilim küçültmek olmayabilir —
+**başka bir uç ya da `orderByField`/sayfalama davranışı** ölçülecek.
 
 ---
 
