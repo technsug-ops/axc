@@ -29,7 +29,7 @@ export async function MarjSerhi({
 }) {
   const s = await marjSerhi(prisma, pencere);
   /** ⚠ İKİ SEBEBİN İKİSİ DE SIFIRSA ŞERH HİÇ ÇIKMAZ. */
-  if (s.bekleyen === 0 && s.alimYok === 0) return null;
+  if (s.bekleyen === 0 && s.alimYok === 0 && s.donemDisi === 0) return null;
 
   const t = await getTranslations("iceAktarma");
   const bicim = await bicimlendirici();
@@ -53,6 +53,18 @@ export async function MarjSerhi({
         {s.alimYok === 0 ? null : (
           <span className="block tabular-nums">
             {t("marjAlimYok", { adet: s.alimYok })}
+          </span>
+        )}
+        {/*
+          ⭐ ÜÇÜNCÜ SEBEP — VE BU KAPANABİLİR BİR AÇIK DEĞİL, TUTANAK.
+          O mal alım defteri başlamadan ÖNCE alınmış; maliyet KAYNAĞI yok.
+          Ekran bunu söylemezse biri kapatmaya çalışır ve kapatamaz.
+          _(Anayasa: "kapanamayacak kayıp, görev değil kayıttır" —
+          ve "tutanak, kusur ile sınırı ayırt ettirir".)_
+        */}
+        {s.donemDisi === 0 ? null : (
+          <span className="block tabular-nums">
+            {t("marjDonemDisi", { adet: s.donemDisi })}
           </span>
         )}
         {/*

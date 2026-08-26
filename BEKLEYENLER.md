@@ -788,6 +788,49 @@ kalmadı; 2553 kalem karşılıksız.
 incelenemeyen 0. **Yeni sapan DOĞMADI**; K54'ün iki hayaleti yerinde.
 Ayrı kova (stok bağı kurulmamış) **2502**.
 
+### ⚠ MARJ EKRANI — SEBEP ÜÇE AYRILDI, RAKAM SUSTURULDU (27.08.2026)
+
+**⛔ `[YANLIŞ CEVAP VEREN EKRAN]` etiketi marj için GERİ GELDİ** ve iki iş
+yapıldı.
+
+**① ŞERH ÜÇ SATIR:**
+
+| Sebep | Sayı | Ne demek |
+|---|---|---|
+| (a) bağ bekliyor | **3809** | alım VAR, henüz bağlanmadı |
+| (b) alım kaydı YOK | **1452** | o varyantın alımı hiç girilmemiş |
+| **(c) DÖNEMİ KAPSAMIYOR** | **1** | satış, alım defteri başlamadan önce |
+
+⚠ **(c) BEKLENENDEN ÇOK KÜÇÜK ÇIKTI — 1 satış.** Yazılan 5778 satışın
+yalnız biri `2024-05-30`dan önce. Kova gerekliydi ve doğru çalışıyor, ama
+bugünkü açığı açıklayan sebep değil; **açığın %72'si (a)**.
+⛔ (c) **kapatılabilir bir açık DEĞİL, tutanaktır** — ekran bunu yazıyor ki
+kimse kapatmaya çalışmasın. Ölçüt `min(Purchase.purchasedAt)`, sabit tarih
+değil: alım defteri geriye büyürse sayı kendiliğinden düşer.
+
+**② MARJ RAKAMI ARTIK BASILMIYOR.**
+
+    kapsanmayan pay  %90,06   ·   eşik %0,50
+    ekran            "hesaplanamıyor (5259/5746 satışın maliyeti yok)"
+    şerhte           maliyet bağı olanların marjı %11,12
+
+⚠ **EŞİK VERİDEN DEĞİL, GÖSTERİM HASSASİYETİNDEN TÜRETİLDİ — ve niye:**
+aylık kapsanmayan pay dağılımı ölçüldü (n=27): `22,6 · 30,8 · 87,0 ·
+100,0 × 24`, en büyük gedik 56,2 puan (ortası %58,9). **Ama o gedik
+_"hangi aylar kapsanıyor"_ sorusunu cevaplıyor**, bizimki _"rakam ne zaman
+yanıltır"_. Marj tek ondalıkla yazılıyor; ~%11'lik bir marjda tek ondalık
+= göreli **%0,45**. Kapsanmayan pay bunun üstündeyse ekrandaki basamak
+zaten yanlış.
+⚠ **Komuttaki `%X` gelmedi (mesaj kesilmişti)** — eşik bu yüzden
+türetildi. Başka bir değer isteniyorsa tek satır.
+
+⛔ **ÖLÇÜLEN ÇARPIKLIK:** ekran **%1,11**, gerçek **%11,12** — **on kat**.
+Bir rakamı on kat yanlış basmak, hiç basmamaktan kötüdür.
+
+**BEKÇİ 207 kontrol** · 9 mutasyon kırmızı. Ve **beş ölçüt eskidiği için
+kırmızı yandı** (kod doğruydu): gövde üçüncü sebeple büyüyünce blok
+penceresi yetmedi, "iki sebep" kontrolleri üçe çıkarıldı.
+
 ⏭ **AÇIK KALAN:** 2502 satış maliyet bağı bekliyor — alım defteri o
 dönemde yetmiyor. K55'in devamı.
 

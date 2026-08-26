@@ -90,6 +90,7 @@ import {
   zararOzeti,
 } from "@/lib/panel/dagilim";
 import { MarjSerhi } from "@/components/marj-serhi";
+import { marjBasilabilirMi, marjSerhi } from "@/lib/ice-aktarma-serhi";
 import { prisma } from "@/lib/prisma";
 import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
@@ -786,6 +787,12 @@ export default async function AnaSayfa({
    * gerekçe için bkz. `lib/panel-listeler.ts` → MARJ RENGİ.
    */
   const ortalamaMarj = donemOrtalamaMarji(urunSatirlari);
+  /**
+   * ⚠ MARJ BASILABİLİR Mİ — tek sorgudan, şerhle AYNI gövdeden.
+   * Ayrı hesaplansaydı şerh "%90 kapsanmıyor" derken kutu rakam basabilir
+   * ve iki ekran birbirini çürütürdü.
+   */
+  const marjDurumuOzeti = await marjSerhi(prisma);
 
   /**
    * MARJ ROZETİ — 14.08.2026, kullanıcı bulgusu.
@@ -867,9 +874,29 @@ export default async function AnaSayfa({
         )}
         {oranlar.satisa === null ? null : (
           <span className="min-w-0">
-            <span className="font-medium tabular-nums">
-              {bicim.yuzde(oranlar.satisa)}
-            </span>{" "}
+            {/*
+              ⛔ MALİYETİ OLMAYAN SATIŞ VARSA RAKAM BASILMAZ.
+              Ekrandaki oran `net / TÜM ciro`; gerçek oran `net / MALİYETİ
+              OLAN ciro`. İkisinin oranı tam olarak `1 − kapsanmayanPay`,
+              yani kapsanmayan pay kadar DÜŞÜK gösterir. Ölçüldü
+              27.08.2026: pay **%90** iken ekran **%1,11**, gerçek **%11,12**.
+              Bir rakamı on kat yanlış basmak, hiç basmamaktan kötüdür.
+
+              ⚠ EŞİK GÖSTERİM HASSASİYETİNDEN TÜRETİLDİ, veriden değil —
+              gerekçe `lib/ice-aktarma-serhi.ts` → `MARJ_KAPSAM_ESIGI`.
+            */}
+            {marjBasilabilirMi(marjDurumuOzeti) ? (
+              <span className="font-medium tabular-nums">
+                {bicim.yuzde(oranlar.satisa)}
+              </span>
+            ) : (
+              <span className="font-medium">
+                {t("marjHesaplanamiyor", {
+                  kapsanmayan: marjDurumuOzeti.kapsanmayanSatis,
+                  toplam: marjDurumuOzeti.toplamSatis,
+                })}
+              </span>
+            )}{" "}
             <span className="text-muted-foreground break-words">
               {t("oranSatisa")}
               {melontikEsleme ? ` ${t("melontikCiro")}` : ""}

@@ -410,7 +410,12 @@ const serhLib = oku("src/lib/ice-aktarma-serhi.ts");
  * Yalnız `importBatch`e bakan bir sayaç o gün de yanmaya devam ederdi ve
  * şerh HİÇ SÖNMEZDİ — sönmeyen uyarı okunmaz olur.
  */
-const marjGovde = blok(serhLib, "export async function marjSerhi(", 2600);
+/**
+ * ⚠ PENCERE ÖLÇÜLDÜ: gövde üçüncü sebeple büyüyünce 2600 karakter
+ * yetmedi ve DÖRT kontrol birden kırmızı yandı — kod doğruydu, pencere
+ * kısaydı. Dar pencere sessiz bir kör nokta üretir.
+ */
+const marjGovde = blok(serhLib, "export async function marjSerhi(", 4200);
 kontrol("marjSerhi gövdesi bulundu", marjGovde.length > 0);
 kontrol(
   "bekleyen sayımı `profitStatus === null` ölçütüne bağlı",
@@ -452,9 +457,14 @@ kontrol(
  * Şerh ancak İKİSİ de sıfırsa sönmeli — biri sıfırlanınca sönseydi öteki
  * sebep sessizce kaybolurdu.
  */
+/**
+ * ⚠ ÖLÇÜT İKİDEN ÜÇE ÇIKTI — ve bu bir GÜÇLENDİRME. Üçüncü sebep
+ * (dönem dışı) eklendi; iki sebebe bakan eski ölçüt, üçüncüsü tek
+ * başına kaldığında şerhi sönmüş sanırdı.
+ */
 kontrol(
-  "YANLIŞ YANMA yok — İKİ sebep de 0 ise çizilmiyor",
-  /if \(s\.bekleyen === 0 && s\.alimYok === 0\) return null;/.test(marjKaynak),
+  "YANLIŞ YANMA yok — ÜÇ sebep de 0 ise çizilmiyor",
+  /if \(s\.bekleyen === 0 && s\.alimYok === 0 && s\.donemDisi === 0\) return null;/.test(marjKaynak),
 );
 /**
  * ⚠ AYIRT EDİCİ ÖLÇÜT VARYANTIN ALIM GEÇMİŞİ. Kalemin kendi hareketine
@@ -465,11 +475,12 @@ kontrol(
   /k\.variant\.stockMovements\.length === 0/.test(marjGovde),
 );
 kontrol(
-  "iki kova AYRI sayılıyor",
-  /alimsizlar\.add\(k\.sale\.id\)/.test(marjGovde) &&
+  "ÜÇ kova AYRI sayılıyor",
+  /donemDisilar\.add\(k\.sale\.id\)/.test(marjGovde) &&
+    /alimsizlar\.add\(k\.sale\.id\)/.test(marjGovde) &&
     /else bekleyenler\.add\(k\.sale\.id\)/.test(marjGovde),
 );
-const marjMetin = blok(marjKaynak, "return (", 1400);
+const marjMetin = blok(marjKaynak, "return (", 2400);
 kontrol(
   "YANLIŞ SUSMA yok — sayı ekrana BASILIYOR",
   /t\("marjOkunamaz",\s*\{\s*adet:\s*s\.bekleyen\s*\}\)/.test(marjMetin),
@@ -1086,6 +1097,74 @@ kontrol(
 kontrol(
   "hata mesajı split()[0] ile KESİLMİYOR",
   !/message\.split\(/.test(satisAktar),
+);
+
+
+console.log("\n⑬ MARJ — üç sebep + rakam basma eşiği");
+
+const panelKaynak = oku("src/app/page.tsx");
+
+/**
+ * ⭐ ÜÇÜNCÜ SEBEP — VE SIRA ÖNEMLİ. Alım defteri o dönemi hiç
+ * kapsamıyorsa varyantın hareketi olup olmaması ANLAMSIZ. Sıra yanlış
+ * olsaydı bu kalemler "alım kaydı yok" diye sayılır ve KAPATILABİLİR
+ * sanılırdı — oysa kapatılamaz.
+ */
+kontrol(
+  "üçüncü sebep ölçütü ALIM DEFTERİNİN EN ESKİ TARİHİ",
+  /_min: \{ purchasedAt: true \}/.test(marjGovde),
+);
+kontrol(
+  "ölçüt SABİT TARİH değil",
+  !/2024-05-30|new Date\("202\d-/.test(yorumsuz(serhLib)),
+);
+kontrol(
+  "dönem dışı EN BAŞTA ayrılıyor (kova sırası)",
+  /donemDisilar\.add\(k\.sale\.id\);\s*continue;/.test(marjGovde),
+);
+kontrol(
+  "üçüncü satır ekrana BASILIYOR",
+  /t\("marjDonemDisi",\s*\{\s*adet: s\.donemDisi\s*\}\)/.test(marjMetin),
+);
+kontrol(
+  "ÜÇ sebep de sıfırsa şerh sönüyor",
+  /if \(s\.bekleyen === 0 && s\.alimYok === 0 && s\.donemDisi === 0\) return null;/.test(marjKaynak),
+);
+
+/**
+ * ⛔ MARJ RAKAMI KAPSANMAYAN PAY EŞİĞİ AŞINCA BASILMAZ.
+ * Ölçüldü: pay %90 iken ekran %1,11, gerçek %11,12 — on kat.
+ */
+kontrol(
+  "eşik gösterim hassasiyetinden türetilmiş",
+  /export const MARJ_BASAMAK = 1;/.test(serhLib) &&
+    /export const MARJ_KAPSAM_ESIGI = 0\.5 \/ 100;/.test(serhLib),
+);
+kontrol(
+  "eşik saf kuralda, ekrana GÖMÜLÜ değil",
+  /export function marjBasilabilirMi/.test(serhLib) &&
+    !/0\.5 \/ 100|kapsanmayanPay >/.test(yorumsuz(panelKaynak)),
+);
+const oranBloku = blok(panelKaynak, "{oranlar.satisa === null ? null : (", 1600);
+kontrol("panel oran bloğu bulundu", oranBloku.length > 0);
+kontrol(
+  "rakam ANCAK eşik sağlanınca basılıyor",
+  /marjBasilabilirMi\(marjDurumuOzeti\) \? \(/.test(oranBloku),
+);
+kontrol(
+  "aşılınca 'hesaplanamıyor' + SAYILAR basılıyor",
+  /t\("marjHesaplanamiyor", \{/.test(oranBloku) &&
+    /kapsanmayan: marjDurumuOzeti\.kapsanmayanSatis/.test(oranBloku) &&
+    /toplam: marjDurumuOzeti\.toplamSatis/.test(oranBloku),
+);
+/**
+ * ⚠ ŞERH İLE KUTU AYNI GÖVDEDEN — ayrı hesaplansaydı şerh "%90
+ * kapsanmıyor" derken kutu rakam basabilir ve iki ekran birbirini
+ * çürütürdü.
+ */
+kontrol(
+  "kutu ile şerh AYNI gövdeden besleniyor",
+  /const marjDurumuOzeti = await marjSerhi\(prisma\)/.test(panelKaynak),
 );
 
 

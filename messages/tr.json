@@ -1928,7 +1928,8 @@
     "operasyonToplamKdv": "Dönem toplamı — hesaplanan {hesaplanan} · indirilecek {indirilecek} · ÖDENECEK {sonuc}",
     "operasyonToplamKdvDevreden": "Dönem toplamı — hesaplanan {hesaplanan} · indirilecek {indirilecek} · DEVREDEN {sonuc} (ödeme yok, sonraki aya aktarılır)",
     "operasyonKdvKaynak": "Satış KDV oranı satış anında kaydedilmiş orandır (değişmez). Alım KDV oranı ürünün BUGÜNKÜ kategorisinden çözülür — kategori oranı değişirse geçmiş alımların KDV'si de değişir.",
-    "operasyonToplamSeri": "Toplam iş"
+    "operasyonToplamSeri": "Toplam iş",
+    "marjHesaplanamiyor": "hesaplanamıyor ({kapsanmayan}/{toplam} satışın maliyeti yok)"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
@@ -3386,6 +3387,7 @@
     "marjAlimYok": "{adet} satış: ALIM KAYDI YOK — bu ürünlerin alımı deftere girmemiş. Marj bu kalemler için hesaplanamaz.",
     "defterDerinligiBaslik": "ALIŞ DEFTERİ SATIŞ DEFTERİNDEN DERİN",
     "defterDerinligiSayilar": "Alımlar {alimTarih} tarihinden kayıtlı ({alim} alım); satışlar yalnız {satisTarih} tarihinden ({satis} satış) — satış defteri {gun} gün sığ.",
-    "defterDerinligiSonuc": "Bu fotoğraf, satışı deftere girmemiş {adet} adedi hâlâ depoda gösterir. Fiziksel stok bundan DÜŞÜK olacaktır."
+    "defterDerinligiSonuc": "Bu fotoğraf, satışı deftere girmemiş {adet} adedi hâlâ depoda gösterir. Fiziksel stok bundan DÜŞÜK olacaktır.",
+    "marjDonemDisi": "{adet} satış: ALIM DEFTERİ O DÖNEMİ KAPSAMIYOR — o mal defter başlamadan önce alınmış, maliyet kaynağı YOK. Bu kapatılabilir bir açık değil, kayıttır."
   }
 }

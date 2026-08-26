@@ -88,6 +88,33 @@ export const SERH_KAPSAMI =
  * ============================================================================
  */
 
+/**
+ * ============================================================================
+ *  MARJ SAYI OLARAK BASILIR MI — EŞİK GÖSTERİM HASSASİYETİNDEN TÜRETİLDİ
+ * ----------------------------------------------------------------------------
+ *  Ekrandaki marj `net / TÜM ciro`; gerçek marj `net / MALİYETİ OLAN ciro`.
+ *  İkisinin oranı tam olarak `1 − kapsanmayanPay`. Yani kapsanmayan pay
+ *  ne kadarsa, ekrandaki rakam o kadar DÜŞÜK gösterir.
+ *
+ *  ⚠ EŞİK VERİDEN DEĞİL, GÖSTERİMDEN TÜRETİLDİ — ve niye:
+ *  Aylık kapsanmayan pay dağılımı ölçüldü (n=27): `22,6 · 30,8 · 87,0 ·
+ *  100,0 × 24`. En büyük gedik 56,2 puan (ortası %58,9). AMA o gedik
+ *  _"hangi aylar kapsanıyor"_ sorusunu cevaplıyor — bizim sorumuz
+ *  _"rakam ne zaman yanıltır"_. Farklı soruya doğru cevap, yanlış eşik
+ *  olurdu. _(Anayasa: "eşik, ölçüldüğü popülasyonun dışına uygulanamaz".)_
+ *
+ *  ⚠ DOĞRU TÜRETME: marj ekranda TEK ONDALIKLA yazılıyor. Gösterilen
+ *  basamağı değiştirmeye yetecek her sapma, rakamı YANLIŞ yapar.
+ *  ~%11'lik bir marjda tek ondalık = 0,05 puan = göreli %0,45. Yani
+ *  kapsanmayan pay bunun üstündeyse ekrandaki basamak zaten yanlıştır.
+ *
+ *  ⛔ EŞİK "MAKUL GÖRÜNDÜĞÜ" İÇİN SEÇİLMEDİ: gösterim bir gün iki
+ *  ondalığa çıkarsa eşik de onunla birlikte inmeli — sabit bir sayı o
+ *  gün sessizce gevşek kalırdı.
+ */
+export const MARJ_BASAMAK = 1;
+export const MARJ_KAPSAM_ESIGI = 0.5 / 100;
+
 export type MarjSerhi = {
   /**
    * ⛔ SEBEP AYRIŞTIRILDI (Halil kararı 26.08.2026) — çünkü ÇÖZÜMÜN YERİ
@@ -104,13 +131,39 @@ export type MarjSerhi = {
    * şey bir satış arızası değil, **eksik alım defteri tutanağıdır.**
    */
   alimYok: number;
+  /**
+   * ⭐ ALIM DEFTERİ O DÖNEMİ KAPSAMIYOR — satış tarihi, alım defterinin
+   * EN ESKİ tarihinden önce.
+   *
+   * ⛔ BU KAPANABİLİR BİR AÇIK DEĞİL, TUTANAKTIR. O mal alım defteri
+   * başlamadan ÖNCE alınmış ve hiçbir dosyada kaydı yok — maliyet
+   * KAYNAĞI yok. Ekran bunu söylemezse biri kapatmaya çalışır ve
+   * kapatamaz. _(Anayasa: "kapanamayacak kayıp, görev değil kayıttır".)_
+   *
+   * ⚠ ÖLÇÜT SABİT TARİH DEĞİL: `min(Purchase.purchasedAt)`. Alım defteri
+   * geriye doğru büyürse bu sayı kendiliğinden düşer.
+   */
+  donemDisi: number;
   /** Maliyet bağı kurulabilir ama henüz kurulmamış satış — iptalsiz. */
   bekleyen: number;
   /** Yalnız maliyet bağı OLAN satışların marjı (%). Hesaplanamazsa null. */
   baglıMarj: number | null;
   /** Ekranda görünen marj (%) — bekleyenler ciroya dahil. */
   ekranMarji: number | null;
+  /** Maliyeti OLMAYAN cironun toplam ciroya oranı (0–1). */
+  kapsanmayanPay: number;
+  /** Maliyeti olmayan satış / toplam satış — ekranda yazılır. */
+  kapsanmayanSatis: number;
+  toplamSatis: number;
 };
+
+/**
+ * ⚠ MARJ SAYI OLARAK BASILABİLİR Mİ. Saf kural — ekran bunu çağırır.
+ * Eşik `MARJ_KAPSAM_ESIGI`den gelir; sabit sayı ekrana gömülmez.
+ */
+export function marjBasilabilirMi(s: Pick<MarjSerhi, "kapsanmayanPay">): boolean {
+  return s.kapsanmayanPay <= MARJ_KAPSAM_ESIGI;
+}
 
 /**
  * ⚠ İKİ RAKAM BİRLİKTE ÜRETİLİR — TEK SORGUDAN.
@@ -119,9 +172,16 @@ export type MarjSerhi = {
  * _(Anayasa: "sonda parametresi ekranın parametresi değildir".)_
  */
 export async function marjSerhi(
-  db: Pick<PrismaClient, "saleItem">,
+  db: Pick<PrismaClient, "saleItem" | "purchase">,
   pencere?: { bas: Date; son: Date },
 ): Promise<MarjSerhi> {
+  /**
+   * ⚠ ALIM DEFTERİNİN EN ESKİ TARİHİ — üçüncü sebebin ölçütü.
+   * Sabit tarih GÖMÜLMEZ: defter geriye büyürse sayı kendiliğinden düşer.
+   */
+  const alimEnEski = (await db.purchase.aggregate({ _min: { purchasedAt: true } }))
+    ._min.purchasedAt;
+
   const kalemler = await db.saleItem.findMany({
     where: {
       sale: {
@@ -133,7 +193,7 @@ export async function marjSerhi(
       quantity: true,
       unitPriceAmount: true,
       sale: {
-        select: { id: true, importBatch: true, profitStatus: true, net2Amount: true },
+        select: { id: true, importBatch: true, profitStatus: true, net2Amount: true, soldAt: true },
       },
       /**
        * ⚠ TEK HAREKET YETER — sayı değil VARLIK soruluyor. `take: 1`
@@ -150,7 +210,11 @@ export async function marjSerhi(
   const netler = new Map<string, number>();
   const bekleyenler = new Set<string>();
   const alimsizlar = new Set<string>();
+  const donemDisilar = new Set<string>();
+  const tumSatislar = new Set<string>();
+  const kapsanmayanlar = new Set<string>();
   for (const k of kalemler) {
+    tumSatislar.add(k.sale.id);
     const tutar = Number(k.unitPriceAmount) * k.quantity;
     ciroHepsi += tutar;
     /**
@@ -160,7 +224,18 @@ export async function marjSerhi(
      * yanmaya devam ederdi — sönmeyen şerh okunmaz olur.
      */
     if (k.sale.profitStatus === null) {
+      kapsanmayanlar.add(k.sale.id);
       if (k.sale.importBatch) {
+        /**
+         * ⚠ SIRA: DÖNEM EN BAŞTA. Alım defteri o dönemi hiç kapsamıyorsa
+         * o varyantın hareketi olup olmaması ANLAMSIZ — mal daha önce
+         * alınmış ve kaydı yok. Sıra yanlış olsaydı bu kalemler "alım
+         * kaydı yok" diye sayılır ve KAPATILABİLİR sanılırdı.
+         */
+        if (alimEnEski !== null && k.sale.soldAt.getTime() < alimEnEski.getTime()) {
+          donemDisilar.add(k.sale.id);
+          continue;
+        }
         /**
          * ⚠ AYIRT EDİCİ ÖLÇÜT: O VARYANTIN HİÇ AÇIK PARTİSİ VAR MI.
          * Kalemin kendi stok hareketi yoksa iki ihtimal var ve ikisi
@@ -180,6 +255,10 @@ export async function marjSerhi(
 
   return {
     alimYok: alimsizlar.size,
+    donemDisi: donemDisilar.size,
+    kapsanmayanPay: ciroHepsi > 0 ? (ciroHepsi - ciroBagli) / ciroHepsi : 0,
+    kapsanmayanSatis: kapsanmayanlar.size,
+    toplamSatis: tumSatislar.size,
     bekleyen: bekleyenler.size,
     baglıMarj: ciroBagli > 0 ? (net / ciroBagli) * 100 : null,
     ekranMarji: ciroHepsi > 0 ? (net / ciroHepsi) * 100 : null,

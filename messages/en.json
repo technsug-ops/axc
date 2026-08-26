@@ -1928,7 +1928,8 @@
     "operasyonToplamKdv": "",
     "operasyonToplamKdvDevreden": "",
     "operasyonKdvKaynak": "",
-    "operasyonToplamSeri": ""
+    "operasyonToplamSeri": "",
+    "marjHesaplanamiyor": ""
   },
   "Envanter": {
     "baslik": "",
@@ -3386,6 +3387,7 @@
     "marjAlimYok": "",
     "defterDerinligiBaslik": "",
     "defterDerinligiSayilar": "",
-    "defterDerinligiSonuc": ""
+    "defterDerinligiSonuc": "",
+    "marjDonemDisi": ""
   }
 }
