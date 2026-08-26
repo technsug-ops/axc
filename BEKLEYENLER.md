@@ -695,7 +695,56 @@ buldu — köprü yine ADLA kuruldu, yani aynı zayıflık.
 > **Sorun ESKİ dönemde.** 2026 zaten %96 eşleşiyor; eşleşmeme geriye
 > gidildikçe artıyor. Son aylarda 8–45 satır.
 
-⏭ **HÜKÜM YOK.** Kuru koşum bu teşhise göre kurulacak.
+### 🚦 K56 KURU KOŞUM — **ONAY BEKLİYOR** (26.08.2026)
+
+`npm run canli:satis-kuru -- --dosya="…"` · **salt okuma, tek satır yazılmadı.**
+`satis.xlsx` · md5 `0674f15faf27ed5c661f55fc75a278a3` · **10205 satır**.
+
+**② YAZILACAK:** **5219 satış** (sipariş no başına) · **5339 kalem** ·
+5339 adet · **₺15.178.095** · kaynak `satis-excel`.
+Yıla göre: 2024 → 290 · 2025 → 2359 · **2026 → 2690**.
+
+**③ DIŞARIDA — sekiz kova, toplam satır sayısıyla TUTUYOR (4866+5339=10205):**
+
+| Kova | Adet | Sebep |
+|---|---|---|
+| `eslesmeyenListing` | **1932** | HBCV/HBV/başka desen — ürün sistemde YOK |
+| `copSku` | **1491** | SKU yerine pazaryeri adı — ürün bilgisi dosyada YOK |
+| `zatenVar` | **553** | çakışmada ATLA, ezme yok |
+| `turFarkli` | **462** | satış DEĞİL |
+| `numarasiz` | 381 | sipariş numarası hiç yok |
+| `belirsizSku` | 36 | kod >1 varyanta işaret ediyor |
+| `tarihOkunamayan` | 8 | |
+| `gelecekTarihli` | **3** | tarih GELECEKTE |
+
+⚠ **`gelecekTarihli` KOVASI SONRADAN AÇILDI — ve 1 satır yazılabilir listeye
+SIZMIŞTI.** Makul yıl kapısı (2000–2100) `2029-03-30`u geçiriyor: yıl geçerli
+ama gün gelmedi. Kova ayrılmasaydı yazıma kadar görünmezdi.
+
+**TÜR KIRILIMI — sistemde karşılığı ne (hiçbiri bu turda yazılmıyor):**
+iade 387 → `Return`/`ReturnItem` · tazmin 27 → `Compensation` ·
+iptal 24 → `Sale.iptalTarihi` · **TATİL 8 → ⛔ karşılığı YOK** ·
+(boş) 8 → ⛔ tür belirsiz · **aktarma 7 → ⛔ karşılığı YOK** ·
+Zarar 1 → `ADJUSTMENT`/hurda, ayrı karar.
+
+⚠ **KANAL ETİKETİ ↔ NUMARA BİÇİMİ ÇELİŞKİSİ: 8 satır.** `4637289070` HB
+deseni taşıyor ama etiket `TY`; `10711449394` tersi. Bu satırların defterde
+karşılığı YOK — _"defter kazanır"_ kuralı **uygulanamaz**, karar gerekiyor.
+
+**④ STOK:** 885 varyanttan **542'sinde açık parti var**.
+✓ `SALE_OUT` yazılır **2629 kalem** · ⛔ parti yok, atlanır **2710 kalem**.
+_(Satış tarafındaki kural: parti yoksa hareket yazılmaz, negatif stok yok.)_
+
+**⑤ ENVANTER ETKİSİ:** kapsanmayan pencerede açık **3115** → bu aktarım
+**2629 adet** eritir → kalan **~486**.
+⚠ **KABA TAHMİN VE NİYE KABA OLDUĞU YAZILI:** şerhin ölçütü "satış
+defterinin en eski tarihinden önce alınmış açık parti"; bu aktarım satış
+defterini 2024'e indirdiği için **pencerenin kendisi de daralacak** —
+gerçek düşüş bundan büyük olabilir.
+
+**⑥ İDEMPOTENTLİK:** ikinci koşum **0** ✓ (anahtar `Sale.code`, global unique).
+
+⛔ **ONAY KAPISI AÇIK — hiçbir yazım yapılmadı.**
 
 ⚠ **EKRANDA GÖRÜNÜYOR ve sebebi AYRI yazıyor** — marj şerhi iki satır:
 _"N satış maliyet bağı bekliyor"_ ile _"M satış: ALIM KAYDI YOK"_ tek cümleye
