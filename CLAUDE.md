@@ -509,6 +509,7 @@ GERÇEKLEŞTİĞİNİ göstermez.
 | 6 | Gider formu çelişkiyi söylüyor mu | Kontrol `const celiski =` arıyordu; mutasyon **render koşulunu** `{false ? (` yaptı — dal hiç çizilmedi, tanım dosyada kaldı, bekçi yeşil |
 | 7 | El kitabı damga vergisini anlatıyor mu | `"Damga vergisi"` bölümde **üç kez** geçiyor (tablo · dikkat kutusu · sık hata). Tablo satırını silen mutasyon ötekileri buldu. Satıra daraltıldı — **yine yeşil kaldı**: MTV satırının GEREKÇE hücresinde _"Damga vergisiyle aynı mantık"_ yazıyor. Ancak **ilk hücreye** (kalem adı) bağlanınca kırmızı yandı |
 | 8 | Yarım tarih seçimi ekranda söyleniyor mu | Kontrol `const yarim =` ile `t("aralikYarim")`i AYRI AYRI arıyordu; render koşulu `{false ? (` yapılınca dal hiç çizilmedi, iki desen de dosyada kaldı, bekçi yeşil |
+| 9 | Excel iki para tabanını ayrı sütun yapıyor mu | `tEnvanter("malBedeli")` deseni FARK sayfasının başlığında da geçiyor; açılış/kapanış sayfalarını tek tabana düşüren mutasyon ötekini buldu ve yeşil kaldı. `basliklar` bloğuna daraltılınca kırmızı yandı |
 
 **YÖNTEM — kontrol yazarken:**
 0. ⚠ **ÖNCE DESENİ SAY.** Aradığın metin dosyada kaç kere geçiyor?
@@ -1461,6 +1462,40 @@ yani düğme bozuk sanıldı, oysa bozuk olan **deponun kendisiydi.**
 döngüsündeki `catch` (hata yutuluyordu, "okumuyor" sanıldı) · `catch {}` ile
 gizlenen depolama · genel olarak **hata yutan her boş blok**. Ölçüt: bir
 `catch` bloğu boşsa, orada ne olduğunu **hiç kimse** öğrenemez.
+
+---
+
+### PARA RAKAMI TABANIYLA BİRLİKTE YAZILIR (KESİN KURAL)
+
+_Canlı bulgu 26.08.2026._ Aynı stok, aynı an, aynı motor — **iki farklı
+doğru rakam.** Hangisine baktığını söylemeyen bir para rakamı, doğru olsa
+bile **kullanılamaz.**
+
+**Vaka:** envanter aralık görünümü açılışı `₺453.053,78` gösteriyordu;
+teslim raporum `₺543.664,54` diyordu. İkisi de doğruydu:
+
+    ÖDENEN (KDV dahil)      543.664,54     ← raporun ölçtüğü
+    MAL BEDELİ (KDV hariç)  453.053,78     ← ekranın gösterdiği
+
+⚠ **VE FARK SABİT BİR ÇARPAN BİLE DEĞİL.** Ölçüldü: açılışta oran tam
+`1,200000` (o partilerin hepsi %20), kapanışta `1,194847` (karışık oran —
+KDV ürünün kategorisinden geliyor). Yani _"1,2'ye böl"_ diye akıldan
+çevrilemez; taban yazılmazsa geri kazanılamaz.
+
+> **KURAL:** ekrana ya da dosyaya giren her para rakamı **tabanını yanında
+> taşır.** Sütun başlığı da buna dahildir: _"Fark (değer)"_ tek başına,
+> muhasebeciye giden bir belgede **kullanılamaz bir sütundur.**
+
+⚠ **VE AYNI EKRANIN İKİ GÖRÜNÜMÜ AYNI ŞEYİ GÖSTERİR (İlke #10).** Tek
+fotoğraf görünümü zaten ikisini de etiketli gösteriyordu
+(`Mal bedeli (KDV hariç)` · `Ödenen (KDV dahil)`); aralık görünümünün
+yalnız birini, etiketsiz göstermesi bir tutarsızlıktı. **Yeni bir görünüm
+eklerken ölçüt "doğru mu" değil, "ötekiyle aynı şeyi mi söylüyor"dur.**
+
+⚠ **HATA BENDEYDİ, KODDA DEĞİL.** Halil testi bu yüzden düştü: rakamı
+ölçerken ham `unitCostAmount` toplamını aldım, ekran ise `kdvHaric`
+uyguluyor. _("Bir sayı etiketiyle taşınır" kuralının para tarafı — orada
+fiil kayboluyordu, burada taban.)_
 
 ---
 

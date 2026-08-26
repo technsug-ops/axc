@@ -39,7 +39,23 @@ export type AralikSatiri = {
   kapanisAdet: number;
   /** ⚠ ÇIKARMA — ayrı sorgu değil. */
   farkAdet: number;
-  /** `null` = o fotoğrafta değeri hesaplanamadı (maliyeti bilinmiyor). */
+  /**
+   * ⚠ İKİ TABAN BİRDEN TAŞINIR — VE BU BİR CANLI BULGUNUN SONUCU
+   * (26.08.2026). İlk yazımda tek bir "değer" vardı ve hangi tabandan
+   * geldiği HİÇBİR YERDE YAZMIYORDU. Ekran `453.053,78` diyordu, teslim
+   * raporu `543.664,54` — ikisi de doğruydu, biri KDV HARİÇ öteki KDV
+   * DAHİL. Tabanı yazılmayan bir para rakamı, doğru olsa bile
+   * KULLANILAMAZ (anayasa: "kaynağı yazılmayan sayı kullanılamaz").
+   *
+   * ⚠ VE TEK FOTOĞRAF EKRANI ZATEN İKİSİNİ DE GÖSTERİYORDU
+   * (`Ödenen (KDV dahil)` · `Mal bedeli (KDV hariç)`); aralık görünümü
+   * yalnız birini, etiketsiz gösteriyordu — İlke #10 ihlali.
+   */
+  /** KDV DAHİL — fiilen ödenen. */
+  acilisOdenen: number;
+  kapanisOdenen: number;
+  farkOdenen: number;
+  /** KDV HARİÇ mal bedeli. `null` = oran çözülemedi. */
   acilisDeger: number | null;
   kapanisDeger: number | null;
   farkDeger: number | null;
@@ -51,6 +67,9 @@ export type AralikBloku = {
   acilisAdet: number;
   kapanisAdet: number;
   farkAdet: number;
+  acilisOdenen: number;
+  kapanisOdenen: number;
+  farkOdenen: number;
   acilisDeger: number;
   kapanisDeger: number;
   farkDeger: number;
@@ -71,7 +90,10 @@ export type AralikSonucu = {
 };
 
 /** Bir fotoğrafın varyant → (adet, değer) haritası. */
-type Fotograf = Map<string, { paraBirimi: Currency; adet: number; deger: number | null }>;
+type Fotograf = Map<
+  string,
+  { paraBirimi: Currency; adet: number; odenen: number; deger: number | null }
+>;
 
 function fotografaCevir(sonuc: Awaited<ReturnType<typeof envanterVerisi>>): Fotograf {
   const harita: Fotograf = new Map();
@@ -83,6 +105,9 @@ function fotografaCevir(sonuc: Awaited<ReturnType<typeof envanterVerisi>>): Foto
       harita.set(satir.variantId, {
         paraBirimi: blok.paraBirimi,
         adet: (onceki?.adet ?? 0) + satir.adet,
+        /** ⚠ ÖDENEN her zaman bilinir — parti maliyeti olmadan satır zaten
+         *  bu listeye girmiyor. */
+        odenen: (onceki?.odenen ?? 0) + satir.odenen,
         /**
          * ⚠ BİLİNMEYEN DEĞER TOPLAMA SIFIR OLARAK GİRMEZ. Sıfır girseydi
          * "bedava mal" demiş olurduk; `null` kalır ve ekran onu ayrı sayar.
@@ -104,6 +129,8 @@ function fotografaCevir(sonuc: Awaited<ReturnType<typeof envanterVerisi>>): Foto
     harita.set(b.variantId, {
       paraBirimi: onceki?.paraBirimi ?? ("TRY" as Currency),
       adet: (onceki?.adet ?? 0) + b.adet,
+      /** ⚠ Maliyeti bilinmeyen partinin ödeneni de bilinmiyor — 0 EKLENMEZ. */
+      odenen: onceki?.odenen ?? 0,
       deger: null,
     });
   }
@@ -137,6 +164,8 @@ export async function envanterAraligi(
 
     const acilisAdet = av?.adet ?? 0;
     const kapanisAdet = kv?.adet ?? 0;
+    const acilisOdenen = av?.odenen ?? 0;
+    const kapanisOdenen = kv?.odenen ?? 0;
     const acilisDeger = av === undefined ? 0 : av.deger;
     const kapanisDeger = kv === undefined ? 0 : kv.deger;
 
@@ -147,6 +176,9 @@ export async function envanterAraligi(
       kapanisAdet,
       /** ⚠ ÇIKARMA — üçüncü sorgu yok. */
       farkAdet: kapanisAdet - acilisAdet,
+      acilisOdenen,
+      kapanisOdenen,
+      farkOdenen: kapanisOdenen - acilisOdenen,
       acilisDeger,
       kapanisDeger,
       farkDeger:
@@ -163,6 +195,9 @@ export async function envanterAraligi(
         acilisAdet: 0,
         kapanisAdet: 0,
         farkAdet: 0,
+        acilisOdenen: 0,
+        kapanisOdenen: 0,
+        farkOdenen: 0,
         acilisDeger: 0,
         kapanisDeger: 0,
         farkDeger: 0,
@@ -171,6 +206,9 @@ export async function envanterAraligi(
     blok.acilisAdet += acilisAdet;
     blok.kapanisAdet += kapanisAdet;
     blok.farkAdet += satir.farkAdet;
+    blok.acilisOdenen += acilisOdenen;
+    blok.kapanisOdenen += kapanisOdenen;
+    blok.farkOdenen += satir.farkOdenen;
     blok.acilisDeger += acilisDeger ?? 0;
     blok.kapanisDeger += kapanisDeger ?? 0;
     blok.farkDeger += satir.farkDeger ?? 0;

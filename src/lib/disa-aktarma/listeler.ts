@@ -246,11 +246,17 @@ async function aralikSayfalari(
   const tumSatirlar = a.bloklar.flatMap((b) => b.satirlar);
   const kimlik = (id: string) => a.kimlikler.get(id);
 
+  /**
+   * ⚠ İKİ TABAN DA SÜTUN OLUR. Tek bir "tutar" sütunu, muhasebecinin
+   * hangi tabana baktığını bilmemesi demekti — ve rakam doğru olduğu için
+   * kimse sorgulamazdı.
+   */
   const basliklar = [
     ortak("urun"),
     ortak("sku"),
     ortak("adet"),
-    ortak("tutar"),
+    tEnvanter("malBedeli"),
+    tEnvanter("odenen"),
     ortak("paraBirimi"),
   ];
 
@@ -259,6 +265,7 @@ async function aralikSayfalari(
     ad: string,
     adetAl: (s: (typeof tumSatirlar)[number]) => number,
     degerAl: (s: (typeof tumSatirlar)[number]) => number | null,
+    odenenAl: (s: (typeof tumSatirlar)[number]) => number,
   ): Sayfa => ({
     ad,
     basliklar,
@@ -267,6 +274,7 @@ async function aralikSayfalari(
       kimlik(s.variantId)?.sku,
       adetAl(s),
       degerAl(s) === null ? tEnvanter("hesaplanamadi") : String(degerAl(s)),
+      String(odenenAl(s)),
       s.paraBirimi,
     ]),
   });
@@ -276,11 +284,13 @@ async function aralikSayfalari(
       `${tEnvanter("acilis")} ${basMetin}`,
       (s) => s.acilisAdet,
       (s) => s.acilisDeger,
+      (s) => s.acilisOdenen,
     ),
     fotografSayfasi(
       `${tEnvanter("kapanis")} ${bitMetin}`,
       (s) => s.kapanisAdet,
       (s) => s.kapanisDeger,
+      (s) => s.kapanisOdenen,
     ),
     {
       ad: `${tEnvanter("fark")} ${basMetin} ${bitMetin}`,
@@ -290,7 +300,8 @@ async function aralikSayfalari(
         tEnvanter("acilis"),
         tEnvanter("kapanis"),
         tEnvanter("fark"),
-        tEnvanter("farkDegeri"),
+        `${tEnvanter("farkDegeri")} · ${tEnvanter("malBedeli")}`,
+        `${tEnvanter("farkDegeri")} · ${tEnvanter("odenen")}`,
         ortak("paraBirimi"),
       ],
       satirlar: [
@@ -301,6 +312,7 @@ async function aralikSayfalari(
           s.kapanisAdet,
           s.farkAdet,
           s.farkDeger === null ? tEnvanter("hesaplanamadi") : String(s.farkDeger),
+          String(s.farkOdenen),
           s.paraBirimi,
         ]),
         /**

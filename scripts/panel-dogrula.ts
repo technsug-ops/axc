@@ -4517,6 +4517,60 @@ console.log("=".repeat(70));
         (SOZ.Envanter?.aralikSiniri ?? "").includes("DAHİL"),
     );
 
+    /**
+     * ═══ PARA RAKAMI TABANIYLA BİRLİKTE ═══════════════════════════════
+     * ⚠ CANLI BULGU 26.08.2026: ekran `453.053,78`, teslim raporu
+     * `543.664,54` diyordu ve İKİSİ DE DOĞRUYDU — biri KDV HARİÇ mal
+     * bedeli, öteki KDV DAHİL ödenen. Aralık görünümü tek bir rakam
+     * gösteriyordu ve **hangi tabandan olduğunu HİÇBİR YERDE yazmıyordu.**
+     *
+     * ⚠ VE TEK FOTOĞRAF EKRANI ZATEN İKİSİNİ DE ETİKETLİ GÖSTERİYORDU
+     * (`Mal bedeli (KDV hariç)` · `Ödenen (KDV dahil)`) — aralığın
+     * göstermemesi İlke #10 ihlaliydi.
+     *
+     * ⚠ ÖLÇÜLDÜ: açılışta oran tam 1,200000 (hepsi %20), kapanışta
+     * 1,194847 (karışık oran). Yani taban farkı sabit bir çarpan bile
+     * değil — "1,2'ye böl" diye akıldan çevrilemez.
+     */
+    kontrol(
+      "aralık görünümü İKİ TABANI da taşıyor (veri)",
+      aralikGovde.includes("acilisOdenen") &&
+        aralikGovde.includes("kapanisOdenen") &&
+        aralikGovde.includes("farkOdenen: kapanisOdenen - acilisOdenen"),
+    );
+    kontrol(
+      "  ...ve ekranda İKİSİ DE ETİKETLİ",
+      gorunum.includes('t("malBedeli")') && gorunum.includes('t("odenen")'),
+    );
+    /**
+     * ⚠ ETİKETSİZ PARA RAKAMI KALMAMALI. Sütun başlığı da tabanı söyler:
+     * "Fark (değer)" tek başına muhasebeciye giden bir belgede
+     * KULLANILAMAZ bir sütundur.
+     */
+    kontrol(
+      "  ...ve sütun başlığı tabanı söylüyor",
+      gorunum.includes('{t("farkDegeri")} · {t("malBedeli")}'),
+    );
+    /** ⚠ Ve DOSYA da iki tabanı ayrı sütun yapıyor. */
+    /**
+     * ⚠ İŞARET FOTOĞRAF SAYFASININ BAŞLIK BLOĞUNA BAĞLI — İLK HÂLİ KÖR
+     * ÇIKTI. `tEnvanter("malBedeli")` deseni FARK sayfasının başlığında da
+     * geçiyor; açılış/kapanış sayfalarını tek tabana düşüren mutasyon
+     * ötekini buldu ve bekçi YEŞİL kaldı. Bu deponun dokuzuncu vakası.
+     */
+    kontrol(
+      "  ...ve Excel iki tabanı AYRI SÜTUN yapıyor",
+      (() => {
+        const bas4 = disa.indexOf("const basliklar = [");
+        if (bas4 < 0) return false;
+        const blok = disa.slice(bas4, bas4 + 300);
+        return (
+          blok.includes('tEnvanter("malBedeli")') &&
+          blok.includes('tEnvanter("odenen")')
+        );
+      })(),
+    );
+
     /** ⚠ EXCEL ÜÇ SAYFA — açılış · kapanış · fark. */
     kontrol(
       "Excel ÜÇ sayfa üretiyor (açılış · kapanış · fark)",

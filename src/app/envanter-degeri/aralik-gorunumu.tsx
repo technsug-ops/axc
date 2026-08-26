@@ -102,8 +102,20 @@ export async function AralikGorunumu({
                   {t("acilis")}
                 </div>
                 <div className="text-2xl font-semibold">{blok.acilisAdet}</div>
+                {/*
+                  ⚠ İKİ TABAN DA ETİKETLİ — VE BU BİR CANLI BULGU
+                  (26.08.2026). Tek bir etiketsiz rakam vardı; ekran
+                  `453.053,78`, teslim raporu `543.664,54` diyordu ve ikisi
+                  de doğruydu (biri KDV hariç, öteki dahil). Tabanı
+                  yazılmayan para rakamı doğru olsa bile KULLANILAMAZ.
+                  ⚠ Ve tek fotoğraf ekranı zaten ikisini de gösteriyordu —
+                  aralık görünümünün göstermemesi İlke #10 ihlaliydi.
+                */}
                 <div className="text-muted-foreground text-sm">
-                  {bicim.para(blok.acilisDeger, blok.paraBirimi)}
+                  {t("malBedeli")}: {bicim.para(blok.acilisDeger, blok.paraBirimi)}
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  {t("odenen")}: {bicim.para(blok.acilisOdenen, blok.paraBirimi)}
                 </div>
               </div>
               <div className="space-y-1 rounded-lg border p-4">
@@ -112,7 +124,10 @@ export async function AralikGorunumu({
                 </div>
                 <div className="text-2xl font-semibold">{blok.kapanisAdet}</div>
                 <div className="text-muted-foreground text-sm">
-                  {bicim.para(blok.kapanisDeger, blok.paraBirimi)}
+                  {t("malBedeli")}: {bicim.para(blok.kapanisDeger, blok.paraBirimi)}
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  {t("odenen")}: {bicim.para(blok.kapanisOdenen, blok.paraBirimi)}
                 </div>
               </div>
               <div className="space-y-1 rounded-lg border p-4">
@@ -123,7 +138,10 @@ export async function AralikGorunumu({
                   {isaretli(blok.farkAdet)}
                 </div>
                 <div className={`text-sm ${farkRengi(blok.farkDeger)}`}>
-                  {bicim.para(blok.farkDeger, blok.paraBirimi)}
+                  {t("malBedeli")}: {bicim.para(blok.farkDeger, blok.paraBirimi)}
+                </div>
+                <div className={`text-xs ${farkRengi(blok.farkOdenen)}`}>
+                  {t("odenen")}: {bicim.para(blok.farkOdenen, blok.paraBirimi)}
                 </div>
               </div>
             </div>
@@ -137,8 +155,13 @@ export async function AralikGorunumu({
                     <TableHead className="text-right">{t("acilis")}</TableHead>
                     <TableHead className="text-right">{t("kapanis")}</TableHead>
                     <TableHead className="text-right">{t("fark")}</TableHead>
+                    {/*
+                      ⚠ BAŞLIK TABANI SÖYLER. "Fark (değer)" tek başına
+                      hangi tabandan olduğunu söylemiyordu; muhasebeciye
+                      giden bir belgede bu, kullanılamaz bir sütundur.
+                    */}
                     <TableHead className="text-right">
-                      {t("farkDegeri")}
+                      {t("farkDegeri")} · {t("malBedeli")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -204,7 +227,7 @@ export async function AralikGorunumu({
                         ),
                       },
                       {
-                        etiket: t("farkDegeri"),
+                        etiket: `${t("farkDegeri")} · ${t("malBedeli")}`,
                         deger:
                           s.farkDeger === null
                             ? t("hesaplanamadi")
