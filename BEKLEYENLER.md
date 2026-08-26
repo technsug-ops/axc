@@ -192,6 +192,53 @@ sayıyla desteklenerek öyle yazılacak.
 ✅ **MEKANİZMA ADLANDIRILDI VE TELAFİ YOLU ÖLÇÜLDÜ** — bkz. yukarıdaki
 "ENUMERASYON — MEKANİZMA" bölümü. Kuru koşum artık kurulabilir.
 
+### 🚦 A3-③ KURU KOŞUM — RAPOR ÜRETİLDİ, **ONAY BEKLİYOR** (26.08.2026)
+
+`npm run canli:ty-kuru-kosum -- --gun=60` · **salt okuma, tek satır yazılmadı**
+(`api:dogrula` bunu koşulur hâlde tutuyor: yalnız GET · prisma yazma çağrısı yok).
+
+**KAPSAM:** Trendyol — AXCALI (`externalId 870249`) · `2026-06-27 → 2026-08-26`
+(`orderDate`e göre) · 3 günlük 30 dilim · okuma anı `2026-08-26T10:27:47Z`.
+
+| | |
+|---|---|
+| aday sipariş | **441** · 449 adet · **₺1.549.713,55** |
+| ⛔ **YAZILABİLİR** | **428** |
+| ⛔ barkodu kataloğumuzda olmayan | **13** — önce ÜRÜN tanımlanmalı |
+| durum | Delivered 411 · **Cancelled 28** (₺165.511) · Returned 2 |
+| çakışma | defterde 111 kod var → **106 aday atlandı** |
+| bölünmüş | 1 sipariş (2 ebeveyn paket elendi) |
+
+**⛔ VARYANT KAPISI EN SERT SINIR:** `SaleItem.variantId` **zorunlu**
+(`onDelete: Restrict`). Bu bir tercih değil **şemanın kendisi** — barkodu
+bilinmeyen siparişin kalemi yazılamaz. _13 sipariş bu yüzden dışarıda._
+
+**⚠ ÇAPRAZ BU KOŞUMDA `0` DÖNDÜ — VE BU TAMLIK KANITI DEĞİL.** Aynı çapraz
+önceki koşumda **37** vermişti. Enumerasyon bu turda o kayıtları yakaladı;
+bir sonraki turda yine kaçırabilir. Sıfırı "boşluk yok" diye okumak, en sinsi
+yalancı yeşil olurdu — betik bunu **ekrana kendisi yazıyor.**
+
+**⛔ RAPORUN AÇTIĞI TEK ŞEMA KALEMİ** (yazımdan ÖNCE, ayrı migration onayı):
+
+    Sale.importBatch  String?   @@index([importBatch])
+    Sale.importKaynak String?   ← 'enumerasyon' | 'hakediş çaprazı'
+
+İkincisi Halil'in kendi ①. şartının gereği: **kaynak raporda değil KAYITTA
+durmalı.** Rapor silinir, kayıt kalır.
+
+**KARARLAR — rapor bunları öneriyor, onay bekliyor:**
+- **İptaller listeye GİRER**, `iptalTarihi` dolu yazılır. Hiç yazılmasaydı o
+  sipariş "hiç olmadı" olurdu ve kargo gideri sahipsiz kalırdı.
+- **Çakışmada ATLA, ÜZERİNE YAZMA** — elle girilmiş kayıt üstün (Halil'in
+  girdiği kupon düşülmüş tutar API brütünden daha doğru olabilir).
+- **`StockMovement` ÜRETİLMEZ.** `SALE_OUT` yazsaydı FIFO'dan mal düşerdi ve
+  geri alması ledger'a ters kayıt gerektirirdi. Stok bağı **ayrı ve sonraki**
+  bir karar.
+- Geri alma **silme değil işaretleme** (`iptalTarihi`).
+
+⛔ **ONAY KAPISI AÇIK — HİÇBİR YAZIM YAPILMADI.** Onay gelirse yazım günü
+kural aynı: önce/sonra sayım · `AuditLog` · ikinci koşum **0** yazmalı.
+
 ---
 
 ## 📎 KAYIT ÇELİŞKİSİ — 25.08.2026, mimar düzeltmesi

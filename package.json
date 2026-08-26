@@ -113,7 +113,8 @@
     "paketleme:dogrula": "tsx scripts/paketleme-dogrula.ts",
     "prepare": "git config core.hooksPath .githooks || true",
     "gecici:dogrula": "tsx scripts/gecici-dogrula.ts",
-    "canli:ty-mutabakat": "tsx scripts/canli-ty-mutabakat.ts"
+    "canli:ty-mutabakat": "tsx scripts/canli-ty-mutabakat.ts",
+    "canli:ty-kuru-kosum": "tsx scripts/canli-ty-kuru-kosum.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
