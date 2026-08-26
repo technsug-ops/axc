@@ -158,20 +158,29 @@ kontrol("KDV `l.vatRate`ten okunuyor", /kdv:\s*l\.vatRate\s*!=/.test(kalemBloku)
  * `ORDERDATE_KAYMA_MS` dosyada tanım + yorum + çağrı olarak geçiyor;
  * yalnız adını aramak, çıkarmayı kaldıran bir mutasyonu yakalamazdı.
  */
-const kaymaBloku = blok(kaynak, "const ham = Number(p.orderDate)", 260);
-kontrol("orderDate okuma bloğu bulundu", kaymaBloku.length > 0);
-kontrol(
-  "orderDate'ten kayma ÇIKARILIYOR",
-  /const\s+duzeltilmis\s*=\s*ham\s*-\s*ORDERDATE_KAYMA_MS/.test(kaymaBloku),
-);
+/**
+ * ⚠ ÖLÇÜT ORTAK GÖVDEYE TAŞINDI — ve bu bir GÜÇLENDİRMEDİR, gevşetme değil.
+ * Burada üç kontrol vardı ve üçü de bu dosyadaki YEREL kayma koduna
+ * bakıyordu (`const ham = ...` bloğu). Kod ortak gövdeye taşınınca blok
+ * kayboldu ve üçü de kırmızı yandı — davranış DOĞRUYDU, ölçüt eskimişti.
+ * ⑤ bölümü aynı şeyi daha sert sınıyor: sabit tek yerde tanımlı VE
+ * `orderDate` okuyan HER betik onu kullanıyor.
+ */
+const kaymaBloku = blok(kaynak, "const duzeltilmis = siparisAni(", 200);
+kontrol("kayma düzeltmesi çağrı yerinde bulundu", kaymaBloku.length > 0);
 kontrol(
   "pencere süzgeci DÜZELTİLMİŞ değeri kullanıyor",
   /duzeltilmis\s*<\s*bas\s*\|\|\s*duzeltilmis\s*>\s*son/.test(kaymaBloku),
 );
-kontrol(
-  "kayma tam 3 saat",
-  /const ORDERDATE_KAYMA_MS = 3 \* 3600_000;/.test(kaynak),
-);
+/**
+ * ⚠ ESKİYEN KONTROL KALDIRILDI, GEVŞETİLMEDİ (26.08.2026).
+ * Burada `kayma tam 3 saat` kontrolü içe aktarma betiğinde sabiti
+ * arıyordu. Sabit ORTAK gövdeye taşındı (iki okuyucu ayrışmasın diye),
+ * dolayısıyla ölçüt yanlış dosyaya bakıyordu ve KIRMIZI yandı — kod
+ * doğruydu, ölçüt eskimişti.
+ * Aynı şeyi ⑤ bölümü artık DAHA GÜÇLÜ sınıyor: sabit ortak gövdede
+ * tanımlı VE her okuyucu onu kullanıyor.
+ */
 /**
  * ⚠ `soldAt` DÜZELTİLMİŞ ANDAN TÜRETİLİYOR — ham `orderDate`ten değil.
  * Süzgeç düzeltilmiş, `soldAt` ham kalsaydı sipariş doğru pencereye
@@ -217,7 +226,7 @@ kontrol(
  *
  * ⚠ 3. TUR: ölçüt önce `.stockMovement.` diye BAŞTA NOKTA istiyordu ve
  * `stockMovement.create(...)` (öneksiz) kaçtı. Sözcük sınırına
- * (``) bağlanınca dördü de kırmızı yandı.
+ * (`\b`) bağlanınca dördü de kırmızı yandı.
  */
 /**
  * ⚠ ÖLÇÜT: KODDA `stockMovement` GEÇMEZ — tekil/çoğul, çağrı/ilişki
@@ -316,6 +325,77 @@ kontrol(
   "ayrı kova sıfırsa hiç basılmıyor",
   /if \(iceAktarmaBagsiz > 0\)/.test(ayrismaKaynak),
 );
+
+// ═══ ⑤ SAAT KAYMASI TEK GÖVDEDEN OKUNUYOR MU ══════════════════════════════
+const KACIS_AC = "\\(";
+const KACIS_KAPA = "\\)";
+
+console.log("\n⑤ SAAT KAYMASI — orderDate okuyan her betik ortak gövdeden geçiyor mu");
+
+/**
+ * ⚠ BU KONTROL BİR CANLI KUSURDAN DOĞDU (26.08.2026).
+ *
+ * `orderDate`in 3 saatlik kayması önce YALNIZ içe aktarma betiğinde
+ * düzeltildi. Mutabakat aracı ham değere bakmaya devam etti ve düzeltilmiş
+ * tarihlerle karşılaştırınca **44 sipariş "tarih +1 gün" diye SAPAN ilan
+ * edildi** — hepsi aynı yönde. Düzeltilince (c) kovası **47 → 5**, tarih
+ * kayması **44 → 0**.
+ *
+ * ⛔ ÖLÇÜT: `orderDate` OKUYAN HER BETİK ORTAK GÖVDEDEN GEÇMELİ. Kendi
+ * sabitini tanımlayan dosya, yarın sessizce ayrışır.
+ * _(Anayasa: "düzeltme yolu, TÜM okuyuculara ulaştığı ölçülmeden 'var'
+ * sayılmaz".)_
+ */
+const ORTAK = oku("scripts/ty/istemci.ts");
+kontrol(
+  "kayma sabiti ORTAK gövdede tanımlı",
+  /export const ORDERDATE_KAYMA_MS = 3 \* 3600_000;/.test(ORTAK),
+);
+kontrol(
+  "ortak gövde siparisAni() ve isGunuUtc() veriyor",
+  /export function siparisAni\(/.test(ORTAK) && /export function isGunuUtc\(/.test(ORTAK),
+);
+
+for (const [ad, yol] of [
+  ["içe aktarma", "scripts/canli-ty-ice-aktar.ts"],
+  ["mutabakat", "scripts/canli-ty-mutabakat.ts"],
+  ["kuru koşum", "scripts/canli-ty-kuru-kosum.ts"],
+] as const) {
+  const g = yorumsuz(oku(yol));
+  const okuyor = new RegExp("\\borderDate\\b").test(g);
+  if (!okuyor) {
+    kontrol(`${ad} — orderDate okumuyor, kapsam dışı`, true);
+    continue;
+  }
+  /**
+   * ⚠ İKİ YÖN: kendi sabitini TANIMLAMAMALI **ve** ortak gövdeyi
+   * KULLANMALI. Yalnız birincisi sınansaydı, sabiti silip düzeltmeyi hiç
+   * uygulamayan bir dosya yeşil kalırdı.
+   */
+  kontrol(
+    `${ad} — kendi kayma sabitini TANIMLAMIYOR`,
+    !/const\s+ORDERDATE_KAYMA_MS\s*=/.test(g),
+  );
+  /**
+   * ⚠ ÖLÇÜT "siparisAni GEÇİYOR MU" DEĞİL, "HAM ERİŞİM KALDI MI".
+   *
+   * İlk hâli `/siparisAni\(/` arıyordu ve MUTASYONLA DÜŞTÜ: desen bu
+   * dosyalarda İKİ yerde geçiyor (pencere süzgeci + gün üretimi), birini
+   * ham değere çeviren mutasyon ötekini buluyor ve bekçi YEŞİL kalıyordu.
+   *
+   * Doğrusu tersten: `siparisAni(...)` çağrıları metinden SİLİNİR, geriye
+   * `.orderDate` erişimi kalıyorsa o erişim ortak gövdeden GEÇMİYOR
+   * demektir. Tip bildirimi (`orderDate: number`) noktasız olduğu için
+   * elenmiş olur.
+   * _(Anayasa: "önce deseni SAY" — birden çoksa ölçüt yokluğa bağlanır.)_
+   */
+  const gecirilmis = g.replace(new RegExp("siparisAni" + KACIS_AC + "[^)]*" + KACIS_KAPA, "g"), " ");
+  kontrol(
+    `${ad} — ham orderDate erişimi KALMADI`,
+    !/\.orderDate/.test(gecirilmis),
+  );
+}
+
 
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
 process.exit(hata === 0 ? 0 : 1);

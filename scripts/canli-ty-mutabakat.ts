@@ -2,7 +2,13 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { canliYapilandirma } from "./canli-ortak";
-import { UCLAR, baslikKur, kimlikOku, tumSayfalar } from "./ty/istemci";
+import {
+  UCLAR,
+  baslikKur,
+  kimlikOku,
+  siparisAni,
+  tumSayfalar,
+} from "./ty/istemci";
 
 /**
  * ============================================================================
@@ -179,11 +185,18 @@ async function main() {
   }
 
   /**
+   * ⚠ KAYMA DÜZELTİLMİŞ AN KULLANILIYOR — VE BU BİR KUSUR DÜZELTMESİDİR.
+   *
+   * Ham `orderDate` TR duvar saatini UTC epoch'u gibi taşıyor (ölçüldü:
+   * defterle göz göze 109/109). Bu araç ham değere bakmaya devam edince
+   * **44 sipariş "tarih +1 gün" diye SAPAN ilan edildi** — hepsi aynı
+   * yönde. Sapmaların kaynağı veri değil ARACIN KENDİSİYDİ.
+   *
    * ⚠ HEDEF PENCERE `orderDate` İLE İSTEMCİDE SÜZÜLÜYOR — sunucu bunu
    * yapamıyor (süzgeci değişiklik anına bakıyor).
    */
   const paketler = [...apiKayitlari.values()].filter(
-    (p) => p.orderDate >= bas && p.orderDate <= son,
+    (p) => siparisAni(p.orderDate) >= bas && siparisAni(p.orderDate) <= son,
   );
   const pencereDisi = apiKayitlari.size - paketler.length;
 
@@ -233,7 +246,7 @@ async function main() {
         paketSayisi: 1,
         tutar,
         adet: kalemAdet,
-        gun: istanbulGunu(new Date(p.orderDate)),
+        gun: istanbulGunu(new Date(siparisAni(p.orderDate))),
         durumlar: [p.status],
         kargoNolari: p.cargoTrackingNumber ? [String(p.cargoTrackingNumber)] : [],
       });

@@ -182,3 +182,55 @@ export const UCLAR = {
   iadeler: (saticiId: string, sayfa: number, boyut = 200) =>
     `/integration/order/sellers/${saticiId}/claims?page=${sayfa}&size=${boyut}`,
 } as const;
+
+/**
+ * ============================================================================
+ *  `orderDate` ÜÇ SAAT KAYMIŞ — TEK GÖVDE
+ * ----------------------------------------------------------------------------
+ *  ⚠ CANLI ÖLÇÜM 26.08.2026, defterle GÖZ GÖZE (n=109 çakışan sipariş —
+ *  Halil'in TY PANELİNDEN okuyup girdiği `soldAt` ile):
+ *
+ *      HAM `orderDate` ile aynı gün      :  89/109
+ *      −3 saat kaydırılmışla aynı gün    : 109/109   ← TAM
+ *
+ *  İkinci tanık, paketin KENDİ geçmişi: `orderDate − packageHistories[0]`
+ *  farkı n=560'ta ortanca **2,994 sa**, max **3,000 sa**.
+ *
+ *  ⚠ BURADA DURMASININ SEBEBİ BİR HATA: kayma önce YALNIZ içe aktarma
+ *  betiğinde düzeltildi. Mutabakat aracı ham `orderDate`e bakmaya devam
+ *  etti ve düzeltilmiş tarihlerle karşılaştırınca **44 sipariş "tarih +1
+ *  gün" diye SAPAN ilan edildi** — hepsi aynı yönde, yani sistematik.
+ *  Sapmaların kaynağı veri değil ARACIN KENDİSİYDİ.
+ *
+ *  Aynı düzeltmeyi iki dosyaya ayrı ayrı yazmak, ikisinin yarın
+ *  ayrışmasına davetiyedir. _(Anayasa: "düzeltme yolu, TÜM okuyuculara
+ *  ulaştığı ölçülmeden 'var' sayılmaz".)_
+ *
+ *  ⚠ SABİT 3 SAAT GÜVENLİ: Türkiye 2016'dan beri kalıcı UTC+3, yaz saati
+ *  uygulaması YOK.
+ *
+ *  ⚠ VE KAYMA YALNIZ `orderDate`E AİT: `packageHistories`,
+ *  `lastModifiedDate` ve `originShipmentDate` gerçek UTC taşıyor.
+ * ============================================================================
+ */
+export const ORDERDATE_KAYMA_MS = 3 * 3600_000;
+
+/** API'nin `orderDate` alanını GERÇEK ana çevirir. */
+export function siparisAni(ham: number): number {
+  return ham - ORDERDATE_KAYMA_MS;
+}
+
+/**
+ * İstanbul takvim gününün UTC gece yarısı.
+ * ⚠ Defterdeki 144/144 `soldAt` satırı bu biçimde (ölçüldü 26.08.2026);
+ * karşılaştırma iki tarafı aynı biçime getirmeden yapılamaz.
+ */
+export function isGunuUtc(ms: number): Date {
+  const g = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Istanbul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(ms));
+  return new Date(`${g}T00:00:00.000Z`);
+}

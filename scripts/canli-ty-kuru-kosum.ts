@@ -2,7 +2,14 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { canliYapilandirma } from "./canli-ortak";
-import { UCLAR, apiGet, baslikKur, kimlikOku, tumSayfalar } from "./ty/istemci";
+import {
+  UCLAR,
+  apiGet,
+  baslikKur,
+  kimlikOku,
+  siparisAni,
+  tumSayfalar,
+} from "./ty/istemci";
 
 /**
  * ============================================================================
@@ -44,7 +51,13 @@ type Aday = {
    * durup kayıtta durmazsa cevap kaybolur.
    */
   kaynak: Kaynak;
-  orderDate: number;
+  /**
+   * ⚠ ADI `orderDate` DEĞİL — ÇÜNKÜ O DEĞİL. API'nin `orderDate` alanı 3
+   * saat kaymış; burada duran şey `siparisAni()`den geçmiş GERÇEK an.
+   * Aynı adı taşısaydı, dosyayı okuyan (ve bekçi) ham API alanı sanardı.
+   * _(Anayasa: "kolon başlığı bir iddiadır" — yerel tipler de dahil.)_
+   */
+  siparisAniMs: number;
   tutar: number;
   adet: number;
   paketSayisi: number;
@@ -114,7 +127,13 @@ async function main() {
   const apiSiparis = new Map<string, Aday>();
   for (const p of paketler.values()) {
     if (ebeveynler.has(Number(p.shipmentPackageId))) continue;
-    const tarih = Number(p.orderDate);
+    /**
+     * ⚠ KAYMA DÜZELTİLİYOR — VE BUNU BEKÇİ YAKALADI (26.08.2026).
+     * Bu betik ham `orderDate` kullanıyordu: pencere süzgeci ve tarih
+     * dağılımı 3 saat kaymış değerlerle çalışıyordu. Gün sınırına düşen
+     * siparişler yanlış aya sayılıyordu.
+     */
+    const tarih = siparisAni(Number(p.orderDate));
     if (tarih < bas || tarih > son) continue;
     const no = String(p.orderNumber);
     const lines = (p.lines ?? []) as { quantity: number; barcode: string }[];
@@ -130,7 +149,7 @@ async function main() {
       apiSiparis.set(no, {
         siparisNo: no,
         kaynak: "enumerasyon",
-        orderDate: tarih,
+        siparisAniMs: tarih,
         tutar,
         adet,
         paketSayisi: 1,
@@ -191,7 +210,7 @@ async function main() {
       adet += lines.reduce((t, l) => t + (l.quantity ?? 0), 0);
       tutar = kurus(tutar + Number(p.grossAmount ?? 0) - Number(p.totalDiscount ?? 0));
       barkodlar.push(...lines.map((l) => String(l.barcode)));
-      tarih = Number(p.orderDate);
+      tarih = siparisAni(Number(p.orderDate));
       durum = String(p.status);
       if (p.cargoTrackingNumber) kargoNo = String(p.cargoTrackingNumber);
     }
@@ -206,7 +225,7 @@ async function main() {
       apiSiparis.set(no, {
         siparisNo: no,
         kaynak: "hakediş çaprazı",
-        orderDate: tarih,
+        siparisAniMs: tarih,
         tutar,
         adet,
         paketSayisi: paket,
@@ -307,7 +326,7 @@ async function main() {
 
   const aylar = new Map<string, number>();
   for (const a of adaylar) {
-    const ay = gun(a.orderDate).slice(0, 7);
+    const ay = gun(a.siparisAniMs).slice(0, 7);
     aylar.set(ay, (aylar.get(ay) ?? 0) + 1);
   }
   console.log(`   ── tarih dağılımı:`);
@@ -397,7 +416,7 @@ async function main() {
   console.log("\n   sipariş no      tarih        tutar       adet pkt  durum        kaynak");
   for (const a of yazilabilir.slice(0, 60)) {
     console.log(
-      `   ${a.siparisNo.padEnd(15)} ${gun(a.orderDate)}  ${a.tutar.toFixed(2).padStart(10)} ${String(a.adet).padStart(4)} ${String(a.paketSayisi).padStart(3)}  ${a.durum.padEnd(12)} ${a.kaynak}`,
+      `   ${a.siparisNo.padEnd(15)} ${gun(a.siparisAniMs)}  ${a.tutar.toFixed(2).padStart(10)} ${String(a.adet).padStart(4)} ${String(a.paketSayisi).padStart(3)}  ${a.durum.padEnd(12)} ${a.kaynak}`,
     );
   }
   if (yazilabilir.length > 60) {

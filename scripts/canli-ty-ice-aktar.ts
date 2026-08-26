@@ -2,7 +2,14 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { canliYapilandirma } from "./canli-ortak";
-import { UCLAR, baslikKur, kimlikOku, tumSayfalar } from "./ty/istemci";
+import {
+  UCLAR,
+  baslikKur,
+  isGunuUtc,
+  kimlikOku,
+  siparisAni,
+  tumSayfalar,
+} from "./ty/istemci";
 
 /**
  * ============================================================================
@@ -36,44 +43,14 @@ const DILIM_GUN = 3;
 const GUN_MS = 86_400_000;
 
 /**
- * ═══ `orderDate` ÜÇ SAAT KAYMIŞ — ÖLÇÜLDÜ, VARSAYILMADI ═══════════════════
- *
- * ⚠ CANLI ÖLÇÜM 26.08.2026, defterle GÖZ GÖZE karşılaştırma (n=109 çakışan
- * sipariş — Halil'in TY PANELİNDEN okuyup girdiği `soldAt` ile):
- *
- *     HAM `orderDate` ile aynı gün      :  89/109
- *     −3 saat kaydırılmışla aynı gün    : 109/109   ← TAM
- *
- * Yani `orderDate` alanı TR duvar saatini UTC epoch'u gibi taşıyor. Ham
- * kullanılsaydı **20 sipariş yanlış güne** düşerdi — ve iç tutarlılık bunu
- * TAMAMEN gizlerdi: bütün satırlar aynı miktarda kayacağı için hiçbir
- * kontrol kırmızı yanmazdı. Kaymayı gösteren tek şey kaynağın kendi
- * ekranıydı. _(Anayasa: "dış kaynağın kendi etiketiyle karşılaştır".)_
- *
- * ⚠ İKİNCİ TANIK — paketin KENDİ geçmişi: `orderDate − packageHistories[0]`
- * farkı n=560'ta ortanca **2,994 sa**, max **3,000 sa**.
- *
- * ⚠ SABİT 3 SAAT GÜVENLİ: Türkiye 2016'dan beri kalıcı UTC+3, yaz saati
- * uygulaması YOK. DST olsaydı bu sabit yılda iki kez yanlış olurdu.
- *
- * ⚠ VE BU KAYMA YALNIZ `orderDate`E AİT: `packageHistories`, `lastModified`
- * ve `originShipmentDate` gerçek UTC taşıyor (ölçüldü — üçü birbiriyle
- * kuruşuna tutuyor). Bu yüzden iptal anına DOKUNULMAZ.
+ * ⚠ `orderDate` KAYMASI VE İŞ GÜNÜ ÇEVİRİMİ ORTAK GÖVDEDEN GELİYOR
+ * (`ty/istemci.ts`). Burada yerel kopyaları vardı; mutabakat aracı aynı
+ * düzeltmeyi almadığı için **44 sipariş yanlışlıkla SAPAN ilan edildi**.
+ * Tek gövde, iki okuyucu.
  */
-const ORDERDATE_KAYMA_MS = 3 * 3600_000;
 
 const kurus = (n: number) => Math.round(n * 100) / 100;
 
-/** İstanbul takvim gününün UTC gece yarısı — defterdeki 144/144 satır böyle. */
-function isGunuUtc(ms: number): Date {
-  const g = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Istanbul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(ms));
-  return new Date(`${g}T00:00:00.000Z`);
-}
 
 type Kaynak = "enumerasyon" | "hakediş çaprazı";
 
@@ -218,8 +195,7 @@ async function main() {
   const adaylar = new Map<string, Aday>();
   for (const p of paketler.values()) {
     if (ebeveynler.has(Number(p.shipmentPackageId))) continue;
-    const ham = Number(p.orderDate);
-    const duzeltilmis = ham - ORDERDATE_KAYMA_MS;
+    const duzeltilmis = siparisAni(Number(p.orderDate));
     if (duzeltilmis < bas || duzeltilmis > son) continue;
     const no = String(p.orderNumber);
     const lines = (p.lines ?? []) as Record<string, unknown>[];

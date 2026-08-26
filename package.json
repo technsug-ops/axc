@@ -16,6 +16,7 @@
     "iade:dogrula": "tsx scripts/iade-dogrula.ts",
     "rapor:dogrula": "tsx scripts/rapor-dogrula.ts",
     "ice-aktarma:dogrula": "tsx scripts/ice-aktarma-dogrula.ts",
+    "canli:11467-tutar": "tsx scripts/canli-11467-tutar-duzelt.ts",
     "kart-odeme:dogrula": "tsx scripts/kart-odeme-dogrula.ts",
     "kart:dogrula": "tsx scripts/urun-karti-dogrula.ts",
     "baglanti:test": "tsx scripts/baglanti-testi.ts",
