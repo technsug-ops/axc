@@ -744,7 +744,52 @@ gerçek düşüş bundan büyük olabilir.
 
 **⑥ İDEMPOTENTLİK:** ikinci koşum **0** ✓ (anahtar `Sale.code`, global unique).
 
-⛔ **ONAY KAPISI AÇIK — hiçbir yazım yapılmadı.**
+### ✅ K56 SATIŞ İÇE AKTARMA — KOŞTU (26–27.08.2026)
+
+Parti `satis-20260826215218` · **hata 0** · `AuditLog: SATIS_ICE_AKTARMA`.
+
+| | önce | sonra | fark |
+|---|---|---|---|
+| `Sale` | 588 | **5778** | +5190 ✓ |
+| `SaleItem` | 588 | **5898** | +5310 ✓ |
+| `StockMovement` | 2505 | **5331** | +2826 ✓ |
+| `SALE_OUT` | 495 | **3321** | +2826 ✓ |
+
+**Dört sayım da tuttu.** İkinci koşum **0 yazdı** (`zatenVar` 5865) ✓
+
+⚠ **İki kova ölçümle doğdu ve YAZILMADI:** `kanalCozulemedi` **21**
+(dosya kanalı söylüyor, hesabı değil — Amazon'da üç hesap, üçü sıfır
+satışlı) · `kanalCeliskisi` **8** (etiket TY, numara HB deseni — yanlış
+kanal kesinti kurallarını değiştirir, NET sessizce yanlış çıkardı).
+
+> ### ⭐ ENVANTER — DERİNLİK ŞERHİ SÖNDÜ
+>
+>     satış defteri en eski   2026-06-17  →  2024-01-14
+>     alım defteri en eski                   2024-05-30
+>     kapsanmayan pencerede AÇIK   3115  →  0
+>
+> Satış defteri artık alım defterinden **derin**; şerhin ölçütü
+> sağlanmıyor ve şerh **kendiliğinden söndü** — sabit sayıya
+> bağlanmadığı için.
+>
+> **Envanter: 3595 → 770 adet · ₺2.193.421** (ödenen, KDV dahil).
+
+⛔ **AMA MARJ EKRANI YİNE ÇÖKTÜ: %10,12 → %1,11.** 5190 yeni satış ciroya
+girdi, yalnız 2826'sı stok hareketi aldı — gerisinin kârı hesaplanamadı.
+Maliyet bağı olanların marjı **%11,12** (değişmedi).
+Marj şerhi **yanıyor ve doğru sebebi söylüyor**: bağ bekleyen **3810** ·
+alım kaydı yok **1452**.
+
+**STOK BAĞI YENİDEN KOŞTU → 0 kalem bağlandı.** Sebep: içe aktarma
+FIFO'yu **koşum içinde zaten tüketti** (2826 hareket). Geriye açık parti
+kalmadı; 2553 kalem karşılıksız.
+
+**DEFTER AYRIŞMASI:** incelenen 707 · temiz 705 · **SAPAN 2** ·
+incelenemeyen 0. **Yeni sapan DOĞMADI**; K54'ün iki hayaleti yerinde.
+Ayrı kova (stok bağı kurulmamış) **2502**.
+
+⏭ **AÇIK KALAN:** 2502 satış maliyet bağı bekliyor — alım defteri o
+dönemde yetmiyor. K55'in devamı.
 
 ⚠ **EKRANDA GÖRÜNÜYOR ve sebebi AYRI yazıyor** — marj şerhi iki satır:
 _"N satış maliyet bağı bekliyor"_ ile _"M satış: ALIM KAYDI YOK"_ tek cümleye
