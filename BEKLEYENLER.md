@@ -602,14 +602,46 @@ bağlansaydı satış aktarımından sonra da (~18 gün) fark kalır ve şerh
 
 ### ⏭ K56 — SATIŞ EXCEL'İ (sıradaki)
 
-`Downloads/satis.xlsx` yerinde (2,2 MB, 26.08 21:51).
-Beyan: **10197 satır · 2024-06 → 2026-08**.
+**ÖLÇÜLDÜ 26.08.2026 — salt okuma, yazma yok.**
+`satis.xlsx` · md5 `0674f15faf27ed5c661f55fc75a278a3` **birebir tuttu** ·
+sayfa `SATIŞ` · **10205 satır** (beyan 10197 → 8 fark).
 
-> **⭐ EN KRİTİK SORU: bu satışların kaçı sistemde ZATEN VAR?**
-> Çift kayıt riski ölçülmeden **tek satır yazılmaz.** Defterde bugün
-> **588 satış** var ve 411'i içe aktarma — çakışma kümesi büyük.
+**⓪ BEYAN — tür ve kanal BİREBİR tuttu:**
+satış **9743** · iade 387 · tazmin 27 · iptal 24 · TATİL 8 · aktarma 7 ·
+Zarar 1 · **(boş) 8** ← beyanda yoktu, 8 farkın kaynağı bu.
+TY 6186 · HB 3917 · AMZN 68 · DEPO 12 · N11 6 · **(boş) 16**.
 
-⏭ Ölçüm turu: kimlik anahtarı adayları · çakışma · eşleşme · temizlik.
+⚠ **TARİH ARALIĞI BEYANDAN GENİŞ:** beyan `2024-06→2026-08`, ölçülen
+**`2024-01-14 → 2029-03-30`**. Gelecek tarihli **3** satır teyit edildi
+(`2027-10-11` · `2029-03-30` · `2026-09-28`) · **11 satırın tarihi
+okunamıyor**.
+
+> ### ⭐ ÇAKIŞMA — ASIL CEVAP
+>
+> | | |
+> |---|---|
+> | dosyadaki tekil sipariş no | **9163** |
+> | **defterde de VAR** | **544** |
+> | defterde YOK | **8619** |
+> | eşleşen dosya satırı | 565 / 10205 |
+>
+> **Çift kayıt riski dar: dosyanın %94'ü defterde YOK.**
+> Eşleşen 544'ün **410'u içe aktarma**, 134'ü elle girilen.
+
+✅ **KANAL DOĞRULAMASI 564/565 TUTTU** — numara eşleşmesi tesadüf değil.
+⚠ Tek istisna `4702310503`: dosya **TY** diyor, defter **Hepsiburada**.
+_(HB numaraları 10 hane "4" ile başlar — dosyadaki kanal etiketi şüpheli.)_
+
+⛔ **YAZILAMAZ OLANLAR — ürün eşleşmesi zayıf:**
+SKU ile eşleşen **6210** · barkodla **0** · belirsiz 41 ·
+**hiçbiri 3954** (737 tekil SKU). Eşleşmeyenlerin çoğu **Hepsiburada
+listing kodu** (`HBCV…` / `HBV…`) — bunlar `ChannelSku` alanına ait,
+`sku` alanına değil.
+
+**YENİLERİN YILI:** 2024 → 1335 · 2025 → **4921** · 2026 → 2954.
+⛔ **419 satırın sipariş numarası HİÇ YOK.**
+
+⏭ **HÜKÜM YOK.** Sıradaki: kimlik/eşleşme kovaları ayrıştırılıp kuru koşum.
 
 ⚠ **EKRANDA GÖRÜNÜYOR ve sebebi AYRI yazıyor** — marj şerhi iki satır:
 _"N satış maliyet bağı bekliyor"_ ile _"M satış: ALIM KAYDI YOK"_ tek cümleye
