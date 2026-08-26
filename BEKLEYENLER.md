@@ -641,7 +641,61 @@ listing kodu** (`HBCV…` / `HBV…`) — bunlar `ChannelSku` alanına ait,
 **YENİLERİN YILI:** 2024 → 1335 · 2025 → **4921** · 2026 → 2954.
 ⛔ **419 satırın sipariş numarası HİÇ YOK.**
 
-⏭ **HÜKÜM YOK.** Sıradaki: kimlik/eşleşme kovaları ayrıştırılıp kuru koşum.
+### 🔬 K56-② — 737 EŞLEŞMEYEN SKU TEŞHİSİ (26.08.2026, salt okuma)
+
+⛔ **ÖNCE BİR RAKAMIMI DÜZELTİYORUM: ₺181.160 → ₺9.084.024 (50 KAT).**
+`Satış Fiyat` kolonunu okumuştum; başlık doğru görünüyordu ama **yalnız 85
+satırda dolu** (hepsi 2024). Doluluk ölçülünce gerçek kolon göründü:
+
+    Alış fiyatı        63      Satış Fiyat        85
+    ÜRÜN ALIŞ FİYATI 10153    ÜRÜN LİSTE FİYATI 10162   ← gerçek
+    Satış tutarı      7874    Toplam kar        10186
+
+_"%100'ü ilk 10 SKU'da" gibi imkânsız bir yoğunlaşma çıkmasa fark
+edilmezdi._ **₺181.160 aşıldı, geçerli olan ₺9.084.024.**
+
+**② KOD BİÇİMİ — ve en büyük grup ÇÖP:**
+
+| Biçim | Kod | Satır | Örnek |
+|---|---|---|---|
+| `HBCV…` HB listing | 385 | 1171 | `HBCV00003GJJF7` |
+| sadece rakam (barkod) | 127 | 408 | `194735192069` |
+| `HBV…` eski listing | 120 | 388 | `HBV00000XYB03` |
+| başka desen | 96 | 296 | `HRBSCPFS2000` |
+| ⛔ **RAKAM YOK (çöp)** | **8** | **1671** | `trendyol` · `hepsiburada` |
+| `axcali…` bizim SKU | 1 | 3 | `AXCALI180734` |
+
+⛔ **8 ÇÖP KOD 1671 SATIR TAŞIYOR** — SKU sütununa kod yerine **pazaryeri
+adı** yazılmış. `trendyol` tek başına **1473 satır · ₺3.128.321 = açığın
+%34'ü.**
+
+**③ HACİM:** 737 SKU · **₺9.084.024**. İlk 10 → %43,4 · ilk 30 → %51,6 ·
+ilk 120 → %69,4. **Dağınık değil, ama tepe de tek koda bağlı.**
+
+**① AD EŞLEŞTİRMESİ — İŞE YARAMIYOR.** Yöntem: Levenshtein, eşik
+`max(2, uzunluk/4)` (`benzerleriBul`, ortak gövde). En büyük 120 SKU'dan
+**yalnız 13'ü** aday buldu. Sebep ölçüldü: dosyadaki adlar **pazaryeri
+listing başlığı**, bizimkiler ürün adı.
+⛔ **VE ADAYLARIN BİR KISMI YANLIŞ ÜRÜNE İŞARET EDİYOR:**
+`Karcher SC 3` → `Karcher SC 4` · `JBL Charge6 Mor` → `JBL Charge6 Mavi` ·
+`Homend Artfood Siyah` → `Homend Artfood Krem`. **Ad eşleşmesi bu veride
+kullanılamaz.**
+
+**④ ALIŞ ÇAPRAZI:** en büyük 120'den **13'ü** alış dosyasında karşılık
+buldu — köprü yine ADLA kuruldu, yani aynı zayıflık.
+
+> ### ⑤ DÖNEM — EN GÜÇLÜ BULGU
+>
+> | Yıl | Eşleşmeyen | Tutar | Eşleşen | **Eşleşmeme** |
+> |---|---|---|---|---|
+> | 2024 | 1382 | 2.884.910 | 364 | **%79,2** |
+> | 2025 | 2429 | 5.614.917 | 2492 | **%49,4** |
+> | **2026** | **133** | 576.981 | **3392** | **%3,8** |
+>
+> **Sorun ESKİ dönemde.** 2026 zaten %96 eşleşiyor; eşleşmeme geriye
+> gidildikçe artıyor. Son aylarda 8–45 satır.
+
+⏭ **HÜKÜM YOK.** Kuru koşum bu teşhise göre kurulacak.
 
 ⚠ **EKRANDA GÖRÜNÜYOR ve sebebi AYRI yazıyor** — marj şerhi iki satır:
 _"N satış maliyet bağı bekliyor"_ ile _"M satış: ALIM KAYDI YOK"_ tek cümleye
