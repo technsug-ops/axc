@@ -271,10 +271,33 @@ bu iş için zaten var; ikinci barkod alanı da yeni tablo da gereksiz.
 tekil — aynı kod iki hesapta iki farklı varyanta işaret edebilir.
 
 **İkinci parti koştu:** 12 sipariş (2 iptal dahil) · 574 → 586 ·
-`ty-20260826130847`. ⏭ Kalan **2 sipariş** Halil'in ürün tanımını bekliyor:
-`6941565979629` DJI Mini 3 · `5702015357180` LEGO Classic 10696.
+`ty-20260826130847`. ✅ **ÜÇÜNCÜ PARTİ KOŞTU (26.08):** Halil iki ürün kartını açtı, ikisi de
+`barcode` alanında doğrulandı (`ELK-DJ-DM-01` · `OYU-LG-LMC10-01`).
+2 sipariş yazıldı · **586 → 588** ✓ · `ty-20260826151804` · ikinci koşum **0**.
 
-### 🔬 K55 — STOK + MALİYET BAĞI · TASARIM ÖLÇÜLDÜ, KARAR BEKLİYOR
+> **⛔ 13'LÜK LİSTE KAPANDI.** Son koşumda `YAZILAMAZ: 0`.
+> 11'i Kanal SKU düzeltmesiyle, 2'si ürün tanımıyla girdi.
+
+### ✅ STOK + MALİYET BAĞI — KOŞTU (26.08.2026)
+
+**Karar: bağlanabilen bağlanır.** 82 satış bağlandı, kârları tazelendi.
+`StockMovement` **541 → 624** (+83) ✓ · `AuditLog: ICE_AKTARMA_STOK_BAGI`.
+⛔ **329 satış ATLANDI** — hareket YAZILMADI. Negatif stok yok, kaynaksız
+çıkış kovası yok. Sebep: o ürünlerin **alımı deftere hiç girmemiş** (K55).
+
+**defter-ayrışması:** SAPAN **2** — K54'ün iki hayaleti, ayrı kovada.
+⚠ Bağdan hemen sonraki koşum **3** demişti, sonraki iki koşum **2**; bir
+varyant arada temize geçti. _Defter akıyor — ölçüm anı yazılır._
+
+**Geri alma** (ters kayıt, silme değil):
+
+    npm run canli:stok-bagi -- --geri=ty-20260826111346 --uygula
+    npm run canli:stok-bagi -- --geri=ty-20260826130847 --uygula
+    npm run canli:stok-bagi -- --geri=ty-20260826151804 --uygula
+
+<details><summary>tasarım ölçümü (26.08, arşiv)</summary>
+
+### 🔬 K55 — STOK + MALİYET BAĞI · TASARIM ÖLÇÜMÜ
 
 **KOD YAZILMADI.** Ölçüm (26.08.2026, salt okuma):
 
@@ -296,6 +319,24 @@ bulamayacak. Bu, üç seçenek arasındaki tercihi bir ayrıntı olmaktan çıka
 ✅ **`occurredAt` KARARI ÖLÇÜLDÜ:** `Sale.soldAt` (İstanbul gününün UTC gece
 yarısı). Mevcut `SALE_OUT` hareketlerinin **151/152**'si zaten birebir böyle
 — yeni kayıtların farklı davranması bir tutarsızlık olurdu.
+
+</details>
+
+### 🆕 K55 — ALIM DEFTERİ AÇIĞI (26.08.2026, AÇILDI)
+
+**329 satış maliyet bağı kuramıyor** çünkü o ürünlerin alımı deftere hiç
+girmemiş. 128 varyant · 335 adet karşılıksız.
+
+> **Satışlar API'den akıyor, alımlar elle giriliyor — makas buradan
+> açılıyor.** Bu bir satış arızası değil; satış tarafında yapılacak bir şey
+> yok.
+
+⏭ **Seçenekler ÖLÇÜLECEK, bugün açılmaz:** tedarikçi belgelerinden toplu
+giriş · Amazon/toptancı dökümü · geriye dönük toplu alım kaydı.
+
+⚠ **EKRANDA GÖRÜNÜYOR ve sebebi AYRI yazıyor** — marj şerhi iki satır:
+_"N satış maliyet bağı bekliyor"_ ile _"M satış: ALIM KAYDI YOK"_ tek cümleye
+karışmıyor, çünkü **çözümün yeri farklı.**
 
 ### ⛔ ANAHTAR — YALNIZ-OKUMA ANAHTARI **BULUNAMADI** (26.08.2026)
 

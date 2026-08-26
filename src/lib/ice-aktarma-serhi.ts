@@ -89,7 +89,22 @@ export const SERH_KAPSAMI =
  */
 
 export type MarjSerhi = {
-  /** Maliyet bağı bekleyen satış sayısı — iptalsiz. */
+  /**
+   * ⛔ SEBEP AYRIŞTIRILDI (Halil kararı 26.08.2026) — çünkü ÇÖZÜMÜN YERİ
+   * FARKLI. İki ayrı şey tek cümleye karışırsa okuyan yanlış tarafta
+   * çözüm arar:
+   *
+   *   `alimYok`  — o ürünün ALIMI deftere hiç girmemiş. Satış tarafında
+   *                yapılacak bir şey YOK; iş alım defterindedir (K55).
+   *   `bekleyen` — bağlanabilirdi ama henüz bağlanmadı (bağ koşumu
+   *                yapılmadı ya da yarım kaldı).
+   *
+   * ⚠ Ölçüldü 26.08.2026: bağ koşumundan sonra `bekleyen` 0'a indi ve
+   * geriye YALNIZ `alimYok` kaldı (329 satış). Yani bugün ekranda görünen
+   * şey bir satış arızası değil, **eksik alım defteri tutanağıdır.**
+   */
+  alimYok: number;
+  /** Maliyet bağı kurulabilir ama henüz kurulmamış satış — iptalsiz. */
   bekleyen: number;
   /** Yalnız maliyet bağı OLAN satışların marjı (%). Hesaplanamazsa null. */
   baglıMarj: number | null;
@@ -120,6 +135,13 @@ export async function marjSerhi(
       sale: {
         select: { id: true, importBatch: true, profitStatus: true, net2Amount: true },
       },
+      /**
+       * ⚠ TEK HAREKET YETER — sayı değil VARLIK soruluyor. `take: 1`
+       * olmadan 154 varyantın bütün hareket geçmişi çekilirdi.
+       */
+      variant: {
+        select: { stockMovements: { take: 1, select: { id: true } } },
+      },
     },
   });
 
@@ -127,6 +149,7 @@ export async function marjSerhi(
   let ciroBagli = 0;
   const netler = new Map<string, number>();
   const bekleyenler = new Set<string>();
+  const alimsizlar = new Set<string>();
   for (const k of kalemler) {
     const tutar = Number(k.unitPriceAmount) * k.quantity;
     ciroHepsi += tutar;
@@ -137,7 +160,16 @@ export async function marjSerhi(
      * yanmaya devam ederdi — sönmeyen şerh okunmaz olur.
      */
     if (k.sale.profitStatus === null) {
-      if (k.sale.importBatch) bekleyenler.add(k.sale.id);
+      if (k.sale.importBatch) {
+        /**
+         * ⚠ AYIRT EDİCİ ÖLÇÜT: O VARYANTIN HİÇ AÇIK PARTİSİ VAR MI.
+         * Kalemin kendi stok hareketi yoksa iki ihtimal var ve ikisi
+         * ayrı işe gider — bu yüzden varyantın alım geçmişine bakılıyor,
+         * kalemin durumuna değil.
+         */
+        if (k.variant.stockMovements.length === 0) alimsizlar.add(k.sale.id);
+        else bekleyenler.add(k.sale.id);
+      }
       continue;
     }
     ciroBagli += tutar;
@@ -147,6 +179,7 @@ export async function marjSerhi(
   for (const v of netler.values()) net += v;
 
   return {
+    alimYok: alimsizlar.size,
     bekleyen: bekleyenler.size,
     baglıMarj: ciroBagli > 0 ? (net / ciroBagli) * 100 : null,
     ekranMarji: ciroHepsi > 0 ? (net / ciroHepsi) * 100 : null,

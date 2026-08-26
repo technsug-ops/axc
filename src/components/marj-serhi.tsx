@@ -28,7 +28,8 @@ export async function MarjSerhi({
   pencere?: { bas: Date; son: Date };
 }) {
   const s = await marjSerhi(prisma, pencere);
-  if (s.bekleyen === 0) return null;
+  /** ⚠ İKİ SEBEBİN İKİSİ DE SIFIRSA ŞERH HİÇ ÇIKMAZ. */
+  if (s.bekleyen === 0 && s.alimYok === 0) return null;
 
   const t = await getTranslations("iceAktarma");
   const bicim = await bicimlendirici();
@@ -38,9 +39,22 @@ export async function MarjSerhi({
     >
       <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
       <div className="space-y-1">
-        <span className="block tabular-nums">
-          {t("marjOkunamaz", { adet: s.bekleyen })}
-        </span>
+        {/*
+          ⚠ İKİ SEBEP AYRI SATIR — VE ÇÖZÜMÜN YERİ FARKLI OLDUĞU İÇİN.
+          "Bağ bekliyor" satış tarafında bir iş; "alım kaydı yok" ALIM
+          defterinde. Tek cümleye karışsalardı okuyan yanlış tarafta
+          çözüm arardı. _(Halil kararı 26.08.2026.)_
+        */}
+        {s.bekleyen === 0 ? null : (
+          <span className="block tabular-nums">
+            {t("marjOkunamaz", { adet: s.bekleyen })}
+          </span>
+        )}
+        {s.alimYok === 0 ? null : (
+          <span className="block tabular-nums">
+            {t("marjAlimYok", { adet: s.alimYok })}
+          </span>
+        )}
         {/*
           ⚠ OKUNABİLİR RAKAM DA YAZILIYOR. "Bu oran okunamaz" tek başına
           bir çıkmazdır; yanına maliyet bağı OLAN satışların marjı konunca

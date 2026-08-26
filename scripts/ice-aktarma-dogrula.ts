@@ -414,9 +414,15 @@ kontrol(
   "bekleyen sayımı `profitStatus === null` ölçütüne bağlı",
   /k\.sale\.profitStatus === null/.test(marjGovde),
 );
+/**
+ * ⚠ ÖLÇÜT DARALTILDI, GEVŞETİLMEDİ: önce `if (importBatch) bekleyenler.add`
+ * deseni aranıyordu; sebep ayrışınca o satır iki kovalı bir bloğa dönüştü.
+ * Kontrol artık KAPININ kendisine bakıyor — içe aktarma olmayan bir satış
+ * hiçbir kovaya giremiyor.
+ */
 kontrol(
-  "bekleyen yalnız İÇE AKTARMA satırlarını sayıyor",
-  /if \(k\.sale\.importBatch\) bekleyenler\.add/.test(marjGovde),
+  "iki kova da yalnız İÇE AKTARMA satırlarını sayıyor",
+  /if \(k\.sale\.importBatch\) \{/.test(marjGovde),
 );
 kontrol(
   "iptalli satış ciroya KARIŞMIYOR",
@@ -438,9 +444,28 @@ kontrol(
 );
 
 /** ⚠ YANLIŞ YANMA: bekleyen yoksa şerh HİÇ çizilmemeli. */
+/**
+ * ⚠ ÖLÇÜT GÜNCELLENDİ — İKİ SEBEP AYRIŞTI (26.08.2026).
+ * Önce tek sayı vardı; Halil sebebi ayırdı çünkü ÇÖZÜMÜN YERİ farklı.
+ * Şerh ancak İKİSİ de sıfırsa sönmeli — biri sıfırlanınca sönseydi öteki
+ * sebep sessizce kaybolurdu.
+ */
 kontrol(
-  "YANLIŞ YANMA yok — bekleyen 0 ise çizilmiyor",
-  /if \(s\.bekleyen === 0\) return null;/.test(marjKaynak),
+  "YANLIŞ YANMA yok — İKİ sebep de 0 ise çizilmiyor",
+  /if \(s\.bekleyen === 0 && s\.alimYok === 0\) return null;/.test(marjKaynak),
+);
+/**
+ * ⚠ AYIRT EDİCİ ÖLÇÜT VARYANTIN ALIM GEÇMİŞİ. Kalemin kendi hareketine
+ * bakan bir ölçüt ikisini ayıramazdı — ikisinde de hareket yok.
+ */
+kontrol(
+  "alım yokluğu VARYANTIN hareket geçmişinden ayırt ediliyor",
+  /k\.variant\.stockMovements\.length === 0/.test(marjGovde),
+);
+kontrol(
+  "iki kova AYRI sayılıyor",
+  /alimsizlar\.add\(k\.sale\.id\)/.test(marjGovde) &&
+    /else bekleyenler\.add\(k\.sale\.id\)/.test(marjGovde),
 );
 const marjMetin = blok(marjKaynak, "return (", 1400);
 kontrol(
@@ -450,6 +475,15 @@ kontrol(
 kontrol(
   "okunabilir marj DA yazılıyor (çıkmaz bırakılmıyor)",
   /t\("marjBagliOlan",\s*\{\s*oran:\s*bicim\.yuzde\(s\.baglıMarj\)\s*\}\)/.test(marjMetin),
+);
+kontrol(
+  "ALIM YOK satırı ekrana BASILIYOR",
+  /t\("marjAlimYok",\s*\{\s*adet:\s*s\.alimYok\s*\}\)/.test(marjMetin),
+);
+kontrol(
+  "iki sebep AYRI satırda — tek cümleye karışmıyor",
+  /\{s\.bekleyen === 0 \? null : \(/.test(marjMetin) &&
+    /\{s\.alimYok === 0 \? null : \(/.test(marjMetin),
 );
 
 /**
@@ -532,6 +566,87 @@ kontrol(
   "belirsiz sipariş yazılabilir sayılmıyor",
   /if \(a\.kalemler\.some\(\(x\) => belirsizKodlar\.has\(x\.barkod\)\)\) belirsiz\.push/.test(kaynak),
 );
+
+
+console.log("\n⑧ STOK BAĞI — bağlanabilen bağlanır, geri kalanı ATLANIR");
+
+const bagKaynak = oku("scripts/canli-ice-aktarma-stok-bagi.ts");
+
+/**
+ * ⚠ İKİNCİ MOTOR AÇILMADI — ölçüt bu. Satış yazma yolu FIFO'yu
+ * `fifoDagit` ile tüketiyor; bağ betiği de aynısını kullanmalı. Ayrı bir
+ * tüketim mantığı yazılsaydı iki yol yarın ayrışır ve maliyetler
+ * birbirini tutmazdı.
+ */
+kontrol(
+  "bağ betiği ORTAK FIFO gövdesini kullanıyor",
+  /fifoDagit\(mevcutPartiler, k\.quantity\)/.test(bagKaynak),
+);
+const yetersizBloku = blok(bagKaynak, "if (!sonuc.yeterliMi) {", 200);
+kontrol(
+  "yetersizse HAREKET YAZILMIYOR — atlanıyor",
+  /atlananlar\.push/.test(yetersizBloku) && /continue;/.test(yetersizBloku),
+);
+/**
+ * ⚠ "DOKUNMUYOR" İDDİASI DA BİR DAVRANIŞTIR. Karar açıkça _"negatif stok
+ * YOK, kaynaksız çıkış kovası YOK"_ diyor; iddia, onu ihlal eden bir
+ * mutasyonla sınanmadıkça korumasızdır.
+ */
+kontrol(
+  "atlanan kalem için hiçbir hareket üretilmiyor",
+  !/atlananlar[\s\S]{0,300}stockMovement\.create/.test(bagKaynak),
+);
+kontrol(
+  "tüketilen parti SONRAKİ kaleme taşınıyor (çift harcama yok)",
+  /kalanPartiler\.set\(k\.variantId, sonuc\.kalanPartiler\)/.test(bagKaynak),
+);
+kontrol(
+  "iptalli satış BAĞLANMIYOR",
+  /sale: \{ importBatch: \{ not: null \}, iptalTarihi: null \}/.test(bagKaynak),
+);
+/**
+ * ⚠ `occurredAt` ÖLÇÜLDÜ, SEÇİLMEDİ: mevcut `SALE_OUT` hareketlerinin
+ * 151/152'si zaten `Sale.soldAt`. Farklı davranmak tutarsızlık olurdu.
+ */
+kontrol(
+  "occurredAt = Sale.soldAt",
+  /occurredAt: plan\.kalem\.sale\.soldAt,/.test(bagKaynak),
+);
+kontrol(
+  "maliyet PARTİDEN kopyalanıyor",
+  /unitCostAmount: pay\.birimMaliyet as never,/.test(bagKaynak),
+);
+/**
+ * ⚠ KÂR TAZELENMESİ AYRI ADIM AMA AYNI KOŞUMDA. Tazelenmezse
+ * `profitStatus` null kalır ve şerh o satışları HÂLÂ "bağ bekliyor" diye
+ * sayar — iş yapılmış, ekran değişmemiş olur.
+ */
+kontrol(
+  "kâr aynı koşumda tazeleniyor",
+  /await satisKarTazele\(saleId\)/.test(bagKaynak),
+);
+/** ⚠ ATLANAN SESSİZ GEÇMEZ — sebebi ve büyüklüğü ekranda. */
+kontrol(
+  "atlananların sebebi ekranda yazıyor",
+  /EKSİK ALIM DEFTERİ/.test(bagKaynak),
+);
+/**
+ * ⚠ GERİ ALMA TERS KAYIT — işaretleme değil; ve küme TÜRETİLİYOR,
+ * yeni alan açılmadı.
+ */
+kontrol(
+  "geri alma TERS KAYIT yazıyor",
+  /type: "ADJUSTMENT",[\s\S]{0,200}quantityDelta: -h\.quantityDelta,/.test(bagKaynak),
+);
+kontrol(
+  "geri alınacak küme importBatch'ten TÜRETİLİYOR",
+  /saleItem: \{ sale: \{ importBatch: GERI \} \}/.test(bagKaynak),
+);
+kontrol(
+  "geri alma özgün hareketi SİLMİYOR",
+  !/stockMovement\.delete/.test(bagKaynak),
+);
+kontrol("bağ ve geri alma iz bırakıyor", /auditLog\.create/.test(bagKaynak));
 
 
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
