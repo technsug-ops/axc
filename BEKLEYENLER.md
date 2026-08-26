@@ -330,8 +330,11 @@ kalem** kurdu.
 | | önce | sonra |
 |---|---|---|
 | **ekran marjı** | %2,58 | **%10,12** |
-| maliyet bağı olanların | %9,31 | **%11,12** |
+| maliyet bağı olanların | %9,31 | **%11,12** ⚠ |
 | şerhteki satış | 329 | **69** |
+
+⚠ **`%11,12` O GÜNÜN KAPSAMIYDI ve AŞILDI** — geçerli olan **%19,67**
+(27.08 kâr tazeleme, 3244 satış üstünden).
 
 ✅ **`[YANLIŞ CEVAP VEREN EKRAN]` ETİKETİ MARJ İÇİN KALKTI** — ekran artık
 gerçeği gösteriyor. İki rakam birbirine yaklaştı; kalan **69 adıyla şerhli**.
@@ -563,8 +566,11 @@ Kuru koşumun öngördüğü rakam **birebir tuttu**: 329 → **260 bağlandı**
 | | önce | sonra |
 |---|---|---|
 | ekran marjı | %2,58 | **%10,12** |
-| maliyet bağı olanların | %9,31 | **%11,12** |
+| maliyet bağı olanların | %9,31 | **%11,12** ⚠ |
 | şerhteki satış | 329 | **69** |
+
+⚠ **`%11,12` O GÜNÜN KAPSAMIYDI ve AŞILDI** — geçerli olan **%19,67**
+(27.08 kâr tazeleme, 3244 satış üstünden).
 
 ⚠ Şerh artık **iki satır**: `29` bağ bekliyor (alım var) · `40` **ALIM KAYDI
 YOK**. İçe aktarma satışlarının **342/411**'inin kârı hesaplanmış.
@@ -776,9 +782,12 @@ kanal kesinti kurallarını değiştirir, NET sessizce yanlış çıkardı).
 
 ⛔ **AMA MARJ EKRANI YİNE ÇÖKTÜ: %10,12 → %1,11.** 5190 yeni satış ciroya
 girdi, yalnız 2826'sı stok hareketi aldı — gerisinin kârı hesaplanamadı.
-Maliyet bağı olanların marjı **%11,12** (değişmedi).
+Maliyet bağı olanların marjı **%11,12** (o anki kapsam).
 Marj şerhi **yanıyor ve doğru sebebi söylüyor**: bağ bekleyen **3810** ·
 alım kaydı yok **1452**.
+
+⚠ **BU SATIRDAKİ ÜÇ RAKAM DA AŞILDI** (27.08 kâr tazeleme sonrası):
+`%1,11 → %12,08` · `%11,12 → %19,67` · bağ bekleyen `3810 → 691`.
 
 **STOK BAĞI YENİDEN KOŞTU → 0 kalem bağlandı.** Sebep: içe aktarma
 FIFO'yu **koşum içinde zaten tüketti** (2826 hareket). Geriye açık parti
@@ -797,8 +806,8 @@ yapıldı.
 
 | Sebep | Sayı | Ne demek |
 |---|---|---|
-| (a) bağ bekliyor | **3809** | alım VAR, henüz bağlanmadı |
-| (b) alım kaydı YOK | **1452** | o varyantın alımı hiç girilmemiş |
+| (a) bağ bekliyor | **3809** ⚠→691 | alım VAR, henüz bağlanmadı |
+| (b) alım kaydı YOK | **1452** ⚠→1441 | o varyantın alımı hiç girilmemiş |
 | **(c) DÖNEMİ KAPSAMIYOR** | **1** | satış, alım defteri başlamadan önce |
 
 ⚠ **(c) BEKLENENDEN ÇOK KÜÇÜK ÇIKTI — 1 satış.** Yazılan 5778 satışın
@@ -810,9 +819,9 @@ değil: alım defteri geriye büyürse sayı kendiliğinden düşer.
 
 **② MARJ RAKAMI ARTIK BASILMIYOR.**
 
-    kapsanmayan pay  %90,06   ·   eşik %0,50
+    kapsanmayan pay  %90,06   ·   eşik %0,50        ⚠ AŞILDI → %38,59
     ekran            "hesaplanamıyor (5259/5746 satışın maliyeti yok)"
-    şerhte           maliyet bağı olanların marjı %11,12
+    şerhte           maliyet bağı olanların marjı %11,12  ⚠ AŞILDI → %19,67
 
 ⚠ **EŞİK VERİDEN DEĞİL, GÖSTERİM HASSASİYETİNDEN TÜRETİLDİ — ve niye:**
 aylık kapsanmayan pay dağılımı ölçüldü (n=27): `22,6 · 30,8 · 87,0 ·
@@ -825,6 +834,7 @@ zaten yanlış.
 türetildi. Başka bir değer isteniyorsa tek satır.
 
 ⛔ **ÖLÇÜLEN ÇARPIKLIK:** ekran **%1,11**, gerçek **%11,12** — **on kat**.
+⚠ _(İkisi de o günün kapsamı; 27.08'de aşıldı → %12,08 ve %19,67.)_
 Bir rakamı on kat yanlış basmak, hiç basmamaktan kötüdür.
 
 **BEKÇİ 207 kontrol** · 9 mutasyon kırmızı. Ve **beş ölçüt eskidiği için
@@ -939,12 +949,16 @@ parti yok.
 
 `AuditLog: SATIS_ICE_AKTARMA_KAR` · hata 0.
 
-| | önce | sonra |
-|---|---|---|
-| genel marj | %1,11 | **%12,08** |
-| maliyet bağı olanların | %11,12 | **%19,67** |
-| kapsanmayan pay | %90,06 | **%38,59** |
-| kârı hesaplanmış satış | 342 | **3099** |
+| | önce | sonra | **KAPSAM (sonra)** |
+|---|---|---|---|
+| genel marj | %1,11 | **%12,08** | 5746 satış |
+| maliyet bağı olanların | %11,12 | **%19,67** | **3244 satış** |
+| kapsanmayan pay | %90,06 | **%38,59** | 2502 / 5746 |
+| kârı hesaplanmış satış | 342 | **3099** | — |
+
+⚠ **KAPSAM SÜTUNU BOŞUNA DEĞİL:** `%11,12` ile `%19,67` aynı şeyin iki
+ölçümü DEĞİL — **iki farklı kümenin** marjı. Kapsam yazılmasaydı ikisi
+çelişiyor sanılırdı.
 
 ⛔ **RAKAM HÂLÂ BASILMIYOR** — kapsanmayan pay **%38,59**, eşik **%0,50**.
 Ekran: _"hesaplanamıyor (2502/5746 satışın maliyeti yok)"_.
@@ -1076,6 +1090,26 @@ _(Onay verildi ve yazım koştu — yukarıdaki özete bak.)_
 </details>
 
 ---
+
+## 📏 PANO KURALI — ORAN SAYISI KAPSAMIYLA YAZILIR
+
+_Kullanıcı kararı 27.08.2026._ Bir marj/oran sayısı panoya girerken
+**yanına ölçüldüğü KAPSAM da yazılır** — "kaç satış üstünden".
+
+**Vaka:** _"gerçek marj %11,12"_ panoda **beş ayrı yerde** duruyordu. Kâr
+tazeleme koşunca **%19,67** oldu ve eski rakam **çelişki gibi** göründü —
+oysa ikisi de doğruydu: biri 487 satışın, öteki 3244 satışın marjı.
+
+> **Kapsam yazılmayan bir oran, kapsam değiştiği an BAYATLAR — ve
+> bayatlığı GÖRÜNMEZ olur.** Sayı hâlâ doğru göründüğü için kimse
+> sorgulamaz; iki rakam yan yana gelince "hangisi doğru" diye tartışılır,
+> oysa soru **"hangi küme"** olmalıdır.
+
+⚠ Aşılan rakam **SİLİNMEZ**, `⚠ AŞILDI → yeni` diye işaretlenir. Elinde
+eski rakam olan biri için kaynaksız bir sayı doğmasın.
+⚠ **VE AYNI TABLO İKİ YERDEYSE İKİSİ DE İŞARETLENİR** — birini işaretleyip
+ötekini bırakmak "hangisi güncel" sorusunu doğurur.
+_("Kaynağı yazılmayan sayı kullanılamaz" kuralının oran tarafı.)_
 
 ## 📎 KAYIT ÇELİŞKİSİ — 25.08.2026, mimar düzeltmesi
 

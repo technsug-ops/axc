@@ -533,6 +533,62 @@ GERÇEKLEŞTİĞİNİ göstermez.
 > Mutasyon sonucu GÖRÜLMEDEN push edilmez — yeşil test, sınanmış kontrol
 > demek değildir.
 
+### YENİ BEKÇİ, KENDİ KÖRLÜĞÜNÜ SINAYAN MUTASYONLA GELİR (KESİN KURAL)
+
+_Kullanıcı kararı 27.08.2026 — **bu hafta BEŞİNCİ kez** aynı kök._
+
+Kaynak tarayan bir ölçüt iki biçimde yazılır ve **ikisi de** yorumda,
+dizede ve başka bağlamda geçen eşleşmeleri sayar:
+
+    /desen/.test(kaynak)                      ← VARLIK ölçütü
+    (kaynak.match(/desen/g) ?? []).length === N ← SAYMA ölçütü
+
+Desen dosyada **bulunduğu** için yeşil yanar; aradığı davranış hiç
+gerçekleşmiyor olabilir. Ve daha sinsisi: desen **birden çok yerde**
+geçtiğinde birini bozan mutasyon ötekini bulur — kontrol yeşil kalır,
+kimse de bunu fark etmez çünkü **testler zaten yeşildi.**
+
+**VAKA LİSTESİ — hepsi mutasyonla yakalandı, hiçbiri değer testiyle:**
+
+| Ne arandı | Niye kör kaldı |
+|---|---|
+| `tonCal` | ekranda çizilmiyordu, desen dosyada duruyordu |
+| `use server` | başka dosyada da geçiyordu |
+| `catch` / `setHata` | boş blok da deseni taşıyordu |
+| `apigw.trendyol.com` | refaktör dizeyi sildi, davranış kaldı |
+| `prisma.sale.create` | **bekçinin kendi arama dizesi** yazma sanıldı |
+| `YOĞUNLAŞMA` | yorumda da geçiyordu; çıktı satırı silindi, yeşil kaldı |
+| `.join(";")` | başlık + veri satırı = İKİ yer; biri virgüle döndü, yeşil |
+
+**HER YENİ ÖLÇÜT ÜÇ ŞARTI BİRDEN TAŞIR:**
+
+1. **YORUMSUZ KODDA ARAR.** Bir yasağı ANLATAN yorum, o yasağı ÇİĞNEMİŞ
+   sayılmaz — ve bir davranışı anlatan yorum, o davranış silinse bile
+   deseni ayakta tutar.
+2. **KULLANIMA BAĞLANIR** — ada ya da dizeye değil. `revalidatePath`
+   değil `` revalidatePath(`/satislar/ ``; kova adı değil `say("kova")`
+   çağrısı; hatta çağrı bile yetmeyebilir: `say("x")` duruyor ama
+   ardındaki `continue;` silinmişse satır hem sayılır hem işlenir.
+3. **KAPSAMI DARALTILIR** — davranışın geçtiği bloğa (`blok(metin, çapa,
+   uzunluk)`). ⚠ Ve pencere **ölçülür**: gövde büyüyünce dar pencere
+   sessizce kör kalır. Bu da iki kez yaşandı (2600 → 4200 → 6500).
+
+> ⛔ **VE ÖLÇÜT MUTASYONSUZ TESLİM EDİLMEZ.** Yeni bir bekçi yazıldığında
+> ARADIĞI DAVRANIŞI BOZAN bir mutasyon denenir ve **kırmızı yandığı
+> GÖRÜLÜR.** Görülmeden push edilmez.
+>
+> **İKİ YÖN AYRI SINANIR:** davranışı KALDIRAN mutasyon (yanlış susma) ve
+> davranışı FAZLADAN yapan mutasyon (yanlış yanma). Yalnız biri yazılırsa
+> öteki yön serbest kalır.
+
+⚠ **MUTASYON HARNESS'İNİN KENDİSİ DE KUSURLU OLABİLİR** — 26.08'de iki kez
+oldu: biri `✗` sayıyordu (çıkış kodu yerine), sözdizimi hatası veren
+mutasyon çöküyor ve "yeşil" görünüyordu; öteki deseni hiç bulamıyordu ve
+mutasyon **hiç uygulanmadan** yeşil raporlanıyordu.
+**Harness çıkış koduna bakar ve mutasyonun UYGULANDIĞINI doğrular.**
+
+---
+
 ### KONTROL TASARIMI, VERİ KAPSAMI DOĞRULANMADAN "FARK" ÜRETMEZ (KESİN KURAL)
 
 _Mimar kararı 20.08.2026, K-5 kargo mutabakatı._ İki kaynağı karşılaştıran
