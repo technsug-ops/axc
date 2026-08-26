@@ -508,6 +508,7 @@ GERÇEKLEŞTİĞİNİ göstermez.
 | 5 | Kanal taşıması kârı tazeliyor mu | Sıra kontrolü `revalidatePath` arıyordu — o kelime **IMPORT satırında da** geçiyor; `indexOf` onu buluyor ve kontrol hep yanlış konuma bakıyordu |
 | 6 | Gider formu çelişkiyi söylüyor mu | Kontrol `const celiski =` arıyordu; mutasyon **render koşulunu** `{false ? (` yaptı — dal hiç çizilmedi, tanım dosyada kaldı, bekçi yeşil |
 | 7 | El kitabı damga vergisini anlatıyor mu | `"Damga vergisi"` bölümde **üç kez** geçiyor (tablo · dikkat kutusu · sık hata). Tablo satırını silen mutasyon ötekileri buldu. Satıra daraltıldı — **yine yeşil kaldı**: MTV satırının GEREKÇE hücresinde _"Damga vergisiyle aynı mantık"_ yazıyor. Ancak **ilk hücreye** (kalem adı) bağlanınca kırmızı yandı |
+| 8 | Yarım tarih seçimi ekranda söyleniyor mu | Kontrol `const yarim =` ile `t("aralikYarim")`i AYRI AYRI arıyordu; render koşulu `{false ? (` yapılınca dal hiç çizilmedi, iki desen de dosyada kaldı, bekçi yeşil |
 
 **YÖNTEM — kontrol yazarken:**
 0. ⚠ **ÖNCE DESENİ SAY.** Aradığın metin dosyada kaç kere geçiyor?
@@ -1460,6 +1461,44 @@ yani düğme bozuk sanıldı, oysa bozuk olan **deponun kendisiydi.**
 döngüsündeki `catch` (hata yutuluyordu, "okumuyor" sanıldı) · `catch {}` ile
 gizlenen depolama · genel olarak **hata yutan her boş blok**. Ölçüt: bir
 `catch` bloğu boşsa, orada ne olduğunu **hiç kimse** öğrenemez.
+
+---
+
+### KONTROLLÜ GİRDİ, DURUMU OLMADAN YAZILAMAZ (KESİN KURAL)
+
+_Canlı arıza 26.08.2026._ Değeri dışarıdan gelen (kontrollü) bir girdi, o
+değeri **güncelleyecek bir yol olmadan** ekrana konursa **doldurulamaz**:
+kullanıcı yazar, React her tuşta eski değeri geri yazar. Ekranda hiçbir hata
+çıkmaz — alan sessizce boş kalır.
+
+**Vaka:** envanter aralık seçicisinde iki tarih alanının değeri doğrudan
+ADRESTEN geliyordu (`value={aralikBas}`) ve adrese gidiş yalnız **iki uç da
+doluyken** tetikleniyordu. Ama ilk tarihi girerken ikinci uç zorunlu olarak
+boştur:
+
+    yaz → gidiş tetiklenmez → adres değişmez → `value` hâlâ ""
+        → React girdiyi siler → yaz → …
+
+Kullanıcının gördüğü: _"tarihler giriliyor fakat program tarihleri
+kaydetmiyor ve envanter rakamı değişmiyor."_ Özellik **hiç kullanılamıyordu.**
+
+> **KURAL:** gerçeğin kaynağı **YEREL DURUM**; adres/depolama yalnız
+> TAMAMLANMIŞ sonucu taşır. Ara hâller (yazarken, yarım seçimken) yerelde
+> yaşar — yoksa alan doldurulamaz.
+
+⚠ **VE KARARIN ÖTEKİ UCU DA YERELDEN OKUNUR.** Arızanın çekirdeği buydu:
+`onChange` öteki ucu ADRESTEN okuyordu, o yüzden hep boş görüyordu ve gidiş
+hiç tetiklenmiyordu. _("Bir okuma, okunan değeri doğrudan taşır" kuralının
+kardeşi: orada okunan değer, burada ötekinin durumu.)_
+
+⚠ **565 KONTROL YEŞİLDİ VE HİÇBİRİ SÖYLEMEDİ.** Saf kural doğruydu, sunucu
+doğruydu, sözlük doğruydu, Excel doğruydu — **kullanıcıya ULAŞAN yol
+kopuktu.** Bir özelliğin uçtan uca KULLANILABİLİR olduğu, parçalarının
+doğruluğundan çıkmaz.
+
+⚠ **VE YARIM HÂL SESSİZ BEKLEMEZ.** Kullanıcı ilk tarihi girip hiçbir şey
+olmadığını görünce "kaydetmiyor" der — nitekim dedi. Bir kural gereği
+bekleniyorsa, **ne beklendiği ekranda yazar** (İlke #5).
 
 ---
 

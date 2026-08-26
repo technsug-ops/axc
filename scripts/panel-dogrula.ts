@@ -4534,6 +4534,91 @@ console.log("=".repeat(70));
       disa.includes('tEnvanter("caprazAyrisma"') &&
         disa.includes('tEnvanter("fotografSerhi")'),
     );
+    /**
+     * ═══ KONTROLLÜ GİRDİ, DURUMU OLMADAN YAZILAMAZ ════════════════════
+     * ⚠ CANLI ARIZA 26.08.2026: _"tarihler giriliyor fakat program
+     * tarihleri kaydetmiyor ve envanter rakamı değişmiyor."_ Kusur ağırdı —
+     * **aralık alanına yazmak İMKÂNSIZDI.**
+     *
+     * Alanların değeri doğrudan ADRESTEN geliyordu ve `onChange` yalnız iki
+     * uç da doluyken adrese gidiyordu. İlk tarihi girerken ikinci uç
+     * zorunlu olarak boş: hiçbir dal çalışmıyor → adres değişmiyor →
+     * `value` hâlâ `""` → React her tuşta girdiyi siliyor.
+     *
+     * ⚠ 560 KONTROL YEŞİLDİ VE HİÇBİRİ ÖZELLİĞİN KULLANILAMAZ OLDUĞUNU
+     * SÖYLEMEDİ: saf kural doğruydu, sunucu doğruydu, sözlük doğruydu —
+     * kullanıcıya ULAŞAN yol kopuktu.
+     */
+    /**
+     * ⚠ YORUMSUZ OKUNUYOR — VE BU KONTROL BİR KEZ KIRMIZI YANDI: arızayı
+     * anlatan JSDoc bloğu `value={aralikBas}` ifadesini AYNEN içeriyordu ve
+     * "adresten okumuyor" kontrolü onu bulup düştü. Desen dosyada değil
+     * KULLANIM BLOĞUNDA aranır; yorum kullanım değildir.
+     */
+    const secici = readFileSync(
+      "src/app/envanter-degeri/tarih-secici.tsx",
+      "utf8",
+    )
+      .replace(/[/][*][^]*?[*][/]/g, "")
+      .replace(/^\s*[/][/].*$/gm, "");
+    kontrol(
+      "tarih alanları YEREL DURUMDAN besleniyor (adresten değil)",
+      secici.includes("const [bas, setBas] = useState(aralikBas)") &&
+        secici.includes("const [bit, setBit] = useState(aralikBit)") &&
+        secici.includes("const [tek, setTek] = useState(baslangic)"),
+    );
+    /**
+     * ⚠ VE `value` O DURUMU OKUYOR — adresi değil. Adres okunsaydı arıza
+     * aynen geri gelirdi.
+     */
+    kontrol(
+      "  ...ve `value` yerel durumu okuyor",
+      secici.includes("value={bas}") &&
+        secici.includes("value={bit}") &&
+        secici.includes("value={tek}") &&
+        !secici.includes("value={aralikBas}") &&
+        !secici.includes("value={aralikBit}"),
+    );
+    /**
+     * ⚠ VE ÖTEKİ UÇ DA YEREL DURUMDAN OKUNUYOR: `aralikDegisti(v, bit)`.
+     * Adresten okunsaydı ilk tarih girildiğinde öteki uç hep boş görünür
+     * ve gidiş hiç tetiklenmezdi — arızanın tam çekirdeği buydu.
+     */
+    kontrol(
+      "  ...ve öteki uç YEREL durumdan okunuyor (arızanın çekirdeği)",
+      secici.includes("aralikDegisti(e.target.value, bit)") &&
+        secici.includes("aralikDegisti(bas, e.target.value)"),
+    );
+    /**
+     * ⚠ YARIM SEÇİM SESSİZ BEKLEMİYOR — ne beklendiği yazıyor (İlke #5).
+     *
+     * ⚠ VE İŞARET RENDER YERİNE BAĞLI — İLK HÂLİ KÖR ÇIKTI. `const yarim =`
+     * ile `t("aralikYarim")` AYRI AYRI aranıyordu; render koşulunu
+     * `{false ? (` yapan mutasyon dalı hiç çizmedi ama iki desen de dosyada
+     * kaldı ve bekçi YEŞİL geçti. Anayasa tablosundaki birinci bozulma
+     * biçimi — bu deponun sekizinci vakası.
+     */
+    {
+      const bas3 = secici.indexOf("{yarim ? (");
+      const blok = bas3 < 0 ? "" : secici.slice(bas3, bas3 + 300);
+      kontrol(
+        "yarım seçim EKRANDA söyleniyor (sessiz beklemiyor)",
+        blok.includes('t("aralikYarim")'),
+      );
+      /** ⚠ Ve koşulun kendisi İKİ YÖNÜ de kapsıyor (bas dolu / bit dolu). */
+      const kosulBas = secici.indexOf("const yarim =");
+      const kosul = kosulBas < 0 ? "" : secici.slice(kosulBas, kosulBas + 160);
+      kontrol(
+        "  ...ve koşul iki yönü de kapsıyor",
+        kosul.includes('bas !== ""') && kosul.includes('bit !== ""'),
+      );
+    }
+    /** ⚠ KİPLER BİRBİRİNİ SİLİYOR — iki soru aynı anda cevaplanmaz. */
+    kontrol(
+      "kipler birbirini siliyor (tek ↔ aralık)",
+      secici.includes('setBas("");') && secici.includes('setTek("");'),
+    );
+
     /** ⚠ Ve dosya AYNI gövdeden besleniyor — ekranla ayrışamaz. */
     kontrol(
       "  ...ve dosya EKRANLA aynı gövdeyi çağırıyor",
