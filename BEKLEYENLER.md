@@ -246,6 +246,75 @@ tekrarları elendi. _Bir desen 11 gerçek kaydı işaretliyorsa o desen ölçüt
 değil gürültüdür._
 ⚠ **HÜKÜM YOK** — bunlar aday; işaret Halil'in.
 
+### ⚠ MARJ ŞERHİ — KOŞUYOR (26.08.2026)
+
+İçe aktarılan satışlar **ciroya giriyor, NET'e girmiyor**. Ekran marjı
+**%2,58**, maliyet bağı olanlarda **%9,31**. Haziran **%0,3** (47 satışın
+46'sı içe aktarma), temmuz **%0,2** (287'nin 283'ü) — o aylarda ekran marjı
+**anlamsız**.
+
+Panel · satışlar · rapor ekranlarında iki rakamlı şerh. Sönme ölçütü
+`profitStatus` (⚠ `importBatch` DEĞİL — bağ kurulunca satır hâlâ
+`importBatch` taşıyacak, şerh sönmezdi).
+
+### ✅ KİMLİK ARAMASI — 11 SİPARİŞ KURTARILDI (26.08.2026)
+
+İçe aktarma barkodu **yalnız `ProductVariant.barcode`da** arıyordu.
+`194645027819` sistemde **VARDI** — `axcali2755`in **Trendyol Kanal SKU'su**
+olarak — sorgu göremiyordu. ₺27.807 defterin dışındaydı.
+
+⚠ **ŞEMA DEĞİŞİKLİĞİ GEREKMEDİ:** merdiven 1. basamakta durdu. `ChannelSku`
+bu iş için zaten var; ikinci barkod alanı da yeni tablo da gereksiz.
+⚠ **AYRI LİSTE YAZILMADI:** `kodKosuluToplu`, `kodKosulu` ile aynı
+`VARYANT_KOD_ALANLARI` sabitinden türüyor.
+⚠ **BELİRSİZ KOD YAZILMIYOR:** `channelSku` yalnız (hesap, kod) çiftinde
+tekil — aynı kod iki hesapta iki farklı varyanta işaret edebilir.
+
+**İkinci parti koştu:** 12 sipariş (2 iptal dahil) · 574 → 586 ·
+`ty-20260826130847`. ⏭ Kalan **2 sipariş** Halil'in ürün tanımını bekliyor:
+`6941565979629` DJI Mini 3 · `5702015357180` LEGO Classic 10696.
+
+### 🔬 K55 — STOK + MALİYET BAĞI · TASARIM ÖLÇÜLDÜ, KARAR BEKLİYOR
+
+**KOD YAZILMADI.** Ölçüm (26.08.2026, salt okuma):
+
+| | |
+|---|---|
+| bağsız kalem | **437** (iptalsiz **409**) |
+| farklı varyant | **152** · toplam **416 adet** |
+| tarih aralığı | 27.06 → 26.08 |
+| **FIFO YETERLİ** | **24 varyant** (%16) |
+| FIFO yetersiz | 23 |
+| **HİÇ hareket yok** | **105** (%69) |
+| **karşılıksız kalacak adet** | **336 / 416 (%81)** |
+
+⛔ **"PARTİ YETMEZSE" BİR İSTİSNA DEĞİL, ÇOĞUNLUK.** Tasarımın merkezi
+soru buydu ve cevap ölçümle geldi: kalemlerin **%81'i** maliyet kaynağı
+bulamayacak. Bu, üç seçenek arasındaki tercihi bir ayrıntı olmaktan çıkarıp
+**işin kendisi** yapıyor.
+
+✅ **`occurredAt` KARARI ÖLÇÜLDÜ:** `Sale.soldAt` (İstanbul gününün UTC gece
+yarısı). Mevcut `SALE_OUT` hareketlerinin **151/152**'si zaten birebir böyle
+— yeni kayıtların farklı davranması bir tutarsızlık olurdu.
+
+### ⛔ ANAHTAR — YALNIZ-OKUMA ANAHTARI **BULUNAMADI** (26.08.2026)
+
+Resmî dokümantasyon (`developers.trendyol.com/docs/2-authorization`) okundu:
+**çoklu anahtar · kapsamlı (scoped) anahtar · salt-okuma anahtarı · rotasyon
+· iptal · yeniden üretme — HİÇBİRİ GEÇMİYOR.** Doküman yalnız "Hesap
+Bilgilerim → Entegrasyon Bilgileri"nden alınacağını söylüyor.
+
+⚠ **VE BU "YOK" DEMEK DEĞİL — "DOKÜMANDA YOK" DEMEK.** Panelde bir
+yenileme düğmesi olabilir; dokümantasyon onu yazmıyor. _(Anayasa: "yokluk
+iddiası da iddiadır".)_
+
+⏭ **HALİL ÖLÇECEK — tek soru:** partner.trendyol.com → Mağaza → Hesap
+Bilgilerim → Entegrasyon Bilgileri sayfasında **"yenile / sıfırla / yeni
+anahtar üret"** benzeri bir düğme var mı? Ekran görüntüsü yeterli.
+· **VARSA** → rotasyon yolu belgelenir, sonra Vercel'e taşınır.
+· **YOKSA** → taşıma bir KARARDIR: sızma hâlinde anahtarı iptal etmenin tek
+yolu Trendyol desteğidir ve süresi bilinmiyor.
+
 ### ⏭ SIRADAKİ — VE ONAY KAPISI
 
 **(a) kovası içe aktarmanın kuru koşumunu doğuruyor.** Yazma ancak Halil'in
