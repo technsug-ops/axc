@@ -331,6 +331,63 @@ girmemiş. 128 varyant · 335 adet karşılıksız.
 > açılıyor.** Bu bir satış arızası değil; satış tarafında yapılacak bir şey
 > yok.
 
+### 📐 K55 ÖLÇÜLDÜ (26.08.2026) — ÖNERİ YOK, DÖRT TABLO
+
+**① AÇIK DAĞINIK, TOPLU DEĞİL.** 128 varyant · 335 adet · **₺1.156.864**.
+
+    ilk  5 ürün → %16,8      ilk 20 ürün → %42,0
+    ilk 10 ürün → %26,7      ilk 40 ürün → %63,7   ilk 64 → %81,2
+
+⛔ **Az sayıda üründe TOPLANMIYOR** — %80'i kapatmak **64 ayrı ürün** ister.
+47 varyant tek kalemlik. En büyük tek kalem ₺61.671 (Philips espresso).
+
+**② ZAMAN — İKİ FARKLI SORUN, İKİSİ DE VAR.**
+
+| Ay | Kalem | Adet | Tutar | Pay |
+|---|---|---|---|---|
+| 2026-06 | 36 | 37 | 128.231 | %11,1 |
+| **2026-07** | **244** | **249** | **856.279** | **%74,0** |
+| 2026-08 | 49 | 49 | 172.354 | %14,9 |
+
+Temmuz ağırlıklı (geçmiş dönem) **ama ağustos da 49 kalem** — bugünkü akışta
+da boşluk var.
+
+**③ ALIM DEFTERİ KAPSAMI — İLK KEZ ÖLÇÜLDÜ.**
+380 alım · 380 kalem · **886 adet** · 30.05.2024 → 26.08.2026.
+**174 / 1097 varyanta dokunuyor (%15,9).**
+⚠ Defter **yeni**: 2026-03'ten itibaren ciddileşiyor (03: 24 · 06: 62 ·
+07: 79 · **08: 144**).
+
+**④ TEDARİKÇİ.** Hepsi Burada 248 alım / 537 adet · Amazon 83 / 236 ·
+N11 13 · Trendyol 9. Karşılıksız varyantların ürünü **yalnız 25'inde**
+başka bir alımda geçiyor — 13'ü Hepsi Burada, 11'i Amazon.
+
+⛔ **VE ASIL BULGU — SORUN NİCELİK DEĞİL KAPSAM:**
+
+    ALINAN  886 adet   ·   SATILAN 566 adet   →  alım defteri 320 adet FAZLA
+
+Yani defter **küçük değil, BAŞKA ÜRÜNLERİ** kapsıyor:
+
+| | |
+|---|---|
+| alımı olan varyant | 174 |
+| satışı olan varyant | 194 |
+| **ikisi de olan** | **91** |
+| satışı var alımı **hiç yok** | **103** |
+
+**Açığın şekli:** miktar eksiği **97 adet** (ürün var, adet yetmiyor) ·
+**ürün eksiği 231 adet** (o ürün deftere hiç girmemiş). **%70'i ürün eksiği.**
+
+⚠ **VE 25 VARYANTIN ALIMI VAR AMA AÇIK PARTİSİ YOK — SEBEP ÖLÇÜLDÜ:**
+31/35 alım kalemi `RECEIVED` ve stok hareketi VAR. Yani mal girmiş, önceki
+satışlarda FIFO'dan tükenmiş. **"Mal kabul bekliyor" DEĞİL** (yalnız 4 kalem:
+3 `CANCELLED` + 1 `ORDERED`).
+
+⚠ **BİR OKUMAM YANLIŞTI — DÜZELTMESİ:** ilk tabloda "Hepsi Burada 248" ile
+"Hepsiburada 7" yan yana çıkınca **çift tedarikçi kaydı** sandım. `Supplier`
+tablosunda tek kayıt var; 7'si `supplierId` BOŞ olan alımların **serbest
+metin** adı. Gerçek bulgu: **22 alımın tedarikçi bağı yok** (14'ü adsız).
+
 ⏭ **Seçenekler ÖLÇÜLECEK, bugün açılmaz:** tedarikçi belgelerinden toplu
 giriş · Amazon/toptancı dökümü · geriye dönük toplu alım kaydı.
 
