@@ -4,6 +4,7 @@ import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 
+import { DefterDerinligiSerhi } from "@/components/defter-derinligi-serhi";
 import { IceAktarmaSerhi } from "@/components/ice-aktarma-serhi";
 import { ExcelIndir } from "@/components/excel-indir";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -196,6 +197,16 @@ export default async function EnvanterDegeriSayfasi({
         görünür ve sebebi görünmez. Sayı CANLI — bağ kurulunca söner.
       */}
       <IceAktarmaSerhi />
+
+      {/*
+        ⚠ İKİNCİ ŞERH — BİRİNCİSİNİN YERİNE DEĞİL YANINA (26.08.2026).
+        İki AYRI sebep, iki AYRI çözüm:
+          · yukarıdaki → satış defterde VAR, maliyet bağı yok
+          · bu         → satış defterde HİÇ YOK (alış defteri daha derin)
+        Halil'in bildirdiği "stok şişti" gözlemi ikincisinden geliyor;
+        tek cümleye karışsalardı yanlış tarafta çözüm aranırdı.
+      */}
+      <DefterDerinligiSerhi />
 
       {/*
         ⚠ GEÇERSİZ/GELECEK TARİH SESSİZ GEÇMEZ. Sessizce bugüne düşseydi

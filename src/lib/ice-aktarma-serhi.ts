@@ -185,3 +185,97 @@ export async function marjSerhi(
     ekranMarji: ciroHepsi > 0 ? (net / ciroHepsi) * 100 : null,
   };
 }
+
+/**
+ * ============================================================================
+ *  DEFTER DERİNLİĞİ ŞERHİ — "ALIŞ DEFTERİ SATIŞ DEFTERİNDEN DERİN"
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI BULGU 26.08.2026 (Halil): alışlar girince stok **₺8,5M / 3595
+ *  adet** göründü. Sebep ölçülü ama EKRANDA YAZILI DEĞİLDİ:
+ *
+ *      alım defteri   1955 kayıt · en eski 2024-05-30
+ *      satış defteri   556 kayıt · en eski 2026-06-17
+ *      → satış defteri 748 GÜN SIĞ
+ *
+ *  O 748 günlük pencerede alınan mal deftere girdi, SATILDIĞI girmedi.
+ *  Envanter fotoğrafı onu hâlâ depoda gösteriyor.
+ *
+ *  ⚠ BU 69'LUK ŞERHİN YERİNE DEĞİL, YANINA. İki AYRI sebep:
+ *    · 69'luk  → satış defterde VAR, maliyet bağı yok
+ *    · bu şerh → satış defterde HİÇ YOK
+ *  Tek cümleye karışsalardı okuyan yanlış tarafta çözüm arardı.
+ *
+ *  ⚠ ÖLÇÜT SABİT SAYI DEĞİL — ve "gün farkı" da değil. Gün farkına
+ *  bağlansaydı satış aktarımından sonra da (2024-06 vs 2024-05-30) ~18
+ *  günlük bir fark kalır ve şerh SÖNMEZDİ. Ölçüt, farkın KENDİSİ değil
+ *  ONUN ÜRETTİĞİ ÇARPIKLIK: satış kapsamı BAŞLAMADAN ÖNCE alınmış ve
+ *  HÂLÂ AÇIK olan parti adedi. Sıfırsa çarpıklık yok, şerh çıkmaz.
+ * ============================================================================
+ */
+
+export type DefterDerinligi = {
+  alimSayisi: number;
+  alimEnEski: Date | null;
+  satisSayisi: number;
+  satisEnEski: Date | null;
+  /** Satış kapsamı başlamadan ÖNCE alınmış, hâlâ açık parti adedi. */
+  kapsamsizAdet: number;
+  /** İki defterin başlangıcı arasındaki gün — GÖSTERİM için, ölçüt değil. */
+  farkGun: number;
+};
+
+export async function defterDerinligi(
+  db: Pick<PrismaClient, "purchase" | "sale" | "stockMovement">,
+): Promise<DefterDerinligi> {
+  const [alim, satis] = await Promise.all([
+    db.purchase.aggregate({ _min: { purchasedAt: true }, _count: { _all: true } }),
+    db.sale.aggregate({
+      where: { iptalTarihi: null },
+      _min: { soldAt: true },
+      _count: { _all: true },
+    }),
+  ]);
+  const alimEnEski = alim._min.purchasedAt ?? null;
+  const satisEnEski = satis._min.soldAt ?? null;
+
+  const bos: DefterDerinligi = {
+    alimSayisi: alim._count._all,
+    alimEnEski,
+    satisSayisi: satis._count._all,
+    satisEnEski,
+    kapsamsizAdet: 0,
+    farkGun: 0,
+  };
+  /** ⚠ Bir defter boşsa kıyas kurulamaz — "temiz" denmez, hüküm verilmez. */
+  if (alimEnEski === null || satisEnEski === null) return bos;
+  if (alimEnEski >= satisEnEski) return bos;
+
+  /**
+   * ⚠ AÇIK PARTİ = giriş − tüketim. `sourceMovementId` tüketimi partiye
+   * bağlıyor; tüketilmiş bir parti depoda DURMUYOR ve çarpıklık üretmez.
+   */
+  const girisler = await db.stockMovement.findMany({
+    where: { type: "PURCHASE_IN", occurredAt: { lt: satisEnEski } },
+    select: { id: true, quantityDelta: true },
+  });
+  if (girisler.length === 0) return bos;
+  const tuketimler = await db.stockMovement.groupBy({
+    by: ["sourceMovementId"],
+    where: { sourceMovementId: { in: girisler.map((g) => g.id) } },
+    _sum: { quantityDelta: true },
+  });
+  const tuketim = new Map(
+    tuketimler.map((t) => [t.sourceMovementId!, Number(t._sum.quantityDelta ?? 0)]),
+  );
+  let acik = 0;
+  for (const g of girisler) {
+    /** Tüketim negatif gelir; kalan = giriş + tüketim. */
+    const kalan = g.quantityDelta + (tuketim.get(g.id) ?? 0);
+    if (kalan > 0) acik += kalan;
+  }
+  return {
+    ...bos,
+    kapsamsizAdet: acik,
+    farkGun: Math.round((satisEnEski.getTime() - alimEnEski.getTime()) / 86_400_000),
+  };
+}

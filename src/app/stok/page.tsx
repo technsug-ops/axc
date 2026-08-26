@@ -21,6 +21,7 @@ import { SayfalamaCubugu } from "@/components/sayfalama";
 import { DURUM_ZEMINI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
 import { DurumRozeti } from "@/components/durum-rozeti";
+import { DefterDerinligiSerhi } from "@/components/defter-derinligi-serhi";
 import { IceAktarmaSerhi } from "@/components/ice-aktarma-serhi";
 import { prisma } from "@/lib/prisma";
 import { acikPartilerToplu } from "@/lib/stok";
@@ -271,6 +272,7 @@ export default async function StokSayfasi({
         Sayı CANLI — stok bağı kurulunca kendiliğinden söner.
       */}
       <IceAktarmaSerhi />
+      <DefterDerinligiSerhi />
 
       {/* SESSİZ SÜZGEÇ YASAK: yaş süzgeci açıkken ekranda GÖRÜNÜR ve tek
           tıkla kaldırılır. Görünmeseydi kullanıcı eksik listeyi deponun

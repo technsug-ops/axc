@@ -3383,6 +3383,9 @@
     "stokAyrismasiNiye": "Stok bağı ayrı karar bekliyor — bu satışlar defterde var, stoktan mal düşmedi.",
     "marjOkunamaz": "{adet} satış maliyet bağı bekliyor — ciroda var, kârda yok.",
     "marjBagliOlan": "Yalnız maliyet bağı olan satışların marjı: {oran}",
-    "marjAlimYok": "{adet} satış: ALIM KAYDI YOK — bu ürünlerin alımı deftere girmemiş. Marj bu kalemler için hesaplanamaz."
+    "marjAlimYok": "{adet} satış: ALIM KAYDI YOK — bu ürünlerin alımı deftere girmemiş. Marj bu kalemler için hesaplanamaz.",
+    "defterDerinligiBaslik": "ALIŞ DEFTERİ SATIŞ DEFTERİNDEN DERİN",
+    "defterDerinligiSayilar": "Alımlar {alimTarih} tarihinden kayıtlı ({alim} alım); satışlar yalnız {satisTarih} tarihinden ({satis} satış) — satış defteri {gun} gün sığ.",
+    "defterDerinligiSonuc": "Bu fotoğraf, satışı deftere girmemiş {adet} adedi hâlâ depoda gösterir. Fiziksel stok bundan DÜŞÜK olacaktır."
   }
 }

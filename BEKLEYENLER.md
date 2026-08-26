@@ -580,6 +580,26 @@ _(Çözüm bulundu: alış Excel'i içe aktarıldı — yukarıdaki özete bak.)
 
 </details>
 
+### ⚠ ENVANTER — İKİNCİ ŞERH KOŞUYOR (26.08.2026)
+
+Halil bildirdi: alışlar girince stok **₺8,5M / 3595 adet** göründü.
+Sebep ölçülüydü ama **ekranda yazılı değildi.**
+
+    alım defteri   1955 kayıt · en eski 2024-05-30
+    satış defteri   556 kayıt · en eski 2026-06-17
+    → satış defteri 748 GÜN SIĞ
+    → kapsanmayan pencerede HÂLÂ AÇIK: 3115 adet
+
+Envanter değeri **ve** stok ekranlarında ikinci şerh — **mevcut 69'luk
+şerhin YANINA, yerine değil.** İki ayrı sebep, iki ayrı çözüm:
+· `MarjSerhi` → satış defterde **VAR**, maliyet bağı yok
+· yeni şerh → satış defterde **HİÇ YOK**
+
+⚠ **ÖLÇÜT GÜN FARKINA BAĞLI DEĞİL — ve bu kasıtlı.** Gün farkına
+bağlansaydı satış aktarımından sonra da (~18 gün) fark kalır ve şerh
+**sönmezdi**. Ölçüt farkın ÜRETTİĞİ çarpıklık: kapsanmayan pencerede
+**hâlâ açık** parti adedi. Sıfırlanınca şerh kendiliğinden söner.
+
 ### ⏭ K56 — SATIŞ EXCEL'İ (sıradaki)
 
 `Downloads/satis.xlsx` yerinde (2,2 MB, 26.08 21:51).

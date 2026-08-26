@@ -793,5 +793,83 @@ kontrol(
 );
 
 
+console.log("\n⑩ DEFTER DERİNLİĞİ ŞERHİ — canlı sayı, türetilmiş ölçüt");
+
+const derinlikKaynak = oku("src/components/defter-derinligi-serhi.tsx");
+const derinlikGovde = blok(serhLib, "export async function defterDerinligi(", 2600);
+
+kontrol("defterDerinligi gövdesi bulundu", derinlikGovde.length > 0);
+/**
+ * ⚠ SAYILAR CANLI — SABİT METİN DEĞİL. Şerhin gövdesinde gömülü rakam
+ * bulunursa (1955 · 556 · 748 gibi) o sayı yarın yanlış olur ve
+ * kimsenin güncellemesi gerektiğini hatırlaması beklenemez.
+ */
+kontrol(
+  "iki defterin sayısı SORGUDAN geliyor",
+  /purchase\.aggregate/.test(derinlikGovde) && /sale\.aggregate/.test(derinlikGovde),
+);
+kontrol(
+  "en eski tarihler SORGUDAN geliyor",
+  /_min: \{ purchasedAt: true \}/.test(derinlikGovde) &&
+    /_min: \{ soldAt: true \}/.test(derinlikGovde),
+);
+kontrol(
+  "şerhte GÖMÜLÜ SAYI yok",
+  !/1955|556|748|8[.,]5M|3595/.test(yorumsuz(derinlikKaynak)),
+);
+/**
+ * ⚠ ÖLÇÜT GÜN FARKINA BAĞLI DEĞİL — bu kasıtlı ve sınanıyor.
+ * Gün farkına bağlansaydı satış aktarımından sonra da ~18 günlük bir
+ * fark kalır ve şerh SÖNMEZDİ. Ölçüt, farkın ÜRETTİĞİ çarpıklık:
+ * kapsanmayan pencerede HÂLÂ AÇIK parti adedi.
+ */
+kontrol(
+  "sönme ölçütü AÇIK PARTİ adedine bağlı (gün farkına DEĞİL)",
+  /if \(d\.kapsamsizAdet === 0\) return null;/.test(derinlikKaynak),
+);
+kontrol(
+  "gün farkı yalnız GÖSTERİM — ölçüt değil",
+  /farkGun: Math\.round/.test(derinlikGovde) &&
+    !/if \(d\.farkGun/.test(derinlikKaynak),
+);
+kontrol(
+  "açık parti TÜKETİM düşülerek hesaplanıyor",
+  /sourceMovementId/.test(derinlikGovde) && /const kalan = g\.quantityDelta \+/.test(derinlikGovde),
+);
+/** ⚠ BİR DEFTER BOŞSA HÜKÜM VERİLMEZ. */
+kontrol(
+  "defterlerden biri boşsa kıyas kurulmuyor",
+  /if \(alimEnEski === null \|\| satisEnEski === null\) return bos;/.test(derinlikGovde),
+);
+kontrol(
+  "alım defteri daha SIĞSA şerh çıkmıyor",
+  /if \(alimEnEski >= satisEnEski\) return bos;/.test(derinlikGovde),
+);
+/** ⚠ İKİ DEFTER YAN YANA BASILIYOR — asimetri görünsün. */
+const derinlikMetin = blok(derinlikKaynak, "return (", 1500);
+kontrol(
+  "iki defterin sayısı ve tarihi YAN YANA basılıyor",
+  /alim: d\.alimSayisi/.test(derinlikMetin) &&
+    /satis: d\.satisSayisi/.test(derinlikMetin) &&
+    /alimTarih:/.test(derinlikMetin) &&
+    /satisTarih:/.test(derinlikMetin),
+);
+kontrol(
+  "çarpıklık ADEDİ ekrana basılıyor",
+  /t\("defterDerinligiSonuc",\s*\{\s*adet: d\.kapsamsizAdet\s*\}\)/.test(derinlikMetin),
+);
+/** ⚠ İKİ ŞERH DE ÇİZİLİYOR — biri ötekinin yerine geçmiyor. */
+for (const [ad, yol] of [
+  ["envanter değeri", "src/app/envanter-degeri/page.tsx"],
+  ["stok", "src/app/stok/page.tsx"],
+] as const) {
+  const e = oku(yol);
+  kontrol(
+    `${ad} — İKİ şerh de çiziliyor (biri ötekinin yerine geçmiyor)`,
+    /<IceAktarmaSerhi\s*\/>/.test(e) && /<DefterDerinligiSerhi\s*\/>/.test(e),
+  );
+}
+
+
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
 process.exit(hata === 0 ? 0 : 1);
