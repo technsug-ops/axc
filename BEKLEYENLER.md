@@ -322,7 +322,29 @@ yarısı). Mevcut `SALE_OUT` hareketlerinin **151/152**'si zaten birebir böyle
 
 </details>
 
-### 🆕 K55 — ALIM DEFTERİ AÇIĞI (26.08.2026, AÇILDI)
+### ✅ K55 — ALIM DEFTERİ AÇIĞI · **BÜYÜK ÖLÇÜDE KAPANDI** (26.08.2026)
+
+**1569 alım · 1609 kalem · 1608 `PURCHASE_IN` yazıldı.** Stok bağı **260
+kalem** kurdu.
+
+| | önce | sonra |
+|---|---|---|
+| **ekran marjı** | %2,58 | **%10,12** |
+| maliyet bağı olanların | %9,31 | **%11,12** |
+| şerhteki satış | 329 | **69** |
+
+✅ **`[YANLIŞ CEVAP VEREN EKRAN]` ETİKETİ MARJ İÇİN KALKTI** — ekran artık
+gerçeği gösteriyor. İki rakam birbirine yaklaştı; kalan **69 adıyla şerhli**.
+
+**KALAN 69:** 29 bağ bekliyor (alım VAR) + 40 **alım kaydı yok**.
+Kaynağı: **130 eşleşmeyen barkod** + **79 barkodsuz satır**.
+
+⚠ **8 ALIM: teslim tarihi okunamadı** (`"11.02.0202"` — 2026 yerine 0202
+yazılmış). Satın alma tarihine düşüldü, **ekranda sayılı, UYDURULMADI.**
+
+<details><summary>açık ölçümü (26.08, arşiv)</summary>
+
+### 🆕 K55 — ALIM DEFTERİ AÇIĞI (AÇILIŞ ÖLÇÜMÜ)
 
 **329 satış maliyet bağı kuramıyor** çünkü o ürünlerin alımı deftere hiç
 girmemiş. 128 varyant · 335 adet karşılıksız.
@@ -554,8 +576,20 @@ Ayrı kova 329 → **69**.
 ⏭ **K55 KÜÇÜLDÜ AMA KAPANMADI:** 69 kalem hâlâ alım kaydı bekliyor —
 130 eşleşmeyen barkod + 79 barkodsuz satır oradan besleniyor.
 
-⏭ **Seçenekler ÖLÇÜLECEK, bugün açılmaz:** tedarikçi belgelerinden toplu
-giriş · Amazon/toptancı dökümü · geriye dönük toplu alım kaydı.
+_(Çözüm bulundu: alış Excel'i içe aktarıldı — yukarıdaki özete bak.)_
+
+</details>
+
+### ⏭ K56 — SATIŞ EXCEL'İ (sıradaki)
+
+`Downloads/satis.xlsx` yerinde (2,2 MB, 26.08 21:51).
+Beyan: **10197 satır · 2024-06 → 2026-08**.
+
+> **⭐ EN KRİTİK SORU: bu satışların kaçı sistemde ZATEN VAR?**
+> Çift kayıt riski ölçülmeden **tek satır yazılmaz.** Defterde bugün
+> **588 satış** var ve 411'i içe aktarma — çakışma kümesi büyük.
+
+⏭ Ölçüm turu: kimlik anahtarı adayları · çakışma · eşleşme · temizlik.
 
 ⚠ **EKRANDA GÖRÜNÜYOR ve sebebi AYRI yazıyor** — marj şerhi iki satır:
 _"N satış maliyet bağı bekliyor"_ ile _"M satış: ALIM KAYDI YOK"_ tek cümleye

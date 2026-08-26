@@ -1567,6 +1567,89 @@ demek, olmayan bir `fetch` için tören istemekti.
 
 ---
 
+### SINANMAYAN DAL, SINANMAMIŞ KODDUR (KESİN KURAL)
+
+_Canlı hata 26.08.2026, alış içe aktarma._ _"Bu fonksiyon sınandı"_ ile
+_"bu fonksiyonun HER DALI sınandı"_ farklı iddialardır. Çok dallı bir
+dönüştürücüde bir dalın doğru olması ötekiler hakkında hiçbir şey
+söylemez — ama testler yeşil yandığı için söylediği sanılır.
+
+**Vaka:** `tariheCevir` üç daldan geçiyordu ve geçerliliği YALNIZ
+sonuncusunda sınıyordu:
+
+    if (ham instanceof Date) return ham;                  ← sınanmıyor
+    if (typeof ham === "number") return new Date(...);    ← sınanmıyor
+    ... Number.isNaN(d.getTime()) ? null : d              ← yalnız burada
+
+Bozuk hücre `Date` NESNESİ olarak geldi (`instanceof Date` doğru,
+`getTime()` `NaN`), ilk daldan sınanmadan geçti ve **44 alım düştü.**
+
+> **KURAL:** çok dallı bir dönüştürücüde her dal AYRI mutasyonla sınanır.
+> Ve çare dal başına ayrı kontrol yazmak DEĞİL — **çıkışı tek kapıdan
+> geçirmektir**; yoksa dördüncü dal eklendiğinde yine atlanır.
+> _("Bekçi ölçütü elle tutulan liste değil, tersten kurulur" kuralının
+> fonksiyon içi hâli.)_
+
+---
+
+### KÜTÜPHANENİN "GEÇERLİ"Sİ, İŞ KURALIMIZIN "GEÇERLİ"Sİ DEĞİLDİR (KESİN KURAL)
+
+_Canlı hata 26.08.2026._ Bir dış ayrıştırıcı bir değeri kabul ediyorsa bu
+YALNIZCA onun dilbilgisine uyduğunu söyler — bizim iş kuralımıza uyduğunu
+DEĞİL. Aradaki farkı sormayan kod, kütüphanenin toleransını kendi
+doğruluk ölçütü sanır.
+
+**Vaka:** Excel hücresinde `"11.02.0202"` yazıyordu — birinin `2026`
+yerine `0202` yazması. `new Date()` bunu **YIL 202** diye seve seve kabul
+etti. Sonra `Intl` onu `202-11-02` (üç haneli yıl) diye biçimledi ve
+`new Date("202-11-02T…")` **Invalid Date** döndü. Prisma reddetti.
+
+⚠ **VE HATA ZİNCİRİN BAŞINDA DEĞİL SONUNDA GÖRÜNDÜ:** sebep okuma
+katmanındaydı, kırmızı yazma katmanında yandı. Bu yüzden ilk teşhis
+yanlış yere baktı (kod çakışması, sıra taşması) ve iki tur kaybettirdi.
+
+> **KURAL:** dış ayrıştırıcının çıktısı KENDİ KAPIMIZDAN geçer. Makul
+> aralık (yıl · tutar · adet) iş kuralıdır ve o kapı okuma anında
+> kurulur — yazma anında değil.
+
+⚠ **VE AYKIRI DEĞER UYDURULARAK DÜZELTİLMEZ.** _"0202 demek ki 2026'ymış"_
+bir TAHMİNDİR. Değer **kullanılamaz** sayıldı, yedeğine düşüldü ve
+**ekranda sayıldı** (`⚠ TESLİM TARİHİ OKUNAMAYAN 8`). Kaynak veriyi
+uydurmak, yanlış bir tarihi kesin gibi göstermek olurdu.
+_("İmkânsız görünen değer önce doğrulanır — düzeltilmez" kuralının
+içe aktarma tarafı.)_
+
+---
+
+### HATA MESAJINI KISALTAN HER İŞLEM TEŞHİSİ KISALTIR (KESİN KURAL)
+
+_Canlı hata 26.08.2026._ Bir hata yakalanıp mesajı KIRPILARAK basılırsa,
+kırpılan kısım sebebin kendisi olabilir. O anda ekranda görünen şey
+"hata var" olur ama "niye" gitmiştir — ve niye gittiği de görünmez.
+
+**Vaka:** yakalama şöyleydi —
+
+    console.log(`⛔ ${no} — ${(e as Error).message.split("\n")[0].slice(0, 100)}`)
+
+Prisma hataları mesaja **boş satırla başlar.** `split("\n")[0]` o boş
+satırı aldı ve ekrana şu düştü:
+
+    ⛔ 471 054 764 0 —
+
+**44 alım düştü ve niye düştüğü ÖLÇÜLEMEDİ.** Sebep (`receivedAt`
+geçersiz) mesajın SONUNDAYDI; teşhis ancak `slice(-260)` denenince geldi.
+
+> **KURAL:** mesaj **TAM** taşınır. Kısaltma yalnız GÖSTERİMDE yapılır,
+> kayıtta (log dosyası · `AuditLog` · hata kovası) **asla**. Ve
+> göstermeden önce satır sonları **boşluğa çevrilir** — ilk satırı almak
+> değil.
+> ⚠ `split()[0]` · `substring` · "ilk satır" — üçü de aynı tuzağın adı.
+
+_(İlke #5'in geliştirici tarafı: sessiz başarısızlık yasağı yalnız
+kullanıcı ekranı için değil, bizim teşhis ekranımız için de geçerli.)_
+
+---
+
 ### PARA RAKAMI TABANIYLA BİRLİKTE YAZILIR (KESİN KURAL)
 
 _Canlı bulgu 26.08.2026._ Aynı stok, aynı an, aynı motor — **iki farklı
