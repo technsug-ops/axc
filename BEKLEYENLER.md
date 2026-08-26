@@ -104,7 +104,7 @@ yerini çocukları almıştır. Düzeltildi: **(b) 83→84 · (c) 22→21**, sap
 **`−21,00` → AÇIKLANAMADI, UYDURULMADI.** `11467475277` · 01.08 · tek kalem
 `8720689013949` · 1 adet · API `1.833,00` · defter `1.812,00` · **indirim 0 ·
 iade yok · tek paket.** İki taraf da tek satır; fark neden 21, görünmüyor.
-⏭ **Halil'in faturasından bakılacak** — kaynak sırasında fatura 1. basamak.
+⏭ **[AÇIK — FATURA BEKLİYOR]** Halil'in faturasından bakılacak; kaynak sırasında fatura 1. basamak.
 
 ### ⚠ ENUMERASYON TAMLIĞI — ÇAPRAZ KURULDU, CEVAP: EKSİK
 
@@ -126,13 +126,59 @@ dedi; ölçüldü ki `SettlementItem.orderNo` **iki cins kimlik** taşıyor
 Biçime göre ayrılınca gerçek sayı **70**. _"Bulunamadı"_ ile
 _"karşılaştırılamadı"_ ayrı sayıldı.
 
-### 🆕 A3-③a — `SettlementItem.orderNo` tek kolonda İKİ CİNS KİMLİK
+### ✅ A3-③a — YANLIŞ ALARM, ÖLÇÜMLE KAPANDI (26.08.2026)
 
-⚠ **BULGU KENDİ BAŞINA İŞ AÇIYOR.** Tek kolonda iki cins kimlik tutmak, o
-kolonu okuyan **her sorguyu sessizce kirletir** — K8 eşleştirmesi de o kolonu
-okuyor. ⏭ Hakediş içe aktarımının hangi durumda paket kimliği yazdığı
-ölçülecek; çare muhtemelen **ayırt edici sütun** (`kimlikTuru`), yeni tablo
+⛔ **BENİM TEŞHİSİM YANLIŞTI ve kalem açılmamalıydı.** `orderNo`daki 10
+haneli "4…" kodlara _"paket kimliği"_ demiştim; **biçim benzerliğine
+bakmıştım.** Ölçüm çürüttü:
+
+    Trendyol — AXCALI : 409 kalem · hepsi 11 hane "1…" · diğer 0
+    Hepsiburada       : 820 kalem · hepsi 10 hane "4…" · diğer 0
+
+Ayrılan şey başka bir kimlik cinsi değil **BAŞKA BİR KANAL**. HB sipariş
+numaraları gerçekten 10 hane "4" ile başlıyor; defterdeki **24 HB satışının
+hepsi** o biçimde ve **ikisi doğrudan eşleşti** (`4006304001` · `4702310503`).
+Kolonda **şema sorunu YOK**, ayırt edici sütuna da gerek yok.
+
+⚠ **VE BU, KIYASI DAHA SAĞLAM YAPTI:** süzgeç biçimden **kanal hesabı
+kimliğine** çevrildi. Biçim süzgeci doğru kümeyi **tesadüfen** veriyordu —
+biçim değiştiği gün sessizce yanlış küme verirdi. Çapraz sayısı **70 → 37**.
+
+⚠ **K8 SAYISI DA DÜZELDİ:** 1271 bağsız kalemin **816'sı HEPSİBURADA** kalemi
+— TY eşleştirmesinin onları bağlayamaması **kusur değil, kapsam**. TY tarafında
+bağsız kalem **400**, `orderNo` boş **55**. _("Kapsam boşluğu fark değildir"
+kuralının hakediş tarafı.)_
+
+### 🔬 ENUMERASYON — MEKANİZMA ADLANDIRILDI (26.08.2026)
+
+**Kaçan 37 siparişten 8 örnek TEK TEK çekildi — 8/8 ✓.** Yani kayıtlar API'de
+VAR; enumerasyon onları düşürüyor.
+
+**Ortak özellik ARANDI, BULUNAMADI:** 8'inin de `status: Delivered` ·
+`createdBy: order-creation` · `shipmentPackageStatus: Delivered` ·
+`deliveryType: normal` · aynı kargo firması. **Ayırt edici bir alan yok** —
+yani düşme, kaydın bir özelliğinden değil **enumerasyon davranışından**
+geliyor.
+
+**SIRALAMA/SAYFALAMA ELENDİ:** aynı 3 günlük dilim dört farklı sıralamayla
+(varsayılan · `PackageLastModifiedDate` ASC/DESC · `CreatedDate` ASC)
+**dördünde de 14 kayıt, 14 farklı sipariş** döndürdü. Sayfalama kayması
 değil.
+
+⚠ **VE DİLİM KÜÇÜLTMEK ÇARE DEĞİL:** 1 günlük dilim 5 hata alıyor ve DAHA AZ
+buluyor (198 < 260). Ayrıca aynı ölçüm iki koşumda 497 ↔ 560 verdi — tarih
+penceresi enumerasyonu **kararlı bile değil.**
+
+> **MEKANİZMA:** _tarih penceresi enumerasyonu sessizce kayıt düşürüyor;
+> sebebi kaydın özelliği ya da sıralama DEĞİL._ Bu bir TY davranışı ve
+> bizim tarafımızdan kapatılamıyor.
+
+**⏭ TELAFİ YOLU ÖLÇÜLDÜ VE ÇALIŞIYOR:** `?orderNumber=` ile **tek tek çekme
+8/8 başarılı.** Kuru koşum bu mekanizmayı telafi ederek kurulacak — sipariş
+numarası BAŞKA bir kaynaktan biliniyorsa (hakediş · kargo faturası) o sipariş
+tek tek çekilip doğrulanabilir.
+⚠ **AMA BU TAMLIK VERMEZ:** hiçbir kaynakta adı geçmeyen bir sipariş yine
+görünmez. Liste **ALT SINIR** olarak kalır ve raporda öyle yazar.
 
 ### ⏭ SIRADAKİ — VE ONAY KAPISI
 
@@ -140,11 +186,11 @@ değil.
 onayından sonra (kendi çerçevesi: _"içe aktarma başlamadan önce kuru koşum
 raporu + onayım"_).
 ⛔ **ENUMERASYON TAMLIĞI ÖLÇÜLDÜ VE SAĞLANMADI:** çapraz, API dilimlemesinin
-bulamadığı **70 sipariş** gösterdi. `123` bir ALT SINIRDIR ve kuru koşum
-raporunda sayıyla desteklenerek öyle yazılacak.
-⏭ **Sıradaki adım kod değil ÖLÇÜM:** dilim 3 günün altına indirilince hata
-alıyor (1 günde 5 hata); dolayısıyla çare dilim küçültmek olmayabilir —
-**başka bir uç ya da `orderByField`/sayfalama davranışı** ölçülecek.
+bulamadığı **37 sipariş** gösterdi (kanal kimliğiyle süzülmüş hâli; biçim
+süzgeciyle 70 çıkıyordu). `123` bir ALT SINIRDIR ve kuru koşum raporunda
+sayıyla desteklenerek öyle yazılacak.
+✅ **MEKANİZMA ADLANDIRILDI VE TELAFİ YOLU ÖLÇÜLDÜ** — bkz. yukarıdaki
+"ENUMERASYON — MEKANİZMA" bölümü. Kuru koşum artık kurulabilir.
 
 ---
 

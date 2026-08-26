@@ -1490,7 +1490,7 @@ her rakamı da kirletir.
 > yazar.
 
 **ÇAPRAZ SONUCU (aynı gün, ölçüldü):** kanalın hakediş satırlarındaki 283
-sipariş numarasından **70'i** API dilimlemesinin bulamadığı siparişler
+sipariş numarasından **37'si** API dilimlemesinin bulamadığı siparişler
 çıktı — ve hepsinin hakediş anı temmuz, yani paketleri pencerenin İÇİNDE
 değiştirilmiş olmalıydı. **Dilimleme eksik.** Çapraz kurulmasaydı `123`
 rakamı "eksik sipariş sayısı" diye yayımlanacaktı.
@@ -1499,29 +1499,39 @@ rakamı "eksik sipariş sayısı" diye yayımlanacaktı.
 
 ---
 
-### KİMLİK CİNSİ AYRILMADAN KIYAS KURULMAZ (KESİN KURAL)
+### KIYASIN İKİ TARAFI AYNI KÜMEDEN GELMELİ — BİÇİM DEĞİL KİMLİK SÜZER (KESİN KURAL)
 
 _Ders 26.08.2026._ İki liste aynı sütun adını taşıyor diye aynı CİNS
 kimliği taşımaz. Karıştırıldığında çıkan sayı "bulunamadı" değil
 **"karşılaştırılamadı"**dır — ve ikisi ekranda aynı görünür.
 
-**Vaka:** `SettlementItem.orderNo` iki farklı cins kimlik taşıyor ve bu
-ölçüldü:
+**Vaka:** çapraz sınama `SettlementItem.orderNo` üzerinden kuruldu ve
+**"134 sipariş bulunamadı"** dedi. Biçime bakınca iki küme göründü:
 
-    283 × 11 hane, ilk hane "1"   → gerçek TY sipariş numarası
-    148 × 10 hane, ilk hane "4"   → PAKET kimliği (shipmentPackageId)
+    283 × 11 hane, ilk hane "1"
+    148 × 10 hane, ilk hane "4"
 
-Çapraz sınama ikisini tek kefeye koyunca **"134 sipariş bulunamadı"** dedi.
-O rakamın yarısı, sipariş numarasıyla paket kimliğinin kıyaslanmasıydı.
-Biçime göre ayrılınca gerçek sayı **70** çıktı — ve 148'i **ayrı kova**
-olarak "kıyasa girmez" diye yazıldı.
+⚠ **VE İLK TEŞHİSİM YANLIŞTI — DÜZELTMESİ BURADA DURUYOR.** İkinci kümeye
+_"paket kimliği (`shipmentPackageId`)"_ dedim, çünkü biçimi paket
+kimliğine benziyordu. **Ölçüm çürüttü:**
 
-> **KONTROL SORUSU:** bu iki sütun aynı CİNS kimliği mi taşıyor? Cevabı
-> ölçmeden verilen her "eşleşmedi" sayısı, kendi kirini de içerir.
+    Trendyol — AXCALI : 409 kalem · hepsi 11 hane "1…"
+    Hepsiburada       : 820 kalem · hepsi 10 hane "4…"
 
-⚠ **VE BULGU KENDİ BAŞINA İŞ AÇAR:** tek bir kolonda iki cins kimlik
-tutmak, o kolonu okuyan HER sorguyu sessizce kirletir. _(Bkz. BEKLEYENLER
-→ A3-②.)_
+Ayrılan şey başka bir kimlik CİNSİ değil, **BAŞKA BİR KANALDI.** HB
+sipariş numaraları gerçekten 10 hane ve "4" ile başlıyor — defterdeki 24
+HB satışının hepsi o biçimde ve ikisi doğrudan eşleşti. `orderNo` kolonu
+**bozuk değil**; ben iki kanalı tek kefeye koymuştum.
+
+> **KONTROL SORUSU:** bu iki liste aynı KÜMEDEN mi geliyor — aynı kanal,
+> aynı hesap? Cevabı ölçmeden verilen her "eşleşmedi" sayısı, kendi kirini
+> de içerir.
+
+⚠ **VE ASIL DERS ŞU: BİÇİM SÜZGECİ TESADÜFEN DOĞRU ÇALIŞIYORDU.**
+`/^1\d{10}$/` doğru kümeyi veriyordu ama **yanlış sebeple** — biçim
+değiştiği gün sessizce yanlış küme verirdi. Süzgeç `channelAccountId`
+KİMLİĞİNE bağlanınca sayı **70 → 37**'ye düştü. _("Kimlik varken dizeyle
+aranmaz" kuralının kıyas tarafı.)_
 
 _(Bu, "benzer ad aynı kimlik değildir" ve "sıfır üç farklı şey olabilir"
 derslerinin kıyas tarafı.)_
