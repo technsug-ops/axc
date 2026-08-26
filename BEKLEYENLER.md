@@ -180,6 +180,72 @@ tek tek çekilip doğrulanabilir.
 ⚠ **AMA BU TAMLIK VERMEZ:** hiçbir kaynakta adı geçmeyen bir sipariş yine
 görünmez. Liste **ALT SINIR** olarak kalır ve raporda öyle yazar.
 
+### 🆕 A3-④/⑤ — OTOMATİK ÇEKİM + HAKEDİŞ/KARGO UÇLARI (tasarım turu, 26.08)
+
+**KOD YAZILMADI.** Ölçüm koştu, tasarım raporlandı, karar Halil'de.
+
+⛔ **HIZ LİMİTİ BAŞLIĞI YOK.** Yanıt başlıkları ölçüldü (17 başlık, hepsi
+basıldı): `rate` · `limit` · `remain` · `retry` · `quota` geçen TEK BAŞLIK
+YOK. Uç sınırını beyan etmiyor → sıklık **ölçümle** seçilecek, beyanla değil.
+
+⚠ **VE AŞIRI YÜKLENME `429` DEĞİL `500` OLARAK GELİYOR.** Aynı çağrı 2 sn
+arayla `200` + 3 kayıt, hızlı ardışıkta `13/13 HTTP 500`. Naif bir yeniden
+deneme döngüsü bunu "uç bozuk" diye okur. _(Ölçüldü: `Stoppage`.)_
+
+**⑥ HAKEDİŞ UCU — KURU KOŞUM:** 15 günlük 13 dilim · **hata 0 · boş 0** ·
+**1863 kalem** (6 ay). Defterde bu hesapta **463** → API **4 KAT** fazla.
+✅ Kalem `id` alanı taşıyor (`14020236951`) → kimlik anahtarı hazır, uydurma
+bileşik anahtar gerekmiyor.
+✅ `orderNumber` **VE** `shipmentPackageId` **AYRI ALANLAR** — 26.08'de
+düzelttiğim karışıklığın kaynağı burada kapanıyor.
+✅ `commissionRate` + `commissionAmount` **kalem düzeyinde** → K9 dilim
+şemasının bağımsız teyidi mümkün. ⚠ Ölçüm planı yazıldı, **hüküm verilmedi.**
+
+**⑦ KARGO FATURASI — API'DE VAR.** ⚠ İlk sondam bulamadı ve sebep **benim
+kusurumdu**: `size=50` gönderiyordum, uç `500 ya da 1000` istiyor ve hatayı
+`400` diye döndürüyor. "Uç yok" diye rapor edilecekti.
+`otherfinancials?transactionType=DeductionInvoices` → **`Kargo Fatura`
+63 kalem · ₺284.674,65** (6 ay). Ayrıca `Platform Hizmet Bedeli` 59 kalem ·
+₺26.003,90 → ₺13,19'un kanalın kendi belgesindeki karşılığı.
+
+⛔ **HTTP 500 VEREN DÖRT TÜR:** `Stoppage` · `CreditNote` ·
+`CommissionInvoice` · `FinancialItem` (4/13). TY tarafı — bizim
+parametremiz değil (aynı çağrı yavaş koşulunca `Stoppage` 200 döndü).
+
+**⑧ GEÇMİŞ SINIRI — YAZILDI:** API sipariş **90 gün**, hakediş **6 ay**.
+Defterin en eski hareketi **2025-08**. ⛔ **ARADAKİ DÖNEM API'DEN KAPANMAZ**
+— elle giriş ya da dosya dökümü. Bu bir SINIR, çözülecek sorun değil.
+
+⏭ **KARAR BEKLEYEN:** anahtarın Vercel'e taşınması (risk raporu verildi) ·
+iki mod (geçmişi doldur / yeni sipariş al) · sıklık.
+
+### ⚠ −21 VAKASI — ÖLÇÜLDÜ, DÜZELTİLMEDİ (26.08)
+
+`11467475277` · 01.08 · **elle girilmiş** (`importBatch` boş) ·
+tek kalem `8720689013949` × 1 @ **1.812,00** · API/fatura **1.833,00**.
+Kâr hesaplanmış: NET-1 `280,11` · NET-2 `230,91`.
+⛔ **DÜZELTİLMEDİ:** tutar bir PARA alanı ve metadata istisnası kapsamına
+girmiyor; düzeltme satış düzenleme ekranından yapılır ve kârı tazeler.
+⏭ Halil ekrandan düzeltir; ya da açık talimat verirse izli betikle.
+
+### ✅ TEST ARTIĞI TARAMASI — NEREDEYSE TEMİZ (26.08)
+
+| Kova | Sonuç |
+|---|---|
+| (a) sipariş kodu şüpheli | **1** — `sfsfsf`, **zaten İPTALLİ** |
+| (b) sipariş numarasız satış | **2** (biri iptalli, biri aktif 03.08) |
+| (c) tutarı sıfır/negatif | **0** |
+| (d) kalemsiz satış | **0** |
+| (e) ürün adı şüpheli | **0** |
+| (f) alım/gider açıklaması | **0** |
+
+⚠ **İLK DESENİM GÜRÜLTÜ ÜRETTİ ve düzeltildi:** `111` gerçek sipariş
+numaralarını (`11453897111`), `zzz` LEGO **DREAMZzz**'i, `xxx` **XXXL**'i
+yakaladı — 11 gerçek ürün "şüpheli" işaretlendi. Rakam ve tek harf
+tekrarları elendi. _Bir desen 11 gerçek kaydı işaretliyorsa o desen ölçüt
+değil gürültüdür._
+⚠ **HÜKÜM YOK** — bunlar aday; işaret Halil'in.
+
 ### ⏭ SIRADAKİ — VE ONAY KAPISI
 
 **(a) kovası içe aktarmanın kuru koşumunu doğuruyor.** Yazma ancak Halil'in
@@ -192,7 +258,17 @@ sayıyla desteklenerek öyle yazılacak.
 ✅ **MEKANİZMA ADLANDIRILDI VE TELAFİ YOLU ÖLÇÜLDÜ** — bkz. yukarıdaki
 "ENUMERASYON — MEKANİZMA" bölümü. Kuru koşum artık kurulabilir.
 
-### 🚦 A3-③ KURU KOŞUM — RAPOR ÜRETİLDİ, **ONAY BEKLİYOR** (26.08.2026)
+### ✅ A3-③ İÇE AKTARMA — KOŞTU (26.08.2026)
+
+**425 satış yazıldı · sayım tuttu (145→570) · ikinci koşum 0.**
+Parti `ty-20260826111346` · `AuditLog: TY_SIPARIS_ICE_AKTARMA`.
+⛔ **13 sipariş YAZILAMADI** (₺52.842) — 3 barkod kataloğumuzda yok.
+⚠ Yazımdan önce üç ölçüm üç hatayı yakaladı: `price` satır toplamı ·
+komisyon alanı `commission` · `orderDate` 3 saat kaymış.
+
+<details><summary>kuru koşum raporu (26.08, arşiv)</summary>
+
+### 🚦 A3-③ KURU KOŞUM — RAPOR (26.08.2026)
 
 `npm run canli:ty-kuru-kosum -- --gun=60` · **salt okuma, tek satır yazılmadı**
 (`api:dogrula` bunu koşulur hâlde tutuyor: yalnız GET · prisma yazma çağrısı yok).
@@ -236,8 +312,9 @@ durmalı.** Rapor silinir, kayıt kalır.
   bir karar.
 - Geri alma **silme değil işaretleme** (`iptalTarihi`).
 
-⛔ **ONAY KAPISI AÇIK — HİÇBİR YAZIM YAPILMADI.** Onay gelirse yazım günü
-kural aynı: önce/sonra sayım · `AuditLog` · ikinci koşum **0** yazmalı.
+_(Onay verildi ve yazım koştu — yukarıdaki özete bak.)_
+
+</details>
 
 ---
 
