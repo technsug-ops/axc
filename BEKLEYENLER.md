@@ -388,6 +388,59 @@ satışlarda FIFO'dan tükenmiş. **"Mal kabul bekliyor" DEĞİL** (yalnız 4 ka
 tablosunda tek kayıt var; 7'si `supplierId` BOŞ olan alımların **serbest
 metin** adı. Gerçek bulgu: **22 alımın tedarikçi bağı yok** (14'ü adsız).
 
+### 📗 ALIŞ EXCEL'İ ÖLÇÜLDÜ (26.08.2026) — AÇIĞIN **%92'Sİ KAPANIYOR**
+
+`Downloads/alislar (5).xlsx` · sayfa `ALIŞLAR` · **salt okuma, hiçbir şey
+yazılmadı.** Dosya depoya GİRMEDİ.
+
+**⓪ BEYAN DOĞRULANDI — üç sapma var, üçü de küçük:**
+
+| | beyan | ölçülen |
+|---|---|---|
+| satır | 2280 | **2283** |
+| barkod dolu | 2128 | **2128** ✓ |
+| barkod boş | 152 | **155** |
+| tekil barkod | 771 | **771** ✓ |
+| toplam tutar | 11.913.849 | **11.913.849,46** ✓ |
+| tarih aralığı | 25.10.25→25.08.26 | ✓ |
+
+⚠ **3 satır fazla ve 3 satırın TARİHİ OKUNAMIYOR** — aynı 3 satır olması
+muhtemel. ⚠ Ayrıca komut metni `alislar (4).xlsx` diyor, yol `(5)` veriyor;
+**ikisi farklı dosya** (md5 ayrı). Verilen yol kullanıldı.
+
+**① EŞLEŞME:** 771 tekil barkodun **698'i bulundu** (%90,5) · 73 bulunamadı ·
+belirsiz 0. Alan kırılımı: `barcode` **697** · `channelSku` **1**.
+
+> **⭐ ASIL CEVAP:** K55'in 128 karşılıksız varyantının **111'i dosyada var**
+> (109 adedi TAM karşılıyor, 2 kısmi). **295/335 adet · ₺1.072.764 · %92,7.**
+
+**② ÇAKIŞMA:** `supplierOrderNo` **işe yarar bir kimlik anahtarı**:
+sistemdeki 385 alımın 355'inde dolu, **314'ü dosyayla eşleşiyor**.
+İkinci aday (varyant+gün+adet) **321 satır** buluyor — iki yöntem tutarlı.
+Yani **~2.000 satır YENİ**.
+
+⛔ **`Envantere İşlendimi` KOLONU TAMAMEN BOŞ (2283/2283).** Halil'in elle
+takibi bu dosyada hiç doldurulmamış. Bu yüzden _"dosya işlenmedi der,
+sistemde var: 321"_ satırı bir ÇELİŞKİ DEĞİL — boş kolonun artefaktı.
+**İki taraf ayrı sayıldı ve biri ötekinin yerine geçmedi.**
+
+**③ TEMİZLİK:**
+· **155 barkodsuz satır** — ürün adıyla tam eşleşen yalnız **5**.
+· **Barkod uzunluğu:** 13 hane 671 · 12 hane 86 · 11 hane 11 · 14 hane 1 ·
+  **8 hane 2 → değerleri `İSTANBUL` ve `iSTANBUL`** (çöp veri; üstelik tam
+  I/i tuzağının kendisi).
+· ⚠ **Kısa barkodlar SIFIR KAYBI DEĞİL:** 99 kısa koddan başa `0` eklenince
+  sistemde bulunan yalnız **2**. Gerisi farklı standart (UPC-A 12 hane).
+· **Mağaza → tedarikçi:** 8 ad eşleşti, **5 yeni aday**: `BEYMEN` · `A101` ·
+  `HUAWEİ` · `Ahmet Pekel` · `(boş)` (4 satır).
+
+**④ FIFO ETKİSİ:** 329 karşılıksız kalemin **285'i bağ kurar** —
+290 adet · **₺1.065.534 · açığın %92,1'i.**
+✅ **SIRA HATASI 0** — hiçbir alım satıştan sonraya düşmüyor.
+⛔ Kalan **44 kalem / 45 adet** dosyada da yok.
+
+⏭ **SIRADAKİ: kuru koşum, sonra onay.**
+
 ⏭ **Seçenekler ÖLÇÜLECEK, bugün açılmaz:** tedarikçi belgelerinden toplu
 giriş · Amazon/toptancı dökümü · geriye dönük toplu alım kaydı.
 
