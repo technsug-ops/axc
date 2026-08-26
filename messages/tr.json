@@ -3377,5 +3377,9 @@
     "yeniGelen": "{adet} yeni ekran eklendi ve varsayılan yerine kondu: {adlar}. İstediğiniz yere taşıyabilirsiniz.",
     "taninmayan": "Kayıtta artık var olmayan {adet} başlık bulundu ve yok sayıldı. Kaydettiğinizde temizlenir.",
     "menuNeZaman": "Oklarla sırayı değiştirdiğinizde SOL MENÜ hemen değişmez — kaydettikten sonra değişir. Taşıdığınız satır burada mavi çerçeveyle işaretlenir. En üstteki satırın yukarı, en alttakinin aşağı oku kapalıdır: gidecek yer yok."
+  },
+  "iceAktarma": {
+    "stokAyrismasi": "İçe aktarılan {adet} satışın stok düşümü yapılmadı.",
+    "stokAyrismasiNiye": "Stok bağı ayrı karar bekliyor — bu satışlar defterde var, stoktan mal düşmedi."
   }
 }

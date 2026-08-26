@@ -4,6 +4,7 @@ import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 
+import { IceAktarmaSerhi } from "@/components/ice-aktarma-serhi";
 import { ExcelIndir } from "@/components/excel-indir";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
@@ -187,6 +188,14 @@ export default async function EnvanterDegeriSayfasi({
         enGec={enGecGun(an)}
         tasinanlar={{ q: parametreler.q ?? "", sira: parametreler.sira ?? "" }}
       />
+
+      {/*
+        ⚠ İÇE AKTARMA ŞERHİ — A3-③, 26.08.2026.
+        İçe aktarılan satışlar stok DÜŞÜRMEDİ (bilinçli karar). Bu ekran
+        defter DEĞERİNİ gösteriyor; ayrışma yazılmasa rakam olduğundan YÜKSEK
+        görünür ve sebebi görünmez. Sayı CANLI — bağ kurulunca söner.
+      */}
+      <IceAktarmaSerhi />
 
       {/*
         ⚠ GEÇERSİZ/GELECEK TARİH SESSİZ GEÇMEZ. Sessizce bugüne düşseydi

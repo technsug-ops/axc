@@ -169,10 +169,88 @@ const YAZMA_IZI = [
   ".deleteMany(",
 ];
 
+/**
+ * ═══ YAZMA İZİ PRİSMA ÇAĞRISINA BAĞLI — ÇIPLAK FİİLE DEĞİL ═══════════════
+ *
+ * ⚠ 26.08.2026 YANLIŞ POZİTİF: kontrol `.delete(` arıyordu ve bir ölçüm
+ * betiğindeki **`Map.delete()`** çağrısını prisma silmesi sandı
+ * (`siparisler.delete(no)` — aday listesinden çakışanı düşürüyor).
+ *
+ * Ayırt edici şey ZİNCİR DERİNLİĞİ: prisma yazması her zaman
+ * `<istemci>.<model>.<fiil>(` yani İKİ noktadır; `Map`/`Set` çağrıları
+ * tek nokta. Ölçüt buna bağlandı.
+ *
+ * ⛔ VE SINIRI YAZILIYOR: `const t = prisma.sale; t.delete(...)` biçiminde
+ * bir kaçış hâlâ mümkün. Bu bir AĞ, duvar değil — beyan listesi ve
+ * `ice-aktarma:dogrula` asıl güvenceyi taşıyor.
+ */
+function prismaYazmalari(govde: string): string[] {
+  return YAZMA_IZI.filter((fiil) =>
+    new RegExp("[A-Za-z0-9_$]+\\.[A-Za-z0-9_$]+\\." + fiil.slice(1, -1) + "\\(").test(govde),
+  );
+}
+
+/**
+ * ═══ YAZAN BETİK ADIYLA BEYAN EDİLİR — SUSTURULMAZ ═══════════════════════
+ *
+ * ⚠ 26.08.2026'da bu kontrol KIRMIZI yandı ve **kod doğruydu**: A3-③ içe
+ * aktarması onaylı bir YAZICI. Bekçinin kırmızısı burada _"kod yanlış"_
+ * değil _"ölçütüm eskidi"_ diyordu — API'ye ulaşan her betiğin ölçüm
+ * betiği olduğu varsayımı, ilk yazıcı doğduğu gün düştü.
+ *
+ * ⚠ SUSTURULMADI, DARALTILDI. Kontrolü silmek ya da beklentiyi gevşetmek
+ * ölçmeyi bırakmak olurdu. Bunun yerine istisna **ADIYLA ve GEREKÇESİYLE**
+ * beyan ediliyor — `yetki-bekci.ts`teki kısıtlı rol beyanının aynısı.
+ *
+ * ⛔ LİSTEYE GİRMEK BİR MUAFİYET DEĞİL, BİR TAAHHÜTTÜR: beyan edilen betik
+ * kendi bekçisini taşımak zorunda (burada `ice-aktarma:dogrula`, 33
+ * kontrol + 13 mutasyon). Beyan, denetimsizlik demek değildir.
+ *
+ * ⚠ VE LİSTE BOŞ DEĞİLSE EKRANDA YAZAR: sessiz bir muafiyet listesi,
+ * zamanla kimsenin bakmadığı bir kapı olur.
+ */
+const YAZMASI_BEYANLI: { dosya: string; gerekce: string; bekcisi: string }[] = [
+  {
+    dosya: "canli-ty-ice-aktar.ts",
+    gerekce:
+      "A3-③ onaylı içe aktarma — Sale/SaleItem yazar. Yazım `--yaz` bayrağına kilitli, " +
+      "her kayıt importBatch+importKaynak taşır, AuditLog bırakır.",
+    bekcisi: "ice-aktarma:dogrula",
+  },
+];
+
 for (const yol of apiDosyalari) {
+  const dosyaAdi = yol.split(new RegExp("[\\\\/]")).pop() ?? yol;
+  const beyan = YAZMASI_BEYANLI.find((b) => b.dosya === dosyaAdi);
   const y = yorumsuzla(readFileSync(yol, "utf8"));
-  const bulunanlar = YAZMA_IZI.filter((d) => y.includes(d));
+  const bulunanlar = prismaYazmalari(y);
+  if (beyan) {
+    /**
+     * ⚠ BEYAN, BEKÇİSİ OLMADAN GEÇMEZ. Beyan edilen betiğin kendi
+     * doğrulaması `package.json`da KAYITLI olmalı — yoksa liste, denetimi
+     * kaldırmanın kolay yoluna dönerdi.
+     */
+    const komutlar = JSON.parse(readFileSync("package.json", "utf8")) as {
+      scripts: Record<string, string>;
+    };
+    kontrol(
+      `  ${yol} — YAZICI olarak beyanlı, bekçisi kayıtlı (${beyan.bekcisi})`,
+      Boolean(komutlar.scripts[beyan.bekcisi]),
+      beyan.bekcisi,
+    );
+    continue;
+  }
   kontrol(`  ${yol} — prisma yazma çağrısı yok`, bulunanlar.length === 0, bulunanlar);
+}
+
+if (YAZMASI_BEYANLI.length > 0) {
+  console.log(`
+  ⚠ YAZMASI BEYANLI ${YAZMASI_BEYANLI.length} BETİK — muafiyet değil, taahhüt:`);
+  for (const b of YAZMASI_BEYANLI) {
+    console.log(`     ${b.dosya}`);
+    console.log(`       gerekçe : ${b.gerekce}`);
+    console.log(`       bekçisi : npm run ${b.bekcisi}`);
+  }
 }
 
 // --- 3) ANAHTAR SIZMAZ ------------------------------------------------------
@@ -212,7 +290,7 @@ kontrol("beyanlı uç bulundu", beyanliUclar.length > 0, beyanliUclar);
 
 for (const yol of beyanliUclar) {
   const y = yorumsuzla(readFileSync(yol, "utf8"));
-  const bulunanlar = YAZMA_IZI.filter((d) => y.includes(d));
+  const bulunanlar = prismaYazmalari(y);
   kontrol(`  ${yol} — yazma çağrısı yok`, bulunanlar.length === 0, bulunanlar);
   /**
    * ⚠ VE KORUMASIZ AÇIK BIRAKILMAZ: sır kontrolü olmadan uç yayına girmez.

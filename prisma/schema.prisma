@@ -1160,6 +1160,33 @@ model Sale {
   profitStatus   ProfitStatus?
   calculatedAt   DateTime?
 
+  /// ── İÇE AKTARMA İZİ (A3-③, 26.08.2026) ────────────────────────────────
+  ///
+  /// TOPLU YAZIMIN KİMLİĞİ. Bir içe aktarma koşumunun ürettiği bütün
+  /// satırlar aynı değeri taşır; geri alma bu alanla yapılır.
+  ///
+  /// ⚠ GERİ ALMA SİLME DEĞİL İŞARETLEMEDİR: parti `iptalTarihi` ile
+  /// işaretlenir. Silme, `SaleItem` Cascade + `StockMovement` SetNull
+  /// yüzünden stok hareketlerini sahipsiz bırakırdı (bkz. anayasa →
+  /// "silme kararı: ilke ihlali değil, veri bozan işlem").
+  ///
+  /// ⚠ ELLE GİRİLEN SATIŞTA NULL KALIR — ve bu ayrımın kendisi bilgidir:
+  /// "bu satırı insan mı yazdı, içe aktarma mı" sorusunun cevabı.
+  importBatch String?
+
+  /// SATIRIN NEREDEN GELDİĞİ — 'enumerasyon' | 'hakediş çaprazı'.
+  ///
+  /// ⚠ KAYNAK RAPORDA DEĞİL KAYITTA DURUR (kullanıcı şartı 26.08.2026).
+  /// Rapor silinir, kayıt kalır; üç ay sonra "bu satış nereden geldi"
+  /// sorusu ancak kayıttan cevaplanabilir.
+  ///
+  /// ⚠ AYRIM BOŞ BİR ETİKET DEĞİL: enumerasyon TY'nin tarih penceresi
+  /// listesinden geliyor ve o liste ölçülmüş biçimde kayıt DÜŞÜRÜYOR
+  /// (aynı sorgu iki koşumda 497 ↔ 560). "Hakediş çaprazı" ile gelen
+  /// satır, enumerasyonun kaçırdığı ve BAŞKA bir kaynaktan bilindiği
+  /// için tek tek çekilmiş satırdır — güven derecesi aynı değildir.
+  importKaynak String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1174,6 +1201,8 @@ model Sale {
   @@index([cargoCarrierId])
   /// İptal süzgeci her satış sorgusunda çalışacak — dizin şart.
   @@index([iptalTarihi])
+  /// Geri alma bu alandan tüm partiyi bulacak — dizin şart.
+  @@index([importBatch])
 }
 
 model SaleItem {

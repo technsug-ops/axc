@@ -21,6 +21,7 @@ import { SayfalamaCubugu } from "@/components/sayfalama";
 import { DURUM_ZEMINI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
 import { DurumRozeti } from "@/components/durum-rozeti";
+import { IceAktarmaSerhi } from "@/components/ice-aktarma-serhi";
 import { prisma } from "@/lib/prisma";
 import { acikPartilerToplu } from "@/lib/stok";
 import {
@@ -260,6 +261,16 @@ export default async function StokSayfasi({
       </div>
 
       <StokArama baslangic={arama} />
+
+      {/*
+        ⚠ İÇE AKTARMA ŞERHİ — A3-③, 26.08.2026.
+        İçe aktarılan satışlar stok DÜŞÜRMEDİ (bilinçli: `SALE_OUT` FIFO'dan
+        mal düşerdi ve geri alması ledger'a ters kayıt gerektirirdi). Ama
+        "bilinçli" demek "görünmez" demek değil: bu ekrana bakan biri satışı
+        defterde görüp stoğun düşmediğini fark ederse sistemi bozuk sanar.
+        Sayı CANLI — stok bağı kurulunca kendiliğinden söner.
+      */}
+      <IceAktarmaSerhi />
 
       {/* SESSİZ SÜZGEÇ YASAK: yaş süzgeci açıkken ekranda GÖRÜNÜR ve tek
           tıkla kaldırılır. Görünmeseydi kullanıcı eksik listeyi deponun

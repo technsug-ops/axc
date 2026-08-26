@@ -112,6 +112,39 @@ async function main() {
   console.log("  incelenemeyen       " + incelenemeyen);
   console.log("");
 
+  /**
+   * ═══ İÇE AKTARMA ŞERHİ — AYRI KOVA, K54'E KARIŞTIRILMAZ ═══════════════
+   *
+   * A3-③'te içe aktarılan satışlar stok hareketi üretmedi (bilinçli karar,
+   * 26.08.2026). Bu, iki defterin ayrışması DEĞİLDİR: ledger de FIFO da
+   * o satışları hiç görmedi, ikisi de aynı şeyi söylüyor.
+   *
+   * ⛔ AMA SAYILMASI ŞART. Bu sayı kovaya karıştırılsaydı K54'ün gerçek
+   * ayrışması (2 adet, bağsız `EXCHANGE_OUT`) 425'lik bir gürültünün
+   * içinde kaybolurdu — ve tersi de doğru: bu 425 "ayrışma" diye
+   * okunsaydı olmayan bir arıza aranırdı.
+   * _(Anayasa: "kontrol tasarımı, veri kapsamı doğrulanmadan FARK
+   * üretmez" — burada iki taraf aynı kümeyi görüyor, fark YOK; eksik olan
+   * BAĞ.)_
+   */
+  const iceAktarmaBagsiz = await prisma.sale.count({
+    where: {
+      importBatch: { not: null },
+      /** ⚠ İPTALLİ SAYILMAZ — ekrandaki şerhle AYNI küme (`SERH_KAPSAMI`). */
+      iptalTarihi: null,
+      items: { none: { stockMovements: { some: {} } } },
+    },
+  });
+  if (iceAktarmaBagsiz > 0) {
+    console.log("  ── AYRI KOVA — İÇE AKTARMA ŞERHİ");
+    console.log("     stok bağı kurulmamış içe aktarma satışı  " + iceAktarmaBagsiz);
+    console.log("     ⚠ BU BİR AYRIŞMA DEĞİL: iki defter de o satışları hiç");
+    console.log("       görmedi, ikisi de aynı şeyi söylüyor. Eksik olan BAĞ.");
+    console.log("     ⚠ Yukarıdaki SAPAN sayısına DAHİL DEĞİL — karıştırılsaydı");
+    console.log("       K54'ün gerçek ayrışması bu sayının içinde kaybolurdu.");
+    console.log("");
+  }
+
   if (sapan.length === 0) {
     console.log("  ✓ İki defter her varyantta birebir tutuyor.");
     console.log("");

@@ -1,483 +1,321 @@
+import { readFileSync } from "node:fs";
+
+import { birimFiyatCoz, iptalAniCoz } from "./canli-ty-ice-aktar";
+
 /**
  * ============================================================================
- *  İÇE AKTARMA DOĞRULAYICI — SINAMA
+ *  İÇE AKTARMA BEKÇİSİ — A3-③
  * ----------------------------------------------------------------------------
- *  Çalıştırma:  npm run ice-aktarma:dogrula
+ *  Üç ölçülmüş tuzağı koşulur hâlde tutuyor. Üçü de canlı ölçümle
+ *  yakalandı, hiçbiri koddan okunarak bulunmadı:
  *
- *  Veritabanına GİTMEZ. Bu modülün tek vaadi şu: "hata varsa HİÇBİR ŞEY
- *  yazılmaz". Aşağıdaki 6. bölüm bunu doğrudan kanıtlar — 3 kusursuz satırın
- *  yanına 1 hatalı satır konur ve planın TAMAMEN boşaldığı gösterilir.
+ *    ① `price` SATIR toplamıdır — birim sanılırsa çok adetli kalem iki
+ *       katı fiyatla girer (11/11 ölçüldü)
+ *    ② komisyon alanı `commission`; `commissionRate` HİÇ YOK (0/564)
+ *    ③ `orderDate` 3 saat kaymış — ham hâli 20 siparişi yanlış güne atar
+ *       (defterle göz göze: ham 89/109, kaydırılmış 109/109)
+ *
+ *  ⚠ SAF KURAL + KAYNAK DESENİ BİRLİKTE: saf fonksiyon doğru olabilir ama
+ *  çağrılmıyorsa hiçbir şey ifade etmez. Kaynak kontrolleri KULLANIM
+ *  BLOĞUNA daraltılmış hâlde arar — dosyanın tamamında değil.
  * ============================================================================
  */
 
-import {
-  enYakin,
-  iceAktarmaDogrula,
-  sayiCoz,
-  tarihCoz,
-  type HamSatir,
-  type HamVeri,
-  type Kip,
-  type Referans,
-} from "../src/lib/ice-aktarma/dogrula";
+let hata = 0;
+let gecen = 0;
 
-let basarisiz = 0;
-let calisan = 0;
-const BOLUM_SAYISI = 7;
-const kosanBolumler: string[] = [];
-
-function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
-  calisan++;
-  if (kosul) {
-    console.log(`  OK    ${ad}`);
+function kontrol(ad: string, sonuc: boolean) {
+  if (sonuc) {
+    gecen++;
+    console.log(`  ✓ ${ad}`);
   } else {
-    basarisiz++;
-    console.log(`  HATA  ${ad}`);
-    if (ayrinti !== undefined) console.log("        ", ayrinti);
+    hata++;
+    console.log(`  ✗ ${ad}`);
   }
 }
 
-/** Tekrarlanabilir kimlik — testte rastgelelik olmaz. */
-function kimlikUreticiKur() {
-  let sayac = 0;
-  return () => `id-${++sayac}`;
+/**
+ * TEK OKUMA KAPISI — satır sonu normalleştirilir.
+ * ⚠ `prisma format` şemayı CRLF'e çevirince bir bekçi sessizce boş bulmuştu;
+ * o dersin bu dosyadaki karşılığı.
+ */
+function oku(yol: string): string {
+  return readFileSync(yol, "utf8").replace(/\r\n/g, "\n").replace(/^﻿/, "");
 }
 
-function satir(satirNo: number, hucreler: Record<string, string>): HamSatir {
-  return { satirNo, hucreler };
+/**
+ * YORUMLARI SÖK — "dokunmuyor" iddiası YORUMDA da geçiyor.
+ *
+ * ⚠ BU BİR MUTASYON BULGUSUNUN ÇARESİ. İlk sürüm `StockMovement`
+ * üretilmediğini `stockMovement:` + `{ create` deseniyle arıyordu ve
+ * mutasyon **ÇOĞUL** yazınca (`stockMovements: { create: [] }`) bekçi
+ * YEŞİL kaldı. Deseni genişletmek de yetmezdi: dosyanın başlığı zaten
+ * "StockMovement ÜRETİLMEZ" diye YAZIYOR, yani ham metinde kelime her
+ * hâlükârda var. Doğru ölçüt, KODDA geçip geçmediği.
+ */
+function yorumsuz(metin: string): string {
+  return metin
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(new RegExp("(^|[^:])//[^" + String.fromCharCode(10) + "]*", "g"), "$1 ");
 }
 
-function veriKur(parcalar: Partial<HamVeri>): HamVeri {
-  return {
-    urunler: parcalar.urunler ?? [],
-    acilisStogu: parcalar.acilisStogu ?? [],
-    kanalSku: parcalar.kanalSku ?? [],
-  };
+
+/** Kullanım bloğunu kes — deseni DOSYADA değil o blokta ara. */
+function blok(metin: string, baslangic: string, uzunluk: number): string {
+  const i = metin.indexOf(baslangic);
+  if (i < 0) return "";
+  return metin.slice(i, i + uzunluk);
 }
 
-const BUGUN = new Date(Date.UTC(2026, 7, 10));
+console.log("\nİÇE AKTARMA BEKÇİSİ — A3-③\n");
 
-function referansKur(ek?: Partial<Referans>): Referans {
-  return {
-    kategoriler: [
-      { id: "kat-genel", ad: "Genel" },
-      { id: "kat-elektronik", ad: "Elektronik" },
-    ],
-    raflar: [
-      { id: "raf-a01", kod: "A-01" },
-      { id: "raf-a02", kod: "A-02" },
-    ],
-    kanalHesaplari: [
-      { id: "hes-ty", etiket: "Trendyol — TR Ana Mağaza" },
-      { id: "hes-hb", etiket: "Hepsiburada — TR Mağaza" },
-    ],
-    mevcutVaryantlar: [],
-    mevcutKanalSkulari: [],
-    bugun: BUGUN,
-    ...ek,
-  };
-}
+// ═══ ① SAF KURAL: birim fiyat ══════════════════════════════════════════════
+console.log("① birimFiyatCoz — `price` satır toplamıdır");
+/**
+ * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: adet 1 seçilseydi
+ * bölme yapılsa da yapılmasa da aynı sonuç çıkardı ve mutasyon YEŞİL
+ * kalırdı. Adet 2 ve 3, bölmeyi kaldıran her mutasyonu kırmızıya çevirir.
+ */
+kontrol("adet 2 → satır toplamı ikiye bölünür", birimFiyatCoz(1623, 2) === 811.5);
+kontrol("adet 3 → üçe bölünür", birimFiyatCoz(2400, 3) === 800);
+kontrol("adet 1 → değişmez", birimFiyatCoz(1885, 1) === 1885);
+kontrol("gerçek canlı satır 7165/2", birimFiyatCoz(7165, 2) === 3582.5);
+kontrol("adet 0 → null (sıfıra bölünmez)", birimFiyatCoz(1000, 0) === null);
+kontrol("adet negatif → null", birimFiyatCoz(1000, -1) === null);
+kontrol("NaN → null", birimFiyatCoz(Number.NaN, 2) === null);
 
-function calistir(veri: HamVeri, kip: Kip = "YALNIZ_YENI", ek?: Partial<Referans>) {
-  return iceAktarmaDogrula(veri, referansKur(ek), kip, kimlikUreticiKur());
-}
+// ═══ ② SAF KURAL: iptal anı ════════════════════════════════════════════════
+console.log("\n② iptalAniCoz — iptal anı kaynağın KENDİ geçmişinden");
+const gecmis = [
+  { createdDate: 1787600277514, status: "Awaiting" },
+  { createdDate: 1787600282116, status: "Created" },
+  { createdDate: 1787600387870, status: "Invoiced" },
+  { createdDate: 1787600392439, status: "Cancelled" },
+];
+kontrol(
+  "Cancelled satırının anı döner",
+  iptalAniCoz(gecmis)?.getTime() === 1787600392439,
+);
+/**
+ * ⚠ AYRIM: "Cancelled" satırı sondan bir önceki olsaydı, son satırı alan
+ * bir mutasyon yeşil kalırdı. Bu örnek statüyü ORTAYA koyuyor.
+ */
+kontrol(
+  "sondaki satır Cancelled DEĞİLSE de doğru anı bulur",
+  iptalAniCoz([
+    { createdDate: 100, status: "Created" },
+    { createdDate: 200, status: "Cancelled" },
+    { createdDate: 300, status: "Delivered" },
+  ])?.getTime() === 200,
+);
+kontrol(
+  "iki kez iptal → EN SONUNCUSU",
+  iptalAniCoz([
+    { createdDate: 100, status: "Cancelled" },
+    { createdDate: 500, status: "Cancelled" },
+  ])?.getTime() === 500,
+);
+kontrol("iptal yoksa null", iptalAniCoz(gecmis.slice(0, 3)) === null);
+kontrol("geçmiş yoksa null — VEKİL TARİH ÜRETİLMEZ", iptalAniCoz(null) === null);
+kontrol("geçmiş dizi değilse null", iptalAniCoz(undefined) === null);
 
-/** Belirli kodda hata var mı? */
-function hataVar(
-  sonuc: ReturnType<typeof calistir>,
-  kod: string,
-  alan?: string,
-) {
-  return sonuc.hatalar.some((h) => h.kod === kod && (!alan || h.alan === alan));
-}
+// ═══ ③ KAYNAK: kural gerçekten ÇAĞRILIYOR mu ══════════════════════════════
+console.log("\n③ KAYNAK — kurallar yazma yolunda FİİLEN kullanılıyor mu");
+const kaynak = oku("scripts/canli-ty-ice-aktar.ts");
 
-const URUN_TAM = satir(2, {
-  urunAdi: "Bluetooth Hoparlör",
-  marka: "JBL",
-  varyantAdi: "",
-  sku: "HOP-001",
-  firmaSku: "FRM-1001",
-  barkod: "8690000000011",
-  kategori: "Genel",
-  desi: "3,5",
-  raf: "A-01",
-});
+/**
+ * ⚠ DESEN SAYILDI: `birimFiyatCoz` dosyada ÜÇ yerde geçiyor — tanım
+ * (`export function`), bu bekçinin import ettiği ad, ve gerçek çağrı.
+ * Bu yüzden işaret ÇAĞRI YERİNE bağlandı: kalem üretim bloğunun içinde,
+ * `l.price` ile `l.quantity` birlikte geçen çağrı.
+ */
+const kalemBloku = blok(kaynak, "const kalemler: Kalem[] = lines.flatMap", 900);
+kontrol("kalem üretim bloğu bulundu", kalemBloku.length > 0);
+kontrol(
+  "birim fiyat, satır toplamı VE adetle birlikte çözülüyor",
+  /birimFiyatCoz\(\s*Number\(l\.price[^)]*\)[^,]*,\s*adet\s*\)/.test(kalemBloku),
+);
+kontrol(
+  "ham `l.price` doğrudan birimFiyat'a yazılmıyor",
+  !/birimFiyat:\s*(kurus\()?Number\(l\.price/.test(kalemBloku),
+);
+/**
+ * ⚠ ÖLÇÜLMÜŞ ALAN ADI: `commissionRate` API'de 0/564 dolu, `commission`
+ * 564/564. İlk sürüm yanlış adı okuyordu ve **sessizce null yazacaktı**.
+ */
+kontrol(
+  "komisyon `l.commission`dan okunuyor",
+  /komisyon:\s*l\.commission\s*!=/.test(kalemBloku),
+);
+kontrol(
+  "API'de var olmayan `l.commissionRate` okunmuyor",
+  !/l\.commissionRate/.test(kalemBloku),
+);
+kontrol("KDV `l.vatRate`ten okunuyor", /kdv:\s*l\.vatRate\s*!=/.test(kalemBloku));
 
-// ===========================================================================
-console.log("\n1) BİÇİM ÇÖZÜCÜLERİ");
-// ===========================================================================
-{
-  kontrol('"12.500,75" -> 12500.75', sayiCoz("12.500,75") === 12500.75);
-  kontrol('"12500.75" -> 12500.75', sayiCoz("12500.75") === 12500.75);
-  kontrol('"1200" -> 1200', sayiCoz("1200") === 1200);
-  kontrol('"" -> null', sayiCoz("") === null);
-  kontrol('"abc" -> NaN', Number.isNaN(sayiCoz("abc")));
+/**
+ * ⚠ SAAT KAYMASI — VE İŞARET SABİTİN ADINA DEĞİL KULLANIMINA BAĞLI.
+ * `ORDERDATE_KAYMA_MS` dosyada tanım + yorum + çağrı olarak geçiyor;
+ * yalnız adını aramak, çıkarmayı kaldıran bir mutasyonu yakalamazdı.
+ */
+const kaymaBloku = blok(kaynak, "const ham = Number(p.orderDate)", 260);
+kontrol("orderDate okuma bloğu bulundu", kaymaBloku.length > 0);
+kontrol(
+  "orderDate'ten kayma ÇIKARILIYOR",
+  /const\s+duzeltilmis\s*=\s*ham\s*-\s*ORDERDATE_KAYMA_MS/.test(kaymaBloku),
+);
+kontrol(
+  "pencere süzgeci DÜZELTİLMİŞ değeri kullanıyor",
+  /duzeltilmis\s*<\s*bas\s*\|\|\s*duzeltilmis\s*>\s*son/.test(kaymaBloku),
+);
+kontrol(
+  "kayma tam 3 saat",
+  /const ORDERDATE_KAYMA_MS = 3 \* 3600_000;/.test(kaynak),
+);
+/**
+ * ⚠ `soldAt` DÜZELTİLMİŞ ANDAN TÜRETİLİYOR — ham `orderDate`ten değil.
+ * Süzgeç düzeltilmiş, `soldAt` ham kalsaydı sipariş doğru pencereye
+ * girer ama YANLIŞ GÜNE yazılırdı; iki kontrol ayrı ayrı gerekiyor.
+ */
+const soldAtBloku = blok(kaynak, "adaylar.set(no, {", 260);
+kontrol(
+  "soldAt DÜZELTİLMİŞ andan türetiliyor",
+  /soldAt:\s*isGunuUtc\(duzeltilmis\)/.test(soldAtBloku),
+);
 
-  const noktali = tarihCoz("01.03.2026");
+/**
+ * ⚠ ÇAKIŞMA KÜRESEL ARANIR — `Sale.code` şemada GLOBAL `@unique`.
+ * Kanal süzgeci konsaydı başka kanaldaki aynı kod elenmez, `INSERT`
+ * benzersizlik kısıtına çarpardı.
+ */
+const cakismaBloku = blok(kaynak, "const mevcutKodlar = new Set(", 420);
+kontrol("çakışma bloğu bulundu", cakismaBloku.length > 0);
+kontrol(
+  "çakışma sorgusu KANALLA SÜZÜLMÜYOR (kod global unique)",
+  !/channelAccountId/.test(cakismaBloku),
+);
+kontrol(
+  "çakışan aday listeden DÜŞÜRÜLÜYOR",
+  /for \(const n of cakisanlar\) adaylar\.delete\(n\)/.test(kaynak),
+);
+
+/**
+ * ⚠ "DOKUNMUYOR" İDDİASI DA BİR DAVRANIŞTIR — ve tersten sınanır.
+ * Rapor `StockMovement` üretilmediğini beyan ediyor ve beyan, onu İHLAL
+ * eden bir mutasyonla sınanmadıkça korumasızdır.
+ *
+ * ⚠ ÖLÇÜT KELİME DEĞİL KOD ŞEKLİ — ve bu iki mutasyon turunun sonucu:
+ *   1. tur: `stockMovement:` + `{ create` arandı → ÇOĞUL yazan mutasyon
+ *      (`stockMovements: {`) YEŞİL geçti.
+ *   2. tur: kelimenin kendisi arandı → temiz dosya KIRMIZI yandı, çünkü
+ *      kelime iki DİZEDE geçiyor (AuditLog notu + ekran satırı) ve ikisi
+ *      de doğru davranışın BEYANI.
+ * Doğrusu ikisi de değil: stok defterine yazmanın iki kod şekli var —
+ * ilişki anahtarı (`stockMovement(s):`) ve çağrı (`stockMovement(s).`).
+ * İkisi de adın hemen ardından `.` ya da `:` getirir; beyan metninde ise
+ * ardından BOŞLUK gelir. Ölçüt bu yüzden beyanı silmekle yeşile dönmez.
+ *
+ * ⚠ 3. TUR: ölçüt önce `.stockMovement.` diye BAŞTA NOKTA istiyordu ve
+ * `stockMovement.create(...)` (öneksiz) kaçtı. Sözcük sınırına
+ * (``) bağlanınca dördü de kırmızı yandı.
+ */
+/**
+ * ⚠ ÖLÇÜT: KODDA `stockMovement` GEÇMEZ — tekil/çoğul, çağrı/ilişki
+ * fark etmez. Bu dosya stok defterine hiç bakmıyor; adının kodda
+ * belirmesinin tek sebebi ona yazmak olurdu.
+ */
+kontrol(
+  "StockMovement ÜRETİLMİYOR — kodda adı hiç geçmiyor",
+  !new RegExp("\\" + "bstockMovements?"+"\\" + "s*[.:]", "i").test(yorumsuz(kaynak)),
+);
+kontrol(
+  "yazım `--yaz` bayrağına kilitli",
+  /const YAZ = process\.argv\.includes\("--yaz"\)/.test(kaynak) &&
+    /if \(!YAZ\) \{/.test(kaynak),
+);
+kontrol(
+  "her kayıt importBatch VE importKaynak taşıyor",
+  /importBatch: partiKimligi/.test(kaynak) && /importKaynak: a\.kaynak/.test(kaynak),
+);
+kontrol("toplu yazım AuditLog bırakıyor", /auditLog\.create/.test(kaynak));
+/**
+ * ⚠ MUAFİYETİN BEYANI DA SINANIR: sayım tutmazsa yorumlanmayacağı
+ * kullanıcının açık şartıydı; beyanın ekrana ULAŞTIĞI ayrı bir davranış.
+ */
+const sayimBloku = blok(kaynak, "const beklenen = onceToplam", 520);
+kontrol("sayım karşılaştırması bulundu", sayimBloku.length > 0);
+kontrol(
+  "tutmayan sayım YORUMLANMADAN ekrana yazılıyor",
+  /SAYIM TUTMADI/.test(sayimBloku) && /YORUMLANMIYOR/.test(sayimBloku),
+);
+
+// ═══ ④ ŞERH — STOK AYRIŞMASI GÖRÜNÜR MÜ ═══════════════════════════════════
+console.log("\n④ ŞERH — içe aktarma stok ayrışması ekranda söyleniyor mu");
+
+const serhKaynak = oku("src/components/ice-aktarma-serhi.tsx");
+const sayacKaynak = oku("src/lib/ice-aktarma-serhi.ts");
+
+/**
+ * ⚠ ÖLÇÜT BAĞA BAĞLI, `importBatch`E DEĞİL. Stok bağı kurulduğu gün o
+ * satırlar hâlâ `importBatch` taşıyacak ama artık ayrışmış olmayacaklar.
+ * Yalnız `importBatch`e bakan bir sayaç o gün de 425 derdi ve şerh
+ * SÖNMEZDİ — sönmeyen şerh okunmaz olur.
+ */
+kontrol(
+  "sayaç stok HAREKETİNİN yokluğuna bakıyor",
+  /items:\s*\{\s*none:\s*\{\s*stockMovements:\s*\{\s*some:\s*\{\}\s*\}/.test(sayacKaynak),
+);
+kontrol(
+  "sayaç yalnız içe aktarma satırlarını sayıyor",
+  /importBatch:\s*\{\s*not:\s*null\s*\}/.test(sayacKaynak),
+);
+
+/**
+ * ⚠ İKİ YÖN AYRI SINANIR — biri yazılıp öteki atlanırsa karşı yön serbest
+ * kalır. YANLIŞ SUSMA: şerh hiç çıkmaz, ayrışma görünmez. YANLIŞ YANMA:
+ * sayı sıfırken de çıkar, sönmeyen şerh rozete olan güveni harcar.
+ */
+kontrol(
+  "YANLIŞ YANMA yok — sıfırsa hiç çizilmiyor",
+  /if \(adet === 0\) return null;/.test(serhKaynak),
+);
+const metinBloku = blok(serhKaynak, "return (", 900);
+kontrol(
+  "YANLIŞ SUSMA yok — sayı ekrana BASILIYOR",
+  /t\("stokAyrismasi",\s*\{\s*adet\s*\}\)/.test(metinBloku),
+);
+kontrol(
+  "sebep de yazıyor (İlke #5 — sessiz durum yok)",
+  /t\("stokAyrismasiNiye"\)/.test(metinBloku),
+);
+
+for (const [ad, yol] of [
+  ["stok", "src/app/stok/page.tsx"],
+  ["envanter değeri", "src/app/envanter-degeri/page.tsx"],
+] as const) {
+  const e = oku(yol);
   kontrol(
-    "01.03.2026 -> 2026-03-01 UTC",
-    noktali instanceof Date && noktali.toISOString().startsWith("2026-03-01"),
-    noktali,
+    `${ad} ekranı şerhi ÇİZİYOR`,
+    /<IceAktarmaSerhi\s*\/>/.test(e) && /components\/ice-aktarma-serhi/.test(e),
   );
-  const tireli = tarihCoz("2026-03-01");
-  kontrol(
-    "2026-03-01 -> aynı gün",
-    tireli instanceof Date && tireli.toISOString().startsWith("2026-03-01"),
-  );
-  kontrol('"" -> null (bugüne düşer)', tarihCoz("") === null);
-  kontrol("31.02.2026 reddedilir", tarihCoz("31.02.2026") === undefined);
-  kontrol("bozuk biçim reddedilir", tarihCoz("mart 2026") === undefined);
-
-  kontrol(
-    '"Elektonik" -> "Elektronik" önerisi',
-    enYakin("Elektonik", ["Genel", "Elektronik"]) === "Elektronik",
-  );
-  kontrol(
-    "çok uzak ad için öneri verilmez",
-    enYakin("zzzzzzzz", ["Genel", "Elektronik"]) === null,
-  );
-  kosanBolumler.push("bicim");
 }
 
-// ===========================================================================
-console.log("\n2) TEMİZ DOSYA");
-// ===========================================================================
-{
-  const sonuc = calistir(
-    veriKur({
-      urunler: [URUN_TAM],
-      acilisStogu: [
-        satir(2, { sku: "HOP-001", adet: "10", birimMaliyet: "1200", paraBirimi: "TRY", tarih: "01.03.2026", raf: "A-01", not: "devir" }),
-      ],
-      kanalSku: [
-        satir(2, { sku: "HOP-001", kanalHesabi: "Trendyol — TR Ana Mağaza", kanalKodu: "TY-HOP-001", komisyonOrani: "18,5" }),
-      ],
-    }),
-  );
+/**
+ * ⚠ AYRI KOVA — K54'E KARIŞMAZ. Kullanıcının açık şartı. Karıştırılsaydı
+ * K54'ün 2 adetlik gerçek ayrışması 425'lik gürültüde kaybolurdu.
+ * ⚠ İşaret SAYIM BLOĞUNA daraltıldı: "ayrı kova" ifadesi yorumda da geçiyor.
+ */
+const ayrismaKaynak = oku("scripts/canli-defter-ayrismasi.ts");
+const kovaBloku = blok(ayrismaKaynak, "const iceAktarmaBagsiz = await", 900);
+kontrol("defter-ayrışması ayrı kova sayıyor", kovaBloku.length > 0);
+kontrol(
+  "ayrı kova SAPAN sayısına eklenmiyor",
+  !/sapan\.push|sapan\.length \+/.test(kovaBloku),
+);
+kontrol(
+  "ayrı kova sıfırsa hiç basılmıyor",
+  /if \(iceAktarmaBagsiz > 0\)/.test(ayrismaKaynak),
+);
 
-  kontrol("hata yok", sonuc.hatalar.length === 0, sonuc.hatalar);
-  kontrol("1 ürün", sonuc.ozet.yeniUrun === 1);
-  kontrol("1 varyant", sonuc.ozet.yeniVaryant === 1);
-  kontrol("1 açılış partisi", sonuc.ozet.acilisPartisi === 1);
-  kontrol("10 adet", sonuc.ozet.acilisAdet === 10);
-  kontrol("1 kanal SKU", sonuc.ozet.yeniKanalSku === 1);
-
-  const varyant = sonuc.plan.yeniVaryantlar[0];
-  kontrol("tek varyant VARSAYILAN işaretlenir", varyant?.varsayilan === true);
-  kontrol("raf çözüldü", varyant?.rafId === "raf-a01");
-  kontrol("kategori çözüldü", sonuc.plan.yeniUrunler[0]?.kategoriId === "kat-genel");
-  kontrol("desi 3,5 okundu", sonuc.plan.yeniUrunler[0]?.desi === 3.5);
-  kontrol("komisyon oranı 18,5", sonuc.plan.yeniKanalSkulari[0]?.komisyonOrani === 18.5);
-  kosanBolumler.push("temiz");
-}
-
-// ===========================================================================
-console.log("\n3) ÜRÜN KURALLARI");
-// ===========================================================================
-{
-  // Zorunlu alan
-  const eksik = calistir(
-    veriKur({ urunler: [satir(2, { urunAdi: "X", sku: "", firmaSku: "F-1" })] }),
-  );
-  kontrol("SKU boşsa ZORUNLU", hataVar(eksik, "ZORUNLU", "sku"));
-
-  // Dosya içi tekrar — hangi satırla çakıştığı yazar
-  const tekrar = calistir(
-    veriKur({
-      urunler: [
-        URUN_TAM,
-        satir(3, { ...URUN_TAM.hucreler, firmaSku: "FRM-9", barkod: "" }),
-      ],
-    }),
-  );
-  const tekrarHatasi = tekrar.hatalar.find((h) => h.kod === "TEKRAR_DOSYADA");
-  kontrol("dosyada tekrar eden SKU yakalanır", tekrarHatasi !== undefined);
-  kontrol("çakışılan satır numarası bildirilir", tekrarHatasi?.ek === "2", tekrarHatasi);
-
-  // Kategori bulunamadı + öneri
-  const kategoriYok = calistir(
-    veriKur({ urunler: [satir(2, { ...URUN_TAM.hucreler, kategori: "Elektonik" })] }),
-  );
-  const katHata = kategoriYok.hatalar.find((h) => h.alan === "kategori");
-  kontrol("olmayan kategori HATA verir", katHata?.kod === "BULUNAMADI");
-  kontrol('"Elektronik" önerilir', katHata?.ek === "Elektronik", katHata);
-
-  // Raf da aynı kural
-  const rafYok = calistir(
-    veriKur({ urunler: [satir(2, { ...URUN_TAM.hucreler, raf: "Z-99" })] }),
-  );
-  kontrol("olmayan raf HATA verir", hataVar(rafYok, "BULUNAMADI", "raf"));
-
-  // Kategori boş bırakılabilir (uygulamanın kendi kuralıyla tutarlı)
-  const kategorisiz = calistir(
-    veriKur({ urunler: [satir(2, { ...URUN_TAM.hucreler, kategori: "" })] }),
-  );
-  kontrol("kategori boş bırakılabilir", kategorisiz.hatalar.length === 0);
-  kontrol("kategorisiz ürün null kategoriyle planlanır", kategorisiz.plan.yeniUrunler[0]?.kategoriId === null);
-
-  // Çok varyantlı ürün — aynı ad+marka tek üründe toplanır
-  const cokVaryant = calistir(
-    veriKur({
-      urunler: [
-        satir(2, { urunAdi: "Tişört", marka: "Koton", varyantAdi: "M", sku: "T-M", firmaSku: "F-M", kategori: "Genel" }),
-        satir(3, { urunAdi: "Tişört", marka: "Koton", varyantAdi: "L", sku: "T-L", firmaSku: "F-L", kategori: "Genel" }),
-      ],
-    }),
-  );
-  kontrol("aynı ad+marka TEK ürün olur", cokVaryant.ozet.yeniUrun === 1);
-  kontrol("iki varyant oluşur", cokVaryant.ozet.yeniVaryant === 2);
-  kontrol(
-    "TAM OLARAK BİR varsayılan varyant",
-    cokVaryant.plan.yeniVaryantlar.filter((v) => v.varsayilan).length === 1,
-  );
-  kontrol("ürün çok varyantlı işaretlenir", cokVaryant.plan.yeniUrunler[0]?.cokVaryantli === true);
-  kosanBolumler.push("urun");
-}
-
-// ===========================================================================
-console.log("\n4) İKİ KİP — yalnız yeni ekle / var olanları güncelle");
-// ===========================================================================
-{
-  const mevcut = {
-    mevcutVaryantlar: [
-      { id: "var-1", urunId: "urun-1", sku: "HOP-001", firmaSku: "FRM-1001", barkod: "8690000000011" },
-    ],
-  };
-
-  const yalnizYeni = calistir(veriKur({ urunler: [URUN_TAM] }), "YALNIZ_YENI", mevcut);
-  kontrol("YALNIZ_YENI: var olan SKU reddedilir", hataVar(yalnizYeni, "ZATEN_KAYITLI", "sku"));
-
-  const guncelle = calistir(veriKur({ urunler: [URUN_TAM] }), "GUNCELLE", mevcut);
-  kontrol("GUNCELLE: hata vermez", guncelle.hatalar.length === 0, guncelle.hatalar);
-  kontrol("GUNCELLE: güncelleme sayılır", guncelle.ozet.guncellenenVaryant === 1);
-  kontrol("GUNCELLE: yeni varyant üretilmez", guncelle.ozet.yeniVaryant === 0);
-  kontrol("GUNCELLE: mevcut kimlik korunur", guncelle.plan.guncellenenVaryantlar[0]?.id === "var-1");
-
-  // Firma SKU BAŞKA varyanta aitse her kipte hata
-  const calinmisFirmaSku = calistir(
-    veriKur({ urunler: [satir(2, { ...URUN_TAM.hucreler, sku: "YENI-1", barkod: "" })] }),
-    "GUNCELLE",
-    mevcut,
-  );
-  kontrol(
-    "başkasının Firma SKU'su GUNCELLE kipinde de reddedilir",
-    hataVar(calinmisFirmaSku, "ZATEN_KAYITLI", "firmaSku"),
-  );
-  kosanBolumler.push("kip");
-}
-
-// ===========================================================================
-console.log("\n5) AÇILIŞ STOĞU — her satır AYRI parti");
-// ===========================================================================
-{
-  const partiler = calistir(
-    veriKur({
-      urunler: [URUN_TAM],
-      acilisStogu: [
-        satir(2, { sku: "HOP-001", adet: "10", birimMaliyet: "1200", paraBirimi: "TRY", tarih: "01.03.2026" }),
-        satir(3, { sku: "HOP-001", adet: "5", birimMaliyet: "1450", paraBirimi: "TRY", tarih: "20.06.2026" }),
-      ],
-    }),
-  );
-  kontrol("aynı SKU iki satır -> İKİ parti", partiler.ozet.acilisPartisi === 2);
-  kontrol("toplam adet 15", partiler.ozet.acilisAdet === 15);
-  kontrol(
-    "maliyetler ayrı korunur (FIFO'nun anlamı)",
-    partiler.plan.acilisHareketleri[0]?.birimMaliyet === 1200 &&
-      partiler.plan.acilisHareketleri[1]?.birimMaliyet === 1450,
-  );
-  kontrol(
-    "eski parti önce (tarih sırası korunur)",
-    partiler.plan.acilisHareketleri[0]!.tarih.getTime() <
-      partiler.plan.acilisHareketleri[1]!.tarih.getTime(),
-  );
-
-  // Tarih boşsa yükleme günü
-  const tarihsiz = calistir(
-    veriKur({
-      urunler: [URUN_TAM],
-      acilisStogu: [satir(2, { sku: "HOP-001", adet: "3", tarih: "" })],
-    }),
-  );
-  kontrol(
-    "tarih boşsa yükleme günü kullanılır",
-    tarihsiz.plan.acilisHareketleri[0]?.tarih.getTime() === BUGUN.getTime(),
-  );
-
-  // Maliyetsiz parti serbest (NO_COST kuralları zaten çalışıyor)
-  kontrol("maliyetsiz parti kabul edilir", tarihsiz.hatalar.length === 0);
-  kontrol("maliyetsiz partide maliyet null", tarihsiz.plan.acilisHareketleri[0]?.birimMaliyet === null);
-
-  // Maliyet var, para birimi yok
-  const parasiz = calistir(
-    veriKur({
-      urunler: [URUN_TAM],
-      acilisStogu: [satir(2, { sku: "HOP-001", adet: "3", birimMaliyet: "500", paraBirimi: "" })],
-    }),
-  );
-  kontrol("maliyet varsa para birimi ZORUNLU", hataVar(parasiz, "PARA_BIRIMI_EKSIK"));
-
-  // Tanımsız SKU
-  const skusuz = calistir(
-    veriKur({ acilisStogu: [satir(2, { sku: "YOK-1", adet: "3" })] }),
-  );
-  kontrol("ne dosyada ne sistemde olan SKU reddedilir", hataVar(skusuz, "SKU_TANIMSIZ"));
-
-  // Adet kuralları
-  const sifirAdet = calistir(
-    veriKur({ urunler: [URUN_TAM], acilisStogu: [satir(2, { sku: "HOP-001", adet: "0" })] }),
-  );
-  kontrol("adet 0 reddedilir", hataVar(sifirAdet, "POZITIF_OLMALI", "adet"));
-
-  const ondalikAdet = calistir(
-    veriKur({ urunler: [URUN_TAM], acilisStogu: [satir(2, { sku: "HOP-001", adet: "2,5" })] }),
-  );
-  kontrol("ondalık adet reddedilir", hataVar(ondalikAdet, "TAM_SAYI_OLMALI", "adet"));
-  kosanBolumler.push("acilis");
-}
-
-// ===========================================================================
-console.log("\n6) KANAL SKU — haftalık komisyon güncelleme akışı");
-// ===========================================================================
-{
-  const mevcut = {
-    mevcutVaryantlar: [
-      { id: "var-1", urunId: "urun-1", sku: "HOP-001", firmaSku: "FRM-1001", barkod: null },
-    ],
-    mevcutKanalSkulari: [{ kanalHesabiId: "hes-ty", varyantId: "var-1" }],
-  };
-
-  // TY Salı / HB Çarşamba gerçeği: yalnız bu sayfa doldurulup yüklenebilmeli.
-  const yalnizKomisyon = calistir(
-    veriKur({
-      kanalSku: [satir(2, { sku: "HOP-001", kanalHesabi: "Trendyol — TR Ana Mağaza", kanalKodu: "", komisyonOrani: "19,25" })],
-    }),
-    "GUNCELLE",
-    mevcut,
-  );
-  kontrol("ürün sayfası BOŞ olsa da dosya geçerli", yalnizKomisyon.hatalar.length === 0, yalnizKomisyon.hatalar);
-  kontrol("mevcut eşleşme GÜNCELLEME sayılır", yalnizKomisyon.ozet.guncellenenKanalSku === 1);
-  kontrol("yeni oran plana girdi", yalnizKomisyon.plan.guncellenenKanalSkulari[0]?.komisyonOrani === 19.25);
-  kontrol(
-    "kanal kodu boşsa sistem SKU'su kullanılır",
-    yalnizKomisyon.plan.guncellenenKanalSkulari[0]?.kanalKodu === "HOP-001",
-  );
-
-  const yalnizYeniKip = calistir(
-    veriKur({ kanalSku: [satir(2, { sku: "HOP-001", kanalHesabi: "Trendyol — TR Ana Mağaza" })] }),
-    "YALNIZ_YENI",
-    mevcut,
-  );
-  kontrol("YALNIZ_YENI kipinde mevcut eşleşme reddedilir", hataVar(yalnizYeniKip, "ZATEN_KAYITLI"));
-
-  // Aynı hesap+varyant iki kez
-  const ciftEsleme = calistir(
-    veriKur({
-      kanalSku: [
-        satir(2, { sku: "HOP-001", kanalHesabi: "Trendyol — TR Ana Mağaza" }),
-        satir(3, { sku: "HOP-001", kanalHesabi: "Trendyol — TR Ana Mağaza" }),
-      ],
-    }),
-    "GUNCELLE",
-    { mevcutVaryantlar: mevcut.mevcutVaryantlar },
-  );
-  kontrol("aynı hesap+varyant iki kez yazılamaz", hataVar(ciftEsleme, "TEKRAR_DOSYADA"));
-
-  // Oran aralığı
-  const oranBuyuk = calistir(
-    veriKur({ kanalSku: [satir(2, { sku: "HOP-001", kanalHesabi: "Trendyol — TR Ana Mağaza", komisyonOrani: "150" })] }),
-    "GUNCELLE",
-    { mevcutVaryantlar: mevcut.mevcutVaryantlar },
-  );
-  kontrol("%150 komisyon reddedilir", hataVar(oranBuyuk, "ARALIK_DISI"));
-
-  // Olmayan kanal hesabı
-  const hesapYok = calistir(
-    veriKur({ kanalSku: [satir(2, { sku: "HOP-001", kanalHesabi: "Trendyol — Yok Mağaza" })] }),
-    "GUNCELLE",
-    { mevcutVaryantlar: mevcut.mevcutVaryantlar },
-  );
-  kontrol("olmayan kanal hesabı reddedilir", hataVar(hesapYok, "BULUNAMADI", "kanalHesabi"));
-  kosanBolumler.push("kanalSku");
-}
-
-// ===========================================================================
-console.log("\n7) YA HEPSİ YA HİÇİ — tek hata planı tamamen boşaltır");
-// ===========================================================================
-{
-  const karisik = calistir(
-    veriKur({
-      urunler: [
-        satir(2, { urunAdi: "A", sku: "A-1", firmaSku: "FA-1", kategori: "Genel" }),
-        satir(3, { urunAdi: "B", sku: "B-1", firmaSku: "FB-1", kategori: "Genel" }),
-        satir(4, { urunAdi: "C", sku: "C-1", firmaSku: "FC-1", kategori: "Genel" }),
-        // TEK BOZUK SATIR — olmayan kategori
-        satir(5, { urunAdi: "D", sku: "D-1", firmaSku: "FD-1", kategori: "Yok Böyle" }),
-      ],
-      acilisStogu: [satir(2, { sku: "A-1", adet: "5" })],
-      kanalSku: [satir(2, { sku: "A-1", kanalHesabi: "Trendyol — TR Ana Mağaza" })],
-    }),
-  );
-
-  kontrol("hata bildirildi", karisik.hatalar.length === 1, karisik.hatalar);
-  kontrol("plan: ürün YOK", karisik.plan.yeniUrunler.length === 0);
-  kontrol("plan: varyant YOK", karisik.plan.yeniVaryantlar.length === 0);
-  kontrol("plan: açılış hareketi YOK", karisik.plan.acilisHareketleri.length === 0);
-  kontrol("plan: kanal SKU YOK", karisik.plan.yeniKanalSkulari.length === 0);
-  kontrol(
-    "özet tamamen sıfır — 3 sağlam satır bile yazılmaz",
-    karisik.ozet.yeniUrun === 0 &&
-      karisik.ozet.yeniVaryant === 0 &&
-      karisik.ozet.acilisPartisi === 0,
-    karisik.ozet,
-  );
-
-  const bos = calistir(veriKur({}));
-  kontrol("bomboş dosya reddedilir", hataVar(bos, "HIC_SATIR_YOK"));
-
-  // --- ARTÇI HATA OLMAZ ---
-  // Ürün satırındaki kategori hatası, o ürünün stok satırlarını da
-  // "SKU tanımsız" diye işaretlememeli: 1 kök neden, 1 hata.
-  const artci = calistir(
-    veriKur({
-      urunler: [satir(2, { urunAdi: "A", sku: "A-1", firmaSku: "FA-1", kategori: "Yok Böyle" })],
-      acilisStogu: [
-        satir(2, { sku: "A-1", adet: "10" }),
-        satir(3, { sku: "A-1", adet: "5" }),
-      ],
-      kanalSku: [satir(2, { sku: "A-1", kanalHesabi: "Trendyol — TR Ana Mağaza" })],
-    }),
-  );
-  kontrol(
-    "kategori hatası stok satırlarına ARTÇI hata üretmez",
-    artci.hatalar.length === 1 && artci.hatalar[0]?.alan === "kategori",
-    artci.hatalar,
-  );
-  kontrol("artçı SKU_TANIMSIZ üretilmedi", !hataVar(artci, "SKU_TANIMSIZ"));
-
-  // Gerçekten hiç bildirilmemiş SKU ise hata YİNE verilir.
-  const gercektenYok = calistir(
-    veriKur({
-      urunler: [satir(2, { urunAdi: "A", sku: "A-1", firmaSku: "FA-1", kategori: "Genel" })],
-      acilisStogu: [satir(2, { sku: "BASKA-SKU", adet: "10" })],
-    }),
-  );
-  kontrol("hiç bildirilmemiş SKU hâlâ yakalanır", hataVar(gercektenYok, "SKU_TANIMSIZ"));
-
-  kosanBolumler.push("hepsi-ya-hici");
-}
-
-// ===========================================================================
-console.log("");
-if (kosanBolumler.length !== BOLUM_SAYISI) {
-  console.log(
-    `KOŞUM YARIM KALDI — sonuç GEÇERSİZ (${kosanBolumler.length}/${BOLUM_SAYISI}: ${kosanBolumler.join(", ")})`,
-  );
-  process.exit(1);
-} else if (basarisiz === 0) {
-  console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
-  process.exit(0);
-} else {
-  console.log(`${basarisiz} KONTROL BAŞARISIZ (${calisan} kontrol içinde)`);
-  process.exit(1);
-}
+console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
+process.exit(hata === 0 ? 0 : 1);
