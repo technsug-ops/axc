@@ -935,9 +935,53 @@ parti yok.
 `11303193632` 7 adet ve **iki partiye bölünmüş** (`8sqwp1xx` × 4 +
 `3qtmm27x` × 3) — dağıtım beklendiği gibi.
 
-⏭ **AÇIK KALAN:** 2502 satış maliyet bağı bekliyor. **382'si kapatılamaz**
-(kapsam dışı), **188 varyantlık kısmı belge eksik** (kapanabilir),
-gerisi alım kaydı yok.
+### ✅ KÂR TAZELEME KOŞTU — 2757/2757 (27.08.2026)
+
+`AuditLog: SATIS_ICE_AKTARMA_KAR` · hata 0.
+
+| | önce | sonra |
+|---|---|---|
+| genel marj | %1,11 | **%12,08** |
+| maliyet bağı olanların | %11,12 | **%19,67** |
+| kapsanmayan pay | %90,06 | **%38,59** |
+| kârı hesaplanmış satış | 342 | **3099** |
+
+⛔ **RAKAM HÂLÂ BASILMIYOR** — kapsanmayan pay **%38,59**, eşik **%0,50**.
+Ekran: _"hesaplanamıyor (2502/5746 satışın maliyeti yok)"_.
+
+⚠ **VE MALİYET BAĞI OLANLARIN MARJI DA DEĞİŞTİ: %11,12 → %19,67.** Kapsam
+değişince payda değişti; **iki rakam da aynı anda hareket etti** ve bu
+beklenen bir şey — ama _"gerçek marj %11,12"_ diye kaydedilmiş bir cümle
+varsa **artık geçersiz**, geçerli olan **%19,67**.
+
+**ÜÇ KOVA:** (a) **691** _(önce 3809)_ · (b) **1441** · (c) **370**.
+(a)'daki büyük düşüş kâr tazelemenin kendisi — o satışların bağı zaten
+vardı.
+
+### 📗 BELGE EKSİK LİSTESİ — HALİL İÇİN ÇALIŞMA DOSYASI
+
+`npm run canli:belge-eksik -- --excel="…"` · **salt okuma**.
+
+**188 varyant · 700 kalem · açık fark 984 adet · ₺1.971.340**
+
+    ilk  10 varyant → %20,9      ilk  60 → %65,6
+    ilk  30 varyant → %43,8      ilk 100 → %84,0
+
+⚠ **DAĞINIK: %84'ü kapatmak 100 ayrı ürünün belgesini ister.** En büyük
+kalem `KUC-AN-260812-01` (Anker Motion Boom): alım 7, satış 21, **açık 14
+adet, ₺61.667**.
+
+📄 **Dosya: `C:/Users/yapra/Downloads/belge-eksik-varyantlar.csv`**
+_(CSV — Excel doğrudan açar; `;` ayraç + BOM, Türkçe karakterler için.)_
+
+⛔ **LİSTEYE KAPSAM DIŞI VE ALIMI HİÇ OLMAYAN VARYANT GİRMEDİ** — onlar
+belge aramakla kapanmaz. Bekçi bu üç elemeyi ayrı ayrı sınıyor; biri
+düşerse Halil bulunamayacak bir belgenin peşine giderdi.
+
+⏭ **AÇIK KALAN — 2502 satış, üç ayrı iş:**
+· **370 kapsam dışı** → ⛔ KAPANMAZ, kalıcı şerh
+· **188 varyant / ₺1,97M** → belge aranabilir _(liste hazır)_
+· **1441 alım kaydı yok** → o ürünlerin alımı hiç girilmemiş
 
 ⚠ **EKRANDA GÖRÜNÜYOR ve sebebi AYRI yazıyor** — marj şerhi iki satır:
 _"N satış maliyet bağı bekliyor"_ ile _"M satış: ALIM KAYDI YOK"_ tek cümleye

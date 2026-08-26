@@ -330,6 +330,7 @@ kontrol(
 // ═══ ⑤ SAAT KAYMASI TEK GÖVDEDEN OKUNUYOR MU ══════════════════════════════
 const KACIS_AC = "\\(";
 const KACIS_NOKTA = "\\.";
+const BS_U = "\\";
 const KACIS_KAPA = "\\)";
 
 console.log("\n⑤ SAAT KAYMASI — orderDate okuyan her betik ortak gövdeden geçiyor mu");
@@ -1295,6 +1296,74 @@ for (const yol of SALE_OUT_YAZANLAR) {
     /satisKarTazele\(/.test(g),
   );
 }
+
+
+console.log("\n⑯ BELGE EKSİK LİSTESİ — yalnız KAPANABİLİR açık");
+
+const belgeKaynak = oku("scripts/canli-belge-eksik-liste.ts");
+
+/**
+ * ⛔ BU LİSTE YALNIZ KAPANABİLİR AÇIĞI TAŞIR.
+ * Yanlış varyant girerse Halil BULUNAMAYACAK bir belgenin peşine gider —
+ * ve aramayı bırakmadığı sürece liste hiç bitmez. Üç eleme AYRI AYRI
+ * sınanıyor; biri düşerse liste sessizce kirlenir.
+ */
+kontrol(
+  "alımı HİÇ olmayan varyant listeye girmiyor ((b) kovası)",
+  /if \(ilk === undefined\) continue;/.test(belgeKaynak),
+);
+kontrol(
+  "KAPSAM DIŞI varyant listeye girmiyor ((c) kovası)",
+  /if \(k\.sale\.soldAt\.getTime\(\) < ilk\.getTime\(\)\) continue;/.test(belgeKaynak),
+);
+kontrol(
+  "ADET YETERLİ varyant listeye girmiyor (belge eksik DEĞİL)",
+  /if \(al >= sa\) continue;/.test(belgeKaynak),
+);
+/**
+ * ⚠ AÇIK FARK TÜRETİLİYOR, elle yazılmıyor — Halil kaç adetlik belge
+ * arayacağını bu sayıdan okuyacak.
+ */
+kontrol(
+  "açık fark satış − alım olarak türetiliyor",
+  /acikFark: sa - al,/.test(belgeKaynak),
+);
+/**
+ * ⚠ YOĞUNLAŞMA YAZILIYOR: "188 varyant" tek başına iş büyüklüğü
+ * söylemez; %80'in kaç üründe toplandığı söyler.
+ */
+/**
+ * ⚠ İŞARET ÇIKTI SATIRINA BAĞLI — "YOĞUNLAŞMA" kelimesi YORUMDA da
+ * geçiyor. Kelimeyi arayan ölçüt, `console.log` silinse bile yeşil
+ * kalırdı. _(Anayasa: önce deseni SAY.)_
+ */
+kontrol(
+  "yoğunlaşma EKRANA basılıyor",
+  belgeKaynak.includes("   YOĞUNLAŞMA:"),
+);
+/**
+ * ⚠ CSV BOM + NOKTALI VİRGÜL TAŞIR. İkisi de olmadan Türkçe Excel
+ * dosyayı bozuk açar ("ÜRÜN" → "ÃœRÃœN") ve sütunlar tek hücreye düşer.
+ */
+kontrol(
+  "CSV BOM ile yazılıyor (Türkçe Excel)",
+  belgeKaynak.includes("\\uFEFF"),
+);
+/**
+ * ⚠ SAYIYA BAĞLI: ayraç İKİ yerde kullanılıyor — başlık satırı ve veri
+ * satırları. Yalnız "geçiyor mu" diye sorulunca birini virgüle çeviren
+ * mutasyon ötekini buluyor ve YEŞİL kalıyordu; o hâlde başlıklar tek
+ * hücreye düşer, veriler ayrılır — ya da tersi.
+ */
+kontrol(
+  "CSV ayracı noktalı virgül — HER İKİ kullanımda",
+  (belgeKaynak.match(/\.join\(";"\)/g) ?? []).length === 2,
+);
+/** ⚠ SALT OKUMA — bu betik deftere yazmaz. */
+kontrol(
+  "liste betiği deftere YAZMIYOR",
+  !new RegExp("[A-Za-z0-9_$]+" + KACIS_NOKTA + "[A-Za-z0-9_$]+" + KACIS_NOKTA + "(create|update|upsert|delete)" + KACIS_AC, "i").test(yorumsuz(belgeKaynak)),
+);
 
 
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
