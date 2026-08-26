@@ -831,8 +831,70 @@ Bir rakamı on kat yanlış basmak, hiç basmamaktan kötüdür.
 kırmızı yandı** (kod doğruydu): gövde üçüncü sebeple büyüyünce blok
 penceresi yetmedi, "iki sebep" kontrolleri üçe çıkarıldı.
 
-⏭ **AÇIK KALAN:** 2502 satış maliyet bağı bekliyor — alım defteri o
-dönemde yetmiyor. K55'in devamı.
+### 🔬 (a) KOVASI TEŞHİSİ — HİPOTEZ ÇÜRÜDÜ, SEBEP BAŞKA (27.08.2026)
+
+⛔ **ASIL BULGU BENİM KUSURUM: satış aktarımı KÂR MOTORUNU ÇAĞIRMIYORDU.**
+
+    kârı hesaplanmamış içe aktarma satışı      5259
+      ⭐ stok hareketi VAR, kârı yok            2757   ← HESAP eksiği
+         stok hareketi YOK                     2502   ← VERİ eksiği
+
+Alım tarafındaki `canli:stok-bagi` kârı **zaten tazeliyordu**; satış
+aktarımı tazelemiyordu — **iki yol sessizce ayrışmıştı.** Ekran 2757'yi
+"bağ bekliyor" diye sayıyordu: sayı doğru, **anlamı yanlıştı.**
+✅ `--kar-tazele` eklendi ve koşuyor.
+
+✅ **BEKÇİ ARTIK BU AYRIŞMAYI YAKALIYOR:** _"`SALE_OUT` yazan her betik kâr
+tazeleme yolunu taşır"_ — dosya listesi değil DAVRANIŞ ölçütü, yarın
+üçüncü yol eklenirse de tutar. 27.08 kusurunun kendisi mutasyonla kırmızı
+yandı.
+
+**① DÖNEM — hipotez ÇÜRÜDÜ.** Beklenen "2024 + 2025 ilk yarı ağırlıklı"
+değil, **tam tersi**: 2024→57 · 2025→432 · **2026→578**. Yoğunlaşma
+**2025-10'dan SONRA** — yani alım defterinin başladığı dönemde.
+
+**② VARYANT BAZINDA:** 201 varyant · adet yetmiyor **63** · tarih sonra
+**0** · **ikisi de 137**. Sorduğun ayrımın cevabı: _"tarih sonra" tek
+başına HİÇ YOK._
+
+**③ `min(purchasedAt)` YANILTICIYDI — seyrek kuyruk:**
+
+    2024-05    1 alım ·   1 adet    ← tek kayıt, sınırı buraya çekiyordu
+    2025-08    2 alım ·   5 adet
+    2025-10   55 alım · 162 adet    ← defterin GERÇEK başlangıcı
+
+### ✅ (c) ÖLÇÜTÜ VARYANT BAZLI OLDU — EŞİKSİZ
+
+`min(purchasedAt)` **bırakıldı**; "yoğun ay" eşiği de **kullanılmadı**
+(dağılımdan türetilmemiş sayı uydurmadır).
+
+    satış < o VARYANTIN ilk alımı   → (c) KAPSAM DIŞI, kapatılamaz
+    satış ≥ ilk alım, parti yok     → (a) ADET AÇIĞI, kapatılabilir
+    varyantın hiç alımı yok         → (b) ALIM KAYDI YOK
+
+| Kova | YENİ | ESKİ | fark |
+|---|---|---|---|
+| (a) adet açığı | **2669** | 3051 | −382 |
+| (b) alım kaydı yok | 1443 | 1443 | 0 |
+| **(c) KAPSAM DIŞI** | **382** | **0** | **+382** |
+
+⭐ Eski ölçüt **382 kapatılamaz satışı kapatılabilir sanıyordu.**
+`axcali2534` artık doğru: ilk satış 2024-11, ilk alım 2026-02 → kapsam dışı.
+
+### 📗 (a) KAPANABİLİRLİK — **kalıcı DEĞİL**
+
+525 varyant · **ilk satış ayına göre neredeyse tamamı 2025-12 ve sonrası**
+(2025-12: 89 varyant · 2026-01: 92 · 2026-02: 81). 2025-11 öncesi yalnız
+**3 varyant**.
+
+> ⭐ **Eksik alımlar alış dosyasının KAPSADIĞI dönemde** (2025-10+). Yani
+> belge bulunabilir — **kalıcı bir açık değil.**
+
+⚠ **ÖLÇÜLMEYEN:** kaç varyantta *toplam alım < toplam satış* olduğu ayrıca
+ölçülmedi; "belge bulunabilir" bir DÖNEM tespiti, adet tespiti değil.
+
+⏭ **AÇIK KALAN:** 2502 satış maliyet bağı bekliyor. Bunun 382'si
+**kapatılamaz** (kapsam dışı), gerisi alım belgesi bekliyor.
 
 ⚠ **EKRANDA GÖRÜNÜYOR ve sebebi AYRI yazıyor** — marj şerhi iki satır:
 _"N satış maliyet bağı bekliyor"_ ile _"M satış: ALIM KAYDI YOK"_ tek cümleye

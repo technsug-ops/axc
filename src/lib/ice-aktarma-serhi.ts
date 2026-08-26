@@ -172,15 +172,46 @@ export function marjBasilabilirMi(s: Pick<MarjSerhi, "kapsanmayanPay">): boolean
  * _(Anayasa: "sonda parametresi ekranın parametresi değildir".)_
  */
 export async function marjSerhi(
-  db: Pick<PrismaClient, "saleItem" | "purchase">,
+  db: Pick<PrismaClient, "saleItem" | "purchaseItem">,
   pencere?: { bas: Date; son: Date },
 ): Promise<MarjSerhi> {
   /**
-   * ⚠ ALIM DEFTERİNİN EN ESKİ TARİHİ — üçüncü sebebin ölçütü.
-   * Sabit tarih GÖMÜLMEZ: defter geriye büyürse sayı kendiliğinden düşer.
+   * ═══ KAPSAM İDDİASI VARYANT BAZLIDIR — GENEL DEĞİL ═══════════════════
+   *
+   * ⛔ ESKİ ÖLÇÜT BIRAKILDI VE NİYE: `min(Purchase.purchasedAt)` defterin
+   * SEYREK KUYRUĞUNA takılıyordu. Aylık yoğunluk ölçüldü:
+   *
+   *     2024-05    1 alım ·   1 adet   ← tek başına bir kayıt
+   *     2025-03    1 alım ·   2 adet
+   *     2025-08    2 alım ·   5 adet
+   *     2025-10   55 alım · 162 adet   ← defterin GERÇEK başlangıcı
+   *
+   * O tek kayıt yüzünden genel sınır `2024-05-30` çıkıyor ve (c) kovası
+   * **1** sayıyordu; gerçek kapsam boşluğu **1056 satış / ₺2,6M**.
+   *
+   * ⛔ "YOĞUN AY" EŞİĞİ DE KULLANILMADI: `adet ≥ 20` dağılımdan
+   * türetilmiş bir sayı değil, benim koyduğum bir sayıydı. Eşiği soruyu
+   * soran koyamaz. _(Anayasa: "eşik, dağılımın gediğine konur" —
+   * gediğin olmadığı yerde eşik de olmaz.)_
+   *
+   * ✅ YENİ ÖLÇÜT EŞİKSİZ: kapsam iddiası VARYANT BAZLI. Bir satışın
+   * maliyet kaynağı ancak O VARYANTIN alım geçmişinde olabilir; başka
+   * bir ürünün ne zaman alındığı hiçbir şey söylemez.
+   *
+   *     satış < varyantın İLK alımı   → (c) KAPSAM DIŞI, kapatılamaz
+   *     satış ≥ ilk alım, parti yok   → (a) ADET AÇIĞI, kapatılabilir
+   *     varyantın hiç alımı yok       → (b) ALIM KAYDI YOK
+   *
+   * ⚠ Bu ölçüt `axcali2534`ü doğru sınıflandırır: ilk satış 2024-11,
+   * ilk alım 2026-02 → kapsam dışı. Genel ölçüt onu (a)'ya koyuyordu.
    */
-  const alimEnEski = (await db.purchase.aggregate({ _min: { purchasedAt: true } }))
-    ._min.purchasedAt;
+  const varyantIlkAlim = new Map<string, Date>();
+  for (const a of await db.purchaseItem.findMany({
+    select: { variantId: true, purchase: { select: { purchasedAt: true } } },
+  })) {
+    const o = varyantIlkAlim.get(a.variantId);
+    if (!o || a.purchase.purchasedAt < o) varyantIlkAlim.set(a.variantId, a.purchase.purchasedAt);
+  }
 
   const kalemler = await db.saleItem.findMany({
     where: {
@@ -192,15 +223,35 @@ export async function marjSerhi(
     select: {
       quantity: true,
       unitPriceAmount: true,
+      variantId: true,
       sale: {
         select: { id: true, importBatch: true, profitStatus: true, net2Amount: true, soldAt: true },
       },
       /**
-       * ⚠ TEK HAREKET YETER — sayı değil VARLIK soruluyor. `take: 1`
-       * olmadan 154 varyantın bütün hareket geçmişi çekilirdi.
+       * ⚠ ÖLÇÜT **GİRİŞ** HAREKETİ — "herhangi bir hareket" DEĞİL.
+       *
+       * ⛔ CANLI KUSUR 27.08.2026: burada süzgeçsiz `stockMovements`
+       * vardı ve `SALE_OUT` de sayılıyordu. Bir satış ÇIKIŞI, o varyantın
+       * ALIMI OLDUĞUNU göstermez — hatta tam tersini gösterir: mal
+       * çıkmış, girişi kayıtsız. Kova ölçümü yapılınca fark edildi:
+       * ekran **3809** "bağ bekliyor" diyordu, gerçek **1053**. Kalan
+       * ~2756 satış (b) kovasına — yani "alım kaydı YOK" — aitti ve
+       * yanlış tarafta sayılıyordu.
+       *
+       * İki kova iki AYRI işe gider: (a) bağlama koşumu, (b) alım
+       * belgesi toplamak. Yanlış kovada sayılan bir satış, yanlış işi
+       * bekletir. _(Anayasa: "tip listesi değil, BAĞ".)_
+       *
+       * ⚠ `take: 1` — sayı değil VARLIK soruluyor.
        */
       variant: {
-        select: { stockMovements: { take: 1, select: { id: true } } },
+        select: {
+          stockMovements: {
+            where: { quantityDelta: { gt: 0 } },
+            take: 1,
+            select: { id: true },
+          },
+        },
       },
     },
   });
@@ -227,12 +278,13 @@ export async function marjSerhi(
       kapsanmayanlar.add(k.sale.id);
       if (k.sale.importBatch) {
         /**
-         * ⚠ SIRA: DÖNEM EN BAŞTA. Alım defteri o dönemi hiç kapsamıyorsa
-         * o varyantın hareketi olup olmaması ANLAMSIZ — mal daha önce
-         * alınmış ve kaydı yok. Sıra yanlış olsaydı bu kalemler "alım
-         * kaydı yok" diye sayılır ve KAPATILABİLİR sanılırdı.
+         * ⚠ SIRA: KAPSAM EN BAŞTA. O varyantın ilk alımı satıştan SONRAYSA
+         * partisi olup olmaması ANLAMSIZ — mal daha önce alınmış ve kaydı
+         * yok. Sıra yanlış olsaydı bu kalemler "adet açığı" diye sayılır
+         * ve KAPATILABİLİR sanılırdı; oysa kapatılamaz.
          */
-        if (alimEnEski !== null && k.sale.soldAt.getTime() < alimEnEski.getTime()) {
+        const ilkAlim = varyantIlkAlim.get(k.variantId);
+        if (ilkAlim !== undefined && k.sale.soldAt.getTime() < ilkAlim.getTime()) {
           donemDisilar.add(k.sale.id);
           continue;
         }

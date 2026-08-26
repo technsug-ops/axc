@@ -415,7 +415,12 @@ const serhLib = oku("src/lib/ice-aktarma-serhi.ts");
  * yetmedi ve DÖRT kontrol birden kırmızı yandı — kod doğruydu, pencere
  * kısaydı. Dar pencere sessiz bir kör nokta üretir.
  */
-const marjGovde = blok(serhLib, "export async function marjSerhi(", 4200);
+/**
+ * ⚠ PENCERE İKİNCİ KEZ ÖLÇÜLDÜ: gövde varyant haritasıyla yine büyüdü
+ * ve DÖRT kontrol kırmızı yandı — kod doğruydu. Dar pencere sessiz bir
+ * kör nokta üretir; genişletmek onu kapatır.
+ */
+const marjGovde = blok(serhLib, "export async function marjSerhi(", 6500);
 kontrol("marjSerhi gövdesi bulundu", marjGovde.length > 0);
 kontrol(
   "bekleyen sayımı `profitStatus === null` ölçütüne bağlı",
@@ -1084,9 +1089,15 @@ kontrol(
   "geri alınacak küme importBatch'ten TÜRETİLİYOR",
   /where: \{ importBatch: GERI \}/.test(satisAktar),
 );
+/**
+ * ⚠ SAYI İKİDEN ÜÇE ÇIKTI — ve bu bir GÜÇLENDİRME, gevşetme değil.
+ * Kâr tazeleme ÜÇÜNCÜ bir yazma yolu; kendi `--yaz` kapısı olmasaydı
+ * `--kar-tazele` tek başına yazardı. Sayı sabitlendi ki dördüncü bir
+ * yol kapısız eklenemesin.
+ */
 kontrol(
-  "yazım --yaz bayrağına kilitli (İKİ yazma yolu)",
-  (satisAktar.match(/if \(!YAZ\) \{/g) ?? []).length === 2,
+  "yazım --yaz bayrağına kilitli (ÜÇ yazma yolu: yazım · geri alma · kâr)",
+  (satisAktar.match(/if \(!YAZ\) \{/g) ?? []).length === 3,
 );
 kontrol("toplu yazım AuditLog bırakıyor", /action: "SATIS_ICE_AKTARMA"/.test(satisAktar));
 kontrol(
@@ -1110,16 +1121,46 @@ const panelKaynak = oku("src/app/page.tsx");
  * olsaydı bu kalemler "alım kaydı yok" diye sayılır ve KAPATILABİLİR
  * sanılırdı — oysa kapatılamaz.
  */
+/**
+ * ⛔ KAPSAM ÖLÇÜTÜ VARYANT BAZLI — GENEL `min(purchasedAt)` DEĞİL.
+ * Genel ölçüt defterin SEYREK KUYRUĞUNA takılıyordu: 2024-05'te tek bir
+ * kayıt yüzünden sınır oraya düşüyor ve (c) yalnız **1** sayıyordu;
+ * varyant bazlı ölçüt gerçek boşluğu gösteriyor.
+ */
 kontrol(
-  "üçüncü sebep ölçütü ALIM DEFTERİNİN EN ESKİ TARİHİ",
-  /_min: \{ purchasedAt: true \}/.test(marjGovde),
+  "kapsam ölçütü VARYANT BAZLI ilk alım tarihinden",
+  /varyantIlkAlim\.get\(k\.variantId\)/.test(marjGovde) &&
+    /k\.sale\.soldAt\.getTime\(\) < ilkAlim\.getTime\(\)/.test(marjGovde),
+);
+/**
+ * ⚠ GENEL AGGREGATE ARTIK KULLANILMIYOR — mutasyon onu geri getirirse
+ * kırmızı yanmalı.
+ */
+/**
+ * ⚠ KAPSAM `marjSerhi` GÖVDESİ — dosyanın tamamı DEĞİL.
+ * `defterDerinligi` aynı dosyada ve `purchase.aggregate` KULLANIYOR;
+ * dosya çapında aransaydı bu kontrol her zaman kırmızı yanardı ve
+ * ölçtüğü şey de yanlış olurdu. _(Anayasa: desen kullanım bloğunda
+ * aranır, dosyada değil.)_
+ */
+kontrol(
+  "genel min(purchasedAt) ölçütü marjSerhi'de KULLANILMIYOR",
+  !/purchase\.aggregate/.test(yorumsuz(marjGovde)),
 );
 kontrol(
-  "ölçüt SABİT TARİH değil",
-  !/2024-05-30|new Date\("202\d-/.test(yorumsuz(serhLib)),
+  "ölçüt SABİT TARİHE bağlı değil",
+  !/new Date\("202\d-/.test(yorumsuz(marjGovde)),
+);
+/**
+ * ⛔ "YOĞUN AY" GİBİ BİR EŞİK DE YOK — dağılımdan türetilmemiş her sayı
+ * uydurmadır ve üstüne kurulan akıl yürütmeyi de dayanaksız yapar.
+ */
+kontrol(
+  "yoğunluk eşiği YOK",
+  !/adet >= \d+|>= 20|yogun/i.test(yorumsuz(marjGovde)),
 );
 kontrol(
-  "dönem dışı EN BAŞTA ayrılıyor (kova sırası)",
+  "kapsam dışı EN BAŞTA ayrılıyor (kova sırası)",
   /donemDisilar\.add\(k\.sale\.id\);\s*continue;/.test(marjGovde),
 );
 kontrol(
@@ -1166,6 +1207,94 @@ kontrol(
   "kutu ile şerh AYNI gövdeden besleniyor",
   /const marjDurumuOzeti = await marjSerhi\(prisma\)/.test(panelKaynak),
 );
+
+
+console.log("\n⑭ SATIŞ AKTARIMI — kâr tazeleme yolu");
+
+/**
+ * ⛔ CANLI KUSUR 27.08.2026 — YAZIM KÂR MOTORUNU ÇAĞIRMIYORDU.
+ * Satış içe aktarma `SALE_OUT` yazıyor ama kâr hesabı yapmıyordu:
+ * **2757 satışın maliyet bağı VARDI, `profitStatus` NULL'du.** Ekran
+ * onları "bağ bekliyor" diye sayıyordu ve VERİ eksiği sanıldı — oysa
+ * HESAP eksiğiydi. Alım tarafındaki `canli:stok-bagi` bunu zaten
+ * yapıyordu; iki yol sessizce ayrışmıştı.
+ */
+kontrol(
+  "satış aktarımı kâr tazeleme yolu TAŞIYOR",
+  /const KAR_TAZELE = process\.argv\.includes\("--kar-tazele"\)/.test(satisAktar) &&
+    /await satisKarTazele\(a\.id\)/.test(satisAktar),
+);
+/**
+ * ⚠ KAPSAM: maliyet bağı OLANLAR. Bağı olmayana hesap çalıştırmak
+ * `NO_COST` damgası basıp GERÇEK eksiği gizlerdi — sayı düşer, sorun
+ * kalır.
+ */
+const tazelemeBloku = blok(satisAktar, "if (KAR_TAZELE) {", 900);
+kontrol("kâr tazeleme bloğu bulundu", tazelemeBloku.length > 0);
+kontrol(
+  "yalnız maliyet bağı OLAN satışlar tazeleniyor",
+  /items: \{ some: \{ stockMovements: \{ some: \{\} \} \} \}/.test(tazelemeBloku),
+);
+kontrol(
+  "yalnız kârı HESAPLANMAMIŞ olanlar",
+  /profitStatus: null,/.test(tazelemeBloku),
+);
+kontrol(
+  "iptalli satış tazelenmiyor",
+  /iptalTarihi: null,/.test(tazelemeBloku),
+);
+kontrol(
+  "tazeleme de --yaz bayrağına kilitli",
+  /if \(!YAZ\) \{/.test(tazelemeBloku),
+);
+kontrol("tazeleme iz bırakıyor", /action: "SATIS_ICE_AKTARMA_KAR"/.test(satisAktar));
+/**
+ * ⚠ KALAN SAYISI EKRANDA — "hepsi tazelendi" sanılmasın. Maliyet bağı
+ * olmayanlar tazelenemez ve o sayı GÖRÜNMELİ.
+ */
+kontrol(
+  "tazelenemeyen KALAN ekrana basılıyor",
+  /kârı HÂLÂ hesaplanmamış/.test(satisAktar),
+);
+
+
+
+
+/**
+ * ============================================================================
+ *  AYNI SONUCU ÜRETEN İKİ YOL, AYNI ADIMLARI TAŞIR
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI KUSUR 27.08.2026 — VE BU KOVA ÖLÇÜMÜ OLMASA GÖRÜNMEZDİ.
+ *
+ *  İki betik de aynı sonucu üretiyor: satışa maliyet bağlamak.
+ *    · `canli-stok-bagi`      → `SALE_OUT` yazıyor **VE kârı tazeliyor**
+ *    · `canli-satis-ice-aktar` → `SALE_OUT` yazıyor, **kârı TAZELEMİYORDU**
+ *
+ *  Sonuç: 2757 satışın maliyet bağı VARDI, `profitStatus` NULL'du. Ekran
+ *  onları "bağ bekliyor" diye sayıyordu — sayı doğruydu, ANLAMI yanlıştı.
+ *  Bir VERİ eksiği sanıldı, oysa HESAP eksiğiydi ve tek komut uzaktaydı.
+ *
+ *  ⚠ ÖLÇÜT: `SALE_OUT` YAZAN HER BETİK KÂR TAZELEME YOLUNU TAŞIR.
+ *  Kova ADI ya da dosya listesi değil — DAVRANIŞ. Yarın üçüncü bir yol
+ *  eklendiğinde de yakalanır.
+ * ============================================================================
+ */
+console.log("\n⑮ İKİ YOL AYRIŞMASI — SALE_OUT yazan her betik kârı tazeler");
+const SALE_OUT_YAZANLAR = [
+  "scripts/canli-ice-aktarma-stok-bagi.ts",
+  "scripts/canli-satis-ice-aktar.ts",
+];
+for (const yol of SALE_OUT_YAZANLAR) {
+  const g = yorumsuz(oku(yol));
+  /** ⚠ Önce KAPSAMA girdiğini doğrula — girmiyorsa kontrol boş yeşil olurdu. */
+  const yaziyor = /type: "SALE_OUT"/.test(g);
+  kontrol(`${yol.split("/").pop()} — SALE_OUT yazıyor (kapsamda)`, yaziyor);
+  if (!yaziyor) continue;
+  kontrol(
+    `${yol.split("/").pop()} — kâr tazeleme yolu TAŞIYOR`,
+    /satisKarTazele\(/.test(g),
+  );
+}
 
 
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);

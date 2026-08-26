@@ -27,6 +27,22 @@ import { canliYapilandirma } from "./canli-ortak";
  */
 
 const YAZ = process.argv.includes("--yaz");
+/**
+ * ⚠ `--kar-tazele` — YAZIMDAN SONRAKİ EKSİK ADIM.
+ *
+ * ⛔ CANLI KUSUR 27.08.2026: bu betik satışı ve `SALE_OUT` hareketini
+ * yazıyor ama KÂR MOTORUNU HİÇ ÇAĞIRMIYORDU. Sonuç: **2757 satışın
+ * maliyet bağı VAR ama `profitStatus` null** — ekran onları "bağ
+ * bekliyor" diye sayıyordu ve bu bir VERİ eksiği sanıldı.
+ *
+ * Gerçekte bir HESAP eksiğiydi ve tek komut uzaktaydı. Kova ölçümü
+ * yapılmasaydı görünmezdi: sayı doğruydu, ANLAMI yanlıştı.
+ * _(Anayasa: "metin, sahip olmadığı anlamı iddia etmez".)_
+ *
+ * ⚠ Alım tarafındaki `canli:stok-bagi` bunu ZATEN yapıyordu; iki yol
+ * sessizce ayrışmıştı.
+ */
+const KAR_TAZELE = process.argv.includes("--kar-tazele");
 const dosyaArg = process.argv.find((a) => a.startsWith("--dosya="));
 const geriArg = process.argv.find((a) => a.startsWith("--geri="));
 const YOL = dosyaArg?.slice("--dosya=".length) ?? "";
@@ -148,6 +164,53 @@ async function main() {
     });
     console.log(`\n  ✓ ${isaretlenen.count} satış iptal işaretlendi · ${ters} ters stok kaydı`);
     console.log(`  ⚠ Hiçbir kayıt SİLİNMEDİ.\n`);
+    await prisma.$disconnect();
+    return;
+  }
+
+  // ═══ KÂR TAZELEME ══════════════════════════════════════════════════════
+  if (KAR_TAZELE) {
+    const { satisKarTazele } = await import("../src/lib/kar-yeniden");
+    /**
+     * ⚠ KAPSAM: maliyet bağı OLAN ama kârı hesaplanmamış satışlar.
+     * Bağı olmayanlara DOKUNULMAZ — onların maliyeti yok; hesap
+     * çalıştırmak `NO_COST` damgası basıp gerçek eksiği GİZLERDİ.
+     */
+    const adaylar = await prisma.sale.findMany({
+      where: {
+        importBatch: { not: null },
+        iptalTarihi: null,
+        profitStatus: null,
+        items: { some: { stockMovements: { some: {} } } },
+      },
+      select: { id: true },
+    });
+    console.log(`\n  KÂR TAZELEME — ${adaylar.length} satış (maliyet bağı VAR, kârı yok)`);
+    if (!YAZ) {
+      console.log(`  RAPOR — yazmak için: -- --kar-tazele --yaz\n`);
+      await prisma.$disconnect();
+      return;
+    }
+    let ok = 0;
+    let yok = 0;
+    for (const a of adaylar) {
+      if (await satisKarTazele(a.id)) ok++;
+      else yok++;
+      if ((ok + yok) % 500 === 0) console.log(`   … ${ok + yok}/${adaylar.length}`);
+    }
+    const kalan = await prisma.sale.count({
+      where: { importBatch: { not: null }, iptalTarihi: null, profitStatus: null },
+    });
+    console.log(`  tazelendi ${ok}` + (yok > 0 ? `   ⛔ tazelenemedi ${yok}` : ""));
+    console.log(`  kârı HÂLÂ hesaplanmamış: ${kalan}   ← maliyet bağı olmayanlar`);
+    await prisma.auditLog.create({
+      data: {
+        action: "SATIS_ICE_AKTARMA_KAR",
+        targetType: "Sale",
+        detail: JSON.stringify({ aday: adaylar.length, tazelendi: ok, tazelenemedi: yok, kalan }),
+      },
+    });
+    console.log(`  ✓ AuditLog — SATIS_ICE_AKTARMA_KAR\n`);
     await prisma.$disconnect();
     return;
   }
