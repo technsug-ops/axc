@@ -27,6 +27,7 @@ import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { UzunAd } from "@/components/uzun-ad";
 import { NetKar } from "@/components/net-kar";
+import { MarjSerhi } from "@/components/marj-serhi";
 import { MarjOlcegi } from "@/components/marj-olcegi";
 import { MarjRozeti } from "@/components/marj-rozeti";
 import { Badge } from "@/components/ui/badge";
@@ -527,6 +528,16 @@ export default async function SatislarSayfasi({
           · `karGorunur` yoksa marj sütunu HİÇ çizilmiyor; ölçeği göstermek
             görünmeyen bir sütunun anahtarını vermek olurdu. */}
       {karGorunur && olcu === "ciro" ? <MarjOlcegi /> : null}
+
+      {/*
+        ⚠ MARJ ŞERHİ — bu listede marj sütunu var ve satır satır DOĞRU
+        (maliyeti olmayan satırda marj hiç çizilmiyor). Şerhin sebebi
+        listenin ALTINDAKİ toplam ve kullanıcının kafasındaki oran:
+        içe aktarılan satışlar ciroya girip kâra girmiyor.
+        ⚠ `karGorunur` şartına BAĞLANMADI: kâr sütunu kapalıyken de ciro
+        toplamı görünüyor ve o toplam da eksik kârla okunuyor.
+      */}
+      <MarjSerhi />
 
       {/* Tercih hatırlama — cihaz bazlı, adres kazanır (bkz. marj-tercihi). */}
       <Suspense fallback={null}>

@@ -3380,6 +3380,8 @@
   },
   "iceAktarma": {
     "stokAyrismasi": "",
-    "stokAyrismasiNiye": ""
+    "stokAyrismasiNiye": "",
+    "marjOkunamaz": "",
+    "marjBagliOlan": ""
   }
 }

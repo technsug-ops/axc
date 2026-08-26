@@ -10,6 +10,7 @@ import {
   siparisAni,
   tumSayfalar,
 } from "./ty/istemci";
+import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
 
 /**
  * ============================================================================
@@ -280,18 +281,70 @@ async function main() {
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
 
   // ═══ VARYANT KAPISI ═════════════════════════════════════════════════════
+  /**
+   * ═══ KİMLİK ARAMASI ORTAK KURALDAN ═══════════════════════════════════
+   *
+   * ⛔ CANLI VAKA 26.08.2026 — VE 11 SİPARİŞ BU YÜZDEN DÜŞTÜ.
+   * Burada arama YALNIZ `ProductVariant.barcode`daydı. TY'nin sipariş
+   * satırındaki `barcode` ise KANALIN kodu: `194645027819` sistemde
+   * VARDI — `axcali2755`in Trendyol Kanal SKU'su olarak — ama bu sorgu
+   * onu göremiyordu. ₺27.807 defterin dışında kaldı.
+   *
+   * ⚠ AYRI LİSTE YAZILMADI: `kodKosuluToplu` sistemin TEK kod kuralından
+   * türüyor (`kodKosulu` ile aynı alan kümesi). İkinci bir liste, yarın
+   * altıncı bir rol eklendiğinde sessizce eski kalırdı.
+   */
   const tumBarkodlar = [...new Set([...adaylar.values()].flatMap((a) => a.kalemler.map((x) => x.barkod)))];
   const varyantlar = await prisma.productVariant.findMany({
-    where: { barcode: { in: tumBarkodlar } },
-    select: { id: true, barcode: true },
+    where: { OR: kodKosuluToplu(tumBarkodlar) },
+    select: {
+      id: true,
+      barcode: true,
+      companySku: true,
+      sku: true,
+      channelSkus: { where: { isActive: true }, select: { channelSku: true } },
+    },
   });
-  const barkodVaryant = new Map(varyantlar.map((v) => [v.barcode!, v.id]));
+
+  /**
+   * ⚠ ÇOK EŞLEŞME AYRI SAYILIR — YAZILMAZ.
+   * `barcode`/`sku`/`companySku` küresel tekil ama `channelSku` yalnız
+   * (hesap, kod) çiftinde tekil: aynı kod iki kanal hesabında iki FARKLI
+   * varyanta işaret edebilir. O kodu tek bir varyanta bağlamak, kalemi
+   * yanlış ürüne yazmak olurdu. _(Anayasa: "sıfır üç farklı şey
+   * olabilir" — burada da "bulunamadı" ile "belirsiz" ayrı.)_
+   */
+  const kodVaryantlar = new Map<string, Set<string>>();
+  const ekle = (kod: string | null, id: string) => {
+    if (!kod || !tumBarkodlar.includes(kod)) return;
+    const k = kodVaryantlar.get(kod) ?? new Set<string>();
+    k.add(id);
+    kodVaryantlar.set(kod, k);
+  };
+  for (const v of varyantlar) {
+    ekle(v.barcode, v.id);
+    ekle(v.companySku, v.id);
+    ekle(v.sku, v.id);
+    for (const k of v.channelSkus) ekle(k.channelSku, v.id);
+  }
+  const barkodVaryant = new Map<string, string>();
+  const belirsizKodlar = new Set<string>();
+  for (const [kod, kume] of kodVaryantlar) {
+    if (kume.size === 1) barkodVaryant.set(kod, [...kume][0]);
+    else belirsizKodlar.add(kod);
+  }
 
   const yazilabilir: Aday[] = [];
   const yazilamaz: Aday[] = [];
+  const belirsiz: Aday[] = [];
   for (const a of adaylar.values()) {
-    if (a.kalemler.every((x) => barkodVaryant.has(x.barkod))) yazilabilir.push(a);
+    if (a.kalemler.some((x) => belirsizKodlar.has(x.barkod))) belirsiz.push(a);
+    else if (a.kalemler.every((x) => barkodVaryant.has(x.barkod))) yazilabilir.push(a);
     else yazilamaz.push(a);
+  }
+  if (belirsiz.length > 0) {
+    console.log(`   ⛔ BELİRSİZ (kod birden çok varyanta işaret ediyor)  ${belirsiz.length}`);
+    for (const a of belirsiz) console.log(`        ${a.siparisNo}`);
   }
   console.log(`   YAZILABİLİR (tüm barkodlar bilinen)              ${yazilabilir.length}`);
   console.log(`   ⛔ YAZILAMAZ (barkod kataloğumuzda yok)           ${yazilamaz.length}`);

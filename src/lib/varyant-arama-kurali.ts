@@ -94,12 +94,41 @@ export function aramaKosulu(sorgu: string) {
  * eklenirse yanlış satış kaydedilir ve stok yanlış düşer. Ürün adı da
  * aranmaz — okuyucu ad okumaz.
  */
+/**
+ * ⚠ VARYANTIN KENDİ ALANLARINDA YAŞAYAN KOD ROLLERİ — TEK KAYIT YERİ.
+ * `kodKosulu` ve `kodKosuluToplu` ikisi de BURADAN türer; ayrı ayrı
+ * yazılsalardı biri yarın ötekinden sessizce ayrışırdı.
+ * `channelSku` bu listede DEĞİL çünkü varyantın alanı değil, İLİŞKİ.
+ */
+const VARYANT_KOD_ALANLARI = ["barcode", "companySku", "sku"] as const;
+
 export function kodKosulu(kod: string) {
   return [
-    { barcode: kod },
-    { companySku: kod },
-    { sku: kod },
+    ...VARYANT_KOD_ALANLARI.map((alan) => ({ [alan]: kod })),
     { channelSkus: { some: { channelSku: kod, isActive: true } } },
+  ];
+}
+
+/**
+ * ============================================================================
+ *  TOPLU KOD ÇÖZÜMÜ — AYNI KURAL, `in` İLE
+ * ----------------------------------------------------------------------------
+ *  ⚠ NİYE VAR: içe aktarma yüzlerce kodu tek seferde çözmek zorunda; kod
+ *  başına bir sorgu 400+ tur eder. Ama AYRI BİR LİSTE yazmak, K34a
+ *  dersinin tam kendisi olurdu — bu yüzden alan listesi paylaşılıyor ve
+ *  bir bekçi ikisinin aynı kümeyi kapsadığını sınıyor.
+ *
+ *  ⛔ CANLI VAKA 26.08.2026: içe aktarma barkodu YALNIZ
+ *  `ProductVariant.barcode`da arıyordu ve **11 sipariş düştü**
+ *  (`194645027819`, ₺27.807). O kod sistemde VARDI — `axcali2755`in
+ *  Trendyol Kanal SKU'su olarak. Kimliği okuyan katmanın listesi eksikti.
+ *  _(Anayasa: "kapsam genişlemesi, bağımlı listelerin de genişlemesidir".)_
+ * ============================================================================
+ */
+export function kodKosuluToplu(kodlar: string[]) {
+  return [
+    ...VARYANT_KOD_ALANLARI.map((alan) => ({ [alan]: { in: kodlar } })),
+    { channelSkus: { some: { channelSku: { in: kodlar }, isActive: true } } },
   ];
 }
 

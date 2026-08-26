@@ -397,5 +397,142 @@ for (const [ad, yol] of [
 }
 
 
+console.log("\n⑥ MARJ ŞERHİ — ciroda var, kârda yok");
+
+const marjKaynak = oku("src/components/marj-serhi.tsx");
+const serhLib = oku("src/lib/ice-aktarma-serhi.ts");
+
+/**
+ * ⚠ SÖNME ŞARTI `profitStatus`, `importBatch` DEĞİL.
+ * Maliyet bağı kurulup kâr hesaplanınca satır hâlâ `importBatch` taşıyacak.
+ * Yalnız `importBatch`e bakan bir sayaç o gün de yanmaya devam ederdi ve
+ * şerh HİÇ SÖNMEZDİ — sönmeyen uyarı okunmaz olur.
+ */
+const marjGovde = blok(serhLib, "export async function marjSerhi(", 2600);
+kontrol("marjSerhi gövdesi bulundu", marjGovde.length > 0);
+kontrol(
+  "bekleyen sayımı `profitStatus === null` ölçütüne bağlı",
+  /k\.sale\.profitStatus === null/.test(marjGovde),
+);
+kontrol(
+  "bekleyen yalnız İÇE AKTARMA satırlarını sayıyor",
+  /if \(k\.sale\.importBatch\) bekleyenler\.add/.test(marjGovde),
+);
+kontrol(
+  "iptalli satış ciroya KARIŞMIYOR",
+  /iptalTarihi: null/.test(marjGovde),
+);
+/**
+ * ⚠ İKİ RAKAM AYRI PAYDADAN — ve ikisi de üretiliyor.
+ * `baglıMarj` yalnız maliyet bağı OLAN cirodan, `ekranMarji` hepsinden.
+ * Aynı paydayı kullansalardı iki rakam eşit çıkar ve şerh hiçbir şey
+ * söylemezdi.
+ */
+kontrol(
+  "bağlı marj yalnız BAĞLI cirodan hesaplanıyor",
+  /baglıMarj: ciroBagli > 0 \? \(net \/ ciroBagli\)/.test(marjGovde),
+);
+kontrol(
+  "ekran marjı TÜM cirodan hesaplanıyor",
+  /ekranMarji: ciroHepsi > 0 \? \(net \/ ciroHepsi\)/.test(marjGovde),
+);
+
+/** ⚠ YANLIŞ YANMA: bekleyen yoksa şerh HİÇ çizilmemeli. */
+kontrol(
+  "YANLIŞ YANMA yok — bekleyen 0 ise çizilmiyor",
+  /if \(s\.bekleyen === 0\) return null;/.test(marjKaynak),
+);
+const marjMetin = blok(marjKaynak, "return (", 1400);
+kontrol(
+  "YANLIŞ SUSMA yok — sayı ekrana BASILIYOR",
+  /t\("marjOkunamaz",\s*\{\s*adet:\s*s\.bekleyen\s*\}\)/.test(marjMetin),
+);
+kontrol(
+  "okunabilir marj DA yazılıyor (çıkmaz bırakılmıyor)",
+  /t\("marjBagliOlan",\s*\{\s*oran:\s*bicim\.yuzde\(s\.baglıMarj\)\s*\}\)/.test(marjMetin),
+);
+
+/**
+ * ⚠ MARJ GÖSTEREN HER EKRAN — ve liste elle tutulmuyor: ölçüt
+ * "kâr ile ciroyu YAN YANA basan ekran". Üçü de kullanıcının saydığı
+ * ekranlar (panel · satışlar · rapor).
+ */
+for (const [ad, yol] of [
+  ["panel", "src/app/page.tsx"],
+  ["satışlar", "src/app/satislar/page.tsx"],
+  ["rapor", "src/app/rapor/page.tsx"],
+] as const) {
+  const e = oku(yol);
+  kontrol(
+    `${ad} ekranı marj şerhini ÇİZİYOR`,
+    /<MarjSerhi[^>]*\/>/.test(e) && /components\/marj-serhi/.test(e),
+  );
+}
+
+
+console.log("\n⑦ KİMLİK ARAMASI — ortak kod kuralına bağlı mı");
+
+const kuralKaynak = oku("src/lib/varyant-arama-kurali.ts");
+
+/**
+ * ⚠ TEK ALAN LİSTESİ. `kodKosulu` ve `kodKosuluToplu` AYNI sabitten
+ * türemeli; ayrı ayrı yazılsalardı biri yarın ötekinden sessizce ayrışır
+ * ve altıncı bir rol eklendiğinde toplu sürüm eski kalırdı (K34a dersi).
+ */
+kontrol(
+  "varyant kod alanları TEK sabitte",
+  /const VARYANT_KOD_ALANLARI = \["barcode", "companySku", "sku"\] as const;/.test(kuralKaynak),
+);
+for (const [ad, fn] of [
+  ["kodKosulu", "export function kodKosulu(kod: string) {"],
+  ["kodKosuluToplu", "export function kodKosuluToplu(kodlar: string[]) {"],
+] as const) {
+  const g = blok(kuralKaynak, fn, 380);
+  kontrol(`${ad} bulundu`, g.length > 0);
+  kontrol(
+    `${ad} ortak alan listesinden türüyor`,
+    /VARYANT_KOD_ALANLARI\.map/.test(g),
+  );
+  kontrol(`${ad} KANAL SKU'yu da kapsıyor`, /channelSkus:\s*\{\s*some:/.test(g));
+  kontrol(`${ad} pasif kanal kodunu ELİYOR`, /isActive: true/.test(g));
+}
+
+/**
+ * ⚠ İÇE AKTARMA ORTAK KURALI KULLANIYOR MU — ve ölçüt YOKLUĞA bağlı:
+ * doğrudan `barcode: { in:` yazan bir sorgu, ortak kuralı ATLAMIŞ demektir.
+ * Yalnız "kodKosuluToplu geçiyor mu" diye sorsaydım, ikisini birden yazan
+ * bir mutasyon yeşil kalırdı.
+ */
+/**
+ * ⚠ PENCERE ÖLÇÜLDÜ, TAHMİN EDİLMEDİ: 1200 karakterle yazıldığında
+ * belirsizlik kovası pencerenin DIŞINDA kaldı ve kontrol kırmızı yandı —
+ * kod doğruydu, pencere kısaydı. Dar pencere sessiz bir kör nokta üretir.
+ */
+const kapsamBloku = blok(kaynak, "const tumBarkodlar =", 2400);
+kontrol("kimlik arama bloğu bulundu", kapsamBloku.length > 0);
+kontrol(
+  "içe aktarma ORTAK kuralı çağırıyor",
+  /where:\s*\{\s*OR:\s*kodKosuluToplu\(tumBarkodlar\)\s*\}/.test(kapsamBloku),
+);
+kontrol(
+  "doğrudan barcode sorgusu KALMADI (ortak kural atlanmıyor)",
+  !/where:\s*\{\s*barcode:\s*\{\s*in:/.test(kapsamBloku),
+);
+/**
+ * ⚠ BELİRSİZ KOD YAZILMAZ. `channelSku` yalnız (hesap, kod) çiftinde
+ * tekil: aynı kod iki hesapta iki FARKLI varyanta işaret edebilir.
+ * Birini seçmek kalemi yanlış ürüne yazmak olurdu.
+ */
+kontrol(
+  "çok eşleşen kod AYRI kovada, yazılmıyor",
+  /if \(kume\.size === 1\) barkodVaryant\.set/.test(kapsamBloku) &&
+    /belirsizKodlar\.add\(kod\)/.test(kapsamBloku),
+);
+kontrol(
+  "belirsiz sipariş yazılabilir sayılmıyor",
+  /if \(a\.kalemler\.some\(\(x\) => belirsizKodlar\.has\(x\.barkod\)\)\) belirsiz\.push/.test(kaynak),
+);
+
+
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
 process.exit(hata === 0 ? 0 : 1);

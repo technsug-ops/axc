@@ -63,3 +63,92 @@ export async function iceAktarmaStokAyrismasi(
  */
 export const SERH_KAPSAMI =
   "importBatch dolu + İPTALSİZ + hiçbir kaleminde stok hareketi yok";
+
+/**
+ * ============================================================================
+ *  MARJ ŞERHİ — "CİRODA VAR, KÂRDA YOK"
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI ÖLÇÜM 26.08.2026 — ve risk beklenenin TERSİ çıktı.
+ *
+ *  İçe aktarılan 425 satışın 425'inde `profitStatus = null`. Ciro süzgeci
+ *  yalnız iptali eliyor, dolayısıyla o satışlar CİROYA GİRİYOR; NET ise
+ *  `null` olduğu için toplama KATILMIYOR (Prisma `_sum` null'ları atlar).
+ *
+ *      CİRO (ekran)                1.797.629,72
+ *      NET-2 (ekran)                  46.462,11
+ *      MARJ (ekran)                        2,58%
+ *      MARJ (yalnız maliyet bağlı)         9,31%
+ *
+ *  Aylık daha da sert: 2026-06 **%0,3** (47 satışın 46'sı içe aktarma),
+ *  2026-07 **%0,2** (287'nin 283'ü). O aylarda ekran marjı **anlamsız**.
+ *
+ *  ⚠ YANİ KÂR ŞİŞKİN DEĞİL, MARJ ÇÖKMÜŞ GÖRÜNÜYOR. Şerh metni bunu
+ *  DOĞRU yönde söylemeli: "kâra dahil değil" — "şişkin" değil.
+ *  _(Anayasa: "metin, sahip olmadığı anlamı iddia etmez".)_
+ * ============================================================================
+ */
+
+export type MarjSerhi = {
+  /** Maliyet bağı bekleyen satış sayısı — iptalsiz. */
+  bekleyen: number;
+  /** Yalnız maliyet bağı OLAN satışların marjı (%). Hesaplanamazsa null. */
+  baglıMarj: number | null;
+  /** Ekranda görünen marj (%) — bekleyenler ciroya dahil. */
+  ekranMarji: number | null;
+};
+
+/**
+ * ⚠ İKİ RAKAM BİRLİKTE ÜRETİLİR — TEK SORGUDAN.
+ * Ayrı ayrı üretilseydi ikisi farklı ana bakabilir ve "ekran %2,58 diyor
+ * ama şerh %2,61 diyor" gibi bir çelişki doğardı.
+ * _(Anayasa: "sonda parametresi ekranın parametresi değildir".)_
+ */
+export async function marjSerhi(
+  db: Pick<PrismaClient, "saleItem">,
+  pencere?: { bas: Date; son: Date },
+): Promise<MarjSerhi> {
+  const kalemler = await db.saleItem.findMany({
+    where: {
+      sale: {
+        iptalTarihi: null,
+        ...(pencere ? { soldAt: { gte: pencere.bas, lte: pencere.son } } : {}),
+      },
+    },
+    select: {
+      quantity: true,
+      unitPriceAmount: true,
+      sale: {
+        select: { id: true, importBatch: true, profitStatus: true, net2Amount: true },
+      },
+    },
+  });
+
+  let ciroHepsi = 0;
+  let ciroBagli = 0;
+  const netler = new Map<string, number>();
+  const bekleyenler = new Set<string>();
+  for (const k of kalemler) {
+    const tutar = Number(k.unitPriceAmount) * k.quantity;
+    ciroHepsi += tutar;
+    /**
+     * ⚠ ÖLÇÜT `importBatch` DEĞİL, KÂRIN HESAPLANMIŞ OLMASI. Maliyet bağı
+     * kurulup kâr hesaplanınca satır hâlâ `importBatch` taşıyacak ama
+     * artık şerhe girmemeli. `importBatch`e bakan bir sayaç o gün de
+     * yanmaya devam ederdi — sönmeyen şerh okunmaz olur.
+     */
+    if (k.sale.profitStatus === null) {
+      if (k.sale.importBatch) bekleyenler.add(k.sale.id);
+      continue;
+    }
+    ciroBagli += tutar;
+    if (k.sale.net2Amount !== null) netler.set(k.sale.id, Number(k.sale.net2Amount));
+  }
+  let net = 0;
+  for (const v of netler.values()) net += v;
+
+  return {
+    bekleyen: bekleyenler.size,
+    baglıMarj: ciroBagli > 0 ? (net / ciroBagli) * 100 : null,
+    ekranMarji: ciroHepsi > 0 ? (net / ciroHepsi) * 100 : null,
+  };
+}

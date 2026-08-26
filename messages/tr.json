@@ -3380,6 +3380,8 @@
   },
   "iceAktarma": {
     "stokAyrismasi": "İçe aktarılan {adet} satışın stok düşümü yapılmadı.",
-    "stokAyrismasiNiye": "Stok bağı ayrı karar bekliyor — bu satışlar defterde var, stoktan mal düşmedi."
+    "stokAyrismasiNiye": "Stok bağı ayrı karar bekliyor — bu satışlar defterde var, stoktan mal düşmedi.",
+    "marjOkunamaz": "{adet} satış maliyet bağı bekliyor — ciroda var, kârda yok. Marj oranı bu dönem için okunamaz.",
+    "marjBagliOlan": "Yalnız maliyet bağı olan satışların marjı: {oran}"
   }
 }

@@ -16,6 +16,7 @@ import { KarSorunuCozumu } from "@/components/kar-sorunu";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { MarjSerhi } from "@/components/marj-serhi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -452,6 +453,15 @@ export default async function RaporSayfasi({
         {sonuc.paraBirimleri.length > 1 ? (
           <h2 className="text-lg font-semibold">{b.paraBirimi}</h2>
         ) : null}
+
+        {/*
+          ⚠ MARJ ŞERHİ — bu ekran satış geliri ile NET'i YAN YANA basıyor
+          (`satisGeliri` · `netBir` · `netIki`) ve okuyan ikisini kafasında
+          oranlıyor. İçe aktarılan satışlar birincisine girip ikincisine
+          girmediği için o oran olduğundan DÜŞÜK. Şerh maliyet bağı
+          kurulunca kendiliğinden söner.
+        */}
+        <MarjSerhi />
 
         {/* ------------------------- ÜST KARTLAR ------------------------- */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

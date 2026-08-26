@@ -89,6 +89,7 @@ import {
   yogunlasma,
   zararOzeti,
 } from "@/lib/panel/dagilim";
+import { MarjSerhi } from "@/components/marj-serhi";
 import { prisma } from "@/lib/prisma";
 import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
@@ -1641,6 +1642,17 @@ export default async function AnaSayfa({
             bitis: parametreler.bitis ?? "",
           }}
         />
+
+
+        {/*
+          ⚠ MARJ ŞERHİ — [YANLIŞ CEVAP VEREN EKRAN], 26.08.2026.
+          İçe aktarılan satışlar CİROYA giriyor, NET'e girmiyor: bu kutunun
+          `kâr/ciro` oranı olduğundan DÜŞÜK çıkıyor (ölçüldü: ekran %2,58,
+          maliyet bağlı olanlarda %9,31; haziran %0,3 · temmuz %0,2).
+          Şerh maliyet bağı kurulunca KENDİLİĞİNDEN söner — ölçüt
+          `profitStatus`, `importBatch` değil.
+        */}
+        <MarjSerhi />
 
         {/* ═══════════════ KARŞILAŞTIRMA SEÇİCİ (2a) ═══════════════
           KAPALI GELİR: her panele zorla ikinci bir rakam basmak ekranı
