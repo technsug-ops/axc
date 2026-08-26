@@ -1981,7 +1981,9 @@
     "tarihHata_EKSIK_UC": "Dönem için HEM başlangıç HEM bitiş seçilmeli. Sistem eksik ucu kendiliğinden tamamlamaz — tamamlasaydı seçmediğiniz bir sınırdan rakam üretmiş olurdu.",
     "tarihHata_TERS": "Dönem başı, dönem sonundan sonra olamaz. İki tarihi ters seçmişsiniz.",
     "tarihHata_GELECEK": "Gelecek bir tarih seçilemez — o güne ait henüz kayıt yok.",
-    "aralikYarim": "İkinci tarihi de seçin — dönem ancak iki uç da dolunca hesaplanır. Sistem eksik ucu kendiliğinden tamamlamaz; tamamlasaydı seçmediğiniz bir sınırdan rakam üretmiş olurdu."
+    "aralikYarim": "İkinci tarihi de seçin — dönem ancak iki uç da dolunca hesaplanır. Sistem eksik ucu kendiliğinden tamamlamaz; tamamlasaydı seçmediğiniz bir sınırdan rakam üretmiş olurdu.",
+    "siralamaNotu": "Sıra sabit: dönemde en çok para hareketi olan ürün üstte.",
+    "degismeyenNotu": "{adet} ürün dönem boyunca hiç değişmedi (fark 0) ve listenin sonunda duruyor — bu bir hata değil, o mal dönemde hiç hareket etmedi."
   },
   "GeriYukleme": {
     "baslik": "Yedekten geri yükleme",

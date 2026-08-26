@@ -4571,6 +4571,70 @@ console.log("=".repeat(70));
       })(),
     );
 
+    /**
+     * ═══ SIFIR YIĞINI SIRALANIR VE AÇIKLANIR ═══════════════════════════
+     * ⚠ CANLI BULGU 26.08.2026: kullanıcı üst üste `₺0,00` görüp
+     * _"hesaplar yanlış mı"_ diye sordu. **Hesap doğruydu** — dört
+     * bağımsız yolla sağlaması yapıldı (elle FIFO · motor · saf ledger ·
+     * kaynak belgeler; dördü de `265 → 399, +134`).
+     *
+     * Yanlış olan EKRANDI: `01.06→05.07` penceresinde 73 satırın **43'ü**
+     * değişmemişti ve tablo SIRASIZDI (`Map` ekleme sırası), yani hepsi
+     * tepede duruyordu.
+     */
+    kontrol(
+      "aralık satırları SIRALI (en çok hareket eden üstte)",
+      aralikGovde.includes("const siraDegeri =") &&
+        aralikGovde.includes("b.satirlar.sort("),
+    );
+    /**
+     * ⚠ İŞARET MUTLAK DEĞERE BAĞLI: büyük bir AZALIŞ da büyük bir artış
+     * kadar bakılmayı hak eder. İşaretli sıralansaydı azalanlar en dibe
+     * düşerdi — oysa stok erimesi görülmesi gereken şeydir.
+     */
+    kontrol(
+      "  ...ölçüt MUTLAK hareket (azalış da üstte)",
+      aralikGovde.includes("Math.abs(x.farkDeger ?? 0)") &&
+        aralikGovde.includes("Math.abs(x.farkAdet)"),
+    );
+    /** ⚠ VE SIRALAMA KARARLI — iki koşumda iki farklı sıra olmamalı. */
+    kontrol(
+      "  ...ve eşitlikte kararlı (aynı girdi aynı sıra)",
+      aralikGovde.includes("x.variantId.localeCompare(y.variantId)"),
+    );
+    /**
+     * ⚠ SIFIR SATIRLAR GİZLENMİYOR, SAYILIYOR. Gizlenseydi dönem boyunca
+     * hiç dokunulmamış mal — envanterin en pahalı kısmı olabilir —
+     * görünmez olurdu. Sona atılıyor ve KAÇ TANE olduğu yazılıyor.
+     */
+    kontrol(
+      "değişmeyen satır SAYILIYOR (gizlenmiyor)",
+      aralikGovde.includes("degismeyenSatir") &&
+        aralikGovde.includes("x.farkAdet === 0"),
+    );
+    {
+      const bas5 = gorunum.indexOf("sonuc.degismeyenSatir > 0");
+      const blok = bas5 < 0 ? "" : gorunum.slice(bas5, bas5 + 200);
+      kontrol(
+        "  ...ve EKRANDA söyleniyor",
+        blok.includes('t("degismeyenNotu"'),
+      );
+    }
+    /** ⚠ VE SIRANIN NE OLDUĞU YAZILI — "niye bu sırada" sorusu doğmasın. */
+    kontrol(
+      "  ...ve sıranın ölçütü ekranda yazılı",
+      gorunum.includes('t("siralamaNotu")'),
+    );
+    /**
+     * ⚠ ARALIKTA SIRALAMA DÜĞMELERİ ÇİZİLMİYOR: duruyorlardı ama aralık
+     * görünümüne HİÇ etki etmiyorlardı — tıklanınca iş yapmayan düğme
+     * sessiz başarısızlıktır (İlke #5).
+     */
+    kontrol(
+      "aralık kipinde ölü sıralama düğmeleri çizilmiyor",
+      ekran.includes('${aralik ? "hidden" : ""}'),
+    );
+
     /** ⚠ EXCEL ÜÇ SAYFA — açılış · kapanış · fark. */
     kontrol(
       "Excel ÜÇ sayfa üretiyor (açılış · kapanış · fark)",

@@ -1981,7 +1981,9 @@
     "tarihHata_EKSIK_UC": "",
     "tarihHata_TERS": "",
     "tarihHata_GELECEK": "",
-    "aralikYarim": ""
+    "aralikYarim": "",
+    "siralamaNotu": "",
+    "degismeyenNotu": ""
   },
   "GeriYukleme": {
     "baslik": "",

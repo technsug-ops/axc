@@ -87,6 +87,21 @@ export type AralikSonucu = {
     ledgerNet: number;
     tutuyorMu: boolean;
   };
+  /**
+   * DÖNEM BOYUNCA HİÇ DEĞİŞMEYEN SATIR SAYISI.
+   *
+   * ⚠ NİYE SAYILIYOR — CANLI BULGU 26.08.2026: kullanıcı ekranı açtı, üst
+   * üste `₺0,00` gördü ve _"bir çok üründe bu değer sıfır, hesaplar yanlış
+   * mı"_ diye sordu. **Hesap doğruydu** (dört bağımsız yolla sağlaması
+   * yapıldı): o ürünler dönemde hiç hareket etmemişti. Yanlış olan
+   * EKRANDI — `01.06→05.07` penceresinde 73 satırın **43'ü** değişmemişti
+   * ve hepsi listenin BAŞINDA duruyordu.
+   *
+   * ⚠ SATIRLAR GİZLENMİYOR (yatan sermaye de bilgidir) ama SONA
+   * atılıyor ve SAYISI yazılıyor: sıfır yığını bir arıza değil, bir
+   * OLGUDUR — ekran onu olgu gibi sunmalı.
+   */
+  degismeyenSatir: number;
 };
 
 /** Bir fotoğrafın varyant → (adet, değer) haritası. */
@@ -231,6 +246,35 @@ export async function envanterAraligi(
   const ledgerNet = net._sum.quantityDelta ?? 0;
   const farkAdet = [...bloklar.values()].reduce((t, b) => t + b.farkAdet, 0);
 
+  /**
+   * ═══ SIRALAMA — EN ÇOK HAREKET EDEN ÜSTTE ═══════════════════════════
+   * ⚠ SIRASIZ BIRAKILMIŞTI VE EKRAN OKUNAMAZ HÂLE GELMİŞTİ: satırlar
+   * `Map` ekleme sırasında geliyordu, yani rastgele. 73 satırın 43'ü
+   * değişmemişti ve tepede duruyordu; kullanıcı "hesaplar yanlış mı"
+   * diye sordu.
+   *
+   * ⚠ ÖLÇÜT MUTLAK PARA HAREKETİ: dönemde en çok para giren/çıkan ürün
+   * üstte. İşareti değil BÜYÜKLÜĞÜ sıralıyor — büyük bir azalış da büyük
+   * bir artış kadar bakılmayı hak eder.
+   *
+   * ⚠ EŞİTLİKTE ADET, sonra AD: sıralama kararlı olsun; iki koşumda iki
+   * farklı sıra, "ekran değişti" sanısı üretir.
+   */
+  const siraDegeri = (x: AralikSatiri) =>
+    Math.abs(x.farkDeger ?? 0) * 1_000_000 + Math.abs(x.farkAdet);
+  for (const b of bloklar.values()) {
+    b.satirlar.sort((x, y) => {
+      const f = siraDegeri(y) - siraDegeri(x);
+      if (f !== 0) return f;
+      return x.variantId.localeCompare(y.variantId);
+    });
+  }
+
+  const degismeyenSatir = [...bloklar.values()].reduce(
+    (t, b) => t + b.satirlar.filter((x) => x.farkAdet === 0).length,
+    0,
+  );
+
   return {
     bloklar: [...bloklar.values()].sort((x, y) =>
       x.paraBirimi.localeCompare(y.paraBirimi),
@@ -238,5 +282,6 @@ export async function envanterAraligi(
     /** Kimlikler KAPANIŞTAN — dönem sonunda görünen ad geçerli olandır. */
     kimlikler: new Map([...acilis.kimlikler, ...kapanis.kimlikler]),
     capraz: { farkAdet, ledgerNet, tutuyorMu: farkAdet === ledgerNet },
+    degismeyenSatir,
   };
 }

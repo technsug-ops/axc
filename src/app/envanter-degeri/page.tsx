@@ -240,7 +240,16 @@ export default async function EnvanterDegeriSayfasi({
           ipucu={t("aramaIpucu")}
         />
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/*
+          ⚠ ARALIK KİPİNDE SIRALAMA DÜĞMELERİ ÇİZİLMEZ — CANLI BULGU
+          26.08.2026. Düğmeler duruyordu ama aralık görünümüne HİÇ
+          etki etmiyordu: tıklanınca iş yapmayan düğme sessiz
+          başarısızlıktır (İlke #5). Aralıkta sıra sabittir (en çok
+          hareket eden üstte) ve bu ekranda YAZILI.
+        */}
+        <div
+          className={`flex flex-wrap items-center gap-2 ${aralik ? "hidden" : ""}`}
+        >
           <span className="text-muted-foreground text-sm">{t("siralama")}</span>
           {ENVANTER_SIRALARI.map((sr) => (
             <Button

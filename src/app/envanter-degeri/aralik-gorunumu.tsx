@@ -146,6 +146,23 @@ export async function AralikGorunumu({
               </div>
             </div>
 
+            {/*
+              ⚠ SIFIR YIĞINI AÇIKLANIR — CANLI BULGU 26.08.2026. Kullanıcı
+              üst üste `₺0,00` görüp _"hesaplar yanlış mı"_ diye sordu.
+              Hesap doğruydu; o ürünler dönemde hiç hareket etmemişti.
+              Ekran artık hem SIRALIYOR (en çok hareket eden üstte) hem de
+              kaç satırın değişmediğini SÖYLÜYOR.
+
+              ⚠ SATIR GİZLENMİYOR: dönem boyunca hiç dokunulmamış mal,
+              envanterin en pahalı kısmı olabilir (yatan sermaye).
+            */}
+            <p className="text-muted-foreground text-xs">
+              {t("siralamaNotu")}
+              {sonuc.degismeyenSatir > 0
+                ? ` ${t("degismeyenNotu", { adet: sonuc.degismeyenSatir })}`
+                : ""}
+            </p>
+
             {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
             <div className="hidden overflow-x-auto rounded-lg border md:block">
               <Table>
