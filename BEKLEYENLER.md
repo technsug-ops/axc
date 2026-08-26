@@ -495,7 +495,64 @@ iki kez stoğa koymak olurdu. `285` aşıldı, geçerli olan **260**.
 numarası ve elle girilen kayıtlarda da dolu; parti kimliği yapmak iki anlamı
 tek kolona koyardı. `note` da sorgulanacağı için yetmez.
 
-⏭ **ONAY KAPISI AÇIK — hiçbir yazım yapılmadı.**
+### ✅ K55 ALIŞ İÇE AKTARMA — KOŞTU (26.08.2026)
+
+**Migration:** `Purchase.importBatch` + `importKaynak` · canlı + yerel · damga **38**.
+
+| | önce | sonra | fark |
+|---|---|---|---|
+| `Purchase` | 386 | **1955** | +1569 ✓ |
+| `PurchaseItem` | 386 | **1995** | +1609 ✓ |
+| `StockMovement` | 636 | **2244** | +1608 ✓ |
+| `PURCHASE_IN` | 358 | **1966** | +1608 ✓ |
+
+**İdempotentlik:** son koşum **0 yazdı**, `zatenVar` 1961 ✓
+
+⛔ **İLK KOŞUMDA 44 ALIM DÜŞTÜ VE SEBEBİ İKİ KUSURDU:**
+
+**① Sınanmayan dal.** `tariheCevir` geçerliliği YALNIZ metin dalında
+sınıyordu; `Date` ve `number` dalları doğrulamasız geçiyordu.
+
+**② Yutulan hata mesajı.** `message.split()[0]` Prisma hatalarında **boş
+satır** düşürüyordu — ekrana `⛔ 471 054 764 0 — ` yazıldı, sebep KAYBOLDU.
+44 alım düştü ve niye düştüğü **ölçülemedi**. _(İlke #5'in tam ihlali:
+sessiz başarısızlık.)_
+
+**GERÇEK SEBEP — KAYNAK VERİ:** 8 satırın Teslim Tarihi **`"11.02.0202"`**
+(birinin `2026` yerine `0202` yazması). `new Date()` bunu **yıl 202** diye
+geçerli sayıyor, `Intl` `202-11-02` (üç haneli yıl) biçimliyor,
+`new Date("202-11-02T…")` **Invalid Date** dönüyor. Zincirin başındaki hata
+SONUNDA görünüyor.
+
+⚠ **UYDURULMADI.** _"0202 demek ki 2026'ymış"_ diye düzeltmek bir tahmindir.
+Makul yıl kapısı kondu (2000–2100), değer **kullanılamaz** sayıldı, satın
+alma tarihine düşüldü ve **ekranda sayıldı**: `⚠ TESLİM TARİHİ OKUNAMAYAN 8`.
+
+**Kalan 8 alım yazıldı, hata 0.**
+
+### ✅ STOK BAĞI YENİDEN KOŞTU — 260 kalem
+
+Kuru koşumun öngördüğü rakam **birebir tuttu**: 329 → **260 bağlandı** ·
+`StockMovement` 2244 → 2504 ✓ · 260 satışın kârı tazelendi ·
+**69 kalem** atlandı.
+
+**MARJ — önce/sonra:**
+
+| | önce | sonra |
+|---|---|---|
+| ekran marjı | %2,58 | **%10,12** |
+| maliyet bağı olanların | %9,31 | **%11,12** |
+| şerhteki satış | 329 | **69** |
+
+⚠ Şerh artık **iki satır**: `29` bağ bekliyor (alım var) · `40` **ALIM KAYDI
+YOK**. İçe aktarma satışlarının **342/411**'inin kârı hesaplanmış.
+
+**DEFTER AYRIŞMASI:** incelenen 707 · temiz 705 · **SAPAN 2** ·
+incelenemeyen 0. K54'ün iki hayaleti yerinde, **yeni sapan DOĞMADI**.
+Ayrı kova 329 → **69**.
+
+⏭ **K55 KÜÇÜLDÜ AMA KAPANMADI:** 69 kalem hâlâ alım kaydı bekliyor —
+130 eşleşmeyen barkod + 79 barkodsuz satır oradan besleniyor.
 
 ⏭ **Seçenekler ÖLÇÜLECEK, bugün açılmaz:** tedarikçi belgelerinden toplu
 giriş · Amazon/toptancı dökümü · geriye dönük toplu alım kaydı.

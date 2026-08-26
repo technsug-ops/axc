@@ -883,6 +883,30 @@ model Purchase {
   /// Benzersiz DEĞİL: aynı sipariş numarası birden çok alıma bölünebilir.
   supplierOrderNo String?
 
+  /// ── İÇE AKTARMA İZİ (K55, 26.08.2026) ─────────────────────────────────
+  ///
+  /// TOPLU YAZIMIN KİMLİĞİ. Bir alış içe aktarma koşumunun ürettiği bütün
+  /// alımlar aynı değeri taşır; geri alma bu alanla yapılır.
+  ///
+  /// ⚠ NİYE `supplierOrderNo` KULLANILMADI — merdiven ölçüldü: o alan
+  /// TEDARİKÇİNİN sipariş numarasıdır ve elle girilen kayıtlarda da dolu
+  /// (canlıda 355/385). Parti kimliği olarak kullanmak iki farklı anlamı
+  /// tek kolona koyar ve o kolonu okuyan her sorguyu kirletirdi.
+  /// `note` serbest metni de yetmez: geri alma bu alanı SORGULAR, yani
+  /// ihtiyaç geriye bakmak değil YAPI. _(Anayasa: şema değişikliği en
+  /// pahalı çözümdür — ilk üç basamak denendi ve tutmadı.)_
+  ///
+  /// ⚠ ELLE GİRİLEN ALIMDA NULL KALIR ve bu ayrımın kendisi bilgidir.
+  importBatch String?
+
+  /// SATIRIN NEREDEN GELDİĞİ — bugün tek değer: 'alis-excel'.
+  ///
+  /// ⚠ Tek değerli bir alan bugün gereksiz görünür; ama ikinci kaynak
+  /// (tedarikçi API'si, toptancı dökümü) doğduğu gün geçmişe dönüp
+  /// "bunlar nereden gelmişti" sorusunun cevabı OLMAZ. Kaynak raporda
+  /// değil KAYITTA durur — satış tarafında verilen kararın aynısı.
+  importKaynak String?
+
   purchasedAt DateTime
   receivedAt  DateTime?
 
@@ -922,6 +946,8 @@ model Purchase {
   @@index([creditCardId])
   @@index([channelAccountId])
   @@index([supplierOrderNo])
+  /// Geri alma tüm partiyi bu alandan bulacak — dizin şart.
+  @@index([importBatch])
 }
 
 model PurchaseItem {

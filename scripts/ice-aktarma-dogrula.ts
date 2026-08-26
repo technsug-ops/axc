@@ -328,6 +328,7 @@ kontrol(
 
 // ═══ ⑤ SAAT KAYMASI TEK GÖVDEDEN OKUNUYOR MU ══════════════════════════════
 const KACIS_AC = "\\(";
+const KACIS_NOKTA = "\\.";
 const KACIS_KAPA = "\\)";
 
 console.log("\n⑤ SAAT KAYMASI — orderDate okuyan her betik ortak gövdeden geçiyor mu");
@@ -647,6 +648,149 @@ kontrol(
   !/stockMovement\.delete/.test(bagKaynak),
 );
 kontrol("bağ ve geri alma iz bırakıyor", /auditLog\.create/.test(bagKaynak));
+
+
+console.log("\n⑨ ALIŞ İÇE AKTARMA — kuru koşum ile yazım AYNI gövdeden mi");
+
+const alisKaynak = oku("scripts/canli-alis-ice-aktar.ts");
+const alisKuru = oku("scripts/canli-alis-kuru-kosum.ts");
+
+/**
+ * ⚠ KURU KOŞUM İLE YAZIM AYNI SINIFLANDIRMAYI YAPMALI. İki ayrı gövde
+ * yarın ayrışır ve "kuru koşumda 1615 çıkmıştı, yazım 1608 yazdı" gibi
+ * açıklanamayan bir fark doğar. Ölçüt: her iki dosya da AYNI kovaları
+ * ve AYNI ölçütleri taşıyor mu.
+ */
+const KOVALAR = [
+  "adetSifir", "iadeli", "tarihYok", "copBarkod",
+  "eslesmeyenBarkod", "belirsizBarkod", "barkodsuz", "zatenVar",
+];
+/**
+ * ⚠ ÖLÇÜT KOVANIN ADI DEĞİL, KOVAYA ATMA ÇAĞRISI — ve bu mutasyonla
+ * bulundu. Kova adı her dosyada BİRDEN ÇOK yerde geçiyor (tip birleşimi ·
+ * açıklama tablosu · çağrı); birini değiştiren mutasyon ötekini bulup
+ * YEŞİL kalıyordu. İşaret artık ATMA çağrısına bağlı.
+ */
+for (const k of KOVALAR) {
+  kontrol(
+    `kova "${k}" — yazımda ATMA çağrısı var`,
+    new RegExp('say\\("' + k + '"\\)').test(alisKaynak),
+  );
+  kontrol(
+    `kova "${k}" — kuru koşumda ATMA çağrısı var`,
+    new RegExp('koy\\("' + k + '", s\\)').test(alisKuru),
+  );
+}
+kontrol(
+  "kimlik araması ORTAK kod kuralından (yazım)",
+  /where: \{ OR: kodKosuluToplu\(tekilBarkod\) \}/.test(alisKaynak),
+);
+kontrol(
+  "kimlik araması ORTAK kod kuralından (kuru koşum)",
+  /where: \{ OR: kodKosuluToplu\(tekilBarkod\) \}/.test(alisKuru),
+);
+kontrol(
+  "tedarikçi eşleştirmesi ORTAK Türkçe anahtarından",
+  /tedarikciAnahtari\(/.test(alisKaynak) && /tedarikciAnahtari\(/.test(alisKuru),
+);
+
+/**
+ * ⚠ TEDARİKÇİ OTOMATİK AÇILMAZ — Halil'in açık şartı ve bu bir
+ * "DOKUNMUYOR" iddiası: eşleşmeyen mağaza adı için `supplier.create`
+ * çağrısı BULUNMAMALI.
+ */
+kontrol(
+  "tedarikçi OTOMATİK AÇILMIYOR",
+  !new RegExp("\bsupplier\s*[.:]", "i").test(yorumsuz(alisKaynak)) ||
+    !/supplier\.create|supplier: \{ create/.test(yorumsuz(alisKaynak)),
+);
+kontrol(
+  "eşleşmeyen mağaza AYRI kovaya düşüyor",
+  /say\(s\.magaza === "" \? "tedarikciBos" : "tedarikciYeniAday"\)/.test(alisKaynak),
+);
+
+/** ⚠ AD EŞLEŞMESİ KAYITTA İŞARETLİ — raporda değil. */
+kontrol(
+  "ürün adıyla eşleşen kalem KAYITTA işaretleniyor",
+  /kalemler\.some\(\(c\) => c\.guven === "ad"\)/.test(alisKaynak) &&
+    /ÜRÜN ADIYLA eşleştirildi/.test(alisKaynak),
+);
+
+/** ⚠ occurredAt = Satın Alma Tarihi, İstanbul günü. */
+/**
+ * ⚠ DESEN SAYILDI VE İLK HÂLİ YANLIŞ YERE DEMİRLEDİ.
+ * `type: "PURCHASE_IN"` bu dosyada İKİ kez geçiyor: önce/sonra SAYIM
+ * sorgusunda ve yazma çağrısında. `blok()` ilkini bulunca üç kontrol
+ * birden kırmızı yandı — kod doğruydu, işaret yanlış konumdaydı.
+ * İşaret artık yazma DÖNGÜSÜNÜN başına bağlı — üç alan da o pencerede.
+ */
+const hareketBloku = blok(alisKaynak, "for (const kalem of alim.items) {", 700);
+kontrol("PURCHASE_IN yazma bloğu bulundu", hareketBloku.length > 0);
+kontrol(
+  "occurredAt Satın Alma Tarihinden, İstanbul gününe indirgenmiş",
+  /occurredAt: isGunuUtc\(ilk\.alis!\)/.test(hareketBloku),
+);
+kontrol(
+  "giriş POZİTİF (çıkış değil)",
+  /quantityDelta: kalem\.quantity,/.test(hareketBloku),
+);
+kontrol(
+  "maliyet harekete kopyalanıyor (FIFO partisi)",
+  /unitCostAmount: kalem\.unitCostAmount/.test(hareketBloku),
+);
+
+/** ⚠ GERİ ALMA TERS KAYIT, SİLME DEĞİL — ve tüketilmiş parti ELLENMEZ. */
+kontrol(
+  "geri alma TERS KAYIT yazıyor",
+  /type: "ADJUSTMENT",[\s\S]{0,260}quantityDelta: -h\.quantityDelta,/.test(alisKaynak),
+);
+kontrol(
+  "geri alma hiçbir şey SİLMİYOR",
+  !/purchase\.delete|stockMovement\.delete|purchaseItem\.delete/.test(yorumsuz(alisKaynak)),
+);
+kontrol(
+  "TÜKETİLMİŞ parti geri alınmıyor — ayrı sayılıyor",
+  /const temiz = hareketler\.filter\(\(h\) => !tuketilen\.has\(h\.id\)\)/.test(alisKaynak),
+);
+kontrol(
+  "geri alınacak küme importBatch'ten TÜRETİLİYOR",
+  /where: \{ importBatch: GERI \}/.test(alisKaynak),
+);
+
+/** ⚠ YAZIM `--yaz` BAYRAĞINA KİLİTLİ. */
+/**
+ * ⚠ İKİ AYRI YAZMA YOLU, İKİ AYRI KAPI — ve sayı ölçülüyor.
+ * Dosyada `if (!YAZ) {` İKİ kez geçiyor: geri alma dalında ve ana
+ * akışta. Yalnız "geçiyor mu" diye sorulunca birini kaldıran mutasyon
+ * ötekini buluyor ve YEŞİL kalıyordu. Ölçüt SAYIYA bağlandı.
+ */
+const yazKapilari = (alisKaynak.match(/if \(!YAZ\) \{/g) ?? []).length;
+kontrol(
+  "yazım --yaz bayrağına kilitli — HER İKİ yazma yolunda kapı var",
+  /const YAZ = process\.argv\.includes\("--yaz"\)/.test(alisKaynak) &&
+    yazKapilari === 2,
+);
+kontrol(
+  "her alım importBatch VE importKaynak taşıyor",
+  /importBatch: parti,/.test(alisKaynak) && /importKaynak: "alis-excel",/.test(alisKaynak),
+);
+kontrol("toplu yazım AuditLog bırakıyor", /auditLog\.create/.test(alisKaynak));
+
+/** ⚠ TUTMAYAN SAYIM YORUMLANMAZ — Halil'in şartı, beyanı da sınanır. */
+kontrol(
+  "tutmayan sayım YORUMLANMADAN yazılıyor",
+  /TUTMADI/.test(alisKaynak) && /YORUMLANMADI/.test(alisKaynak),
+);
+
+/** ⚠ KURU KOŞUM YAZMAZ — onay kapısı olduğunu iddia ediyor, sınanır. */
+kontrol(
+  "kuru koşum HİÇBİR yazma çağrısı taşımıyor",
+  !new RegExp("[A-Za-z0-9_$]+" + KACIS_NOKTA + "[A-Za-z0-9_$]+" + KACIS_NOKTA + "(create|update|upsert|delete)" + KACIS_AC, "i").test(yorumsuz(alisKuru)),
+);
+kontrol(
+  "kuru koşum dosya KİMLİĞİNİ basıyor (ad + md5)",
+  /createHash\("md5"\)/.test(alisKuru) && /DOSYA KİMLİĞİ/.test(alisKuru),
+);
 
 
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);

@@ -38,6 +38,7 @@
     "20260825120000_gider_kartla_odeme",
     "20260825160000_gider_odeme_yontemi",
     "20260825200000_menu_duzeni",
-    "20260826140000_satis_ice_aktarma_izi"
+    "20260826140000_satis_ice_aktarma_izi",
+    "20260826200000_alim_ice_aktarma_izi"
   ]
 }
