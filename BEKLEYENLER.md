@@ -893,8 +893,51 @@ başına HİÇ YOK._
 ⚠ **ÖLÇÜLMEYEN:** kaç varyantta *toplam alım < toplam satış* olduğu ayrıca
 ölçülmedi; "belge bulunabilir" bir DÖNEM tespiti, adet tespiti değil.
 
-⏭ **AÇIK KALAN:** 2502 satış maliyet bağı bekliyor. Bunun 382'si
-**kapatılamaz** (kapsam dışı), gerisi alım belgesi bekliyor.
+### 📐 (a) KOVASI — ADET TESPİTİ (27.08.2026, salt okuma)
+
+**(a) kovası: 446 varyant · 1892 kalem.** Üçe ayrıldı:
+
+| Kova | Varyant | Kalem | Tutar |
+|---|---|---|---|
+| alım < satış → **BELGE EKSİK** | **188** | 913 | 2.608.868 |
+| alım ≥ satış → ⭐ **ADET YETERLİ** | **258** | 979 | **3.605.118** |
+| alım = 0 | — | — | (b) kovası |
+
+⭐ **İkinci kova BOŞ DEĞİL** — `axcali2032` tekil bir görünüm değilmiş.
+
+**İKİNCİ KOVANIN SEBEBİ ÖLÇÜLDÜ (240 varyant):**
+
+    stoğa HİÇ girmemiş        0 varyant
+    kısmen girmiş             3
+    tamamı girmiş           237      ← sipariş = teslim, sorun burada DEĞİL
+
+    açık parti VAR           69
+    açık parti YOK (tükenmiş) 171
+
+> ### ✅ VE KALEM DÜZEYİNDE SORU KAPANDI — AÇIKLANAMAYAN YOK
+>
+>     BAĞSIZ KALEM: 2550
+>       açık parti HİÇ YOK                 2550
+>       açık parti VAR ama TARİHİ SONRA       0
+>       açık parti var, ADET yetmiyor         0
+>       ⛔ KURULABİLİRDİ (açıklanamayan)      0
+>
+> **Her bağsız kalemin açık partisi sıfır.** "Parti yanlış dağıtıldı"
+> iddiası **kurulamadı** — desen yok, tek vaka da yok.
+
+⚠ **VARYANT DÜZEYİNDEKİ 69 İLE KALEM DÜZEYİNDEKİ 0 ÇELİŞMİYOR:** o 69
+varyantın açık partisi var ama kârı bekleyen kalemleri **hareket almış**
+durumda (kâr tazeleme kuyruğunda). Gerçekten bağsız olanların hiçbirinde
+parti yok.
+
+**`axcali2032` DÖKÜMÜ — FIFO doğru çalışıyor:** 5 alım (+6, +5, +5, +7,
++5), 22 satış çıkışı, **0 bağsız kalem**, ledger bakiye 9. Sipariş
+`11303193632` 7 adet ve **iki partiye bölünmüş** (`8sqwp1xx` × 4 +
+`3qtmm27x` × 3) — dağıtım beklendiği gibi.
+
+⏭ **AÇIK KALAN:** 2502 satış maliyet bağı bekliyor. **382'si kapatılamaz**
+(kapsam dışı), **188 varyantlık kısmı belge eksik** (kapanabilir),
+gerisi alım kaydı yok.
 
 ⚠ **EKRANDA GÖRÜNÜYOR ve sebebi AYRI yazıyor** — marj şerhi iki satır:
 _"N satış maliyet bağı bekliyor"_ ile _"M satış: ALIM KAYDI YOK"_ tek cümleye
