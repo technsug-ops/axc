@@ -439,7 +439,63 @@ sistemde var: 321"_ satırı bir ÇELİŞKİ DEĞİL — boş kolonun artefaktı
 ✅ **SIRA HATASI 0** — hiçbir alım satıştan sonraya düşmüyor.
 ⛔ Kalan **44 kalem / 45 adet** dosyada da yok.
 
-⏭ **SIRADAKİ: kuru koşum, sonra onay.**
+### 🚦 K55 KURU KOŞUM ÜRETİLDİ — **ONAY BEKLİYOR** (26.08.2026)
+
+`npm run canli:alis-kuru -- --dosya="…"` · **salt okuma, tek satır yazılmadı.**
+
+**① DOSYA KİMLİĞİ RAPORUN İLK SATIRINDA** (artık her koşumda):
+`alislar (5).xlsx` · md5 `b4ccfd3b0e99388a2ed0780c2770dcc6` · **2283 satır**.
+
+**② YAZILACAK:** **1574 alım** (sipariş no başına gruplanmış) · **1615 kalem** ·
+3266 adet · **₺7.788.253** · kaynak `alis-excel`.
+⚠ 1614'ü barkodla, **1'i ürün adıyla** — ad eşleşmesi ayrı işaretli.
+Tarih: 2025-10 → 2026-08, en yoğun 2026-01 (251 kalem).
+
+**③ DIŞARIDA — altı ayrı kova, toplamı satır sayısıyla TUTUYOR (668+1615=2283):**
+
+| Kova | Adet | Sebep |
+|---|---|---|
+| `zatenVar` | **348** | sipariş no ya da varyant+gün+adet eşleşti |
+| `eslesmeyenBarkod` | **130** | barkod var, ürün sistemde YOK |
+| `iadeli` | **106** | iade edilmiş — stok vermez |
+| `barkodsuz` | **79** | barkod yok, ürün adı da eşleşmedi |
+| `adetSifir` | 3 | adet ≤ 0 |
+| `copBarkod` | **2** | `İSTANBUL` · `iSTANBUL` |
+
+**④ TEDARİKÇİ:** 8 eşleşti · **2 yeni aday: `A101` · `Ahmet Pekel`** (1'er kalem).
+⛔ **Otomatik AÇILMAZ** — onay gelene kadar o 2 kalem dışarıda.
+
+**⑤ İDEMPOTENTLİK:** ikinci koşum **0** — beyan değil, aynı sınıflandırma
+yazım sonrası hâlle yeniden koşularak **simüle edildi**.
+
+**⑦ STOK:** `PURCHASE_IN`, `occurredAt` = Satın Alma Tarihi.
+`StockMovement` **636 → 2251** · `PURCHASE_IN` **358 → 1973**.
+⚠ Satış tarafındaki karardan farklı ve sebebi net: orada parti YOKTU,
+burada parti **bizzat bu kayıtlar**.
+
+**⑧ SONRASI:** stok bağı yeniden koşunca **260 kalem** bağ kurar ·
+₺990.061 · **açığın %85,6'sı**. Yine bağlanamayan 69 kalem.
+
+⚠ **RAKAM DÜŞTÜ: 285 → 260 — VE SEBEBİ ÖLÇÜLDÜ, VARSAYILMADI.**
+
+    süzgeçsiz (ilk ölçümün yaptığı)   289
+    yalnız iade elendi                285   ← önceki rapordaki rakam
+    yalnız zatenVar elendi            264
+    ikisi de elendi (kuru koşum)      260   ← GEÇERLİ OLAN
+
+İlk ölçüm sistemde **zaten olan 348 satırı yeni parti sayıyordu** — aynı malı
+iki kez stoğa koymak olurdu. `285` aşıldı, geçerli olan **260**.
+
+⛔ **RAPORUN AÇTIĞI TEK ŞEMA KALEMİ** (yazımdan ÖNCE ayrı migration onayı):
+
+    Purchase.importBatch  String?   @@index([importBatch])
+    Purchase.importKaynak String?   ← 'alis-excel'
+
+⚠ Merdiven ölçüldü: `supplierOrderNo` bu işi **göremez** — o tedarikçinin
+numarası ve elle girilen kayıtlarda da dolu; parti kimliği yapmak iki anlamı
+tek kolona koyardı. `note` da sorgulanacağı için yetmez.
+
+⏭ **ONAY KAPISI AÇIK — hiçbir yazım yapılmadı.**
 
 ⏭ **Seçenekler ÖLÇÜLECEK, bugün açılmaz:** tedarikçi belgelerinden toplu
 giriş · Amazon/toptancı dökümü · geriye dönük toplu alım kaydı.

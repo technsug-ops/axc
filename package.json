@@ -18,6 +18,7 @@
     "ice-aktarma:dogrula": "tsx scripts/ice-aktarma-dogrula.ts",
     "canli:11467-tutar": "tsx scripts/canli-11467-tutar-duzelt.ts",
     "canli:stok-bagi": "tsx scripts/canli-ice-aktarma-stok-bagi.ts",
+    "canli:alis-kuru": "tsx scripts/canli-alis-kuru-kosum.ts",
     "kart-odeme:dogrula": "tsx scripts/kart-odeme-dogrula.ts",
     "kart:dogrula": "tsx scripts/urun-karti-dogrula.ts",
     "baglanti:test": "tsx scripts/baglanti-testi.ts",
