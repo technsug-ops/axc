@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { birimFiyatCoz, iptalAniCoz } from "./canli-ty-ice-aktar";
+import { iceAktarmaTarihi } from "../src/lib/ice-aktarma-tarih-kapisi";
 
 /**
  * ============================================================================
@@ -869,6 +870,223 @@ for (const [ad, yol] of [
     /<IceAktarmaSerhi\s*\/>/.test(e) && /<DefterDerinligiSerhi\s*\/>/.test(e),
   );
 }
+
+
+console.log("\n⑪ TARİH KAPISI — alt sınır SABİT, üst sınır KAYAR");
+
+const kapiKaynak = oku("src/lib/ice-aktarma-tarih-kapisi.ts");
+
+/**
+ * ⚠ SAF KURAL — ÜST SINIR KAYAR. Örnek veri AYRIMIN İKİ YAKASINI
+ * gösteriyor: aynı tarih, iki farklı "şimdi" ile iki farklı sonuç.
+ * Tek "şimdi" ile sınansaydı sabit sınıra çeviren mutasyon YEŞİL kalırdı.
+ */
+const SIMDI_2026 = new Date("2026-08-26T00:00:00.000Z");
+const SIMDI_2030 = new Date("2030-01-01T00:00:00.000Z");
+kontrol(
+  "2029 tarihi BUGÜN 2026 iken GELECEKTE",
+  iceAktarmaTarihi("2029-03-30", SIMDI_2026).tur === "GELECEKTE",
+);
+kontrol(
+  "AYNI tarih BUGÜN 2030 iken GEÇERLİ — sınır KAYIYOR",
+  iceAktarmaTarihi("2029-03-30", SIMDI_2030).tur === "GECERLI",
+);
+kontrol(
+  "alt sınırdan eski COK_ESKI (0202 vakası)",
+  iceAktarmaTarihi("0202-11-02", SIMDI_2026).tur === "COK_ESKI",
+);
+kontrol(
+  "alt sınırın kendisi GEÇERLİ",
+  iceAktarmaTarihi("2024-01-01T00:00:00.000Z", SIMDI_2026).tur === "GECERLI",
+);
+kontrol(
+  "alt sınırdan bir gün öncesi COK_ESKI",
+  iceAktarmaTarihi("2023-12-31T00:00:00.000Z", SIMDI_2026).tur === "COK_ESKI",
+);
+kontrol("okunamayan OKUNAMADI", iceAktarmaTarihi("abc", SIMDI_2026).tur === "OKUNAMADI");
+kontrol("boş OKUNAMADI", iceAktarmaTarihi(null, SIMDI_2026).tur === "OKUNAMADI");
+/**
+ * ⚠ HER DAL AYRI SINANIR — geçersiz `Date` NESNESİ `instanceof Date`
+ * doğrudur ve ilk daldan sınanmadan geçerse 8 alım düşer (canlı vaka).
+ */
+kontrol(
+  "geçersiz Date NESNESİ OKUNAMADI",
+  iceAktarmaTarihi(new Date("gecersiz"), SIMDI_2026).tur === "OKUNAMADI",
+);
+/**
+ * ⚠ SERİ NUMARASI DEĞERİ ÖLÇÜLDÜ, TAHMİN EDİLMEDİ. İlk yazımda 45000
+ * "geçerli bir tarih" sanıldı ve kontrol KIRMIZI yandı — 45000 aslında
+ * `2023-03-15`, yani ALT SINIRIN ALTINDA. Kod doğruydu, testin verisi
+ * yanlıştı. Değerler hesaplanarak seçildi:
+ *     45000 → 2023-03-15    45800 → 2025-05-23    46000 → 2025-12-09
+ */
+kontrol(
+  "Excel seri numarası dalı çalışıyor (45800 = 2025-05-23)",
+  iceAktarmaTarihi(45800, SIMDI_2026).tur === "GECERLI",
+);
+kontrol(
+  "Excel seri numarası ALT SINIRIN altındaysa elenir (45000 = 2023)",
+  iceAktarmaTarihi(45000, SIMDI_2026).tur === "COK_ESKI",
+);
+kontrol(
+  "Excel sıfır serisi de elenir",
+  iceAktarmaTarihi(1000, SIMDI_2026).tur === "COK_ESKI",
+);
+
+/**
+ * ⛔ ÜST SINIR SABİT TARİHE/YILA BAĞLANAMAZ — "2027 Ocak'ta sessizce
+ * kırılır" tuzağı. Kaynakta sabit yıl karşılaştırması ARANMIYOR olmalı.
+ */
+kontrol(
+  "üst sınır SABİT YILA bağlı değil",
+  !/getUTCFullYear\(\)\s*[<>]/.test(yorumsuz(kapiKaynak)) &&
+    !/20\d\d-12-31|new Date\("20[3-9]\d/.test(yorumsuz(kapiKaynak)),
+);
+kontrol(
+  "üst sınır çağırandan gelen `simdi`",
+  /aday\.getTime\(\) > simdi\.getTime\(\)/.test(kapiKaynak),
+);
+kontrol(
+  "fonksiyon KENDİ saatini okumuyor (test edilebilir)",
+  !/new Date\(\)/.test(yorumsuz(kapiKaynak)),
+);
+
+/** ⚠ HER İKİ AKTARIM DA ORTAK KAPIDAN GEÇİYOR — yerel kopya yok. */
+for (const [ad, yol] of [
+  ["alış yazım", "scripts/canli-alis-ice-aktar.ts"],
+  ["alış kuru koşum", "scripts/canli-alis-kuru-kosum.ts"],
+  ["satış kuru koşum", "scripts/canli-satis-kuru-kosum.ts"],
+] as const) {
+  const g = yorumsuz(oku(yol));
+  kontrol(`${ad} — ORTAK kapıyı çağırıyor`, /iceAktarmaTarihi\(/.test(g));
+  kontrol(
+    `${ad} — kendi makul-yıl kapısını TANIMLAMIYOR`,
+    !/yil < 2000 \|\| yil > 2100/.test(g),
+  );
+}
+/** ⚠ İKİ SINIR AYRI KOVADA — tek "tarihDışı" rakamı iki sorunu gizlerdi. */
+const satisKuru = oku("scripts/canli-satis-kuru-kosum.ts");
+kontrol(
+  "alt ve üst sınır AYRI kovalarda",
+  /koy\("tarihCokEski", s\)/.test(satisKuru) && /koy\("gelecekTarihli", s\)/.test(satisKuru),
+);
+
+
+console.log("\n⑫ SATIŞ İÇE AKTARMA — kovalar, hesap alanları, kanal kapısı");
+
+const satisAktar = oku("scripts/canli-satis-ice-aktar.ts");
+
+/**
+ * ⚠ KURU KOŞUM İLE YAZIM AYNI KOVALARI TAŞIMALI — ölçüt kova ADI değil
+ * ATMA çağrısı, çünkü ad her dosyada birden çok yerde geçiyor.
+ */
+const SATIS_KOVALARI = [
+  "turFarkli", "adetSifir", "tarihOkunamayan", "tarihCokEski",
+  "gelecekTarihli", "numarasiz", "zatenVar", "copSku",
+  "eslesmeyenListing", "belirsizSku",
+];
+for (const k of SATIS_KOVALARI) {
+  kontrol(
+    `satış kovası "${k}" — yazımda ATMA çağrısı var`,
+    new RegExp('say\\("' + k + '"\\)').test(satisAktar),
+  );
+}
+/**
+ * ⚠ ÖLÇÜT "ÇAĞRI VAR MI" DEĞİL, "SATIR GERÇEKTEN DÜŞÜYOR MU" — ve bu
+ * MUTASYONLA bulundu. `say("kanalCeliskisi")` yerinde duruyor ama
+ * ardındaki `continue;` silinirse satır hem kovaya SAYILIR hem YİNE
+ * YAZILIR: iki yanlış birden. Kova adını aramak bunu geçiriyordu.
+ */
+for (const k of ["kanalCozulemedi", "kanalCeliskisi"]) {
+  const dusurme = blok(satisAktar, 'say("' + k + '")', 40);
+  kontrol(
+    `satış kovası "${k}" — ATMA çağrısı VE düşürme birlikte`,
+    dusurme.length > 0 && /continue;/.test(dusurme),
+  );
+}
+
+/**
+ * ⛔ HESAP SÜTUNLARI YAZILMAZ — motor kendi hesaplar. Dosyanınkini
+ * yazmak iki farklı gerçek üretirdi. "Dokunmuyor" iddiası, ihlal eden
+ * mutasyonla sınanır.
+ */
+const satisYazma = blok(satisAktar, "const satis = await prisma.sale.create({", 1400);
+kontrol("satış yazma bloğu bulundu", satisYazma.length > 0);
+for (const alan of ["net1Amount", "net2Amount", "profitStatus", "calculatedAt", "commissionRate", "vatRate"]) {
+  kontrol(`hesap alanı \`${alan}\` YAZILMIYOR`, !new RegExp(alan).test(satisYazma));
+}
+kontrol(
+  "her satış importBatch VE importKaynak taşıyor",
+  /importBatch: parti,/.test(satisYazma) && /importKaynak: "satis-excel",/.test(satisYazma),
+);
+kontrol(
+  "soldAt İstanbul gününe indirgeniyor",
+  /soldAt: isGunuUtc\(kalemler\[0\]\.tarih\)/.test(satisYazma),
+);
+
+/**
+ * ⚠ PARTİ YOKSA HAREKET YAZILMAZ — negatif stok üretilmez. Satış
+ * tarafındaki kararın aynısı ve ihlali sessizce hayalet adet üretir.
+ */
+kontrol(
+  "parti yetmezse SALE_OUT yazılmıyor",
+  /if \(!sonuc\.yeterliMi\) \{ hareketAtlanan\+\+; continue; \}/.test(satisAktar),
+);
+kontrol(
+  "tüketilen parti SONRAKİ kaleme taşınıyor",
+  /kalanPartiler\.set\(kalem\.variantId, sonuc\.kalanPartiler\)/.test(satisAktar),
+);
+kontrol("ORTAK fifoDagit kullanılıyor", /fifoDagit\(mevcut, kalem\.quantity\)/.test(satisAktar));
+
+/**
+ * ⚠ KANAL BELİRSİZSE YAZILMAZ. Amazon'da üç hesap var ve üçü de sıfır
+ * satışlı — hangisine yazılacağı VERİDEN çıkmıyor.
+ * ⚠ VE KANAL ÇELİŞKİSİ YAZILMAZ: yanlış kanal KESİNTİ KURALLARINI
+ * değiştirir (HB komisyona %20 KDV + ₺12,60; TY ₺13,19), NET sessizce
+ * yanlış çıkar.
+ */
+kontrol(
+  "kanal hesabı SATIŞI OLAN hesaptan çözülüyor",
+  /adaylar\.filter\(\(h\) => h\._count\.sales > 0\)/.test(satisAktar),
+);
+kontrol(
+  "birden çok aday varsa BELİRSİZ — yazılmıyor",
+  /if \(satisli\.length === 1\) kanalHesap\.set/.test(satisAktar) &&
+    /else belirsizKanal\.add/.test(satisAktar),
+);
+kontrol(
+  "DEPO kanal eşlemesinde YOK",
+  !/DEPO:/.test(yorumsuz(satisAktar)),
+);
+
+/** ⚠ GERİ ALMA: satış SİLİNMEZ, işaretlenir + stok ters kayıtla döner. */
+kontrol(
+  "geri alma satışı SİLMİYOR, işaretliyor",
+  !/sale\.delete|saleItem\.delete/.test(yorumsuz(satisAktar)) &&
+    /data: \{ iptalTarihi: okumaAni \}/.test(satisAktar),
+);
+kontrol(
+  "geri alma stok hareketini TERS KAYITLA geri veriyor",
+  /type: "ADJUSTMENT",[\s\S]{0,200}quantityDelta: -h\.quantityDelta,/.test(satisAktar),
+);
+kontrol(
+  "geri alınacak küme importBatch'ten TÜRETİLİYOR",
+  /where: \{ importBatch: GERI \}/.test(satisAktar),
+);
+kontrol(
+  "yazım --yaz bayrağına kilitli (İKİ yazma yolu)",
+  (satisAktar.match(/if \(!YAZ\) \{/g) ?? []).length === 2,
+);
+kontrol("toplu yazım AuditLog bırakıyor", /action: "SATIS_ICE_AKTARMA"/.test(satisAktar));
+kontrol(
+  "tutmayan sayım YORUMLANMADAN yazılıyor",
+  /TUTMADI/.test(satisAktar) && /YORUMLANMADI/.test(satisAktar),
+);
+/** ⚠ HATA MESAJI TAM TAŞINIR — `split()[0]` tuzağı tekrarlanmaz. */
+kontrol(
+  "hata mesajı split()[0] ile KESİLMİYOR",
+  !/message\.split\(/.test(satisAktar),
+);
 
 
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);

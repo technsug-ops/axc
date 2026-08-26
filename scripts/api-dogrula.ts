@@ -123,6 +123,28 @@ const YASAK = [
   { desen: 'method: "PATCH"', ad: "PATCH" },
 ];
 
+/**
+ * ═══ KAPSAM: PRİSMA İSTEMCİSİNE ULAŞAMAYAN DOSYA YAZAMAZ ═════════════════
+ *
+ * ⚠ 26.08.2026: bu kontrol `ice-aktarma-dogrula.ts`de kırmızı yandı ve
+ * KOD DOĞRUYDU. O dosya bir BEKÇİ — kaynağı METİN olarak okuyup desen
+ * arıyor ve içinde arama DİZESİ olarak `prisma.sale.create(` taşıyor.
+ * Dize, çağrı değildir.
+ *
+ * ⛔ ÇARE DİZE SÖKMEK DEĞİL — o yol kırılgan (kaçışlar, şablon değişkeni).
+ * Doğru ölçüt DAVRANIŞ: bir dosya prisma istemcisini HİÇ ALMIYORSA
+ * deftere yazamaz. Kapsam import'a bağlandı; import satırı yapısaldır.
+ *
+ * ⚠ DİNAMİK IMPORT DA SAYILIR: içe aktarma betikleri istemciyi
+ * `await import("../src/lib/prisma")` ile alıyor. Yalnız statik import
+ * aransaydı ONLAR kapsam dışı kalır, asıl korunması gerekenler
+ * korumasız olurdu.
+ */
+function prismayaUlasiyorMu(govde: string): boolean {
+  return /lib\/prisma|generated\/prisma\/client/.test(govde) ||
+    /new PrismaClient\(/.test(govde);
+}
+
 for (const yol of apiDosyalari) {
   const y = yorumsuzla(readFileSync(yol, "utf8"));
   const bulunanlar = YASAK.filter((x) => y.includes(x.desen)).map((x) => x.ad);
@@ -223,6 +245,10 @@ for (const yol of apiDosyalari) {
   const dosyaAdi = yol.split(new RegExp("[\\\\/]")).pop() ?? yol;
   const beyan = YAZMASI_BEYANLI.find((b) => b.dosya === dosyaAdi);
   const y = yorumsuzla(readFileSync(yol, "utf8"));
+  if (!prismayaUlasiyorMu(y)) {
+    kontrol(`  ${yol} — prisma istemcisi ALMIYOR, yazamaz`, true);
+    continue;
+  }
   const bulunanlar = prismaYazmalari(y);
   if (beyan) {
     /**

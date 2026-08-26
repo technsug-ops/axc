@@ -7,6 +7,7 @@ import readXlsxFile from "read-excel-file/node";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { anahtarla } from "../src/lib/benzerlik";
 import { paketiNormalle } from "../src/lib/tablo/paket";
+import { iceAktarmaTarihi } from "../src/lib/ice-aktarma-tarih-kapisi";
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
 import { canliYapilandirma } from "./canli-ortak";
 
@@ -46,25 +47,6 @@ const gun = (d: Date) =>
   }).format(d);
 const isGunuUtc = (d: Date) => new Date(`${gun(d)}T00:00:00.000Z`);
 
-/**
- * ⚠ GEÇERLİLİK HER DALDA — ve makul yıl kapısı OKUMA anında.
- * _(Anayasa: "sınanmayan dal, sınanmamış koddur" + "kütüphanenin
- * geçerlisi iş kuralımızın geçerlisi değildir".)_
- */
-function tariheCevir(ham: unknown): Date | null {
-  const aday =
-    ham instanceof Date
-      ? ham
-      : typeof ham === "number"
-        ? new Date(Date.UTC(1899, 11, 30) + ham * 86_400_000)
-        : metne(ham)
-          ? new Date(metne(ham))
-          : null;
-  if (aday === null || Number.isNaN(aday.getTime())) return null;
-  const yil = aday.getUTCFullYear();
-  if (yil < 2000 || yil > 2100) return null;
-  return aday;
-}
 
 /**
  * ⚠ SATIŞ TÜRÜ — YALNIZ "satış" YAZILIR.
@@ -72,6 +54,19 @@ function tariheCevir(ham: unknown): Date | null {
  * ciroya sokar ve iade/iptal defterini de bozar.
  */
 const SATIS_TURU = "satış";
+
+/**
+ * ⚠ YALNIZ GEÇERLİ KAPIDAN GEÇMİŞ SATIRDA ÇAĞRILIR. Sınıflandırma
+ * geçersiz olanları çoktan ayırdı; burada `!` yerine açık bir hata
+ * fırlatmak, kova sırası bozulursa SESSİZ yanlış tarih yerine gürültü
+ * üretir.
+ */
+function tarihiAl(s: { tarihKapisi: ReturnType<typeof iceAktarmaTarihi> }): Date {
+  if (s.tarihKapisi.tur !== "GECERLI") {
+    throw new Error("tarihiAl: geçersiz kapı — sınıflandırma sırası bozuk");
+  }
+  return s.tarihKapisi.tarih;
+}
 
 async function main() {
   if (!YOL) {
@@ -135,13 +130,13 @@ async function main() {
 
   type Satir = {
     sira: number; siparis: string; sku: string; barkod: string; kanal: string;
-    urun: string; tur: string; adet: number; tarih: Date | null; fiyat: number;
+    urun: string; tur: string; adet: number; tarihKapisi: ReturnType<typeof iceAktarmaTarihi>; fiyat: number;
   };
   const veri: Satir[] = satirlar.map((r, i) => ({
     sira: i + 7,
     siparis: metne(r[kol.siparis]), sku: metne(r[kol.sku]), barkod: metne(r[kol.barkod]),
     kanal: metne(r[kol.kanal]), urun: metne(r[kol.urun]), tur: metne(r[kol.tur]),
-    adet: Number(r[kol.adet]) || 0, tarih: tariheCevir(r[kol.tarih]),
+    adet: Number(r[kol.adet]) || 0, tarihKapisi: iceAktarmaTarihi(r[kol.tarih], okumaAni),
     fiyat: Number(r[kol.fiyat]) || 0,
   }));
 
@@ -182,6 +177,7 @@ async function main() {
   type Kova =
     | "yazilacak" | "zatenVar" | "turFarkli" | "copSku" | "belirsizSku"
     | "eslesmeyenListing" | "numarasiz" | "tarihOkunamayan" | "gelecekTarihli"
+    | "tarihCokEski"
     | "adetSifir";
   const kovalar = new Map<Kova, Satir[]>();
   const koy = (k: Kova, s: Satir) => kovalar.set(k, [...(kovalar.get(k) ?? []), s]);
@@ -201,17 +197,15 @@ async function main() {
       continue;
     }
     if (s.adet <= 0) { koy("adetSifir", s); continue; }
-    if (s.tarih === null) { koy("tarihOkunamayan", s); continue; }
     /**
-     * ⚠ GELECEK TARİHLİ SATIŞ AYRI KOVA — VE İLK SÜRÜMDE SIZMIŞTI.
-     * Makul yıl kapısı (2000–2100) `2029-03-30`u geçiriyor: yıl geçerli,
-     * ama o gün HENÜZ GELMEDİ. Bir satış gelecekte olamaz; yazılsaydı
-     * ciroya girer, kâr hesabına katılır ve nakit takviminde olmayan bir
-     * hakediş beklentisi doğururdu.
-     * ⛔ 1 satır bu yüzden yazılabilir listeye sızdı ve kuru koşumda
-     * yakalandı — kova ayrılmasaydı yazıma kadar görünmezdi.
+     * ⚠ İKİ SINIR AYRI SAYILIR — alt sınırı aşan VERİ HATASI (`0202`
+     * gibi), üst sınırı aşan GELECEK TARİHLİ bir olay. Tek "tarihDışı"
+     * rakamı iki apayrı sorunu gizlerdi.
      */
-    if (s.tarih.getTime() > okumaAni.getTime()) { koy("gelecekTarihli", s); continue; }
+    if (s.tarihKapisi.tur === "OKUNAMADI") { koy("tarihOkunamayan", s); continue; }
+    if (s.tarihKapisi.tur === "COK_ESKI") { koy("tarihCokEski", s); continue; }
+    if (s.tarihKapisi.tur === "GELECEKTE") { koy("gelecekTarihli", s); continue; }
+    const tarih = s.tarihKapisi.tarih;
     if (!s.siparis) { koy("numarasiz", s); continue; }
     if (defterKod.has(s.siparis)) { koy("zatenVar", s); continue; }
     if (copMu(s.sku)) { koy("copSku", s); continue; }
@@ -238,7 +232,7 @@ async function main() {
   console.log("   kaynak                           \"satis-excel\"");
   const yillik = new Map<string, { kalem: number; tutar: number }>();
   for (const s of yazilacak) {
-    const y = gun(s.tarih!).slice(0, 4);
+    const y = gun(tarihiAl(s)).slice(0, 4);
     const m = yillik.get(y) ?? { kalem: 0, tutar: 0 };
     m.kalem++;
     m.tutar += s.fiyat * s.adet;
@@ -286,7 +280,8 @@ async function main() {
     eslesmeyenListing: "HBCV/HBV/başka desen — ürün sistemde YOK",
     numarasiz: "sipariş numarası HİÇ YOK",
     tarihOkunamayan: "tarih okunamadı ya da makul yıl dışı",
-    gelecekTarihli: "tarih GELECEKTE — satış henüz olmadı",
+    gelecekTarihli: "tarih GELECEKTE (üst sınır=bugün) — satış henüz olmadı",
+    tarihCokEski: "tarih ALT SINIRDAN eski (2024-01-01) — veri hatası",
     adetSifir: "adet 0 ya da negatif",
   };
   let disarida = 0;
@@ -354,12 +349,12 @@ async function main() {
 
   /** ⚠ Kalemler TARİH SIRASINDA tüketilir — parti bir sonrakine taşınır. */
   const kalan = new Map([...partiler].map(([k, v]) => [k, v.map((x) => ({ ...x }))]));
-  const siraliKalemler = [...yazilacak].sort((a, b) => a.tarih!.getTime() - b.tarih!.getTime());
+  const siraliKalemler = [...yazilacak].sort((a, b) => tarihiAl(a).getTime() - tarihiAl(b).getTime());
   let hareketYazilir = 0, hareketAtlanir = 0, erienAdet = 0;
   for (const s of siraliKalemler) {
     const vid = cozum.get(s.sira)!;
     const p = kalan.get(vid) ?? [];
-    const uygun = p.filter((x) => x.tarih.getTime() <= isGunuUtc(s.tarih!).getTime() && x.kalan > 0);
+    const uygun = p.filter((x) => x.tarih.getTime() <= isGunuUtc(tarihiAl(s)).getTime() && x.kalan > 0);
     if (uygun.reduce((t, x) => t + x.kalan, 0) < s.adet) { hareketAtlanir++; continue; }
     let ihtiyac = s.adet;
     for (const x of uygun) {

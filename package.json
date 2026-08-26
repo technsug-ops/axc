@@ -21,6 +21,7 @@
     "canli:alis-kuru": "tsx scripts/canli-alis-kuru-kosum.ts",
     "canli:alis-aktar": "tsx scripts/canli-alis-ice-aktar.ts",
     "canli:satis-kuru": "tsx scripts/canli-satis-kuru-kosum.ts",
+    "canli:satis-aktar": "tsx scripts/canli-satis-ice-aktar.ts",
     "kart-odeme:dogrula": "tsx scripts/kart-odeme-dogrula.ts",
     "kart:dogrula": "tsx scripts/urun-karti-dogrula.ts",
     "baglanti:test": "tsx scripts/baglanti-testi.ts",

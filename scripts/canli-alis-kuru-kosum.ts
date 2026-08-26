@@ -9,6 +9,7 @@ import { anahtarla } from "../src/lib/benzerlik";
 import { paketiNormalle } from "../src/lib/tablo/paket";
 import { tedarikciAnahtari } from "../src/lib/tedarikci-adi";
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
+import { iceAktarmaTarihi } from "../src/lib/ice-aktarma-tarih-kapisi";
 import { canliYapilandirma } from "./canli-ortak";
 
 /**
@@ -42,60 +43,15 @@ const metne = (v: unknown): string =>
 
 /** Excel seri numarasını tarihe çevirir; 1900 tarih sistemi. */
 /**
- * ============================================================================
- *  TARİH ÇEVİRİMİ — GEÇERLİLİK **HER DALDA** SINANIR
- * ----------------------------------------------------------------------------
- *  ⛔ CANLI HATA 26.08.2026 — VE 8 ALIM BU YÜZDEN DÜŞTÜ.
- *
- *  İlk sürüm geçerliliği YALNIZ metin dalında sınıyordu:
- *      if (ham instanceof Date) return ham;               ← sınanmıyor
- *      if (typeof ham === "number") return new Date(...);  ← sınanmıyor
- *      ... Number.isNaN(d.getTime()) ? null : d            ← yalnız burada
- *
- *  `read-excel-file` bozuk bir hücreyi **Invalid Date NESNESİ** olarak
- *  döndürüyor: `instanceof Date` DOĞRU, `getTime()` `NaN`. O nesne ilk
- *  daldan sınanmadan geçti, `receivedAt`e yazılmaya çalışıldı ve Prisma
- *  reddetti — _"Provided Date object is invalid"_.
- *
- *  ⚠ VE HATA SESSİZ KALDI: mesaj `split()[0]` ile kesiliyordu ve ilk
- *  satır BOŞTU. 44 alım düştü, sebebi ekranda " — " olarak göründü.
- *  İki kusur üst üste: sınanmayan dal + yutulan mesaj.
- *
- *  ⚠ KAPI TEK YERE KONDU: üç dalın da çıkışı aynı doğrulamadan geçiyor.
- *  Dal başına ayrı kontrol yazılsaydı dördüncü dal eklendiğinde yine
- *  atlanırdı. _(Anayasa: "ölçüt tersten kurulur".)_
- * ============================================================================
+ * ⚠ TARİH KAPISI ORTAK GÖVDEDEN — burada yerel bir kopyası vardı.
+ * Kapı iki ayrı vaka üretti (alışta `0202`, satışta `2029`) ve iki
+ * betikte iki ayrı kopya tutmak, ikisinin yarın ayrışmasına davetiyeydi.
+ * `iceAktarmaTarihi` alt sınırı SABİT (2024-01-01), üst sınırı KAYAR
+ * (bugün) — ayrıntı için `src/lib/ice-aktarma-tarih-kapisi.ts`.
  */
-function tariheCevir(ham: unknown): Date | null {
-  const aday =
-    ham instanceof Date
-      ? ham
-      : typeof ham === "number"
-        ? new Date(Date.UTC(1899, 11, 30) + ham * 86_400_000)
-        : metne(ham)
-          ? new Date(metne(ham))
-          : null;
-  if (aday === null || Number.isNaN(aday.getTime())) return null;
-  /**
-   * ⚠ MAKUL YIL KAPISI — VE UYDURMA YAPILMIYOR.
-   *
-   * ⛔ CANLI VERİ HATASI 26.08.2026: 8 satırın Teslim Tarihi
-   * `"11.02.0202"` yazıyor — birinin `2026` yerine `0202` yazması.
-   * `new Date()` bunu YIL 202 diye GEÇERLİ kabul ediyor; sonra
-   * `Intl` onu `202-11-02` (üç haneli yıl) diye biçimliyor ve
-   * `new Date("202-11-02T…")` **Invalid Date** dönüyor. Prisma
-   * reddediyor, alım düşüyor — ve sebep zincirin başında değil
-   * SONUNDA görünüyor.
-   *
-   * ⚠ "0202 demek ki 2026'ymış" DİYE DÜZELTİLMEZ. Bu bir tahmindir;
-   * kaynak veriyi uydurmak, yanlış bir teslim tarihini kesin gibi
-   * göstermek olurdu. Değer KULLANILAMAZ sayılır, çağıran taraf
-   * yedeğine (satın alma tarihi) düşer ve bu SAYILIR.
-   * _(Anayasa: "imkânsız görünen değer önce doğrulanır — düzeltilmez".)_
-   */
-  const yil = aday.getUTCFullYear();
-  if (yil < 2000 || yil > 2100) return null;
-  return aday;
+function tariheCevir(ham: unknown, simdi: Date): Date | null {
+  const k = iceAktarmaTarihi(ham, simdi);
+  return k.tur === "GECERLI" ? k.tarih : null;
 }
 
 async function main() {
@@ -169,8 +125,8 @@ async function main() {
     adet: Number(r[kol.adet]) || 0,
     fiyat: Number(r[kol.fiyat]) || 0,
     toplam: Number(r[kol.toplam]) || 0,
-    alis: tariheCevir(r[kol.alis]),
-    teslim: tariheCevir(r[kol.teslim]),
+    alis: tariheCevir(r[kol.alis], okumaAni),
+    teslim: tariheCevir(r[kol.teslim], okumaAni),
     iade: metne(r[kol.iade]),
   }));
 
