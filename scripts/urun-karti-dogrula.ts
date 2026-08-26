@@ -5,7 +5,7 @@ import {
   type KartSatisi,
 } from "../src/lib/urun-karti";
 import type { KalemGirdisi } from "../src/lib/panel-listeler";
-import { tedarikciAdi } from "../src/lib/tedarikci-adi";
+import { tedarikciAdi, tedarikciAnahtari } from "../src/lib/tedarikci-adi";
 import { aramaKarari } from "../src/lib/kart-arama-karari";
 import { aramaKosulu } from "../src/lib/varyant-arama-kurali";
 import { readFileSync } from "node:fs";
@@ -334,6 +334,63 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
     "ikisi de doluysa İLİŞKİ kazanır (güncel olan)",
     tedarikciAdi({ supplier: { name: "Yeni Ad" }, supplierName: "Eski Ad" }) ===
       "Yeni Ad",
+  );
+  /**
+   * ═══ EŞLEŞTİRME ANAHTARI — I/ı/İ/i TUZAĞI ═══════════════════════════
+   *
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR. "Hepsi Burada" ile
+   * "Hepsiburada" yalnız BOŞLUKLA ayrılıyor — o çift, katlamayı değil
+   * yalnız boşluk sökmeyi sınar. "BIM" ile "BİM" ise TAM olarak Türkçe
+   * tuzağı: `toLocaleLowerCase("tr")` onları "bım" ve "bim" yapıp AYIRIR.
+   * İkisi birlikte olmadan mutasyon yeşil kalırdı.
+   */
+  kontrol(
+    "boşluk farkı eşleşmeyi bozmuyor",
+    tedarikciAnahtari("Hepsi Burada") === tedarikciAnahtari("Hepsiburada"),
+  );
+  kontrol(
+    "büyük/küçük harf farkı eşleşmeyi bozmuyor",
+    tedarikciAnahtari("HEPSİBURADA") === tedarikciAnahtari("hepsiburada"),
+  );
+  kontrol(
+    "NOKTASIZ I ile NOKTALI İ aynı anahtara düşer (asıl tuzak)",
+    tedarikciAnahtari("BIM") === tedarikciAnahtari("BİM"),
+  );
+  kontrol(
+    "Türkçe küçük harf TEK BAŞINA yetmezdi — ayrım gösteriliyor",
+    "BIM".toLocaleLowerCase("tr") !== "BİM".toLocaleLowerCase("tr"),
+  );
+  /**
+   * ⚠ ASIL TUZAK BU — ve mutasyonla bulundu. "BIM"/"BİM" çifti YETMİYOR:
+   * `.toLowerCase()` ASCII `I`yi zaten "i" yapıyor, dolayısıyla katlamayı
+   * kaldıran mutasyon o testi geçiyordu. Kırmızı yandıran şey NOKTASIZ
+   * `ı`: katlanmazsa süzgece takılıp harf tamamen KAYBOLUYOR.
+   */
+  kontrol(
+    "noktasız ı katlanmazsa harf KAYBOLUR — çift ayrımı gösteriyor",
+    tedarikciAnahtari("Kırtasiye") === tedarikciAnahtari("KIRTASIYE"),
+  );
+  kontrol(
+    "ve o çift gerçekten ayrım gösteriyor (ham hâlleri farklı)",
+    "Kırtasiye".toLowerCase() !== "KIRTASIYE".toLowerCase(),
+  );
+  kontrol(
+    "ş/ğ/ü/ö/ç taban karşılığına düşer",
+    tedarikciAnahtari("Şişli Ğüöç") === "sisliguoc",
+  );
+  kontrol(
+    "noktalama ve tire sökülür",
+    tedarikciAnahtari("A-101 Market.") === tedarikciAnahtari("A101 Market"),
+  );
+  /**
+   * ⚠ FARKLI TEDARİKÇİLER KARIŞMAMALI — katlama ne kadar ileri giderse
+   * yanlış eşleşme riski o kadar artar. Bu kontrol katlamanın SINIRINI
+   * sabitliyor: rakamlar korunur, farklı adlar farklı kalır.
+   */
+  kontrol(
+    "farklı tedarikçiler AYNI anahtara düşmüyor",
+    tedarikciAnahtari("A101") !== tedarikciAnahtari("A102") &&
+      tedarikciAnahtari("Amazon") !== tedarikciAnahtari("Amazın"),
   );
   kontrol(
     "ikisi de boşsa null — ekran 'kayıtsız' yazar",
