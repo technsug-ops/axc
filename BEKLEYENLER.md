@@ -1019,6 +1019,76 @@ anahtar üret"** benzeri bir düğme var mı? Ekran görüntüsü yeterli.
 · **YOKSA** → taşıma bir KARARDIR: sızma hâlinde anahtarı iptal etmenin tek
 yolu Trendyol desteğidir ve süresi bilinmiyor.
 
+### 📊 ÜÇ ÖLÇÜM — SAYIM ÖNCESİ TABAN (27.08.2026, salt okuma)
+
+**① KAYNAK KIRILIMI — ilk kez alındı**
+
+| SATIŞ (iptalsiz) | Kayıt | Adet | Tutar | Aralık | Kârlı |
+|---|---|---|---|---|---|
+| aktarım: satis-excel | 5190 | 5310 | 15.072.024 | 2024-01→2026-08 | %53,1 |
+| aktarım: TY API | 411 | 418 | 1.348.454 | 2026-06→2026-08 | %83,2 |
+| **ELLE GİRİLEN** | 145 | 148 | 499.561 | 2026-06→2026-08 | **%100,0** |
+
+| ALIM | Kayıt | Adet | Tutar | Aralık |
+|---|---|---|---|---|
+| aktarım: alis-excel | 1569 | 3251 | 7.759.477 | 2025-10→2026-08 |
+| ELLE GİRİLEN | 386 | 899 | 2.169.011 | 2024-05→2026-08 |
+
+> ### ✅ ELLE GİRİLENLERDE AÇIK YOK
+>
+> | Kaynak | (a) | (b) | (c) | Toplam |
+> |---|---|---|---|---|
+> | satis-excel | 662 | 1401 | 370 | **2433** |
+> | TY API | 29 | 40 | 0 | **69** |
+> | **ELLE** | **0** | **0** | **0** | **0** |
+>
+> **Giriş disiplini bulgusu YOK** — açığın tamamı aktarımdan geliyor.
+
+**ENVANTER 770 ADEDİN KAYNAĞI:** elle **458** (₺1.213.040) · alis-excel
+**306** (₺957.107) · ⛔ alıma bağlı değil **6** (₺23.274).
+
+---
+
+**② 188 VARYANTIN BOŞLUK TARİHİ**
+
+Boşluk **2025-10-26 → 2026-08-26**, tepe **2026-01 (115 kalem)**.
+Alım tarihleri: **150 varyantta alım YALNIZ satıştan önce** · 22'sinde
+arada da var · 16'sında kısmen sonra.
+
+⛔ **ÇAPRAZ CEVABI: ÇAKIŞIYOR.** Boşluğun her ayında alım defteri
+**yoğun** (2026-01: 115 boşluk kalemi ↔ 515 alım adedi). Yani **dosya o
+dönemi kapsıyor ama BU ürünleri kapsamıyor** — sebep dosya kapsamı değil.
+
+⛔ **(d) BARKODSUZ SATIRLAR BOŞLUĞU AÇIKLAMIYOR:** 155 barkodsuz alış
+satırından 188 varyantla **TAM eşleşen 2**, yakın **4**, eşleşmeyen
+**182**. Belge aramaya gerek var.
+
+---
+
+**③ TERS YÖN — alım var, satış yok**
+
+**202 varyant · 770 adet · ₺2.193.421**
+
+⛔ **HİÇ SATIŞI OLMAYAN: 81 varyant · 299 adet · ₺930.766**
+**80'inin kanal SKU'su VAR** — yani ürünler fiilen satışta.
+
+⚠ **HÜKÜM YOK — İKİ OKUMA DA MÜMKÜN ve ölçüm ikisini AYIRAMAZ:**
+satışı deftere girilmemiş olabilir **ya da** gerçekten satılmamış stok.
+**Ayrımı yalnız FİZİKSEL SAYIM kurar.**
+
+⚠ **BEKLEME SÜRESİ TEK BAŞINA AYIRT ETMİYOR:** `axcali1610` 3 gün
+beklemiş ve hiç satışı yok (normal), `axcali1834` 178 gün beklemiş ve hiç
+satışı yok (şüpheli) — ama `OYU-LG-598P-01` 1 gün beklemiş, satışı VAR ve
+37 adet açık. Üç desen de aynı listede.
+
+**Açık partilerin alım ayı:** 2026-06 (₺424.246) · 2026-07 (₺428.781) ·
+2026-08 (₺251.714) — **yeni alım ağırlıklı, bu normal stok görüntüsü.**
+Eski uçta 2025-03'te 1 varyant / 1 adet.
+
+📄 **SAYIM ADAY LİSTESİ: `C:/Users/yapra/Downloads/sayim-adaylari.csv`**
+202 satır · tutara göre sıralı · SKU · ürün · açık adet · ödenen · en
+eski/yeni parti · son satış · bekleme günü · kanal SKU sayısı.
+
 ### ⏭ SIRADAKİ — VE ONAY KAPISI
 
 **(a) kovası içe aktarmanın kuru koşumunu doğuruyor.** Yazma ancak Halil'in
