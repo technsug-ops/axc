@@ -39,6 +39,66 @@
 
 ---
 
+## 🔬 A3-② MUTABAKAT — [KOŞTU 26.08.2026] · SALT OKUMA
+
+> `npm run canli:ty-mutabakat -- --gun=30` · veritabanına hiçbir şey yazılmadı,
+> hiçbir yazma ucu çağrılmadı.
+
+**KAPSAM BEYANI (rakamlardan önce):** Trendyol · AXCALI (`externalId 870249`,
+kimlikle bulundu, adla değil) · `2026-07-27 → 2026-08-26` · defter tarafı
+iptaller DAHİL, ayrı işaretli · API tarafı 3 günlük 20 dilim, 60 günlük
+DEĞİŞİKLİK penceresi.
+
+| Kova | Adet | Kanıt değeri |
+|---|---|---|
+| **(a)** API'de VAR, defterde YOK | **123 sipariş · 124 adet · ₺446.537,36** | ✅ **TEK YÖNLÜ KANIT** |
+| **(b)** İkisinde de var, alanlar tutuyor | **83** | temiz |
+| **(c)** İkisinde de var, ALAN FARKI | **22** | desen çıktı ↓ |
+| **(d)** Defterde VAR, API'de YOK | **2** | ⛔ yorumlanamaz — ve ikisi de bilinen test artığı (`sfsfsf` · `115180181780`, ikisi de İPTAL) |
+| eşleştirilemeyen | **1** | sipariş numarası YOK — hiçbir kovaya giremez |
+
+### ⚠ İLK TASARIM ÇÖPE ATILDI — VE RAKAMLAR YAYIMLANMADAN
+
+**① `startDate/endDate` `orderDate`i SÜZMÜYOR.** Paketin SON DEĞİŞİKLİK anını
+süzüyor. Ölçüm: `10.08→27.08` penceresi `orderDate 04.08→21.08` döndürdü.
+İlk tasarım bunu `orderDate` sanmıştı; o varsayımla üretilen **(a)=104 ·
+(d)=74** rakamları **fark değil KAPSAM BOŞLUĞUYDU.**
+
+**② TEK GENİŞ PENCERE SESSİZCE EKSİK DÖNÜYOR — 7 KAT.**
+`tek 90 günlük pencere → 114 kayıt (totalPages: 1)` · `13 × 7 günlük dilim →
+804 FARKLI sipariş`. Hiçbir hata vermeden, `totalElements: 114` diyerek.
+
+**③ DİLİM ÖLÇÜLEREK SEÇİLDİ:** `14 gün → 234 · 7 gün → 234 · 3 gün → 260 ·
+1 gün → 198 (5 hata)`. 3 gün seçildi.
+
+**④ ⛔ YAKINSAMA SAĞLANMADI:** 3 günlük dilim 7 günlükten 26 kayıt fazla
+buluyor. Yani **API tarafı bir ALT SINIRDIR.** Bunun iki sonucu var ve ikisi
+de rapora yazılı: **(a) tek yönlü kanıttır** (görülen kayıt yok sayılamaz),
+**(d) kanıt DEĞİLDİR** (API'de görünmemek orada olmadığını göstermez).
+
+⚠ **VE DÜZELTME KENDİNİ DOĞRULADI:** dilimleme açılınca **(d) 74 → 2**'ye
+düştü, **(b) 26 → 83**'e çıktı. Eski 74'ün tamamı enumerasyon artefaktıymış.
+
+### (c) — 22 SAPMA, İKİ DESEN ÇIKTI
+
+`ALAN DAĞILIMI: tarih=20 · tutar=5 · adet=1 · paketSayisi=1`
+
+· **TARİH KAYMALARI: `+1 gün × 20` — hepsi aynı yönde, sistematik.**
+  Bu 20 ayrı hata değil BİR mekanizma: `orderDate` saat taşıyor (**H20**).
+· **TUTAR SAPMALARI: `15,00 × 3` · `−7.798,00 × 1` · `−21,00 × 1`.**
+  `₺15` takipçi kuponu (**K19**). Diğer ikisi **tek tek bakılacak** —
+  `−7.798` büyük ve açıklanmadı.
+
+### ⏭ SIRADAKİ — VE ONAY KAPISI
+
+**(a) kovası içe aktarmanın kuru koşumunu doğuruyor.** Yazma ancak Halil'in
+onayından sonra (kendi çerçevesi: _"içe aktarma başlamadan önce kuru koşum
+raporu + onayım"_).
+⛔ **ÖNCE ENUMERASYON TAMLIĞI:** 123 rakamı bir ALT SINIR; kuru koşum
+raporunda bu açıkça yazılacak.
+
+---
+
 ## 📎 KAYIT ÇELİŞKİSİ — 25.08.2026, mimar düzeltmesi
 
 > **Mimar tarafı da bir KAYIT KAYNAĞIDIR — ve pano ile çeliştiğinde

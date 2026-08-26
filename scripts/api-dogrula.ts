@@ -82,12 +82,26 @@ const API_IZI = "apigw.trendyol.com";
  */
 const KENDI = join("scripts", "api-dogrula.ts");
 
+/**
+ * ⚠ İSTEMCİYİ ÇAĞIRAN DOSYA DA API DOSYASIDIR — VE BU BOŞLUK ÖLÇÜLDÜ
+ * (26.08.2026). Bekçi dosyaları `apigw.trendyol.com` dizesine göre
+ * buluyordu; A3-②'de API çağrıları TEK İSTEMCİ MODÜLÜNE toplanınca
+ * `canli-ty-mutabakat.ts` o dizeyi hiç içermez oldu ve **taranmadı**.
+ * Oysa o dosya `prisma` kullanıyor — yazma yasağı tam orada gerekliydi.
+ *
+ * ⚠ İYİ BİR REFAKTÖR, BEKÇİYİ KÖR ETTİ. Ölçüt "dizeyi içeren dosya"
+ * olmaktan çıkıp **"API'ye ULAŞAN dosya"** oldu: doğrudan taban adresi
+ * yazan YA DA istemci modülünü içeri alan.
+ */
+const ISTEMCI_IZI = "ty/istemci";
+
 const tumDosyalar = [...dosyalar("scripts"), ...dosyalar("src")];
 const apiDosyalari = tumDosyalar
   .filter((y) => y !== KENDI)
   .filter((y) => {
     try {
-      return readFileSync(y, "utf8").includes(API_IZI);
+      const icerik = readFileSync(y, "utf8");
+      return icerik.includes(API_IZI) || icerik.includes(ISTEMCI_IZI);
     } catch {
       return false;
     }
@@ -115,14 +129,31 @@ for (const yol of apiDosyalari) {
   kontrol(`  ${yol} — yalnız GET`, bulunanlar.length === 0, bulunanlar);
 
   /**
-   * ⚠ VE `GET` AÇIKÇA YAZILMALI. `fetch` yöntem verilmezse varsayılan GET
-   * olur ama bir gün biri değişkene alırsa desen kaybolur; açık yazım,
-   * niyeti kodda görünür kılar.
+   * ⚠ VE `GET` AÇIKÇA YAZILMALI — AMA YALNIZ `fetch` ÇAĞIRAN DOSYADA.
+   *
+   * ⚠ ÖLÇÜT REFAKTÖRLE İKİYE AYRILDI (26.08.2026): A3-②'de bütün API
+   * çağrıları TEK İSTEMCİ MODÜLÜNE toplandı. Onu İÇERİ ALAN dosyalarda
+   * artık `fetch` yok, dolayısıyla `method: "GET"` de yok — ve kontrol
+   * altı dosyada birden kırmızı yandı.
+   *
+   * ⚠ KOD YANLIŞ DEĞİLDİ, ÖLÇÜT ESKİMİŞTİ. Ve doğru davranış susturmak
+   * değil AYIRMAK:
+   *   · `fetch` çağıran dosya → `method: "GET"` AÇIKÇA yazılı olmalı
+   *   · yalnız istemciyi çağıran dosya → hiçbir HTTP fiili GEÇMEMELİ
+   *     (yasak listesi zaten yukarıda sınandı)
+   * İkincisine "GET yaz" demek, olmayan bir `fetch` için tören istemekti.
+   *
+   * ⚠ VE BU AYRIM ÖLÇÜTÜ GEVŞETMİYOR: istemci modülünün kendisi `fetch`
+   * çağırdığı için birinci sınıfa giriyor ve tam olarak sınanıyor.
    */
-  kontrol(
-    `    ...ve GET açıkça yazılı`,
-    y.includes('method: "GET"'),
-  );
+  if (y.includes("fetch(")) {
+    kontrol(`    ...\`fetch\` çağırıyor → GET açıkça yazılı`, y.includes('method: "GET"'));
+  } else {
+    kontrol(
+      `    ...\`fetch\` çağırmıyor (istemciyi kullanıyor) → fiil yok`,
+      bulunanlar.length === 0,
+    );
+  }
 }
 
 // --- 2) ÖLÇÜM BETİKLERİ DEFTERE YAZMAZ --------------------------------------
