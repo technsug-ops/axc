@@ -2374,6 +2374,216 @@ törene dönüşür. Damga **commit edilir**.
 **Bekçi karar veremiyorsa bunu YAZAR** (damga yoksa "atlandı" der), sessiz
 yeşil vermez.
 
+## DÜZELTMENİN ÇARESİ DOSYA LİSTESİ DEĞİL, DESEN YASAĞIDIR (KESİN KURAL)
+
+_Kullanıcı kararı 27.08.2026, K60 — günün ana dersi._ Anayasada zaten şu
+vardı: _"düzeltme yolu, TÜM OKUYUCULARA ulaştığı ölçülmeden 'var' sayılmaz."_
+Bugün o kuralın kendisi çiğnendi ve eksik yarısı ortaya çıktı: **ölçmek
+yetmez, YAPI gerekir.**
+
+**Vaka:** `shippedAt = null`ın iki anlama geldiği bulundu, koşul düzeltildi —
+ama yalnız `panel.ts`te. Aynı soruyu **ALTI** yer soruyordu:
+
+    ✓ panel.ts                     ← düzeltildi
+    ✗ panel/gorev-verisi.ts (×2)   ← GÖREV KUTUSU · ekrandaki rakam buradan
+    ✗ liste-suzgeci.ts             ← rakama tıklayınca açılan liste
+    ✗ paketle/actions.ts           ← paketleme ekranı
+    ✗ okut/actions.ts (×2)         ← barkod okuma akışı
+
+Ekran düzeltilmiş görünüyordu; **kutu hâlâ 5599 gösteriyordu** ve bunu
+kullanıcı buldu, bekçi değil.
+
+> **ÇARE ÜÇ ADIMDIR VE ÜÇÜNCÜSÜ ATLANIYOR:**
+> ① koşulu **tek gövdeye** taşı · ② bütün okuyucuları ona bağla ·
+> ③ **çıplak koşulu YASAKLAYAN bir bekçi yaz.**
+
+⛔ **VE BEKÇİ DOSYA LİSTESİ TUTMAZ.** _"Şu altı dosyada var mı"_ diye sayan
+bir kontrol, **yedinci ekran eklendiğinde sessizce yeşil kalır** ve tam bu
+hatayı bir kat yukarıda tekrarlar. Doğru ölçüt bir **desen yasağıdır**:
+
+    Bir `Sale` sorgusunda ÇIPLAK `shippedAt: null` YAZILAMAZ.
+    Küme `KARGO_BEKLEYEN` gövdesinden gelir.
+
+Böyle kurulunca yarın açılan okuyucu da yakalanır ve kimsenin listeye
+eklemeyi hatırlaması gerekmez. _(Mutasyonla sınandı: `src/lib/`e çıplak koşul
+yazan YENİ bir dosya, hiçbir listeye eklenmeden kırmızı yandı.)_
+
+⚠ **İSTİSNALAR GEREKÇESİYLE BEYAN EDİLİR.** Kümeyi bilerek GENİŞLETEN bir
+sorgu (panelin üç kovayı görebilmesi için) ya da bir yazma kapısı istisna
+olabilir — ama _"istisna"_ demek yetmez, NİÇİN olduğu yazılır. Beyan
+edilmemiş her kullanım hata sayılır.
+
+_(Bu, "bekçi ölçütü elle tutulan liste değil, tersten kurulur" kuralının veri
+koşulları üzerindeki hâli — orada ekranlar sayılıyordu, burada sorgular.)_
+
+---
+
+## ALANIN DOLU OLMASI, OLAYIN GERÇEKLEŞTİĞİNİ GÖSTERMEZ (KESİN KURAL)
+
+_Mimar düzeltmesi 27.08.2026, K60-②._ Bir alan doluysa "o alanın anlattığı
+şey oldu" diye okunur. **Okunmamalıdır.** Alan bir DEĞER taşır; olayın
+gerçekleştiği, o değerin varlığından değil **olayın izinden** çıkar.
+
+**Vaka:** uydurma kargo tarihlerini geri alırken ölçüt şöyle verilmişti —
+_"`shipmentCode` dolu olanlar hariç tutulsun, onlar gerçekten kargolanmış."_
+Niyet doğruydu. Ama TY içe aktarması `shipmentCode`u **HER siparişe** yazıyor:
+alanın dolu olması yalnız _"bir takip numarası var"_ der, _"26/27.08'de
+kargolandı"_ demez. Ölçüt uygulansaydı **409 satırda uydurma tarih
+KORUNACAKTI** — düzeltme, düzelttiğini sandığı şeyi kısmen bozacaktı.
+
+> **KURAL:** ölçüt, alanın VARLIĞINA değil **olayın İZİNE** bağlanır.
+> Sorulacak soru: _bu alanı dolduran mekanizma, benim aradığım olay mı?_
+
+_(Kardeşleri: "kolon başlığı bir iddiadır" — orada başlık boş bir söz
+veriyordu; "`İşlem Tarihi` ödeme günü değildir" — orada alanın ADI yanlış
+okunmuştu. Burada alanın DOLULUĞU yanlış okundu.)_
+
+---
+
+## TOPLU İŞLEMİN İZİ ZAMANDA YIĞILIR, ELLE İŞLEMİN İZİ DAĞILIR (KESİN KURAL)
+
+_Ölçüm 27.08.2026, K60-②._ _"Bunu insan mı yaptı, makine mi"_ sorusunun
+ölçülebilir bir cevabı vardır: **`updatedAt` dağılımı.**
+
+Toplu bir işlem binlerce satırı **saniyeler içinde** günceller; elle yapılan
+işlem zamana yayılır. Vakada ayrım tartışmasızdı:
+
+    2026-08-27, 09:55    5191 satır   %92,7   ← TEK DAKİKADA → toplu tık
+    2026-08-26, 19:20–21     2 satır          ← dağınık → elle, korundu
+
+Bu ölçüm, hiçbir alanın söylemediği bir şeyi söyledi ve **düzeltmenin kapsamını
+belirledi**: 5599 satır geri alındı, 2 satır bilinçli işlem sayılıp yerinde
+bırakıldı.
+
+⚠ **VE KOVA GENİŞLİĞİ ÖLÇÜLÜR.** İlk yazımda kova `slice(0, 16)` ile
+kesiliyordu ve dakikanın son hanesi düşüyordu — kova aslında **10
+DAKİKALIKTI**. Sayılar makul göründüğü için fark edilmesi zordu: **etiket
+"dakika" diyordu, ölçtüğü başkaydı.** Zaman kovasıyla çalışan her ölçümde
+kovanın GENİŞLİĞİ ayrıca doğrulanır.
+
+---
+
+## KAPATILAMAYAN MADDE KULLANICIYI YIKICI İŞLEME İTER (KESİN KURAL)
+
+_Kullanıcı kararı 27.08.2026, K60._ K49 _"kapatılamayan madde kutunun
+tamamına olan güveni eritir"_ diyordu. Eksik olan yarısı bugün ölçüldü:
+**kapatılamayan madde yalnız güveni eritmez — kullanıcıyı yıkıcı bir işleme
+İTER.**
+
+**Vaka:** görev kutusunda 5192 maddelik, kapatılması İMKÂNSIZ bir yığın vardı
+(içe aktarılan geçmiş satışların `shippedAt`i yok). `/satislar`da onu
+kapatacak bir düğme duruyordu: *"Kargoya verildi olarak işaretle"*. Liste
+sayfalanmıyordu, onay metni yalnız _"bugünün tarihiyle"_ diyordu ve toplu geri
+alma yoktu. İki tıkla **5601 siparişe** sistemin hiç bilmediği bir kargo
+tarihi yazıldı; günlük grafik tek günde 5192 paketlik sahte bir gün gösterdi.
+
+> **KURAL:** kutuya madde koyan, **kapatma yolunu da GÜVENLİ hâlde koymak
+> zorundadır.** Kapatılamayan bir madde yayımlanacaksa yanında ne yapılacağı
+> da yazar — ve yanlış yolu KAPATAN bir kapı kurulur.
+
+⚠ **VE SUÇ KULLANICIDA ARANMAZ.** Operatör kendisine gösterilen tek yolu
+kullandı. Bir ekran yıkıcı bir işlemi kolay, doğru işlemi görünmez yapıyorsa
+ortaya çıkan sonuç bir **tasarım çıktısıdır**, kullanıcı hatası değil.
+
+---
+
+## TOPLU İŞLEM, SİSTEMİN BİLMEDİĞİ BİR DEĞERİ YAZAMAZ (KESİN KURAL)
+
+_Kullanıcı kararı 27.08.2026, K60._ Bir alanı toplu dolduran her işlem şu
+soruyu geçmek zorundadır: **yazacağım değerin KAYNAĞI ne?**
+
+- Kaynak kullanıcının o an girdiği bir veri ise → toplu iş meşrudur
+- Kaynak _"bugünün tarihi"_ gibi bir **varsayılan** ise, ve o alan gerçek bir
+  OLAYIN anını taşıyorsa → **toplu yol AÇILMAZ**
+
+**Vaka:** `shippedAt` bir olayın anıdır. İçe aktarılmış siparişin gerçek kargo
+tarihi defterde YOK — ne kaynak dosyada bir kolonu var, ne API veriyor.
+Toplu düğme oraya bugünü yazınca **veri üretilmiş** oldu.
+
+> **DOĞRU CEVAP `null`.** Bilinmeyen bir değeri boş bırakmak bir eksiklik
+> değil, bir BEYANDIR: _"sistem bunu bilmiyor."_ Uydurma bir tarih o beyanı
+> susturur ve üstüne rapor kurulur.
+
+⚠ **VE BİLİNMEYEN İÇİN TEK TEK BİLE AÇILMAZ — kaynak gösterilmedikçe.**
+Tek satır işaretleme açık kaldı çünkü orada kullanıcı **tarihi kendisi
+giriyor**; toplu yolda öyle bir kaynak yok.
+
+_(Kardeşi: "kolon başlığı bir iddiadır — vekil alan gösterilmez" ve "aykırı
+değer uydurularak düzeltilmez". Üçü de aynı ölçütün farklı yüzleri: sistem,
+bilmediği şey hakkında yazı yazmaz.)_
+
+## SAF HESAP KATMANI, DESEN TARAYAN BEKÇİYE MUHTAÇ OLMAZ (KESİN KURAL)
+
+_Kullanıcı kararı 27.08.2026._ Bir davranış saf bir gövdeye taşınabiliyorsa,
+onu sınayan bekçi kaynak metni **TARAMAZ** — gövdeyi doğrudan **ÇAĞIRIR** ve
+**değerini** sınar. Desen yanlış yerde bulunamaz, çünkü desen aranmaz.
+
+Bu, deponun en sık tekrarlayan hata sınıfını o katmanda **yapısal olarak
+imkânsız** yapar. Yalnız bu hafta beş vaka: `tonCal` (ekranda çizilmiyordu,
+desen dosyada duruyordu) · `use server` (başka dosyada da geçiyordu) ·
+`apigw.trendyol.com` (refaktör dizeyi sildi, davranış kaldı) · `YOĞUNLAŞMA`
+(yorumda da geçiyordu) · `.join(";")` (başlık + veri satırı = iki yer).
+
+**Sıra:** ① davranışı saf gövdeye taşımayı DENE → ② taşınıyorsa değer testi
+yaz → ③ taşınmıyorsa (ekran çizimi, sunucu eylemi) ancak o zaman desen
+tara — ve o zaman kullanım bloğuna daralt.
+
+_Kaynak tarama yasak değil; **son çare**. Bugün ilk seçenek gibi
+kullanılıyordu ve bedeli beş yalancı yeşil oldu._
+
+## MUTASYON KAÇIYORSA ÖNCE TEST VERİSİ SORGULANIR (KESİN KURAL)
+
+_Kullanıcı kararı 27.08.2026, K57._ Bir mutasyon yakalanmadığında ilk
+varsayım _"bekçi eksik"_ olmamalıdır. **Kaçan mutasyon her zaman kod kusuru
+değildir — kör ÖRNEK VERİ de o kapıyı hiç çalıştırmaz.**
+
+**Vaka:** `sayilmadi` sayacının kapsam kapısını (`if (g.kapsamdaydi)`) silen
+mutasyon yeşil geçti. Ölçüt doğru yazılmıştı; test verisinde **kapsam DIŞI
+ve SAYILMAMIŞ** bir satır yoktu, dolayısıyla koşul hiç değerlendirilmiyordu.
+Ayrımın iki yakasını gösteren tek satır eklenince mutasyon kırmızıya döndü.
+
+> **KURAL:** mutasyon SİLİNMEZ, ölçüt gevşetilmez — **veri düzeltilir.**
+> Sorulacak soru: _bu mutasyonun bozduğu satırdan, testlerimden herhangi
+> biri GEÇİYOR MU?_ Geçmiyorsa eksik olan bekçi değil, örnektir.
+
+_("Örnek veri ayrımın iki yakasını göstermeli" kuralının mutasyon tarafı:
+orada testin kör olduğu, burada harness'in bunu SÖYLEDİĞİ ölçülüyor.)_
+
+## MIGRATION, ADININ SÖYLEDİĞİ İŞİN DIŞINA ÇIKMAZ (KESİN KURAL)
+
+_Ders 27.08.2026, K58._ Bir migration dosyası **bir SÖZDÜR**: adı ne
+diyorsa onu yapar. Araç kendiliğinden başka bir tabloya dokunan bir ifade
+eklediyse, o ifade "zaten gerekiyormuş" diye kabul EDİLMEZ — **sebebi
+aranır.**
+
+**Vaka:** `stok_sayimi` adlı migration'a Prisma şu satırı ekledi:
+
+    ALTER TABLE `returnnotice` MODIFY `reason` ENUM(… 14 değer) NOT NULL;
+
+Sebep ölçülünce ortaya çıktı: eksik değer değil, **YANLIŞ SIRA**.
+`YANLIS_URUN` veritabanında 6., şemada 13. sıradaydı ve MySQL'de ENUM
+**sıralıdır** (değerler içeride sıra numarasıyla saklanır). Şema 23.08'den
+beri sessizce ayrışmıştı; Prisma her yeni migration'a onu yamıyordu.
+
+Kabul edilseydi, adı "sayım" olan bir paket canlıda **veri taşıyan** bir
+kolonu yeniden sıralayacaktı — ve ileride biri _"sayım migration'ı niye
+iadeye dokunmuş"_ diye baktığında cevap bulamayacaktı.
+
+> **KURAL:** yabancı ifade **YAZILMAZ, GEREKSİZ KILINIR.** Buradaki çare
+> ALTER'ı onaylamak değil, ŞEMANIN SIRASINI veritabanına uydurmaktı: değer
+> kümesi zaten aynıydı, dolayısıyla hiçbir veri değişmedi ve migration
+> tertemiz kaldı. Gerçekten gerekiyorsa **kendi adıyla, kendi
+> migration'ında** gider.
+
+⚠ **VE AYRIŞMANIN KENDİSİ AYRI BİR KALEMDİR.** `deploy:bekci` katman A
+_"şemadaki her alanın migration'ı var"_ diyor ama **ALANLARI** sayıyor;
+enum değerlerinin kümesini ve sırasını hiç ölçmüyor. Ayrışma **4 gün**
+yeşil yandı ve ancak alakasız bir migration üretilirken göründü. Bekçinin
+görmediği bir ayrışma, ilk fırsatta başka bir paketin içine binerek gelir.
+
+_(Bu, "commit başlığı bir etikettir" disiplininin migration hâli: paketin
+adı, içindekinin tamamını anlatmalı.)_
+
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`
 - Her anlamlı iş biriminde commit at; günün sonunda değil, iş bitince

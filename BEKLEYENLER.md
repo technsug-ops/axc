@@ -1089,6 +1089,345 @@ Eski uçta 2025-03'te 1 varyant / 1 adet.
 202 satır · tutara göre sıralı · SKU · ürün · açık adet · ödenen · en
 eski/yeni parti · son satış · bekleme günü · kanal SKU sayısı.
 
+### 🔬 K57 — FİZİKSEL SAYIM · [MIGRATION CANLIDA BEKLİYOR] (27.08.2026)
+
+**Tasarım turu onaylandı** (iki tablo · kapsam 202 varyantın tamamı).
+Migration `20260827061946_stok_sayimi` **yerelde koştu, canlıda KOŞMADI** —
+canlı veritabanına erişim yok (bkz. K59). `deploy:bekci` bu yüzden bilerek
+kırmızı; şema commit'i **push EDİLMEZ** (`8cb0023` vakası).
+
+    ALTER StockMovement +sayimSatiriId · CREATE StokSayimi · CREATE StokSayimSatiri
+    2 CreateTable · 1 AlterTable · 1 CreateIndex · 4 AddForeignKey · 0 yıkıcı ifade
+
+**Saf gövde YAZILDI ve bekçisi koşuyor** — `src/lib/sayim/`
+(`kova` · `ozet` · `oturum` · `karar`), veritabanına hiç dokunmuyor.
+
+| Bekçi | Sonuç |
+|---|---|
+| `sayim:dogrula` | ✅ **62 ölçüt** · değer testi, kaynak taraması YOK |
+| `sayim:mutasyon` | ✅ **15/15 yakalandı** (− kaldıran 7 · + fazladan 8) · 40 sn |
+
+⚠ **HARNESS BİR KÖR NOKTA BULDU VE BEKÇİ DÜZELTİLDİ** (mutasyon silinmedi):
+`sayilmadi` sayacının kapsam kapısını (`if (g.kapsamdaydi)`) silen mutasyon
+**yeşil geçti** — çünkü test verisinde kapsam DIŞI + SAYILMAMIŞ satır yoktu.
+Ayrımın iki yakasını gösteren satır eklendi, mutasyon kırmızıya döndü.
+_Ölçüt doğruydu, ÖRNEK VERİ kördü — "örnek veri ayrımın iki yakasını
+göstermeli" kuralının dokuzuncu vakası._
+
+⚠ **`yedek:dogrula` da kırmızı yandı ve haklıydı:** iki yeni tablo yedek
+listesinde yoktu. Eklendi — ve **stok defterinden ÖNCEye**, çünkü
+`StockMovement.sayimSatiriId` sayım satırına bakıyor; ters sırada geri
+yükleme yabancı anahtar hatası verirdi.
+
+**Kalan (migration canlıya inince):** `/okut` ikinci kipi + açılış
+hatırlatması · kapanış ekranı (fazla/eksik ayrı, belge yolu üstte, yazınca
+kilit) · Halil test listesi.
+
+✅ **`sayim-mutasyon:kontrol` TURA GİRDİ** (kullanıcı kararı 27.08.2026):
+_"mutasyon turu koşmuyorsa bekçinin bekçisi yoktur."_
+
+⚠ **İKİ DÜZELTME — ikisi de benim hatam, sessizce geçilmiyor:**
+
+**① ÖNERDİĞİM AD TURA GİRMİYORDU.** `sayim:mutasyon-kontrol` dedim; seçici
+`ad.endsWith(":kontrol")` arıyor ve o ad `-kontrol` ile bitiyor. Tur 52
+bekçiyle koştu, mutasyon **hiç çalışmadı** ve fark ancak koşum listesinde
+görüldü. Doğru ad **`sayim-mutasyon:kontrol`** (`migration:kontrol` deseni).
+_"Kural doğru mu değil, teslim edilebilir mi" — ad bir SÖZDÜ, seçici onu
+tanımıyordu._
+
+**② BEYAN ETTİĞİM BEDEL AŞILDI.** Ölçüldü:
+
+    tahminim   +40 sn  →  tur ~140 sn      (tek başına koşum: 40 sn)
+    GERÇEK     +89 sn  →  tur  189 sn      (tur içinde adım: 52,9 sn)
+
+Fark, harness'in **15 alt süreç** açmasından: `bekci.ts` bekçileri
+**SIRAYLA** koşuyor (`for (const ad of liste)`, paralel yok), ama harness'in
+kendi alt süreçleri makineyi doldurup öteki adımları da yavaşlatıyor.
+Karar aynı yönde kalıyor — ama tahmini bilen biri için kaynaksız bir sayı
+doğmasın.
+
+⚠ **AÇIK KALEM (kullanıcı şartı): süre büyürse çözüm mutasyonu ÇIKARMAK
+DEĞİL**, paralel koşum ya da önbellek ölçmek. `bekci.ts` bugün tamamen
+sırayla koşuyor — ölçülecek ilk yer orası.
+
+### 🆕 K58 — ENUM SIRA AYRIŞMASI · ŞEMA ↔ VERİTABANI (27.08.2026)
+
+`ReturnReason` şemada ile veritabanında **AYNI 14 DEĞERİ FARKLI SIRAYLA**
+taşıyordu: `YANLIS_URUN` veritabanında 6., şemada 13. sıradaydı. Ayrışma
+**23.08'den beri** vardı.
+
+MySQL'de ENUM **sıralıdır** (değerler içeride sıra numarasıyla saklanır), o
+yüzden Prisma bunu bir kusur sayıyor ve **her yeni migration'a kendiliğinden
+yamıyordu**: K57'nin sayım migration'ına
+
+    ALTER TABLE `returnnotice` MODIFY `reason` ENUM(...) NOT NULL;
+
+satırı böyle girdi. Yani adı `stok_sayimi` olan bir paket, canlıda **veri
+taşıyan** bir kolonu yeniden sıralayacaktı.
+
+✅ **ÇÖZÜM: ALTER YAZILMADI, GEREKSİZ KILINDI.** Şemanın sırası
+veritabanınınkine uyduruldu (değer kümesi zaten aynıydı) → migration'da
+`returnnotice` geçen satır **0**, canlıda hiçbir ALTER koşmayacak, hiçbir
+veri değişmedi. Enum'un yanına niye o sırada olduğu yazıldı; sona taşınırsa
+aynı kaçak geri gelir.
+
+⛔ **AÇIK KALEM — `deploy:bekci` KATMAN A ENUM DEĞER SIRASINA BAKMIYOR.**
+_"Şemadaki her alanın migration'ı var"_ diyor ve ALANLARI sayıyor; enum
+değerlerinin sırasını (hatta kümesini) hiç ölçmüyor. Ayrışma **4 gün boyunca
+yeşil yandı** ve ancak alakasız bir migration üretilirken göründü.
+**Açılış şartı yok — bu doğrudan iştir:** katman A enum kümesi + sırası
+karşılaştırmasıyla genişletilir, ve genişletme **iki yönlü mutasyonla**
+sınanır (sıra bozan · değer ekleyen).
+
+### 🆕 K59 — CANLI VERİTABANINA ERİŞİM YOK · **HALİL'DE** (27.08.2026)
+
+Sebep **ölçüldü ve daraltıldı — KAS'ta değil, AĞDA:**
+
+| Hedef | Sonuç |
+|---|---|
+| `w0216a46.kasserver.com:3306` | `ECONNREFUSED` (~2 sn sonra) |
+| `github.com:443` · `example.com:80` | **AÇIK** (15–32 ms) |
+| `8.8.8.8:53` · `1.1.1.1:53` · `github.com:22` | `ECONNREFUSED` |
+| `127.0.0.1:3306` (yerel) | AÇIK (1 ms) |
+
+**8.8.8.8:53 kapalı olamaz** — yani reddeden karşı taraf değil, **çıkış
+yolu**. Dışarı yalnız **80/443** açık.
+
+    Bağlanılan ağ:  SSID "i-Punkt HOTSPOT" · şifresiz (Offen) · 192.168.179.6
+    Çıkış IP:       109.250.119.195      DNS: 192.168.179.1
+
+⛔ **AÇIK BİR HOTSPOT'A BAĞLANILMIŞ** ve o hotspot yalnız web'e izin veriyor.
+Kum havuzu dışında da aynı sonuç — yani araç kısıtı değil, ağın kendisi.
+Canlı SİTE çalışıyor (`/giris` 200), Selliora'da bir arıza YOK.
+
+**Halil'in yapacağı:** kendi WiFi'ına (ya da telefon hotspot'una) geç →
+`npm run canli:migrate` tek komutla biter. **KAS panelinde değişiklik
+GEREKMİYOR** — ilk teşhisim IP izin listesini işaret ediyordu, ölçüm onu
+çürüttü.
+
+### 🚨 K60 — GÖREV KUTUSU: "5192 KARGOYA VERİLMEMİŞ" · **[YANLIŞ CEVAP VEREN EKRAN]** (27.08.2026)
+
+Panel _"Bugün ne göndermeliyim"_ **5192 bekleyen** · **0 paketlendi** diyor.
+Rakam gerçek bir iş DEĞİL: K56'nın içe aktardığı geçmiş satışlar.
+
+**MEKANİZMA — koddan okundu, kesin:**
+
+    panel.ts:314   if (kargo.kargoTarihi === null) → bekleyen++
+                   "DÖNEM KONTROLÜ YOK: bekleyen zamansızdır"
+
+    canli-satis-ice-aktar.ts:401  sale.create({ code, channelAccountId,
+                                   soldAt, importBatch, importKaynak, items })
+                                   ⛔ shippedAt YAZILMIYOR
+    canli-ty-ice-aktar.ts:379     shipmentCode YAZIYOR, shippedAt YAZMIYOR
+
+⛔ **VE KAYNAK DOSYADA KARGO TARİHİ YOK** (ölçüldü — `satis.xlsx` · SATIŞ
+sayfası · 31 kolon): `Tarih` var, kargo/teslim tarihi kolonu **hiç yok**.
+Yani geri doldurulacak bir veri de yok.
+
+**KÖK SEBEP — `shippedAt = null` İKİ AYRI ŞEY DEMEK:**
+
+| null'ın anlamı | Doğru davranış |
+|---|---|
+| elle girilen satış, **henüz kargolanmadı** | ✅ GÖREV |
+| içe aktarılan satış, **sistem hiç bilmiyor** | ⛔ görev DEĞİL — KAYIT |
+
+Panel kuralı _"bekleyen zamansızdır"_ **doğruydu**: her satış kendi günü
+girildiğinde null yalnız birinci anlamı taşıyordu. 14 aylık geçmiş deftere
+girince ikinci anlam doğdu ve kural kendi kapsamının dışına taştı.
+_(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa hatayı korur".)_
+
+⚠ **VE KUTU ARTIK KAPANAMAZ.** Halil aylar önce teslim edilmiş 5192 siparişi
+kargolayamaz. K49: _"görev kutusundaki her madde kapatılabilir olmalıdır;
+kapatılamayan madde kutunun TAMAMINA olan güveni eritir."_ "0 paketlendi"
+ilerleme satırı da bu yüzden sonsuza kadar 0.
+
+**ÖNERİ — ÜÇ KOVA, hepsi elimizdeki veriden (yeni alan YOK, uydurma YOK):**
+
+| Koşul | Sonuç |
+|---|---|
+| `importKaynak = null` + `shippedAt = null` | **GÖREV** (bugünkü davranış korunur) |
+| içe aktarılmış + `shipmentCode` DOLU | kargo numarası var → çıkmış → görev değil |
+| içe aktarılmış + `shipmentCode` BOŞ | **BİLİNMİYOR** → görev değil, **tutanakta sayılır** |
+
+⛔ **`shippedAt` GERİ DOLDURULMAZ.** Ne dosyada ne API'de kargo tarihi var;
+bir tarih uydurmak ledger'a sahte bir olay yazmak olurdu.
+_(Anayasa: "kolon başlığı bir iddiadır — vekil alan gösterilmez".)_
+
+⚠ **VE KAYBOLMAZ:** üçüncü kova ekranda **yazar** — _"N içe aktarılmış
+siparişin kargo bilgisi sistemde yok; bu sayım onları kapsamıyor."_
+
+⚠ **`panel:dogrula` KIRMIZI YANACAK ve HAKLI OLMAYACAK:** `panel-dogrula.ts:898`
+_"bekleyen 3 — BUGÜN penceresinde"_ tam da bugünkü (yanlışa dönmüş) davranışı
+sabitliyor. Ölçüt ESKİDİ; susturulmaz, **kapsamına bağlanır** ve niye
+değiştiği yazılır.
+
+**KARDEŞ SATIR — aynı kutuda "5259 Kârı hesaplanamayan satış".** Aynı
+aileden ama **aynı şey değil:** o kova K55/K56 ile **kapanabilir** (bağ
+bekleyen 691 · alım kaydı yok 1441) ve marj şerhi sebebini üçe ayırıp zaten
+söylüyor. Dokunulmadı — kapanabilir bir açık görev kutusunda kalabilir.
+
+⛔ **SAYILARIN BİLEŞİMİ ÖLÇÜLMEDİ** (5192'nin kaçı excel, kaçı TY API,
+kaçında `shipmentCode` var): canlı veritabanına erişim yok (K59). Mekanizma
+koddan **kesin**, dağılım ölçülünce yazılacak.
+
+### 🚦 K60-② UYDURMA KARGO TARİHİ — KURU KOŞUM KOŞTU, **YAZIM ONAY BEKLİYOR** (27.08.2026)
+
+`npm run canli:kargo-geri-al` (salt okuma). **Hiçbir şey yazılmadı.**
+
+    ① o iki günde kargo tarihi taşıyan satış      5613   ← tahmin 5613, TUTTU
+       içe aktarılmış (etkilenir)                 5601
+       ELLE GİRİLMİŞ (dokunulmaz)                   12
+
+    ② kaynak:  satis-excel  5190   (27.08: 5190)
+               enumerasyon   411   (26.08: 410 · 27.08: 1)
+
+    ③ elle girilenler, YERİNDE KALIR:  26.08 → 11  ·  27.08 → 1
+
+⚠ **TAHMİNİM TUTMADI, DÜZELTİLİYOR:** elle girilenler için `26.08 → 13,
+27.08 → 0` demiştim; gerçek **11 ve 1**. Küçük fark ama rakamı bilen biri
+için kaynaksız bir sayı doğmasın.
+
+**④ RİSK ÖLÇÜMÜ — VE ÖLÇÜT DEĞİŞTİRİLDİ.** İstenen ölçüt _"shipmentCode dolu
+olanlar hariç"_ idi. **Mekanizma niyeti karşılamıyor:** TY içe aktarması
+`shipmentCode`u HER siparişe yazıyor, yani o alanın dolu olması _"26/27.08'de
+kargolandı"_ demek değil. Ona göre hariç tutmak **409 satırda uydurma tarihi
+KORUMAK** olurdu.
+
+Gerçek ayırt edici **`updatedAt` yığılması** — toplu tık binlerce satırı
+saniyeler içinde günceller:
+
+    2026-08-27, 09:55    5191 satır   %92,7   ← TEK DAKİKADA. Toplu tık, tartışmasız.
+    2026-08-26, 22:39–43   260 satır          ← o günün tıkları
+    2026-08-26, 18:19       74 · 15:30  68
+    2026-08-26, 19:20–21     2 satır          ← DAĞINIK, hariç tutuluyor
+
+    GERİ ALINACAK   5599      (5601 − 2 dağınık)
+    iptalli hedef      0
+    shipmentCode: var 409 · yok 5190   (ölçüldü, ölçüt DEĞİL)
+
+⚠ **KURU KOŞUMUN KENDİ KUSURU DA BULUNDU VE DÜZELTİLDİ:** "dakika" kovası
+`slice(0, 16)` ile kesiliyordu ve dakikanın son hanesi düşüyordu — kova
+aslında **10 DAKİKALIKTI**. Sayılar makul göründüğü için fark edilmesi zordu;
+etiket "dakika" diyordu, ölçtüğü başkaydı. `slice(0, 17)` ile düzeltildi ve
+tablo yeniden üretildi.
+
+**⛔ YAZIM İÇİN ONAY BEKLİYOR** — ölçütü DEĞİŞTİRDİĞİM için kendiliğinden
+koşmadım. Komut: `npm run canli:kargo-geri-al -- --yaz` (tek toplu `AuditLog`
+kaydı, gerekçesiyle).
+
+### ✅ K60-② GERİ ALMA — KOŞTU (27.08.2026)
+
+    önce  5601   →   sonra  2      (etkilenen 5599)
+    ikinci koşum:  GERİ ALINACAK 0        ← idempotent
+
+**Elle girilen 12'ye DOKUNULMADI** — teyit: 26.08 → 11 · 27.08 → 1, ikinci
+koşumda aynı. Hariç tutulan 2 dağınık damgalı satır da yerinde.
+
+`AuditLog: KARGO_TARIHI_GERI_ALINDI` — gerekçe · ölçüt · hariç tutulanlar ·
+öncesi/sonrası/etkilenen, hepsi kayıtta.
+
+**PANELİN GÖRECEĞİ (K60 gövdesiyle canlı veri üzerinde hesaplandı):**
+
+| Kova | Adet |
+|---|---|
+| **GÖREV** (kargoya verilmemiş) | **0** |
+| ÇIKMIŞ | 556 |
+| **BİLİNMİYOR** (ekranda şerh) | **5190** |
+
+Günlük grafik: 26.08 **421 → 13** · 27.08 **5192 → 1**. Sahte gün silindi.
+
+⛔ **AMA K60 KODU CANLIDA DEĞİL — VE BU BİR AÇIK PENCERE.** Geri alma canlı
+VERİYİ düzeltti; üç kovayı uygulayan KOD hâlâ commit'siz. Bugünkü canlı
+panel eski kuralla sayıyor, yani görev kutusu şimdi **~5599 bekleyen**
+gösteriyor.
+
+⚠ **VE DÜĞME KAPISI DA CANLIDA DEĞİL:** aynı toplu düğme bugün yine
+tıklanırsa aynı hasar tekrarlanır. `.githooks/pre-push` → `deploy:bekci`
+migration canlıda koşmadığı için push'u durduruyor, yani K60 ekranı
+**migration'dan önce canlıya çıkamaz.**
+
+**Halil'e:** _"Kargoya verildi olarak işaretle"_ düğmesine migration + deploy
+tamamlanana kadar **BASMAYIN.**
+
+### ✅ K60-③ DÜĞME KAPISI — KURULDU (27.08.2026)
+
+Aynı turda, tekrar olmasın diye.
+
+| Katman | Ne yapıldı |
+|---|---|
+| **Sunucu** | `updateMany` koşuluna `importKaynak: null` — içe aktarılmış sipariş toplu işaretlenemez |
+| **Ekran** | düğmeye giden küme aynı süzgeci uyguluyor (düğmedeki sayı = işlenecek sayı) |
+| **Onay metni** | artık SOMUT: _"{sayi} sipariş için KARGO TARİHİ olarak {tarih} yazılacak. ⛔ Bu tarih gerçek kargo tarihi değilse veri bozulur."_ |
+| **Elenen küme** | sessizce elenmiyor: _"⛔ İçe aktarılmış N sipariş bu kümede YOK: sistem onların gerçek kargo tarihini bilmiyor…"_ |
+
+⚠ **Tarih İSTANBUL gününden kuruluyor** — çıplak yerel tarih, Almanya'da gece
+yarısından sonra sunucunun yazacağından FARKLI gün gösterirdi.
+⚠ **Tek tek işaretleme AÇIK kaldı:** orada kullanıcı tarihi KENDİSİ giriyor,
+yani bir kaynağı var.
+
+**Bekçiler:** `toplu-kargo:dogrula` **14 ölçüt** · `toplu-kargo-mutasyon:kontrol`
+**9/9 mutasyon** (− kaldıran 6 · + fazladan 3).
+
+⚠ **HARNESS ÜÇÜNCÜ KAPISI İŞE YARADI — ÜÇ MUTASYON "YEŞİL" GÖRÜNECEKTİ.**
+`src/app/satislar/actions.ts` **CRLF**, öteki dosyalar LF; çok satırlı
+desenler `
+` arıyordu ve o dosyada **0 kez** eşleşti. Harness bunu
+"yakalandı" saymadı, **HARNESS HATASI** dedi. Çare desen yamamak değil
+**okuma/eşleşme kapısı** oldu (`desenNormalle`) — yoksa yarın eklenen
+dördüncü desen aynı tuzağa düşerdi.
+
+⚠ **Sayfalama hâlâ YOK** (`/satislar` bütün defteri çekiyor) — ayrı kalem,
+bu turda kapsam dışı.
+
+### ⛔ K60-④ DÜZELTME BEŞ OKUYUCUYA ULAŞMAMIŞTI (27.08.2026)
+
+**Kullanıcı buldu, bekçi değil:** geri alma koştu, K60 kodu yazıldı, ekran
+düzeltilmiş görünüyordu — **görev kutusu hâlâ 5599 gösteriyordu.**
+
+Sebep: aynı soruyu **ALTI** yer soruyor, ben **birini** düzeltmişim.
+
+    ✓ panel.ts                     ← düzeltilmişti (pazaryeri kartı)
+    ✗ panel/gorev-verisi.ts (×2)   ← GÖREV KUTUSU · ekrandaki rakam
+    ✗ liste-suzgeci.ts             ← rakama tıklayınca açılan liste
+    ✗ paketle/actions.ts           ← paketleme ekranı
+    ✗ okut/actions.ts (×2)         ← barkod okuma akışı
+
+**ÇARE — TEK GÖVDE + DESEN YASAĞI:** `src/lib/kargo-bekleyen.ts` açıldı, altı
+okuyucu oradan besleniyor. Bekçi **dosya listesi TUTMUYOR**; çıplak
+`shippedAt: null` yazmayı yasaklıyor — yarın eklenen yedinci ekran da
+yakalanır. Üç istisna gerekçesiyle beyan edildi.
+
+`kargo-bekleyen:dogrula` **14 ölçüt · 6/6 mutasyon**, sonuncusu belirleyici:
+**hiçbir listeye eklenmemiş YENİ bir dosya** çıplak koşul yazınca kırmızı
+yandı.
+
+⚠ **İKİ BEKÇİ KIRMIZI YANDI VE HAKLI OLMADILAR** — `paketleme:dogrula` ve
+`panel:dogrula` çıplak metni arıyordu. **Susturulmadılar**, `KARGO_BEKLEYEN`e
+bağlandılar, niye eskidikleri koda yazıldı ve **dişleri mutasyonla sınandı**
+(ikisi de kırmızı yandı). `paketleme`nin eski gerekçesi (_"sabite saklanmış
+süzgeci bekçi göremez"_) `iptalTarihi` için HÂLÂ geçerli ve o koşul çağrı
+yerinde bırakıldı.
+
+### ✅ K57 MIGRATION CANLIDA KOŞTU (27.08.2026)
+
+    39 migration · damga 2026-08-27 · deploy:bekci YEŞİL
+    45 tablo · 501 kolon canlıda doğrulandı
+
+**DÖRT SAYIM:**
+
+    StokSayimi            0    ✓
+    StokSayimSatiri       0    ✓
+    StockMovement      5336
+    sayimSatiriId dolu    0    ✓ geri doldurma YOK
+
+⚠ **`StockMovement` İÇİN "DEĞİŞMEDİ" DİYEMEM — ölçüm penceresi kaçtı.**
+Migration'dan hemen ÖNCE sayım almadım; elimdeki taban bu sabah 02:00'daki
+`5331`. Fark **+5** ve ölçüldü: **beşi de `PURCHASE_IN`, bugün yazılmış** —
+yani Halil'in gün içi alım girişi, migration değil (migration hiçbir hareket
+yazmaz; migration anından sonra doğan 3 hareketin hepsi de alım). Doğru
+cümle _"değişmedi"_ değil, **"migration hareket yazmadı, fark gün içi
+giriştir."**
+
 ### ⏭ SIRADAKİ — VE ONAY KAPISI
 
 **(a) kovası içe aktarmanın kuru koşumunu doğuruyor.** Yazma ancak Halil'in
