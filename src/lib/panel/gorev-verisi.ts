@@ -13,6 +13,7 @@ import {
 import { prisma } from "@/lib/prisma";
 
 import type { GorevAnahtari } from "./bugun-ne-yapmaliyim";
+import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
 
 /**
  * ============================================================================
@@ -173,7 +174,7 @@ export async function paketlenenSiparisSayisi(): Promise<number> {
   if (hazirlananlar.length === 0) return 0;
 
   return prisma.sale.count({
-    where: { id: { in: hazirlananlar }, shippedAt: null, iptalTarihi: null },
+    where: { id: { in: hazirlananlar }, ...KARGO_BEKLEYEN, iptalTarihi: null },
   });
 }
 
@@ -233,7 +234,7 @@ export async function gorevSayilariniTopla(): Promise<
     tarifeKapsam,
   ] = await Promise.all([
     // `/satislar?kargo=bekleyen` ile aynı koşul.
-    prisma.sale.count({ where: { shippedAt: null, iptalTarihi: null } }),
+    prisma.sale.count({ where: { ...KARGO_BEKLEYEN, iptalTarihi: null } }),
 
     /**
      * Açık bildirim = mal yolda ya da karar bekleyen. Kapanmış/iptal olan

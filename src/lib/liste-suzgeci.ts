@@ -7,6 +7,7 @@ import {
 } from "@/lib/donem";
 
 import type { Prisma } from "@/generated/prisma/client";
+import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
 
 /**
  * ============================================================================
@@ -303,7 +304,13 @@ export function satisKosulu(
     ...(kargo === "verildi"
       ? { shippedAt: pencere.aralik ?? { not: null } }
       : {}),
-    ...(kargo === "bekleyen" ? { shippedAt: null } : {}),
+    /**
+     * ⛔ ELLE `shippedAt: null` YAZILMAZ — tek gövde (K60).
+     * İçe aktarılmış siparişin kargo tarihi BİLİNMİYOR; "çıkmadı" değil.
+     * Panelin kutusu ve bu liste AYNI koşuldan beslenmeli, yoksa kutudaki
+     * rakama tıklayınca başka bir liste açılır.
+     */
+    ...(kargo === "bekleyen" ? KARGO_BEKLEYEN : {}),
     /**
      * ŞÜPHELİ VERİ — küme DIŞARIDAN gelir (`supheliIdler`).
      *

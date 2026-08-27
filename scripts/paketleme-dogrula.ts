@@ -276,7 +276,21 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
    * YANINDA yazılı olmalı: sabite saklanmış bir süzgeci `iptal:bekci`
    * göremiyor, ve bir bekçinin göremediği süzgeç silindiğinde de görünmez.
    */
-  kontrol("shippedAt süzgeci sorguda", /shippedAt:\s*null/.test(yorumsuz));
+  /**
+   * ⚠ ÖLÇÜT 27.08.2026'DA GÜNCELLENDİ — SUSTURULMADI, ESKİDİĞİ İÇİN.
+   * Eskiden çıplak `shippedAt: null` aranıyordu ve gerekçesi yukarıda yazılı:
+   * "sabite saklanmış süzgeci bekçi göremez". O gerekçe `iptalTarihi` için
+   * HÂLÂ GEÇERLİ ve o koşul hâlâ çağrı yerinde duruyor.
+   *
+   * Kargo koşulu ise K60'ta tek gövdeye taşındı (`lib/kargo-bekleyen.ts`) —
+   * çünkü aynı soruyu ALTI yer soruyordu ve biri düzeltilince ötekiler eski
+   * kuralla kalmıştı; görev kutusu hâlâ 5599 gösteriyordu. Yani burada
+   * sabit, bekçiyi kör etmek için değil, **beş okuyucunun ayrışmasını
+   * engellemek** için var — ve kendi bekçisi de var:
+   * `kargo-bekleyen:dogrula` hem gövdenin içeriğini hem her okuyucunun onu
+   * kullandığını ölçüyor.
+   */
+  kontrol("kargo bekleyen süzgeci sorguda", /\.\.\.KARGO_BEKLEYEN/.test(yorumsuz));
   kontrol("iptalTarihi süzgeci sorguda", /iptalTarihi:\s*null/.test(yorumsuz));
   kontrol("izin isteniyor", /yetkiIste\("stok\.gor"\)/.test(yorumsuz));
   /** ⚠ RAF OKUNMADAN bu ekranın varlık sebebi kalmaz. */

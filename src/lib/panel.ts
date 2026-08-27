@@ -95,6 +95,18 @@ export type PanelKargosu = {
    */
   kargoTarihi: Date | null;
   /**
+   * SİPARİŞ İÇE AKTARILDI MI (`Sale.importKaynak`). `null` = elle girildi.
+   *
+   * ⛔ NİYE PANELE GİRDİ (K60, 27.08.2026): `kargoTarihi === null` artık
+   * İKİ AYRI ŞEY anlatıyor ve ayırt edici tek veri bu.
+   */
+  importKaynak: string | null;
+  /**
+   * KARGO NUMARASI (`Sale.shipmentCode`). TY içe aktarması bunu YAZIYOR,
+   * `shippedAt` yazmıyor — numara varsa paket fiilen çıkmıştır.
+   */
+  shipmentCode: string | null;
+  /**
    * SİPARİŞİN CİROSU — "o gün ne kadar mal elimden çıktı".
    * ⚠ Kargo ÜCRETİ değil: soru "kaç liralık mal sevk ettim", "kargoya ne
    * kadar ödedim" değil. İkisi karışırsa grafik bambaşka bir şey anlatır.
@@ -199,11 +211,68 @@ export type ParaBirimiPaneli = {
    * süzgeci bu rakama uygulanmaz.
    */
   kargoBekleyenAdet: number;
+  /**
+   * KARGO BİLGİSİ SİSTEMDE OLMAYAN içe aktarılmış sipariş sayısı (K60).
+   * ⚠ GÖREV DEĞİL, KAYIT — ama SAYILIR ve ekranda yazar. Sessizce elenseydi
+   * gerçekten bekleyen bir içe aktarma siparişi hiçbir yerde görünmezdi.
+   */
+  kargoBilinmiyorAdet: number;
 };
 
 /** Kâr toplamına girer mi? Durum CALCULATED değilse NET'e güvenilmez. */
 function hesaplandi(durum: KarDurumu | null, net: number | null): net is number {
   return durum === "CALCULATED" && net !== null;
+}
+
+/**
+ * ============================================================================
+ *  BİR SİPARİŞİN KARGO HÂLİ (K60) — `shippedAt = null` İKİ ŞEY DEMEK
+ * ----------------------------------------------------------------------------
+ *  ⚠ ESKİ KURAL SİLİNMİYOR, KAPSAMI YAZILIYOR. Burada eskiden şu vardı ve
+ *  DOĞRUYDU:
+ *
+ *      "bekleyen zamansızdır — kargolanmamış her sipariş, ne zaman satılmış
+ *       olursa olsun, bugün bekliyordur."
+ *
+ *  Kapsamı şuydu: **her satış kendi günü elle giriliyordu**, dolayısıyla
+ *  `shippedAt = null` yalnız TEK şey anlatıyordu — "henüz kargolanmadı".
+ *
+ *  26–27.08.2026'da 14 aylık geçmiş defter içe aktarıldı ve null İKİNCİ bir
+ *  anlam kazandı: **"sistem hiç bilmiyor"**. Kod değişmedi, ANLAM değişti —
+ *  ve panel 5192 kapatılamaz görev gösterdi. Halil aylar önce teslim edilmiş
+ *  siparişleri kargolayamaz; kapatılamayan madde kutunun TAMAMINA olan
+ *  güveni eritir (K49).
+ *
+ *  ═══ ÜÇ HÂL — hepsi ELİMİZDEKİ VERİDEN, yeni alan YOK ═══
+ *
+ *    GOREV      elle girilmiş + kargolanmamış  → gerçek iş, bugünkü davranış
+ *    CIKMIS     kargo tarihi VAR — ya da içe aktarılmış ve KARGO NUMARASI var
+ *    BILINMIYOR içe aktarılmış, numarası da yok → görev DEĞİL, KAYIT
+ *
+ *  ⛔ `shippedAt` GERİ DOLDURULMAZ. Ölçüldü: satış dosyasının 31 kolonunda
+ *  kargo/teslim tarihi YOK; TY API'si de `shipmentCode` veriyor, tarih
+ *  vermiyor. Bir tarih uydurmak ledger'a sahte bir olay yazmak olurdu.
+ *  _(Anayasa: "kolon başlığı bir iddiadır — vekil alan gösterilmez".)_
+ *
+ *  ⚠ VE ÜÇÜNCÜ HÂL KAYBOLMAZ: ayrı sayılır (`kargoBilinmiyorAdet`) ve ekranda
+ *  YAZAR. Sessizce elenseydi, gerçekten bekleyen bir içe aktarma siparişi
+ *  hiçbir yerde görünmezdi.
+ * ============================================================================
+ */
+export type KargoHali = "GOREV" | "CIKMIS" | "BILINMIYOR";
+
+export function kargoHali(
+  k: Pick<PanelKargosu, "kargoTarihi" | "importKaynak" | "shipmentCode">,
+): KargoHali {
+  if (k.kargoTarihi !== null) return "CIKMIS";
+  /** Elle girilmiş: null'ın tek anlamı var — henüz kargolanmadı. */
+  if (k.importKaynak === null) return "GOREV";
+  /**
+   * ⚠ BOŞ DİZE DE YOK SAYILIR. `shipmentCode: ""` bir kargo numarası
+   * değildir; `!== null` demek onu "çıkmış" sayar ve gerçek bir bilinmezliği
+   * gizlerdi.
+   */
+  return (k.shipmentCode ?? "").trim() !== "" ? "CIKMIS" : "BILINMIYOR";
 }
 
 /**
@@ -226,6 +295,8 @@ export function panelHesapla(
    * "0 satış / 0 ciro" satırıyla ekrana gelirdi — bilgi değil gürültü.
    */
   const bekleyenler = new Map<Currency, number>();
+  /** K60 — görev DEĞİL ama kaybolmayan kova. Bekleyenle aynı gerekçeyle blok açmaz. */
+  const bilinmeyenler = new Map<Currency, number>();
 
   /** Blok ve kanal satırını gerektiğinde açar. */
   function kanalSatiri(
@@ -312,11 +383,28 @@ export function panelHesapla(
    */
   for (const kargo of kargolar) {
     if (kargo.kargoTarihi === null) {
-      // DÖNEM KONTROLÜ YOK: bekleyen zamansızdır.
-      bekleyenler.set(
-        kargo.paraBirimi,
-        (bekleyenler.get(kargo.paraBirimi) ?? 0) + 1,
-      );
+      /**
+       * DÖNEM KONTROLÜ YOK: bekleyen zamansızdır. ⚠ Ama artık HANGİ null
+       * olduğu sorulur — bkz. `kargoHali` başlığı (K60).
+       */
+      const hal = kargoHali(kargo);
+      if (hal === "GOREV") {
+        bekleyenler.set(
+          kargo.paraBirimi,
+          (bekleyenler.get(kargo.paraBirimi) ?? 0) + 1,
+        );
+      } else if (hal === "BILINMIYOR") {
+        bilinmeyenler.set(
+          kargo.paraBirimi,
+          (bilinmeyenler.get(kargo.paraBirimi) ?? 0) + 1,
+        );
+      }
+      /**
+       * ⚠ CIKMIS HİÇBİR SAYACA GİRMEZ — ve niye: kargo numarası var ama
+       * kargo TARİHİ yok, yani hangi döneme yazılacağı BİLİNMİYOR.
+       * `kargoyaVerilenAdet`e eklemek, bilmediğimiz bir günü bir pencereye
+       * uydurmak olurdu.
+       */
       continue;
     }
     if (!pencerede(pencere, kargo.kargoTarihi)) continue;
@@ -368,6 +456,7 @@ export function panelHesapla(
         kargoyaVerilenAdet: liste.reduce((t, k) => t + k.kargoyaVerilenAdet, 0),
         // Dönemden bağımsız: çıkarma İLE TÜRETİLMİYOR, sayılıyor.
         kargoBekleyenAdet: bekleyenler.get(paraBirimi) ?? 0,
+        kargoBilinmiyorAdet: bilinmeyenler.get(paraBirimi) ?? 0,
       };
     })
     .sort((a, b) => b.toplamAdet - a.toplamAdet);

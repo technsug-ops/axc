@@ -401,6 +401,12 @@ export default async function AnaSayfa({
       },
       select: {
         shippedAt: true,
+        /**
+         * K60 — `shippedAt = null` iki ayrı şey anlatıyor ve ayırt edici
+         * veri bu ikisi. Bkz. `panel.ts` → `kargoHali`.
+         */
+        importKaynak: true,
+        shipmentCode: true,
         profitCurrency: true,
         channelAccount: {
           select: { channel: { select: { code: true, name: true } } },
@@ -481,6 +487,9 @@ export default async function AnaSayfa({
       kanalAdi: k.channelAccount.channel.name,
       paraBirimi,
       kargoTarihi: k.shippedAt,
+      /** K60 — hüküm `panel.ts`teki `kargoHali`de; burası yalnız taşıyor. */
+      importKaynak: k.importKaynak,
+      shipmentCode: k.shipmentCode,
       /**
        * ⚠ SEVK EDİLEN SİPARİŞİN CİROSU — kargo ÜCRETİ DEĞİL.
        * Soru "o gün kaç liralık mal elimden çıktı"; "kargoya ne kadar

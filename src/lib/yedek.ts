@@ -110,6 +110,9 @@ export async function yedekUret(
     ReturnItem: await istemci.returnItem.findMany(),
     ReturnFee: await istemci.returnFee.findMany(),
     ReturnNotice: await istemci.returnNotice.findMany(),
+    // Fiziksel sayım — stok defterinden ÖNCE (bkz. yedek-bicim.ts sıra notu).
+    StokSayimi: await istemci.stokSayimi.findMany(),
+    StokSayimSatiri: await istemci.stokSayimSatiri.findMany(),
     StockMovement: await istemci.stockMovement.findMany(),
     Settlement: await istemci.settlement.findMany(),
     SettlementItem: await istemci.settlementItem.findMany(),

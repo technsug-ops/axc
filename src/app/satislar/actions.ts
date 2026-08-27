@@ -315,6 +315,29 @@ export async function topluKargoyaVerildi(
       /** ⚠ SUNUCU SÜZGECİ — istemci ne gönderirse göndersin. */
       shippedAt: null,
       iptalTarihi: null,
+      /**
+       * ⛔ İÇE AKTARILMIŞ SİPARİŞ TOPLU İŞARETLENMEZ (K60, 27.08.2026).
+       *
+       * VAKA: görev kutusunda kapatılamayan 5192 maddelik bir yığın vardı
+       * (içe aktarılan geçmiş satışların `shippedAt`i yok) ve bu düğme onu
+       * kapatmanın tek görünen yoluydu. İki tıkla **5601 siparişe** BUGÜNÜN
+       * tarihi kargo tarihi olarak yazıldı — sistemin hiç bilmediği bir
+       * tarih. Geri alması ayrı bir betik gerektirdi.
+       *
+       * ⚠ HATA KULLANICIDA DEĞİLDİ: kutuya kapatılamayan madde koyan,
+       * kapatma yolunu da güvenli hâlde koymak zorundadır. Düğme uyarmadı,
+       * liste sayfalanmıyordu, geri alma yolu yoktu.
+       *
+       * ⛔ VE KURAL BUNDAN GENEL: **toplu işlem, sistemin BİLMEDİĞİ bir
+       * değeri yazamaz.** İçe aktarılmış siparişin gerçek kargo tarihi
+       * defterde YOK; bugünün tarihini yazmak veri üretmek olur.
+       * `shippedAt = null` doğru cevaptır ve K60 onu `BILINMIYOR` kovasında
+       * görev saymadan gösterir.
+       *
+       * Tek tek işaretleme AÇIK kalır (`kargoDurumuKaydet`): orada kullanıcı
+       * TARİHİ KENDİSİ giriyor, yani bir kaynağı var.
+       */
+      importKaynak: null,
     },
     data: { shippedAt: gun },
   });

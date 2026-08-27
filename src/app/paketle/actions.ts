@@ -5,6 +5,7 @@ import { PAKETLEME_EYLEMLERI, hazirlaniyorMu } from "@/lib/okuma/paketleme";
 import type { PaketSiparisi } from "@/lib/paketleme/yonlendirme";
 import { satisKodKosulu } from "@/lib/varyant-arama-kurali";
 import { yetkiIste } from "@/lib/yetki";
+import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
 
 /**
  * ============================================================================
@@ -80,8 +81,11 @@ export async function paketlemeIcinAra(kod: string): Promise<PaketAramasi> {
   const satis = await prisma.sale.findFirst({
     where: {
       OR: satisKodKosulu(temiz),
-      /* `shippedAt: null` = paket henüz çıkmadı — paketlenecek olan bu. */
-      shippedAt: null,
+      /* Paket henüz çıkmadı — paketlenecek olan bu. ⚠ İÇE AKTARILMIŞ sipariş
+         bu kümede YOK (K60): kargo tarihi bilinmiyor, "çıkmadı" DEĞİL.
+         Aksi hâlde paketleme ekranı aylar önce teslim edilmiş 5190 siparişi
+         paketlenecek diye gösterirdi. */
+      ...KARGO_BEKLEYEN,
       /* İptal edilmiş satış paketlenmez. */
       iptalTarihi: null,
     },

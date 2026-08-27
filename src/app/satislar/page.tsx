@@ -608,12 +608,31 @@ export default async function SatislarSayfasi({
 
         ⚠ SÜZGECE BAĞLI, "TÜM DEFTER"E DEĞİL: ekranda ne varsa onun
         üzerinde çalışır (İlke #15'in kardeşi).
+
+        ⛔ İÇE AKTARILMIŞ SİPARİŞLER KÜMEDE DEĞİL (K60, 27.08.2026).
+        Gerekçe `actions.ts`te uzun uzun yazılı: sistem onların gerçek kargo
+        tarihini bilmiyor ve toplu işlem bilmediği bir değeri yazamaz.
+        Sunucu da AYNI süzgeci uyguluyor — burada eleme yalnız SAYIYI doğru
+        göstermek için (düğmede yazan rakam gerçekten işlenecek rakam olsun).
       */}
       <div className="flex justify-end">
         <TopluKargo
           kimlikler={satislar
-            .filter((s) => s.shippedAt === null && s.iptalTarihi === null)
+            .filter(
+              (s) =>
+                s.shippedAt === null &&
+                s.iptalTarihi === null &&
+                s.importKaynak === null,
+            )
             .map((s) => s.id)}
+          iceAktarilanSayisi={
+            satislar.filter(
+              (s) =>
+                s.shippedAt === null &&
+                s.iptalTarihi === null &&
+                s.importKaynak !== null,
+            ).length
+          }
         />
       </div>
 

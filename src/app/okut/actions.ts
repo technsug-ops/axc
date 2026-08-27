@@ -29,6 +29,7 @@ import {
 } from "@/lib/varyant-ozet";
 import { oturumdakiKullanici } from "@/lib/oturum";
 import { yetkiIste } from "@/lib/yetki";
+import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
 
 /**
  * ============================================================================
@@ -169,7 +170,10 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
     : await prisma.sale.findFirst({
         where: {
           OR: satisKodKosulu(temiz),
-          shippedAt: null,
+          /* ⛔ TEK GÖVDE (K60): içe aktarılmış sipariş AÇIK SİPARİŞ değildir —
+             kargo tarihi BİLİNMİYOR, "çıkmadı" demiyor. Elle yazılsaydı okuma
+             ekranı aylar önce kapanmış siparişlerde eşleşme gösterirdi. */
+          ...KARGO_BEKLEYEN,
           iptalTarihi: null,
         },
         select: {
@@ -197,10 +201,16 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
            * GÖREMİYORDU. Süzgeç doğruydu ama görünmüyordu — ve bir bekçinin
            * göremediği süzgeç, yarın silindiğinde de görünmezdi.
            *
-           * `shippedAt: null` = paket henüz çıkmadı (şemadaki tanım).
+           * ⚠ VE BU GEREKÇE 27.08.2026'DA DARALTILDI, KALDIRILMADI:
+           * `iptalTarihi: null` HÂLÂ ÇAĞRI YERİNDE YAZILI — `iptal:bekci`
+           * onu görmeye devam ediyor. Sabite taşınan yalnız KARGO koşulu
+           * (`KARGO_BEKLEYEN`) ve onun kendi bekçisi var
+           * (`kargo-bekleyen:dogrula`). Yani her koşul, kendisini ölçen
+           * bekçinin GÖREBİLECEĞİ yerde duruyor.
+           *
            * `iptalTarihi: null` = iptal edilmiş satış açık sipariş sayılmaz.
            */
-          sale: { shippedAt: null, iptalTarihi: null },
+          sale: { ...KARGO_BEKLEYEN, iptalTarihi: null },
         },
         select: {
           quantity: true,

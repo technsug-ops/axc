@@ -90,6 +90,7 @@ import {
 } from "../src/lib/panel/takvim-gruplama";
 import {
   aylikSeri,
+  kargoHali,
   panelHesapla,
   type PanelKargosu,
   type PanelIadesi,
@@ -176,6 +177,13 @@ function kargo(ek: Partial<PanelKargosu> = {}): PanelKargosu {
     kanalAdi: "Trendyol",
     paraBirimi: "TRY",
     kargoTarihi: gun(2026, 8, 5),
+    /**
+     * K60 — VARSAYILAN "ELLE GİRİLMİŞ". Bu kasıtlı: elle giriş bugünkü
+     * davranışın korunması gereken hâl, dolayısıyla varsayılan o olmalı ki
+     * içe aktarma testleri farkı AÇIKÇA yazsın.
+     */
+    importKaynak: null,
+    shipmentCode: null,
     /** Sevk edilen siparişin cirosu — kargo ÜCRETİ değil. */
     gelir: 1000,
     ...ek,
@@ -887,6 +895,13 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
   /**
    * BEKLEYEN DÖNEMDEN BAĞIMSIZ. Aynı bekleyen küme, hangi pencere
    * seçilirse seçilsin aynı sayıyı vermeli — "bugünün bekleyeni" yoktur.
+   *
+   * ⚠ ÖLÇÜTÜN KAPSAMI 27.08.2026'DA YAZILDI (K60) — SUSTURULMADI, DARALTILDI.
+   * Bu blok ELLE GİRİLMİŞ siparişleri sınıyor (`importKaynak: null`) ve o
+   * kapsamda kural aynen geçerli. İçe aktarılmış siparişlerde `shippedAt`
+   * null'ı BAŞKA bir şey anlatıyor; onların ölçütü hemen aşağıda, ayrı.
+   * Eskiden bu ayrım yoktu çünkü içe aktarma da yoktu — kod değişmedi,
+   * VERİNİN KAPSAMI değişti.
    */
   const bekleyenler = [
     kargo({ kargoTarihi: null }),
@@ -905,6 +920,75 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
     "  ...bekleyen kanal satırı AÇMIYOR (boş 0 satış satırı çıkmasın)",
     bugunBek.kanallar.every((k) => k.kanalKodu !== "HEPSIBURADA"),
     bugunBek.kanallar.map((k) => k.kanalKodu),
+  );
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  K60 — `shippedAt = null` ÜÇ HÂLE AYRILDI (27.08.2026)
+   * --------------------------------------------------------------------
+   *  Vaka: K56 içe aktarması 5190 geçmiş satış yazdı, hiçbirinde
+   *  `shippedAt` yok (kaynak dosyada kargo tarihi KOLONU yok — ölçüldü).
+   *  Panel hepsini "bugün gönderilecek" saydı: **5192 kapatılamaz görev.**
+   *
+   *  ⚠ ÖRNEK VERİ AYRIMIN ÜÇ YAKASINI DA GÖSTERİR. Üç satırın ÜÇÜNÜN DE
+   *  `kargoTarihi` null; ayıran tek şey öteki iki alan. Tek yaka yazılsaydı
+   *  kovaları birleştiren mutasyon yeşil kalırdı.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const ucHal = [
+    /** ① elle girilmiş, kargolanmamış → GERÇEK İŞ */
+    kargo({ kargoTarihi: null }),
+    /** ② içe aktarılmış + kargo numarası VAR → paket çıkmış, iş değil */
+    kargo({ kargoTarihi: null, importKaynak: "ty-api", shipmentCode: "7260035885654078" }),
+    /** ③ içe aktarılmış + numara YOK → sistem BİLMİYOR, iş değil ama SAYILIR */
+    kargo({ kargoTarihi: null, importKaynak: "satis-excel", shipmentCode: null }),
+  ];
+  const k60 = panelHesapla(bugun, [satis({ tarih: gun(2026, 8, 12) })], [], ucHal)[0];
+
+  kontrol("K60 — görev YALNIZ elle girilen: 1", k60.kargoBekleyenAdet === 1, k60.kargoBekleyenAdet);
+  kontrol(
+    "K60 — bilinmiyor kovası SAYILIYOR: 1 (sessizce elenmiyor)",
+    k60.kargoBilinmiyorAdet === 1,
+    k60.kargoBilinmiyorAdet,
+  );
+  kontrol(
+    "K60 — kargo numarası olan hiçbir kovaya girmiyor (1+1, üçü değil)",
+    k60.kargoBekleyenAdet + k60.kargoBilinmiyorAdet === 2,
+    k60.kargoBekleyenAdet + k60.kargoBilinmiyorAdet,
+  );
+  kontrol(
+    "K60 — tarihi bilinmeyen paket DÖNEME de yazılmıyor (kargoya verilen 0)",
+    k60.kargoyaVerilenAdet === 0,
+    k60.kargoyaVerilenAdet,
+  );
+
+  /** Saf ölçüt — üç hâl tek tek. */
+  kontrol(
+    "K60 — kargoHali: kargo tarihi varsa CIKMIS",
+    kargoHali({ kargoTarihi: gun(2026, 8, 5), importKaynak: "satis-excel", shipmentCode: null }) ===
+      "CIKMIS",
+  );
+  kontrol(
+    "K60 — kargoHali: elle girilmiş + tarihsiz = GOREV",
+    kargoHali({ kargoTarihi: null, importKaynak: null, shipmentCode: null }) === "GOREV",
+  );
+  kontrol(
+    "K60 — kargoHali: içe aktarılmış + numara var = CIKMIS",
+    kargoHali({ kargoTarihi: null, importKaynak: "ty-api", shipmentCode: "726003" }) === "CIKMIS",
+  );
+  kontrol(
+    "K60 — kargoHali: içe aktarılmış + numara yok = BILINMIYOR",
+    kargoHali({ kargoTarihi: null, importKaynak: "satis-excel", shipmentCode: null }) ===
+      "BILINMIYOR",
+  );
+  kontrol(
+    "K60 — kargoHali: BOŞ DİZE numara sayılmaz (BILINMIYOR)",
+    kargoHali({ kargoTarihi: null, importKaynak: "satis-excel", shipmentCode: "   " }) ===
+      "BILINMIYOR",
+  );
+  kontrol(
+    "K60 — elle girilmiş satışta kargo numarası GÖREVİ DÜŞÜRMEZ",
+    kargoHali({ kargoTarihi: null, importKaynak: null, shipmentCode: "726003" }) === "GOREV",
   );
   /**
    * ════════════════════════════════════════════════════════════════════
@@ -4079,14 +4163,21 @@ console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
     kontrol("paketlenen sayacının gövdesi kesilebildi", bas > 0 && govde.length > 100);
 
     /**
-     * ⚠ DESEN DOSYADA ÜÇ KEZ GEÇİYOR (`shippedAt: null`) — bu yüzden
-     * dosyada değil, YALNIZ bu fonksiyonun gövdesinde aranıyor. Dosya
-     * genelinde arayan bir kontrol, sayaçtan silinse bile öteki iki
-     * kullanımı bulup yeşil kalırdı.
+     * ⚠ DESEN DOSYADA BİRDEN ÇOK KEZ GEÇİYOR — bu yüzden dosyada değil,
+     * YALNIZ bu fonksiyonun gövdesinde aranıyor. Dosya genelinde arayan bir
+     * kontrol, sayaçtan silinse bile öteki kullanımı bulup yeşil kalırdı.
+     *
+     * ⚠ ÖLÇÜT 27.08.2026'DA GÜNCELLENDİ — SUSTURULMADI, ESKİDİĞİ İÇİN:
+     * eskiden çıplak `shippedAt: null` aranıyordu. K60 ile "kargo bekliyor"
+     * koşulu TEK GÖVDEYE taşındı (`lib/kargo-bekleyen.ts`) çünkü aynı soruyu
+     * altı yer soruyordu ve biri düzeltilince ötekiler eski kuralla kalmıştı.
+     * Davranış aynı, METİN değişti; ölçüt gövdenin ADINA bağlandı.
+     * ⛔ Gevşetilmedi: `KARGO_BEKLEYEN` yayılmıyorsa yine kırmızı yanar —
+     * ve gövdenin İÇERİĞİNİ `kargo-bekleyen:dogrula` ayrıca ölçüyor.
      */
     kontrol(
       "pay, paydayla AYNI kümeden sayılıyor (kargoya verilmemiş)",
-      /shippedAt: null/.test(govde),
+      /\.\.\.KARGO_BEKLEYEN/.test(govde),
     );
     kontrol(
       "  ...iptaller ikisinden de dışarıda",

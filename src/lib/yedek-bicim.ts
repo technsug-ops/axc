@@ -89,6 +89,13 @@ export const YEDEK_TABLOLARI = [
   // İade bildirimi (RMA) — Sale, ProductVariant, Return ve User'a bakar,
   // bu yüzden dördünden de SONRA gelir.
   "ReturnNotice",
+  // --- fiziksel sayım (K57) ---
+  // ⚠ STOK DEFTERİNDEN ÖNCE GELİR. `StockMovement.sayimSatiriId` sayım
+  // satırına bakıyor; sıra ters olsaydı sayım düzeltmesi geri yüklenirken
+  // hedefini bulamaz ve YABANCI ANAHTAR HATASI verirdi. Sıra bağımlılık
+  // yönündedir, alfabe ya da tabloların yaşı değil.
+  "StokSayimi",
+  "StokSayimSatiri",
   // --- stok defteri: yukarıdakilerin hepsine bakabilir, KENDİNE de ---
   "StockMovement",
   // --- hakediş ve tazminat ---

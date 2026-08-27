@@ -95,6 +95,19 @@ enum ReturnReason {
   CALISMIYOR // gelince servise/analize gider, hüküm sonra
   CAYMA // gelince muayene; sağlamsa onay
   KULLANILMIS_ITIRAZ // kullanılmış çıktı; pazaryerine itiraz edildi
+  /// BİZİM HATAMIZ — A satıldı, B gönderildi. Dönen varyant satılandan
+  /// FARKLIDIR. Kırılımda ayrı sayılır: bu bir DEPO HATASI metriğidir,
+  /// müşteri caymasıyla aynı kefeye konmaz.
+  ///
+  /// ⛔ SIRASI BURADA — SONA TAŞIMAYIN. MySQL'de ENUM SIRALIDIR: değerler
+  /// içeride sıra numarasıyla saklanır. Bu değer 23.08 migration'ında
+  /// 6. sıraya yazıldı; şemada 13. sırada duruyordu ve ikisi 27.08.2026'ya
+  /// kadar SESSİZCE AYRIŞTI. Prisma bunu bir sonraki migration'a kendi
+  /// başına `MODIFY ... ENUM(...)` olarak ekledi — yani ALAKASIZ bir
+  /// pakete, canlıda veri taşıyan bir kolonun yeniden sıralanması girdi.
+  /// Şema sırası veritabanına UYDURULDU (değer kümesi zaten aynıydı,
+  /// hiçbir veri değişmedi). Sıra değiştirilirse aynı kaçak geri gelir.
+  YANLIS_URUN
   /// ── PAZARYERİNİN KENDİ LİSTESİNDEN (docs/iade-sureci.md §3) ──
   /// 23.08.2026: Trendyol müşteri uygulamasının "İade Sebebi Seçiniz"
   /// listesi ölçüldü ve bizim 7 değerimizin çoğunun karşılığı çıkmadı;
@@ -110,10 +123,6 @@ enum ReturnReason {
   HASARLI // ürün hasarlı — kargo şirketine tazmin başvurusu yolu açar
   BOS_PAKET // boş paket geldi — kesinlikle itiraz edilir
   URUN_EKSIK // adetli siparişte eksik geldi
-  /// BİZİM HATAMIZ — A satıldı, B gönderildi. Dönen varyant satılandan
-  /// FARKLIDIR. Kırılımda ayrı sayılır: bu bir DEPO HATASI metriğidir,
-  /// müşteri caymasıyla aynı kefeye konmaz.
-  YANLIS_URUN
   DIGER
 }
 
@@ -395,6 +404,7 @@ model ProductVariant {
   /// Ayrılan ile aynı şey DEĞİL: ayrılan gönderilecek, dönen geri gelen.
   donenBildirimler   ReturnNotice[]  @relation("DonenVaryant")
   stockMovements     StockMovement[]
+  sayimSatirlari     StokSayimSatiri[]
 
   @@index([productId])
   @@index([isActive])
@@ -1053,6 +1063,18 @@ model StockMovement {
   adjustmentReasonId String?
   adjustmentReason   StockAdjustmentReason? @relation(fields: [adjustmentReasonId], references: [id], onDelete: Restrict)
 
+  /// SAYIM İZİ — bu düzeltmeyi hangi sayım satırı doğurdu.
+  /// EKSİ yönde bir satır BİRDEN ÇOK hareket yazar (FIFO parti başına), o
+  /// yüzden bağ hareketin üzerindedir; sayım satırında tek bir id tutmak
+  /// çoğulu taşıyamazdı.
+  ///
+  /// `Restrict` — `purchaseItemId`/`saleItemId` ailesi SetNull kullanır ama
+  /// oradaki mantık burada geçerli değil: sayım oturumu SİLİNMEZ ve silinse
+  /// bile bağın kopması, düzelten kaydı sahipsiz bırakırdı (Sale silme
+  /// vakasının aynısı). `adjustmentReasonId` ile aynı seçim.
+  sayimSatiriId String?
+  sayimSatiri   StokSayimSatiri? @relation(fields: [sayimSatiriId], references: [id], onDelete: Restrict)
+
   note String? @db.Text
 
   createdAt DateTime @default(now())
@@ -1065,6 +1087,7 @@ model StockMovement {
   @@index([sourceMovementId])
   @@index([locationId])
   @@index([adjustmentReasonId])
+  @@index([sayimSatiriId])
   @@index([userId])
 }
 
@@ -1830,6 +1853,7 @@ model User {
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   stockMovements      StockMovement[]
+  stokSayimlari       StokSayimi[]
   iadeler             Return[]
   iadeBildirimleri    ReturnNotice[]
   ekler               Attachment[]
@@ -2621,4 +2645,124 @@ model KomisyonTarifeKalemi {
   @@unique([tarifeId, barkod, dilimSirasi])
   @@index([variantId])
   @@index([barkod])
+}
+
+// ============================================================================
+//  FİZİKSEL SAYIM (K57)
+// ----------------------------------------------------------------------------
+//  RAF GERÇEK, DEFTER İDDİA. Bu iki tablo sayımın KENDİSİNİ tutar; sayımın
+//  SONUCU yeni bir yere yazılmaz — mevcut `StockMovement` + `COUNT_CORRECTION`
+//  + `stokDuzelt` zincirinden geçer (merdiven 1. basamak).
+//
+//  NİYE İKİ TABLO (mimar kararı 27.08.2026): tek tabloda oturum durumu 200
+//  satıra kopyalanır ve "kapandı mı" sorusu satırların tutarlılığına kalır —
+//  iki anlam tek yerde.
+//
+//  ⚠ DURUM ENUM'U YOK — BİLEREK. Oturumun hâli üç nullable damgadan TÜRETİLİR
+//  (kapanisAt · yazimAt · iptalAt); enum eklemek aynı bilgiyi ikinci kez
+//  saklamak olurdu ve ikisi ayrıştığında hangisinin doğru olduğu sorusu
+//  cevapsız kalırdı. Damga ayrıca NE ZAMAN olduğunu da söyler; enum söylemez.
+// ============================================================================
+
+/// Sayımın neyi kapsadığı. i18n için ENUM — serbest metin olsaydı ekran
+/// başlığı veritabanına gömülü Türkçe olurdu ve çevrilemezdi.
+/// Bugün yalnız TUM_STOK kullanılıyor; ötekiler ekranda seçilebilir.
+enum SayimKapsamTuru {
+  TUM_STOK // stoğu > 0 olan bütün varyantlar
+  LISTE // dışarıdan verilen varyant listesi (CSV/seçim)
+  RAF // tek bir raf — ⚠ bugünkü veride 202 varyantın 132'si tek "DEPO" konumunda
+}
+
+model StokSayimi {
+  id String @id @default(cuid())
+
+  /// `sayim-YYYYMMDD` — düzeltme hareketlerine bu kod damgalanır.
+  kod String @unique
+
+  /// SAYIMIN İŞ GÜNÜ (İstanbul), UTC gece yarısı olarak. Karşılaştırma
+  /// "bugünkü stok"a değil, BU GÜN SONU stoğuna yapılır:
+  /// `occurredAt <= sayimGunu`. Sayımdan sonraki hareketler böylece
+  /// kendiliğinden dışarıda kalır — yeni alan gerekmez.
+  sayimGunu DateTime
+
+  kapsamTuru SayimKapsamTuru
+
+  /// ⚠ SAYIM GÜNÜ İLK SATIŞ ÇIKMADAN YAPILIR ve bunu ekran AÇILIŞTA
+  /// hatırlatır. Yapılamazsa o gün hareketi olan varyantlar "aynı gün
+  /// hareketi var — belirsiz" işaretlenir ve SESSİZCE YAZILMAZ.
+  /// Belirsizlik SAKLANMAZ, okuma anında türetilir (ledger'a bakılır);
+  /// saklansaydı gün içinde giren bir kayıt damgayı bayatlatırdı.
+  acilisAt DateTime @default(now())
+
+  /// Sayım bitti, fark hesaplandı — düzeltme HENÜZ yazılmadı.
+  /// ⚠ Fark bu aşamada da CANLI kalır: ekran her açılışta yeniden hesaplar.
+  /// Kapanış sırası ekranda yazar: önce bekleyen belgeleri gir, sonra farkı yaz.
+  kapanisAt DateTime?
+
+  /// Düzeltmeler yazıldı.
+  yazimAt DateTime?
+
+  /// Sayım terk edildi. Satırlar SİLİNMEZ — hüküm vermezler, ama ne
+  /// sayıldığı kaydı kalır.
+  iptalAt DateTime?
+
+  /// TEK AÇIK OTURUM kuralını uygulama katmanı garanti eder (isDefault
+  /// varyant kuralıyla aynı desen): `kapanisAt IS NULL AND iptalAt IS NULL`
+  /// olan ikinci bir satır açılmaz. Nullable damgalarla DB kısıtı kurulamaz.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  satirlar StokSayimSatiri[]
+
+  @@index([sayimGunu])
+  @@index([userId])
+}
+
+model StokSayimSatiri {
+  id      String     @id @default(cuid())
+  sayimId String
+  sayim   StokSayimi @relation(fields: [sayimId], references: [id], onDelete: Cascade)
+
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  /// ⛔ null = SAYILMADI · 0 = SAYILDI, RAFTA YOK.
+  /// BU AYRIM SİSTEMİN EN KRİTİK YERİ: ikisi karıştırılırsa sayılmamış mal
+  /// stoktan yanlışlıkla silinir. Ayrı bir "durum" enum'u AÇILMADI — açılsaydı
+  /// aynı anlam iki yerde yaşar ve ayrıştıklarında hangisinin doğru olduğu
+  /// belirsiz kalırdı.
+  sayilanAdet Int?
+
+  /// KAPSAM İÇİNDE DOĞDU MU. Oturum açılırken kapsamdaki her varyant için
+  /// satır MADDİLEŞTİRİLİR (bugün 202 satır) — böylece "sayılmadı" bir
+  /// YOKLUK değil, GÖRÜNÜR bir satır olur. Sayım sırasında kapsam dışı bir
+  /// kod okunursa satır `false` ile doğar ve doğrudan FAZLA'dır; reddedilmez,
+  /// çünkü sistemin boş sandığı yerde mal bulunması bulgunun kendisidir.
+  kapsamdaydi Boolean @default(true)
+
+  /// DÜZELTME YAZILDI ANI. null = yazılmadı.
+  duzeltmeYazildiAt DateTime?
+
+  /// YAZIM ANINDA KARŞILAŞTIRILAN SİSTEM ADEDİ (sayım günü sonu).
+  /// ⚠ SAYIM HÜKMÜ KAYDIN HÂLİNE BAĞLIDIR (K6 deseni): sonradan sayım gününe
+  /// ya da öncesine damgalı bir hareket girilirse bu damga tutmaz ve satır
+  /// YENİDEN AÇILIR. "Yeniden açıldı" durumu SAKLANMAZ — türetilir, çünkü
+  /// saklansaydı geriye dönük kayıt geldiği an bayatlardı.
+  damgaSistemAdedi Int?
+
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Bu satırın doğurduğu düzeltme hareketleri (EKSİ yönde parti başına birden çok).
+  hareketler StockMovement[]
+
+  @@unique([sayimId, variantId])
+  @@index([variantId])
 }

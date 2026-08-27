@@ -44,9 +44,33 @@ import { topluKargoyaVerildi } from "./actions";
  *
  *  ⚠ YIKICI EYLEM = ONAY (İlke #6): geri alma tek tek satırdan yapılır,
  *  toplu geri alma YOK. Bu yüzden onay diyaloğu sayıyı ADIYLA söyler.
+ *
+ *  ═══ 27.08.2026 — KÜME BİR KEZ DAHA DARALDI (K60) ═══
+ *
+ *  ⛔ İÇE AKTARILMIŞ SİPARİŞLER KÜMEDE DEĞİL. Vaka: görev kutusunda
+ *  kapatılamayan 5192 maddelik bir yığın vardı (içe aktarılan geçmiş
+ *  satışların `shippedAt`i yok) ve bu düğme onu kapatmanın tek görünen
+ *  yoluydu. İki tıkla **5601 siparişe** bugünün tarihi yazıldı — sistemin
+ *  HİÇ BİLMEDİĞİ bir tarih. Günlük operasyon grafiği tek günde 5192 paketlik
+ *  sahte bir gün gösterdi.
+ *
+ *  ⚠ HATA KULLANICIDA DEĞİLDİ. Kutuya kapatılamayan madde koyan, kapatma
+ *  yolunu da GÜVENLİ hâlde koymak zorundadır: düğme uyarmadı, liste
+ *  sayfalanmıyordu, geri alma yolu yoktu.
+ *
+ *  ⚠ VE ONAY METNİ ARTIK SOMUT: hangi TARİHİN yazılacağını rakamla söylüyor
+ *  ve o tarih gerçek değilse ne olacağını yazıyor. "Bugünün tarihiyle"
+ *  demek yetmiyordu — okuyan onu bir ayrıntı sanıyor.
  * ============================================================================
  */
-export function TopluKargo({ kimlikler }: { kimlikler: string[] }) {
+export function TopluKargo({
+  kimlikler,
+  iceAktarilanSayisi,
+}: {
+  kimlikler: string[];
+  /** Kümeden ÇIKARILAN içe aktarılmış sipariş sayısı — sessizce elenmez. */
+  iceAktarilanSayisi: number;
+}) {
   const t = useTranslations("Satis");
   const ortak = useTranslations("Ortak");
   const router = useRouter();
@@ -57,6 +81,19 @@ export function TopluKargo({ kimlikler }: { kimlikler: string[] }) {
   );
 
   const sayi = kimlikler.length;
+  /**
+   * ⚠ TARİH SUNUCUYLA AYNI GÖVDEDEN GELMİYOR — ve gelemez, bu bir istemci
+   * bileşeni. Bu yüzden İSTANBUL günü burada da AÇIKÇA kuruluyor;
+   * `toLocaleDateString()` çıplak çağrılsaydı Almanya'daki tarayıcı gece
+   * yarısından sonra bir gün geriye yazardı ve onay metni sunucunun
+   * yazacağı tarihten FARKLI bir tarih gösterirdi.
+   */
+  const bugun = new Intl.DateTimeFormat("tr-TR", {
+    timeZone: "Europe/Istanbul",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date());
 
   /**
    * ⚠ SIFIRDA DÜĞME ÇİZİLİR AMA KİLİTLİ, VE NİYE KİLİTLİ YAZAR (İlke #5).
@@ -84,8 +121,18 @@ export function TopluKargo({ kimlikler }: { kimlikler: string[] }) {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("topluKargoBaslik")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("topluKargoAciklama", { sayi })}
+              {t("topluKargoAciklama", { sayi, tarih: bugun })}
             </AlertDialogDescription>
+            {iceAktarilanSayisi > 0 ? (
+              /**
+               * ⛔ ELENEN KÜME SESSİZCE ELENMEZ (İlke #5). Kullanıcı
+               * "5192 bekleyen" görüp düğmede "12" yazınca aradaki farkı
+               * SORAR; cevabı ekranda durmalı, yoksa sistem bozuk sanılır.
+               */
+              <AlertDialogDescription className="mt-2 font-medium">
+                {t("topluKargoIceAktarilan", { sayi: iceAktarilanSayisi })}
+              </AlertDialogDescription>
+            ) : null}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{ortak("vazgec")}</AlertDialogCancel>
