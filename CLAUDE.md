@@ -2374,6 +2374,61 @@ törene dönüşür. Damga **commit edilir**.
 **Bekçi karar veremiyorsa bunu YAZAR** (damga yoksa "atlandı" der), sessiz
 yeşil vermez.
 
+## YAKALANMAMIŞ HATA, YUTULMUŞ HATANIN KARDEŞİDİR (KESİN KURAL)
+
+_Kullanıcı kararı 28.08.2026, K57-③._ Anayasada `catch {}` yasağı vardı
+(_"sessiz yutma"_). Eksik yarısı bugün eklendi: **hiç yakalamamak da aynı
+sonucu verir.** İkisi de TEŞHİS İMKÂNINI yok eder.
+
+**Vaka:** aynı gün ikinci "Sayım başlat" tekillik ihlaline çarptı, hata
+yakalanmadı ve kullanıcı yalnız şunu gördü:
+
+    This page couldn't load
+    A server error occurred.        ERROR 286811001
+
+Sebep hiçbir yerde yazmıyordu. Kod doğruydu diye düşünüp yanlış yerde
+arandı; teşhis ancak **canlı veritabanına bakılıp** oturumun 16 saniye
+sonra kapandığı görülünce çıktı.
+
+> **KURAL:** her sunucu eylemi hatasını **TAM** loglar (kısaltma yalnız
+> gösterimde) **VE** kullanıcıya ne olduğunu söyler. `try/catch` yoksa
+> teşhis de yoktur.
+
+⚠ **VE HATA KODA ÇEVRİLİR, MESAJA DEĞİL:** eylem `{ hata: "ACILAMADI" }`
+döner, ekran onu SABİT eşlemeyle metne çevirir. Ham hata metnini ekrana
+basmak hem kullanıcıya bir şey anlatmaz hem de iç ayrıntı sızdırır.
+
+---
+
+## SEÇENEK SUNULURKEN GERİ ALINABİLİR OLAN ÖNE KONUR (KESİN KURAL)
+
+_Kullanıcı kararı 28.08.2026._ Bir ekran iki yol sunuyorsa ve kullanıcı
+hangisinin doğru olduğundan emin değilse, **ekran şüphe hâlinde ne
+seçileceğini SÖYLER** — ve söylediği şey, yanlış çıktığında DÜZELTİLEBİLİR
+olandır.
+
+**Vaka — sayım eksiği:** rafta 5, sistemde 7. İki yol var:
+
+| Seçim | Yanlışsa ne olur |
+|---|---|
+| **Sayım farkı** | GERÇEK NET olduğundan düşük görünür — **ters kayıtla düzeltilir** |
+| **Satış gir** | ciro şişer · **KDV ve stopaj matrahına girer** · hakediş beklentisi doğar |
+
+İkisi de "bir hata" ama biri deftere, öteki **dış dünyaya** taşar. Ekran bu
+asimetriyi yazar:
+
+> _"Emin değilseniz SAYIM FARKI seçin."_
+
+⚠ **BU BİR TAVSİYE SATIRIDIR, KAPI DEĞİL.** Kullanıcı yine ikisini de
+seçebilir — doğruyu operatör bilir. Ekranın işi seçmek değil, **bedeli
+söylemek.**
+
+_(Anayasadaki "uyarı sorar, kullanıcı ısrar ederse istisna kaydedilir"
+kuralının seçim tarafı: orada eşik vardı, burada iki meşru yol var ve
+yalnızca RİSKLERİ farklı.)_
+
+---
+
 ## BEKÇİNİN YEŞİLİ, ÖLÇTÜĞÜ DOĞRULANMADAN GÜVENCE DEĞİLDİR (KESİN KURAL)
 
 _Kullanıcı kararı 28.08.2026._ Anayasada _"yeşil test, sınanmış kontrol

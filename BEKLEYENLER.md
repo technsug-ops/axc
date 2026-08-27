@@ -1611,6 +1611,51 @@ yok, düzeltme yazmamış). Silinebilir — `StockMovement → satır` bağı
 `Restrict` olduğu için düzeltme yazmış bir oturum zaten silinemezdi.
 **Karar Halil'de**; durması da zararsız (kapanmış bir sayım kaydı).
 
+### ✅ K57-② KAPANIŞ EKRANI — TESLİM (28.08.2026)
+
+**Sayım artık uçtan uca kullanılabilir:** başlat → okut → kapat → **hüküm ver**.
+
+| Parça | Durum |
+|---|---|
+| `lib/sayim/kapanis-verisi.ts` | ✅ üç ölçüm: sayım günü sonu stoğu · aynı gün hareketi · **hareketsiz satış** |
+| `okut/sayim-yazim-actions.ts` | ✅ `COUNT_CORRECTION` · FIFO · damga · sunucu kilidi |
+| `okut/sayim-kapanis.tsx` | ✅ beş sayı · fazla/eksik AYRI · belge yolu üstte |
+| `docs/sayim-proseduru.md` | ✅ **sürüm 2** — belge ilk kez dosya oldu |
+
+**ÜÇ EK UYGULANDI:**
+
+**① Üçüncü bilgi.** Eksik satırında _"Bu üründe stok hareketi olmayan N satış
+kaydı var"_ — N=0 ise satır ÇİZİLMEZ. Ölçüm gerçek: canlıda 2553/5866 satış
+kalemi (%43,5) stok hareketi taşımıyor; kapsamdaki 204 varyanttan **1'i** bu
+durumda. Risk düşük ama sıfır değil.
+
+**② Dil düzeltildi.** _"maliyet gider yazılır"_ cümlem YANLIŞTI — gider
+tablosuna yazılmıyor. Doğru metin: _"Ciroya ve NET-2'ye GİRMEZ, gider
+tablosuna YAZILMAZ; GERÇEK NET'ten düşer."_ **Bekçi dil ölçütü taşıyor:**
+hiçbir sayım metni "gider yazılır" diyemez.
+
+**③ Asimetri ekranda.** _"Emin değilseniz SAYIM FARKI seçin…"_ — tavsiye
+satırı, kapı değil.
+
+**Bekçiler:** `sayim:dogrula` **85** · `sayim-mutasyon:kontrol` **22/22** ·
+`sayim-ekran:dogrula` **61 ölçüt · 13/13 mutasyon**.
+
+⚠ **BİR MUTASYON ÖN-EK KÖRLÜĞÜNDEN KAÇTI.** Sıra kontrolü
+`indexOf("yolBelgeGirFazla")` yapıyordu; mutasyon anahtarı
+`yolBelgeGirFazlaSonra` yapınca `indexOf` onu **yine buldu** (ön ek) ve sıra
+aynı konumu ölçüp yeşil kaldı. Desen tam çağrıya bağlandı
+(`t("yolBelgeGirFazla")`), mutasyon kırmızıya döndü.
+
+⚠ **BELGE DOSYA OLARAK YOKMUŞ.** _"HTML prosedürü düzeltilecek"_ denince
+arandı: `docs/`te sayım belgesi **hiç yoktu** — prosedür şimdiye kadar yalnız
+sohbette yaşamıştı. `docs/sayim-proseduru.md` kuruldu ve aşılan sürüm
+**sessizce değiştirilmedi**: sürüm 2'nin başında hangi iki cümlenin niye
+düzeldiği yazıyor.
+
+⛔ **HENÜZ YOK — ekranda "yakında" yazıyor:** "Satışı gir" ve "Alımı gir"
+düğmeleri kapalı. O iki yol mevcut satış/alım formlarına bağlanacak; bugün
+kullanıcı ilgili ekrana kendisi gidiyor.
+
 ### ⏭ SIRADAKİ — VE ONAY KAPISI
 
 **(a) kovası içe aktarmanın kuru koşumunu doğuruyor.** Yazma ancak Halil'in
