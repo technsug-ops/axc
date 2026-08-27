@@ -429,7 +429,10 @@ console.log("=".repeat(70));
   );
   kontrol(
     "  ...varsayılan KAPALI (open özniteliği yok)",
-    !/<details[^>]*open/.test(buton),
+    !/<details[^>]*\bopen\b/.test(buton),
+    /* ⚠ 28.08.2026: burada `\b` GÖRÜNMEZ backspace (0x08) olarak duruyordu —
+       desen hiçbir şeyle eşleşmiyor, `!` ile birlikte ölçüt HER ZAMAN yeşil
+       yanıyordu. `kontrol-karakteri:dogrula` bulup çıkardı. */
   );
   kontrol(
     "  ...başka bir şey toplanmadığı YAZILI",

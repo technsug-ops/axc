@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { ScanBarcode } from "lucide-react";
 
 import { Okuyucu } from "@/app/okut/okuyucu";
+import { SayimBolumu } from "@/app/okut/sayim-bolumu";
 import { bicimlendirici } from "@/lib/bicim";
 import {
   OKUMA_KOVALARI,
@@ -59,6 +60,9 @@ export default async function OkutSayfasi() {
       </p>
 
       <Okuyucu />
+
+      {/* SAYIM KİPİ (K57) — aynı ekranın ikinci kipi, yeni adres YOK. */}
+      <SayimBolumu />
 
       <section className="space-y-2">
         <h2 className="text-sm font-medium">{t("raporBaslik")}</h2>

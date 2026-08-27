@@ -2374,6 +2374,72 @@ törene dönüşür. Damga **commit edilir**.
 **Bekçi karar veremiyorsa bunu YAZAR** (damga yoksa "atlandı" der), sessiz
 yeşil vermez.
 
+## EŞİK FİZİKSEL EYLEMİN KENDİSİNE KONUR — UYDURULMAZ (KESİN KURAL)
+
+_Kullanıcı kararı 28.08.2026, K57 sayım tekrar koruması._ Anayasada zaten
+_"eşik dağılımın gediğine konur"_ vardı. İkinci kaynağı bugün eklendi:
+**eşik, ölçülebilir bir FİZİKSEL OLAYA da bağlanabilir — ve bağlanabiliyorsa
+sayı hiç yazılmaz.**
+
+**Vaka:** sayım kipinde kamera açık kalıyor ve çözücü 250 ms'de bir kare
+çözüyor. Koruma olmasa önünde duran tek barkod **saniyede dört kez**
+sayılırdı. İlk akla gelen çözüm bir SÜRE eşiğiydi:
+
+    ⛔ "800 ms içinde aynı kodu sayma"
+
+O sayı veriden gelmez — ben uydururum. Ve hızlı okutan biri **gerçek**
+okumasını kaybeder: dört ayrı ürünü hızla okutan operatör cezalandırılır.
+
+**Konulan ölçüt:** _aynı kod, arada **BOŞ KARE** geçmeden ikinci kez
+sayılmaz._ Dört ayrı ürünü okuturken her birini kadraja sokup ÇIKARIRSINIZ —
+kod bulunmayan kare **zorunlu olarak** oluşur. Tek ürün sabit dururken
+oluşmaz.
+
+> **AYIRT EDİCİ SORU:** bu eşik bir OLAYI mı ölçüyor, yoksa bir olayın ne
+> kadar sürdüğünü mü TAHMİN ediyor? Birincisi ölçüt, ikincisi uydurma.
+
+⚠ **VE RİSK BEYAN EDİLİR, GİZLENMEZ:** sabit duran bir barkod bazı karelerde
+çözülemez (odak, parlama). O kare "boş" sayılıp kilidi haksız açabilir. Eşik
+bu yüzden PARAMETRE (`bosKareEsigi`, varsayılan 1) ve gerçek kullanımda çift
+sayım görülürse **ölçümle** yükseltilir. İkinci emniyet ekranda: her satırda
+görünür sayaç ve `−`/`+`.
+
+⚠ **VE YASAK BEKÇİYE BAĞLANIR:** saf gövdede `Date` · `setTimeout` ·
+`performance.now` KULLANILAMAZ. Değer testi bunu yakalayamıyordu (zamana
+bağlı ifade neredeyse hep doğru); ölçüt kaynağa bağlandı ve mutasyonla
+kırmızı yandığı görüldü.
+
+---
+
+## GÖRÜNMEZ KARAKTER, BEKÇİYİ SESSİZCE İŞLEVSİZ YAPAR (KESİN KURAL)
+
+_Üçüncü vaka 28.08.2026._ Bir bekçi deseni betikle (Python) dosyaya
+yazılırken `` yazıldığında, ham OLMAYAN dizede bu bir kaçış dizisidir ve
+**0x08 BACKSPACE** karakterine çevrilir:
+
+    ["Date", /<BS>Date<BS>/]        ← ekranda `/Date/` GİBİ GÖRÜNÜR
+
+`grep`, `sed` ve editör backspace'i çizmez. **Kod doğru görünür**, desen
+hiçbir şeyle eşleşmez, ölçüt **her zaman yeşil yanar.**
+
+⛔ **28.08'de bu üç kez birden ortaya çıktı:** yeni yazılan süre-eşiği yasağı
+mutasyonla kaçtı (sebep koddaydı sanıldı, `cat -A` ile görünmez karakter
+çıktı) — ve aynı gün yazılan `kontrol-karakteri:dogrula` **aylardır duran
+üçüncü bir vakayı** buldu: `talep-dogrula.ts`teki _"varsayılan KAPALI"_
+ölçütü `!/<details[^>]*<BS>open<BS>/` idi, yani `!false` = **her koşumda
+yeşil.** Onarıldı ve mutasyonla dişi olduğu görüldü.
+
+> **KURAL:** `src/` ve `scripts/` altındaki hiçbir kaynakta kontrol
+> karakteri bulunmaz (`	` · `
+` · `` hariç). Bekçisi:
+> `kontrol-karakteri:dogrula` — dosya listesi tutmaz, hepsini tarar.
+
+⚠ **VE BETİKLE KOD YAZARKEN:** ters bölülü desenler ham dizeyle (`r"..."`)
+ya da `chr(92)` ile kurulur. "Ekranda doğru görünüyor" bir doğrulama
+DEĞİLDİR.
+
+---
+
 ## YAVAŞLIK HACİMLE DEĞİL, ÖLÇEKLENME BİÇİMİYLE AÇIKLANIR (KESİN KURAL)
 
 _Kullanıcı düzeltmesi 27.08.2026, K61._ Bir ekran yavaşladığında _"veri

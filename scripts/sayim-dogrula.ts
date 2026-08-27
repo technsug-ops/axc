@@ -7,7 +7,16 @@ import {
   okumayaAcikMi,
   acilisUyarisiGerekirMi,
 } from "../src/lib/sayim/oturum";
+import { readFileSync } from "node:fs";
+
 import { satirKarari } from "../src/lib/sayim/karar";
+import {
+  BOS_KILIT,
+  okumaKarari,
+  sepetToplami,
+  sepeteEkle,
+  type Sepet,
+} from "../src/lib/sayim/okuma";
 
 /**
  * ============================================================================
@@ -298,6 +307,131 @@ esit(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
+
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ⑩ BOŞ KARE KİLİDİ — sayım kipinde kamera AÇIK kalıyor
+// ═══════════════════════════════════════════════════════════════════════════
+//  Çözücü 250 ms'de bir kare çözüyor. Koruma olmasa sabit duran bir barkod
+//  saniyede DÖRT kez sayılırdı. Kural: aynı kod, arada BOŞ KARE geçmeden
+//  ikinci kez sayılmaz — süre eşiği YOK.
+
+{
+  /** Bir kare dizisini kurala göre işleyip toplam sayımı döndürür. */
+  const kostur = (kareler: (string | null)[], esik?: number) => {
+    let kilit = BOS_KILIT;
+    let sepet: Sepet = new Map();
+    for (const k of kareler) {
+      const karar = okumaKarari(kilit, k, esik);
+      kilit = karar.kilit;
+      if (karar.say && k !== null) sepet = sepeteEkle(sepet, k);
+    }
+    return sepet;
+  };
+
+  esit(
+    "⑩ tek ürün sabit duruyor (8 kare aynı kod) → 1 sayılır",
+    kostur(["A", "A", "A", "A", "A", "A", "A", "A"]).get("A"),
+    1,
+  );
+  /**
+   * ⚠ AYRIMIN ÖTEKİ YAKASI — VE ÖRNEK VERİ BUNU GÖSTERMELİ: dört GERÇEK
+   * ürün, her biri kadraja girip çıkıyor. Yalnız üstteki yazılsaydı
+   * "hep 1 döndür" mutasyonu yeşil kalırdı.
+   */
+  esit(
+    "⑩ dört ayrı ürün (arada boş kare) → 4 sayılır",
+    kostur(["A", null, "A", null, "A", null, "A"]).get("A"),
+    4,
+  );
+  esit(
+    "⑩ boş kare GEÇMEDEN ikinci okuma sayılmaz",
+    kostur(["A", "A"]).get("A"),
+    1,
+  );
+  esit(
+    "⑩ boş kare SONRASI sayılır (kilit açılıyor)",
+    kostur(["A", null, "A"]).get("A"),
+    2,
+  );
+  esit(
+    "⑩ FARKLI kod kilidi açar — A→B→A üçü de sayılır",
+    [kostur(["A", "B", "A"]).get("A"), kostur(["A", "B", "A"]).get("B")],
+    [2, 1],
+  );
+  /**
+   * ⛔ BOŞ DİZE `null` DEĞİLDİR. Çözücü `""` dönerse o bir koddur, "kadraj
+   * boş" değil — `!kod` yazılsaydı kilit sessizce açılırdı.
+   */
+  esit(
+    "⑩ boş dize kilidi AÇMAZ (null ile karıştırılmıyor)",
+    kostur(["A", "", "A"]).get("A"),
+    1,
+  );
+  esit(
+    "⑩ araya karışan tek bulanık kare (eşik 2) kilidi AÇMAZ",
+    kostur(["A", null, "A", "A"], 2).get("A"),
+    1,
+  );
+  esit(
+    "⑩ iki ardışık boş kare (eşik 2) kilidi AÇAR",
+    kostur(["A", null, null, "A"], 2).get("A"),
+    2,
+  );
+
+  /* ── Sepet: −/+ düzeltmesi ── */
+  esit("⑩ sepet: + artırır", sepeteEkle(new Map([["A", 3]]), "A").get("A"), 4);
+  esit("⑩ sepet: − azaltır", sepeteEkle(new Map([["A", 3]]), "A", -1).get("A"), 2);
+  esit(
+    "⑩ sepet: sıfırın ALTINA inmez",
+    sepeteEkle(new Map([["A", 0]]), "A", -1).get("A"),
+    0,
+  );
+  esit(
+    "⑩ sepet: SIFIR SİLİNMEZ — 'sayıldı, rafta yok' bir ölçümdür",
+    sepeteEkle(new Map([["A", 1]]), "A", -1).has("A"),
+    true,
+  );
+  esit("⑩ sepet toplamı", sepetToplami(new Map([["A", 3], ["B", 2]])), 5);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ⑪ SÜRE EŞİĞİ YASAĞI — tek kaynak taraması, ve NİYE gerekti
+// ═══════════════════════════════════════════════════════════════════════════
+//  ⛔ BU DOSYADAKİ TEK KAYNAK TARAMASI. Gerekçesi ölçüldü: mutasyon harness'i
+//  `Date.now() % 800 !== 0` ekleyen bir senaryo denedi ve DEĞER TESTLERİ
+//  YAKALAYAMADI — çünkü o ifade neredeyse her zaman doğru, davranış kareler
+//  düzeyinde değişmiyor. Zamana bağlı bir değer testi yazmak ise kırılgan
+//  bir bekçi üretirdi (bazen yeşil, bazen kırmızı).
+//
+//  ⚠ VE KURAL ZATEN YAPISAL: `okuma.ts` SAF bir gövde. Saf bir gövdede saat
+//  okumak, onu sınanamaz yapar. Yasak, kuralın kendisiyle aynı şey.
+//  _(Anayasa 28.08.2026: "eşik, dağılımın gediğine ya da FİZİKSEL EYLEMİN
+//  kendisine konur — uydurulmaz.")_
+
+{
+  const kaynak = readFileSync("src/lib/sayim/okuma.ts", "utf8")
+    /* ⚠ YORUMSUZ: yasağı ANLATAN yorum, yasağı ÇİĞNEMİŞ sayılmaz. */
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
+
+  for (const [ad, desen] of [
+    ["Date", /Date/],
+    ["performance.now", /performance\s*\.\s*now/],
+    ["setTimeout", /setTimeout/],
+    ["setInterval", /setInterval/],
+  ] as const) {
+    esit("⑪ okuma kuralı `" + ad + "` KULLANMIYOR (süre eşiği yasak)", desen.test(kaynak), false);
+  }
+
+  /* Ayrımın öteki yakası: eşik KARE cinsinden ve dışarıdan verilebiliyor. */
+  esit(
+    "⑪ eşik KARE sayısı olarak var (süre değil)",
+    /BOS_KARE_ESIGI\s*=\s*\d+/.test(kaynak),
+    true,
+  );
+}
 
 console.log("\nFİZİKSEL SAYIM BEKÇİSİ (K57)\n");
 if (dusen.length === 0) {

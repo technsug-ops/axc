@@ -1495,6 +1495,63 @@ bütün kalemlerini ciro için çekiyor, `groupBy`a inebilir · `/satislar`
 varsayılan penceresi "tüm zamanlar" — 12.08.2026'da bilinçle böyle bırakıldı
 (_"süzgeç eklemek kayıt gizlemek anlamına gelmemeli"_), **dokunulmadı.**
 
+### 🟡 K57 SAYIM EKRANI — ① SAYIM KİPİ KOŞUYOR · ② KAPANIŞ EKRANI KALDI (28.08.2026)
+
+**TESLİM EDİLEN — sayıma BUGÜN başlanabilir:**
+
+| Parça | Durum |
+|---|---|
+| Şema (2 tablo + bağ) | ✅ canlıda (39 migration) |
+| Hesap gövdeleri (`lib/sayim/`) | ✅ `kova · ozet · oturum · karar · okuma` |
+| Sunucu eylemleri | ✅ `sayimAc · sayimaOkut · sayimiKapat · okutulmayanlariCevapla` |
+| `/okut` sayım kipi | ✅ yapışık sayaç · sürekli kamera · `−`/`+` · wakeLock |
+| **Kapanış ekranı** | ⏳ **YOK** — fazla/eksik listesi, belge yolu, düzeltme yazımı |
+
+**ÜÇ ÖLÇÜM YAPILDI, ÜÇÜ DE TASARIMI DEĞİŞTİRDİ:**
+
+    ① kamera HER OKUMADA kapanıyordu (`onOkundu` → `onKapat`)
+       768 adet × (getUserMedia + play + odak) ≈ 10–25 dk yalnız açılış
+       → `surekli` kipi eklendi; varsayılan KAPALI, öteki ekranlar aynen
+
+    ② tekrar koruması YOKTU — gerekmiyordu da (kamera zaten kapanıyordu)
+       açık kalınca sabit barkod SANİYEDE 4 KEZ sayılırdı
+       → BOŞ KARE KURALI (eşiksiz), onaylandı
+
+    ③ wakeLock hiç kullanılmıyordu → tam günde telefon uyur, kamera ölür
+       → yalnız oturum açıkken tutulur, kapanışta BIRAKILIR
+
+**BEKÇİLER:** `sayim:dogrula` **80 ölçüt** · `sayim-mutasyon:kontrol`
+**20/20** · `sayim-ekran:dogrula` **30 ölçüt · 18/18 mutasyon**.
+
+⚠ **BOŞ DİZE ÜÇÜNCÜ HÂL ÇIKTI.** İlk yazımda çözücünün döndürdüğü `""` bir
+KOD sayılıyordu: kilit ona geçiyor ve gerçek ürün yeniden sayılıyordu
+(`["A","","A"]` → 2, doğrusu 1). Ne ürün ne boş kare — kilit hiç oynatılmaz.
+Değer testi yakaladı.
+
+⚠ **PENCERE ÖLÇÜLDÜ, TAHMİN EDİLMEDİ.** `sayim-ekran:dogrula` ilk yazımda
+2600 karakterlik pencere kullandı ve bir sonraki fonksiyona taşıp MEŞRU bir
+`updateMany`yi "toplu yazım" sanarak yanlış yandı. Gövde ölçüldü: 1740.
+
+⚠ **İKİ ÖLÇÜT DESEN SAYMA KÖRLÜĞÜNE DÜŞTÜ, MUTASYON YAKALADI.**
+`Math.max(0,` okuma bloğunda İKİ kez (create + update dalı), `surekli = false`
+kamera dosyasında İKİ kez. İkisi de ATAMAYA/SAYIYA bağlandı.
+
+**KALAN (② — kapanış ekranı):** dört sayı + **beşinci ayrı: belirsiz** ·
+fazla/eksik AYRI liste · fazlada belge yolu ÜSTTE · düzeltme yazılınca satır
+KİLİTLENİR · `stok.duzelt` izni · Halil test listesi kapanış kısmı.
+
+### 🆕 K62 — GÖRÜNMEZ KARAKTER BEKÇİSİ · ÜÇÜNCÜ VAKA BULUNDU (28.08.2026)
+
+Python'un ham OLMAYAN dizesinde `` → **0x08 backspace**. Dosyaya düşen
+desen ekranda `/Date/` gibi görünür ama hiçbir şeyle eşleşmez → ölçüt
+**her zaman yeşil.**
+
+`kontrol-karakteri:dogrula` yazıldı (585 dosya taranıyor, liste tutmuyor) ve
+**aylardır duran üçüncü bir vakayı buldu:** `talep-dogrula.ts` →
+_"varsayılan KAPALI (open özniteliği yok)"_ ölçütü
+`!/<details[^>]*<BS>open<BS>/` idi, yani `!false` = **her koşumda yeşil.**
+Onarıldı, mutasyonla dişi olduğu görüldü.
+
 ### ⏭ SIRADAKİ — VE ONAY KAPISI
 
 **(a) kovası içe aktarmanın kuru koşumunu doğuruyor.** Yazma ancak Halil'in

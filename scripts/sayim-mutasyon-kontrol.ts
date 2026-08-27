@@ -185,6 +185,48 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu: "önce fark yazılır sonra fatura girilir → stok İKİ KEZ artar",
   },
 
+  // ── BOŞ KARE KİLİDİ (28.08.2026) — kamera sayım kipinde AÇIK kalıyor ─────
+  {
+    ad: "boş kare kilidi kaldırıldı (aynı kod hep sayılır)",
+    yon: "FAZLADAN",
+    dosya: "src/lib/sayim/okuma.ts",
+    bul: "  if (kod === kilit.sonKod) {\n    return { say: false, kilit: { sonKod: kod, bosKare: 0 } };\n  }",
+    koy: "",
+    bozdugu: "sabit duran barkod SANİYEDE DÖRT KEZ sayılır — 1 adet 12 saniyede 48 olur",
+  },
+  {
+    ad: "boş kare kilidi hiç AÇILMIYOR",
+    yon: "KALDIRAN",
+    dosya: "src/lib/sayim/okuma.ts",
+    bul: "      kilit: bosKare >= esik ? { sonKod: null, bosKare } : { ...kilit, bosKare },",
+    koy: "      kilit: { ...kilit, bosKare },",
+    bozdugu: "aynı üründen dört adet okutulamaz — gerçek okuma ENGELLENİR",
+  },
+  {
+    ad: "SÜRE EŞİĞİ eklendi (Date farkı) — uydurma eşik yasak",
+    yon: "FAZLADAN",
+    dosya: "src/lib/sayim/okuma.ts",
+    bul: "  if (kod === kilit.sonKod) {",
+    koy: "  if (kod === kilit.sonKod && Date.now() % 800 !== 0) {",
+    bozdugu: "kural fiziksel olaydan koparılıp uydurma bir süreye bağlanır",
+  },
+  {
+    ad: "bozuk okuma (boş dize) boş kare gibi sayılıyor",
+    yon: "FAZLADAN",
+    dosya: "src/lib/sayim/okuma.ts",
+    bul: "  if (kod !== null && kod.trim() === \"\") {\n    return { say: false, kilit };\n  }",
+    koy: "",
+    bozdugu: "çözülemeyen kare kilidi açar, elde duran ürün İKİ kez sayılır",
+  },
+  {
+    ad: "sepette sıfır satırı siliniyor",
+    yon: "FAZLADAN",
+    dosya: "src/lib/sayim/okuma.ts",
+    bul: "  yeni.set(kod, Math.max(0, sonraki));",
+    koy: "  if (sonraki <= 0) yeni.delete(kod); else yeni.set(kod, sonraki);",
+    bozdugu: "'sayıldı, rafta yok' (0) satırı kaybolur ve 'sayılmadı'ya döner — stok yanlış silinir",
+  },
+
   // ─────────────────────────────────────────────────────────────────────────
   //  OTURUM HÂLİ — damgadan türetilir
   // ─────────────────────────────────────────────────────────────────────────

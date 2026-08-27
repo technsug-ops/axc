@@ -128,11 +128,32 @@ function KameraDiyalogu({
   onKapat,
   onOkundu,
   baslik,
+  surekli = false,
+  onBosKare,
 }: {
   acik: boolean;
   onKapat: () => void;
   onOkundu: (kod: string) => void;
   baslik: string;
+  /**
+   * SÜREKLİ KİP (K57, 28.08.2026) — okuma kamerayı KAPATMAZ.
+   *
+   * ⚠ VARSAYILAN `false`: bugünkü bütün kullanımlar (ürün ara, kargo etiketi
+   * okut) "bir kod okut, işini gör" akışıdır ve orada kapanmak DOĞRU
+   * davranıştır. Sayım kipi tek istisnadır.
+   *
+   * ⛔ NİYE GEREKTİ: sayımda 768 adet okutuluyor. Her okumada diyalog açılıp
+   * kamera yeniden kurulsaydı (`getUserMedia` + `play()` + odak kısıtı,
+   * tipik 0,5–2 sn) yalnız kamera açılışı 10–25 dakika ederdi — artı batarya.
+   */
+  surekli?: boolean;
+  /**
+   * KADRAJDA KOD YOK. Sürekli kipte her boş kare bildirilir; "boş kare
+   * kilidi" bu sinyalden besleniyor (bkz. `lib/sayim/okuma.ts`).
+   * ⚠ Kural BURADA DEĞİL: bu bileşen yalnız OLAYI bildirir, hükmü saf gövde
+   * verir — yoksa kural sınanamaz bir yerde yaşardı.
+   */
+  onBosKare?: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -239,9 +260,17 @@ function KameraDiyalogu({
         okumaSuruyor = true;
         try {
           const kod = await kareyiCozumle(canvas, video);
-          if (kod && !iptal) {
+          if (iptal) return;
+          if (kod) {
             onOkundu(kod);
-            onKapat();
+            /**
+             * ⛔ SÜREKLİ KİPTE KAPANMAZ — sayaç artar, kamera açık kalır.
+             * Tek kod okutan akışlarda eski davranış aynen sürüyor.
+             */
+            if (!surekli) onKapat();
+          } else if (surekli) {
+            /** Kadraj boş — kilidi açacak olay. Yalnız sürekli kipte anlamlı. */
+            onBosKare?.();
           }
         } catch (e) {
           /**
@@ -277,7 +306,7 @@ function KameraDiyalogu({
       if (zamanlayici) clearInterval(zamanlayici);
       stream?.getTracks().forEach((track) => track.stop());
     };
-  }, [acik, onOkundu, onKapat, t]);
+  }, [acik, onOkundu, onKapat, t, surekli, onBosKare]);
 
   return (
     <Dialog open={acik} onOpenChange={(a) => !a && onKapat()}>
@@ -419,10 +448,15 @@ export function KameraDugmesi({
   onOkundu,
   baslik = "Barkod / QR okut",
   etiket = "Kamerayla okut",
+  surekli = false,
+  onBosKare,
 }: {
   onOkundu: (kod: string) => void;
   baslik?: string;
   etiket?: string;
+  /** Sürekli kip — bkz. `KameraDiyalogu`. Varsayılan KAPALI. */
+  surekli?: boolean;
+  onBosKare?: () => void;
 }) {
   const [acik, setAcik] = useState(false);
   const kapat = useCallback(() => setAcik(false), []);
@@ -438,6 +472,8 @@ export function KameraDugmesi({
         onKapat={kapat}
         onOkundu={onOkundu}
         baslik={baslik}
+        surekli={surekli}
+        onBosKare={onBosKare}
       />
     </>
   );
