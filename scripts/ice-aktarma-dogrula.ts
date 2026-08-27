@@ -1062,18 +1062,56 @@ kontrol("ORTAK fifoDagit kullanılıyor", /fifoDagit\(mevcut, kalem\.quantity\)/
  * değiştirir (HB komisyona %20 KDV + ₺12,60; TY ₺13,19), NET sessizce
  * yanlış çıkar.
  */
+/**
+ * ⛔ ÖLÇÜT ESKİDİ VE GÜNCELLENDİ 28.08.2026 — SUSTURULMADI.
+ *
+ * ESKİSİ: `adaylar.filter((h) => h._count.sales > 0)` — "satışı OLAN hesap".
+ * O ölçüt YENİ AÇILAN bir kanalı **yapısal olarak** dışlıyordu: kanal
+ * doğduğu gün sıfır satışlıdır, dolayısıyla sonsuza kadar "belirsiz" kalır
+ * ve kendi satırları hiç yazılamaz. Yani ön şartı asla sağlanamazdı.
+ *
+ * YENİSİ: `satisIcin` — bir ROL BEYANI, geçmişin yan etkisi değil.
+ * ⚠ Ölçüldü, davranış DEĞİŞMEDİ: TY · HB · N11'in her birinde `satisIcin`
+ * taşıyan tek hesap var (AXCALI) ve o zaten satışı olan hesabın kendisi.
+ * Amazon'un üç hesabı da `satisIcin=false` — eskiden de belirsizdi, şimdi de.
+ */
 kontrol(
-  "kanal hesabı SATIŞI OLAN hesaptan çözülüyor",
-  /adaylar\.filter\(\(h\) => h\._count\.sales > 0\)/.test(satisAktar),
+  "kanal hesabı SATIŞ ROLÜ BEYAN EDİLMİŞ hesaptan çözülüyor",
+  /adaylar\.filter\(\(h\) => h\.satisIcin\)/.test(satisAktar) &&
+    /satisIcin: true,/.test(satisAktar),
 );
 kontrol(
   "birden çok aday varsa BELİRSİZ — yazılmıyor",
-  /if \(satisli\.length === 1\) kanalHesap\.set/.test(satisAktar) &&
+  /if \(satisRolu\.length === 1\) kanalHesap\.set/.test(satisAktar) &&
     /else belirsizKanal\.add/.test(satisAktar),
 );
+
+/**
+ * ⛔ ÖLÇÜT TERSİNE ÇEVRİLDİ 28.08.2026 — ESKİ HÂLİ VE GEREKÇESİ:
+ *
+ *     kontrol("DEPO kanal eşlemesinde YOK", !/DEPO:/.test(...))
+ *     gerekçe: "DEPO bir kanal değil, depo hareketi; satış olarak yazmak
+ *               ciroyu şişirirdi."
+ *
+ * Kullanıcı düzeltti: **DEPO elden yapılan satışların yazıldığı yerdir.**
+ * Ölçüldü — 12 satırın 11'inde komisyon ve kargo SIFIR. Eski ölçüt doğru
+ * bir satışı dışarıda tutuyordu.
+ *
+ * ⚠ AMA KANAL EŞLEMESİNE GİRMEK, YAZILABİLİR OLMAK DEĞİLDİR. İki sebeple
+ * bugün yazılamaz: `Sipariş Numarası` kolonu DEPO satırlarında BARKOD
+ * taşıyor (`Sale.code`a barkod girerdi — yanlış + `@unique` çakışması), ve
+ * KDV/stopajın işleyip işlemediği cevaplanmadı. Yeni ölçüt tam olarak bu
+ * kapıyı koruyor: eşleme VAR ama kapı KAPALI.
+ */
 kontrol(
-  "DEPO kanal eşlemesinde YOK",
-  !/DEPO:/.test(yorumsuz(satisAktar)),
+  "DEPO kanal eşlemesinde VAR",
+  /DEPO: "Elden Satış"/.test(yorumsuz(satisAktar)),
+);
+kontrol(
+  "DEPO satırları ADIM2 kapısında yazılmıyor",
+  /const ADIM2_BEKLEYEN = new Set\(\["DEPO"\]\)/.test(yorumsuz(satisAktar)) &&
+    /if \(ADIM2_BEKLEYEN\.has\(s\.kanal\.toUpperCase\(\)\)\) \{ say\("adim2Bekliyor"\); continue; \}/
+      .test(yorumsuz(satisAktar)),
 );
 
 /** ⚠ GERİ ALMA: satış SİLİNMEZ, işaretlenir + stok ters kayıtla döner. */
