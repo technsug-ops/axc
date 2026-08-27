@@ -13,6 +13,97 @@
 
 ---
 
+## ⭐ K66 — commissionRate BOŞ YAZILIYOR · 28.08.2026 · **EN BÜYÜK BULGU**
+
+> İçe aktarma `commissionRate` alanını **hiç yazmıyor**. `null` "bilinmiyor"
+> demek olduğu için kâr motoru komisyonu HİÇ DÜŞMÜYOR — ve NET olduğundan
+> **YÜKSEK** çıkıyor.
+
+| # | İş | Durum |
+|---|---|---|
+| ① | Kapsam ölçümü | **[KOŞTU 28.08.2026]** |
+| ② | Geriye doldurma kuru koşumu | **[KOŞTU]** — `npm run canli:komisyon-doldur` |
+| ③ | Yazma + `karYenidenYaz` | **[ONAY BEKLİYOR]** |
+| ④ | İçe aktarmanın oranı YAZMASI | **[BEKLİYOR]** — yoksa açık her koşumda yeniden doğar |
+
+**KAPSAM — ölçüldü:**
+
+    iptalsiz kalem 5891 · oranı BOŞ 5333 (%90,5)
+      TRENDYOL     3383 / 3910   (%86,5)
+      HEPSIBURADA  1939 / 1964   (%98,7)
+      AMAZON         11 /   11  (%100)
+      N11             0 /    6    (%0)
+
+    KAYNAK BAZINDA — ayrım keskin:
+      satis-excel      5333 / 5333   (%100 boş)   ⭐
+      elle girilmiş       0 /  147
+      enumerasyon         0 /  411
+
+**⭐ YÖN TERSİNE ÇIKTI — İLK HİPOTEZİM YANLIŞTI VE SİLİNMİYOR.**
+"Oranı olmayan satışın `net2Amount`i null kalır, marj DÜŞÜK çıkar" dedim.
+Ölçüm çürüttü: `net2Amount` **RULE_MISSING satışlarda da yazılıyor** —
+yalnızca komisyon düşülmeden.
+
+    profitStatus     satış   ciro            Σ net2          marj
+    RULE_MISSING      2757    8.708.782,38    1.856.720,88   %21,32   ⭐
+    CALCULATED         489    1.688.824,45      187.731,37   %11,12
+    (boş)             2525    6.590.842,44             0,00       —
+
+Yani ekrandaki marj **olduğundan YÜKSEK**, düşük değil. Komisyonu düşülmüş
+kümenin marjı %11,12; düşülmemiş kümenin marjı %21,32.
+⚠ %11,12 "gerçek marj" DEĞİLDİR — yalnız 489 satışlık, temsili olmayabilecek
+bir kümenin marjı. Kanıtladığı tek şey yönün ters olduğu.
+
+**MARJ ŞERHİ BUNU HİÇ GÖRMÜYOR** — çünkü şerh MALİYET BAĞINI ölçüyor:
+
+    ✓ ikisi de tam (maliyet + oran)            489 kalem
+    ⚠ yalnız maliyet bağı eksik (oran var)      69 kalem   ← şerhin gördüğü
+    ⭐ yalnız komisyon oranı eksik (maliyet var) 2829 kalem  ← şerh KÖR
+    ⛔ ikisi de eksik                          2504 kalem
+
+**② KURU KOŞUM SONUCU — dosyanın kendi kolonundan:**
+
+    DOLDURULABİLİR 5330 / 5333  (%99,9)
+      TRENDYOL 3381 · HEPSIBURADA 1938 · AMAZON 11
+      belirsiz 2 · dosyada yok 1
+    ciro 15.133.100,55  →  düşülecek komisyon (KDV hariç) 1.811.492,36
+
+**KAYNAK SEÇİMİ — ikisi ölçümle ELENDİ:**
+- **Tarife defteri:** yüklü 3 pencere var, oranı boş **5333 kalemin 0 tanesi**
+  bir pencereye düşüyor. Ve zaten yasaktı — `dilimBul` kendi belgesinde
+  _"kayda YAZILMAZ, kayıt kanalın kendi beyanından gelir (mimar kararı
+  18.08.2026)"_ diyor. Tarife "ne olurdu"yu yanıtlar, "ne oldu"yu değil.
+- **Hakediş:** 1284 kalem var, satışa bağlı olan **13**. Kaynak önceliğinde
+  1. basamak ama kapsamı ~%1.
+- **Satış dosyasının kolonu:** 2. basamak (kendi defterimiz), kapsam %99,9.
+
+**⚠ KOLONUN NE ANLATTIĞI ÖLÇÜLDÜ — VE İLK OKUMAM YANLIŞTI:**
+`(TUTAR/FİYAT) ÷ ORAN` dağılımı 3705 satırda `×1,20` çıkıyordu ve bunları
+"tutmayan" diye saymıştım. Sapma değil — **Hepsiburada'nın komisyona
+eklediği %20 KDV.** Anayasada yazılıydı; ölçütüm hesaba katmıyordu.
+
+    5734 satır  ×1,00   (KDV'siz)
+    3705 satır  ×1,20   (komisyona +%20 KDV)
+      40 satır  başka   (kuyruk, ayrı sayılır)
+
+⛔ Bu yüzden yazılacak değer `KOMİSYON ORANI` (**KDV HARİÇ**) olmalı,
+`TUTAR/FİYAT` değil: motorda `HEPSIBURADA · KOMISYON_KDV · %20` kuralı
+yüklü ve KDV'yi kendisi ekliyor. KDV dahil oran yazılsaydı **iki kez**
+uygulanırdı.
+
+**⚠ AMAZON'UN %1'İ ŞÜPHELİ — YAZILMADAN ÖNCE DOĞRULANMALI.** 11 kalemin
+hepsi tam `%1,00`. Amazon TR komisyonu tipik olarak %8–15. Bu bir yer
+tutucu olabilir. _(Anayasa: "imkânsız görünen değer önce doğrulanır.")_
+
+**⛔ ③ YAZMA TEK BAŞINA YETMEZ:** oran yazıldıktan sonra her satışın kârı
+`karYenidenYaz` ile tazelenmeli, yoksa `net2Amount` komisyonsuz hâliyle
+kalır ve ekran hiç değişmez.
+
+**④ AÇIK KAPANMAZSA YENİDEN DOĞAR:** içe aktarma oranı yazmadığı sürece
+her yeni koşum yine boş kalem üretir. Bugünkü 23 satış da öyle girdi.
+
+---
+
 ## 🆕 K65 — ELDEN SATIŞ (DEPO) KANALI · 28.08.2026
 
 > Kullanıcı düzeltmesi: `DEPO` bir depo hareketi DEĞİL, **elden yapılan
@@ -70,10 +161,23 @@ etmiyor. Şema değişikliği bu yüzden **hak edilmedi**.
 | # | İş | Durum |
 |---|---|---|
 | ① | Amazon **SATIŞ** hesabı (`AMZN`) | **[KOŞTU 28.08.2026]** — `AuditLog: KANAL_HESABI_ACILDI` |
-| ② | 23 satışın içe aktarılması (AMZN 11 + TY 12) | **[ONAY BEKLİYOR]** — kuru koşum hazır |
+| ② | 23 satışın içe aktarılması (AMZN 11 + TY 12) | **[KOŞTU 28.08.2026]** — parti `satis-20260827234322` |
 | ③ | 54 ASIN → varyant eşleştirmesi | **[BEKLİYOR]** — ②'den sonra |
 | ④ | Amazon `ChannelFee` kuralları | **[BEKLİYOR]** — Amazon'un kendi hakediş raporu |
 | ⑤ | `AMZN` hesabını PASİFE al | **[BEKLİYOR]** — ② bittikten sonra, Ayarlar → Kanallar |
+
+**② KOŞTU — önce/sonra sayımı tuttu, ikinci koşum 0:**
+
+    Sale           5780 → 5803   (fark 23, beklenen 23) ✓
+    SaleItem       5900 → 5923   (fark 23, beklenen 23) ✓
+    SALE_OUT       3323 → 3326   (fark  3, beklenen  3) ✓
+    ikinci koşum:  plan 0 satış ✓
+
+⚠ **23 KALEMİN YALNIZ 3'ÜNE STOK HAREKETİ YAZILDI — 20'sinde FIFO PARTİSİ
+YOKTU.** Bu bir kusur değil, kural: parti yoksa hareket yazılmaz, negatif
+stok üretilmez. Ama sonucu şu: o 20 ürünün stoğu DÜŞMEDİ ve maliyetleri
+bağlanmadı — K55'in (alım defteri açığı) aynı kuyruğu.
+Geri alma: `npm run canli:satis-aktar -- --geri=satis-20260827234322 --yaz`
 
 **MAĞAZA KAPALI (kullanıcı, 28.08.2026) — hesap yine de açıldı.** Kapanmış bir
 mağazanın geçmiş satışları da defterin parçasıdır; bağlanacak hesap olmasa
