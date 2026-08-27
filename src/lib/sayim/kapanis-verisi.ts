@@ -40,6 +40,19 @@ export type KapanisSatiri = {
   karar: SatirKarari;
   /** Bu varyantta stok hareketi olmayan satış kaydı sayısı (③). */
   hareketsizSatis: number;
+  /**
+   * ④ Bu varyantın DAHA ÖNCE alımı var mı.
+   *
+   * ⛔ FAZLA KOVASINI İKİYE AYIRIR ve ayrım iş üretir:
+   *   var  → maliyeti sistem ZATEN biliyor; doğru iş "alımı gir"
+   *   yok  → maliyet gerçekten bilinmiyor
+   *
+   * ⚠ NİYE ÖLÇÜLDÜ (28.08.2026): 103 fazla ürüne elle maliyet girmek
+   * **₺400.252,88** yaratacaktı. Ölçüm gösterdi ki **80'inin alım geçmişi
+   * VAR** — yani o maliyetlerin uydurulmasına gerek yok. Ekran ikisini ayırt
+   * etmeden gösterirse kullanıcı hepsine elle maliyet yazar.
+   */
+  alimGecmisiVar: boolean;
 };
 
 export type KapanisVerisi = {
@@ -53,6 +66,15 @@ export type KapanisVerisi = {
   belirsiz: number;
   /** Hiç okuma almamış kapalı oturum. Türetilir, alan AÇILMADI. */
   bosKapandi: boolean;
+  /**
+   * SAPMA BULDU AMA HİÇ DÜZELTME YAZMADI.
+   *
+   * ⚠ BU BİR EKSİKLİK DEĞİL, MEŞRU BİR SONUÇ (kullanıcı kararı 28.08.2026):
+   * bir sayım bulgularını KAYIT olarak tutabilir ve düzeltmeler alım/satış
+   * girişleriyle yapılabilir. Ekran bunu AÇIKÇA söylemek zorunda — yoksa
+   * kullanıcı "sayım bir işe yaramadı" sanır.
+   */
+  duzeltmesizKapandi: boolean;
   fazla: KapanisSatiri[];
   eksik: KapanisSatiri[];
   okutulmayanlar: { variantId: string; sku: string; urunAdi: string }[];
@@ -108,6 +130,16 @@ export async function kapanisVerisi(
     where: { variantId: { in: kimlikler }, sale: { iptalTarihi: null } },
     select: { variantId: true, stockMovements: { select: { id: true } } },
   });
+
+  /** ④ Alım geçmişi — fazla kovasını "alım bekliyor" / "maliyet yok" diye ayırır. */
+  const alimliVaryantlar = new Set(
+    (
+      await db.purchaseItem.groupBy({
+        by: ["variantId"],
+        where: { variantId: { in: kimlikler } },
+      })
+    ).map((g) => g.variantId),
+  );
   const hareketsiz = new Map<string, number>();
   for (const k of satisKalemleri) {
     if (k.stockMovements.length > 0) continue;
@@ -135,6 +167,7 @@ export async function kapanisVerisi(
       hal,
       karar: satirKarari(hal),
       hareketsizSatis: hareketsiz.get(s.variantId) ?? 0,
+      alimGecmisiVar: alimliVaryantlar.has(s.variantId),
     };
   });
 
@@ -155,6 +188,15 @@ export async function kapanisVerisi(
      * `bosKapandi` sütunu eklemek, aynı bilgiyi ikinci kez saklamak olurdu.
      */
     bosKapandi: sayim.kapanisAt !== null && ozet.sayildi === 0,
+    /**
+     * ⚠ SAPMA VARKEN hiç düzeltme yazılmamışsa — "kayıt olarak tutuldu".
+     * Sapma YOKSA bu bayrak yanmaz: yazacak bir şey olmadığı için yazmamak
+     * bir karar değildir.
+     */
+    duzeltmesizKapandi:
+      sayim.kapanisAt !== null &&
+      ozet.sapan > 0 &&
+      zenginler.every((z) => z.hal.damga === "YAZILMADI"),
     fazla: zenginler.filter((z) => z.hal.kova === "FAZLA"),
     eksik: zenginler.filter((z) => z.hal.kova === "EKSIK"),
     okutulmayanlar: zenginler

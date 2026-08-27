@@ -23,11 +23,20 @@ import { satirHali, type SatirGirdisi, type SatirHali } from "@/lib/sayim/kova";
 export type SayimOzeti = {
   /** Oturum açılışında kapsamda olan satır sayısı. */
   kapsam: number;
-  /** ① incelendi — `sayilanAdet` dolu satır (0 dahil: rafta yok da bir ölçümdür). */
+  /**
+   * ① incelendi — KAPSAM İÇİ ve `sayilanAdet` dolu satır (0 dahil: rafta yok
+   * da bir ölçümdür).
+   *
+   * ⛔ KAPSAM DIŞI BULUNANLAR BURAYA GİRMEZ — ve niye (canlı bulgu
+   * 28.08.2026): giriyordu ve ekranda **`sayıldı 231 > kapsam 204`** çıktı.
+   * Dört sayı bir KAPSAM ÖLÇÜSÜDÜR; içine kapsam dışı bir bulgu karışınca
+   * `kapsam = sayıldı + sayılmadı` eşitliği bozuluyor ve tablo kendi
+   * kendini yalanlıyor. Kapsam dışı bulgular AYRI satırda (`kapsamDisi`).
+   */
   sayildi: number;
-  /** ② temiz — sayıldı ve sistemle tutuyor. */
+  /** ② temiz — kapsam içi, sayıldı ve sistemle tutuyor. */
   tutuyor: number;
-  /** ③ sapan — fazla + eksik satır sayısı. */
+  /** ③ sapan — KAPSAM İÇİ fazla + eksik satır sayısı. */
   sapan: number;
   /** ④ incelenemedi — kapsamda ama sayılmadı. ⚠ SIFIR SAYILMADI DEMEK DEĞİL. */
   sayilmadi: number;
@@ -80,14 +89,23 @@ export function sayimOzeti(girdiler: readonly SatirGirdisi[]): SayimOzeti {
          */
         if (g.kapsamdaydi) o.sayilmadi++;
         break;
+      /**
+       * ⚠ DÖRT SAYI KAPSAM İÇİNDEN; kova TOPLAMLARI (fazla/eksik adet)
+       * kapsam dışını DA sayar. İkisi farklı sorulardır:
+       *   dört sayı  → "kapsamın ne kadarını inceledim"
+       *   kova toplamı → "toplam ne kadar sapma buldum"
+       * Kapsam dışı bulgu ikincisine girer, birincisine girmez.
+       */
       case "TUTUYOR":
-        o.sayildi++; o.tutuyor++;
+        if (g.kapsamdaydi) { o.sayildi++; o.tutuyor++; }
         break;
       case "FAZLA":
-        o.sayildi++; o.sapan++; o.fazlaSatir++; o.fazlaAdet += h.fark ?? 0;
+        if (g.kapsamdaydi) { o.sayildi++; o.sapan++; }
+        o.fazlaSatir++; o.fazlaAdet += h.fark ?? 0;
         break;
       case "EKSIK":
-        o.sayildi++; o.sapan++; o.eksikSatir++; o.eksikAdet += Math.abs(h.fark ?? 0);
+        if (g.kapsamdaydi) { o.sayildi++; o.sapan++; }
+        o.eksikSatir++; o.eksikAdet += Math.abs(h.fark ?? 0);
         break;
     }
   }

@@ -37,6 +37,7 @@ function kapanisSatiri(s: KapanisSatiri) {
     yenidenAcildi: s.hal.damga === "YENIDEN_ACILDI",
     kapsamDisi: s.hal.kapsamDisi,
     hareketsizSatis: s.hareketsizSatis,
+    alimGecmisiVar: s.alimGecmisiVar,
   };
 }
 
@@ -103,7 +104,9 @@ export async function SayimBolumu() {
               sayilmadi: veri.ozet.sayilmadi,
             }}
             belirsiz={veri.belirsiz}
+            kapsamDisi={veri.ozet.kapsamDisi}
             bosKapandi={veri.bosKapandi}
+            duzeltmesizKapandi={veri.duzeltmesizKapandi}
             yazildiMi={veri.yazildiMi}
             okutulmayanlar={veri.okutulmayanlar}
             eksik={veri.eksik.map(kapanisSatiri)}

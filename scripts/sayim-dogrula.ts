@@ -217,6 +217,41 @@ esit(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
+//  4b) DÖRT SAYI KENDİ İÇİNDE TUTARLI — kapsam = sayıldı + sayılmadı
+// ═══════════════════════════════════════════════════════════════════════════
+//  ⛔ CANLI BULGU 28.08.2026: kapsam dışı bulunanlar `sayildi`ya giriyordu ve
+//  ekranda `sayıldı 231 > kapsam 204` çıktı. Dört sayı bir KAPSAM ÖLÇÜSÜDÜR;
+//  kapsam dışı bir bulgu içine karışınca tablo kendi kendini yalanlar.
+
+{
+  const karisik = sayimOzeti([
+    g({ sayilanAdet: 2, sistemAdedi: 2 }),                     // içi · tutuyor
+    g({ sayilanAdet: 1, sistemAdedi: 5 }),                     // içi · eksik
+    g({ sayilanAdet: null, sistemAdedi: 3 }),                  // içi · sayılmadı
+    g({ sayilanAdet: 4, sistemAdedi: 0, kapsamdaydi: false }), // DIŞI · fazla
+    g({ sayilanAdet: 7, sistemAdedi: 0, kapsamdaydi: false }), // DIŞI · fazla
+  ]);
+
+  esit(
+    "4b kapsam = sayıldı + sayılmadı (tablo kendini doğrular)",
+    karisik.kapsam === karisik.sayildi + karisik.sayilmadi,
+    true,
+  );
+  esit("4b kapsam 3", karisik.kapsam, 3);
+  esit("4b sayıldı 2 — kapsam DIŞI iki bulgu buraya GİRMEZ", karisik.sayildi, 2);
+  esit("4b sapan 1 — yalnız kapsam içi eksik", karisik.sapan, 1);
+  esit("4b kapsam dışı AYRI sayılır", karisik.kapsamDisi, 2);
+  /**
+   * ⚠ AYRIMIN ÖTEKİ YAKASI: kova TOPLAMLARI kapsam dışını DA sayar.
+   * Dört sayı "kapsamın ne kadarını inceledim", kova toplamı "toplam ne kadar
+   * sapma buldum" sorusunu cevaplar. Kapsam dışı bulgu ikincisinden DÜŞMEZ.
+   */
+  esit("4b fazla SATIRI kapsam dışını da sayar", karisik.fazlaSatir, 2);
+  esit("4b fazla ADEDİ kapsam dışını da sayar", karisik.fazlaAdet, 11);
+  esit("4b eksik adedi kapsam içinden", karisik.eksikAdet, 4);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 //  5) BELİRSİZ — sayım günü hareketi varsa SESSİZCE YAZILMAZ
 // ═══════════════════════════════════════════════════════════════════════════
 

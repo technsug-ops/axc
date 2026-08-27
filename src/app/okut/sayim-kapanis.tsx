@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Lock, TriangleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { Baglanti } from "@/components/baglanti";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
@@ -45,6 +46,7 @@ type Satir = {
   yenidenAcildi: boolean;
   kapsamDisi: boolean;
   hareketsizSatis: number;
+  alimGecmisiVar: boolean;
 };
 
 export function SayimKapanis({
@@ -52,7 +54,9 @@ export function SayimKapanis({
   kod,
   ozet,
   belirsiz,
+  kapsamDisi,
   bosKapandi,
+  duzeltmesizKapandi,
   fazla,
   eksik,
   okutulmayanlar,
@@ -62,7 +66,10 @@ export function SayimKapanis({
   kod: string;
   ozet: { kapsam: number; sayildi: number; sapan: number; sayilmadi: number };
   belirsiz: number;
+  /** Kapsam DIŞI bulunan ürün sayısı — dört sayının DIŞINDA gösterilir. */
+  kapsamDisi: number;
   bosKapandi: boolean;
+  duzeltmesizKapandi: boolean;
   fazla: Satir[];
   eksik: Satir[];
   okutulmayanlar: { variantId: string; sku: string; urunAdi: string }[];
@@ -121,6 +128,18 @@ export function SayimKapanis({
         </div>
       ) : null}
 
+      {/*
+        ⛔ DÜZELTMESİZ KAPANIŞ MEŞRU BİR SONUÇTUR — ve ekran bunu SÖYLEMEK
+        ZORUNDA. Bir sayım bulgularını KAYIT olarak tutabilir; düzeltmeler
+        alım ve satış girişleriyle yapılır. Söylenmezse kullanıcı "sayım bir
+        işe yaramadı" sanır ve bir günlük iş çöpe gitmiş gibi görünür.
+      */}
+      {duzeltmesizKapandi ? (
+        <div className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.bilgi}`}>
+          {t("duzeltmesizKapandi")}
+        </div>
+      ) : null}
+
       {/* ═══ BEŞ SAYI — dördü kapsam, beşincisi AYRI ═══ */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {/*
@@ -142,7 +161,17 @@ export function SayimKapanis({
           </div>
         ))}
       </div>
-      {/* ⛔ BEŞİNCİ SAYI DÖRTLÜNÜN DIŞINDA — kapsam ölçüsü değil. */}
+      {/*
+        ⛔ DÖRT SAYI BİR KAPSAM ÖLÇÜSÜDÜR: `kapsam = sayıldı + sayılmadı`.
+        Kapsam DIŞI bulgular ve BELİRSİZ satırlar o dörde KARIŞMAZ — kendi
+        satırlarında durur. Karışsalardı tablo kendi kendini yalanlardı
+        (canlı: `sayıldı 231 > kapsam 204`).
+      */}
+      {kapsamDisi > 0 ? (
+        <div className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.bilgi}`}>
+          {t("kapsamDisiSayisi", { sayi: kapsamDisi })}
+        </div>
+      ) : null}
       {belirsiz > 0 ? (
         <div className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
           {t("belirsizSayisi", { sayi: belirsiz })}
@@ -206,9 +235,18 @@ export function SayimKapanis({
                   <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("belirsizNot")}</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" className="h-11" disabled>
+                    {/*
+                      ⚠ "YAKINDA" DEĞİL: satış girme YETENEĞİ VAR, olmayan bu
+                      ekrandan giden KISAYOL. "Yakında" demek, var olan bir
+                      yolu yokmuş gibi göstermekti — ve kullanıcıyı tek açık
+                      seçeneğe (sayım farkı) itiyordu.
+                    */}
+                    <Baglanti
+                      href="/satislar/yeni"
+                      className="inline-flex h-11 items-center rounded-md border px-4 text-sm"
+                    >
                       {t("yolBelgeGirEksik")}
-                    </Button>
+                    </Baglanti>
                     <Button
                       type="button"
                       variant="secondary"
@@ -238,6 +276,15 @@ export function SayimKapanis({
             {fazla.map((s) => (
               <li key={s.variantId} className="space-y-2 p-3">
                 <SatirBasligi s={s} t={t} />
+                {/*
+                  ⛔ FAZLA KOVASI İKİYE AYRILIR — ölçüldü: 103 üründen 80'inin
+                  alım geçmişi VAR, yani maliyeti uydurmaya gerek yok. Ayrım
+                  gösterilmeseydi kullanıcı hepsine elle maliyet yazardı
+                  (₺400.252,88 değerinde).
+                */}
+                <p className="text-xs">
+                  {s.alimGecmisiVar ? t("alimGecmisiVar") : t("alimGecmisiYok")}
+                </p>
                 {s.kilitli ? (
                   <KilitliNot s={s} t={t} />
                 ) : s.belirsiz ? (
@@ -245,9 +292,12 @@ export function SayimKapanis({
                 ) : (
                   <div className="space-y-2">
                     {/* ⛔ İLK YOL: BELGE. Sıra kuralı — çift sayım olmasın. */}
-                    <Button type="button" variant="outline" className="h-11 w-full" disabled>
+                    <Baglanti
+                      href="/alimlar/yeni"
+                      className="inline-flex h-11 w-full items-center justify-center rounded-md border px-4 text-sm font-medium"
+                    >
                       {t("yolBelgeGirFazla")}
-                    </Button>
+                    </Baglanti>
                     <div className="flex flex-wrap items-center gap-2">
                       <Input
                         type="number"

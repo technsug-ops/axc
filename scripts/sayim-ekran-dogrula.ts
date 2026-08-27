@@ -304,7 +304,13 @@ kontrol(
 
 /* ── FAZLADA BELGE YOLU ÜSTTE (sıra kuralı) ── */
 {
-  const fazlaBlok = blok(kapanis, "fazla.map((s)", 2200);
+  /**
+   * ⚠ PENCERE ÖLÇÜLDÜ — 2200 idi ve GÖVDE BÜYÜYÜNCE dar kaldı: fazla satırına
+   * "alım geçmişi" ayrımı eklenince `yolMaliyetsizYaz` 2233. karaktere kaydı
+   * ve sıra kontrolü onu göremeyip YANLIŞ YANDI. Bu depoda pencere üç kez
+   * eskidi; ölçülmeden yazılmaz.
+   */
+  const fazlaBlok = blok(kapanis, "fazla.map((s)", 3000);
   /**
    * ⚠ DESEN TAM ÇAĞRIYA BAĞLI — ÖN EK YETMEZ. İlk yazımda `"yolBelgeGirFazla"`
    * aranıyordu ve mutasyon anahtarı `yolBelgeGirFazlaSonra` yapınca `indexOf`
@@ -440,6 +446,32 @@ kontrol(
 kontrol(
   "⑩ boş kapanan oturum TÜRETİLİYOR (şemaya alan açılmadı)",
   /bosKapandi: sayim\.kapanisAt !== null && ozet\.sayildi === 0/.test(veri),
+);
+
+/* ── ⑪ DÜZELTMESİZ KAPANIŞ + FAZLA KOVASININ AYRIMI (28.08.2026) ── */
+
+kontrol(
+  "⑪ düzeltmesiz kapanış ekranda SÖYLENİYOR (koşuluyla)",
+  /duzeltmesizKapandi \?[\s\S]{0,300}t\("duzeltmesizKapandi"\)/.test(kapanis),
+  "söylenmezse kullanıcı 'sayım bir işe yaramadı' sanır",
+);
+kontrol(
+  "⑪ ve bayrak SAPMA VARKEN yanıyor (sapma yoksa karar değildir)",
+  /ozet\.sapan > 0/.test(veri) && /every\(\(z\) => z\.hal\.damga === "YAZILMADI"\)/.test(veri),
+  "sapması olmayan sayımda da 'düzeltme yazmadı' demek anlamsız",
+);
+kontrol(
+  "⑪ fazla satırı alım geçmişini AYIRT EDİYOR",
+  /s\.alimGecmisiVar \? t\("alimGecmisiVar"\) : t\("alimGecmisiYok"\)/.test(kapanis),
+  "ayrım gösterilmezse kullanıcı hepsine ELLE maliyet yazar (₺400 bin)",
+);
+kontrol(
+  "⑪ alım geçmişi gerçekten ÖLÇÜLÜYOR",
+  /purchaseItem\.groupBy/.test(veri) && /alimliVaryantlar\.has/.test(veri),
+);
+kontrol(
+  "⑪ metin 'elle maliyet yazma' demeyi AÇIKÇA söylüyor",
+  /elle maliyet yazmak değil/i.test(sozluk.Sayim.alimGecmisiVar ?? ""),
 );
 
 if (dusen.length === 0) {
