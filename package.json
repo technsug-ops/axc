@@ -98,6 +98,8 @@
     "canli:amazon-muayene": "tsx scripts/canli-amazon-dosya-muayene.ts",
     "canli:amazon-olcum": "tsx scripts/canli-amazon-kuru-olcum.ts",
     "canli:amazon-ayrim": "tsx scripts/canli-amazon-ayrim.ts",
+    "canli:amazon-dosyada": "tsx scripts/canli-amazon-satis-dosyasinda.ts",
+    "canli:amazon-kimlik": "tsx scripts/canli-amazon-kimlik-cozum.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",
     "canli:kargo-geri-al": "tsx scripts/canli-kargo-tarihi-geri-al.ts",
     "canli:k20-sayim": "tsx scripts/canli-k20-sayim.ts",
