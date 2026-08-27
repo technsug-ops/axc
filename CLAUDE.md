@@ -2374,6 +2374,57 @@ törene dönüşür. Damga **commit edilir**.
 **Bekçi karar veremiyorsa bunu YAZAR** (damga yoksa "atlandı" der), sessiz
 yeşil vermez.
 
+## YAVAŞLIK HACİMLE DEĞİL, ÖLÇEKLENME BİÇİMİYLE AÇIKLANIR (KESİN KURAL)
+
+_Kullanıcı düzeltmesi 27.08.2026, K61._ Bir ekran yavaşladığında _"veri
+büyüdü"_ demek **tetiği** anlatır, **kusuru** değil — ve yanlış işe yollar.
+Kullanıcı tek cümleyle çerçeveyi düzeltti: _"milyonlarca data ile çalışan
+ERP'ler var."_ Doğru: 5778 satır AZ bir veridir.
+
+**AYIRT EDİCİ ÖLÇÜM — ağ tabanı ÇIKARILARAK yapılır:**
+
+    SELECT 1                                29 ms   ← taban, bu her rakamın İÇİNDE
+    count() — 5778 satır                    30 ms   →    1 ms iş
+    50 satır + kalemleri                    94 ms   →   65 ms iş
+    TÜM defter + derin include            1600 ms   → 1571 ms iş
+
+Veritabanı **1 milisaniyede** sayıyordu ve indeks planı `rows=50 · Using
+index` veriyordu — yani sorgu milyonlarca satırda da aynı maliyette. Yavaş
+olan ekranın **satır sayısıyla DOĞRUSAL büyüyen yazılış biçimiydi.**
+
+> **SORU "kaç satır var" DEĞİL, "satır sayısı ARTINCA maliyet nasıl
+> büyüyor"dur.** Sabit kalıyorsa hacim sorun değildir; doğrusal büyüyorsa
+> bugünkü hacim şanstır, yarınki kaza.
+
+⚠ **VE TABAN ÖLÇÜLMEDEN HİÇBİR SÜRE YORUMLANMAZ.** `count()` 30 ms
+görünüyordu ve "yavaş" sanılabilirdi; ağ tabanı ölçülünce gerçek iş **1 ms**
+çıktı. Uzaktaki bir veritabanında her ölçümün içinde gidiş-dönüş vardır.
+
+---
+
+## SAYFALAMA, TOPLAMLAR VERİTABANINA TAŞINMADAN YAPILMAZ (KESİN KURAL)
+
+_Ders 27.08.2026, K61._ Bir listeyi sayfalamak ekranı hızlandırır — ama
+toplamlar hâlâ çekilen diziden hesaplanıyorsa **iki şeyden biri olur:**
+
+- ekran defterin tamamını çekmeye devam eder (sayfalama işe yaramaz), ya da
+- **toplam sessizce SAYFANIN toplamına düşer**
+
+İkincisi yavaşlıktan tehlikelidir: hiçbir şey hata vermez, ekran hızlanır,
+**rakam yanlışa döner** ve kimse bakmaz. İlke #15 tam olarak bunu yasaklar:
+_"toplam, görünen sayfanın değil, SÜZGECİN TAMAMININ toplamıdır."_
+
+> **SIRA:** ① toplamları veritabanına taşı → ② sayfala → ③ **toplamın sayfa
+> numarasından bağımsız olduğunu bekçiyle sabitle.**
+
+⚠ **VE KOŞUL `AND` İLE EKLENİR, SPREAD İLE DEĞİL.** `{ ...kosul, iptalTarihi:
+null }` yazıldığında kullanıcının kendi iptal süzgeci **sessizce ezilir**;
+`{ AND: [kosul, { iptalTarihi: null }] }` ikisini de ayakta tutar.
+_(17.08.2026'da bu sınıftan bir hata yaşandı: `?iptal=1` açıkken ciro
+105.184 → 106.618 sıçradı.)_
+
+---
+
 ## DÜZELTMENİN ÇARESİ DOSYA LİSTESİ DEĞİL, DESEN YASAĞIDIR (KESİN KURAL)
 
 _Kullanıcı kararı 27.08.2026, K60 — günün ana dersi._ Anayasada zaten şu

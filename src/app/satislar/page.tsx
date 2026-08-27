@@ -47,15 +47,13 @@ import { satisKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
 
 import { satisKalemToplamlari } from "@/lib/tutar";
-import {
-  adetToplami,
-  hesaplananToplami,
-  suzgecToplami,
-} from "@/lib/liste-toplami";
 import { Suspense } from "react";
 
 import { MarjTercihi } from "./marj-tercihi";
 import { ListeToplami } from "@/components/liste-toplami";
+import { SayfalamaCubugu } from "@/components/sayfalama";
+import { sayfaCoz } from "@/lib/sayfalama";
+import { satisToplamlari } from "@/lib/satis-toplami";
 import {
   MARJ_OLCULERI,
   VARSAYILAN_OLCU,
@@ -90,6 +88,8 @@ export default async function SatislarSayfasi({
     marj?: string;
     /** Uyarı merkezinden: maliyet/kâr olağan aralığın dışında. */
     veri?: string;
+    /** Sayfa numarası (27.08.2026) — `SAYFA_PARAMETRESI` ile aynı ad. */
+    sayfa?: string;
   }>;
 }) {
   await sayfaIzni("satis.gor");
@@ -169,8 +169,43 @@ export default async function SatislarSayfasi({
     }),
   ]);
 
+  /**
+   * ═══════════════════════════════════════════════════════════════════════
+   *  SAYFALAMA (27.08.2026) — VE NİYE BUGÜN GELDİ
+   * -----------------------------------------------------------------------
+   *  Bu ekran bütün defteri tek seferde çekiyordu. 149 satışta sorunsuz
+   *  görünüyordu; içe aktarmadan sonra 5778 satış / 5898 kalem oldu ve
+   *  ölçüm şunu dedi:
+   *
+   *      sale.count() — 5778 satır                 30 ms   (ağ tabanı 29 ms)
+   *      50 satış + kalemleri                      94 ms
+   *      TÜM defter + derin include              1600 ms   ← buradaki sorgu
+   *      → çekilen nesne 10,1 MB, DOM ~11.500 satır (masaüstü + mobil)
+   *
+   *  ⚠ SORUN HACİM DEĞİL: veritabanı 5778 satırı 1 ms'de sayıyor ve
+   *  `Sale_soldAt_idx` planı `rows=50 · Using index` veriyor — yani bu sorgu
+   *  MİLYONLARCA satırda da 50 satır maliyetinde çalışır. Yavaş olan,
+   *  ekranın satır sayısıyla DOĞRUSAL büyüyen yazılış biçimiydi.
+   *
+   *  Aynı ders bu depoda 12.08.2026'da alınmıştı (`lib/sayfalama.ts`:
+   *  _"gerçek veri gelmeden yazılan ekran, gerçek hacimde sınanmamıştır"_);
+   *  o gün `/urunler` · `/stok` · `/iadeler` sayfalandı, bu ekran 149 satır
+   *  olduğu için sıraya girmemişti.
+   *
+   *  ⛔ VE SAYFALAMA TEK BAŞINA YETMEZDİ: toplamlar bu diziden hesaplanıyordu,
+   *  yani defterin tamamı yine çekilirdi. Toplamlar `lib/satis-toplami.ts`e
+   *  taşındı ve SÜZGECİN TAMAMINI ölçüyor (İlke #15) — sayfa numarasından
+   *  bağımsız.
+   * ═══════════════════════════════════════════════════════════════════════
+   */
+  // ÖNCE SAY, SONRA SAYFAYI ÇEK (bkz. lib/sayfalama.ts).
+  const toplamlar = await satisToplamlari(kosul);
+  const sayfalama = sayfaCoz(p.sayfa, toplamlar.kayitSayisi);
+
   const satislar = await prisma.sale.findMany({
     where: kosul,
+    skip: sayfalama.atla,
+    take: sayfalama.boyut,
     include: {
       items: {
         include: {
@@ -247,11 +282,12 @@ export default async function SatislarSayfasi({
    */
   const iptalliMi = (s: (typeof satislar)[number]) => s.iptalTarihi !== null;
 
-  const ciroToplami = suzgecToplami(
-    satislar,
-    (s) => satisKalemToplamlari(s.items),
-    iptalliMi,
-  );
+  /**
+   * ⛔ ARTIK VERİTABANINDAN — sayfadan DEĞİL. `satislar` yalnız 50 satır
+   * taşıyor; ondan hesaplasaydık toplam "görünen sayfanın toplamı" olurdu
+   * ve İlke #15 çiğnenirdi ("toplam, süzgecin TAMAMININ toplamıdır").
+   */
+  const ciroToplami = toplamlar.ciro;
 
   /**
    * ADET TOPLAMI (kullanıcı isteği 21.08.2026) — "kaç kayıt" değil "kaç ürün".
@@ -260,7 +296,7 @@ export default async function SatislarSayfasi({
    * kullanıcı satırlardaki Adet sütununu kafadan topluyordu. Sistem zaten
    * biliyordu, söylemiyordu (İlke #15).
    */
-  const adetToplam = adetToplami(satislar, satirAdedi, iptalliMi);
+  const adetToplam = toplamlar.adet; // veritabanından — bkz. ciro notu
 
   /**
    * NET-2 TOPLAMI — SESSİZ VARSAYIM YOK.
@@ -270,18 +306,7 @@ export default async function SatislarSayfasi({
    * Kaç satışın dışarıda kaldığı kutunun altında yazar — eksik rakamı tam
    * sanmak, yanlış rakamdan tehlikelidir.
    */
-  const net = hesaplananToplami(
-    satislar,
-    (s) =>
-      // İptal edilen satış NET toplamına da girmez (yukarıdaki gerekçe).
-      s.iptalTarihi === null &&
-      s.profitStatus === "CALCULATED" &&
-      s.net2Amount !== null,
-    (s) => ({
-      paraBirimi: s.profitCurrency ?? "TRY",
-      tutar: Number(s.net2Amount!.toString()),
-    }),
-  );
+  const net = toplamlar.net; // veritabanından — bkz. ciro notu
 
   /** Birim fiyat kolonu: tek kalemde gerçek fiyat, çok kalemde çizgi. */
   function birimFiyatMetni(satis: (typeof satislar)[number]) {
@@ -487,7 +512,7 @@ export default async function SatislarSayfasi({
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
           <p className="text-muted-foreground text-sm">
-            {ortak("kayitSayisi", { sayi: satislar.length })}
+            {ortak("kayitSayisi", { sayi: toplamlar.kayitSayisi })}
             {arama ? ortak("aramaEki", { arama }) : ""}
             {/* Seçili dönem başlıkta yazar: "9 kayıt" rakamının hangi
                 aralığa ait olduğu ekranda görünsün (#5). */}
@@ -965,6 +990,31 @@ export default async function SatislarSayfasi({
               />
             ))}
           </div>
+
+          {/*
+            SAYFALAMA (27.08.2026) — süzgeç parametreleri KORUNUR.
+            ⚠ Adres kurulurken bütün süzgeçler taşınmazsa "2. sayfa" tıklaması
+            süzgeci sessizce sıfırlar ve kullanıcı başka bir listeye düşer.
+          */}
+          <SayfalamaCubugu
+            sayfalama={sayfalama}
+            yol="/satislar"
+            parametreler={{
+              q: arama,
+              pencere: p.pencere,
+              baslangic: p.baslangic,
+              bitis: p.bitis,
+              kanal: p.kanal,
+              hesap: p.hesap,
+              kar: p.kar,
+              iade: p.iade,
+              kargo: p.kargo,
+              paket: p.paket,
+              iptal: p.iptal,
+              marj: p.marj,
+              veri: p.veri,
+            }}
+          />
         </>
       )}
     </div>

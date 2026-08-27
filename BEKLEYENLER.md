@@ -1428,6 +1428,73 @@ yazmaz; migration anından sonra doğan 3 hareketin hepsi de alım). Doğru
 cümle _"değişmedi"_ değil, **"migration hareket yazmadı, fark gün içi
 giriştir."**
 
+### ✅ K61 — YAVAŞLIK: SAYFALAMA + TOPLAMLAR VERİTABANINA (27.08.2026)
+
+**Kullanıcı düzeltmesi çerçeveyi değiştirdi:** _"Milyonlarca data ile çalışan
+ERP'ler var."_ Haklı — 5778 satır AZ bir veri. İlk çerçevem ("veri büyüdü")
+tetiği anlatıyordu, kusuru değil.
+
+**AYIRT EDİCİ ÖLÇÜM — ağ tabanı çıkarılmış:**
+
+    SELECT 1 (saf gidiş-dönüş)                  29 ms   ← taban
+    sale.count() — 5778 satır                   30 ms   →   1 ms iş
+    50 satış, sığ seçim                         32 ms   →   3 ms iş
+    50 satış + kalemleri                        94 ms   →  65 ms iş
+    TÜM defter + derin include                1600 ms   → 1571 ms iş
+    aggregate: NET-2 / adet                  57 / 58 ms
+
+**Veritabanı 5778 satırı 1 ms'de sayıyor.** `Sale_soldAt_idx` planı
+`type=index · rows=50 · Using index` — bu sorgu MİLYONLARCA satırda da 50
+satır maliyetinde çalışır. Yavaş olan veri değil, **ekranın satır sayısıyla
+DOĞRUSAL büyüyen yazılış biçimiydi.**
+
+**ÜÇ KUSUR, hepsi yazım:** ① `/satislar` ve `/alimlar`da sayfalama yok ·
+② derin `include` zinciri (satır başına 5+ tablo) · ③ **toplamlar bellekte**
+— ekranın defteri komple çekmesinin ASIL sebebi buydu.
+
+⚠ ③ çözülmeden ① yapılsaydı ekran hızlanır, **toplamlar sessizce sayfanın
+toplamına düşerdi** (İlke #15). Yavaşlıktan tehlikeli: yanlış rakam.
+
+**SONUÇ — ölçüldü:**
+
+    ÖNCE   sorgu 1609 ms · 5746 satır · 10,1 MB
+    SONRA  sorgu  158 ms ·   50 satır ·   91 KB     ← yük 111 KAT küçük
+           toplamlar (veritabanı) 200 ms
+           ────────────────────────────
+           1609 ms  →  358 ms
+
+Toplamlar süzgecin TAMAMINI ölçüyor: `5746 kayıt · ciro ₺16.920.038,27 ·
+5876 adet · NET-2 ₺187.008,67 · hesaplanamayan 5259`.
+
+**Yeni gövdeler:** `lib/satis-toplami.ts` · `lib/alim-toplami.ts`.
+İptal koşulu **`AND` ile** ekleniyor — spread, kullanıcının kendi `?iptal=1`
+süzgecini sessizce ezerdi (17.08.2026 vakası).
+
+**Bekçi:** `sayfalama-toplami:dogrula` **18 ölçüt · 8/8 mutasyon** —
+sayfalanmış diziden toplayan her ifade, `take`/`skip` silinmesi, süzgeç
+taşımayan çubuk, spread'e dönen gövde: hepsi kırmızı yanıyor.
+
+⚠ **İKİ BEKÇİ DAHA ESKİDİ, SUSTURULMADI:**
+· `toplam:dogrula` — `adetToplami(` arıyordu; ölçüt **yer değiştirdi**,
+  gevşemedi: adet toplamının ekrana vardığı hâlâ ölçülüyor, kaynağı artık
+  veritabanı gövdesi.
+· `iptal:bekci` — yeni gövdedeki 6 sorguda süzgeç bir satır YUKARIDA
+  (`iptalsiz()`), bekçinin penceresi dışında. **Gerekçesiyle beyan edildi**
+  ve süzgecin varlığı `sayfalama-toplami:dogrula` tarafından ayrıca ölçülüyor
+  — beyanla geçilmedi.
+
+⛔ **AÇILIŞ ŞARTI YAZILI:** ciro toplamı çarpım gerektirdiği için (`SUM(a*b)`
+`_sum`la yapılamaz, `kosul` ham SQL'e çevrilemez) kalemleri okuyor — satır
+başına ÜÇ skaler alan, 5898 kalem ≈ 0,2 MB. **~200 bin kalemi geçince**
+çözüm `SaleItem.lineTotalAmount` sütunu + `_sum`; bugün eklemek tüketicisi
+doğmadan sütun açmak olurdu.
+
+⚠ **KALAN, AÇILMADI:** `/satislar` derin `include` zinciri hâlâ satır başına
+5+ tablo çekiyor (50 satırda sorun değil) · panel kargo sorgusu 5600 satışın
+bütün kalemlerini ciro için çekiyor, `groupBy`a inebilir · `/satislar`
+varsayılan penceresi "tüm zamanlar" — 12.08.2026'da bilinçle böyle bırakıldı
+(_"süzgeç eklemek kayıt gizlemek anlamına gelmemeli"_), **dokunulmadı.**
+
 ### ⏭ SIRADAKİ — VE ONAY KAPISI
 
 **(a) kovası içe aktarmanın kuru koşumunu doğuruyor.** Yazma ancak Halil'in

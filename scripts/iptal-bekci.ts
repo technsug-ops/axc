@@ -32,6 +32,42 @@ const ISTISNALAR = new Map<string, string>([
     "src/lib/yedek.ts:sale.findMany",
     "YEDEK: veritabanının TAMAMINI dışa aktarır. Süzgeç uygulasaydı yedek eksik olurdu ve geri yüklendiğinde iptal edilmiş satışlar KAYBOLURDU — iptal kaydı silinmiyor, korunuyor.",
   ],
+  /**
+   * ═════════════════════════════════════════════════════════════════════
+   *  SATIŞ/ALIM TOPLAM GÖVDELERİ (27.08.2026) — SÜZGEÇ VAR AMA BEKÇİ
+   *  ONU BURADAN GÖREMİYOR, VE BU SEFER BEYAN DOĞRU CEVAP.
+   * ---------------------------------------------------------------------
+   *  Bu iki modülün BÜTÜN KONUSU iptal ayrımı: `iptalsiz()` ve
+   *  `yalnizIptalli()` kümeyi ikiye böler, sonra her sorgu o kümeyi alır.
+   *  Süzgeç sorgunun YANINDA değil, bir satır YUKARIDA — bekçinin
+   *  ölçtüğü pencerenin dışında.
+   *
+   *  ⛔ VE SÜZGEÇ ÖLÇÜLÜYOR, BEYANLA GEÇİLMİYOR:
+   *  `sayfalama-toplami:dogrula` bu gövdelerin iptal koşulunu `AND` ile
+   *  eklediğini VE spread kullanmadığını ölçüyor — spread kullanıcının
+   *  kendi `?iptal=1` süzgecini sessizce ezerdi (17.08.2026 vakası).
+   *
+   *  ⚠ Alternatif "süzgeci her sorgunun içine kopyala" olurdu: aynı koşul
+   *  altı yerde tekrarlanır ve biri unutulduğunda SESSİZ ayrışır — bugün
+   *  tam bu sınıftan bir hata düzeltildi (K60, `shippedAt` altı okuyucu).
+   * ═════════════════════════════════════════════════════════════════════
+   */
+  [
+    "src/lib/satis-toplami.ts:sale.count",
+    "TOPLAM GÖVDESİ: iptal ayrımı `iptalsiz()`/`yalnizIptalli()` ile bir satır yukarıda kuruluyor; `sayfalama-toplami:dogrula` bunu AND koşulu olarak ölçüyor.",
+  ],
+  [
+    "src/lib/satis-toplami.ts:saleItem.aggregate",
+    "TOPLAM GÖVDESİ: aynı gerekçe — küme `sale: giren` / `sale: haric` olarak geçiyor.",
+  ],
+  [
+    "src/lib/satis-toplami.ts:sale.groupBy",
+    "TOPLAM GÖVDESİ: NET-2 para birimi kırılımı; küme `giren` (iptalsiz) üzerinden.",
+  ],
+  [
+    "src/lib/satis-toplami.ts:saleItem.findMany",
+    "TOPLAM GÖVDESİ: ciro çarpımı `_sum` ile yapılamadığı için kalem okunuyor; küme `sale: kosul` olarak geliyor ve çağıran `giren`/`haric` veriyor.",
+  ],
   [
     "src/lib/yedek.ts:saleItem.findMany",
     "YEDEK: yukarıdaki gerekçenin aynısı — kalemler de eksiksiz yedeklenir",

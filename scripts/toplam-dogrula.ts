@@ -288,14 +288,29 @@ console.log("\nADET EKRANA VARIYOR MU — kaynak taraması");
   /**
    * ⚠ DESEN ÖNCE SAYILDI. `adetToplami` satış sayfasında İKİ kez geçiyor
    * (import satırı + çağrı). Import tek başına hiçbir kutu çizmez, bu yüzden
-   * işaret ÇAĞRIYA bağlanıyor: `adetToplami(`.
+   * işaret ÇAĞRIYA bağlanıyor.
+   *
+   * ⚠ ÖLÇÜT 27.08.2026'DA GÜNCELLENDİ — SUSTURULMADI, ESKİDİĞİ İÇİN.
+   * Eskiden `adetToplami(` aranıyordu; o gövde ÇEKİLEN DİZİYİ topluyor ve
+   * iki ekran o gün SAYFALANDI (5778 satır · 10,1 MB · 1600 ms). Toplamlar
+   * veritabanına taşındı; sayfalanmış diziden toplamak artık YASAK, çünkü
+   * "görünen sayfanın toplamı" olurdu (İlke #15).
+   *
+   * ⛔ ÖLÇÜT GEVŞEMEDİ, YER DEĞİŞTİRDİ: adet toplamının EKRANA vardığı hâlâ
+   * ölçülüyor — kaynağı artık veritabanı gövdesi. Kaynağın kendisini
+   * `sayfalama-toplami:dogrula` ayrıca sınıyor (sayfadan hesaplayan her
+   * ifade orada kırmızı yanıyor).
    */
   for (const [ad, yol, etiket] of [
     ["satışlar", "src/app/satislar/page.tsx", 'etiket: t("adetToplami")'],
     ["alımlar", "src/app/alimlar/page.tsx", 'etiket: t("adetToplami")'],
   ] as const) {
     const kaynak = readFileSync(yol, "utf8");
-    esit(`${ad} — süzgeç adedini HESAPLIYOR`, kaynak.includes("adetToplami("), true);
+    esit(
+      `${ad} — süzgeç adedini HESAPLIYOR (veritabanı gövdesinden)`,
+      /const adetToplam = toplam(lar|Verisi)\.adet;/.test(kaynak),
+      true,
+    );
     /**
      * ⚠ VE KUTUYA BAĞLANIYOR. Hesabın var olması ekranda göründüğü anlamına
      * gelmez — "muafiyetin uygulanması ve beyanı ayrı sınanır" dersinin

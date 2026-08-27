@@ -32,8 +32,10 @@ import { alimKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
 import { donusDegeri, donusTasiyan } from "@/lib/suzgec";
 import { kalemToplamlari } from "@/lib/tutar";
-import { adetToplami, suzgecToplami } from "@/lib/liste-toplami";
 import { ListeToplami } from "@/components/liste-toplami";
+import { SayfalamaCubugu } from "@/components/sayfalama";
+import { sayfaCoz } from "@/lib/sayfalama";
+import { alimToplamlari } from "@/lib/alim-toplami";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -58,6 +60,8 @@ export default async function AlimlarSayfasi({
     hesap?: string;
     tedarikci?: string;
     kart?: string;
+    /** Sayfa numarası (27.08.2026) — `SAYFA_PARAMETRESI` ile aynı ad. */
+    sayfa?: string;
   }>;
 }) {
   await sayfaIzni("alim.gor");
@@ -94,8 +98,22 @@ export default async function AlimlarSayfasi({
     }),
   ]);
 
+  /**
+   * SAYFALAMA (27.08.2026) — gerekçenin tamamı `/satislar`da yazılı.
+   * Ölçüm: sayfalamasız hâlde 1955 alım · 3,0 MB · 1913 ms; veritabanı ise
+   * aynı satırları 1 ms'de sayıyor. Yavaş olan veri değil, ekranın satır
+   * sayısıyla DOĞRUSAL büyüyen yazılış biçimiydi.
+   *
+   * ⛔ Toplamlar `lib/alim-toplami.ts`e taşındı ve SÜZGECİN TAMAMINI ölçüyor
+   * (İlke #15) — yoksa sayfalama toplamı sayfanın toplamına düşürürdü.
+   */
+  const toplamVerisi = await alimToplamlari(kosul);
+  const sayfalama = sayfaCoz(p.sayfa, toplamVerisi.kayitSayisi);
+
   const alimlar = await prisma.purchase.findMany({
     where: kosul,
+    skip: sayfalama.atla,
+    take: sayfalama.boyut,
     include: {
       items: {
         include: {
@@ -232,11 +250,11 @@ export default async function AlimlarSayfasi({
   /** Hariç yüklemi TEK GÖVDEDE — tutar ve adet kutuları ayrışamaz. */
   const iptalliMi = (a: (typeof alimlar)[number]) => a.status === "CANCELLED";
 
-  const toplamlar = suzgecToplami(
-    alimlar,
-    (a) => kalemToplamlari(a.items),
-    iptalliMi,
-  );
+  /**
+   * ⛔ ARTIK VERİTABANINDAN — sayfadan DEĞİL. `alimlar` yalnız 50 satır
+   * taşıyor; ondan hesaplasaydık toplam "görünen sayfanın toplamı" olurdu.
+   */
+  const toplamlar = toplamVerisi.tutar;
 
   /**
    * ADET TOPLAMI — satır satır adet gösteren listenin toplamı (İlke #15).
@@ -246,7 +264,7 @@ export default async function AlimlarSayfasi({
    * eklendiği anda borç doğurmuştu; satış listesindeki aynı iş sırasında
    * fark edildi ve birlikte kapatıldı.
    */
-  const adetToplam = adetToplami(alimlar, toplamAdet, iptalliMi);
+  const adetToplam = toplamVerisi.adet; // veritabanından — bkz. üstteki not
 
   function eylemler(alim: (typeof alimlar)[number]) {
     const kabulEdilebilir =
@@ -294,7 +312,7 @@ export default async function AlimlarSayfasi({
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
           <p className="text-muted-foreground text-sm">
-            {ortak("kayitSayisi", { sayi: alimlar.length })}
+            {ortak("kayitSayisi", { sayi: toplamVerisi.kayitSayisi })}
             {arama ? ortak("aramaEki", { arama }) : ""}
             {aralikMetni ? ` · ${aralikMetni}` : ""}
           </p>
@@ -606,6 +624,23 @@ export default async function AlimlarSayfasi({
               />
             ))}
           </div>
+
+          {/* ⚠ SÜZGEÇLER TAŞINIR: taşınmazsa "2. sayfa" tıklaması süzgeci
+              sessizce sıfırlar ve kullanıcı başka bir listeye düşer. */}
+          <SayfalamaCubugu
+            sayfalama={sayfalama}
+            yol="/alimlar"
+            parametreler={{
+              q: p.q,
+              durum: p.durum,
+              pencere: p.pencere,
+              baslangic: p.baslangic,
+              bitis: p.bitis,
+              hesap: p.hesap,
+              tedarikci: p.tedarikci,
+              kart: p.kart,
+            }}
+          />
         </>
       )}
     </div>
