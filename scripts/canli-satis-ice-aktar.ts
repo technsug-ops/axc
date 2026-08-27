@@ -88,6 +88,17 @@ const KANAL_ESLEMESI: Record<string, string> = {
   HB: "Hepsiburada",
   N11: "N11",
   DEPO: "Elden Satış",
+
+  /**
+   * AMAZON — mağaza KAPALI, ama geçmiş satışları deftere ait (28.08.2026).
+   *
+   * ⛔ ESKİ GEREKÇE — ÇÜRÜMEDİ, KARŞILANDI: "Amazon'da üç hesap var ve üçü
+   * de sıfır satışlı; hangisine yazılacağı VERİDEN ÇIKMIYOR." Doğruydu —
+   * ölçüldü, üçü de ALIŞ hesabıymış (19 + 44 + 25 alım · 0 satış). Eksik
+   * olan şey bir seçim değil, hesabın KENDİSİYDİ. Kullanıcı adını verdi
+   * (`AMZN`), hesap açıldı, belirsizlik kalktı.
+   */
+  AMZN: "Amazon",
 };
 
 /**
@@ -406,6 +417,27 @@ async function main() {
   console.log(`   satış   ${gruplar.size}`);
   console.log(`   kalem   ${yazilacaklar.length}`);
   console.log(`   tutar   ${t2(yazilacaklar.reduce((t, c) => t + c.s.fiyat * c.s.adet, 0))}`);
+
+  /**
+   * ⛔ KANAL DÖKÜMÜ AYNI GÖVDEDEN ÜRETİLİR — ayrı bir sonda YAZILMAZ.
+   * 28.08.2026'da ayrı bir betikle sayıldı ve `76` çıktı; bu gövde `23`
+   * diyordu. İkisi de kendi sınırında doğruydu — sonda tarih kapısını,
+   * belirsiz SKU elemesini ve kanal çelişkisi süzgecini taşımıyordu.
+   * _(Anayasa: "sonda parametresi ekranın parametresi değildir".)_
+   */
+  const kanalDokumu = new Map<string, { satis: Set<string>; tutar: number }>();
+  for (const c of yazilacaklar) {
+    const e = c.s.kanal.toUpperCase() || "(BOŞ)";
+    const k = kanalDokumu.get(e) ?? { satis: new Set<string>(), tutar: 0 };
+    k.satis.add(c.s.siparis);
+    k.tutar += c.s.fiyat * c.s.adet;
+    kanalDokumu.set(e, k);
+  }
+  console.log(`\n   KANAL BAŞINA:`);
+  for (const [e, k] of [...kanalDokumu].sort((a, b) => b[1].satis.size - a[1].satis.size)) {
+    console.log(`     ${e.padEnd(6)} ${String(k.satis.size).padStart(5)} satış  ${t2(k.tutar)}`);
+  }
+
   console.log(`\n   DIŞARIDA:`);
   let disarida = 0;
   for (const [k, n] of [...kova].sort((a, b) => b[1] - a[1])) {

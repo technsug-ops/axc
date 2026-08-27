@@ -102,6 +102,7 @@
     "canli:amazon-kimlik": "tsx scripts/canli-amazon-kimlik-cozum.ts",
     "canli:depo-olcum": "tsx scripts/canli-depo-satis-olcum.ts",
     "canli:depo-ac": "tsx scripts/canli-depo-kanali-ac.ts",
+    "canli:amazon-hesap-ac": "tsx scripts/canli-amazon-hesap-ac.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",
     "canli:kargo-geri-al": "tsx scripts/canli-kargo-tarihi-geri-al.ts",
     "canli:k20-sayim": "tsx scripts/canli-k20-sayim.ts",

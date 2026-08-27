@@ -22,7 +22,7 @@
 | # | İş | Durum |
 |---|---|---|
 | ① | `DEPO` kanalı + `Elden Satış` hesabı + `KANAL_ESLEMESI` satırı | **[KOŞTU 28.08.2026]** — `AuditLog: KANAL_ACILDI`. Şema değişikliği YOK. |
-| ② | 10 elden satışın içe aktarılması | **[BEKLİYOR]** — KDV/stopaj cevabına bağlı |
+| ② | 10 elden satışın içe aktarılması | **[BEKLİYOR]** — artık YALNIZ barkod/`Sale.code` sorunu |
 | ③ | `Channel.type` vekil kaydı | **[KAYIT]** — kapanamaz, açılış şartı aşağıda |
 
 **② NİYE BEKLİYOR — İKİ SEBEP, İKİSİ DE ÖLÇÜLDÜ:**
@@ -30,8 +30,14 @@
    (`8720389039577`, `5702017747682`…). Olduğu gibi yazılsaydı barkod
    `Sale.code`a girerdi — hem yanlış hem `@unique` çakışması. Elden satışın
    sipariş numarası **yoktur**; doğru değer `null`.
-2. **KDV ve stopaj elden satışta işliyor mu?** Cevapsız. `ChannelFee` kümesi
-   buna bağlı ve tahmin NET-2'yi sessizce bozar.
+2. ~~KDV ve stopaj elden satışta işliyor mu?~~ **CEVAPLANDI 28.08.2026** —
+   kullanıcı: _"Elden satışta kargo ve pazaryeri yok, gerisi aynı."_
+   Ve ölçüldü: **hiçbir `ChannelFee` gerekmiyor.**
+   · KDV ürünün KENDİ kategorisinden geliyor (`kalem.kdvOrani`)
+   · Stopaj motorun genel kuralı (`kar.ts:37`, `STOPAJ_ORANI = 1`)
+   · Komisyon ve kargo YOK → kalem `commissionRate = 0` ile yazılır
+   ⚠ `null` DEĞİL `0`: `null` "bilinmiyor" der ve `RULE_MISSING` üretir;
+   `0` "komisyon yok" der ve NET hesaplanır (`kar.ts:198`).
 
 Kapı mekanik: `ADIM2_BEKLEYEN` kümesi. Kuru koşumda **`adim2Bekliyor: 10`**
 saydı — satırlar görünüyor ama yazılmıyor. Cevap gelince kümeden `DEPO`
@@ -63,9 +69,19 @@ etmiyor. Şema değişikliği bu yüzden **hak edilmedi**.
 
 | # | İş | Durum |
 |---|---|---|
-| ① | Amazon **SATIŞ** hesabının tanımlanması | **[BEKLİYOR]** — kullanıcıdan mağaza adı |
-| ② | 54 ASIN → varyant eşleştirmesi | **[BEKLİYOR]** — ①'dan sonra |
-| ③ | Amazon `ChannelFee` kuralları | **[BEKLİYOR]** — Amazon'un kendi hakediş raporu |
+| ① | Amazon **SATIŞ** hesabı (`AMZN`) | **[KOŞTU 28.08.2026]** — `AuditLog: KANAL_HESABI_ACILDI` |
+| ② | 23 satışın içe aktarılması (AMZN 11 + TY 12) | **[ONAY BEKLİYOR]** — kuru koşum hazır |
+| ③ | 54 ASIN → varyant eşleştirmesi | **[BEKLİYOR]** — ②'den sonra |
+| ④ | Amazon `ChannelFee` kuralları | **[BEKLİYOR]** — Amazon'un kendi hakediş raporu |
+| ⑤ | `AMZN` hesabını PASİFE al | **[BEKLİYOR]** — ② bittikten sonra, Ayarlar → Kanallar |
+
+**MAĞAZA KAPALI (kullanıcı, 28.08.2026) — hesap yine de açıldı.** Kapanmış bir
+mağazanın geçmiş satışları da defterin parçasıdır; bağlanacak hesap olmasa
+64 satış (₺255.555) hiçbir yere yazılamaz ve ciro eksik kalır. Kapanmışlık
+`isActive` ile ifade edilir, hesabın YOKLUĞUYLA değil.
+> ⚠ `isActive = true` açıldı ve sebebi yazılı: `false` olsaydı hesap satış
+> listesinin SÜZGEÇ menüsünde de görünmezdi (`satislar/page.tsx:166`) ve
+> kullanıcı kendi Amazon satışlarını süzemezdi. ② bitince ⑤ ile kapatılır.
 
 **⚠ SORUM YANLIŞTI VE ÖLÇÜMLE DÜZELTİLDİ.** "Hangi hesap — S.ahmet, SEDA,
 EKREM?" diye sordum; varsayımım satış hesabının bu üçünün içinde olduğuydu.
@@ -80,8 +96,20 @@ _"Amazon'da sattığınız mağaza hesabının adı ne?"_ (TY/HB'de bu `AXCALI`.
 
 **ÖLÇÜLEN KAPSAM:** dosyada 65 Amazon satış satırı var; **54'ü SKU
 kolonunda ASIN** (`B0…`) taşıyor ve hiçbir varyanta bağlı değil.
-Kimliği bugün çözülen **11 satır · ₺45.221**; kuru koşumda `kanalCozulemedi`
-kovasında **11** olarak görünüyor — iki ölçüm birbirini doğruluyor.
+Kimliği bugün çözülen **11 satır · ₺45.221**.
+
+**② KURU KOŞUM — içe aktarmanın KENDİ gövdesinden:**
+
+    ② PLAN
+       satış   23        KANAL BAŞINA:
+       kalem   23          TY     12 satış     15856.00
+       tutar   61077.00    AMZN   11 satış     45221.00
+
+⚠ **AYRI SONDA YAZILDI VE `76` SAYDI — YANLIŞTI.** Sonda tarih kapısını,
+belirsiz SKU elemesini ve kanal çelişkisi süzgecini taşımıyordu. Döküm
+artık `yazilacaklar` dizisinden üretiliyor ve bunu bir bekçi ölçütü
+sabitliyor (iki mutasyonla kırmızı yandığı görüldü).
+_(Anayasa: "sonda parametresi ekranın parametresi değildir".)_
 
 ---
 

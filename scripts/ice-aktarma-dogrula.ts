@@ -1107,6 +1107,17 @@ kontrol(
   "DEPO kanal eşlemesinde VAR",
   /DEPO: "Elden Satış"/.test(yorumsuz(satisAktar)),
 );
+/**
+ * ⛔ KANAL DÖKÜMÜ AYNI GÖVDEDEN — 28.08.2026'da ayrı bir sonda yazıldı ve
+ * `76` saydı; bu gövde `23` diyordu. Sonda tarih kapısını, belirsiz SKU
+ * elemesini ve kanal çelişkisi süzgecini taşımıyordu. Rapora giden sayı
+ * `yazilacaklar` dizisinden ÜRETİLMEK ZORUNDA; ham dosyadan yeniden
+ * sayılırsa iki rakam sessizce ayrışır ve ikisi de "doğru" görünür.
+ */
+kontrol(
+  "kanal dökümü yazilacaklar'dan üretiliyor",
+  /for \(const c of yazilacaklar\) \{[\s\S]{0,400}kanalDokumu\.set/.test(satisAktar),
+);
 kontrol(
   "DEPO satırları ADIM2 kapısında yazılmıyor",
   /const ADIM2_BEKLEYEN = new Set\(\["DEPO"\]\)/.test(yorumsuz(satisAktar)) &&
