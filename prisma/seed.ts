@@ -47,6 +47,25 @@ const CHANNELS: { code: string; name: string; type: ChannelType }[] = [
   { code: "VATAN", name: "Vatan", type: ChannelType.MARKETPLACE },
   { code: "PAZARAMA", name: "Pazarama", type: ChannelType.MARKETPLACE },
   { code: "PTTAVM", name: "PTTAvm", type: ChannelType.MARKETPLACE },
+
+  /**
+   * ELDEN SATIŞ — pazaryeri DEĞİL, ama satış kanalı (kullanıcı kararı
+   * 28.08.2026). Mal doğrudan elden satılıyor: alışı ve satışı var,
+   * üçüncü taraf komisyonu YOK (ölçüldü: 12 satırın 11'inde komisyon
+   * ve kargo sıfır). Kaynak dosyada `PAZAR YERI = DEPO` etiketiyle geçer,
+   * bu yüzden kod da `DEPO`.
+   *
+   * ⚠ `type = OWN_STORE` BİR VEKİLDİR VE SAKLANMIYOR. Elden satış "kendi
+   * siteniz" değildir; örtüşen şey DAVRANIŞ (üçüncü taraf komisyonu yok),
+   * ad değil. Bugün zararsız çünkü ÖLÇÜLDÜ: `Channel.type` kodun hiçbir
+   * yerinde okunmuyor — seed yazıyor, hiçbir ekran ya da karar branch
+   * etmiyor. Şema değişikliği bu yüzden HAK EDİLMEDİ.
+   *
+   * ⛔ AÇILIŞ ŞARTI: bir rapor/ekran ilk kez `Channel.type`a göre
+   * dallandığında gerçek bir enum değeri (`DIRECT`) eklenir — o gün
+   * migration hak edilmiş olur. Şartsız bekleyen alan, unutulmuş alandır.
+   */
+  { code: "DEPO", name: "Elden Satış", type: ChannelType.OWN_STORE },
 ];
 
 async function main() {

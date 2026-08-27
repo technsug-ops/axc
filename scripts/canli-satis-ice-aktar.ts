@@ -72,14 +72,43 @@ const SATIS_TURU = "satış";
  * SEDA). Hangisine yazılacağı VERİDEN ÇIKMIYOR; tahmin etmek satışı
  * yanlış hesaba yazmak olurdu. AMZN satırları AYRI kovada bekliyor.
  *
- * ⛔ `DEPO` BİR KANAL DEĞİL — pazaryeri değil, depo hareketi. Satış
- * olarak yazmak ciroyu şişirirdi.
+ * ⛔ ESKİ GEREKÇE — ÇÜRÜDÜ, SİLİNMİYOR (28.08.2026):
+ *
+ *     "`DEPO` BİR KANAL DEĞİL — pazaryeri değil, depo hareketi.
+ *      Satış olarak yazmak ciroyu şişirirdi."
+ *
+ * Kullanıcı düzeltti: **DEPO, ELDEN YAPILAN SATIŞLARIN yazıldığı yerdir.**
+ * Alışı ve satışı var, yalnız pazaryeri komisyonu yok. Cümlenin ikinci
+ * yarısı tersmiş: yazmamak ciroyu ŞİŞİRMİYOR, EKSİK BIRAKIYOR.
+ * Ölçüldü: 12 satırın 11'inde komisyon ve kargo SIFIR.
+ * _(Anayasa: "eski gerekçe silinmez" — niye çevrildiğiyle birlikte durur.)_
  */
 const KANAL_ESLEMESI: Record<string, string> = {
   TY: "Trendyol",
   HB: "Hepsiburada",
   N11: "N11",
+  DEPO: "Elden Satış",
 };
+
+/**
+ * ═══ ADIM 2 KAPISI — HENÜZ YAZILAMAYAN KANALLAR ═════════════════════════
+ *
+ * ⛔ Kanal eşlemesinde OLMAK, o satırın YAZILABİLİR olduğunu göstermez.
+ * DEPO satırları iki ayrı sebeple bugün yazılamaz ve ikisi de ölçüldü:
+ *
+ *   ① `Sipariş Numarası` kolonu DEPO satırlarında BARKOD taşıyor
+ *      (`8720389039577`, `5702017747682` …), sipariş numarası DEĞİL.
+ *      Olduğu gibi yazılsaydı barkod `Sale.code`a girerdi — hem yanlış
+ *      hem `@unique` çakışması. Elden satışın sipariş numarası YOKTUR;
+ *      doğru değer `null`dur ve bunu ayrı bir akış yazmalı.
+ *   ② KDV ve stopajın elden satışta işleyip işlemediği CEVAPLANMADI.
+ *      `ChannelFee` kümesi o cevaba bağlı; tahmin NET-2'yi bozar.
+ *
+ * ⚠ Kapı BEYANDIR, unutulmuş bir eksik değil: kanal eşlemesini eklemek
+ * ile satırı yazmak AYRI kararlardır ve ikincisi henüz verilmedi.
+ * Açılış: cevap gelince bu kümeden `DEPO` çıkarılır.
+ */
+const ADIM2_BEKLEYEN = new Set(["DEPO"]);
 
 async function main() {
   const y = canliYapilandirma();
@@ -289,16 +318,36 @@ async function main() {
     (await prisma.sale.findMany({ where: { code: { not: null } }, select: { code: true } })).map((s) => s.code!),
   );
 
-  /** ⚠ Kanal → SATIŞI OLAN hesap. Belirsizse yazılmaz. */
+  /**
+   * ⚠ KANAL → SATIŞ ROLÜ SEÇİLMİŞ hesap. Belirsizse yazılmaz.
+   *
+   * ⛔ ÖLÇÜT DEĞİŞTİ 28.08.2026 — ESKİSİ: "satışı OLAN hesap"
+   * (`_count.sales > 0`). O ölçüt YENİ AÇILAN bir kanalı yapısal olarak
+   * dışlıyordu: DEPO hesabı doğduğu gün sıfır satışlıdır, dolayısıyla
+   * "belirsiz" sayılır ve kendi satırları hiç yazılamazdı. Yani ölçüt,
+   * kendi ön şartını asla sağlanamaz kılıyordu.
+   *
+   * YENİSİ: `satisIcin = true` olan hesap — bu bir ROL BEYANIDIR, geçmişin
+   * yan etkisi değil. Kullanıcı formda tek seçimle beyan ediyor.
+   *
+   * ⚠ ÖLÇÜLDÜ, DAVRANIŞ DEĞİŞMİYOR: TY · HB · N11'in her birinde `satisIcin`
+   * taşıyan TEK hesap var (AXCALI) ve o zaten satışı olan hesabın kendisi.
+   * Amazon'un üç hesabının üçü de `satisIcin=false` — eskiden de belirsizdi,
+   * şimdi de belirsiz. Ölçüt gevşetilmedi, DOĞRU SORUYA bağlandı.
+   */
   const hesaplar = await prisma.channelAccount.findMany({
-    select: { id: true, name: true, channel: { select: { name: true } }, _count: { select: { sales: true } } },
+    select: {
+      id: true, name: true, satisIcin: true,
+      channel: { select: { name: true } },
+      _count: { select: { sales: true } },
+    },
   });
   const kanalHesap = new Map<string, string>();
   const belirsizKanal = new Set<string>();
   for (const [etiket, kanalAdi] of Object.entries(KANAL_ESLEMESI)) {
     const adaylar = hesaplar.filter((h) => anahtarla(h.channel.name) === anahtarla(kanalAdi));
-    const satisli = adaylar.filter((h) => h._count.sales > 0);
-    if (satisli.length === 1) kanalHesap.set(etiket, satisli[0].id);
+    const satisRolu = adaylar.filter((h) => h.satisIcin);
+    if (satisRolu.length === 1) kanalHesap.set(etiket, satisRolu[0].id);
     else belirsizKanal.add(etiket);
   }
   console.log(`\n   KANAL → HESAP:`);
@@ -329,6 +378,7 @@ async function main() {
     const aday = [s.sku, s.barkod].filter(Boolean).map((k) => kodVar.get(k)).find((l) => l && l.length > 0);
     if (!aday) { say("eslesmeyenListing"); continue; }
     if (aday.length > 1) { say("belirsizSku"); continue; }
+    if (ADIM2_BEKLEYEN.has(s.kanal.toUpperCase())) { say("adim2Bekliyor"); continue; }
     const hesapId = kanalHesap.get(s.kanal.toUpperCase());
     if (!hesapId) { say("kanalCozulemedi"); continue; }
     /**

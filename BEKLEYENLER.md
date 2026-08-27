@@ -13,6 +13,88 @@
 
 ---
 
+## 🆕 K65 — ELDEN SATIŞ (DEPO) KANALI · 28.08.2026
+
+> Kullanıcı düzeltmesi: `DEPO` bir depo hareketi DEĞİL, **elden yapılan
+> satışların yazıldığı yer.** İçe aktarmadaki eski gerekçe çürüdü ve
+> `canli-satis-ice-aktar.ts` içinde NIYE çevrildiğiyle birlikte duruyor.
+
+| # | İş | Durum |
+|---|---|---|
+| ① | `DEPO` kanalı + `Elden Satış` hesabı + `KANAL_ESLEMESI` satırı | **[KOŞTU 28.08.2026]** — `AuditLog: KANAL_ACILDI`. Şema değişikliği YOK. |
+| ② | 10 elden satışın içe aktarılması | **[BEKLİYOR]** — KDV/stopaj cevabına bağlı |
+| ③ | `Channel.type` vekil kaydı | **[KAYIT]** — kapanamaz, açılış şartı aşağıda |
+
+**② NİYE BEKLİYOR — İKİ SEBEP, İKİSİ DE ÖLÇÜLDÜ:**
+1. `Sipariş Numarası` kolonu DEPO satırlarında **BARKOD** taşıyor
+   (`8720389039577`, `5702017747682`…). Olduğu gibi yazılsaydı barkod
+   `Sale.code`a girerdi — hem yanlış hem `@unique` çakışması. Elden satışın
+   sipariş numarası **yoktur**; doğru değer `null`.
+2. **KDV ve stopaj elden satışta işliyor mu?** Cevapsız. `ChannelFee` kümesi
+   buna bağlı ve tahmin NET-2'yi sessizce bozar.
+
+Kapı mekanik: `ADIM2_BEKLEYEN` kümesi. Kuru koşumda **`adim2Bekliyor: 10`**
+saydı — satırlar görünüyor ama yazılmıyor. Cevap gelince kümeden `DEPO`
+çıkarılır.
+
+**③ `type = OWN_STORE` VEKİLDİR — kapanamaz kayıt, görev DEĞİL.**
+Elden satış "kendi siteniz" değildir; örtüşen şey DAVRANIŞ (üçüncü taraf
+komisyonu yok), ad değil. Bugün zararsız çünkü **ölçüldü: `Channel.type`
+kodun hiçbir yerinde OKUNMUYOR** — seed yazıyor, hiçbir ekran/karar branch
+etmiyor. Şema değişikliği bu yüzden **hak edilmedi**.
+> ⛔ **AÇILIŞ ŞARTI:** bir rapor/ekran ilk kez `Channel.type`a göre
+> dallandığında gerçek enum değeri (`DIRECT`) eklenir — o gün migration hak
+> edilmiş olur. Şartsız bekleyen alan, unutulmuş alandır.
+
+**AYRI KOVALAR — 10'luk kümeye KARIŞTIRILMAZ:**
+- `4440897248` — 10 hane "4" ile başlıyor: **HB iadesi**, DEPO değil ve
+  **sistemde zaten var.** Kuru koşumda `TÜR=iade` olduğu için `turFarkli`
+  kovasına düştü; DEPO kovasına hiç girmiyor. Bu turda **işlenmez.**
+- `2024-07-07` — "Elden ( ahmet pekel )", komisyon 637 · kargo 120, kimliği
+  çözülmüyor. Öteki 11'den farklı; `numarasiz` kovasında ayrı duruyor.
+
+---
+
+## 🆕 K64 — AMAZON SATIŞLARI · 28.08.2026
+
+> Kullanıcı haklı çıktı: Amazon satışları **zaten `satis.xlsx` içinde** —
+> 64/64 orada. Sisteme girmemeleri sessiz bir düşme değil, içe aktarmanın
+> **bilinçli bekletmesiydi** (`KANAL_ESLEMESI` yalnız TY/HB/N11 taşıyordu).
+
+| # | İş | Durum |
+|---|---|---|
+| ① | Amazon **SATIŞ** hesabının tanımlanması | **[BEKLİYOR]** — kullanıcıdan mağaza adı |
+| ② | 54 ASIN → varyant eşleştirmesi | **[BEKLİYOR]** — ①'dan sonra |
+| ③ | Amazon `ChannelFee` kuralları | **[BEKLİYOR]** — Amazon'un kendi hakediş raporu |
+
+**⚠ SORUM YANLIŞTI VE ÖLÇÜMLE DÜZELTİLDİ.** "Hangi hesap — S.ahmet, SEDA,
+EKREM?" diye sordum; varsayımım satış hesabının bu üçünün içinde olduğuydu.
+Ölçüm bunu çürüttü — **üçü de ALIŞ hesabı:**
+
+    YAN1  EKREM     alisIcin=EVET  satisIcin=hayir   19 alım ·  0 satış
+    ANA   S.ahmet   alisIcin=EVET  satisIcin=hayir   44 alım ·  0 satış
+    YAN   SEDA      alisIcin=EVET  satisIcin=hayir   25 alım ·  0 satış
+
+Yani Amazon **satış mağazası sistemde HİÇ TANIMLI DEĞİL.** Doğru soru:
+_"Amazon'da sattığınız mağaza hesabının adı ne?"_ (TY/HB'de bu `AXCALI`.)
+
+**ÖLÇÜLEN KAPSAM:** dosyada 65 Amazon satış satırı var; **54'ü SKU
+kolonunda ASIN** (`B0…`) taşıyor ve hiçbir varyanta bağlı değil.
+Kimliği bugün çözülen **11 satır · ₺45.221**; kuru koşumda `kanalCozulemedi`
+kovasında **11** olarak görünüyor — iki ölçüm birbirini doğruluyor.
+
+---
+
+## 📌 AÇIK KALAN ÖLÇÜM ŞERHLERİ — 28.08.2026
+
+| Kalem | Durum |
+|---|---|
+| **`axcali1752`** (Bialetti Moka Pot) | **[AÇIK]** — sistem dosyadan FAZLA gösteriyor; öteki yönün sorusu, ayrı ölçülecek |
+| **A kalemi (HBCV) kapsamı** | **[KAPANMADI]** — "Listelerim" dökümü yalnız **AKTİF** listingleri veriyor; eşleşmeyen 385 kod KAPALI listinglerdir. Halil'in indirdiği dosya yanlış değil, **KAPSAMI dar.** Çare: kapalı listing dökümü ya da HB API |
+| **C bölümü ölçüm kusuru** | **[KAYIT]** — "eşleşmeyen satırlar bu varyantların kodlarını taşıyor mu" sorusunun cevabı **tanım gereği sıfırdı**; döngüsel bir soruydu ve bulgu diye sunulmadı |
+
+---
+
 ## 🚨 [YANLIŞ CEVAP VEREN EKRAN] — bu etiket varken YENİ CEPHE AÇILMAZ
 
 > Bir ekran **rakam gösteriyor ve rakam yanlışsa**, o ekran susan bir
