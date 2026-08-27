@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
 import { oturumdakiKullanici } from "@/lib/oturum";
-import { acikOturumVarMi, sayimKodu } from "@/lib/sayim/oturum";
+import { acikOturumVarMi, bosSayimKodu } from "@/lib/sayim/oturum";
 import { kodKosulu } from "@/lib/varyant-arama-kurali";
 import { yetkiIste } from "@/lib/yetki";
 
@@ -61,7 +61,17 @@ export async function sayimAc(): Promise<SayimAcilisi> {
   }
 
   const bugun = gunDegeri(isTakvimGunu(new Date()));
-  const kod = sayimKodu(bugun);
+  /**
+   * ⛔ AYNI GÜN İKİNCİ SAYIM ÇÖKÜYORDU (canlı, 28.08.2026). `kod` şemada
+   * `@unique` ve `sayimKodu` günde TEK kod üretiyor; ikinci "Sayım başlat"
+   * tekillik ihlaliyle düşüyor ve kullanıcı `This page couldn't load`
+   * görüyordu. Kod artık BOŞ olanı seçiyor: `sayim-20260827-2`.
+   */
+  const gunlukKodlar = await prisma.stokSayimi.findMany({
+    where: { sayimGunu: bugun },
+    select: { kod: true },
+  });
+  const kod = bosSayimKodu(bugun, gunlukKodlar.map((k) => k.kod));
 
   /** Kapsam: stoğu > 0 olan varyantlar (ilk sayım kararı — TÜM STOK). */
   const stoklar = await prisma.stockMovement.groupBy({
@@ -81,18 +91,30 @@ export async function sayimAc(): Promise<SayimAcilisi> {
   });
 
   const kullanici = await oturumdakiKullanici();
-  const sayim = await prisma.stokSayimi.create({
-    data: {
-      kod,
-      sayimGunu: bugun,
-      kapsamTuru: "TUM_STOK",
-      userId: kullanici?.id ?? null,
-      satirlar: {
-        create: kapsam.map((variantId) => ({ variantId })),
+  /**
+   * ⛔ YAKALANMAMIŞ HATA 500 DÖNER VE KULLANICI SEBEBİ GÖREMEZ (İlke #5).
+   * 28.08'de tam bu oldu: ekranda yalnız `This page couldn't load` yazdı,
+   * hiçbir yerde neden yazmadı. Artık hata KODA çevrilip ekrana taşınıyor.
+   */
+  let sayim: { id: string };
+  try {
+    sayim = await prisma.stokSayimi.create({
+      data: {
+        kod,
+        sayimGunu: bugun,
+        kapsamTuru: "TUM_STOK",
+        userId: kullanici?.id ?? null,
+        satirlar: {
+          create: kapsam.map((variantId) => ({ variantId })),
+        },
       },
-    },
-    select: { id: true },
-  });
+      select: { id: true },
+    });
+  } catch (e) {
+    /** Mesaj TAM taşınır — kısaltma yalnız gösterimde (anayasa). */
+    console.error("[sayim] açılış hatası:", e instanceof Error ? e.message : String(e));
+    return { hata: "ACILAMADI" };
+  }
 
   revalidatePath("/okut");
   return {

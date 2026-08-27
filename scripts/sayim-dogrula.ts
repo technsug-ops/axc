@@ -3,6 +3,7 @@ import { sayimOzeti, sayimTamMi, kovalaraAyir } from "../src/lib/sayim/ozet";
 import {
   oturumHali,
   acikOturumVarMi,
+  bosSayimKodu,
   sayimKodu,
   okumayaAcikMi,
   acilisUyarisiGerekirMi,
@@ -430,6 +431,41 @@ esit(
     "⑪ eşik KARE sayısı olarak var (süre değil)",
     /BOS_KARE_ESIGI\s*=\s*\d+/.test(kaynak),
     true,
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ⑫ GÜNDE İKİNCİ SAYIM — CANLI ÇÖKME 28.08.2026
+// ═══════════════════════════════════════════════════════════════════════════
+//  `kod` şemada @unique ve `sayimKodu` günde TEK kod üretiyor. İkinci
+//  "Sayım başlat" tekillik ihlaliyle düşüyordu; kullanıcı yalnız
+//  `This page couldn't load` gördü.
+//  ⚠ Çare "günde bir sayım" DEĞİL: aynı gün ikinci sayım meşrudur (ilki
+//  yarım kalmış olabilir). Kod okunaklı kalarak tekilleşiyor.
+
+{
+  const gun = new Date("2026-08-27T00:00:00.000Z");
+  esit("⑫ boş günde taban kod", bosSayimKodu(gun, []), "sayim-20260827");
+  esit(
+    "⑫ taban doluysa -2 (çökmüyor)",
+    bosSayimKodu(gun, ["sayim-20260827"]),
+    "sayim-20260827-2",
+  );
+  esit(
+    "⑫ -2 de doluysa -3",
+    bosSayimKodu(gun, ["sayim-20260827", "sayim-20260827-2"]),
+    "sayim-20260827-3",
+  );
+  /* ⚠ AYRIMIN ÖTEKİ YAKASI: BAŞKA GÜNÜN kodu tabanı işgal etmez. */
+  esit(
+    "⑫ başka günün kodu tabanı bloke etmiyor",
+    bosSayimKodu(gun, ["sayim-20260826", "sayim-20260828"]),
+    "sayim-20260827",
+  );
+  esit(
+    "⑫ sırasız gelen liste de doğru çalışır",
+    bosSayimKodu(gun, ["sayim-20260827-2", "sayim-20260827"]),
+    "sayim-20260827-3",
   );
 }
 

@@ -3161,6 +3161,7 @@
     "baslatNotu": "Stoğu olan {sayi} varyant sayılacak. Sayım bir gün sürebilir — ara verebilirsiniz.",
     "acikSayim": "Açık sayım: {kod}",
     "hataZatenAcik": "Zaten açık bir sayım var. Aynı anda tek sayım yapılabilir.",
+    "hataAcilamadi": "Sayım açılamadı. Ayrıntı sunucu günlüğünde — teknik desteğe bildirin.",
     "hataSayimYok": "Sayım bulunamadı.",
     "hataSayimKapali": "Bu sayım kapandı; yeni okuma girilemez.",
     "hataBulunamadi": "Bu kod hiçbir üründe bulunamadı.",

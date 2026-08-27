@@ -67,6 +67,47 @@ export function sayimKodu(sayimGunu: Date): string {
 }
 
 /**
+ * ⛔ GÜNDE İKİNCİ SAYIM — CANLI ÇÖKME 28.08.2026.
+ *
+ * `kod` şemada `@unique`. `sayimKodu` günde TEK kod ürettiği için, aynı gün
+ * ikinci kez "Sayım başlat"a basmak yabancı anahtar değil **tekillik**
+ * ihlali veriyordu ve eylem yakalanmamış bir hatayla düşüyordu: kullanıcı
+ * `This page couldn't load` gördü.
+ *
+ * Vaka birebir buydu: `sayim-20260827` 13:37:31'de açıldı (204 satır),
+ * 13:37:47'de kapandı; ikinci deneme çöktü.
+ *
+ * ⚠ ÇARE "GÜNDE BİR SAYIM" DEMEK DEĞİL. Aynı gün ikinci sayım MEŞRU: ilki
+ * yarım bırakılmış olabilir, ya da bir rafın yeniden sayılması gerekebilir.
+ * Kapıyı kapatmak operatörü kilitlerdi.
+ *
+ * ⚠ VE KOD OKUNAKLI KALIR: `sayim-20260827-2`. Rastgele bir sonek (zaman
+ * damgası, cuid) da tekilliği sağlardı ama düzeltme hareketine damgalanan
+ * kod insanın okuyacağı bir iz — üç ay sonra "bu hangi sayımdı" sorusuna
+ * cevap vermeli.
+ *
+ * @param mevcutKodlar O gün ZATEN kullanılmış kodlar (veritabanından).
+ */
+export function bosSayimKodu(
+  sayimGunu: Date,
+  mevcutKodlar: readonly string[],
+): string {
+  const taban = sayimKodu(sayimGunu);
+  const kullanilan = new Set(mevcutKodlar);
+  if (!kullanilan.has(taban)) return taban;
+  /**
+   * ⚠ SINIRSIZ DÖNGÜ YOK: 2'den başlayıp boş bulana kadar. Aynı günde 99
+   * sayım gerçekçi değil ama döngünün üst sınırı YAZILI olmalı — yoksa
+   * beklenmedik bir veri hâli sunucuyu kilitler.
+   */
+  for (let n = 2; n <= 99; n++) {
+    const aday = taban + "-" + n;
+    if (!kullanilan.has(aday)) return aday;
+  }
+  throw new Error("SAYIM_KODU_TUKENDI");
+}
+
+/**
  * AÇILIŞTA HATIRLATMA — "bugün ilk satış çıktı mı?"
  *
  * ⛔ KAPANIŞTA DEĞİL, AÇILIŞTA. Kapanışta söylemek geç olur: sayım çoktan

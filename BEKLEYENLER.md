@@ -1571,6 +1571,46 @@ _"varsayılan KAPALI (open özniteliği yok)"_ ölçütü
 `!/<details[^>]*<BS>open<BS>/` idi, yani `!false` = **her koşumda yeşil.**
 Onarıldı, mutasyonla dişi olduğu görüldü.
 
+### 🚨 K57-③ CANLI ÇÖKME — GÜNDE İKİNCİ SAYIM (28.08.2026, DÜZELTİLDİ)
+
+Halil "Sayım başlat"a bastı, ekran **`This page couldn't load`** verdi.
+
+**ÖLÇÜM — tahmin edilmedi, canlıdan okundu:**
+
+    sayim-20260827   204 satır
+      açılış  13:37:31
+      kapanış 13:37:47      ← 16 saniye sonra kapatılmış
+
+**SEBEP:** `kod` şemada `@unique`, `sayimKodu` günde **TEK** kod üretiyor.
+Oturum açılıp kapandıktan sonra ikinci "Sayım başlat" **tekillik ihlaliyle**
+düştü — ve hata yakalanmadığı için 500 döndü.
+
+⛔ **İKİ AYRI KUSUR, İKİSİ DE DÜZELTİLDİ:**
+
+**① Kod tekilleşmesi.** Çare _"günde bir sayım"_ DEĞİL — aynı gün ikinci
+sayım meşrudur (ilki yarım kalmış olabilir, bir raf yeniden sayılabilir).
+`bosSayimKodu` boş olanı seçiyor: `sayim-20260827-2`. Rastgele sonek de
+tekilliği sağlardı ama kod düzeltme hareketine damgalanıyor ve **insanın
+okuyacağı bir iz** — üç ay sonra "bu hangi sayımdı" sorusuna cevap vermeli.
+
+**② Yakalanmamış hata 500 döndürüyordu.** Kullanıcı yalnız _"This page
+couldn't load"_ gördü, hiçbir yerde NEDEN yazmadı (İlke #5 ihlali).
+`create` artık `try/catch` içinde: mesaj **tam** loglanıyor, ekrana
+_"Sayım açılamadı"_ düşüyor.
+
+**Bekçi:** `sayim:dogrula` **85 ölçüt** (5 yeni) · `sayim-mutasyon:kontrol`
+**22/22**.
+
+⚠ **HARNESS ÜÇÜNCÜ KAPISI YİNE İŞE YARADI.** İlk mutasyon döngü gövdesini
+siliyordu; o hâlde `bosSayimKodu` 99 turdan sonra `throw` ediyor, bekçi
+ÇÖKÜYOR ve harness bunu **"yakalandı" saymadı** — çökme, ölçütün ölçtüğünü
+kanıtlamaz. Mutasyon değer bozan hâle çevrildi.
+
+⚠ **CANLIDA DURAN KAYIT:** `sayim-20260827` (204 satır, kapalı, hiç okuma
+yok, düzeltme yazmamış). Silinebilir — `StockMovement → satır` bağı
+`Restrict` olduğu için düzeltme yazmış bir oturum zaten silinemezdi.
+**Karar Halil'de**; durması da zararsız (kapanmış bir sayım kaydı).
+
 ### ⏭ SIRADAKİ — VE ONAY KAPISI
 
 **(a) kovası içe aktarmanın kuru koşumunu doğuruyor.** Yazma ancak Halil'in

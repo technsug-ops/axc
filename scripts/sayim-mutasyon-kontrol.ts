@@ -185,6 +185,30 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu: "önce fark yazılır sonra fatura girilir → stok İKİ KEZ artar",
   },
 
+  // ── GÜNDE İKİNCİ SAYIM (28.08.2026, canlı çökme) ────────────────────────
+  {
+    ad: "günde ikinci sayım yine çakışıyor (sonek verilmiyor)",
+    yon: "KALDIRAN",
+    dosya: "src/lib/sayim/oturum.ts",
+    bul: "    if (!kullanilan.has(aday)) return aday;",
+    /**
+     * ⚠ MUTASYON DEĞER BOZAR, ÇÖKERTMEZ. İlk yazımda döngü gövdesi
+     * tamamen siliniyordu; o hâlde `bosSayimKodu` 99 turdan sonra
+     * `throw` ediyor, bekçi ÇÖKÜYOR ve harness bunu (haklı olarak)
+     * "yakalandı" saymıyordu. Çökme, ölçütün ölçtüğünü kanıtlamaz.
+     */
+    koy: "    return taban;",
+    bozdugu: "aynı gün ikinci 'Sayım başlat' tekillik ihlaliyle 500 döner — kullanıcı sebebi göremez",
+  },
+  {
+    ad: "taban kod boşken bile sonek ekleniyor",
+    yon: "FAZLADAN",
+    dosya: "src/lib/sayim/oturum.ts",
+    bul: "  if (!kullanilan.has(taban)) return taban;",
+    koy: "  if (false) return taban;",
+    bozdugu: "günün İLK sayımı da -2 kodu alır; kod okunaklılığını kaybeder",
+  },
+
   // ── BOŞ KARE KİLİDİ (28.08.2026) — kamera sayım kipinde AÇIK kalıyor ─────
   {
     ad: "boş kare kilidi kaldırıldı (aynı kod hep sayılır)",

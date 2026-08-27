@@ -46,6 +46,10 @@ export function SayimBaslat({ kapsam }: { kapsam: number }) {
               setHata(t("hataZatenAcik"));
               return;
             }
+            if (sonuc.hata === "ACILAMADI") {
+              setHata(t("hataAcilamadi"));
+              return;
+            }
             if (sonuc.hata) {
               setHata(t("hataSayimYok"));
               return;
