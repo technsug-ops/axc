@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="tr"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fiziksel Sayım Prosedürü</title>
+<style>
+:root {
+  --zemin:#EDF1F6; --kart:#FFFFFF; --ink:#111820; --ink2:#5C6B7E;
+  --kabuk:#12356B; --kabuk2:#1D4784; --cizgi:#C6CDD5; --satir:#F3F6FA;
+  --gece:#0E1626; --gece-ink:#E4EAF2;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: "Segoe UI", "Noto Sans", system-ui, -apple-system, sans-serif;
+  color: var(--ink); background: var(--zemin); margin: 0;
+  font-size: 16px; line-height: 1.62;
+}
+.sayfa {
+  max-width: 62rem; margin: 0 auto; padding: 2.5rem 1.5rem 5rem;
+  background: var(--kart); min-height: 100vh;
+  box-shadow: 0 0 0 1px var(--cizgi);
+}
+h1 { font-size: 2rem; margin: 0 0 .35rem; color: var(--kabuk); letter-spacing: -.02em; }
+h2 {
+  font-size: 1.3rem; margin: 2.6rem 0 .7rem; color: var(--kabuk);
+  border-bottom: 2px solid var(--kabuk); padding-bottom: .3rem;
+}
+h3 { font-size: 1.05rem; margin: 1.6rem 0 .4rem; color: var(--kabuk2); }
+p { margin: 0 0 .7rem; }
+strong { color: #0A2044; }
+a { color: var(--kabuk); }
+
+blockquote {
+  margin: 1rem 0; padding: .8rem 1.1rem; border-left: 4px solid var(--kabuk);
+  background: var(--zemin); border-radius: 0 6px 6px 0;
+}
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Tablolar dar ekranda KENDİ kabında kayar — sayfa yana kaymaz. */
+.tablo-kap { overflow-x: auto; margin: .9rem 0 1.2rem; }
+table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+th, td { border: 1px solid var(--cizgi); padding: .5rem .65rem; text-align: left; vertical-align: top; }
+th { background: var(--kabuk); color: #fff; font-weight: 600; position: sticky; top: 0; }
+tbody tr:nth-child(even) { background: var(--satir); }
+
+pre {
+  background: var(--gece); color: var(--gece-ink); padding: 1rem 1.1rem;
+  border-radius: 8px; overflow-x: auto; margin: 1rem 0;
+  font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  font-size: .78rem; line-height: 1.45; white-space: pre;
+}
+code {
+  font-family: "Cascadia Mono", Consolas, monospace; font-size: .88em;
+  background: var(--zemin); padding: .1em .35em; border-radius: 3px;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+
+ul, ol { margin: 0 0 .7rem; padding-left: 1.4rem; }
+li { margin-bottom: .25rem; }
+hr { border: 0; border-top: 1px solid var(--cizgi); margin: 2rem 0; }
+
+/* Üretilmiş dosya uyarısı — elle düzenlenip kaynaktan ayrışmasın. */
+.uretildi {
+  background: #FFF6E5; border: 1px solid #E8C88A; color: #6B4E12;
+  border-radius: 6px; padding: .6rem .85rem; font-size: .82rem;
+  margin: 0 0 1.6rem;
+}
+.uretildi code { background: #F6E7C6; }
+
+@media print {
+  @page { size: A4; margin: 16mm 14mm; }
+  body { background: #fff; font-size: 9.6pt; line-height: 1.5; }
+  .sayfa { max-width: none; padding: 0; box-shadow: none; min-height: 0; }
+  .uretildi { display: none; }
+  h1 { font-size: 19pt; } h2 { font-size: 13pt; page-break-after: avoid; }
+  h3 { font-size: 10.6pt; page-break-after: avoid; }
+  .tablo-kap { overflow: visible; }
+  table { font-size: 8.7pt; }
+  th { position: static; }
+  tr, blockquote, pre { page-break-inside: avoid; }
+  pre { font-size: 7.4pt; }
+}
+</style>
+</head><body><div class="sayfa"><div class="uretildi">Bu dosya <code>sayim-proseduru.md</code> dosyasından ÜRETİLDİ. Elle düzenlemeyin — değişiklik kaynağa yapılır, sonra <code>npm run belge:uret</code> koşulur.</div><h1>Fiziksel Sayım Prosedürü</h1>
+<blockquote><p><strong>Bu belge operasyonun nasıl sayacağını anlatır.</strong> Ekran bu belgeyi birebir uygular; ikisi ayrıştığında kazanan bu belgedir ve ekran düzeltilir.</p><p><strong>Sürüm 3 — 28.08.2026.</strong> · <strong>Sürüm 2'de</strong> birinci sürümün iki hatası düzeltildi: "Eksik" bölümünde   <strong>"alım yap"</strong> yazıyordu (o FAZLA durumunun yolu) ve <strong>"maliyet gider   yazılır"</strong> deniyordu (gider tablosuna YAZILMIYOR). · <strong>Sürüm 3'te</strong> §3.1 eklendi: <em>"Okuttuğunuz kod bulunamazsa"</em>. Bu bölüm   belgede yoktu ve <strong>gerçek kullanımın ilk gününde</strong> karşımıza çıktı.</p><p><em>Aşılan sürümler sessizce değiştirilmedi; ne olduğu burada yazıyor.</em></p></blockquote>
+<hr />
+<h2>0 · Sayım gününü seçin — iki gerçek seçenek</h2>
+<p>⛔ <strong>"Sabah ilk satıştan önce yap" kuralı KALDIRILDI.</strong> Sayım bir gün sürüyor; gün boyu sayarken satış da çıkacak. Uygulanamayan bir kural, kural değildir.</p>
+<div class="tablo-kap"><table><thead><tr><th></th><th>Ne yaparsınız</th><th>Bedeli</th></tr></thead><tbody><tr><td><strong>A · Temiz gün</strong></td><td>Sayım günü hiç kargo çıkarmazsınız</td><td>Bir günlük sevkiyat gecikmesi · sayım tertemiz</td></tr><tr><td><strong>B · Gün içinde çalış</strong> ⭐</td><td>Normal çalışırsınız, sayım paralel gider</td><td>O gün hareket gören ürünler <strong>belirsiz</strong> işaretlenir</td></tr></tbody></table></div>
+<p><strong>Tavsiye: B.</strong> Ölçüldü — son 30 günde <strong>günde ortalama 9,6 satış kalemi</strong> çıkıyor. Yani kabaca <strong>10 civarı varyant</strong> belirsize düşer (kapsamın ~%5'i). Onların düzeltmesi yazılmaz, ertesi gün tek tek bakılır.</p>
+<p><strong>Neden belirsiz:</strong> defter <strong>gün</strong> çözünürlüğünde çalışıyor (hareketlerin %99,6'sı gün damgalı). Sabah 09:00'da çıkan kargo ile 14:00'te yapılan sayım aynı güne yazılı; sistem hangisinin önce olduğunu <strong>ayıramaz.</strong> Uydurmak yerine işaretliyoruz.</p>
+<h2>⏱ Süre — bir gün ayırın</h2>
+<p>Sebebi okutma hızı değil, <strong>ürünü bulmak</strong>: kapsamın <strong>%65'i</strong> tek bir <code>DEPO</code> konumunda, raf adresi yok. Okutmak saniyeler sürer; hangi kutuda olduğunu bulmak sürer.</p>
+<hr />
+<h2>1 · Açılış</h2>
+<p><code>/okut</code> → <strong>Sayım başlat</strong>. Kapsam ekranda yazar (stoğu &gt; 0 olan varyant sayısı — sabit değil, o anki stoktan okunur).</p>
+<p>O gün stok hareketi varsa ekran <strong>açılışta</strong> söyler — kapanışta değil, o zaman geç olur.</p>
+<p>Sistem kapsamdaki <strong>her varyant için satır açar</strong>; hepsi <code>sayılmadı</code> durumunda başlar. Bu yüzden sayılmayan bir ürün asla sessizce kaybolmaz.</p>
+<p><strong>Kod:</strong> <code>sayim-YYYYMMDD</code>. Aynı gün ikinci sayım açılırsa <code>-2</code> eklenir.</p>
+<h2>2 · ⭐ Ara verin — sistem bekler</h2>
+<ul><li><strong>Her okuma anında kaydedilir</strong> — oturum sonunda toplu değil</li><li>Uygulamayı kapatıp açabilirsiniz; dönüşte <strong>aynı sayıma</strong> girersiniz</li><li>Sayaç kaldığı yerden devam eder: <code>sayılan X / kapsam · kalan Z</code></li><li>Ekran uykuya geçmez (sayım oturumu boyunca)</li></ul>
+<p>Aynı anda <strong>tek açık sayım</strong> olabilir — dönüşü mümkün kılan kural budur.</p>
+<h2>3 · Sayım</h2>
+<p>Barkodu okutursunuz. <strong>Her okuma +1.</strong> 4 adet varsa 4 kez okutursunuz.</p>
+<p><strong>Kamera açık kalır</strong> — okuma kamerayı kapatmaz. Aynı ürünü kadrajda tutmak adedi artırmaz; <strong>kadrajdan çıkarıp yeniden göstermek</strong> artırır. Yanlış okumayı düzeltmek satırdaki <code>−</code> / <code>+</code> ile iki dokunuş.</p>
+<p><strong>Listede olmayan bir şey çıkarsa → okutun.</strong> Sistem reddetmez: <em>"kapsam dışı bulundu"</em> diye işaretler. Bu hata değil, <strong>bulgunun kendisi.</strong></p>
+<p><strong>Bir ürün rafta hiç yoksa → okutmayın.</strong> Kapanışta sorulacak.</p>
+<h3>3.1 · Okuttuğunuz kod bulunamazsa</h3>
+<p>Ekran <em>"Bu kod hiçbir üründe bulunamadı"</em> diyorsa <strong>üç adım, sırayla:</strong></p>
+<ol><li><strong>ÖNCE ÜRÜNÜ ADIYLA ARAYIN.</strong> Sistemde başka bir kodla duruyor olabilir.</li><li><strong>Varsa → o üründe kodu TANITIN.</strong> Yeni ürün <strong>AÇMAYIN.</strong></li><li><strong>Gerçekten yoksa → yeni ürün açın</strong>, sonra okutun.</li></ol>
+<blockquote><p>⛔ <strong>①'İ ATLAMAYIN.</strong> Aynı fiziksel mal iki kayda bölünürse <strong>hiçbir hata mesajı çıkmaz</strong> ama sayım <strong>İKİSİNİ BİRDEN</strong> bozar: · eskisi <strong>EKSİK</strong> görünür (stoğu duruyor, malı yeni kayda sayıldı) · yenisi <strong>FAZLA</strong> görünür Üstelik <strong>maliyet, FIFO partisi ve satış geçmişi eski kayıtta kalır</strong> — yani yeni kaydın kârı hiç hesaplanamaz.</p></blockquote>
+<h4>Kod hangi role girer</h4>
+<p>Sistem dört kod rolünü <strong>ayrı</strong> tutar:</p>
+<div class="tablo-kap"><table><thead><tr><th>Rol</th><th>Ne</th><th>Nereden gelir</th></tr></thead><tbody><tr><td><strong>Barkod (EAN)</strong></td><td>üreticinin kodu</td><td>ürünün üstünde yazan</td></tr><tr><td><strong>Firma SKU</strong></td><td>sizin bastığınız etiket</td><td>siz</td></tr><tr><td><strong>SKU</strong></td><td>sistem içi kod</td><td>sistem üretir</td></tr><tr><td><strong>Kanal SKU</strong></td><td>pazaryerinin kodu</td><td>Trendyol / Hepsiburada</td></tr></tbody></table></div>
+<p><strong>Ürünün üstündeki kod → Barkod. Sizin etiketiniz → Firma SKU.</strong> Yanlış role koymak bugün çalışır, ileride <strong>pazaryeri eşleştirmesinde karışır.</strong></p>
+<h4>Yeni açtığınız ürünün stoğu 0'dır</h4>
+<p>Bu yüzden sayım kapsamına <strong>girmez</strong> ve okuttuğunuzda <strong>"kapsam dışı bulundu"</strong> olur; kapanışta <strong>FAZLA</strong> kovasına düşer.</p>
+<p><strong>Doğru davranış budur:</strong> mal var, sistem alımını hiç görmemiş. Kapanışta ekran <em>"önce alımı girin"</em> diyecek.</p>
+<hr />
+<h2>4 · Kapanış</h2>
+<p>Ekran <strong>önce</strong> okutulmayanları sorar — <strong>varsayılan YOK:</strong></p>
+<ul><li><strong>Rafta yok → 0 say</strong> (gerçek eksik olarak sayılır)</li><li><strong>Sayılmadı → dokunma</strong> (sistem hüküm vermez)</li></ul>
+<blockquote><p>⛔ <strong>BU AYRIM SİSTEMİN EN KRİTİK YERİ.</strong> Karıştırılırsa <strong>sayılmamış mal stoktan silinir.</strong></p></blockquote>
+<p>Sonra <strong>dört sayı</strong> çıkar — ve <strong>beşincisi ayrı durur:</strong></p>
+<pre><code>kapsam · sayıldı · sapan · SAYILMADI          + belirsiz (ayrı)</code></pre>
+<p><code>belirsiz</code> dörde <strong>karışmaz</strong>: o bir kapsam eksikliği değil, hüküm verilemeyen bir satır.</p>
+<h2>5 · Karar — fazla ve eksik AYRI</h2>
+<p>Tek "fark" tablosu <strong>yoktur.</strong> 3 eksik + 3 fazla net sıfır eder ve "her şey yolunda" der — oysa ortada bir satış ve bir alım kaydı eksiktir.</p>
+<h3>🔻 EKSİK — <em>"Sistem 7 diyor, rafta 5 var → sistem 2 FAZLA gösteriyor"</em></h3>
+<p>Büyük ihtimalle <strong>kaydı girilmemiş bir satış.</strong> Maliyet <strong>biliniyor</strong> (FIFO partisinden gelir).</p>
+<div class="tablo-kap"><table><thead><tr><th>Yol</th><th>Ne zaman</th></tr></thead><tbody><tr><td><strong>Satışı gir</strong></td><td>Mal müşteriye gitti ve satış sistemde YOK</td></tr><tr><td><strong>Sayım farkı yaz</strong></td><td>Nereye gittiği bilinmiyor (kayıp, kırık, yanlış raf)</td></tr></tbody></table></div>
+<p>⚠ <strong>ÜÇÜNCÜ İHTİMAL — ekran uyarır:</strong> o üründe <strong>stok hareketi olmayan satış kaydı</strong> varsa, satış zaten sistemdedir ve yeni satış girmek <strong>ciroyu iki kez sayar.</strong> Ekran o satırda şunu yazar: <em>"Bu üründe stok hareketi olmayan N satış kaydı var — yeni satış girmeden önce onlara bakın."</em> N sıfırsa satır çizilmez.</p>
+<blockquote><p>⭐ <strong>EMİN DEĞİLSENİZ SAYIM FARKI SEÇİN.</strong> Yanlış sayım farkı GERÇEK NET'i düşük gösterir ve <strong>ters kayıtla düzeltilebilir</strong>; yanlış satış <strong>ciroyu şişirir, KDV ve stopaj matrahına girer, hakediş beklentisi doğurur.</strong> Bu bir tavsiyedir, kapı değil — ikisini de seçebilirsiniz.</p></blockquote>
+<h3>🔺 FAZLA — <em>"Sistem 0 diyor, rafta 2 var → sistem 2 AZ gösteriyor"</em></h3>
+<p>Büyük ihtimalle <strong>kaydı girilmemiş bir alım.</strong> Maliyet <strong>BİLİNMİYOR</strong> ve sistem uydurmaz. Üç yol, <strong>sırası kural:</strong></p>
+<ol><li><strong>Alımı gir</strong> ← önce bu. Fatura varsa maliyet gerçek gelir</li><li><strong>Maliyet gir + fazla yaz</strong></li><li><strong>Maliyeti bilmiyorum</strong> → parti maliyetsiz doğar; o mal satılınca kâr <em>"hesaplanamadı"</em> der</li></ol>
+<blockquote><p>⛔ <strong>SIRA KURALDIR.</strong> Önce fark yazıp sonra faturayı girerseniz <strong>stok iki kez artar.</strong> Düzeltmeyi yazdığınız an satır <strong>kilitlenir.</strong></p><p>Ölçüldü: elle girilen alımların <strong>ortanca gecikmesi 31 gün</strong> (p75 82). Yani bu listenin çoğu "maliyeti bilinmeyen mal" değil, <strong>faturası daha girilmemiş alım.</strong></p></blockquote>
+<h3>⚠ Belirsiz satırlar</h3>
+<p>Sayım gününde hareketi olan ürünler listede durur ama <strong>düğmeleri kapalıdır</strong> ve sebebi yazar. Karar sizin; sistem sessizce yazmaz.</p>
+<hr />
+<h2>6 · Hesaplar karışır mı? — HAYIR</h2>
+<p>Sayım farkı <strong>bir satış değildir:</strong></p>
+<div class="tablo-kap"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><strong>Ciro</strong></td><td>⛔ değişmez</td></tr><tr><td><strong>NET-1 / NET-2</strong></td><td>⛔ değişmez</td></tr><tr><td><strong>Gider tablosu</strong></td><td>⛔ <strong>YAZILMAZ</strong> — tek kaynak stok defteri, çift kayıt olmaz</td></tr><tr><td>Dönem raporu</td><td>✅ ayrı <strong>"fire / sayım farkı"</strong> kalemi</td></tr><tr><td><strong>GERÇEK NET</strong></td><td>✅ o malın <strong>alış maliyeti</strong> kadar düşer</td></tr></tbody></table></div>
+<p>Formül (<code>lib/rapor.ts</code>): <code>gercekNet = brutNet2 − giderNetDusen − duzeltmeZarari</code></p>
+<blockquote><p>⚠ <strong>Sürüm 1'de "maliyet gider yazılır" yazıyordu — YANLIŞTI.</strong> Gider tablosuna yazılmıyor; gider <strong>gibi davranıyor</strong> ama ciroya hiç dokunmuyor.</p></blockquote>
+<hr />
+<h2>7 · Sonrası — sayım kendini denetler</h2>
+<p>Sayım gününe ait geç bir kaydı sonradan girerseniz o varyantın sayım günü stoğu <strong>değişir</strong> ve satır <strong>yeniden açılır:</strong></p>
+<blockquote><p><em>"Bu ürüne sayımdan sonra geriye dönük kayıt girildi. Sayım farkı yeniden hesaplanmalı."</em></p></blockquote>
+<p>Kalıcı bir <em>"sayıldı, bir daha bakma"</em> damgası <strong>yoktur</strong> — doğrulanan ürün değil, <strong>ürünün o günkü hâlidir.</strong></p>
+<p>Bu yüzden <strong>kapanış sırası:</strong> önce bekleyen belgeleri girin, sonra farkı yazın.</p>
+<hr />
+<h2>Ekranın dili</h2>
+<blockquote><p><strong>Rafta ne varsa O DOĞRUDUR. Sistem yanılır, raf yanılmaz.</strong></p></blockquote>
+<p>Sapma cümlesi hep defterin tarafından kurulur — <em>"sistem 2 fazla gösteriyor"</em>, asla <em>"sayımda 2 eksik"</em>. İkinci cümle sayımı sanık yapar.</p>
+<p>Ve kapsam her raporda yazar: bu sayım kapsam dışındaki varyantlar hakkında <strong>hiçbir şey söylemez.</strong></p></div></body></html>

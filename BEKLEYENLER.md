@@ -1656,6 +1656,54 @@ düzeldiği yazıyor.
 düğmeleri kapalı. O iki yol mevcut satış/alım formlarına bağlanacak; bugün
 kullanıcı ilgili ekrana kendisi gidiyor.
 
+### ✅ K57-④ PROSEDÜR SÜRÜM 3 + BELGE ÜRETECİ (28.08.2026)
+
+**§3.1 eklendi — "Okuttuğunuz kod bulunamazsa".** Gerçek kullanımın ilk
+gününde çıktı, belgede yoktu: ① önce ürünü ADIYLA ara ② varsa o üründe kodu
+TANIT ③ gerçekten yoksa yeni ürün aç. Dört kod rolü tablosu ve "yeni ürünün
+stoğu 0'dır" notu da girdi.
+
+**Bekleyen iki düzeltme sürüm 2'de ZATEN yapılmıştı** — doğrulandı, tekrar
+edilmedi: `"alım yap"` ve `"gider yazılır"` yalnız _"ne değişti"_ notlarında
+geçiyor, canlı talimat olarak değil.
+
+**ÖLÇÜLDÜ — Halil'in yaptığı doğruydu:**
+
+    mevcut varyanta kod eklendi      9   ← DOĞRU YOL
+    yeni kanal SKU                   3
+    yeni ürün + varyant açıldı       4
+    aynı barkod iki üründe           0   ← çakışma YOK
+
+Açılan 4 ürün tek tek kontrol edildi: ikisi gerçekten yeni, ikisi (LEGO)
+benzer seriden ama **farklı setler, barkodlar ayrı.** Dördü de haklı.
+
+### 🆕 K63 — BELGE ÜRETECİ + BAYATLIK BEKÇİSİ (28.08.2026)
+
+⚠ **`docs/iade-sureci.html` ELLE üretilmişti ve üretecin kendisi depoda
+YOKTU.** HTML'in başındaki _"Bu dosya ... ÜRETİLDİ"_ uyarısı, gerçekten üreten
+bir komut olmadıkça bir İDDİADIR — ve kaynak değişip HTML üretilmezse **yalan**
+olur.
+
+`belge:uret` yazıldı (`docs/*.md → docs/*.html`, `iade-sureci.html`in stilini
+tek kaynaktan alıyor). ⛔ **Bağımlılık EKLENMEDİ:** depoda markdown kütüphanesi
+yok ve bu belgelerin sözdizimi dar/bilinen. Tanınmayan satır **sessizce
+yutulmaz**, paragraf olarak çıkar.
+
+`belge:dogrula` — belgeyi yeniden üretip **bayt bayt** karşılaştırıyor.
+Mutasyon: `.md`ye tek satır eklendi, bekçi kırmızı yandı ✓
+
+⛔ **VE BEKÇİ KENDİ ARACIMDA KUSUR BULDU:** `belge-uret.ts` ilk yazımda kod
+yer tutucusu olarak **0x00 (NUL)** kullanıyordu; `kontrol-karakteri:dogrula`
+onu yakaladı. Teknik olarak işe yarardı ama görünmez karakteri kaynağa yazmak
+tam da o bekçinin yasakladığı şey — **kural kendi araçlarım için de geçerli.**
+Görünür bir işarete çevrildi. Aynı turda ikinci kusur: `new RegExp(... "(\d+)"
+...)` — JS dizesinde `\d` sadece `d` oluyordu ve satır içi kod HİÇ
+üretilmiyordu; kaçış düzeltildi (11 satır içi kod → 12 `<code>`).
+
+⚠ **KAPSAM DIŞI GEREKÇESİYLE BEYAN EDİLDİ:** `iade-sureci` (üreteçten önce
+elle üretildi, bayt bayt eşleşmiyor — açılış şartı: bir kez `belge:uret` ile
+üretilmesi) · `el-kitabi` (veritabanından üretiliyor, md kaynağı yok).
+
 ### ⏭ SIRADAKİ — VE ONAY KAPISI
 
 **(a) kovası içe aktarmanın kuru koşumunu doğuruyor.** Yazma ancak Halil'in

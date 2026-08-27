@@ -3,10 +3,14 @@
 > **Bu belge operasyonun nasıl sayacağını anlatır.** Ekran bu belgeyi birebir
 > uygular; ikisi ayrıştığında kazanan bu belgedir ve ekran düzeltilir.
 >
-> **Sürüm 2 — 28.08.2026.** Birinci sürümdeki iki hata düzeltildi:
-> "Eksik" bölümünde **"alım yap"** yazıyordu (o FAZLA durumunun yolu) ve
-> **"maliyet gider yazılır"** deniyordu (gider tablosuna YAZILMIYOR).
-> _Aşılan sürüm sessizce değiştirilmedi; ne olduğu burada yazıyor._
+> **Sürüm 3 — 28.08.2026.**
+> · **Sürüm 2'de** birinci sürümün iki hatası düzeltildi: "Eksik" bölümünde
+>   **"alım yap"** yazıyordu (o FAZLA durumunun yolu) ve **"maliyet gider
+>   yazılır"** deniyordu (gider tablosuna YAZILMIYOR).
+> · **Sürüm 3'te** §3.1 eklendi: _"Okuttuğunuz kod bulunamazsa"_. Bu bölüm
+>   belgede yoktu ve **gerçek kullanımın ilk gününde** karşımıza çıktı.
+>
+> _Aşılan sürümler sessizce değiştirilmedi; ne olduğu burada yazıyor._
 
 ---
 
@@ -71,6 +75,44 @@ okumayı düzeltmek satırdaki `−` / `+` ile iki dokunuş.
 *"kapsam dışı bulundu"* diye işaretler. Bu hata değil, **bulgunun kendisi.**
 
 **Bir ürün rafta hiç yoksa → okutmayın.** Kapanışta sorulacak.
+
+### 3.1 · Okuttuğunuz kod bulunamazsa
+
+Ekran *"Bu kod hiçbir üründe bulunamadı"* diyorsa **üç adım, sırayla:**
+
+1. **ÖNCE ÜRÜNÜ ADIYLA ARAYIN.** Sistemde başka bir kodla duruyor olabilir.
+2. **Varsa → o üründe kodu TANITIN.** Yeni ürün **AÇMAYIN.**
+3. **Gerçekten yoksa → yeni ürün açın**, sonra okutun.
+
+> ⛔ **①'İ ATLAMAYIN.** Aynı fiziksel mal iki kayda bölünürse **hiçbir hata
+> mesajı çıkmaz** ama sayım **İKİSİNİ BİRDEN** bozar:
+> · eskisi **EKSİK** görünür (stoğu duruyor, malı yeni kayda sayıldı)
+> · yenisi **FAZLA** görünür
+> Üstelik **maliyet, FIFO partisi ve satış geçmişi eski kayıtta kalır** — yani
+> yeni kaydın kârı hiç hesaplanamaz.
+
+#### Kod hangi role girer
+
+Sistem dört kod rolünü **ayrı** tutar:
+
+| Rol | Ne | Nereden gelir |
+|---|---|---|
+| **Barkod (EAN)** | üreticinin kodu | ürünün üstünde yazan |
+| **Firma SKU** | sizin bastığınız etiket | siz |
+| **SKU** | sistem içi kod | sistem üretir |
+| **Kanal SKU** | pazaryerinin kodu | Trendyol / Hepsiburada |
+
+**Ürünün üstündeki kod → Barkod. Sizin etiketiniz → Firma SKU.**
+Yanlış role koymak bugün çalışır, ileride **pazaryeri eşleştirmesinde
+karışır.**
+
+#### Yeni açtığınız ürünün stoğu 0'dır
+
+Bu yüzden sayım kapsamına **girmez** ve okuttuğunuzda **"kapsam dışı bulundu"**
+olur; kapanışta **FAZLA** kovasına düşer.
+
+**Doğru davranış budur:** mal var, sistem alımını hiç görmemiş. Kapanışta
+ekran *"önce alımı girin"* diyecek.
 
 ---
 

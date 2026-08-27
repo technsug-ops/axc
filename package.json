@@ -86,6 +86,8 @@
     "sayfalama-toplami:dogrula": "tsx scripts/sayfalama-toplami-dogrula.ts",
     "kontrol-karakteri:dogrula": "tsx scripts/kontrol-karakteri-dogrula.ts",
     "sayim-ekran:dogrula": "tsx scripts/sayim-ekran-dogrula.ts",
+    "belge:dogrula": "tsx scripts/belge-dogrula.ts",
+    "belge:uret": "tsx scripts/belge-uret.ts",
     "canli:kargo-geri-al": "tsx scripts/canli-kargo-tarihi-geri-al.ts",
     "canli:k20-sayim": "tsx scripts/canli-k20-sayim.ts",
     "canli:ty-saglik": "tsx scripts/canli-ty-saglik.ts",
