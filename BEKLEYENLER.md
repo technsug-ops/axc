@@ -1540,9 +1540,28 @@ kamera dosyasında İKİ kez. İkisi de ATAMAYA/SAYIYA bağlandı.
 fazla/eksik AYRI liste · fazlada belge yolu ÜSTTE · düzeltme yazılınca satır
 KİLİTLENİR · `stok.duzelt` izni · Halil test listesi kapanış kısmı.
 
+### 🆕 K62-② BEKÇİ BELGELERE GENİŞLETİLDİ — ALTI VAKA DAHA (28.08.2026)
+
+İlk yazımda yalnız `src/` ve `scripts/` taranıyordu. Aynı gün ölçüldü:
+
+    CLAUDE.md         5 backspace   ← İKİSİ tam da BU KURALI anlatan örneğin içinde
+    BEKLEYENLER.md    1 backspace
+
+⛔ **KURAL, KENDİ METNİNİ BOZARAK YAZILMIŞTI.** _"Ters bölülü desenler ham
+dizeyle kurulur"_ diyen paragraf betikle eklendi ve içindeki kaçışlar yine
+backspace'e döndü. Ekranda `/Date/` gibi görünüyordu.
+
+⚠ **BELGE BOZULMASI KODDAN SİNSİ:** derleyici yok, test yok, mutasyon yok —
+yalnız okuyan biri **yanlış öğrenir.** Kapsam köke uzatıldı (`CLAUDE.md` ·
+`BEKLEYENLER.md` · `ARSIV.md` · `README.md` · `AGENTS.md`), 595 dosya
+taranıyor, mutasyonla kırmızı yandığı görüldü.
+
+**Ders yazıldı:** bu tuzak _"dikkat edilerek"_ atlatılmıyor. Aynı oturumda
+**üç kez** düşüldü ve üçünü de ölçüm yakaladı, göz değil.
+
 ### 🆕 K62 — GÖRÜNMEZ KARAKTER BEKÇİSİ · ÜÇÜNCÜ VAKA BULUNDU (28.08.2026)
 
-Python'un ham OLMAYAN dizesinde `` → **0x08 backspace**. Dosyaya düşen
+Python'un ham OLMAYAN dizesinde ters bölü + `b` yazmak → **0x08 backspace**. Dosyaya düşen
 desen ekranda `/Date/` gibi görünür ama hiçbir şeyle eşleşmez → ölçüt
 **her zaman yeşil.**
 

@@ -2374,6 +2374,59 @@ törene dönüşür. Damga **commit edilir**.
 **Bekçi karar veremiyorsa bunu YAZAR** (damga yoksa "atlandı" der), sessiz
 yeşil vermez.
 
+## BEKÇİNİN YEŞİLİ, ÖLÇTÜĞÜ DOĞRULANMADAN GÜVENCE DEĞİLDİR (KESİN KURAL)
+
+_Kullanıcı kararı 28.08.2026._ Anayasada _"yeşil test, sınanmış kontrol
+demek değildir"_ zaten vardı. Bugün eksik yarısı eklendi: **ölçütün fiilen
+BİR ŞEY ÖLÇTÜĞÜ ayrıca doğrulanır.**
+
+**"Kaynakta doğru görünüyor" bir doğrulama DEĞİLDİR.** Görünmez bir karakter
+(0x08 backspace) deseni hiçbir şeyle eşleşmez hâle getirir ve `grep`, `sed`,
+editör bunu **çizmez** — kod tertemiz görünür, ölçüt her koşumda yeşil yanar.
+
+**28.08 vakası:** yeni yazılan süre-eşiği yasağı mutasyonla KAÇTI. Kod
+doğruydu; desen içinde görünmez bir backspace vardı ve ancak `cat -A` ile
+göründü. Aynı gün yazılan `kontrol-karakteri:dogrula`, `talep-dogrula.ts`te
+**aylardır duran ikinci bir vakayı** buldu: `!/<details[^>]*<BS>open<BS>/`
+yani `!false` — her koşumda yeşil.
+
+> **BİR ÖLÇÜTÜN ÖLÇTÜĞÜNÜ GÖSTEREN İKİ ŞEY VARDIR:** mutasyonun kırmızı
+> yandığını GÖRMEK, ve gerektiğinde baytları GÖRMEK (`cat -A`). Gözle
+> okumak üçüncüsü değildir.
+
+---
+
+## KOD ÜRETEN ARAÇ, KAÇIŞ DİZİLERİNİ BOZUK YAZABİLİR (KESİN KURAL)
+
+_Ders 28.08.2026._ Bir betikle (Python heredoc, sed, jq…) kaynak dosyaya
+kod yazıldığında **kaçış dizileri iki kez yorumlanır** ve hedefe bozuk düşer:
+
+    ham dize   r"\bDate\b"    -> dosyaya  \bDate\b       DOGRU
+    kacirilmis  "\\bDate\\b"   -> dosyaya  \bDate\b       DOGRU
+    ham DEGIL   "\bDate\b"     -> dosyaya  <BS>Date<BS>   BOZUK
+
+(Yukarida `<BS>` ile gosterilen sey 0x08 backspace'tir ve gercek dosyada
+GORUNMEZ — bu ornekte bilerek adiyla yazildi.)
+
+⚠ **VE BU ÖRNEĞİN KENDİSİ DE BOZUK YAZILDI** (28.08, aynı oturumda):
+kuralı anlatan satırlar betikle eklendi ve ters bölülü kaçışlar yine
+backspace'e döndü — kural, kendi metnini bozarak yazıldı. Ders şu: bu
+tuzak "dikkat edilerek" atlatılmıyor, **ölçümle** yakalanıyor.
+
+⚠ **VE ÜRETİM BAŞARISI, ÖLÇÜM BAŞARISI DEĞİLDİR.** Betik hatasız koştu,
+dosya yazıldı, `tsc` geçti, bekçi yeşil yandı — ölçüt yine de hiçbir şey
+ölçmüyordu.
+
+> **KURAL:** üretilen her ölçüt, üretildikten SONRA **mutasyonla sınanır.**
+> Ters bölülü desenler ham dizeyle (`r"..."`) ya da `chr(92)` ile kurulur;
+> çok satırlı desenlerde satır sonu hedef dosyanın biçimine normalleştirilir
+> (bu depoda dosyaların bir kısmı CRLF, bir kısmı LF).
+
+Bekçisi: `kontrol-karakteri:dogrula` — `src/` ve `scripts/` altındaki her
+`.ts`/`.tsx` taranır, dosya listesi tutulmaz.
+
+---
+
 ## EŞİK FİZİKSEL EYLEMİN KENDİSİNE KONUR — UYDURULMAZ (KESİN KURAL)
 
 _Kullanıcı kararı 28.08.2026, K57 sayım tekrar koruması._ Anayasada zaten
@@ -2414,7 +2467,7 @@ kırmızı yandığı görüldü.
 ## GÖRÜNMEZ KARAKTER, BEKÇİYİ SESSİZCE İŞLEVSİZ YAPAR (KESİN KURAL)
 
 _Üçüncü vaka 28.08.2026._ Bir bekçi deseni betikle (Python) dosyaya
-yazılırken `` yazıldığında, ham OLMAYAN dizede bu bir kaçış dizisidir ve
+yazılırken ters bölü + `b` yazıldığında, ham OLMAYAN dizede bu bir kaçış dizisidir ve
 **0x08 BACKSPACE** karakterine çevrilir:
 
     ["Date", /<BS>Date<BS>/]        ← ekranda `/Date/` GİBİ GÖRÜNÜR

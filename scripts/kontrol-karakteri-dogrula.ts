@@ -25,14 +25,26 @@ import { join } from "node:path";
  *  ancak `cat -A` ile ortaya çıktı.
  *
  *  ═══ ÖLÇÜT DESEN YASAĞI: kaynakta kontrol karakteri OLMAZ ═══
- *  Tek tek dosya listelemiyoruz; `src/` ve `scripts/` altındaki her `.ts`
- *  taranıyor. Yarın yazılan dosya da kendiliğinden kapsama girer.
+ *  `src/` ve `scripts/` altındaki her `.ts`/`.tsx` TARANIR — dosya listesi
+ *  tutulmuyor, yarın yazılan dosya da kendiliğinden kapsama girer.
+ *  ⚠ VE KÖKTEKİ BELGELER DE: anayasa ve pano betikle düzenleniyor, yani
+ *  aynı tuzağın içinde. Ölçüldü — `CLAUDE.md`de 5, `BEKLEYENLER.md`de 1
+ *  backspace bulundu, hepsi AYNI GÜN yazılmıştı.
  *
  *  İZİN VERİLENLER: `\t` (0x09), `\n` (0x0A), `\r` (0x0D). Gerisi hata.
  * ============================================================================
  */
 
+/**
+ * ⚠ BELGELER DE TARANIR — VE BU ÖLÇÜMLE EKLENDİ. İlk yazımda yalnız `src/`
+ * ve `scripts/` taranıyordu; aynı gün `CLAUDE.md`de **beş** backspace
+ * bulundu ve ikisi tam da bu kuralı ANLATAN örneğin içindeydi (kural, kendi
+ * metnini bozarak yazılmıştı). Belge bozulması koddan daha sinsi: derleyici
+ * yok, test yok, yalnız okuyan biri yanlış öğrenir.
+ */
 const KOKLER = ["src", "scripts"];
+/** Kök dizindeki belgeler — alt klasör taramasına girmiyorlar. */
+const BELGELER = ["CLAUDE.md", "BEKLEYENLER.md", "ARSIV.md", "README.md", "AGENTS.md"];
 
 /** ⚠ İzin listesi — YASAK listesi değil. Yarın doğan karakter de yakalanır. */
 const IZINLI = new Set([0x09, 0x0a, 0x0d]);
@@ -54,8 +66,10 @@ function dosyalar(kok: string, biriken: string[] = []): string[] {
 const bulgular: string[] = [];
 let taranan = 0;
 
-for (const kok of KOKLER) {
-  for (const yol of dosyalar(kok)) {
+const hedefler = [...KOKLER.flatMap((k) => dosyalar(k)), ...BELGELER];
+
+{
+  for (const yol of hedefler) {
     taranan++;
     const metin = readFileSync(yol, "utf8");
     for (let i = 0; i < metin.length; i++) {
