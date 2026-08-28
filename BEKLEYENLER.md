@@ -734,6 +734,91 @@ her seferinde sadakatle yazacak. Tek vaka değil, **desen.**
 
 ---
 
+## 🚨 K79 — GEÇMİŞ SATIŞ GELECEĞİN PARTİSİNİ YİYOR · 29.08.2026
+
+> **HALİL BULDU, SİSTEM DEĞİL.** `10383153730` 27.07.2025'te satılmış ama
+> tükettiği parti **13.08.2026** tarihli. Ekranda stok 0 göründü, bekleyen
+> sipariş **kaydedilemedi.**
+
+⚠ **VE ÖNCE KENDİMİ DÜZELTTİM:** _"bu bugünkü işimden çıkmış"_ demiştim.
+Ölçüm çürüttü: 810 bozuk bağın **809'u NOTSUZ**, bugün yazdığım her hareket
+parti notu taşıyor. Bu **eski** bir durum — panoda _"809 geriye dönük FIFO
+bağı"_ olarak zaten duruyordu, ama **kilitlenen gerçek stok** olarak hiç
+ölçülmemişti. Sayı biliniyordu, **bedeli bilinmiyordu.**
+
+### ✅ A — `axcalistan01` ONARILDI [KOŞTU]
+
+    ÖNCE : 2025-07-27 SALE_OUT −1 → parti 2026-08-13 (382 gün sonra)
+           ledger 0 · FIFO açık 0   ← sipariş girilemiyordu
+    SONRA: 2025-07-27 PURCHASE_IN +1 ₺1.792,00 (dosya M sütunu)
+           ledger 1 · FIFO açık 1   ✓ İKİ DEFTER TUTUYOR
+           10383153730 → CALCULATED · NET-1 473,58 · NET-2 390,65
+
+⭐ **VE ÖDÜNÇ ALINAN RAKAM YANLIŞTI:** satış ₺1.069,49 maliyet gösteriyordu
+(2026 partisinin maliyeti); dosyadaki gerçek maliyet **₺1.792,00**. Yani
+o satışın kârı **₺722,51 fazla** yazılıydı.
+
+**ÇARE NİYE "BAĞI KOPARMAK" DEĞİL:** satış gerçek, mal çıktı. Bağ koparılsa
+ledger 0 kalır FIFO 1 olur → **iki defter ayrışır** ("hayalet adet"). Eksik
+olan ALIM'dı; satış tarihine parti açıldı.
+
+### 📏 B — TÜMÜ ÖLÇÜLDÜ [KURU KOŞUM]
+
+    bozuk bağ 809 · etkilenen varyant 181 · serbest kalacak adet 809
+    dosyada maliyeti OLAN 808  ·  ⛔ NO_COST'a düşecek 1
+
+    MALİYET  ödünç alınan 1.634.178,54 → gerçek 1.439.598,55
+             ⭐ FARK −194.579,99   (maliyet DÜŞER → NET ARTAR)
+    STOK     ⭐ ENVANTER DEĞERİ ARTIŞI 1.630.579,54
+
+⚠ **Fark NEGATİF, yani ödünç alınan maliyetler toplamda GERÇEKTEN YÜKSEKTİ.**
+`axcalistan01`da tersiydi (ödünç düşük çıkmıştı) — **tek vakadan yön
+çıkarılmaz**, kümenin yönü ayrı ölçüldü.
+
+### ⭐ KÖK BULUNDU — VE PARAMETRE HİÇ YOK
+
+    export async function acikPartiler(db, variantId)   ← `sinir` YOK
+
+Tek varyantlık yardımcı `sinir`i **hiç kabul etmiyor**; `acikPartilerToplu`
+kabul ediyor ama bu kapıdan geçen çağrılar onu geçiremez. Yani sorun
+"parametre verilmedi" değil, **verilemiyor.**
+
+`fifoDagit`e besleyen 7 dosya var. Sınıflandırma:
+
+| çağrı | tarih elde var mı | hüküm |
+|---|---|---|
+| `lib/satis.ts:188` **SATIŞ KAYDI** | `soldAt` ✓ | ⛔ **SINIR ZORUNLU — 809'un kaynağı bu** |
+| `lib/iade.ts:599` · `:752` | `girdi.occurredAt` ✓ | ⛔ sınır gerekli |
+| `app/stok/duzeltme-actions.ts:156` | form `tarih` alanı ✓ | ⛔ sınır gerekli (geri tarihli düzeltme aynı tuzağa düşer) |
+| `app/okut/sayim-yazim-actions.ts:123` | `veri.sayimGunu` ✓ | ⛔ sınır gerekli — **sayım da geri tarihli olabiliyor** |
+| `app/iadeler/bildirim-actions.ts:845` | değişim anı | ⛔ sınır gerekli |
+| `app/satislar/[id]/iade/actions.ts:137` | önizleme | ⛔ yazma yoluyla **AYNI** olmalı |
+| `lib/iptal-geri-alma-veri.ts:138` | — | ✅ **BİLİNÇLİ AÇIK:** "ayna partisi bugün tükenmiş mi" diye soruyor; tarih sınırı başka bir soruyu cevaplardı |
+
+Görüntüleme yolları (`page.tsx` · `stok/page.tsx` · `kalem-bilgisi` ·
+`urun-karti-verisi`) bugünün stoğunu gösteriyor → **açık kalır.**
+`envanter-veri.ts` zaten parametreli.
+
+⚠ **VE BİR TUZAK: `lt` mi `lte` mi.** `acikPartilerToplu` süzgeci
+`occurredAt: { lt: sinir }` — **kesin ÖNCE**. Satışa `soldAt` verilirse
+**aynı gün alınan mal dışarıda kalır** ve bugün çalışan satışlar
+kaydedilemez hâle gelir. Sınır günün SONU olmalı; bu ölçülmeden değiştirilmez.
+
+### BEKÇİ ÖNERİSİ — liste değil, DESEN
+
+> Sonucu `fifoDagit`e giden bir `acikPartiler`/`acikPartilerToplu` çağrısı
+> **`sinir` geçirmek ZORUNDA.** Geçirmeyen çağrı, yanında
+> `/** SINIR YOK: <gerekçe> */` beyanı taşımıyorsa **KIRMIZI.**
+
+Böyle kurulunca yarın açılan ekran da yakalanır; kimsenin listeye eklemeyi
+hatırlaması gerekmez. İki yönde mutasyonla sınanır: sınırı KALDIRAN çağrı
+kırmızı yanmalı, beyanlı istisna yeşil kalmalı.
+
+⛔ **B YAZILMADI. Kod değişikliği (sinir) YAZILMADI** — ikisi de onay
+bekliyor ve `lt`/`lte` sorusu önce ölçülmeli.
+
+---
+
 ### ⚠ İKİ AÇIK NOT
 
 **· `10415881283` — aynı kampanyanın dördü FARKLI maliyetle duruyor.**
