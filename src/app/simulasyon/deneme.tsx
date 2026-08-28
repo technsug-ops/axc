@@ -131,7 +131,15 @@ export function Deneme({ bugun }: { bugun: string }) {
       setUrun(z);
       /** ⚠ ORTALAMALAR KDV DAHİL — girdi dili de dahile çevriliyor. */
       setKdvDahil(true);
-      if (z.ortalamaAlis !== null) setAlis(z.ortalamaAlis.toFixed(2));
+      /**
+       * ⚠ SON ALIŞ FİYATI, ORTALAMA DEĞİL (kullanıcı kararı 28.08.2026).
+       * Satış tarafındaki kararın alış tarafındaki kardeşi ve gerekçesi
+       * aynı: ortalama, aylar önceki bir maliyeti bugünkü denemeye
+       * karıştırır ve **maliyet kaymasını gizler.** Ölçüldü: 708 alımlı
+       * varyantın 247'sinde (%34,9) ikisi ayrışıyor, max sapma %81,4.
+       * ⛔ Ortalama SİLİNMEDİ — özet satırında ikisi de yazıyor.
+       */
+      if (z.sonAlisFiyati !== null) setAlis(z.sonAlisFiyati.toFixed(2));
       /**
        * ⚠ SON SATIŞ FİYATI, ORTALAMA DEĞİL (kullanıcı kararı 21.08.2026).
        * Ortalama, aylar önceki bir fiyatı bugünkü denemeye karıştırır ve
@@ -327,6 +335,14 @@ export function Deneme({ bugun }: { bugun: string }) {
                   : t("zeminOzeti", {
                       adet: urun.satisAdedi,
                       alis: para(urun.ortalamaAlis),
+                      sonAlis:
+                        urun.sonAlisFiyati === null
+                          ? "—"
+                          : para(urun.sonAlisFiyati),
+                      alisTarihi:
+                        urun.sonAlisTarihi === null
+                          ? "—"
+                          : bicim.tarih(urun.sonAlisTarihi),
                       ortalama: para(urun.ortalamaSatis),
                       son:
                         urun.sonSatisFiyati === null

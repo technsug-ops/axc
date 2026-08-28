@@ -1032,6 +1032,32 @@ console.log("10) EKRAN — son satış fiyatı, yanıltıcı satır, durum rengi
     "  ...ortalama satış artık ALANI DOLDURMUYOR",
     !ekran.includes("setSatis(z.ortalamaSatis"),
   );
+
+  /**
+   * ⚠ ALIŞ TARAFI DA AYNI — kullanıcı kararı 28.08.2026. Satış tarafında
+   * 21.08'de verilen karar alış tarafına uygulanmamıştı; bir tutarsızlıktı
+   * (İlke #10). Ölçüldü: 708 alımlı varyantın **247'sinde (%34,9)** ortalama
+   * ile son ayrışıyor; |sapma| ortanca %3,15 · p90 %16,92 · **max %81,4**
+   * (`axcali2045`: ortalama ₺6.553 ↔ son ₺11.890). Ortalamayla yapılan bir
+   * deneme o üründe kârlı görünüp gerçekte zarar ettirirdi.
+   */
+  kontrol(
+    "alış alanı SON alış fiyatından doluyor",
+    ekran.includes("setAlis(z.sonAlisFiyati.toFixed(2))"),
+  );
+  kontrol(
+    "  ...ortalama alış artık ALANI DOLDURMUYOR",
+    !ekran.includes("setAlis(z.ortalamaAlis"),
+  );
+  /**
+   * ⛔ ORTALAMA SİLİNMEDİ — bilgi kaybı olmaz. Özet satırı İKİSİNİ DE
+   * yazar; "son"a geçmek "ortalamayı gizle" demek değildir.
+   */
+  kontrol(
+    "  ...ortalama alış ÖZET SATIRINDA hâlâ yazıyor",
+    /alis: para\(urun\.ortalamaAlis\)/.test(ekran) &&
+      /sonAlis:/.test(ekran),
+  );
   const zemin = readFileSync("src/lib/simulasyon/urun-zemini.ts", "utf8");
   /**
    * ⚠ SON SATIŞ, ORTALAMAYLA AYNI KÜMEDEN: iki rakam farklı kümelerden

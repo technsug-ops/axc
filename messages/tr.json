@@ -3101,7 +3101,7 @@
     "bulunamadi": "\"{kod}\" ile eşleşen ürün bulunamadı — barkod, SKU, firma SKU ve pazaryeri SKU'su arandı.",
     "yetkisiz": "Bu bilgiyi görme yetkiniz yok.",
     "urunTemizle": "Ürünü bırak",
-    "zeminOzeti": "{adet} adet satılmış · ortalama alış {alis} · ortalama satış {ortalama} · son satış {son} ({tarih})",
+    "zeminOzeti": "{adet} adet satılmış · SON alış {sonAlis} ({alisTarihi}) · ortalama alış {alis} · ortalama satış {ortalama} · son satış {son} ({tarih})",
     "zeminAlimYok": "Bu üründe alım kaydı yok — alış fiyatını elle gir.",
     "zeminSatisYok": "Bu ürün bizde hiç satılmamış — satış fiyatı BOŞ kalabilir. Pazaryeri kutularına buy box fiyatını yazman yeter.",
     "oran_DILIM": "oran dilim tarifesinden",

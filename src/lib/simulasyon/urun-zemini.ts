@@ -49,6 +49,28 @@ export type UrunZemini = {
   ortalamaAlis: number | null;
   alimAdedi: number;
 
+  /**
+   * EN SON ÖDENEN BİRİM MALİYET (KDV DAHİL) — hiç alınmadıysa null.
+   *
+   * ⚠ ORTALAMA DEĞİL, SON. Kullanıcı kararı 28.08.2026: _"ortalama alış
+   * geldiği için yanıltıcı olabiliyor, direkt en son alım fiyatı gelsin."_
+   *
+   * ⛔ AYNI KARAR SATIŞ TARAFINDA 21.08.2026'DA VERİLMİŞTİ (`sonSatisFiyati`)
+   * ve alış tarafı o değişikliğin DIŞINDA kalmıştı — bir tutarsızlık
+   * (İlke #10: aynı işlem her ekranda aynı çalışır).
+   *
+   * ⚠ VE ÖLÇÜLDÜ (28.08.2026, n=708 alımlı varyant): ortalama ile son
+   * **247 varyantta (%34,9) ayrışıyor**; |sapma| ortanca %3,15 · p90 %16,92
+   * · **max %81,4** (`axcali2045`: ortalama ₺6.553 ↔ son ₺11.890). Ortalama
+   * ile yapılan bir deneme o üründe kârlı görünüp gerçekte zarar ettirirdi.
+   *
+   * ⛔ ORTALAMA SİLİNMEDİ — ikisi de ekranda yazar. Form SON ile dolar,
+   * özet satırı ikisini de gösterir; bilgi kaybı olmaz.
+   */
+  sonAlisFiyati: number | null;
+  /** O alımın günü — rakamın ne kadar taze olduğu ekranda yazsın. */
+  sonAlisTarihi: Date | null;
+
   /** Adetle ağırlıklı ortalama satış fiyatı (KDV DAHİL). Satışı yoksa null. */
   ortalamaSatis: number | null;
   satisAdedi: number;
@@ -126,7 +148,14 @@ export async function urunZemini(
       quantityDelta: { gt: 0 },
       unitCostAmount: { not: null },
     },
-    select: { quantityDelta: true, unitCostAmount: true },
+    select: { quantityDelta: true, unitCostAmount: true, occurredAt: true },
+    /**
+     * ⚠ SIRALAMA ORTALAMAYLA AYNI KÜMEDEN OKUNUYOR — iki rakam farklı
+     * sorgudan gelseydi ekranda yan yana durup birbirini yalanlayabilirdi.
+     * `occurredAt` eşitse `createdAt` ayırır: aynı güne damgalı iki alımda
+     * "son" belirsiz kalmasın.
+     */
+    orderBy: [{ occurredAt: "asc" }, { createdAt: "asc" }],
   });
 
   let alimAdet = 0;
@@ -191,6 +220,13 @@ export async function urunZemini(
     /** ⚠ SIFIR ADETTE null — sıfıra bölmek yerine "bilinmiyor" doğru cevap. */
     ortalamaAlis: alimAdet > 0 ? alimTutar / alimAdet : null,
     alimAdedi: alimAdet,
+    /** ⚠ Dizi `occurredAt asc` sıralı; sonuncusu EN YENİ giriştir. */
+    sonAlisFiyati:
+      girisler.length === 0
+        ? null
+        : Number(girisler[girisler.length - 1].unitCostAmount),
+    sonAlisTarihi:
+      girisler.length === 0 ? null : girisler[girisler.length - 1].occurredAt,
     ortalamaSatis: satisAdet > 0 ? satisTutar / satisAdet : null,
     satisAdedi: satisAdet,
     sonSatisFiyati:
