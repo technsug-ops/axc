@@ -143,6 +143,8 @@
     "canli:on-vaka-b": "tsx scripts/canli-on-vaka-b.ts",
     "canli:barbie-adj": "tsx scripts/canli-barbie-adj.ts",
     "canli:kargo-kolonu": "tsx scripts/canli-kargo-kolonu.ts",
+    "canli:kargo-yaz": "tsx scripts/canli-kargo-yaz.ts",
+    "canli:test-duzeltmeleri": "tsx scripts/canli-test-duzeltmeleri.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",

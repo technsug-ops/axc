@@ -465,6 +465,95 @@ sistem bilmiyor. Vekil bir firma seçmek olmayan bilgiyi uydurmak olurdu.
 ⚠ Yazım sonrası kâr tazelenir; **NET-2 ~₺681 bin AŞAĞI iner.** Bu bir
 kayıp değil, bugüne kadar **eksik düşülmüş bir giderin** deftere girmesidir.
 
+### ⭐ KURU KOŞUM [KOŞTU 28.08.2026] — `npm run canli:kargo-yaz`
+
+⚠ **VE ÖNCEKİ RAKAMIM DÜZELDİ.** Ölçüm satır bazlıydı; kargo **SİPARİŞ**
+başınadır. Sipariş bazına indirilince ve satırları çelişen siparişler
+ayrılınca sayı düştü:
+
+    önce (satır bazlı)  : 5721 · ₺681.081
+    ⭐ ŞİMDİ (sipariş)   : 5583 · ₺669.760,96 KDV DAHİL
+
+    KOVALAR
+      dosyada kargolu sipariş  9140
+      ⭐ YAZILACAK              5583
+      ⛔ satırları ÇELİŞEN        28   ← aynı siparişe farklı kargo
+      ⛔ kargosu ZATEN olan      143   ← DOKUNULMUYOR
+      ⛔ sistemde yok / iptalli 3386
+
+    ⭐ YAZILACAK DEĞER (KDV HARİÇ) : ₺558.134,04   ← `cargoAmount`
+       aradaki KDV                 : ₺111.626,92
+
+**NET ETKİSİ — MOTORA SORULDU, TAHMİN EDİLMEDİ.** `karHesapla` aynı girdiyle
+iki kez çağrıldı (kargolu/kargosuz):
+
+    ₺100 KDV-hariç kargo → ΔNET-1 −120,00 · ΔNET-2 −100,00
+    ölçülen çarpan: NET-1 ×1,20 · NET-2 ×1,00
+
+⚠ **VE BU BİR CÜMLEMİ DÜZELTTİ:** _"NET-2 ~₺681 bin aşağı iner"_ demiştim.
+**Yanlış** — o rakam NET-1'in etkisi. Kargo KDV'si İNDİRİLİYOR
+(`odenecekKdv`den düşüyor), o yüzden NET-2 yalnız **KDV HARİÇ** kadar iner:
+
+    5583 satışın 5574'ü CALCULATED · kargosu ₺557.458,22 (hariç)
+    ⭐ NET-1 düşüşü : ₺668.949,86
+    ⭐ NET-2 düşüşü : ₺557.458,22
+
+**NEGATİF — YAZILACAK KÜMEDE YOK, AMA DOSYADA 168 SATIR VAR.**
+
+    TÜRE GÖRE: iade = 167 (₺20.771,00) · satış = 1 (₺125,00)
+
+Tek negatif SATIŞ satırı `11265267349` — ve o sipariş **iki satır** taşıyor
+(`+125/+2.550` ve `−125/−2.550`), yani çelişen 28'in içinde, yazılmıyor.
+⭐ **VE 167 İADE SATIRI K73'ÜN ÜÇÜNCÜ BİLİNMEYENİNE DOKUNUYOR:** `iadeKargosu`
+dosyada olabilir. ⛔ Ama ölçülmedi — gidiş kargosu mu, iade kargosu mu,
+ikisi mi belli değil. İade işine geçince ilk ölçülecek şey bu.
+
+**143 ŞERHLİ KAYIT — sapma para olarak KÜÇÜK.**
+
+    oran (dosya ÷ defter): p25 1,2000 · ortanca 1,2028 · p75 1,2102
+    tam 1,20 olan 74 · tam 1,00 olan 2 · ikisi de değil 67
+    |dosya − defter×1,20| toplamı: ₺1.209,87
+
+⛔ Dokunulmuyor (FIFO kararının aynısı: ölçülmüş gerçek beyanla
+değiştirilmez), ama sapma burada şerhli duruyor.
+
+---
+
+## 🆕 K76 — TEST NOTLU STOK DÜZELTMELERİ · 28.08.2026 · [ÖLÇÜLDÜ]
+
+Ölçüm: `npm run canli:test-duzeltmeleri` (salt okuma).
+⚠ Ölçüt **dosya listesi değil DESEN**: bir kayda bağlı OLMAYAN (elle
+girilmiş) her `ADJUSTMENT` taranıyor — yarın yazılan da yakalanır.
+
+    elle girilmiş düzeltme 19 · notu test/deneme geçen 5 · NOTSUZ 2
+
+| yazıldı | SKU | adet | birim | not |
+|---|---|---|---|---|
+| 28.08 14:02 | `axcali1869` | **−1** | ₺1.200,00 | _"test amaçlı"_ ← Barbie |
+| 26.08 11:09 | `axcali1752` | **+1** | ₺1.438,99 | _"Test amaçlı **düşüldü**"_ ⚠ not ile yön ters |
+| 25.08 21:14 | `axcali1685` | **−1** | ₺5.749,00 | _"Test amaçlı stok **girildi**"_ ⚠ not ile yön ters |
+| 25.08 21:14 | `axcali1685` | **−1** | ₺5.749,00 | ⚠ **AYNI DAKİKA, İKİNCİ KEZ** |
+| 12.08 23:39 | `axcali2595` | −1 | ₺279,00 | _"test - kutu ezildi"_ ← gerçek olabilir |
+
+⚠ **İKİ AYRI KUSUR GÖRÜNÜYOR VE İKİSİ DE HÜKÜM DEĞİL:** üç kayıtta **notun
+söylediği yön ile hareketin yönü ters**, ve `axcali1685` aynı dakikada iki
+kez yazılmış (**−2 adet · ₺11.498**). Hangisinin kasıt hangisinin kaza
+olduğu **ölçülemez** — kararı Halil verir.
+NOTSUZ ikisi: `OYU-HT-260812-01` (+1 maliyetsiz · −2 ₺325,00).
+
+### BARBIE GERİ ALMA — KURU KOŞUM
+
+    ŞU AN                    : ledger 0 · FIFO açık parti 0
+    ters kayıt (+1) sonrası  : ledger 1 · FIFO açık parti 1
+
+⚠ **TEK BAŞINA YETMEZ:** `11540657420`in `SALE_OUT`u yok; serbest kalan
+parti o satışa **kendiliğinden bağlanmaz**. İkinci adım
+`canli:ice-aktarma-stok-bagi` (K55).
+⚠ **VE ÇARE SİLMEK DEĞİL:** `lib/stok-duzeltme.ts` kuralı —
+_"hareket silinmez; yanlış düzeltme ters işaretli ikinci düzeltmeyle
+kapatılır."_ Ters kayıt **ekrandan** yapılır, ikinci bir düzeltme mantığı
+yazılmaz.
+
 ---
 
 ### ⚠ İKİ AÇIK NOT
