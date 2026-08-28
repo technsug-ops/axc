@@ -2847,7 +2847,7 @@
     "birimNet": "NET-2 / adet",
     "marj": "Marj",
     "sermayeVerimi": "Sermaye verimi",
-    "sermayeVerimiNotu": "kâr / maliyet",
+    "sermayeVerimiNotu": "kâr / SATILANIN maliyeti",
     "sonSatisNet": "Son satışın NET-2si",
     "tekSatisUyarisi": "Bu rakamlar TEK satıştan çıktı — marj tek başına yanıltır.",
     "netKapsamNotu": "NET-2 ürünün kendi marjıdır: kalem seviyesinden okunur, sipariş kargosu ve hizmet bedeli HARİÇTİR. Satışlar ekranındaki sipariş NET-2si bu yüzden farklıdır.",

@@ -238,6 +238,20 @@ export async function kartVerisiniTopla(
       kalanAdet: p.kalanAdet,
       birimMaliyet: p.birimMaliyet === null ? null : Number(p.birimMaliyet),
     })),
+    /**
+     * ⚠ EK SORGU YOK — `kalemDusumleri` bu hareketleri zaten çekiyor
+     * (`quantityDelta` + `unitCostAmount`). Ayrı bir sorgu açmak, aynı
+     * satırları ikinci kez okumak olurdu.
+     * ⚠ Yalnız SEÇİLEN para birimindeki kalemler: kartın geri kalanı da
+     * o kümeden hesaplanıyor, iki rakam farklı kümeden gelmemeli.
+     */
+    satilanDusumleri: secilenler.flatMap((k) =>
+      (dusumler.get(k.id) ?? []).map((d) => ({
+        adet: Math.abs(d.quantityDelta),
+        birimMaliyet:
+          d.unitCostAmount === null ? null : Number(d.unitCostAmount.toString()),
+      })),
+    ),
     iadeAdedi: iadeler.reduce((t, i) => t + i.quantity, 0),
     // Aynı iade birden çok kalem taşıyabilir; "kaç iade" tekil sayılır.
     iadeSayisi: new Set(iadeler.map((i) => i.returnId)).size,

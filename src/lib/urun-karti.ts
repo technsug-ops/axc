@@ -69,6 +69,16 @@ export type KartGirdisi = {
   satislar: KartSatisi[];
   /** Açık FIFO partilerinden: birim maliyetler (adet ağırlıklı). */
   acikPartiler: { kalanAdet: number; birimMaliyet: number | null }[];
+  /**
+   * SATILAN adetlerin FIFO maliyet damgaları — `SALE_OUT` hareketlerinden.
+   *
+   * ⛔ AÇIK PARTİLERLE KARIŞTIRILMAZ: ikisi FARKLI SORUYA cevap verir.
+   *   `acikPartiler`      → "elimdeki malın maliyeti ne"   (envanter)
+   *   `satilanDusumleri`  → "sattığım mala ne ödemiştim"   (sermaye)
+   * Sermaye verimi ikincisini ister; birincisi bu satışın sermayesi
+   * DEĞİLDİR. _(Karar 28.08.2026 — ayrıntı `sermayeVerimi` alanında.)_
+   */
+  satilanDusumleri: { adet: number; birimMaliyet: number | null }[];
   iadeAdedi: number;
   iadeSayisi: number;
 };
@@ -87,8 +97,33 @@ export type KartOzeti = {
   /** Adet başına NET-2 (kalem seviyesi). Hesaplanamayan varsa null. */
   birimNet2: number | null;
   marj: number | null;
-  /** Kâr / maliyet — yatırılan paranın kaç katı döndü. */
+  /**
+   * Kâr / maliyet — yatırılan paranın kaç katı döndü.
+   *
+   * ⛔ PAYDA = SATILAN ADEDİN MALİYETİ (karar 28.08.2026).
+   *
+   * ESKİ KOD `agirlikliOrtalama(acikPartiler)` kullanıyordu — yani ELDE
+   * KALAN partileri. Yorum ise "satılan adedin maliyeti" diyordu; ikisi
+   * ayrışmıştı ve ÖLÇÜM yorumu doğruladı:
+   *   · satışı olan 955 varyantın **832'sinde (%87,1)** payda `null`
+   *     çıkıyordu — çünkü iyi satan ürün TÜKENİYOR, açık parti kalmıyor.
+   *     Metrik tam da en çok işe yarayacağı yerde susuyordu (satış
+   *     hacminin %88,5'i bu kovadaydı).
+   *   · Karşılaştırılabilen 123 varyantın **67'sinde (%54,5)** iki payda
+   *     ayrışıyordu: |sapma| ortanca %6,68 · p90 %34,72 · **max %155,69**
+   *     (`axcali2045`: 10.325,97 ↔ 4.038,40). Sapma İKİ YÖNLÜ — rakam
+   *     karamsar değil, RASTGELE yanlıştı.
+   *   · Veri tam: `SALE_OUT` damgalı 3330 adedin hepsinde maliyet dolu.
+   *
+   * ⚠ BU BİR DÜZELTME DEĞİL, İLK KEZ ÇALIŞMA: 832 üründe bugüne kadar boş
+   * duran kutu ilk kez rakam üretecek.
+   */
   sermayeVerimi: number | null;
+  /**
+   * Sermaye veriminin PAYDASI — satılan adedin ağırlıklı birim maliyeti.
+   * ⚠ Ekranda `ortalamaMaliyet` ile YAN YANA DURMAZ; ayrı sorulardır.
+   */
+  satilanBirimMaliyeti: number | null;
   sonSatisNet2: number | null;
 
   // --- MALİYET ---
@@ -131,6 +166,26 @@ export function agirlikliOrtalama(
 }
 
 /**
+ * SATILAN ADEDİN AĞIRLIKLI BİRİM MALİYETİ — sermaye veriminin paydası.
+ *
+ * ⚠ AYNI FORMÜL, AYRI SORU. Hesap `agirlikliOrtalama`ya devrediliyor ki
+ * ağırlıklı ortalama bu dosyada TEK yerde yaşasın; ayrı bir kopya yazmak
+ * iki formülün bir gün ayrışması demekti. Ayrı olan şey GİRDİ: burada
+ * satılan adetler, orada elde kalanlar.
+ *
+ * ⛔ Maliyet damgası olmayan düşüm HESABA GİRMEZ — `agirlikliOrtalama`nın
+ * kendi kuralı. Damgasızı sıfır saymak, bedava mal almış gibi göstererek
+ * sermaye verimini şişirirdi.
+ */
+export function satilanBirimMaliyeti(
+  dusumler: { adet: number; birimMaliyet: number | null }[],
+): number | null {
+  return agirlikliOrtalama(
+    dusumler.map((d) => ({ kalanAdet: d.adet, birimMaliyet: d.birimMaliyet })),
+  );
+}
+
+/**
  * ALIMDAN SATIŞA ORTALAMA GÜN — sermaye dönüş hızı.
  *
  * Her satış kalemi birden çok partiden düşmüş olabilir (FIFO); her düşümün
@@ -169,14 +224,18 @@ function satisSuresi(satislar: KartSatisi[]): {
 }
 
 export function kartOzeti(girdi: KartGirdisi): KartOzeti {
-  const { kalemler, satislar, acikPartiler, iadeAdedi, iadeSayisi } = girdi;
+  const { kalemler, satislar, acikPartiler, satilanDusumleri, iadeAdedi, iadeSayisi } =
+    girdi;
 
   // Panel motoru: tek varyant verildiği için tek satır döner.
   const satirlar = urunlereTopla(kalemler);
   const satir = satirlar[0] ?? null;
 
   const hiz = satisSuresi(satislar);
+  /** ⛔ ENVANTER SORUSU — ekranda kendi kutusu var, paydayla KARIŞTIRILMAZ. */
   const ortalamaMaliyet = agirlikliOrtalama(acikPartiler);
+  /** ⛔ SERMAYE SORUSU — sermaye veriminin paydası. Ayrı girdi, ayrı anlam. */
+  const satilanBirim = satilanBirimMaliyeti(satilanDusumleri);
 
   /**
    * SERMAYE VERİMİ = NET-2 / MALİYET. "Yatırdığım paranın kaç katı döndü"
@@ -192,7 +251,12 @@ export function kartOzeti(girdi: KartGirdisi): KartOzeti {
    * gösteriyor. İki ekranın kendi formülünü yazması, aynı sayının iki dilde
    * konuşması demekti — bugünün kargo dersi. Biçim de oradan gelir.
    */
-  const sermayeOrani = sermayeVerimi(birim, ortalamaMaliyet);
+  /**
+   * ⛔ PAYDA `satilanBirim` — `ortalamaMaliyet` DEĞİL (karar 28.08.2026).
+   * Elde kalan stok bu satışın sermayesi değildir; tükenmiş üründe hiç
+   * payda kalmaz ve metrik tam da orada susardı.
+   */
+  const sermayeOrani = sermayeVerimi(birim, satilanBirim);
 
   const siraliSatislar = [...satislar].sort(
     (a, b) => b.soldAt.getTime() - a.soldAt.getTime(),
@@ -214,6 +278,7 @@ export function kartOzeti(girdi: KartGirdisi): KartOzeti {
     sonSatisNet2: sonSatis?.net2 ?? null,
 
     ortalamaMaliyet,
+    satilanBirimMaliyeti: satilanBirim,
 
     ortalamaSatisSuresi: hiz.ortalama,
     hizOrnekSayisi: hiz.ornek,

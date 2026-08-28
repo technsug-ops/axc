@@ -1,6 +1,7 @@
 import {
   kartOzeti,
   paraBirimiKarisikMi,
+  satilanBirimMaliyeti,
   type KartGirdisi,
   type KartSatisi,
 } from "../src/lib/urun-karti";
@@ -75,6 +76,7 @@ const bos: KartGirdisi = {
   kalemler: [],
   satislar: [],
   acikPartiler: [],
+  satilanDusumleri: [],
   iadeAdedi: 0,
   iadeSayisi: 0,
 };
@@ -153,36 +155,92 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
 // --- 3) MALİYET ve SERMAYE VERİMİ -------------------------------------------
 {
   console.log("\n3) MALİYET / SERMAYE VERİMİ");
+
+  /**
+   * ⛔ İKİ GİRDİ BİLEREK FARKLI — örnek veri AYRIMIN İKİ YAKASINI göstermeli.
+   * `acikPartiler` 125, `satilanDusumleri` 250 veriyor. Eşit olsalardı
+   * paydayı açık partilere döndüren bir mutasyon YEŞİL kalırdı ve test
+   * kuralı değil TESADÜFÜ sınamış olurdu.
+   */
   const o = kartOzeti({
     ...bos,
     kalemler: [kalem(2, 2000, 400)],
     satislar: [satis(17, 2, 400, [10])],
-    // 3 adet × 100 + 1 adet × 200 = 500 / 4 = 125
+    // ENVANTER: 3 × 100 + 1 × 200 = 500 / 4 = 125
     acikPartiler: [
       { kalanAdet: 3, birimMaliyet: 100 },
       { kalanAdet: 1, birimMaliyet: 200 },
     ],
+    // SERMAYE: 2 × 250 = 500 / 2 = 250
+    satilanDusumleri: [{ adet: 2, birimMaliyet: 250 }],
   });
   kontrol(
-    "ağırlıklı ortalama maliyet 125",
+    "ağırlıklı ortalama maliyet 125 (ENVANTER sorusu)",
     o.ortalamaMaliyet === 125,
     o.ortalamaMaliyet,
   );
-  // birim kâr = 400/2 = 200 · sermaye verimi = 200/125 = 1,6
-  kontrol("sermaye verimi 1,6", o.sermayeVerimi === 1.6, o.sermayeVerimi);
+  kontrol(
+    "satılanın birim maliyeti 250 (SERMAYE sorusu)",
+    o.satilanBirimMaliyeti === 250,
+    o.satilanBirimMaliyeti,
+  );
+  /**
+   * ⛔ PAYDA SATILANDAN: birim kâr 400/2 = 200 · 200 / 250 = 0,8.
+   * Açık partilerden hesaplansaydı 200 / 125 = 1,6 çıkardı — bu tek sayı,
+   * paydanın hangi kümeden geldiğini tek başına ele veriyor.
+   */
+  kontrol("sermaye verimi 0,8 — payda SATILANDAN", o.sermayeVerimi === 0.8, o.sermayeVerimi);
+  kontrol(
+    "  ...açık partilerden hesaplanmıyor (1,6 DEĞİL)",
+    o.sermayeVerimi !== 1.6,
+    o.sermayeVerimi,
+  );
 
   /**
-   * MALİYETİ BİLİNMEYEN PARTİ ORTALAMAYI BOZMAZ. Sıfır sayılsaydı ortalama
-   * düşer, sermaye verimi olduğundan yüksek çıkar ve kullanıcı zararlı bir
+   * ⭐ ASIL KAZANÇ — TÜKENMİŞ ÜRÜNDE METRİK YAŞAR.
+   * Ölçüldü 28.08.2026: satışı olan 955 varyantın 832'sinde (%87,1) açık
+   * parti yok ve eski kod orada `null` döndürüyordu. İyi satan ürün
+   * tükenir; metrik tam da en çok işe yarayacağı yerde susuyordu.
+   */
+  const tukenmis = kartOzeti({
+    ...bos,
+    kalemler: [kalem(2, 2000, 400)],
+    satislar: [satis(17, 2, 400, [10])],
+    acikPartiler: [],
+    satilanDusumleri: [{ adet: 2, birimMaliyet: 250 }],
+  });
+  kontrol(
+    "TÜKENMİŞ üründe sermaye verimi HESAPLANIYOR",
+    tukenmis.sermayeVerimi === 0.8,
+    tukenmis.sermayeVerimi,
+  );
+  /**
+   * ⛔ VE `ortalamaMaliyet` AYNI ANDA null KALIR — iki kutu AYRI kaynaktan.
+   * İkisini tek kaynağa bağlamak, bugün düzelttiğimiz hatanın tersi olurdu:
+   * "elimdeki malın maliyeti" sorusuna satılanın maliyetiyle cevap vermek.
+   */
+  kontrol(
+    "  ...ortalamaMaliyet null KALIR (envanter boş)",
+    tukenmis.ortalamaMaliyet === null,
+    tukenmis.ortalamaMaliyet,
+  );
+
+  /**
+   * MALİYET DAMGASI OLMAYAN DÜŞÜM HESABA GİRMEZ. Sıfır sayılsaydı payda
+   * düşer, sermaye verimi olduğundan YÜKSEK çıkar ve kullanıcı zararlı bir
    * ürünü kârlı sanardı.
    */
   const eksik = kartOzeti({
     ...bos,
-    kalemler: [kalem(1, 1000, 200)],
-    satislar: [satis(17, 1, 200, [10])],
+    kalemler: [kalem(2, 2000, 400)],
+    satislar: [satis(17, 2, 400, [10])],
     acikPartiler: [
       { kalanAdet: 1, birimMaliyet: 100 },
       { kalanAdet: 5, birimMaliyet: null },
+    ],
+    satilanDusumleri: [
+      { adet: 1, birimMaliyet: 300 },
+      { adet: 5, birimMaliyet: null },
     ],
   });
   kontrol(
@@ -190,16 +248,35 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
     eksik.ortalamaMaliyet === 100,
     eksik.ortalamaMaliyet,
   );
+  kontrol(
+    "damgasız DÜŞÜM paydaya GİRMEZ (300, 50 değil)",
+    eksik.satilanBirimMaliyeti === 300,
+    eksik.satilanBirimMaliyeti,
+  );
 
-  // Hiçbir partinin maliyeti yoksa: "?" (null), sıfır değil.
+  // Hiçbir düşümün maliyeti yoksa: "?" (null), sıfır değil.
   const hicMaliyet = kartOzeti({
     ...bos,
     kalemler: [kalem(1, 1000, 200)],
     satislar: [satis(17, 1, 200, [10])],
     acikPartiler: [{ kalanAdet: 5, birimMaliyet: null }],
+    satilanDusumleri: [{ adet: 1, birimMaliyet: null }],
   });
   kontrol("maliyet hiç yoksa null", hicMaliyet.ortalamaMaliyet === null);
   kontrol("  ...sermaye verimi de null", hicMaliyet.sermayeVerimi === null);
+
+  /** Saf gövde DOĞRUDAN çağrılır — kaynak taraması değil, DEĞER testi. */
+  kontrol(
+    "satilanBirimMaliyeti saf gövdesi ağırlıklı ortalama veriyor",
+    satilanBirimMaliyeti([
+      { adet: 3, birimMaliyet: 100 },
+      { adet: 1, birimMaliyet: 200 },
+    ]) === 125,
+  );
+  kontrol(
+    "  ...boş listede null",
+    satilanBirimMaliyeti([]) === null,
+  );
 }
 
 // --- 4) MARJ PANEL MOTORUNDAN — kopya hesap yok -----------------------------
@@ -529,6 +606,40 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
    * `sonAlimHareketi` BLOĞUNA daraltılarak aranıyor.
    */
   const kaynak = readFileSync("src/lib/urun-karti-verisi.ts", "utf8");
+
+  /**
+   * ═══ ZİNCİRİN ORTA HALKASI — VERİ KATMANI (28.08.2026) ═════════════════
+   *
+   * ⛔ NİYE KAYNAK TARAMASI: yukarıdaki DEĞER testleri `kartOzeti`yi saf
+   * gövde olarak çağırıyor ve payda kuralını sınıyor — ama veri katmanı o
+   * gövdeye BOŞ liste gönderirse hepsi yeşil kalır. Mutasyonla ölçüldü:
+   * `satilanDusumleri`i boşaltan bir mutasyon **101 kontrolün hiçbirini
+   * kırmızı yakmadı.** _(Anayasa: "zincir, halkalarının varlığıyla değil
+   * BAĞLANTISIYLA sınanır" — orada `formuOku` eksikti, burada besleme.)_
+   *
+   * ⚠ Desen KULLANIMA bağlı: yalnız alan adını aramak yetmez, `dusumler`
+   * haritasından okunduğu ve maliyet damgasının taşındığı da aranıyor.
+   */
+  const dBas = kaynak.indexOf("satilanDusumleri:");
+  const dSon = kaynak.indexOf("iadeAdedi:", dBas);
+  kontrol("satılan düşümleri bloğu bulunabiliyor", dBas > 0 && dSon > dBas);
+  const dBlok = kaynak.slice(dBas, dSon);
+  kontrol(
+    "satılan düşümleri SALE_OUT hareketlerinden besleniyor",
+    /dusumler\.get\(k\.id\)/.test(dBlok),
+  );
+  kontrol(
+    "  ...maliyet damgası TAŞINIYOR (unitCostAmount)",
+    /unitCostAmount/.test(dBlok),
+  );
+  /**
+   * ⚠ VE AÇIK PARTİDEN BESLENMİYOR: `partiler` bu bloğa girerse payda
+   * yeniden envanter tarafına kayar — düzelttiğimiz hatanın ta kendisi.
+   */
+  kontrol(
+    "  ...açık partiden DEĞİL (partiler bloğa girmiyor)",
+    !/partiler/.test(dBlok),
+  );
 
   const bas = kaynak.indexOf("const sonAlimHareketi =");
   const son = kaynak.indexOf("const sonAlimAcikMi");
