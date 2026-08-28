@@ -121,6 +121,7 @@
     "canli:bagsiz-tarih": "tsx scripts/canli-bagsiz-tarih-dagilimi.ts",
     "canli:bagsiz-sebep": "tsx scripts/canli-bagsiz-sebep-ayrimi.ts",
     "canli:malkabul-acik": "tsx scripts/canli-malkabul-hareket-acigi.ts",
+    "canli:fifo-kronoloji": "tsx scripts/canli-fifo-kronoloji.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",
