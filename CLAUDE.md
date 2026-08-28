@@ -166,7 +166,20 @@ tercih değil, zorunluluktur:
     Sayfalama varsa toplam **görünen sayfanın değil, süzgecin tamamının**
     toplamıdır ve bu ekranda yazar.
 
-YENİ EKRAN KONTROL LİSTESİ: Her yeni ekran tesliminde bu 15 maddeye
+16. RAKAM KAYNAĞINA GÖTÜRÜR: Bir **aksaklığı** gösteren sayı (kârı
+    hesaplanamayan satış, eşleşmeyen kayıt, eksik veri) ya da bir
+    **performans değerlendirmesi** (marj, sermaye verimi, satış hızı)
+    ekranda duruyorsa, **üstüne tıklanınca o rakamı üreten KAYNAK VERİ
+    süzülmüş hâlde açılır.** Düz metin olarak yazılan bir aksaklık sayısı,
+    okuyanı "hangileri?" diye aramaya bırakır — ve çoğu zaman aranmaz.
+    _Kullanıcı kuralı 28.08.2026: panelde "47 satış hesaplanamadı" düz
+    metindi; rakam vardı, gidilecek yer yoktu._
+    ⚠ **ADRES, SÜZGEÇ SÖZLEŞMESİNİN SAHİBİ DOSYADAN ÜRETİLİR** — ekran
+    kendi adresini kurarsa koşul değiştiğinde sayı ile liste sessizce
+    ayrışır. Panelin en temel sözü **"sayı = liste"**dir (İlke #9'un
+    kardeşi; bkz. `GOREV_ADRESLERI` deseni).
+
+YENİ EKRAN KONTROL LİSTESİ: Her yeni ekran tesliminde bu 16 maddeye
 uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklenir.
 
 ## İş sabitleri

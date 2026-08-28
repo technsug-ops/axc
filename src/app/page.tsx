@@ -45,7 +45,11 @@ import {
 import { GENEL_KDV_ORANI, kdvHaric } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { kutuOranlari } from "@/lib/panel/kar-orani";
-import { pencereCoz } from "@/lib/liste-suzgeci";
+import {
+  karEksikAyAdresi,
+  karEksikKanalAdresi,
+  pencereCoz,
+} from "@/lib/liste-suzgeci";
 import {
   aylikSeri,
   panelHesapla,
@@ -1541,12 +1545,19 @@ export default async function AnaSayfa({
                     {t("kanalIade", { sayi: kanal.iadeAdedi })}
                   </div>
                 ) : null}
+                {/* ⛔ AKSAKLIK SAYISI KAYNAĞINA GÖTÜRÜR (İlke #16). Düz metinken
+                    "hangi satışlar?" sorusunun cevabı yoktu; adres süzgeç
+                    sözleşmesinin sahibi dosyadan geliyor ki sayı ile liste
+                    ayrışmasın. */}
                 {kanal.hesaplanamayanAdet > 0 ? (
-                  <div className="text-muted-foreground text-xs">
+                  <Link
+                    href={karEksikKanalAdresi(kanal.kanalKodu)}
+                    className="text-muted-foreground hover:text-foreground block text-xs underline underline-offset-2"
+                  >
                     {t("kanalEksik", {
                       sayi: kanal.hesaplanamayanAdet,
                     })}
-                  </div>
+                  </Link>
                 ) : null}
               </div>
             ) : null}
@@ -2830,12 +2841,18 @@ export default async function AnaSayfa({
                               {t("kanalIade", { sayi: nokta.iadeAdedi })}
                             </span>
                           ) : null}
+                          {/* ⛔ AKSAKLIK SAYISI KAYNAĞINA GÖTÜRÜR (İlke #16).
+                              Ay penceresi `OZEL` aralıkla veriliyor; bitiş
+                              günü DAHİL (bkz. `pencereOlustur`). */}
                           {nokta.hesaplanamayanAdet > 0 ? (
-                            <span className="text-muted-foreground block text-xs">
+                            <Link
+                              href={karEksikAyAdresi(nokta.yil, nokta.ay)}
+                              className="text-muted-foreground hover:text-foreground block text-xs underline underline-offset-2"
+                            >
                               {t("kanalEksik", {
                                 sayi: nokta.hesaplanamayanAdet,
                               })}
-                            </span>
+                            </Link>
                           ) : null}
                         </TableCell>
                       ) : null}

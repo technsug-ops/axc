@@ -37,6 +37,11 @@ import {
 } from "../src/lib/menu/katalog";
 
 import { gunDegeri, pencereOlustur } from "../src/lib/donem";
+import {
+  ayinGunSayisi,
+  karEksikAyAdresi,
+  karEksikKanalAdresi,
+} from "../src/lib/liste-suzgeci";
 import { kdvHaric } from "../src/lib/kar";
 import { karOrani, kutuOranlari } from "../src/lib/panel/kar-orani";
 import { serileriKur } from "../src/lib/panel/operasyon-serisi";
@@ -4856,6 +4861,68 @@ console.log("=".repeat(70));
   );
 }
 
+// ---------------------------------------------------------------------------
+//  İLKE #16 — AKSAKLIK SAYISI KAYNAĞINA GÖTÜRÜR (28.08.2026)
+// ---------------------------------------------------------------------------
+{
+  console.log("\nİLKE #16 — aksaklık sayısı tıklanabilir mi");
+
+  /** Saf gövde DOĞRUDAN çağrılır — kaynak taraması değil, DEĞER testi. */
+  kontrol(
+    "ay adresi kar=eksik + OZEL pencere taşıyor",
+    karEksikAyAdresi(2026, 8) ===
+      "/satislar?kar=eksik&pencere=OZEL&baslangic=2026-08-01&bitis=2026-08-31",
+    karEksikAyAdresi(2026, 8),
+  );
+  /** ⚠ ARTIK YIL — `Date` kullanılmadığı için elle sınanır. */
+  kontrol(
+    "şubat 2028 (artık yıl) 29 gün",
+    karEksikAyAdresi(2028, 2).endsWith("bitis=2028-02-29"),
+    karEksikAyAdresi(2028, 2),
+  );
+  kontrol(
+    "şubat 2026 (artık DEĞİL) 28 gün",
+    karEksikAyAdresi(2026, 2).endsWith("bitis=2026-02-28"),
+    karEksikAyAdresi(2026, 2),
+  );
+  kontrol("2100 artık yıl DEĞİL", ayinGunSayisi(2100, 2) === 28);
+  kontrol("2000 artık yıl", ayinGunSayisi(2000, 2) === 29);
+  kontrol(
+    "kanal adresi kar=eksik + kanal taşıyor",
+    karEksikKanalAdresi("TRENDYOL") === "/satislar?kar=eksik&kanal=TRENDYOL",
+    karEksikKanalAdresi("TRENDYOL"),
+  );
+  /** ⚠ Boş kod süzgeci UYDURMAZ — kanalsız listeye gider. */
+  kontrol(
+    "boş kanal kodu süzgeç uydurmuyor",
+    karEksikKanalAdresi("  ") === "/satislar?kar=eksik",
+  );
+
+  /**
+   * ⛔ EKRAN BAĞLANTISI — değer testi ekranın LİNK ÇİZDİĞİNİ göremez.
+   * Sayı düz metne dönerse yukarıdaki testlerin hepsi yeşil kalır ve
+   * kullanıcı yine "hangileri?" diye arar. Desen ADA değil KULLANIMA
+   * bağlanıyor: `href={karEksik...}`.
+   */
+  const panelHam = readFileSync("src/app/page.tsx", "utf8");
+  kontrol(
+    "aylık tablodaki sayı LİNK (href=ay adresi)",
+    /href=\{karEksikAyAdresi\(nokta\.yil, nokta\.ay\)\}/.test(panelHam),
+  );
+  kontrol(
+    "kanal bloğundaki sayı LİNK (href=kanal adresi)",
+    /href=\{karEksikKanalAdresi\(kanal\.kanalKodu\)\}/.test(panelHam),
+  );
+  /** ⚠ TIKLANABİLİR GÖRÜNÜR (İlke #2): link stili olmadan link sayılmaz. */
+  kontrol(
+    "  ...ve tıklanabilir GÖRÜNÜYOR (underline)",
+    (panelHam.match(/href=\{karEksik[A-Za-zÇĞİÖŞÜçğıöşü]+\([^)]*\)\}[\s\S]{0,220}?underline/g) ?? [])
+      .length === 2,
+  );
+}
+
+console.log("");
+
 // ===========================================================================
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) {
@@ -4864,4 +4931,4 @@ if (basarisiz === 0) {
   console.log(`${basarisiz} KONTROL BAŞARISIZ (${calisan} kontrolden)`);
   process.exitCode = 1;
 }
-console.log("");
+

@@ -430,3 +430,53 @@ export async function alimKosulu(
 
   return { kosul, pencere };
 }
+
+// ---------------------------------------------------------------------------
+//  AKSAKLIK SAYISI → KAYNAK LİSTESİ (İlke #16)
+// ---------------------------------------------------------------------------
+
+/**
+ * ⛔ BİR AKSAKLIK SAYISI, KAYNAĞINA GÖTÜRMEK ZORUNDA (kullanıcı kuralı
+ * 28.08.2026). Panelde "47 satış hesaplanamadı" yazıyordu ve düz metindi:
+ * rakamı gören kişi HANGİ satışlar olduğunu göremiyor, aramak zorunda
+ * kalıyordu. Sayının işe yaraması için kaynağına açılması gerekir.
+ *
+ * ⚠ ADRESLER BURADA ÜRETİLİR, EKRANDA DEĞİL: süzgeç sözleşmesinin sahibi
+ * bu dosya. Ekran kendi adresini kursaydı, `kar=eksik` koşulu değiştiğinde
+ * sayı ile liste sessizce ayrışırdı — panelin en temel sözü "sayı = liste".
+ */
+
+/** ⚠ Saf: `Date` KULLANILMAZ, saat dilimi bu hesaba karışamaz. */
+const AY_GUNLERI = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
+const artikYilMi = (yil: number) =>
+  (yil % 4 === 0 && yil % 100 !== 0) || yil % 400 === 0;
+
+/** Ayın gün sayısı — `ay` 1-12. */
+export function ayinGunSayisi(yil: number, ay: number): number {
+  if (ay < 1 || ay > 12) return 0;
+  return ay === 2 && artikYilMi(yil) ? 29 : AY_GUNLERI[ay - 1];
+}
+
+const iki = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * BİR AYIN kârı hesaplanamayan satışları.
+ * ⚠ `bitis` DAHİLDİR (`pencereOlustur` OZEL dalı bir gün ileri taşıyor).
+ */
+export function karEksikAyAdresi(yil: number, ay: number): string {
+  const son = ayinGunSayisi(yil, ay);
+  if (son === 0) return "/satislar?kar=eksik";
+  return (
+    "/satislar?kar=eksik&pencere=OZEL" +
+    `&baslangic=${yil}-${iki(ay)}-01` +
+    `&bitis=${yil}-${iki(ay)}-${iki(son)}`
+  );
+}
+
+/** BİR KANALIN kârı hesaplanamayan satışları. */
+export function karEksikKanalAdresi(kanalKodu: string): string {
+  const kod = kanalKodu.trim();
+  return kod === ""
+    ? "/satislar?kar=eksik"
+    : `/satislar?kar=eksik&kanal=${encodeURIComponent(kod)}`;
+}
