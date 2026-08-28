@@ -556,6 +556,82 @@ yazılmaz.
 
 ---
 
+## 🆕 K77 — İADE DOSYASI · O SÜTUNU · 28.08.2026 · [ÖLÇÜLDÜ]
+
+> Halil: _"İade dosyası O sütununda iadelerin kargo ücretleri mevcut."_
+
+Ölçüm: `npm run canli:iade-kargo-kolonu` (salt okuma).
+
+    O sütununun başlığı: "KARGO" ✓ (dosyadaki tek KARGO sütunu da bu)
+    iade satırı 366 · dolu 193 (%52,7) · negatif 167 · pozitif 26
+    |değer|: min 50 · ortanca 110 · p95 200 · max 350 · TOPLAM ₺23.021,00
+
+### ⛔ AMA SÜTUN ARADIĞIMIZ ŞEYİ TAŞIMIYOR — VE BU BİR UMUDUMU ÇÜRÜTTÜ
+
+Bir önceki turda _"bu sütun `iadeKargosu`nun ta kendisi olabilir"_ demiştim.
+Ölçüm çürüttü: **değerler satış dosyasının kargosuyla AYNI.**
+
+    satış kargosuyla AYNI : 186
+    FARKLI                :   4   (ve dördü de kuruş farkı: 114,14↔114,00 gibi)
+    satış satırı yok      :   3
+
+Yani O sütunu **yeni bir kargo bacağı değil, satışın kargosunun TERS
+İŞARETLİ AYNASI.** `4120311526` bunu tek satırda gösteriyor:
+
+    iade dosyası  O = −101,00
+    satış dosyası KARGO = +101,00      ← aynı sayı, ters işaret
+    ⭐ HB paneli   = −94,20            ← kanalın kendi belgesi
+
+⚠ **VE ÜÇ KAYNAK ÜÇ FARKLI ŞEY SÖYLÜYOR.** Dosya kargoyu **sıfırlıyor**
+(+101 −101 = 0), HB ise **fiilen ₺94,20 kesmiş.** Halil'in kuralı
+(_"teslim edilmeden dönende TEK kargo yansır"_) HB'yi doğruluyor: kargo
+sıfır değil, **bir bacak.** Dosyanın aynalaması o bacağı siliyor.
+
+⛔ **SONUÇ: K73'ÜN ÜÇÜNCÜ BİLİNMEYENİ KAPANMADI.** `iadeKargosu` hâlâ
+bilinmiyor; elimizdeki tek gerçek ölçüm kanal panelinden geliyor ve o da
+tek vaka. Diğer iki bilinmeyen (`returnType` · `saglamAdet`/`hasarliAdet`)
+zaten açıktı. **K73 kilitli kalır.**
+
+⚠ Yine de sütun işe yaramaz değil: hangi iadede kargonun ters kaydedildiğini
+söylüyor ve **163 iade satırı hem kargolu hem satışı sistemde** (₺19.738,00).
+Ekstre geldiğinde kıyas tarafı olur.
+
+---
+
+## 🔓 K74 — HALİL'İN ÜÇ CEVABI GELDİ · 28.08.2026
+
+**① `4120311526` (Razer) — ÇÖZÜLDÜ.** Halil: _"1 alım 2 kere kaydedilmiş."_
+Yani gerçek **2 alım**, defterdeki 3'ün biri mükerrer. Aritmetik kapanıyor:
+
+    gerçek alım 2 · kalıcı satış 2 (4662729595 · 11473158422) · stok 0 ✓
+    aradaki 4120311526: satıldı → teslim edilemedi → stoğa döndü → yeniden satıldı
+
+**② `4673224319` — HİKÂYE TAMAM, İKİ AYRINTI ÖLÇÜLDÜ.** Halil: HB tazmin
+talebini onayladı, **ürün HB deposuna gönderildi, kargosunu BİZ ödedik
+(₺100)**, tazmin ödemesi alındı.
+
+⚠ **VE DOSYADA İKİ FARKLI ALIŞ FİYATI VAR — ikisi de M sütununda:**
+
+    satış satırı  (05.11.2025) : liste 1.484,00 · alış **575,04** · KARGO 85,00
+    tazmin satırı (03.02.2026) : liste 1.216,87 · alış **575,40**
+
+`575,04` ↔ `575,40` — rakamlar yer değiştirmiş görünüyor, biri yazım hatası.
+⛔ Hangisinin doğru olduğu **ölçülemez**; satışa bağlı olan `575,04`.
+⚠ Ve ₺100 iade kargosu dosyanın hiçbir sütununda YOK (satış satırı ₺85 diyor,
+o gidiş kargosu). **Halil'in beyanı tek kaynak.**
+
+**⛔ TAZMİNİN KARŞI TARAFI ŞEMADA YOK — ÖLÇÜLDÜ.** `Compensation` modelinde
+`supplierId` ve `carrierId` **ikisi de opsiyonel**, ama **`channelAccountId`
+diye bir alan YOK.** Yani HB'nin ödediği tazmin bugün ancak _"karşı taraf
+boş + not"_ olarak yazılabilir; **sorgulanamaz.**
+_Bu zaten bilinen bir açık:_ `docs/iade-sureci.md` §11.4 aynı şeyi söylüyor
+(_"Hurda Geliri" hakediş kalemi de tanınmıyor_).
+
+**③ `10559161422` — TEYİT ALINDI.** Halil: _"sadece 1 tanesi yanlış, diğeri
+doğru."_ ⭐ Siparişin **tamamı iptal EDİLMEYECEK**; **tek kalem** kaldırılır.
+
+---
+
 ### ⚠ İKİ AÇIK NOT
 
 **· `10415881283` — aynı kampanyanın dördü FARKLI maliyetle duruyor.**
