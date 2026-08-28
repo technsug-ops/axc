@@ -13,6 +13,53 @@
 
 ---
 
+## 📊 DÖRT CEPHE — 28.08.2026 [KOŞTU] `npm run canli:dort-cephe`
+
+Halil sordu: _"alımlar satışlar iadeler kargolar düzeldi mi?"_ Dördü ayrı
+ölçüldü; **ikisi düzeldi, biri kilitli, biri hiç başlamadı.**
+
+| cephe | hâl |
+|---|---|
+| **ALIMLAR** | ✅ neredeyse temiz — 1971 alım · 2011 kalem · FIFO açık parti **811 adet / ₺2.235.150,51** (ödenen, KDV dahil) · ⚠ **2 varyantta ayrışma** |
+| **SATIŞLAR** | ✅ **DÜZELDİ** — 5810 satış (37 iptal) · kalem `CALCULATED` **5880** · `NO_COST` **10** · `RULE_MISSING` **3** |
+| **İADELER** | 🔒 **KİLİTLİ** — defterde **8** `Return`, dosyada **366** · bkz. K73 |
+| **KARGOLAR** | ⛔ **HİÇ BAŞLAMADI** — 5773 geçerli satışın yalnız **%2,7'sinde** kargo var |
+
+**② SATIŞLARDA ASIL KANIT — mekanizma tuttu:**
+
+    NET-2 yazılı satış 5763  =  CALCULATED 5763   ✓ BİREBİR
+
+Bugün alınan _"NET yalnız `CALCULATED` iken yazılır"_ kararı **ölçülerek
+doğrulandı**: eksik hesaplı hiçbir satış NET taşımıyor.
+Komisyon oranı boş kalem **5319 → 3** · maliyet bağı olmayan **2493 → 10**.
+
+**① AYRIŞMANIN KAYNAĞI BULUNDU — VE BUGÜNÜN İŞİ DEĞİL.**
+`canli:defter-ayrismasi`: incelenen 1040 · temiz 1038 · **sapan 2** ·
+incelenemeyen 0. İkisi de **23.08.2026 tarihli `EXCHANGE_OUT`** satırı ve
+ikisi de **partisiz çıkış** — ledger düşüyor, FIFO düşmüyor:
+
+    axcali1660  ledger  2 ↔ FIFO  3   (cmt6bwbno… · 23.08 21:37)
+    axcali1610  ledger 11 ↔ FIFO 12   (cmt6d7clk… · 23.08 22:14)
+
+⭐ Anayasadaki **"hayalet adet"** deseninin ta kendisi. Değişim akışı
+negatif hareketi `sourceMovementId` olmadan yazıyor. ⛔ Hüküm verilmedi —
+hangi defterin doğru olduğu vakaya göre değişir.
+
+**④ KARGO — ALTYAPI VAR, VERİ YOK.**
+
+    tanımlı firma 12 · yüklü tarife satırı 44.841     ← hazır
+    kargo firması seçili   153 / 5773   (%2,7)
+    kargo ücreti girili    161 / 5773   (%2,8)
+    desi girili            154 / 5773   (%2,7)
+    kâr hesabındaki KARGO kesintisi: 161 satır · ₺21.843,97
+
+⚠ **YÖN KESİN, BÜYÜKLÜK ÖLÇÜLMEDİ:** 5612 satışta kargo hiç düşülmüyor,
+yani **NET-2 olduğundan YÜKSEK**. Kaç lira olduğu ancak desi × tarife ile
+hesaplanır; gözlenen 161 satışın ortalamasını 5612'ye çarpmak **kaba bir
+tahmin olurdu** ve o sayı ekrana yazılmaz.
+
+---
+
 ## 🆕 K69 — DOSYA MALİYETİ ASIL VERİ · 28.08.2026
 
 > **Kullanıcı kararı:** _"M sütunundaki alış fiyatı ASIL VERİ. Bu rakamlar

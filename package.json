@@ -137,6 +137,8 @@
     "canli:iki-vaka-b": "tsx scripts/canli-iki-vaka-b.ts",
     "canli:iade-kargo-olcum": "tsx scripts/canli-iade-kargo-olcum.ts",
     "canli:k71-olcum": "tsx scripts/canli-k71-olcum.ts",
+    "canli:dort-cephe": "tsx scripts/canli-dort-cephe.ts",
+    "canli:ayrisan-iki": "tsx scripts/canli-ayrisan-iki.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",
