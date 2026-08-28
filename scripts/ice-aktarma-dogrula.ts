@@ -1462,5 +1462,50 @@ kontrol(
 );
 
 
+
+// ---------------------------------------------------------------------------
+//  `sinir` PARAMETRESİ — İKİ KULLANIM KARIŞTIRILMAZ (28.08.2026)
+// ---------------------------------------------------------------------------
+/**
+ * ⛔ `acikPartilerToplu(db, ids, sinir)` İKİ FARKLI SORUYA HİZMET EDER:
+ *
+ *   K55 stok bağı  → `sinir` VERİLMEZ. Soru: "bu satışın maliyeti ne?"
+ *     Sonradan girilen alım, kaydedilmemiş bir alımın yerine geçer.
+ *     `sinir` verilseydi koşum 0 kalem bağlardı (ölçüldü: 12/12 ters).
+ *
+ *   K53 tarihli envanter → `sinir` ZORUNLU. Soru: "o TARİHTE elimde ne
+ *     vardı?" Sonradan girilen parti o günün stoğuna karışamaz.
+ *
+ * ⚠ İkisi karıştırılırsa iki farklı soruya tek cevap verilmiş olur:
+ * envanter geçmişi şişer ya da maliyet bağı hiç kurulamaz.
+ */
+{
+  console.log("`sinir` parametresi — iki kullanım ayrı");
+  const bagi = readFileSync("scripts/canli-ice-aktarma-stok-bagi.ts", "utf8");
+  const env = readFileSync("src/lib/envanter-veri.ts", "utf8");
+
+  kontrol(
+    "K55 stok bağı `sinir` VERMİYOR",
+    /acikPartilerToplu\(prisma, varyantIds\)/.test(bagi),
+  );
+  kontrol(
+    "  ...ve NİYE vermediği kodda YAZILI",
+    /sinir` PARAMETRESİ BURADA BİLEREK VERİLMİYOR/.test(bagi),
+  );
+  kontrol(
+    "K53 tarihli envanter `sinir` VERİYOR",
+    /acikPartilerToplu\(prisma, null, sinir\)/.test(env),
+  );
+  /** ⚠ GERİYE DÖNÜK BAĞ İZSİZ KALMAZ — karar kabul edildi ama kayda geçer. */
+  kontrol(
+    "geriye dönük bağ AuditLog'a yazılıyor",
+    /geriyeDonukBag: \{/.test(bagi) && /gecikmeGun/.test(bagi),
+  );
+  kontrol(
+    "  ...ve EKRANDA da yazıyor (kaydedilen = görünen)",
+    /GERİYE DÖNÜK BAĞ — parti satıştan SONRA damgalı/.test(bagi),
+  );
+}
+
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
 process.exit(hata === 0 ? 0 : 1);

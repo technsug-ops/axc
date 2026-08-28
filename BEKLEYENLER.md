@@ -61,7 +61,50 @@ yok" denmesi gerekirken), burada `0` ("bilinmiyor" denmesi gerekirken).
 |---|---|---|
 | ① | `kalemMaliyeti` boş listede `null` dönsün | **[KOŞTU 28.08.2026]** — 4 mutasyon, 4'ü de kırmızı |
 | ② | Bağsız satışların kârının TAZELENMESİ | **[KOŞTU 28.08.2026]** — 2525/2525, hata 0 |
-| ③ | Maliyet bağının kurulması | **[BEKLİYOR]** — K55 kuyruğu, 2573 kalem |
+| ③ | Maliyet bağının kurulması | **[KOŞTU 28.08.2026]** — 12 bağlandı, **2561 kaldı** |
+
+**③ SONUÇ — küçük çıktı ve sebebi yapısal:**
+
+    BAĞLANACAK 12 · ATLANAN 2561 (528 varyant, hepsinin AÇIK PARTİSİ 0)
+    StockMovement 5350 → 5362 (+12) ✓   ·   kâr tazelendi 12/12
+    hâlâ bağsız satış 2510              ·   ikinci koşum: 0 ✓
+    PANEL MARJI 11,56% — DEĞİŞMEDİ (12 kalem 5893'ün içinde iz bırakmadı)
+
+⛔ **KALAN 2561 SATIŞ TARAFINDA KAPANMAZ.** 528 varyantın açık partisi
+sıfır — alımları sisteme hiç girilmemiş. Bu bir bağ sorunu değil, **alım
+defteri açığı**; kapanma yolu kullanıcının alım girmesi.
+
+### ⚠ GERİYE DÖNÜK BAĞ — kabul edildi, İZLİ
+
+**12/12 hareket geriye dönük**: parti satıştan SONRA damgalı.
+
+    gecikme: en küçük 96 gün · ortanca 142 gün · EN BÜYÜK 384 gün
+    en uçtaki: satış 2025-08-09 → parti 2026-08-28
+
+**KULLANICI KARARI 28.08.2026:** _"o malın gerçek alımı hiç kaydedilmedi;
+bugün girilen alım o eksik kaydın yerine geçiyor. Maliyet GERÇEK (aynı
+ürün, gerçek fatura), yalnız tarihi geç. Alternatif 'hiç maliyet' — daha
+doğru değil, daha az bilgi."_
+
+⚠ **VE TARİH SINIRI KONSAYDI KOŞUM 0 KALEM BAĞLARDI** — yani kullanıcının
+alım girme işi hiçbir şey kazandırmazdı: girdiği her alım, girmeden önceki
+satışlara bağlanamazdı.
+
+**İZ:** her geriye dönük bağ `AuditLog`a gecikme günüyle yazılıyor
+(`geriyeDonukBag`) **ve ekranda da basılıyor** — kaydedilip görünmemek
+"kaydedilen ≠ görünen" hatası olurdu.
+
+### ⚠ `sinir` PARAMETRESİ — İKİ KULLANIM AYRI, BEKÇİYLE SABİT
+
+| Kullanım | `sinir` | Soru |
+|---|---|---|
+| **K55 stok bağı** | **VERİLMEZ** | "bu satışın maliyeti ne?" |
+| **tarihli envanter** _(K53)_ | **ZORUNLU** | "o TARİHTE elimde ne vardı?" |
+
+Karıştırılırsa iki farklı soruya tek cevap verilmiş olur. Beş ölçüt
+eklendi (`ice-aktarma:dogrula`), beşi de mutasyonla kırmızı yandı:
+K55'e `sinir` eklemek · tarihli envanterden kaldırmak · `AuditLog` izini silmek ·
+ekran satırını silmek · gerekçe yorumunu silmek.
 | ④ | `CALCULATED` olmayan satırlarda NET alanları | **[KOŞTU 28.08.2026]** — kod + veri |
 
 **② SONUÇ — panel marjı ÖLÇÜLDÜ (tahmin değil):**

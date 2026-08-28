@@ -167,6 +167,29 @@ async function main() {
   console.log(`   farklı varyant            ${varyantIds.length}`);
   console.log(`   toplam adet               ${kalemler.reduce((t, k) => t + k.quantity, 0)}`);
 
+  /**
+   * ⛔ `sinir` PARAMETRESİ BURADA BİLEREK VERİLMİYOR — kullanıcı kararı
+   * 28.08.2026.
+   *
+   * `sinir` verilseydi yalnız satış tarihinden ÖNCEKİ partiler aday olurdu
+   * ve bu koşum **0 kalem** bağlardı (ölçüldü: bağlanabilen 12 kalemin
+   * 12'sinde de parti satıştan SONRA damgalı). Yani kullanıcının bugün
+   * alım girme işi HİÇBİR ŞEY kazandırmazdı: girdiği her alım, girmeden
+   * önceki satışlara bağlanamazdı.
+   *
+   * ⚠ GEREKÇE: o malın GERÇEK alımı hiç kaydedilmedi; bugün girilen alım
+   * o eksik kaydın yerine geçiyor. Maliyet gerçek (aynı ürün, gerçek
+   * fatura), yalnız TARİHİ GEÇ. Alternatif "hiç maliyet" — daha doğru
+   * değil, daha az bilgi.
+   *
+   * ⛔ VE İZSİZ KALMIYOR: geriye dönük kurulan her bağ `AuditLog`a
+   * gecikme günüyle yazılıyor (aşağıda `geriyeDonuk`).
+   *
+   * ⚠ K53 (TARİHLİ ENVANTER) İÇİN ZORUNLUDUR VE ORADA VERİLİYOR
+   * (`lib/envanter-veri.ts`). Orada soru "o TARİHTE elimde ne vardı" —
+   * sonradan girilen parti o günün stoğuna karışamaz. **İki kullanımı
+   * karıştırmak, iki farklı soruya tek cevap vermek olur.**
+   */
   const partiler = await acikPartilerToplu(prisma, varyantIds);
 
   // ═══ PLANLAMA — FIFO ════════════════════════════════════════════════════
@@ -252,6 +275,20 @@ async function main() {
 
   let hareket = 0;
   const tazelenecek = new Set<string>();
+  /** ⭐ Geriye dönük bağların izi — `AuditLog`a ve rapora gider. */
+  const geriyeDonuk: {
+    siparis: string | null; sku: string; satisTarihi: string;
+    partiTarihi: string; gecikmeGun: number;
+  }[] = [];
+  /** Parti hareketlerinin tarihi — gecikme hesabı için. */
+  const partiTarihleri = new Map(
+    (
+      await prisma.stockMovement.findMany({
+        where: { id: { in: planlar.flatMap((x) => x.dagitim.map((d) => d.hareketId)) } },
+        select: { id: true, occurredAt: true },
+      })
+    ).map((x) => [x.id, x.occurredAt]),
+  );
   for (const plan of planlar) {
     for (const pay of plan.dagitim) {
       await prisma.stockMovement.create({
@@ -276,6 +313,23 @@ async function main() {
       hareket++;
     }
     tazelenecek.add(plan.kalem.sale.id);
+    /**
+     * ⭐ GERİYE DÖNÜK BAĞ İZİ — parti satıştan SONRA damgalıysa kaydedilir.
+     * "Bu maliyet nereden geldi" sorusunun ileride cevabı bu olacak.
+     */
+    for (const pay of plan.dagitim) {
+      const partiTarihi = partiTarihleri.get(pay.hareketId);
+      if (partiTarihi === undefined || partiTarihi <= plan.kalem.sale.soldAt) continue;
+      geriyeDonuk.push({
+        siparis: plan.kalem.sale.code,
+        sku: plan.kalem.variant.sku,
+        satisTarihi: plan.kalem.sale.soldAt.toISOString().slice(0, 10),
+        partiTarihi: partiTarihi.toISOString().slice(0, 10),
+        gecikmeGun: Math.round(
+          (partiTarihi.getTime() - plan.kalem.sale.soldAt.getTime()) / 86400_000,
+        ),
+      });
+    }
   }
 
   const sonraHareket = await prisma.stockMovement.count();
@@ -315,6 +369,24 @@ async function main() {
       items: { none: { stockMovements: { some: {} } } },
     },
   });
+  /**
+   * ⚠ GERİYE DÖNÜK BAĞ EKRANDA DA YAZAR — `AuditLog`a yazıp ekranda
+   * susmak, "kaydedilen ≠ görünen" hatası olurdu.
+   */
+  console.log(`\n⑤b GERİYE DÖNÜK BAĞ — parti satıştan SONRA damgalı`);
+  console.log(`   ${geriyeDonuk.length} / ${hareket} hareket`);
+  if (geriyeDonuk.length > 0) {
+    const g = geriyeDonuk.map((x) => x.gecikmeGun).sort((a, b) => a - b);
+    console.log(
+      `   gecikme: en küçük ${g[0]} gün · ortanca ${g[Math.floor(g.length / 2)]} gün · EN BÜYÜK ${g[g.length - 1]} gün`,
+    );
+    for (const x of geriyeDonuk) {
+      console.log(
+        `     ${x.satisTarihi} → ${x.partiTarihi}  (+${x.gecikmeGun} gün)  ${(x.siparis ?? "—").padEnd(14)}${x.sku}`,
+      );
+    }
+  }
+
   console.log(`\n⑥ SONUÇ`);
   console.log(`   hâlâ bağsız satış         ${kalanBagsiz}   ← alım defteri açığı (K55)`);
 
@@ -333,6 +405,18 @@ async function main() {
         karTazelendi: tazelendi,
         kalanBagsizSatis: kalanBagsiz,
         not: "Karar: baglanabilen baglanir. Parti yetersiz ve hic hareketi olmayan varyantlar ATLANDI - negatif stok YOK, kaynaksiz cikis YOK.",
+        geriyeDonukBag: {
+          adet: geriyeDonuk.length,
+          gerekce:
+            "O malin GERCEK alimi hic kaydedilmedi; bugun girilen alim o eksik kaydin yerine geciyor. Maliyet gercek, yalniz tarihi gec. `sinir` parametresi bilerek verilmedi (kullanici karari 28.08.2026).",
+          enBuyukGecikmeGun:
+            geriyeDonuk.length === 0 ? 0 : Math.max(...geriyeDonuk.map((g) => g.gecikmeGun)),
+          ortalamaGecikmeGun:
+            geriyeDonuk.length === 0
+              ? 0
+              : Math.round(geriyeDonuk.reduce((t, g) => t + g.gecikmeGun, 0) / geriyeDonuk.length),
+          kayitlar: geriyeDonuk,
+        },
       }),
     },
   });
