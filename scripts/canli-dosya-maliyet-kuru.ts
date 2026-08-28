@@ -43,6 +43,33 @@ import { canliYapilandirma } from "./canli-ortak";
  */
 
 const DOSYA = "C:/Users/yapra/Desktop/excel/satis.xlsx";
+
+/**
+ * ⭐ DOĞRULANMIŞ AYKIRI DEĞERLER — kural KALKMAZ, İSTİSNA BEYAN EDİLİR.
+ *
+ * Kullanıcı 28.08.2026, sorulunca doğruladı:
+ *   _"bu ürünle promosyon geldi ve sattım, ondan dolayı maliyetlerini
+ *    1 lira yazdım."_
+ *
+ * ⛔ ANAYASA GEREĞİ BÖYLE YAZILIYOR: _"aykırılık bir HÜKÜM değil, bir
+ * DAVETTİR. Sıra şudur: işaretle → baktır → doğrula → (gerçekse)
+ * işaretini kaldır ve YAŞAT."_ OneBlade vakasında ₺27,16 aynı şekilde
+ * gerçek çıkmıştı (hediye kuponu) ve "düzeltilseydi" doğru bir kayıt
+ * bozulacaktı.
+ *
+ * ⚠ VE ÖLÇÜT SİLİNMİYOR: `≤ ₺5` kuralı yerinde duruyor. Yarın doğan yeni
+ * bir ucuz satır yine işaretlenecek ve yine SORULACAK. Beyan edilmemiş
+ * hiçbir aykırı değer sessizce geçmez.
+ * _(Anayasa: "sonsuza kadar yanan uyarı olmaz" — her şüphelinin bir
+ * DOĞRULANDI yolu olmak zorundadır.)_
+ */
+const DOGRULANMIS_UCUZ = new Map<string, string>([
+  ["10030751247", "promosyonla geldi — kullanıcı 28.08.2026 (⚠ satış sistemde YOK)"],
+  ["10415881283", "promosyonla geldi — kullanıcı 28.08.2026 (⚠ FIFO damgası ₺849, çelişki ②'de)"],
+  ["10415963548", "promosyonla geldi — kullanıcı 28.08.2026"],
+  ["10415994329", "promosyonla geldi — kullanıcı 28.08.2026"],
+  ["10416041845", "promosyonla geldi — kullanıcı 28.08.2026"],
+]);
 const sayi = (h: unknown) => (Number.isFinite(Number(h)) ? Number(h) : 0);
 const t2 = (n: number) => n.toFixed(2).padStart(15);
 
@@ -133,7 +160,11 @@ async function main() {
 
     /** ⛔ ② AYKIRI — iki alt sınıf AYRI. */
     const satisBirim = Number(k.unitPriceAmount.toString());
-    if (birim <= 5) { aykiriUcuz.push({ k, birim }); continue; }
+    /** ⭐ DOĞRULANMIŞSA aykırı sayılmaz — işaret kalkar, rakam YAŞAR. */
+    if (birim <= 5 && !DOGRULANMIS_UCUZ.has(k.sale.code ?? "")) {
+      aykiriUcuz.push({ k, birim });
+      continue;
+    }
     if (satisBirim > 0 && birim >= satisBirim) { aykiriPahali.push({ k, birim }); continue; }
     yazilacak.push({ k, birim });
   }
@@ -167,6 +198,12 @@ async function main() {
       "   satış " + Number(x.k.unitPriceAmount.toString()).toFixed(2).padStart(9) +
       "   " + x.k.variant.sku.padEnd(18) + x.k.variant.product.name.slice(0, 26));
   }
+  if (aykiriUcuz.length === 0) console.log("       (yok — hepsi doğrulandı)");
+  console.log("\n   ⭐ DOĞRULANMIŞ UCUZ SATIRLAR — işaret kalktı, rakam YAŞIYOR");
+  for (const [no, sebep] of DOGRULANMIS_UCUZ) {
+    console.log("       " + no.padEnd(14) + sebep);
+  }
+
   console.log("\n   (b) MALİYET ≥ SATIŞ — zararına satış iddiası   [" + aykiriPahali.length + " kalem]");
   for (const x of aykiriPahali) {
     console.log("       " + (x.k.sale.code ?? "—").padEnd(14) + x.birim.toFixed(2).padStart(9) +
