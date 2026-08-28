@@ -209,6 +209,61 @@ tencere): satılmadan zarar yazılmış tek kalem.
 
 ---
 
+## 🆕 K72 — İKİ VAKA HALİL'DEN · 28.08.2026
+
+### ① `11540657420` — Barbie, TY faturası elde, sistemde **NO_COST**
+
+Fatura (e-Arşiv `TEA2026000002461`, 27.08) satışı doğruluyor: ₺1.944,00.
+Sistemde satış VAR (`enumerasyon` ile TY API'den gelmiş) ama **stok
+hareketi YOK** → maliyet bağı kurulamıyor.
+
+**SEBEP ÖLÇÜLDÜ — kod kusuru değil, ALIM EKSİĞİ:**
+
+    axcali1869 defteri: 9 giren · 9 çıkan · net stok 0
+    ⭐ FIFO AÇIK PARTİ KALANI: 0
+    satış kalemi 11 · stok hareketi OLMAYAN 2
+
+Yani **satılan adet alınan adetten 2 fazla.** Satış anında düşecek parti
+kalmadığı için `SALE_OUT` yazılamıyor. Alım girilince kendiliğinden düzelir.
+
+⚠ **VE ÖNCEKİ CÜMLEMİ DÜZELTİYOR:** "alımı hiç girilmemiş" demiştim,
+kullanıcı itiraz etmişti ve HAKLIYDI — alımlar girilmiş (dokuz kez, hepsi
+₺1.200). Eksik olan **son iki adedin alımı.**
+
+### ② `4120311526` — Razer mouse, teslim edilmeden iade
+
+> Kullanıcı: _"Müşteri kargoda iptal ederse TEK kargo bize yansıyor.
+> Bu ürün henüz teslim edilmeden iptal edildiği için tek kargo ücreti
+> bize yansıdı."_
+
+| kaynak | ne diyor |
+|---|---|
+| **HB paneli** (kanalın kendi belgesi) | tutar 0 · komisyon 0 · hizmet 0 · stopaj 0 · **KARGO −94,20** · net **−94,20** |
+| ters-satır listesi | TÜR iade · adet −1 · liste −6.499 · alış −4.948 · **KARGO −101** |
+| **defterimiz** | ₺6.499'luk GERÇEKLEŞMİŞ satış · STOPAJ 54,16 · ÖDEME_GİDERİ 51,99 · HİZMET 12,60 · ⛔ iade kaydı YOK · kargo YOK |
+
+⭐ **KARGO İKİ KAYNAKTA FARKLI: 101 ≠ 94,20.** Kaynak önceliği kuralı
+gereği **kanalın kendi belgesi kazanır** (₺94,20 `OLCULDU`, ₺101 kullanıcı
+tahmini).
+
+### ⭐ KULLANICININ ÖLÇÜTÜ `returnType`i TAHMİNDEN ÇIKARABİLİR
+
+"Tek kargo = teslim edilmeden döndü" bir **sayılabilir** ölçüttür ve
+ekstrede karşılığı var: `KARGO` ve **`KARGO_IADE`** ayrı kodlar.
+
+**AMA KAPSAM ÖLÇÜLDÜ VE BUGÜN YETMİYOR:**
+
+    dosyadaki iade siparişi 360
+    ⭐ ekstrede görülen        9  (%2,5)
+    ⛔ ekstrede hiç yok      351
+    kargo bacağı sayılabilen  5 → 1 bacak=2 · 2 bacak=3
+
+Ölçüt DOĞRU ve teslim edilebilir; **veri kapsamı yok.** 236 iadenin türü
+bugün ölçülemez. **Açılış şartı: HB/TY hakediş ekstrelerinin yüklenmesi** —
+o gün tür TAHMİN edilmeden ÖLÇÜLEREK yazılabilir.
+
+---
+
 ### ⚠ İKİ AÇIK NOT
 
 **· `10415881283` — aynı kampanyanın dördü FARKLI maliyetle duruyor.**
