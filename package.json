@@ -106,6 +106,8 @@
     "canli:komisyon-kapsami": "tsx scripts/canli-komisyon-orani-kapsami.ts",
     "canli:marj-carpitmasi": "tsx scripts/canli-marj-carpitmasi.ts",
     "canli:komisyon-doldur": "tsx scripts/canli-komisyon-geri-doldur.ts",
+    "canli:karsiz-sebep": "tsx scripts/canli-karsiz-sebep.ts",
+    "canli:kural-kapsam": "tsx scripts/canli-kural-kapsam-tarihi.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",

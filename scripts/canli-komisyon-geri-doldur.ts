@@ -1,10 +1,10 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import readXlsxFile from "read-excel-file/node";
 
-import { PrismaClient } from "../src/generated/prisma/client";
 import { paketiNormalle } from "../src/lib/tablo/paket";
+import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 
 /**
@@ -51,6 +51,9 @@ import { canliYapilandirma } from "./canli-ortak";
 
 const SATIS_DOSYA = "C:/Users/yapra/Downloads/satis.xlsx";
 
+const YAZ = process.argv.includes("--yaz");
+const GERI = process.argv.includes("--geri");
+
 /**
  * ⛔ AMAZON HARİÇ — kullanıcı kararı 28.08.2026.
  * 11 kalemin hepsi tam `%1,00`; Amazon TR komisyonu tipik olarak %8–15.
@@ -70,7 +73,15 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  const p = new PrismaClient({ adapter: new PrismaMariaDb(c.veri.ham) });
+  /**
+   * ⛔ TEK İSTEMCİ: `karYenidenYaz` `src/lib/prisma`yı kullanıyor. Ayrı bir
+   * istemci açsaydık okuma bir bağlantıdan, yazma başka bir bağlantıdan
+   * giderdi ve aynı turda iki farklı görüntü oluşabilirdi.
+   */
+  process.env.DATABASE_URL = betikAdresi(c.veri.ham);
+  const { prisma: p } = await import("../src/lib/prisma");
+  const { karYenidenYaz } = await import("../src/lib/kar-yeniden");
+  const { kdvDahilKargo } = await import("../src/lib/kargo-kdv");
 
   const s = (await readXlsxFile(paketiNormalle(readFileSync(SATIS_DOSYA)).bayt))
     .find((x) => String(x.sheet).includes("SATIŞ"))!;
@@ -135,9 +146,13 @@ async function main() {
   let komisyonKdvli = 0;
 
   console.log("\n" + "=".repeat(104));
-  console.log("commissionRate GERİYE DOLDURMA — KURU KOŞUM (hiçbir şey yazılmaz)");
+  console.log("commissionRate GERİYE DOLDURMA — " +
+    (GERI ? "⚠ GERİ ALMA" : YAZ ? "⚠ YAZIM" : "KURU KOŞUM (yazmaz)"));
   console.log("=".repeat(104));
-  console.log("\n   oranı boş iptalsiz kalem: " + bosKalemler.length);
+  /** ⚠ Dosya kimliği kayda geçer: geri alma AYNI dosyadan türetilir. */
+  const md5 = createHash("md5").update(readFileSync(SATIS_DOSYA)).digest("hex");
+  console.log("\n   dosya md5: " + md5);
+  console.log("   oranı boş iptalsiz kalem: " + bosKalemler.length);
 
   type K = { doldurulabilir: number; belirsiz: number; kodsuz: number; dosyadaYok: number;
     komisyon: number; ciro: number; oranlar: number[] };
@@ -149,6 +164,7 @@ async function main() {
     return v;
   };
 
+  const plan: { saleId: string; saleItemId: string; oran: number }[] = [];
   const haricKova = new Map<string, { kalem: number; ciro: number }>();
   for (const k of bosKalemler) {
     const kanalKodu = k.sale.channelAccount.channel.code;
@@ -171,6 +187,7 @@ async function main() {
     if (new Set(bulunan).size > 1) { v.belirsiz++; continue; }
     v.doldurulabilir++;
     v.oranlar.push(bulunan[0]);
+    plan.push({ saleId: k.sale.id, saleItemId: k.id, oran: bulunan[0] });
     const kom = (ciro * bulunan[0]) / 100;
     v.komisyon += kom;
     /** Hepsiburada'da komisyonun üstüne %20 KDV binecek (KOMISYON_KDV kuralı). */
@@ -254,8 +271,137 @@ async function main() {
   console.log("     tazelenmeli, yoksa `net2Amount` komisyonsuz hâliyle kalır ve ekran");
   console.log("     hiç değişmez. Yazım ile tazeleme AYNI turda, ayrılmaz.");
 
+  if (!YAZ && !GERI) {
+    console.log("\n" + "=".repeat(104));
+    console.log("KURU KOŞUM — HİÇBİR ŞEY YAZILMADI.");
+    console.log("Yazmak için:  npm run canli:komisyon-doldur -- --yaz");
+    console.log("=".repeat(104) + "\n");
+    await p.$disconnect();
+    return;
+  }
+
+  // ═══ YAZIM / GERİ ALMA ══════════════════════════════════════════════════
+  /**
+   * ⛔ YAZIM VE KÂR TAZELEME AYRILMAZ — VE BU YAPISAL.
+   * `karYenidenYaz` `commissionRate`i, `net1`/`net2`yi ve `profitStatus`ü
+   * TEK transaction'da yazıyor. Ayrı iki adım yazsaydık aradaki bir çökme
+   * "oran yazıldı ama kâr eski" hâlini bırakırdı ve ekran yanlış görünürdü.
+   *
+   * ⚠ GERİ ALMA aynı gövdeden geçer: oran `null` verilir, kâr yeniden
+   * hesaplanır ve satış komisyonsuz hâline döner.
+   */
+  const hedef = new Map<string, Map<string, number>>();
+  for (const x of plan) {
+    const m = hedef.get(x.saleId) ?? new Map<string, number>();
+    m.set(x.saleItemId, x.oran);
+    hedef.set(x.saleId, m);
+  }
+
+  console.log("\n⚠ " + (GERI ? "GERİ ALINIYOR" : "YAZILIYOR") + " — " +
+    hedef.size + " satış · " + plan.length + " kalem…");
+
+  let basarili = 0;
+  let basarisiz = 0;
+  const hatalar: string[] = [];
+  let sayac = 0;
+  for (const [saleId, oranlar] of hedef) {
+    /** ⚠ Kalemin MEVCUT oranı korunur — yalnız hedefteki kalem değişir. */
+    const satis = await p.sale.findUnique({
+      where: { id: saleId },
+      select: {
+        code: true, cargoCarrierId: true, cargoDesi: true, cargoAmount: true,
+        items: { select: { id: true, commissionRate: true } },
+      },
+    });
+    if (!satis) { basarisiz++; hatalar.push(saleId + " — satış bulunamadı"); continue; }
+
+    try {
+      const ok = await karYenidenYaz({
+        saleId,
+        kalemler: satis.items.map((k) => {
+          const yeni = oranlar.get(k.id);
+          return {
+            saleItemId: k.id,
+            commissionRate: GERI
+              ? (yeni !== undefined ? null : (k.commissionRate === null ? null : Number(k.commissionRate.toString())))
+              : (yeni ?? (k.commissionRate === null ? null : Number(k.commissionRate.toString()))),
+            commissionAmount: null,
+          };
+        }),
+        cargoCarrierId: satis.cargoCarrierId,
+        cargoDesi: satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
+        /** DB KDV hariç saklar; motor KDV dahil bekler (`lib/kargo-kdv.ts`). */
+        cargoAmountManual: kdvDahilKargo(
+          satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
+        ),
+      });
+      if (ok) basarili++;
+      else { basarisiz++; if (hatalar.length < 8) hatalar.push((satis.code ?? saleId) + " — önizleme null (maliyet yok?)"); }
+    } catch (e) {
+      basarisiz++;
+      /** ⛔ Mesaj TAM taşınır; kırpma teşhisi kırpar. */
+      if (hatalar.length < 8) {
+        hatalar.push((satis.code ?? saleId) + " — " +
+          (e instanceof Error ? e.message : String(e)).replace(/\s+/g, " "));
+      }
+    }
+    if (++sayac % 500 === 0) console.log("   … " + sayac + " / " + hedef.size);
+  }
+
+  console.log("\n   başarılı " + basarili + " · başarısız " + basarisiz);
+  for (const h of hatalar) console.log("     ⚠ " + h);
+
+  await p.auditLog.create({
+    data: {
+      action: GERI ? "KOMISYON_ORANI_GERI_ALINDI" : "KOMISYON_ORANI_GERIYE_DOLDURULDU",
+      targetType: "SaleItem",
+      detail: JSON.stringify({
+        gerekce: "İçe aktarma commissionRate yazmıyordu; 5333 kalem RULE_MISSING kaldı ve komisyon HİÇ düşülmedi. Kullanıcı onayı 28.08.2026.",
+        kaynak: "satis.xlsx · KOMİSYON ORANI kolonu (KDV HARİÇ)",
+        dosyaMd5: md5,
+        kalem: plan.length,
+        satis: hedef.size,
+        basarili, basarisiz,
+        haric: [...haricKova].map(([k, v]) => ({ kanal: k, kalem: v.kalem, gerekce: "oran %1,00 — yer tutucu şüphesi, doğrulanmadı" })),
+        kdvNotu: "Yazılan değer KDV HARİÇ orandır. Motor HB'de KOMISYON_KDV %20 kuralıyla KDV'yi kendisi ekler; KDV dahil oran yazılsaydı iki kez uygulanırdı.",
+        geriAlma: "npm run canli:komisyon-doldur -- --geri   (AYNI dosyayla; md5 tutmalı)",
+      }),
+    },
+  });
+  console.log("   ✓ AuditLog: " + (GERI ? "KOMISYON_ORANI_GERI_ALINDI" : "KOMISYON_ORANI_GERIYE_DOLDURULDU"));
+
+  // ── SONRA tablosu — aynı gövdeden ──────────────────────────────────────
+  console.log("\n   SONRA — ölçüldü (tahmin değil)");
+  const satislar2 = await p.sale.findMany({
+    where: { iptalTarihi: null },
+    select: { profitStatus: true, net2Amount: true,
+      items: { select: { quantity: true, unitPriceAmount: true } } },
+  });
+  const durum2 = new Map<string, { n: number; ciro: number; net2: number }>();
+  for (const x of satislar2) {
+    const d = x.profitStatus ?? "(boş)";
+    const v = durum2.get(d) ?? { n: 0, ciro: 0, net2: 0 };
+    v.n++;
+    v.ciro += x.items.reduce((t, i) => t + Number(i.unitPriceAmount.toString()) * i.quantity, 0);
+    if (x.net2Amount !== null) v.net2 += Number(x.net2Amount.toString());
+    durum2.set(d, v);
+  }
+  console.log("     durum".padEnd(20) + "satış".padStart(7) + "ciro".padStart(17) +
+    "Σ net2".padStart(17) + "marj".padStart(9) + "   FARK (satış)");
+  console.log("     " + "─".repeat(80));
+  for (const d of new Set([...durum.keys(), ...durum2.keys()])) {
+    const a = durum.get(d) ?? { n: 0, ciro: 0, net2: 0 };
+    const b = durum2.get(d) ?? { n: 0, ciro: 0, net2: 0 };
+    console.log("     " + d.padEnd(20) + String(b.n).padStart(7) +
+      b.ciro.toFixed(2).padStart(17) + b.net2.toFixed(2).padStart(17) +
+      (b.ciro > 0 ? ((b.net2 / b.ciro) * 100).toFixed(2) + "%" : "—").padStart(9) +
+      ("   " + (b.n - a.n >= 0 ? "+" : "") + (b.n - a.n)).padStart(16));
+  }
+  console.log("\n   ⚠ FARK YAZILDI, YORUMLANMADI.");
+
   console.log("\n" + "=".repeat(104));
-  console.log("KURU KOŞUM — HİÇBİR ŞEY YAZILMADI. Bu betikte `--yaz` YOK.");
+  console.log((GERI ? "GERİ ALINDI." : "YAZILDI.") +
+    "  Geri alma: npm run canli:komisyon-doldur -- --geri");
   console.log("=".repeat(104) + "\n");
   await p.$disconnect();
 }
