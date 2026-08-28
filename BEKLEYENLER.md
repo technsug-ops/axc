@@ -13,6 +13,52 @@
 
 ---
 
+## 🆕 K69 — DOSYA MALİYETİ ASIL VERİ · 28.08.2026
+
+> **Kullanıcı kararı:** _"M sütunundaki alış fiyatı ASIL VERİ. Bu rakamlar
+> KDV DAHİL ve sahih."_ Ve içe aktarmadaki _"hesap sütunları yazılmaz"_
+> kararı kâr/ROI/KDV için doğruydu ama **alış fiyatı hesap SONUCU değil,
+> kullanıcının KAYDI** — komisyon oranında aynı hata yapılıp düzeltilmişti.
+
+**KDV ÖLÇÜLEREK DOĞRULANDI, KABUL EDİLMEDİ:** defterdeki `unitCostAmount`
+KDV dahil (`envanter.ts` ondan `kdvHaric` alıyor) ve dosya **1128 kalemde
+BİREBİR** tutuyor (×1,000). Komisyondaki ×1,20 tuzağı burada yok (2 kalem).
+
+| # | İş | Durum |
+|---|---|---|
+| ① | FIFO boş kalemlere dosya maliyeti | **[KOŞTU 28.08.2026]** — 2551 kalem · ₺4.522.783 |
+| ② | 2175 çelişen kalem | **[ŞERHLİ AÇIK]** — dokunulmadı |
+| ③ | Kronoloji düzeltmesi | **[BEKLİYOR]** — ayrı iş, 309 kalem / 423 hareket |
+
+**ÜÇ KARAR:**
+· **FIFO ÜSTÜNE YAZILMAZ** — _"ölçülmüş gerçek, ölçülmemiş beyanla
+  değiştirilmez."_ Çelişen 2175 kalem şerhli kalır (defter ₺4.917.625 ↔
+  dosya ₺4.717.391).
+· Aykırı satır yazılmaz, ayrı kovada bekler.
+· Karşılığı olmayan 10 kalem `NO_COST` kalır — uydurulmaz.
+
+**⭐ ₺1,00'LIK SATIRLAR DOĞRULANDI VE YAŞIYOR.** Kullanıcı: _"bu ürünle
+promosyon geldi ve sattım, ondan dolayı maliyetlerini 1 lira yazdım."_
+Dosyadaki **tüm** ucuz satırlar tarandı — tam 5, listesiyle birebir.
+⛔ Ölçüt SİLİNMEDİ, istisna BEYAN edildi (`DOGRULANMIS_UCUZ`): yarın doğan
+yeni bir ucuz satır yine işaretlenecek.
+
+### ⚠ İKİ AÇIK NOT
+
+**· `10415881283` — aynı kampanyanın dördü FARKLI maliyetle duruyor.**
+Üçü ₺1,00 yazıldı, dördüncüsünde FIFO damgası ₺849 var ve ① kararı gereği
+dokunulmadı. **Kararın doğal sonucu, hata değil.**
+⭐ **AMA defterdeki ₺849 muhtemelen promosyon kaydedilirken yanlış
+girilmiş. FIFO damgalarının doğruluğu bir gün ölçülürse İLK BAKILACAK
+VAKA budur.**
+
+**· `10030751247` — Türk Kahvesi ₺1.700, dosyada VAR, sisteme HİÇ girmemiş.**
+K56 içe aktarmasının kaçırdıklarından olabilir.
+⭐ **ÖLÇÜM (yazımdan sonra, ayrı iş):** dosyada olup sistemde hiç olmayan
+BAŞKA satış var mı? Kaç tane, kaç TL? K56 bunu hangi kovaya koymuştu?
+
+---
+
 ## ✅ K66 KAPANDI + ⚠ K68b AÇILDI — 28.08.2026
 
 **KOMİSYON AÇIĞI KAPANDI.** 5200 satış · 5319 kalem yazıldı, **başarısız 0**.

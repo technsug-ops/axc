@@ -5,6 +5,7 @@ import readXlsxFile from "read-excel-file/node";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { paketiNormalle } from "../src/lib/tablo/paket";
+import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 
 /**
@@ -70,6 +71,13 @@ const DOGRULANMIS_UCUZ = new Map<string, string>([
   ["10415994329", "promosyonla geldi — kullanıcı 28.08.2026"],
   ["10416041845", "promosyonla geldi — kullanıcı 28.08.2026"],
 ]);
+const YAZ = process.argv.includes("--yaz");
+/**
+ * ⚠ PARTİ DAMGASI — geri alma bu dizeyle bulunur. `note` alanı serbest
+ * metin ve merdivenin ikinci basamağı; yeni sütun AÇILMADI.
+ */
+const PARTI = "dosya-maliyet-20260828";
+
 const sayi = (h: unknown) => (Number.isFinite(Number(h)) ? Number(h) : 0);
 const t2 = (n: number) => n.toFixed(2).padStart(15);
 
@@ -80,7 +88,11 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  const p = new PrismaClient({ adapter: new PrismaMariaDb(c.veri.ham) });
+  /** ⛔ TEK İSTEMCİ: kâr motoru `src/lib/prisma`yı kullanıyor. */
+  process.env.DATABASE_URL = betikAdresi(c.veri.ham);
+  const { prisma: p } = await import("../src/lib/prisma");
+  const { satisKarTazele } = await import("../src/lib/kar-yeniden");
+  const { urunlereTopla, donemOrtalamaMarji } = await import("../src/lib/panel-listeler");
 
   const s = (await readXlsxFile(paketiNormalle(readFileSync(DOSYA)).bayt))
     .find((x) => String(x.sheet).includes("SATIŞ"))!;
@@ -241,7 +253,182 @@ async function main() {
   console.log("   mertebe, ~" + Math.ceil((yazilacak.length * 2) / 60) + " dk (2 hareket/kalem).");
 
   console.log("\n" + "=".repeat(104));
-  console.log("KURU KOŞUM — HİÇBİR ŞEY YAZILMADI.");
+  /** ⚠ PANEL MARJI PANELİN KENDİ GÖVDESİNDEN — kopya formül YAZILMAZ. */
+  const panelMarji = async () => {
+    const kl = await p.saleItem.findMany({
+      where: { sale: { iptalTarihi: null } },
+      select: {
+        quantity: true, unitPriceAmount: true, net1Amount: true, net2Amount: true,
+        profitStatus: true, variantId: true,
+        variant: { select: { sku: true, product: { select: { name: true } } } },
+      },
+    });
+    return donemOrtalamaMarji(
+      urunlereTopla(
+        kl.map((x) => ({
+          variantId: x.variantId,
+          urunAdi: x.variant.product.name,
+          sku: x.variant.sku,
+          adet: x.quantity,
+          ciro: Number(x.unitPriceAmount.toString()) * x.quantity,
+          net1: x.net1Amount === null ? null : Number(x.net1Amount.toString()),
+          net2: x.net2Amount === null ? null : Number(x.net2Amount.toString()),
+          durum: x.profitStatus,
+        })),
+      ),
+    );
+  };
+  const durumDagilimi = async () => {
+    const g = await p.sale.groupBy({
+      by: ["profitStatus"], where: { iptalTarihi: null },
+      _count: true, _sum: { net2Amount: true },
+    });
+    return g.map((x) => ({
+      durum: String(x.profitStatus ?? "(boş)"),
+      satis: x._count,
+      net2: Number(x._sum.net2Amount?.toString() ?? 0),
+    }));
+  };
+  const kutuSayisi = () =>
+    p.sale.count({
+      where: {
+        iptalTarihi: null,
+        OR: [{ profitStatus: null }, { NOT: { profitStatus: "CALCULATED" as const } }],
+      },
+    });
+
+  if (!YAZ) {
+    console.log("KURU KOŞUM — HİÇBİR ŞEY YAZILMADI.");
+    console.log("Yazmak için:  npm run canli:dosya-maliyet-kuru -- --yaz");
+    console.log("=".repeat(104) + "\n");
+    await p.$disconnect();
+    return;
+  }
+
+  // ═══ YAZIM ══════════════════════════════════════════════════════════════
+  const onceHareket = await p.stockMovement.count();
+  const onceStok = await p.stockMovement.aggregate({ _sum: { quantityDelta: true } });
+  const onceDurum = await durumDagilimi();
+  const onceMarj = await panelMarji();
+  const onceKutu = await kutuSayisi();
+
+  console.log("\n⚠ YAZILIYOR — " + yazilacak.length + " kalem…");
+  console.log("   ÖNCE  StockMovement " + onceHareket +
+    " · net stok " + (onceStok._sum.quantityDelta ?? 0) +
+    " · kutu " + onceKutu + " · panel marjı " +
+    (onceMarj === null ? "—" : onceMarj.toFixed(2) + "%"));
+
+  const tazelenecek = new Set<string>();
+  let yazilan = 0;
+  let hata = 0;
+  const hatalar: string[] = [];
+  for (const x of yazilacak) {
+    try {
+      /**
+       * ⛔ İKİ HAREKET TEK TRANSACTION — araya çökme girerse "parti var,
+       * çıkış yok" hâli kalırdı ve stok kalıcı olarak şişerdi.
+       */
+      await p.$transaction(async (tx) => {
+        const parti = await tx.stockMovement.create({
+          data: {
+            variantId: x.k.variantId,
+            type: "PURCHASE_IN",
+            quantityDelta: x.k.quantity,
+            /** ⚠ SATIŞ TARİHİNE damgalanır — geriye dönük bağ üretmez. */
+            occurredAt: x.k.sale.soldAt,
+            unitCostAmount: String(x.birim),
+            unitCostCurrency: "TRY",
+            note: PARTI + " · dosya beyanı (satis.xlsx · ÜRÜN ALIŞ FİYATI)",
+          },
+          select: { id: true },
+        });
+        await tx.stockMovement.create({
+          data: {
+            variantId: x.k.variantId,
+            type: "SALE_OUT",
+            quantityDelta: -x.k.quantity,
+            occurredAt: x.k.sale.soldAt,
+            saleItemId: x.k.id,
+            sourceMovementId: parti.id,
+            unitCostAmount: String(x.birim),
+            unitCostCurrency: "TRY",
+            note: PARTI,
+          },
+        });
+      });
+      yazilan++;
+      tazelenecek.add(x.k.sale.id);
+    } catch (e) {
+      hata++;
+      /** ⛔ Mesaj TAM taşınır — kırpma teşhisi kırpar. */
+      if (hatalar.length < 8) {
+        hatalar.push((x.k.sale.code ?? x.k.id) + " — " +
+          (e instanceof Error ? e.message : String(e)).replace(/\s+/g, " "));
+      }
+    }
+    if ((yazilan + hata) % 250 === 0) console.log("   … " + (yazilan + hata) + " / " + yazilacak.length);
+  }
+  console.log("\n   yazılan " + yazilan + " kalem (" + yazilan * 2 + " hareket) · hata " + hata);
+  for (const h of hatalar) console.log("     ⚠ " + h);
+
+  const sonraHareket = await p.stockMovement.count();
+  const sonraStok = await p.stockMovement.aggregate({ _sum: { quantityDelta: true } });
+  console.log("\n   StockMovement " + onceHareket + " → " + sonraHareket +
+    "  (fark " + (sonraHareket - onceHareket) + ", beklenen " + yazilan * 2 + ")" +
+    (sonraHareket - onceHareket === yazilan * 2 ? "  ✓" : "  ⛔ TUTMADI"));
+  console.log("   ⭐ NET STOK " + (onceStok._sum.quantityDelta ?? 0) + " → " +
+    (sonraStok._sum.quantityDelta ?? 0) +
+    ((sonraStok._sum.quantityDelta ?? 0) === (onceStok._sum.quantityDelta ?? 0)
+      ? "   ✓ SIFIR ETKİ (+N sonra −N)"
+      : "   ⛔ STOK KAYDI — beklenmedik"));
+
+  console.log("\n⚠ KÂR TAZELENİYOR — " + tazelenecek.size + " satış…");
+  let tazelendi = 0, tazelenemedi = 0;
+  for (const saleId of tazelenecek) {
+    if (await satisKarTazele(saleId)) tazelendi++;
+    else tazelenemedi++;
+    if ((tazelendi + tazelenemedi) % 250 === 0) {
+      console.log("   … " + (tazelendi + tazelenemedi) + " / " + tazelenecek.size);
+    }
+  }
+  console.log("   tazelendi " + tazelendi + " · tazelenemedi " + tazelenemedi);
+
+  await p.auditLog.create({
+    data: {
+      action: "DOSYA_MALIYETI_YAZILDI",
+      targetType: "StockMovement",
+      detail: JSON.stringify({
+        parti: PARTI,
+        gerekce: "Kullanıcı kararı 28.08.2026: satış dosyasındaki `ÜRÜN ALIŞ FİYATI` ASIL VERİDİR ve KDV DAHİLDİR. Bağımsız doğrulandı: defterdeki unitCostAmount da KDV dahil ve 1128 kalemde birebir tutuyor.",
+        kural: "Dosya maliyeti YALNIZ FIFO'nun BOŞ olduğu kaleme yazıldı; damgası olan kaleme DOKUNULMADI (çelişen 2175 kalem şerhli duruyor).",
+        yazilanKalem: yazilan, hareket: yazilan * 2, tazelenenSatis: tazelendi,
+        dokunulmayanCelisen: celisen.length,
+        karsiliksizNoCost: karsiliksiz.length,
+        dogrulanmisUcuz: [...DOGRULANMIS_UCUZ],
+        damgalama: "PURCHASE_IN `occurredAt = sale.soldAt` — geriye dönük bağ üretmez. Purchase/PurchaseItem BELGESİ ÜRETİLMEDİ: fatura yok, sahte belge kayıt uydurmak olurdu.",
+        geriAlma: "note alanı '" + PARTI + "' taşıyan hareketler ters kayıtla geri verilir.",
+      }),
+    },
+  });
+  console.log("   ✓ AuditLog: DOSYA_MALIYETI_YAZILDI");
+
+  const sonraDurum = await durumDagilimi();
+  const sonraMarj = await panelMarji();
+  const sonraKutu = await kutuSayisi();
+  console.log("\n   SONRA — ölçüldü (tahmin değil)");
+  console.log("     durum            satış           Σ net2");
+  for (const d of sonraDurum) {
+    console.log("     " + d.durum.padEnd(18) + String(d.satis).padStart(6) + t2(d.net2));
+  }
+  console.log("\n     ÖNCE  kutu " + onceKutu + " · panel marjı " +
+    (onceMarj === null ? "—" : onceMarj.toFixed(2) + "%"));
+  console.log("     SONRA kutu " + sonraKutu + " · panel marjı " +
+    (sonraMarj === null ? "—" : sonraMarj.toFixed(2) + "%"));
+  console.log("   ⛔ Σ net2 ÖNCE/SONRA oranları BÖLÜNMEDİ — küme değişti.");
+  console.log("     (önce: " + onceDurum.map((d) => d.durum + "=" + d.satis).join(" · ") + ")");
+
+  console.log("\n" + "=".repeat(104));
+  console.log("YAZILDI. Geri alma: `note` alanı '" + PARTI + "' taşıyan hareketler.");
   console.log("=".repeat(104) + "\n");
   await p.$disconnect();
 }
