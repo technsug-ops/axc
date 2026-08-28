@@ -109,6 +109,7 @@
     "canli:karsiz-sebep": "tsx scripts/canli-karsiz-sebep.ts",
     "canli:kural-kapsam": "tsx scripts/canli-kural-kapsam-tarihi.ts",
     "canli:son-alis": "tsx scripts/canli-son-alis-farki.ts",
+    "canli:sermaye-olcum": "tsx scripts/canli-sermaye-verimi-olcum.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",
