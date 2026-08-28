@@ -790,6 +790,39 @@ console.log("=".repeat(70));
   );
 }
 
+
+/**
+ * ⛔ NET YALNIZ `CALCULATED` İKEN YAZILIR (28.08.2026).
+ * Saf gövde `netYaz` yerine YAZMA KATMANI sınanıyor: değer testi motorun
+ * ürettiği sayıya bakar, bu ölçüt o sayının KAYDA GİRİP GİRMEDİĞİNE.
+ * ⚠ Desen ADA değil KULLANIMA bağlı ve İKİ yazma yeri de ayrı sayılıyor
+ *   (satış seviyesi + kalem seviyesi); biri bozulursa öteki kurtarmasın.
+ */
+{
+  console.log("NET: yalnız CALCULATED iken yazılır");
+  const y = readFileSync("src/lib/kar-yeniden.ts", "utf8");
+  kontrol(
+    "netYaz gövdesi CALCULATED şartını taşıyor",
+    /durum === "CALCULATED" \? String\(deger\) : null/.test(y),
+  );
+  kontrol(
+    "SATIŞ seviyesinde ham String() YAZILMIYOR",
+    /net1Amount: netYaz\(yeni\.durum, yeni\.net1\)/.test(y) &&
+      /net2Amount: netYaz\(yeni\.durum, yeni\.net2\)/.test(y),
+  );
+  kontrol(
+    "KALEM seviyesinde ham String() YAZILMIYOR",
+    /net1Amount: netYaz\(sonuc\.durum, sonuc\.net1\)/.test(y) &&
+      /net2Amount: netYaz\(sonuc\.durum, sonuc\.net2\)/.test(y),
+  );
+  /** ⚠ Ölçüt SAYIYA da bağlanıyor: iki yazma yeri de netYaz'dan geçmeli. */
+  kontrol(
+    "  ...net alanlarının HEPSİ netYaz'dan geçiyor (4 yer)",
+    (y.match(/net[12]Amount: netYaz\(/g) ?? []).length === 4 &&
+      (y.match(/net[12]Amount: String\(/g) ?? []).length === 0,
+  );
+}
+
 console.log(
   basarisiz === 0
     ? `TÜM KONTROLLER GEÇTİ (${calisan})`

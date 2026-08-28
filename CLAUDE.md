@@ -2196,6 +2196,46 @@ bacaktı ve yazmak çift sayım **değil** tamamlama olurdu.
 görünen ÇIKTI hatayı saklıyordu, burada tutarlı görünen YORUM. İkisinin de
 çaresi aynı — kaynağın kendi yazdığıyla göz göze karşılaştırmak.
 
+### İKİ HALKA AYRI AYRI DOĞRU OLABİLİR — ARADAKİ BAĞ YANLIŞ (KESİN KURAL)
+
+_Kullanıcı kararı 28.08.2026._ Bir birim ölçüt zincirin **iki ucunu ayrı
+ayrı** besliyorsa, aradaki kopuşu **göremez** — ve iki uç da doğru olduğu
+için ölçüt sonsuza kadar yeşil yanar.
+
+**Vaka:** `kar:dogrula`da şu ölçüt vardı ve hep yeşildi:
+
+    karHesapla({ kalemler: [{ ...temel, maliyet: null }] }).durum === "NO_COST"
+
+Motor ELDEN `null` ile besleniyordu ve doğru davranıyordu. Ama canlıda
+maliyet motora `kalemMaliyeti`den geliyordu ve **o gövde boş listede `0`
+döndürüyordu**: motor `null` görmedi, `0` gördü, `CALCULATED` dedi.
+**2493 satış maliyetsiz hâlde "hesaplandı" sayıldı** ve panel ₺4,5M sahte
+kâr gösterdi.
+
+> **ÖLÇÜT:** birim ölçüt "A doğru mu" ve "B doğru mu" diye sorar. Uçtan
+> uca ölçüt **"A'nın çıktısı B'ye ne olarak giriyor"** diye sorar. İkincisi
+> yoksa zincir sınanmamıştır.
+
+**Uygulama:** ölçüt gerçek gövdeyi çağırarak kurulur —
+`karHesapla({ maliyet: kalemMaliyeti([]).maliyet })` — ve **ayrımın iki
+yakası da** sınanır (bağ yoksa `NO_COST`, bağ varsa `CALCULATED`).
+
+⚠ Bu, _"zincir, halkalarının varlığıyla değil bağlantısıyla sınanır"_
+kuralının BİRİM TEST tarafı: orada eksik olan bir fonksiyon çağrısıydı
+(`formuOku`), burada eksik olan iki doğru gövdenin ARASINDAKİ tip/anlam
+uyumu.
+
+⛔ **VE KORUMA DİSİPLİNE DEĞİL MEKANİZMAYA BAĞLANIR.** Aynı gün ikinci
+karar: `net1Amount`/`net2Amount` yalnız `CALCULATED` iken yazılır. Eski
+hâlde her tüketicinin "süzgeci koymayı hatırlaması" gerekiyordu — bugün
+bir tüketici vardı, yarın beş olur. Süzgeç ikinci savunma olarak KALDI,
+ama birinci savunma artık yazma katmanında.
+_(Kural duruma GENEL: `RULE_MISSING` ve `CURRENCY_MISMATCH` de eksik bir
+hesabı temsil eder; yalnız `NO_COST` yazılsaydı yarın doğan bir satır aynı
+yalanı taşırdı.)_
+
+---
+
 ### VARSAYILAN DEĞER, ALANIN ANLAMINDAN TÜRETİLİR — DİLİN KOLAYINDAN DEĞİL (KESİN KURAL)
 
 _Kullanıcı kararı 28.08.2026._ `null` ile `0` ayrımı **İKİ YÖNDE DE**

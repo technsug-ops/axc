@@ -1,6 +1,8 @@
 import { kalemMaliyeti } from "@/lib/kalem-maliyeti";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
-import { karHesapla, type KarGirdisi, type KarSonucu } from "@/lib/kar";
+import { karHesapla, type KarGirdisi, type KarSonucu,
+  type KarDurumu,
+} from "@/lib/kar";
 import { kdvHaricKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
 
@@ -186,6 +188,32 @@ export async function karOnizle(
 }
 
 /** Önizlemedeki sonucu KALICI yazar. Ledger'a dokunmaz. */
+/**
+ * ⛔ NET YALNIZ `CALCULATED` İKEN YAZILIR — ötekilerde `null` (28.08.2026).
+ *
+ * `karHesapla` durumu ne olursa olsun bir sayı üretir: maliyet
+ * bilinmiyorsa `0` sayıp, komisyon kuralı yoksa `0` sayıp devam eder.
+ * O sayı bir HESAP DEĞİL, bir ARTIKTIR — ve kayda yazıldığında alan
+ * "kârı budur" diye **iddia eder.**
+ *
+ * ⚠ ÖLÇÜLDÜ 28.08.2026 canlı: `NO_COST` satırlarda `net1` **₺5.668.424**,
+ * `net2` **₺4.714.528** yazılıydı — maliyeti düşülmemiş rakamlar.
+ * Bugün onları toplayan tüketici yoktu (`satis-toplami.ts` süzgecinde
+ * `profitStatus: "CALCULATED"` var), ama koruma **DİSİPLİNE** bağlıydı:
+ * süzgeci unutan İLK tüketici o rakamı kâra yazardı.
+ *
+ * ⛔ KURAL DURUMA GENELDİR, `NO_COST`A ÖZEL DEĞİL: `RULE_MISSING` ve
+ * `CURRENCY_MISMATCH` de eksik bir hesabı temsil eder. Yalnız `NO_COST`
+ * yazılsaydı, yarın doğan bir `RULE_MISSING` satırı aynı yalanı taşırdı.
+ *
+ * ⚠ SÜZGEÇ ZORUNLULUĞU KALDIRILMADI — ikinci savunma olarak duruyor.
+ * _(Anayasa: "maliyet bilinmiyorsa NET de bilinmiyor"; "varsayılan değer
+ * alanın anlamından türetilir".)_
+ */
+function netYaz(durum: KarDurumu, deger: number): string | null {
+  return durum === "CALCULATED" ? String(deger) : null;
+}
+
 export async function karYenidenYaz(
   girdi: YenidenHesaplaGirdisi,
 ): Promise<boolean> {
@@ -217,8 +245,8 @@ export async function karYenidenYaz(
         cargoDesi: girdi.cargoDesi === null ? null : String(girdi.cargoDesi),
         cargoAmount: kargoHaric === null ? null : String(kargoHaric),
         cargoCurrency: kargoHaric === null ? null : "TRY",
-        net1Amount: String(yeni.net1),
-        net2Amount: String(yeni.net2),
+        net1Amount: netYaz(yeni.durum, yeni.net1),
+        net2Amount: netYaz(yeni.durum, yeni.net2),
         profitCurrency: paraBirimi,
         profitStatus: yeni.durum,
         calculatedAt: new Date(),
@@ -240,8 +268,8 @@ export async function karYenidenYaz(
             duzeltme?.commissionRate === undefined
               ? null
               : String(duzeltme.commissionRate),
-          net1Amount: String(sonuc.net1),
-          net2Amount: String(sonuc.net2),
+          net1Amount: netYaz(sonuc.durum, sonuc.net1),
+          net2Amount: netYaz(sonuc.durum, sonuc.net2),
           profitStatus: sonuc.durum,
         },
       });

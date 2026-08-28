@@ -62,7 +62,7 @@ yok" denmesi gerekirken), burada `0` ("bilinmiyor" denmesi gerekirken).
 | ① | `kalemMaliyeti` boş listede `null` dönsün | **[KOŞTU 28.08.2026]** — 4 mutasyon, 4'ü de kırmızı |
 | ② | Bağsız satışların kârının TAZELENMESİ | **[KOŞTU 28.08.2026]** — 2525/2525, hata 0 |
 | ③ | Maliyet bağının kurulması | **[BEKLİYOR]** — K55 kuyruğu, 2573 kalem |
-| ④ | `NO_COST` satırlarda `net2Amount` DOLU kalıyor | **[AÇIK]** — bkz. aşağıda |
+| ④ | `CALCULATED` olmayan satırlarda NET alanları | **[KOŞTU 28.08.2026]** — kod + veri |
 
 **② SONUÇ — panel marjı ÖLÇÜLDÜ (tahmin değil):**
 
@@ -95,8 +95,38 @@ edilmedi, ölçüldü.)_
 der. Süzgeci unutan İLK tüketici ₺4,7M'yi kâra yazar.
 _(Anayasa: "şemadaki alan da bir iddiadır — yazıcısı yoksa vaat boştur"
 kuralının tersi: burada yazıcı VAR ama yazdığı şey geçersiz.)_
-**Açılış şartı:** karar — ya `NO_COST`ta `net2Amount` `null` yazılır, ya
-da süzgeç zorunluluğu bir bekçiyle sabitlenir.
+**KARAR VE SONUÇ (kullanıcı, 28.08.2026):** _"₺4,7M'lik iddiayı disipline
+değil MEKANİZMAYA bağlarız."_
+
+    ÖNCE   NO_COST 2525 · net1 5.668.424,24 · net2 4.714.528,05
+    SONRA  NO_COST 2525 · net1         0,00 · net2         0,00
+    temizlenen: satış 2526 · kalem 2574   ·   kalan ihlal: 0 ✓
+    PANEL MARJI: 11,56% — DEĞİŞMEDİ (zaten süzülüyordu) ✓
+    ikinci koşum: hedef 0 ✓
+
+⚠ **`net1` DE ŞİŞİKTİ** — ölçüldü, ₺5.668.424. `net1 = satış − maliyet −
+komisyon − stopaj` ve maliyet `0` sayılıyordu. İkisi birlikte temizlendi.
+
+⚠ **KURAL DURUMA GENEL YAZILDI**, `NO_COST`a özel değil: `RULE_MISSING` ve
+`CURRENCY_MISMATCH` de eksik bir hesabı temsil eder. Bugün o durumda satır
+yok ama yarın doğan bir satır aynı yalanı taşırdı.
+
+⚠ **TEMİZLİK 1 SATIR FAZLA:** 2526/2574 güncellendi (2525/2573 değil) —
+fazlası bir İPTAL EDİLMİŞ satış. Ölçüt `iptalTarihi` süzmüyor ve bu
+bilinçli: iptal satışın da geçersiz bir NET taşımasının sebebi yok.
+
+⚠ **NE SİLİNDİ, NE KALDI:** yalnız `net1Amount` ve `net2Amount`.
+`profitStatus`, `profitCurrency`, `SaleFee` kalemleri ve stok defteri
+ELLENMEDİ — kesintiler ÖLÇÜLMÜŞ gerçeklerdir, geçersiz olan yalnız
+onlardan türetilen NET.
+
+⚠ **`karYenidenYaz` KULLANILMADI:** kod düzeltildi (`netYaz`) ama o yalnız
+YENİ yazmaları etkiler. Var olan satırlar için motoru yeniden koşturmak
+~40 dk sürer ve hiçbir hesabı değiştirmezdi — yapılacak tek şey geçersiz
+bir değeri SİLMEKTİ. Hesaplama değil, temizlik.
+
+**Süzgeç zorunluluğu KALDIRILMADI** — `satis-toplami.ts`teki
+`profitStatus: "CALCULATED"` şartı ikinci savunma olarak duruyor.
 
 ⚠ **① TEK BAŞINA EKRANI DEĞİŞTİRMEZ:** `profitStatus` ve `net2Amount`
 SAKLANIYOR; kod düzeldi ama defterdeki damgalar eski. Tazeleme koşmadan
