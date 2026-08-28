@@ -632,6 +632,80 @@ doğru."_ ⭐ Siparişin **tamamı iptal EDİLMEYECEK**; **tek kalem** kaldırı
 
 ---
 
+## ✅ KARGO YAZILDI · 28.08.2026 · [KOŞTU]
+
+`npm run canli:kargo-yaz -- --yaz` — satış dosyasının **R (KARGO)** sütunu.
+
+    yazıldı 5595 satış
+    DOĞRULAMA: kayıt 5595/5595 ✓ · toplam ₺559.499,05 / ₺559.499,05 ✓
+    kâr tazelendi 5595 · başarısız 0
+
+    NET-1  2.444.999,67 → 1.776.097,22   (−668.902,45)
+    NET-2  2.015.414,97 → 1.457.996,25   (−557.418,72)
+
+⚠ **SAYI 5583 DEĞİL 5595 ÇIKTI, SEBEBİ YAZILI:** ilk deneme `$transaction`ın
+5 sn tavanına çarpıp düştü (hiçbir satır yazılmadı — ölçüldü, kargolu satış
+161→161). Yeniden koşulabilirlik için _"kargosu hedef değere kuruşuna eşit
+olan kayıt bizimdir"_ ölçütü konuldu; bu ölçüt **zaten hedef değerde olan 12
+kaydı** da kümeye aldı. Yazılan değer aynı, veri değişmedi — ama `--geri` o
+12'yi de boşaltır. Küçük ve **bilinen** risk.
+
+### ⛔ VE BİR KUSUR BULUNDU — İZ SESSİZCE KESİLMİŞTİ
+
+`AuditLog.detail`e 5595 satış kimliği kondu. Alan MySQL `TEXT` (65.535 bayt)
+ve JSON tam tavanda kırpıldı: **65.511 karakter, `JSON.parse` DÜŞÜYOR.**
+
+> **Geri alma yolu YAZILDIĞI ANDA BOZUKTU ve hiçbir şey söylemedi.**
+
+⭐ **ÇARE LİSTE SAKLAMAK DEĞİL, KÜMEYİ DETERMİNİSTİK KURMAK:** ölçüt
+_"kargosu, dosyadaki değerin 1,20'ye bölümüne kuruşuna eşit"_. Aynı ölçüt
+yazımın yeniden-koşulabilirlik kapısında da var; iki yerde iki ölçüt olmaz.
+Kesilmiş iz **silinmedi**; üstüne onu açıklayan ikinci iz yazıldı
+(`KARGO_DOSYADAN_YAZILDI_IZ_ONARIMI`) — ledger disiplini izlere de işler.
+
+⚠ **DERS:** bir listeyi ize gömmek, ize sığdığını VARSAYMAKTIR. Sığmadığında
+veritabanı hata vermez, **keser** — ve kesik iz sessizce yeşil görünür.
+
+### ⚠ ₺1.404,50 AÇIKLANAMADI — VE UYDURULMADI
+
+Beklenen NET-2 düşüşü (NET taşımayan 9 satışın kargosu düşülünce)
+₺558.823,22; ölçülen ₺557.418,72. Fark **₺1.404,50** (değişimin %0,25'i).
+
+**ARANDI, BULUNAMADI:**
+· "bayat NET damgası" hipotezi **çürütüldü** — kargosuz 27 satışta motorun
+  hesabı kayıtlı NET'e **birebir** eşit (fark 0).
+· Yazılan kümede de durum aynı: **120/120 satışta kayıtlı NET = motor.**
+
+⭐ **YANİ BUGÜNKÜ RAKAMLAR DOĞRU.** Açıklanamayan şey, yazımdan ÖNCEKİ
+toplamın bileşimi — ve **satış bazında saklanmadığı için artık atfedilemez.**
+⛔ Sebep uydurulmadı; açıklanamadığı yazıldı.
+
+⚠ **SONRAKİ TOPLU YAZIMLARDA ÖNCEKİ DEĞER SATIŞ BAZINDA SAKLANIR** — yoksa
+artık bir fark çıktığında kaynağı aranamaz. (Bu betikte toplam saklandı,
+satır saklanmadı; eksik olan buydu.)
+
+---
+
+## 🆕 K78 — SİPARİŞ SATIRI KALDIRILAMIYOR · 28.08.2026 · [YAPISAL EKSİK]
+
+`10559161422`de dosya aynı satırı **iki kez** taşıyor ve içe aktarma
+sadakatle iki kalem yazmış. Halil: _"sadece 1 tanesi yanlış, diğeri doğru."_
+
+⛔ **SİSTEMDE YOLU YOK — ÖLÇÜLDÜ:**
+· `lib/satis-duzenleme.ts` → `yeniAdet <= 0` **reddediliyor** (`ADET_GECERSIZ`)
+· kalem SİLME diye bir işlem hiç yok; kapsam **FİYAT + ADET + KARGO**
+
+**İki kötü seçenek:**
+· tamamını iptal → **gerçek olan 1 adet de** silinir
+· betikle `SaleItem` sil → `StockMovement.saleItemId` **SetNull**, hareket
+  sahipsiz kalır: _"stok düşük kalır, düşüren kaybolur"_ (anayasa)
+
+⚠ **VE BU TEKRARLAYACAK:** dosyada mükerrer satır bir kez değil; içe aktarma
+her seferinde sadakatle yazacak. Tek vaka değil, **desen.**
+⛔ Bugün yazılmadı; ekran/gövde kararı gerekiyor.
+
+---
+
 ### ⚠ İKİ AÇIK NOT
 
 **· `10415881283` — aynı kampanyanın dördü FARKLI maliyetle duruyor.**

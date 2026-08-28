@@ -56,35 +56,19 @@ async function main() {
     (GERI ? "⚠ GERİ ALMA" : YAZ ? "⚠ YAZIM" : "KURU KOŞUM (yazmaz)"));
   console.log("=".repeat(100));
 
-  // ═══ GERİ ALMA ═══════════════════════════════════════════════════════
-  if (GERI) {
-    const iz = await p.auditLog.findFirst({
-      where: { action: "KARGO_DOSYADAN_YAZILDI" },
-      orderBy: { createdAt: "desc" },
-      select: { detail: true, createdAt: true },
-    });
-    if (!iz?.detail) {
-      console.log("\n⛔ GERİ ALINACAK İZ YOK.\n");
-      await p.$disconnect();
-      return;
-    }
-    const d = JSON.parse(iz.detail) as { saleIds?: string[] };
-    const idler = d.saleIds ?? [];
-    console.log("\n   iz " + iz.createdAt.toISOString().slice(0, 19) +
-      " · " + idler.length + " satış");
-    let geri = 0;
-    for (let k = 0; k < idler.length; k += 200) {
-      const r = await p.sale.updateMany({
-        where: { id: { in: idler.slice(k, k + 200) } },
-        data: { cargoAmount: null, cargoCurrency: null },
-      });
-      geri += r.count;
-    }
-    console.log("   ⭐ kargosu boşaltılan: " + geri);
-    console.log("   ⚠ Kâr TAZELENMEDİ — `npm run canli:kar-tazele` ayrı koşar.\n");
-    await p.$disconnect();
-    return;
-  }
+  /**
+   * ⛔ GERİ ALMA BURADA DEĞİL — AŞAĞIDA, KÜME KURULDUKTAN SONRA.
+   *
+   * İLK YAZIMDA İZE 5595 KİMLİK KONDU VE İZ SESSİZCE KESİLDİ: `AuditLog.detail`
+   * MySQL `TEXT` (65.535 bayt) ve JSON tam o tavanda kırpıldı — 65.511 karakter,
+   * `JSON.parse` **düşüyor**. Yani geri alma yolu YAZILDIĞI ANDA BOZUKTU ve
+   * bunu hiçbir şey söylemedi (ölçüldü 28.08.2026).
+   *
+   * ⭐ ÇARE: kimlik LİSTESİ SAKLAMAK DEĞİL, kümeyi DETERMİNİSTİK KURMAK.
+   * Ölçüt: kargosu, dosyadaki değerin 1,20'ye bölümüne **kuruşuna eşit**
+   * olan satış bizimdir. Aynı ölçüt yazımın "yeniden koşulabilirlik"
+   * kapısında da kullanılıyor; iki yerde iki farklı ölçüt olmaz.
+   */
 
   // ── DOSYA ──────────────────────────────────────────────────────────────
   const ss = (await readXlsxFile(paketiNormalle(readFileSync(SATIS)).bayt))
@@ -151,11 +135,48 @@ async function main() {
     if (v.celiski) { celiskili.push(kod); continue; }
     const s = satislar.get(kod);
     if (!s) { sistemdeYok++; continue; }
-    if (s.kargo !== null) { zaten.push({ kod, defter: s.kargo, dosya: v.deger }); continue; }
+    /**
+     * ⚠ YARIM KALMIŞ KOŞUMDAN DEVAM EDİLEBİLİR: kargosu HEDEF DEĞERE
+     * kuruşuna EŞİT olan kayıt "zaten kargosu vardı" kovasına DÜŞMEZ —
+     * o, bizim önceki koşumumuzun yazdığı satırdır. Başka bir değer
+     * taşıyan kayıt gerçekten önceden doluydu ve dokunulmaz.
+     */
+    const hedef = kurus(v.deger / 1.2);
+    if (s.kargo !== null && Math.abs(s.kargo - hedef) > 0.005) {
+      zaten.push({ kod, defter: s.kargo, dosya: v.deger });
+      continue;
+    }
     yazilacak.push({
       id: s.id, kod, dahil: v.deger, haric: kurus(v.deger / 1.2),
       durum: s.durum, soldAt: s.soldAt,
     });
+  }
+
+  // ═══ GERİ ALMA — DETERMİNİSTİK KÜMEDEN ═══════════════════════════════
+  if (GERI) {
+    /**
+     * `yazilacak` kümesi burada iki şeyi birden içerir: henüz yazılmamışlar
+     * (kargosu null) VE bizim yazdıklarımız (kargosu hedefe eşit). Geri
+     * alınacak olan yalnız ikincisi — kargosu DOLU olanlar.
+     */
+    const bizim = yazilacak.filter((x) => satislar.get(x.kod)?.kargo !== null);
+    console.log("\n   deterministik küme: " + bizim.length + " satış");
+    console.log("   ölçüt: kargo == dosya ÷ 1,20 (kuruşuna)");
+    let geri = 0;
+    for (let k = 0; k < bizim.length; k += 20) {
+      const dilim = bizim.slice(k, k + 20);
+      await Promise.all(dilim.map(async (x) => {
+        await p.sale.update({
+          where: { id: x.id },
+          data: { cargoAmount: null, cargoCurrency: null },
+        });
+        geri++;
+      }));
+    }
+    console.log("   ⭐ kargosu boşaltılan: " + geri);
+    console.log("   ⚠ Kâr TAZELENMEDİ — ayrıca koşulmalı.\n");
+    await p.$disconnect();
+    return;
   }
 
   console.log("\n① KOVALAR");
@@ -271,16 +292,37 @@ async function main() {
   }
 
   // ═══ YAZIM ═══════════════════════════════════════════════════════════
+  /** ⭐ ÖNCE ölçülür — sonra/önce kıyası TAHMİN değil ÖLÇÜM olsun diye. */
+  const oncesi = await p.sale.aggregate({
+    where: { id: { in: yazilacak.map((x) => x.id) } },
+    _sum: { net1Amount: true, net2Amount: true },
+    _count: { _all: true },
+  });
+  const oncekiNet1 = Number((oncesi._sum.net1Amount ?? 0).toString());
+  const oncekiNet2 = Number((oncesi._sum.net2Amount ?? 0).toString());
+  console.log("\n⑦ ÖNCE (defterden okundu, " + oncesi._count._all + " satış)");
+  console.log("   NET-1 " + t2(oncekiNet1) + " · NET-2 " + t2(oncekiNet2));
+
   console.log("\n⚠ YAZILIYOR — " + yazilacak.length + " satış");
+  /**
+   * ⚠ TEK BÜYÜK İŞLEM DEĞİL — ilk denemede `$transaction` 100'lük dilimde
+   * 5 sn tavanını aştı ve koşum DÜŞTÜ (P2028; hiçbir satır yazılmadı,
+   * ölçüldü: kargolu satış 161 → 161). Satırlar birbirinden bağımsız ve
+   * her `update` zaten atomik; küçük eşzamanlı gruplar hem hızlı hem de
+   * yarım kalırsa kaldığı yerden devam edilebilir.
+   */
   let ok = 0;
-  for (let k = 0; k < yazilacak.length; k += 100) {
-    const dilim = yazilacak.slice(k, k + 100);
-    await p.$transaction(dilim.map((x) => p.sale.update({
-      where: { id: x.id },
-      data: { cargoAmount: String(x.haric), cargoCurrency: "TRY" },
-    })));
-    ok += dilim.length;
-    if (k % 1000 === 0) console.log("   … " + ok + "/" + yazilacak.length);
+  const GRUP = 20;
+  for (let k = 0; k < yazilacak.length; k += GRUP) {
+    const dilim = yazilacak.slice(k, k + GRUP);
+    await Promise.all(dilim.map(async (x) => {
+      await p.sale.update({
+        where: { id: x.id },
+        data: { cargoAmount: String(x.haric), cargoCurrency: "TRY" },
+      });
+      ok++;
+    }));
+    if ((k + GRUP) % 1000 < GRUP) console.log("   … " + ok + "/" + yazilacak.length);
   }
   console.log("   ⭐ yazıldı " + ok);
 
@@ -313,15 +355,53 @@ async function main() {
         adet: ok,
         toplamHaric: topHaric.toFixed(2),
         toplamDahil: topDahil.toFixed(2),
-        saleIds: yazilacak.map((x) => x.id),
+        /**
+         * ⛔ KİMLİK LİSTESİ YAZILMAZ — `detail` MySQL `TEXT` ve 5595 kimlik
+         * onu 65.535 bayt tavanında SESSİZCE KESTİ (28.08.2026, ölçüldü:
+         * 65.511 karakter, `JSON.parse` düşüyor). Kesilen iz, iz değildir.
+         * Küme geri alınırken dosyadan DETERMİNİSTİK kurulur.
+         */
+        geriAlmaOlcutu: "cargoAmount == kurus(dosya KARGO / 1.20); npm run canli:kargo-yaz -- --geri",
       }),
     },
   });
   console.log("   ✓ AuditLog: KARGO_DOSYADAN_YAZILDI");
 
+  /**
+   * ═══ KÂR TAZELEME — UYGULAMANIN KENDİ GÖVDESİYLE ═══
+   * ⚠ `satisKarTazele` çağrılıyor; ikinci bir hesaplama mantığı YAZILMIYOR.
+   * O gövde kargoyu `kdvDahilKargo` ile motora veriyor — yani buradaki
+   * KDV çevirisi ile ekranınki TEK yerden geliyor.
+   */
+  console.log("\n⑧ KÂR TAZELENİYOR — " + yazilacak.length + " satış");
+  const { satisKarTazele } = await import("../src/lib/kar-yeniden");
+  let tazelendi = 0, basarisiz = 0;
+  for (let k = 0; k < yazilacak.length; k++) {
+    const ok2 = await satisKarTazele(yazilacak[k].id);
+    if (ok2) tazelendi++; else basarisiz++;
+    if ((k + 1) % 500 === 0) console.log("   … " + (k + 1) + "/" + yazilacak.length);
+  }
+  console.log("   ⭐ tazelendi " + tazelendi + " · başarısız " + basarisiz);
+
+  const sonrasi = await p.sale.aggregate({
+    where: { id: { in: yazilacak.map((x) => x.id) } },
+    _sum: { net1Amount: true, net2Amount: true },
+  });
+  const yeniNet1 = Number((sonrasi._sum.net1Amount ?? 0).toString());
+  const yeniNet2 = Number((sonrasi._sum.net2Amount ?? 0).toString());
+  console.log("\n⑨ ÖNCE / SONRA — ÖLÇÜLDÜ");
+  console.log("   NET-1  önce " + t2(oncekiNet1) + "  sonra " + t2(yeniNet1));
+  console.log("          ⭐ FARK " + t2(yeniNet1 - oncekiNet1) +
+    "   (beklenen " + t2(-topHaric * 1.2) + ")");
+  console.log("   NET-2  önce " + t2(oncekiNet2) + "  sonra " + t2(yeniNet2));
+  console.log("          ⭐ FARK " + t2(yeniNet2 - oncekiNet2) +
+    "   (beklenen " + t2(-topHaric) + ")");
+  console.log("   ⚠ Beklenen rakam motorun ölçülen çarpanından türetildi;");
+  console.log("     sapma varsa SEBEBİ ARANIR — 'yakın' bir sonuç değildir.");
+
   console.log("\n" + "=".repeat(100));
-  console.log("YAZILDI. Geri alma: npm run canli:kargo-yaz -- --geri");
-  console.log("⚠ SIRADAKİ: kâr tazeleme — kargo NET'e ancak o zaman girer.");
+  console.log("YAZILDI + TAZELENDİ. Geri alma: npm run canli:kargo-yaz -- --geri");
+  console.log("⚠ Geri alma kargoyu boşaltır; kâr tazelemesi AYRICA koşulmalı.");
   console.log("=".repeat(100) + "\n");
   await p.$disconnect();
 }
