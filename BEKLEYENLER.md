@@ -293,7 +293,10 @@ Fatura (e-Arşiv `TEA2026000002461`, 27.08) satışı doğruluyor: ₺1.944,00.
 Sistemde satış VAR (`enumerasyon` ile TY API'den gelmiş) ama **stok
 hareketi YOK** → maliyet bağı kurulamıyor.
 
-**SEBEP ÖLÇÜLDÜ — kod kusuru değil, ALIM EKSİĞİ:**
+⛔ **BU BÖLÜMDEKİ TEŞHİS YANLIŞTI — DÜZELTMESİ K74'TE.** Kesik bir çıktı
+(`tail -45`) okunduğu için bir alım satırı görülmedi. Doğrusu: **10 alındı,
+10 satıldı, alım eksiği YOK**; engel bugün elle yazılmış _"test amaçlı"_ bir
+`ADJUSTMENT −1`. Aşağıdaki sayılar KESİK ÖLÇÜMDEN gelir, geçerli değildir:
 
     axcali1869 defteri: 9 giren · 9 çıkan · net stok 0
     ⭐ FIFO AÇIK PARTİ KALANI: 0
@@ -367,6 +370,100 @@ Bugünkü kapsam **%2,5** (360 iadenin 9'u ekstrede). Ekstre gelince tür
 ⚠ **KAPANANA KADAR BU BİR BULGUDUR, GÖREV DEĞİL:** 243 satışın iadesi
 defterde YOK. Somut örnek `4120311526` (Razer) — defter **₺6.499 kâr**
 sayıyor, gerçek **₺94,20 zarar**. Bugün kapatılamaz; kaydı burada durur.
+
+---
+
+## 🆕 K74 — HALİL'İN ON VAKASI · 28.08.2026 · [ÖLÇÜLDÜ, YAZIM ONAY BEKLİYOR]
+
+Ölçüm: `npm run canli:on-vaka` · `canli:on-vaka-b` · `canli:barbie-adj`
+(üçü de salt okuma).
+
+### ⛔ ÖNCE BİR DÜZELTME — BARBIE HAKKINDAKİ CÜMLEM YANLIŞTI
+
+K72'de _"9 alınmış, 11 satılmış, son iki adedin alımı girilmemiş"_ yazmıştım.
+**Yanlış.** Sebep: hareket dökümünü `tail -45` ile okumuştum ve **ilk satır
+kesilmişti** (`2026-03-25 PURCHASE_IN 1`). Kesik çıktının üstüne hüküm kurdum.
+
+    DOĞRUSU: alınan 10 · satılan 10 · Halil'in beyanı 10  →  TUTUYOR
+
+⭐ **GERÇEK SEBEP BAŞKAYDI VE BUGÜN DOĞDU:**
+
+    2026-08-28 14:02:57 UTC  ADJUSTMENT −1 · ₺1.200 · NOT: "test amaçlı"
+
+Ekrandan elle yapılmış bir **test düzeltmesi** son açık partiyi tüketmiş;
+`11540657420` o yüzden maliyetsiz kaldı. Alım eksiği YOK.
+_(Anayasa dersi: boru sonuna güvenilmez — bu sefer `tail` kesti.)_
+
+### ÖLÇÜM TABLOSU
+
+| # | sipariş | Halil ne diyor | defter ne diyor |
+|---|---|---|---|
+| ① | `11540657420` | 10 alındı, 9'u sorunsuz | ✓ 10/10 · engel: bugünkü **"test amaçlı"** ADJUSTMENT |
+| ② | `4120311526` | teslim edilmedi · stoğa girdi · ₺94,20 kargo · sonra satıldı | iade kaydı **YOK** · ₺6.499 ciroda · kargo **YOK** |
+| ③ | `10828937011` | 2 adet · birim ₺1.634 | 2 kalem, **ikisi de** NO_COST |
+| ④ | `4673224319` | kullanılmış iade · tazmin **kazanıldı** ₺1.216,87 + hurda | NO_COST · iade YOK · **hakediş satırı YOK** |
+| ⑤⑥⑦⑧ | 4 sipariş | promosyon, maliyet **0** | dördü de NO_COST · `axcali3070` · 5 satış kalemi, **0 alım kalemi** |
+| ⑨ | `10559161422` | mükerrer, iptal edilecek | ⭐ **mükerrerlik DOSYADA**: satış dosyasında **birebir aynı İKİ satır** |
+| ⑩ | `4138485546` | 2 adet · birim ₺2.549, _"diğerinde problem yok"_ | ⚠ **İKİSİ DE** NO_COST |
+
+### ⚠ ÜÇ SORU — YAZIMDAN ÖNCE CEVAP GEREKİYOR
+
+**② stok aritmetiği 1 adet tutmuyor.** `axcali1633`: 3 alım · 3 satış
+(`4662729595` 01.07 · `4120311526` 04.07 · `11473158422` 03.08). İade
+yazılırsa mal stoğa döner ve **net stok 1** olur — Halil _"stokta yok"_
+diyor. Ya bir alım fazladan girilmiş ya da bir satış eksik.
+
+**④ iki bilinmeyen:** ürünün alış maliyeti ne (dosyadaki tazmin satırı
+`₺575,40` diyor) ve ₺1.216,87 tazmin **nereye** yazılacak — `Compensation`
+karşı tarafı `supplierId`/`carrierId` istiyor, oysa ödeyen **kanal**.
+
+**⑨ tamamı mı, bir kalemi mi?** Sipariş 2 kalem taşıyor çünkü **dosyada iki
+satır var**. Siparişin tamamını iptal etmek **gerçek olan 1 adedi de** siler.
+
+⛔ **HİÇBİRİ YAZILMADI.**
+
+---
+
+## 🆕 K75 — KARGO SÜTUNU (R) · 28.08.2026 · [ÖLÇÜLDÜ, YAZIM ONAY BEKLİYOR]
+
+> Halil: _"Satış dosyasının R kısmında kargo ücretleri mevcut."_
+
+Ölçüm: `npm run canli:kargo-kolonu` (salt okuma).
+
+    R sütununun başlığı  : "KARGO"  ✓ (adı da değeri de kargo diyor)
+    satış satırı 9743 · R DOLU 9616 (%98,7) · boş 127
+    değer: min 20 · p25 85 · ortanca 100 · p75 120 · p95 200 · max 659
+    TOPLAM ₺1.075.311,77  ·  ⛔ negatif değer 1 (ayrı incelenecek)
+
+**⭐ TABAN ÖLÇÜLDÜ — DOSYA KDV **DAHİL**.** Bu, yazımın en kritik kararıydı:
+`Sale.cargoAmount` şemada **KDV HARİÇ** saklanıyor (`lib/kargo-kdv.ts`:
+_"ölçüldü 32/32 satışta KARGO kesintisi = cargoAmount × 1,20"_). Yanlış
+tabanda yazmak doğrudan **%20 hata** demekti.
+
+    kargosu ZATEN olan 147 satışta oran (dosya ÷ defter):
+      p25 1,2000 · ortanca 1,2028 · p75 1,2102
+      ⭐ oranı tam 1,20 olan 74 · oranı 1,00 olan yalnız 2
+
+Ortanca 1,20'ye oturuyor, 1,00'e değil → **dosya kullanıcının bildiği
+KDV DAHİL tutarı taşıyor.** Yazarken **1,20'ye bölünür.**
+
+⚠ **VE BİR TAHMİNİM ÖLÇÜMLE ÇÜRÜDÜ:** çakışan örneklerin ilk altısı Amazon
+numarasıydı ve _"147'nin hemen hepsi Amazon"_ diye yazacaktım. Ölçüm:
+Amazon biçimli sipariş **11/5752**. Örneklem sıralamadan geliyordu, kümeden
+değil.
+
+**YAZILABİLİR KÜME:**
+
+    ⭐ 5721 satış · ₺681.081,46 (KDV DAHİL)  →  cargoAmount = R ÷ 1,20
+    dokunulmayacak: kargosu ZATEN olan 147 (hangisi doğru — ölçülmedi)
+    sistemde olmayan sipariş 3388 (K56 kovası)
+
+⛔ **FİRMA VE DESİ DOSYADA YOK** (ölçüldü). `cargoCarrierId` ve `cargoDesi`
+**BOŞ bırakılır** — boş kalması bir BEYANDIR: hangi firmayla gittiğini
+sistem bilmiyor. Vekil bir firma seçmek olmayan bilgiyi uydurmak olurdu.
+
+⚠ Yazım sonrası kâr tazelenir; **NET-2 ~₺681 bin AŞAĞI iner.** Bu bir
+kayıp değil, bugüne kadar **eksik düşülmüş bir giderin** deftere girmesidir.
 
 ---
 
