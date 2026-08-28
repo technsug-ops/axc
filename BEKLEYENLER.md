@@ -119,10 +119,21 @@ kullanıcı biliyor, sistem bilmiyor. **YAZILMADI.**
 `4619254455`e iptal yazmak satışı **hiç olmamış** gibi gösterirdi; o 243'lük
 iade kovasına ait ve iade içe aktarma kararını bekliyor.
 
-**İPTAL KURU KOŞUMU (4 satış):**
+**✅ İPTAL YAZILDI — 28.08.2026** (`canli:iptal-yaz -- --yaz`,
+uygulamanın kendi `iptalOnizle`/`iptalUygula` gövdesiyle; ikinci iptal
+mantığı YAZILMADI). Ölçülen fark beklenenle **birebir**:
 
-    düşecek CİRO  ₺5.475,00   ·   düşecek NET-2  ₺840,57
-    ilgili stok hareketi 4    ·   hepsi CALCULATED
+    ciro farkı  −5.475,00   (beklenen −5.475,00)   ✓
+    stok farkı       +4     (beklenen +4 — mal geri döner) ✓
+    düşen NET-2  ₺840,57  ·  iptal 4 · engellendi 0
+
+İz: `AuditLog: DOSYADAN_IPTAL_ISARETLENDI` (hariç tutulan `4619254455`
+gerekçesiyle birlikte yazıldı). Geri alma: satış ekranından iptal geri alınır.
+⚠ **SEBEP BİR İDDİADIR VE UYDURULMADI:** dosya KİMİN iptal ettiğini
+söylemiyor; `MAGAZA_DIGER` yalnız zorunlu alanı karşılamak için seçildi
+(açıklamayı ZORUNLU kılan tek değer) ve gerçek durum nota yazıldı.
+Ölçüldü: `iptalSebebi` hiçbir HESABI sürmüyor — yalnız ekran gruplaması
+(`lib/satis-iptali.ts`), yani bedeli yanlış rakam değil yanlış ETİKET.
 
 ⚠ **Kâr tazelemesi GEREKMEZ:** iptal kârı yeniden hesaplamaz —
 `iptalTarihi` dolunca satış bütün süzgeçlerden **düşer**. Kayıt yerinde
@@ -136,20 +147,38 @@ _"İki alan eksik: reason ve returnType"_ demiştim. Şema okundu:
 **`Return` modelinde `reason` alanı HİÇ YOK.** O yalnız `ReturnNotice`ta
 ve o model malın GELMESİNİ bekleyen aşamanın kaydı — burada süreç bitmiş.
 
-⛔ **EKSİK ALAN İKİ DEĞİL, BİR: `returnType`.**
+⛔ **VE BU RAPORUM DA EKSİKTİ — BİR DEĞİL, ÜÇ BİLİNMEYEN VAR.** Yazma
+gövdesi (`lib/iade.ts → iadeKaydet`) okundu; şemaya bakmak yetmiyormuş:
 
-| | kazanç | kayıp | iş yükü |
-|---|---|---|---|
-| **A) hiç aktarma** | sıfır risk | ciro **₺694.432 fazla** kalır | yok |
-| **B) türsüz aktarma** | — | ⛔ **ŞEMA İZİN VERMİYOR**: `returnType` NOT NULL | — |
-| **C) son 90 gün elle** | ciro %8,8 düzelir | %91 açık kalır | 21 satır |
+| # | bilinmeyen | bedeli |
+|---|---|---|
+| 1 | `returnType` | **şemada NÖTR DEĞER YOK** — üç değer de bir şey iddia ediyor |
+| 2 | `saglamAdet` / `hasarliAdet` | ⭐ **EN AĞIRI: STOK.** `RETURN_IN` yalnız sağlam adet için yazılıyor |
+| 3 | `iadeKargosu` | `KARGO` sütunu satışın mı iadenin mi — belirsiz |
+
+**② EN AĞIR OLANI ÖNCEDEN HİÇ GÖRÜLMEMİŞTİ.** "Hepsi sağlam" dersek
+**stok +236 adet** artar ve mal hurdaya gittiyse envanter değeri şişer;
+"hepsi hasarlı" dersek gerçekten dönen mal kaybolur. Dosya bunu söylemiyor.
+
+**B SEÇENEĞİ KURU KOŞUMU — YAZILABİLİR KÜME ÖLÇÜLDÜ:**
+
+    dosyadaki iade satırı 366
+    ⭐ YAZILABİLİR         236 Return + 236 ReturnItem · 236 adet · ₺683.923,92
+    dışarıda: satış sistemde yok 125 · zaten iade kaydı var 4 · kalem eşleşmedi 1
+
+⚠ **VE "CİRO ₺694.432 DÜZELİR" CÜMLEM FAZLA İYİMSERDİ.** `Return` yazmak
+`Sale.items`i DEĞİŞTİRMEZ — ciro rakamı **aynı kalır**, iade etkisi kâr
+motorunda AYRI taşınır. Bugünkü hâlden yine de iyi, ama beklenti düzeltilir.
 
 **B için merdiven inildi:** `Return.note` serbest metin ve `code` boş —
 tür BİLİNMİYOR diye işaretlenip **kargo hesabı dışında** bırakılabilir,
 yeni sütun açmadan. Tür VARSAYMAK ise kargo maliyetini değiştirir
 (iade-sureci §5) ve yasak.
-⚠ Dosyada tür ipucu arandı: `KARGO` sütunu 193/366 satırda dolu — ama bu
-bir TAHMİN, ölçüm değil; `UNDELIVERED`da da gidiş kargosu yanmış olabilir.
+⚠ Dosyada tür ipucu arandı: `KARGO` sütunu 193/366 satırda dolu — kullanıcı
+bunun **KULLANILMAYACAĞINI** söyledi: ipucu ölçüm değildir.
+
+⛔ **KARAR KULLANICIDA** (şartı buydu): şemada nötr `returnType` yok, ve
+sağlam/hasarlı ayrımı stoğu doğrudan değiştiriyor. **YAZILMADI.**
 
 ---
 
@@ -163,10 +192,17 @@ yalnız `satış`:
     TATİL      8 ·          0,00      aktarma     7 ·    11.294,00
     Zarar      1 ·          0,00
 
-**`tazmin` 27 kayıt · ₺91.280** — sistemde `Compensation` modeli var ve
-içinde **4 kayıt**. Eşleşme muhtemel ama ölçülmedi.
-**`aktarma` 7 · ₺11.294** ve **`Zarar` 1** — sistemde doğrudan karşılığı YOK.
-**`TATİL` 8** — satış değil, işaret satırı.
+**`tazmin` 27 kayıt · ₺91.280** (HB 24 · TY 3) — sistemde `Compensation`
+modeli var ve içinde **4 kayıt**, ama **DÖRDÜ DE `supplierId` taşıyor**
+(karşı taraf TEDARİKÇİ). Dosya `tazmin`in karşı tarafını söylemiyor:
+model ya `supplierId` ya `carrierId` istiyor, ikisi farklı iş.
+⛔ Ölçülmeden eşleştirilmedi.
+**`aktarma` 7 · ₺11.294** — hepsi HB, ve **4'ünde sipariş numarası BOŞ**;
+numarasız satır hiçbir kayda bağlanamaz.
+**`Zarar` 1** — `4383491870`, liste ₺0,00 · alış ₺1.070,00 (Schafer granit
+tencere): satılmadan zarar yazılmış tek kalem.
+**`TATİL` 8** — satış değil: bütün alanları boş, `Ürün` sütununda da
+"TATİL" yazıyor. **İşaret satırı, veri değil.**
 
 ⛔ Hiçbiri eşleştirilmedi; ölçülmeden tür atanmaz.
 
