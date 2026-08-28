@@ -108,6 +108,69 @@ kullanıcı biliyor, sistem bilmiyor. **YAZILMADI.**
 **⑤ 24 İPTAL SATIRI:** sistemde iptal işaretli **0** · **NORMAL görünen 5**
 (ciroda duruyor) · sistemde yok 19.
 
+### ⭐ HALİL DOĞRULADI — 5 DEĞİL, 4 İPTAL + 1 İADE
+
+⚠ **DOSYADAKİ `TÜR` SÜTUNU TEK BAŞINA HÜKÜM VERMEZ.** Ölçüm beşini de
+"iptal" saydı çünkü dosya öyle diyordu; kullanıcı ayırdı:
+
+    İPTAL (4)  4234503772 · 4597407440 · 4852324050 · 4002405216
+    ⛔ İADE (1) 4619254455 — satış GERÇEKLEŞTİ, mal döndü
+
+`4619254455`e iptal yazmak satışı **hiç olmamış** gibi gösterirdi; o 243'lük
+iade kovasına ait ve iade içe aktarma kararını bekliyor.
+
+**İPTAL KURU KOŞUMU (4 satış):**
+
+    düşecek CİRO  ₺5.475,00   ·   düşecek NET-2  ₺840,57
+    ilgili stok hareketi 4    ·   hepsi CALCULATED
+
+⚠ **Kâr tazelemesi GEREKMEZ:** iptal kârı yeniden hesaplamaz —
+`iptalTarihi` dolunca satış bütün süzgeçlerden **düşer**. Kayıt yerinde
+durur, yalnız sayılmaz.
+⚠ **Stok:** iptalde mal geri döner. Toplu yazım yapılacaksa **iptal
+akışının kendi gövdesi** kullanılmalı; ikinci bir iptal mantığı yazılmaz.
+
+### ⭐ İADE İÇE AKTARMA — ÖNCEKİ RAPORUM EKSİKTİ
+
+_"İki alan eksik: reason ve returnType"_ demiştim. Şema okundu:
+**`Return` modelinde `reason` alanı HİÇ YOK.** O yalnız `ReturnNotice`ta
+ve o model malın GELMESİNİ bekleyen aşamanın kaydı — burada süreç bitmiş.
+
+⛔ **EKSİK ALAN İKİ DEĞİL, BİR: `returnType`.**
+
+| | kazanç | kayıp | iş yükü |
+|---|---|---|---|
+| **A) hiç aktarma** | sıfır risk | ciro **₺694.432 fazla** kalır | yok |
+| **B) türsüz aktarma** | — | ⛔ **ŞEMA İZİN VERMİYOR**: `returnType` NOT NULL | — |
+| **C) son 90 gün elle** | ciro %8,8 düzelir | %91 açık kalır | 21 satır |
+
+**B için merdiven inildi:** `Return.note` serbest metin ve `code` boş —
+tür BİLİNMİYOR diye işaretlenip **kargo hesabı dışında** bırakılabilir,
+yeni sütun açmadan. Tür VARSAYMAK ise kargo maliyetini değiştirir
+(iade-sureci §5) ve yasak.
+⚠ Dosyada tür ipucu arandı: `KARGO` sütunu 193/366 satırda dolu — ama bu
+bir TAHMİN, ölçüm değil; `UNDELIVERED`da da gidiş kargosu yanmış olabilir.
+
+---
+
+## 🆕 K71 — TANINMAYAN TÜRLER · 28.08.2026
+
+Dosyadaki `TÜR` sütununun tam dökümü ölçüldü; içe aktarmanın tanıdığı
+yalnız `satış`:
+
+    satış   9743 · 25.871.523,48      iade      387 · 1.020.513,02
+    tazmin    27 ·     91.279,89      iptal      24 ·    51.077,00
+    TATİL      8 ·          0,00      aktarma     7 ·    11.294,00
+    Zarar      1 ·          0,00
+
+**`tazmin` 27 kayıt · ₺91.280** — sistemde `Compensation` modeli var ve
+içinde **4 kayıt**. Eşleşme muhtemel ama ölçülmedi.
+**`aktarma` 7 · ₺11.294** ve **`Zarar` 1** — sistemde doğrudan karşılığı YOK.
+**`TATİL` 8** — satış değil, işaret satırı.
+
+⛔ Hiçbiri eşleştirilmedi; ölçülmeden tür atanmaz.
+
+
 ---
 
 ### ⚠ İKİ AÇIK NOT

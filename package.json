@@ -130,6 +130,7 @@
     "canli:iade-listesi": "tsx scripts/canli-iade-listesi-olcum.ts",
     "canli:iade-acigi": "tsx scripts/canli-iade-acigi.ts",
     "canli:iptal-adaylari": "tsx scripts/canli-iptal-adaylari.ts",
+    "canli:iade-secenekleri": "tsx scripts/canli-iade-secenekleri.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",
