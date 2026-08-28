@@ -401,7 +401,27 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
     "bir hareket maliyetsizse TOPLAM null (uydurulmaz)",
     satisCikisMaliyeti([...hareketler, { quantityDelta: -1, unitCostAmount: null }]) === null,
   );
-  yakin("hareket yoksa maliyet sıfır", satisCikisMaliyeti([]) ?? -1, 0);
+  /**
+   * ⛔ ÖLÇÜT TERSİNE ÇEVRİLDİ 28.08.2026 — ESKİ HÂLİ VE NİYE:
+   *
+   *     yakin("hareket yoksa maliyet sıfır", satisCikisMaliyeti([]) ?? -1, 0);
+   *
+   * Bu ölçüt gerekçesizdi: kodun O ANDAKİ davranışını sabitliyordu, bir
+   * kuralı değil. Ve sabitlediği şey bir HATAYDI — boş hareket listesi
+   * "bedava mal" demek değil, "FIFO bağı yok, maliyet BİLİNMİYOR" demek.
+   *
+   * ⚠ Canlıda ölçüldü: bağı olmayan 2573 kalem `CALCULATED` sayılıyor,
+   * ciroları ₺6.585.533 ve maliyet düşülmeden ₺4.573.976 "net2" yazılmış.
+   * Ayrım tertemiz: `MALIYET = 0` olup hareketi OLAN kalem sayısı **0**.
+   *
+   * ⚠ Sarmalayıcının kendi belgesi zaten "uydurulmaz" diyordu; ölçüt o
+   * sözün tersini koruyordu.
+   */
+  kontrol(
+    "hareket yoksa maliyet BİLİNMİYOR (null) — sıfır DEĞİL",
+    satisCikisMaliyeti([]) === null,
+    satisCikisMaliyeti([]),
+  );
   yakin(
     "komisyon yalnız KOMISYON satırlarından",
     komisyonToplami([

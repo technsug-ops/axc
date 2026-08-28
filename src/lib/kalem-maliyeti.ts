@@ -57,6 +57,32 @@ function dortBasamak(d: number): number {
 }
 
 export function kalemMaliyeti(hareketler: MaliyetHareketi[]): KalemMaliyeti {
+  /**
+   * ⛔ HAREKET YOKSA MALİYET **BİLİNMİYOR** — SIFIR DEĞİL (28.08.2026).
+   *
+   * Boş liste, FIFO bağının hiç kurulmadığı anlamına gelir: o kalem için
+   * hangi partiden ne ödendiği sistemde YOK. Eski kod döngüye hiç girmeyip
+   * `dortBasamak(0)` döndürüyordu ve sonuç şuydu — kalem `CALCULATED`
+   * sayılıyor, `net2` maliyet düşülmeden yazılıyor, satış **tamamen kâr**
+   * görünüyordu.
+   *
+   * ⚠ ÖLÇÜLDÜ 28.08.2026, canlı: bağı olmayan **2573 kalem** · ciro
+   * ₺6.585.533 · yazılmış "net2" ₺4.573.976. Bunların **2493'ü
+   * `CALCULATED`** damgalıydı. Ve ayrım TERTEMİZ çıktı — `MALIYET = 0`
+   * olup HAREKETİ OLAN kalem sayısı **0**: yani gerçekten sıfır maliyetli
+   * tek bir parti bile yok, her sıfır "bilinmiyor" demekti.
+   *
+   * ⚠ Bu, aynı gün komisyon tarafında düzeltilen null↔0 hatasının kâr
+   * tarafındaki hâli — ama TERS yönde: orada `null` yazılıyordu ("komisyon
+   * yok" denmesi gerekirken), burada `0` ("bilinmiyor" denmesi gerekirken).
+   * _(Anayasa: "sessiz varsayım yok — hesaplanamayan sıfır DEĞİL, null.")_
+   *
+   * ⛔ Fonksiyonun kendi belgesi zaten bunu söylüyordu: _"Bilinmiyorsa null
+   * — hesaplanamayan maliyet SIFIR sayılmaz."_ Kod o sözü boş listede
+   * tutmuyordu.
+   */
+  if (hareketler.length === 0) return { maliyet: null, paraBirimi: null };
+
   let toplam = 0;
   let paraBirimi: string | null = null;
 

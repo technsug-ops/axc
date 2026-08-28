@@ -13,6 +13,81 @@
 
 ---
 
+## ✅ K66 KAPANDI + ⚠ K68b AÇILDI — 28.08.2026
+
+**KOMİSYON AÇIĞI KAPANDI.** 5200 satış · 5319 kalem yazıldı, **başarısız 0**.
+`AuditLog: KOMISYON_ORANI_GERIYE_DOLDURULDU` · geri alma
+`npm run canli:komisyon-doldur -- --geri`.
+Oranı hâlâ boş: **14 kalem** (Amazon 11 + TY 2 + HB 1) — planlandığı gibi.
+K67'nin kör kovası (**yalnız komisyon eksik**) `2829 → 3`.
+
+⚠ **"MARJ DÜŞECEK" DEDİM, TABLO %34,00 GÖSTERDİ — İKİSİ DE YANLIŞ OKUMA.**
+Önce/sonra toplamları **karşılaştırılamaz**: 2443 satışın `net2`'si YOKTU,
+şimdi VAR. Küme değişti, oran değil. Kendi kuralımı kendi raporuma
+uygulamam gerekti. _(Anayasa: "kıyasın iki tarafı aynı kümeden gelmeli".)_
+
+Komisyonun etkisi doğrudan ölçüldü: `SaleFee KOMISYON` toplamı
+**₺2.066.869,50**. ⚠ Bu defterdeki **TÜM** komisyondur; kuru koşumun
+₺1.811.040'ı yalnız YENİ yazılanların tahminiydi — farklı kümeler.
+
+### ⭐ %34,00 GEÇERSİZ — iki farklı rakamın karışımı
+
+| | satış | ciro | Σ net2 | marj |
+|---|---|---|---|---|
+| **maliyeti OLAN** | 3248 | 10.406.700,83 | 1.151.847,40 | **%11,07** |
+| **maliyeti YOK** | 2443 | 6.370.520,17 | 4.552.585,02 | **%71,46** ⚠ |
+
+**GERÇEK MARJ ~%11,07** ve iki bağımsız ölçüm aynı yeri gösteriyor:
+yazımdan ÖNCE `CALCULATED` kümesi **%11,10** diyordu.
+
+### ⚠ K68b — KÖK BULUNDU: `kalemMaliyeti` boş listede `0` dönüyordu
+
+`for (const h of hareketler)` hiç dönmeyince `dortBasamak(0)` dönüyordu.
+Yani **"FIFO bağı yok"** ile **"maliyet gerçekten sıfır"** aynı görünüyordu:
+kalem `CALCULATED` sayılıyor, `net2` maliyet düşülmeden yazılıyordu.
+
+    bağı olmayan kalem      2573   ciro 6.585.533,44   yazılmış "net2" 4.573.976,43
+      bunun CALCULATED'ı      2493   <-- maliyet 0 sayıldı
+
+⭐ **AYRIM TERTEMİZ:** `MALIYET = 0` olup HAREKETİ OLAN kalem sayısı **0**.
+Yani gerçekten sıfır maliyetli tek bir parti bile yok — her sıfır
+"bilinmiyor" demekti. Belirsizlik yok, hipotez yok.
+
+⚠ Bu, aynı gün komisyon tarafında düzeltilen null↔0 hatasının **kâr
+tarafındaki hâli — ama TERS yönde**: orada `null` yazılıyordu ("komisyon
+yok" denmesi gerekirken), burada `0` ("bilinmiyor" denmesi gerekirken).
+
+| # | İş | Durum |
+|---|---|---|
+| ① | `kalemMaliyeti` boş listede `null` dönsün | **[KOŞTU 28.08.2026]** — 4 mutasyon, 4'ü de kırmızı |
+| ② | 2493 satışın kârının TAZELENMESİ | **[ONAY BEKLİYOR]** — canlı yazma |
+| ③ | Maliyet bağının kurulması | **[BEKLİYOR]** — K55 kuyruğu, 2562 kalem |
+
+⚠ **① TEK BAŞINA EKRANI DEĞİŞTİRMEZ:** `profitStatus` ve `net2Amount`
+SAKLANIYOR; kod düzeldi ama defterdeki damgalar eski. Tazeleme koşmadan
+panel hâlâ ₺4,5M sahte kârı gösterir.
+
+✅ **VE PANEL KENDİLİĞİNDEN DÜZELECEK:** `donemOrtalamaMarji` hesaplanamayan
+kalemleri hem paydan hem PAYDADAN çıkarıyor (`hesaplananCiro`). Yani ayrı
+bir ekran yaması GEREKMİYOR — tazeleme yeter.
+
+⚠ **BİR BEKÇİ ESKİ DAVRANIŞI SABİTLEMİŞTİ:** `iade:dogrula` içinde
+_"hareket yoksa maliyet sıfır"_ ölçütü vardı ve **gerekçesizdi** — kodun o
+anki davranışını sabitliyordu, bir kuralı değil. Sarmalayıcının kendi
+belgesi zaten _"uydurulmaz"_ diyordu. Ölçüt tersine çevrildi, eski hâli
+gerekçesiyle bırakıldı.
+
+### ⚠ BEKÇİ KÖR NOKTASI — İlke #16 ölçütlerinde yaşandı
+
+Yeni yazılan altı ölçüt **kör kaldı** ve sebebi öğreticiydi: blok
+`panel-dogrula.ts`te **özetten SONRA** koşuyordu, `process.exitCode` çoktan
+yazılmıştı. Ölçüm doğruydu, **karara ulaşmıyordu.**
+_(Anayasa: "ölçüm ile karar arasındaki boru da ölçümün parçasıdır" —
+`| tail -2` ve `echo $?` vakalarının bekçi içindeki hâli.)_
+Blok özetin ÖNÜNE alındı, altı mutasyonun altısı da kırmızı yandı.
+
+---
+
 ## ⭐ K66 — commissionRate BOŞ YAZILIYOR · 28.08.2026 · **EN BÜYÜK BULGU**
 
 > İçe aktarma `commissionRate` alanını **hiç yazmıyor**. `null` "bilinmiyor"

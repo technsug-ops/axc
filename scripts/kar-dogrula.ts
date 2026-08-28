@@ -17,6 +17,7 @@ import { readFileSync } from "node:fs";
  */
 
 import { karHesapla, kdvAyir, kdvHaric, type KarGirdisi } from "../src/lib/kar";
+import { kalemMaliyeti } from "../src/lib/kalem-maliyeti";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -706,6 +707,41 @@ console.log("=".repeat(70));
     /paketSayisi: Math\.max\(1, Math\.trunc\(girdi\.paketSayisi \?\? 1\)\)/.test(
       satisKaynak,
     ),
+  );
+}
+
+
+/**
+ * ⛔ MALİYET BAĞI YOKSA `NO_COST` — SIFIR SAYILMAZ (28.08.2026).
+ * Saf gövde DOĞRUDAN çağrılır; kaynak taraması yok.
+ */
+{
+  console.log("MALİYET: bağ yoksa BİLİNMİYOR");
+  kontrol(
+    "boş hareket listesi null döner (0 DEĞİL)",
+    kalemMaliyeti([]).maliyet === null,
+    kalemMaliyeti([]).maliyet,
+  );
+  kontrol(
+    "  ...para birimi de null",
+    kalemMaliyeti([]).paraBirimi === null,
+  );
+  /** ⚠ AYRIMIN ÖTEKİ YAKASI: dolu liste hâlâ TOPLAM veriyor. */
+  kontrol(
+    "dolu liste toplamı veriyor (kural gevşetilmedi)",
+    kalemMaliyeti([
+      { quantityDelta: -2, birimMaliyet: "100.0000", birimMaliyetParaBirimi: "TRY" },
+    ]).maliyet === 200,
+    kalemMaliyeti([
+      { quantityDelta: -2, birimMaliyet: "100.0000", birimMaliyetParaBirimi: "TRY" },
+    ]).maliyet,
+  );
+  /** ⚠ Ve bir hareket damgasızsa yine null — eski kural DURUYOR. */
+  kontrol(
+    "damgasız hareket varsa null (eski kural duruyor)",
+    kalemMaliyeti([
+      { quantityDelta: -1, birimMaliyet: null, birimMaliyetParaBirimi: null },
+    ]).maliyet === null,
   );
 }
 
