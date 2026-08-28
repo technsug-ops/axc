@@ -306,8 +306,23 @@ async function main() {
   }
 
   // ═══ YAZIM ══════════════════════════════════════════════════════════════
-  const onceHareket = await p.stockMovement.count();
-  const onceStok = await p.stockMovement.aggregate({ _sum: { quantityDelta: true } });
+  /**
+   * ⛔ SAYAÇ KENDİ PARTİMİZE DARALTILDI — 28.08.2026 dersi.
+   *
+   * İlk yazımda GENEL sayaç kullanıldı (`stockMovement.count()`) ve rapor
+   * **"⛔ TUTMADI"** dedi: fark 5104, beklenen 5102 · net stok 771 → 781.
+   * Ölçüm doğruydu ama YANLIŞ ŞEYİ ölçüyordu — aradaki 2 hareket ve +10
+   * stok, koşum SÜRERKEN kullanıcının ekrandan girdiği iki alımdı
+   * (`ALM-HB-260828-08/09`, axcali3101, 10:59 ve 11:00).
+   *
+   * Kendi partimize daraltılınca sonuç tertemiz: 5102 hareket, net stok
+   * etkisi **0**. Aynı anda başkası yazabiliyorsa genel sayaç bir yalancı
+   * kırmızı üretir; sayaç HER ZAMAN kendi kümesine bağlanır.
+   */
+  const onceHareket = await p.stockMovement.count({ where: { note: { contains: PARTI } } });
+  const onceStok = await p.stockMovement.aggregate({
+    where: { note: { contains: PARTI } }, _sum: { quantityDelta: true },
+  });
   const onceDurum = await durumDagilimi();
   const onceMarj = await panelMarji();
   const onceKutu = await kutuSayisi();
@@ -371,8 +386,10 @@ async function main() {
   console.log("\n   yazılan " + yazilan + " kalem (" + yazilan * 2 + " hareket) · hata " + hata);
   for (const h of hatalar) console.log("     ⚠ " + h);
 
-  const sonraHareket = await p.stockMovement.count();
-  const sonraStok = await p.stockMovement.aggregate({ _sum: { quantityDelta: true } });
+  const sonraHareket = await p.stockMovement.count({ where: { note: { contains: PARTI } } });
+  const sonraStok = await p.stockMovement.aggregate({
+    where: { note: { contains: PARTI } }, _sum: { quantityDelta: true },
+  });
   console.log("\n   StockMovement " + onceHareket + " → " + sonraHareket +
     "  (fark " + (sonraHareket - onceHareket) + ", beklenen " + yazilan * 2 + ")" +
     (sonraHareket - onceHareket === yazilan * 2 ? "  ✓" : "  ⛔ TUTMADI"));
