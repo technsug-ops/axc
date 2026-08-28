@@ -284,6 +284,21 @@ async function main() {
     siparis: K("Sipariş Numarası"), sku: K("SKU"), barkod: K("AXCALI BARKOD"),
     kanal: K("PAZAR YERI"), urun: K("Ürün"), tur: K("TÜR"),
     adet: K("Satış Miktarı"), tarih: K("Tarih"), fiyat: K("ÜRÜN LİSTE FİYATI"),
+    /**
+     * ⛔ KOMİSYON ORANI — KDV HARİÇ. `KOMİSYON TUTARI`DAN TÜRETİLMEZ.
+     *
+     * Ölçüldü 28.08.2026, `(TUTAR/FİYAT) ÷ ORAN` dağılımı:
+     *     5734 satır  ×1,00   (KDV'siz)
+     *     3705 satır  ×1,20   (komisyona +%20 KDV)
+     *       40 satır  başka
+     *
+     * Yani `TUTAR` bir kısım satırda KDV DAHİL. Ondan oran türetilseydi
+     * o satırlarda oran %20 şişerdi — ve motor üstüne bir kez daha KDV
+     * eklerdi (`HEPSIBURADA · KOMISYON_KDV · %20` kuralı yüklü), yani
+     * KDV **iki kez** uygulanırdı. `ORAN` kolonu her iki kovada da KDV
+     * hariç; tek doğru kaynak odur.
+     */
+    komisyonOrani: K("KOMİSYON ORANI"),
   };
   const eksik = Object.entries(kol).filter(([, i]) => i < 0).map(([a]) => a);
   if (eksik.length > 0) {
@@ -296,13 +311,32 @@ async function main() {
   type Satir = {
     sira: number; siparis: string; sku: string; barkod: string; kanal: string;
     urun: string; tur: string; adet: number; fiyat: number;
+    /** KDV HARİÇ komisyon oranı (%). Okunamazsa null — 0 DEĞİL. */
+    komisyonOrani: number | null;
     kapi: ReturnType<typeof iceAktarmaTarihi>;
+  };
+
+  /**
+   * ⛔ KOMİSYONU OLMAYAN KANAL — oran `0` YAZILIR, `null` DEĞİL.
+   * `null` "bilinmiyor" der ve motor `RULE_MISSING` üretir; `0` ise
+   * "komisyon yok" der ve NET hesaplanır. Elden satışta üçüncü taraf
+   * komisyonu YOK (ölçüldü: 12 satırın 11'inde komisyon ve kargo sıfır).
+   */
+  const KOMISYONSUZ_KANALLAR = new Set(["DEPO"]);
+
+  /** ⚠ Makul aralık İŞ KURALIDIR: dış ayrıştırıcının kabul ettiği her sayı geçerli değildir. */
+  const oranOku = (ham: unknown, kanal: string): number | null => {
+    if (KOMISYONSUZ_KANALLAR.has(kanal.toUpperCase())) return 0;
+    const n = Number(ham);
+    if (!Number.isFinite(n) || n <= 0 || n > 100) return null;
+    return n;
   };
   const veri: Satir[] = satirlar.map((r, i) => ({
     sira: i + 7,
     siparis: metne(r[kol.siparis]), sku: metne(r[kol.sku]), barkod: metne(r[kol.barkod]),
     kanal: metne(r[kol.kanal]), urun: metne(r[kol.urun]), tur: metne(r[kol.tur]),
     adet: Number(r[kol.adet]) || 0, fiyat: Number(r[kol.fiyat]) || 0,
+    komisyonOrani: oranOku(r[kol.komisyonOrani], metne(r[kol.kanal])),
     kapi: iceAktarmaTarihi(r[kol.tarih], okumaAni),
   }));
 
@@ -390,6 +424,14 @@ async function main() {
     if (!aday) { say("eslesmeyenListing"); continue; }
     if (aday.length > 1) { say("belirsizSku"); continue; }
     if (ADIM2_BEKLEYEN.has(s.kanal.toUpperCase())) { say("adim2Bekliyor"); continue; }
+    /**
+     * ⛔ ORANSIZ KALEM YAZILMAZ — kullanıcı kararı 28.08.2026.
+     * Oranı boş yazmak `RULE_MISSING` üretiyor ve komisyon HİÇ düşülmüyor;
+     * ekrandaki marj olduğundan YÜKSEK çıkıyor (ölçüldü: RULE_MISSING
+     * kümesinin marjı %21,32, komisyonu düşülmüş kümenin marjı %11,10).
+     * Sessizce boş yazmak yerine kalem GÖRÜNÜR bir kovaya düşer.
+     */
+    if (s.komisyonOrani === null) { say("oranYok"); continue; }
     const hesapId = kanalHesap.get(s.kanal.toUpperCase());
     if (!hesapId) { say("kanalCozulemedi"); continue; }
     /**
@@ -488,9 +530,18 @@ async function main() {
           importBatch: parti,
           importKaynak: "satis-excel",
           /**
-           * ⚠ HESAP SÜTUNLARI YAZILMIYOR (kâr · ROI · komisyon · KDV ·
-           * stopaj · %15). Motor kendi hesaplar; dosyanınkini yazmak iki
-           * farklı gerçek üretirdi.
+           * ⚠ HESAP SONUÇLARI YAZILMIYOR (kâr · ROI · KDV · stopaj · %15).
+           * Motor kendi hesaplar; dosyanınkini yazmak iki farklı gerçek
+           * üretirdi. **Bu gerekçe DURUYOR ve doğru.**
+           *
+           * ⛔ AMA KOMİSYON ORANI BU KÜMEYE AİT DEĞİLMİŞ — DÜZELTİLDİ
+           * 28.08.2026. Oran bir SONUÇ değil, motorun GİRDİSİDİR: kanalın
+           * beyanıdır ve motor onu hesaplayamaz. Yazılmayınca komisyon HİÇ
+           * düşülmedi ve 5333 kalem `RULE_MISSING` kaldı — o kümenin marjı
+           * %21,32 görünürken komisyonu düşülmüş kümenin marjı %11,10.
+           * Yani ekrandaki rakam olduğundan YÜKSEKTİ.
+           * _(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa hatayı
+           * korur" — burada korunan şey iki gerçek değil, eksik bir hesaptı.)_
            */
           items: {
             create: kalemler.map((c) => ({
@@ -498,6 +549,8 @@ async function main() {
               quantity: c.s.adet,
               unitPriceAmount: c.s.fiyat,
               unitPriceCurrency: "TRY" as const,
+              /** ⛔ KDV HARİÇ oran — motor HB'de üstüne %20 KDV kendisi ekler. */
+              commissionRate: c.s.komisyonOrani,
             })),
           },
         },

@@ -23,8 +23,36 @@
 |---|---|---|
 | ① | Kapsam ölçümü | **[KOŞTU 28.08.2026]** |
 | ② | Geriye doldurma kuru koşumu | **[KOŞTU]** — `npm run canli:komisyon-doldur` |
-| ③ | Yazma + `karYenidenYaz` | **[ONAY BEKLİYOR]** |
-| ④ | İçe aktarmanın oranı YAZMASI | **[BEKLİYOR]** — yoksa açık her koşumda yeniden doğar |
+| ③ | Yazma + `karYenidenYaz` | **[KURU KOŞUM HAZIR · ONAY BEKLİYOR]** |
+| ④ | İçe aktarmanın oranı YAZMASI | **[KOŞTU 28.08.2026]** — beş yeni bekçi ölçütü, beşi de mutasyonla kırmızı yandı |
+| ⑤ | AMAZON 11 kalem | **[BEKLİYOR]** — %1,00 doğrulanacak, HARİÇ tutuldu |
+
+**③ KURU KOŞUM — Amazon HARİÇ:**
+
+    DOLDURULABİLİR   5319 / 5333        TRENDYOL 3381 · HEPSIBURADA 1938
+    etkilenecek satış  5200             belirsiz 2 · dosyada yok 1
+    ciro          15.087.879,55
+    komisyon (KDV hariç)   1.811.040,15
+    komisyon (HB KDV'li)   1.979.025,43
+    HARİÇ: AMAZON 11 kalem · 45.221,00 TL  (oran %1,00 — yer tutucu şüphesi)
+
+⛔ **SONRAKİ NET-2 TAHMİN EDİLMEDİ.** Komisyon KDV'si indirilecek KDV'ye
+giriyor ve NET-2 ödenecek KDV'yi de düşüyor; zinciri yalnız kâr motoru
+bilir. Tahmini bir rakam basmak, sistemin kendi hesabı sanılacak bir sayı
+üretirdi. Yazımdan SONRA aynı tablo yeniden basılır ve fark ÖLÇÜLÜR.
+
+⚠ **MARJ DÜŞECEK VE BU BEKLENEN.** ₺1.811.040 komisyon ilk kez düşülüyor.
+Düşüş **"bozuldu" değil, "İLK KEZ DOĞRU"** demektir.
+
+**④ NE YAPILDI:** içe aktarma artık `KOMİSYON ORANI` kolonunu okuyup
+`SaleItem.commissionRate`e yazıyor. Oranı okunamayan kalem **`oranYok`
+kovasına düşüyor, sessizce boş yazılmıyor.** Komisyonsuz kanalda (DEPO)
+oran `0` yazılır — `null` değil.
+
+Beş ölçüt eklendi ve **beşi de mutasyonla kırmızı yandığı GÖRÜLDÜ**:
+kaldıran yön (yazma satırı silindi · kapı silindi · `0` yerine `null` ·
+makul aralık kapısı silindi) ve **yanlış kaynak yönü** (oran `KOMİSYON
+TUTARI`ndan türetildi → KDV iki kez uygulanırdı).
 
 **KAPSAM — ölçüldü:**
 
@@ -51,8 +79,11 @@ yalnızca komisyon düşülmeden.
 
 Yani ekrandaki marj **olduğundan YÜKSEK**, düşük değil. Komisyonu düşülmüş
 kümenin marjı %11,12; düşülmemiş kümenin marjı %21,32.
-⚠ %11,12 "gerçek marj" DEĞİLDİR — yalnız 489 satışlık, temsili olmayabilecek
-bir kümenin marjı. Kanıtladığı tek şey yönün ters olduğu.
+⚠ **%11,12 "GERÇEK MARJ" DEĞİLDİR — BAYAT OKUMA RİSKİ.** Yalnız 489
+satışlık, temsili olmayabilecek bir kümenin marjı; o küme `elle` ve
+`enumerasyon` kaynaklı satışlardan oluşuyor ve `satis-excel` kümesini
+temsil etmesi için hiçbir sebep yok. Kanıtladığı tek şey **yönün ters**
+olduğu. Bu satır bir rapora alıntılanacaksa yanında bu şerh de gider.
 
 **MARJ ŞERHİ BUNU HİÇ GÖRMÜYOR** — çünkü şerh MALİYET BAĞINI ölçüyor:
 
@@ -90,6 +121,15 @@ eklediği %20 KDV.** Anayasada yazılıydı; ölçütüm hesaba katmıyordu.
 `TUTAR/FİYAT` değil: motorda `HEPSIBURADA · KOMISYON_KDV · %20` kuralı
 yüklü ve KDV'yi kendisi ekliyor. KDV dahil oran yazılsaydı **iki kez**
 uygulanırdı.
+
+**⚠ MARJ ŞERHİ ÜÇÜNCÜ SEBEBİ DE SAYMALI — AYRI KALEM (K67).** Şerh bugün
+iki sebep ayrıştırıyor (`alimYok` · `bekleyen` · `donemDisi`), üçü de
+MALİYET tarafında. **Komisyon oranı eksikliği hiç sayılmıyor** ve 2829
+kalemi kör bırakıyor: o kalemlerin maliyeti VAR, şerh onları "kapsanan"
+sayıyor, ama NET'leri komisyonsuz. Şerhin `kapsanmayanPay` ölçütü
+maliyeti ölçüyor; NET'in DOĞRU hesaplandığını ölçmüyor.
+⛔ ③ koştuktan sonra bu kova küçülecek ama SIFIRLANMAYACAK (Amazon 11 +
+belirsiz 2 + dosyada yok 1 kalır) — o yüzden şerh yine de saymalı.
 
 **⚠ AMAZON'UN %1'İ ŞÜPHELİ — YAZILMADAN ÖNCE DOĞRULANMALI.** 11 kalemin
 hepsi tam `%1,00`. Amazon TR komisyonu tipik olarak %8–15. Bu bir yer

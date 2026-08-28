@@ -1108,6 +1108,53 @@ kontrol(
   /DEPO: "Elden Satış"/.test(yorumsuz(satisAktar)),
 );
 /**
+ * ═══ KOMİSYON ORANI — GİRDİ, SONUÇ DEĞİL (28.08.2026) ═══════════════════
+ *
+ * ⛔ İçe aktarma `commissionRate`i HİÇ yazmıyordu ve gerekçesi şuydu:
+ * "hesap sütunları yazılmaz, motor kendi hesaplar". Gerekçe SONUÇLAR için
+ * doğru (kâr · ROI · KDV · stopaj) ama ORAN bir GİRDİDİR — kanalın beyanı,
+ * motor onu hesaplayamaz. Yazılmayınca komisyon HİÇ düşülmedi: 5333 kalem
+ * `RULE_MISSING` kaldı ve o kümenin marjı %21,32 görünürken komisyonu
+ * düşülmüş kümenin marjı %11,10'du. Ekrandaki rakam olduğundan YÜKSEKTİ.
+ *
+ * ⛔ İKİ ÖLÇÜT, İKİ AYRI TEHLİKE:
+ *  ① `TUTAR`DAN TÜREMEK — o kolon 3705 satırda KDV DAHİL (`×1,20`). Ondan
+ *    oran türetilseydi motor üstüne bir kez daha %20 eklerdi
+ *    (`HEPSIBURADA · KOMISYON_KDV`), yani KDV İKİ KEZ uygulanırdı.
+ *  ② ORANSIZ KALEM YAZMAK — sessizce `null` yazmak açığı her koşumda
+ *    yeniden doğurur. Kalem görünür bir kovaya düşmeli.
+ */
+kontrol(
+  "komisyon oranı `KOMİSYON ORANI` kolonundan okunuyor",
+  /komisyonOrani: K\("KOMİSYON ORANI"\)/.test(satisAktar),
+);
+kontrol(
+  "oran `KOMİSYON TUTARI`ndan TÜRETİLMİYOR",
+  !/KOMİSYON TUTARI/.test(yorumsuz(satisAktar)),
+);
+kontrol(
+  "yazılan kalem commissionRate taşıyor",
+  /commissionRate: c\.s\.komisyonOrani,/.test(satisAktar),
+);
+kontrol(
+  "oransız kalem YAZILMIYOR — görünür kovaya düşüyor",
+  /if \(s\.komisyonOrani === null\) \{ say\("oranYok"\); continue; \}/.test(yorumsuz(satisAktar)),
+);
+/**
+ * ⚠ KOMİSYONSUZ KANALDA `0` — `null` DEĞİL. `null` "bilinmiyor" der ve
+ * `RULE_MISSING` üretir; `0` "komisyon yok" der ve NET hesaplanır.
+ */
+kontrol(
+  "komisyonsuz kanalda oran 0 yazılıyor",
+  /KOMISYONSUZ_KANALLAR\.has\(kanal\.toUpperCase\(\)\)\) return 0;/.test(yorumsuz(satisAktar)),
+);
+/** ⚠ Makul aralık iş kuralıdır — dış ayrıştırıcının kabulü yeterli değil. */
+kontrol(
+  "oran makul aralıkta değilse null (0 < oran ≤ 100)",
+  /n <= 0 \|\| n > 100\) return null;/.test(yorumsuz(satisAktar)),
+);
+
+/**
  * ⛔ KANAL DÖKÜMÜ AYNI GÖVDEDEN — 28.08.2026'da ayrı bir sonda yazıldı ve
  * `76` saydı; bu gövde `23` diyordu. Sonda tarih kapısını, belirsiz SKU
  * elemesini ve kanal çelişkisi süzgecini taşımıyordu. Rapora giden sayı
