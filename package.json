@@ -117,6 +117,7 @@
     "canli:alim-teyit": "tsx scripts/canli-alim-sonrasi-teyit.ts",
     "canli:calculated-maliyetsiz": "tsx scripts/canli-calculated-maliyetsiz.ts",
     "canli:net-temizle": "tsx scripts/canli-net-temizle.ts",
+    "canli:k55-detay": "tsx scripts/canli-k55-kuru-detay.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",
