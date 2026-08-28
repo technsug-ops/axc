@@ -406,6 +406,34 @@ _(Anayasa dersi: boru sonuna güvenilmez — bu sefer `tail` kesti.)_
 | ⑨ | `10559161422` | mükerrer, iptal edilecek | ⭐ **mükerrerlik DOSYADA**: satış dosyasında **birebir aynı İKİ satır** |
 | ⑩ | `4138485546` | 2 adet · birim ₺2.549, _"diğerinde problem yok"_ | ⚠ **İKİSİ DE** NO_COST |
 
+### ✅ K74 MALİYETLERİ YAZILDI — 28.08.2026 [KOŞTU]
+
+`npm run canli:k74-maliyet -- --yaz` + `-- --tazele`
+
+    yazılan hareket 18 (9 kalem × PURCHASE_IN + SALE_OUT)
+    net stok farkı 0 ✓  ·  partiye ait hareket 18/18 ✓
+    ⭐ İKİNCİ KOŞUM: yazılacak kalem 0  ✓ (dokuzu da "hareketi var")
+
+**YEDİSİ DE `NO_COST` → `CALCULATED`:**
+
+    10828937011  NET-1   478,19 · NET-2   392,66
+    4138485546   NET-1   960,83 · NET-2   790,83
+    4673224319   NET-1   588,99 · NET-2   488,77
+    10635054169  NET-1   148,52 · NET-2   123,33
+    4762343000   NET-1   223,43 · NET-2   185,67
+    4405769515   NET-1   239,67 · NET-2   199,17
+    10571819650  NET-1   166,91 · NET-2   138,69
+    ⭐ TOPLAM NET-2: ₺2.319,12   (önce: yedisi de NET taşımıyordu)
+
+⚠ **VE BİR HATA YAPTIM, KOD DÜZELTİLDİ.** İlk koşumda hareketler yazıldı ama
+kâr tazelemesi **düştü**: betik canlıya kendi istemcisiyle bağlanmıştı, kâr
+motoru ise uygulamanın `prisma` tekilini çağırıyor → `DATABASE_URL` yok.
+⭐ **Düşmesi ŞANSTI:** `canli-kar-tazele.ts` başlığı tam bu tuzağı anlatıyor —
+_"betik kendi istemcisiyle bağlanıp motoru öylece çağırsaydı, CANLIDAN OKUYUP
+YERELE YAZARDI."_ Adres artık her şeyden önce kuruluyor.
+Hareketler ikinci kez YAZILMADI; `--tazele` kapısı yalnız kâr damgasını
+tamamladı ve izi o yazdı (satır bazında önceki değerlerle).
+
 ### ⚠ ÜÇ SORU — YAZIMDAN ÖNCE CEVAP GEREKİYOR
 
 **② stok aritmetiği 1 adet tutmuyor.** `axcali1633`: 3 alım · 3 satış
@@ -702,7 +730,7 @@ sadakatle iki kalem yazmış. Halil: _"sadece 1 tanesi yanlış, diğeri doğru.
 
 ⚠ **VE BU TEKRARLAYACAK:** dosyada mükerrer satır bir kez değil; içe aktarma
 her seferinde sadakatle yazacak. Tek vaka değil, **desen.**
-⛔ Bugün yazılmadı; ekran/gövde kararı gerekiyor.
+⛔ Bugün yazılmadı; **çözüm tasarımı AYRI TUR** (kullanıcı kararı 28.08.2026).
 
 ---
 

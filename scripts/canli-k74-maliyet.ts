@@ -1,6 +1,4 @@
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-
-import { PrismaClient } from "../src/generated/prisma/client";
+import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 
 /**
@@ -27,6 +25,8 @@ import { canliYapilandirma } from "./canli-ortak";
 const PARTI = "k74-maliyet-20260828";
 const YAZ = process.argv.includes("--yaz");
 const GERI = process.argv.includes("--geri");
+/** Yalnız kâr tazeleme — hareketler zaten yazılmışsa. */
+const TAZELE = process.argv.includes("--tazele");
 
 /** ⭐ HALİL'İN BEYANI — her satırın gerekçesi yanında. */
 const VAKALAR: { kod: string; birim: number; gerekce: string }[] = [
@@ -57,7 +57,15 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  const p = new PrismaClient({ adapter: new PrismaMariaDb(c.veri.ham) });
+  /**
+   * ⚠ ADRES HER ŞEYDEN ÖNCE KURULUR VE UYGULAMANIN KENDİ `prisma` TEKİLİ
+   * KULLANILIR. İlk denemede betik kendi istemcisiyle bağlanmış, kâr motoru
+   * ise tekili çağırmıştı: `DATABASE_URL` yok diye DÜŞTÜ. Düşmeseydi
+   * CANLIDAN OKUYUP YERELE YAZABİLİRDİ — `canli-kar-tazele.ts` başlığında
+   * yazılı olan tuzağın ta kendisi.
+   */
+  process.env.DATABASE_URL = betikAdresi(c.veri.ham);
+  const { prisma: p } = await import("../src/lib/prisma");
 
   console.log("\n" + "=".repeat(100));
   console.log("K74 MALİYETLERİ — " +
@@ -155,6 +163,69 @@ async function main() {
   console.log("   ⚠ `stok-duzeltme.ts` \"sıfır maliyet VARSAYILMAZ\" der — burada");
   console.log("     varsayılmıyor, BEYAN EDİLİYOR ve gerekçesi ize yazılıyor.");
 
+  /**
+   * ═══ YALNIZ TAZELEME ═══
+   * ⚠ İlk yazımda hareketler YAZILDI ama tazeleme adres kuramadığı için
+   * düştü. Hareketler yerinde; eksik olan yalnız kâr damgası. Bu kapı onu
+   * kapatır — hareketleri İKİNCİ KEZ yazmadan.
+   */
+  if (TAZELE) {
+    console.log("\n④ YALNIZ TAZELEME — hareketler zaten yazılmış");
+    const { satisKarTazele } = await import("../src/lib/kar-yeniden");
+    for (const kod of kodlar) {
+      const s = harita.get(kod);
+      if (!s) { console.log("   " + kod + " ⛔ YOK"); continue; }
+      const once = s.profitStatus;
+      const ok2 = await satisKarTazele(s.id);
+      const sonra = await p.sale.findUnique({
+        where: { id: s.id },
+        select: { profitStatus: true, net1Amount: true, net2Amount: true },
+      });
+      const y1 = sonra?.net1Amount === null || sonra?.net1Amount === undefined
+        ? "—" : Number(sonra.net1Amount.toString()).toFixed(2);
+      const y2 = sonra?.net2Amount === null || sonra?.net2Amount === undefined
+        ? "—" : Number(sonra.net2Amount.toString()).toFixed(2);
+      console.log("   " + kod.padEnd(14) + (ok2 ? "✓" : "⛔") + "  " +
+        String(once).padEnd(13) + " → " + String(sonra?.profitStatus).padEnd(12) +
+        " NET-1 " + y1.padStart(11) + " · NET-2 " + y2.padStart(11));
+    }
+    /**
+     * ⚠ İZ BURADA YAZILIR — ilk koşum tazelemeye varmadan düştüğü için
+     * `--yaz` kapısındaki iz hiç oluşmadı. Hareketler yazılıp iz
+     * yazılmamış olsaydı, bu paket sistemde SEBEPSİZ dururdu.
+     */
+    const zatenIz = await p.auditLog.count({ where: { action: "K74_MALIYET_YAZILDI" } });
+    if (zatenIz === 0) {
+      const hareket = await p.stockMovement.count({ where: { note: { contains: PARTI } } });
+      await p.auditLog.create({
+        data: {
+          action: "K74_MALIYET_YAZILDI",
+          targetType: "StockMovement",
+          detail: JSON.stringify({
+            parti: PARTI,
+            gerekce: "Halil'in bildirdiği maliyetler, 28.08.2026.",
+            vakalar: VAKALAR,
+            hareket,
+            /** ⭐ ANAYASA 28.08.2026: önceki değer SATIR BAZINDA saklanır. */
+            oncekiDegerler: kodlar.map((k) => ({
+              kod: k, profitStatus: "NO_COST", net1: null, net2: null,
+            })),
+            sifirMaliyet: "Dört promosyon siparişinde maliyet 0 — VARSAYIM DEĞİL, Halil'in beyanı.",
+            geriAlmaOlcutu: "Kimlik listesi DEĞİL, desen: StockMovement.note içinde '" + PARTI + "' geçen hareketler. Komut: npm run canli:k74-maliyet -- --geri",
+            not: "Hareketler ilk koşumda yazıldı; kâr tazelemesi adres kuramadığı için düşmüştü (betik kendi istemcisiyle bağlanmış, motor uygulamanın tekilini çağırmıştı). İkinci koşumda yalnız tazeleme yapıldı, hareketler İKİNCİ KEZ yazılmadı.",
+          }),
+        },
+      });
+      console.log("\n   ✓ AuditLog: K74_MALIYET_YAZILDI (satır bazında önceki değerlerle)");
+    }
+
+    console.log("\n" + "=".repeat(100));
+    console.log("TAZELENDİ — stok defterine DOKUNULMADI.");
+    console.log("=".repeat(100) + "\n");
+    await p.$disconnect();
+    return;
+  }
+
   if (!YAZ) {
     console.log("\n" + "=".repeat(100));
     console.log("KURU KOŞUM — HİÇBİR ŞEY YAZILMADI.");
@@ -165,6 +236,36 @@ async function main() {
   }
 
   // ═══ YAZIM ═══════════════════════════════════════════════════════════
+  /**
+   * ⭐ ÖNCEKİ DEĞER SATIR BAZINDA SAKLANIR — anayasa kuralı 28.08.2026.
+   * Toplam saklamak yetmez: kargo yazımında ₺1.404,50'lik fark tam bu
+   * yüzden atfedilemez kaldı. Burada 9 kalem var, satır saklamak bedava.
+   */
+  const oncekiler = [...new Set(plan.map((x) => x.kod))].map((kod) => {
+    const s = harita.get(kod)!;
+    return {
+      kod,
+      profitStatus: s.profitStatus,
+      net1: null as string | null,
+      net2: null as string | null,
+    };
+  });
+  for (const o of oncekiler) {
+    const s = await p.sale.findUnique({
+      where: { id: harita.get(o.kod)!.id },
+      select: { net1Amount: true, net2Amount: true },
+    });
+    o.net1 = s?.net1Amount === null || s?.net1Amount === undefined
+      ? null : String(s.net1Amount);
+    o.net2 = s?.net2Amount === null || s?.net2Amount === undefined
+      ? null : String(s.net2Amount);
+  }
+  console.log("\n⑤ ÖNCE — SATIR BAZINDA (ize yazılacak)");
+  for (const o of oncekiler) {
+    console.log("   " + o.kod.padEnd(14) + String(o.profitStatus).padEnd(14) +
+      " NET-1 " + (o.net1 ?? "—").padStart(12) + " · NET-2 " + (o.net2 ?? "—").padStart(12));
+  }
+
   const stokOnce = await p.stockMovement.aggregate({ _sum: { quantityDelta: true } });
   console.log("\n⚠ YAZILIYOR — " + plan.length + " kalem");
   let ok = 0;
@@ -229,6 +330,9 @@ async function main() {
         toplamMaliyet: toplam.toFixed(2),
         atlanan,
         sifirMaliyet: "Dört promosyon siparişinde maliyet 0 — VARSAYIM DEĞİL, Halil'in beyanı.",
+        /** ⭐ ANAYASA 28.08.2026: önceki değer SATIR BAZINDA saklanır. */
+        oncekiDegerler: oncekiler,
+        geriAlmaOlcutu: "Kimlik listesi DEĞİL, desen: StockMovement.note içinde parti adı geçen hareketler. Komut: npm run canli:k74-maliyet -- --geri",
       }),
     },
   });

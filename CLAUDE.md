@@ -688,6 +688,70 @@ değil, **o kaydın o hâlidir.**
 - Eski iz **silinmez**, yenisi yazılır ve en yenisi okunur — bir istisnanın
   kaç kez geri geldiği kendi başına bilgidir.
 
+### GERİ ALMA YOLU, SAKLANAN LİSTEYE DEĞİL YENİDEN HESAPLANABİLİR ÖLÇÜTE DAYANIR (KESİN KURAL)
+
+_Kullanıcı kararı 28.08.2026, kargo yazımı._ Toplu bir yazımın geri alma
+yolu, "neyi yazdım" listesini SAKLAYARAK kurulursa, o yol **listenin
+sağlamlığı kadar sağlamdır** — ve liste bozulur: boyut sınırı, kırpılma,
+kodlama, biçim değişikliği. **Ölçüt bozulmaz.**
+
+**Vaka:** 5595 satışın kimliği `AuditLog.detail`e kondu. Alan MySQL `TEXT`
+(65.535 bayt) ve JSON tam tavanda kırpıldı:
+
+    yazılan uzunluk 65.511 karakter  ·  JSON.parse DÜŞÜYOR
+
+Yani **geri alma yolu YAZILDIĞI ANDA BOZUKTU.** Veritabanı hata vermedi,
+betik hata vermedi, bekçi kırmızı yanmadı. Kırılma **yazıldığı anda oluşur,
+kullanıldığı anda görülür** — ve kullanıldığı an, genellikle bir şeyin ters
+gittiği ve geri almanın gerektiği andır.
+
+> **KURAL:** geri alma kümesi **yeniden hesaplanabilir bir ölçütten** kurulur.
+> Kargoda ölçüt şuydu: _"kargosu, kaynak dosyadaki değerin 1,20'ye bölümüne
+> kuruşuna eşit olan satış bizimdir."_ Stok yazımlarında ölçüt parti adıdır
+> (`note` içinde `PARTI` geçen hareketler). İkisi de dosyadan/desenden
+> yeniden üretilir; hiçbir yerde liste tutulmaz.
+
+⚠ **VE AYNI ÖLÇÜT İKİ YERDE KULLANILIR:** yazımın "yeniden koşulabilirlik"
+kapısı ile geri alma kapısı **aynı** ölçüde bakar. İki yerde iki farklı
+ölçüt olursa biri ötekinin yazdığını göremez.
+
+⚠ **KESİK İZ SİLİNMEZ.** Ledger disiplini izlere de işler: bozuk kayıt
+yerinde bırakılır, üstüne **onu açıklayan** ikinci bir iz yazılır ve geçerli
+olan o olur. Silmek, altı ay sonra "burada niye bozuk bir iz vardı"
+sorusunu cevapsız bırakır.
+
+_(Bu, "hiçbir doğrulama boru sonuna güvenmez" ve "hata mesajını kısaltan her
+işlem teşhisi kısaltır" derslerinin İZ tarafı: orada mesaj kırpılıyordu,
+burada izin kendisi.)_
+
+---
+
+### TOPLU YAZIMDA ÖNCEKİ DEĞER SATIR BAZINDA SAKLANIR (KESİN KURAL)
+
+_Kullanıcı kararı 28.08.2026._ Bir toplu yazımın etkisini ölçmek için
+**önce/sonra TOPLAMI** saklamak yetmez. Toplam, sonradan doğan bir farkın
+**kaynağını aramaya izin vermez** — fark görünür ama kime ait olduğu
+sorulamaz.
+
+**Vaka:** kargo yazımında beklenen NET-2 düşüşü ₺558.823,22, ölçülen
+₺557.418,72. Fark **₺1.404,50** (değişimin %0,25'i). Sebep arandı:
+
+    "bayat NET damgası" hipotezi ÇÜRÜTÜLDÜ
+      kargosuz  27 satış → kayıtlı NET = motor, fark 0
+      kargolu  120 satış → kayıtlı NET = motor, fark 0
+
+Yani **yazımdan sonraki durum doğru.** Açıklanamayan şey yazımdan ÖNCEKİ
+toplamın bileşimiydi — ve satış bazında saklanmadığı için **artık
+atfedilemez.** Sebep uydurulmadı; açıklanamadığı yazıldı.
+
+> **KURAL:** toplu yazım, dokunduğu her satırın **eski değerini** ize yazar
+> (durum + ilgili tutarlar). Küme çok büyükse özet + **dağılım** (kaç satır
+> hangi durumdaydı) saklanır; ama "toplam" tek başına asla yeterli değildir.
+
+⚠ **VE İZ BOYUTU BU KURALLA ÇARPIŞIR** — üstteki kural liste saklamayı
+yasaklamıyor, **geri almayı listeye BAĞLAMAYI** yasaklıyor. Önceki değerler
+teşhis içindir; sığmıyorsa özetlenir, ama geri alma yolu onlara bağlanmaz.
+
 ### İMKÂNSIZ GÖRÜNEN DEĞER ÖNCE DOĞRULANIR — DÜZELTİLMEZ (KESİN KURAL)
 
 _Ders 19.08.2026, OneBlade vakası._ Bir uyarının görevi **baktırmaktır**,
