@@ -466,6 +466,51 @@ console.log("\n3) DURUM TESTLERİ — hesaplanamayan kâr sıfır sayılmaz");
     maliyetsiz.durum,
   );
 
+  /**
+   * ⛔ UÇTAN UCA — ZİNCİRİN İKİ HALKASI BİRLİKTE (28.08.2026).
+   *
+   * Yukarıdaki ölçüt motoru `maliyet: null` ile ELDEN besliyor ve o hâliyle
+   * hep yeşildi. Ama canlıda `maliyet` motora `kalemMaliyeti`den geliyordu
+   * ve o gövde BOŞ listede `0` döndürüyordu: motor `null` görmedi, `0`
+   * gördü ve `CALCULATED` dedi. **İki halka ayrı ayrı doğruydu, ARADAKİ
+   * BAĞ yanlıştı** — 2493 satış maliyetsiz hâlde "hesaplandı" sayıldı.
+   * _(Anayasa: "zincir, halkalarının varlığıyla değil bağlantısıyla
+   * sınanır".)_
+   */
+  const bagsizKalem = karHesapla({
+    kalemler: [
+      { ...temelKalem, maliyet: kalemMaliyeti([]).maliyet, maliyetParaBirimi: null },
+    ],
+    komisyonKdvOrani: null,
+    siparisKesintileri: [],
+    kargoTarifesi: null,
+  });
+  kontrol(
+    "FIFO bağı YOK -> uçtan uca NO_COST (CALCULATED DEĞİL)",
+    bagsizKalem.durum === "NO_COST",
+    bagsizKalem.durum,
+  );
+  /** ⚠ AYRIMIN ÖTEKİ YAKASI: bağ VARSA yine CALCULATED — kural gevşemedi. */
+  const bagliKalem = karHesapla({
+    kalemler: [
+      {
+        ...temelKalem,
+        maliyet: kalemMaliyeti([
+          { quantityDelta: -1, birimMaliyet: "800.0000", birimMaliyetParaBirimi: "TRY" },
+        ]).maliyet,
+        maliyetParaBirimi: "TRY",
+      },
+    ],
+    komisyonKdvOrani: null,
+    siparisKesintileri: [],
+    kargoTarifesi: null,
+  });
+  kontrol(
+    "  ...bağ VARSA CALCULATED (kural gevşetilmedi)",
+    bagliKalem.durum === "CALCULATED",
+    bagliKalem.durum,
+  );
+
   const paraFarki = karHesapla({
     kalemler: [{ ...temelKalem, maliyet: 800, maliyetParaBirimi: "EUR" }],
     komisyonKdvOrani: null,

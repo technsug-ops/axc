@@ -60,8 +60,43 @@ yok" denmesi gerekirken), burada `0` ("bilinmiyor" denmesi gerekirken).
 | # | İş | Durum |
 |---|---|---|
 | ① | `kalemMaliyeti` boş listede `null` dönsün | **[KOŞTU 28.08.2026]** — 4 mutasyon, 4'ü de kırmızı |
-| ② | 2493 satışın kârının TAZELENMESİ | **[ONAY BEKLİYOR]** — canlı yazma |
-| ③ | Maliyet bağının kurulması | **[BEKLİYOR]** — K55 kuyruğu, 2562 kalem |
+| ② | Bağsız satışların kârının TAZELENMESİ | **[KOŞTU 28.08.2026]** — 2525/2525, hata 0 |
+| ③ | Maliyet bağının kurulması | **[BEKLİYOR]** — K55 kuyruğu, 2573 kalem |
+| ④ | `NO_COST` satırlarda `net2Amount` DOLU kalıyor | **[AÇIK]** — bkz. aşağıda |
+
+**② SONUÇ — panel marjı ÖLÇÜLDÜ (tahmin değil):**
+
+    ÖNCE                              SONRA
+    CALCULATED  5691  5.704.432,43    CALCULATED  3245  1.147.279,90
+    (boş)         82          0,00    NO_COST     2525  4.714.528,05
+                                      (boş)          3          0,00
+    PANEL MARJI  34,43%          →    PANEL MARJI  11,56%
+
+⛔ Σ net2 yan yana yazıldı, **oranları BÖLÜNMEDİ** — küme değişti.
+İkinci koşum: hedef aynı 2525, panel marjı **değişmedi (11,56%)** → idempotent.
+Doğrulama taraması: **`CALCULATED` + maliyetsiz kalem = 0** (çıkış kodu 0).
+
+**⚠ KULLANICININ YAKALADIĞI DÖRT SATIR — kaçış DEĞİLDİ.** `4071382273 ·
+4558198425 · 4088751365 · 4106341348` teyit çıktısında hem `CALCULATED`
+hem "maliyet bağı yok" görünüyordu. Ölçüldü: o an **107 kalem** o hâldeydi
+ve **107/107'si hedef kümedeydi** — yani koşum onlara henüz ulaşmamıştı.
+Koşum bitince sayı **0**'a indi. _(İki ihtimalden hangisi olduğu tahmin
+edilmedi, ölçüldü.)_
+
+### ⚠ ④ AÇIK — `NO_COST` satırlarda `net2Amount` DOLU
+
+`karYenidenYaz` durumdan bağımsız olarak `net2Amount` yazıyor. Sonuç:
+**2525/2525 `NO_COST` satırında `net2Amount` dolu** ve toplamı
+**₺4.714.528** — maliyeti düşülmemiş bir rakam.
+
+✅ **BUGÜN KİMSE ONU TOPLAMIYOR** (ölçüldü): `satis-toplami.ts` süzgeçte
+`profitStatus: "CALCULATED"` şartını taşıyor, panel `durum`a bakıyor.
+⛔ Ama alan bir İDDİADIR: `net2Amount` dolu olan bir satır "kârı budur"
+der. Süzgeci unutan İLK tüketici ₺4,7M'yi kâra yazar.
+_(Anayasa: "şemadaki alan da bir iddiadır — yazıcısı yoksa vaat boştur"
+kuralının tersi: burada yazıcı VAR ama yazdığı şey geçersiz.)_
+**Açılış şartı:** karar — ya `NO_COST`ta `net2Amount` `null` yazılır, ya
+da süzgeç zorunluluğu bir bekçiyle sabitlenir.
 
 ⚠ **① TEK BAŞINA EKRANI DEĞİŞTİRMEZ:** `profitStatus` ve `net2Amount`
 SAKLANIYOR; kod düzeldi ama defterdeki damgalar eski. Tazeleme koşmadan
