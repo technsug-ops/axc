@@ -26,7 +26,7 @@ BİREBİR** tutuyor (×1,000). Komisyondaki ×1,20 tuzağı burada yok (2 kalem)
 
 | # | İş | Durum |
 |---|---|---|
-| ① | FIFO boş kalemlere dosya maliyeti | **[KOŞTU 28.08.2026]** — 2551 kalem · ₺4.522.783 |
+| ① | FIFO boş kalemlere dosya maliyeti | **[KAPANDI 28.08.2026]** — 2551 kalem · ₺4.522.783 |
 | ② | 2175 çelişen kalem | **[ŞERHLİ AÇIK]** — dokunulmadı |
 | ③ | Kronoloji düzeltmesi | **[BEKLİYOR]** — ayrı iş, 309 kalem / 423 hareket |
 
@@ -42,6 +42,73 @@ promosyon geldi ve sattım, ondan dolayı maliyetlerini 1 lira yazdım."_
 Dosyadaki **tüm** ucuz satırlar tarandı — tam 5, listesiyle birebir.
 ⛔ Ölçüt SİLİNMEDİ, istisna BEYAN edildi (`DOGRULANMIS_UCUZ`): yarın doğan
 yeni bir ucuz satır yine işaretlenecek.
+
+### ✅ ① KAPANDI — SONUÇ
+
+    2551 kalem · 5102 hareket · hata 0 · 2505 satış tazelendi
+    kutu         2516 → 21
+    panel marjı  %11,56 → %12,63   (ÖLÇÜLDÜ, panelin kendi gövdesinden)
+    CALCULATED 5753 · NO_COST 8 · RULE_MISSING 10 · (boş) 3
+    ikinci koşum 0 ✓   ·   ihlal taraması 0 ✓
+    geri alma: `note` = 'dosya-maliyet-20260828'
+
+⚠ **TAHMİNİM YANLIŞ ÇIKTI:** _"maliyet artacağı için marj düşecek"_ demiştim,
+**yükseldi.** Sebep: 2551 kalem `NO_COST`tan çıkıp hesaba GİRDİ — hem paya
+hem paydaya eklendiler. Küme değişince oran karşılaştırılamaz kuralını kuru
+koşuma yazmıştım, kendi cümlemde uygulamamışım.
+
+⚠ **RAPOR "TUTMADI" DEDİ, SEBEBİ BİZDE DEĞİLDİ.** Genel sayaç kullanılmıştı
+ve fark 5104/5102 · net stok 771→781 çıktı. Aradaki 2 hareket ve +10 stok,
+koşum SÜRERKEN kullanıcının girdiği iki alımdı (`ALM-HB-260828-08/09`,
+axcali3101, 10:59 ve 11:00). Sayaç kendi partisine daraltıldı: **5102
+hareket, net stok 0 ✓**. Aynı anda başkası yazabiliyorsa genel sayaç
+**yalancı kırmızı** üretir.
+
+**KALAN:** `NO_COST` 8 (dosyada karşılığı yok) · `RULE_MISSING` 10 (8'i
+Amazon — komisyon oranı yok, K64 ④'e bağlı).
+
+---
+
+## 🆕 K70 — İADE AÇIĞI · 28.08.2026
+
+> Kullanıcı: _"iadeleri daha önce ters işlem yani negatif tutarla
+> kapattım."_ Ters satırların tam listesini verdi (391 satır).
+
+⚠ **SAYIM UYUŞMAZLIĞI LİSTEYLE ÇÖZÜLDÜ.** Kullanıcı "256" demişti, ölçüm
+`ÜRÜN ALIŞ FİYATI` sütununda **391** diyordu. Listenin kendisi **391 satır**
+çıktı — ölçüm doğruymuş. Rakamı tartışma değil **liste** kapattı.
+
+    liste 391 satır · 385 sipariş · TÜR iade=366 · iptal=24 · satış=1
+
+**⭐ İADE AÇIĞI ÖLÇÜLDÜ:**
+
+    satış VAR, iade kaydı YOK : 243 satır · 238 sipariş
+    ⭐ CİRO BU KADAR FAZLA     : ₺694.431,92
+    son 90 gün 16 kayıt ₺60.606 · son 180 gün 64 kayıt ₺220.709
+    en yoğun: 2025-11 (29) · 2025-12 (25) · 2026-01 (23) · 2026-05 (23)
+
+⚠ ₺694.432 **iade edilen kalemlerin** tutarıdır; o satışların tam cirosu
+(₺710.189) DEĞİL. İki rakam karıştırılmaz.
+
+**③ 143 SİPARİŞ SİSTEMDE HİÇ YOK — Türk Kahvesi ile AYNI KOVA.** Ana satış
+dosyasında 299 satırları var (155'i satış satırı; TÜR: satış=141 ·
+tazmin=13 · Zarar=1). Yani satışları da girmemiş.
+
+**④ İADE İÇE AKTARMASI — İKİ ALAN EKSİK, UYDURULAMAZ.**
+Dosyada var: sipariş no · tarih · adet · tutar · SKU.
+⛔ Dosyada YOK: **iade SEBEBİ** (`ReturnReason`) ve **iade TÜRÜ**
+(`UNDELIVERED`/`NORMAL`/`DISPUTED`).
+· `reason` iade akışının tamamını yönlendiriyor; `DIGER` diye toplu yazmak
+  366 iadeyi analiz edilemez hâle getirirdi — ve o kova zaten en az izlenen.
+· `returnType` **KARGO MALİYETİNİ** değiştiriyor (iade-sureci §5).
+⭐ **ÖNERİ:** `ReturnNotice` değil doğrudan `Return` + `ReturnItem`
+(mal gelmiş, süreç bitmiş) · ve dosyaya **iki sütun** eklenmesi istenir —
+kullanıcı biliyor, sistem bilmiyor. **YAZILMADI.**
+
+**⑤ 24 İPTAL SATIRI:** sistemde iptal işaretli **0** · **NORMAL görünen 5**
+(ciroda duruyor) · sistemde yok 19.
+
+---
 
 ### ⚠ İKİ AÇIK NOT
 

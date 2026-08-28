@@ -128,6 +128,7 @@
     "canli:negatif-kalem": "tsx scripts/canli-negatif-kalem.ts",
     "canli:ters-iade": "tsx scripts/canli-ters-satir-iade.ts",
     "canli:iade-listesi": "tsx scripts/canli-iade-listesi-olcum.ts",
+    "canli:iade-acigi": "tsx scripts/canli-iade-acigi.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",
