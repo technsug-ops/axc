@@ -2183,6 +2183,46 @@ bacaktı ve yazmak çift sayım **değil** tamamlama olurdu.
 görünen ÇIKTI hatayı saklıyordu, burada tutarlı görünen YORUM. İkisinin de
 çaresi aynı — kaynağın kendi yazdığıyla göz göze karşılaştırmak.
 
+### KARARIN KAPSAMI, UYGULANDIĞI YERLE SINIRLI SAYILMAZ (KESİN KURAL)
+
+_Kullanıcı kararı 28.08.2026._ Bir karar verildiğinde, o kararın geçerli
+olduğu **BÜTÜN yerler ölçülür.** Kararı bir yerde uygulayıp bırakmak,
+kalan yerleri "karar verilmemiş" hâlde bırakır — ve orada eski davranış
+**doğruymuş gibi** yaşamaya devam eder.
+
+**Vaka:** 21.08.2026'da fiyat denemesi için karar verildi — _"ortalama,
+aylar önceki bir fiyatı bugünkü denemeye karıştırır ve fiyat kaymasını
+gizler; SON fiyat kullanılsın."_ Karar **satış** alanına uygulandı,
+**alış** alanı ortalamayla doldurmaya devam etti ve **yedi gün** öyle
+durdu. Kullanıcı fark etti, sistem değil.
+
+Ölçüldü (28.08.2026, n=708 alımlı varyant): ortalama ile son **247
+varyantta (%34,9)** ayrışıyor · |sapma| ortanca %3,15 · p90 %16,92 ·
+**max %81,4** (`axcali2045`: ortalama ₺6.553 ↔ son ₺11.890). Ortalamayla
+yapılan bir deneme o üründe **kârlı görünüp gerçekte zarar ettirirdi.**
+
+> **KONTROL SORUSU — her kararda:** bu kural nerelerde geçerli, ve
+> hepsinde uygulandı mı? "Şu ekranda düzelttim" bir kapanış değildir.
+
+⚠ Bu, İlke #10'un (_"aynı işlem her ekranda aynı görünür ve aynı
+çalışır"_) karar tarafındaki hâli: orada iki ekranın DAVRANIŞI ayrışıyor,
+burada bir kararın KAPSAMI eksik uygulanıyor.
+
+⚠ **VE KARARIN İZİ DE TAŞINIR.** Kod düzeltilip belge eski hâlinde
+kalırsa ikinci bir ayrışma doğar — aynı vakada el kitabı _"senin GERÇEK
+ortalama alışın"_ demeye devam ediyordu. _("Şemadaki alan da bir iddiadır"
+kuralının belge tarafı.)_
+
+⛔ **AMA KAPSAM GENİŞLETİLİRKEN HER YER AYRI SINANIR: BAZI YERLERDE
+ORTALAMA DOĞRUDUR.** Aynı taramada ölçüldü — dönem ortalama marjı (rozet
+eşiği), iade başına ortalama NET-2 etkisi ve alımdan satışa ortalama gün,
+üçü de ORAN/HIZ ölçüsüdür ve "son" onlarda anlamsız olurdu. Kararı
+kapsamına bakmadan her yere uygulamak, onu düzeltmek değil
+**körleştirmek** olur (bkz. "ilke, kendi kapsamının dışına uygulanırsa
+hatayı korur").
+
+---
+
 ### KAYNAK ÖNCELİĞİ: İÇERDEN GELEN BİLGİ ÜSTTEDİR (KESİN KURAL)
 
 _Kullanıcı kararı 22.08.2026._ Bir pazaryeri kuralı yazılırken kaynaklar
@@ -2539,7 +2579,8 @@ yeşil.** Onarıldı ve mutasyonla dişi olduğu görüldü.
 
 > **KURAL:** `src/` ve `scripts/` altındaki hiçbir kaynakta kontrol
 > karakteri bulunmaz (`	` · `
-` · `` hariç). Bekçisi:
+` · `
+` hariç). Bekçisi:
 > `kontrol-karakteri:dogrula` — dosya listesi tutmaz, hepsini tarar.
 
 ⚠ **VE BETİKLE KOD YAZARKEN:** ters bölülü desenler ham dizeyle (`r"..."`)

@@ -957,7 +957,7 @@ var. Bu tersliği gözle görmek mümkün değil; hesabı sistem yapar.</p>
 
 ${ekranSemasi("Fiyat denemesi", [
   { no: 1, ad: "Ürünü koddan bul", aciklama: "Barkod, SKU, firma SKU ya da pazaryeri SKU'su. Okuyucuyla okutabilirsin.", genis: true },
-  { no: 2, ad: "Alış fiyatı", aciklama: "Ürün bulunduysa kendiliğinden gelir — senin GERÇEK ortalama alışın." },
+  { no: 2, ad: "Alış fiyatı", aciklama: "Ürün bulunduysa kendiliğinden gelir — EN SON ödediğin birim maliyet. Ortalama DEĞİL: ortalama, aylar önceki bir maliyeti bugünkü denemeye karıştırır. Ortalaman özet satırında ayrıca yazar." },
   { no: 3, ad: "Satış fiyatı (ortak)", aciklama: "İsteğe bağlı. Ürün bulunduysa EN SON sattığın fiyat gelir." },
   { no: 4, ad: "Kargo ve KDV", aciklama: "Kargo boş bırakılırsa hesaba girmez (alıcı ödüyorsa)." },
   { no: 5, ad: "Pazaryeri kutuları", aciklama: "Her pazaryeri için buy box fiyatı + komisyon. Yalnız merak ettiğini doldurabilirsin.", genis: true, vurgulu: true },
