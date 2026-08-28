@@ -177,8 +177,8 @@ yeni sütun açmadan. Tür VARSAYMAK ise kargo maliyetini değiştirir
 ⚠ Dosyada tür ipucu arandı: `KARGO` sütunu 193/366 satırda dolu — kullanıcı
 bunun **KULLANILMAYACAĞINI** söyledi: ipucu ölçüm değildir.
 
-⛔ **KARAR KULLANICIDA** (şartı buydu): şemada nötr `returnType` yok, ve
-sağlam/hasarlı ayrımı stoğu doğrudan değiştiriyor. **YAZILMADI.**
+✅ **KARAR VERİLDİ 28.08.2026 — B İPTAL, EKSTRE YOLU SEÇİLDİ.**
+Ayrıntı ve açılış şartı: **K73** (kilitli). **YAZILMADI.**
 
 ---
 
@@ -192,26 +192,55 @@ yalnız `satış`:
     TATİL      8 ·          0,00      aktarma     7 ·    11.294,00
     Zarar      1 ·          0,00
 
-**`tazmin` 27 kayıt · ₺91.280** (HB 24 · TY 3) — sistemde `Compensation`
-modeli var ve içinde **4 kayıt**, ama **DÖRDÜ DE `supplierId` taşıyor**
-(karşı taraf TEDARİKÇİ). Dosya `tazmin`in karşı tarafını söylemiyor:
+**`tazmin` 27 · ₺91.279,89 liste / ₺71.485,89 alış** (HB 24 · TY 3),
+23.08.2024 → 18.08.2026.
+
+⭐ **ÇAPRAZ SONUCU DEĞİŞTİRDİ: `tazmin` AYRI BİR SATIŞ TÜRÜ DEĞİL.**
+Ters-satır listesinde **27/27'si** geçiyor — ve orada **26'sı `iade`,
+1'i `iptal`** yazıyor. Yani `tazmin`, satışın kendisi değil, **iade
+edilmiş bir siparişe düşülmüş "tazmini istendi" NOTU.**
+
+    sistemde satış olarak VAR 14 · ⛔ YOK 13
+    o 14'ün hâli: iptal 0 · iade kaydı olan 1 · CALCULATED 13 · NO_COST 1
+    ⭐ BUGÜN CİRODA DURAN TUTAR: ₺72.829,00
+
+Yani **bu 14 sipariş K73'ün (iade açığı) içinde** — dosya iade diyor,
+defter kâr sayıyor. Kalan 13 ise "hiç girilmemiş satış" kovasında.
+⚠ Ürün kimliği yalnız **3/27** satırda tanınıyor (SKU/barkod eşleşmiyor).
+
+`Compensation` modeli var, **4 kayıt** — ama **dördü de `supplierId`**
+(karşı taraf TEDARİKÇİ). Dosya kimden tazmin alındığını söylemiyor;
 model ya `supplierId` ya `carrierId` istiyor, ikisi farklı iş.
 ⛔ Ölçülmeden eşleştirilmedi.
-**`aktarma` 7 · ₺11.294** — hepsi HB, ve **4'ünde sipariş numarası BOŞ**;
-numarasız satır hiçbir kayda bağlanamaz.
-**`Zarar` 1** — `4383491870`, liste ₺0,00 · alış ₺1.070,00 (Schafer granit
-tencere): satılmadan zarar yazılmış tek kalem.
-**`TATİL` 8** — satış değil: bütün alanları boş, `Ürün` sütununda da
-"TATİL" yazıyor. **İşaret satırı, veri değil.**
 
-⛔ Hiçbiri eşleştirilmedi; ölçülmeden tür atanmaz.
+**`aktarma` 7 · ₺11.294 liste / ₺6.778 alış** — hepsi HB, 13.06.2024 →
+16.04.2025. **Bu kümede tutunacak hiçbir kimlik yok:**
+
+    sipariş no BOŞ 3 · dolu 4 → sistemde VAR 0
+    ters-satır listesinde geçen 0 · ürünü tanınan 0/7
+    3 satır AYNI ürün (Homend Toastbuster), AYNI gün (31.01.2025)
+    1 satırın "no"su aslında sipariş no değil: HBCV00003JIJSK (HB ürün kodu)
+
+⛔ **BUGÜN YAPILACAK BİR ŞEY YOK** — bağlanacak kayıt da, tanınacak ürün
+de yok. Kalem **kayıt** olarak durur, görev olarak değil.
+
+**`Zarar` 1** — `4383491870`, 30.09.2024, liste ₺0,00 · alış ₺1.070,00
+(Schafer granit tencere). Sistemde satış olarak YOK, ters listede VAR.
+Tek satır; ürünü de tanınmıyor.
+
+**`TATİL` 8** — ✅ **KAPANDI: VERİ DEĞİL.** 01–08.08.2024, sekiz ardışık
+gün; sipariş no yok, tutar yok, `Satış Miktarı` sütununda bile "TATİL"
+yazıyor. Tatil günlerini işaretleyen satırlar. **Bir daha sorulmaz.**
+
+⛔ Hiçbiri eşleştirilmedi; tür atanmadı; yazılmadı.
+Ölçüm: `npm run canli:k71-olcum` (salt okuma).
 
 
 ---
 
 ## 🆕 K72 — İKİ VAKA HALİL'DEN · 28.08.2026
 
-### ① `11540657420` — Barbie, TY faturası elde, sistemde **NO_COST**
+### ✅ ① `11540657420` — Barbie · **ÇÖZÜLDÜ (teşhis)**
 
 Fatura (e-Arşiv `TEA2026000002461`, 27.08) satışı doğruluyor: ₺1.944,00.
 Sistemde satış VAR (`enumerasyon` ile TY API'den gelmiş) ama **stok
@@ -261,6 +290,36 @@ ekstrede karşılığı var: `KARGO` ve **`KARGO_IADE`** ayrı kodlar.
 Ölçüt DOĞRU ve teslim edilebilir; **veri kapsamı yok.** 236 iadenin türü
 bugün ölçülemez. **Açılış şartı: HB/TY hakediş ekstrelerinin yüklenmesi** —
 o gün tür TAHMİN edilmeden ÖLÇÜLEREK yazılabilir.
+
+---
+
+## 🔒 K73 — İADE İÇE AKTARMA · KİLİTLİ · 28.08.2026
+
+> ⚠ Halil bu kalemi "K72" diye adlandırdı; o kod bugün **İKİ VAKA**ya
+> gitmişti. Kimlik tekil olmak zorunda (aynı kodu ikinci kez kullanmak
+> panoyu taranamaz yapar), bu yüzden **K73**.
+
+**⛔ B SEÇENEĞİ İPTAL — KARAR: EKSTRE YOLU.** _(Halil, 28.08.2026.)_
+
+Gerekçe kayda geçti:
+· Üç bilinmeyen çıktı; en ağırı `saglamAdet`/`hasarliAdet` — "hepsi
+  sağlam" demek **stok +236** demek ve hurdaya gitmiş mal envanteri şişirir.
+  **Bugün tam bu sınıftan bir hatayı düzelttik** (uydurma kargo tarihleri).
+· Ciro zaten düzelmiyor: `Return` yazmak `Sale.items`i değiştirmiyor.
+  **B'nin kazancı küçük, bedeli büyük.**
+· Ekstre yolu türü **ÖLÇÜLEBİLİR** kılıyor — `KARGO` ↔ `KARGO_IADE` ayrı
+  kodlar. Uydurma gerekmez.
+
+**DURUM:** 236 iade · ₺683.924 yazılabilir hâlde bekliyor. Üç bilinmeyen:
+`returnType` · `saglamAdet`/`hasarliAdet` · `iadeKargosu`.
+
+⛔ **AÇILIŞ ŞARTI: HB/TY hakediş ekstrelerinin yüklenmesi.**
+Bugünkü kapsam **%2,5** (360 iadenin 9'u ekstrede). Ekstre gelince tür
+**kargo bacağı sayımıyla** belirlenir — tahmin edilmez.
+
+⚠ **KAPANANA KADAR BU BİR BULGUDUR, GÖREV DEĞİL:** 243 satışın iadesi
+defterde YOK. Somut örnek `4120311526` (Razer) — defter **₺6.499 kâr**
+sayıyor, gerçek **₺94,20 zarar**. Bugün kapatılamaz; kaydı burada durur.
 
 ---
 
