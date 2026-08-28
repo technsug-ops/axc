@@ -2196,6 +2196,82 @@ bacaktı ve yazmak çift sayım **değil** tamamlama olurdu.
 görünen ÇIKTI hatayı saklıyordu, burada tutarlı görünen YORUM. İkisinin de
 çaresi aynı — kaynağın kendi yazdığıyla göz göze karşılaştırmak.
 
+### VARSAYILAN DEĞER, ALANIN ANLAMINDAN TÜRETİLİR — DİLİN KOLAYINDAN DEĞİL (KESİN KURAL)
+
+_Kullanıcı kararı 28.08.2026._ `null` ile `0` ayrımı **İKİ YÖNDE DE**
+bozulabilir ve iki yön de aynı gün, aynı depoda bulundu:
+
+| Alan | Yazılan | Olması gereken | Sonucu |
+|---|---|---|---|
+| `commissionRate` | **`null`** | `0` ("komisyon yok") | `RULE_MISSING` · komisyon HİÇ düşülmedi · NET olduğundan **YÜKSEK** |
+| `kalemMaliyeti([])` | **`0`** | `null` ("bilinmiyor") | `CALCULATED` sanıldı · maliyet düşülmedi · NET yine **YÜKSEK** |
+
+⚠ **İKİSİ TERS YÖNDE HATA AMA AYNI SONUCU VERDİ** — ve ikisi de "boş
+bırakmanın kolay yolu" seçildiği için doğdu. Biri döngüye hiç girmeyip
+`0` döndürdü, öteki alanı hiç yazmayıp `null` bıraktı.
+
+> **KONTROL SORUSU:** bu alan boşken sistem NE İDDİA ETMİŞ OLUYOR?
+> · `0` = "ölçtüm, sıfır çıktı"
+> · `null` = "bilmiyorum"
+> Hangisi doğruysa varsayılan odur. Dilin kolayına gelen değer değil.
+
+⛔ **VE AYRIM ÖLÇÜLEREK DOĞRULANIR.** Maliyet vakasında "sıfır gerçekten
+sıfır olabilir mi" diye soruldu ve ölçüldü: `MALIYET = 0` olup **hareketi
+OLAN** kalem sayısı **0**. Yani meşru sıfır hiç yoktu; ayrım tartışmasızdı.
+Ölçülmeseydi "bazıları gerçekten bedava olabilir" diye bir istisna
+uydurulur ve hata yaşardı.
+
+---
+
+### BEKÇİ ÖLÇÜTÜ KURALI SABİTLER — DAVRANIŞI DEĞİL (KESİN KURAL)
+
+_Ders 28.08.2026._ Bir ölçüt yazılırken sabitlenen şey **kural** olmalıdır.
+Kodun O ANDAKİ davranışını sabitleyen gerekçesiz bir ölçüt, hata varsa
+**hatayı korur** — ve düzeltmeye kalkan kişinin karşısına kırmızı yanarak
+çıkar, yani düzeltmeyi ENGELLER.
+
+**Vaka:** `iade:dogrula` içinde şu satır vardı ve **tek bir gerekçe cümlesi
+taşımıyordu**:
+
+    yakin("hareket yoksa maliyet sıfır", satisCikisMaliyeti([]) ?? -1, 0);
+
+Sabitlediği şey bir kural değil, `kalemMaliyeti`nin boş listede `0`
+döndürmesiydi — ve o davranış hatanın kendisiydi. Üstelik fonksiyonun
+KENDİ belgesi tersini söylüyordu: _"Bilinmiyorsa null — hesaplanamayan
+maliyet SIFIR sayılmaz."_ Ölçüt, kodun belgesine değil koduna bakmıştı.
+
+> **YAZARKEN SORU:** bu ölçüt bir KURALI mı yazıyor, yoksa kodun bugün ne
+> yaptığını mı? İkincisiyse gerekçe yazılamaz — ve gerekçe yazılamayan
+> ölçüt, yazılmamalıdır.
+
+⚠ Bu, _"bekçinin kırmızısı her zaman kod yanlış demez"_ kuralının ÖNCEKİ
+adımı: orada eskiyen ölçüt güncelleniyor, burada ölçütün **doğarken**
+kural mı davranış mı sabitlediği soruluyor.
+
+---
+
+### BİR EKRANIN NE GÖSTERDİĞİ, ÖLÇÜLMEDEN İDDİA EDİLMEZ (KESİN KURAL)
+
+_Ders 28.08.2026 — ve bu kuralı önce ben çiğnedim._ Kullanıcı _"panel
+%34,00 gösteriyor"_ dedi. Ben itiraz ettim: o rakam benim betiğimin
+çıktısıydı, panelin gövdesi (`donemOrtalamaMarji`) hesaplanamayanları
+paydadan çıkarıyordu, dolayısıyla ekran onu basamazdı.
+
+**Panelin kendi gövdesi çağrılıp ölçüldü: `34.43%`.** Kullanıcı haklıydı,
+ben yanılmıştım. Gövde doğruydu ama girdisi bozuktu — 2493 satış
+`CALCULATED` damgalı olduğu için "hesaplanabilmiş" sayılıyor ve paydaya
+giriyordu.
+
+> **ÖLÇÜT:** "ekran şunu gösteriyor/göstermiyor" bir İDDİADIR. Kanıtı
+> gövdeyi OKUMAK değil, gövdeyi **ÇAĞIRMAK**tır. Doğru bir formül, bozuk
+> bir girdiyle yanlış rakam basar — ve kod okuyarak bu görülmez.
+
+⚠ Bu, _"sistem kendi defterinde takip etmediği şey hakkında iddia
+kurmaz"_ kuralının EKRAN tarafı — ve _"kendi sistemimizin davranışı da
+doğrulanır"_ maddesinin bir örneği daha.
+
+---
+
 ### KARARIN KAPSAMI, UYGULANDIĞI YERLE SINIRLI SAYILMAZ (KESİN KURAL)
 
 _Kullanıcı kararı 28.08.2026._ Bir karar verildiğinde, o kararın geçerli
