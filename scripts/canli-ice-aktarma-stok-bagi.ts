@@ -256,8 +256,38 @@ async function main() {
       console.log(`   ${m.sku.padEnd(18)} ${String(m.kalem).padStart(4)} ${String(m.adet).padStart(5)} ${String(m.mevcut).padStart(11)}  ${m.ad.slice(0, 40)}`);
     }
     if (varyantBazli.size > 20) console.log(`   … ve ${varyantBazli.size - 20} varyant daha`);
-    console.log(`\n   ⚠ BU BİR HATA DEĞİL, EKSİK ALIM DEFTERİ. O ürünlerin alımı`);
-    console.log(`     sisteme hiç girilmemiş; satış tarafında yapılacak bir şey yok.`);
+    /**
+     * ⛔ MESAJ DÜZELTİLDİ 28.08.2026 — ESKİ HÂLİ VE NİYE:
+     *
+     *     "BU BİR HATA DEĞİL, EKSİK ALIM DEFTERİ. O ürünlerin alımı
+     *      sisteme hiç girilmemiş."
+     *
+     * Kullanıcı `axcali1869` ile çürüttü: alım GİRİLMİŞ (ALM-HB-260815-09,
+     * 4 adet, teslim alınmış) ama **10 adet satılmış**. Alım yok değil,
+     * YETMİYOR. Ölçüldü: atlananların **200 varyantı** bu sınıfta
+     * (1060 kalem · ₺2.758.690) — mesaj o kümeye YANLIŞ İŞ tarif
+     * ediyordu. "Alımı gir" ile "eksik adedi gir" farklı işlerdir.
+     * _(Anayasa: "metin, sahip olmadığı anlamı iddia etmez".)_
+     */
+    const alimGirisi = new Map(
+      (
+        await prisma.stockMovement.groupBy({
+          by: ["variantId"],
+          where: { variantId: { in: [...atlananVaryant] }, type: "PURCHASE_IN" },
+          _sum: { quantityDelta: true },
+        })
+      ).map((g) => [g.variantId, g._sum.quantityDelta ?? 0]),
+    );
+    let hicYok = 0;
+    let yetmiyor = 0;
+    for (const v of atlananVaryant) {
+      if ((alimGirisi.get(v) ?? 0) > 0) yetmiyor++;
+      else hicYok++;
+    }
+    console.log(`\n   ⚠ İKİ AYRI SEBEP — İKİSİ FARKLI İŞ TARİF EDER:`);
+    console.log(`     ⛔ ALIM HİÇ GİRİLMEMİŞ   ${String(hicYok).padStart(4)} varyant → o ürünün alımını GİR`);
+    console.log(`     ⚠ ALIM VAR AMA YETMİYOR ${String(yetmiyor).padStart(4)} varyant → EKSİK ADEDİ gir`);
+    console.log(`     Satış tarafında yapılacak bir şey yok; iş alım defterinde.`);
   }
 
   if (!UYGULA) {

@@ -1505,6 +1505,26 @@ kontrol(
     "  ...ve EKRANDA da yazıyor (kaydedilen = görünen)",
     /GERİYE DÖNÜK BAĞ — parti satıştan SONRA damgalı/.test(bagi),
   );
+
+  /**
+   * ⛔ ATLANANLARIN SEBEBİ İKİYE AYRILIR (28.08.2026, kullanıcı düzeltmesi).
+   * Eski mesaj hepsine "alımı sisteme hiç girilmemiş" diyordu; ölçüldü,
+   * 200 varyantta alım VAR ama YETMİYOR. Tek cümle iki farklı işe yanlış
+   * tarif veriyordu: "alımı gir" ≠ "eksik adedi gir".
+   */
+  kontrol(
+    "atlananlar İKİ SEBEBE ayrılıyor (hiç yok / yetmiyor)",
+    /ALIM HİÇ GİRİLMEMİŞ/.test(bagi) && /ALIM VAR AMA YETMİYOR/.test(bagi),
+  );
+  kontrol(
+    "  ...ayrım ÖLÇÜLÜYOR (PURCHASE_IN toplamına bakılıyor)",
+    /type: "PURCHASE_IN"/.test(bagi) && /alimGirisi\.get\(v\)/.test(bagi),
+  );
+  /** ⚠ VE ESKİ YANLIŞ CÜMLE GERİ GELMEZ. */
+  kontrol(
+    "  ...eski 'hiç girilmemiş' toplu iddiası KALKTI",
+    !/O ürünlerin alımı[\s\S]{0,60}sisteme hiç girilmemiş/.test(yorumsuz(bagi)),
+  );
 }
 
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);

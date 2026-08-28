@@ -119,6 +119,7 @@
     "canli:net-temizle": "tsx scripts/canli-net-temizle.ts",
     "canli:k55-detay": "tsx scripts/canli-k55-kuru-detay.ts",
     "canli:bagsiz-tarih": "tsx scripts/canli-bagsiz-tarih-dagilimi.ts",
+    "canli:bagsiz-sebep": "tsx scripts/canli-bagsiz-sebep-ayrimi.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",

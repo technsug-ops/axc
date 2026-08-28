@@ -70,9 +70,26 @@ yok" denmesi gerekirken), burada `0` ("bilinmiyor" denmesi gerekirken).
     hâlâ bağsız satış 2510              ·   ikinci koşum: 0 ✓
     PANEL MARJI 11,56% — DEĞİŞMEDİ (12 kalem 5893'ün içinde iz bırakmadı)
 
-⛔ **KALAN 2561 SATIŞ TARAFINDA KAPANMAZ.** 528 varyantın açık partisi
-sıfır — alımları sisteme hiç girilmemiş. Bu bir bağ sorunu değil, **alım
-defteri açığı**; kapanma yolu kullanıcının alım girmesi.
+⛔ **KALAN 2561 SATIŞ TARAFINDA KAPANMAZ** — ama sebebi TEK DEĞİL.
+
+⚠ **BENİM HATAM, KULLANICI DÜZELTTİ (28.08.2026).** Hem betik hem raporum
+_"o ürünlerin alımı sisteme hiç girilmemiş"_ diyordu. `axcali1869` bunu
+çürüttü: alım **GİRİLMİŞ** (`ALM-HB-260815-09`, 4 adet, teslim alınmış)
+ama **10 adet satılmış**. Alım yok değil, **YETMİYOR.**
+
+    ⛔ ALIM HİÇ GİRİLMEMİŞ    328 varyant · 1501 kalem · ₺3.814.348
+    ⚠ ALIM VAR AMA YETMİYOR   200 varyant · 1060 kalem · ₺2.758.690
+
+**İKİSİ FARKLI İŞ TARİF EDER** ve tek cümle 200 varyanta yanlış iş
+söylüyordu:
+· _"alım hiç yok"_ → o ürünün alımını **GİR**
+· _"alım yetmiyor"_ → **EKSİK ADEDİ** gir (mevcut alım doğru, tam değil)
+
+Mesaj kaynağında düzeltildi; ayrım artık `PURCHASE_IN` toplamından
+**ÖLÇÜLÜYOR**, tahmin edilmiyor. Üç ölçüt eklendi, üçü de mutasyonla
+kırmızı yandı — biri özellikle **eski yanlış cümlenin geri gelmesini**
+yasaklıyor.
+_(Anayasa: "metin, sahip olmadığı anlamı iddia etmez".)_
 
 ### ⚠ GERİYE DÖNÜK BAĞ — kabul edildi, İZLİ
 
