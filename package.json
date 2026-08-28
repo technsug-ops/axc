@@ -124,6 +124,7 @@
     "canli:fifo-kronoloji": "tsx scripts/canli-fifo-kronoloji.ts",
     "canli:dosya-alis": "tsx scripts/canli-dosya-alis-fiyati.ts",
     "canli:dosya-maliyet-etkisi": "tsx scripts/canli-dosya-maliyet-etkisi.ts",
+    "canli:dosya-maliyet-kuru": "tsx scripts/canli-dosya-maliyet-kuru.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",
     "canli:eksik-teshis": "tsx scripts/canli-eksik-teshis.ts",
