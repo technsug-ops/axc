@@ -33,10 +33,37 @@ import type { PrismaClient } from "@/generated/prisma/client";
  */
 export async function iceAktarmaStokAyrismasi(
   db: Pick<PrismaClient, "sale">,
+  /**
+   * ⭐ EKRANIN SÜZGECİ — kullanıcı bulgusu 29.08.2026.
+   *
+   * ⛔ SORUN: bu sayı SÜZGEÇSİZ okunuyordu ve süzülmüş bir arama
+   * sonucunun ÜSTÜNDE duruyordu. Halil tek barkod aradı, ekranda tek ürün
+   * vardı ve üstünde _"9 satışın stok düşümü yapılmadı"_ yazıyordu. O 9,
+   * defterin TAMAMINA aitti; aranan ürüne ait olan **0**'dı. Rakam
+   * doğruydu, çerçevesi yanlıştı — ve yanlış teşhise yol açtı.
+   *
+   * ⚠ ÇARE ETİKET DEĞİL KAPSAM: "defter geneli" diye yazmak da olurdu ama
+   * o zaman okuyan, baktığı ürün hakkında hiçbir şey öğrenmez. Sayı artık
+   * EKRANDA NE VARSA ONU anlatıyor; süzgeç yoksa defterin tamamı.
+   * _(Anayasa: "bir sayı etiketiyle taşınır" — burada etiket KAPSAMDIR.)_
+   */
+  varyantSuzgeci?: object,
 ): Promise<number> {
   return db.sale.count({
     where: {
       importBatch: { not: null },
+      /**
+       * ⛔ SPREAD İLE EKLENMEZ — `AND` İLE. İlk yazımda süzgeç
+       * `...{ items: { some: … } }` diye konmuştu ve AŞAĞIDAKİ
+       * `items: { none: … }` onu SESSİZCE EZDİ: aynı anahtar iki kez
+       * yazılınca JS'de ikincisi kazanır. Süzgeç hiç uygulanmadı ve üç
+       * ölçüm de aynı sayıyı (9) verdi — değer testi yakaladı.
+       * _(Anayasa: "koşul `AND` ile eklenir, spread ile değil" — 17.08'de
+       * ciro 105.184 → 106.618 sıçratan hatanın aynısı.)_
+       */
+      ...(varyantSuzgeci
+        ? { AND: [{ items: { some: { variant: varyantSuzgeci } } }] }
+        : {}),
       /**
        * ⚠ İPTALLİ SATIŞ SAYILMAZ — VE BU BİR KARAR DEĞİŞİKLİĞİDİR.
        *

@@ -155,6 +155,7 @@
     "canli:2997-sayim": "tsx scripts/canli-2997-sayim.ts",
     "canli:uphouse": "tsx scripts/canli-uphouse-14.ts",
     "canli:bag-onar": "tsx scripts/canli-bag-onar.ts",
+    "canli:eksik-bag": "tsx scripts/canli-eksik-bag.ts",
     "canli:guncel-stok-kiyas": "tsx scripts/canli-guncel-stok-kiyas.ts",
     "canli:mukerrer-olcum": "tsx scripts/canli-mukerrer-olcum.ts",
     "canli:sayim-2": "tsx scripts/canli-sayim-2.ts",

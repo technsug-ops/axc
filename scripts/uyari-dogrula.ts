@@ -1148,9 +1148,73 @@ console.log("=".repeat(70));
 
 console.log("");
 console.log("=".repeat(70));
+/**
+ * ============================================================================
+ *  İÇE AKTARMA ŞERHİ — SAYI EKRANIN SÜZGECİNE BAĞLI
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI KUSUR 29.08.2026 (Halil buldu): şerh süzgeçsiz okunuyordu ve
+ *  SÜZÜLMÜŞ bir arama sonucunun üstünde duruyordu. Tek barkod arandı,
+ *  ekranda tek ürün vardı, üstünde "9 satışın stok düşümü yapılmadı"
+ *  yazıyordu. O 9 defterin TAMAMINA aitti; aranan ürüne ait olan **0**'dı.
+ *  Rakam doğru, çerçeve yanlış — ve yanlış teşhise yol açtı.
+ *
+ *  ⚠ VE İLK DÜZELTME SESSİZCE ÇALIŞMADI: süzgeç `...{ items: { some } }`
+ *  diye SPREAD ile eklenmişti ve alttaki `items: { none: … }` onu ezdi
+ *  (aynı anahtar iki kez → JS'de ikincisi kazanır). Üç ölçüm de aynı
+ *  sayıyı verdi; DEĞER TESTİ yakaladı, kaynak okuması yakalamazdı.
+ *  _(Anayasa: "koşul `AND` ile eklenir, spread ile değil".)_
+ * ============================================================================
+ */
+{
+  const serhKaynak = readFileSync("src/lib/ice-aktarma-serhi.ts", "utf8");
+  const ekranKaynak = readFileSync("src/app/stok/page.tsx", "utf8");
+
+  /**
+   * ⚠ ÖLÇÜT PENCEREYE DEĞİL İMZAYA BAĞLI. İlk hâli fonksiyon adıyla
+   * parametre arasına 400 karakter pencere koyuyordu ve gerekçe yorumu
+   * o pencereyi aştı — kontrol kırmızı yandı, kod doğruydu. Parametre
+   * artık DÖNÜŞ TİPİNE demirli: araya ne kadar yorum girerse girsin
+   * ölçüt aynı imzayı görür.
+   */
+  kontrol(
+    "şerh sayısı SÜZGEÇ parametresi alıyor",
+    /varyantSuzgeci\?: object,\s*\r?\n\): Promise<number>/.test(serhKaynak),
+  );
+  /**
+   * ⭐ ÖLÇÜT `AND`E BAĞLI, VARLIĞA DEĞİL. Spread'e dönen bir mutasyon
+   * sessizce çalışmayan bir süzgeç üretir ve sayı hep defter geneli kalır.
+   */
+  kontrol(
+    "  ...süzgeç `AND` ile ekleniyor (spread DEĞİL)",
+    /AND:\s*\[\{\s*items:\s*\{\s*some:\s*\{\s*variant:\s*varyantSuzgeci/.test(serhKaynak),
+  );
+  kontrol(
+    "  ...ve `items: { none: … }` koşulu DURUYOR (ezilmemiş)",
+    /items:\s*\{\s*none:\s*\{\s*stockMovements:\s*\{\s*some:\s*\{\}\s*\}\s*\}\s*\}/
+      .test(serhKaynak),
+  );
+  kontrol(
+    "stok ekranı şerhe KENDİ süzgecini geçiriyor",
+    /<IceAktarmaSerhi\s+varyantSuzgeci=\{suzgec\}\s*\/>/.test(ekranKaynak),
+  );
+  /**
+   * ⚠ DEFTER DERİNLİĞİ ŞERHİ SÜZGEÇSİZ KALIR — bilinçli ve gerekçesi
+   * kodda yazılı. İki şerh iki farklı soru soruyor; ikincisi iki DEFTERİN
+   * başlangıcını karşılaştırıyor ve tek ürün için anlamı yok.
+   */
+  kontrol(
+    "defter derinliği şerhi süzgeçsiz BIRAKILMIŞ (bilinçli)",
+    /<DefterDerinligiSerhi\s*\/>/.test(ekranKaynak),
+  );
+  kontrol(
+    "  ...ve NİYE süzgeçsiz olduğu kodda YAZILI",
+    /SÜZGECE BAĞLANMAZ — VE BU BİLİNÇLİ/.test(ekranKaynak),
+  );
+}
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
 else {
   console.log(`${kalan} KONTROL BAŞARISIZ (${gecen + kalan} kontrolden)`);
   process.exitCode = 1;
 }
 console.log("");
+

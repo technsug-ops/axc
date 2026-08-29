@@ -271,7 +271,21 @@ export default async function StokSayfasi({
         defterde görüp stoğun düşmediğini fark ederse sistemi bozuk sanar.
         Sayı CANLI — stok bağı kurulunca kendiliğinden söner.
       */}
-      <IceAktarmaSerhi />
+      {/*
+        ⭐ ŞERH EKRANIN SÜZGECİNE BAĞLI — kullanıcı bulgusu 29.08.2026.
+        Süzgeçsiz hâlinde tek barkod aranan bir ekranda "9 satış" yazıyordu
+        ve o 9 defterin TAMAMINA aitti; aranan ürüne ait olan 0'dı. Rakam
+        doğruydu, çerçevesi yanlıştı ve yanlış teşhise yol açtı.
+      */}
+      <IceAktarmaSerhi varyantSuzgeci={suzgec} />
+      {/*
+        ⚠ DEFTER DERİNLİĞİ ŞERHİ SÜZGECE BAĞLANMAZ — VE BU BİLİNÇLİ.
+        O şerh iki DEFTERİN başlangıçlarını karşılaştırıyor ("alış defteri
+        satış defterinden N gün derin"); bu, tek bir ürünün değil sistemin
+        tamamının özelliğidir. Süzgeçlemek, olmayan bir ürün bazlı anlam
+        üretirdi. _(Anayasa: "aynı veri, farklı soruya farklı pencereden
+        bakar" — iki şerh iki farklı soru soruyor.)_
+      */}
       <DefterDerinligiSerhi />
 
       {/* SESSİZ SÜZGEÇ YASAK: yaş süzgeci açıkken ekranda GÖRÜNÜR ve tek

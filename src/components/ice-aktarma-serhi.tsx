@@ -21,8 +21,23 @@ import { prisma } from "@/lib/prisma";
  *  ⚠ VE SIFIRSA HİÇ ÇIKMAZ: sönmeyen bir şerh okunmaz olur.
  * ============================================================================
  */
-export async function IceAktarmaSerhi() {
-  const adet = await iceAktarmaStokAyrismasi(prisma);
+export async function IceAktarmaSerhi({
+  /**
+   * ⭐ EKRANIN SÜZGECİ — kullanıcı bulgusu 29.08.2026.
+   * Şerh süzülmüş bir listenin üstünde duruyorsa, o listenin sayısını
+   * söylemeli. Süzgeç yoksa defterin tamamı.
+   */
+  varyantSuzgeci,
+}: {
+  varyantSuzgeci?: object;
+} = {}) {
+  const adet = await iceAktarmaStokAyrismasi(prisma, varyantSuzgeci);
+  /**
+   * ⚠ SIFIRSA ÇIKMAZ — VE SÜZGEÇLE BİRLİKTE BU DAHA ÇOK ÖNEMLİ:
+   * aranan ürünün ayrışması yoksa şerh hiç görünmez, dolayısıyla
+   * "bu ürünün sorunu var" diye okunamaz. Eski hâlinde defterin geneli
+   * basılıyordu ve tam bu yanlış okuma yaşandı.
+   */
   if (adet === 0) return null;
 
   const t = await getTranslations("iceAktarma");

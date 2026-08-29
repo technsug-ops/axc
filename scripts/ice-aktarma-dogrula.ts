@@ -322,7 +322,12 @@ for (const [ad, yol] of [
   const e = oku(yol);
   kontrol(
     `${ad} ekranı şerhi ÇİZİYOR`,
-    /<IceAktarmaSerhi\s*\/>/.test(e) && /components\/ice-aktarma-serhi/.test(e),
+    /* ⭐ ÖLÇÜT GÜNCELLENDİ 29.08.2026 — KOD DEĞİL, ÖLÇÜT ESKİDİ.
+       Şerh artık ekranın süzgecini alıyor (`varyantSuzgeci={suzgec}`);
+       desen özelliksiz self-closing etikete kilitliydi ve kırmızı yandı.
+       Ölçülen davranış "şerh ÇİZİLİYOR" — özellik alıp almadığı ayrı bir
+       ölçütün (`uyari:dogrula`) işi. */
+    /<IceAktarmaSerhi(\s[^>]*)?\/>/.test(e) && /components\/ice-aktarma-serhi/.test(e),
   );
 }
 
@@ -909,7 +914,10 @@ for (const [ad, yol] of [
   const e = oku(yol);
   kontrol(
     `${ad} — İKİ şerh de çiziliyor (biri ötekinin yerine geçmiyor)`,
-    /<IceAktarmaSerhi\s*\/>/.test(e) && /<DefterDerinligiSerhi\s*\/>/.test(e),
+    /* ⚠ İÇE AKTARMA ŞERHİ ÖZELLİK ALABİLİR (süzgeç), DEFTER DERİNLİĞİ
+       ALMAZ — ve bu ayrım BİLİNÇLİ: ikincisi iki DEFTERİN başlangıcını
+       karşılaştırıyor, tek ürün için anlamı yok. Desen bu farkı KORUYOR. */
+    /<IceAktarmaSerhi(\s[^>]*)?\/>/.test(e) && /<DefterDerinligiSerhi\s*\/>/.test(e),
   );
 }
 
