@@ -2,7 +2,7 @@ import { acikCikislar, kalemMaliyeti } from "@/lib/kalem-maliyeti";
 import { GENEL_KDV_ORANI, kdvAyir, type KarDurumu } from "@/lib/kar";
 import { prisma, type IslemIstemcisi } from "@/lib/prisma";
 import { donenMalDagilimi } from "@/lib/iade/yanlis-urun";
-import { acikPartiler, fifoDagit, type Parti } from "@/lib/stok";
+import { acikPartiler, fifoDagit, gunSonu, type Parti } from "@/lib/stok";
 
 import type { Currency, ReturnType } from "@/generated/prisma/enums";
 
@@ -596,7 +596,8 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
       // --- değişim: yeni ürün FIFO'dan düşer ---
       let degisimMaliyeti: number | null = null;
       if (g.exchangeVariantId) {
-        const partiler = await acikPartiler(tx, g.exchangeVariantId);
+        /** ⛔ SINIR: iade gununun sonu — bkz. `gunSonu` (29.08.2026). */
+        const partiler = await acikPartiler(tx, g.exchangeVariantId, gunSonu(girdi.occurredAt));
         const dagitim = fifoDagit(partiler, g.iadeAdedi);
         if (!dagitim.yeterliMi) {
           throw new DegisimStokYokHatasi(
@@ -749,7 +750,8 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
          * yanlıştı; ayrımı `donenMalDagilimi` tutuyor ve `rma:dogrula`
          * onu sınıyor.
          */
-        const bPartileri = await acikPartiler(tx, donenVaryantId);
+        /** ⛔ SINIR: iade gununun sonu — bkz. `gunSonu` (29.08.2026). */
+        const bPartileri = await acikPartiler(tx, donenVaryantId, gunSonu(girdi.occurredAt));
         const bMevcut = bPartileri.reduce((t, p) => t + p.kalanAdet, 0);
 
         /** Maliyeti bilinen SON hareket — FIFO'nun yetmediği giriş için. */

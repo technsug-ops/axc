@@ -141,8 +141,39 @@ export type Parti = {
 export async function acikPartiler(
   db: IslemIstemcisi,
   variantId: string,
+  sinir?: Date,
 ): Promise<Parti[]> {
-  return (await acikPartilerToplu(db, [variantId])).get(variantId) ?? [];
+  return (await acikPartilerToplu(db, [variantId], sinir)).get(variantId) ?? [];
+}
+
+/**
+ * ============================================================================
+ *  FIFO SINIRI — BİR OLAYIN GÜNÜNÜN SONU
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI ARIZA 29.08.2026: 27.07.2025 tarihli bir satış, 13.08.2026
+ *  tarihli bir partiyi tüketti. Gerçek stok kilitlendi, ekran 0 gösterdi,
+ *  yeni sipariş KAYDEDİLEMEDİ. Kapsam ölçüldü: 809 bağ · 181 varyant.
+ *
+ *  ⭐ VE SINIRIN YÖNÜ ÖLÇÜLMEDEN SEÇİLMEDİ. İlk akla gelen `sinir = soldAt`
+ *  idi — "satıştan önce alınmış parti" makul görünüyor. Ölçüm çürüttü:
+ *
+ *      partiye bağlı çıkış 5928
+ *      parti ÖNCE   2506  %42,27
+ *      parti AYNI AN 2888  %48,72   ← `soldAt` + `lt` BUNLARI KİLİTLERDİ
+ *
+ *  Aynı gün alıp aynı gün satmak KENAR DURUM DEĞİL, olağan iştir. O yüzden
+ *  sınır GÜNÜN SONUDUR: olayın ertesi günü 00:00. Süzgeç operatörü (`lt`)
+ *  DEĞİŞMEZ — değişen yalnız sınır DEĞERİdir.
+ *
+ *  ⚠ GÜN SINIRI İSTANBUL GÜNÜNE GÖRE (anayasa): `soldAt` ve kardeşleri
+ *  zaten İstanbul gününün UTC gece yarısı damgası; +1 gün eklemek yeter.
+ * ============================================================================
+ */
+export function gunSonu(an: Date): Date {
+  const d = new Date(an);
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d;
 }
 
 /**

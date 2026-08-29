@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
-import { acikPartiler, fifoDagit } from "@/lib/stok";
+import { acikPartiler, fifoDagit, gunSonu } from "@/lib/stok";
 import { kapanisVerisi } from "@/lib/sayim/kapanis-verisi";
 import { oturumdakiKullanici } from "@/lib/oturum";
 import { yetkiIste } from "@/lib/yetki";
@@ -120,7 +120,9 @@ export async function sayimFarkiniYaz(
         sayac = 1;
       } else {
         /** MAL GİTTİ: FIFO'dan düş, HER PARTİ İÇİN AYRI hareket. */
-        const partiler = await acikPartiler(tx, variantId);
+        /** SINIR: sayim gununun sonu — geri tarihli sayim bugunku
+         *  partiyi yiyemez (29.08.2026 arizasi). */
+        const partiler = await acikPartiler(tx, variantId, gunSonu(tarih));
         const dagitim = fifoDagit(partiler, adet);
         if (!dagitim.yeterliMi) {
           throw Object.assign(new Error("STOK_YETMIYOR"), {

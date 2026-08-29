@@ -232,6 +232,27 @@ async function main() {
   }
 
   // ═══ YAZIM ═══════════════════════════════════════════════════════════
+  /** ⭐ ÖNCE ölçülür — kıyas TAHMİN değil ÖLÇÜM olsun diye. */
+  const etkilenenKalem = await p.saleItem.findMany({
+    where: { id: { in: bozuk.map((x) => x.saleItem?.id).filter(Boolean) as string[] } },
+    select: { saleId: true },
+  });
+  const etkilenenSatis = [...new Set(etkilenenKalem.map((k) => k.saleId))];
+  const netOnce = await p.sale.aggregate({
+    where: { id: { in: etkilenenSatis } },
+    _sum: { net1Amount: true, net2Amount: true },
+  });
+  const durumOnce = await p.sale.groupBy({
+    by: ["profitStatus"], where: { id: { in: etkilenenSatis } }, _count: { _all: true },
+  });
+  const o1 = Number((netOnce._sum.net1Amount ?? 0).toString());
+  const o2 = Number((netOnce._sum.net2Amount ?? 0).toString());
+  console.log("");
+  console.log("⑤ ONCE — ETKILENEN " + etkilenenSatis.length + " SATIS");
+  console.log("   NET-1 " + t2(o1) + " · NET-2 " + t2(o2));
+  console.log("   kar durumu: " +
+    durumOnce.map((g) => g.profitStatus + "=" + g._count._all).join(" · "));
+
   const stokOnce = await p.stockMovement.aggregate({ _sum: { quantityDelta: true } });
   console.log("\n⚠ YAZILIYOR — " + plan.length + " bağ");
   const eskiBaglar: { c: string; e: string }[] = [];
@@ -317,6 +338,23 @@ async function main() {
   let tz = 0;
   for (const sid of satislar) { if (await satisKarTazele(sid)) tz++; }
   console.log("   ⭐ tazelenen satış: " + tz + " / " + satislar.length);
+
+  const netSonra = await p.sale.aggregate({
+    where: { id: { in: etkilenenSatis } },
+    _sum: { net1Amount: true, net2Amount: true },
+  });
+  const durumSonra = await p.sale.groupBy({
+    by: ["profitStatus"], where: { id: { in: etkilenenSatis } }, _count: { _all: true },
+  });
+  const y1 = Number((netSonra._sum.net1Amount ?? 0).toString());
+  const y2v = Number((netSonra._sum.net2Amount ?? 0).toString());
+  console.log("\n⑦ ÖNCE / SONRA — ÖLÇÜLDÜ");
+  console.log("   NET-1  önce " + t2(o1) + "  sonra " + t2(y1) +
+    "  ⭐ FARK " + t2(y1 - o1));
+  console.log("   NET-2  önce " + t2(o2) + "  sonra " + t2(y2v) +
+    "  ⭐ FARK " + t2(y2v - o2));
+  console.log("   kâr durumu SONRA: " +
+    durumSonra.map((g) => g.profitStatus + "=" + g._count._all).join(" · "));
 
   console.log("\n" + "=".repeat(104));
   console.log("YAZILDI. Geri alma: npm run canli:ileri-parti-onar -- --geri");

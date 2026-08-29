@@ -19,7 +19,7 @@ import {
   type IadeSatiri,
 } from "@/lib/iade";
 import { prisma } from "@/lib/prisma";
-import { acikPartiler, fifoDagit, varyantStogu } from "@/lib/stok";
+import { acikPartiler, fifoDagit, gunSonu, varyantStogu } from "@/lib/stok";
 
 import type { ReturnType } from "@/generated/prisma/enums";
 
@@ -134,7 +134,10 @@ export async function iadeOnizle(
     let degisimMaliyeti: number | null = null;
     if (g.exchangeVariantId) {
       // Kayıtla AYNI kaynak: açık partiler + FIFO dağıtımı.
-      const partiler = await acikPartiler(prisma, g.exchangeVariantId);
+      /** SINIR: YAZMA YOLUYLA AYNI olmali — onizleme baska bir
+       *  kume gosterirse kullanici gormedigi bir sonuca onay verir. */
+      const partiler = await acikPartiler(
+        prisma, g.exchangeVariantId, gunSonu(new Date(girdi.occurredAt)));
       const dagitim = fifoDagit(partiler, g.iadeAdedi);
       // Stok yetmiyorsa değişim zaten kaydedilemez; önizlemede uydurma
       // rakam göstermek yerine satır hiç çizilmez, hüküm kayıtta verilir.

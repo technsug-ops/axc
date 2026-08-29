@@ -40,7 +40,7 @@ import { kargolamaDogurur } from "@/lib/iade/kargolama";
 import { oturumdakiKullanici } from "@/lib/oturum";
 import { satisKarTazele } from "@/lib/kar-yeniden";
 import { prisma } from "@/lib/prisma";
-import { acikPartiler, fifoDagit, varyantStogu } from "@/lib/stok";
+import { acikPartiler, fifoDagit, gunSonu, varyantStogu } from "@/lib/stok";
 import { yetkiIste } from "@/lib/yetki";
 
 import type {
@@ -842,7 +842,9 @@ export async function degisimUrunuGonderildi(
 
   try {
     await prisma.$transaction(async (tx) => {
-      const partiler = await acikPartiler(tx, varyantId);
+      /** SINIR: degisim aninin gunu — geri tarihli bir degisim
+       *  bugunku partiyi yiyemez (29.08.2026 arizasi). */
+      const partiler = await acikPartiler(tx, varyantId, gunSonu(new Date()));
       const dagitim = fifoDagit(partiler, adet);
       if (!dagitim.yeterliMi) {
         throw new Error(`STOK_YETERSIZ:${dagitim.mevcut}`);

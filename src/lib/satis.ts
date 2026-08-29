@@ -1,7 +1,7 @@
 import { karHesapla, type KarGirdisi, type KarDurumu } from "@/lib/kar";
 import { kdvHaricKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
-import { acikPartiler, fifoDagit, type Parti } from "@/lib/stok";
+import { acikPartiler, fifoDagit, gunSonu, type Parti } from "@/lib/stok";
 
 import type { Currency } from "@/generated/prisma/enums";
 
@@ -185,7 +185,14 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
       const mevcut = partiDurumu.get(variantId);
       if (mevcut) return mevcut;
 
-      const partiler = await acikPartiler(tx, variantId);
+      /**
+       * ⛔ SINIR ZORUNLU — 29.08.2026 canlı arızasının kaynağı tam buydu.
+       * Sınırsız çağrı, geriye dönük girilen bir satışın BUGÜNKÜ partiyi
+       * tüketmesine izin veriyordu; 809 bağ böyle bozuldu.
+       * Sınır SATIŞ GÜNÜNÜN SONU: aynı gün alınan mal içeride kalır
+       * (ölçüldü: çıkışların %48,72'si partisiyle aynı anı taşıyor).
+       */
+      const partiler = await acikPartiler(tx, variantId, gunSonu(girdi.soldAt));
       partiDurumu.set(variantId, partiler);
       return partiler;
     }

@@ -135,6 +135,9 @@ async function planKur(
    */
   const acikMap = new Map<string, number>();
   for (const vid of varyantlar)
+    /** SINIR YOK: "ayna partisi BUGUN tukendi mi" sorusu — gecmis
+     *  bir ana bakmiyor. Tarih siniri baska bir soruyu cevaplardi ve
+     *  bugun tuketilmis bir partiyi acik gosterirdi. */
     for (const parti of await acikPartiler(prisma, vid))
       acikMap.set(parti.hareketId, parti.kalanAdet);
 

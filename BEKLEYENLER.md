@@ -775,6 +775,92 @@ olan ALIM'dı; satış tarihine parti açıldı.
 `axcalistan01`da tersiydi (ödünç düşük çıkmıştı) — **tek vakadan yön
 çıkarılmaz**, kümenin yönü ayrı ölçüldü.
 
+### ✅ B YAZILDI + SINIR KAPATILDI — 29.08.2026 [KOŞTU]
+
+    onarılan bağ 809 · net stok farkı +809  ✓ (beklenen +809)
+    tazelenen satış 798/798 · hepsi CALCULATED
+    NET-1  87.895,28 → 282.475,27   ⭐ FARK +194.579,99
+    NET-2  70.336,79 → 232.486,78   ⭐ FARK +162.149,99
+
+⭐ **NET-1 FARKI, KURU KOŞUMUN ÖNGÖRDÜĞÜ MALİYET FARKININ BİREBİR AYNASI:**
+kuru koşum _"maliyet −194.579,99"_ demişti, ölçülen NET-1 artışı
+**+194.579,99**. Kuruşuna tutuyor — motorun ve planın aynı şeyi söylediğinin
+kanıtı.
+
+### ⭐ KÖK KAPATILDI — `sinir` ALTI YAZMA YOLUNA GEÇTİ
+
+    src/lib/stok.ts        acikPartiler'e `sinir?` EKLENDİ + `gunSonu()` yardımcısı
+    src/lib/satis.ts       gunSonu(girdi.soldAt)        ← 809'un kaynağıydı
+    src/lib/iade.ts (×2)   gunSonu(girdi.occurredAt)
+    stok/duzeltme-actions  gunSonu(tarih)
+    okut/sayim-yazim       gunSonu(tarih)
+    iadeler/bildirim       gunSonu(new Date())
+    satislar/[id]/iade     gunSonu(girdi.occurredAt)    ← önizleme, yazımla AYNI
+    satis-duzenleme-veri   gunSonu(once.soldAt)         ← adet artışı da FIFO'dan düşer
+    iptal-geri-alma-veri   `SINIR YOK:` beyanıyla açık
+
+⚠ **VE İKİ ÖLÇÜM YOLU DÜZELTTİ:**
+① `acikPartiler` `sinir`i **hiç kabul etmiyordu** — sorun "verilmedi" değil,
+  **verilemiyordu.**
+② `satis-duzenleme-veri` ilk taramada gözden kaçtı; `fifoDagit`e **dolaylı**
+  besliyor (`adetPlani` → `satis-adet.ts`). Bekçi yakaladı, ben değil.
+
+**BEKÇİ — `fifo-sinir:dogrula`, DESEN YASAĞI:**
+> Sonucu `fifoDagit`e giden çağrı `sinir` geçirmek zorunda; sınır
+> `gunSonu(...)` olmalı; `stok.ts` süzgeci `lt` kalmalı. İstisna yalnız
+> `SINIR YOK: <gerekçe>` beyanıyla.
+
+**DÖRT MUTASYON, DÖRDÜ DE KIRMIZI YANDI (görüldü):**
+sınırı kaldıran · sınırı gün BAŞINA çeviren · `lt`→`lte` · beyansız istisna.
+Beyanlı istisna yeşil kaldı (yanlış yanma yönü de sınandı).
+
+⚠ **VE BEKÇİ YAZILIRKEN KENDİ KUSURUNU ÜRETTİ:** `\b` yine `0x08`e döndü
+(betikle kod yazma tuzağı). `kontrol-karakteri:dogrula` yakaladı — ölçüt
+kendisini ölçen bekçiye yakalandı.
+
+---
+
+## 🆕 K81 — HURDA ÇAPRAZI · 29.08.2026 · [ÖLÇÜLDÜ]
+
+`hurda.xlsx` · md5 **teyit edildi** (`fa335f…41`) · sayfa "Hurda takip" · 62 satır.
+
+**⭐ K73'ÜN İKİNCİ BİLİNMEZLİĞİNİ KISMEN KAPATIYOR:** hurdaya giden mal
+**hasarlı** dönmüş demektir → `saglamAdet=0 · hasarliAdet=adet`.
+
+    ⭐ İADE LİSTESİYLE KESİŞEN : 56 sipariş · 56 adet · ₺197.408,00
+    ⛔ hurdada VAR, iadede YOK : 5
+
+⚠ **İKİ ÖN RAKAM TUTMADI — ve fark BENDE DEĞİL, ölçümde:**
+
+| beyan | ölçülen |
+|---|---|
+| kesişim **58** | **56** |
+| tutar **41/62 · ₺138.385** | **15/62 · ₺45.854** |
+
+Satır 62 ✓ · HB 47 / TY 15 ✓ · sipariş no 61/62 ✓ · SKU 16/62 ✓ · Ödendi
+51/10 ✓ — **altı rakamdan dördü birebir tuttu**, ikisi tutmadı. Tutar
+sütununda **47 satır boş**; beyandaki 41 başka bir sütundan sayılmış olabilir.
+
+**⛔ KALAN 304 İADE SAĞLAM SAYILAMAZ — ÇIKARIM YAPILMADI.** _"Hurda
+listesinde yok"_ ile _"sağlam döndü"_ aynı şey değildir; liste eksik de
+olabilir. **Halil'e sorulacak.**
+
+**③ 5 SİPARİŞ:** dördü sistemde **hiç yok** (K56 kovası), biri
+(`10920524864`) var ve `CALCULATED`.
+
+**④ DURUM SÜTUNLARI KOVA DEĞİL, NOT.** İki sütun (I·J), **38 farklı değer**,
+üç ayrı "ödendi" yazımı (`ödendi` 26 · `ÖDENDİ` 3 · `Ödendi` 3), araya
+serpilmiş tarihler ve serbest notlar. Desenle kovalama denendi:
+**sınıflanamayan 31 / 85** — yani üçte biri hiçbir kovaya girmiyor.
+⭐ **Hüküm: bu sütun ayrıştırılmaz, NOT olarak taşınır.**
+
+**⑤ TUTARSIZ 47 SATIR:** 36'sında `Ödendi=1` ama tutar YOK → **kayıt eksik**;
+10'unda `Ödendi=0` → henüz tazmin alınmamış olabilir.
+
+**⑥ ÜRÜN EŞLEŞTİRME:** sipariş numarasıyla sistemde bulunan **31/61**.
+⭐ **Çok kalemli sipariş 0** — yani bulunanlarda ürün sipariş numarasından
+tek anlamlı çıkıyor, SKU'nun 16/62 olması engel DEĞİL.
+
 ### ⭐ KÖK BULUNDU — VE PARAMETRE HİÇ YOK
 
     export async function acikPartiler(db, variantId)   ← `sinir` YOK

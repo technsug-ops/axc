@@ -752,6 +752,46 @@ atfedilemez.** Sebep uydurulmadı; açıklanamadığı yazıldı.
 yasaklamıyor, **geri almayı listeye BAĞLAMAYI** yasaklıyor. Önceki değerler
 teşhis içindir; sığmıyorsa özetlenir, ama geri alma yolu onlara bağlanmaz.
 
+### BİR SINIRIN YÖNÜ ÖLÇÜLMEDEN ÇEVRİLMEZ (KESİN KURAL)
+
+_Kullanıcı kararı 29.08.2026, FIFO sınırı._ Mantıkla doğru görünen bir
+kısıt, veriyle sınanmadan yazılmaz. Kısıtlar "makul" oldukları için
+sorgulanmaz — ve tam bu yüzden en pahalı hatayı üretirler: **yanlış kısıt
+bir hatayı düzeltmez, çalışan bir akışı kilitler.**
+
+**Vaka:** geçmiş satışlar geleceğin partisini yiyordu (809 bağ). Çare
+belliydi — FIFO'ya tarih sınırı koy. İlk akla gelen sınır `soldAt`ti:
+_"satıştan ÖNCE alınmış parti"_. Cümle kusursuz görünüyor.
+
+Ölçüm çürüttü:
+
+    partiye bağlı çıkış 5928
+    parti ÖNCE    2506   %42,27
+    parti AYNI AN 2888   %48,72   ← `soldAt` + `lt` BUNLARI KİLİTLERDİ
+
+**Aynı gün alıp aynı gün satmak KENAR DURUM DEĞİL, işin kendisidir.**
+`soldAt` sınırı defterin yarısını kilitler ve o satışlar bir daha
+kaydedilemezdi — yani düzeltme, düzelttiği hatadan büyük bir hasar
+verirdi.
+
+> **KURAL:** bir sınır/eşik/kısıt yazılırken **yönü ve değeri veriyle
+> ölçülür.** Sorulacak soru "bu kural doğru mu" değil, **"bu kural bugünkü
+> defterin ne kadarını dışarıda bırakır"**dır. Cevap ölçülmeden kural koda
+> girmez.
+
+⭐ **VE ÇÖZÜM OPERATÖRÜ DEĞİŞTİRMEK DEĞİLDİ:** `lt` yerinde kaldı, sınırın
+DEĞERİ gün sonuna taşındı (`gunSonu`). Süzgeci gevşetmek (`lte`) ertesi
+günün ilk anını içeri alırdı — başka bir yanlış.
+
+⚠ **BEKÇİSİ İKİ YÖNLÜ:** `fifo-sinir:dogrula` hem sınırın VARLIĞINI hem
+DEĞERİNİ ölçer. Dört mutasyonun dördü de kırmızı yandı: sınırı kaldıran ·
+sınırı gün BAŞINA çeviren · `lt`yi `lte` yapan · beyansız istisna ekleyen.
+Beyanlı istisna (`SINIR YOK: <gerekçe>`) yeşil kaldı.
+
+_(Bu, "eşik dağılımın gediğine konur" ve "eşik ölçüldüğü popülasyonun
+dışına uygulanamaz" derslerinin KISIT tarafı: orada bir uyarı eşiği
+yanlış yanıyordu, burada bir kısıt doğru kaydı engelleyecekti.)_
+
 ### İMKÂNSIZ GÖRÜNEN DEĞER ÖNCE DOĞRULANIR — DÜZELTİLMEZ (KESİN KURAL)
 
 _Ders 19.08.2026, OneBlade vakası._ Bir uyarının görevi **baktırmaktır**,

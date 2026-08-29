@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
 import { prisma } from "@/lib/prisma";
-import { acikPartiler, fifoDagit } from "@/lib/stok";
+import { acikPartiler, fifoDagit, gunSonu } from "@/lib/stok";
 import {
   duzeltmeyiDogrula,
   hareketMiktari,
@@ -153,7 +153,9 @@ export async function stokDuzelt(
       }
 
       // --- MAL GİTTİ: FIFO'dan düş ---
-      const partiler = await acikPartiler(tx, variantId);
+      /** ⛔ SINIR: duzeltme gununun sonu — geri tarihli duzeltme
+       *  bugunku partiyi yiyemez (29.08.2026 arizasi). */
+      const partiler = await acikPartiler(tx, variantId, gunSonu(tarih));
       const dagitim = fifoDagit(partiler, adet);
       if (!dagitim.yeterliMi) {
         // Özel hata: ekranda "elinizde şu kadar var" diye gösterilecek.

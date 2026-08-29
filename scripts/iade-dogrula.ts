@@ -462,7 +462,17 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
    */
   kontrol(
     "  ...değişim maliyeti GERÇEK FIFO'dan (yaklaşık hesap kalkmış)",
-    onizlemeKaynagi.includes("acikPartiler(prisma, g.exchangeVariantId)") &&
+    /**
+     * ⚠ ÖLÇÜT 29.08.2026'DA GÜNCELLENDİ — KOD DEĞİL, ÖLÇÜT ESKİMİŞTİ.
+     * Eskiden çağrının BİREBİR METNİ aranıyordu:
+     *     "acikPartiler(prisma, g.exchangeVariantId)"
+     * FIFO'ya tarih sınırı eklenince çağrı üçüncü argüman aldı ve satıra
+     * sığmadı; metin değişti, DAVRANIŞ değişmedi. Ölçüt kırmızı yandı ve
+     * HAKLIYDI: sessiz kalmaktansa yanlış şeyi göstermek iyidir. Ama
+     * susturulmadı — davranışa bağlandı: çağrı VAR mı, eski yaklaşıklık
+     * geri geldi mi.
+     */
+    /\bacikPartiler\(\s*prisma,\s*g\.exchangeVariantId\b/.test(onizlemeKaynagi) &&
       !onizlemeKaynagi.includes("quantityDelta: { gt: 0 }"),
   );
   const kayitKaynagi = readFileSync("src/lib/iade.ts", "utf8");

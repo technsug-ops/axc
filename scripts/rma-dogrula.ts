@@ -1265,7 +1265,14 @@ console.log("\n7) GERİ GELEN MAL — STOK ŞARTI YOK, MALİYET ŞARTI VAR");
   const kaynak = readFileSync("src/lib/iade.ts", "utf8");
   kontrol(
     "değişimde gidecek ürüne stok kontrolü UYGULANIYOR (kural kalktı sanılmasın)",
-    kaynak.includes("const partiler = await acikPartiler(tx, g.exchangeVariantId)") &&
+    /**
+     * ⚠ OLCUT 29.08.2026'DA GUNCELLENDI — KOD DEGIL, OLCUT ESKIMISTI.
+     * Cagrinin BIREBIR METNI araniyordu; FIFO'ya tarih siniri eklenince
+     * ucuncu arguman geldi ve metin degisti. DAVRANIS ayni. Olcut hakli
+     * olarak kirmizi yandi (sessiz kalmadi) ve susturulmak yerine
+     * davranisa baglandi: cagri var mi, stok yetmezse hata firliyor mu.
+     */
+    /\bacikPartiler\(\s*tx,\s*g\.exchangeVariantId\b/.test(kaynak) &&
       kaynak.includes("throw new DegisimStokYokHatasi("),
   );
   kontrol(

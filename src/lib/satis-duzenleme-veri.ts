@@ -1,7 +1,7 @@
 import { acikCikislar } from "@/lib/kalem-maliyeti";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { adetPlani } from "@/lib/satis-adet";
-import { acikPartilerToplu } from "@/lib/stok";
+import { acikPartilerToplu, gunSonu } from "@/lib/stok";
 import { karYenidenYaz } from "@/lib/kar-yeniden";
 import { prisma } from "@/lib/prisma";
 import {
@@ -206,7 +206,8 @@ export async function duzenlemeUygula(girdi: {
   // Öncesi — rapor için (kullanıcı NET-2 farkını görecek).
   const once = await prisma.sale.findUnique({
     where: { id: girdi.saleId },
-    select: { net2Amount: true },
+    /** `soldAt` FIFO SINIRI icin okunuyor — bkz. asagidaki `gunSonu`. */
+    select: { net2Amount: true, soldAt: true },
   });
 
   const kalemler = await prisma.saleItem.findMany({
@@ -246,9 +247,12 @@ export async function duzenlemeUygula(girdi: {
 
   let stokPlani: ReturnType<typeof adetPlani> | null = null;
   if (adetDegisenler.length > 0) {
+    /** SINIR: satis gununun sonu — adet artisi da FIFO'dan duser ve
+     *  geri tarihli bir satis bugunku partiyi yiyemez (29.08.2026). */
     const partiHaritasi = await acikPartilerToplu(
       prisma,
       [...new Set(adetDegisenler.map((k) => k.variantId))],
+      gunSonu(once!.soldAt),
     );
     stokPlani = adetPlani(
       adetDegisenler.map((k) => ({
