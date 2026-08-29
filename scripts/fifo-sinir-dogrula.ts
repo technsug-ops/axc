@@ -24,9 +24,19 @@ import { join } from "node:path";
  * ============================================================================
  */
 
-const KOK = ["src"];
-/** Çağrı ile beyan arasında kaç satır kabul edilir. */
-const BEYAN_PENCERESI = 6;
+/**
+ * ⭐ KAPSAM `scripts/` DE — kusur ÖLÇÜLDÜ 29.08.2026.
+ * Bekçi `src/` ile sınırlıyken `scripts/canli-satis-ice-aktar.ts`
+ * `acikPartilerToplu(prisma, ids)` çağırıyordu: SINIRSIZ. O betik `SALE_OUT`
+ * YAZAN bir yol ve bu kökün en tehlikeli tüketicisi — geçmiş tarihli bir
+ * satış, aylar SONRA alınmış bir partiyi tüketebiliyordu. Bekçi onu hiç
+ * görmedi çünkü kapsam dışındaydı.
+ * _(Anayasa: "kararın kapsamı, uygulandığı yerle sınırlı sayılmaz" — karar
+ * `src/` içinde uygulandı, `scripts/` uygulanmadan kaldı.)_
+ */
+const KOK = ["src", "scripts"];
+/** ⚠ Bekçinin KENDİSİ ölçüt metnini taşır; kendini ölçerse yalancı kırmızı yanar. */
+const KENDI = "scripts/fifo-sinir-dogrula.ts";
 
 function dosyalar(dizin: string): string[] {
   const cikti: string[] = [];
@@ -54,6 +64,8 @@ for (const kok of KOK) {
     const ham = readFileSync(yol, "utf8");
     /** Motorun kendi gövdesi ölçütün dışında — tanımın kendisi burada. */
     if (yol.replace(/\\/g, "/").endsWith("src/lib/stok.ts")) continue;
+    /** ⚠ Ölçütün kendi metni ölçülmez — yoksa bekçi kendini kırmızı yakar. */
+    if (yol.replace(/\\/g, "/").endsWith(KENDI)) continue;
 
     const kod = yorumsuz(ham);
     /** ⚠ Bu dosya FIFO DAĞITIMI yapıyor mu — davranışa bağlan, ada değil. */
@@ -121,14 +133,56 @@ for (const kok of KOK) {
         continue;
       }
 
-      /** Beyan aranıyor — çağrıdan ÖNCEKİ birkaç satırda, HAM metinde. */
+      /**
+       * Beyan aranıyor — çağrıya BİTİŞİK yorum bloğunda, HAM metinde.
+       *
+       * ⭐ PENCERE SATIR SAYISIYLA ÖLÇÜLMÜYOR (eski hâli 6 satırdı ve
+       * ÖLÇÜLDÜ: gerçek gerekçe blokları 13 ve 30 satır uzunluğunda, ikisi
+       * de kaçtı). Satır sayısı büyüttükçe uzak bir beyan alakasız bir
+       * çağrıyı örtmeye başlar. Ölçüt bunun yerine BAĞ: beyan, çağrının
+       * KENDİ yorum bloğunda olmalı — araya kod girerse beyan düşer.
+       * _(Anayasa: "pencere ölçülür; gövde büyüyünce dar pencere sessizce
+       * kör kalır" — çare pencereyi büyütmek değil, kaldırmak.)_
+       */
       const oncekiKod = kod.slice(0, m.index);
       const satirNo = oncekiKod.split("\n").length;
       const hamSatirlar = ham.split("\n");
-      const pencere = hamSatirlar
-        .slice(Math.max(0, satirNo - 1 - BEYAN_PENCERESI), satirNo)
-        .join("\n");
-      if (/SINIR YOK:\s*\S/.test(pencere)) continue;
+      /** Çağrı satırından yukarı: yalnız yorum/boş satır geçilir. */
+      let ust = satirNo - 2;
+      let blok = "";
+      let yorumda = false;
+      while (ust >= 0) {
+        const s = hamSatirlar[ust].trim();
+        const yorumSatiri =
+          s === "" || s.startsWith("*") || s.startsWith("//") ||
+          s.startsWith("/*") || s.endsWith("*/");
+        if (!yorumSatiri && !yorumda) break;
+        if (s.endsWith("*/")) yorumda = true;
+        if (s.startsWith("/*")) yorumda = false;
+        blok = hamSatirlar[ust] + "\n" + blok;
+        ust--;
+      }
+      if (/SINIR YOK:\s*\S/.test(blok)) {
+        /**
+         * ⛔ BEYAN, SAHİP OLMADIĞI MEKANİZMAYI ADIYLA ANAMAZ.
+         * Bir beyan _"sınır bellekte uygulanıyor"_ diyorsa o gövde KODDA
+         * bulunmalı. Yoksa beyan bir VEKİLDİR: bugün doğru, refaktörden
+         * sonra sessizce yalan — ve bekçi hâlâ yeşil yanar.
+         *
+         * ⚠ MUTASYONLA ÖLÇÜLDÜ 29.08.2026: `fifoDagit(uygun, …)` →
+         * `fifoDagit(mevcut, …)` yapıldığında sınır tamamen düşüyordu,
+         * `tsc` sessizdi ve bu kontrol olmadan bekçi de sessizdi.
+         */
+        if (/partileriSinirla/.test(blok) && !/\bpartileriSinirla\s*\(/.test(kod)) {
+          hata++;
+          const sn = kod.slice(0, m.index).split("\n").length;
+          bulgular.push(
+            "  ⛔ " + yol.replace(/\\/g, "/") + ":" + sn +
+            "  →  BEYAN `partileriSinirla` DİYOR ama kodda çağrısı YOK",
+          );
+        }
+        continue;
+      }
 
       hata++;
       bulgular.push(

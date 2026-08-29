@@ -153,6 +153,7 @@
     "canli:ileri-parti-onar": "tsx scripts/canli-ileri-parti-onar.ts",
     "canli:eksik-alim-onar": "tsx scripts/canli-eksik-alim-onar.ts",
     "canli:2997-sayim": "tsx scripts/canli-2997-sayim.ts",
+    "canli:uphouse": "tsx scripts/canli-uphouse-14.ts",
     "canli:guncel-stok-kiyas": "tsx scripts/canli-guncel-stok-kiyas.ts",
     "canli:mukerrer-olcum": "tsx scripts/canli-mukerrer-olcum.ts",
     "canli:sayim-2": "tsx scripts/canli-sayim-2.ts",

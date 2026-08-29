@@ -1065,11 +1065,37 @@ kontrol(
   "parti yetmezse SALE_OUT yazılmıyor",
   /if \(!sonuc\.yeterliMi\) \{ hareketAtlanan\+\+; continue; \}/.test(satisAktar),
 );
+/**
+ * ⭐ ÖLÇÜT GÜNCELLENDİ 29.08.2026 — KOD DEĞİL, ÖLÇÜT ESKİDİ.
+ *
+ * Eskisi çağrının BİREBİR metnine bağlıydı
+ * (`kalanPartiler.set(kalem.variantId, sonuc.kalanPartiler)` ·
+ * `fifoDagit(mevcut, kalem.quantity)`). Betiğe FIFO SINIRI eklendi:
+ * partiler artık dağıtımdan önce `partileriSinirla` ile ikiye ayrılıyor
+ * (satışın gün sonundan önce açılanlar / sonrakiler) ve dağıtımdan sonra
+ * `partileriBirlestir` ile geri konuyor.
+ *
+ * Davranış BOZULMADI, güçlendi: tüketilen parti hâlâ sonraki kaleme
+ * taşınıyor — üstelik artık dışarıda bırakılanlar da taşınıyor, yoksa daha
+ * yeni bir satış onları bulamazdı.
+ * _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez" — ve
+ * eskiyen ölçüt güncellenirken NİYE eskidiği yazılır.)_
+ */
 kontrol(
   "tüketilen parti SONRAKİ kaleme taşınıyor",
-  /kalanPartiler\.set\(kalem\.variantId, sonuc\.kalanPartiler\)/.test(satisAktar),
+  /kalanPartiler\.set\(\s*kalem\.variantId,\s*\n?\s*partileriBirlestir\(sonuc\.kalanPartiler, disarida\)/
+    .test(satisAktar),
 );
-kontrol("ORTAK fifoDagit kullanılıyor", /fifoDagit\(mevcut, kalem\.quantity\)/.test(satisAktar));
+kontrol("ORTAK fifoDagit kullanılıyor", /fifoDagit\(uygun, kalem\.quantity\)/.test(satisAktar));
+/** ⭐ YENİ DAVRANIŞ DONDURULUYOR — sınır satışın GÜN SONU'ndan kuruluyor. */
+kontrol(
+  "FIFO sınırı satışın GÜN SONU'ndan kuruluyor",
+  /const sinir = gunSonu\(isGunuUtc\(kalemler\[0\]\.tarih\)\)/.test(satisAktar),
+);
+kontrol(
+  "sınır DAĞITIMDAN ÖNCE uygulanıyor (ileri parti aday değil)",
+  /partileriSinirla\(mevcut, sinir\)/.test(satisAktar),
+);
 
 /**
  * ⚠ KANAL BELİRSİZSE YAZILMAZ. Amazon'da üç hesap var ve üçü de sıfır
@@ -1504,9 +1530,14 @@ kontrol(
     "K55 stok bağı `sinir` VERMİYOR",
     /acikPartilerToplu\(prisma, varyantIds\)/.test(bagi),
   );
+  /**
+   * ⭐ ÖLÇÜT GÜNCELLENDİ 29.08.2026: beyan artık `fifo-sinir:dogrula`nın
+   * KENDİ sözcüğüyle yazılıyor (`SINIR YOK:`). İki ayrı beyan biçimi
+   * tutmak, birini güncelleyip ötekini unutmanın yoluydu — tek dağarcık.
+   */
   kontrol(
     "  ...ve NİYE vermediği kodda YAZILI",
-    /sinir` PARAMETRESİ BURADA BİLEREK VERİLMİYOR/.test(bagi),
+    /SINIR YOK: `sinir` BURADA BİLEREK VERİLMİYOR/.test(bagi),
   );
   kontrol(
     "K53 tarihli envanter `sinir` VERİYOR",

@@ -169,8 +169,16 @@ async function main() {
   console.log(`   toplam adet               ${kalemler.reduce((t, k) => t + k.quantity, 0)}`);
 
   /**
-   * ⛔ `sinir` PARAMETRESİ BURADA BİLEREK VERİLMİYOR — kullanıcı kararı
+   * SINIR YOK: `sinir` BURADA BİLEREK VERİLMİYOR — kullanıcı kararı
    * 28.08.2026.
+   *
+   * ⚠ VE BU, `canli-satis-ice-aktar.ts`İN TERSİ YÖNDE — ÇELİŞKİ DEĞİL,
+   * BAŞKA SORU. Orada YENİ satış yazılıyor: 2025 tarihli bir satışın
+   * bugünkü rafta duran malı yemesi, sayımla sayılmış malı tüketilmiş
+   * gösterirdi. Burada satış ZATEN VAR ve maliyetsiz; bugün girilen alım
+   * o eksik kaydın yerine geçiyor. _(Anayasa: "aynı veri, farklı soruya
+   * farklı pencereden bakar" — ve hangi ekranın hangi soruyu sorduğu
+   * KODDA yazılı olmalıdır.)_
    *
    * `sinir` verilseydi yalnız satış tarihinden ÖNCEKİ partiler aday olurdu
    * ve bu koşum **0 kalem** bağlardı (ölçüldü: bağlanabilen 12 kalemin

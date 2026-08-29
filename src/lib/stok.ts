@@ -177,6 +177,40 @@ export function gunSonu(an: Date): Date {
 }
 
 /**
+ * SINIRI BELLEKTE UYGULAR — partiler bir kez okunup taşınıyorsa.
+ *
+ * ⭐ NİYE VAR: toplu içe aktarma partileri **tek sorguda** okur ve tüketimi
+ * koşum içinde taşır (aynı partiyi iki kaleme dağıtmamak için). Orada sınırı
+ * OKUMA anında vermek imkânsızdır — her satışın tarihi başkadır. Sınır bu
+ * yüzden DAĞITIM anında, bellekte uygulanır.
+ *
+ * ⚠ Dışarıda kalan partiler ÇAĞIRANDA durur ve tüketilmemiş olarak geri
+ * konur; burada atılsalardı sonraki (daha yeni) satış onları bulamazdı.
+ *
+ * Ölçüt `acikPartiler` ile AYNI: `occurredAt < sinir` — sınır GÜN SONU
+ * olduğu için aynı günün partisi İÇERİDEDİR.
+ */
+export function partileriSinirla(
+  partiler: Parti[],
+  sinir: Date,
+): { uygun: Parti[]; disarida: Parti[] } {
+  const uygun: Parti[] = [];
+  const disarida: Parti[] = [];
+  for (const p of partiler) {
+    if (p.occurredAt < sinir) uygun.push(p);
+    else disarida.push(p);
+  }
+  return { uygun, disarida };
+}
+
+/** Sınırlı dağıtımdan sonra partileri FIFO sırasında geri birleştirir. */
+export function partileriBirlestir(kalan: Parti[], disarida: Parti[]): Parti[] {
+  return [...kalan, ...disarida].sort(
+    (a, b) => a.occurredAt.getTime() - b.occurredAt.getTime(),
+  );
+}
+
+/**
  * Aynı hesap, TEK SORGUDA çok varyant için.
  *
  * Envanter değeri ekranı bütün depoyu değerler; varyant başına ayrı sorgu

@@ -522,8 +522,20 @@ async function main() {
   console.log(`\n④ YAZILIYOR — parti ${parti}`);
 
   /** ⚠ Açık partiler BİR KEZ okunur, tüketim koşum içinde taşınır. */
-  const { acikPartilerToplu, fifoDagit } = await import("../src/lib/stok");
+  const { acikPartilerToplu, fifoDagit, gunSonu, partileriSinirla, partileriBirlestir } =
+    await import("../src/lib/stok");
   const varyantIds = [...new Set(yazilacaklar.map((c) => c.variantId))];
+  /**
+   * SINIR YOK: her satışın tarihi BAŞKA — sınır okuma anında verilemez.
+   * Partiler tek sorguda okunur (tüketim koşum içinde taşınır, aynı parti
+   * iki kaleme dağıtılmasın diye) ve sınır DAĞITIM anında `partileriSinirla`
+   * ile bellekte uygulanır. Aşağıya bak: `gunSonu(satışTarihi)`.
+   *
+   * ⛔ ÖLÇÜLDÜ 29.08.2026 — sınırsız hâlde ne oluyordu: 2025-07 tarihli bir
+   * satış, 2026-08'de alınmış bir partiyi tüketiyordu. Tek üründe (LEGO
+   * 43217) 36 satışın 8'inin tarihinde ÖNCESİNDE hiç açık parti yoktu;
+   * hepsi ileri partiyi yiyecekti ve maliyet yanlış damgalanacaktı.
+   */
   const partiler = await acikPartilerToplu(prisma, varyantIds);
   const kalanPartiler = new Map(varyantIds.map((v) => [v, partiler.get(v) ?? []]));
 
@@ -571,12 +583,23 @@ async function main() {
       yazilanSatis++;
       yazilanKalem += satis.items.length;
 
+      /** ⭐ SINIR — satışın GÜN SONU'ndan sonra açılan parti tüketilemez. */
+      const sinir = gunSonu(isGunuUtc(kalemler[0].tarih));
       for (const kalem of satis.items) {
         const mevcut = kalanPartiler.get(kalem.variantId) ?? [];
-        const sonuc = fifoDagit(mevcut, kalem.quantity);
-        /** ⚠ PARTİ YOKSA HAREKET YAZILMAZ — negatif stok üretilmez. */
+        const { uygun, disarida } = partileriSinirla(mevcut, sinir);
+        const sonuc = fifoDagit(uygun, kalem.quantity);
+        /**
+         * ⚠ PARTİ YOKSA HAREKET YAZILMAZ — negatif stok üretilmez.
+         * ⛔ Ve İLERİ PARTİ İMDADA YETİŞMEZ: `disarida` bilerek dışarıda
+         * bırakılır. Satış maliyetsiz kalır (`NO_COST`) ve bu DOĞRU cevaptır —
+         * o tarihte elimizde o mal yoktu; uydurma maliyet damgalamaktansa
+         * "bilmiyorum" demek yeğdir.
+         */
         if (!sonuc.yeterliMi) { hareketAtlanan++; continue; }
-        kalanPartiler.set(kalem.variantId, sonuc.kalanPartiler);
+        /** ⚠ Dışarıda kalanlar geri konur — sonraki satış onları bulabilsin. */
+        kalanPartiler.set(kalem.variantId,
+          partileriBirlestir(sonuc.kalanPartiler, disarida));
         for (const pay of sonuc.dagitim) {
           await prisma.stockMovement.create({
             data: {

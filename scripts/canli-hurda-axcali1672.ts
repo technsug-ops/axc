@@ -106,6 +106,11 @@ async function main() {
     where: { variantId: varyant.id },
     _sum: { quantityDelta: true },
   });
+  /**
+   * SINIR YOK: bu bir ÖNİZLEME dökümü — aşağıda yalnız `console.log` ile
+   * basılıyor, hiçbir hareket bu listeden yazılmıyor. Soru "bugün elimde
+   * hangi partiler açık", geçmiş bir tarihin stoğu değil.
+   */
   const partiler = await acikPartiler(prisma, varyant.id);
 
   console.log("ÖNCE");

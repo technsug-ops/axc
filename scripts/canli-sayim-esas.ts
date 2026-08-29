@@ -258,6 +258,12 @@ async function main() {
   let eksiDeger = 0, eksiYetersiz = 0;
   const { acikPartiler, fifoDagit, gunSonu } = await import("../src/lib/stok");
   for (const s of eksiler) {
+    /**
+     * SINIR YOK: bu döngü SAYIMIN DEĞERLEMESİ — `eksiDeger` toplar, hiçbir
+     * hareket yazmaz. Sayım BUGÜN yapıldı, dolayısıyla "bugün açık olan
+     * partiler" zaten doğru kümedir. Yazım yolu ayrı ve orada `gunSonu`
+     * uygulanıyor.
+     */
     const partiler = await acikPartiler(p, s.id);
     const d = fifoDagit(partiler, Math.abs(s.farkBugun));
     if (!d.yeterliMi) { eksiYetersiz++; continue; }
