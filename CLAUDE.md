@@ -2803,6 +2803,65 @@ basmak hem kullanıcıya bir şey anlatmaz hem de iç ayrıntı sızdırır.
 
 ---
 
+## ÖLÇÜT BLOĞU, ÖZET VE ÇIKIŞ KODUNDAN ÖNCE KOŞAR (KESİN KURAL)
+
+_Kullanıcı kararı 30.08.2026 — günün İKİNCİ vakası._ Anayasada zaten
+_"ölçüm ile karar arasındaki boru da ölçümün parçasıdır"_ vardı. Ama o kural
+**kabuk komutları için** yazılmıştı (`| tail -2` · `echo $?` · `&&` zinciri).
+Bugün aynı boru **bekçinin KENDİ İÇİNDE** bulundu.
+
+**Vaka:** `uyari:dogrula`ya dört yeni ölçüt eklendi — dosyanın **sonuna**.
+Ölçütler koştu, `OK` satırları ekrana bastı, ama özet ve `process.exitCode`
+onlardan **önce** hesaplanıyordu:
+
+    …ölçütler…            ← sonradan eklenen blok BURAYA gelmeliydi
+    if (kalan === 0) …    ← özet + exitCode BURADA
+    …ölçütler…            ← ama BURAYA eklendi
+
+`kalan` sayacı artıyor, **kimse okumuyor.** Üç mutasyon da yeşil geçti ve
+bekçi "TÜM KONTROLLER GEÇTİ" dedi.
+
+> **KURAL:** her bekçide ölçüt blokları özet ve çıkış kodundan **ÖNCE**
+> koşar. Yeni ölçüt dosyanın sonuna eklenmez — özet satırı bulunur ve blok
+> onun ÜSTÜNE konur.
+
+⚠ **VE BUNU YAKALAYAN TEK ŞEY MUTASYONDU.** Ekranda `OK` yazıyordu, çıkış
+kodu `0`'dı, sayaç doğruydu. Yeşil test, sınanmış kontrol demek değildir —
+ve bu sefer sınanmayan şey ölçütün kendisi değil, **sonucunun okunup
+okunmadığıydı.**
+
+⚠ **AYNI GÜN İKİNCİ VAKA:** `fifo-sinir:dogrula`nın beyan penceresi de
+(6 satır) gerçek gerekçe bloklarını (13 ve 30 satır) göremiyordu. İkisi de
+"ölçüt var ama ölçtüğü şeye ulaşamıyor" sınıfı.
+
+⭐ **VE DAHA İYİ ÇARE ZATEN DEPODA VARDI — SIRA DEĞİL, SAYAÇ.**
+Bütün bekçiler tarandı; `suzgec-dogrula.ts` bu tuzağı **mekanizmayla**
+çözmüş: her bölüm bitince kendini kaydediyor ve özet, beklenen sayıyla
+karşılaştırıyor —
+
+    const BOLUM_SAYISI = 7;
+    …
+    kosanBolumler.push("paketleme süzgeci");
+    …
+    if (kosanBolumler.length !== BOLUM_SAYISI) {
+      console.log("KOŞUM YARIM KALDI — sonuç GEÇERSİZ");
+      process.exit(1);
+    }
+
+Bir blok koşmazsa (sıra bozulsa, `return` düşse, hata yutulsa) bekçi
+**"geçti" DEMİYOR, GEÇERSİZ diyor.** Blok sırasını doğru tutmak insan
+disiplinidir; sayaç mekanizmadır.
+_(Anayasa: "güvenlik mekanizmaya bağlanır" — `&&` zinciri yedek katman
+olarak kalır ama tek dayanak olamaz.)_
+
+⚠ **VE TARAMANIN KENDİSİ DE ÖLÇÜLDÜ.** İlk tarayıcı `awk` içinde `\b`
+kullanıyordu; POSIX ERE bunu desteklemiyor ve tarayıcı **hiçbir şey
+bulamıyordu** — "62 bekçi temiz" diye rapor edilecekti. Sentetik bir vaka
+enjekte edilip ısırdığı GÖRÜLDÜKTEN sonra gerçek tarama koşuldu.
+_(Anayasa: "mutasyon harness'inin kendisi de kusurlu olabilir".)_
+
+---
+
 ## SEÇENEK SUNULURKEN GERİ ALINABİLİR OLAN ÖNE KONUR (KESİN KURAL)
 
 _Kullanıcı kararı 28.08.2026._ Bir ekran iki yol sunuyorsa ve kullanıcı
