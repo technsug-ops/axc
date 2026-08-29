@@ -971,6 +971,65 @@ bölünüyordu. Komisyon ORAN olarak saklı olduğu için kendiliğinden düzeld
 
 ---
 
+## 🆕 K83 — FİZİKSEL SAYIM ESAS · 29.08.2026 · [KURU KOŞUM, YAZIM ONAY BEKLİYOR]
+
+> Halil **7 saat** fiziksel sayım yaptı ve kuralı koydu: **fiziki varlık
+> esastır.** Sonraki Excel aktarımları stok rakamlarını bozdu — sıra
+> yanlıştı, sayım SON SÖZ olmalı.
+
+Ölçüm: `npm run canli:sayim-esas` (salt okuma).
+Dosya md5 **birebir teyit edildi** (`41d7b2…52`) · sayfa `SELLİORA` 1103 satır.
+⛔ `TRENDYOL` sayfası (218 barkod) bu işe **dahil değil** — kanal listeleme stoğu.
+
+    "Olması gereken" DOLU : 207   ✓ (beyanla aynı)
+    ⭐ SKU EŞLEŞMESİ       : 207/207 BULUNDU · bulunamayan 0
+
+### ⭐ İKİ FARK AYRI ÖLÇÜLDÜ — VE KAYMA ÇOK KÜÇÜK ÇIKTI
+
+    ① SAYIM ANINDAKİ (dosyanın kendi iki sütunu)
+       tutuyor 106 · FAZLA 52 (−207) · AZ 49 (+104) · net −103
+       ⭐ mimarın ölçümüyle BİREBİR
+
+    ② BUGÜNKÜ (sistemin şu anki adedi ↔ sayılan)
+       tutuyor 104 · FAZLA 53 (−208) · AZ 50 (+105) · net −103
+
+    ⚠ SAYIMDAN BUGÜNE KAYAN SATIR: 2 / 207
+
+⭐ **Yani sayımdan bu yana yalnız 2 satır oynamış.** Düzeltme ②'ye göre
+yapılır; ① kayıt olarak durur.
+
+### DÜZELTME PLANI — `COUNT_CORRECTION`
+
+    EKSİ yön (mal gitmiş) : 53 varyant · −208 adet
+    ARTI yön (mal fazla)  : 50 varyant · +105 adet
+
+    ARTI'da maliyet: FIFO'da parti VAR 43 (₺135.195,16) · ⛔ parti YOK → NO_COST 7
+    EKSİ'de FIFO   : düşülecek maliyet ₺499.809,07 · ⛔ parti YETMEYEN 0
+
+⭐ **ENVANTER DEĞERİ NET ETKİSİ: −₺364.613,91** (499.809,07 çıkar,
+135.195,16 girer). Bu bir kayıp TESPİTİ değil, kaydı: mal zaten yoktu,
+defter fazla gösteriyordu.
+
+⛔ **UYDURMA MALİYET YAZILMAZ:** 7 varyantta FIFO'da hiç parti yok; onların
+partisi **NO_COST** doğar ve satıldığında kâr dürüstçe "hesaplanamadı" der.
+
+### KÂR ETKİSİ — YOK (bilerek)
+
+`COUNT_CORRECTION` **kâr tablosuna girmez** (kullanıcı kararı 12.08.2026):
+düzeltme bir satış değildir, NET-1/NET-2'ye karışmaz; dönem raporunda AYRI
+kalem olarak GERÇEK NET'ten düşer.
+⚠ Bu varyantlarda maliyet bağı olmayan satış kalemi **0** — yani ARTI
+partileri bekleyen bir bağlama işi yok.
+
+### GERİ ALMA — DETERMİNİSTİK
+
+Kimlik listesi DEĞİL: `note` içinde `sayim-fiziksel-20260829` geçen
+hareketler. `npm run canli:sayim-esas -- --geri`
+
+⛔ **YAZILMADI — Halil'in onayı bekleniyor.**
+
+---
+
 ### ⚠ İKİ AÇIK NOT
 
 **· `10415881283` — aynı kampanyanın dördü FARKLI maliyetle duruyor.**
