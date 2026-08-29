@@ -1,3 +1,4 @@
+/** BETIK SINIFI: TEK_SEFERLIK — 28.08 tek vakalik, YEDI siparis kimligine kilitli (VAKALAR listesi). */
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 

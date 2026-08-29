@@ -1,3 +1,4 @@
+/** BETIK SINIFI: TEK_SEFERLIK — 28.08 tek vakalik maliyet yazimi, `dosya-maliyet-20260828` partisine kilitli. */
 import { readFileSync } from "node:fs";
 
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";

@@ -1,3 +1,4 @@
+/** BETIK SINIFI: TEK_SEFERLIK — K55, 28.08 tek vakalik bag onarimi. `--geri=<parti>` ile geri alinir, tekrar kosulmaz. */
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 

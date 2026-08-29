@@ -1,3 +1,4 @@
+/** BETIK SINIFI: TEK_SEFERLIK — PROVA — iade akisini sinar, canli stoga dokunmaz. */
 /**
  * ============================================================================
  *  RMA PROVASI — 6. SENARYO, GERÇEK FIFO İLE (YEREL)

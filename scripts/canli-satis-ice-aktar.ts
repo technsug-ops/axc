@@ -1,3 +1,15 @@
+/** BETIK SINIFI: SUREKLI — Satis dosyasi her yeni dosyada yeniden kosulur. 29.08 arizasini bu sinif yapti. */
+/**
+ * SAYIM KORUMASI YOK: kapi bu yola HENUZ BAGLANMADI (K84/K85, 29.08.2026).
+ *
+ * Bu betik SUREKLI sinifta ve 29.08 arizasini yapan iki aktarimdan biri.
+ * Kapinin dogru hali burada SORU SORMAK DEGIL, ATLAYIP RAPORLAMAKTIR:
+ * kimse basinda degil, "israr" kavrami betikte yok. Atlanan satir
+ * raporda gorunur; sessizce yazilan gorunmez.
+ *
+ * Bu beyan bir gerekce DEGIL, BORC KAYDIDIR ve bilerek en gorunur yere
+ * konuldu: bu dosyayi acan kisi once bunu okur.
+ */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 

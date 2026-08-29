@@ -121,6 +121,62 @@ for (const yol of dosyalar("src")) {
   acik.push("  ⛔ " + d + "  →  `occurredAt` sabit değil, `sayimKorumasi(` yok, beyan yok");
 }
 
+
+/**
+ * ═══ ② `scripts/` KAPSAMI — SINIF BEYANLA BELİRLENİR ═════════════════════
+ *
+ * ⛔ 29.08.2026: arızayı yapan aktarım `src/` içinde DEĞİL, `scripts/`
+ * altındaydı ve bekçi orayı hiç taramıyordu — koruma, arızanın geldiği
+ * yeri kapsamıyordu.
+ *
+ * ⚠ VE SINIFI DESENLE TAHMİN ETME DENEMESİ ÇÖKTÜ. `PARTI =` · `KODLAR =`
+ * · `--geri` işaretleriyle "tek seferlik onarım" ayrılmaya çalışıldı;
+ * `canli-alis-ice-aktar` ve `canli-satis-ice-aktar` **muaf sayıldı** —
+ * oysa arızayı yapanlar tam onlardı. İşaretler iki sınıfta da geçiyor.
+ *
+ * ⭐ O YÜZDEN SINIF BEYAN EDİLİR, TAHMİN EDİLMEZ:
+ *     BETIK SINIFI: SUREKLI                     → kapıdan geçmeli
+ *     BETIK SINIFI: TEK_SEFERLIK — <gerekçe>    → muaf
+ * Beyanı OLMAYAN betik KIRMIZI.
+ *
+ * ⚠ MUTASYON AYRIMI (kullanıcı kararı 29.08):
+ *  · beyanı `SUREKLI` → `TEK_SEFERLIK` çeviren senaryo YEŞİL kalır —
+ *    o bir İNSAN KARARIDIR ve gerekçesiyle birlikte koda yazılır;
+ *    bekçinin işi kararı denetlemek değil, KARARSIZLIĞI yakalamak.
+ *  · beyanı SİLEN senaryo KIRMIZI — sınıf yeniden tahmine düşer.
+ */
+const SINIF_DESENI = /BETIK SINIFI:\s*(SUREKLI|TEK_SEFERLIK)/;
+for (const yol of dosyalar("scripts")) {
+  const ham = readFileSync(yol, "utf8");
+  const kod = yorumsuz(ham);
+  if (!/\bstockMovement\.create(Many)?\s*\(/.test(kod)) continue;
+  const tarihler = kod.match(/occurredAt:\s*[^,\n}]+/g) ?? [];
+  if (tarihler.length > 0 && tarihler.every((t) => /new Date\(\)/.test(t))) continue;
+  kontrol++;
+  const m = SINIF_DESENI.exec(ham);
+  if (m === null) {
+    hata++;
+    acik.push("  ⛔ " + yol.replace(/\\/g, "/") +
+      "  →  BETIK SINIFI beyanı YOK (SUREKLI mi TEK_SEFERLIK mi?)");
+    continue;
+  }
+  if (m[1] === "TEK_SEFERLIK") {
+    /** ⚠ Muafiyet GEREKÇESİZ verilemez — beyan tek başına yetmez. */
+    if (!/BETIK SINIFI:\s*TEK_SEFERLIK\s*—\s*\S/.test(ham)) {
+      hata++;
+      acik.push("  ⛔ " + yol.replace(/\\/g, "/") +
+        "  →  TEK_SEFERLIK beyanı GEREKÇESİZ");
+    }
+    continue;
+  }
+  /** SUREKLI ise kapıdan geçmeli ya da beyanlı istisna taşımalı. */
+  if (/\bsayimKorumasi\s*\(/.test(kod)) continue;
+  if (/SAYIM KORUMASI YOK:\s*\S/.test(ham)) continue;
+  hata++;
+  acik.push("  ⛔ " + yol.replace(/\\/g, "/") +
+    "  →  SUREKLI ama `sayimKorumasi(` yok, beyan yok");
+}
+
 console.log("");
 console.log("SAYIM KORUMASI — DEĞER TESTİ + DESEN YASAĞI");
 console.log("  ölçüt ①: saf gövde ÇAĞRILIR, değeri sınanır");

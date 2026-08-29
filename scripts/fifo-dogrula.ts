@@ -1,3 +1,4 @@
+/** BETIK SINIFI: TEK_SEFERLIK — BEKCI — kendi test verisini yazip siler, canli stoga dokunmaz. */
 /**
  * ============================================================================
  *  FIFO DOĞRULAMA — tek seferlik/elle çalıştırılan doğrulama betiği

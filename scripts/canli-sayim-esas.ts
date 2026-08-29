@@ -1,3 +1,4 @@
+/** BETIK SINIFI: TEK_SEFERLIK — 29.08 fiziksel sayim yazimi, `sayim-fiziksel-20260829` kodunda kilitli; ikinci kosum 0 dondurur. */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 

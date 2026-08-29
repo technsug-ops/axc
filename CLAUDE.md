@@ -880,6 +880,48 @@ düşürmez; sayımın "fazla" dediği rakamı **haklı çıkarabilir** — bu b
 çelişki değil, bilgidir. Stoğu DÜŞÜREN geç kayıt (satış, düzeltme) ise
 sayılmış malı yok eder ve asıl tehlike odur.
 
+### SINIF, KENDİSİNDEN TÜRETİLEMİYORSA BEYAN EDİLİR (KESİN KURAL)
+
+_Kullanıcı kararı 29.08.2026._ Bir sınıflandırma, **sınıfın kendisinden
+türetilemiyorsa TAHMİN EDİLMEZ — BEYAN EDİLİR.** Desenle tahmin edilen
+sınıf iki okumayla da uyumlu çıkarsa hiçbirini kanıtlamaz; ve **yanlış
+sınıflandırma SESSİZDİR:** koruma varmış gibi görünür, korunması gereken
+dışarıda kalır.
+
+**Vaka:** `scripts/` altındaki stok yazan betikleri _"tek seferlik onarım"_
+ve _"sürekli koşan aktarım"_ diye ayırmak gerekiyordu. Desen denendi —
+`PARTI =` · `KODLAR =` · `--geri` işaretleri:
+
+    canli-alis-ice-aktar.ts   → "tek seferlik" sayıldı   ⛔ MUAF
+    canli-satis-ice-aktar.ts  → "tek seferlik" sayıldı   ⛔ MUAF
+
+**Arızayı yapan iki aktarım tam bunlardı.** İşaretler iki sınıfta da
+geçiyor: onarım betiği de parti koduna kilitli, aktarım da parti damgası
+yazıyor. **Desen NİYETİ göremez.**
+
+⚠ **VE HATA SESSİZ OLURDU:** bekçi _"sürekli koşan 3 araç"_ diye rapor
+verdi ve o üçü (`fifo-dogrula` · `rma-prova` · `canli-deneme-sifirla`)
+**risksiz olanlardı.** Yeşil bir rapor, korumasız iki aktarımın üstünü
+örtüyordu.
+
+> **KURAL:** sınıf koda **beyan edilir** ve beyanı olmayan KIRMIZI olur.
+>
+>     BETIK SINIFI: SUREKLI                  → kapıdan geçmeli
+>     BETIK SINIFI: TEK_SEFERLIK — <gerekçe> → muaf
+>
+> Muafiyet **gerekçesiz verilemez** — beyan tek başına yetmez.
+
+⭐ **VE MUTASYON AYRIMI İNCEDİR:**
+· beyanı `SUREKLI`→`TEK_SEFERLIK` çeviren senaryo **YEŞİL kalır.** O bir
+  İNSAN KARARIDIR ve gerekçesiyle koda yazılır; bekçinin işi kararı
+  denetlemek değil, **kararsızlığı** yakalamak.
+· beyanı **SİLEN** senaryo **KIRMIZI** — sınıf yeniden tahmine düşer.
+· gerekçesiz `TEK_SEFERLIK` **KIRMIZI** — muafiyet bedava olmaz.
+
+_(Bu, "bekçi ölçütü elle tutulan liste değil tersten kurulur" kuralının
+SINIFLANDIRMA tarafı: orada ekranlar sayılıyordu, burada niyet tahmin
+ediliyordu.)_
+
 ### İMKÂNSIZ GÖRÜNEN DEĞER ÖNCE DOĞRULANIR — DÜZELTİLMEZ (KESİN KURAL)
 
 _Ders 19.08.2026, OneBlade vakası._ Bir uyarının görevi **baktırmaktır**,

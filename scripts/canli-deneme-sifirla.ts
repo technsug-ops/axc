@@ -1,3 +1,4 @@
+/** BETIK SINIFI: TEK_SEFERLIK — 23.08 tek vakalik, UC siparis numarasina kilitli (SIPARISLER). Kosuldu ve bir kismi geri alindi; package.json'a hic yazilmadi. */
 /**
  * ============================================================================
  *  DENEME TESTLERİNİ SIFIRLA — ÜÇ SATIŞ, KİMLİĞE KİLİTLİ

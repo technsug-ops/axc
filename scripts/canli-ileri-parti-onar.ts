@@ -1,3 +1,4 @@
+/** BETIK SINIFI: TEK_SEFERLIK — 29.08 tek vakalik ileri parti onarimi, `ileri-parti-onarim-20260829` partisine kilitli. */
 import { readFileSync } from "node:fs";
 
 import readXlsxFile from "read-excel-file/node";

@@ -1233,6 +1233,65 @@ olarak koda yazılır.
 
 ---
 
+### ✅ BEYAN KURALI YAZILDI + KAPSAM `scripts/`E UZATILDI [29.08.2026]
+
+    bekçi ölçütü 21 → 31 kontrol
+    ⭐ VE TAM OLARAK ARIZAYI YAPAN İKİ AKTARIMI YAKALADI:
+       canli-alis-ice-aktar · canli-satis-ice-aktar → "SUREKLI ama kapı yok"
+
+**ON BETİĞİN SINIFI — Halil'in kararıyla, körlemesine değil:**
+
+| sınıf | betik | gerekçe |
+|---|---|---|
+| **SUREKLI** | `canli-alis-ice-aktar` · `canli-satis-ice-aktar` | her yeni dosyada yeniden koşar; **29.08 arızasını bu sınıf yaptı** |
+| TEK_SEFERLIK | `canli-ice-aktarma-stok-bagi` | K55, `--geri=<parti>` ile geri alınır |
+| TEK_SEFERLIK | `canli-dosya-maliyet-kuru` | `dosya-maliyet-20260828` partisine kilitli |
+| TEK_SEFERLIK | `canli-ileri-parti-onar` | `ileri-parti-onarim-20260829` partisine kilitli |
+| TEK_SEFERLIK | `canli-k74-maliyet` | YEDİ sipariş kimliğine kilitli |
+| TEK_SEFERLIK | `canli-sayim-esas` | sayım koduna kilitli, ikinci koşum 0 döndürür |
+| TEK_SEFERLIK | `fifo-dogrula` · `rma-prova` | bekçi/prova — canlı stoğa dokunmaz |
+| TEK_SEFERLIK | `canli-deneme-sifirla` | 23.08, ÜÇ sipariş numarasına kilitli |
+
+**⚠ KOMUTSUZ BETİK — ÖLÇÜLDÜ, ÖLÜ KOD DEĞİL.** `canli-deneme-sifirla`
+`package.json`da hiç yok (0 eşleşme) ama **koşulmuş**: üç sipariş
+numarasına kilitli, ve iki betik (`canli-11467-geri-yukle` ·
+`canli-11473-degisim-var`) ondan söz ediyor — biri onun bir kısmını GERİ
+ALMIŞ. Yani "gövdesiz beyin" değil, **kayıt dışı koşulmuş bir araç.**
+⭐ Asıl bulgu: `tsx` ile doğrudan koşulan betikler `package.json`
+listesinde görünmüyor — **bekçi listesi oradan okunduğu için o betikler
+hiçbir listeye girmiyor.** Beyan kuralı bunu kapatıyor: liste değil, dosyanın
+kendisi konuşuyor.
+
+**ÜÇ MUTASYON — AYRIM DOĞRU ÇALIŞTI:**
+· beyanı SİL → **KIRMIZI** ✓
+· `SUREKLI`→`TEK_SEFERLIK` gerekçeli çevir → **YEŞİL** ✓ (insan kararı)
+· `TEK_SEFERLIK` gerekçesiz → **KIRMIZI** ✓ (muafiyet bedava değil)
+
+⛔ İki `SUREKLI` aktarımda kapı hâlâ bağlı değil; **borç beyanı en görünür
+yere** (dosyanın ilk satırlarına) konuldu ve doğru davranış yazılı:
+_"betikte SORU SORULMAZ — ATLA VE RAPORLA."_
+
+---
+
+## 📐 ŞEMA KURU KOŞUMU — `sayimGecersizAt`
+
+    KOLON   ProductVariant.sayimGecersizAt  DateTime?  · nullable
+    İNDEKS  @@index([sayimGecersizAt])
+    ETKİLENEN SATIR  1104 (hepsi) — hepsi NULL doğar, GERİ DOLDURMA YOK
+    GERİ DÖNÜŞ       kolon nullable, varsayılansız → `DROP COLUMN` yeter
+
+⭐ **NİYE VARYANTTA:** uyarı merkezi _"N varyantın sayımı geçersizleşti"_
+diye **SORGULAMAK** zorunda. Serbest metin geriye bakmaya yeter, sorguya
+yetmez — merdivenin 2. basamağından 4.'ye çıkış gerekçesi bu.
+
+⚠ **İNDEKS BUGÜN GEREKLİ DEĞİL, YARIN GEREKLİ:** 1104 satır küçük bir
+tablo. Kolonla birlikte açmak migration'ı ikiye bölmemek için.
+⚠ **VERİ KAYBI RİSKİ YOK:** damgaların ikinci kopyası `AuditLog`ta
+(iz iki yere yazılıyor).
+
+⛔ **MIGRATION KOŞULMADI, ŞEMA DEĞİŞMEDİ.** Anayasa: şema commit'i
+migration canlıda koşana kadar push edilmez. **Onay bekliyor.**
+
 ## 📐 ISRAR EKRANI — TASARIM (kod yazılmadı)
 
 **NEREDE ÇIKAR:** duraksama, stok yazan **her yolun kendi onay adımında**
