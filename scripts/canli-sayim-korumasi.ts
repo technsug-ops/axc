@@ -73,12 +73,21 @@ async function main() {
   // ── ② SAYILMIŞ VARYANTLAR ─────────────────────────────────────────────
   const sayimlar = await p.stockMovement.findMany({
     where: { type: SAYIM_TIPI },
-    select: { variantId: true, occurredAt: true },
+    select: { variantId: true, occurredAt: true, createdAt: true },
   });
-  const sonSayim = new Map<string, Date>();
+  /**
+   * ⚠ İKİ ÇIPA AYRI TUTULUR — İLK ÖLÇÜMÜMDE KARIŞTIRDIM (29.08.2026).
+   * Sayımın İŞ TARİHİ (`occurredAt`) ile SİSTEME YAZILDIĞI AN (`createdAt`)
+   * farklı şeylerdir. "Geriye dönük mü" sorusu iş tarihine, "sayımdan
+   * sonra mı yazıldı" sorusu yazılış anına bakar. İkisini tek değişkende
+   * tutmak, meşru hareketleri de tehlikeli göstermişti.
+   */
+  const sonSayim = new Map<string, { is: Date; yazilis: Date }>();
   for (const x of sayimlar) {
     const v = sonSayim.get(x.variantId);
-    if (!v || x.occurredAt > v) sonSayim.set(x.variantId, x.occurredAt);
+    if (!v || x.createdAt > v.yazilis) {
+      sonSayim.set(x.variantId, { is: x.occurredAt, yazilis: x.createdAt });
+    }
   }
   console.log("\n② SAYILMIŞ VARYANTLAR");
   console.log("   `COUNT_CORRECTION` hareketi olan varyant: " + sonSayim.size);
@@ -106,10 +115,11 @@ async function main() {
       },
     });
     for (const h of hh) {
-      const sayimAni = sonSayim.get(h.variantId)!;
-      /** YAZILDIĞI an sayımdan SONRA mı? */
-      if (h.createdAt <= sayimAni) continue;
-      if (h.occurredAt < sayimAni) {
+      const sayim = sonSayim.get(h.variantId)!;
+      /** ⚠ İKİ ŞART BİRDEN: sayım KAYDEDİLDİKTEN sonra yazılmış OLACAK
+       *  ve iş tarihi sayımın İŞ TARİHİNDEN önce OLACAK. */
+      if (h.createdAt <= sayim.yazilis) continue;
+      if (h.occurredAt < sayim.is) {
         geriyeDonuk++;
         tipDagilim.set(h.type, (tipDagilim.get(h.type) ?? 0) + 1);
         if (ornek.length < 8) {

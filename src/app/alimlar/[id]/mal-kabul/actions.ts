@@ -10,6 +10,20 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { alimDurumunuHesapla, kalemTeslimAlinanlar } from "@/lib/stok";
 
+/**
+ * SAYIM KORUMASI YOK: kapı bu yola HENÜZ BAĞLANMADI (K84, 29.08.2026).
+ *
+ * Kural ve saf gövde hazır (`lib/sayim-korumasi.ts`), bekçisi koşuyor
+ * (`sayim-korumasi:dogrula`). Eksik olan tek şey KULLANICI TARAFI:
+ * duraksama bir soru sorar ve "ısrar edersen iz bırakarak geçer" yolu
+ * gerektirir; o ekran yok. Kapıyı ekransız bağlamak, meşru bir işi
+ * SESSİZCE kilitlerdi — anayasadaki "kural doğru mu değil, teslim
+ * edilebilir mi" süzgeci tam burada durduruyor.
+ *
+ * Bu beyan bir gerekçe DEĞİL, BORÇ KAYDIDIR: yeni açılan bir yol bekçiye
+ * takılır ve bu satırı kopyalamak zorunda kalan kişi borcu görür.
+ */
+
 export type MalKabulDurumu = {
   hatalar?: string[];
 };

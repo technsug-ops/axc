@@ -1099,7 +1099,78 @@ ve yeniden sayılması istenir.
 > ZORUNDA. Geçmeyen çağrı, yanında `SAYIM KORUMASI YOK: <gerekçe>` beyanı
 > taşımıyorsa KIRMIZI. İki yönde mutasyonla sınanır.
 
-⛔ **KOD YAZILMADI — tasarım onayı bekliyor.**
+### ✅ GERİ ALMA KAPISI KOŞULDU [29.08.2026] — ÇALIŞIYOR
+
+_"Ölçüt sınandı, kapı sınanmadı"_ demiştim; kapı da koşuldu.
+⚠ **Önce risk ölçüldü:** artı partilerden tüketim **0**, son 1 saatte başka
+hareket **0** → en kötü ihtimal bir saat önceki hâle dönmekti, o da dosyadan
+yeniden yazılabilirdi.
+
+    yazım        1617 → 1515 · 181 hareket
+    GERİ ALMA    1515 → 1617 · 0 hareket        ✓ tam eski değere döndü
+    yeniden yaz  1617 → 1515 · 181 hareket      ✓ rakamlar BİREBİR aynı
+                 (ARTI +133.823,64 · EKSİ −499.009,17 · net −365.185,53)
+
+⭐ Yeniden yazımın **aynı rakamları** üretmesi ayrıca bir belirlenimlilik
+kanıtı: küme listeden değil ölçütten kuruluyor.
+
+---
+
+## 🔒 K84 — SAYIM KORUMASI · 29.08.2026 · [KURAL VE BEKÇİ HAZIR · KAPI BAĞLI DEĞİL]
+
+**⭐ (c) SORUSUNUN CEVABI — ARTIRAN HAFİF DEĞİL, ve gerekçe FİZİKSEL:**
+
+| yön | ne olur |
+|---|---|
+| **DÜŞÜREN** (satış · aktarma · eksi düzeltme) | sayılmış malı **yok eder** — rafta vardı, defterden siliniyor |
+| **ARTIRAN** (geç girilen alım) | mal sayım sırasında raftaysa **sayan kişi onu ZATEN saydı**; geriye dönük alım aynı malı **ikinci kez** ekler, stok **şişer** |
+
+⭐ **İkisi de sayımı geçersiz kılar → ikisi de AYNI sertlikte duraksatır.**
+Değişen tek şey **kullanıcıya söylenen cümle**, çünkü yapılacak kontrol farklı.
+
+⚠ **VE KENDİ ÖLÇÜMÜMDE KUSUR BULDUM:** ilk turda sayımın **iş tarihi** ile
+**yazılış anını** tek değişkende tutmuşum; meşru hareketleri tehlikeli
+gösteriyordu. İki çıpa ayrıldı, ölçüm tekrarlandı:
+
+    iş tarihi sayımdan SONRA (normal) : 16 → 11
+    ⛔ iş tarihi sayımdan ÖNCE         : 15   (değişmedi, hepsi `PURCHASE_IN`)
+
+⚠ **VE ÖRNEKLEM DAR OLDUĞU YAZILI:** bugünden önce sistemde yalnız birkaç
+sayım vardı; _"yalnız alım geriye dönüyor"_ gözlemi **zayıf tabanlı.** Kural
+bu gözleme değil, yukarıdaki **fiziksel gerekçeye** dayanıyor.
+
+**TESLİM EDİLEN:**
+· `src/lib/sayim-korumasi.ts` — saf gövde. Sayım damgası yoksa/hareket
+  sonraysa/adet 0 ise SERBEST; öncesine yazılıyorsa **DURAKSA** + yön + sebep.
+· ⭐ **AYNI GÜN SERBEST — bilerek:** sayım günü yapılan satış sayımdan önce
+  de sonra da olabilir; kilitlersek sayım gününün TAMAMI kapanırdı.
+  _(FIFO `sinir` kararının TERS yöndeki kardeşi.)_
+· `sayim-korumasi:dogrula` — ① saf gövde **çağrılır**, değeri sınanır
+  ② geriye dönük yazabilen her yol kapıdan geçmeli, geçmiyorsa beyan taşımalı.
+  **Desen yasağı, liste değil.**
+· **DÖRT MUTASYON, DÖRDÜ DE KIRMIZI:** artıranı serbest yapan · aynı günü
+  kilitleyen · korumayı kaldıran · beyansız yol ekleyen.
+
+### ⛔ KAPI HİÇBİR YOLA BAĞLANMADI — VE BU KODA YAZILI
+
+Dokuz yolun dokuzunda `SAYIM KORUMASI YOK:` **borç kaydı** duruyor. Gerekçe
+uydurulmadı; beyan aynen şunu diyor: _"kapı henüz bağlanmadı, eksik olan
+KULLANICI TARAFI — duraksama bir soru sorar ve ısrar yolu gerektirir, o ekran
+yok. Ekransız bağlamak meşru bir işi SESSİZCE kilitlerdi."_
+
+⚠ **VE BİR KAPSAM BULGUSU:** arızayı yapan aktarım **`src/` içinde değil,
+`scripts/` altında.** Bekçi bugün yalnız `src`i tarıyor — betikler kapsam
+dışı. Bu, bekçinin bilinen sınırı olarak burada yazılı.
+
+### İSTİSNA EKRANDA NEREYE — ÖNERİ
+
+Halil: _"AuditLog yeterli değil, kullanıcı yeniden sayması gerektiğini
+bilmeli."_ Katılıyorum. Önerim:
+· **Uyarı merkezine YENİ ANAHTAR:** `sayimGecersizlesti` — _"N varyantın
+  sayımı geçersizleşti, yeniden sayılmalı."_ Bu kalem **kapatılabilir**
+  (yeniden say → kapanır), yani K49 ölçütünü geçiyor: uyarı kutusuna girer.
+· Rakama tıklayınca **süzülmüş liste** açılır (İlke #16).
+⛔ Yazılmadı — kapı bağlanmadan uyarının besleyeceği veri doğmaz.
 
 ---
 

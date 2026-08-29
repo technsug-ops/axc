@@ -10,6 +10,20 @@ import { yetkiIste } from "@/lib/yetki";
 import type { Currency } from "@/generated/prisma/enums";
 
 /**
+ * SAYIM KORUMASI YOK: kapı bu yola HENÜZ BAĞLANMADI (K84, 29.08.2026).
+ *
+ * Kural ve saf gövde hazır (`lib/sayim-korumasi.ts`), bekçisi koşuyor
+ * (`sayim-korumasi:dogrula`). Eksik olan tek şey KULLANICI TARAFI:
+ * duraksama bir soru sorar ve "ısrar edersen iz bırakarak geçer" yolu
+ * gerektirir; o ekran yok. Kapıyı ekransız bağlamak, meşru bir işi
+ * SESSİZCE kilitlerdi — anayasadaki "kural doğru mu değil, teslim
+ * edilebilir mi" süzgeci tam burada durduruyor.
+ *
+ * Bu beyan bir gerekçe DEĞİL, BORÇ KAYDIDIR: yeni açılan bir yol bekçiye
+ * takılır ve bu satırı kopyalamak zorunda kalan kişi borcu görür.
+ */
+
+/**
  * ============================================================================
  *  SAYIM FARKINI YAZ (K57 ②) — DEFTERE DOKUNAN TEK YER
  * ----------------------------------------------------------------------------
