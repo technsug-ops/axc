@@ -154,6 +154,8 @@
     "canli:sinir-olcum": "tsx scripts/canli-sinir-olcum.ts",
     "canli:hurda-caprazi": "tsx scripts/canli-hurda-caprazi.ts",
     "fifo-sinir:dogrula": "tsx scripts/fifo-sinir-dogrula.ts",
+    "canli:coklu-adet": "tsx scripts/canli-coklu-adet.ts",
+    "canli:birim-fiyat-onar": "tsx scripts/canli-birim-fiyat-onar.ts",
     "canli:test-artiklari": "tsx scripts/canli-test-artiklari.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",

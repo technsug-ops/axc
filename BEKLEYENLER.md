@@ -905,6 +905,72 @@ bekliyor ve `lt`/`lte` sorusu önce ölçülmeli.
 
 ---
 
+## 🚨 K82 — ÇOKLU ADETTE BİRİM FİYAT BÖLÜNÜYORDU · 29.08.2026 · [KAPANDI]
+
+> **HALİL BULDU.** _"2 adet × ₺2.074 satılmış ama sistem birim fiyatı
+> ₺1.037 gösteriyor ve satış zararda."_ `11373352181`
+
+### ⭐ ÇELİŞKİ BAĞIMSIZ KANITLA ÇÖZÜLDÜ
+
+İki kaynak çelişiyordu: TY API `price=2074` (adet 2) ↔ Halil'in dosyası
+(iki satır, her biri adet 1 × ₺2.074). Hakem **kanalın kendi ödeme kaydı**
+oldu:
+
+    hakediş: SIPARIS_TUTARI 1897,71  ·  SIPARIS_TUTARI 1897,71   (İKİ SATIR)
+             1897,71 = 2074 − 176,29   (2074'ün %8,5'i = komisyon)
+
+İki satır = iki adet · her satır birim fiyattan komisyon düşülmüş hâli.
+⭐ **Birim fiyat 2074, sipariş toplamı 4148. Bölme YANLIŞTI.**
+
+### KÖK — ÖLÇÜM GERÇEKTİ, ÇIKARIM YANLIŞTI
+
+`canli-ty-ice-aktar.ts → birimFiyatCoz` adete bölüyordu. Gerekçesi
+26.08.2026 ölçümüydü: _"adet>1 olan 11 kalemin 11'inde de
+`price === amount`"_. **Ölçüm gerçek, çıkarım yanlış:** o eşitlik **iki
+okumayla da uyumlu** ve rakip hipotezi elemiyor. Ayırt edici kanıt hiç
+aranmamıştı. → Anayasaya madde olarak geçti.
+
+⚠ **VE HATA KENDİNİ EN AZ GÖRÜNÜR KILAN KÜMEDE YAŞIYORDU:** tek adetli 553
+kalemde bölme fark yaratmıyor (`x/1 = x`), yalnız çok adetlilerde bozuyor.
+
+⚠ **VE TEST HATAYI SABİTLEMİŞTİ.** `ice-aktarma:dogrula`da
+_"adet 2 → satır toplamı ikiye bölünür"_ yazılıydı — bir KURALI değil kodun
+DAVRANIŞINI sabitleyen ölçüt. Düzeltmeye kalkanın karşısına kırmızı yanarak
+çıkardı. Tersine çevrildi, **üç mutasyonla** sınandı (bölmeyi geri getiren ·
+adetle çarpan · sıfır kapısını kaldıran) — üçü de kırmızı.
+
+### ✅ ONARIM [KOŞTU] — 7 kalem, hepsi zarardan kâra
+
+    kalem 7 · hepsi adet 2 · hepsi `enumerasyon` kaynaklı
+    ciro 16.766,00 → 33.532,00   ⭐ EKSİK CİRO 16.766,00
+    ⭐ hâlâ NET-1 negatif olan: 0 / 7
+
+| sipariş | NET-1 önce → sonra | NET-2 önce → sonra |
+|---|---|---|
+| `11492207627` | −1.401,70 → **482,77** | −1.170,80 → 396,88 |
+| `11438745987` | −899,08 → **1.643,26** | −753,29 → 1.361,28 |
+| `11431419530` | −377,94 → **4.943,28** | −323,10 → 4.103,10 |
+| `11419703466` | −217,94 → **706,55** | −183,20 → 585,63 |
+| `11399165160` | −286,55 → **1.059,09** | −241,18 → 877,79 |
+| `11373352181` | −1.255,96 → **624,46** | −1.049,52 → 514,63 |
+| `11370752568` | −344,94 → **604,30** | −288,97 → 500,56 |
+
+⭐ **HALİL'İN HESABI BİREBİR TUTTU:** `11373352181` için brüt kâr
+4.148 − 3.036,20 = **1.111,80** (Halil ₺1.112 demişti); kesintiler sonrası
+NET-1 **624,46**.
+
+⚠ **VERDİĞİ BEŞE EK OLARAK İKİ SİPARİŞ DAHA BULUNDU** (`11373352181`
+örnekti, `11399165160` hiç bildirilmemişti) — küme listeden değil
+**ölçütten** kuruldu: `enumerasyon` kaynaklı + adet>1 + iptalsiz.
+
+⛔ **ELLE GİRİLEN 3 ÇOK ADETLİ KALEME DOKUNULMADI** — onların birim fiyatını
+kullanıcı kendi girdi, bölme oraya hiç uğramadı.
+
+**Maliyet tarafı DOĞRUYDU** (FIFO birim maliyeti × adet); yalnız fiyat
+bölünüyordu. Komisyon ORAN olarak saklı olduğu için kendiliğinden düzeldi.
+
+---
+
 ### ⚠ İKİ AÇIK NOT
 
 **· `10415881283` — aynı kampanyanın dördü FARKLI maliyetle duruyor.**

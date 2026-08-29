@@ -71,17 +71,33 @@ function blok(metin: string, baslangic: string, uzunluk: number): string {
 console.log("\nİÇE AKTARMA BEKÇİSİ — A3-③\n");
 
 // ═══ ① SAF KURAL: birim fiyat ══════════════════════════════════════════════
-console.log("① birimFiyatCoz — `price` satır toplamıdır");
+console.log("① birimFiyatCoz — `price` BİRİM fiyattır (hakedişle kanıtlandı)");
 /**
- * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: adet 1 seçilseydi
- * bölme yapılsa da yapılmasa da aynı sonuç çıkardı ve mutasyon YEŞİL
- * kalırdı. Adet 2 ve 3, bölmeyi kaldıran her mutasyonu kırmızıya çevirir.
+ * ⛔ BU BLOK 29.08.2026'DA TERSİNE ÇEVRİLDİ VE SEBEBİ YAZILI.
+ * Önce şunu sabitliyordu: _"adet 2 → satır toplamı ikiye bölünür"_.
+ *
+ * ⚠ O ÖLÇÜT BİR KURALI DEĞİL, KODUN O ANDAKİ DAVRANIŞINI sabitliyordu —
+ * ve davranış hatanın kendisiydi. Anayasa: _"bekçi ölçütü kuralı
+ * sabitler, davranışı değil; gerekçe yazılamayan ölçüt yazılmamalıdır."_
+ * Gerekçe olarak _"price === amount ölçüldü"_ yazılıydı, ama o eşitlik
+ * iki okumayla da uyumluydu; ayırt edici kanıt hiç aranmamıştı.
+ *
+ * ⭐ AYIRT EDİCİ KANIT — KANALIN KENDİ ÖDEME KAYDI:
+ * `11373352181` · adet 2 · `price` 2074 · komisyon %8,5 →
+ * hakedişte İKİ satır, her biri 1897,71 = 2074 − 176,29.
+ * Yani TY birim başına ödemiş; birim fiyat 2074, sipariş toplamı 4148.
+ *
+ * ⚠ VE ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİR: adet 1 seçilseydi
+ * bölünse de bölünmese de aynı sonuç çıkardı ve mutasyon YEŞİL kalırdı.
+ * Adet 2 ve 3, bölmeyi GERİ GETİREN her mutasyonu kırmızıya çevirir.
  */
-kontrol("adet 2 → satır toplamı ikiye bölünür", birimFiyatCoz(1623, 2) === 811.5);
-kontrol("adet 3 → üçe bölünür", birimFiyatCoz(2400, 3) === 800);
+kontrol("adet 2 → BÖLÜNMEZ, birim aynen kalır", birimFiyatCoz(1623, 2) === 1623);
+kontrol("adet 3 → BÖLÜNMEZ", birimFiyatCoz(2400, 3) === 2400);
 kontrol("adet 1 → değişmez", birimFiyatCoz(1885, 1) === 1885);
-kontrol("gerçek canlı satır 7165/2", birimFiyatCoz(7165, 2) === 3582.5);
-kontrol("adet 0 → null (sıfıra bölünmez)", birimFiyatCoz(1000, 0) === null);
+kontrol("gerçek canlı satır 2074 (adet 2)", birimFiyatCoz(2074, 2) === 2074);
+/** ⭐ ADETLE ÇARPMA DA YOK — motor zaten `× quantity` yapıyor. */
+kontrol("adet 2 → ÇARPILMAZ da (çift sayım olurdu)", birimFiyatCoz(1623, 2) !== 3246);
+kontrol("adet 0 → null (kalem yazılmaz)", birimFiyatCoz(1000, 0) === null);
 kontrol("adet negatif → null", birimFiyatCoz(1000, -1) === null);
 kontrol("NaN → null", birimFiyatCoz(Number.NaN, 2) === null);
 

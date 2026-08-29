@@ -58,28 +58,40 @@ type Kaynak = "enumerasyon" | "hakediş çaprazı";
 type Kalem = { barkod: string; adet: number; birimFiyat: number; kdv: number | null; komisyon: number | null };
 
 /**
- * ═══ `price` SATIR TOPLAMIDIR, BİRİM FİYAT DEĞİL — ÖLÇÜLDÜ ═══════════════
+ * ═══ `price` BİRİM FİYATTIR — HAKEDİŞLE KANITLANDI (29.08.2026) ══════════
  *
- * ⚠ CANLI ÖLÇÜM 26.08.2026, adet>1 olan 11 kalemin **11'inde de**
- * `price === amount`, yani satırın tamamı:
+ * ⛔ BU GÖVDE ÖNCE BÖLÜYORDU VE YANLIŞTI. Eski gerekçe SİLİNMİYOR (anayasa:
+ * "karar çevrildiğinde önceki savunma, NİYE çevrildiğiyle birlikte
+ * dosyada bırakılır"):
  *
- *     adet=2  amount=1623  price=1623   → birim 811,50
- *     adet=2  amount=3899  price=3899   → birim 1949,50
- *     adet=2  amount=7215  price=7165   → birim 3582,50
+ *   _26.08.2026 ölçümü: adet>1 olan 11 kalemin 11'inde de `price === amount`.
+ *   Buradan "price satırın tamamıdır" sonucu çıkarıldı ve adete bölündü._
  *
- * Alan adı "price" birim fiyat gibi OKUNUYOR ve tam bu yüzden sorgusuz
- * geçilirdi. Ham yazılsaydı çok adetli her kalem **iki katı** birim
- * fiyatla girerdi ve `unitPriceAmount × quantity` gerçek cironun iki katını
- * verirdi — üstelik tek adetli 553 kalemde DOĞRU görüneceği için
- * gözden kaçardı. _(Anayasa: "bir alanın ADI, içeriğinin NE OLDUĞUNU
- * söylemez".)_
+ * ⚠ ÖLÇÜM GERÇEKTİ, ÇIKARIM YANLIŞTI. `price === amount` eşitliği İKİ
+ * OKUMAYLA DA UYUMLUDUR; ayırt edici kanıt hiç aranmamıştı.
  *
- * ⚠ SIFIRA BÖLÜNMEZ: `quantity` 0 gelirse kalem yazılmaz — çağıran taraf
- * bunu ayrı sayar.
+ * ⭐ AYIRT EDİCİ KANIT — KANALIN KENDİ ÖDEME KAYDI (hakediş):
+ * `11373352181` · adet 2 · API `price` 2074 · komisyon oranı %8,5
+ *
+ *     hakediş: SIPARIS_TUTARI 1897,71  ·  SIPARIS_TUTARI 1897,71   (İKİ SATIR)
+ *     1897,71 = 2074 − 176,29   (2074'ün %8,5'i)
+ *
+ * Trendyol BİRİM BAŞINA 1897,71 ödemiş ve İKİ satır yazmış. Yani birim
+ * fiyat 2074, sipariş toplamı 4148. Bölme, ciroyu ve komisyonu YARIYA
+ * indiriyordu; altı siparişin altısı da bu yüzden ZARARDA görünüyordu.
+ * _(Kaynak önceliği: kanalın kendi belgesi > bizim çıkarımımız.)_
+ *
+ * ⚠ VE ADI YİNE ALDATICI DEĞİLDİ: alan "price" ve gerçekten birim fiyat.
+ * Yanlış olan, adına DEĞİL, sınanmamış bir çıkarıma güvenmekti.
+ *
+ * ⛔ ADETLE ÇARPMA DA YOK: motor zaten `unitPriceAmount × quantity`
+ * yapıyor (`kar.ts` → `satisTutari`). Burada çarpmak çift sayım olurdu.
  */
-export function birimFiyatCoz(satirToplami: number, adet: number): number | null {
-  if (!Number.isFinite(satirToplami) || !Number.isFinite(adet) || adet <= 0) return null;
-  return Math.round((satirToplami / adet) * 10000) / 10000;
+export function birimFiyatCoz(birimFiyat: number, adet: number): number | null {
+  if (!Number.isFinite(birimFiyat) || !Number.isFinite(adet) || adet <= 0) {
+    return null;
+  }
+  return birimFiyat;
 }
 
 type Aday = {

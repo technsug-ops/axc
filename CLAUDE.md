@@ -792,6 +792,53 @@ _(Bu, "eşik dağılımın gediğine konur" ve "eşik ölçüldüğü popülasyo
 dışına uygulanamaz" derslerinin KISIT tarafı: orada bir uyarı eşiği
 yanlış yanıyordu, burada bir kısıt doğru kaydı engelleyecekti.)_
 
+### İKİ OKUMAYLA DA UYUMLU BİR GÖZLEM, HİÇBİRİNİ KANITLAMAZ (KESİN KURAL)
+
+_Halil'in bulduğu canlı hata 29.08.2026, çoklu adet._ Bir ölçüm GERÇEK
+olabilir, sayılar DOĞRU olabilir ve buradan çıkarılan sonuç yine de yanlış
+olabilir — çünkü **gözlem, rakip hipotezi elemeye yetmiyordur.**
+
+**Vaka:** TY API içe aktarması şu ölçüme dayanıyordu ve ölçüm gerçekti:
+
+    26.08.2026 · adet>1 olan 11 kalemin 11'inde de `price === amount`
+
+Buradan _"price satırın tamamıdır"_ sonucu çıkarıldı ve fiyat adete
+bölündü. **Ama `price === amount` eşitliği İKİ OKUMAYLA DA UYUMLUDUR:**
+alan birim fiyatsa da eşit olabilir, satır toplamıysa da. Gözlem hiçbirini
+elemiyordu; **ayırt edici kanıt hiç aranmadı.**
+
+Bedeli: çok adetli her satış cironun **yarısıyla** girdi ve **ZARARDA**
+göründü. Tek adetli 553 kalemde doğru göründüğü için de gözden kaçtı —
+hata, kendini en az görünür kılan kümede yaşıyordu.
+
+**⭐ AYIRT EDİCİ KANIT KANALIN KENDİ ÖDEME KAYDINDAYDI:**
+
+    11373352181 · adet 2 · price 2074 · komisyon %8,5
+    hakediş: SIPARIS_TUTARI 1897,71  ·  SIPARIS_TUTARI 1897,71   (İKİ SATIR)
+             1897,71 = 2074 − 176,29
+
+İki satır = iki adet, ve her satır birim fiyattan komisyon düşülmüş hâli.
+Bu gözlem **yalnız bir okumayla uyumlu**: `price` birim fiyattır.
+
+> **KURAL:** bir alanın anlamı hakkında hüküm kurmadan önce sorulur —
+> **bu gözlem, rakip okumayı ELİYOR mu?** Elemeyen gözlem, kaç kayıtta
+> tekrarlarsa tekrarlasın kanıt değildir. Ayırt edici kanıt, iki okumanın
+> FARKLI sonuç vereceği bir yerden gelir; bu vakada kanalın kendi ödeme
+> kaydı öyle bir yerdi.
+
+⚠ **VE TEST HATAYI SABİTLEMİŞTİ.** `ice-aktarma:dogrula` şunu ölçüyordu:
+_"adet 2 → satır toplamı ikiye bölünür"_. Ölçüt bir KURALI değil, kodun o
+anki DAVRANIŞINI sabitliyordu ve davranış hatanın kendisiydi — yani bekçi,
+hatayı düzeltmeye kalkanın karşısına kırmızı yanarak çıkardı.
+_(Bkz. "bekçi ölçütü kuralı sabitler, davranışı değil".)_ Ölçüt tersine
+çevrildi ve **üç mutasyonla** sınandı: bölmeyi geri getiren · adetle
+çarpan · sıfır adet kapısını kaldıran; üçü de kırmızı yandı.
+
+⚠ **VE "BİRİM Mİ TOPLAM MI" SORUSU HER İKİ TARAF İÇİN AYRI SORULUR:**
+satış fiyatı için de, maliyet için de. Bu vakada maliyet DOĞRUYDU (FIFO
+birim maliyeti × adet) ve yalnız fiyat tarafı bölünmüştü; ikisini birden
+kontrol etmeyen bir bakış, doğru olan tarafı da bozabilirdi.
+
 ### İMKÂNSIZ GÖRÜNEN DEĞER ÖNCE DOĞRULANIR — DÜZELTİLMEZ (KESİN KURAL)
 
 _Ders 19.08.2026, OneBlade vakası._ Bir uyarının görevi **baktırmaktır**,
