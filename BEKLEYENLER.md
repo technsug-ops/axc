@@ -1441,6 +1441,53 @@ Halil'in **henüz girmediği 3 satış** var (`axcali2997`). Girildiğinde stok
 
 ---
 
+## 🆕 K89 — AD KARMAŞASININ SOMUT KANITI · 29.08.2026 · [ÖLÇÜLDÜ]
+
+Dosya: `ISIM UZELLMEMIS.xlsx` · md5 **8e6df13a…** (teyit edildi) · 44 satır,
+tek ürün (`LEGO Disney 43217 Up House`).
+
+    ⭐ AD tekil değer : 5     ← aynı ürün, beş ad
+    ⭐ SKU tekil      : 3     ← 41'i aynı: 5702017424842
+
+**Beş ad:** ikisi görünmez karakterle ayrışıyor — `│` (U+2502) ve `|`
+(U+007C). Gözle bakan "aynı ad" der, makine "farklı" der.
+
+⭐ **AD EŞLEŞTİRMEYİ REDDETME KARARININ (26.08) SOMUT KANITI.** Karcher
+`SC 3 → SC 4` vakasının kardeşi: orada ad **yanlış ürünü** buluyordu,
+burada ad **aynı ürünü beş parçaya** bölüyor. Kodla eşleşen 41 satır
+sorunsuz.
+
+⚠ **AMA "SKU HEP AYNI" DEĞİL — KALAN ÜÇÜ ÖLÇÜLDÜ:** `trendyol` (2) ve
+`B0BBSBDCP7` (1, Amazon ASIN'i). Yani kod sütunu da kirli; ad eşleştirmesi
+reddedilirken bu üçü **başka bir kovaya** düşer, sessizce geçmez.
+
+### ⛔ VE "FİRMA BARKODU BOŞ" TESPİTİ SİSTEME UYMUYOR — ÖLÇÜLDÜ
+
+Dosyada `AXCALI BARKOD` sütunu **44/44 boş** ✓. Ama bu, üründe firma
+kimliği olmadığı anlamına GELMİYOR:
+
+    SİSTEMDE (1104 varyant)
+      Firma SKU BOŞ         : 0     %0,0
+      Barkod (EAN) BOŞ      : 1     %0,1
+      HEM ikisi birden boş  : 0
+
+⭐ **Boşluk DOSYANIN sütununda, KATALOGDA değil.** K35 (firma etiketi)
+kaleminin gerekçesi bu rakamla **zayıflıyor** — okutulacak kimliği olmayan
+varyant yok. _(Kalem kapanmıyor ama gerekçesi düzeltiliyor: sorun etiket
+eksikliği değil, dosyaya yazılmaması.)_
+
+### ⛔ İSİM DÜZELTME GEREKMİYOR — SİSTEMDE ZATEN İKİ AD VAR, BEŞ DEĞİL
+
+    OYU-LG-598P-01  5702017866932  LEGO ® Disney "Yukarı Bak" Evi 43217 …
+    axcali2601      5702017424842  Disney 43217 'Up' House
+    ⭐ sistemdeki tekil ad: 2   (dosyada 5)
+
+Beş ad **pazaryerinden gelen satış dosyasının** metni; katalogda karşılığı
+yok. Mükerrer çift birleşince **tek ad kalır** — ayrı bir isim temizliği
+işine gerek yok.
+
+---
+
 ### ⚠ İKİ AÇIK NOT
 
 **· `10415881283` — aynı kampanyanın dördü FARKLI maliyetle duruyor.**
