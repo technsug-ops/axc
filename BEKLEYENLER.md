@@ -1026,7 +1026,80 @@ partileri bekleyen bir bağlama işi yok.
 Kimlik listesi DEĞİL: `note` içinde `sayim-fiziksel-20260829` geçen
 hareketler. `npm run canli:sayim-esas -- --geri`
 
-⛔ **YAZILMADI — Halil'in onayı bekleniyor.**
+### ✅ YAZILDI [KOŞTU 29.08.2026] — 181 hareket
+
+    yazılan hareket 181 (COUNT_CORRECTION) · eksi 132 · artı 49
+    net stok 1617 → 1515   fark −102   (beklenen −102)   ✓
+    envanter değeri: ARTI +₺133.823,64 · EKSİ −₺499.009,17
+    ⭐ NET −₺365.185,53
+
+⭐ **DOĞRULAMA — SAYILAN 207 VARYANTIN 207'Sİ ARTIK TUTUYOR:**
+kuru koşum yeniden koşuldu → `tutuyor 207 · fazla 0 · az 0 · net 0`.
+**İkinci koşum: 0 yeni hareket** (betik kendi damgasını görüp duruyor).
+
+⚠ **RAKAM 103 DEĞİL 102 ÇIKTI VE SEBEBİ YAZILI:** kuru koşum ile yazım
+arasında bir varyantın farkı kapandı (defter oynadı). Ölçüm anı ile yazım
+anı aynı an değildir; sapma değil, zamandır.
+
+**7 NO_COST PARTİ** (FIFO'da hiç parti yok, maliyet UYDURULMADI):
+`axcali1604` +1 · `axcali1696` +1 · `axcali1820` +2 · `axcali2587` +2 ·
+`axcali2601` +14 · `axcali2850` +2 · `KOZ-PH-BRI92-01` +1
+
+**İZ:** `AuditLog → FIZIKSEL_SAYIM_ESAS_ALINDI` · 1748 karakter, JSON
+sağlam. ⭐ **Sayım anındaki fark (①) ize YAZILDI** — `tutuyor 106 · fazla 52
+· az 49 · net −103` orada duruyor, kaybolmuyor.
+
+**GERİ ALMA ÖLÇÜTÜ DOĞRULANDI:** `note` içinde sayım kodu geçen hareket
+**181/181** buluyor.
+⚠ **AMA TAM TUR CANLIDA KOŞULMADI** — 181 hareketi silip yeniden yazmak,
+arada stoğu yanlış bırakırdı. **Ölçüt sınandı, kapı sınanmadı;** istenirse
+koşulur. _(Dürüstlük notu: dün kargo yazımında geri alma yolu bozuktu ve
+ancak sorulunca çıktı.)_
+
+⚠ **İKİ DEFTER:** 102 varyantın 100'ünde `ledger = FIFO`. Ayrışık 2
+(`axcali1660` · `axcali1610`) — **dünkü `EXCHANGE_OUT` partisiz çıkış
+vakasının aynısı, yeni ayrışma DOĞMADI.**
+
+---
+
+## 🆕 K84 — SAYIM KORUMASI · 29.08.2026 · [ÖLÇÜLDÜ, KOD YAZILMADI]
+
+Ölçüm: `npm run canli:sayim-korumasi` (salt okuma).
+
+**① STOK YAZAN 10 YOL — DOKUZU GERİYE DÖNÜK YAZABİLİYOR.** Yalnız
+`iadeler/bildirim-actions` `new Date()` kullanıyor; kalan dokuzun tarihi
+dışarıdan geliyor (dosya · form · satış tarihi).
+
+**② ⭐ MEŞRU GERİYE DÖNÜK VAKA VAR — TAM YASAK YANLIŞ OLURDU:**
+
+    sayımdan SONRA yazılan hareket
+      iş tarihi sayımdan SONRA (normal) : 16
+      ⛔ iş tarihi sayımdan ÖNCE         : 15   ← HEPSİ `PURCHASE_IN`
+
+Onbeşi de **geç girilen alım** (`OYU-LG-598P-01`, iş tarihi ocak/mart,
+yazılış 26.08). Yasaklasaydık gerçekten olmuş bir mal kabulünü kaydetmek
+imkânsızlaşırdı. _(29.08 `sinir` dersinin aynısı: makul görünen kısıt
+çalışan akışı kilitler.)_
+
+**③ YÖN AYRIMI — ASIL TEHLİKE AŞAĞI YÖNDE:**
+· stoğu **ARTIRAN** geç kayıt (alım) sayılmış rafı düşürmez; sayımın
+  "fazla" dediğini haklı çıkarabilir — çelişki değil, bilgi.
+· stoğu **DÜŞÜREN** geç kayıt (satış · içe aktarma · düzeltme) sayılmış
+  malı yok eder. **29.08 arızasının kaynağı bu.**
+
+**④ ÖNERİ — YASAK DEĞİL DURAKSAMA (⛔ kod yazılmadı):**
+(a) sayım damgasından öncesine yazılacaksa işlem **DURUR ve sebebi
+yazar**; kullanıcı ısrar ederse istisna **iz bırakarak** geçer.
+(b) geçen her istisnada varyant **"sayım geçersizleşti"** diye işaretlenir
+ve yeniden sayılması istenir.
+
+**⑤ BEKÇİ ÖNERİSİ — desen yasağı, liste değil:**
+> `stockMovement.create` çağıran ve `occurredAt`i sabit OLMAYAN her yol,
+> yazmadan önce `sayimKorumasi(variantId, occurredAt)` kapısından geçmek
+> ZORUNDA. Geçmeyen çağrı, yanında `SAYIM KORUMASI YOK: <gerekçe>` beyanı
+> taşımıyorsa KIRMIZI. İki yönde mutasyonla sınanır.
+
+⛔ **KOD YAZILMADI — tasarım onayı bekliyor.**
 
 ---
 

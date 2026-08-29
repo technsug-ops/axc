@@ -839,6 +839,47 @@ satış fiyatı için de, maliyet için de. Bu vakada maliyet DOĞRUYDU (FIFO
 birim maliyeti × adet) ve yalnız fiyat tarafı bölünmüştü; ikisini birden
 kontrol etmeyen bir bakış, doğru olan tarafı da bozabilirdi.
 
+### FİZİKSEL SAYIM SON SÖZDÜR (KESİN KURAL)
+
+_Kullanıcı kararı 29.08.2026, 7 saatlik sayımdan sonra._ Kayıttan türetilen
+hiçbir değer, **sayılmış bir stoğu sessizce ezemez.** Aktarım sırası
+sayımdan ÖNCE gelir; sonra gelen bir aktarım sayımı geçersiz kılıyorsa bu
+bir hata değil **TASARIM KUSURUDUR** — sıra hiç tanımlanmamıştır.
+
+**Vaka:** Halil 7 saat fiziksel sayım yaptı ve _"esas unsur fiziki
+varlıktır"_ dedi. Sonraki Excel aktarımları stoğu bozdu; ortalık karıştı.
+Kimse hata yapmadı — **sistem hangi kaynağın üstün olduğunu hiç
+söylememişti.**
+
+> **KURAL:** stok yazan her yol, yazacağı hareketin **iş tarihi** ile o
+> varyantın **son sayım damgası** arasındaki ilişkiyi bilmek zorundadır.
+> Sayımdan öncesine yazacaksa **sessizce yazamaz.**
+
+⚠ **AMA TAM YASAK DEĞİL — ÖLÇÜLDÜ.** İlk akla gelen çare _"sayımdan sonra
+geriye dönük hareket yazılamaz"_ idi. Ölçüm meşru vaka gösterdi:
+
+    sayımdan SONRA yazılan hareket:
+      iş tarihi sayımdan SONRA (normal) : 16
+      iş tarihi sayımdan ÖNCE           : 15   ← hepsi `PURCHASE_IN`
+
+Onbeşi de **geç girilen ALIM** — yani gerçekten olmuş bir mal kabulünün
+kaydı. Tam yasak, çalışan bir işi kilitlerdi. _(29.08'de `sinir`
+kararında aynı tuzağa düşülüyordu: `soldAt` sınırı defterin %48,72'sini
+kilitleyecekti.)_
+
+**⭐ DOĞRU ŞEKİL — YASAK DEĞİL DURAKSAMA:**
+· sayım damgasından öncesine yazılmak isteniyorsa işlem **DURUR** ve
+  **NE OLDUĞU SÖYLENİR** (İlke #5);
+· kullanıcı ısrar ederse istisna **İZ BIRAKARAK** geçer _(anayasadaki
+  "uyarı sorar, kullanıcı ısrar ederse istisna kaydedilir" kuralı)_;
+· geçen her istisnada o varyant **"sayım geçersizleşti"** diye işaretlenir
+  ve yeniden sayılması istenir — sessizce ezilmez.
+
+⚠ **VE YÖN AYRIMI ÖNEMLİ:** stoğu ARTIRAN geç kayıt (alım) sayılmış rafı
+düşürmez; sayımın "fazla" dediği rakamı **haklı çıkarabilir** — bu bir
+çelişki değil, bilgidir. Stoğu DÜŞÜREN geç kayıt (satış, düzeltme) ise
+sayılmış malı yok eder ve asıl tehlike odur.
+
 ### İMKÂNSIZ GÖRÜNEN DEĞER ÖNCE DOĞRULANIR — DÜZELTİLMEZ (KESİN KURAL)
 
 _Ders 19.08.2026, OneBlade vakası._ Bir uyarının görevi **baktırmaktır**,

@@ -157,6 +157,7 @@
     "canli:coklu-adet": "tsx scripts/canli-coklu-adet.ts",
     "canli:birim-fiyat-onar": "tsx scripts/canli-birim-fiyat-onar.ts",
     "canli:sayim-esas": "tsx scripts/canli-sayim-esas.ts",
+    "canli:sayim-korumasi": "tsx scripts/canli-sayim-korumasi.ts",
     "canli:test-artiklari": "tsx scripts/canli-test-artiklari.ts",
     "canli:net2-durum": "tsx scripts/canli-net2-durum.ts",
     "canli:satis-sayaci": "tsx scripts/canli-satis-sayaci.ts",

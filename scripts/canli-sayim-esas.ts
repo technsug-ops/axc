@@ -255,7 +255,7 @@ async function main() {
 
   /** EKSİ yönde: FIFO'dan düşer, maliyeti gider olur. */
   let eksiDeger = 0, eksiYetersiz = 0;
-  const { acikPartiler, fifoDagit } = await import("../src/lib/stok");
+  const { acikPartiler, fifoDagit, gunSonu } = await import("../src/lib/stok");
   for (const s of eksiler) {
     const partiler = await acikPartiler(p, s.id);
     const d = fifoDagit(partiler, Math.abs(s.farkBugun));
@@ -295,7 +295,127 @@ async function main() {
     await p.$disconnect();
     return;
   }
-  console.log("\n⛔ YAZIM BU TURDA AÇILMADI — Halil'in onayı bekleniyor.\n");
+  // ═══ YAZIM ═══════════════════════════════════════════════════════════
+  /** ⭐ İKİNCİ KOŞUM SIFIR: bu sayım kodu zaten yazılmışsa DURUR. */
+  const zaten = await p.stockMovement.count({ where: { note: { contains: SAYIM_KODU } } });
+  if (zaten > 0) {
+    console.log("\n⭐ BU SAYIM ZATEN YAZILMIŞ — " + zaten + " hareket var.");
+    console.log("   Yazılacak yeni hareket: 0   (ikinci koşum etkisiz)");
+    console.log("   Geri almak için: npm run canli:sayim-esas -- --geri\n");
+    await p.$disconnect();
+    return;
+  }
+
+  const stokOnce = await p.stockMovement.aggregate({ _sum: { quantityDelta: true } });
+  const an = new Date();
+  an.setUTCHours(0, 0, 0, 0);
+
+  console.log("\n⚠ YAZILIYOR — " + satirlar.filter((x) => x.farkBugun !== 0).length + " varyant");
+  const noCostListe: { sku: string; adet: number; ad: string }[] = [];
+  const yazilamayan: string[] = [];
+  let hareket = 0, artiDegerY = 0, eksiDegerY = 0;
+
+  for (const st of satirlar) {
+    if (st.farkBugun === 0) continue;
+    if (st.farkBugun < 0) {
+      /** EKSİ: FIFO'dan düşer, HER PARTİ İÇİN AYRI hareket (parti izi korunur). */
+      const partiler = await acikPartiler(p, st.id, gunSonu(an));
+      const d = fifoDagit(partiler, Math.abs(st.farkBugun));
+      if (!d.yeterliMi) { yazilamayan.push(st.sku + " (FIFO yetmedi)"); continue; }
+      for (const x of d.dagitim) {
+        await p.stockMovement.create({
+          data: {
+            variantId: st.id, type: "COUNT_CORRECTION", quantityDelta: -x.adet,
+            occurredAt: an, sourceMovementId: x.parti.hareketId,
+            unitCostAmount: x.parti.birimMaliyet === null ? null : String(x.parti.birimMaliyet),
+            unitCostCurrency: x.parti.birimMaliyet === null ? null : "TRY",
+            note: SAYIM_KODU + " · fiziksel sayim esas (Halil, 7 saat). Defter " +
+              st.bugun + ", sayilan " + st.olmasi + ".",
+          },
+        });
+        hareket++;
+        eksiDegerY += x.adet * Number(x.parti.birimMaliyet ?? 0);
+      }
+    } else {
+      /** ARTI: yeni parti. Maliyet FIFO'daki son partiden; yoksa NO_COST. */
+      const sonParti = await p.stockMovement.findFirst({
+        where: { variantId: st.id, quantityDelta: { gt: 0 }, unitCostAmount: { not: null } },
+        orderBy: [{ occurredAt: "desc" }],
+        select: { unitCostAmount: true, unitCostCurrency: true },
+      });
+      const m = sonParti === null ? null : Number(sonParti.unitCostAmount!.toString());
+      if (m === null) noCostListe.push({ sku: st.sku, adet: st.farkBugun, ad: st.ad });
+      else artiDegerY += st.farkBugun * m;
+      await p.stockMovement.create({
+        data: {
+          variantId: st.id, type: "COUNT_CORRECTION", quantityDelta: st.farkBugun,
+          occurredAt: an,
+          unitCostAmount: m === null ? null : String(m),
+          unitCostCurrency: m === null ? null : (sonParti!.unitCostCurrency ?? "TRY"),
+          note: SAYIM_KODU + " · fiziksel sayim esas (Halil, 7 saat). Defter " +
+            st.bugun + ", sayilan " + st.olmasi + "." +
+            (m === null ? " MALIYET BILINMIYOR — parti NO_COST (uydurulmadi)." : ""),
+        },
+      });
+      hareket++;
+    }
+  }
+  console.log("   ⭐ yazılan hareket: " + hareket);
+  if (yazilamayan.length > 0) {
+    console.log("   ⛔ YAZILAMAYAN: " + yazilamayan.join(" · "));
+  }
+
+  const stokSonra = await p.stockMovement.aggregate({ _sum: { quantityDelta: true } });
+  const fark = (stokSonra._sum.quantityDelta ?? 0) - (stokOnce._sum.quantityDelta ?? 0);
+  console.log("\n   DOĞRULAMA:");
+  console.log("     net stok: " + (stokOnce._sum.quantityDelta ?? 0) + " → " +
+    (stokSonra._sum.quantityDelta ?? 0) + "   fark " + fark +
+    "   (beklenen " + b.net + ")" + (fark === b.net ? "   ✓" : "   ⛔"));
+  console.log("     envanter değeri: ARTI +" + t2(artiDegerY) +
+    " · EKSİ −" + t2(eksiDegerY) + "   ⭐ NET " + t2(artiDegerY - eksiDegerY));
+
+  console.log("\n   ⭐ NO_COST PARTİLER (" + noCostListe.length + "):");
+  if (noCostListe.length === 0) console.log("     (yok)");
+  for (const x of noCostListe) {
+    console.log("     " + x.sku.padEnd(18) + "+" + String(x.adet).padStart(3) +
+      " adet · " + x.ad.slice(0, 46));
+  }
+
+  await p.auditLog.create({
+    data: {
+      action: "FIZIKSEL_SAYIM_ESAS_ALINDI",
+      targetType: "StockMovement",
+      detail: JSON.stringify({
+        sayimKodu: SAYIM_KODU,
+        gerekce: "Halil 7 saat fiziksel sayim yapti ve kurali koydu: FIZIKI VARLIK ESASTIR. Sonraki Excel aktarimlari stok rakamlarini bozmustu.",
+        dosya: { ad: "Stok.xlsx", md5: MD5, sayfa: "SELLIORA",
+          trendyolSayfasi: "DAHIL DEGIL — kanal listeleme stogu, ayri kalem." },
+        sayilanSatir: sayilan.length,
+        eslesme: eslesen.length + "/" + sayilan.length,
+        sayimAnindakiFark: {
+          aciklama: "Dosyanin kendi iki sutunu: sayim gunu sistem ne diyordu ile rafta ne vardi. Duzeltme BUNA gore degil, BUGUNKU farka gore yapildi; bu rakam KAYIT olarak duruyor.",
+          tutuyor: a.tutan, sistemFazla: a.fazla, fazlaAdet: a.fazlaAdet,
+          sistemAz: a.az, azAdet: a.azAdet, net: a.net,
+        },
+        bugunkuFark: {
+          tutuyor: b.tutan, sistemFazla: b.fazla, fazlaAdet: b.fazlaAdet,
+          sistemAz: b.az, azAdet: b.azAdet, net: b.net,
+        },
+        sayimdanBuguneKayanSatir: kaymis,
+        yazilan: { hareket, netStokFarki: fark, yazilamayan },
+        envanterDegeri: { arti: artiDegerY.toFixed(2), eksi: eksiDegerY.toFixed(2),
+          net: (artiDegerY - eksiDegerY).toFixed(2) },
+        noCostPartiler: noCostListe,
+        geriAlmaOlcutu: "Kimlik listesi DEGIL: note icinde sayim kodu gecen hareketler. Komut: npm run canli:sayim-esas -- --geri",
+      }),
+    },
+  });
+  console.log("\n   ✓ AuditLog: FIZIKSEL_SAYIM_ESAS_ALINDI");
+  console.log("     ⭐ Sayım anındaki fark (①) ize YAZILDI — kaybolmuyor.");
+
+  console.log("\n" + "=".repeat(104));
+  console.log("YAZILDI. Geri alma: npm run canli:sayim-esas -- --geri");
+  console.log("=".repeat(104) + "\n");
   await p.$disconnect();
 }
 
