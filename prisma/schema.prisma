@@ -406,9 +406,23 @@ model ProductVariant {
   stockMovements     StockMovement[]
   sayimSatirlari     StokSayimSatiri[]
 
+  /// SAYIM GECERSIZLESTI — fiziksel sayimdan SONRA, sayim tarihinden ONCEYE
+  /// bir hareket yazildiginda damgalanir. O varyantin sayimi artik gecerli
+  /// degildir ve YENIDEN SAYILMASI istenir.
+  ///
+  /// NIYE SERBEST METIN DEGIL SUTUN: uyari merkezi "N varyantin sayimi
+  /// gecersizlesti" diye SORGULAMAK zorunda. Merdivende serbest metin
+  /// geriye bakmaya yeter ama sorguya yetmez (anayasa: "geriye bakmak ->
+  /// serbest metin; SORGU -> yapi").
+  ///
+  /// IZ IKI YERDE: burasi SORGU icin, `AuditLog.SAYIM_KORUMASI_ASILDI`
+  /// ise gecmise bakmak icin. Bu sutun silinse bile karar izi kaybolmaz.
+  sayimGecersizAt    DateTime?
+
   @@index([productId])
   @@index([isActive])
   @@index([locationId])
+  @@index([sayimGecersizAt])
 }
 
 /// Varyant seçenekleri (Beden=M, Renk=Kırmızı).

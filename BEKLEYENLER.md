@@ -1292,6 +1292,46 @@ tablo. Kolonla birlikte açmak migration'ı ikiye bölmemek için.
 ⛔ **MIGRATION KOŞULMADI, ŞEMA DEĞİŞMEDİ.** Anayasa: şema commit'i
 migration canlıda koşana kadar push edilmez. **Onay bekliyor.**
 
+### ✅ `sayimGecersizAt` MIGRATION KOŞTU [29.08.2026]
+
+    SQL (yalnız iki ifade, adının dışına çıkmadı):
+      ALTER TABLE `ProductVariant` ADD COLUMN `sayimGecersizAt` DATETIME(3) NULL;
+      CREATE INDEX `ProductVariant_sayimGecersizAt_idx` ON `ProductVariant`(`sayimGecersizAt`);
+
+    ⚠ deploy:bekci ÖNCE  : ÇIKIŞ 1  ← migration koşmadan push edilemez (doğru)
+    canlı migrate         : 40 migration, yenisi uygulandı ✓
+    damga güncellendi     : prisma/canli-migrasyon-damgasi.json (commit edilir)
+    sağlık kontrolü       : 45 tablo · 502 kolon canlıda doğrulandı
+    yerel migrate deploy  : ✓   ·   prisma generate: ✓
+    ⚠ deploy:bekci SONRA : ÇIKIŞ 0  ✓
+
+**MIGRATION SONRASI SAYIM — hepsi tuttu:**
+
+    ProductVariant toplam : 1104   (beklenen 1104)  ✓
+    sayimGecersizAt DOLU  :    0   (beklenen 0)     ✓
+    NULL                  : 1104   ✓ hepsi
+    ⭐ kolon canlıdan OKUNDU: EVET ✓ (axcali3026 → null)
+
+⭐ **Son satır önemli:** kolon yazılarak değil **okunarak** doğrulandı —
+şemada olması canlıda okunabildiğini göstermez _(8cb0023 dersi)_.
+
+⚠ **DEV SUNUCUSU YENİDEN BAŞLATILMALI** — `prisma generate` sonrası çalışan
+sunucu eski istemciyi önbellekte tutar ve "Unknown field" verir. **Bu adım
+Halil'de.**
+
+---
+
+## 📌 PANO — BEKÇİ LİSTESİNİN KÖR NOKTASI KAPANDI
+
+`tsx` ile **doğrudan** koşulan betikler `package.json`da görünmüyor; bekçi
+listesi oradan okunduğu için o betikler **hiçbir listeye girmiyordu.**
+Vaka: `canli-deneme-sifirla` — koşulmuş, canlı veriyi değiştirmiş, bir kısmı
+sonradan geri alınmış, ama hiçbir listede yok.
+
+⭐ **Beyan kuralı bunu kapattı: liste değil, DOSYANIN KENDİSİ konuşuyor.**
+Bir betik `stockMovement.create` çağırıyorsa sınıfını beyan etmek zorunda —
+`package.json`da olsun olmasın.
+
 ## 📐 ISRAR EKRANI — TASARIM (kod yazılmadı)
 
 **NEREDE ÇIKAR:** duraksama, stok yazan **her yolun kendi onay adımında**
@@ -1336,6 +1376,68 @@ YOKTUR (anayasadaki ısrar kuralı).
   o yüzden sütun. _(Anayasa: "geriye bakmak → serbest metin; SORGU → yapı".)_
 
 ⛔ Şema kalemi olduğu için **migration onayı ayrıca istenir.**
+
+---
+
+## 🚨 K88 — İLERİ PARTİ ONARIMININ ÖLÇÜTÜ YANLIŞTI · 29.08.2026 · [DÜZELTİLDİ]
+
+> **HALİL BULDU:** _"bundan sayımda 4 tane saydık, 1 satış girdim, 3 kalması
+> lazım — 20 görünüyor."_ (`axcali2997`)
+
+### ⛔ HATA BENDEYDİ VE ÖNCÜLDEYDİ
+
+`canli-ileri-parti-onar` şu varsayımla çalışıyordu:
+
+    "partisi çıkıştan SONRA tarihli  ⇒  o satışın alımı defterde YOK"
+
+**Yanlış.** Alım çoğu zaman defterde VARDIR, yalnız daha GEÇ tarihle
+girilmiştir. Her ileri bağ için yeni parti açmak **aynı malı iki kez saydı.**
+
+⚠ **VE DOĞRULAMAM YANLIŞ ŞEYİ DOĞRULUYORDU:** _"net stok +809, beklenen
++809 ✓"_ demiştim. Aritmetik doğruydu, **öncül yanlıştı.**
+
+### ✅ DÖRT ADIM — her adımdan sonra ölçüldü
+
+    başlangıç      net stok 1515 · axcali2997 = 20
+    ① sayım geri al        1617 · sayım hareketi 0
+    ② ileri-parti geri al   807 · axcali2997 = −1
+       ⭐ İZ TAM: 810/810 eski bağ geri yüklendi · NO_COST satış 1 → 1
+         (hiçbir satış maliyetini KAYBETMEDİ — yazmadan önce ölçüldü)
+    ③ eksik-alim yaz        830 · negatif stoklu varyant 3 → 0
+    ④ sayım yeniden koş     962 · ⭐ tutuyor 207/207 · net 0
+
+### ⭐ YENİ ÖLÇÜT VE FARKI
+
+    ⛔ ESKİ (ileri bağ başına) : 810 parti · 810 adet · 182 varyant
+    ✅ YENİ (adet açığı)       :   3 parti ·  23 adet ·   3 varyant
+    ⭐ FARK                    : 787 adet AZ
+
+**179 varyantın hiç açığı yokmuş** — alımları defterde zaten vardı.
+Gerçekten eksik olan üç varyant: `axcali2723` +15 · `OYUNEN88141740` +7 ·
+`axcalistan01` +1. Üçünün de maliyeti dosyadan; **NO_COST yok.**
+
+**Yeni ölçüt nasıl çalışıyor:** varyantın hareketleri kronolojik yürütülür;
+stok ilk nerede negatife düşerse parti **o çıkışın tarihine** damgalanır.
+Tarih uydurulmaz, FIFO sırası bozulmaz, varyant başına **tek parti**.
+⚠ Net stoğu ≥ 0 olup geçmişte anlık negatife düşen varyant **kapsam dışı** —
+orada mal alınmış, sadece geç kaydedilmiş; parti eklemek çift sayım olurdu.
+
+### ✅ `axcali2997` KAPANDI
+
+    sistem 6 · Halil 3 · fark −3   ← ölçüldü, VARSAYILMADI
+    6'nın bileşimi: gerçek alım +22 · mal kabul +4 · ③'ün eklediği +7 · satış −27
+    bugünkü satış `11548483041` sistemde VAR ve stok hareketi doğmuş ✓
+    ⭐ COUNT_CORRECTION −3 (FIFO'dan, birim ₺796,00) → SONRA 3 ✓
+    ikinci koşum: "BEKLENEN −3 DEĞİL (0) — YAZILMADI" ✓
+
+⚠ **NİYE 207'LİK KÜMEYE GİRMEMİŞTİ:** sayım dosyasında satırı VAR ama
+`Olması gereken Stok` sütunu **BOŞ**. Boş sütun _"sayılmadı"_ demektir ve
+betik onu bilerek atlar — uydurmamak için.
+
+### ⏭ AÇIK İŞ — HALİL'DE
+
+Halil'in **henüz girmediği 3 satış** var (`axcali2997`). Girildiğinde stok
+**0** olacak ve bu doğru davranıştır. API otomatik çekmiyorsa elle girilecek.
 
 ---
 

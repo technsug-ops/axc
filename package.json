@@ -151,6 +151,8 @@
     "canli:kargo-iz-onar": "tsx scripts/canli-kargo-iz-onar.ts",
     "canli:ileri-parti": "tsx scripts/canli-ileri-parti.ts",
     "canli:ileri-parti-onar": "tsx scripts/canli-ileri-parti-onar.ts",
+    "canli:eksik-alim-onar": "tsx scripts/canli-eksik-alim-onar.ts",
+    "canli:2997-sayim": "tsx scripts/canli-2997-sayim.ts",
     "canli:sinir-olcum": "tsx scripts/canli-sinir-olcum.ts",
     "canli:hurda-caprazi": "tsx scripts/canli-hurda-caprazi.ts",
     "fifo-sinir:dogrula": "tsx scripts/fifo-sinir-dogrula.ts",
