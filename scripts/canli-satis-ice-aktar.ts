@@ -1,15 +1,4 @@
 /** BETIK SINIFI: SUREKLI — Satis dosyasi her yeni dosyada yeniden kosulur. 29.08 arizasini bu sinif yapti. */
-/**
- * SAYIM KORUMASI YOK: kapi bu yola HENUZ BAGLANMADI (K84/K85, 29.08.2026).
- *
- * Bu betik SUREKLI sinifta ve 29.08 arizasini yapan iki aktarimdan biri.
- * Kapinin dogru hali burada SORU SORMAK DEGIL, ATLAYIP RAPORLAMAKTIR:
- * kimse basinda degil, "israr" kavrami betikte yok. Atlanan satir
- * raporda gorunur; sessizce yazilan gorunmez.
- *
- * Bu beyan bir gerekce DEGIL, BORC KAYDIDIR ve bilerek en gorunur yere
- * konuldu: bu dosyayi acan kisi once bunu okur.
- */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
@@ -500,6 +489,41 @@ async function main() {
   }
   console.log(`     ${String(disarida).padStart(5)}  TOPLAM → ${disarida + yazilacaklar.length} = ${veri.length} ${disarida + yazilacaklar.length === veri.length ? "✓" : "⛔"}`);
 
+  /**
+   * ⭐ SAYIM KAPISI KURU KOŞUMDA DA GÖRÜNÜR.
+   *
+   * ⛔ İLK YAZIMDA GÖRÜNMÜYORDU ve bu bir eksikti: kapı yalnız yazım
+   * yolunda raporlanıyordu. Halil kararını KURU KOŞUMLA veriyor; kaç
+   * satırın atlanacağını ancak yazdıktan sonra görmek, kararı kararın
+   * sonucundan sonraya bırakmaktır.
+   */
+  {
+    const { betikSayimKarari, sonSayimTarihleri } =
+      await import("../src/lib/sayim-damgasi");
+    const idler = [...new Set(yazilacaklar.map((c) => c.variantId))];
+    const sonSayimlar = await sonSayimTarihleri(prisma, idler);
+    let atlanacak = 0;
+    let atlanacakAdet = 0;
+    for (const c of yazilacaklar) {
+      const k = betikSayimKarari({
+        sonSayimIsTarihi: sonSayimlar.get(c.variantId) ?? null,
+        hareketIsTarihi: isGunuUtc(c.tarih),
+        adet: -c.s.adet,
+      });
+      if (k.islem === "ATLA") {
+        atlanacak++;
+        atlanacakAdet += c.s.adet;
+      }
+    }
+    console.log(`\n   ⭐ SAYIM KAPISI (projeksiyon)`);
+    console.log(`     sayım damgalı varyant       ${sonSayimlar.size}`);
+    console.log(`     ⛔ ATLANACAK kalem           ${atlanacak}   adet ${atlanacakAdet}`);
+    if (atlanacak > 0) {
+      console.log(`     → satış YAZILIR, stok hareketi YAZILMAZ (NO_COST kalır)`);
+      console.log(`     → gerekçe: sayımdan ÖNCEYE tarihli çıkış, sayılmış malı yok eder`);
+    }
+  }
+
   if (!YAZ) {
     console.log(`\n${"=".repeat(98)}\n  ÖNİZLEME — hiçbir şey yazılmadı. Yazmak için: --yaz\n${"=".repeat(98)}\n`);
     await prisma.$disconnect();
@@ -537,6 +561,22 @@ async function main() {
    * hepsi ileri partiyi yiyecekti ve maliyet yanlış damgalanacaktı.
    */
   const partiler = await acikPartilerToplu(prisma, varyantIds);
+  /**
+   * ⭐ SAYIM KAPISI — anayasa: FİZİKSEL SAYIM SON SÖZDÜR.
+   *
+   * ⚠ SATIŞ YÖNÜ DÜŞÜRENDİR ve asıl tehlike odur: sayımdan ÖNCEYE tarihli
+   * bir çıkış, Halil'in raftan saydığı malı deftere hiç sormadan yok eder.
+   * Betikte soracak kimse yok → **ATLANIR ve RAPORLANIR.**
+   *
+   * ⚠ SATIŞ YİNE YAZILIR, YALNIZ HAREKETİ YAZILMAZ: satış gerçekten oldu
+   * ve ciroya girmeli. Maliyetsiz kalır (`NO_COST`) — bu, uydurma bir
+   * stok çıkışı yazmaktan yeğdir ve zaten "parti yok" dalıyla aynı
+   * davranış. _(Anayasa: "sistem bilmediği şey hakkında yazı yazmaz".)_
+   */
+  const { betikSayimKarari, sonSayimTarihleri } = await import("../src/lib/sayim-damgasi");
+  const sonSayimlar = await sonSayimTarihleri(prisma, varyantIds);
+  console.log(`   sayım kapısı: ${sonSayimlar.size} varyantın sayım damgası var`);
+  const sayimAtlanan: { variantId: string; adet: number; siparis: string }[] = [];
   const kalanPartiler = new Map(varyantIds.map((v) => [v, partiler.get(v) ?? []]));
 
   /** ⚠ TARİH SIRASINDA — eski satış eski partiyi tüketsin. */
@@ -586,6 +626,20 @@ async function main() {
       /** ⭐ SINIR — satışın GÜN SONU'ndan sonra açılan parti tüketilemez. */
       const sinir = gunSonu(isGunuUtc(kalemler[0].tarih));
       for (const kalem of satis.items) {
+        /** ⭐ SAYIM KAPISI — düşüren yön, sayımdan öncesine yazılmaz. */
+        const kapi = betikSayimKarari({
+          sonSayimIsTarihi: sonSayimlar.get(kalem.variantId) ?? null,
+          hareketIsTarihi: isGunuUtc(kalemler[0].tarih),
+          adet: -kalem.quantity,
+        });
+        if (kapi.islem === "ATLA") {
+          sayimAtlanan.push({
+            variantId: kalem.variantId,
+            adet: kalem.quantity,
+            siparis: siparisNo,
+          });
+          continue;
+        }
         const mevcut = kalanPartiler.get(kalem.variantId) ?? [];
         const { uygun, disarida } = partileriSinirla(mevcut, sinir);
         const sonuc = fifoDagit(uygun, kalem.quantity);
@@ -637,6 +691,27 @@ async function main() {
   console.log(`\n⑤ SONRA SAYIM`);
   console.log(`   yazılan satış ${yazilanSatis} · kalem ${yazilanKalem} · hareket ${yazilanHareket}`);
   console.log(`   ⛔ parti yok, hareket atlandı  ${hareketAtlanan}`);
+  /**
+   * ⚠ SAYIM KAPISI HER ZAMAN RAPORLANIR — SIFIRSA DA. "Kapı çalıştı,
+   * kimseyi durdurmadı" ile "kapı hiç çağrılmadı" ekranda ayrı görünmeli.
+   */
+  console.log(`\n   ⭐ SAYIM KAPISI`);
+  console.log(`     sayım damgalı varyant       ${sonSayimlar.size}`);
+  console.log(`     ⛔ ATLANAN (sayımdan önceye) ${sayimAtlanan.length}` +
+    `   adet ${sayimAtlanan.reduce((t, x) => t + x.adet, 0)}`);
+  if (sayimAtlanan.length > 0) {
+    const kimlik = await prisma.productVariant.findMany({
+      where: { id: { in: [...new Set(sayimAtlanan.map((x) => x.variantId))] } },
+      select: { id: true, sku: true },
+    });
+    const ad = new Map(kimlik.map((v) => [v.id, v.sku]));
+    console.log(`     ATLANAN KİMLİKLER (satış · SKU · adet):`);
+    for (const x of sayimAtlanan.slice(0, 40)) {
+      console.log(`       ${x.siparis.padEnd(14)} ${(ad.get(x.variantId) ?? "?").padEnd(18)} ${x.adet}`);
+    }
+    if (sayimAtlanan.length > 40) console.log(`       … +${sayimAtlanan.length - 40}`);
+    console.log(`     → satış YAZILDI, stok hareketi yazılmadı (NO_COST kalır)`);
+  }
   if (hata > 0) console.log(`   ⛔ HATA ${hata}`);
   const satir = (ad: string, o: number, s: number, bek: number) =>
     console.log(`   ${ad.padEnd(15)} ${o} → ${s}   (fark ${s - o}, beklenen ${bek}) ${s - o === bek ? "✓" : "⛔ TUTMADI"}`);

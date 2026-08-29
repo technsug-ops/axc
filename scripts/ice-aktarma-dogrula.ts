@@ -758,7 +758,16 @@ kontrol(
  * birden kırmızı yandı — kod doğruydu, işaret yanlış konumdaydı.
  * İşaret artık yazma DÖNGÜSÜNÜN başına bağlı — üç alan da o pencerede.
  */
-const hareketBloku = blok(alisKaynak, "for (const kalem of alim.items) {", 700);
+/**
+ * ⚠ PENCERE ÖLÇÜLDÜ, TAHMİN EDİLMEDİ — 700 → 2200 (29.08.2026).
+ * Döngüye SAYIM KAPISI eklendi (gerekçe yorumu + karar + iki dal) ve
+ * `stockMovement.create` alanları 700 karakterin dışına taştı; üç kontrol
+ * birden kırmızı yandı. Ölçülen gerçek mesafe **1497** karakter; pencere
+ * büyüme payıyla 2200'e çekildi.
+ * _(Anayasa: "pencere ÖLÇÜLÜR — gövde büyüyünce dar pencere sessizce kör
+ * kalır". Burada kör kalmadı, kırmızı yandı: doğru yön.)_
+ */
+const hareketBloku = blok(alisKaynak, "for (const kalem of alim.items) {", 2200);
 kontrol("PURCHASE_IN yazma bloğu bulundu", hareketBloku.length > 0);
 kontrol(
   "occurredAt Satın Alma Tarihinden, İstanbul gününe indirgenmiş",

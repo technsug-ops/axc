@@ -169,12 +169,114 @@ for (const yol of dosyalar("scripts")) {
     }
     continue;
   }
-  /** SUREKLI ise kapıdan geçmeli ya da beyanlı istisna taşımalı. */
-  if (/\bsayimKorumasi\s*\(/.test(kod)) continue;
+  /**
+   * SUREKLI ise kapıdan geçmeli ya da beyanlı istisna taşımalı.
+   *
+   * ⭐ ÖLÇÜT GENİŞLETİLDİ 29.08.2026 — KOD DEĞİL, ÖLÇÜT ESKİDİ.
+   * Kapı iki yoldan çağrılabiliyor: saf gövde doğrudan (`sayimKorumasi`)
+   * ya da betikler için yön ayrımını yapan sarmalayıcı
+   * (`betikSayimKarari`, `lib/sayim-damgasi.ts`). İkincisi birincisini
+   * ZATEN çağırıyor; ölçüt ada değil KAPIDAN GEÇMEYE bakar.
+   */
+  const kapiCagrisi = /\b(sayimKorumasi|betikSayimKarari)\s*\(/.test(kod);
+  /**
+   * ⛔ EN KRİTİK ÖLÇÜT — "BAĞLI GÖRÜNÜP ÇAĞRILMAYAN" KAPI.
+   * _(Kullanıcı kararı 29.08.2026: "bugünkü durumun kendisi bu.")_
+   *
+   * Bir dosya kapıyı İÇERİ ALIP (import) hiç ÇAĞIRMAZSA, kaynağa bakan
+   * biri korumanın bağlı olduğunu sanır. Bu, deponun en sık hatasının
+   * (dize davranışın vekilidir) tam kendisi ve bugün canlıda yaşandı:
+   * gövde vardı, bekçi yeşildi, 35 ölçüt geçiyordu, **hiçbir yol
+   * çağırmıyordu.**
+   */
+  /** ⚠ Statik VE dinamik ithal — betikler `await import(...)` kullanıyor. */
+  const kapiIthali =
+    /from\s+["'][^"']*sayim-(korumasi|damgasi)["']/.test(kod) ||
+    /import\s*\(\s*["'][^"']*sayim-(korumasi|damgasi)["']\s*\)/.test(kod);
+  if (kapiIthali && !kapiCagrisi) {
+    hata++;
+    acik.push("  ⛔ " + yol.replace(/\\/g, "/") +
+      "  →  kapı İÇERİ ALINMIŞ ama HİÇ ÇAĞRILMAMIŞ (vekil koruma)");
+    continue;
+  }
+  /**
+   * ⛔ VE ÇAĞRI TEK BAŞINA YETMEZ — SONUCU KULLANILMALI.
+   * `betikSayimKarari(...)` çağrılıp dönüşü hiç okunmazsa kapı yine
+   * çalışmaz; desen dosyada durur, davranış yoktur.
+   */
+  /**
+   * ⛔ VE ÇAĞRI TEK BAŞINA YETMEZ — KORUYAN DAL BULUNMALI.
+   *
+   * ⚠ ÖLÇÜT `.islem ===` DEĞİL, `"ATLA"` DALI. Mutasyonla ölçüldü
+   * (29.08.2026): `islem === "ATLA"` dalını öldüren senaryo YEŞİL kaldı,
+   * çünkü aynı dosyadaki `islem === "YAZ_VE_DAMGALA"` deseni ayakta
+   * tutuyordu. Koruyan dal ATLA'dır; öteki dal yazmaya izin verir.
+   * _(Anayasa: "aynı desen birden çok yerde geçerse, birini bozan
+   * mutasyon ötekini bulur".)_
+   */
+  if (kapiCagrisi && !/islem\s*===\s*"ATLA"/.test(kod)) {
+    hata++;
+    acik.push("  ⛔ " + yol.replace(/\\/g, "/") +
+      "  →  kapı ÇAĞRILMIŞ ama KORUYAN DAL (`islem === \"ATLA\"`) yok");
+    continue;
+  }
+  /**
+   * ⛔ MUAFİYET BEYANI, KAPI İTHAL EDİLMİŞ DOSYADA GEÇERSİZDİR.
+   *
+   * ⚠ BU BUGÜN CANLIDA YAŞANDI: iki aktarıcı _"kapı bu yola HENÜZ
+   * BAĞLANMADI"_ diye BORÇ KAYDI taşıyordu. Kapı bağlandı, beyan
+   * kaldırılmadı — ve beyan, artık bağlı olan kapıyı bekçinin gözünden
+   * SİLDİ. Bayat bir borç kaydı, kalıcı bir muafiyete dönüşüyor.
+   */
+  if (/SAYIM KORUMASI YOK:\s*\S/.test(ham) && kapiIthali) {
+    hata++;
+    acik.push("  ⛔ " + yol.replace(/\\/g, "/") +
+      "  →  hem `SAYIM KORUMASI YOK` beyanı hem kapı ithali var — çelişki");
+    continue;
+  }
+  /** ⚠ Çelişki elendikten SONRA: çalışan kapı geçer. */
+  if (kapiCagrisi) continue;
   if (/SAYIM KORUMASI YOK:\s*\S/.test(ham)) continue;
   hata++;
   acik.push("  ⛔ " + yol.replace(/\\/g, "/") +
-    "  →  SUREKLI ama `sayimKorumasi(` yok, beyan yok");
+    "  →  SUREKLI ama kapı çağrısı yok, beyan yok");
+}
+
+/**
+ * ═══ ÖLÇÜT ③ — `sayimGecersizAt` YAZICISIZ KALMASIN ═════════════════════
+ *
+ * ⛔ ANAYASA: "şemadaki alan da bir iddiadır — yazıcısı yoksa vaat boştur."
+ * Sütun 29.08.2026'da açıldı ve aynı gün **hiçbir kod onu yazmıyordu**;
+ * alanı gören biri _"demek ki sayım geçersizliği izleniyor"_ diye okur ve
+ * üstüne akıl yürütür. Boş bir alan sessiz değildir, YANLIŞ CEVAP VERİR.
+ *
+ * ⚠ ÖLÇÜT DOSYA LİSTESİ DEĞİL: "en az bir yazma yolu `sayimGecersizlestir(`
+ * çağırıyor mu" diye sorar. Hangi dosyanın çağırdığı zamanla değişebilir.
+ */
+{
+  kontrol++;
+  const yazan: string[] = [];
+  for (const yol of [...dosyalar("scripts"), ...dosyalar("src")]) {
+    const duz = yol.replace(/\\/g, "/");
+    /**
+     * ⛔ BEKÇİ KENDİ ARAMA DİZESİNİ YAZICI SANMAZ.
+     * ⚠ Mutasyonla yakalandı 29.08.2026: damgalama çağrısı silindiğinde
+     * ölçüt YEŞİL kaldı, çünkü ölçütün KENDİ regex'i `sayimGecersizlestir(`
+     * metnini taşıyor ve dosya kendini "yazan" olarak buluyordu.
+     * _(Anayasa vaka listesi: "`prisma.sale.create` — bekçinin kendi arama
+     * dizesi yazma sanıldı".)_
+     */
+    if (duz.endsWith("scripts/sayim-korumasi-dogrula.ts")) continue;
+    const kod = yorumsuz(readFileSync(yol, "utf8"));
+    /** ⚠ Gövdenin KENDİ tanımı sayılmaz — `export function` satırı. */
+    if (/export\s+async\s+function\s+sayimGecersizlestir/.test(kod)) continue;
+    if (/\bsayimGecersizlestir\s*\(/.test(kod)) yazan.push(yol.replace(/\\/g, "/"));
+  }
+  if (yazan.length === 0) {
+    hata++;
+    acik.push("  ⛔ `sayimGecersizAt` YAZICISIZ — hiçbir yol " +
+      "`sayimGecersizlestir(` çağırmıyor; şema tutmadığı bir söz veriyor");
+  }
 }
 
 console.log("");

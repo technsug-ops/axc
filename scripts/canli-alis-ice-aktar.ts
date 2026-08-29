@@ -1,15 +1,4 @@
 /** BETIK SINIFI: SUREKLI — Alim dosyasi her yeni dosyada yeniden kosulur; stogu geri tarihli yazar. */
-/**
- * SAYIM KORUMASI YOK: kapi bu yola HENUZ BAGLANMADI (K84/K85, 29.08.2026).
- *
- * Bu betik SUREKLI sinifta ve 29.08 arizasini yapan iki aktarimdan biri.
- * Kapinin dogru hali burada SORU SORMAK DEGIL, ATLAYIP RAPORLAMAKTIR:
- * kimse basinda degil, "israr" kavrami betikte yok. Atlanan satir
- * raporda gorunur; sessizce yazilan gorunmez.
- *
- * Bu beyan bir gerekce DEGIL, BORC KAYDIDIR ve bilerek en gorunur yere
- * konuldu: bu dosyayi acan kisi once bunu okur.
- */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
@@ -322,6 +311,36 @@ async function main() {
   }
   console.log(`     ${String(disarida).padStart(5)}  TOPLAM → ${disarida + yazilacaklar.length} = ${veri.length} ${disarida + yazilacaklar.length === veri.length ? "✓" : "⛔"}`);
 
+  /**
+   * ⭐ SAYIM KAPISI KURU KOŞUMDA DA GÖRÜNÜR — kararı kuru koşum verir.
+   * ⚠ ALIM YÖNÜ ARTIRAN: atlanmaz, YAZILIR ama varyant damgalanır.
+   */
+  {
+    const { betikSayimKarari, sonSayimTarihleri } =
+      await import("../src/lib/sayim-damgasi");
+    const idler = [...new Set(yazilacaklar.map((c) => c.variantId))];
+    const sonSayimlar = await sonSayimTarihleri(prisma, idler);
+    const damgalanacak = new Set<string>();
+    let atlanacak = 0;
+    for (const c of yazilacaklar) {
+      const k = betikSayimKarari({
+        sonSayimIsTarihi: sonSayimlar.get(c.variantId) ?? null,
+        hareketIsTarihi: isGunuUtc(c.satir.alis!),
+        adet: c.satir.adet,
+      });
+      if (k.islem === "YAZ_VE_DAMGALA") damgalanacak.add(c.variantId);
+      if (k.islem === "ATLA") atlanacak++;
+    }
+    console.log(`\n   ⭐ SAYIM KAPISI (projeksiyon)`);
+    console.log(`     sayım damgalı varyant       ${sonSayimlar.size}`);
+    console.log(`     ⚠ YAZILACAK + DAMGALANACAK  ${damgalanacak.size} varyant`);
+    console.log(`     ⛔ ATLANACAK                 ${atlanacak}`);
+    if (damgalanacak.size > 0) {
+      console.log(`     → geç girilen GERÇEK alım; yazılır ama sayım geçersizleşir`);
+      console.log(`     → bu varyantlar YENİDEN SAYILMALI`);
+    }
+  }
+
   if (!YAZ) {
     console.log(`\n${"=".repeat(96)}\n  ÖNİZLEME — hiçbir şey yazılmadı. Yazmak için: --yaz\n${"=".repeat(96)}\n`);
     await prisma.$disconnect();
@@ -342,6 +361,20 @@ async function main() {
 
   const parti = `alis-${new Date().toISOString().slice(0, 19).replace(/[-:T]/g, "")}`;
   console.log(`\n④ YAZILIYOR — parti ${parti}`);
+
+  /**
+   * ⭐ SAYIM KAPISI — son sayım tarihleri BİR KEZ okunur.
+   * ⚠ Kapsam yalnız YAZILACAK varyantlar; boş liste tüm defteri çekmez.
+   */
+  const { betikSayimKarari, sonSayimTarihleri, sayimGecersizlestir } =
+    await import("../src/lib/sayim-damgasi");
+  const yazilacakVaryantlar = [
+    ...new Set([...gruplar.values()].flatMap((k) => k.map((c) => c.variantId))),
+  ];
+  const sonSayimlar = await sonSayimTarihleri(prisma, yazilacakVaryantlar);
+  console.log(`   sayım kapısı: ${sonSayimlar.size} varyantın sayım damgası var`);
+  const sayimAtlanan: { variantId: string; adet: number }[] = [];
+  const sayimDamgalanan: string[] = [];
 
   let yazilanAlim = 0;
   let yazilanKalem = 0;
@@ -397,6 +430,26 @@ async function main() {
       yazilanAlim++;
       yazilanKalem += alim.items.length;
       for (const kalem of alim.items) {
+        /**
+         * ⭐ SAYIM KAPISI — anayasa: FİZİKSEL SAYIM SON SÖZDÜR.
+         *
+         * ⚠ ALIM YÖNÜ ARTIRANDIR ve ölçüm gösterdi ki bu yön MEŞRU:
+         * sayımdan sonra yazılan 13 `PURCHASE_IN` (net +47) geç girilmiş
+         * GERÇEK mal kabulleriydi. Atlamak, olmuş bir alımın deftere hiç
+         * girmemesi olurdu. Bu yüzden YAZILIR — ama sessizce değil:
+         * varyant `sayimGecersizAt` ile damgalanır ve yeniden sayılması
+         * istenir. _(Anayasa: "yasak değil DURAKSAMA".)_
+         */
+        const kapi = betikSayimKarari({
+          sonSayimIsTarihi: sonSayimlar.get(kalem.variantId) ?? null,
+          hareketIsTarihi: isGunuUtc(ilk.alis!),
+          adet: kalem.quantity,
+        });
+        if (kapi.islem === "ATLA") {
+          sayimAtlanan.push({ variantId: kalem.variantId, adet: kalem.quantity });
+          continue;
+        }
+        if (kapi.islem === "YAZ_VE_DAMGALA") sayimDamgalanan.push(kalem.variantId);
         await prisma.stockMovement.create({
           data: {
             variantId: kalem.variantId,
@@ -437,9 +490,51 @@ async function main() {
     hareket: await prisma.stockMovement.count(),
     girisi: await prisma.stockMovement.count({ where: { type: "PURCHASE_IN" } }),
   };
+  /**
+   * ⭐ SAYIMI GEÇERSİZLEŞEN VARYANTLAR DAMGALANIR.
+   * ⚠ Damga TEK AN taşır (`damgaAni`) — koşum içinde `new Date()` okunsaydı
+   * aynı turun satırları farklı damga taşır ve "bu tur ne yaptı" sorusu
+   * cevapsız kalırdı.
+   */
+  const damgaAni = new Date();
+  const damgalanan = await sayimGecersizlestir(prisma, sayimDamgalanan, damgaAni);
+
   console.log(`\n⑤ SONRA SAYIM`);
   console.log(`   yazılan alım   ${yazilanAlim}   kalem ${yazilanKalem}   hareket ${yazilanHareket}`);
   if (hata > 0) console.log(`   ⛔ HATA        ${hata}`);
+  /**
+   * ⚠ SAYIM KAPISI HER ZAMAN RAPORLANIR — SIFIRSA DA. "Kapı çalıştı ve
+   * kimseyi durdurmadı" ile "kapı hiç çağrılmadı" aynı şey değildir ve
+   * ekranda ayırt edilebilmelidir.
+   * _(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+   * değildir".)_
+   */
+  console.log(`\n   ⭐ SAYIM KAPISI`);
+  console.log(`     sayım damgalı varyant       ${sonSayimlar.size}`);
+  console.log(`     ⛔ ATLANAN (düşüren)         ${sayimAtlanan.length}` +
+    `   adet ${sayimAtlanan.reduce((t, x) => t + x.adet, 0)}`);
+  console.log(`     ⚠ YAZILDI + DAMGALANDI      ${new Set(sayimDamgalanan).size}` +
+    ` varyant   (güncellenen ${damgalanan})`);
+  if (sayimAtlanan.length > 0) {
+    const kimlik = await prisma.productVariant.findMany({
+      where: { id: { in: [...new Set(sayimAtlanan.map((x) => x.variantId))] } },
+      select: { id: true, sku: true },
+    });
+    const ad = new Map(kimlik.map((v) => [v.id, v.sku]));
+    console.log(`     ATLANAN KİMLİKLER:`);
+    for (const x of sayimAtlanan.slice(0, 40)) {
+      console.log(`       ${(ad.get(x.variantId) ?? "?").padEnd(18)} adet ${x.adet}`);
+    }
+    if (sayimAtlanan.length > 40) console.log(`       … +${sayimAtlanan.length - 40}`);
+  }
+  if (new Set(sayimDamgalanan).size > 0) {
+    const kimlik = await prisma.productVariant.findMany({
+      where: { id: { in: [...new Set(sayimDamgalanan)] } },
+      select: { sku: true },
+    });
+    console.log(`     DAMGALANAN KİMLİKLER: ${kimlik.map((v) => v.sku).join(", ")}`);
+    console.log(`     → bu varyantlar YENİDEN SAYILMALI (sayım geçersizleşti)`);
+  }
   const satir = (ad: string, o: number, s: number, bek: number) => {
     const fark = s - o;
     console.log(`   ${ad.padEnd(15)} ${o} → ${s}   (fark ${fark}, beklenen ${bek}) ${fark === bek ? "✓" : "⛔ TUTMADI"}`);
