@@ -1174,6 +1174,112 @@ bilmeli."_ Katılıyorum. Önerim:
 
 ---
 
+## 🆕 K85 — `scripts/` KAPSAMI · 29.08.2026 · [ÖLÇÜLDÜ]
+
+> Halil'in tespiti: _"koruma bugün ARIZANIN GELDİĞİ YERİ kapsamıyor."_
+> **Doğru** — ve ölçüm bunu daha da kötü gösterdi.
+
+Ölçüm: `npm run scripts-kapsami:olc` (salt okuma).
+
+    `scripts/` altında .ts dosyası      : 213
+    ⭐ `stockMovement.create` ÇAĞIRAN   : 14
+       occurredAt SABİT (zaten temiz)  :  4
+       kapıdan geçen                   :  0
+       beyanı olan                     :  0
+    ⛔ KAPSAM UZATILIRSA YENİ İHLAL     : 10
+
+### ⛔ VE SINIFLANDIRMA DENEMEM ÇÖKTÜ — ASIL BULGU BU
+
+_"Tek seferlik onarım"_ ile _"sürekli koşan aktarım"_ı desenle ayırmayı
+denedim (`PARTI =` · `KODLAR =` · `--geri` işaretleri). **Ölçüt çöktü:**
+
+    canli-alis-ice-aktar.ts   → "tek seferlik" sayıldı
+    canli-satis-ice-aktar.ts  → "tek seferlik" sayıldı
+    ⛔ OYSA ARIZAYI YAPAN AKTARIMLAR TAM BUNLAR.
+
+İşaretler **iki sınıfta da** geçiyor; desen NİYETİ ayırt edemiyor.
+_(Anayasa: "iki okumayla da uyumlu bir gözlem hiçbirini kanıtlamaz" —
+bugün ikinci kez aynı tuzak, bu sefer kendi bekçimde.)_
+
+⚠ **VE YANLIŞ SINIFLANDIRMA SESSİZ OLURDU:** bekçi "sürekli koşan 3 araç"
+diye rapor vermişti ve o üçü (`fifo-dogrula` · `rma-prova` ·
+`canli-deneme-sifirla`) **risksiz olanlardı.** Gerçek risk taşıyan iki
+aktarım muaf sayılıp geçecekti.
+
+### ⭐ ÖNERİ — SINIF TAHMİN EDİLMEZ, BEYAN EDİLİR
+
+    /** BETİK SINIFI: SUREKLI */                    → kapıdan geçmeli
+    /** BETİK SINIFI: TEK_SEFERLIK — <gerekçe> */    → muaf
+
+Beyanı **olmayan** betik KIRMIZI. Böylece yarın eklenen bir aktarım
+_"tek seferlik sanılıp"_ sessizce geçemez ve muafiyet **insan kararı**
+olarak koda yazılır.
+
+**ON İHLAL — sınıfını Halil belirler:**
+
+| betik | npm komutu |
+|---|---|
+| `canli-alis-ice-aktar` | VAR ⛔ **aktarım** |
+| `canli-satis-ice-aktar` | VAR ⛔ **aktarım** |
+| `canli-ice-aktarma-stok-bagi` | VAR |
+| `canli-dosya-maliyet-kuru` | VAR |
+| `canli-ileri-parti-onar` | VAR |
+| `canli-k74-maliyet` | VAR |
+| `canli-sayim-esas` | VAR |
+| `fifo-dogrula` · `rma-prova` | VAR (test/bekçi) |
+| `canli-deneme-sifirla` | yok |
+
+⛔ **KOD DEĞİŞMEDİ.** Doğru sıra: **önce beyan kuralı, sonra kapsam.**
+
+---
+
+## 📐 ISRAR EKRANI — TASARIM (kod yazılmadı)
+
+**NEREDE ÇIKAR:** duraksama, stok yazan **her yolun kendi onay adımında**
+çıkar — ayrı bir ekran açılmaz. Üç yer:
+
+| yol | nerede |
+|---|---|
+| **ekran işlemleri** (mal kabul · stok düzeltme · satış · iade) | kaydet düğmesine basınca, **kaydetmeden önce** araya giren onay bloğu |
+| **toplu aktarım** (betikler) | ekran yok → **SORULMAZ, ATLANIR ve raporlanır**: "N satır sayım korumasına takıldı" |
+| **API/otomatik** | aynı: atlanır + raporlanır |
+
+⭐ **BETİKTE SORU SORULMAZ — VE BU BİLEREK.** Kimse başında değil; "ısrar"
+kavramı orada yok. Atlamak, sessizce yazmaktan iyidir çünkü **atlanan satır
+raporda görünür**, sessizce yazılan görünmez.
+
+**NE SORAR** (metin sözlükten, İlke #5 — sebep ekranda yazar):
+
+    ⚠ Bu ürün 29.08.2026'da SAYILDI.
+    Yazmak üzere olduğunuz hareketin tarihi 27.07.2025 — sayımdan ÖNCE.
+
+    [DÜŞÜREN ise]
+    Sayımda rafta bulunan mal, bu kayıtla defterden düşecek.
+    Sayım o malı GÖRDÜ; şimdi yok sayıyorsunuz.
+
+    [ARTIRAN ise]
+    Bu mal sayım sırasında raftaysa SAYAN KİŞİ ONU ZATEN SAYDI.
+    Bu kayıt aynı malı İKİNCİ KEZ ekleyebilir ve stok şişer.
+
+    ☐ Anlıyorum, yine de kaydet — bu varyantın sayımı GEÇERSİZLEŞECEK
+      ve yeniden sayılması istenecek.
+    Sebep: [kapalı liste ▾]  (açıklama zorunlu değilse "diğer" hariç)
+
+⚠ **ONAY HER SEFERİNDE SORULUR** — "bir kez onayladım, artık sorma"
+YOKTUR (anayasadaki ısrar kuralı).
+
+**İZ NEYE YAZILIR — İKİ YERE:**
+① `AuditLog` → `SAYIM_KORUMASI_ASILDI`: varyant · sayım tarihi · hareket
+  tarihi · yön · sebep · kullanıcı. _(Geçmişe bakmak için.)_
+② ⭐ **VARYANTIN KENDİSİNE**: `sayimGecersizAt` damgası — çünkü uyarı
+  merkezi bunu **sorgulamak** zorunda ("N varyantın sayımı geçersizleşti").
+  Merdiven: serbest metin geriye bakmaya yeter ama **sorgu gerekiyor**,
+  o yüzden sütun. _(Anayasa: "geriye bakmak → serbest metin; SORGU → yapı".)_
+
+⛔ Şema kalemi olduğu için **migration onayı ayrıca istenir.**
+
+---
+
 ### ⚠ İKİ AÇIK NOT
 
 **· `10415881283` — aynı kampanyanın dördü FARKLI maliyetle duruyor.**
