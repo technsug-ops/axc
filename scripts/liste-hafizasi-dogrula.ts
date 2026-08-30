@@ -168,7 +168,7 @@ console.log("§1 SAF GÖVDE — hatırlanan adres güvenli mi");
   const bilesen = yorumsuz(
     readFileSync("src/components/liste-hafizasi-bilesenleri.tsx", "utf8"),
   );
-  const cagri = /useSyncExternalStore\(([^;]*?)\);/s.exec(bilesen)?.[1] ?? "";
+  const cagri = /useSyncExternalStore\(([^;]*?)\);/.exec(bilesen)?.[1] ?? "";
   kontrol("useSyncExternalStore çağrısı bulundu", cagri.length > 0);
   kontrol(
     "sunucu görüntüsü DÜZ href (hidrasyon uyuşmazlığı yok)",
@@ -203,7 +203,7 @@ const suzgecliRotalar = new Map<string, string[]>();
         : "/" + duz.slice(kok.length + 1, -"/page.tsx".length);
     if (rota.includes("[")) continue;
     const kaynak = readFileSync(yol, "utf8");
-    const m = /searchParams:\s*Promise<\{([^}]*)\}>/s.exec(kaynak);
+    const m = /searchParams:\s*Promise<\{([^}]*)\}>/.exec(kaynak);
     if (!m) continue;
     const adlar = [...m[1].matchAll(/(\w+)\?:/g)].map((x) => x[1]);
     const suzgecler = adlar.filter((a) => a !== "sayfa");
