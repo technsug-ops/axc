@@ -222,7 +222,8 @@
     "canli:ty-mutabakat": "tsx scripts/canli-ty-mutabakat.ts",
     "canli:ty-kuru-kosum": "tsx scripts/canli-ty-kuru-kosum.ts",
     "canli:ty-ice-aktar": "tsx scripts/canli-ty-ice-aktar.ts",
-    "ice-aktarma:dogrula": "tsx scripts/ice-aktarma-dogrula.ts"
+    "canli:fifo-dagit": "tsx scripts/canli-fifo-yeniden-dagit.ts",
+    "sunucu-eylemi:dogrula": "tsx scripts/sunucu-eylemi-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

@@ -61,3 +61,16 @@ export function yerlestirmeKarari(g: YerlestirmeGirdisi): YerlestirmeKarari {
   if (g.rafVar) return { tur: "RAF_DEGISTIR" };
   return { tur: "BULUNAMADI" };
 }
+
+/**
+ * İZ EYLEMİ — `AuditLog.action`, tek yerden.
+ *
+ * ⛔ SUNUCU EYLEMİ DOSYASINDA DURAMAZ (canlı arıza 30.08.2026): `"use server"`
+ * işaretli bir dosyada YALNIZ async fonksiyon dışa aktarılabilir. Bu sabit
+ * orada durduğu için modülün BÜTÜN dışa aktarımları düştü, derleme patladı
+ * ve `/yerlestir` canlıya HİÇ ÇIKMADI — üç push boyunca.
+ *
+ * ⚠ VE `tsc --noEmit` BUNU GÖRMEZ; yalnız `next build` görür. Bekçi turu o
+ * gün derlemeyi sınamıyordu (K48).
+ */
+export const YERLESTIRME_EYLEMI = "URUN_YERLESTIRILDI";

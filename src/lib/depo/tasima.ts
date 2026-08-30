@@ -88,3 +88,10 @@ export function izListesi(skular: readonly string[]): {
     toplam: skular.length,
   };
 }
+
+/**
+ * İZ EYLEMİ — `AuditLog.action`.
+ *
+ * ⛔ Sunucu eylemi dosyasında duramaz — gerekçe `lib/depo/yerlestirme.ts`te.
+ */
+export const TOPLU_TASIMA_EYLEMI = "RAF_TOPLU_TASIMA";

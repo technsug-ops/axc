@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
-import { izListesi, tasimaKarari } from "@/lib/depo/tasima";
-import { yerlestirmeKarari } from "@/lib/depo/yerlestirme";
+import { TOPLU_TASIMA_EYLEMI, izListesi, tasimaKarari } from "@/lib/depo/tasima";
+import { YERLESTIRME_EYLEMI, yerlestirmeKarari } from "@/lib/depo/yerlestirme";
 import { prisma } from "@/lib/prisma";
 import { kodKosulu } from "@/lib/varyant-arama-kurali";
 import { yetkiIste } from "@/lib/yetki";
@@ -29,9 +29,6 @@ import { yetkiIste } from "@/lib/yetki";
  *  ayrılır.
  * ============================================================================
  */
-
-/** ⚠ İZ EYLEMİ — `AuditLog.action`, tek yerden. */
-export const YERLESTIRME_EYLEMI = "URUN_YERLESTIRILDI";
 
 export type SeciliRaf = {
   id: string;
@@ -238,8 +235,6 @@ export async function koduIsle(
  *  kırpıldığı için YAZILDIĞI ANDA BOZULMUŞTU.
  * ============================================================================
  */
-
-export const TOPLU_TASIMA_EYLEMI = "RAF_TOPLU_TASIMA";
 
 export type RafUrunu = { variantId: string; sku: string; ad: string; adet: number };
 
