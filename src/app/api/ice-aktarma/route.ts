@@ -14,6 +14,11 @@ import { sablonMetinleri } from "@/lib/ice-aktarma/metinler";
 import { dosyayiOku } from "@/lib/ice-aktarma/oku";
 import { referansYukle } from "@/lib/ice-aktarma/referans";
 import { planiYaz, type YazimSonucu } from "@/lib/ice-aktarma/yaz";
+import {
+  SAYIM_ISRAR_SEBEPLERI,
+  type SayimIsrarSebebi,
+} from "@/lib/sayim-korumasi";
+import { SayimKorumasiHatasi } from "@/lib/satis";
 
 /**
  * ============================================================================
@@ -34,7 +39,16 @@ import { planiYaz, type YazimSonucu } from "@/lib/ice-aktarma/yaz";
 export const dynamic = "force-dynamic";
 
 type Yanit =
-  | { durum: "HATA"; hatalar: SatirHatasi[]; eksikSutunlar: { sayfa: string; sutun: string }[] }
+  | {
+      durum: "HATA";
+      hatalar: SatirHatasi[];
+      eksikSutunlar: { sayfa: string; sutun: string }[];
+      /**
+       * ⭐ SAYIM KAPISI DURAKSATTI — ekran ısrar bloğunu ÇİZSİN diye.
+       * ⚠ Sunucu yine kendi ölçütünü koşar; bu bayrak yalnız GÖSTERİM.
+       */
+      sayimDuraksatti?: boolean;
+    }
   | { durum: "ONIZLEME"; ozet: Ozet; uyarilar: SatirUyarisi[] }
   | { durum: "YAZILDI"; sonuc: YazimSonucu }
   | { durum: "COKTU"; mesaj: string };
@@ -101,9 +115,41 @@ export async function POST(istek: Request) {
 
   // --- 4) YAZ — tek transaction ---
   try {
-    const yazim = await planiYaz(sonuc.plan);
+    /**
+     * ⭐ SAYIM KAPISI ISRARI — form gövdesinden okunur.
+     * ⚠ Sunucu ekrana GÜVENMEZ: `planiYaz` aynı saf gövdeyi kendisi
+     * çağırır ve geçersiz ısrarı reddeder.
+     */
+    const sebepHam = String(form.get("sayimIsrariSebep") ?? "");
+    const yazim = await planiYaz(sonuc.plan, {
+      onaylandi: String(form.get("sayimIsrariOnay") ?? "") === "1",
+      sebep: (SAYIM_ISRAR_SEBEPLERI as readonly string[]).includes(sebepHam)
+        ? (sebepHam as SayimIsrarSebebi)
+        : null,
+      aciklama: String(form.get("sayimIsrariAciklama") ?? ""),
+    });
     return yanitla({ durum: "YAZILDI", sonuc: yazim });
   } catch (e) {
+    /**
+     * ⭐ SAYIM KAPISI DURAKSATTI — ve mesaj ÇIKIŞI DA SÖYLÜYOR.
+     * ⚠ Ham hata ekrana basılmaz; kod SABİT eşlemeyle metne çevrilir.
+     */
+    if (e instanceof SayimKorumasiHatasi) {
+      return yanitla({
+        durum: "HATA",
+        hatalar: [
+          {
+            sayfa: "acilisStogu",
+            satir: 0,
+            alan: "adet",
+            kod: "SAYIM_KORUMASI",
+            deger: String(e.duraksayanlar.length),
+          },
+        ],
+        eksikSutunlar: [],
+        sayimDuraksatti: true,
+      });
+    }
     console.error("[ice-aktarma] yazim basarisiz:", e);
     return yanitla({ durum: "COKTU", mesaj: t("beklenmeyenHata") }, 500);
   }

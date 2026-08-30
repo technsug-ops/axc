@@ -85,6 +85,14 @@ export function Yukleyici() {
   const [dosya, setDosya] = useState<File | null>(null);
   const [kip, setKip] = useState<Kip>("YALNIZ_YENI");
   const [yanit, setYanit] = useState<Yanit | null>(null);
+  /**
+   * ⭐ SAYIM KAPISI ISRARI — YÜKLEME BAŞINA.
+   * Kapıyı tetikleyen şey açılış satırlarının tarihi; ısrar tek.
+   */
+  const [israrOnay, setIsrarOnay] = useState(false);
+  const [israrSebep, setIsrarSebep] = useState("");
+  const [israrAciklama, setIsrarAciklama] = useState("");
+
   const [calisiyor, setCalisiyor] = useState<"denetle" | "yaz" | null>(null);
   const [onayAcik, setOnayAcik] = useState(false);
 
@@ -126,6 +134,7 @@ export function Yukleyici() {
   function hataMetni(h: SatirHatasi): string {
     const p = { alan: alanAdi(h.alan), deger: h.deger ?? "", ek: h.ek ?? "" };
     switch (h.kod) {
+      case "SAYIM_KORUMASI": return t("hataSAYIM_KORUMASI", p);
       case "ZORUNLU": return t("hataZORUNLU", p);
       case "SAYI_OLMALI": return t("hataSAYI_OLMALI", p);
       case "POZITIF_OLMALI": return t("hataPOZITIF_OLMALI", p);
@@ -152,6 +161,10 @@ export function Yukleyici() {
     govde.set("dosya", dosya);
     govde.set("kip", kip);
     if (yaz) govde.set("yaz", "1");
+    /** ⚠ Kapı tetiklenmediyse boş gider — sunucu "ısrar yok" sayar. */
+    govde.set("sayimIsrariOnay", israrOnay ? "1" : "");
+    govde.set("sayimIsrariSebep", israrSebep);
+    govde.set("sayimIsrariAciklama", israrAciklama);
 
     try {
       const cevap = await fetch("/api/ice-aktarma", {

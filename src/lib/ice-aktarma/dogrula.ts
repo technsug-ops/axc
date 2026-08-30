@@ -27,6 +27,14 @@ import type { Currency } from "@/generated/prisma/enums";
 export type Kip = "YALNIZ_YENI" | "GUNCELLE";
 
 export type HataKodu =
+  /**
+   * ⭐ SAYIM KORUMASI DURAKSATTI — 30.08.2026.
+   * ⚠ Yeni kod eklendi, DOLAYISIYLA bağımlı listeler de genişledi:
+   * `yukleyici.tsx` eşlemesi ve iki sözlük. Biri unutulsaydı ekranda
+   * ham kod görünürdü. _(Anayasa: "kapsam genişlemesi, bağımlı
+   * listelerin de genişlemesidir".)_
+   */
+  | "SAYIM_KORUMASI"
   | "ZORUNLU"
   | "SAYI_OLMALI"
   | "POZITIF_OLMALI"

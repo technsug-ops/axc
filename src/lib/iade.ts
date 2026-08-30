@@ -1,3 +1,10 @@
+import { sonSayimTarihleri, sayimGecersizlestir } from "./sayim-damgasi";
+import {
+  israrGecerliMi,
+  sayimKorumasi,
+  type SayimIsrari,
+} from "./sayim-korumasi";
+import { SayimKorumasiHatasi } from "./satis";
 import { acikCikislar, kalemMaliyeti } from "@/lib/kalem-maliyeti";
 import { GENEL_KDV_ORANI, kdvAyir, type KarDurumu } from "@/lib/kar";
 import { prisma, type IslemIstemcisi } from "@/lib/prisma";
@@ -5,20 +12,6 @@ import { donenMalDagilimi } from "@/lib/iade/yanlis-urun";
 import { acikPartiler, fifoDagit, gunSonu, type Parti } from "@/lib/stok";
 
 import type { Currency, ReturnType } from "@/generated/prisma/enums";
-
-/**
- * SAYIM KORUMASI YOK: kapı bu yola HENÜZ BAĞLANMADI (K84, 29.08.2026).
- *
- * Kural ve saf gövde hazır (`lib/sayim-korumasi.ts`), bekçisi koşuyor
- * (`sayim-korumasi:dogrula`). Eksik olan tek şey KULLANICI TARAFI:
- * duraksama bir soru sorar ve "ısrar edersen iz bırakarak geçer" yolu
- * gerektirir; o ekran yok. Kapıyı ekransız bağlamak, meşru bir işi
- * SESSİZCE kilitlerdi — anayasadaki "kural doğru mu değil, teslim
- * edilebilir mi" süzgeci tam burada durduruyor.
- *
- * Bu beyan bir gerekçe DEĞİL, BORÇ KAYDIDIR: yeni açılan bir yol bekçiye
- * takılır ve bu satırı kopyalamak zorunda kalan kişi borcu görür.
- */
 
 /**
  * ============================================================================
@@ -416,6 +409,11 @@ export type IadeKaydiGirdisi = {
   yenidenGonderimKargosu: number | null;
   ceza: number | null;
   cezaNotu: string | null;
+  /**
+   * ⭐ SAYIM KAPISI ISRARI — İADE BAŞINA (kalem başına DEĞİL).
+   * Kapıyı tetikleyen şey TARİH ve iadenin tek tarihi var.
+   */
+  sayimIsrari?: SayimIsrari;
   kalemler: {
     saleItemId: string;
     iadeAdedi: number;
@@ -592,6 +590,89 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
       (t, k) => t + Number(k.unitPriceAmount.toString()) * k.quantity,
       0,
     );
+
+    /**
+     * ═══ SAYIM KAPISI ══════════════════════════════════════════════════════
+     *
+     * ⭐ ANAYASA: **FİZİKSEL SAYIM SON SÖZDÜR.** İade tarihi kullanıcıdan
+     * geliyor (`girdi.occurredAt`), yani sayımdan ÖNCEYE yazılabilir.
+     *
+     * ⚠ İADE HER İKİ YÖNDE DE HAREKET YAZAR ve ikisi de sayımı bozar:
+     *  · `RETURN_IN` (+)    → geri dönen mal; sayan kişi onu ZATEN saymışsa
+     *                         aynı mal ikinci kez eklenir, stok ŞİŞER
+     *  · `EXCHANGE_OUT` (−) → giden değişim ürünü; sayılmış malı YOK EDER
+     *
+     * ⚠ VE KAPI İKİ YÖNÜ DE AYRI ÖLÇER — tek varyantta ikisi birden
+     * olabiliyor (yanlış ürün senaryosu: A gidiyor, B dönüyor).
+     *
+     * ⛔ ISRAR İADE BAŞINA: kapıyı tetikleyen şey TARİH ve iadenin tek
+     * tarihi var. (Kalem başına sorulsaydı aynı soru defalarca sorulurdu.)
+     */
+    {
+      const yonler = new Map<string, number>();
+      const ekle = (variantId: string, adet: number) => {
+        yonler.set(variantId, (yonler.get(variantId) ?? 0) + adet);
+      };
+      for (const g of girdi.kalemler) {
+        const kalem = kalemHaritasi.get(g.saleItemId)!;
+        /** Geri dönen mal — `donenVaryantId` doluysa o, yoksa satılan. */
+        ekle(g.donenVaryantId || kalem.variantId, g.saglamAdet);
+        /** Giden değişim ürünü — stoktan düşer. */
+        if (g.exchangeVariantId) ekle(g.exchangeVariantId, -g.iadeAdedi);
+      }
+      const sonSayimlar = await sonSayimTarihleri(tx, [...yonler.keys()]);
+      const duraksayanlar: {
+        variantId: string;
+        yon: "ARTIRAN" | "DUSUREN";
+        sayimTarihi: Date;
+      }[] = [];
+      for (const [variantId, adet] of yonler) {
+        const karar = sayimKorumasi({
+          sonSayimIsTarihi: sonSayimlar.get(variantId) ?? null,
+          hareketIsTarihi: girdi.occurredAt,
+          adet,
+        });
+        if (karar.sonuc === "DURAKSA") {
+          duraksayanlar.push({
+            variantId,
+            yon: karar.yon,
+            sayimTarihi: karar.sayimTarihi,
+          });
+        }
+      }
+      if (duraksayanlar.length > 0) {
+        /** ⛔ SUNUCU EKRANA GÜVENMEZ — aynı saf gövde burada da koşuyor. */
+        const g = israrGecerliMi(
+          girdi.sayimIsrari ?? { onaylandi: false, sebep: null, aciklama: "" },
+        );
+        if (!g.gecerli) throw new SayimKorumasiHatasi(duraksayanlar, g.eksik);
+        /**
+         * ⚠ İSTİSNA GEÇTİ — İZ İKİ YERE, VE İŞLEM İÇİNDE. İade geri
+         * sarılırsa damga da sarılmalı.
+         */
+        const an = new Date();
+        await sayimGecersizlestir(
+          tx,
+          duraksayanlar.map((x) => x.variantId),
+          an,
+        );
+        await tx.auditLog.create({
+          data: {
+            action: "SAYIM_KORUMASI_ISTISNASI",
+            targetType: "Sale",
+            targetId: girdi.saleId,
+            detail: JSON.stringify({
+              yol: "/satislar/[id]/iade",
+              occurredAt: girdi.occurredAt.toISOString(),
+              sebep: girdi.sayimIsrari?.sebep ?? null,
+              aciklama: girdi.sayimIsrari?.aciklama.trim() || null,
+              duraksayanlar,
+              sonuc: "SAYIM GECERSIZLESTI — bu varyantlar yeniden sayilmali.",
+            }),
+          },
+        });
+      }
+    }
 
     // --- hesap girdisi ---
     const hesapKalemleri: IadeKalemGirdisi[] = [];

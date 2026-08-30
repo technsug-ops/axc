@@ -1392,7 +1392,16 @@
     "yardim14": "NOT: «Listeler» sayfası yalnızca BİLGİ içindir. Oraya yeni bir kategori veya raf adı yazmak sistemde o kaydı OLUŞTURMAZ. Yeni kategori için Ayarlar → KDV Kategorileri, yeni raf için Ayarlar → Raf Konumları ekranını kullanın, sonra şablonu yeniden indirin.",
     "uyariBasligi": "{sayi} uyarı — yükleme durmadı",
     "uyariBenzerUrun": "Satır {satir}: \"{deger}\" — sistemde benzer bir ürün var: \"{mevcut}\"",
-    "uyariNotu": "Bunlar hata değil, bilgi. Aynı ürünü ikinci kez açıyorsanız dosyayı düzeltin; farklı ürünlerse yüklemeye devam edin."
+    "uyariNotu": "Bunlar hata değil, bilgi. Aynı ürünü ikinci kez açıyorsanız dosyayı düzeltin; farklı ürünlerse yüklemeye devam edin.",
+    "hataSAYIM_KORUMASI": "{deger} üründe SAYIM VAR ve açılış stoğu sayımdan ÖNCEYE yazılıyor — sayan kişi o malı zaten saymış olabilir. Devam etmek için onay kutusunu işaretleyip sebep seçin.",
+    "sayimIsrariBaslik": "Sayım koruması",
+    "sayimIsrariOnayMetni": "Anlıyorum, yine de yaz — bu ürünlerin sayımı geçersizleşecek ve yeniden sayılmaları gerekecek.",
+    "sayimIsrariSebepEtiketi": "Sebep",
+    "sayimIsrariAciklamaEtiketi": "Açıklama",
+    "sayimSebep_GEC_GIRILEN_ALIM": "Geç girilen alım (mal gerçekten geldi)",
+    "sayimSebep_GEC_GIRILEN_SATIS": "Geç girilen satış (mal gerçekten çıktı)",
+    "sayimSebep_SAYIM_HATALI": "Sayım yanlıştı, kayıt doğru",
+    "sayimSebep_DIGER": "Diğer — açıklama zorunlu"
   },
   "KanalSku": {
     "baslik": "Kanal kodları",

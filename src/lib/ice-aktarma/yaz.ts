@@ -1,21 +1,14 @@
+import { sonSayimTarihleri, sayimGecersizlestir } from "@/lib/sayim-damgasi";
+import {
+  israrGecerliMi,
+  sayimKorumasi,
+  type SayimIsrari,
+} from "@/lib/sayim-korumasi";
+import { SayimKorumasiHatasi } from "@/lib/satis";
 import { prisma } from "@/lib/prisma";
 import { topluGuncelle } from "@/lib/toplu-guncelle";
 
 import type { YazimPlani } from "./dogrula";
-
-/**
- * SAYIM KORUMASI YOK: kapı bu yola HENÜZ BAĞLANMADI (K84, 29.08.2026).
- *
- * Kural ve saf gövde hazır (`lib/sayim-korumasi.ts`), bekçisi koşuyor
- * (`sayim-korumasi:dogrula`). Eksik olan tek şey KULLANICI TARAFI:
- * duraksama bir soru sorar ve "ısrar edersen iz bırakarak geçer" yolu
- * gerektirir; o ekran yok. Kapıyı ekransız bağlamak, meşru bir işi
- * SESSİZCE kilitlerdi — anayasadaki "kural doğru mu değil, teslim
- * edilebilir mi" süzgeci tam burada durduruyor.
- *
- * Bu beyan bir gerekçe DEĞİL, BORÇ KAYDIDIR: yeni açılan bir yol bekçiye
- * takılır ve bu satırı kopyalamak zorunda kalan kişi borcu görür.
- */
 
 /**
  * ============================================================================
@@ -54,9 +47,91 @@ export type YazimSonucu = {
   guncellenenKanalSku: number;
 };
 
-export async function planiYaz(plan: YazimPlani): Promise<YazimSonucu> {
+export async function planiYaz(
+  plan: YazimPlani,
+  /**
+   * ⭐ SAYIM KAPISI ISRARI — YÜKLEME BAŞINA.
+   * Verilmezse "ısrar edilmemiş" sayılır ve kapı duraksatır.
+   */
+  sayimIsrari?: SayimIsrari,
+): Promise<YazimSonucu> {
   return prisma.$transaction(
     async (tx) => {
+      /**
+       * ═══ SAYIM KAPISI ══════════════════════════════════════════════════
+       *
+       * ⭐ ANAYASA: **FİZİKSEL SAYIM SON SÖZDÜR.** Ve bu yol tam olarak
+       * 29.08.2026 arızasını yapan sınıfın kardeşi: bir Excel aktarımı
+       * sayılmış stoğu ezebiliyordu.
+       *
+       * ⛔ VE HİPOTEZ ÖLÇÜMLE ÇÜRÜTÜLDÜ: "açılış stoğu yalnız YENİ
+       * varyantlara yazılır, yeni varyantın sayım damgası olamaz" diye
+       * düşünülmüştü. Yanlış — `varyantiBul` **`mevcutSku`ya da düşüyor**
+       * (`lib/ice-aktarma/dogrula.ts`), yani zaten sayılmış bir varyanta
+       * açılış stoğu yazılabiliyor.
+       *
+       * ⚠ YÖN ARTIRAN (`INITIAL`, pozitif): mal sayım sırasında raftaysa
+       * SAYAN KİŞİ ONU ZATEN SAYDI; açılış stoğu aynı malı İKİNCİ KEZ
+       * ekler ve stok ŞİŞER.
+       *
+       * ⚠ YENİ VARYANTLAR KENDİLİĞİNDEN SERBEST: damgaları yok, kapı
+       * `SERBEST` döner. Ayrı bir süzgeç GEREKMİYOR — ölçüt zaten
+       * "damga var mı" diye soruyor.
+       */
+      if (plan.acilisHareketleri.length) {
+        const sonSayimlar = await sonSayimTarihleri(
+          tx,
+          [...new Set(plan.acilisHareketleri.map((h) => h.varyantId))],
+        );
+        const duraksayanlar: {
+          variantId: string;
+          yon: "ARTIRAN" | "DUSUREN";
+          sayimTarihi: Date;
+        }[] = [];
+        for (const h of plan.acilisHareketleri) {
+          const karar = sayimKorumasi({
+            sonSayimIsTarihi: sonSayimlar.get(h.varyantId) ?? null,
+            hareketIsTarihi: h.tarih,
+            adet: h.adet,
+          });
+          if (karar.sonuc === "DURAKSA") {
+            duraksayanlar.push({
+              variantId: h.varyantId,
+              yon: karar.yon,
+              sayimTarihi: karar.sayimTarihi,
+            });
+          }
+        }
+        if (duraksayanlar.length > 0) {
+          /** ⛔ SUNUCU EKRANA GÜVENMEZ — aynı saf gövde burada da koşuyor. */
+          const g = israrGecerliMi(
+            sayimIsrari ?? { onaylandi: false, sebep: null, aciklama: "" },
+          );
+          if (!g.gecerli) throw new SayimKorumasiHatasi(duraksayanlar, g.eksik);
+          /** ⚠ İZ İKİ YERE, VE İŞLEM İÇİNDE — yükleme geri sarılırsa damga da. */
+          const an = new Date();
+          await sayimGecersizlestir(
+            tx,
+            duraksayanlar.map((x) => x.variantId),
+            an,
+          );
+          await tx.auditLog.create({
+            data: {
+              action: "SAYIM_KORUMASI_ISTISNASI",
+              targetType: "StockMovement",
+              detail: JSON.stringify({
+                yol: "/ayarlar/ice-aktarma — açılış stoğu",
+                yon: "ARTIRAN",
+                sebep: sayimIsrari?.sebep ?? null,
+                aciklama: sayimIsrari?.aciklama.trim() || null,
+                duraksayanlar,
+                sonuc: "SAYIM GECERSIZLESTI — bu varyantlar yeniden sayilmali.",
+              }),
+            },
+          });
+        }
+      }
+
       // --- 1) ÜRÜNLER ---
       if (plan.yeniUrunler.length) {
         await tx.product.createMany({

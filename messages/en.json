@@ -1392,7 +1392,16 @@
     "yardim14": "",
     "uyariBasligi": "",
     "uyariBenzerUrun": "",
-    "uyariNotu": ""
+    "uyariNotu": "",
+    "hataSAYIM_KORUMASI": "",
+    "sayimIsrariBaslik": "",
+    "sayimIsrariOnayMetni": "",
+    "sayimIsrariSebepEtiketi": "",
+    "sayimIsrariAciklamaEtiketi": "",
+    "sayimSebep_GEC_GIRILEN_ALIM": "",
+    "sayimSebep_GEC_GIRILEN_SATIS": "",
+    "sayimSebep_SAYIM_HATALI": "",
+    "sayimSebep_DIGER": ""
   },
   "KanalSku": {
     "baslik": "",
