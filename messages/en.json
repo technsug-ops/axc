@@ -2107,7 +2107,20 @@
     "hataAciklamaZorunlu": "",
     "hataMaliyetNegatif": "",
     "hataMaliyetParaBirimsiz": "",
-    "nedenYonUyumsuz": ""
+    "nedenYonUyumsuz": "",
+    "sayimIsrariDusuren": "",
+    "sayimIsrariArtiran": "",
+    "sayimIsrariOnayGerek": "",
+    "sayimIsrariSebepGerek": "",
+    "sayimIsrariAciklamaGerek": "",
+    "sayimIsrariBaslik": "",
+    "sayimIsrariOnayMetni": "",
+    "sayimIsrariSebepEtiketi": "",
+    "sayimIsrariAciklamaEtiketi": "",
+    "sayimSebep_GEC_GIRILEN_ALIM": "",
+    "sayimSebep_GEC_GIRILEN_SATIS": "",
+    "sayimSebep_SAYIM_HATALI": "",
+    "sayimSebep_DIGER": ""
   },
   "DuzeltmeNedeni": {
     "baslik": "",

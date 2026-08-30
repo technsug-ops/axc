@@ -58,6 +58,62 @@ export type SayimKorumaGirdisi = {
 };
 
 /**
+ * ============================================================================
+ *  ISRAR — KAPALI SEBEP LİSTESİ
+ * ----------------------------------------------------------------------------
+ *  ⭐ ANAYASA: _"uyarı sorar, kullanıcı ısrar ederse istisna kaydedilir."_
+ *  Ve şartları oradan geliyor: eşik yerinde kalır · onay HER SEFERİNDE
+ *  istenir · sebep KAPALI KÜMEDEN · istisna İZ BIRAKIR.
+ *
+ *  ⛔ SEBEP NİYE KAPALI LİSTE: serbest metin üç ay sonra "bunu neden
+ *  geçmiştik" sorusuna cevap vermiyor — herkes başka şey yazıyor ve
+ *  sayılamıyor. Kapalı liste sayılabilir; hangi sebebin kaç kez geldiği
+ *  kendi başına bilgidir (bir sebep sürekli geliyorsa kuralın kendisi
+ *  yanlıştır).
+ * ============================================================================
+ */
+export const SAYIM_ISRAR_SEBEPLERI = [
+  /** Gerçekten olmuş bir mal kabulü, deftere geç giriliyor. */
+  "GEC_GIRILEN_ALIM",
+  /** Gerçekten olmuş bir satış, deftere geç giriliyor. */
+  "GEC_GIRILEN_SATIS",
+  /** Sayımın kendisi yanlıştı; kayıt doğru. */
+  "SAYIM_HATALI",
+  /** ⚠ AÇIKLAMA ZORUNLU — sebepsiz istisna, istisna değil kusurdur. */
+  "DIGER",
+] as const;
+export type SayimIsrarSebebi = (typeof SAYIM_ISRAR_SEBEPLERI)[number];
+
+export type SayimIsrari = {
+  /** Kullanıcı kutuyu işaretledi mi — HER SEFERİNDE istenir. */
+  onaylandi: boolean;
+  sebep: SayimIsrarSebebi | null;
+  /** `DIGER` seçildiyse zorunlu. */
+  aciklama: string;
+};
+
+/**
+ * ⭐ SAF: ısrar geçerli mi. Ekran bunu çağırır ve düğmeyi kilitler; sunucu
+ * AYNI gövdeyi çağırır ve reddeder — iki yerde iki ölçüt olmaz.
+ *
+ * ⚠ VE SEBEP EKRANDA YAZAR (İlke #5): niye ilerlemediği ve nasıl
+ * ilerleyeceği görünür; kilitli düğme sessiz kalmaz.
+ */
+export type IsrarKarari =
+  | { gecerli: true }
+  | { gecerli: false; eksik: "onay" | "sebep" | "aciklama" };
+
+export function israrGecerliMi(i: SayimIsrari): IsrarKarari {
+  if (!i.onaylandi) return { gecerli: false, eksik: "onay" };
+  if (i.sebep === null) return { gecerli: false, eksik: "sebep" };
+  /** ⚠ `DIGER` seçildiyse açıklama ZORUNLU — kapalı listenin kaçak deliği. */
+  if (i.sebep === "DIGER" && i.aciklama.trim() === "") {
+    return { gecerli: false, eksik: "aciklama" };
+  }
+  return { gecerli: true };
+}
+
+/**
  * ⭐ SAF: veritabanına gitmez, saat okumaz. Değerle sınanır.
  *
  * ⚠ SINIR GÜNÜN KENDİSİDİR, GÜN SONU DEĞİL: sayım günü YAPILAN bir satış

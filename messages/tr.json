@@ -2107,7 +2107,20 @@
     "hataAciklamaZorunlu": "Bu nedende açıklama zorunlu — ne olduğunu yazın.",
     "hataMaliyetNegatif": "Birim maliyet eksi olamaz.",
     "hataMaliyetParaBirimsiz": "Maliyet girildi ama para birimi seçilmedi.",
-    "nedenYonUyumsuz": "Seçilen neden bu yön için kullanılamaz — nedenin yönü ile işlemin yönü uyuşmuyor."
+    "nedenYonUyumsuz": "Seçilen neden bu yön için kullanılamaz — nedenin yönü ile işlemin yönü uyuşmuyor.",
+    "sayimIsrariDusuren": "⚠ Bu ürün sayıldı ve siz sayımdan ÖNCEKİ bir tarihe ({tarih}) STOK DÜŞÜREN kayıt giriyorsunuz — sayılmış malı yok ediyorsunuz.",
+    "sayimIsrariArtiran": "⚠ Bu ürün sayıldı ve siz sayımdan ÖNCEKİ bir tarihe ({tarih}) STOK ARTIRAN kayıt giriyorsunuz — sayan kişi o malı zaten saymış olabilir, aynı mal ikinci kez eklenebilir.",
+    "sayimIsrariOnayGerek": "Devam etmek için onay kutusunu işaretleyin.",
+    "sayimIsrariSebepGerek": "Devam etmek için bir sebep seçin.",
+    "sayimIsrariAciklamaGerek": "\"Diğer\" seçildiğinde açıklama zorunludur.",
+    "sayimIsrariBaslik": "Sayım koruması",
+    "sayimIsrariOnayMetni": "Anlıyorum, yine de kaydet — bu varyantın sayımı geçersizleşecek ve yeniden sayılması gerekecek.",
+    "sayimIsrariSebepEtiketi": "Sebep",
+    "sayimIsrariAciklamaEtiketi": "Açıklama",
+    "sayimSebep_GEC_GIRILEN_ALIM": "Geç girilen alım (mal gerçekten geldi)",
+    "sayimSebep_GEC_GIRILEN_SATIS": "Geç girilen satış (mal gerçekten çıktı)",
+    "sayimSebep_SAYIM_HATALI": "Sayım yanlıştı, kayıt doğru",
+    "sayimSebep_DIGER": "Diğer — açıklama zorunlu"
   },
   "DuzeltmeNedeni": {
     "baslik": "Stok düzeltme nedenleri",

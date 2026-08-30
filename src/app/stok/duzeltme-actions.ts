@@ -6,6 +6,14 @@ import { getTranslations } from "next-intl/server";
 
 import { prisma } from "@/lib/prisma";
 import { acikPartiler, fifoDagit, gunSonu } from "@/lib/stok";
+import { sayimGecersizlestir, sonSayimTarihleri } from "@/lib/sayim-damgasi";
+import {
+  israrGecerliMi,
+  SAYIM_ISRAR_SEBEPLERI,
+  sayimKorumasi,
+  type SayimIsrari,
+  type SayimIsrarSebebi,
+} from "@/lib/sayim-korumasi";
 import {
   duzeltmeyiDogrula,
   hareketMiktari,
@@ -137,6 +145,57 @@ export async function stokDuzelt(
   const tarih = tarihMetni ? new Date(`${tarihMetni}T00:00:00.000Z`) : new Date();
   if (Number.isNaN(tarih.getTime())) return { hatalar: [t("tarihGecersiz")] };
 
+  /**
+   * ═══ SAYIM KAPISI ════════════════════════════════════════════════════════
+   *
+   * ⭐ ANAYASA: **FİZİKSEL SAYIM SON SÖZDÜR.** Bu ekran kullanıcının SEÇTİĞİ
+   * tarihe yazıyor, yani sayımdan ÖNCEYE yazabilir.
+   *
+   * ⚠ YASAK DEĞİL, DURAKSAMA: kullanıcı ısrar ederse geçer — ama sebebiyle
+   * ve izle. _(Anayasa: "uyarı sorar, kullanıcı ısrar ederse istisna
+   * kaydedilir.")_
+   *
+   * ⛔ VE ÖLÇÜT SUNUCUDA DA KOŞAR: ekran düğmeyi kilitliyor, sunucu ona
+   * GÜVENMİYOR. İki yerde iki ölçüt olmasın diye ikisi de AYNI saf gövdeyi
+   * (`israrGecerliMi`) çağırıyor.
+   */
+  const sonSayimlar = await sonSayimTarihleri(prisma, [variantId]);
+  const kapi = sayimKorumasi({
+    sonSayimIsTarihi: sonSayimlar.get(variantId) ?? null,
+    hareketIsTarihi: tarih,
+    adet: hareketMiktari({ adet, yon }),
+  });
+  const israr: SayimIsrari = {
+    onaylandi: String(formData.get("sayimIsrariOnay") ?? "") === "1",
+    sebep: (SAYIM_ISRAR_SEBEPLERI as readonly string[]).includes(
+      String(formData.get("sayimIsrariSebep") ?? ""),
+    )
+      ? (String(formData.get("sayimIsrariSebep")) as SayimIsrarSebebi)
+      : null,
+    aciklama: String(formData.get("sayimIsrariAciklama") ?? ""),
+  };
+  if (kapi.sonuc === "DURAKSA") {
+    const g = israrGecerliMi(israr);
+    if (!g.gecerli) {
+      /**
+       * ⚠ SEBEP EKRANDA YAZAR (İlke #5): niye ilerlemediği ve nasıl
+       * ilerleyeceği görünür. Sessiz başarısızlık yasak.
+       */
+      return {
+        hatalar: [
+          kapi.yon === "DUSUREN"
+            ? t("sayimIsrariDusuren", { tarih: tarihMetni })
+            : t("sayimIsrariArtiran", { tarih: tarihMetni }),
+          g.eksik === "onay"
+            ? t("sayimIsrariOnayGerek")
+            : g.eksik === "sebep"
+              ? t("sayimIsrariSebepGerek")
+              : t("sayimIsrariAciklamaGerek"),
+        ],
+      };
+    }
+  }
+
   try {
     await prisma.$transaction(async (tx) => {
       if (yon === "ARTI") {
@@ -206,6 +265,41 @@ export async function stokDuzelt(
     }
     console.error("[stok duzeltme] beklenmeyen hata:", e);
     return { hatalar: [t("kaydedilemedi")] };
+  }
+
+  /**
+   * ═══ İSTİSNA İZ BIRAKIR — İKİ YERE ═══════════════════════════════════════
+   *
+   * ⭐ ANAYASA: _"'Devam edilsin' demek, kaydın sessizce geçmesi demek
+   * değildir; üç ay sonra 'bu neden böyle' sorusunun cevabı olmalıdır."_
+   *
+   * İKİ AYRI OKUYUCU, İKİ AYRI KAYIT — biri ötekinin yerine geçmez:
+   *  · `AuditLog`        → "ne oldu, kim, hangi sebeple" (geçmişe bakan)
+   *  · `sayimGecersizAt` → "bu varyantın sayımı ARTIK GEÇERLİ DEĞİL"
+   *                        (ileriye bakan: yeniden sayılmalı)
+   * Yalnız `AuditLog` yazılsaydı, geçersizleşen sayım hiçbir ekranda
+   * görünmezdi ve kimse yeniden saymazdı.
+   */
+  if (kapi.sonuc === "DURAKSA") {
+    const an = new Date();
+    await sayimGecersizlestir(prisma, [variantId], an);
+    await prisma.auditLog.create({
+      data: {
+        action: "SAYIM_KORUMASI_ISTISNASI",
+        targetType: "ProductVariant",
+        targetId: variantId,
+        detail: JSON.stringify({
+          yol: "/stok — stok düzeltme",
+          yon: kapi.yon,
+          sayimTarihi: kapi.sayimTarihi.toISOString(),
+          hareketIsTarihi: kapi.hareketIsTarihi.toISOString(),
+          adet: hareketMiktari({ adet, yon }),
+          sebep: israr.sebep,
+          aciklama: israr.aciklama.trim() || null,
+          sonuc: "SAYIM GECERSIZLESTI — bu varyant yeniden sayilmali.",
+        }),
+      },
+    });
   }
 
   revalidatePath("/stok");

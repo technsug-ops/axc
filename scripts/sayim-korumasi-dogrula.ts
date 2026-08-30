@@ -1,7 +1,11 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { sayimKorumasi } from "../src/lib/sayim-korumasi";
+import {
+  israrGecerliMi,
+  SAYIM_ISRAR_SEBEPLERI,
+  sayimKorumasi,
+} from "../src/lib/sayim-korumasi";
 
 /**
  * ============================================================================
@@ -81,6 +85,37 @@ dogru("iki yön de AYNI sertlikte (ikisi de DURAKSA)",
 dogru("ama sebepleri FARKLI (kullanıcıya farklı iş düşüyor)",
   (dus.sonuc === "DURAKSA" ? dus.sebep : "") !==
     (art.sonuc === "DURAKSA" ? art.sebep : ""));
+/**
+ * ═══ ISRAR — KAPALI SEBEP LİSTESİ (saf gövde, DEĞER testi) ═══════════════
+ *
+ * ⭐ ANAYASA: _"uyarı sorar, kullanıcı ısrar ederse istisna kaydedilir."_
+ * Dört şart: eşik yerinde · onay HER SEFERİNDE · sebep KAPALI KÜMEDEN ·
+ * istisna İZ BIRAKIR. İlk üçü burada DEĞERLE sınanıyor; dördüncüsü
+ * (iz) yazma yolunun ölçütü.
+ */
+yakin("onaysız ısrar geçersiz — eksik: onay",
+  israrGecerliMi({ onaylandi: false, sebep: "GEC_GIRILEN_ALIM", aciklama: "" }),
+  { gecerli: false, eksik: "onay" });
+yakin("onay VAR ama sebep YOK — geçersiz",
+  israrGecerliMi({ onaylandi: true, sebep: null, aciklama: "" }),
+  { gecerli: false, eksik: "sebep" });
+/** ⚠ `DIGER` kapalı listenin kaçak deliği — açıklama ZORUNLU. */
+yakin("DIGER seçildi ama açıklama boş — geçersiz",
+  israrGecerliMi({ onaylandi: true, sebep: "DIGER", aciklama: "   " }),
+  { gecerli: false, eksik: "aciklama" });
+yakin("DIGER + açıklama — geçerli",
+  israrGecerliMi({ onaylandi: true, sebep: "DIGER", aciklama: "sayim fisi kayip" }),
+  { gecerli: true });
+yakin("kapalı listeden sebep + onay — geçerli",
+  israrGecerliMi({ onaylandi: true, sebep: "SAYIM_HATALI", aciklama: "" }),
+  { gecerli: true });
+/**
+ * ⚠ SEBEP LİSTESİ KAPALI KALMALI — yeni sebep eklenirse sözlük ve ekran da
+ * genişlemek zorunda. Sayı sabitlenerek "sessizce büyüme" engelleniyor.
+ * _(Anayasa: "kapsam genişlemesi, bağımlı listelerin de genişlemesidir".)_
+ */
+yakin("kapalı listede 4 sebep var", SAYIM_ISRAR_SEBEPLERI.length, 4);
+
 /** ⚠ Bir gün öncesi bile duraksatır — eşik uydurulmadı. */
 dogru("sayımdan BİR GÜN öncesi de duraksatır (tolerans yok)",
   sayimKorumasi({ sonSayimIsTarihi: S("2026-08-29"), hareketIsTarihi: S("2026-08-28"), adet: -1 })
@@ -115,8 +150,51 @@ for (const yol of dosyalar("src")) {
     tarihler.every((t) => /new Date\(\)/.test(t));
   kontrol++;
   if (hepsiSimdi) continue;
-  if (/\bsayimKorumasi\s*\(/.test(kod)) continue;
-  if (/SAYIM KORUMASI YOK:\s*\S/.test(ham)) continue;
+  /**
+   * ═══ EKRAN YOLU SÖZLEŞMESİ — ÜÇ PARÇA BİRDEN ════════════════════════════
+   *
+   * Bir ekran yolu kapıyı çağırıyorsa YALNIZ çağırması yetmez; ısrar
+   * akışının üç parçası da olmalı:
+   *   ① kapı        `sayimKorumasi(`      — duraksatıyor mu
+   *   ② ısrar       `israrGecerliMi(`     — kullanıcı ısrar etti mi, SUNUCUDA
+   *   ③ damga       `sayimGecersizlestir(` — istisna geçtiyse sayım geçersiz
+   *
+   * ⛔ ①'İ ÇAĞIRIP ②'Yİ ATLAMAK EN TEHLİKELİSİ: kapı duraksatır, ekran
+   * kilitler — ama sunucu ekrana GÜVENİR. Formu elle gönderen (ya da
+   * `disabled`ı kaldıran) biri kapıyı tamamen atlar ve hiçbir iz kalmaz.
+   *
+   * ⛔ ③'Ü ATLAMAK SESSİZ: istisna geçer, `AuditLog`a yazılır ama sayım
+   * "hâlâ geçerli" görünür ve kimse yeniden saymaz.
+   */
+  const kapiVar = /\bsayimKorumasi\s*\(/.test(kod);
+  const israrVar = /\bisrarGecerliMi\s*\(/.test(kod);
+  const damgaVar = /\bsayimGecersizlestir\s*\(/.test(kod);
+  const beyan = /SAYIM KORUMASI YOK:\s*\S/.test(ham);
+  if (kapiVar) {
+    if (!israrVar) {
+      hata++;
+      acik.push("  ⛔ " + d +
+        "  →  kapı ÇAĞRILIYOR ama `israrGecerliMi(` YOK — sunucu ekrana güveniyor");
+      continue;
+    }
+    if (!damgaVar) {
+      hata++;
+      acik.push("  ⛔ " + d +
+        "  →  ısrar var ama `sayimGecersizlestir(` YOK — geçersizleşen sayım görünmez");
+      continue;
+    }
+    continue;
+  }
+  /**
+   * ⛔ KAPIYI İÇERİ ALIP ÇAĞIRMAMAK — "bağlı görünen" koruma.
+   * _(29.08'de betiklerde tam bu yaşandı; ekran yolunda da yasak.)_
+   */
+  if (/from\s+["'][^"']*sayim-(korumasi|damgasi)["']/.test(kod)) {
+    hata++;
+    acik.push("  ⛔ " + d + "  →  kapı İÇERİ ALINMIŞ ama HİÇ ÇAĞRILMAMIŞ (vekil koruma)");
+    continue;
+  }
+  if (beyan) continue;
   hata++;
   acik.push("  ⛔ " + d + "  →  `occurredAt` sabit değil, `sayimKorumasi(` yok, beyan yok");
 }

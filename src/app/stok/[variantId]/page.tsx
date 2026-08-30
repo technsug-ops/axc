@@ -22,6 +22,7 @@ import { tarihGirdisi } from "@/lib/bicim";
 
 import { DuzeltmeFormu } from "./duzeltme-formu";
 import { varyantStogu } from "@/lib/stok";
+import { sonSayimTarihleri } from "@/lib/sayim-damgasi";
 
 export default async function VaryantHareketleriSayfasi({
   params,
@@ -46,6 +47,14 @@ export default async function VaryantHareketleriSayfasi({
     where: { isActive: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
+
+  /**
+   * ⭐ SAYIM KAPISI İÇİN — bu varyantın SON sayımının İŞ TARİHİ.
+   * Ölçüt `sonSayimTarihleri` gövdesinden gelir; ekran kendi sorgusunu
+   * kurmaz. İki yerde iki ölçüt olursa biri ötekinden sessizce ayrışır.
+   */
+  const sonSayim =
+    (await sonSayimTarihleri(prisma, [variantId])).get(variantId) ?? null;
 
   const bicim = await bicimlendirici();
   const t = await getTranslations("Stok");
@@ -182,6 +191,14 @@ export default async function VaryantHareketleriSayfasi({
         variantId={varyant.id}
         mevcutStok={stok}
         bugun={tarihGirdisi(new Date())}
+        /**
+         * ⭐ SAYIM KAPISI — bu varyantın SON sayımının iş tarihi.
+         * Form, seçilen tarih bundan ÖNCEYSE ısrar bloğunu çizer.
+         * ⚠ Ekran kilitler, SUNUCU GÜVENMEZ: aynı ölçüt orada da koşuyor.
+         */
+        sonSayimTarihi={
+          sonSayim === null ? null : tarihGirdisi(sonSayim)
+        }
         nedenler={nedenler.map((n) => ({
           id: n.id,
           ad: n.name,

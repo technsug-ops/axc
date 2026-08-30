@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DURUM_KUTUSU } from "@/lib/renkler";
+import { SAYIM_ISRAR_SEBEPLERI } from "@/lib/sayim-korumasi";
 import { stokDuzelt, type DuzeltmeDurumu } from "../duzeltme-actions";
 
 /**
@@ -49,12 +51,22 @@ export function DuzeltmeFormu({
   nedenler,
   bugun,
   mevcutStok,
+  sonSayimTarihi,
 }: {
   variantId: string;
   nedenler: NedenSecenegi[];
   /** <input type="date"> biçiminde iş günü. */
   bugun: string;
   mevcutStok: number;
+  /**
+   * ⭐ SAYIM KAPISI İÇİN — bu varyantın SON sayımının iş tarihi
+   * (`<input type="date">` biçiminde). Sayılmamışsa null.
+   *
+   * ⚠ EKRAN KİLİTLER, SUNUCU GÜVENMEZ: aynı ölçüt sunucuda da koşuyor.
+   * Burada gösterilmesinin sebebi kullanıcıyı KAYDET'e bastıktan sonra
+   * değil, ÖNCE uyarmak. _(İlke #5: sessiz başarısızlık yasak.)_
+   */
+  sonSayimTarihi: string | null;
 }) {
   const t = useTranslations("StokDuzeltme");
   const ortak = useTranslations("Ortak");
@@ -66,6 +78,29 @@ export function DuzeltmeFormu({
 
   const [yon, setYon] = useState<"EKSI" | "ARTI">("EKSI");
   const [nedenId, setNedenId] = useState("");
+
+  /**
+   * ⚠ TARİH ARTIK DURUMDA — kontrolsüzken sayım kapısı KARAR VEREMİYORDU.
+   * _(Anayasa: "kontrollü girdi, durumu olmadan yazılamaz" — burada tersi
+   * yönde: karar için değeri OKUMAK gerekiyordu ve `defaultValue` okunamaz.)_
+   */
+  const [tarih, setTarih] = useState(bugun);
+  const [israrOnay, setIsrarOnay] = useState(false);
+  const [israrSebep, setIsrarSebep] = useState("");
+  const [israrAciklama, setIsrarAciklama] = useState("");
+
+  /**
+   * ⭐ SAYIM KAPISI DURAKSATIR MI — ekran tarafı.
+   *
+   * ⚠ ÖLÇÜT SUNUCUYLA AYNI: sayım damgası VAR ve hareketin iş tarihi
+   * damgadan ÖNCE. Aynı gün SERBEST (sayım gününün tamamı kilitlenmez).
+   * Metin karşılaştırması `YYYY-MM-DD` biçiminde sıralı olduğu için güvenli.
+   */
+  const kapiDuraksatir = sonSayimTarihi !== null && tarih < sonSayimTarihi;
+  /** ⚠ YÖN AYRIMI EKRANDA DA: iki yön iki AYRI cümle, çünkü yapılacak
+   *  kontrol farklı. Sertlik aynı, gerekçe farklı. */
+  const israrGecerli =
+    israrOnay && israrSebep !== "" && (israrSebep !== "DIGER" || israrAciklama.trim() !== "");
 
   /**
    * ════════════════════════════════════════════════════════════════════
@@ -192,7 +227,8 @@ export function DuzeltmeFormu({
                 id="sd-tarih"
                 name="tarih"
                 type="date"
-                defaultValue={bugun}
+                value={tarih}
+                onChange={(e) => setTarih(e.target.value)}
                 className="h-11 md:h-10"
               />
             </div>
@@ -239,7 +275,100 @@ export function DuzeltmeFormu({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit" disabled={bekliyor} className="h-11 md:h-10">
+            {/*
+              ═══ SAYIM KORUMASI — ISRAR BLOĞU ═══════════════════════════
+              ⭐ ANAYASA: "uyarı SORAR, kullanıcı ISRAR ederse istisna
+              kaydedilir." Dört şart burada karşılanıyor:
+               · eşik yerinde   → uyarı her seferinde çıkar, susturulmaz
+               · onay açık      → kutu işaretlenmeden düğme AÇILMAZ
+               · sebep kapalı liste → serbest metin sayılamaz
+               · iz bırakır     → sunucu `AuditLog` + `sayimGecersizAt` yazar
+
+              ⚠ VE YÖN AYRIMI EKRANDA DA: iki yön İKİ AYRI CÜMLE, çünkü
+              kullanıcının yapması gereken kontrol farklı.
+            */}
+            {kapiDuraksatir ? (
+              <div
+                className={`space-y-3 rounded-md border border-dashed p-3 text-xs ${DURUM_KUTUSU.uyari}`}
+              >
+                <p className="font-medium">{t("sayimIsrariBaslik")}</p>
+                <p>
+                  {yon === "EKSI"
+                    ? t("sayimIsrariDusuren", { tarih })
+                    : t("sayimIsrariArtiran", { tarih })}
+                </p>
+                <div className="space-y-1">
+                  <Label htmlFor="sd-israr-sebep">
+                    {t("sayimIsrariSebepEtiketi")}
+                  </Label>
+                  {/*
+                    ⚠ ÇIPLAK <select> DEĞİL shadcn değil — form `FormData` ile
+                    gönderiliyor ve `name` taşıyan yerli öğe gerekiyor.
+                    Dokunma alanı telefonda 44px (İlke #8).
+                  */}
+                  <select
+                    id="sd-israr-sebep"
+                    name="sayimIsrariSebep"
+                    value={israrSebep}
+                    onChange={(e) => setIsrarSebep(e.target.value)}
+                    className="border-input bg-background h-11 w-full rounded-md border px-3 text-xs md:h-10"
+                  >
+                    <option value="">—</option>
+                    {SAYIM_ISRAR_SEBEPLERI.map((s) => (
+                      <option key={s} value={s}>
+                        {t(`sayimSebep_${s}`)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {/* ⚠ `DIGER` kapalı listenin kaçak deliği — açıklama ZORUNLU. */}
+                {israrSebep === "DIGER" ? (
+                  <div className="space-y-1">
+                    <Label htmlFor="sd-israr-aciklama">
+                      {t("sayimIsrariAciklamaEtiketi")}
+                    </Label>
+                    <Input
+                      id="sd-israr-aciklama"
+                      name="sayimIsrariAciklama"
+                      value={israrAciklama}
+                      onChange={(e) => setIsrarAciklama(e.target.value)}
+                      className="h-11 md:h-10"
+                    />
+                  </div>
+                ) : (
+                  <input type="hidden" name="sayimIsrariAciklama" value="" />
+                )}
+                <label className="flex cursor-pointer items-start gap-2">
+                  <input
+                    type="checkbox"
+                    name="sayimIsrariOnay"
+                    value="1"
+                    className="mt-0.5 size-4 shrink-0"
+                    checked={israrOnay}
+                    onChange={(e) => setIsrarOnay(e.target.checked)}
+                  />
+                  <span>{t("sayimIsrariOnayMetni")}</span>
+                </label>
+                {/*
+                  ⚠ KİLİTLİ DÜĞME SESSİZ KALMAZ (İlke #5): niye ilerlemediği
+                  ve nasıl ilerleyeceği YAZILI.
+                */}
+                {!israrGecerli ? (
+                  <p className="font-medium">
+                    {!israrOnay
+                      ? t("sayimIsrariOnayGerek")
+                      : israrSebep === ""
+                        ? t("sayimIsrariSebepGerek")
+                        : t("sayimIsrariAciklamaGerek")}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            <Button
+              type="submit"
+              disabled={bekliyor || (kapiDuraksatir && !israrGecerli)}
+              className="h-11 md:h-10"
+            >
               <Save />
               {bekliyor ? ortak("kaydediliyor") : t("kaydet")}
             </Button>
