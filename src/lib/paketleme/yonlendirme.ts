@@ -144,3 +144,57 @@ export function paketlenebilirMi(siparis: PaketSiparisi | null): boolean {
 export function rafiEksikOlanlar(siparis: PaketSiparisi): PaketKalemi[] {
   return siparis.kalemler.filter((k) => k.rafKodu === null);
 }
+
+/**
+ * ============================================================================
+ *  RAF DOĞRULAMASI — OKUT-AL (K50 ⑤)
+ * ----------------------------------------------------------------------------
+ *  Toplayıcı rafın önüne gider, RAF ETİKETİNİ okutur ve ekran ona o rafta bu
+ *  siparişten NE olduğunu söyler.
+ *
+ *  ⛔ NÖTR — AKIŞ DURMAZ. Yanlış raf okutmak bir hata değil, bir bilgidir:
+ *  operatör sıradaki rafa geçer. Kilitleyen bir doğrulama, ilk yanlış
+ *  okumada toplamayı durdurur ve operasyoncu ekrana küser.
+ *
+ *  ⛔ VE RAF = KONUM, ADET DEĞİL. Raf okutmak bir kalemi TEYİTLİ YAPMAZ.
+ *  Yapsaydı, rafın önünde durmak "ürünü aldım" sayılırdı — akışın tek işi
+ *  (doğru ürünün eline geldiğini doğrulamak) sessizce atlanmış olurdu.
+ * ============================================================================
+ */
+export type RafKarari =
+  /** Okutulan kod bu siparişin kalemlerinden en az birinin rafı. */
+  | { tur: "RAFTA_VAR"; kalemler: PaketKalemi[] }
+  /** Kod bu siparişteki hiçbir kalemin rafı değil. Hüküm DEĞİL, bilgi. */
+  | { tur: "RAFTA_YOK" };
+
+/**
+ * Okutulan kodun bu siparişte hangi kalemlere karşılık geldiğini söyler.
+ *
+ * ⚠ TEYİTLİ KALEMLER DE DÖNER: operatör rafa geri dönüp bakabilir ve
+ * "burada ne vardı" sorusunun cevabı teyitle değişmez. Ayıklamak, aynı rafa
+ * ikinci kez uğrayan birine "burada bir şey yok" demek olurdu.
+ *
+ * ⚠ RAFI GİRİLMEMİŞ KALEM EŞLEŞMEZ: `null` DA BOŞ DİZE DE bir raf kodu
+ * değildir. Boş okumayı boş rafla eşleştirmek, yeri bilinmeyen ürünü "bu
+ * raftaymış" gibi gösterirdi.
+ *
+ * ⚠ TEK KAPI — VE NİYE: önce ayrıca `if (!temiz) return` vardı ve mutasyon
+ * denemesinde ÖLÇÜLEMEDİ; hiçbir kalemin raf kodu boş olmadığı sürece o
+ * satırı silmek davranışı hiç değiştirmiyordu. Ölçülemeyen satır, koruduğunu
+ * sandığı şeyi korumaz. Kapı KALEM tarafına taşındı: boş raf kodu artık
+ * hiçbir okumayla eşleşmiyor ve bunu bozan mutasyon kırmızı yanıyor.
+ * _(Anayasa: "mutasyon kaçıyorsa önce test verisi sorgulanır" — burada
+ * cevap veri değil, ölçülemez kapıydı.)_
+ */
+export function rafKarari(
+  kalemler: readonly PaketKalemi[],
+  kod: string,
+): RafKarari {
+  const temiz = kod.trim();
+  const uyanlar = kalemler.filter(
+    (k) => k.rafKodu !== null && k.rafKodu.trim() !== "" && k.rafKodu === temiz,
+  );
+  return uyanlar.length > 0
+    ? { tur: "RAFTA_VAR", kalemler: uyanlar }
+    : { tur: "RAFTA_YOK" };
+}

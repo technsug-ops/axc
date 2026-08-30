@@ -3398,7 +3398,8 @@
     "bastanBasla": "Yeni kutu",
     "bulunamadiHicYok": "Bu kod sistemde HİÇBİR satışta bulunamadı. En sık sebebi: o satışa gönderi numarası henüz girilmemiş olmasıdır — satış detayından girip tekrar deneyin. Kargo etiketindeki numara ile sisteme yazılan numara farklı da olabilir.",
     "bulunamadiKargoyaVerilmis": "Bu kod {siparis} numaralı siparişe ait — ama o sipariş KARGOYA VERİLMİŞ olarak işaretli. Paketlenecek siparişler burada çıkmaz.",
-    "bulunamadiIptal": "Bu kod {siparis} numaralı siparişe ait — ama o sipariş İPTAL edilmiş."
+    "bulunamadiIptal": "Bu kod {siparis} numaralı siparişe ait — ama o sipariş İPTAL edilmiş.",
+    "rafEslesti": "{kod} rafındasınız — bu siparişten burada {adet} kalem var. Ürünü okutunca teyitlenir."
   },
   "Depo": {
     "baslik": "Depo kurulumu",

@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import {
   kalemBul,
+  rafKarari,
   paketlenebilirMi,
   rafiEksikOlanlar,
   siradakiAdim,
@@ -109,6 +110,13 @@ export function Paketleyici({
   const [sonOkumaEslestiMi, setSonOkuma] = useState<boolean | null>(null);
   const [okunmayanKod, setOkunmayanKod] = useState<string | null>(null);
   /**
+   * RAF DOĞRULAMASI (K50 ⑤) — AYRI DURUM, `sonOkumaEslestiMi`DEN BAĞIMSIZ.
+   *
+   * ⛔ Aynı duruma yazılsaydı raf okumak bir ÜRÜN TEYİDİ gibi görünürdü ve
+   * "raf = konum, adet değil" kuralı sessizce çiğnenirdi.
+   */
+  const [rafNotu, setRafNotu] = useState<string | null>(null);
+  /**
    * ⚠ "BULUNAMADI" TEK BAYRAK DEĞİL, SEBEBİ TAŞIYAN BİR DEĞER. Üç apayrı
    * durum (hiç yok · kargoya verilmiş · iptal) tek cümleye sıkışınca
    * kullanıcı yanlış işe yönelir: kodu yeniden okutur, oysa yapılacak şey
@@ -143,6 +151,38 @@ export function Paketleyici({
     if (!aranacak || !siparis) return;
 
     const bulunan = kalemBul(siparis.kalemler, aranacak);
+
+    /**
+     * ═══ RAF DOĞRULAMASI (K50 ⑤) — ÜRÜNDEN SONRA SORULUR ═══════════════
+     *
+     * ⚠ SIRA: önce ÜRÜN. Günlük iş ürün okutmaktır; raf etiketi istisnadır.
+     * Ve çakışma canlıda ölçüldü (30.08.2026): 41 raf kodunun hiçbiri bir
+     * ürünün SKU/Firma SKU/barkoduyla çakışmıyor.
+     *
+     * ⛔ RAF OKUMASI KALEMİ TEYİTLİ YAPMAZ — raf KONUMDUR, ADET DEĞİL.
+     * Yapsaydı rafın önünde durmak "ürünü aldım" sayılır ve akışın tek işi
+     * (doğru ürünün eline geldiğini doğrulamak) sessizce atlanırdı.
+     *
+     * ⛔ VE AKIŞ DURMAZ: yanlış raf okutmak bir hata değil bir bilgidir.
+     */
+    if (!bulunan) {
+      const raf = rafKarari(siparis.kalemler, aranacak);
+      if (raf.tur === "RAFTA_VAR") {
+        setRafNotu(
+          t("rafEslesti", {
+            kod: aranacak,
+            adet: raf.kalemler.length,
+          }),
+        );
+        setOkunmayanKod(null);
+        /** ⚠ `sonOkuma` DOKUNULMAZ: raf okuması bir ürün teyidi değildir. */
+        setUrunKodu("");
+        urunOdagi.current?.focus();
+        return;
+      }
+    }
+    setRafNotu(null);
+
     setOkunmayanKod(bulunan ? null : aranacak);
     setSonOkuma(bulunan !== null);
     tonCal(bulunan !== null);
@@ -303,6 +343,21 @@ export function Paketleyici({
               placeholder={t("urunKoduIpucu")}
               kameraBasligi={t("urunKoduEtiketi")}
             />
+
+            {/*
+              ═══ RAF DOĞRULAMASI (K50 ⑤) — NÖTR KUTU ══════════════════════
+              ⛔ YEŞİL DEĞİL: yeşil "iş bitti" der ve raf okutmak bir iş
+              bitirmez. Ürün hâlâ okutulacak. Nötr renk bunu söylüyor.
+              ⚠ Yalnız raf okununca çıkar; sonraki ürün okumasında silinir.
+            */}
+            {rafNotu ? (
+              <div className={`rounded-md p-3 ${DURUM_KUTUSU.notr}`} role="status">
+                <p className="flex items-center gap-2 text-sm">
+                  <MapPin className="size-4 shrink-0" aria-hidden />
+                  {rafNotu}
+                </p>
+              </div>
+            ) : null}
 
             {adim === "ESLESTI" ? (
               <div className={`rounded-md p-3 ${DURUM_KUTUSU.olumlu}`} role="status">

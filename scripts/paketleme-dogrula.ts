@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import {
   PAKETLEME_ADIMLARI,
   kalemBul,
+  rafKarari,
   paketlenebilirMi,
   rafiEksikOlanlar,
   siradakiAdim,
@@ -419,6 +420,173 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
     "KÖPRÜ TEK YÖNLÜ — /paketle içinden /okut a bağlantı YOK",
     !ekranY.includes("href=" + JSON.stringify("/okut")) &&
       !ekranY.includes(`href={` + JSON.stringify("/okut")),
+  );
+}
+
+/**
+ * ============================================================================
+ *  RAF DOĞRULAMASI — OKUT-AL (K50 ⑤)
+ * ----------------------------------------------------------------------------
+ *  ⛔ İKİ KURAL BİRDEN SINANIR VE İKİSİ DE "YAPMAMA" İDDİASIDIR:
+ *    ① raf okuması bir kalemi TEYİTLİ YAPMAZ  (raf = KONUM, adet değil)
+ *    ② raf okuması akışı DURDURMAZ            (nötr bilgi)
+ *  "Dokunmuyor" iddiası da bir davranıştır ve dokunan bir mutasyonla
+ *  sınanmadıkça doğru sayılmaz. _(Anayasa, 25.08.2026.)_
+ * ============================================================================
+ */
+{
+  console.log("\nRAF DOĞRULAMASI (K50 ⑤)");
+
+  const K = (ek: Partial<PaketKalemi>): PaketKalemi => ({
+    saleItemId: "s1",
+    variantId: "v1",
+    urunAdi: "Ürün",
+    varyantAdi: null,
+    sku: "SKU1",
+    companySku: "F1",
+    barcode: "111",
+    adet: 1,
+    rafKodu: "RAF-SLN1-1",
+    teyitli: false,
+    ...ek,
+  });
+
+  const kalemler = [
+    K({}),
+    K({ saleItemId: "s2", sku: "SKU2", companySku: "F2", barcode: "222" }),
+    K({
+      saleItemId: "s3",
+      sku: "SKU3",
+      companySku: "F3",
+      barcode: "333",
+      rafKodu: "RAF-SLN2-3",
+    }),
+    /** ⚠ RAFI GİRİLMEMİŞ KALEM — ayrımın öteki yakası. */
+    K({ saleItemId: "s4", sku: "SKU4", companySku: "F4", barcode: "444", rafKodu: null }),
+    /**
+     * ⚠ RAF KODU BOŞ DİZE — `null`DAN AYRI BİR HÂL VE BİLEREK BURADA.
+     * Bu satır olmadan "boş kod eşleşmiyor" kapısı ÖLÇÜLEMİYORDU: mutasyon
+     * kapıyı kaldırıyor, hiçbir kalemin raf kodu boş olmadığı için davranış
+     * değişmiyor ve bekçi yeşil kalıyordu.
+     */
+    K({ saleItemId: "s5", sku: "SKU5", companySku: "F5", barcode: "555", rafKodu: "" }),
+  ];
+
+  kontrol(
+    "rafı okunan kalemler bulunuyor",
+    (() => {
+      const r = rafKarari(kalemler, "RAF-SLN1-1");
+      return r.tur === "RAFTA_VAR" && r.kalemler.length === 2;
+    })(),
+  );
+  kontrol(
+    "başka rafın kalemi karışmıyor",
+    (() => {
+      const r = rafKarari(kalemler, "RAF-SLN2-3");
+      return r.tur === "RAFTA_VAR" && r.kalemler[0].saleItemId === "s3";
+    })(),
+  );
+  /** ⚠ SİPARİŞTE OLMAYAN RAF BİR HÜKÜM DEĞİL — bilgi. */
+  kontrol(
+    "siparişte olmayan raf → RAFTA_YOK",
+    rafKarari(kalemler, "RAF-DEPO9-9").tur === "RAFTA_YOK",
+  );
+  /**
+   * ⛔ BOŞ KOD BOŞ RAFLA EŞLEŞMEZ. Eşleşseydi yeri bilinmeyen ürün
+   * "bu raftaymış" gibi görünürdü.
+   */
+  /**
+   * ⛔ BOŞ OKUMA, RAF KODU BOŞ OLAN KALEMLE DE EŞLEŞMEZ.
+   * Örnekte `s5`in raf kodu `""` — kapı kalkarsa boş okuma onu bulur ve
+   * "bu raftasınız" der. Yeri belli olmayan ürün, bir rafta gösterilmiş
+   * olurdu.
+   */
+  kontrol("boş kod hiçbir şeyle eşleşmiyor", rafKarari(kalemler, "  ").tur === "RAFTA_YOK");
+  kontrol(
+    "  ...raf kodu BOŞ DİZE olan kalem de eşleşmiyor",
+    rafKarari(kalemler, "").tur === "RAFTA_YOK",
+  );
+  kontrol(
+    "rafı `null` olan kalem EŞLEŞMİYOR",
+    (() => {
+      const r = rafKarari(kalemler, "RAF-SLN1-1");
+      return (
+        r.tur === "RAFTA_VAR" && !r.kalemler.some((k) => k.saleItemId === "s4")
+      );
+    })(),
+  );
+  /**
+   * ⭐ TEYİTLİ KALEM DE DÖNER: aynı rafa ikinci kez uğrayan operatöre
+   * "burada bir şey yok" demek yanlış olurdu.
+   */
+  kontrol(
+    "teyitli kalem de rafta GÖRÜNÜYOR",
+    (() => {
+      const t = kalemler.map((k) =>
+        k.saleItemId === "s1" ? { ...k, teyitli: true } : k,
+      );
+      const r = rafKarari(t, "RAF-SLN1-1");
+      return r.tur === "RAFTA_VAR" && r.kalemler.length === 2;
+    })(),
+  );
+
+  /* ═══ EKRAN — İKİ "YAPMAMA" İDDİASI ═════════════════════════════════ */
+  const pEkran = readFileSync("src/app/paketle/paketleyici.tsx", "utf8");
+  const pY = pEkran
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+
+  kontrol("ekran SAF gövdeyi çağırıyor", /rafKarari\(siparis\.kalemler,/.test(pY));
+
+  /**
+   * ⛔ ÖLÇÜT DALIN KENDİSİNE BAĞLI — dosya geneline değil.
+   * Raf dalı, kalemi teyitli yapan satıra ULAŞMADAN dönmeli. Dosya
+   * genelinde `teyitli: true` aransaydı ürün dalındaki meşru kullanım
+   * mutasyonu ayakta tutardı.
+   */
+  const dalBas = pY.indexOf('const raf = rafKarari(');
+  const dalSon = pY.indexOf("setRafNotu(null);", dalBas);
+  const rafDali = dalBas < 0 || dalSon < 0 ? "" : pY.slice(dalBas, dalSon);
+  kontrol("raf dalı bulunuyor", rafDali.length > 0, rafDali.length);
+  /** ⚠ PENCERE ÖLÇÜLDÜ: dal ~500 karakter; büyürse bu ölçü güncellenir. */
+  kontrol("  ...ve dal makul uzunlukta (kapsam kaymadı)", rafDali.length < 1200);
+  kontrol(
+    "① raf okuması kalemi TEYİTLİ YAPMIYOR",
+    rafDali.length > 0 && !/teyitli: true/.test(rafDali),
+  );
+  kontrol(
+    "  ...ve ürün teyidi durumuna DOKUNMUYOR",
+    rafDali.length > 0 && !/setSonOkuma\(/.test(rafDali),
+  );
+  /** ⛔ SES DE ÇALMAZ: onay tonu "ürün eline geldi" demektir. */
+  kontrol("  ...ve onay tonu ÇALMIYOR", rafDali.length > 0 && !/tonCal\(/.test(rafDali));
+  /**
+   * ② AKIŞ DURMAZ — raf notu ayrı bir durumda yaşıyor ve `siradakiAdim`
+   * onu hiç görmüyor. Görseydi ekran raf okununca adım değiştirirdi.
+   */
+  kontrol(
+    "② raf notu AYRI durumda (adım kararına girmiyor)",
+    /const \[rafNotu, setRafNotu\]/.test(pY) &&
+      !/siradakiAdim\(\{[^}]*rafNotu/.test(pY),
+  );
+  /** ⛔ NÖTR KUTU — yeşil "iş bitti" derdi, oysa ürün hâlâ okutulacak. */
+  const notKutusu = pY.slice(pY.indexOf("{rafNotu ?"), pY.indexOf("{rafNotu ?") + 400);
+  kontrol("nötr kutuda gösteriliyor (yeşil DEĞİL)",
+    /DURUM_KUTUSU\.notr/.test(notKutusu) && !/DURUM_KUTUSU\.olumlu/.test(notKutusu));
+  /** ⚠ Raf notu YOKSA hiç çıkmaz — sönmeyen kutu okunmaz olur. */
+  kontrol("raf notu yoksa kutu HİÇ çıkmıyor", /\{rafNotu \? \(/.test(pEkran));
+
+  const sozlukP = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Paketle: Record<string, string>;
+  };
+  /**
+   * ⚠ METİN "TEYİTLENDİ" DEMEZ — "ürünü okutunca teyitlenir" der. Metin
+   * teyit iddia etseydi kullanıcı ürünü okutmadan paketlerdi ve kural
+   * ekranda değil yalnız kodda kalırdı.
+   */
+  kontrol(
+    "metin teyidi ÜRÜN OKUMASINA bağlıyor",
+    (sozlukP.Paketle.rafEslesti ?? "").includes("okutunca teyitlenir"),
   );
 }
 
