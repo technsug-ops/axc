@@ -1,23 +1,15 @@
 import { karHesapla, type KarGirdisi, type KarDurumu } from "@/lib/kar";
 import { kdvHaricKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
+import { sonSayimTarihleri, sayimGecersizlestir } from "./sayim-damgasi";
+import {
+  israrGecerliMi,
+  sayimKorumasi,
+  type SayimIsrari,
+} from "./sayim-korumasi";
 import { acikPartiler, fifoDagit, gunSonu, type Parti } from "@/lib/stok";
 
 import type { Currency } from "@/generated/prisma/enums";
-
-/**
- * SAYIM KORUMASI YOK: kapı bu yola HENÜZ BAĞLANMADI (K84, 29.08.2026).
- *
- * Kural ve saf gövde hazır (`lib/sayim-korumasi.ts`), bekçisi koşuyor
- * (`sayim-korumasi:dogrula`). Eksik olan tek şey KULLANICI TARAFI:
- * duraksama bir soru sorar ve "ısrar edersen iz bırakarak geçer" yolu
- * gerektirir; o ekran yok. Kapıyı ekransız bağlamak, meşru bir işi
- * SESSİZCE kilitlerdi — anayasadaki "kural doğru mu değil, teslim
- * edilebilir mi" süzgeci tam burada durduruyor.
- *
- * Bu beyan bir gerekçe DEĞİL, BORÇ KAYDIDIR: yeni açılan bir yol bekçiye
- * takılır ve bu satırı kopyalamak zorunda kalan kişi borcu görür.
- */
 
 /**
  * ============================================================================
@@ -78,6 +70,12 @@ export type SatisGirdisi = {
    * komisyondaki oran/tutar ikilisinin aynısı: panel gerçeği kazanır.
    */
   cargoAmountManual: number | null;
+  /**
+   * ⭐ SAYIM KAPISI ISRARI — satış başına, kalem başına DEĞİL.
+   * Kapıyı tetikleyen şey TARİH ve satışın tek tarihi var.
+   * Verilmezse "ısrar edilmemiş" sayılır ve kapı duraksatır.
+   */
+  sayimIsrari?: SayimIsrari;
 };
 
 /** Stok yetmediğinde fırlatılır; transaction geri sarılır. */
@@ -155,6 +153,32 @@ export class SiparisNoCakismasiHatasi extends Error {
 }
 
 /**
+ * ⭐ SAYIM KAPISI DURAKSATTI — kullanıcı ısrar etmedi.
+ *
+ * ⚠ HÜKÜM HATANIN İÇİNDE TAŞINIR: hangi varyantlar, hangi yön, hangi sayım
+ * tarihi — çağıran yeniden sorgulamasın (`SiparisNoCakismasiHatasi` deseni).
+ *
+ * ⚠ VE ISRAR SATIŞ BAŞINA, KALEM BAŞINA DEĞİL: kapıyı tetikleyen şey TARİH
+ * (`soldAt`) ve satışın tek bir tarihi var. Kalem başına sorulsaydı aynı
+ * soru aynı cevapla defalarca sorulurdu.
+ * _(Komisyon `oranIstisnasi` kalem başına — çünkü ORAN kalem başına.)_
+ */
+export class SayimKorumasiHatasi extends Error {
+  constructor(
+    readonly duraksayanlar: {
+      variantId: string;
+      yon: "ARTIRAN" | "DUSUREN";
+      sayimTarihi: Date;
+    }[],
+    /** Israr neden geçersiz — `null` ise hiç ısrar edilmemiş. */
+    readonly eksik: "onay" | "sebep" | "aciklama",
+  ) {
+    super("Sayım koruması duraksattı");
+    this.name = "SayimKorumasiHatasi";
+  }
+}
+
+/**
  * Satışı kaydeder ve stoğu FIFO ile düşer.
  *
  * @returns oluşan satışın kimliği
@@ -189,6 +213,56 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
       const hukum = siparisNoCakismaHukmu(cakisan);
       if (hukum.tur !== "YOK")
         throw new SiparisNoCakismasiHatasi(girdi.shipmentCode, hukum);
+    }
+
+    /**
+     * ═══ SAYIM KAPISI ══════════════════════════════════════════════════════
+     *
+     * ⭐ ANAYASA: **FİZİKSEL SAYIM SON SÖZDÜR.** Satış formu `soldAt`i
+     * kullanıcıdan alıyor — yani sayımdan ÖNCEYE yazılabilir. Satış
+     * DÜŞÜREN yöndedir ve asıl tehlike odur: sayılmış malı yok eder.
+     *
+     * ⚠ YASAK DEĞİL DURAKSAMA: geç girilen satış meşrudur. Kullanıcı ısrar
+     * ederse geçer — sebebiyle ve izle.
+     *
+     * ⚠ VE HEPSİ TOPLANIR, İLKİNDE DURULMAZ: kullanıcıya "şu üç üründe
+     * sayım var" demek, "birinde var" demekten daha kullanışlı — yoksa
+     * aynı formu üç kez gönderip üç kez uyarı alır.
+     */
+    const sonSayimlar = await sonSayimTarihleri(
+      tx,
+      girdi.kalemler.map((k) => k.variantId),
+    );
+    const duraksayanlar: {
+      variantId: string;
+      yon: "ARTIRAN" | "DUSUREN";
+      sayimTarihi: Date;
+    }[] = [];
+    for (const kalem of girdi.kalemler) {
+      const karar = sayimKorumasi({
+        sonSayimIsTarihi: sonSayimlar.get(kalem.variantId) ?? null,
+        hareketIsTarihi: girdi.soldAt,
+        /** ⚠ Satış çıkıştır — işaret EKSİ. */
+        adet: -kalem.quantity,
+      });
+      if (karar.sonuc === "DURAKSA") {
+        duraksayanlar.push({
+          variantId: kalem.variantId,
+          yon: karar.yon,
+          sayimTarihi: karar.sayimTarihi,
+        });
+      }
+    }
+    if (duraksayanlar.length > 0) {
+      /**
+       * ⛔ SUNUCU EKRANA GÜVENMEZ — ekran düğmeyi kilitliyor ama aynı
+       * ölçüt burada da koşuyor. İki yerde iki ölçüt olmasın diye ikisi de
+       * `israrGecerliMi` saf gövdesini çağırıyor.
+       */
+      const g = israrGecerliMi(
+        girdi.sayimIsrari ?? { onaylandi: false, sebep: null, aciklama: "" },
+      );
+      if (!g.gecerli) throw new SayimKorumasiHatasi(duraksayanlar, g.eksik);
     }
 
     // Aynı varyant birden fazla kalemde geçebilir; partilerin kalan durumu
@@ -284,6 +358,46 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
     //  sonradan değişse bu satışın hesabı DEĞİŞMEZ. Yeniden hesaplama
     //  ayrı ve bilinçli bir eylemdir.
     await karHesabiniYaz(tx, satis.id, girdi, planlar);
+
+    /**
+     * ═══ İSTİSNA İZ BIRAKIR — İKİ YERE ═══════════════════════════════════
+     *
+     * ⭐ ANAYASA: _"'Devam edilsin' demek, kaydın sessizce geçmesi demek
+     * değildir."_ İki AYRI okuyucu, biri ötekinin yerine geçmez:
+     *  · `AuditLog`        → "ne oldu, hangi sebeple" (geçmişe bakan)
+     *  · `sayimGecersizAt` → "bu varyantın sayımı ARTIK GEÇERSİZ"
+     *                        (ileriye bakan: yeniden sayılmalı)
+     *
+     * ⚠ İŞLEM İÇİNDE YAZILIR: satış geri sarılırsa damga da sarılmalı.
+     * Dışarıda yazılsaydı, başarısız bir satış sayımı geçersizleştirirdi.
+     */
+    if (duraksayanlar.length > 0) {
+      const an = new Date();
+      await sayimGecersizlestir(
+        tx,
+        duraksayanlar.map((x) => x.variantId),
+        an,
+      );
+      await tx.auditLog.create({
+        data: {
+          action: "SAYIM_KORUMASI_ISTISNASI",
+          targetType: "Sale",
+          targetId: satis.id,
+          detail: JSON.stringify({
+            yol: "/satislar — yeni satış",
+            soldAt: girdi.soldAt.toISOString(),
+            sebep: girdi.sayimIsrari?.sebep ?? null,
+            aciklama: girdi.sayimIsrari?.aciklama.trim() || null,
+            duraksayanlar: duraksayanlar.map((x) => ({
+              variantId: x.variantId,
+              yon: x.yon,
+              sayimTarihi: x.sayimTarihi.toISOString(),
+            })),
+            sonuc: "SAYIM GECERSIZLESTI — bu varyantlar yeniden sayilmali.",
+          }),
+        },
+      });
+    }
 
     return satis.id;
   });

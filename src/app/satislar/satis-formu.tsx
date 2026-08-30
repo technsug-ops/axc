@@ -39,6 +39,7 @@ import { KarDurumu } from "./kar-durumu";
 import type { SimulasyonZemini } from "@/lib/fiyatlama/kart-verisi";
 import { oranUyarisi } from "@/lib/komisyon/oran-uyarisi";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { SAYIM_ISRAR_SEBEPLERI } from "@/lib/sayim-korumasi";
 
 export type HesapSecenegi = {
   id: string;
@@ -122,6 +123,15 @@ export function SatisFormu({
   const bicim = useBicim();
   const t = useTranslations("Satis");
   const ortak = useTranslations("Ortak");
+
+  /**
+   * ⭐ SAYIM KAPISI ISRARI — SATIŞ BAŞINA, kalem başına DEĞİL.
+   * Kapıyı tetikleyen şey TARİH (`soldAt`) ve satışın tek tarihi var.
+   * _(Komisyon `oranIstisnasi` kalem başına — çünkü ORAN kalem başına.)_
+   */
+  const [israrOnay, setIsrarOnay] = useState(false);
+  const [israrSebep, setIsrarSebep] = useState("");
+  const [israrAciklama, setIsrarAciklama] = useState("");
 
   // --- Başlık alanları ---
   const [code, setCode] = useState("");
@@ -378,6 +388,19 @@ export function SatisFormu({
       const n = Number(kargoTutariElle.replace(",", "."));
       return kargoTutariElle.trim() !== "" && Number.isFinite(n) ? n : null;
     })(),
+    /**
+     * ⭐ SAYIM KAPISI ISRARI — kapı tetiklenmediyse HİÇ GÖNDERİLMEZ.
+     * ⚠ Boş bir nesne göndermek "ısrar edildi ama geçersiz" demek olurdu;
+     * `undefined` "ısrar edilmedi" der ve sunucu kapıyı normal işletir.
+     */
+    sayimIsrari:
+      israrOnay || israrSebep !== ""
+        ? {
+            onaylandi: israrOnay,
+            sebep: israrSebep === "" ? null : israrSebep,
+            aciklama: israrAciklama,
+          }
+        : undefined,
     kalemler: kalemler.map((k) => {
       const sayi = Number(k.unitPriceAmount.replace(",", "."));
       const oran = Number(k.komisyonOrani.replace(",", "."));
@@ -1014,6 +1037,67 @@ export function SatisFormu({
                 : t("cakisanSatisaGit")}
             </Link>
           </Button>
+        </div>
+      ) : null}
+
+      {/*
+        ═══ SAYIM KORUMASI — ISRAR BLOĞU ═════════════════════════════════════
+        ⭐ ANAYASA: "uyarı SORAR, kullanıcı ISRAR ederse istisna kaydedilir."
+
+        ⚠ BLOK SUNUCU DURAKSATINCA AÇILIR, ÖNCEDEN DEĞİL — ve bu bilinçli:
+        satışın tarihi ile kalemleri birlikte değerlendiriliyor ve hangi
+        varyantın sayıldığı ancak sunucuda bilinir. Formu önden yüklemek,
+        her satışta gereksiz bir sorgu demek olurdu.
+
+        ⚠ Stok düzeltme ekranında blok ÖNDEN çiziliyor — orada tek varyant
+        var ve sayfa zaten onu okuyor. Aynı kural, iki farklı maliyet.
+      */}
+      {durum.sayimDuraksatti ? (
+        <div
+          className={`space-y-3 rounded-md border border-dashed p-3 text-xs ${DURUM_KUTUSU.uyari}`}
+        >
+          <p className="font-medium">{t("sayimIsrariBaslik")}</p>
+          <div className="space-y-1">
+            <Label htmlFor="satis-israr-sebep">
+              {t("sayimIsrariSebepEtiketi")}
+            </Label>
+            <select
+              id="satis-israr-sebep"
+              value={israrSebep}
+              onChange={(e) => setIsrarSebep(e.target.value)}
+              className="border-input bg-background h-11 w-full rounded-md border px-3 text-xs md:h-10"
+            >
+              <option value="">—</option>
+              {SAYIM_ISRAR_SEBEPLERI.map((s) => (
+                <option key={s} value={s}>
+                  {t(`sayimSebep_${s}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          {/* ⚠ `DIGER` kapalı listenin kaçak deliği — açıklama ZORUNLU. */}
+          {israrSebep === "DIGER" ? (
+            <div className="space-y-1">
+              <Label htmlFor="satis-israr-aciklama">
+                {t("sayimIsrariAciklamaEtiketi")}
+              </Label>
+              <Input
+                id="satis-israr-aciklama"
+                value={israrAciklama}
+                onChange={(e) => setIsrarAciklama(e.target.value)}
+                className="h-11 md:h-10"
+              />
+            </div>
+          ) : null}
+          <label className="flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 shrink-0"
+              checked={israrOnay}
+              onChange={(e) => setIsrarOnay(e.target.checked)}
+            />
+            <span>{t("sayimIsrariOnayMetni")}</span>
+          </label>
         </div>
       ) : null}
 

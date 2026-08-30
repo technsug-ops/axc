@@ -917,7 +917,20 @@
     "topluKargoOnayla": "Evet, işaretle",
     "topluKargoSonuc": "✓ {sayi} sipariş kargoya verildi olarak işaretlendi.",
     "topluKargoBos": "Bu süzgeçte kargoya verilecek sipariş yok.",
-    "topluKargoBosIstek": "İşaretlenecek sipariş seçilmedi."
+    "topluKargoBosIstek": "İşaretlenecek sipariş seçilmedi.",
+    "sayimIsrariDusuren": "⚠ {adet} üründe SAYIM VAR ve satış tarihi sayımdan ÖNCE — sayılmış malı yok ediyorsunuz.",
+    "sayimIsrariArtiran": "⚠ {adet} üründe SAYIM VAR ve tarih sayımdan ÖNCE — sayan kişi o malı zaten saymış olabilir.",
+    "sayimIsrariOnayGerek": "Devam etmek için onay kutusunu işaretleyin.",
+    "sayimIsrariSebepGerek": "Devam etmek için bir sebep seçin.",
+    "sayimIsrariAciklamaGerek": "\"Diğer\" seçildiğinde açıklama zorunludur.",
+    "sayimIsrariBaslik": "Sayım koruması",
+    "sayimIsrariOnayMetni": "Anlıyorum, yine de kaydet — bu ürünlerin sayımı geçersizleşecek ve yeniden sayılmaları gerekecek.",
+    "sayimIsrariSebepEtiketi": "Sebep",
+    "sayimIsrariAciklamaEtiketi": "Açıklama",
+    "sayimSebep_GEC_GIRILEN_ALIM": "Geç girilen alım (mal gerçekten geldi)",
+    "sayimSebep_GEC_GIRILEN_SATIS": "Geç girilen satış (mal gerçekten çıktı)",
+    "sayimSebep_SAYIM_HATALI": "Sayım yanlıştı, kayıt doğru",
+    "sayimSebep_DIGER": "Diğer — açıklama zorunlu"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",

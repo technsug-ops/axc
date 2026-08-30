@@ -170,6 +170,22 @@ for (const yol of dosyalar("src")) {
   const israrVar = /\bisrarGecerliMi\s*\(/.test(kod);
   const damgaVar = /\bsayimGecersizlestir\s*\(/.test(kod);
   const beyan = /SAYIM KORUMASI YOK:\s*\S/.test(ham);
+  /**
+   * ⛔ BAYAT BORÇ KAYDI = KALICI MUAFİYET.
+   *
+   * ⚠ BU BUGÜN İKİ KEZ YAŞANDI. Önce iki aktarım betiğinde: kapı bağlandı,
+   * _"kapı bu yola HENÜZ BAĞLANMADI"_ beyanı kaldırılmadı ve **bekçiyi kör
+   * etti**. Sonra `/stok` düzeltme ekranında aynısı — beyan yine kaldı.
+   *
+   * Bir borç kaydı, ödendikten sonra silinmezse muafiyete dönüşür ve
+   * ölçüt sessizce devre dışı kalır. Kapı ÇAĞRILIYORSA beyan YALANDIR.
+   */
+  if (kapiVar && beyan) {
+    hata++;
+    acik.push("  ⛔ " + d +
+      "  →  kapı BAĞLI ama `SAYIM KORUMASI YOK` beyanı DURUYOR — bayat borç kaydı");
+    continue;
+  }
   if (kapiVar) {
     if (!israrVar) {
       hata++;

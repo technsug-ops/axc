@@ -12,6 +12,7 @@ import { gunDegeri, gunMetninden, isTakvimGunu } from "@/lib/donem";
 import {
   satisKaydet,
   SiparisNoCakismasiHatasi,
+  SayimKorumasiHatasi,
   YetersizStokHatasi,
 } from "@/lib/satis";
 
@@ -24,6 +25,12 @@ export type SatisDurumu = {
    * aratmak demekti (eyleme dönük hata ilkesi).
    */
   mevcutSatisId?: string;
+  /**
+   * ⭐ SAYIM KAPISI DURAKSATTI — form ısrar bloğunu ÇİZSİN diye.
+   * ⚠ Ekran bu bayrağa bakarak bloğu açar; sunucu yine de kendi ölçütünü
+   * koşar. İki yerde iki ölçüt yok, tek gövde iki yerden çağrılıyor.
+   */
+  sayimDuraksatti?: boolean;
   /** Çakışan satış İPTALLİ mi — kutu metnini bu belirler. */
   mevcutSatisIptalli?: boolean;
 };
@@ -75,6 +82,20 @@ function satisSemasiKur(t: Ceviri) {
     // Elle girilen KDV DAHIL kargo tutari; doluysa tarife kullanilmaz.
     cargoAmountManual: z.number().min(0).nullable(),
     kalemler: z.array(kalemSemasi).min(1, t("enAzBirKalem")),
+    /**
+     * ⭐ SAYIM KAPISI ISRARI — satış başına.
+     * ⚠ `optional` çünkü kapı çoğu satışta hiç tetiklenmiyor; gelmezse
+     * "ısrar edilmemiş" sayılır ve kapı duraksatır.
+     */
+    sayimIsrari: z
+      .object({
+        onaylandi: z.boolean(),
+        sebep: z
+          .enum(["GEC_GIRILEN_ALIM", "GEC_GIRILEN_SATIS", "SAYIM_HATALI", "DIGER"])
+          .nullable(),
+        aciklama: z.string().trim().max(500),
+      })
+      .optional(),
   });
 }
 
@@ -149,6 +170,7 @@ export async function satisOlustur(
       cargoDesi: veri.cargoDesi,
       paketSayisi: veri.paketSayisi,
       cargoAmountManual: veri.cargoAmountManual,
+      sayimIsrari: veri.sayimIsrari,
       kalemler: veri.kalemler.map((k) => ({
         variantId: k.variantId,
         quantity: k.quantity,
@@ -174,6 +196,32 @@ export async function satisOlustur(
             mevcut: e.mevcut,
           }),
         ],
+      };
+    }
+    /**
+     * ⭐ SAYIM KAPISI DURAKSATTI — ve mesaj ÇIKIŞI DA SÖYLÜYOR.
+     *
+     * ⚠ İki yön iki AYRI cümle: kullanıcının yapması gereken kontrol farklı.
+     * DÜŞÜREN "sayılmış malı yok ediyorsunuz" · ARTIRAN "sayan kişi onu
+     * zaten saydı". Tek cümleye indirseydik yanlış kontrole yönlendirirdik.
+     *
+     * ⚠ VE NİYE İLERLEMEDİĞİ YAZILI (İlke #5): eksik olan onay mı, sebep mi,
+     * açıklama mı — kilitli düğme sessiz kalmaz.
+     */
+    if (e instanceof SayimKorumasiHatasi) {
+      const dusuren = e.duraksayanlar.some((x) => x.yon === "DUSUREN");
+      return {
+        hatalar: [
+          dusuren
+            ? t("sayimIsrariDusuren", { adet: e.duraksayanlar.length })
+            : t("sayimIsrariArtiran", { adet: e.duraksayanlar.length }),
+          e.eksik === "onay"
+            ? t("sayimIsrariOnayGerek")
+            : e.eksik === "sebep"
+              ? t("sayimIsrariSebepGerek")
+              : t("sayimIsrariAciklamaGerek"),
+        ],
+        sayimDuraksatti: true,
       };
     }
     if (e instanceof SiparisNoCakismasiHatasi) {
