@@ -47,7 +47,8 @@
     "urunKarti": "",
     "simulasyon": "",
     "menuDuzeni": "",
-    "yerlestir": ""
+    "yerlestir": "",
+    "rafTasi": ""
   },
   "Ortak": {
     "kapat": "",
@@ -3536,6 +3537,33 @@
     "ilkKez": "",
     "zatenBuRafta": "",
     "rafKoduEtiketi": "",
-    "skuEtiketi": ""
+    "skuEtiketi": "",
+    "topluTasimayaGit": ""
+  },
+  "Tasi": {
+    "baslik": "",
+    "aciklama": "",
+    "yerlestirmeyeDon": "",
+    "kaynakAdimi": "",
+    "hedefAdimi": "",
+    "rafYerTutucu": "",
+    "rafSec": "",
+    "rafYok": "",
+    "rafPasif": "",
+    "rafDoluluk": "",
+    "secimBasligi": "",
+    "hepsiniSec": "",
+    "secimiTemizle": "",
+    "skuEtiketi": "",
+    "ozet": "",
+    "kismiUyari": "",
+    "tasi": "",
+    "tasindi": "",
+    "durumKAYNAK_YOK": "",
+    "durumHEDEF_YOK": "",
+    "durumAYNI_RAF": "",
+    "durumKAYNAK_BOS": "",
+    "durumSECIM_YOK": "",
+    "durumPASIF_RAF": ""
   }
 }

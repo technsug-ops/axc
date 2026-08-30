@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
 import { MapPin } from "lucide-react";
 
 import { Yerlestirici } from "@/app/yerlestir/yerlestirici";
@@ -38,6 +39,17 @@ export default async function YerlestirSayfasi() {
       </header>
 
       <p className="text-muted-foreground max-w-3xl text-sm">{t("aciklama")}</p>
+
+      {/*
+        ⚠ TOPLU TAŞIMA BURADAN GİRİLİR — menüye ayrı satır AÇILMADI.
+        Günlük iş tek ürün yerleştirmektir; toplu taşıma raf düzeni
+        değiştiğinde yapılır ve seyrek bir iş günlük listeyi şişirmemeli.
+      */}
+      <p className="text-muted-foreground text-sm">
+        <Link href="/yerlestir/tasi" className="underline underline-offset-4">
+          {t("topluTasimayaGit")}
+        </Link>
+      </p>
 
       <Yerlestirici />
     </div>

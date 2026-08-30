@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { izListesi, tasimaKarari } from "@/lib/depo/tasima";
 import { yerlestirmeKarari } from "@/lib/depo/yerlestirme";
 import { prisma } from "@/lib/prisma";
 import { kodKosulu } from "@/lib/varyant-arama-kurali";
@@ -218,5 +219,162 @@ export async function koduIsle(
     oncekiKod: varyant.location?.code ?? null,
     ayniRaf: karar.ayniRaf,
     rafUrunSayisi: sayi,
+  };
+}
+
+/**
+ * ============================================================================
+ *  TOPLU RAF TAŞIMA (K50 ⑥)
+ * ----------------------------------------------------------------------------
+ *  Kaynak rafı okut → hedef rafı okut → "N ürün taşınacak" → onayla.
+ *
+ *  ⛔ YİNE STOK DEFTERİNE DOKUNULMAZ — yazılan tek alan `locationId`.
+ *  SAYIM KORUMASI YOK: hiçbir stok hareketi yazılmıyor; konum sayımın
+ *  ölçtüğü büyüklük değil.
+ *
+ *  ⚠ GERİ ALMA LİSTEYE BAĞLI DEĞİL: taşımayı geri almak, aynı ekranda
+ *  hedefi kaynak yapıp yeniden taşımaktır. 28.08 vakasında geri alma yolu
+ *  `AuditLog.detail`e konan bir listeye bağlanmış ve liste tavanda
+ *  kırpıldığı için YAZILDIĞI ANDA BOZULMUŞTU.
+ * ============================================================================
+ */
+
+export const TOPLU_TASIMA_EYLEMI = "RAF_TOPLU_TASIMA";
+
+export type RafUrunu = { variantId: string; sku: string; ad: string; adet: number };
+
+/** Bir rafın aktif ürünleri — seçim listesi buradan çizilir. HİÇBİR ŞEY YAZMAZ. */
+export async function raftakiUrunler(rafId: string): Promise<RafUrunu[]> {
+  await yetkiIste("stok.duzelt");
+  const varyantlar = await prisma.productVariant.findMany({
+    where: { isActive: true, locationId: rafId },
+    select: {
+      id: true,
+      sku: true,
+      name: true,
+      product: { select: { name: true } },
+    },
+    orderBy: { sku: "asc" },
+  });
+  return varyantlar.map((v) => ({
+    variantId: v.id,
+    sku: v.sku,
+    ad: v.name ? `${v.product.name} — ${v.name}` : v.product.name,
+    /** ⚠ Adet bu ekranda GEREKMİYOR: taşınan şey KONUM, adet değil. */
+    adet: 0,
+  }));
+}
+
+export type TasimaSonucu =
+  | { durum: "TASINDI"; adet: number; kismi: boolean; kaynakKod: string; hedefKod: string }
+  | { durum: "KAYNAK_YOK" }
+  | { durum: "HEDEF_YOK" }
+  | { durum: "AYNI_RAF" }
+  | { durum: "KAYNAK_BOS" }
+  | { durum: "SECIM_YOK" }
+  | { durum: "PASIF_RAF"; kod: string };
+
+/**
+ * TAŞIMAYI UYGULA — kullanıcı "N ürün taşınacak" ONAYINDAN sonra.
+ *
+ * ⛔ KÜME SUNUCUDA YENİDEN TÜRETİLİR. İstemciden gelen kimlik listesine
+ * körlemesine güvenilmez: ekran açıkken bir ürün başka rafa gitmiş olabilir
+ * ve o zaman onu KAYNAKTA DEĞİLKEN taşımış olurduk.
+ */
+export async function tasimayiUygula(
+  kaynakId: string | null,
+  hedefId: string | null,
+  seciliIdler: string[],
+): Promise<TasimaSonucu> {
+  const { kullaniciId } = await yetkiIste("stok.duzelt");
+
+  if (kaynakId === null) return { durum: "KAYNAK_YOK" };
+  if (hedefId === null) return { durum: "HEDEF_YOK" };
+
+  const [kaynak, hedef] = await Promise.all([
+    prisma.location.findUnique({
+      where: { id: kaynakId },
+      select: { id: true, code: true, isActive: true },
+    }),
+    prisma.location.findUnique({
+      where: { id: hedefId },
+      select: { id: true, code: true, isActive: true },
+    }),
+  ]);
+  if (!kaynak) return { durum: "KAYNAK_YOK" };
+  if (!hedef) return { durum: "HEDEF_YOK" };
+  /** ⛔ Pasif rafa taşımak ürünü kayıp eder — aktif listelerde görünmez. */
+  if (!hedef.isActive) return { durum: "PASIF_RAF", kod: hedef.code };
+
+  /** ⭐ KAYNAK KÜMESİ SUNUCUDAN — istemcinin listesi yalnız SEÇİM. */
+  const kaynaktakiler = await prisma.productVariant.findMany({
+    where: { isActive: true, locationId: kaynak.id },
+    select: { id: true, sku: true },
+  });
+
+  const karar = tasimaKarari({
+    kaynakId: kaynak.id,
+    hedefId: hedef.id,
+    kaynaktakiler: kaynaktakiler.map((v) => v.id),
+    secili: seciliIdler,
+  });
+  if (karar.tur !== "HAZIR") return { durum: karar.tur };
+
+  const kaynakKumesi = new Set(kaynaktakiler.map((v) => v.id));
+  const tasinacak = [...new Set(seciliIdler)].filter((id) => kaynakKumesi.has(id));
+  const skuEslemesi = new Map(kaynaktakiler.map((v) => [v.id, v.sku]));
+
+  /**
+   * ⚠ TEK İŞLEM — yazma ile iz AYRILAMAZ. İz yazılmadan yazma yapılırsa,
+   * araya giren bir hata "ne olduğu bilinmeyen" bir taşıma bırakır.
+   */
+  const yazilan = await prisma.$transaction(async (tx) => {
+    const guncelleme = await tx.productVariant.updateMany({
+      where: { id: { in: tasinacak }, isActive: true, locationId: kaynak.id },
+      data: { locationId: hedef.id },
+    });
+
+    const liste = izListesi(
+      tasinacak.map((id) => skuEslemesi.get(id) ?? id),
+    );
+
+    /**
+     * ⭐ TEK İZ (kullanıcı şartı) — ve ÖNCEKİ DEĞER İÇİNDE.
+     * Taşınan her satırın önceki konumu AYNI: `kaynakKod`. Tekdüze olduğu
+     * için satır satır yazmaya gerek yok; özet o bilgiyi tam taşıyor.
+     */
+    await tx.auditLog.create({
+      data: {
+        action: TOPLU_TASIMA_EYLEMI,
+        targetType: "Location",
+        targetId: kaynak.id,
+        userId: kullaniciId,
+        detail: JSON.stringify({
+          kaynakKod: kaynak.code,
+          hedefKod: hedef.code,
+          istenenAdet: tasinacak.length,
+          yazilanAdet: guncelleme.count,
+          kismi: karar.kismi,
+          raftakiToplam: kaynaktakiler.length,
+          skular: liste.skular,
+          /** ⚠ KIRPILDIYSA SÖYLENİR — eksik liste, tam liste sanılmasın. */
+          skuKirpildi: liste.kirpildi,
+          skuToplami: liste.toplam,
+        }),
+      },
+    });
+    return guncelleme.count;
+  });
+
+  revalidatePath("/okut");
+  revalidatePath("/ayarlar/depo");
+  revalidatePath("/yerlestir");
+
+  return {
+    durum: "TASINDI",
+    adet: yazilan,
+    kismi: karar.kismi,
+    kaynakKod: kaynak.code,
+    hedefKod: hedef.code,
   };
 }

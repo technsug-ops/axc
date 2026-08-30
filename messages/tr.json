@@ -47,7 +47,8 @@
     "urunKarti": "Ürün kârlılık kartı",
     "simulasyon": "Fiyat denemesi",
     "menuDuzeni": "Menü düzeni",
-    "yerlestir": "Yerleştir"
+    "yerlestir": "Yerleştir",
+    "rafTasi": "Toplu raf taşıma"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -3536,6 +3537,33 @@
     "ilkKez": "İlk kez yerleştirildi — daha önce yeri kayıtlı değildi.",
     "zatenBuRafta": "Zaten bu raftaydı — doğrulandı.",
     "rafKoduEtiketi": "Raf kodu",
-    "skuEtiketi": "SKU"
+    "skuEtiketi": "SKU",
+    "topluTasimayaGit": "Bir rafın tamamını başka rafa taşı"
+  },
+  "Tasi": {
+    "baslik": "Toplu raf taşıma",
+    "aciklama": "Bir rafın ürünlerini başka rafa taşır. Kaynak rafı okutun, hedef rafı okutun, taşınacakları seçin ve onaylayın. Stok adedi değişmez — yalnız ürünlerin yeri değişir.",
+    "yerlestirmeyeDon": "Yerleştir",
+    "kaynakAdimi": "1 · Kaynak raf (nereden)",
+    "hedefAdimi": "2 · Hedef raf (nereye)",
+    "rafYerTutucu": "örn. RAF-SLN1-2",
+    "rafSec": "Rafı seç",
+    "rafYok": "Bu kodda bir raf yok: {kod}",
+    "rafPasif": "{kod} rafı pasif — buraya ürün taşınamaz.",
+    "rafDoluluk": "Bu rafta {adet} ürün var.",
+    "secimBasligi": "Taşınacaklar — {toplam} üründen {secili} seçili",
+    "hepsiniSec": "Hepsini seç",
+    "secimiTemizle": "Seçimi temizle",
+    "skuEtiketi": "SKU",
+    "ozet": "{adet} ürün {kaynak} rafından {hedef} rafına taşınacak.",
+    "kismiUyari": "Bu kısmî bir taşıma: {kalan} ürün {kaynak} rafında kalacak.",
+    "tasi": "Taşı",
+    "tasindi": "{adet} ürün {kaynak} rafından {hedef} rafına taşındı.",
+    "durumKAYNAK_YOK": "Önce kaynak rafı okutun.",
+    "durumHEDEF_YOK": "Şimdi hedef rafı okutun.",
+    "durumAYNI_RAF": "Kaynak ve hedef aynı raf — taşınacak bir şey yok. Farklı bir hedef raf okutun.",
+    "durumKAYNAK_BOS": "Kaynak rafta ürün yok.",
+    "durumSECIM_YOK": "Hiçbir ürün seçili değil. Yukarıdan en az bir ürün seçin.",
+    "durumPASIF_RAF": "Hedef raf pasif — buraya ürün taşınamaz."
   }
 }

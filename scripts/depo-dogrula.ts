@@ -16,6 +16,7 @@ import QRCode from "qrcode";
 
 import { code128B, code128Genisligi, code128Yol } from "../src/lib/depo/code128";
 import { rafEtiketiSvg } from "../src/lib/depo/etiket";
+import { IZ_SKU_TAVANI, izListesi, tasimaKarari } from "../src/lib/depo/tasima";
 import { yerlestirmeKarari } from "../src/lib/depo/yerlestirme";
 import {
   eskiRaflar,
@@ -870,7 +871,15 @@ async function etiketKontrolleri() {
     "hedef raf sunucuda YENİDEN okunuyor",
     /location\.findUnique\(\{[\s\S]{0,120}where: \{ id: seciliRafId \}/.test(yY),
   );
-  kontrol("  ...ve pasif raf REDDEDİLİYOR", /if \(!hedef\.isActive\)/.test(yY));
+  /**
+   * ⛔ ÖLÇÜT `koduIsle` BLOĞUNA KİLİTLİ — dosyada `hedef.isActive` İKİ kez
+   * geçiyor (burada ve toplu taşımada). Dosya genelinde arandığında mutasyon
+   * KAÇTI: birini silen senaryo ötekini buldu ve bekçi yeşil kaldı.
+   */
+  kontrol(
+    "  ...ve pasif raf REDDEDİLİYOR",
+    /if \(!hedef\.isActive\)/.test(eylemBloku("koduIsle")),
+  );
 
   /* ═══ EKRAN ══════════════════════════════════════════════════════════ */
   const yEkran = readFileSync("src/app/yerlestir/yerlestirici.tsx", "utf8");
@@ -923,6 +932,207 @@ async function etiketKontrolleri() {
     Menu: Record<string, string>;
   };
   kontrol("  ...menü metni var", (sozluk4.Menu.yerlestir ?? "").length > 0);
+
+  /**
+   * ==========================================================================
+   *  ⑭ TOPLU RAF TAŞIMA (K50 ⑥)
+   * --------------------------------------------------------------------------
+   *  ⚠ ONAYSIZ YAZMA YOK · KISMÎ TAŞIMA SÖYLENİR · TEK İZ · KÜME SUNUCUDA
+   *  YENİDEN TÜRETİLİR.
+   * ==========================================================================
+   */
+  console.log("\n14) TOPLU RAF TAŞIMA");
+
+  const T = (ek: Partial<Parameters<typeof tasimaKarari>[0]> = {}) =>
+    tasimaKarari({
+      kaynakId: "k1",
+      hedefId: "h1",
+      kaynaktakiler: ["v1", "v2", "v3"],
+      secili: ["v1", "v2", "v3"],
+      ...ek,
+    });
+
+  kontrol("kaynak yoksa SÖYLENİR", T({ kaynakId: null }).tur === "KAYNAK_YOK");
+  kontrol("hedef yoksa SÖYLENİR", T({ hedefId: null }).tur === "HEDEF_YOK");
+  /**
+   * ⛔ AYNI RAF YAZMA YAPMAZ. Yapsaydı "3 ürün taşındı" izi yazılır ve
+   * hiçbir şey değişmemiş olurdu — iz yalan söylerdi.
+   */
+  kontrol("kaynak = hedef → AYNI_RAF", T({ hedefId: "k1" }).tur === "AYNI_RAF");
+  /** ⚠ VE SIRA ÖNEMLİ: hedef seçilmemişken "aynı raf" demek yanlış bilgi. */
+  kontrol(
+    "  ...ama hedef BOŞKEN 'aynı raf' denmiyor",
+    T({ kaynakId: "k1", hedefId: null }).tur === "HEDEF_YOK",
+  );
+  kontrol("boş kaynak → KAYNAK_BOS", T({ kaynaktakiler: [], secili: [] }).tur === "KAYNAK_BOS");
+  kontrol("seçim boşsa → SECIM_YOK", T({ secili: [] }).tur === "SECIM_YOK");
+
+  kontrol(
+    "tam taşıma HAZIR ve KISMÎ DEĞİL",
+    (() => {
+      const k = T();
+      return k.tur === "HAZIR" && k.adet === 3 && !k.kismi;
+    })(),
+  );
+  /** ⭐ KISMÎ TAŞIMA MEŞRU — ve KISMÎ olduğu işaretlenir. */
+  kontrol(
+    "kısmî taşıma HAZIR ve KISMÎ işaretli",
+    (() => {
+      const k = T({ secili: ["v1"] });
+      return k.tur === "HAZIR" && k.adet === 1 && k.kismi;
+    })(),
+  );
+  /**
+   * ⛔ KAYNAKTA OLMAYAN KİMLİK SAYILMAZ. Ekran açıkken ürün başka rafa
+   * gitmiş olabilir; sayılsaydı ekran "2 taşınacak" der, 1 taşınır ve fark
+   * kimseye söylenmezdi.
+   */
+  kontrol(
+    "kaynakta olmayan seçim SAYILMIYOR",
+    (() => {
+      const k = T({ secili: ["v1", "BASKA_RAFTA"] });
+      return k.tur === "HAZIR" && k.adet === 1;
+    })(),
+  );
+  kontrol(
+    "  ...hepsi kaynak dışıysa SECIM_YOK",
+    T({ secili: ["X", "Y"] }).tur === "SECIM_YOK",
+  );
+  /** ⚠ Tekrarlı kimlik iki kez sayılmaz — "4 ürün taşınacak" yazmasın. */
+  kontrol(
+    "tekrarlı seçim TEK sayılıyor",
+    (() => {
+      const k = T({ secili: ["v1", "v1", "v2"] });
+      return k.tur === "HAZIR" && k.adet === 2;
+    })(),
+  );
+
+  /* ═══ İZ TAVANI ══════════════════════════════════════════════════════ */
+  /**
+   * ⛔ 28.08 DERSİ: liste `AuditLog.detail` tavanında kırpıldı ve geri alma
+   * yolu YAZILDIĞI ANDA BOZUKTU. Burada liste yalnız TEŞHİS için; yine de
+   * kırpılma BEYAN EDİLİYOR.
+   */
+  kontrol("iz listesi tavanı makul", IZ_SKU_TAVANI === 500);
+  kontrol(
+    "tavan altında kırpılmıyor",
+    (() => {
+      const l = izListesi(["a", "b"]);
+      return l.skular.length === 2 && !l.kirpildi && l.toplam === 2;
+    })(),
+  );
+  kontrol(
+    "tavan aşılınca KIRPILDI diye BEYAN ediliyor",
+    (() => {
+      const l = izListesi(Array.from({ length: IZ_SKU_TAVANI + 7 }, (_, i) => `s${i}`));
+      return l.skular.length === IZ_SKU_TAVANI && l.kirpildi && l.toplam === IZ_SKU_TAVANI + 7;
+    })(),
+  );
+
+  /* ═══ SUNUCU EYLEMİ ══════════════════════════════════════════════════ */
+  const tBlok = (() => {
+    const bas = yY.indexOf("export async function tasimayiUygula(");
+    return bas < 0 ? "" : yY.slice(bas);
+  })();
+  kontrol("taşıma eylemi tanımlı", tBlok.length > 0);
+  kontrol("  ...izin istiyor", /yetkiIste\("stok\.duzelt"\)/.test(tBlok));
+  kontrol("  ...kuralı ÇAĞIRIYOR", /tasimaKarari\(\{/.test(tBlok));
+  /**
+   * ⛔ KÜME SUNUCUDA YENİDEN TÜRETİLİR — istemcinin listesine körlemesine
+   * güvenilmez. `where` hem seçimi hem KAYNAK RAFI şart koşuyor.
+   */
+  kontrol(
+    "  ...taşıma KAYNAK RAFI şart koşuyor",
+    /where: \{ id: \{ in: tasinacak \}, isActive: true, locationId: kaynak\.id \}/.test(tBlok),
+  );
+  kontrol("  ...pasif hedef REDDEDİLİYOR", /if \(!hedef\.isActive\)/.test(tBlok));
+  /** ⭐ TEK İŞLEM: yazma ile iz ayrılamaz. */
+  kontrol("  ...yazma ve iz TEK İŞLEMDE", /\$transaction\(async \(tx\) => \{/.test(tBlok));
+  kontrol(
+    "  ...iz KOŞULSUZ yazılıyor",
+    /^\s*await tx\.auditLog\.create\(\{$/m.test(tBlok),
+  );
+  /**
+   * ⚠ İZ BLOĞU SONUYLA KESİLİR — SABİT PENCEREYLE DEĞİL.
+   *
+   * ⛔ Önce `+900` karakterlik sabit pencere vardı ve MUTASYON KAÇTI:
+   * ölçüldü, o pencerede `kismi:` **İKİ** kez geçiyor — biri izde, öteki
+   * eylemin DÖNÜŞ satırında (`return { … kismi: karar.kismi … }`). İzden
+   * silen mutasyon dönüş satırını buldu ve bekçi yeşil kaldı.
+   *
+   * ⭐ Blok artık kendi kapanışında bitiyor (gerçek uzunluk 564); pencere
+   * gövde büyüdükçe sessizce genişlemiyor.
+   */
+  const tIzBas = tBlok.indexOf("await tx.auditLog.create({");
+  const tIzSon = tBlok.indexOf("\n    });", tIzBas);
+  const tIz = tIzBas < 0 || tIzSon < 0 ? "" : tBlok.slice(tIzBas, tIzSon);
+  kontrol("  ...iz bloğu SINIRLI okunuyor", tIz.length > 200 && tIz.length < 900, tIz.length);
+  for (const alan of ["kaynakKod:", "hedefKod:", "kismi:", "skuKirpildi:", "raftakiToplam:"]) {
+    kontrol(`  ...iz \`${alan}\` taşıyor`, tIz.includes(alan));
+  }
+  kontrol("  ...stok hareketi YAZILMIYOR", !/stockMovement\./.test(tBlok));
+
+  /* ═══ EKRAN ══════════════════════════════════════════════════════════ */
+  const tEkran = readFileSync("src/app/yerlestir/tasi/tasiyici.tsx", "utf8");
+  kontrol("ekran SAF gövdeyi çağırıyor", /const karar = tasimaKarari\(\{/.test(tEkran));
+  /**
+   * ⛔ ONAYSIZ YAZMA YOK: düğme yalnız HAZIR iken açılır — ve niye kapalı
+   * olduğu ekranda YAZAR (İlke #5, kilitli düğme sessiz kalmaz).
+   */
+  kontrol(
+    "düğme yalnız HAZIR iken açık",
+    /disabled=\{bekliyor \|\| karar\.tur !== "HAZIR"\}/.test(tEkran),
+  );
+  kontrol(
+    "  ...ve kapalı olma SEBEBİ yazıyor",
+    /karar\.tur !== "HAZIR" \? \(/.test(tEkran) && /durum\$\{karar\.tur\}/.test(tEkran),
+  );
+  /** ⚠ KISMÎ OLDUĞU AYRICA YAZAR — "rafı taşıdım" sanılmasın. */
+  kontrol("kısmî taşıma EKRANDA uyarılıyor", /t\("kismiUyari"/.test(tEkran));
+  kontrol(
+    "  ...ve yalnız KISMÎ iken çıkıyor",
+    /karar\.tur === "HAZIR" && karar\.kismi \? \(/.test(tEkran),
+  );
+  /** ⭐ Varsayılan seçim TAMAMI — kısmî taşıma istisna. */
+  kontrol(
+    "kaynak seçilince TAMAMI seçili geliyor",
+    /setSecili\(liste\.map\(\(u\) => u\.variantId\)\)/.test(tEkran),
+  );
+  kontrol("çıplak kod kutusu YOK (ortak okuyucu)",
+    (tEkran.match(/<BarkodGirisi/g) ?? []).length === 2);
+  /**
+   * ⚠ ONAY KUTUSU İSTİSNA: `<input type="checkbox">` bir KOD kutusu değil,
+   * kamera kuralının kapsamına girmiyor. Ölçüt bu yüzden "metin girişi yok"
+   * biçiminde: `type="text"` ya da türsüz bir `<input` kalamaz.
+   */
+  kontrol(
+    "  ...ve serbest metin girişi YOK",
+    !/<input(?![^>]*type="checkbox")/.test(tEkran),
+  );
+  const sozluk5 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Tasi: Record<string, string>;
+  };
+  /** ⚠ HER DURUMUN METNİ VAR — sebepsiz kilitli düğme kalmasın. */
+  for (const d of [
+    "KAYNAK_YOK",
+    "HEDEF_YOK",
+    "AYNI_RAF",
+    "KAYNAK_BOS",
+    "SECIM_YOK",
+    "PASIF_RAF",
+  ]) {
+    kontrol(`  durum metni var — ${d}`, (sozluk5.Tasi[`durum${d}`] ?? "").length > 0);
+  }
+  /** ⚠ Metin STOĞUN DEĞİŞMEDİĞİNİ söylüyor — "taşıma" adet sanılmasın. */
+  kontrol(
+    "açıklama stok adedinin DEĞİŞMEDİĞİNİ söylüyor",
+    (sozluk5.Tasi.aciklama ?? "").includes("Stok adedi değişmez"),
+  );
+  /** ⛔ Ekran ULAŞILABİLİR: `/yerlestir`den bağlantı var. */
+  kontrol(
+    "yerleştirme ekranından bağlantı var",
+    /href="\/yerlestir\/tasi"/.test(readFileSync("src/app/yerlestir/page.tsx", "utf8")),
+  );
   console.log("");
   console.log("=".repeat(70));
   if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

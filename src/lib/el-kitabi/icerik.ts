@@ -645,6 +645,19 @@ olduğunu anlar.</p>
 <p>Yazılan tek şey ürünün <strong>yeri</strong>dir. Adet değişmez, stok
 hareketi oluşmaz, kâr hesabı etkilenmez. Yanlış rafa okutursan düzeltmesi
 kolay: doğru rafı okut, ürünü tekrar okut.</p>
+<h3>Bir rafın tamamını başka rafa taşımak</h3>
+<p>Raf düzenini değiştirdiğinde ürünleri tek tek okutmana gerek yok.
+<strong>Yerleştir &rarr; &quot;Bir rafın tamamını başka rafa taşı&quot;</strong>
+bağlantısından girersin: <strong>kaynak rafı</strong> okut,
+<strong>hedef rafı</strong> okut, taşınacakları seç ve onayla. Ekran
+onaydan önce <strong>kaç ürünün nereye</strong> gideceğini yazar.</p>
+<p>Varsayılan olarak rafın <strong>tamamı</strong> seçili gelir. Bir kısmını
+taşıyacaksan işaretleri kaldır &mdash; ekran o zaman
+&quot;<strong>kısmî taşıma</strong>&quot; diye uyarır ve kaç ürünün eski
+rafta kalacağını söyler.</p>
+<div class="ek-not"><div class="etiket">Yanlış taşıdıysan</div>
+<p>Geri almak için ayrı bir düğme yok &mdash; gerekmiyor da: aynı ekranda
+<strong>hedefi kaynak, kaynağı hedef</strong> yapıp geri taşırsın.</p></div>
 <div class="ek-not"><div class="etiket">Nereden geldiğini de yazar</div>
 <p>Yerleştirdiğin her ürünün altında <strong>önceki yeri</strong> görünür
 (&quot;Önceki yeri: RAF-SLN1-2&quot;). Yanlış ürünü okuttuysan bunu oradan
