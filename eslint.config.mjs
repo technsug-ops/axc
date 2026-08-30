@@ -47,6 +47,24 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    /**
+     * ⚠ 30.08.2026'DA EKLENDİ — BEKÇİNİN KENDİ ÇIKTISI LİNT'İ KIRIYORDU.
+     *
+     * K48 ile `derleme:dogrula` tura girdi ve derlemeyi `.next-bekci/`
+     * altına yazıyor (335 MB üretilmiş JS). Dizin `.gitignore`da vardı ama
+     * ESLint'ten dışlanmamıştı; `npm run lint` o üretilmiş yığını taramaya
+     * başladı ve `require() style import`, `@ts-ignore`, `module` ataması
+     * gibi ONLARCA hatayla kırmızı yandı. Hataların hiçbiri BİZİM kodumuzda
+     * değildi.
+     *
+     * ⚠ VE KİMSE GÖRMEDİ: `lint` bekçi turunda YOK — tur `package.json`dan
+     * `:dogrula` / `:bekci` / `:kontrol` ekiyle keşfediyor ve düz `lint` bu
+     * kalıba uymuyor. Yani bir bekçinin yan etkisi, tur DIŞINDAKİ bir
+     * kontrolü bozdu ve tur yeşil yanmaya devam etti.
+     * _(Anayasa: "iyi bir refaktör bekçiyi kör etmemeli" — burada tersi
+     * oldu, yeni bir bekçi başka bir kontrolü kör etti.)_
+     */
+    ".next-bekci/**",
   ]),
 ]);
 

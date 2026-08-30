@@ -55,7 +55,9 @@ async function main() {
   const tersTarih: string[] = [];
   for (const k of kalemler) {
     const l = kalanPartiler.get(k.variantId) ?? [];
-    let gerek = k.quantity, kullanilan: Date[] = [];
+    /** ⚠ `gerek` azalıyor, `kullanilan` yalnız push ediliyor — ayrı beyan. */
+    let gerek = k.quantity;
+    const kullanilan: Date[] = [];
     for (const parti of l) {
       if (gerek <= 0) break;
       if (parti.kalan <= 0) continue;
