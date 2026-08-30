@@ -50,6 +50,7 @@ const STOK_SAYFASI = "src/app/stok/page.tsx";
 const CUBUK = "src/app/stok/sirala-suzgec.tsx";
 const KART = "src/app/kart/[variantId]/page.tsx";
 const PANEL = "src/lib/panel-listeler.ts";
+const DENE = "src/app/kart/[variantId]/fiyat-dene.tsx";
 
 const MUTASYONLAR: Mutasyon[] = [
   // ═══ K100 — UPC-A ↔ EAN-13 ═════════════════════════════════════════════
@@ -283,6 +284,38 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: 'className="bg-amber-100 space-y-4 rounded-xl border p-4 shadow-md"',
     bozdugu:
       "renk bu depoda HUKUM tasir (olumlu/olumsuz/uyari); fiyat denemesi ne iyi ne kotu haber",
+  },
+
+  {
+    ad: "baslik yine KARTIN ICINE alindi (kartlar hizasiz kalir)",
+    yon: "FAZLADAN",
+    bekci: SIRALAMA,
+    dosya: DENE,
+    bul: '      <p className="text-muted-foreground text-sm">{t("fiyatDeneNot")}</p>',
+    koy:
+      '      <div>{t("fiyatDeneBaslik")}</div>' +
+      String.fromCharCode(10) +
+      '      <p className="text-muted-foreground text-sm">{t("fiyatDeneNot")}</p>',
+    bozdugu: "baslik iki yerde birden gorunur; kart yine soldaki BASLIK hizasina duser",
+  },
+  {
+    ad: "hizalama sihirli ust boslukla yapildi",
+    yon: "FAZLADAN",
+    bekci: SIRALAMA,
+    dosya: KART,
+    bul: 'className="mt-6 space-y-6 xl:mt-0"',
+    koy: 'className="mt-6 space-y-6 xl:mt-0 xl:pt-7"',
+    bozdugu:
+      "sayi basligin satir yuksekligine kilitlenir; yazi tipi degisince hizalama sessizce kayar",
+  },
+  {
+    ad: "bolum sarmali kaldirildi (baslik hic cizilmez)",
+    yon: "KALDIRAN",
+    bekci: SIRALAMA,
+    dosya: KART,
+    bul: '        <Bolum baslik={t("fiyatDeneBaslik")} ikon={Calculator}>',
+    koy: "        <>",
+    bozdugu: "sag sutun baslıksiz kalir ve kart yine soldaki basligin hizasina duser",
   },
 ];
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowDown, Calculator, Clock, Scale } from "lucide-react";
+import { ArrowDown, Clock, Scale } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -203,11 +203,19 @@ export function FiyatDene({
       ⚠ Ve `ring` yerine `shadow`: halka sınır çizgisiyle çakışıp kalın
       bir çerçeve izlenimi veriyordu.
     */
+    /*
+      ⚠ BAŞLIK BU KARTTAN ÇIKTI — BÖLÜM BAŞLIĞINA TERFİ ETTİ (30.08.2026).
+      Kullanıcı: _"kartlarla hizala."_ Sol sütunun ilk şeyi bir BÖLÜM
+      BAŞLIĞI ("Stok"), altında kutular; sağ sütunun ilk şeyi ise doğrudan
+      KARTTI. Bu yüzden kartın üst kenarı soldaki başlığın hizasına düşüyor,
+      kutularla hizalanmıyordu.
+
+      ⛔ ÇARE SİHİRLİ BİR ÜST BOŞLUK DEĞİL (`pt-7` gibi): o sayı başlığın
+      satır yüksekliğine kilitlenir ve yazı tipi değişince sessizce kayar.
+      Başlık `<Bolum>`e taşındı — iki sütun artık AYNI yapıya sahip ve
+      kartlar kendiliğinden hizalanıyor.
+    */
     <div className="bg-card space-y-4 rounded-xl border p-4 shadow-md">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <Calculator className="size-4 shrink-0" />
-        {t("fiyatDeneBaslik")}
-      </div>
       <p className="text-muted-foreground text-sm">{t("fiyatDeneNot")}</p>
 
       <label className="block max-w-xs">

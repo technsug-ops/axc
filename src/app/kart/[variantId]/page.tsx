@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Boxes, Lock, PackageSearch, TriangleAlert } from "lucide-react";
+import { Boxes, Calculator, Lock, PackageSearch, TriangleAlert } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -536,7 +536,10 @@ export default async function KartSayfasi({
           (bugünkü sırası) — `xl:` kırılımının doğal sonucu, ayrıca bir
           sıralama kuralı yazılmıyor. */}
       <div className="mt-6 space-y-6 xl:mt-0">
+      {/* ⚠ BAŞLIK BURADA, KARTIN İÇİNDE DEĞİL — sol sütun da bölüm
+          başlığıyla başlıyor; kartlar ancak böyle aynı hizada durur. */}
       {karGorunur ? (
+        <Bolum baslik={t("fiyatDeneBaslik")} ikon={Calculator}>
         <FiyatDene
           /**
            * Tarih ISO metne çevrilir: istemci bileşenine `Date` geçmek
@@ -558,6 +561,7 @@ export default async function KartSayfasi({
           yasGun={veri.yasGun}
           yasBandi={veri.yasBandi}
         />
+        </Bolum>
       ) : null}
       </div>
       </div>

@@ -567,6 +567,34 @@ console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
       deneKabi,
     ),
   );
+  /**
+   * ⛔ KARTLAR AYNI HİZADAN BAŞLAR — VE BU YAPIYLA SAĞLANIR.
+   * Kullanıcı düzeltmesi 30.08: sol sütunun ilk şeyi bir BÖLÜM BAŞLIĞI
+   * ("Stok"), altında kutular; sağ sütunun ilk şeyi doğrudan KARTTI ve
+   * kartın üstü soldaki BAŞLIĞIN hizasına düşüyordu.
+   *
+   * Ölçüt iki şeyi birden sınıyor: başlık `<Bolum>`e taşındı MI, ve
+   * karttan çıkarıldı MI. Yalnız biri sınansaydı başlık iki yerde birden
+   * durabilir (çift başlık) ya da hiç kalmayabilirdi.
+   */
+  kontrol(
+    "fiyat denemesi başlığı BÖLÜM başlığında (kartlar hizalanır)",
+    /<Bolum baslik=\{t\("fiyatDeneBaslik"\)\}[\s\S]{0,80}<FiyatDene/.test(kart),
+  );
+  kontrol(
+    "  ...ve başlık kartın İÇİNDE tekrarlanmıyor",
+    !/fiyatDeneBaslik/.test(deneKaynak),
+  );
+  /**
+   * ⚠ SİHİRLİ ÜST BOŞLUK YASAK: `pt-*` ile hizalamak, başlığın satır
+   * yüksekliğine kilitlenmek demektir ve yazı tipi değişince sessizce kayar.
+   */
+  const sagKap =
+    /<div className="(mt-6 space-y-6 xl:mt-0[^"]*)"/.exec(kart)?.[1] ?? "";
+  kontrol(
+    "hizalama sihirli üst boşlukla yapılmamış",
+    sagKap.length > 0 && !/xl:pt-\d/.test(sagKap),
+  );
   kosanBolumler.push("kart düzeni");
 }
 
