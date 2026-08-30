@@ -103,7 +103,24 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
+/**
+ * ⚠ TİP ELLE YAZILDI — `LayoutProps<"/">` KULLANILMIYOR (30.08.2026).
+ *
+ * `LayoutProps` Next'in `.next/types` altına ÜRETTİĞİ bir tiptir. Kullanınca
+ * `tsc --noEmit` üretilmiş yapıya BAĞIMLI hâle geliyordu: ölçüldü, `.next`
+ * silinince bekçi turu 63/64'e düşüyor ve düşen tek şey `tsc:dogrula` oluyor.
+ * Yani temiz bir klonda tur, bir `build`/`dev` koşulmadan kırmızı yanardı —
+ * ve sebebi koddaki bir hata değil, eksik bir çıktı olurdu.
+ *
+ * ⭐ ÇARE BELGELEMEK DEĞİL, BAĞIMLILIĞI KALDIRMAK: kök yerleşim yalnız
+ * `children` alıyor ve bu tip bir satırla yazılabiliyor. Depoda başka
+ * üretilmiş tip kullanımı YOK (tarandı).
+ */
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const dil = await getLocale();
   const ortak = await getTranslations("Ortak");
 

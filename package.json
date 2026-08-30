@@ -223,7 +223,9 @@
     "canli:ty-kuru-kosum": "tsx scripts/canli-ty-kuru-kosum.ts",
     "canli:ty-ice-aktar": "tsx scripts/canli-ty-ice-aktar.ts",
     "canli:fifo-dagit": "tsx scripts/canli-fifo-yeniden-dagit.ts",
-    "sunucu-eylemi:dogrula": "tsx scripts/sunucu-eylemi-dogrula.ts"
+    "sunucu-eylemi:dogrula": "tsx scripts/sunucu-eylemi-dogrula.ts",
+    "derleme:dogrula": "tsx scripts/derleme-dogrula.ts",
+    "istemci-siniri:dogrula": "tsx scripts/istemci-siniri-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

@@ -68,11 +68,63 @@ klonda `tsc:dogrula` bir build/dev koşmadan kırmızı yanar.
 | **(b)** Yalnız desen yasakları | ~2 sn | bilinen sınıflarda sıfır, **bilinmeyende sonsuz** |
 | **(c)** Günde bir / elle | ~0 | **24 saate kadar** — bugünkü bedelin ta kendisi |
 
-⛔ **K48 KAPANMIYOR, DARALIYOR.** Sınıf 1 kapandı; 2+3 tek bekçiyle
-kapanabilir. Ama **dört sınıf denedim ve tamlık iddia edemem** — Next sürümü
-değiştikçe sınıf doğar. Desen yasağı bilinen sınıfların listesidir; build
-ise yer gerçeğidir. _(Anayasa: "bir kaynağın listesi kendi tamlığını
-kanıtlayamaz".)_
+### ✅ KARAR UYGULANDI — (a) + 2/3 bekçisi · 30.08.2026 [KOŞTU]
+
+**Kullanıcı kararı:** build tura girer, tip kontrolü kapalı; 2+3 için içe
+aktarma grafı bekçisi; sınıf 4 ölçülüp kapatılabiliyorsa eklenir; `.next`
+bağımlılığı ayrı kalem.
+
+    tur 64 → 66 doğrulama · 218 → 311 sn (öngörü ~340)
+      derleme:dogrula        54,5 sn (sıcak önbellek; soğuk 122 sn)
+      istemci-siniri:dogrula  2,8 sn
+      sunucu-eylemi:dogrula   2,0 sn
+
+· **① `derleme:dogrula`** — `next build`, tip kontrolü `BEKCI_DERLEME`
+  değişkeniyle kapalı. ⚠ **Vercel o değişkeni KURMUYOR**, canlı deploy'da
+  tip kontrolü tam koşuyor; son kapı körelmedi. Çıktı `.next-bekci`ye —
+  `.next`e yazsaydı açık bir `next dev` sunucusunu ezerdi.
+  ⚠ Bekçi "çıkış 0" ile yetinmiyor, `Compiled successfully` satırını da
+  arıyor: yapılandırma bir gün derlemeyi atlarsa çıkış 0 gelir ve bekçi
+  hiçbir şey ölçmemiş olurdu.
+· **② + ③ + ④ `istemci-siniri:dogrula`** — üçü de aynı sınırın tarafında,
+  tek bekçide. Graf `"use server"` sınırında DURUYOR (istemcinin sunucu
+  eylemi çağırması meşru) ve `import type` sayılmıyor (derlemede silinir).
+· **④ ÖLÇÜLDÜ VE KAPATILABİLDİ** — `"use client"` içinde `metadata`.
+  Build bile görmüyordu; artık tek kapısı bu bekçi.
+
+### ⛔ BEKÇİ YAZILIRKEN ÜÇ KUSUR ÇIKTI — ÜÇÜNÜ DE MUTASYON BULDU
+
+1. **76 YANLIŞ POZİTİF:** graf `"use server"` sınırında durmuyordu; her
+   istemci → eylem → `yetki` → `oturum` → `next/headers` zinciri kirli
+   sayıldı. Ölçüm çürüttü: `next build` bu 76'nın hiçbirine kızmıyor.
+2. **DESEN LİSTESİ YANLIŞTI:** `^@prisma/client$` yazmıştım, bu deponun
+   gerçek zinciri `@prisma/client/runtime/client` ve `@prisma/adapter-mariadb`.
+   Listeyi ölçmeden, genel Next dünyasından yazmışım — prisma'yı DOĞRUDAN
+   içeri alan mutasyon YEŞİL geçti.
+3. ⛔ **ÇIKARICI İÇE AKTARMALARI HİÇ GÖRMÜYORDU:** tembel `[\s\S]*?` aralığı
+   dosyanın başındaki bir `export type`tan başlayıp ilk `from`a kadar her
+   şeyi yutuyor, aradaki gerçek `import` satırları o aralıkta kalıyor ve
+   "tip" sayılıp atlanıyordu. **Bekçi yeşildi çünkü BAKMIYORDU.**
+
+### ⏭ AÇIK KALAN
+
+· **Tamlık iddia EDİLMİYOR:** dört sınıf ölçüldü, Next sürümü değiştikçe
+  sınıf doğar. Desen yasağı bilinen sınıfların listesi, build yer gerçeği —
+  ikisi birbirinin yedeği. _(Anayasa: "bir kaynağın listesi kendi tamlığını
+  kanıtlayamaz".)_
+· **Süre büyürse çözüm build'i ÇIKARMAK değil** (kullanıcı kararı): paralel
+  koşum ya da önbellek ölçülür. Ayrı kalem, bugün açılmadı.
+
+### ✅ `.next` BAĞIMLILIĞI KALDIRILDI (madde 4)
+
+Ölçüldü: `.next` yokken tur **63/64** — düşen tek şey `tsc:dogrula`, sebep
+`layout.tsx`teki `LayoutProps<"/">` (Next'in ÜRETTİĞİ tip). Temiz bir klonda
+tur, bir `build`/`dev` koşulmadan kırmızı yanardı ve sebebi koddaki bir hata
+değil, eksik bir çıktı olurdu.
+
+⭐ **Çare belgelemek değil, bağımlılığı kaldırmak:** tip elle yazıldı
+(`{ children: React.ReactNode }`). Depoda başka üretilmiş tip kullanımı YOK
+(tarandı). Doğrulandı: `.next` silinip `tsc --noEmit` koşuldu → **çıkış 0**.
 
 ---
 
