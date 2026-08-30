@@ -41,6 +41,7 @@
     "simulasyon-mutasyon:kontrol": "tsx scripts/simulasyon-mutasyon-kontrol.ts",
     "simulasyon:dogrula": "tsx scripts/simulasyon-dogrula.ts",
     "komisyon:prova": "tsx scripts/komisyon-prova.ts",
+    "panel-mutasyon:kontrol": "tsx scripts/panel-mutasyon-kontrol.ts",
     "panel:dogrula": "tsx scripts/panel-dogrula.ts",
     "pano:dogrula": "tsx scripts/pano-dogrula.ts",
     "stok-siralama-mutasyon:kontrol": "tsx scripts/stok-siralama-mutasyon-kontrol.ts",

@@ -121,6 +121,7 @@ import {
   type YaslanmaGirdisi,
 } from "../src/lib/yaslanma";
 import { LISTE_PENCERELERI } from "../src/lib/donem";
+import { kanallariSirala } from "../src/lib/kanal-sirasi";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -4922,6 +4923,75 @@ console.log("=".repeat(70));
 }
 
 console.log("");
+
+
+// ===========================================================================
+console.log("");
+console.log("K106) KANAL SIRASI — sabit duzen, ciro degil");
+// ===========================================================================
+{
+  /**
+   * KULLANICI KARARI 30.08.2026: "1 Trendyol · 2 Hepsiburada · 3 N11 ·
+   * 4 Amazon · 5 Elden". Eskiden sira `b.gelir - a.gelir` idi ve kart
+   * yerleri veriyle birlikte oynuyordu.
+   *
+   * OLCUTLER SAF GOVDEYI CAGIRIYOR; kaynak taramasi yalniz baglantı icin.
+   */
+  const ornek = [
+    { kanalKodu: "DEPO", kanalAdi: "Elden Satış", gelir: 900 },
+    { kanalKodu: "VATAN", kanalAdi: "Vatan", gelir: 5000 },
+    { kanalKodu: "N11", kanalAdi: "N11", gelir: 0 },
+    { kanalKodu: "A101", kanalAdi: "A101", gelir: 7000 },
+    { kanalKodu: "TRENDYOL", kanalAdi: "Trendyol", gelir: 1 },
+    { kanalKodu: "AMAZON", kanalAdi: "Amazon", gelir: 0 },
+    { kanalKodu: "HEPSIBURADA", kanalAdi: "Hepsiburada", gelir: 0 },
+  ];
+  const sirali = kanallariSirala(ornek).map((k) => k.kanalKodu);
+
+  kontrol(
+    "sira kullanicinin saydigi gibi: TY · HB · N11 · Amazon · Elden",
+    sirali.slice(0, 5).join(",") ===
+      "TRENDYOL,HEPSIBURADA,N11,AMAZON,DEPO",
+  );
+  /**
+   * ORNEK VERI AYRIMIN IKI YAKASINI GOSTERIYOR: ciroya gore sirlansaydi
+   * bastaki A101 (7000) olurdu ve Trendyol (1) sonlarda kalirdi. Yani bu
+   * veri, "ciro sirasi" ile "sabit duzen" arasinda AYRISIYOR.
+   */
+  kontrol(
+    "  ...ciro sirasi DEGIL (A101 7000 ile basta degil)",
+    sirali[0] === "TRENDYOL",
+  );
+  /**
+   * SAYILMAYAN KANAL KAYBOLMAZ — besliden sonra ADA gore gelir. Sabit
+   * listeye bagli bir suzgec olsaydi yarin acilan kanal panelden sessizce
+   * duserdi.
+   */
+  kontrol(
+    "sayilmayan kanallar KAYBOLMUYOR (hepsi listede)",
+    sirali.length === ornek.length,
+  );
+  kontrol(
+    "  ...ve besliden SONRA, ada gore siralı (A101 < Vatan)",
+    sirali.slice(5).join(",") === "A101,Vatan".replace("Vatan", "VATAN"),
+  );
+  /** Girdi bozulmuyor — cagiran ayni diziyi baska yerde kullaniyor olabilir. */
+  kontrol(
+    "girdi dizisi BOZULMUYOR (yeni dizi donuyor)",
+    ornek[0]!.kanalKodu === "DEPO",
+  );
+
+  /** BAGLANTI: panel govdesi gercekten bu siralamayi cagiriyor mu. */
+  const panelGovde = readFileSync("src/lib/panel.ts", "utf8");
+  kontrol(
+    "panel govdesi sabit duzeni CAGIRIYOR",
+    /const liste = kanallariSirala\(/.test(panelGovde),
+  );
+  kontrol(
+    "  ...ve eski ciro sirasi KALMADI",
+    !/values\(\)\]\.sort\(\(a, b\) => b\.gelir - a\.gelir\)/.test(panelGovde),
+  );
+}
 
 // ===========================================================================
 console.log("\n" + "=".repeat(70));

@@ -2,6 +2,7 @@ import { ayKaydir, pencerede, type Pencere } from "@/lib/donem";
 
 import type { KarDurumu } from "@/lib/kar";
 import type { Currency } from "@/generated/prisma/enums";
+import { kanallariSirala } from "@/lib/kanal-sirasi";
 
 /**
  * ============================================================================
@@ -434,7 +435,14 @@ export function panelHesapla(
 
   return [...bloklar.entries()]
     .map(([paraBirimi, kanallar]) => {
-      const liste = [...kanallar.values()].sort((a, b) => b.gelir - a.gelir);
+      /**
+       * ⚠ SIRA CİRODAN DEĞİL, SABİT DÜZENDEN (K106, 30.08.2026).
+       * Eskiden `b.gelir - a.gelir` idi; kart yerleri veriyle birlikte
+       * oynuyor ve kullanıcı her açılışta aradığı kanalı yeniden arıyordu.
+       * Büyüklük bilgisi kartın kendi ciro çubuğunda zaten yazılı —
+       * sıralama onu taşımıyordu, yalnız yerleri oynatıyordu (İlke #10).
+       */
+      const liste = kanallariSirala([...kanallar.values()]);
       // Hesaplar da cirosuna göre sıralanır — kanalla aynı mantık.
       for (const kanal of liste) {
         kanal.hesaplar.sort((a, b) => b.gelir - a.gelir);
