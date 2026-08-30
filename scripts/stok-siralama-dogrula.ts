@@ -513,7 +513,14 @@ console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
    * blok kendi içinde ikinci bir kaydırma ister. Biri "iyileştirme" diye
    * `sticky` eklerse bu ölçüt kırmızı yanar ve gerekçeyi okur.
    */
-  const sagSutun = blok(kart, 'className="mt-6 space-y-6 xl:mt-0"', 900);
+  /**
+   * CAPA KAPANIS TIRNAGINI ICERMEZ — VE BU BILINCLI. Tam dizeye baglaninca
+   * sag sutunun sinif listesine eklenen HER SEY bu olcutu kirmizi yakiyor ve
+   * ustelik OTEKI olcutleri maskeliyordu: `xl:pt-7` mutasyonu "sihirli
+   * bosluk" olcutu yerine BU capa yuzunden yakalaniyordu, yani dogru sonuc
+   * yanlis sebeple geliyordu.
+   */
+  const sagSutun = blok(kart, 'className="mt-6 space-y-6 xl:mt-0', 900);
   kontrol("sağ sütun bulundu", sagSutun.length > 0);
   kontrol("sağ sütun YAPIŞKAN değil (ölçülmüş karar)", !/sticky/.test(sagSutun));
   kontrol(
@@ -591,9 +598,22 @@ console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
    */
   const sagKap =
     /<div className="(mt-6 space-y-6 xl:mt-0[^"]*)"/.exec(kart)?.[1] ?? "";
+  /**
+   * DESEN `RegExp` KURUCUSUYLA — TERS BOLU KAYNAKTA GECMIYOR.
+   * Ilk yazimda ters bolu + b ikilisi **0x08 BACKSPACE** karakterine
+   * donustu: desen hicbir seyle eslesmiyor, `!eslesme` her zaman `true`,
+   * olcut **her kosumda yesil**. `kontrol-karakteri:dogrula` yakaladi ve
+   * push'u DURDURDU.
+   *
+   * VE MUTASYON BUNU GORMEMISTI: `xl:pt-7` ekleyen mutasyon kirmizi yandi
+   * ama BASKA bir olcut sayesinde (S6'nin `sagSutun` capasi tam dizeye
+   * bagli, sinif degisince bulunamiyor). Dogru sonuc YANLIS sebeple
+   * geliyordu — mutasyonun kirmizisi, olcutun olctugunu KANITLAMAZ.
+   */
+  const sihirliBoslukDeseni = new RegExp("xl:pt-[0-9]");
   kontrol(
     "hizalama sihirli üst boşlukla yapılmamış",
-    sagKap.length > 0 && !/xl:pt-\d/.test(sagKap),
+    sagKap.length > 0 && !sihirliBoslukDeseni.test(sagKap),
   );
   kosanBolumler.push("kart düzeni");
 }
