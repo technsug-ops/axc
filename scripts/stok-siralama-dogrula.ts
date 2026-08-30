@@ -687,47 +687,23 @@ console.log("§7 SÜZGEÇ KALICILIĞI — detaya girip dönünce filtre DURUYOR"
     /onOkundu=\{ara\}/.test(arama) && /function ara\(deger: string\)/.test(arama),
   );
 
-  const geri = readFileSync("src/app/stok/[variantId]/stok-geri.tsx", "utf8");
-  const detay = readFileSync("src/app/stok/[variantId]/page.tsx", "utf8");
   /**
-   * ⛔ SABİT `href="/stok"` BAĞLANTISI KULLANICININ BİLDİRDİĞİ KAYBIN
-   * DOĞRUDAN SEBEBİYDİ — geliş adresini hiç taşımıyordu.
-   */
-  /**
-   * ⚠ ÖLÇÜT YORUMSUZ KODDA VE ÇAĞRI SIRASINA BAĞLI — İLK YAZIMDA KAÇTI.
-   * Önce yalnız `/router\.back\(\)/` aranıyordu; gövdeyi `return;` ile
-   * değiştiren mutasyon YEŞİL geçti çünkü o metin dosyanın BAŞLIK
-   * YORUMUNDA da duruyor. Bir davranışı ANLATAN yorum, o davranışın
-   * GERÇEKLEŞTİĞİNİ göstermez.
+   * ═══ GERİ BAĞLANTISI ÖLÇÜTLERİ BURADAN TAŞINDI — 30.08.2026 ═══
    *
-   * Yeni ölçüt iki şeyi birden istiyor: varsayılan gezinme İPTAL EDİLİYOR
-   * ve HEMEN ARDINDAN geçmişe dönülüyor. `preventDefault` olmadan `back()`
-   * çağrılsaydı tarayıcı ikisini birden yapardı (iki adım geri).
+   * Burada üç ölçüt vardı ve `stok/[variantId]/stok-geri.tsx` dosyasını
+   * okuyorlardı. O dosya SİLİNDİ: `/stok`a özel yazılmış bileşen, on iki
+   * ekranın ortak `<ListeyeDon>` bileşenine dönüştü ve ölçüt ENOENT ile
+   * kırmızı yandı. **Kod doğruydu — ölçütün baktığı yer kalmamıştı.**
+   *
+   * ⭐ SUSTURULMADI, KAPSAM BÜYÜDÜ: aynı davranışı artık
+   * `liste-hafizasi:dogrula` ölçüyor ve orada ölçüt bir DESEN YASAĞI —
+   * kaynaktan türetilen 17 süzgeçli rotanın hiçbirine sabit `href` ile
+   * dönülemiyor. Yani buradaki üç dosyaya bakan ölçütün yerine, YARIN
+   * eklenecek ekranı da kapsayan bir ölçüt geçti.
+   *
+   * ⚠ Bu bölümde YALNIZ arama kutusunun parametre koruması kaldı; o
+   * `/stok`a özgü ve başka bir bekçinin kapsamında değil.
    */
-  const geriKod = yorumsuz(geri);
-  kontrol(
-    "detaydaki geri bağlantısı geçmişe dönüyor",
-    /<StokGeriBaglantisi/.test(detay) &&
-      /olay\.preventDefault\(\);\s*router\.back\(\);/.test(geriKod),
-  );
-  /**
-   * ⚠ GÖVDE HÂLÂ GERÇEK BİR BAĞLANTI: JavaScript çalışmasa da, sayfa
-   * doğrudan linkle açılmış olsa da `/stok`a gider. Düğmeye çevrilseydi o
-   * iki hâlde hiçbir yere gitmezdi.
-   */
-  kontrol(
-    "  ...ama gövde hâlâ gerçek bağlantı (JS'siz de çalışır)",
-    /href="\/stok"/.test(geriKod),
-  );
-  /**
-   * ⛔ TEK GİRDİLİ GEÇMİŞTE `back()` ÇAĞRILMAZ — hiçbir yere gitmez ve
-   * kullanıcı tıkladığı hâlde ekranda hiçbir şey olmaz (sessiz başarısızlık,
-   * İlke #5). O hâlde bağlantı kendi işini yapar.
-   */
-  kontrol(
-    "  ...geçmiş yoksa back() çağrılmıyor (sessiz başarısızlık yok)",
-    /window\.history\.length <= 1\) return;/.test(geriKod),
-  );
   kosanBolumler.push("süzgeç kalıcılığı");
 }
 

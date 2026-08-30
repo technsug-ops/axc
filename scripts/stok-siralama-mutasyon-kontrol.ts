@@ -52,7 +52,6 @@ const KART = "src/app/kart/[variantId]/page.tsx";
 const PANEL = "src/lib/panel-listeler.ts";
 const DENE = "src/app/kart/[variantId]/fiyat-dene.tsx";
 const ARAMA_KUTUSU = "src/app/stok/stok-arama.tsx";
-const GERI = "src/app/stok/[variantId]/stok-geri.tsx";
 
 const MUTASYONLAR: Mutasyon[] = [
   // ═══ K100 — UPC-A ↔ EAN-13 ═════════════════════════════════════════════
@@ -362,28 +361,18 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "kutu DOLDURULAMAZ hale gelir: kullanici yazar, React her tusta eski degeri geri yazar (26.08 arizasi)",
   },
-  {
-    ad: "geri baglantisi yine SABIT /stok (gecmise donmuyor)",
-    yon: "KALDIRAN",
-    bekci: SIRALAMA,
-    dosya: GERI,
-    bul:
-      "        olay.preventDefault();" +
-      String.fromCharCode(10) +
-      "        router.back();",
-    koy: "        return;",
-    bozdugu: "detaydan donunce liste bastan kurulur — kalemin ta kendisi",
-  },
-  {
-    ad: "gecmis yokken de back() cagriliyor",
-    yon: "FAZLADAN",
-    bekci: SIRALAMA,
-    dosya: GERI,
-    bul: "        if (typeof window === \"undefined\" || window.history.length <= 1) return;",
-    koy: "        if (typeof window === \"undefined\") return;",
-    bozdugu:
-      "tek girdili gecmiste back() hicbir yere gitmez; kullanici tiklar, ekranda HICBIR SEY olmaz",
-  },
+  /**
+   * NOT: burada iki mutasyon vardi ("geri baglantisi yine SABIT" ve
+   * "gecmis yokken de back()") ve CIKARILDILAR — kactiklari icin DEGIL,
+   * olctukleri DOSYA ortadan kalktigi icin. `/stok`a ozel `stok-geri.tsx`
+   * on iki ekranin ortak `<ListeyeDon>` bilesenine donustu ve
+   * `router.back()` karari olcumle CEVRILDI: formdan yonlendirilen bir
+   * sayfada back() listeye degil FORMA doner.
+   *
+   * Ayni davranisin mutasyonlari artik `liste-hafizasi-mutasyon:kontrol`
+   * icinde ve orada kapsam DAHA GENIS: hicbir listeye eklenmemis YENI bir
+   * ekran bile sinaniyor.
+   */
 ];
 
 function bekciyiKostur(b: Bekci): { kod: number; ciktiVar: boolean } {
