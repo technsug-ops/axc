@@ -102,6 +102,9 @@ export const YEDEK_TABLOLARI = [
   // yönündedir, alfabe ya da tabloların yaşı değil.
   "StokSayimi",
   "StokSayimSatiri",
+  // --- muhasebe dönemi (K108): `kapatanId` ile `User`a bakar, o yüzden
+  //     kullanıcılardan SONRA; başka hiçbir tabloya bağlı değil. ---
+  "MuhasebeDonemi",
   // --- stok defteri: yukarıdakilerin hepsine bakabilir, KENDİNE de ---
   "StockMovement",
   // --- hakediş ve tazminat ---

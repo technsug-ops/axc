@@ -115,6 +115,9 @@ export async function yedekUret(
     // Fiziksel sayım — stok defterinden ÖNCE (bkz. yedek-bicim.ts sıra notu).
     StokSayimi: await istemci.stokSayimi.findMany(),
     StokSayimSatiri: await istemci.stokSayimSatiri.findMany(),
+    // Muhasebe dönemi (K108) — kapanış kararları; kaybolursa hangi
+    // dönemin kapalı olduğu ve beyan sınırı yeniden üretilemez.
+    MuhasebeDonemi: await istemci.muhasebeDonemi.findMany(),
     StockMovement: await istemci.stockMovement.findMany(),
     Settlement: await istemci.settlement.findMany(),
     SettlementItem: await istemci.settlementItem.findMany(),
