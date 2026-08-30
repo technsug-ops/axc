@@ -318,9 +318,19 @@ for (const m of MUTASYONLAR) {
   try {
     writeFileSync(m.dosya, mutant, "utf8");
 
-    // ── Kapı 2: mutasyon GERÇEKTEN uygulandı mı (diskten okunur) ───────────
+    /**
+     * ── Kapı 2: mutasyon GERÇEKTEN uygulandı mı (diskten okunur) ──────────
+     *
+     * ⚠ ÖLÇÜT 30.08.2026'DA DÜZELTİLDİ. Eski hâli `diskten.includes(m.bul)`
+     * idi ve **EKLEYEN** mutasyonlarda yanlış alarm veriyordu: bir satırın
+     * ÜSTÜNE yeni satır koyan mutasyonda eski satır zaten yerinde kalır.
+     * Bu dosyada bugün öyle bir mutasyon YOK (ölçüldü: 21 çiftin 0'ı), yani
+     * kusur ısırmıyordu — ama `hata-mutasyon:kontrol` yazılırken ısırdı ve
+     * kolay çare o mutasyonları SİLMEK, yani "yanlış yanma" yönünü
+     * korumasız bırakmak olurdu. Ölçüt gevşetilmez, düzeltilir.
+     */
     const diskten = readFileSync(m.dosya, "utf8");
-    if (diskten.includes(m.bul) || diskten === asil) {
+    if (diskten !== mutant || mutant === asil) {
       bozuk.push(m.ad + "\n       mutasyon diske UYGULANMADI");
       continue;
     }

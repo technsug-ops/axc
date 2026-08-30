@@ -166,11 +166,18 @@ for (const m of MUTASYONLAR) {
     continue;
   }
 
+  const mutant = asil.replace(bul, koy);
   let sonuc: Sonuc;
   try {
-    writeFileSync(m.dosya, asil.replace(bul, koy), "utf8");
+    writeFileSync(m.dosya, mutant, "utf8");
+    /**
+     * ⚠ ÖLÇÜT 30.08.2026'DA SIKILAŞTIRILDI: "diskteki metin ASILDAN farklı"
+     * yerine "diskteki metin BEKLENENE eşit". Eskisi kısmi/bozuk bir yazımı
+     * da "uygulandı" sayardı. Üç harness'in üçünde de aynı kapı olsun diye
+     * burada da değiştirildi — iki yerde iki farklı ölçüt olmaz.
+     */
     const diskten = readFileSync(m.dosya, "utf8");
-    if (diskten === asil) {
+    if (diskten !== mutant || mutant === asil) {
       bozuk.push(m.ad + "\n       mutasyon diske UYGULANMADI");
       continue;
     }
