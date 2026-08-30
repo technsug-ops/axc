@@ -467,8 +467,22 @@ console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
 // ═══════════════════════════════════════════════════════════════════════
 {
   const kart = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
-  const kap = blok(kart, "mx-auto max-w-3xl", 400);
-  kontrol("kart kabı bulundu", kap.length > 0);
+  /**
+   * ⚠ ÖLÇÜT 30.08.2026'DA PENCEREDEN KURTARILDI — VE NİYE, BURADA YAZAR.
+   * Önce `blok(kart, "mx-auto max-w-3xl", 400)` penceresi kullanılıyordu.
+   * K103-② künyeyi ızgaranın ÜSTÜNE taşıyınca ızgara o pencerenin DIŞINA
+   * çıktı ve ölçüt kırmızı yandı — **kod doğruydu, pencere yanlış yerdeydi.**
+   *
+   * ⭐ ÇARE PENCEREYİ BÜYÜTMEK DEĞİL, KALDIRMAKTI: iki desen de bu dosyada
+   * ÖLÇÜLDÜ ve **TAM BİR KEZ** geçiyor (`grid-cols-[minmax` 1 ·
+   * `max-w-3xl` 1). Tek geçişli bir desende pencere hiçbir şey kazandırmaz,
+   * yalnız yapı değişince kırılacak bir bağ ekler.
+   * _(Anayasa: "önce deseni SAY".)_
+   */
+  const izgaraSayisi = (kart.match(/grid-cols-\[minmax/g) ?? []).length;
+  const tabanSayisi = (kart.match(/max-w-3xl/g) ?? []).length;
+  kontrol("ızgara sınıfı TAM BİR KEZ geçiyor (ölçüt tekil)", izgaraSayisi === 1);
+  kontrol("taban genişlik TAM BİR KEZ geçiyor", tabanSayisi === 1);
 
   /**
    * ⛔ KULLANICI BULGUSU (K103): masaüstünde kartın sağı TAMAMEN boştu ve
@@ -476,7 +490,7 @@ console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
    */
   kontrol(
     "geniş ekranda iki sütun kuruluyor",
-    /xl:grid xl:grid-cols-\[/.test(kap),
+    /xl:grid xl:grid-cols-\[/.test(kart),
   );
   /**
    * ⛔ EN KRİTİK ÖLÇÜT — MOBİL BOZULMASIN. Izgara `xl:` ile SINIRLI olmak
@@ -485,13 +499,13 @@ console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
    */
   kontrol(
     "ızgara YALNIZ xl: kırılımında (mobilde tek sütun)",
-    !/(?<!xl:)grid-cols-\[minmax/.test(kap),
+    !/(?<!xl:)grid-cols-\[minmax/.test(kart),
   );
   /**
    * ⚠ TABAN GENİŞLİK MOBİLDE KORUNUYOR: `max-w-3xl` okunabilir sütun
    * genişliği. Kaldırılırsa telefonda satırlar kenardan kenara yayılır.
    */
-  kontrol("mobil taban genişliği duruyor (max-w-3xl)", /max-w-3xl/.test(kap));
+  kontrol("mobil taban genişliği duruyor (max-w-3xl)", /max-w-3xl/.test(kart));
 
   /**
    * ⛔ YAPIŞKAN YAPILMADI — VE BU ÖLÇÜLMÜŞ BİR KARARDIR. `FiyatDene` KANAL
@@ -505,6 +519,53 @@ console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
   kontrol(
     "fiyat denemesi sağ sütunda çiziliyor",
     /<FiyatDene/.test(sagSutun),
+  );
+
+  /**
+   * ⛔ KÜNYE IZGARANIN DIŞINDA — İKİ SÜTUN AYNI ÇİZGİDEN BAŞLASIN.
+   * Künye sol sütunun içindeyken sağdaki kart sayfanın EN TEPESİNDEN
+   * başlıyordu ve iki sütun hizasız duruyordu (kullanıcı bulgusu 30.08).
+   * Ölçüt: `<h1` ızgara açılışından ÖNCE gelmeli.
+   */
+  const izgaraKonumu = kart.indexOf("xl:grid xl:grid-cols-[");
+  const basligKonumu = kart.indexOf("<h1");
+  kontrol(
+    "künye ızgaranın ÜSTÜNDE (iki sütun aynı çizgiden başlıyor)",
+    basligKonumu > 0 && izgaraKonumu > 0 && basligKonumu < izgaraKonumu,
+  );
+
+  /**
+   * ⚠ ÖNE ÇIKARMA YÜZEYLE, RENKLE DEĞİL. Bu depoda renk ANLAM taşır
+   * (olumlu/olumsuz/uyarı); fiyat denemesine renk koymak olmayan bir hüküm
+   * iddia ederdi. Vurgu `shadow` ile — biri renge çevirirse burası yanar.
+   */
+  const deneKaynak = readFileSync(
+    "src/app/kart/[variantId]/fiyat-dene.tsx",
+    "utf8",
+  );
+  /**
+   * ⛔ PENCERE DEĞİL, NİTELİĞİN TAMAMI — VE BUNU MUTASYON ÖĞRETTİ.
+   * Önce `blok(deneKaynak, "space-y-4 rounded-xl border p-4", 120)` vardı:
+   * pencere çapadan İLERİ doğru açılıyor, oysa sınıf listesine eklenen bir
+   * renk çapadan ÖNCE duruyor (`bg-amber-100 space-y-4 …`). Renk mutasyonu
+   * tam bu yüzden KAÇTI — ölçüt baktığı yerde değildi.
+   * Şimdi `className` niteliğinin TAMAMI yakalanıyor; sınıfların sırası
+   * değişse de ölçüt yerinde kalır.
+   */
+  const deneKabi =
+    /<div className="([^"]*space-y-4 rounded-xl border p-4[^"]*)"/.exec(
+      deneKaynak,
+    )?.[1] ?? "";
+  kontrol("fiyat denemesi kabının sınıfı okundu", deneKabi.length > 0);
+  kontrol(
+    "fiyat denemesi kartı ÖNE ÇIKIYOR (yükselti var)",
+    /shadow-/.test(deneKabi),
+  );
+  kontrol(
+    "  ...vurgu ANLAM RENGİYLE yapılmamış (renk hüküm taşır)",
+    !/(?:bg|text|border|ring)-(?:red|green|blue|amber|yellow|emerald|rose|orange)-\d{2,3}/.test(
+      deneKabi,
+    ),
   );
   kosanBolumler.push("kart düzeni");
 }

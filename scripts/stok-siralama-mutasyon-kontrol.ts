@@ -253,6 +253,37 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: 'className="mx-auto xl:max-w-6xl"',
     bozdugu: "telefonda satirlar kenardan kenara yayilir, okunabilir sutun genisligi gider",
   },
+
+  // === K103-② HIZALAMA VE ONE CIKARMA ==================================
+  {
+    ad: "kunye yine izgaranin ICINE alindi (iki sutun hizasiz baslar)",
+    yon: "KALDIRAN",
+    bekci: SIRALAMA,
+    dosya: KART,
+    bul: '      <div className="mb-6">',
+    koy: '      <div className="mb-6 xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)]">',
+    bozdugu:
+      "sag kart sayfanin en tepesinden baslar, soldaki ilk kart kunyenin altindan — goz kayar",
+  },
+  {
+    ad: "fiyat denemesi kartinin yukseltisi silindi",
+    yon: "KALDIRAN",
+    bekci: SIRALAMA,
+    dosya: "src/app/kart/[variantId]/fiyat-dene.tsx",
+    bul: 'className="bg-card space-y-4 rounded-xl border p-4 shadow-md"',
+    koy: 'className="bg-card space-y-4 rounded-xl border p-4"',
+    bozdugu: "kartin tek EYLEM yuzeyi duz bir bilgi kutusu gibi gorunur",
+  },
+  {
+    ad: "vurgu ANLAM RENGIYLE yapildi",
+    yon: "FAZLADAN",
+    bekci: SIRALAMA,
+    dosya: "src/app/kart/[variantId]/fiyat-dene.tsx",
+    bul: 'className="bg-card space-y-4 rounded-xl border p-4 shadow-md"',
+    koy: 'className="bg-amber-100 space-y-4 rounded-xl border p-4 shadow-md"',
+    bozdugu:
+      "renk bu depoda HUKUM tasir (olumlu/olumsuz/uyari); fiyat denemesi ne iyi ne kotu haber",
+  },
 ];
 
 function bekciyiKostur(b: Bekci): { kod: number; ciktiVar: boolean } {

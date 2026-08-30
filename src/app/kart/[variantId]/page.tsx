@@ -152,10 +152,19 @@ export default async function KartSayfasi({
       bir kaydırma ister — faydadan çok yük olurdu.
     */
     <div className="mx-auto max-w-3xl xl:max-w-6xl">
-      <div className="xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] xl:items-start xl:gap-6">
-      <div className="space-y-6">
-      {/* ═══════════════════ KİMLİK ═══════════════════ */}
-      <div>
+      {/*
+        ═══ KÜNYE IZGARANIN ÜSTÜNDE, TAM GENİŞLİKTE (K103-②) ═══
+        ⛔ KULLANICI BULGUSU 30.08.2026: künye sol sütunun İÇİNDEYKEN sağdaki
+        "Fiyat dene" kartı sayfanın EN TEPESİNDEN başlıyor, soldaki ilk kart
+        (Stok kutuları) ise künyenin altından — iki sütun aynı hizada
+        başlamıyordu ve göz kayıyordu.
+
+        Künye zaten SAYFA DÜZEYİNDE bir başlık (ürün adı · kodlar · KDV
+        künyesi); bir sütunun içeriği değil. Dışarı alınınca iki sütun da
+        AYNI ÇİZGİDEN başlıyor. Alt eylemler ve SKU satırı da aynı gerekçeyle
+        ızgaranın dışında (İlke #10).
+      */}
+      <div className="mb-6">
         <h1 className="text-xl font-semibold sm:text-2xl">
           {varyant.urunAdi}
           {varyant.varyantAdi ? ` — ${varyant.varyantAdi}` : ""}
@@ -223,6 +232,8 @@ export default async function KartSayfasi({
         </div>
       </div>
 
+      <div className="xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] xl:items-start xl:gap-6">
+      <div className="space-y-6">
       {/* ═══════════════════ STOK — HERKESE AÇIK ═══════════════════ */}
       <Bolum baslik={t("stokBaslik")} ikon={Boxes}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

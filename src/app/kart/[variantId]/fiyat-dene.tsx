@@ -188,7 +188,22 @@ export function FiyatDene({
   };
 
   return (
-    <div className="space-y-4 rounded-lg border p-4">
+    /*
+      ═══ ÖNE ÇIKAN KART (K103-②, kullanıcı isteği 30.08.2026) ═══
+      Bu blok kartın tek EYLEM yüzeyi — ötekiler okunur, burada bir şey
+      DENENİR. Öteki bölümlerle birebir aynı görünmesi onu düz bir bilgi
+      kutusu gibi gösteriyordu.
+
+      ⚠ VURGU RENKLE DEĞİL YÜZEYLE YAPILIYOR: `bg-card` + `shadow-md`
+      (yükselti) ve biraz daha yuvarlak köşe. Renk bu depoda ANLAM taşır
+      (`lib/renkler.ts` → olumlu/olumsuz/uyarı) — buraya renk koymak
+      olmayan bir hüküm iddia ederdi. Fiyat denemesi ne iyi ne kötü haber,
+      sadece bir araç.
+
+      ⚠ Ve `ring` yerine `shadow`: halka sınır çizgisiyle çakışıp kalın
+      bir çerçeve izlenimi veriyordu.
+    */
+    <div className="bg-card space-y-4 rounded-xl border p-4 shadow-md">
       <div className="flex items-center gap-2 text-sm font-medium">
         <Calculator className="size-4 shrink-0" />
         {t("fiyatDeneBaslik")}
