@@ -33,6 +33,7 @@ export const BOLUMLER = [
   { kimlik: "urun", ad: "Ürünler ve stok" },
   { kimlik: "stok", ad: "Stok — elimde ne var" },
   { kimlik: "okuma", ad: "Barkod okut — sistem ne biliyor" },
+  { kimlik: "yerlestirme", ad: "Yerleştir — ürünü rafa koy" },
   { kimlik: "paketleme", ad: "Yönlendirmeli paketleme" },
   { kimlik: "kanalSku", ad: "Kanal SKU — ne işe yarar" },
   { kimlik: "komisyon", ad: "Komisyon oranı ve tarife" },
@@ -92,6 +93,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   iadeler: "iade",
   stok: "stok",
   okut: "okuma",
+  yerlestir: "yerlestirme",
   paketle: "paketleme",
   envanterDegeri: "envanter",
   kanalSkulari: "kanalSku",
@@ -620,6 +622,44 @@ ${sikHata([
   {
     hata: "Bulunamayan her kod için ürün göstermek zorunda hissetmek",
     cozum: "Zorunlu de\u011fil. Acelen varsa atla; kay\u0131t yine tutulur ve raporda \u0022hüküm verilemedi\u0022 taraf\u0131nda say\u0131l\u0131r.",
+  },
+])}
+</section>
+
+<section id="yerlestirme">
+${baslik("yerlestirme")}
+<p><strong>Sol menü &rarr; Yerleştir.</strong> Bir ürünün <strong>hangi rafta
+durduğunu</strong> sisteme yazdığın ekran budur. Akış tek yönlü: önce
+<strong>raf etiketini</strong> okutursun, sonra o rafa koyduğun ürünleri
+<strong>peş peşe</strong> okutursun. Raf seçili kalır; her ürün için yeniden
+raf okutmana gerek yok.</p>
+${neZaman(
+  "Kargo açıp malı rafa koyarken. Ürünü rafa yerleştirdiğin an okut; sonraya bırakılan yerleştirme yapılmaz.",
+)}
+<h3>Rafı nasıl değiştirirsin</h3>
+<p>Başka bir rafın önüne geçtiğinde <strong>o rafın etiketini okut</strong>
+&mdash; ekran &quot;Raf değişti&quot; yazar ve bundan sonraki ürünler yeni
+rafa yazılır. Ürün kutusuna raf etiketi okutsan da olur; sistem kodun raf
+olduğunu anlar.</p>
+<h3>Bu ekran STOĞA DOKUNMAZ</h3>
+<p>Yazılan tek şey ürünün <strong>yeri</strong>dir. Adet değişmez, stok
+hareketi oluşmaz, kâr hesabı etkilenmez. Yanlış rafa okutursan düzeltmesi
+kolay: doğru rafı okut, ürünü tekrar okut.</p>
+<div class="ek-not"><div class="etiket">Nereden geldiğini de yazar</div>
+<p>Yerleştirdiğin her ürünün altında <strong>önceki yeri</strong> görünür
+(&quot;Önceki yeri: RAF-SLN1-2&quot;). Yanlış ürünü okuttuysan bunu oradan
+anlarsın. Ürün zaten o raftaysa &quot;Zaten bu raftaydı&quot; yazar
+&mdash; bu bir hata değil, <em>doğrulama</em>dır.</p></div>
+${sikHata([
+  {
+    hata: "Raf okutmadan ürün okutmak",
+    cozum:
+      "Ekran &quot;önce raf etiketini okutun&quot; der ve hiçbir şey yazmaz. Yukarıdaki kutuya rafı okut, sonra devam et.",
+  },
+  {
+    hata: "Rafı değiştirmeyi unutup ürünleri eski rafa yazmak",
+    cozum:
+      "Üstteki kutuda hangi rafın seçili olduğu ve o rafta kaç ürün olduğu her zaman yazar. Yeni rafın önüne geçtiğinde etiketini okut.",
   },
 ])}
 </section>

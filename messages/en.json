@@ -46,7 +46,8 @@
     "tarife": "",
     "urunKarti": "",
     "simulasyon": "",
-    "menuDuzeni": ""
+    "menuDuzeni": "",
+    "yerlestir": ""
   },
   "Ortak": {
     "kapat": "",
@@ -698,7 +699,8 @@
     "paketle": "",
     "depoKurulumu": "",
     "menuDuzeni": "",
-    "grupAyarlar": ""
+    "grupAyarlar": "",
+    "yerlestir": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -3509,5 +3511,30 @@
     "defterDerinligiSayilar": "",
     "defterDerinligiSonuc": "",
     "marjDonemDisi": ""
+  },
+  "Yerlestir": {
+    "baslik": "",
+    "aciklama": "",
+    "rafAdimi": "",
+    "rafYerTutucu": "",
+    "rafKamera": "",
+    "rafSec": "",
+    "rafYok": "",
+    "rafPasif": "",
+    "rafDoluluk": "",
+    "urunAdimi": "",
+    "urunYerTutucu": "",
+    "urunKamera": "",
+    "yerlestir": "",
+    "rafBekleniyor": "",
+    "onceRafOkut": "",
+    "rafDegisti": "",
+    "bulunamadi": "",
+    "gecmisBasligi": "",
+    "tasindi": "",
+    "ilkKez": "",
+    "zatenBuRafta": "",
+    "rafKoduEtiketi": "",
+    "skuEtiketi": ""
   }
 }

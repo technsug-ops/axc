@@ -16,6 +16,7 @@ import QRCode from "qrcode";
 
 import { code128B, code128Genisligi, code128Yol } from "../src/lib/depo/code128";
 import { rafEtiketiSvg } from "../src/lib/depo/etiket";
+import { yerlestirmeKarari } from "../src/lib/depo/yerlestirme";
 import {
   eskiRaflar,
   gocPlani,
@@ -697,6 +698,231 @@ async function etiketKontrolleri() {
     "  ...ve oranı katalogla ilişkilendiriyor",
     (sozluk3.Depo.yeriBilinmeyen ?? "").includes("{yuzde}"),
   );
+
+  /**
+   * ==========================================================================
+   *  ⑬ YERLEŞTİRME — OKUT-KOY (K50 ④)
+   * --------------------------------------------------------------------------
+   *  ⭐ KARAR SAF GÖVDEDE; bekçi onu ÇAĞIRIYOR, kaynak taramıyor.
+   *  (Anayasa: "saf hesap katmanı desen tarayan bekçiye muhtaç olmaz".)
+   * ==========================================================================
+   */
+  console.log("\n13) YERLEŞTİRME — OKUT-KOY");
+
+  const RAF_A = "raf-a";
+  const RAF_B = "raf-b";
+
+  /** ⭐ ÜRÜN ÖNCE — sıra ölçüldü (çakışma 0/41 canlıda). */
+  kontrol(
+    "kod hem ürün hem raf ise ÜRÜN kazanır",
+    yerlestirmeKarari({
+      varyantVar: true,
+      varyantKonumId: null,
+      rafVar: true,
+      seciliRafId: RAF_A,
+    }).tur === "URUN_YERLESTIR",
+  );
+  /**
+   * ⛔ RAF SEÇİLMEDEN ÜRÜN SESSİZ GEÇMEZ. Yutulsaydı operatör okutur, hiçbir
+   * şey olmaz ve "sistem bozuk" derdi — kullanıcının menü vakasında tam
+   * olarak bu yaşandı.
+   */
+  kontrol(
+    "raf seçilmeden ürün okunursa SEBEBİ söylenir",
+    yerlestirmeKarari({
+      varyantVar: true,
+      varyantKonumId: RAF_A,
+      rafVar: false,
+      seciliRafId: null,
+    }).tur === "RAF_SECILMEDI",
+  );
+  /** ⭐ AYNI RAF AYRI SÖYLENİR — "taşındı" demek yanlış bilgi olurdu. */
+  kontrol(
+    "zaten o rafta olan ürün AYNI RAF işaretleniyor",
+    (() => {
+      const k = yerlestirmeKarari({
+        varyantVar: true,
+        varyantKonumId: RAF_A,
+        rafVar: false,
+        seciliRafId: RAF_A,
+      });
+      return k.tur === "URUN_YERLESTIR" && k.ayniRaf;
+    })(),
+  );
+  kontrol(
+    "başka raftaki ürün AYNI RAF sayılmıyor",
+    (() => {
+      const k = yerlestirmeKarari({
+        varyantVar: true,
+        varyantKonumId: RAF_B,
+        rafVar: false,
+        seciliRafId: RAF_A,
+      });
+      return k.tur === "URUN_YERLESTIR" && !k.ayniRaf;
+    })(),
+  );
+  /** ⚠ HİÇ KONUMU OLMAYAN ÜRÜN "AYNI RAF" DEĞİLDİR — `null` bir raf değil. */
+  kontrol(
+    "konumsuz ürün AYNI RAF sayılmıyor",
+    (() => {
+      const k = yerlestirmeKarari({
+        varyantVar: true,
+        varyantKonumId: null,
+        rafVar: false,
+        seciliRafId: RAF_A,
+      });
+      return k.tur === "URUN_YERLESTIR" && !k.ayniRaf;
+    })(),
+  );
+  /** ⭐ RAF ETİKETİ OKUNUNCA RAF DEĞİŞİR (İlke #9). */
+  kontrol(
+    "raf etiketi okunursa SEÇİLİ RAF değişir",
+    yerlestirmeKarari({
+      varyantVar: false,
+      varyantKonumId: null,
+      rafVar: true,
+      seciliRafId: RAF_A,
+    }).tur === "RAF_DEGISTIR",
+  );
+  kontrol(
+    "ne ürün ne raf → BULUNAMADI",
+    yerlestirmeKarari({
+      varyantVar: false,
+      varyantKonumId: null,
+      rafVar: false,
+      seciliRafId: RAF_A,
+    }).tur === "BULUNAMADI",
+  );
+
+  /* ═══ SUNUCU EYLEMİ ══════════════════════════════════════════════════ */
+  const yEylem = readFileSync("src/app/yerlestir/actions.ts", "utf8");
+  const yY = yEylem
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+
+  kontrol("eylem KURALI ÇAĞIRIYOR, kendi yazmıyor", /yerlestirmeKarari\(\{/.test(yY));
+  /**
+   * ⛔ İZİN HER EYLEMDE AYRI SORULUR — SAYIM DEĞİL, BLOK BAZINDA.
+   *
+   * ⚠ İLK YAZIMDA DOSYA GENELİNDE ARANIYORDU VE MUTASYON KAÇTI: desen İKİ
+   * yerde geçiyor (`rafiSec` ve `koduIsle`); birini `stok.gor`a çeviren
+   * mutasyon ötekini buldu ve bekçi yeşil kaldı. Yazma yolu korumasız
+   * kalırdı ve kimse görmezdi.
+   * _(Anayasa: "aynı desen birden çok yerde geçiyorsa her yeri ayrı sına".)_
+   */
+  const eylemBloku = (ad: string) => {
+    const bas = yY.indexOf(`export async function ${ad}(`);
+    if (bas < 0) return "";
+    const son = yY.indexOf("\nexport ", bas + 10);
+    return yY.slice(bas, son < 0 ? yY.length : son);
+  };
+  for (const ad of ["rafiSec", "koduIsle"]) {
+    const blok = eylemBloku(ad);
+    kontrol(`${ad} tanımlı`, blok.length > 0);
+    kontrol(
+      `  ...ve KENDİ içinde izin istiyor`,
+      /yetkiIste\("stok\.duzelt"\)/.test(blok),
+    );
+  }
+  /** ⚠ ARAMA KURALI ORTAK KAYNAKTAN — ayrı liste yazılsa kural ayrışırdı. */
+  kontrol("arama ORTAK kuraldan (`kodKosulu`)", /OR: kodKosulu\(temiz\)/.test(yY));
+  /**
+   * ⛔ STOK DEFTERİNE DOKUNULMAZ. Bu ekran konum yazar, adet yazmaz —
+   * `StockMovement` yazsaydı sayım koruması kapsamına girerdi ve sayılmış
+   * bir rafı sessizce düşürebilirdi.
+   */
+  kontrol(
+    "stok hareketi YAZILMIYOR",
+    !/stockMovement\.(create|createMany|update)/.test(yY),
+  );
+  /**
+   * ⭐ İZ — ESKİ VE YENİ BİRLİKTE (kullanıcı şartı).
+   *
+   * ⛔ ÖLÇÜT ÇAĞRININ SATIRINA BAĞLI, ADINA DEĞİL. İlk yazımda
+   * `/auditLog\.create\(\{/` aranıyordu ve mutasyon KAÇTI: çağrıyı
+   * `if (false) await …` yapan senaryoda dal hiç çalışmıyor ama desen
+   * dosyada duruyor. Satır başına bağlanınca kırmızı yandı.
+   * _(Anayasa: "koşul öldürülür, desen kalır".)_
+   */
+  kontrol(
+    "iz KOŞULSUZ yazılıyor (ölü dalda değil)",
+    /^\s*await prisma\.auditLog\.create\(\{$/m.test(yY),
+  );
+  /**
+   * ⛔ ALANLAR İZİN KENDİ BLOĞUNDA ARANIR. Dosya genelinde arandığında
+   * mutasyon kaçtı: `oncekiKod:` cevap TİPİNDE de geçiyor, izden silinse
+   * bile desen ayakta kalıyordu.
+   *
+   * ⚠ PENCERE ÖLÇÜLDÜ (30.08.2026): iz bloğu **458** karakter, pencere 700.
+   * Gövde büyürse dar pencere sessizce körelir; bu yüzden ölçü yazılıyor ve
+   * blok uzarsa buradan güncellenir.
+   */
+  const izBas = yY.indexOf("await prisma.auditLog.create({");
+  const izBloku = izBas < 0 ? "" : yY.slice(izBas, izBas + 700);
+  for (const alan of ["oncekiKonumId:", "oncekiKod:", "yeniKonumId:", "yeniKod:"]) {
+    kontrol(`  ...iz \`${alan}\` taşıyor`, izBloku.includes(alan));
+  }
+  /**
+   * ⛔ HEDEF RAF SUNUCUDA DOĞRULANIR. İstemciden gelen kimliğe güvenilseydi
+   * ekran açıkken pasife alınmış bir rafa ürün yazılır ve kaybolurdu.
+   */
+  kontrol(
+    "hedef raf sunucuda YENİDEN okunuyor",
+    /location\.findUnique\(\{[\s\S]{0,120}where: \{ id: seciliRafId \}/.test(yY),
+  );
+  kontrol("  ...ve pasif raf REDDEDİLİYOR", /if \(!hedef\.isActive\)/.test(yY));
+
+  /* ═══ EKRAN ══════════════════════════════════════════════════════════ */
+  const yEkran = readFileSync("src/app/yerlestir/yerlestirici.tsx", "utf8");
+  /**
+   * ⛔ OKUNAN DEĞER DURUMDAN OKUNMAZ. Kamera `setKod` çağırıp hemen işlemi
+   * tetiklerse durum HENÜZ ESKİ değeri taşır ve yanlış ürün yanlış rafa
+   * gider. Ölçüt: işleyen gövdeler PARAMETRE alıyor.
+   */
+  for (const gövde of ["rafOkut", "urunOkut"]) {
+    kontrol(
+      `${gövde} okunan değeri PARAMETRE alıyor`,
+      new RegExp(`const ${gövde} = \\(okunan\\?: string\\)`).test(yEkran),
+    );
+    kontrol(
+      `  ...ve durumu yalnız YEDEK olarak kullanıyor`,
+      new RegExp(`const aranacak = \\(okunan \\?\\? \\w+\\)\\.trim\\(\\)`).test(yEkran),
+    );
+  }
+  /** ⚠ Raf kimliği de yazımdan ÖNCE yakalanır — ardışık okumada kaymasın. */
+  kontrol(
+    "raf kimliği çağrı ÖNCESİ yakalanıyor",
+    /const hedefId = raf\?\.id \?\? null;\s*\n\s*basla\(/.test(yEkran),
+  );
+  /** ⛔ ÇIPLAK `<input>` YASAK — kamera ortak bileşenden gelir (İlke #7). */
+  kontrol("kod kutuları ORTAK okuyucuyu kullanıyor",
+    (yEkran.match(/<BarkodGirisi/g) ?? []).length === 2);
+  kontrol("  ...çıplak input YOK", !/<input\b/i.test(yEkran));
+  /** ⚠ ESKİ YER EKRANDA — yanlış rafa okutulduğu fark edilebilsin. */
+  kontrol("geçmişte ÖNCEKİ yer yazıyor", /t\("tasindi", \{ onceki:/.test(yEkran));
+  kontrol("  ...ve `zaten bu rafta` ayrı söyleniyor", /t\("zatenBuRafta"\)/.test(yEkran));
+
+  /* ═══ ULAŞILABİLİRLİK — EKRAN MENÜDE ═════════════════════════════════ */
+  /**
+   * ⛔ MENÜDE OLMAYAN EKRAN TESLİM EDİLMİŞ SAYILMAZ. Adres var, sayfa
+   * çiziliyor, kimse bulamıyor.
+   * _(Anayasa: "kural doğru mu değil, kural teslim edilebilir mi".)_
+   */
+  const katalog = readFileSync("src/lib/menu/katalog.ts", "utf8");
+  kontrol("menü katalogunda adresi var", /yerlestir: "\/yerlestir"/.test(katalog));
+  kontrol("  ...ve katalog kalemi var", /anahtar: "yerlestir"/.test(katalog));
+  kontrol(
+    "  ...GÜNLÜK grupta (ayarlara gömülmemiş)",
+    /\{ anahtar: "yerlestir", varsayilanGrup: null \}/.test(katalog),
+  );
+  kontrol(
+    "  ...ikonu var",
+    /yerlestir: \w+,/.test(readFileSync("src/components/app-sidebar.tsx", "utf8")),
+  );
+  const sozluk4 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Menu: Record<string, string>;
+  };
+  kontrol("  ...menü metni var", (sozluk4.Menu.yerlestir ?? "").length > 0);
   console.log("");
   console.log("=".repeat(70));
   if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

@@ -306,11 +306,22 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
    *  aslında "raf okutuldu" demiş olurdu. Ölçüm aletini kendi eklediğimiz
    *  özellikle bozamayız.
    *
-   *  ⚠ "SON YERLEŞTİRME TARİHİ" GÖSTERİLMİYOR — çünkü YOK. K50 ⑤ onu
-   *  istiyor ama yerleştirme izi (`/yerlestir`, madde ③) henüz yazılmadı;
-   *  `updatedAt` "en son dokunulan an"dır, "en son yerleştirilen an" değil.
-   *  Olmayan bir alanı benzeriyle doldurmak, kolon başlığını iddiaya
-   *  çevirmek olurdu. Madde ③ gelince eklenir.
+   *  ⚠ "SON YERLEŞTİRME TARİHİ" HÂLÂ GÖSTERİLMİYOR — VE SEBEBİ DEĞİŞTİ
+   *  (30.08.2026). Eskiden şöyle yazıyordu ve o gün doğruydu:
+   *  _"yerleştirme izi henüz yazılmadı."_ Artık YAZILDI — `/yerlestir`
+   *  her yerleştirmeyi `AuditLog`a `URUN_YERLESTIRILDI` olarak, eski ve
+   *  yeni rafıyla birlikte kaydediyor.
+   *
+   *  Bugünkü sebep başka: iz VAR ama bu ekran için henüz KAPSAMI YOK.
+   *  Rafın 969 ürünü için "son yerleştirme" göstermek, varyant başına en
+   *  yeni izi bulan bir SORGU demektir; bugün o izlerin tamamı da yeni
+   *  (ilk yerleştirmeler daha yapılmadı) ve sütunun büyük kısmı boş
+   *  görünürdü. `updatedAt` yine vekil olarak KULLANILMIYOR: "en son
+   *  dokunulan an"dır, "en son yerleştirilen an" değil.
+   *
+   *  AÇILIŞ ŞARTI: raflara yerleştirme başladıktan sonra, sütunun anlamlı
+   *  ölçüde dolduğu ölçüldüğünde. _(Anayasa: "şartsız bekleyen alan,
+   *  unutulmuş alandır".)_
    * ════════════════════════════════════════════════════════════════════════
    */
   if (!varyant && !satisKaydi) {

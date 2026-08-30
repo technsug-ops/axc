@@ -33,6 +33,7 @@ export const MENU_ADRESLERI: Record<string, string> = {
   iadeler: "/iadeler",
   paketle: "/paketle",
   okut: "/okut",
+  yerlestir: "/yerlestir",
   simulasyon: "/simulasyon",
 
   giderler: "/giderler",
@@ -112,6 +113,13 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "iadeler", varsayilanGrup: null },
   { anahtar: "paketle", varsayilanGrup: null },
   { anahtar: "okut", varsayilanGrup: null },
+  /**
+   * ⚠ GÜNLÜK GRUPTA — YERLEŞTİRME BİR DEPO İŞİDİR, AYAR DEĞİL.
+   * Ayarlar altına konsaydı operatör onu günde onlarca kez ayarlardan açmak
+   * zorunda kalırdı; canlıda katalogun yaklaşık yüzde 88'i henüz
+   * yerleştirilmemiş durumda ve bu ekran bir süre günlük iş olacak.
+   */
+  { anahtar: "yerlestir", varsayilanGrup: null },
   { anahtar: "simulasyon", varsayilanGrup: null },
 
   // ── PARA ────────────────────────────────────────────────────────────────

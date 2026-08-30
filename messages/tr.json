@@ -46,7 +46,8 @@
     "tarife": "Komisyon tarifesi",
     "urunKarti": "Ürün kârlılık kartı",
     "simulasyon": "Fiyat denemesi",
-    "menuDuzeni": "Menü düzeni"
+    "menuDuzeni": "Menü düzeni",
+    "yerlestir": "Yerleştir"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -698,7 +699,8 @@
     "paketle": "Paketle",
     "depoKurulumu": "Depo kurulumu",
     "menuDuzeni": "Menü düzeni",
-    "grupAyarlar": "Ayarlar"
+    "grupAyarlar": "Ayarlar",
+    "yerlestir": "Yerleştir"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -3509,5 +3511,30 @@
     "defterDerinligiSayilar": "Alımlar {alimTarih} tarihinden kayıtlı ({alim} alım); satışlar yalnız {satisTarih} tarihinden ({satis} satış) — satış defteri {gun} gün sığ.",
     "defterDerinligiSonuc": "Bu fotoğraf, satışı deftere girmemiş {adet} adedi hâlâ depoda gösterir. Fiziksel stok bundan DÜŞÜK olacaktır.",
     "marjDonemDisi": "{adet} satış: ALIM DEFTERİ O DÖNEMİ KAPSAMIYOR — o mal defter başlamadan önce alınmış, maliyet kaynağı YOK. Bu kapatılabilir bir açık değil, kayıttır."
+  },
+  "Yerlestir": {
+    "baslik": "Yerleştir",
+    "aciklama": "Önce rafı okutun, sonra ürünleri peş peşe okutun. Raf seçili kalır; yeni bir raf etiketi okutunca raf değişir.",
+    "rafAdimi": "1 · Raf etiketini okutun",
+    "rafYerTutucu": "örn. RAF-SLN1-2",
+    "rafKamera": "Raf etiketini okut",
+    "rafSec": "Rafı seç",
+    "rafYok": "Bu kodda bir raf yok: {kod}",
+    "rafPasif": "{kod} rafı pasif — buraya ürün yerleştirilemez. Önce rafı yeniden etkinleştirin.",
+    "rafDoluluk": "Bu rafa kayıtlı {adet} ürün var.",
+    "urunAdimi": "2 · Ürünleri okutun",
+    "urunYerTutucu": "örn. barkod, SKU veya Firma SKU",
+    "urunKamera": "Ürün kodunu okut",
+    "yerlestir": "Yerleştir",
+    "rafBekleniyor": "Önce yukarıdan bir raf okutun; ürünün yazılacağı yer henüz belli değil.",
+    "onceRafOkut": "Ürün okundu ama raf seçili değil — önce raf etiketini okutun.",
+    "rafDegisti": "Raf değişti: {kod}. Bundan sonraki ürünler bu rafa yazılır.",
+    "bulunamadi": "Bu kod ne ürün ne raf olarak bulundu: {kod}",
+    "gecmisBasligi": "Bu oturumda yerleştirilen {adet} ürün",
+    "tasindi": "Önceki yeri: {onceki}",
+    "ilkKez": "İlk kez yerleştirildi — daha önce yeri kayıtlı değildi.",
+    "zatenBuRafta": "Zaten bu raftaydı — doğrulandı.",
+    "rafKoduEtiketi": "Raf kodu",
+    "skuEtiketi": "SKU"
   }
 }

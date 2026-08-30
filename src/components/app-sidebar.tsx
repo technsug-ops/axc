@@ -30,6 +30,7 @@ import {
   Receipt,
   ScanBarcode,
   PackageCheck,
+  PackagePlus,
   ScanSearch,
   ShieldCheck,
   ShoppingCart,
@@ -103,6 +104,7 @@ const MENU_IKONLARI: Record<string, typeof Package> = {
   iadeler: Undo2,
   paketle: PackageCheck,
   okut: ScanSearch,
+  yerlestir: PackagePlus,
   simulasyon: Calculator,
 
   giderler: Wallet,
