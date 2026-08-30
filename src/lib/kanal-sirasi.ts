@@ -25,12 +25,41 @@
  *  bir sıra, ad düzenlendiği gün sessizce bozulurdu.
  *  _(Anayasa: "kimlik varken dizeyle aranmaz".)_
  *
- *  ⏭ BUGÜN SABİT, YARIN AYARLANABİLİR: kullanıcı bunun menü düzeni gibi
- *  ekrandan değiştirilebilmesini istedi. O bir ŞEMA işidir (`Company`
- *  üstünde `menuDuzeni`nin kardeşi bir sütun) ve migration onayı bekliyor;
- *  bu gövde o gün varsayılan sıra olarak kalır, üstüne kayıtlı düzen biner.
+ *  ── ⭐ İKİ SIRA DA DOĞRU — SEÇENEK OLDU (kullanıcı, 31.08.2026) ────────
+ *  Kullanıcı sabit düzeni istedikten sonra ekledi: _"aslında ciroya göre de
+ *  iyiymiş."_ Haklı — ikisi FARKLI SORUYA cevap veriyor:
+ *
+ *      SABİT  → "Trendyol'u nerede bulacağım?"   (yer sabit, göz öğrenir)
+ *      CİRO   → "Bu dönem hangisi kazandırdı?"   (hüküm sırayla okunur)
+ *
+ *  Birini seçip ötekini atmak, iki doğrudan birini kaybetmek olurdu.
+ *  _(Anayasa: "aynı veri, farklı soruya farklı pencereden bakar" — ve o
+ *  kural iki ekranın AYRIŞMASINI tutarsızlık saymamayı da söylüyor.)_
+ *
+ *  ⚠ VARSAYILAN SABİT DÜZEN: panel önce "nerede ne var" sorusuna cevap
+ *  veriyor; ciro tek tıkla alınıyor.
+ *
+ *  ⭐ VE BU, ŞEMA İŞİNİ GEREKSİZ KILDI. Sıra `Company` üstünde bir sütunda
+ *  saklanacaktı; seçenek ADRESTE yaşayınca migration'a hiç gerek kalmadı ve
+ *  panel zaten süzgeçli bir rota olduğu için liste hafızası onu
+ *  KENDİLİĞİNDEN hatırlıyor (K104).
  * ============================================================================
  */
+
+export const KANAL_SIRA_KIPLERI = ["duzen", "ciro"] as const;
+export type KanalSiraKipi = (typeof KANAL_SIRA_KIPLERI)[number];
+
+/**
+ * ⚠ VARSAYILAN GÖVDEDE, EKRANDA DEĞİL. İki yerde iki varsayılan olsaydı
+ * (sunucu "duzen", çip "ciro" gibi) ekran açılışta bir sıra çizer, kullanıcı
+ * hiçbir şeye basmadan başka bir sıra görürdü.
+ */
+export const VARSAYILAN_KANAL_SIRASI: KanalSiraKipi = "duzen";
+
+/** Adresten gelen ham değeri çözer; tanınmayan değer VARSAYILANA düşer. */
+export function kanalSiraKipi(ham?: string): KanalSiraKipi {
+  return KANAL_SIRA_KIPLERI.find((k) => k === ham) ?? VARSAYILAN_KANAL_SIRASI;
+}
 
 /** Kullanıcının saydığı sıra — KOD ile, ad ile değil. */
 export const KANAL_SIRASI = [
@@ -61,12 +90,25 @@ export function kanalSirasi(kod: string): number {
  * sıra kullanılsaydı sayılmayan 7 kanalın arasındaki düzen koşumdan koşuma
  * değişebilirdi (`sort` kararlılığı motora bağlı bırakılmaz).
  */
-export function kanallariSirala<T extends { kanalKodu: string; kanalAdi: string }>(
-  kanallar: readonly T[],
-): T[] {
+export function kanallariSirala<
+  T extends { kanalKodu: string; kanalAdi: string; gelir: number },
+>(kanallar: readonly T[], kip: KanalSiraKipi = VARSAYILAN_KANAL_SIRASI): T[] {
   return [...kanallar].sort((a, b) => {
-    const fark = kanalSirasi(a.kanalKodu) - kanalSirasi(b.kanalKodu);
-    if (fark !== 0) return fark;
+    if (kip === "ciro") {
+      const ciroFarki = b.gelir - a.gelir;
+      if (ciroFarki !== 0) return ciroFarki;
+      /**
+       * ⚠ CİRO KİPİNDE DE EŞİTLİK BOZUCU VAR — ve SABİT DÜZEN. Ciroları
+       * eşit kanallar (özellikle hepsi 0 olan dönemler) aksi hâlde rastgele
+       * dizilir; kullanıcı aynı ekranı iki kez açtığında farklı bir liste
+       * görürdü. Sıfırlı dönemde ekran bu sayede yine tanıdık kalıyor.
+       */
+      const duzenFarki = kanalSirasi(a.kanalKodu) - kanalSirasi(b.kanalKodu);
+      if (duzenFarki !== 0) return duzenFarki;
+    } else {
+      const fark = kanalSirasi(a.kanalKodu) - kanalSirasi(b.kanalKodu);
+      if (fark !== 0) return fark;
+    }
     return a.kanalAdi.localeCompare(b.kanalAdi, "tr");
   });
 }

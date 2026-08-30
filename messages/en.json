@@ -1973,7 +1973,10 @@
     "operasyonToplamKdvDevreden": "",
     "operasyonKdvKaynak": "",
     "operasyonToplamSeri": "",
-    "marjHesaplanamiyor": ""
+    "marjHesaplanamiyor": "",
+    "kanalSiraEtiket": "",
+    "kanalSiraDuzen": "",
+    "kanalSiraCiro": ""
   },
   "Envanter": {
     "baslik": "",

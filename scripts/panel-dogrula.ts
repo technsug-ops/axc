@@ -121,7 +121,11 @@ import {
   type YaslanmaGirdisi,
 } from "../src/lib/yaslanma";
 import { LISTE_PENCERELERI } from "../src/lib/donem";
-import { kanallariSirala } from "../src/lib/kanal-sirasi";
+import {
+  kanallariSirala,
+  kanalSiraKipi,
+  VARSAYILAN_KANAL_SIRASI,
+} from "../src/lib/kanal-sirasi";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -4990,6 +4994,62 @@ console.log("K106) KANAL SIRASI — sabit duzen, ciro degil");
   kontrol(
     "  ...ve eski ciro sirasi KALMADI",
     !/values\(\)\]\.sort\(\(a, b\) => b\.gelir - a\.gelir\)/.test(panelGovde),
+  );
+
+  /**
+   * ═══ K106-② İKİ KİP — kullanici 31.08.2026: "ciroya gore de iyiymis" ═══
+   * Ikisi FARKLI SORUYA cevap veriyor; birini secip otekini atmak iki
+   * dogrudan birini kaybetmek olurdu.
+   */
+  const ciroSirali = kanallariSirala(ornek, "ciro").map((k) => k.kanalKodu);
+  kontrol(
+    "ciro kipi gercekten ciroya gore siraliyor (A101 7000 basta)",
+    ciroSirali[0] === "A101",
+  );
+  kontrol(
+    "  ...ve iki kip AYRISIYOR (ornek veri ayrimi gosteriyor)",
+    ciroSirali[0] !== sirali[0],
+  );
+  /**
+   * CIRO KIPINDE DE ESITLIK BOZUCU SABIT DUZEN: sifirli donemde butun
+   * kanallar 0 ciroludur ve rastgele dizilirse ekran her acilista baska
+   * gorunur. Bu olcut o donemi temsil ediyor.
+   */
+  const hepsiSifir = ornek.map((k) => ({ ...k, gelir: 0 }));
+  kontrol(
+    "ciro kipinde esitlik SABIT DUZENLE bozuluyor (sifirli donem)",
+    kanallariSirala(hepsiSifir, "ciro")
+      .map((k) => k.kanalKodu)
+      .slice(0, 5)
+      .join(",") === "TRENDYOL,HEPSIBURADA,N11,AMAZON,DEPO",
+  );
+  /** Adres ne derse desin gecerli bir kip cikar. */
+  kontrol(
+    "taninmayan kip VARSAYILANA (sabit duzen) dusuyor",
+    kanalSiraKipi("uydurma") === "duzen" && kanalSiraKipi(undefined) === "duzen",
+  );
+  kontrol("gecerli kip oldugu gibi geciyor", kanalSiraKipi("ciro") === "ciro");
+  /**
+   * VARSAYILAN GOVDEDE, EKRANDA DEGIL. Iki yerde iki varsayilan olsaydi
+   * ekran acilista bir sira cizer, kullanici hicbir seye basmadan baska bir
+   * sira gorurdu.
+   */
+  kontrol(
+    "varsayilan SABIT DUZEN (panel once 'nerede ne var' der)",
+    VARSAYILAN_KANAL_SIRASI === "duzen",
+  );
+
+  /** BAGLANTI: ekran cubugu ciziyor ve kip iki cagriya da gidiyor. */
+  const panelEkran = readFileSync("src/app/page.tsx", "utf8");
+  kontrol("panel sira cubugunu CIZIYOR", /<KanalSiraCubugu/.test(panelEkran));
+  /**
+   * KIYAS BLOGU DA AYNI KIPTE. Ayrissaydi ust blok sabit duzende, kiyas
+   * blogu ciroda cizilir; ayni ekranda iki farkli sira, kartlari goz goze
+   * karsilastirmayi imkansiz kilardi.
+   */
+  kontrol(
+    "kip HER IKI panelHesapla cagrisina da gidiyor",
+    (panelEkran.match(/^\s*kanalKipi,$/gm) ?? []).length === 2,
   );
 }
 

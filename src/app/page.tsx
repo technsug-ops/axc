@@ -128,6 +128,8 @@ import {
 
 import type { Currency } from "@/generated/prisma/enums";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
+import { kanalSiraKipi } from "@/lib/kanal-sirasi";
+import { KanalSiraCubugu } from "./kanal-sira-cubugu";
 
 /**
  * ============================================================================
@@ -186,6 +188,8 @@ export default async function AnaSayfa({
   searchParams,
 }: {
   searchParams: Promise<{
+    /** K106-② — kanal kartlarının sırası: sabit düzen mi, ciro mu. */
+    kanalSira?: string;
     kanal?: string;
     para?: string;
     pencere?: string;
@@ -695,11 +699,21 @@ export default async function AnaSayfa({
     ? kargolar.filter((k) => k.kanalKodu === seciliKanal)
     : kargolar;
 
+  /**
+   * ⭐ İKİ SIRA DA DOĞRU, SEÇİM KULLANICININ (K106-②, 31.08.2026).
+   * Sabit düzen "nerede ne var" sorusuna, ciro "hangisi kazandırdı"
+   * sorusuna cevap veriyor. Durum ADRESTE — panel süzgeçli bir rota olduğu
+   * için liste hafızası (K104) seçimi kendiliğinden hatırlıyor ve bu
+   * yüzden `Company` üstünde bir sütuna HİÇ gerek kalmadı.
+   */
+  const kanalKipi = kanalSiraKipi(parametreler.kanalSira);
+
   const bloklar = panelHesapla(
     donem,
     donemSatislari,
     donemIadeleri,
     donemKargolari,
+    kanalKipi,
   );
 
   /**
@@ -734,6 +748,12 @@ export default async function AnaSayfa({
          * Aynı kartta iki farklı evren — düzeltilen hatanın kendisi.
          */
         donemKargolari,
+        /**
+         * ⚠ KIYAS DA AYNI SIRADA (K106-②). Ayrışsaydı üst blok sabit
+         * düzende, kıyas bloğu ciroda çizilir; aynı ekranda iki farklı
+         * sıra, kartları göz göze karşılaştırmayı imkânsız kılardı.
+         */
+        kanalKipi,
       )
     : null;
   /** Kıyas döneminde o para biriminde HİÇ KAYIT yoksa null → "karşılaştırılamaz". */
@@ -1460,6 +1480,13 @@ export default async function AnaSayfa({
     blok: ParaBirimiPaneli,
     kanalPaylari: Map<string, { ciroPayi: number; net2Payi: number | null }>,
   ) => (
+    <div className="space-y-3">
+      {/* K106-② — sıra seçimi kartların ÜSTÜNDE: değiştireceği şeyin
+          hemen yanında, aşağıda aranmıyor (İlke #9). */}
+      <KanalSiraCubugu
+        kip={kanalKipi}
+        tasinanlar={parametreler as Record<string, string | undefined>}
+      />
     <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {blok.kanallar.map((kanal) => (
         <div
@@ -1633,6 +1660,7 @@ export default async function AnaSayfa({
             <div className="text-lg font-semibold tabular-nums">0</div>
           </div>
         ))}
+    </div>
     </div>
   );
 

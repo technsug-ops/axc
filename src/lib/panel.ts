@@ -2,7 +2,11 @@ import { ayKaydir, pencerede, type Pencere } from "@/lib/donem";
 
 import type { KarDurumu } from "@/lib/kar";
 import type { Currency } from "@/generated/prisma/enums";
-import { kanallariSirala } from "@/lib/kanal-sirasi";
+import {
+  kanallariSirala,
+  VARSAYILAN_KANAL_SIRASI,
+  type KanalSiraKipi,
+} from "@/lib/kanal-sirasi";
 
 /**
  * ============================================================================
@@ -288,6 +292,11 @@ export function panelHesapla(
   satislar: PanelSatisi[],
   iadeler: PanelIadesi[] = [],
   kargolar: PanelKargosu[] = [],
+  /**
+   * ⚠ SON PARAMETRE VE VARSAYILANLI — ÇAĞRANLARIN HEPSİ DEĞİŞMESİN diye.
+   * İki kip de doğru; hangisinin sorulduğu ekranın kararı (K106-②).
+   */
+  kanalKipi: KanalSiraKipi = VARSAYILAN_KANAL_SIRASI,
 ): ParaBirimiPaneli[] {
   const bloklar = new Map<Currency, Map<string, KanalBlogu>>();
   /**
@@ -442,7 +451,7 @@ export function panelHesapla(
        * Büyüklük bilgisi kartın kendi ciro çubuğunda zaten yazılı —
        * sıralama onu taşımıyordu, yalnız yerleri oynatıyordu (İlke #10).
        */
-      const liste = kanallariSirala([...kanallar.values()]);
+      const liste = kanallariSirala([...kanallar.values()], kanalKipi);
       // Hesaplar da cirosuna göre sıralanır — kanalla aynı mantık.
       for (const kanal of liste) {
         kanal.hesaplar.sort((a, b) => b.gelir - a.gelir);

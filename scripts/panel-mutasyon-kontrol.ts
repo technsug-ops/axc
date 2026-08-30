@@ -48,7 +48,7 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "panel yine CIRO sirasina dondu",
     yon: "KALDIRAN",
     dosya: PANEL,
-    bul: "      const liste = kanallariSirala([...kanallar.values()]);",
+    bul: "      const liste = kanallariSirala([...kanallar.values()], kanalKipi);",
     koy: "      const liste = [...kanallar.values()].sort((a, b) => b.gelir - a.gelir);",
     bozdugu:
       "kart yerleri veriyle birlikte oynar; kullanici her acilista aradigi kanali yeniden arar",
@@ -95,6 +95,52 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "  return (kanallar as T[]).sort((a, b) => {",
     bozdugu:
       "cagiran ayni diziyi baska yerde kullaniyorsa onun sirasi da sessizce degisir",
+  },
+  // === K106-2 IKI KIP =================================================
+  {
+    ad: "ciro kipi aslinda sabit duzen ciziyor (secim ise yaramiyor)",
+    yon: "KALDIRAN",
+    dosya: SIRA,
+    bul: "      const ciroFarki = b.gelir - a.gelir;",
+    koy: "      const ciroFarki = 0;",
+    bozdugu:
+      "kullanici cipe basar, ekranda HICBIR SEY degismez — ozellik VARMIS GIBI gorunur",
+  },
+  {
+    ad: "ciro kipinde esitlik bozucu SABIT DUZEN kaldirildi",
+    yon: "KALDIRAN",
+    dosya: SIRA,
+    bul:
+      "      const duzenFarki = kanalSirasi(a.kanalKodu) - kanalSirasi(b.kanalKodu);" +
+      String.fromCharCode(10) +
+      "      if (duzenFarki !== 0) return duzenFarki;",
+    koy: "",
+    bozdugu:
+      "sifirli donemde butun kanallar esit ciroludur ve ekran her acilista BASKA bir sirada gorunur",
+  },
+  {
+    ad: "varsayilan CIRO yapildi (panel her acilista oynayan bir liste)",
+    yon: "FAZLADAN",
+    dosya: SIRA,
+    bul: 'export const VARSAYILAN_KANAL_SIRASI: KanalSiraKipi = "duzen";',
+    koy: 'export const VARSAYILAN_KANAL_SIRASI: KanalSiraKipi = "ciro";',
+    bozdugu:
+      "kullanici kararina aykiri: panel once 'nerede ne var' sorusuna cevap vermeli",
+  },
+  {
+    ad: "kip KIYAS blogua gitmiyor (ayni ekranda iki farkli sira)",
+    yon: "KALDIRAN",
+    dosya: "src/app/page.tsx",
+    bul:
+      "        kanalKipi," +
+      String.fromCharCode(10) +
+      "      )" +
+      String.fromCharCode(10) +
+      "    : null;",
+    koy:
+      "      )" + String.fromCharCode(10) + "    : null;",
+    bozdugu:
+      "ust blok sabit duzende, kiyas blogu ciroda cizilir — kartlar goz goze karsilastirilamaz",
   },
 ];
 
