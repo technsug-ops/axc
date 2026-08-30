@@ -454,8 +454,70 @@ model VariantOption {
 //       (Depo > Koridor > Raf > Göz)
 // ============================================================================
 
+/// ============================================================================
+///  DEPO BÖLÜMÜ — DÜZEN VERİDİR, ŞABLON DEĞİL (K50 kararı 25.08.2026)
+/// ----------------------------------------------------------------------------
+///  "Depo düzeni firmadan firmaya değişir; kanal kesinti kuralları nasıl veri
+///  olduysa depo düzeni de VERİDİR — firma deposunu kendisi çizer."
+///
+///  ⭐ ŞEMA MERDİVENİ ÖLÇÜLDÜ (30.08.2026), üç basamak elendi:
+///   ① `Location.name` taşıyabilir mi → HAYIR. Canlıda `OFİS` (13 raf) ve
+///     `Ofis` (1 raf) AYRI kayıt: aynı bölüm iki kimlik. Ve RAFSIZ BÖLÜM
+///     kurulamaz — kurulum ekranı bölümü ÖNCE tanımlayıp SONRA raf üretiyor.
+///   ② Serbest metin → aynı iki sorun.
+///   ③ Kod önekinden TÜRETİLEBİLİR Mİ → HAYIR. Ölçüldü: `A` öneki 27 rafta
+///     ve hem `OFİS` hem adsız bölümde geçiyor; önek bölümü VERMİYOR.
+///   ④ → tablo + sütun. Sorgu ihtiyacı gerçek: raf listesi bölüm→ünite→göz
+///     sırasında, `/yerlestir` ünite bazında gruplayacak, toplu taşıma bölüm
+///     süzecek. SQL metin ayrıştırarak sıralayamaz.
+///     _(Anayasa: "Geriye bakmak → serbest metin; SORGU → yapı.")_
+/// ============================================================================
+model DepoBolumu {
+  id String @id @default(cuid())
+
+  /// Görünen ad — DEĞİŞEBİLİR ("Salon" → "Salon dolabı").
+  ad String
+
+  /// ⛔ KISALTMA ETİKETİN İÇİNDE — SONRADAN DEĞİŞMEZ (K50 kararı).
+  ///
+  /// Kural: BÜYÜK HARF + rakam, boşluksuz, Türkçe karaktersiz, barkod-güvenli.
+  /// Bu kural `OFİS`/`Ofis` çakışmasını YAPISAL olarak kapatır: iki yazım da
+  /// `OFIS`e iner ve `@unique` ikincisini reddeder.
+  ///
+  /// ⚠ Değişmezliğin sebebi FİZİKSEL: kısaltma basılı etiketin içinde. Değişse
+  /// etiket yalan söyler ve raf kodu ile duvardaki kâğıt ayrışır.
+  kisaltma String @unique
+
+  /// Ekranda görünme sırası — koda gömülmez, kullanıcı sıralar.
+  sira     Int     @default(0)
+  isActive Boolean @default(true)
+
+  raflar Location[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
 model Location {
   id String @id @default(cuid())
+
+  /// ⚠ NULLABLE VE GERİ DOLDURULMUYOR — göç ONAYLANANA KADAR mevcut 41 raf
+  /// bölümsüz kalır. Onaysız tek ad değişmez (K50); şema bunu zorlar.
+  bolumId String?
+  bolum   DepoBolumu? @relation(fields: [bolumId], references: [id], onDelete: SetNull)
+
+  /// ⭐ ÜNİTE ve GÖZ — SIRALAMA/GRUPLAMA için SÜTUN, koddan ayrıştırılmaz.
+  ///
+  /// Kod (`RAF-SLN3-2`) bu ikisini zaten taşıyor ve şablona kilitli, yani
+  /// ayrıştırmak GÜVENLİ olurdu. Ama SQL metin ayrıştırarak SIRALAYAMAZ ve
+  /// `/yerlestir` ünite bazında gruplayacak. Sorgu ihtiyacı → sütun.
+  ///
+  /// ⚠ GÖZ NUMARASI YERDEN YUKARI, SABİT KURAL (K50) — ayar değil. Üste kat
+  /// eklenince alttaki etiketler sökülmesin diye.
+  unite Int?
+  goz   Int?
 
   /// Raf kodu: "A-03-2". Etiketlerde ve toplama listesinde bu görünür.
   code String  @unique
@@ -473,6 +535,8 @@ model Location {
   stockMovements StockMovement[]
 
   @@index([isActive])
+  /// ⚠ Raf listesi bölüm → ünite → göz sırasında okunur.
+  @@index([bolumId, unite, goz])
 }
 
 // ============================================================================

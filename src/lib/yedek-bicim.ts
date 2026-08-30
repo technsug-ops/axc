@@ -25,6 +25,12 @@
 export const YEDEK_TABLOLARI = [
   // --- kimseye bağlı olmayanlar ---
   "Category",
+  /**
+   * ⚠ `Location`DAN ÖNCE — `Location.bolumId` buna bağlı.
+   * Geri yükleme sırası bağımlılığı izler; bölüm sonra gelseydi raflar
+   * var olmayan bir bölüme bağlanmaya çalışır ve yabancı anahtar patlardı.
+   */
+  "DepoBolumu",
   "Location",
   "Channel",
   "CargoCarrier",

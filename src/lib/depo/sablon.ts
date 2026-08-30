@@ -130,3 +130,48 @@ export function uretimPlani(t: BolumTarifi, mevcutKodlar: readonly string[]): Ur
     sinirAsildi: kodlar.length > UST_SINIR.toplam,
   };
 }
+
+/**
+ * ============================================================================
+ *  KISALTMA NORMALLEŞTİRME — `İ` TUZAĞINI YAPISAL KAPATIR
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI ÖLÇÜM 30.08.2026: `Location.name` alanında `OFİS` (13 raf) ve
+ *  `Ofis` (1 raf) AYRI kayıt olarak duruyordu — aynı bölüm İKİ KİMLİK.
+ *
+ *  ⚠ VE `toUpperCase()` TEK BAŞINA YETMEZ: Türkçe `İ` JavaScript'te `i`ye
+ *  inmez (`"İ".toLowerCase() !== "i"`). Bu tuzak bu depoda daha önce bir
+ *  kolon eşleşmesini de sessizce bozmuştu.
+ *
+ *  ⭐ `KISALTMA_KURALI` yalnız DENETLER (`/^[A-Z0-9]{1,6}$/`); girilen
+ *  `Ofis`i reddeder ama `OFİS` ile `Ofis`in AYNI ŞEY olduğunu söylemez.
+ *  Normalleştirme o boşluğu kapatıyor: ikisi de `OFIS`e iner ve
+ *  `DepoBolumu.kisaltma @unique` ikincisini reddeder.
+ *
+ *  ⚠ VE BARKOD-GÜVENLİ: Code128'in B kümesi ASCII 32–126 taşır; Türkçe
+ *  harfler oraya girmez. Normalleştirme yalnız çakışmayı değil, ETİKETİN
+ *  BASILABİLİRLİĞİNİ de garanti eder.
+ * ============================================================================
+ */
+const HARF_ESLEMESI: Record<string, string> = {
+  İ: "I", I: "I", ı: "I", i: "I",
+  Ş: "S", ş: "S",
+  Ğ: "G", ğ: "G",
+  Ü: "U", ü: "U",
+  Ö: "O", ö: "O",
+  Ç: "C", ç: "C",
+};
+
+export function kisaltmaNormalle(ham: string): string {
+  let cikti = "";
+  for (const ch of ham.trim()) {
+    const esit = HARF_ESLEMESI[ch];
+    if (esit !== undefined) {
+      cikti += esit;
+      continue;
+    }
+    const buyuk = ch.toUpperCase();
+    /** ⚠ Yalnız A–Z ve 0–9 kalır; boşluk ve noktalama DÜŞER. */
+    if (/^[A-Z0-9]$/.test(buyuk)) cikti += buyuk;
+  }
+  return cikti;
+}
