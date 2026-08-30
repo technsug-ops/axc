@@ -34,7 +34,7 @@ import {
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 
 let gecen = 0;
@@ -54,6 +54,17 @@ function kontrol(ad: string, sonuc: boolean) {
 function blok(metin: string, capa: string, uzunluk: number): string {
   const bas = metin.indexOf(capa);
   return bas < 0 ? "" : metin.slice(bas, bas + uzunluk);
+}
+
+/**
+ * Yorumlari siler — bir yasagi ANLATAN yorum, o yasagi CIGNEMIS sayilmaz.
+ * Desenler `RegExp` kurucusuyla kuruluyor: betikle uretilen ters bolulu
+ * kaciSlar 0x08'e donusebiliyor (anayasa dersi 28.08).
+ */
+function yorumsuz(kod: string): string {
+  const blokYorumu = new RegExp("/" + String.fromCharCode(92) + "*[^]*?" + String.fromCharCode(92) + "*/", "g");
+  const satirYorumu = new RegExp("//[^" + String.fromCharCode(92) + "n]*", "g");
+  return kod.replace(blokYorumu, "").replace(satirYorumu, "");
 }
 
 function olcum(adet: number, sonHareket: Date | null): VaryantOlcumu {
@@ -616,6 +627,108 @@ console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
     sagKap.length > 0 && !sihirliBoslukDeseni.test(sagKap),
   );
   kosanBolumler.push("kart düzeni");
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+console.log("");
+console.log("§7 SÜZGEÇ KALICILIĞI — detaya girip dönünce filtre DURUYOR");
+// ═══════════════════════════════════════════════════════════════════════
+{
+  const arama = readFileSync("src/app/stok/stok-arama.tsx", "utf8");
+
+  /**
+   * ⛔ KULLANICI BULGUSU (K104): "Anker" arayıp sıralayınca, ikinci aramada
+   * sıra kayboluyordu — `ara()` adresi SIFIRDAN kuruyor ve `sirala`/`yon`/
+   * `stok` parametrelerini siliyordu.
+   */
+  kontrol(
+    "arama mevcut adres parametrelerini KORUYOR",
+    /new URLSearchParams\(parametreler\.toString\(\)\)/.test(arama),
+  );
+  /**
+   * ⛔ ÇIPLAK ADRES YASAĞI: `/stok?q=` biçiminde elle kurulan bir adres
+   * öteki parametreleri sessizce düşürür. Bu ölçüt tam o deseni yasaklıyor.
+   */
+  kontrol(
+    "arama adresi ELLE kurulmuyor (öteki parametreler düşmesin)",
+    !/`\/stok\?q=/.test(yorumsuz(arama)),
+  );
+  /**
+   * ⚠ "TEMİZLE" YALNIZ ARAMAYI DÜŞÜRÜR. Düz `/stok` bağlantısı sıralamayı
+   * ve sıfır süzgecini de süpürürdü; kullanıcı yalnız kutuyu boşaltmak
+   * istemişti.
+   */
+  kontrol(
+    "temizle yalnız aramayı düşürüyor (düz /stok değil)",
+    /href=\{adresKur\(""\)\}/.test(arama),
+  );
+  /**
+   * ⚠ YENİ ARAMA 1. SAYFADAN BAŞLAR — 5. sayfada kalmak kullanıcıyı boş
+   * ekrana düşürürdü (liste bambaşka).
+   */
+  kontrol("yeni arama sayfayı sıfırlıyor", /p\.delete\("sayfa"\)/.test(arama));
+  /**
+   * ⛔ TASLAK DEĞER YEREL DURUMDA KALMALI. Kaldırılırsa kutu DOLDURULAMAZ
+   * hâle gelir: kullanıcı yazar, adres henüz değişmediği için React her
+   * tuşta eski değeri geri yazar ve ekranda hiçbir hata çıkmaz.
+   * _(26.08 canlı arızası — envanter tarih seçicisi.)_
+   */
+  kontrol(
+    "yazılan taslak YEREL durumda (kutu doldurulabilsin)",
+    /useState\(baslangic\)/.test(arama),
+  );
+  /**
+   * ⚠ OKUNAN KOD ARA DURUMDAN DEĞİL, DOĞRUDAN PARAMETREYLE taşınıyor.
+   * `setSorgu(x)` deyip hemen `ara()` çağrılsaydı React durumu senkron
+   * güncellemediği için BİR ÖNCEKİ kod aranırdı (fiyat denemesi vakası).
+   */
+  kontrol(
+    "okunan kod doğrudan parametreyle taşınıyor",
+    /onOkundu=\{ara\}/.test(arama) && /function ara\(deger: string\)/.test(arama),
+  );
+
+  const geri = readFileSync("src/app/stok/[variantId]/stok-geri.tsx", "utf8");
+  const detay = readFileSync("src/app/stok/[variantId]/page.tsx", "utf8");
+  /**
+   * ⛔ SABİT `href="/stok"` BAĞLANTISI KULLANICININ BİLDİRDİĞİ KAYBIN
+   * DOĞRUDAN SEBEBİYDİ — geliş adresini hiç taşımıyordu.
+   */
+  /**
+   * ⚠ ÖLÇÜT YORUMSUZ KODDA VE ÇAĞRI SIRASINA BAĞLI — İLK YAZIMDA KAÇTI.
+   * Önce yalnız `/router\.back\(\)/` aranıyordu; gövdeyi `return;` ile
+   * değiştiren mutasyon YEŞİL geçti çünkü o metin dosyanın BAŞLIK
+   * YORUMUNDA da duruyor. Bir davranışı ANLATAN yorum, o davranışın
+   * GERÇEKLEŞTİĞİNİ göstermez.
+   *
+   * Yeni ölçüt iki şeyi birden istiyor: varsayılan gezinme İPTAL EDİLİYOR
+   * ve HEMEN ARDINDAN geçmişe dönülüyor. `preventDefault` olmadan `back()`
+   * çağrılsaydı tarayıcı ikisini birden yapardı (iki adım geri).
+   */
+  const geriKod = yorumsuz(geri);
+  kontrol(
+    "detaydaki geri bağlantısı geçmişe dönüyor",
+    /<StokGeriBaglantisi/.test(detay) &&
+      /olay\.preventDefault\(\);\s*router\.back\(\);/.test(geriKod),
+  );
+  /**
+   * ⚠ GÖVDE HÂLÂ GERÇEK BİR BAĞLANTI: JavaScript çalışmasa da, sayfa
+   * doğrudan linkle açılmış olsa da `/stok`a gider. Düğmeye çevrilseydi o
+   * iki hâlde hiçbir yere gitmezdi.
+   */
+  kontrol(
+    "  ...ama gövde hâlâ gerçek bağlantı (JS'siz de çalışır)",
+    /href="\/stok"/.test(geriKod),
+  );
+  /**
+   * ⛔ TEK GİRDİLİ GEÇMİŞTE `back()` ÇAĞRILMAZ — hiçbir yere gitmez ve
+   * kullanıcı tıkladığı hâlde ekranda hiçbir şey olmaz (sessiz başarısızlık,
+   * İlke #5). O hâlde bağlantı kendi işini yapar.
+   */
+  kontrol(
+    "  ...geçmiş yoksa back() çağrılmıyor (sessiz başarısızlık yok)",
+    /window\.history\.length <= 1\) return;/.test(geriKod),
+  );
+  kosanBolumler.push("süzgeç kalıcılığı");
 }
 
 // ═══════════════════════════════════════════════════════════════════════

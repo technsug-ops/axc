@@ -34,13 +34,21 @@ export function Baglanti({
 export function GeriBaglanti({
   href,
   children,
+  onClick,
 }: {
   href: string;
   children: React.ReactNode;
+  /**
+   * Tiklamayi devralmak isteyen ekranlar icin (K104: "geri" tarayici
+   * gecmisine dusmeli ki liste suzgeci korunsun). Verilmezse bilesen
+   * duz bir bagLANTI olarak calisir — JS'siz ve dogrudan-link halinde de.
+   */
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm underline decoration-current/40 underline-offset-4 transition-colors"
     >
       <ChevronLeft className="size-3.5 shrink-0" />

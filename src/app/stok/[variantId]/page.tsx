@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 
-import { Baglanti, GeriBaglanti } from "@/components/baglanti";
+import { Baglanti } from "@/components/baglanti";
+import { StokGeriBaglantisi } from "./stok-geri";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -122,7 +123,7 @@ export default async function VaryantHareketleriSayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <GeriBaglanti href="/stok">{t("baslik")}</GeriBaglanti>
+        <StokGeriBaglantisi etiket={t("baslik")} />
         <h1 className="mt-1 text-2xl font-semibold">
           {varyant.product.name}
           {varyant.name ? ` — ${varyant.name}` : ""}

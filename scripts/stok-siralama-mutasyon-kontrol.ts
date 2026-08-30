@@ -51,6 +51,8 @@ const CUBUK = "src/app/stok/sirala-suzgec.tsx";
 const KART = "src/app/kart/[variantId]/page.tsx";
 const PANEL = "src/lib/panel-listeler.ts";
 const DENE = "src/app/kart/[variantId]/fiyat-dene.tsx";
+const ARAMA_KUTUSU = "src/app/stok/stok-arama.tsx";
+const GERI = "src/app/stok/[variantId]/stok-geri.tsx";
 
 const MUTASYONLAR: Mutasyon[] = [
   // ═══ K100 — UPC-A ↔ EAN-13 ═════════════════════════════════════════════
@@ -316,6 +318,71 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: '        <Bolum baslik={t("fiyatDeneBaslik")} ikon={Calculator}>',
     koy: "        <>",
     bozdugu: "sag sutun baslıksiz kalir ve kart yine soldaki basligin hizasina duser",
+  },
+
+  // === K104 - SUZGEC KALICILIGI =========================================
+  {
+    ad: "arama adresi yine SIFIRDAN kuruluyor (siralama silinir)",
+    yon: "KALDIRAN",
+    bekci: SIRALAMA,
+    dosya: ARAMA_KUTUSU,
+    bul: "    const p = new URLSearchParams(parametreler.toString());",
+    koy: "    const p = new URLSearchParams();",
+    bozdugu:
+      "arama yapmak sirala/yon/stok parametrelerini SESSIZCE siler — kullanicinin bildirdigi kayip",
+  },
+  {
+    ad: "temizle yine duz /stok'a gidiyor (her seyi supurur)",
+    yon: "FAZLADAN",
+    bekci: SIRALAMA,
+    dosya: ARAMA_KUTUSU,
+    bul: '<Link href={adresKur("")}>{ortak("temizle")}</Link>',
+    koy: '<Link href="/stok">{ortak("temizle")}</Link>',
+    bozdugu: "kullanici yalniz kutuyu bosaltmak isterken siralama ve suzgec de gider",
+  },
+  {
+    ad: "yeni arama 5. sayfada kaliyor",
+    yon: "KALDIRAN",
+    bekci: SIRALAMA,
+    dosya: ARAMA_KUTUSU,
+    bul: '    p.delete("sayfa");',
+    koy: "",
+    bozdugu: "bambaska bir listenin 5. sayfasina dusulur, ekran BOS gorunur",
+  },
+  {
+    ad: "taslak deger yerel durumdan cikarildi",
+    yon: "KALDIRAN",
+    bekci: SIRALAMA,
+    dosya: ARAMA_KUTUSU,
+    bul: "  const [sorgu, setSorgu] = useState(baslangic);",
+    koy:
+      "  const sorgu = baslangic;" +
+      String.fromCharCode(10) +
+      "  const setSorgu = (_x: string) => {};",
+    bozdugu:
+      "kutu DOLDURULAMAZ hale gelir: kullanici yazar, React her tusta eski degeri geri yazar (26.08 arizasi)",
+  },
+  {
+    ad: "geri baglantisi yine SABIT /stok (gecmise donmuyor)",
+    yon: "KALDIRAN",
+    bekci: SIRALAMA,
+    dosya: GERI,
+    bul:
+      "        olay.preventDefault();" +
+      String.fromCharCode(10) +
+      "        router.back();",
+    koy: "        return;",
+    bozdugu: "detaydan donunce liste bastan kurulur — kalemin ta kendisi",
+  },
+  {
+    ad: "gecmis yokken de back() cagriliyor",
+    yon: "FAZLADAN",
+    bekci: SIRALAMA,
+    dosya: GERI,
+    bul: "        if (typeof window === \"undefined\" || window.history.length <= 1) return;",
+    koy: "        if (typeof window === \"undefined\") return;",
+    bozdugu:
+      "tek girdili gecmiste back() hicbir yere gitmez; kullanici tiklar, ekranda HICBIR SEY olmaz",
   },
 ];
 
