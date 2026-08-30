@@ -321,7 +321,8 @@
     "bicimsizBaslik": "{sayi} rafın kodu standarda uymuyor",
     "bicimsizMetin": "Bunlar çalışmaya devam eder; standarda çekmek isterseniz Düzenle ile kodu değiştirin. Kod değişirse o rafın etiketini yeniden basmanız gerekir.",
     "birlestir": "Rafları birleştir",
-    "kodPasifRaftaVar": "\"{kod}\" kodu PASİF bir rafta kayıtlı ({ad}). Pasif raflar listede solgun görünür; o rafı aktifleştirebilir ya da başka kod seçebilirsiniz."
+    "kodPasifRaftaVar": "\"{kod}\" kodu PASİF bir rafta kayıtlı ({ad}). Pasif raflar listede solgun görünür; o rafı aktifleştirebilir ya da başka kod seçebilirsiniz.",
+    "etiketOlcusu": "Etiket ölçüsü: {en}×{boy} mm (termal rulo)"
   },
   "KanalHesabi": {
     "kanalSecilmeli": "Kanal seçilmeli",

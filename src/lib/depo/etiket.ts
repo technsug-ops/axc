@@ -133,48 +133,18 @@ function kodKacir(m: string): string {
 }
 
 /**
- * ⭐ A4 TOPLU BASIM — ve TEK RAF YENİDEN BASIMI aynı gövdeden.
+ * ═══ A4 BİRLEŞTİRİCİ KALDIRILDI — 30.08.2026 ═════════════════════════════
  *
- * ⚠ YENİDEN BASIM AYNI KODU ÇİZER (K35 kuralı): etiket kaybolduğunda yeni
- * bir kod üretmek, duvardaki eski etiketi yalancı yapar ve konum geçmişini
- * koparır. Bu yüzden burada üretim YOK, yalnız çizim var — kodlar çağırandan
- * gelir.
+ * Burada `etiketSayfasiSvg` ve `sayfaBasinaEtiket` vardı: A4 sayfasını kendisi
+ * kuran, etiketleri ızgaraya yerleştiren bir gövde. İkisinin de TÜKETİCİSİ
+ * HİÇ OLMADI — ölçüldü, `src/` ve `scripts/` altında tek çağrı yok.
+ *
+ * ⛔ VE KUSURLUYDU: sayfaya sığmayan etikette `break` ediyordu, yani listenin
+ * kuyruğunu SESSİZCE DÜŞÜRÜYORDU. Basılan sayfada eksik olduğu görünmez;
+ * eksiklik ancak duvarda etiketsiz bir raf bulununca anlaşılır.
+ *
+ * ⭐ SAYFALAMAYI TARAYICI YAPIYOR (`break-inside-avoid`). İkinci bir yerleşim
+ * motoru yazmak, aynı işi iki yerde yapıp birinin ötekinden ayrışmasını
+ * beklemekti. _(Anayasa: "yazıcısı olmayan alan bağlanır ya da kaldırılır".)_
+ * ═════════════════════════════════════════════════════════════════════════
  */
-export async function etiketSayfasiSvg(kodlar: string[]): Promise<string> {
-  /** A4: 210×297 mm. Kenar boşluğu 8 mm, etiketler arası 2 mm. */
-  const kenar = 8;
-  const bosluk = 2;
-  const sutun = Math.max(1, Math.floor((210 - kenar * 2 + bosluk) / (ETIKET_EN_MM + bosluk)));
-  const parcalar: string[] = [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 210 297">`,
-    `<rect width="210" height="297" fill="#fff"/>`,
-  ];
-  for (const [i, kod] of kodlar.entries()) {
-    const s = Math.floor(i / sutun);
-    const k = i % sutun;
-    const x = kenar + k * (ETIKET_EN_MM + bosluk);
-    const y = kenar + s * (ETIKET_BOY_MM + bosluk);
-    /** ⚠ Sayfaya sığmayan etiket ÇİZİLMEZ — üst üste basmak yerine taşar. */
-    if (y + ETIKET_BOY_MM > 297 - kenar) break;
-    const tek = await rafEtiketiSvg(kod);
-    const ic = /<svg[^>]*>([\s\S]*)<\/svg>/.exec(tek)?.[1] ?? "";
-    parcalar.push(
-      `<g transform="translate(${x} ${y})">`,
-      `<rect width="${ETIKET_EN_MM}" height="${ETIKET_BOY_MM}" fill="none"`,
-      ` stroke="#ccc" stroke-width="0.2" stroke-dasharray="1 1"/>`,
-      ic,
-      `</g>`,
-    );
-  }
-  parcalar.push(`</svg>`);
-  return parcalar.join("");
-}
-
-/** Bir A4 sayfasına kaç etiket sığar — ekran "N sayfa" diyebilsin. */
-export function sayfaBasinaEtiket(): number {
-  const kenar = 8;
-  const bosluk = 2;
-  const sutun = Math.max(1, Math.floor((210 - kenar * 2 + bosluk) / (ETIKET_EN_MM + bosluk)));
-  const satir = Math.max(1, Math.floor((297 - kenar * 2 + bosluk) / (ETIKET_BOY_MM + bosluk)));
-  return sutun * satir;
-}

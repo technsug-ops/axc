@@ -10,6 +10,10 @@ import {
   uretimPlani,
   type BolumTarifi,
 } from "../src/lib/depo/sablon";
+import QRCode from "qrcode";
+
+import { code128B, code128Genisligi, code128Yol } from "../src/lib/depo/code128";
+import { rafEtiketiSvg } from "../src/lib/depo/etiket";
 import {
   eskiRaflar,
   gocPlani,
@@ -445,11 +449,185 @@ const TARIF: BolumTarifi = { ad: "Salon", kisaltma: "SLN", uniteSayisi: 2, gozSa
   );
 }
 
-console.log("");
-console.log("=".repeat(70));
-if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
-else {
-  console.log(`${kalan} KONTROL BAŞARISIZ (${gecen + kalan} kontrolden)`);
-  process.exitCode = 1;
+/**
+ * ============================================================================
+ *  ⑪ ETİKET — ÜÇ GÖSTERİM, TEK DEĞER (K50 ②)
+ * ----------------------------------------------------------------------------
+ *  ⛔ ASIL RİSK: iki kodun AYRIŞMASI. Telefonla okuyan bir raf bulur, el
+ *  terminaliyle okuyan başka bir raf bulur — ve ikisi de "okudu" der.
+ *  Sessiz, çünkü her iki okuma da kendi içinde başarılıdır.
+ *
+ *  ⭐ ÖLÇÜM ÜÇ GÖSTERİMİ AYRI AYRI KAYNAĞINA BAĞLIYOR; "kodda `kod` yazıyor"
+ *  diye bakmıyor. Barkod yolu bağımsız kodlanıp karşılaştırılıyor, QR gövdesi
+ *  bağımsız üretilip karşılaştırılıyor, yazı birebir sınanıyor.
+ * ============================================================================
+ */
+/**
+ * ⚠ ASENKRON — `qrcode` paketi öyle çalışıyor. Bekçi CJS koştuğu için üst
+ * düzey `await` YOK; özet de bu gövdenin İÇİNDE kalıyor ki ölçütler çıkış
+ * kodu hesaplanmadan ÖNCE koşsun (K93).
+ */
+async function etiketKontrolleri() {
+  console.log("\n11) ETİKET — ÜÇ GÖSTERİM, TEK DEĞER");
+
+  const A = "RAF-SLN3-2";
+  const B = "RAF-OFIS12-4";
+
+  /**
+   * ⭐ ALTIN DEĞER — DIŞ OKUYUCUYLA ÇAPRAZLANMIŞ.
+   * Bu modül dizisi 30.08.2026'da `zxing-wasm` okuyucusuna verildi ve
+   * `RAF-SLN3-2` olarak birebir okundu. Yani sabit, kendi kodlayıcımızın
+   * beyanı değil — BAĞIMSIZ bir çözücünün onayladığı çıktı.
+   * _(Anayasa: "kendi kendini doğrulayan ölçüm ölçüm değildir".)_
+   */
+  const ALTIN_A =
+    "2112142311311113231323111221322131131321311133212211321221322232113221122331112";
+  const sonucA = code128B(A);
+  kontrol(
+    "Code128 çıktısı DIŞ OKUYUCUYLA doğrulanmış altın değerde",
+    sonucA.olur && sonucA.moduller.join("") === ALTIN_A,
+  );
+  /** ⚠ Sağlama basamağı kodun İÇİNDE — dizeyi bozan mutasyon çıktıyı değiştirir. */
+  kontrol(
+    "farklı kod → farklı barkod (sabit çizim yok)",
+    (() => {
+      const b = code128B(B);
+      return sonucA.olur && b.olur && sonucA.moduller.join("") !== b.moduller.join("");
+    })(),
+  );
+  /** ⛔ Geçersiz karakter SESSİZCE ATLANMAZ. */
+  kontrol(
+    "ASCII dışı karakter REDDEDİLİYOR",
+    (() => {
+      const s = code128B("RAF-ŞUBE-1");
+      return !s.olur && s.sebep === "GECERSIZ_KARAKTER";
+    })(),
+  );
+  kontrol("boş kod REDDEDİLİYOR", (() => {
+    const s = code128B("");
+    return !s.olur && s.sebep === "BOS";
+  })());
+
+  const etiketA = await rafEtiketiSvg(A);
+  const etiketB = await rafEtiketiSvg(B);
+
+  /**
+   * ═══ BAĞ ① — BARKOD, ETİKETİN KODUNU TAŞIYOR ═══════════════════════════
+   * Etiketin içindeki `<path>`, `A` için BAĞIMSIZ kodlanan yolla birebir
+   * aynı olmalı. `code128B(kod + "X")` gibi bir mutasyon buradan kaçamaz.
+   */
+  const yolA = /<path d="([^"]+)"/.exec(etiketA)?.[1] ?? "";
+  const modulSayisiA = sonucA.olur ? code128Genisligi(sonucA.moduller) : 1;
+  const beklenenYolA = sonucA.olur
+    ? code128Yol(sonucA.moduller, (50 * 0.56) / modulSayisiA)
+    : "";
+  kontrol("BARKOD etiketin KENDİ kodunu taşıyor", yolA !== "" && yolA === beklenenYolA);
+
+  /**
+   * ═══ BAĞ ② — QR, AYNI DİZEYİ TAŞIYOR ══════════════════════════════════
+   * QR gövdesi, `A` için BAĞIMSIZ üretilen QR ile birebir aynı olmalı.
+   * ⚠ Buradaki ölçüt "QR var mı" DEĞİL: `QRCode.toString(kod + "-QR")` gibi
+   * bir mutasyon "QR var" ölçütünden geçerdi ve iki kod sessizce ayrışırdı.
+   */
+  const qrBagimsiz = await QRCode.toString(A, {
+    type: "svg",
+    errorCorrectionLevel: "M",
+    margin: 0,
+  });
+  const qrGovdeBagimsiz =
+    /<svg[^>]*viewBox="[^"]+"[^>]*>([\s\S]*)<\/svg>/.exec(qrBagimsiz)?.[1] ?? "";
+  kontrol(
+    "QR etiketin KENDİ kodunu taşıyor (zengin veri YOK)",
+    qrGovdeBagimsiz !== "" && etiketA.includes(qrGovdeBagimsiz),
+  );
+
+  /** ═══ BAĞ ③ — OKUNABİLİR YAZI AYNI DİZE ══════════════════════════════ */
+  const yaziA = /<text[^>]*>([^<]+)<\/text>/.exec(
+    etiketA.slice(etiketA.indexOf("<text")),
+  )?.[1];
+  kontrol("okunabilir YAZI aynı dize", yaziA === A);
+
+  /** ⚠ ÜÇÜ DE DEĞİŞMELİ: biri sabit çizilse ötekiler onu örterdi. */
+  kontrol(
+    "farklı kod → ÜÇ gösterim de değişiyor",
+    (() => {
+      const yolB = /<path d="([^"]+)"/.exec(etiketB)?.[1] ?? "";
+      return yolA !== yolB && !etiketB.includes(qrGovdeBagimsiz) && etiketB.includes(B);
+    })(),
+  );
+
+  /**
+   * ⛔ BOŞ KÂĞIT YASAK (İlke #5): basılamayan kod NİYE basılamadığını yazar.
+   * Yoksa operatör eksik etiketi ancak duvarda fark eder.
+   */
+  const bozuk = await rafEtiketiSvg("RAF-ŞUBE-1");
+  kontrol("basılamayan kod SEBEBİNİ yazıyor", /BASILAMADI/.test(bozuk));
+  kontrol("  ...ve sebebi de basıyor", /GECERSIZ_KARAKTER/.test(bozuk));
+
+  /**
+   * ═══ DIŞ SERVİS YASAĞI ════════════════════════════════════════════════
+   * ⚠ ÖLÇÜT YORUMSUZ KODDA ARANIR: yasağı ANLATAN yorum, yasağı ÇİĞNEMİŞ
+   * sayılmaz. `code128.ts` başlığındaki "DIŞ SERVİS YOK" cümlesi `http`
+   * içermiyor ama ileride içerebilir.
+   */
+  const yorumsuz = (m: string) =>
+    m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+  for (const yol of [
+    "src/lib/depo/code128.ts",
+    "src/lib/depo/etiket.ts",
+    "src/app/ayarlar/konumlar/etiketler/page.tsx",
+  ]) {
+    const m = yorumsuz(readFileSync(yol, "utf8"));
+    kontrol(
+      `dış servis çağrısı YOK — ${yol.split("/").pop()}`,
+      !/\bfetch\s*\(|https?:\/\/(?!www\.w3\.org)/.test(m),
+    );
+  }
+  /** ⭐ Kodlayıcı BAĞIMSIZ: hiçbir şey içeri almıyor, dolayısıyla hiçbir şeye bağlı değil. */
+  kontrol(
+    "Code128 kodlayıcısının HİÇ içe aktarması yok",
+    !/^\s*import\s/m.test(readFileSync("src/lib/depo/code128.ts", "utf8")),
+  );
+
+  /** ═══ EKRAN GERÇEKTEN BU GÖVDEYİ ÇAĞIRIYOR MU ════════════════════════ */
+  const etiketEkran = readFileSync(
+    "src/app/ayarlar/konumlar/etiketler/page.tsx",
+    "utf8",
+  );
+  kontrol(
+    "etiket ekranı ORTAK gövdeyi çağırıyor",
+    /await rafEtiketiSvg\(konum\.code\)/.test(etiketEkran),
+  );
+  /**
+   * ⛔ EKRAN KENDİ QR'INI ÜRETEMEZ. Eskiden `QRCode.toString` doğrudan
+   * buradaydı; kalsaydı etiket iki ayrı yerden çizilir ve biri Code128
+   * öğrenirken öteki öğrenmezdi.
+   */
+  kontrol(
+    "  ...ve kendi QR'ını ÜRETMİYOR",
+    !/QRCode\.toString/.test(etiketEkran),
+  );
+  /** ⚠ Bölüm adı ETİKETE basılmaz — kimlik koddur, ad değişebilir. */
+  kontrol("bölüm adı etikete DEĞİL, yalnız ekrana basılıyor",
+    /print:hidden[\s\S]{0,120}etiket\.name|etiket\.name[\s\S]{0,200}print:hidden/.test(
+      etiketEkran,
+    ));
+  console.log("");
+  console.log("=".repeat(70));
+  if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
+  else {
+    console.log(`${kalan} KONTROL BAŞARISIZ (${gecen + kalan} kontrolden)`);
+    process.exitCode = 1;
+  }
+  console.log("");
 }
-console.log("");
+
+/**
+ * ⛔ REDDEDİLEN SÖZ DE KIRMIZI YANAR: gövde patlarsa çıkış kodu hiç yazılmaz
+ * ve bekçi SESSİZCE yeşil görünürdü — ölçmediğini bilmeden.
+ */
+etiketKontrolleri().catch((e: unknown) => {
+  console.log(`
+⛔ BEKÇİ KOŞAMADI — ${String(e instanceof Error ? e.stack : e)}`);
+  process.exitCode = 1;
+});
