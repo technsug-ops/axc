@@ -38,6 +38,7 @@
     "hakedis:dogrula": "tsx scripts/hakedis-dogrula.ts",
     "komisyon:dogrula": "tsx scripts/komisyon-dogrula.ts",
     "marj:dogrula": "tsx scripts/marj-dogrula.ts",
+    "simulasyon-mutasyon:kontrol": "tsx scripts/simulasyon-mutasyon-kontrol.ts",
     "simulasyon:dogrula": "tsx scripts/simulasyon-dogrula.ts",
     "komisyon:prova": "tsx scripts/komisyon-prova.ts",
     "panel:dogrula": "tsx scripts/panel-dogrula.ts",

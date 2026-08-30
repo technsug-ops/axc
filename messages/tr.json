@@ -3130,7 +3130,7 @@
     "alisFiyati": "Alış fiyatı",
     "kdvOrani": "KDV oranı (%)",
     "kargoUcreti": "Kargo ücreti",
-    "kargoIpucu": "Boş bırakırsan kargo hesaba girmez (alıcı ödüyorsa).",
+    "kargoIpucu": "Kargo yoksa (alıcı ödüyorsa) 0 yaz — boş bırakma.",
     "kdvDili": "Girdiğim tutarlar",
     "kdvDahil": "KDV dahil",
     "kdvHaric": "KDV hariç",
@@ -3196,7 +3196,10 @@
     "birimPara": "₺",
     "birimYuzde": "%",
     "hepsiniTemizle": "Hepsini temizle",
-    "dokum_PAZARYERI_BEDELI": "Pazaryeri bedeli"
+    "dokum_PAZARYERI_BEDELI": "Pazaryeri bedeli",
+    "kargoUyarisi": "Kargo ücreti girilmedi — NET kâr olduğundan YÜKSEK çıkar. Kargoyu alıcı ödüyorsa 0 yaz.",
+    "bosKargoBaslik": "Kargo ücreti bekleniyor",
+    "bosKargoIpucu": "Kargo NET kârın en büyük kalemlerinden biri; girilmeden hesap yapılmaz. Kargoyu alıcı ödüyorsa 0 yaz — hesap anında çıkar."
   },
   "Cevrimdisi": {
     "baslik": "Bağlantı yok",

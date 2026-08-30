@@ -26,6 +26,7 @@ import { SIMULASYON_KANALLARI } from "@/lib/simulasyon/kanal-kurallari";
 import type { UrunZemini } from "@/lib/simulasyon/urun-zemini";
 import { urunAra } from "./actions";
 import {
+  eksikSebebi,
   girdiEksikMi,
   simulasyonKarsilastir,
   type KanalSonucu,
@@ -236,7 +237,15 @@ export function Deneme({ bugun }: { bugun: string }) {
     kanalFiyatlari: sayiSozlugu(kanalFiyatlari),
   };
 
-  const eksik = girdiEksikMi(girdi);
+  /**
+   * ⚠ "EKSİK" YETMEZ, "NE EKSİK" GEREKİYOR (K105). Ekran hangi alanı
+   * beklediğini SÖYLEMEK zorunda; yoksa hesap çıkmaz, sebebi görünmez ve
+   * operatör sistemi bozuk sanar (İlke #5).
+   */
+  const sebep = eksikSebebi(girdi);
+  const eksik = sebep !== null;
+  /** Kargo alanının yanında yanan uyarı — çare tam orada yazılı. */
+  const kargoEksik = kargo.trim() === "";
   /**
    * ⚠ "BUGÜN" SUNUCUDAN GELİYOR, `new Date()` DEĞİL. İş saat dilimi sabittir
    * (Europe/Istanbul) ve tarayıcının saat dilimi ASLA kullanılmaz — anayasa.
@@ -378,13 +387,32 @@ export function Deneme({ bugun }: { bugun: string }) {
           degistir={setKdv}
           ipucu={t("ornek", { deger: "20" })}
         />
-        <Alan
-          etiket={t("kargoUcreti")}
-          deger={kargo}
-          degistir={setKargo}
-          ipucu={t("ornek", { deger: "120" })}
-          not={t("kargoIpucu")}
-        />
+        {/*
+          ⛔ KARGO ZORUNLU — kullanıcı kararı 30.08.2026: "yoksa unutuluyor".
+          Boş bırakmak eskiden SESSİZCE "kargo yok" demekti ve NET olduğundan
+          YÜKSEK çıkıyordu; fiyat kararı o iyimser rakamdan veriliyordu.
+
+          ⚠ UYARI ALANIN YANINDA, sonuç kutusunda DEĞİL: çare tam burada ve
+          kullanıcının gözü zaten burada. Sonuca kadar inip "neden hesap yok"
+          diye aramak zorunda kalmasın (İlke #9).
+        */}
+        <div className="space-y-1.5">
+          <Alan
+            etiket={t("kargoUcreti")}
+            deger={kargo}
+            degistir={setKargo}
+            ipucu={t("ornek", { deger: "120" })}
+            not={t("kargoIpucu")}
+          />
+          {kargoEksik ? (
+            <p
+              className={`rounded-md p-2 text-xs ${DURUM_KUTUSU.uyari} ${DURUM_YAZISI.uyari}`}
+              role="status"
+            >
+              {t("kargoUyarisi")}
+            </p>
+          ) : null}
+        </div>
 
         {/* ── KDV DİLİ — İKİ SEÇENEK DE GÖRÜNÜR ────────────────────────────
             ⚠ ONAY KUTUSU DEĞİL. Tek kutu olsaydı "işaretli değilse ne
@@ -473,8 +501,17 @@ export function Deneme({ bugun }: { bugun: string }) {
           sorudur. Sıfır duvarı hesaplanmış gibi okunurdu (İlke #5). */}
       {eksik ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
-          <p className="font-medium">{t("bosBaslik")}</p>
-          <p className="text-muted-foreground mt-1 text-sm">{t("bosIpucu")}</p>
+          {/*
+            ⚠ SEBEP EKRANDA YAZAR. Tek bir "henüz hesaplanmadı" cümlesi,
+            formu doldurmuş ama kargoyu atlamış kullanıcıya HİÇBİR ŞEY
+            söylemez — o cümleyi okuyup "ama ben doldurdum" der.
+          */}
+          <p className="font-medium">
+            {sebep === "KARGO" ? t("bosKargoBaslik") : t("bosBaslik")}
+          </p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {sebep === "KARGO" ? t("bosKargoIpucu") : t("bosIpucu")}
+          </p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">

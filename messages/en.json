@@ -3196,7 +3196,10 @@
     "birimPara": "",
     "birimYuzde": "",
     "hepsiniTemizle": "",
-    "dokum_PAZARYERI_BEDELI": ""
+    "dokum_PAZARYERI_BEDELI": "",
+    "kargoUyarisi": "",
+    "bosKargoBaslik": "",
+    "bosKargoIpucu": ""
   },
   "Cevrimdisi": {
     "baslik": "",

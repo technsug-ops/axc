@@ -188,7 +188,23 @@ export type KanalSonucu = {
  * Oranı çözülemeyen kanal artık kutusunu çizer ve `ORAN_YOK` beyanıyla
  * "NET hesaplanamadı" der — sessiz kalmaz, ama öteki kanalları da susturmaz.
  */
-export function girdiEksikMi(girdi: SimulasyonGirdisi): boolean {
+/**
+ * ============================================================================
+ *  EKSİK GİRDİ — HANGİSİ EKSİK, SIRASIYLA (K105, 30.08.2026)
+ * ----------------------------------------------------------------------------
+ *  ⚠ KAPI "eksik mi" DEMEKLE YETİNMEZ, "NE eksik" DER. Sessiz bir kapı
+ *  kullanıcıyı çıkmazda bırakır: ekran hesap vermez, sebebi yazmaz ve
+ *  operatör sistemi bozuk sanar (İlke #5).
+ *
+ *  ⚠ SIRA DOLDURMA SIRASIDIR: fiyat → alış → KDV → kargo. İki alan birden
+ *  eksikken ilk sırada YAZILACAK OLAN, kullanıcının bir sonraki adımıdır;
+ *  rastgele biri seçilseydi ekran onu ileri geri gezdirirdi.
+ * ============================================================================
+ */
+export const EKSIK_SEBEPLERI = ["FIYAT", "ALIS", "KDV", "KARGO"] as const;
+export type EksikSebebi = (typeof EKSIK_SEBEPLERI)[number];
+
+export function eksikSebebi(girdi: SimulasyonGirdisi): EksikSebebi | null {
   /**
    * ⚠ FİYAT ORTAK OLMAK ZORUNDA DEĞİL. Kullanıcının elinde tek bir satış
    * fiyatı yok, kanal başına buy box var; ortak alanı şart koşan bir kapı
@@ -200,13 +216,34 @@ export function girdiEksikMi(girdi: SimulasyonGirdisi): boolean {
     SIMULASYON_KANALLARI.some(
       (k) => elleFiyat(k.kod, girdi.kanalFiyatlari) !== null,
     );
-  return (
-    !fiyatVar ||
-    !Number.isFinite(girdi.alisFiyati) ||
-    girdi.alisFiyati <= 0 ||
-    !Number.isFinite(girdi.kdvOrani) ||
-    girdi.kdvOrani < 0
-  );
+  if (!fiyatVar) return "FIYAT";
+  if (!Number.isFinite(girdi.alisFiyati) || girdi.alisFiyati <= 0) return "ALIS";
+  if (!Number.isFinite(girdi.kdvOrani) || girdi.kdvOrani < 0) return "KDV";
+  /**
+   * ⛔ KARGO ZORUNLU — KULLANICI KARARI 30.08.2026: _"kargo ücreti girmek
+   * zorunlu olsun ve uyarı versin, yoksa unutuluyor."_
+   *
+   * Eskiden boş bırakmak SESSİZCE "kargo yok" demekti ve NET olduğundan
+   * YÜKSEK çıkıyordu — yani ekran, unutulan bir gideri hesaba katmadığını
+   * hiç söylemeden iyimser bir rakam basıyordu. Fiyat kararı o rakamdan
+   * veriliyor.
+   *
+   * ⭐ AMA YASAK DEĞİL, BEYAN: `0` yazmak GEÇERLİ ve "kargoyu alıcı ödüyor"
+   * demektir. Tam yasak, kargosuz meşru satışı (elden satış, alıcı ödemeli)
+   * kilitlerdi. Aradaki fark **unutmak ile karar vermek** arasındaki
+   * farktır; sistem ikincisini istiyor.
+   * _(Anayasa: "bir sınırın yönü ölçülmeden çevrilmez" — burada sınır
+   * `null` ile `0` arasına konuldu, sıfırın kendisine değil.)_
+   */
+  if (girdi.kargoUcreti === null || !Number.isFinite(girdi.kargoUcreti)) {
+    return "KARGO";
+  }
+  if (girdi.kargoUcreti < 0) return "KARGO";
+  return null;
+}
+
+export function girdiEksikMi(girdi: SimulasyonGirdisi): boolean {
+  return eksikSebebi(girdi) !== null;
 }
 
 /** KDV hariç girilen bir tutarı dahile çevirir. */

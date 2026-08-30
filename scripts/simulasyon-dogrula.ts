@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { SIMULASYON_KANALLARI } from "../src/lib/simulasyon/kanal-kurallari";
 import {
+  eksikSebebi,
   girdiEksikMi,
   simulasyonKarsilastir,
   type SimulasyonGirdisi,
@@ -275,9 +276,17 @@ console.log("\n3) SIRALAMA VE BOŞ GİRDİ");
   );
   kontrol("dolu form eksik SAYILMIYOR", !girdiEksikMi(ORTAK));
 
-  /** Kargosuz deneme meşru: alıcı ödüyorsa kargo bize gider değildir. */
+  /**
+   * Kargosuz deneme meşru: alıcı ödüyorsa kargo bize gider değildir.
+   *
+   * ⚠ GİRDİ 30.08.2026'DA `null` → `0` OLDU — VE NİYE, BURADA YAZAR.
+   * Ölçütün NİYETİ değişmedi; eskiyen şey onu ifade etme biçimi. Artık
+   * `null` "kargo yok" demek DEĞİL, "kullanıcı girmeyi UNUTTU" demek
+   * (K105) ve hesap o hâlde koşmuyor. Kargosuz senaryonun açık cevabı `0`.
+   * Bu satır aynı zamanda kuralı belgeliyor: sıfır YASAK DEĞİL, beyandır.
+   */
   const kargosuz = simulasyonKarsilastir(
-    { ...ORTAK, kargoUcreti: null },
+    { ...ORTAK, kargoUcreti: 0 },
     BUGUN,
   );
   kontrol(
@@ -1314,7 +1323,9 @@ console.log("12) N11 KESİNTİLERİ — GERÇEK HAKEDİŞ EKSTRESİNDEN");
         kdvDahilMi: true,
         alisFiyati: 500,
         kdvOrani: 20,
-        kargoUcreti: null,
+        /** Kargosuz senaryo artik `0` ile yazilir: `null` K105'ten beri
+         *  "kullanici UNUTTU" demek ve hesap kosmuyor. */
+        kargoUcreti: 0,
         kanalFiyatlari: { N11: satis },
         kanalOranlari: { N11: 16 },
       },
@@ -1415,6 +1426,83 @@ console.log("12) N11 KESİNTİLERİ — GERÇEK HAKEDİŞ EKSTRESİNDEN");
 }
 
 console.log("");
+// ===========================================================================
+console.log("");
+console.log("K105) KARGO ZORUNLU — unutulan gider NET'i sisiriyordu");
+// ===========================================================================
+{
+  /**
+   * KULLANICI KARARI 30.08.2026: "kargo ucreti girmek zorunlu olsun ve uyari
+   * versin, yoksa unutuluyor." Bos birakmak eskiden SESSIZCE "kargo yok"
+   * demekti ve NET oldugundan YUKSEK cikiyordu — fiyat karari o iyimser
+   * rakamdan veriliyordu.
+   *
+   * OLCUTLER SAF GOVDEYI CAGIRIYOR; kaynak taramasi yalniz EKRAN CIZIMI icin.
+   */
+  kontrol(
+    "kargo BOS iken form EKSIK sayiliyor",
+    eksikSebebi({ ...ORTAK, kargoUcreti: null }) === "KARGO",
+  );
+  /**
+   * SIFIR YASAK DEGIL — BEYAN. Kargoyu alici oduyorsa `0` gecerli bir
+   * cevaptir; tam yasak, kargosuz mesru satisi (elden satis, alici odemeli)
+   * KILITLERDI. Ayrim "unutmak" ile "karar vermek" arasinda.
+   */
+  kontrol(
+    "  ...ama SIFIR gecerli (kargoyu alici oduyor)",
+    eksikSebebi({ ...ORTAK, kargoUcreti: 0 }) === null,
+  );
+  kontrol(
+    "  ...ve NEGATIF kargo reddediliyor",
+    eksikSebebi({ ...ORTAK, kargoUcreti: -5 }) === "KARGO",
+  );
+  kontrol(
+    "dolu formda sebep YOK",
+    eksikSebebi(ORTAK) === null && !girdiEksikMi(ORTAK),
+  );
+  /**
+   * SIRA DOLDURMA SIRASI: iki alan birden eksikken yazilacak olan,
+   * kullanicinin BIR SONRAKI adimi. Rastgele biri secilseydi ekran onu
+   * ileri geri gezdirirdi.
+   */
+  kontrol(
+    "fiyat ve kargo birlikte eksikken ONCE fiyat soyleniyor",
+    eksikSebebi({
+      ...ORTAK,
+      satisFiyati: Number.NaN,
+      kanalFiyatlari: {},
+      kargoUcreti: null,
+    }) === "FIYAT",
+  );
+  kontrol(
+    "alis ve kargo birlikte eksikken ONCE alis soyleniyor",
+    eksikSebebi({ ...ORTAK, alisFiyati: 0, kargoUcreti: null }) === "ALIS",
+  );
+
+  /** EKRAN: uyari kargo alaninin YANINDA ve care yazili. */
+  const k105Ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  kontrol(
+    "ekran eksik SEBEBINI cozuyor (sessiz kapi degil)",
+    /const sebep = eksikSebebi\(girdi\)/.test(k105Ekran),
+  );
+  kontrol(
+    "kargo bosken uyari CIZILIYOR",
+    /kargoEksik \? \([\s\S]{0,300}t\("kargoUyarisi"\)/.test(k105Ekran),
+  );
+  /**
+   * OLU DAL YASAGI: `{false ? (` yapilan bir dal hic cizilmez ama sozluk
+   * anahtari dosyada durur ve ustteki olcut yesil yanar.
+   */
+  kontrol(
+    "  ...ve olu dal degil (kosul oldurulmemis)",
+    !/\{\s*false\s*[?&]/.test(k105Ekran),
+  );
+  kontrol(
+    "bos durum KARGO sebebini AYRI anlatiyor",
+    /sebep === "KARGO" \? t\("bosKargoBaslik"\)/.test(k105Ekran),
+  );
+}
+
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
 else {
