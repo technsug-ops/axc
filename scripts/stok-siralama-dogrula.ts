@@ -34,7 +34,7 @@ import {
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 
 let gecen = 0;
@@ -459,6 +459,54 @@ console.log("\n§5 KÂR CÜMLESİ — satış fiyatı, maliyet ve adet bir arada
     /ozet\.tekSatisMi \? null : \(/.test(karBloku),
   );
   kosanBolumler.push("kâr cümlesi");
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+console.log("");
+console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
+// ═══════════════════════════════════════════════════════════════════════
+{
+  const kart = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
+  const kap = blok(kart, "mx-auto max-w-3xl", 400);
+  kontrol("kart kabı bulundu", kap.length > 0);
+
+  /**
+   * ⛔ KULLANICI BULGUSU (K103): masaüstünde kartın sağı TAMAMEN boştu ve
+   * fiyat denemesi için aşağı kaydırmak gerekiyordu (İlke #12).
+   */
+  kontrol(
+    "geniş ekranda iki sütun kuruluyor",
+    /xl:grid xl:grid-cols-\[/.test(kap),
+  );
+  /**
+   * ⛔ EN KRİTİK ÖLÇÜT — MOBİL BOZULMASIN. Izgara `xl:` ile SINIRLI olmak
+   * ZORUNDA; öneki düşerse telefonda da iki sütun açılır ve iki blok birden
+   * okunmaz hâle gelir. Depoda birincil cihaz telefon (İlke #8).
+   */
+  kontrol(
+    "ızgara YALNIZ xl: kırılımında (mobilde tek sütun)",
+    !/(?<!xl:)grid-cols-\[minmax/.test(kap),
+  );
+  /**
+   * ⚠ TABAN GENİŞLİK MOBİLDE KORUNUYOR: `max-w-3xl` okunabilir sütun
+   * genişliği. Kaldırılırsa telefonda satırlar kenardan kenara yayılır.
+   */
+  kontrol("mobil taban genişliği duruyor (max-w-3xl)", /max-w-3xl/.test(kap));
+
+  /**
+   * ⛔ YAPIŞKAN YAPILMADI — VE BU ÖLÇÜLMÜŞ BİR KARARDIR. `FiyatDene` KANAL
+   * BAŞINA kart çiziyor; yüksekliği ekranı aşabilir ve ekranı aşan yapışkan
+   * blok kendi içinde ikinci bir kaydırma ister. Biri "iyileştirme" diye
+   * `sticky` eklerse bu ölçüt kırmızı yanar ve gerekçeyi okur.
+   */
+  const sagSutun = blok(kart, 'className="mt-6 space-y-6 xl:mt-0"', 900);
+  kontrol("sağ sütun bulundu", sagSutun.length > 0);
+  kontrol("sağ sütun YAPIŞKAN değil (ölçülmüş karar)", !/sticky/.test(sagSutun));
+  kontrol(
+    "fiyat denemesi sağ sütunda çiziliyor",
+    /<FiyatDene/.test(sagSutun),
+  );
+  kosanBolumler.push("kart düzeni");
 }
 
 // ═══════════════════════════════════════════════════════════════════════

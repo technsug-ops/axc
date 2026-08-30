@@ -134,7 +134,26 @@ export default async function KartSayfasi({
     deger === null ? null : bicim.para(deger, birim);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    /*
+      ═══ İKİ SÜTUN — YALNIZ GENİŞ EKRANDA (K103, 30.08.2026) ═══
+      ⛔ KULLANICI BULGUSU: masaüstünde kartın sağı TAMAMEN boştu ve fiyat
+      denemesi için aşağı kaydırmak gerekiyordu. Oysa iki blok BİRLİKTE
+      okunur: solda "bu ürün ne kazandırdı", sağda "bu fiyattan ne
+      kazandırır". _(İlke #12: ekranda boşluk bilgi taşımaz.)_
+
+      ⚠ AYRIM `xl:` — ALTINDA TEK SÜTUN. Telefon ve tablette kart tek
+      sütun kalır ve blokların bugünkü SIRASI korunur; depoda birincil
+      cihaz telefon (İlke #8). Erken bir kırılım (`lg:`) 1024 px'lik bir
+      tablette iki sütunu 500 px'e sıkıştırır ve ikisini de okunmaz yapardı.
+
+      ⛔ YAPIŞKAN (`sticky`) YAPILMADI — VE BU ÖLÇÜLDÜ. `FiyatDene` KANAL
+      BAŞINA bir kart çiziyor, yani yüksekliği kanal sayısıyla büyüyor ve
+      ekranı aşabiliyor. Ekranı aşan yapışkan bir blok kendi içinde ikinci
+      bir kaydırma ister — faydadan çok yük olurdu.
+    */
+    <div className="mx-auto max-w-3xl xl:max-w-6xl">
+      <div className="xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] xl:items-start xl:gap-6">
+      <div className="space-y-6">
       {/* ═══════════════════ KİMLİK ═══════════════════ */}
       <div>
         <h1 className="text-xl font-semibold sm:text-2xl">
@@ -496,9 +515,16 @@ export default async function KartSayfasi({
         </p>
       ) : null}
 
-      {/* ═══════════════════ FİYAT DENE ═══════════════════
+      </div>
+
+      {/* ═══════════════════ FİYAT DENE — SAĞ SÜTUN ═══════════════════
           Aşama 1'in kullanıcıya değen yüzü. Kâr izni olmayan rol
-          NET göremez; simülasyon da NET üretiyor, aynı izne bağlı. */}
+          NET göremez; simülasyon da NET üretiyor, aynı izne bağlı.
+
+          ⚠ SAĞ SÜTUN GENİŞ EKRANDA; altında bu blok kartın SONUNDA kalır
+          (bugünkü sırası) — `xl:` kırılımının doğal sonucu, ayrıca bir
+          sıralama kuralı yazılmıyor. */}
+      <div className="mt-6 space-y-6 xl:mt-0">
       {karGorunur ? (
         <FiyatDene
           /**
@@ -522,7 +548,17 @@ export default async function KartSayfasi({
           yasBandi={veri.yasBandi}
         />
       ) : null}
+      </div>
+      </div>
 
+      {/*
+        ⚠ ALT EYLEMLER VE SKU IZGARANIN DIŞINDA — TAM GENİŞLİKTE.
+        İlk yazımda sağ sütunun içinde kalmışlardı ve masaüstünde fiyat
+        denemesinin ALTINA düşüyorlardı. Bunlar sayfa düzeyinde öğeler;
+        her ekranda sayfanın en altındalar (İlke #10, tutarlılık) — bir
+        sütunun kuyruğu değiller.
+      */}
+      <div className="mt-6 space-y-6">
       <div className="flex flex-wrap gap-2">
         <Button asChild variant="secondary" className="h-11">
           <Link href={`/stok/${varyant.id}`}>{t("stokEkrani")}</Link>
@@ -538,6 +574,7 @@ export default async function KartSayfasi({
       <p className="text-muted-foreground text-xs">
         {ortak("sku")}: {varyant.sku}
       </p>
+      </div>
     </div>
   );
 }

@@ -213,6 +213,46 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "satılan malın maliyeti yerine eldeki stoğun maliyeti yazılır — iki farklı soru, tek kutu",
   },
+
+  // === K103 - KART DUZENI ===============================================
+  {
+    ad: "izgara kirilimi kaldirildi (MOBILDE de iki sutun acilir)",
+    yon: "FAZLADAN",
+    bekci: SIRALAMA,
+    dosya: KART,
+    bul: 'className="xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] xl:items-start xl:gap-6"',
+    koy: 'className="grid grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] items-start gap-6"',
+    bozdugu:
+      "telefonda kart iki sutuna bolunur; depoda birincil cihaz telefon ve iki blok da okunmaz olur",
+  },
+  {
+    ad: "iki sutun duzeni tamamen silindi",
+    yon: "KALDIRAN",
+    bekci: SIRALAMA,
+    dosya: KART,
+    bul: 'className="xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] xl:items-start xl:gap-6"',
+    koy: 'className="space-y-6"',
+    bozdugu: "masaustunde sag taraf yine bos kalir, fiyat denemesi asagida",
+  },
+  {
+    ad: "sag sutun YAPISKAN yapildi (olculmus karara aykiri)",
+    yon: "FAZLADAN",
+    bekci: SIRALAMA,
+    dosya: KART,
+    bul: 'className="mt-6 space-y-6 xl:mt-0"',
+    koy: 'className="mt-6 space-y-6 xl:mt-0 xl:sticky xl:top-4"',
+    bozdugu:
+      "FiyatDene kanal basina kart ciziyor; ekrani asan yapiskan blok ikinci bir kaydirma ister",
+  },
+  {
+    ad: "mobil taban genisligi kaldirildi",
+    yon: "KALDIRAN",
+    bekci: SIRALAMA,
+    dosya: KART,
+    bul: 'className="mx-auto max-w-3xl xl:max-w-6xl"',
+    koy: 'className="mx-auto xl:max-w-6xl"',
+    bozdugu: "telefonda satirlar kenardan kenara yayilir, okunabilir sutun genisligi gider",
+  },
 ];
 
 function bekciyiKostur(b: Bekci): { kod: number; ciktiVar: boolean } {
