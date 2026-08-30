@@ -10,6 +10,7 @@ import { sayfaIzni } from "@/lib/yetki";
 
 import { Yukleyici, type HesapSecenegi } from "./yukleyici";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +47,7 @@ export default async function KomisyonAktarSayfasi() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <GeriBaglanti href="/kanal-sku">{tKanalSku("baslik")}</GeriBaglanti>
+        <ListeyeDon href="/kanal-sku">{tKanalSku("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground mt-1 text-sm">{t("aciklamaMetni")}</p>
       </div>

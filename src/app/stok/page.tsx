@@ -51,6 +51,7 @@ import { maliyetsizVaryantlar } from "@/lib/uyari/maliyetsiz-stok";
 
 import { StokArama } from "./stok-arama";
 import { SiralaSuzgec } from "./sirala-suzgec";
+import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -360,6 +361,10 @@ export default async function StokSayfasi({
 
   return (
     <div className="space-y-6">
+      {/* SUZGECLI ADRESI HATIRLAR — hicbir sey CIZMEZ (K104-2).
+          Bir kayda girip donen kullanici suzgecini geri bulsun diye.
+          Kaydedici olmadan "< Liste" baglantisi duz listeye duser. */}
+      <ListeyiHatirla temel="/stok" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

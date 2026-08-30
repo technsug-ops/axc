@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 
 import { satisOlustur } from "../actions";
 import { SatisFormu, type HesapSecenegi } from "../satis-formu";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 
 /**
  * Forma "bugün" yazan sayfa; statik kipte DERLEME GÜNÜ gömülü kalırdı.
@@ -40,7 +41,7 @@ export default async function YeniSatisSayfasi() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <GeriBaglanti href="/satislar">{t("baslik")}</GeriBaglanti>
+        <ListeyeDon href="/satislar">{t("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("yeniSatis")}</h1>
       </div>
 

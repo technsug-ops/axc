@@ -3,7 +3,7 @@ import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 
 import { Baglanti } from "@/components/baglanti";
-import { StokGeriBaglantisi } from "./stok-geri";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -123,7 +123,7 @@ export default async function VaryantHareketleriSayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <StokGeriBaglantisi etiket={t("baslik")} />
+        <ListeyeDon href="/stok">{t("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">
           {varyant.product.name}
           {varyant.name ? ` — ${varyant.name}` : ""}

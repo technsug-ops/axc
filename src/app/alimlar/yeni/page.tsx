@@ -12,6 +12,7 @@ import {
   type KartSecenegi,
 } from "../alim-formu";
 import { type TedarikciSecenegi } from "../tedarikci-secimi";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 
 /**
  * Forma "bugün" yazan sayfa; statik kipte DERLEME GÜNÜ gömülü kalırdı.
@@ -90,7 +91,7 @@ export default async function YeniAlimSayfasi({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <GeriBaglanti href="/alimlar">Alımlar</GeriBaglanti>
+        <ListeyeDon href="/alimlar">Alımlar</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">Yeni Alım</h1>
       </div>
 

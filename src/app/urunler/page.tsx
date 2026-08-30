@@ -30,6 +30,7 @@ import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { urunStoklari } from "@/lib/stok";
 
 import { SilButonu } from "./sil-butonu";
+import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -164,6 +165,10 @@ export default async function UrunlerSayfasi({
 
   return (
     <div className="space-y-6">
+      {/* SUZGECLI ADRESI HATIRLAR — hicbir sey CIZMEZ (K104-2).
+          Bir kayda girip donen kullanici suzgecini geri bulsun diye.
+          Kaydedici olmadan "< Liste" baglantisi duz listeye duser. */}
+      <ListeyiHatirla temel="/urunler" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

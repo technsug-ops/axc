@@ -54,6 +54,7 @@ import { ListeToplami } from "@/components/liste-toplami";
 import { SayfalamaCubugu } from "@/components/sayfalama";
 import { sayfaCoz } from "@/lib/sayfalama";
 import { satisToplamlari } from "@/lib/satis-toplami";
+import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 import {
   MARJ_OLCULERI,
   VARSAYILAN_OLCU,
@@ -508,6 +509,10 @@ export default async function SatislarSayfasi({
 
   return (
     <div className="space-y-6">
+      {/* SUZGECLI ADRESI HATIRLAR — hicbir sey CIZMEZ (K104-2).
+          Bir kayda girip donen kullanici suzgecini geri bulsun diye.
+          Kaydedici olmadan "< Liste" baglantisi duz listeye duser. */}
+      <ListeyiHatirla temel="/satislar" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

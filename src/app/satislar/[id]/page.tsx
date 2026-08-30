@@ -43,6 +43,7 @@ import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
 import type { Currency } from "@/generated/prisma/enums";
 import { satisKalemToplamlari } from "@/lib/tutar";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 
 /** Denetim izindeki tek alan değişikliği (AuditLog.detail içinden). */
 type IzFarki = {
@@ -345,7 +346,7 @@ export default async function SatisDetaySayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <GeriBaglanti href="/satislar">{t("baslik")}</GeriBaglanti>
+        <ListeyeDon href="/satislar">{t("baslik")}</ListeyeDon>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="flex flex-wrap items-center gap-2 text-2xl font-semibold">

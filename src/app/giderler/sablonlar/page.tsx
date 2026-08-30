@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import type { KategoriSecenegi } from "../gider-formu";
 import { SablonEylemleri } from "./sablon-eylemleri";
 import { SablonFormu } from "./sablon-formu";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 
 /**
  * "BU AY EKLENDİ Mİ?" ZAMANA BAĞLI — HER İSTEKTE YENİDEN ÇİZİLİR.
@@ -69,7 +70,7 @@ export default async function SablonlarSayfasi() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <GeriBaglanti href="/giderler">{t("baslik")}</GeriBaglanti>
+        <ListeyeDon href="/giderler">{t("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("sablonBaslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("sablonAciklama")}</p>
       </div>

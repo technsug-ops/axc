@@ -43,6 +43,8 @@
     "panel:dogrula": "tsx scripts/panel-dogrula.ts",
     "pano:dogrula": "tsx scripts/pano-dogrula.ts",
     "stok-siralama-mutasyon:kontrol": "tsx scripts/stok-siralama-mutasyon-kontrol.ts",
+    "liste-hafizasi-mutasyon:kontrol": "tsx scripts/liste-hafizasi-mutasyon-kontrol.ts",
+    "liste-hafizasi:dogrula": "tsx scripts/liste-hafizasi-dogrula.ts",
     "stok-siralama:dogrula": "tsx scripts/stok-siralama-dogrula.ts",
     "arama:dogrula": "tsx scripts/arama-dogrula.ts",
     "api:dogrula": "tsx scripts/api-dogrula.ts",

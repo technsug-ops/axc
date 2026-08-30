@@ -9,6 +9,7 @@ import { tarihGirdisi } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 
 import { GiderFormu, type KategoriSecenegi } from "../gider-formu";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 
 /**
  * TARİH ÜRETEN SAYFA — HER İSTEKTE YENİDEN ÇİZİLİR.
@@ -57,7 +58,7 @@ export default async function YeniGiderSayfasi() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <GeriBaglanti href="/giderler">{t("baslik")}</GeriBaglanti>
+        <ListeyeDon href="/giderler">{t("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("yeniGider")}</h1>
         <p className="text-muted-foreground text-sm">{t("aciklamaMetni")}</p>
       </div>

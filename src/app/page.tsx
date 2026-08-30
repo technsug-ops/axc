@@ -127,6 +127,7 @@ import {
 } from "./panel-kartlari";
 
 import type { Currency } from "@/generated/prisma/enums";
+import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 
 /**
  * ============================================================================
@@ -1637,6 +1638,10 @@ export default async function AnaSayfa({
 
   return (
     <div className="min-w-0 space-y-6">
+      {/* ⚠ SÜZGEÇLİ ADRESİ HATIRLAR — hiçbir şey ÇİZMEZ (K104-②).
+          Bir kayda girip dönen kullanıcı süzgecini geri bulsun diye.
+          Kaydedici olmadan "‹ Liste" bağlantısı düz listeye düşer. */}
+      <ListeyiHatirla temel="/" />
       <div>
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">

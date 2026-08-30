@@ -25,6 +25,7 @@ import { varyantStoklari } from "@/lib/stok";
 
 import { SilButonu } from "../sil-butonu";
 import { DURUM_KUTUSU } from "@/lib/renkler";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 
 export default async function UrunDetaySayfasi({
   params,
@@ -67,7 +68,7 @@ export default async function UrunDetaySayfasi({
   return (
     <div className="space-y-6">
       <div>
-        <GeriBaglanti href="/urunler">{t("baslik")}</GeriBaglanti>
+        <ListeyeDon href="/urunler">{t("baslik")}</ListeyeDon>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">{urun.name}</h1>

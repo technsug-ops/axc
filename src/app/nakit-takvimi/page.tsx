@@ -20,6 +20,7 @@ import {
 } from "@/lib/panel/takvim-verisi";
 import { sayfaIzni } from "@/lib/yetki";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 
 /**
  * ============================================================================
@@ -99,7 +100,7 @@ export default async function NakitTakvimiSayfasi({
   return (
     <div className="min-w-0 space-y-6">
       <div>
-        <GeriBaglanti href="/">{ortak("panel")}</GeriBaglanti>
+        <ListeyeDon href="/">{ortak("panel")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">
           {t("baslik", { gun: pencere })}
         </h1>

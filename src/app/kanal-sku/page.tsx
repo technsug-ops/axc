@@ -28,6 +28,7 @@ import { sayfaCoz } from "@/lib/sayfalama";
 import { SatirDuzenle } from "./satir-duzenle";
 import { YeniEsleme } from "./yeni-esleme";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -205,6 +206,10 @@ export default async function KanalSkuSayfasi({
 
   return (
     <div className="space-y-6">
+      {/* SUZGECLI ADRESI HATIRLAR — hicbir sey CIZMEZ (K104-2).
+          Bir kayda girip donen kullanici suzgecini geri bulsun diye.
+          Kaydedici olmadan "< Liste" baglantisi duz listeye duser. */}
+      <ListeyiHatirla temel="/kanal-sku" />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

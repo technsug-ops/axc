@@ -26,6 +26,7 @@ import { GiderFiltresi, type AySecenegi } from "./filtre";
 import { SilButonu } from "./sil-butonu";
 
 import type { Currency } from "@/generated/prisma/enums";
+import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -184,6 +185,10 @@ export default async function GiderlerSayfasi({
 
   return (
     <div className="space-y-6">
+      {/* SUZGECLI ADRESI HATIRLAR — hicbir sey CIZMEZ (K104-2).
+          Bir kayda girip donen kullanici suzgecini geri bulsun diye.
+          Kaydedici olmadan "< Liste" baglantisi duz listeye duser. */}
+      <ListeyiHatirla temel="/giderler" />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

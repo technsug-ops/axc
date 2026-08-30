@@ -14,6 +14,7 @@ import { DURUM_KUTUSU } from "@/lib/renkler";
 import { sayfaIzni } from "@/lib/yetki";
 
 import { MenuDuzenleyici } from "./duzenleyici";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 
 /**
  * ============================================================================
@@ -68,7 +69,7 @@ export default async function MenuDuzeniSayfasi() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4 md:p-6">
       <div>
-        <GeriBaglanti href="/">{t("baslik")}</GeriBaglanti>
+        <ListeyeDon href="/">{t("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("aciklama")}</p>
       </div>
