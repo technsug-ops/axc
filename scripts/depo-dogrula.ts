@@ -4,9 +4,11 @@ import {
   KOD_SABLONU,
   RAF_ONEKI,
   UST_SINIR,
+  KOVA_KODU,
   kodSablonaUyuyorMu,
   kodlariUret,
   tarifiDenetle,
+  yeriBilinmeyenOzeti,
   uretimPlani,
   type BolumTarifi,
 } from "../src/lib/depo/sablon";
@@ -612,6 +614,89 @@ async function etiketKontrolleri() {
     /print:hidden[\s\S]{0,120}etiket\.name|etiket\.name[\s\S]{0,200}print:hidden/.test(
       etiketEkran,
     ));
+
+  /**
+   * ==========================================================================
+   *  ⑫ YERİ BİLİNMEYEN ÜRÜNLER — TUTANAK, SAYI CANLI (K50 ③)
+   * --------------------------------------------------------------------------
+   *  ⛔ CANLI 30.08.2026: 969 varyant `DEPO` kovasında, 1'i konumsuz —
+   *  katalogun ~%88'i. Hiçbir ekranda yazmıyordu.
+   *
+   *  ⚠ KULLANICI ŞARTI: sayı SABİT YAZILMAZ, canlı ölçülür. Sabit bir "969"
+   *  ilk yerleştirmede yalan söylerdi ve ilerleme görünmezdi.
+   * ==========================================================================
+   */
+  console.log("\n12) YERİ BİLİNMEYEN — TUTANAK");
+
+  /** ⭐ SAF GÖVDE ÇAĞRILIR. */
+  const o1 = yeriBilinmeyenOzeti(969, 1, 1103);
+  kontrol("kovadaki + konumsuz TEK rakama toplanıyor", o1.bilinmeyen === 970);
+  kontrol("  ...ve bileşim KAYBOLMUYOR", o1.kovada === 969 && o1.konumsuz === 1);
+  kontrol("oran katalogun tamamına göre", o1.yuzde === 87.9, o1.yuzde);
+  /**
+   * ⚠ KONUMSUZ ARM'I DÜŞÜREN MUTASYON BURADAN KAÇAMAZ: 969 ile 970 farklı.
+   * Örnek veride konumsuz 1 OLMASI şart — 0 olsaydı iki hâl ayrışmazdı.
+   * _(Anayasa: "örnek veri ayrımın iki yakasını göstermeli".)_
+   */
+  kontrol(
+    "konumsuz kayıt SAYIYA GİRİYOR",
+    yeriBilinmeyenOzeti(5, 3, 100).bilinmeyen === 8,
+  );
+  /** ⛔ `NaN%` ekranda "sistem bozuk" demektir. */
+  kontrol("boş katalogda oran 0 — NaN DEĞİL", yeriBilinmeyenOzeti(0, 0, 0).yuzde === 0);
+  kontrol("hepsi biliniyorsa 0", yeriBilinmeyenOzeti(0, 0, 500).bilinmeyen === 0);
+  kontrol("kova kodu sabiti", KOVA_KODU === "DEPO");
+
+  const depoEkran = readFileSync("src/app/ayarlar/depo/page.tsx", "utf8");
+  const depoY = depoEkran
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+  kontrol("ekran SAF gövdeyi çağırıyor", /yeriBilinmeyenOzeti\(/.test(depoY));
+  /**
+   * ⛔ SAYI CANLI SORGUDAN GELİR. Ölçüt `count(` çağrısına bağlı — kovadaki
+   * ürünü SAYAN sorgu silinip yerine sabit konsaydı ekran ilerlemeyi hiç
+   * göstermezdi.
+   */
+  kontrol(
+    "  ...kovadaki ürün CANLI sayılıyor",
+    /locationId: kova\.id/.test(depoY) && /productVariant\.count\(/.test(depoY),
+  );
+  kontrol(
+    "  ...konumsuz ürün de CANLI sayılıyor",
+    /locationId: null/.test(depoY),
+  );
+  kontrol("  ...kova KODLA bulunuyor", /code: KOVA_KODU/.test(depoY));
+  /** ⛔ SABİT SAYI YASAK — bugünkü rakamlardan biri koda gömülemez. */
+  kontrol(
+    "ekranda SABİT sayı yok (969 · 970 · 1103)",
+    !/\b(969|970|1103)\b/.test(depoY),
+  );
+  /** ⚠ Sıfırsa hiç çıkmaz — sönmeyen tutanak okunmaz olur. */
+  kontrol(
+    "sıfırsa tutanak HİÇ çıkmıyor",
+    /yerSiz\.bilinmeyen > 0 \?/.test(depoEkran),
+  );
+  /** ⭐ Ve bileşim EKRANDA — tek rakam kalsaydı konumsuz kayıt kaybolurdu. */
+  kontrol(
+    "bileşim ekranda yazıyor",
+    /t\("yeriBilinmeyenBilesim"/.test(depoEkran),
+  );
+  const sozluk3 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Depo: Record<string, string>;
+  };
+  /**
+   * ⚠ METİN AZALACAĞINI SÖYLER: kullanıcı bunu kapatılamaz bir borç
+   * sanmamalı. Kapatma yolu olmayan madde, kutunun tamamına olan güveni
+   * eritir (K49).
+   */
+  kontrol(
+    "metin sayının AZALACAĞINI söylüyor",
+    (sozluk3.Depo.yeriBilinmeyen ?? "").toLowerCase().includes("azalır"),
+  );
+  kontrol(
+    "  ...ve oranı katalogla ilişkilendiriyor",
+    (sozluk3.Depo.yeriBilinmeyen ?? "").includes("{yuzde}"),
+  );
   console.log("");
   console.log("=".repeat(70));
   if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

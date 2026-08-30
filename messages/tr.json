@@ -3441,7 +3441,9 @@
     "goceGit": "{adet} eski rafı yeni şablona taşı",
     "bolumeBagli": "Bölüme bağlı",
     "bolumsuz": "Bölümsüz",
-    "bolumsuzNotu": "{adet} raf henüz bir bölüme bağlı değil — bunlar depo düzeni kurulmadan önce açılmış raflar. Göç onaylanana kadar olduğu gibi çalışırlar; hiçbir şey bozulmaz."
+    "bolumsuzNotu": "{adet} raf henüz bir bölüme bağlı değil — bunlar depo düzeni kurulmadan önce açılmış raflar. Göç onaylanana kadar olduğu gibi çalışırlar; hiçbir şey bozulmaz.",
+    "yeriBilinmeyen": "Yeri bilinmeyen {adet} ürün — katalogun %{yuzde}'i. Raflara yerleştirdikçe bu sayı kendiliğinden azalır.",
+    "yeriBilinmeyenBilesim": "{kovada} ürün {kova} kovasında (rafı bilinmiyor) · {konumsuz} ürünün hiç konumu yok."
   },
   "Goc": {
     "baslik": "Raf göçü",

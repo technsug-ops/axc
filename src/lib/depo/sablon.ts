@@ -175,3 +175,66 @@ export function kisaltmaNormalle(ham: string): string {
   }
   return cikti;
 }
+
+/**
+ * ============================================================================
+ *  TOPLAMA KOVASI — "DEPO" (K50 ③)
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI ÖLÇÜM 30.08.2026: aktif 1103 varyantın **969'u** tek bir rafta
+ *  duruyor ve o rafın kodu `DEPO`. Bu bir raf DEĞİL, bir KOVA: "depoda bir
+ *  yerde, hangi rafta bilmiyoruz."
+ *
+ *  ⚠ VE BU BİLGİ SİSTEMDE HİÇBİR YERDE YAZMIYORDU. Ekranlar `DEPO`yu öteki
+ *  41 rafla aynı sayıyor; bakan kişi 969 ürünün yerinin BİLİNDİĞİNİ sanır.
+ *  _(Anayasa: "kolon başlığı bir iddiadır" — burada raf adının kendisi bir
+ *  iddia ve tutmuyor.)_
+ *
+ *  ⚠ NİYE SÜTUN AÇILMADI (şema merdiveni): kova bugün TEK ve kodu veriyle
+ *  sabit. `Location.kovaMi` sütunu, tek satırlık bir gerçeği ikinci bir yere
+ *  yazmak olurdu. İkinci bir kova doğduğu gün sütun açılır — bugün değil.
+ * ============================================================================
+ */
+export const KOVA_KODU = "DEPO";
+
+export type YeriBilinmeyenOzeti = {
+  /** Kovadaki + hiç konumu olmayan varyantların TOPLAMI. */
+  bilinmeyen: number;
+  /** Kovada duranlar. */
+  kovada: number;
+  /** Hiç konumu olmayanlar (`locationId = null`). */
+  konumsuz: number;
+  /** Katalogdaki aktif varyant sayısı — paydası. */
+  aktif: number;
+  /** Yüzde, bir ondalık. Aktif 0 ise 0. */
+  yuzde: number;
+};
+
+/**
+ * İki hâli TEK rakama toplar.
+ *
+ * ⭐ İKİSİ DE "YERİ BİLİNMİYOR": kovada duran ürünün rafı bilinmiyor, hiç
+ * konumu olmayan ürünün konumu hiç yok. Operasyonda ikisi de aynı işi
+ * doğuruyor — gidip bulmak. Ayrı sayılıp ayrı gösterilseydi ikinci rakam
+ * (bugün **1**) kimsenin bakmadığı bir köşede kaybolurdu.
+ *
+ * ⚠ AMA BİLEŞİMİ KAYBOLMUYOR: ikisi ayrı alanda da duruyor, çünkü `null`
+ * bir VERİ EKSİĞİ, kova ise bir OPERASYON DURUMU. Biri düzeltilir, öteki
+ * yerleştirilir.
+ *
+ * ⚠ SIFIRA BÖLÜNMEZ: boş katalogda oran 0'dır, `NaN` değil — `NaN%`
+ * ekrana basılsaydı sistem bozuk sanılırdı.
+ */
+export function yeriBilinmeyenOzeti(
+  kovada: number,
+  konumsuz: number,
+  aktif: number,
+): YeriBilinmeyenOzeti {
+  const bilinmeyen = kovada + konumsuz;
+  return {
+    bilinmeyen,
+    kovada,
+    konumsuz,
+    aktif,
+    yuzde: aktif > 0 ? Math.round((bilinmeyen / aktif) * 1000) / 10 : 0,
+  };
+}

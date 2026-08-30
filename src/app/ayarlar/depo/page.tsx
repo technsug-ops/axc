@@ -3,7 +3,11 @@ import Link from "next/link";
 import { Warehouse } from "lucide-react";
 
 import { DepoFormu } from "@/app/ayarlar/depo/depo-formu";
-import { kodSablonaUyuyorMu } from "@/lib/depo/sablon";
+import {
+  KOVA_KODU,
+  kodSablonaUyuyorMu,
+  yeriBilinmeyenOzeti,
+} from "@/lib/depo/sablon";
 import { prisma } from "@/lib/prisma";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { sayfaIzni } from "@/lib/yetki";
@@ -48,6 +52,44 @@ export default async function DepoSayfasi() {
    */
   const bolumluRaf = konumlar.filter((k) => k.bolumId !== null).length;
   const bolumsuzRaf = konumlar.length - bolumluRaf;
+
+  /**
+   * ═══ YERİ BİLİNMEYEN ÜRÜNLER — TUTANAK (K50 ③) ═════════════════════════
+   *
+   * ⛔ CANLI 30.08.2026: aktif 1103 varyantın 969'u `DEPO` kovasında, 1'i
+   * hiç konumsuz. Yani katalogun yaklaşık **%88'inin rafı bilinmiyor** ve
+   * bu bugüne kadar HİÇBİR EKRANDA yazmıyordu — `DEPO` öteki 41 rafla aynı
+   * görünüyor, bakan kişi yerin BİLİNDİĞİNİ sanıyordu.
+   *
+   * ⭐ SAYI CANLI ÖLÇÜLÜR, SABİT YAZILMAZ (kullanıcı şartı). `/yerlestir`
+   * ile raflara koydukça kendiliğinden azalır; sabit bir "969" yazsaydık
+   * ilerleme görünmez ve tutanak ilk yerleştirmede YALAN söylerdi.
+   *
+   * ⚠ VE BU BİR GÖREV DEĞİL, TUTANAK: 969 maddelik bir uyarı kutusu
+   * kapatılamaz görünür ve kutunun tamamına olan güveni eritirdi (K49).
+   * Burada duruyor çünkü depo düzenini kuran kişi tam burada.
+   */
+  const kova = await prisma.location.findFirst({
+    where: { code: KOVA_KODU },
+    select: { id: true },
+  });
+  const [aktifVaryant, kovadaki, konumsuzVaryant] = await Promise.all([
+    prisma.productVariant.count({ where: { isActive: true } }),
+    /**
+     * ⚠ KOVA YOKSA 0 — ve bu bir HÜKÜM değil. Kova hiç kurulmamış bir
+     * depoda "yeri bilinmeyen yok" demek yanlış olmaz: o ürünler gerçek
+     * raflarda duruyordur. Uydurma bir sayı yazmaktan iyidir.
+     */
+    kova
+      ? prisma.productVariant.count({
+          where: { isActive: true, locationId: kova.id },
+        })
+      : Promise.resolve(0),
+    prisma.productVariant.count({
+      where: { isActive: true, locationId: null },
+    }),
+  ]);
+  const yerSiz = yeriBilinmeyenOzeti(kovadaki, konumsuzVaryant, aktifVaryant);
 
   return (
     <div className="space-y-6">
@@ -112,6 +154,38 @@ export default async function DepoSayfasi() {
           <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
             {t("uymayanNotu", { adet: uymayan.length })}
           </p>
+        ) : null}
+
+        {/*
+          ═══ TUTANAK — YERİ BİLİNMEYEN ÜRÜNLER ═══════════════════════════
+          ⚠ GÖREV DEĞİL, KAYIT. Bugün 970 madde; uyarı kutusuna konsaydı
+          kapatılamaz görünür ve kutunun tamamına olan güveni eritirdi (K49).
+
+          ⭐ SAYI CANLI: yerleştirdikçe kendiliğinden azalır.
+          ⚠ SIFIRSA HİÇ ÇIKMAZ — sönmeyen bir tutanak okunmaz olur.
+        */}
+        {yerSiz.bilinmeyen > 0 ? (
+          <div className="mt-2 rounded-md border border-dashed p-3 text-sm">
+            <p className="font-medium">
+              {t("yeriBilinmeyen", {
+                adet: yerSiz.bilinmeyen,
+                yuzde: yerSiz.yuzde,
+              })}
+            </p>
+            {/*
+              ⚠ BİLEŞİM DE YAZAR: kovada duran ürün YERLEŞTİRİLİR, konumsuz
+              ürün bir VERİ EKSİĞİDİR ve düzeltilir. Tek rakama indirilseydi
+              bugünkü tek konumsuz kayıt kimsenin bakmadığı yerde kalırdı.
+              _(Anayasa: "bir sayı etiketiyle taşınır".)_
+            */}
+            <p className="text-muted-foreground mt-1 text-xs">
+              {t("yeriBilinmeyenBilesim", {
+                kova: KOVA_KODU,
+                kovada: yerSiz.kovada,
+                konumsuz: yerSiz.konumsuz,
+              })}
+            </p>
+          </div>
         ) : null}
 
         <p className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
