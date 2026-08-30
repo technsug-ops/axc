@@ -184,9 +184,51 @@ const SAYFA_ISTISNALARI = new Map<string, string>([
    */
   ["src/app/cevrimdisi/page.tsx", "çevrimdışı yedeği — veri taşımaz, çerezsiz önbelleğe alınır"],
 ]);
+/**
+ * ============================================================================
+ *  TANINAN SAYFA KAPILARI — ELLE TUTULMUYOR, MODÜLDEN OKUNUYOR
+ * ----------------------------------------------------------------------------
+ *  ⚠ ÖLÇÜT 30.08.2026'DA DÜZELTİLDİ (K98). Eski hâli dört kapı adını ELLE
+ *  sayıyordu (`yetkiIste` · `yetkiBaglami` · `izinVarMi` · `sayfaIzni`) ve
+ *  bu, deponun bilinen antipatterni: _"bekçi ölçütü elle tutulan liste değil,
+ *  tersten kurulur."_ Liste bakım ister, bakımı unutulur.
+ *
+ *  ⛔ VE İKİ KEZ UNUTULMUŞTU:
+ *    · `sayfaGirisi` hiç listede değildi. `talepler/page.tsx` yalnız
+ *      TESADÜFEN geçiyor — yanında `izinVarMi("destek.yonet")` de çağırıyor.
+ *      O satır silinseydi KORUNAN bir sayfa "korumasız" diye kırmızı yanardı.
+ *    · `sayfaTamYetki` (K98) eklenince aynı şey bir kez daha oldu.
+ *
+ *  ⭐ DOĞRUSU: kapı adları `lib/yetki/index.ts`ten OKUNUYOR. Yarın açılan
+ *  bir `sayfaX` kapısı kendiliğinden tanınır; kimsenin listeye eklemeyi
+ *  hatırlaması gerekmez.
+ *
+ *  ⚠ "0 BULDUM" İLE "TEMİZ" AYRI ŞEYDİR: tarama hiçbir kapı bulamazsa
+ *  (dosya taşınır, imza değişir) her sayfa korumasız görünürdü — ya da
+ *  desen boşalıp her sayfa korumalı sayılırdı. Bulunan kapı sayısı ayrıca
+ *  ölçülüyor.
+ * ============================================================================
+ */
+const SAYFA_KAPILARI = [
+  ...readFileSync("src/lib/yetki/index.ts", "utf8")
+    .replace(/\r/g, "")
+    .matchAll(/export async function (sayfa[A-Za-z]+)\(/g),
+].map((e) => e[1]);
+
+kontrol(
+  "  sayfa kapıları modülden okunuyor (elle liste yok)",
+  SAYFA_KAPILARI.length >= 3,
+  "bulunan: " + JSON.stringify(SAYFA_KAPILARI),
+);
+
 {
   const korumasiz: string[] = [];
   let korumali = 0;
+  const KORUMA_DESENI = new RegExp(
+    ["yetkiIste", "yetkiBaglami", "izinVarMi", ...SAYFA_KAPILARI]
+      .map((ad) => ad + "\\(")
+      .join("|"),
+  );
 
   for (const yol of KAYNAKLAR) {
     if (!/[\\/]page\.tsx$/.test(yol)) continue;
@@ -194,7 +236,7 @@ const SAYFA_ISTISNALARI = new Map<string, string>([
     if (SAYFA_ISTISNALARI.has(anahtar)) continue;
 
     const icerik = readFileSync(yol, "utf8");
-    if (/yetkiIste\(|yetkiBaglami\(|izinVarMi\(|sayfaIzni\(/.test(icerik)) {
+    if (KORUMA_DESENI.test(icerik)) {
       korumali++;
     } else {
       korumasiz.push(anahtar);

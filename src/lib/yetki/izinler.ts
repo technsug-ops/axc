@@ -201,3 +201,35 @@ export const OPERASYON_IZINLERI: readonly Izin[] = [
 /** Seed'lenecek roller. "Boş rol" açılmaz — ihtiyaç doğunca ekrandan. */
 export const SAHIP_ROLU = "Sahip";
 export const OPERASYON_ROLU = "Operasyon";
+
+/**
+ * ============================================================================
+ *  TAM YETKİLİ Mİ — SAF ÖLÇÜT (K98, 30.08.2026)
+ * ----------------------------------------------------------------------------
+ *  ⭐ ÖLÇÜT İZİN KÜMESİDİR, ROL ADI DEĞİL. Bir rolün adının "Sahip" olması
+ *  yetki vermez; canlıdaki rol zaten "CEO" ve seed'in kurduğu "Sahip" değil.
+ *
+ *  ⚠ TABAN NİYE `FIRMA_IZINLERI`, `TUM_IZINLER` DEĞİL — ÖLÇÜLDÜ:
+ *  sağlayıcı izinleri (`saglayici: true`) firma rollerine **otomatik
+ *  dağıtılmıyor** (`otomatikDagitilacak` onları eliyor). Yani sonradan
+ *  doğmuş bir sağlayıcı izni, canlıdaki CEO rolünde OLMAYABİLİR. Taban
+ *  `TUM_IZINLER` seçilseydi tam yetkili kullanıcı bile kapıdan geçemez ve
+ *  ona açılan ekran 404 dönerdi — kural doğru, teslim edilemez olurdu.
+ *
+ *  Aynı taban `scripts/yetki-bekci.ts`in ve seed'in sonradan-doğan
+ *  dağıtımının tabanıdır; iki yerde iki farklı ölçüt olmaz.
+ *
+ *  ⚠ SAF: veritabanına gitmez, oturum bilmez. Çağıran izin kümesini verir,
+ *  bu gövde yalnız hüküm kurar — böylece bekçi onu ÇAĞIRARAK sınayabiliyor,
+ *  kaynak metni tarayarak değil.
+ * ============================================================================
+ */
+export function tamYetkiliMi(izinler: ReadonlySet<string>): boolean {
+  /**
+   * ⚠ BOŞ KÜME TAM YETKİLİ SAYILMAZ. `every` boş listede `true` döner;
+   * taban boşalırsa (liste bozulursa) kapı herkese açılırdı. Taban da
+   * ayrıca sınanıyor — "0 buldum" ile "hepsi var" ayrı şeylerdir.
+   */
+  if (FIRMA_IZINLERI.length === 0) return false;
+  return FIRMA_IZINLERI.every((izin) => izinler.has(izin));
+}

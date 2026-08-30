@@ -225,6 +225,80 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "anayasa #8: dokunulabilir öğe telefonda en az 44px — tek çıkış yolu o düğme",
   },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  §7 DENEME ROTASI — KAPI
+  // ---------------------------------------------------------------------------
+  //  ⛔ BU BLOK KULLANICININ AÇIK ŞARTI (30.08.2026): "bu rotanın yetki
+  //  kapısını kaldıran senaryo → KIRMIZI. Mutasyonla sınansın — bu rota
+  //  korumasız kalırsa canlıda herkesin tetikleyebileceği bir hata sayfası
+  //  doğar."
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    ad: "deneme rotasının YETKİ KAPISI kaldırıldı",
+    yon: "KALDIRAN",
+    dosya: "src/app/sistem/hata-denemesi/page.tsx",
+    bul: "  await sayfaTamYetki();\n",
+    koy: "",
+    bozdugu:
+      "canlıda HERKESİN tetikleyebileceği bir hata sayfası doğar — kullanıcının açık şartı",
+  },
+  {
+    ad: "kapı ile hata YER DEĞİŞTİRDİ (ikisi de dosyada duruyor)",
+    yon: "FAZLADAN",
+    dosya: "src/app/sistem/hata-denemesi/page.tsx",
+    bul: "  await sayfaTamYetki();",
+    koy: '  throw new Error("erken");\n  await sayfaTamYetki();',
+    bozdugu:
+      "iki desen de bulunur, varlık ölçütleri yeşil kalır — ama hata yetkisiz kullanıcıya da çizilir",
+  },
+  {
+    ad: "kapının ret dalı öldürüldü (desen dosyada KALIYOR)",
+    yon: "KALDIRAN",
+    dosya: "src/lib/yetki/index.ts",
+    bul: "  if (!tamYetkiliMi(baglam.izinler)) notFound();",
+    koy: "  if (false) notFound();",
+    bozdugu:
+      "kapı çağrılıyor ama hiçbir şeyi reddetmiyor — giriş yapan herkes geçer",
+  },
+  {
+    ad: "tam yetki ölçütü GEVŞETİLDİ (every → some)",
+    yon: "FAZLADAN",
+    dosya: "src/lib/yetki/izinler.ts",
+    bul: "  return FIRMA_IZINLERI.every((izin) => izinler.has(izin));",
+    koy: "  return FIRMA_IZINLERI.some((izin) => izinler.has(izin));",
+    bozdugu:
+      "TEK izni olan kısıtlı rol tam yetkili sayılır — kapı adı var, kendi yok",
+  },
+  {
+    ad: "yetki tabanı BOŞALTILDI",
+    yon: "KALDIRAN",
+    dosya: "src/lib/yetki/izinler.ts",
+    bul: "export const FIRMA_IZINLERI: readonly Izin[] = TUM_IZINLER.filter(",
+    koy: "export const FIRMA_IZINLERI: readonly Izin[] = ([] as Izin[]).filter(",
+    bozdugu:
+      "taban boşalınca `every` her kümede true döner ve kapı herkese açılır",
+  },
+  {
+    ad: "deneme rotası hata ATMIYOR",
+    yon: "KALDIRAN",
+    dosya: "src/app/sistem/hata-denemesi/page.tsx",
+    bul: "  throw new Error(",
+    koy: "  console.log(",
+    bozdugu:
+      "rota hiçbir şey tetiklemez — Halil ekranı göremez, test yalancı biçimde 'yapıldı' sayılır",
+  },
+  {
+    ad: "deneme rotası veriye DOKUNUYOR",
+    yon: "FAZLADAN",
+    dosya: "src/app/sistem/hata-denemesi/page.tsx",
+    bul: 'import { sayfaTamYetki } from "@/lib/yetki";',
+    koy:
+      'import { prisma } from "@/lib/prisma";\n' +
+      'import { sayfaTamYetki } from "@/lib/yetki";',
+    bozdugu:
+      "bilerek hata atan bir sayfa veriye yazarsa yarım kalmış yazım bırakır",
+  },
 ];
 
 type Sonuc = { kod: number; ciktiVar: boolean };

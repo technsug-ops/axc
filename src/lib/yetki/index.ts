@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { oturumdakiKullanici } from "@/lib/oturum";
 
-import { izinTaninirMi, type Izin } from "./izinler";
+import { izinTaninirMi, tamYetkiliMi, type Izin } from "./izinler";
 
 /**
  * ============================================================================
@@ -189,6 +189,29 @@ export async function sayfaGirisi(): Promise<YetkiBaglami> {
   if (await parolaDegismeliMi()) redirect("/parola-degistir");
   const baglam = await yetkiBaglami();
   if (!baglam) notFound();
+  return baglam;
+}
+
+/**
+ * SAYFA YALNIZ TAM YETKİLİ ROLE AÇILIR (K98, 30.08.2026).
+ *
+ * `sayfaIzni` TEK bir izin sorar; bu kapı BÜTÜN firma izinlerini sorar.
+ * Bakım/deneme ekranları için: kısıtlı hiçbir rol göremez, tek bir izin
+ * verilerek de açılamaz.
+ *
+ * ⛔ REDDEDİLEN İSTEK `notFound()` — "yetkiniz yok" DEĞİL. İkincisi rotanın
+ * VAR OLDUĞUNU söyler; bakım ekranının varlığı bile sızmamalı. Aynı desen
+ * `sayfaIzni`de de var, iki yerde iki farklı davranış olmaz.
+ *
+ * ⚠ İKİNCİ BİR GİRİŞ MANTIĞI YAZILMIYOR: parola değiştirme zorunluluğu ve
+ * oturum kontrolü kardeş kapılarla aynı sırada geçiliyor — o gün biri
+ * güncellenip öteki unutulurdu.
+ */
+export async function sayfaTamYetki(): Promise<YetkiBaglami> {
+  if (await parolaDegismeliMi()) redirect("/parola-degistir");
+  const baglam = await yetkiBaglami();
+  if (!baglam) notFound();
+  if (!tamYetkiliMi(baglam.izinler)) notFound();
   return baglam;
 }
 

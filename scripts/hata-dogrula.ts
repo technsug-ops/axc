@@ -6,6 +6,12 @@ import {
   hataKodu,
 } from "../src/lib/hata/durum";
 import { HATA_METINLERI } from "../src/lib/hata/metinler";
+import {
+  FIRMA_IZINLERI,
+  SAGLAYICI_IZINLERI,
+  TUM_IZINLER,
+  tamYetkiliMi,
+} from "../src/lib/yetki/izinler";
 
 /**
  * ============================================================================
@@ -36,13 +42,14 @@ import { HATA_METINLERI } from "../src/lib/hata/metinler";
  *  eylemi için — orada saf gövde yok — ve o taramalar YORUMSUZ kodda,
  *  KULLANIM BLOĞUNA daraltılarak yapılır.
  *
- *  ── ALTI BÖLÜM ──────────────────────────────────────────────────────────
+ *  ── YEDİ BÖLÜM ──────────────────────────────────────────────────────────
  *   §1 SAF KARAR      — sonda cevabı → ekran durumu (dört hâl AYRI kalır)
  *   §2 HATA KODU      — digest gösterimi; boş kod satır AÇMAZ
  *   §3 SÖZLÜK BAĞI    — her durumun metni VAR ve tr/en anahtarları eş
  *   §4 SONDA          — salt okuma · yazma yok · mesaj kırpılmıyor
  *   §5 İKİ SINIR      — error.tsx · global-error.tsx ayrışmıyor
  *   §6 EKRAN GÖVDESİ  — ölçülen durum kullanıcıya ULAŞIYOR mu
+ *   §7 DENEME ROTASI  — yetki kapısı VAR ve hatadan ÖNCE koşuyor
  *
  *  ⚠ BÖLÜM SAYACI: bir bölüm sessizce koşmazsa özet "geçti" DEMEZ, koşumu
  *  GEÇERSİZ ilan eder. _(K93, 30.08.2026: ölçütler koştu, `OK` bastı, ama
@@ -59,7 +66,7 @@ const dusen: string[] = [];
  * ⚠ BÖLÜM EKLENİNCE BU SAYI DA ARTAR. Artırmayı unutmak "yarım kaldı" der ve
  * doğru davranır; eksik bırakmak yeşil yanardı.
  */
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ipucu?: string) {
@@ -469,6 +476,118 @@ function blok(metin: string, capa: string, uzunluk: number): string {
   );
 
   kosanBolumler.push("ekran gövdesi");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  §7 DENEME ROTASI — /sistem/hata-denemesi
+// ---------------------------------------------------------------------------
+//  Hata ekranını gerçek cihazda görmenin tek yolu. Ama açtığı şey bir HATA
+//  SAYFASI: korumasız kalırsa canlıda herkesin tetikleyebileceği bir uç olur.
+//  Bu yüzden kapının VARLIĞI değil, ÖNCE koştuğu da ölçülüyor.
+// ═══════════════════════════════════════════════════════════════════════════
+{
+  /**
+   * ⭐ ÖNCE DEĞER: kapının ölçütü saf bir gövde (`tamYetkiliMi`), o yüzden
+   * ÇAĞRILIYOR. Desen aranmadığı için desen yanlış yerde bulunamaz.
+   */
+  kontrol(
+    "§7 tam izin kümesi kapıyı AÇAR",
+    tamYetkiliMi(new Set<string>(FIRMA_IZINLERI)),
+  );
+  kontrol(
+    "§7 TEK izin eksikse kapı KAPALI",
+    !tamYetkiliMi(new Set<string>(FIRMA_IZINLERI.slice(1))),
+    "kısıtlı bir rol hata sayfasını tetikleyebilir",
+  );
+  kontrol(
+    "§7 boş küme tam yetkili SAYILMAZ",
+    !tamYetkiliMi(new Set<string>()),
+    "`every` boş listede true döner — taban boşalırsa kapı herkese açılır",
+  );
+  /**
+   * ⚠ TABANIN KENDİSİ DE ÖLÇÜLÜR. `tamYetkiliMi` içindeki boş-taban kapısı
+   * ancak taban gerçekten boşalırsa iş görür ve o hâli DIŞARIDAN sınamanın
+   * yolu yok (sabit modül düzeyinde). O yüzden riskin kaynağı doğrudan
+   * ölçülüyor: taban boşsa kapı herkese açılırdı.
+   */
+  kontrol(
+    "§7 yetki tabanı BOŞ DEĞİL",
+    FIRMA_IZINLERI.length > 0,
+    "taban boşalırsa her kullanıcı tam yetkili sayılır",
+  );
+
+  /**
+   * ⭐ TESLİM EDİLEBİLİRLİK ÖLÇÜTÜ — ve bu testin doğuş sebebi:
+   * taban `TUM_IZINLER` seçilseydi, sağlayıcı izni OLMAYAN canlıdaki CEO
+   * rolü kapıdan geçemez ve Halil 404 alırdı. Yani kural doğru, ekran
+   * teslim edilemez olurdu. Bu ölçüt tam o senaryoyu sabitliyor.
+   */
+  const saglayicisiz = new Set<string>(
+    TUM_IZINLER.filter(
+      (i) => !(SAGLAYICI_IZINLERI as readonly string[]).includes(i),
+    ),
+  );
+  kontrol(
+    "§7 sağlayıcı izni OLMAYAN tam yetkili rol de geçer (CEO vakası)",
+    SAGLAYICI_IZINLERI.length === 0 || tamYetkiliMi(saglayicisiz),
+    "taban TUM_IZINLER'e kayarsa canlıdaki tam yetkili kullanıcı 404 alır",
+  );
+
+  const kapi = yorumsuz(oku("src/lib/yetki/index.ts"));
+  const kapiBloku = blok(kapi, "export async function sayfaTamYetki", 500);
+  kontrol(
+    "§7 pencere yeterli (kapı gövdesi tam)",
+    kapiBloku.includes("return baglam;"),
+  );
+  kontrol(
+    "§7 kapı saf ölçütü kullanıyor",
+    /if \(!tamYetkiliMi\(baglam\.izinler\)\) notFound\(\);/.test(kapiBloku),
+    "kapı kendi ölçütünü yazarsa iki yerde iki farklı tam-yetki tanımı doğar",
+  );
+  /**
+   * ⚠ İLK YAZIMDA BU ÖLÇÜT `redirect(` GEÇMEMELİ diyordu ve DOĞRU KODDA
+   * kırmızı yandı: kapı, kardeş kapılarla aynı parola-değiştirme yolunu
+   * paylaşıyor (`parolaDegismeliMi()` → `redirect("/parola-degistir")`) ve
+   * o yönlendirme meşru. Ölçüt "blokta şu kelime geçmesin" değil, REDDİN
+   * KENDİSİ ne yapıyor olmalı — iki ret dalı da 404 döndürmeli.
+   */
+  kontrol(
+    "§7 reddedilen istek 404 alıyor (rotanın varlığı sızmıyor)",
+    /if \(!baglam\) notFound\(\);/.test(kapiBloku) &&
+      /if \(!tamYetkiliMi\(baglam\.izinler\)\) notFound\(\);/.test(kapiBloku) &&
+      !/YetkisizHata/.test(kapiBloku),
+    "'yetkiniz yok' demek, rotanın VAR OLDUĞUNU söylemektir",
+  );
+
+  const rota = "src/app/sistem/hata-denemesi/page.tsx";
+  const sayfa = yorumsuz(oku(rota));
+  kontrol("§7 deneme rotası kapıyı çağırıyor", /await sayfaTamYetki\(\);/.test(sayfa));
+  kontrol(
+    "§7 deneme rotası hata ATIYOR",
+    /throw new Error\(/.test(sayfa),
+    "atmazsa ekran hiç çizilmez ve rota işe yaramaz",
+  );
+
+  /**
+   * ⛔ SIRA — BU ÖLÇÜTÜN KENDİSİ ASIL KORUMA. Kapı ile hata YER DEĞİŞTİRİRSE
+   * ikisi de dosyada durur, iki desen de bulunur ve varlık ölçütleri yeşil
+   * kalır; ama hata sayfası HERKESE çizilir. Ölçüt bu yüzden konuma bakıyor.
+   */
+  const kapiYeri = sayfa.indexOf("await sayfaTamYetki();");
+  const hataYeri = sayfa.indexOf("throw new Error(");
+  kontrol(
+    "§7 kapı hatadan ÖNCE koşuyor",
+    kapiYeri >= 0 && hataYeri >= 0 && kapiYeri < hataYeri,
+    "sıra ters: hata yetkisiz kullanıcıya da çizilir",
+  );
+
+  kontrol(
+    "§7 deneme rotası HİÇBİR ŞEY yazmıyor",
+    !/prisma|\.create\(|\.update\(|\.delete\(/.test(sayfa),
+    "deneme sayfası veriye dokunuyor",
+  );
+
+  kosanBolumler.push("deneme rotası");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

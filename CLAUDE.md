@@ -387,6 +387,39 @@ düğme, hangi rakam beklenir). Kullanıcı listeyi okuyup uygulayabilmeli;
 
 Bir paket Halil testini geçmeden sıradaki pakete GEÇİLMEZ.
 
+### SINANMAMIŞ EKRAN, EKRAN DEĞİLDİR (KESİN KURAL)
+
+_Kullanıcı kararı 30.08.2026._ **Bekçinin yeşili, ekranın ÇİZİLDİĞİNİ
+kanıtlamaz.** Bekçi kaynağı ölçer; kaynağın kullanıcıya ULAŞTIĞINI ölçmez.
+İkisi arasında derleme, deploy ve rota çözümü var — ve üçü de sessizce
+başarısız olabilir.
+
+**Vaka:** 30.08'de üç raf ekranı yazıldı (`/yerlestir`, `/paketle` raf
+okuması, toplu taşıma), tur **63/63 yeşildi** ve ekranlar **canlıda HİÇ
+YOKTU** — `"use server"` dosyasındaki tek bir sabit modülün bütün dışa
+aktarımlarını düşürmüş, derleme patlamıştı. Yeşil, yanlış güvence verdi.
+
+> **KURAL:** gerçek cihazda görülmeyen bir ekran **teslim edilmiş
+> sayılmaz.** Ne bekçi sayısı, ne mutasyon sayısı, ne `tsc` bunun yerine
+> geçer.
+
+⚠ **VE EKRAN TETİKLENEMİYORSA, TETİKLEYECEK YOL AÇILIR.** Bir ekran ancak
+nadir bir olayda çiziliyorsa (hata ekranı, kesinti ekranı), "gerçek vaka
+beklensin" demek testi süresiz ertelemektir. Doğrusu **kontrollü bir tetik
+yolu** açmaktır — ve o yol açılırken:
+· yalnız tam yetkili role açılır, reddedilen istek **404** alır (rotanın
+  varlığı bile sızmaz — "yetkiniz yok" demek, orada bir şey OLDUĞUNU söyler);
+· hiçbir şey yazmaz;
+· **kapının kendisi mutasyonla sınanır** — kapıyı kaldıran senaryo kırmızı
+  yanmalı, yoksa canlıda herkesin tetikleyebileceği bir uç doğar;
+· panoya **"test için açıldı, üretim özelliği değil"** diye kaydedilir.
+
+⚠ **AMA TETİKLENEMEYEN YOL "GEÇTİ" SAYILMAZ.** Aynı ekranın tetiklenebilen
+yolu sınanmış olsa bile, tetiklenemeyen yolu **açık kalır** ve raporda öyle
+yazar. _(K98: `SUNUCU_HATASI` deneme rotasıyla sınandı; `VERITABANI_YOK` ve
+`SUNUCUYA_ULASILAMADI` gerçek kesintiye bağlı kaldı.)_ Tetiklenemeyen bir
+yolu geçmiş saymak, testi değil raporu düzeltmektir.
+
 ## "KURAL DOĞRU MU" DEĞİL, "KURAL TESLİM EDİLEBİLİR Mİ" (KESİN KURAL)
 
 _Ders 16.08.2026._ Saf kural testi (matematik, mantık) geçse bile, kuralın
