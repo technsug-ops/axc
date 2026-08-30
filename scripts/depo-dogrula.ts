@@ -291,6 +291,87 @@ const TARIF: BolumTarifi = { ad: "Salon", kisaltma: "SLN", uniteSayisi: 2, gozSa
   kontrol("izin isteniyor", /yetkiIste\("ayar\.yaz"\)/.test(gocEylem));
 }
 
+/**
+ * ============================================================================
+ *  ⑨ BÖLÜM BAĞI — ŞEMA BİR VAAT DEĞİL, YAZICISI VAR
+ * ----------------------------------------------------------------------------
+ *  ⛔ 30.08.2026'da `DepoBolumu` + `Location.bolumId/unite/goz` açıldı ve
+ *  AYNI GÜN ölçüldü: kurulum eylemi bu sütunları YAZMIYORDU. Şema bir şey
+ *  vaat ediyor, kod tutmuyordu — K52 sınıfı ("şemadaki alan da bir iddiadır;
+ *  yazıcısı yoksa vaat boştur").
+ *
+ *  ⚠ VE PRATİK SONUCU: bölüm `Location.name` METNİYLE taşınmaya devam
+ *  ediyordu, yani canlıdaki `OFİS`/`Ofis` iki-kimlik ayrışması AÇIK kalıyordu.
+ *  `kisaltma @unique` ancak bu bağ kurulunca fiilen devreye giriyor.
+ * ============================================================================
+ */
+{
+  /**
+   * ⚠ YORUMSUZ KODDA ARANIR — bir kuralı ANLATAN yorum, o kuralı
+   * UYGULAMIŞ sayılmaz. Bu dosyada yorumlar çok uzun; desen yorumda
+   * bulunsaydı ölçüt sessizce yeşil yanardı.
+   */
+  const yorumsuzla = (m: string) =>
+    m
+      .replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " "))
+      .replace(/\/\/[^\n]*/g, (x) => x.replace(/[^\n]/g, " "));
+  const kurulum = yorumsuzla(readFileSync("src/app/ayarlar/depo/eylemler.ts", "utf8"));
+  const ekran = yorumsuzla(readFileSync("src/app/ayarlar/depo/page.tsx", "utf8"));
+
+  kontrol("bölüm `DepoBolumu`ya yazılıyor", /depoBolumu\.upsert\s*\(/.test(kurulum));
+  /**
+   * ⚠ `upsert` ADI GÜNCELLEMEZ: aynı bölüme ikinci kez raf eklemek meşru
+   * (üniteye kat eklendi) ama ad değişikliği AYRI bir karardır ve buradan
+   * sessizce yapılmamalı.
+   */
+  kontrol("  ...ve mevcut bölümün ADI güncellenmiyor", /update:\s*\{\}/.test(kurulum));
+  kontrol("raf bölüme KİMLİKLE bağlanıyor", /bolumId:\s*bolum\.id/.test(kurulum));
+  kontrol(
+    "ünite/göz SÜTUNA yazılıyor (sıralama/gruplama)",
+    /unite:\s*Number\(m\[1\]\)/.test(kurulum) && /goz:\s*Number\(m\[2\]\)/.test(kurulum),
+  );
+  /** ⚠ Eşleşmezse UYDURMA SAYI değil `null` — sistem bilmediğini yazmaz. */
+  kontrol(
+    "  ...eşleşmezse `null` (uydurma sayı YOK)",
+    /\{ unite: null, goz: null \}/.test(kurulum),
+  );
+  /**
+   * ⭐ NORMALLEŞTİRME GİRİŞ KAPISINDA — `toUpperCase()` YETMİYORDU.
+   * Türkçe `İ` `i`ye inmez; eski hâlde kullanıcı `Ofis` yazınca kısaltma
+   * `OFİS` oluyor ve `KISALTMA_KURALI` onu REDDEDİYORDU.
+   */
+  kontrol(
+    "kısaltma GİRİŞ kapısında normalleştiriliyor",
+    /kisaltma:\s*kisaltmaNormalle\(/.test(kurulum),
+  );
+  kontrol("  ...ve `toUpperCase()` TEK BAŞINA kullanılmıyor",
+    !/kisaltma:\s*String\([^)]*\)\.trim\(\)\.toUpperCase\(\)/.test(kurulum));
+  /** ⚠ MEVCUT DAVRANIŞ KORUNDU — ezme yok. */
+  kontrol("mevcut raf ATLANIYOR (kapasite artırma = ekleme)",
+    /skipDuplicates:\s*true/.test(kurulum));
+
+  kontrol("kurulum İZ bırakıyor", /action:\s*"DEPO_BOLUMU_KURULDU"/.test(kurulum));
+  kontrol("  ...izde KULLANICI var", /userId:\s*kullaniciId/.test(kurulum));
+  /**
+   * ⚠ ATLANAN DA YAZILIR: "12 raf açıldı" ile "12 açıldı, 8 zaten vardı"
+   * farklı hikâyelerdir; yalnız açılanı yazmak ikinci kurulumu ilk kurulum
+   * gibi gösterirdi.
+   */
+  kontrol("  ...izde ATLANAN da var", /atlanan:\s*ozet\.mevcut\.length/.test(kurulum));
+
+  /**
+   * ⭐ İKİ HÂL BİR ARADA — VE EKRAN SÖYLÜYOR.
+   * Mevcut 41 rafın `bolumId`si boş kalıyor (göç onaylanana kadar). Ekran
+   * ayırmazsa bakan kişi hepsinin bağlı olduğunu sanar.
+   */
+  kontrol(
+    "ekran BÖLÜMLÜ ve BÖLÜMSÜZ rafı AYRI gösteriyor",
+    /t\("bolumeBagli"\)/.test(ekran) && /t\("bolumsuz"\)/.test(ekran),
+  );
+  /** ⚠ Sıfırsa çıkmaz — sönmeyen not okunmaz olur. */
+  kontrol("  ...bölümsüz notu SIFIRSA çıkmıyor", /bolumsuzRaf > 0 \?/.test(ekran));
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

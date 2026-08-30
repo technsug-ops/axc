@@ -3437,7 +3437,10 @@
     "hataUNITE_GECERSIZ": "",
     "hataGOZ_GECERSIZ": "",
     "hataSinir": "",
-    "goceGit": ""
+    "goceGit": "",
+    "bolumeBagli": "",
+    "bolumsuz": "",
+    "bolumsuzNotu": ""
   },
   "Goc": {
     "baslik": "",

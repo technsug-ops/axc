@@ -3437,7 +3437,10 @@
     "hataUNITE_GECERSIZ": "Ünite sayısı 1 ile 99 arasında bir tam sayı olmalı.",
     "hataGOZ_GECERSIZ": "Göz sayısı 1 ile 99 arasında bir tam sayı olmalı.",
     "hataSinir": "Bu düzen {toplam} raf üretir ve üst sınır 2000. Bölümü ikiye ayırın.",
-    "goceGit": "{adet} eski rafı yeni şablona taşı"
+    "goceGit": "{adet} eski rafı yeni şablona taşı",
+    "bolumeBagli": "Bölüme bağlı",
+    "bolumsuz": "Bölümsüz",
+    "bolumsuzNotu": "{adet} raf henüz bir bölüme bağlı değil — bunlar depo düzeni kurulmadan önce açılmış raflar. Göç onaylanana kadar olduğu gibi çalışırlar; hiçbir şey bozulmaz."
   },
   "Goc": {
     "baslik": "Raf göçü",
