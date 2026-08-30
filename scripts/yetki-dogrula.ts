@@ -81,6 +81,10 @@ const ACTION_ISTISNALARI = new Map<string, string>([
     "uyarilariGetir",
     "tek bir izne bağlanamaz: çan BEŞ ayrı uyarı taşıyor ve her birinin kendi izni var. Süzme uyarilariTopla içinde, SUNUCUDA, sayımdan ÖNCE yapılıyor (izneGoreSuz) — istemciye göremeyeceği uyarı hiç gönderilmiyor. Buraya yetkiIste koymak, izni OLMAYAN kullanıcının çanı hiç görememesi demek olurdu; oysa operasyonel uyarıyı (maliyetsiz stok) görmeli.",
   ],
+  [
+    "veritabaniUlasilabilirMi",
+    "hata ekranının sondası: GİRİŞ EKRANI düştüğünde de cevap vermek zorunda — 30.08.2026'da düşen tam oydu (korumalı rotalar 307, çizilen tek sayfa /giris 500). `yetkiIste` çağırsaydı veritabanı çöktüğünde yetki sorgusu da çöker ve sonda tam gerektiği anda susardı; ekran o zaman sebebi TAHMİN etmek zorunda kalırdı. Sızdırdığı bilgi ÖLÇÜLDÜ: dönen tek şey true/false — sürüm, sunucu adı, hata metni, tablo adı YOK; ve 'veritabanı ayakta mı' zaten sitenin açılıp açılmamasından okunabiliyor. Gövde SALT OKUMA (`SELECT 1`).",
+  ],
 ]);
 
 // ===========================================================================

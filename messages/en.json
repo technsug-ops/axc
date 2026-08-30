@@ -3565,5 +3565,17 @@
     "durumKAYNAK_BOS": "",
     "durumSECIM_YOK": "",
     "durumPASIF_RAF": ""
+  },
+  "Hata": {
+    "baslik": "",
+    "KONTROL_EDILIYOR": "",
+    "VERITABANI_YOK": "",
+    "SUNUCUYA_ULASILAMADI": "",
+    "SUNUCU_HATASI": "",
+    "neYapmaliVERITABANI_YOK": "",
+    "neYapmaliSUNUCUYA_ULASILAMADI": "",
+    "neYapmaliSUNUCU_HATASI": "",
+    "tekrarDene": "",
+    "kodEtiketi": ""
   }
 }

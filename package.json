@@ -69,6 +69,8 @@
     "toplam:dogrula": "tsx scripts/toplam-dogrula.ts",
     "iptal:dogrula": "tsx scripts/iptal-dogrula.ts",
     "sayim:dogrula": "tsx scripts/sayim-dogrula.ts",
+    "hata:dogrula": "tsx scripts/hata-dogrula.ts",
+    "hata-mutasyon:kontrol": "tsx scripts/hata-mutasyon-kontrol.ts",
     "sayim-mutasyon:kontrol": "tsx scripts/sayim-mutasyon-kontrol.ts",
     "iptal:bekci": "tsx scripts/iptal-bekci.ts",
     "duzenleme:dogrula": "tsx scripts/satis-duzenleme-dogrula.ts",

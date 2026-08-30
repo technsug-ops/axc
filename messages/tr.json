@@ -3565,5 +3565,17 @@
     "durumKAYNAK_BOS": "Kaynak rafta ürün yok.",
     "durumSECIM_YOK": "Hiçbir ürün seçili değil. Yukarıdan en az bir ürün seçin.",
     "durumPASIF_RAF": "Hedef raf pasif — buraya ürün taşınamaz."
+  },
+  "Hata": {
+    "baslik": "Bu ekran çizilemedi",
+    "KONTROL_EDILIYOR": "Ne olduğu kontrol ediliyor…",
+    "VERITABANI_YOK": "Sunucu ayakta ama veritabanına ulaşılamıyor. Bu bir kayıt hatası değil.",
+    "SUNUCUYA_ULASILAMADI": "Sunucu yanıt vermiyor. Bu bir kayıt hatası değil.",
+    "SUNUCU_HATASI": "Veritabanı çalışıyor; hata bu ekranın kendisinde.",
+    "neYapmaliVERITABANI_YOK": "Yapman gereken bir şey yok. Birkaç dakika sonra tekrar dene; sürerse veritabanı sağlayıcısına bakılmalı.",
+    "neYapmaliSUNUCUYA_ULASILAMADI": "Yapman gereken bir şey yok. İnternetin çalışıyorsa sorun bizde; birkaç dakika sonra tekrar dene.",
+    "neYapmaliSUNUCU_HATASI": "Tekrar dene. Aynı ekranda tekrarlıyorsa aşağıdaki kodu ilet.",
+    "tekrarDene": "Tekrar dene",
+    "kodEtiketi": "Hata kodu"
   }
 }
