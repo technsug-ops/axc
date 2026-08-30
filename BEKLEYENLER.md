@@ -13,6 +13,69 @@
 
 ---
 
+## 🚨 K48 — BEKÇİ DERLEMEYİ SINAMIYOR · 30.08.2026 · [ÖLÇÜLDÜ, DARALTILDI]
+
+> **BEDELİ ÖLÇÜLDÜ:** 30.08'de **üç push boyunca üç ekran canlıda yoktu**
+> (`/yerlestir`, `/paketle` raf okuması, toplu taşıma) ve **hiçbir bekçi
+> görmedi.** Tur 63/63 yeşildi ve kod **yayınlanamıyordu.** Halil test
+> listesini uygulayınca çıktı: A ✓ B ✓ (önceki deploy) · C ✗ D ✗ E ✗
+> (yayınlanmamış üç paket). **"Yeşil" yanlış güvence verdi.**
+
+### ⛔ KÖK — TEK SATIR, BÜTÜN MODÜLÜ DÜŞÜRDÜ
+
+    // src/app/yerlestir/actions.ts   ("use server")
+    export const YERLESTIRME_EYLEMI = "URUN_YERLESTIRILDI";
+
+`"use server"` dosyasında yalnız async fonksiyon dışa aktarılabilir. Sabit
+konunca modülün BÜTÜN dışa aktarımları düştü ve derleme patladı.
+
+### 📏 ÖLÇÜM — `tsc` NEYİ GÖRMÜYOR (4 sınıf enjekte edildi, tek build)
+
+| # | Sınıf | `tsc` | `next build` | Desen yasağı |
+|---|---|---|---|---|
+| 1 | `"use server"` async olmayan dışa aktarım | ✗ | ✓ | ✅ **KAPANDI** — `sunucu-eylemi:dogrula` (64. bekçi) |
+| 2 | İstemci → sunucu modülü (`@/lib/prisma` → `fs`·`net`·`tls`) | ✗ | ✓ | ⏭ kapanabilir — içe aktarma grafı |
+| 3 | İstemci → `next/headers` | ✗ | ✓ | ⏭ aynı grafla, 2 ile aynı bekçi |
+| 4 | `"use client"` içinde `export const metadata` | ✗ | **✗** | ⛔ **İKİSİ DE GÖRMÜYOR** — sessiz sınıf |
+
+⚠ **4. SINIF AYRI BİR KALEM:** ne `tsc` ne `build` yakalıyor; metadata
+sessizce yok sayılıyor. Bir sekme başlığı yanlış kalır ve kimse anlamaz.
+
+### 📏 MALİYET ÖLÇÜMÜ
+
+    bekçi turu (bugün, 64 doğrulama)          218 sn
+    next build — BAŞARILI (tip kontrolü KAPALI) 122 sn
+    next build — BAŞARISIZ (hızlı düşer)         33 sn
+    next build — tip kontrolü AÇIK          ⛔ BELLEKTEN DÜŞÜYOR
+                                            (12,7 GB RAM, 0,5 GB boş)
+
+⭐ **TİP KONTROLÜ `next build` İÇİNDE GEREKSİZ:** `tsc:dogrula` onu zaten
+ayrı koşuyor. `typescript.ignoreBuildErrors` ile build **122 sn'de çıkış 0**
+veriyor ve bellekten düşmüyor. Yani _"build yerelde koşamıyor"_ artık
+doğru değil — ölçüldü.
+
+### ⚠ İKİNCİ BULGU — `tsc` KENDİ BAŞINA YETMİYOR
+
+`.next` silinince `tsc --noEmit` **düşüyor**: `LayoutProps` Next'in
+ÜRETTİĞİ bir tip. Yani bekçi turu kendi kendine yeterli değil — temiz bir
+klonda `tsc:dogrula` bir build/dev koşmadan kırmızı yanar.
+
+### ⏭ KARAR BEKLEYEN — ÜÇ YOL, MALİYETLERİ ÖLÇÜLDÜ
+
+| Yol | Maliyet | Yakalama gecikmesi |
+|---|---|---|
+| **(a)** Build her push'ta | tur 218 → **~340 sn** (+%56) | **sıfır** |
+| **(b)** Yalnız desen yasakları | ~2 sn | bilinen sınıflarda sıfır, **bilinmeyende sonsuz** |
+| **(c)** Günde bir / elle | ~0 | **24 saate kadar** — bugünkü bedelin ta kendisi |
+
+⛔ **K48 KAPANMIYOR, DARALIYOR.** Sınıf 1 kapandı; 2+3 tek bekçiyle
+kapanabilir. Ama **dört sınıf denedim ve tamlık iddia edemem** — Next sürümü
+değiştikçe sınıf doğar. Desen yasağı bilinen sınıfların listesidir; build
+ise yer gerçeğidir. _(Anayasa: "bir kaynağın listesi kendi tamlığını
+kanıtlayamaz".)_
+
+---
+
 ## 📊 DÖRT CEPHE — 28.08.2026 [KOŞTU] `npm run canli:dort-cephe`
 
 Halil sordu: _"alımlar satışlar iadeler kargolar düzeldi mi?"_ Dördü ayrı
