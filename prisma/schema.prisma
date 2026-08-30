@@ -1932,6 +1932,10 @@ model User {
   updatedAt           DateTime          @updatedAt
   stockMovements      StockMovement[]
   stokSayimlari       StokSayimi[]
+  /// K108 — kapattigi muhasebe donemleri. ⚠ TERS ILISKI: DB'de sutun
+  /// acmaz, yabanci anahtar `MuhasebeDonemi` tarafinda. `User` tablosu
+  /// DEGISMEZ — migration yalnizca yeni tabloyu yaratmali.
+  kapattigiDonemler   MuhasebeDonemi[] @relation("DonemKapatan")
   iadeler             Return[]
   iadeBildirimleri    ReturnNotice[]
   ekler               Attachment[]
@@ -2843,4 +2847,66 @@ model StokSayimSatiri {
 
   @@unique([sayimId, variantId])
   @@index([variantId])
+}
+
+// ============================================================================
+//  MUHASEBE DÖNEMİ (K108, 31.08.2026)
+// ----------------------------------------------------------------------------
+//  ⛔ NİYE AÇILDI: sistemde muhasebe dönemi kavramı HİÇ YOKTU. Şemadaki
+//  `periodStart`/`periodEnd` yalnız `Settlement`ta ve o PAZARYERİNİN ÖDEME
+//  dönemi — bizim beyan dönemimiz DEĞİL. İkisi karıştırılmamalı: hakediş
+//  dönemi kanalın takvimine, muhasebe dönemi bizim beyanımıza bağlı.
+//
+//  ── ⚠ MERDİVEN İNİLDİ, TABLOYA EN SON GELİNDİ ──────────────────────────
+//    ① Mevcut alan: `Settlement.periodStart/End` BAŞKA bir şeyin dönemi. ✗
+//    ② `AuditLog`: dönem durumu HER YAZIMDA sorgulanacak (her harekette
+//       `ORDER BY createdAt DESC LIMIT 1`) ve o tablo "geriye bakmak"
+//       içindir, current-state deposu değil. ✗
+//    ③ Türetilebilir mi: HAYIR — kapanış bir KARARDIR, veriden çıkmaz. ✗
+//    ④ TABLO ✓ — sütun DEĞİL, çünkü her dönem bir satır ve zamanla büyür.
+//
+//  ── ⚠ SATIR "AÇIK" DİYE DOĞMAZ — YOKLUK AÇIKTIR ────────────────────────
+//  Kapanmamış her ay için satır yazmak, hiç dokunulmamış 30 aya 30 satır
+//  açmak olurdu. Satır ancak KAPATILDIĞINDA doğar; satırı olmayan dönem
+//  AÇIKTIR. Böylece "kaç dönem kapandı" sorusu tablonun kendisidir.
+//  ⚠ Ve `durum` yine de tutuluyor: kapatılmış bir dönem YENİDEN AÇILABİLİR
+//  ve o zaman satır SİLİNMEZ — durumu değişir, izi kalır (ledger disiplini).
+// ============================================================================
+
+enum DonemDurumu {
+  ACIK
+  KAPALI
+}
+
+model MuhasebeDonemi {
+  id String @id @default(cuid())
+
+  /// Takvim yılı ve ayı (1–12). İŞ SAAT DİLİMİNE göre — `Europe/Istanbul`.
+  yil Int
+  ay  Int
+
+  durum DonemDurumu @default(KAPALI)
+
+  /// KİM KAPATTI — kapanış bir karardır, sahibi olmalı.
+  kapatanId String?
+  kapatan   User?   @relation("DonemKapatan", fields: [kapatanId], references: [id], onDelete: Restrict)
+
+  kapatildiAt DateTime?
+
+  /// ⚠ YENİDEN AÇMANIN İZİ İÇİN AYRI SÜTUN YOK — VE BU BİLİNÇLİ.
+  /// Onaylanan şekil `kapatanId · kapatildiAt · not`tu; "kim yeniden açtı"
+  /// için iki sütun daha eklemek, migration'ı ADININ SÖYLEDİĞİ İŞİN DIŞINA
+  /// çıkarmak olurdu. Ve gerek de yok: yeniden açma `AuditLog`a düşüyor —
+  /// kim, ne zaman, hangi dönem. Ayrı sütun aynı bilgiyi İKİNCİ kez tutardı.
+  /// _(Anayasa: "migration, adının söylediği işin dışına çıkmaz".)_
+  ///
+  /// Kapanış/açılış notu — muhasebeciye giden sayfada görünür.
+  not String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// ⚠ Bir ay için TEK satır. İki kez kapatma denemesi ikinci satır açamaz.
+  @@unique([yil, ay])
+  @@index([durum])
 }

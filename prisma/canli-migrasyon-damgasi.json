@@ -42,6 +42,7 @@
     "20260826200000_alim_ice_aktarma_izi",
     "20260827061946_stok_sayimi",
     "20260829150000_sayim_gecersiz_damgasi",
-    "20260830120000_depo_bolumu"
+    "20260830120000_depo_bolumu",
+    "20260831090000_muhasebe_donemi"
   ]
 }
