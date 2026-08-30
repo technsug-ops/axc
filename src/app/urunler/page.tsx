@@ -26,6 +26,7 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { sayfaCoz } from "@/lib/sayfalama";
+import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { urunStoklari } from "@/lib/stok";
 
 import { SilButonu } from "./sil-butonu";
@@ -50,22 +51,26 @@ export default async function UrunlerSayfasi({
 
   const suzgec = arama
     ? {
-        OR: [
-          { name: { contains: arama } },
-          { brand: { contains: arama } },
-          { variants: { some: { sku: { contains: arama } } } },
-          { variants: { some: { companySku: { contains: arama } } } },
-          { variants: { some: { barcode: { contains: arama } } } },
+        /**
+         * ⚠ EŞDEĞER KODLAR AÇILIR (K100) — UPC-A ↔ EAN-13. Rol kümesi
+         * DEĞİŞMEDİ; yalnız aynı kodun ikinci yazılışı da aranıyor.
+         */
+        OR: kodEsdegerleri(arama).flatMap((e) => [
+          { name: { contains: e } },
+          { brand: { contains: e } },
+          { variants: { some: { sku: { contains: e } } } },
+          { variants: { some: { companySku: { contains: e } } } },
+          { variants: { some: { barcode: { contains: e } } } },
           // KANAL KODLARI DA ARANIR: pazaryeri panelinden kopyalanan bir kod
           // (HBCV00004IA2P8) doğrudan yapıştırılıp bulunabilsin. Ölçüldü
           // 12.08.2026: arama süresine etkisi yok (55 -> 63 ms), ama bu
           // olmadan o kod HİÇ bulunmuyordu.
           {
             variants: {
-              some: { channelSkus: { some: { channelSku: { contains: arama } } } },
+              some: { channelSkus: { some: { channelSku: { contains: e } } } },
             },
           },
-        ],
+        ]),
       }
     : undefined;
 

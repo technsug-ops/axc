@@ -32,6 +32,15 @@ import {
   YAS_BANTLARI,
 } from "@/lib/yaslanma";
 import { sayfaCoz } from "@/lib/sayfalama";
+import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
+import {
+  idleriSirala,
+  sayfaDilimi,
+  siralamaCoz,
+  stoguOlanIdler,
+  veritabanindaSiralanir,
+  type VaryantOlcumu,
+} from "@/lib/stok-siralama";
 import {
   AYRILMIS_SAYILAN_DURUMLAR,
   ayrilmisAdetler,
@@ -41,6 +50,7 @@ import { kanalKodsuzStokluVaryantlar } from "@/lib/uyari/faz2-veri";
 import { maliyetsizVaryantlar } from "@/lib/uyari/maliyetsiz-stok";
 
 import { StokArama } from "./stok-arama";
+import { SiralaSuzgec } from "./sirala-suzgec";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -57,11 +67,17 @@ export default async function StokSayfasi({
     maliyet?: string;
     /** Uyarı merkezinden gelir: stoğu var, hiçbir kanalda kodu yok. */
     kanal?: string;
+    /** K101 — sıralama alanı ve yönü; tanınmayan değer varsayılana düşer. */
+    sirala?: string;
+    yon?: string;
+    /** K101 — `var` ise stoğu sıfır olanlar gizlenir. */
+    stok?: string;
   }>;
 }) {
   await sayfaIzni("stok.gor");
 
-  const { q, sayfa, yas, maliyet, kanal } = await searchParams;
+  const { q, sayfa, yas, maliyet, kanal, sirala, yon, stok } =
+    await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
   const t = await getTranslations("Stok");
@@ -132,7 +148,46 @@ export default async function StokSayfasi({
    * Kural değişmedi (KESİŞİM), gövde listeleri katlıyor: dördüncü süzgeç
    * eklendiğinde bu satırlara dokunulmayacak.
    */
-  const varyantSuzgeci = [yasVaryantlari, maliyetsizListe, kanalKodsuzListe]
+  /**
+   * ═══ K101 — SIRALAMA VE SIFIR SÜZGECİ ═══════════════════════════════
+   *
+   * ⚠ İKİSİ DE AYNI ÖLÇÜMÜ İSTER: "mevcut stok" ve "son hareket"
+   * `ProductVariant` kolonu DEĞİL, `StockMovement` defterinden türer.
+   * Ölçüm YALNIZ gerektiğinde koşuyor (ölçüldü 30.08: ~600 ms) — varsayılan
+   * sıra (ürün adı) `orderBy` ile veritabanında çözülüyor ve hiçbir ek
+   * sorgu üretmiyor. Bu dosyadaki yaş/maliyet süzgeçleri de aynı desende.
+   */
+  const sira = siralamaCoz(sirala, yon);
+  const stokSuzgeciAcik = stok === "var";
+  const olcumGerek = stokSuzgeciAcik || !veritabanindaSiralanir(sira);
+
+  let olcumler: Map<string, VaryantOlcumu> | null = null;
+  if (olcumGerek) {
+    const gruplar = await prisma.stockMovement.groupBy({
+      by: ["variantId"],
+      _sum: { quantityDelta: true },
+      _max: { occurredAt: true },
+    });
+    olcumler = new Map(
+      gruplar.map((g) => [
+        g.variantId,
+        {
+          adet: g._sum.quantityDelta ?? 0,
+          sonHareket: g._max.occurredAt ?? null,
+        },
+      ]),
+    );
+  }
+
+  /**
+   * ⚠ HAREKETİ HİÇ OLMAYAN VARYANT BU LİSTEDE YOKTUR — ve doğrusu bu:
+   * bakiyesi sıfırdır, "stoğu olanlar" süzgecinde yeri yoktur. Ölçüldü
+   * 30.08: 1104 varyantın 51'i hiç hareket görmemiş.
+   */
+  const stokluListe =
+    stokSuzgeciAcik && olcumler !== null ? stoguOlanIdler(olcumler) : null;
+
+  const varyantSuzgeci = [yasVaryantlari, maliyetsizListe, kanalKodsuzListe, stokluListe]
     .filter((l): l is string[] => l !== null)
     .reduce<string[] | null>(
       (kesisim, liste) =>
@@ -142,11 +197,18 @@ export default async function StokSayfasi({
 
   const aramaKosulu = arama
     ? {
-        OR: [
-          { sku: { contains: arama } },
-          { companySku: { contains: arama } },
-          { barcode: { contains: arama } },
-          { product: { name: { contains: arama } } },
+        /**
+         * ⚠ EŞDEĞER KODLAR AÇILIR (K100, 30.08.2026) — UPC-A ↔ EAN-13.
+         * Okuyucu 12 haneli bir barkodu 13 hane olarak döndürüyor ve
+         * `contains` uzun sorguyu kısa alanda BULAMIYOR. Kural
+         * `lib/varyant-arama-kurali.ts`te tek yerde; buradaki rol kümesi
+         * ve `isActive` şartları DEĞİŞMEDİ, yalnız kod eşdeğeri eklendi.
+         */
+        OR: kodEsdegerleri(arama).flatMap((e) => [
+          { sku: { contains: e } },
+          { companySku: { contains: e } },
+          { barcode: { contains: e } },
+          { product: { name: { contains: e } } },
           /**
            * KANAL KODLARI DA ARANIR — 14.08.2026 kullanıcı bulgusu.
            *
@@ -160,8 +222,8 @@ export default async function StokSayfasi({
            * ürünü bulabilmeli: sistem SKU'su, firma etiketi, üretici
            * barkodu ya da pazaryeri kodu.
            */
-          { channelSkus: { some: { channelSku: { contains: arama } } } },
-        ],
+          { channelSkus: { some: { channelSku: { contains: e } } } },
+        ]),
       }
     : undefined;
 
@@ -197,16 +259,65 @@ export default async function StokSayfasi({
   });
   const tumStok = stokToplami._sum.quantityDelta ?? 0;
 
-  const varyantlar = await prisma.productVariant.findMany({
-    where: suzgec,
-    skip: sayfalama.atla,
-    take: sayfalama.boyut,
-    include: {
-      product: { select: { id: true, name: true, brand: true } },
-      location: { select: { code: true } },
-    },
-    orderBy: [{ product: { name: "asc" } }, { sku: "asc" }],
-  });
+  /** İki yol da AYNI alanları çeker; ayrı yazılsalardı biri gün gelip
+   *  ötekinden eksik kalırdı. */
+  const SATIR_ALANLARI = {
+    product: { select: { id: true, name: true, brand: true } },
+    location: { select: { code: true } },
+  } as const;
+
+  /**
+   * ═══ SIRA SÜZGECİN TAMAMI ÜZERİNDE KURULUR — SAYFANIN İÇİNDE DEĞİL ═══
+   *
+   * ⛔ KOLAY YOL YANLIŞ OLURDU: sayfayı çekip eldeki 50 satırı sıralamak.
+   * Ekran "adede göre sıralı" derdi, gerçekte 2. sayfada 1. sayfadan büyük
+   * adet çıkardı ve hiçbir şey hata vermezdi.
+   * _(K61'in kardeşi: orada TOPLAM sayfaya düşüyordu, burada SIRA.)_
+   */
+  const varyantlar = veritabanindaSiralanir(sira)
+    ? await prisma.productVariant.findMany({
+        where: suzgec,
+        skip: sayfalama.atla,
+        take: sayfalama.boyut,
+        include: SATIR_ALANLARI,
+        orderBy: [
+          { product: { name: sira.yon === "artan" ? "asc" : "desc" } },
+          { sku: "asc" },
+        ],
+      })
+    : await (async () => {
+        /** Süzgece uyan BÜTÜN kimlikler — sıralama ancak tam küme üzerinde
+         *  doğru olur. Yalnız `id` + ad çekiliyor; satırın kendisi sonra. */
+        const hepsi = await prisma.productVariant.findMany({
+          where: suzgec,
+          select: { id: true, product: { select: { name: true } } },
+        });
+        const adlar = new Map(hepsi.map((v) => [v.id, v.product.name]));
+        const sayfaIdleri = sayfaDilimi(
+          idleriSirala(
+            hepsi.map((v) => v.id),
+            adlar,
+            olcumler ?? new Map(),
+            sira,
+          ),
+          sayfalama.atla,
+          sayfalama.boyut,
+        );
+        const satirlar = await prisma.productVariant.findMany({
+          where: { id: { in: sayfaIdleri } },
+          include: SATIR_ALANLARI,
+        });
+        /**
+         * ⚠ SIRAYI GERİ KUR. `where: { id: { in: [...] } }` dizi SIRASINI
+         * KORUMAZ — veritabanı kendi bildiği sırada döndürür. Bu satır
+         * olmasaydı sıralama sessizce kaybolur, ekran "adede göre sıralı"
+         * derken rastgele bir liste gösterirdi.
+         */
+        const harita = new Map(satirlar.map((v) => [v.id, v]));
+        return sayfaIdleri
+          .map((id) => harita.get(id))
+          .filter((v): v is (typeof satirlar)[number] => v !== undefined);
+      })();
 
   const varyantIdleri = varyantlar.map((v) => v.id);
   const [stoklar, sonHareketler, acikBildirimler] = await Promise.all([
@@ -258,10 +369,22 @@ export default async function StokSayfasi({
             {arama ? ortak("aramaEki", { arama }) : ""}
           </p>
         </div>
-        <ExcelIndir liste="stok" parametreler={{ q: arama }} />
+        {/* ⚠ EKRANIN SÜZGECİ EXCEL'E DE GİDER — yoksa indirilen dosya
+            ekrandan farklı bir liste olurdu (İlke #10, "sayı = liste"). */}
+        <ExcelIndir
+          liste="stok"
+          parametreler={{ q: arama, stok: stokSuzgeciAcik ? "var" : undefined }}
+        />
       </div>
 
       <StokArama baslangic={arama} />
+
+      {/* K101 — sıralama ve sıfır süzgeci. Durum ADRESTE yaşar. */}
+      <SiralaSuzgec
+        sira={sira}
+        stokSuzgeciAcik={stokSuzgeciAcik}
+        tasinanlar={{ q: arama, yas, maliyet, kanal }}
+      />
 
       {/*
         ⚠ İÇE AKTARMA ŞERHİ — A3-③, 26.08.2026.

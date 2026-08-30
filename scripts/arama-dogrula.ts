@@ -1,4 +1,7 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { kartAdresi } from "../src/lib/kart-adresi";
+import { kodDizisi } from "../src/lib/varyant-ozet";
 import {
   KOD_ROLLERI,
   ROL_KAPSAMI,
@@ -6,12 +9,35 @@ import {
   VARYANT_ROLLERI,
   aramaKosulu,
   kapsananRoller,
+  kodEsdegerleri,
   kodKosulu,
+  kodKosuluToplu,
   satisKodKosulu,
 } from "../src/lib/varyant-arama-kurali";
-import { kartAdresi } from "../src/lib/kart-adresi";
-import { kodDizisi } from "../src/lib/varyant-ozet";
 
+/** Yorumları siler — bir yasağı ANLATAN yorum, o yasağı ÇİĞNEMİŞ sayılmaz. */
+function yorumsuz(kod: string): string {
+  const blokYorumu = new RegExp("/\\*[\\s\\S]*?\\*/", "g");
+  const satirYorumu = new RegExp("//[^\\n]*", "g");
+  return kod.replace(blokYorumu, "").replace(satirYorumu, "");
+}
+
+/** `src` altındaki bütün kaynak dosyaları — liste TUTULMAZ, taranır. */
+/** Yol ayiricisini duzlestirir. Ters bolu KARAKTER KODUYLA yaziliyor:
+ *  betikle uretilen kacis dizileri bozulabiliyor (anayasa dersi 28.08). */
+function duzYol(yol: string): string {
+  return yol.split(String.fromCharCode(92)).join("/");
+}
+
+function kaynakDosyalari(kok: string): string[] {
+  const cikti: string[] = [];
+  for (const girdi of readdirSync(kok, { withFileTypes: true })) {
+    const yol = join(kok, girdi.name);
+    if (girdi.isDirectory()) cikti.push(...kaynakDosyalari(yol));
+    else if (/\.tsx?$/.test(girdi.name)) cikti.push(yol);
+  }
+  return cikti;
+}
 /**
  * ⚠ ŞEMA SATIR SONUNDAN BAĞIMSIZ OKUNUR (24.08.2026).
  *
@@ -554,9 +580,33 @@ console.log("");
 
   // ── /satislar ARAMASI ────────────────────────────────────────────────
   const suzgec = readFileSync("src/lib/liste-suzgeci.ts", "utf8");
+  /**
+   * ⚠ ÖLÇÜT 30.08.2026'DA GÜNCELLENDİ — VE NİYE GÜNCELLENDİĞİ BURADA YAZAR.
+   *
+   * Eski hâli değişken ADINI sabitliyordu: `{ contains: arama }`. K100
+   * (UPC-A ↔ EAN-13) süzgeci `kodEsdegerleri(arama).flatMap((e) => …)` içine
+   * aldı ve değişken `e` oldu; kontrol KIRMIZI yandı. **Kod doğruydu** —
+   * gönderi numarası hâlâ aranıyor; eskiyen şey ölçüttü.
+   * _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez" — eskiyen
+   * ölçüt güncellenir, SUSTURULMAZ.)_
+   *
+   * ⭐ YENİ ÖLÇÜT DAHA GÜÇLÜ: artık yalnız "aranıyor mu" demiyor, aranan
+   * değerin EŞDEĞER DÖNGÜSÜNDEN geldiğini de sınıyor. Yani biri yarın
+   * gönderi numarasını eşdeğer açılımının DIŞINA çıkarırsa kırmızı yanar.
+   */
+  const esdegerDegiskeni = /kodEsdegerleri\([^)]*\)\s*\.\s*flatMap\(\s*\(\s*([A-Za-z_$][\w$]*)/.exec(
+    suzgec,
+  )?.[1];
+  const gonderiDegiskeni = /shipmentCode:\s*\{\s*contains:\s*([A-Za-z_$][\w$]*)/.exec(
+    suzgec,
+  )?.[1];
   kontrol(
     "/satislar araması gönderi numarasını da buluyor",
-    /\{ shipmentCode: \{ contains: arama \} \}/.test(suzgec),
+    gonderiDegiskeni !== undefined,
+  );
+  kontrol(
+    "  ...ve eşdeğer kod döngüsünün İÇİNDEN okuyor (K100)",
+    esdegerDegiskeni !== undefined && gonderiDegiskeni === esdegerDegiskeni,
   );
 }
 
@@ -644,6 +694,126 @@ console.log("");
       urunlerKaynak,
     ),
   );
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ *  § K100 — UPC-A ↔ EAN-13 EŞDEĞERLİĞİ (30.08.2026)
+ * -----------------------------------------------------------------------
+ *  ⛔ CANLI VAKA: Halil `/yerlestir`de `0194644037598` okuttu, ekran "ne
+ *  ürün ne raf" dedi; baştaki sıfır elle silinince ürün çıktı.
+ *
+ *  ⭐ ÖLÇÜTLER SAF GÖVDEYİ ÇAĞIRIYOR — kaynak taranmıyor. Anayasa: "saf
+ *  hesap katmanı, desen tarayan bekçiye muhtaç olmaz".
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+{
+  console.log("");
+  console.log("§ K100 — UPC-A / EAN-13 eşdeğerliği");
+
+  const e13 = kodEsdegerleri("0194644037598");
+  kontrol(
+    "13 hane + baştaki sıfır -> 12 haneli hâli de aranıyor",
+    e13.includes("0194644037598") && e13.includes("194644037598"),
+  );
+  const e12 = kodEsdegerleri("194644037598");
+  kontrol(
+    "12 hane -> sıfır eklenmiş hâli de aranıyor",
+    e12.includes("194644037598") && e12.includes("0194644037598"),
+  );
+
+  /**
+   * ⚠ SINIR SINANIYOR — KURAL GENİŞLEMESİN. Ölçüm yalnız 12 ↔ 13 için
+   * yapıldı; 11/14/18 hane ve sayı olmayan kodlar ölçülmedi, bu yüzden
+   * kural onlara DOKUNMAMALI. Dokunsaydı ölçülmemiş bir denklik koda
+   * girerdi ve yanlış eşleşme YANLIŞ ÜRÜNE yazardı.
+   */
+  for (const kod of ["1234567890", "12345678901234", "HBCV00004IA2P8", ""]) {
+    kontrol(
+      `kapsam dışı kod dokunulmadan geçiyor: "${kod}"`,
+      kodEsdegerleri(kod).length === 1,
+    );
+  }
+  /**
+   * ⚠ 13 HANE AMA SIFIRLA BAŞLAMIYORSA DOKUNULMAZ. `5702017419732` gibi
+   * gerçek bir EAN-13'ten hane atmak, onu başka bir ürünün koduna
+   * çevirebilirdi.
+   */
+  kontrol(
+    "13 hane ama sıfırsız -> dokunulmuyor",
+    kodEsdegerleri("5702017419732").length === 1,
+  );
+  /**
+   * ⚠ "BÜTÜN BAŞTAKİ SIFIRLARI KIRP" DEĞİL — TAM BİR HANE. `011120272536`
+   * katalogda GERÇEKTEN sıfırla başlayan 12 haneli bir koddur; hepsini
+   * kırpan bir kural onu başka bir kümeye taşırdı.
+   */
+  kontrol(
+    "12 hanede baştaki sıfır KIRPILMIYOR (yalnız eklenir)",
+    !kodEsdegerleri("011120272536").includes("11120272536"),
+  );
+
+  /** Kural üç yayım yolunun ÜÇÜNE de ulaşıyor mu — gövdeler çağrılarak. */
+  const kosulMetni = JSON.stringify(kodKosulu("0194644037598"));
+  kontrol(
+    "okutulan kod (kodKosulu) eşdeğeri taşıyor",
+    kosulMetni.includes("194644037598") &&
+      kosulMetni.includes("0194644037598"),
+  );
+  const topluMetni = JSON.stringify(kodKosuluToplu(["0194644037598"]));
+  kontrol(
+    "toplu çözüm (kodKosuluToplu) eşdeğeri taşıyor",
+    topluMetni.includes('"194644037598"'),
+  );
+  const serbestMetni = JSON.stringify(aramaKosulu("0194644037598"));
+  kontrol(
+    "serbest arama (aramaKosulu) eşdeğeri taşıyor",
+    serbestMetni.includes('"194644037598"'),
+  );
+
+  /**
+   * ═══ DESEN YASAĞI — DOSYA LİSTESİ TUTULMUYOR ═══════════════════════
+   *
+   * ⛔ ANAYASA: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır".
+   * K100 yazılırken ALTI ayrı kopya bulundu (`/stok`, `/urunler`,
+   * `alim-arama`, `liste-suzgeci`, dışa aktarmada iki yer) ve hiçbiri
+   * paylaşılan kuralı kullanmıyordu. "Şu altı dosyayı düzelttim" demek,
+   * YEDİNCİ ekran eklendiğinde sessizce yeşil kalmaktı.
+   *
+   * ⭐ ÖLÇÜT: `barcode: { contains: X }` yazan her yerde X, bir
+   * `kodEsdegerleri(...)` dönüşünden gelen değişken OLMAK ZORUNDA.
+   * Ham bir değişken (`arama`, `q`, `sorgu`) yazılamaz.
+   */
+  const taranan = kaynakDosyalari("src");
+  const ihlaller: string[] = [];
+  for (const yol of taranan) {
+    const kod = yorumsuz(readFileSync(yol, "utf8"));
+    /** Kuralın KENDİ dosyası muaf — eşdeğeri o üretiyor. */
+    if (duzYol(yol).endsWith("lib/varyant-arama-kurali.ts")) continue;
+    const eslesmeler = kod.match(/barcode:\s*\{\s*contains:\s*([A-Za-z_$][\w$]*)/g) ?? [];
+    if (eslesmeler.length === 0) continue;
+    /**
+     * ⚠ BAĞLAYICI ARANIYOR, AD DEĞİL: `kodEsdegerleri` kelimesinin dosyada
+     * geçmesi yetmez (yorumda da geçebilir) — dönüşünü bir değişkene BAĞLAYAN
+     * çağrı aranıyor.
+     */
+    const baglayici = /kodEsdegerleri\([^)]*\)\s*\.\s*flatMap\(\s*\(\s*([A-Za-z_$][\w$]*)/.exec(kod);
+    const bagliDegisken = baglayici?.[1] ?? null;
+    for (const e of eslesmeler) {
+      const degisken = /contains:\s*([A-Za-z_$][\w$]*)/.exec(e)?.[1] ?? "?";
+      if (degisken !== bagliDegisken) {
+        ihlaller.push(`${duzYol(yol)} -> contains: ${degisken}`);
+      }
+    }
+  }
+  kontrol(
+    `çıplak barkod araması YOK (${taranan.length} dosya tarandı)`,
+    ihlaller.length === 0,
+  );
+  for (const i of ihlaller) console.log("        " + i);
+  /** ⚠ TARAMANIN KENDİSİ DE ÖLÇÜLÜR: hiç dosya bulunamazsa "temiz" değil,
+   *  BOZUK demektir (anayasa: boş sonuç ile temiz sonuç ayrı şeylerdir). */
+  kontrol("tarama gerçekten dosya buldu", taranan.length > 100);
 }
 
 console.log("=".repeat(70));

@@ -3,6 +3,7 @@ import type { Currency } from "@/generated/prisma/enums";
 import { sermayeVerimi } from "@/lib/marj-gosterge";
 import {
   birimKar,
+  birimSatisFiyati,
   marjYuzdesi,
   urunlereTopla,
   type KalemGirdisi,
@@ -94,6 +95,12 @@ export type KartOzeti = {
   kanallar: string[];
 
   // --- KÂRLILIK ---
+  /**
+   * Adet başına SATIŞ FİYATI — kâr cümlesinin ilk terimi (K102).
+   * ⚠ `birimNet2` ve `marj` ile AYNI paydadan (`hesaplananAdet`) okunur;
+   * üçü aynı kümeyi anlatmazsa ekrandaki aritmetik tutmaz.
+   */
+  birimSatisFiyati: number | null;
   /** Adet başına NET-2 (kalem seviyesi). Hesaplanamayan varsa null. */
   birimNet2: number | null;
   marj: number | null;
@@ -272,6 +279,7 @@ export function kartOzeti(girdi: KartGirdisi): KartOzeti {
     // Kanal adları tekilleştirilir; aynı kanaldan 10 satış tek etiket olsun.
     kanallar: [...new Set(satislar.map((s) => s.kanalAdi))].sort(),
 
+    birimSatisFiyati: satir === null ? null : birimSatisFiyati(satir),
     birimNet2: birim,
     marj: satir === null ? null : marjYuzdesi(satir),
     sermayeVerimi: sermayeOrani,

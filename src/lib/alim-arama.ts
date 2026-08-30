@@ -1,6 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 
 /**
  * ============================================================================
@@ -61,14 +62,23 @@ export async function alimAramaKosulu(
      * "Bu ürün hangi alımda geldi?" operasyonun en sık sorularından biri ve
      * cevabı hiçbir ekranda yoktu. Ürün adı, SKU, Firma SKU ve barkod aranır.
      */
-    { items: { some: { variant: { sku: { contains: arama } } } } },
-    { items: { some: { variant: { companySku: { contains: arama } } } } },
-    { items: { some: { variant: { barcode: { contains: arama } } } } },
-    {
-      items: {
-        some: { variant: { product: { name: { contains: arama } } } },
-      },
-    },
+    /**
+     * ⚠ EŞDEĞER KODLAR AÇILIR (K100, 30.08.2026) — UPC-A ↔ EAN-13.
+     * Okuyucudan 13 hane gelen bir barkod, katalogda 12 hane yazılıysa
+     * `contains` ile BULUNAMAZ (sorgu alandan uzun). Rol kümesi değişmedi.
+     */
+    ...kodEsdegerleri(arama).flatMap(
+      (e): Prisma.PurchaseWhereInput[] => [
+        { items: { some: { variant: { sku: { contains: e } } } } },
+        { items: { some: { variant: { companySku: { contains: e } } } } },
+        { items: { some: { variant: { barcode: { contains: e } } } } },
+        {
+          items: {
+            some: { variant: { product: { name: { contains: e } } } },
+          },
+        },
+      ],
+    ),
   ];
 
   const sade = ayraclariAt(arama);

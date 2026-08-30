@@ -184,7 +184,12 @@
     "ayrilmisRozeti": "",
     "yasSuzgeci": "",
     "nedenYonUyumsuz": "",
-    "karlilikKarti": ""
+    "karlilikKarti": "",
+    "siralaEtiket": "",
+    "siralaAd": "",
+    "siralaAdet": "",
+    "siralaHareket": "",
+    "sifirGizle": ""
   },
   "Urunler": {
     "baslik": "",
@@ -2956,7 +2961,12 @@
     "kategoriYok": "",
     "desiSatiri": "",
     "desiYok": "",
-    "urunSayfasi": ""
+    "urunSayfasi": "",
+    "birimSatisFiyati": "",
+    "birimSatisFiyatiNotu": "",
+    "satilanMaliyet": "",
+    "satilanMaliyetNotu": "",
+    "satilanAdet": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",

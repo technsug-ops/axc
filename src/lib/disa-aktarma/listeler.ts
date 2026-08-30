@@ -17,6 +17,8 @@ import { odemeMetni } from "@/lib/gider-odemesi";
 import { prisma } from "@/lib/prisma";
 
 import type { Sayfa } from "./xlsx";
+import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
+import { stoguVarMi } from "@/lib/stok-siralama";
 
 /**
  * ============================================================================
@@ -457,13 +459,18 @@ async function urunlerSayfasi(p: Parametreler): Promise<Sayfa> {
   const urunler = await prisma.product.findMany({
     where: arama
       ? {
-          OR: [
-            { name: { contains: arama } },
-            { brand: { contains: arama } },
-            { variants: { some: { sku: { contains: arama } } } },
-            { variants: { some: { companySku: { contains: arama } } } },
-            { variants: { some: { barcode: { contains: arama } } } },
-          ],
+          /**
+           * ⚠ EŞDEĞER KODLAR (K100) — EKRANLA AYNI KÜME. Dışa aktarma
+           * ekranın süzgecini birebir taşımak zorunda: biri barkodu bulup
+           * öteki bulamazsa Excel ekrandan farklı bir liste üretir.
+           */
+          OR: kodEsdegerleri(arama).flatMap((e) => [
+            { name: { contains: e } },
+            { brand: { contains: e } },
+            { variants: { some: { sku: { contains: e } } } },
+            { variants: { some: { companySku: { contains: e } } } },
+            { variants: { some: { barcode: { contains: e } } } },
+          ]),
         }
       : undefined,
     include: {
@@ -640,12 +647,13 @@ async function stokSayfasi(p: Parametreler): Promise<Sayfa> {
   const varyantlar = await prisma.productVariant.findMany({
     where: arama
       ? {
-          OR: [
-            { sku: { contains: arama } },
-            { companySku: { contains: arama } },
-            { barcode: { contains: arama } },
-            { product: { name: { contains: arama } } },
-          ],
+          /** ⚠ EŞDEĞER KODLAR (K100) — ekranla aynı küme. */
+          OR: kodEsdegerleri(arama).flatMap((e) => [
+            { sku: { contains: e } },
+            { companySku: { contains: e } },
+            { barcode: { contains: e } },
+            { product: { name: { contains: e } } },
+          ]),
         }
       : undefined,
     include: {
@@ -656,18 +664,32 @@ async function stokSayfasi(p: Parametreler): Promise<Sayfa> {
     orderBy: { sku: "asc" },
   });
 
-  const satirlar = varyantlar.map((v) => [
-    v.product.name,
-    v.product.brand,
-    v.name,
-    v.sku,
-    v.companySku,
-    v.barcode,
-    v.location?.code,
-    // Stok = ledger toplamı; kolon olarak tutulmuyor, türetiliyor.
-    v.stockMovements.reduce((toplam, h) => toplam + h.quantityDelta, 0),
-    v.isActive ? ortak("aktif") : ortak("pasif"),
-  ]);
+  /**
+   * ⚠ EKRANIN SIFIR SÜZGECİ EXCEL'E DE İŞLER (K101, 30.08.2026).
+   * İşlemeseydi ekran 230 satır gösterirken indirilen dosyada 1104 satır
+   * olurdu ve muhasebeye giden belge ekranı yalanlardı. Ölçüt paylaşılan
+   * `stoguVarMi` gövdesinden geliyor — iki yerde iki eşik olmaz.
+   */
+  const sifirGizlensin = p.stok === "var";
+
+  const satirlar = varyantlar
+    .map((v) => ({
+      v,
+      // Stok = ledger toplamı; kolon olarak tutulmuyor, türetiliyor.
+      adet: v.stockMovements.reduce((toplam, h) => toplam + h.quantityDelta, 0),
+    }))
+    .filter(({ adet }) => !sifirGizlensin || stoguVarMi(adet))
+    .map(({ v, adet }) => [
+      v.product.name,
+      v.product.brand,
+      v.name,
+      v.sku,
+      v.companySku,
+      v.barcode,
+      v.location?.code,
+      adet,
+      v.isActive ? ortak("aktif") : ortak("pasif"),
+    ]);
 
   return {
     ad: tBaslik("stok"),

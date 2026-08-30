@@ -328,7 +328,40 @@ export default async function KartSayfasi({
             </p>
           ) : (
             <>
+              {/*
+                ═══ KÂR CÜMLESİ SOLDAN SAĞA OKUNUR (K102, 30.08.2026) ═══
+                ⛔ KULLANICI BULGUSU: blokta maliyet, NET-2 ve marj vardı,
+                **satış fiyatı hiçbir yerde yoktu** — "%6,0 marj" yazıyordu
+                ama neyin %6'sı olduğu okunamıyordu. Maliyet ayrı bölümdeydi
+                (yukarıda "Maliyet ve hız"), üstelik ORADAKİ maliyet ELDE
+                KALAN partilerin ortalaması: satılan malın maliyeti DEĞİL.
+                İki rakam yan yana konsa birbirini yalanlardı.
+
+                ⭐ Şimdi dört kutu bir cümle kuruyor ve dördü de AYNI
+                paydadan (`hesaplananAdet`) okunuyor:
+
+                    satış fiyatı − maliyet − kesintiler = NET-2
+                    marj = NET-2 / satış fiyatı
+
+                ⚠ MALİYET BURADA `satilanBirimMaliyeti` — sermaye veriminin
+                de paydası. Hesaplanıyordu ama HİÇBİR EKRANDA GÖSTERİLMİYORDU;
+                "0.08x" kutusu paydasını söylemeden duruyordu.
+              */}
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <Kutu
+                  etiket={t("birimSatisFiyati")}
+                  deger={p(ozet.birimSatisFiyati)}
+                  not={t("birimSatisFiyatiNotu")}
+                />
+                <Kutu
+                  etiket={t("satilanMaliyet")}
+                  deger={p(ozet.satilanBirimMaliyeti)}
+                  not={
+                    ozet.satilanBirimMaliyeti === null
+                      ? t("maliyetBilinmiyor")
+                      : t("satilanMaliyetNotu")
+                  }
+                />
                 <Kutu
                   etiket={t("birimNet")}
                   deger={p(ozet.birimNet2)}
@@ -342,6 +375,19 @@ export default async function KartSayfasi({
                   etiket={t("marj")}
                   deger={ozet.marj === null ? null : `%${ozet.marj.toFixed(1)}`}
                 />
+              </div>
+
+              {/* ── İKİNCİ SIRA: BAĞLAM ─────────────────────────────────
+                  ⚠ SATILAN ADET BURAYA GİRDİ (kullanıcı: "satış miktarı yok
+                  burda"). "Satış geçmişi" bölümünde duruyordu ama kâr
+                  cümlesinin ÖLÇEĞİ o: ₺203,70 birim kâr, 1 adette ₺203,70 —
+                  100 adette bambaşka bir iştir. Ölçeksiz birim rakam,
+                  kararın büyüklüğünü gizler. */}
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <Kutu
+                  etiket={t("satilanAdet")}
+                  deger={String(ozet.toplamAdet)}
+                />
                 <Kutu
                   etiket={t("sermayeVerimi")}
                   deger={
@@ -351,15 +397,27 @@ export default async function KartSayfasi({
                   }
                   not={t("sermayeVerimiNotu")}
                 />
-                <Kutu
-                  etiket={t("sonSatisNet")}
-                  deger={p(ozet.sonSatisNet2)}
-                  vurgu={
-                    ozet.sonSatisNet2 === null
-                      ? ""
-                      : DURUM_YAZISI[karDurumu(ozet.sonSatisNet2)]
-                  }
-                />
+                {/*
+                  ⚠ TEK SATIŞTA GÖSTERİLMEZ — VE BU BİR ÖLÇÜM SONUCUDUR.
+                  `sonSatisNet2` ile `birimNet2` tek satışlı üründe MATEMATİK
+                  OLARAK aynı sayıdır (ikisi de o tek kalemden çıkar); ekran
+                  görüntüsünde ikisi de ₺203,70 yazıyordu. Aynı rakamı iki
+                  kutuda göstermek, ikinci kutuyu bilgi sanan okura yeni bir
+                  şey söylemez — yalnız alanı harcar (İlke #12).
+                  Çok satışlı üründe İKİSİ AYRIŞIR (ortalama ↔ son) ve o
+                  zaman gerçekten iki ayrı bilgidir; kutu geri gelir.
+                */}
+                {ozet.tekSatisMi ? null : (
+                  <Kutu
+                    etiket={t("sonSatisNet")}
+                    deger={p(ozet.sonSatisNet2)}
+                    vurgu={
+                      ozet.sonSatisNet2 === null
+                        ? ""
+                        : DURUM_YAZISI[karDurumu(ozet.sonSatisNet2)]
+                    }
+                  />
+                )}
               </div>
 
               {/* TEK SATIŞ UYARISI — marj tek başına yanıltır. */}

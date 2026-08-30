@@ -8,6 +8,7 @@ import {
 
 import type { Prisma } from "@/generated/prisma/client";
 import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
+import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 
 /**
  * ============================================================================
@@ -186,23 +187,29 @@ export function satisKosulu(
       ? {
           AND: [
             {
-              OR: [
-                { code: { contains: arama } },
+              /**
+               * ⚠ EŞDEĞER KODLAR AÇILIR (K100, 30.08.2026) — UPC-A ↔ EAN-13.
+               * Okuyucudan 13 hane gelen barkod katalogda 12 hane yazılıysa
+               * `contains` BULAMAZ: sorgu alandan uzundur. Rol kümesi ve
+               * `isActive` şartları DEĞİŞMEDİ.
+               */
+              OR: kodEsdegerleri(arama).flatMap((e) => [
+                { code: { contains: e } },
                 /**
                  * GÖNDERİ (TAKİP) NUMARASI — K41①, 24.08.2026.
                  * Depoda elindeki kâğıtta hangisi yazıyorsa onu arar;
                  * "hangi kod hangi kutuya ait" ezberlemek zorunda kalmaz.
                  */
-                { shipmentCode: { contains: arama } },
-                { items: { some: { variant: { sku: { contains: arama } } } } },
+                { shipmentCode: { contains: e } },
+                { items: { some: { variant: { sku: { contains: e } } } } },
                 {
                   items: {
-                    some: { variant: { companySku: { contains: arama } } },
+                    some: { variant: { companySku: { contains: e } } },
                   },
                 },
                 {
                   items: {
-                    some: { variant: { barcode: { contains: arama } } },
+                    some: { variant: { barcode: { contains: e } } },
                   },
                 },
                 /** PAZARYERİ SKU'su — kullanıcı isteği 17.08.2026. */
@@ -211,7 +218,7 @@ export function satisKosulu(
                     some: {
                       variant: {
                         channelSkus: {
-                          some: { channelSku: { contains: arama } },
+                          some: { channelSku: { contains: e } },
                         },
                       },
                     },
@@ -220,11 +227,11 @@ export function satisKosulu(
                 {
                   items: {
                     some: {
-                      variant: { product: { name: { contains: arama } } },
+                      variant: { product: { name: { contains: e } } },
                     },
                   },
                 },
-              ],
+              ]),
             },
           ],
         }

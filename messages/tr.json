@@ -184,7 +184,12 @@
     "ayrilmisRozeti": "{sayi} ayrıldı",
     "yasSuzgeci": "{gun}+ gündür bekleyenler",
     "nedenYonUyumsuz": "Seçilen neden bu yönde kullanılamaz. Nedeni ya da yönü değiştirin.",
-    "karlilikKarti": "Kârlılık kartı"
+    "karlilikKarti": "Kârlılık kartı",
+    "siralaEtiket": "Sırala:",
+    "siralaAd": "Ürün adı",
+    "siralaAdet": "Adet",
+    "siralaHareket": "Son hareket",
+    "sifirGizle": "Sıfır stokluları gizle"
   },
   "Urunler": {
     "baslik": "Ürünler",
@@ -2956,7 +2961,12 @@
     "kategoriYok": "kategori girilmemiş",
     "desiSatiri": "desi {desi}",
     "desiYok": "desi girilmemiş",
-    "urunSayfasi": "Düzenle / alım gir →"
+    "urunSayfasi": "Düzenle / alım gir →",
+    "birimSatisFiyati": "Satış fiyatı / adet",
+    "birimSatisFiyatiNotu": "kâr hesaplanabilen satışların ortalaması",
+    "satilanMaliyet": "Maliyet / adet",
+    "satilanMaliyetNotu": "SATILAN malın FIFO maliyeti",
+    "satilanAdet": "Satılan adet"
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

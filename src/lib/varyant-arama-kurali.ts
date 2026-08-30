@@ -78,13 +78,71 @@ export const SATIS_ROLLERI = KOD_ROLLERI.filter(
  * ürünü göstermemeli, yoksa kapatılan listing hâlâ ürün getirir.
  */
 export function aramaKosulu(sorgu: string) {
-  return [
-    { sku: { contains: sorgu } },
-    { companySku: { contains: sorgu } },
-    { barcode: { contains: sorgu } },
-    { channelSkus: { some: { channelSku: { contains: sorgu }, isActive: true } } },
-    { product: { name: { contains: sorgu } } },
-  ];
+  /**
+   * ⚠ EŞDEĞERLER SERBEST METİNDE DE GEÇERLİ — VE BURASI DAHA SİNSİ.
+   * `contains` uzun bir sorguyu KISA bir alanda bulamaz: aranan
+   * `0194644037598`, kayıtlı `194644037598`den UZUN olduğu için hiçbir
+   * satırı tutturmaz. Yani "kısmi eşleşme zaten yakalar" sanısı yanlıştır.
+   */
+  return kodEsdegerleri(sorgu).flatMap((e) => [
+    { sku: { contains: e } },
+    { companySku: { contains: e } },
+    { barcode: { contains: e } },
+    { channelSkus: { some: { channelSku: { contains: e }, isActive: true } } },
+    { product: { name: { contains: e } } },
+  ]);
+}
+
+/**
+ * ============================================================================
+ *  UPC-A ↔ EAN-13 — AYNI KODUN İKİ YAZILIŞI (K100, 30.08.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI VAKA: Halil `/yerlestir`de `0194644037598` okuttu, ekran
+ *  "Bu kod ne ürün ne raf olarak bulundu" dedi. Baştaki sıfır ELLE silinince
+ *  ürün çıktı (Soundcore K20i Mor-A3994). Bilgi sistemde VARDI; arama
+ *  sormuyordu — yani ekran susmuyor, YANLIŞ CEVAP veriyordu.
+ *
+ *  UPC-A 12 hanedir. EAN-13, aynı kodun başına `0` konmuş hâlidir; okuyucu
+ *  ve kamera çoğu kez 13 haneli hâli döndürür, katalogda ise 12 hane yazılı.
+ *  İki dize farklı, ürün AYNI.
+ *
+ *  ── ⛔ KURAL ÖLÇÜLDÜ, "MAKUL GÖRÜNDÜĞÜ" İÇİN YAZILMADI ──────────────────
+ *  "Baştaki sıfırı kırp" makul görünür ve tam bu yüzden tehlikelidir: bu
+ *  kodlar TAM eşleşmeyle aranıyor ve yanlış eşleşme YANLIŞ ÜRÜNE yazar
+ *  (stok yanlış rafa, satış yanlış varyanta). Sorulan soru "kırpmak doğru
+ *  mu" değil, **"kırpınca iki AYRI ürün aynı koda düşüyor mu"** oldu.
+ *
+ *  `npm run canli:barkod-sifir` (30.08.2026, salt okuma, n=1104 varyant):
+ *
+ *      12 hane (UPC-A)                 104        13 hane      925
+ *      kural YÜZÜNDEN çakışan anahtar    0        ZATEN çakışan  0
+ *      kuralla KURTARILAN okuma        104        (katalogun %9,4'ü)
+ *      gönderi numarası 12/13 hane       0        → o role hiç dokunmuyor
+ *
+ *  Beş kod rolünün (barkod · Firma SKU · SKU · Kanal SKU · gönderi no)
+ *  beşinde de çakışma sıfır. _(Anayasa: "bir sınırın yönü ölçülmeden
+ *  çevrilmez" — burada yön de değeri de ölçüldü.)_
+ *
+ *  ── ⚠ BEYAN EDİLEN SINIR: YALNIZ 12 ↔ 13 ───────────────────────────────
+ *  Katalogda 14 haneli (GTIN-14) 3 barkod var ve onların eşdeğerliği
+ *  ÖLÇÜLMEDİ; kural onlara DOKUNMUYOR. Ölçmeden genişletmek, ölçülmemiş bir
+ *  sınırı koda gömmek olurdu. Bir GTIN-14 okuması kaçarsa açılış şartı
+ *  budur: aynı ölçüm 14 hane için koşulur.
+ *
+ *  ⚠ VE "BÜTÜN BAŞTAKİ SIFIRLARI KIRP" DEĞİL: `011120272536` katalogda
+ *  GERÇEKTEN sıfırla başlayan 12 haneli bir koddur. Hepsini kırpan bir kural
+ *  onu `11120272536`ya indirir ve başka bir kümeye taşırdı. Kural tam olarak
+ *  bir hane ekler/çıkarır, fazlasını değil.
+ * ============================================================================
+ */
+export function kodEsdegerleri(kod: string): string[] {
+  const k = kod.trim();
+  const cikti = new Set<string>([k]);
+  /** EAN-13 → UPC-A: 13 hane ve baştaki hane `0` ise o hane atılır. */
+  if (/^\d{13}$/.test(k) && k.startsWith("0")) cikti.add(k.slice(1));
+  /** UPC-A → EAN-13: 12 hanenin başına `0` eklenir. */
+  if (/^\d{12}$/.test(k)) cikti.add("0" + k);
+  return [...cikti];
 }
 
 /**
@@ -103,9 +161,15 @@ export function aramaKosulu(sorgu: string) {
 const VARYANT_KOD_ALANLARI = ["barcode", "companySku", "sku"] as const;
 
 export function kodKosulu(kod: string) {
+  /**
+   * ⚠ TAM EŞLEŞME KORUNUYOR — GEVŞEMİYOR. `in` bir KÜMEYE tam eşleşmedir;
+   * kısmi eşleşme değildir. Eşdeğerler ölçülmüş bir denkliktir (UPC-A ↔
+   * EAN-13), "benzeyen kod" değil. _(Bkz. `kodEsdegerleri`.)_
+   */
+  const kodlar = kodEsdegerleri(kod);
   return [
-    ...VARYANT_KOD_ALANLARI.map((alan) => ({ [alan]: kod })),
-    { channelSkus: { some: { channelSku: kod, isActive: true } } },
+    ...VARYANT_KOD_ALANLARI.map((alan) => ({ [alan]: { in: kodlar } })),
+    { channelSkus: { some: { channelSku: { in: kodlar }, isActive: true } } },
   ];
 }
 
@@ -126,9 +190,17 @@ export function kodKosulu(kod: string) {
  * ============================================================================
  */
 export function kodKosuluToplu(kodlar: string[]) {
+  /**
+   * ⚠ EŞDEĞERLER BURADA DA AÇILIR. İçe aktarma yüzlerce kodu tek seferde
+   * çözüyor; tek kodluk yol (`kodKosulu`) denkliği bilip toplu yol bilmeseydi
+   * aynı barkod EKRANDA bulunur, İÇE AKTARMADA kaçardı — ve kaçış sessiz
+   * olurdu (satır "ürün bulunamadı" diye düşer).
+   * _(Anayasa: "kapsam genişlemesi, bağımlı listelerin de genişlemesidir".)_
+   */
+  const genis = [...new Set(kodlar.flatMap(kodEsdegerleri))];
   return [
-    ...VARYANT_KOD_ALANLARI.map((alan) => ({ [alan]: { in: kodlar } })),
-    { channelSkus: { some: { channelSku: { in: kodlar }, isActive: true } } },
+    ...VARYANT_KOD_ALANLARI.map((alan) => ({ [alan]: { in: genis } })),
+    { channelSkus: { some: { channelSku: { in: genis }, isActive: true } } },
   ];
 }
 

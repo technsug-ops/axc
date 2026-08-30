@@ -183,6 +183,32 @@ export function birimKar(satir: UrunSatiri): number | null {
 }
 
 /**
+ * ============================================================================
+ *  ADET BAŞINA SATIŞ FİYATI — KÂR CÜMLESİNİN İLK TERİMİ (K102, 30.08.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ KULLANICI BULGUSU: ürün kartında maliyet vardı, NET-2 vardı, marj
+ *  vardı — **satış fiyatı hiçbir yerde yoktu.** Ekran "%6,0 marj" diyordu
+ *  ama neyin %6'sı olduğu okunamıyordu; operatör kârın hangi fiyattan
+ *  çıktığını göremeden fiyat kararı veremez.
+ *
+ *  ⚠ PAYDA `hesaplananAdet` — `adet` DEĞİL. Marj ve birim kâr da bu paydayı
+ *  kullanıyor (`marjYuzdesi` · `birimKar`) ve üçü aynı kalem kümesinden
+ *  okunmak ZORUNDA: pay hesaplanabilmiş kalemlerden gelirken payda TÜM
+ *  kalemlerden gelseydi fiyat olduğundan DÜŞÜK çıkar ve
+ *
+ *      marj = birimNet2 / birimSatisFiyati
+ *
+ *  eşitliği ekranda tutmazdı. Kullanıcı üç kutuya bakıp dördüncüyü kafadan
+ *  doğrulayamayınca hangisinin bozuk olduğunu arar.
+ *  _(Anayasa: "sonda parametresi ekranın parametresi değildir" — burada üç
+ *  kutu aynı parametreden okunuyor.)_
+ */
+export function birimSatisFiyati(satir: UrunSatiri): number | null {
+  if (satir.hesaplananAdet <= 0) return null;
+  return satir.hesaplananCiro / satir.hesaplananAdet;
+}
+
+/**
  * Marja göre sıralama. Marjı hesaplanamayan ürün listeye GİRMEZ — sıfır
  * sayılıp "en düşük marjlı" gibi görünmesi, olmayan bir bulguyu gerçek gibi
  * göstermek olurdu (toplam kâr listesindeki kuralın aynısı).
