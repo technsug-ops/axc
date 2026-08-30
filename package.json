@@ -158,6 +158,7 @@
     "canli:eksik-bag": "tsx scripts/canli-eksik-bag.ts",
     "canli:sayim-maliyeti": "tsx scripts/canli-sayim-maliyeti.ts",
     "canli:satis-duzeltme": "tsx scripts/canli-satis-duzeltmeleri.ts",
+    "parti-bagi:dogrula": "tsx scripts/parti-bagi-dogrula.ts",
     "canli:guncel-stok-kiyas": "tsx scripts/canli-guncel-stok-kiyas.ts",
     "canli:mukerrer-olcum": "tsx scripts/canli-mukerrer-olcum.ts",
     "canli:sayim-2": "tsx scripts/canli-sayim-2.ts",

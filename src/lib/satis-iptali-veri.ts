@@ -204,7 +204,30 @@ export async function iptalUygula(girdi: {
           locationId: h.locationId,
           unitCostAmount: h.birimMaliyet,
           unitCostCurrency: h.birimMaliyetParaBirimi as never,
-          sourceMovementId: h.sourceMovementId,
+          /**
+           * ⛔ `sourceMovementId` VERİLMİYOR — ÖLÇÜLDÜ 30.08.2026 (K96).
+           *
+           * Bu hareket POZİTİF. `acikPartiler` pozitif her hareketi bir
+           * PARTİ sayar; aynı hareket `sourceMovementId` de taşırsa eski
+           * partinin tüketimini de geri alır. Aynı adet **iki kez**
+           * FIFO'ya girer: ledger 1, FIFO 2.
+           *
+           * ⭐ ÖLÇÜM: defterdeki 14 `SALE_CANCEL_IN`in 12'sinde bu alan
+           * BOŞ; dolu olan 2'si 30.08'de elle yazılmıştı ve **ayrışan tam
+           * o iki varyanttı** (`axcali1633` · `axcali3134`). Alan
+           * boşaltılınca ayrışma 2 → 0.
+           *
+           * ⚠ VE BUGÜNE KADAR PATLAMAMASI TESADÜFTÜ: iptal edilen
+           * satışların `SALE_OUT`larında kaynak zaten boştu. **Aynı gün
+           * eksik bağlar kapatıldı** (`canli:eksik-bag`), yani artık her
+           * çıkışın kaynağı var — bir sonraki iptal bu hatayı kesin
+           * üretirdi. Kendi düzeltmemiz riski tetikledi.
+           *
+           * ⚠ KAYIP BİLGİ YOK: geri dönen mal YENİ bir parti oluşturur ve
+           * maliyeti çıkışın maliyetinden AYNEN kopyalanır (yukarıda).
+           * "Hangi partiye döndü" sorusunun cevabı FIFO'da anlamsız —
+           * tüketilmiş parti kapanmıştır.
+           */
         },
       });
     }
