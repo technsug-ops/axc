@@ -561,7 +561,21 @@ for (const [ad, fn] of [
   ["kodKosulu", "export function kodKosulu(kod: string) {"],
   ["kodKosuluToplu", "export function kodKosuluToplu(kodlar: string[]) {"],
 ] as const) {
-  const g = blok(kuralKaynak, fn, 380);
+  /**
+   * ⚠ PENCERE 30.08.2026'DA ÖLÇÜLEREK BÜYÜTÜLDÜ (380 -> 900).
+   *
+   * K100 (UPC-A <-> EAN-13) iki gövdeye de `kodEsdegerleri(...)` çağrısı ve
+   * gerekçesini ekledi; 380 karakterlik pencere `channelSkus` ile
+   * `isActive: true` satırlarına ARTIK ULAŞMIYORDU ve beş ölçüt kırmızı
+   * yandı. **Kod doğruydu — pencere kısaydı.**
+   *
+   * Ölçüldü: gereken en uzun mesafe `kodKosuluToplu` içinde 639 karakter.
+   * Pay bırakılarak 900 seçildi; gövdeler yine büyürse bu satır YENİDEN
+   * ölçülür — tahmin edilmez.
+   * _(Anayasa: "kapsam daraltılır — VE pencere ÖLÇÜLÜR"; aynı tuzak bugün
+   * `stok-siralama:dogrula`da da yaşandı.)_
+   */
+  const g = blok(kuralKaynak, fn, 900);
   kontrol(`${ad} bulundu`, g.length > 0);
   kontrol(
     `${ad} ortak alan listesinden türüyor`,
