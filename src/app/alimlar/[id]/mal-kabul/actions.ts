@@ -8,24 +8,24 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { sonSayimTarihleri, sayimGecersizlestir } from "@/lib/sayim-damgasi";
+import {
+  israrGecerliMi,
+  SAYIM_ISRAR_SEBEPLERI,
+  sayimKorumasi,
+  type SayimIsrari,
+  type SayimIsrarSebebi,
+} from "@/lib/sayim-korumasi";
 import { alimDurumunuHesapla, kalemTeslimAlinanlar } from "@/lib/stok";
-
-/**
- * SAYIM KORUMASI YOK: kapı bu yola HENÜZ BAĞLANMADI (K84, 29.08.2026).
- *
- * Kural ve saf gövde hazır (`lib/sayim-korumasi.ts`), bekçisi koşuyor
- * (`sayim-korumasi:dogrula`). Eksik olan tek şey KULLANICI TARAFI:
- * duraksama bir soru sorar ve "ısrar edersen iz bırakarak geçer" yolu
- * gerektirir; o ekran yok. Kapıyı ekransız bağlamak, meşru bir işi
- * SESSİZCE kilitlerdi — anayasadaki "kural doğru mu değil, teslim
- * edilebilir mi" süzgeci tam burada durduruyor.
- *
- * Bu beyan bir gerekçe DEĞİL, BORÇ KAYDIDIR: yeni açılan bir yol bekçiye
- * takılır ve bu satırı kopyalamak zorunda kalan kişi borcu görür.
- */
 
 export type MalKabulDurumu = {
   hatalar?: string[];
+  /**
+   * ⭐ SAYIM KAPISI DURAKSATTI — form ısrar bloğunu ÇİZSİN diye.
+   * ⚠ Ekran bu bayrağa bakarak bloğu açar; sunucu yine de kendi ölçütünü
+   * koşar. Tek gövde, iki yerden çağrılıyor.
+   */
+  sayimDuraksatti?: boolean;
 };
 
 /** Sözlükten çözülen çeviri işlevi. */
@@ -99,6 +99,7 @@ export async function malKabulEt(
     return { hatalar: [t("teslimTarihiGecersiz")] };
   }
 
+
   const alim = await prisma.purchase.findUnique({
     where: { id: alimId },
     include: { items: true },
@@ -148,6 +149,91 @@ export async function malKabulEt(
     hatalar.push(t("enAzBirAdet"));
   }
   if (hatalar.length) return { hatalar };
+
+  /**
+   * ═══ SAYIM KAPISI ════════════════════════════════════════════════════════
+   *
+   * ⭐ ANAYASA: **FİZİKSEL SAYIM SON SÖZDÜR.** Teslim tarihi kullanıcıdan
+   * geliyor; geç girilen bir mal kabulü sayımdan ÖNCEYE düşebilir.
+   *
+   * ⚠ YÖN ARTIRAN VE MEŞRU — VE BU ÖLÇÜLDÜ: 29.08.2026'da sayımdan sonra
+   * yazılan 15 geriye dönük hareketin **hepsi `PURCHASE_IN`**di, yani
+   * gerçekten olmuş mal kabulleri. Yasaklamak çalışan bir işi kilitlerdi.
+   *
+   * ⛔ AMA SESSİZ DE GEÇMEZ: mal sayım sırasında raftaysa **SAYAN KİŞİ ONU
+   * ZATEN SAYDI**; geriye dönük alım aynı malı İKİNCİ KEZ ekler ve stok
+   * ŞİŞER. Kullanıcı ısrar ederse geçer — sebebiyle ve izle.
+   *
+   * ⚠ KAPI KALEM BAŞINA ÖLÇÜLÜR, ISRAR MAL KABUL BAŞINA: teslim tarihi tek.
+   */
+  const kabulEdilenler = veri.satirlar.filter((s) => s.saglam > 0);
+  const varyantIdleri = [
+    ...new Set(
+      kabulEdilenler.map((s) => kalemHaritasi.get(s.purchaseItemId)!.variantId),
+    ),
+  ];
+  const sonSayimlar = await sonSayimTarihleri(prisma, varyantIdleri);
+  const duraksayanlar: string[] = [];
+  for (const satir of kabulEdilenler) {
+    const kalem = kalemHaritasi.get(satir.purchaseItemId)!;
+    const karar = sayimKorumasi({
+      sonSayimIsTarihi: sonSayimlar.get(kalem.variantId) ?? null,
+      hareketIsTarihi: tarih,
+      /** ⚠ Mal kabul giriştir — işaret ARTI. */
+      adet: satir.saglam,
+    });
+    if (karar.sonuc === "DURAKSA") duraksayanlar.push(kalem.variantId);
+  }
+  if (duraksayanlar.length > 0) {
+    /**
+     * ⛔ SUNUCU EKRANA GÜVENMEZ — aynı saf gövde burada da koşuyor.
+     */
+    const israr: SayimIsrari = {
+      onaylandi: String(formData.get("sayimIsrariOnay") ?? "") === "1",
+      sebep: (SAYIM_ISRAR_SEBEPLERI as readonly string[]).includes(
+        String(formData.get("sayimIsrariSebep") ?? ""),
+      )
+        ? (String(formData.get("sayimIsrariSebep")) as SayimIsrarSebebi)
+        : null,
+      aciklama: String(formData.get("sayimIsrariAciklama") ?? ""),
+    };
+    const g = israrGecerliMi(israr);
+    if (!g.gecerli) {
+      return {
+        hatalar: [
+          t("sayimIsrariArtiran", { adet: duraksayanlar.length }),
+          g.eksik === "onay"
+            ? t("sayimIsrariOnayGerek")
+            : g.eksik === "sebep"
+              ? t("sayimIsrariSebepGerek")
+              : t("sayimIsrariAciklamaGerek"),
+        ],
+        sayimDuraksatti: true,
+      };
+    }
+    /**
+     * ⚠ İSTİSNA GEÇTİ — İZ İKİ YERE. `AuditLog` geçmişe bakan, damga
+     * ileriye bakan; biri ötekinin yerine geçmez.
+     */
+    const an = new Date();
+    await sayimGecersizlestir(prisma, duraksayanlar, an);
+    await prisma.auditLog.create({
+      data: {
+        action: "SAYIM_KORUMASI_ISTISNASI",
+        targetType: "Purchase",
+        targetId: alimId,
+        detail: JSON.stringify({
+          yol: "/alimlar/[id]/mal-kabul",
+          yon: "ARTIRAN",
+          teslimTarihi: tarih.toISOString(),
+          sebep: israr.sebep,
+          aciklama: israr.aciklama.trim() || null,
+          varyantlar: duraksayanlar,
+          sonuc: "SAYIM GECERSIZLESTI — bu varyantlar yeniden sayilmali.",
+        }),
+      },
+    });
+  }
 
   // Raf seçimleri geçerli mi?
   const rafIdleri = [

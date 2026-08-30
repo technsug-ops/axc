@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { gecTeslimMi } from "@/lib/uyari/gec-teslim";
-import { DURUM_YAZISI } from "@/lib/renkler";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { SAYIM_ISRAR_SEBEPLERI } from "@/lib/sayim-korumasi";
 import { useActionState, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { PackageCheck, TriangleAlert } from "lucide-react";
@@ -82,6 +83,14 @@ export function MalKabulFormu({
   siparisTarihi: string;
 }) {
   const t = useTranslations("MalKabul");
+
+  /**
+   * ⭐ SAYIM KAPISI ISRARI — MAL KABUL BAŞINA (kalem başına DEĞİL).
+   * Kapıyı tetikleyen şey TESLİM TARİHİ ve mal kabulün tek tarihi var.
+   */
+  const [israrOnay, setIsrarOnay] = useState(false);
+  const [israrSebep, setIsrarSebep] = useState("");
+  const [israrAciklama, setIsrarAciklama] = useState("");
   const tOnay = useTranslations("MalKabulOnay");
   const tOrtak = useTranslations("Ortak");
 
@@ -434,6 +443,71 @@ export function MalKabulFormu({
       </Card>
 
       <HataOzeti hatalar={durum.hatalar} />
+
+      {/*
+        ═══ SAYIM KORUMASI — ISRAR BLOĞU ═════════════════════════════════
+        ⭐ ANAYASA: "uyarı SORAR, kullanıcı ISRAR ederse istisna kaydedilir."
+
+        ⚠ YÖN ARTIRAN VE MEŞRU — ölçüldü: sayımdan sonra yazılan 15 geriye
+        dönük hareketin hepsi gerçek mal kabulüydü. Yasaklamak çalışan bir
+        işi kilitlerdi. Ama sessiz de geçmez: mal sayım sırasında raftaysa
+        SAYAN KİŞİ ONU ZATEN SAYDI ve aynı mal ikinci kez eklenir.
+      */}
+      {durum.sayimDuraksatti ? (
+        <div
+          className={`space-y-3 rounded-md border border-dashed p-3 text-xs ${DURUM_KUTUSU.uyari}`}
+        >
+          <p className="font-medium">{t("sayimIsrariBaslik")}</p>
+          <div className="space-y-1">
+            <Label htmlFor="mk-israr-sebep">{t("sayimIsrariSebepEtiketi")}</Label>
+            <select
+              id="mk-israr-sebep"
+              name="sayimIsrariSebep"
+              form="mal-kabul-formu"
+              value={israrSebep}
+              onChange={(e) => setIsrarSebep(e.target.value)}
+              className="border-input bg-background h-11 w-full rounded-md border px-3 text-xs md:h-10"
+            >
+              <option value="">—</option>
+              {SAYIM_ISRAR_SEBEPLERI.map((sb) => (
+                <option key={sb} value={sb}>
+                  {t(`sayimSebep_${sb}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          {/* ⚠ `DIGER` kapalı listenin kaçak deliği — açıklama ZORUNLU. */}
+          {israrSebep === "DIGER" ? (
+            <div className="space-y-1">
+              <Label htmlFor="mk-israr-aciklama">
+                {t("sayimIsrariAciklamaEtiketi")}
+              </Label>
+              <Input
+                id="mk-israr-aciklama"
+                name="sayimIsrariAciklama"
+                form="mal-kabul-formu"
+                value={israrAciklama}
+                onChange={(e) => setIsrarAciklama(e.target.value)}
+                className="h-11 md:h-10"
+              />
+            </div>
+          ) : (
+            <input type="hidden" name="sayimIsrariAciklama" form="mal-kabul-formu" value="" />
+          )}
+          <label className="flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              name="sayimIsrariOnay"
+              form="mal-kabul-formu"
+              value="1"
+              className="mt-0.5 size-4 shrink-0"
+              checked={israrOnay}
+              onChange={(e) => setIsrarOnay(e.target.checked)}
+            />
+            <span>{t("sayimIsrariOnayMetni")}</span>
+          </label>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         {/* Stok hareketi geri alınamaz — onay zorunlu (#6). */}

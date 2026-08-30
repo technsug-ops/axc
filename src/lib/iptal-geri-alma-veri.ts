@@ -11,17 +11,18 @@ import {
 } from "@/lib/iptal-geri-alma";
 
 /**
- * SAYIM KORUMASI YOK: kapı bu yola HENÜZ BAĞLANMADI (K84, 29.08.2026).
+ * SAYIM KORUMASI YOK: bu yol hareketin İŞ TARİHİNİ **ŞU AN** yazıyor
+ * (`girdi.an = new Date()`, çağıran: app/satislar/[id]/geri-al-actions.ts). Sayım damgası da geçmişte
+ * ya da bugünde; dolayısıyla `hareketIsTarihi >= sonSayimIsTarihi` HER
+ * ZAMAN doğru ve kapı `SERBEST` döner — çağırmak ölçüm yapmadan bir
+ * satır eklemek olurdu.
  *
- * Kural ve saf gövde hazır (`lib/sayim-korumasi.ts`), bekçisi koşuyor
- * (`sayim-korumasi:dogrula`). Eksik olan tek şey KULLANICI TARAFI:
- * duraksama bir soru sorar ve "ısrar edersen iz bırakarak geçer" yolu
- * gerektirir; o ekran yok. Kapıyı ekransız bağlamak, meşru bir işi
- * SESSİZCE kilitlerdi — anayasadaki "kural doğru mu değil, teslim
- * edilebilir mi" süzgeci tam burada durduruyor.
+ * ⚠ ÖLÇÜLDÜ, VARSAYILMADI (30.08.2026): dosyadaki tüm `occurredAt`
+ * YAZIMLARI `girdi.an`. `occurredAt: satis.iptalTarihi` bir OKUMA kosulu (findMany WHERE) — ayna hareketleri bulmak icin; yazma degil.
  *
- * Bu beyan bir gerekçe DEĞİL, BORÇ KAYDIDIR: yeni açılan bir yol bekçiye
- * takılır ve bu satırı kopyalamak zorunda kalan kişi borcu görür.
+ * ⛔ AÇILIŞ ŞARTI: bu yol bir gün kullanıcıdan tarih almaya başlarsa beyan
+ * DÜŞER ve kapı bağlanır. Bekçi bunu kendiliğinden yakalar — `occurredAt`
+ * sabit olmaktan çıktığı an dosya yeniden kapsama girer.
  */
 
 /**

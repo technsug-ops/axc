@@ -10,17 +10,24 @@ import { yetkiIste } from "@/lib/yetki";
 import type { Currency } from "@/generated/prisma/enums";
 
 /**
- * SAYIM KORUMASI YOK: kapı bu yola HENÜZ BAĞLANMADI (K84, 29.08.2026).
+ * SAYIM KORUMASI YOK: **BU YOL SAYIMIN KENDİSİDİR.**
  *
- * Kural ve saf gövde hazır (`lib/sayim-korumasi.ts`), bekçisi koşuyor
- * (`sayim-korumasi:dogrula`). Eksik olan tek şey KULLANICI TARAFI:
- * duraksama bir soru sorar ve "ısrar edersen iz bırakarak geçer" yolu
- * gerektirir; o ekran yok. Kapıyı ekransız bağlamak, meşru bir işi
- * SESSİZCE kilitlerdi — anayasadaki "kural doğru mu değil, teslim
- * edilebilir mi" süzgeci tam burada durduruyor.
+ * Kapı, sayılmış bir stoğu SONRADAN gelen kayıtlardan korur. Sayımın
+ * kendisini kapıya sokmak, korunacak damgayı YAZAN işlemi o damgayla
+ * engellemek olurdu — ve her sayım bir öncekine takılırdı.
  *
- * Bu beyan bir gerekçe DEĞİL, BORÇ KAYDIDIR: yeni açılan bir yol bekçiye
- * takılır ve bu satırı kopyalamak zorunda kalan kişi borcu görür.
+ * ⚠ VE İKİNCİ SAYIM MEŞRUDUR, ÖLÇÜLDÜ: 29.08.2026'da iki tur sayıldı ve
+ * ikinci tur birincinin rakamını DÜZELTTİ (`axcali2723` 7 → 6,
+ * `axcali2177` 9 → 7, `KUC-PH-10000-01` 1 → 2, `axcali2686` 3 → 4).
+ * Kapı burada çalışsaydı ikinci tur ısrar ekranı isterdi ve sayım işi bir
+ * onay törenine dönerdi.
+ *
+ * ⭐ VE GEÇERSİZLEŞTİRME BURADA TERS YÖNDE İŞLER: yeni sayım eski damgayı
+ * ZATEN tazeliyor — `sonSayimTarihleri` en büyük `occurredAt`i okur.
+ * Ayrı bir işaret gerekmiyor.
+ *
+ * ⛔ AÇILIŞ ŞARTI YOK — bu bir borç kaydı DEĞİL, kalıcı ve gerekçeli
+ * muafiyet. _(Anayasa: "muafiyet gerekçesiz verilemez"; gerekçe burada.)_
  */
 
 /**

@@ -639,7 +639,19 @@
     "kaydet": "Mal Kabulü Kaydet",
     "altNot": "{kod} · Kısmi kabul yapabilirsiniz; kalan adetler için daha sonra tekrar mal kabul edersiniz.",
     "teslimGecUyari": "⚠ Sipariş {gun} gün önce verilmiş. Teslim gerçekten bu tarihte mi oldu? Geçmiş bir alım giriyorsan tarihi düzelt.",
-    "teslimTersUyari": "⚠ Teslim tarihi sipariş tarihinden ÖNCE. Bu mümkün değil — birini düzelt."
+    "teslimTersUyari": "⚠ Teslim tarihi sipariş tarihinden ÖNCE. Bu mümkün değil — birini düzelt.",
+    "sayimIsrariArtiran": "⚠ {adet} üründe SAYIM VAR ve teslim tarihi sayımdan ÖNCE — sayan kişi o malı zaten saymış olabilir, aynı mal ikinci kez eklenebilir.",
+    "sayimIsrariOnayGerek": "Devam etmek için onay kutusunu işaretleyin.",
+    "sayimIsrariSebepGerek": "Devam etmek için bir sebep seçin.",
+    "sayimIsrariAciklamaGerek": "\"Diğer\" seçildiğinde açıklama zorunludur.",
+    "sayimIsrariBaslik": "Sayım koruması",
+    "sayimIsrariOnayMetni": "Anlıyorum, yine de kaydet — bu ürünlerin sayımı geçersizleşecek ve yeniden sayılmaları gerekecek.",
+    "sayimIsrariSebepEtiketi": "Sebep",
+    "sayimIsrariAciklamaEtiketi": "Açıklama",
+    "sayimSebep_GEC_GIRILEN_ALIM": "Geç girilen alım (mal gerçekten geldi)",
+    "sayimSebep_GEC_GIRILEN_SATIS": "Geç girilen satış (mal gerçekten çıktı)",
+    "sayimSebep_SAYIM_HATALI": "Sayım yanlıştı, kayıt doğru",
+    "sayimSebep_DIGER": "Diğer — açıklama zorunlu"
   },
   "Menu": {
     "operasyon": "Operasyon",
