@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Selliora</title>
+<meta name="description" content="Çok kanallı e-ticaret operasyon sistemi. Panel, kârlılık hesabı, stok ve depo takibi, ürün analizi, fiyat denemesi ve yönlendirmeli paketleme tek defterde.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Selliora">
+<meta property="og:description" content="Ekranda kârlı görünen satış, gerçekte zarardaydı. Kesintiler tahmin değil, ölçüm.">
+<meta property="og:locale" content="tr_TR">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body, h1, h2, h3, h4, p, ul, figure, blockquote { margin: 0; }
+  img, svg { display: block; max-width: 100%; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --kagit:      #ECEDEF;
+    --kagit-alt:  #E3E5E8;
+    --murekkep:   #111820;
+    --murekkep-2: #3D4750;
+    --murekkep-3: #6E7981;
+    --cetvel:     #CDD2D7;
+    --cetvel-2:   #DBDFE3;
+    --kadran:     #2E6F8E;
+    --kadran-yum: #DCE7EC;
+    --zarar:      #A33A2E;
+
+    --display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --govde:   "Newsreader", Georgia, "Times New Roman", serif;
+    --veri:    "IBM Plex Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
+
+    --olcu: 1180px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --kagit:      #0E1318;
+      --kagit-alt:  #141A21;
+      --murekkep:   #E4E8EB;
+      --murekkep-2: #AAB4BC;
+      --murekkep-3: #7C868F;
+      --cetvel:     #29323A;
+      --cetvel-2:   #1E262D;
+      --kadran:     #6FB2CE;
+      --kadran-yum: #16303C;
+      --zarar:      #E0796A;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --kagit:      #0E1318;
+    --kagit-alt:  #141A21;
+    --murekkep:   #E4E8EB;
+    --murekkep-2: #AAB4BC;
+    --murekkep-3: #7C868F;
+    --cetvel:     #29323A;
+    --cetvel-2:   #1E262D;
+    --kadran:     #6FB2CE;
+    --kadran-yum: #16303C;
+    --zarar:      #E0796A;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--kagit);
+    color: var(--murekkep);
+    font-family: var(--govde);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .sinir { max-width: var(--olcu); margin: 0 auto; padding: 0 28px; }
+
+  .defter { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 0 34px; align-items: start; }
+  @media (max-width: 820px) { .defter { grid-template-columns: 1fr; gap: 10px; } }
+
+  .serit {
+    font-family: var(--veri); font-size: 11px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--murekkep-3);
+    padding-top: .55em; border-top: 2px solid var(--murekkep);
+  }
+  @media (max-width: 820px) { .serit { border-top: none; padding-top: 0; } }
+
+  .bolum { padding: 76px 0; border-top: 1px solid var(--cetvel); }
+
+  h1, h2, h3, h4 { font-family: var(--display); font-weight: 700; text-wrap: balance; margin: 0; }
+  h2 { font-size: clamp(28px, 3.6vw, 42px); line-height: 1.1; letter-spacing: -.02em; }
+  h3 { font-size: 20px; line-height: 1.22; letter-spacing: -.01em; }
+  h4 { font-size: 17px; line-height: 1.25; }
+  p { margin: 0; max-width: 62ch; }
+  .yig { display: flex; flex-direction: column; gap: 18px; }
+  .yig-s { display: flex; flex-direction: column; gap: 8px; }
+  .sonuc { color: var(--murekkep-2); }
+
+  /* ── Hero ──────────────────────────────────────────────────────── */
+  .tepe { padding: 68px 0 54px; }
+  .marka { font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: .3em; text-transform: uppercase; }
+  .marka span { color: var(--murekkep-3); letter-spacing: .06em; font-weight: 500; font-size: 13px; text-transform: none; margin-left: 14px; }
+  .tez {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(36px, 6vw, 70px); line-height: .99;
+    letter-spacing: -.035em; margin: 24px 0 0; max-width: 16ch;
+  }
+  .tez em { font-style: normal; color: var(--kadran); }
+  .alt-tez { margin-top: 20px; font-size: 20px; color: var(--murekkep-2); max-width: 56ch; }
+
+  .kanit { margin-top: 46px; border-top: 2px solid var(--murekkep); border-bottom: 2px solid var(--murekkep); background: var(--kagit-alt); }
+  .kanit-bas { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; align-items: baseline; padding: 13px 18px; border-bottom: 1px solid var(--cetvel); }
+  .etiket { font-family: var(--veri); font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--murekkep-3); }
+  .satir { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 16px; align-items: baseline; padding: 10px 18px; border-bottom: 1px solid var(--cetvel-2); font-family: var(--veri); font-size: 14px; }
+  .satir .ad { color: var(--murekkep-2); }
+  .satir .tutar { font-variant-numeric: tabular-nums; font-weight: 500; }
+  .satir.dus .tutar { color: var(--zarar); }
+  .satir.toplam { border-bottom: none; border-top: 2px solid var(--murekkep); padding-top: 14px; padding-bottom: 16px; }
+  .satir.toplam .ad { color: var(--murekkep); font-weight: 600; }
+  .satir.toplam .tutar { font-weight: 600; font-size: 20px; }
+  .satir.toplam .tutar.eksi { color: var(--zarar); }
+  .kanit-not { padding: 13px 18px; font-size: 14px; color: var(--murekkep-2); border-top: 1px solid var(--cetvel); }
+  .kanit-not b { font-weight: 600; color: var(--murekkep); }
+
+  /* ── Modül ızgarası ────────────────────────────────────────────── */
+  .moduller { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1px; background: var(--cetvel); border: 1px solid var(--cetvel); }
+  .modul { background: var(--kagit); padding: 22px 20px 24px; display: flex; flex-direction: column; gap: 11px; }
+  .modul .kod { font-family: var(--veri); font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--kadran); }
+  .modul p { font-size: 15.5px; color: var(--murekkep-2); }
+  .modul ul { margin: 3px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .modul li { font-size: 14.5px; color: var(--murekkep-2); padding-left: 15px; position: relative; line-height: 1.45; }
+  .modul li::before { content: "—"; position: absolute; left: 0; color: var(--murekkep-3); }
+
+  /* ── Öne çıkan tek özellik ─────────────────────────────────────── */
+  .vitrin { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,320px); gap: 40px; align-items: start; }
+  @media (max-width: 900px) { .vitrin { grid-template-columns: 1fr; gap: 26px; } }
+  .kart { border: 2px solid var(--murekkep); background: var(--kagit-alt); }
+  .kart-bas { padding: 12px 16px; border-bottom: 1px solid var(--cetvel); }
+  .kart .satir { font-size: 13.5px; padding: 9px 16px; }
+  .kart .satir.kazanan { background: var(--kadran-yum); }
+  .kart .satir.kazanan .ad { color: var(--murekkep); font-weight: 600; }
+
+  /* ── Akış ──────────────────────────────────────────────────────── */
+  .akis { display: flex; flex-direction: column; gap: 1px; background: var(--cetvel); border-block: 1px solid var(--cetvel); }
+  .adim { background: var(--kagit); display: grid; grid-template-columns: 50px minmax(0,1fr); gap: 18px; padding: 18px 4px; align-items: start; }
+  .adim .no { font-family: var(--veri); font-size: 12px; font-weight: 600; color: var(--kadran); letter-spacing: .1em; padding-top: .3em; }
+
+  .kutular { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--cetvel); border: 1px solid var(--cetvel); }
+  .kutu { background: var(--kagit); padding: 15px; display: flex; flex-direction: column; gap: 5px; }
+  .kutu .say { font-family: var(--veri); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .kutu .ne { font-size: 14px; color: var(--murekkep-2); line-height: 1.35; }
+
+  .ilke { border-left: 3px solid var(--kadran); padding: 4px 0 4px 22px; font-size: clamp(19px, 2.3vw, 25px); line-height: 1.35; font-style: italic; max-width: 32ch; }
+
+  .kapanis { background: var(--kagit-alt); border-top: 2px solid var(--murekkep); }
+  /* İletişim — defter kimliğiyle aynı: mono yüz, tabular rakam, tek kural çizgisi. */
+  .iletisim { display: flex; flex-direction: column; gap: 7px; align-items: flex-start; }
+  .iletisim a {
+    display: inline-block;
+    font-family: var(--veri); font-size: clamp(21px, 2.8vw, 28px); font-weight: 500;
+    font-variant-numeric: tabular-nums; letter-spacing: .01em;
+    color: var(--murekkep); text-decoration: none;
+    border-bottom: 2px solid var(--kadran);
+    padding: 4px 0 7px; /* dokunma alanı telefonda rahat kalsın */
+  }
+  .iletisim a:hover { color: var(--kadran); }
+  .dip { padding: 24px 0 56px; font-family: var(--veri); font-size: 12px; color: var(--murekkep-3); }
+
+  a { color: var(--kadran); }
+  a:focus-visible { outline: 2px solid var(--kadran); outline-offset: 3px; }
+</style>
+</head>
+<body>
+<div class="sinir">
+
+  <header class="tepe">
+    <div class="marka">Selliora <span>çok kanallı e-ticaret operasyon sistemi</span></div>
+    <h1 class="tez">Ekranda kârlı görünen satış, <em>gerçekte zarardaydı.</em></h1>
+    <p class="alt-tez">
+      Alıştan paketlemeye kadar bütün operasyon tek defterde — ve her satışın
+      gerçek sonucu, pazaryerinin kendi belgesinden ölçülmüş kesintilerle
+      hesaplanır.
+    </p>
+
+    <div class="kanit">
+      <div class="kanit-bas">
+        <span class="etiket">Gerçek satış · Trendyol · 15.01.2026</span>
+        <span class="etiket">Ürün KDV %20 · komisyon %20</span>
+      </div>
+      <div class="satirlar">
+        <div class="satir"><span class="ad">Satış fiyatı</span><span class="tutar">₺6.284,00</span></div>
+        <div class="satir dus"><span class="ad">Mal maliyeti (FIFO)</span><span class="tutar">−₺4.799,00</span></div>
+        <div class="satir dus"><span class="ad">Komisyon %20</span><span class="tutar">−₺1.256,80</span></div>
+        <div class="satir dus"><span class="ad">Platform hizmet bedeli</span><span class="tutar">−₺13,19</span></div>
+        <div class="satir dus"><span class="ad">Kargo</span><span class="tutar">−₺185,00</span></div>
+        <div class="satir dus"><span class="ad">Stopaj %1</span><span class="tutar">−₺52,37</span></div>
+        <div class="satir dus"><span class="ad">Ödenecek KDV</span><span class="tutar">−₺5,00</span></div>
+        <div class="satir toplam"><span class="ad">NET-2</span><span class="tutar eksi">−₺27,36</span></div>
+      </div>
+      <p class="kanit-not">
+        Brüt farka bakan bir tablo bu satış için <b>₺1.485,00 kâr</b> yazardı.
+        Aradaki <b>₺1.512,36</b>, kalem kalem ölçülen kesintilerdir.
+      </p>
+    </div>
+  </header>
+
+  <!-- ═══ MODÜLLER — sayfanın ana işi ═══════════════════════════════ -->
+  <section class="bolum defter">
+    <div class="serit">Ne var</div>
+    <div class="yig">
+      <h2>Operasyonun tamamı, sekiz ekranda</h2>
+      <div class="moduller">
+
+        <div class="modul">
+          <span class="kod">Panel</span>
+          <h4>Güne nereden bakılır</h4>
+          <p>Bugünün cirosu, NET-1 ve NET-2, marj ve bekleyen işler tek ekranda.</p>
+          <ul>
+            <li>Görev kutusu: kargoya verilmeyen, kârı hesaplanamayan, eksik veri</li>
+            <li>14 ve 30 günlük nakit takvimi — hakediş ve kart borcu birlikte</li>
+            <li>Her rakama tıklayınca onu üreten liste süzülmüş hâlde açılır</li>
+          </ul>
+        </div>
+
+        <div class="modul">
+          <span class="kod">Kârlılık</span>
+          <h4>Bir satıştan gerçekte ne kalıyor</h4>
+          <p>İki net rakam: NET-1 stopaj düşülmüş, NET-2 ödenecek KDV de düşülmüş.</p>
+          <ul>
+            <li>Maliyet FIFO partisinden gelir, ortalamadan değil</li>
+            <li>Komisyon oranı satış anında kayda damgalanır; sonradan değişse hesap kaymaz</li>
+            <li>Maliyet bilinmiyorsa kâr yazılmaz — sıfır sayılmaz</li>
+          </ul>
+        </div>
+
+        <div class="modul">
+          <span class="kod">Stok</span>
+          <h4>Elimde ne var, nereden geldi</h4>
+          <p>Parti bazlı defter. Kayıt silinmez; düzeltme ters işaretli hareketle yapılır.</p>
+          <ul>
+            <li>Her çıkış hangi partiden düştüğünü ve o partinin maliyetini taşır</li>
+            <li>Negatif stok ve defter–FIFO ayrışması otomatik denetlenir</li>
+            <li>Alım, iade, sayım farkı ve düzeltme aynı defterde</li>
+          </ul>
+        </div>
+
+        <div class="modul">
+          <span class="kod">Depo</span>
+          <h4>Ürün fiziksel olarak nerede</h4>
+          <p>Raf düzeni tarif edilir, kodlar üretilir, etiketler basılır.</p>
+          <ul>
+            <li>Etiket üç gösterim taşır: Code128, QR ve okunabilir kod — üçü aynı değer</li>
+            <li>Rafı okut, ürünleri peş peşe okut; konum yazılır, eski yeri de kaydedilir</li>
+            <li>Fiziksel sayım esastır: sayılmış raf sonradan sessizce ezilemez</li>
+          </ul>
+        </div>
+
+        <div class="modul">
+          <span class="kod">Alış · Satış</span>
+          <h4>İki yönlü defter</h4>
+          <p>Sipariş girme, mal kabul, iade, gider ve kredi kartı borcu.</p>
+          <ul>
+            <li>Mal kabulde parti açılır, maliyet ve raf birlikte kaydedilir</li>
+            <li>İade satış kalemine bağlanır, mal stoğa döner, kâr yeniden hesaplanır</li>
+            <li>Excel dosyalarından toplu içe aktarma; her aktarım öncesi kuru koşum</li>
+          </ul>
+        </div>
+
+        <div class="modul">
+          <span class="kod">Analiz</span>
+          <h4>Hangi ürün gerçekten kazandırıyor</h4>
+          <p>Ürün ve kanal bazında kârlılık, marj ve sermaye verimi.</p>
+          <ul>
+            <li>Kârlılık kartı: bir ürünün bütün kanallardaki net sonucu yan yana</li>
+            <li>Yaşlanma bandı: sermayenin hangi üründe ne kadar beklediği</li>
+            <li>Dönem karşılaştırma ve dışa aktarma</li>
+          </ul>
+        </div>
+
+        <div class="modul">
+          <span class="kod">Fiyat denemesi</span>
+          <h4>Kaça satsam, nerede satsam</h4>
+          <p>Bir fiyat yazarsınız; sistem bütün kanallar için sonucu hesaplar.</p>
+          <ul>
+            <li>Kanal kanal NET-2 ve başabaş fiyat</li>
+            <li>Komisyon dilimi sınıra yakınsa daha kârlı alt dilim önerilir</li>
+            <li>Kargo firmaları o desi için yan yana — en ucuzu işaretli</li>
+          </ul>
+        </div>
+
+        <div class="modul">
+          <span class="kod">Paketleme</span>
+          <h4>Yönlendirmeli hazırlık</h4>
+          <p>Kargo kodunu okutun; gerisini sistem söyler.</p>
+          <ul>
+            <li>Hangi ürün, kaç adet, hangi raftan — ekranda yazar</li>
+            <li>Raftan aldığınız ürünü okutunca eşleşme sesli ve görsel doğrulanır</li>
+            <li>Yanlış ürün akışı durdurmaz, bilgi verir</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ VİTRİN — fiyat denemesi ═══════════════════════════════════ -->
+  <section class="bolum defter">
+    <div class="serit">Öne çıkan</div>
+    <div class="vitrin">
+      <div class="yig">
+        <h2>Aynı ürün, farklı kanal, farklı sonuç</h2>
+        <p class="sonuc">
+          Kanalların kesinti yapısı birbirinden farklı: biri komisyona KDV
+          ekliyor, biri sipariş başına sabit bedel alıyor, kargo tarifesi
+          desiye göre değişiyor. Aynı fiyat her yerde aynı kârı bırakmaz.
+        </p>
+        <p class="sonuc">
+          Fiyat denemesi ekranı bir fiyat yazdığınızda bütün kanalları
+          hesaplar — ve hangisinde satmanız gerektiğini rakamla söyler.
+          Ürünü kaça alacağınıza karar verirken de aynı ekran kullanılır.
+        </p>
+        <p class="sonuc">
+          Bu hesabı önceden yapmamanın bedeli tek bir talihsiz satış değil.
+          Yandaki iki rakam bu sistemin kendi defterinden sayıldı: zarar
+          eden satışların büyük çoğunluğu, satış anında <b>kârlı
+          görünüyordu.</b>
+        </p>
+      </div>
+      <div class="kart">
+        <div class="kart-bas"><span class="etiket">Bu defterden ölçüldü</span></div>
+        <div class="satir"><span class="ad">Kârı hesaplanmış satış</span><span class="tutar">5.830</span></div>
+        <div class="satir dus"><span class="ad">Satış fiyatı maliyetin üstünde,<br>ama NET-2 zararda</span><span class="tutar">115</span></div>
+        <div class="kanit-not">
+          Tek kalemli satışlar içinde sayıldı. Bu satışların hepsi brüt
+          bakışta <b>kârlı görünüyordu</b>; kesintiler hesaba katılınca
+          zarara döndüler.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ AKIŞ ══════════════════════════════════════════════════════ -->
+  <section class="bolum defter">
+    <div class="serit">Günlük iş</div>
+    <div class="yig">
+      <h2>Bir siparişin defterdeki yolu</h2>
+      <div class="akis">
+        <div class="adim"><span class="no">01</span><div class="yig-s">
+          <h3>Mal kabul</h3>
+          <p class="sonuc">Alım girilir, ürünler rafa okutularak yerleştirilir. Her giriş bir parti açar.</p>
+        </div></div>
+        <div class="adim"><span class="no">02</span><div class="yig-s">
+          <h3>Fiyat kararı</h3>
+          <p class="sonuc">Fiyat denemesi ekranında kanal kanal net sonuç görülür; satış fiyatı rakama bakarak verilir.</p>
+        </div></div>
+        <div class="adim"><span class="no">03</span><div class="yig-s">
+          <h3>Satış</h3>
+          <p class="sonuc">Sipariş kaydedilir; o günün komisyon oranı ve kesinti kuralları satışa damgalanır.</p>
+        </div></div>
+        <div class="adim"><span class="no">04</span><div class="yig-s">
+          <h3>Toplama ve paketleme</h3>
+          <p class="sonuc">Kargo kodu okutulur, sistem rafı söyler, alınan ürün okutulunca doğrulanır.</p>
+        </div></div>
+        <div class="adim"><span class="no">05</span><div class="yig-s">
+          <h3>Kâr ve hakediş</h3>
+          <p class="sonuc">NET-1 ve NET-2 hesaplanır; pazaryeri ödeme dosyası gelince kestiği komisyon beklenenle karşılaştırılır.</p>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ AYRIM ═════════════════════════════════════════════════════ -->
+  <section class="bolum defter">
+    <div class="serit">Ayrım</div>
+    <div class="yig">
+      <h2>Kesinti kuralları tahmin değil, ölçüm</h2>
+      <p class="sonuc">
+        Dışarıdan bakan bir hesaplayıcı, bir pazaryerinin faturasında kaç satır
+        olduğunu bilemez. İki kanalda ölçüldü, ikisinde de yanıldı:
+      </p>
+      <div class="kutular">
+        <div class="kutu"><span class="say">₺8,00</span><span class="ne">HB ödeme gideri — gerçek. Dış kaynak ₺9,60 diyordu (113 siparişte ölçüldü)</span></div>
+        <div class="kutu"><span class="say">2</span><span class="ne">N11 hizmet kalemi — dış kaynak birini hiç görmemişti</span></div>
+        <div class="kutu"><span class="say">₺13,19</span><span class="ne">TY platform bedeli, sipariş başına bir kez — kalem sayısından bağımsız</span></div>
+      </div>
+      <p class="sonuc">
+        Kaynak sırası sabittir: kanalın kendi belgesi, sonra kendi defteriniz,
+        en son dış hesaplayıcı. Her kural hangi kaynaktan geldiğini ekranda
+        taşır.
+      </p>
+      <p class="ilke">Doğru sayı, yanlış çerçeve — yine yanlış hükümdür.</p>
+    </div>
+  </section>
+
+  <!-- ═══ YÖNTEM ════════════════════════════════════════════════════ -->
+  <section class="bolum defter">
+    <div class="serit">Güvence</div>
+    <div class="yig">
+      <h2>Rakamın arkasında bir disiplin var</h2>
+      <div class="kutular">
+        <div class="kutu"><span class="say">11</span><span class="ne">satış kanalı, kanal başına birden çok hesap</span></div>
+        <div class="kutu"><span class="say">68</span><span class="ne">her yayın öncesi koşan otomatik denetim</span></div>
+        <div class="kutu"><span class="say">FIFO</span><span class="ne">parti bazlı defter, kayıt silinmez</span></div>
+        <div class="kutu"><span class="say">TR</span><span class="ne">iş takvimi Europe/Istanbul’a sabit</span></div>
+      </div>
+      <p class="sonuc">
+        Kâr motoru, stok defteri ile FIFO’nun birbirini tutması, iptal
+        süzgeçleri, yedek kapsamı ve derleme — biri kırmızı yanarsa yayın
+        durur. Denetimlerin kendisi de sınanır: bir denetimin gerçekten ölçtüğü,
+        ölçtüğü davranışı bozan bir deneme kırmızı yandığı görülerek doğrulanır.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ DURUM ═════════════════════════════════════════════════════ -->
+  <section class="bolum defter">
+    <div class="serit">Durum</div>
+    <div class="yig">
+      <h2>Bugün nerede</h2>
+      <p class="sonuc">
+        Selliora şu anda <b>gerçek bir operasyonda</b> günlük olarak çalışıyor:
+        alımlar, satışlar, iadeler, sayım ve hakediş denetimi canlı veriyle
+        yürüyor. Çok müşterili sürüm hazırlanıyor.
+      </p>
+      <p class="sonuc">
+        Bu sayfadaki para rakamlarının hepsi o defterden ölçüldü — temsilî
+        örnek değil.
+      </p>
+    </div>
+  </section>
+
+  <section class="bolum kapanis defter">
+    <div class="serit">İletişim</div>
+    <div class="yig">
+      <h2>Kendi defterinizle görmek ister misiniz?</h2>
+      <p class="sonuc">
+        Bir aylık gerçek satış ve alım dosyanızı okutalım, NET-2’nizi
+        çıkaralım. Beklediğinizle arasındaki fark, sistemin ne yaptığını en
+        hızlı anlatan şeydir.
+      </p>
+      <p class="iletisim">
+        <span class="etiket">Telefon</span>
+        <a href="tel:+4915203253691">0152 0325 3691</a>
+      </p>
+    </div>
+  </section>
+
+  <div class="dip">Selliora · çok kanallı e-ticaret operasyon sistemi</div>
+
+</div>
+</body>
+</html>
