@@ -1,4 +1,4 @@
-import { kodSablonaUyuyorMu } from "@/lib/depo/sablon";
+import { kisaltmaNormalle, kodSablonaUyuyorMu } from "@/lib/depo/sablon";
 
 /**
  * ============================================================================
@@ -129,4 +129,72 @@ export function gocPlani(
  */
 export function sayimTutuyorMu(once: number, sonra: number): boolean {
   return once === sonra;
+}
+
+/**
+ * ============================================================================
+ *  KISALTMA ÇAKIŞMASI — SESSİZ BİRLEŞTİRME YOK, İŞARET VAR
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI ÖLÇÜM 30.08.2026: `Location.name` alanında `OFİS` (13 raf) ve
+ *  `Ofis` (1 raf) AYRI kayıt olarak duruyordu — aynı bölüm İKİ KİMLİK.
+ *  Türkçe `İ` JavaScript'te `i`ye inmez, bu yüzden fark gözle bile zor
+ *  görülüyor.
+ *
+ *  ⚠ SESSİZ BİRLEŞTİRME ZATEN YOK — göç eşlemesi ELLE kurulur ve sistem
+ *  hiçbir rafı kendiliğinden taşımaz. Eksik olan şey UYARIydı: kullanıcı
+ *  iki adın aynı kısaltmaya indiğini GÖREMİYORDU ve ikisini iki ayrı bölüm
+ *  sanıp iki kez tarif edebilirdi.
+ *
+ *  ⭐ HÜKMÜ KULLANICI VERİR. Bu gövde yalnız SÖYLER: "bu iki ad aynı
+ *  kısaltmaya iniyor". Hangisinin kalacağını depoyu bilen seçer —
+ *  `gocPlani`nin kendi gerekçesiyle aynı ilke.
+ * ============================================================================
+ */
+
+export type KisaltmaCakismasi = {
+  /** İki adın da indiği ortak kısaltma. */
+  kisaltma: string;
+  /** Çakışan kaynak adlar — ekranda olduğu gibi gösterilir. */
+  adlar: string[];
+};
+
+/**
+ * Aynı kısaltmaya inen FARKLI adları bulur.
+ *
+ * ⚠ ADSIZ RAFLAR KAPSAM DIŞI: adı boş olan raf bir bölüm iddiası taşımıyor;
+ * onu kod önekinden türetip çakışma saymak, olmayan bir çelişki üretirdi.
+ * _(Anayasa: "sıfır üç farklı şey olabilir" — burada "ad yok" ile "ad
+ * çakışıyor" ayrı şeyler.)_
+ *
+ * ⚠ VE TEK AD ÇAKIŞMA DEĞİLDİR: `OFİS` yalnız başına geçiyorsa sorun yok.
+ * Ölçüt "aynı kısaltmaya inen BİRDEN ÇOK farklı ad".
+ */
+export function kisaltmaCakismalari(
+  raflar: readonly { ad: string | null }[],
+): KisaltmaCakismasi[] {
+  const gruplar = new Map<string, Set<string>>();
+  for (const r of raflar) {
+    const ad = (r.ad ?? "").trim();
+    const k = kisaltmaNormalle(ad);
+    /**
+     * TEK KAPI — adsız raf da, yalnız noktalamadan ibaret ad da burada durur.
+     *
+     * ⚠ ÖNCE İKİ KAPI VARDI (`ad === ""` ve `k === ""`) ve mutasyon denemesi
+     * birincisinin ÖLÇÜLEMEDİĞİNİ gösterdi: normalleştirme boş adı zaten `""`
+     * yapıyor, yani o satırı silen mutasyon davranışı hiç değiştirmiyordu.
+     * Ölçülemeyen satır, koruduğunu sandığı şeyi korumaz.
+     *
+     * ⭐ İKİNCİ KAPI DAHA GENİŞ: `—` gibi bir ad BOŞ DEĞİL ama kısaltması boş.
+     * Kapı kalkarsa bütün bu adlar `""` kısaltması altında toplanır ve
+     * birbiriyle ÇAKIŞIYOR sanılırdı — olmayan bir çelişki.
+     */
+    if (k === "") continue;
+    const küme = gruplar.get(k) ?? new Set<string>();
+    küme.add(ad);
+    gruplar.set(k, küme);
+  }
+  return [...gruplar]
+    .filter(([, adlar]) => adlar.size > 1)
+    .map(([kisaltma, adlar]) => ({ kisaltma, adlar: [...adlar].sort() }))
+    .sort((a, b) => a.kisaltma.localeCompare(b.kisaltma, "tr"));
 }

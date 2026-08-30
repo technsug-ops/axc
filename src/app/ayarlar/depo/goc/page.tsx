@@ -3,7 +3,12 @@ import Link from "next/link";
 import { ArrowRightLeft } from "lucide-react";
 
 import { GocFormu } from "@/app/ayarlar/depo/goc/goc-formu";
-import { eskiRaflar, yeniRaflar } from "@/lib/depo/goc";
+import { DURUM_KUTUSU } from "@/lib/renkler";
+import {
+  eskiRaflar,
+  kisaltmaCakismalari,
+  yeniRaflar,
+} from "@/lib/depo/goc";
 import { prisma } from "@/lib/prisma";
 import { sayfaIzni } from "@/lib/yetki";
 
@@ -45,6 +50,12 @@ export default async function GocSayfasi() {
     varyant: k._count.variants,
   }));
 
+  /**
+   * ⭐ ÇAKIŞMA ÖLÇÜTÜ SAF GÖVDEDEN — ekran kendi kuralını yazmıyor.
+   * `kisaltmaCakismalari` `depo:dogrula` ile veritabanısız sınanıyor.
+   */
+  const cakismalar = kisaltmaCakismalari(hepsi);
+
   return (
     <div className="max-w-3xl space-y-6">
       <header className="flex items-center gap-2">
@@ -59,6 +70,36 @@ export default async function GocSayfasi() {
           {t("depoyaGit")}
         </Link>
       </p>
+
+      {/*
+        ═══ ⑧ KISALTMA ÇAKIŞMASI — İŞARET, BİRLEŞTİRME DEĞİL ═══════════════
+        ⛔ CANLI ÖLÇÜM 30.08.2026: `OFİS` (13 raf) ve `Ofis` (1 raf) AYRI
+        kayıt — aynı bölüm İKİ KİMLİK. Türkçe `İ` `i`ye inmediği için fark
+        gözle bile zor görülüyor.
+
+        ⚠ SESSİZ BİRLEŞTİRME ZATEN YOKTU: eşleme ELLE kuruluyor ve sistem
+        hiçbir rafı kendiliğinden taşımıyor. Eksik olan UYARIydı — kullanıcı
+        iki adın aynı kısaltmaya indiğini GÖREMİYOR, ikisini iki ayrı bölüm
+        sanıp iki kez tarif edebiliyordu.
+
+        ⭐ HÜKMÜ KULLANICI VERİR: ekran yalnız SÖYLER, seçmez.
+        ⚠ Çakışma yoksa hiç çıkmaz — sönmeyen uyarı okunmaz olur.
+      */}
+      {cakismalar.length > 0 ? (
+        <div
+          className={`space-y-2 rounded-md border border-dashed p-3 text-sm ${DURUM_KUTUSU.uyari}`}
+        >
+          <p className="font-medium">{t("cakismaBasligi")}</p>
+          {cakismalar.map((c) => (
+            <p key={c.kisaltma}>
+              {t("cakismaSatiri", {
+                adlar: c.adlar.join(" · "),
+                kisaltma: c.kisaltma,
+              })}
+            </p>
+          ))}
+        </div>
+      ) : null}
 
       <GocFormu
         kaynaklar={eskiRaflar(hepsi)}

@@ -3466,7 +3466,9 @@
     "hataHEDEF_TEKRAR": "{kod} rafı birden çok kaynağa hedef seçilmiş. İki fiziksel rafı tek rafa çökertmek ürünleri karıştırır ve geri alınamaz; gerçekten istiyorsanız iki turda yapın.",
     "hataHEDEF_SABLONA_UYMUYOR": "{kod} şablona uymuyor; hedef ancak yeni şablonla üretilmiş bir raf olabilir.",
     "hataKAYNAK_HEDEF_AYNI": "{kod} kendisine hedef seçilmiş.",
-    "hataSayimTutmadi": "Taşıma GERİ ALINDI: taşınması gereken ürün sayısı ile taşınan sayı tutmadı. Bir bağ düşmüş olabilir — hiçbir şey değiştirilmedi."
+    "hataSayimTutmadi": "Taşıma GERİ ALINDI: taşınması gereken ürün sayısı ile taşınan sayı tutmadı. Bir bağ düşmüş olabilir — hiçbir şey değiştirilmedi.",
+    "cakismaBasligi": "Aynı kısaltmaya inen bölüm adları var",
+    "cakismaSatiri": "Bu bölüm adları aynı kısaltmaya iniyor ({kisaltma}): {adlar}. Hangisi kalacak, siz seçin — sistem kendiliğinden birleştirmez."
   },
   "MenuDuzeni": {
     "baslik": "Menü düzeni",

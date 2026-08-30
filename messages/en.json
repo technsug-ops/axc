@@ -3466,7 +3466,9 @@
     "hataHEDEF_TEKRAR": "",
     "hataHEDEF_SABLONA_UYMUYOR": "",
     "hataKAYNAK_HEDEF_AYNI": "",
-    "hataSayimTutmadi": ""
+    "hataSayimTutmadi": "",
+    "cakismaBasligi": "",
+    "cakismaSatiri": ""
   },
   "MenuDuzeni": {
     "baslik": "",

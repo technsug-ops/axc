@@ -13,6 +13,7 @@ import {
 import {
   eskiRaflar,
   gocPlani,
+  kisaltmaCakismalari,
   sayimTutuyorMu,
   yeniRaflar,
   type HedefRaf,
@@ -370,6 +371,78 @@ const TARIF: BolumTarifi = { ad: "Salon", kisaltma: "SLN", uniteSayisi: 2, gozSa
   );
   /** ⚠ Sıfırsa çıkmaz — sönmeyen not okunmaz olur. */
   kontrol("  ...bölümsüz notu SIFIRSA çıkmıyor", /bolumsuzRaf > 0 \?/.test(ekran));
+}
+
+/**
+ * ============================================================================
+ *  ⑩ KISALTMA ÇAKIŞMASI — İŞARET VAR, SESSİZ BİRLEŞTİRME YOK
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI ÖLÇÜM 30.08.2026: `OFİS` (13 raf) ve `Ofis` (1 raf) AYRI kayıt —
+ *  aynı bölüm İKİ KİMLİK. Türkçe `İ` `i`ye inmediği için fark gözle bile
+ *  zor görülüyordu.
+ *
+ *  ⚠ SESSİZ BİRLEŞTİRME ZATEN YOKTU (eşleme elle kuruluyor); eksik olan
+ *  UYARIYDI. Bu ölçüt onun KAYBOLMAMASINI sağlıyor.
+ * ============================================================================
+ */
+{
+  console.log("\n10) KISALTMA ÇAKIŞMASI");
+  /** ⭐ SAF GÖVDE ÇAĞRILIR — desen taranmaz. */
+  kontrol(
+    "OFİS + Ofis AYNI kısaltmaya iniyor ve ÇAKIŞMA sayılıyor",
+    JSON.stringify(kisaltmaCakismalari([{ ad: "OFİS" }, { ad: "Ofis" }])) ===
+      JSON.stringify([{ kisaltma: "OFIS", adlar: ["OFİS", "Ofis"] }]),
+  );
+  /** ⚠ TEK AD ÇAKIŞMA DEĞİLDİR — yoksa her bölüm uyarı üretirdi. */
+  kontrol("tek ad → çakışma YOK", kisaltmaCakismalari([{ ad: "OFİS" }]).length === 0);
+  kontrol(
+    "aynı ad iki kez → çakışma DEĞİL",
+    kisaltmaCakismalari([{ ad: "OFİS" }, { ad: "OFİS" }]).length === 0,
+  );
+  /**
+   * ⚠ ADSIZ RAF KAPSAM DIŞI: adı boş olan raf bölüm iddiası TAŞIMIYOR.
+   * Kod önekinden türetip çakışma saymak, olmayan bir çelişki üretirdi.
+   * _(Anayasa: "sıfır üç farklı şey olabilir".)_
+   */
+  /**
+   * ⚠ `—` VERİDE BİLEREK VAR: adsız raf ile "yalnız noktalama" ayrı hâllerdir
+   * ve ikisi de kısaltmasız kalır. Bu satır olmadan kapıyı kaldıran mutasyon
+   * YEŞİL kaçıyordu — eksik olan bekçi değil, örnek veriydi.
+   * _(Anayasa: "mutasyon kaçıyorsa önce test verisi sorgulanır".)_
+   */
+  kontrol(
+    "adsız VE yalnız noktalamadan ibaret adlar kapsam DIŞI",
+    kisaltmaCakismalari([{ ad: null }, { ad: "  " }, { ad: "—" }, { ad: "Salon" }])
+      .length === 0,
+  );
+  kontrol(
+    "farklı bölümler çakışmaz",
+    kisaltmaCakismalari([{ ad: "Salon" }, { ad: "Depo" }]).length === 0,
+  );
+
+  const gocEkran = readFileSync("src/app/ayarlar/depo/goc/page.tsx", "utf8");
+  kontrol("göç ekranı ölçütü SAF GÖVDEDEN çağırıyor",
+    /kisaltmaCakismalari\(hepsi\)/.test(gocEkran));
+  kontrol("  ...ve çakışmayı EKRANDA gösteriyor",
+    /t\("cakismaSatiri"/.test(gocEkran));
+  /** ⚠ Çakışma yoksa hiç çıkmaz — sönmeyen uyarı okunmaz olur. */
+  kontrol("  ...çakışma YOKSA hiç çıkmıyor", /cakismalar\.length > 0 \?/.test(gocEkran));
+  /**
+   * ⭐ VE METİN "SİZ SEÇİN" DİYOR — sistem hükmetmiyor.
+   * `gocPlani`nin kendi gerekçesiyle aynı ilke: eşleştirmeyi depoyu bilen
+   * yapar. Metin "birleştirildi" deseydi kullanıcı işin bittiğini sanardı.
+   */
+  const sozluk2 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Goc: Record<string, string>;
+  };
+  kontrol(
+    "metin HÜKMÜ KULLANICIYA bırakıyor",
+    (sozluk2.Goc.cakismaSatiri ?? "").includes("siz seçin"),
+  );
+  kontrol(
+    "  ...ve sistemin birleştirmediğini SÖYLÜYOR",
+    (sozluk2.Goc.cakismaSatiri ?? "").toLowerCase().includes("birleştirmez"),
+  );
 }
 
 console.log("");
