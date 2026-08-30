@@ -37,6 +37,16 @@ import { spawnSync } from "node:child_process";
  *
  *  ⚠ SÜRE BÜYÜRSE ÇÖZÜM BUILD'İ ÇIKARMAK DEĞİL (kullanıcı kararı):
  *  paralel koşum ya da önbellek ölçülür. Ayrı kalem.
+ *
+ *  ── ⚠ `tsconfig.json`I İLK KOŞUMDA NEXT KENDİSİ YENİDEN YAZDI ───────────
+ *  `next build` `include` listesine `.next-bekci/types` altındaki yolları
+ *  EKLEDİ ve dosyayı yeniden biçimledi. İzlenen bir dosyanın bekçi tarafından
+ *  değiştirilmesi kabul edilebilir değil, o yüzden ÖLÇÜLDÜ: değişiklik TEK
+ *  SEFERLİK. İkinci koşumdan sonra `git status` temiz kalıyor (denendi).
+ *
+ *  ⚠ Var olmayan `include` yolu zararsızdır; `.next-bekci` hiç üretilmemiş
+ *  bir makinede `tsc` yine çalışır — `tsc:dogrula`nın üretilmiş yapıya
+ *  bağımlılığı 30.08'de zaten kaldırıldı (`layout.tsx`).
  * ============================================================================
  */
 
