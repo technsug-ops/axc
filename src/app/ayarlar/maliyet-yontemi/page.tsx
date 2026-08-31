@@ -4,11 +4,14 @@ import { Calculator } from "lucide-react";
 import { Baglanti } from "@/components/baglanti";
 import { prisma } from "@/lib/prisma";
 import { sayfaIzni } from "@/lib/yetki";
-import { maliyetYontemiCoz, type MaliyetYontemi } from "@/lib/maliyet-yontemi";
+import {
+  ACIK_YONTEMLER,
+  maliyetYontemiCoz,
+  type MaliyetYontemi,
+} from "@/lib/maliyet-yontemi";
 import { lotKipiCoz } from "@/lib/lot-kipi";
 import { yontemDegisimKarari } from "@/lib/maliyet-yontemi-kapisi";
 
-import { acikYontemler } from "./eylemler";
 import { YontemFormu } from "./yontem-formu";
 
 export async function generateMetadata() {
@@ -106,7 +109,7 @@ export default async function MaliyetYontemiSayfasi() {
       <YontemFormu
         mevcutYontem={mevcutYontem}
         mevcutKip={mevcutKip}
-        acikYontemler={await acikYontemler()}
+        acikYontemler={[...ACIK_YONTEMLER]}
         duraksama={duraksama}
       />
     </div>

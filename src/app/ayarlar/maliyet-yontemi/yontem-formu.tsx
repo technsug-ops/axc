@@ -204,7 +204,7 @@ export function YontemFormu({
           className="h-11 md:h-10"
           disabled={bekliyor || !degisiklikVar || !israrTamam}
         >
-          {bekliyor ? ortak("kaydediliyor") : ortak("kaydet")}
+          {bekliyor ? ortak("kaydediliyor") : ortak("degisiklikleriKaydet")}
         </Button>
         {!degisiklikVar ? (
           <p className="text-muted-foreground text-xs">{t("degisiklikYokIpucu")}</p>

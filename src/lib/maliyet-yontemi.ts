@@ -133,3 +133,22 @@ export function hareketliOrtalama(
   if (adet <= 0) return { durum: "STOK_YOK" };
   return { durum: "HESAPLANDI", birimMaliyet: deger / adet, adet };
 }
+
+/**
+ * ⛔ BUGÜN SEÇİLEBİLEN YÖNTEMLER — KAPI, LİSTE DEĞİL.
+ *
+ * Kullanıcı şartı (31.08.2026): _"bekçiler koşullanmadan
+ * `HAREKETLI_ORTALAMA` seçilebilir olmaz."_
+ *
+ * ⚠ EKRANDAN GİZLEMEK YETMEZ: seçeneği listelemesek de bir POST isteği
+ * yeter. Yazma gövdesi bu listeye bakıp reddediyor — kapı SUNUCUDA.
+ *
+ * ⚠ VE BURADA, SAF MODÜLDE: `"use server"` dosyasından dışa aktarılan her
+ * şey ağdan çağrılabilir bir uçtur. Sabit bir liste için yetki kontrolü
+ * yazmak yanlış cevaptı; doğrusu onu hiç uç yapmamak.
+ * _(`yetki:dogrula` bunu yakaladı ve haklıydı.)_
+ *
+ * Bekçiler yöntem-koşullu hâle geldiği gün burası `MALIYET_YONTEMLERI`
+ * olur ve bu blok silinir.
+ */
+export const ACIK_YONTEMLER: readonly MaliyetYontemi[] = ["FIFO"];

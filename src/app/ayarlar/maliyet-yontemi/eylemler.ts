@@ -6,7 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { yetkiIste } from "@/lib/yetki";
 import {
-  MALIYET_YONTEMLERI,
+  ACIK_YONTEMLER,
   maliyetYontemiCoz,
   type MaliyetYontemi,
 } from "@/lib/maliyet-yontemi";
@@ -16,7 +16,7 @@ import {
   yontemDegisimKarari,
   type YontemIsrarSebebi,
 } from "@/lib/maliyet-yontemi-kapisi";
-import { LOT_KIPLERI, lotKipiCoz, type LotKipi } from "@/lib/lot-kipi";
+import { lotKipiCoz } from "@/lib/lot-kipi";
 
 /**
  * ============================================================================
@@ -40,14 +40,6 @@ import { LOT_KIPLERI, lotKipiCoz, type LotKipi } from "@/lib/lot-kipi";
 const IZIN = "ayar.yaz";
 
 export type YontemSonucu = { hata?: string; basari?: string };
-
-/**
- * ⛔ BUGÜN AÇIK OLAN YÖNTEMLER — ekranın değil GÖVDENİN kapısı.
- *
- * ⚠ Bekçiler yöntem-koşullu hâle geldiğinde bu liste `MALIYET_YONTEMLERI`
- * olur ve satır silinir. O güne kadar `HAREKETLI_ORTALAMA` gövdeden geçmez.
- */
-const ACIK_YONTEMLER: readonly MaliyetYontemi[] = ["FIFO"];
 
 export async function yontemiDegistir(
   _onceki: YontemSonucu,
@@ -152,11 +144,9 @@ function donemAnahtariBugun(): string {
   return `${g.getUTCFullYear()}-${String(g.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-/** Ekranın seçenek listesi — gövdeyle AYNI kapıdan geçer. */
-export async function acikYontemler(): Promise<MaliyetYontemi[]> {
-  return MALIYET_YONTEMLERI.filter((y) => ACIK_YONTEMLER.includes(y));
-}
-
-export async function tumKipler(): Promise<LotKipi[]> {
-  return [...LOT_KIPLERI];
-}
+/**
+ * ⚠ SEÇENEK LİSTESİ ARTIK BURADA DEĞİL. Sabit bir listeyi `"use server"`
+ * dosyasından dışa aktarmak, onu ağdan çağrılabilir bir UÇ yapıyordu ve
+ * `yetki:dogrula` haklı olarak kırmızı yandı. Liste saf modülde
+ * (`lib/maliyet-yontemi.ts` → `ACIK_YONTEMLER`); ekran oradan okuyor.
+ */
