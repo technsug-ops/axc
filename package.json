@@ -259,7 +259,9 @@
     "maliyet-yontemi:dogrula": "tsx scripts/maliyet-yontemi-dogrula.ts",
     "maliyet-yontemi-mutasyon:kontrol": "tsx scripts/maliyet-yontemi-mutasyon-kontrol.ts",
     "aylik-marj:dogrula": "tsx scripts/aylik-marj-dogrula.ts",
-    "aylik-marj-mutasyon:kontrol": "tsx scripts/aylik-marj-mutasyon-kontrol.ts"
+    "aylik-marj-mutasyon:kontrol": "tsx scripts/aylik-marj-mutasyon-kontrol.ts",
+    "canli:damgasiz-denge": "tsx scripts/canli-damgasiz-denge.ts",
+    "damgasiz-denge:dogrula": "tsx scripts/damgasiz-denge-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
