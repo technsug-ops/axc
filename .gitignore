@@ -62,3 +62,7 @@ raporlar/
 # BENIOKU.md İSTİSNA — klasörün kendisi depoda görünsün diye.
 /scripts/tmp/*
 !/scripts/tmp/BENIOKU.md
+
+# Yerel canli anlik goruntuler — CANLI VERI, depoya girmez.
+# (31.08.2026: Vercel Blob deposu askiya alininca yerel yedek yolu acildi.)
+veri/yedek-yerel/
