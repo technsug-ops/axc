@@ -263,7 +263,8 @@
     "canli:damgasiz-denge": "tsx scripts/canli-damgasiz-denge.ts",
     "damgasiz-denge:dogrula": "tsx scripts/damgasiz-denge-dogrula.ts",
     "canli:yedek-dosya": "tsx scripts/canli-yedek-dosya.ts",
-    "canli:ty-urun-taramasi": "tsx scripts/canli-ty-urun-taramasi.ts"
+    "canli:ty-urun-taramasi": "tsx scripts/canli-ty-urun-taramasi.ts",
+    "canli:kanal-listeleme": "tsx scripts/canli-kanal-listeleme-yaz.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

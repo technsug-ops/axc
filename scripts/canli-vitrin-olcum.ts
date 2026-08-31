@@ -95,7 +95,7 @@ async function main() {
       else
         tyDurum.set(bk, {
           sinif: sn < mevcut.sinif ? sn : mevcut.sinif,
-          adet: mevcut.adet + q,
+          adet: mevcut.adet, // ⚠ AYNI LİSTELEME — adet TEKRAR eklenmez
         });
     }
   }

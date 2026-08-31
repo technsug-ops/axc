@@ -78,7 +78,7 @@ async function main() {
       else
         ty.set(bk, {
           sinif: sn < v.sinif ? sn : v.sinif,
-          adet: v.adet + q,
+          adet: v.adet, // ⚠ AYNI LİSTELEME — adet TEKRAR eklenmez
           baslik: v.baslik,
         });
     }
