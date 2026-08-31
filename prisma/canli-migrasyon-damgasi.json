@@ -44,6 +44,7 @@
     "20260829150000_sayim_gecersiz_damgasi",
     "20260830120000_depo_bolumu",
     "20260831090000_muhasebe_donemi",
-    "20260831160000_maliyet_yontemi"
+    "20260831160000_maliyet_yontemi",
+    "20260901090000_kanal_listeleme_durumu"
   ]
 }

@@ -397,12 +397,12 @@ model ProductVariant {
   channelSkus        ChannelSku[]
   purchaseItems      PurchaseItem[]
   saleItems          SaleItem[]
-  returnItems        ReturnItem[]    @relation("IadeVaryanti")
-  exchangeItems      ReturnItem[]    @relation("DegisimVaryanti")
-  ayrilanBildirimler ReturnNotice[]  @relation("AyrilanVaryant")
+  returnItems        ReturnItem[]      @relation("IadeVaryanti")
+  exchangeItems      ReturnItem[]      @relation("DegisimVaryanti")
+  ayrilanBildirimler ReturnNotice[]    @relation("AyrilanVaryant")
   /// 6. senaryoda YANLIŞ GİDEN (geri dönen) ürün olarak geçtiği bildirimler.
   /// Ayrılan ile aynı şey DEĞİL: ayrılan gönderilecek, dönen geri gelen.
-  donenBildirimler   ReturnNotice[]  @relation("DonenVaryant")
+  donenBildirimler   ReturnNotice[]    @relation("DonenVaryant")
   stockMovements     StockMovement[]
   sayimSatirlari     StokSayimSatiri[]
 
@@ -417,7 +417,7 @@ model ProductVariant {
   ///
   /// IZ IKI YERDE: burasi SORGU icin, `AuditLog.SAYIM_KORUMASI_ASILDI`
   /// ise gecmise bakmak icin. Bu sutun silinse bile karar izi kaybolmaz.
-  sayimGecersizAt    DateTime?
+  sayimGecersizAt DateTime?
 
   @@index([productId])
   @@index([isActive])
@@ -738,6 +738,7 @@ model ChannelAccount {
    * /**
    * /**
    * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -803,6 +804,21 @@ model ChannelSku {
   commissionUpdatedAt DateTime?
 
   isActive Boolean @default(true)
+
+  /// KANALDAKİ LİSTELEME DURUMU — pazaryerinden OKUNARAK yazılır (K121).
+  /// ⛔ BU ALAN KANALA YAZILMAZ, KANALDAN OKUNUR. Stok senkronu (kanala adet
+  /// yazma) KAPSAM DIŞI — kullanıcı şartı 01.09.2026.
+  listelemeDurumu KanalListelemeDurumu @default(BILINMIYOR)
+
+  /// Kanalın bildirdiği adet. `null` = ölçülmedi (0 DEĞİL — "sıfır adet"
+  /// ile "bakmadık" ayrı şeylerdir ve karıştırılırsa hayalet stok sayımı
+  /// yanlış çıkar).
+  kanalAdet Int?
+
+  /// Son karşılaştırma anı. `null` = hiç karşılaştırılmadı.
+  /// ⚠ EKRANDA GÖRÜNÜR ("son karşılaştırma 3 saat önce"): ölçümün YAŞI
+  /// yazılmazsa bayat bir rakam taze sanılır.
+  kanalOlcumAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1831,20 +1847,16 @@ model Expense {
 
   /**
    * GİDER HANGİ KARTLA ÖDENDİ (25.08.2026).
-   *
    * ⚠ NİYE AÇILDI: kullanıcı _"giderleri ve vergileri de kartla ödüyorum,
    * bugün 4-5 binlik vergi ödedim"_ dedi. Kart borcu `kartBorcuHesapla`
    * ile YALNIZ alımlardan hesaplanıyordu; kartla ödenen gider borçta hiç
    * görünmüyor, kart borcu ve NAKİT TAKVİMİ o kadar eksik çıkıyordu.
-   *
    * ⚠ `kartOdemesi` ALANIYLA KARIŞTIRILMAZ — o TERS yöndedir: kart
    * ekstresi ödenirken doğan gecikme faizini gidere bağlar. Bu alan ise
    * "bu gideri şu kartla ödedim" der ve karta BORÇ yazar.
-   *
    * ⚠ ADLAR ALIMLA BİREBİR AYNI (`creditCardId` · `installmentCount`):
    * iki yerde iki farklı ad, iki farklı zihin modeli demekti. Aynı ad,
    * aynı anlam, aynı hesap (`BorcAlimi`).
-   *
    * ⚠ MERDİVEN ÖLÇÜLDÜ, SÜTUNA EN SON GELİNDİ: ① mevcut alan taşımıyor
    * (`kartOdemesi` ters yönde) · ② serbest metin yetmez — borç hesabı
    * SORGU istiyor, geriye bakış değil · ③ türetilemez, hangi giderin
@@ -1855,7 +1867,6 @@ model Expense {
 
   /**
    * Taksit sayısı. 1 = tek çekim.
-   *
    * ⚠ İLK KARARDA "TAKSİT GEREK YOK" DENMİŞTİ, KULLANICI DÜZELTTİ ve
    * gerekçesi net: _"devlete peşin kartla ödüyorum, sonra banka
    * uygulamasına girip taksit seçeneği varsa böldürüyorum."_ Yani taksit
@@ -1866,15 +1877,12 @@ model Expense {
 
   /**
    * ÖDEME YÖNTEMİ — NAKİT | HAVALE | KART (25.08.2026).
-   *
    * ⚠ `null` = BELİRTİLMEDİ. Alan açılmadan önceki giderler boş kalır ve
    * ekran "belirtilmedi" der; "Nakit" varsayılmaz.
-   *
    * ⚠ `creditCardId` İLE TUTARLILIK UYGULAMA KATMANINDA BAĞLIDIR (zod):
    * KART seçiliyse kart zorunlu, KART değilse kart temizlenir. Veritabanı
    * kısıtıyla kurulmadı çünkü MySQL'de koşullu CHECK bakımı pahalı ve
    * `null` üçüncü bir hâl olarak kuralın dışında kalıyor.
-   *
    * ⚠ HESABA GİRMEZ — borç `creditCardId`den yürür. Bu alan beyan/görünüm.
    */
   odemeYontemi OdemeYontemi?
@@ -1935,7 +1943,7 @@ model User {
   /// K108 — kapattigi muhasebe donemleri. ⚠ TERS ILISKI: DB'de sutun
   /// acmaz, yabanci anahtar `MuhasebeDonemi` tarafinda. `User` tablosu
   /// DEGISMEZ — migration yalnizca yeni tabloyu yaratmali.
-  kapattigiDonemler   MuhasebeDonemi[] @relation("DonemKapatan")
+  kapattigiDonemler   MuhasebeDonemi[]  @relation("DonemKapatan")
   iadeler             Return[]
   iadeBildirimleri    ReturnNotice[]
   ekler               Attachment[]
@@ -2308,34 +2316,28 @@ model Company {
 
   /**
    * MENÜ DÜZENİ — SIRA VE GRUPLAMA, JSON METİN (K51, 25.08.2026).
-   *
    * ⚠ NİYE AÇILDI: menü sırası ÜÇ KEZ koddan değişti (22.08 yedi kalem ·
    * 25.08 `Paketle` · 25.08 kullanıcı sırayı birebir verdi). Her seferinde
    * iki dosya elden geçti, bir bekçi sınırı elle artırıldı ve bir deploy
    * beklendi. Sıralamak bir KOD işi değildir.
-   *
    * ⚠ MERDİVEN ÖLÇÜLDÜ, SÜTUNA EN SON GELİNDİ:
-   *   ① Mevcut alan: `Company`de serbest metin YOK (ölçüldü, 6 kolon). ✗
-   *   ② `AuditLog`: current-state deposu DEĞİL — menü HER RENDER'da
-   *      okunuyor, `ORDER BY createdAt DESC LIMIT 1` gerekirdi ve o tablo
-   *      "geriye bakmak" için (232 satır, sürekli büyüyor). ✗
-   *   ③ Türetilebilir mi: hayır, tercih. ✗
-   *   ④ SÜTUN ✓ — ve YENİ TABLO DEĞİL: mevcut tabloya tek nullable metin.
-   *
+   * ① Mevcut alan: `Company`de serbest metin YOK (ölçüldü, 6 kolon). ✗
+   * ② `AuditLog`: current-state deposu DEĞİL — menü HER RENDER'da
+   * okunuyor, `ORDER BY createdAt DESC LIMIT 1` gerekirdi ve o tablo
+   * "geriye bakmak" için (232 satır, sürekli büyüyor). ✗
+   * ③ Türetilebilir mi: hayır, tercih. ✗
+   * ④ SÜTUN ✓ — ve YENİ TABLO DEĞİL: mevcut tabloya tek nullable metin.
    * ⚠ FİRMA DÜZLEMİNDE, KULLANICI DÜZLEMİNDE DEĞİL. Menü sırası bir
    * operasyon standardıdır ("herkes aynı menüyü görsün"); kullanıcının
    * göremeyeceği ekranları zaten RBAC gizliyor. İleride kişisel tercih
    * istenirse `User.menuDuzeni` ÜSTTE ezen bir katman olarak eklenir —
    * bu sütun kaldırılmaz.
-   *
    * ⚠ `null` = KULLANICI HİÇ DÜZENLEMEDİ. Varsayılan düzen koddadır ve
    * bu bir eksiklik değildir.
-   *
    * ⚠ SORGULANMAZ, BÜTÜN OKUNUR: indeks yok (firma PK ile geliyor) ve
    * JSON şeması yok. Bu veri gruplanmıyor, toplanmıyor, süzülmüyor —
    * bir kerede okunup bir kerede yazılıyor. Sorgu ihtiyacı doğduğu gün
    * yapı kararı yeniden verilir.
-   *
    * ⚠ BİÇİM V2'Yİ TAŞIR: grup kaydı isteğe bağlı `ad` alanı kabul eder
    * (kullanıcının açtığı grubun adı). V1 yazmıyor, ama reddetmiyor —
    * böylece V2 bir göç değil GENİŞLEME olur.
@@ -2344,20 +2346,16 @@ model Company {
 
   /**
    * ═══ MALİYET YÖNTEMİ (K115, 31.08.2026) ═══════════════════════════════
-   *
    * Kullanıcı kararı: firma hangi maliyet motorunu kullanacağını SEÇER.
    * İlk kurulumda ya da bir dönem kapandıktan sonra değiştirilebilir.
-   *
    * ⚠ VARSAYILAN `FIFO` — VE BU BİR TERCİH DEĞİL, MEVCUT DURUMUN KORUNMASI.
    * Bu sütun eklendiği anda hiçbir rakam değişmemeli. Ölçüldü (migration
    * öncesi taban, 31.08.2026): 6.082 negatif hareketin 6.082'si partiye
    * bağlı (%100), NET-2 toplamı ₺1.713.105,5422. Migration sonrası aynı
    * üç rakam BİREBİR ölçülüp karşılaştırılıyor.
-   *
    * ⛔ YÖNTEM DEĞİŞİRSE GEÇMİŞ YENİDEN HESAPLANMAZ. Değişim ileriye
    * dönüktür; kapanmış dönemin NET'i olduğu gibi kalır. Aksi hâlde beyan
    * edilmiş vergi tutmaz.
-   *
    * ⚠ `HAREKETLI_ORTALAMA` PARTİ KAVRAMINI ORTADAN KALDIRIR: o firmada
    * `StockMovement.sourceMovementId` boş kalır ve lot izlenebilirliği
    * çalışmaz. Bu bir kusur değil yöntemin tanımıdır — ve seçen firma bunu
@@ -2367,16 +2365,13 @@ model Company {
 
   /**
    * ═══ PARTİ SEÇİM KİPİ (K115) ══════════════════════════════════════════
-   *
    * ⚠ BU BİR MALİYET YÖNTEMİ DEĞİL, BİR POLİTİKA AYARI. Üç kipte de
    * maliyet kuralı FIFO'dur; değişen tek şey PARTİYİ KİMİN SEÇTİĞİ:
-   *   FIFO   — seçici gizli, hep en eski
-   *   HIBRIT — seçici isteğe bağlı (K110 ile gelen bugünkü davranış)
-   *   LOT    — seçici zorunlu, her satırda parti seçilir
-   *
+   * FIFO   — seçici gizli, hep en eski
+   * HIBRIT — seçici isteğe bağlı (K110 ile gelen bugünkü davranış)
+   * LOT    — seçici zorunlu, her satırda parti seçilir
    * ⚠ YALNIZ `maliyetYontemi = FIFO` İKEN ANLAMLI. Hareketli ortalamada
    * parti yoktur; seçilecek bir şey kalmaz ve ayar ekranda kapanır.
-   *
    * ⚠ VARSAYILAN `HIBRIT` — bugünkü davranış. `FIFO` yapılsaydı K110 ile
    * gelen seçici sessizce kaybolurdu.
    */
@@ -2915,12 +2910,27 @@ model StokSayimSatiri {
 
 /**
  * MALİYET MOTORU (K115, 31.08.2026).
- *
  * ⚠ SIRA ÖNEMLİ VE DEĞİŞTİRİLEMEZ: MySQL'de ENUM sıralıdır (değerler
  * içeride sıra numarasıyla saklanır). Yeni değer ancak SONA eklenir.
  * _(27.08 dersi: `ReturnNotice.reason` şemada 13., veritabanında 6.
  * sıradaydı ve Prisma her migration'a sessizce bir ALTER yamıyordu.)_
  */
+/// KANAL LİSTELEME DURUMU (K121, 01.09.2026) — pazaryerinden OKUNUR, asla
+/// oraya yazılmaz. Ölçüldü (TY, 01.09.2026): stoklu 231 varyantın 27'si
+/// satılamıyor (₺263.293) ve sebep üç ayrı iş.
+///
+/// ⚠ VARSAYILAN `BILINMIYOR` VE BU BİLİNÇLİ: sütun eklendiği anda hiçbir
+/// satır ölçülmüş değildir. `ACIK` varsayılsaydı sistem hiç bakmadığı bir
+/// şey hakkında "satışa açık" diye iddia kurardı.
+enum KanalListelemeDurumu {
+  BILINMIYOR /// henüz karşılaştırılmadı — hüküm YOK, sayıya girmez
+  ACIK /// onaylı · arşivsiz · onSale · adet > 0
+  STOKSUZ /// listede var ama kanal adedi 0 → satılamıyor
+  ONAY_BEKLIYOR /// onaylanmamış ya da reddedilmiş
+  PASIF /// arşivli · kilitli · kara listede
+  YOK /// kanalda hiç listelenmemiş
+}
+
 enum MaliyetYontemi {
   /// Parti bazlı, en eskiden tüketir. Lot izlenebilirliği ÇALIŞIR.
   FIFO

@@ -1,0 +1,60 @@
+-- KANAL LISTELEME DURUMU (K121)
+--
+-- NIYE: elimizde mal olan urunler pazaryerinde SATILAMIYOR ve sistem bunu
+-- HIC BILMIYOR. Olculdu (TY, 01.09.2026, salt okuma tarama):
+--     stoklu varyant 231
+--       TY'de satisa acik            204
+--       stok bildirimi KAPALI          9   TL  26.166,85
+--       PASIF (arsiv/kilit/karaliste)  5   TL  41.685,09
+--       TY'de HIC listelenmemis       13   TL 195.440,64
+--                                    ---   -------------
+--       SATILAMIYOR                   27   TL 263.292,58
+-- Rafta yatan sermayenin %11,3'u vitrinde degil.
+--
+-- TERS YON DE OLCULDU: bizde stok 0 ama TY vitrini acik = 1 urun, 3 hayalet
+-- adet (satilirsa gonderilemez -> iptal + ceza puani).
+--
+-- MERDIVEN INILDI:
+--   1) mevcut alan: ChannelSku'da bos alan YOK; commissionRate/
+--      externalListingId'nin kendi anlami var, ikinci anlam yuklemek
+--      onlari okuyan her sorguyu kirletirdi                        HAYIR
+--   2) serbest metin: durum SORGULANACAK (panel kutusu sayiyor,
+--      /stok suzuyor); serbest metin gruplanamaz                   HAYIR
+--   3) turetilebilir mi: HAYIR — bu veri BIZDE YOK, pazaryerinden
+--      OKUNUYOR. Turetilecek bir kaynak mevcut degil               HAYIR
+--   4) SUTUN — ve YENI TABLO DEGIL: iliskiyi zaten ChannelSku
+--      tasiyor (kanal hesabi x varyant), tam dogru yer             EVET
+--
+-- ⭐ ETKI: SIFIR DAVRANIS DEGISIKLIGI. Varsayilan BILINMIYOR ve iki alan
+-- NULL; hicbir ekran bugun bu alanlari okumuyor. Sutun eklendigi anda
+-- sistem hiç bakmadigi bir sey hakkinda iddia kurmuyor.
+--
+-- ⛔ VARSAYILAN 'ACIK' DEGIL 'BILINMIYOR' — VE BU KRITIK. 'ACIK' varsayilsaydi
+-- panel kutusu "hepsi satista" der ve 27 urunluk kayip GORUNMEZ kalirdi;
+-- ustelik hiç olculmemis bir sey "olculmus ve temiz" gibi gorunurdu.
+-- (Anayasa: bilinmeyen sifira/varsayilana cevrilmez.)
+--
+-- ⛔ kanalAdet NULL EDILEBILIR VE BU DA KRITIK: "kanal 0 adet bildiriyor"
+-- ile "kanala hic bakmadik" AYRI seylerdir. Ikisi 0'da birlesseydi hayalet
+-- stok sayimi yanlis cikardi.
+--
+-- ⛔ STOK SENKRONU KAPSAM DISI: bu alanlar pazaryerinden OKUNARAK yazilir,
+-- pazaryerine ASLA yazilmaz. Kullanici sarti 01.09.2026. TY istemcisinde
+-- yazma metodu tanimli degil ve bekci bunu olcuyor.
+--
+-- ⚠ ENUM SIRASI DEGISTIRILEMEZ: MySQL'de ENUM sirali saklanir; yeni deger
+-- ancak SONA eklenir. (27.08 dersi: ReturnNotice.reason semada 13.,
+-- veritabaninda 6. siradaydi ve her migration'a sessiz bir ALTER biniyordu.)
+--
+-- GERI DONUS: uc sutun da YENI; hicbir mevcut kayit bunlara bagli degil.
+-- `ALTER TABLE ChannelSku DROP COLUMN listelemeDurumu, DROP COLUMN
+-- kanalAdet, DROP COLUMN kanalOlcumAt;` yeterli.
+--
+-- ⚠ MIGRATION ADININ SOYLEDIGI ISIN DISINA CIKMAZ: YALNIZ `ChannelSku`ya
+-- uc sutun ve bir yeni enum. Baska hicbir tabloya dokunulmuyor.
+
+-- AlterTable
+ALTER TABLE `ChannelSku`
+    ADD COLUMN `listelemeDurumu` ENUM('BILINMIYOR', 'ACIK', 'STOKSUZ', 'ONAY_BEKLIYOR', 'PASIF', 'YOK') NOT NULL DEFAULT 'BILINMIYOR',
+    ADD COLUMN `kanalAdet` INTEGER NULL,
+    ADD COLUMN `kanalOlcumAt` DATETIME(3) NULL;

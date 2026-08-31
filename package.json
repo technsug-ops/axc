@@ -262,7 +262,8 @@
     "aylik-marj-mutasyon:kontrol": "tsx scripts/aylik-marj-mutasyon-kontrol.ts",
     "canli:damgasiz-denge": "tsx scripts/canli-damgasiz-denge.ts",
     "damgasiz-denge:dogrula": "tsx scripts/damgasiz-denge-dogrula.ts",
-    "canli:yedek-dosya": "tsx scripts/canli-yedek-dosya.ts"
+    "canli:yedek-dosya": "tsx scripts/canli-yedek-dosya.ts",
+    "canli:ty-urun-taramasi": "tsx scripts/canli-ty-urun-taramasi.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
