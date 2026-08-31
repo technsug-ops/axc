@@ -13,73 +13,90 @@
 
 ---
 
-## 🔴🔴 K119 — YEDEK BORU HATTI ÖLÜ · **BU DÜZELMEDEN MIGRATION VE TOPLU YAZIM YAPILMAZ**
+## 🟠 K119 — YEDEK BORU HATTI · **DARALDI** (yazım güvenliği sağlandı)
 
-_Kullanıcı kararı 31.08.2026. Bu kalem panonun EN ÜSTÜNDE durur._
+_K119a teslim edildi 31.08.2026. Kalan: gece otomasyonu Vercel askısına bağlı._
 
-> ⛔ **KURAL — askı kalkana kadar:** migration YOK · toplu yazım YOK ·
-> onarım YOK. **Salt okuma ölçümler serbesttir** (K112b dahil) — onlar
-> yazmıyor.
+> ⛔ **KALAN KURAL:** gece otomasyonu ÇALIŞMIYOR. Migration ve toplu yazım
+> öncesi **`npm run canli:yedek-dosya`** koşulur ve doğrulaması GEÇMELİDİR.
+> Salt okuma ölçümler serbest.
 
-**Belirti:** `npm run canli:yedek` ve `npm run canli:ham-yedek` **ikisi de**
-düşüyor — `Vercel Blob: This store has been suspended.`
+### ✅ K119a — YAPILANLAR
 
-### ÖLÇÜLDÜ (31.08.2026, salt okuma; Vercel'e YAZMA denenmedi)
+**① HEDEF ARAYÜZÜ** (`src/lib/yedek-hedefi.ts`): `yaz · listele · oku · sil`.
+İki uygulama — `blobHedefi` (mevcut) ve `dosyaHedefi` (yerel, tarih damgalı).
+⚠ **OKU arayüzde ZORUNLU ve bu ölçülmüş bir karar:** 31.08'de yazma da
+listeleme de "çalışıyor" görünüyordu; kırılan şey OKUMAYDI.
+⛔ **Üretim gövdesine DOKUNULMADI** — `yedekUret`/`yedegiMetneCevir` aynen;
+elle alınan yedekle gece yedeği aynı şeyi içermeye devam ediyor.
 
-**① Depo tamamen ölü DEĞİL — ama yedekler OKUNAMIYOR.**
-`list()` ve `head()` çalışıyor: **21 yedek dosyası** görünüyor, en yenisi
-**31.08.2026 01:00:47 · 30.770.681 B**. Üstveri okunuyor.
-⛔ **AMA İÇERİK OKUNMUYOR: dört yolun DÖRDÜ DE `403`** — düz `fetch` ·
-`Authorization: Bearer` · `downloadUrl` · hepsi. Yani 21 yedek **bugün
-kullanılamaz.** _Kullanıcının kuralı: "okunamayan yedek, yedek değildir" —
-o hâlde bugün **sıfır kullanılabilir yedeğimiz var.**_
+**② TAM YEDEK ALINDI VE GERİ OKUNDU** — `npm run canli:yedek-dosya`
 
-**② YEDEKSİZ PENCERE: 31.08.2026 01:00:47'den beri (~20,5 saat).**
-⛔ **K115 MIGRATION'I BU PENCEREDE:**
+    boyut          30.864.379 B   (Blob'un son başarılısı 30.770.681 B)
+    JSON.parse     BAŞARILI
+    StockMovement  yedek 10780 · canlı 10780
+    Sale           yedek  5882 · canlı  5882
+    Purchase       yedek  1986 · canlı  1986
+    ProductVariant yedek  1108 · canlı  1108
+    alan alan      5 tuttu · 0 tutmadı
 
-    2026-08-31T15:29:32   ⛔ YEDEKSİZ   20260831160000_maliyet_yontemi
-    2026-08-30T23:04:13     yedekli     20260831090000_muhasebe_donemi
-    2026-08-30T02:25:26     yedekli     20260830120000_depo_bolumu
+⚠ **DOĞRULAYICI İLK TURDA YANLIŞ YERE BAKTI** ve dördü de `-1` döndü —
+**yedek doğruydu**, ben `cozulen.stockMovement` arıyordum; gerçek şekil
+`tablolar.StockMovement` ve tablo adları PascalCase. Düzeltildi ve dosyanın
+**kendi içindeki** `satirSayilari` beyanı ile dizi uzunluğu da ayrıca
+karşılaştırılıyor.
+⚠ **İKİNCİ KOPYA (KAS) KURULMADI** — mevcut erişim ölçülmedi, fizibilite
+notu: hedef arayüzü hazır olduğu için üçüncü bir uygulama (`sftpHedefi`)
+yazmak yalnız `yaz/oku/sil` gövdesi demek; üretim tarafına dokunulmaz.
 
-Pencerede canlıya yazılan veri: **6 stok hareketi · 2 satış · 13 alım ·
-115 denetim izi.**
+**④ `deploy:bekci`'YE SONDA EKLENDİ** — "D) YEDEK HEDEFİ — yaz · oku · sil".
+Hedef ölüyse tur KIRMIZI ve deploy durur. Mutasyon **3/3 kırmızı**
+(okuma bozuk · yazma yok · silme yok).
+⚠ **SİLME MUTASYONU İLK TURDA KAÇTI:** sonda `sil()`in döndürdüğü SAYIYA
+bakıyordu; silmeyi hiç yapmayıp `1` döndüren kurgu yeşil geçti. Ölçüt
+davranışa bağlandı — silmeden sonra **yeniden okunuyor**.
 
-**③ HEDEF GÖMÜLÜ — ama içerik üretimi ZATEN AYRIK.**
-`put()` üç yerde doğrudan çağrılıyor (`scripts/canli-yedek.ts` ·
-`scripts/canli-ham-yedek.ts` · `src/lib/yedek-yaz.ts`), klasör sabit
-(`KLASOR = "yedek"`), hedef soyutlaması yok.
-⭐ **AMA FİZİBİLİTE İYİ:** yedeğin İÇERİĞİNİ üreten gövde (`yedekUret` +
-`yedegiMetneCevir`) hedeften bağımsız — dosyaya, S3'e ya da yerele yazmak
-için üretim tarafına dokunmak gerekmiyor, yalnız `put()` çağrısının yerine
-bir hedef arayüzü konuyor. **Kod YAZILMADI** (kullanıcı şartı: sadece rapor).
+### ⏳ ASKI KALKINCA (sırası belli)
 
-⚠ **cron-job.org günlüklerine ERİŞEMİYORUM** ve tahmin etmiyorum. Ama
-01:00:47 damgalı dosyanın VARLIĞI, zamanlayıcının bugün 01:00'de
-çalıştığını gösteriyor — askı ondan SONRA başlamış olmalı.
+1. 21 eski Blob yedeğinin **geri okunurluğu** doğrulanacak (bugün `403`).
+2. Otomasyon hedefi karara bağlanacak: **yalnız Blob mu, ÇİFT HEDEF mi.**
+   _(Ölçülmüş görüş: çift hedef — tek hedefe bağlı kalmak 31.08'de sıfır
+   yedeğe düşürdü.)_
 
-### ASKI KALKINCA SIRA (kullanıcı kararı, atlanmaz)
+---
 
-1. **Gerçek yedek al.**
-2. **GERİ OKUNABİLDİĞİNİ DOĞRULA** — boyut + örnek kayıt karşılaştırması.
-   _Okunamayan yedek, yedek değildir; bugün tam bu yaşandı._
-3. **K91 yazımı** (hazır bekliyor, aşağıda).
-4. **Değişmezlik turu.**
+## 🔴 K91 — YAZIM DENENDİ, DEĞİŞMEZLİK TURU REDDETTİ, **GERİ ALINDI**
 
-### K91 — HAZIR NE VARSA HAZIR KALIYOR
+_31.08.2026. Ölçüt bir kusuru başka bir kusurla değiştiriyor._
 
-Yazım **DURDU**, hiçbir şey yazılmadı. Şart "gerçek yedek"ti; yerel anlık
-görüntü yedek SAYILMAZ (yalnız iki alanı taşır, beklenmedik kesinti
-senaryosunda varsayımları çöker).
+**YAZIM KOŞTU** (yedek doğrulaması geçtikten sonra, kilit açıldı): 63 satır.
+**DEĞİŞMEZLİK TURU:**
 
-Hazır olanlar: ölçüt **saf gövdede** (`src/lib/bag-onarim.ts`) ve kuru
-koşumun **altı sayısını da birebir** üretiyor (64 · 3861 · 1487 · 664 · 6 ·
-0) · yazım betiği **varsayılan KURU**, `--yaz` ile yazar · satır satır
-`BAG_ONARILDI` izi (eski → yeni → damga → varyant) · değişmezlik turu
-yazımdan sonra kendiliğinden koşuyor.
+    OK  hareket · negatif · satış sayısı DEĞİŞMEDİ
+    OK  NET-2 KURUŞUNA AYNI          1713105.5422 → 1713105.5422
+    OK  varyant bazında stok DEĞİŞMEDİ
+    OK  ileri partiye bağlı çıkış TAM 63 azaldı   802 → 739  ← HEDEFE ULAŞTI
+    ⛔  kalanı NEGATİF parti          1 → 32
 
-Taban (31.08.2026): hareket **10780** · negatif **6082** · satış **5843** ·
-NET-2 **1713105.5422** · ileri partiye bağlı çıkış **803** → yazımdan sonra
-**739** beklenir (tam 64 azalma).
+⛔ **ÖLÇÜTÜN EKSİĞİ BURADA GÖRÜLDÜ:** plan her çıkış için "o an açık ve
+damgaya kuruşuna eşit" **tek aday** buluyor — ama **birden çok çıkış aynı
+partiyi gösterebiliyor** ve toplamları o partinin adedini aşabiliyor.
+Simülasyon MEVCUT bağı tükettiği için (bilinçli: defterin gerçek hâlini
+üretsin diye) **önerilen hedefin KAPASİTESİ hiç ölçülmüyordu.**
+
+✅ **GERİ ALINDI VE DOĞRULANDI:** 63 satır, izden satır satır
+(`canli-bag-onarim-geri.ts`); sonrası `802 / 1` — yazımdan önceki hâl birebir.
+⚠ Onarım izleri **silinmedi**; üstlerine `BAG_ONARIMI_GERI_ALINDI` yazıldı.
+_(İlk yazım denemesi 5131 ms'de zaman aşımına uğrayıp geri sarılmıştı —
+doğrulandı, iz 0 kaldı, kısmi yazım YOK. İzler `createMany`ye alındı ve
+süre tavanı açıkça yükseltildi.)_
+
+### AÇILIŞ ŞARTI — ölçüte KAPASİTE KISITI eklenmeden yazım YAPILMAZ
+
+Aday partinin o ana kadarki kalanı, ona yönlendirilecek çıkışların toplamını
+karşılamalı. ⚠ Ve bu kısıt yazılmadan önce **yönü ve değeri ölçülecek**:
+kaç satır elenir, geriye kaç kalır. _(Anayasa: "bir sınırın yönü ölçülmeden
+çevrilmez" — 29.08'de `soldAt` sınırı defterin %48,72'sini kilitleyecekti.)_
 
 ---
 

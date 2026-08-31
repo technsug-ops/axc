@@ -146,7 +146,12 @@ export function katmanB(
   };
 }
 
-function main() {
+/**
+ * ⚠ `async` OLDU (K119a): yedek hedefi sondası dosya sistemine gidiyor ve
+ * hedef arayüzü `Promise` döndürüyor. Senkron bırakıp sondayı atlamak,
+ * ölçülmeyen bir katman bırakmak olurdu.
+ */
+async function main() {
   console.log("\nDEPLOY BEKÇİSİ — kod, şemasının önüne geçemez\n");
 
   const a = katmanA();
@@ -197,6 +202,65 @@ function main() {
     console.log("────────────────────────────────────────────────────────\n");
     process.exitCode = 1;
     return;
+  }
+
+  /* ═══════ D) YEDEK HEDEFİ CANLI MI — YAZ · OKU · SİL ═══════════════ */
+  /**
+   * ⛔ NİYE VAR (K119a, 31.08.2026): Vercel Blob deposu askıya alındı ve
+   * BUNU KİMSE FARK ETMEDİ — bir toplu yazım öncesi yedek almaya
+   * çalışılana kadar. O gün ölçüldü: 21 yedek dosyasının ÜSTVERİSİ
+   * okunuyordu ama İÇERİĞİ dört yolun dördünde de `403` veriyordu; yani
+   * kullanılabilir yedek sayısı **sıfırdı** ve pano yeşildi.
+   *
+   * ⛔ VE SINAMA "YAZ" İLE BİTMEZ. 31.08'de yazma bile değil, OKUMA
+   * kırılmıştı. Bu yüzden üç adım birden koşuyor: **yaz → oku → sil**, ve
+   * okunan içerik yazılanla KARŞILAŞTIRILIYOR.
+   * _(Anayasa: "okunamayan yedek, yedek değildir".)_
+   *
+   * ⚠ HEDEF: yerel dosya. Blob askıdayken bile bu tur kırmızı yanmamalı —
+   * çünkü ölçtüğü şey "yedek ALABİLİYOR MUYUZ", "Blob ayakta mı" değil.
+   * Blob'un durumu K119'un kendi kalemi.
+   */
+  {
+    const { dosyaHedefi } = await import("../src/lib/yedek-hedefi");
+    const hedef = dosyaHedefi("veri/yedek-yerel");
+    const ad = `sonda/deploy-bekci-${Date.now()}.txt`;
+    /** ⚠ İÇERİK BENZERSİZ: sabit bir metin, ESKİ bir dosyayı okuyup
+     *  "çalışıyor" sanmamıza yol açabilirdi. */
+    const beklenen = `yedek-hedefi-sondasi ${new Date().toISOString()} ${Math.random()}`;
+    let sonucD = "";
+    try {
+      await hedef.yaz(ad, beklenen);
+      const okunan = await hedef.oku(ad);
+      if (okunan === null) sonucD = "OKUNAMADI (null döndü)";
+      else if (okunan !== beklenen) sonucD = "OKUNAN ile YAZILAN AYNI DEĞİL";
+      const silinen = await hedef.sil([ad]);
+      if (sonucD === "" && silinen !== 1) sonucD = "SİLME SAYISI 1 DEĞİL";
+      /**
+       * ⛔ SAYIYA DEĞİL SONUCA BAKILIR — VE BU BİR MUTASYONDAN SONRA EKLENDİ.
+       * Önce yalnız `silinen === 1` ölçülüyordu; silmeyi hiç yapmayıp yine
+       * `1` döndüren mutasyon YEŞİL geçti. Dosyanın GERÇEKTEN gittiğini
+       * ancak yeniden okumak gösteriyor.
+       */
+      if (sonucD === "" && (await hedef.oku(ad)) !== null) {
+        sonucD = "SİLİNDİ DENDİ AMA DOSYA DURUYOR";
+      }
+    } catch (e) {
+      /** ⛔ HATA TAM TAŞINIR — kırpmak teşhisi kırpar. */
+      sonucD = "HATA: " + String((e as Error).message).replace(/\s+/g, " ");
+    }
+    console.log("");
+    console.log("D) YEDEK HEDEFİ — yaz · oku · sil");
+    if (sonucD === "") {
+      console.log(`  ✓  ${hedef.aciklama} — üç adım da çalışıyor`);
+    } else {
+      console.log(`  ⛔ ${hedef.aciklama} — ${sonucD}`);
+      console.log("");
+      console.log("  ⛔ YEDEK ALINAMIYOR: migration ve toplu yazım YAPILMAZ.");
+      console.log("     31.08.2026'da bu sınıf bir arıza SESSİZ yaşadı.");
+      process.exitCode = 1;
+      return;
+    }
   }
 
   console.log("\nDEPLOY EDİLEBİLİR.\n");

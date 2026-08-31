@@ -191,33 +191,49 @@ async function main() {
   const damga = "K91-" + new Date().toISOString().slice(0, 10);
   console.log("\n   YAZILIYOR — parti damgası " + damga);
 
-  await prisma.$transaction(async (tx) => {
-    for (const s of plan.yazilacak) {
+  /**
+   * ⚠ İŞLEM SÜRESİ VE GİDİŞ-DÖNÜŞ SAYISI ÖLÇÜLDÜ, VARSAYILMADI.
+   * İlk deneme 5131 ms'de zaman aşımına uğradı (Prisma varsayılanı 5000 ms):
+   * 64 satır × 2 sorgu = 128 gidiş-dönüş, uzak veritabanına ~40 ms.
+   * ⭐ Ve işlem GERİ SARILDI — doğrulandı, `BAG_ONARILDI` izi 0 kaldı.
+   * Kısmi yazım YOK.
+   *
+   * İki düzeltme birden:
+   *   ① izler TEK `createMany` ile yazılıyor (64 sorgu → 1)
+   *   ② süre tavanı açıkça yükseltiliyor — varsayılana bel bağlanmıyor
+   * ⛔ Güncellemeler tek tek kalıyor: her satırın HEDEFİ farklı, toplu bir
+   * `updateMany` aynı değeri hepsine yazardı.
+   */
+  await prisma.$transaction(
+    async (tx) => {
       /**
-       * ⛔ ÖNCEKİ DEĞER SATIR BAZINDA — toplam saklamak, sonradan doğan bir
+       * ⛔ İZ ÖNCE — güncelleme düşerse iz de düşer (aynı işlem).
+       * ⛔ ÖNCEKİ DEĞER SATIR BAZINDA: toplam saklamak, sonradan doğan bir
        * farkın KAYNAĞINI aramaya izin vermez.
-       * ⚠ Ve iz ÖNCE yazılıyor: güncelleme düşerse iz de düşer (aynı işlem).
        */
-      await tx.auditLog.create({
-        data: {
+      await tx.auditLog.createMany({
+        data: plan.yazilacak.map((s2) => ({
           action: "BAG_ONARILDI",
           targetType: "StockMovement",
-          targetId: s.cikis,
+          targetId: s2.cikis,
           detail: JSON.stringify({
             parti: damga,
-            variantId: s.variantId,
-            eski: s.eski,
-            yeni: s.yeni,
-            damga: s.damga,
+            variantId: s2.variantId,
+            eski: s2.eski,
+            yeni: s2.yeni,
+            damga: s2.damga,
           }),
-        },
+        })),
       });
-      await tx.stockMovement.update({
-        where: { id: s.cikis },
-        data: { sourceMovementId: s.yeni },
-      });
-    }
-  });
+      for (const s2 of plan.yazilacak) {
+        await tx.stockMovement.update({
+          where: { id: s2.cikis },
+          data: { sourceMovementId: s2.yeni },
+        });
+      }
+    },
+    { timeout: 120_000, maxWait: 30_000 },
+  );
 
   console.log("   " + plan.yazilacak.length + " satır yazıldı.");
 

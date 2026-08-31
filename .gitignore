@@ -66,3 +66,4 @@ raporlar/
 # Yerel canli anlik goruntuler — CANLI VERI, depoya girmez.
 # (31.08.2026: Vercel Blob deposu askiya alininca yerel yedek yolu acildi.)
 veri/yedek-yerel/
+veri/yedek-yerel/sonda/
