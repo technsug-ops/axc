@@ -3305,6 +3305,37 @@ görmediği bir ayrışma, ilk fırsatta başka bir paketin içine binerek gelir
 _(Bu, "commit başlığı bir etikettir" disiplininin migration hâli: paketin
 adı, içindekinin tamamını anlatmalı.)_
 
+
+### YAZMADAN ÖNCE HEDEFE BAK — "BU MODÜL VAR MI"NIN DOSYA HÂLİ (KESİN KURAL)
+
+_Ders 31.08.2026._ Yeni bir gövde yazarken sorulan soru "bu isim uygun mu"
+değil, **"bu dosya ZATEN VAR MI"**dır. Uygun bir isim, çoğu zaman **başkasının
+da uygun bulduğu** isimdir — ve tam bu yüzden çakışır.
+
+**Vaka:** K108 için muhasebe dönemi gövdesi `src/lib/donem.ts` adıyla yazıldı.
+O dosya **zaten vardı** ve başka bir şeyin dönemiydi: rapor/liste
+**pencereleri** (`BU_AY` · `SON_3_AY`) ve takvim yardımcıları (`gunDegeri` ·
+`isTakvimGunu` · `ayKaydir`). Üstüne yazıldı; **19 dışa aktarım kayboldu.**
+
+⭐ **YAKALAYAN ŞEY `tsc` OLDU, GÖZ DEĞİL** — ve ancak dört dosya `gunDegeri`
+bulunamadı diye kırmızı yandığında. Kaybolan modül daha az kullanılsaydı
+sessizce geçebilirdi.
+
+> **KURAL:** `Write` ile bir dosya oluşturmadan önce **o yolun boş olduğu
+> DOĞRULANIR**. Aracın "oluşturuldu" demesi dosyanın YENİ olduğunu
+> göstermez — var olanı da aynı cümleyle ezer.
+
+⚠ **VE İSİM ÇAKIŞMASI BİR UYARIDIR, ENGEL DEĞİL:** `donem.ts` dolu çıkınca
+doğru cevap "başka bir ad bul" değil, **"aynı kelimeyi iki farklı kavram için
+kullanıyorum"** diye durup düşünmekti. Dosya `muhasebe-donemi.ts` oldu ve
+gerekçesi başlığına yazıldı — çünkü bu, K108'in kendi uyarısının tekrarıydı:
+`Settlement.periodStart` da "dönem" diyor ama **pazaryerinin ödeme dönemini**
+kastediyor.
+
+_(Bu, "şemadaki alan da bir iddiadır" ve "kolon başlığı bir iddiadır"
+derslerinin DOSYA tarafı: orada bir alanın adı yanlış okunuyordu, burada bir
+dosyanın adı iki kavram taşıyor.)_
+
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`
 - Her anlamlı iş biriminde commit at; günün sonunda değil, iş bitince
