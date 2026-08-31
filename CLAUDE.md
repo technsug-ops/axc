@@ -759,6 +759,60 @@ burada izin kendisi.)_
 
 ---
 
+### TOPLU YAZIM ÜÇ ŞARTLA KOŞAR (KESİN KURAL)
+
+_Kullanıcı kararı 01.09.2026, K91 vakasından sonra._ Bir toplu yazım üç
+ayrı yerden bozulabilir ve üçü de 31.08–01.09'da AYNI GECE yaşandı:
+yarım commit · yanlış kanıtla "temiz" ilan etmek · satır bazında doğru olup
+küme bazında yanlış olan bir ölçüt.
+
+**a) YEREL ANLIK GÖRÜNTÜ ZORUNLU — VE "İZ SAYISI" KISMİ YAZIM KANITI DEĞİLDİR.**
+Yazımdan önce **dokunulacak alanların** yerel anlık görüntüsü alınır. Geri
+alma sonrası defter o görüntüyle **bit-bit karşılaştırılır** ve fark **0**
+olmalıdır.
+
+> ⛔ VAKA: zaman aşımına uğrayan bir işlemden sonra `AuditLog` sayısı `0`
+> çıktı ve ben _"kısmi yazım yok"_ dedim. **Yanlıştı.** Bir `UPDATE` commit
+> olmuştu ve izi yoktu; defter 12 saat boyunca bozuk kaldı ve üstüne kurulan
+> iki ölçüm de kirlendi (`803→802`, `64→63`). Artığı bulan tek şey anlık
+> görüntüyle karşılaştırma oldu.
+>
+> **İz, yazımın kanıtı değildir — yazımın NİYETİDİR.** Kanıt, verinin
+> kendisinin karşılaştırılmasıdır.
+
+**b) YARIM COMMIT MÜMKÜN OLAN HİÇBİR BETİK CANLIYA KOŞMAZ.**
+İki meşru kalıp vardır, üçüncüsü yoktur:
+- **tamamı-ya-hiçbiri:** tek işlem, ve zaman aşımı **yazım boyutuna göre
+  AÇIKÇA ayarlı** — varsayılana bel bağlanmaz;
+- **satır satır tekrar-koşulabilir:** her satır bağımsız, betik kaldığı
+  yerden devam eder ve ikinci koşum zararsızdır.
+
+> ⛔ VAKA VE ÖLÇÜM: 63 satır × 2 sorgu = **126 gidiş-dönüş**. Canlıya sıcak
+> gidiş-dönüş **29 ms ortanca** (n=12), yazma sorguları daha ağır (~41 ms) →
+> **5131 ms**, Prisma'nın varsayılan **5000 ms** tavanını aştı. Tavan
+> ölçülmemişti; "64 satır az" diye varsayılmıştı.
+> Düzeltilmiş hâl: izler tek `createMany`, güncellemeler tek tek (her satırın
+> hedefi farklı, `updateMany` aynı değeri hepsine yazardı) → **64
+> gidiş-dönüş**; tavan ayrıca **120 sn**'ye alındı.
+
+**c) BAĞ/EŞLEME ONARIMLARINDA HEDEF KAPASİTESİ KÜME BAZINDA DOĞRULANIR.**
+Satır bazında uygunluk YETMEZ: her satır tek başına geçerli bir hedef
+bulabilir ve **aynı hedefi gösteren satırların toplamı** o hedefin kapasitesini
+aşabilir.
+
+> ⛔ VAKA: K91'de 64 satırın her biri "o an açık ve maliyeti kuruşuna eşit"
+> tek bir parti buluyordu. Yazıldığında **32 parti aşırı tüketildi** (toplam
+> 64 adet aşım). Ölçüldü: 31 hedef partinin **31'i de ömür boyu tam
+> tükenmiş** — kalan kapasite tam `0`.
+> Kapasite kısıtı eklenince yazılabilir satır sayısı **64 → 0** oldu; onarım
+> bu biçimiyle öldü. _(Anayasa: "bir sınırın yönü ölçülmeden çevrilmez" —
+> burada ölçüm kısıtı değil, ONARIMI eledi.)_
+
+⚠ **VE ÜÇÜ BİRLİKTE OKUNUR:** (c) ölçütün, (b) mekanizmanın, (a) kanıtın
+kuralıdır. Biri sağlanıp öteki atlanırsa yazım yine sessizce bozulur.
+
+---
+
 ### TOPLU YAZIMDA ÖNCEKİ DEĞER SATIR BAZINDA SAKLANIR (KESİN KURAL)
 
 _Kullanıcı kararı 28.08.2026._ Bir toplu yazımın etkisini ölçmek için
