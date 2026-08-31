@@ -484,16 +484,33 @@ console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
    * K103-② künyeyi ızgaranın ÜSTÜNE taşıyınca ızgara o pencerenin DIŞINA
    * çıktı ve ölçüt kırmızı yandı — **kod doğruydu, pencere yanlış yerdeydi.**
    *
-   * ⭐ ÇARE PENCEREYİ BÜYÜTMEK DEĞİL, KALDIRMAKTI: iki desen de bu dosyada
-   * ÖLÇÜLDÜ ve **TAM BİR KEZ** geçiyor (`grid-cols-[minmax` 1 ·
-   * `max-w-3xl` 1). Tek geçişli bir desende pencere hiçbir şey kazandırmaz,
-   * yalnız yapı değişince kırılacak bir bağ ekler.
+   * ⭐ ÇARE PENCEREYİ BÜYÜTMEK DEĞİL, KALDIRMAKTI: desen bu dosyada
+   * ÖLÇÜLDÜ ve TAM BİR KEZ geçiyor. Tek geçişli bir desende pencere hiçbir
+   * şey kazandırmaz, yalnız yapı değişince kırılacak bir bağ ekler.
    * _(Anayasa: "önce deseni SAY".)_
+   *
+   * ⚠ ÖLÇÜT 31.08.2026'DE `mx-auto max-w-3xl`E DARALTILDI — VE NİYE.
+   * Kart parti paneli, İlke #12 gereği (listeler için genişlik sınırı) kendi
+   * listesine `max-w-3xl` verdi ve çıplak desen **2 kez** geçmeye başladı.
+   * Ölçüt kırmızı yandı ama **kod doğruydu** — eskiyen şey ölçütün tekillik
+   * VARSAYIMIYDI. _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış
+   * demez"; eskiyen ölçüt susturulmaz, NİYE eskidiği yazılarak güncellenir.)_
+   *
+   * ⛔ VE GEVŞETİLMEDİ, DARALTILDI — VE FARKI ÖLÇÜLDÜ. "Mobil taban
+   * genişliği kaldırıldı" mutasyonu (kart sarmalayıcısından `max-w-3xl`
+   * silinir) iki ölçütte şunu verir:
+   *
+   *     ÇIPLAK  /max-w-3xl/          sayı=1  →  ===1 GEÇER   ⛔ YALANCI YEŞİL
+   *     DAR     /mx-auto max-w-3xl/  sayı=0  →  ===1 KIRMIZI  ✓
+   *
+   * Yani çıplak desen bırakılsaydı ölçüt, silinen kart tabanı yerine
+   * PANELİN listesini bulur ve yeşil kalırdı. _(Anayasa: aynı desen birden
+   * çok yerde geçiyorsa işaret KULLANIMA bağlanır, ada değil.)_
    */
   const izgaraSayisi = (kart.match(/grid-cols-\[minmax/g) ?? []).length;
-  const tabanSayisi = (kart.match(/max-w-3xl/g) ?? []).length;
+  const tabanSayisi = (kart.match(/mx-auto max-w-3xl/g) ?? []).length;
   kontrol("ızgara sınıfı TAM BİR KEZ geçiyor (ölçüt tekil)", izgaraSayisi === 1);
-  kontrol("taban genişlik TAM BİR KEZ geçiyor", tabanSayisi === 1);
+  kontrol("kart sarmalayıcı tabanı TAM BİR KEZ geçiyor", tabanSayisi === 1);
 
   /**
    * ⛔ KULLANICI BULGUSU (K103): masaüstünde kartın sağı TAMAMEN boştu ve
@@ -516,7 +533,10 @@ console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
    * ⚠ TABAN GENİŞLİK MOBİLDE KORUNUYOR: `max-w-3xl` okunabilir sütun
    * genişliği. Kaldırılırsa telefonda satırlar kenardan kenara yayılır.
    */
-  kontrol("mobil taban genişliği duruyor (max-w-3xl)", /max-w-3xl/.test(kart));
+  kontrol(
+    "mobil taban genişliği duruyor (mx-auto max-w-3xl)",
+    /mx-auto max-w-3xl/.test(kart),
+  );
 
   /**
    * ⛔ YAPIŞKAN YAPILMADI — VE BU ÖLÇÜLMÜŞ BİR KARARDIR. `FiyatDene` KANAL

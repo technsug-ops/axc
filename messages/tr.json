@@ -3041,7 +3041,17 @@
     "birimSatisFiyatiNotu": "kâr hesaplanabilen satışların ortalaması",
     "satilanMaliyet": "Maliyet / adet",
     "satilanMaliyetNotu": "SATILAN malın FIFO maliyeti",
-    "satilanAdet": "Satılan adet"
+    "satilanAdet": "Satılan adet",
+    "partiBaslik": "Açık partiler",
+    "partiYok": "Bu üründe açık parti yok — stok bittiğinde partiler kapanır.",
+    "partiAdet": "{adet} adet",
+    "partiMaliyetiBilinmiyor": "maliyet bilinmiyor",
+    "partiAlimKodu": "Alım kodu",
+    "partiSiradaki": "sıradaki",
+    "partiToplami": "Toplam {adet} adet · {tutar}",
+    "partiToplamEksik": "{adet} parti tutara girmedi (maliyeti bilinmiyor ya da başka para birimi)",
+    "partiBagiKaymis": "Bu üründe GEÇMİŞ bir çıkış, kendisinden sonra alınmış bir partiye bağlanmış — o satışların maliyeti etkilenmiş olabilir. Yukarıdaki açık partiler etkilenmez.",
+    "partiBagiSupheli": "Bu üründe geçmiş parti bağları çözülemedi; eski satışların maliyeti doğrulanamıyor. Yukarıdaki açık partiler etkilenmez."
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

@@ -1,4 +1,5 @@
 import { acikPartilerToplu } from "@/lib/stok";
+import { partiBagiTanisi, type BagTanisi } from "@/lib/parti-bagi-tanisi";
 import { kalemDusumleri } from "@/lib/satis";
 import { prisma } from "@/lib/prisma";
 import { tedarikciAdi } from "@/lib/tedarikci-adi";
@@ -15,7 +16,11 @@ import {
   type KartSatisi,
 } from "@/lib/urun-karti";
 import type { KalemGirdisi } from "@/lib/panel-listeler";
-import type { Currency, ReturnReason } from "@/generated/prisma/enums";
+import type {
+  Currency,
+  ReturnReason,
+  StockMovementType,
+} from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
@@ -68,6 +73,38 @@ export type KartVerisi = {
   sonAlimTedarikcisi: string | null;
   /** Son alımın kodu — kayda gitmek için. */
   sonAlimKodu: string | null;
+  /**
+   * AÇIK PARTİLER — FIFO sırasıyla (K115, 31.08.2026).
+   *
+   * ⛔ NİYE EKLENDİ: kartta "Maliyet ₺X" yazıyordu ama o X'in NEREDEN
+   * geldiği hiçbir yerde görünmüyordu. Kullanıcı 31.08'de iki farklı
+   * fiyata aldığı bir üründe satış formunda seçici görmedi ve "bozuk mu"
+   * diye sordu — cevap doğruydu (tek parti açıktı) ama ekran onu
+   * SÖYLEMİYORDU. _(Anayasa: rakam kaynağına götürür.)_
+   */
+  partiler: {
+    hareketId: string;
+    tarih: Date;
+    kalanAdet: number;
+    birimMaliyet: number | null;
+    paraBirimi: Currency | null;
+    /**
+     * Alım kodu — alıma bağlı DEĞİLSE `null`.
+     *
+     * ⚠ `null` = "BAĞLANAMADI" DEĞİL. Ölçüldü (31.08.2026, canlı): 431 açık
+     * partinin 100'ünün alım kodu yok ve bunların **88'i
+     * `COUNT_CORRECTION`** — yani 29.08 fiziksel sayımının fazla çıkan
+     * kalemleri. Onlarda bağlanacak bir alım HİÇ YOK. Ekranda "alım kaydı
+     * bağlanamadı" yazmak, olmayan bir kusur iddia etmek olurdu; bu yüzden
+     * hareket tipi de taşınıyor ve ekran onun ADINI yazıyor.
+     * _(Anayasa: metin, sahip olmadığı anlamı iddia etmez.)_
+     */
+    alimKodu: string | null;
+    /** Partiyi doğuran hareketin tipi — kod yoksa ekran bunu yazar. */
+    hareketTipi: StockMovementType;
+  }[];
+  /** K91 — geçmiş bağlar sağlam mı; panelde şerh olur. */
+  bagTanisi: BagTanisi;
   /**
    * Son alımın partisi hâlâ açık mı? `false` ise o alımdan stok kalmamış
    * demektir ve kart bunu YAZAR — rakam çerçevesiz durmaz.
@@ -231,6 +268,49 @@ export async function kartVerisiniTopla(
   }));
 
   const partiler = partiHaritasi.get(variantId) ?? [];
+
+  /**
+   * PARTİ → ALIM KODU. Tek sorgu; parti kodu olmadan panel "27.08 · 3 adet"
+   * der ve kullanıcı hangi alımdan geldiğini kayda gidip bakamaz.
+   * ⚠ Bağ kurulamazsa `null` kalır ve ekran "bilinmiyor" der — UYDURULMAZ.
+   */
+  const partiKayitlari = partiler.length
+    ? await prisma.stockMovement.findMany({
+        where: { id: { in: partiler.map((pa) => pa.hareketId) } },
+        select: {
+          id: true,
+          type: true,
+          purchaseItem: { select: { purchase: { select: { code: true } } } },
+        },
+      })
+    : [];
+  const partiKodlari = new Map(
+    partiKayitlari.map((k) => [k.id, k.purchaseItem?.purchase.code ?? null]),
+  );
+  const partiTipleri = new Map(partiKayitlari.map((k) => [k.id, k.type]));
+
+  /**
+   * ⚠ TANI İÇİN VARYANTIN TÜM HAREKETİ — açık partiler yetmez; bağın
+   * sağlamlığı defterin O ANA KADARKİ akışından çıkıyor.
+   */
+  const bagHareketleri = await prisma.stockMovement.findMany({
+    where: { variantId },
+    select: {
+      id: true,
+      occurredAt: true,
+      createdAt: true,
+      quantityDelta: true,
+      unitCostAmount: true,
+      sourceMovementId: true,
+    },
+  });
+  const bagTanisi = partiBagiTanisi(
+    bagHareketleri.map((h) => ({
+      ...h,
+      unitCostAmount:
+        h.unitCostAmount === null ? null : h.unitCostAmount.toString(),
+    })),
+  );
   const girdi: KartGirdisi = {
     kalemler: kartKalemleri,
     satislar,
@@ -376,6 +456,16 @@ export async function kartVerisiniTopla(
       ? tedarikciAdi(sonAlimHareketi.purchaseItem.purchase)
       : null,
     sonAlimKodu: sonAlimHareketi?.purchaseItem?.purchase.code ?? null,
+    partiler: partiler.map((pa) => ({
+      hareketId: pa.hareketId,
+      tarih: pa.occurredAt,
+      kalanAdet: pa.kalanAdet,
+      birimMaliyet: pa.birimMaliyet === null ? null : Number(pa.birimMaliyet),
+      paraBirimi: pa.birimMaliyetParaBirimi,
+      alimKodu: partiKodlari.get(pa.hareketId) ?? null,
+      hareketTipi: partiTipleri.get(pa.hareketId) ?? "PURCHASE_IN",
+    })),
+    bagTanisi,
     iadeSebepleri: [...sebepSayaci.entries()]
       .map(([sebep, sayi]) => ({ sebep: sebep as ReturnReason, sayi }))
       .sort((a, b) => b.sayi - a.sayi),

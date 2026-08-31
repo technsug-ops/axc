@@ -1,13 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Boxes, Calculator, Lock, PackageSearch, TriangleAlert } from "lucide-react";
+import { Boxes, Calculator, Layers, Lock, PackageSearch, TriangleAlert } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
 import { bicimlendirici } from "@/lib/bicim";
-import { iadeGerekceEtiketleri } from "@/lib/etiketler";
+import { partiToplami, siradakiPartiSirasi } from "@/lib/kart-partileri";
+import { iadeGerekceEtiketleri, stokHareketEtiketleri } from "@/lib/etiketler";
 import { sermayeVerimiMetni } from "@/lib/marj-gosterge";
 import { DURUM_KUTUSU, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 import { YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
@@ -106,6 +107,8 @@ export default async function KartSayfasi({
   const t = await getTranslations("UrunKarti");
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
+  /** Parti kaynağı alıma bağlı değilse ekran hareketin ADINI yazar. */
+  const hareketEtiketleri = await stokHareketEtiketleri();
   // İade sebebi etiketleri sözlükten — ham enum adı ekrana yazılmaz.
   const gerekceEtiketleri = await iadeGerekceEtiketleri();
 
@@ -132,6 +135,15 @@ export default async function KartSayfasi({
   /** Para biçimi — değer null ise "?" kalır, sıfıra çevrilmez. */
   const p = (deger: number | null, birim = para) =>
     deger === null ? null : bicim.para(deger, birim);
+
+  /**
+   * PARTİ TOPLAMLARI (İlke #15 — tek tek gösterilen yerde toplam da olur).
+   * ⭐ KURAL SAF GÖVDEDE: `partiToplami` çağrılıyor, burada elle toplanmıyor.
+   * Böylece bekçi kaynağı taramak yerine gövdeyi ÇAĞIRIP değerini ölçer.
+   */
+  const partiOzeti = partiToplami(veri.partiler, para);
+  const siradaki = siradakiPartiSirasi(veri.partiler.length);
+
 
   return (
     /*
@@ -320,6 +332,117 @@ export default async function KartSayfasi({
             }
           />
         </div>
+      </Bolum>
+
+      {/* ═══════════ AÇIK PARTİLER — MALİYETİN KAYNAĞI ═══════════ */}
+      {/**
+        * ⛔ NİYE VAR: üstteki kutuda "maliyet ₺X" yazıyordu ve o X'in NEREDEN
+        * geldiği hiçbir ekranda görünmüyordu. Kullanıcı 31.08.2026'da iki
+        * farklı fiyata aldığı bir üründe satış formunda parti seçici görmedi
+        * ve sistemi bozuk sandı; cevap doğruydu (tek parti açıktı) ama ekran
+        * onu SÖYLEMİYORDU. _(Anayasa: rakam kaynağına götürür.)_
+        */}
+      <Bolum baslik={t("partiBaslik")} ikon={Layers}>
+        {veri.partiler.length === 0 ? (
+          <p className="text-muted-foreground text-sm">{t("partiYok")}</p>
+        ) : (
+          <div className="max-w-3xl space-y-2">
+            <ul className="divide-y rounded-lg border">
+              {veri.partiler.map((parti, sira) => (
+                <li
+                  key={parti.hareketId}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm"
+                >
+                  <span className="font-medium tabular-nums">
+                    {bicim.tarih(parti.tarih)}
+                  </span>
+                  <span className="tabular-nums">
+                    {t("partiAdet", { adet: parti.kalanAdet })}
+                  </span>
+                  <span className="tabular-nums">
+                    {parti.birimMaliyet === null
+                      ? t("partiMaliyetiBilinmiyor")
+                      : p(parti.birimMaliyet, parti.paraBirimi ?? para)}
+                  </span>
+                  {/**
+                    * İlke #4 — kod niteliğindeki değer tek tıkla kopyalanır.
+                    * ⚠ KOD YOKSA "BAĞLANAMADI" YAZILMAZ, TİP YAZILIR. Ölçüldü
+                    * (31.08.2026): kodsuz 100 partinin 88i `COUNT_CORRECTION`
+                    * — 29.08 sayımının fazlaları. Orada bağlanacak bir alım HİÇ
+                    * YOK; "bağlanamadı" olmayan bir kusur iddia ederdi.
+                    */}
+                  {parti.alimKodu === null ? (
+                    <span className="text-muted-foreground">
+                      {hareketEtiketleri[parti.hareketTipi]}
+                    </span>
+                  ) : (
+                    <KopyalanabilirKod
+                      deger={parti.alimKodu}
+                      etiket={t("partiAlimKodu")}
+                    />
+                  )}
+                  {/**
+                    * SIRADAKİ ROZETİ YALNIZ İLK SATIRDA: liste FIFO sırasında
+                    * geliyor, yani bir satış girildiğinde tüketilecek parti bu.
+                    * Rozet olmasaydı kullanıcı hangisinin gideceğini ancak
+                    * tarihlere bakıp TAHMİN ederdi.
+                    */}
+                  {sira === siradaki ? (
+                    <span className="ml-auto rounded-full border px-2 py-0.5 text-xs">
+                      {t("partiSiradaki")}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            {/**
+              * İLKE #15 — tek tek gösterilen yerde toplam da olur.
+              * ⚠ TOPLAM YALNIZ ÖLÇÜLEBİLENİ TOPLAR: maliyeti bilinmeyen ya da
+              * başka para birimindeki parti tutara GİRMEZ ve kaç tanesinin
+              * dışarıda kaldığı YAZAR. Sessizce toplasaydık eksik bir rakam
+              * tam görünürdü. _(Anayasa: boş sonuç ile temiz sonuç ayrılır.)_
+              */}
+            <p className="text-muted-foreground text-sm">
+              {t("partiToplami", {
+                adet: partiOzeti.adet,
+                tutar: p(partiOzeti.tutar, para) ?? "",
+              })}
+              {partiOzeti.olculemeyen > 0
+                ? " · " + t("partiToplamEksik", { adet: partiOzeti.olculemeyen })
+                : ""}
+            </p>
+          </div>
+        )}
+        {/**
+          * K91 DİPNOTU — UYARI ŞERİDİ DEĞİL, KAYIT.
+          *
+          * ⛔ İKİ ÖLÇÜM BU BİÇİMİ DAYATTI (31.08.2026, canlı):
+          *
+          * ① SIKLIK — stoklu 231 varyantın 107'sinde (%46,3) yanıyor
+          *    (KAYMIS 56 · SUPHELI 51). Turuncu bir uyarı şeridi olarak
+          *    çizilseydi kartların yarısında yanardı ve üç gün içinde
+          *    okunmaz olurdu. _(Anayasa: sönmeyen uyarı, rozetin tamamına
+          *    olan güveni götürür.)_
+          *
+          * ② KAPATILABİLİRLİK — K91b kapandı: çıkışlarda `purchaseItemId`
+          *    SIFIR, yani kalan 739 bağı onaracak bir veri yolu YOK. Bunu
+          *    okuyan biri bugün hiçbir şey YAPAMAZ. K49'un ayırt edici
+          *    sorusuna göre bu bir GÖREV değil KAYITTIR — ve kayıt, sessiz
+          *    bir dipnot olarak ilgili ekranda durur.
+          *
+          * ⚠ VE CÜMLE ÖLÇTÜĞÜNDEN FAZLASINI İDDİA ETMİYOR: bağ kayması
+          * GEÇMİŞ ÇIKIŞLARIN hangi partiden düşüldüğünü etkiler. Yukarıda
+          * duran AÇIK partiler ve sıradaki parti bundan etkilenmez — ilk
+          * yazımda "yukarıdaki maliyet kesin sayılmaz" diyordu ve bu,
+          * ölçümün söylemediği bir şeydi.
+          */}
+        {veri.bagTanisi === "TEMIZ" ? null : (
+          <p className="text-muted-foreground mt-2 text-xs">
+            {veri.bagTanisi === "KAYMIS"
+              ? t("partiBagiKaymis")
+              : t("partiBagiSupheli")}
+          </p>
+        )}
       </Bolum>
 
       {/* ═══════════════════ SATIŞ GEÇMİŞİ — HERKESE AÇIK ═══════════════════ */}

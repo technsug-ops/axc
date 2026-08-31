@@ -3041,7 +3041,17 @@
     "birimSatisFiyatiNotu": "",
     "satilanMaliyet": "",
     "satilanMaliyetNotu": "",
-    "satilanAdet": ""
+    "satilanAdet": "",
+    "partiBaslik": "",
+    "partiYok": "",
+    "partiAdet": "",
+    "partiMaliyetiBilinmiyor": "",
+    "partiAlimKodu": "",
+    "partiSiradaki": "",
+    "partiToplami": "",
+    "partiToplamEksik": "",
+    "partiBagiKaymis": "",
+    "partiBagiSupheli": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",

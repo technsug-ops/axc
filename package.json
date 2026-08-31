@@ -253,7 +253,9 @@
     "parti-bagi-tanisi:dogrula": "tsx scripts/parti-bagi-tanisi-dogrula.ts",
     "parti-bagi-tanisi-mutasyon:kontrol": "tsx scripts/parti-bagi-tanisi-mutasyon-kontrol.ts",
     "lot-kipi:dogrula": "tsx scripts/lot-kipi-dogrula.ts",
-    "lot-kipi-mutasyon:kontrol": "tsx scripts/lot-kipi-mutasyon-kontrol.ts"
+    "lot-kipi-mutasyon:kontrol": "tsx scripts/lot-kipi-mutasyon-kontrol.ts",
+    "kart-partileri:dogrula": "tsx scripts/kart-partileri-dogrula.ts",
+    "kart-partileri-mutasyon:kontrol": "tsx scripts/kart-partileri-mutasyon-kontrol.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
