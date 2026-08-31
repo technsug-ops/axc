@@ -1,4 +1,4 @@
-import { fifoDagit, type Parti } from "@/lib/stok";
+import { fifoDagit, partileriOncele, type Parti } from "@/lib/stok";
 
 /**
  * ============================================================================
@@ -43,6 +43,18 @@ export type KalemAdetDegisimi = {
     locationId: string | null;
     adet: number;
   }[];
+  /**
+   * SPESİFİK BELİRLEME (K110) — bu kalemin ÖNCEDEN tükettiği partinin
+   * hareket kimliği; çağıran, kalemin en eski çıkış hareketinden okur.
+   *
+   * ⚠ NİYE FIFO DEĞİL: satış fiilen O LOTTAN sevk edildi. Adedi artırmak
+   * aynı sevkiyata bir adet daha eklemektir; başka bir partiden düşmek,
+   * aynı satışın iki farklı maliyet taşıması demek olurdu.
+   *
+   * ⚠ VE FIFO YİNE YEDEK: o parti tükendiyse `partileriOncele` listeyi
+   * olduğu gibi döndürür ve dağıtım FIFO'ya düşer — kilitlenme olmaz.
+   */
+  oncekiPartiId: string | null;
   /** Varyantın açık FIFO partileri — artışta çıkış buradan yapılır. */
   partiler: Parti[];
 };
@@ -99,7 +111,8 @@ export function adetPlani(kalemler: KalemAdetDegisimi[]): AdetPlani {
        * iki dağıtım mantığı olsaydı aynı satış iki farklı maliyetle
        * yazılabilirdi.
        */
-      const sonuc = fifoDagit(k.partiler, fark);
+      const oncelik = partileriOncele(k.partiler, k.oncekiPartiId);
+      const sonuc = fifoDagit(oncelik.partiler, fark);
       if (!sonuc.yeterliMi) {
         return {
           olur: false,

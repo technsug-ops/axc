@@ -7,7 +7,13 @@ import {
   sayimKorumasi,
   type SayimIsrari,
 } from "./sayim-korumasi";
-import { acikPartiler, fifoDagit, gunSonu, type Parti } from "@/lib/stok";
+import {
+  acikPartiler,
+  fifoDagit,
+  gunSonu,
+  partileriOncele,
+  type Parti,
+} from "@/lib/stok";
 
 import type { Currency } from "@/generated/prisma/enums";
 import {
@@ -48,6 +54,14 @@ export type SatisKalemGirdisi = {
   commissionRate: number | null;
   /** Panelde görülen komisyon TUTARI (KDV dahil). Doluysa oran kullanılmaz. */
   commissionAmount: number | null;
+
+  /**
+   * SPESİFİK BELİRLEME — operatörün seçtiği partinin hareket kimliği (K110).
+   *
+   * ⚠ `null` = SEÇİM YOK = FIFO. Varsayılan bu ve öyle kalmalı: alan
+   * doldurulmadığında bugünkü davranış kuruşuna aynı sürer.
+   */
+  secilenPartiId: string | null;
 };
 
 export type SatisGirdisi = {
@@ -316,7 +330,13 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
 
     for (const kalem of girdi.kalemler) {
       const partiler = await varyantinPartileri(kalem.variantId);
-      const sonuc = fifoDagit(partiler, kalem.quantity);
+      /**
+       * ⭐ SPESİFİK BELİRLEME (K110): seçilen parti BAŞA alınır, kalanlar FIFO
+       * sırasında kalır. Seçim yoksa liste AYNEN geçer — bugünkü davranış
+       * kuruşuna aynı sürer.
+       */
+      const oncelik = partileriOncele(partiler, kalem.secilenPartiId);
+      const sonuc = fifoDagit(oncelik.partiler, kalem.quantity);
 
       if (!sonuc.yeterliMi) {
         throw new YetersizStokHatasi(

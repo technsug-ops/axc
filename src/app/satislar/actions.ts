@@ -68,6 +68,14 @@ function satisSemasiKur(t: Ceviri) {
     vatRate: z.number().min(0).max(100),
     commissionRate: z.number().min(0).max(100).nullable(),
     commissionAmount: z.number().min(0).nullable(),
+    /**
+     * SPESİFİK BELİRLEME (K110) — operatörün seçtiği parti.
+     *
+     * ⚠ VARSAYILAN `null` = FIFO. Form alanı boş gelirse bugünkü davranış
+     * kuruşuna aynı sürer; zorunlu yapmak her satışa gereksiz bir karar
+     * yüklerdi (İlke #9: az tıkla).
+     */
+    secilenPartiId: z.string().trim().nullable().default(null),
   });
 
   return z.object({
@@ -207,6 +215,7 @@ export async function satisOlustur(
         vatRate: k.vatRate,
         commissionRate: k.commissionRate,
         commissionAmount: k.commissionAmount,
+        secilenPartiId: k.secilenPartiId,
       })),
     });
   } catch (e) {

@@ -34,6 +34,7 @@ import {
   kalemBilgisiGetir,
   kargoSecenekleriGetir,
   type KargoSecenegi,
+  type PartiSecenegi,
 } from "./kalem-bilgisi";
 import { type SatisDurumu } from "./actions";
 import { KarDurumu } from "./kar-durumu";
@@ -55,6 +56,14 @@ type Kalem = {
   quantity: number;
   unitPriceAmount: string;
   unitPriceCurrency: "TRY" | "EUR";
+  /**
+   * SPESİFİK BELİRLEME (K110) — seçilebilir partiler ve seçim.
+   *
+   * ⚠ `null` = SEÇİM YOK = FIFO. Varsayılan bu; operatör dokunmazsa satış
+   * bugünkü gibi en eski partiden düşer.
+   */
+  partiler: PartiSecenegi[];
+  secilenPartiId: string | null;
   /** Kalem eklenirken okunan stok — uyarı için, doğrulama sunucuda. */
   stok: number | null;
   /** Ürün desisi — toplam desi bundan hesaplanır. */
@@ -228,7 +237,19 @@ export function SatisFormu({
       if (sira >= 0) {
         // Aynı ürün tekrar okutulursa adet artar (peş peşe okutma akışı).
         return onceki.map((k, i) =>
-          i === sira ? { ...k, quantity: k.quantity + adet, stok } : k,
+          /**
+           * ⚠ PARTİ LİSTESİ DE TAZELENİR: aynı ürün tekrar okutulduğunda
+           * araya başka bir satış girmiş olabilir ve seçilen parti tükenmiş
+           * olabilir. Bayat liste, seçilemeyecek bir partiyi seçili gösterirdi.
+           */
+          i === sira
+            ? {
+                ...k,
+                quantity: k.quantity + adet,
+                stok,
+                partiler: bilgi?.partiler ?? k.partiler,
+              }
+            : k,
         );
       }
       return [
@@ -241,6 +262,8 @@ export function SatisFormu({
           unitPriceAmount: "",
           unitPriceCurrency: varsayilanParaBirimi,
           stok,
+          partiler: bilgi?.partiler ?? [],
+          secilenPartiId: null,
           desi: bilgi?.desi ?? null,
           kdvOrani: bilgi?.kdvOrani ?? 20,
           kdvVarsayilan: bilgi?.kdvKaynagi === "VARSAYILAN",
@@ -417,6 +440,7 @@ export function SatisFormu({
             : null,
         unitPriceCurrency: k.unitPriceCurrency,
         vatRate: k.kdvOrani,
+        secilenPartiId: k.secilenPartiId,
         commissionRate:
           k.komisyonOrani.trim() !== "" && Number.isFinite(oran) ? oran : null,
         commissionAmount:
@@ -818,6 +842,80 @@ export function SatisFormu({
                       </Select>
                     </div>
                   </div>
+
+                  {/*
+                    ═══ SPESİFİK BELİRLEME — PARTİ SEÇİMİ (K110, 31.08.2026) ═══
+                    ⚠ YALNIZ SEÇENEK VARSA ÇİZİLİR. Tek partisi olan üründe
+                    seçilecek bir şey yok; kutu çizmek her satışa anlamsız bir
+                    karar yüklerdi (İlke #9: az tıkla).
+
+                    ⚠ VARSAYILAN "EN ESKİ (FIFO)" ve değeri BOŞ DİZE. Operatör
+                    dokunmazsa satış bugünkü gibi davranır.
+
+                    ÖLÇÜLDÜ (canlı, 31.08.2026): 230 varyantın 102'sinde 2+ açık
+                    parti var, 41'inde partilerin MALİYETİ farklı — ortanca
+                    %2,3, en büyüğü %36 (₺3.749 → ₺5.099).
+                  */}
+                  {kalem.partiler.length > 1 ? (
+                    <div className="space-y-2">
+                      <Label htmlFor={`parti-${sira}`}>{t("partiSecimi")}</Label>
+                      <Select
+                        value={kalem.secilenPartiId ?? ""}
+                        onValueChange={(d) =>
+                          kalemGuncelle(sira, {
+                            /** ⚠ BOŞ DİZE = SEÇİM YOK; sunucu da böyle okuyor. */
+                            secilenPartiId: d === "" ? null : d,
+                          })
+                        }
+                      >
+                        <SelectTrigger
+                          id={`parti-${sira}`}
+                          className="h-11 w-full md:h-10"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">{t("partiFifo")}</SelectItem>
+                          {kalem.partiler.map((pa) => (
+                            <SelectItem key={pa.hareketId} value={pa.hareketId}>
+                              {t("partiSecenek", {
+                                tarih: bicim.tarih(pa.girisTarihi),
+                                adet: pa.kalanAdet,
+                                maliyet:
+                                  pa.birimMaliyet === null
+                                    ? t("partiMaliyetYok")
+                                    : bicim.para(
+                                        Number(pa.birimMaliyet),
+                                        pa.paraBirimi ?? "TRY",
+                                      ),
+                              })}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {/*
+                        ⚠ YETERSİZ SEÇİM SESSİZ GEÇMEZ (İlke #5). Seçilen partide
+                        2 varken 5 satılıyorsa kalan 3'ü FIFO tamamlar; bunu
+                        söylememek, operatörün bilmediği bir maliyet üretirdi.
+                      */}
+                      {(() => {
+                        const secili = kalem.partiler.find(
+                          (pa) => pa.hareketId === kalem.secilenPartiId,
+                        );
+                        if (!secili) return null;
+                        if (secili.kalanAdet >= kalem.quantity) return null;
+                        return (
+                          <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
+                            {t("partiYetersiz", {
+                              secilen: secili.kalanAdet,
+                              istenen: kalem.quantity,
+                              kalan: kalem.quantity - secili.kalanAdet,
+                            })}
+                          </p>
+                        );
+                      })()}
+                    </div>
+                  ) : null}
 
                   {/* --- komisyon: oran ÖNERİLİR, tutar EZER --- */}
                   <div className="grid gap-3 sm:grid-cols-3">

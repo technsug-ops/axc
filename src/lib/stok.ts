@@ -327,6 +327,89 @@ export type FifoSonucu =
   | { yeterliMi: false; mevcut: number };
 
 /**
+ * ============================================================================
+ *  SPESİFİK BELİRLEME — PARTİYİ OPERATÖR SEÇER (K110, 31.08.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ YENİ DAĞITIM GÖVDESİ YAZILMADI. Seçim, `fifoDagit`e verilen listenin
+ *  SIRASINI değiştirerek uygulanıyor — dağıtım kuralı tek yerde kalıyor.
+ *  İkinci bir dağıtıcı yazılsaydı ikisi bir gün ayrışır ve hangisinin
+ *  maliyeti yazdığı sorulamazdı.
+ *
+ *  ⚠ ŞEMA DEĞİŞMEDİ. Hangi partinin tüketildiği zaten `StockMovement.
+ *  sourceMovementId`de duruyor (canlıda çıkışların %100'ü bağlı, ölçüldü
+ *  31.08.2026). Seçimi ayrıca saklamak, aynı bilgiyi ikinci kez yazmak olurdu.
+ *
+ *  ── ⚠ NİYE GEREKLİ — ÖLÇÜLDÜ (canlı, 31.08.2026) ───────────────────────
+ *      açık partisi olan varyant        230
+ *        2+ açık partisi olan           102
+ *        ...partilerin MALİYETİ FARKLI   41   ← seçim burada rakam değiştirir
+ *      maliyet farkı: ortanca %2,3 · EN BÜYÜK %36 (₺3.749 → ₺5.099)
+ *
+ *  Aynı üründen iki fiyata alınmışsa ve pahalı olan gönderildiyse, FIFO
+ *  ucuzun maliyetini yazar ve NET **olduğundan yüksek** çıkar. Muhasebede
+ *  adı "spesifik belirleme"dir ve VUK'ta geçerli bir yöntemdir.
+ *
+ *  ── ⚠ SEÇİM YOKSA HİÇBİR ŞEY DEĞİŞMEZ ──────────────────────────────────
+ *  Varsayılan FIFO'dur ve liste AYNEN döner. Bu gövde bugünkü davranışı
+ *  bozarsa hata sessiz olurdu: bütün maliyetler kayar, hiçbir ekran uyarmaz.
+ * ============================================================================
+ */
+export type PartiOncelikSonucu = {
+  /** `fifoDagit`e verilecek liste — seçilen başta, kalanlar FIFO sırasında. */
+  partiler: Parti[];
+  /**
+   * Seçim uygulandı mı.
+   *
+   * ⚠ BULUNAMAYAN SEÇİM SESSİZCE FIFO'YA DÜŞMEZ. Parti araya giren başka bir
+   * satışla tükenmiş olabilir; o durumda operatör seçtiğini sanır, sistem
+   * başka partiyi yazar ve kimse fark etmez. Çağıran bu bayrağa bakıp UYARIR
+   * (İlke #5: sessiz başarısızlık yasak).
+   */
+  secimUygulandi: boolean;
+  /**
+   * Seçilen partinin kalan adedi — seçim yoksa/bulunamadıysa `null`.
+   * Ekran "seçtiğin partide 2 var, 5 satıyorsun" cümlesini bundan kurar.
+   */
+  secilenKalan: number | null;
+};
+
+/**
+ * Seçilen partiyi listenin BAŞINA alır; geri kalanların sırasına DOKUNMAZ.
+ *
+ * ⚠ KALANLARIN SIRASI KORUNUR ve bu bilinçli: yalnız seçilen öne alınır,
+ * arkası FIFO'da kalır. Liste yeniden sıralansaydı seçim, seçilmeyen
+ * partilerin de sırasını kaydırır ve seçimin kapsamadığı adet **yanlış
+ * partiden** tamamlanırdı.
+ *
+ * ⚠ GİRDİ DİZİSİ DEĞİŞTİRİLMEZ — `fifoDagit` ile aynı söz. Çağıranlar aynı
+ * listeyi birden çok kalem için kullanıyor.
+ */
+export function partileriOncele(
+  partiler: Parti[],
+  secilenHareketId: string | null,
+): PartiOncelikSonucu {
+  /**
+   * ⚠ BOŞ DİZE DE "SEÇİM YOK" DEMEKTİR. Form alanı doldurulmadığında `""`
+   * gönderiyor; onu kimlik sanan bir gövde hiçbir partiyi bulamaz ve her
+   * satışta yanlışlıkla uyarı yakardı.
+   */
+  if (secilenHareketId === null || secilenHareketId === "") {
+    return { partiler, secimUygulandi: false, secilenKalan: null };
+  }
+
+  const secilen = partiler.find((p) => p.hareketId === secilenHareketId);
+  if (secilen === undefined) {
+    return { partiler, secimUygulandi: false, secilenKalan: null };
+  }
+
+  return {
+    partiler: [secilen, ...partiler.filter((p) => p.hareketId !== secilenHareketId)],
+    secimUygulandi: true,
+    secilenKalan: secilen.kalanAdet,
+  };
+}
+
+/**
  * İstenen adedi en eski partiden başlayarak dağıtır.
  *
  * Stok yetmiyorsa HİÇBİR dağıtım yapmaz, mevcut adedi bildirir — çağıran taraf

@@ -8,7 +8,7 @@ import {
   simulasyonZeminleri,
   type SimulasyonZemini,
 } from "@/lib/fiyatlama/kart-verisi";
-import { acikPartilerToplu, varyantStogu } from "@/lib/stok";
+import { acikPartilerToplu, gunSonu, varyantStogu } from "@/lib/stok";
 
 /**
  * ============================================================================
@@ -23,6 +23,20 @@ import { acikPartilerToplu, varyantStogu } from "@/lib/stok";
  *  desiden farklı çıkabiliyor).
  * ============================================================================
  */
+
+/**
+ * Formda gösterilen parti seçeneği — tüketilebilir bir lot.
+ *
+ * ⚠ MALİYET DİZE OLARAK TAŞINIR: `Decimal` float'a çevrilirse kuruş kuyruğu
+ * doğar ve ekranda gösterilen maliyet defterdekinden ayrışır.
+ */
+export type PartiSecenegi = {
+  hareketId: string;
+  girisTarihi: Date;
+  kalanAdet: number;
+  birimMaliyet: string | null;
+  paraBirimi: "TRY" | "EUR" | null;
+};
 
 export type KalemBilgisi = {
   stok: number;
@@ -47,6 +61,13 @@ export type KalemBilgisi = {
    *  Bu bir TAHMİNDİR ve uyarı metni bunu söyler.
    */
   birimMaliyet: number | null;
+  /**
+   * SPESİFİK BELİRLEME (K110) — bu varyantın SEÇİLEBİLİR partileri.
+   *
+   * ⚠ SIRA FIFO SIRASIDIR ve ilki varsayılandır: seçim yapılmazsa dağıtım
+   * zaten baştan başlar. Liste boşsa (parti yok) ekran seçici çizmez.
+   */
+  partiler: PartiSecenegi[];
   /** Yalnız SEÇİLİ kanal hesabının zemini; ötekiler formda gereksiz. */
   zemin: SimulasyonZemini | null;
   /**
@@ -112,7 +133,28 @@ export async function kalemBilgisiGetir(
    * doğmasın. Maliyeti bilinmeyen parti varsa ortalama null döner:
    * bilinmeyeni sıfır saymak "bedava mal" demek olurdu.
    */
-  const partiler = (await acikPartilerToplu(prisma, [variantId])).get(variantId) ?? [];
+  /**
+   * ⚠ SINIR SATIŞ GÜNÜNÜN SONU — YAZMA YOLUYLA AYNI (K110, 31.08.2026).
+   *
+   * Eskiden burada sınır YOKTU ve bugüne kadar zararsızdı: liste yalnız
+   * ortalama maliyet TAHMİNİ için kullanılıyordu. Parti SEÇİMİ eklenince
+   * zararsız olmaktan çıktı — form, geri tarihli bir satışa satış gününden
+   * SONRA gelmiş bir partiyi seçenek olarak sunardı; `satis.ts` o partiyi
+   * `gunSonu(soldAt)` sınırı yüzünden listesinde bulamaz ve seçim SESSİZCE
+   * FIFO'ya düşerdi. Kullanıcı seçtiğini sanır, defter başkasını yazardı.
+   *
+   * ⭐ VE TAHMİN DE DÜZELİYOR: ortalama artık gerçekten tüketilebilecek
+   * partilerden hesaplanıyor. Bugünün satışında iki liste AYNI; fark yalnız
+   * geri tarihli satışta doğuyor ve orada yeni davranış doğru olandır.
+   */
+  const partiler =
+    (
+      await acikPartilerToplu(
+        prisma,
+        [variantId],
+        satisTarihi ? gunSonu(satisTarihi) : undefined,
+      )
+    ).get(variantId) ?? [];
   let adet = 0;
   let tutar = 0;
   let eksik = partiler.length === 0;
@@ -163,6 +205,19 @@ export async function kalemBilgisiGetir(
     kdvKaynagi: kdv.kaynak,
     kategoriAdi: kdv.kategoriAdi,
     komisyonOrani,
+    /**
+     * ⚠ HAM `Parti` DEĞİL, DAR BİR GÖRÜNÜM. Parti nesnesi `girenAdet` ve
+     * `locationId` de taşıyor; formun onlara işi yok ve istemciye gereksiz
+     * alan göndermek, yarın biri onlara bakıp iş kurduğunda yanlış bir
+     * sözleşme doğururdu.
+     */
+    partiler: partiler.map((pa) => ({
+      hareketId: pa.hareketId,
+      girisTarihi: pa.occurredAt,
+      kalanAdet: pa.kalanAdet,
+      birimMaliyet: pa.birimMaliyet,
+      paraBirimi: pa.birimMaliyetParaBirimi,
+    })),
     birimMaliyet,
     zemin,
     tarifeTabani,

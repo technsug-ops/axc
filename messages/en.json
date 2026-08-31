@@ -977,7 +977,12 @@
     "donemSebepGEC_GIRILEN_KAYIT": "",
     "donemSebepDONEM_YANLIS_KAPATILDI": "",
     "donemSebepDIGER": "",
-    "donemSebepMUHASEBECI_ONAYLADI": ""
+    "donemSebepMUHASEBECI_ONAYLADI": "",
+    "partiSecimi": "",
+    "partiFifo": "",
+    "partiSecenek": "",
+    "partiMaliyetYok": "",
+    "partiYetersiz": ""
   },
   "Kategori": {
     "adZorunlu": "",

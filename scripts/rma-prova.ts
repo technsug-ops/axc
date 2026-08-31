@@ -163,6 +163,8 @@ async function main() {
           vatRate: 20,
           commissionRate: 15,
           commissionAmount: null,
+          /** K110: seçim YOK — bu ölçütler FIFO varsayılanını sınıyor. */
+          secilenPartiId: null,
         },
       ],
     });

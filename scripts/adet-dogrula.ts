@@ -61,6 +61,8 @@ const kalem = (
   ],
 ): KalemAdetDegisimi => ({
   saleItemId: "k1",
+  /** K110: önceki parti YOK — bu ölçütler FIFO varsayılanını sınıyor. */
+  oncekiPartiId: null,
   variantId: "v1",
   urunAdi: "Soundcore Q21i",
   eskiAdet,

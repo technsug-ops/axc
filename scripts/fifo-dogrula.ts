@@ -203,6 +203,8 @@ async function ucanUca() {
           vatRate: 20,
           commissionRate: null,
           commissionAmount: 0,
+          /** K110: seçim YOK — bu ölçütler FIFO varsayılanını sınıyor. */
+          secilenPartiId: null,
         },
       ],
     });
@@ -266,6 +268,8 @@ async function ucanUca() {
             vatRate: 20,
             commissionRate: null,
             commissionAmount: 0,
+            /** K110: seçim YOK — bu ölçütler FIFO varsayılanını sınıyor. */
+            secilenPartiId: null,
           },
         ],
       });
@@ -318,6 +322,8 @@ async function ucanUca() {
             vatRate: 20,
             commissionRate: null,
             commissionAmount: 0,
+            /** K110: seçim YOK — bu ölçütler FIFO varsayılanını sınıyor. */
+            secilenPartiId: null,
           },
           {
             variantId,
@@ -327,6 +333,8 @@ async function ucanUca() {
             vatRate: 20,
             commissionRate: null,
             commissionAmount: 0,
+            /** K110: seçim YOK — bu ölçütler FIFO varsayılanını sınıyor. */
+            secilenPartiId: null,
           },
         ],
       });
@@ -358,6 +366,8 @@ async function ucanUca() {
           vatRate: 20,
           commissionRate: null,
           commissionAmount: 0,
+          /** K110: seçim YOK — bu ölçütler FIFO varsayılanını sınıyor. */
+          secilenPartiId: null,
         },
         {
           variantId,
@@ -367,6 +377,8 @@ async function ucanUca() {
           vatRate: 20,
           commissionRate: null,
           commissionAmount: 0,
+          /** K110: seçim YOK — bu ölçütler FIFO varsayılanını sınıyor. */
+          secilenPartiId: null,
         },
       ],
     });

@@ -244,6 +244,7 @@ export async function duzenlemeUygula(girdi: {
         orderBy: { createdAt: "asc" },
         select: {
           quantityDelta: true,
+          sourceMovementId: true,
           unitCostAmount: true,
           unitCostCurrency: true,
           locationId: true,
@@ -276,6 +277,39 @@ export async function duzenlemeUygula(girdi: {
         urunAdi: k.variant.product.name,
         eskiAdet: k.quantity,
         yeniAdet: girdi.yeni.adetler?.[k.id] ?? k.quantity,
+        /**
+         * SPESİFİK BELİRLEME (K110) — kalemin İLK tükettiği parti.
+         *
+         * ⚠ NİYE İLK: seçim yapıldıysa `partileriOncele` o partiyi başa
+         * almıştı, yani ilk tüketilen odur.
+         *
+         * ⛔ VE BURADA BİR İDDİAM ÖLÇÜMLE ÇÜRÜDÜ. Önce şöyle yazmıştım:
+         * _"seçim yapılmadıysa ilk tüketilen zaten FIFO'nun en eskisidir,
+         * o hâlde bu türetme davranışı DEĞİŞTİRMEZ."_ Cümle makul görünüyordu
+         * ve YANLIŞTI. Canlı ölçüm (31.08.2026, 5962 iptalsiz satış kalemi):
+         *
+         *     parti KAPANMIŞ  → FIFO'ya düşüyor   4928   %82,7  (fark yok)
+         *     önceki = FIFO ilki                   943   %15,8  (fark yok)
+         *     ⭐ AYRIŞAN                             91   %1,5   ← DEĞİŞİYOR
+         *
+         * O 91 kalemde eski parti hâlâ açık ama FIFO'nun ilki DEĞİL (araya
+         * geri tarihli bir alım ya da iade dönüşü girmiş). Bir kısmında
+         * maliyet aynı (₺1.438,99 ↔ ₺1.438,99), bir kısmında değil
+         * (₺2.634,15 ↔ ₺3.599).
+         *
+         * ⭐ DEĞİŞİKLİK BİLEREK KORUNDU: satış fiilen O LOTTAN sevk edildi;
+         * adedi artırmak aynı sevkiyata bir adet daha eklemektir. Ama artık
+         * "hiçbir şey değişmiyor" diye anlatılmıyor — %1,5'i değişiyor ve
+         * yalnız ADET ARTIRILDIĞINDA tetikleniyor.
+         *
+         * ⚠ VE `quantityDelta < 0` ŞART: aynı kalemde iptal/iade dönüşü de
+         * hareket yazıyor; pozitif bir ayna girişini "tüketilen parti" sanmak
+         * adedi yanlış partiden düşürürdü.
+         */
+        oncekiPartiId:
+          k.stockMovements.find(
+            (h) => h.quantityDelta < 0 && h.sourceMovementId !== null,
+          )?.sourceMovementId ?? null,
         cikislar: acikCikislar(
           k.stockMovements.map((h) => ({
             ...h,
