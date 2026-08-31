@@ -56,6 +56,16 @@ export type YazimSonucu = {
   kanalKaydiYok: number;
 };
 
+/** Durum önceliği — küçük olan "daha iyi". */
+const SIRA: Record<string, number> = {
+  ACIK: 0,
+  STOKSUZ: 1,
+  ONAY_BEKLIYOR: 2,
+  PASIF: 3,
+  YOK: 4,
+  BILINMIYOR: 5,
+};
+
 function kimlikleri(u: Record<string, unknown>): string[] {
   const cikan: string[] = [];
   for (const alan of ["barcode", "stockCode", "productMainId"]) {
@@ -180,12 +190,3 @@ export async function listelemeDurumunuYaz(
   return sonuc;
 }
 
-/** Durum önceliği — küçük olan "daha iyi". */
-const SIRA: Record<string, number> = {
-  ACIK: 0,
-  STOKSUZ: 1,
-  ONAY_BEKLIYOR: 2,
-  PASIF: 3,
-  YOK: 4,
-  BILINMIYOR: 5,
-};

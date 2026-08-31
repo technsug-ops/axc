@@ -51,11 +51,12 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
   const bosMu =
     veri.satirlar.length === 0 && veri.kaydiYokAdet === 0;
 
-  const yasSaat =
-    veri.olcumAt === null
-      ? null
-      : (Date.now() - veri.olcumAt.getTime()) / 3_600_000;
-  const bayat = yasSaat !== null && yasSaat > BAYAT_SAAT;
+  /**
+   * ⚠ `Date.now()` RENDER İÇİNDE ÇAĞRILMAZ — lint yakaladı ve haklıydı:
+   * saf olmayan bir çağrı, aynı girdiyle farklı çıktı üretir ve React'in
+   * varsayımını kırar. Yaş VERİ katmanında hesaplanıp prop olarak geliyor.
+   */
+  const bayat = veri.yasSaat !== null && veri.yasSaat > BAYAT_SAAT;
 
   const etiket: Record<VitrinSatiri, string> = {
     LISTELENMEMIS: t("listelenmemis"),

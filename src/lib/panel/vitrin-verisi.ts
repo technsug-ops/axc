@@ -45,6 +45,11 @@ export type VitrinKutusu = {
   kaydiYokTutar: number;
   /** Son karşılaştırma anı; hiç ölçülmediyse `null`. */
   olcumAt: Date | null;
+  /**
+   * Ölçümün YAŞI (saat). Burada hesaplanıyor çünkü `Date.now()` render
+   * içinde çağrılamaz — saf olmayan çağrı aynı girdiyle farklı çıktı verir.
+   */
+  yasSaat: number | null;
 };
 
 /**
@@ -64,6 +69,7 @@ export async function vitrinKutusunuTopla(
     kaydiYokAdet: 0,
     kaydiYokTutar: 0,
     olcumAt: null,
+    yasSaat: null,
   };
 
   const hesap = await prisma.channelAccount.findFirst({
@@ -139,5 +145,9 @@ export async function vitrinKutusunuTopla(
     kaydiYokAdet: kaydiYok.adet,
     kaydiYokTutar: kaydiYok.tutar,
     olcumAt: damga._min.kanalOlcumAt,
+    yasSaat:
+      damga._min.kanalOlcumAt === null
+        ? null
+        : (Date.now() - damga._min.kanalOlcumAt.getTime()) / 3_600_000,
   };
 }
