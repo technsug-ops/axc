@@ -498,6 +498,33 @@ export type AyNoktasi = {
   hesaplanamayanIadeAdedi: number;
   /** Ciro sunumu aylık tabloda da aynı: brüt − bu tutar = net ciro. */
   iadeTutari: number;
+  /**
+   * MARJIN PAYDASI — yalnız kârı HESAPLANABİLMİŞ satışların cirosu.
+   *
+   * ⛔ NİYE `gelir` KULLANILMIYOR (K117, 31.08.2026): `gelir` HER satışta
+   * artıyor, `net2` ise yalnız `hesaplandi(...)` olanlarda. `net2 / gelir`
+   * yazılsaydı, kârı hesaplanamayan bir satış paydayı büyütür, payı
+   * büyütmez ve marj SESSİZCE düşerdi.
+   *
+   * ⚠ BUGÜN FARK YOK — VE TUZAK TAM BURADA. Ölçüldü (31.08.2026, canlı):
+   * 5843 geçerli satışın **%100'ü** `CALCULATED`, yani `hesaplananGelir`
+   * bugün `gelir`e eşit. "Bugün aynı" diye `gelir` kullanmak, ilk
+   * hesaplanamayan satış girdiği gün sessizce yanlış bir marj üretirdi ve
+   * o gün kimse bu satırı okumazdı.
+   *
+   * ⚠ VE AYNI ÖLÇÜT `donemOrtalamaMarji`DE ZATEN VAR (`hesaplananCiro`):
+   * ikinci bir tanım yazmıyoruz, var olanı aylık eksene taşıyoruz.
+   */
+  hesaplananGelir: number;
+  /**
+   * Kârı hesaplanabilmiş İADELERİN tutarı — marj paydasından düşülür.
+   *
+   * ⚠ NİYE `iadeTutari` DEĞİL: `net2` yalnız hesaplanabilen iadelerin
+   * etkisini taşıyor. Paydadan TÜM iadeyi düşmek, payında karşılığı olmayan
+   * bir düşüş yapar ve marjı bu sefer YUKARI kaydırırdı. Pay ile payda aynı
+   * kümeden gelir. _(Anayasa: kıyasın iki tarafı aynı kümeden olmalı.)_
+   */
+  hesaplananIadeTutari: number;
 };
 
 /**
@@ -511,6 +538,39 @@ export type AyNoktasi = {
  * @param ayAdedi  Kaç ay geriye gidileceği (sonAy dahil).
  * @param kanalKodu Süzgeç; null ise bütün kanallar.
  */
+/**
+ * ---------------------------------------------------------------------------
+ *  AYLIK ORTALAMA KÂR MARJI — NET-2 BAZLI (K117, kullanıcı isteği 31.08.2026)
+ * ---------------------------------------------------------------------------
+ *  marj = NET-2 ÷ (hesaplanabilmiş ciro − hesaplanabilmiş iade)  × 100
+ *
+ *  ── ⛔ PAYDA "NET CİRO", BRÜT DEĞİL ────────────────────────────────────
+ *  Aylık tablo zaten `brüt − iade = net ciro` diye sunuyor. Payda brüt
+ *  olsaydı ekrandaki sütunları bölen kullanıcı BAŞKA bir sayı bulurdu ve
+ *  hangisinin doğru olduğunu bilemezdi. _(İlke #16'nın kardeşi: ekrandaki
+ *  rakam, ekrandaki rakamlardan türetilebilmeli.)_
+ *
+ *  ── ⛔ SIFIR DEĞİL `null` ──────────────────────────────────────────────
+ *  Satışı olmayan ay "%0 marj" yapmaz — o ayın marjı YOKTUR. Sıfır yazmak
+ *  "ölçtüm, sıfır çıktı" demektir ve grafikte tabana yapışan sahte bir
+ *  nokta üretirdi. _(Anayasa: varsayılan değer alanın anlamından türetilir.)_
+ *
+ *  ── ⚠ PAYDA NEGATİFE DÜŞEBİLİR ────────────────────────────────────────
+ *  İadesi satışından büyük bir ay (geçmiş ayın malı bu ay iade edilirse)
+ *  net ciroyu eksiye indirir. Negatif paydayla bölmek işareti ters çevirir
+ *  ve ZARARI KÂR gibi gösterir; o yüzden hüküm verilmez.
+ *  _(Anayasa: "sıfıra ve negatife bölünmez".)_
+ */
+export function aylikMarj(nokta: {
+  net2: number;
+  hesaplananGelir: number;
+  hesaplananIadeTutari: number;
+}): number | null {
+  const netCiro = nokta.hesaplananGelir - nokta.hesaplananIadeTutari;
+  if (netCiro <= 0) return null;
+  return (nokta.net2 / netCiro) * 100;
+}
+
 export function aylikSeri(
   satislar: PanelSatisi[],
   sonAy: { yil: number; ay: number },
@@ -535,6 +595,8 @@ export function aylikSeri(
       iadeAdedi: 0,
       hesaplanamayanIadeAdedi: 0,
       iadeTutari: 0,
+      hesaplananGelir: 0,
+      hesaplananIadeTutari: 0,
     };
     noktalar.push(nokta);
     dizin.set(`${yil}-${ay}`, nokta);
@@ -553,8 +615,14 @@ export function aylikSeri(
 
     nokta.adet++;
     nokta.gelir += satis.gelir;
-    if (hesaplandi(satis.durum, satis.net2)) nokta.net2 += satis.net2;
-    else nokta.hesaplanamayanAdet++;
+    /**
+     * ⚠ PAY VE PAYDA AYNI DALDA ARTIYOR — ve bu bilinçli. İki ayrı `if`
+     * yazılsaydı biri değişip öteki kalabilirdi; marj o an sessizce kayar.
+     */
+    if (hesaplandi(satis.durum, satis.net2)) {
+      nokta.net2 += satis.net2;
+      nokta.hesaplananGelir += satis.gelir;
+    } else nokta.hesaplanamayanAdet++;
     if (hesaplandi(satis.durum, satis.net1)) nokta.net1 += satis.net1;
   }
 
@@ -569,8 +637,11 @@ export function aylikSeri(
 
     nokta.iadeAdedi++;
     nokta.iadeTutari += iade.iadeTutari;
-    if (hesaplandi(iade.durum, iade.net2)) nokta.net2 += iade.net2;
-    else nokta.hesaplanamayanIadeAdedi++;
+    /** Satış tarafıyla AYNI kalıp: pay ve payda tek dalda. */
+    if (hesaplandi(iade.durum, iade.net2)) {
+      nokta.net2 += iade.net2;
+      nokta.hesaplananIadeTutari += iade.iadeTutari;
+    } else nokta.hesaplanamayanIadeAdedi++;
     if (hesaplandi(iade.durum, iade.net1)) nokta.net1 += iade.net1;
   }
 

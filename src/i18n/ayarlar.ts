@@ -67,3 +67,28 @@ export function paraSecenekleri(paraBirimi: string) {
     minimumFractionDigits: 2,
   };
 }
+
+/**
+ * KISA PARA — YALNIZ GRAFİK NOKTA ETİKETİ İÇİN.
+ *
+ * ⛔ NİYE AYRI BİR BİÇİM: `₺1.713.105,54` bir grafik noktasının üstüne
+ * sığmaz; 12 nokta yan yana konunca yazılar üst üste biner ve rakam
+ * OKUNMAZ olur — yani eklenen etiket, eklenmemiş hâlden kötüdür.
+ * `notation: "compact"` bunu `₺1,7 Mn` yapar.
+ *
+ * ⚠ VE KISALTMA YALNIZ GÖSTERİMDE: tablo, dışa aktarma ve hesap her yerde
+ * TAM tutarı taşır. Kısaltma bir yuvarlamadır ve yuvarlanmış bir rakam
+ * üzerine hüküm kurulmaz. _(Anayasa: "hata mesajını kısaltan her işlem
+ * teşhisi kısaltır" — kısaltma kayda değil ekrana aittir.)_
+ *
+ * ⚠ BİÇİM YİNE DİL ALTYAPISINDAN GEÇER — elle "M"/"K" eklemek İngilizce
+ * kısaltmayı Türkçe ekrana gömerdi; `Intl` bunu dile göre çözüyor.
+ */
+export function kisaParaSecenekleri(paraBirimi: string) {
+  return {
+    style: "currency" as const,
+    currency: paraBirimi,
+    notation: "compact" as const,
+    maximumFractionDigits: 1,
+  };
+}

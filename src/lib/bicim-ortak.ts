@@ -1,6 +1,10 @@
 import type { useFormatter } from "next-intl";
 
-import { IS_SAAT_DILIMI, paraSecenekleri } from "@/i18n/ayarlar";
+import {
+  IS_SAAT_DILIMI,
+  kisaParaSecenekleri,
+  paraSecenekleri,
+} from "@/i18n/ayarlar";
 
 /**
  * ============================================================================
@@ -38,6 +42,19 @@ export function bicimOlustur(format: Formatter) {
       const sayi = sayiyaCevir(tutar);
       if (sayi === null) return "—";
       return format.number(sayi, paraSecenekleri(paraBirimi));
+    },
+
+    /**
+     * ₺1,7 Mn — YALNIZ grafik nokta etiketi için kısaltılmış tutar.
+     *
+     * ⛔ HESAPTA VE TABLODA KULLANILMAZ. Bu bir yuvarlamadır; kullanıcı
+     * ₺1.713.105,54 ile ₺1.699.000,00 arasındaki farkı burada göremez ve
+     * görmemesi gerekmez — grafik EĞİMİ anlatır, tablo RAKAMI teyit eder.
+     */
+    paraKisa(tutar: HamTutar, paraBirimi: string): string {
+      const sayi = sayiyaCevir(tutar);
+      if (sayi === null) return "—";
+      return format.number(sayi, kisaParaSecenekleri(paraBirimi));
     },
 
     /** 09.08.2026 — biçim adı i18n ayarlarında tanımlı. */

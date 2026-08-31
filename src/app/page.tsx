@@ -2853,6 +2853,7 @@ export default async function AnaSayfa({
             gelirAdi={t("ciro")}
             net2Adi={t("net2")}
             bicimle={(deger) => bicim.para(deger, seciliPara)}
+            bicimleKisa={(deger) => bicim.paraKisa(deger, seciliPara)}
             bosMesaj={t("grafikBos")}
             net2Goster={karGorunur}
           />
