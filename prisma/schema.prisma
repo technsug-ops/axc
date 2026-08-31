@@ -2342,6 +2342,46 @@ model Company {
    */
   menuDuzeni String? @db.Text
 
+  /**
+   * ═══ MALİYET YÖNTEMİ (K115, 31.08.2026) ═══════════════════════════════
+   *
+   * Kullanıcı kararı: firma hangi maliyet motorunu kullanacağını SEÇER.
+   * İlk kurulumda ya da bir dönem kapandıktan sonra değiştirilebilir.
+   *
+   * ⚠ VARSAYILAN `FIFO` — VE BU BİR TERCİH DEĞİL, MEVCUT DURUMUN KORUNMASI.
+   * Bu sütun eklendiği anda hiçbir rakam değişmemeli. Ölçüldü (migration
+   * öncesi taban, 31.08.2026): 6.082 negatif hareketin 6.082'si partiye
+   * bağlı (%100), NET-2 toplamı ₺1.713.105,5422. Migration sonrası aynı
+   * üç rakam BİREBİR ölçülüp karşılaştırılıyor.
+   *
+   * ⛔ YÖNTEM DEĞİŞİRSE GEÇMİŞ YENİDEN HESAPLANMAZ. Değişim ileriye
+   * dönüktür; kapanmış dönemin NET'i olduğu gibi kalır. Aksi hâlde beyan
+   * edilmiş vergi tutmaz.
+   *
+   * ⚠ `HAREKETLI_ORTALAMA` PARTİ KAVRAMINI ORTADAN KALDIRIR: o firmada
+   * `StockMovement.sourceMovementId` boş kalır ve lot izlenebilirliği
+   * çalışmaz. Bu bir kusur değil yöntemin tanımıdır — ve seçen firma bunu
+   * ekranda okur.
+   */
+  maliyetYontemi MaliyetYontemi @default(FIFO)
+
+  /**
+   * ═══ PARTİ SEÇİM KİPİ (K115) ══════════════════════════════════════════
+   *
+   * ⚠ BU BİR MALİYET YÖNTEMİ DEĞİL, BİR POLİTİKA AYARI. Üç kipte de
+   * maliyet kuralı FIFO'dur; değişen tek şey PARTİYİ KİMİN SEÇTİĞİ:
+   *   FIFO   — seçici gizli, hep en eski
+   *   HIBRIT — seçici isteğe bağlı (K110 ile gelen bugünkü davranış)
+   *   LOT    — seçici zorunlu, her satırda parti seçilir
+   *
+   * ⚠ YALNIZ `maliyetYontemi = FIFO` İKEN ANLAMLI. Hareketli ortalamada
+   * parti yoktur; seçilecek bir şey kalmaz ve ayar ekranda kapanır.
+   *
+   * ⚠ VARSAYILAN `HIBRIT` — bugünkü davranış. `FIFO` yapılsaydı K110 ile
+   * gelen seçici sessizce kaybolurdu.
+   */
+  lotKipi LotKipi @default(HIBRIT)
+
   uyelikler UserCompanyRole[]
   auditLogs AuditLog[]
   talepler  Talep[]
@@ -2872,6 +2912,34 @@ model StokSayimSatiri {
 //  ⚠ Ve `durum` yine de tutuluyor: kapatılmış bir dönem YENİDEN AÇILABİLİR
 //  ve o zaman satır SİLİNMEZ — durumu değişir, izi kalır (ledger disiplini).
 // ============================================================================
+
+/**
+ * MALİYET MOTORU (K115, 31.08.2026).
+ *
+ * ⚠ SIRA ÖNEMLİ VE DEĞİŞTİRİLEMEZ: MySQL'de ENUM sıralıdır (değerler
+ * içeride sıra numarasıyla saklanır). Yeni değer ancak SONA eklenir.
+ * _(27.08 dersi: `ReturnNotice.reason` şemada 13., veritabanında 6.
+ * sıradaydı ve Prisma her migration'a sessizce bir ALTER yamıyordu.)_
+ */
+enum MaliyetYontemi {
+  /// Parti bazlı, en eskiden tüketir. Lot izlenebilirliği ÇALIŞIR.
+  FIFO
+  /// Tüm alımlar tek havuzda; her girişte ortalama tazelenir. Parti YOK.
+  HAREKETLI_ORTALAMA
+}
+
+/**
+ * PARTİYİ KİM SEÇER (K115). Maliyet kuralı üçünde de FIFO'dur.
+ * ⚠ Yeni değer SONA eklenir — yukarıdaki ENUM sırası kuralı burada da.
+ */
+enum LotKipi {
+  /// Seçici gizli — sistem hep en eski partiyi tüketir.
+  FIFO
+  /// Seçici isteğe bağlı; varsayılan en eski (K110 davranışı).
+  HIBRIT
+  /// Seçici zorunlu — her satırda parti seçilir.
+  LOT
+}
 
 enum DonemDurumu {
   ACIK

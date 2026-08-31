@@ -1,0 +1,41 @@
+-- MALIYET YONTEMI VE PARTI SECIM KIPI (K115)
+--
+-- NIYE: firma hangi maliyet motorunu kullanacagini SECEBILMELI. Bugune
+-- kadar FIFO koda gomuluydu ve secenek yoktu.
+--
+-- IKI AYRI AYAR, BIRI OTEKINI KISITLIYOR:
+--   maliyetYontemi — MOTOR   : FIFO | HAREKETLI_ORTALAMA
+--   lotKipi        — POLITIKA: partiyi KIM secer (FIFO | HIBRIT | LOT)
+-- lotKipi YALNIZ maliyetYontemi=FIFO iken anlamlidir; ortalamada parti
+-- kavrami yoktur ve secilecek bir sey kalmaz.
+--
+-- MERDIVEN INILDI:
+--   1) mevcut alan: `Company`de bos bir alan YOK (7 kolon olculdu)  HAYIR
+--   2) menuDuzeni serbest metni: MENUNUN alanidir; ikinci bir anlam
+--      yuklemek o kolonu okuyan her sorguyu kirletirdi               HAYIR
+--   3) turetilebilir mi: yontem bir KARARDIR, veriden cikmaz         HAYIR
+--   4) SUTUN — ve YENI TABLO DEGIL: mevcut tabloya iki enum          EVET
+--
+-- ⭐ ETKI: SIFIR DAVRANIS DEGISIKLIGI. Varsayilanlar bugunku hali birebir
+-- koruyor (FIFO + HIBRIT). Migration ONCESI olculen taban:
+--     firma 1 (AXC) · toplam hareket 10.780
+--     negatif hareket 6.082 · partiye bagli 6.082 (%100,00)
+--     hesaplanan satis 5.843
+--     NET-1 2.083.597,3953 · NET-2 1.713.105,5422
+-- Ayni uc rakam migration SONRASI birebir olculup karsilastiriliyor.
+-- "Varsayilan mevcut durumu korur" bir IDDIADIR ve olculmeden gecmez.
+--
+-- ⚠ ENUM SIRASI DEGISTIRILEMEZ: MySQL'de ENUM sirali saklanir; yeni deger
+-- ancak SONA eklenir. (27.08 dersi: ReturnNotice.reason semada 13.,
+-- veritabaninda 6. siradaydi ve her migration'a sessiz bir ALTER biniyordu.)
+--
+-- GERI DONUS: iki sutun da yeni ve varsayilanli; `DROP COLUMN` yeterli,
+-- hicbir mevcut kayit bunlara bagli degil.
+--
+-- ⚠ MIGRATION ADININ SOYLEDIGI ISIN DISINA CIKMAZ: YALNIZ `Company`ye iki
+-- sutun ve iki yeni enum. Baska hicbir tabloya dokunulmuyor.
+
+-- AlterTable
+ALTER TABLE `Company`
+    ADD COLUMN `maliyetYontemi` ENUM('FIFO', 'HAREKETLI_ORTALAMA') NOT NULL DEFAULT 'FIFO',
+    ADD COLUMN `lotKipi` ENUM('FIFO', 'HIBRIT', 'LOT') NOT NULL DEFAULT 'HIBRIT';

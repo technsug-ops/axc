@@ -46,6 +46,7 @@ import {
   ayrilmisAdetler,
 } from "@/lib/iade/bildirim";
 import { sonHareketTarihleri, varyantStoklari } from "@/lib/stok";
+import { pazaryeriKanallari } from "@/lib/kanal-kapsami";
 import {
   kanalKodsuzStokluVaryantlar,
   kanaldaKodsuzStokluVaryantlar,
@@ -138,16 +139,13 @@ export default async function StokSayfasi({
       ? await kanaldaKodsuzStokluVaryantlar(kanal)
       : null;
   /**
-   * ⚠ ÇİP LİSTESİ VERİDEN — ve yalnız AKTİF HESABI OLAN kanallar. 11 kanalın
-   * hepsini çipe dökmek, dokuzu hiç kullanılmıyorken ekranı gürültüye
-   * boğardı; ölçüldü, gerçek hesabı olan kanal sayısı üç.
+   * ⚠ ÇİP LİSTESİ ORTAK GÖVDEDEN — ölçüt DÜZELTİLDİ (31.08.2026).
+   * Burada "gerçek hesabı olan kanal sayısı üç" yazıyordu ve o cümle
+   * ÖLÇÜLMEMİŞTİ: 11 kanalın hepsinin aktif hesabı var (alım hesapları da
+   * sayılıyordu). Doğru ölçüt `lib/kanal-kapsami.ts`te — pazaryeri OLAN ve
+   * SATIŞ hesabı bulunan kanallar. `/mal-kabul` sütunlarıyla aynı gövde.
    */
-  const kanalKayitlari = await prisma.channel.findMany({
-    where: { isActive: true, accounts: { some: { isActive: true } } },
-    select: { code: true, name: true },
-    orderBy: { name: "asc" },
-  });
-  const kanalSecenekleri = kanalKayitlari.map((k) => ({ kod: k.code, ad: k.name }));
+  const kanalSecenekleri = await pazaryeriKanallari();
 
   const yasBandi = yasSuzgeciCoz(yas);
   let yasVaryantlari: string[] | null = null;

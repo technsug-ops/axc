@@ -15,6 +15,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
+import { SuzgecCubugu } from "@/components/suzgec-cubugu";
+import { pazaryeriKanallari } from "@/lib/kanal-kapsami";
+import { suzgecAdresi } from "@/lib/suzgec";
 import { pencereCoz } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
 import { sayfaIzni } from "@/lib/yetki";
@@ -65,6 +69,16 @@ export default async function MalKabulSayfasi({
     pencere?: string;
     baslangic?: string;
     bitis?: string;
+    /** Barkod · Firma SKU · ürün adı araması (kamera destekli). */
+    q?: string;
+    /**
+     * ⭐ `eksik=1` → yalnız kanal kodu EKSİK olanlar.
+     *
+     * ⚠ Bu ekranın tek EYLEME ÇEVRİLEBİLİR süzgeci: "bugün ne girdi" bir
+     * bilgi, "hangisi satışa açılmamış" bir İŞ. Listeyi ona daraltmak,
+     * depocunun elindeki işi gösterir.
+     */
+    eksik?: string;
   }>;
 }) {
   await sayfaIzni("alim.gor");
@@ -132,18 +146,19 @@ export default async function MalKabulSayfasi({
       },
     }),
     /**
-     * ⚠ ROZET SÜTUNLARI VERİDEN — sabit kod değil. Anayasa: firma/kanal
-     * adları sistemin YAPISINA gömülmez. Yalnız AKTİF HESABI olan kanallar
-     * geliyor; 11 kanalın hepsine sütun açmak ekranı okunmaz yapardı.
+     * ⚠ ROZET SÜTUNLARI ORTAK GÖVDEDEN — ve ölçüt DÜZELTİLDİ (31.08.2026).
+     * Önce "aktif hesabı olan kanal" deniyordu ve 11 kanalın HEPSİ geçiyordu
+     * (alım hesapları da sayılıyordu); tablo dokuz sütun çizdi, neredeyse
+     * hepsi "Kod yok". Ölçüt `lib/kanal-kapsami.ts`te tek yerde: pazaryeri
+     * OLAN ve SATIŞ hesabı bulunan kanallar. Bugün dört.
      */
-    prisma.channel.findMany({
-      where: { isActive: true, accounts: { some: { isActive: true } } },
-      select: { code: true, name: true },
-      orderBy: { name: "asc" },
-    }),
+    pazaryeriKanallari(),
   ]);
 
-  const satirlar = varyantlar
+  const arama = (p.q ?? "").trim().toLocaleLowerCase("tr");
+  const yalnizEksik = p.eksik === "1";
+
+  const tumSatirlar = varyantlar
     .map((v) => {
       const o = toplamlar.get(v.id)!;
       const kodluKanallar = new Set(
@@ -156,11 +171,51 @@ export default async function MalKabulSayfasi({
     /** En çok gireni üste — depocunun ilgilendiği sıra. */
     .sort((a, b) => b.adet - a.adet);
 
+  /**
+   * ⚠ KOD EKSİĞİ ÖLÇÜTÜ SÜTUN SAYISINA BAĞLI. Sütunlar `kanal-kapsami`den
+   * geliyor (pazaryeri + satış hesabı); daha önce 11 kanal sayılıyordu ve
+   * "eksik" rakamı HER ÜRÜNÜ kapsıyordu, yani hiçbir şey söylemiyordu.
+   */
+  const eksikMi = (s: (typeof tumSatirlar)[number]) =>
+    s.kodluKanallar.size < kanalKayitlari.length;
+
+  /**
+   * ⚠ ARAMA BELLEKTE, SORGUDA DEĞİL — ve bu bilinçli. Küme zaten döneme
+   * göre daraltılmış durumda (bugün 717 satır, tüm zamanlar). Sorguya
+   * taşımak, `kodEsdegerleri` kuralını burada İKİNCİ kez kurmak olurdu.
+   * Hacim büyürse sorguya iner; o gün ölçülür.
+   */
+  const satirlar = tumSatirlar.filter((s) => {
+    if (yalnizEksik && !eksikMi(s)) return false;
+    if (arama === "") return true;
+    const alanlar = [
+      s.varyant.barcode ?? "",
+      s.varyant.sku,
+      s.varyant.product.name,
+    ];
+    return alanlar.some((a) => a.toLocaleLowerCase("tr").includes(arama));
+  });
+
   const toplamAdet = satirlar.reduce((t, s) => t + s.adet, 0);
-  /** ⚠ AÇIK SIFIR: kaç üründe kod eksiği var, ekranda YAZAR. */
-  const eksikliOlan = satirlar.filter(
-    (s) => s.kodluKanallar.size < kanalKayitlari.length,
-  ).length;
+  /**
+   * ⚠ AÇIK SIFIR: kaç üründe kod eksiği var, ekranda YAZAR.
+   * ⚠ VE SAYI SÜZGECİN TAMAMINDAN (İlke #15) — görünen listenin değil,
+   * o dönemin tamamının eksiği. Süzgeç "yalnız eksikler" iken sayı ile
+   * satır sayısı zaten eşitlenir.
+   */
+  const eksikliOlan = tumSatirlar.filter(eksikMi).length;
+
+  /**
+   * ⚠ ADRES `suzgecAdresi` GÖVDESİNDEN — ekran kendi adresini KURMAZ.
+   * Kurarsa koşul değiştiğinde sayı ile liste sessizce ayrışır; anayasa
+   * bunu açıkça yasaklıyor ("adres, süzgeç sözleşmesinin sahibi dosyadan
+   * üretilir").
+   */
+  const eksikSuzgecAdresi = suzgecAdresi(
+    "/mal-kabul",
+    { q: p.q, pencere: p.pencere, baslangic: p.baslangic, bitis: p.bitis },
+    { eksik: yalnizEksik ? undefined : "1" },
+  );
 
   const aralikMetni = pencere.pencere
     ? `${bicim.tarih(pencere.pencere.baslangic)} — ${bicim.tarih(pencere.pencere.sonGun)}`
@@ -179,14 +234,62 @@ export default async function MalKabulSayfasi({
       </div>
 
       {/*
+        ⚠ ARAMA ORTAK KUTUDAN — kamera ve USB okuyucu bedava geliyor
+        (İlke #7). Çıplak bir `<input name="q">` yazsaydık `kamera:dogrula`
+        haklı olarak kırmızı yanardı.
+      */}
+      <KodAramaKutusu
+        temelAdres="/mal-kabul"
+        baslangic={p.q ?? ""}
+        tasinanlar={{
+          pencere: p.pencere,
+          baslangic: p.baslangic,
+          bitis: p.bitis,
+          eksik: p.eksik,
+        }}
+        ipucu={t("aramaIpucu")}
+      />
+
+      {/*
+        ⚠ ZAMAN SÜZGECİ ORTAK ÇUBUKTAN — aynı işlem her ekranda aynı
+        görünür (İlke #10). Kendi çiplerimizi çizseydik `/alimlar` ile
+        `/mal-kabul` iki farklı süzgeç görünümü olurdu.
+      */}
+      <SuzgecCubugu
+        temelAdres="/mal-kabul"
+        mevcut={p}
+        suzgecler={[]}
+        zaman={{
+          secili: pencere.tur,
+          aralikMetni: pencere.pencere ? aralikMetni : "",
+          baslangic: p.baslangic ?? "",
+          bitis: p.bitis ?? "",
+        }}
+      />
+
+      {/*
         ⚠ İLKE #15 — TEK TEK GÖSTERİLEN YERDE TOPLAM DA OLUR. Ve toplam
         SÜZGECİN tamamının toplamıdır: bu ekran sayfalamıyor, yani görünen
         neyse toplam odur.
       */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <IstatistikKutusu etiket={t("urunSayisi")} cocuk={satirlar.length} />
         <IstatistikKutusu etiket={t("gelenAdet")} cocuk={toplamAdet} bas />
-        <IstatistikKutusu etiket={t("kodEksigi")} cocuk={eksikliOlan} />
+        {/*
+          ⭐ RAKAM KAYNAĞINA GÖTÜRÜR (İlke #16): "kanal kodu eksik" bir
+          AKSAKLIK sayısı; tıklanınca o kümeye süzülür. Düz metin bırakmak,
+          okuyanı "hangileri?" diye aramaya bırakırdı.
+        */}
+        <Baglanti
+          href={
+            eksikSuzgecAdresi === null ? "/mal-kabul" : eksikSuzgecAdresi
+          }
+        >
+          <IstatistikKutusu
+            etiket={yalnizEksik ? t("kodEksigiAcik") : t("kodEksigi")}
+            cocuk={eksikliOlan}
+          />
+        </Baglanti>
       </div>
 
       {satirlar.length === 0 ? (
@@ -204,7 +307,7 @@ export default async function MalKabulSayfasi({
                 <TableHead className="text-right">{t("gelenAdet")}</TableHead>
                 <TableHead>{t("raf")}</TableHead>
                 {kanalKayitlari.map((k) => (
-                  <TableHead key={k.code}>{k.name}</TableHead>
+                  <TableHead key={k.kod}>{k.ad}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
@@ -240,9 +343,9 @@ export default async function MalKabulSayfasi({
                     )}
                   </TableCell>
                   {kanalKayitlari.map((k) => {
-                    const kodVar = s.kodluKanallar.has(k.code);
+                    const kodVar = s.kodluKanallar.has(k.kod);
                     return (
-                      <TableCell key={k.code}>
+                      <TableCell key={k.kod}>
                         {kodVar ? (
                           <Badge variant="secondary">{t("kodVar")}</Badge>
                         ) : (

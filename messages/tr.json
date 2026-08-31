@@ -50,7 +50,8 @@
     "yerlestir": "Yerleştir",
     "rafTasi": "Toplu raf taşıma",
     "donemler": "Muhasebe dönemleri",
-    "malKabul": "Mal kabul"
+    "malKabul": "Mal kabul",
+    "maliyetYontemi": "Maliyet yöntemi"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -724,7 +725,8 @@
     "grupAyarlar": "Ayarlar",
     "yerlestir": "Yerleştir",
     "donemler": "Muhasebe dönemleri",
-    "malKabul": "Mal kabul"
+    "malKabul": "Mal kabul",
+    "maliyetYontemi": "Maliyet yöntemi"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -3746,6 +3748,47 @@
     "raf": "Raf",
     "kodVar": "Kod var",
     "kodYok": "Kod yok",
-    "bosMesaj": "Bu aralıkta depoya giren ürün yok. Sipariş verilmiş ama henüz kabul edilmemiş alımlar bu listede görünmez."
+    "bosMesaj": "Bu aralıkta depoya giren ürün yok. Sipariş verilmiş ama henüz kabul edilmemiş alımlar bu listede görünmez.",
+    "aramaIpucu": "Barkod, SKU veya ürün adı ara…",
+    "kodEksigiAcik": "Kanal kodu eksik (süzgeç açık)"
+  },
+  "MaliyetYontemi": {
+    "baslik": "Maliyet yöntemi",
+    "aciklama": "Stok maliyetinin nasıl hesaplandığını ve satışta partiyi kimin seçtiğini belirler. Yöntem değişikliği ileriye dönüktür — geçmiş yeniden hesaplanmaz.",
+    "donemlereGit": "Muhasebe dönemleri →",
+    "yontemEtiketi": "Maliyet yöntemi",
+    "yontemFIFO": "FIFO — parti bazlı, en eskiden tüketir",
+    "yontemHAREKETLI_ORTALAMA": "Hareketli ortalama",
+    "yontemAciklamaFIFO": "Her mal kabulü kendi partisini kurar; satış en eski partiden düşer ve hangi partiden gittiği kayıtta kalır.",
+    "yontemAciklamaHAREKETLI_ORTALAMA": "Tüm alımlar tek havuzda toplanır; her girişte ortalama tazelenir. Parti kavramı ve lot izlenebilirliği çalışmaz.",
+    "ortalamaHenuzKapali": "Hareketli ortalama seçeneği henüz açık değil: FIFO varsayan doğrulamalar yönteme göre koşullandırılmadan açılmayacak.",
+    "kipEtiketi": "Partiyi kim seçer",
+    "kipFIFO": "Sistem seçsin — seçici gizli",
+    "kipHIBRIT": "İstersem ben seçeyim (varsayılan)",
+    "kipLOT": "Her satışta ben seçeyim",
+    "kipAciklamaFIFO": "Satış formunda parti seçici çıkmaz; sistem hep en eski partiyi tüketir.",
+    "kipAciklamaHIBRIT": "Seçici yalnız partilerin maliyeti farklıysa çıkar ve varsayılan en eskidir. Dokunmazsanız FIFO gibi davranır.",
+    "kipAciklamaLOT": "Birden çok partisi olan üründe parti seçimi zorunludur. Tek partili üründe seçilecek bir şey olmadığı için sorulmaz.",
+    "kipOrtalamada": "Hareketli ortalamada parti kavramı yoktur; bu ayar o yöntemde çalışmaz.",
+    "uyariSinirda": "Bu ay henüz stok hareketi yok — geçiş temiz bir sınırda olacak. Ama arkanızda {sayi} hareket var ve defteriniz bundan sonra iki farklı kuralla yazılmış olacak.",
+    "uyariDonemOrtasi": "Bu ayda zaten {sayi} stok hareketi var. Şimdi değiştirirseniz aynı ayın yarısı FIFO, yarısı ortalama olur — o defter muhasebecinize açıklanamaz. Dönem kapandıktan sonra değiştirmeniz önerilir.",
+    "gecmisDegismez": "Geçmiş yeniden hesaplanmaz: kapanmış dönemlerin NET rakamları olduğu gibi kalır.",
+    "sebepEtiketi": "Sebep",
+    "sebepSec": "Sebep seçin…",
+    "sebepMUHASEBECI_KARARI": "Muhasebeci istedi / onayladı",
+    "sebepYANLIS_KURULMUSTU": "İlk kurulumda yanlış yöntem seçilmişti",
+    "sebepMEVZUAT_GEREGI": "Mevzuat ya da beyan gereği",
+    "sebepDIGER": "Diğer (açıklama zorunlu)",
+    "aciklamaEtiketi": "Açıklama",
+    "onayMetni": "Uyarıyı okudum, yöntemi yine de değiştir",
+    "onayGerek": "Devam etmek için onay kutusunu işaretleyin.",
+    "sebepGerek": "Bir sebep seçin — üç ay sonra bu değişikliğin niye yapıldığı sorulacak.",
+    "aciklamaGerek": "\"Diğer\" seçtiniz; açıklama zorunlu.",
+    "israrEksik": "Yöntem değişikliği için sebep ve onay gerekiyor.",
+    "degisiklikYok": "Değişiklik yok.",
+    "degisiklikYokIpucu": "Kaydetmek için bir ayarı değiştirin.",
+    "kaydedildi": "Ayarlar kaydedildi.",
+    "firmaYok": "Firma kaydı bulunamadı.",
+    "yontemHenuzAcikDegil": "Bu yöntem henüz açık değil."
   }
 }

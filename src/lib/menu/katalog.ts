@@ -60,6 +60,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   roller: "/ayarlar/roller",
   menuDuzeni: "/ayarlar/menu",
   donemler: "/ayarlar/donemler",
+  /** K115 — maliyet motoru ve parti seçim kipi; değişim kuralı döneme bağlı. */
+  maliyetYontemi: "/ayarlar/maliyet-yontemi",
 
   veriAktarimi: "/ayarlar/ice-aktarma",
   veriDisari: "/ayarlar/disa-aktarma",
@@ -175,6 +177,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
    * görünür ve hiç kullanılmayan bir satır olurdu.
    */
   { anahtar: "donemler", varsayilanGrup: "grupAyarlar" },
+  { anahtar: "maliyetYontemi", varsayilanGrup: "grupAyarlar" },
 ];
 
 /**

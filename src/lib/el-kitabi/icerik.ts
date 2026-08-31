@@ -100,6 +100,8 @@ export const MENU_BOLUM: Record<string, string | null> = {
    * "gösterdiğim link VAR OLAN bir ekrana mı gidiyor" tuzağı olurdu.
    */
   malKabul: null,
+  /** ⚠ `null` — el kitabında maliyet yöntemi bölümü henüz YOK. */
+  maliyetYontemi: null,
   urunler: "urun",
   urunKarti: "kart",
   simulasyon: "deneme",

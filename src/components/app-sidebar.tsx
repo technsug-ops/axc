@@ -131,6 +131,8 @@ const MENU_IKONLARI: Record<string, typeof Package> = {
   roller: ShieldCheck,
   menuDuzeni: ListOrdered,
   donemler: CalendarCheck,
+  /** Hesap makinesi — maliyet MOTORU; takvim (dönem) ile karışmasın. */
+  maliyetYontemi: Calculator,
   /** Depoya GİREN mal — kutuya düşen ok. `paketle`/`yerlestir` ikonlarıyla
    *  çakışmaması için ayrı: aynı ikon iki farklı iş demez (İlke #10). */
   malKabul: Inbox,

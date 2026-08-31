@@ -50,7 +50,8 @@
     "yerlestir": "",
     "rafTasi": "",
     "donemler": "",
-    "malKabul": ""
+    "malKabul": "",
+    "maliyetYontemi": ""
   },
   "Ortak": {
     "kapat": "",
@@ -724,7 +725,8 @@
     "grupAyarlar": "",
     "yerlestir": "",
     "donemler": "",
-    "malKabul": ""
+    "malKabul": "",
+    "maliyetYontemi": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -3746,6 +3748,47 @@
     "raf": "",
     "kodVar": "",
     "kodYok": "",
-    "bosMesaj": ""
+    "bosMesaj": "",
+    "aramaIpucu": "",
+    "kodEksigiAcik": ""
+  },
+  "MaliyetYontemi": {
+    "baslik": "",
+    "aciklama": "",
+    "donemlereGit": "",
+    "yontemEtiketi": "",
+    "yontemFIFO": "",
+    "yontemHAREKETLI_ORTALAMA": "",
+    "yontemAciklamaFIFO": "",
+    "yontemAciklamaHAREKETLI_ORTALAMA": "",
+    "ortalamaHenuzKapali": "",
+    "kipEtiketi": "",
+    "kipFIFO": "",
+    "kipHIBRIT": "",
+    "kipLOT": "",
+    "kipAciklamaFIFO": "",
+    "kipAciklamaHIBRIT": "",
+    "kipAciklamaLOT": "",
+    "kipOrtalamada": "",
+    "uyariSinirda": "",
+    "uyariDonemOrtasi": "",
+    "gecmisDegismez": "",
+    "sebepEtiketi": "",
+    "sebepSec": "",
+    "sebepMUHASEBECI_KARARI": "",
+    "sebepYANLIS_KURULMUSTU": "",
+    "sebepMEVZUAT_GEREGI": "",
+    "sebepDIGER": "",
+    "aciklamaEtiketi": "",
+    "onayMetni": "",
+    "onayGerek": "",
+    "sebepGerek": "",
+    "aciklamaGerek": "",
+    "israrEksik": "",
+    "degisiklikYok": "",
+    "degisiklikYokIpucu": "",
+    "kaydedildi": "",
+    "firmaYok": "",
+    "yontemHenuzAcikDegil": ""
   }
 }
