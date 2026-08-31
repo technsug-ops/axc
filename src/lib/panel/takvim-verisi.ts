@@ -55,6 +55,27 @@ export async function takvimSatirlariniTopla(
       where: { isActive: true },
       orderBy: { label: "asc" },
     }),
+    /**
+     * ═══ BEYANLI İSTİSNA — KART BORCU SIPARIS GUNUNDE DOGAR ═══════════
+     *
+     * ⛔ BU GÖVDE `purchasedAt` KULLANIR VE ÖYLE KALMALI. K112a ile panelin
+     * "Mal kabul" sayımı `receivedAt`e çevrildi ve panelde çıplak
+     * `purchasedAt` yazmak YASAKLANDI — ama bu dosya o kuralın KAPSAMINA
+     * GİRMEZ.
+     *
+     * Sebep: burada sayılan şey mal değil BORÇTUR. Kredi kartı borcu
+     * siparişin verildiği gün doğar; banka ekstresini o güne göre keser ve
+     * taksit o gün başlar. Mal bir ay sonra gelse bile ödeme takvimi
+     * değişmez. Bu gövdeyi `receivedAt`e çevirmek, doğru çalışan bir nakit
+     * takvimini bozar ve kesim günü hesabını kaydırırdı.
+     *
+     * ⚠ ÖLÇÜLDÜ: 1973 alımın 1931'inde iki tarih farklı (ortanca 3 gün,
+     * max 48). Yani çevirme "zararsız bir tutarlılık" değil, takvimi
+     * gerçekten kaydıran bir değişiklik olurdu.
+     *
+     * _(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa hatayı korur" —
+     * doğru bir kuralı yanlış yere uygulamak onu güçlendirmez, körleştirir.)_
+     */
     prisma.purchase.findMany({
       where: { creditCardId: { not: null }, NOT: { status: "CANCELLED" } },
       select: {

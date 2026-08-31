@@ -30,6 +30,7 @@ import {
   Percent,
   Receipt,
   ScanBarcode,
+  Inbox,
   PackageCheck,
   PackagePlus,
   ScanSearch,
@@ -130,6 +131,9 @@ const MENU_IKONLARI: Record<string, typeof Package> = {
   roller: ShieldCheck,
   menuDuzeni: ListOrdered,
   donemler: CalendarCheck,
+  /** Depoya GİREN mal — kutuya düşen ok. `paketle`/`yerlestir` ikonlarıyla
+   *  çakışmaması için ayrı: aynı ikon iki farklı iş demez (İlke #10). */
+  malKabul: Inbox,
 
   veriAktarimi: FileSpreadsheet,
   veriDisari: Download,

@@ -1970,11 +1970,17 @@ export default async function AnaSayfa({
                     paylaşıyor; kıyas rozetini de onlarla aynı motordan
                     alıyor. */}
                   <IstatistikKutusu
-                    etiket={t("alimAdedi")}
+                    etiket={t("malKabulAdedi")}
                     cocuk={
                       <Baglanti
                         href={suzgecAdresi(
-                          "/alimlar",
+                          /**
+                           * ⚠ HEDEF DEĞİŞTİ (K112a): `/alimlar` SİPARİŞ
+                           * tarihiyle süzüyor, bu rakam ise KABUL tarihiyle
+                           * sayılıyor. Eski hedefte kalsaydı sayı ile liste
+                           * sessizce ayrışırdı (İlke #16).
+                           */
+                          "/mal-kabul",
                           {},
                           donemParametreleri(),
                         )}
@@ -2309,12 +2315,12 @@ export default async function AnaSayfa({
                 adres:
                   operasyonGorunumu !== "adet"
                     ? {
-                        a: noktaAdresi("/alimlar", n),
+                        a: noktaAdresi("/mal-kabul", n),
                         b: noktaAdresi("/satislar", n),
                         c: "",
                       }
                     : {
-                        a: noktaAdresi("/alimlar", n),
+                        a: noktaAdresi("/mal-kabul", n),
                         b: noktaAdresi("/satislar", n),
                         c: suzgecAdresi(
                           "/satislar",

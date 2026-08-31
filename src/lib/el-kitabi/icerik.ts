@@ -94,6 +94,12 @@ export const MENU_BOLUM: Record<string, string | null> = {
    * Bölüm yazıldığı gün burası doldurulur.
    */
   donemler: null,
+  /**
+   * ⚠ `null` — UYDURMA BİR BÖLÜME İŞARET EDİLMEDİ. Mal kabul ekranının el
+   * kitabı bölümü henüz YOK; var olmayan bir bölüme link vermek, anayasadaki
+   * "gösterdiğim link VAR OLAN bir ekrana mı gidiyor" tuzağı olurdu.
+   */
+  malKabul: null,
   urunler: "urun",
   urunKarti: "kart",
   simulasyon: "deneme",

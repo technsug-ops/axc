@@ -36,10 +36,24 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 export function YeniEsleme({
   hesaplar,
   bantlar,
+  onDolu = null,
 }: {
   hesaplar: { id: string; etiket: string; satisIcin: boolean }[];
   /** Hakedişten gelen komisyon bantları — hesap başına en fazla bir tane. */
   bantlar: KomisyonBandi[];
+  /**
+   * ÖN DOLDURULAN VARYANT (K112a) — mal kabul ekranındaki "Kod yok"
+   * rozetinden gelinince ürün hazır seçili olur.
+   *
+   * ⚠ NİYE GEREKTİ: rozet bir GÖREV gösteriyor ("bu kanalda kodu yok").
+   * Kullanıcıyı boş bir arama kutusuna bırakmak, az önce gördüğü ürünü
+   * yeniden aratmak demekti (İlke #9: az tıkla).
+   *
+   * ⚠ YALNIZ BAŞLANGIÇ DEĞERİ, KİLİT DEĞİL: kullanıcı seçimi
+   * değiştirebilir. Kilitli olsaydı yanlış ürünle gelen biri formu hiç
+   * kullanamazdı.
+   */
+  onDolu?: VaryantSonucu | null;
 }) {
   const t = useTranslations("KanalSku");
   const ortak = useTranslations("Ortak");
@@ -51,7 +65,7 @@ export function YeniEsleme({
 
   const [sorgu, setSorgu] = useState("");
   const [sonuclar, setSonuclar] = useState<VaryantSonucu[]>([]);
-  const [secili, setSecili] = useState<VaryantSonucu | null>(null);
+  const [secili, setSecili] = useState<VaryantSonucu | null>(onDolu);
   const [hesapId, setHesapId] = useState("");
   const [kanalKodu, setKanalKodu] = useState("");
   const [oran, setOran] = useState("");

@@ -241,7 +241,9 @@
     "istemci-siniri:dogrula": "tsx scripts/istemci-siniri-dogrula.ts",
     "parti-secimi:dogrula": "tsx scripts/parti-secimi-dogrula.ts",
     "parti-secimi-mutasyon:kontrol": "tsx scripts/parti-secimi-mutasyon-kontrol.ts",
-    "kamera-mutasyon:kontrol": "tsx scripts/kamera-mutasyon-kontrol.ts"
+    "kamera-mutasyon:kontrol": "tsx scripts/kamera-mutasyon-kontrol.ts",
+    "mal-kabul:dogrula": "tsx scripts/mal-kabul-dogrula.ts",
+    "mal-kabul-mutasyon:kontrol": "tsx scripts/mal-kabul-mutasyon-kontrol.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

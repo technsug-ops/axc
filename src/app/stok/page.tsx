@@ -46,7 +46,10 @@ import {
   ayrilmisAdetler,
 } from "@/lib/iade/bildirim";
 import { sonHareketTarihleri, varyantStoklari } from "@/lib/stok";
-import { kanalKodsuzStokluVaryantlar } from "@/lib/uyari/faz2-veri";
+import {
+  kanalKodsuzStokluVaryantlar,
+  kanaldaKodsuzStokluVaryantlar,
+} from "@/lib/uyari/faz2-veri";
 import { maliyetsizVaryantlar } from "@/lib/uyari/maliyetsiz-stok";
 
 import { StokArama } from "./stok-arama";
@@ -113,10 +116,39 @@ export default async function StokSayfasi({
    * "2" derken liste başka bir sayı gösterebilirdi; `faz2-veri.ts` iki
    * tarafı da besliyor.
    */
+  /**
+   * ── KANAL KAPSAMI SÜZGECİ (K112, 31.08.2026) ──────────────────────────
+   *  `?kanal=yok`  → HİÇBİR kanalda kodu yok (uyarı merkezinden gelen bağ)
+   *  `?kanal=N11`  → O KANALDA kodu yok (ötekilerde olabilir)
+   *
+   *  ⚠ ÖLÇÜM BU SÜZGECİ AÇTIRDI (canlı, 31.08.2026, 230 stoklu varyant):
+   *      hiçbir kanalda kodu yok     3
+   *      TY'de kodu yok             10
+   *      HB'de kodu yok              6
+   *      N11'de kodu yok           190   ← %82,6, asıl boşluk
+   *  "Hiçbir kanalda yok" sorusu boşluğun %1,5'ini gösteriyordu; kanal
+   *  bazında sorulmadan gerçek açık görünmüyordu.
+   *
+   *  ⚠ İKİSİ DE AYNI ÇEKİRDEKTEN (`faz2-veri.ts`) — çan ile liste ayrışmaz.
+   */
   const kanalKodsuzIsteniyor = kanal === "yok";
   const kanalKodsuzListe = kanalKodsuzIsteniyor
     ? await kanalKodsuzStokluVaryantlar()
-    : null;
+    : kanal
+      ? await kanaldaKodsuzStokluVaryantlar(kanal)
+      : null;
+  /**
+   * ⚠ ÇİP LİSTESİ VERİDEN — ve yalnız AKTİF HESABI OLAN kanallar. 11 kanalın
+   * hepsini çipe dökmek, dokuzu hiç kullanılmıyorken ekranı gürültüye
+   * boğardı; ölçüldü, gerçek hesabı olan kanal sayısı üç.
+   */
+  const kanalKayitlari = await prisma.channel.findMany({
+    where: { isActive: true, accounts: { some: { isActive: true } } },
+    select: { code: true, name: true },
+    orderBy: { name: "asc" },
+  });
+  const kanalSecenekleri = kanalKayitlari.map((k) => ({ kod: k.code, ad: k.name }));
+
   const yasBandi = yasSuzgeciCoz(yas);
   let yasVaryantlari: string[] | null = null;
   let maliyetsizListe: string[] | null = null;
@@ -389,6 +421,8 @@ export default async function StokSayfasi({
         sira={sira}
         stokSuzgeciAcik={stokSuzgeciAcik}
         tasinanlar={{ q: arama, yas, maliyet, kanal }}
+        kanallar={kanalSecenekleri}
+        seciliKanal={kanal && kanal !== "yok" ? kanal : undefined}
       />
 
       {/*

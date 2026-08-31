@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
+import { VARYANT_SECIMI, varyantiOzetle } from "@/lib/varyant-ozet";
 import { komisyonBandi } from "@/lib/komisyon-bandi";
 import { prisma } from "@/lib/prisma";
 
@@ -38,12 +39,32 @@ export async function generateMetadata() {
 export default async function KanalSkuSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ hesap?: string; q?: string; eksik?: string; sayfa?: string }>;
+  searchParams: Promise<{
+    hesap?: string;
+    q?: string;
+    eksik?: string;
+    sayfa?: string;
+    /** K112a — mal kabul ekranındaki "Kod yok" rozetinden gelen varyant. */
+    ekle?: string;
+  }>;
 }) {
   await sayfaIzni("kanalsku.yaz");
 
-  const { hesap, q, eksik, sayfa } = await searchParams;
+  const { hesap, q, eksik, sayfa, ekle } = await searchParams;
   const seciliHesap = hesap ?? "";
+
+  /**
+   * ⚠ ÖN DOLDURMA — mal kabul ekranındaki "Kod yok" rozetinden gelinince.
+   * Bulunamazsa `null` döner ve form BOŞ açılır: uydurma bir seçim
+   * göstermektense boş bırakmak doğrudur (İlke #11 ailesi).
+   */
+  const onDoluKayit = ekle
+    ? await prisma.productVariant.findUnique({
+        where: { id: ekle },
+        select: VARYANT_SECIMI,
+      })
+    : null;
+  const onDoluVaryant = onDoluKayit ? varyantiOzetle(onDoluKayit) : null;
   const arama = (q ?? "").trim();
   const eksikOran = eksik === "1";
 
@@ -290,7 +311,11 @@ export default async function KanalSkuSayfasi({
               </p>
             </div>
           ) : (
-            <YeniEsleme hesaplar={hesaplar} bantlar={bantlar} />
+            <YeniEsleme
+              hesaplar={hesaplar}
+              bantlar={bantlar}
+              onDolu={onDoluVaryant}
+            />
           )}
         </CardContent>
       </Card>

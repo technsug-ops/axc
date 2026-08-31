@@ -28,6 +28,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   panel: "/",
   satislar: "/satislar",
   alimlar: "/alimlar",
+  /** K112a — panelin "Mal kabul" sayısının açtığı liste (günün girişleri). */
+  malKabul: "/mal-kabul",
   urunler: "/urunler",
   stok: "/stok",
   iadeler: "/iadeler",
@@ -109,6 +111,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "panel", varsayilanGrup: null },
   { anahtar: "satislar", varsayilanGrup: null },
   { anahtar: "alimlar", varsayilanGrup: null },
+  { anahtar: "malKabul", varsayilanGrup: null },
   { anahtar: "urunler", varsayilanGrup: null },
   { anahtar: "stok", varsayilanGrup: null },
   { anahtar: "iadeler", varsayilanGrup: null },

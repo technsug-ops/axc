@@ -69,11 +69,23 @@ export async function SiralaSuzgec({
   sira,
   stokSuzgeciAcik,
   tasinanlar,
+  kanallar,
+  seciliKanal,
 }: {
   sira: Siralama;
   stokSuzgeciAcik: boolean;
   /** Korunacak öteki adres parametreleri (arama, yaş, maliyet, kanal). */
   tasinanlar: Record<string, string | undefined>;
+  /**
+   * K112 — kanal kapsamı süzgeci için seçenekler.
+   *
+   * ⚠ LİSTE VERİDEN GELİR, SABİT KOD DEĞİL. Anayasa: firma/kanal adları
+   * sistemin YAPISINA gömülmez. Ve yalnız AKTİF HESABI OLAN kanallar
+   * geliyor — 11 kanalın hepsini çipe dökmek, dokuzu hiç kullanılmıyorken
+   * ekranı gürültüye boğardı.
+   */
+  kanallar: { kod: string; ad: string }[];
+  seciliKanal: string | undefined;
 }) {
   const t = await getTranslations("Stok");
 
@@ -150,6 +162,39 @@ export async function SiralaSuzgec({
         <EyeOff className="size-4" aria-hidden />
         {t("sifirGizle")}
       </Cip>
+
+      {/*
+        ═══ K112 — KANALDA KODU OLMAYANLAR ═══════════════════════════════
+        ⚠ ÖLÇÜM BU ÇİPLERİ AÇTIRDI (canlı 31.08.2026, 230 stoklu varyant):
+            hiçbir kanalda kodu yok     3
+            N11'de kodu yok           190   ← %82,6
+        Eskiden yalnız "hiçbir kanalda yok" sorulabiliyordu ve o soru
+        boşluğun %1,5'ini gösteriyordu.
+
+        ⚠ ÇİP "KODU YOK" DER, "SATIŞTA DEĞİL" DEMEZ. Pazaryerinin listeleme
+        durumu sistemde HİÇ YOK (TY'de ürün ucu yok, HB/N11'de API yok).
+        "Satışta değil" demek, tutamayacağımız bir söz olurdu.
+      */}
+      {kanallar.length > 0 ? (
+        <>
+          <span className="text-muted-foreground ml-2 text-sm">
+            {t("kanalKapsami")}
+          </span>
+          {kanallar.map((k) => (
+            <Cip
+              key={k.kod}
+              aktif={seciliKanal === k.kod}
+              href={adres({
+                kanal: seciliKanal === k.kod ? undefined : k.kod,
+                sirala: sira.alan === "ad" ? undefined : sira.alan,
+                yon: sira.alan === "ad" ? undefined : sira.yon,
+              })}
+            >
+              {t("kanaldaKodYok", { kanal: k.ad })}
+            </Cip>
+          ))}
+        </>
+      ) : null}
     </div>
   );
 }

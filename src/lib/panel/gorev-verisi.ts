@@ -10,6 +10,7 @@ import {
   tarifeKapsami,
   type TarifeKapsami,
 } from "@/lib/panel/tarife-penceresi";
+import { kabulKosulu } from "@/lib/panel/kabul-sayimi";
 import { prisma } from "@/lib/prisma";
 
 import type { GorevAnahtari } from "./bugun-ne-yapmaliyim";
@@ -39,9 +40,26 @@ import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
  * kararı 21.08.2026 ile dönem kartına taşındı: orada kardeşleriyle aynı
  * dönemi paylaşıyor ve kıyas rozeti alabiliyor.
  *
- * ⚠ ALAN SEÇİMİ ÖLÇÜLDÜ: `purchasedAt` — alım listesi de onu süzüyor
- * (`liste-suzgeci.ts` → `alimKosulu`). `createdAt` seçilseydi geçmiş
- * tarihli bir alım bugün girildiğinde panel sayar, liste göstermezdi.
+ * ── ⛔ ALAN DEĞİŞTİ: `purchasedAt` → `receivedAt` (K112a, 31.08.2026) ─────
+ *
+ * Eski gerekçe SİLİNMİYOR, çevrildiği için burada duruyor: alan
+ * `purchasedAt` seçilmişti çünkü alım listesi de onu süzüyor
+ * (`liste-suzgeci.ts` → `alimKosulu`) ve iki ekran ayrışmasın isteniyordu.
+ * Gerekçe iyi niyetliydi ama YANLIŞ SORUYU cevaplıyordu: kullanıcının
+ * sorduğu şey "bugün ne sipariş ettim" değil, **"bugün depoya ne girdi"**.
+ * Sipariş edilen mal daha rafta değildir, satışa da çıkamaz.
+ *
+ * ⚠ VE İKİ TARİH GERÇEKTEN AYRIŞIYOR — ölçüldü: 1973 alımın **1931'inde**
+ * (%97,9) `receivedAt ≠ purchasedAt`, ortanca 3 gün, max 48. Yani sütun
+ * neredeyse her kaydı yanlış güne yazıyordu.
+ *
+ * ⚠ SAYI = LİSTE SÖZLEŞMESİ KORUNUYOR AMA HEDEF DEĞİŞTİ: bu rakama
+ * tıklayınca artık `/alimlar` (sipariş tarihli) değil, GÜNÜN GİRİŞLERİ
+ * açılıyor — ikisi aynı gövdeden (`panel/kabul-sayimi.ts`) süzülüyor.
+ * Eski hedefe bırakılsaydı sayı ile liste sessizce ayrışırdı.
+ *
+ * ⚠ KURAL TEK GÖVDEDE ve bekçiyle korunuyor: panelde çıplak `purchasedAt`
+ * yazmak yasak (kart takvimi beyanlı istisna).
  *
  * ── ⚠ TUTAR KENDİ FORMÜLÜYLE HESAPLANMAZ ─────────────────────────────────
  * Alım listesindeki toplam kutusu `kalemToplamlari` + `suzgecToplami`
@@ -68,10 +86,10 @@ export async function donemAlimi(pencere: {
    * tipi bu tuzağı önlemek için `bitisHaric` taşıyor.
    */
   const alimlar = await prisma.purchase.findMany({
-    where: { purchasedAt: { gte: pencere.baslangic, lt: pencere.bitisHaric } },
+    where: kabulKosulu(pencere),
     select: {
       status: true,
-      purchasedAt: true,
+      receivedAt: true,
       items: {
         select: {
           quantity: true,
@@ -119,7 +137,12 @@ export async function donemAlimi(pencere: {
     gunluk: alimlar
       .filter((a) => a.status !== "CANCELLED")
       .map((a) => ({
-        tarih: a.purchasedAt,
+        /**
+         * ⚠ `receivedAt` BURADA `null` OLAMAZ — `kabulKosulu` onu zaten
+         * elemiştir. Yine de sessizce `purchasedAt`e DÜŞÜLMÜYOR: öyle
+         * yapılsaydı grafik yanlış güne nokta koyar ve kimse görmezdi.
+         */
+        tarih: a.receivedAt!,
         tutar:
           kalemToplamlari(a.items).find((x) => x.paraBirimi === "TRY")?.tutar ??
           0,

@@ -49,7 +49,8 @@
     "menuDuzeni": "Menü düzeni",
     "yerlestir": "Yerleştir",
     "rafTasi": "Toplu raf taşıma",
-    "donemler": "Muhasebe dönemleri"
+    "donemler": "Muhasebe dönemleri",
+    "malKabul": "Mal kabul"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -190,7 +191,9 @@
     "siralaAd": "Ürün adı",
     "siralaAdet": "Adet",
     "siralaHareket": "Son hareket",
-    "sifirGizle": "Sıfır stokluları gizle"
+    "sifirGizle": "Sıfır stokluları gizle",
+    "kanalKapsami": "Kanalda kodu yok:",
+    "kanaldaKodYok": "{kanal}"
   },
   "Urunler": {
     "baslik": "Ürünler",
@@ -720,7 +723,8 @@
     "menuDuzeni": "Menü düzeni",
     "grupAyarlar": "Ayarlar",
     "yerlestir": "Yerleştir",
-    "donemler": "Muhasebe dönemleri"
+    "donemler": "Muhasebe dönemleri",
+    "malKabul": "Mal kabul"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -2002,7 +2006,7 @@
     "operasyonBaslik": "Günlük operasyon",
     "operasyon_adet": "Adet",
     "operasyon_ciro": "Ciro",
-    "operasyonAlim": "Alım",
+    "operasyonAlim": "Mal kabul",
     "operasyonSatis": "Satış",
     "operasyonKargo": "Kargoya verilen",
     "operasyonToplamAdet": "Dönem toplamı — alım {alim} · satış {satis} · kargo {kargo} · toplam {islem} işlem",
@@ -2022,7 +2026,8 @@
     "kanalSiraDuzen": "Sabit düzen",
     "kanalSiraCiro": "Ciro",
     "donemDurumu": "Açık dönem: {bu} · en son kapanan: {son}",
-    "donemHicKapanmadi": "Açık dönem: {bu} · henüz hiçbir dönem kapatılmadı"
+    "donemHicKapanmadi": "Açık dönem: {bu} · henüz hiçbir dönem kapatılmadı",
+    "malKabulAdedi": "Mal kabul"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
@@ -3726,5 +3731,17 @@
     "kesintiPAZARLAMA_HIZMET": "Pazarlama hizmet bedeli",
     "kesintiPAZARYERI_BEDELI": "Pazaryeri bedeli",
     "raporuAc": "Raporu aç"
+  },
+  "KabulListesi": {
+    "baslik": "Mal kabul — günün girişleri",
+    "kapsam": "Depoya giren ürünler · {aralik}",
+    "tumZaman": "tüm zamanlar",
+    "urunSayisi": "Ürün çeşidi",
+    "gelenAdet": "Gelen adet",
+    "kodEksigi": "Kanal kodu eksik",
+    "raf": "Raf",
+    "kodVar": "Kod var",
+    "kodYok": "Kod yok",
+    "bosMesaj": "Bu aralıkta depoya giren ürün yok. Sipariş verilmiş ama henüz kabul edilmemiş alımlar bu listede görünmez."
   }
 }

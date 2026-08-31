@@ -49,7 +49,8 @@
     "menuDuzeni": "",
     "yerlestir": "",
     "rafTasi": "",
-    "donemler": ""
+    "donemler": "",
+    "malKabul": ""
   },
   "Ortak": {
     "kapat": "",
@@ -190,7 +191,9 @@
     "siralaAd": "",
     "siralaAdet": "",
     "siralaHareket": "",
-    "sifirGizle": ""
+    "sifirGizle": "",
+    "kanalKapsami": "",
+    "kanaldaKodYok": ""
   },
   "Urunler": {
     "baslik": "",
@@ -720,7 +723,8 @@
     "menuDuzeni": "",
     "grupAyarlar": "",
     "yerlestir": "",
-    "donemler": ""
+    "donemler": "",
+    "malKabul": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -2022,7 +2026,8 @@
     "kanalSiraDuzen": "",
     "kanalSiraCiro": "",
     "donemDurumu": "",
-    "donemHicKapanmadi": ""
+    "donemHicKapanmadi": "",
+    "malKabulAdedi": ""
   },
   "Envanter": {
     "baslik": "",
@@ -3726,5 +3731,17 @@
     "kesintiPAZARLAMA_HIZMET": "",
     "kesintiPAZARYERI_BEDELI": "",
     "raporuAc": ""
+  },
+  "KabulListesi": {
+    "baslik": "",
+    "kapsam": "",
+    "tumZaman": "",
+    "urunSayisi": "",
+    "gelenAdet": "",
+    "kodEksigi": "",
+    "raf": "",
+    "kodVar": "",
+    "kodYok": "",
+    "bosMesaj": ""
   }
 }

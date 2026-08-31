@@ -146,14 +146,39 @@ export async function supheliVeriBulgusu(bugun: Date): Promise<{
  * Hesap bazlı boşluk kanal SKU ekranında sütun olarak yaşar; burası
  * yalnız "mal rafta ama hiçbir yerde satışa açık değil" halini sayar.
  */
-export async function kanalKodsuzStokluVaryantlar(): Promise<string[]> {
+/**
+ * ORTAK ÇEKİRDEK (K112, 31.08.2026) — "stoğu var, kodu yok".
+ *
+ * `kanalKodu === null` → HİÇBİR kanalda kodu yok (çanın sorduğu soru).
+ * `kanalKodu` doluysa → O KANALDA kodu yok (öteki kanallarda olabilir).
+ *
+ * ⚠ İKİ SORU TEK GÖVDEDEN. Ayrı ayrı yazılsalardı biri gün gelip ötekinden
+ * ayrışırdı — ve ayrışma sessiz olurdu: çan bir sayı, liste başka bir sayı.
+ * Bu dosyanın var oluş sebebi zaten oydu.
+ *
+ * ⚠ `isActive: true` SÜZGECİ KORUNDU — davranış DEĞİŞMEDİ. Yani PASİF bir
+ * kanal kodu "kod yok" sayılır. Bugün zararsız: canlıda ölçüldü, pasif
+ * kayıt **sıfır**. Değiştirmek ayrı bir karardır ve bu paketin işi değil.
+ */
+async function stokluKodsuzlar(kanalKodu: string | null): Promise<string[]> {
   const [stoklu, kodlu] = await Promise.all([
     prisma.stockMovement.groupBy({
       by: ["variantId"],
       _sum: { quantityDelta: true },
     }),
     prisma.channelSku.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        /**
+         * ⚠ KİMLİKLE DEĞİL KODLA SÜZÜLÜYOR ve bu bilinçli: `Channel.code`
+         * sabit bir sözleşme (`TRENDYOL`, `N11`), `id` ise kurulumdan
+         * kuruluma değişir. Adres çubuğuna `?kanal=N11` yazılabilmesi
+         * gerekiyor; cuid yazılamaz.
+         */
+        ...(kanalKodu === null
+          ? {}
+          : { channelAccount: { channel: { code: kanalKodu } } }),
+      },
       select: { variantId: true },
       distinct: ["variantId"],
     }),
@@ -163,4 +188,26 @@ export async function kanalKodsuzStokluVaryantlar(): Promise<string[]> {
   return stoklu
     .filter((g) => (g._sum.quantityDelta ?? 0) > 0 && !kodluIdler.has(g.variantId))
     .map((g) => g.variantId);
+}
+
+export async function kanalKodsuzStokluVaryantlar(): Promise<string[]> {
+  return stokluKodsuzlar(null);
+}
+
+/**
+ * BELİRLİ BİR KANALDA kodu olmayan stoklu varyantlar (K112).
+ *
+ * ⛔ ÇANA KONMAZ — VE SEBEBİ ÖLÇÜLDÜ. Canlıda (31.08.2026) N11'de kodu
+ * olmayan **190** stoklu varyant var; bu sayı çana konsaydı her gün yanar,
+ * kapatılamaz bir madde olur ve kutunun tamamına olan güveni eritirdi
+ * (anayasa: "kapanamayacak kayıp, görev değil kayıttır").
+ *
+ * ⭐ SÜZGEÇ OLARAK YAŞAR: kullanıcı SORDUĞUNDA cevap verir. Yukarıdaki
+ * 19.08 kararı HESAP bazlı boşluğu çandan çıkarmıştı; bu KANAL bazlı ve
+ * çana hiç girmiyor — aynı kararla çelişmiyor, onu genişletiyor.
+ */
+export async function kanaldaKodsuzStokluVaryantlar(
+  kanalKodu: string,
+): Promise<string[]> {
+  return stokluKodsuzlar(kanalKodu);
 }
