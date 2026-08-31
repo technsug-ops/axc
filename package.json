@@ -257,7 +257,9 @@
     "kart-partileri:dogrula": "tsx scripts/kart-partileri-dogrula.ts",
     "kart-partileri-mutasyon:kontrol": "tsx scripts/kart-partileri-mutasyon-kontrol.ts",
     "maliyet-yontemi:dogrula": "tsx scripts/maliyet-yontemi-dogrula.ts",
-    "maliyet-yontemi-mutasyon:kontrol": "tsx scripts/maliyet-yontemi-mutasyon-kontrol.ts"
+    "maliyet-yontemi-mutasyon:kontrol": "tsx scripts/maliyet-yontemi-mutasyon-kontrol.ts",
+    "aylik-marj:dogrula": "tsx scripts/aylik-marj-dogrula.ts",
+    "aylik-marj-mutasyon:kontrol": "tsx scripts/aylik-marj-mutasyon-kontrol.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

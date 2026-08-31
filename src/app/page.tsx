@@ -20,6 +20,9 @@ import {
 } from "@/components/istatistik-kutusu";
 import { KatlanirBolum } from "@/components/katlanir-bolum";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
+import { IsiHaritasi, type IsiSatiri } from "@/components/isi-haritasi";
+import { TekSeriliGrafik, type TekNokta } from "@/components/tek-serili-grafik";
+import { envanterSerisi } from "@/lib/panel/envanter-serisi";
 import { SuzgecCubugu } from "@/components/suzgec-cubugu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +55,7 @@ import {
   pencereCoz,
 } from "@/lib/liste-suzgeci";
 import {
+  aylikMarj,
   aylikSeri,
   panelHesapla,
   type PanelIadesi,
@@ -199,6 +203,15 @@ export default async function AnaSayfa({
     sirala?: string;
     /** Ürün analizi sekmesi: verim | hacim | stok | dagilim. */
     analiz?: string;
+    /**
+     * Aylık grafik sekmesi: "para" (varsayılan) | "envanter" | "adet" | "marj".
+     *
+     * ⚠ SEÇİM ADRESTE (İlke #13) — VE BU YALNIZ BİR TERCİH DEĞİL, ÖLÇÜMÜN
+     * GEREĞİ: envanter serisi 12 ay için 2950 ms sürüyor. Sekme adreste
+     * durduğu için o gövde SADECE o sekme açıkken sunucuda çalışıyor;
+     * istemci tarafında saklansaydı hepsi her açılışta yüklenirdi.
+     */
+    grafik?: string;
     /** Operasyon grafiği görünümü: "adet" (varsayılan) | "ciro". */
     operasyon?: string;
     /** Karşılaştırma tabanı: onceki | ucAy | gecenYil. Boşsa kapalı. */
@@ -1395,6 +1408,75 @@ export default async function AnaSayfa({
   const aylikSatirlar = seri
     .map((nokta, i) => ({ nokta, etiket: noktalar[i]?.tamEtiket ?? "" }))
     .reverse();
+
+  /* ═══════════════ AYLIK GRAFİK SEKMELERİ (K117, 31.08.2026) ═══════════
+     Kullanıcı isteği: envanter gelişimi · satış adedi ısı haritası ·
+     ortalama kâr marjı — ve sekme değişince ALTTAKİ TABLO da değişsin. */
+  const GRAFIK_SEKMELERI = ["para", "envanter", "adet", "marj"] as const;
+  const grafikSekmesi = GRAFIK_SEKMELERI.includes(
+    parametreler.grafik as (typeof GRAFIK_SEKMELERI)[number],
+  )
+    ? (parametreler.grafik as (typeof GRAFIK_SEKMELERI)[number])
+    : "para";
+  const grafikAdresi = (deger: string) =>
+    suzgecAdresi("/", parametreler, { grafik: deger });
+
+  /**
+   * ⛔ ENVANTER SERİSİ YALNIZ KENDİ SEKMESİNDE ÇEKİLİYOR.
+   * Ölçüldü (31.08.2026, canlı): 12 ay sonu fotoğrafı **2950 ms**, fotoğraf
+   * başına ~246 ms. Koşulsuz çağrılsaydı panelin HER açılışına 3 saniye
+   * eklenirdi — üstelik kullanıcıların çoğu bu sekmeyi hiç açmadan.
+   */
+  const envanterAylari =
+    grafikSekmesi === "envanter"
+      ? await envanterSerisi({ yil: bugun.yil, ay: bugun.ay }, GRAFIK_AY_SAYISI)
+      : null;
+
+  const envanterNoktalari: TekNokta[] = (envanterAylari ?? []).map((a) => {
+    const tam = bicim.ayYil(gunDegeri({ yil: a.yil, ay: a.ay, gun: 1 }));
+    return {
+      etiket: tam.split(" ")[0] ?? tam,
+      tamEtiket: tam,
+      /**
+       * ⚠ HİÇ MALI OLMAYAN AY `null`, SIFIR DEĞİL — ama burada sıfır GERÇEK
+       * sıfırdır: parti yoksa envanter yoktur ve bu ölçülmüş bir bilgidir.
+       * `deger` doğrudan geçiyor.
+       */
+      deger: a.deger,
+    };
+  });
+
+  /**
+   * ORTALAMA KÂR MARJI — NET-2 BAZLI (kullanıcı isteği 31.08.2026).
+   * Hesap `aylikMarj` saf gövdesinde; burada yalnız ekrana çevriliyor.
+   */
+  const marjNoktalari: TekNokta[] = seri.map((nokta, i) => ({
+    etiket: noktalar[i]?.etiket ?? "",
+    tamEtiket: noktalar[i]?.tamEtiket ?? "",
+    deger: aylikMarj(nokta),
+  }));
+
+  /**
+   * SATIŞ ADEDİ ISI HARİTASI — AY × KANAL.
+   *
+   * ⚠ EK SORGU YOK: `aylikSeri` zaten bellekteki `satislar` listesini süzüyor;
+   * kanal başına yeniden çağırmak yalnız o listeyi bir kez daha geziyor.
+   *
+   * ⛔ KANAL SÜZGECİ BURADA UYGULANMAZ — VE BU BİLİNÇLİ. Haritanın işi
+   * kanalları KARŞILAŞTIRMAK; üstteki süzgeç tek kanala indirilmişse harita
+   * tek satıra düşer ve hiçbir şey söylemez. Sekme başlığında da yazıyor.
+   */
+  const isiSatirlari: IsiSatiri[] = kanalSecenekleri.map(([kod, ad]) => ({
+    ad,
+    hucreler: aylikSeri(
+      satislar,
+      { yil: bugun.yil, ay: bugun.ay },
+      GRAFIK_AY_SAYISI,
+      kod,
+      seciliPara,
+      iadeler,
+    ).map((n) => n.adet),
+  }));
 
   /**
    * ── GÜNLÜK OPERASYON SERİSİ (kullanıcı isteği 21.08.2026) ───────────────
@@ -2830,24 +2912,28 @@ export default async function AnaSayfa({
           ("hangi ürün ne durumda") bakan diğer listelerle aynı yere ait.
           İçeriği yukarıdaki sekme dizisinde. */}
 
-      {/* ======================== AYLIK GRAFİK ======================== */}
-      <Card className="min-w-0">
-        <CardHeader>
-          <CardTitle>{t("grafikBaslik", { ay: GRAFIK_AY_SAYISI })}</CardTitle>
-          <p className="text-muted-foreground text-sm">{t("grafikNotu")}</p>
-        </CardHeader>
-        {/* GRAFİK TAM GENİŞLİK, TABLO KATLI (15.08.2026 düzeltmesi).
-            Bir gün önce ikisini yan yana koymuştum ve kullanıcı haklı olarak
-            "çok kötü oldu" dedi. Sebebi: ÇİZGİ GRAFİĞİ GENİŞLİK İSTER.
-            12 ayı yarım genişliğe sıkıştırınca ay etiketleri üst üste
-            biniyor, eğim yassılaşıyor ve grafik ne söylediğini kaybediyor.
-            Yan yana kurgusu iki LİSTE için doğruydu (aynı biçim, aynı
-            yükseklik); grafik + tablo için değil.
+      {/* ==================== AYLIK GRAFİK — SEKMELİ ====================
+          K117 (kullanıcı isteği 31.08.2026): tek bir para grafiği yerine
+          dört görünüm. İLKE #13 GEREĞİ SEKME, AYRI BLOK DEĞİL: dördü de
+          "son 12 ayda ne oldu" sorusuna bakıyor ve aynı anda
+          karşılaştırılmaları GEREKMİYOR — envanter değeri ile satış adedi
+          yan yana konsa ikisi de küçülürdü. Seçim adreste durur.
 
-            Yer kazancı bu kez KATLAMAYLA: eğri hikâyeyi anlatır, tablo
-            rakamı teyit eder. Teyit her zaman ekranda durmak zorunda değil,
-            ama BİR TIK ötede durmalı — silinmiyor, katlanıyor. */}
-        <CardContent className="min-w-0 space-y-4">
+          ⛔ VE SEKME BURADA YER KAZANMANIN KOLAY YOLU DEĞİL: birlikte
+          okunması gereken rakamlar (ciro ile NET-2) AYNI sekmede kaldı. */}
+      <SekmeliBolum
+        baslik={t("grafikBaslik", { ay: GRAFIK_AY_SAYISI })}
+        secili={grafikSekmesi}
+        sekmeler={[
+          {
+            anahtar: "para",
+            etiket: t("grafikSekmePara"),
+            adres: grafikAdresi("para"),
+            icerik: (
+              <div className="min-w-0 space-y-4">
+                <p className="text-muted-foreground text-sm">
+                  {t("grafikNotu")}
+                </p>
           <CizgiGrafik
             noktalar={noktalar}
             gelirAdi={t("ciro")}
@@ -2937,9 +3023,179 @@ export default async function AnaSayfa({
                 </TableBody>
               </Table>
             </div>
-          </KatlanirBolum>
-        </CardContent>
-      </Card>
+                </KatlanirBolum>
+              </div>
+            ),
+          },
+          {
+            anahtar: "envanter",
+            etiket: t("grafikSekmeEnvanter"),
+            adres: grafikAdresi("envanter"),
+            icerik: (
+              <div className="min-w-0 space-y-4">
+                <p className="text-muted-foreground text-sm">
+                  {t("envanterGrafikNotu")}
+                </p>
+                <TekSeriliGrafik
+                  noktalar={envanterNoktalari}
+                  bicimle={(deger) => bicim.para(deger, "TRY")}
+                  bicimleKisa={(deger) => bicim.paraKisa(deger, "TRY")}
+                  bosMesaj={t("grafikBos")}
+                />
+                <KatlanirBolum
+                  baslik={t("envanterRakamlari")}
+                  notu={t("aylikRakamlarNotu")}
+                >
+                  <div className="overflow-x-auto rounded-lg border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t("ay")}</TableHead>
+                          <TableHead className="text-right">
+                            {t("envanterDegeri")}
+                          </TableHead>
+                          <TableHead className="text-right">
+                            {t("envanterAdedi")}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {[...(envanterAylari ?? [])].reverse().map((a) => (
+                          <TableRow key={`${a.yil}-${a.ay}`}>
+                            <TableCell className="whitespace-nowrap">
+                              {bicim.ayYil(
+                                gunDegeri({ yil: a.yil, ay: a.ay, gun: 1 }),
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right whitespace-nowrap">
+                              {bicim.para(a.deger, "TRY")}
+                              {/* ⛔ K116③ — BİLİNMEYEN GÖRÜNÜR, UYDURULMAZ.
+                                  Maliyeti bilinmeyen parti toplama SIFIR
+                                  olarak karışmaz; kaç adet olduğu YAZAR.
+                                  Karışsaydı envanter olduğundan düşük
+                                  görünür ve düşüşün sebebi görünmezdi. */}
+                              {a.bilinmeyenAdet > 0 ? (
+                                <span className="text-muted-foreground block text-xs">
+                                  {t("envanterBilinmeyen", {
+                                    adet: a.bilinmeyenAdet,
+                                  })}
+                                </span>
+                              ) : null}
+                            </TableCell>
+                            <TableCell className="text-right whitespace-nowrap">
+                              {bicim.sayi(a.adet)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </KatlanirBolum>
+              </div>
+            ),
+          },
+          {
+            anahtar: "adet",
+            etiket: t("grafikSekmeAdet"),
+            adres: grafikAdresi("adet"),
+            icerik: (
+              <div className="min-w-0 space-y-4">
+                <p className="text-muted-foreground text-sm">
+                  {t("isiHaritasiNotu")}
+                </p>
+                {/* ⚠ ISI HARİTASI ZATEN TABLODUR — altına ikinci bir tablo
+                    konmadı. Her hücrede rakam yazıyor; renk tek başına bilgi
+                    taşımaz (renk körlüğü ve siyah-beyaz çıktı). */}
+                <IsiHaritasi
+                  sutunlar={noktalar.map((n) => n.etiket)}
+                  satirlar={isiSatirlari}
+                  bicimle={(deger) => bicim.sayi(deger)}
+                  bosMesaj={t("grafikBos")}
+                  satirToplamiEtiketi={t("toplam")}
+                />
+              </div>
+            ),
+          },
+          {
+            anahtar: "marj",
+            etiket: t("grafikSekmeMarj"),
+            adres: grafikAdresi("marj"),
+            icerik: (
+              <div className="min-w-0 space-y-4">
+                <p className="text-muted-foreground text-sm">
+                  {t("marjGrafikNotu")}
+                </p>
+                <TekSeriliGrafik
+                  noktalar={marjNoktalari}
+                  bicimle={(deger) => bicim.yuzde(deger)}
+                  bicimleKisa={(deger) => bicim.yuzde(deger)}
+                  bosMesaj={t("grafikBos")}
+                />
+                <KatlanirBolum
+                  baslik={t("marjRakamlari")}
+                  notu={t("aylikRakamlarNotu")}
+                >
+                  <div className="overflow-x-auto rounded-lg border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t("ay")}</TableHead>
+                          <TableHead className="text-right">
+                            {t("marjNetCiro")}
+                          </TableHead>
+                          <TableHead className="text-right">
+                            {t("net2")}
+                          </TableHead>
+                          <TableHead className="text-right">
+                            {t("marjSutunu")}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {aylikSatirlar.map(({ nokta, etiket }) => {
+                          const marj = aylikMarj(nokta);
+                          return (
+                            <TableRow key={etiket}>
+                              <TableCell className="whitespace-nowrap">
+                                {etiket}
+                              </TableCell>
+                              {/* ⚠ PAYDA EKRANDA YAZAR: kullanıcı marjı bu
+                                  iki sütunu bölerek DOĞRULAYABİLMELİ. Payda
+                                  gizli kalsaydı yüzde denetlenemez bir sayı
+                                  olurdu (İlke #16). */}
+                              <TableCell className="text-right whitespace-nowrap">
+                                {bicim.para(
+                                  nokta.hesaplananGelir -
+                                    nokta.hesaplananIadeTutari,
+                                  seciliPara,
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right whitespace-nowrap">
+                                {bicim.para(nokta.net2, seciliPara)}
+                              </TableCell>
+                              <TableCell className="text-right whitespace-nowrap">
+                                {/* ⛔ HESAPLANAMAYAN AY "%0" DEĞİL "—":
+                                    sıfır "ölçtüm, sıfır çıktı" demektir. */}
+                                {marj === null ? (
+                                  <span className="text-muted-foreground">
+                                    {t("marjYok")}
+                                  </span>
+                                ) : (
+                                  bicim.yuzde(marj)
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </KatlanirBolum>
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }
