@@ -12,6 +12,12 @@ import { donenMalDagilimi } from "@/lib/iade/yanlis-urun";
 import { acikPartiler, fifoDagit, gunSonu, type Parti } from "@/lib/stok";
 
 import type { Currency, ReturnType } from "@/generated/prisma/enums";
+import {
+  donemKapisi,
+  donemIstisnaIzi,
+  DONEM_ISTISNA_EYLEMI,
+} from "@/lib/donem-kapisi";
+import type { DonemIsrari } from "@/lib/donem-korumasi";
 
 /**
  * ============================================================================
@@ -414,6 +420,9 @@ export type IadeKaydiGirdisi = {
    * Kapıyı tetikleyen şey TARİH ve iadenin tek tarihi var.
    */
   sayimIsrari?: SayimIsrari;
+  /** ⭐ DÖNEM KAPISI ISRARI (K108) — sayım ısrarından AYRI alan:
+   *  biri FİZİKSEL sayıma, öteki AYIN beyanına bağlı bir riski geçiyor. */
+  donemIsrari?: DonemIsrari;
   kalemler: {
     saleItemId: string;
     iadeAdedi: number;
@@ -640,6 +649,32 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
           });
         }
       }
+      /**
+       * ═══ DÖNEM KAPISI (K108) — sayım kapısının yanında, ondan AYRI ═══
+       */
+      const donemSonucu = await donemKapisi(tx, girdi.occurredAt, girdi.donemIsrari);
+      if (donemSonucu.durum === "ISRARLA_GECILDI") {
+        await tx.auditLog.create({
+          data: {
+            action: DONEM_ISTISNA_EYLEMI,
+            /**
+             * ⚠ HEDEF `Sale` — komşu sayım izi de aynı hedefi kullanıyor.
+             * İade kaydı bu noktada HENÜZ YOK (kapı yazmadan ÖNCE koşmak
+             * zorunda); satış kimliği ise girdide hazır ve iadenin ait
+             * olduğu kaydı zaten o gösteriyor.
+             */
+            targetType: "Sale",
+            targetId: girdi.saleId,
+            detail: donemIstisnaIzi({
+              yol: "/iadeler — iade kaydı",
+              donem: donemSonucu.donem,
+              isTarihi: girdi.occurredAt,
+              israr: girdi.donemIsrari,
+            }),
+          },
+        });
+      }
+
       if (duraksayanlar.length > 0) {
         /** ⛔ SUNUCU EKRANA GÜVENMEZ — aynı saf gövde burada da koşuyor. */
         const g = israrGecerliMi(

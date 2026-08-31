@@ -21,6 +21,13 @@ import {
 } from "@/lib/stok-duzeltme";
 
 import type { Currency } from "@/generated/prisma/enums";
+import {
+  DonemKorumasiHatasi,
+  donemKapisi,
+  donemIsrariniOku,
+  donemIstisnaIzi,
+  DONEM_ISTISNA_EYLEMI,
+} from "@/lib/donem-kapisi";
 
 
 /**
@@ -49,6 +56,9 @@ export type DuzeltmeDurumu = {
   hatalar?: string[];
   /** Stok yetersizse: gerçekte kaç adet var. */
   mevcutStok?: number;
+  /** ⭐ DÖNEM KAPISI DURAKSATTI (K108) — sayım bayrağından AYRI.
+   *  Tek bayrak olsaydı ekran YANLIŞ ısrar bloğunu açardı. */
+  donemDuraksatti?: boolean;
 };
 
 export async function stokDuzelt(
@@ -146,6 +156,48 @@ export async function stokDuzelt(
    * GÜVENMİYOR. İki yerde iki ölçüt olmasın diye ikisi de AYNI saf gövdeyi
    * (`israrGecerliMi`) çağırıyor.
    */
+  /**
+   * ═══ DÖNEM KAPISI (K108) ═══
+   * ⚠ SAYIM KAPISINDAN AYRI: dönem MALİ, sayım FİZİKSEL bir riski soruyor.
+   */
+  try {
+    const donemSonucu = await donemKapisi(
+      prisma,
+      tarih,
+      donemIsrariniOku(formData),
+    );
+    if (donemSonucu.durum === "ISRARLA_GECILDI") {
+      await prisma.auditLog.create({
+        data: {
+          action: DONEM_ISTISNA_EYLEMI,
+          targetType: "ProductVariant",
+          targetId: variantId,
+          detail: donemIstisnaIzi({
+            yol: "/stok — elle düzeltme",
+            donem: donemSonucu.donem,
+            isTarihi: tarih,
+            israr: donemIsrariniOku(formData),
+          }),
+        },
+      });
+    }
+  } catch (e) {
+    if (e instanceof DonemKorumasiHatasi) {
+      return {
+        hatalar: [
+          t("donemKapali", { donem: e.donem, sayi: e.satisSayisi }),
+          e.eksik === "onay"
+            ? t("donemIsrariOnayGerek")
+            : e.eksik === "sebep"
+              ? t("donemIsrariSebepGerek")
+              : t("donemIsrariAciklamaGerek"),
+        ],
+        donemDuraksatti: true,
+      };
+    }
+    throw e;
+  }
+
   const sonSayimlar = await sonSayimTarihleri(prisma, [variantId]);
   const kapi = sayimKorumasi({
     sonSayimIsTarihi: sonSayimlar.get(variantId) ?? null,

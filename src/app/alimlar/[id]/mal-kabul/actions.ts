@@ -17,6 +17,13 @@ import {
   type SayimIsrarSebebi,
 } from "@/lib/sayim-korumasi";
 import { alimDurumunuHesapla, kalemTeslimAlinanlar } from "@/lib/stok";
+import {
+  DonemKorumasiHatasi,
+  donemKapisi,
+  donemIsrariniOku,
+  donemIstisnaIzi,
+  DONEM_ISTISNA_EYLEMI,
+} from "@/lib/donem-kapisi";
 
 export type MalKabulDurumu = {
   hatalar?: string[];
@@ -26,6 +33,13 @@ export type MalKabulDurumu = {
    * koşar. Tek gövde, iki yerden çağrılıyor.
    */
   sayimDuraksatti?: boolean;
+  /**
+   * ⭐ DÖNEM KAPISI DURAKSATTI (K108) — AYRI BAYRAK, bilerek.
+   * Tek bayrak olsaydı ekran hangi kapının yandığını bilemez ve YANLIŞ
+   * ısrar bloğunu açardı: kullanıcı sayım sebebi seçer, sunucu dönem
+   * sebebi bekler, kimse niye ilerlemediğini anlamaz (İlke #5).
+   */
+  donemDuraksatti?: boolean;
 };
 
 /** Sözlükten çözülen çeviri işlevi. */
@@ -172,6 +186,50 @@ export async function malKabulEt(
       kabulEdilenler.map((s) => kalemHaritasi.get(s.purchaseItemId)!.variantId),
     ),
   ];
+  /**
+   * ═══ DÖNEM KAPISI (K108) — SAYIM KAPISINDAN ÖNCE ═══
+   * ⚠ SIRA ÖNEMSİZ AMA AYRI: iki kapı iki farklı riski soruyor. Dönem
+   * MALİ (beyan edilmiş vergi), sayım FİZİKSEL (rafta ne var). Tek onayda
+   * birleştirilselerdi kullanıcı birini geçmek için ötekini de geçerdi.
+   */
+  try {
+    const donemSonucu = await donemKapisi(
+      prisma,
+      tarih,
+      donemIsrariniOku(formData),
+    );
+    if (donemSonucu.durum === "ISRARLA_GECILDI") {
+      await prisma.auditLog.create({
+        data: {
+          action: DONEM_ISTISNA_EYLEMI,
+          targetType: "Purchase",
+          targetId: alimId,
+          detail: donemIstisnaIzi({
+            yol: "/alimlar/[id]/mal-kabul",
+            donem: donemSonucu.donem,
+            isTarihi: tarih,
+            israr: donemIsrariniOku(formData),
+          }),
+        },
+      });
+    }
+  } catch (e) {
+    if (e instanceof DonemKorumasiHatasi) {
+      return {
+        hatalar: [
+          t("donemKapali", { donem: e.donem, sayi: e.satisSayisi }),
+          e.eksik === "onay"
+            ? t("donemIsrariOnayGerek")
+            : e.eksik === "sebep"
+              ? t("donemIsrariSebepGerek")
+              : t("donemIsrariAciklamaGerek"),
+        ],
+        donemDuraksatti: true,
+      };
+    }
+    throw e;
+  }
+
   const sonSayimlar = await sonSayimTarihleri(prisma, varyantIdleri);
   const duraksayanlar: string[] = [];
   for (const satir of kabulEdilenler) {

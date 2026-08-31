@@ -10,6 +10,12 @@ import {
 import { acikPartiler, fifoDagit, gunSonu, type Parti } from "@/lib/stok";
 
 import type { Currency } from "@/generated/prisma/enums";
+import {
+  donemKapisi,
+  donemIstisnaIzi,
+  DONEM_ISTISNA_EYLEMI,
+} from "@/lib/donem-kapisi";
+import type { DonemIsrari } from "@/lib/donem-korumasi";
 
 /**
  * ============================================================================
@@ -76,6 +82,14 @@ export type SatisGirdisi = {
    * Verilmezse "ısrar edilmemiş" sayılır ve kapı duraksatır.
    */
   sayimIsrari?: SayimIsrari;
+  /**
+   * ⭐ DÖNEM KAPISI ISRARI (K108) — satış başına, kalem başına DEĞİL.
+   * Sayım ısrarıyla AYNI gerekçe: kapıyı tetikleyen TARİH ve satışın tek
+   * tarihi var. ⚠ Ama İKİSİ AYRI ALAN: sayım bir VARYANTIN fiziksel
+   * sayımına, dönem bir AYIN beyanına bağlı. Tek alanda toplanırlarsa
+   * kullanıcı sayım için verdiği onayla kapanmış bir dönemi de geçerdi.
+   */
+  donemIsrari?: DonemIsrari;
 };
 
 /** Stok yetmediğinde fırlatılır; transaction geri sarılır. */
@@ -253,6 +267,14 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
         });
       }
     }
+    /**
+     * ═══ DÖNEM KAPISI (K108) — SAYIM KAPISININ HEMEN YANINDA ═══
+     * ⚠ İKİ KAPI AYRI AYRI SORULUR ve sırası önemli değil: ikisi de
+     * yazmadan ÖNCE, işlemin içinde koşuyor. Birleştirilselerdi tek bir
+     * onay iki farklı riski birden geçerdi.
+     */
+    const donemSonucu = await donemKapisi(tx, girdi.soldAt, girdi.donemIsrari);
+
     if (duraksayanlar.length > 0) {
       /**
        * ⛔ SUNUCU EKRANA GÜVENMEZ — ekran düğmeyi kilitliyor ama aynı
@@ -371,6 +393,27 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
      * ⚠ İŞLEM İÇİNDE YAZILIR: satış geri sarılırsa damga da sarılmalı.
      * Dışarıda yazılsaydı, başarısız bir satış sayımı geçersizleştirirdi.
      */
+    /**
+     * ⚠ DÖNEM İSTİSNASININ İZİ — İŞLEM İÇİNDE. Satış geri sarılırsa iz de
+     * sarılmalı; dışarıda yazılsaydı başarısız bir satış "uyarıya rağmen
+     * yazıldı" diye kayda geçerdi.
+     */
+    if (donemSonucu.durum === "ISRARLA_GECILDI") {
+      await tx.auditLog.create({
+        data: {
+          action: DONEM_ISTISNA_EYLEMI,
+          targetType: "Sale",
+          targetId: satis.id,
+          detail: donemIstisnaIzi({
+            yol: "/satislar — yeni satış",
+            donem: donemSonucu.donem,
+            isTarihi: girdi.soldAt,
+            israr: girdi.donemIsrari,
+          }),
+        },
+      });
+    }
+
     if (duraksayanlar.length > 0) {
       const an = new Date();
       await sayimGecersizlestir(

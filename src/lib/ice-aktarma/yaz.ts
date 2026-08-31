@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma";
 import { topluGuncelle } from "@/lib/toplu-guncelle";
 
 import type { YazimPlani } from "./dogrula";
+import { betikDonemKarari } from "@/lib/donem-kapisi";
+import { kapaliDonemler } from "@/lib/muhasebe-donemi";
 
 /**
  * ============================================================================
@@ -180,10 +182,43 @@ export async function planiYaz(
         })),
       );
 
+      /**
+       * ═══ DÖNEM KAPISI — BETİK YOLU: SORMA, ATLA VE RAPORLA (K108) ═══
+       *
+       * ⛔ BURADA SORU SORULMAZ. İçe aktarma toplu bir yazımdır ve soracak
+       * kimse yok; sayım korumasında da aynı kural geçerli. Kapanmış bir
+       * döneme sessizce yazmak, beyan edilmiş bir dönemi kimsenin haberi
+       * olmadan bozmak olurdu.
+       *
+       * ⚠ VE ATLANAN SATIR KAYBOLMAZ: kimliğiyle sonuca yazılıyor ve ekran
+       * onu gösteriyor. Sessizce atlanan satır, atlanmamış satırdan
+       * tehlikelidir — kullanıcı hepsinin yazıldığını sanır.
+       *
+       * ⚠ KÜME BİR KEZ OKUNUYOR: satır başına sorgu atmak binlerce satırlık
+       * bir aktarımı yüzlerce tura çıkarırdı.
+       */
+      const kapaliKume = await kapaliDonemler(tx);
+      const donemAtlananlar: { id: string; varyantId: string; donem: string }[] = [];
+      const yazilacakHareketler = plan.acilisHareketleri.filter((h) => {
+        const karar = betikDonemKarari({
+          isTarihi: h.tarih,
+          kapaliDonemler: kapaliKume,
+        });
+        if (karar.islem === "ATLA") {
+          donemAtlananlar.push({
+            id: h.id,
+            varyantId: h.varyantId,
+            donem: karar.donem,
+          });
+          return false;
+        }
+        return true;
+      });
+
       // --- 4) AÇILIŞ STOĞU — her satır AYRI bir FIFO partisi ---
-      if (plan.acilisHareketleri.length) {
+      if (yazilacakHareketler.length) {
         await tx.stockMovement.createMany({
-          data: plan.acilisHareketleri.map((h) => ({
+          data: yazilacakHareketler.map((h) => ({
             id: h.id,
             variantId: h.varyantId,
             type: "INITIAL" as const,
@@ -275,8 +310,12 @@ export async function planiYaz(
         urun: plan.yeniUrunler.length,
         varyant: plan.yeniVaryantlar.length,
         guncellenenVaryant: plan.guncellenenVaryantlar.length,
-        hareket: plan.acilisHareketleri.length,
-        adet: plan.acilisHareketleri.reduce((t, h) => t + h.adet, 0),
+        /** ⚠ GERÇEKTEN YAZILAN — planlanan DEĞİL. Plan sayısını basmak,
+         *  atlanan satırları yazılmış gibi göstermek olurdu. */
+        hareket: yazilacakHareketler.length,
+        adet: yazilacakHareketler.reduce((t, h) => t + h.adet, 0),
+        /** Kapalı döneme düştüğü için ATLANAN satırlar — kimliğiyle. */
+        donemAtlananlar,
         kanalSku: plan.yeniKanalSkulari.length,
         guncellenenKanalSku: plan.guncellenenKanalSkulari.length,
       };
