@@ -40,6 +40,14 @@ export type MalKabulDurumu = {
    * sebebi bekler, kimse niye ilerlemediğini anlamaz (İlke #5).
    */
   donemDuraksatti?: boolean;
+  /**
+   * ⚠ SOMUT SAYI EKRANA TAŞINIR (kullanıcı şartı 31.08.2026).
+   * Yalnız bayrak dönseydi ekran "kapalı dönem" diye SOYUT bir cümle
+   * kurardı; kullanıcı ne kadar şeyi etkilediğini görmeden ısrar
+   * edemez. Rakam kapıda ZATEN ölçülüyor — taşımamak onu atmak olurdu.
+   */
+  donem?: string;
+  donemSatisSayisi?: number;
 };
 
 /** Sözlükten çözülen çeviri işlevi. */
@@ -225,6 +233,8 @@ export async function malKabulEt(
               : t("donemIsrariAciklamaGerek"),
         ],
         donemDuraksatti: true,
+        donem: e.donem,
+        donemSatisSayisi: e.satisSayisi,
       };
     }
     throw e;

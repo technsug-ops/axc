@@ -57,6 +57,7 @@ export const MENU_ADRESLERI: Record<string, string> = {
   kullanicilar: "/ayarlar/kullanicilar",
   roller: "/ayarlar/roller",
   menuDuzeni: "/ayarlar/menu",
+  donemler: "/ayarlar/donemler",
 
   veriAktarimi: "/ayarlar/ice-aktarma",
   veriDisari: "/ayarlar/disa-aktarma",
@@ -164,6 +165,13 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
    * bulamadı. Bir ekranın nerede olması gerektiğini, onu arayan söyler.
    */
   { anahtar: "menuDuzeni", varsayilanGrup: "grupAyarlar" },
+  /**
+   * MUHASEBE DÖNEMLERİ (K108) — Ayarlar altında.
+   * ⚠ Bir OPERASYON ekranı değil, bir KARAR ekranı: ayda bir kez, dönem
+   * bitince açılır. Günlük menüye (Stok · Satışlar) konsaydı her gün
+   * görünür ve hiç kullanılmayan bir satır olurdu.
+   */
+  { anahtar: "donemler", varsayilanGrup: "grupAyarlar" },
 ];
 
 /**

@@ -59,6 +59,14 @@ export type DuzeltmeDurumu = {
   /** ⭐ DÖNEM KAPISI DURAKSATTI (K108) — sayım bayrağından AYRI.
    *  Tek bayrak olsaydı ekran YANLIŞ ısrar bloğunu açardı. */
   donemDuraksatti?: boolean;
+  /**
+   * ⚠ SOMUT SAYI EKRANA TAŞINIR (kullanıcı şartı 31.08.2026).
+   * Yalnız bayrak dönseydi ekran "kapalı dönem" diye SOYUT bir cümle
+   * kurardı; kullanıcı ne kadar şeyi etkilediğini görmeden ısrar
+   * edemez. Rakam kapıda ZATEN ölçülüyor — taşımamak onu atmak olurdu.
+   */
+  donem?: string;
+  donemSatisSayisi?: number;
 };
 
 export async function stokDuzelt(
@@ -193,6 +201,8 @@ export async function stokDuzelt(
               : t("donemIsrariAciklamaGerek"),
         ],
         donemDuraksatti: true,
+        donem: e.donem,
+        donemSatisSayisi: e.satisSayisi,
       };
     }
     throw e;

@@ -1,5 +1,6 @@
 "use client";
 
+import { DonemIsrarBloku } from "@/components/donem-israr-bloku";
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -115,6 +116,8 @@ export function SatisFormu({
   action: (durum: SatisDurumu, formData: FormData) => Promise<SatisDurumu>;
   bugun: string;
 }) {
+  /** Dönem ısrarının geçerliliği — blok bildirir, düğme okur. */
+  const [donemIsrarGecerli, setDonemIsrarGecerli] = useState(false);
   const [durum, formAction, bekliyor] = useActionState<SatisDurumu, FormData>(
     action,
     {},
@@ -1052,6 +1055,19 @@ export function SatisFormu({
         ⚠ Stok düzeltme ekranında blok ÖNDEN çiziliyor — orada tek varyant
         var ve sayfa zaten onu okuyor. Aynı kural, iki farklı maliyet.
       */}
+      {/*
+        ═══ DÖNEM KAPISI ISRARI (K108) — SAYIM BLOĞUNUN ÜSTÜNDE ═══
+        ⚠ İKİSİ AYNI ANDA ÇIKABİLİR: bir satış hem kapanmış bir döneme hem
+        sayımdan öncesine düşebilir. Tek blok gösterilseydi kullanıcı birini
+        geçer, öteki sessizce beklerdi ve "niye hâlâ kaydetmiyor" derdi.
+      */}
+      {durum.donemDuraksatti && durum.donem ? (
+        <DonemIsrarBloku
+          donem={durum.donem}
+          satisSayisi={durum.donemSatisSayisi ?? 0}
+          onGecerlilik={setDonemIsrarGecerli}
+        />
+      ) : null}
       {durum.sayimDuraksatti ? (
         <div
           className={`space-y-3 rounded-md border border-dashed p-3 text-xs ${DURUM_KUTUSU.uyari}`}
@@ -1109,7 +1125,14 @@ export function SatisFormu({
         ) : null}
         <Button
           type="submit"
-          disabled={bekliyor || kalemler.length === 0 || onayBekleyen}
+          disabled={
+            bekliyor ||
+            kalemler.length === 0 ||
+            onayBekleyen ||
+            /** ⚠ DÖNEM KAPISI AYRI KİLİTLER — sunucu zaten reddediyor ama
+             *  kilidin sebebi ekranda yazılı (İlke #5). */
+            (durum.donemDuraksatti === true && !donemIsrarGecerli)
+          }
         >
           {bekliyor ? ortak("kaydediliyor") : t("satisiKaydet")}
         </Button>

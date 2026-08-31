@@ -48,7 +48,8 @@
     "simulasyon": "Fiyat denemesi",
     "menuDuzeni": "Menü düzeni",
     "yerlestir": "Yerleştir",
-    "rafTasi": "Toplu raf taşıma"
+    "rafTasi": "Toplu raf taşıma",
+    "donemler": "Muhasebe dönemleri"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -718,7 +719,8 @@
     "depoKurulumu": "Depo kurulumu",
     "menuDuzeni": "Menü düzeni",
     "grupAyarlar": "Ayarlar",
-    "yerlestir": "Yerleştir"
+    "yerlestir": "Yerleştir",
+    "donemler": "Muhasebe dönemleri"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",
@@ -2012,7 +2014,9 @@
     "marjHesaplanamiyor": "hesaplanamıyor ({kapsanmayan}/{toplam} satışın maliyeti yok)",
     "kanalSiraEtiket": "Kanal sırası:",
     "kanalSiraDuzen": "Sabit düzen",
-    "kanalSiraCiro": "Ciro"
+    "kanalSiraCiro": "Ciro",
+    "donemDurumu": "Açık dönem: {bu} · en son kapanan: {son}",
+    "donemHicKapanmadi": "Açık dönem: {bu} · henüz hiçbir dönem kapatılmadı"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
@@ -3658,6 +3662,26 @@
     "sebepDIGER": "Diğer (açıklama zorunlu)",
     "baslik": "Muhasebe dönemleri",
     "durumACIK": "Açık",
-    "durumKAPALI": "Kapalı"
+    "durumKAPALI": "Kapalı",
+    "aciklama": "Kapanan dönemde geriye dönük kayıt yazmak beyan edilmiş vergiyi etkileyebilir; sistem uyarır ama engellemez.",
+    "kapatmaUyarisi": "Bir dönemi kapatmak yasak koymaz — UYARI koyar. O döneme yazılan her kayıt sebep ve onay ister, ve uyarıya rağmen yazıldığı kayda geçer.",
+    "sutunDonem": "Dönem",
+    "sutunKapatan": "Kapatan",
+    "kapatanBilinmiyor": "bilinmiyor",
+    "kapat": "Kapat",
+    "yenidenAc": "Yeniden aç",
+    "kapatOnayBaslik": "{donem} kapatılsın mı?",
+    "kapatOnayMetni": "Bu döneme yazılacak her kayıt sebep ve onay isteyecek. Kapanış geri alınabilir.",
+    "acOnayBaslik": "{donem} yeniden açılsın mı?",
+    "acOnayMetni": "Bu dönemin koruması kalkacak; kayıtlar uyarısız yazılacak. Kapanış kaydı silinmez, izi kalır.",
+    "kapanisNotu": "Kapanış notu",
+    "kapanisNotuIpucu": "örn. Beyan verildi, muhasebeci onayladı",
+    "kapatildi": "Dönem kapatıldı.",
+    "acildi": "Dönem yeniden açıldı.",
+    "gecersizDonem": "Geçersiz dönem.",
+    "gelecekDonemKapatilamaz": "Bitmemiş bir dönem kapatılamaz — bugünkü ay dâhil. Kapanış ancak dönem bittikten sonra bir karardır.",
+    "ayarlaraDon": "Ayarlar",
+    "sutunIslem": "İşlem",
+    "onayla": "Evet, uygula"
   }
 }

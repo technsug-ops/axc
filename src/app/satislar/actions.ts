@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { gunDegeri, gunMetninden, isTakvimGunu } from "@/lib/donem";
+import { DonemKorumasiHatasi } from "@/lib/donem-kapisi";
 import {
   satisKaydet,
   SiparisNoCakismasiHatasi,
@@ -31,6 +32,11 @@ export type SatisDurumu = {
    * koşar. İki yerde iki ölçüt yok, tek gövde iki yerden çağrılıyor.
    */
   sayimDuraksatti?: boolean;
+  /** ⭐ DÖNEM KAPISI DURAKSATTI (K108) — sayım bayrağından AYRI.
+   *  Tek bayrak ekranın YANLIŞ ısrar bloğunu açmasına yol açardı. */
+  donemDuraksatti?: boolean;
+  donem?: string;
+  donemSatisSayisi?: number;
   /** Çakışan satış İPTALLİ mi — kutu metnini bu belirler. */
   mevcutSatisIptalli?: boolean;
 };
@@ -92,6 +98,26 @@ function satisSemasiKur(t: Ceviri) {
         onaylandi: z.boolean(),
         sebep: z
           .enum(["GEC_GIRILEN_ALIM", "GEC_GIRILEN_SATIS", "SAYIM_HATALI", "DIGER"])
+          .nullable(),
+        aciklama: z.string().trim().max(500),
+      })
+      .optional(),
+    /**
+     * ⭐ DÖNEM KAPISI ISRARI (K108) — sayım ısrarından AYRI alan.
+     * ⚠ Sebep listesi de ayrı: sayımın sebepleri FİZİKSEL, dönemin MALİ.
+     * Tek alanda toplansalardı kullanıcı sayım için verdiği onayla
+     * kapanmış bir dönemi de geçerdi.
+     */
+    donemIsrari: z
+      .object({
+        onaylandi: z.boolean(),
+        sebep: z
+          .enum([
+            "GEC_GIRILEN_KAYIT",
+            "MUHASEBECI_ONAYLADI",
+            "DONEM_YANLIS_KAPATILDI",
+            "DIGER",
+          ])
           .nullable(),
         aciklama: z.string().trim().max(500),
       })
@@ -171,6 +197,7 @@ export async function satisOlustur(
       paketSayisi: veri.paketSayisi,
       cargoAmountManual: veri.cargoAmountManual,
       sayimIsrari: veri.sayimIsrari,
+      donemIsrari: veri.donemIsrari,
       kalemler: veri.kalemler.map((k) => ({
         variantId: k.variantId,
         quantity: k.quantity,
@@ -208,6 +235,26 @@ export async function satisOlustur(
      * ⚠ VE NİYE İLERLEMEDİĞİ YAZILI (İlke #5): eksik olan onay mı, sebep mi,
      * açıklama mı — kilitli düğme sessiz kalmaz.
      */
+    /**
+     * ⚠ DÖNEM KAPISI SAYIMDAN ÖNCE YAKALANIR — ikisi aynı anda duraksatabilir
+     * ve o hâlde önce MALİ olanı söylemek doğru: dönem kapalıysa kayıt zaten
+     * beyanı etkiliyor, sayım ondan sonra gelir.
+     */
+    if (e instanceof DonemKorumasiHatasi) {
+      return {
+        hatalar: [
+          t("donemKapali", { donem: e.donem, sayi: e.satisSayisi }),
+          e.eksik === "onay"
+            ? t("donemIsrariOnayGerek")
+            : e.eksik === "sebep"
+              ? t("donemIsrariSebepGerek")
+              : t("donemIsrariAciklamaGerek"),
+        ],
+        donemDuraksatti: true,
+        donem: e.donem,
+        donemSatisSayisi: e.satisSayisi,
+      };
+    }
     if (e instanceof SayimKorumasiHatasi) {
       const dusuren = e.duraksayanlar.some((x) => x.yon === "DUSUREN");
       return {

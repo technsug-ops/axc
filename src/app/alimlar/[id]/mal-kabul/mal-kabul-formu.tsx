@@ -36,6 +36,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { malKabulEt, type MalKabulDurumu } from "./actions";
+import { DonemIsrarBloku } from "@/components/donem-israr-bloku";
 
 export type KonumSecenegi = { id: string; code: string; name: string | null };
 
@@ -94,6 +95,8 @@ export function MalKabulFormu({
   const tOnay = useTranslations("MalKabulOnay");
   const tOrtak = useTranslations("Ortak");
 
+  /** Dönem ısrarının geçerliliği — blok bildirir, düğme okur. */
+  const [donemIsrarGecerli, setDonemIsrarGecerli] = useState(false);
   const [durum, formAction, bekliyor] = useActionState<
     MalKabulDurumu,
     FormData
@@ -453,6 +456,19 @@ export function MalKabulFormu({
         işi kilitlerdi. Ama sessiz de geçmez: mal sayım sırasında raftaysa
         SAYAN KİŞİ ONU ZATEN SAYDI ve aynı mal ikinci kez eklenir.
       */}
+      {/*
+        ═══ DÖNEM KAPISI ISRARI (K108) — SAYIM BLOĞUNUN ÜSTÜNDE ═══
+        ⚠ İKİSİ AYNI ANDA ÇIKABİLİR ve çıkmalı: bir mal kabul hem kapanmış
+        bir döneme hem sayımdan öncesine düşebilir. Tek blok gösterilseydi
+        kullanıcı birini geçer, öteki sessizce beklerdi.
+      */}
+      {durum.donemDuraksatti && durum.donem ? (
+        <DonemIsrarBloku
+          donem={durum.donem}
+          satisSayisi={durum.donemSatisSayisi ?? 0}
+          onGecerlilik={setDonemIsrarGecerli}
+        />
+      ) : null}
       {durum.sayimDuraksatti ? (
         <div
           className={`space-y-3 rounded-md border border-dashed p-3 text-xs ${DURUM_KUTUSU.uyari}`}
@@ -551,7 +567,17 @@ export function MalKabulFormu({
               <AlertDialogCancel>{tOrtak("vazgec")}</AlertDialogCancel>
               {/* Diyalog portal içinde açıldığı için düğmeyi forma
                   form="..." ile bağlıyoruz; yoksa gönderim çalışmaz. */}
-              <Button type="submit" form="mal-kabul-formu" disabled={bekliyor}>
+              {/* ⚠ DÖNEM KAPISI DÜĞMEYİ DE KİLİTLER — sunucu zaten
+                  reddediyor ama kilitli düğme sebebi ekranda yazılı
+                  (İlke #5); kullanıcı boşuna göndermiyor. */}
+              <Button
+                type="submit"
+                form="mal-kabul-formu"
+                disabled={
+                  bekliyor ||
+                  (durum.donemDuraksatti === true && !donemIsrarGecerli)
+                }
+              >
                 {tOnay("onayla")}
               </Button>
             </AlertDialogFooter>

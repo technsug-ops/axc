@@ -1,3 +1,4 @@
+import { donemOzeti } from "@/lib/muhasebe-donemi";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import {
@@ -707,6 +708,17 @@ export default async function AnaSayfa({
    * yüzden `Company` üstünde bir sütuna HİÇ gerek kalmadı.
    */
   const kanalKipi = kanalSiraKipi(parametreler.kanalSira);
+
+  /**
+   * ⚠ DÖNEM DURUMU PANELDE (K108) — iki rakam, ne eksik ne fazla:
+   * BUGÜNÜN dönemi ve EN SON kapanış. "Açık dönem sayısı" gibi bir rakam
+   * kapanmamış her ayı sayardı ve sonsuza kadar büyüyen anlamsız bir sayı
+   * olurdu. Panel bir HÜKÜM yeridir (İlke #13).
+   */
+  /** ⚠ AD `muhasebeDonemi` — `donem` bu dosyada ZATEN pencereyi (BU_AY,
+   *  SON_3_AY) gösteriyor. Aynı kelimeyi iki kavram için kullanmak, bugün
+   *  anayasaya yazılan dersin değişken düzeyindeki hâli olurdu. */
+  const muhasebeDonemi = await donemOzeti(new Date());
 
   const bloklar = panelHesapla(
     donem,
@@ -1666,6 +1678,30 @@ export default async function AnaSayfa({
 
   return (
     <div className="min-w-0 space-y-6">
+      {/*
+        ⚠ TEK SATIR, KUTU DEĞİL. Dönem durumu bir GÖREV değil bir BAĞLAM:
+        "nerede duruyoruz" bilgisi. Kutu yapılsaydı panelde iş varmış gibi
+        görünür ve kapatılacak bir şey aranırdı (K49: kapatılamayan madde
+        kutunun tamamına olan güveni eritir).
+      */}
+      <p className="text-muted-foreground text-xs">
+        {muhasebeDonemi.sonKapanan
+          ? t("donemDurumu", {
+              bu: bicim.ayYil(
+                new Date(Date.UTC(muhasebeDonemi.buDonem.yil, muhasebeDonemi.buDonem.ay - 1, 1)),
+              ),
+              son: bicim.ayYil(
+                new Date(
+                  Date.UTC(muhasebeDonemi.sonKapanan.yil, muhasebeDonemi.sonKapanan.ay - 1, 1),
+                ),
+              ),
+            })
+          : t("donemHicKapanmadi", {
+              bu: bicim.ayYil(
+                new Date(Date.UTC(muhasebeDonemi.buDonem.yil, muhasebeDonemi.buDonem.ay - 1, 1)),
+              ),
+            })}
+      </p>
       {/* ⚠ SÜZGEÇLİ ADRESİ HATIRLAR — hiçbir şey ÇİZMEZ (K104-②).
           Bir kayda girip dönen kullanıcı süzgecini geri bulsun diye.
           Kaydedici olmadan "‹ Liste" bağlantısı düz listeye düşer. */}

@@ -48,7 +48,8 @@
     "simulasyon": "",
     "menuDuzeni": "",
     "yerlestir": "",
-    "rafTasi": ""
+    "rafTasi": "",
+    "donemler": ""
   },
   "Ortak": {
     "kapat": "",
@@ -718,7 +719,8 @@
     "depoKurulumu": "",
     "menuDuzeni": "",
     "grupAyarlar": "",
-    "yerlestir": ""
+    "yerlestir": "",
+    "donemler": ""
   },
   "Kamera": {
     "desteklenmiyor": "",
@@ -2012,7 +2014,9 @@
     "marjHesaplanamiyor": "",
     "kanalSiraEtiket": "",
     "kanalSiraDuzen": "",
-    "kanalSiraCiro": ""
+    "kanalSiraCiro": "",
+    "donemDurumu": "",
+    "donemHicKapanmadi": ""
   },
   "Envanter": {
     "baslik": "",
@@ -3658,6 +3662,26 @@
     "sebepDIGER": "",
     "baslik": "",
     "durumACIK": "",
-    "durumKAPALI": ""
+    "durumKAPALI": "",
+    "aciklama": "",
+    "kapatmaUyarisi": "",
+    "sutunDonem": "",
+    "sutunKapatan": "",
+    "kapatanBilinmiyor": "",
+    "kapat": "",
+    "yenidenAc": "",
+    "kapatOnayBaslik": "",
+    "kapatOnayMetni": "",
+    "acOnayBaslik": "",
+    "acOnayMetni": "",
+    "kapanisNotu": "",
+    "kapanisNotuIpucu": "",
+    "kapatildi": "",
+    "acildi": "",
+    "gecersizDonem": "",
+    "gelecekDonemKapatilamaz": "",
+    "ayarlaraDon": "",
+    "sutunIslem": "",
+    "onayla": ""
   }
 }

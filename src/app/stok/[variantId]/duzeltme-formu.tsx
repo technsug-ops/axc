@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DURUM_KUTUSU } from "@/lib/renkler";
 import { SAYIM_ISRAR_SEBEPLERI } from "@/lib/sayim-korumasi";
 import { stokDuzelt, type DuzeltmeDurumu } from "../duzeltme-actions";
+import { DonemIsrarBloku } from "@/components/donem-israr-bloku";
 
 /**
  * ============================================================================
@@ -96,6 +97,8 @@ export function DuzeltmeFormu({
    * damgadan ÖNCE. Aynı gün SERBEST (sayım gününün tamamı kilitlenmez).
    * Metin karşılaştırması `YYYY-MM-DD` biçiminde sıralı olduğu için güvenli.
    */
+  /** Dönem ısrarının geçerliliği — blok bildirir, düğme okur. */
+  const [donemIsrarGecerli, setDonemIsrarGecerli] = useState(false);
   const kapiDuraksatir = sonSayimTarihi !== null && tarih < sonSayimTarihi;
   /** ⚠ YÖN AYRIMI EKRANDA DA: iki yön iki AYRI cümle, çünkü yapılacak
    *  kontrol farklı. Sertlik aynı, gerekçe farklı. */
@@ -364,9 +367,30 @@ export function DuzeltmeFormu({
                 ) : null}
               </div>
             ) : null}
+            {/*
+              ═══ DÖNEM KAPISI ISRARI (K108) — SAYIM BLOĞUNDAN AYRI ═══
+              ⚠ Sunucu duraksatınca çiziliyor; ekran KENDİ BAŞINA "bu dönem
+              kapalı mı" diye tahmin etmiyor. Tahmin etseydi kapalı dönem
+              listesini istemciye taşımak ve iki yerde iki ölçüt tutmak
+              gerekirdi.
+            */}
+            {durum.donemDuraksatti && durum.donem ? (
+              <DonemIsrarBloku
+                donem={durum.donem}
+                satisSayisi={durum.donemSatisSayisi ?? 0}
+                onGecerlilik={setDonemIsrarGecerli}
+              />
+            ) : null}
             <Button
               type="submit"
-              disabled={bekliyor || (kapiDuraksatir && !israrGecerli)}
+              disabled={
+                bekliyor ||
+                (kapiDuraksatir && !israrGecerli) ||
+                /** ⚠ İKİ KAPI AYRI AYRI KİLİTLER: biri geçilse öteki hâlâ
+                 *  duruyor olabilir. Tek koşulda birleştirmek, bir onayla
+                 *  iki riski birden geçirmek olurdu. */
+                (durum.donemDuraksatti === true && !donemIsrarGecerli)
+              }
               className="h-11 md:h-10"
             >
               <Save />
