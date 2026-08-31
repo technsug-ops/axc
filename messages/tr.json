@@ -3819,5 +3819,20 @@
     "kaydedildi": "Ayarlar kaydedildi.",
     "firmaYok": "Firma kaydı bulunamadı.",
     "yontemHenuzAcikDegil": "Bu yöntem henüz açık değil."
+  },
+  "Vitrin": {
+    "baslik": "Rafta var, vitrinde yok",
+    "notu": "Elimizde malı olan ama pazaryerinde satılamayan ürünler. Her satır o ürünleri süzülmüş hâlde açar.",
+    "ozet": "{adet} ürün · {tutar}",
+    "satirOzeti": "{adet} ürün · {tutar}",
+    "listelenmemis": "Kanalda hiç listelenmemiş",
+    "pasif": "Pasif ya da onay bekliyor",
+    "stokKapali": "Stok bildirimi kapalı",
+    "kaydiYok": "Kanal kaydı yok",
+    "toplamaGirmez": "(toplama girmez)",
+    "sonKarsilastirma": "Son karşılaştırma: {tarih}",
+    "hicOlculmedi": "Henüz karşılaştırılmadı",
+    "bayat": "{saat} saatten eski — gece koşumu kaçmış olabilir",
+    "bos": "Bu kanalda satılamayan stoklu ürün yok."
   }
 }

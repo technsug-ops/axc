@@ -126,13 +126,24 @@ export function kanalKaydiYokKosulu(g: {
  * sözleşmesinin sahibi DOSYADAN üretilir — ekran kendi adresini kurarsa
  * koşul değiştiğinde sayı ile liste sessizce ayrışır."
  */
-export function vitrinAdresi(satir?: VitrinSatiri): string {
+/** Adres seçeneği — sayılan satırlar + kayıtsızlar. */
+export type VitrinAdresi = VitrinSatiri | "KAYIT_YOK";
+
+export function vitrinAdresi(satir?: VitrinAdresi): string {
   const p = new URLSearchParams({ vitrin: satir ?? "hepsi" });
   return `/stok?${p.toString()}`;
 }
 
 /** Adresten satır çözümü — tanınmayan değer "hepsi"ye düşer. */
-export function vitrinSatiriCoz(ham: string | undefined): VitrinSatiri | undefined {
+/**
+ * ⚠ `KAYIT_YOK` AYRI DÖNER: çağıran onu `kanalKaydiYokKosulu`ya götürmek
+ * zorunda. `vitrinKosulu`ya verilirse hiçbir şey bulamaz ve liste sessizce
+ * boşalır — kutuda 9 yazarken listede 0 çıkardı ("sayı = liste" bozulur).
+ */
+export function vitrinSatiriCoz(
+  ham: string | undefined,
+): VitrinAdresi | undefined {
+  if (ham === "KAYIT_YOK") return "KAYIT_YOK";
   return (VITRIN_SATIRLARI as readonly string[]).includes(ham ?? "")
     ? (ham as VitrinSatiri)
     : undefined;

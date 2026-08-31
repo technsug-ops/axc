@@ -3819,5 +3819,20 @@
     "kaydedildi": "",
     "firmaYok": "",
     "yontemHenuzAcikDegil": ""
+  },
+  "Vitrin": {
+    "baslik": "",
+    "notu": "",
+    "ozet": "",
+    "satirOzeti": "",
+    "listelenmemis": "",
+    "pasif": "",
+    "stokKapali": "",
+    "kaydiYok": "",
+    "toplamaGirmez": "",
+    "sonKarsilastirma": "",
+    "hicOlculmedi": "",
+    "bayat": "",
+    "bos": ""
   }
 }
