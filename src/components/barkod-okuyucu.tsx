@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DESTEKLENEN_FORMATLAR } from "@/lib/barkod-formatlari";
 
 /**
  * ============================================================================
@@ -43,34 +44,16 @@ prepareZXingModule({
 });
 
 /**
- * OKUNAN BİÇİMLER — İKİ AYRI DÜNYA.
+ * OKUNAN BİÇİMLER — LİSTE ARTIK `lib/barkod-formatlari.ts`TE.
  *
- * ⚠ LİSTE ÜRÜN KODLARI İÇİN KURULMUŞTU VE KAPSAM GENİŞLEYİNCE GENİŞLEMEDİ.
- * İlk hâli `EAN13 · EAN8 · Code128 · QRCode` idi ve o gün ekran yalnız ÜRÜN
- * okuyordu. K41① ile **kargo etiketi** akışa girdi (`/okut`, `/paketle`) —
- * kargo etiketleri başka semboloji kullanır ve liste hiç güncellenmedi.
+ * ⚠ TAŞINDI (K111, 31.08.2026) ve sebebi bekçiydi: liste burada, modül
+ * düzeyinde `prepareZXingModule` çağıran bir `.tsx` içinde durdukça bekçi onu
+ * ÇAĞIRARAK ölçemiyor, KAYNAK TARAMAK zorunda kalıyordu. Aynı liste iki kez
+ * eksik çıktı (25.08 `ITF`, 31.08 `UPCA`) ve ikisinde de kaynak tarayan bir
+ * ölçüt yoktu. Saf modüle taşınınca bekçi gövdeyi çağırıp değerini ölçüyor.
  *
- * Canlı bulgu 25.08.2026: Hepsiburada `hepsiJET` etiketi kamerayla
- * okunmuyor. Etiketteki numara **14 hane** (`62755096992291`) — bu klasik
- * bir `ITF-14` uzunluğu ve `ITF` listede YOKTU. Okuyucu tanımadığı bir
- * sembolojiyi "bulamadım" diye geçer; ekranda hata da çıkmaz, hiçbir şey
- * olmaz. Tam olarak kullanıcının anlattığı hâl.
- *
- * ⚠ HANGİ SEMBOLOJİ OLDUĞU ÖLÇÜLMEDİ — VE BU YAZILI. Etiketin gerçekte
- * `ITF` mi `Code128` mi olduğunu ölçemedim (elimde dosya olarak yok).
- * Bu yüzden TEK bir biçim eklenmedi: kargo etiketlerinde yaygın olan
- * ailenin tamamı açıldı. Genişletmenin bedeli yok (okuyucu zaten tarıyor),
- * dar bırakmanın bedeli okunmayan etiket.
+ * Gerekçeler, ölçümler ve perakende muafiyet listesi orada.
  */
-const URUN_FORMATLARI = ["EAN13", "EAN8", "Code128", "QRCode"] as const;
-
-/** Kargo/lojistik etiketlerinde yaygın olanlar. */
-const KARGO_FORMATLARI = ["ITF", "Code39", "Code93", "DataMatrix", "PDF417"] as const;
-
-const DESTEKLENEN_FORMATLAR = [
-  ...URUN_FORMATLARI,
-  ...KARGO_FORMATLARI,
-] as const;
 
 /** Kamera karesini çözümler; kod bulursa metnini döner. */
 async function kareyiCozumle(
@@ -345,9 +328,15 @@ function KameraDiyalogu({
 
         <canvas ref={canvasRef} className="hidden" />
 
-        <p className="text-muted-foreground text-xs">
-          Desteklenen formatlar: EAN-13, EAN-8, Code128, QR
-        </p>
+        {/*
+          ⚠ METİN AİLE DÜZEYİNDE VE SÖZLÜKTEN (K111). Eskiden koda gömülüydü
+          ve "EAN-13, EAN-8, Code128, QR" diyordu — ITF eklendiğinde de,
+          UPC-A eklendiğinde de güncellenmedi. Tek tek biçim saymak, listeyi
+          her genişlettiğimizde SESSİZCE yalan söyleyen bir cümle bırakıyor
+          (anayasa: "kolon başlığı bir iddiadır"). Aile düzeyinde yazılınca
+          iddia dar kalıyor ve doğru kalıyor.
+        */}
+        <p className="text-muted-foreground text-xs">{t("desteklenenler")}</p>
 
         <Button type="button" variant="outline" onClick={onKapat}>
           Kapat

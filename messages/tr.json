@@ -729,7 +729,8 @@
     "acilamadi": "Kamera açılamadı. Sayfa güvenli bağlantıda (https veya localhost) olmalı. Kodu elle yazabilirsiniz.",
     "yonerge": "Kodu kameranın ortasına getirin. Okunduğunda pencere kendiliğinden kapanır.",
     "aciliyor": "Kamera açılıyor...",
-    "cozucuHatasi": "Barkod çözücü çalışmadı: {sebep}. Kodu elle yazabilirsiniz."
+    "cozucuHatasi": "Barkod çözücü çalışmadı: {sebep}. Kodu elle yazabilirsiniz.",
+    "desteklenenler": "Ürün barkodları (EAN, UPC), kargo etiketleri ve QR/kare kodlar okunur."
   },
   "Satis": {
     "urunSecilmeli": "Ürün seçilmeli",

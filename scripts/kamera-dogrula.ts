@@ -1,4 +1,12 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
+import { RETAIL_BARCODE_FORMATS } from "zxing-wasm/reader";
+
+import {
+  DESTEKLENEN_FORMATLAR,
+  URUN_DISI_PERAKENDE,
+  URUN_FORMATLARI,
+  perakendeBoslugu,
+} from "../src/lib/barkod-formatlari";
 import { join } from "node:path";
 
 /**
@@ -271,12 +279,31 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/^\s*\/\/.*$/gm, "");
 
-  for (const bicim of ["EAN13", "Code128", "QRCode"]) {
-    kontrol(`  ürün biçimi ${bicim} destekleniyor`, okuyucu.includes(`"${bicim}"`));
+  /**
+   * ⚠ ÖLÇÜT DEĞERE BAĞLANDI — KAYNAK TARAMASI BIRAKILDI (K111, 31.08.2026).
+   *
+   * Eski hâli `okuyucu.includes('"EAN13"')` diyordu ve iki ayrı kusuru vardı:
+   *
+   * ① Liste saf modüle taşınınca (bekçi ÇAĞIRABİLSİN diye) desen dosyadan
+   *    kalktı ve ölçüt kırmızı yandı. Kod DOĞRUYDU, ölçüt eskimişti
+   *    (anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez").
+   *
+   * ② ⛔ VE DAHA KÖTÜSÜ: `"QRCode"` ile `"DataMatrix"` ölçütleri ZATEN
+   *    YALANCI YEŞİLDİ. O dizeler biçim listesinde değil, aşağıdaki
+   *    `kareKodlar` kümesinde de geçiyor — biçim listesinden silinseler
+   *    kontrol yine yeşil yanardı. Tam olarak anayasanın "aynı desen birden
+   *    çok yerde geçiyorsa tarama ikincisini bulur" vakası.
+   *
+   * Artık modül çağrılıp DEĞERİ ölçülüyor; desen aranmadığı için yanlış
+   * yerde bulunamıyor.
+   */
+  const bicimler = DESTEKLENEN_FORMATLAR as readonly string[];
+  for (const bicim of ["EAN13", "EAN8", "UPCA", "Code128", "QRCode"]) {
+    kontrol(`  ürün biçimi ${bicim} destekleniyor`, bicimler.includes(bicim));
   }
   /** ⚠ 14 haneli kargo numarası klasik ITF-14'tür — bu satır o vakanın bekçisi. */
-  for (const bicim of ["ITF", "Code39", "DataMatrix"]) {
-    kontrol(`  kargo biçimi ${bicim} destekleniyor`, okuyucu.includes(`"${bicim}"`));
+  for (const bicim of ["ITF", "Code39", "Code93", "DataMatrix", "PDF417"]) {
+    kontrol(`  kargo biçimi ${bicim} destekleniyor`, bicimler.includes(bicim));
   }
 
   /**
@@ -344,6 +371,92 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
     "  ...ve hatayı SESSİZCE yutmuyor",
     /catch\s*\(\w+\)\s*\{[\s\S]{0,500}?setHata\(/.test(cozumBloku),
     cozumBloku.slice(0, 90),
+  );
+}
+
+/**
+ * ============================================================================
+ *  PERAKENDE BİÇİM KAPSAMI — LİSTE ELLE TUTULMUYOR (K111, 31.08.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ NİYE: aynı liste İKİ KEZ eksik çıktı ve ikisinde de sessiz kaldı.
+ *    ① 25.08 — kargo etiketi girdi, `ITF` yoktu (hepsiJET okunmadı)
+ *    ② 31.08 — `UPCA` yoktu; kataloğun %9,2'si (104 varyant) okunamıyordu
+ *
+ *  ⭐ ÖLÇÜT TERSTEN KURULDU: "UPC-A var mı" diye SAYMIYOR. Kütüphanenin KENDİ
+ *  perakende kataloğunu (`RETAIL_BARCODE_FORMATS`) okuyup her biçimin ya açık
+ *  ya GEREKÇESİYLE beyan edilmiş olmasını şart koşuyor. Kütüphane yarın yeni
+ *  bir perakende biçimi eklerse bekçi onu kendiliğinden sorar; kimsenin
+ *  listeyi hatırlaması gerekmez. _(Anayasa: "bekçi ölçütü elle tutulan liste
+ *  değil, tersten kurulur".)_
+ *
+ *  ⭐ VE KAYNAK TARAMIYOR: saf modül ÇAĞRILIP değeri ölçülüyor.
+ * ============================================================================
+ */
+console.log("\n11) PERAKENDE BİÇİM KAPSAMI — K111");
+{
+  const acik = URUN_FORMATLARI as readonly string[];
+  const hepsi = DESTEKLENEN_FORMATLAR as readonly string[];
+
+  /**
+   * ⭐ ÖNCE GÖVDENİN KENDİSİ SINANIR — SENTETİK VAKAYLA.
+   *
+   * ⛔ NİYE: bu ölçüt `perakendeBoslugu`ya güveniyor. Gövde körleştirilirse
+   * (ör. `acik` kümesi kataloğun kendisinden kurulursa) her zaman BOŞ döner
+   * ve ölçüt sonsuza kadar yeşil yanar. Mutasyon turunda tam bu senaryo
+   * KAÇTI ve bu iki satır o kaçışı kapatmak için yazıldı.
+   *
+   * Anayasa: _"bekçinin yeşili, ölçtüğü doğrulanmadan güvence değildir"_ —
+   * bir ölçütün ölçtüğünü gösteren şey, ayırdığı iki yakayı da göstermektir.
+   */
+  kontrol(
+    "gövde BEYANSIZ bir biçimi gerçekten yakalıyor (sentetik)",
+    perakendeBoslugu(["UYDURMA_BICIM"]).includes("UYDURMA_BICIM"),
+  );
+  kontrol(
+    "  ...ve AÇIK olanı yanlışlıkla suçlamıyor",
+    perakendeBoslugu(["EAN13"]).length === 0,
+  );
+  kontrol(
+    "  ...ve BEYANLI olanı suçlamıyor",
+    perakendeBoslugu(["EAN2"]).length === 0,
+  );
+
+  /** ⭐ ASIL ÖLÇÜT — beyansız eksik yasak. */
+  const bosluk = perakendeBoslugu(RETAIL_BARCODE_FORMATS);
+  kontrol(
+    "zxing perakende kataloğunda BEYANSIZ eksik yok",
+    bosluk.length === 0,
+    bosluk.length ? "beyansız: " + bosluk.join(", ") : "",
+  );
+
+  /** Vakanın kendisi — 12 haneli barkod okunabilmeli. */
+  kontrol("UPC-A açık (12 haneli barkod — 104 varyant)", acik.includes("UPCA"));
+  kontrol("UPC-E açık", acik.includes("UPCE"));
+  kontrol("EAN-13 hâlâ açık (925 varyant)", acik.includes("EAN13"));
+
+  /**
+   * ⚠ İKİNCİ YÖN: EK KOD BİÇİMLERİ AÇILMAMALI. `EAN2`/`EAN5` iki ve beş
+   * haneli fiyat ekleridir; açılırlarsa `maxNumberOfSymbols: 4` taramasında
+   * "12" gibi bir çöp değer asıl barkodun ÖNÜNE geçebilir. Yalnız "eksik
+   * var mı" diye sorsaydık bu yön serbest kalırdı.
+   */
+  for (const ek of ["EAN2", "EAN5", "EANUPC"]) {
+    kontrol(`  ...${ek} AÇIK DEĞİL (çöp okuma riski)`, !hepsi.includes(ek));
+  }
+
+  /** ⚠ ZİNCİR: ürün listesi okuyucuya GERÇEKTEN ulaşıyor mu? */
+  for (const b of acik) {
+    kontrol(`  ...${b} birleşik listede`, hepsi.includes(b));
+  }
+
+  /** ⛔ GEREKÇESİZ MUAFİYET YOK — beyan tek başına yetmez. */
+  const gerekcesiz = Object.entries(URUN_DISI_PERAKENDE)
+    .filter(([, g]) => g.trim() === "")
+    .map(([k]) => k);
+  kontrol(
+    "her muafiyet GEREKÇELİ",
+    gerekcesiz.length === 0,
+    gerekcesiz.join(", "),
   );
 }
 
