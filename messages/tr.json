@@ -659,7 +659,19 @@
     "sayimSebep_GEC_GIRILEN_ALIM": "Geç girilen alım (mal gerçekten geldi)",
     "sayimSebep_GEC_GIRILEN_SATIS": "Geç girilen satış (mal gerçekten çıktı)",
     "sayimSebep_SAYIM_HATALI": "Sayım yanlıştı, kayıt doğru",
-    "sayimSebep_DIGER": "Diğer — açıklama zorunlu"
+    "sayimSebep_DIGER": "Diğer — açıklama zorunlu",
+    "donemKapali": "{donem} dönemi KAPATILDI. O dönemde {sayi} satış hesaplandı — yazarsanız o dönemin rakamı değişir ve beyan edilmiş vergi tutmayabilir. Muhasebecinize danışın.",
+    "donemIsrariOnayGerek": "Devam etmek için onay kutusunu işaretleyin.",
+    "donemIsrariSebepGerek": "Bir sebep seçin — üç ay sonra bu kaydın niye geçtiği sorulacak.",
+    "donemIsrariAciklamaGerek": "\"Diğer\" seçtiniz; açıklama zorunlu.",
+    "donemIsrariBaslik": "Kapalı döneme yazıyorsunuz",
+    "donemIsrariOnay": "Uyarıyı okudum, yine de yaz",
+    "donemIsrariSebep": "Sebep",
+    "donemIsrariAciklama": "Açıklama",
+    "donemSebepGEC_GIRILEN_KAYIT": "Gerçekten olmuş bir kayıt, deftere geç giriliyor",
+    "donemSebepDONEM_YANLIS_KAPATILDI": "Dönem sehven kapatılmıştı",
+    "donemSebepDIGER": "Diğer (açıklama zorunlu)",
+    "donemSebepMUHASEBECI_ONAYLADI": "Muhasebeci onayladı — beyan düzeltmesi yapılacak"
   },
   "Menu": {
     "operasyon": "Operasyon",
@@ -951,7 +963,19 @@
     "sayimSebep_GEC_GIRILEN_ALIM": "Geç girilen alım (mal gerçekten geldi)",
     "sayimSebep_GEC_GIRILEN_SATIS": "Geç girilen satış (mal gerçekten çıktı)",
     "sayimSebep_SAYIM_HATALI": "Sayım yanlıştı, kayıt doğru",
-    "sayimSebep_DIGER": "Diğer — açıklama zorunlu"
+    "sayimSebep_DIGER": "Diğer — açıklama zorunlu",
+    "donemKapali": "{donem} dönemi KAPATILDI. O dönemde {sayi} satış hesaplandı — yazarsanız o dönemin rakamı değişir ve beyan edilmiş vergi tutmayabilir. Muhasebecinize danışın.",
+    "donemIsrariOnayGerek": "Devam etmek için onay kutusunu işaretleyin.",
+    "donemIsrariSebepGerek": "Bir sebep seçin — üç ay sonra bu kaydın niye geçtiği sorulacak.",
+    "donemIsrariAciklamaGerek": "\"Diğer\" seçtiniz; açıklama zorunlu.",
+    "donemIsrariBaslik": "Kapalı döneme yazıyorsunuz",
+    "donemIsrariOnay": "Uyarıyı okudum, yine de yaz",
+    "donemIsrariSebep": "Sebep",
+    "donemIsrariAciklama": "Açıklama",
+    "donemSebepGEC_GIRILEN_KAYIT": "Gerçekten olmuş bir kayıt, deftere geç giriliyor",
+    "donemSebepDONEM_YANLIS_KAPATILDI": "Dönem sehven kapatılmıştı",
+    "donemSebepDIGER": "Diğer (açıklama zorunlu)",
+    "donemSebepMUHASEBECI_ONAYLADI": "Muhasebeci onayladı — beyan düzeltmesi yapılacak"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -1113,7 +1137,19 @@
     "onDoluDonen": "Geri gelen (yanlış giden) ürün: {urun}",
     "onDoluGonderilecek": "Değişimde gidecek ürün: {urun}",
     "donenMaliyetYok": "{urun} için sistemde hiç stok hareketi yok, bu yüzden geri gelen malın maliyeti bilinmiyor. Bu bir stok yetersizliği DEĞİLDİR — geri gelen malın stoğu 0 olabilir. Eksik olan maliyettir: önce bu ürüne bir alım (stok girişi) girin, sonra iadeyi kaydedin.",
-    "yenidenGonderimDegisimNotu": "Değişimde yeni ürünün kargosunu satıcı öder. Ödediğiniz tutarı girin — girilmezse bu gider defterde hiç görünmez."
+    "yenidenGonderimDegisimNotu": "Değişimde yeni ürünün kargosunu satıcı öder. Ödediğiniz tutarı girin — girilmezse bu gider defterde hiç görünmez.",
+    "donemKapali": "{donem} dönemi KAPATILDI. O dönemde {sayi} satış hesaplandı — yazarsanız o dönemin rakamı değişir ve beyan edilmiş vergi tutmayabilir. Muhasebecinize danışın.",
+    "donemIsrariOnayGerek": "Devam etmek için onay kutusunu işaretleyin.",
+    "donemIsrariSebepGerek": "Bir sebep seçin — üç ay sonra bu kaydın niye geçtiği sorulacak.",
+    "donemIsrariAciklamaGerek": "\"Diğer\" seçtiniz; açıklama zorunlu.",
+    "donemIsrariBaslik": "Kapalı döneme yazıyorsunuz",
+    "donemIsrariOnay": "Uyarıyı okudum, yine de yaz",
+    "donemIsrariSebep": "Sebep",
+    "donemIsrariAciklama": "Açıklama",
+    "donemSebepGEC_GIRILEN_KAYIT": "Gerçekten olmuş bir kayıt, deftere geç giriliyor",
+    "donemSebepDONEM_YANLIS_KAPATILDI": "Dönem sehven kapatılmıştı",
+    "donemSebepDIGER": "Diğer (açıklama zorunlu)",
+    "donemSebepMUHASEBECI_ONAYLADI": "Muhasebeci onayladı — beyan düzeltmesi yapılacak"
   },
   "Gider": {
     "baslik": "Giderler",
@@ -2166,7 +2202,19 @@
     "sayimSebep_GEC_GIRILEN_ALIM": "Geç girilen alım (mal gerçekten geldi)",
     "sayimSebep_GEC_GIRILEN_SATIS": "Geç girilen satış (mal gerçekten çıktı)",
     "sayimSebep_SAYIM_HATALI": "Sayım yanlıştı, kayıt doğru",
-    "sayimSebep_DIGER": "Diğer — açıklama zorunlu"
+    "sayimSebep_DIGER": "Diğer — açıklama zorunlu",
+    "donemKapali": "{donem} dönemi KAPATILDI. O dönemde {sayi} satış hesaplandı — yazarsanız o dönemin rakamı değişir ve beyan edilmiş vergi tutmayabilir. Muhasebecinize danışın.",
+    "donemIsrariOnayGerek": "Devam etmek için onay kutusunu işaretleyin.",
+    "donemIsrariSebepGerek": "Bir sebep seçin — üç ay sonra bu kaydın niye geçtiği sorulacak.",
+    "donemIsrariAciklamaGerek": "\"Diğer\" seçtiniz; açıklama zorunlu.",
+    "donemIsrariBaslik": "Kapalı döneme yazıyorsunuz",
+    "donemIsrariOnay": "Uyarıyı okudum, yine de yaz",
+    "donemIsrariSebep": "Sebep",
+    "donemIsrariAciklama": "Açıklama",
+    "donemSebepGEC_GIRILEN_KAYIT": "Gerçekten olmuş bir kayıt, deftere geç giriliyor",
+    "donemSebepDONEM_YANLIS_KAPATILDI": "Dönem sehven kapatılmıştı",
+    "donemSebepDIGER": "Diğer (açıklama zorunlu)",
+    "donemSebepMUHASEBECI_ONAYLADI": "Muhasebeci onayladı — beyan düzeltmesi yapılacak"
   },
   "DuzeltmeNedeni": {
     "baslik": "Stok düzeltme nedenleri",
@@ -3593,5 +3641,23 @@
     "neYapmaliSUNUCU_HATASI": "Tekrar dene. Aynı ekranda tekrarlıyorsa aşağıdaki kodu ilet.",
     "tekrarDene": "Tekrar dene",
     "kodEtiketi": "Hata kodu"
+  },
+  "Donem": {
+    "israrBaslik": "Kapalı döneme yazıyorsunuz",
+    "kapaliUyari": "{donem} dönemi KAPATILDI. O dönemde {sayi} satış hesaplandı — yazarsanız o dönemin rakamı değişir ve beyan edilmiş vergi tutmayabilir. Muhasebecinize danışın.",
+    "israrSebep": "Sebep",
+    "israrSebepSec": "Sebep seçin…",
+    "israrAciklama": "Açıklama",
+    "israrOnayMetni": "Uyarıyı okudum, yine de yaz",
+    "israrOnayGerek": "Devam etmek için onay kutusunu işaretleyin.",
+    "israrSebepGerek": "Bir sebep seçin — üç ay sonra bu kaydın niye geçtiği sorulacak.",
+    "israrAciklamaGerek": "\"Diğer\" seçtiniz; açıklama zorunlu.",
+    "sebepGEC_GIRILEN_KAYIT": "Gerçekten olmuş bir kayıt, deftere geç giriliyor",
+    "sebepMUHASEBECI_ONAYLADI": "Muhasebeci onayladı — beyan düzeltmesi yapılacak",
+    "sebepDONEM_YANLIS_KAPATILDI": "Dönem sehven kapatılmıştı",
+    "sebepDIGER": "Diğer (açıklama zorunlu)",
+    "baslik": "Muhasebe dönemleri",
+    "durumACIK": "Açık",
+    "durumKAPALI": "Kapalı"
   }
 }

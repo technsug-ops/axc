@@ -659,7 +659,19 @@
     "sayimSebep_GEC_GIRILEN_ALIM": "",
     "sayimSebep_GEC_GIRILEN_SATIS": "",
     "sayimSebep_SAYIM_HATALI": "",
-    "sayimSebep_DIGER": ""
+    "sayimSebep_DIGER": "",
+    "donemKapali": "",
+    "donemIsrariOnayGerek": "",
+    "donemIsrariSebepGerek": "",
+    "donemIsrariAciklamaGerek": "",
+    "donemIsrariBaslik": "",
+    "donemIsrariOnay": "",
+    "donemIsrariSebep": "",
+    "donemIsrariAciklama": "",
+    "donemSebepGEC_GIRILEN_KAYIT": "",
+    "donemSebepDONEM_YANLIS_KAPATILDI": "",
+    "donemSebepDIGER": "",
+    "donemSebepMUHASEBECI_ONAYLADI": ""
   },
   "Menu": {
     "operasyon": "",
@@ -951,7 +963,19 @@
     "sayimSebep_GEC_GIRILEN_ALIM": "",
     "sayimSebep_GEC_GIRILEN_SATIS": "",
     "sayimSebep_SAYIM_HATALI": "",
-    "sayimSebep_DIGER": ""
+    "sayimSebep_DIGER": "",
+    "donemKapali": "",
+    "donemIsrariOnayGerek": "",
+    "donemIsrariSebepGerek": "",
+    "donemIsrariAciklamaGerek": "",
+    "donemIsrariBaslik": "",
+    "donemIsrariOnay": "",
+    "donemIsrariSebep": "",
+    "donemIsrariAciklama": "",
+    "donemSebepGEC_GIRILEN_KAYIT": "",
+    "donemSebepDONEM_YANLIS_KAPATILDI": "",
+    "donemSebepDIGER": "",
+    "donemSebepMUHASEBECI_ONAYLADI": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -1113,7 +1137,19 @@
     "onDoluDonen": "",
     "onDoluGonderilecek": "",
     "donenMaliyetYok": "",
-    "yenidenGonderimDegisimNotu": ""
+    "yenidenGonderimDegisimNotu": "",
+    "donemKapali": "",
+    "donemIsrariOnayGerek": "",
+    "donemIsrariSebepGerek": "",
+    "donemIsrariAciklamaGerek": "",
+    "donemIsrariBaslik": "",
+    "donemIsrariOnay": "",
+    "donemIsrariSebep": "",
+    "donemIsrariAciklama": "",
+    "donemSebepGEC_GIRILEN_KAYIT": "",
+    "donemSebepDONEM_YANLIS_KAPATILDI": "",
+    "donemSebepDIGER": "",
+    "donemSebepMUHASEBECI_ONAYLADI": ""
   },
   "Gider": {
     "baslik": "",
@@ -2166,7 +2202,19 @@
     "sayimSebep_GEC_GIRILEN_ALIM": "",
     "sayimSebep_GEC_GIRILEN_SATIS": "",
     "sayimSebep_SAYIM_HATALI": "",
-    "sayimSebep_DIGER": ""
+    "sayimSebep_DIGER": "",
+    "donemKapali": "",
+    "donemIsrariOnayGerek": "",
+    "donemIsrariSebepGerek": "",
+    "donemIsrariAciklamaGerek": "",
+    "donemIsrariBaslik": "",
+    "donemIsrariOnay": "",
+    "donemIsrariSebep": "",
+    "donemIsrariAciklama": "",
+    "donemSebepGEC_GIRILEN_KAYIT": "",
+    "donemSebepDONEM_YANLIS_KAPATILDI": "",
+    "donemSebepDIGER": "",
+    "donemSebepMUHASEBECI_ONAYLADI": ""
   },
   "DuzeltmeNedeni": {
     "baslik": "",
@@ -3593,5 +3641,23 @@
     "neYapmaliSUNUCU_HATASI": "",
     "tekrarDene": "",
     "kodEtiketi": ""
+  },
+  "Donem": {
+    "israrBaslik": "",
+    "kapaliUyari": "",
+    "israrSebep": "",
+    "israrSebepSec": "",
+    "israrAciklama": "",
+    "israrOnayMetni": "",
+    "israrOnayGerek": "",
+    "israrSebepGerek": "",
+    "israrAciklamaGerek": "",
+    "sebepGEC_GIRILEN_KAYIT": "",
+    "sebepMUHASEBECI_ONAYLADI": "",
+    "sebepDONEM_YANLIS_KAPATILDI": "",
+    "sebepDIGER": "",
+    "baslik": "",
+    "durumACIK": "",
+    "durumKAPALI": ""
   }
 }
