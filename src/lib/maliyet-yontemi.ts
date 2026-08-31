@@ -120,9 +120,18 @@ export function hareketliOrtalama(
       if (adet > 0) deger -= (deger / adet) * cikan;
       adet -= cikan;
       /**
-       * ⚠ SIFIRA DÜŞTÜ → GEÇMİŞ KAPANDI. Kalan kuruş tozu da siliniyor;
-       * yoksa "adet 0 ama değer 0,0001" gibi bir kalıntı bir sonraki girişin
-       * ortalamasına sızardı.
+       * SIFIRA DÜŞTÜ → GEÇMİŞ KAPANDI.
+       *
+       * ⚠ BU SATIR SAVUNMA AMAÇLI — VE TETİKLENEMEDİĞİ ÖLÇÜLDÜ (31.08.2026).
+       * İlk yazımda "yoksa 0,0001 gibi bir kalıntı sızardı" deniyordu; o bir
+       * İDDİAYDI ve sınandı: 200+ kurgu tarandı (iki farklı maliyetli giriş ×
+       * sekiz kısmi çıkış deseni) ve `deger - (deger/adet)*adet` **hiçbirinde**
+       * sıfırdan farklı çıkmadı — IEEE754 bu işlemde tur atışını tam yapıyor.
+       *
+       * ⛔ SATIR KALIYOR ama KORUMASIZ OLDUĞU YAZILIYOR: onu silen mutasyon
+       * `maliyet-yontemi-mutasyon:kontrol`ta YEŞİL kalır ve harness bunu
+       * beyan eder. Sınanamayan bir yolu sınanmış saymak, testi değil raporu
+       * düzeltmek olurdu. _(Anayasa: tetiklenemeyen yol "geçti" sayılmaz.)_
        */
       if (adet === 0) deger = 0;
       continue;

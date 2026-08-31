@@ -255,7 +255,9 @@
     "lot-kipi:dogrula": "tsx scripts/lot-kipi-dogrula.ts",
     "lot-kipi-mutasyon:kontrol": "tsx scripts/lot-kipi-mutasyon-kontrol.ts",
     "kart-partileri:dogrula": "tsx scripts/kart-partileri-dogrula.ts",
-    "kart-partileri-mutasyon:kontrol": "tsx scripts/kart-partileri-mutasyon-kontrol.ts"
+    "kart-partileri-mutasyon:kontrol": "tsx scripts/kart-partileri-mutasyon-kontrol.ts",
+    "maliyet-yontemi:dogrula": "tsx scripts/maliyet-yontemi-dogrula.ts",
+    "maliyet-yontemi-mutasyon:kontrol": "tsx scripts/maliyet-yontemi-mutasyon-kontrol.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
