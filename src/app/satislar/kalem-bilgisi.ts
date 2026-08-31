@@ -9,6 +9,7 @@ import {
   type SimulasyonZemini,
 } from "@/lib/fiyatlama/kart-verisi";
 import { acikPartilerToplu, gunSonu, varyantStogu } from "@/lib/stok";
+import { partiBagiTanisi, type BagTanisi } from "@/lib/parti-bagi-tanisi";
 
 /**
  * ============================================================================
@@ -68,6 +69,15 @@ export type KalemBilgisi = {
    * zaten baştan başlar. Liste boşsa (parti yok) ekran seçici çizmez.
    */
   partiler: PartiSecenegi[];
+  /**
+   * PARTİ BAĞI TANISI (K91, 31.08.2026) — bu varyantın geçmiş bağları
+   * sağlam mı. Seçicinin içinde uyarı bandı olarak çiziliyor.
+   *
+   * ⚠ EKRAN SUSMAZ AMA UYDURMA KESİNLİK DE VERMEZ: `KAYMIS` ile `SUPHELI`
+   * ayrı cümle alır. Ölçüldü (231 stoklu varyant): TEMIZ 124 · KAYMIS 56 ·
+   * SUPHELI 51.
+   */
+  bagTanisi: BagTanisi;
   /** Yalnız SEÇİLİ kanal hesabının zemini; ötekiler formda gereksiz. */
   zemin: SimulasyonZemini | null;
   /**
@@ -155,6 +165,35 @@ export async function kalemBilgisiGetir(
         satisTarihi ? gunSonu(satisTarihi) : undefined,
       )
     ).get(variantId) ?? [];
+  /**
+   * ⚠ TANI İÇİN VARYANTIN TÜM HAREKETİ GEREKİYOR — açık partiler yetmez.
+   * Bağın doğru olup olmadığı, defterin O ANA KADARKİ akışından çıkıyor;
+   * yalnız bugünkü açık partilere bakan bir ölçüt geçmişteki kaymayı
+   * göremezdi.
+   *
+   * ⚠ MALİYETİ SORGUYA TAŞIMADIK: küme tek varyantın hareketleri ve
+   * ölçüldü — 10.780 hareket 1104 varyanta dağılıyor, yani varyant başına
+   * ortanca ~10 satır. Hacim büyürse ölçülür.
+   */
+  const bagHareketleri = await prisma.stockMovement.findMany({
+    where: { variantId },
+    select: {
+      id: true,
+      occurredAt: true,
+      createdAt: true,
+      quantityDelta: true,
+      unitCostAmount: true,
+      sourceMovementId: true,
+    },
+  });
+  const bagTanisi = partiBagiTanisi(
+    bagHareketleri.map((h) => ({
+      ...h,
+      unitCostAmount:
+        h.unitCostAmount === null ? null : h.unitCostAmount.toString(),
+    })),
+  );
+
   let adet = 0;
   let tutar = 0;
   let eksik = partiler.length === 0;
@@ -205,6 +244,7 @@ export async function kalemBilgisiGetir(
     kdvKaynagi: kdv.kaynak,
     kategoriAdi: kdv.kategoriAdi,
     komisyonOrani,
+    bagTanisi,
     /**
      * ⚠ HAM `Parti` DEĞİL, DAR BİR GÖRÜNÜM. Parti nesnesi `girenAdet` ve
      * `locationId` de taşıyor; formun onlara işi yok ve istemciye gereksiz

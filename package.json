@@ -249,7 +249,9 @@
     "baglanti-tanisi:dogrula": "tsx scripts/baglanti-tanisi-dogrula.ts",
     "baglanti-tanisi-mutasyon:kontrol": "tsx scripts/baglanti-tanisi-mutasyon-kontrol.ts",
     "kare-tanisi:dogrula": "tsx scripts/kare-tanisi-dogrula.ts",
-    "kare-tanisi-mutasyon:kontrol": "tsx scripts/kare-tanisi-mutasyon-kontrol.ts"
+    "kare-tanisi-mutasyon:kontrol": "tsx scripts/kare-tanisi-mutasyon-kontrol.ts",
+    "parti-bagi-tanisi:dogrula": "tsx scripts/parti-bagi-tanisi-dogrula.ts",
+    "parti-bagi-tanisi-mutasyon:kontrol": "tsx scripts/parti-bagi-tanisi-mutasyon-kontrol.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

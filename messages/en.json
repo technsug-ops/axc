@@ -993,7 +993,9 @@
     "partiFifo": "",
     "partiSecenek": "",
     "partiMaliyetYok": "",
-    "partiYetersiz": ""
+    "partiYetersiz": "",
+    "bagKaymis": "",
+    "bagSupheli": ""
   },
   "Kategori": {
     "adZorunlu": "",

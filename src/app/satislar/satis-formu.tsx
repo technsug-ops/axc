@@ -30,6 +30,7 @@ import {
   varyantKodlaBul,
 } from "../varyant-arama";
 import { kodDizisi, type VaryantSonucu } from "@/lib/varyant-ozet";
+import type { BagTanisi } from "@/lib/parti-bagi-tanisi";
 import {
   kalemBilgisiGetir,
   kargoSecenekleriGetir,
@@ -64,6 +65,8 @@ type Kalem = {
    */
   partiler: PartiSecenegi[];
   secilenPartiId: string | null;
+  /** K91 — geçmiş parti bağları sağlam mı; seçicinin içinde uyarı olur. */
+  bagTanisi: BagTanisi;
   /** Kalem eklenirken okunan stok — uyarı için, doğrulama sunucuda. */
   stok: number | null;
   /** Ürün desisi — toplam desi bundan hesaplanır. */
@@ -248,6 +251,7 @@ export function SatisFormu({
                 quantity: k.quantity + adet,
                 stok,
                 partiler: bilgi?.partiler ?? k.partiler,
+                bagTanisi: bilgi?.bagTanisi ?? k.bagTanisi,
               }
             : k,
         );
@@ -264,6 +268,7 @@ export function SatisFormu({
           stok,
           partiler: bilgi?.partiler ?? [],
           secilenPartiId: null,
+          bagTanisi: bilgi?.bagTanisi ?? "TEMIZ",
           desi: bilgi?.desi ?? null,
           kdvOrani: bilgi?.kdvOrani ?? 20,
           kdvVarsayilan: bilgi?.kdvKaynagi === "VARSAYILAN",
@@ -859,6 +864,21 @@ export function SatisFormu({
                   {kalem.partiler.length > 1 ? (
                     <div className="space-y-2">
                       <Label htmlFor={`parti-${sira}`}>{t("partiSecimi")}</Label>
+                      {/*
+                        ⚠ UYARI BANDI SEÇİCİNİN İÇİNDE, her üründe DEĞİL.
+                        Ölçüldü: 231 stoklu varyantın 107'sinde tanı var ama
+                        seçici yalnız 2+ partili üründe çıkıyor ve orada
+                        etkilenen 24/102. Bandı her ürüne koymak, uyarıyı
+                        okunmaz yapardı.
+                        ⛔ UYDURMA KESİNLİK YOK: iki sınıf AYRI cümle alır.
+                      */}
+                      {kalem.bagTanisi !== "TEMIZ" ? (
+                        <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
+                          {kalem.bagTanisi === "SUPHELI"
+                            ? t("bagSupheli")
+                            : t("bagKaymis")}
+                        </p>
+                      ) : null}
                       <Select
                         value={kalem.secilenPartiId ?? ""}
                         onValueChange={(d) =>
