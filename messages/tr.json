@@ -734,7 +734,11 @@
     "yonerge": "Kodu kameranın ortasına getirin. Okunduğunda pencere kendiliğinden kapanır.",
     "aciliyor": "Kamera açılıyor...",
     "cozucuHatasi": "Barkod çözücü çalışmadı: {sebep}. Kodu elle yazabilirsiniz.",
-    "desteklenenler": "Ürün barkodları (EAN, UPC), kargo etiketleri ve QR/kare kodlar okunur."
+    "desteklenenler": "Ürün barkodları (EAN, UPC), kargo etiketleri ve QR/kare kodlar okunur.",
+    "tani": "kamera {genislik}×{yukseklik} @{kare_hizi} · odak: {odak} · kare {kare}",
+    "odakYok": "desteklenmiyor",
+    "taniOkunamadi": "kamera bilgisi okunamadı",
+    "kareyiKaydet": "Kareyi kaydet (teşhis)"
   },
   "Satis": {
     "urunSecilmeli": "Ürün seçilmeli",

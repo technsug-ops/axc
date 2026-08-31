@@ -243,7 +243,13 @@
     "parti-secimi-mutasyon:kontrol": "tsx scripts/parti-secimi-mutasyon-kontrol.ts",
     "kamera-mutasyon:kontrol": "tsx scripts/kamera-mutasyon-kontrol.ts",
     "mal-kabul:dogrula": "tsx scripts/mal-kabul-dogrula.ts",
-    "mal-kabul-mutasyon:kontrol": "tsx scripts/mal-kabul-mutasyon-kontrol.ts"
+    "mal-kabul-mutasyon:kontrol": "tsx scripts/mal-kabul-mutasyon-kontrol.ts",
+    "kare:test": "tsx scripts/kare-cozum-testi.ts",
+    "canli:baglanti-tanisi": "tsx scripts/canli-baglanti-tanisi.ts",
+    "baglanti-tanisi:dogrula": "tsx scripts/baglanti-tanisi-dogrula.ts",
+    "baglanti-tanisi-mutasyon:kontrol": "tsx scripts/baglanti-tanisi-mutasyon-kontrol.ts",
+    "kare-tanisi:dogrula": "tsx scripts/kare-tanisi-dogrula.ts",
+    "kare-tanisi-mutasyon:kontrol": "tsx scripts/kare-tanisi-mutasyon-kontrol.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Camera, ScanLine } from "lucide-react";
+import { Camera, Download, ScanLine } from "lucide-react";
 import { prepareZXingModule, readBarcodes } from "zxing-wasm/reader";
 
 import { Button } from "@/components/ui/button";
@@ -148,6 +148,76 @@ function KameraDiyalogu({
   const t = useTranslations("Kamera");
   const [hata, setHata] = useState<string | null>(null);
   const [hazir, setHazir] = useState(false);
+  /**
+   * ═══ TEŞHİS SATIRI (K113, 31.08.2026) ═══════════════════════════════
+   *
+   * ⛔ NİYE VAR: bir kargo barkodu okunmuyor ve ÜÇ hipotez ölçümle elendi
+   * (biçim listesi · çözüm bütçesi · döngü kilidi). Geriye YAKALAMA YOLU
+   * kaldı — ve orada teşhis TAVANA DAYANDI: kod `1920×1080` İSTİYOR ama
+   * `ideal` olarak, yani cihaz `640×480` verse de uygulama bunu hiçbir
+   * yerde SÖYLEMİYOR. Odak isteği de desteklenmiyorsa sessizce düşüyor.
+   *
+   * ⚠ SESSİZ DÜŞÜŞLER GÖRÜNÜR OLUYOR — davranış DEĞİŞMİYOR. Bu satır
+   * hiçbir kısıtı değiştirmez, yalnız ne olduğunu söyler.
+   * _(Anayasa: "sistem, kendi defterinde takip etmediği şey hakkında iddia
+   * kurmaz" — ölçemediğimiz şeyi tahmin etmek yerine ölçüyoruz.)_
+   *
+   * ⚠ İKİ DEĞER AYRI GÖSTERİLİYOR ve bu bilinçli: `getSettings()` track'in
+   * BEYANI, `videoWidth` ise gerçekten çizilen KARE. Ayrışırlarsa bu başlı
+   * başına bir bulgudur — tek satıra indirseydik o ayrışma görünmezdi.
+   */
+  const [tani, setTani] = useState<string | null>(null);
+
+  /**
+   * ÇÖZÜCÜYE GİDEN KAREYİ OLDUĞU GİBİ İNDİR (K113 · yalnız teşhis).
+   *
+   * ⚠ AYRI CANVAS'A ÇİZİLİYOR, PAYLAŞILANA DEĞİL. Tarama döngüsü
+   * `canvasRef`i 250 ms'de bir kullanıyor; araya girmek okumayı bozardı.
+   * Teşhis aracı, teşhis ettiği şeyi etkilememeli.
+   *
+   * ⚠ ÖLÇEK YOK, YENİDEN SIKIŞTIRMA YOK: `video.videoWidth` boyutunda
+   * çizilip PNG olarak veriliyor. Küçültülmüş ya da JPEG'lenmiş bir kare,
+   * masaüstünde çözülemediğinde SEBEBİ karıştırırdı — kamera mı kötü,
+   * kaydetme mi bozdu, ayırt edilemezdi.
+   *
+   * ⛔ ÜRETİM AKIŞINA DOKUNMAZ: hiçbir okuma tetiklemez, hiçbir durum
+   * değiştirmez, kamerayı kapatmaz.
+   */
+  function kareyiKaydet() {
+    const video = videoRef.current;
+    if (!video?.videoWidth) return;
+
+    const tuval = document.createElement("canvas");
+    tuval.width = video.videoWidth;
+    tuval.height = video.videoHeight;
+    const ctx = tuval.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, tuval.width, tuval.height);
+
+    const d = new Date();
+    const ikiHane = (n: number) => String(n).padStart(2, "0");
+    const ad =
+      "kare-" +
+      d.getFullYear() +
+      ikiHane(d.getMonth() + 1) +
+      ikiHane(d.getDate()) +
+      "-" +
+      ikiHane(d.getHours()) +
+      ikiHane(d.getMinutes()) +
+      ikiHane(d.getSeconds()) +
+      ".png";
+
+    tuval.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = ad;
+      a.click();
+      /** ⚠ Nesne adresi bırakılmaz — her kayıtta bellekte bir kopya kalırdı. */
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }
 
   useEffect(() => {
     if (!acik) return;
@@ -233,6 +303,41 @@ function KameraDiyalogu({
       }
       if (iptal) return;
       setHazir(true);
+
+      /**
+       * ⚠ BİR KEZ OKUNUR — ÇÖZÜM DÖNGÜSÜNÜN DIŞINDA. `getSettings()`i 250
+       * ms'de bir çağırmak hem gereksiz iş hem de ölçtüğü şeyi bozma riski;
+       * teşhis aracı, teşhis ettiği şeyi etkilememeli. Bekçi bu konumu
+       * ölçüyor: döngünün içine kayarsa kırmızı yanar.
+       */
+      try {
+        const iz = stream?.getVideoTracks()[0];
+        const a = iz?.getSettings() as
+          | { width?: number; height?: number; frameRate?: number; focusMode?: string }
+          | undefined;
+        const video = videoRef.current;
+        const kare =
+          video && video.videoWidth
+            ? `${video.videoWidth}×${video.videoHeight}`
+            : "?";
+        /**
+         * ⚠ `focusMode` AYARLARDA YOKSA "desteklenmiyor" YAZAR — boş
+         * bırakmaz. Kısıt `catch {}` ile sessizce düşüyordu ve tam bu
+         * sessizlik teşhisi tıkıyordu.
+         */
+        setTani(
+          t("tani", {
+            genislik: a?.width ?? 0,
+            yukseklik: a?.height ?? 0,
+            kare_hizi: Math.round(a?.frameRate ?? 0),
+            odak: a?.focusMode ?? t("odakYok"),
+            kare,
+          }),
+        );
+      } catch {
+        /** Teşhis okunamadıysa da SESSİZ KALMAZ — satır bunu söyler. */
+        setTani(t("taniOkunamadi"));
+      }
 
       zamanlayici = setInterval(async () => {
         if (okumaSuruyor || iptal) return;
@@ -337,6 +442,28 @@ function KameraDiyalogu({
           iddia dar kalıyor ve doğru kalıyor.
         */}
         <p className="text-muted-foreground text-xs">{t("desteklenenler")}</p>
+
+        {/*
+          ═══ TEŞHİS (K113) — DAVRANIŞ DEĞİŞTİRMEZ ═══════════════════════
+          Küçük gri satır: kameranın FİİLEN verdiği çözünürlük, kare hızı,
+          odak kipi ve çözücüye giden karenin boyutu. Sessiz düşüşler
+          (istenen 1920, verilen 640) artık görünür.
+        */}
+        {tani ? (
+          <p className="text-muted-foreground font-mono text-[11px]">{tani}</p>
+        ) : null}
+
+        {hazir && !hata ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 md:h-10"
+            onClick={kareyiKaydet}
+          >
+            <Download />
+            {t("kareyiKaydet")}
+          </Button>
+        ) : null}
 
         <Button type="button" variant="outline" onClick={onKapat}>
           Kapat
