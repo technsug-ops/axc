@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { lotKipiCoz } from "@/lib/lot-kipi";
 import { sayfaIzni } from "@/lib/yetki";
 import { GeriBaglanti } from "@/components/baglanti";
 import { tarihGirdisi } from "@/lib/bicim";
@@ -23,6 +24,14 @@ export async function generateMetadata() {
 
 export default async function YeniSatisSayfasi() {
   await sayfaIzni("satis.yaz");
+
+  /**
+   * PARTİ SEÇİM KİPİ (K115) — firma ayarı. Form kendi kararını vermiyor;
+   * kip SUNUCUDAN geliyor ve seçicinin çizilip çizilmeyeceğini o belirliyor.
+   * ⚠ Firma kaydı yoksa varsayılan `HIBRIT` — bugünkü davranış.
+   */
+  const firma = await prisma.company.findFirst({ select: { lotKipi: true } });
+  const lotKipi = lotKipiCoz(firma?.lotKipi ?? null);
 
   const t = await getTranslations("Satis");
 
@@ -49,6 +58,7 @@ export default async function YeniSatisSayfasi() {
         hesaplar={hesaplar}
         action={satisOlustur}
         bugun={tarihGirdisi(new Date())}
+        lotKipi={lotKipi}
       />
     </div>
   );

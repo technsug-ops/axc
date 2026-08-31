@@ -995,7 +995,8 @@
     "partiMaliyetYok": "maliyeti yok",
     "partiYetersiz": "Seçtiğiniz partide {secilen} adet var, {istenen} adet satıyorsunuz. Kalan {kalan} adet en eski partiden düşecek.",
     "bagKaymis": "⚠ Bu üründe kalan adetler partiler arasında kaymış olabilir. Maliyet damgaları etkilenmez.",
-    "bagSupheli": "⚠ Bu üründe parti bağları doğrulanamıyor; kalan adetler şüpheli."
+    "bagSupheli": "⚠ Bu üründe parti bağları doğrulanamıyor; kalan adetler şüpheli.",
+    "lotSecimEksik": "Parti seçimi zorunlu: \"{urun}\" için hangi partiden düşeceğini seçin."
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",

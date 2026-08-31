@@ -995,7 +995,8 @@
     "partiMaliyetYok": "",
     "partiYetersiz": "",
     "bagKaymis": "",
-    "bagSupheli": ""
+    "bagSupheli": "",
+    "lotSecimEksik": ""
   },
   "Kategori": {
     "adZorunlu": "",

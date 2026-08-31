@@ -32,6 +32,11 @@ import {
 import { kodDizisi, type VaryantSonucu } from "@/lib/varyant-ozet";
 import type { BagTanisi } from "@/lib/parti-bagi-tanisi";
 import {
+  seciciCizilsinMi,
+  secimZorunluMu,
+  type LotKipi,
+} from "@/lib/lot-kipi";
+import {
   kalemBilgisiGetir,
   kargoSecenekleriGetir,
   type KargoSecenegi,
@@ -123,10 +128,19 @@ export function SatisFormu({
   hesaplar,
   action,
   bugun,
+  lotKipi,
 }: {
   hesaplar: HesapSecenegi[];
   action: (durum: SatisDurumu, formData: FormData) => Promise<SatisDurumu>;
   bugun: string;
+  /**
+   * PARTİ SEÇİM KİPİ (K115) — firma ayarı, SUNUCUDAN gelir.
+   *
+   * ⚠ FORM KENDİ KARARINI VERMİYOR: kipi burada okuyup `seciciCizilsinMi`
+   * gövdesine soruyoruz. Kural formda yazılsaydı sunucu ile ekran ayrı
+   * ölçüt taşır ve bir gün ayrışırdı.
+   */
+  lotKipi: LotKipi;
 }) {
   /** Dönem ısrarının geçerliliği — blok bildirir, düğme okur. */
   const [donemIsrarGecerli, setDonemIsrarGecerli] = useState(false);
@@ -183,6 +197,19 @@ export function SatisFormu({
   const [paketSayisi, setPaketSayisi] = useState("1");
   const [shipmentCode, setShipmentCode] = useState("");
   const [kargoSecenekleri, setKargoSecenekleri] = useState<KargoSecenegi[]>([]);
+
+  /**
+   * `LOT` kipinde partisi seçilmemiş kalemler — düğmeyi kilitler ve
+   * sebebi ekranda yazar.
+   *
+   * ⚠ ÖLÇÜT SAF GÖVDEDEN (`secimZorunluMu`): formda ikinci bir kural
+   * yazsaydık sunucu ile ekran ayrı ölçüt taşır ve bir gün ayrışırdı.
+   */
+  const partisiEksikKalemler = kalemler.filter(
+    (k) =>
+      secimZorunluMu({ kip: lotKipi, partiSayisi: k.partiler.length }) &&
+      k.secilenPartiId === null,
+  );
 
   /** Seçili kanal hesabının para birimi, yeni kalemler için varsayılan olur. */
   const varsayilanParaBirimi: "TRY" | "EUR" =
@@ -861,7 +888,10 @@ export function SatisFormu({
                     parti var, 41'inde partilerin MALİYETİ farklı — ortanca
                     %2,3, en büyüğü %36 (₺3.749 → ₺5.099).
                   */}
-                  {kalem.partiler.length > 1 ? (
+                  {seciciCizilsinMi({
+                    kip: lotKipi,
+                    maliyetler: kalem.partiler.map((pa) => pa.birimMaliyet),
+                  }) ? (
                     <div className="space-y-2">
                       <Label htmlFor={`parti-${sira}`}>{t("partiSecimi")}</Label>
                       {/*
@@ -1241,6 +1271,17 @@ export function SatisFormu({
         {onayBekleyen ? (
           <p className={`text-sm ${DURUM_YAZISI.uyari}`}>{t("oranOnayBekliyor")}</p>
         ) : null}
+        {/*
+          ⚠ `LOT` KİPİNDE SEÇİM ZORUNLU — ve KİLİTLİ DÜĞME SESSİZ KALMAZ
+          (İlke #5): hangi kalemde parti seçilmediği yazılı.
+          ⭐ TEK PARTİLİ ÜRÜNDE ZORLANMAZ: seçilecek bir şey yokken onay
+          istemek zorunluluğu ucuzlatır (kural `lib/lot-kipi.ts`te, saf).
+        */}
+        {partisiEksikKalemler.length > 0 ? (
+          <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
+            {t("lotSecimEksik", { urun: partisiEksikKalemler[0].etiket })}
+          </p>
+        ) : null}
         <Button
           type="submit"
           disabled={
@@ -1249,7 +1290,8 @@ export function SatisFormu({
             onayBekleyen ||
             /** ⚠ DÖNEM KAPISI AYRI KİLİTLER — sunucu zaten reddediyor ama
              *  kilidin sebebi ekranda yazılı (İlke #5). */
-            (durum.donemDuraksatti === true && !donemIsrarGecerli)
+            (durum.donemDuraksatti === true && !donemIsrarGecerli) ||
+            partisiEksikKalemler.length > 0
           }
         >
           {bekliyor ? ortak("kaydediliyor") : t("satisiKaydet")}
