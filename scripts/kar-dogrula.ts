@@ -1,3 +1,4 @@
+import { siparisKesintiKurallari } from "../src/lib/siparis-kesintileri";
 import { readFileSync } from "node:fs";
 /**
  * ============================================================================
@@ -717,18 +718,103 @@ console.log("=".repeat(70));
    * yorumlarda da geçiyor, `.filter(` satırına bağlanmazsa yalancı yeşil
    * olurdu (beş kez yaşandı).
    */
-  for (const yol of ["src/lib/satis.ts", "src/lib/kar-yeniden.ts"]) {
-    const kaynak = readFileSync(yol, "utf8");
+  /**
+   * ⭐ ÖLÇÜT 31.08.2026'DA KAYNAK TARAMASINDAN DEĞER TESTİNE ÇEVRİLDİ — VE
+   * NİYE. Eskiden `satis.ts` ile `kar-yeniden.ts` içinde `.filter(...)`
+   * deseni aranıyordu. K116① tekilleştirme ve süzmeyi ORTAK GÖVDEYE aldı
+   * (`siparis-kesintileri.ts`) ve iki tarama birden KIRMIZI yandı — kod
+   * doğruydu, aranan DİZE taşınmıştı.
+   * _(Anayasa: "dize, davranışın vekilidir — ve refaktör vekili eskitir".)_
+   *
+   * ⛔ VE ÖLÇÜT GEVŞETİLMEDİ, GÜÇLENDİRİLDİ: artık desen aranmıyor, gövde
+   * ÇAĞRILIP DEĞERİ ölçülüyor. Desen yanlış yerde bulunamaz, çünkü desen
+   * aranmıyor. _(Anayasa: "saf hesap katmanı, desen tarayan bekçiye muhtaç
+   * olmaz".)_
+   */
+  {
+    const kurallar = [
+      { code: "SABIT_GIDER", scope: "PER_SALE", basis: "FIXED", amount: "13.19" },
+      { code: "PAKET_GIDERI", scope: "PER_PACKAGE", basis: "FIXED", amount: "5.00" },
+      { code: "ODEME_GIDERI", scope: "PER_SALE", basis: "PERCENT", rate: "0.8" },
+      { code: "KOMISYON", scope: "PER_ITEM", basis: "PERCENT", rate: "10" },
+    ];
+    const cikan = siparisKesintiKurallari(kurallar);
+
     kontrol(
-      `${yol}: süzgeç PER_PACKAGE'ı da alıyor`,
-      /\.filter\(\(k\) => k\.scope === "PER_SALE" \|\| k\.scope === "PER_PACKAGE"\)/.test(
-        kaynak,
-      ),
+      "PER_SALE kuralı süzgeçten GEÇİYOR",
+      cikan.some((k) => k.code === "SABIT_GIDER"),
+    );
+    /**
+     * ⛔ EN KRİTİK: `PER_PACKAGE` düşerse kesinti HİÇ uygulanmaz ve kâr
+     * sessizce şişer. Mutasyon denemesinde tam bu nokta kör kalmıştı.
+     */
+    kontrol(
+      "PER_PACKAGE kuralı da süzgeçten GEÇİYOR",
+      cikan.some((k) => k.code === "PAKET_GIDERI"),
     );
     kontrol(
-      `  ...ve kurala paketBasina işareti konuyor`,
-      /paketBasina: k\.scope === "PER_PACKAGE"/.test(kaynak),
+      "  ...ve paketBasina İŞARETİ konuyor",
+      cikan.find((k) => k.code === "PAKET_GIDERI")?.paketBasina === true,
     );
+    /** ⚠ AYRIMIN ÖTEKİ YAKASI: sipariş başına kural paket sayısıyla ÇARPILMAZ. */
+    kontrol(
+      "  ...PER_SALE kuralına işaret KONMUYOR",
+      cikan.find((k) => k.code === "SABIT_GIDER")?.paketBasina === false,
+    );
+    /** ⛔ KALEM BAŞINA KURAL SİPARİŞ KESİNTİSİ DEĞİLDİR — sızarsa çift keser. */
+    kontrol(
+      "PER_ITEM kuralı süzgeçten GEÇMİYOR",
+      !cikan.some((k) => k.code === "KOMISYON"),
+    );
+
+    /**
+     * ⛔ K116① ASIL DEĞİŞMEZİ: SİPARİŞ BAŞINA KESİNTİ BİR KEZ.
+     * Aynı koddan iki sürüm gelirse (tarife güncellenmişse) YALNIZ İLKİ —
+     * yani en yenisi — geçerlidir. Ölçüldü (31.08.2026, canlı): TY içe
+     * aktarması çok adedi çok satıra çevirdiği için 86 satışta aynı varyant
+     * birden çok satırda; kesinti kalem başına uygulansaydı sabit gider
+     * İKİ KEZ kesilir ve NET olduğundan DÜŞÜK çıkardı.
+     */
+    const ciftSurum = [
+      { code: "SABIT_GIDER", scope: "PER_SALE", basis: "FIXED", amount: "13.19" },
+      { code: "SABIT_GIDER", scope: "PER_SALE", basis: "FIXED", amount: "9.99" },
+      { code: "HIZMET_BEDELI", scope: "PER_SALE", basis: "FIXED", amount: "12.60" },
+      { code: "HIZMET_BEDELI", scope: "PER_SALE", basis: "FIXED", amount: "7.00" },
+    ];
+    const tekil = siparisKesintiKurallari(ciftSurum);
+    for (const kod of ["SABIT_GIDER", "HIZMET_BEDELI"]) {
+      kontrol(
+        `${kod}: satış başına EN FAZLA BİR kural`,
+        tekil.filter((k) => k.code === kod).length === 1,
+        tekil.filter((k) => k.code === kod).length,
+      );
+    }
+    /** ⚠ VE GEÇERLİ OLAN EN YENİSİ (liste `validFrom desc` geliyor). */
+    kontrol(
+      "  ...ve geçerli olan EN YENİ sürüm",
+      tekil.find((k) => k.code === "SABIT_GIDER")?.amount === 13.19,
+      tekil.find((k) => k.code === "SABIT_GIDER")?.amount,
+    );
+
+    /**
+     * ⛔ VE İKİ ÇAĞIRAN DA BU GÖVDEYE BAĞLI. Biri kendi kopyasına dönerse
+     * o yol çift sabit gider yazar ve öteki yazmaz — fark ancak aynı satışı
+     * iki yoldan geçiren biri tarafından görülür.
+     * ⚠ İŞARET ADA DEĞİL ÇAĞRIYA BAĞLI: `siparisKesintiKurallari(kurallar)`
+     * — import satırı da o adı taşıyor ve ad araması onu bulurdu.
+     */
+    for (const yol of ["src/lib/satis.ts", "src/lib/kar-yeniden.ts"]) {
+      const kaynak = readFileSync(yol, "utf8");
+      kontrol(
+        `${yol}: ortak gövdeyi ÇAĞIRIYOR`,
+        kaynak.includes("siparisKesintiKurallari(kurallar)"),
+      );
+      /** ⚠ VE KENDİ KOPYASINI GERİ GETİRMEMİŞ. */
+      kontrol(
+        `  ...ve kendi süzgecini geri getirmemiş`,
+        !/\.filter\(\(k\) => k\.scope === "PER_SALE"/.test(kaynak),
+      );
+    }
   }
 
   /**

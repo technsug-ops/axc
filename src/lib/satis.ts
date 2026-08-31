@@ -1,3 +1,7 @@
+import {
+  komisyonKdvOrani as kesintiKomisyonKdvOrani,
+  siparisKesintiKurallari,
+} from "@/lib/siparis-kesintileri";
 import { karHesapla, type KarGirdisi, type KarDurumu } from "@/lib/kar";
 import { kdvHaricKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
@@ -492,13 +496,14 @@ async function karHesabiniYaz(
   });
 
   // Aynı koddan birden fazla sürüm varsa en yenisi geçerlidir.
-  const gecerli = new Map<string, (typeof kurallar)[number]>();
-  for (const k of kurallar) if (!gecerli.has(k.code)) gecerli.set(k.code, k);
+  /**
+   * ⛔ TEKİLLEŞTİRME VE SÜZME ARTIK ORTAK GÖVDEDE (K116①, 31.08.2026).
+   * Bu blok `satis.ts` ve `kar-yeniden.ts` içinde AYNI ANDA yazılıydı; biri
+   * kaysaydı BİR YOL çift sabit gider yazar, öteki yazmazdı ve fark ancak
+   * aynı satışı iki yoldan geçiren biri tarafından görülürdü.
+   */
 
-  const komisyonKdvKurali = gecerli.get("KOMISYON_KDV");
-  const komisyonKdvOrani = komisyonKdvKurali?.rate
-    ? Number(komisyonKdvKurali.rate.toString())
-    : null;
+  const komisyonKdvOrani = kesintiKomisyonKdvOrani(kurallar);
 
   /**
    * ⚠ İKİ KAPSAM DA ALINIR — `PER_SALE` ve `PER_PACKAGE`.
@@ -506,16 +511,7 @@ async function karHesabiniYaz(
    * DÜŞERDİ ve kesinti hiç uygulanmazdı: kâr daha da şişerdi.
    * _"Tip listesi değil, bağ" dersinin kapsam hâli._
    */
-  const siparisKesintileri = [...gecerli.values()]
-    .filter((k) => k.scope === "PER_SALE" || k.scope === "PER_PACKAGE")
-    .map((k) => ({
-      code: k.code,
-      basis:
-        k.basis === "FIXED" ? ("FIXED" as const) : ("SALE_AMOUNT" as const),
-      rate: k.rate ? Number(k.rate.toString()) : null,
-      amount: k.amount ? Number(k.amount.toString()) : null,
-      paketBasina: k.scope === "PER_PACKAGE",
-    }));
+  const siparisKesintileri = siparisKesintiKurallari(kurallar);
 
   // --- kargo: ELLE GİRİLEN TUTAR TARİFEYİ EZER ---
   // Panel gerçeği tarifeden sapabilir (anlaşmalı fiyat, ek bedel...).
