@@ -1,3 +1,4 @@
+import { Baglanti } from "@/components/baglanti";
 import { getTranslations } from "next-intl/server";
 import { Lock, LockOpen } from "lucide-react";
 
@@ -122,7 +123,17 @@ export default async function DonemlerSayfasi() {
                     <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="space-y-1">
+                  {/*
+                    ⚠ RAPOR BAĞLANTISI HER SATIRDA — açık dönemin de raporu
+                    okunabilir (şerhiyle). Yalnız kapalılara koysaydık
+                    kullanıcı kapatmadan önce ne kapattığını göremezdi.
+                  */}
+                  <div>
+                    <Baglanti href={`/ayarlar/donemler/${d.yil}-${String(d.ay).padStart(2, "0")}`}>
+                      {t("raporuAc")}
+                    </Baglanti>
+                  </div>
                   <DonemSatiriEylemi
                     yil={d.yil}
                     ay={d.ay}

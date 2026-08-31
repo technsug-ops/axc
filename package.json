@@ -73,6 +73,8 @@
     "talep:dogrula": "tsx scripts/talep-dogrula.ts",
     "gecmis:dogrula": "tsx scripts/gecmis-dogrula.ts",
     "prebuild": "tsx scripts/deploy-bekci.ts",
+    "donem-mutasyon:kontrol": "tsx scripts/donem-mutasyon-kontrol.ts",
+    "donem:dogrula": "tsx scripts/donem-dogrula.ts",
     "deploy:bekci": "tsx scripts/deploy-bekci.ts",
     "toplam:dogrula": "tsx scripts/toplam-dogrula.ts",
     "iptal:dogrula": "tsx scripts/iptal-dogrula.ts",
