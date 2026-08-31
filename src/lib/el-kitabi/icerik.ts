@@ -85,6 +85,15 @@ export const BOLUMLER = [
  */
 export const MENU_BOLUM: Record<string, string | null> = {
   panel: "panel",
+  /**
+   * ⚠ DÖNEM EKRANININ EL KİTABI BÖLÜMÜ HENÜZ YOK — `null` BİLEREK.
+   * Eşlemede olmayan bir anahtar bekçiyi kırmızı yakıyor (haklı olarak:
+   * menüdeki her ekranın el kitabında karşılığı SORULMALI). Ama olmayan
+   * bir bölüme işaret etmek, var olmayan bir sayfaya link vermek olurdu
+   * — anayasa: "gösterdiğim link VAR OLAN bir ekrana mı gidiyor".
+   * Bölüm yazıldığı gün burası doldurulur.
+   */
+  donemler: null,
   urunler: "urun",
   urunKarti: "kart",
   simulasyon: "deneme",

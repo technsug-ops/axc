@@ -5,6 +5,7 @@ import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
+  CalendarCheck,
   BarChart3,
   Banknote,
   ChevronDown,
@@ -128,6 +129,7 @@ const MENU_IKONLARI: Record<string, typeof Package> = {
   kullanicilar: Users,
   roller: ShieldCheck,
   menuDuzeni: ListOrdered,
+  donemler: CalendarCheck,
 
   veriAktarimi: FileSpreadsheet,
   veriDisari: Download,

@@ -263,8 +263,24 @@ console.log("§3 DESEN YASAĞI — süzgeçli listeye sabit href ile dönülemez
    * bir adres hiç yazılmaz: bağlantı sessizce düz listeye düşer ve özellik
    * VARMIŞ GİBİ görünüp çalışmaz — en pahalı başarısızlık biçimi.
    */
+  /**
+   * ⚠ ÖLÇÜT 31.08.2026'DA DARALTILDI — VE NİYE, BURADA YAZAR.
+   *
+   * Önce `ListeyeDon` kullanılan HER rotanın kaydedici çizmesi isteniyordu.
+   * Ölçüt fazla genişti ve bunu K108 ortaya çıkardı: `/ayarlar` ve
+   * `/ayarlar/donemler` süzgeçli liste DEĞİL (searchParams okumuyorlar), ama
+   * geri bağlantıları `ListeyeDon` kullanıyor. Bekçi ikisini de kırmızı
+   * yaktı — **kod doğruydu.**
+   *
+   * ⭐ SÜZGEÇSİZ BİR ROTADA `ListeyeDon` KULLANMAK ZARARSIZ: hatırlanacak bir
+   * adres olmadığı için düz `href`e düşer, yani `GeriBaglanti` gibi davranır.
+   * Kaydedici şartı YALNIZ süzgeçli rotalar için anlamlıdır — asıl kural
+   * zaten oydu (bkz. başlık ③).
+   */
   const kaydedicisiz: string[] = [];
   for (const rota of donenRotalar) {
+    /** Süzgeçsiz rota kaydedici istemez — hatırlanacak bir şey yok. */
+    if (!suzgecliRotalar.has(rota)) continue;
     const sayfa =
       rota === "/" ? "src/app/page.tsx" : `src/app${rota}/page.tsx`;
     let kaynak = "";
@@ -278,7 +294,9 @@ console.log("§3 DESEN YASAĞI — süzgeçli listeye sabit href ile dönülemez
     if (!desen.test(kaynak)) kaydedicisiz.push(`${rota} → ${sayfa}`);
   }
   kontrol(
-    `dönülen her liste kaydediciyi çiziyor (${donenRotalar.size} rota)`,
+    `dönülen her SÜZGEÇLİ liste kaydediciyi çiziyor (${
+      [...donenRotalar].filter((r) => suzgecliRotalar.has(r)).length
+    } süzgeçli rota)`,
     kaydedicisiz.length === 0,
   );
   for (const k of kaydedicisiz) console.log("        ⛔ " + k);
