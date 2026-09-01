@@ -11,6 +11,9 @@
  *  Bu betik hiçbir şeyi değiştirmez; sadece hangi kayıtların iki saat
  *  diliminde FARKLI GÜN gösterdiğini sayar ve örnekler.
  * ============================================================================
+ *
+ * ⛔ BEKCI SINIFI: BAGIMSIZ — tek seferlik OLCUM betigi, olcut degil.
+ * Saat dilimi kararinin (Europe/Istanbul sabiti) o gunku etkisini olcmustu; kuralin koşan karsiligi `i18n:kontrol` ve `tarih:dogrula` icinde.
  */
 
 import "dotenv/config";

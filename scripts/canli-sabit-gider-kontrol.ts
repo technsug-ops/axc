@@ -20,6 +20,9 @@ import { canliYapilandirma } from "./canli-ortak";
  *  satışlarda yapılır — hiç kesilmemiş satışta "eksik" demek kapsam
  *  boşluğunu fark diye okumak olurdu.
  * ============================================================================
+ *
+ * ⛔ BEKCI SINIFI: BAGIMSIZ — CANLI veritabani ister; tur baglantisiz kosar.
+ * Zaten `BETIK SINIFI: TEK_SEFERLIK` beyanli: bir para riskini bir kez olcer.
  */
 
 async function main() {

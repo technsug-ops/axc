@@ -2,7 +2,17 @@
  * ============================================================================
  *  KART BORCU DOĞRULAMA
  * ----------------------------------------------------------------------------
- *  Çalıştırma:  npm run kart:dogrula
+ *  Çalıştırma:  npm run kart-borcu:dogrula
+ *
+ *  ⛔ AD ÇAKIŞMASI — 16.08→01.09.2026 ARASI HİÇ KOŞMADI (K26).
+ *  Bu dosya `kart:dogrula` diye anılıyordu; aynı komut adını ÜRÜN
+ *  kartı bekçisi (`urun-karti-dogrula.ts`) aldı ve bu dosya
+ *  `package.json`da REFERANSSIZ kaldı. Tur komutları package.json'dan
+ *  okuduğu için sessizce hiç koşmadı — 48 ölçüt iki hafta boyunca
+ *  hiçbir şeyi korumadı. "Kart" iki farklı kavramın adıydı: kredi
+ *  kartı ↔ ürün kartı. _(Anayasa: aynı kelimeyi iki kavram için
+ *  kullandığını fark ettiğin an dur ve ayır.)_
+ *  Bekçisi: `npm run bekci-yetim:dogrula`.
  *
  *  Veritabanına GİTMEZ. Dört bölüm:
  *  1) TAKVİM — kesim günü 31 olan kartta şubat, yıl sınırı, kesim gününde

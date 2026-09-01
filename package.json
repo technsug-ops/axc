@@ -214,6 +214,8 @@
     "el-kitabi:dogrula": "tsx scripts/el-kitabi-dogrula.ts",
     "canli:n11-kesinti": "tsx scripts/canli-n11-kesinti.ts",
     "bekci": "tsx scripts/bekci.ts",
+    "kart-borcu:dogrula": "tsx scripts/kart-dogrula.ts",
+    "bekci-yetim:dogrula": "tsx scripts/bekci-yetim-dogrula.ts",
     "kamera:dogrula": "tsx scripts/kamera-dogrula.ts",
     "pwa:dogrula": "tsx scripts/pwa-dogrula.ts",
     "canli:eksik-siparis": "tsx scripts/canli-eksik-siparis.ts",

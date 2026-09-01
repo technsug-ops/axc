@@ -19,6 +19,9 @@
  *  ⚠ HESAP MOTORDAN, KOPYA DEĞİL. Kendi NET formülünü yazsaydı motor
  *  değiştiğinde bu betik eski formülü savunurdu.
  * ============================================================================
+ *
+ * ⛔ BEKCI SINIFI: BAGIMSIZ — CANLI veritabani ister, tur baglanti kuramaz.
+ * `canli:` onekli komutlar bilerek tur DISINDA (scripts/bekci.ts suzgeci).
  */
 
 import { kdvDahilKargo } from "../src/lib/kargo-kdv";

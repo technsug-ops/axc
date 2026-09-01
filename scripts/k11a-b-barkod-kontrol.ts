@@ -33,6 +33,8 @@
  *  ── ⚠ H20 ───────────────────────────────────────────────────────────────
  *  `soldAt` saat taşımıyor; pencere uçları GÜN düzeyinde kesilir.
  * ============================================================================
+ *
+ * ⛔ BEKCI SINIFI: BAGIMSIZ — K11a-b vakasinin tek seferlik olcumu; CANLI veri ister ve tekrarlanabilir bir olcut degil, bir tesis kaydidir.
  */
 
 import { betikAdresi } from "../src/lib/veritabani-adresi";
