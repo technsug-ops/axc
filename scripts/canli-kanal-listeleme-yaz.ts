@@ -95,6 +95,15 @@ async function main() {
   const t = await taramaAl();
   if (!t.tamam) {
     console.log("\n   ⛔ " + t.hata);
+    /**
+     * ⛔ TARAMA DÜŞTÜĞÜNDE DE İZ YAZILIR. Yazılmasaydı panel kutusu eski
+     * damgaya bakıp "48 saat oldu" derdi — YANLIŞ TEŞHİS: sorun geçen zaman
+     * değil, koşumun DÜŞMESİ. İkisi farklı iş istiyor.
+     */
+    if (YAZ) {
+      const { kosumIziniYaz } = await import("../src/lib/kanal-listeleme-yaz");
+      await kosumIziniYaz({ basarili: false, mesaj: t.hata });
+    }
     process.exitCode = 1;
     return;
   }
@@ -145,6 +154,45 @@ async function main() {
   console.log("   barkodsuz (atlandı)      " + s.barkodsuzAtlanan);
   console.log("   kanal kaydı YOK (yazacak yer yok) " + s.kanalKaydiYok);
   console.log("\n   ⛔ Pazaryerine hiçbir şey yazılmadı.");
+
+  /**
+   * ⛔ BAŞARIDA DA İZ YAZILIR — VE BUNUN OLMAMASI BİR KUSURDU (01.09.2026).
+   * `kosumIziniYaz`ın kendi belgesi _"İZ HER KOŞUMDA YAZILIR — başarıda da"_
+   * diyordu; kod onu YALNIZ hesap bulunamadığında çağırıyordu. İki sonucu
+   * vardı ve ikisi de sessiz:
+   *   · bir kez düşen koşumdan sonra iz sonsuza kadar "BAŞARISIZ" kalırdı —
+   *     sonraki başarılı koşumlar onu hiç temizlemezdi;
+   *   · "hiç koşmadı" ile "koştu ve düzeldi" ayırt edilemezdi.
+   * _(Anayasa: "şemadaki alan da bir iddiadır — yazıcısı yoksa vaat boştur".)_
+   */
+  const { kosumIziniYaz } = await import("../src/lib/kanal-listeleme-yaz");
+  await kosumIziniYaz({
+    basarili: true,
+    mesaj: `${s.hesap} · yazılan ${s.yazilan} · YOK ${s.yokIsaretlenen} · barkodsuz ${s.barkodsuzAtlanan}`,
+  });
 }
 
-void main();
+/**
+ * ⛔ ÇÖKÜŞTE DE İZ YAZILIR — VE HATA MESAJI TAM TAŞINIR.
+ * Yakalanmamış hata, yutulmuş hatanın kardeşidir: betik patlarsa panel
+ * kutusu bunu asla öğrenemez ve bayat damgayı "gece koşumu kaçmış" diye
+ * okur — yanlış teşhis. _(Anayasa: "hata mesajını kısaltan her işlem
+ * teşhisi kısaltır" — kırpma yalnız GÖSTERİMDE, kayıtta asla.)_
+ */
+main().catch(async (e: unknown) => {
+  const mesaj = (e instanceof Error ? (e.stack ?? e.message) : String(e)).replace(
+    /\r?\n/g,
+    " ",
+  );
+  console.log("\n   ⛔ KOŞUM ÇÖKTÜ — " + mesaj);
+  if (YAZ) {
+    try {
+      const { kosumIziniYaz } = await import("../src/lib/kanal-listeleme-yaz");
+      await kosumIziniYaz({ basarili: false, mesaj });
+    } catch {
+      /** ⚠ İz de yazılamadıysa en azından ekranda duruyor — sessiz kalmıyor. */
+      console.log("   ⛔ Koşum izi de YAZILAMADI.");
+    }
+  }
+  process.exitCode = 1;
+});

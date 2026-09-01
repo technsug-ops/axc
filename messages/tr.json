@@ -3840,6 +3840,11 @@
     "hicOlculmedi": "Henüz karşılaştırılmadı",
     "bayat": "{saat} saatten eski — gece koşumu kaçmış olabilir",
     "bos": "Bu kanalda satılamayan stoklu ürün yok.",
-    "kosumBasarisiz": "son koşum BAŞARISIZ"
+    "kosumBasarisiz": "son koşum BAŞARISIZ",
+    "sayilanBaslik": "Satılamayan",
+    "temiz": "temiz",
+    "olculmemis": "Henüz karşılaştırılmadı",
+    "olculmemisNotu": "Kanal kodu yeni girilmiş; gece koşumu bunlara henüz bakmadı.",
+    "adetSade": "{adet} ürün"
   }
 }

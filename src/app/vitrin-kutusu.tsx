@@ -22,6 +22,21 @@ import type { VitrinKutusu as Veri } from "@/lib/panel/vitrin-verisi";
  *  kanalda VAR. Toplama katılsaydı kutu ₺33.857 fazla gösterirdi ve dördü
  *  haksız yere suçlanırdı. _(Kullanıcı şartı: BILINMIYOR ayrı satır.)_
  *
+ *  ── ⛔ SIFIR SATIR GİZLENMEZ — VE BU BİR ARIZADAN SONRA DÜZELTİLDİ ───
+ *  Eskiden `adet > 0` olmayan satır hiç çizilmiyordu. 01.09.2026 sabahı kutu
+ *  kendiliğinden boşaldı ve kullanıcı sordu: _"bu bilgilendirmeler neden
+ *  gitmiş"_. Ekranda **"baktım, temiz"** ile **"bu satır artık yok"** ayırt
+ *  edilemiyordu. Üç satır artık HER ZAMAN duruyor; sıfır olan `0 · temiz`
+ *  yazar ve bağlantı OLMAZ (açılacak liste yok, İlke #16).
+ *
+ *  ── ⛔ BEŞİNCİ SATIR: HİÇ KARŞILAŞTIRILMAMIŞLAR ──────────────────────
+ *  Aynı sabahın gerçek sebebi buydu: Halil **19 ürüne TY kodu ekledi**
+ *  (05:03–09:25, `createdAt` damgaları birebir söylüyor) ve gece koşumu
+ *  ondan sonra hiç koşmadı. Yeni satır `BILINMIYOR` doğar; kutu onları
+ *  hiçbir yerde saymıyordu. Tarama dosyasıyla çaprazlandı: **6'sı STOKSUZ,
+ *  4'ü PASIF** — yani 10'u gerçekten satılamaz durumdaydı ve ekranda
+ *  görünmüyordu. Sayıya GİRMEZ (defterin hükmü yok), ama GÖRÜNÜR.
+ *
  *  ── ⚠ SATIRLAR ₺'YE GÖRE SIRALI ──────────────────────────────────────
  *  Sıralama `vitrinKutusunuTopla` içinde yapılıyor; kutu onu bozmaz.
  *  13 ucuz ürün 5 pahalı üründen önce gelmemeli.
@@ -48,8 +63,12 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
    */
   if (veri.hesapId === null) return null;
 
-  const bosMu =
-    veri.satirlar.length === 0 && veri.kaydiYokAdet === 0;
+  /**
+   * ⚠ "TEMİZ" ARTIK BİR HÜKÜM, BİR BOŞLUK DEĞİL: üç satır da sıfırsa kutu
+   * bunu SÖYLER. Eskiden satırlar hiç çizilmediği için kutu sessizce
+   * boşalıyordu ve okuyan "ölçüm mü gitti, sorun mu bitti" bilemiyordu.
+   */
+  const hepsiSifir = veri.satirlar.every((s) => s.adet === 0);
 
   /**
    * ⚠ `Date.now()` RENDER İÇİNDE ÇAĞRILMAZ — lint yakaladı ve haklıydı:
@@ -89,14 +108,12 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
               · {veri.hesapAdi}
             </span>
           ) : null}
-          {!bosMu ? (
-            <span className="text-muted-foreground text-sm font-normal">
-              {t("ozet", {
-                adet: veri.toplamAdet,
-                tutar: bicim.para(veri.toplamTutar, "TRY"),
-              })}
-            </span>
-          ) : null}
+          <span className="text-muted-foreground text-sm font-normal tabular-nums">
+            {t("ozet", {
+              adet: veri.toplamAdet,
+              tutar: bicim.para(veri.toplamTutar, "TRY"),
+            })}
+          </span>
         </CardTitle>
         <p className="text-muted-foreground text-sm">{t("notu")}</p>
         {/* ⚠ DAMGA HER ZAMAN GÖRÜNÜR — ölçüm yoksa da. */}
@@ -134,47 +151,123 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
           ve göz aradaki yüzlerce pikseli kat etmek zorunda kalırdı — anayasanın
           adıyla yasakladığı kalıp. Sınır burada, ızgarada değil: kutu nereye
           konursa konsun içi okunabilir kalsın. */}
-      <CardContent className="min-w-0 max-w-3xl space-y-2">
-        {bosMu ? (
+      {/* ⛔ GENİŞLİK SINIRI — İLKE #12. Kutu panelde TAM GENİŞLİKTE duruyor;
+          satırlar sınırsız bırakılsaydı etiket solda, rakam ta sağda kalır
+          ve göz aradaki yüzlerce pikseli kat etmek zorunda kalırdı — anayasanın
+          adıyla yasakladığı kalıp. Sınır burada, ızgarada değil: kutu nereye
+          konursa konsun içi okunabilir kalsın.
+
+          ⭐ VE KALIP "SATIR" DEĞİL "KOMPAKT KUTUCUK IZGARASI" — anayasanın
+          İlke #12'de adıyla önerdiği şekil. Üç rakam yan yana durunca
+          karşılaştırılabiliyor; alt alta uzun satırlar hâlinde durunca
+          durmuyordu. */}
+      <CardContent className="min-w-0 max-w-3xl space-y-3">
+        {/* ── SAYIYA GİREN ÜÇ KUTUCUK — HER ZAMAN ÜÇÜ DE ÇİZİLİR ──
+            ⛔ SIFIR OLANI DA. "Baktım, temiz" ile "bu satır artık yok"
+            ekranda AYNI görünüyordu ve kutu bir sabah kendiliğinden boşaldı.
+            _(Anayasa: boş sonuç ile temiz sonuç ayırt edilir.)_ */}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {veri.satirlar.map((s) => {
+            const govde = (
+              <>
+                <span className="text-muted-foreground text-xs">
+                  {etiket[s.satir]}
+                </span>
+                {s.adet === 0 ? (
+                  /* ⚠ SIFIR AÇIKÇA YAZAR — ve "temiz" olduğu da yazar ki
+                     okuyan bunu bir eksiklik sanmasın. */
+                  <span className="text-muted-foreground text-sm tabular-nums">
+                    0 · {t("temiz")}
+                  </span>
+                ) : (
+                  <span className="text-sm font-medium tabular-nums">
+                    {t("satirOzeti", {
+                      adet: s.adet,
+                      tutar: bicim.para(s.tutar, "TRY"),
+                    })}
+                  </span>
+                )}
+              </>
+            );
+            /* ⛔ SIFIR SATIR BAĞLANTI DEĞİLDİR: açılacak liste yok, tıklamak
+               boş bir ekrana götürürdü. İlke #2 — tıklanabilir görünen her
+               şey tıklanabilir olmalı; tersi de geçerli. */
+            return s.adet === 0 ? (
+              <div
+                key={s.satir}
+                className="flex min-h-11 flex-col justify-center gap-0.5 rounded-lg border px-3 py-2"
+              >
+                {govde}
+              </div>
+            ) : (
+              <Link
+                key={s.satir}
+                href={vitrinAdresi(s.satir)}
+                className="hover:bg-muted/50 flex min-h-11 flex-col justify-center gap-0.5 rounded-lg border px-3 py-2"
+              >
+                {govde}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* ⚠ ÜÇÜ DE SIFIRSA HÜKÜM YAZILIR — sessiz kalmak "ölçüm mü gitti,
+            sorun mu bitti" sorusunu cevapsız bırakırdı. */}
+        {hepsiSifir ? (
           <p className="text-muted-foreground text-sm">{t("bos")}</p>
         ) : null}
 
-        {/* ── SAYIYA GİREN ÜÇ SATIR ── */}
-        {veri.satirlar.map((s) => (
-          <Link
-            key={s.satir}
-            href={vitrinAdresi(s.satir)}
-            className="hover:bg-muted/50 flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
-          >
-            <span className="font-medium">{etiket[s.satir]}</span>
-            <span className="tabular-nums">
-              {t("satirOzeti", {
-                adet: s.adet,
-                tutar: bicim.para(s.tutar, "TRY"),
-              })}
-            </span>
-          </Link>
-        ))}
+        {/* ── SAYIYA GİRMEYEN İKİ KÜME — KESİK ÇERÇEVE ──
+            ⛔ İKİSİ DE TOPLAMA GİRMEZ ve bu EKRANDA YAZAR; okuyan çıkarmak
+            zorunda kalmasın, yoksa toplam ile satırlar çelişiyor sanılır. */}
+        {veri.olculmemisAdet > 0 || veri.kaydiYokAdet > 0 ? (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {/* ⛔ HİÇ KARŞILAŞTIRILMAMIŞLAR — 01.09.2026 arızasının GERÇEK
+                sebebi. Kanal kodu yeni girilen ürün gece koşumuna kadar
+                burada bekler; görünmezse ekleyen kişi için ürün KAYBOLUR. */}
+            {veri.olculmemisAdet > 0 ? (
+              <Link
+                href={vitrinAdresi("OLCULMEMIS")}
+                className="hover:bg-muted/50 flex min-h-11 flex-col justify-center gap-0.5 rounded-lg border border-dashed px-3 py-2"
+              >
+                <span className="text-muted-foreground text-xs">
+                  {t("olculmemis")}
+                  <span className="ml-1">{t("toplamaGirmez")}</span>
+                </span>
+                <span className="text-muted-foreground text-sm tabular-nums">
+                  {t("satirOzeti", {
+                    adet: veri.olculmemisAdet,
+                    tutar: bicim.para(veri.olculmemisTutar, "TRY"),
+                  })}
+                </span>
+              </Link>
+            ) : null}
 
-        {/* ── DÖRDÜNCÜ SATIR — TOPLAMA GİRMEZ ── */}
-        {veri.kaydiYokAdet > 0 ? (
-          <Link
-            href={vitrinAdresi("KAYIT_YOK")}
-            className="hover:bg-muted/50 flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed px-3 py-2 text-sm"
-          >
-            <span className="text-muted-foreground">
-              {t("kaydiYok")}
-              {/* ⚠ "TOPLAMA GİRMEZ" EKRANDA YAZAR — okuyan çıkarmak zorunda
-                  kalmasın; yoksa toplam ile satırlar çelişiyor sanılır. */}
-              <span className="ml-2 text-xs">{t("toplamaGirmez")}</span>
-            </span>
-            <span className="text-muted-foreground tabular-nums">
-              {t("satirOzeti", {
-                adet: veri.kaydiYokAdet,
-                tutar: bicim.para(veri.kaydiYokTutar, "TRY"),
-              })}
-            </span>
-          </Link>
+            {veri.kaydiYokAdet > 0 ? (
+              <Link
+                href={vitrinAdresi("KAYIT_YOK")}
+                className="hover:bg-muted/50 flex min-h-11 flex-col justify-center gap-0.5 rounded-lg border border-dashed px-3 py-2"
+              >
+                <span className="text-muted-foreground text-xs">
+                  {t("kaydiYok")}
+                  <span className="ml-1">{t("toplamaGirmez")}</span>
+                </span>
+                <span className="text-muted-foreground text-sm tabular-nums">
+                  {t("satirOzeti", {
+                    adet: veri.kaydiYokAdet,
+                    tutar: bicim.para(veri.kaydiYokTutar, "TRY"),
+                  })}
+                </span>
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* ⚠ NİYE BEKLİYORLAR — İlke #5: bir şey olmadıysa NEDEN olmadığı
+            ekranda yazar. "Henüz karşılaştırılmadı" tek başına ne yapılacağını
+            söylemez. */}
+        {veri.olculmemisAdet > 0 ? (
+          <p className="text-muted-foreground text-xs">{t("olculmemisNotu")}</p>
         ) : null}
       </CardContent>
     </Card>

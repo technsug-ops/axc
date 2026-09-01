@@ -120,14 +120,52 @@ export function kanalKaydiYokKosulu(g: {
 }
 
 /**
+ * HENÜZ KARŞILAŞTIRILMAMIŞ stoklu varyantlar — kutunun AYRI satırı.
+ *
+ * ⛔ NİYE DOĞDU (01.09.2026): kutu bir sabah kendiliğinden boşaldı ve
+ * kullanıcı sordu — _"bu bilgilendirmeler neden gitmiş"_. Ölçüm sebebi
+ * verdi: Halil o sabah **19 ürüne TY kanal kodu eklemişti** (05:03–09:25
+ * arası, `createdAt` damgaları bunu birebir söylüyor). Yeni satır varsayılan
+ * `BILINMIYOR` doğar ve gece koşumu ondan SONRA hiç koşmadı.
+ *
+ * ⚠ VE BU SATIRLAR SESSİZ DEĞİL — KANALIN KENDİ CEVABI ONLAR HAKKINDA
+ * KONUŞUYOR. Aynı gün tarama dosyasıyla çaprazlandı (salt okuma): 19 satırın
+ * **6'sı STOKSUZ · 4'ü PASIF** — yani **10'u gerçekten satılamaz durumda**,
+ * 5'i AÇIK, 4'ü kanalın cevabında hiç yok. Kutu onları saymadığı için
+ * ekranda `0` yazıyordu ve para görünmüyordu.
+ *
+ * ⭐ AMA SAYIYA GİRMEZLER: defterin onlar hakkında HÜKMÜ YOK. Kanalın
+ * cevabına bakarak sayıya katmak, ölçülmemiş bir şeyi ölçülmüş gibi
+ * göstermek olurdu. Ayrı satırda durur ve ne olduğu yazar.
+ * _(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+ * değildir" + "sistem, kendi defterinde takip etmediği şey hakkında iddia
+ * kurmaz".)_
+ */
+export function olculmemisKosulu(g: {
+  kanalHesabiId: string;
+  variantIdleri: string[];
+}): Prisma.ProductVariantWhereInput {
+  return {
+    isActive: true,
+    id: { in: g.variantIdleri },
+    channelSkus: {
+      some: {
+        channelAccountId: g.kanalHesabiId,
+        listelemeDurumu: "BILINMIYOR" as never,
+      },
+    },
+  };
+}
+
+/**
  * `/stok` adresi — kutudaki her satır buraya gider.
  *
  * ⛔ ADRESİ EKRAN KURMAZ, BU GÖVDE KURAR. Anayasa: "adres, süzgeç
  * sözleşmesinin sahibi DOSYADAN üretilir — ekran kendi adresini kurarsa
  * koşul değiştiğinde sayı ile liste sessizce ayrışır."
  */
-/** Adres seçeneği — sayılan satırlar + kayıtsızlar. */
-export type VitrinAdresi = VitrinSatiri | "KAYIT_YOK";
+/** Adres seçeneği — sayılan satırlar + sayıya girmeyen İKİ küme. */
+export type VitrinAdresi = VitrinSatiri | "KAYIT_YOK" | "OLCULMEMIS";
 
 export function vitrinAdresi(satir?: VitrinAdresi): string {
   const p = new URLSearchParams({ vitrin: satir ?? "hepsi" });
@@ -136,14 +174,17 @@ export function vitrinAdresi(satir?: VitrinAdresi): string {
 
 /** Adresten satır çözümü — tanınmayan değer "hepsi"ye düşer. */
 /**
- * ⚠ `KAYIT_YOK` AYRI DÖNER: çağıran onu `kanalKaydiYokKosulu`ya götürmek
- * zorunda. `vitrinKosulu`ya verilirse hiçbir şey bulamaz ve liste sessizce
- * boşalır — kutuda 9 yazarken listede 0 çıkardı ("sayı = liste" bozulur).
+ * ⚠ `KAYIT_YOK` ve `OLCULMEMIS` AYRI DÖNER: çağıran onları kendi gövdelerine
+ * götürmek zorunda. `vitrinKosulu`ya verilirse hiçbir şey bulamaz ve liste
+ * sessizce boşalır — kutuda 9 yazarken listede 0 çıkardı ("sayı = liste"
+ * bozulur).
  */
 export function vitrinSatiriCoz(
   ham: string | undefined,
 ): VitrinAdresi | undefined {
   if (ham === "KAYIT_YOK") return "KAYIT_YOK";
+  /** ⚠ `OLCULMEMIS` de AYRI gövdeye gider — `vitrinKosulu` onu bulamaz. */
+  if (ham === "OLCULMEMIS") return "OLCULMEMIS";
   return (VITRIN_SATIRLARI as readonly string[]).includes(ham ?? "")
     ? (ham as VitrinSatiri)
     : undefined;

@@ -4,6 +4,7 @@ import { acikPartilerToplu } from "@/lib/stok";
 import {
   VITRIN_SATIRLARI,
   kanalKaydiYokKosulu,
+  olculmemisKosulu,
   vitrinKosulu,
   type VitrinSatiri,
 } from "@/lib/vitrin-kutusu";
@@ -44,6 +45,13 @@ export type VitrinKutusu = {
   /** Kanal kaydı olmayan stoklu varyantlar — AYRI, sayıya girmez. */
   kaydiYokAdet: number;
   kaydiYokTutar: number;
+  /**
+   * Kanal kaydı OLAN ama hiç karşılaştırılmamış stoklu varyantlar — AYRI,
+   * sayıya girmez. Yeni kanal kodu girilen ürünler gece koşumuna kadar
+   * burada bekler; kutuda görünmezlerse eklenen ürün ekrandan KAYBOLUR.
+   */
+  olculmemisAdet: number;
+  olculmemisTutar: number;
   /** Son karşılaştırma anı; hiç ölçülmediyse `null`. */
   olcumAt: Date | null;
   /**
@@ -78,6 +86,8 @@ export async function vitrinKutusunuTopla(): Promise<VitrinKutusu> {
     toplamTutar: 0,
     kaydiYokAdet: 0,
     kaydiYokTutar: 0,
+    olculmemisAdet: 0,
+    olculmemisTutar: 0,
     olcumAt: null,
     yasSaat: null,
     sonKosumBasarisiz: false,
@@ -147,18 +157,39 @@ export async function vitrinKutusunuTopla(): Promise<VitrinKutusu> {
     };
   };
 
+  /**
+   * ⛔ ÜÇ SATIR DA HER ZAMAN DÖNER — SIFIR OLANI DA.
+   *
+   * NİYE DEĞİŞTİ (01.09.2026): eskiden `if (r.adet > 0)` ile sıfır satırlar
+   * ATLANIYORDU ve kutu bir sabah kendiliğinden boşaldı. Kullanıcı sordu:
+   * _"bu bilgilendirmeler neden gitmiş"_. Ekranda **"baktım, temiz"** ile
+   * **"bu satır artık yok"** birbirinden ayırt edilemiyordu — oysa ikisi
+   * bambaşka: biri hüküm, öteki sessizlik.
+   * _(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+   * değildir" — sıfır AÇIKÇA yazılır.)_
+   */
   const satirlar: VitrinKutuSatiri[] = [];
   for (const s of VITRIN_SATIRLARI) {
     const r = await olc({
       where: vitrinKosulu({ kanalHesabiId: hesap.id, variantIdleri: stoklu, satir: s }),
     });
-    if (r.adet > 0) satirlar.push({ satir: s, adet: r.adet, tutar: r.tutar });
+    satirlar.push({ satir: s, adet: r.adet, tutar: r.tutar });
   }
-  /** ⚠ ₺'YE GÖRE SIRALI — en pahalı iş en üstte. */
+  /** ⚠ ₺'YE GÖRE SIRALI — en pahalı iş en üstte; sıfırlar kendiliğinden altta. */
   satirlar.sort((a, b) => b.tutar - a.tutar);
 
   const kaydiYok = await olc({
     where: kanalKaydiYokKosulu({ kanalHesabiId: hesap.id, variantIdleri: stoklu }),
+  });
+
+  /**
+   * ⛔ HİÇ KARŞILAŞTIRILMAMIŞ SATIRLAR — ÖLÇÜLDÜ VE GÖRÜNÜR KILINDI.
+   * 01.09.2026: 19 varyanta o sabah TY kodu eklendi, gece koşumu ondan sonra
+   * koşmadı ve hepsi `BILINMIYOR` kaldı. Kutu onları hiçbir yerde saymıyordu;
+   * kanalın kendi cevabına göre **10'u gerçekten satılamaz durumdaydı**.
+   */
+  const olculmemis = await olc({
+    where: olculmemisKosulu({ kanalHesabiId: hesap.id, variantIdleri: stoklu }),
   });
 
   /**
@@ -205,6 +236,8 @@ export async function vitrinKutusunuTopla(): Promise<VitrinKutusu> {
     toplamTutar: satirlar.reduce((t, s) => t + s.tutar, 0),
     kaydiYokAdet: kaydiYok.adet,
     kaydiYokTutar: kaydiYok.tutar,
+    olculmemisAdet: olculmemis.adet,
+    olculmemisTutar: olculmemis.tutar,
     olcumAt: damga._min.kanalOlcumAt,
     yasSaat:
       damga._min.kanalOlcumAt === null

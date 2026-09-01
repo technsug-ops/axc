@@ -4,6 +4,7 @@ import {
   SATIR_DURUMLARI,
   VITRIN_SATIRLARI,
   kanalKaydiYokKosulu,
+  olculmemisKosulu,
   vitrinAdresi,
   vitrinKosulu,
   vitrinSatiriCoz,
@@ -25,7 +26,7 @@ import { listelemeDurumu, kanalAdedi, satisaEngel, engelGrubu } from "../src/lib
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let kalan = 0;
@@ -293,6 +294,118 @@ console.log("\n6) zincir — kutu panele, süzgeç /stok'a BAĞLI mı");
   );
 }
 kosanBolumler.push("zincir");
+
+// --- 7) ÖLÇÜLMEMİŞ KÜME — SAYIYA GİRMEZ AMA GÖRÜNÜR --------------------
+console.log("\n7) ölçülmemiş küme — sayıya girmez, kaybolmaz");
+{
+  /**
+   * ⛔ NİYE DOĞDU (01.09.2026): kutu bir sabah kendiliğinden boşaldı ve
+   * kullanıcı sordu — "bu bilgilendirmeler neden gitmiş". Ölçüm sebebi
+   * verdi: o sabah 19 varyanta TY kanal kodu eklenmişti (05:03–09:25,
+   * `createdAt` damgaları birebir söylüyor) ve gece koşumu ondan sonra hiç
+   * koşmadı. Yeni satır varsayılan `BILINMIYOR` doğar; kutu onları hiçbir
+   * yerde saymıyordu.
+   *
+   * ⚠ VE BUNLAR SESSİZ DEĞİLDİ: aynı gün tarama dosyasıyla çaprazlandı —
+   * 6'sı STOKSUZ, 4'ü PASIF, yani 10'u gerçekten satılamaz durumda.
+   * Ekranda hiçbir yerde görünmüyorlardı.
+   */
+  const o = JSON.stringify(olculmemisKosulu({ kanalHesabiId: "h1", variantIdleri: ["v1"] }));
+  dogru("ölçülmemiş koşulu `some` kullanıyor", o.includes('"some"'));
+  dogru("ölçülmemiş koşulu `none` KULLANMIYOR", !o.includes('"none"'));
+  dogru("ölçülmemiş koşulu BILINMIYOR süzüyor", o.includes('"BILINMIYOR"'));
+  /**
+   * ⛔ SAYILAN KÜMEYE GİRMEZ — defterin o satırlar hakkında HÜKMÜ YOK.
+   * Kanalın cevabına bakıp saymak, ölçülmemiş bir şeyi ölçülmüş gibi
+   * göstermek olurdu. _(Anayasa: sistem, kendi defterinde takip etmediği
+   * şey hakkında iddia kurmaz.)_
+   */
+  dogru(
+    "BILINMIYOR engelli durumlarda DEĞİL",
+    !(ENGELLI_DURUMLAR as readonly string[]).includes("BILINMIYOR"),
+  );
+  dogru(
+    "BILINMIYOR hiçbir sayılan satıra düşmüyor",
+    !Object.values(SATIR_DURUMLARI).flat().includes("BILINMIYOR"),
+  );
+  /** ⚠ ADRES SÖZLEŞMESİ: kutudaki satır tıklanınca AYNI kümeye gitmeli. */
+  yakin("ölçülmemiş adresi", vitrinAdresi("OLCULMEMIS"), "/stok?vitrin=OLCULMEMIS");
+  yakin("ölçülmemiş çözümü", vitrinSatiriCoz("OLCULMEMIS"), "OLCULMEMIS");
+  yakin("kayıt-yok çözümü bozulmadı", vitrinSatiriCoz("KAYIT_YOK"), "KAYIT_YOK");
+  yakin("tanınmayan değer çözülmez", vitrinSatiriCoz("saçma"), undefined);
+}
+kosanBolumler.push("ölçülmemiş");
+
+// --- 8) SIFIR SATIR GİZLENMİYOR + KOŞUM İZİ YAZILIYOR -------------------
+console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazılır");
+{
+  const yorumsuz2 = (m: string) =>
+    m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+  /**
+   * ⛔ SIFIR SATIR ATLANAMAZ. Eski kod `if (r.adet > 0)` ile sıfır satırı hiç
+   * çizmiyordu; ekranda "baktım, temiz" ile "bu satır artık yok" AYNI
+   * görünüyordu ve kutu bir sabah sessizce boşaldı.
+   *
+   * ⚠ ÖLÇÜT DÖNGÜ BLOĞUNA DARALTILDI — `r.adet` dosyanın başka yerlerinde de
+   * geçiyor (kayıt-yok ve ölçülmemiş ölçümleri). _(Anayasa: kaynak tarayan
+   * kontrol, deseni dosyada değil KULLANIM BLOĞUNDA arar.)_
+   */
+  const veri = yorumsuz2(readFileSync("src/lib/panel/vitrin-verisi.ts", "utf8"));
+  const donguBas = veri.indexOf("for (const s of VITRIN_SATIRLARI)");
+  dogru("üç satır döngüsü bulundu", donguBas >= 0);
+  const dongu =
+    donguBas >= 0 ? veri.slice(donguBas, veri.indexOf("satirlar.sort", donguBas)) : "";
+  dogru("döngü her satırı EKLİYOR", dongu.includes("satirlar.push("));
+  dogru("döngüde sıfır ATLAMA koşulu YOK", !/if\s*\(\s*r\.adet/.test(dongu));
+  dogru("ölçülmemiş küme veriye giriyor", veri.includes("olculmemisKosulu("));
+
+  /**
+   * ⛔ SIFIR SATIR BAĞLANTI OLMAZ — açılacak liste yok (İlke #2: tıklanabilir
+   * görünen her şey tıklanabilir olmalı, tersi de geçerli). Ama SATIR VAR.
+   * ⚠ İKİ YÖN AYRI: dolu satır bağlantı OLMALI, sıfır satır OLMAMALI.
+   */
+  const kutu = yorumsuz2(readFileSync("src/app/vitrin-kutusu.tsx", "utf8"));
+  const mapBas = kutu.indexOf("veri.satirlar.map(");
+  dogru("kutu satırları ÇİZİYOR", mapBas >= 0);
+  const mapBlok = mapBas >= 0 ? kutu.slice(mapBas, mapBas + 2600) : "";
+  /**
+   * ⚠ ÖLÇÜT `return` SATIRINA BAĞLANDI — VE BU BİR MUTASYON KAÇTIĞI İÇİN.
+   * Önce çıplak `s.adet === 0 ?` aranıyordu; aynı desen blokta İKİ yerde
+   * geçiyor (gövde metnini seçen ternary + sarmalayıcıyı seçen ternary).
+   * Sarmalayıcıyı `false ?` yapan mutasyon ötekini buldu ve YEŞİL kaldı.
+   * _(Anayasa: "önce deseni say — birden çoksa işaret çağrı yerine bağlanır".)_
+   */
+  dogru("sarmalayıcı seçimi sıfıra bağlı", /return s\.adet === 0 \?/.test(mapBlok));
+  dogru("gövde metni de sıfıra bağlı", /\{s\.adet === 0 \? \(/.test(mapBlok));
+  dogru("dolu satır BAĞLANTI", mapBlok.includes("<Link"));
+  dogru("sıfır satır bağlantı DEĞİL", mapBlok.includes("<div"));
+  dogru("kutu ölçülmemiş satırını çiziyor", kutu.includes("veri.olculmemisAdet"));
+  dogru("ölçülmemiş adresi gövdeden", kutu.includes('vitrinAdresi("OLCULMEMIS")'));
+
+  /**
+   * ⛔ /stok AYNI KÜMEYE GİTMELİ — yoksa kutuda 19 yazarken liste boş çıkar
+   * ve "sayı = liste" sözü bozulur.
+   */
+  const stok2 = yorumsuz2(readFileSync("src/app/stok/page.tsx", "utf8"));
+  dogru("/stok ölçülmemiş gövdesini alıyor", stok2.includes("olculmemisKosulu("));
+
+  /**
+   * ⛔ İZ HER KOŞUMDA YAZILIR — BAŞARIDA DA. Eski kod izi YALNIZ hesap
+   * bulunamadığında yazıyordu (kendi belgesi tersini söylediği hâlde): bir
+   * kez düşen koşumdan sonra kutu sonsuza kadar "BAŞARISIZ" derdi ve "hiç
+   * koşmadı" ile "koştu ve düzeldi" ayırt edilemezdi.
+   * _(Anayasa: "şemadaki alan da bir iddiadır — yazıcısı yoksa vaat boştur".)_
+   */
+  const betik = yorumsuz2(readFileSync("scripts/canli-kanal-listeleme-yaz.ts", "utf8"));
+  dogru("başarılı koşum iz YAZIYOR", /kosumIziniYaz\(\{\s*basarili: true/.test(betik));
+  dogru("çöküş de iz yazıyor", betik.includes("main().catch("));
+  dogru(
+    "tarama düşüşü de iz yazıyor",
+    /if \(!t\.tamam\)[\s\S]{0,500}kosumIziniYaz/.test(betik),
+  );
+}
+kosanBolumler.push("zincir②");
 
 console.log("\n" + "=".repeat(60));
 if (kosanBolumler.length !== BOLUM_SAYISI) {

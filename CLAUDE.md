@@ -1206,6 +1206,24 @@ Dördüncüsü sıfırdan büyükse, sonucun kapsamı da o kadar dardır ve bu
 **ekranda yazar**. _("Açık sıfır" ilkesinin denetim tarafı: hiçbir şey
 bulunamadığında da NEDEN bulunamadığı söylenir.)_
 
+⚠ **VE AYNI ÖLÇÜT EKRANA DA İŞLER: SIFIR SATIR GİZLENMEZ.** _(Vaka
+01.09.2026.)_ Panel kutusu satırları `adet > 0` ise çiziyordu. Bir sabah üç
+satır birden ekrandan kalktı ve kullanıcı sordu: _"bu bilgilendirmeler neden
+gitmiş"_. Ekranda **"baktım, temiz"** ile **"bu satır artık yok"** aynı
+görünüyordu — ve gerçek sebep üçüncü bir şeydi: o sabah eklenen 19 yeni kayıt
+henüz hiç karşılaştırılmamıştı, kutu onları **hiçbir yerde saymıyordu** ve
+kanalın kendi cevabına göre **10'u gerçekten satılamaz durumdaydı**
+(₺228.680,95 ekrandan düşmüştü).
+
+> **KURAL:** bir denetim satırı sıfır olduğu için KAYBOLMAZ; `0` yazar ve
+> **temiz olduğunu söyler.** Ve "ölçülmemiş" küme, sayıya girmese bile
+> EKRANDA DURUR — sayıya girmediği de yazar. Görünmeyen bir küme hakkında
+> kimse soru soramaz.
+
+⚠ **SIFIR SATIR BAĞLANTI OLMAZ** (İlke #2): açılacak liste yoktur, tıklamak
+boş ekrana götürürdü. Görünürlük ile tıklanabilirlik ayrı kararlardır.
+
+
 ### DIŞ KAYNAĞIN KENDİ ETİKETİYLE KARŞILAŞTIR — İÇ TUTARLILIK KAYMAYI GİZLER (KESİN KURAL)
 
 _Ders 20.08.2026._ Dışarıdan gelen bir veriyi işlerken, çıktının **kaynağın

@@ -22,6 +22,7 @@ import { DURUM_ZEMINI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
 import {
   kanalKaydiYokKosulu,
+  olculmemisKosulu,
   vitrinKosulu,
   vitrinSatiriCoz,
 } from "@/lib/vitrin-kutusu";
@@ -266,14 +267,21 @@ export default async function StokSayfasi({
       const stoklular = grup
         .filter((g) => (g._sum.quantityDelta ?? 0) > 0)
         .map((g) => g.variantId);
+      /**
+       * ⚠ ÜÇ AYRI GÖVDE — "sayı = liste" ancak böyle korunur. `KAYIT_YOK` ve
+       * `OLCULMEMIS` kümeleri `vitrinKosulu`ya verilseydi hiçbir şey bulamaz
+       * ve liste sessizce boşalırdı: kutuda 19 yazarken listede 0.
+       */
       const kosul =
         vitrinSecimi === "KAYIT_YOK"
           ? kanalKaydiYokKosulu({ kanalHesabiId: hesapId, variantIdleri: stoklular })
-          : vitrinKosulu({
-              kanalHesabiId: hesapId,
-              variantIdleri: stoklular,
-              satir: vitrinSecimi,
-            });
+          : vitrinSecimi === "OLCULMEMIS"
+            ? olculmemisKosulu({ kanalHesabiId: hesapId, variantIdleri: stoklular })
+            : vitrinKosulu({
+                kanalHesabiId: hesapId,
+                variantIdleri: stoklular,
+                satir: vitrinSecimi,
+              });
       const bulunan = await prisma.productVariant.findMany({
         where: kosul,
         select: { id: true },
