@@ -1,3 +1,10 @@
+/**
+ * SUTUN TAVANI ISTISNASI: 8 — govdede 6 rozet/ikon — sutunlarin cogu kisa deger tasiyor, sekizle sigmasi olasi; piksel genisligi OLCULMEDI. K43 · gercek cihazda bakilacak 01.09.2026.
+ *
+ * Tavan (7) UC metin agirlikli ekranin icerik genisligine gore olculmustu;
+ * bu ekran o kumenin disinda. Istisna SAYIYLA birlikte okunuyor: sutun
+ * eklenirse beyan bayatlar ve bekci kirmizi yanar.
+ */
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";

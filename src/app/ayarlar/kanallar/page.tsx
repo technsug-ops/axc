@@ -1,3 +1,10 @@
+/**
+ * SUTUN TAVANI ISTISNASI: 8 — 8. sutun BOS baslikli eylem sutunu (ikon), yani metin genisligi tasimiyor; piksel genisligi OLCULMEDI. K43 · gercek cihazda bakilacak 01.09.2026.
+ *
+ * Tavan (7) UC metin agirlikli ekranin icerik genisligine gore olculmustu;
+ * bu ekran o kumenin disinda. Istisna SAYIYLA birlikte okunuyor: sutun
+ * eklenirse beyan bayatlar ve bekci kirmizi yanar.
+ */
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";

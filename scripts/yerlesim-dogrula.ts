@@ -24,7 +24,7 @@
  * ============================================================================
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -134,30 +134,108 @@ console.log("\n3) SÜTUN BÜTÇESİ — liste tabloları tek ekrana sığıyor m
    * ⛔ Yedi ekranın durumu panoda AÇIK kalem (gerçek cihazda bakılacak);
    * burada sessizce "sorun yok" da denmiyor, uydurma kırmızı da yakılmıyor.
    */
-  const LISTELER = [
-    "src/app/alimlar/page.tsx",
-    "src/app/satislar/page.tsx",
-    "src/app/urunler/page.tsx",
-    "src/app/kanal-sku/page.tsx",
-  ];
+  /**
+   * ⛔ ELLE TUTULAN DOSYA LİSTESİ KALDIRILDI (K43, 01.09.2026).
+   *
+   * Ölçüt DÖRT dosyayı sayıyordu; depoda `<TableHeader>` taşıyan **32
+   * tablo** var ve YEDİSİ tavanın üstünde. Yani bekçi, koruduğunu sandığı
+   * şeyin beşte birini ölçüyordu — ve sekizinci ekran yarın eklendiğinde
+   * yine sessizce yeşil kalırdı.
+   * _(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)_
+   *
+   * ── ⚠ AMA TAVAN KÖRLEMESİNE UYGULANMIYOR ────────────────────────────
+   * Tavan (7) ÜÇ ekranın içerik genişliğine göre ölçüldü. Sütunları dar
+   * olan bir ekran (rozet · ikon · kısa sayı) sekizle de sığabilir; gerçek
+   * ölçüt piksel genişliğidir ve o tarayıcı ister — projede otomasyon yok
+   * (karar 08.08.2026). Yedi ekranı birden kırmızı yakmak, ölçülmemiş bir
+   * kısıtla çalışan ekranları kilitlemek olurdu.
+   * _(Anayasa: "bir sınırın yönü ölçülmeden çevrilmez".)_
+   *
+   * ⭐ ÇÖZÜM: tavanın üstündeki ekran **kendi dosyasında BEYAN EDER**:
+   *
+   *     SUTUN TAVANI ISTISNASI: <sütun sayısı> — <gerekçe>
+   *
+   * · Beyanı olmayan aşım KIRMIZI — yarın eklenen ekran yakalanır.
+   * · Beyan **sayıyla birlikte** okunur: 8 beyan edip 9'a çıkan ekran yine
+   *   kırmızı yanar; istisna bir sütun için verildi, sonrakine değil.
+   * · Beyanlar TUTANAK olarak basılır — sayı sıfırlanmadıkça görünür kalır,
+   *   yani muafiyet saklanma yeri olmaz.
+   *   _(Anayasa: "sıfır satır gizlenmez" · "tutanak, kusur ile sınırı
+   *   ayırt ettirir".)_
+   */
+  const ekranlar: string[] = [];
+  (function tara(dizin: string) {
+    for (const giris of readdirSync(dizin, { withFileTypes: true })) {
+      const yol = `${dizin}/${giris.name}`;
+      if (giris.isDirectory()) tara(yol);
+      else if (giris.name.endsWith(".tsx")) ekranlar.push(yol);
+    }
+  })("src/app");
 
-  for (const yol of LISTELER) {
-    const kaynak = readFileSync(yol, "utf8");
-    // İlk <TableHeader> bloğu = masaüstü liste tablosunun başlık satırı.
+  const tabloluEkranlar = ekranlar
+    .map((yol) => [yol, readFileSync(yol, "utf8")] as const)
+    .filter(([, kaynak]) => kaynak.includes("<TableHeader>"));
+
+  /**
+   * ⛔ TABAN DOLULUĞU AYRICA KANITLANIR: tarama bozulup boş dönseydi
+   * aşağıdaki `filter` hiçbir şey bulamaz ve bekçi yeşil yanardı.
+   */
+  /** Taban ÖLÇÜLDÜ 01.09.2026: `<TableHeader>` taşıyan 24 dosya. Eşik
+   *  tahminle değil o ölçümün altına konuldu — tarama bozulup küçülürse
+   *  yakalasın, birkaç ekran silinirse haksız yere yanmasın. */
+  kontrol(
+    `tablolu ekran bulundu (${tabloluEkranlar.length})`,
+    tabloluEkranlar.length >= 20,
+  );
+
+  const beyanlilar: string[] = [];
+  const beyansizlar: string[] = [];
+  const bayatBeyanlar: string[] = [];
+
+  for (const [yol, kaynak] of tabloluEkranlar) {
     const blok = /<TableHeader>([\s\S]*?)<\/TableHeader>/.exec(kaynak);
-    if (!blok) {
-      kontrol(`${yol}: başlık satırı bulundu`, false);
+    if (!blok) continue;
+    const sayi = (blok[1]?.match(/<TableHead[\s>]/g) ?? []).length;
+    if (sayi <= TAVAN) continue;
+
+    const kisa = yol.replace("src/app/", "").replace("/page.tsx", "");
+    const beyan = /SUTUN TAVANI ISTISNASI:\s*(\d+)\s*—\s*(.*)/.exec(kaynak);
+    if (beyan === null) {
+      beyansizlar.push(`${kisa} (${sayi} sütun)`);
       continue;
     }
-    const sayi = (blok[1].match(/<TableHead[\s>]/g) ?? []).length;
-    kontrol(
-      `${yol.replace("src/app/", "").replace("/page.tsx", "")}: ${sayi} sütun (tavan ${TAVAN})`,
-      sayi <= TAVAN,
-      sayi > TAVAN
-        ? `${sayi - TAVAN} sütun fazla — iki satırlı hücreye taşı (iki-satir.tsx)`
-        : undefined,
-    );
+    const beyanEdilen = Number(beyan[1]);
+    const gerekce = (beyan[2] ?? "").trim();
+    if (gerekce.length < 20) {
+      beyansizlar.push(`${kisa} — beyan GEREKÇESİZ`);
+      continue;
+    }
+    if (beyanEdilen !== sayi) {
+      bayatBeyanlar.push(`${kisa}: beyan ${beyanEdilen}, gerçek ${sayi}`);
+      continue;
+    }
+    beyanlilar.push(`${kisa} (${sayi})`);
   }
+
+  kontrol(
+    `tavanı aşıp BEYANI OLMAYAN ekran YOK (${beyansizlar.length})`,
+    beyansizlar.length === 0,
+    beyansizlar,
+  );
+  kontrol(
+    `beyan sütun sayısıyla GÜNCEL (${bayatBeyanlar.length} bayat)`,
+    bayatBeyanlar.length === 0,
+    bayatBeyanlar,
+  );
+
+  /**
+   * ⚠ TUTANAK — GÖREV DEĞİL, KAYIT. Bu satırlar bugün kapatılamaz: piksel
+   * ölçümü gerçek cihaz ister. Ama KAYBOLMAZLAR da; her koşumda sayılır.
+   */
+  console.log(
+    `        tavan üstü BEYANLI ekran: ${beyanlilar.length}` +
+      (beyanlilar.length > 0 ? ` — ${beyanlilar.join(" · ")}` : ""),
+  );
 }
 
 console.log("");

@@ -1,3 +1,10 @@
+/**
+ * SUTUN TAVANI ISTISNASI: 9 — en genis ekran, TEK tavan asan 9 sutunlu. 3 sutun saga yasli sayi, govdede 3 rozet/ikon var; piksel genisligi OLCULMEDI. K43 · gercek cihazda bakilacak 01.09.2026.
+ *
+ * Tavan (7) UC metin agirlikli ekranin icerik genisligine gore olculmustu;
+ * bu ekran o kumenin disinda. Istisna SAYIYLA birlikte okunuyor: sutun
+ * eklenirse beyan bayatlar ve bekci kirmizi yanar.
+ */
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";

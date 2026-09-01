@@ -1,3 +1,10 @@
+/**
+ * SUTUN TAVANI ISTISNASI: 8 — 8 sutunun 6'si saga yasli SAYI (beklenen/saglam/hasarli/kalan/satir toplami) — dar sutunlar; piksel genisligi OLCULMEDI. K43 · gercek cihazda bakilacak 01.09.2026.
+ *
+ * Tavan (7) UC metin agirlikli ekranin icerik genisligine gore olculmustu;
+ * bu ekran o kumenin disinda. Istisna SAYIYLA birlikte okunuyor: sutun
+ * eklenirse beyan bayatlar ve bekci kirmizi yanar.
+ */
 import Link from "next/link";
 import { sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";

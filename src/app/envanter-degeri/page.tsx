@@ -1,3 +1,10 @@
+/**
+ * SUTUN TAVANI ISTISNASI: 8 — 5 sutun saga yasli SAYI/para; ama basliklar uzun (Odenen KDV dahil / Mal bedeli KDV haric) ve tasima riski en yuksek aday. K43 · gercek cihazda bakilacak 01.09.2026.
+ *
+ * Tavan (7) UC metin agirlikli ekranin icerik genisligine gore olculmustu;
+ * bu ekran o kumenin disinda. Istisna SAYIYLA birlikte okunuyor: sutun
+ * eklenirse beyan bayatlar ve bekci kirmizi yanar.
+ */
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import Link from "next/link";
 import { sayfaIzni } from "@/lib/yetki";

@@ -4002,3 +4002,47 @@ Kapanan iki kalem:
 |---|---|---|
 | **K123** | **KARGO BARKODU OKUMA HIZI · [KOD KOŞTU 01.09.2026 · ✅ HALİL TESTİ GEÇTİ 01.09.2026]** | ✅ Kullanıcı bir Trendyol kargo etiketi gösterip _"bu barkodları okumakta hâlâ zorluk çekiyor"_ dedi. ⚠ **İLK ŞÜPHELİ BİÇİM LİSTESİYDİ VE SUÇSUZ ÇIKTI** — iki kez oradan yanmıştık (25.08 `ITF`, 31.08 `UPCA`), bu sefer değildi: kod `7260036664117470` **16 haneli**, `Code128`/`ITF` ikisi de listede ve **defterde tam eşleşmesi var** (509 satışın kargo kodu 16 haneli). 📏 **ÖLÇÜLDÜ — SORUN BİÇİM DEĞİL HIZ:** kod bulunmayan kare (1920×1080, koyu dokulu zemin — kullanıcının fotoğrafındaki gibi) `tryHarder` ile **668 ms**, onsuz **146 ms**. Döngü 250 ms'de bir tetikleniyor ama önceki kare bitmeden yenisi başlamıyor → sistem barkoda **saniyede ~1,5 kez** bakıyordu, telefon CPU'sunda çok daha az. 📏 **VE YÖN ÖLÇÜLDÜ (kısıt çevrilmeden önce):** zxing writer ile gerçek barkod üretilip **20 senaryoda** denendi (net · bulanık · ağır bulanık · DÖNÜK · dönük+bulanık · TERS · 2 px/modül · 1,2 px/modül × Code128/ITF) — **20'sinde de sonuç AYNI**, süre farkı **3×–14×** (en kötü 1848 → 118 ms). ⭐ **SEBEBİ:** `tryRotate` · `tryInvert` · `tryDownscale` zxing'de **AYRI bayraklar ve zaten açık**; dönük/ters/küçük kareyi kurtaran `tryHarder` değil. ⛔ **AMA YETENEK ATILMADI — ÖLÇÜM SENTETİKTİ:** ard arda **8** kare okunamazsa BİR kare zor ayarla taranıyor; emniyet duruyor, bedeli ~2 saniyede bir yavaş kare. ⛔ **ÇÖZÜNÜRLÜK DÜŞÜRÜLMEDİ** — ölçüldü ve reddedildi: 960×540 kareler 3,4× hızlı ama modül başına piksel yarıya iner ve ölçümde **1,2 px/modül okunmuyor**; hızı oradan almak okunabilirliği harcamak olurdu. ⛔ **BİÇİM LİSTESİ DE DARALTILMADI** — matris biçimleri yalnız `tryHarder` ile pahalıydı (11 biçim hızlı ayarla 146 ms), kısaltmak kapsam kaybettirirdi. **Bekçi `kamera:dogrula` 50 → 71 ölçüt · mutasyon 9/9 KIRMIZI** (zorKareMi hep true · hep false · hızlı karede tryHarder açık · tryRotate/tryInvert/tryDownscale kapatıldı · biçim listesi daraltıldı · okuyucu gövdeyi çağırmıyor · sayaç okumada sıfırlanmıyor). ⚠ Bir ölçüt **eskidiği için** kırmızı yandı ve susturulmadı, güncellendi: çapa `kareyiCozumle(canvas, video)` idi, üçüncü argüman eklenince tutmadı; çapa çağrıya bağlandı ve pencere **ölçülerek** 700 → 2600 karaktere çıkarıldı. ⏳ **HALİL TESTİ:** aynı etiketi gerçek telefonda `/okut` ve `/paketle` ekranlarında okut — okuma belirgin hızlanmalı. |
 | **K124** | **PANELDE 3 KANAL KARTI + `/kanallar` DÖKÜM SAYFASI · [KOD KOŞTU 01.09.2026 · ✅ HALİL TESTİ GEÇTİ 01.09.2026]** | ✅ Kullanıcı: _"burada sadece 3 tane kart görünsün, devamını isterse başka bir sayfada görsün. Sabitte 1) Trendyol 2) Hepsiburada 3) N11; ciro ise en büyükten en küçüğe."_ ⭐ **TAVAN SIRALAMADAN BAĞIMSIZ ÇALIŞIYOR** — kesme sıralamadan SONRA yapılıyor, yani sabit düzende ilk üç Trendyol · Hepsiburada · N11, ciro kipinde en büyük üç. İkinci bir sıralama yazılmadı; kip değiştiğinde ekran ile kesme ayrışırdı. ⛔ **AYRI BİR BORU HATTI YAZILMADI:** `/kanallar` panelin KENDİ gövdesini çağırıyor (`yalnizKanallar` bayrağı) ve ondan yalnız kanal ızgarasını tavansız çizmesini istiyor. İkinci bir sorgu/eşleme yazılsaydı iki yerde iki hesap olur ve bir gün sessizce ayrışırlardı — panelin en temel sözü **"sayı = liste"**. ⚠ **BEDELİ BEYAN EDİLDİ:** döküm sayfası panelin BÜTÜN hesabını koşturuyor ama yalnız kanal bölümünü çiziyor; nadiren açılan bir ekran için kabul edilebilir, sayıların ayrışması değildi. ⛔ **ADRES BEYAZ LİSTE TUTMUYOR:** bağlantı panelin o anki bütün parametrelerini aynen taşıyor — beyaz liste olsaydı yarın eklenen bir süzgeç listeye girmediği için sessizce düşer ve döküm BAŞKA BİR KÜMEYİ gösterirdi. ⚠ **BİR TUZAK ÖLÇÜMLE YAKALANDI:** ilk yazımda bağlantı yalnız SATIŞI OLAN kanal kuyruğunu sayıyordu; canlıda o sayı **tam 3** (TY · HB · N11) ve açık sıfır kartları **2** (Amazon · Elden Satış) — yani bağlantı HİÇ çizilmez, o iki kart panelden sessizce düşer ve onlara ulaşacak hiçbir yol kalmazdı. Sayı artık **satışlı kuyruk + açık sıfır**. ⛔ **KAPI ROTADA:** `/kanallar` `sayfaIzni("satis.kar.gor")` istiyor (sayfanın tamamı para); yetkisiz istek 404 alıyor, rotanın varlığı bile sızmıyor — ve bu bekçi tarafından yakalandı, elle düşünülerek değil (`yetki:dogrula` "her sayfa yetki istiyor" kırmızı yandı). **Bekçi `panel:dogrula` 612 → 632 ölçüt · mutasyon 11/11 KIRMIZI.** ⚠ Bir mutasyon önce KAÇTI: `yalnizKanallar={false}` yapıldığında ölçüt yeşil kaldı çünkü yalnız ADI arıyordu; ölçüt bayrağın DEĞERİNE bağlandı (`={true}` ile de yeşil, `={false}` ve silinmesiyle kırmızı). ⏳ **HALİL TESTİ:** panelde 3 kart + "Tümünü gör · N kanal daha"; bağlantıya bas → `/kanallar` açılmalı, dönem ve sıra kipi KORUNMALI, tüm kanallar + satışı olmayanlar görünmeli. |
+
+### 01.09.2026 — K41 ve K41a kapandı · K43'ün bekçi tarafı düzeltildi
+
+- **K41** — `11473322212` iade tipi. 24.08.2026'da AXCALI'nın cevabıyla çözüldü
+  (_"değişim oldu, para bizde kaldı"_): iade para iadesi gibi hesaplanmıştı,
+  değişime çevrildi, NET-2 `−377,38 → +1.714,83`. Üç kök neden aynı gün bulundu
+  ve üçü de düzeltildi. Kalem kapanış kaydını **taşıyordu ama açık listede
+  duruyordu** — etiketi bayattı.
+- **K41a** — gönderi numarası (`Sale.shipmentCode`). Canlıda, migration koştu,
+  `arama:dogrula` 67 kontrol · **10 mutasyon, 10'u da yakalandı**. Açık ucu yoktu.
+
+⭐ **K43 — KAPANMADI AMA YARISI DÜZELDİ, VE DÜZELEN YARI ASIL ARIZAYDI.**
+Kalem _"yedi ekran sütun tavanının üstünde"_ diye duruyordu ve gerçek ölçüt
+piksel genişliği olduğu için bekleniyordu. Ölçüm başka bir şey gösterdi:
+**bekçinin kendisi elle tutulan DÖRT dosyayı sayıyordu**, oysa depoda
+`<TableHeader>` taşıyan **24 dosya** var. Yedi ekran "biliniyordu" ama
+sekizincisi yarın eklenseydi **sessizce yeşil** kalırdı.
+
+Liste kaldırıldı, yerine beyan kondu. ⚠ **Tavan körlemesine uygulanmadı** —
+yedi ekranı birden kırmızı yakmak, ölçülmemiş bir kısıtla çalışan ekranları
+kilitlemek olurdu _(anayasa: "bir sınırın yönü ölçülmeden çevrilmez")_. Beyan
+**sayıyla** okunuyor ve yedisi her koşumda **tutanak** olarak basılıyor, yani
+muafiyet saklanma yeri değil.
+
+⚠ **PİKSEL ÖLÇÜMÜ AÇIK — VE BİR ÖLÇÜM DENENİP TERK EDİLDİ.** Başlıkları
+sözlükten çözüp karakter genişliğinden piksel tahmin etmeyi denedim;
+başlıkların çoğu çözülemedi ve çözülemeyene 104px varsayarak "ölçtüm" demek
+uydurma olurdu _(anayasa: "aykırı değer uydurularak düzeltilmez" — burada
+eksik değer)_. Onun yerine **doğrulanabilir sinyaller** ölçülüp her ekranın
+beyanına yazıldı: kaç sütun sağa yaslı sayı, gövdede kaç rozet/ikon, boş
+başlıklı eylem sütunu var mı. Gerçek cihazdaki bakış artık hangi ekranda ne
+aranacağını bilerek yapılır.
+
+🧪 **Mutasyon 5/5 kırmızı** — ikisi önce kaçtı, ikisinin de sebebi ölçüldü:
+biri **benim kurgu hatamdı** (gerekçeyi kısaltan mutasyon satırın yalnız
+başını değiştiriyordu; tamamı kısaltılınca kırmızı yandı), öteki yine
+**dairesel bir beklentiydi** — bekçinin kendi sayı kontrolünü silen senaryo;
+kontrol koşumu (ölçüt yerinde + bayat veri) kırmızı yanarak ölçütün taşıyıcı
+olduğunu gösterdi.
+
+| Kod | Konu | Panodaki son hâli (birebir) |
+|---|---|---|
+| **K41** | **`11473322212` iade tipi — ✅ ÇÖZÜLDÜ 24.08.2026** | ✅ **CEVAP AXCALI'DAN GELDİ:** _"Değişim oldu, para bizde kaldı, yeni ürün gönderildi, hasarlı ürün çöp oldu."_ İade **para iadesi** gibi hesaplanmıştı; **değişime** çevrildi. **ÖNCE:** `KAYIP_GELIR −2.980` · `KOMISYON_IADE +439,55` · `STOPAJ_IADE +24,83` · NET-2 **−377,38**. **SONRA:** ciro ve komisyon DURUYOR, yalnız `MALIYET_GERI +1.799` ve `IADE_KARGO −101` kaldı · NET-2 **+1.714,83**. Fark **+2.092,21**. ⚠ **KÖK NEDEN ZİNCİRİ, ÜÇÜ DE AYNI GÜN BULUNDU:** ① iade formunun ön-doldurması GEREKÇEYE bağlıydı, müşteri sebebi `HASARLI` olduğu için ayrılan değişim ürünü forma hiç taşınmadı; ② motor değişimi tek satırdan anlıyor (`degisimMi = kalem.degisimMaliyeti !== null`), alan boş gelince `false`; ③ iade para iadesi gibi hesaplandı. Üçü de düzeltildi (ön-dolu artık VERİYE bakıyor). ⚠ **SNAPSHOT DOKUNULMAZLIĞI BURAYA UYMADI VE SEBEBİ YAZILDI:** o ilke DOĞRU koşullarla hesaplanmış damgayı korur; bu damga YANLIŞ GİRDİYLE hesaplanmıştı, korunacak olan geçmiş değil hatanın kendisiydi. ⚠ **`MALIYET_GERI` KALDI VE DOĞRU:** eski mal fiziken döndü, maliyeti geri geldi; sonra K38 ile hurdaya düşüp kayıp DÖNEM tarafına yazıldı (fire zararı ₺1.799). Aynı lira iki kez düşmüyor. 📌 Ledger'a dokunulmadı: yalnız kesinti dökümü (fotoğraf) ve NET damgası yeniden yazıldı; iz `AuditLog`ta önceki/yeni değerlerle. |
+| **K41a** | **Gönderi numarası — ✅ [KOŞTU] 24.08.2026** | 📦 **CANLIDA.** `Sale.shipmentCode String? @unique` — migration koştu (33 migration · 470 kolon doğrulandı · damga güncellendi). **Sayım 125 → 125, dolu 0** (beklenen: kod satıştan SONRA oluşuyor, geri doldurulmaz). Yeni satış formunda + satış detayında **sonradan** girilebilir, ikisinde de **okutulabilir**. `/okut` varyant bulamazsa satış kimliğinde arar → sonuç **tekil** (`@unique`) → **Paketlendi doğrudan o satıra**. `/satislar` araması da bulur. ⚠ **"AYRI LİSTE YAZMA" NİYETİ KORUNDU, MEKANİZMA DEĞİŞTİ:** `kodKosulu` beş yerden çağrılıyor ve hepsi `ProductVariant` sorguluyor; gönderi no bir `Sale` kimliği. Liste **TEK** (`KOD_ROLLERI`), yayım kapsama göre ayrıldı (`ROL_KAPSAMI` **exhaustive** — altıncı rol derlenmeden eklenemez, nitekim beşinciyi eklerken `alanAdi` sözlüğü derhal kırıldı). 🧪 `arama:dogrula` 67 kontrol · **10 mutasyon, 10'u da yakalandı.** |
