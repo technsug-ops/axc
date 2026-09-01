@@ -845,10 +845,15 @@ async function etiketKontrolleri() {
    * `if (false) await …` yapan senaryoda dal hiç çalışmıyor ama desen
    * dosyada duruyor. Satır başına bağlanınca kırmızı yandı.
    * _(Anayasa: "koşul öldürülür, desen kalır".)_
+   *
+   * ⚠ ÇAPA K90'DA GÜNCELLENDİ: iz artık ortak gövdeden geçiyor
+   * (`izYaz`), çıplak `auditLog.create` `src/` içinde YASAK. Kod DOĞRUYDU
+   * — eskiyen çapaydı. Korunan değişmez aynı: iz KOŞULSUZ yazılır ve
+   * alanları KENDİ bloğunda aranır.
    */
   kontrol(
     "iz KOŞULSUZ yazılıyor (ölü dalda değil)",
-    /^\s*await prisma\.auditLog\.create\(\{$/m.test(yY),
+    /^\s*await izYaz\(\{$/m.test(yY),
   );
   /**
    * ⛔ ALANLAR İZİN KENDİ BLOĞUNDA ARANIR. Dosya genelinde arandığında
@@ -859,7 +864,7 @@ async function etiketKontrolleri() {
    * Gövde büyürse dar pencere sessizce körelir; bu yüzden ölçü yazılıyor ve
    * blok uzarsa buradan güncellenir.
    */
-  const izBas = yY.indexOf("await prisma.auditLog.create({");
+  const izBas = yY.indexOf("await izYaz({");
   const izBloku = izBas < 0 ? "" : yY.slice(izBas, izBas + 700);
   for (const alan of ["oncekiKonumId:", "oncekiKod:", "yeniKonumId:", "yeniKod:"]) {
     kontrol(`  ...iz \`${alan}\` taşıyor`, izBloku.includes(alan));
@@ -1051,7 +1056,7 @@ async function etiketKontrolleri() {
   kontrol("  ...yazma ve iz TEK İŞLEMDE", /\$transaction\(async \(tx\) => \{/.test(tBlok));
   kontrol(
     "  ...iz KOŞULSUZ yazılıyor",
-    /^\s*await tx\.auditLog\.create\(\{$/m.test(tBlok),
+    /^\s*await izYaz\(\{$/m.test(tBlok),
   );
   /**
    * ⚠ İZ BLOĞU SONUYLA KESİLİR — SABİT PENCEREYLE DEĞİL.
@@ -1064,8 +1069,14 @@ async function etiketKontrolleri() {
    * ⭐ Blok artık kendi kapanışında bitiyor (gerçek uzunluk 564); pencere
    * gövde büyüdükçe sessizce genişlemiyor.
    */
-  const tIzBas = tBlok.indexOf("await tx.auditLog.create({");
-  const tIzSon = tBlok.indexOf("\n    });", tIzBas);
+  const tIzBas = tBlok.indexOf("await izYaz({");
+  /**
+   * ⚠ KAPANIŞ İŞARETİ K90'DA DEĞİŞTİ: iz ortak gövdeye taşınınca çağrı
+   * `});` ile değil `},` ile bitiyor (ikinci argüman `tx`). Ölçüt hâlâ
+   * KAPANIŞA bağlı; sabit pencereye DÖNÜLMEDİ — o pencere bir kez
+   * mutasyon kaçırmıştı.
+   */
+  const tIzSon = tBlok.indexOf("\n    },", tIzBas);
   const tIz = tIzBas < 0 || tIzSon < 0 ? "" : tBlok.slice(tIzBas, tIzSon);
   kontrol("  ...iz bloğu SINIRLI okunuyor", tIz.length > 200 && tIz.length < 900, tIz.length);
   for (const alan of ["kaynakKod:", "hedefKod:", "kismi:", "skuKirpildi:", "raftakiToplam:"]) {

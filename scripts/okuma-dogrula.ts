@@ -467,7 +467,7 @@ console.log("\n6) UYARISIZLIK SÖZÜ — VE KAMERA");
   );
   kontrol(
     "  ...iz gerçekten AuditLog'a yazılıyor",
-    /prisma\.auditLog\.create\(/.test(eylemler),
+    /izYaz\(/.test(eylemler),
   );
 
   kosanBolumler.push("uyarisizlik-ve-kamera");
