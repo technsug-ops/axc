@@ -76,6 +76,19 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
         <CardTitle className="flex flex-wrap items-center gap-2">
           <Store className="size-4 shrink-0" />
           {t("baslik")}
+          {/* ⛔ KANAL ADI BAŞLIKTA — VE BU BİR SORUDAN SONRA EKLENDİ.
+              Kullanıcı sordu: "kanal kaydı yok kısmında iki farklı sayı var,
+              hangisi muteber?" Kutu 9 diyordu, uyarı merkezi 2. İKİSİ DE
+              DOĞRUYDU — ölçüldü: 2 = HİÇBİR kanalda kodu yok, 9 = bu kanalda
+              kaydı yok, ve 2 kümesi 9'un ALT KÜMESİ (kalan 7'sinin
+              Hepsiburada'da kodu var). Çelişki yoktu, KAPSAM yazılmamıştı.
+              _(Anayasa: iki rakam yan yana bırakılmaz; ikisi de kaynağıyla
+              yazılır ve hangisinin neyi ölçtüğü söylenir.)_ */}
+          {veri.hesapAdi !== null ? (
+            <span className="text-muted-foreground text-sm font-normal">
+              · {veri.hesapAdi}
+            </span>
+          ) : null}
           {!bosMu ? (
             <span className="text-muted-foreground text-sm font-normal">
               {t("ozet", {
@@ -116,7 +129,12 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
         ) : null}
       </CardHeader>
 
-      <CardContent className="min-w-0 space-y-2">
+      {/* ⛔ GENİŞLİK SINIRI — İLKE #12. Kutu panelde TAM GENİŞLİKTE duruyor;
+          satırlar sınırsız bırakılsaydı etiket solda, rakam ta sağda kalır
+          ve göz aradaki yüzlerce pikseli kat etmek zorunda kalırdı — anayasanın
+          adıyla yasakladığı kalıp. Sınır burada, ızgarada değil: kutu nereye
+          konursa konsun içi okunabilir kalsın. */}
+      <CardContent className="min-w-0 max-w-3xl space-y-2">
         {bosMu ? (
           <p className="text-muted-foreground text-sm">{t("bos")}</p>
         ) : null}

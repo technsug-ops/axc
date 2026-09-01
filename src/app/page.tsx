@@ -1920,14 +1920,20 @@ export default async function AnaSayfa({
           daraltıldı, pazaryeri kartları sağa ve GENİŞ tarafa alındı.
           Eşit bölünce (2/2) pazaryeri kartları üçe bölünüp sıkışıyordu;
           görev kutucukları ise kısa ve fazla genişlik istemiyor. */}
-        <div className="grid min-w-0 gap-4 xl:grid-cols-5">
-          {/* ═══ RAFTA VAR, VİTRİNDE YOK (K121) ═══
-              GÖREV KUTUSUNUN ÜSTÜNDE: ikisi de "bugün ne yapmalıyım"a bakıyor,
-              ama bu kutu PARA taşıyor ve önce okunmalı. */}
-          <div className="min-w-0 xl:col-span-2">
-            <VitrinKutusu veri={vitrin} />
-          </div>
+        {/* ═══ RAFTA VAR, VİTRİNDE YOK (K121) ═══
+            ⛔ IZGARANIN İÇİNDE DEĞİL, ÜSTÜNDE — VE BU BİR HATADAN SONRA BÖYLE.
+            Önce `xl:grid-cols-5` ızgarasına `col-span-2` olarak konmuştu.
+            Izgarada zaten 2 (görev) + 3 (pazaryeri) vardı; toplam 7 olunca
+            satır taştı ve iki yerde boşluk kaldı. Kullanıcı "panelin
+            frontendi bozuldu" dedi ve haklıydı.
 
+            ⚠ TAM GENİŞLİK, AMA İÇERİK SINIRLI: kutunun satırları etiket-sol
+            rakam-sağ yazıyor; tam genişlikte bu İlke #12'nin adıyla
+            yasakladığı kalıp olurdu. Sınır bileşenin İÇİNDE duruyor. */}
+        <VitrinKutusu veri={vitrin} />
+
+        {/* ⚠ 2/5 — 3/5 düzeni KORUNDU: ızgaraya dokunulmadı. */}
+        <div className="grid min-w-0 gap-4 xl:grid-cols-5">
           {/* Operasyonel sayılar — `satis.kar.gor` İSTEMEZ, depocu da görür. */}
           <div className="min-w-0 xl:col-span-2">
             <GorevKutusu
