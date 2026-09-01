@@ -9,6 +9,12 @@ import { SayimKorumasiHatasi } from "@/lib/satis";
 import { prisma } from "@/lib/prisma";
 import { topluGuncelle } from "@/lib/toplu-guncelle";
 
+/**
+ * CIKIS YAZMAZ: bu gövde yalnız POZİTİF hareket yazıyor (mal girişi).
+ * Parti bağı (`sourceMovementId`) ÇIKIŞIN alanıdır; giriş zaten partinin
+ * KENDİSİDİR. _(K54 beyanı — çıkış yazan her gövde partiyi bağlamak
+ * zorunda; yazmıyorsa gerekçesini beyan eder.)_
+ */
 import type { YazimPlani } from "./dogrula";
 import { betikDonemKarari } from "@/lib/donem-kapisi";
 import { kapaliDonemler } from "@/lib/muhasebe-donemi";

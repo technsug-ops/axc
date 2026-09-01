@@ -15,6 +15,8 @@
  * ============================================================================
  */
 
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import "dotenv/config";
 
 import { fifoDagit, type Parti } from "../src/lib/stok";
@@ -457,6 +459,92 @@ async function ucanUca() {
       basarisiz++;
       console.log("  HATA  uçtan uca bölüm sonuna kadar çalışmadı");
     }
+
+// =========================================================================
+//  ÇIKIŞ PARTİYE BAĞLANMADAN YAZILAMAZ (K54, 01.09.2026)
+// =========================================================================
+{
+  /**
+   * ⛔ NİYE DOĞDU: 23.08.2026'da iki `EXCHANGE_OUT` hareketi partiye
+   * BAĞLANMADAN yazıldı (vaka-bazlı düzeltme betikleri). Sonuç: **ledger
+   * düştü, FIFO düşmedi → hayalet adet.** `/stok` ile tarihli envanter aynı
+   * ürün için 2 birim FARKLI gösteriyordu ve hiçbiri hata vermiyordu.
+   * _(Anayasa: "stoğun kendisi de iki defterdir".)_
+   *
+   * ⭐ VAKA BUGÜN TEMİZ — ÖLÇÜLDÜ (01.09.2026): `canli:defter-ayrismasi`
+   * 1056 varyantın 1056'sında temiz, ve tüm defterde **6091 çıkışın 0'ı**
+   * partiye bağsız. Ama örneğin kalmaması DESENİN kapandığı anlamına gelmez.
+   * _(Anayasa: "desen, örneği kalmadığında değil, DOĞURAMADIĞINDA kapanır".)_
+   *
+   * ⛔ BU YÜZDEN ÖLÇÜT DESEN YASAĞI: `src/` içinde negatif hareket yazan her
+   * gövde `fifoDagit`ten geçmek ZORUNDA — partiyi bağlayan tek gövde odur.
+   * Yarın açılan bir yol da yakalanır; kimsenin listeye eklemesi gerekmez.
+   */
+  const yorumsuzKod = (m: string) =>
+    m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+  const hepsi: string[] = [];
+  const yigin = ["src"];
+  while (yigin.length > 0) {
+    const kok = yigin.pop()!;
+    for (const ad of readdirSync(kok)) {
+      const yol = join(kok, ad);
+      if (statSync(yol).isDirectory()) {
+        if (ad !== "generated") yigin.push(yol);
+      } else if (ad.endsWith(".ts") || ad.endsWith(".tsx")) {
+        hepsi.push(yol);
+      }
+    }
+  }
+  /** ⛔ "0 BULDUM" İLE "TEMİZ" AYRI: tarama boşalırsa kontrol yalancı yeşil yanar. */
+  kontrol("kaynak taraması koştu", hepsi.length > 200, hepsi.length);
+
+  /**
+   * ⛔ ÖLÇÜT YAZAN GÖVDEYE BAĞLI, PLANLAYANA DEĞİL — VE BU BİR YANLIŞ
+   * YANMADAN SONRA DARALTILDI. İlk yazımda "negatif `quantityDelta` yazan"
+   * aranıyordu ve İKİ SAF PLANLAYICI gövdeyi suçladı
+   * (`iptal-geri-alma.ts` · `iade/yanlis-urun.ts`): onlar plan DİZİSİ
+   * kuruyor, veritabanına hiç yazmıyor. Yazan (ve partiyi bağlayan)
+   * çağıranlarıydı.
+   * _(Anayasa: yanlış uyarı, uyarısızlıktan kötüdür.)_
+   *
+   * ⛔ İSTİSNA DOSYANIN KENDİSİNDE BEYAN EDİLİR, BEKÇİDE LİSTE TUTULMAZ:
+   * yalnız POZİTİF hareket yazan gövde `CIKIS YAZMAZ: <gerekçe>` yazar.
+   * Beyansız eksik HATA sayılır.
+   */
+  const yazanGovdeler: string[] = [];
+  const bagsizlar: string[] = [];
+  for (const yol of hepsi) {
+    const ham = readFileSync(yol, "utf8");
+    const kod = yorumsuzKod(ham);
+    if (!/stockMovement\.create/.test(kod)) continue;
+    yazanGovdeler.push(yol.replace(/\\/g, "/"));
+    /** ⚠ BEYAN YORUMDA DA OLABİLİR — bilinçli bir karardır, koda gömülmez. */
+    if (/CIKIS YAZMAZ:\s*\S+/.test(ham)) continue;
+    if (!/sourceMovementId/.test(kod)) bagsizlar.push(yol.replace(/\\/g, "/"));
+  }
+  kontrol(
+    "hareket yazan gövde bulundu",
+    yazanGovdeler.length > 0,
+    yazanGovdeler.length,
+  );
+  kontrol(
+    "çıkış yazan her gövde partiyi BAĞLIYOR",
+    bagsizlar.length === 0,
+    bagsizlar,
+  );
+
+  /**
+   * ⛔ VE `fifoDagit` PARTİYİ GERÇEKTEN BAĞLIYOR — gövde ada değil ÇAĞRIYA
+   * bağlı: dağıtım sonucu `sourceMovementId` olarak yazılmazsa bağ kurulmaz
+   * ve yasak boşa çıkar.
+   */
+  const stokGovdesi = readFileSync("src/lib/stok.ts", "utf8");
+  kontrol(
+    "FIFO gövdesi parti kimliğini taşıyor",
+    /sourceMovementId/.test(stokGovdesi),
+  );
+}
 
     console.log(
       basarisiz === 0

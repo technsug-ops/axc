@@ -1,5 +1,11 @@
 "use server";
 
+/**
+ * CIKIS YAZMAZ: bu gövde yalnız POZİTİF hareket yazıyor (mal girişi).
+ * Parti bağı (`sourceMovementId`) ÇIKIŞIN alanıdır; giriş zaten partinin
+ * KENDİSİDİR. _(K54 beyanı — çıkış yazan her gövde partiyi bağlamak
+ * zorunda; yazmıyorsa gerekçesini beyan eder.)_
+ */
 import { yetkiIste } from "@/lib/yetki";
 import { izYaz } from "@/lib/iz";
 import { basariAdresi } from "@/lib/bildirim";
