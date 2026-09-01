@@ -204,12 +204,31 @@ console.log("\n5) pazaryerine yazma yolu YOK");
   const yazici = yorumsuz(readFileSync("src/lib/kanal-listeleme-yaz.ts", "utf8"));
   dogru("yazıcıda fetch YOK", !/\bfetch\s*\(/.test(yazici));
   dogru("yazıcıda apigw adresi YOK", !yazici.includes("apigw."));
-  /** ⛔ VE YALNIZ ÜÇ ALAN YAZILIR — dördüncüsü sızarsa başka kaynakla çakışır. */
-  const yazilanAlanlar = [...yazici.matchAll(/data:\s*\{([^}]*)\}/g)]
-    .flatMap((m) => [...m[1]!.matchAll(/(\w+):/g)].map((x) => x[1]!));
+  /**
+   * ⛔ ChannelSku'YA YALNIZ ÜÇ ALAN YAZILIR — dördüncüsü sızarsa başka bir
+   * kaynakla sessizce çakışır (commissionRate'in kendi kaynağı var).
+   *
+   * ⚠ ÖLÇÜT 01.09.2026'DA KULLANIMA DARALTILDI — VE NİYE. Önce dosyadaki
+   * BÜTÜN "data" blokları taranıyordu. Aynı dosyaya koşum izi
+   * (auditLog.create) eklenince ölçüt onun alanlarını da saydı ve KIRMIZI
+   * yandı: kod DOĞRUYDU, ölçütün KAPSAMI eskimişti.
+   * _(Anayasa: bekçinin kırmızısı her zaman "kod yanlış" demez; eskiyen
+   * ölçüt susturulmaz, NİYE eskidiği yazılarak daraltılır.)_
+   *
+   * ⚠ VE İŞARET ÇAĞRIYA BAĞLI, ADA DEĞİL: "ChannelSku" kelimesi dosyada
+   * yorumlarda ve tip adlarında da geçiyor.
+   */
+  const kanalYazimlari = [
+    ...yazici.matchAll(/channelSku\.update\(\{[\s\S]*?data:\s*\{([^}]*)\}/g),
+  ];
+  /** ⛔ ÖLÇÜT BOŞA DÜŞMEZ: hiç yazım bulunamazsa "temiz" değil KIRMIZI. */
+  dogru("ChannelSku yazımı bulundu", kanalYazimlari.length > 0);
+  const yazilanAlanlar = kanalYazimlari.flatMap((m) =>
+    [...m[1]!.matchAll(/(\w+):/g)].map((x) => x[1]!),
+  );
   const izinli = new Set(["listelemeDurumu", "kanalAdet", "kanalOlcumAt"]);
   const fazla = [...new Set(yazilanAlanlar)].filter((a) => !izinli.has(a));
-  yakin("yalnız üç alan yazılıyor", fazla, []);
+  yakin("ChannelSku'ya yalnız üç alan yazılıyor", fazla, []);
 }
 kosanBolumler.push("yazma yok");
 

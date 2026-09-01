@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { KOSUM_IZI } from "@/lib/kanal-listeleme-yaz";
 import { acikPartilerToplu } from "@/lib/stok";
 import {
   VITRIN_SATIRLARI,
@@ -50,6 +51,17 @@ export type VitrinKutusu = {
    * içinde çağrılamaz — saf olmayan çağrı aynı girdiyle farklı çıktı verir.
    */
   yasSaat: number | null;
+  /**
+   * Son koşum HATA ile mi bitti.
+   *
+   * ⛔ NİYE AYRI: koşum düştüğünde `kanalOlcumAt` ESKİ değerinde kalır ve
+   * kutu "48 saat oldu" der — YANLIŞ TEŞHİS. Sorun geçen zaman değil,
+   * koşumun DÜŞMESİ; ikisi farklı iş istiyor ("zamanlayıcı çalışmıyor" ↔
+   * "çalıştı ama patladı").
+   */
+  sonKosumBasarisiz: boolean;
+  /** Başarısızlığın sebebi — ekranda görünür, kırpılmaz. */
+  sonKosumMesaji: string | null;
 };
 
 /**
@@ -70,6 +82,8 @@ export async function vitrinKutusunuTopla(
     kaydiYokTutar: 0,
     olcumAt: null,
     yasSaat: null,
+    sonKosumBasarisiz: false,
+    sonKosumMesaji: null,
   };
 
   const hesap = await prisma.channelAccount.findFirst({
@@ -136,6 +150,32 @@ export async function vitrinKutusunuTopla(
     _min: { kanalOlcumAt: true },
   });
 
+  /**
+   * ⚠ EN SON İZ OKUNUR — "kaç kez düştü" değil "şu an durum ne" sorusu.
+   * Eski iz SİLİNMEZ, en yenisi geçerlidir (ledger disiplini izlere de işler).
+   */
+  const sonIz = await prisma.auditLog.findFirst({
+    where: { action: KOSUM_IZI },
+    orderBy: { createdAt: "desc" },
+    select: { detail: true },
+  });
+  let basarisiz = false;
+  let mesaj: string | null = null;
+  if (sonIz?.detail) {
+    try {
+      const v = JSON.parse(sonIz.detail) as { basarili?: boolean; mesaj?: string };
+      basarisiz = v.basarili === false;
+      if (basarisiz) mesaj = v.mesaj ?? null;
+    } catch {
+      /**
+       * ⛔ ÇÖZÜLEMEYEN İZ "BAŞARILI" SAYILMAZ — bozuk bir kayıt sessizce
+       * iyimser okunursa gerçek bir arıza görünmez kalır.
+       */
+      basarisiz = true;
+      mesaj = "Koşum izi okunamadı (bozuk kayıt).";
+    }
+  }
+
   return {
     hesapId: hesap.id,
     hesapAdi: `${hesap.channel.name} · ${hesap.name}`,
@@ -149,5 +189,7 @@ export async function vitrinKutusunuTopla(
       damga._min.kanalOlcumAt === null
         ? null
         : (Date.now() - damga._min.kanalOlcumAt.getTime()) / 3_600_000,
+    sonKosumBasarisiz: basarisiz,
+    sonKosumMesaji: mesaj,
   };
 }

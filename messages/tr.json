@@ -3833,6 +3833,7 @@
     "sonKarsilastirma": "Son karşılaştırma: {tarih}",
     "hicOlculmedi": "Henüz karşılaştırılmadı",
     "bayat": "{saat} saatten eski — gece koşumu kaçmış olabilir",
-    "bos": "Bu kanalda satılamayan stoklu ürün yok."
+    "bos": "Bu kanalda satılamayan stoklu ürün yok.",
+    "kosumBasarisiz": "son koşum BAŞARISIZ"
   }
 }

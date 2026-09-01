@@ -131,6 +131,11 @@ async function main() {
   console.log("\n   YAZIM SONUCU\n");
   if (s.hesap === null) {
     console.log("   ⛔ Bu satıcı kimliğine sahip kanal hesabı YOK — hiçbir şey yazılmadı.");
+    const { kosumIziniYaz } = await import("../src/lib/kanal-listeleme-yaz");
+    await kosumIziniYaz({
+      basarili: false,
+      mesaj: `Satıcı kimliği ${t.saticiId} ile eşleşen kanal hesabı yok.`,
+    });
     process.exitCode = 1;
     return;
   }

@@ -56,7 +56,13 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
    * saf olmayan bir çağrı, aynı girdiyle farklı çıktı üretir ve React'in
    * varsayımını kırar. Yaş VERİ katmanında hesaplanıp prop olarak geliyor.
    */
+  /**
+   * ⛔ BAŞARISIZLIK BAYATLIKTAN ÖNCE GELİR. Koşum düştüyse damga "48 saat
+   * oldu" DEMEZ — o yanlış teşhis olurdu: sorun geçen zaman değil, koşumun
+   * DÜŞMESİ. İkisi farklı iş istiyor. _(Kullanıcı şartı 01.09.2026.)_
+   */
   const bayat = veri.yasSaat !== null && veri.yasSaat > BAYAT_SAAT;
+  const sorunVar = veri.sonKosumBasarisiz || bayat;
 
   const etiket: Record<VitrinSatiri, string> = {
     LISTELENMEMIS: t("listelenmemis"),
@@ -88,7 +94,7 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
              * Renk `DURUM_YAZISI.uyari` belirtecinden geliyor; elle yazılan
              * bir ton, karanlık temada ve ileride palet değişince ayrışırdı.
              */
-            bayat
+            sorunVar
               ? `text-sm font-medium ${DURUM_YAZISI.uyari}`
               : "text-muted-foreground text-sm"
           }
@@ -96,8 +102,18 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
           {veri.olcumAt === null
             ? t("hicOlculmedi")
             : t("sonKarsilastirma", { tarih: bicim.tarih(veri.olcumAt) })}
-          {bayat ? " · " + t("bayat", { saat: BAYAT_SAAT }) : ""}
+          {/* ⚠ BAŞARISIZLIK ÖNCELİKLİ — bayatlık mesajı onu ÖRTMEZ. */}
+          {veri.sonKosumBasarisiz
+            ? " · " + t("kosumBasarisiz")
+            : bayat
+              ? " · " + t("bayat", { saat: BAYAT_SAAT })
+              : ""}
         </p>
+        {/* ⛔ SEBEP EKRANDA YAZAR — "başarısız" tek başına ne yapılacağını
+            söylemez (İlke #5: sessiz başarısızlık yasak). */}
+        {veri.sonKosumBasarisiz && veri.sonKosumMesaji !== null ? (
+          <p className="text-muted-foreground text-xs">{veri.sonKosumMesaji}</p>
+        ) : null}
       </CardHeader>
 
       <CardContent className="min-w-0 space-y-2">

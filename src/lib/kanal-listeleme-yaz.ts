@@ -77,6 +77,36 @@ function kimlikleri(u: Record<string, unknown>): string[] {
   return cikan;
 }
 
+/**
+ * KOŞUM İZİ — kutunun "son koşum başarısız" diyebilmesi için.
+ *
+ * ⛔ NİYE GEREKTİ: damga yalnız `kanalOlcumAt`e bakarsa, koşum HATA ile
+ * bittiğinde damga ESKİ değerinde kalır ve kutu "48 saat oldu" der. Bu
+ * yanlış teşhis: sorun geçen zaman değil, koşumun DÜŞMESİ. İkisi farklı iş
+ * istiyor — biri "zamanlayıcı çalışmıyor", öteki "çalıştı ama patladı".
+ * _(Anayasa: boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+ * değildir.)_
+ *
+ * ⚠ İZ HER KOŞUMDA YAZILIR — başarıda da. Yalnız hatada yazılsaydı "hiç
+ * koşmadı" ile "koştu ve düzeldi" ayırt edilemezdi.
+ */
+export const KOSUM_IZI = "KANAL_KARSILASTIRMA";
+
+export async function kosumIziniYaz(g: {
+  basarili: boolean;
+  mesaj: string;
+}): Promise<void> {
+  await prisma.auditLog.create({
+    data: {
+      action: KOSUM_IZI,
+      targetType: "ChannelSku",
+      targetId: null,
+      /** ⛔ MESAJ TAM TAŞINIR — kırpmak teşhisi kırpar. */
+      detail: JSON.stringify({ basarili: g.basarili, mesaj: g.mesaj }),
+    },
+  });
+}
+
 export async function listelemeDurumunuYaz(
   tarama: TaramaSonucu,
 ): Promise<YazimSonucu> {
