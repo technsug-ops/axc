@@ -30,6 +30,17 @@ import { canliYapilandirma } from "./canli-ortak";
 
 const A_DESEN = "eksik-alim-20260829";
 const B_DESEN = "MALIYET BILINMIYOR";
+/**
+ * ⛔ ÜÇÜNCÜ KÜME — KAPSAM, RAPORLADIĞIM LİSTEYLE AYNI OLMAK ZORUNDA.
+ *
+ * İlk sürüm yalnız A ve B'yi yüklüyordu; oysa kullanıcıya verdiğim
+ * doğrulama listesinde `sayim-fiziksel` partileri de vardı (maliyetinin
+ * KAYNAĞI notta yazmayan, ama satışa gitmiş olanlar). Sonuç: kullanıcının
+ * teyit ettiği altı partinin yalnız üçü bu betikte görünüyordu — yani
+ * "sayı" ile "liste" ayrışmıştı.
+ * _(Anayasa: panelin en temel sözü "sayı = liste".)_
+ */
+const C_DESEN = "sayim-fiziksel-20260829";
 
 function para(d: unknown): string {
   if (d === null || d === undefined) return "—";
@@ -62,7 +73,11 @@ async function main() {
   const partiler = await prisma.stockMovement.findMany({
     where: {
       quantityDelta: { gt: 0 },
-      OR: [{ note: { contains: A_DESEN } }, { note: { contains: B_DESEN } }],
+      OR: [
+        { note: { contains: A_DESEN } },
+        { note: { contains: B_DESEN } },
+        { note: { contains: C_DESEN } },
+      ],
     },
     select: {
       id: true,
@@ -130,12 +145,75 @@ async function main() {
     }
   }
 
+  /**
+   * ⛔ TEYİT EDİLMİŞ PARTİ LİSTEDEN DÜŞER — AMA DAMGASI TUTUYORSA.
+   *
+   * Kullanıcı 02.09.2026'da altı partiyi barkodla doğruladı ve altısı da
+   * sistemdekiyle birebir çıktı. Teyit yazılmasaydı liste onları YARIN DA
+   * sorardı; sönmeyen uyarı okunmaz olur ve listenin tamamına olan güveni
+   * götürür. _(Anayasa K6: her şüphelinin bir DOĞRULANDI yolu olmalı.)_
+   *
+   * ⚠ VE TEYİT KALICI MUAFİYET DEĞİL: damga o günkü maliyeti taşır.
+   * Maliyet değişirse damga DÜŞER ve satır listeye geri gelir —
+   * karşılaştırma **kuruşuna**, tolerans yok.
+   *
+   * ⚠ İZİN DOĞUM TARİHİ **02.09.2026**: ondan öncesi için "teyit yok"
+   * bir hüküm değildir, mekanizma yoktu.
+   */
+  const teyitler = await prisma.auditLog.findMany({
+    where: { action: "MALIYET_TEYIDI", targetId: { in: kimlikler } },
+    select: { targetId: true, detail: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+  });
+  /** En YENİ iz geçerli — eski iz silinmez, üstüne yazılır. */
+  const teyitDamgasi = new Map<string, number>();
+  for (const t of teyitler) {
+    if (t.targetId === null || teyitDamgasi.has(t.targetId)) continue;
+    try {
+      const d = JSON.parse(t.detail ?? "{}") as { damgaKurus?: number };
+      if (typeof d.damgaKurus === "number") teyitDamgasi.set(t.targetId, d.damgaKurus);
+    } catch {
+      /** ⛔ ÇÖZÜLEMEYEN İZ SUSTURMAZ — bozuk JSON bir kalemi sonsuza
+       *  kadar sessizleştirebilirdi. Satır listede KALIR. */
+    }
+  }
+  const teyitli = new Set<string>();
+  for (const p of partiler) {
+    const damga = teyitDamgasi.get(p.id);
+    if (damga === undefined) continue;
+    const simdi = p.unitCostAmount === null
+      ? null
+      : Math.round(Number(String(p.unitCostAmount)) * 100);
+    if (simdi === damga) teyitli.add(p.id);
+  }
+  console.log(
+    `  teyitli (damgası tutan): ${teyitli.size} · teyit izi: ${teyitDamgasi.size}` +
+      (teyitDamgasi.size > teyitli.size
+        ? `  ⚠ ${teyitDamgasi.size - teyitli.size} teyit DÜŞTÜ (maliyet değişmiş)`
+        : ""),
+  );
+
   const A = partiler.filter((p) => p.note?.includes(A_DESEN));
-  const B = partiler.filter((p) => !p.note?.includes(A_DESEN));
+  const B = partiler.filter(
+    (p) => !p.note?.includes(A_DESEN) && p.note?.includes(B_DESEN),
+  );
+  /**
+   * ⚠ C KÜMESİ **SATIŞA GİDENLERLE** SINIRLI — 91 sayım partisinin hepsini
+   * basmak listeyi okunamaz yapardı ve satılmamış bir partinin maliyeti
+   * bugün kimseye yanlış NET vermiyor. Sınır KEYFİ DEĞİL: ölçüt "bugün
+   * para riski üretiyor mu".
+   * ⚠ Ve dışarıda bırakılan küme SAYILIYOR — görünmeyen küme hakkında
+   * kimse soru soramaz. _(Anayasa: "sıfır satır gizlenmez".)_
+   */
+  const cHepsi = partiler.filter(
+    (p) => !p.note?.includes(A_DESEN) && !p.note?.includes(B_DESEN),
+  );
+  const C = cHepsi.filter((p) => (satilan.get(p.id) ?? 0) > 0);
 
   for (const [ad, kume] of [
     ["A · eksik-alim-20260829 — MALİYET UYDURULDU", A],
     ["B · notu 'MALIYET BILINMIYOR' ama maliyet TAŞIYOR", B],
+    ["C · sayım partisi — maliyetin KAYNAĞI notta yazmıyor (satışa gidenler)", C],
   ] as const) {
     console.log(`\n  ── ${ad} — ${kume.length} parti ─────────────`);
     if (kume.length === 0) {
@@ -151,10 +229,11 @@ async function main() {
     for (const p of kume) {
       const s = satilan.get(p.id) ?? 0;
       const b = baskaCikis.get(p.id) ?? "—";
+      const t = teyitli.has(p.id) ? "✓" : " ";
       toplamAdet += p.quantityDelta;
       satilanAdet += s;
       console.log(
-        `     ${doldur(gun(p.occurredAt), 12)} ${doldur(p.variant.companySku ?? "—", 18)} ` +
+        `   ${t} ${doldur(gun(p.occurredAt), 12)} ${doldur(p.variant.companySku ?? "—", 18)} ` +
           `${doldur(p.variant.barcode ?? "—", 15)} ${doldur(String(p.quantityDelta), 5)} ` +
           `${doldur(String(s), 7)} ${doldur(b, 13)} ${doldur(para(p.unitCostAmount) + " " + (p.unitCostCurrency ?? ""), 20)} ` +
           `${(p.variant.product.name ?? "").slice(0, 34)}`,
@@ -167,6 +246,18 @@ async function main() {
     );
   }
 
+  /**
+   * ⛔ DIŞARIDA BIRAKILAN KÜME SAYILIR. C kümesi satışa gidenlerle
+   * sınırlı; ama kaç partinin bu yüzden basılmadığı EKRANDA durur —
+   * görünmeyen bir küme hakkında kimse soru soramaz.
+   * _(Anayasa: "sıfır satır gizlenmez" · denetim incelenemeyeni ayrı sayar.)_
+   */
+  console.log(
+    `
+  C kümesinde satışı OLMAYAN, bu yüzden basılmayan parti: ` +
+      `${cHepsi.length - C.length} — bugün yanlış NET üretmiyorlar, ` +
+      `satıldıkları gün üretecekler.`,
+  );
   console.log(
     `\n  ⚠ SATIŞA giden adet > 0 olan her satır YANLIŞ bir NET taşır. 'başka çıkış'
      (COUNT_CORRECTION vb.) hiçbir satışa BAĞLI DEĞİL — kâra girmez.` +
