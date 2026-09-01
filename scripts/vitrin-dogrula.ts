@@ -25,7 +25,7 @@ import { listelemeDurumu, kanalAdedi, satisaEngel, engelGrubu } from "../src/lib
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let kalan = 0;
@@ -231,6 +231,68 @@ console.log("\n5) pazaryerine yazma yolu YOK");
   yakin("ChannelSku'ya yalnız üç alan yazılıyor", fazla, []);
 }
 kosanBolumler.push("yazma yok");
+
+// --- 6) KUTU EKRANA GERÇEKTEN BAĞLI MI ---------------------------------
+console.log("\n6) zincir — kutu panele, süzgeç /stok'a BAĞLI mı");
+{
+  /**
+   * ⛔ BU BÖLÜM BİR HALİL TESTİ DÜŞTÜĞÜ İÇİN YAZILDI (01.09.2026).
+   *
+   * Tur **98/98 yeşildi** ve kutu ekranda YOKTU. Sebep: TY istemcisi
+   * taşımasını geri alırken koşulan `git checkout -- src/`, commit
+   * edilmemiş ÜÇ düzenlemeyi birden sildi — panel bağlantısı, `/stok`
+   * süzgeci ve hesap çözümü. Biri geri kondu, ikisi kondu sanıldı.
+   *
+   * Hiçbir ölçüt bunu görmedi çünkü hepsi SAF GÖVDEYİ sınıyordu; gövdeler
+   * kusursuz çalışıyordu ve kimse onları ÇAĞIRMIYORDU.
+   * _(Anayasa: "sınanmamış ekran, ekran değildir — bekçinin yeşili, ekranın
+   * ÇİZİLDİĞİNİ kanıtlamaz"; ve "zincir, halkalarının varlığıyla değil
+   * BAĞLANTISIYLA sınanır".)_
+   *
+   * ⚠ İŞARET ÇAĞRIYA BAĞLI, ADA DEĞİL: `<VitrinKutusu` (JSX kullanımı) ve
+   * `vitrinKutusunuTopla()` (çağrı) aranıyor — import satırı tek başına
+   * "ekranda çiziliyor" demek değildir.
+   */
+  const yorumsuz = (m: string) =>
+    m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+  const panel = yorumsuz(readFileSync("src/app/page.tsx", "utf8"));
+  dogru("panel kutuyu ÇİZİYOR (<VitrinKutusu)", panel.includes("<VitrinKutusu"));
+  dogru(
+    "panel veriyi ÇAĞIRIYOR (vitrinKutusunuTopla())",
+    panel.includes("vitrinKutusunuTopla()"),
+  );
+  /** ⚠ Çizim ile veri AYRI sınanır: biri olup öteki olmayınca kutu boş çizilir. */
+  dogru("çizilen kutuya veri GİDİYOR", /<VitrinKutusu\s+veri=\{/.test(panel));
+
+  const stok = yorumsuz(readFileSync("src/app/stok/page.tsx", "utf8"));
+  dogru("/stok vitrin parametresini OKUYOR", /\bvitrin\s*[,}]/.test(stok));
+  dogru("/stok koşulu GÖVDEDEN alıyor", stok.includes("vitrinKosulu("));
+  dogru(
+    "/stok KAYIT_YOK gövdesini de alıyor",
+    stok.includes("kanalKaydiYokKosulu("),
+  );
+  /**
+   * ⛔ VE SÜZGEÇ GERÇEKTEN UYGULANIYOR MU: koşul hesaplanıp kullanılmazsa
+   * liste süzülmez ve kutudaki sayı ile liste ayrışır ("sayı = liste").
+   *
+   * ⚠ ÖLÇÜT KESİŞİM DİZİSİNE DARALTILDI — VE BU BİR MUTASYON KAÇTIĞI İÇİN.
+   * Önce dosyanın tamamında `vitrinListe` aranıyordu; diziden çıkaran
+   * mutasyon YEŞİL geçti, çünkü değişken TANIMI dosyada duruyordu.
+   * Desenin bulunması, davranışın gerçekleştiğini göstermez.
+   * _(Anayasa: kaynak tarayan kontrol, deseni dosyada değil KULLANIM
+   * BLOĞUNDA arar.)_
+   */
+  const kesisimBasi = stok.indexOf("const varyantSuzgeci = [");
+  dogru("/stok kesişim dizisi bulundu", kesisimBasi >= 0);
+  const kesisimBloku =
+    kesisimBasi >= 0 ? stok.slice(kesisimBasi, stok.indexOf("]", kesisimBasi)) : "";
+  dogru(
+    "/stok süzgeci varyant KESİŞİMİNE giriyor",
+    kesisimBloku.includes("vitrinListe"),
+  );
+}
+kosanBolumler.push("zincir");
 
 console.log("\n" + "=".repeat(60));
 if (kosanBolumler.length !== BOLUM_SAYISI) {

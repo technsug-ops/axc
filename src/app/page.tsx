@@ -104,12 +104,14 @@ import { prisma } from "@/lib/prisma";
 import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
+import { VitrinKutusu } from "./vitrin-kutusu";
 import {
   donemAlimi,
   gorevSayilariniTopla,
   tarifeKapsaminiOlc,
   paketlenenSiparisSayisi,
 } from "@/lib/panel/gorev-verisi";
+import { vitrinKutusunuTopla } from "@/lib/panel/vitrin-verisi";
 import { tarifeUyarisiVarMi } from "@/lib/panel/tarife-penceresi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { izinVarMi } from "@/lib/yetki";
@@ -1337,7 +1339,7 @@ export default async function AnaSayfa({
    *  - Takvim İLERİYE bakar; dönem süzgeci geçmişi süzer. Aynı düğmeye
    *    bağlansalardı "bugün" seçilince takvim boşalırdı. Ekranda da yazıyor.
    */
-  const [gorevSayilari, tarifeKapsam, paketlenen, alim, kiyasAlim] =
+  const [gorevSayilari, tarifeKapsam, paketlenen, alim, kiyasAlim, vitrin] =
     await Promise.all([
     gorevSayilariniTopla(),
 
@@ -1371,6 +1373,13 @@ export default async function AnaSayfa({
      */
     donemAlimi(donem),
     kiyasPencere ? donemAlimi(kiyasPencere) : Promise.resolve(null),
+
+    /**
+     * VİTRİN KUTUSU (K121) — DÖNEM SÜZGECİNDEN BAĞIMSIZ ve bu bilinçli:
+     * "rafta duran mal ŞU AN satılabiliyor mu" sorusu bugünün sorusudur.
+     * Döneme bağlansaydı dönem daraldığında liste sessizce kısalırdı.
+     */
+    vitrinKutusunuTopla(),
   ]);
 
   const seri = aylikSeri(
@@ -1912,6 +1921,13 @@ export default async function AnaSayfa({
           Eşit bölünce (2/2) pazaryeri kartları üçe bölünüp sıkışıyordu;
           görev kutucukları ise kısa ve fazla genişlik istemiyor. */}
         <div className="grid min-w-0 gap-4 xl:grid-cols-5">
+          {/* ═══ RAFTA VAR, VİTRİNDE YOK (K121) ═══
+              GÖREV KUTUSUNUN ÜSTÜNDE: ikisi de "bugün ne yapmalıyım"a bakıyor,
+              ama bu kutu PARA taşıyor ve önce okunmalı. */}
+          <div className="min-w-0 xl:col-span-2">
+            <VitrinKutusu veri={vitrin} />
+          </div>
+
           {/* Operasyonel sayılar — `satis.kar.gor` İSTEMEZ, depocu da görür. */}
           <div className="min-w-0 xl:col-span-2">
             <GorevKutusu

@@ -69,9 +69,7 @@ export type VitrinKutusu = {
  * satıcı kimliği; taramanın `saticiId`siyle aynı. _(20.08 dersi:
  * `kanalAdi === "Hepsiburada"` karşılaştırması 29 ürünü sessizce elemişti.)_
  */
-export async function vitrinKutusunuTopla(
-  saticiId: string,
-): Promise<VitrinKutusu> {
+export async function vitrinKutusunuTopla(): Promise<VitrinKutusu> {
   const bos: VitrinKutusu = {
     hesapId: null,
     hesapAdi: null,
@@ -86,8 +84,31 @@ export async function vitrinKutusunuTopla(
     sonKosumMesaji: null,
   };
 
-  const hesap = await prisma.channelAccount.findFirst({
-    where: { externalId: saticiId },
+  /**
+   * ⛔ SATICI KİMLİĞİ KODA GÖMÜLMEZ — anayasa: "firma adları yalnızca VERİ
+   * olabilir, YAPI olamaz."
+   *
+   * ⭐ HESAP ÖLÇÜMÜN KENDİSİNDEN BULUNUR: `kanalOlcumAt` dolu bir satırı olan
+   * hesap, karşılaştırması yapılmış hesaptır. Yarın ikinci kanal ölçülmeye
+   * başlarsa kod değişmeden görünür.
+   *
+   * ⚠ VE `externalId` İLE ARAMA BURADA YANLIŞ OLURDU: parametre boş
+   * geldiğinde Prisma `undefined` koşulu YOK SAYAR ve findFirst rastgele bir
+   * hesap döndürür. 01.09.2026'da tam bu oldu — kutu `Hepsiburada/S.Ahmet`
+   * hesabını seçti ve 231 ürünü "kanal kaydı yok" saydı.
+   */
+  const olculmus = await prisma.channelSku.groupBy({
+    by: ["channelAccountId"],
+    where: { kanalOlcumAt: { not: null } },
+    _count: { _all: true },
+    orderBy: { _count: { channelAccountId: "desc" } },
+    take: 1,
+  });
+  const hesapId = olculmus[0]?.channelAccountId;
+  /** ⛔ HİÇ ÖLÇÜM YOKSA KUTU ÇİZİLMEZ — boş kutu "her şey yolunda" der. */
+  if (hesapId === undefined) return bos;
+  const hesap = await prisma.channelAccount.findUnique({
+    where: { id: hesapId },
     select: { id: true, name: true, channel: { select: { name: true } } },
   });
   if (hesap === null) return bos;

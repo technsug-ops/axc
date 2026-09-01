@@ -20,6 +20,11 @@ import {
 import { SayfalamaCubugu } from "@/components/sayfalama";
 import { DURUM_ZEMINI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
+import {
+  kanalKaydiYokKosulu,
+  vitrinKosulu,
+  vitrinSatiriCoz,
+} from "@/lib/vitrin-kutusu";
 import { DurumRozeti } from "@/components/durum-rozeti";
 import { DefterDerinligiSerhi } from "@/components/defter-derinligi-serhi";
 import { IceAktarmaSerhi } from "@/components/ice-aktarma-serhi";
@@ -77,11 +82,17 @@ export default async function StokSayfasi({
     yon?: string;
     /** K101 — `var` ise stoğu sıfır olanlar gizlenir. */
     stok?: string;
+    /**
+     * K121 — panel vitrin kutusundan gelir: `LISTELENMEMIS` · `PASIF` ·
+     * `STOK_KAPALI` · `KAYIT_YOK` · `hepsi`. Tanınmayan değer engelli
+     * durumların TAMAMINA düşer, boş listeye değil.
+     */
+    vitrin?: string;
   }>;
 }) {
   await sayfaIzni("stok.gor");
 
-  const { q, sayfa, yas, maliyet, kanal, sirala, yon, stok } =
+  const { q, sayfa, yas, maliyet, kanal, sirala, yon, stok, vitrin } =
     await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
@@ -218,7 +229,66 @@ export default async function StokSayfasi({
   const stokluListe =
     stokSuzgeciAcik && olcumler !== null ? stoguOlanIdler(olcumler) : null;
 
-  const varyantSuzgeci = [yasVaryantlari, maliyetsizListe, kanalKodsuzListe, stokluListe]
+  /**
+   * VİTRİN SÜZGECİ (K121) — panel kutusundan gelir.
+   *
+   * ⛔ KOŞUL BURADA KURULMAZ, GÖVDEDEN GELİR (`vitrin-kutusu.ts`). Kutu
+   * sayıyor, bu liste süzüyor; ikisi ayrı yazılsaydı koşul değiştiğinde
+   * sayı ile liste sessizce ayrışırdı.
+   * _(Anayasa: adres ve koşul, süzgeç sözleşmesinin sahibi DOSYADAN üretilir.)_
+   *
+   * ⚠ `KAYIT_YOK` AYRI GÖVDEYE GİDER: `vitrinKosulu`ya verilseydi hiçbir şey
+   * bulamaz ve liste sessizce boşalırdı — kutuda 9 yazarken listede 0.
+   *
+   * ⚠ VE SÜZGEÇ KAPALIYKEN HİÇBİR EK SORGU KOŞMAZ: iki sorgu (stoklu küme +
+   * varyant listesi) yalnız kutudan gelindiğinde çalışır.
+   */
+  const vitrinSecimi = vitrinSatiriCoz(vitrin);
+  let vitrinListe: string[] | null = null;
+  if (vitrin !== undefined) {
+    const olculmus = await prisma.channelSku.groupBy({
+      by: ["channelAccountId"],
+      where: { kanalOlcumAt: { not: null } },
+      _count: { _all: true },
+      orderBy: { _count: { channelAccountId: "desc" } },
+      take: 1,
+    });
+    const hesapId = olculmus[0]?.channelAccountId;
+    if (hesapId === undefined) {
+      /** Hiç ölçüm yoksa küme BOŞTUR — "süzgeç yokmuş gibi hepsi" değil. */
+      vitrinListe = [];
+    } else {
+      const grup = await prisma.stockMovement.groupBy({
+        by: ["variantId"],
+        _sum: { quantityDelta: true },
+        orderBy: { variantId: "asc" },
+      });
+      const stoklular = grup
+        .filter((g) => (g._sum.quantityDelta ?? 0) > 0)
+        .map((g) => g.variantId);
+      const kosul =
+        vitrinSecimi === "KAYIT_YOK"
+          ? kanalKaydiYokKosulu({ kanalHesabiId: hesapId, variantIdleri: stoklular })
+          : vitrinKosulu({
+              kanalHesabiId: hesapId,
+              variantIdleri: stoklular,
+              satir: vitrinSecimi,
+            });
+      const bulunan = await prisma.productVariant.findMany({
+        where: kosul,
+        select: { id: true },
+      });
+      vitrinListe = bulunan.map((v) => v.id);
+    }
+  }
+
+  const varyantSuzgeci = [
+    yasVaryantlari,
+    maliyetsizListe,
+    kanalKodsuzListe,
+    stokluListe,
+    vitrinListe,
+  ]
     .filter((l): l is string[] => l !== null)
     .reduce<string[] | null>(
       (kesisim, liste) =>
