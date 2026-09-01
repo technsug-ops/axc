@@ -1,27 +1,42 @@
 /**
  * ============================================================================
- *  UYDURMA MALİYET ENVANTERİ — SALT OKUMA (K127 kuyruğu, 01.09.2026)
+ *  MALİYET KAYNAĞI ENVANTERİ — SALT OKUMA
  * ----------------------------------------------------------------------------
- *  Çalıştırma:  npx tsx scripts/canli-uydurma-maliyet.ts
+ *  Çalıştırma:  npx tsx scripts/canli-maliyet-kaynagi.ts
  *
- *  BETIK SINIFI: TEK_SEFERLIK — sistemin uydurduğu maliyetleri sayar,
- *  rutin koşmaz. HİÇBİR ŞEY YAZMAZ; yazma bayrağı da yoktur.
+ *  BETIK SINIFI: TEK_SEFERLIK — maliyetin NEREDEN geldiğini sayar, rutin
+ *  koşmaz. HİÇBİR ŞEY YAZMAZ; yazma bayrağı da yoktur.
  *
- *  ⛔ NİYE: 29.08'de eksik alımlar onarılırken bazı partilere maliyet
- *  UYDURULDU. O partileri tüketen her satışın NET'i yanlış — ve yanlış
- *  olduğu ekranda GÖRÜNMÜYOR. Kullanıcı gerçek alım fiyatlarını girecek;
- *  bu betik ona "hangi ürün, hangi tarih, kaç adet, şu an ne yazıyor"
- *  listesini verir.
+ *  ── ⛔ ESKİ ADI YANLIŞTI: "UYDURMA MALİYET ENVANTERİ" ────────────────────
+ *  01.09.2026'da bu betiği yazarken partileri _"maliyeti uydurulmuş"_ diye
+ *  etiketledim. **Rakamı yazan kodu hiç okumamıştım** ve o kod tam tersini
+ *  söylüyordu — kendi başlığında:
  *
- *  ── ⚠ İKİ AYRI KÜME, AYRI SAYILIR ──────────────────────────────────────
- *  (A) `eksik-alim-20260829` partisi — maliyet UYDURULDU, satışlar var.
- *  (B) notu "MALIYET BILINMIYOR" diyen ama maliyet TAŞIYAN partiler —
- *      not ile veri ÇELİŞİYOR; hangisinin doğru olduğu ölçülmeli.
+ *      canli-eksik-alim-onar.ts:44
+ *        "⛔ MALİYET UYDURULMAZ: satış dosyasının M sütunundan; yoksa NO_COST."
  *
- *  Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
- *  değildir" — incelenen · bulunan · satılmış · satılmamış AYRI basılır.
+ *  ÖLÇÜLDÜ (02.09.2026) — hiçbiri uydurma değil, üç ayrı gerçek kaynak var:
+ *    · `eksik-alim-20260829` → kullanıcının `satis.xlsx` dosyası, M sütunu
+ *      (ÜRÜN ALIŞ FİYATI). Bir BEYANDIR; belge değildir.
+ *    · `sayim-fiziksel-20260829` → o varyantın **en son partisinin** birim
+ *      maliyeti (`canli-sayim-esas.ts:349`). Türetilmiştir.
+ *    · `dosya-maliyet-20260828` → yine dosya beyanı, ve notunda YAZILI.
+ *
+ *  _(Anayasa: "kendi sistemimizin davranışı da doğrulanır" — bir betiğin ne
+ *  yaptığını söylemeden önce o betiğe BAKILIR.)_
+ *
+ *  ── ⚠ AÇIK KALAN İKİ SORU — VE İKİSİ DE "UYDURMA" DEĞİL ─────────────────
+ *  ① `satis.xlsx`in beyan ettiği alış fiyatı, faturalarla tutuyor mu?
+ *     Bu sistemin İÇİNDEN cevaplanamaz; kaynak hiyerarşisinde beyan,
+ *     belgenin altındadır.
+ *  ② Sayımda fazla çıkan mal, gerçekten SON partiden mi? Kampanya döngüsüyle
+ *     alan bir firmada fazla mal ESKİ stok olabilir ve eski fiyatı taşır.
+ *     📏 Ölçüldü: `axcali2467` eski fiyat 1.931,34 ↔ atanan 2.361,50
+ *     (**%22 fark**), `axcali2177` 356,38 ↔ 427,48 (%20). Öteki ikisinde
+ *     varyantın tek fiyatı var, yayılma %0 — orada soru doğmuyor.
  * ============================================================================
  */
+
 
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
@@ -66,7 +81,7 @@ async function main() {
   const prisma = new PrismaClient({ adapter: new PrismaMariaDb(y.veri.ham) });
 
   console.log("=".repeat(78));
-  console.log("  UYDURMA MALİYET ENVANTERİ — salt okuma");
+  console.log("  MALİYET KAYNAĞI ENVANTERİ — salt okuma");
   console.log("=".repeat(78));
 
   /** Parti = pozitif girişli StockMovement (kendi kendinin kaynağı). */
@@ -160,6 +175,20 @@ async function main() {
    * ⚠ İZİN DOĞUM TARİHİ **02.09.2026**: ondan öncesi için "teyit yok"
    * bir hüküm değildir, mekanizma yoktu.
    */
+  /**
+   * ⛔ İPTAL EDİLMİŞ TEYİT TEYİT DEĞİLDİR — VE BU SATIR SONRADAN EKLENDİ.
+   *
+   * 02.09.2026'da `MALIYET_TEYIDI_IPTAL` izleri yazıldı (teyit döngüseldi),
+   * ama bu betik onları OKUMUYORDU: iptal deftere geçmişti, ekran hâlâ
+   * "7 teyitli" diyordu. Düzeltme, TÜM okuyucularına ulaştığı ölçülmeden
+   * "var" sayılmaz. _(Anayasa, 19.08.2026.)_
+   */
+  const iptaller = await prisma.auditLog.findMany({
+    where: { action: "MALIYET_TEYIDI_IPTAL", targetId: { in: kimlikler } },
+    select: { targetId: true },
+  });
+  const iptalli = new Set(iptaller.map((x) => x.targetId));
+
   const teyitler = await prisma.auditLog.findMany({
     where: { action: "MALIYET_TEYIDI", targetId: { in: kimlikler } },
     select: { targetId: true, detail: true, createdAt: true },
@@ -169,6 +198,7 @@ async function main() {
   const teyitDamgasi = new Map<string, number>();
   for (const t of teyitler) {
     if (t.targetId === null || teyitDamgasi.has(t.targetId)) continue;
+    if (iptalli.has(t.targetId)) continue;
     try {
       const d = JSON.parse(t.detail ?? "{}") as { damgaKurus?: number };
       if (typeof d.damgaKurus === "number") teyitDamgasi.set(t.targetId, d.damgaKurus);
@@ -187,7 +217,8 @@ async function main() {
     if (simdi === damga) teyitli.add(p.id);
   }
   console.log(
-    `  teyitli (damgası tutan): ${teyitli.size} · teyit izi: ${teyitDamgasi.size}` +
+    `  teyitli (damgası tutan): ${teyitli.size} · geçerli teyit izi: ${teyitDamgasi.size}` +
+      (iptalli.size > 0 ? ` · ⛔ İPTAL EDİLMİŞ teyit: ${iptalli.size}` : "") +
       (teyitDamgasi.size > teyitli.size
         ? `  ⚠ ${teyitDamgasi.size - teyitli.size} teyit DÜŞTÜ (maliyet değişmiş)`
         : ""),
@@ -211,9 +242,9 @@ async function main() {
   const C = cHepsi.filter((p) => (satilan.get(p.id) ?? 0) > 0);
 
   for (const [ad, kume] of [
-    ["A · eksik-alim-20260829 — MALİYET UYDURULDU", A],
+    ["A · eksik-alim-20260829 — kaynak: satis.xlsx M sütunu (BEYAN)", A],
     ["B · notu 'MALIYET BILINMIYOR' ama maliyet TAŞIYOR", B],
-    ["C · sayım partisi — maliyetin KAYNAĞI notta yazmıyor (satışa gidenler)", C],
+    ["C · sayım partisi — kaynak: varyantın SON partisi (türetilmiş) (satışa gidenler)", C],
   ] as const) {
     console.log(`\n  ── ${ad} — ${kume.length} parti ─────────────`);
     if (kume.length === 0) {

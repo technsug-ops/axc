@@ -1142,6 +1142,56 @@ düzeltilecek bir şey yoktu. Aykırı artık **ortalamadan dışlanır**
 (istisna ortalamayı temsil etmez) ve **beyan edilir** (kaybolmaz); kilit
 yalnız gerçekten kaba olan eksende kalır.
 
+### DOĞRULAMA ARACI CEVABI GÖSTERİYORSA DOĞRULAMA DEĞİLDİR (KESİN KURAL)
+
+_Kullanıcı tespiti 02.09.2026._ Bir değeri kullanıcıya doğrulatan araç, o
+değeri **ekranda gösteriyorsa** ölçtüğü şey doğruluk değil **yankıdır**.
+Ve yankı, ölçüm gibi görünür — üstelik mükemmel sonuç verdiği için ikna
+edicidir.
+
+**Vaka:** yedi partinin maliyeti doğrulatılacaktı. Hazırladığım sayfa her
+satırda iki kez cevabı veriyordu:
+
+    <span class="us">Yazan maliyet</span><span>427,48</span>   ← alan
+    placeholder="örn. 427,48"                                  ← yer tutucu
+
+Dönen yedi değerin **yedisi de kuruşuna tuttu** ve ben bunu _"demek ki
+rakamlar doğruymuş"_ diye okudum. Kullanıcı durdurdu: _"7 ürünün
+rakamlarının kuruşuna kadar tutmasının istatistiksel olarak mümkün
+olmadığını sen de biliyorsun."_ Kimse faturadan `427,48`i akılda tutup
+yazmaz. **Rakamlar okundu, ölçülmedi.**
+
+> **KURAL:** doğrulama arayüzü doğrulanacak değeri **GÖSTERMEZ.** Kimlik,
+> adet, tarih gibi ARAMAYA yarayan alanlar durur; cevabın kendisi gizlenir.
+> Yer tutucu da cevap olamaz — biçim örneği verir, değer örneği değil
+> _(İlke #11'in tersi: orada yer tutucu değer sanılıyordu, burada yer
+> tutucu değerin ta kendisiydi)_.
+
+⛔ **VE DAHA DERİNİ — TEYİT BAĞIMSIZ OLAMAZDI.** Rakamların kaynağı zaten
+kullanıcının kendi `satis.xlsx` dosyasıydı. O listeden okunan bir teyit,
+kaynağın kendini doğrulaması demektir; sayfayı kör yapsam bile bağımsız
+olmazdı. **Bağımsız kaynak faturadır.**
+_(Anayasa: "bağımsızlık KAYNAĞIN ayrılığıyla ölçülür, yolun ayrılığıyla
+değil" — Melontik dersinin araç tarafı.)_
+
+⚠ **VE ASIL HATA DAHA ÖNCEDEYDİ: RAKAMI YAZAN KODU HİÇ OKUMADIM.**
+Partileri _"maliyeti uydurulmuş"_ diye etiketledim; onları yazan betiğin
+**kendi başlığında** şu yazılıydı —
+
+    canli-eksik-alim-onar.ts:44
+      "⛔ MALİYET UYDURULMAZ: satış dosyasının M sütunundan; yoksa NO_COST."
+
+Sayım partileri de uydurmuyordu: maliyeti o varyantın **son partisinden**
+taşıyorlardı. Yani ortada üç ayrı gerçek kaynak vardı ve ben üçünü birden
+"uydurma" diye adlandırıp bir doğrulama turu başlattım.
+_(Anayasa: "kendi sistemimizin davranışı da doğrulanır" — bir betiğin ne
+yaptığını söylemeden önce o betiğe BAKILIR.)_
+
+⭐ **DÜZELTME İZLE YAPILDI, SİLEREK DEĞİL:** teyit izleri yerinde bırakıldı,
+üstlerine `MALIYET_TEYIDI_IPTAL` yazıldı ve geçerli olan o oldu. ⚠ Ve
+iptalin **okuyucuya ulaştığı ölçüldü** — envanter betiği ilk hâlinde iptali
+okumuyordu ve ekran hâlâ "7 teyitli" diyordu.
+
 ### ZAMAN İÇİNDEKİ FİYAT FARKI ŞÜPHE ÜRETMEZ (KESİN KURAL)
 
 _Kullanıcı düzeltmesi 02.09.2026._ Aynı ürünün iki alımı arasındaki fiyat
