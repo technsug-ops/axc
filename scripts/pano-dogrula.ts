@@ -1,5 +1,14 @@
 import { readFileSync } from "node:fs";
 
+import {
+  CEKIRDEK,
+  KALEM_DEGIL,
+  SATIR_KIMLIGI,
+  cakismaCaresi,
+  kalemMi,
+  sonrakiKodlar,
+} from "./pano-kimlik";
+
 /**
  * ============================================================================
  *  PANO BEKÇİSİ — KİMLİK TEKİLDİR (K10)
@@ -50,22 +59,7 @@ const DOSYALAR = ["BEKLEYENLER.md", "ARSIV.md"];
  *
  * ⚠ VE BEYAN ÇÜRÜMEZ: her satırın dosyada hâlâ bulunduğu 1b'de sınanıyor.
  */
-const KALEM_DEGIL: { dosya: string; ham: string; sebep: string }[] = [
-  {
-    dosya: "ARSIV.md",
-    ham: "N11",
-    sebep: "kanal adı — pazaryeri karşılaştırma tablosunun satır başlığı",
-  },
-];
 
-/** Satır kimliği: tablo satırının İLK hücresi. Metin içi atıflar sayılmaz. */
-const SATIR_KIMLIGI = /^\|\s*\*\*([^*|]+)\*\*\s*\|/;
-
-/**
- * Kimlik çekirdeği: harf öneki + sayı + isteğe bağlı TEK küçük harf.
- * Sonrasında ne gelirse gelsin (simge · tire · açıklama) SÜSTÜR.
- */
-const CEKIRDEK = /^([A-Z]{1,2})(\d{1,3})([a-z]?)/;
 
 type Kayit = { dosya: string; satir: number; ham: string };
 
@@ -105,9 +99,7 @@ function kimlikleriOku(dosya: string): Map<string, Kayit[]> {
        */
       if (!c) continue;
       /** ⚠ BEYAN EDİLMİŞ İSTİSNA — kimlik sayılmaz, ama beyanı 1b'de sınanır. */
-      if (KALEM_DEGIL.some((x) => x.dosya === dosya && x.ham === parca.trim())) {
-        continue;
-      }
+      if (!kalemMi(dosya, parca)) continue;
       const cekirdek = c[1] + c[2] + c[3];
       if (!harita.has(cekirdek)) harita.set(cekirdek, []);
       harita.get(cekirdek)!.push({ dosya, satir: i + 1, ham: parca.trim() });
@@ -120,6 +112,18 @@ function kimlikleriOku(dosya: string): Map<string, Kayit[]> {
 console.log("\n1) KİMLİK TEKİLLİĞİ — dosya içinde çakışma YOK");
 
 const tumu = new Map<string, Kayit[]>();
+
+/**
+ * ⛔ ÖNERİ ÖNCE HESAPLANIR — ÇAKIŞMA MESAJINDA KULLANILSIN DİYE.
+ * Eski hâlde sıradaki boş kod bölüm 2'de, yani HATADAN SONRA yazılıyordu;
+ * kırmızı yanan kişi çareyi aşağıda aramak zorundaydı. Bekçi yalnız "hayır"
+ * demez, "ne yap" der.
+ */
+const tumKimlikler: string[] = [];
+for (const dosya of DOSYALAR) {
+  for (const k of kimlikleriOku(dosya).keys()) tumKimlikler.push(k);
+}
+const SONRAKI = sonrakiKodlar(tumKimlikler);
 
 for (const dosya of DOSYALAR) {
   const harita = kimlikleriOku(dosya);
@@ -136,7 +140,10 @@ for (const dosya of DOSYALAR) {
   kontrol(
     `  ${dosya} — çakışma yok`,
     cakisanlar.length === 0,
-    cakisanlar.map(([k, y]) => `${k}: ${y.map((x) => `${x.ham}@${x.satir}`).join(", ")}`),
+    cakisanlar.map(
+      ([k, y]) =>
+        `${y.map((x) => `${x.ham}@${x.satir}`).join(", ")} → ${cakismaCaresi(k, SONRAKI)}`,
+    ),
   );
 
   for (const [k, y] of harita) {
@@ -170,19 +177,66 @@ for (const x of KALEM_DEGIL) {
  */
 console.log("\n2) SIRADAKİ BOŞ KOD");
 
-const onekler = new Map<string, number>();
-for (const cekirdek of tumu.keys()) {
-  const m = cekirdek.match(/^([A-Z]{1,2})(\d{1,3})/);
-  if (!m) continue;
-  const onek = m[1];
-  const sayi = Number(m[2]);
-  onekler.set(onek, Math.max(onekler.get(onek) ?? 0, sayi));
+/**
+ * ⛔ AYNI GÖVDE — `npm run pano:sonraki` de bunu çağırıyor. İki yerde iki
+ * hesap olsaydı bekçinin önerdiği kod ile komutun verdiği kod bir gün
+ * ayrışırdı; o gün ikisine de güvenilmezdi.
+ */
+kontrol("en az bir önek bulundu", SONRAKI.size > 0, [...SONRAKI.keys()]);
+for (const [onek, kod] of SONRAKI) {
+  console.log(`     ${onek}  →  SIRADAKİ ${kod}`);
 }
 
-kontrol("en az bir önek bulundu", onekler.size > 0, [...onekler.keys()]);
+// --- 3) KOD ATAMA GÖVDESİ — DEĞER TESTİ ---------------------------------
+console.log("\n3) kod atama gövdesi");
+{
+  /**
+   * ⛔ NİYE DEĞER TESTİ: bölüm 2 sıradaki kodu EKRANA BASIYOR ama basılanın
+   * DOĞRU olduğunu sınamıyordu. Yanlış bir öneri, çakışmayı çözmek yerine
+   * bir sonraki turda yenisini üretirdi.
+   * _(Anayasa: saf hesap katmanı desen tarayan bekçiye muhtaç olmaz —
+   * gövde ÇAĞRILIR, değeri ölçülür.)_
+   */
+  /**
+   * ⚠ SIRA BİLEREK BOZUK: en büyük kod dizinin SONUNDA DEĞİL.
+   * İlk yazımda `["K1","K127",…]` idi ve "en büyük yerine SONUNCUYU al"
+   * mutasyonu YEŞİL geçti — çünkü o veride sonuncu zaten en büyüktü.
+   * Kaçan mutasyon bekçinin değil, ÖRNEK VERİNİN kusuruydu.
+   * _(Anayasa: örnek veri ayrımın iki yakasını göstermeli.)_
+   */
+  const m = sonrakiKodlar(["K127", "K1", "K90", "H3", "H1", "A3", "A1"]);
+  kontrol("K önekinin sıradakisi", m.get("K") === "K128", m.get("K"));
+  kontrol("H önekinin sıradakisi", m.get("H") === "H4", m.get("H"));
+  kontrol("A önekinin sıradakisi", m.get("A") === "A4", m.get("A"));
+  /**
+   * ⛔ BOŞLUK YENİDEN KULLANILMAZ — EN BÜYÜK + 1. `K2` boşsa bile verilmez:
+   * eski bir commit mesajında `K2` geçiyorsa, o kodu ikinci bir işe vermek
+   * geçmişi yalancı yapar.
+   */
+  const bosluklu = sonrakiKodlar(["K1", "K5"]);
+  kontrol("boşluk YENİDEN KULLANILMIYOR", bosluklu.get("K") === "K6", bosluklu.get("K"));
+  /** ⚠ SON EK KİMLİĞİN PARÇASI DEĞİL: `K11a` ile `K11` aynı sayıdır. */
+  kontrol("son ek harfi sayıyı bozmuyor", sonrakiKodlar(["K11a"]).get("K") === "K12");
+  /**
+   * ⛔ BOŞ GİRDİ BOŞ DÖNER — uydurma bir "K1" basmaz. `pano:sonraki` bu
+   * boşluğu görüp "okunamadı" diyor; gövde kendiliğinden bir sayı ÜRETİRSE
+   * o kapı işlevsiz kalırdı.
+   */
+  kontrol("boş girdi boş döner", sonrakiKodlar([]).size === 0);
+  kontrol("kod olmayan dize atlanır", sonrakiKodlar(["Başabaş"]).size === 0);
 
-for (const [onek, enBuyuk] of [...onekler].sort()) {
-  console.log(`     ${onek}: en büyük ${onek}${enBuyuk}  →  SIRADAKİ ${onek}${enBuyuk + 1}`);
+  /** ⛔ İSTİSNA DOSYAYA BAĞLI: aynı metin başka dosyada kimlik OLABİLİR. */
+  kontrol("beyanlı istisna kimlik sayılmaz", !kalemMi("ARSIV.md", "N11"));
+  kontrol("  ...ama yalnız O DOSYADA", kalemMi("BEKLEYENLER.md", "N11"));
+  kontrol("gerçek kimlik elenmez", kalemMi("ARSIV.md", "K50"));
+
+  /**
+   * ⛔ ÇARE İKİ YOLU DA SÖYLER. Çakışmanın iki sebebi var ve çareleri
+   * farklı; mesaj hangisi olduğunu okuyana bırakmaz.
+   */
+  const care = cakismaCaresi("K50", m);
+  kontrol("çare ikinci fazı anlatıyor", care.includes("②"));
+  kontrol("çare sıradaki kodu VERİYOR", care.includes("K128"));
 }
 
 console.log("");
