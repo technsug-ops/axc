@@ -3854,5 +3854,32 @@
     "olculmemisNotu": "",
     "adetSade": "",
     "tabanNotu": ""
+  },
+  "PartiMaliyet": {
+    "baslik": "",
+    "ac": "",
+    "aciklama": "",
+    "mevcut": "",
+    "yeniMaliyet": "",
+    "yeniMaliyetIpucu": "",
+    "sebep": "",
+    "sebepIpucu": "",
+    "onizle": "",
+    "onizlemeBaslik": "",
+    "onizlemeOzeti": "",
+    "onizlemeFarkArtis": "",
+    "onizlemeFarkAzalis": "",
+    "onay": "",
+    "uygula": "",
+    "vazgec": "",
+    "duzeltildi": "",
+    "tazelenemeyen": "",
+    "partiBulunamadi": "",
+    "onayGerekli": "",
+    "yazimDustu": "",
+    "redMALIYET_GECERSIZ": "",
+    "redMALIYET_AYNI": "",
+    "redPARA_BIRIMI_YOK": "",
+    "redSEBEP_BOS": ""
   }
 }

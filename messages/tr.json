@@ -3854,5 +3854,32 @@
     "olculmemisNotu": "Kanal kodu yeni girilmiş; gece koşumu bunlara henüz bakmadı.",
     "adetSade": "{adet} ürün",
     "tabanNotu": "Tutarlar ödenen tutardır (KDV dahil)."
+  },
+  "PartiMaliyet": {
+    "baslik": "Parti maliyetini düzelt",
+    "ac": "Maliyeti düzelt",
+    "aciklama": "Bu partinin birim maliyetini düzeltir. Partiden çekilmiş çıkışlar da yeniden damgalanır ve etkilenen satışların kârı yeniden hesaplanır. Stok adedi DEĞİŞMEZ.",
+    "mevcut": "Şu anki maliyet",
+    "yeniMaliyet": "Doğru birim maliyet",
+    "yeniMaliyetIpucu": "örn. 759,90",
+    "sebep": "Neden düzeltiliyor",
+    "sebepIpucu": "örn. alım faturasında 759,90 yazıyor",
+    "onizle": "Önce göster",
+    "onizlemeBaslik": "Ne olacak",
+    "onizlemeOzeti": "{eski} → {yeni} · {adet} adet · {cikis} çıkış yeniden damgalanacak · {satis} satışın kârı yeniden hesaplanacak",
+    "onizlemeFarkArtis": "Maliyet artıyor: bu satışların kârı toplam {fark} DÜŞECEK.",
+    "onizlemeFarkAzalis": "Maliyet düşüyor: bu satışların kârı toplam {fark} ARTACAK.",
+    "onay": "Geçmiş satışların NET rakamlarının değişeceğini anladım.",
+    "uygula": "Düzelt",
+    "vazgec": "Vazgeç",
+    "duzeltildi": "Maliyet {eski} → {yeni} olarak düzeltildi; {satis} satışın kârı yeniden hesaplandı.",
+    "tazelenemeyen": "{sayi} satışın kârı tazelenemedi — Yeniden Hesapla ile tekrar deneyin.",
+    "partiBulunamadi": "Parti bulunamadı ya da bu hareket bir giriş değil.",
+    "onayGerekli": "Onay kutusu işaretlenmeden düzeltme yapılmaz.",
+    "yazimDustu": "Düzeltme yazılamadı; hiçbir şey değişmedi. Tekrar deneyin.",
+    "redMALIYET_GECERSIZ": "Birim maliyet sıfırdan büyük bir sayı olmalı.",
+    "redMALIYET_AYNI": "Yeni maliyet mevcut maliyetle aynı — değişecek bir şey yok.",
+    "redPARA_BIRIMI_YOK": "Partinin para birimi yok; maliyet bu ekrandan düzeltilemez.",
+    "redSEBEP_BOS": "Neden düzeltildiği yazılmadan kaydedilmez."
   }
 }

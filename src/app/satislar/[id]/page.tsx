@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
+import { PartiMaliyetDuzelt } from "./parti-maliyet-duzelt";
 import { notFound } from "next/navigation";
 import { Undo2 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -70,6 +71,12 @@ export default async function SatisDetaySayfasi({
    * güvenlik değil.
    */
   const duzenleyebilir = await izinVarMi("satis.duzenle");
+  /**
+   * ⛔ PARTİ MALİYETİ DÜZELTME İZNİ AYRI (K127): stok düzeltmesiyle aynı
+   * kapı (`stok.duzelt`). Satışı düzenleyebilen herkes maliyet damgasına
+   * dokunamasın — bu, defterin maliyet tarafına yazan bir işlem.
+   */
+  const maliyetDuzeltebilir = await izinVarMi("stok.duzelt");
   const iptalEdebilir = await izinVarMi("satis.iptal");
 
   const { id } = await params;
@@ -607,6 +614,9 @@ export default async function SatisDetaySayfasi({
                       <TableHead className="text-right">
                         {t("partiBirimMaliyet")}
                       </TableHead>
+                      {/* ⛔ EYLEM SÜTUNU — İlke #1: bir kayıtta yapılabilecek
+                          işlem O KAYDIN SATIRINDA görünür durur. */}
+                      {maliyetDuzeltebilir ? <TableHead /> : null}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -631,6 +641,22 @@ export default async function SatisDetaySayfasi({
                         <TableCell className="text-right whitespace-nowrap">
                           {partiMaliyeti(dusum)}
                         </TableCell>
+                        {/**
+                          * ⚠ DÜZELTİLEN ŞEY PARTİ, ÇIKIŞ DEĞİL. Buton
+                          * `sourceMovement.id` taşıyor; partisi belli olmayan
+                          * bir çıkış için hiç çizilmiyor — düzeltilecek bir
+                          * damga yok, olmayan bir yol gösterilmez.
+                          */}
+                        {maliyetDuzeltebilir ? (
+                          <TableCell className="text-right">
+                            {dusum.sourceMovement ? (
+                              <PartiMaliyetDuzelt
+                                hareketId={dusum.sourceMovement.id}
+                                mevcutMaliyet={String(partiMaliyeti(dusum))}
+                              />
+                            ) : null}
+                          </TableCell>
+                        ) : null}
                       </TableRow>
                     ))}
 
@@ -703,7 +729,19 @@ export default async function SatisDetaySayfasi({
                       },
                       {
                         etiket: t("partiBirimMaliyet"),
-                        deger: partiMaliyeti(dusum),
+                        deger: (
+                          <span className="flex flex-wrap items-center gap-2">
+                            {partiMaliyeti(dusum)}
+                            {/* ⛔ TELEFONDA DA VAR — İlke #8: mobil eşit
+                                vatandaş; düzeltme yalnız masaüstünde kalmaz. */}
+                            {maliyetDuzeltebilir && dusum.sourceMovement ? (
+                              <PartiMaliyetDuzelt
+                                hareketId={dusum.sourceMovement.id}
+                                mevcutMaliyet={String(partiMaliyeti(dusum))}
+                              />
+                            ) : null}
+                          </span>
+                        ),
                       },
                     ]}
                   />
