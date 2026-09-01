@@ -183,6 +183,12 @@ YENİ EKRAN KONTROL LİSTESİ: Her yeni ekran tesliminde bu 16 maddeye
 uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklenir.
 
 ## İş sabitleri
+- **ALIM KAMPANYA DÖNGÜSÜNE BAĞLIDIR — FİYATIN YÖNÜ YOKTUR.** _(Kullanıcı
+  beyanı 02.09.2026.)_ İş modeli arbitraj: kampanya takip edilir, kampanya
+  döneminde alınır, satılır; sonraki kampanyada aynı döngü tekrarlanır.
+  Bu yüzden **aynı ürünün iki alımı arasındaki fiyat farkı bir SİNYAL
+  DEĞİLDİR** — ne yukarı ne aşağı. Ürün geçen yıl ₺1.792'ye, bu yıl
+  ₺1.069'a alınmış olabilir ve ikisi de doğrudur.
 - 11 satış kanalı: Trendyol, Hepsiburada, Amazon, N11, Bim, A101,
   Teknosa, Mediamarkt, Vatan, Pazarama, PTTAvm
 - Bir kanalda birden fazla hesap olabilir (hesap başına alım limiti nedeniyle)
@@ -1135,6 +1141,45 @@ Aşama B'yi KİLİTLİYORDU. Gerçek bir istisna sonsuza kadar kilitlerdi ve
 düzeltilecek bir şey yoktu. Aykırı artık **ortalamadan dışlanır**
 (istisna ortalamayı temsil etmez) ve **beyan edilir** (kaybolmaz); kilit
 yalnız gerçekten kaba olan eksende kalır.
+
+### ZAMAN İÇİNDEKİ FİYAT FARKI ŞÜPHE ÜRETMEZ (KESİN KURAL)
+
+_Kullanıcı düzeltmesi 02.09.2026._ Aynı ürünün iki alımı arasındaki fiyat
+farkı, **hiçbir yönde** bir hata işareti değildir. "Fiyatlar yükselir" de
+"ürün ucuzlamaz" da bu işte geçersiz varsayımlardır — ve ikisi de kulağa
+makul geldiği için sorgulanmaz.
+
+**Vaka:** `axcalistan01` (Stanley set) partisinin maliyeti `₺1.792` (Tem
+2025) diye duruyordu. Kullanıcının Amazon faturası aynı seti **bir yıl
+SONRA** `₺1.069,49` gösteriyordu. Buradan şu akıl yürütüldü —
+
+> _"Fiyatlar yükselir, düşmez; bir yıl sonraki gerçek fiyat uydurulanın
+> %40 altındaysa uydurulan fazla yüksektir."_
+
+**Cümle yanlıştı ve kullanıcı çürüttü:** _"Fiyatlar düşebilir yükselebilir.
+Kullanıcı firma kampanya takip edip kampanya döneminde alan, sonra satan ve
+2. kampanya döneminde aynı döngüyü yapan bir firma olabilir."_ İki alım iki
+ayrı kampanyadan geliyordu; **ikisi de doğruydu.** Rakamı "düzeltseydim",
+doğru bir kaydı bozacaktım — ve bozulma, düzeltme kılığında geldiği için
+fark edilmeyecekti.
+
+> **KONTROL SORUSU:** bu şüpheyi üreten şey verinin KENDİSİ mi, yoksa
+> benim zaman içindeki gidişat varsayımım mı? İkincisiyse şüphe yoktur.
+
+⚠ **ÖLÇÜLDÜ — KODDA BU VARSAYIM YOK (02.09.2026).** `veri-supheli.ts`
+eşikleri **dağılımdan** geliyor (verim oranı p95, maliyet payı p5), zaman
+yönünden değil; `simulasyon/urun-zemini.ts` de trend hesaplamıyor, **en son**
+alış fiyatını alıp **tarihini yanında yazıyor**. Yani desen bugün hiçbir
+yerde tetiklenmiyor — kusur koda değil, akıl yürütmeye aitti.
+
+⛔ **AÇILIŞ ŞARTI:** aynı varyantın **iki farklı tarihli maliyetini
+karşılaştırıp** bundan hüküm üreten ilk kod yazıldığı gün bu kalem açılır ve
+bekçisi yazılır. O güne kadar yazılı kural yeterlidir.
+_(Anayasa: "desen, örneği kalmadığında değil DOĞURAMADIĞINDA kapanır".)_
+
+_Bu, "imkânsız görünen değer önce doğrulanır — düzeltilmez" kuralının ZAMAN
+eksenindeki kardeşi: orada tek bir değer imkânsız görünüyordu, burada iki
+değerin ARASINDAKİ fark._
 
 ### UYARI SORAR, KULLANICI ISRAR EDERSE İSTİSNA KAYDEDİLİR (KESİN KURAL)
 

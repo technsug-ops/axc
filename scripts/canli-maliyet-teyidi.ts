@@ -56,6 +56,7 @@ const TEYIT_LISTESI: ReadonlyArray<{ barkod: string; kurus: number }> = [
   { barkod: "8697975600803", kurus: 236150 }, // Tefal Easyblend
   { barkod: "8683650330486", kurus: 127500 }, // Refika Swiss Crystal
   { barkod: "8683650003847", kurus: 42748 }, // Cake Pro döküm kek kalıbı
+  { barkod: "8699131860571", kurus: 119900 }, // Schafer Black Stone 3'lü tava seti
 ];
 
 /**
@@ -63,7 +64,8 @@ const TEYIT_LISTESI: ReadonlyArray<{ barkod: string; kurus: number }> = [
  * üç ay sonra "bunu neden geçmiştik" sorusuna cevap bırakmaz.
  */
 const GEREKCE =
-  "Kullanici 02.09.2026'da barkod listesiyle teyit etti; degerler sistemdekiyle birebir tuttu.";
+  "Kullanici 02.09.2026'da barkod listesiyle teyit etti; degerler sistemdekiyle birebir tuttu. "
+  + "Yedinci satir (Schafer tava seti) ayni gun ikinci turda geldi.";
 
 /** Stanley icin kullanicinin ek aciklamasi — hipotezimi curuttu, kayda gecer. */
 const STANLEY_NOTU =
@@ -93,6 +95,7 @@ async function main() {
   let uyan = 0;
   let sapan = 0;
   let bulunamayan = 0;
+  let atlanan = 0;
   const yazilacak: { partiId: string; barkod: string; kurus: number }[] = [];
 
   for (const t of TEYIT_LISTESI) {
@@ -136,6 +139,34 @@ async function main() {
     }
 
     uyan++;
+
+    /**
+     * ⛔ TEKRAR KOŞULABİLİR: aynı damgayı taşıyan iz zaten varsa YENİSİ
+     * YAZILMAZ. Anayasa "eski iz silinmez, yenisi yazılır" diyor — ama o
+     * kural DEĞİŞEN bir hüküm içindir; birebir aynı damgayı ikinci kez
+     * yazmak defterde gürültüden başka bir şey üretmez.
+     * _(Anayasa: "satır satır tekrar-koşulabilir · ikinci koşum zararsız".)_
+     */
+    const mevcut = await prisma.auditLog.findFirst({
+      where: { action: TEYIT_EYLEMI, targetId: parti.id },
+      select: { detail: true },
+      orderBy: { createdAt: "desc" },
+    });
+    let ayniDamga = false;
+    try {
+      const d = JSON.parse(mevcut?.detail ?? "{}") as { damgaKurus?: number };
+      ayniDamga = d.damgaKurus === t.kurus;
+    } catch {
+      /** Çözülemeyen iz teyit SAYILMAZ — yenisi yazılır. */
+    }
+    if (ayniDamga) {
+      atlanan++;
+      console.log(
+        `  · zaten teyitli ${sku.padEnd(16)} ${(t.kurus / 100).toFixed(2).padStart(10)}  · ${ad}`,
+      );
+      continue;
+    }
+
     yazilacak.push({ partiId: parti.id, barkod: t.barkod, kurus: t.kurus });
     console.log(
       `  ✓ TEYİT      ${sku.padEnd(16)} ${(t.kurus / 100).toFixed(2).padStart(10)}  · ${ad}`,
@@ -147,6 +178,8 @@ async function main() {
   console.log(`  birebir tutan (teyit edilebilir): ${uyan}`);
   console.log(`  sapan (düzeltme işi): ${sapan}`);
   console.log(`  partisi bulunamayan: ${bulunamayan}`);
+  console.log(`  zaten teyitli (yeniden yazılmadı): ${atlanan}`);
+  console.log(`  yazılacak yeni iz: ${yazilacak.length}`);
 
   if (!yazmaKipi) {
     console.log("\n  PROVA — hiçbir şey yazılmadı. Yazmak için: --yaz");
@@ -160,6 +193,11 @@ async function main() {
    * İzler bağımsız satırlar olduğu için ikinci koşum zararsız: eski iz
    * SİLİNMEZ, yenisi yazılır ve en yenisi okunur.
    */
+  if (yazilacak.length === 0) {
+    console.log("\n  Yazılacak yeni iz yok — hepsi zaten teyitli.");
+    await prisma.$disconnect();
+    return;
+  }
   const now = new Date().toISOString();
   await prisma.auditLog.createMany({
     data: yazilacak.map((y) => ({

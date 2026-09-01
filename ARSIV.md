@@ -4046,3 +4046,54 @@ olduğunu gösterdi.
 |---|---|---|
 | **K41** | **`11473322212` iade tipi — ✅ ÇÖZÜLDÜ 24.08.2026** | ✅ **CEVAP AXCALI'DAN GELDİ:** _"Değişim oldu, para bizde kaldı, yeni ürün gönderildi, hasarlı ürün çöp oldu."_ İade **para iadesi** gibi hesaplanmıştı; **değişime** çevrildi. **ÖNCE:** `KAYIP_GELIR −2.980` · `KOMISYON_IADE +439,55` · `STOPAJ_IADE +24,83` · NET-2 **−377,38**. **SONRA:** ciro ve komisyon DURUYOR, yalnız `MALIYET_GERI +1.799` ve `IADE_KARGO −101` kaldı · NET-2 **+1.714,83**. Fark **+2.092,21**. ⚠ **KÖK NEDEN ZİNCİRİ, ÜÇÜ DE AYNI GÜN BULUNDU:** ① iade formunun ön-doldurması GEREKÇEYE bağlıydı, müşteri sebebi `HASARLI` olduğu için ayrılan değişim ürünü forma hiç taşınmadı; ② motor değişimi tek satırdan anlıyor (`degisimMi = kalem.degisimMaliyeti !== null`), alan boş gelince `false`; ③ iade para iadesi gibi hesaplandı. Üçü de düzeltildi (ön-dolu artık VERİYE bakıyor). ⚠ **SNAPSHOT DOKUNULMAZLIĞI BURAYA UYMADI VE SEBEBİ YAZILDI:** o ilke DOĞRU koşullarla hesaplanmış damgayı korur; bu damga YANLIŞ GİRDİYLE hesaplanmıştı, korunacak olan geçmiş değil hatanın kendisiydi. ⚠ **`MALIYET_GERI` KALDI VE DOĞRU:** eski mal fiziken döndü, maliyeti geri geldi; sonra K38 ile hurdaya düşüp kayıp DÖNEM tarafına yazıldı (fire zararı ₺1.799). Aynı lira iki kez düşmüyor. 📌 Ledger'a dokunulmadı: yalnız kesinti dökümü (fotoğraf) ve NET damgası yeniden yazıldı; iz `AuditLog`ta önceki/yeni değerlerle. |
 | **K41a** | **Gönderi numarası — ✅ [KOŞTU] 24.08.2026** | 📦 **CANLIDA.** `Sale.shipmentCode String? @unique` — migration koştu (33 migration · 470 kolon doğrulandı · damga güncellendi). **Sayım 125 → 125, dolu 0** (beklenen: kod satıştan SONRA oluşuyor, geri doldurulmaz). Yeni satış formunda + satış detayında **sonradan** girilebilir, ikisinde de **okutulabilir**. `/okut` varyant bulamazsa satış kimliğinde arar → sonuç **tekil** (`@unique`) → **Paketlendi doğrudan o satıra**. `/satislar` araması da bulur. ⚠ **"AYRI LİSTE YAZMA" NİYETİ KORUNDU, MEKANİZMA DEĞİŞTİ:** `kodKosulu` beş yerden çağrılıyor ve hepsi `ProductVariant` sorguluyor; gönderi no bir `Sale` kimliği. Liste **TEK** (`KOD_ROLLERI`), yayım kapsama göre ayrıldı (`ROL_KAPSAMI` **exhaustive** — altıncı rol derlenmeden eklenemez, nitekim beşinciyi eklerken `alanAdi` sözlüğü derhal kırıldı). 🧪 `arama:dogrula` 67 kontrol · **10 mutasyon, 10'u da yakalandı.** |
+
+### 02.09.2026 — Maliyet doğrulama turu KAPANDI: 7/7 teyitli, düzeltme 0
+
+📏 **ŞÜPHE ÖLÇÜM SONUCU DEĞİL, KAYNAĞIN YAZILI OLMAMASIYDI.** Yedi partinin
+maliyeti "belgesiz" diye listelenmişti; kullanıcı yedisini de barkodla
+doğruladı ve **yedisi de sistemde yazan değerle kuruşuna aynı** çıktı.
+Düzeltilecek hiçbir şey yoktu.
+
+| Barkod | Değer | Ürün |
+|---|---|---|
+| `3168430275010` | 759,90 | DeliBake kek kalıbı |
+| `6939236348423` | 1.792,00 | Stanley shot bardak seti |
+| `9723484564032` | 796,00 | Korbell bebek bezi çöp kovası |
+| `8697975600803` | 2.361,50 | Tefal Easyblend |
+| `8683650330486` | 1.275,00 | Refika Swiss Crystal |
+| `8683650003847` | 427,48 | Cake Pro döküm kek kalıbı |
+| `8699131860571` | 1.199,00 | Schafer Black Stone tava seti |
+
+⭐ **VE BU BİR SONUÇTUR — SESSİZCE GEÇİLMEDİ.** Teyit yazılmasaydı liste aynı
+satırları yarın da sorardı; sönmeyen bir uyarı okunmaz olur ve listenin
+tamamına olan güveni götürür. Yeni iz: **`MALIYET_TEYIDI`** (doğum tarihi
+02.09.2026). Damga partinin **o günkü** `unitCostAmount` değerini taşır —
+maliyet değişirse teyit **düşer** ve satır listeye geri gelir; karşılaştırma
+kuruşuna, tolerans yok. _(Anayasa K6.)_
+
+⚠ **MEVCUT `VERI_DOGRULANDI` MEKANİZMASI BİLEREK KULLANILMADI:** kapsamı
+açıkça dar (_"yalnız `veriSupheli`"_) ve hedefi SATIŞ kaydı; buradaki hedef
+bir STOK HAREKETİ. Genişletmek, dar tutulmasının gerekçesini çiğnerdi.
+_(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa hatayı korur".)_
+
+⛔ **BENİM İKİ HATAM ÖLÇÜMLE YAKALANDI:**
+1. **Envanter betiği teyitlerin yarısını okumuyordu** — kapsamı (A+B),
+   kullanıcıya verdiğim listeyle (A+B+sayım partileri) **ayrışmıştı**.
+   C kümesi eklendi; 6/6 → 7/7 okunuyor. _("Sayı = liste".)_
+2. **Dışarıda bırakılan küme görünmüyordu** — C satışa gidenlerle sınırlı,
+   ama basılmayan **66 parti** artık ekranda sayılıyor.
+   _("Sıfır satır gizlenmez".)_
+
+⛔ **VE ASIL DERS ANAYASAYA GİRDİ — "ZAMAN İÇİNDEKİ FİYAT FARKI ŞÜPHE
+ÜRETMEZ".** Stanley'nin ₺1.792'sini _"fiyatlar yükselir, düşmez"_ diye
+şüpheli ilan etmiştim. Kullanıcı çürüttü: _"Fiyatlar düşebilir yükselebilir.
+Kampanya takip edip kampanya döneminde alan, satan ve 2. kampanya döneminde
+aynı döngüyü yapan bir firma."_ İki alım iki ayrı kampanyadan; **ikisi de
+doğruydu.** Bir adım daha gitseydim doğru bir kaydı "düzelterek"
+bozacaktım — ve bozulma düzeltme kılığında geldiği için fark edilmeyecekti.
+📏 Kodda bu varsayımın olmadığı ayrıca **ölçüldü** (`veri-supheli.ts`
+dağılımdan besleniyor, `urun-zemini.ts` trend hesaplamıyor); kusur akıl
+yürütmeye aitti ve açılış şartıyla birlikte yazıldı.
+
+⭐ **BETİK TEKRAR-KOŞULABİLİR:** aynı damgayı taşıyan iz varsa yenisi
+yazılmaz. İkinci koşumda 6 satır atlandı, yalnız yeni olan yazıldı.
