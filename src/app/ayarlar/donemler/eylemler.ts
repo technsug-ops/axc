@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { yetkiIste } from "@/lib/yetki";
 import { tarihinDonemi } from "@/lib/muhasebe-donemi";
+import { izYaz } from "@/lib/iz";
 
 /**
  * ============================================================================
@@ -82,14 +83,13 @@ export async function donemiKapat(
     },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      action: "DONEM_KAPATILDI",
-      targetType: "MuhasebeDonemi",
-      targetId: `${yil}-${String(ay).padStart(2, "0")}`,
-      userId: baglam.kullaniciId,
-      detail: JSON.stringify({ yil, ay, not: not || null }),
-    },
+  /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+  await izYaz({
+    action: "DONEM_KAPATILDI",
+    targetType: "MuhasebeDonemi",
+    targetId: `${yil}-${String(ay).padStart(2, "0")}`,
+    userId: baglam.kullaniciId,
+    detail: JSON.stringify({ yil, ay, not: not || null }),
   });
 
   revalidatePath("/ayarlar/donemler");
@@ -119,14 +119,13 @@ export async function donemiAc(
     data: { durum: "ACIK" },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      action: "DONEM_ACILDI",
-      targetType: "MuhasebeDonemi",
-      targetId: `${yil}-${String(ay).padStart(2, "0")}`,
-      userId: baglam.kullaniciId,
-      detail: JSON.stringify({ yil, ay }),
-    },
+  /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+  await izYaz({
+    action: "DONEM_ACILDI",
+    targetType: "MuhasebeDonemi",
+    targetId: `${yil}-${String(ay).padStart(2, "0")}`,
+    userId: baglam.kullaniciId,
+    detail: JSON.stringify({ yil, ay }),
   });
 
   revalidatePath("/ayarlar/donemler");

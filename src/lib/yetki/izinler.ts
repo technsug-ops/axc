@@ -233,3 +233,51 @@ export function tamYetkiliMi(izinler: ReadonlySet<string>): boolean {
   if (FIRMA_IZINLERI.length === 0) return false;
   return FIRMA_IZINLERI.every((izin) => izinler.has(izin));
 }
+
+/**
+ * ============================================================================
+ *  İKİ AYRI SORU, İKİ AYRI ÖLÇÜT — AYNI ÇATI ALTINDA (K99-②, 01.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ TEK ÖLÇÜT ÜÇ TÜKETİCİYE HİZMET EDİYORDU VE İKİSİ AYNI SORUYU SORMUYOR:
+ *
+ *    (a) KİLİT KORUMASI — `koruma.ts` · `/ayarlar/kullanicilar` sayacı
+ *        Soru: "sistemi kilitten ÇIKARABİLECEK biri kaldı mı?"
+ *    (c) BAKIM ROTASI — `sayfaTamYetki()` → `/sistem/hata-denemesi`
+ *        Soru: "bu tetik yolunu kim açabilir?"
+ *
+ *  ⭐ (a) İÇİN BÜTÜN İZİNLER ŞART DEĞİL — ÖLÇÜT YETENEKTİR. Kilidi açmak
+ *  için gereken tam olarak iki şey var: kullanıcıyı yönetmek ve rolü
+ *  yönetmek. 27 iznin hepsini istemek, kilidi açabilecek bir rolü "sahip
+ *  değil" saymak demekti — ve o hâlde koruma MEŞRU bir değişikliği
+ *  engellerdi (K99-① vakası bunun bir üst basamağıydı).
+ *
+ *  ⛔ (c) İÇİN SIKI ÖLÇÜT KALIYOR. Bakım rotası üretim özelliği değil;
+ *  anayasa "yalnız tam yetkili role açılır" diyor ve orada gevşetmek,
+ *  hiç kimsenin istemediği bir kapıyı genişletmek olurdu.
+ *
+ *  ⚠ VE İKİSİ AYNI DOSYADA, ADIYLA AYRILMIŞ. Ayrı dosyalara dağılsalardı
+ *  üçüncü bir tüketici hangisini çağıracağını bilemez ve "en yakın olanı"
+ *  seçerdi. _(Anayasa: iki yerde iki ölçüt olmaz — ama iki SORU varsa iki
+ *  ölçüt olur, yeter ki adı sorusunu söylesin.)_
+ * ============================================================================
+ */
+
+/**
+ * KİLİDİ AÇABİLECEK İZİN ÇİFTİ — kendini kilitleme korumasının ölçütü.
+ *
+ * ⚠ SAF: veritabanına gitmez. Bekçi ÇAĞIRIP değerini ölçüyor.
+ */
+export const KILIT_ACMA_IZINLERI: readonly Izin[] = [
+  "kullanici.yonet",
+  "rol.yonet",
+];
+
+export function sistemiAcabilirMi(izinler: ReadonlySet<string>): boolean {
+  /**
+   * ⛔ BOŞ TABAN KAPISI — `every` boş listede `true` döner. Liste bir gün
+   * boşalırsa kapı herkese açılırdı ve hiçbir değer testi bunu göstermezdi.
+   * _(Kılavuz: her `every`/`all` kapısı taban doluluğunu AYRICA kanıtlar.)_
+   */
+  if (KILIT_ACMA_IZINLERI.length === 0) return false;
+  return KILIT_ACMA_IZINLERI.every((izin) => izinler.has(izin));
+}

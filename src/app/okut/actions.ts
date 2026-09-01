@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { bulunanAlan, kaydiOku, kaydiYaz } from "@/lib/okuma/kayit";
+import { izYaz } from "@/lib/iz";
 import {
   PAKETLEME_EYLEMLERI,
   PAKETLENDI_EYLEMI,
@@ -516,17 +517,19 @@ async function iziYaz(
 ): Promise<string | null> {
   try {
     const kullanici = await oturumdakiKullanici();
-    const satir = await prisma.auditLog.create({
-      data: {
-        userId: kullanici?.id ?? null,
-        action: kovaEylemi(kova),
-        targetType: kayit.varyantId ? "ProductVariant" : null,
-        targetId: kayit.varyantId,
-        detail: kaydiYaz(kayit),
-      },
-      select: { id: true },
+    /**
+     * ⛔ İZ ORTAK GÖVDEDEN (K90) — ve kimliği geri dönüyor: bu okuma satırı
+     * "geri al" bağlantısında kullanılıyor.
+     * ⚠ KULLANICI AÇIKÇA GEÇİYOR: bu gövde oturumu zaten çözmüş durumda,
+     * ikinci kez çözmek aynı isteği tekrarlamak olurdu.
+     */
+    return await izYaz({
+      userId: kullanici?.id ?? null,
+      action: kovaEylemi(kova),
+      targetType: kayit.varyantId ? "ProductVariant" : null,
+      targetId: kayit.varyantId,
+      detail: kaydiYaz(kayit),
     });
-    return satir.id;
   } catch (e) {
     /**
      * ⚠ İZ TUTULAMADIYSA OKUMA YİNE DE CEVAP VERİR. Bu ekran depoda
@@ -596,19 +599,18 @@ async function paketlemeIziYaz(
 ): Promise<void> {
   try {
     const kullanici = await oturumdakiKullanici();
-    await prisma.auditLog.create({
-      data: {
-        userId: kullanici?.id ?? null,
-        action: eylem,
-        targetType: "Sale",
-        targetId: saleId,
-        /**
-         * ⚠ YAPILANDIRILMIŞ, SERBEST METİN DEĞİL — K34a ④ ile aynı kural.
-         * "Hangi barkodla paketlendi" sorusu ileride metin ayrıştırmaya
-         * dönmesin diye şekil bugün sabitleniyor.
-         */
-        detail: okuma ? JSON.stringify(okuma) : null,
-      },
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      userId: kullanici?.id ?? null,
+      action: eylem,
+      targetType: "Sale",
+      targetId: saleId,
+      /**
+       * ⚠ YAPILANDIRILMIŞ, SERBEST METİN DEĞİL — K34a ④ ile aynı kural.
+       * "Hangi barkodla paketlendi" sorusu ileride metin ayrıştırmaya
+       * dönmesin diye şekil bugün sabitleniyor.
+       */
+      detail: okuma ? JSON.stringify(okuma) : null,
     });
   } catch (e) {
     /* İz tutulamadıysa paket yine hazırlanır; operasyon ölçüm için durmaz. */

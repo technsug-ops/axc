@@ -1,3 +1,4 @@
+import { izYaz } from "@/lib/iz";
 import {
   komisyonKdvOrani as kesintiKomisyonKdvOrani,
   siparisKesintiKurallari,
@@ -423,19 +424,24 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
      * yazıldı" diye kayda geçerdi.
      */
     if (donemSonucu.durum === "ISRARLA_GECILDI") {
-      await tx.auditLog.create({
-        data: {
-          action: DONEM_ISTISNA_EYLEMI,
-          targetType: "Sale",
-          targetId: satis.id,
-          detail: donemIstisnaIzi({
-            yol: "/satislar — yeni satış",
-            donem: donemSonucu.donem,
-            isTarihi: girdi.soldAt,
-            israr: girdi.donemIsrari,
-          }),
-        },
-      });
+      /**
+       * ⛔ İZ ORTAK GÖVDEDEN — `userId` KENDİLİĞİNDEN DAMGALANIR (K90).
+       * İSTISNA İZLERİ ÖZELLİKLE ÖNEMLİ: bunlar bir insanın uyarıyı AŞTIĞINI
+       * kaydeder. "Kim" yazılmazsa üç ay sonra "bunu neden geçmişiz"
+       * sorusunun cevabı yarım kalır.
+       */
+      await izYaz({
+        action: DONEM_ISTISNA_EYLEMI,
+        targetType: "Sale",
+        targetId: satis.id,
+        detail: donemIstisnaIzi({
+          yol: "/satislar — yeni satış",
+          donem: donemSonucu.donem,
+          isTarihi: girdi.soldAt,
+          israr: girdi.donemIsrari,
+        }),
+      },
+        tx);
     }
 
     if (duraksayanlar.length > 0) {
@@ -445,25 +451,30 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
         duraksayanlar.map((x) => x.variantId),
         an,
       );
-      await tx.auditLog.create({
-        data: {
-          action: "SAYIM_KORUMASI_ISTISNASI",
-          targetType: "Sale",
-          targetId: satis.id,
-          detail: JSON.stringify({
-            yol: "/satislar — yeni satış",
-            soldAt: girdi.soldAt.toISOString(),
-            sebep: girdi.sayimIsrari?.sebep ?? null,
-            aciklama: girdi.sayimIsrari?.aciklama.trim() || null,
-            duraksayanlar: duraksayanlar.map((x) => ({
-              variantId: x.variantId,
-              yon: x.yon,
-              sayimTarihi: x.sayimTarihi.toISOString(),
-            })),
-            sonuc: "SAYIM GECERSIZLESTI — bu varyantlar yeniden sayilmali.",
-          }),
-        },
-      });
+      /**
+       * ⛔ İZ ORTAK GÖVDEDEN — `userId` KENDİLİĞİNDEN DAMGALANIR (K90).
+       * İSTISNA İZLERİ ÖZELLİKLE ÖNEMLİ: bunlar bir insanın uyarıyı AŞTIĞINI
+       * kaydeder. "Kim" yazılmazsa üç ay sonra "bunu neden geçmişiz"
+       * sorusunun cevabı yarım kalır.
+       */
+      await izYaz({
+        action: "SAYIM_KORUMASI_ISTISNASI",
+        targetType: "Sale",
+        targetId: satis.id,
+        detail: JSON.stringify({
+          yol: "/satislar — yeni satış",
+          soldAt: girdi.soldAt.toISOString(),
+          sebep: girdi.sayimIsrari?.sebep ?? null,
+          aciklama: girdi.sayimIsrari?.aciklama.trim() || null,
+          duraksayanlar: duraksayanlar.map((x) => ({
+            variantId: x.variantId,
+            yon: x.yon,
+            sayimTarihi: x.sayimTarihi.toISOString(),
+          })),
+          sonuc: "SAYIM GECERSIZLESTI — bu varyantlar yeniden sayilmali.",
+        }),
+      },
+        tx);
     }
 
     return satis.id;

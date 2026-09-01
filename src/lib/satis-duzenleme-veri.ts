@@ -4,6 +4,7 @@ import { adetPlani } from "@/lib/satis-adet";
 import { acikPartilerToplu, gunSonu } from "@/lib/stok";
 import { karYenidenYaz } from "@/lib/kar-yeniden";
 import { prisma } from "@/lib/prisma";
+import { izYaz } from "@/lib/iz";
 import {
   duzenlemeImzasi,
   duzenlemePlani,
@@ -395,23 +396,23 @@ export async function duzenlemeUygula(girdi: {
      * DENETİM İZİ — ESKİ ve YENİ değerle. Bugünkü script'in bıraktığı satırla
      * aynı yerde durur; satış detayı ikisini de gösterir.
      */
-    await tx.auditLog.create({
-      data: {
-        userId: girdi.kullaniciId,
-        action: "SATIS_DUZENLEME",
-        targetType: "Sale",
-        targetId: girdi.saleId,
-        detail: JSON.stringify({
-          satisKodu,
-          neden: girdi.neden,
-          aciklama: girdi.aciklama,
-          farklar: plan.farklar,
-          eskiCiro: plan.eskiCiro,
-          yeniCiro: plan.yeniCiro,
-          paraBirimi: plan.paraBirimi,
-        }),
-      },
-    });
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      userId: girdi.kullaniciId,
+      action: "SATIS_DUZENLEME",
+      targetType: "Sale",
+      targetId: girdi.saleId,
+      detail: JSON.stringify({
+        satisKodu,
+        neden: girdi.neden,
+        aciklama: girdi.aciklama,
+        farklar: plan.farklar,
+        eskiCiro: plan.eskiCiro,
+        yeniCiro: plan.yeniCiro,
+        paraBirimi: plan.paraBirimi,
+      }),
+    },
+      tx);
   });
 
   /**

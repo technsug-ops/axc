@@ -268,7 +268,8 @@
     "vitrin:dogrula": "tsx scripts/vitrin-dogrula.ts",
     "alim-ekseni:dogrula": "tsx scripts/alim-ekseni-dogrula.ts",
     "parti-maliyeti:dogrula": "tsx scripts/parti-maliyeti-dogrula.ts",
-    "pano:sonraki": "tsx scripts/pano-sonraki.ts"
+    "pano:sonraki": "tsx scripts/pano-sonraki.ts",
+    "iz:dogrula": "tsx scripts/iz-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

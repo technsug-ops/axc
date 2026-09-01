@@ -7,6 +7,7 @@ import { YERLESTIRME_EYLEMI, yerlestirmeKarari } from "@/lib/depo/yerlestirme";
 import { prisma } from "@/lib/prisma";
 import { kodKosulu } from "@/lib/varyant-arama-kurali";
 import { yetkiIste } from "@/lib/yetki";
+import { izYaz } from "@/lib/iz";
 
 /**
  * ============================================================================
@@ -181,22 +182,21 @@ export async function koduIsle(
    * ⚠ VE AYNI RAFA YAZIM DA İZ BIRAKIR: "operatör bu ürünü bu rafta
    * DOĞRULADI" bilgisi, hiç okutulmamış olmaktan farklıdır.
    */
-  await prisma.auditLog.create({
-    data: {
-      action: YERLESTIRME_EYLEMI,
-      targetType: "ProductVariant",
-      targetId: varyant.id,
-      userId: kullaniciId,
-      detail: JSON.stringify({
-        sku: varyant.sku,
-        okutulanKod: temiz,
-        oncekiKonumId: varyant.locationId,
-        oncekiKod: varyant.location?.code ?? null,
-        yeniKonumId: hedef.id,
-        yeniKod: hedef.code,
-        ayniRaf: karar.ayniRaf,
-      }),
-    },
+  /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+  await izYaz({
+    action: YERLESTIRME_EYLEMI,
+    targetType: "ProductVariant",
+    targetId: varyant.id,
+    userId: kullaniciId,
+    detail: JSON.stringify({
+      sku: varyant.sku,
+      okutulanKod: temiz,
+      oncekiKonumId: varyant.locationId,
+      oncekiKod: varyant.location?.code ?? null,
+      yeniKonumId: hedef.id,
+      yeniKod: hedef.code,
+      ayniRaf: karar.ayniRaf,
+    }),
   });
 
   const sayi = await prisma.productVariant.count({
@@ -338,26 +338,26 @@ export async function tasimayiUygula(
      * Taşınan her satırın önceki konumu AYNI: `kaynakKod`. Tekdüze olduğu
      * için satır satır yazmaya gerek yok; özet o bilgiyi tam taşıyor.
      */
-    await tx.auditLog.create({
-      data: {
-        action: TOPLU_TASIMA_EYLEMI,
-        targetType: "Location",
-        targetId: kaynak.id,
-        userId: kullaniciId,
-        detail: JSON.stringify({
-          kaynakKod: kaynak.code,
-          hedefKod: hedef.code,
-          istenenAdet: tasinacak.length,
-          yazilanAdet: guncelleme.count,
-          kismi: karar.kismi,
-          raftakiToplam: kaynaktakiler.length,
-          skular: liste.skular,
-          /** ⚠ KIRPILDIYSA SÖYLENİR — eksik liste, tam liste sanılmasın. */
-          skuKirpildi: liste.kirpildi,
-          skuToplami: liste.toplam,
-        }),
-      },
-    });
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      action: TOPLU_TASIMA_EYLEMI,
+      targetType: "Location",
+      targetId: kaynak.id,
+      userId: kullaniciId,
+      detail: JSON.stringify({
+        kaynakKod: kaynak.code,
+        hedefKod: hedef.code,
+        istenenAdet: tasinacak.length,
+        yazilanAdet: guncelleme.count,
+        kismi: karar.kismi,
+        raftakiToplam: kaynaktakiler.length,
+        skular: liste.skular,
+        /** ⚠ KIRPILDIYSA SÖYLENİR — eksik liste, tam liste sanılmasın. */
+        skuKirpildi: liste.kirpildi,
+        skuToplami: liste.toplam,
+      }),
+    },
+      tx);
     return guncelleme.count;
   });
 

@@ -1,4 +1,5 @@
 import { sonSayimTarihleri, sayimGecersizlestir } from "./sayim-damgasi";
+import { izYaz } from "@/lib/iz";
 import {
   israrGecerliMi,
   sayimKorumasi,
@@ -654,25 +655,30 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
        */
       const donemSonucu = await donemKapisi(tx, girdi.occurredAt, girdi.donemIsrari);
       if (donemSonucu.durum === "ISRARLA_GECILDI") {
-        await tx.auditLog.create({
-          data: {
-            action: DONEM_ISTISNA_EYLEMI,
-            /**
-             * ⚠ HEDEF `Sale` — komşu sayım izi de aynı hedefi kullanıyor.
-             * İade kaydı bu noktada HENÜZ YOK (kapı yazmadan ÖNCE koşmak
-             * zorunda); satış kimliği ise girdide hazır ve iadenin ait
-             * olduğu kaydı zaten o gösteriyor.
-             */
-            targetType: "Sale",
-            targetId: girdi.saleId,
-            detail: donemIstisnaIzi({
-              yol: "/iadeler — iade kaydı",
-              donem: donemSonucu.donem,
-              isTarihi: girdi.occurredAt,
-              israr: girdi.donemIsrari,
-            }),
-          },
-        });
+        /**
+         * ⛔ İZ ORTAK GÖVDEDEN — `userId` KENDİLİĞİNDEN DAMGALANIR (K90).
+         * İSTISNA İZLERİ ÖZELLİKLE ÖNEMLİ: bunlar bir insanın uyarıyı AŞTIĞINI
+         * kaydeder. "Kim" yazılmazsa üç ay sonra "bunu neden geçmişiz"
+         * sorusunun cevabı yarım kalır.
+         */
+        await izYaz({
+          action: DONEM_ISTISNA_EYLEMI,
+          /**
+           * ⚠ HEDEF `Sale` — komşu sayım izi de aynı hedefi kullanıyor.
+           * İade kaydı bu noktada HENÜZ YOK (kapı yazmadan ÖNCE koşmak
+           * zorunda); satış kimliği ise girdide hazır ve iadenin ait
+           * olduğu kaydı zaten o gösteriyor.
+           */
+          targetType: "Sale",
+          targetId: girdi.saleId,
+          detail: donemIstisnaIzi({
+            yol: "/iadeler — iade kaydı",
+            donem: donemSonucu.donem,
+            isTarihi: girdi.occurredAt,
+            israr: girdi.donemIsrari,
+          }),
+        },
+          tx);
       }
 
       if (duraksayanlar.length > 0) {
@@ -691,21 +697,26 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
           duraksayanlar.map((x) => x.variantId),
           an,
         );
-        await tx.auditLog.create({
-          data: {
-            action: "SAYIM_KORUMASI_ISTISNASI",
-            targetType: "Sale",
-            targetId: girdi.saleId,
-            detail: JSON.stringify({
-              yol: "/satislar/[id]/iade",
-              occurredAt: girdi.occurredAt.toISOString(),
-              sebep: girdi.sayimIsrari?.sebep ?? null,
-              aciklama: girdi.sayimIsrari?.aciklama.trim() || null,
-              duraksayanlar,
-              sonuc: "SAYIM GECERSIZLESTI — bu varyantlar yeniden sayilmali.",
-            }),
-          },
-        });
+        /**
+         * ⛔ İZ ORTAK GÖVDEDEN — `userId` KENDİLİĞİNDEN DAMGALANIR (K90).
+         * İSTISNA İZLERİ ÖZELLİKLE ÖNEMLİ: bunlar bir insanın uyarıyı AŞTIĞINI
+         * kaydeder. "Kim" yazılmazsa üç ay sonra "bunu neden geçmişiz"
+         * sorusunun cevabı yarım kalır.
+         */
+        await izYaz({
+          action: "SAYIM_KORUMASI_ISTISNASI",
+          targetType: "Sale",
+          targetId: girdi.saleId,
+          detail: JSON.stringify({
+            yol: "/satislar/[id]/iade",
+            occurredAt: girdi.occurredAt.toISOString(),
+            sebep: girdi.sayimIsrari?.sebep ?? null,
+            aciklama: girdi.sayimIsrari?.aciklama.trim() || null,
+            duraksayanlar,
+            sonuc: "SAYIM GECERSIZLESTI — bu varyantlar yeniden sayilmali.",
+          }),
+        },
+          tx);
       }
     }
 

@@ -1,4 +1,5 @@
 import { gunlukYedekYaz, SAKLAMA_GUNU } from "@/lib/yedek-yaz";
+import { izYaz } from "@/lib/iz";
 
 /**
  * ============================================================================
@@ -51,17 +52,16 @@ async function redKaydiniYaz(istek: Request): Promise<void> {
     });
     if (varMi) return;
 
-    await prisma.auditLog.create({
-      data: {
-        action: RED_EYLEMI,
-        targetType: "YedekUcu",
-        detail: JSON.stringify({
-          userAgent: istek.headers.get("user-agent")?.slice(0, 200) ?? null,
-          /** Başlık VAR MI — değeri ASLA yazılmaz, sır sızdırılmaz. */
-          authorizationVarMi: istek.headers.get("authorization") !== null,
-          not: "Gün başına tek kayıt; sayı değil VARLIK ölçülüyor.",
-        }),
-      },
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      action: RED_EYLEMI,
+      targetType: "YedekUcu",
+      detail: JSON.stringify({
+        userAgent: istek.headers.get("user-agent")?.slice(0, 200) ?? null,
+        /** Başlık VAR MI — değeri ASLA yazılmaz, sır sızdırılmaz. */
+        authorizationVarMi: istek.headers.get("authorization") !== null,
+        not: "Gün başına tek kayıt; sayı değil VARLIK ölçülüyor.",
+      }),
     });
   } catch {
     // İz tutulamadıysa red yine de geçerlidir.
@@ -153,16 +153,15 @@ export async function GET(istek: Request) {
    */
   try {
     const { prisma } = await import("@/lib/prisma");
-    await prisma.auditLog.create({
-      data: {
-        action: KOSTU_EYLEMI,
-        targetType: "YedekUcu",
-        detail: JSON.stringify({
-          userAgent: istek.headers.get("user-agent")?.slice(0, 200) ?? null,
-          gun: sonuc.gun,
-          satir: sonuc.satir,
-        }),
-      },
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      action: KOSTU_EYLEMI,
+      targetType: "YedekUcu",
+      detail: JSON.stringify({
+        userAgent: istek.headers.get("user-agent")?.slice(0, 200) ?? null,
+        gun: sonuc.gun,
+        satir: sonuc.satir,
+      }),
     });
   } catch {
     // İz tutulamadıysa yedek yine de alınmıştır; başarı geri alınmaz.

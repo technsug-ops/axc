@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { ALIM_NO_DENEME, alimNoOlustur } from "@/lib/alim-no";
 import { prisma } from "@/lib/prisma";
+import { izYaz } from "@/lib/iz";
 
 export type AlimDurumu = {
   hatalar?: string[];
@@ -379,13 +380,43 @@ export async function alimGuncelle(
 
         // KURAL 3 — defterdeki maliyet damgası da düzelir.
         if (maliyetDegisti && (gelen.get(eski.id) ?? 0) > 0) {
-          await tx.stockMovement.updateMany({
+          const guncellenen = await tx.stockMovement.updateMany({
             where: { purchaseItemId: eski.id },
             data: {
               unitCostAmount: String(yeni.unitCostAmount),
               unitCostCurrency: yeni.unitCostCurrency,
             },
           });
+          /**
+           * ⛔ İZSİZ MALİYET DEĞİŞİKLİĞİ YOK (K90, 01.09.2026).
+           * Bu yol defterdeki maliyet damgasını değiştiriyordu ve HİÇBİR İZ
+           * BIRAKMIYORDU: kim, ne zaman, hangi değerden hangi değere —
+           * üçünün de cevabı yoktu. Ölçümde `src/` içinde iz yazmadan
+           * `StockMovement` güncelleyen TEK yol buydu.
+           *
+           * ⚠ VE BEYAN EDİLEN SINIR: bu güncelleme yalnız `purchaseItemId`
+           * ile bağlı hareketlere ulaşıyor. Partiden ÇEKİLMİŞ çıkışlar
+           * (`sourceMovementId`) buradan güncellenmiyor — o iş K127'nin
+           * parti maliyeti düzeltme yolunda. İz bu sınırı da yazıyor ki
+           * okuyan "her yer düzeldi" sanmasın.
+           */
+          await izYaz(
+            {
+              action: "ALIM_MALIYETI_DUZELTILDI",
+              targetType: "PurchaseItem",
+              targetId: eski.id,
+              detail: JSON.stringify({
+                eskiMaliyet: eski.unitCostAmount.toString(),
+                eskiParaBirimi: eski.unitCostCurrency,
+                yeniMaliyet: String(yeni.unitCostAmount),
+                yeniParaBirimi: yeni.unitCostCurrency,
+                guncellenenHareket: guncellenen.count,
+                sinir:
+                  "yalniz purchaseItemId ile bagli hareketler — cikislar (sourceMovementId) DAHIL DEGIL",
+              }),
+            },
+            tx,
+          );
         }
       }
 

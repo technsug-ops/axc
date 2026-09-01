@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { kalemMaliyeti } from "@/lib/kalem-maliyeti";
 import { oturumdakiKullanici } from "@/lib/oturum";
 import { prisma } from "@/lib/prisma";
+import { izYaz } from "@/lib/iz";
 import {
   DOGRULAMA_EYLEMI,
   damgaKur,
@@ -109,14 +110,13 @@ export async function veriDogrula(
    * kayıt silinmez, üstüne yazılır. "Kim ne zaman neyi doğruladı" geçmişi
    * kalır — bir istisnanın kaç kez geri geldiği kendi başına bilgidir.
    */
-  await prisma.auditLog.create({
-    data: {
-      userId: kullanici?.id ?? null,
-      action: DOGRULAMA_EYLEMI,
-      targetType: "SaleItem",
-      targetId: kalem.id,
-      detail: JSON.stringify(kayit),
-    },
+  /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+  await izYaz({
+    userId: kullanici?.id ?? null,
+    action: DOGRULAMA_EYLEMI,
+    targetType: "SaleItem",
+    targetId: kalem.id,
+    detail: JSON.stringify(kayit),
   });
 
   revalidatePath("/satislar");

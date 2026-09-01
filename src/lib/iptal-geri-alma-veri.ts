@@ -2,6 +2,7 @@ import { karYenidenYaz } from "@/lib/kar-yeniden";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
 import { acikPartiler } from "@/lib/stok";
+import { izYaz } from "@/lib/iz";
 import {
   geriAlmaImzasi,
   geriAlmaPlani,
@@ -286,21 +287,21 @@ export async function geriAlmaUygula(girdi: {
       },
     });
 
-    await tx.auditLog.create({
-      data: {
-        userId: girdi.kullaniciId,
-        action: "SATIS_IPTAL_GERI_ALINDI",
-        targetType: "Sale",
-        targetId: girdi.saleId,
-        detail: JSON.stringify({
-          satisKodu,
-          neden: girdi.neden,
-          aciklama: girdi.aciklama,
-          stoktanCikan: plan.stoktanCikacakAdet,
-          hareketSayisi: plan.hareketler.length,
-        }),
-      },
-    });
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      userId: girdi.kullaniciId,
+      action: "SATIS_IPTAL_GERI_ALINDI",
+      targetType: "Sale",
+      targetId: girdi.saleId,
+      detail: JSON.stringify({
+        satisKodu,
+        neden: girdi.neden,
+        aciklama: girdi.aciklama,
+        stoktanCikan: plan.stoktanCikacakAdet,
+        hareketSayisi: plan.hareketler.length,
+      }),
+    },
+      tx);
   });
 
   // Kâr ELLE yazılmaz — motor yeniden hesaplar.

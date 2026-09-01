@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-import { tamYetkiliMi } from "./izinler";
+import { sistemiAcabilirMi } from "./izinler";
 
 /**
  * ============================================================================
@@ -24,7 +24,17 @@ import { tamYetkiliMi } from "./izinler";
  */
 
 /**
- * SAHİP sayılmanın ölçütü — TEK GÖVDEDEN (K99, 01.09.2026).
+ * SAHİP SAYILMANIN ÖLÇÜTÜ — SORUSUYLA ADLANDIRILMIŞ (K99-②, 01.09.2026).
+ *
+ * ⭐ ÖLÇÜT `sistemiAcabilirMi`: `kullanici.yonet` + `rol.yonet`. Bu gövdenin
+ * sorduğu soru "tam yetkili mi" DEĞİL, **"sistemi kilitten çıkarabilir mi"**
+ * — ve onun cevabı tam olarak bu iki izindir. 27 iznin hepsini istemek,
+ * kilidi açabilecek bir rolü "sahip değil" saymak olurdu.
+ *
+ * ⚠ BAKIM ROTASININ ÖLÇÜTÜ AYRI VE SIKI KALDI (`tamYetkiliMi`): o başka bir
+ * soru soruyor ve orada gevşetmek kimsenin istemediği bir kapıyı açardı.
+ *
+ * ── AŞAĞIDAKİ GEREKÇE SİLİNMEDİ (K99-①) ──────────────────────────────
  *
  * ⛔ BURADA İKİNCİ BİR ÖLÇÜT VARDI VE AYRIŞIYORDU. Anayasa açıkça
  * _"iki yerde iki farklı ölçüt olmaz"_ diyor; buna rağmen bu dosya
@@ -55,7 +65,9 @@ export async function tamYetkiliRolIdleri(): Promise<string[]> {
   });
 
   return roller
-    .filter((r) => tamYetkiliMi(new Set(r.izinler.map((i) => i.permissionKey))))
+    .filter((r) =>
+      sistemiAcabilirMi(new Set(r.izinler.map((i) => i.permissionKey))),
+    )
     .map((r) => r.id);
 }
 

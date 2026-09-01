@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { izYaz } from "@/lib/iz";
 import {
   kanalAdedi,
   listelemeDurumu,
@@ -96,14 +97,13 @@ export async function kosumIziniYaz(g: {
   basarili: boolean;
   mesaj: string;
 }): Promise<void> {
-  await prisma.auditLog.create({
-    data: {
-      action: KOSUM_IZI,
-      targetType: "ChannelSku",
-      targetId: null,
-      /** ⛔ MESAJ TAM TAŞINIR — kırpmak teşhisi kırpar. */
-      detail: JSON.stringify({ basarili: g.basarili, mesaj: g.mesaj }),
-    },
+  /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+  await izYaz({
+    action: KOSUM_IZI,
+    targetType: "ChannelSku",
+    targetId: null,
+    /** ⛔ MESAJ TAM TAŞINIR — kırpmak teşhisi kırpar. */
+    detail: JSON.stringify({ basarili: g.basarili, mesaj: g.mesaj }),
   });
 }
 

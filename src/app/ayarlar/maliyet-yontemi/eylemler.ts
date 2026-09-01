@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 
 import { prisma } from "@/lib/prisma";
 import { yetkiIste } from "@/lib/yetki";
+import { izYaz } from "@/lib/iz";
 import {
   ACIK_YONTEMLER,
   maliyetYontemiCoz,
@@ -108,22 +109,21 @@ export async function yontemiDegistir(
    * ⚠ İZ, DEĞİŞİKLİĞİN İKİ UCUNU DA TAŞIR. Yalnız yenisini yazmak, üç ay
    * sonra "neredeyse geçmişti" sorusunu cevapsız bırakırdı.
    */
-  await prisma.auditLog.create({
-    data: {
-      action: YONTEM_DEGISTI_EYLEMI,
-      targetType: "Company",
-      targetId: firma.id,
-      userId: baglam.kullaniciId,
-      detail: JSON.stringify({
-        eskiYontem: firma.maliyetYontemi,
-        yeniYontem,
-        eskiKip: firma.lotKipi,
-        yeniKip,
-        donem: donemAnahtariBugun(),
-        israrSebep: form.get("yontemSebep") ?? null,
-        israrAciklama: String(form.get("yontemAciklama") ?? "").trim() || null,
-      }),
-    },
+  /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+  await izYaz({
+    action: YONTEM_DEGISTI_EYLEMI,
+    targetType: "Company",
+    targetId: firma.id,
+    userId: baglam.kullaniciId,
+    detail: JSON.stringify({
+      eskiYontem: firma.maliyetYontemi,
+      yeniYontem,
+      eskiKip: firma.lotKipi,
+      yeniKip,
+      donem: donemAnahtariBugun(),
+      israrSebep: form.get("yontemSebep") ?? null,
+      israrAciklama: String(form.get("yontemAciklama") ?? "").trim() || null,
+    }),
   });
 
   revalidatePath("/ayarlar/maliyet-yontemi");

@@ -874,6 +874,35 @@ atfedilemez.** Sebep uydurulmadı; açıklanamadığı yazıldı.
 yasaklamıyor, **geri almayı listeye BAĞLAMAYI** yasaklıyor. Önceki değerler
 teşhis içindir; sığmıyorsa özetlenir, ama geri alma yolu onlara bağlanmaz.
 
+### `EVERY` KAPISI TABAN DOLULUĞUNU AYRICA KANITLAR (KESİN KURAL)
+
+_Kullanıcı kararı 01.09.2026, K99._ `liste.every(...)` **boş listede `true`
+döner.** Bir izin/koşul kapısı bu kalıpla yazıldığında, tabanın boşalması
+kapıyı **herkese açar** — ve bunu hiçbir değer testi göstermez, çünkü boş
+GİRDİYLE sınamak boş TABAN dalını hiç çalıştırmaz.
+
+**Vaka:** `tamYetkiliMi` içindeki `if (FIRMA_IZINLERI.length === 0) return
+false;` kapısını **silen mutasyon YEŞİL geçti.** Bekçide "boş küme tam
+yetkili değil" ölçütü vardı ve o ölçüt doğruydu — ama yanlış şeyi
+sınıyordu: boş küme, dolu bir tabana karşı zaten `false` verir.
+
+> **KURAL:** `every`/`all` ile kurulan her kapı **İKİ** şeyi birden kanıtlar:
+> ① tabanın **DOLU** olduğu (değer testi: `TABAN.length >= N`), ve
+> ② gövdedeki **boş-taban kapısının yerinde durduğu.**
+> Biri olmadan öteki eksiktir.
+
+⚠ **VE İKİ SORU VARSA İKİ ÖLÇÜT OLUR — YETER Kİ ADI SORUSUNU SÖYLESİN.**
+Aynı gün ikinci bulgu: tek bir "tam yetkili" ölçütü **iki farklı soruya**
+hizmet ediyordu — _"sistemi kilitten çıkarabilecek biri kaldı mı"_ ve
+_"bu bakım rotasını kim açabilir"_. Birincisi için bütün izinleri istemek,
+kilidi açabilecek bir rolü "sahip değil" sayıp **meşru bir değişikliği
+engelliyordu**. Ölçüt ikiye ayrıldı (`sistemiAcabilirMi` ·
+`tamYetkiliMi`), **aynı dosyada ve adıyla**: ayrı dosyalara dağılsalardı
+üçüncü bir tüketici "en yakın olanı" seçerdi.
+
+_(Bu, "iki yerde iki ölçüt olmaz" kuralının sınırı: yasak olan aynı soruya
+iki cevap; farklı sorulara farklı ölçüt ZORUNLULUKTUR.)_
+
 ### BİR SINIRIN YÖNÜ ÖLÇÜLMEDEN ÇEVRİLMEZ (KESİN KURAL)
 
 _Kullanıcı kararı 29.08.2026, FIFO sınırı._ Mantıkla doğru görünen bir

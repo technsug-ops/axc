@@ -33,6 +33,8 @@ import {
   TUM_IZINLER,
   izinTaninirMi,
   otomatikDagitilacak,
+  KILIT_ACMA_IZINLERI,
+  sistemiAcabilirMi,
   tamYetkiliMi,
 } from "../src/lib/yetki/izinler";
 import { yetkiBekcisi } from "./yetki-bekci";
@@ -783,14 +785,108 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
       kacakOlcut.length === 0,
       kacakOlcut,
     );
-    /** ⛔ VE KORUMA GERÇEKTEN ORTAK GÖVDEYİ ÇAĞIRIYOR — ada değil ÇAĞRIYA bağlı. */
-    kontrol(
-      "koruma ortak gövdeyi ÇAĞIRIYOR",
-      /tamYetkiliMi\(new Set\(/.test(
-        readFileSync("src/lib/yetki/koruma.ts", "utf8"),
-      ),
-    );
+    /**
+     * ⛔ KORUMA KENDİ ÖLÇÜTÜNÜ KURMAZ — ORTAK GÖVDEYİ ÇAĞIRIR.
+     *
+     * ⚠ ÖLÇÜT K99-②'DE GÜNCELLENDİ: eskiden `tamYetkiliMi(new Set(` aranıyordu
+     * ve koruma o gövdeyi çağırınca yeşildi. Sonra ölçüt SORUSUNA göre ayrıldı
+     * (kilit → `sistemiAcabilirMi`) ve bekçi kırmızı yandı. Kod DOĞRUYDU —
+     * eskiyen şey, tek bir gövde ADINA bağlanmış olmasıydı.
+     * ⭐ Korunan değişmez aynı: koruma kendi `every` mantığını KURAMAZ,
+     * `izinler.ts`ten gelen ADLANDIRILMIŞ bir ölçüt çağırır. Hangisini
+     * çağırdığı bir alttaki bölümde ayrıca ölçülüyor.
+     */
+    {
+      const korumaKodu = readFileSync("src/lib/yetki/koruma.ts", "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/(^|[^:])\/\/.*$/gm, "$1");
+      kontrol(
+        "koruma ortak bir ölçüt gövdesi ÇAĞIRIYOR",
+        /(sistemiAcabilirMi|tamYetkiliMi)\(new Set\(/.test(korumaKodu),
+      );
+      kontrol(
+        "  ...ve kendi `every` mantığını KURMUYOR",
+        !/\.every\(/.test(korumaKodu),
+      );
+    }
   }
+    /**
+     * ⛔ FIRMA ∪ SAĞLAYICI = TUM, KESİŞİM BOŞ, İKİSİ DE DOLU (K99-②).
+     * `FIRMA_IZINLERI` bugün TÜRETİLMİŞ (`TUM_IZINLER.filter(!saglayici)`)
+     * ama biri onu bir gün elle listeye çevirirse ayrışma SESSİZ olurdu:
+     * eksik bir izin "tam yetkili" ölçütünü gevşetir, fazla bir izin
+     * meşru bir rolü dışarıda bırakır.
+     */
+    {
+      const firma = new Set<string>(FIRMA_IZINLERI);
+      const saglayici = new Set<string>(SAGLAYICI_IZINLERI);
+      kontrol("firma tabanı DOLU", firma.size > 0, firma.size);
+      kontrol("sağlayıcı tabanı DOLU", saglayici.size > 0, saglayici.size);
+      kontrol(
+        "kesişim BOŞ",
+        [...firma].every((i) => !saglayici.has(i)),
+        [...firma].filter((i) => saglayici.has(i)),
+      );
+      kontrol(
+        "birleşim = TUM_IZINLER",
+        firma.size + saglayici.size === TUM_IZINLER.length &&
+          TUM_IZINLER.every((i) => firma.has(i) || saglayici.has(i)),
+        { firma: firma.size, saglayici: saglayici.size, tum: TUM_IZINLER.length },
+      );
+    }
+
+    /**
+     * ⛔ İKİ SORU, İKİ ÖLÇÜT — VE İKİSİ AYNI ŞEY DEĞİL.
+     *   kilit koruması → `sistemiAcabilirMi` (kullanici.yonet + rol.yonet)
+     *   bakım rotası   → `tamYetkiliMi` (bütün firma izinleri)
+     * Aynı sonucu verselerdi ayırmanın anlamı olmazdı; ayrım ÖLÇÜLÜYOR.
+     */
+    {
+      const cift = new Set<string>(KILIT_ACMA_IZINLERI);
+      kontrol("iki izinle sistem AÇILABİLİR", sistemiAcabilirMi(cift));
+      kontrol("  ...ama TAM YETKİLİ değil", !tamYetkiliMi(cift));
+      kontrol(
+        "kilit izinleri firma tabanının İÇİNDE",
+        KILIT_ACMA_IZINLERI.every((i) => FIRMA_IZINLERI.includes(i)),
+      );
+      /** ⛔ TEK İZİN YETMEZ — çift şart. */
+      kontrol(
+        "yalnız kullanici.yonet YETMEZ",
+        !sistemiAcabilirMi(new Set(["kullanici.yonet"])),
+      );
+      kontrol(
+        "yalnız rol.yonet YETMEZ",
+        !sistemiAcabilirMi(new Set(["rol.yonet"])),
+      );
+      kontrol("boş küme açamaz", !sistemiAcabilirMi(new Set()));
+      /** ⚠ TAM YETKİLİ OLAN HER ROL KİLİDİ DE AÇABİLİR — kapsama ilişkisi. */
+      kontrol(
+        "tam yetkili olan kilidi de açar",
+        sistemiAcabilirMi(new Set<string>(FIRMA_IZINLERI)),
+      );
+      /** ⛔ BOŞ TABAN KAPISI GÖVDEDE DURUYOR (kılavuz: every/all kapıları). */
+      kontrol(
+        "kilit ölçütünde boş taban kapısı VAR",
+        /if \(KILIT_ACMA_IZINLERI\.length === 0\) return false;/.test(
+          readFileSync("src/lib/yetki/izinler.ts", "utf8"),
+        ),
+      );
+      kontrol("kilit tabanı DOLU", KILIT_ACMA_IZINLERI.length === 2);
+      /** ⛔ KORUMA YENİ ÖLÇÜTÜ ÇAĞIRIYOR — ada değil ÇAĞRIYA bağlı. */
+      kontrol(
+        "koruma `sistemiAcabilirMi` ÇAĞIRIYOR",
+        /sistemiAcabilirMi\(new Set\(/.test(
+          readFileSync("src/lib/yetki/koruma.ts", "utf8"),
+        ),
+      );
+      /** ⛔ BAKIM ROTASI SIKI ÖLÇÜTTE KALDI. */
+      kontrol(
+        "bakım rotası `tamYetkiliMi` kullanıyor",
+        /if \(!tamYetkiliMi\(baglam\.izinler\)\) notFound\(\);/.test(
+          readFileSync("src/lib/yetki/index.ts", "utf8"),
+        ),
+      );
+    }
 
   console.log("\n" + "=".repeat(70));
   if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);

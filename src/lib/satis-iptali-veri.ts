@@ -1,6 +1,7 @@
 import { acikCikislar } from "@/lib/kalem-maliyeti";
 import { prisma } from "@/lib/prisma";
 import { satisKalemToplamlari } from "@/lib/tutar";
+import { izYaz } from "@/lib/iz";
 import {
   iptalImzasi,
   iptalPlani,
@@ -249,22 +250,22 @@ export async function iptalUygula(girdi: {
      * kayıtta durmalı; satış kaydındaki alanlar "ne" der, bu satır "kim ve
      * hangi bağlamda" der.
      */
-    await tx.auditLog.create({
-      data: {
-        userId: girdi.kullaniciId,
-        action: "SATIS_IPTAL",
-        targetType: "Sale",
-        targetId: girdi.saleId,
-        detail: JSON.stringify({
-          satisKodu,
-          sebep: girdi.sebep,
-          not: girdi.not,
-          geriDonenAdet: plan.geriDonenAdet,
-          hareketSayisi: plan.hareketler.length,
-          etki: plan.etki,
-        }),
-      },
-    });
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      userId: girdi.kullaniciId,
+      action: "SATIS_IPTAL",
+      targetType: "Sale",
+      targetId: girdi.saleId,
+      detail: JSON.stringify({
+        satisKodu,
+        sebep: girdi.sebep,
+        not: girdi.not,
+        geriDonenAdet: plan.geriDonenAdet,
+        hareketSayisi: plan.hareketler.length,
+        etki: plan.etki,
+      }),
+    },
+      tx);
   });
 
   return { tamam: true, satisKodu, geriDonenAdet: plan.geriDonenAdet };

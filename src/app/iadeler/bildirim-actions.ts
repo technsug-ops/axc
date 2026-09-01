@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { gunDegeri, gunEkle, gunMetninden, isTakvimGunu } from "@/lib/donem";
+import { izYaz } from "@/lib/iz";
 import {
   DURUM_SAYACI,
   SAYAC_KURALLARI,
@@ -296,17 +297,16 @@ export async function bildirimOlustur(
    */
   if (veri.tavanIstisnasi && bildirimTavaniDoldu(mevcutBildirimSayisi)) {
     try {
-      await prisma.auditLog.create({
-        data: {
-          userId: kullanici?.id ?? null,
-          action: TAVAN_ISTISNASI_EYLEMI,
-          targetType: "Sale",
-          targetId: veri.saleId,
-          detail: JSON.stringify({
-            mevcutBildirim: mevcutBildirimSayisi,
-            tavan: BILDIRIM_TAVANI,
-          }),
-        },
+      /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+      await izYaz({
+        userId: kullanici?.id ?? null,
+        action: TAVAN_ISTISNASI_EYLEMI,
+        targetType: "Sale",
+        targetId: veri.saleId,
+        detail: JSON.stringify({
+          mevcutBildirim: mevcutBildirimSayisi,
+          tavan: BILDIRIM_TAVANI,
+        }),
       });
     } catch (e) {
       console.error("[iade] tavan istisnası izi yazılamadı:", e);
@@ -506,14 +506,13 @@ export async function bildirimDurumuGuncelle(
   if (turetme?.iz) {
     try {
       const kullanici = await oturumdakiKullanici();
-      await prisma.auditLog.create({
-        data: {
-          userId: kullanici?.id ?? null,
-          action: SON_TARIH_EYLEMI,
-          targetType: "ReturnNotice",
-          targetId: bildirimId,
-          detail: JSON.stringify(turetme.iz),
-        },
+      /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+      await izYaz({
+        userId: kullanici?.id ?? null,
+        action: SON_TARIH_EYLEMI,
+        targetType: "ReturnNotice",
+        targetId: bildirimId,
+        detail: JSON.stringify(turetme.iz),
       });
     } catch (e) {
       /* İz tutulamadıysa geçiş yine geçerlidir; sayaç ekranda doğru durur. */
@@ -627,14 +626,13 @@ export async function bildirimCipasiYaz(
 
   try {
     const kullanici = await oturumdakiKullanici();
-    await prisma.auditLog.create({
-      data: {
-        userId: kullanici?.id ?? null,
-        action: SON_TARIH_EYLEMI,
-        targetType: "ReturnNotice",
-        targetId: bildirimId,
-        detail: JSON.stringify(turetme.iz ?? {}),
-      },
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      userId: kullanici?.id ?? null,
+      action: SON_TARIH_EYLEMI,
+      targetType: "ReturnNotice",
+      targetId: bildirimId,
+      detail: JSON.stringify(turetme.iz ?? {}),
     });
   } catch (e) {
     console.error("[iade] çıpa izi yazılamadı:", e);
@@ -686,18 +684,17 @@ export async function bildirimSonTarihiYaz(
 
   try {
     const kullanici = await oturumdakiKullanici();
-    await prisma.auditLog.create({
-      data: {
-        userId: kullanici?.id ?? null,
-        action: SON_TARIH_EYLEMI,
-        targetType: "ReturnNotice",
-        targetId: bildirimId,
-        detail: JSON.stringify({
-          kaynak: "PANEL",
-          sutun,
-          sonTarih: tarih ? tarih.toISOString() : null,
-        }),
-      },
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      userId: kullanici?.id ?? null,
+      action: SON_TARIH_EYLEMI,
+      targetType: "ReturnNotice",
+      targetId: bildirimId,
+      detail: JSON.stringify({
+        kaynak: "PANEL",
+        sutun,
+        sonTarih: tarih ? tarih.toISOString() : null,
+      }),
     });
   } catch (e) {
     console.error("[iade] panel tarihi izi yazılamadı:", e);
@@ -873,25 +870,25 @@ export async function degisimUrunuGonderildi(
         });
       }
 
-      await tx.auditLog.create({
-        data: {
-          userId: kullanici?.id ?? null,
-          action: DEGISIM_GONDERILDI_EYLEMI,
-          targetType: "ReturnNotice",
-          targetId: bildirimId,
-          detail: JSON.stringify({
-            siparisNo: bildirim.sale.code,
-            saleItemId: hedefKalemId,
-            variantId: varyantId,
-            adet,
-            partiler: dagitim.dagitim.map((p) => ({
-              hareketId: p.parti.hareketId,
-              adet: p.adet,
-              birimMaliyet: p.parti.birimMaliyet,
-            })),
-          }),
-        },
-      });
+      /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+      await izYaz({
+        userId: kullanici?.id ?? null,
+        action: DEGISIM_GONDERILDI_EYLEMI,
+        targetType: "ReturnNotice",
+        targetId: bildirimId,
+        detail: JSON.stringify({
+          siparisNo: bildirim.sale.code,
+          saleItemId: hedefKalemId,
+          variantId: varyantId,
+          adet,
+          partiler: dagitim.dagitim.map((p) => ({
+            hareketId: p.parti.hareketId,
+            adet: p.adet,
+            birimMaliyet: p.parti.birimMaliyet,
+          })),
+        }),
+      },
+        tx);
     });
   } catch (e) {
     const mesaj = String(e);
@@ -988,21 +985,21 @@ export async function kapanmisBildirimiIptalEt(
      * bakan birine neyin iptal edildiğini söylemez; `KAPANDI`dan mı yoksa
      * başka bir yerden mi geldiği kaydın hikâyesidir.
      */
-    await tx.auditLog.create({
-      data: {
-        userId: kullanici?.id ?? null,
-        action: BILDIRIM_IPTAL_EYLEMI,
-        targetType: "ReturnNotice",
-        targetId: bildirimId,
-        detail: JSON.stringify({
-          oncekiDurum: bildirim.status,
-          yeniDurum: "IPTAL",
-          gerekce: gerekce.trim(),
-          saleId: bildirim.saleId,
-          returnId: bildirim.returnId,
-        }),
-      },
-    });
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      userId: kullanici?.id ?? null,
+      action: BILDIRIM_IPTAL_EYLEMI,
+      targetType: "ReturnNotice",
+      targetId: bildirimId,
+      detail: JSON.stringify({
+        oncekiDurum: bildirim.status,
+        yeniDurum: "IPTAL",
+        gerekce: gerekce.trim(),
+        saleId: bildirim.saleId,
+        returnId: bildirim.returnId,
+      }),
+    },
+      tx);
   });
 
   revalidatePath("/iadeler");

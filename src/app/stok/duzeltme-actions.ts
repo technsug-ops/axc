@@ -1,6 +1,7 @@
 "use server";
 
 import { yetkiIste } from "@/lib/yetki";
+import { izYaz } from "@/lib/iz";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
@@ -175,18 +176,22 @@ export async function stokDuzelt(
       donemIsrariniOku(formData),
     );
     if (donemSonucu.durum === "ISRARLA_GECILDI") {
-      await prisma.auditLog.create({
-        data: {
-          action: DONEM_ISTISNA_EYLEMI,
-          targetType: "ProductVariant",
-          targetId: variantId,
-          detail: donemIstisnaIzi({
-            yol: "/stok — elle düzeltme",
-            donem: donemSonucu.donem,
-            isTarihi: tarih,
-            israr: donemIsrariniOku(formData),
-          }),
-        },
+      /**
+       * ⛔ İZ ORTAK GÖVDEDEN — `userId` KENDİLİĞİNDEN DAMGALANIR (K90).
+       * İSTISNA İZLERİ ÖZELLİKLE ÖNEMLİ: bunlar bir insanın uyarıyı AŞTIĞINI
+       * kaydeder. "Kim" yazılmazsa üç ay sonra "bunu neden geçmişiz"
+       * sorusunun cevabı yarım kalır.
+       */
+      await izYaz({
+        action: DONEM_ISTISNA_EYLEMI,
+        targetType: "ProductVariant",
+        targetId: variantId,
+        detail: donemIstisnaIzi({
+          yol: "/stok — elle düzeltme",
+          donem: donemSonucu.donem,
+          isTarihi: tarih,
+          israr: donemIsrariniOku(formData),
+        }),
       });
     }
   } catch (e) {
@@ -332,22 +337,26 @@ export async function stokDuzelt(
   if (kapi.sonuc === "DURAKSA") {
     const an = new Date();
     await sayimGecersizlestir(prisma, [variantId], an);
-    await prisma.auditLog.create({
-      data: {
-        action: "SAYIM_KORUMASI_ISTISNASI",
-        targetType: "ProductVariant",
-        targetId: variantId,
-        detail: JSON.stringify({
-          yol: "/stok — stok düzeltme",
-          yon: kapi.yon,
-          sayimTarihi: kapi.sayimTarihi.toISOString(),
-          hareketIsTarihi: kapi.hareketIsTarihi.toISOString(),
-          adet: hareketMiktari({ adet, yon }),
-          sebep: israr.sebep,
-          aciklama: israr.aciklama.trim() || null,
-          sonuc: "SAYIM GECERSIZLESTI — bu varyant yeniden sayilmali.",
-        }),
-      },
+    /**
+     * ⛔ İZ ORTAK GÖVDEDEN — `userId` KENDİLİĞİNDEN DAMGALANIR (K90).
+     * İSTISNA İZLERİ ÖZELLİKLE ÖNEMLİ: bunlar bir insanın uyarıyı AŞTIĞINI
+     * kaydeder. "Kim" yazılmazsa üç ay sonra "bunu neden geçmişiz"
+     * sorusunun cevabı yarım kalır.
+     */
+    await izYaz({
+      action: "SAYIM_KORUMASI_ISTISNASI",
+      targetType: "ProductVariant",
+      targetId: variantId,
+      detail: JSON.stringify({
+        yol: "/stok — stok düzeltme",
+        yon: kapi.yon,
+        sayimTarihi: kapi.sayimTarihi.toISOString(),
+        hareketIsTarihi: kapi.hareketIsTarihi.toISOString(),
+        adet: hareketMiktari({ adet, yon }),
+        sebep: israr.sebep,
+        aciklama: israr.aciklama.trim() || null,
+        sonuc: "SAYIM GECERSIZLESTI — bu varyant yeniden sayilmali.",
+      }),
     });
   }
 

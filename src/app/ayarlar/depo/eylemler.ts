@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
+import { izYaz } from "@/lib/iz";
 
 import {
   kisaltmaNormalle,
@@ -170,23 +171,22 @@ export async function depoyuKur(form: FormData): Promise<DepoSonucu> {
      * farklı hikâyelerdir. Yalnız açılanı yazmak, ikinci kurulumu ilk
      * kurulum gibi gösterirdi.
      */
-    await prisma.auditLog.create({
-      data: {
-        action: "DEPO_BOLUMU_KURULDU",
-        targetType: "DepoBolumu",
-        targetId: bolum.id,
-        userId: kullaniciId,
-        detail: JSON.stringify({
-          ad: tarif.ad,
-          kisaltma,
-          uniteSayisi: tarif.uniteSayisi,
-          gozSayisi: tarif.gozSayisi,
-          acilan: ozet.yeni.length,
-          atlanan: ozet.mevcut.length,
-          ilkKod: ozet.yeni[0],
-          sonKod: ozet.yeni[ozet.yeni.length - 1],
-        }),
-      },
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      action: "DEPO_BOLUMU_KURULDU",
+      targetType: "DepoBolumu",
+      targetId: bolum.id,
+      userId: kullaniciId,
+      detail: JSON.stringify({
+        ad: tarif.ad,
+        kisaltma,
+        uniteSayisi: tarif.uniteSayisi,
+        gozSayisi: tarif.gozSayisi,
+        acilan: ozet.yeni.length,
+        atlanan: ozet.mevcut.length,
+        ilkKod: ozet.yeni[0],
+        sonKod: ozet.yeni[ozet.yeni.length - 1],
+      }),
     });
   }
 

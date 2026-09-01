@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { izYaz } from "@/lib/iz";
 
 /**
  * ============================================================================
@@ -103,15 +104,14 @@ export async function yuklemeKaydiYaz(
     const hesapAdi =
       hesap === null ? undefined : `${hesap.channel.name} — ${hesap.name}`;
 
-    await prisma.auditLog.create({
-      data: {
-        userId: girdi.kullaniciId,
-        companyId: girdi.companyId,
-        action: KOMISYON_YUKLEME_EYLEMI,
-        targetType: "ChannelAccount",
-        targetId: girdi.channelAccountId,
-        detail: yuklemeDetayi({ ...girdi, channelAccountAdi: hesapAdi }),
-      },
+    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+    await izYaz({
+      userId: girdi.kullaniciId,
+      companyId: girdi.companyId,
+      action: KOMISYON_YUKLEME_EYLEMI,
+      targetType: "ChannelAccount",
+      targetId: girdi.channelAccountId,
+      detail: yuklemeDetayi({ ...girdi, channelAccountAdi: hesapAdi }),
     });
   } catch (e) {
     console.error("[komisyon] yükleme kaydı yazılamadı:", e);

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
 import { prisma } from "@/lib/prisma";
+import { izYaz } from "@/lib/iz";
 import { satisKarTazele } from "@/lib/kar-yeniden";
 import { yetkiIste } from "@/lib/yetki";
 import {
@@ -181,8 +182,13 @@ export async function partiMaliyetiniDuzelt(
          * ve yeniden hesaplanabilir. İz TEŞHİS içindir.
          * _(Anayasa: geri alma yolu saklanan listeye dayanmaz.)_
          */
-        await tx.auditLog.create({
-          data: {
+        /**
+         * ⛔ İZ ORTAK GÖVDEDEN — `userId` KENDİLİĞİNDEN damgalanır (K90).
+         * Elle `auditLog.create` yazmak, 33'üncü çağrı yerinde "kim"i yine
+         * unutmak demekti.
+         */
+        await izYaz(
+          {
             action: MALIYET_DUZELTME_EYLEMI,
             targetType: "StockMovement",
             targetId: parti.id,
@@ -197,7 +203,8 @@ export async function partiMaliyetiniDuzelt(
               maliyetFarkiToplam: plan.maliyetFarkiToplam,
             }),
           },
-        });
+          tx,
+        );
       },
       { timeout: 120_000 },
     );

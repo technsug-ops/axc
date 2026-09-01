@@ -1,4 +1,5 @@
 import { sonSayimTarihleri, sayimGecersizlestir } from "@/lib/sayim-damgasi";
+import { izYaz } from "@/lib/iz";
 import {
   israrGecerliMi,
   sayimKorumasi,
@@ -117,20 +118,20 @@ export async function planiYaz(
             duraksayanlar.map((x) => x.variantId),
             an,
           );
-          await tx.auditLog.create({
-            data: {
-              action: "SAYIM_KORUMASI_ISTISNASI",
-              targetType: "StockMovement",
-              detail: JSON.stringify({
-                yol: "/ayarlar/ice-aktarma — açılış stoğu",
-                yon: "ARTIRAN",
-                sebep: sayimIsrari?.sebep ?? null,
-                aciklama: sayimIsrari?.aciklama.trim() || null,
-                duraksayanlar,
-                sonuc: "SAYIM GECERSIZLESTI — bu varyantlar yeniden sayilmali.",
-              }),
-            },
-          });
+          /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+          await izYaz({
+            action: "SAYIM_KORUMASI_ISTISNASI",
+            targetType: "StockMovement",
+            detail: JSON.stringify({
+              yol: "/ayarlar/ice-aktarma — açılış stoğu",
+              yon: "ARTIRAN",
+              sebep: sayimIsrari?.sebep ?? null,
+              aciklama: sayimIsrari?.aciklama.trim() || null,
+              duraksayanlar,
+              sonuc: "SAYIM GECERSIZLESTI — bu varyantlar yeniden sayilmali.",
+            }),
+          },
+            tx);
         }
       }
 
