@@ -83,6 +83,31 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
   const bayat = veri.yasSaat !== null && veri.yasSaat > BAYAT_SAAT;
   const sorunVar = veri.sonKosumBasarisiz || bayat;
 
+  /**
+   * ⛔ İKİ AÇIKLAMA TEK SATIRDA. Ayrı paragraflarken kutu iki satır daha
+   * uzuyordu ve altındaki asıl iş kutuları ekranın dışına itiliyordu
+   * (kullanıcı şartı 01.09.2026). Metin KISALTILMADI — birleştirildi.
+   *
+   * ⚠ Üçü de sıfırsa hüküm YAZILIR: sessiz kalmak "ölçüm mü gitti, sorun
+   * mu bitti" sorusunu cevapsız bırakırdı.
+   */
+  const altNot = [
+    hepsiSifir ? t("bos") : "",
+    veri.olculmemisAdet > 0 ? t("olculmemisNotu") : "",
+    /**
+     * ⛔ PARA TABANI EKRANDA YAZAR — ANAYASA KURALI, TERCİH DEĞİL.
+     * `unitCostAmount` FİİLEN ÖDENEN tutardır (KDV dahil); aynı stok "mal
+     * bedeli (KDV hariç)" tabanıyla da yazılabilir ve iki rakam **%20'ye
+     * varan** fark eder. 26.08.2026'da tam bu yaşandı: aynı stok, aynı an,
+     * iki DOĞRU rakam (543.664,54 ↔ 453.053,78) ve hangisine bakıldığı
+     * yazılı olmadığı için Halil testi düştü.
+     * _(Anayasa: "para rakamı tabanıyla birlikte yazılır".)_
+     */
+    t("tabanNotu"),
+  ]
+    .filter((m) => m !== "")
+    .join(" · ");
+
   const etiket: Record<VitrinSatiri, string> = {
     LISTELENMEMIS: t("listelenmemis"),
     PASIF: t("pasif"),
@@ -91,21 +116,15 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
 
   return (
     <Card className="min-w-0">
-      <CardHeader className="gap-1 pb-3">
-        <CardTitle className="flex flex-wrap items-center gap-2">
+      {/* TEK SATIR BASLIK — kullanici sarti 01.09.2026: kutu cok uzundu,
+          yatay bosluk kullanilacak, panelin ust yarisi gorunur kalacak. */}
+      <CardHeader className="gap-1 pb-2">
+        <CardTitle className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <Store className="size-4 shrink-0" />
           {t("baslik")}
-          {/* ⛔ KANAL ADI BAŞLIKTA — VE BU BİR SORUDAN SONRA EKLENDİ.
-              Kullanıcı sordu: "kanal kaydı yok kısmında iki farklı sayı var,
-              hangisi muteber?" Kutu 9 diyordu, uyarı merkezi 2. İKİSİ DE
-              DOĞRUYDU — ölçüldü: 2 = HİÇBİR kanalda kodu yok, 9 = bu kanalda
-              kaydı yok, ve 2 kümesi 9'un ALT KÜMESİ (kalan 7'sinin
-              Hepsiburada'da kodu var). Çelişki yoktu, KAPSAM yazılmamıştı.
-              _(Anayasa: iki rakam yan yana bırakılmaz; ikisi de kaynağıyla
-              yazılır ve hangisinin neyi ölçtüğü söylenir.)_ */}
           {veri.hesapAdi !== null ? (
             <span className="text-muted-foreground text-sm font-normal">
-              · {veri.hesapAdi}
+              {"\u00b7"} {veri.hesapAdi}
             </span>
           ) : null}
           <span className="text-muted-foreground text-sm font-normal tabular-nums">
@@ -114,59 +133,47 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
               tutar: bicim.para(veri.toplamTutar, "TRY"),
             })}
           </span>
+          {/* ⚠ DAMGA HER ZAMAN GÖRÜNÜR — ölçüm yoksa da. Ve `ml-auto` ile
+              SAĞ BOŞLUĞA yaslanıyor: kendi satırını yemiyor.
+              ⚠ HAM TAILWIND RENGİ YASAK — `panel:dogrula` yakaladı ve haklıydı;
+              renk `DURUM_YAZISI.uyari` belirtecinden geliyor.
+              ⚠ BAŞARISIZLIK ÖNCELİKLİ — bayatlık mesajı onu ÖRTMEZ: sorun
+              geçen zaman değil, koşumun DÜŞMESİ. */}
+          <span
+            className={
+              sorunVar
+                ? `ml-auto text-sm font-medium ${DURUM_YAZISI.uyari}`
+                : "text-muted-foreground ml-auto text-sm font-normal"
+            }
+          >
+            {veri.olcumAt === null
+              ? t("hicOlculmedi")
+              : t("sonKarsilastirma", { tarih: bicim.tarih(veri.olcumAt) })}
+            {veri.sonKosumBasarisiz
+              ? " \u00b7 " + t("kosumBasarisiz")
+              : bayat
+                ? " \u00b7 " + t("bayat", { saat: BAYAT_SAAT })
+                : ""}
+          </span>
         </CardTitle>
-        <p className="text-muted-foreground text-sm">{t("notu")}</p>
-        {/* ⚠ DAMGA HER ZAMAN GÖRÜNÜR — ölçüm yoksa da. */}
-        <p
-          className={
-            /**
-             * ⚠ HAM TAILWIND RENGİ YASAK — `panel:dogrula` yakaladı ve haklıydı.
-             * Renk `DURUM_YAZISI.uyari` belirtecinden geliyor; elle yazılan
-             * bir ton, karanlık temada ve ileride palet değişince ayrışırdı.
-             */
-            sorunVar
-              ? `text-sm font-medium ${DURUM_YAZISI.uyari}`
-              : "text-muted-foreground text-sm"
-          }
-        >
-          {veri.olcumAt === null
-            ? t("hicOlculmedi")
-            : t("sonKarsilastirma", { tarih: bicim.tarih(veri.olcumAt) })}
-          {/* ⚠ BAŞARISIZLIK ÖNCELİKLİ — bayatlık mesajı onu ÖRTMEZ. */}
-          {veri.sonKosumBasarisiz
-            ? " · " + t("kosumBasarisiz")
-            : bayat
-              ? " · " + t("bayat", { saat: BAYAT_SAAT })
-              : ""}
-        </p>
-        {/* ⛔ SEBEP EKRANDA YAZAR — "başarısız" tek başına ne yapılacağını
-            söylemez (İlke #5: sessiz başarısızlık yasak). */}
         {veri.sonKosumBasarisiz && veri.sonKosumMesaji !== null ? (
           <p className="text-muted-foreground text-xs">{veri.sonKosumMesaji}</p>
         ) : null}
       </CardHeader>
 
-      {/* ⛔ GENİŞLİK SINIRI — İLKE #12. Kutu panelde TAM GENİŞLİKTE duruyor;
-          satırlar sınırsız bırakılsaydı etiket solda, rakam ta sağda kalır
-          ve göz aradaki yüzlerce pikseli kat etmek zorunda kalırdı — anayasanın
-          adıyla yasakladığı kalıp. Sınır burada, ızgarada değil: kutu nereye
-          konursa konsun içi okunabilir kalsın. */}
-      {/* ⛔ GENİŞLİK SINIRI — İLKE #12. Kutu panelde TAM GENİŞLİKTE duruyor;
-          satırlar sınırsız bırakılsaydı etiket solda, rakam ta sağda kalır
-          ve göz aradaki yüzlerce pikseli kat etmek zorunda kalırdı — anayasanın
-          adıyla yasakladığı kalıp. Sınır burada, ızgarada değil: kutu nereye
-          konursa konsun içi okunabilir kalsın.
-
-          ⭐ VE KALIP "SATIR" DEĞİL "KOMPAKT KUTUCUK IZGARASI" — anayasanın
-          İlke #12'de adıyla önerdiği şekil. Üç rakam yan yana durunca
-          karşılaştırılabiliyor; alt alta uzun satırlar hâlinde durunca
-          durmuyordu. */}
-      <CardContent className="min-w-0 max-w-3xl space-y-3">
-        {/* ── SAYIYA GİREN ÜÇ KUTUCUK — HER ZAMAN ÜÇÜ DE ÇİZİLİR ──
-            ⛔ SIFIR OLANI DA. "Baktım, temiz" ile "bu satır artık yok"
-            ekranda AYNI görünüyordu ve kutu bir sabah kendiliğinden boşaldı.
-            _(Anayasa: boş sonuç ile temiz sonuç ayırt edilir.)_ */}
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      {/* ⛔ GENİŞLİK SINIRI KALDIRILDI — VE NİYE.
+          İlke #12'nin yasakladığı şey "tam genişlikte etiket solda / rakam ta
+          sağda SATIR"dır; ÖNERDİĞİ şekil ise KOMPAKT KUTUCUK IZGARASI.
+          Kutucuk ızgarası genişledikçe satır uzamaz, SÜTUN SAYISI artar — yani
+          geniş ekran burada göz yormuyor, DİKEY YER KAZANDIRIYOR. `max-w-3xl`
+          beş kutucuğu iki satıra kırıyor ve kutuyu boşuna uzatıyordu.
+          _(Kullanıcı şartı 01.09.2026: "en fazla yarısı kadar aşağıya uzasın,
+          yan taraftaki boşlukları kullan".)_ */}
+      <CardContent className="min-w-0 space-y-2 pt-0">
+        {/* ⛔ ÜÇÜ SAYIYA GİRER, İKİSİ GİRMEZ — ayrım KESİK ÇERÇEVE ve satır
+            içindeki "(toplama girmez)" ile YAZILI. Yan yana durmaları onları
+            aynı cinse çevirmez; ayrımı gizleyen tek şey YAZMAMAK olurdu. */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {veri.satirlar.map((s) => {
             const govde = (
               <>
@@ -174,10 +181,8 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
                   {etiket[s.satir]}
                 </span>
                 {s.adet === 0 ? (
-                  /* ⚠ SIFIR AÇIKÇA YAZAR — ve "temiz" olduğu da yazar ki
-                     okuyan bunu bir eksiklik sanmasın. */
                   <span className="text-muted-foreground text-sm tabular-nums">
-                    0 · {t("temiz")}
+                    0 {"\u00b7"} {t("temiz")}
                   </span>
                 ) : (
                   <span className="text-sm font-medium tabular-nums">
@@ -190,8 +195,8 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
               </>
             );
             /* ⛔ SIFIR SATIR BAĞLANTI DEĞİLDİR: açılacak liste yok, tıklamak
-               boş bir ekrana götürürdü. İlke #2 — tıklanabilir görünen her
-               şey tıklanabilir olmalı; tersi de geçerli. */
+               boş bir ekrana götürürdü. İlke #2 — tıklanabilir görünen her şey
+               tıklanabilir olmalı; TERSİ DE GEÇERLİ. */
             return s.adet === 0 ? (
               <div
                 key={s.satir}
@@ -209,65 +214,47 @@ export async function VitrinKutusu({ veri }: { veri: Veri }) {
               </Link>
             );
           })}
+
+          {/* ⛔ HİÇ KARŞILAŞTIRILMAMIŞLAR — 01.09.2026 arızasının GERÇEK
+              sebebi. Kanal kodu yeni girilen ürün gece koşumuna kadar burada
+              bekler; görünmezse ekleyen kişi için ürün EKRANDAN KAYBOLUR. */}
+          {veri.olculmemisAdet > 0 ? (
+            <Link
+              href={vitrinAdresi("OLCULMEMIS")}
+              className="hover:bg-muted/50 flex min-h-11 flex-col justify-center gap-0.5 rounded-lg border border-dashed px-3 py-2"
+            >
+              <span className="text-muted-foreground text-xs">
+                {t("olculmemis")} {t("toplamaGirmez")}
+              </span>
+              <span className="text-muted-foreground text-sm tabular-nums">
+                {t("satirOzeti", {
+                  adet: veri.olculmemisAdet,
+                  tutar: bicim.para(veri.olculmemisTutar, "TRY"),
+                })}
+              </span>
+            </Link>
+          ) : null}
+
+          {veri.kaydiYokAdet > 0 ? (
+            <Link
+              href={vitrinAdresi("KAYIT_YOK")}
+              className="hover:bg-muted/50 flex min-h-11 flex-col justify-center gap-0.5 rounded-lg border border-dashed px-3 py-2"
+            >
+              <span className="text-muted-foreground text-xs">
+                {t("kaydiYok")} {t("toplamaGirmez")}
+              </span>
+              <span className="text-muted-foreground text-sm tabular-nums">
+                {t("satirOzeti", {
+                  adet: veri.kaydiYokAdet,
+                  tutar: bicim.para(veri.kaydiYokTutar, "TRY"),
+                })}
+              </span>
+            </Link>
+          ) : null}
         </div>
 
-        {/* ⚠ ÜÇÜ DE SIFIRSA HÜKÜM YAZILIR — sessiz kalmak "ölçüm mü gitti,
-            sorun mu bitti" sorusunu cevapsız bırakırdı. */}
-        {hepsiSifir ? (
-          <p className="text-muted-foreground text-sm">{t("bos")}</p>
-        ) : null}
-
-        {/* ── SAYIYA GİRMEYEN İKİ KÜME — KESİK ÇERÇEVE ──
-            ⛔ İKİSİ DE TOPLAMA GİRMEZ ve bu EKRANDA YAZAR; okuyan çıkarmak
-            zorunda kalmasın, yoksa toplam ile satırlar çelişiyor sanılır. */}
-        {veri.olculmemisAdet > 0 || veri.kaydiYokAdet > 0 ? (
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {/* ⛔ HİÇ KARŞILAŞTIRILMAMIŞLAR — 01.09.2026 arızasının GERÇEK
-                sebebi. Kanal kodu yeni girilen ürün gece koşumuna kadar
-                burada bekler; görünmezse ekleyen kişi için ürün KAYBOLUR. */}
-            {veri.olculmemisAdet > 0 ? (
-              <Link
-                href={vitrinAdresi("OLCULMEMIS")}
-                className="hover:bg-muted/50 flex min-h-11 flex-col justify-center gap-0.5 rounded-lg border border-dashed px-3 py-2"
-              >
-                <span className="text-muted-foreground text-xs">
-                  {t("olculmemis")}
-                  <span className="ml-1">{t("toplamaGirmez")}</span>
-                </span>
-                <span className="text-muted-foreground text-sm tabular-nums">
-                  {t("satirOzeti", {
-                    adet: veri.olculmemisAdet,
-                    tutar: bicim.para(veri.olculmemisTutar, "TRY"),
-                  })}
-                </span>
-              </Link>
-            ) : null}
-
-            {veri.kaydiYokAdet > 0 ? (
-              <Link
-                href={vitrinAdresi("KAYIT_YOK")}
-                className="hover:bg-muted/50 flex min-h-11 flex-col justify-center gap-0.5 rounded-lg border border-dashed px-3 py-2"
-              >
-                <span className="text-muted-foreground text-xs">
-                  {t("kaydiYok")}
-                  <span className="ml-1">{t("toplamaGirmez")}</span>
-                </span>
-                <span className="text-muted-foreground text-sm tabular-nums">
-                  {t("satirOzeti", {
-                    adet: veri.kaydiYokAdet,
-                    tutar: bicim.para(veri.kaydiYokTutar, "TRY"),
-                  })}
-                </span>
-              </Link>
-            ) : null}
-          </div>
-        ) : null}
-
-        {/* ⚠ NİYE BEKLİYORLAR — İlke #5: bir şey olmadıysa NEDEN olmadığı
-            ekranda yazar. "Henüz karşılaştırılmadı" tek başına ne yapılacağını
-            söylemez. */}
-        {veri.olculmemisAdet > 0 ? (
-          <p className="text-muted-foreground text-xs">{t("olculmemisNotu")}</p>
+        {altNot !== "" ? (
+          <p className="text-muted-foreground text-xs">{altNot}</p>
         ) : null}
       </CardContent>
     </Card>

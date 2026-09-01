@@ -382,6 +382,42 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
   dogru("sıfır satır bağlantı DEĞİL", mapBlok.includes("<div"));
   dogru("kutu ölçülmemiş satırını çiziyor", kutu.includes("veri.olculmemisAdet"));
   dogru("ölçülmemiş adresi gövdeden", kutu.includes('vitrinAdresi("OLCULMEMIS")'));
+  /**
+   * ⛔ KUTU KOMPAKT KALMALI — VE BU BİR KULLANICI ŞARTI (01.09.2026):
+   * _"burası çok büyük, en fazla yarısı kadar aşağıya uzasın, yan taraftaki
+   * boşlukları kullan. İlk bakışta seçili dönem kartı dâhil sayfada görmek
+   * istiyorum."_ Kutu panelin EN ÜSTÜNDE duruyor; uzadığı her satır altındaki
+   * asıl iş kutularını ekranın dışına itiyor.
+   *
+   * ⚠ VE BU BİR ÖLÇÜT — TERCİH DEĞİL: aynı kutu iki kez yerleşim yüzünden
+   * kullanıcı tarafından geri bildirildi (önce ızgara taşması, sonra boy).
+   * Ölçülmezse üçüncü bir teslimde sessizce geri gelir.
+   */
+  dogru(
+    "beş kutucuk TEK ızgara satırında (lg:grid-cols-5)",
+    kutu.includes("lg:grid-cols-5"),
+  );
+  /**
+   * ⛔ `max-w-3xl` GERİ GELEMEZ: beş kutucuğu iki satıra kırar ve kutuyu
+   * boşuna uzatır. İlke #12'nin yasakladığı şey tam genişlikte "etiket
+   * solda / rakam ta sağda" SATIR'dır; kutucuk ızgarası onun ÖNERDİĞİ
+   * şekildir ve genişledikçe satır uzamaz, SÜTUN artar.
+   */
+  dogru("genişlik sınırı YOK (max-w-3xl)", !kutu.includes("max-w-3xl"));
+  /** ⛔ DAMGA KENDİ SATIRINI YEMEZ — başlık satırında sağa yaslanır. */
+  dogru("damga başlık satırında (ml-auto)", kutu.includes("ml-auto"));
+  /**
+   * ⛔ AÇIKLAMALAR TEK SATIRDA BİRLEŞİK — ayrı paragraflarken kutu iki satır
+   * daha uzuyordu. Metin kısaltılmadı, yan yana getirildi.
+   */
+  dogru("alt açıklamalar tek gövdede birleşiyor", kutu.includes("const altNot = ["));
+  /**
+   * ⛔ PARA TABANI EKRANDA YAZAR. Aynı stok iki DOĞRU rakamla yazılabilir
+   * (ödenen/KDV dahil ↔ mal bedeli/KDV hariç) ve aralarında %20'ye varan fark
+   * olur; hangisine bakıldığı yazılmazsa rakam doğru olsa bile KULLANILAMAZ.
+   * 26.08.2026'da bu yüzden bir Halil testi düştü.
+   */
+  dogru("para tabanı ekranda yazıyor", kutu.includes('t("tabanNotu")'));
 
   /**
    * ⛔ /stok AYNI KÜMEYE GİTMELİ — yoksa kutuda 19 yazarken liste boş çıkar

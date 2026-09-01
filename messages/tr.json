@@ -3845,6 +3845,7 @@
     "temiz": "temiz",
     "olculmemis": "Henüz karşılaştırılmadı",
     "olculmemisNotu": "Kanal kodu yeni girilmiş; gece koşumu bunlara henüz bakmadı.",
-    "adetSade": "{adet} ürün"
+    "adetSade": "{adet} ürün",
+    "tabanNotu": "Tutarlar ödenen tutardır (KDV dahil)."
   }
 }
