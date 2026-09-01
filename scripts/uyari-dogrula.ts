@@ -904,7 +904,18 @@ console.log("=".repeat(70));
   kontrol("damga SUNUCUDA kuruluyor", /damgaKur\(\{ net2: net2!/.test(eylem));
   kontrol("  ...ve şüpheli olmayan kayıt reddediliyor", /supheliMi\(\{ net2, maliyet, ciro \}\)/.test(eylem));
   kontrol("  ...yetki satis.duzenle", /yetkiIste\("satis\.duzenle"\)/.test(eylem));
-  kontrol("  ...eski iz SİLİNMİYOR (create, update değil)", /auditLog\.create/.test(eylem) && !/auditLog\.update/.test(eylem));
+  /**
+   * ⚠ ÇAPA K90'DA GÜNCELLENDİ: iz ortak gövdeden geçiyor (`izYaz`) ve
+   * çıplak `auditLog.create` `src/` içinde artık YASAK. Kod DOĞRUYDU —
+   * eskiyen çapaydı. Korunan değişmez aynı ve anayasadan geliyor:
+   * **eski iz SİLİNMEZ, üstüne YAZILMAZ; yenisi eklenir ve en yenisi
+   * geçerlidir** — bir istisnanın kaç kez geri geldiği kendi başına bilgidir.
+   */
+  kontrol(
+    "  ...eski iz SİLİNMİYOR (yalnız ekleniyor)",
+    /izYaz\(/.test(eylem) &&
+      !/auditLog\.(update|updateMany|delete|deleteMany)/.test(eylem),
+  );
 
   kontrol("düğme onay diyaloğu açıyor", /Dialog/.test(buton));
   kontrol("  ...geçicilik ekranda yazılı", /dogrulaGecicilik/.test(buton));

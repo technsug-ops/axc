@@ -298,10 +298,19 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   kontrol("raf (location) seçiliyor", /location:\s*\{\s*select/.test(yorumsuz));
   /** ⚠ TEYİT SUNUCUDAN GELMEZ — okutularak kurulur. */
   kontrol("kalemler teyitsiz doğar", /teyitli:\s*false/.test(yorumsuz));
-  /** ⚠ İKİNCİ YAZMA YOLU AÇILMADI: paketlendi izi tek yerde. */
+  /**
+   * ⚠ İKİNCİ YAZMA YOLU AÇILMADI: paketlendi izi tek yerde.
+   *
+   * ⛔ ÖLÇÜT K90'DA GENİŞLETİLDİ — VE BU BİR REFAKTÖRÜN KÖRLEŞTİRDİĞİ
+   * YASAKTI. İz ortak gövdeye taşınınca (`izYaz`) bu satır hâlâ YEŞİL
+   * yanıyordu ama artık hiçbir şeyi yasaklamıyordu: buraya `izYaz(`
+   * eklenseydi ikinci yazma yolu sessizce açılırdı.
+   * _(Anayasa: "iyi bir refaktör bekçiyi kör etmemeli" — düzeltirken
+   * sorulacak ek soru: bu değişiklik hangi bekçinin aradığı izi siliyor?)_
+   */
   kontrol(
     "paketlendi izi BURADA yazılmıyor (tek kapı korunuyor)",
-    !yorumsuz.includes("auditLog.create"),
+    !yorumsuz.includes("auditLog.create") && !yorumsuz.includes("izYaz("),
   );
   /**
    * ⚠ SEBEP ÖLÇÜLÜR, TAHMİN EDİLMEZ. "Hiç yok" ile "var ama listede değil"
