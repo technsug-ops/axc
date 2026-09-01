@@ -905,6 +905,32 @@ verirdi.
 DEĞERİ gün sonuna taşındı (`gunSonu`). Süzgeci gevşetmek (`lte`) ertesi
 günün ilk anını içeri alırdı — başka bir yanlış.
 
+⚠ **VE AYNI ÖLÇÜT "AÇIK BIRAKILMIŞ" AYARLAR İÇİN DE GEÇERLİ — MALİYET
+ÖLÇÜLÜR, FAYDA VARSAYILMAZ.** _(Vaka 01.09.2026, barkod okuyucu.)_ Bir ayar
+"daha iyi okusun diye" açılır ve bir daha sorgulanmaz; oysa **açık bırakmak
+da bir karardır** ve o da ölçülmemiştir.
+
+`tryHarder: true` kamerada açıktı. Ölçüldü: kod bulunmayan bir kareyi
+**668 ms → 146 ms**'den pahalı yapıyor (4,6×) ve tarama döngüsü 250 ms'de bir
+tetiklendiği için sistem barkoda **saniyede ~1,5 kez** bakabiliyordu.
+Sonra FAYDASI ölçüldü — gerçek barkod üretilip **20 senaryoda** denendi
+(net · bulanık · dönük · ters · küçük × iki biçim): **20'sinde de sonuç
+AYNI.** Ayar hiçbir okuma kazandırmıyordu, yalnız hepsini yavaşlatıyordu.
+
+⭐ **VE SEBEP KÜTÜPHANENİN BELGESİNDEYDİ:** `tryRotate` · `tryInvert` ·
+`tryDownscale` AYRI bayraklar ve varsayılanları zaten açık. Dönük ya da ters
+etiketi kurtaran `tryHarder` değildi — pahalı olanın işi sanılan şeyi
+aslında bedava olanlar yapıyordu.
+
+> **KONTROL SORUSU:** bu ayar NE kazandırıyor — ve bunu ölçen bir şey var mı?
+> Cevap yoksa ayar "güvenli taraf" değil, **ölçülmemiş maliyettir.**
+
+⚠ **AMA ÖLÇÜM SENTETİKSE YETENEK ATILMAZ, SEYREKLEŞTİRİLİR.** 20 senaryo
+gerçek kamera değil; ayar tamamen kaldırılsaydı ölçmediğim bir durumda
+sessizce yetenek kaybedilirdi. Doğru şekil: **hızlı kip esas, pahalı kip
+seyrek emniyet** (ard arda 8 başarısız karede bir).
+
+
 ⚠ **BEKÇİSİ İKİ YÖNLÜ:** `fifo-sinir:dogrula` hem sınırın VARLIĞINI hem
 DEĞERİNİ ölçer. Dört mutasyonun dördü de kırmızı yandı: sınırı kaldıran ·
 sınırı gün BAŞINA çeviren · `lt`yi `lte` yapan · beyansız istisna ekleyen.

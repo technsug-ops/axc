@@ -14,7 +14,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { DESTEKLENEN_FORMATLAR } from "@/lib/barkod-formatlari";
+import {
+  ZOR_TARAMA_ARALIGI,
+  tarayiciSecenekleri,
+  zorKareMi,
+} from "@/lib/barkod-formatlari";
 
 /**
  * ============================================================================
@@ -59,6 +63,13 @@ prepareZXingModule({
 async function kareyiCozumle(
   canvas: HTMLCanvasElement,
   video: HTMLVideoElement,
+  /**
+   * ⛔ ZOR KARE — ard arda okuyamayan taramada ARADA BİR koşar.
+   * Ölçüldü (01.09.2026): `tryHarder` kareyi 3–14× pahalılaştırıyor ve
+   * 20 senaryonun 20'sinde SONUCU DEĞİŞTİRMİYOR. Ama ölçüm sentetik;
+   * yeteneği tamamen atmak yerine seyrek bir emniyet olarak duruyor.
+   */
+  zor = false,
 ): Promise<string | null> {
   if (!video.videoWidth || !video.videoHeight) return null;
 
@@ -79,11 +90,7 @@ async function kareyiCozumle(
    * paket/adres demeti taşır. O değer arandığında hiçbir şey bulunmaz ve
    * kullanıcıya "okumadı" gibi görünür.
    */
-  const sonuclar = await readBarcodes(imageData, {
-    formats: [...DESTEKLENEN_FORMATLAR],
-    tryHarder: true,
-    maxNumberOfSymbols: 4,
-  });
+  const sonuclar = await readBarcodes(imageData, tarayiciSecenekleri(zor));
 
   const gecerliler = sonuclar.filter((s) => s.isValid && s.text);
   if (gecerliler.length === 0) return null;
@@ -224,6 +231,12 @@ function KameraDiyalogu({
 
     let stream: MediaStream | null = null;
     let zamanlayici: ReturnType<typeof setInterval> | null = null;
+    /**
+     * ⛔ ARD ARDA OKUNAMAYAN KARE SAYACI — zor taramanın tetiği.
+     * Okuma başarılı olunca sıfırlanır; yoksa sayaç birikip her 8. karede
+     * pahalı taramayı sonsuza kadar koşardı.
+     */
+    let ardArdaBasarisiz = 0;
     let iptal = false;
     let okumaSuruyor = false;
 
@@ -347,8 +360,18 @@ function KameraDiyalogu({
 
         okumaSuruyor = true;
         try {
-          const kod = await kareyiCozumle(canvas, video);
+          /**
+           * ⛔ HIZLI KARE ESAS, ZOR KARE EMNİYET. Ölçüldü (01.09.2026, koyu
+           * dokulu zemin, 1920×1080): kod bulunmayan kare `tryHarder` ile
+           * 668 ms, onsuz 146 ms. Döngü 250 ms'de bir tetikleniyor ama
+           * önceki kare bitmeden yenisi başlamıyor — yani sistem barkoda
+           * saniyede ~1,5 kez bakıyordu ve telefonda çok daha az.
+           */
+          const zor = zorKareMi(ardArdaBasarisiz);
+          const kod = await kareyiCozumle(canvas, video, zor);
           if (iptal) return;
+          /** ⚠ SAYAÇ OKUMADA SIFIRLANIR — yoksa zor tarama sürekli koşar. */
+          ardArdaBasarisiz = kod ? 0 : ardArdaBasarisiz + 1;
           if (kod) {
             onOkundu(kod);
             /**

@@ -3,6 +3,9 @@ import { RETAIL_BARCODE_FORMATS } from "zxing-wasm/reader";
 
 import {
   DESTEKLENEN_FORMATLAR,
+  ZOR_TARAMA_ARALIGI,
+  tarayiciSecenekleri,
+  zorKareMi,
   URUN_DISI_PERAKENDE,
   URUN_FORMATLARI,
   perakendeBoslugu,
@@ -364,8 +367,20 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
    * deseni ayakta tutuyordu. Aynı desen birden çok yerde geçiyorsa
    * kullanım bloğuna inilir — kaçıncı kez.
    */
-  const cozumBasi = okuyucu.indexOf("kareyiCozumle(canvas, video)");
-  const cozumBloku = cozumBasi < 0 ? "" : okuyucu.slice(cozumBasi, cozumBasi + 700);
+  /**
+   * ⚠ ÇAPA ÇAĞRIYA BAĞLI, TAM İMZAYA DEĞİL — VE BU BİR KIRMIZIDAN SONRA
+   * DÜZELTİLDİ (01.09.2026). Çapa `kareyiCozumle(canvas, video)` idi;
+   * fonksiyona üçüncü bir argüman (zor kare) eklenince çapa TUTMADI ve beşçi
+   * kırmızı yandı. Kod DOĞRUYDU — eskiyen ÖLÇÜTTÜ.
+   * _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez"; yapılmayacak
+   * şey ölçütü SUSTURMAK, yapılacak şey güncelleyip NİYE eskidiğini yazmak.)_
+   *
+   * ⚠ PENCERE ÖLÇÜLDÜ: çağrıdan `setHata`ya mesafe **1640 karakter**
+   * (önce 700'dü ve yeni yorumlar eklenince dar kalırdı). Payıyla 2600.
+   * _(Anayasa: dar pencere gövde büyüyünce sessizce kör kalır.)_
+   */
+  const cozumBasi = okuyucu.indexOf("kareyiCozumle(canvas, video");
+  const cozumBloku = cozumBasi < 0 ? "" : okuyucu.slice(cozumBasi, cozumBasi + 2600);
   kontrol("tarama döngüsü bulundu", cozumBasi >= 0);
   kontrol(
     "  ...ve hatayı SESSİZCE yutmuyor",
@@ -457,6 +472,101 @@ console.log("\n11) PERAKENDE BİÇİM KAPSAMI — K111");
     "her muafiyet GEREKÇELİ",
     gerekcesiz.length === 0,
     gerekcesiz.join(", "),
+  );
+}
+
+// --- 12) TARAMA MALİYETİ — HIZLI KARE / ZOR KARE (K123) -----------------
+console.log("\n12) tarama maliyeti — hızlı kare esas, zor kare emniyet");
+{
+  /**
+   * ⛔ NİYE DOĞDU: kullanıcı bir Trendyol kargo etiketi gösterip _"bu
+   * barkodları okumakta hâlâ zorluk çekiyor"_ dedi (01.09.2026). İlk şüpheli
+   * BİÇİM LİSTESİYDİ — iki kez oradan yandık (25.08 `ITF`, 31.08 `UPCA`) —
+   * ama bu sefer liste suçsuz çıktı: kod 16 haneli, `Code128`/`ITF` listede,
+   * ve defterde TAM EŞLEŞMESİ VAR (509 satışın kargo kodu 16 haneli).
+   *
+   * 📏 ÖLÇÜLDÜ — SORUN BİÇİM DEĞİL HIZ: kod bulunmayan kare (1920×1080, koyu
+   * dokulu zemin — kullanıcının fotoğrafındaki gibi) `tryHarder` ile 668 ms,
+   * onsuz 146 ms. Döngü 250 ms'de bir tetikleniyor ama önceki kare bitmeden
+   * yenisi başlamıyor — yani sistem barkoda saniyede ~1,5 kez bakıyordu ve
+   * telefon CPU'sunda çok daha az.
+   *
+   * 📏 VE YÖN ÖLÇÜLDÜ (kısıt çevrilmeden önce): gerçek barkod üretilip 20
+   * senaryoda denendi — net · bulanık · ağır bulanık · DÖNÜK · dönük+bulanık
+   * · TERS · 2 px/modül · 1,2 px/modül, Code128 ve ITF. **20'sinde de sonuç
+   * AYNI** (okudu/okumadı), süre farkı 3×–14×. Sebep: `tryRotate` ·
+   * `tryInvert` · `tryDownscale` zxing'de AYRI bayraklar ve zaten açık;
+   * dönük/ters/küçük kareyi kurtaran `tryHarder` değil.
+   */
+  const hizli = tarayiciSecenekleri(false);
+  const zorS = tarayiciSecenekleri(true);
+  kontrol("hızlı karede tryHarder KAPALI", hizli.tryHarder === false);
+  kontrol("zor karede tryHarder AÇIK", zorS.tryHarder === true);
+
+  /**
+   * ⛔ ASIL KORUNAN YETENEK BU ÜÇÜ. Biri sessizce kapanırsa dönük ya da ters
+   * etiket okunmaz olur ve bunu kimse fark etmez — kütüphanenin varsayılanı
+   * bizim güvencemiz değildir.
+   */
+  for (const [ad, o] of [
+    ["hızlı", hizli],
+    ["zor", zorS],
+  ] as const) {
+    kontrol(`${ad} karede tryRotate AÇIK`, o.tryRotate === true);
+    kontrol(`${ad} karede tryInvert AÇIK`, o.tryInvert === true);
+    kontrol(`${ad} karede tryDownscale AÇIK`, o.tryDownscale === true);
+    /** ⛔ BİÇİM LİSTESİ DARALTILAMAZ — kapsam kaybı olurdu (25.08/31.08 dersi). */
+    kontrol(
+      `${ad} karede biçim listesi TAM (${DESTEKLENEN_FORMATLAR.length})`,
+      o.formats.length === DESTEKLENEN_FORMATLAR.length,
+    );
+    /** ⚠ Ölçüldü: 4 ↔ 1 arasında süre farkı yok (668 ↔ 610 ms). */
+    kontrol(`${ad} karede maxNumberOfSymbols 4`, o.maxNumberOfSymbols === 4);
+  }
+
+  /**
+   * ⛔ İLK KARE ZOR OLMAZ: kamera açılır açılmaz en pahalı taramayı koşmak
+   * tam kullanıcının nişan aldığı anı yavaşlatırdı.
+   * ⛔ VE EMNİYET DÜŞMEZ: ölçüm sentetikti, bu yüzden yetenek atılmadı —
+   * her N başarısız karede bir zor tarama koşar.
+   */
+  kontrol("ilk kare zor DEĞİL", zorKareMi(0) === false);
+  kontrol("aralık dolmadan zor DEĞİL", zorKareMi(ZOR_TARAMA_ARALIGI - 1) === false);
+  kontrol("aralık dolunca ZOR", zorKareMi(ZOR_TARAMA_ARALIGI) === true);
+  kontrol("ikinci aralıkta yine ZOR", zorKareMi(ZOR_TARAMA_ARALIGI * 2) === true);
+  /** ⚠ 1 olsaydı her kare zor (hiçbir şey kazanılmaz), çok büyükse emniyet ölü. */
+  kontrol(
+    "aralık 2–32 arasında",
+    ZOR_TARAMA_ARALIGI >= 2 && ZOR_TARAMA_ARALIGI <= 32,
+  );
+
+  /**
+   * ⛔ ZİNCİR — GÖVDELER KUSURSUZ ÇALIŞIP KİMSE ÇAĞIRMAZSA HİÇBİR ŞEY
+   * DEĞİŞMEZ. K121'de tur 98/98 yeşilken kutu ekranda yoktu; ders bu.
+   */
+  const okuyucuKaynagi = readFileSync("src/components/barkod-okuyucu.tsx", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  kontrol(
+    "okuyucu seçenekleri GÖVDEDEN alıyor",
+    okuyucuKaynagi.includes("tarayiciSecenekleri(zor)"),
+  );
+  kontrol(
+    "okuyucu zor kareyi GÖVDEYE soruyor",
+    okuyucuKaynagi.includes("zorKareMi(ardArdaBasarisiz)"),
+  );
+  /**
+   * ⛔ SAYAÇ OKUMADA SIFIRLANMALI: sıfırlanmazsa sayaç birikir ve pahalı
+   * tarama sonsuza kadar her N. karede koşmaya devam eder.
+   */
+  kontrol(
+    "sayaç okumada SIFIRLANIYOR",
+    /ardArdaBasarisiz = kod \? 0 : ardArdaBasarisiz \+ 1/.test(okuyucuKaynagi),
+  );
+  /** ⛔ ÇÖZÜCÜYE SABİT DEĞER GEÇİLEMEZ — zor kare ya hiç koşmaz ya hep koşar. */
+  kontrol(
+    "çözücüye sayaçtan gelen değer geçiyor",
+    /kareyiCozumle\(canvas, video, zor\)/.test(okuyucuKaynagi),
   );
 }
 
