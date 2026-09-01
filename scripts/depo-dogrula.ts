@@ -16,6 +16,7 @@ import QRCode from "qrcode";
 
 import { code128B, code128Genisligi, code128Yol } from "../src/lib/depo/code128";
 import { rafEtiketiSvg } from "../src/lib/depo/etiket";
+import { rafKoduGecerliMi } from "../src/lib/kimlik";
 import { IZ_SKU_TAVANI, izListesi, tasimaKarari } from "../src/lib/depo/tasima";
 import { yerlestirmeKarari } from "../src/lib/depo/yerlestirme";
 import {
@@ -1133,6 +1134,62 @@ async function etiketKontrolleri() {
     "yerleştirme ekranından bağlantı var",
     /href="\/yerlestir\/tasi"/.test(readFileSync("src/app/yerlestir/page.tsx", "utf8")),
   );
+  // =========================================================================
+  console.log("\nİKİ RAF DESENİ BİRBİRİNİ TANIYOR MU (K50-⑨)");
+  // =========================================================================
+  {
+    /**
+     * ⛔ NİYE DOĞDU: kullanıcı _"depo düzeninin çalışma prensiplerini
+     * bilmediğimiz için çizmedik, kılavuz gerekiyor"_ dedi (01.09.2026).
+     * Kılavuz yazılmadan ÖNCE ölçüldü ve kılavuzun okuyucuyu duvara
+     * götüreceği anlaşıldı:
+     *
+     *     kodSablonaUyuyorMu("RAF-SLN1-2")  true    ← /ayarlar/depo ÜRETİYOR
+     *     rafKoduGecerliMi("RAF-SLN1-2")    FALSE ⛔ ← /ayarlar/konumlar REDDEDİYOR
+     *
+     * Yani depo düzeni çizilir çizilmez `/ayarlar/konumlar` üretilen her rafı
+     * "biçimsiz" diye işaretleyecek ve düzenleme formu kaydetmeyi
+     * reddedecekti — sadece ADINI değiştirmek isteyen biri duvara çarpardı.
+     * _(Anayasa: "kural doğru mu değil, kural TESLİM EDİLEBİLİR Mİ" — ve
+     * "düzeltme yolu, tüm okuyuculara ulaştığı ölçülmeden var sayılmaz";
+     * buradaki okuyucu başka bir EKRANDI.)_
+     */
+    const uretilenK50 = kodlariUret({
+      ad: "Salon",
+      kisaltma: "SLN",
+      uniteSayisi: 2,
+      gozSayisi: 3,
+    });
+    kontrol(
+      "şablon üretilen kodların HEPSİ şablona uyuyor",
+      uretilenK50.every((k) => kodSablonaUyuyorMu(k)),
+      uretilenK50.join(" "),
+    );
+    /** ⛔ ASIL ÖLÇÜT: raf ekranı üretilen kodu KABUL ETMELİ. */
+    kontrol(
+      "raf ekranı ŞABLON kodlarını kabul ediyor",
+      uretilenK50.every((k) => rafKoduGecerliMi(k)),
+    );
+    /**
+     * ⚠ ESKİ DESEN KALDIRILMADI — canlıdaki 43 rafın hepsi ona uyuyor ve göç
+     * onaylanana kadar yaşayacak. Kaldırılsaydı bugünkü depo bir gecede
+     * "bozuk" görünürdü.
+     */
+    for (const eski of ["A5", "DEPO", "R9-2", "YTK-1", "A5-3", "B3"]) {
+      kontrol(`  eski kod hâlâ geçerli: ${eski}`, rafKoduGecerliMi(eski));
+    }
+    /**
+     * ⛔ VE KAPI GEVŞEMEDİ — YANLIŞ YANMA YÖNÜ AYRI SINANIYOR. Desenin işi
+     * standardı değiştirmek değil, SERBEST METNİ engellemek.
+     */
+    for (const cop of ["kapi yani", "RAF-", "raf-sln1-2", "", "RAF-SLN1"]) {
+      kontrol(
+        `  serbest metin hâlâ reddediliyor: ${JSON.stringify(cop)}`,
+        !rafKoduGecerliMi(cop),
+      );
+    }
+  }
+
   console.log("");
   console.log("=".repeat(70));
   if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

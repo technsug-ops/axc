@@ -1,3 +1,4 @@
+import { kodSablonaUyuyorMu } from "@/lib/depo/sablon";
 import { isTakvimGunu } from "@/lib/donem";
 
 /**
@@ -330,8 +331,30 @@ export function alimNoUret(parcalar: {
  */
 export const RAF_DESENI = /^[A-Z]{1,4}\d{0,3}(-\d{1,2})?$/;
 
+/**
+ * ⛔ İKİ BİÇİM DE GEÇERLİ — VE BU BOŞLUK ÖLÇÜLEREK BULUNDU (01.09.2026).
+ *
+ * `RAF_DESENI` deponun ELDE kurulmuş eski kodlarını tanıyor (`A5` · `DEPO` ·
+ * `R9-2`). Raf motoru (K50) ise şablondan üretiyor: `RAF-SLN1-2`. İki desen
+ * birbirini TANIMIYORDU ve sonuç ölçüldü:
+ *
+ *     kodSablonaUyuyorMu("RAF-SLN1-2")  true
+ *     rafKoduGecerliMi("RAF-SLN1-2")    false   ⛔
+ *
+ * Yani `/ayarlar/depo` bir raf üretir üretmez `/ayarlar/konumlar` onu
+ * **"biçimsiz"** diye işaretliyor ve düzenleme formu kaydetmeyi REDDEDIYORDU
+ * — sadece adını değiştirmek isteyen biri duvara çarpardı. Depo düzeni
+ * çizilmeden bulundu; çizilseydi 43 rafın hepsi bir gecede "bozuk" görünürdü.
+ *
+ * ⚠ ESKİ DESEN KALDIRILMADI: 43 mevcut rafın hepsi ona uyuyor ve göç
+ * onaylanana kadar yaşamaya devam edecek. İkisi BİRLİKTE geçerli; serbest
+ * metin ("kapi yani") ikisine de uymuyor ve hâlâ reddediliyor.
+ * _(Anayasa: "düzeltme yolu, tüm okuyuculara ulaştığı ölçülmeden var
+ * sayılmaz" — burada okuyucu başka bir EKRANDI.)_
+ */
 export function rafKoduGecerliMi(kod: string): boolean {
-  return RAF_DESENI.test(kod.trim());
+  const temiz = kod.trim();
+  return RAF_DESENI.test(temiz) || kodSablonaUyuyorMu(temiz);
 }
 
 /**

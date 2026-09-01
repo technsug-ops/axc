@@ -93,6 +93,18 @@ console.log("\n2) panelde çıplak `purchasedAt` yasağı");
    * KULLANMAK ZORUNDA (borç sipariş gününde doğar). Beyanı dosyanın
    * kendisinde arıyoruz — beyansız kullanım hata sayılır.
    */
+  /**
+   * ⚠ BEYAN TEK CÜMLEYE KİLİTLİYDİ — VE BU BİR "ELLE TUTULAN LİSTE"YDİ.
+   * Ölçüt yalnız `KART BORCU SIPARIS GUNUNDE DOGAR` cümlesini tanıyordu,
+   * yani `purchasedAt`i meşru olarak kullanan İKİNCİ bir gövde doğduğunda
+   * (K126 sipariş serisi) tek çare ya cümleyi kopyalamak ya listeyi
+   * büyütmekti. İkisi de aynı antipattern.
+   *
+   * ⭐ ŞİMDİ İŞARET SABİT, GEREKÇE SERBEST: `PURCHASEDAT ISTISNASI: <sebep>`.
+   * Yeni bir meşru kullanım kendi gerekçesini yazar; gerekçesiz işaret
+   * KIRMIZI yanar — muafiyet bedava olmaz.
+   */
+  const ISARET = "PURCHASEDAT ISTISNASI:";
   const BEYAN = "KART BORCU SIPARIS GUNUNDE DOGAR";
   const kacaklar: string[] = [];
   const kok = "src/lib/panel";
@@ -104,6 +116,9 @@ console.log("\n2) panelde çıplak `purchasedAt` yasağı");
     if (!/purchasedAt/.test(kod)) continue;
     /** Beyan YORUMDA da olabilir — bilinçli bir karardır, koda gömülmez. */
     if (ham.includes(BEYAN)) continue;
+    /** ⛔ GEREKÇESİZ İŞARET SAYILMAZ: aynı satırda bir sebep yazmalı. */
+    const isaretli = new RegExp(ISARET + "\\s*\\S+").test(ham);
+    if (isaretli) continue;
     kacaklar.push(ad);
   }
   kontrol(
@@ -118,6 +133,26 @@ console.log("\n2) panelde çıplak `purchasedAt` yasağı");
     "kart takvimi istisnası BEYAN EDİLMİŞ",
     takvim.includes(BEYAN),
     "beyan yok — `purchasedAt` kullanımı gerekçesiz kalır",
+  );
+  /**
+   * ⛔ İKİNCİ MEŞRU KULLANIM DA BEYANLI (K126): sipariş serisi `purchasedAt`
+   * KULLANMAK ZORUNDA — kullanıcının saydığı dört kalemin birincisi
+   * "benim tarafımdan satın alınan ürünler", yani SİPARİŞ VERME günü.
+   */
+  const gorev = readFileSync("src/lib/panel/gorev-verisi.ts", "utf8");
+  kontrol(
+    "sipariş serisi istisnası BEYAN EDİLMİŞ",
+    new RegExp(ISARET + "\\s*\\S+").test(gorev),
+    "beyan yok — sipariş serisinin `purchasedAt` kullanımı gerekçesiz",
+  );
+  /**
+   * ⛔ VE MAL KABUL SAYIMI DEĞİŞMEDİ: aynı dosyada iki eksen var artık,
+   * `gunluk` hâlâ `receivedAt` okumak zorunda. Sessizce sipariş eksenine
+   * kaymış olsaydı panel "bugün ne geldi" sorusuna yanlış cevap verirdi.
+   */
+  kontrol(
+    "mal kabul günlüğü hâlâ `receivedAt` okuyor",
+    /tarih:\s*a\.receivedAt!/.test(gorev),
   );
 }
 kosanBolumler.push("desen yasağı");
@@ -136,8 +171,37 @@ console.log("\n3) toplam ile seri AYNI kayıtlardan");
    * ⚠ İKİ SORGU OLSAYDI TOPLAM İLE GRAFİK AYRI SÜZGEÇLE AYRIŞABİLİRDİ.
    * Ölçüt sayım: gövdede TAM BİR `purchase.findMany` olmalı.
    */
+  /**
+   * ⚠ ÖLÇÜT 01.09.2026'DA GÜNCELLENDİ (K126) — VE GEVŞETİLMEDİ, AYRIŞTIRILDI.
+   * Eskiden gövdede TEK sorgu aranıyordu; koruduğu şey şuydu: **toplam ile
+   * grafik AYNI kayıtlardan gelsin.** K126 ikinci bir eksen ekledi (sipariş,
+   * `purchasedAt`) ve o eksen mal kabul kümesinden TÜRETİLEMEZ — mal kabulü
+   * yapılmamış 31 alımın `receivedAt`i hiç yok.
+   *
+   * ⛔ KORUNAN DEĞİŞMEZ AYNI KALDI: mal kabul tarafı hâlâ TEK sorgu, ve hem
+   * toplam hem günlük seri O sorgunun sonucundan (`alimlar`) türüyor.
+   * İkinci sorgu ayrı bir soruya cevap veriyor ve kendi alanına yazıyor.
+   */
   const sorguSayisi = (kod.match(/prisma\.purchase\.findMany/g) ?? []).length;
-  kontrol("gövdede TEK purchase sorgusu var", sorguSayisi === 1, sorguSayisi);
+  kontrol("gövdede iki eksen = iki sorgu", sorguSayisi === 2, sorguSayisi);
+  kontrol(
+    "  ...mal kabul sorgusu TEK ve `kabulKosulu` ile",
+    (kod.match(/where: kabulKosulu\(pencere\)/g) ?? []).length === 1,
+  );
+  kontrol(
+    "  ...sipariş sorgusu TEK ve `purchasedAt` aralığıyla",
+    (kod.match(/purchasedAt: \{ gte: pencere\.baslangic/g) ?? []).length === 1,
+  );
+  /** ⛔ TOPLAM VE GÜNLÜK HÂLÂ AYNI KAYITLARDAN — ayrışırlarsa sayı ≠ grafik. */
+  kontrol(
+    "  ...toplam ve günlük AYNI `alimlar` dizisinden",
+    /suzgecToplami\(\s*alimlar/.test(kod) && /gunluk: alimlar/.test(kod),
+  );
+  /** ⛔ SİPARİŞ SERİSİ MAL KABUL DİZİSİNDEN TÜRETİLMİYOR (türetilemez). */
+  kontrol(
+    "  ...sipariş günlüğü kendi sorgusundan",
+    /siparisGunluk: siparisler\.map/.test(kod),
+  );
   kontrol("  ...ve süzgeç `kabulKosulu` gövdesinden", /where:\s*kabulKosulu\(/.test(kod));
   kontrol("  ...grafik günü `receivedAt` taşıyor", /tarih:\s*a\.receivedAt/.test(kod));
   kontrol("  ...`purchasedAt`e düşmüyor", !/tarih:\s*a\.purchasedAt/.test(kod));

@@ -2024,8 +2024,8 @@
     "operasyonAlim": "Mal kabul",
     "operasyonSatis": "Satış",
     "operasyonKargo": "Kargoya verilen",
-    "operasyonToplamAdet": "Dönem toplamı — alım {alim} · satış {satis} · kargo {kargo} · toplam {islem} işlem",
-    "operasyonToplamCiro": "Dönem toplamı — alım {alim} · satış {satis} · FARK {fark}",
+    "operasyonToplamAdet": "Dönem toplamı — satın alınan {siparis} · mal kabul {alim} · satış {satis} · kargo {kargo} · toplam {islem} işlem",
+    "operasyonToplamCiro": "Dönem toplamı — satın alınan {siparis} · mal kabul {alim} · satış {satis} · FARK {fark}",
     "operasyonFark": "Fark (satış − alım)",
     "operasyonTabloAc": "Tabloyu aç — {sayi} dönem, rakamların tamamı",
     "operasyon_kdv": "KDV",
@@ -2061,7 +2061,11 @@
     "toplam": "Toplam",
     "kanalTumu": "Tümünü gör · {sayi} kanal daha",
     "kanalTumuBaslik": "Pazaryeri performansı — tüm kanallar",
-    "kanalTumuGeri": "← Panel"
+    "kanalTumuGeri": "← Panel",
+    "operasyonSiparis": "Satın alınan",
+    "siparisAdedi": "Satın alınan",
+    "siparisToplamAlim": "{tutar} sipariş tutarı",
+    "siparisKabulBekliyor": "{sayi} tanesi henüz gelmedi"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

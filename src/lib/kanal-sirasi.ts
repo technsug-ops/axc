@@ -147,6 +147,50 @@ export function panelKanallari<T>(
 }
 
 /**
+ * PANELDE HANGİ ÜÇ KANAL — KİPE GÖRE (K126-B, 01.09.2026).
+ *
+ * ⛔ KULLANICI ŞARTI: _"Sabit olan sekmede 1) Trendyol 2) Hepsiburada
+ * 3) N11."_ Yani sabit düzende yuvalar SATIŞA GÖRE DOLMAZ; o üç kanal
+ * satış olmasa da yerinde durur ve `0` yazar.
+ *
+ * ⚠ VE BU BİR ARIZADAN SONRA YAZILDI: tavan konulunca (K124) panelde yalnız
+ * SATIŞI OLAN kanallar kalıyordu. Canlıda o sayı tam 3'tü ama üçü de
+ * Trendyol'un altındaki kuyruk değil — HB ve N11 o dönemde satışsız olduğu
+ * için "açık sıfır" kartlarına düşmüştü ve tavanla birlikte EKRANDAN
+ * KAYBOLDULAR. Kullanıcı ekran görüntüsünde boş iki kutu çizip sordu.
+ *
+ * ⛔ AYRI BİR LİSTE YAZILMADI: sabit üçlü `KANAL_SIRASI`nın ilk üçüdür.
+ * İkinci bir liste açılsaydı kullanıcı sırayı değiştirdiğinde ikisi
+ * sessizce ayrışırdı. _(Anayasa: "bekçi ölçütü elle tutulan liste değil".)_
+ */
+export function panelYuvalari(
+  kip: KanalSiraKipi,
+  /** Cirosu olan kanal kodları — ZATEN sıralanmış gelir. */
+  siraliKodlar: readonly string[],
+  tavan: number = PANEL_KANAL_TAVANI,
+): string[] {
+  const n = Math.max(0, tavan);
+  /**
+   * ⚠ KESME `panelKanallari` GÖVDESİNDEN — burada ikinci bir `slice`
+   * yazılsaydı tavan mantığı iki yerde yaşar ve biri değiştiğinde öteki
+   * sessizce eski kalırdı.
+   */
+  if (kip === "ciro") return panelKanallari(siraliKodlar, n);
+  /**
+   * ⚠ SABİT DÜZENDE KUYRUK DA DOLDURUR: sabit listede olmayan bir kanal
+   * tek başına satış yapıyorsa (ör. yalnız Amazon) ekran boş üç kutu
+   * göstermez; sabit üçlü bittikten sonra sıralı kuyruktan devam eder.
+   * Bugün gerekmiyor ama gerektiği gün sessizce boş kalmaz.
+   */
+  const yuvalar: string[] = panelKanallari(KANAL_SIRASI, n);
+  for (const kod of siraliKodlar) {
+    if (yuvalar.length >= n) break;
+    if (!yuvalar.includes(kod)) yuvalar.push(kod);
+  }
+  return yuvalar;
+}
+
+/**
  * Panelde GÖSTERİLMEYEN kanal sayısı — "tümü" bağlantısının rakamı.
  *
  * ⛔ RAKAM YAZILIR, "devamı" DEMEZ: kaç kanalın gizlendiğini bilmeyen biri

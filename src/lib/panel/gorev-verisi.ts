@@ -79,6 +79,20 @@ export async function donemAlimi(pencere: {
   adet: number;
   toplam: ParaToplami[];
   gunluk: { tarih: Date; tutar: number; kdv: number }[];
+  /**
+   * SİPARİŞ GÜNLÜĞÜ — `purchasedAt` ekseninde (K126, 01.09.2026).
+   *
+   * PURCHASEDAT ISTISNASI: kullanıcı günlük operasyonu DÖRT başlıkta saydı
+   * ve birincisi "benim tarafımdan satın alınan ürünler" — yani SİPARİŞ
+   * VERME günü. Mal kabul ekseni o soruyu cevaplayamaz: K114'te ölçüldü,
+   * iki eksen ortanca 3 gün arayla düşüyor ve yalnız %1,4 örtüşüyor.
+   * Ayrıca mal kabulü yapılmamış 31 alımın `receivedAt`i HİÇ YOK; bu seri
+   * onların tek görünürlük yolu.
+   *
+   * ⛔ MAL KABUL SAYIMINI DEĞİŞTİRMEZ: `gunluk` yerinde duruyor ve hâlâ
+   * `receivedAt` ekseninde. İki seri AYRI, biri ötekinin yerine geçmez.
+   */
+  siparisGunluk: { tarih: Date; tutar: number }[];
 }> {
   /**
    * ⚠ YARI AÇIK ARALIK — `[baslangic, bitisHaric)`. `lte: sonGun`
@@ -131,9 +145,38 @@ export async function donemAlimi(pencere: {
    * ⚠ İPTALLİ ALIM SERİYE GİRMEZ — toplamda da girmiyor. Grafik ile kutu
    * aynı kümeyi göstermeli, yoksa "grafikte 5 var, kutuda 4" olur.
    */
+  /**
+   * ⚠ AYRI SORGU ZORUNLU — TÜRETİLEMEZ. Pencereye `receivedAt` ile giren
+   * küme ile `purchasedAt` ile giren küme AYNI DEĞİL (K114: son 30 günde
+   * 152 ↔ 168). Mevcut listeden süzmek, o pencerede sipariş edilip henüz
+   * gelmemiş alımları sessizce düşürürdü.
+   *
+   * ⚠ SEÇİM DAR: yalnız kova için gereken alanlar. Kalem detayı çekilmiyor
+   * çünkü sipariş serisinde KDV yok (vergi mal kabulde doğar).
+   */
+  const siparisler = await prisma.purchase.findMany({
+    where: {
+      purchasedAt: { gte: pencere.baslangic, lt: pencere.bitisHaric },
+      /** ⚠ İPTALLİ SİPARİŞ SERİYE GİRMEZ — mal kabul serisiyle aynı kural. */
+      status: { not: "CANCELLED" },
+    },
+    select: {
+      purchasedAt: true,
+      items: {
+        select: { quantity: true, unitCostAmount: true, unitCostCurrency: true },
+      },
+    },
+  });
+
   return {
     adet: alimlar.length,
     toplam: sonuc.toplam,
+    siparisGunluk: siparisler.map((sp) => ({
+      tarih: sp.purchasedAt,
+      tutar:
+        kalemToplamlari(sp.items).find((x) => x.paraBirimi === "TRY")?.tutar ??
+        0,
+    })),
     gunluk: alimlar
       .filter((a) => a.status !== "CANCELLED")
       .map((a) => ({

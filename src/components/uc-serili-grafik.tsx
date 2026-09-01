@@ -57,8 +57,17 @@ export type UcSeriNoktasi = {
    * Kararı ÇAĞIRAN verir (bkz. `serileriKur`), grafik bilmez.
    */
   toplam?: number;
+  /**
+   * DÖRDÜNCÜ SERİ — İSTEĞE BAĞLI (K126, 01.09.2026).
+   *
+   * ⛔ ZORUNLU YAPILMADI: bileşen üç seriyle çağrılan yerlerde çalışmaya
+   * devam etmeli. `undefined` gelirse dördüncü çizgi hiç çizilmez —
+   * "yarım çizilen seri, olmayan seriden kötüdür" kuralı toplam serisinde
+   * zaten böyle kurulmuştu, aynısı burada.
+   */
+  d?: number;
   /** Bu noktanın süzülmüş adresleri; yoksa nokta tıklanamaz. */
-  adres?: { a: string; b: string; c: string };
+  adres?: { a: string; b: string; c: string; d?: string };
 };
 
 const G = {
@@ -87,6 +96,15 @@ const ARALIK = 4;
  * karşılanmazdı. Değerler hem açık hem koyu temada okunacak tonlarda.
  */
 const RENK = {
+  /**
+   * ⭐ DÖRDÜNCÜ RENK MOR (`d`) — üç renkten de yeterince uzak ve hem açık
+   * hem koyu temada okunur. Sipariş serisi (K126) buradan çiziliyor.
+   *
+   * ⚠ MAL KABULE YAKIN BİR YEŞİL TONU SEÇİLMEDİ: iki seri akraba işler
+   * (sipariş → kabul) ve yakın tonlar "aynı şeyin iki hâli" izlenimi
+   * verirdi. Onlar AYRI iki iş; renk de ayrı.
+   */
+  d: "#9333ea",
   a: "#16a34a",
   b: "#2563eb",
   c: "#ea580c",
@@ -103,7 +121,7 @@ export function UcSeriliGrafik({
   tabloAcik = false,
 }: {
   noktalar: UcSeriNoktasi[];
-  adlar: { a: string; b: string; c: string };
+  adlar: { a: string; b: string; c: string; d?: string };
   bicimle: (deger: number) => string;
   bosMesaj: string;
   /** Kapalı akordiyonun üstünde yazan metin. */
@@ -146,12 +164,29 @@ export function UcSeriliGrafik({
   const toplamDeger = (n: UcSeriNoktasi) => n.toplam ?? 0;
 
   /**
+   * ⚠ DÖRDÜNCÜ SERİ DE İKİ ŞARTLI: adı verilmiş VE her noktada sayısı var.
+   * Yalnız ad verilip veri gelmezse çizgi `NaN`a düşer ve grafik BOŞ değil
+   * BOZUK çizilir — toplam serisinde öğrenilen aynı ders.
+   */
+  const dVar =
+    adlar.d !== undefined && noktalar.every((n) => typeof n.d === "number");
+  const dDeger = (n: UcSeriNoktasi) => n.d ?? 0;
+
+  /**
    * ⚠ TOPLAM EKSENE DAHİL. Dahil edilmezse toplam çizgisi tavanı aşar ve
    * grafiğin ÜSTÜNDEN taşar — okunmaz olur.
    */
-  const tumu = noktalar.flatMap((n) =>
-    toplamVar ? [n.a, n.b, n.c, toplamDeger(n)] : [n.a, n.b, n.c],
-  );
+  /**
+   * ⚠ ÇİZİLEN HER SERİ EKSENE DAHİL. Biri dışarıda kalırsa çizgisi grafiğin
+   * ÜSTÜNDEN taşar ve okunmaz olur — toplam serisinde bir kez yaşandı.
+   */
+  const tumu = noktalar.flatMap((n) => [
+    n.a,
+    n.b,
+    n.c,
+    ...(dVar ? [dDeger(n)] : []),
+    ...(toplamVar ? [toplamDeger(n)] : []),
+  ]);
   const tavanHam = Math.max(...tumu, 0);
   const tabanHam = Math.min(...tumu, 0);
   /**
@@ -174,7 +209,22 @@ export function UcSeriliGrafik({
 
   const adim = Math.max(1, Math.ceil(noktalar.length / 10));
 
+  /**
+   * ⛔ SIRA OPERASYON HUNİSİDİR, ALFABE DEĞİL: dördüncü seri (`d`) EN BAŞTA
+   * duruyor çünkü iş oradan başlıyor — sipariş → mal kabul → satış → kargo.
+   * Sona eklenseydi gösterge ve tablo, işin yapılış sırasını yalanlardı.
+   */
+  /**
+   * ⚠ SERİ DEĞERİ TEK KAPIDAN OKUNUR. `n[anahtar]` doğrudan okunsaydı `d`
+   * için `number | undefined` dönerdi ve her kullanım yerinde ayrı ayrı
+   * `?? 0` yazmak gerekirdi — biri unutulduğunda `NaN` grafiğe düşer ve
+   * çizgi sessizce kaybolur. Tek gövde, tek kural.
+   */
+  const seriDegeri = (n: UcSeriNoktasi, anahtar: "a" | "b" | "c" | "d") =>
+    anahtar === "d" ? dDeger(n) : n[anahtar];
+
   const seriler = [
+    ...(dVar ? [{ anahtar: "d" as const, ad: adlar.d ?? "", renk: RENK.d }] : []),
     { anahtar: "a" as const, ad: adlar.a, renk: RENK.a },
     { anahtar: "b" as const, ad: adlar.b, renk: RENK.b },
     { anahtar: "c" as const, ad: adlar.c, renk: RENK.c },
@@ -274,7 +324,7 @@ export function UcSeriliGrafik({
           <path
             key={s.anahtar}
             aria-hidden
-            d={yol((n) => n[s.anahtar])}
+            d={yol((n) => seriDegeri(n, s.anahtar))}
             fill="none"
             stroke={s.renk}
             strokeWidth={2.5}
@@ -308,7 +358,7 @@ export function UcSeriliGrafik({
         {seriler.map((s) =>
           noktalar.map((n, i) => {
             const cx = x(i);
-            const cy = y(n[s.anahtar]);
+            const cy = y(seriDegeri(n, s.anahtar));
             const daire = (
               <>
                 <circle cx={cx} cy={cy} r={3.5} fill={s.renk} />
@@ -321,9 +371,9 @@ export function UcSeriliGrafik({
               <a
                 key={`${s.anahtar}-${i}`}
                 href={adres}
-                aria-label={`${n.tamEtiket} · ${s.ad}: ${bicimle(n[s.anahtar])}`}
+                aria-label={`${n.tamEtiket} · ${s.ad}: ${bicimle(seriDegeri(n, s.anahtar))}`}
               >
-                <title>{`${n.tamEtiket} · ${s.ad}: ${bicimle(n[s.anahtar])}`}</title>
+                <title>{`${n.tamEtiket} · ${s.ad}: ${bicimle(seriDegeri(n, s.anahtar))}`}</title>
                 {daire}
               </a>
             ) : (
@@ -418,7 +468,7 @@ export function UcSeriliGrafik({
                   </td>
                   {seriler.map((s) => {
                     const adres = n.adres?.[s.anahtar];
-                    const deger = bicimle(n[s.anahtar]);
+                    const deger = bicimle(seriDegeri(n, s.anahtar));
                     return (
                       <td
                         key={s.anahtar}

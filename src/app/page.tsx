@@ -140,6 +140,7 @@ import {
   gizlenenKanalSayisi,
   kanalSiraKipi,
   panelKanallari,
+  panelYuvalari,
   tumKanallarAdresi,
 } from "@/lib/kanal-sirasi";
 import { KanalSiraCubugu } from "./kanal-sira-cubugu";
@@ -1531,6 +1532,7 @@ export default async function AnaSayfa({
     pencere: donem,
     kirilim: operasyonKirilimi,
     alimlar: alim.gunluk,
+    siparisler: alim.siparisGunluk,
     satislar: donemSatislari
       .filter((s) => s.paraBirimi === seciliPara)
       .map((s) => ({ tarih: s.tarih, gelir: s.gelir, kdv: s.kdv })),
@@ -1546,6 +1548,26 @@ export default async function AnaSayfa({
    * ⚠ Nokta kendi tarih aralığını taşıyor; adres ondan kuruluyor. Böylece
    * haftalık/aylık kovada da doğru aralık açılır — "20.08" değil "17–23.08".
    */
+  /**
+   * SİPARİŞ NOKTASININ ADRESİ (K126) — `/alimlar`, SİPARİŞ EKSENİNDE.
+   *
+   * ⛔ EKSEN AÇIKÇA YAZILIYOR: `eksen=siparis` bugün zaten varsayılan ama
+   * varsayılan bir gün değişebilir ve o gün bu bağlantı sessizce başka bir
+   * kümeye giderdi. Adres, hangi soruyu sorduğunu kendi taşır.
+   * _(Anayasa: "sayı = liste".)_
+   */
+  const siparisAdresi = (n: (typeof operasyonGunleri)[number]) =>
+    suzgecAdresi(
+      "/alimlar",
+      {},
+      {
+        pencere: "OZEL",
+        baslangic: gunMetni(n.baslangic),
+        bitis: gunMetni(n.sonGun),
+        eksen: "siparis",
+      },
+    );
+
   const noktaAdresi = (temel: string, n: (typeof operasyonGunleri)[number]) =>
     suzgecAdresi(
       temel,
@@ -1632,10 +1654,49 @@ export default async function AnaSayfa({
       .filter(([kod]) => !blok.kanallar.some((k) => k.kanalKodu === kod))
       .sort((a, b) => a[1].localeCompare(b[1], "tr"));
     /** Panelde çizilmeyen her şey — satışlı kuyruk + açık sıfır kartları. */
-    const gizlenen =
+    /**
+     * ⚠ GİZLENEN SAYISI ÇİZİLEN YUVALARDAN HESAPLANIR, TAVANDAN DEĞİL.
+     * Sabit düzende yuvaların bir kısmı "açık sıfır" olabiliyor; tavanı
+     * satışlı kanal sayısından çıkarmak o kartları iki kez sayardı.
+     */
+    const toplamKanal = blok.kanallar.length + bosKanallar.length;
+
+    /**
+     * ⛔ SABİT DÜZENDE YUVALAR SATIŞA GÖRE DOLMAZ (K126-B, kullanıcı şartı
+     * 01.09.2026: _"sabit olan sekmede 1) Trendyol 2) Hepsiburada 3) N11"_).
+     * O üç kanal satış olmasa da yerinde durur ve `0` yazar.
+     *
+     * ⚠ K124'TE TAM BU KAYBOLMUŞTU: tavan konulunca satışsız kanallar
+     * "açık sıfır" kartlarına düşüyor ve tavanla birlikte ekrandan siliniyordu.
+     * Kullanıcı boş iki kutu çizip sordu.
+     */
+    const yuvaKodlari =
       tavan === null
-        ? 0
-        : gizlenenKanalSayisi(blok.kanallar.length, tavan) + bosKanallar.length;
+        ? null
+        : panelYuvalari(
+            kanalKipi,
+            blok.kanallar.map((k) => k.kanalKodu),
+            tavan,
+          );
+    const bosAdi = new Map(bosKanallar);
+    /** Yuvası dolu olanlar — kart verisi varsa o, yoksa açık sıfır. */
+    const yuvalar =
+      yuvaKodlari === null
+        ? null
+        : yuvaKodlari
+            .map((kod) => {
+              const dolu = blok.kanallar.find((k) => k.kanalKodu === kod);
+              if (dolu) return { kod, kanal: dolu, ad: dolu.kanalAdi };
+              const ad = bosAdi.get(kod);
+              /**
+               * ⚠ ADI BİLİNMEYEN YUVA ÇİZİLMEZ, UYDURULMAZ. Kanal bu para
+               * biriminde satış hesabı taşımıyorsa adı da yoktur; kod yazmak
+               * ("N11" yerine ham kod) ekranı teknik jargona düşürürdü.
+               */
+              return ad === undefined ? null : { kod, kanal: null, ad };
+            })
+            .filter((y) => y !== null);
+    const gizlenen = yuvalar === null ? 0 : toplamKanal - yuvalar.length;
     return (
     <div className="space-y-3">
       {/* K106-② — sıra seçimi kartların ÜSTÜNDE: değiştireceği şeyin
@@ -1645,7 +1706,26 @@ export default async function AnaSayfa({
         tasinanlar={parametreler as Record<string, string | undefined>}
       />
     <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {(tavan === null ? blok.kanallar : panelKanallari(blok.kanallar, tavan)).map((kanal) => (
+      {/* ⛔ TAVAN VARSA YUVALARDAN ÇİZİLİR (K126-B): sabit düzende üç
+          kanal satış olmasa da yerinde durur. Tavansız dökümde eski davranış. */}
+      {(yuvalar === null
+        ? blok.kanallar.map((k) => ({ kod: k.kanalKodu, kanal: k, ad: k.kanalAdi }))
+        : yuvalar
+      ).map(({ kod, kanal, ad }) =>
+        kanal === null ? (
+          /* AÇIK SIFIR YUVASI — kanal tanımlı ama bu dönemde satış yok.
+             Kart soluk çizilir: "var ama boş" ile "hiç yok" ayrışsın. */
+          <div
+            key={`yuva-${kod}`}
+            className="text-muted-foreground min-w-0 space-y-2 rounded-lg border border-dashed p-3"
+          >
+            <div className="font-medium">
+              <Baglanti href={kanalSatislariAdresi(kod)}>{ad}</Baglanti>
+            </div>
+            <div className="text-xs">{t("kanalSatisYok")}</div>
+            <div className="text-lg font-semibold tabular-nums">0</div>
+          </div>
+        ) : (
         <div
           key={kanal.kanalKodu}
           className="bg-card min-w-0 space-y-3 rounded-lg border p-3"
@@ -1796,7 +1876,8 @@ export default async function AnaSayfa({
             </ul>
           ) : null}
         </div>
-      ))}
+        ),
+      )}
 
       {/* SATIŞI OLMAYAN KANALLAR — AÇIK SIFIR.
                   Kart soluk çizilir: "var ama boş" ile "hiç yok" ayrışsın.
@@ -2046,8 +2127,14 @@ export default async function AnaSayfa({
             yasakladığı kalıp olurdu. Sınır bileşenin İÇİNDE duruyor. */}
         <VitrinKutusu veri={vitrin} />
 
-        {/* ⚠ 2/5 — 3/5 düzeni KORUNDU: ızgaraya dokunulmadı. */}
-        <div className="grid min-w-0 gap-4 xl:grid-cols-5">
+        {/* ⚠ 2/5 — 3/5 düzeni KORUNDU: ızgaraya dokunulmadı.
+            ⛔ İKİ SÜTUN AYNI YERDE BİTER (K126-C, kullanıcı 01.09.2026:
+            _"Mal ve kayıt kartının bitişi ile pazaryeri performansı kartının
+            bitişleri aynı yerde olmalı ki düzen olsun"_). `items-stretch`
+            ızgara varsayılanıdır ama AÇIKÇA yazılıyor: bir gün biri
+            `items-start` eklerse kartlar sessizce ayrışır ve kimse
+            nedenini aramaz. */}
+        <div className="grid min-w-0 items-stretch gap-4 xl:grid-cols-5">
           {/* Operasyonel sayılar — `satis.kar.gor` İSTEMEZ, depocu da görür. */}
           <div className="min-w-0 xl:col-span-2">
             <GorevKutusu
@@ -2081,7 +2168,10 @@ export default async function AnaSayfa({
           {/* PAZARYERİ PERFORMANSI — para bloğu, izne bağlı.
             İzin yoksa görev kartları tek başına tam genişliğe yayılır. */}
           {karGorunur && ustBlok && ustPaylar ? (
-            <Card className="flex min-w-0 flex-col xl:col-span-3">
+            /* ⛔ `h-full` — sol sütunun boyunu İZLER. Kart kendi içeriği
+               kadar yüksek kalsaydı (K126'dan sonra üç kanal kartı kaldığı
+               için içerik kısaldı) sağ sütun havada biterdi. */
+            <Card className="flex h-full min-w-0 flex-col xl:col-span-3">
               <CardHeader className="pb-3">
                 <CardTitle className="flex flex-wrap items-center gap-2 text-base">
                   <Store className="size-5" />
@@ -2174,8 +2264,50 @@ export default async function AnaSayfa({
                   ⚠ SIRA RASTGELE DEĞİL — yeni kutu eklenirken hunideki
                   yerine konur, sona eklenmez. */}
                 <div
-                  className={`grid gap-2 sm:grid-cols-3 ${karGorunur ? "lg:grid-cols-6" : ""}`}
+                  /* ⛔ YEDİ KUTU (K126, kullanıcı 01.09.2026): grafiğin DÖRT
+                     kalemi + Ciro + NET-1 + NET-2. Kullanıcının cümlesi:
+                     _"seçili dönem kartının başındaki 4 kart yukarıda
+                     saydığım grafikteki kartlardan oluşmalı, sonra Ciro,
+                     Net kâr 1 ve Net kâr 2 gelmeli — yani 7 kart istiyorum."_
+                     ⚠ `lg:grid-cols-7` yalnız kâr görünürken: izin yoksa
+                     dört kutu kalır ve yedi sütun boş yer bırakırdı. */
+                  className={`grid gap-2 sm:grid-cols-2 md:grid-cols-4 ${karGorunur ? "lg:grid-cols-7" : ""}`}
                 >
+                  {/* ---------------- SATIN ALINAN — HUNİNİN GERÇEK BAŞI -------
+                    K126: iş sipariş vermekle başlar, mal kabulle değil.
+                    `purchasedAt` ekseninde sayılıyor ve bağlantı o ekseni
+                    ADRESTE taşıyor (K114) — sayı ile liste ayrışmasın.
+
+                    ⛔ MAL KABUL KUTUSUNUN KOPYASI DEĞİL: K114'te ölçüldü,
+                    iki eksen ortanca 3 gün arayla düşüyor ve yalnız %1,4
+                    örtüşüyor. Son 30 günde sipariş 168 ↔ kabul 152. */}
+                  <IstatistikKutusu
+                    etiket={t("siparisAdedi")}
+                    cocuk={
+                      <Baglanti
+                        href={suzgecAdresi(
+                          "/alimlar",
+                          {},
+                          { ...donemParametreleri(), eksen: "siparis" },
+                        )}
+                      >
+                        {alim.siparisGunluk.length}
+                      </Baglanti>
+                    }
+                    altNot={
+                      karGorunur ? (
+                        <span className="text-muted-foreground text-xs">
+                          {t("siparisToplamAlim", {
+                            tutar: bicim.para(
+                              alim.siparisGunluk.reduce((a, x) => a + x.tutar, 0),
+                              seciliPara,
+                            ),
+                          })}
+                        </span>
+                      ) : undefined
+                    }
+                  />
+
                   {/* ---------------- ALIM ADEDİ — HUNİNİN BAŞI ----------------
                     Kullanıcı sırası 21.08.2026: alım → satış → kargo →
                     ciro → NET-1 → NET-2.
@@ -2517,6 +2649,12 @@ export default async function AnaSayfa({
                   n.baslangic.getTime() === n.sonGun.getTime()
                     ? bicim.tarih(n.baslangic)
                     : `${bicim.tarih(n.baslangic)} – ${bicim.tarih(n.sonGun)}`,
+                /* ⛔ SİPARİŞ SERİSİ (K126) — YALNIZ VARSA. `serileriKur`
+                   KDV kipinde `null` döndürüyor (vergi mal kabulde doğar);
+                   alan hiç konmazsa grafik dördüncü çizgiyi hiç çizmez. */
+                ...(operasyonSeri.siparis
+                  ? { d: operasyonSeri.siparis[i] ?? 0 }
+                  : {}),
                 a: operasyonSeri.alim[i] ?? 0,
                 b: operasyonSeri.satis[i] ?? 0,
                 c: operasyonSeri.ucuncu[i] ?? 0,
@@ -2533,11 +2671,18 @@ export default async function AnaSayfa({
                 adres:
                   operasyonGorunumu !== "adet"
                     ? {
+                        /* ⭐ SİPARİŞ NOKTASI `/alimlar`a GİDİYOR VE EKSENİ
+                           TAŞIYOR (K114). Eksen taşınmasaydı liste sipariş
+                           tarihine göre süzmeye devam ederdi ama bunu
+                           SÖYLEMEZDİ; şimdi ekranda hangi eksende olduğu
+                           yazılı. */
+                        d: siparisAdresi(n),
                         a: noktaAdresi("/mal-kabul", n),
                         b: noktaAdresi("/satislar", n),
                         c: "",
                       }
                     : {
+                        d: siparisAdresi(n),
                         a: noktaAdresi("/mal-kabul", n),
                         b: noktaAdresi("/satislar", n),
                         c: suzgecAdresi(
@@ -2571,6 +2716,10 @@ export default async function AnaSayfa({
                     ? /* ⚠ KARGO CİROSU YAZILMIYOR (kullanıcı: "ihtiyaç yok").
                          Yerine FARK: satış − alım. */
                       t("operasyonToplamCiro", {
+                        siparis: bicim.para(
+                          operasyonToplam.siparisTutar,
+                          seciliPara,
+                        ),
                         alim: bicim.para(operasyonToplam.alimTutar, seciliPara),
                         satis: bicim.para(
                           operasyonToplam.satisCiro,
@@ -2580,6 +2729,7 @@ export default async function AnaSayfa({
                       })
                     : /* Adet tarafında üç kalem + TOPLAM İŞLEM sayısı. */
                       t("operasyonToplamAdet", {
+                        siparis: operasyonToplam.siparisAdet,
                         alim: operasyonToplam.alimAdet,
                         satis: operasyonToplam.satisAdet,
                         kargo: operasyonToplam.kargoAdet,
@@ -2588,6 +2738,12 @@ export default async function AnaSayfa({
                 </p>
               }
               adlar={{
+                /* ⛔ KDV KİPİNDE AD VERİLMEZ — seri de yok. İkisi birlikte
+                   aranıyor; yalnız ad verilseydi grafik bozuk çizilirdi. */
+                d:
+                  operasyonGorunumu === "kdv"
+                    ? undefined
+                    : t("operasyonSiparis"),
                 a:
                   operasyonGorunumu === "kdv"
                     ? t("operasyonIndirilecek")

@@ -68,6 +68,7 @@ console.log("1) AÇIK SIFIR — her gün nokta üretir");
   const seri = operasyonSerisi({
     pencere,
     kirilim: "GUN",
+    siparisler: [],
     alimlar: [],
     satislar: [],
     kargolar: [],
@@ -100,6 +101,7 @@ console.log("\n2) ÜÇ AYRI TARİH EKSENİ — aynı güne yazılmaz");
   const seri = operasyonSerisi({
     pencere,
     kirilim: "GUN",
+    siparisler: [],
     alimlar: [{ tarih: g("2026-08-18"), tutar: 1000, kdv: 0 }],
     satislar: [{ tarih: g("2026-08-19"), gelir: 500, kdv: 0 }],
     kargolar: [{ tarih: g("2026-08-21"), gelir: 500 }],
@@ -139,6 +141,7 @@ console.log("\n3) AYNI GÜNDE BİRDEN ÇOK KAYIT TOPLANIR");
   const seri = operasyonSerisi({
     pencere,
     kirilim: "GUN",
+    siparisler: [],
     alimlar: [
       { tarih: g("2026-08-20"), tutar: 300, kdv: 0 },
       { tarih: g("2026-08-20"), tutar: 700, kdv: 0 },
@@ -160,6 +163,7 @@ console.log("\n4) PENCERE DIŞI KAYIT SERİYİ KAYDIRMAZ");
   const seri = operasyonSerisi({
     pencere,
     kirilim: "GUN",
+    siparisler: [],
     alimlar: [
       { tarih: g("2026-07-01"), tutar: 999, kdv: 0 },
       { tarih: g("2026-08-20"), tutar: 100, kdv: 0 },
@@ -187,6 +191,7 @@ console.log("\n5) GÖRÜNÜM SEÇİMİ — adet ile ciro AYRIŞIR");
   const seri = operasyonSerisi({
     pencere,
     kirilim: "GUN",
+    siparisler: [],
     alimlar: [{ tarih: g("2026-08-21"), tutar: 1000, kdv: 0 }],
     satislar: [{ tarih: g("2026-08-21"), gelir: 2000, kdv: 0 }],
     kargolar: [{ tarih: g("2026-08-21"), gelir: 3000 }],
@@ -223,6 +228,7 @@ console.log("\n6) TOPLAM — grafiğin altındaki rakam (İlke #15)");
   const seri = operasyonSerisi({
     pencere,
     kirilim: "GUN",
+    siparisler: [],
     alimlar: [
       { tarih: g("2026-08-18"), tutar: 100, kdv: 0 },
       { tarih: g("2026-08-19"), tutar: 200, kdv: 0 },
@@ -267,6 +273,7 @@ console.log("\n7) KIRILIM — uzun pencerede gün gün çizilmez");
   const yil = operasyonSerisi({
     pencere: pencereOlustur("SON_1_YIL", AN),
     kirilim: "AY",
+    siparisler: [],
     alimlar: [],
     satislar: [],
     kargolar: [],
@@ -283,6 +290,7 @@ console.log("\n7) KIRILIM — uzun pencerede gün gün çizilmez");
   const haftalar = operasyonSerisi({
     pencere: buAy,
     kirilim: "HAFTA",
+    siparisler: [],
     alimlar: [],
     satislar: [],
     kargolar: [],
@@ -302,6 +310,7 @@ console.log("\n7) KIRILIM — uzun pencerede gün gün çizilmez");
   const toplanan = operasyonSerisi({
     pencere: buAy,
     kirilim: "HAFTA",
+    siparisler: [],
     alimlar: [
       { tarih: g("2026-08-17"), tutar: 100, kdv: 0 },
       { tarih: g("2026-08-19"), tutar: 200, kdv: 0 },
@@ -325,6 +334,7 @@ console.log("\n8) CİRO ÜÇÜNCÜ SERİ = FARK (kargo DEĞİL)");
     pencere: pencereOlustur("BUGUN", AN),
     kirilim: "GUN",
     /** ⚠ Kargo cirosu BİLEREK farklı (9999): fark yerine kargo çizilirse yakalansın. */
+    siparisler: [],
     alimlar: [{ tarih: g("2026-08-21"), tutar: 400, kdv: 0 }],
     satislar: [{ tarih: g("2026-08-21"), gelir: 1000, kdv: 0 }],
     kargolar: [{ tarih: g("2026-08-21"), gelir: 9999 }],
@@ -350,6 +360,7 @@ console.log("\n8) CİRO ÜÇÜNCÜ SERİ = FARK (kargo DEĞİL)");
     operasyonSerisi({
       pencere: pencereOlustur("BUGUN", AN),
       kirilim: "GUN",
+      siparisler: [],
       alimlar: [{ tarih: g("2026-08-21"), tutar: 1000, kdv: 0 }],
       satislar: [],
       kargolar: [],
@@ -414,6 +425,7 @@ console.log("\n9) TABLO GRAFİKLE AYNI ŞEYİ GÖSTERİR — kırpma YOK");
     return operasyonSerisi({
       pencere,
       kirilim: kirilimSec(tur, pencereGunSayisi(pencere)),
+      siparisler: [],
       alimlar: [],
       satislar: [],
       kargolar: [],
@@ -561,6 +573,7 @@ console.log("\n10) KDV GÖRÜNÜMÜ — hesaplanan − indirilecek");
   const seri = operasyonSerisi({
     pencere: pencereOlustur("BUGUN", AN),
     kirilim: "GUN",
+    siparisler: [],
     alimlar: [{ tarih: g("2026-08-21"), tutar: 1200, kdv: 200 }],
     satislar: [{ tarih: g("2026-08-21"), gelir: 6000, kdv: 60 }],
     kargolar: [{ tarih: g("2026-08-21"), gelir: 9999 }],
@@ -603,6 +616,7 @@ console.log("\n10) KDV GÖRÜNÜMÜ — hesaplanan − indirilecek");
   const artiSeri = operasyonSerisi({
     pencere: pencereOlustur("BUGUN", AN),
     kirilim: "GUN",
+    siparisler: [],
     alimlar: [{ tarih: g("2026-08-21"), tutar: 100, kdv: 10 }],
     satislar: [{ tarih: g("2026-08-21"), gelir: 600, kdv: 100 }],
     kargolar: [],
@@ -614,6 +628,77 @@ console.log("\n10) KDV GÖRÜNÜMÜ — hesaplanan − indirilecek");
   );
 
   kontrol("kdv görünümü tanınır", gorunumCoz("kdv") === "kdv");
+}
+
+// --- DÖRDÜNCÜ SERİ: SATIN ALINAN (K126) ---------------------------------
+console.log("\nDÖRDÜNCÜ SERİ — SATIN ALINAN (K126)");
+{
+  /**
+   * ⛔ KULLANICI 01.09.2026 GÜNLÜK OPERASYONU DÖRT BAŞLIKTA SAYDI:
+   * _"1) benim tarafımdan satın alınan ürünler 2) mal kabul 3) satış
+   * 4) kargo"_ (beşincisi toplam). Grafik üç seri çiziyordu; eksik olan
+   * BİRİNCİSİYDİ.
+   *
+   * ⛔ VE BU "ALIM"IN ADINI DEĞİŞTİRMEK DEĞİL: mevcut seri `receivedAt`
+   * ekseninde (gerçekten MAL KABUL), eklenen seri `purchasedAt` ekseninde.
+   * K114'te ölçüldü: ortanca 3 gün ara, yalnız %1,4 örtüşme.
+   */
+  const g = (t: string) => new Date(t + "T09:00:00.000Z");
+  const noktalar = operasyonSerisi({
+    pencere: {
+      baslangic: g("2026-08-01"),
+      bitisHaric: g("2026-08-04"),
+      sonGun: g("2026-08-03"),
+      tur: "OZEL",
+    } as never,
+    kirilim: "GUN",
+    siparisler: [
+      { tarih: g("2026-08-01"), tutar: 100 },
+      { tarih: g("2026-08-01"), tutar: 50 },
+    ],
+    alimlar: [{ tarih: g("2026-08-03"), tutar: 150, kdv: 25 }],
+    satislar: [{ tarih: g("2026-08-02"), gelir: 400, kdv: 66 }],
+    kargolar: [{ tarih: g("2026-08-02"), gelir: 400 }],
+  });
+
+  /**
+   * ⛔ AYRI GÜNE DÜŞÜYOR — VE ÖRNEK BUNU GÖSTERMEK İÇİN BÖYLE KURULDU.
+   * Sipariş 01'de, mal kabul 03'te. İkisi aynı güne konsaydı test
+   * "eksenler ayrı mı" sorusunu HİÇ sormamış olurdu (örnek veri ayrımın
+   * iki yakasını göstermeli).
+   */
+  kontrol("sipariş kendi gününe düşüyor", noktalar[0]?.siparisAdet === 2);
+  kontrol("  ...ve tutarı toplanıyor", noktalar[0]?.siparisTutar === 150);
+  /** ⚠ Pencere yarı açık ama kova üretimi son günü de kapsıyor: 4 nokta. */
+  kontrol("dört nokta üretildi", noktalar.length === 4, noktalar.length);
+  kontrol("sipariş MAL KABUL gününe düşmüyor", noktalar[2]?.siparisAdet === 0);
+  kontrol("mal kabul kendi gününde", noktalar[2]?.alimAdet === 1);
+
+  const adet = serileriKur(noktalar, "adet");
+  kontrol("adet kipinde sipariş serisi VAR", adet.siparis !== null);
+  kontrol("  ...değerleri doğru", JSON.stringify(adet.siparis) === "[2,0,0,0]");
+  /**
+   * ⛔ TOPLAM DÖRT KALEMİ DE SAYAR. Sipariş + mal kabul ÇİFT SAYIM DEĞİLDİR:
+   * aynı alım iki AYRI GÜNDE iki AYRI iş üretir.
+   */
+  kontrol("toplam sipariş kalemini İÇERİYOR", JSON.stringify(adet.toplam) === "[2,2,1,0]");
+
+  const ciro = serileriKur(noktalar, "ciro");
+  kontrol("ciro kipinde sipariş serisi VAR", ciro.siparis !== null);
+  kontrol("  ...tutar ekseninde", JSON.stringify(ciro.siparis) === "[150,0,0,0]");
+
+  /**
+   * ⛔ KDV KİPİNDE SİPARİŞ SERİSİ YOK — VE BU BİR EKSİKLİK DEĞİL.
+   * İndirilecek KDV MAL KABULDE doğar. Sipariş çizgisi oraya konsaydı aynı
+   * alımın vergisi iki kez görünür ve "ödenecek KDV" okuması bozulurdu.
+   */
+  kontrol("kdv kipinde sipariş serisi YOK", serileriKur(noktalar, "kdv").siparis === null);
+
+  const toplam = operasyonToplami(noktalar);
+  kontrol("dönem toplamı sipariş adedini sayıyor", toplam.siparisAdet === 2);
+  kontrol("  ...ve tutarını", toplam.siparisTutar === 150);
+  /** ⛔ SİPARİŞ DE İŞTİR: "kaç iş yaptım" dört kalemi birden sayar. */
+  kontrol("işlem adedi sipariş kalemini İÇERİYOR", toplam.islemAdedi === 5);
 }
 
 console.log("");

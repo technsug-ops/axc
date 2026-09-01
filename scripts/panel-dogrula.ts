@@ -48,6 +48,7 @@ import {
   PANEL_KANAL_TAVANI,
   gizlenenKanalSayisi,
   panelKanallari,
+  panelYuvalari,
   tumKanallarAdresi,
 } from "../src/lib/kanal-sirasi";
 import { karOrani, kutuOranlari } from "../src/lib/panel/kar-orani";
@@ -4089,6 +4090,8 @@ console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
     anahtar: "x",
     baslangic: new Date(2026, 7, 17),
     sonGun: new Date(2026, 7, 17),
+    siparisAdet: 0,
+    siparisTutar: 0,
     alimAdet: alim,
     alimTutar: 100,
     satisAdet: satis,
@@ -5054,9 +5057,27 @@ console.log("K106) KANAL SIRASI — sabit duzen, ciro degil");
    * blogu ciroda cizilir; ayni ekranda iki farkli sira, kartlari goz goze
    * karsilastirmayi imkansiz kilardi.
    */
+  /**
+   * ⚠ ÖLÇÜT 01.09.2026'DA ÇAĞRIYA BAĞLANDI — VE NİYE. Eski hâli
+   * `^\s*kanalKipi,$` SATIRLARINI sayıyordu ve tam ikisini bekliyordu;
+   * K126'da `panelYuvalari(kanalKipi, …)` üçüncü bir satır ekleyince
+   * bekçi kırmızı yandı. Kod DOĞRUYDU — ölçüt yanlış şeyi sayıyordu.
+   * _(Anayasa: "önce deseni SAY — işaret çağrı yerine bağlanır, ada değil".)_
+   */
+  /**
+   * ⚠ PENCERE ÖLÇÜLDÜ, TAHMİN EDİLMEDİ: iki çağrıdan `kanalKipi,` argümanına
+   * mesafe **88** ve **739** karakter (ikincisinde araya bir gerekçe yorumu
+   * giriyor). 400'lük pencere ikincisini KAÇIRIYORDU ve bekçi haksız yere
+   * kırmızı yandı. Payıyla 1200. _(Anayasa: "pencere ÖLÇÜLÜR — gövde
+   * büyüyünce dar pencere sessizce kör kalır".)_
+   */
+  const kipliCagrilar = (
+    panelEkran.match(/panelHesapla\([\s\S]{0,1200}?kanalKipi,/g) ?? []
+  ).length;
   kontrol(
     "kip HER IKI panelHesapla cagrisina da gidiyor",
-    (panelEkran.match(/^\s*kanalKipi,$/gm) ?? []).length === 2,
+    kipliCagrilar === 2,
+    kipliCagrilar,
   );
 }
 
@@ -5099,6 +5120,51 @@ console.log("\nKANAL KARTI TAVANI — PANELDE 3, DÖKÜM SAYFASINDA HEPSİ (K124
   kontrol("negatife düşmüyor", gizlenenKanalSayisi(0) === 0);
 
   /**
+   * ⛔ SABİT DÜZENDE YUVALAR SATIŞA GÖRE DOLMAZ (K126-B, kullanıcı şartı
+   * 01.09.2026: _"Sabit olan sekmede 1) Trendyol 2) Hepsiburada 3) N11"_).
+   *
+   * ⚠ VE BU ÖLÇÜT BİR MUTASYON KAÇTIĞI İÇİN YAZILDI: sabit düzeni ciro gibi
+   * dolduran senaryo bütün bekçilerden YEŞİL geçti — kaynak taraması
+   * "gövde çağrılıyor mu" diye soruyordu, "gövde NE DÖNDÜRÜYOR" diye değil.
+   */
+  kontrol(
+    "sabit düzen: satış yokken bile ÜÇ KANAL",
+    JSON.stringify(panelYuvalari("duzen", [])) ===
+      JSON.stringify(["TRENDYOL", "HEPSIBURADA", "N11"]),
+    panelYuvalari("duzen", []),
+  );
+  kontrol(
+    "sabit düzen: satan başka kanal ÜÇLÜYÜ İTMİYOR",
+    JSON.stringify(panelYuvalari("duzen", ["AMAZON", "DEPO"])) ===
+      JSON.stringify(["TRENDYOL", "HEPSIBURADA", "N11"]),
+    panelYuvalari("duzen", ["AMAZON", "DEPO"]),
+  );
+  /** ⛔ CİRO KİPİ AYRI: orada sıra rakamdan gelir, listeden değil. */
+  kontrol(
+    "ciro kipi: en büyük üç",
+    JSON.stringify(
+      panelYuvalari("ciro", ["AMAZON", "TRENDYOL", "DEPO", "N11"]),
+    ) === JSON.stringify(["AMAZON", "TRENDYOL", "DEPO"]),
+    panelYuvalari("ciro", ["AMAZON", "TRENDYOL", "DEPO", "N11"]),
+  );
+  /**
+   * ⚠ İKİ KİP AYNI SONUCU VERMEMELİ — yoksa "sabit düzen" diye bir şey
+   * kalmaz ve kullanıcının şartı sessizce düşer.
+   */
+  kontrol(
+    "iki kip FARKLI sonuç veriyor",
+    JSON.stringify(panelYuvalari("duzen", ["AMAZON", "DEPO"])) !==
+      JSON.stringify(panelYuvalari("ciro", ["AMAZON", "DEPO"])),
+  );
+  /** ⚠ Sabit üçlü bitince kuyruk doldurur — bugün gerekmiyor, yarın gerekebilir. */
+  kontrol(
+    "tavan büyükse kuyruktan devam eder",
+    JSON.stringify(panelYuvalari("duzen", ["AMAZON"], 5)) ===
+      JSON.stringify(["TRENDYOL", "HEPSIBURADA", "N11", "AMAZON", "DEPO"]),
+    panelYuvalari("duzen", ["AMAZON"], 5),
+  );
+
+  /**
    * ⛔ ADRES PANELİN SÜZGEÇLERİNİ AYNEN TAŞIR — BEYAZ LİSTE YOK.
    * Beyaz liste yazsaydık, yarın panele eklenen bir süzgeç listeye girmediği
    * için sessizce düşer ve döküm sayfası BAŞKA BİR KÜMEYİ gösterirdi;
@@ -5129,9 +5195,15 @@ console.log("\nKANAL KARTI TAVANI — PANELDE 3, DÖKÜM SAYFASINDA HEPSİ (K124
     "panel ızgarayı TAVANLA çağırıyor",
     /kanalIzgarasi\(ustBlok, ustPaylar, PANEL_KANAL_TAVANI\)/.test(ekranK124),
   );
+  /**
+   * ⚠ ÖLÇÜT K126-B'DE TAŞINDI: kesme artık ekranda değil, `panelYuvalari`
+   * gövdesinin İÇİNDE yapılıyor (sabit düzende yuvalar satışa göre dolmadığı
+   * için ekran "ilk N satışlı kanal" diye kesemez). Korunan değişmez aynı:
+   * kesme TEK GÖVDEDE, ekranda ikinci bir `slice` yok.
+   */
   kontrol(
-    "ızgara kesmeyi GÖVDEDEN yapıyor",
-    ekranK124.includes("panelKanallari(blok.kanallar, tavan)"),
+    "ekranda ÇIPLAK kesme YOK",
+    !/\.slice\(0,\s*tavan\)/.test(ekranK124),
   );
   kontrol("tümü bağlantısı ÇİZİLİYOR", ekranK124.includes("tumKanallarAdresi("));
   /**
@@ -5141,11 +5213,30 @@ console.log("\nKANAL KARTI TAVANI — PANELDE 3, DÖKÜM SAYFASINDA HEPSİ (K124
    * hiç çizilmez, o iki kart panelden sessizce düşer ve onlara ulaşacak
    * hiçbir yol kalmazdı.
    */
+  /**
+   * ⚠ ÖLÇÜT K126'DA GÜNCELLENDİ — FORMÜL DEĞİŞTİ, KORUNAN DEĞİŞMEZ AYNI.
+   * Eskiden gizlenen = tavan artığı + açık sıfırlar diye hesaplanıyordu.
+   * Sabit düzende yuvaların bir kısmı ARTIK açık sıfır olabildiği için
+   * (K126-B) o formül aynı kartı iki kez sayardı. Yeni formül ÇİZİLENDEN
+   * gidiyor: toplam kanal − çizilen yuva.
+   */
   kontrol(
-    "gizlenen sayısı SATIŞLI KUYRUK + AÇIK SIFIR",
-    /gizlenenKanalSayisi\(blok\.kanallar\.length, tavan\) \+ bosKanallar\.length/.test(
+    "gizlenen sayısı TOPLAM − ÇİZİLEN YUVA",
+    /const toplamKanal = blok\.kanallar\.length \+ bosKanallar\.length/.test(
       ekranK124,
-    ),
+    ) && /toplamKanal - yuvalar\.length/.test(ekranK124),
+  );
+  /**
+   * ⛔ SABİT DÜZENDE YUVALAR GÖVDEDEN GELİR (K126-B, kullanıcı şartı):
+   * Trendyol · Hepsiburada · N11 satış olmasa da yerinde durur.
+   */
+  kontrol(
+    "yuvalar `panelYuvalari` gövdesinden",
+    /panelYuvalari\(\s*kanalKipi,/.test(ekranK124),
+  );
+  kontrol(
+    "boş yuva AÇIK SIFIR kartı çiziyor",
+    /kanal === null \? \(/.test(ekranK124),
   );
   kontrol("bağlantı gizlenen sayısına BAĞLI", /gizlenen > 0 \?/.test(ekranK124));
   /** ⛔ AÇIK SIFIR KARTLARI PANELDE ÇİZİLMEZ, DÖKÜMDE ÇİZİLİR. */

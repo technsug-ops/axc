@@ -2061,7 +2061,11 @@
     "toplam": "",
     "kanalTumu": "",
     "kanalTumuBaslik": "",
-    "kanalTumuGeri": ""
+    "kanalTumuGeri": "",
+    "operasyonSiparis": "",
+    "siparisAdedi": "",
+    "siparisToplamAlim": "",
+    "siparisKabulBekliyor": ""
   },
   "Envanter": {
     "baslik": "",

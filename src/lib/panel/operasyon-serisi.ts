@@ -35,6 +35,16 @@ import {
  *  alımların KDV'si geriye dönük kayar. (`PurchaseItem`e oran snapshot'ı
  *  eklemek bunu kapatır — şema işi, ayrı karar.)
  *
+ *  ── ⭐ DÖRT KALEM (K126, 01.09.2026) ───────────────────────────────────
+ *  Kullanıcı günlük operasyonu DÖRT başlıkta saydı: _"1) benim tarafımdan
+ *  satın alınan ürünler 2) mal kabul 3) satış 4) kargo"_ (beşincisi toplam).
+ *  Grafik üç seri çiziyordu ve eksik olan BİRİNCİSİYDİ.
+ *
+ *  ⛔ VE BU "ALIM"IN ADINI DEĞİŞTİRMEK DEĞİL: mevcut seri `receivedAt`
+ *  ekseninde, yani gerçekten MAL KABUL. Eklenen seri `purchasedAt`
+ *  ekseninde — SİPARİŞ VERME günü. K114'te ölçüldü: ikisi ortanca 3 gün
+ *  arayla düşüyor ve yalnız %1,4 örtüşüyor.
+ *
  *  ── ⚠ ÜÇ SAYININ BİRİMİ AYNI DEĞİL ──────────────────────────────────────
  *  ADET görünümünde: alım = ALIM KAYDI, satış = SATIŞ KAYDI, kargo =
  *  KARGOYA VERİLEN paket. Üçü de "kaç iş yaptım"ın cevabı ve panelin
@@ -110,6 +120,16 @@ export type OperasyonNoktasi = {
   baslangic: Date;
   /** Noktanın kapsadığı son gün (DAHİL) — süzgeç adresinin bitişi. */
   sonGun: Date;
+  /**
+   * SİPARİŞ VERİLEN ALIM — `purchasedAt` ekseninde (K126, 01.09.2026).
+   *
+   * ⛔ MAL KABULDEN AYRI BİR İŞTİR VE AYNI GÜN DEĞİLDİR. K114'te ölçüldü:
+   * sipariş → kabul gecikmesi ortanca **3 gün**, iki eksen yalnız **%1,4**
+   * örtüşüyor. Tek seriye indirmek "ne ısmarladım" ile "ne geldi" sorularını
+   * birbirine karıştırırdı.
+   */
+  siparisAdet: number;
+  siparisTutar: number;
   alimAdet: number;
   alimTutar: number;
   satisAdet: number;
@@ -132,6 +152,17 @@ export type OperasyonGirdisi = {
    * kalem hesaplayıp toplamı buraya verir.
    */
   alimlar: { tarih: Date; tutar: number; kdv: number }[];
+  /**
+   * ⚠ SİPARİŞLER AYRI GELİR — ALIMLARDAN TÜRETİLEMEZ. Aynı alımın iki
+   * tarihi var (`purchasedAt` ve `receivedAt`) ve mal kabulü yapılmamış
+   * siparişin `receivedAt`i HİÇ YOK: K114'te ölçüldü, 1990 alımın 31'i
+   * (%1,6) öyle. Türetilseydi o 31 sipariş grafikte hiç görünmezdi.
+   *
+   * ⛔ KDV YOK: indirilecek KDV mal kabulde doğar, sipariş anında değil.
+   * Sipariş serisi KDV sekmesine GİRMEZ — girseydi aynı alımın vergisi iki
+   * kez çizilirdi.
+   */
+  siparisler: { tarih: Date; tutar: number }[];
   satislar: { tarih: Date; gelir: number; kdv: number }[];
   /** Kargoya VERİLENLER — verilmemişler listede olmamalı. */
   kargolar: { tarih: Date; gelir: number }[];
@@ -209,6 +240,8 @@ export function operasyonSerisi(girdi: OperasyonGirdisi): OperasyonNoktasi[] {
       anahtar,
       baslangic: bas,
       sonGun: gunEkle(bitHaric, -1),
+      siparisAdet: 0,
+      siparisTutar: 0,
       alimAdet: 0,
       alimTutar: 0,
       satisAdet: 0,
@@ -223,6 +256,12 @@ export function operasyonSerisi(girdi: OperasyonGirdisi): OperasyonNoktasi[] {
     imlec = sonraki;
   }
 
+  for (const sp of girdi.siparisler) {
+    const n = dizin.get(kova(sp.tarih, girdi.kirilim).anahtar);
+    if (!n) continue;
+    n.siparisAdet++;
+    n.siparisTutar += sp.tutar;
+  }
   for (const a of girdi.alimlar) {
     const n = dizin.get(kova(a.tarih, girdi.kirilim).anahtar);
     if (!n) continue;
@@ -273,6 +312,14 @@ export function serileriKur(
   noktalar: OperasyonNoktasi[],
   gorunum: OperasyonGorunumu,
 ): {
+  /**
+   * SİPARİŞ SERİSİ — `adet` ve `ciro` kiplerinde dolu, `kdv`de `null`.
+   *
+   * ⛔ KDV'DE YOK VE BU BİR EKSİKLİK DEĞİL: indirilecek KDV mal kabulde
+   * doğar. Sipariş çizgisi oraya konsaydı aynı alımın vergisi iki kez
+   * görünür ve "ödenecek KDV" okuması bozulurdu.
+   */
+  siparis: number[] | null;
   alim: number[];
   satis: number[];
   ucuncu: number[];
@@ -289,6 +336,7 @@ export function serileriKur(
 } {
   if (gorunum === "ciro") {
     return {
+      siparis: noktalar.map((n) => n.siparisTutar),
       alim: noktalar.map((n) => n.alimTutar),
       satis: noktalar.map((n) => n.satisCiro),
       /** ⚠ SATIŞ − ALIM: pozitif "içeri para girdi" demek. */
@@ -304,6 +352,8 @@ export function serileriKur(
      * alınsaydı "ödeyecek miyim alacaklı mıyım" bilgisi kaybolurdu.
      */
     return {
+      /** ⛔ SİPARİŞİN KDV'Sİ YOK — vergi mal kabulde doğar (yukarıdaki not). */
+      siparis: null,
       alim: noktalar.map((n) => n.alimKdv),
       satis: noktalar.map((n) => n.satisKdv),
       ucuncu: noktalar.map((n) => n.satisKdv - n.alimKdv),
@@ -311,16 +361,28 @@ export function serileriKur(
     };
   }
   return {
+    siparis: noktalar.map((n) => n.siparisAdet),
     alim: noktalar.map((n) => n.alimAdet),
     satis: noktalar.map((n) => n.satisAdet),
     ucuncu: noktalar.map((n) => n.kargoAdet),
-    /** Aynı birim (kayıt sayısı) → toplanabilir. */
-    toplam: noktalar.map((n) => n.alimAdet + n.satisAdet + n.kargoAdet),
+    /**
+     * Aynı birim (kayıt sayısı) → toplanabilir.
+     *
+     * ⚠ SİPARİŞ + MAL KABUL ÇİFT SAYIM DEĞİLDİR: aynı alım iki AYRI GÜNDE
+     * iki AYRI İŞ üretir — sipariş verme günü ve mal kabul günü. Toplam
+     * "o gün kaç kalem iş yaptım" sorusunun cevabı; satış ile kargo da
+     * zaten aynı siparişin iki ayrı günü.
+     */
+    toplam: noktalar.map(
+      (n) => n.siparisAdet + n.alimAdet + n.satisAdet + n.kargoAdet,
+    ),
   };
 }
 
 /** Dönemin toplamı — grafiğin altında yazar (İlke #15). */
 export function operasyonToplami(noktalar: OperasyonNoktasi[]): {
+  siparisAdet: number;
+  siparisTutar: number;
   alimAdet: number;
   alimTutar: number;
   satisAdet: number;
@@ -337,6 +399,8 @@ export function operasyonToplami(noktalar: OperasyonNoktasi[]): {
 } {
   const t = noktalar.reduce(
     (a, n) => ({
+      siparisAdet: a.siparisAdet + n.siparisAdet,
+      siparisTutar: a.siparisTutar + n.siparisTutar,
       alimAdet: a.alimAdet + n.alimAdet,
       alimTutar: a.alimTutar + n.alimTutar,
       satisAdet: a.satisAdet + n.satisAdet,
@@ -346,6 +410,8 @@ export function operasyonToplami(noktalar: OperasyonNoktasi[]): {
       satisKdv: a.satisKdv + n.satisKdv,
     }),
     {
+      siparisAdet: 0,
+      siparisTutar: 0,
       alimAdet: 0,
       alimTutar: 0,
       satisAdet: 0,
@@ -357,7 +423,13 @@ export function operasyonToplami(noktalar: OperasyonNoktasi[]): {
   );
   return {
     ...t,
-    islemAdedi: t.alimAdet + t.satisAdet + t.kargoAdet,
+    /**
+     * ⚠ SİPARİŞ DE İŞTİR — 01.09.2026'da kullanıcı dört kalem saydı:
+     * "benim tarafımdan satın alınan · mal kabul · satış · kargo".
+     * Sipariş vermek ayrı bir gün ve ayrı bir emek; toplamdan dışlanması
+     * "kaç iş yaptım" sorusunu eksik cevaplardı.
+     */
+    islemAdedi: t.siparisAdet + t.alimAdet + t.satisAdet + t.kargoAdet,
     fark: t.satisCiro - t.alimTutar,
     odenecekKdv: t.satisKdv - t.alimKdv,
   };
