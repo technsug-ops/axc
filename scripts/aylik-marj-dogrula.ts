@@ -150,6 +150,7 @@ console.log("\n5) uçtan uca — toplama gövdesiyle birlikte");
   const ortak = {
     kanalKodu: "TY",
     kanalAdi: "Trendyol",
+    hesapId: "hesap-axcali",
     hesapAdi: "AXCALI",
     tarih: gun,
     paraBirimi: "TRY" as const,
@@ -173,6 +174,7 @@ console.log("\n5) uçtan uca — toplama gövdesiyle birlikte");
     {
       kanalKodu: "TY",
       kanalAdi: "Trendyol",
+      hesapId: "hesap-axcali",
       hesapAdi: "AXCALI",
       tarih: gun,
       paraBirimi: "TRY" as const,
@@ -184,6 +186,7 @@ console.log("\n5) uçtan uca — toplama gövdesiyle birlikte");
     {
       kanalKodu: "TY",
       kanalAdi: "Trendyol",
+      hesapId: "hesap-axcali",
       hesapAdi: "AXCALI",
       tarih: gun,
       paraBirimi: "TRY" as const,

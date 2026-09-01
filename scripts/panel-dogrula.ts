@@ -173,6 +173,7 @@ function satis(ek: Partial<PanelSatisi> = {}): PanelSatisi {
   return {
     kanalKodu: "TRENDYOL",
     kanalAdi: "Trendyol",
+    hesapId: "hesap-axcali",
     hesapAdi: "AXCALI",
     tarih: gun(2026, 8, 5),
     paraBirimi: "TRY",
@@ -390,6 +391,7 @@ console.log("\n2c) İADE ETKİSİ — PANEL NET-2 = RAPOR Σ NET-2");
     return {
       kanalKodu: "TRENDYOL",
       kanalAdi: "Trendyol",
+      hesapId: "hesap-axcali",
       hesapAdi: "AXCALI",
       tarih: gun(2026, 8, 10),
       paraBirimi: "TRY",
@@ -775,6 +777,7 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
   const iade = (ek: Partial<PanelIadesi> = {}): PanelIadesi => ({
     kanalKodu: "TRENDYOL",
     kanalAdi: "Trendyol",
+    hesapId: "hesap-axcali",
     hesapAdi: "AXCALI",
     tarih: gun(2026, 8, 10),
     paraBirimi: "TRY",
@@ -794,6 +797,7 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
       satis({
         kanalKodu: "HEPSIBURADA",
         kanalAdi: "Hepsiburada",
+        hesapId: "hesap-axcali",
         hesapAdi: "AXCALI",
         gelir: 4898,
       }),
@@ -1082,9 +1086,9 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
     buAy,
     [
       satis({ hesapAdi: "AXCALI", gelir: 6000 }),
-      satis({ hesapAdi: "SEDA", gelir: 4000 }),
+      satis({ hesapId: "hesap-seda", hesapAdi: "SEDA", gelir: 4000 }),
     ],
-    [iade({ hesapAdi: "SEDA", iadeTutari: 1000 })],
+    [iade({ hesapId: "hesap-seda", hesapAdi: "SEDA", iadeTutari: 1000 })],
   );
   const kanal = cokHesap[0].kanallar[0];
   kontrol("kanal iki hesaba bölündü", kanal.hesaplar.length === 2, kanal.hesaplar);
@@ -1182,6 +1186,7 @@ console.log("\n6) NET-1 — STOPAJ DÜŞÜLMÜŞ, ÖDENECEK KDV DÜŞÜLMEMİŞ"
       {
         kanalKodu: "TRENDYOL",
         kanalAdi: "Trendyol",
+        hesapId: "hesap-axcali",
         hesapAdi: "AXCALI",
         tarih: gun(2026, 8, 10),
         paraBirimi: "TRY",
@@ -5330,6 +5335,137 @@ console.log("\nZAMAN TABLOSU SIRASI — EN YENİ ÜSTTE (K125)");
   kontrol(
     "grafik çizimi HAM diziyi kullanıyor",
     cizimBloku.length > 0 && !cizimBloku.includes("tabloNoktalari("),
+  );
+}
+
+
+// ===========================================================================
+// K14t — HESAP KIRILIMI KİMLİKLE GRUPLANIR, ADLA DEĞİL
+// ===========================================================================
+//
+// ⛔ VAKA: `hesapSatiri` hesabı `hesapAdi` ile arıyordu. Aynı kanalda harf
+// farkıyla ikinci bir hesap açılsaydı (`S.Ahmet` ↔ `s.ahmet`) panel ikisini
+// TEK satırda birleştirir ve iki ayrı mağazanın cirosu sessizce toplanırdı.
+//
+// ⚠ RİSK TEORİK DEĞİL — CANLIDA ÖLÇÜLDÜ (01.09.2026): aynı kişi kanaldan
+// kanala ÜÇ farklı yazımla duruyor (`S.Ahmet` · `S.ahmet` · `s.ahmet`).
+// Aynı KANAL içinde çakışma bugün YOK; yazım tutarsızlığı ise zaten kural.
+// _(Anayasa: "kimlik varken dizeyle aranmaz" · "benzer ad, aynı kimlik
+// değildir".)_
+{
+  console.log("\n── K14t · HESAP KIRILIMI KİMLİKLE ──────────────────────");
+
+  const pencere = pencereOlustur("BU_AY", AN);
+  const iadeK14 = (ek: Partial<PanelIadesi>): PanelIadesi => ({
+    kanalKodu: "TRENDYOL",
+    kanalAdi: "Trendyol",
+    hesapId: "hesap-axcali",
+    hesapAdi: "AXCALI",
+    tarih: gun(2026, 8, 10),
+    paraBirimi: "TRY",
+    net1: -300,
+    net2: -340.43,
+    durum: "CALCULATED",
+    iadeTutari: 0,
+    ...ek,
+  });
+
+  /**
+   * ⭐ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR — ve tam bu yüzden adlar
+   * YALNIZ HARF DURUMUYLA ayrılıyor. Farklı adlar seçilseydi ada dayalı
+   * eski gövde de testi geçerdi; ayrımı gösteren şey, adların MySQL
+   * karşılaştırmasında AYNI sayılacak kadar yakın olmasıdır.
+   */
+  const ikiHesap = panelHesapla(
+    pencere,
+    [
+      satis({ hesapId: "hesap-1", hesapAdi: "S.Ahmet", gelir: 1000 }),
+      satis({ hesapId: "hesap-2", hesapAdi: "s.ahmet", gelir: 400 }),
+    ],
+    [],
+  );
+  const blok = ikiHesap[0]?.kanallar[0];
+  kontrol(
+    "harf farklı İKİ hesap AYRI satır kalıyor",
+    (blok?.hesaplar.length ?? 0) === 2,
+    blok?.hesaplar.map((h) => h.hesapAdi),
+  );
+  yakin(
+    "  ...ve ciroları BİRLEŞMİYOR",
+    blok?.hesaplar.find((h) => h.hesapId === "hesap-1")?.gelir ?? -1,
+    1000,
+  );
+
+  /**
+   * ⛔ TERS YÖN — "yanlış yanma". Yalnız üstteki ölçüt yazılsaydı, hiç
+   * gruplamayan bir gövde de yeşil geçerdi: iki satır zaten iki hesap
+   * verir. Aynı KİMLİK birleşmek ZORUNDA.
+   * _(Anayasa: "iki ayrı mutasyon gerekir — kaldıran ve fazladan yapan".)_
+   */
+  const tekKimlik = panelHesapla(
+    pencere,
+    [
+      satis({ hesapId: "hesap-1", hesapAdi: "S.Ahmet", gelir: 1000 }),
+      satis({ hesapId: "hesap-1", hesapAdi: "s.ahmet", gelir: 400 }),
+    ],
+    [],
+  );
+  kontrol(
+    "AYNI kimlik TEK satırda birleşiyor",
+    (tekKimlik[0]?.kanallar[0]?.hesaplar.length ?? 0) === 1,
+  );
+  yakin(
+    "  ...ve ciroları toplanıyor",
+    tekKimlik[0]?.kanallar[0]?.hesaplar[0]?.gelir ?? -1,
+    1400,
+  );
+  /**
+   * Ad ETİKETTİR: birleşen satırda İLK gelen yazım kalır. Ölçüt bunu
+   * sabitliyor ki "hangi ad kazanır" sorusu sessiz bir kura olmasın.
+   */
+  kontrol(
+    "  ...birleşen satırda İLK yazım etiket olarak kalıyor",
+    tekKimlik[0]?.kanallar[0]?.hesaplar[0]?.hesapAdi === "S.Ahmet",
+  );
+
+  /** İade de aynı kimlikle düşer — satışla İKİ ayrı yol, tek ölçüt. */
+  const iadeli = panelHesapla(
+    pencere,
+    [
+      satis({ hesapId: "hesap-1", hesapAdi: "S.Ahmet", gelir: 1000 }),
+      satis({ hesapId: "hesap-2", hesapAdi: "s.ahmet", gelir: 400 }),
+    ],
+    [iadeK14({ hesapId: "hesap-2", hesapAdi: "s.ahmet", iadeTutari: 150 })],
+  );
+  const hesaplar = iadeli[0]?.kanallar[0]?.hesaplar ?? [];
+  yakin(
+    "iade DOĞRU hesaba düşüyor",
+    hesaplar.find((h) => h.hesapId === "hesap-2")?.iadeTutari ?? -1,
+    150,
+  );
+  yakin(
+    "  ...öteki hesap iadeden ETKİLENMİYOR",
+    hesaplar.find((h) => h.hesapId === "hesap-1")?.iadeTutari ?? -1,
+    0,
+  );
+
+  /**
+   * ⚠ ZİNCİR: gövde doğru olabilir ve EKRAN hâlâ adla anahtarlanıyor
+   * olabilir. React anahtarı da kimliğe bağlı olmalı — aynı kanalda harf
+   * farklı iki hesap aynı anahtarı üretirse React satırları karıştırır.
+   * _(Anayasa: "sınanmamış ekran, ekran değildir".)_
+   */
+  const panelKaynagi = readFileSync("src/app/page.tsx", "utf8");
+  kontrol(
+    "ekran hesap satırını KİMLİKLE anahtarlıyor",
+    /key=[{]`[$][{]kanal[.]kanalKodu[}]-[$][{]hesap[.]hesapId[}]`[}]/.test(
+      panelKaynagi,
+    ),
+  );
+  kontrol(
+    "  ...ve hesap kimliği SORGUDAN çekiliyor",
+    /hesapId: satis[.]channelAccount[.]id,/.test(panelKaynagi) &&
+      /hesapId: iade[.]sale[.]channelAccount[.]id,/.test(panelKaynagi),
   );
 }
 

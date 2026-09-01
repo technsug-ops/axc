@@ -44,10 +44,16 @@ import {
   oranUyarisi,
 } from "../src/lib/komisyon/oran-uyarisi";
 import type { KomisyonOkumasi } from "../src/lib/komisyon/model";
+import {
+  KANAL_RITMI,
+  ritimGunleri,
+  sonGuncellemeGunu,
+} from "../src/lib/komisyon-ritmi";
+import { KANAL_SIRASI } from "../src/lib/kanal-sirasi";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1047,6 +1053,140 @@ console.log("\nORAN UYARISI (satış formu)");
   ]) {
     kontrol(`  sözlük: ${a}`, (sozluk.Satis?.[a] ?? "").length > 0);
   }
+}
+
+
+// ===========================================================================
+// K14c — KOMİSYON YAYIM RİTMİ: ANAHTAR KOD MU, AD MI?
+// ===========================================================================
+//
+// ⛔ NİYE BEKÇİ: sözlük kanal ADIYLA anahtarlanmıştı. Ad ayarlardan
+// düzenlenebilir; düzenlendiği gün eşleşme düşer, ritim TANIMSIZ olur ve
+// bayatlık ölçümü SESSİZCE kaybolur — üstelik boş dönüş makul görünür.
+//
+// ⭐ ÖLÇÜT SAF GÖVDEYİ ÇAĞIRIR, KAYNAK TARAMAZ (anayasa: "saf hesap
+// katmanı, desen tarayan bekçiye muhtaç olmaz"). Yalnız BAĞLANTI —
+// betiğin `.code` okuduğu — kaynaktan sınanıyor; onun saf karşılığı yok.
+{
+  console.log("\n── K14c · KOMİSYON YAYIM RİTMİ ─────────────────────────");
+
+  const anahtarlar = Object.keys(KANAL_RITMI);
+  kontrol("ritim sözlüğü BOŞ DEĞİL", anahtarlar.length > 0);
+
+  /**
+   * ⛔ TABAN DOLULUĞU AYRICA KANITLANIR: boş sözlükte `every` daima `true`
+   * döner ve aşağıdaki iki ölçüt sessizce anlamsızlaşırdı.
+   * _(Anayasa: "every/all kapıları taban doluluğunu ayrıca kanıtlar".)_
+   */
+  kontrol(
+    "  ...ve bilinen kanalları kapsıyor (TRENDYOL + HEPSIBURADA)",
+    anahtarlar.includes("TRENDYOL") && anahtarlar.includes("HEPSIBURADA"),
+  );
+
+  kontrol(
+    "anahtarlar KOD biçiminde (BÜYÜK harf) — ad değil",
+    anahtarlar.every((a) => /^[A-Z0-9_]+$/.test(a)),
+  );
+
+  /**
+   * Kod olması yetmez, GERÇEK bir kanal kodu olmalı: `TRENDYOLX` de büyük
+   * harftir ama hiçbir kanala karşılık gelmez.
+   */
+  kontrol(
+    "  ...ve her anahtar TANINAN bir kanal kodu",
+    anahtarlar.every((a) => (KANAL_SIRASI as readonly string[]).includes(a)),
+  );
+
+  // ── Bilinmeyen kanal: `null`, boş dizi DEĞİL ────────────────────────
+  kontrol("bilinen kod ritim döndürüyor", ritimGunleri("TRENDYOL") !== null);
+  kontrol(
+    "  ...ve Trendyol İKİ yayım günü taşıyor (salı + cuma)",
+    (ritimGunleri("TRENDYOL") ?? []).length === 2,
+  );
+  kontrol(
+    "bilinmeyen kod `null` döndürüyor — boş dizi DEĞİL",
+    ritimGunleri("BOYLE_BIR_KANAL_YOK") === null,
+  );
+  /**
+   * ⛔ ESKİ AD ANAHTARI ARTIK EŞLEŞMEMELİ. Bu ölçüt yön olarak ötekinin
+   * TERSİ: yukarısı "kod çalışıyor mu", burası "ad ÇALIŞMIYOR mu" diye
+   * sorar. Yalnız biri yazılsaydı, sözlüğe ada göre ikinci bir anahtar
+   * eklenmesi serbest kalırdı.
+   */
+  kontrol(
+    "kanal ADI anahtar olarak eşleşmiyor",
+    ritimGunleri("Trendyol") === null && ritimGunleri("Hepsiburada") === null,
+  );
+
+  // ── En yakın yayım günü ─────────────────────────────────────────────
+  /**
+   * ⭐ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR: CUMA günü ölçülüyor.
+   * "İlk günü al" ya da "en eskiyi al" diye yazılsaydı salı (3 gün önce)
+   * seçilir ve cuma yayımı kaçardı — tek yayım günlü bir kanalla
+   * sınansaydı bu fark hiç görünmezdi.
+   */
+  const cuma = new Date("2026-08-28T12:00:00Z"); // 28.08.2026 = CUMA
+  kontrol(
+    "iki yayım gününden EN YAKINI seçiliyor (cuma → cuma)",
+    sonGuncellemeGunu(cuma, [2, 5]).toISOString().slice(0, 10) === "2026-08-28",
+  );
+  kontrol(
+    "  ...tek yayım günlü kanalda geriye gidiyor (cuma → çarşamba)",
+    sonGuncellemeGunu(cuma, [3]).toISOString().slice(0, 10) === "2026-08-26",
+  );
+  kontrol(
+    "yayım günü BUGÜNSE bugünü sayar",
+    sonGuncellemeGunu(new Date("2026-08-26T12:00:00Z"), [3])
+      .toISOString()
+      .slice(0, 10) === "2026-08-26",
+  );
+
+  // ── BAĞLANTI: betik gerçekten KODLA arıyor mu? ──────────────────────
+  /**
+   * ⚠ SAF GÖVDE DOĞRU OLABİLİR VE ÇAĞRILMAYABİLİR — anayasadaki "zincir,
+   * halkalarının varlığıyla değil BAĞLANTISIYLA sınanır" vakası.
+   */
+  const envanter = readFileSync("scripts/canli-komisyon-envanter.ts", "utf8");
+  kontrol("betik ritmi GÖVDEDEN okuyor", /ritimGunleri\(kod\)/.test(envanter));
+  /**
+   * ⛔ DESEN İKİ YERDE GEÇİYOR — SAYILARAK ÖLÇÜLÜR (mutasyon K14c-5,
+   * 01.09.2026). İlk yazımda tek `test()` vardı ve gruplamayı ada
+   * çeviren mutasyon KAÇTI: `const kod = ...channel.code;` hem 1. bölüm
+   * özetinde hem gün kırılımı tablosunda geçiyor; birini bozan mutasyon
+   * ötekini ayakta buldu ve bekçi yeşil kaldı.
+   * _(Anayasa: "ÖNCE DESENİ SAY — birden çoksa her yeri ayrı sına".)_
+   */
+  const kodAtamasi = (envanter.match(
+    /const kod = k[.]channelAccount[.]channel[.]code;/g,
+  ) ?? []).length;
+  kontrol(
+    `  ...ve İKİ gruplama da KANAL KODUYLA (bulunan: ${kodAtamasi})`,
+    kodAtamasi === 2,
+  );
+  /**
+   * Ve ters yön: ada dönen bir atama hiç kalmamalı. Sayma ölçütü tek
+   * başına yetmez — üçüncü bir yer eklenip biri ada bağlansaydı sayı
+   * yine 2 çıkabilirdi.
+   */
+  kontrol(
+    "  ...anahtar olarak kanal ADI atanmıyor",
+    !/const kod = k[.]channelAccount[.]channel[.]name;/.test(envanter),
+  );
+  kontrol(
+    "  ...bayat süzgeci de KODLA eşleşiyor",
+    /channel[.]code === kod/.test(envanter),
+  );
+  /**
+   * ⛔ ADLA GRUPLAMA GERİ GELEMEZ. Ad yalnız ETİKET olarak basılır
+   * (`o.ad`); `channel.name === ad` biçiminde bir EŞLEŞTİRME yasak.
+   */
+  kontrol("adla eşleştirme kalmadı", !/channel[.]name === ad/.test(envanter));
+  kontrol(
+    "TANIMSIZ satırı hangi KODUN aranıp bulunamadığını yazıyor",
+    /ritmi TANIMSIZ [(]kod [$][{]kod[}][)]/.test(envanter),
+  );
+
+  kosanBolumler.push("yayım ritmi");
 }
 
 // ===========================================================================

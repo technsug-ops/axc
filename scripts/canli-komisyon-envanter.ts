@@ -37,24 +37,10 @@
 import { gunDegeri, isTakvimGunu } from "../src/lib/donem";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
+import { ritimGunleri, sonGuncellemeGunu } from "../src/lib/komisyon-ritmi";
 
 /** Kaç günlük satış taranacak. */
 const GERIYE_GUN = 60;
-
-/**
- * Oranın haftalık güncellendiği gün (0=Paz … 6=Cmt).
- * _Kaynak: CLAUDE.md iş sabitleri — Trendyol Salı, Hepsiburada Çarşamba._
- */
-const GUNCELLEME_GUNU: Record<string, number[]> = {
-  /**
-   * TRENDYOL HAFTADA İKİ KEZ — 18.08.2026'da tarife dosyasından ÖLÇÜLDÜ.
-   * Pencereler: Salı 08:00→Cuma 07:59 (3 gün) · Cuma 08:00→Salı 07:59
-   * (4 gün). Tek gün yazsaydık cuma yayımını kaçırır, salıya kadar
-   * "güncel" sayardık.
-   */
-  Trendyol: [2, 5],
-  Hepsiburada: [3],
-};
 
 function para(d: number | null): string {
   if (d === null) return "—";
@@ -70,23 +56,6 @@ function doldur(m: string, n: number): string {
 
 function gun(d: Date | null): string {
   return d === null ? "—" : d.toISOString().slice(0, 10);
-}
-
-/**
- * Verilen haftanın gününe göre EN SON güncelleme tarihi.
- * Bugün o günse bugünü sayar — güncelleme günü henüz geçmemiş olabilir,
- * o yüzden "bayat" hükmü bir sonraki bölümde eşikle veriliyor.
- */
-function sonGuncellemeGunu(bugun: Date, gunler: number[]): Date {
-  /** Birden çok yayım günü varsa EN YAKINI geçerlidir. */
-  let enYakin: Date | null = null;
-  for (const g of gunler) {
-    const d = new Date(bugun);
-    const fark = (d.getUTCDay() - g + 7) % 7;
-    d.setUTCDate(d.getUTCDate() - fark);
-    if (!enYakin || d > enYakin) enYakin = d;
-  }
-  return enYakin!;
 }
 
 async function main() {
@@ -121,7 +90,7 @@ async function main() {
       commissionUpdatedAt: true,
       variant: { select: { product: { select: { name: true } } } },
       channelAccount: {
-        select: { name: true, channel: { select: { name: true } } },
+        select: { name: true, channel: { select: { code: true, name: true } } },
       },
     },
   });
@@ -129,11 +98,24 @@ async function main() {
   console.log("  ── 1) ORAN DOLULUĞU ───────────────────────────────────────");
   console.log(`     aktif kanal SKU'su: ${kayitlar.length}`);
 
-  type Ozet = { toplam: number; dolu: number; enEski: Date | null; enYeni: Date | null };
+  /** `ad` yalnız EKRAN ETİKETİ; gruplama ve sözlük araması `kod` ile. */
+  type Ozet = {
+    ad: string;
+    toplam: number;
+    dolu: number;
+    enEski: Date | null;
+    enYeni: Date | null;
+  };
   const kanalOzeti = new Map<string, Ozet>();
   for (const k of kayitlar) {
-    const ad = k.channelAccount.channel.name;
-    const o = kanalOzeti.get(ad) ?? { toplam: 0, dolu: 0, enEski: null, enYeni: null };
+    const kod = k.channelAccount.channel.code;
+    const o = kanalOzeti.get(kod) ?? {
+      ad: k.channelAccount.channel.name,
+      toplam: 0,
+      dolu: 0,
+      enEski: null,
+      enYeni: null,
+    };
     o.toplam++;
     if (k.commissionRate !== null) o.dolu++;
     const t = k.commissionUpdatedAt;
@@ -141,7 +123,7 @@ async function main() {
       if (!o.enEski || t < o.enEski) o.enEski = t;
       if (!o.enYeni || t > o.enYeni) o.enYeni = t;
     }
-    kanalOzeti.set(ad, o);
+    kanalOzeti.set(kod, o);
   }
 
   const toplamDolu = kayitlar.filter((k) => k.commissionRate !== null).length;
@@ -149,9 +131,9 @@ async function main() {
   console.log(`     oranı BOŞ:          ${kayitlar.length - toplamDolu}`);
   console.log("");
   console.log(`     ${doldur("kanal", 16)} ${doldur("dolu/toplam", 14)} ${doldur("en eski", 12)} en yeni`);
-  for (const [ad, o] of [...kanalOzeti.entries()].sort()) {
+  for (const [, o] of [...kanalOzeti.entries()].sort()) {
     console.log(
-      `     ${doldur(ad, 16)} ${doldur(`${o.dolu}/${o.toplam}`, 14)} ${doldur(gun(o.enEski), 12)} ${gun(o.enYeni)}`,
+      `     ${doldur(o.ad, 16)} ${doldur(`${o.dolu}/${o.toplam}`, 14)} ${doldur(gun(o.enEski), 12)} ${gun(o.enYeni)}`,
     );
   }
   /**
@@ -189,18 +171,23 @@ async function main() {
   console.log("     İkisi arasındaki boşluk = tazelenmemiş olabilir.");
   console.log("");
 
-  for (const [ad, o] of [...kanalOzeti.entries()].sort()) {
-    const haftaninGunu = GUNCELLEME_GUNU[ad];
-    if (haftaninGunu === undefined) {
+  for (const [kod, o] of [...kanalOzeti.entries()].sort()) {
+    const haftaninGunu = ritimGunleri(kod);
+    if (haftaninGunu === null) {
+      /**
+       * ⚠ SESSİZ DEĞİL, SAYILI. Sözlükte olmayan kanal için hüküm
+       * verilmez ama KOD da basılır: ritim tanımlıyken bir gün TANIMSIZ'a
+       * düşerse, hangi anahtarın aranıp bulunamadığı ekranda durur.
+       */
       console.log(
-        `     ${doldur(ad, 16)} güncelleme ritmi TANIMSIZ — bayatlık ölçülemedi`,
+        `     ${doldur(o.ad, 16)} güncelleme ritmi TANIMSIZ (kod ${kod}) — bayatlık ölçülemedi`,
       );
       continue;
     }
     const sinir = sonGuncellemeGunu(bugun, haftaninGunu);
     const bayatlar = kayitlar.filter(
       (k) =>
-        k.channelAccount.channel.name === ad &&
+        k.channelAccount.channel.code === kod &&
         k.commissionRate !== null &&
         (k.commissionUpdatedAt === null || k.commissionUpdatedAt < sinir),
     );
@@ -223,7 +210,7 @@ async function main() {
      */
     const guncellenen = o.dolu - bayatlar.length;
     console.log(
-      `     ${doldur(ad, 16)} beklenen yayım ${gun(sinir)} · veride en yeni ${gun(o.enYeni)}`,
+      `     ${doldur(o.ad, 16)} beklenen yayım ${gun(sinir)} · veride en yeni ${gun(o.enYeni)}`,
     );
     console.log(
       `     ${doldur("", 16)} → yayımdan beri GÜNCELLENEN ${guncellenen} · DEĞİŞMEYEN ${bayatlar.length}  (toplam ${o.dolu})`,
@@ -266,20 +253,23 @@ async function main() {
    * denebiliyor.
    */
   console.log("     GÜNCELLEME TARİHİ DAĞILIMI — KANAL KIRILIMLI (son 10 gün):");
+  /** Sütunlar KODLA gruplanır; başlıkta okunabilir AD durur. */
   const kanallar = [...kanalOzeti.keys()].sort();
   const gunKanal = new Map<string, Map<string, number>>();
   for (const k of kayitlar) {
     if (k.commissionUpdatedAt === null) continue;
     const g = gun(k.commissionUpdatedAt);
     const satir = gunKanal.get(g) ?? new Map<string, number>();
-    const ad = k.channelAccount.channel.name;
-    satir.set(ad, (satir.get(ad) ?? 0) + 1);
+    const kod = k.channelAccount.channel.code;
+    satir.set(kod, (satir.get(kod) ?? 0) + 1);
     gunKanal.set(g, satir);
   }
   const siralı = [...gunKanal.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
 
   console.log(
-    `       ${doldur("tarih", 12)} ${doldur("toplam", 8)} ${kanallar.map((a) => doldur(a, 14)).join("")}`,
+    `       ${doldur("tarih", 12)} ${doldur("toplam", 8)} ${kanallar
+      .map((kod) => doldur(kanalOzeti.get(kod)?.ad ?? kod, 14))
+      .join("")}`,
   );
   for (const [g, satir] of siralı.slice(0, 10)) {
     const toplam = [...satir.values()].reduce((t, n) => t + n, 0);

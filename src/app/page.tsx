@@ -342,7 +342,10 @@ export default async function AnaSayfa({
         channelAccount: {
           // `name` HESAP KIRILIMI İÇİN: aynı pazaryerindeki iki mağaza
           // toplamın içinde kaybolmasın (mimar kararı 13.08.2026).
+          // ⛔ `id` DE ÇEKİLİR: gruplama KİMLİKLE yapılır, ad yalnız etiket
+          // (K14t, 01.09.2026 — harf farkıyla açılan ikinci hesap birleşirdi).
           select: {
+            id: true,
             name: true,
             channel: { select: { code: true, name: true } },
           },
@@ -395,6 +398,7 @@ export default async function AnaSayfa({
           select: {
             channelAccount: {
               select: {
+                id: true,
                 name: true,
                 channel: { select: { code: true, name: true } },
               },
@@ -584,6 +588,7 @@ export default async function AnaSayfa({
     return {
       kanalKodu: satis.channelAccount.channel.code,
       kanalAdi: satis.channelAccount.channel.name,
+      hesapId: satis.channelAccount.id,
       hesapAdi: satis.channelAccount.name,
       tarih: satis.soldAt,
       paraBirimi,
@@ -600,6 +605,7 @@ export default async function AnaSayfa({
   const iadeler: PanelIadesi[] = iadeKayitlari.map((iade) => ({
     kanalKodu: iade.sale.channelAccount.channel.code,
     kanalAdi: iade.sale.channelAccount.channel.name,
+    hesapId: iade.sale.channelAccount.id,
     hesapAdi: iade.sale.channelAccount.name,
     tarih: iade.occurredAt,
     // Rapor ekranıyla aynı kural: iadenin para birimi kâr snapshot'ından.
@@ -1857,7 +1863,7 @@ export default async function AnaSayfa({
             <ul className="space-y-1 border-t pt-2">
               {kanal.hesaplar.map((hesap) => (
                 <li
-                  key={`${kanal.kanalKodu}-${hesap.hesapAdi}`}
+                  key={`${kanal.kanalKodu}-${hesap.hesapId}`}
                   className="text-muted-foreground flex flex-wrap items-baseline justify-between gap-2 text-xs"
                 >
                   <span className="min-w-0 truncate">

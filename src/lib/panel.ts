@@ -43,7 +43,21 @@ export type PanelSatisi = {
   /** Kanalın kendi kodu — hesap değil KANAL seviyesinde gruplanır. */
   kanalKodu: string;
   kanalAdi: string;
-  /** Kanal HESABININ adı — kanal altındaki kırılım için ("AXCALI"). */
+  /**
+   * KANAL HESABININ KİMLİĞİ — GRUPLAMA BUNDAN YAPILIR (K14t, 01.09.2026).
+   *
+   * ⛔ AD İLE GRUPLAMA TUZAKTI: `hesapAdi` bir ETİKETTİR, kimlik değil.
+   * MySQL karşılaştırması harf duyarsız; aynı kanalda `S.Ahmet` ile
+   * `s.ahmet` açılsaydı panel ikisini TEK satırda birleştirir ve iki ayrı
+   * mağazanın cirosu sessizce toplanırdı.
+   *
+   * ⚠ VE RİSK TEORİK DEĞİL — ÖLÇÜLDÜ (01.09.2026): aynı kişi kanaldan
+   * kanala üç farklı yazımla duruyor (`S.Ahmet` · `S.ahmet` · `s.ahmet`).
+   * Aynı kanalda çakışma bugün YOK, ama yazım tutarsızlığı zaten kural.
+   * _(Anayasa: "kimlik varken dizeyle aranmaz".)_
+   */
+  hesapId: string;
+  /** Kanal HESABININ adı — yalnız EKRAN ETİKETİ. Gruplama `hesapId` ile. */
   hesapAdi: string;
   /** İş tarihi (UTC gece yarısı). */
   tarih: Date;
@@ -124,7 +138,9 @@ export type PanelIadesi = {
   /** İadenin bağlı olduğu SATIŞIN kanalı. */
   kanalKodu: string;
   kanalAdi: string;
-  /** İadenin bağlı olduğu SATIŞIN kanal hesabı. */
+  /** İadenin bağlı olduğu SATIŞIN kanal hesabı — kimlik (K14t). */
+  hesapId: string;
+  /** Yalnız ekran etiketi; gruplama `hesapId` ile. */
   hesapAdi: string;
   /** İadenin KENDİ tarihi (occurredAt) — satışın tarihi değil. */
   tarih: Date;
@@ -149,6 +165,8 @@ export type PanelIadesi = {
 
 /** Kanal altındaki hesap kırılımı — "Trendyol'un hangi mağazası?" */
 export type HesapSatiri = {
+  /** ⛔ KİMLİK — React anahtarı ve gruplama bundan; ad yalnız etiket. */
+  hesapId: string;
   hesapAdi: string;
   adet: number;
   gelir: number;
@@ -341,11 +359,23 @@ export function panelHesapla(
     return kanal;
   }
 
-  /** Kanal içindeki hesap satırını gerektiğinde açar. */
-  function hesapSatiri(kanal: KanalBlogu, hesapAdi: string): HesapSatiri {
-    let hesap = kanal.hesaplar.find((h) => h.hesapAdi === hesapAdi);
+  /**
+   * Kanal içindeki hesap satırını gerektiğinde açar.
+   *
+   * ⛔ EŞLEŞTİRME KİMLİKLE (K14t, 01.09.2026). Önce `hesapAdi` ile
+   * eşleşiyordu: aynı kanalda harf farkıyla ikinci bir hesap açıldığında
+   * (`S.Ahmet` ↔ `s.ahmet`) iki mağaza TEK satırda birleşir ve ciroları
+   * sessizce toplanırdı. Ad ETİKETTİR; ilk gelen yazım kazanır.
+   */
+  function hesapSatiri(
+    kanal: KanalBlogu,
+    hesapId: string,
+    hesapAdi: string,
+  ): HesapSatiri {
+    let hesap = kanal.hesaplar.find((h) => h.hesapId === hesapId);
     if (!hesap) {
       hesap = {
+        hesapId,
         hesapAdi,
         adet: 0,
         gelir: 0,
@@ -370,7 +400,7 @@ export function panelHesapla(
     // NET-1 aynı bayrağa bakar; "hesaplanamayan" bir kez sayılır.
     if (hesaplandi(satis.durum, satis.net1)) kanal.net1 += satis.net1;
 
-    const hesap = hesapSatiri(kanal, satis.hesapAdi);
+    const hesap = hesapSatiri(kanal, satis.hesapId, satis.hesapAdi);
     hesap.adet++;
     hesap.gelir += satis.gelir;
     if (hesaplandi(satis.durum, satis.net2)) hesap.net2 += satis.net2;
@@ -435,7 +465,7 @@ export function panelHesapla(
     else kanal.hesaplanamayanIadeAdedi++;
     if (hesaplandi(iade.durum, iade.net1)) kanal.net1 += iade.net1;
 
-    const hesap = hesapSatiri(kanal, iade.hesapAdi);
+    const hesap = hesapSatiri(kanal, iade.hesapId, iade.hesapAdi);
     hesap.iadeAdedi++;
     hesap.iadeTutari += iade.iadeTutari;
     if (hesaplandi(iade.durum, iade.net2)) hesap.net2 += iade.net2;
