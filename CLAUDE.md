@@ -1142,6 +1142,40 @@ düzeltilecek bir şey yoktu. Aykırı artık **ortalamadan dışlanır**
 (istisna ortalamayı temsil etmez) ve **beyan edilir** (kaybolmaz); kilit
 yalnız gerçekten kaba olan eksende kalır.
 
+### `NOT` SÜZGECİ NULL SATIRI DA ATAR — SESSİZCE (KESİN KURAL)
+
+_Ölçüm hatası 02.09.2026._ `NOT: { alan: { contains: "x" } }` yazıldığında
+SQL `NOT (alan LIKE '%x%')` üretir; `alan` **NULL** ise sonuç `TRUE` değil
+`NULL`'dur ve satır **elenir.** Yani "şunu içermeyenler" diye kurulan bir
+süzgeç, aslında "şunu içermeyen VE alanı DOLU olanlar" demektir.
+
+**Vaka:** sayım partilerinin maliyetini o varyantın öteki fiyatlarıyla
+kıyaslıyordum ve `NOT: { note: { contains: "sayim-fiziksel" } }` yazdım.
+En eski, düz alımların notu **boştu** ve hepsi sessizce düştü:
+
+    süzgeçli    2.361,50 – 2.386,50   → yayılma %1,1   "soru anlamsız"
+    süzgeçsiz   1.931,34 – 2.386,50   → yayılma %23,6  SORU ANLAMLI
+
+**Yirmi kat fark**, ve yanlış olan taraf "sorun yok" diyordu. Hata vermedi,
+sayı makul göründü; yakalanmasının tek sebebi aynı varyantı iki ayrı
+ölçümde farklı sonuçla görmem oldu.
+
+> **KURAL:** nullable bir alana `NOT`/`not` süzgeci kurulurken NULL dalı
+> AÇIKÇA yazılır:
+> `OR: [{ alan: null }, { NOT: { alan: { contains: "x" } } }]`
+> — ya da soru tersine çevrilir. "Kastetmediğim satırlar da elendi mi?"
+> sorusu, süzgeç yazılırken sorulur.
+
+📏 **ÖLÇÜLDÜ — ÜRETİM KODUNDA YOK (02.09.2026):** `src/` altındaki bütün
+`NOT:` kullanımları **nullable OLMAYAN** alanlarda (`id` · `name` · `code` ·
+`status PurchaseStatus @default(DRAFT)`). Kusur yalnız geçici ölçüm
+betiğindeydi; desen bugün üretimde tetiklenmiyor.
+⛔ **AÇILIŞ ŞARTI:** nullable bir alana `NOT` süzgeci yazan ilk üretim kodu.
+
+_("Boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim değildir"
+kuralının SÜZGEÇ tarafı: orada araç hiç bakamıyordu, burada baktığını
+sanıyor ama kümenin bir kısmını hiç görmüyor.)_
+
 ### DOĞRULAMA ARACI CEVABI GÖSTERİYORSA DOĞRULAMA DEĞİLDİR (KESİN KURAL)
 
 _Kullanıcı tespiti 02.09.2026._ Bir değeri kullanıcıya doğrulatan araç, o
