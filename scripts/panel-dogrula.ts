@@ -43,6 +43,7 @@ import {
   karEksikKanalAdresi,
 } from "../src/lib/liste-suzgeci";
 import { kdvHaric } from "../src/lib/kar";
+import { tabloNoktalari } from "../src/lib/tablo-sirasi";
 import {
   PANEL_KANAL_TAVANI,
   gizlenenKanalSayisi,
@@ -5182,6 +5183,62 @@ console.log("\nKANAL KARTI TAVANI — PANELDE 3, DÖKÜM SAYFASINDA HEPSİ (K124
   kontrol(
     "/kanallar kâr iznini İSTİYOR",
     rotaK124.includes('sayfaIzni("satis.kar.gor")'),
+  );
+}
+
+// ===========================================================================
+console.log("\nZAMAN TABLOSU SIRASI — EN YENİ ÜSTTE (K125)");
+// ===========================================================================
+{
+  /**
+   * ⛔ KULLANICI KARARI 01.09.2026: _"tabloların devamı en yeni tarihi üst
+   * tarafa koymalı, diğer tablolarda da görünüm bu şekilde olsun."_
+   *
+   * ⚠ GRAFİK İLE TABLO AYNI DİZİYİ TERS OKUR VE İKİSİ DE DOĞRU: grafik
+   * soldan sağa zamanı çizer (ters çevrilirse yükselen seri düşüyor
+   * görünür), tablo bir DÖKÜMDÜR ve dökümde göz önce EN SON olana bakar.
+   */
+  kontrol(
+    "tablo en yeniyi üste alıyor",
+    JSON.stringify(tabloNoktalari([1, 2, 3])) === JSON.stringify([3, 2, 1]),
+  );
+  /**
+   * ⛔ GİRDİ BOZULMAZ: `reverse()` yerinde çevirir ve AYNI diziyi kullanan
+   * grafik sessizce ters çizilirdi — eğri yine "makul" görünür, kimse fark
+   * etmez. Bu yüzden kopya alınması ayrıca ölçülüyor.
+   */
+  {
+    const kaynak = [1, 2, 3];
+    tabloNoktalari(kaynak);
+    kontrol(
+      "girdi dizisi BOZULMUYOR",
+      JSON.stringify(kaynak) === JSON.stringify([1, 2, 3]),
+    );
+  }
+  kontrol("boş dizi güvenli", tabloNoktalari([]).length === 0);
+
+  /**
+   * ⛔ ZİNCİR — VE İKİ YÖN AYRI SINANIYOR: tablo TERS okumalı, grafik HAM
+   * okumalı. Yalnız biri sınansaydı öteki yön serbest kalırdı.
+   */
+  const grafikKaynagi = readFileSync("src/components/uc-serili-grafik.tsx", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  const detayBasi = grafikKaynagi.indexOf("<details");
+  kontrol("grafik tablosu bulundu", detayBasi >= 0);
+  const cizimBloku = detayBasi < 0 ? "" : grafikKaynagi.slice(0, detayBasi);
+  const tabloBloku = detayBasi < 0 ? "" : grafikKaynagi.slice(detayBasi);
+  kontrol(
+    "tablo gövdesi TERS diziyi kullanıyor",
+    /<tbody>[\s\S]{0,400}tabloNoktalari\(noktalar\)\.map/.test(tabloBloku),
+  );
+  /**
+   * ⛔ ÇİZİM HAM DİZİYİ KULLANIR: grafik ters çevrilirse zaman ekseni
+   * tersine döner ve yükselen bir seri düşüyor görünür.
+   */
+  kontrol(
+    "grafik çizimi HAM diziyi kullanıyor",
+    cizimBloku.length > 0 && !cizimBloku.includes("tabloNoktalari("),
   );
 }
 

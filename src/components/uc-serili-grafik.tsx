@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { tabloNoktalari } from "@/lib/tablo-sirasi";
 
 /**
  * ============================================================================
@@ -403,7 +404,14 @@ export function UcSeriliGrafik({
               </tr>
             </thead>
             <tbody>
-              {noktalar.map((n, i) => (
+              {/**
+               * ⛔ EN YENİ ÜSTTE — KULLANICI KARARI 01.09.2026.
+               * Tablo bir DÖKÜMDÜR: göz önce EN SON olana bakar. Grafik ise
+               * AYNI diziyi ham hâliyle kullanıyor çünkü soldan sağa zamanı
+               * çiziyor; ters çevrilseydi yükselen seri düşüyor görünürdü.
+               * İkisi de doğru, ikisi ayrı soruya cevap veriyor.
+               */}
+              {tabloNoktalari(noktalar).map((n, i) => (
                 <tr key={n.tamEtiket + i} className="border-b last:border-0">
                   <td className="text-muted-foreground py-1 pr-2 whitespace-nowrap">
                     {n.tamEtiket}

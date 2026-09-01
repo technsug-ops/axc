@@ -483,9 +483,34 @@ console.log("\n9) TABLO GRAFİKLE AYNI ŞEYİ GÖSTERİR — kırpma YOK");
   const tbodySon = bilesen.indexOf("</tbody>");
   kontrol("tablo gövdesi bulunabiliyor", tbodyBas > 0 && tbodySon > tbodyBas);
   const tbody = bilesen.slice(tbodyBas, tbodySon);
+  /**
+   * ⚠ ÖLÇÜT 01.09.2026'DA GÜNCELLENDİ — VE NİYE. Eski hâli `noktalar.map(`
+   * diye ARADIĞI İÇİN, tablonun satır SIRASINI değiştirmeyi de yasaklıyordu.
+   * Kullanıcı "tablolar en yeni tarihi üste koymalı" deyince (K125) bekçi
+   * kırmızı yandı ve **haklıydı**: kod değişmişti. Ama ölçüt yanlış şeyi
+   * koruyordu — koruduğu değişmez **KÜME**dir ("tablo grafiğin gördüğü
+   * kümenin aynısını gösterir, kırpılmış bir alt küme değil"), SIRA değil.
+   * _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez" — eskiyen
+   * ölçüt güncellenir, SUSTURULMAZ; ve niye eskidiği yazılır.)_
+   *
+   * ⛔ GEVŞETİLMEDİ, DARALTILDI: kabul edilen tek dönüşüm ORTAK GÖVDEDİR
+   * (`tabloNoktalari(noktalar)`), yani sırayı da tek yerden okuyoruz. Serbest
+   * bir ifade kabul edilseydi `noktalar.filter(...)` de geçerdi ve tablo
+   * grafikten farklı bir küme gösterebilirdi.
+   */
   kontrol(
-    "tablo GRAFİĞİN dizisini geziyor (`noktalar`) — ayrı kırpılmış dizi yok",
-    tbody.includes("noktalar.map("),
+    "tablo GRAFİĞİN dizisini geziyor — ayrı/kırpılmış dizi yok",
+    /(^|[^.\w])noktalar\.map\(/.test(tbody) ||
+      tbody.includes("tabloNoktalari(noktalar).map("),
+  );
+  /**
+   * ⛔ VE SIRA DÖNÜŞÜMÜ ORTAK GÖVDEDEN GELİR: tablo kendi başına
+   * `[...noktalar].reverse()` yapsaydı, aynı diziyi kullanan grafik bir gün
+   * yerinde çevrilip sessizce ters çizilebilirdi.
+   */
+  kontrol(
+    "  ...sıra dönüşümü varsa ORTAK GÖVDEDEN",
+    !/reverse\(\)|\.sort\(/.test(tbody),
   );
   /**
    * ⚠ VE KIRPMANIN GERİ GELMEDİĞİ AYRICA SINANIYOR: `slice`/`tavan` gibi
