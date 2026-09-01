@@ -112,3 +112,70 @@ export function kanallariSirala<
     return a.kanalAdi.localeCompare(b.kanalAdi, "tr");
   });
 }
+
+/**
+ * ============================================================================
+ *  PANELDE KAÇ KANAL KARTI (K124, 01.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ KULLANICI KARARI: _"burada sadece 3 tane kart görünsün, devamını isterse
+ *  başka bir sayfada görsün."_ Panel bir HÜKÜM yeridir (İlke #13): satır
+ *  sayısı veriyle birlikte büyüyen hiçbir şey özet ekranına konmaz. Kanal
+ *  kartları tam olarak öyle bir liste — canlıda 12 kanal var (ölçüldü
+ *  30.08.2026) ve her yeni kanal paneli bir kat daha uzatıyordu.
+ *
+ *  ⚠ TAVAN SIRALAMADAN BAĞIMSIZ ÇALIŞIR: hangi kip seçiliyse ilk üç O SIRANIN
+ *  ilk üçüdür. Sabit düzende Trendyol · Hepsiburada · N11, ciro kipinde en
+ *  büyük üç. Kullanıcı ikisini de böyle istedi.
+ * ============================================================================
+ */
+
+/** Panelde gösterilecek en fazla kanal kartı. */
+export const PANEL_KANAL_TAVANI = 3;
+
+/**
+ * Panelde çizilecek kanallar — SIRALANMIŞ listenin ilk N'i.
+ *
+ * ⚠ SIRALAMAYI BU GÖVDE YAPMAZ: `kanallariSirala` çoktan yapmış olmalı.
+ * Burada ikinci bir sıralama olsaydı, kip değiştiğinde ekran ile bu kesme
+ * ayrışabilirdi.
+ */
+export function panelKanallari<T>(
+  kanallar: readonly T[],
+  tavan: number = PANEL_KANAL_TAVANI,
+): T[] {
+  return kanallar.slice(0, Math.max(0, tavan));
+}
+
+/**
+ * Panelde GÖSTERİLMEYEN kanal sayısı — "tümü" bağlantısının rakamı.
+ *
+ * ⛔ RAKAM YAZILIR, "devamı" DEMEZ: kaç kanalın gizlendiğini bilmeyen biri
+ * bağlantıya basıp basmayacağına karar veremez. _(İlke #5: bir şey
+ * gösterilmiyorsa NE olmadığı ekranda yazar.)_
+ */
+export function gizlenenKanalSayisi(
+  toplam: number,
+  tavan: number = PANEL_KANAL_TAVANI,
+): number {
+  return Math.max(0, toplam - Math.max(0, tavan));
+}
+
+/**
+ * `/kanallar` adresi — panelin süzgeçlerini AYNEN taşır.
+ *
+ * ⛔ TAŞINACAK PARAMETRE LİSTESİ ELLE TUTULMAZ. Beyaz liste yazsaydık,
+ * yarın panele eklenen bir süzgeç listeye girmediği için sessizce düşer ve
+ * döküm sayfası BAŞKA BİR KÜMEYİ gösterirdi — panelin en temel sözü olan
+ * "sayı = liste" tam orada bozulurdu. _(Anayasa: "bekçi ölçütü elle tutulan
+ * liste değil, tersten kurulur" kuralının adres tarafı.)_
+ */
+export function tumKanallarAdresi(
+  tasinanlar: Record<string, string | undefined>,
+): string {
+  const p = new URLSearchParams();
+  for (const [ad, deger] of Object.entries(tasinanlar)) {
+    if (deger !== undefined && deger !== "") p.set(ad, deger);
+  }
+  const sorgu = p.toString();
+  return sorgu === "" ? "/kanallar" : `/kanallar?${sorgu}`;
+}

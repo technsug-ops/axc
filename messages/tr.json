@@ -2058,7 +2058,10 @@
     "marjNetCiro": "Net ciro",
     "marjSutunu": "Marj",
     "marjYok": "—",
-    "toplam": "Toplam"
+    "toplam": "Toplam",
+    "kanalTumu": "Tümünü gör · {sayi} kanal daha",
+    "kanalTumuBaslik": "Pazaryeri performansı — tüm kanallar",
+    "kanalTumuGeri": "← Panel"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

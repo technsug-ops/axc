@@ -135,7 +135,13 @@ import {
 
 import type { Currency } from "@/generated/prisma/enums";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
-import { kanalSiraKipi } from "@/lib/kanal-sirasi";
+import {
+  PANEL_KANAL_TAVANI,
+  gizlenenKanalSayisi,
+  kanalSiraKipi,
+  panelKanallari,
+  tumKanallarAdresi,
+} from "@/lib/kanal-sirasi";
 import { KanalSiraCubugu } from "./kanal-sira-cubugu";
 
 /**
@@ -193,7 +199,22 @@ export async function generateMetadata() {
 
 export default async function AnaSayfa({
   searchParams,
+  /**
+   * ⛔ YALNIZ KANAL KARTLARI — `/kanallar` SAYFASI BU GÖVDEYİ ÇAĞIRIYOR.
+   *
+   * NEDEN AYRI BİR BORU HATTI YAZILMADI: kanal kartlarının rakamları
+   * panelin kendi hesabından geliyor (`panelHesapla` + `kanalDagilimi` +
+   * dönem süzgeçleri). İkinci bir sayfaya ayrı sorgu/eşleme yazılsaydı iki
+   * yerde iki hesap olurdu ve bir gün sessizce ayrışırlardı — panelin en
+   * temel sözü "sayı = liste".
+   *
+   * ⚠ BEDELİ BEYAN EDILİYOR: bu sayfa panelin BÜTÜN hesabını koşturuyor ama
+   * yalnız kanal bölümünü çiziyor. Nadiren açılan bir döküm ekranı için
+   * kabul edilebilir bir bedel; sayıların ayrışması değildi.
+   */
+  yalnizKanallar = false,
 }: {
+  yalnizKanallar?: boolean;
   searchParams: Promise<{
     /** K106-② — kanal kartlarının sırası: sabit düzen mi, ciro mu. */
     kanalSira?: string;
@@ -1582,7 +1603,40 @@ export default async function AnaSayfa({
   const kanalIzgarasi = (
     blok: ParaBirimiPaneli,
     kanalPaylari: Map<string, { ciroPayi: number; net2Payi: number | null }>,
-  ) => (
+    /**
+     * ⛔ PANELDE TAVAN VAR, DÖKÜM SAYFASINDA YOK (K124, kullanıcı kararı
+     * 01.09.2026: _"burada sadece 3 tane kart görünsün, devamını isterse
+     * başka bir sayfada görsün"_).
+     *
+     * ⚠ TAVAN SIRALAMADAN BAĞIMSIZ: hangi kip seçiliyse ilk üç O SIRANIN
+     * ilk üçüdür — sabit düzende Trendyol · Hepsiburada · N11, ciro
+     * kipinde en büyük üç. İkinci bir sıralama BURADA yapılmaz; kip
+     * değiştiğinde ekran ile kesme ayrışırdı.
+     */
+    tavan: number | null = null,
+  ) => {
+    /**
+     * ⛔ SATIŞI OLMAYAN KANALLAR DA GİZLENİYOR VE SAYIYA GİRİYOR.
+     *
+     * ⚠ VE BU BİR TUZAKTAN SONRA BÖYLE YAZILDI: ilk hâlde bağlantı yalnız
+     * SATIŞI OLAN kanal sayısına bakıyordu. Canlıda o sayı tam 3 (Trendyol ·
+     * Hepsiburada · N11), açık sıfır kartları ise 2 (Amazon · Elden Satış) —
+     * yani bağlantı HİÇ çizilmez, o iki kart panelden sessizce düşer ve
+     * onlara ulaşacak hiçbir yol kalmazdı. "N11 neden yok?" sorusunun
+     * cevabı olsun diye konmuş kartlar, cevapsız kaybolurdu.
+     * _(Anayasa: kapatılamayan/ulaşılamayan bir bilgi, olmayan bilgidir.)_
+     */
+    const bosKanallar = [
+      ...(paraBirimineGoreKanallar.get(blok.paraBirimi) ?? []),
+    ]
+      .filter(([kod]) => !blok.kanallar.some((k) => k.kanalKodu === kod))
+      .sort((a, b) => a[1].localeCompare(b[1], "tr"));
+    /** Panelde çizilmeyen her şey — satışlı kuyruk + açık sıfır kartları. */
+    const gizlenen =
+      tavan === null
+        ? 0
+        : gizlenenKanalSayisi(blok.kanallar.length, tavan) + bosKanallar.length;
+    return (
     <div className="space-y-3">
       {/* K106-② — sıra seçimi kartların ÜSTÜNDE: değiştireceği şeyin
           hemen yanında, aşağıda aranmıyor (İlke #9). */}
@@ -1591,7 +1645,7 @@ export default async function AnaSayfa({
         tasinanlar={parametreler as Record<string, string | undefined>}
       />
     <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {blok.kanallar.map((kanal) => (
+      {(tavan === null ? blok.kanallar : panelKanallari(blok.kanallar, tavan)).map((kanal) => (
         <div
           key={kanal.kanalKodu}
           className="bg-card min-w-0 space-y-3 rounded-lg border p-3"
@@ -1748,10 +1802,7 @@ export default async function AnaSayfa({
                   Kart soluk çizilir: "var ama boş" ile "hiç yok" ayrışsın.
                   Kanal sayısı arttığında bu bölümün ayarlardan seçilebilir
                   olması BEKLEYENLER'de. */}
-      {[...(paraBirimineGoreKanallar.get(blok.paraBirimi) ?? [])]
-        .filter(([kod]) => !blok.kanallar.some((k) => k.kanalKodu === kod))
-        .sort((a, b) => a[1].localeCompare(b[1], "tr"))
-        .map(([kod, ad]) => (
+      {(tavan !== null ? [] : bosKanallar).map(([kod, ad]) => (
           <div
             key={`bos-${kod}`}
             className="text-muted-foreground min-w-0 space-y-2 rounded-lg border border-dashed p-3"
@@ -1764,8 +1815,71 @@ export default async function AnaSayfa({
           </div>
         ))}
     </div>
+
+      {/**
+       * ⛔ DÖKÜM KENDİ SAYFASINA GİDER, ÖZETTE RAKAM + "AÇ" BAĞLANTISI KALIR
+       * (İlke #13). Bağlantı KAÇ kanalın gizlendiğini YAZAR — "devamı" demek
+       * okuyana basmaya değer mi bilgisini vermezdi (İlke #5).
+       *
+       * ⚠ SAYI GİZLENENİ SAYAR, TOPLAMI DEĞİL: "12 kanal" yazsaydı ekranda
+       * duran üçü de içerir ve okuyan ne bulacağını bilemezdi.
+       */}
+      {gizlenen > 0 ? (
+        <Link
+          href={tumKanallarAdresi(
+            parametreler as Record<string, string | undefined>,
+          )}
+          className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center text-sm underline underline-offset-2"
+        >
+          {t("kanalTumu", { sayi: gizlenen })}
+        </Link>
+      ) : null}
     </div>
-  );
+    );
+  };
+
+  /**
+   * ============================================================================
+   *  /kanallar — KANAL DÖKÜM SAYFASI (K124, 01.09.2026)
+   * ----------------------------------------------------------------------------
+   *  ⛔ AYNI GÖVDE, AYNI HESAP, TAVANSIZ IZGARA. Panelde üç kart var; burası
+   *  hepsini çiziyor — satışı olmayan kanalların açık sıfır kartları dahil.
+   *
+   *  ⚠ AYRI BİR BORU HATTI YAZILMADI: rakamlar panelin kendi hesabından
+   *  geliyor. İkinci bir sorgu/eşleme yazılsaydı iki yerde iki hesap olur ve
+   *  bir gün sessizce ayrışırlardı — panelin en temel sözü "sayı = liste".
+   *  Bedeli beyan ediliyor: bu sayfa panelin BÜTÜN hesabını koşturuyor.
+   *
+   *  ⚠ KAR GÖRÜNMEZKEN DE ÇİZİLİR AMA SEBEBİ YAZAR: yetkisi olmayan biri boş
+   *  bir sayfa görüp "bozuk" sanmasın (İlke #5).
+   * ============================================================================
+   */
+  if (yalnizKanallar) {
+    return (
+      <div className="min-w-0 space-y-4">
+        <div className="space-y-1">
+          <Baglanti href={suzgecAdresi("/", {}, parametreler as Record<string, string>)}>
+            {t("kanalTumuGeri")}
+          </Baglanti>
+          <h1 className="text-xl font-semibold">{t("kanalTumuBaslik")}</h1>
+          {/* ⚠ HANGİ DÖNEM — rakamların kapsamı ekranda yazar. */}
+          <p className="text-muted-foreground text-sm">{aralikMetni}</p>
+        </div>
+        {/**
+         * ⚠ YETKİ DALI YOK — VE BİLEREK. `/kanallar` rotası `satis.kar.gor`
+         * kapısından geçiyor; yetkisi olmayan istek buraya HİÇ ulaşmadan
+         * `notFound()` alıyor. Buraya bir "yetkiniz yok" mesajı yazmak, hiçbir
+         * zaman çizilmeyecek bir dal olurdu — ve o dalı gören biri, kapının
+         * BURADA olduğunu sanardı.
+         */}
+        {ustBlok && ustPaylar ? (
+          kanalIzgarasi(ustBlok, ustPaylar)
+        ) : (
+          <p className="text-muted-foreground text-sm">{t("donemBos")}</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="min-w-0 space-y-6">
@@ -1984,7 +2098,7 @@ export default async function AnaSayfa({
                     {t("donemBos")}
                   </p>
                 ) : (
-                  kanalIzgarasi(ustBlok, ustPaylar)
+                  kanalIzgarasi(ustBlok, ustPaylar, PANEL_KANAL_TAVANI)
                 )}
               </CardContent>
             </Card>

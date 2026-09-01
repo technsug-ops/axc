@@ -43,6 +43,12 @@ import {
   karEksikKanalAdresi,
 } from "../src/lib/liste-suzgeci";
 import { kdvHaric } from "../src/lib/kar";
+import {
+  PANEL_KANAL_TAVANI,
+  gizlenenKanalSayisi,
+  panelKanallari,
+  tumKanallarAdresi,
+} from "../src/lib/kanal-sirasi";
 import { karOrani, kutuOranlari } from "../src/lib/panel/kar-orani";
 import { serileriKur } from "../src/lib/panel/operasyon-serisi";
 import {
@@ -5050,6 +5056,132 @@ console.log("K106) KANAL SIRASI — sabit duzen, ciro degil");
   kontrol(
     "kip HER IKI panelHesapla cagrisina da gidiyor",
     (panelEkran.match(/^\s*kanalKipi,$/gm) ?? []).length === 2,
+  );
+}
+
+// ===========================================================================
+console.log("\nKANAL KARTI TAVANI — PANELDE 3, DÖKÜM SAYFASINDA HEPSİ (K124)");
+// ===========================================================================
+{
+  /**
+   * ⛔ KULLANICI KARARI 01.09.2026: _"burada sadece 3 tane kart görünsün,
+   * devamını isterse başka bir sayfada görsün."_ Panel bir HÜKÜM yeridir
+   * (İlke #13): satır sayısı veriyle birlikte BÜYÜYEN hiçbir şey özet
+   * ekranına konmaz. Canlıda 12 kanal var (ölçüldü 30.08.2026) ve her yeni
+   * kanal paneli bir kat daha uzatıyordu.
+   */
+  kontrol("panel tavanı 3", PANEL_KANAL_TAVANI === 3);
+
+  const bes = ["a", "b", "c", "d", "e"];
+  kontrol("tavan uygulanıyor", panelKanallari(bes).length === 3);
+  /**
+   * ⛔ KESME SIRALAMAYI BOZMAZ — VE İKİNCİ BİR SIRALAMA YAPMAZ. Hangi kip
+   * seçiliyse ilk üç O SIRANIN ilk üçüdür: sabit düzende Trendyol ·
+   * Hepsiburada · N11, ciro kipinde en büyük üç. Burada yeniden sıralansaydı
+   * kip değiştiğinde ekran ile kesme ayrışırdı.
+   */
+  kontrol(
+    "kesme sırayı KORUYOR (ilk üç, baştan)",
+    JSON.stringify(panelKanallari(bes)) === JSON.stringify(["a", "b", "c"]),
+  );
+  kontrol("tavandan az kanal aynen döner", panelKanallari(["a", "b"]).length === 2);
+
+  /**
+   * ⛔ BAĞLANTI KAÇ KANALIN GİZLENDİĞİNİ YAZAR. "Devamı" demek, okuyana
+   * basmaya değer mi bilgisini vermezdi (İlke #5).
+   * ⚠ VE SAYI GİZLENENİ SAYAR, TOPLAMI DEĞİL: "12 kanal" yazsaydı ekranda
+   * duran üçü de içerir ve okuyan ne bulacağını bilemezdi.
+   */
+  kontrol("gizlenen sayısı doğru (5 kanal → 2)", gizlenenKanalSayisi(5) === 2);
+  kontrol("tavanla eşitse gizlenen YOK", gizlenenKanalSayisi(3) === 0);
+  kontrol("tavandan azsa gizlenen YOK", gizlenenKanalSayisi(2) === 0);
+  kontrol("negatife düşmüyor", gizlenenKanalSayisi(0) === 0);
+
+  /**
+   * ⛔ ADRES PANELİN SÜZGEÇLERİNİ AYNEN TAŞIR — BEYAZ LİSTE YOK.
+   * Beyaz liste yazsaydık, yarın panele eklenen bir süzgeç listeye girmediği
+   * için sessizce düşer ve döküm sayfası BAŞKA BİR KÜMEYİ gösterirdi;
+   * "sayı = liste" tam orada bozulurdu.
+   */
+  kontrol(
+    "adres bilinmeyen parametreyi de TAŞIYOR",
+    tumKanallarAdresi({ pencere: "SON_30_GUN", yarinEklenen: "x" }) ===
+      "/kanallar?pencere=SON_30_GUN&yarinEklenen=x",
+  );
+  kontrol(
+    "boş ve tanımsız değerler DÜŞÜYOR",
+    tumKanallarAdresi({ pencere: "", kanal: undefined }) === "/kanallar",
+  );
+  kontrol(
+    "sıralama kipi taşınıyor",
+    tumKanallarAdresi({ kanalSira: "ciro" }) === "/kanallar?kanalSira=ciro",
+  );
+
+  /**
+   * ⛔ ZİNCİR — GÖVDE DOĞRU OLUP EKRANA BAĞLANMAZSA HİÇBİR ŞEY DEĞİŞMEZ.
+   * K121'de tur 98/98 yeşilken kutu ekranda YOKTU; ders bu.
+   */
+  const ekranK124 = readFileSync("src/app/page.tsx", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  kontrol(
+    "panel ızgarayı TAVANLA çağırıyor",
+    /kanalIzgarasi\(ustBlok, ustPaylar, PANEL_KANAL_TAVANI\)/.test(ekranK124),
+  );
+  kontrol(
+    "ızgara kesmeyi GÖVDEDEN yapıyor",
+    ekranK124.includes("panelKanallari(blok.kanallar, tavan)"),
+  );
+  kontrol("tümü bağlantısı ÇİZİLİYOR", ekranK124.includes("tumKanallarAdresi("));
+  /**
+   * ⛔ BAĞLANTI SAYISI AÇIK SIFIR KARTLARINI DA İÇERİR — VE BU BİR TUZAKTAN
+   * SONRA BÖYLE YAZILDI. İlk hâlde yalnız SATIŞI OLAN kanal kuyruğu
+   * sayılıyordu; canlıda o sayı tam 3, açık sıfır kartları 2 — yani bağlantı
+   * hiç çizilmez, o iki kart panelden sessizce düşer ve onlara ulaşacak
+   * hiçbir yol kalmazdı.
+   */
+  kontrol(
+    "gizlenen sayısı SATIŞLI KUYRUK + AÇIK SIFIR",
+    /gizlenenKanalSayisi\(blok\.kanallar\.length, tavan\) \+ bosKanallar\.length/.test(
+      ekranK124,
+    ),
+  );
+  kontrol("bağlantı gizlenen sayısına BAĞLI", /gizlenen > 0 \?/.test(ekranK124));
+  /** ⛔ AÇIK SIFIR KARTLARI PANELDE ÇİZİLMEZ, DÖKÜMDE ÇİZİLİR. */
+  kontrol(
+    "açık sıfır kartları tavan varken gizleniyor",
+    /tavan !== null \? \[\] : bosKanallar/.test(ekranK124),
+  );
+  /**
+   * ⛔ DÖKÜM DALI TAVANSIZ ÇAĞIRIYOR: tavanı oraya da geçirsek "tümünü gör"
+   * bağlantısı yine üç kart gösterirdi — bağlantının sözü boşa çıkardı.
+   */
+  kontrol(
+    "döküm dalı ızgarayı TAVANSIZ çağırıyor",
+    /yalnizKanallar\)[\s\S]{0,1500}kanalIzgarasi\(ustBlok, ustPaylar\)/.test(ekranK124),
+  );
+
+  const rotaK124 = readFileSync("src/app/kanallar/page.tsx", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  /**
+   * ⚠ ÖLÇÜT BAYRAĞIN DEĞERİNE BAĞLI — VE BU BİR MUTASYON KAÇTIĞI İÇİN.
+   * Önce yalnız `yalnizKanallar` adı aranıyordu; `yalnizKanallar={false}`
+   * yapan mutasyon YEŞİL geçti çünkü ad hâlâ dosyadaydı. Desenin bulunması,
+   * davranışın gerçekleştiğini göstermez.
+   * _(Anayasa: ölçüt ADA değil KULLANIMA bağlanır.)_
+   */
+  kontrol(
+    "/kanallar rotası panel gövdesini AÇIK bayrakla çağırıyor",
+    /<AnaSayfa[\s\S]{0,300}yalnizKanallar(\s*=\s*\{true\})?\s*\/>/.test(rotaK124),
+  );
+  /**
+   * ⛔ KAPI ROTADA: sayfanın tamamı para (kanal cirosu ve NET-2). Yetkisiz
+   * istek `notFound()` alıyor — rotanın varlığı bile sızmıyor.
+   */
+  kontrol(
+    "/kanallar kâr iznini İSTİYOR",
+    rotaK124.includes('sayfaIzni("satis.kar.gor")'),
   );
 }
 
