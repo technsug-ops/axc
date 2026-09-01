@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-import { TUM_IZINLER } from "./izinler";
+import { tamYetkiliMi } from "./izinler";
 
 /**
  * ============================================================================
@@ -23,7 +23,31 @@ import { TUM_IZINLER } from "./izinler";
  * ============================================================================
  */
 
-/** SAHİP sayılmanın ölçütü: TÜM izinlere sahip aktif rol. */
+/**
+ * SAHİP sayılmanın ölçütü — TEK GÖVDEDEN (K99, 01.09.2026).
+ *
+ * ⛔ BURADA İKİNCİ BİR ÖLÇÜT VARDI VE AYRIŞIYORDU. Anayasa açıkça
+ * _"iki yerde iki farklı ölçüt olmaz"_ diyor; buna rağmen bu dosya
+ * `TUM_IZINLER.every(...)` kullanıyordu, bekçi ve seed ise
+ * `FIRMA_IZINLERI`. Aradaki fark **sağlayıcı izinleri** — bugün tek eleman,
+ * `destek.yonet`.
+ *
+ * 📏 AYRIŞMA ÖLÇÜLDÜ (01.09.2026): 28 iznin 27'si firma izni. Ekrandan
+ * açılan, BÜTÜN firma izinlerine sahip bir rol için:
+ *     tamYetkiliMi(27 izin)          → true   (doğru)
+ *     TUM_IZINLER.every(27 izin)     → FALSE  ⛔ (eski ölçüt)
+ * Yani öyle bir rol "sahip" SAYILMAZDI: `baskaSahipVarMi()` haksız yere
+ * `false` döner ve koruma MEŞRU bir rol değişikliğini engellerdi.
+ *
+ * ⭐ VE GEVŞEME DEĞİL DÜZELTMEDİR: 27 iznin içinde `kullanici.yonet` ve
+ * `rol.yonet` VAR — yani o rol sistemi kilitten çıkarabilir. Korumanın
+ * sorduğu soru "sağlayıcı mı" değil, **"sistemi açabilecek biri kaldı mı"**.
+ * `destek.yonet` (destek talebi yönetimi) o soruya cevap vermiyor.
+ *
+ * ⚠ BUGÜN ISIRMIYORDU VE SEBEBİ TESADÜFTÜ: canlıdaki iki tam yetkili rol
+ * (CEO · Sahip) sağlayıcı iznini de taşıyor. Ekrandan açılacak YENİ bir rol
+ * onu otomatik ALMAZ (`otomatikDagitilacak` eliyor) — hata o gün doğardı.
+ */
 export async function tamYetkiliRolIdleri(): Promise<string[]> {
   const roller = await prisma.role.findMany({
     where: { isActive: true },
@@ -31,10 +55,7 @@ export async function tamYetkiliRolIdleri(): Promise<string[]> {
   });
 
   return roller
-    .filter((r) => {
-      const küme = new Set(r.izinler.map((i) => i.permissionKey));
-      return TUM_IZINLER.every((izin) => küme.has(izin));
-    })
+    .filter((r) => tamYetkiliMi(new Set(r.izinler.map((i) => i.permissionKey))))
     .map((r) => r.id);
 }
 

@@ -33,6 +33,7 @@ import {
   TUM_IZINLER,
   izinTaninirMi,
   otomatikDagitilacak,
+  tamYetkiliMi,
 } from "../src/lib/yetki/izinler";
 import { yetkiBekcisi } from "./yetki-bekci";
 
@@ -695,6 +696,101 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
     })(),
   );
 }
+
+  // =========================================================================
+  console.log("\n7) TAM YETKİLİ ÖLÇÜTÜ TEK — İKİ TABAN AYRIŞMIYOR (K99)");
+  // =========================================================================
+  {
+    /**
+     * ⛔ ANAYASA: "aynı ölçüt `koruma.ts`in kendini kilitleme korumasında da
+     * geçerlidir; iki yerde iki farklı ölçüt olmaz." Buna rağmen VARDI:
+     * `koruma.ts` → `TUM_IZINLER.every(...)` · bekçi ve seed → `FIRMA_IZINLERI`.
+     *
+     * 📏 AYRIŞMA ÖLÇÜLDÜ (01.09.2026): 28 iznin 27'si firma izni; fark tek
+     * sağlayıcı izni (`destek.yonet`). Ekrandan açılan, bütün firma
+     * izinlerine sahip bir rol için eski ölçüt `false` dönerdi —
+     * `baskaSahipVarMi()` haksız yere `false` verir ve koruma MEŞRU bir rol
+     * değişikliğini ENGELLERDİ.
+     *
+     * ⚠ BUGÜN ISIRMIYORDU VE SEBEBİ TESADÜFTÜ: canlıdaki iki tam yetkili rol
+     * de sağlayıcı iznini taşıyor. Ekrandan açılacak YENİ bir rol onu
+     * otomatik ALMAZ — hata o gün doğardı.
+     */
+    const firmaTam = new Set<string>(FIRMA_IZINLERI);
+    kontrol("bütün FİRMA izinleri = tam yetkili", tamYetkiliMi(firmaTam));
+    /**
+     * ⛔ SAĞLAYICI İZNİ ŞART DEĞİL — VE BU BİR GEVŞEME DEĞİL, DÜZELTMEDİR.
+     * Korumanın sorusu "sağlayıcı mı" değil, "sistemi açabilecek biri kaldı
+     * mı" — ve 27 iznin içinde `kullanici.yonet` ile `rol.yonet` var.
+     */
+    kontrol(
+      "  ...sağlayıcı izni firma tabanında DEĞİL",
+      SAGLAYICI_IZINLERI.every((i) => !firmaTam.has(i)),
+      [...SAGLAYICI_IZINLERI],
+    );
+    kontrol(
+      "  ...ama kullanıcı/rol yönetimi firma tabanında VAR",
+      firmaTam.has("kullanici.yonet") && firmaTam.has("rol.yonet"),
+    );
+    /** ⛔ TEK İZİN EKSİKSE TAM YETKİLİ DEĞİL — kapı gevşemiyor. */
+    const eksikKume = new Set(firmaTam);
+    eksikKume.delete("rol.yonet");
+    kontrol("bir izin eksikse tam yetkili DEĞİL", !tamYetkiliMi(eksikKume));
+    /**
+     * ⛔ BOŞ KÜME TAM YETKİLİ SAYILMAZ. `every` boş listede `true` döner;
+     * taban boşalırsa kapı herkese açılırdı.
+     */
+    kontrol("boş küme tam yetkili DEĞİL", !tamYetkiliMi(new Set()));
+    /**
+     * ⛔ ASIL TEHLİKE BOŞ KÜME DEĞİL, BOŞ TABAN. `every` boş listede `true`
+     * döner: `FIRMA_IZINLERI` bir gün boşalırsa (liste bozulur, süzgeç
+     * yanlış yazılır) kapı HERKESE açılırdı ve hiçbir değer testi bunu
+     * göstermezdi — çünkü boş kümeyle sınamak o dalı hiç çalıştırmıyor.
+     *
+     * ⚠ VE BU BİR MUTASYON KAÇTIĞI İÇİN EKLENDİ: "boş taban kapısı kalktı"
+     * senaryosu yeşil geçti; eksik olan bekçi değil, ÖLÇÜLEN ŞEYDİ.
+     * İki ölçüt birlikte kapatıyor: taban DOLU olmalı, ve gövdedeki kapı
+     * YERİNDE durmalı.
+     */
+    kontrol(
+      "firma tabanı BOŞ DEĞİL (en az 20 izin)",
+      FIRMA_IZINLERI.length >= 20,
+      FIRMA_IZINLERI.length,
+    );
+    kontrol(
+      "gövdede boş taban kapısı DURUYOR",
+      /if \(FIRMA_IZINLERI\.length === 0\) return false;/.test(
+        readFileSync("src/lib/yetki/izinler.ts", "utf8"),
+      ),
+    );
+
+    /**
+     * ⛔ ÇARE DOSYA LİSTESİ DEĞİL DESEN YASAĞI: `lib/yetki` altında hiçbir
+     * gövde KENDİ "tam yetkili" ölçütünü kuramaz. Yarın açılan üçüncü bir
+     * gövde de yakalanır; kimsenin listeye eklemeyi hatırlaması gerekmez.
+     */
+    const kacakOlcut: string[] = [];
+    for (const ad of readdirSync("src/lib/yetki")) {
+      if (!ad.endsWith(".ts") || ad === "izinler.ts") continue;
+      const ham = readFileSync(join("src/lib/yetki", ad), "utf8");
+      const kod = ham
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/(^|[^:])\/\/.*$/gm, "$1");
+      if (/TUM_IZINLER\s*\.\s*every/.test(kod)) kacakOlcut.push(ad);
+    }
+    kontrol(
+      "kendi tam-yetkili ölçütünü kuran gövde YOK",
+      kacakOlcut.length === 0,
+      kacakOlcut,
+    );
+    /** ⛔ VE KORUMA GERÇEKTEN ORTAK GÖVDEYİ ÇAĞIRIYOR — ada değil ÇAĞRIYA bağlı. */
+    kontrol(
+      "koruma ortak gövdeyi ÇAĞIRIYOR",
+      /tamYetkiliMi\(new Set\(/.test(
+        readFileSync("src/lib/yetki/koruma.ts", "utf8"),
+      ),
+    );
+  }
 
   console.log("\n" + "=".repeat(70));
   if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
