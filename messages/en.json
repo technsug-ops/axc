@@ -593,7 +593,13 @@
     "iptalHaric": "",
     "toplamAdet": "",
     "adetToplami": "",
-    "adetIptalHaric": ""
+    "adetIptalHaric": "",
+    "eksenEtiketi": "",
+    "eksenSiparis": "",
+    "eksenKabul": "",
+    "bosEksenAciklamasi": "",
+    "bosEksenGecis": "",
+    "bosKabulsuzUyarisi": ""
   },
   "MalKabul": {
     "saglamSayiOlmali": "",

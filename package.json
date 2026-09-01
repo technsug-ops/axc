@@ -265,7 +265,8 @@
     "canli:yedek-dosya": "tsx scripts/canli-yedek-dosya.ts",
     "canli:ty-urun-taramasi": "tsx scripts/canli-ty-urun-taramasi.ts",
     "canli:kanal-listeleme": "tsx scripts/canli-kanal-listeleme-yaz.ts",
-    "vitrin:dogrula": "tsx scripts/vitrin-dogrula.ts"
+    "vitrin:dogrula": "tsx scripts/vitrin-dogrula.ts",
+    "alim-ekseni:dogrula": "tsx scripts/alim-ekseni-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

@@ -759,6 +759,41 @@ burada izin kendisi.)_
 
 ---
 
+### ARACIN ÇIKTISI OKUNUR — RENGİ ya da KODU DEĞİL (KESİN KURAL)
+
+_Kullanıcı kararı 01.09.2026, aynı gün İKİ vakadan sonra._ Bir aracın çıkış
+kodu **OLUP OLMADIĞINI** söyler, **NE OLDUĞUNU** söylemez. Yalnız koda (ya da
+ekrandaki renge) bakıp geçmek, teşhisi hiç yapmamaktır — ve en pahalı hâli,
+kodun **yeşil** olduğu ama aracın yanlış şeyi ölçtüğü durumdur.
+
+**VAKA 1 — kırmızıyı görüp okumamak.** `npm run lint:dogrula` **1** döndü;
+ben `LINT=1` satırını gördüm ve **commit ettim.** Üç hata vardı ve ikisi
+gerçekti (`Date.now()` render içinde — saf olmayan çağrı; sabit kullanımdan
+önce tanımlanmış). Kod bana "bir şey var" dedi, ben "not aldım" deyip geçtim.
+Hataların ne olduğunu ancak push reddedince okudum.
+
+**VAKA 2 — yeşili görüp inanmak.** Tur **98/98 yeşildi** ve panelde kutu
+YOKTU. Bütün ölçütler saf gövdeyi sınıyordu; gövdeler kusursuz çalışıyordu ve
+**onları kimse çağırmıyordu.** Yeşil, ölçülen şeyin doğruluğunu değil, ölçülen
+şeyin ne olduğunu bilmediğimi gösterdi.
+
+> **KURAL:** her araç koşumunda **çıktının kendisi okunur.** Kırmızıda "hangi
+> ölçüt, hangi satır, ne bekliyordu"; yeşilde "kaç ölçüt koştu ve NEYİ ölçtü".
+> Çıkış kodu bir **kapıdır**, rapor değildir.
+
+⚠ **VE BU, "BORU SONUNA GÜVENİLMEZ" KURALININ İKİZİ:** orada ölçümün SONUCU
+kayboluyordu (`| tail`, `echo $?`), burada sonuç yerinde duruyor ama
+**okunmuyor.** İkisi de aynı yere çıkıyor — ölçüm yapıldı, karar ondan
+beslenmedi.
+
+⚠ **HARNESS'İN KENDİ ÇIKTISI DA OKUNUR.** Aynı gün üç kez mutasyon turu
+"bekçi çöktü" diye rapor verdi ve üçünde de bekçi ÇALIŞMIŞTI: grep desenine
+Türkçe karakter yazılmıştı (`EKSENİ` ≠ `EKSENI`) ve bir kez de ayıraç
+desendeki `||` ile çakışmıştı. "Çöktü" satırını okumadan kabul etseydim, iki
+gerçek mutasyon sonucu kaybolurdu.
+
+---
+
 ### TOPLU YAZIM ÜÇ ŞARTLA KOŞAR (KESİN KURAL)
 
 _Kullanıcı kararı 01.09.2026, K91 vakasından sonra._ Bir toplu yazım üç

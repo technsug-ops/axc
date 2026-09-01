@@ -593,7 +593,13 @@
     "iptalHaric": "{sayi} iptal hariç",
     "toplamAdet": "{sayi} adet sipariş",
     "adetToplami": "Toplam sipariş adedi",
-    "adetIptalHaric": "{sayi} adet iptal hariç"
+    "adetIptalHaric": "{sayi} adet iptal hariç",
+    "eksenEtiketi": "Tarih ekseni",
+    "eksenSiparis": "Sipariş tarihi",
+    "eksenKabul": "Mal kabul tarihi",
+    "bosEksenAciklamasi": "Bu liste {aktif} eksenine göre süzüyor. Aynı dönemde {oteki} eksenine göre {sayi} kayıt var.",
+    "bosEksenGecis": "{oteki} eksenine geç",
+    "bosKabulsuzUyarisi": "Mal kabulü yapılmamış {sayi} alım bu eksende hiçbir dönemde görünmez — kabul tarihleri henüz yok."
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",

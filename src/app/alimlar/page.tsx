@@ -6,6 +6,12 @@ import { Eye, Pencil, PackageCheck, Plus } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
+import {
+  ALIM_EKSENLERI,
+  eksenAlani,
+  eksenAnahtari,
+  otekiEksen,
+} from "@/lib/alim-ekseni";
 import { AlimIptalButonu } from "./iptal-butonu";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -30,7 +36,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { alimKosulu } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
-import { donusDegeri, donusTasiyan } from "@/lib/suzgec";
+import { donusDegeri, donusTasiyan, suzgecAdresi } from "@/lib/suzgec";
 import { kalemToplamlari } from "@/lib/tutar";
 import { ListeToplami } from "@/components/liste-toplami";
 import { SayfalamaCubugu } from "@/components/sayfalama";
@@ -63,6 +69,13 @@ export default async function AlimlarSayfasi({
     kart?: string;
     /** Sayfa numarası (27.08.2026) — `SAYFA_PARAMETRESI` ile aynı ad. */
     sayfa?: string;
+    /**
+     * K114 — tarih ekseni: `siparis` (varsayılan) | `kabul`.
+     *
+     * ⚠ Tanınmayan değer VARSAYILANA düşer, boş listeye değil: bozuk bir
+     * adres ekranı sessizce boşaltmamalı.
+     */
+    eksen?: string;
   }>;
 }) {
   await sayfaIzni("alim.gor");
@@ -77,7 +90,7 @@ export default async function AlimlarSayfasi({
   const tSatis = await getTranslations("Satis");
 
   // EKRAN VE EXCEL AYNI KOŞULU KULLANIR (bkz. lib/liste-suzgeci.ts).
-  const { kosul, pencere } = await alimKosulu(p);
+  const { kosul, pencere, eksen } = await alimKosulu(p);
 
   // Süzgeç seçenekleri VERİDEN gelir. Alım hesapları ALIŞ rolündedir;
   // satış mağazasını alım süzgecinde listelemek anlamsız olurdu.
@@ -142,11 +155,25 @@ export default async function AlimlarSayfasi({
       },
       supplier: { select: { name: true } },
     },
-    orderBy: { purchasedAt: "desc" },
+    orderBy: { [eksenAlani(eksen)]: "desc" },
   });
 
   /** Süzgeç çubuğunun seçenekleri. */
   const suzgecler: SuzgecTanimi[] = [
+    /**
+     * ⛔ TARİH EKSENİ EN BAŞTA — VE BU BİLİNÇLİ: öteki süzgeçler kümeyi
+     * DARALTIYOR, bu ise hangi SORUYA bakıldığını değiştiriyor ("ne aldım"
+     * ↔ "ne geldi"). Sonda dursaydı kullanıcı önce boş listeyi görür,
+     * sebebini en son bulurdu.
+     */
+    {
+      ad: "eksen",
+      etiket: t("eksenEtiketi"),
+      secenekler: ALIM_EKSENLERI.map((e) => ({
+        deger: e,
+        etiket: t(eksenAnahtari(e)),
+      })),
+    },
     {
       ad: "durum",
       etiket: t("durumFiltresiEtiketi"),
@@ -184,11 +211,55 @@ export default async function AlimlarSayfasi({
     pencere: p.pencere,
     baslangic: p.baslangic,
     bitis: p.bitis,
+    eksen: p.eksen,
   };
   const disaAktarmaParametreleri = { ...formTasinanlar, q: arama };
 
   const suzgecVar =
     arama !== "" || Object.values(formTasinanlar).some((d) => (d ?? "") !== "");
+
+  /**
+   * BOŞ SONUCUN AÇIKLAMASI — ÖTEKİ EKSENDE KAÇ KAYIT VAR (K114).
+   *
+   * ⛔ YALNIZ LİSTE BOŞKEN ÖLÇÜLÜR. Her açılışta iki ek sorgu koşturmak,
+   * hiç görülmeyecek bir cümle için bedel ödemek olurdu — `/stok`taki yaş
+   * süzgeciyle aynı kalıp ("süzgeç kapalıyken hiçbir ek sorgu koşmuyor").
+   *
+   * ⚠ ÖTEKİ EKSEN AYNI PENCEREYLE ÖLÇÜLÜR: pencere değiştirilseydi rakam
+   * başka bir soruyu cevaplar ve kullanıcıyı yanlış yere gönderirdi.
+   * Değişen TEK ŞEY tarih alanı — kıyasın iki tarafı aynı kümeden.
+   */
+  const eksenSayilari =
+    alimlar.length === 0
+      ? await (async () => {
+          const oteki = otekiEksen(eksen);
+          const otekiKosul = {
+            ...kosul,
+            /** Aktif eksenin tarih koşulu kaldırılır, ötekininki konur. */
+            [eksenAlani(eksen)]: undefined,
+            ...(pencere.aralik ? { [eksenAlani(oteki)]: pencere.aralik } : {}),
+          };
+          const [otekiSayi, kabulsuz] = await Promise.all([
+            prisma.purchase.count({ where: otekiKosul }),
+            /**
+             * ⚠ Mal kabul tarihi OLMAYAN alım sayısı — kabul ekseninde
+             * hiçbir pencerede görünmez. Ölçüldü (01.09.2026): 1990 alımın
+             * 31'i (%1,6). Pencere UYGULANMAZ: bu kayıtların kabul tarihi
+             * YOK, dolayısıyla hiçbir pencereye ait değiller.
+             */
+            prisma.purchase.count({ where: { receivedAt: null } }),
+          ]);
+          return {
+            oteki: otekiSayi,
+            kabulsuz,
+            /** ⛔ ADRES EKRANDA KURULMAZ — mevcut süzgeçler korunur. */
+            otekiAdres: suzgecAdresi("/alimlar", disaAktarmaParametreleri, {
+              eksen: oteki,
+            }),
+          };
+        })()
+      : null;
+
 
   /** Seçili dönemin gerçek karşılığı — /iadeler ve /satislar ile aynı biçim. */
   const aralikMetni = pencere.pencere
@@ -393,6 +464,45 @@ export default async function AlimlarSayfasi({
           <p className="text-muted-foreground mt-1 text-sm">
             {suzgecVar ? t("bosFiltreIpucu") : t("bosIpucu")}
           </p>
+
+          {/* ═══ BOŞ SONUÇ KENDİNİ ANLATIR (K114) ═══
+              ⛔ "Kayıt yok" tek başına YANLIŞ YÖNE GÖNDERİR. Kullanıcı
+              31.08.2026'da tam bunu yaşadı: "bugün teslim aldıklarım
+              çıkmıyor" — oysa kayıt VARDI, ekran SİPARİŞ tarihine bakıyordu.
+
+              ⭐ VE EKSENİ ADLANDIRMAK YETMEZ, RAKAM GEREKİR: "öteki eksende
+              N kayıt var" cümlesi kullanıcıyı doğrudan çözüme götürür. N
+              sıfırsa da bilgidir — o zaman sorun eksen değil, pencere.
+              _(Anayasa: sessiz başarısızlık yasak; bir şey olmadıysa NEDEN
+              olmadığı ekranda yazar.)_ */}
+          {eksenSayilari !== null ? (
+            <p className="mt-4 text-sm">
+              {t("bosEksenAciklamasi", {
+                aktif: t(eksenAnahtari(eksen)),
+                oteki: t(eksenAnahtari(otekiEksen(eksen))),
+                sayi: eksenSayilari.oteki,
+              })}
+              {eksenSayilari.oteki > 0 ? (
+                <>
+                  {" "}
+                  <Baglanti href={eksenSayilari.otekiAdres}>
+                    {t("bosEksenGecis", {
+                      oteki: t(eksenAnahtari(otekiEksen(eksen))),
+                    })}
+                  </Baglanti>
+                </>
+              ) : null}
+            </p>
+          ) : null}
+
+          {/* ⚠ KABUL EKSENİNDE GÖRÜNMEYENLER BEYAN EDİLİR: mal kabulü
+              yapılmamış alımın kabul tarihi YOKTUR ve hiçbir pencerede
+              çıkmaz. Sessiz kalsaydı "kayboldu" sanılırdı. */}
+          {eksen === "kabul" && eksenSayilari !== null && eksenSayilari.kabulsuz > 0 ? (
+            <p className="text-muted-foreground mt-2 text-xs">
+              {t("bosKabulsuzUyarisi", { sayi: eksenSayilari.kabulsuz })}
+            </p>
+          ) : null}
         </div>
       ) : (
         <>

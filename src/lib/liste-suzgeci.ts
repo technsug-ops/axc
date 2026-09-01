@@ -1,3 +1,8 @@
+import {
+  alimEkseniCoz,
+  eksenAlani,
+  type AlimEkseni,
+} from "@/lib/alim-ekseni";
 import { alimAramaKosulu } from "@/lib/alim-arama";
 import {
   LISTE_PENCERELERI,
@@ -410,7 +415,11 @@ function alimDurumuGecerliMi(deger: string): boolean {
 export async function alimKosulu(
   p: SuzgecParametreleri,
   an: Date = new Date(),
-): Promise<{ kosul: Prisma.PurchaseWhereInput; pencere: PencereCozumu }> {
+): Promise<{
+  kosul: Prisma.PurchaseWhereInput;
+  pencere: PencereCozumu;
+  eksen: AlimEkseni;
+}> {
   const pencere = pencereCoz(p, an);
 
   const arama = temiz(p.q);
@@ -421,8 +430,18 @@ export async function alimKosulu(
 
   const aramaKosulu = await alimAramaKosulu(arama);
 
+  /**
+   * ⛔ TARİH EKSENİ SEÇİLEBİLİR (K114): sipariş günü ↔ mal kabul günü.
+   * Alan adı `alim-ekseni.ts` gövdesinden geliyor; burada elle yazılsaydı
+   * süzgeç ile sıralama ayrı alanlara bakabilir ve liste doğru kümeyi
+   * YANLIŞ sırada gösterirdi.
+   * ⚠ Ölçüldü: iki eksen yalnız %1,4 örtüşüyor (ortanca gecikme 3 gün).
+   */
+  const eksen = alimEkseniCoz(p.eksen);
+  const alan = eksenAlani(eksen);
+
   const kosul: Prisma.PurchaseWhereInput = {
-    ...(pencere.aralik ? { purchasedAt: pencere.aralik } : {}),
+    ...(pencere.aralik ? { [alan]: pencere.aralik } : {}),
     ...(aramaKosulu ?? {}),
     // Bileşik "bekleyen" ÖNCE denenir; tek durum kontrolü onu tanımaz.
     ...(durum === ALIM_BEKLEYEN_KODU
@@ -435,7 +454,7 @@ export async function alimKosulu(
     ...(kart ? { creditCardId: kart } : {}),
   };
 
-  return { kosul, pencere };
+  return { kosul, pencere, eksen };
 }
 
 // ---------------------------------------------------------------------------
