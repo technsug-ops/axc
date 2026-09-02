@@ -13,7 +13,7 @@
 
 ---
 
-## 🚨 K133 — DETAYA GİRİNCE LİSTEYE DÖNÜLEMİYOR · 02.09.2026 · [ÖLÇÜLDÜ]
+## ✅ K133 — DETAYA GİRİNCE LİSTEYE DÖNÜLEMİYOR · **KOD KOŞTU 02.09.2026**
 
 > Kullanıcı: _"Bu ekrandan ürünün üzerine tıklayınca geri ekrana gelemiyorum.
 > Bu normal mi?"_ — **Normal değil.**
@@ -54,15 +54,76 @@ arayüzünü değiştirir.
 (`?donus=...`). O da aynı işi yapan İKİNCİ bir mekanizma kurar ve ikisi
 zamanla ayrışır.
 
-⏭ **AÇIK — TASARIM KARARI GEREKİYOR.** Doğru şekil muhtemelen: hafıza
-genel anahtarla saklanır (adres + taban birlikte), `ListeyeDon` etiketi
-hedeften türetir, ve güvenlik ölçütü hatırlanan TABANA karşı uygulanır.
-⚠ Bekçisi mutasyonla gelmeli: "başka listeden gelince o listeye döner" ve
-"etiket hedefle tutar" AYRI ölçütler.
+### ✅ ÇÖZÜM — GENEL HAFIZA, VE ETİKET LİSTENİN KENDİSİNDEN
 
-⚠ **BU ARADA TARAYICININ GERİ TUŞU ÇALIŞIYOR** — liste durumunun tamamı
-adreste olduğu için. Kayıp yalnız ekrandaki bağlantıda; kullanıcıya bunu
-söylemek, çözüm gelene kadar iş görür.
+⭐ **MODÜL KENDİ DOĞRU SORUSUNU BAŞLIĞINDA ZATEN YAZMIŞTI** — _"'bir adım
+geri' değil, EN SON HANGİ LİSTEYİ GÖRDÜM."_ Uygulaması taban başına
+kalmıştı. Genel anahtar (`__son__`) o soruyu olduğu gibi cevaplıyor.
+
+⛔ **ETİKET DE SAKLANIYOR VE BU TASARIMIN ÇEKİRDEĞİ.** Yalnız adres
+saklansaydı bağlantı **"‹ Ürünler" yazarken `/satislar`a giderdi** — metin
+davranışı YANLIŞ söyler (İlke #2). Etiketi taban→ad eşlemesinden türetmek
+ise **elle tutulan bir liste** doğururdu ve yedinci liste eklendiğinde
+sessizce eskirdi. Çözüm: **etiketi listenin KENDİSİ yazar** — sayfa zaten
+kendi başlığını biliyor (`Basliklar` sözlüğü), eşleme HİÇ DOĞMUYOR.
+
+⛔ **İKİNCİ MEKANİZMA KURULMADI.** Dönüş adresini bağlantıya parametre
+olarak taşımak (`?donus=…`) aynı işi yapan ikinci bir yol olurdu ve ikisi
+zamanla ayrışırdı. Yeni gövde var olanın ÜSTÜNE bindi, yanına değil —
+taban başına hafıza yedek olarak yerinde.
+
+⚠ **PANEL GENEL HAFIZAYA GİRMEZ, BİLEREK:** tabanı `/` ve `guvenliTaban`
+onu reddediyor. `/` tabanıyla HER adres doğrulamayı geçerdi ve depodan
+gelen değer bir gezinme hedefine dönüştüğü için bu açık yönlendirme riski.
+
+⭐ **TYPESCRIPT YEDİ ÇAĞRI YERİNİ BİRDEN ZORLADI** — `etiket` zorunlu prop
+olunca derleme durdu ve hiçbir liste unutulamadı. Elle liste tutulmadı.
+
+**Bekçi `liste-donusu:dogrula` 27 ölçüt · 4 bölüm · mutasyon 9/9 KIRMIZI.**
+
+### ⛔ VE BEKÇİ İLK TURDA KÖRDÜ — ALTI MUTASYONUN DÖRDÜ KAÇTI
+
+Bu, mutasyonun niye zorunlu olduğunun ders kitabı örneği. Dört ayrı körlük:
+
+| Kaçan | Sebep |
+|---|---|
+| yazma kapısı kalktı | **okuma tarafı aynı kontrolü yapıyor** — sonuç yine `null`, iki halka birbirini maskeliyor |
+| okuma kapısı kalktı | yazma kapısı bozuk kaydı zaten geçirmiyor → okuma kapısı **hiç tetiklenmiyor** |
+| genel hafıza silindi | ⛔ `indexOf(a) < indexOf(b)` — bulunamayınca **`-1` döner ve `-1 < n` DOĞRUDUR** |
+| taban kapısı kalktı | örnek veri **iki kapıya birden** takılıyordu; ayrım görünmüyordu |
+
+**Üç düzeltme:** ① yazma tarafı **depoya bakarak** izole ölçülüyor
+(`depoBos()`), ② okuma tarafı için depoya **doğrudan enjeksiyon**, ③ her
+örnek **yalnız BİR kapıya** takılıyor — ötekiler geçiyor.
+_(Anayasa: "örnek veri ayrımın iki yakasını göstermeli"; "sıfır üç farklı
+şey olabilir" — burada `-1` "yok" demekti, ölçüt onu "önce geliyor" okudu.)_
+
+### 📎 KAPANIŞ — DERSLER ANAYASAYA GEÇTİ (02.09.2026)
+
+Üç madde `CLAUDE.md`e yazıldı; burada tekrarlanmıyor, kaynağı orası:
+· **İki kapı aynı şeyi koruyorsa mutasyon kapı başına izole edilir**
+· **Sessiz varsayılan üreten ifadeler ayrıca kapılanır** (`indexOf`/`-1`,
+  `every`/`[]`, `??`, `Math.max()`)
+· **Kritik yazım, yazıldığı doğrulanmadan yapılmış sayılmaz** (aynı gün üç
+  sessiz `replace`; geri almanın kendisi de bir yazımdır)
+
+⭐ **PANEL GEREKÇESİ KODA YAZILDI** — `lib/liste-hafizasi.ts` →
+`guvenliTaban` başlığında, **reddin gerçekleştiği yerde** (çağrı yerinde
+değil). Başlık açıkça _"GERİ EKLEMEYİN"_ diyor ve niye eklenemeyeceğini
+ölçtürüyor: `/` tabanıyla `guvenliAdres` hiçbir şeyi elemez, ve buradan
+okunan değer doğrudan bir gezinme hedefine dönüşür.
+
+### 🔶 HALİL TEST LİSTESİ
+
+1. `/stok` → **"91–180 gün"** çipine bas → bir ürüne tıkla → ürün detayında
+   sol üstteki geri bağlantısı **"‹ Stok"** demeli ve tıklayınca
+   **süzgeçli listeye** dönmeli (91–180 seçili).
+2. `/rapor/urunler` → Stokta bekleyen → bir ürüne tıkla → geri bağlantısı
+   **"‹ Ürün analizi"** demeli ve süzgeçli analize dönmeli.
+   ⛔ "‹ Ürünler" yazıyorsa test DÜŞER.
+3. `/satislar`da gez, sonra panelden bir ürüne git → geri **"‹ Satışlar"**
+   demeli. (En son gördüğün liste odur; metin de onu söyler.)
+4. Tarayıcının geri tuşu da eskisi gibi çalışmalı.
 
 ---
 

@@ -85,6 +85,7 @@ export default async function AlimlarSayfasi({
   const bicim = await bicimlendirici();
   const durumEtiketleri = await alimDurumEtiketleri();
   const t = await getTranslations("Alim");
+  const tBaslik = await getTranslations("Basliklar");
   const ortak = await getTranslations("Ortak");
   // "+N kalem" cümlesi satış sözlüğünde; aynı cümle iki sözlükte durmasın.
   const tSatis = await getTranslations("Satis");
@@ -383,7 +384,7 @@ export default async function AlimlarSayfasi({
       {/* SUZGECLI ADRESI HATIRLAR — hicbir sey CIZMEZ (K104-2).
           Bir kayda girip donen kullanici suzgecini geri bulsun diye.
           Kaydedici olmadan "< Liste" baglantisi duz listeye duser. */}
-      <ListeyiHatirla temel="/alimlar" />
+      <ListeyiHatirla temel="/alimlar" etiket={tBaslik("alimlar")} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

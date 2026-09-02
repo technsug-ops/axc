@@ -59,6 +59,7 @@ export default async function GiderlerSayfasi({
 
   const { ay: ayParam, kategori: kategoriParam } = await searchParams;
   const t = await getTranslations("Gider");
+  const tBaslik = await getTranslations("Basliklar");
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
 
@@ -195,7 +196,7 @@ export default async function GiderlerSayfasi({
       {/* SUZGECLI ADRESI HATIRLAR — hicbir sey CIZMEZ (K104-2).
           Bir kayda girip donen kullanici suzgecini geri bulsun diye.
           Kaydedici olmadan "< Liste" baglantisi duz listeye duser. */}
-      <ListeyiHatirla temel="/giderler" />
+      <ListeyiHatirla temel="/giderler" etiket={tBaslik("giderler")} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

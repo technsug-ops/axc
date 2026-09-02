@@ -110,6 +110,7 @@ export default async function SatislarSayfasi({
   const karEksik = p.kar === "eksik";
   const bicim = await bicimlendirici();
   const t = await getTranslations("Satis");
+  const tBaslik = await getTranslations("Basliklar");
   const tIpt = await getTranslations("SatisIptali");
   const tMarj = await getTranslations("MarjGosterge");
 
@@ -512,7 +513,7 @@ export default async function SatislarSayfasi({
       {/* SUZGECLI ADRESI HATIRLAR — hicbir sey CIZMEZ (K104-2).
           Bir kayda girip donen kullanici suzgecini geri bulsun diye.
           Kaydedici olmadan "< Liste" baglantisi duz listeye duser. */}
-      <ListeyiHatirla temel="/satislar" />
+      <ListeyiHatirla temel="/satislar" etiket={tBaslik("satislar")} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

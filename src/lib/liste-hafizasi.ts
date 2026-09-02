@@ -91,3 +91,128 @@ export function hatirlananListe(temel: string): string | null {
     return null;
   }
 }
+
+
+/**
+ * ============================================================================
+ *  "EN SON HANGI LISTEYI GORDUM" — GENEL HAFIZA (K133, 02.09.2026)
+ * ----------------------------------------------------------------------------
+ *  SORUN: ustteki hafiza TABAN ADRESE gore sakliyor. Urun detayi
+ *  `<ListeyeDon href="/urunler">` diyor, yani YALNIZ `/urunler` anahtarina
+ *  bakiyor. Kullanici `/stok`tan ya da `/rapor/urunler`den geldiyse o anahtar
+ *  bostur ve baglanti duz `/urunler`e gider — SUZGEC KAYBOLUR.
+ *
+ *  OLCULDU 02.09.2026: urun detayina ALTI ekrandan giriliyor
+ *  (`/rapor/urunler` · `/stok` · `/kart` · `/alimlar/[id]` · `/satislar/[id]` ·
+ *  panel kartlari). `/stok`ta hafiza VAR ama detay onu okumuyor — farkli
+ *  anahtar. Kullanici bunu `/rapor/urunler`de fark etti; kusur yeni DEGIL.
+ *
+ *  MODUL KENDI DOGRU SORUSUNU BASLIGINDA ZATEN YAZMISTI:
+ *  "'bir adim geri' degil, EN SON HANGI LISTEYI GORDUM." Uygulamasi taban
+ *  basina kalmisti; bu blok o soruyu GENEL olarak cevapliyor.
+ *
+ *  -- ETIKET DE SAKLANIYOR, VE BU TASARIMIN CEKIRDEGI ---------------------
+ *  Yalniz adres saklansaydi baglanti "< Urunler" yazarken `/satislar`a
+ *  giderdi: metin, davranisi YANLIS soyler (Ilke #2). Etiketi taban->ad
+ *  eslemesinden turetmek ise ELLE TUTULAN BIR LISTE dogururdu ve yedinci
+ *  liste eklendiginde sessizce eskirdi. Cozum: etiketi listenin KENDISI
+ *  yazar — sayfa zaten kendi basligini biliyor, esleme hic dogmuyor.
+ *
+ *  -- IKINCI MEKANIZMA KURULMADI -----------------------------------------
+ *  Cazip alternatif donus adresini baglantiya parametre olarak tasimakti
+ *  (`?donus=...`). Ayni isi yapan IKINCI bir yol olurdu ve ikisi zamanla
+ *  ayrisirdi. Bu blok var olan hafizanin USTUNE biniyor, yanina degil.
+ * ============================================================================
+ */
+
+/** Genel anahtar — taban adi degil, sabit. */
+const SON_ANAHTAR = ONEK + "__son__";
+
+export type SonListe = { temel: string; adres: string; etiket: string };
+
+/** Etiket ekrana basiliyor; sismis/bozuk deger okunmaz. */
+const ETIKET_TAVANI = 60;
+
+/**
+ * TABAN DA DOGRULANIR. `adres` zaten `guvenliAdres` ile tabanina karsi
+ * sinaniyor; ama taban `//baska-site.com` olsaydi adres de onunla baslayip
+ * kontrolu gecerdi. Taban tek egik cizgiyle baslamak ZORUNDA.
+ *
+ * ============================================================================
+ *  ⛔ PANEL (`temel: "/"`) BU KAPIDAN GECEMEZ — VE BU BIR EKSIK DEGIL,
+ *     BILINCLI BIR GUVENLIK KARARIDIR. GERI EKLEMEYIN.
+ * ----------------------------------------------------------------------------
+ *  `temel.length > 1` sarti panelin tabanini (`/`) eliyor. Sebep:
+ *  `guvenliAdres` bir adresi TABANIYLA BASLIYOR MU diye siniyor. Taban `/`
+ *  olsaydi bu sart hicbir seyi elemezdi — kokten baslayan HER adres gecerdi.
+ *  Ve buradan okunan deger dogrudan bir GEZINME HEDEFINE donusuyor
+ *  (`<GeriBaglanti href={hedef}>`): depoyu kirletebilen biri kullaniciyi
+ *  istedigi yere goturebilirdi.
+ *
+ *  ⚠ PANEL BUNDAN ZARAR GORMUYOR: kendi TABAN BASINA hafizasi
+ *  (`listeyiHatirla("/", …)`) eskisi gibi calisiyor. Kaybedilen tek sey,
+ *  "en son gordugum liste PANELDI" diye geri donmek — panel zaten bir
+ *  DOKUM degil, sol menude her zaman bir tik uzakta.
+ *
+ *  ⭐ UC AY SONRA "panel niye yok" diye bakan icin: eksik olan sey
+ *  panelin EKLENMESI degil, bu gerekcenin OKUNMASI. Eklemek isteyen once
+ *  `guvenliAdres`in `/` tabaniyla neyi eledigini olcsun.
+ *  _(Anayasa: "eski gerekce silinmez" — karar cevrilecekse NIYE cevrildigi
+ *  bu satirlarin yanina yazilir.)_
+ * ============================================================================
+ */
+function guvenliTaban(temel: string): boolean {
+  return (
+    temel.length > 1 &&
+    temel.length <= TAVAN &&
+    temel.startsWith("/") &&
+    !temel.startsWith("//")
+  );
+}
+
+/** En son gorulen listeyi hatirlar — taban, adres ve EKRANDAKI adiyla. */
+export function sonListeyiHatirla(kayit: SonListe): void {
+  if (!guvenliTaban(kayit.temel)) return;
+  const adres = guvenliAdres(kayit.temel, kayit.adres);
+  if (adres === null) return;
+  const etiket = kayit.etiket.trim();
+  if (etiket === "" || etiket.length > ETIKET_TAVANI) return;
+  try {
+    window.sessionStorage.setItem(
+      SON_ANAHTAR,
+      JSON.stringify({ temel: kayit.temel, adres, etiket }),
+    );
+  } catch {
+    /** Depolama engelliyse baglanti duz listeye gider — bugunku davranis. */
+  }
+}
+
+/**
+ * En son gorulen liste; yoksa ya da guvenilmezse `null`.
+ *
+ * BOZUK KAYIT SESSIZCE KULLANILMAZ. `JSON.parse` duserse, alanlar eksikse
+ * ya da adres kendi tabanina karsi dogrulanamiyorsa `null` doner — cagiran
+ * kendi duz adresine duser. (Anayasa: "cozulemeyen iz susturmaz".)
+ */
+export function hatirlananSonListe(): SonListe | null {
+  try {
+    const ham = window.sessionStorage.getItem(SON_ANAHTAR);
+    if (ham === null) return null;
+    const c = JSON.parse(ham) as Partial<SonListe>;
+    if (
+      typeof c.temel !== "string" ||
+      typeof c.adres !== "string" ||
+      typeof c.etiket !== "string"
+    ) {
+      return null;
+    }
+    if (!guvenliTaban(c.temel)) return null;
+    const adres = guvenliAdres(c.temel, c.adres);
+    if (adres === null) return null;
+    const etiket = c.etiket.trim();
+    if (etiket === "" || etiket.length > ETIKET_TAVANI) return null;
+    return { temel: c.temel, adres, etiket };
+  } catch {
+    return null;
+  }
+}

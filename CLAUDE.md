@@ -3627,6 +3627,107 @@ _(Bu, "şemadaki alan da bir iddiadır" ve "kolon başlığı bir iddiadır"
 derslerinin DOSYA tarafı: orada bir alanın adı yanlış okunuyordu, burada bir
 dosyanın adı iki kavram taşıyor.)_
 
+### İKİ KAPI AYNI ŞEYİ KORUYORSA, MUTASYON KAPI BAŞINA İZOLE EDİLİR (KESİN KURAL)
+
+_Ders 02.09.2026, K133 gezinme paketi._ Bir değeri iki kapı birden
+koruyorsa (yazma tarafı **ve** okuma tarafı), birini kaldıran mutasyon
+**ötekinin arkasında görünmez kalır.** Sonuç değişmez, bekçi yeşil yanar ve
+koruma sessizce yarıya iner.
+
+**Vaka:** liste hafızasında hem `sonListeyiHatirla` hem `hatirlananSonListe`
+aynı üç şeyi sınıyordu (taban · adres · etiket). Altı mutasyonun **dördü
+kaçtı:**
+
+    yazma kapısı kaldırıldı  → okuma yine `null` döndürdü, test göremedi
+    okuma kapısı kaldırıldı  → yazma kapısı bozuk kaydı zaten geçirmiyordu,
+                               yani okuma kapısı HİÇ TETİKLENMEDİ
+
+> **KURAL:** iki kapı varsa **her biri AYRI ölçülür.**
+> · **Yazma kapısı** — çağrıdan sonra **deponun kendisine** bakılır
+>   (`depo.get(...) === null`), okuma gövdesine değil.
+> · **Okuma kapısı** — bozuk kayıt **doğrudan depoya enjekte edilir**;
+>   yazma kapısından geçirilemeyen bir kayıt okuma kapısını hiç çalıştırmaz.
+
+⚠ **VE ÖRNEK VERİ YALNIZ BİR KAPIYA TAKILMALI.** Aynı vakada `temel: "/"` ·
+`adres: "/kotu"` denendi ve mutasyon yine kaçtı: o adres **zaten** ikinci
+kapıya (`guvenliAdres`) takılıyordu, birinci kapı hiç değerlendirilmiyordu.
+`adres: "/"` yapılınca — ikinci kapıyı GEÇEN, yalnız birinciye takılan bir
+örnek — mutasyon kırmızıya döndü.
+_("Örnek veri ayrımın iki yakasını göstermeli" kuralının ÇOK KAPILI hâli:
+orada tek kural iki sonuç vermiyordu, burada iki kural tek sonuç veriyor.)_
+
+---
+
+### SESSİZ VARSAYILAN ÜRETEN İFADELER AYRICA KAPILANIR (`indexOf` · `every` · `??`)
+
+_Ders 02.09.2026._ Bazı ifadeler "bulamadım" durumunda **kullanılabilir
+görünen bir değer** döndürür ve o değer bir karşılaştırmaya girdiğinde
+sessizce YANLIŞ CEVAP üretir. Hata vermez; ölçüt yeşil yanar.
+
+**Vaka — `indexOf` ve `-1`:** bir ölçüt sırayı şöyle sınıyordu —
+
+    bilesen.indexOf("hatirlananSonListe()") < bilesen.indexOf("hatirlananListe(href)")
+
+Genel hafıza okumasını **TAMAMEN SİLEN** mutasyon kaçtı: `indexOf`
+bulamayınca `-1` döner ve **`-1 < n` DOĞRUDUR.** Yani ölçüt, ölçtüğü şey
+YOK OLDUĞUNDA yeşil yanıyordu — en kötü yalancı yeşil.
+
+**Aynı sınıfın bilinen üyeleri:**
+
+| İfade | "Yok" hâlinde döndürdüğü | Sessiz sonucu |
+|---|---|---|
+| `indexOf(x)` | `-1` | her sıra karşılaştırmasını geçer |
+| `liste.every(...)` | `true` (boş listede) | her izin kapısını açar |
+| `x ?? 0` / `?? []` | nötr eleman | "ölçtüm, sıfır çıktı" gibi okunur |
+| `Math.max()` | `-Infinity` | her eşiği geçer |
+
+> **KURAL:** böyle bir ifadenin sonucu bir karşılaştırmaya giriyorsa
+> **VARLIK ayrıca kapılanır.** Sıra ölçütü şu üçe bölünür:
+> `iA >= 0` · `iB >= 0` · `iA < iB`. Tek satırda yazılan sıra ölçütü,
+> "yok" ile "önce" arasındaki farkı göremez.
+
+_(`EVERY` kapısı için ayrı ve daha eski bir madde var — bu, aynı kökün
+`indexOf` ve `??` tarafı. Üçü tek sınıftır: **nötr görünen varsayılan.**)_
+
+---
+
+### KRİTİK YAZIM, YAZILDIĞI DOĞRULANMADAN YAPILMIŞ SAYILMAZ (KESİN KURAL)
+
+_Ders 02.09.2026, aynı gün ÜÇ KEZ._ Bir düzenleme aracının "tamam" demesi,
+düzenlemenin **uygulandığını** göstermez. Desen tutmazsa `replace` hiçbir
+şey yapmaz ve **hata da vermez**; dosya olduğu gibi kalır ve iş yapılmış
+sanılır.
+
+**Aynı gün üç vaka:**
+
+    cat >> dosya <<'EOF'   → hiç yazmadı; `grep` BOŞ döndü, ben "temiz" okudum
+    replace(eski, yeni)    → çapa tutmadı; bekçiye eklediğim testler yoktu
+    replace(eski, yeni)    → çapa tutmadı; ölçüt kör kaldı, mutasyon kaçtı
+
+⛔ **VE İKİSİ DE EN TEHLİKELİ BİÇİMDE SESSİZDİ:** ilkinde `tsc`ye
+`| grep dosya-adi` uyguladım, boş çıktı ve **"temiz"** diye okudum — oysa
+boş çıkmasının sebebi eklenen kodun HİÇ OLMAMASIYDI.
+_(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+değildir" — burada denetimi ben körleştirdim.)_
+
+> **KURAL:** kaynağa yazan her kritik düzenleme **yazıldığı doğrulanarak**
+> yapılır:
+> · `replace` çağrısı önce **deseni sayar** (`count(eski) == 1`), tutmuyorsa
+>   **HATA VERİR** — sessizce geçmez;
+> · yazımdan sonra sonucun **varlığı ölçülür** (satır sayısı, `grep -c`);
+> · ve mutasyon harness'i mutasyonun **UYGULANDIĞINI** doğrular — desen
+>   bulunamayan bir mutasyon "yeşil" değil **UYGULANAMADI**dır.
+
+⚠ **VE GERİ ALMA DA BİR YAZIMDIR — AYNI ŞART ONA DA İŞLER.** Aynı gün iki
+kez geri alma bozuldu: biri `$TMPDIR` boş çıktığı için dosyayı **mutasyonlu
+bıraktı**, öteki `git checkout` ile geri alınınca o dosyadaki **commit
+edilmemiş bütün çalışmayı sildi**.
+⛔ **Commit edilmemiş bir dosyada mutasyon geri alması `git checkout` ile
+YAPILMAZ** — dosyanın kopyası alınır ve o geri yazılır; kopyanın alındığı
+da doğrulanır.
+
+---
+
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`
 - Her anlamlı iş biriminde commit at; günün sonunda değil, iş bitince

@@ -4,7 +4,12 @@ import { useEffect, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { GeriBaglanti } from "@/components/baglanti";
-import { hatirlananListe, listeyiHatirla } from "@/lib/liste-hafizasi";
+import {
+  hatirlananListe,
+  hatirlananSonListe,
+  listeyiHatirla,
+  sonListeyiHatirla,
+} from "@/lib/liste-hafizasi";
 
 /**
  * ============================================================================
@@ -26,13 +31,32 @@ import { hatirlananListe, listeyiHatirla } from "@/lib/liste-hafizasi";
  * açılışta kaydedilseydi, kullanıcı süzgeci değiştirdikten sonra detaya
  * girip döndüğünde ESKİ süzgece dönerdi — sessizce yanlış bir liste.
  */
-export function ListeyiHatirla({ temel }: { temel: string }) {
+export function ListeyiHatirla({
+  temel,
+  etiket,
+}: {
+  temel: string;
+  /**
+   * ⚠ EKRANDAKİ ADI — bu sayfanın kendi başlığı, SÖZLÜKTEN.
+   *
+   * ⛔ NİYE BURADA: dönüş bağlantısının METNİ hedefle tutmak zorunda.
+   * Etiket taban→ad eşlemesinden türetilseydi ELLE TUTULAN BİR LİSTE
+   * doğardı ve yedinci liste eklendiğinde sessizce eskirdi. Listeyi en iyi
+   * bilen, listenin KENDİSİDİR. _(Anayasa: "bekçi ölçütü elle tutulan liste
+   * değil, tersten kurulur" — burada eşleme HİÇ DOĞMUYOR.)_
+   */
+  etiket: string;
+}) {
   const parametreler = useSearchParams();
 
   useEffect(() => {
     const sorgu = parametreler.toString();
-    listeyiHatirla(temel, sorgu ? `${temel}?${sorgu}` : temel);
-  }, [temel, parametreler]);
+    const adres = sorgu ? `${temel}?${sorgu}` : temel;
+    /** Taban başına hafıza — eski davranış, yerinde. */
+    listeyiHatirla(temel, adres);
+    /** Genel hafıza — "en son hangi listeyi gördüm" (K133). */
+    sonListeyiHatirla({ temel, adres, etiket });
+  }, [temel, parametreler, etiket]);
 
   return null;
 }
@@ -77,11 +101,32 @@ export function ListeyeDon({
    * uyuşmazlığı doğmaz ve JavaScript hiç çalışmasa bile bağlantı GERÇEK bir
    * bağlantı olarak `/liste`ye gider.
    */
-  const hedef = useSyncExternalStore(
+  /**
+   * ⭐ SIRA (K133): genel "en son liste" → taban başına hafıza → düz adres.
+   *
+   * ⛔ VE HEDEFLE ETİKET BİRLİKTE SEÇİLİR, AYRI AYRI DEĞİL. Ayrı seçilseydi
+   * bağlantı `/satislar`a giderken "‹ Ürünler" yazabilirdi — metin,
+   * davranışı yanlış söylerdi (İlke #2). İkisi tek kaynaktan geliyor.
+   *
+   * ⚠ SUNUCU GÖRÜNTÜSÜ HÂLÂ DÜZ ADRES: JavaScript hiç çalışmasa da bağlantı
+   * GERÇEK bir bağlantı olarak `href`e gider. Hidrasyon uyuşmazlığı doğmaz.
+   */
+  const secim = useSyncExternalStore(
     aboneOlma,
-    () => hatirlananListe(href) ?? href,
-    () => href,
+    () => {
+      const son = hatirlananSonListe();
+      if (son !== null) return JSON.stringify({ h: son.adres, e: son.etiket });
+      const eski = hatirlananListe(href);
+      return JSON.stringify({ h: eski ?? href, e: null });
+    },
+    () => JSON.stringify({ h: href, e: null }),
   );
+  const { h: hedef, e: etiket } = JSON.parse(secim) as {
+    h: string;
+    e: string | null;
+  };
 
-  return <GeriBaglanti href={hedef}>{children}</GeriBaglanti>;
+  return (
+    <GeriBaglanti href={hedef}>{etiket === null ? children : etiket}</GeriBaglanti>
+  );
 }

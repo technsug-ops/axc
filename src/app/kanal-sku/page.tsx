@@ -69,6 +69,8 @@ export default async function KanalSkuSayfasi({
   const eksikOran = eksik === "1";
 
   const t = await getTranslations("KanalSku");
+
+  const tBaslik = await getTranslations("Basliklar");
   const tKomisyon = await getTranslations("Komisyon");
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
@@ -230,7 +232,7 @@ export default async function KanalSkuSayfasi({
       {/* SUZGECLI ADRESI HATIRLAR — hicbir sey CIZMEZ (K104-2).
           Bir kayda girip donen kullanici suzgecini geri bulsun diye.
           Kaydedici olmadan "< Liste" baglantisi duz listeye duser. */}
-      <ListeyiHatirla temel="/kanal-sku" />
+      <ListeyiHatirla temel="/kanal-sku" etiket={tBaslik("kanalSku")} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

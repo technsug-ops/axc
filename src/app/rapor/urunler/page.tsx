@@ -11,6 +11,7 @@ import { TriangleAlert } from "lucide-react";
 
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
+import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 import { ListeToplami } from "@/components/liste-toplami";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -33,6 +34,7 @@ import { marjYuzdesi } from "@/lib/panel-listeler";
 import {
   ANALIZ_EKSENLERI,
   analizAdresi,
+  ANALIZ_YOLU,
   analizToplami,
   coklucoz,
   eksenCoz,
@@ -241,6 +243,11 @@ export default async function UrunAnaliziSayfasi({
 
   return (
     <div className="min-w-0 space-y-4 p-4 md:p-6">
+      {/* K133 — bu liste de hafızaya girer, yoksa detaydan dönülemez.
+          Etiket ekranın KENDİ başlığı: dönüş bağlantısı "‹ Ürün analizi"
+          yazacak ve gerçekten buraya gelecek. */}
+      <ListeyiHatirla temel={ANALIZ_YOLU} etiket={t("baslik")} />
+
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("notu")}</p>

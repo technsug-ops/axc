@@ -49,6 +49,7 @@ export default async function UrunlerSayfasi({
   const bicim = await bicimlendirici();
   const t = await getTranslations("Urunler");
   const ortak = await getTranslations("Ortak");
+  const tBaslik = await getTranslations("Basliklar");
 
   const suzgec = arama
     ? {
@@ -168,7 +169,7 @@ export default async function UrunlerSayfasi({
       {/* SUZGECLI ADRESI HATIRLAR — hicbir sey CIZMEZ (K104-2).
           Bir kayda girip donen kullanici suzgecini geri bulsun diye.
           Kaydedici olmadan "< Liste" baglantisi duz listeye duser. */}
-      <ListeyiHatirla temel="/urunler" />
+      <ListeyiHatirla temel="/urunler" etiket={tBaslik("urunler")} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

@@ -254,6 +254,7 @@ export default async function AnaSayfa({
 
   const parametreler = await searchParams;
   const t = await getTranslations("Panel");
+  const tBaslik = await getTranslations("Basliklar");
   const tAnaliz = await getTranslations("UrunAnalizi");
   // "kârda"/"zararda" satış kavramıdır; sözlüğü çoğaltmak yerine oradan okunur.
   const tSatis = await getTranslations("Satis");
@@ -2018,7 +2019,12 @@ export default async function AnaSayfa({
       {/* ⚠ SÜZGEÇLİ ADRESİ HATIRLAR — hiçbir şey ÇİZMEZ (K104-②).
           Bir kayda girip dönen kullanıcı süzgecini geri bulsun diye.
           Kaydedici olmadan "‹ Liste" bağlantısı düz listeye düşer. */}
-      <ListeyiHatirla temel="/" />
+      {/* ⚠ PANEL GENEL HAFIZAYA GİRMEZ — BİLEREK. Tabanı `/` ve
+          `guvenliTaban` onu reddediyor (`temel.length > 1`): `/` tabanıyla
+          HER adres doğrulamayı geçerdi ve depodan gelen bir değer gezinme
+          hedefine dönüştüğü için bu açık yönlendirme riskidir. Panelin
+          kendi taban-başına hafızası eskisi gibi çalışmaya devam ediyor. */}
+      <ListeyiHatirla temel="/" etiket={tBaslik("panel")} />
       <div>
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">
