@@ -285,7 +285,8 @@
     "canli:iade-kuru-kosum": "tsx scripts/canli-iade-kuru-kosum.ts",
     "canli:iade-sayim-cakismasi": "tsx scripts/canli-iade-sayim-cakismasi.ts",
     "canli:iade-sebep-esleme": "tsx scripts/canli-iade-sebep-esleme.ts",
-    "canli:iade-sayimda-mi": "tsx scripts/canli-iade-sayimda-mi.ts"
+    "canli:iade-sayimda-mi": "tsx scripts/canli-iade-sayimda-mi.ts",
+    "canli:iade-yazim-plani": "tsx scripts/canli-iade-yazim-plani.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

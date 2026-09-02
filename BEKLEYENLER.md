@@ -175,12 +175,91 @@ iadesi YOK. **Bu bir iade olmayabilir** — kısmi düzeltme olabilir.
 
 ⛔ **SEÇİM MİMAR + HALİL'DE.** Rapor seçenekleri ve bedellerini gösterir.
 
-### ⏳ ② KURU KOŞUM HAZIR AMA DURUYOR — İKİ KARAR ŞART
+### ✓ ② KURU KOŞUM GEÇTİ — VE HALİL İKİ GİRDİYİ VERDİ (02.09 akşamı)
 
-1. **TY'nin 3 siparişinin türü** ne olacak? (kargo sinyali yok)
-2. **`4446089356`** iade mi değil mi?
+    ekstre iade kalemleri (mutlak) : 28.110,85
+    hedef                          : 28.110,85
+    fark                           :      0,00   ✓ KURUŞUNA
 
-Tür olmadan `Return` satırı KURULAMAZ — kuru koşum bile yarım kalır.
+⭐ **HALİL SEBEP VE TARİH VERDİ → ÜÇ BİLİNMEYENİN ÜÇÜ DE KAPANDI:**
+- **`4446089356` İADE ÇIKTI** ("Yanlış sipariş verdim") — şüpheli işareti
+  kalktı, küme 8 sipariş olarak duruyor.
+- **TÜR = NORMAL, sekizinde de.** Sebepler teslimden SONRA müşteri iadesi
+  ("Yanlış sipariş verdim" ×6 · "Küçük geldi" · "Beğenmedim"). Dört HB
+  siparişinde ekstrenin kendi `KARGO_IADE` satırı bunu **BAĞIMSIZ**
+  doğruluyor — iki ayrı kaynak aynı hüküm.
+- **SAĞLAM ADET = TAMAMI.** Hasar iddiası hiçbirinde yok.
+
+### ⭐ ÇAPRAZ KANIT — BEYAN FİZİKSEL SAYIMLA DOĞRULANDI
+
+Verilen tarihlerin hepsi 27.08 sayımından ÖNCE. O hâlde mal döndüyse
+sayımda görünmeliydi. Ölçüldü:
+
+    axcali1761  sayılan 1 − sistem 0 = fazla 1   iade 1   ✓✓  [kapsam DIŞI]
+    axcali1797  sayılan 5 − sistem 4 = fazla 1   iade 1   ✓✓
+    axcali2498  sayılan 1 − sistem 0 = fazla 1   iade 1   ✓✓  [kapsam DIŞI]
+    SALTP1314…  sayılan 4 − sistem 3 = fazla 1   iade 1   ✓✓
+
+    ✓✓ fazla = iade adedi (beyan DOĞRULANDI) : 4
+    ⚠  fazla eşleşmedi                        : 0
+    ⚠  varyant hiç sayılmamış (ölçülemez)     : 4
+
+Ölçülebilen **dördünün dördünde de** fark tam olarak iade adedi; ikisinde
+sistem rafı **boş sanıyordu ve mal bulundu.** Beyan bir kaynak, fiilen
+sayılan raf **bağımsız** ikinci kaynak — ikisi buluştu.
+_(Anayasa: "bağımsızlık KAYNAĞIN ayrılığıyla ölçülür".)_
+
+⭐ **VE İLK HÜKMÜM ÖLÇÜMLE ÇEVRİLDİ.** Önce "3 siparişte çift sayım riski"
+demiştim; ölçütüm _"sayım satıştan sonra mı"_ idi. `duzeltmeYazildiAt`
+ölçülünce görüldü: **düzeltme hiçbirinde yazılmamış**, fazla ledger'a
+girmemiş. Mal fizikte var, defterde yok → `soundQuantity` yazmak çift
+saymaz, **defteri fizikle buluşturur.**
+_(Anayasa: "alanın dolu olması, olayın gerçekleştiğini göstermez".)_
+
+### 📋 YAZIM PLANI — `npm run canli:iade-yazim-plani` (salt okuma)
+
+| Sipariş | Satış → İade | Ekstre | NET-2 etkisi |
+|---|---|---|---|
+| 4068972350 HB | 01.06 → 09.06 | 1.340,74 | −546,34 |
+| 4287210000 HB | 25.06 → 03.07 | 11.952,53 | **+1.914,86** |
+| 4446089356 HB | 22.05 → 05.06 | 441,48 | −207,98 |
+| 4586626981 HB | 12.07 → 20.07 | 2.583,94 | −235,94 |
+| 4903455009 HB | 22.06 → 29.06 | 5.712,46 | −255,25 |
+| 11385159467 TY | 05.07 → 22.07 | 3.007,06 | −99,93 |
+| 11409234590 TY | 13.07 → 29.07 | 1.401,28 | −570,41 |
+| 11438301199 TY | 22.07 → 10.08 | 1.671,36 | −97,92 |
+
+    ekstre toplamı   28.110,85   ✓   tarih kusuru 0
+    NET-2 toplam etki   −98,93   ·   stok +8   ·   ciro geri dönen 30.701,45
+
+⚠ **NET-2'nin ₺99 çıkması DOĞRU:** iade ciroyu geri alırken malı da rafa
+döndürüyor, maliyet de geri geliyor; kalan fark yanan kargo ve iade
+edilmeyen kalemler. `4287210000` pozitif çünkü o satış zaten zarardaydı.
+⛔ **Bu 8'in NET etkisi ₺99 diye 233'ün de öyle olduğu SÖYLENMİYOR** —
+ölçülmedi. Yön şu: açığın büyük kısmı **ciro/stok** meselesi, kâr değil.
+
+### ⛔ KALAN TEK KARAR — SEBEP NEREYE YAZILSIN
+
+`ReturnReason` enum'unda karşılığı yok; 8'in **7'si `DIGER`**'e düşüyor.
+
+    pazaryeri listesi (9) → belgeli karşılık 5 · DIGER 4
+    Halil'in 8 beyanı     → eşleşen 1 · ⛔ DIGER 7
+      "Yanlış sipariş verdim" × 6   ⛔ enumda YOK
+      "Begenmedim"            × 1   ⛔ enumda YOK
+
+23.08'de şema pazaryeri listesine göre genişletilmişti ama listenin **ilk
+iki maddesi** alınmadı — gerçek veride en sık geçen ikisi tam onlar.
+
+| | Yol | Bedeli |
+|---|---|---|
+| **A** | `Return.note`ta Halil'in KENDİ cümlesi | şema değişmez · sorgulanamaz |
+| **B** | Enum'a iki değer | migration + canlı koşum · ⚠ sıra SONA |
+
+⛔ **UYDURULMADI:** "Beğenmedim"e `CAYMA` yazmak bir YORUM olurdu.
+_(Anayasa: "sınıf, kendisinden türetilemiyorsa BEYAN edilir".)_
+
+⏭ **SEÇİM GELİNCE YAZIM:** anlık görüntü → tek işlem → satır satır
+`AuditLog` → değişmezlik turu (açık 233→225, iade dışı rakamlar bit-bit).
 
 ### ⏭ ④ SONRAKİ: HAKEDİŞ UCUNDAN GEÇMİŞ EKSTRELER (salt okuma)
 
