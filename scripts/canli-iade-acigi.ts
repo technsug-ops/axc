@@ -56,12 +56,25 @@ async function main() {
   };
 
   const nolar = [...new Set(satirlar.map((r) => String(r[i("Sipariş Numarası")]).trim()))];
-  const sale = new Map<string, { id: string; iptal: Date | null; durum: string | null }>();
+  const sale = new Map<string, { id: string; iptal: Date | null; durum: string | null; kanal: string }>();
   for (let k = 0; k < nolar.length; k += 400) {
     for (const x of await p.sale.findMany({
       where: { code: { in: nolar.slice(k, k + 400) } },
-      select: { id: true, code: true, iptalTarihi: true, profitStatus: true },
-    })) sale.set(x.code!, { id: x.id, iptal: x.iptalTarihi, durum: x.profitStatus });
+      select: {
+        id: true,
+        code: true,
+        iptalTarihi: true,
+        profitStatus: true,
+        /** K136 — kullanıcı sordu: "bu ciro farkı öteki pazaryerlerinden mi?" */
+        channelAccount: { select: { channel: { select: { name: true } } } },
+      },
+    }))
+      sale.set(x.code!, {
+        id: x.id,
+        iptal: x.iptalTarihi,
+        durum: x.profitStatus,
+        kanal: x.channelAccount.channel.name,
+      });
   }
   const iadeli = new Set((await p.returnNotice.findMany({
     where: { sale: { code: { in: nolar } } }, select: { sale: { select: { code: true } } },
@@ -80,6 +93,79 @@ async function main() {
   console.log("İADE AÇIĞI — ÖLÇÜM (salt okuma)");
   console.log("=".repeat(104));
 
+  /**
+   * ============================================================================
+   *  ⓪ BİRLEŞİK GÖRÜNÜM — İKİ KAYNAK, KİMLİKLE TEKİLLEŞTİRİLMİŞ
+   * ----------------------------------------------------------------------------
+   *  Kullanıcı kuralı 02.09.2026: _"Bir zamandan sonra sisteme yazıp Excel'e
+   *  yazmamaya başladık. Ona göre çift kayıt alma ama mevcut kayıtları
+   *  görmek için İKİ TARAFA DA BAK."_
+   *
+   *  ⭐ KURAL TARİH DEĞİL KİMLİK — VE BU DAHA SAĞLAM. Bir kesim tarihi
+   *  sınırda kenar durum üretir (o gün hem yazılmış hem yazılmamış olabilir);
+   *  sipariş numarasıyla tekilleştirme sınır tanımaz.
+   *  _(Anayasa: "kimlik varken dizeyle aranmaz" — burada tarihle de aranmaz.)_
+   *
+   *  ⚠ AÇIK HESABI ZATEN TEKİLLEŞTİRİLMİŞ (`!iadeli.has` · `!returnli.has`):
+   *  sistemde kaydı olan sipariş açıktan düşüyor. Bu blok o hesabı
+   *  DEĞİŞTİRMİYOR, yalnız iki tarafı birlikte GÖRÜNÜR kılıyor.
+   * ============================================================================
+   */
+  {
+    const iTur2 = i("TÜR");
+    /** Excel'de iade işaretli sipariş numaraları. */
+    const excelIade = new Set(
+      satirlar
+        .filter((r) => String(r[iTur2] ?? "").trim().toLowerCase() === "iade")
+        .map((r) => String(r[i("Sipariş Numarası")]).trim())
+        .filter((x) => x !== ""),
+    );
+    /**
+     * ⛔ SİSTEM TARAFI KISITSIZ SORGULANIR — `iadeli`/`returnli` KULLANILMAZ.
+     *
+     * O iki küme `where: { sale: { code: { in: nolar } } }` ile, yani
+     * EXCEL'İN sipariş numaralarıyla süzülüyor. Birleşimde onları
+     * kullansaydım Excel'de olmayan hiçbir sistem iadesi görünmezdi ve
+     * "birleşim" aslında KESİŞİM olurdu — üstelik sayı makul görünürdü.
+     * _(Anayasa: "kontrol tasarımı, veri kapsamı doğrulanmadan FARK
+     * üretmez" — iki taraf aynı kümeyi kapsamalı, biri ötekiyle
+     * süzülmemeli.)_
+     */
+    const tumSistemIade = new Set<string>(
+      [
+        ...(await p.return.findMany({
+          select: { sale: { select: { code: true } } },
+        })),
+        ...(await p.returnNotice.findMany({
+          select: { sale: { select: { code: true } } },
+        })),
+      ]
+        .map((x) => x.sale?.code ?? "")
+        .filter((x) => x !== ""),
+    );
+    const sistemIade = tumSistemIade;
+    const kesisim = [...excelIade].filter((x) => sistemIade.has(x));
+    const birlesim = new Set<string>([...excelIade, ...sistemIade]);
+
+    console.log("\n⓪ BİRLEŞİK GÖRÜNÜM — iki kaynak, kimlikle tekilleştirilmiş");
+    console.log(`   Excel'de iade işaretli sipariş : ${excelIade.size}`);
+    console.log(`   Sistemde iade kaydı olan       : ${sistemIade.size}`);
+    console.log(`   ⚠ HER İKİSİNDE de olan         : ${kesisim.length}`);
+    console.log(`   ⭐ TOPLAM BİLİNEN İADE (birleşim): ${birlesim.size}`);
+    console.log(
+      "   ⛔ Birleşim, iki sayının TOPLAMI DEĞİL — kesişim bir kez sayılır.",
+    );
+    if (kesisim.length > 0) {
+      console.log(
+        `   ⚠ İki tarafta birden olanlar: ${kesisim.slice(0, 8).join(" · ")}` +
+          (kesisim.length > 8 ? ` … +${kesisim.length - 8}` : ""),
+      );
+      console.log(
+        "     Bunlar AÇIK sayılmıyor (sistem kaydı var) — çift düşülmüyor.",
+      );
+    }
+  }
+
   // ── ① İADE TUTARI ──────────────────────────────────────────────────────
   /** ⚠ Liste fiyatı NEGATİF yazılı; mutlak değeri iadenin tutarıdır. */
   const tutar = acik.reduce((t, r) => t + Math.abs(n(r[i("ÜRÜN LİSTE FİYATI")])), 0);
@@ -91,6 +177,42 @@ async function main() {
   console.log("     cirosu (₺710.189) DEĞİL. İki rakam karıştırılmaz.");
 
   // ── ② DÖNEM ────────────────────────────────────────────────────────────
+  /**
+   * ⭐ KANAL DAĞILIMI — KULLANICI SORUSU (02.09.2026):
+   * _"Bu ciro farkı diğer pazaryerlerinden kaynaklanmış olabilir mi?"_
+   *
+   * ⛔ SORU MEŞRUYDU VE CEVABI ÖLÇÜLMEMİŞTİ: bu betikte `channel` kelimesi
+   * HİÇ geçmiyordu, yani açık bugüne kadar **kanal ayrımı olmadan**
+   * raporlanıyordu. Kullanıcı HB · N11 · Amazon'da da satıyor.
+   * _(Anayasa: "kontrol tasarımı, veri kapsamı doğrulanmadan FARK üretmez"
+   * — iki taraf aynı kümeyi kapsıyor mu, sorulmadan hüküm kurulmaz.)_
+   */
+  console.log("\n①b KANAL DAĞILIMI — açık hangi pazaryerinde");
+  {
+    const kanalG = new Map<string, { adet: number; tutar: number }>();
+    for (const r of acik) {
+      const no = String(r[i("Sipariş Numarası")]).trim();
+      const k = sale.get(no)?.kanal ?? "(defterde yok)";
+      const c = kanalG.get(k) ?? { adet: 0, tutar: 0 };
+      c.adet++;
+      c.tutar += Math.abs(n(r[i("ÜRÜN LİSTE FİYATI")]));
+      kanalG.set(k, c);
+    }
+    for (const [k, v] of [...kanalG.entries()].sort(
+      (a, b) => b[1].tutar - a[1].tutar,
+    )) {
+      console.log(
+        `   ${k.padEnd(18)} ${String(v.adet).padStart(5)} satır  ` +
+          `${v.tutar
+            .toLocaleString("tr-TR", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
+            .padStart(16)}`,
+      );
+    }
+  }
+
   console.log("\n② DÖNEM DAĞILIMI");
   const ay = new Map<string, { n: number; tutar: number }>();
   let okunamayan = 0;

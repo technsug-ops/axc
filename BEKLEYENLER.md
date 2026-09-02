@@ -127,6 +127,58 @@ okunan değer doğrudan bir gezinme hedefine dönüşür.
 
 ---
 
+## 🔵 K136 — İADE AÇIĞI KANAL AYRIMI · 02.09.2026 · [ÖLÇÜLDÜ]
+
+> Kullanıcı sordu: _"Bu ciro farkı diğer pazaryerlerinden kaynaklanmış
+> olabilir mi? Biliyorsun HB'de ve N11'de de satıyorum, Amazon'da da
+> sattım."_ — **Soru meşruydu ve cevabı ölçülmemişti.**
+
+### ⛔ AÇIK 28.08'DEN BERİ KANAL AYRIMI OLMADAN RAPORLANIYORDU
+
+`canli-iade-acigi.ts` içinde `channel` kelimesi **HİÇ geçmiyordu.**
+₺694.431 tek bir yığın gibi duruyordu ve hangi pazaryerinden geldiği
+sorulmamıştı. _(Anayasa: "kontrol tasarımı, veri kapsamı doğrulanmadan
+FARK üretmez".)_
+
+### 📏 ÖLÇÜM — kanal ayrımı eklendi (`npm run canli:iade-acigi`)
+
+    Hepsiburada   115 satır   ₺356.259,97   %52,2
+    Trendyol      123 satır   ₺326.197,95   %47,8
+    N11 · Amazon        —             —      (açık YOK)
+
+⭐ **BULGU: HB ORANTISIZ.** HB cironun **%35,9**'u ama iade açığının
+**%52,2**'si. TY %63,7 ciro ↔ %47,8 açık. Bu, rakam tek yığındayken
+görülemezdi.
+
+⚠ N11 (7 satış) ve Amazon (11 satış) küçük ve açık çıkmadı — makul.
+
+### 📏 RAKAM TAZELENDİ (28.08 → 02.09)
+
+    satır   243 → 238      sipariş 238 → 233
+    tutar   ₺694.431,92 → ₺682.457,92
+
+⚠ **BU, İADE EDİLEN KALEMLERİN TUTARI** — o satışların tam cirosu
+(₺710.189) DEĞİL. İki rakam karıştırılmaz (betiğin kendi uyarısı).
+📏 Toplam ciroya oranı: **₺682.458 / ₺17.203.860 = %4,0**
+
+⚠ **SON 30 GÜNDE 0 KAYIT** — açık birikmiş bir geçmiş, BÜYÜMÜYOR.
+En yoğun: 2025-10 (23) · 2025-11 (29) · 2025-12 (25) · 2026-01 (23).
+
+### ⭐ KARARA ETKİSİ: K73'ÜN "EKSTRE YOLU" SEÇİMİ GÜÇLENDİ
+
+Açığın **yarısından fazlası HB'de** ve HB'de API yok (kullanıcı kararı
+02.09: _"Hepsiburada'nın API'si var ama henüz başlamak istemiyorum"_).
+Dolayısıyla **TY `claims` ucu bu açığın ancak %48'ini çözer.**
+Ekstre yolu her iki kanalı da kapsıyor — tek yol o.
+
+### ⏭ ÖLÇÜLMEYEN — VE ÖLÇÜLMEDİĞİ YAZILIYOR
+
+**NET-2 etkisi ölçülmedi.** Ciro etkisi ₺682.458 ama kâr etkisi daha
+küçük olacak (iade edilen malın maliyeti de geri döndü). Karar için asıl
+rakam odur ve **bugün elimizde yok.**
+
+---
+
 ## 🔵 K135 — "EKSİK ÖDEME" TEŞHİSİ ÇÜRÜDÜ · 02.09.2026 · [ÖLÇÜLDÜ]
 
 _K134'ten sonra hakediş teyidi ilk kez rakam üretti ve `EKSIK_ODEME 31`
