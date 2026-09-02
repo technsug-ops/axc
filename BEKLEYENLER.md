@@ -233,7 +233,7 @@ silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
 
 ---
 
-## 🚨 K138 — PANO YAZIMI "BEKLİYOR" DERKEN KOŞMUŞTU · 02.09.2026 · [KAPANDI]
+## ✅ K138 — PANO YAZIMI "BEKLİYOR" DERKEN KOŞMUŞTU · BEKÇİ 03.09.2026 · [KOD KOŞTU]
 
 ⛔ **BEŞ GÜN SESSİZ KALDI VE BUGÜN YANLIŞ BİLGİ ÜRETTİ.**
 
@@ -263,8 +263,61 @@ etiketli kalemde aynı betiği arayan bir tarama yazdım, **0 çelişki** dedi.
 Sebep: K75'in `[KOŞTU 28.08.2026]` alt başlığı **kendi içinde**, bir
 seviye aşağıda — bölme onu ayrı kalem saydı.
 
-⏭ **BEKÇİ YAZILACAK:** bir kalemin BAŞLIĞI "bekliyor" derken GÖVDESİNDE
-`[KOŞTU]` alt başlığı varsa KIRMIZI.
+### ✅ BEKÇİ YAZILDI · 03.09.2026 — VE İKİ VAKA DAHA BULDU
+
+⭐ **ÖLÇÜT "YAN YANA OLMASIN" DEĞİL, "BAŞLIK DOĞRUYU SÖYLESİN".** Bir
+kalemin bir parçasının koşup ötekinin beklemesi MEŞRUDUR (K74: maliyetler
+yazıldı, ②④⑨ onay bekliyor). Yasaklanan şey bu değil — yasaklanan,
+başlığın **yalnız bekleyeni söyleyip koşanı gizlemesi.**
+
+📏 **ÖLÇÜLDÜ (61 kalem):** "bekliyor" başlıklı **3** kalemin **2'sinde**
+gövdede `[KOŞTU]` alt başlığı vardı ve **ikisi de gerçek kusurdu.**
+Sahte pozitif: 0.
+
+    K83  [KURU KOŞUM, YAZIM ONAY BEKLİYOR]
+         ### ✅ YAZILDI [KOŞTU 29.08.2026] — 181 hareket   ⛔ BAŞLIK YALAN
+    K74  [ÖLÇÜLDÜ, YAZIM ONAY BEKLİYOR]
+         ### ✅ K74 MALİYETLERİ YAZILDI [KOŞTU]            ⛔ yarısı gizli
+
+İkisinin de başlığı düzeltildi; K75 de aynı turda `[KOŞTU · kalıntı 19]`
+oldu. **Bekçi yazılmadan önce pano gerçeğe uyduruldu** — yoksa ölçüt ilk
+gün kırmızı doğar ve susturulmaya davet çıkarırdı.
+
+### ⛔ VE İLK İKİ ÖLÇÜT KÖR ÇIKTI — DESEN İKİ YÖNDEN DE YANLIŞTI
+
+    ① K138'in ilk taraması "bekliyor" ile "[KOŞTU]"yu AYRI kalem saydı → 0
+    ② bugünkü ilk denemem /\[KOŞTU\]/ arıyordu; K83'ün işareti
+      `[KOŞTU 29.08.2026]` biçiminde ve KAÇTI — üstelik aynı desen düz
+      metinde de geçtiği için K138'in KENDİ BELGESİNE yanıyordu
+
+Desen hem **genişletildi** (tarih/önek alabilir) hem **daraltıldı** (yalnız
+`###`+ alt başlığında sayılır). _(Anayasa: "kaynak tarayan kontrol, deseni
+kullanım bloğunda arar".)_
+
+### ⛔ VE İLK MUTASYON TURU 7'DE 4 KAÇIRDI — SEBEP BEKÇİ DEĞİL, VERİYDİ
+
+Panoyu düzelttiğim an bekçinin ısıracağı **canlı vaka kalmadı**; "ölçütü
+öldüren mutasyon" ile "temiz pano" ayırt edilemez oldu. Ölçüt kaynağı
+tarıyordu ve tarama boş dönünce her mutasyon yeşil geçiyordu.
+
+⭐ **ÇARE SAF GÖVDE:** `durumCeliskileri(satirlar)` panoyu okumaz, satır
+dizisi alır — ve **dört değer testiyle** sınanır (üçü gerçek vakadan:
+K83'ün eski hâli · K74'ün bugünkü dürüst hâli · K138'in kendi belgesi).
+Artık mantığı bozan her mutasyon kırmızı yanıyor.
+_(Anayasa: "mutasyon kaçıyorsa önce test verisi sorgulanır" · "saf hesap
+katmanı, desen tarayan bekçiye muhtaç olmaz".)_
+
+✓ **8/8 mutasyon kırmızı** — iki yön ayrı: yanlış susma (K83 başlığını
+yalanına döndür · K74'ten YAZILDI'yı çıkar · saf gövdeyi boşalt · desenden
+tarihi düş · taban eşiğini gerçek sayının üstüne al) ve yanlış yanma (alt
+başlık sınırını kaldır · dürüst başlık muafiyetini kaldır · `##` sınırını
+gevşet).
+
+⚠ **AÇIK KALAN — BU BEKÇİ K75'İ YAKALAMAZDI.** K75'in `[KOŞTU 28.08.2026]`
+kaydı **başka bir kalemde** duruyordu, kendi gövdesinde değil. Kalemler
+ARASI aynı işi anlatan çifti bulmak bu ölçütün kapsamı DIŞINDA ve bugün
+açılmadı. `pano:dogrula` bunu bilmez; K75 sınıfının gerçek çaresi durumu
+panodan değil **defterden** sormaktır (`canli:kargo-mutabakat-izi`).
 
 ---
 
@@ -509,7 +562,48 @@ baktırma sebebi.
 "sayılsın" demek bedeli bilinmeyen bir işi emretmek olurdu.** Rakam
 konunca karar kolay: ₺226K'lık bir ayrım için 90 varyant sayılır.
 
-⏭ **KARAR HALİL'DE:** ① 90 varyant sayılsın mı, ② yoksa sebep sınıfına
+### ✅ ⑥ SAYIM FÖYÜ TESLİM EDİLDİ · 03.09.2026 [KOŞTU]
+
+_Halil şartnamesi: "90 varyant ₺ etkisine göre sıralı, %80 eşiği
+işaretli, raf sırasına dizili — PDF/ekran."_
+
+⚠ **ŞARTNAME İKİ SIRALAMA İSTİYOR VE İKİSİ ÇELİŞİYOR.** Çözüm birini
+seçmek değil, ikisini **farklı işe koşmak**: ₺ etkisi hangi satırların
+sayılmaya değdiğini belirler (%80 kesimi, işaretlenir) · raf sırası listenin
+DİZİLİŞİdir. ₺'ye göre dizilseydi Halil aynı rafa beş kez giderdi.
+
+⚠ **VE RAKAM PANODAKİNDEN FARKLI ÇIKTI — SESSİZCE DEĞİŞMEDİ:**
+
+    02.09  97 varyant → 7 bedava çözüldü → **90** sayılacak
+    03.09  96 varyant → 7 bedava çözüldü → **89** sayılacak   ← GEÇERLİ
+
+Sebep: 02.09'da K136a'nın 8 iadesi yazıldı; iadesi yazılan sipariş hedef
+kümeden çıkıyor. _(Anayasa: "donmuş kaynak, akan kaynakla karşılaştırılırken
+iki damga yazılır".)_
+
+⛔ **VE BİR ETİKET HATASI YAPTIM — DÜZELTMESİ BURADA DURUYOR.** Commit
+mesajına _"89 varyant · ₺222.317,98"_ yazdım. **Yanlış.** İki ayrı rakamı
+tek etiketle taşıdım:
+
+    ₺222.317,98   SİPARİŞ bazlı — kararin TAMAMININ bedeli
+                  (sayimin BEDAVA çözdüğü 7 varyant DAHİL)
+    ₺200.134,41   VARYANT bazlı — **listenin toplamı**, sayılacak 89 kalem
+    ₺ 22.183,57   fark = sayımın bedavaya çözdüğü kısım
+
+Betik ikisini zaten AYRI basıyor ve **kapsam karşılaştırması yapıyor**
+(ayrışırsa liste yayımlanmaz); hatayı yapan ölçüm değil, rakamı taşıyan
+cümleydi. _(Anayasa: "bir sayı etiketiyle taşınır".)_
+
+    ⭐ %80'i ilk **46** varyantta: ₺160.476,34
+      kalan 43 varyant                ₺ 39.658,07
+    raf: 80 DEPO · 4 OFİS · 5 (raf yok)
+    ✓ her varyantın maliyeti biliniyor
+
+**ÇIKTI:** `raporlar/k136c-sayim-listesi.csv` (89 satır, raf sırasında) +
+telefonda işaretlenebilir föy (toplam süzgeçle birlikte değişir — İlke #15;
+SKU tık-kopyala — İlke #4; dokunma alanı 44px — İlke #8).
+
+⏭ **KARAR HALİL'DE:** ① 89 varyant sayılsın mı, ② yoksa sebep sınıfına
 göre politika mı (teslim edilmeyen → sağlam, hasar imalı → sayılsın,
 gerisi → ?). ⛔ Yazım bu karardan sonra, AYRI onayla.
 
@@ -2143,7 +2237,7 @@ sayıyor, gerçek **₺94,20 zarar**. Bugün kapatılamaz; kaydı burada durur.
 
 ---
 
-## 🆕 K74 — HALİL'İN ON VAKASI · 28.08.2026 · [ÖLÇÜLDÜ, YAZIM ONAY BEKLİYOR]
+## 🆕 K74 — HALİL'İN ON VAKASI · 28.08.2026 · [MALİYETLER YAZILDI · ②④⑨ ONAY BEKLİYOR]
 
 Ölçüm: `npm run canli:on-vaka` · `canli:on-vaka-b` · `canli:barbie-adj`
 (üçü de salt okuma).
@@ -2222,9 +2316,59 @@ satır var**. Siparişin tamamını iptal etmek **gerçek olan 1 adedi de** sile
 
 ---
 
-## 🆕 K75 — KARGO SÜTUNU (R) · 28.08.2026 · [ÖLÇÜLDÜ, YAZIM ONAY BEKLİYOR]
+## ✅ K75 — KARGO SÜTUNU (R) · YAZILDI 28.08.2026 · [KOŞTU · kalıntı 19]
 
 > Halil: _"Satış dosyasının R kısmında kargo ücretleri mevcut."_
+### ⛔ PANO KURGU ÜRETİYORDU — DÜZELTİLDİ 03.09.2026
+
+Başlık **[YAZIM ONAY BEKLİYOR]** diyordu; iş **28.08'de yapılmıştı.** Aynı
+panoda `✅ KARGO YAZILDI · 28.08.2026 · [KOŞTU]` kaydı duruyordu ve rakamlar
+neredeyse birebir aynıydı (5595 ↔ 5583 · ₺559.499 ↔ ₺558.134) — yani pano
+**aynı işi hem yapılmış hem bekliyor** diye taşıyordu.
+
+⛔ **VE BU KURGU BANA BİR HATA YAPTIRDI:** panodaki satıra bakıp kullanıcıya
+_"5583 siparişte kargo gideri düşülmemiş"_ dedim. Kullanıcı durdurdu:
+_"nasıl düşmemiş kargo saçmalama hesaplarda görünüyor."_ **Haklıydı** —
+cevap panodan değil DEFTERDEN okunmalıydı.
+_(Anayasa: "panonun kendisi de doğrulanan bir veridir"; "pano, işin DURUMUNU
+değil NİYETİNİ kaydederse kurgu üretir".)_
+
+### ✅ ÇİFT DÜŞÜM RİSKİ ÖLÇÜLDÜ — SIFIR
+
+_Halil ön şartı: "30.08'de yazılan 'kargo 5.595 kayıt' hangi alandı, K75
+hangi alana yazacak, kesişim kaç sipariş? Çift düşüm riski sıfır
+kanıtlanmadan yazım yok."_
+Araç: `npm run canli:kargo-mutabakat-izi` (salt okuma).
+
+⚠ **İKİ ALAN VAR VE İKİSİ DE "KARGO" DENİYOR** — ayrı sayıldı:
+
+    `Sale.cargoAmount`  kargo ÜCRETİ (para)  ← K75 buraya yazacaktı
+    `Sale.shippedAt`    kargo TARİHİ (an)     ← K60'ta yazılıp GERİ ALINDI
+
+    ⭐ KESİŞİM (zaten yazılmış olup yeniden yazılacak) : en az **5578**
+    ⭐ cargoAmount BOŞ olan satış (mutlak tavan)        : **52**
+    ⭐ ALAN CİNSİ: **MUTLAK** (üzerine yazar) · artımlı kullanım: YOK
+    ✓ **ÇİFT DÜŞÜM İMKÂNSIZ** — aynı değeri ikinci kez yazmak toplamı
+      değiştirmez.
+
+⚠ **VE DEĞERLERİN DOĞRULUĞU AYRICA ÖLÇÜLDÜ** (`canli:kargo-degeri-dogrula`):
+_"alanın DOLU olması, değerin DOĞRU olduğunu göstermez."_ 5595 satır
+kuruşuna `dosya ÷ 1,20` çıktı; taban kanıtı olarak oran p05–p95 boyunca
+**tam 1,2000**.
+
+### ⏭ AÇIK KALAN — **19 SATIŞ**
+
+    kargosuz toplam 52
+      (a) İPTALLİ   33   ← kargo zaten beklenmez, kusur DEĞİL
+      ⭐ açık satis  19   ← 15 Trendyol · 4 Hepsiburada
+
+Bunlar dosyada kargo satırı TAŞIMIYOR; yazacak değer yok. ⛔ Sistemin
+bilmediği bir değeri toplu yazmak yasak — `null` bir eksiklik değil
+**BEYANDIR**. Tam liste: `veri/ozel/kargosuz-satislar.csv`.
+⚠ Ayrıca **28 sipariş "çelişen"** kovasında (aynı siparişe dosyada farklı
+kargo değerleri) — ayrı kalem, bugün açılmadı.
+
+
 
 Ölçüm: `npm run canli:kargo-kolonu` (salt okuma).
 
@@ -2741,7 +2885,7 @@ bölünüyordu. Komisyon ORAN olarak saklı olduğu için kendiliğinden düzeld
 
 ---
 
-## 🆕 K83 — FİZİKSEL SAYIM ESAS · 29.08.2026 · [KURU KOŞUM, YAZIM ONAY BEKLİYOR]
+## ✅ K83 — FİZİKSEL SAYIM ESAS · YAZILDI 29.08.2026 · [KOŞTU · 181 hareket]
 
 > Halil **7 saat** fiziksel sayım yaptı ve kuralı koydu: **fiziki varlık
 > esastır.** Sonraki Excel aktarımları stok rakamlarını bozdu — sıra

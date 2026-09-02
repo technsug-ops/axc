@@ -317,6 +317,160 @@ kontrol(
   );
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+ *  5) DURUM TUTARLILIĞI — BAŞLIK YALNIZ "BEKLİYOR" DİYEMEZ (K138, 03.09.2026)
+ * ──────────────────────────────────────────────────────────────────────────
+ *  ⛔ BEDELİ ÖLÇÜLDÜ. K75'in başlığı `[ÖLÇÜLDÜ, YAZIM ONAY BEKLİYOR]`
+ *  diyordu; iş 28.08'de KOŞMUŞTU. Panonun ilk yarısını okuyup kullanıcıya
+ *  şunu söyledim: _"5583 siparişte kargo gideri düşülmemiş."_ **Yanlıştı.**
+ *  Kullanıcı durdurdu: _"nasıl düşmemiş kargo, hesaplarda görünüyor."_
+ *  Defter: `cargoAmount` DOLU 5806/5903 · ₺583.497,58.
+ *  ⛔ İddia edilen şey defterin **₺557 bin yanlış olduğuydu.**
+ *
+ *  ── ⚠ İLK İKİ ÖLÇÜT KÖR ÇIKTI — DESEN İKİ YÖNDEN DE YANLIŞTI ──────────
+ *  ① K138'in ilk taraması "bekliyor" kalemiyle "[KOŞTU]" kalemini AYRI
+ *     kalem sayıyordu ve `0 çelişki` dedi.
+ *  ② Bugünkü ilk denemem `/\[KOŞTU\]/` arıyordu; K83'ün işareti
+ *     `[KOŞTU 29.08.2026]` biçiminde ve **kaçtı**. Aynı desen prose'ta da
+ *     geçtiği için K138'in KENDİ BELGESİNE yanıyordu.
+ *  ⭐ Desen hem GENİŞLETİLDİ (tarih/önek alabilir) hem DARALTILDI (yalnız
+ *     ALT BAŞLIKTA sayılır; alıntı ve düz metin sayılmaz).
+ *
+ *  ── ⭐ ÖLÇÜT "YAN YANA OLMASIN" DEĞİL, "BAŞLIK DOĞRUYU SÖYLESİN" ───────
+ *  Bir kalemin bir parçası koşup ötekinin beklemesi MEŞRUDUR (K74: maliyet
+ *  yazıldı, ②④⑨ onay bekliyor). Yasaklanan şey bu değil — yasaklanan,
+ *  başlığın **yalnız bekleyeni** söyleyip koşanı gizlemesi.
+ *
+ *  📏 ÖLÇÜLDÜ 03.09.2026 (61 kalem): "bekliyor" başlıklı 3 kalemin
+ *  **2'sinde** gövdede `[KOŞTU]` alt başlığı vardı — K74 ve K83 — ve
+ *  **ikisi de gerçek kusurdu.** K83'ün başlığı `[KURU KOŞUM, YAZIM ONAY
+ *  BEKLİYOR]` diyordu; gövdesinde `✅ YAZILDI [KOŞTU 29.08.2026] — 181
+ *  hareket`. Sahte pozitif: 0.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/** Başlık "bu iş bekliyor" diyor mu? */
+const BEKLIYOR_ETIKETI = /BEKLİYOR|BEKLEMEDE|\[SIRADA\]|ONAY BEKL/i;
+/**
+ * Başlık "bir kısmı koştu" diyor mu?
+ * ⚠ `KOŞTU` tek başına yetmez: `KURU KOŞUM` da onu içerir ve kuru koşum
+ * YAZIM DEĞİLDİR. Bu yüzden `KOŞTU` kelimesi tam olarak aranıyor.
+ */
+const KOSTU_ETIKETI = /YAZILDI|KAPANDI|KOŞTU\b|✅/;
+/**
+ * Gövdede "koştu" işaretli ALT BAŞLIK.
+ * ⚠ Yalnız `###`+ satırında aranır — aynı metin gerekçe paragrafında ve
+ * alıntıda da geçiyor (K138 kendi vakasını ANLATIYOR ve o yasağı çiğnemiş
+ * sayılamaz). _(Anayasa: "kaynak tarayan kontrol, deseni kullanım bloğunda
+ * arar" · "yorumsuz kodda arar".)_
+ */
+const KOSTU_ALT_BASLIK = /^#{3,6}\s.*\[(?:[A-ZÇĞİÖŞÜ ]* )?KOŞTU[^\]]*\]/;
+
+/**
+ * SAF GÖVDE — panoyu okumaz, satır dizisi alır.
+ *
+ * ⭐ NİYE SAF: ilk yazımda bu mantık doğrudan pano üstünde koşuyordu ve
+ * mutasyon turunda **dört senaryo birden kaçtı.** Sebep bekçi değil,
+ * VERİYDİ: panoyu düzelttiğim an ısıracak canlı vaka kalmadı ve "ölçütü
+ * öldüren mutasyon" ile "temiz pano" ayırt edilemez oldu. Saf gövde
+ * sentetik vakayla sınanabiliyor; artık mantığı bozan her mutasyon
+ * kırmızı yanıyor.
+ * _(Anayasa: "mutasyon kaçıyorsa önce test verisi sorgulanır" · "saf hesap
+ * katmanı, desen tarayan bekçiye muhtaç olmaz".)_
+ */
+function durumCeliskileri(satirlar: string[]): {
+  celisenler: string[];
+  kalemSayisi: number;
+  bekleyenSayisi: number;
+} {
+  const kalemBasi = satirlar
+    .map((l, i) => (/^##(?!#)\s/.test(l) ? i : -1))
+    .filter((i) => i >= 0);
+  const celisenler: string[] = [];
+  let bekleyenSayisi = 0;
+  for (let n = 0; n < kalemBasi.length; n++) {
+    const bas = satirlar[kalemBasi[n]];
+    if (!BEKLIYOR_ETIKETI.test(bas)) continue;
+    bekleyenSayisi += 1;
+    /** Başlık koşanı DA söylüyorsa dürüsttür — yasak işlemez. */
+    if (KOSTU_ETIKETI.test(bas)) continue;
+    const sonu = n + 1 < kalemBasi.length ? kalemBasi[n + 1] : satirlar.length;
+    const kosan = satirlar
+      .slice(kalemBasi[n] + 1, sonu)
+      .filter((l) => KOSTU_ALT_BASLIK.test(l));
+    if (kosan.length > 0) {
+      celisenler.push(
+        `${bas.trim().slice(0, 60)} → ${kosan[0].trim().slice(0, 50)}`,
+      );
+    }
+  }
+  return { celisenler, kalemSayisi: kalemBasi.length, bekleyenSayisi };
+}
+
+/**
+ * ⭐ DEĞER TESTLERİ — AYRIMIN İKİ YAKASI, GERÇEK VAKALARDAN ALINMIŞ.
+ * Örnekler uydurma değil: ① K83'ün 29.08–03.09 arasındaki gerçek hâli,
+ * ② K74'ün bugünkü dürüst hâli, ③ K138'in kendi belgesi (yasağı ANLATAN
+ * metin onu ÇİĞNEMİŞ sayılamaz).
+ */
+kontrol(
+  "① İHLAL: bekliyor başlığı + [KOŞTU tarihli] alt başlık yakalanıyor",
+  durumCeliskileri([
+    "## 🆕 K83 — FİZİKSEL SAYIM · [KURU KOŞUM, YAZIM ONAY BEKLİYOR]",
+    "metin",
+    "### ✅ YAZILDI [KOŞTU 29.08.2026] — 181 hareket",
+  ]).celisenler.length === 1,
+);
+kontrol(
+  "② SERBEST: başlık koşanı DA söylüyorsa yakalanmıyor",
+  durumCeliskileri([
+    "## 🆕 K74 — ON VAKA · [MALİYETLER YAZILDI · ②④⑨ ONAY BEKLİYOR]",
+    "### ✅ K74 MALİYETLERİ YAZILDI — 28.08.2026 [KOŞTU]",
+  ]).celisenler.length === 0,
+);
+kontrol(
+  "③ SERBEST: [KOŞTU] yalnız DÜZ METİNDE geçiyorsa yakalanmıyor",
+  durumCeliskileri([
+    "## 🚨 K138 — PANO YAZIMI BEKLİYOR DERKEN KOŞMUŞTU",
+    "satır aşağıda `✅ KARGO YAZILDI · 28.08.2026 · [KOŞTU]` kaydı duruyordu.",
+  ]).celisenler.length === 0,
+);
+kontrol(
+  "④ SERBEST: bekleyeni olmayan kalem hiç taranmıyor",
+  durumCeliskileri([
+    "## ✅ K48 — KAPANDI · [KOD KOŞTU]",
+    "### ✅ YAZILDI [KOŞTU 03.09.2026]",
+  ]).bekleyenSayisi === 0,
+);
+
+{
+  const olcum = durumCeliskileri(
+    readFileSync("BEKLEYENLER.md", "utf8").split(/\r?\n/),
+  );
+  /**
+   * ⛔ TABAN DOLULUĞU: pano okunamazsa `celisenler.length === 0`
+   * KENDİLİĞİNDEN doğru olur ve bekçi kör hâlini "temiz" diye onaylar.
+   * _(Anayasa: "`EVERY` kapısı taban doluluğunu ayrıca kanıtlar".)_
+   */
+  kontrol(
+    `⭐ TABAN DOLU — en az 40 kalem başlığı okundu (${olcum.kalemSayisi})`,
+    olcum.kalemSayisi >= 40,
+    olcum.kalemSayisi,
+  );
+  kontrol(
+    `başlığı YALNIZ "bekliyor" deyip gövdesi [KOŞTU] olan kalem YOK` +
+      ` (${olcum.bekleyenSayisi} bekleyen kalem tarandı)`,
+    olcum.celisenler.length === 0,
+    olcum.celisenler,
+  );
+  if (olcum.celisenler.length > 0) {
+    console.log(
+      "        ÇARE: başlık NE KOŞTUĞUNU da söylesin " +
+        '(ör. "[MALİYETLER YAZILDI · ②④⑨ ONAY BEKLİYOR]"). ' +
+        "Kaleme dokunma, BAŞLIĞI düzelt.",
+    );
+  }
+}
+
 console.log("");
 console.log(`  toplam kimlik: ${tumu.size}`);
 
