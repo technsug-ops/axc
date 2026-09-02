@@ -233,6 +233,227 @@ silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
 
 ---
 
+## ✅ K136b — TY GEÇMİŞ FİZİBİLİTESİ · 02.09.2026 · [ÖLÇÜLDÜ · YAZIM YOK]
+
+_Halil şartnamesi: "TY hakediş GEÇMİŞ çekimi + claims geçmiş ufku, tek
+fizibilite raporu (salt okuma, Halil makinesi, A3 içinde)."_
+Araç: `npm run canli:ty-gecmis-fizibilite` — salt okuma, yalnız `GET`.
+
+### ⭐ ASIL SAYI: KAPSAMA %99,1
+
+    açık TY siparişi          115
+    ⭐ claims'te GÖRÜNEN      114   ciro 317.591,00
+    ⛔ claims'te GÖRÜNMEYEN     1   ciro     840,00
+
+**TY yarısı bu boruyla neredeyse TAMAMEN adreslenebilir.** Açığın TY
+tarafı ₺319.503,50 idi; claims'in gördüğü ₺317.591 — yani **%99,4'ü.**
+
+⚠ **"GÖRÜNEN" ≠ "YAZILABİLİR".** K136a'da her sipariş için ÜÇ şey
+gerekiyordu: sebep · tarih · tür. Claims ilk ikisini veriyor
+(`customerClaimItemReason` · `lastModifiedDate`, K136a'da 3/3 beyanla
+tuttu). **TÜR henüz ölçülmedi** — açık soru.
+
+### ① CLAIMS UCU
+
+    çekilen 351 · ucun kendi beyanı 351   ✓ TAM
+    ufuk (claimDate) 2023-10-04 → 2026-08-28
+    farklı sipariş numarası 308
+
+### ② HAKEDİŞ UCU — VE BİR PARAMETRE HATASI
+
+İlk denemede `400` döndü ve ben mesajı **80 karaktere kırptığım için**
+sebebi göremedim (`CheApiBusinessException` ile kesiliyordu). Tam cevap:
+
+    "Size değeri 500 ya da 1000 olmalıdır"
+
+⛔ `size=50` geçmiştim. Kırpma olmasaydı ilk turda çözülürdü.
+_(Anayasa: "hata mesajını kısaltan her işlem teşhisi kısaltır" — bu ders
+bugün ÜÇÜNCÜ kez tetiklendi.)_
+
+Düzeltilince veri aktı — 15 günlük pencerelerle geriye:
+
+    2026-08-18 → 2026-09-02   113 kayıt
+    2025-12-21 → 2026-01-05   201 kayıt
+    2024-08-28 → 2024-09-12    15 kayıt
+    2024-04-30 → 2024-05-15     5 kayıt
+
+⚠ **GİDİLEBİLEN en eski pencere 2024-03-16 — ve bu UCUN sınırı DEĞİL,
+döngü tavanım (60 pencere ≈ 2,5 yıl).** Uç daha geriye de veriyor olabilir.
+Rapor bunu kendisi yazıyor.
+_(Aynı gün ÜÇ kez aynı tuzak: zaman aşımı · alan haritası derinliği · şimdi
+döngü tavanı. Üçünde de aracımın sınırı kaynağın yokluğu gibi göründü.)_
+
+📌 **Bizim için yeterli:** Excel listesindeki en eski iade **2024-08**.
+
+### ⚠ YAN BULGU — 58 SİPARİŞ DEFTERDE HİÇ YOK
+
+    (a) claims'te VAR + listede VAR + defterde SATIŞ YOK : 58
+
+Bunlar iade açığı değil, **K56 kovası** (sisteme hiç girilmemiş satışlar).
+Ayrı iş; bu boruyla çözülmez çünkü bağlanacak satış kaydı yok.
+
+### ⭐ TÜR SORUSU KAPANDI — HİPOTEZ ÇÜRÜDÜ, CEVAP DAHA İYİ ÇIKTI
+
+Hipotez şuydu: _"claims bir MÜŞTERİ talebidir, talep açan malı almıştır →
+hepsi NORMAL."_ **Yanlış.** Sebep kodu dağılımı çürüttü:
+
+    66  DISLIKE · Beğenmedim
+    59  WRONGORDER · Yanlış sipariş verdim
+    51  DAMAGEDITEM · Kusurlu ürün gönderildi
+    44  SMALLSIZE · Bedeni/Ebatı Küçük Geldi
+    38  ABANDON · Vazgeçtim
+    ⭐ 25  UNDELIVERED · Teslim edilemeyen gönderi
+    ⭐  3  CLAIMEDINSHIP · Taşıma Sürecinde İade Edildi
+       … 20 farklı kod
+
+⭐ **YANİ TÜR VARSAYILMIYOR, KANALIN KENDİ KODUNDAN OKUNUYOR.** Bu
+varsaymaktan kat kat sağlam: K136a'da tür ekstrenin `KARGO_IADE` satırından
+türetiliyordu ve TY ekstresinde o satır **hiç yoktu**.
+
+⚠ **VE DEFTER TARAFI HİPOTEZİ SINAYAMADI:** sistemde `UNDELIVERED` iade
+**0** — ayrımın öteki yakası yok. "Sınanamadı" ile "doğrulandı" aynı şey
+değildir; hipotezi çürüten şey defter değil, kodun kendisi oldu.
+
+### ⭐ 114 SİPARİŞ YAZIMA HAZIR — ÜÇ ALANIN ÜÇÜ DE ÇÖZÜLÜYOR
+
+    'Accepted' talebi OLAN sipariş : 114/114
+    hiç 'Accepted' talebi YOK      :   0
+    TÜR (sipariş bazında):
+        97  NORMAL
+        17  UNDELIVERED
+         0  ⛔ KARIŞIK
+
+⚠ **DURUM SÜZGECİ ŞART:** 351 talebin 235'i `Accepted`, 70'i `Cancelled`,
+53'ü `Rejected`, 1'i `Created`. Reddedilen bir talep **iade değildir** (mal
+müşteride kaldı). K136a'da `11409234590`'ın iki talebi vardı ve doğru olan
+`Accepted` olandı — o süzgeç orada elle uygulanmıştı, burada ölçüldü.
+
+    sebep  → customerClaimItemReason.code + .name   ✓
+    tarih  → lastModifiedDate (K136a'da 3/3 tuttu)  ✓
+    tür    → sebep kodundan                          ✓
+
+### ⛔ GERİYE TEK BİLİNMEYEN: SAĞLAM ADET
+
+K136a'da en pahalı karar buydu (8 siparişte ₺21.948 yayılım) ve orada
+**fiziksel sayım** çözdü — 4/4 varyantta fazla = iade adedi. **O çapraz
+114 siparişte ölçeklenmez:** varyantların çoğu 27.08 sayımına hiç girmedi.
+
+⚠ Ve claims de söylemiyor: `DAMAGEDITEM` (kusurlu gönderdik) ya da
+`ANALYSISREQUEST` gibi kodlar malın satılabilir dönüp dönmediğini
+belirtmiyor.
+⏭ **Toplu yazım açılmadan önce bu ölçülmeli.**
+
+⛔ **YAZIM YOK.** Toplu yazım AYRI onayla.
+⛔ **HB yarısı (₺332.252,97) bu boruyla KAPANMIYOR** — A3 kapı kararı **B**.
+
+---
+
+## ✅ K137 — İŞLENMİŞ İADE ARAMASI · 02.09.2026 · [KAPANDI]
+
+_Kullanıcı: "iadeler kısmında arama kısmı yok. Detaylı arama kısmını buraya
+da ekle."_
+
+⛔ **HAKLIYDI VE EKSİK YARIMDI:** arama kutusu bu sayfada **VARDI** — yalnız
+**Bildirimler** sekmesinde (`bq`). İşlenmiş iadelerde tarih penceresi ve üç
+açılır süzgeç vardı, arama YOKTU. Ortak bileşen sayfaya girmiş, ikinci
+sekmeye taşınmamıştı.
+
+### NE EKLENDİ
+
+`src/lib/iade/arama.ts` → `iadeAramaKosulu` (saf, `bildirimAramaKosulu`nun
+kardeşi — AYRI tablo olduğu için ortak gövdeye zorlanmadı).
+
+    aranıyor: talep no · SEBEP NOTU · sipariş no · gönderi no ·
+              SKU · firma SKU · barkod · ürün adı · kanal SKU (aktif)
+
+⭐ **SEBEP NOTU DA ARANIYOR** — K136a'da sebep `Return.note`a yazıldı
+(`IADE_SEBEP[kaynak:…]: «Beğenmedim»`). Aranabilir olmasaydı "kaç iade
+beğenmemekten" sorusunun cevabı olmazdı; o soru enum genişletmesinin
+**açılış şartı**.
+
+⭐ **ARAMA `kosul`A GİRDİ, LİSTEYE DEĞİL:** `kosul` üç yerde okunuyor —
+`count`, liste ve **dönem özeti**. Yalnız listeye uygulansaydı üstteki
+kartlar süzgeçten bağımsız kalır ve İlke #15 kırılırdı. Excel de aynı
+kümeyi indiriyor.
+
+⛔ **BOŞ MESAJ ÜÇE AYRILDI.** Eskiden her hâlde _"Bu dönemde iade yok."_
+yazıyordu; arama açıkken bu **yanlış bilgiydi** (dönemde iade VAR, eşleşen
+yok). Artık: arama varsa `bosAramaSonucu` · süzgeç varsa `bosSuzgecSonucu` ·
+ikisi de yoksa `bosListe`.
+
+### 🐞 BEKÇİ ÜÇ KEZ KAÇTI — ÜÇÜ DE ÖLÇÜT KUSURU, VERİ DEĞİL
+
+| Kaçan mutasyon | Kök sebep |
+|---|---|
+| `sale.code`u listeden sil | Ölçüt `IADE_ARAMA_ALANLARI`'nı DOLAŞIYORDU — listeden silinen alan, onu sınayan kontrolü de siliyordu. **Kendi tabanını doğruluyordu.** |
+| `sale.shipmentCode`u sil | aynı kök |
+| Kod eşdeğerini kaldır | Ölçüt `includes("194644037598")` idi; aranan `0194644037598` bunu zaten **ALT DİZE** olarak içeriyor. Ölçüt kendi girdisinin parçasıyla tatmin oluyordu. |
+
+⭐ **ÇARE İKİ PARÇALI:** ① taban doluluğu AYRICA kanıtlanıyor
+(`length >= 8` + operasyonun eline geçen kimlikler ADIYLA); ② eşdeğer
+KENDİ DEĞERİ olarak aranıyor (`"contains":"194644037598"`, tırnaklarıyla).
+_(Anayasa: "`EVERY` kapısı taban doluluğunu ayrıca kanıtlar" — liste
+boşalmıyor ama KÜÇÜLÜYOR ve etkisi aynı.)_
+
+✓ **10/10 mutasyon kırmızı** (yanlış susma + yanlış yanma yönü).
+✓ `rma:dogrula` 532 ölçüt · i18n ✓ · lint ✓ · tsc ✓
+
+### ⭐ ② SEBEP LİSTEYE DE KONDU (kullanıcı sorusu, aynı gün)
+
+_Kullanıcı Tür sütununu işaret ederek: "Beğenmedim kısmı burda mı olsa
+acaba?"_
+
+⛔ **ALTINDA GERÇEK KUSUR VARDI:** arama sebep notunu ARIYOR ama satır
+**niye eşleştiğini söylemiyordu.** "Beğenmedim" yazıp kaydı bulan kullanıcı,
+sebebi görmek için detaya girmek zorundaydı _(İlke #9 ihlali)_.
+
+**Yer seçimi kullanıcınındı ve doğruydu:** Tür = _NASIL_ döndü (normal ·
+teslim edilemedi · itirazlı), sebep = _NİYE_ döndü. İkisi aynı soruya bakar,
+aynı hücrede durur. Mobil kartta da var _(İlke #8/#10)_.
+
+### ⚠ VE KALIP TEK BAŞINA YETMEZ — ÖLÇÜLDÜ
+
+    toplam Return 17  ·  notu dolu 10  ·  notu boş 7
+    ⭐ kurallı kalıp   8   (IADE_SEBEP[kaynak:…]: «…»)
+    ⚠ serbest metin   2   ← ve İKİSİ DE gerçek operasyon notu:
+      "Değişim olarak düzeltildi — para satıcıda kaldı…"
+      "İADE REDDEDİLDİ TRENDYOL KABUL ETTİ, ÜRÜN MÜŞTERİYE…"
+
+⛔ Yalnız kalıbı çözen bir gösterim o ikisini **görünmez** yapardı — üstelik
+en çok okunması gereken notlar onlar. `iadeSebebiCoz` asla `null` dönmez:
+kalıp tutmazsa notun KENDİSİ döner. Ve **kırpma yok** — serbest notlarda
+hüküm sonda olabiliyor.
+
+### 🐞 BİR MUTASYON DAHA KAÇTI — BU SEFER VERİ KÖRDÜ
+
+`«»` girdisiyle yazdığım ölçüt, `metin === ""` dalını öldüren mutasyonu
+yakalayamadı. Sebep kodda değildi: `«(.+)»` **en az bir karakter** istiyor,
+yani `«»` kalıba hiç girmiyor ve o dal çalışmıyordu — ölçüt doğru cevabı
+YANLIŞ yoldan alıyordu. Girdi `«   »` yapıldı (boşluk kalıba girer, `trim`
+sonrası boşalır) ve mutasyon kırmızıya döndü.
+_(Anayasa: "mutasyon kaçıyorsa ÖNCE test verisi sorgulanır" — mutasyon
+silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
+
+✓ **15/15 mutasyon kırmızı** · `rma:dogrula` 546 ölçüt
+
+### 🧾 HALİL TEST LİSTESİ
+
+0. `/iadeler` → İşlenmiş iadeler → `4287210000` satırında **Tür**
+   sütununun altında sebep yazmalı:
+   _"Yanlış sipariş verdim seçeneğinden iade"_
+
+1. `/iadeler` → **İşlenmiş iadeler** sekmesi → arama kutusu GÖRÜNMELİ
+   (kamera ikonuyla)
+2. `4287210000` yaz → Ara → **1 kayıt**; üstteki özet kartları da o tek
+   kaydın rakamına düşmeli (adet 1)
+3. `Beğenmedim` yaz → **1 kayıt** (`11409234590`) — sebep notundan buluyor
+4. `zzzz` yaz → **"«zzzz» ile eşleşen iade yok"** yazmalı,
+   _"Bu dönemde iade yok"_ DEĞİL
+5. Temizle → liste geri gelmeli, kutu da boşalmalı
+6. Arama açıkken **Excel indir** → inen dosya yalnız eşleşenleri taşımalı
+
+---
+
 ## 🔵 K136b — SIRA B: TY HAKEDİŞ GEÇMİŞİ + CLAIMS UFKU · [SIRADA]
 
 _Halil, 02.09: "sıra B'de = TY hakediş GEÇMİŞ çekimi + claims geçmiş ufku,
