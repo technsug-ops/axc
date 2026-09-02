@@ -44,7 +44,7 @@ import {
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 9;
+const BOLUM_SAYISI = 10;
 const kosanBolumler: string[] = [];
 
 let gecen = 0;
@@ -85,6 +85,9 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
     yasGun: x.yasGun ?? null,
     bagliSermaye: x.bagliSermaye ?? null,
     rafAdedi: x.rafAdedi ?? null,
+    barkod: x.barkod ?? null,
+    firmaSku: x.firmaSku ?? null,
+    kanalKodlari: x.kanalKodlari ?? [],
   };
 }
 
@@ -588,6 +591,70 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
   );
 
   kosanBolumler.push("kova");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10) KİMLİK KODLARI LİSTEDE (İlke #3 + #4) — kullanıcı isteği 02.09.2026
+// ═══════════════════════════════════════════════════════════════════════════
+{
+  const sayfa = readFileSync("src/app/rapor/urunler/page.tsx", "utf8");
+  /** Bileşen gövdesine daralt — desen dosyanın başka yerinde de geçebilir. */
+  const bas = sayfa.indexOf("async function KimlikSatiri");
+  const blok = bas < 0 ? "" : sayfa.slice(bas);
+
+  dogru("kimlik: ayrı bir bileşende (tek gövde)", bas >= 0);
+  /**
+   * ⛔ MASAÜSTÜ VE TELEFON AYNI BİLEŞENİ ÇAĞIRIR (İlke #10).
+   * İki ayrı düzen yazılsaydı biri güncellenip öteki unutulurdu.
+   */
+  yakin(
+    "kimlik: tablo VE kart listesi aynı bileşeni çağırıyor",
+    (sayfa.match(/<KimlikSatiri satir=\{s\} \/>/g) ?? []).length,
+    2,
+  );
+
+  dogru("kimlik: SKU basılıyor", /deger=\{satir\.sku\}/.test(blok));
+  dogru("kimlik: barkod basılıyor", /deger=\{satir\.barkod\}/.test(blok));
+  dogru(
+    "kimlik: kanal kodları basılıyor",
+    /satir\.kanalKodlari\.map\(/.test(blok),
+  );
+  /** ⛔ Kanal ADI kodun yanında — etiketsiz kod okuyana soru bıraktırır. */
+  dogru(
+    "kimlik: kanal ADI kodun yanında yazıyor",
+    /\{k\.kanal\}/.test(blok) && /deger=\{k\.kod\}/.test(blok),
+  );
+  /**
+   * ⛔ FİRMA SKU YALNIZ FARKLIYSA — ölçüldü: 1110 varyantın 1084'ünde
+   * (%97,7) `companySku === sku`. Koşulsuz basılsaydı satırların
+   * neredeyse tamamında aynı değer İKİ KEZ görünürdü.
+   * ⚠ Koşul SONUCUYLA birlikte aranıyor: yalnız `firmaSku === null` demek
+   * dalın çizilip çizilmediğini söylemez.
+   */
+  dogru(
+    "kimlik: Firma SKU yalnız SKU'dan FARKLIYSA çiziliyor",
+    /satir\.firmaSku === null \? null : \(/.test(blok),
+  );
+
+  /** Gövde tarafı: aynıysa `null` yazılıyor mu — DEĞER testi. */
+  const veri = readFileSync("src/lib/rapor/urun-analizi-verisi.ts", "utf8");
+  dogru(
+    "gövde: companySku === sku ise firmaSku null",
+    /firmaSku: v\.companySku === v\.sku \? null : v\.companySku/.test(veri),
+  );
+  /** Aynı kanalda iki hesap varsa kod TEKİLLEŞİR — yoksa satır şişer. */
+  dogru(
+    "gövde: kanal kodları tekilleştiriliyor",
+    /new Map\(\s*v\.channelSkus\.map/.test(veri),
+  );
+  /** ⛔ İKİ EKSEN AYNI GÖVDEDEN — ayrışırsa iki ekran farklı kod gösterir. */
+  yakin(
+    "gövde: iki eksen de kimlikCoz çağırıyor",
+    (veri.match(/kimlikCoz\(/g) ?? []).length >= 3,
+    true,
+  );
+
+  kosanBolumler.push("kimlik");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -3955,6 +3955,7 @@
     "paretoNotu": "Kümülatif pay, NET-2'ye göre azalan sırada baştan buraya kadarki payı gösterir.",
     "paretoSiraUyarisi": "Kümülatif pay yalnız NET-2'ye göre AZALAN sıralamada anlamlıdır; şu an başka bir sıralama seçili olduğu için gösterilmiyor.",
     "panelAc": "Tam listeyi aç",
-    "sermayesizUrun": "Maliyeti bilinmeyen"
+    "sermayesizUrun": "Maliyeti bilinmeyen",
+    "kanalKodEtiketi": "{kanal} kodu"
   }
 }

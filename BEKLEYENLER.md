@@ -13,6 +13,59 @@
 
 ---
 
+## 🚨 K133 — DETAYA GİRİNCE LİSTEYE DÖNÜLEMİYOR · 02.09.2026 · [ÖLÇÜLDÜ]
+
+> Kullanıcı: _"Bu ekrandan ürünün üzerine tıklayınca geri ekrana gelemiyorum.
+> Bu normal mi?"_ — **Normal değil.**
+
+### ⛔ KÖK: HAFIZA TABAN ADRESE GÖRE, AMA DETAYA ÇOK YERDEN GİRİLİYOR
+
+`lib/liste-hafizasi.ts` başlığında doğru soru zaten yazılı:
+
+> _"DOĞRU SORU 'bir adım geri' değil, **'en son hangi listeyi gördüm'**."_
+
+Ama uygulaması **taban adres başına**: `sessionStorage[selliora:liste:{temel}]`.
+Ürün detayı `<ListeyeDon href="/urunler">` diyor, yani YALNIZ `/urunler`
+anahtarına bakıyor. Başka bir listeden gelindiyse o anahtar boştur ve
+bağlantı düz `/urunler`e gider — **kullanıcının süzgeci kaybolur.**
+
+📏 **ÖLÇÜLDÜ 02.09.2026 — ürün detayına giren ekranlar:**
+
+    /rapor/urunler  ·  /stok  ·  /kart  ·  /alimlar/[id]
+    /satislar/[id]  ·  panel kartları
+    ListeyiHatirla KOYULMUŞ olanlar: alimlar · giderler · kanal-sku ·
+                                     panel · satislar · stok · urunler
+
+Yani `/stok`ta hafıza VAR ama ürün detayı onu OKUMUYOR (farklı anahtar).
+`/rapor/urunler`de hafıza HİÇ YOK.
+
+⚠ **BU YENİ BİR KUSUR DEĞİL — K129 onu GÖRÜNÜR YAPTI.** `/stok`tan girip
+dönen kullanıcı da aynı şeyi yaşıyordu; yeni ekran gelince fark edildi.
+
+### ⛔ VE ÜÇ SATIRLIK BİR DÜZELTME DEĞİL — DENENDİ, ÇÜRÜDÜ
+
+**Cazip çare:** genel bir "son liste" anahtarı yaz, `ListeyeDon` onu tercih
+etsin. **Ama etiket sabit:** bağlantı "‹ Ürünler" yazarken `/satislar`a
+giderse metin davranışı YANLIŞ söyler (İlke #2 + "metin, sahip olmadığı
+anlamı iddia etmez"). Yani etiket de hedeften türetilmeli — bu, bileşenin
+arayüzünü değiştirir.
+
+**İkinci cazip çare:** dönüş adresini bağlantıya parametre olarak taşı
+(`?donus=...`). O da aynı işi yapan İKİNCİ bir mekanizma kurar ve ikisi
+zamanla ayrışır.
+
+⏭ **AÇIK — TASARIM KARARI GEREKİYOR.** Doğru şekil muhtemelen: hafıza
+genel anahtarla saklanır (adres + taban birlikte), `ListeyeDon` etiketi
+hedeften türetir, ve güvenlik ölçütü hatırlanan TABANA karşı uygulanır.
+⚠ Bekçisi mutasyonla gelmeli: "başka listeden gelince o listeye döner" ve
+"etiket hedefle tutar" AYRI ölçütler.
+
+⚠ **BU ARADA TARAYICININ GERİ TUŞU ÇALIŞIYOR** — liste durumunun tamamı
+adreste olduğu için. Kayıp yalnız ekrandaki bağlantıda; kullanıcıya bunu
+söylemek, çözüm gelene kadar iş görür.
+
+---
+
 ## 🟢 K132 — HB AVANTAJLI TEKLİFLER (K-HB-TEKLIF) · 02.09.2026 · [KOD KOŞTU]
 
 _Kullanıcı HB tarife ekranına `Avantajlı_Teklifler-02-09-2026-10_00.xlsx`

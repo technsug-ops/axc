@@ -9,6 +9,57 @@ import { yaslanmaListesi, type YaslanmaGirdisi } from "@/lib/yaslanma";
 import type { AnalizSatiri } from "./urun-analizi";
 
 /**
+ * KİMLİK KODLARI — İKİ EKSENDE DE AYNI ŞEKİLDE (İlke #10).
+ * Satış ekseni ile stok ekseni farklı sorgular kullanıyor; kodların seçimi
+ * ve biçimi TEK GÖVDEDEN geçiyor ki iki ekranda ayrışmasın.
+ */
+const KIMLIK_SECIMI = {
+  sku: true,
+  companySku: true,
+  barcode: true,
+  channelSkus: {
+    select: {
+      channelSku: true,
+      channelAccount: { select: { channel: { select: { name: true } } } },
+    },
+  },
+} as const;
+
+type KimlikKaynagi = {
+  sku: string;
+  companySku: string;
+  barcode: string | null;
+  channelSkus: {
+    channelSku: string;
+    channelAccount: { channel: { name: string } };
+  }[];
+};
+
+function kimlikCoz(
+  v: KimlikKaynagi | null,
+): Pick<AnalizSatiri, "barkod" | "firmaSku" | "kanalKodlari"> {
+  if (v === null) return { barkod: null, firmaSku: null, kanalKodlari: [] };
+  return {
+    barkod: v.barcode,
+    /**
+     * ⚠ AYNIYSA `null` — ölçüldü 02.09.2026: 1110 varyantın 1084'ünde
+     * (%97,7) `companySku === sku`. Aynı değeri iki kez basmak satırı
+     * gürültüye boğar ve okuyana hiçbir şey söylemez.
+     */
+    firmaSku: v.companySku === v.sku ? null : v.companySku,
+    /** Aynı kanalda birden çok hesap olabilir; kod TEKİLLEŞTİRİLİYOR. */
+    kanalKodlari: [
+      ...new Map(
+        v.channelSkus.map((c) => [
+          `${c.channelAccount.channel.name}|${c.channelSku}`,
+          { kanal: c.channelAccount.channel.name, kod: c.channelSku },
+        ]),
+      ).values(),
+    ].sort((a, b) => a.kanal.localeCompare(b.kanal, "tr")),
+  };
+}
+
+/**
  * ============================================================================
  *  ÜRÜN ANALİZİ — VERİ TOPLAMA (SUNUCU)
  * ----------------------------------------------------------------------------
@@ -75,7 +126,7 @@ export async function satisEkseniVerisi(
           profitStatus: true,
           variant: {
             select: {
-              sku: true,
+              ...KIMLIK_SECIMI,
               product: {
                 select: {
                   id: true,
@@ -95,7 +146,12 @@ export async function satisEkseniVerisi(
   /** variantId → sunuma giren kimlik (hesaba girmez). */
   const kimlik = new Map<
     string,
-    { urunId: string; marka: string | null; kategori: string | null }
+    {
+      urunId: string;
+      marka: string | null;
+      kategori: string | null;
+      kodlar: ReturnType<typeof kimlikCoz>;
+    }
   >();
   const kalemler: KalemGirdisi[] = [];
 
@@ -112,6 +168,7 @@ export async function satisEkseniVerisi(
         urunId: k.variant.product.id,
         marka: k.variant.product.brand,
         kategori: k.variant.product.category?.name ?? null,
+        kodlar: kimlikCoz(k.variant),
       });
       kalemler.push({
         variantId: k.variantId,
@@ -139,6 +196,7 @@ export async function satisEkseniVerisi(
     yasGun: null,
     bagliSermaye: null,
     rafAdedi: null,
+    ...(kimlik.get(s.variantId)?.kodlar ?? kimlikCoz(null)),
   }));
 }
 
@@ -154,7 +212,7 @@ export async function stokEkseniVerisi(bugun: Date): Promise<AnalizSatiri[]> {
     where: { isActive: true },
     select: {
       id: true,
-      sku: true,
+      ...KIMLIK_SECIMI,
       product: {
         select: {
           id: true,
@@ -215,6 +273,7 @@ export async function stokEkseniVerisi(bugun: Date): Promise<AnalizSatiri[]> {
        */
       bagliSermaye:
         y.sermayeParaBirimi === "TRY" ? y.sermayeKdvHaric : null,
+      ...kimlikCoz(v ?? null),
     };
   });
 }

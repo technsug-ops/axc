@@ -473,11 +473,7 @@ export default async function UrunAnaliziSayfasi({
                                   {s.urunAdi}
                                 </Link>
                               )}
-                              <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
-                                {/* Kimlik kodu LİSTEDE ve TIK-KOPYALA (İlke #3, #4) */}
-                                <KopyalanabilirKod deger={s.sku} etiket={tOrtak("sku")} />
-                                {s.marka === null ? null : <span>{s.marka}</span>}
-                              </div>
+                              <KimlikSatiri satir={s} />
                             </div>
                           </TableCell>
 
@@ -556,7 +552,7 @@ export default async function UrunAnaliziSayfasi({
                           </Link>
                         )
                       }
-                      altBaslik={<KopyalanabilirKod deger={s.sku} etiket={tOrtak("sku")} />}
+                      altBaslik={<KimlikSatiri satir={s} />}
                       alanlar={
                         stokKipi
                           ? [
@@ -636,6 +632,62 @@ export default async function UrunAnaliziSayfasi({
           ) : null}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/**
+ * ============================================================================
+ *  KİMLİK SATIRI — ÜRÜN ADININ ALTINDAKİ KODLAR (İlke #3 + #4)
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı isteği 02.09.2026: _"altına tüm bilgiler gelmez mi — barkod,
+ *  TY SKU, Hepsiburada SKU?"_ Bir kaydı tanımlayan kodlar detaya girmeden
+ *  LİSTEDE görünür ve her biri tek tıkla kopyalanır.
+ *
+ *  ── 📏 HANGİ KODLARIN GÖSTERİLECEĞİ ÖLÇÜLDÜ (1110 aktif varyant) ────────
+ *  · barkod      %99,9 dolu           → gösterilir
+ *  · Firma SKU   %100 dolu AMA %97,7'si SKU ile AYNI
+ *                → yalnız FARKLIYSA. Aynı değeri iki kez basmak satırı
+ *                  gürültüye boğar ve okuyana hiçbir şey söylemez.
+ *  · kanal SKU   varyant başına ortanca 2 (HB 1092 · TY 1070 · N11 49)
+ *                → kanal ADIYLA, çünkü kodun hangi pazaryerine ait olduğu
+ *                  kodun kendisinden anlaşılmıyor.
+ *
+ *  ⚠ MASAÜSTÜ VE TELEFON AYNI BİLEŞEN (İlke #10). Tabloda ve kart
+ *  listesinde iki ayrı düzen yazılsaydı biri güncellenip öteki unutulurdu.
+ *  Satır SARILIR (`flex-wrap`), yeni bir sütun AÇMAZ — sütun tavanı (7)
+ *  bu yüzden etkilenmiyor.
+ * ============================================================================
+ */
+async function KimlikSatiri({ satir }: { satir: AnalizSatiri }) {
+  const tOrtak = await getTranslations("Ortak");
+  const t = await getTranslations("UrunAnalizi");
+
+  return (
+    <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      <KopyalanabilirKod deger={satir.sku} etiket={tOrtak("sku")} />
+      {/* ⚠ SKU ile AYNIYSA çizilmez — ölçüldü, satırların %97,7'si öyle. */}
+      {satir.firmaSku === null ? null : (
+        <KopyalanabilirKod
+          deger={satir.firmaSku}
+          etiket={tOrtak("firmaSku")}
+        />
+      )}
+      {satir.barkod === null ? null : (
+        <KopyalanabilirKod deger={satir.barkod} etiket={tOrtak("barkod")} />
+      )}
+      {satir.kanalKodlari.map((k) => (
+        <span key={`${k.kanal}-${k.kod}`} className="inline-flex items-center gap-1">
+          {/* Kanal adı kodun ÖNÜNDE: hangi pazaryerine ait olduğu koddan
+              anlaşılmıyor ve etiketsiz bir kod okuyana soru bıraktırır. */}
+          <span className="opacity-70">{k.kanal}</span>
+          <KopyalanabilirKod
+            deger={k.kod}
+            etiket={t("kanalKodEtiketi", { kanal: k.kanal })}
+          />
+        </span>
+      ))}
+      {satir.marka === null ? null : <span>{satir.marka}</span>}
     </div>
   );
 }

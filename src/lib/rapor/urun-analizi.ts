@@ -139,6 +139,22 @@ export type AnalizSatiri = UrunSatiri & {
    * _(Anayasa: "bir sayı etiketiyle taşınır".)_
    */
   rafAdedi: number | null;
+  /**
+   * ── KİMLİK KODLARI (İlke #3) — kullanıcı isteği 02.09.2026 ─────────────
+   * _"Altına tüm bilgiler gelmez mi: barkod, TY SKU, Hepsiburada SKU?"_
+   * Bir kaydı tanımlayan kodlar detaya girmeden LİSTEDE görünür.
+   *
+   * 📏 NE GÖSTERİLECEĞİ ÖLÇÜLDÜ (02.09.2026, 1110 aktif varyant):
+   *   barcode      %99,9 dolu               → gösterilir
+   *   companySku   %100 dolu AMA %97,7'si SKU ile AYNI
+   *                → yalnız FARKLIYSA gösterilir; aynı değeri iki kez
+   *                  basmak satırı gürültüye boğar ve hiçbir şey eklemez
+   *   kanal SKU    varyant başına ortanca 2 (HB 1092 · TY 1070 · N11 49)
+   */
+  barkod: string | null;
+  /** ⚠ `null` = SKU ile AYNI (ölçüldü: satırların %97,7'si). */
+  firmaSku: string | null;
+  kanalKodlari: { kanal: string; kod: string }[];
 };
 
 export type AnalizSuzgeci = {
