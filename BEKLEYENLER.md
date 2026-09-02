@@ -127,6 +127,84 @@ okunan değer doğrudan bir gezinme hedefine dönüşür.
 
 ---
 
+## ✅ K134 — HAKEDİŞ BAĞI KURULDU · **1209 KALEM** · 02.09.2026
+
+_Kullanıcı kararı: "TY'yi bitirelim sonra geçelim HB'ye."_ İlk adım bu oldu.
+
+### ⛔ PANODAKİ TEŞHİS BAYATLAMIŞTI — VE BUNU ÖLÇÜM GÖSTERDİ
+
+K8 şöyle diyordu (24.08): _"motor kusursuz, **defter eksik**"_ · _"defter
+dolmadan tetik kurmanın anlamı yok."_ **O gün doğruydu. Bugün değildi.**
+
+    TY satış (defterde)   24.08: 121   →   bugün: 3931
+    hakediş kalemi              1136   →         1408
+    BAĞLI                          ~8  →          130
+
+Defter 24.08'den sonra doldu (2025-01 → 2026-09, aylara düzgün dağılmış) ama
+**eşleştirme motoru o günden beri tekrar koşmadı.** Kilit "defter eksik"
+değildi artık — kimse kapıyı çalmamıştı.
+
+⚠ **DERS: KAPANIŞ ŞARTI SAĞLANDIĞINDA KİMSE HABER VERMİYOR.** _"Defter
+dolunca tetik kurulur"_ diye yazılmış bir kalem, defter dolduğunda
+kendiliğinden uyanmaz. Şart yazılırken **onu kimin ölçeceği** de yazılmalı.
+
+### ✅ YAZIM — ÜÇ ŞART DA UYGULANDI
+
+**(a) ANLIK GÖRÜNTÜ ALINDI** (`veri/yedek-yerel/hakedis-bag-oncesi.json`)
+ve yazımdan sonra **bit-bit karşılaştırıldı:**
+
+    toplam   1408 → 1408   fark 0
+    bağlı     130 → 1339   fark +1209
+    bağsız   1278 →   69   fark −1209
+
+    ⛔ önce BAĞLIYKEN şimdi bağsız olan : 0
+    ⭐ önce bağsızken şimdi BAĞLI olan  : 1209
+    ✓ TUTUYOR — toplam değişmedi, hiçbir mevcut bağ bozulmadı
+
+⚠ **İZ SAYISI KANIT DEĞİL, VERİ KARŞILAŞTIRMASI KANIT.** `AuditLog`
+yazıldı ama doğrulama ondan değil, kimlik kümesinin karşılaştırılmasından
+geldi — 01.09'da `AuditLog` sayısı `0` görülüp "kısmi yazım yok" denmiş ve
+YANLIŞ çıkmıştı.
+
+**(b) YARIM COMMIT MÜMKÜN DEĞİL:** betik **satır satır tekrar-koşulabilir**
+kalıpta — her satır bağımsız `updateMany`, ve `WHERE`de `saleId: null`
+şartı duruyor. Koşum yarıda kesilse ikinci koşum kaldığı yerden devam eder.
+**İkinci koşum doğrulandı: 0 bağlanacak, 7 karşılığı yok.**
+
+**(c) KAPASİTE:** çift eşleşme **0**, kanal uyuşmazlığı **0** — betik
+ikisini de reddediyor ve hiçbiri çıkmadı.
+
+### ⭐ SONUÇ: EŞLEŞME ORANI %9 → %95
+
+    hakediş kalemi 1408 · satışa BAĞLI 1339 · oran %95
+    rapordaki farklı sipariş no 506 · bugün karşılığı OLAN 504
+
+**H3 kilidi açıldı** — hakediş teyidi ilk kez rakam üretiyor.
+
+### ⚠ YENİ GÖRÜNEN RAKAMLAR — BUNLAR HÜKÜM DEĞİL, DAVET
+
+    TOPLAM beklenen      1.575.699,99
+    TOPLAM gerçekleşen   1.584.676,11
+    FARK                     8.976,12   (%0,57)
+
+    durum: GECIKTI 296 · FAZLA_ODEME 107 · BEKLIYOR 61 ·
+           EKSIK_ODEME 31 · ODENDI 8
+
+⛔ **BU RAKAMLARIN HİÇBİRİ DOĞRULANMADI.** Dün görünmüyorlardı, bugün
+görünüyorlar — o kadar. Özellikle:
+· `EKSIK_ODEME` örnekleri büyük negatifler taşıyor (−7.033 · −4.608).
+  İade/talep netlemesi mi, gerçek eksik ödeme mi **ölçülmedi.**
+· `GECIKTI 296` — gecikme ölçütünün bu yeni kümede doğru davrandığı
+  sınanmadı. _(Anayasa: 19.08'de "67 kalem gecikti ₺137.975" sahte paniği
+  tam bu sınıftandı; o zaman kural "bağsız kalem alacak değildir" diye
+  daraltılmıştı ve şimdi bağ kurulduğu için kural kendiliğinden geçerli
+  hâle geldi — ama SAYININ doğruluğu ayrı bir soru.)_
+
+⏭ **SIRADAKİ ÖLÇÜM:** bu üç durumun her biri ayrı bakılacak. İlk bakılacak
+`EKSIK_ODEME` — çünkü tek satırda ₺7.033 taşıyor ve yönü paraya doğru.
+
+---
+
 ## 🟢 K132 — HB AVANTAJLI TEKLİFLER (K-HB-TEKLIF) · 02.09.2026 · [KOD KOŞTU]
 
 _Kullanıcı HB tarife ekranına `Avantajlı_Teklifler-02-09-2026-10_00.xlsx`
