@@ -293,7 +293,17 @@
     "canli:satis-neden-zarar": "tsx scripts/canli-satis-neden-zarar.ts",
     "canli:iade-not-sekli": "tsx scripts/canli-iade-not-sekli.ts",
     "canli:ty-gecmis-fizibilite": "tsx scripts/canli-ty-gecmis-fizibilite.ts",
-    "canli:iade-adet-olcum": "tsx scripts/canli-iade-adet-olcum.ts"
+    "canli:iade-adet-olcum": "tsx scripts/canli-iade-adet-olcum.ts",
+    "canli:kargo-mutabakat-izi": "tsx scripts/canli-kargo-mutabakat-izi.ts",
+    "canli:kargosuz-neden": "tsx scripts/canli-kargosuz-neden.ts",
+    "canli:satis-saglik": "tsx scripts/canli-satis-saglik-taramasi.ts",
+    "canli:zarar-fiyat-capraz": "tsx scripts/canli-zarar-fiyat-capraz.ts",
+    "canli:kargo-degeri-dogrula": "tsx scripts/canli-kargo-degeri-dogrula.ts",
+    "canli:ters-kalem": "tsx scripts/canli-ters-kalem-taramasi.ts",
+    "canli:varyant-gecmisi": "tsx scripts/canli-varyant-gecmisi.ts",
+    "canli:ty-durum": "tsx scripts/canli-ty-durum.ts",
+    "canli:11265-onarim": "tsx scripts/canli-11265-onarim.ts",
+    "canli:11265-tam": "tsx scripts/canli-11265-tam-onarim.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

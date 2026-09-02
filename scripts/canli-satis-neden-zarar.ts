@@ -217,12 +217,19 @@ async function main() {
       console.log(`      ${"(MALIYET)".padEnd(25)} ${para(f.amount).padStart(11)}   ← maliyet satırı, kesinti DEĞİL`);
       continue;
     }
-    kesinti += Math.abs(Number(f.amount.toString()));
+    /**
+     * ⛔ `Math.abs` KALDIRILDI — NEGATİF KESİNTİ BİR TERS KAYITTIR.
+     * `11265267349`de ters kalemin komisyonu −76,50 ve stopajı −21,25.
+     * Mutlak değer alınca ikisi de EKLENDİ ve rapor defterden 195,50
+     * saptı. Betik bunu "⛔ AYRIŞIYOR" diye söyledi — susmadı, ve hata
+     * BURADA görüldü. Ters kayıt NETLEŞİR.
+     */
+    kesinti += Number(f.amount.toString());
     console.log(`      ${f.code.padEnd(25)} ${para(f.amount).padStart(11)}`);
   }
   for (const f of satis.items.flatMap((i) => i.fees)) {
     if (f.code === "MALIYET") continue;
-    kesinti += Math.abs(Number(f.amount.toString()));
+    kesinti += Number(f.amount.toString());
   }
   const brut = ciro - maliyetToplam;
   console.log(

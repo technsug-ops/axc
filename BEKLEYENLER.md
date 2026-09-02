@@ -233,6 +233,211 @@ silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
 
 ---
 
+## 🚨 K138 — PANO YAZIMI "BEKLİYOR" DERKEN KOŞMUŞTU · 02.09.2026 · [KAPANDI]
+
+⛔ **BEŞ GÜN SESSİZ KALDI VE BUGÜN YANLIŞ BİLGİ ÜRETTİ.**
+
+K75 satırı `[ÖLÇÜLDÜ, YAZIM ONAY BEKLİYOR]` diyordu; aynı panoda birkaç yüz
+satır aşağıda `✅ KARGO YAZILDI · 28.08.2026 · [KOŞTU]` kaydı duruyordu.
+Ben panonun ilk yarısını okuyup kullanıcıya şunu söyledim:
+
+> _"5583 siparişte kargo gideri düşülmemiş, kârlar olduğundan yüksek."_
+
+**Yanlıştı.** Kullanıcı düzeltti: _"nasıl düşmemiş kargo, hesaplarda
+görünüyor."_ Deftere sorunca çıktı:
+
+    cargoAmount DOLU 5806/5903  ·  toplam ₺583.497,58
+    iz: KARGO_DOSYADAN_YAZILDI · 28.08.2026 16:48:59
+
+⛔ **BEDELİ:** defterin ₺557 bin yanlış olduğu iddiası. Muhasebeciye
+gitseydi ya da bir karar verilseydi, o karar yanlış rakama dayanacaktı.
+
+### ⭐ KÖK — KURAL VARDI, BEKÇİSİ YOKTU
+
+Anayasada bu tuzağın maddesi **20.08'den beri yazılı**: _"pano, işin
+DURUMUNU değil NİYETİNİ kaydederse kurgu üretir."_ Ama `pano:dogrula`
+durum tutarlılığına **hiç bakmıyor** (ölçüldü).
+
+⚠ **VE İLK TARAMAM DA KÖR ÇIKTI:** "bekliyor" etiketli kalemle "[KOŞTU]"
+etiketli kalemde aynı betiği arayan bir tarama yazdım, **0 çelişki** dedi.
+Sebep: K75'in `[KOŞTU 28.08.2026]` alt başlığı **kendi içinde**, bir
+seviye aşağıda — bölme onu ayrı kalem saydı.
+
+⏭ **BEKÇİ YAZILACAK:** bir kalemin BAŞLIĞI "bekliyor" derken GÖVDESİNDE
+`[KOŞTU]` alt başlığı varsa KIRMIZI.
+
+---
+
+## ✅ K139 — EKSİK KARGOLAR YAZILDI · 02.09.2026 · [KOŞTU]
+
+Kullanıcı sordu: _"hangi satışlar kargosuz, listesini ver."_
+
+    açık kargosuz 54  →  (a) dosyada VAR 36 · (b) çelişkili 18 · (c) yok 0
+    ⭐ 36 satışın 35'i aynı ürün: LEGO Disney "Yukarı Bak" Evi
+
+⭐ **NİYE 28.08'DE KAÇMIŞLAR — ÖLÇÜLDÜ:** 35'i deftere yazımdan **SONRA**
+girmiş (betik göremezdi), 1'i önce girmiş ve atlanmış (sebep açık).
+
+    npm run canli:kargo-yaz -- --yaz
+    cargoAmount 5817 → 5854 (+37) · 584.931,57 → 588.620,45
+
+⚠ Elle girilmedi: dosyada **124,00** yazıyor, deftere giren **103,33**
+(KDV hariç). 36 kez elle girmek %20'lik bir hata riskiydi.
+
+### ⭐ VE "DEĞERLER DOĞRU MU" AYRICA ÖLÇÜLDÜ (`canli:kargo-degeri-dogrula`)
+
+Önce yanlış soruyu sormuştum: kaç satışta kargo VAR. 5806 satırın hepsi
+yanlış olsaydı o ölçüm de aynı sonucu verirdi.
+
+    ✓ kuruşuna TUTUYOR 5595  ·  ⛔ SAPAN 132 (1.018,35)
+    ⚠ dosyada ÇELİŞKİLİ 8   ·  ⚠ dosyada YOK 82 (kıyaslanamaz)
+    TABAN: p05…p95 hepsi 1.2000 · tam 1,20 olan 5596 · tam 1,00 olan 2
+
+Taban tartışmasız; `÷1,20` doğru karardı. Sapanların çoğu kuruş kuyruğu
+(daha önce elle girilmiş satırlar), dördü gerçek ayrışma.
+
+---
+
+## ✅ K140 — `11265267349` TAM ONARIM · 02.09.2026 · [KOŞTU]
+
+Kullanıcı ekranda 0,00 tutarlı, −3.288,49 zararda bir satış buldu.
+
+### ⛔ NE OLMUŞ — İADE NEGATİF SATIŞ SATIRI OLARAK GİRİLMİŞ
+
+    kalem 1:  1 adet  +2.550,00  maliyet 1.934,00
+    kalem 2:  1 adet  −2.550,00  maliyet 1.999,00   ⛔
+
+Fiyat ve komisyon netleşiyor, **maliyet netleşmiyor** → ciro 0, zarar
+3.933. Ve negatif satır `SALE_OUT −1`: malı geri getirmek yerine **bir
+adet daha düşürmüş.** Bu varyantta `RETURN_IN` **hiç yoktu.**
+
+Zincir: stok erken sıfırlandı → 28.08 maliyet betiği açıkta kalan iki
+satış için **iki hayalet parti** açtı (`dosya-maliyet-20260828`).
+
+### ⭐ KANALIN KENDİ KAYDI HİKÂYEYİ DOĞRULADI
+
+    27.05  DAMAGEDITEM   "Kusurlu ürün gönderildi"   → Rejected
+    15.06  SELLERREQUEST "Satıcı Talebi İle İade"    → Accepted · 1 adet
+
+Kullanıcının anlattığı (4 stok · 5 satış · 5.si iadeden dönen mal) **birebir
+doğruydu**; yanlış olan defterin kaydıydı.
+
+### YAZILAN
+
+    A1 sahte kalemin fiyatı −2.550 → 0        (düzenleme kapısından)
+    A2 kaleme bağlı ters ADJUSTMENT +1        (stok ve maliyet netlenir)
+    B  gerçek İADE: 15.06 · 1 adet · NORMAL · sağlam 1 · ty-claims notu
+    C  2 çıkış gerçek partilere bağlandı      (1.945 → 1.999 ve 1.934)
+    D  2 hayalet parti SİLİNDİ
+    E  3 satışın kârı tazelendi
+
+    ⭐ stok 2 → 0 ✓
+    11265267349  NET-2  −3.288,49 → +417,34
+    11272966624  NET-2     283,23 →  238,23
+    4901581069   NET-2     246,43 →  255,60
+
+### 🐞 YOL BOYUNCA ÜÇ KEZ KENDİ KURALIMA TAKILDIM
+
+**① `NOT` süzgeci NULL satırı attı.** `NOT: { note: { contains: … } }`
+yazdım; gerçek partilerin `note`u BOŞ ve SQL onları eledi — C durdu.
+**Anayasada bu kuralın kendi maddesi var** (02.09'da yazılmış) ve yine
+düştüm. Çare: `OR: [{ note: null }, { NOT: … }]`.
+
+**② Kimliği fiyatın İŞARETİNE bağladım.** A1 fiyatı 0 yapınca ikinci
+koşumda kalem "bulunamadı" oldu ve şekil kapısı C/D'yi engelledi.
+Ölçüt `< 0` → `<= 0`.
+
+**③ Düzenleme kapısı iki kez reddetti** — `FIYAT_GECERSIZ`, `ADET_GECERSIZ`.
+⭐ **VE KAPILAR HAKLIYDI:** uygulamada satır silme yolu yok, olmaması
+doğru. Çözüm anayasanın kendi kuralıydı: kaleme bağlı ters `ADJUSTMENT` —
+çünkü `kalemMaliyeti` maliyeti TİPTEN değil **BAĞDAN ve işaretiyle**
+topluyor.
+
+⚠ Her seferinde betik **DURDU ve söyledi**; yarım yazım olmadı. Kayıt
+silinmedi — sahte kalem yerinde, üstüne onu açıklayan ters hareket yazıldı.
+
+---
+
+## 🔵 K141 — `CALCULATED` EKSİK MALİYETİ SÖYLEMİYOR · 02.09.2026 · [ÖLÇÜLDÜ]
+
+Kullanıcı CSV'de gördü: kargosuz satışların `durum` sütunu **CALCULATED**.
+
+⛔ `CALCULATED` = **"motor çalıştı"**, "her maliyet hesaba girdi" DEĞİL.
+Kargo `null` iken de motor sonuç üretir. Şemada `NO_COST` · `RULE_MISSING`
+· `CURRENCY_MISMATCH` var; **eksik KARGO için durum YOK** — kargosuz satış
+kargolu satıştan ekranda ayırt edilemiyor.
+
+⚠ Uyarı merkezinde de kural yok: 13 kuraldan hiçbiri ciro 0'ı ya da
+"zarar cirodan büyük"ü yakalamıyor. `11265267349` üç ağdan da geçti.
+
+⏭ **AÇIK:** `ciroSifir` ve `zararCiroyuAsan` uyarıları · eksik kargo için
+durum ya da rozet.
+
+---
+
+## ✅ K142 — SATIŞ DEFTERİ SAĞLIK TARAMASI · 02.09.2026 · [ÖLÇÜLDÜ]
+
+_"Başka problem var mı"_ sorusunun cevabı sayımdır. 5864 açık satış:
+
+    1  CIRO_SIFIR · 1 CIRO_SIFIR_AMA_NET_VAR · 1 NEGATIF_BIRIM
+    0  KALEMSIZ · HESAPLANAMAYAN · NET_YOK · KOMISYONSUZ
+   54  KARGOSUZ  ·  121 ZARAR  ·  3 ZARAR_CIROYU_ASAN
+
+⭐ **"API'den önce problem yoktu" iddiası ÖLÇÜLDÜ VE ÇÜRÜDÜ** bu vakada:
+`CIRO_SIFIR` ve `ZARAR_CIROYU_ASAN` kayıtlarının hepsi **`satis-excel`**
+kaynaklı, API'den değil.
+
+⭐ **TERS KALEM TARAMASI (`canli:ters-kalem`) — 6024 KALEM, TEK VAKA.**
+Üç ayrı ölçüt (kalem düzeyi · ters çift · geniş desen) aynı tek satışı
+buldu. Yayılmış çürüme YOK.
+⚠ Önceki tarama SATIŞ düzeyinde sayıyordu; bir satışta üç ters çift olsa
+yine "1" yazardı. Birim KALEM olmalıydı.
+
+---
+
+## 🔵 K143 — ZARARLARIN KAYNAĞI ÖLÇÜLDÜ · 02.09.2026 · [ÖLÇÜLDÜ]
+
+Kullanıcı: _"iadenin olmadığı ürünlerde bu kadar zarar anlamsız, bir hesap
+hatası var."_ **Hesap doğru** (`ciro − maliyet − kesinti = NET-1`, fark
+0,00) ama zamanlama sezgisi tuttu:
+
+    129 iadesiz zarar
+      ⛔ FİYAT MALİYETİN ALTINDA :  12   → 20.182,36
+      ⚠ fiyat üstünde, KESİNTİ yiyor : 115
+    ⭐ KARGO OLMASA KÂRDA olurdu : 78   (zararı 2.971,93)
+      kargosuz DA zararda        : 49
+
+**78 satış 28.08'de kargo yazılana kadar kârda görünüyordu.** Değişen
+görüntü, gerçek değil — o satışlar zaten zarardaydı, sistem bilmiyordu.
+
+### ⛔ VE FİYAT ÇAPRAZIMI YANLIŞ TABANDA KURDUM
+
+Yorumda _"taban aynı"_ yazdım ama ÖLÇMEDİM: 30/30 "sapan" çıktı, hepsi
+aynı yönde. Ayırt edici kanıt tek satırda göründü — `11428632368` farkı
+**−91,80**, o satışın komisyonu da tam **91,80**. `SIPARIS_TUTARI`
+**komisyon düşülmüş** tutarmış.
+Taban düzeltilince 13 tutuyor, 16 sapıyor; kalan farklar **13,19** (TY
+sabit gider) gibi — ekstre başka kalemler de düşüyor.
+⛔ **Tabanı tam çözülmeden fiyat hükmü VERİLMEDİ.** 98 sipariş zaten
+ekstrede yok.
+
+---
+
+## 🔵 K144 — TY API DURUM RAPORU · 02.09.2026 · [ÖLÇÜLDÜ]
+
+_"Her şeyiyle bağlı mıyız?"_ → **Hayır.** Üç ayrı soru, üç ayrı cevap:
+
+    ① UÇ VAR MI        siparisler · hakedis · iadeler   (yazma fiili YOK)
+    ② ÇALIŞIYOR MU     üçü de ✓ (81 · 113 · 351 kayıt)
+    ③ DEFTERE AKIYOR MU  API'den 439/5906 = %7,4
+
+⛔ **AKIŞ DURMUŞ:** ilk API kaydı 26.08, son API kaydı da 26.08 — tek
+seferlik çekim. **Otomatik zamanlayıcı YOK**, içe aktarma elle koşuluyor.
+⛔ Bağlanmamışlar: stok/fiyat ve paket statü (bilerek, yazma ucu) ·
+buy-box (kapı kararı A'da) · ürün/listeleme okuma.
+
+---
+
 ## ✅ K136c — SAĞLAM ADET ÖLÇÜM YOLU · 02.09.2026 · [ÖLÇÜLDÜ · YAZIM YOK]
 
 Araç: `npm run canli:iade-adet-olcum` — salt okuma, yazma bayrağı YOK.
