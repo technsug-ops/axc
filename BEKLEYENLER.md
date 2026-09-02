@@ -232,17 +232,52 @@ eder** (satış silme tuzağının aynısı); parti tüketilmişse
 dayanır. Sekiz izin sekizi de `JSON.parse` geçiyor (28.08'deki kırpılma
 vakası tekrarlanmadı) ve önceki NET-1/NET-2/durum taşıyor.
 
-### 🧾 HALİL TEST LİSTESİ (canlı, gerçek cihaz)
+### ⛔ HALİL TESTİ İKİ MADDEDE DÜŞTÜ — İKİSİ DE BENİM HATAM (02.09 akşamı)
 
-1. `/satislar` → `4287210000` ara → detay aç → **"İade" bölümü görünmeli**;
-   iade tarihi **03.07.2026**, tür **NORMAL**, sebep notu
-   `IADE_SEBEP[kaynak:halil-beyani-0209]: «Yanlış sipariş verdim…»`
-2. Aynı ekranda: orijinal NET-2 **−756,19** DEĞİŞMEMİŞ olmalı; iade etkisi
-   **+1.914,86** ayrı satırda, iade sonrası **1.158,67**
-3. `/stok` → `axcali1797` ara → adet **4 → 5** olmalı
-4. `/stok` → `axcali1761` ara → adet **0 → 1** olmalı
-5. `11409234590` detayında sebep notu `[kaynak:ty-claims]: «Beğenmedim»`
-   yazmalı (API'den geldi, beyandan değil)
+**① MADDE 5 SINANAMADI: `Return.note` HİÇBİR EKRANDA ÇİZİLMİYORDU.**
+Alan aylardır YAZILIYORDU (iade formu, sonra K136a'nın 8 kaydı) ama
+`IadeGorunumu` tipinde alan yoktu → sayfa eşlemiyordu → bileşen
+çizmiyordu. Halil satış detayına baktı ve sebebi bulamadı.
+
+⛔ **Bu, "şemadaki alan bir iddiadır" kuralının AYNADAKİ hâli:** orada
+alanın yazıcısı yoktu, burada **okuyucusu** yok. Sonuç aynı — veri orada,
+kimse göremiyor. Ve Halil `ReturnReason` yerine notu tam da sebep
+kaybolmasın diye seçmişti.
+
+✓ **DÜZELTİLDİ:** `IadeGorunumu.note` + sayfa eşlemesi + `iade-blogu`
+çizimi + `Iade.kayitNotu` (tr/en). Metin AYRIŞTIRILMADAN çiziliyor —
+kalıp çözülseydi, kalıp taşımayan serbest notlar sessizce görünmez olurdu.
+✓ **BEKÇİ:** `iade:dogrula` → **5b bölümü**, zincir halka halka
+(tip · eşleme · çizim · sözlük ×2). **6/6 mutasyon kırmızı yandı**, yorum
+körlüğü yönü dâhil.
+
+**② MADDE 3'ÜN RAKAMI YANLIŞTI: `axcali1797` 4→5 değil, 1→2.**
+Ekran **2** gösterdi ve haklıydı. İki hata üst üste binmişti:
+
+    ⛔ `4 → 5` BAŞKA varyanta aitti — SALTP1314D1AVDF (Casio, 11438301199)
+    ⛔ `4` rakamı SAYIM GÜNÜ (27.08) itibarıyladır, BUGÜNKÜ raf değil;
+       arada 29.08'de yazılan üç `sayım farkı −1` hareketi var
+
+Sebep: yazım betiği stok değişimini **UUID** ile basıyor, SKU ile değil —
+hangi satırın hangi ürün olduğu okunamıyordu.
+_(Anayasa: "sonda parametresi ekranın parametresi değildir".)_
+✓ `canli:iade-yazim-teyit` → **④ bölümü** artık SKU ile ve BUGÜNKÜ rakamla
+basıyor; ekranla aynı parametreden okunuyor.
+
+### 🧾 HALİL TEST LİSTESİ — DÜZELTİLMİŞ (canlı, gerçek cihaz)
+
+⚠ Madde 3 ve 5 düzeltildi; 5 ancak **deploy sonrası** sınanabilir.
+
+1. `/satislar` → `4287210000` → detay: **İade** bölümü, **03.07.2026**,
+   `Normal İade` rozeti
+2. Aynı ekran: orijinal NET-2 **−756,19** DEĞİŞMEMİŞ; iade etkisi
+   **+1.914,86**; iade sonrası **1.158,67**
+3. `/stok?q=axcali1797` → **2** _(1 → 2; düzeltildi)_
+4. `/stok?q=axcali1761` → **1** _(0 → 1)_
+5. ⭐ **DEPLOY SONRASI:** `11409234590` detayı → İade bloğunda
+   **"Kayıt notu: IADE_SEBEP[kaynak:ty-claims]: «Beğenmedim»"** satırı
+   GÖRÜNMELİ _(bu satır 02.09 akşamına kadar hiç çizilmiyordu)_
+6. `/stok?q=SALTP1314D1AVDF` → **5** _(4 → 5 — asıl sahibi bu)_
 
 ---
 

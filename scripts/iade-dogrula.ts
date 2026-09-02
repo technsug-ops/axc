@@ -711,6 +711,106 @@ console.log("\n5) KDV VARSAYIMI (S6 — muhasebeci teyidi bekliyor)");
 }
 
 // ===========================================================================
+//  5b) İADE SEBEBİ EKRANDA ÇİZİLİYOR MU — ZİNCİR HALKA HALKA
+// ---------------------------------------------------------------------------
+//  ⛔ BU BÖLÜM BİR CANLI KUSURDAN DOĞDU (02.09.2026). `Return.note`
+//  aylardır YAZILIYORDU (iade formu, sonra K136a'nın 8 kaydı) ama
+//  **hiçbir ekran OKUMUYORDU**: `IadeGorunumu` tipinde alan yoktu,
+//  dolayısıyla sayfa onu eşlemiyor ve bileşen çizmiyordu. Halil satış
+//  detayına baktı ve sebebi bulamadı.
+//
+//  ⚠ VE ÜÇ HALKA DA AYRI SINANIYOR. Sadece "bileşen `note` çiziyor mu"
+//  diye sorsaydım, sayfa eşlemesi koptuğunda ölçüt YEŞİL kalırdı —
+//  bileşen doğru, girdisi boş. Tam da gider formunda yaşanan şey.
+//  _(Anayasa: "zincir, halkalarının varlığıyla değil BAĞLANTISIYLA
+//  sınanır"; "şemadaki alan da bir iddiadır — yazıcısı olup okuyucusu
+//  olmayan alan boş vaattir".)_
+// ===========================================================================
+function iadeNotuEkranda() {
+  console.log("\n5b) İADE SEBEBİ EKRANDA ÇİZİLİYOR MU");
+
+  /**
+   * ⚠ YORUM SATIRLARI SİLİNİYOR. Bir davranışı ANLATAN yorum, o davranış
+   * kaldırılsa bile deseni ayakta tutar — ve bu dosyada davranışı anlatan
+   * uzun yorumlar VAR (yukarıdaki blok dâhil).
+   */
+  const yorumsuz = (m: string) =>
+    m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  const bilesen = yorumsuz(
+    readFileSync("src/components/iade-blogu.tsx", "utf8"),
+  );
+  const sayfa = yorumsuz(
+    readFileSync("src/app/satislar/[id]/page.tsx", "utf8"),
+  );
+
+  /** ① TİP HALKASI — görünüm tipi alanı taşıyor mu. */
+  kontrol(
+    "① IadeGorunumu `note` alanını taşıyor",
+    /export type IadeGorunumu = \{[\s\S]{0,600}?\bnote: string \| null;/.test(
+      bilesen,
+    ),
+  );
+
+  /**
+   * ② EŞLEME HALKASI — sayfa alanı DOLDURUYOR mu.
+   *
+   * ⚠ DESEN `note:` DEĞİL `note: i.note` — çünkü `note:` bu dosyada
+   * BAŞKA yerde de geçiyor (satışın kendi notu). Ada değil KULLANIMA
+   * bağlanıyor, ve `iadeler` eşleme bloğuna daraltılıyor.
+   */
+  const esleme = bilesenBloku(
+    sayfa,
+    "const iadeler: IadeGorunumu[] = satis.returns.map",
+    700,
+  );
+  kontrol(
+    "② sayfa `note: i.note` ile eşlemeyi DOLDURUYOR",
+    /\bnote: i\.note\b/.test(esleme),
+  );
+
+  /**
+   * ③ ÇİZİM HALKASI — KOŞUL, SÖZLÜK ANAHTARI VE DEĞER TEK DESENDE.
+   *
+   * ⚠ Üçü ayrı ayrı aransaydı, render koşulunu `{false ? (` yapan bir
+   * mutasyon dalı hiç çizmezdi ama üç desen de dosyada KALIRDI ve ölçüt
+   * yeşil yanardı — bu deponun en sık tekrarlayan yalancı yeşili.
+   * `iade.note` zaten İKİ yerde geçiyor (koşul + gövde); tek başına
+   * aranması yetmez.
+   */
+  kontrol(
+    "③ çizim: koşul → sözlük anahtarı → değer TEK zincirde",
+    /\{iade\.note \? \([\s\S]{0,400}?t\("kayitNotu"\)[\s\S]{0,200}?\{iade\.note\}/.test(
+      bilesen,
+    ),
+  );
+
+  /** ④ SÖZLÜK HALKASI — anahtar İKİ dilde de var mı (biri boş iskelet). */
+  for (const dosya of ["messages/tr.json", "messages/en.json"]) {
+    const sozluk = JSON.parse(readFileSync(dosya, "utf8")) as {
+      Iade?: Record<string, string>;
+    };
+    kontrol(
+      `④ ${dosya} → Iade.kayitNotu tanımlı`,
+      sozluk.Iade !== undefined && "kayitNotu" in sozluk.Iade,
+    );
+  }
+}
+
+/**
+ * Bir çapadan başlayıp `uzunluk` karakterlik pencere keser.
+ *
+ * ⚠ PENCERE ÖLÇÜLDÜ, TAHMİN EDİLMEDİ: `iadeler` eşleme bloğu bugün 430
+ * karakter; 700 seçildi ki blok büyüyünce ölçüt sessizce körelmesin.
+ * Çapa bulunamazsa BOŞ döner ve ölçüt kırmızı yanar — "bulamadım" ile
+ * "yok" ayrışsın diye.
+ */
+function bilesenBloku(metin: string, capa: string, uzunluk: number): string {
+  const i = metin.indexOf(capa);
+  return i < 0 ? "" : metin.slice(i, i + uzunluk);
+}
+
+// ===========================================================================
 //  6) CEZA KADEMESİ — veritabanına gider
 // ===========================================================================
 async function cezaTesti() {
@@ -778,5 +878,14 @@ async function cezaTesti() {
     process.exit(basarisiz === 0 ? 0 : 1);
   }
 }
+
+/**
+ * ⚠ ÖZET VE ÇIKIŞ KODUNDAN **ÖNCE** KOŞUYOR. Özet `cezaTesti()`in
+ * `finally` bloğunda; buraya sonradan eklenen bir ölçüt oraya YETİŞMEZSE
+ * sayacı artırır ama kimse okumaz — 30.08.2026'da `uyari:dogrula`da tam
+ * bu oldu ve üç mutasyon yeşil geçti.
+ * _(Anayasa: "ölçüt bloğu, özet ve çıkış kodundan önce koşar".)_
+ */
+iadeNotuEkranda();
 
 void cezaTesti();

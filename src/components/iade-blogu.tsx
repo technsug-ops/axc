@@ -31,6 +31,25 @@ export type IadeGorunumu = {
   occurredAt: Date;
   net1: number | null;
   net2: number | null;
+  /**
+   * ⭐ KAYIT NOTU — İADENİN SEBEBİ BURADA YAŞIYOR.
+   *
+   * ⛔ BU ALAN 02.09.2026'DA EKLENDİ VE SEBEBİ BİR TESLİM KUSURUDUR:
+   * `Return.note` aylardır YAZILIYORDU (iade formu) ama **hiçbir ekran
+   * OKUMUYORDU**. K136a'da 8 iadenin sebebi bu alana yazıldı — Halil
+   * `ReturnReason` enum'unu genişletmek yerine notu seçmişti, tam da
+   * sebep kaybolmasın diye. Sonra Halil ekrana baktı ve sebebi bulamadı.
+   *
+   * Yazıcısı olup okuyucusu olmayan alan, taşımadığı bilgiyi vaat eden
+   * alanın aynadaki hâlidir: veri orada ama kimse göremiyor.
+   * _(Anayasa: "şemadaki alan da bir iddiadır"; "kaydedilen ≠ görünen".)_
+   *
+   * ⚠ METİN OLDUĞU GİBİ ÇİZİLİR, AYRIŞTIRILMAZ. Not iki biçimde gelebilir:
+   * formdan serbest metin, ya da K136a'nın kurallı kalıbı
+   * (`IADE_SEBEP[kaynak:…]: «…»`). Ekran kalıbı çözmeye kalksaydı, kalıp
+   * taşımayan notlar sessizce görünmez olurdu.
+   */
+  note: string | null;
   satirlar: { code: string; tutar: number }[];
 };
 
@@ -190,6 +209,16 @@ export async function IadeBlogu({
                 </span>
               </div>
             </div>
+
+            {/* ⭐ KAYIT NOTU — sebep. Yoksa satır hiç çizilmez: boş bir
+                "Kayıt notu: —" satırı, sebebin OLMADIĞINI değil sistemin
+                onu KAYBETTİĞİNİ ima ederdi. */}
+            {iade.note ? (
+              <p className="text-muted-foreground text-sm whitespace-pre-line">
+                <span className="font-medium">{t("kayitNotu")}: </span>
+                {iade.note}
+              </p>
+            ) : null}
 
             <dl className="space-y-1 text-sm">
               {/* GEÇMİŞ KAYITLAR İÇİN AÇIK SIFIR.

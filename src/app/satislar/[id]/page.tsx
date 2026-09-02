@@ -193,6 +193,8 @@ export default async function SatisDetaySayfasi({
     occurredAt: i.occurredAt,
     net1: i.net1Amount ? Number(i.net1Amount.toString()) : null,
     net2: i.net2Amount ? Number(i.net2Amount.toString()) : null,
+    /** ⭐ SEBEP — 02.09.2026'ya kadar yazılıyor ama HİÇ okunmuyordu. */
+    note: i.note,
     satirlar: i.fees.map((f) => ({
       code: f.code,
       tutar: Number(f.amount.toString()),

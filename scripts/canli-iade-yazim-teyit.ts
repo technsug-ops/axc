@@ -172,6 +172,42 @@ async function main() {
     }
   }
 
+  /**
+   * ④ ⭐ BUGÜNKÜ STOK — SKU İLE, UUID İLE DEĞİL.
+   *
+   * ⛔ VE BU BÖLÜM BİR HATADAN DOĞDU. Halil test listesine
+   * _"`axcali1797` → 4 → 5"_ yazdım; ekran **2** gösterdi ve haklıydı.
+   * İki ayrı hata üst üste binmişti:
+   *   ① `4 → 5` sayısı BAŞKA bir varyanta aitti (yazım betiği stok
+   *      değişimini UUID ile basıyor, SKU ile değil — hangi satırın hangi
+   *      ürün olduğu okunamıyordu);
+   *   ② `4` rakamı zaten SAYIM GÜNÜ (27.08) itibarıyla ölçülmüştü, BUGÜNKÜ
+   *      raf değil. Arada 29.08'de yazılan sayım farkı hareketleri var.
+   * _(Anayasa: "sonda parametresi ekranın parametresi değildir" — rapor
+   * sayısı, ekranın koşuluyla aynı parametreden üretilmeden yazılmaz.)_
+   */
+  console.log("\n④ BUGÜNKÜ STOK — ekranın gösterdiği rakam (tüm hareketler)");
+  const varyantlar = await prisma.returnItem.findMany({
+    where: { return: { note: { startsWith: "IADE_SEBEP[" } } },
+    select: {
+      quantity: true,
+      variant: { select: { id: true, sku: true } },
+      return: { select: { sale: { select: { code: true } } } },
+    },
+  });
+  for (const v of varyantlar) {
+    const toplam = await prisma.stockMovement.aggregate({
+      where: { variantId: v.variant.id },
+      _sum: { quantityDelta: true },
+    });
+    const iadeOncesi = (toplam._sum.quantityDelta ?? 0) - v.quantity;
+    console.log(
+      `   ${v.variant.sku.padEnd(16)} ${String(iadeOncesi).padStart(3)} → ` +
+        `${String(toplam._sum.quantityDelta ?? 0).padStart(3)}` +
+        `   (sipariş ${v.return.sale?.code ?? "—"})`,
+    );
+  }
+
   console.log("\n" + "=".repeat(80));
   console.log(kusur === 0 ? "  ✓ TEYİT TEMİZ." : `  ⛔ ${kusur} KUSUR VAR.`);
   console.log("=".repeat(80) + "\n");
