@@ -159,6 +159,7 @@
     "canli:kargo-yaz": "tsx scripts/canli-kargo-yaz.ts",
     "canli:test-duzeltmeleri": "tsx scripts/canli-test-duzeltmeleri.ts",
     "canli:iade-kargo-kolonu": "tsx scripts/canli-iade-kargo-kolonu.ts",
+    "canli:k74-uc-vaka": "tsx scripts/canli-k74-uc-vaka.ts",
     "canli:k74-maliyet": "tsx scripts/canli-k74-maliyet.ts",
     "canli:net-sapma": "tsx scripts/canli-net-sapma.ts",
     "canli:kargo-iz-onar": "tsx scripts/canli-kargo-iz-onar.ts",

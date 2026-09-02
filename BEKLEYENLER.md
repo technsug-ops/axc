@@ -2237,7 +2237,7 @@ sayıyor, gerçek **₺94,20 zarar**. Bugün kapatılamaz; kaydı burada durur.
 
 ---
 
-## 🆕 K74 — HALİL'İN ON VAKASI · 28.08.2026 · [MALİYETLER YAZILDI · ②④⑨ ONAY BEKLİYOR]
+## 🆕 K74 — HALİL'İN ON VAKASI · KURU KOŞUM 03.09 · [MALİYETLER YAZILDI · ②⑨ İŞ YOK · ④ TIKALI]
 
 Ölçüm: `npm run canli:on-vaka` · `canli:on-vaka-b` · `canli:barbie-adj`
 (üçü de salt okuma).
@@ -2311,6 +2311,73 @@ karşı tarafı `supplierId`/`carrierId` istiyor, oysa ödeyen **kanal**.
 
 **⑨ tamamı mı, bir kalemi mi?** Sipariş 2 kalem taşıyor çünkü **dosyada iki
 satır var**. Siparişin tamamını iptal etmek **gerçek olan 1 adedi de** siler.
+
+### ✅ ② ④ ⑨ KURU KOŞUM · 03.09.2026 [KOŞTU] — `npm run canli:k74-uc-vaka`
+
+⛔ **ÜÇÜNÜN DE CEVABI PANODAKİNDEN FARKLI ÇIKTI.** Üç soru da defterin
+ESKİ hâline dayanıyordu; 29.08–01.09 arasında ikisi zaten çözülmüş.
+
+**② `4120311526` — İŞ YOK, VE İKİ AYRI SEBEPLE.**
+
+    satış İPTAL EDİLMİŞ    29.08.2026   (pano bunu bilmiyordu)
+    kâr durumu             RULE_MISSING
+    kargo                  ₺84,17       (Halil ₺94,20 diyor — küçük fark, ayrı)
+
+`axcali1633` defteri iki şeyi birden söylüyor:
+
+    2026-08-29  SALE_CANCEL_IN   +1   "Halil: teslim edilmedi"   ← +1 ZATEN YAZILMIŞ
+    2026-09-01  COUNT_CORRECTION -1   fiziksel sayım              ← ve RAFTA YOK dedi
+    net stok 0
+
+⭐ Yani iade yazımı **üçüncü kez** aynı +1'i yazardı — ve fiziksel sayım
+zaten hüküm vermiş. _(Anayasa: "fiziksel sayım son sözdür".)_
+⚠ Kanal tarafı **kanıt vermedi**: TY claims 8 sayfada bu siparişi
+bulamadı. Bu "iade yok" DEMEK DEĞİL (sipariş **Hepsiburada**, TY claims
+onu zaten göremez) — ölçüm YAPILAMADI, ve öyle yazıyor.
+
+**⑨ `10559161422` — İŞ YOK, ZATEN NÖTRLENMİŞ.**
+
+    kalem 1  adet 1 · ₺1.039 · net maliyet ₺699,00      ← gerçek satış
+    kalem 2  adet 0 · ₺1.039 · net maliyet ₺0,00        ← mükerrer
+             2025-10-02 SALE_OUT      −1 · 699
+             2026-08-29 SALE_CANCEL_IN +1 · 699  "mukerrer kalem"
+
+Fazla kalem 29.08'de geri alınmış, adedi 0'a çekilmiş, **kalem
+silinmemiş** — tam istenen desen. Ters kayıt atmak **çift geri alma**
+olurdu.
+
+⛔ **VE BETİĞİM TAM ONU ÖNERİYORDU.** İlk yazımda ⑨ dalı koşulsuz _"ters
+`ADJUSTMENT` at"_ diyordu. Ölçüt eklendi: adet 0 **ve** net maliyet 0 ise
+"yapılacak iş yok" der. _(Anayasa: "alanın DOLU olması olayın
+gerçekleştiğini göstermez" — burada TERSİ: kalemin DURMASI, işin
+yapılmadığını göstermez.)_
+
+⛔ **VE MALİYETİ İLK ÖLÇÜMÜMDE YANLIŞ HESAPLADIM.** `Math.abs(quantityDelta)
+× birim` toplamıştım ve ⑨'un ikinci kalemi **"₺1.398 maliyet"** göründü —
+oysa iki hareket birbirini götürüyor ve net **₺0**. `kalemMaliyeti`
+İŞARETLİ topluyor (`toplam -= birim × quantityDelta`). Kendi hesabımı
+silip **gövdenin kendisini çağırdım**; ikinci bir hesap bir gün sessizce
+ayrışırdı. _(Bu oturumda aynı `Math.abs` tuzağına ikinci düşüş.)_
+
+**④ `4673224319` — TEK GERÇEK TIKANIKLIK, VE İKİ KAPI BİRDEN KAPALI.**
+
+    ⭐ maliyet BİLİNİYOR: ₺575,04   ← pano "bilinmiyor" diyordu, BAYAT
+    ⛔ "Hepsiburada" adlı Supplier YOK        (10 tedarikçi tarandı)
+    ⛔ iade kaydı YOK · bildirim YOK          (tazmin bağlanacak kayıt yok)
+    ✓ mevcut tazmin kaydı 0                  (çift yazım riski yok)
+
+⚠ **VE ŞEMANIN KENDİ İDDİASI ÇÜRÜDÜ.** `Compensation` başlığı diyor ki:
+_"Pazaryerleri ZATEN `Supplier` listesinde (arbitrajda onlardan da alım
+yapılıyor), yani o taraf ek alan GEREKTİRMEDİ."_ **Hepsiburada için
+DOĞRU DEĞİL** — ölçüldü, yok. Şema bir alanı açarken taşıdığını
+varsaydığı veriyi taşımıyor. _(Anayasa: "şemadaki alan da bir iddiadır —
+yazıcısı yoksa vaat boştur".)_
+
+⏭ **④ İÇİN SIRA — VE HİÇBİRİ YAZIM DEĞİL, KARAR:**
+① Hepsiburada `Supplier` olarak tanımlansın mı (arbitrajda ondan alım da
+   yapılıyor, yani tanım zaten gerekebilir) ·
+② tazmin neye bağlanacak: önce iade mi yazılacak, yoksa bildirim mi ·
+③ ₺1.216,87 ile dosyadaki ₺575,40 farkı ne (hurda geliri ayrı mı).
 
 ⛔ **HİÇBİRİ YAZILMADI.**
 
