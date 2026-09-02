@@ -411,7 +411,7 @@ silinmedi — sahte kalem yerinde, üstüne onu açıklayan ters hareket yazıld
 
 ---
 
-## 🔵 K141 — `CALCULATED` EKSİK MALİYETİ SÖYLEMİYOR · 02.09.2026 · [ÖLÇÜLDÜ]
+## 🔵 K141 — `CALCULATED` EKSİK MALİYETİ SÖYLEMİYOR · 03.09.2026 · [ÜST ÖLÇÜT KOŞTU · kargo rozeti açık]
 
 Kullanıcı CSV'de gördü: kargosuz satışların `durum` sütunu **CALCULATED**.
 
@@ -423,8 +423,85 @@ kargolu satıştan ekranda ayırt edilemiyor.
 ⚠ Uyarı merkezinde de kural yok: 13 kuraldan hiçbiri ciro 0'ı ya da
 "zarar cirodan büyük"ü yakalamıyor. `11265267349` üç ağdan da geçti.
 
-⏭ **AÇIK:** `ciroSifir` ve `zararCiroyuAsan` uyarıları · eksik kargo için
-durum ya da rozet.
+### ✅ ÖLÇÜLDÜ VE YAZILDI · 03.09.2026 [KOD KOŞTU]
+
+⛔ **ÖNCE KÜME ÖLÇÜLDÜ — VE İKİ ÖNERİDEN BİRİ DÜŞTÜ.**
+
+    ① ciro 0 olan satış        : **0**    ← küme BOŞ, kural yazılmadı
+    ② |zarar| > ciro olan satış : **2**    ← GERÇEK, ve sebebi bulundu
+    ③ kargosuz ama CALCULATED   : 19       ← K75'in kalıntısıyla aynı 19
+
+`ciroSifir` için kural AÇILMADI: tek vakası `11265267349`'du ve onarıldı.
+Bugün tetiklenmeyen bir desen için kutu açmak, kutunun tamamına olan
+güveni harcar. _(Anayasa: "kaydetme kararı tüketicisi doğduğunda verilir".)_
+
+### ⭐ ② KULLANICI HAKLIYDI — VE SEBEP YAPISALDI
+
+Kullanıcı zararına satış listesine bakıp demişti: _"iadenin olmadığı
+ürünlerde bu kadar zarar yapmak anlamsız. Bir hesap hatası var."_
+
+    11015495705 · axcali1805 · ciro ₺1.789 · maliyet ₺7.641,50  (%427)
+    11015821765 · axcali1805 · ciro ₺1.789 · maliyet ₺7.641,50  (%427)
+    "Fresh Kitchen Paslanmaz Çelik 12/15 Cm 2'li Şef Bıçağı"
+
+⭐ **VE AYKIRILIK ZAMANDA DEĞİL, KARDEŞLERİNDE** — aynı varyantın AYNI GÜN
+aynı tedarikçiden girilmiş dört partisi var:
+
+    16.02.2026  ALM-HB-260216-01     ₺537,62
+    16.02.2026  ALM-HB-260216-03   ₺7.641,50   ← 13 KAT
+    16.02.2026  ALM-HB-260216-04     ₺562,47
+    16.02.2026  ALM-HB-260216-05     ₺612,47
+
+Yani anayasadaki _"zaman içindeki fiyat farkı şüphe üretmez"_ kuralının
+KAPSAMI DIŞINDA: kıyas aynı gün, aynı tedarikçi, aynı varyant.
+
+### ⛔ VE UYARI MERKEZİ TEK YÖNLÜ KURULMUŞTU
+
+`veri-supheli.ts`in iki ölçütü de maliyetin **ÇOK DÜŞÜK** olmasını
+arıyordu — çünkü doğdukları vaka (OneBlade `₺27,16`) öyleydi. Maliyetin
+**ÇOK YÜKSEK** olması için ölçüt **YOKTU** ve o yön serbest kaldı.
+_(Anayasa: "iki yön ayrı sınanır" — orada mutasyon, burada UYARININ
+kendisi.)_
+
+### ⭐ EŞİK UYDURULMADI — DAĞILIM ÖLÇÜLDÜ, GEDİĞİNE KONDU
+
+MALİYET / CİRO · **n=5982** iptalsiz kalem · 03.09.2026
+
+    p50 %67,9 · p90 %80,8 · p95 %84,1 · p99 %89,2   ← GÖVDE
+    102 · 107 · 107 · 107 · 109 · 114 · 116          ← MEŞRU zararına satış
+    148                                              ← tek vaka
+    ────────────── GEDİK ──────────────
+    427 · 427                                        ← axcali1805
+
+⚠ **`%100` EŞİK OLAMAZDI:** zararına satmak meşrudur ve 8 kalem tam orada;
+eşik oraya konsaydı dokuzu da ilk gün yanlış alarm verirdi. Eşik gövdenin
+bittiği yere değil **gediğe** kondu: **%200**.
+⭐ `SUPHELI_VERIM = 2.0` ile aynı çarpan — _"sattığının iki katını
+ödemişsin"_ iş kararı değil, veri hatasıdır.
+
+    veri-supheli.ts  2 → 3 ölçüt   ·   uyari:dogrula  245 → 252
+
+⭐ **TEK GÖVDE, İKİ TÜKETİCİ:** `supheSebepleri` hem çan sayısını hem
+`/satislar?veri=supheli` listesini besliyor — üçüncü sebep ikisine birden
+aktı, ayrışma imkânsız.
+
+✓ **6/6 mutasyon kırmızı** — iki yön ayrı: yanlış susma (ölçütü kaldır ·
+eşiği %500'e çek · karşılaştırmayı ters çevir) ve yanlış yanma (eşiği
+%120'ye çek · `ciro > 0` kapısını kaldır · ölçüm kaydını bozarak eşik
+kapısını körleştir).
+
+### ⏭ AÇIK KALAN — BEYAN
+
+· ⚠ **BU İKİ VAKA UYARIYA DÜŞMEZ:** `SUPHE_PENCERESI_GUN = 90` ve satışlar
+  04.03.2026. Ölçüt GELECEĞİ korur; geçmişteki 10 kalem (pay >%100) tek
+  seferlik araç işi.
+· ⛔ **VE ₺7.641,50 DÜZELTİLMEDİ.** Uyarı bir hüküm değil DAVETTİR; rakam
+  gerçek de olabilir. Bağımsız kaynak: `ALM-HB-260216-03` alımının HB
+  sipariş geçmişi. _(OneBlade `₺27,16` de imkânsız görünmüştü ve hediye
+  kuponuyla alındığı için GERÇEKTİ.)_
+· ⏭ **EKSİK KARGO ROZETİ HÂLÂ AÇIK:** `CALCULATED` "motor çalıştı" demek,
+  "her maliyet girdi" değil. 19 satış kargosuz ve ekranda kargolu olandan
+  ayırt edilemiyor. Bu ayrı bir iş; bugün açılmadı.
 
 ---
 

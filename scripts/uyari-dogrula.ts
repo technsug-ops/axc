@@ -31,7 +31,9 @@ import {
   supheSebepleri,
   supheliMi,
   SUPHELI_MALIYET_PAYI,
+  SUPHELI_MALIYET_PAYI_UST,
   SUPHELI_VERIM,
+  UST_KUYRUK_OLCUMU,
   SUPHE_OLCUMU,
 } from "../src/lib/uyari/veri-supheli";
 import { gecTeslimMi, GEC_TESLIM_GUN, TESLIM_OLCUMU } from "../src/lib/uyari/gec-teslim";
@@ -527,6 +529,65 @@ console.log("=".repeat(70));
 
   /** Normal kalem sessiz kalmalı — ortanca verim %23, maliyet payı %66. */
   kontrol("ortanca kalem sessiz", !supheliMi(g(230, 1000, 1515)));
+
+  /* ──────────────────────────────────────────────────────────────────────
+   *  ÜÇÜNCÜ ÖLÇÜT — MALİYET ÇOK YÜKSEK (K141, 03.09.2026)
+   * ──────────────────────────────────────────────────────────────────────
+   *  ⛔ MODÜL TEK YÖNLÜYDÜ: iki ölçüt de maliyetin ÇOK DÜŞÜK olmasını
+   *  arıyordu (OneBlade öyleydi). Yüksek yön SERBESTTİ ve kullanıcı onu
+   *  ekranda buldu: _"bu kadar zarar anlamsız, bir hesap hatası var."_
+   *  _(Anayasa: "iki yön ayrı sınanır".)_
+   * ────────────────────────────────────────────────────────────────────── */
+
+  /**
+   * ⚠ GERÇEK VAKA — axcali1805, "2'li Şef Bıçağı". ciro ₺1.789 ·
+   * maliyet ₺7.641,50 = %427. Aynı varyantın AYNI GÜN girilmiş kardeş
+   * partileri ₺537–612; aykırılık zamanda değil, kardeşlerinde.
+   */
+  const bicak = supheSebepleri(g(-5296.15, 7641.5, 1789));
+  kontrol("axcali1805 yakalanıyor (%427)", bicak.includes("MALIYET_YUKSEK"), bicak);
+
+  /**
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİYOR — MEŞRU ZARARINA SATIŞ
+   * YAKALANMAMALI. Ölçüldü: %102–%148 bandında 9 kalem var ve hepsi
+   * meşru. `%100` eşik seçilseydi dokuzu da ilk gün yanlış alarm verirdi.
+   */
+  const zarar148 = supheSebepleri(g(-1418, 4398, 2980));
+  kontrol(
+    "meşru zararına satış (%148) YAKALANMIYOR",
+    !zarar148.includes("MALIYET_YUKSEK"),
+    zarar148,
+  );
+  const zarar102 = supheSebepleri(g(-68.18, 3897.18, 3829));
+  kontrol(
+    "meşru zararına satış (%102) YAKALANMIYOR",
+    !zarar102.includes("MALIYET_YUKSEK"),
+    zarar102,
+  );
+
+  /**
+   * ⭐ EŞİK GEDİĞE KONDU — VE İKİ YANI DA SABİTLENİYOR. Eşik meşru en
+   * yüksek değerin ÜSTÜNDE, bozuk kaydın ALTINDA olmalı; biri sağlanıp
+   * öteki sağlanmazsa eşik gediğin içinde değildir.
+   */
+  kontrol(
+    "üst eşik meşru en yüksekten BÜYÜK",
+    SUPHELI_MALIYET_PAYI_UST > UST_KUYRUK_OLCUMU.mesruEnYuksek,
+  );
+  kontrol(
+    "üst eşik bozuk paydan KÜÇÜK",
+    SUPHELI_MALIYET_PAYI_UST < UST_KUYRUK_OLCUMU.bozukPay,
+  );
+  /** ⚠ Alt ve üst eşik birbirini geçemez — geçerse her kalem şüpheli olur. */
+  kontrol(
+    "alt eşik üst eşiğin ALTINDA",
+    SUPHELI_MALIYET_PAYI < SUPHELI_MALIYET_PAYI_UST,
+  );
+  /** Ciro sıfırsa üst pay da hesaplanmaz — alt ölçütle aynı kapı. */
+  kontrol(
+    "ciro sıfırsa ÜST pay da hesaplanmaz",
+    supheSebepleri(g(500, 99999, 0)).every((x) => x !== "MALIYET_YUKSEK"),
+  );
 }
 
 console.log("");
