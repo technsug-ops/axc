@@ -185,8 +185,15 @@ kırmızı yanıyor.
 
 ### 🔶 HALİL TEST LİSTESİ
 
-1. **Panel → "ölü sermaye" rozeti** → `/stok?yas=kirmizi`, **110 kalem**,
-   rozet **"61+ gündür bekleyenler"**. ⛔ Boş liste = test DÜŞER.
+1. **Panel → Ürün analizi → "Dağılım (nereye yoğunlaşmalıyım)" sekmesi →
+   üstten İKİNCİ kırmızı rozet: `110 kalem 61+ gündür rafta · ₺… bağlı`**
+   → tıkla → `/stok?yas=kirmizi`, **110 kalem**, ekrandaki süzgeç rozeti
+   **"61+ gündür bekleyenler"**. ⛔ Boş liste = test DÜŞER.
+   ⚠ **İLK YAZIMDA BU MADDE UYGULANAMAZDI:** rozeti iç adıyla ("ölü sermaye")
+   yazmıştım; ekranda o metin **HİÇ GEÇMİYOR** ve kullanıcı aradı, bulamadı.
+   Test listesi ekranda YAZAN metni söyler, kodun içindeki adı değil.
+   _(Anayasa: "kural doğru mu değil, teslim edilebilir mi" — talimatın
+   kendisi de bu süzgeçten geçer.)_
 2. `/stok` → **"91–180 gün"** → **53 kalem**, rozet **"Raf yaşı: 91–180 gün"**.
 3. Aynı çipe **tekrar** bas → süzgeç kalkar, tüm liste döner.
 4. **"15 gün ve altı"** → 83 · **"16–30 gün"** → 10 · **"181 günden fazla"** → 28.
