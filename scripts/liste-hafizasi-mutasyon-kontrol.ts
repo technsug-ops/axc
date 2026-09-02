@@ -84,8 +84,13 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "sunucu goruntusu hatirlanan adresi donduruyor (hidrasyon uyusmazligi)",
     yon: "FAZLADAN",
     dosya: BILESEN,
-    bul: "    () => hatirlananListe(href) ?? href,\n    () => href,",
-    koy: "    () => hatirlananListe(href) ?? href,\n    () => hatirlananListe(href) ?? href,",
+    /**
+     * ⚠ ÇAPA K133'TE ESKİDİ — davranış AYNI, şekil değişti. Sunucu
+     * görüntüsü artık `JSON.stringify({ h: href, e: null })`; korunan
+     * değişmez yine "sunucu görüntüsü DEPOYA DOKUNMAZ".
+     */
+    bul: "    () => JSON.stringify({ h: href, e: null }),",
+    koy: "    () => JSON.stringify({ h: hatirlananSonListe()?.adres ?? href, e: null }),",
     bozdugu:
       "sunucuda `sessionStorage` YOK; sunucu goruntusu istemciden farkli olur ve React uyari basar",
   },
@@ -102,7 +107,8 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "satis listesi kaydediciyi cizmiyor",
     yon: "KALDIRAN",
     dosya: SATIS_LISTE,
-    bul: '<ListeyiHatirla temel="/satislar" />',
+    /** ⚠ ÇAPA K133'TE ESKİDİ: kaydedici artık `etiket` de alıyor. */
+    bul: '<ListeyiHatirla temel="/satislar" etiket={tBaslik("satislar")} />',
     koy: "",
     bozdugu:
       "hatirlanacak adres HIC yazilmaz; ozellik VARMIS GIBI gorunur ama duz listeye duser",

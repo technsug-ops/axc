@@ -168,11 +168,47 @@ console.log("§1 SAF GÖVDE — hatırlanan adres güvenli mi");
   const bilesen = yorumsuz(
     readFileSync("src/components/liste-hafizasi-bilesenleri.tsx", "utf8"),
   );
-  const cagri = /useSyncExternalStore\(([^;]*?)\);/.exec(bilesen)?.[1] ?? "";
+  /**
+   * ⚠ AYRIŞTIRICI `;` İLE KESİLEMEZ — K133'te kırıldı ve sebebi buydu.
+   * Eski desen `[^;]*?` kullanıyordu; çağrının GÖVDESİNE `const … ;`
+   * satırları girince eşleşme erken kesildi ve `cagri` boş kaldı. Boş
+   * dizede her arama başarısız olur — ölçüt "davranış yok" der, oysa
+   * OKUYAMAMIŞTIR.
+   * _(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+   * değildir" — burada tersi: boş okuma YANLIŞ KIRMIZI üretiyordu.)_
+   *
+   * 📏 PENCERE ÖLÇÜLDÜ (02.09.2026): çağrı bloğu **330 karakter**, sunucu
+   * görüntüsü 281. karakterde. 800 tavanı iki katından fazla pay bırakıyor;
+   * gövde büyürse `cagriBulundu` ölçütü kırmızı yanar ve pencere yeniden
+   * ölçülür — sessizce kör kalmaz.
+   */
+  const cagriBas = bilesen.indexOf("useSyncExternalStore(");
+  const cagri = cagriBas < 0 ? "" : bilesen.slice(cagriBas, cagriBas + 800);
   kontrol("useSyncExternalStore çağrısı bulundu", cagri.length > 0);
+  /**
+   * ⚠ ÖLÇÜT K133'TE ESKİDİ — SUSTURULMADI, DAVRANIŞA BAĞLANDI (02.09.2026).
+   *
+   * Eskiden sunucu görüntüsünün BİREBİR `() => href` olmasını arıyordu.
+   * K133'te üçüncü parametre `() => JSON.stringify({ h: href, e: null })`
+   * oldu (hedef ile etiket tek okumadan geliyor) ve ölçüt kırmızı yandı.
+   * KOD DOĞRUYDU, ÇAPA ESKİYDİ.
+   *
+   * ⭐ YENİ ÖLÇÜT ESKİSİNDEN GÜÇLÜ: korunan değişmez "şu ifade birebir
+   * budur" değil, **"sunucu görüntüsü DEPOYA DOKUNMAZ"**. Biçime bağlı
+   * ölçüt her yeniden yazımda kırılır; davranışa bağlı olan yalnız gerçek
+   * bir bozulmada kırılır.
+   */
+  /** Sunucu görüntüsü çağrının ÜÇÜNCÜ parametresi — bloktaki son `() =>`. */
+  const sonOk = cagri.lastIndexOf("() =>");
+  const sunucuGorunumu = sonOk < 0 ? "" : cagri.slice(sonOk, sonOk + 120);
+  kontrol("sunucu görüntüsü parametresi bulundu", sonOk > 0);
   kontrol(
-    "sunucu görüntüsü DÜZ href (hidrasyon uyuşmazlığı yok)",
-    /\(\)\s*=>\s*href,?\s*$/.test(cagri.trim()),
+    "sunucu görüntüsü href'ten türüyor (hidrasyon uyuşmazlığı yok)",
+    /href/.test(sunucuGorunumu),
+  );
+  kontrol(
+    "  ...ve sunucu görüntüsü DEPOYA DOKUNMUYOR",
+    !/hatirlanan/.test(sunucuGorunumu),
   );
   /**
    * VE EFEKT ICINDE setState YOK: lint kurali bunu zaten yakaliyor ama
