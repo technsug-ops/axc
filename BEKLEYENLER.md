@@ -131,15 +131,33 @@ Tek bir pencere yazmak, 20+ günü olan 7 ürünü gereksiz aceleye sokardı ve
 | Casio DW-9052 — tek aday | **1** | ⏳ **Halil kararı bekliyor** |
 | Maliyeti yok (raf 0) | 1 | değerlendirilemedi |
 
-**Casio:** stok **2**, bugün NET-2/adet ₺198,96 → teklifte ₺219,06, çarpan
-**0,9×**. Toplam kazanç **~₺40** (2 adet × ₺20,10). Son gün **09.09 02:58**.
+**Casio — ÜÇ KADEMESİ AYRI AYRI ÖLÇÜLDÜ (bugün 3.850 / %18 → ₺198,96):**
+
+    kademe 1   3.658 TL   %14,10   →  ₺219,06   0,91×   ⭐ BUGÜNDEN İYİ
+    kademe 2   3.475 TL   %11,30   →  ₺192,41   1,03×      bugünden kötü
+    kademe 3   3.292 TL   %9,10    →  ₺135,76   1,47×   ⛔ %32 KÖTÜ
+
+⛔ **KARAR KAYDINDA YANLIŞ RAKAM VARDI VE DÜZELTİLDİ.** Önce
+`Fiyatı Güncelle = 3292` yazılmıştı — o **EN DERİN İNDİRİM** kademesi ve
+bugünkünden **%32 daha kötü**. Girilseydi teklif "kabul edildi" sanılır,
+gerçekte adet başına ₺63 kaybedilirdi. Doğru rakam **3.658**.
+
+⚠ **KOMİSYON EN ÇOK DÜŞEN KADEME EN İYİSİ DEĞİL.** Kademe 3'te komisyon
+%18→%9,1 (yarı yarıya) ama fiyat 3.850→3.292 düşüyor; fiyat kaybı komisyon
+kazancını yiyor. "En büyük indirim en iyi teklif" sezgisi burada yanlış —
+ve tam bu yüzden rapor **her kademeyi ayrı** hesaplıyor.
+
+⚠ **VE KAZANÇ SANILANDAN KÜÇÜK — İKİ STOK RAKAMI ÇELİŞİYOR:**
+dosya **stok 2** diyor, bizim defterde **raf 1**. Kazanç 2 adetse ~₺40,
+1 adetse ~₺20. Çelişki bu karar için önemsiz (ikisi de küçük) ama
+**kayda geçiyor**: HB'de bilmediğimiz bir adet var ya da defter eksik.
 
 ⭐ **KABUL EDİLİRSE SİSTEM TARAFINDA İŞ YOK:** HB panelinden
-`Fiyatı Güncelle = 3292` girilir, o kadar. Sonraki kanal taraması yeni
+`Fiyatı Güncelle = 3658` girilir, o kadar. Sonraki kanal taraması yeni
 komisyonu **kendiliğinden** görür — elle oran girilmez, tarife yüklenmez.
 
-⚠ **~₺40 İÇİN BİLE KARAR HALİL'İN:** rapor talep tahmini yapmıyor ve
-"stok 2" demek "en fazla 2 adet kazanç" demek. Sistem hüküm vermez.
+⚠ **~₺20 İÇİN KARAR YİNE HALİL'İN:** rapor talep tahmini yapmıyor.
+Sistem hüküm vermez.
 
 ### ⏭ KALICI EKRAN — ⭐ AÇILIŞ ŞARTI DOLDU (02.09.2026)
 
