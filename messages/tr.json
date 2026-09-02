@@ -3509,7 +3509,8 @@
     "boslukKapanmaz": "Bu boşluk KAPATILAMAZ: kaçırılan tarife dosyası arşivden inmiyor. Satır bir görev değil, kapsamın kaydıdır — o dönemin satışlarında Fiyat dene hüküm veremez.",
     "boslukSatir": "{kanal} · {baslangic} → {bitis} arası KAPSAMSIZ ({saat} saat · {gun} tam gün) — bu aralıkta {satis} satış var, tarifesi yok.",
     "boslukGizlenen": "{adet} boşluk daha var ama listelenen pencerelerin dışında kalıyor. Özetteki sayı hepsini kapsar.",
-    "boslukGorusSiniri": "Bu aralık, sistemin ilk tarife kaydından ({ilk}) ÖNCEDİR — kaçırılmış bir indirme değil, sistemin görüş alanının başlangıç sınırı. Rutin kurulduğundan beri kaçan pencere yok."
+    "boslukGorusSiniri": "Bu aralık, sistemin ilk tarife kaydından ({ilk}) ÖNCEDİR — kaçırılmış bir indirme değil, sistemin görüş alanının başlangıç sınırı. Rutin kurulduğundan beri kaçan pencere yok.",
+    "hataTeklifDosyasi": "Bu bir Avantajlı Teklifler kampanya dosyası — tarife DEĞİL. Koşullu tekliftir: oran ancak teklifi kabul edip fiyatı düşürürsen geçerli olur. Tarife olarak yüklenirse komisyon ve NET yanlış hesaplanır — sistem senin bugünkü fiyatına indirimli oranı uygular ve kâr olduğundan yüksek görünür. Bu ekran yalnız pazaryerinin dilim/limit sütunlu ürün komisyon tarifesini okur."
   },
   "Paketle": {
     "baslik": "Yönlendirmeli paketleme",

@@ -13,6 +13,163 @@
 
 ---
 
+## 🟢 K132 — HB AVANTAJLI TEKLİFLER (K-HB-TEKLIF) · 02.09.2026 · [KOD KOŞTU]
+
+_Kullanıcı HB tarife ekranına `Avantajlı_Teklifler-02-09-2026-10_00.xlsx`
+yükledi, ekran reddetti. **Ekran haklıydı, mesajı yanlıştı.**_
+
+### ⛔ BU DOSYA TARİFE DEĞİL — VE YÜKLENSEYDİ KÂRI BOZARDI
+
+HB koşullu teklif veriyor: _"fiyatı 8.886'ya indirirsen komisyonu %13'ten
+%4,7'ye düşürürüm."_ Oran ancak teklif KABUL EDİLİP fiyat düşürülürse
+geçerli. Tarife tablosuna girseydi `dilimBul` **bugünkü 15.269'luk fiyata**
+%4,7 uygulardı — komisyon olduğundan DÜŞÜK, **NET olduğundan YÜKSEK** çıkar
+ve rakam tamamen makul görünürdü.
+
+⭐ **AYNI KORUMA SINIFI:** 20.08.2026'da Trendyol'un "İndirimli Komisyon
+Tarifeleri" dosyası için birebir aynı karar verilmişti.
+
+### ✅ ① MESAJ DÜZELTİLDİ — YENİ ENGEL KODU `TEKLIF_DOSYASI`
+
+Eskiden `SUTUN_EKSIK` düşüyordu: doğru ama kullanışsız teşhis, üstelik
+_"henüz desteklenmiyor"_ diye okunuyordu — yani "eksik özellik, sonra
+eklenir". Oysa bu dosya **hiçbir zaman** tarife olarak yüklenmemeli.
+
+⚠ **TANIMA YAPIYA BAĞLI, ADA DEĞİL:** iki satırlı başlık (`Teklif N` üstte,
+`Üst Fiyat`/`Komisyon` altta). Dosya adı yalnız **ikinci onay** — ve bu
+güvenli, çünkü tanıma **yalnız okuma ZATEN DÜŞTÜĞÜNDE** danışılıyor: yanlış
+pozitifin bedeli bozuk veri değil, yanlış bir mesaj.
+
+⚠ **VE BÜTÜN SAYFALAR TARANIYOR:** bu dosyanın İLK sayfası "Açıklama"
+(kolon sözlüğü), veri "Teklifler"de. Mevcut hata mesajı **yanlış sayfaya
+bakarak** üretiliyordu.
+
+⚠ **İKİ YOL DA TANIYOR:** "Önce göster" ile "Yaz" aynı cevabı veriyor;
+ayrışsaydı aynı dosyaya iki farklı hata çıkardı.
+
+**Bekçi `tarife:dogrula` 136 → 142 ölçüt · mutasyon 3/3 KIRMIZI**
+(yalnız ilk sayfaya bakma · yalnız "Teklif" kelimesine bakma [yanlış yanma] ·
+dosya adı tanımasını kaldırma).
+⚠ **VE BİR SABİT SAYI ESKİDİ, SUSTURULMADI:** `kodlar.length === 4` ölçütü
+beşinci kod eklenince kırmızı yandı — kod doğruydu, ölçüt eskiydi. Sayıya
+değil KAPSAMAYA bağlandı.
+
+### ✅ ② SALT OKUMA DEĞERLENDİRME — `npm run canli:hb-teklif -- "<dosya>"`
+
+⭐ **KÂR HESABI YENİDEN YAZILMADI:** `simulasyonKur` çağrılıyor — fiyat
+denemesi ekranının gövdesinin aynısı. İkinci bir hesap yazsaydım biri
+değişince öteki sessizce ayrışır, iki ekran aynı fiyata iki NET-2 verirdi.
+
+    incelenen 24 · EŞLEŞTİ 24 · EŞLEŞMEDİ 0 · maliyetsiz 1
+    (eşleşme HB SKU üstünden — dosyada barkod kolonu YOK)
+
+⛔ **SONUÇ NET: 23 değerlendirilebilir teklifin 16'sı SATIŞI ZARARA
+ÇEVİRİYOR.** Bugünkünden iyi olan **1 tane** (Casio, 0,9×).
+
+    ÜRÜN                          BUGÜN N2   EN İYİ N2   ÇARPAN
+    Delonghi Dedica               3.417,16     -238,93   ⛔ ZARAR
+    Jbl Xtreme 3                  2.483,35    1.083,57      2,3×
+    LEGO Icons Retro Radyo        1.058,72     -122,84   ⛔ ZARAR
+    Anker Nano 45W                  409,17      217,72      1,9×
+    Casio DW-9052                   198,96      219,06      0,9×  ⭐
+
+⚠ **RAPOR HÜKÜM VERMİYOR — TALEP TAHMİNİ YOK.** Çarpan yalnız başabaşı
+ölçer: _"2,3× = bugünkü parayı kazanmak için 2,3 kat satmalısın."_ Satılıp
+satılamayacağını sistem BİLMEZ ve tahmin etmez; kararı operatör verir.
+
+⚠ **KARGO HARİÇ VE BEYAN EDİLİYOR:** dosya desi taşımıyor. Kargo iki
+senaryoda da aynı olduğu için karşılaştırmayı etkilemez, ama rakamlar
+panelin NET-2'siyle **birebir aynı değildir.**
+
+⚠ **STOK SÜTUNU KARARIN PARÇASI:** 24 üründen **10'unun stoğu 1–3.** Stoğu
+1 olan üründe "2,3 kat sat" zaten imkânsız — teklif orada anlamsız.
+
+⚠ **BİRİM DOĞRULANDI:** komisyonlar yüzde olarak geliyor (mevcut %10–18,
+teklif %3–14,1); 1'den küçük değer YOK, yani kesir/yüzde karışıklığı yok.
+Açıklama sayfasında örnek `0.15` diye geçiyordu — ölçülmeseydi bütün
+komisyonlar 100 kat yanlış olabilirdi.
+
+⚠ **VE BİR KANAL KODU VARSAYIMI YAKALANDI:** betiği `"HB"` koduyla yazdım,
+gerçek kod `HEPSIBURADA`. Eşleşmeyince betik boş dönerdi ve **boş dönüş
+makul görünürdü** — anayasadaki "kanal adına gömülü sözlük" tuzağı. Kod
+ölçüldü, ve bulunamazsa artık mevcut kodlar EKRANA basılıyor.
+
+**Çıktı:** `raporlar/hb-teklif-degerlendirme-0209.csv` (60 satır, kademe
+başına bir satır).
+
+### ⛔ TARİH DÜZELTMESİ — VE ÖLÇÜM İKİMİZİ DE DÜZELTTİ
+
+Kullanıcı _"teklif bitişi 08.09 23:59"_ dedi, ben rapora `09.09` yazmıştım.
+Ölçüldü — **ikimiz de kendi saat dilimimizi okuyorduk:**
+
+    ham damga (dosyada)   2026-09-08T23:58:59.999Z   ← kullanıcının okuduğu (UTC)
+    makine yereli (DE)    09.09.2026 01:58            ← benim okuduğum
+    ⭐ İSTANBUL İŞ SAATİ   09.09.2026 02:58            ← GEÇERLİ OLAN
+
+Anayasa iş saat dilimini SABİTLİYOR (`Europe/Istanbul`); ne UTC damgası ne
+makinenin yereli hüküm kurar. _(Anayasa: "dış kaynağın kendi etiketiyle
+karşılaştır — iç tutarlılık kaymayı gizler".)_
+
+⛔ **VE ASIL BULGU: BÜTÜN TEKLİFLER AYNI GÜN BİTMİYOR.** "Karar penceresi
+6 gün" cümlesi 24 ürünün hepsi için doğru değil — **beş farklı bitiş var:**
+
+    07.09.2026 02:58    1 ürün    ← 5 gün
+    09.09.2026 02:58   16 ürün    ← 7 gün  (Casio dahil)
+    22.09.2026 02:58    2 ürün
+    24.09.2026 02:58    1 ürün
+    01.10.2026 02:58    4 ürün    ← 29 gün
+
+Tek bir pencere yazmak, 20+ günü olan 7 ürünü gereksiz aceleye sokardı ve
+5 günü olanı geç fark ettirirdi. Tarih artık **satır başına** CSV'de.
+
+### 📌 KARAR KAYDI (Halil, 02.09.2026)
+
+| Küme | Sayı | Karar |
+|---|---|---|
+| Teklif NET-2'si ≤ 0 (zarar) | **16** | 🔴 **RET** |
+| Gri bölge — çarpan 1,9–2,3 ve/veya stok 1–3 | **6** | 🔴 **RET** |
+| Casio DW-9052 — tek aday | **1** | ⏳ **Halil kararı bekliyor** |
+| Maliyeti yok (raf 0) | 1 | değerlendirilemedi |
+
+**Casio:** stok **2**, bugün NET-2/adet ₺198,96 → teklifte ₺219,06, çarpan
+**0,9×**. Toplam kazanç **~₺40** (2 adet × ₺20,10). Son gün **09.09 02:58**.
+
+⭐ **KABUL EDİLİRSE SİSTEM TARAFINDA İŞ YOK:** HB panelinden
+`Fiyatı Güncelle = 3292` girilir, o kadar. Sonraki kanal taraması yeni
+komisyonu **kendiliğinden** görür — elle oran girilmez, tarife yüklenmez.
+
+⚠ **~₺40 İÇİN BİLE KARAR HALİL'İN:** rapor talep tahmini yapmıyor ve
+"stok 2" demek "en fazla 2 adet kazanç" demek. Sistem hüküm vermez.
+
+### ⏭ KALICI EKRAN — ⭐ AÇILIŞ ŞARTI DOLDU (02.09.2026)
+
+Şart _"dosya periyodik gelirse"_ idi ve **Halil aynı gün bildirdi: dosya
+periyodik geliyor.** Yani tüketici doğdu; kalıcı "teklif değerlendirme"
+ekranı artık şarta bağlı değil, **sıraya girdi.**
+
+⛔ **AMA HEMEN YAZILMIYOR — SIRA A3'TE.** Kullanıcı kararı: _"API'den önce
+hepsini temizleyelim."_ Temizlik bitti; bu ekran YENİ İŞ ve A3'ten sonraya
+kalır. Bugünkü betik her yeni dosyada koşabilir, yani boşluk yok.
+
+**Ekran yazıldığında ne gerekecek (bugünden ölçülmüş):**
+· eşleştirme HB SKU üstünden — barkod kolonu YOK
+· iki satırlı başlık ayrıştırma (`Teklif N` + `Üst Fiyat`/`Komisyon`)
+· bitiş tarihi **satır başına** ve **İstanbul** saatinde
+· kâr `simulasyonKur`dan — ikinci hesap YAZILMAZ
+· kargo hariç beyanı her NET-2 rakamının **yanında**
+
+### 🔶 HALİL TEST LİSTESİ
+
+1. `/ayarlar/tarife` → Hepsiburada — AXCALI seç → **aynı dosyayı** yükle →
+   **"Önce göster"**.
+   → Kırmızı kutuda **"Bu bir Avantajlı Teklifler kampanya dosyası — tarife
+   DEĞİL…"** yazmalı. ⛔ "sütunlar bulunamadı" yazıyorsa test DÜŞER.
+2. Aynı dosyayla **"Yaz"** dene → **aynı** mesaj çıkmalı (iki yol ayrışmasın).
+3. **Gerçek bir HB komisyon tarifesi** yükle → normal önizleme açılmalı.
+   ⛔ Bu adım geçmezse tanıma fazla geniş demektir.
+
+---
+
 ## 🟢 K129 — ÜRÜN ANALİZİ TAM LİSTESİ · 02.09.2026 · [KOD KOŞTU]
 
 _Kullanıcı isteği 02.09.2026, beş madde. **A paketi (1-4) teslim edildi;**

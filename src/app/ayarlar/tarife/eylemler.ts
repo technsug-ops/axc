@@ -42,7 +42,8 @@ export async function tarifeOnizle(form: FormData) {
   }
 
   const bayt = Buffer.from(await dosya.arrayBuffer());
-  const sonuc = await tarifeDenetle(bayt, hesapId, bugunku());
+  /** ⚠ Dosya adı tanımaya geçer — "Önce göster" ile "Yaz" aynı cevabı versin. */
+  const sonuc = await tarifeDenetle(bayt, hesapId, bugunku(), dosya.name);
   return ozetle(sonuc, t);
 }
 

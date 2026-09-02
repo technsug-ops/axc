@@ -3,7 +3,7 @@ import readXlsxFile from "read-excel-file/node";
 import { prisma } from "@/lib/prisma";
 import { paketiNormalle } from "@/lib/tablo/paket";
 
-import { tarifeOku, type TarifeOkumasi } from "./tarife-okuyucu";
+import { teklifDosyasiMi, tarifeOku, type TarifeOkumasi } from "./tarife-okuyucu";
 import {
   tarifePlaniKur,
   yazilabilirMi,
@@ -50,7 +50,13 @@ export type TarifeYuklemeSonucu =
        * ham `SUTUN_EKSIK` gördü. Kod ile insan cümlesi AYRI alanlar: betik
        * kodu/ham metni yazar, ekran çeviriyi.
        */
-      kod: "DOSYA_OKUNAMADI" | "SUTUN_EKSIK" | "PENCERE_YOK" | "SATIR_YOK";
+      kod:
+        | "DOSYA_OKUNAMADI"
+        | "SUTUN_EKSIK"
+        | "PENCERE_YOK"
+        | "SATIR_YOK"
+        /** K-HB-TEKLIF — kampanya teklif dosyası; tarife DEĞİL. */
+        | "TEKLIF_DOSYASI";
       /** Betik çıktısı için ham metin — ekranda GÖSTERİLMEZ. */
       engel: string;
       eksikler?: string[];
@@ -75,8 +81,12 @@ export async function tarifeDenetle(
   dosya: Buffer,
   channelAccountId: string,
   bugun: Date,
+  /** Tanıma için ikinci onay — yapı ölçütü zaten yeterli, ad yedek. */
+  dosyaAdi?: string,
 ): Promise<TarifeYuklemeSonucu> {
   let veri: unknown[][];
+  /** Tanıma için dışarıda: `catch` bloğundan sonra da okunabilmeli. */
+  let sayfalar: { sheet: string; data: unknown[][] }[] = [];
   try {
     /**
      * NORMALLEŞTİRİCİDEN GEÇER — Trendyol dosyaları ZIP64 + veri
@@ -84,7 +94,7 @@ export async function tarifeDenetle(
      * (`lib/tablo/paket.ts`, ölçüm 11.08.2026).
      */
     const { bayt } = paketiNormalle(dosya);
-    const sayfalar = (await readXlsxFile(bayt)) as unknown as {
+    sayfalar = (await readXlsxFile(bayt)) as unknown as {
       sheet: string;
       data: unknown[][];
     }[];
@@ -112,6 +122,22 @@ export async function tarifeDenetle(
   const okuma = tarifeOku(veri, bugun);
   const izin = yazilabilirMi(okuma);
   if (!izin.olur) {
+    /**
+     * ⛔ TANIMA, GENEL HATADAN ÖNCE. "Sütun bulunamadı" doğru ama
+     * KULLANIŞSIZ bir teşhis: operatöre ne olduğunu da ne yapacağını da
+     * söylemez ve "eksik özellik, sonra eklenir" diye okunur. Oysa bu
+     * dosya tarife DEĞİL ve tarife olarak yüklenmesi kâr hesabını bozardı.
+     *
+     * ⚠ YALNIZ HATA YOLUNDA DANIŞILIYOR: geçerli bir tarife dosyası bu
+     * satıra hiç gelmez, dolayısıyla tanıma doğru bir yüklemeyi engelleyemez.
+     */
+    if (teklifDosyasiMi(sayfalar, dosyaAdi)) {
+      return {
+        durum: "HATA",
+        kod: "TEKLIF_DOSYASI",
+        engel: "TEKLIF_DOSYASI: Avantajlı Teklifler kampanya dosyası",
+      };
+    }
     return {
       durum: "HATA",
       kod: izin.engel,
@@ -164,6 +190,10 @@ export async function tarifeYaz(girdi: {
     girdi.dosya,
     girdi.channelAccountId,
     girdi.bugun,
+    /** ⚠ AD DA GEÇER: yazma yolu ile önizleme yolu AYNI tanımayı görmeli.
+     *  Geçmeseydi "Önce göster" doğru mesajı verir, "Yaz" başka bir hata
+     *  verirdi — aynı dosyaya iki farklı cevap. */
+    girdi.dosyaAdi,
   );
   if (onizleme.durum !== "ONIZLEME") return onizleme;
 

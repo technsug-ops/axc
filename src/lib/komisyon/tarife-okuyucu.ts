@@ -378,3 +378,78 @@ export function dilimBul(
   }
   return null;
 }
+
+/**
+ * ============================================================================
+ *  TEKLİF DOSYASI TANIMA — "AVANTAJLI TEKLİFLER" (K-HB-TEKLIF, 02.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ BU DOSYA TARİFE DEĞİL VE TARİFE OLARAK YÜKLENMEMELİ.
+ *
+ *  Hepsiburada'nın "Avantajlı Teklifler" dosyası KOŞULLU bir kampanya
+ *  teklifidir: _"fiyatı 8.886'ya indirirsen komisyonu %13'ten %4,7'ye
+ *  düşürürüm."_ Oran ancak teklif KABUL EDİLİP fiyat düşürülürse geçerlidir.
+ *
+ *  Tarife tablosuna girseydi `dilimBul` senin 15.269'dan sattığın ürün için
+ *  `%4,7` döndürürdü — komisyon olduğundan DÜŞÜK, NET olduğundan YÜKSEK
+ *  çıkardı ve rakam tamamen makul görünürdü.
+ *
+ *  ⚠ AYNI KORUMA SINIFI: 20.08.2026'da Trendyol'un "İndirimli Komisyon
+ *  Tarifeleri" dosyası için birebir aynı karar verilmişti — _"aynı tabloya
+ *  konsaydı `satisTarihiTarifesi` onları TAM TARİFE sanıp forma verirdi ve
+ *  `dilimBul` yanlış dilim döndürürdü."_ Orada dosya kaydedilmedi; burada
+ *  yüklenmesi engelleniyor. İkisi de aynı ilkenin uygulaması.
+ *
+ *  ── ⚠ TANIMA YAPIYA BAĞLI, DOSYA ADINA DEĞİL ───────────────────────────
+ *  Dosya adı yeniden adlandırılabilir; başlık yapısı adlandırmayla
+ *  değişmez. Ad YALNIZ ikinci bir onay olarak kabul ediliyor ve bu güvenli:
+ *  tanıma **yalnız tarife okuması ZATEN DÜŞTÜĞÜNDE** danışılıyor, yani
+ *  yanlış pozitifin bedeli bozuk veri değil, yanlış bir MESAJDIR.
+ *
+ *  ⚠ VE BÜTÜN SAYFALAR TARANIR: bu dosyanın İLK sayfası "Açıklama" (kolon
+ *  sözlüğü), veri "Teklifler" sayfasında. Yalnız ilk sayfaya bakan bir
+ *  tanıma dosyayı hiç tanımazdı — nitekim mevcut hata mesajı da yanlış
+ *  sayfaya bakarak üretiliyordu.
+ * ============================================================================
+ */
+
+/** Dosya adı deseni — ikinci onay, tek başına ölçüt DEĞİL. */
+const TEKLIF_AD_DESENI = /avantajl[ıi]_?teklifler/i;
+
+/**
+ * Bir sayfa "teklif" yapısında mı: üst başlıkta `Teklif N`, ALT başlıkta
+ * `Üst Fiyat` + `Komisyon` (iki satırlı, birleştirilmiş başlık).
+ *
+ * ⛔ İKİSİ BİRDEN ARANIYOR. Yalnız "Teklif" kelimesine bakmak, içinde o
+ * kelime geçen bir tarife dosyasını yanlışlıkla teklif sayardı.
+ */
+function teklifSayfasiMi(veri: unknown[][]): boolean {
+  if (veri.length < 2) return false;
+  const metin = (r: unknown[]) =>
+    r.map((c) => basligiNormalle(String(c ?? ""))).filter((x) => x !== "");
+
+  const ust = metin(veri[0] ?? []);
+  const alt = metin(veri[1] ?? []);
+  /**
+   * ⚠ DESEN KÜÇÜK HARF: `basligiNormalle` başlıkları Türkçe yerelinde
+   * KÜÇÜLTÜYOR (`toLocaleLowerCase("tr")`). İlk yazımda deseni büyük harf
+   * yazdım ve tanıma hiç tutmadı — bekçi yakaladı. Normalleştiricinin ne
+   * ürettiğini VARSAYMAK yerine okumak gerekiyordu.
+   */
+  const teklifBasligi = ust.some((b) => /^teklif\s*\d+$/.test(b));
+  const ustFiyat = alt.some((b) => b === basligiNormalle("Üst Fiyat"));
+  const komisyon = alt.some((b) => b === basligiNormalle("Komisyon"));
+  return teklifBasligi && ustFiyat && komisyon;
+}
+
+/**
+ * Dosya bir "Avantajlı Teklifler" kampanya dosyası mı?
+ * Sayfalardan HERHANGİ BİRİ teklif yapısındaysa — ya da dosya adı deseni
+ * tutuyorsa — evet.
+ */
+export function teklifDosyasiMi(
+  sayfalar: { sheet: string; data: unknown[][] }[],
+  dosyaAdi?: string,
+): boolean {
+  if (dosyaAdi !== undefined && TEKLIF_AD_DESENI.test(dosyaAdi)) return true;
+  return sayfalar.some((s) => teklifSayfasiMi(s.data ?? []));
+}

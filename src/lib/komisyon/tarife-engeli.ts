@@ -31,4 +31,11 @@ export const ENGEL_ANAHTARI: Record<TarifeEngelKodu, string> = {
   SUTUN_EKSIK: "hataSutunEksik",
   PENCERE_YOK: "hataPencereYok",
   SATIR_YOK: "hataSatirYok",
+  /**
+   * K-HB-TEKLIF (02.09.2026) — kullanıcı HB "Avantajlı Teklifler"
+   * dosyasını yükledi. Eskiden `SUTUN_EKSIK` düşüyordu: doğru ama
+   * kullanışsız teşhis, üstelik "henüz desteklenmiyor" diye okunuyordu.
+   * Bu dosya tarife DEĞİL ve tarife olarak yüklenmesi kâr hesabını bozar.
+   */
+  TEKLIF_DOSYASI: "hataTeklifDosyasi",
 };

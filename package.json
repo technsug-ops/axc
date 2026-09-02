@@ -275,7 +275,9 @@
     "canli:sayim-fazlasi": "tsx scripts/canli-sayim-fazlasi.ts",
     "urun-analizi:dogrula": "tsx scripts/urun-analizi-dogrula.ts",
     "urun-analizi-mutasyon:kontrol": "tsx scripts/urun-analizi-mutasyon-kontrol.ts",
-    "canli:yas-dagilimi": "tsx scripts/canli-yas-dagilimi.ts"
+    "canli:yas-dagilimi": "tsx scripts/canli-yas-dagilimi.ts",
+    "canli:parti-oykusu": "tsx scripts/canli-parti-oykusu.ts",
+    "canli:hb-teklif": "tsx scripts/canli-hb-teklif-degerlendir.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

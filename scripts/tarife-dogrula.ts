@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { ENGEL_ANAHTARI } from "../src/lib/komisyon/tarife-engeli";
+import { teklifDosyasiMi } from "../src/lib/komisyon/tarife-okuyucu";
 import {
   dilimBul,
   pencereCoz,
@@ -455,7 +456,19 @@ console.log("\nKOMİSYON TARİFESİ — DOĞRULAMA\n");
     Tarife: Record<string, string>;
   };
   const kodlar = Object.keys(ENGEL_ANAHTARI);
-  kontrol("dört engel kodu da eşlenmiş", kodlar.length === 4, kodlar);
+  /**
+   * ⚠ SABİT SAYI KALDIRILDI (02.09.2026, K-HB-TEKLIF). Eskiden "=== 4"
+   * yazıyordu ve beşinci kod eklenince bekçi KIRMIZI yanıyordu — oysa kod
+   * doğruydu, ÖLÇÜT eskimişti. Ölçüt artık sayıya değil KAPSAMAYA bakıyor:
+   * tip birliğindeki her kodun eşlemesi var mı. Yeni kod eklendiğinde
+   * TypeScript zaten `Record`ta derlemeyi durduruyor; bekçinin işi sözlük
+   * tarafını sınamak.
+   */
+  kontrol("en az beş engel kodu eşlenmiş", kodlar.length >= 5, kodlar);
+  kontrol(
+    "  ...ve TEKLIF_DOSYASI eşlemede (K-HB-TEKLIF)",
+    kodlar.includes("TEKLIF_DOSYASI"),
+  );
 
   for (const [kod, anahtar] of Object.entries(ENGEL_ANAHTARI)) {
     const metin = sozluk.Tarife[anahtar];
@@ -994,6 +1007,91 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
     tarifeUyarisiVarMi(yaklasan) === true,
     yaklasan,
   );
+}
+
+/**
+ * ---------------------------------------------------------------------------
+ *  10c) TEKLİF DOSYASI TANIMA (K-HB-TEKLIF, 02.09.2026)
+ * ---------------------------------------------------------------------------
+ *  ⛔ KORUMA SINIFI: HB "Avantajlı Teklifler" dosyası KOŞULLU bir kampanya
+ *  teklifidir; tarife tablosuna girerse `dilimBul` bugünkü fiyata indirimli
+ *  oranı uygular ve NET olduğundan YÜKSEK çıkar. Trendyol'un "İndirimli
+ *  Komisyon Tarifeleri" dosyası için 20.08.2026'da verilen kararla aynı sınıf.
+ *
+ *  ⭐ ÖLÇÜT DEĞER TESTİ — gövde ÇAĞRILIYOR, kaynak taranmıyor.
+ *  Kurgu, kullanıcının 02.09.2026'da yüklediği GERÇEK dosyanın başlık
+ *  yapısıdır (iki satırlı: `Teklif N` üstte, `Üst Fiyat`/`Komisyon` altta).
+ * ---------------------------------------------------------------------------
+ */
+{
+  console.log("");
+  console.log("10c) TEKLİF DOSYASI TANIMA");
+
+  /** Gerçek dosyanın yapısı — "Açıklama" sayfası ÖNCE geliyor (tuzak buydu). */
+  const teklifDosyasi = [
+    {
+      sheet: "Açıklama",
+      data: [
+        ["Excel Kolon Adı", "Karşılığı", "Örnek"],
+        ["Ürün Adı", "Ürünün adını belirtir.", "Phazz Brand Ayakkabı"],
+      ] as unknown[][],
+    },
+    {
+      sheet: "Teklifler",
+      data: [
+        ["Ürün Adı", "Satıcı Stok Kodu", "SKU", "Mevcut Fiyat", "Mevcut Komisyon", "Teklif 1", null, "Teklif 2", null],
+        [null, null, null, null, null, "Üst Fiyat", "Komisyon", "Üst Fiyat", "Komisyon"],
+        ["Delonghi Dedica", "HBV00000A3BP9", "HBV00000A3BP9", 15269, "13,00 %", 8886, "4,7 %", 8442, "4,2 %"],
+      ] as unknown[][],
+    },
+  ];
+
+  kontrol(
+    "gerçek teklif dosyası TANINIYOR (yapıdan, adsız)",
+    teklifDosyasiMi(teklifDosyasi) === true,
+  );
+  /** ⛔ İLK SAYFA "Açıklama" — yalnız ona bakan bir tanıma dosyayı kaçırırdı. */
+  kontrol(
+    "  ...ilk sayfa Açıklama olsa da BÜTÜN sayfalar taranıyor",
+    teklifDosyasiMi([teklifDosyasi[0]]) === false &&
+      teklifDosyasiMi(teklifDosyasi) === true,
+  );
+  kontrol(
+    "  ...dosya adı da tanıtıyor (ikinci onay)",
+    teklifDosyasiMi([], "Avantajlı_Teklifler-02-09-2026-10_00.xlsx") === true,
+  );
+
+  /**
+   * ⛔ YANLIŞ YANMA YÖNÜ: gerçek bir tarife dosyası teklif SAYILMAMALI.
+   * Sayılsaydı geçerli bir yükleme "bu tarife değil" diye reddedilirdi.
+   */
+  const tarifeDosyasi = [
+    {
+      sheet: "Sayfa1",
+      data: [
+        ["BARKOD", "ÜRÜN İSMİ", "1.Fiyat Alt Limit", "1.KOMİSYON", "2.Fiyat Üst Limiti", "2.KOMİSYON"],
+        ["8697975600803", "Tefal Blender", 0, 21, 1000, 8.4],
+      ] as unknown[][],
+    },
+  ];
+  kontrol(
+    "gerçek TARİFE dosyası teklif SAYILMIYOR",
+    teklifDosyasiMi(tarifeDosyasi) === false,
+  );
+  /** İçinde "Teklif" kelimesi geçen ama yapısı tarife olan dosya da geçmemeli. */
+  kontrol(
+    "  ...yalnız 'Teklif' kelimesi yetmiyor (alt başlık da aranıyor)",
+    teklifDosyasiMi([
+      {
+        sheet: "S",
+        data: [
+          ["BARKOD", "Teklif 1", "Açıklama"],
+          ["8697975600803", "x", "y"],
+        ] as unknown[][],
+      },
+    ]) === false,
+  );
+  kontrol("boş dosya teklif sayılmıyor", teklifDosyasiMi([]) === false);
 }
 
 console.log("");
