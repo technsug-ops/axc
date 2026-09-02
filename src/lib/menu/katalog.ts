@@ -45,6 +45,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   tazminat: "/tazminat",
   nakitTakvimi: "/nakit-takvimi",
   rapor: "/rapor",
+  /** K129 — panelin dört analiz ekseninin tam, süzülebilir listesi. */
+  urunAnalizi: "/rapor/urunler",
 
   urunKarti: "/kart",
   kanalSkulari: "/kanal-sku",
@@ -136,6 +138,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "tazminat", varsayilanGrup: "grupPara" },
   { anahtar: "nakitTakvimi", varsayilanGrup: "grupPara" },
   { anahtar: "rapor", varsayilanGrup: "grupPara" },
+  { anahtar: "urunAnalizi", varsayilanGrup: "grupPara" },
 
   // ── ÜRÜN VE KANAL ───────────────────────────────────────────────────────
   { anahtar: "urunKarti", varsayilanGrup: "grupUrunKanal" },

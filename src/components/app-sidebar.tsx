@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import {
   CalendarCheck,
   BarChart3,
+  ListFilter,
   Banknote,
   ChevronDown,
   BookOpen,
@@ -116,6 +117,7 @@ const MENU_IKONLARI: Record<string, typeof Package> = {
   tazminat: PackageX,
   nakitTakvimi: CalendarClock,
   rapor: BarChart3,
+  urunAnalizi: ListFilter,
 
   urunKarti: ScanBarcode,
   kanalSkulari: Tags,

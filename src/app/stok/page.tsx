@@ -42,6 +42,9 @@ import {
   bandinVaryantlari,
   yaslanmaListesi,
   yasSuzgeciCoz,
+  yasSeciminiCoz,
+  secimVaryantlari,
+  YAS_KOVALARI,
   YAS_BANTLARI,
 } from "@/lib/yaslanma";
 import { sayfaCoz } from "@/lib/sayfalama";
@@ -166,15 +169,24 @@ export default async function StokSayfasi({
    */
   const kanalSecenekleri = await pazaryeriKanallari();
 
-  const yasBandi = yasSuzgeciCoz(yas);
+  /**
+   * ⛔ TEK KAPI, İKİ SÖZCÜK DAĞARCIĞI (K131). `yasSeciminiCoz` hem ROZET
+   * bandını (`amber` · `kirmizi`) hem KOVA kodunu (`15-30` …) tanır.
+   *
+   * ⚠ ESKİ KODLAR YERİNDE KALDI VE BU BİLİNÇLİ: panelin "ölü sermaye"
+   * rozeti `/stok?yas=kirmizi` adresine gidiyor (ölçüldü 02.09.2026: 110
+   * kalem). Kova kodları eskilerin YERİNE konsaydı o bağlantı hiçbir hata
+   * vermeden boş liste açardı — sessiz kırılmanın ders kitabı hâli.
+   */
+  const yasSecimi = yasSeciminiCoz(yas);
   let yasVaryantlari: string[] | null = null;
   let maliyetsizListe: string[] | null = null;
 
-  if (yasBandi || maliyetsizIsteniyor) {
+  if (yasSecimi || maliyetsizIsteniyor) {
     const partiler = await acikPartilerToplu(prisma, null);
     if (maliyetsizIsteniyor) maliyetsizListe = maliyetsizVaryantlar(partiler);
-    if (yasBandi) {
-      yasVaryantlari = bandinVaryantlari(
+    if (yasSecimi) {
+      yasVaryantlari = secimVaryantlari(
         yaslanmaListesi(
           [...partiler.entries()].map(([variantId, liste]) => ({
             variantId,
@@ -183,7 +195,7 @@ export default async function StokSayfasi({
           })),
           new Date(),
         ),
-        yasBandi,
+        yasSecimi,
       );
     }
   }
@@ -506,6 +518,11 @@ export default async function StokSayfasi({
         tasinanlar={{ q: arama, yas, maliyet, kanal }}
         kanallar={kanalSecenekleri}
         seciliKanal={kanal && kanal !== "yok" ? kanal : undefined}
+        /* ⚠ YALNIZ KOVA GEÇİYOR: bant seçiliyken (panelden gelinmişse)
+           hiçbir çip aktif görünmez ve bu DOĞRUDUR — bant çiplerde
+           temsil edilmiyor. Bandı bir kovaya "en yakın" diye eşlemek,
+           kullanıcıya seçmediği bir kovayı seçmiş gibi gösterirdi. */
+        seciliKova={yasSecimi?.tur === "kova" ? yasSecimi.kova : undefined}
       />
 
       {/*
@@ -536,10 +553,20 @@ export default async function StokSayfasi({
       {/* SESSİZ SÜZGEÇ YASAK: yaş süzgeci açıkken ekranda GÖRÜNÜR ve tek
           tıkla kaldırılır. Görünmeseydi kullanıcı eksik listeyi deponun
           tamamı sanardı — bu dosyada `tumStok` de aynı sebeple var. */}
-      {yasBandi ? (
+      {yasSecimi ? (
         <div className="flex flex-wrap items-center gap-2">
           <DurumRozeti durum="olumsuz" isaretsiz>
-            {t("yasSuzgeci", { gun: YAS_BANTLARI.kirmiziGun })}
+            {/* ⛔ ROZET SEÇİMİ ANLATIR, SABİT BİR SAYIYI DEĞİL.
+                Eskiden burada koşulsuz `kirmiziGun` (61) yazıyordu ve
+                `?yas=amber` seçiliyken de "61+ gündür bekleyenler" diyordu —
+                yani rozet, süzgecin GERÇEKTE ne süzdüğünü YANLIŞ söylüyordu.
+                Kovalar eklenince aynı satır yedi kez daha yanlış olacaktı.
+                _(Anayasa: "metin, sahip olmadığı anlamı iddia etmez".)_ */}
+            {yasSecimi.tur === "kova"
+              ? t("yasSuzgeciKova", { kova: t(`yasKova${yasSecimi.kova}`) })
+              : yasSecimi.bant === "KIRMIZI"
+                ? t("yasSuzgeci", { gun: YAS_BANTLARI.kirmiziGun })
+                : t("yasBantAmber", { gun: YAS_BANTLARI.amberGun })}
           </DurumRozeti>
           <Baglanti href={arama ? `/stok?q=${encodeURIComponent(arama)}` : "/stok"}>
             {ortak("temizle")}

@@ -8,6 +8,7 @@ import {
   type Siralama,
   type SiralamaAlani,
 } from "@/lib/stok-siralama";
+import { YAS_KOVALARI, type YasKovasi } from "@/lib/yaslanma";
 
 /**
  * ============================================================================
@@ -71,6 +72,7 @@ export async function SiralaSuzgec({
   tasinanlar,
   kanallar,
   seciliKanal,
+  seciliKova,
 }: {
   sira: Siralama;
   stokSuzgeciAcik: boolean;
@@ -86,6 +88,13 @@ export async function SiralaSuzgec({
    */
   kanallar: { kod: string; ad: string }[];
   seciliKanal: string | undefined;
+  /**
+   * K131 — seçili raf yaşı kovası. `undefined` = kova seçili değil.
+   * ⚠ ROZET BANDI (`amber`/`kirmizi`) buraya GELMEZ: o ayrı bir sözcük
+   * dağarcığı ve çiplerde karşılığı yok. Bant seçiliyken hiçbir kova çipi
+   * aktif görünmez ve bu doğrudur — kullanıcı panelden gelmiştir.
+   */
+  seciliKova: YasKovasi | undefined;
 }) {
   const t = await getTranslations("Stok");
 
@@ -162,6 +171,37 @@ export async function SiralaSuzgec({
         <EyeOff className="size-4" aria-hidden />
         {t("sifirGizle")}
       </Cip>
+
+      {/*
+        ═══ K131 — RAF YAŞI KOVALARI ═════════════════════════════════════
+        Kullanıcı isteği 02.09.2026: yedi aralık.
+
+        📏 SINIRLAR ÖLÇÜLDÜ (`npm run canli:yas-dagilimi`, 230 raflı kalem):
+        kovaların YEDİSİ DE DOLU, boş kova yok, kapsama tam. Boş bir kova
+        çizmek, tıklayana boş liste açıp "bozuk mu" dedirtirdi.
+
+        ⚠ ÇİP LİSTESİ `YAS_KOVALARI` DİZİSİNDEN — burada elle sıra tutulmuyor.
+        Sekizinci kova eklenirse bu dosyaya dokunulmayacak.
+
+        ⚠ AKTİF KOVAYA TEKRAR BASMAK SÜZGECİ KALDIRIR (İlke #10: açtığın
+        şeyi kapatmanın yolu, açtığın düğmedir).
+      */}
+      <span className="text-muted-foreground ml-2 text-sm">
+        {t("yasKovaBaslik")}
+      </span>
+      {YAS_KOVALARI.map((k) => (
+        <Cip
+          key={k.kod}
+          aktif={seciliKova === k.kod}
+          href={adres({
+            yas: seciliKova === k.kod ? undefined : k.kod,
+            sirala: sira.alan === "ad" ? undefined : sira.alan,
+            yon: sira.alan === "ad" ? undefined : sira.yon,
+          })}
+        >
+          {t(`yasKova${k.kod}`)}
+        </Cip>
+      ))}
 
       {/*
         ═══ K112 — KANALDA KODU OLMAYANLAR ═══════════════════════════════

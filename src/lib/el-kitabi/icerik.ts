@@ -49,6 +49,7 @@ export const BOLUMLER = [
   { kimlik: "nakit", ad: "Nakit takvimi" },
   { kimlik: "envanter", ad: "Envanter değeri" },
   { kimlik: "rapor", ad: "Dönem raporu" },
+  { kimlik: "urunAnalizi", ad: "Ürün analizi" },
   { kimlik: "talep", ad: "Destek talepleri" },
   { kimlik: "depo", ad: "Ayarlar — Depo kurulumu" },
   { kimlik: "raf", ad: "Ayarlar — Raf Konumları" },
@@ -116,6 +117,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   kanalSkulari: "kanalSku",
   giderler: "gider",
   rapor: "rapor",
+  urunAnalizi: "urunAnalizi",
   /** İki menü öğesi, tek bölüm: kart tanımı ile kart borcu aynı konudur. */
   kartlar: "kartBorcu",
   kartBorcu: "kartBorcu",
@@ -568,6 +570,28 @@ bu ekran "elimde ne var" sorusuna cevap verir.</p>
 ${neZaman(
   "Sipariş toplarken (mal hangi rafta), yeniden sipariş verirken (ne bitti) ve sayım yaparken (sistem ne diyor, rafta ne var).",
 )}
+<h3>Raf yaşı süzgeci</h3>
+<p>Çip sırasından bir aralık seçince liste <strong>o kadar gündür rafta
+bekleyen</strong> ürünlere daralır: <strong>15 gün ve altı · 16&ndash;30 ·
+31&ndash;45 · 46&ndash;60 · 61&ndash;90 · 91&ndash;180 · 181 günden fazla</strong>.
+Aynı çipe tekrar basmak süzgeci kaldırır.</p>
+<p><strong>Yaş</strong>, o üründeki <strong>en eski açık partinin</strong> giriş
+tarihinden bugüne geçen gündür &mdash; ortalama yaş ya da son giriş değil. FIFO'da
+satılacak ilk mal en eski partidir; "rafta en uzun bekleyen para" odur. Üstüne
+mal eklemek yaşı <strong>sıfırlamaz</strong>.</p>
+<div class="ek-not"><div class="etiket">Aralıklar üst sınır DAHİL</div>
+<p>&quot;16&ndash;30&quot; demek <strong>16 ile 30 arası, ikisi de dahil</strong>
+demektir. Bitişik aralıklar ne çakışır ne boşluk bırakır: 30 günlük bir kalem
+<em>yalnız</em> 16&ndash;30'da, 31 günlük kalem <em>yalnız</em> 31&ndash;45'te
+görünür. Bu yüzden aralıkların kalem sayıları toplandığında raftaki toplam
+çıkar.</p></div>
+<div class="ek-not"><div class="etiket">Renkler ile aralıklar birbirini tutar</div>
+<p>Satırlardaki uyarı renkleri <strong>31</strong> ve <strong>61</strong> günde
+değişir (amber ve kırmızı). Aralıklar bu sınırlara göre kuruldu, dolayısıyla
+<strong>bir aralığın içinde iki farklı renk çıkmaz</strong>: 15 ve altı ile
+16&ndash;30 nötr, 31&ndash;45 ile 46&ndash;60 amber, kalan üçü kırmızıdır.
+Panelin &quot;ölü sermaye&quot; uyarısına tıklayınca da aynı ekran açılır.</p></div>
+
 <h3>Stok bir DEFTERDİR, bir sayı değil</h3>
 <p>Sistem stoğu "şu an 5 adet" diye tutmaz; her hareketi tek tek yazar ve
 toplamını alır. Mal kabul <strong>+3</strong>, satış <strong>&minus;1</strong>,
@@ -1355,6 +1379,48 @@ böyle olduğunu söyler ve kategori ekranına götürür.</p>
 <p>Maliyetsiz girilmiş partiler (açılış stoğu ya da elle düzeltme) <strong>ayrı bir
 kutuda</strong> durur. Adetleri gerçektir, paraları bilinmez — bu yüzden toplamlara
 katılmazlar. Sıfır sayılsalardı envanteriniz olduğundan ucuz görünürdü.</p></div>
+</section>
+
+<section id="urunAnalizi">
+${baslik("urunAnalizi")}
+<p><strong>Ürün analizi.</strong> "Param hangi üründe, hangi ürün beni taşıyor, hangi mal rafta yatıyor?" sorularının tam listesi.</p>
+<h3>Ürün analizi (tam liste)</h3>
+<p>Paneldeki "Ürün analizi" kutusu size <strong>hükmü</strong> söyler
+("kârının %70,5'i 39 üründen geliyor"); <strong>dökümü</strong> bu sayfadadır.
+Panelde her sekmenin üstündeki <strong>"Tam listeyi aç"</strong> düğmesi ve
+yoğunlaşma cümlesinin kendisi buraya götürür.</p>
+<ul>
+<li><strong>Dağılım</strong> — kâr hangi ürünlerde toplanıyor. Kümülatif pay
+sütunu, baştan o satıra kadarki payı gösterir.</li>
+<li><strong>Verim (marj)</strong> — hacimden bağımsız: hangi ürün daha verimli
+satıyor.</li>
+<li><strong>Hacim</strong> — adet ve tutar: parayı bu dönemde hangi ürün
+getirdi.</li>
+<li><strong>Stokta bekleyen</strong> — rafta duran mal, yaşına ve bağlı
+sermayesine göre.</li>
+</ul>
+<div class="uyari"><div class="etiket">İki sekme, iki ayrı küme</div>
+<p>İlk üç sekme <strong>seçtiğiniz dönemde satılmış</strong> ürünlere bakar.
+"Stokta bekleyen" ise <strong>bugün rafta duran</strong> mala bakar ve
+<strong>dönem ile kanal süzgecinden etkilenmez</strong> — bu ekranda da yazar.
+Sebebi şu: dönemde <em>hiç satılmamış</em> ama aylardır bekleyen mal, satış
+listesinde hiç görünmez; oysa ölü sermaye tam olarak odur.</p></div>
+<h3>Süzgeçler ve satır sayısı</h3>
+<p>Marka, kategori, en az adet ve en az ciro ile daraltabilirsiniz; sıralama
+alanını ve yönünü siz seçersiniz. Liste <strong>50 satır</strong> gösterir,
+seçiciden <strong>100</strong>'e çıkarabilirsiniz (25'e de indirebilirsiniz).</p>
+<div class="ek-not"><div class="etiket">Üstteki toplam sayfanın değil, süzgecin</div>
+<p>Satır sayısını 100'den 25'e düşürdüğünüzde <strong>toplam değişmez</strong>,
+yalnız görünen satır sayısı azalır. Toplam her zaman <strong>süzgeçten geçen
+bütün ürünlerin</strong> toplamıdır. Değişseydi, ekrandaki rakam gerçeği değil
+tavanı anlatırdı.</p></div>
+<p>Kârı hesaplanamamış kalemler <strong>NET toplamına girmez</strong> ve kaç
+tane oldukları yazar — sıfır sayılmazlar. Aynı şekilde maliyeti bilinmeyen mal
+bağlı sermaye toplamına girmez; "&mdash;" görürsünüz, <strong>0 TL
+değil</strong>, çünkü o mal bedava değil, maliyeti <em>bilinmiyor</em>.</p>
+<p>Kümülatif pay sütunu <strong>yalnız NET-2'ye göre azalan sıralamada</strong>
+çıkar. Başka bir sıralama seçerseniz kaybolur ve niye kaybolduğu yazar —
+alfabetik bir listede "ilk %70" diye bir şey yoktur.</p>
 </section>
 
 <section id="talep">

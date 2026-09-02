@@ -13,6 +13,281 @@
 
 ---
 
+## 🟢 K129 — ÜRÜN ANALİZİ TAM LİSTESİ · 02.09.2026 · [KOD KOŞTU]
+
+_Kullanıcı isteği 02.09.2026, beş madde. **A paketi (1-4) teslim edildi;**
+B paketi (`/stok` yaş kovaları) sırada._
+
+> Kullanıcı: _"Kârının %70,5'i 39 üründen geliyor. Burası çok önemli bir veri,
+> süzülebilir ve listelenebilir olmalı."_ Panel bir HÜKÜM veriyordu, DÖKÜMÜ
+> yoktu — düz metin olarak yazılan bir hüküm okuyanı "hangileri?" diye
+> aramaya bırakır ve çoğu zaman aranmaz (İlke #16).
+
+### ✅ TESLİM — `/rapor/urunler`, TEK SAYFA DÖRT EKSEN
+
+⛔ **DÖRT AYRI SAYFA AÇILMADI.** Dördü de aynı kümeyi farklı sıralıyor;
+dört sayfa dört ayrı süzgeç kodu ve dört ayrı bakım demekti, ikisi
+ayrıştığı gün aynı soruya iki cevap doğardı (İlke #10).
+
+· **dağılım** (kümülatif pay) · **verim/marj** · **hacim** · **stokta bekleyen**
+· süzgeç: marka · kategori · en az adet · en az ciro · sıralama+yön
+· satır tavanı **25/50/100**, varsayılan **50** — kullanıcı şartı birebir
+· masaüstünde tablo, telefonda kart listesi (İlke #8); JavaScript'siz GET formu
+
+📏 **ÖLÇÜM PLANI DEĞİŞTİRDİ:** marka süzgeci yazılmadan önce doluluk ölçüldü —
+`Product.brand` **1090/1100 (%99,1)** dolu (LEGO 221 · Karaca 159 · TEFAL 101).
+Boş çıksaydı süzgeç yazılmayacaktı; ölü süzgeç, olmayan bir yeteneği vaat eder.
+Kategori **%100** dolu çıktı ve bedava ikinci eksen oldu.
+
+### ⛔ İKİ EKSEN İKİ AYRI KÜMEYE BAKAR — VE BU EKRANDA YAZAR
+
+Satış eksenleri "dönemde satılan"a, stok ekseni "bugün rafta duran"a bakar.
+Tek sorguya sıkıştırmak cazipti ve **yanlış olurdu**: dönemde hiç satılmamış
+ama aylardır bekleyen mal satış kümesinde HİÇ GÖRÜNMEZ — oysa ölü sermayenin
+ta kendisi odur. Stok ekseninde dönem/kanal süzgecinin **uygulanmadığı
+ekranda yazıyor**; sessizce yok sayılsaydı kullanıcı "temmuzu seçtim, rakam
+değişmedi" diye sisteme güvenini yitirirdi.
+
+### ⚠ YAZARKEN ÜÇ HATA YAPILDI VE ÜÇÜ DE ÖLÇÜMLE YAKALANDI
+
+① **Kendi ayıracımı kurmuştum** (`marka=A~B`). Onay kutusu ızgarası zaten
+tekrarlı parametre üretiyor; ayıraç bir gün marka adının içinde geçerdi ve
+süzgeç **sessizce** iki markaya bölünürdü. Tekrarlı parametreye çevrildi.
+② **Pencere sözleşmesini kendim tanımlamıştım** (`lte: bitis`); repo yarı
+açık aralık kullanıyor (`lt: bitisHaric`). Sınır günü iki ekranda farklı
+davranırdı ve fark yalnız ayın son gününde görünürdü.
+③ **`Ortak.tersAralik` anahtarının var olduğunu VARSAYMIŞTIM** — `Rapor`
+ad alanındaymış; `i18n:kontrol` yakaladı.
+
+### ⚠ BİR İŞARET DENENDİ VE TABAN ORANIYLA ELENDİ
+
+Sıralama önceliği için _"kaynak partisi tükenmiş"_ benzeri bir işaret
+düşünülmedi; onun yerine **para** ölçüt yapıldı. _(K128'de aynı sınıftan bir
+işaret ölçülüp elenmişti: %50,0 ↔ %59,5.)_
+
+**Bekçi `urun-analizi:dogrula` 65 ölçüt · 8 bölüm · mutasyon 11/11 KIRMIZI.**
+Mutasyonlar iki yönlü: davranışı KALDIRAN 8 (toplam kırpık listeden ·
+null başa · markasız satır geçiyor · tavan sabit · `~` bölmesi geri geldi ·
+sermaye sıfır sayılıyor · panel adresi elle · bölüm sayacı düştü) ve
+FAZLADAN yapan 3 (pareto her sırada · eksen varsayılanları tek değer ·
+hesaplanamayan sayısı sıfırlanıyor).
+⭐ **Ölçütlerin çoğu DEĞER TESTİ** — gövde saf olduğu için kaynak taranmıyor;
+desen yanlış yerde bulunamaz çünkü desen aranmıyor.
+
+### 🔶 HALİL TEST LİSTESİ — canlıda, gerçek cihazda
+
+1. Panel → **Ürün analizi** → "Dağılım" sekmesi → _"Kârının %70,5'i 39
+   üründen geliyor"_ cümlesine **TIKLA**.
+   → `/rapor/urunler` açılmalı, **satır tavanı 50**, sıra **NET-2 azalan**,
+   ve listenin ilk 39 satırının kümülatif payı **%70,5'e ulaşmalı**.
+   ⛔ Cümledeki sayı ile listedeki sayı TUTMUYORSA test DÜŞER.
+2. Sekmelerden **"Stokta bekleyen"** → dönem süzgecini değiştir.
+   → Rakam **DEĞİŞMEMELİ** ve ekranda bunun sebebi yazıyor olmalı.
+3. **Marka** kutusunu aç → `LEGO` + `Karaca` işaretle → Uygula.
+   → Üstteki toplam **süzgecin tamamının** toplamı olmalı; satır tavanını
+   25'e düşür, **toplam DEĞİŞMEMELİ** (yalnız görünen satır sayısı azalır).
+4. **Satır** seçicisini 100 yap → 100 satıra kadar listelenmeli.
+5. **Telefonda** aç: tablo yerine kart listesi çıkmalı, marka kutusu
+   parmakla işaretlenebilmeli.
+6. Sıralamayı **"Ürün adı"** yap → dağılım sekmesinde kümülatif pay sütunu
+   **KAYBOLMALI** ve niye gösterilmediği yazmalı.
+
+⏭ **B PAKETİ SIRADA:** `/stok` yaş kovaları (`<15 · 15-30 · 30-45 · 45-60 ·
+60-90 · 90-180 · 180+`). ⭐ Ölçüldü: `/stok`ta **zaten** yaş süzgeci var
+(`YAS_SUZGEC_KODU`, 3 bant) — iş sıfırdan değil, 3 bandı 7 kovaya
+genişletmek. ⛔ Rozet eşiklerine (31/61 gün) DOKUNULMAYACAK: onlar
+14.08.2026 mimar kararı ve ÖLÇÜLMÜŞ; yeni kovalar SÜZGEÇ, rozet değil.
+
+---
+
+## 🟢 K131 — RAF YAŞI KOVALARI · 02.09.2026 · [KOD KOŞTU]
+
+_Kullanıcı isteğinin 5. maddesi (B paketi). Sınırlar **kullanıcı tarafından
+düzeltildi** — ilk yazımım kusurluydu._
+
+> Kullanıcı: _"Stok sayfasında bunlara göre sıralama olsun (örn. 15 günden az
+> · 15-30 · 30-45 · 45-60 · 60-90 · 90-180 · 180 günden fazla)."_
+
+### ⭐ KULLANICI SINIR SEMANTİĞİNİ DÜZELTTİ — VE HAKLIYDI
+
+İlk yazımda sınırlar **yarı açıktı** (`15-30` = gün 15..29). Kullanıcı sordu:
+
+> _"Ara rakamlarda olanlar nerede gösteriliyor? Acaba bir sonraki süzgeci
+> 1 sayı fazlasından mı başlatsak — 16–30, 31–45, 46–60, 61–90, 91–180, 181+?"_
+
+**Kayıp yoktu** (30 günlük kalem `30-45`teydi) ama **etiket belirsizdi**:
+`15-30` yazan çipe bakan biri 30'un hangi kovada olduğunu bilemez.
+
+⛔ **VE ÖLÇÜM DAHA BÜYÜK BİR KUSUR GÖSTERDİ — BANDI KESİYORDU:**
+
+    ESKİ  30-45 → gün 30..44 = NÖTR + AMBER karışık     ⛔
+    ESKİ  60-90 → gün 60..89 = AMBER + KIRMIZI karışık  ⛔
+    bandı kesen kova: 2/7
+
+Yani tek bir kovada **iki farklı renkte satır** çıkıyordu. Kullanıcının
+önerisiyle kesişme **0/7** ve kovalar rozet bantlarının İÇİNE tam oturuyor.
+_(Anayasa: "bir sınırın yönü ölçülmeden çevrilmez" — burada ölçüm sınırı
+çevirtti.)_
+
+### 📏 CANLI ÖLÇÜM — `npm run canli:yas-dagilimi` (salt okuma)
+
+    rafta stoğu olan 230 kalem · ortanca 53 gün · p75 135 · max 536
+
+    0-15      83 kalem   ₺466.785,13
+    16-30     10 kalem   ₺ 68.276,96
+    31-45     15 kalem   ₺256.532,72
+    46-60     12 kalem   ₺155.372,54
+    61-90     29 kalem   ₺305.873,80
+    91-180    53 kalem   ₺506.051,27
+    181+      28 kalem   ₺178.813,14
+
+    BOŞ KOVA 0/7 · KAPSAMA TAM (230 = 230)
+
+    ⭐ KOVA/BANT ÖRTÜŞMESİ — üçü de tutuyor:
+       NÖTR     93 = 0-15 + 16-30              93  ✓
+       AMBER    27 = 31-45 + 46-60             27  ✓
+       KIRMIZI 110 = 61-90 + 91-180 + 181+    110  ✓
+
+**90 günden uzun bekleyen 81 kalem / ₺684.864.**
+
+### ⛔ İKİ SÖZCÜK DAĞARCIĞI — ESKİ KODLAR YERİNDE KALDI
+
+Panelin "ölü sermaye" rozeti **`/stok?yas=kirmizi`**'ye gidiyor (110 kalem).
+Kova kodları o kodun YERİNE konsaydı bağlantı hiçbir hata vermeden **boş
+liste** açardı. Tek `yas` parametresi, tek kapı (`yasSeciminiCoz`), iki
+dağarcık: **BANT** (31/61 — ölçülmüş mimar kararı, DOKUNULMADI) ve **KOVA**.
+
+⭐ Kovalar bantlara uyduruldu, **bantlar kovalara değil**: kullanıcının
+süzgeci taşınabilir, ölçülmüş bir eşik taşınamaz.
+
+### ⚠ VE MEVCUT BİR HATA ORTAYA ÇIKTI, DÜZELTİLDİ
+
+`/stok`taki aktif süzgeç rozeti **koşulsuz "61+ gündür bekleyenler"** yazıyordu
+— `?yas=amber` seçiliyken bile. Rozet, süzgecin GERÇEKTE ne süzdüğünü yanlış
+söylüyordu; kovalar eklenince aynı satır yedi kez daha yanlış olacaktı.
+_(Anayasa: "metin, sahip olmadığı anlamı iddia etmez".)_
+
+### ✅ NEREYE KONDU
+
+· **`/stok`** — yedi kova çipi, `YAS_KOVALARI` dizisinden çiziliyor
+· **`/rapor/urunler` stok ekseni** — aynı kovalar (İlke #10). ⛔ Öteki
+  eksenlerde ÇİZİLMİYOR: satış satırlarının `yasGun`u `null`, kova seçilse
+  boş liste açardı.
+· **Ölçüm betiği kovaları GÖVDEDEN okuyor** — ikinci bir sınır listesi yok;
+  olsaydı ölçüm bir sınır, ekran başka bir sınır kullanır ve rapor
+  "doğrulanmış" görünürdü.
+
+**Bekçi `urun-analizi:dogrula` 95 → 106 ölçüt · mutasyon 17/17 KIRMIZI.**
+⭐ En değerli ölçüt kullanıcının bulgusundan doğdu: **hiçbir kova bir rozet
+bandını KESMEZ** — ve ölçüt sınır SAYILARINA değil, `kovaBul` + `yasBandi`
+gövdelerinin DAVRANIŞINA bağlı. Mutasyon: sınırı yarı açığa döndüren senaryo
+kırmızı yanıyor.
+
+### 🔶 HALİL TEST LİSTESİ
+
+1. **Panel → "ölü sermaye" rozeti** → `/stok?yas=kirmizi`, **110 kalem**,
+   rozet **"61+ gündür bekleyenler"**. ⛔ Boş liste = test DÜŞER.
+2. `/stok` → **"91–180 gün"** → **53 kalem**, rozet **"Raf yaşı: 91–180 gün"**.
+3. Aynı çipe **tekrar** bas → süzgeç kalkar, tüm liste döner.
+4. **"15 gün ve altı"** → 83 · **"16–30 gün"** → 10 · **"181 günden fazla"** → 28.
+5. ⭐ **ÖRTÜŞME TESTİ:** "31–45" (15) + "46–60" (12) = **27**, ve bu sayı
+   panelin AMBER bandıyla aynı olmalı.
+6. `/rapor/urunler` → **Stokta bekleyen** → aynı kovalar, **aynı sayılar**.
+7. **Dağılım** sekmesine geç → kova çipleri **GÖRÜNMEMELİ**.
+8. **Telefonda** çipler parmakla basılabilmeli (44 px).
+
+---
+
+## 🔧 K130 — PANO KİMLİK ARACI BAŞLIKLARI GÖRMÜYOR · 02.09.2026 · [ÖLÇÜLDÜ]
+
+⛔ `scripts/pano-kimlik.ts` kimlikleri yalnız **tablo satırından** okuyor
+(`SATIR_KIMLIGI = /^\|\s*\*\*([^*|]+)\*\*\s*\|/`). Panonun üst
+kısmındaki **`## K128 — …` biçimli 30 kalem GÖRÜNMÜYOR.**
+
+📏 **ÖLÇÜLDÜ 02.09.2026:** `BEKLEYENLER.md`de başlık biçimli **30** kalem,
+tablo satırı **86**. `npm run pano:sonraki` "100 kimlik okundu" diyor ve
+K128'i **BOŞ** gösteriyor — oysa K128 az önce panoya yazıldı (satır 16).
+
+⚠ **BEDELİ: BEŞİNCİ KİMLİK ÇAKIŞMASI.** K10 dört çakışmadan sonra
+_"elle atama üçüncü kez tutmadı, bu artık bir tercih değil ölçülmüş bir
+kusur"_ diyerek aracı kurmuştu. Araç şimdi **kendi kör noktası yüzünden**
+aynı çakışmayı üretecek: bir sonraki kalem de K128 diye önerilecek.
+
+⭐ **ÇARE DOSYA LİSTESİ DEĞİL, İKİNCİ DESEN:** başlık biçimi de okunur
+(başlık deseni: iki-üç diyez, ardından kalem kodu) ve `pano:dogrula`nın
+çakışma kontrolü iki biçimi BİRLİKTE görür. ⚠ Bekçisi mutasyonla gelmeli:
+başlık desenini kaldıran senaryo KIRMIZI yanmalı, yoksa kör nokta geri döner.
+
+_(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur" — burada
+ölçüt biçime bağlanmış ve pano iki biçim kullanıyor.)_
+
+---
+
+## 🔵 K128 — SAYIM FAZLASININ MALİYETİ · 02.09.2026 · [ÖLÇÜLDÜ · KULLANICI KONTROLÜNDE]
+
+_02.09'da maliyet doğrulama turu **GEÇERSİZ** ilan edildi (araç cevabı
+gösteriyordu — döngüsel teyit, `b2d3baf`). Geriye iki soru kalmıştı; biri
+bugün kapandı, öteki kullanıcıya ölçülmüş hâlde verildi._
+
+### ✅ ① `satis.xlsx` BEYANI — **KAPANDI 02.09.2026, KULLANICI BEYANIYLA**
+
+> Kullanıcı: _"satis.xlsx dosyası muteber bir dosya ve onu faturalardan
+> aldığım bilgilerle yazdım."_
+
+Kaynak hiyerarşisinde bu dosya artık **ikinci basamak değil, birincinin
+türevi**: rakamlar kanalın/tedarikçinin faturasından okunmuş. `M` sütunundan
+yazılan alış fiyatları için ayrı bir fatura çaprazı **AÇILMAZ**.
+⚠ Bu bir ölçüm değil BEYANDIR ve öyle yazılmıştır — ileride tek bir kalem
+tutmazsa açılış şartı budur, tekrar tur açılmaz.
+
+### 🔵 ② "FAZLA MAL EN SON PARTİDEN" VARSAYIMI — **AÇIK, LİSTE VERİLDİ**
+
+`canli-sayim-esas.ts:349` rafta fazla çıkan mala **o varyantın en son
+partisinin** birim maliyetini yazdı. Türetmedir, uydurma değildir — ama
+kampanya döngüsüyle alan bir firmada fazla mal **eski stok** olabilir.
+⛔ Fiyat farkının YÖNÜ şüphe üretmez (anayasa); sorulan şey fiyat değil
+**malın YAŞI**.
+
+**ÖLÇÜM — `npm run canli:sayim-fazlasi` (salt okuma, CSV üretir):**
+
+    incelenen sayım fazlası partisi   77
+      ⭐ yayılma var (soru anlamlı)    42
+      ✓ tek fiyat, soru doğmuyor      34
+      ⚠ maliyet HİÇ yok (NO_COST)      1   axcali2601 · 14 adet
+
+    ⭐ BUGÜNKÜ PARA ETKİSİ ÇOK KÜÇÜK: 77 partiden SATILAN yalnız 2 ADET
+       axcali2467 Tefal Easyblend  1 adet · atanan 2.361,50 ↔ en eski 1.931,34
+       axcali2177 Cake Pro kalıp   2 adet (1 satıldı) · 427,48 ↔ 356,38
+
+    mesafe (kayıp DEĞİL, sonucun düşebileceği aralık)
+      tam aralık toplamı    61.154,06
+      en eski seçilseydi    45.868,13
+
+⚠ **BİR İŞARET DENENDİ VE ÖLÇÜMLE ELENDİ.** _"Maliyeti alınan parti sayım
+anında zaten tükenmişse fazla mal ondan olamaz"_ diye ayırt edici bir işaret
+kuruldu; **taban oranı çürüttü** — bütün fazlalarda %50,0, yayılması
+olanlarda %59,5. İki oran birbirine yakın, yani işaret ayırt etmiyor.
+Dikkat sırasını **para** belirliyor. _(İşaret çıktıda duruyor ama hüküm
+olarak kullanılmıyor; ölçülmeden kullanılsaydı dikkati boşa yönlendirirdi.)_
+
+⚠ **AYKIRI DEĞERLER — ÖNCE DOĞRULANIR, DÜZELTİLMEZ.** Üç satırda fiyat farkı
+kampanyayla açıklanamayacak kadar büyük ve bunlar **veri sorusu**, fiyat
+sorusu değil:
+· `axcali1841` — 2025-08-09 tarihli üç parti **₺1,00** (yayılma %84.800)
+· `axcali1852` — 4.800'lerin arasında tek bir **₺1.638,53**
+· `axcali2975` — 899,99 → 2.600,70 (%189, LEGO; gerçek de olabilir)
+⛔ OneBlade dersi geçerli: ₺27,16 "imkânsız" görünmüştü ve **gerçekti**
+(hediye kuponu). Bunlar düzeltilmez, **sorulur.**
+
+**KULLANICIDA:** `veri/ozel/sayim-fazlasi-2026-09-02.csv` — 77 satır, küme
+etiketi + bütün alım fiyatları tarihiyle. Fatura/kutu tarihine bakıp malın
+yaşı söylenecek.
+⛔ **KOD DEĞİŞİKLİĞİ YAPILMADI ve cevap gelmeden YAPILMAZ** — hangi partinin
+doğru olduğu bilinmeden yazılacak her düzeltme, doğru bir kaydı bozma
+riskini düzeltme kılığında taşır.
+
+---
+
 ## 🟠 K119 — YEDEK BORU HATTI · **DARALDI** (yazım güvenliği sağlandı)
 
 _K119a teslim edildi 31.08.2026. Kalan: gece otomasyonu Vercel askısına bağlı._

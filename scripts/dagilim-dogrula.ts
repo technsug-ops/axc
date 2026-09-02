@@ -12,6 +12,7 @@ import { satisKosulu } from "../src/lib/liste-suzgeci";
 import {
   bandinVaryantlari,
   yasSuzgeciCoz,
+  yasSeciminiCoz,
   YAS_SUZGEC_KODU,
 } from "../src/lib/yaslanma";
 import { sermayeVerimiSiralamasi } from "../src/lib/panel/kar-orani";
@@ -453,10 +454,31 @@ console.log("=".repeat(70));
   );
 
   const stok = readFileSync("src/app/stok/page.tsx", "utf8");
-  kontrol("/stok yaş süzgecini tanıyor", stok.includes("yasSuzgeciCoz(yas)"));
+  /**
+   * ⚠ ÜÇ ÇAPA K131'DE ESKİDİ — SUSTURULMADI, GÜNCELLENDİ (02.09.2026).
+   *
+   * Korudukları DAVRANIŞ aynı; değişen, davranışın hangi gövdeden geçtiği.
+   * `/stok` artık tek kapıdan (`yasSeciminiCoz`) geçiyor çünkü iki sözcük
+   * dağarcığı var: ROZET bandı (`amber`/`kirmizi`) ve KOVA (`16-30` …).
+   * Eski çapalar `yasSuzgeciCoz(yas)` ve `if (yasBandi) {` arıyordu; ikisi
+   * de artık yok. Ölçüt gevşetilmedi — kapı yeni adıyla aranıyor.
+   * _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez"; eskiyen
+   * ölçüt güncellenir ve NİYE eskidiği yazılır.)_
+   */
+  kontrol("/stok yaş süzgecini tanıyor", stok.includes("yasSeciminiCoz(yas)"));
+  /**
+   * ⛔ TEK KAYNAK ŞARTI DEĞİŞMEDİ, ZİNCİRE BİR HALKA EKLENDİ.
+   * Panel `bandinVaryantlari`yi doğrudan çağırıyor; `/stok` ise
+   * `secimVaryantlari` üzerinden — ve O GÖVDE bant dalında yine
+   * `bandinVaryantlari`ye devrediyor. Ölçüt bu DEVRİ de sınıyor: devir
+   * kopsaydı iki ekran aynı bandı iki farklı kuralla süzerdi.
+   */
+  const yaslanmaKaynagi = readFileSync("src/lib/yaslanma.ts", "utf8");
   kontrol(
     "  ...AYNI kuralı çağırıyor (bandinVaryantlari — tek kaynak)",
-    stok.includes("bandinVaryantlari(") && panel.includes("bandinVaryantlari("),
+    stok.includes("secimVaryantlari(") &&
+      panel.includes("bandinVaryantlari(") &&
+      /return bandinVaryantlari\(satirlar, secim\.bant\);/.test(yaslanmaKaynagi),
   );
   kontrol(
     "  ...süzgeç ekranda GÖRÜNÜR ve temizlenebilir (sessiz süzgeç yok)",
@@ -464,7 +486,20 @@ console.log("=".repeat(70));
   );
   kontrol(
     "  ...süzgeç kapalıyken yaşlanma sorgusu KOŞMUYOR",
-    stok.includes("if (yasBandi) {"),
+    stok.includes("if (yasSecimi) {"),
+  );
+  /**
+   * ⭐ K131 — PANELİN BAĞLANTISI KIRILMASIN.
+   * Panel `/stok?yas=kirmizi` adresine gidiyor; kova kodları eski kodların
+   * YERİNE konsaydı bağlantı hiçbir hata vermeden BOŞ liste açardı.
+   */
+  kontrol(
+    "  ...eski BANT kodu hâlâ tanınıyor (panel bağlantısı sağlam)",
+    yasSeciminiCoz(YAS_SUZGEC_KODU.KIRMIZI)?.tur === "bant",
+  );
+  kontrol(
+    "  ...ve KOVA kodu da tanınıyor (iki dağarcık tek kapıda)",
+    yasSeciminiCoz("61-90")?.tur === "kova",
   );
 
   kontrol("kirmizi → KIRMIZI", yasSuzgeciCoz("kirmizi") === "KIRMIZI");

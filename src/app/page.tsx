@@ -114,6 +114,10 @@ import {
 import { vitrinKutusunuTopla } from "@/lib/panel/vitrin-verisi";
 import { tarifeUyarisiVarMi } from "@/lib/panel/tarife-penceresi";
 import { suzgecAdresi } from "@/lib/suzgec";
+import {
+  analizAdresi as urunAnaliziAdresi,
+  yogunlasmaAdresi,
+} from "@/lib/rapor/urun-analizi";
 import { izinVarMi } from "@/lib/yetki";
 import {
   bandinVaryantlari,
@@ -250,6 +254,7 @@ export default async function AnaSayfa({
 
   const parametreler = await searchParams;
   const t = await getTranslations("Panel");
+  const tAnaliz = await getTranslations("UrunAnalizi");
   // "kârda"/"zararda" satış kavramıdır; sözlüğü çoğaltmak yerine oradan okunur.
   const tSatis = await getTranslations("Satis");
   // Karşılaştırma metinleri rapor sözlüğünde; aynı kavramı ikinci bir
@@ -1262,6 +1267,22 @@ export default async function AnaSayfa({
           bitis: parametreler.bitis ?? "",
         }
       : { pencere: donemTuru };
+
+  /**
+   * ÜRÜN ANALİZİ TAM LİSTESİNİN TABANI — dönem · kanal · para birebir taşınır.
+   *
+   * ⛔ ADRESİ BURADA KURMUYORUM, `@/lib/rapor/urun-analizi`den ÜRETİYORUM.
+   * Panel kendi adresini elle kursaydı, süzgeç sözleşmesi değiştiği gün
+   * panelin sayısı ile listenin kümesi SESSİZCE ayrışırdı — ve "sayı = liste"
+   * panelin en temel sözüdür (İlke #16).
+   */
+  const analizTabani = {
+    pencere: donemParametreleri().pencere,
+    baslangic: donemParametreleri().baslangic,
+    bitis: donemParametreleri().bitis,
+    kanal: parametreler.kanal,
+    para: seciliPara,
+  };
 
   /**
    * Kıyas seçimi adreste yaşar; DÖNEM, KANAL ve SEKME seçimi KORUNUR.
@@ -2816,12 +2837,45 @@ export default async function AnaSayfa({
          * bakmadan cevaplatıyor (İlke #9).
          */
         ustEylem={
-          <Button asChild variant="secondary" size="sm" className="h-9">
-            <Link href="/kart">
-              <ScanBarcode />
-              {t("kartAra")}
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary" size="sm" className="h-9">
+              <Link href="/kart">
+                <ScanBarcode />
+                {t("kartAra")}
+              </Link>
+            </Button>
+            {/* ── TAM LİSTE (İlke #13 + #16, kullanıcı isteği 02.09.2026) ──
+                Panel bir HÜKÜM yeridir; döküm kendi sayfasına gider ve
+                özette rakam + "aç" bağlantısı kalır.
+
+                ⛔ DÖRT SEKMEYE DÖRT AYRI BAĞLANTI KOYMADIM: tek düğme,
+                SEÇİLİ sekmenin eksenine gider. Dört yere yazsaydım biri
+                güncellenip öteki unutulur ve bir sekme yanlış listeye
+                açılırdı — üstelik bunu kimse fark etmezdi.
+
+                ⚠ PANELİN SEKME ADI İLE EKSEN ADI AYNI DEĞİL ("verim" ↔
+                "marj") ve eşleme AÇIKÇA yazılı; `as` ile zorlansaydı
+                "verim" ekseni diye var olmayan bir eksene gidilir ve sayfa
+                sessizce varsayılana düşerdi. */}
+            <Button asChild variant="secondary" size="sm" className="h-9">
+              <Link
+                href={urunAnaliziAdresi({
+                  ...analizTabani,
+                  eksen:
+                    analizSekmesi === "verim"
+                      ? "marj"
+                      : analizSekmesi === "hacim"
+                        ? "hacim"
+                        : analizSekmesi === "stok"
+                          ? "stok"
+                          : "dagilim",
+                })}
+              >
+                <ArrowRight />
+                {tAnaliz("panelAc")}
+              </Link>
+            </Button>
+          </div>
         }
         secili={analizSekmesi}
         sekmeler={[
@@ -2950,13 +3004,33 @@ export default async function AnaSayfa({
                       </div>
 
                       {/* YOĞUNLAŞMA CÜMLESİ — abartısız, yorum kullanıcının.
-                          Panel yalnız dağılımı dürüstçe söyler. */}
+                          Panel yalnız dağılımı dürüstçe söyler.
+
+                          ⭐ VE ARTIK KAYNAĞINA GÖTÜRÜR (İlke #16, kullanıcı
+                          isteği 02.09.2026): _"kârının %70,5'i 39 üründen
+                          geliyor — burası çok önemli bir veri, süzülebilir
+                          ve listelenebilir olmalı."_ Düz metin olarak yazılan
+                          bir hüküm, okuyanı "hangileri?" diye aramaya bırakır
+                          ve çoğu zaman aranmaz.
+
+                          ⛔ ADRESİ `yogunlasmaAdresi` ÜRETİR: sayı NET-2'ye
+                          göre AZALAN paretodan çıkıyor ve adres tam onu
+                          kuruyor. Sıra başka olsaydı açılan listenin ilk 39
+                          satırı BAŞKA ürünler olurdu ve kullanıcı cümledeki
+                          39 ile ekrandaki 39'un aynı olmadığını göremezdi. */}
                       {yogunluk ? (
                         <p className="text-sm">
-                          {t("yogunlasmaCumlesi", {
-                            sayi: yogunluk.urunSayisi,
-                            yuzde: bicim.yuzde(yogunluk.yuzde),
-                          })}
+                          <Baglanti
+                            href={yogunlasmaAdresi(
+                              yogunluk.urunSayisi,
+                              analizTabani,
+                            )}
+                          >
+                            {t("yogunlasmaCumlesi", {
+                              sayi: yogunluk.urunSayisi,
+                              yuzde: bicim.yuzde(yogunluk.yuzde),
+                            })}
+                          </Baglanti>
                         </p>
                       ) : null}
 
