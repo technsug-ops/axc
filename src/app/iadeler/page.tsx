@@ -54,6 +54,7 @@ import {
   itirazGerekceEtiketleri,
   iadeTuruEtiketleri,
 } from "@/lib/etiketler";
+import { iadeAramaKosulu } from "@/lib/iade/arama";
 import {
   ACIK_BILDIRIM_DURUMLARI,
   bildirimAramaKosulu,
@@ -192,6 +193,14 @@ export default async function IadelerSayfasi({
     tur?: string;
     hasar?: string;
     sayfa?: string;
+    /**
+     * İŞLENMİŞ İADE ARAMASI — bildirim aramasından (`bq`) AYRI.
+     *
+     * ⚠ İKİ SEKME İKİ AYRI PARAMETRE: aynı `q` paylaşılsaydı bildirimde
+     * arayıp işlenmiş sekmesine geçen kullanıcı, hiç yazmadığı bir
+     * süzgeçle boş liste görürdü — ve sebebini ekranda bulamazdı.
+     */
+    q?: string;
     /** Bildirim araması — işlenmiş iade tablosunun süzgeçlerinden AYRI. */
     bq?: string;
     /** Panelden gelen "bekleyen bildirim" süzgeci — eski bağlantılar için. */
@@ -238,9 +247,18 @@ export default async function IadelerSayfasi({
   const kanalKodu = (p.kanal ?? "").trim();
   const turFiltresi = (p.tur ?? "").trim();
   const hasarFiltresi = (p.hasar ?? "").trim();
+  const arama = (p.q ?? "").trim();
 
+  /**
+   * ⭐ ARAMA `kosul`A GİRİYOR — VE BU İLKE #15'İ BEDAVA SAĞLIYOR.
+   * `kosul` ÜÇ yerde okunuyor: `count` (sayfalama), liste ve DÖNEM ÖZETİ.
+   * Arama yalnız listeye uygulansaydı üstteki kartlar süzgeçten bağımsız
+   * kalır ve "ekranda ne varsa onun toplamı" sözü kırılırdı — 17.08.2026'da
+   * tam bu yaşandı (özet, sayfalanmış listeden hesaplanıyordu).
+   */
   const kosul = {
     occurredAt: aralik,
+    ...iadeAramaKosulu(arama),
     ...(kanalKodu
       ? { sale: { channelAccount: { channel: { code: kanalKodu } } } }
       : {}),
@@ -823,6 +841,8 @@ export default async function IadelerSayfasi({
     kanal: kanalKodu,
     tur: turFiltresi,
     hasar: hasarFiltresi,
+    /** ⚠ ARAMA DA TAŞINIR: Excel, ekranda GÖRÜLEN kümeyi indirmeli. */
+    q: arama,
   };
 
   /**
@@ -1227,6 +1247,31 @@ export default async function IadelerSayfasi({
   const islenmisIcerigi = (
     <div className="space-y-5">
       <p className="text-muted-foreground text-sm">{t("islenmisNotu")}</p>
+
+      {/* ⭐ ARAMA — 02.09.2026'da eklendi. Kutu bu SAYFADA zaten vardı ama
+          yalnız Bildirimler sekmesinde; işlenmiş iadelerde tarih penceresi
+          ve üç açılır süzgeç vardı, arama YOKTU.
+
+          ⚠ ORTAK BİLEŞEN, ÇIPLAK `<input>` DEĞİL: sipariş no, gönderi no,
+          SKU ve barkod hepsi KOD — İlke #7 gereği kamera ve USB okuyucu
+          zorunlu. `arama:dogrula` çıplak kutuyu zaten yasaklıyor.
+
+          ⚠ SÜZGEÇLER TAŞINIYOR: dönem penceresi, kanal, tür ve hasar
+          `tasinanlar` ile adrese yeniden yazılıyor — arama yapmak
+          süzgeçleri sıfırlamaz. Sekme de taşınıyor, yoksa arama
+          Bildirimler'e düşerdi. */}
+      <KodAramaKutusu
+        temelAdres="/iadeler"
+        baslangic={arama}
+        parametre="q"
+        tasinanlar={{
+          ...disaAktarmaParametreleri,
+          q: undefined,
+          sekme: SEKME_ISLENMIS,
+        }}
+        ipucu={t("aramaIpucu")}
+      />
+
       <SuzgecCubugu
         temelAdres="/iadeler"
         mevcut={p}
@@ -1289,9 +1334,19 @@ export default async function IadelerSayfasi({
       ))}
 
       {/* ======================= İŞLENMİŞ İADELER ======================= */}
+      {/* ⛔ BOŞ MESAJ ÜÇE AYRILDI — TEK CÜMLE YANLIŞ BİLGİ VERİYORDU.
+          Eskiden her hâlde "Bu dönemde iade yok." yazıyordu. Arama ya da
+          süzgeç açıkken bu cümle YANLIŞTI: dönemde iade VAR, eşleşen yok.
+          Kullanıcı "veriler gitmiş" sanır ve sebebini ekranda bulamaz.
+          _(İlke #5: bir şey olmadıysa NEDEN olmadığı ekranda yazar;
+          anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim".)_ */}
       {satirlar.length === 0 ? (
         <p className="text-muted-foreground py-10 text-center text-sm">
-          {t("bosListe")}
+          {arama !== ""
+            ? t("bosAramaSonucu", { arama })
+            : kanalKodu !== "" || turFiltresi !== "" || hasarFiltresi !== ""
+              ? t("bosSuzgecSonucu")
+              : t("bosListe")}
         </p>
       ) : (
         <>

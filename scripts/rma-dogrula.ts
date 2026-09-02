@@ -98,6 +98,11 @@ import {
   onDoluHedefKalem,
   serbestStok,
 } from "../src/lib/iade/bildirim";
+/** ⭐ İŞLENMİŞ İADE ARAMASI — `bildirimAramaKosulu`nun kardeşi, AYRI tablo. */
+import {
+  IADE_ARAMA_ALANLARI,
+  iadeAramaKosulu,
+} from "../src/lib/iade/arama";
 import {
   EK_SINIRLARI,
   TASIMA_SINIRI,
@@ -1114,6 +1119,166 @@ console.log("\n6) BİLDİRİM LİSTESİ — BULUNABİLİRLİK");
   kontrol(
     "  ...ve kamera taşıyan ortak kutuyu kullanıyor (İlke #7)",
     /<KodAramaKutusu/.test(sayfa2),
+  );
+
+  /**
+   * ═════════════════════════════════════════════════════════════════════
+   *  İŞLENMİŞ İADE ARAMASI — KARDEŞ KURAL (02.09.2026)
+   * ---------------------------------------------------------------------
+   *  ⛔ KULLANICI BULDU: _"iadeler kısmında arama kısmı yok."_ Haklıydı ve
+   *  eksik YARIMDI: kutu bu sayfada VARDI ama yalnız **Bildirimler**
+   *  sekmesinde. İşlenmiş iadelerde tarih penceresi ve üç açılır süzgeç
+   *  vardı, arama YOKTU — ortak bileşen sayfaya girmiş, ikinci sekmeye
+   *  taşınmamıştı.
+   *
+   *  ⚠ ÖLÇÜTLER DEĞER TESTİ, KAYNAK TARAMASI DEĞİL: gövde saf olduğu için
+   *  ÇAĞRILIYOR ve dönen nesne sınanıyor. Yalnız ekran BAĞLANTISI (sekmeye
+   *  fiilen konmuş mu) kaynaktan okunuyor — o çizim, saf gövdeye taşınamaz.
+   *  _(Anayasa: "saf hesap katmanı, desen tarayan bekçiye muhtaç olmaz".)_
+   * ═════════════════════════════════════════════════════════════════════
+   */
+  kontrol(
+    "işlenmiş: boş arama SÜZMEZ",
+    Object.keys(iadeAramaKosulu("")).length === 0,
+  );
+  kontrol(
+    "  ...yalnız boşluk da süzmez",
+    Object.keys(iadeAramaKosulu("   ")).length === 0,
+  );
+
+  const iKosul = iadeAramaKosulu("  zqxwv ");
+  const iDallar = (iKosul.OR ?? []) as Record<string, unknown>[];
+  const iMetin = JSON.stringify(iKosul);
+  kontrol("işlenmiş: arama OR dalları üretiyor", iDallar.length > 0);
+  kontrol(
+    "  ...arama metni kırpılıyor",
+    iMetin.includes('"zqxwv"') && !iMetin.includes('" zqxwv'),
+  );
+
+  /**
+   * ⛔⛔ TABAN DOLULUĞU AYRICA KANITLANIR — VE BU SATIRLAR BİR MUTASYON
+   *  TURUNDAN DOĞDU (02.09.2026).
+   *
+   *  Aşağıdaki döngü `IADE_ARAMA_ALANLARI`'nı dolaşıyor ve "listedeki her
+   *  alan aranıyor mu" diye soruyor. Ölçüt doğru ama KENDİ TABANINI
+   *  doğruluyor: listeden `sale.code`u SİLEN mutasyon, onu sınayan
+   *  kontrolü de sildiği için **YEŞİL GEÇTİ**. Aynısı `sale.shipmentCode`
+   *  için de oldu. Dal sayısı ölçütü de kurtarmıyor — o da listeyle
+   *  birlikte küçülüyor.
+   *
+   *  _(Anayasa: "`EVERY` kapısı taban doluluğunu AYRICA kanıtlar" — boş
+   *  listede `every` `true` döner; burada liste boşalmıyor ama KÜÇÜLÜYOR
+   *  ve etkisi aynı: kapı açılıyor.)_
+   *
+   *  ⚠ İKİ ŞEY BİRDEN GEREKİYOR: taban en az bu kadar DOLU olmalı, VE
+   *  operasyonun eline geçen kimlikler ADIYLA orada olmalı.
+   */
+  kontrol(
+    "işlenmiş: arama tabanı DOLU (en az 8 alan)",
+    IADE_ARAMA_ALANLARI.length >= 8,
+    IADE_ARAMA_ALANLARI.length,
+  );
+  /**
+   * ⚠ BU LİSTE ELLE TUTULAN BİR KOPYA DEĞİL, BİR ALT SINIRDIR: operasyonun
+   * eline FİİLEN geçen kâğıtlardaki kimlikler. Yeni alan eklemek bunu
+   * bozmaz (üstteki döngü onu kendiliğinden ister); ama bunlardan birini
+   * SİLMEK kırmızı yakar.
+   */
+  for (const zorunlu of [
+    "sale.code",
+    "sale.shipmentCode",
+    "code",
+    "items.some.variant.barcode",
+    "items.some.variant.sku",
+  ]) {
+    kontrol(
+      `  işlenmiş: ${zorunlu} listeden DÜŞMEMİŞ`,
+      (IADE_ARAMA_ALANLARI as readonly string[]).includes(zorunlu),
+    );
+  }
+
+  /**
+   * ⭐ LİSTE TERSTEN DOLAŞILIYOR — ELLE SAYILMIYOR.
+   * Beklenen alanlar `IADE_ARAMA_ALANLARI`'ndan ÜRETİLİYOR; yarın listeye
+   * dokuzuncu bir alan eklenirse ölçüt onu KENDİLİĞİNDEN ister. Elle
+   * yazılmış bir liste, eklenen alanı sessizce dışarıda bırakırdı.
+   * _(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)_
+   */
+  for (const yol of IADE_ARAMA_ALANLARI) {
+    const parcalar = yol.split(".");
+    let beklenen: unknown = { contains: "zqxwv" };
+    for (let i = parcalar.length - 1; i >= 0; i--) {
+      beklenen = { [parcalar[i]]: beklenen };
+    }
+    kontrol(
+      `  işlenmiş: ${yol} aranıyor`,
+      iMetin.includes(JSON.stringify(beklenen)),
+      JSON.stringify(beklenen),
+    );
+  }
+  /** Kanal SKU listede değil (şekli farklı) — AYRI ölçülüyor ki düşmesin. */
+  kontrol(
+    "  işlenmiş: kanal SKU da aranıyor (yalnız AKTİF eşleşme)",
+    iMetin.includes('"channelSku":{"contains":"zqxwv"}') &&
+      iMetin.includes('"isActive":true'),
+  );
+  kontrol(
+    "  işlenmiş: dal sayısı listeyle tutuyor (alanlar + kanal SKU)",
+    iDallar.length === IADE_ARAMA_ALANLARI.length + 1,
+    [iDallar.length, IADE_ARAMA_ALANLARI.length + 1],
+  );
+
+  /**
+   * ⭐ K100 — UPC-A ↔ EAN-13 EŞDEĞERİ SERBEST METİNDE DE GEÇERLİ.
+   * `contains` uzun bir sorguyu KISA alanda BULAMAZ: aranan
+   * `0194644037598`, kayıtlı `194644037598`den uzun. "Kısmi eşleşme zaten
+   * yakalar" sanısı burada yanlıştır ve sessizce boş sonuç üretir.
+   */
+  /**
+   * ⛔ İLK YAZIM MUTASYONDAN KAÇTI — VE SEBEBİ ÖĞRETİCİ (02.09.2026).
+   * Ölçüt şöyleydi:
+   *     JSON.stringify(...).includes("194644037598")
+   * Eşdeğer üretimini KALDIRAN mutasyon YEŞİL geçti, çünkü aranan
+   * `0194644037598` dizesi `194644037598`i zaten ALT DİZE olarak içeriyor.
+   * Yani ölçüt, kendi girdisinin bir parçasıyla tatmin oluyordu.
+   *
+   * ⭐ ÇARE: eşdeğeri KENDİ DEĞERİ olarak ara — tırnaklarıyla birlikte.
+   * `"contains":"194644037598"` ancak eşdeğer AYRI bir dal olarak
+   * üretildiyse oluşur; alt dize tesadüfü bunu kuramaz.
+   * _(Anayasa: "işaret çağrı yerine bağlanır, ada değil".)_
+   */
+  {
+    const esdegerMetni = JSON.stringify(iadeAramaKosulu("0194644037598"));
+    kontrol(
+      "işlenmiş: kod eşdeğeri AYRI DAL olarak üretiliyor (K100)",
+      esdegerMetni.includes('"contains":"194644037598"'),
+    );
+    kontrol(
+      "  ...ve asıl yazım da duruyor (eşdeğer onun YERİNE geçmiyor)",
+      esdegerMetni.includes('"contains":"0194644037598"'),
+    );
+  }
+
+  // --- EKRAN BAĞLANTISI: ZİNCİR HALKA HALKA ---
+  kontrol(
+    "işlenmiş: arama SUNUCUDA, `kosul` içinde (özet ve sayfalama da süzülür)",
+    /\.\.\.iadeAramaKosulu\(arama\)/.test(sayfa2),
+  );
+  kontrol(
+    "  ...kutu İŞLENMİŞ sekmesinde ve `q` parametresini yazıyor",
+    /parametre="q"/.test(sayfa2) && sayfa2.includes("p.q"),
+  );
+  /**
+   * ⚠ BOŞ MESAJ AYRIŞMASI — "Bu dönemde iade yok." cümlesi arama açıkken
+   * YANLIŞ bilgi veriyordu: dönemde iade VAR, eşleşen yok. Koşul ve sonucu
+   * TEK desende aranıyor; ayrı ayrı aransaydı dalı öldüren bir mutasyon
+   * iki deseni de dosyada bırakır ve ölçüt yeşil yanardı.
+   */
+  kontrol(
+    "  ...boş sonuçta ARAMA ile SÜZGEÇ ayrı cümle kuruyor (İlke #5)",
+    /arama !== ""[\s\S]{0,120}?t\("bosAramaSonucu", \{ arama \}\)[\s\S]{0,220}?t\("bosSuzgecSonucu"\)/.test(
+      sayfa2,
+    ),
   );
   /**
    * BEKLEYEN ROZETİ ARAMADAN BAĞIMSIZ: eskiden ekrandaki 50 kaydın içinden

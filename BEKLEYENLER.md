@@ -127,6 +127,70 @@ okunan değer doğrudan bir gezinme hedefine dönüşür.
 
 ---
 
+## ✅ K137 — İŞLENMİŞ İADE ARAMASI · 02.09.2026 · [KAPANDI]
+
+_Kullanıcı: "iadeler kısmında arama kısmı yok. Detaylı arama kısmını buraya
+da ekle."_
+
+⛔ **HAKLIYDI VE EKSİK YARIMDI:** arama kutusu bu sayfada **VARDI** — yalnız
+**Bildirimler** sekmesinde (`bq`). İşlenmiş iadelerde tarih penceresi ve üç
+açılır süzgeç vardı, arama YOKTU. Ortak bileşen sayfaya girmiş, ikinci
+sekmeye taşınmamıştı.
+
+### NE EKLENDİ
+
+`src/lib/iade/arama.ts` → `iadeAramaKosulu` (saf, `bildirimAramaKosulu`nun
+kardeşi — AYRI tablo olduğu için ortak gövdeye zorlanmadı).
+
+    aranıyor: talep no · SEBEP NOTU · sipariş no · gönderi no ·
+              SKU · firma SKU · barkod · ürün adı · kanal SKU (aktif)
+
+⭐ **SEBEP NOTU DA ARANIYOR** — K136a'da sebep `Return.note`a yazıldı
+(`IADE_SEBEP[kaynak:…]: «Beğenmedim»`). Aranabilir olmasaydı "kaç iade
+beğenmemekten" sorusunun cevabı olmazdı; o soru enum genişletmesinin
+**açılış şartı**.
+
+⭐ **ARAMA `kosul`A GİRDİ, LİSTEYE DEĞİL:** `kosul` üç yerde okunuyor —
+`count`, liste ve **dönem özeti**. Yalnız listeye uygulansaydı üstteki
+kartlar süzgeçten bağımsız kalır ve İlke #15 kırılırdı. Excel de aynı
+kümeyi indiriyor.
+
+⛔ **BOŞ MESAJ ÜÇE AYRILDI.** Eskiden her hâlde _"Bu dönemde iade yok."_
+yazıyordu; arama açıkken bu **yanlış bilgiydi** (dönemde iade VAR, eşleşen
+yok). Artık: arama varsa `bosAramaSonucu` · süzgeç varsa `bosSuzgecSonucu` ·
+ikisi de yoksa `bosListe`.
+
+### 🐞 BEKÇİ ÜÇ KEZ KAÇTI — ÜÇÜ DE ÖLÇÜT KUSURU, VERİ DEĞİL
+
+| Kaçan mutasyon | Kök sebep |
+|---|---|
+| `sale.code`u listeden sil | Ölçüt `IADE_ARAMA_ALANLARI`'nı DOLAŞIYORDU — listeden silinen alan, onu sınayan kontrolü de siliyordu. **Kendi tabanını doğruluyordu.** |
+| `sale.shipmentCode`u sil | aynı kök |
+| Kod eşdeğerini kaldır | Ölçüt `includes("194644037598")` idi; aranan `0194644037598` bunu zaten **ALT DİZE** olarak içeriyor. Ölçüt kendi girdisinin parçasıyla tatmin oluyordu. |
+
+⭐ **ÇARE İKİ PARÇALI:** ① taban doluluğu AYRICA kanıtlanıyor
+(`length >= 8` + operasyonun eline geçen kimlikler ADIYLA); ② eşdeğer
+KENDİ DEĞERİ olarak aranıyor (`"contains":"194644037598"`, tırnaklarıyla).
+_(Anayasa: "`EVERY` kapısı taban doluluğunu ayrıca kanıtlar" — liste
+boşalmıyor ama KÜÇÜLÜYOR ve etkisi aynı.)_
+
+✓ **10/10 mutasyon kırmızı** (yanlış susma + yanlış yanma yönü).
+✓ `rma:dogrula` 532 ölçüt · i18n ✓ · lint ✓ · tsc ✓
+
+### 🧾 HALİL TEST LİSTESİ
+
+1. `/iadeler` → **İşlenmiş iadeler** sekmesi → arama kutusu GÖRÜNMELİ
+   (kamera ikonuyla)
+2. `4287210000` yaz → Ara → **1 kayıt**; üstteki özet kartları da o tek
+   kaydın rakamına düşmeli (adet 1)
+3. `Beğenmedim` yaz → **1 kayıt** (`11409234590`) — sebep notundan buluyor
+4. `zzzz` yaz → **"«zzzz» ile eşleşen iade yok"** yazmalı,
+   _"Bu dönemde iade yok"_ DEĞİL
+5. Temizle → liste geri gelmeli, kutu da boşalmalı
+6. Arama açıkken **Excel indir** → inen dosya yalnız eşleşenleri taşımalı
+
+---
+
 ## 🔵 K136b — SIRA B: TY HAKEDİŞ GEÇMİŞİ + CLAIMS UFKU · [SIRADA]
 
 _Halil, 02.09: "sıra B'de = TY hakediş GEÇMİŞ çekimi + claims geçmiş ufku,
