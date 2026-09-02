@@ -98,6 +98,49 @@ geliyor ve o liste **2026-08-03'te bitiyor**. Sonrası "iade yok" değil,
 
 ---
 
+### 📋 HALİL'İN YAPACAĞI BAŞVURU ADIMLARI — 02.09.2026 · 🟡 REFERANS
+
+_Kullanıcı istedi: "HB API fizibilite raporundan Halil'in yapacağı başvuru
+adımları 3 satırlık liste hâlinde çıkarılsın (panel nerede, ne istenecek)."_
+
+1. **`merchant.hepsiburada.com`** → giriş yap.
+2. **`Hesabım → Entegrasyon Bilgileri → API Anahtarı`** → **Generate**.
+   Dönen üç şey: **kullanıcı adı · parola · Merchant ID**.
+3. Anahtarlar **`.env.canli`ye** girer (`HB_API_KEY` · `HB_API_SECRET` ·
+   `HB_MERCHANT_ID`) — Vercel'e KONMAZ, uygulama katmanına GİRMEZ
+   (TY ile aynı çerçeve: istemci `scripts/` altında yaşar ve yalnız `GET`
+   bilir).
+
+⛔ **BU ÜÇ SATIR 🟡 REFERANS SEVİYESİNDE — HB'NİN KENDİ BELGESİNDEN DEĞİL.**
+`developers.hepsiburada.com` **403** döndü (01.09'da da, 02.09'da da).
+Adımlar üçüncü parti entegratör kaynaklarından derlendi.
+_(Anayasa: "kaynak önceliği — içerden gelen bilgi üsttedir"; dış kaynak
+kullanılabilir ama **rozetiyle** ve ilk belge geldiğinde düşeceği
+bilinerek. Aynı dış kaynak sınıfı HB ödeme giderinde `9,60` demişti,
+gerçek `8,00` çıktı — %20 sapma.)_
+
+⚠ **VE İKİ KAYNAK ÇELİŞİYOR — İKİSİ DE YAZILIYOR, BİRİ SEÇİLMİYOR:**
+
+| Yol | Kaynak ne diyor |
+|---|---|
+| **A** | `Hesabım → Entegrasyon Bilgileri → API Anahtarı` → anında üretilir |
+| **B** | `Yardım → Talepler → API Entegrasyon İşlemleri` → destek talebi açılır |
+
+Hangisinin güncel olduğu **ölçülemedi**. Halil panele girince hangisinin
+DURDUĞUNU görecek — ve gördüğü şey bu satırı düzeltir.
+
+⚠ **ETBİS kaydı olan işletme otomatik onaylanıyor, olmayan 1–2 hafta
+manuel kuyruğa düşüyor** (aynı dış kaynak, aynı rozet).
+
+📌 **User-Agent zorunluluğu TY ile aynı şekilde:** `{MERCHANT_ID} - {AppAdı}`.
+Bu bizim TY istemcimizde zaten var (`${saticiId} - SelfIntegration`) —
+yani HB istemcisi aynı kalıbı miras alabilir.
+
+⏭ **KAPI KARARI ②'DE (aşağıda) — bu liste kararı VERMİYOR, kararı
+uygulanabilir kılıyor.**
+
+---
+
 ### ⛔ ORAN SINIRI — İKİ KAYNAK ÇELİŞİYOR, ÇÖZÜLEMEDİ
 
     "500 istek / 1 saniye"  (ürün statü ucu, IP başına)      🟡

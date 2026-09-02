@@ -233,6 +233,83 @@ silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
 
 ---
 
+## ✅ K136c — SAĞLAM ADET ÖLÇÜM YOLU · 02.09.2026 · [ÖLÇÜLDÜ · YAZIM YOK]
+
+Araç: `npm run canli:iade-adet-olcum` — salt okuma, yazma bayrağı YOK.
+
+### ⚠ ÖNCE BİR AYRIM: ŞARTNAME İKİ SORUYU TEK ADLA ANIYOR
+
+    (A) İADE ADEDİ   — kaç birim geri geldi?   → quantity
+    (B) SAĞLAM ADET  — kaçı rafa girdi?        → soundQuantity
+
+Adım ①③ (A)'yı, adım ④ (B)'yi ölçer. K136a'daki ₺21.948'lik yayılım
+**(B)'den** geliyordu; ikisi karıştırılırsa "adet çözüldü" denip asıl
+soru açık kalır.
+
+### ⭐ ① ADET EKSENİ NEREDEYSE BOŞ ÇIKTI
+
+    adet=1 kalem (belirsizlik YOK) : 119
+    ⛔ adet>1 kalem (BELİRSİZ)      :   1   → 11399165160 (axcali1649×2)
+    ⛔ ₺ yayılımı                   : 1.721,50
+
+**120 kalemin 119'u tek adet.** Bu eksen pratikte sorun değil.
+
+### ⭐ ② CLAIMS YAPISI — HİPOTEZ AYIRT EDİCİ KANITLA DESTEKLENDİ
+
+`claimItems` içinde adet/quantity alanı **YOK** — ama her `claimItem`
+kendi `orderLineItemId`sini taşıyor. Hipotez: _adet = kabul edilmiş
+claimItem sayısı._
+
+    kabul kalem = satış adedi   : 112
+    ⭐ kabul kalem < satış adedi :   2   10863545466(1/2) · 11265267349(1/2)
+    ⛔ kabul kalem > satış adedi :   0
+
+⭐ **KISMİ İADE GÖRÜLÜYOR** → hipotez desteklendi. Hepsi eşit çıksaydı
+sınanamazdı ("her satıra bir kalem" de aynı sonucu verirdi). Ve "fazla"
+sıfır — satılandan çok iade yok, yani imkânsız durum üretmiyor.
+
+### ⛔ ③ EKSTRE ÇAPRAZI BOŞ — VE BU "TEMİZ" DEĞİL
+
+    ekstrede IADE_TUTARI olan sipariş: 0/114
+
+Bu yol **veri olmadığı için** cevap vermiyor; "fark yok" DEĞİL, "bakacak
+şey yok". Eski siparişlerin ekstresi sisteme hiç girmemiş.
+
+### ⭐ ④b BEDAVA KANIT — SAYIM 7 VARYANTI ZATEN ÇÖZDÜ
+
+    ⭐ sayım fazlası iade adedini TAM açıklıyor :  7
+    ⚠ sayılmış ama açıklamıyor                 : 12
+    ⚠ hiç sayılmamış (ÖLÇÜLEMEZ, 'yok' DEĞİL)  : 78
+    → Halil'in ELLE sayması gereken varyant    : 90   (97 değil)
+
+K136a'daki 4/4 deseninin aynısı. Elle sayım listesi buradan **7 kısaldı**.
+
+### 📋 ④ HEDEFLİ SAYIM LİSTESİ
+
+    97 FARKLI varyant  ·  raf: 86 DEPO · 6 OFİS · 5 (raf yok)
+    kabul edilen kalemlerin sebep sınıfı:
+      17  TESLİM EDİLMEDİ  → mal hiç açılmadı, SAĞLAM dönmesi beklenir
+      91  müşteri vazgeçmesi → hasar iddiası YOK
+      11  ⛔ HASAR İMALI (kusurlu/analiz/eksik parça) → BAKILMALI
+
+⚠ Sebep kodu hasarı **söylemiyor**, ihtimalini gösteriyor. Hüküm değil,
+baktırma sebebi.
+
+### ⛔ ⑤ KARARIN BEDELİ ÖLÇÜLDÜ — VE SAYMAYA DEĞER
+
+    KARARIN BEDELİ: ₺226.250,98   (sağlam=0 ↔ sağlam=tamamı)
+    ✓ tüm siparişlerin maliyeti biliniyor
+
+90 varyant elle saymak ciddi bir iş; **ne kazandıracağı yazılmadan
+"sayılsın" demek bedeli bilinmeyen bir işi emretmek olurdu.** Rakam
+konunca karar kolay: ₺226K'lık bir ayrım için 90 varyant sayılır.
+
+⏭ **KARAR HALİL'DE:** ① 90 varyant sayılsın mı, ② yoksa sebep sınıfına
+göre politika mı (teslim edilmeyen → sağlam, hasar imalı → sayılsın,
+gerisi → ?). ⛔ Yazım bu karardan sonra, AYRI onayla.
+
+---
+
 ## ✅ K136b — TY GEÇMİŞ FİZİBİLİTESİ · 02.09.2026 · [ÖLÇÜLDÜ · YAZIM YOK]
 
 _Halil şartnamesi: "TY hakediş GEÇMİŞ çekimi + claims geçmiş ufku, tek

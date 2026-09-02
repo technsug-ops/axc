@@ -292,7 +292,8 @@
     "canli:iade-yazim-teyit": "tsx scripts/canli-iade-yazim-teyit.ts",
     "canli:satis-neden-zarar": "tsx scripts/canli-satis-neden-zarar.ts",
     "canli:iade-not-sekli": "tsx scripts/canli-iade-not-sekli.ts",
-    "canli:ty-gecmis-fizibilite": "tsx scripts/canli-ty-gecmis-fizibilite.ts"
+    "canli:ty-gecmis-fizibilite": "tsx scripts/canli-ty-gecmis-fizibilite.ts",
+    "canli:iade-adet-olcum": "tsx scripts/canli-iade-adet-olcum.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
