@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { CEKIRDEK, SATIR_KIMLIGI, kalemMi, sonrakiKodlar } from "./pano-kimlik";
+import { CEKIRDEK, kalemMi, satirKimligi, sonrakiKodlar } from "./pano-kimlik";
 
 /**
  * ============================================================================
@@ -23,10 +23,14 @@ let okunanSatir = 0;
 
 for (const dosya of DOSYALAR) {
   for (const satir of readFileSync(dosya, "utf8").split(/\r?\n/)) {
-    const m = SATIR_KIMLIGI.exec(satir);
-    if (m === null) continue;
+    /**
+     * ⭐ İKİ BİÇİM DE OKUNUYOR (K130). Eskiden yalnız tablo satırı
+     * okunuyordu ve araç 16 numara geriden söylüyordu.
+     */
+    const ham = satirKimligi(satir);
+    if (ham === null) continue;
     okunanSatir += 1;
-    for (const parca of m[1].split("/")) {
+    for (const parca of ham.split("/")) {
       /** ⚠ BEYAN EDİLMİŞ İSTİSNA — bekçiyle AYNI gövdeden eleniyor. */
       if (!kalemMi(dosya, parca)) continue;
       const c = CEKIRDEK.exec(parca.trim());

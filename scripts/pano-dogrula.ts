@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import {
   CEKIRDEK,
   KALEM_DEGIL,
-  SATIR_KIMLIGI,
+  satirKimligi,
   cakismaCaresi,
   kalemMi,
   sonrakiKodlar,
@@ -84,8 +84,15 @@ function kimlikleriOku(dosya: string): Map<string, Kayit[]> {
   const satirlar = readFileSync(dosya, "utf8").split(/\r?\n/);
 
   satirlar.forEach((satir, i) => {
-    const m = satir.match(SATIR_KIMLIGI);
-    if (!m) return;
+    /**
+     * ⭐ İKİ BİÇİM DE (K130): tablo satırı VE `##` kalem başlığı.
+     * ⚠ Alt bölümler (`###`+) kimlik ÜRETMEZ — ölçüldü, `###` düzeyinde 8
+     * kod meşru olarak tekrar ediyor ve sayılsalardı bekçi sekiz sahte
+     * çakışma üretip kullanılamaz hâle gelirdi.
+     */
+    const ham = satirKimligi(satir);
+    if (ham === null) return;
+    const m = [satir, ham] as unknown as RegExpMatchArray;
     /**
      * ⚠ `H12/H13` GİBİ ÇİFT ETİKET İKİ KİMLİK SAYILIR. Tek parça saysaydık
      * `H13` başka bir satırda yeniden kullanılabilir ve görünmezdi.
@@ -163,8 +170,8 @@ for (const x of KALEM_DEGIL) {
   const bulundu = readFileSync(x.dosya, "utf8")
     .split(/\r?\n/)
     .some((l) => {
-      const m = l.match(SATIR_KIMLIGI);
-      return m !== null && m[1].trim() === x.ham;
+      /** ⚠ Beyan yalnız TABLO satırı için — istisna orada yaşıyor. */
+      return satirKimligi(l) === x.ham;
     });
   kontrol(`  ${x.dosya} → ${x.ham} beyanı hâlâ geçerli`, bulundu, x.sebep);
 }
@@ -237,6 +244,77 @@ console.log("\n3) kod atama gövdesi");
   const care = cakismaCaresi("K50", m);
   kontrol("çare ikinci fazı anlatıyor", care.includes("②"));
   kontrol("çare sıradaki kodu VERİYOR", care.includes("K128"));
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ *  4) OKUYUCUNUN KENDİSİ — İKİ BİÇİM DE OKUNUYOR MU (K130, 02.09.2026)
+ * ---------------------------------------------------------------------------
+ *  ⛔ BU BÖLÜM BİR MUTASYON KAÇIŞINDAN DOĞDU. Başlık desenini TAMAMEN
+ *  KALDIRAN mutasyon **YEŞİL GEÇTİ** — çünkü kimlik okunmayınca çakışma da
+ *  olmuyor. Yani bekçi, aracın kör hâlini "temiz" diye onaylıyordu.
+ *
+ *  ⭐ Bu, anayasadaki `EVERY` kapısı dersinin aynısı: bir kapı yalnız
+ *  "çakışma var mı" diye sorarsa, TABANIN BOŞ olması kapıyı açar. Taban
+ *  doluluğu **ayrıca** kanıtlanmalı.
+ *
+ *  ⚠ VE ÖLÇÜTLER DEĞER TESTİ — kaynak taraması değil. Gövde saf olduğu
+ *  için doğrudan ÇAĞRILIYOR.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+console.log("");
+console.log("4) OKUYUCU — İKİ BİÇİM DE OKUNUYOR MU");
+kontrol(
+  "tablo satırı okunuyor",
+  satirKimligi("| **K12** | bir iş | açık |") === "K12",
+);
+kontrol(
+  "⭐ `##` kalem başlığı okunuyor (K130'un kendisi)",
+  satirKimligi("## ✅ K138 — PANO YAZIMI · [KAPANDI]") === "K138",
+);
+kontrol(
+  "  ...simgesiz başlık da okunuyor",
+  satirKimligi("## K99 — bir iş") === "K99",
+);
+kontrol(
+  "  ...harf ekli kimlik korunuyor",
+  satirKimligi("## 🔵 K136b — TY GEÇMİŞ") === "K136b",
+);
+/**
+ * ⚠ İKİ YANLIŞ YANMA YÖNÜ — ölçüt yalnız "okuyor mu" diye sorsaydı,
+ * her satırı kimlik sayan bir desen de geçerdi.
+ */
+kontrol(
+  "⛔ satır ORTASINDAKİ atıf kimlik SAYILMAZ",
+  satirKimligi("## ✅ DEFTER ONARIMI — KAPANDI (K20 · K21 · K22)") === null,
+);
+kontrol(
+  "⛔ alt bölüm (`###`) kimlik ÜRETMEZ",
+  satirKimligi("### 📐 K55 ÖLÇÜLDÜ (26.08.2026)") === null,
+);
+kontrol("⛔ kodsuz başlık kimlik üretmez", satirKimligi("## 📌 AÇIK KOMUTLAR") === null);
+
+/**
+ * ⭐ TABAN DOLULUĞU — MUTASYONUN KAÇTIĞI YER.
+ * Ölçüt "kaç kimlik okundu" diye sorar; desen kaldırılırsa bu sayı
+ * çöker ve bekçi kırmızı yanar.
+ * 📏 Ölçüldü 02.09.2026: başlık biçimli 71 · tablo satırı 42 · toplam 151.
+ * Taban 100'ün altına düşerse bir okuyucu susmuş demektir.
+ */
+kontrol(
+  "⭐ TABAN DOLU — panodan en az 100 kimlik okunuyor",
+  tumu.size >= 100,
+  tumu.size,
+);
+{
+  const baslikli = readFileSync("BEKLEYENLER.md", "utf8")
+    .split(/\r?\n/)
+    .filter((l) => l.startsWith("## ") && satirKimligi(l) !== null).length;
+  kontrol(
+    "  ...ve bunların en az 40'ı BAŞLIK biçiminden geliyor",
+    baslikli >= 40,
+    baslikli,
+  );
 }
 
 console.log("");

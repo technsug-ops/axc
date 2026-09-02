@@ -6,6 +6,13 @@
  *
  *  BETIK SINIFI: SUREKLI. ⛔ HİÇBİR ŞEY YAZMAZ.
  *
+ *  BEKCI SINIFI: BAGIMSIZ — adı `-dogrula` ile bitiyor ama tura GİREMEZ:
+ *  canlı veritabanına VE kullanıcının yerel Excel dosyasına
+ *  (`satis.xlsx`) ihtiyaç duyuyor. `npm run bekci` çevrimdışı ve
+ *  makineden bağımsız koşmak zorunda; bu betik ikisini de sağlayamaz.
+ *  ⚠ `bekci-yetim:dogrula` bunu yakaladı ve push'u durdurdu — ölçüt
+ *  haklıydı, ad yanıltıcıydı. Beyan gerekçesiyle veriliyor; susturma DEĞİL.
+ *
  *  ── ⛔ NİYE BU AYRI BİR ÖLÇÜM ───────────────────────────────────────────
  *  Kullanıcı: _"kargo kısmına tekrar baktın mı"_
  *

@@ -630,133 +630,6 @@ belirtmiyor.
 
 ---
 
-## ✅ K137 — İŞLENMİŞ İADE ARAMASI · 02.09.2026 · [KAPANDI]
-
-_Kullanıcı: "iadeler kısmında arama kısmı yok. Detaylı arama kısmını buraya
-da ekle."_
-
-⛔ **HAKLIYDI VE EKSİK YARIMDI:** arama kutusu bu sayfada **VARDI** — yalnız
-**Bildirimler** sekmesinde (`bq`). İşlenmiş iadelerde tarih penceresi ve üç
-açılır süzgeç vardı, arama YOKTU. Ortak bileşen sayfaya girmiş, ikinci
-sekmeye taşınmamıştı.
-
-### NE EKLENDİ
-
-`src/lib/iade/arama.ts` → `iadeAramaKosulu` (saf, `bildirimAramaKosulu`nun
-kardeşi — AYRI tablo olduğu için ortak gövdeye zorlanmadı).
-
-    aranıyor: talep no · SEBEP NOTU · sipariş no · gönderi no ·
-              SKU · firma SKU · barkod · ürün adı · kanal SKU (aktif)
-
-⭐ **SEBEP NOTU DA ARANIYOR** — K136a'da sebep `Return.note`a yazıldı
-(`IADE_SEBEP[kaynak:…]: «Beğenmedim»`). Aranabilir olmasaydı "kaç iade
-beğenmemekten" sorusunun cevabı olmazdı; o soru enum genişletmesinin
-**açılış şartı**.
-
-⭐ **ARAMA `kosul`A GİRDİ, LİSTEYE DEĞİL:** `kosul` üç yerde okunuyor —
-`count`, liste ve **dönem özeti**. Yalnız listeye uygulansaydı üstteki
-kartlar süzgeçten bağımsız kalır ve İlke #15 kırılırdı. Excel de aynı
-kümeyi indiriyor.
-
-⛔ **BOŞ MESAJ ÜÇE AYRILDI.** Eskiden her hâlde _"Bu dönemde iade yok."_
-yazıyordu; arama açıkken bu **yanlış bilgiydi** (dönemde iade VAR, eşleşen
-yok). Artık: arama varsa `bosAramaSonucu` · süzgeç varsa `bosSuzgecSonucu` ·
-ikisi de yoksa `bosListe`.
-
-### 🐞 BEKÇİ ÜÇ KEZ KAÇTI — ÜÇÜ DE ÖLÇÜT KUSURU, VERİ DEĞİL
-
-| Kaçan mutasyon | Kök sebep |
-|---|---|
-| `sale.code`u listeden sil | Ölçüt `IADE_ARAMA_ALANLARI`'nı DOLAŞIYORDU — listeden silinen alan, onu sınayan kontrolü de siliyordu. **Kendi tabanını doğruluyordu.** |
-| `sale.shipmentCode`u sil | aynı kök |
-| Kod eşdeğerini kaldır | Ölçüt `includes("194644037598")` idi; aranan `0194644037598` bunu zaten **ALT DİZE** olarak içeriyor. Ölçüt kendi girdisinin parçasıyla tatmin oluyordu. |
-
-⭐ **ÇARE İKİ PARÇALI:** ① taban doluluğu AYRICA kanıtlanıyor
-(`length >= 8` + operasyonun eline geçen kimlikler ADIYLA); ② eşdeğer
-KENDİ DEĞERİ olarak aranıyor (`"contains":"194644037598"`, tırnaklarıyla).
-_(Anayasa: "`EVERY` kapısı taban doluluğunu ayrıca kanıtlar" — liste
-boşalmıyor ama KÜÇÜLÜYOR ve etkisi aynı.)_
-
-✓ **10/10 mutasyon kırmızı** (yanlış susma + yanlış yanma yönü).
-✓ `rma:dogrula` 532 ölçüt · i18n ✓ · lint ✓ · tsc ✓
-
-### ⭐ ② SEBEP LİSTEYE DE KONDU (kullanıcı sorusu, aynı gün)
-
-_Kullanıcı Tür sütununu işaret ederek: "Beğenmedim kısmı burda mı olsa
-acaba?"_
-
-⛔ **ALTINDA GERÇEK KUSUR VARDI:** arama sebep notunu ARIYOR ama satır
-**niye eşleştiğini söylemiyordu.** "Beğenmedim" yazıp kaydı bulan kullanıcı,
-sebebi görmek için detaya girmek zorundaydı _(İlke #9 ihlali)_.
-
-**Yer seçimi kullanıcınındı ve doğruydu:** Tür = _NASIL_ döndü (normal ·
-teslim edilemedi · itirazlı), sebep = _NİYE_ döndü. İkisi aynı soruya bakar,
-aynı hücrede durur. Mobil kartta da var _(İlke #8/#10)_.
-
-### ⚠ VE KALIP TEK BAŞINA YETMEZ — ÖLÇÜLDÜ
-
-    toplam Return 17  ·  notu dolu 10  ·  notu boş 7
-    ⭐ kurallı kalıp   8   (IADE_SEBEP[kaynak:…]: «…»)
-    ⚠ serbest metin   2   ← ve İKİSİ DE gerçek operasyon notu:
-      "Değişim olarak düzeltildi — para satıcıda kaldı…"
-      "İADE REDDEDİLDİ TRENDYOL KABUL ETTİ, ÜRÜN MÜŞTERİYE…"
-
-⛔ Yalnız kalıbı çözen bir gösterim o ikisini **görünmez** yapardı — üstelik
-en çok okunması gereken notlar onlar. `iadeSebebiCoz` asla `null` dönmez:
-kalıp tutmazsa notun KENDİSİ döner. Ve **kırpma yok** — serbest notlarda
-hüküm sonda olabiliyor.
-
-### 🐞 BİR MUTASYON DAHA KAÇTI — BU SEFER VERİ KÖRDÜ
-
-`«»` girdisiyle yazdığım ölçüt, `metin === ""` dalını öldüren mutasyonu
-yakalayamadı. Sebep kodda değildi: `«(.+)»` **en az bir karakter** istiyor,
-yani `«»` kalıba hiç girmiyor ve o dal çalışmıyordu — ölçüt doğru cevabı
-YANLIŞ yoldan alıyordu. Girdi `«   »` yapıldı (boşluk kalıba girer, `trim`
-sonrası boşalır) ve mutasyon kırmızıya döndü.
-_(Anayasa: "mutasyon kaçıyorsa ÖNCE test verisi sorgulanır" — mutasyon
-silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
-
-✓ **15/15 mutasyon kırmızı** · `rma:dogrula` 546 ölçüt
-
-### 🧾 HALİL TEST LİSTESİ
-
-0. `/iadeler` → İşlenmiş iadeler → `4287210000` satırında **Tür**
-   sütununun altında sebep yazmalı:
-   _"Yanlış sipariş verdim seçeneğinden iade"_
-
-1. `/iadeler` → **İşlenmiş iadeler** sekmesi → arama kutusu GÖRÜNMELİ
-   (kamera ikonuyla)
-2. `4287210000` yaz → Ara → **1 kayıt**; üstteki özet kartları da o tek
-   kaydın rakamına düşmeli (adet 1)
-3. `Beğenmedim` yaz → **1 kayıt** (`11409234590`) — sebep notundan buluyor
-4. `zzzz` yaz → **"«zzzz» ile eşleşen iade yok"** yazmalı,
-   _"Bu dönemde iade yok"_ DEĞİL
-5. Temizle → liste geri gelmeli, kutu da boşalmalı
-6. Arama açıkken **Excel indir** → inen dosya yalnız eşleşenleri taşımalı
-
----
-
-## 🔵 K136b — SIRA B: TY HAKEDİŞ GEÇMİŞİ + CLAIMS UFKU · [SIRADA]
-
-_Halil, 02.09: "sıra B'de = TY hakediş GEÇMİŞ çekimi + claims geçmiş ufku,
-tek fizibilite raporu (salt okuma, Halil makinesi, A3 içinde)."_
-
-⭐ **CLAIMS UFKU ZATEN ÖLÇÜLDÜ** (K136a yan ürünü): uç **2023-09-30**'a
-kadar iniyor, **351 kayıt**, sebep alanı ve müşteri notu dâhil. Yani TY
-tarafında iade açığının **tamamı** bu uçtan okunabilir olabilir — ölçülmesi
-gereken tek şey KAPSAMA (351 claim, açığın 120 TY satırının kaçını görüyor).
-
-⏭ **ÖLÇÜLECEK:**
-· TY hakediş ucu (`/settlements`) **geçmişe ne kadar** iniyor — pencere
-  15 gün, kaç pencere geriye açık?
-· claims 351 kaydı ↔ açıktaki 120 TY satırı → kaç eşleşme
-· ikisi birlikte açığın TY yarısını (₺319.503) ne kadar kapatır
-
-⛔ **YAZIM YOK** — kapsam raporu gelince toplu yazım AYRI onayla.
-⛔ **HB yarısı (₺332.253) bu boruyla kapanmıyor** — A3 kapı kararı **B**.
-
----
-
 ## ✅ K136a — EKSTRE YOLU UÇTAN UCA SINANDI · 02.09.2026 · [KAPANDI · YAZILDI]
 
 _Halil onayı: "YAZIM ONAYI VERİLDİ — kuru koşum temizse." Kuru koşum temiz
@@ -1464,29 +1337,76 @@ kırmızı yanıyor.
 
 ---
 
-## 🔧 K130 — PANO KİMLİK ARACI BAŞLIKLARI GÖRMÜYOR · 02.09.2026 · [ÖLÇÜLDÜ]
+## ✅ K130 — PANO KİMLİK ARACI KAPANDI · 02.09.2026 · [KOD KOŞTU]
 
-⛔ `scripts/pano-kimlik.ts` kimlikleri yalnız **tablo satırından** okuyor
-(`SATIR_KIMLIGI = /^\|\s*\*\*([^*|]+)\*\*\s*\|/`). Panonun üst
-kısmındaki **`## K128 — …` biçimli 30 kalem GÖRÜNMÜYOR.**
+⛔ **ARAÇ 16 NUMARA GERİDEYDİ.**
 
-📏 **ÖLÇÜLDÜ 02.09.2026:** `BEKLEYENLER.md`de başlık biçimli **30** kalem,
-tablo satırı **86**. `npm run pano:sonraki` "100 kimlik okundu" diyor ve
-K128'i **BOŞ** gösteriyor — oysa K128 az önce panoya yazıldı (satır 16).
+    npm run pano:sonraki  →  "K → K128"    (100 kimlik okundu)
+    gerçek en büyük       →  K144
 
-⚠ **BEDELİ: BEŞİNCİ KİMLİK ÇAKIŞMASI.** K10 dört çakışmadan sonra
-_"elle atama üçüncü kez tutmadı, bu artık bir tercih değil ölçülmüş bir
-kusur"_ diyerek aracı kurmuştu. Araç şimdi **kendi kör noktası yüzünden**
-aynı çakışmayı üretecek: bir sonraki kalem de K128 diye önerilecek.
+Kimlikler yalnız **tablo satırından** okunuyordu (`| **K128** |`); pano ise
+kalemlerin çoğunu **başlık** olarak yazıyor (`## 🚨 K138 — …`).
+📏 Ölçüldü: başlık biçimli **71**, tablo satırı **42**.
 
-⭐ **ÇARE DOSYA LİSTESİ DEĞİL, İKİNCİ DESEN:** başlık biçimi de okunur
-(başlık deseni: iki-üç diyez, ardından kalem kodu) ve `pano:dogrula`nın
-çakışma kontrolü iki biçimi BİRLİKTE görür. ⚠ Bekçisi mutasyonla gelmeli:
-başlık desenini kaldıran senaryo KIRMIZI yanmalı, yoksa kör nokta geri döner.
+⚠ **BEDELİ AYNI GÜN ÖDENDİ:** K138–K144 araca sorulmadan ELLE numaralandı,
+çünkü yanlış söyleyeceği biliniyordu. Aracın kurulma gerekçesi tam da elle
+atamanın üç kez tutmamasıydı — araç kendi kör noktası yüzünden kurulma
+sebebini geri getirmişti.
 
-_(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur" — burada
-ölçüt biçime bağlanmış ve pano iki biçim kullanıyor.)_
+### ⭐ ÇÖZÜM — TEK GÖVDE, İKİ BİÇİM
 
+`satirKimligi(satir)` eklendi ve **üç çağıran** ona bağlandı
+(`pano:sonraki` · `pano:dogrula`nın iki yeri). Biçim listesi çağıranlarda
+dursaydı biri güncellenip öteki unutulurdu — kusurun kendisi zaten öyle
+doğmuştu.
+
+    K128 → K145   ·   okunan kimlik 100 → 151
+
+### ⛔ DESEN İKİ TUZAK TAŞIYOR — İKİSİ DE ÖLÇÜLDÜ, İKİSİ DE KAPANDI
+
+**① Satır ortasındaki atıf kimlik DEĞİLDİR.**
+`## ✅ DEFTER ONARIMI — KAPANDI (K20 · K21 · K22)` üç kod geçiriyor ama
+başlığın kimliği hiçbiri değil. Kod **başlığın BAŞINDA** aranıyor.
+
+**② Alt bölüm aynı kodu tekrar eder — ve bu MEŞRUDUR.**
+`### 📐 K55 ÖLÇÜLDÜ` · `### 🚦 K55 KURU KOŞUM` · `### ✅ K55 KOŞTU` —
+altısı da K55'in alt bölümü. Ölçüldü: `###`+ düzeyinde **8 kod** meşru
+olarak tekrar ediyor; sayılsalardı bekçi sekiz sahte çakışma üretip
+kullanılamaz hâle gelirdi.
+⭐ Ölçüt: kalem başlığı **tam iki diyez**. `##` düzeyinde tekrar eden 5 kod
+vardı ve **beşi de gerçek kusur** çıktı — sahte pozitif yok.
+
+### 🐞 VE AÇILINCA ALTI ÇAKIŞMA ÇIKTI — İKİSİ BUGÜN BENİM ÇÖPÜMDÜ
+
+    K137  ×2   ⛔ 106 satır BİREBİR aynı blok, iki kez yazılmış  → SİLİNDİ
+    K136b ×2   ⛔ bayat "[SIRADA]" kopyası kalmış               → SİLİNDİ
+    K74 · K84 · K66 · A3   iki fazlı teslim (eski)             → alt bölüme İNDİRİLDİ
+
+⚠ **SİLMEDEN ÖNCE ÖLÇÜLDÜ:** K137 blokları satır satır karşılaştırıldı
+(birebir aynı), K136b'nin bayat kopyası özgün bilgi taşımıyor diye
+anahtar kelimeyle sınandı. Panonun yedeği alındı.
+⭐ İki fazlı olanlar **silinmedi** — `##` → `###` indirildi. İçerik aynen
+duruyor, yalnız kimlik üretmiyor; anayasa zaten "ikinci faz yeni satır
+açmaz, aynı satırın devamıdır" diyor.
+
+### ⛔ VE İLK MUTASYON TURU BİR ÖLÇÜT KAÇIRDI — EN ÖNEMLİSİNİ
+
+Başlık desenini **tamamen kaldıran** mutasyon **YEŞİL GEÇTİ**: kimlik
+okunmayınca çakışma da olmuyor. Yani bekçi, aracın **kör hâlini "temiz"
+diye onaylıyordu.**
+
+⭐ Anayasadaki `EVERY` kapısı dersinin aynısı: bir kapı yalnız "çakışma var
+mı" diye sorarsa **tabanın BOŞ olması kapıyı açar.** Taban doluluğu AYRICA
+kanıtlandı:
+
+    ⭐ panodan en az 100 kimlik okunuyor   (bugün 139)
+      ...ve en az 40'ı BAŞLIK biçiminden   (bugün 71)
+
+Ve okuyucunun kendisi **değer testiyle** sınandı (kaynak taraması yok):
+tablo · başlık · simgesiz başlık · harf ekli kimlik okunuyor; satır ortası
+atıf, alt bölüm ve kodsuz başlık okunmuyor.
+
+✓ **4/4 mutasyon kırmızı** · `pano:dogrula` 27 ölçüt
 ---
 
 ## ✅ K128 — SAYIM FAZLASININ MALİYETİ · **KAPANDI 02.09.2026**
@@ -2425,7 +2345,7 @@ Ekstre geldiğinde kıyas tarafı olur.
 
 ---
 
-## 🔓 K74 — HALİL'İN ÜÇ CEVABI GELDİ · 28.08.2026
+### 🔓 K74 — HALİL'İN ÜÇ CEVABI GELDİ · 28.08.2026
 
 **① `4120311526` (Razer) — ÇÖZÜLDÜ.** Halil: _"1 alım 2 kere kaydedilmiş."_
 Yani gerçek **2 alım**, defterdeki 3'ün biri mükerrer. Aritmetik kapanıyor:
@@ -2915,7 +2835,7 @@ kanıtı: küme listeden değil ölçütten kuruluyor.
 
 ---
 
-## 🔒 K84 — SAYIM KORUMASI · 29.08.2026 · [KURAL VE BEKÇİ HAZIR · KAPI BAĞLI DEĞİL]
+### 🔒 K84 — SAYIM KORUMASI · 29.08.2026 · [KURAL VE BEKÇİ HAZIR · KAPI BAĞLI DEĞİL]
 
 **⭐ (c) SORUSUNUN CEVABI — ARTIRAN HAFİF DEĞİL, ve gerekçe FİZİKSEL:**
 
@@ -3503,7 +3423,7 @@ Blok özetin ÖNÜNE alındı, altı mutasyonun altısı da kırmızı yandı.
 
 ---
 
-## ⭐ K66 — commissionRate BOŞ YAZILIYOR · 28.08.2026 · **EN BÜYÜK BULGU**
+### ⭐ K66 — commissionRate BOŞ YAZILIYOR · 28.08.2026 · **EN BÜYÜK BULGU**
 
 > İçe aktarma `commissionRate` alanını **hiç yazmıyor**. `null` "bilinmiyor"
 > demek olduğu için kâr motoru komisyonu HİÇ DÜŞMÜYOR — ve NET olduğundan
@@ -3783,7 +3703,7 @@ _(Anayasa: "sonda parametresi ekranın parametresi değildir".)_
 
 ---
 
-## 🔬 A3-② MUTABAKAT — [KOŞTU 26.08.2026] · SALT OKUMA
+### 🔬 A3-② MUTABAKAT — [KOŞTU 26.08.2026] · SALT OKUMA
 
 > `npm run canli:ty-mutabakat -- --gun=30` · veritabanına hiçbir şey yazılmadı,
 > hiçbir yazma ucu çağrılmadı.
@@ -5602,7 +5522,7 @@ hak ediyor. Sırası gelince açılır.
 
 ---
 
-## 🛡 A3 GÜVENLİK ÇERÇEVESİ — mimar kararı 25.08.2026
+### 🛡 A3 GÜVENLİK ÇERÇEVESİ — mimar kararı 25.08.2026
 
 > **TEST DOMAİNİ AÇILMAYACAK.** Canlıda salt okuma disipliniyle
 > ilerlenecek. Gerekçe: _"iki defter ayrışır, üçüncü bir mutabakat işi

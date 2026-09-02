@@ -23,6 +23,58 @@
 export const SATIR_KIMLIGI = /^\|\s*\*\*([^*|]+)\*\*\s*\|/;
 
 /**
+ * ============================================================================
+ *  İKİNCİ BİÇİM — BAŞLIK KİMLİĞİ (K130, 02.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ ARAÇ KENDİ KÖR NOKTASI YÜZÜNDEN AYNI KUSURU ÜRETİYORDU. Bu gövde
+ *  kimlikleri yalnız TABLO satırından okuyordu; pano ise kalemlerin
+ *  çoğunu BAŞLIK olarak yazıyor (`## 🚨 K138 — …`).
+ *
+ *  📏 ÖLÇÜLDÜ 02.09.2026: başlık biçimli kimlik **71**, tablo satırı **42**.
+ *  `npm run pano:sonraki` "sıradaki K128" diyordu; gerçek en büyük **K144**
+ *  — araç **16 numara geride** ve bir sonraki kaleme kullanılmış bir kod
+ *  önerecekti (beşinci çakışma).
+ *
+ *  ⚠ VE BUGÜN ELLE NUMARALANDI: K138–K144 araca sorulmadan verildi, çünkü
+ *  yanlış söyleyeceği biliniyordu. Aracın kurulma gerekçesi tam da elle
+ *  atamanın üç kez tutmamasıydı.
+ *
+ *  ── ⛔ DESEN İKİ TUZAK TAŞIYOR, İKİSİ DE ÖLÇÜLDÜ ────────────────────────
+ *  ① SATIR ORTASINDAKİ ATIF KİMLİK DEĞİLDİR.
+ *     `## ✅ DEFTER ONARIMI — KAPANDI 20.08.2026 (K20 · K21 · K22)`
+ *     Üç kod geçiyor ama başlığın kimliği hiçbiri değil. Bu yüzden kod
+ *     **başlığın BAŞINDA** aranıyor (isteğe bağlı tek simgeden sonra).
+ *
+ *  ② ALT BÖLÜM AYNI KODU TEKRAR EDER — VE BU MEŞRUDUR.
+ *     `### 📐 K55 ÖLÇÜLDÜ`, `### 🚦 K55 KURU KOŞUM`, `### ✅ K55 KOŞTU` —
+ *     altısı da K55'in alt bölümü. Ölçüldü: `###`+ düzeyinde **8 kod**
+ *     tekrar ediyor ve hepsi meşru. Çakışma kontrolü onları sayarsa
+ *     sekiz sahte çakışma üretir ve bekçi kullanılamaz hâle gelir.
+ *
+ *  ⭐ ÇARE: kalem başlığı **tam iki diyez** (`##`). Alt bölümler (`###`+)
+ *  kimlik ÜRETMEZ. Ölçüldü: `##` düzeyinde tekrar eden 5 kod var ve
+ *  **beşi de gerçek kusur** (iki fazlı teslim ya da bayat kopya) — yani
+ *  bu ölçüt sahte pozitif üretmiyor.
+ * ============================================================================
+ */
+export const BASLIK_KIMLIGI =
+  /^##\s+(?:[^A-Za-z0-9\s]+\s+)?([A-Z]{1,2}\d{1,3}[a-z]?)(?=[\s—·:.,])/;
+
+/**
+ * Bir satırdan kalem kimliğini çıkarır — İKİ BİÇİMİ DE bilir.
+ *
+ * ⛔ TEK GÖVDE: üç çağıran (`pano:sonraki`, `pano:dogrula`nın iki yeri) bunu
+ * kullanır. Biçim listesi çağıranlarda dursaydı biri güncellenip öteki
+ * unutulurdu — bu kusurun kendisi zaten öyle doğdu.
+ */
+export function satirKimligi(satir: string): string | null {
+  const tablo = SATIR_KIMLIGI.exec(satir);
+  if (tablo !== null) return tablo[1].trim();
+  const baslik = BASLIK_KIMLIGI.exec(satir);
+  return baslik === null ? null : baslik[1].trim();
+}
+
+/**
  * Kimlik çekirdeği: harf öneki + sayı + isteğe bağlı TEK küçük harf.
  * Sonrasında ne gelirse gelsin (simge · tire · açıklama) SÜSTÜR.
  */
