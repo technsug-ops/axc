@@ -127,6 +127,81 @@ okunan değer doğrudan bir gezinme hedefine dönüşür.
 
 ---
 
+## 🔵 K136a — EKSTRE YOLU UÇTAN UCA SINAMA · 02.09.2026 · [ÖLÇÜLDÜ · KARAR BEKLİYOR]
+
+_Kullanıcı şartnamesi 02.09: ölç → kuru koşum → **Halil onayı** → yazım →
+değişmezlik turu. **Yazım YOK.**_
+
+### ⭐ ① K73'ÜN "SEBEP UYDURULAMAZ" ENGELİ KISMEN ÇÜRÜDÜ
+
+    Return       zorunlu: saleId · returnType · occurredAt   ⭐ reason ALANI YOK
+    ReturnItem   zorunlu: returnId · saleItemId · variantId · quantity
+    ReturnNotice zorunlu: saleId · noticedAt · reason        ← sebep BURADA
+
+K73 zaten _"`ReturnNotice` DEĞİL, doğrudan `Return` + `ReturnItem`"_
+diyordu — **o yolda sebep hiç sorulmuyor.** Ayrıca `soundQuantity` ve
+`damagedQuantity` **`@default(0)`**, yani K73'ün korktuğu _"hepsi sağlam
+demek stok +236 demek"_ riski varsayılan hâlde **doğmuyor.**
+
+⛔ **GERİYE TEK BİLİNMEYEN KALDI: `returnType`.**
+
+### ⚠ ② TÜR TÜRETME KURALI — 8'İN 4'ÜNDE ÇALIŞIYOR
+
+**Aday kural:** `KARGO_IADE` satırının varlığı/işareti türü söyler
+(`iade-sureci §5`: UNDELIVERED → gidiş kargosu yandı · NORMAL → dönüş
+kargosu satıcıda).
+
+    4068972350  HB  KARGO_IADE −218,71   → NORMAL
+    4287210000  HB  KARGO_IADE −241,80   → NORMAL
+    4586626981  HB  KARGO_IADE −107,90   → NORMAL
+    4903455009  HB  KARGO_IADE −178,94   → NORMAL
+    11385159467 TY  kargo satırı YOK     → ⛔ BELİRLENEMİYOR
+    11409234590 TY  kargo satırı YOK     → ⛔ BELİRLENEMİYOR
+    11438301199 TY  kargo satırı YOK     → ⛔ BELİRLENEMİYOR
+    4446089356  HB  kargo YOK, ⚠ IADE_TUTARI da YOK → ⛔ ŞÜPHELİ
+
+⛔ **TY EKSTRESİNDE KARGO SATIRI HİÇ YOK** — tür oradan türetilemez.
+⚠ **`4446089356` AYKIRI:** yalnız `KOMISYON_IADE +441,48`, sipariş tutarı
+iadesi YOK. **Bu bir iade olmayabilir** — kısmi düzeltme olabilir.
+Ölçülmeden yazılmaz.
+
+### 📌 SEBEP ALANI — SEÇENEK RAPORU (ÖNERİ DEĞİL)
+
+| Seçenek | Ne demek | Bedeli |
+|---|---|---|
+| **A** | Yalnız `Return` yaz, `ReturnNotice` yazma | Sebep hiç sorulmaz; iade bildirim geçmişi olmadan doğar |
+| **B** | `ReturnNotice` de yaz, sebep `BELIRTILMEMIS` | ⛔ Enum'da böyle değer **YOK** — şema değişikliği gerekir |
+| **C** | Dosyaya sebep sütunu iste | Halil biliyor, sistem bilmiyor — 233 satır elle |
+
+⛔ **SEÇİM MİMAR + HALİL'DE.** Rapor seçenekleri ve bedellerini gösterir.
+
+### ⏳ ② KURU KOŞUM HAZIR AMA DURUYOR — İKİ KARAR ŞART
+
+1. **TY'nin 3 siparişinin türü** ne olacak? (kargo sinyali yok)
+2. **`4446089356`** iade mi değil mi?
+
+Tür olmadan `Return` satırı KURULAMAZ — kuru koşum bile yarım kalır.
+
+### ⏭ ④ SONRAKİ: HAKEDİŞ UCUNDAN GEÇMİŞ EKSTRELER (salt okuma)
+
+Ekstre bugün açığın **%3,4'ünü** görüyor (233 siparişin 8'i, ₺28.110,85).
+Sebep yol değil **kapsam**: ekstre 506 sipariş kapsıyor, defterde 5891
+satış var, açık 2024-08'e uzanıyor.
+⚠ `(a) ekstrede iade var ama defterde satış yok: **0**` — ekstre ile defter
+UYUMLU; sorun eşleşmede değil, veri miktarında.
+**Ölçülecek:** hakediş ucundan kaç partiye, hangi tarihe kadar erişim var.
+Toplu yazım kapsam raporundan sonra AYRI onayla.
+
+### ⛔ ⑤ HB TARAFI BU BORUYLA ÇÖZÜLMÜYOR
+
+Açığın **%52,2'si Hepsiburada** (₺356.260) ve HB'de API yok
+_(kullanıcı kararı 02.09: "HB'nin API'si var ama henüz başlamak
+istemiyorum")_. TY hakediş ucu açığın en fazla **yarısını** çözer.
+⏭ **A3 fizibilite raporundaki HB-API sorusuna bağlandı**
+(`docs/a3-hb-n11-api-kesif.md` → kapı kararı **B**).
+
+---
+
 ## 🔵 K136 — İADE AÇIĞI KANAL AYRIMI · 02.09.2026 · [ÖLÇÜLDÜ]
 
 > Kullanıcı sordu: _"Bu ciro farkı diğer pazaryerlerinden kaynaklanmış

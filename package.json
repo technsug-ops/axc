@@ -280,7 +280,8 @@
     "canli:hb-teklif": "tsx scripts/canli-hb-teklif-degerlendir.ts",
     "liste-donusu:dogrula": "tsx scripts/liste-donusu-dogrula.ts",
     "canli:eksik-odeme": "tsx scripts/canli-eksik-odeme-olcum.ts",
-    "canli:liste-ufku": "tsx scripts/canli-liste-ufku.ts"
+    "canli:liste-ufku": "tsx scripts/canli-liste-ufku.ts",
+    "canli:ekstre-iade-kapsami": "tsx scripts/canli-ekstre-iade-kapsami.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
