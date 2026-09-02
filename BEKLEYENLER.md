@@ -127,6 +127,72 @@ okunan değer doğrudan bir gezinme hedefine dönüşür.
 
 ---
 
+## 🔵 K135 — "EKSİK ÖDEME" TEŞHİSİ ÇÜRÜDÜ · 02.09.2026 · [ÖLÇÜLDÜ]
+
+_K134'ten sonra hakediş teyidi ilk kez rakam üretti ve `EKSIK_ODEME 31`
+göründü. Ölçüldü — **eksik ödeme DEĞİL.**_
+
+### ⛔ İKİ HİPOTEZ KURULDU, İKİSİ DE ÇÜRÜDÜ
+
+**Hipotez 1 — "pazaryeri eksik ödüyor."** Çürüdü: ölçüm `EKSİK görünen
+503 / ölçülebilen 503` verdi, yani **%100**. Hiçbir pazaryeri HER siparişte
+eksik ödemez. Bu oran eksik ödemenin değil **TANIM UYUŞMAZLIĞININ**
+imzasıdır.
+
+**Hipotez 2 — "komisyon düşülmemiş (K66 deseni)."** Fark/beklenen oranları
+komisyon oranlarına benziyordu (%7,3 · %13,5 · %14 · %16) ve K66 tam bu
+deseni kaydetmişti. **Ölçüm çürüttü:**
+
+    'soru açık' kümesinin kalemleri : 202
+    commissionRate BOŞ olan         : 0   (%0,0)
+    profitStatus RULE_MISSING       : 0
+
+⭐ **ORAN BENZERLİĞİ KANIT DEĞİLDİ.** Komisyona benzeyen bir oran başka bir
+kesintiden de gelebilir; ayırt edici kanıt `commissionRate` alanıydı ve o
+**dolu** çıktı. _(Anayasa: "iki okumayla da uyumlu bir gözlem hiçbirini
+kanıtlamaz".)_
+
+### 📏 ÖLÇÜLENLER — `npm run canli:eksik-odeme` (salt okuma)
+
+    eksik görünen 503 · ölçülebilen 503  →  %100
+
+    negatif kalem TAŞIYAN (netleme)   301   toplam −238.263,65
+    yalnız POZİTİF kalem (soru açık)  202   toplam − 72.496,52
+
+    fark/beklenen: min %2,7 · p25 %5,6 · ortanca %8,9 · p75 %14,8 · max %84,4
+
+**HAKEDİŞ VERİSİ DEMONSTRE OLARAK KISMİ:**
+
+    SIPARIS_TUTARI    499 kalem      KOMISYON          138 kalem
+    KUPON             153            TAHSILAT_BEDELI   138
+    KARGO             140            STOPAJ            135
+
+⚠ 499 sipariş satırına karşılık yalnız 138 komisyon satırı. Kesinti
+satırları çoğu siparişte **yüklü değil.**
+
+### ⛔ VE AÇIKLAMA UYDURULMADI
+
+Kısmi veri "eksik görünmeyi" açıklıyor **gibi duruyor** ama yön tutmuyor:
+eksik olan `KOMISYON` satırları **negatif** ve yüklenselerdi `gerçekleşen`
+DAHA DA düşerdi — fark kapanmaz, büyürdü.
+
+> **Yani bugün elimizde: hipotez 1 çürük, hipotez 2 çürük, kısmi veri
+> gözlemi yönü tutmuyor. AÇIKLAMA YOK ve olmadığı yazılıyor.**
+> _(Anayasa: "bir soruyu kapatmak, yanındakini de kapattığı anlamına
+> gelmez" — açıklanmayan yazılır, uydurulmaz.)_
+
+⏭ **SIRADAKİ ÖLÇÜM:** `SIPARIS_TUTARI`nın tabanı. Anayasada bir ölçüm var —
+_"11373352181 · price 2074 · komisyon %8,5 → SIPARIS_TUTARI 1897,71 =
+2074 − 176,29"_ — yani satır komisyon DÜŞÜLMÜŞ geliyor. Eğer öyleyse
+`beklenen`in tabanı ile satırın tabanı farklı ve mesele bir **taban
+uyuşmazlığıdır.** Tek satırda göz göze doğrulanabilir.
+
+⛔ **BU ARADA HİÇBİR EKRANDA "EKSİK ÖDEME" RAKAMI GÖSTERİLMEMELİ.**
+Doğrulanmamış bir alacak rakamı, 19.08'deki ₺138K sahte paniğinin aynısını
+üretir ve rozetin tamamına olan güveni götürür.
+
+---
+
 ## ✅ K134 — HAKEDİŞ BAĞI KURULDU · **1209 KALEM** · 02.09.2026
 
 _Kullanıcı kararı: "TY'yi bitirelim sonra geçelim HB'ye."_ İlk adım bu oldu.

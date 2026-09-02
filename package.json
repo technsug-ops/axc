@@ -278,7 +278,8 @@
     "canli:yas-dagilimi": "tsx scripts/canli-yas-dagilimi.ts",
     "canli:parti-oykusu": "tsx scripts/canli-parti-oykusu.ts",
     "canli:hb-teklif": "tsx scripts/canli-hb-teklif-degerlendir.ts",
-    "liste-donusu:dogrula": "tsx scripts/liste-donusu-dogrula.ts"
+    "liste-donusu:dogrula": "tsx scripts/liste-donusu-dogrula.ts",
+    "canli:eksik-odeme": "tsx scripts/canli-eksik-odeme-olcum.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
