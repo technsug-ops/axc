@@ -1617,7 +1617,7 @@ _Dersler anayasaya geçti: "toplu yazım üç şartla koşar"._
 
 ---
 
-## 🚨 K48 — BEKÇİ DERLEMEYİ SINAMIYOR · 30.08.2026 · [ÖLÇÜLDÜ, DARALTILDI]
+## ✅ K48 — BEKÇİ DERLEMEYİ SINAMIYOR · KAPANDI 03.09.2026 · [KOD KOŞTU]
 
 > **BEDELİ ÖLÇÜLDÜ:** 30.08'de **üç push boyunca üç ekran canlıda yoktu**
 > (`/yerlestir`, `/paketle` raf okuması, toplu taşıma) ve **hiçbir bekçi
@@ -1710,14 +1710,65 @@ bağımlılığı ayrı kalem.
    şeyi yutuyor, aradaki gerçek `import` satırları o aralıkta kalıyor ve
    "tip" sayılıp atlanıyordu. **Bekçi yeşildi çünkü BAKMIYORDU.**
 
-### ⏭ AÇIK KALAN
+### ✅ SON BORÇ KAPANDI · 03.09.2026 — İDDİA VARDI, ÖLÇEN YOKTU
+
+Bu dosya 30.08'den beri şunu **iddia ediyordu**:
+
+    "`tsc:dogrula`nın üretilmiş yapıya bağımlılığı zaten kaldırıldı"
+
+İddia **doğruydu** — ölçüldü: temiz klonu taklit eden bir `tsconfig` ile
+`tsc --noEmit` çıkış **0**, **585 kaynak dosyası** görüldü (`layout.tsx`
+dahil). Ama iddiayı **ölçen hiçbir şey yoktu**: `layout.tsx`in yanına
+_"depoda başka üretilmiş tip kullanımı YOK (tarandı)"_ yazılmıştı.
+**Tarama bir kerelik bakıştır; desen yasağı değildir.**
+
+⚠ **VE BOZULMA SESSİZ OLURDU:** `LayoutProps<"/">` yazan biri yerelde
+hiçbir şey görmez — `.next/types` durduğu için `tsc` geçer. Yalnız temiz
+klonda düşer ve düşen şey `tsc:dogrula` olur: sebebi koddaki bir hata değil,
+**eksik bir çıktı gibi görünür.**
+
+⭐ **YASAK ADA DEĞİL, ÇÖZÜLMEMİŞ ATFA BAĞLI.** Ölçüldü: Next 12 global tip
+üretiyor ve bir kısmı tehlikeli derecede genel (`Routes` · `PageProps` ·
+`ParamMap`). Adı yasaklamak kendi tipimize de yanardı. Ölçüt: **dosya o adı
+KENDİ tanımlamıyor ya da içe aktarmıyorsa** atıf globaldir ve yasaktır.
+
+⭐ **VE LİSTE ELLE TUTULMUYOR:** üretilmiş dizin varsa gerçek çıktıyla
+karşılaştırılıyor; Next yeni bir tip üretirse **taban eskidi** diye kırmızı
+yanar. Dizin yoksa (temiz klon) kontrol **ATLANDI diye YAZILIR**, sessizce
+yeşil verilmez.
+
+    derleme:dogrula   1 → 10 kontrol   (yasak ~1 sn, build'den ÖNCE düşer)
+
+⚠ **VE BU YAZILIRKEN İKİ KUSUR ÇIKTI — İKİSİNİ DE MUTASYON BULDU:**
+
+1. **Tarama döngüsünü silen mutasyon YEŞİL kalacaktı** — `ihlaller.length
+   === 0` ölçütü, döngü HİÇ KOŞMASA da `true` verir. Anayasadaki `EVERY`
+   kapısı dersinin aynısı: taranılan dosya sayısı **ayrıca** kanıtlandı
+   (585/585).
+2. **İlk turdaki bir mutasyon GEÇERSİZDİ** — bugün zaten geçen bir koşulu
+   `true` yapmak hiçbir şeyi değiştirmiyor. Ve ondan önceki mutasyon **iki
+   kapıyı birden** tetikliyordu (taban `>=10` **ve** tazelik) — hangisinin
+   ısırdığı belirsizdi. _(Anayasa: "iki kapı aynı şeyi koruyorsa mutasyon
+   kapı başına izole edilir".)_ Tek tip çıkarılıp (taban 12→11, `>=10`
+   kapısını GEÇEN bir örnek) tazelik tek başına sınandı → kırmızı.
+
+⚠ **VE HARNESS DOSYAYI MUTASYONLU BIRAKTI:** izole koşum Türkçe karakterde
+çöktü ve geri yazmaya varamadı. Kopyadan geri yazıldı ve **geri yazıldığı
+doğrulandı**. _(Anayasa: "geri alma da bir yazımdır".)_
+
+✓ **8/8 mutasyon kırmızı** — iki yön ayrı: yanlış susma (gerçek
+`LayoutProps` kullanımı · döngü silme · saf gövde boşaltımı · taban boşaltımı ·
+tazelik · bölüm sayacı) ve yanlış yanma (yerel tanımı yok sayma · yorum
+soymayı kaldırma).
+
+### ⏭ KAPSAM DIŞINDA — BEYAN
 
 · **Tamlık iddia EDİLMİYOR:** dört sınıf ölçüldü, Next sürümü değiştikçe
   sınıf doğar. Desen yasağı bilinen sınıfların listesi, build yer gerçeği —
   ikisi birbirinin yedeği. _(Anayasa: "bir kaynağın listesi kendi tamlığını
   kanıtlayamaz".)_
 · **Süre büyürse çözüm build'i ÇIKARMAK değil** (kullanıcı kararı): paralel
-  koşum ya da önbellek ölçülür. Ayrı kalem, bugün açılmadı.
+  koşum ya da önbellek ölçülür. **Ayrı kalem, bugün de açılmadı.**
 
 ### ✅ `.next` BAĞIMLILIĞI KALDIRILDI (madde 4)
 

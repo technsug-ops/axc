@@ -22,7 +22,7 @@
  * ============================================================================
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 import readXlsxFile from "read-excel-file/node";
 
@@ -444,6 +444,14 @@ async function main() {
   let sayildiAmaAciklamiyor = 0;
   let hicSayilmadi = 0;
   const cozulenOrnek: string[] = [];
+  /**
+   * ⭐ KİMLİK DE TUTULUYOR, YALNIZ SAYI DEĞİL (03.09.2026).
+   * ⑥'daki sayım listesi bu kümeyi DÜŞEREK kuruluyor. Sayı tutulup kimlik
+   * tutulmasaydı liste "90" derken hangi 90 olduğunu söyleyemezdi ve
+   * ikinci bir hesapla yeniden bulunması gerekirdi — o hesap da bir gün
+   * bundan ayrışırdı. _(Anayasa: "aynı soruya iki cevap olmaz".)_
+   */
+  const cozulenler = new Set<string>();
   for (const [varyantId, v] of varyantlar) {
     const satir = await prisma.stokSayimSatiri.findFirst({
       where: { variantId: varyantId, sayilanAdet: { not: null } },
@@ -471,6 +479,7 @@ async function main() {
      */
     if (satir.duzeltmeYazildiAt === null && fazla === v.adet && fazla > 0) {
       cozulen += 1;
+      cozulenler.add(varyantId);
       if (cozulenOrnek.length < 8) cozulenOrnek.push(`${v.sku}(+${fazla})`);
     } else sayildiAmaAciklamiyor += 1;
   }
@@ -545,6 +554,160 @@ async function main() {
         ? `⚠ ${maliyetsiz} siparişin maliyeti YOK — yayılıma girmedi`
         : "✓ tüm siparişlerin maliyeti biliniyor"),
   );
+  /**
+   * ══════════════════════════════════════════════════════════════════════
+   *  ⑥ HALİL'İN SAYIM LİSTESİ — ₺ ETKİSİ · %80 EŞİĞİ · RAF SIRASI
+   * ---------------------------------------------------------------------
+   *  _Halil şartnamesi 02.09: "90 varyant ₺ etkisine göre sıralı, %80 eşiği
+   *  işaretli, raf sırasına dizili."_
+   *
+   *  ⛔ ŞARTNAME İKİ SIRALAMA İSTİYOR VE İKİSİ ÇELİŞİYOR. Çözüm ikisinden
+   *  birini seçmek DEĞİL, ikisini farklı işe koşmak:
+   *    · ₺ etkisi  → **hangi satırların sayılmaya değdiğini** belirler
+   *                  (%80 kesimi buradan çıkar, işaretlenir)
+   *    · raf sırası→ **listenin DİZİLİŞİ**; depo bir kez dolaşılır
+   *  Liste ₺'ye göre dizilseydi Halil aynı rafa beş kez giderdi.
+   *
+   *  ⚠ TOPLAM İKİ YOLDAN ÖLÇÜLÜP KARŞILAŞTIRILIYOR: varyant bazında
+   *  toplanan tutar, sipariş bazında ölçülen `saglamYayilimi` ile aynı
+   *  kümeyi görmeli. Ayrışırsa liste YAYIMLANMAZ — iki rakam yan yana
+   *  durursa hangisinin geçerli olduğu sorulur.
+   *  _(Anayasa: "kontrol tasarımı, veri kapsamı doğrulanmadan fark
+   *  üretmez" · "tek tek gösterilen yerde toplam da olur".)_
+   * ══════════════════════════════════════════════════════════════════════
+   */
+  console.log("\n" + "=".repeat(86));
+  console.log("  ⑥ HALİL'İN SAYIM LİSTESİ");
+  console.log("=".repeat(86));
+
+  type SayimSatiri = {
+    sku: string;
+    urun: string;
+    raf: string | null;
+    adet: number;
+    tutar: number;
+    maliyetsiz: boolean;
+  };
+  const liste: SayimSatiri[] = [];
+  for (const [varyantId, v] of varyantlar) {
+    if (cozulenler.has(varyantId)) continue;
+    /**
+     * ⚠ TUTAR VARYANT BAZINDA: yalnız BU varyantın hareketleri. Sipariş
+     * bazlı ölçüm çok kalemli siparişte hepsini tek varyanta yazardı.
+     */
+    const hareketler = await prisma.stockMovement.findMany({
+      where: {
+        variantId: varyantId,
+        saleItem: { sale: { code: { in: [...hedef] } } },
+      },
+      select: { quantityDelta: true, unitCostAmount: true },
+    });
+    const tutar = hareketler.reduce(
+      (t, h) =>
+        t +
+        (h.unitCostAmount === null
+          ? 0
+          : Number(h.unitCostAmount.toString()) * Math.abs(h.quantityDelta)),
+      0,
+    );
+    liste.push({
+      sku: v.sku,
+      urun: v.urun,
+      raf: v.raf,
+      adet: v.adet,
+      tutar,
+      maliyetsiz: tutar === 0,
+    });
+  }
+
+  /** ₺'ye göre azalan — %80 kesimi BURADAN çıkar. */
+  const tutaraGore = [...liste].sort((a, b) => b.tutar - a.tutar);
+  const toplamTutar = tutaraGore.reduce((t, s) => t + s.tutar, 0);
+  const esikte = new Set<string>();
+  let birikim = 0;
+  for (const s of tutaraGore) {
+    if (birikim >= toplamTutar * 0.8) break;
+    birikim += s.tutar;
+    esikte.add(s.sku);
+  }
+
+  console.log(`   sayılacak varyant : ${liste.length}`);
+  console.log(`   toplam ₺ etkisi   : ${para(toplamTutar)}`);
+  console.log(
+    `   ⭐ %80'i ilk ${esikte.size} varyantta (${para(birikim)}) — ` +
+      `kalan ${liste.length - esikte.size} varyant ${para(toplamTutar - birikim)}`,
+  );
+  const maliyetsizAdet = liste.filter((s) => s.maliyetsiz).length;
+  console.log(
+    "   " +
+      (maliyetsizAdet > 0
+        ? `⚠ ${maliyetsizAdet} varyantın maliyeti YOK — ₺0 sayılmadı, ` +
+          "eşiğe girmedi ve listede AYRI işaretli"
+        : "✓ her varyantın maliyeti biliniyor"),
+  );
+
+  /**
+   * ⛔ KAPSAM KARŞILAŞTIRMASI — iki yoldan ölçülen toplam tutuyor mu?
+   * Varyant bazlı toplam, sipariş bazlı `saglamYayilimi`den ÇÖZÜLENLER
+   * kadar eksik olmalı; fazlası/eksiği kapsam boşluğudur.
+   */
+  const cozulenTutar = saglamYayilimi - toplamTutar;
+  console.log(
+    `   kapsam: sipariş bazlı ${para(saglamYayilimi)} − varyant bazlı ` +
+      `${para(toplamTutar)} = ${para(cozulenTutar)} (sayımın çözdüğü ${cozulen} varyant)`,
+  );
+  if (cozulenTutar < -0.005) {
+    console.log(
+      "   ⛔ VARYANT BAZLI TOPLAM SİPARİŞ BAZLIYI AŞIYOR — kapsam ayrışması.",
+    );
+    console.log("      LİSTE YAYIMLANMADI.");
+    process.exitCode = 1;
+  } else {
+    /** ⭐ DİZİLİŞ RAFA GÖRE — depo bir kez dolaşılsın. */
+    const rafliListe = [...liste].sort((a, b) => {
+      const ra = a.raf ?? "￿";
+      const rb = b.raf ?? "￿";
+      return ra === rb ? b.tutar - a.tutar : ra.localeCompare(rb, "tr");
+    });
+    const satirlar = [
+      "raf;sku;urun;iadeAdedi;tutarTL;%80icinde;maliyetBilinmiyor",
+      ...rafliListe.map((s) =>
+        [
+          s.raf ?? "(raf yok)",
+          s.sku,
+          s.urun.replace(/;/g, ","),
+          String(s.adet),
+          s.tutar.toFixed(2),
+          esikte.has(s.sku) ? "EVET" : "hayir",
+          s.maliyetsiz ? "EVET" : "",
+        ].join(";"),
+      ),
+    ];
+    const cikti = "raporlar/k136c-sayim-listesi.csv";
+    writeFileSync(cikti, "﻿" + satirlar.join("\r\n"), "utf8");
+    console.log(`\n   ⭐ LİSTE: ${cikti} (${rafliListe.length} satır, RAF sırasında)`);
+    console.log("\n   İLK RAFLAR — sayıma buradan başlanır:");
+    let basilan = 0;
+    let oncekiRaf = "";
+    for (const s of rafliListe) {
+      if (basilan >= 14) break;
+      const r = s.raf ?? "(raf yok)";
+      if (r !== oncekiRaf) {
+        console.log(`      ── ${r}`);
+        oncekiRaf = r;
+      }
+      console.log(
+        `         ${esikte.has(s.sku) ? "⭐" : "  "} ${s.sku.padEnd(16)}` +
+          ` ${String(s.adet).padStart(2)} ad  ${para(s.tutar).padStart(12)}` +
+          `  ${s.urun.slice(0, 30)}`,
+      );
+      basilan += 1;
+    }
+    console.log("\n   ⭐ = ₺ etkisinin %80'ini taşıyan varyantlar.");
+    console.log("   ⚠ Süre darsa YALNIZ ⭐ satırları sayılabilir; kalan");
+    console.log("     varyantlar listede DURUR ve sayılmadıkları YAZILIR.");
+  }
+
   console.log("\n   ⛔ YAZIM YOK. Toplu yazım kararı bu rapordan sonra,");
   console.log("      Halil onayıyla.");
   console.log("=".repeat(86) + "\n");
