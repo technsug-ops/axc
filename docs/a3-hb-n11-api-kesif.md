@@ -74,6 +74,30 @@ kullanılmamış tek yeni yetenek.**
 | **Test ortamı** | ⚠ **BULUNAMADI** — sandbox olup olmadığı okunamadı | ⛔ |
 | **buy-box / rakip fiyat** | ⚠ **BULUNAMADI** — böyle bir uç olduğuna dair belge görülmedi | ⛔ |
 
+### ⭐ HB KAPISININ ÖLÇÜLMÜŞ İŞ DEĞERİ — 02.09.2026 EKLENDİ
+
+Bu rapor 01.09'da yazıldığında HB kapısı _"sırası gelince"_ diye duruyordu.
+K136 ölçümü ona **para değeri** verdi ve soruyu değiştirdi.
+
+    iade açığı (sistemde kaydı olmayan iade)      233 sipariş · ₺682.458
+      ├─ Hepsiburada   ₺356.260   %52,2   ⛔ API YOK → kapatılamıyor
+      └─ Trendyol      ₺326.198   %47,8   ✓ hakediş ucu VAR
+
+⛔ **TY hakediş ucu bu açığın EN FAZLA YARISINI kapatır.** Öteki yarısı,
+HB entegrasyonu açılmadan **hiçbir boruyla** kapanmıyor — elle giriş
+dışında yolu yok.
+
+⚠ **VE BU BİR ÖNERİ DEĞİL, BİR ÖLÇÜMDÜR.** Rakam kapıyı açmayı gerekli
+kılmaz; kapıyı açmamanın **bedelini** görünür kılar. Karar yine mimar +
+Halil'de _(kullanıcı 02.09: "HB'nin API'si var ama henüz başlamak
+istemiyorum")_.
+
+⚠ **KAPSAM UYARISI:** ₺682.458 rakamı kullanıcının ters satır listesinden
+geliyor ve o liste **2026-08-03'te bitiyor**. Sonrası "iade yok" değil,
+**ÖLÇÜLMEMİŞ** demektir _(bkz. `canli:liste-ufku`)_.
+
+---
+
 ### ⛔ ORAN SINIRI — İKİ KAYNAK ÇELİŞİYOR, ÇÖZÜLEMEDİ
 
     "500 istek / 1 saniye"  (ürün statü ucu, IP başına)      🟡
@@ -158,7 +182,7 @@ Bu rapor **öneri içermez.** Karara bağlanacak sorular:
 | # | Soru |
 |---|---|
 | **A** | TY buy-box ucu açılsın mı? (Anahtar ve istemci hazır; yeni bilgi rakip fiyatı.) |
-| **B** | HB entegrasyonu için anahtar alınsın mı — ve önce oran sınırı belgesi okunsun mu? |
+| **B** | HB entegrasyonu için anahtar alınsın mı — ve önce oran sınırı belgesi okunsun mu? ⭐ **Ölçülmüş bedeli var:** kapı kapalıyken iade açığının **%52,2'si (₺356.260)** kapatılamıyor (bkz. §2). |
 | **C** | N11 bugün **49 varyant** kapsıyor; sıraya girmeli mi, beklemeli mi? |
 | **D** | Sıra "kanal kanal" mı, "yetenek yetenek" mi? (TY'de sipariş+hakediş çalışıyor; HB'de sıfırdan başlanacak.) |
 
