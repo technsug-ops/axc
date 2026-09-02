@@ -103,6 +103,7 @@ import {
   IADE_ARAMA_ALANLARI,
   iadeAramaKosulu,
 } from "../src/lib/iade/arama";
+import { iadeSebebiCoz, iadeSebebiMetni } from "../src/lib/iade/sebep";
 import {
   EK_SINIRLARI,
   TASIMA_SINIRI,
@@ -1274,6 +1275,94 @@ console.log("\n6) BİLDİRİM LİSTESİ — BULUNABİLİRLİK");
    * TEK desende aranıyor; ayrı ayrı aransaydı dalı öldüren bir mutasyon
    * iki deseni de dosyada bırakır ve ölçüt yeşil yanardı.
    */
+  /**
+   * ═════════════════════════════════════════════════════════════════════
+   *  SEBEP LİSTEDE GÖRÜNÜYOR MU (02.09.2026)
+   * ---------------------------------------------------------------------
+   *  ⛔ KULLANICI SORDU: _"Beğenmedim kısmı burda mı olsa acaba?"_ — Tür
+   *  sütununu işaret ederek. Altında gerçek bir kusur vardı: arama sebep
+   *  notunu ARIYOR ama satır niye eşleştiğini SÖYLEMİYORDU.
+   *  _(İlke #9: detaya girmek zorunluysa, o bilgi listede de olmalı.)_
+   *
+   *  ⚠ ÖLÇÜLDÜ (canlı, 02.09): 10 dolu notun **2'si serbest metin** ve
+   *  ikisi de gerçek operasyon notu ("İADE REDDEDİLDİ TRENDYOL KABUL
+   *  ETTİ…"). Yalnız kalıbı çözen bir gösterim onları GÖRÜNMEZ yapardı.
+   *  Bu yüzden çözücü asla `null` dönmez — kalıp tutmazsa notun kendisi.
+   * ═════════════════════════════════════════════════════════════════════
+   */
+  {
+    const kaliplı = iadeSebebiCoz(
+      'IADE_SEBEP[kaynak:ty-claims]: «Beğenmedim»',
+    );
+    kontrol(
+      "sebep: kurallı kalıp çözülüyor",
+      kaliplı.tur === "KALIPLI" &&
+        kaliplı.metin === "Beğenmedim" &&
+        kaliplı.kaynak === "ty-claims",
+      kaliplı,
+    );
+    /** ⭐ AYRIMIN İKİ YAKASI: kalıplı ↔ serbest FARKLI sonuç vermeli. */
+    const serbest = iadeSebebiCoz("İADE REDDEDİLDİ TRENDYOL KABUL ETTİ");
+    kontrol(
+      "  ...kalıp tutmayan not GİZLENMİYOR, ham dönüyor",
+      serbest.tur === "SERBEST" &&
+        serbest.metin === "İADE REDDEDİLDİ TRENDYOL KABUL ETTİ",
+      serbest,
+    );
+    kontrol(
+      "  ...boş/eksik not YOK döner (satır hiç çizilmez)",
+      iadeSebebiCoz(null).tur === "YOK" &&
+        iadeSebebiCoz("   ").tur === "YOK" &&
+        iadeSebebiCoz(undefined).tur === "YOK",
+    );
+    /**
+     * ⛔ BU ÖRNEK BİR MUTASYON KAÇIŞINDAN SONRA DÜZELTİLDİ (02.09.2026).
+     *
+     * İlk yazımda girdi `«»` idi ve `metin === ""` dalını ÖLDÜREN mutasyon
+     * YEŞİL geçti. Sebep kodda değildi: `«(.+)»` **en az bir karakter**
+     * istiyor, yani `«»` kalıba HİÇ girmiyor — `m === null` dalından
+     * çıkıyor ve o dal zaten SERBEST dönüyor. Yani ölçüt doğru cevabı
+     * YANLIŞ yoldan alıyordu.
+     *
+     * Boşluk dolu `«   »` kalıba GİRER (`.+` boşluğu yakalar), `trim()`
+     * sonrası boşalır ve asıl dala ulaşır.
+     * _(Anayasa: "mutasyon kaçıyorsa ÖNCE test verisi sorgulanır" —
+     * mutasyon silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
+     */
+    kontrol(
+      "  ...kalıp içi BOŞLUK serbest sayılır, yutulmaz",
+      iadeSebebiCoz("IADE_SEBEP[kaynak:x]: «   »").tur === "SERBEST",
+      iadeSebebiCoz("IADE_SEBEP[kaynak:x]: «   »"),
+    );
+    /** Ve boş `«»` de yutulmaz — ÖTEKİ daldan, ama sonuç aynı olmalı. */
+    kontrol(
+      "  ...tamamen boş «» de serbest (öteki dal)",
+      iadeSebebiCoz("IADE_SEBEP[kaynak:x]: «»").tur === "SERBEST",
+    );
+    kontrol(
+      "  ...metin KIRPILMIYOR (hüküm sonda olabilir)",
+      iadeSebebiMetni(
+        "IADE_SEBEP[kaynak:halil-beyani-0209]: «Yanlış sipariş verdim seçeneğinden iade»",
+      ) === "Yanlış sipariş verdim seçeneğinden iade",
+    );
+    kontrol(
+      "  ...notu olmayanda metin null (ekran '—' bile yazmaz)",
+      iadeSebebiMetni(null) === null,
+    );
+  }
+  kontrol(
+    "sebep listede ÇİZİLİYOR (masaüstü Tür hücresi)",
+    /\{iadeSebebiMetni\(kayit\.note\) \? \([\s\S]{0,400}?\{iadeSebebiMetni\(kayit\.note\)\}/.test(
+      sayfa2,
+    ),
+  );
+  kontrol(
+    "  ...ve MOBİL kartta da (İlke #8/#10)",
+    /\.\.\.\(iadeSebebiMetni\(kayit\.note\)[\s\S]{0,300}?deger: iadeSebebiMetni\(kayit\.note\)/.test(
+      sayfa2,
+    ),
+  );
+
   kontrol(
     "  ...boş sonuçta ARAMA ile SÜZGEÇ ayrı cümle kuruyor (İlke #5)",
     /arama !== ""[\s\S]{0,120}?t\("bosAramaSonucu", \{ arama \}\)[\s\S]{0,220}?t\("bosSuzgecSonucu"\)/.test(

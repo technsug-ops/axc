@@ -177,7 +177,49 @@ boşalmıyor ama KÜÇÜLÜYOR ve etkisi aynı.)_
 ✓ **10/10 mutasyon kırmızı** (yanlış susma + yanlış yanma yönü).
 ✓ `rma:dogrula` 532 ölçüt · i18n ✓ · lint ✓ · tsc ✓
 
+### ⭐ ② SEBEP LİSTEYE DE KONDU (kullanıcı sorusu, aynı gün)
+
+_Kullanıcı Tür sütununu işaret ederek: "Beğenmedim kısmı burda mı olsa
+acaba?"_
+
+⛔ **ALTINDA GERÇEK KUSUR VARDI:** arama sebep notunu ARIYOR ama satır
+**niye eşleştiğini söylemiyordu.** "Beğenmedim" yazıp kaydı bulan kullanıcı,
+sebebi görmek için detaya girmek zorundaydı _(İlke #9 ihlali)_.
+
+**Yer seçimi kullanıcınındı ve doğruydu:** Tür = _NASIL_ döndü (normal ·
+teslim edilemedi · itirazlı), sebep = _NİYE_ döndü. İkisi aynı soruya bakar,
+aynı hücrede durur. Mobil kartta da var _(İlke #8/#10)_.
+
+### ⚠ VE KALIP TEK BAŞINA YETMEZ — ÖLÇÜLDÜ
+
+    toplam Return 17  ·  notu dolu 10  ·  notu boş 7
+    ⭐ kurallı kalıp   8   (IADE_SEBEP[kaynak:…]: «…»)
+    ⚠ serbest metin   2   ← ve İKİSİ DE gerçek operasyon notu:
+      "Değişim olarak düzeltildi — para satıcıda kaldı…"
+      "İADE REDDEDİLDİ TRENDYOL KABUL ETTİ, ÜRÜN MÜŞTERİYE…"
+
+⛔ Yalnız kalıbı çözen bir gösterim o ikisini **görünmez** yapardı — üstelik
+en çok okunması gereken notlar onlar. `iadeSebebiCoz` asla `null` dönmez:
+kalıp tutmazsa notun KENDİSİ döner. Ve **kırpma yok** — serbest notlarda
+hüküm sonda olabiliyor.
+
+### 🐞 BİR MUTASYON DAHA KAÇTI — BU SEFER VERİ KÖRDÜ
+
+`«»` girdisiyle yazdığım ölçüt, `metin === ""` dalını öldüren mutasyonu
+yakalayamadı. Sebep kodda değildi: `«(.+)»` **en az bir karakter** istiyor,
+yani `«»` kalıba hiç girmiyor ve o dal çalışmıyordu — ölçüt doğru cevabı
+YANLIŞ yoldan alıyordu. Girdi `«   »` yapıldı (boşluk kalıba girer, `trim`
+sonrası boşalır) ve mutasyon kırmızıya döndü.
+_(Anayasa: "mutasyon kaçıyorsa ÖNCE test verisi sorgulanır" — mutasyon
+silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
+
+✓ **15/15 mutasyon kırmızı** · `rma:dogrula` 546 ölçüt
+
 ### 🧾 HALİL TEST LİSTESİ
+
+0. `/iadeler` → İşlenmiş iadeler → `4287210000` satırında **Tür**
+   sütununun altında sebep yazmalı:
+   _"Yanlış sipariş verdim seçeneğinden iade"_
 
 1. `/iadeler` → **İşlenmiş iadeler** sekmesi → arama kutusu GÖRÜNMELİ
    (kamera ikonuyla)

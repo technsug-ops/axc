@@ -55,6 +55,7 @@ import {
   iadeTuruEtiketleri,
 } from "@/lib/etiketler";
 import { iadeAramaKosulu } from "@/lib/iade/arama";
+import { iadeSebebiMetni } from "@/lib/iade/sebep";
 import {
   ACIK_BILDIRIM_DURUMLARI,
   bildirimAramaKosulu,
@@ -1411,6 +1412,23 @@ export default async function IadelerSayfasi({
                       <Badge variant="secondary">
                         {turEtiketleri[kayit.returnType]}
                       </Badge>
+                      {/* ⭐ SEBEP — TÜR'ÜN ALTINDA. Tür "NASIL döndü"
+                          (normal / teslim edilemedi / itirazlı), sebep
+                          "NİYE döndü" der; ikisi aynı soruya bakar.
+
+                          ⛔ VE BU SATIR OLMADAN ARAMA YARIM KALIYORDU:
+                          sebep notu ARANIYOR ama satırda GÖRÜNMÜYORDU —
+                          "Beğenmedim" yazıp satırı bulan kullanıcı, niye
+                          eşleştiğini göremiyordu (İlke #9).
+
+                          ⚠ KIRPILMIYOR: serbest notlarda hüküm SONDA
+                          olabiliyor ("…ÜRÜN MÜŞTERİYE GERİ GÖNDERİLECEK").
+                          Kırpmak operasyonun kararını siler. */}
+                      {iadeSebebiMetni(kayit.note) ? (
+                        <p className="text-muted-foreground mt-1 max-w-56 text-xs">
+                          {iadeSebebiMetni(kayit.note)}
+                        </p>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       {veri.adet}
@@ -1481,6 +1499,17 @@ export default async function IadelerSayfasi({
                     etiket: t("turSuzgeci"),
                     deger: turEtiketleri[kayit.returnType],
                   },
+                  /* ⚠ MOBİLDE DE VAR: aynı işlem her ekranda aynı görünür
+                     (İlke #10). Sebebi yalnız masaüstüne koymak, depoda
+                     telefonla bakan için bilgiyi yok ederdi (İlke #8). */
+                  ...(iadeSebebiMetni(kayit.note)
+                    ? [
+                        {
+                          etiket: tIade("kayitNotu"),
+                          deger: iadeSebebiMetni(kayit.note) ?? "",
+                        },
+                      ]
+                    : []),
                   {
                     etiket: ortak("adet"),
                     deger: (
