@@ -45,30 +45,10 @@ import {
 } from "../src/lib/iade";
 import { gunSonu } from "../src/lib/stok";
 
-/**
- * HALİL'İN BEYANI — 02.09.2026. Sebep kendi kelimeleriyle, DEĞİŞTİRİLMEDEN.
- * _(Anayasa: "veritabanına yazılan veri ÇEVRİLMEZ".)_
- *
- * ⛔ TÜR HEPSİNDE `NORMAL`: sekizi de teslimden SONRA müşteri iadesi.
- * Dört HB siparişinde ekstrenin kendi `KARGO_IADE` satırı bunu BAĞIMSIZ
- * doğruluyor — iki ayrı kaynak aynı hükmü veriyor.
- */
-const PLAN: {
-  siparis: string;
-  sebep: string;
-  /** Halil'in verdiği iade tarihi — İstanbul günü. */
-  tarih: string;
-}[] = [
-  { siparis: "4068972350", sebep: "Yanlış sipariş verdim", tarih: "2026-06-09" },
-  { siparis: "4287210000", sebep: "Yanlış sipariş verdim", tarih: "2026-07-03" },
-  { siparis: "4446089356", sebep: "Yanlış sipariş verdim", tarih: "2026-06-05" },
-  { siparis: "4586626981", sebep: "Yanlış sipariş verdim", tarih: "2026-07-20" },
-  { siparis: "4903455009", sebep: "Küçük geldi", tarih: "2026-06-29" },
-  { siparis: "11385159467", sebep: "Yanlış sipariş verdim", tarih: "2026-07-22" },
-  { siparis: "11409234590", sebep: "Beğenmedim", tarih: "2026-07-29" },
-  { siparis: "11438301199", sebep: "Yanlış sipariş verdim", tarih: "2026-08-10" },
-];
+/** ⭐ VERİ AYRI MODÜLDE — yan etkisiz; iki betik AYNI listeyi okur. */
+import { PLAN, TUR_TURETMESI, notMetni } from "./k136a-plan";
 
+/** Ekstrede iadeyi işaret eden kodlar. */
 const IADE_DESENI = /IADE/;
 
 function para(x: number): string {
@@ -148,7 +128,23 @@ async function main() {
       `  ${p.siparis}  ·  ${s.channelAccount.channel.name}` +
         `  ·  satış ${gun(s.soldAt)}  →  iade ${p.tarih}`,
     );
-    console.log(`     sebep (Halil'in cümlesi): "${p.sebep}"`);
+    /** ⭐ YAZILACAK NOT — BİREBİR, kırpılmadan. */
+    console.log(`     note = ${notMetni(p)}`);
+
+    /** ⭐ TÜR TÜRETMESİ — hangi ekstre kodu ne söylüyor. */
+    const bukodlar = ekstre
+      .filter((k) => k.orderNo === p.siparis && IADE_DESENI.test(k.code))
+      .map((k) => k.code);
+    const konusanlar = TUR_TURETMESI.filter((t) => bukodlar.includes(t.kod));
+    for (const t of konusanlar) {
+      console.log(`     tür ← ${t.kod.padEnd(16)} → ${t.varsa}   (${t.gerekce})`);
+    }
+    if (konusanlar.length === 0) {
+      console.log(
+        "     ⛔ TÜR TÜRETİLEMEDİ — hiçbir bilinen kod yok; yazım DURUR.",
+      );
+      tarihKusuru += 1;
+    }
     console.log("     tür: NORMAL  ·  sağlam adet: TAMAMI (hasar iddiası yok)");
 
     /** ① TARİH TUTARLILIĞI. */

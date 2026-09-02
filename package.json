@@ -286,7 +286,10 @@
     "canli:iade-sayim-cakismasi": "tsx scripts/canli-iade-sayim-cakismasi.ts",
     "canli:iade-sebep-esleme": "tsx scripts/canli-iade-sebep-esleme.ts",
     "canli:iade-sayimda-mi": "tsx scripts/canli-iade-sayimda-mi.ts",
-    "canli:iade-yazim-plani": "tsx scripts/canli-iade-yazim-plani.ts"
+    "canli:iade-yazim-plani": "tsx scripts/canli-iade-yazim-plani.ts",
+    "canli:ty-claims-olcum": "tsx scripts/canli-ty-claims-olcum.ts",
+    "canli:iade-yaz": "tsx scripts/canli-iade-yaz.ts",
+    "canli:iade-yazim-teyit": "tsx scripts/canli-iade-yazim-teyit.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

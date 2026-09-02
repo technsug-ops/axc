@@ -127,157 +127,122 @@ okunan değer doğrudan bir gezinme hedefine dönüşür.
 
 ---
 
-## 🔵 K136a — EKSTRE YOLU UÇTAN UCA SINAMA · 02.09.2026 · [ÖLÇÜLDÜ · KARAR BEKLİYOR]
+## 🔵 K136b — SIRA B: TY HAKEDİŞ GEÇMİŞİ + CLAIMS UFKU · [SIRADA]
 
-_Kullanıcı şartnamesi 02.09: ölç → kuru koşum → **Halil onayı** → yazım →
-değişmezlik turu. **Yazım YOK.**_
+_Halil, 02.09: "sıra B'de = TY hakediş GEÇMİŞ çekimi + claims geçmiş ufku,
+tek fizibilite raporu (salt okuma, Halil makinesi, A3 içinde)."_
 
-### ⭐ ① K73'ÜN "SEBEP UYDURULAMAZ" ENGELİ KISMEN ÇÜRÜDÜ
+⭐ **CLAIMS UFKU ZATEN ÖLÇÜLDÜ** (K136a yan ürünü): uç **2023-09-30**'a
+kadar iniyor, **351 kayıt**, sebep alanı ve müşteri notu dâhil. Yani TY
+tarafında iade açığının **tamamı** bu uçtan okunabilir olabilir — ölçülmesi
+gereken tek şey KAPSAMA (351 claim, açığın 120 TY satırının kaçını görüyor).
 
-    Return       zorunlu: saleId · returnType · occurredAt   ⭐ reason ALANI YOK
-    ReturnItem   zorunlu: returnId · saleItemId · variantId · quantity
-    ReturnNotice zorunlu: saleId · noticedAt · reason        ← sebep BURADA
+⏭ **ÖLÇÜLECEK:**
+· TY hakediş ucu (`/settlements`) **geçmişe ne kadar** iniyor — pencere
+  15 gün, kaç pencere geriye açık?
+· claims 351 kaydı ↔ açıktaki 120 TY satırı → kaç eşleşme
+· ikisi birlikte açığın TY yarısını (₺319.503) ne kadar kapatır
 
-K73 zaten _"`ReturnNotice` DEĞİL, doğrudan `Return` + `ReturnItem`"_
-diyordu — **o yolda sebep hiç sorulmuyor.** Ayrıca `soundQuantity` ve
-`damagedQuantity` **`@default(0)`**, yani K73'ün korktuğu _"hepsi sağlam
-demek stok +236 demek"_ riski varsayılan hâlde **doğmuyor.**
+⛔ **YAZIM YOK** — kapsam raporu gelince toplu yazım AYRI onayla.
+⛔ **HB yarısı (₺332.253) bu boruyla kapanmıyor** — A3 kapı kararı **B**.
 
-⛔ **GERİYE TEK BİLİNMEYEN KALDI: `returnType`.**
+---
 
-### ⚠ ② TÜR TÜRETME KURALI — 8'İN 4'ÜNDE ÇALIŞIYOR
+## ✅ K136a — EKSTRE YOLU UÇTAN UCA SINANDI · 02.09.2026 · [KAPANDI · YAZILDI]
 
-**Aday kural:** `KARGO_IADE` satırının varlığı/işareti türü söyler
-(`iade-sureci §5`: UNDELIVERED → gidiş kargosu yandı · NORMAL → dönüş
-kargosu satıcıda).
+_Halil onayı: "YAZIM ONAYI VERİLDİ — kuru koşum temizse." Kuru koşum temiz
+çıktı, yazım yapıldı, teyit temiz._
 
-    4068972350  HB  KARGO_IADE −218,71   → NORMAL
-    4287210000  HB  KARGO_IADE −241,80   → NORMAL
-    4586626981  HB  KARGO_IADE −107,90   → NORMAL
-    4903455009  HB  KARGO_IADE −178,94   → NORMAL
-    11385159467 TY  kargo satırı YOK     → ⛔ BELİRLENEMİYOR
-    11409234590 TY  kargo satırı YOK     → ⛔ BELİRLENEMİYOR
-    11438301199 TY  kargo satırı YOK     → ⛔ BELİRLENEMİYOR
-    4446089356  HB  kargo YOK, ⚠ IADE_TUTARI da YOK → ⛔ ŞÜPHELİ
+### ⭐ SONUÇ
 
-⛔ **TY EKSTRESİNDE KARGO SATIRI HİÇ YOK** — tür oradan türetilemez.
-⚠ **`4446089356` AYKIRI:** yalnız `KOMISYON_IADE +441,48`, sipariş tutarı
-iadesi YOK. **Bu bir iade olmayabilir** — kısmi düzeltme olabilir.
-Ölçülmeden yazılmaz.
+    yazıldı 8/8  ·  atlandı 0  ·  hata 0
+    stok kusuru 0  ·  NET kusuru 0
+    Return       9 → 17   (+8)
+    StockMovement 10804 → 10812   (+8, her varyantta tam +1)
+    ⭐ AÇIK İADE  233 → 225   ·  tutar 682.458 → 651.756,47
+       HB 332.252,97 (−24.007,00)  ·  TY 319.503,50 (−6.694,45)
+    ikinci koşum: 8 ATLANDI, +0 yazım → **idempotent ÖLÇÜLDÜ**
 
-### 📌 SEBEP ALANI — SEÇENEK RAPORU (ÖNERİ DEĞİL)
+Orijinal satış NET snapshot'ları **8/8 bit-bit sabit** — iade etkisi ayrı
+`Return` kaydında, satışa dokunulmadı.
 
-| Seçenek | Ne demek | Bedeli |
-|---|---|---|
-| **A** | Yalnız `Return` yaz, `ReturnNotice` yazma | Sebep hiç sorulmaz; iade bildirim geçmişi olmadan doğar |
-| **B** | `ReturnNotice` de yaz, sebep `BELIRTILMEMIS` | ⛔ Enum'da böyle değer **YOK** — şema değişikliği gerekir |
-| **C** | Dosyaya sebep sütunu iste | Halil biliyor, sistem bilmiyor — 233 satır elle |
+### ⭐ KAYNAK ÖNCELİĞİ UYGULANDI VE ÖLÇÜLDÜ (`canli:ty-claims-olcum`)
 
-⛔ **SEÇİM MİMAR + HALİL'DE.** Rapor seçenekleri ve bedellerini gösterir.
+Halil'in kuralı: **pazaryeri API > ekstre > beyan.** Yazımdan ÖNCE ölçüldü:
 
-### ✓ ② KURU KOŞUM GEÇTİ — VE HALİL İKİ GİRDİYİ VERDİ (02.09 akşamı)
+    TY claims ucu       AYAKTA · 351 kayıt · ucun kendi beyanıyla TAM
+    sebep alanı         VAR — customerClaimItemReason.code + .name
+                        (+ customerNote: müşterinin kendi cümlesi)
+    geçmiş ufku         2023-09-30 → 2026-08-29   ⭐ 05.06.2026'yı KAPSIYOR
+    beyan ↔ claims      3/3 TUTTU (sebep VE tarih birlikte)
 
-    ekstre iade kalemleri (mutlak) : 28.110,85
-    hedef                          : 28.110,85
-    fark                           :      0,00   ✓ KURUŞUNA
+⭐ **Üç TY siparişinde beyan API ile BİREBİR tuttu** — `WRONGORDER` ·
+`DISLIKE` · `WRONGORDER`, ve tarihler `lastModifiedDate` ile aynı gün.
+HB'de API kapısı açılmadı → 5 siparişte beyan tek kaynak (SINIR, eksiklik
+değil).
 
-⭐ **HALİL SEBEP VE TARİH VERDİ → ÜÇ BİLİNMEYENİN ÜÇÜ DE KAPANDI:**
-- **`4446089356` İADE ÇIKTI** ("Yanlış sipariş verdim") — şüpheli işareti
-  kalktı, küme 8 sipariş olarak duruyor.
-- **TÜR = NORMAL, sekizinde de.** Sebepler teslimden SONRA müşteri iadesi
-  ("Yanlış sipariş verdim" ×6 · "Küçük geldi" · "Beğenmedim"). Dört HB
-  siparişinde ekstrenin kendi `KARGO_IADE` satırı bunu **BAĞIMSIZ**
-  doğruluyor — iki ayrı kaynak aynı hüküm.
-- **SAĞLAM ADET = TAMAMI.** Hasar iddiası hiçbirinde yok.
+⛔ **VE İKİ KEZ ARACIMIN TAVANI KAYNAĞIN YOKLUĞU GİBİ GÖRÜNDÜ:**
+① `tumSayfalar` 20 sn'de düştü → "ULASILAMADI" dedi; uç aslında ayaktaydı.
+② alan haritası 3 derinlikte kesiliyordu → **"sebep alanı HİÇ YOK"** dedi;
+sebep 4. derinlikteydi. İkisi de yanlış hükümdü ve ikisi de düzeltildi.
 
-### ⭐ ÇAPRAZ KANIT — BEYAN FİZİKSEL SAYIMLA DOĞRULANDI
+### 📝 NOT BİÇİMİ — SEÇENEK A UYGULANDI
 
-Verilen tarihlerin hepsi 27.08 sayımından ÖNCE. O hâlde mal döndüyse
-sayımda görünmeliydi. Ölçüldü:
+    IADE_SEBEP[kaynak:ty-claims]: «Yanlış sipariş verdim»
+    IADE_SEBEP[kaynak:halil-beyani-0209]: «Küçük geldi seçeneğinden iade»
 
-    axcali1761  sayılan 1 − sistem 0 = fazla 1   iade 1   ✓✓  [kapsam DIŞI]
-    axcali1797  sayılan 5 − sistem 4 = fazla 1   iade 1   ✓✓
-    axcali2498  sayılan 1 − sistem 0 = fazla 1   iade 1   ✓✓  [kapsam DIŞI]
-    SALTP1314…  sayılan 4 − sistem 3 = fazla 1   iade 1   ✓✓
+`ReturnReason` enum'u GENİŞLETİLMEDİ. Biçim kurallı, ileride nottan
+**deterministik türetme** yapılabilir.
 
-    ✓✓ fazla = iade adedi (beyan DOĞRULANDI) : 4
-    ⚠  fazla eşleşmedi                        : 0
-    ⚠  varyant hiç sayılmamış (ölçülemez)     : 4
+### ⚠ 1 KURUŞLUK FARK — SEBEBİ ÖLÇÜLDÜ, HESAP DEĞİL GÖSTERİM
 
-Ölçülebilen **dördünün dördünde de** fark tam olarak iade adedi; ikisinde
-sistem rafı **boş sanıyordu ve mal bulundu.** Beyan bir kaynak, fiilen
-sayılan raf **bağımsız** ikinci kaynak — ikisi buluştu.
-_(Anayasa: "bağımsızlık KAYNAĞIN ayrılığıyla ölçülür".)_
+`4586626981` kuru koşumda −235,94, defterde −235,95 göründü. Ham değer:
 
-⭐ **VE İLK HÜKMÜM ÖLÇÜMLE ÇEVRİLDİ.** Önce "3 siparişte çift sayım riski"
-demiştim; ölçütüm _"sayım satıştan sonra mı"_ idi. `duzeltmeYazildiAt`
-ölçülünce görüldü: **düzeltme hiçbirinde yazılmamış**, fazla ledger'a
-girmemiş. Mal fizikte var, defterde yok → `soundQuantity` yazmak çift
-saymaz, **defteri fizikle buluşturur.**
-_(Anayasa: "alanın dolu olması, olayın gerçekleştiğini göstermez".)_
+    NET-2 = -235.945   ← TAM YARIM NOKTA
 
-### 📋 YAZIM PLANI — `npm run canli:iade-yazim-plani` (salt okuma)
+Kuru koşum motorun **float** çıktısını yuvarlıyor (float `-235.945`
+aslında `-235.94499…`), defter aynı değeri `Decimal(18,4)` saklayıp
+yarım-yukarı yuvarlıyor. **Hesap aynı, iki yuvarlama ayrışıyor.**
+⏭ Uyur-kalem: aynı değer iki ekranda 1 kuruş farklı görünebilir.
 
-| Sipariş | Satış → İade | Ekstre | NET-2 etkisi |
-|---|---|---|---|
-| 4068972350 HB | 01.06 → 09.06 | 1.340,74 | −546,34 |
-| 4287210000 HB | 25.06 → 03.07 | 11.952,53 | **+1.914,86** |
-| 4446089356 HB | 22.05 → 05.06 | 441,48 | −207,98 |
-| 4586626981 HB | 12.07 → 20.07 | 2.583,94 | −235,94 |
-| 4903455009 HB | 22.06 → 29.06 | 5.712,46 | −255,25 |
-| 11385159467 TY | 05.07 → 22.07 | 3.007,06 | −99,93 |
-| 11409234590 TY | 13.07 → 29.07 | 1.401,28 | −570,41 |
-| 11438301199 TY | 22.07 → 10.08 | 1.671,36 | −97,92 |
+### ⛔ İKİ UYUR-KALEM — AÇILIŞ ŞARTLARIYLA
 
-    ekstre toplamı   28.110,85   ✓   tarih kusuru 0
-    NET-2 toplam etki   −98,93   ·   stok +8   ·   ciro geri dönen 30.701,45
+**① `ReturnReason` enum boşluğu.** Pazaryerinin 9 sebebinden 5'inin
+karşılığı var; **8 gerçek iadenin 7'si `DIGER`'e düşüyor**
+("Yanlış sipariş verdim" ×6 · "Beğenmedim" ×1). 23.08'de liste
+genişletilirken en sık geçen ilk iki madde alınmamış.
+⛔ **AÇILIŞ ŞARTI:** sebebe göre sayım/süzme ihtiyacı FİİLEN doğduğunda —
+o gün nottan deterministik türetme + migration BİRLİKTE gider.
+⚠ Enum sırası: yeni değer **SONA** eklenir (27.08 `YANLIS_URUN` kayması).
 
-⚠ **NET-2'nin ₺99 çıkması DOĞRU:** iade ciroyu geri alırken malı da rafa
-döndürüyor, maliyet de geri geliyor; kalan fark yanan kargo ve iade
-edilmeyen kalemler. `4287210000` pozitif çünkü o satış zaten zarardaydı.
-⛔ **Bu 8'in NET etkisi ₺99 diye 233'ün de öyle olduğu SÖYLENMİYOR** —
-ölçülmedi. Yön şu: açığın büyük kısmı **ciro/stok** meselesi, kâr değil.
+**② `SAYIM_ISRAR_SEBEPLERI`'nde `GEC_GIRILEN_IADE` YOK.** Kapalı listede
+`GEC_GIRILEN_ALIM` ve `GEC_GIRILEN_SATIS` var; liste alım/satış için
+kurulmuş ve **iade oradan düşüyor**. Sekiz kayıt `DIGER` + zorunlu
+açıklamayla geçti — uygun olmayan bir etiketi seçmek kaydı yanlış
+sınıflandırırdı.
+⛔ **AÇILIŞ ŞARTI:** ikinci bir geç-girilen iade partisi geldiğinde.
 
-### ⛔ KALAN TEK KARAR — SEBEP NEREYE YAZILSIN
+### ⛔ GERİ ALMA YOLU — SİLMEK DEĞİL
 
-`ReturnReason` enum'unda karşılığı yok; 8'in **7'si `DIGER`**'e düşüyor.
+Ölçüldü: `StockMovement.returnItemId` **SetNull**. `Return` silinirse
+`RETURN_IN` hareketleri **sahipsiz kalır ve stok yüksek kalmaya devam
+eder** (satış silme tuzağının aynısı); parti tüketilmişse
+`sourceMovementId` **Restrict** silmeyi zaten engeller.
+→ Geri alma **ters işaretli `ADJUSTMENT`**tir ve izdeki ESKİ değerlere
+dayanır. Sekiz izin sekizi de `JSON.parse` geçiyor (28.08'deki kırpılma
+vakası tekrarlanmadı) ve önceki NET-1/NET-2/durum taşıyor.
 
-    pazaryeri listesi (9) → belgeli karşılık 5 · DIGER 4
-    Halil'in 8 beyanı     → eşleşen 1 · ⛔ DIGER 7
-      "Yanlış sipariş verdim" × 6   ⛔ enumda YOK
-      "Begenmedim"            × 1   ⛔ enumda YOK
+### 🧾 HALİL TEST LİSTESİ (canlı, gerçek cihaz)
 
-23.08'de şema pazaryeri listesine göre genişletilmişti ama listenin **ilk
-iki maddesi** alınmadı — gerçek veride en sık geçen ikisi tam onlar.
-
-| | Yol | Bedeli |
-|---|---|---|
-| **A** | `Return.note`ta Halil'in KENDİ cümlesi | şema değişmez · sorgulanamaz |
-| **B** | Enum'a iki değer | migration + canlı koşum · ⚠ sıra SONA |
-
-⛔ **UYDURULMADI:** "Beğenmedim"e `CAYMA` yazmak bir YORUM olurdu.
-_(Anayasa: "sınıf, kendisinden türetilemiyorsa BEYAN edilir".)_
-
-⏭ **SEÇİM GELİNCE YAZIM:** anlık görüntü → tek işlem → satır satır
-`AuditLog` → değişmezlik turu (açık 233→225, iade dışı rakamlar bit-bit).
-
-### ⏭ ④ SONRAKİ: HAKEDİŞ UCUNDAN GEÇMİŞ EKSTRELER (salt okuma)
-
-Ekstre bugün açığın **%3,4'ünü** görüyor (233 siparişin 8'i, ₺28.110,85).
-Sebep yol değil **kapsam**: ekstre 506 sipariş kapsıyor, defterde 5891
-satış var, açık 2024-08'e uzanıyor.
-⚠ `(a) ekstrede iade var ama defterde satış yok: **0**` — ekstre ile defter
-UYUMLU; sorun eşleşmede değil, veri miktarında.
-**Ölçülecek:** hakediş ucundan kaç partiye, hangi tarihe kadar erişim var.
-Toplu yazım kapsam raporundan sonra AYRI onayla.
-
-### ⛔ ⑤ HB TARAFI BU BORUYLA ÇÖZÜLMÜYOR
-
-Açığın **%52,2'si Hepsiburada** (₺356.260) ve HB'de API yok
-_(kullanıcı kararı 02.09: "HB'nin API'si var ama henüz başlamak
-istemiyorum")_. TY hakediş ucu açığın en fazla **yarısını** çözer.
-⏭ **A3 fizibilite raporundaki HB-API sorusuna bağlandı**
-(`docs/a3-hb-n11-api-kesif.md` → kapı kararı **B**).
+1. `/satislar` → `4287210000` ara → detay aç → **"İade" bölümü görünmeli**;
+   iade tarihi **03.07.2026**, tür **NORMAL**, sebep notu
+   `IADE_SEBEP[kaynak:halil-beyani-0209]: «Yanlış sipariş verdim…»`
+2. Aynı ekranda: orijinal NET-2 **−756,19** DEĞİŞMEMİŞ olmalı; iade etkisi
+   **+1.914,86** ayrı satırda, iade sonrası **1.158,67**
+3. `/stok` → `axcali1797` ara → adet **4 → 5** olmalı
+4. `/stok` → `axcali1761` ara → adet **0 → 1** olmalı
+5. `11409234590` detayında sebep notu `[kaynak:ty-claims]: «Beğenmedim»`
+   yazmalı (API'den geldi, beyandan değil)
 
 ---
 
