@@ -29,8 +29,12 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { canliYapilandirma } from "./canli-ortak";
 
-/** Kullanıcının 02.09.2026'da bildirdiği iki satış — para riski burada. */
+/**
+ * Kullanıcının 02.09.2026'da bildirdiği iki satış — para riski oradaydı.
+ * `--hepsi` ile SAYIM FAZLASI olan BÜTÜN varyantlar taranır.
+ */
 const SKULAR = ["axcali2467", "axcali2177"];
+const HEPSI = process.argv.includes("--hepsi");
 /** Halil'in fiziksel sayımı — fazla partiler bu gün açıldı. */
 const SAYIM_KODU = "sayim-fiziksel-20260829";
 
@@ -44,8 +48,153 @@ function para(d: unknown): string {
 function gun(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
+function doldur(m: string, n: number): string {
+  return m.length >= n ? m.slice(0, n) : m + " ".repeat(n - m.length);
+}
 function saga(m: string, n: number): string {
   return m.length >= n ? m : " ".repeat(n - m.length) + m;
+}
+
+/**
+ * BÜTÜN SAYIM FAZLALARI — soru kaç partide GERÇEKTEN açık?
+ *
+ * Ölçüt aynı: sayım anında SAYIM PARTİSİ DIŞINDA açık parti var mıydı?
+ * Yoksa "en son parti" ataması defterle tutarlı TEK seçenektir ve soru
+ * kapanır. Varsa soru açıktır ve para büyüklüğü yazılır.
+ */
+async function hepsiniTara(prisma: PrismaClient): Promise<void> {
+  const fazlalar = await prisma.stockMovement.findMany({
+    where: { quantityDelta: { gt: 0 }, note: { contains: SAYIM_KODU } },
+    select: {
+      id: true,
+      variantId: true,
+      occurredAt: true,
+      quantityDelta: true,
+      unitCostAmount: true,
+      variant: { select: { sku: true, product: { select: { name: true } } } },
+    },
+  });
+
+  const varyantlar = [...new Set(fazlalar.map((f) => f.variantId))];
+  const hepsi = await prisma.stockMovement.findMany({
+    where: { variantId: { in: varyantlar } },
+    select: {
+      id: true,
+      variantId: true,
+      quantityDelta: true,
+      occurredAt: true,
+      unitCostAmount: true,
+      sourceMovementId: true,
+      note: true,
+      saleItemId: true,
+      saleItem: { select: { sale: { select: { iptalTarihi: true } } } },
+    },
+  });
+  const varyantHareketleri = new Map<string, typeof hepsi>();
+  for (const h of hepsi) {
+    const l = varyantHareketleri.get(h.variantId) ?? [];
+    l.push(h);
+    varyantHareketleri.set(h.variantId, l);
+  }
+
+  let kapali = 0;
+  let acik = 0;
+  let acikSatilan = 0;
+  let acikPara = 0;
+  const acikSatirlar: string[] = [];
+
+  for (const f of fazlalar) {
+    const hs = varyantHareketleri.get(f.variantId) ?? [];
+    const atanan =
+      f.unitCostAmount === null ? null : Number(String(f.unitCostAmount));
+
+    /** Sayım anında açık olan, SAYIM PARTİSİ OLMAYAN girişler. */
+    const acikPartiler = hs.filter((h) => {
+      if (h.quantityDelta <= 0) return false;
+      if (h.note !== null && h.note.includes(SAYIM_KODU)) return false;
+      const oGuneKadar = hs
+        .filter(
+          (c) =>
+            c.quantityDelta < 0 &&
+            c.sourceMovementId === h.id &&
+            c.occurredAt <= f.occurredAt,
+        )
+        .reduce((x, c) => x + Math.abs(c.quantityDelta), 0);
+      return h.quantityDelta - oGuneKadar > 0;
+    });
+
+    /**
+     * ⚠ AÇIK PARTİ VARSA BİLE SORU ANCAK FİYAT FARKLIYSA DOĞAR.
+     * Aynı fiyattan iki parti açıksa hangisinden geldiği maliyeti
+     * değiştirmez — soru yoktur.
+     */
+    const fiyatlar = [
+      ...new Set(
+        acikPartiler
+          .map((h) =>
+            h.unitCostAmount === null ? null : Number(String(h.unitCostAmount)),
+          )
+          .filter((x): x is number => x !== null),
+      ),
+    ];
+    const enUzak =
+      atanan === null || fiyatlar.length === 0
+        ? 0
+        : Math.max(...fiyatlar.map((x) => Math.abs(x - atanan)));
+
+    if (enUzak < 0.005) {
+      kapali++;
+      continue;
+    }
+    acik++;
+    /** Bu partiden İPTAL OLMAYAN satışla çıkan adet — bugünkü para etkisi. */
+    const satilan = hs
+      .filter(
+        (c) =>
+          c.sourceMovementId === f.id &&
+          c.quantityDelta < 0 &&
+          c.saleItemId !== null &&
+          c.saleItem?.sale?.iptalTarihi === null,
+      )
+      .reduce((x, c) => x + Math.abs(c.quantityDelta), 0);
+    acikSatilan += satilan;
+    acikPara += satilan * enUzak;
+    acikSatirlar.push(
+      `    ${doldur(f.variant.sku, 16)} ${doldur(f.variant.product.name, 34)}` +
+        ` fazla ${saga(String(f.quantityDelta), 3)}` +
+        ` · satılan ${saga(String(satilan), 3)}` +
+        ` · en uzak fark ${saga(para(enUzak), 10)}`,
+    );
+  }
+
+  console.log("\n" + "-".repeat(76));
+  console.log("  BÜTÜN SAYIM FAZLALARI — soru kaç partide AÇIK?");
+  console.log("-".repeat(76));
+  console.log(`  incelenen sayım fazlası partisi : ${fazlalar.length}`);
+  console.log(
+    `  ✓ SORU KAPALI (açık parti yok ya da aynı fiyat) : ${kapali}`,
+  );
+  console.log(`  ⚠ soru AÇIK (farklı fiyatlı açık parti var)      : ${acik}`);
+  if (acikSatirlar.length > 0) {
+    console.log("\n" + acikSatirlar.join("\n"));
+  }
+  console.log("\n" + "-".repeat(76));
+  console.log(`  ⭐ BUGÜNKÜ PARA ETKİSİ — satılmış adet: ${acikSatilan}`);
+  console.log(`     en kötü hâlde toplam sapma  : ${para(acikPara)}`);
+  /**
+   * ⚠ "EN KÖTÜ HÂL" BİR HÜKÜM DEĞİL, ÜST SINIR. Her satırda EN UZAK
+   * fiyatın seçildiği varsayılıyor; gerçek sapma bunun İÇİNDE bir yerde.
+   * Üst sınır küçükse soru ölçümle kapanır — büyükse bakılır.
+   */
+  console.log(
+    "\n  ⚠ Bu bir ÜST SINIR: her satırda en uzak fiyat seçilseydi." +
+      "\n    Gerçek sapma bunun İÇİNDE bir yerde.",
+  );
+  console.log(
+    "\n  ⛔ SATILMAMIŞ FAZLALAR bugün hiçbir NET üretmiyor —" +
+      "\n    satıldıklarında üretecekler. 'Bugünkü etki' ile" +
+      "\n    'ileride doğacak etki' AYRI sayılıyor.",
+  );
 }
 
 async function main() {
@@ -60,6 +209,18 @@ async function main() {
   console.log("=".repeat(76));
   console.log("  PARTİ ÖYKÜSÜ — sayım anında hangi parti AÇIKTI? (salt okuma)");
   console.log("=".repeat(76));
+
+  /**
+   * ⭐ `--hepsi`: soruyu bütün sayım fazlalarına sorar ve YALNIZ ÖZET basar.
+   * Kullanıcı kriteri (02.09.2026): _"önemsiz bir fark; sistem akışını
+   * bozmuyorsa mühim değil."_ Kriteri uygulayabilmek için önce BÜYÜKLÜĞÜ
+   * bilmek gerekiyor — "muhtemelen küçüktür" bir ölçüm değildir.
+   */
+  if (HEPSI) {
+    await hepsiniTara(prisma);
+    await prisma.$disconnect();
+    return;
+  }
 
   for (const sku of SKULAR) {
     const v = await prisma.productVariant.findUnique({

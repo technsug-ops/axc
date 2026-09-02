@@ -188,7 +188,14 @@ kalır. Bugünkü betik her yeni dosyada koşabilir, yani boşluk yok.
 
 ---
 
-## 🟢 K129 — ÜRÜN ANALİZİ TAM LİSTESİ · 02.09.2026 · [KOD KOŞTU]
+## ✅ K129 — ÜRÜN ANALİZİ TAM LİSTESİ · **HALİL TESTİ GEÇTİ 02.09.2026**
+
+> **Halil onayı:** yoğunlaşma cümlesi tıklanıyor, problem yok.
+> ⚠ İlk denemede tıklanmıyordu — sebep koddaki bir hata DEĞİL, **deploy
+> gecikmesiydi**; kullanıcı eski sürümü görüyordu. Ayırt edici kontrol
+> ("Tam listeyi aç" düğmesi ve menüde "Ürün analizi" var mı") bunu bir
+> turda ayırdı. _(Anayasa: "sınanmamış ekran, ekran değildir" — ama
+> "ekran yok" ile "ekran henüz yayınlanmadı" AYRI şeyler.)_
 
 _Kullanıcı isteği 02.09.2026, beş madde. **A paketi (1-4) teslim edildi;**
 B paketi (`/stok` yaş kovaları) sırada._
@@ -275,7 +282,11 @@ genişletmek. ⛔ Rozet eşiklerine (31/61 gün) DOKUNULMAYACAK: onlar
 
 ---
 
-## 🟢 K131 — RAF YAŞI KOVALARI · 02.09.2026 · [KOD KOŞTU]
+## ✅ K131 — RAF YAŞI KOVALARI · **HALİL TESTİ GEÇTİ 02.09.2026**
+
+> **Halil onayı:** eski bağlantı çalışıyor — `/stok?yas=kirmizi` açılıyor.
+> Kovaları eski kodların YERİNE koysaydım bu bağlantı hiçbir hata vermeden
+> boş liste açacaktı; test tam onu sınadı ve geçti.
 
 _Kullanıcı isteğinin 5. maddesi (B paketi). Sınırlar **kullanıcı tarafından
 düzeltildi** — ilk yazımım kusurluydu._
@@ -405,7 +416,58 @@ _(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur" — bu
 
 ---
 
-## 🔵 K128 — SAYIM FAZLASININ MALİYETİ · 02.09.2026 · [ÖLÇÜLDÜ · KULLANICI KONTROLÜNDE]
+## ✅ K128 — SAYIM FAZLASININ MALİYETİ · **KAPANDI 02.09.2026**
+
+> **Kapanış cümlesi (kullanıcı):** _"Önemsiz bir fark: sistem akışını
+> bozmuyorsa mühim değil."_ — ve kriter ÖLÇÜLEREK uygulandı, varsayılmadı.
+
+### ⭐ KAPANIŞ ÖLÇÜMÜ — `npm run canli:parti-oykusu -- --hepsi`
+
+Soru bütün sayım fazlalarına soruldu: _sayım anında SAYIM PARTİSİ DIŞINDA
+açık parti var mıydı, ve varsa FİYATI FARKLI MIYDI?_ Yoksa "en son parti"
+ataması defterle tutarlı **tek seçenektir** ve soru kendiliğinden kapanır.
+
+    incelenen sayım fazlası partisi   77
+    ✓ SORU KAPALI                     67   (açık parti yok ya da aynı fiyat)
+    ⚠ soru açık                       10   — ve 9'u HENÜZ SATILMAMIŞ
+
+    ⭐ BUGÜNKÜ PARA ETKİSİ: 1 adet · ÜST SINIR ₺25,00
+
+⛔ **YANİ K128'İN TAMAMININ BUGÜNKÜ ETKİSİ ₺25.** Kullanıcının kriteri
+("akışı bozuyor mu") bu rakamla tartışmasız karşılanıyor.
+
+⚠ **İLERİDE DOĞACAK ETKİ AYRI SAYILDI VE SIFIR DEĞİL.** Satılmamış 9
+partinin üst sınırı **~₺1.480** ve bunun **₺1.136'sı TEK ÜRÜNDE**:
+`axcali1726` FISHER PRICE (2 adet, birim fark ₺567,88). Kalan sekizinin
+toplamı ₺344. ⚠ Bu bir KAYIP DEĞİL: iki gerçek parti arasında hangisinin
+seçildiği sorusu ve üst sınır — gerçek sapma bunun içinde bir yerde.
+
+⏭ **AÇILIŞ ŞARTI:** `axcali1726` satılırsa ve NET-2'si şüpheli görünürse
+tek satırlık bir bakış yeter (`npm run canli:parti-oykusu`). Ondan önce
+iş yok.
+
+### 📌 GEÇMİŞ — turun kendisi (kayıtta kalıyor)
+
+_02.09 sabahı bir doğrulama turu yapıldı ve KENDİM ÇÜRÜTTÜM: sayfa cevabı
+ekranda gösteriyordu, dönen 7 teyidin 7'si de "tuttu" ve ölçtüğüm şey
+doğruluk değil YANKI'ydı. Sonra soru doğru sorulunca (fiyat değil, malın
+YAŞI) ve defterden ayırt edici kanıt çıkarılınca (sayım anında hangi parti
+açıktı) 77 partinin 67'si tek koşumda kapandı._
+
+⭐ **DERS: DOĞRU SORU, DOĞRU CEVAPTAN ÖNCE GELİR.** "Maliyet doğru mu" diye
+sormak kullanıcıyı ekrandaki rakamı okumaya itiyordu. "Sayım anında hangi
+parti açıktı" sorusu ise DEFTERDEN cevaplanabiliyordu ve kullanıcıya hiç
+sorulması gerekmiyordu.
+
+---
+
+### 📎 TURUN AYRINTISI — kapanana kadarki ölçümler
+
+⚠ **BU BÖLÜM AYRI BİR KALEM DEĞİL, K128'İN DEVAMI.** İlk yazımda buraya
+`K128-ESKİ KAYIT` diye ikinci bir BAŞLIK açmıştım — panoda aynı kimlik iki
+satırda geçemez (anayasa: "işaret kimliğin parçası değildir"; K10'da dört
+kez çakışmış bir desen). Aynı kalemin ikinci fazı yeni satır açmaz, mevcut
+satırın altına eklenir.
 
 _02.09'da maliyet doğrulama turu **GEÇERSİZ** ilan edildi (araç cevabı
 gösteriyordu — döngüsel teyit, `b2d3baf`). Geriye iki soru kalmıştı; biri
