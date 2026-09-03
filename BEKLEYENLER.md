@@ -325,6 +325,60 @@ sonraki içe aktarma aynı hatayı tekrarlamayacak.
 
 ---
 
+## 📌 K153 — RESMİ ÖLÇÜM SINIRI: 01.08.2025 · KULLANICI KARARI 03.09.2026 · [KARAR]
+
+> **Halil:** _"tamam, tüm official ölçümüzü 2025 Ağustos ayının başından
+> itibaren alalım."_
+
+### ⭐ SINIR VERİDEN ÇIKTI, UYDURULMADI
+
+Kodsuz satış satırlarının (B sütunu `trendyol`/`hepsiburada`, kod yok) ay
+dağılımı ölçüldü:
+
+    2024-06 → 2025-07   1.604 satir · ~₺3,4M   ← karisik donem
+    2025-08                 2 satir             ← VERI BURADA DUZELIYOR
+    2026                    3 tek satir         ← elle duzeltilecek
+
+⚠ Haziran–Temmuz 2024'ün 111 satırında sipariş numarası da yok — hiçbir
+yöntemle giremezler.
+
+### KARARIN ANLAMI
+
+- **Ağustos 2025'ten bugüne rakamlar RESMİDİR** — satışlar defterle
+  %99,7 kuruşuna mutabık (K152 sonrası).
+- **Öncesi KISMİDİR ve öyle beyan edilir:** kodlu olan her eski satış
+  girdi ve DOĞRU (silinmez, dursun); kodsuz ₺3,4M dosyada var, deftere
+  bağlanamaz. _Rakam kaybolmadı, kayda geçti._
+- **Ad eşleştirmesiyle zorla bağlama YAPILMADI** — gerekçe: benzer ad
+  aynı kimlik değildir; yanlış bağ doğru ürünün kâr geçmişini kirletir.
+  **Yanlış veri, eksik veriden tehlikelidir.**
+
+### ⭐ STOK TARAFI ÖLÇÜLDÜ — HALİL'İN BEYANI %99,94 DOĞRU
+
+> **Halil:** _"Stok kısmı sorunsuz çünkü 2025 Ağustos'tan önce giren
+> hiçbir aktif stok yok."_
+
+Ölçüldü (03.09.2026): 01.08.2025 öncesine damgalı **1.700 partinin
+1.699'u tamamen tükenmiş.** Tek istisna, beyanlı:
+
+    axcali2523 · Imaginext DC Batglider · parti 15.03.2025 · kalan 1 · ₺689
+
+Yani aktif stoğun tamamı (bir adet hariç) resmî dönemin malı — sınır
+stok tarafında da temiz.
+
+### ⏭ AÇIK UÇLAR
+
+1. **3 tek satır** Halil'de: Karaca (satır 9525, sip 11359141121) +
+   2026-02 (₺9.100) + 2026-03 (₺9.984) — kod yazılınca resmî dönem %100.
+2. Halil bugünkü satışlarla güncel satış dosyası + **temiz alış listesi**
+   verecek (alış listesinde İADE KOLONU kalmalı).
+3. Pazaryeri iade listeleri bekleniyor (K: iade şişkinliği ~₺118K).
+
+⚠ **AÇILIŞ ŞARTI:** Halil eski kütleyi (2024-06→2025-07 kodsuz) elle
+eşleştirmek isterse bu kalem yeniden açılır; öneri listesi çıkarılmıştı.
+
+---
+
 ## ✅ K152 — "HEPSİNİ İÇERİ AL": 724 ÜRÜN + 1.889 SATIŞ + MALİYETLERİ · 03.09.2026 · [KOD KOŞTU]
 
 > **Halil:** _"satış listesini tekrar veriyorum … kontrol et ve HEPSİNİ
