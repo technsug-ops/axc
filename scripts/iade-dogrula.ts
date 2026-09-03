@@ -26,6 +26,7 @@ import {
   komisyonToplami,
   satisCikisMaliyeti,
   type IadeGirdisi,
+  tarihselKipKontrol,
 } from "../src/lib/iade";
 import { prisma } from "../src/lib/prisma";
 
@@ -858,6 +859,73 @@ async function cezaTesti() {
     await bekle("HB 6000 TL -> 150", hb.id, 6000, 150);
     await bekle("HB 6000,01 TL -> öneri YOK", hb.id, 6000.01, null);
     await bekle("HB 20000 TL -> öneri YOK", hb.id, 20000, null);
+
+    /** ═══ TARİHSEL İADE KİPİ (03.09.2026) — V2 baz iadeleri için ═══
+     *  Saf kontrol DEĞER testiyle; stok bloğu kapıları KULLANIM YERİNE
+     *  bağlı kaynak ölçütüyle (ada değil, satırın kendisine). */
+    kontrol(
+      "tarihsel kip: kip yokken kontrol susar",
+      tarihselKipKontrol({ kalemler: [{ exchangeVariantId: null }] }) === null,
+    );
+    kontrol(
+      "tarihsel kip: gerekçeli + değişimsiz GEÇERLİ",
+      tarihselKipKontrol({
+        stokYazilmaz: { gerekce: "V2 baz — stok sayımca kapatıldı" },
+        kalemler: [{ exchangeVariantId: null }],
+      }) === null,
+    );
+    kontrol(
+      "tarihsel kip: GEREKÇESİZ reddedilir",
+      tarihselKipKontrol({
+        stokYazilmaz: { gerekce: "  " },
+        kalemler: [{ exchangeVariantId: null }],
+      }) !== null,
+    );
+    kontrol(
+      "tarihsel kip: DEĞİŞİM reddedilir (stok ister)",
+      tarihselKipKontrol({
+        stokYazilmaz: { gerekce: "x" },
+        kalemler: [{ exchangeVariantId: "v1" }],
+      }) !== null,
+    );
+    kontrol(
+      "tarihsel kip: YANLIŞ ÜRÜN reddedilir (düzeltme stok ister)",
+      tarihselKipKontrol({
+        stokYazilmaz: { gerekce: "x" },
+        kalemler: [{ exchangeVariantId: null, donenVaryantId: "v2" }],
+      }) !== null,
+    );
+    {
+      const motor = readFileSync("src/lib/iade.ts", "utf8");
+      /** RETURN_IN kapısı — desen SATIRIN KENDİSİ, ad değil. */
+      kontrol(
+        "tarihsel kip: RETURN_IN bloğu stokYazilmaz kapılı",
+        motor.includes(
+          '} else if (!girdi.stokYazilmaz && girdi.returnType !== "DISPUTED" && g.saglamAdet > 0) {',
+        ),
+      );
+      /** Sayım kapısı yön haritası — SAYIM KAPISI bloğuna daraltılmış. */
+      const sayimBasi = motor.indexOf("═══ SAYIM KAPISI ═══");
+      const sayimSonu = motor.indexOf("═══ DÖNEM KAPISI");
+      kontrol(
+        "tarihsel kip: sayım yön haritası stokYazilmaz kapılı (blok içinde)",
+        sayimBasi > 0 &&
+          sayimSonu > sayimBasi &&
+          motor.slice(sayimBasi, sayimSonu).includes("if (!girdi.stokYazilmaz) {"),
+      );
+      /** Giriş kontrolü — çağrı + fırlatma birlikte, iadeKaydet gövdesinde. */
+      const kaydetBasi = motor.indexOf("export async function iadeKaydet");
+      kontrol(
+        "tarihsel kip: iadeKaydet girişte tarihselKipKontrol çağırıp fırlatıyor",
+        kaydetBasi > 0 &&
+          motor
+            .slice(kaydetBasi, kaydetBasi + 1200)
+            .includes("const kipHatasi = tarihselKipKontrol(girdi);") &&
+          motor
+            .slice(kaydetBasi, kaydetBasi + 1200)
+            .includes("if (kipHatasi) throw new Error(kipHatasi);"),
+      );
+    }
 
     bolum6Tamamlandi = true;
   } catch (e) {

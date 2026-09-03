@@ -363,11 +363,34 @@ TEK MOTOR ile. `9548963835` → 11.10.2024: **Halil kararıyla DIŞARIDA**
       elden satışta stopaj yok — KDV işliyor mu? Cevaba göre kapı açılır.
     ③ Karaca satır 5271: kod hücresi hâlâ boş.
 
+### ⭐ ② İADELER YAZILDI — TARİHSEL KİPLE · 03.09.2026
+
+Motora `stokYazilmaz` kipi eklendi (**5 mutasyon kırmızı kanıtlı**, iade
+bekçisi 94→102): para tarafı TAM işler (ciro geri · komisyon geri ·
+maliyet geri · stopaj/ödeme gideri iadesi · KDV düzeltmesi), stok HİÇ
+oynamaz — 27.08 sayımı son söz. Değişim/yanlış-ürün bu kipte YASAK;
+gerekçe zorunlu ve Return.note'a damgalı. İkinci motor AÇILMADI.
+
+    yazılan 199/199 · hata 0 · Return 18 → 217 ✓
+    STOK HAREKETİ: 0 ✓  (betik kendisi ölçüyor, 0 değilse kırmızı)
+    ⭐ MOTORUN YAZDIĞI NET-2 ETKİSİ: −₺62.052,42
+    tarih: 195 V1 "Geldiği Tarih" · 4 satış tarihine geri düşüş (beyanlı)
+    kargo: 195 siparişte V1'den (KDV dahil kabul, beyanlı)
+    dönem kapısı: GEC_GIRILEN_KAYIT ısrarıyla, iz bırakarak
+
+⚠ **ÖNİZLEME −₺113.378 DEMİŞTİ, MOTOR −₺62.052 YAZDI** — fark sessiz
+geçilmedi: önizleme kaba üç terimdi (−ciro+komisyon+maliyet); motor
+stopaj/ödeme gideri iadelerini, KDV düzeltmesini ve kargo giderini de
+taşıyor. Bağlayıcı rakam MOTORUN; önizleme "yaklaşık" beyanlıydı.
+
+Dışarıda (gerekçeli): `4634137503` sayım SONRASI geliş → stoklu ayrı tur ·
+`4775170966` çok kalemli satışta kalem eşleşmedi (Halil'e) · 13 zaten
+kayıtlı ✓ · 1 iptalli ✓.
+
 ### ⏭ SIRADA (V2 baz mandası)
 
-- **İADE 201 sipariş** (iade_v2): motorda "sayım-öncesi tarihsel iade"
-  kipi + kuru koşum → rapor → yazım. 13'ü zaten kayıtlı ✓ · 1 iptalli ✓.
 - **TAZMİN 13 sipariş** (tanzim_v2): tazminat tahsilatı — iade bağıyla.
+- **İADE ARTIĞI:** `4634137503` (stoklu tur) · `4775170966` (kalem sorusu).
 - **KESİNTİ DOĞRULAMASI:** defterdeki komisyon/kargo ↔ V2 M/O kolonları
   (kargo tabanı KDV dahil mi hariç mi ÖLÇÜLEREK).
 

@@ -417,6 +417,23 @@ export type IadeKaydiGirdisi = {
   ceza: number | null;
   cezaNotu: string | null;
   /**
+   * ⭐ TARİHSEL İADE KİPİ — STOK SAYIMCA KAPATILDI (Halil kararı 03.09.2026).
+   *
+   * V2 baz dosyalarındaki 201 geçmiş iade için açıldı: mal 27.08 fiziksel
+   * sayımından ÖNCE rafa döndü ve ya yeniden satıldı ya sayımda sayıldı —
+   * yani stok tarafını SAYIM zaten kapattı. Bu kipte:
+   *   · HİÇBİR stok hareketi yazılmaz (RETURN_IN / düzeltme / EXCHANGE_OUT)
+   *   · sayım kapısı tetiklenmez (stoğa dokunan yön yok)
+   *   · PARA TARAFI AYNEN işler — `saglamAdet` maliyet geri hesabına girer
+   *     (mal fiziken döndü; "hasarlı" saymak tazminat ekranlarını kirletir
+   *     ve maliyeti yakar — K: kayıp abartısı da kayıp küçültmesi kadar yanlış)
+   *   · değişim ve yanlış-ürün senaryoları BU KİPTE YASAK (stok ister)
+   *   · gerekçe zorunludur ve Return.note'a damgalanır
+   * ⛔ İkinci motor DEĞİL: aynı gövde, stok bloğu kapalı. Dönem kapısı
+   * (K108) aynen işler.
+   */
+  stokYazilmaz?: { gerekce: string };
+  /**
    * ⭐ SAYIM KAPISI ISRARI — İADE BAŞINA (kalem başına DEĞİL).
    * Kapıyı tetikleyen şey TARİH ve iadenin tek tarihi var.
    */
@@ -526,10 +543,33 @@ export class DegisimStokYokHatasi extends Error {
 }
 
 /**
+ * TARİHSEL KİP ÖN KONTROLÜ — SAF. `iadeKaydet` girişte çağırır; bekçi
+ * değer testiyle sınar (kaynak taramaz — "saf hesap katmanı desen tarayan
+ * bekçiye muhtaç olmaz").
+ * Dönen değer: hata metni ya da null (geçerli).
+ */
+export function tarihselKipKontrol(girdi: {
+  stokYazilmaz?: { gerekce: string };
+  kalemler: { exchangeVariantId: string | null; donenVaryantId?: string | null }[];
+}): string | null {
+  if (!girdi.stokYazilmaz) return null;
+  if (girdi.stokYazilmaz.gerekce.trim() === "")
+    return "Tarihsel iade kipi GEREKÇESİZ kullanılamaz.";
+  if (girdi.kalemler.some((k) => k.exchangeVariantId))
+    return "Tarihsel iade kipinde DEĞİŞİM desteklenmez — değişim stok ister.";
+  if (girdi.kalemler.some((k) => k.donenVaryantId))
+    return "Tarihsel iade kipinde YANLIŞ ÜRÜN senaryosu desteklenmez — düzeltme stok ister.";
+  return null;
+}
+
+/**
  * İadeyi kaydeder: stok hareketleri, iade etkisi ve kesinti satırları
  * TEK TRANSACTION içinde yazılır. Yarım iade kaydı oluşamaz.
  */
 export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
+  /** ⛔ Tarihsel kip şartları — saf gövdeden, yazmaya başlamadan ÖNCE. */
+  const kipHatasi = tarihselKipKontrol(girdi);
+  if (kipHatasi) throw new Error(kipHatasi);
   return prisma.$transaction(async (tx) => {
     const satis = await tx.sale.findUnique({
       where: { id: girdi.saleId },
@@ -623,12 +663,17 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
       const ekle = (variantId: string, adet: number) => {
         yonler.set(variantId, (yonler.get(variantId) ?? 0) + adet);
       };
-      for (const g of girdi.kalemler) {
-        const kalem = kalemHaritasi.get(g.saleItemId)!;
-        /** Geri dönen mal — `donenVaryantId` doluysa o, yoksa satılan. */
-        ekle(g.donenVaryantId || kalem.variantId, g.saglamAdet);
-        /** Giden değişim ürünü — stoktan düşer. */
-        if (g.exchangeVariantId) ekle(g.exchangeVariantId, -g.iadeAdedi);
+      /** ⭐ TARİHSEL KİPTE stok yönü YOKTUR: `yonler` boş kalır, kapı
+       *  israrsız geçer — çünkü dokunulan stok yok. Dönem kapısı (aşağıda)
+       *  bundan MUAF DEĞİL, aynen işler. */
+      if (!girdi.stokYazilmaz) {
+        for (const g of girdi.kalemler) {
+          const kalem = kalemHaritasi.get(g.saleItemId)!;
+          /** Geri dönen mal — `donenVaryantId` doluysa o, yoksa satılan. */
+          ekle(g.donenVaryantId || kalem.variantId, g.saglamAdet);
+          /** Giden değişim ürünü — stoktan düşer. */
+          if (g.exchangeVariantId) ekle(g.exchangeVariantId, -g.iadeAdedi);
+        }
       }
       const sonSayimlar = await sonSayimTarihleri(tx, [...yonler.keys()]);
       const duraksayanlar: {
@@ -780,7 +825,12 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
         code: girdi.code,
         returnType: girdi.returnType,
         occurredAt: girdi.occurredAt,
-        note: girdi.note,
+        /** ⭐ Tarihsel kip Return kaydının KENDİSİNE damgalanır — çağırana
+         *  bırakılsaydı bir çağıran unutur, kip izi kaybolurdu. */
+        note: girdi.stokYazilmaz
+          ? (girdi.note ? girdi.note + " · " : "") +
+            "[TARIHSEL-IADE STOK YAZILMADI — " + girdi.stokYazilmaz.gerekce + "]"
+          : girdi.note,
         userId: girdi.userId,
         exchangeDeliveredAt: girdi.degisimTeslimTarihi,
         returnCargoAmount:
@@ -841,7 +891,7 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
         ? g.donenVaryantId!
         : kalem.variantId;
 
-      if (yanlisUrunMu) {
+      if (!girdi.stokYazilmaz && yanlisUrunMu) {
         const nedenId = await sevkiyatHatasiNedeniId(tx);
 
         /**
@@ -987,7 +1037,7 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
             },
           });
         }
-      } else if (girdi.returnType !== "DISPUTED" && g.saglamAdet > 0) {
+      } else if (!girdi.stokYazilmaz && girdi.returnType !== "DISPUTED" && g.saglamAdet > 0) {
         // SAĞLAM mal stoğa döner — ama itirazlı iadede ürün müşteride kalır.
         await tx.stockMovement.create({
           data: {
