@@ -3008,6 +3008,7 @@
     "sonAlim": "Son alım maliyeti",
     "alimYok": "alım kaydı yok",
     "ortalamaMaliyet": "Ortalama maliyet",
+    "acikPartiYokMaliyet": "stok bitti — açık parti yok",
     "maliyetBilinmiyor": "maliyet bilinmiyor",
     "hiz": "Alımdan satışa",
     "hizYok": "ölçülemedi",

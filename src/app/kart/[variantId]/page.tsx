@@ -312,8 +312,32 @@ export default async function KartSayfasi({
           <Kutu
             etiket={t("ortalamaMaliyet")}
             deger={p(ozet.ortalamaMaliyet)}
+            /**
+             * ⛔ "MALİYET BİLİNMİYOR" YARIM DOĞRUYDU VE KULLANICI ONA TAKILDI
+             * (03.09.2026). Bu kutu ELDE KALAN partilerin ortalamasıdır; stok
+             * bitince açık parti kalmaz ve `null` döner. Eski metin bunu
+             * _"maliyet bilinmiyor"_ diye yazıyordu — oysa sistem o ürünün
+             * alım maliyetini BİLİYOR, yan kutuda da gösteriyor.
+             *
+             * 📏 ÖLÇÜLDÜ: 1114 varyantın **518'i** (%46,5) alımı OLDUĞU hâlde
+             * bu kutuda "bilinmiyor" görüyordu. Kullanıcı `axcali1805`
+             * kartında tam bunu sordu: alım ekranı ₺7.641,50 diyor, ürün
+             * ekranı "bilinmiyor".
+             *
+             * ⭐ VE ÇARE ZATEN YAN KUTUDA YAZILIYDI: `sonAlim` kutusu 21.08'de
+             * aynı kusuru düzeltmiş ("alım VARDI, stok yoktu") ama karar bu
+             * kutuya UYGULANMAMIŞ. _(Anayasa: "kararın kapsamı, uygulandığı
+             * yerle sınırlı sayılmaz" · "kolon başlığı bir iddiadır".)_
+             *
+             * Ayrım `sonAlimTarihi` ile kuruluyor — yan kutunun kullandığı
+             * ölçütün AYNISI; iki kutu aynı soruya iki cevap vermesin.
+             */
             not={
-              ozet.ortalamaMaliyet === null ? t("maliyetBilinmiyor") : undefined
+              ozet.ortalamaMaliyet !== null
+                ? undefined
+                : veri.sonAlimTarihi === null
+                  ? t("alimYok")
+                  : t("acikPartiYokMaliyet")
             }
           />
           <Kutu

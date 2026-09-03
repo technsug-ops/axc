@@ -411,6 +411,73 @@ silinmedi — sahte kalem yerinde, üstüne onu açıklayan ters hareket yazıld
 
 ---
 
+## ✅ K145 — KARDEŞ PARTİ SAPMASI TARANDI + KART ETİKETİ YALAN SÖYLÜYORDU · 03.09.2026 · [KOD KOŞTU]
+
+_Halil: "ALM-HB-260216-03 aramasında sipariş no'ya tıkladığımda çıkan ekran
+ile ürün ismine tıkladığımda çıkan ekran birbirinin aynısı değil. Bunun gibi
+bir hata başka üründe de var mı?"_
+
+⚠ İki ekran **farklı olmalı** (biri ALIM, biri ÜRÜN) — ama Halil haklıydı:
+aynı satırdan gidilen iki ekran **aynı ürün için farklı şey söylüyordu.**
+Alım ekranı ₺7.641,50, ürün kartı _"Ortalama maliyet: ? maliyet bilinmiyor"_.
+İki ayrı bulgu çıktı.
+
+### ⭐ ① BAŞKA ÜRÜNDE DE VAR — ÜÇ TANE DAHA
+
+Ölçüt: **aynı varyant + aynı gün + aynı para birimi** grubunda en yüksek ÷
+en düşük birim maliyet. Zaman ekseni YOK — anayasa _"zaman içindeki fiyat
+farkı şüphe üretmez"_ diyor ve bu kıyas onun kapsamı dışında.
+
+    538 grup (>=2 kalem) · n=538
+    p50 1,000x · p75 1,011x · p90 1,051x · p95 1,099x · p99 1,319x
+    ────────────────── GÖVDE BİTER ──────────────────
+    1,84x  ·  2,00x  ·  3,11x  ·  14,21x        ← YALNIZ DÖRT GRUP
+
+| oran | SKU | gün | aralık | ürün |
+|---|---|---|---|---|
+| **14,21×** | `axcali1805` | 16.02.2026 | 537,62 → **7.641,50** | Fresh Kitchen 2'li Şef Bıçağı |
+| **3,11×** | `axcali2110` | 01.01.2026 | **450,35** → 1.399,00 | LEGO 31172 Çiçekli Pikap |
+| **2,00×** | `axcali2002` | 27.04.2026 | **1.500,00** → 2.999,00 | Braun Series 3 |
+| **1,84×** | `axcali1603` | 14.08.2026 | 1.111,00 → 2.048,00 | Zolo 20.000mAh Powerbank |
+
+⚠ **VE YÖN ÖNEMLİ — ÜÇÜNDE AYKIRI OLAN *DÜŞÜK* TARAF.** Yüksek aykırı kârı
+olduğundan **kötü**, düşük aykırı olduğundan **iyi** gösterir. İkincisi daha
+tehlikelidir: kimse "kârım fazla çıkmış" diye şikâyet etmez.
+
+⛔ **HİÇBİRİ DÜZELTİLMEDİ — DAVETTİR, HÜKÜM DEĞİL.** Her biri fatura ile
+doğrulanır. _(OneBlade `₺27,16` de imkânsız görünmüştü ve GERÇEKTİ.)_
+**Liste:** `raporlar/kardes-parti-sapmasi.csv`
+
+### ⛔ ② KART ETİKETİ YALAN SÖYLÜYORDU — VE YARIM DEPOYU ETKİLİYORDU
+
+_"Ortalama maliyet: ? — maliyet bilinmiyor"_ cümlesi **yanlıştı.** Kutu
+ELDE KALAN partilerin ortalamasıdır; stok bitince açık parti kalmaz ve
+`null` döner. Sistem o ürünün alım maliyetini **BİLİYOR** — hatta YAN
+KUTUDA gösteriyor (`Son alım maliyeti ₺649,00`).
+
+    📏 1114 varyantın **518'i** (%46,5) alımı OLDUĞU hâlde "bilinmiyor" görüyordu
+       alımı YOK 385  ·  alımı VAR + stok>0 211  ·  ⭐ alımı VAR + stok 0 → **518**
+
+⭐ **VE ÇARE ZATEN YAN KUTUDAYDI.** `sonAlim` kutusu **21.08.2026'da** aynı
+kusuru düzeltmiş ve gerekçesi kodda yazılı: _"Eskiden stok bitince bu kutu
+'alım yok' derdi — alım VARDI, stok yoktu."_ Karar bu kutuya
+**UYGULANMAMIŞ.** _(Anayasa: "kararın kapsamı, uygulandığı yerle sınırlı
+sayılmaz" · "kolon başlığı bir iddiadır".)_
+
+Yeni metin iki sebebi AYRI söylüyor ve ayrım **yan kutunun ölçütünden**
+geliyor (`sonAlimTarihi`) — iki kutu aynı soruya iki cevap vermesin:
+
+    alımı YOK    → "alım kaydı yok"
+    stok BİTMİŞ  → "stok bitti — açık parti yok"
+
+    kart:dogrula  105 → 111 ölçüt   ·   i18n tr+en ✓
+
+✓ **5/5 mutasyon kırmızı:** eski yalan metne dönüş · iki sebebi tek metne
+indirme · ayrımı yan kutudan koparma · dolu kutuya not basma · blok
+çapasını bozma (pencere gerçekten daralıyor mu).
+
+---
+
 ## 🔵 K141 — `CALCULATED` EKSİK MALİYETİ SÖYLEMİYOR · 03.09.2026 · [ÜST ÖLÇÜT KOŞTU · kargo rozeti açık]
 
 Kullanıcı CSV'de gördü: kargosuz satışların `durum` sütunu **CALCULATED**.

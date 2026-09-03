@@ -818,6 +818,61 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
   );
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+ *  ORTALAMA MALİYET KUTUSU "BİLİNMİYOR" DEMEZ — SEBEBİNİ SÖYLER (03.09.2026)
+ * ──────────────────────────────────────────────────────────────────────────
+ *  ⛔ BEDELİ: kullanıcı `axcali1805` kartında takıldı — alım ekranı
+ *  ₺7.641,50 diyor, ürün kartı "maliyet bilinmiyor". İkisi de doğruydu ama
+ *  METİN yalan söylüyordu: kutu ELDE KALAN partilerin ortalaması ve stok
+ *  bitince `null` dönüyor; sistem alım maliyetini BİLİYOR.
+ *
+ *  📏 ÖLÇÜLDÜ 03.09.2026: 1114 varyantın **518'i** (%46,5) alımı OLDUĞU
+ *  hâlde bu kutuda "bilinmiyor" görüyordu.
+ *
+ *  ⭐ VE ÇARE ZATEN YAN KUTUDAYDI: `sonAlim` kutusu 21.08'de aynı kusuru
+ *  düzeltmiş ("alım VARDI, stok yoktu") ama karar bu kutuya UYGULANMAMIŞ.
+ *  _(Anayasa: "kararın kapsamı, uygulandığı yerle sınırlı sayılmaz".)_
+ *
+ *  ⚠ ÖLÇÜT KULLANIM BLOĞUNA DARALTILIYOR: `maliyetBilinmiyor` anahtarı
+ *  sözlükte İKİ yerde geçiyor ve dosyanın tamamında aramak yalancı yeşil
+ *  üretirdi. _(Anayasa: "önce deseni say".)_
+ * ══════════════════════════════════════════════════════════════════════════ */
+{
+  const kaynak = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
+  const bas = kaynak.indexOf('etiket={t("ortalamaMaliyet")}');
+  const son = kaynak.indexOf('etiket={t("hiz")}');
+  kontrol("ortalama maliyet kutusu bulunabiliyor", bas > 0 && son > bas);
+  const kutu = kaynak.slice(bas, son);
+
+  /** ⛔ YANLIŞ METİN GERİ GELMESİN — asıl kusur buydu. */
+  kontrol(
+    'ortalama maliyet kutusu artık "maliyetBilinmiyor" DEMİYOR',
+    !/maliyetBilinmiyor/.test(kutu),
+  );
+  /** İKİ SEBEP AYRI SÖYLENİYOR — "hiç alım yok" ile "stok bitti" aynı şey değil. */
+  kontrol(
+    "  ...alımı OLMAYAN için `alimYok`",
+    /t\("alimYok"\)/.test(kutu),
+  );
+  kontrol(
+    "  ...stok BİTMİŞ için `acikPartiYokMaliyet`",
+    /t\("acikPartiYokMaliyet"\)/.test(kutu),
+  );
+  /**
+   * ⚠ AYRIM YAN KUTUYLA AYNI ÖLÇÜTTEN: iki kutu aynı soruya iki cevap
+   * vermesin. `sonAlimTarihi` ikisinde de kullanılıyor.
+   */
+  kontrol(
+    "  ...ayrım `sonAlimTarihi` ile kuruluyor (yan kutunun ölçütü)",
+    /veri\.sonAlimTarihi === null/.test(kutu),
+  );
+  /** ⭐ VE DEĞER VARKEN NOT BASILMIYOR — dolu kutuya açıklama gürültüdür. */
+  kontrol(
+    "  ...değer VARKEN not basılmıyor",
+    /ozet\.ortalamaMaliyet !== null\s*\?\s*undefined/.test(kutu),
+  );
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
