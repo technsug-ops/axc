@@ -292,17 +292,115 @@ NET-2'ye doğrudan uyguladım.
 
 ✓ NET tazelendi 7/7 · doğrulama 7/7 · `canli:net-tazele` ile.
 
-### ⏭ AÇIK KALAN
+### ✅ AÇIK KALAN KALEM ÖLÇÜLDÜ VE KAPANDI — KORBELL YAZILMAYACAK
 
-**Korbell'in 4 alımı hâlâ deftere girmedi** — ₺6.906,24 · 8 adet ·
-06–07.02.2026. ⚠ Bu stoğa mal ekler; yazımdan önce 27.08 sayımının
-Korbell'i görüp görmediği ÖLÇÜLECEK. Sayım "rafta yok" dediyse geçmişe mal
-eklemek mutabakatı bozar.
+Ölçüm yapıldı (03.09) ve cevap **"yazma"** çıktı. Gerekçe üç ölçümde:
+
+    ① SAYIM GORDU   29.08: defter 7 → duzeltme −3 → Halil rafta 4 saydi
+       8 adet geçmişe eklenirse defter 15 olur, sayılan 4 ile arası 11 AÇILIR
+    ② STOK ZATEN KAPATILMIS  bu varyantta alim kaydi OLMAYAN 8 giris var:
+       +7 @₺796 (eksik-alim-20260829) · 7×+1 @₺863 (dosya-maliyet-20260828)
+    ③ MALIYET ZATEN DOGRU     sentetik ₺863,00 ↔ gercek ₺863,28 → 28 KURUS
+
+⭐ **AÇIK OLAN TEK EKSEN KDV TABANI** — ₺6.906,24 şubat alımına girmemiş.
+Ama bu Korbell'e özgü değil; K151'de ölçüldü ve oraya taşındı.
+
+⛔ **VE PANODAKİ NOT YANLIŞTI — DÜZELTMESİ BURADA:** yukarıda _"Korbell Çöp
+Kovası · İKİ barkodun da varyantı YOK"_ yazıyordu. Ölçüm: barkod **TEK**
+(`9723484564032`) ve varyantı **VAR** — `OYUNEN88141740`. Ad araması `0`
+döndürmüştü çünkü ürün sistemde **"Bebek Bezi Çöp Kovası Sistemi"** adıyla
+duruyor, "Korbell" adıyla değil.
+_(Anayasa: "kimlik varken dizeyle aranmaz" — ve "sıfır üç farklı şey
+olabilir": burada `0`, yokluk değil BULUNAMAMAYDI.)_
+
+⭐ **VE NİYE GİRMEDİĞİ DE BULUNDU:** eski `Alımlar.xlsx`ta o 4 satırın
+barkodu `6009631456297`ydi — sistemde karşılığı olmayan bir kod. İçe
+aktarma barkoda baktı, bulamadı, **doğru davrandı.** Halil hücreleri
+düzeltti; bir sonraki aktarma bu satırları görecek.
 
 ⭐ **VE KAYNAK DOSYA DÜZELDİ:** Halil `Alımlar.xlsx`taki 20 hücreyi
 düzeltti; ad↔barkod çelişkisi **7 → 1**'e indi ve kalan tek çelişki
 (Stanley IceFlow) GERÇEK — Rose Quartz ve Lila iki ayrı renk. Yani bir
 sonraki içe aktarma aynı hatayı tekrarlamayacak.
+
+---
+
+## 🔴 K151 — ALIM DOSYASINDA VAR, DEFTERDE YOK: 39 SATIR · ₺190.189,01 · 03.09.2026 · [ÖLÇÜLDÜ · YAZIM YOK]
+
+Korbell'in 4 alımı ölçülürken soru büyüdü: **bu tek üründe mi, deseni mi
+var?** Ölçüldü — deseni var ve her ay tekrarlıyor.
+
+### ⭐ ÖNCE KAPSAM: SENTETİK PARTİ HAVUZU
+
+Alım kaydı OLMAYAN stok girişleri (`purchaseItemId = null`, pozitif):
+
+    dosya-maliyet-20260828   2549 hareket · 2550 adet · 527 varyant · ₺4.518.893,19
+    sayim-fiziksel-20260829    77 hareket ·  185 adet                · ₺  407.720,97
+    eksik-alim-20260829         3 hareket ·   23 adet                · ₺   18.762,50
+    ────────────────────────────────────────────────────────────────────────────────
+    TOPLAM                   2704 hareket · 2848 adet                · ₺5.110.504,67
+    alim kaydi OLAN giris    2019 hareket · 4199 adet   →  sentetik payi %40,41
+
+⛔ **AMA BU ₺5,1M "KDV AÇIĞI" DEĞİL.** Havuzun büyük kısmı sistem
+öncesi mal — ve o dönemin alımı Halil'in dosyasında zaten yok.
+_(Anayasa: "kapsam boşluğu fark değildir".)_ Açık olan yalnız şu:
+**dosyada DURAN ama deftere girmemiş satırlar.**
+
+### ⛔ VE İLK RAKAMIM KULLANILAMAZDI — %55 YANLIŞ POZİTİF
+
+Çapraz `supplierOrderNo` üzerinden kuruldu ve **251 satır** buldu. Kendi
+çaprazımı sınadım ve ısırdı:
+
+| kademe | ölçüt | eleme | kalan |
+|---|---|---|---|
+| ① | sipariş nosu defterde yok + barkod tanıdık | — | **87** · ₺502.870,72 |
+| ② | aynı varyant + AYNI GÜN + birim tutar kuruşuna eşit | **−48** | 39 |
+| ③ | tarih sınırı KALDIRILDI, birim tutar eşit | −0 | **39** |
+
+    ⭐ GERCEKTEN EKSIK KALAN   39 satir  ₺190.189,01   (eleme orani %55,2)
+
+⚠ **SEBEP: DOSYANIN SİPARİŞ NUMARASI DEFTERİNKİYLE TUTMUYOR.** Aynı alım
+iki kaynakta iki farklı numarayla duruyor —
+
+    r 81  → ALM-HB-251030-01  (defterde sip "450 251 020 5")
+    r 97  → ALM-AMZ-251104-03 (defterde sip "404-9185567-6872345")
+
+Yani anahtar güvenilmez; **rakam ancak ikinci bir ölçütle elendikten
+sonra yazılabilir.** ⛔ Ve ③'ün bile dediği _"birim tutar eşit"_dir,
+_"aynı alım"_ değil — **₺190.189,01 bir ÜST SINIRDIR ve öyle yazılır.**
+
+### 📏 AYRI SAYILAN İKİ KOVA — BİRLİKTE TOPLANMAZ
+
+    (a) barkodu TANIDIK    87 → 39 satir   ₺190.189,01   ⛔ girmesi GEREKIRDI
+    (b) barkodu YABANCI       102 satir    ₺737.008,50   ⚠ once URUN TANIMI
+    (c) barkodu BOS            62 satir    ₺282.306,61   ⚠ kimlik YOK
+
+⛔ **(b) ve (c) ÖLÇÜLMEDİ ve öyle yazıyor.** Elenmemiş hâlleridir; (a) gibi
+%55 küçülebilirler. _"Bulunamadı" ile "yok" aynı şey değildir._
+
+### ⚠ DAĞILIM — TEK SEFERLİK DEĞİL, HER AY
+
+    2025-10  4 · ₺18.867   2026-01  3 · ₺13.355   2026-04  7 · ₺41.524
+    2025-11  7 · ₺35.107   2026-02  6 · ₺15.056   2026-06  3 · ₺17.758
+    2025-12  6 · ₺20.847   2026-03  2 · ₺23.815   2026-07  1 · ₺ 3.860
+
+Kaçak **süregelen**; kapatılması gereken tek şey geçmiş değil, **içe
+aktarmanın kendisi.**
+
+### ⏭ HALİL'E — VE HİÇBİR ŞEY YAZILMADI
+
+39 satırın tamamı listelendi (bu turun çıktısında). Karar Halil'in:
+
+1. **Stok tarafı zaten kapalı** — sentetik partiler malı deftere sokmuş.
+   Bu satırları alım olarak yazmak **stoğu ikinci kez saydırır** ve
+   29.08 sayımını bozar. _(Korbell'de ölçüldü: defter 15 ↔ sayılan 4.)_
+2. **Kâr tarafı da büyük ölçüde kapalı** — Korbell'de fark 28 kuruştu.
+3. **Açık olan tek eksen KDV.** Bu satırlar KDV indirim tabanına
+   girmemiş.
+
+⛔ **BU YÜZDEN ÇÖZÜM "ALIMLARI GİR" DEĞİL.** Stoğa dokunmadan KDV
+tabanını düzeltmenin yolu ayrı bir tasarım ister ve **Halil'in kararı
+olmadan açılmaz.**
 
 ---
 
