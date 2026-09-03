@@ -233,7 +233,7 @@ silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
 
 ---
 
-## 🚨 K147 — DÖRT ŞÜPHELİ ALIM FATURAYLA SINANDI · 03.09.2026 · [ÜÇÜ KAPANDI · BİRİ AÇILDI]
+## 🚨 K147 — DÖRT ŞÜPHELİ ALIM FATURAYLA SINANDI · 03.09.2026 · [ÜÇÜ KAPANDI · KARIŞMA ÖLÇÜLDÜ]
 
 K145'in bulduğu dört "kardeş parti sapması" Halil'in faturalarıyla teker
 teker sınandı. **Dördünden yalnız biri gerçek fiyat hatasıydı** — ve
@@ -244,7 +244,7 @@ beşincisi, hiç beklenmeyen bir kusur çıktı.
 | ① | `ALM-HB-260216-03` | 14,21× | x2 · ₺1.598 → birim **₺799** | ✅ **DÜZELTİLDİ** (K146) |
 | ② | `ALM-HB-260427-07` | 2,00× | **₺1.500 DOĞRU** — Halil alış hesabını düzeltmiş | ✅ **KAPANDI, hata yok** |
 | ③ | `ALM-BI-260814-01/02` | 1,84× | ⛔ **SAHTE POZİTİF** — `-01` İPTALLİ | ✅ **KAPANDI, ölçüt düzeltildi** |
-| ④ | `ALM-AMZ-260101-07` | 3,11× | ⛔ fiyat değil **ÜRÜN KARIŞMASI** | 🚨 **AÇIK — daha büyük** |
+| ④ | `ALM-AMZ-260101-07` | 3,11× | ⛔ fiyat değil **ÜRÜN KARIŞMASI** | 📏 **ÖLÇÜLDÜ — 2 hasar** |
 
 ### ⛔ ③ SAHTE POZİTİF — TARAMAM İPTALLİ ALIMI ELEMİYORDU
 
@@ -294,14 +294,61 @@ alınmış. Yanlış kaydı **doğru görünen** bir kayda çevirmek olurdu.
 _(Anayasa: "imkânsız görünen değer önce doğrulanır — düzeltilmez"; burada
 doğrulama fiyatı değil ÜRÜNÜ çürüttü.)_
 
-### ⏭ ÖLÇÜLECEK — CANLI AÇILINCA
+### ✅ ÖLÇÜLDÜ · 03.09.2026 — İÇE AKTARMA DOĞRU, KAYNAK DOSYA YANLIŞ
 
-    ① Hulkbuster 76263 sistemde kayıtlı mı, hangi SKU'da
-    ② eşleştirme neye göre yapılmış (barkod mu, ad mı)
-    ③ ⚠ BU KARIŞMA KAÇ ALIMDA DAHA VAR — asıl soru bu
+⭐ **KORKULAN ŞEY ÇIKMADI.** 01.01.2026'nın **yedi alımından altısı doğru**
+eşleşmiş. İçe aktarma **BARKODLA** eşleştiriyor ve doğrusu da o.
 
-⚠ Ölçüm **canlı veritabanı cevap vermediği için** yapılamadı (havuz zaman
-aşımı, `limit=1`). Betikler hazır; erişim açılınca koşulacak.
+    -01  402-7378419-2515516  axcali2280  brk 5702017419794  Hulkbuster    ✓
+    -03  402-2789363-4803560  axcali2110  brk 5702017835990  Çiçekli Pikap ✓
+    -04  406-1628311-8913918  axcali2280  brk 5702017419794  Hulkbuster    ✓
+    -05  406-5483511-3513154  axcali2110  brk 5702017835990  Çiçekli Pikap ✓
+    -07  sipariş no BOŞ       axcali2110  brk 5702017835990  ⛔ KARIŞIK
+
+⛔ **HATA TEK HÜCREDE:** `Alımlar.xlsx` satır **546**'nın ürün adı
+_"LEGO Marvel Iron Man Hulkbuster 76263"_ ama **barkodu Çiçekli
+Pikap'ınki** (`5702017835990`). Aynı ürünün öteki beş satırı
+(330 · 331 · 338 · 539 · 542) doğru barkodu taşıyor (`5702017419794`).
+İçe aktarma barkoda güvendi ve **doğru davrandı.**
+
+### 📏 KAPSAM ÖLÇÜLDÜ — 7 ÇELİŞKİ, AMA YALNIZ 2 GERÇEK HASAR
+
+Ölçüt: **aynı ürün adı, birden çok barkod** (880 farklı ürün adı tarandı).
+Liste: `raporlar/barkod-celiskisi.csv`
+
+| ürün | çoğunluk | azınlık | sistemde ne oldu |
+|---|---|---|---|
+| LEGO Hulkbuster 76263 | 5 satır | **1** | ⛔ `axcali2110`'a (Çiçekli Pikap) bağlandı |
+| Karaca Maestrochef Stella | 1 | **1** | ⛔ `axcali2093`'e (**Dreame ROBOT SÜPÜRGE**) bağlandı |
+| Stanley IceFlow | 2 | 1 | ✓ `axcali3015` (Lilac) — ayrı renk, MEŞRU görünüyor |
+| Korbell Çöp Kovası | 11 | 4 | ⚠ İKİ barkodun da varyantı YOK |
+| Grundig HD 6481 | 8 | 1 | ⚠ azınlık barkodun varyantı yok |
+| JBL Charge6 | 2 | 1 | ⚠ azınlık barkodun varyantı yok |
+| Anker Soundcore C40i | 1 | 1 | ⚠ birinin varyantı yok |
+
+⛔ **İKİNCİ HASAR YENİ BULUNDU — `ALM-HB-260107-05`:**
+
+    axcali2093 · Dreame Robot Süpürge D9 Max · 3 alım
+       07.01.2026  ALM-HB-260107-05  x2 · ₺4.299,00   ⛔ bu Karaca MİKSER satırı
+       09.01.2026  ALM-HB-260109-03  x1 · ₺7.499,00   ✓
+       09.01.2026  ALM-HB-260109-04  x1 · ₺7.499,00   ✓
+
+Robot süpürgenin öteki iki alımı ₺7.499; ₺4.299 mikserin fiyatı. Gerçek
+Maestrochef varyantı (`axcali3104`) sistemde AYRI duruyor.
+
+⚠ **VE 109 BARKOD BİRDEN ÇOK AD TAŞIYOR — AMA ÇOĞU MASUM:** aynı ürünün
+farklı yazılışı (_"Philips OneBlade 2'li Yedek Bıçak"_ ↔ _"QP220/51"_).
+Bu yön hasar üretmiyor; barkod aynıysa varyant da aynı.
+
+### ⏭ HALİL'E — HANGİ BARKOD DOĞRU
+
+⛔ **HİÇBİR ŞEY YAZILMADI.** İki hasarın düzeltilmesi için önce hangi
+barkodun doğru olduğu söylenmeli; sonra o alımlar doğru varyanta taşınır.
+⚠ Taşıma basit bir fiyat düzeltmesi DEĞİL: alım kalemi + parti hareketi +
+o partiden yemiş çıkışlar birlikte gider (K146'daki üç yer kuralı).
+
+⏭ **AYRI KALEM:** barkodu hiç eşleşmeyen satırlar (Korbell 15 satır dahil)
+sisteme girmiş mi, girdiyse nasıl eşleşmiş — bugün açılmadı.
 ⛔ "Ölçülemedi" ile "temiz" AYNI ŞEY DEĞİLDİR ve öyle yazıyor.
 
 ---
