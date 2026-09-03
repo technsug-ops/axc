@@ -325,6 +325,54 @@ sonraki içe aktarma aynı hatayı tekrarlamayacak.
 
 ---
 
+## 📌 K155 — "LİSTE, SATIŞLARIN FİZİKİ SAYIMIDIR" · DEFTER LİSTEYE HİZALANDI · 04.09.2026 · [KOD KOŞTU]
+
+> **Halil:** _"Nasıl stoklarda fiziki sayım okeyse, şu anda verdiğim
+> satışlarda son çalışılan liste — bunu baz al. Bu tarih aralığında
+> gerisi umurumda değil."_
+> ⭐ KURAL: resmî dönemde (01.08.2025+) satışların son sözü LİSTEDİR —
+> sayımın stok için olduğu gibi. Listeyle çelişen defter değeri listeye
+> çekilir; listede olmayan elle giriş iptal edilir. Bu beyan, "kanal >
+> defter" kaynak sırasının da ÜZERİNDEDİR (kullanıcı ısrarı, izli).
+
+### ⭐ SON KÖPRÜ — SIFIR FARK
+
+    Satislar_V2 (2).xlsx (md5 3a41d5b0…) ₺17.625.773,71
+      − 4120311526 (sistemde İPTALLİ; listede hâlâ satış)  −6.499,00
+      = PANEL ₺17.619.274,71  ✓ KURUŞUNA
+    panelde-var-dosyada-yok 0 · tutar farkı 0 · elden 31.349,00 birebir
+
+### YAPILANLAR (hepsi ekran motorlarıyla ya da beyanlı dar yolla)
+
+1. **17 fiyat hizası** — `duzenlemeUygula` (neden KANAL_FARKI, izli).
+   API kuruşları dahil LİSTE kazandı (Halil beyanı; eski gerekçe izde).
+2. **Kodsuz OneBlade (03.08, ₺1.649) İPTAL** — `iptalUygula`
+   (MAGAZA_DIGER): listede yok + Halil'in test şüphesi.
+3. **3 çok-kalemli**, teker teker ölçülüp:
+   · `10559161422` kalem2 0→1 (motor STOK_YETMIYOR dedi — Ekim 2025'te
+     parti yok; dosya-maliyet çifti fallback, net stok 0, maliyet kalem1
+     damgasından)
+   · `4747680294` mükerrer kalem2 SIFIRLANDI (ters çift, net stok 0)
+   · `11265267349` onarım artığı ₺0-kalem SIFIRLANDI — ⭐ hareket
+     YAZILMADI: işaretli maliyeti zaten 0'dı; yazmak kârı şişirirdi.
+     _(Panel "adet 6.041"in +1'i buydu.)_
+4. Motorun `adet=0` reddi EKRAN kuralı olarak yerinde bırakıldı; sıfırlama
+   dar elle-yolla, ters kayıtla, `SATIS_KALEMI_SIFIRLANDI` iziyle.
+
+### ⭐ AYRICA BUGÜN: DOSYA KAZASI YAKALANDI
+
+Halil listeyi güncellerken **03.09.2025** tarihli 9 satır silinmişti
+(bir yıl önceki aynı gün — tarih filtresi iki yılı yakaladı, ₺21.410).
+Köprü yakaladı, liste verildi, Halil geri ekledi, (2) sürümüyle kapandı.
+
+### ⏭ AÇIK
+
+- TAZMİN 13: motora KDV'li tahsilat satırı + hasarlıya çevirme (Halil
+  cevapları alındı: tahsilat = satış fiyatı hücresi, FATURALI/KDV'li).
+- `4120311526`: listede TÜR düzeltmesi Halil'de (opsiyonel).
+
+---
+
 ## 🔶 K154 — V2 BAZ DOSYALARI: SATIŞ HATTI KAPANDI · İADE/TAZMİN SIRADA · 03.09.2026 · [KISMEN KOŞTU]
 
 > **Halil:** _"Bu verdiklerim son veriler ve AXcali için BAZ sayılmalı;
