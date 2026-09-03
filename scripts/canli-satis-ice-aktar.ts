@@ -276,8 +276,19 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  const basliklar = sayfa.data[5].map((h) => anahtarla(metne(h)));
-  const satirlar = sayfa.data.slice(6).filter((r) => r.some((h) => metne(h) !== ""));
+  /**
+   * ⚠ BAŞLIK SATIRI SABİT DEĞİL (03.09.2026): eski dışa aktarımda 6. satırda,
+   * Halil'in yeni "Guncel Satislar" dışa aktarımında 1. satırda. Sabit
+   * `data[5]` yeni dosyada "KOLON BULUNAMADI" verdi. Başlık, "Sipariş
+   * Numarası" hücresini taşıyan İLK satır olarak ARANIR; bulunamazsa
+   * betik zaten kolon listesiyle kırmızı düşüyor (sessiz geçiş yok).
+   */
+  const baslikSatiri = sayfa.data.findIndex((r) =>
+    r.some((h) => anahtarla(metne(h)) === anahtarla("Sipariş Numarası")));
+  const basliklar = (sayfa.data[baslikSatiri] ?? []).map((h) => anahtarla(metne(h)));
+  const satirlar = sayfa.data
+    .slice(baslikSatiri + 1)
+    .filter((r) => r.some((h) => metne(h) !== ""));
   console.log(`   satır  ${satirlar.length}`);
 
   const K = (ad: string) => basliklar.indexOf(anahtarla(ad));

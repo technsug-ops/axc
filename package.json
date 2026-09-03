@@ -311,7 +311,8 @@
     "canli:varyant-gecmisi": "tsx scripts/canli-varyant-gecmisi.ts",
     "canli:ty-durum": "tsx scripts/canli-ty-durum.ts",
     "canli:11265-onarim": "tsx scripts/canli-11265-onarim.ts",
-    "canli:11265-tam": "tsx scripts/canli-11265-tam-onarim.ts"
+    "canli:11265-tam": "tsx scripts/canli-11265-tam-onarim.ts",
+    "canli:urun-tanimla-toplu": "tsx scripts/canli-urun-tanimla-toplu.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
