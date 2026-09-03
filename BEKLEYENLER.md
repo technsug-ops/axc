@@ -387,12 +387,37 @@ Dışarıda (gerekçeli): `4634137503` sayım SONRASI geliş → stoklu ayrı tu
 `4775170966` çok kalemli satışta kalem eşleşmedi (Halil'e) · 13 zaten
 kayıtlı ✓ · 1 iptalli ✓.
 
-### ⏭ SIRADA (V2 baz mandası)
+### ⭐ ③ KESİNTİ DOĞRULAMASI + KARGO DOLDURMA · 03.09.2026
 
-- **TAZMİN 13 sipariş** (tanzim_v2): tazminat tahsilatı — iade bağıyla.
-- **İADE ARTIĞI:** `4634137503` (stoklu tur) · `4775170966` (kalem sorusu).
-- **KESİNTİ DOĞRULAMASI:** defterdeki komisyon/kargo ↔ V2 M/O kolonları
-  (kargo tabanı KDV dahil mi hariç mi ÖLÇÜLEREK).
+**KOMİSYON — V2 İLE MUTABIK.** İlk ölçümde ×2,000 çıktı ve **benim
+hatamdı**: `sale.fees` ile `items.fees` AYNI kayıtları veriyor (7.942
+kalemin 7.942'si `saleItemId` dolu), iki yoldan toplayınca ikiye
+katlanmış. _(Anayasa: "iki okumayla da uyumlu gözlem hiçbirini kanıtlamaz"
+— ×2'nin bu kadar düzgün olması işaretti.)_ Tek yoldan: p25–p95 **tam
+1,000** · 4.911 kuruşuna tutan · 958'de küçük fark (×0,995–1,020, net
+−₺56.165) → haftalık oran değişimi izi, AYRI KALEM.
+
+**KARGO TABANI ÖLÇÜLDÜ:** defter ÷ dosya = **tam 0,833 = 1/1,20** —
+defter KDV hariç (bilinen), dosya KDV dahil. Uyuşmazlık DEĞİL.
+
+**KARGO DOLDURMA (canli-kargo-v2-yaz, V2 md5 kilidi):**
+
+    yazılan 602/602 · hata 0 · resmî dönem kargolu satış → 5.880
+    dosya ₺69.967,37 (dahil) → deftere ₺58.305,63 (hariç, ÷1,20 ölçülü)
+    TY 425 · HB 125 · AMZN 52 · firma kolonu yok → cargoCarrierId null (beyanlı)
+    kâr tazeleme motorla · geri alma ölçütü: dosya değeri ÷1,20 kuruş eşleşmesi
+
+### ⏭ SIRADA (V2 baz mandası — kalanlar)
+
+- **TAZMİN 13 — HALİL'İN İKİ CEVABINI BEKLİYOR:** ① tahsil edilen tutar
+  hangi kolon ([10] liste mi, KALAN mı)? ② tahsilat KDV'li mi?
+  Ölçüldü: `Compensation` modülü yalnız ALACAK takibi — tahsilat NET'e
+  HİÇBİR yerden girmiyor; doğru yol iade motoruna tahsilat satırı +
+  13 iadenin kalemlerini HASARLI'ya çevirmek (maliyet geri gelmez).
+- **KOMİSYON 958 FARKI** (net −₺56.165): kanal/oran kırılımı ölçülecek;
+  dosya baz ama fark sistematik mi tekil mi anlaşılmadan yazılmaz.
+- **İADE ARTIĞI:** `4634137503` (sayım sonrası, stoklu tur) ·
+  `4775170966` (çok kalemli, kalem sorusu Halil'e).
 
 ---
 
