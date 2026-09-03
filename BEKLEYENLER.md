@@ -325,6 +325,45 @@ sonraki içe aktarma aynı hatayı tekrarlamayacak.
 
 ---
 
+## ✅ K152 — "HEPSİNİ İÇERİ AL": 724 ÜRÜN + 1.889 SATIŞ + MALİYETLERİ · 03.09.2026 · [KOD KOŞTU]
+
+> **Halil:** _"satış listesini tekrar veriyorum … kontrol et ve HEPSİNİ
+> içeri al."_ Dosya: `Guncel Satislar..xlsx` · md5 `78f40868…` (her adım
+> bu kimliğe kilitli — K151 dersinin ilk uygulaması).
+
+### ⭐ ÜÇ ADIM, ÜÇÜ DE SAYIMLA DOĞRULANDI
+
+    ① URUN TANIMI   724 urun · hata 0 · Product 1103→1827 ✓
+       EAN → barcode · kanal kodu (HBCV/TYBA/ENT) → sku · kategori BOS
+       (KDV cozumu anayasa sirasiyla %20) · parti urun-tanim-20260903
+    ② SATIS         1.889 satis · 1.916 kalem · ₺4.778.657,32
+       Sale 5919→7808 ✓ · StockMovement 10844→10844 (STOK OYNAMADI) ✓
+       eslesmeyenListing 1918 → 1 · parti satis-20260903133148
+    ③ MALIYET       1.912 kalem · ₺3.326.074,07 · hata 0 · NET STOK 0 ✓
+       kar tazelendi 1885/1885 · parti dosya-maliyet-20260903
+
+### ⭐ SONUÇ — YENİ GİREN SATIŞLARIN DEFTERİ
+
+    ciro   ₺4.768.583,32       NET-1  ₺841.242,89      NET-2  ₺694.412,71
+    2024:  799 satis · ₺1,74M ciro     2025: 972 · ₺2,48M     2026: 114 · ₺0,54M
+
+⚠ **KDV alım tabanına GİRMEDİ** — maliyet partisi belge üretmez (fatura
+yok); 28.08 kararının aynısı. ⚠ Maliyet tabanı VARSAYILMADI, ölçüldü:
+damgalı 3.422 kalemde FIFO ÷ dosya = p50 tam 1,000 (%90,3 birebir).
+
+### 📏 DOSYADAN GİREMEYENLER — SEBEBİYLE, KAYITLI
+
+    kodu kullanilamaz (barkod hucresi "trendyol" vb.)  ~1.491+ satir  → ad eslestirmesi gerekli
+    siparis numarasi BOS                                 381 satir · ₺859.182
+    komisyon orani bos 2 · kanal celiskisi 8 · tarih bozuk ~8 (2027/2029 yazimlari)
+    maliyeti dosyada olmayan 4 kalem → NO_COST (uydurulmadi)
+
+### ⭐ AKTARMA DÜZELTMESİ
+Başlık satırı sabit `data[5]` yerine **aranıyor** — eski dışa aktarım 6.
+satırda, yenisi 1. satırda; sabit indeks "KOLON BULUNAMADI" veriyordu.
+
+---
+
 ## ⛔ K151 — GERİ ÇEKİLDİ · RAKAMLARIM YANLIŞ DOSYADAN ÇIKMIŞTI · 03.09.2026 · [DÜZELTİLDİ]
 
 > **Halil:** _"sana alım dosyası, satış dosyası ve iade dosyasını verdim.
