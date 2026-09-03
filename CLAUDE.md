@@ -765,6 +765,63 @@ burada izin kendisi.)_
 
 ---
 
+### DIŞ DOSYA İLE DEFTER KIYASLANMADAN ÖNCE, SİSTEMİN O DOSYAYI NASIL OKUDUĞU KENDİ İZİNDEN DOĞRULANIR (KESİN KURAL)
+
+_Kullanıcı tespiti 03.09.2026, alım dosyası vakası._ Elimdeki dosya ile
+sistemin OKUDUĞU dosya aynı sanılırsa, çıkacak sayı fark değil **KAPSAM
+BOŞLUĞUDUR** — ve fark diye okunduğu anda olmayan bir arıza aranmaya
+başlanır.
+
+**Vaka:** Halil'in verdiği `Alımlar.xlsx` ile defteri kıyasladım ve iki
+rakam ürettim: _"39 satır eksik · ₺190.189,01"_ ve _"toplam fark
+₺1.047.781,07"_. **İkisi de geçersizdi.** Sistem `alislar (5).xlsx`ten
+aktarmıştı:
+
+| | içe aktarılan | benim kıyasladığım |
+|---|---|---|
+| dosya | `alislar (5).xlsx` · md5 `b4ccfd3b…` | `Alımlar.xlsx` |
+| satır | 2283 | 2156 |
+| sayfa | **ALIŞLAR** | Sayfa1 |
+| kolon | + `Fatura` · `Envantere İşlendimi` · **`İade`** | yok |
+
+İçe aktarma iade edilmiş alımı **bilerek atıyor** (`:260`). İade kolonu
+olmayan bir dışa aktarımla kıyaslayınca **106 iade satırı "eksik" sayıldı.**
+Doğru ölçüm tersini söyledi: defter dosyadan **%1,54 FAZLA** — hiçbir satır
+kaybolmamış.
+
+> **KURAL:** dış bir dosya defterle kıyaslanmadan önce, **sistemin o
+> dosyayı nasıl okuduğu `AuditLog` izinden okunur** — dosya adı, **md5**,
+> satır sayısı ve **hangi satırın hangi sebeple elendiği.** İzdeki dosya
+> kimliği elimdekiyle tutmuyorsa **kıyas KURULMAZ.**
+
+⚠ **CEVAP ZATEN YAZILIYDI VE SORULMADI.** `ALIS_ICE_AKTARMA` izi her
+koşumda kovaları basıyor (`iadeli` · `eslesmeyenBarkod` · `barkodsuz` ·
+`zatenVar`). Dört tur ölçüm yapıldı; **tek bir sorgu** hepsini gereksiz
+kılardı. _(Anayasa: "kendi sistemimizin davranışı da doğrulanır" — ve
+"rakamı yazan kodu hiç okumadım" dersinin İZ tarafı.)_
+
+⭐ **KULLANICININ ELİNE VERİLEN CÜMLE (Halil, 03.09.2026):** bir rakam
+sunulduğunda sorulur —
+**_"bunu neyin üstünde ölçtün, ve o kaynağı sistemin kendi izinden mi
+doğruladın?"_**
+Cevapta **md5 / iz kaydı / betik adı** geçmiyorsa rakam ham tahmindir.
+
+⚠ **VE AYNI TURDA DÖRT HATA AYNI KÖKTEN ÇIKTI** — _ölçmeden önce neyin
+üstünde ölçtüğünü doğrulamamak_:
+
+| hata | kök |
+|---|---|
+| NET-2 düşüşü ₺11.143 dendi, ₺9.286 çıktı | maliyetin **KDV DAHİL** olduğu sorulmadı |
+| "5 satış zarara düşecek" — hiçbiri düşmedi | aynı kök |
+| "ürünün varyantı yok" — **vardı** | ad araması `0` döndü, "yok" diye okundu |
+| ₺502.870,72 — **%55'i yanlış pozitif** | sipariş nosu güvenilir anahtar sanıldı |
+
+⛔ **VE İZ GÖRÜNÜR DEĞİLSE KURAL DA UNUTULUR.** İçe aktarma kovaları
+`AuditLog`ın içine gömülü: kullanıcı görmüyor, uygulayan da bakmayı
+hatırlamıyor. **₺1.364.610,92**'lik alım (`eslesmeyenBarkod` +
+`barkodsuz`) KDV indirim tabanına girmemiş ve bunu hiçbir ekran
+söylemiyor. _(Bkz. BEKLEYENLER → "son içe aktarma" ekranı; onay bekliyor.)_
+
 ### ARACIN ÇIKTISI OKUNUR — RENGİ ya da KODU DEĞİL (KESİN KURAL)
 
 _Kullanıcı kararı 01.09.2026, aynı gün İKİ vakadan sonra._ Bir aracın çıkış

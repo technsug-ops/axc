@@ -325,84 +325,93 @@ sonraki içe aktarma aynı hatayı tekrarlamayacak.
 
 ---
 
-## 🔴 K151 — ALIM DOSYASINDA VAR, DEFTERDE YOK: 39 SATIR · ₺190.189,01 · 03.09.2026 · [ÖLÇÜLDÜ · YAZIM YOK]
+## ⛔ K151 — GERİ ÇEKİLDİ · RAKAMLARIM YANLIŞ DOSYADAN ÇIKMIŞTI · 03.09.2026 · [DÜZELTİLDİ]
 
-Korbell'in 4 alımı ölçülürken soru büyüdü: **bu tek üründe mi, deseni mi
-var?** Ölçüldü — deseni var ve her ay tekrarlıyor.
+> **Halil:** _"sana alım dosyası, satış dosyası ve iade dosyasını verdim.
+> Ayrıca stok istedin saydım. Bunların bu kadar yanlış vermesi mümkün
+> değil."_ — **Haklıydı. Hata bendeydi.**
 
-### ⭐ ÖNCE KAPSAM: SENTETİK PARTİ HAVUZU
+### ⛔ GERİ ÇEKİLEN İKİ RAKAM — SİLİNMİYOR, NİYE YANLIŞ OLDUĞUYLA DURUYOR
 
-Alım kaydı OLMAYAN stok girişleri (`purchaseItemId = null`, pozitif):
+    ⛔ "39 satir eksik · ₺190.189,01"      GECERSIZ
+    ⛔ "toplam fark ₺1.047.781,07 (%9,49)" GECERSIZ
 
-    dosya-maliyet-20260828   2549 hareket · 2550 adet · 527 varyant · ₺4.518.893,19
-    sayim-fiziksel-20260829    77 hareket ·  185 adet                · ₺  407.720,97
-    eksik-alim-20260829         3 hareket ·   23 adet                · ₺   18.762,50
-    ────────────────────────────────────────────────────────────────────────────────
-    TOPLAM                   2704 hareket · 2848 adet                · ₺5.110.504,67
-    alim kaydi OLAN giris    2019 hareket · 4199 adet   →  sentetik payi %40,41
+**Sebep tek ve basit: YANLIŞ DOSYAYLA KIYASLADIM.**
 
-⛔ **AMA BU ₺5,1M "KDV AÇIĞI" DEĞİL.** Havuzun büyük kısmı sistem
-öncesi mal — ve o dönemin alımı Halil'in dosyasında zaten yok.
-_(Anayasa: "kapsam boşluğu fark değildir".)_ Açık olan yalnız şu:
-**dosyada DURAN ama deftere girmemiş satırlar.**
+| | içe aktarılan | benim kıyasladığım |
+|---|---|---|
+| dosya | `alislar (5).xlsx` | `Alımlar.xlsx` |
+| md5 | `b4ccfd3b0e99388a2ed0780c2770dcc6` | başka |
+| satır | 2283 | 2156 |
+| sayfa | **ALIŞLAR** | Sayfa1 |
+| kolonlar | + `Fatura` · `Envantere İşlendimi` · **`İade`** | bunlar YOK |
 
-### ⛔ VE İLK RAKAMIM KULLANILAMAZDI — %55 YANLIŞ POZİTİF
+İçe aktarma iade edilmiş alımı **bilerek atıyor**
+(`canli-alis-ice-aktar.ts:260`). Benim kıyasladığım dışa aktarımda o kolon
+olmadığı için **iadeleri de "eksik" diye saydım.**
 
-Çapraz `supplierOrderNo` üzerinden kuruldu ve **251 satır** buldu. Kendi
-çaprazımı sınadım ve ısırdı:
+### ⭐ DOĞRU ÖLÇÜM — ELMA ↔ ELMA (gerçek kaynak, md5 doğrulandı)
 
-| kademe | ölçüt | eleme | kalan |
-|---|---|---|---|
-| ① | sipariş nosu defterde yok + barkod tanıdık | — | **87** · ₺502.870,72 |
-| ② | aynı varyant + AYNI GÜN + birim tutar kuruşuna eşit | **−48** | 39 |
-| ③ | tarih sınırı KALDIRILDI, birim tutar eşit | −0 | **39** |
+    dosyada GECERLI   1952 satir · 4109 adet · ₺9.841.960,22
+    defterde          2025 kalem · 4218 adet · ₺9.993.538,82
+    fark               +109 adet · +₺151.578,60   (%+1,54)
 
-    ⭐ GERCEKTEN EKSIK KALAN   39 satir  ₺190.189,01   (eleme orani %55,2)
+⭐ **DEFTER DOSYADAN EKSİK DEĞİL, FAZLA.** İçe aktarma hiçbir satır
+kaybetmemiş. _(Fazlalık meşru: elle girilen alımlar ve düzeltmeler —
+ör. `ALM-HB-260216-03` maliyet düzeltmesi.)_
 
-⚠ **SEBEP: DOSYANIN SİPARİŞ NUMARASI DEFTERİNKİYLE TUTMUYOR.** Aynı alım
-iki kaynakta iki farklı numarayla duruyor —
+### 📏 DIŞARIDA KALANLAR — SİSTEM ZATEN SAYIYOR VE SEBEBİNİ YAZIYOR
 
-    r 81  → ALM-HB-251030-01  (defterde sip "450 251 020 5")
-    r 97  → ALM-AMZ-251104-03 (defterde sip "404-9185567-6872345")
+    iadeli             106 satir · 245 adet · ₺707.278,32   ✓ DOGRU atiliyor
+    eslesmeyenBarkod   140 satir · 303 adet · ₺967.339,43   ⚠ urun TANIMLI DEGIL
+    barkodsuz           82 satir · 155 adet · ₺397.271,49   ⚠ dosyada barkod BOS
+    adetSifir            3 satir ·   0 adet · ₺        0,00
 
-Yani anahtar güvenilmez; **rakam ancak ikinci bir ölçütle elendikten
-sonra yazılabilir.** ⛔ Ve ③'ün bile dediği _"birim tutar eşit"_dir,
-_"aynı alım"_ değil — **₺190.189,01 bir ÜST SINIRDIR ve öyle yazılır.**
+⚠ **Kayıp veri DEĞİL — ürün tanımı bekleyen satırlar.** Tanım açılınca bir
+sonraki aktarma onları alır. En büyükleri: Philips Lumea 9900 (₺98.631) ·
+Bissell Spotclean (₺62.944) · DJI Mini 4K (₺36.000). Bir satırda barkod
+hücresine **"İSTANBUL"** yazılmış (Xiaomi 15T Pro, ₺42.999) — dosya hatası.
 
-### 📏 AYRI SAYILAN İKİ KOVA — BİRLİKTE TOPLANMAZ
+⭐ **AÇIK OLAN GERÇEK KALEM:** `eslesmeyenBarkod` + `barkodsuz` =
+**₺1.364.610,92** alım KDV indirim tabanına hiç girmemiş. Sistem bunu
+biliyor, **ekranda söylemiyor.**
 
-    (a) barkodu TANIDIK    87 → 39 satir   ₺190.189,01   ⛔ girmesi GEREKIRDI
-    (b) barkodu YABANCI       102 satir    ₺737.008,50   ⚠ once URUN TANIMI
-    (c) barkodu BOS            62 satir    ₺282.306,61   ⚠ kimlik YOK
+### ⛔ DERS — CEVAP SİSTEMİN KENDİ İZİNDEYDİ, BEN SORMADIM
 
-⛔ **(b) ve (c) ÖLÇÜLMEDİ ve öyle yazıyor.** Elenmemiş hâlleridir; (a) gibi
-%55 küçülebilirler. _"Bulunamadı" ile "yok" aynı şey değildir._
+`AuditLog → ALIS_ICE_AKTARMA` her koşumda şunu yazıyor: dosya adı · md5 ·
+satır sayısı · **hangi satır hangi sebeple elendi**. Ben bu izi okumadan
+Halil'in elindeki dışa aktarımla **dört tur** ölçüm yaptım.
 
-### ⚠ DAĞILIM — TEK SEFERLİK DEĞİL, HER AY
+> **KURAL:** dış bir dosya ile defter kıyaslanmadan önce **sistemin o
+> dosyayı nasıl okuduğu kendi izinden doğrulanır** — dosya kimliği (md5)
+> dahil. İzde yazan dosya ile elimdeki dosya aynı değilse kıyas
+> **KURULMAZ**, çünkü çıkacak sayı fark değil **kapsam boşluğudur.**
 
-    2025-10  4 · ₺18.867   2026-01  3 · ₺13.355   2026-04  7 · ₺41.524
-    2025-11  7 · ₺35.107   2026-02  6 · ₺15.056   2026-06  3 · ₺17.758
-    2025-12  6 · ₺20.847   2026-03  2 · ₺23.815   2026-07  1 · ₺ 3.860
+⚠ **VE AYNI TURDA ÜÇ HATA DAHA, HEPSİ AYNI KÖKTEN** — _ölçmeden önce
+neyin üstünde ölçtüğümü doğrulamamak_:
 
-Kaçak **süregelen**; kapatılması gereken tek şey geçmiş değil, **içe
-aktarmanın kendisi.**
+| # | hata | kök |
+|---|---|---|
+| 1 | NET-2 düşüşü ₺11.143 dedim, ₺9.286 çıktı | maliyetin KDV DAHİL olduğunu sormadım |
+| 2 | "5 satış zarara düşecek" — hiçbiri düşmedi | aynı kök |
+| 3 | "Korbell'in varyantı yok" — VARDI | ad araması `0` döndü, "yok" diye okudum |
+| 4 | ₺502.870,72 — %55'i yanlış pozitif | sipariş nosunu anahtar sanmıştım |
 
-### ⏭ HALİL'E — VE HİÇBİR ŞEY YAZILMADI
+⭐ **HALİL'İN ELİNE VERİLEN CÜMLE (kullanıcı kararı 03.09.2026):** bir rakam
+sunulduğunda sorulacak soru —
+**_"bunu neyin üstünde ölçtün, ve o kaynağı sistemin kendi izinden mi
+doğruladın?"_**
+Cevapta md5 / iz kaydı / betik adı geçmiyorsa rakam ham tahmindir.
 
-39 satırın tamamı listelendi (bu turun çıktısında). Karar Halil'in:
+### ⏭ AÇIK — HALİL'İN KARARINI BEKLİYOR
 
-1. **Stok tarafı zaten kapalı** — sentetik partiler malı deftere sokmuş.
-   Bu satırları alım olarak yazmak **stoğu ikinci kez saydırır** ve
-   29.08 sayımını bozar. _(Korbell'de ölçüldü: defter 15 ↔ sayılan 4.)_
-2. **Kâr tarafı da büyük ölçüde kapalı** — Korbell'de fark 28 kuruştu.
-3. **Açık olan tek eksen KDV.** Bu satırlar KDV indirim tabanına
-   girmemiş.
-
-⛔ **BU YÜZDEN ÇÖZÜM "ALIMLARI GİR" DEĞİL.** Stoğa dokunmadan KDV
-tabanını düzeltmenin yolu ayrı bir tasarım ister ve **Halil'in kararı
-olmadan açılmaz.**
+**"Son içe aktarma" ekranı:** hangi dosya · kaç satır girdi · kaç satır
+hangi sebeple girmedi · o satırların listesi. İz bugün `AuditLog`'un içine
+gömülü; ne Halil görüyor ne ben bakmayı hatırlıyorum.
+⛔ **Onay alınmadan açılmaz.**
 
 ---
+
 
 ## 🚨 K149 — MUTASYON KALINTISI ÜRETİME SIZDI · 03.09.2026 · [KAPI KURULDU]
 
