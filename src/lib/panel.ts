@@ -481,7 +481,7 @@ export function panelHesapla(
        * Büyüklük bilgisi kartın kendi ciro çubuğunda zaten yazılı —
        * sıralama onu taşımıyordu, yalnız yerleri oynatıyordu (İlke #10).
        */
-      const liste = kanallariSirala([...kanallar.values()], kanalKipi);
+      const liste = [...kanallar.values()].sort((a, b) => b.gelir - a.gelir);
       // Hesaplar da cirosuna göre sıralanır — kanalla aynı mantık.
       for (const kanal of liste) {
         kanal.hesaplar.sort((a, b) => b.gelir - a.gelir);

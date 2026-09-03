@@ -302,6 +302,7 @@
     "canli:satis-saglik": "tsx scripts/canli-satis-saglik-taramasi.ts",
     "canli:zarar-fiyat-capraz": "tsx scripts/canli-zarar-fiyat-capraz.ts",
     "canli:alim-maliyet-duzelt": "tsx scripts/canli-alim-maliyet-duzelt.ts",
+    "canli:test-kaydi-notrle": "tsx scripts/canli-test-kaydi-notrle.ts",
     "canli:kardes-parti-sapmasi": "tsx scripts/canli-kardes-parti-sapmasi.ts",
     "canli:kargo-eksik-yaz": "tsx scripts/canli-kargo-eksik-yaz.ts",
     "canli:kargo-degeri-dogrula": "tsx scripts/canli-kargo-degeri-dogrula.ts",

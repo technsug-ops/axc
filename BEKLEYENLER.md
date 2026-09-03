@@ -233,6 +233,75 @@ silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
 
 ---
 
+## ✅ K148 — 14.08 TEST KAYITLARI NÖTRLENDİ · DAR İSTİSNA · 03.09.2026 · [KOD KOŞTU]
+
+> **Halil:** _"bu alım kesin yok, bu test alımı"_ · _"KDV'ye etki etmeyecek
+> şekilde her şeye etkisinin sıfır olacağı şekle çevirebilir miyiz. Bu bir
+> istisna olur."_
+
+Araç: `npm run canli:test-kaydi-notrle` — kimliğe kilitli, vaka bazlı.
+
+### ⭐ ÖLÇÜLDÜ: NEREDEYSE HER ŞEY ZATEN SIFIRDI
+
+    axcali1603   ledger 0 · FIFO açık 0 · UYUYOR
+    axcali1752   ledger 0 · FIFO açık 0 · UYUYOR
+    test iadesi  NET-1 0 · NET-2 0
+    kesintileri  MALIYET_GERI +1.438,99 · DEGISIM_MALIYET −1.438,99 → 0
+    bağlı GERÇEK satış 11502693455 · iade ona DOKUNMUYOR
+
+⛔ **SIFIR OLMAYAN TEK ŞEY:** alım, ağustos toplamına ₺2.048 katıyordu ve o
+toplam **KDV takibinin tabanı**. Düzeltilen yalnızca bu.
+
+    ağustos alım  ₺607.564,12 → ₺605.516,12   (−₺2.048,00)
+
+### ⛔ VE UYGULAMANIN KENDİ KAPISI BUNU REDDEDİYORDU
+
+    alimlar/actions.ts:479
+      if (toplamGelen > 0) return { hatalar: [t("iptalEdilemez")] };
+
+⭐ **KAPI HAKLI — AMA KAPSAMI DIŞINDAYIZ.** "Malı gelmiş alım iptal
+edilemez" kuralı, deftere girmiş gerçek bir hareketi dayanaksız bırakmamak
+için var. Burada mal ZATEN GELMEDİ: kayıt testti ve stok etkisi 27.08
+sayımıyla sıfırlandı. _(Anayasa: "ilke, kendi kapsamının dışına
+uygulanırsa hatayı korur".)_
+
+### ⛔ İADE SİLİNMEDİ — ÖLÇÜLDÜ, VARSAYILMADI
+
+Şema silme kuralları:
+
+    Return → ReturnItem        : Cascade  (kalemler silinir)
+    StockMovement.returnItemId : SetNull  ⛔ 4 HAREKET SAHİPSİZ KALIR
+    ReturnNotice.returnId      : SetNull  ⛔ bildirim sahipsiz kalır
+
+Silmek, **görünen bir test kaydını görünmeyen bozuk veriye** çevirirdi —
+`sfsfsf` satış silme vakasının aynısı. Ve iadenin parasal etkisi zaten
+sıfır; silinecek bir etki yok.
+⭐ Bu yüzden iade **BEYAN EDİLDİ**: notuna test olduğu yazıldı, listede
+öyle görünüyor. Görünür test kaydı, görünmez bozuk veriden iyidir.
+
+### ⛔ HİÇBİR STOK HAREKETİNE DOKUNULMADI
+
+`PURCHASE_IN +1` deftere girmiş bir olaydır; 29.08 sayım düzeltmesi onu
+zaten götürmüş. Ters kayıt yazmak stoğu **−1**'e düşürürdü.
+⭐ Ölçüldü: FIFO alım durumuna BAKMIYOR (`lib/stok.ts`), o yüzden
+`CANCELLED` parti zincirini bozmuyor — parti zaten kapalı.
+
+### ✅ DOĞRULAMA — YAZIM SONRASI
+
+    alım durumu CANCELLED ✓ · alım beyanı ✓ · iade beyanı ✓
+    stok hareketi 1/1 ✓ DOKUNULMADI
+    axcali1603 ledger 0 · FIFO 0 · UYUYOR ✓
+    axcali1752 ledger 0 · FIFO 0 · UYUYOR ✓
+    bağlı gerçek satış 11502693455 NET-2 189,265 — DEĞİŞMEDİ ✓
+    test partisini yiyen 11396146008 NET-2 69,36 — DEĞİŞMEDİ ✓
+    ⭐ tekrar koşulabilir: ikinci koşum "ZATEN İPTALLİ" der
+
+⚠ **METADATA İSTİSNASININ ÜÇ ŞARTI SAĞLANDI:** ① değişen alan miktar/para
+DEĞİL (`status` + `note`) · ② alternatifler ölçülüp elendi · ③ iz eski
+değerle birlikte (`TEST_KAYDI_NOTRLENDI`).
+
+---
+
 ## 🚨 K147 — DÖRT ŞÜPHELİ ALIM FATURAYLA SINANDI · 03.09.2026 · [ÜÇÜ KAPANDI · KARIŞMA ÖLÇÜLDÜ]
 
 K145'in bulduğu dört "kardeş parti sapması" Halil'in faturalarıyla teker
