@@ -233,6 +233,60 @@ silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
 
 ---
 
+## 🚨 K149 — MUTASYON KALINTISI ÜRETİME SIZDI · 03.09.2026 · [KAPI KURULDU]
+
+⛔ **CANLIYA BOZUK KOD GİTTİ VE TUR YEŞİL YANDI.**
+
+K148 commit'i (`1213c2e`) `src/lib/panel.ts`te şunu taşıyordu:
+
+    - kanallariSirala([...kanallar.values()], kanalKipi)
+    + [...kanallar.values()].sort((a, b) => b.gelir - a.gelir)
+
+K106'da sabitlenen kanal sırası (TY · HB · N11 · Amazon · Elden) canlıda
+**ciro sırasına döndü.** Düzeltme: `9c76dcb`.
+
+### ⛔ SIRA ÖLÇÜLDÜ — VE HATA BEKÇİDE DEĞİL
+
+    ① harness panel.ts'i mutasyona uğrattı
+    ② `git add -A && commit`  → MUTASYON COMMIT'E GİRDİ
+    ③ harness dosyayı geri yazdı
+    ④ push bekçi turunu koştu → ÇALIŞMA AĞACI temizdi → YEŞİL
+    ⑤ push geçti, BOZUK COMMIT gitti
+
+⭐ **VE BEKÇİ KUSURSUZDU.** `panel-dogrula.ts:5007` hem çağrıyı arıyor
+(`/const liste = kanallariSirala\(/`) hem eski sıralamayı **açıkça
+yasaklıyor**. İkisi de mutasyonda kırmızı yanardı.
+
+⛔ **ÖLÇÜM DOĞRUYDU — YANLIŞ ŞEYİ ÖLÇTÜ.** Tur çalışma ağacını okuyor,
+giden commit'i DEĞİL. _(Anayasa: "ölçüm ile karar arasındaki boru da
+ölçümün parçasıdır" — orada `| tail` ve `echo` yutuyordu, burada zamanlama.)_
+
+### ⭐ KAPI KURULDU — `.githooks/pre-push`
+
+Turdan ÖNCE, bekçilerin okuduğu dizinlerde çalışma ağacı ↔ HEAD ayrışması
+aranıyor. Ayrışma varsa tur gidenden BAŞKA bir şeyi ölçecek demektir ve
+push **DURUR**.
+
+    OLCULEN="src scripts prisma messages package.json"
+    git diff --name-only HEAD -- $OLCULEN   →  boş değilse çıkış 1
+
+⚠ **KAPSAM BİLEREK DAR:** yalnız bekçilerin okuduğu dizinler. Başka yerdeki
+yarım iş push'u durdurmaz — yanlış yere konan kapı, aşılmak için bahane
+üretir.
+
+✓ **İKİ YÖN DE SINANDI:** `src/` altında kirli dosya → **çıkış 1, DURDU**;
+temiz ağaç → **çıkış 0, GEÇTİ**; geri yazma bit-bit doğrulandı.
+
+### ⏭ VE İKİ DAVRANIŞ KURALI
+
+1. ⛔ **Mutasyon turu koşarken `git add -A` YAPILMAZ.** Harness'in geri
+   yazması commit ile yarışıyor ve bu turda yarışı harness kaybetti.
+2. ⛔ **Commit öncesi `git status` OKUNUR** — beklenmeyen bir `src/`
+   dosyası varsa commit DURUR. Bu turda beklenen liste pano + betiklerdi;
+   `panel.ts` orada yoktu ve gözden kaçtı.
+
+---
+
 ## ✅ K148 — 14.08 TEST KAYITLARI NÖTRLENDİ · DAR İSTİSNA · 03.09.2026 · [KOD KOŞTU]
 
 > **Halil:** _"bu alım kesin yok, bu test alımı"_ · _"KDV'ye etki etmeyecek

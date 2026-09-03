@@ -23,6 +23,46 @@
 # ============================================================================
 
 echo ""
+# ============================================================================
+#  ⛔ ÖNCE: TUR NEYİ ÖLÇÜYOR — ÇALIŞMA AĞACINI MI, GİDEN COMMIT'İ Mİ
+# ----------------------------------------------------------------------------
+#  BEDELİ ÖLÇÜLDÜ 03.09.2026. Bir mutasyon turu `src/lib/panel.ts`i değiştirdi,
+#  `git add -A` bozuk hâli commit'e süpürdü, harness dosyayı SONRADAN geri
+#  yazdı ve push bekçi turunu TEMİZ çalışma ağacına karşı koştu. Tur yeşil
+#  yandı, BOZUK COMMIT canlıya gitti: K106'da sabitlenen kanal sırası ciro
+#  sırasına döndü.
+#
+#  ⚠ VE BEKÇİ KUSURLU DEĞİLDİ. `panel:dogrula` hem çağrıyı arıyor hem eski
+#  sıralamayı yasaklıyordu; ikisi de mutasyonda kırmızı yanardı. Ölçüm
+#  doğruydu — YANLIŞ ŞEYİ ölçtü.
+#  _(Anayasa: "ölçüm ile karar arasındaki boru da ölçümün parçasıdır" ·
+#  "bekçinin yeşili, ölçtüğü doğrulanmadan güvence değildir".)_
+#
+#  ⭐ ÇARE: turdan ÖNCE, ölçülen dizinlerde çalışma ağacı ile HEAD ayrışıyor
+#  mu diye bakılır. Ayrışıyorsa tur, gidenden BAŞKA bir şeyi ölçecek demektir
+#  ve sonucu geçersizdir.
+#  ⚠ Kapsam DAR: yalnız bekçilerin okuduğu dizinler. Başka yerdeki yarım iş
+#  push'u durdurmaz — yanlış yere konan bir kapı, aşılmak için bahane üretir.
+# ============================================================================
+
+OLCULEN="src scripts prisma messages package.json"
+KIRLI=$(git diff --name-only HEAD -- $OLCULEN 2>/dev/null)
+
+if [ -n "$KIRLI" ]; then
+  echo ""
+  echo "⛔ PUSH DURDURULDU — bekçi turu YANLIŞ ŞEYİ ölçerdi."
+  echo ""
+  echo "   Bu dosyalar çalışma ağacında HEAD'den farklı:"
+  echo "$KIRLI" | sed "s/^/     /"
+  echo ""
+  echo "   Tur çalışma ağacını okur, giden commit'i DEĞİL. Ayrışma varsa"
+  echo "   yeşil sonuç gidenin değil, elindekinin güvencesidir."
+  echo ""
+  echo "   Ya commit'le, ya \`git stash\`le — sonra tekrar dene."
+  echo ""
+  exit 1
+fi
+
 echo "── PUSH KAPISI: bekçi turu koşuyor (~2 dk) ─────────────────────────"
 
 if ! npm run bekci; then
