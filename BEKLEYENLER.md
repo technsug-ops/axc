@@ -706,7 +706,58 @@ baktırma sebebi.
 "sayılsın" demek bedeli bilinmeyen bir işi emretmek olurdu.** Rakam
 konunca karar kolay: ₺226K'lık bir ayrım için 90 varyant sayılır.
 
-### ✅ ⑥ SAYIM FÖYÜ TESLİM EDİLDİ · 03.09.2026 [KOŞTU]
+### ⛔ ⑦ SAYIM FÖYÜ GERİ ÇEKİLDİ · 03.09.2026 — KULLANICI DURDURDU
+
+_Halil: "bu nedir. sana sayım sırasında zaten kesin sayım sonuçlarını
+verdim."_ **HAKLIYDI.**
+
+⛔ **89 VARYANTLIK ELLE SAYIM LİSTESİ VAR OLMAYAN BİR İŞ İSTİYORDU.**
+
+    89 varyantın →  rafta MALI OLAN   : **11**   ₺28.556,81
+                    rafta MALI OLMAYAN: **78**   ₺171.577,59
+
+**78'inin rafında bugün hiçbir şey yok** — sayılacak bir şey de yok. Ve
+rafta malı olan **11'in HEPSİ 27.08 sayımında zaten sayılmış** (11/11).
+Yani sayım, bu işin sayılabilir kısmını **eksiksiz** kapsamış.
+
+⭐ **HATA ÖLÇÜT SEÇİMİNDEYDİ.** Liste kurulurken şu soruldu:
+_"sayım fazlası iade adedini TAM açıklıyor mu"_ (`fazla === iade`). Ama
+**"rafta sayılacak bir şey var mı"** HİÇ SORULMADI. Ölçüt doğruydu,
+kapsamı yanlıştı — ve sonuç, operatöre boş rafa baktıran bir liste oldu.
+_(Anayasa: "kural doğru mu değil, KURAL TESLİM EDİLEBİLİR Mİ".)_
+
+### 📏 SAYIMIN GERÇEK KAPSAMI — ÖLÇÜLDÜ
+
+    27.08.2026 · iki sayım, ikisi de TUM_STOK
+      467 satır · adedi GİRİLMİŞ 231 varyant · BOŞ 236 satır
+      bugün stoğu > 0 olan 233 varyantın **212'si sayılmış (%91)**
+      ⭐ `sayılanAdet = 0` girilmiş satır: **0**
+
+Yani boş satır _"sayılmadı"_ değil, büyük olasılıkla **"rafta yok"** demek —
+sayım özensiz değildi, kapsamı stoklu mala odaklıydı.
+⚠ Ama sistem ikisini AYIRT EDEMİYOR (`null` ile `0` aynı görünüyor);
+bu ayrı bir kalem ve bugün açılmadı.
+
+### ⛔ VE YENİ BİR SAYIM DA ÇÖZMEZ — ÖLÇÜLDÜ
+
+    89 varyantta "satılan > alınan" olan: **0**
+       satılan = alınan : 83   ·   satılan < alınan : 6
+
+Defterde iade malının geri geldiğine dair **hiçbir aritmetik iz yok.**
+Rafta olmayan malı saymak da, defteri yeniden toplamak da aynı cevabı
+verir: **bilinmiyor.**
+
+⏭ **GERİYE İKİ YOL KALDI, İKİSİ DE KARAR — ÖLÇÜM DEĞİL:**
+① pazaryerinin kendi kaydından sağlam adedi çekmek (TY claims / HB) ·
+② sebep sınıfına göre politika (teslim edilmedi → sağlam · hasar imalı →
+  değil · gerisi → ?).
+
+⚠ **VE 11 VARYANTIN SAYIM SONUCU YORUMLANIRKEN DİKKAT:** `fazla > iade`
+iade malının geri geldiğini **KANITLAMAZ** — fazla başka sebeplerden de
+gelebilir. Föy bunu _"uyumlu"_ diye yazıyor, _"kanıtlandı"_ diye değil.
+_(Anayasa: "iki okumayla da uyumlu bir gözlem, hiçbirini kanıtlamaz".)_
+
+### ⛔ ⑥ SAYIM FÖYÜ — GEÇERSİZ, ⑦'DE GERİ ÇEKİLDİ (kayıt için duruyor)
 
 _Halil şartnamesi: "90 varyant ₺ etkisine göre sıralı, %80 eşiği
 işaretli, raf sırasına dizili — PDF/ekran."_
