@@ -431,9 +431,18 @@ async function main() {
     if (s.kapi.tur === "GELECEKTE") { say("gelecekTarihli"); continue; }
     if (!s.siparis) { say("numarasiz"); continue; }
     if (defterKod.has(s.siparis)) { say("zatenVar"); continue; }
-    if (copMu(s.sku)) { say("copSku"); continue; }
+    /**
+     * ⛔ SIRA DEGISTI (03.09.2026): "rakamsiz SKU = cop" kontrolu ESKIDEN
+     * eslestirmeden ONCE kosuyordu ve TANIMLI harf-SKU'lari da atiyordu —
+     * MTTEFOPTIGRILL sistemde kayitliydi, satisi "copSku" sayildi.
+     * Dogru sira: ONCE eslestir; eslesmeyen rakamsiz kod yine cop.
+     * _(Anayasa: "kural dogru mu degil, bu durum kapsamina giriyor mu".)_
+     */
     const aday = [s.sku, s.barkod].filter(Boolean).map((k) => kodVar.get(k)).find((l) => l && l.length > 0);
-    if (!aday) { say("eslesmeyenListing"); continue; }
+    if (!aday) {
+      if (copMu(s.sku) && (s.barkod === "" || copMu(s.barkod))) { say("copSku"); continue; }
+      say("eslesmeyenListing"); continue;
+    }
     if (aday.length > 1) { say("belirsizSku"); continue; }
     if (ADIM2_BEKLEYEN.has(s.kanal.toUpperCase())) { say("adim2Bekliyor"); continue; }
     /**

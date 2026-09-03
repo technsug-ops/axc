@@ -313,7 +313,8 @@
     "canli:11265-onarim": "tsx scripts/canli-11265-onarim.ts",
     "canli:11265-tam": "tsx scripts/canli-11265-tam-onarim.ts",
     "canli:urun-tanimla-toplu": "tsx scripts/canli-urun-tanimla-toplu.ts",
-    "canli:dosya-maliyet-2": "tsx scripts/canli-dosya-maliyet-2.ts"
+    "canli:dosya-maliyet-2": "tsx scripts/canli-dosya-maliyet-2.ts",
+    "canli:dosya-maliyet-3": "tsx scripts/canli-dosya-maliyet-3.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

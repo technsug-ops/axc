@@ -325,6 +325,54 @@ sonraki içe aktarma aynı hatayı tekrarlamayacak.
 
 ---
 
+## 🔶 K154 — V2 BAZ DOSYALARI: SATIŞ HATTI KAPANDI · İADE/TAZMİN SIRADA · 03.09.2026 · [KISMEN KOŞTU]
+
+> **Halil:** _"Bu verdiklerim son veriler ve AXcali için BAZ sayılmalı;
+> stok hariç bütün düzeltmeleri bu verilere göre yap."_ Üç dosya, md5'li:
+> `Satislar_V2` `3872cefd…` · `iade_v2` `62eab900…` · `tanzim_v2` `0c325a5a…`
+> J/L/M/N/O kolonları da baz: alış · komisyon oranı/tutarı · diğer · KARGO.
+
+### ⭐ SATIŞ HATTI — V2 ↔ DEFTER MUTABIK
+
+    dosya 5.892 sipariş → zaten defterde 5.998 satır · YENI GIREN 13 · ₺36.241
+    ters yön: defterde olup V2'de olmayan resmî dönem satışı = yalnız
+    BUGÜNÜN 5 API satışı (dosya onlardan önce kaydedilmiş) → çelişki YOK
+    maliyet: 13/13 yazıldı (parti dosya-maliyet-v2-20260903) · kâr tazelendi
+
+### ⭐ İKİ MOTOR DÜZELTMESİ (bekçili + mutasyon kanıtlı)
+
+1. **TR metin tarihi:** `"13.08.2025"` yazılmış 8 hücre `OKUNAMADI`
+   düşüyordu → tarih kapısına GG.AA.YYYY dalı (taşma korumalı: 31.02
+   KAYMAZ, yıl kapıları aynen işler). +4 ölçüt · 2 mutasyon kırmızı ✓
+2. **copSku sırası:** "rakamsız SKU = çöp" kontrolü eşleştirmeden ÖNCE
+   koşuyordu ve TANIMLI harf-SKU'ları atıyordu (`MTTEFOPTIGRILL` kayıtlıydı,
+   satışı 4 kez çöp sayıldı). Sıra düzeltildi: önce eşleştir.
+
+⭐ Halil'in tarih beyanları uygulandı: `11094348152` → 30.03.2026 ·
+`11560868627` → 02.09.2026 (API'den zaten girmiş çıktı) — mini dosya +
+TEK MOTOR ile. `9548963835` → 11.10.2024: **Halil kararıyla DIŞARIDA**
+(resmî sınır öncesi).
+
+### ⏭ HALİL'E MİKRO LİSTE (satış hattının kalanı)
+
+    ① KANAL ÇELİŞKİSİ 8 satır (₺28.510): satır 81 · 1622 · 1715 · 2525 ·
+      2781 · 4522 · 4805 · 4885 — etiket TY/HB derken numara öteki kanalın
+      biçiminde. PAZAR YERI hücresi mi yanlış, numara mı?
+    ② DEPO (elden satış) 9 satır (₺31.349): sipariş no yerine BARKOD
+      taşıyorlar (elden satışın numarası yok) ve KDV/stopaj sorusu açık:
+      elden satışta stopaj yok — KDV işliyor mu? Cevaba göre kapı açılır.
+    ③ Karaca satır 5271: kod hücresi hâlâ boş.
+
+### ⏭ SIRADA (V2 baz mandası)
+
+- **İADE 201 sipariş** (iade_v2): motorda "sayım-öncesi tarihsel iade"
+  kipi + kuru koşum → rapor → yazım. 13'ü zaten kayıtlı ✓ · 1 iptalli ✓.
+- **TAZMİN 13 sipariş** (tanzim_v2): tazminat tahsilatı — iade bağıyla.
+- **KESİNTİ DOĞRULAMASI:** defterdeki komisyon/kargo ↔ V2 M/O kolonları
+  (kargo tabanı KDV dahil mi hariç mi ÖLÇÜLEREK).
+
+---
+
 ## 📌 K153 — RESMİ ÖLÇÜM SINIRI: 01.08.2025 · KULLANICI KARARI 03.09.2026 · [KARAR]
 
 > **Halil:** _"tamam, tüm official ölçümüzü 2025 Ağustos ayının başından

@@ -967,6 +967,26 @@ kontrol(
   "alt sınırdan bir gün öncesi COK_ESKI",
   iceAktarmaTarihi("2023-12-31T00:00:00.000Z", SIMDI_2026).tur === "COK_ESKI",
 );
+/** TR METIN TARIHI (eklendi 03.09.2026 — Satislar_V2'nin 8 metin-tarih satiri). */
+{
+  const t = iceAktarmaTarihi("13.08.2025", SIMDI_2026);
+  kontrol(
+    "TR metin tarihi GECERLI ve DOGRU GUNE cozulur",
+    t.tur === "GECERLI" && t.tarih.toISOString().slice(0, 10) === "2025-08-13",
+  );
+}
+kontrol(
+  "ay tasan TR metin OKUNAMADI (32.13.2025)",
+  iceAktarmaTarihi("32.13.2025", SIMDI_2026).tur === "OKUNAMADI",
+);
+kontrol(
+  "gun tasan TR metin OKUNAMADI (31.02.2026 — 3 Mart'a KAYMAMALI)",
+  iceAktarmaTarihi("31.02.2026", SIMDI_2026).tur === "OKUNAMADI",
+);
+kontrol(
+  "TR metin yil kapisindan MUAF DEGIL (11.02.0202 → COK_ESKI)",
+  iceAktarmaTarihi("11.02.0202", SIMDI_2026).tur === "COK_ESKI",
+);
 kontrol("okunamayan OKUNAMADI", iceAktarmaTarihi("abc", SIMDI_2026).tur === "OKUNAMADI");
 kontrol("boş OKUNAMADI", iceAktarmaTarihi(null, SIMDI_2026).tur === "OKUNAMADI");
 /**

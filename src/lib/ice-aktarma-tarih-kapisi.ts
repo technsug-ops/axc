@@ -58,6 +58,32 @@ export type TarihKapisi =
  * ayrı kontrol yazılsaydı dördüncü dal eklendiğinde atlanırdı.
  * _(Anayasa: "sınanmayan dal, sınanmamış koddur".)_
  */
+/**
+ * "13.08.2025" gibi TR METIN tarihi — Halil'in dosyalarında Excel'in tarih
+ * saymadığı hücreler böyle geliyor (Satislar_V2, 8 satır, 03.09.2026).
+ * ⛔ `new Date("13.08.2025")` güvenilmez; alanlar TEK TEK doğrulanır —
+ * "32.13.2025" OKUNAMADI kalmalı, sessizce başka güne kaymamalı.
+ * Biçim beyanı: GG.AA.YYYY (iş TR; "08.05.2025" TR okunur, ABD değil).
+ * Yıl burada SINANMAZ — alt/üst sınır kapıları zaten tek çıkışta ölçüyor
+ * ("11.02.0202" buradan geçer, COK_ESKI kapısına takılır).
+ */
+function trMetinTarihi(metin: string): Date | null {
+  const e = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(metin);
+  if (!e) return null;
+  const gun = Number(e[1]);
+  const ay = Number(e[2]);
+  const yil = Number(e[3]);
+  const d = new Date(Date.UTC(yil, ay - 1, gun));
+  /** Taşma kontrolü: 31.02 → 3 Mart'a kayar; kaymışsa OKUNAMADI. */
+  if (
+    d.getUTCFullYear() !== yil ||
+    d.getUTCMonth() !== ay - 1 ||
+    d.getUTCDate() !== gun
+  )
+    return null;
+  return d;
+}
+
 export function iceAktarmaTarihi(ham: unknown, simdi: Date): TarihKapisi {
   const metin =
     ham === null || ham === undefined
@@ -71,7 +97,7 @@ export function iceAktarmaTarihi(ham: unknown, simdi: Date): TarihKapisi {
       : typeof ham === "number"
         ? new Date(Date.UTC(1899, 11, 30) + ham * 86_400_000)
         : metin
-          ? new Date(metin)
+          ? (trMetinTarihi(metin) ?? new Date(metin))
           : null;
   if (aday === null || Number.isNaN(aday.getTime())) return { tur: "OKUNAMADI" };
   if (aday.getTime() < ICE_AKTARMA_ALT_SINIR.getTime()) return { tur: "COK_ESKI", tarih: aday };
