@@ -87,6 +87,7 @@
     "duzenleme:dogrula": "tsx scripts/satis-duzenleme-dogrula.ts",
     "gerial:dogrula": "tsx scripts/geri-alma-dogrula.ts",
     "adet:dogrula": "tsx scripts/adet-dogrula.ts",
+    "canli:net-tazele": "tsx scripts/canli-net-tazele.ts",
     "canli:kar-tazele": "tsx scripts/canli-kar-tazele.ts",
     "canli:odeme-tazele": "tsx scripts/canli-odeme-gideri-tazele.ts",
     "canli:barkod-sifir": "tsx scripts/canli-barkod-sifir.ts",

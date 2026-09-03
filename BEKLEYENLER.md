@@ -233,6 +233,85 @@ silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
 
 ---
 
+## ✅ K146 — 19 KARGO + BIÇAK MALİYETİ YAZILDI · NET TAZELENDİ · 03.09.2026 · [KOD KOŞTU]
+
+### ⭐ ① 19 SATIŞIN KARGOSU — HALİL DOLDURDU, YAZILDI
+
+K75'in kalıntısıydı: satış dosyasında kargo satırı YOKTU, toplu yazım
+yasaktı. Halil listeyi indirdi, **19/19'unu elle doldurdu** (tutar + firma).
+
+    yazılan 19/19 · ₺2.368,61 (KDV hariç) · KDV ₺473,72
+    firma da yazıldı: 15 Aras Kargo · 4 hepsiJET
+
+⭐ **TABAN ÖLÇÜLDÜ, VARSAYILMADI:** dosyada `₺101` ALTI kez geçiyor ve
+`101 ÷ 1,20 = 84,17` — defterde `4120311526`ın kargosu tam **84,17**.
+Yani dosya KDV DAHİL; yazarken 1,20'ye bölündü.
+
+⛔ **VE BİR KİMLİK KAYBI YAKALANDI:** Excel `0681327845`in **baştaki
+sıfırını sildi**, dosyaya `681327845` diye geldi ve ilk koşumda "defterde
+YOK" düştü. Sıfır dolgusu eklendi, denendiği EKRANDA yazıyor. 18 → 19/19.
+
+### ⭐ ② BIÇAK MALİYETİ — FATURA TEYİDİYLE DÜZELTİLDİ
+
+Halil'in HB faturası: sipariş `479 182 345 7` · 16.02.2026 · **x2 ·
+1.598,00 TL**. Beyanı: _"Ben Excel listesine yanlış girmişim."_
+
+    ESKİ 7.641,50/adet (toplam 15.283,00)
+    YENİ   799,00/adet (toplam  1.598,00)
+
+⭐ **BAĞIMSIZ TEYİT:** kardeş parti oranı **14,21× → 1,49×**. K145
+bekçisinin eşiği `1,5×` ve düzeltilmiş değer tam altına oturuyor. Öteki
+okuma (₺1.598/adet) olsaydı `2,97×` kalır, hâlâ şüpheli çıkardı.
+⚠ Betik birim/toplam ayrımına KARAR VERMEZ: `--toplam=` ya da `--birim=`
+açıkça istenir, varsayılan YOKTUR. _(TY `price` vakasında bu ayrım yanlış
+yapılmıştı.)_
+
+⚠ **DÜZELTME ÜÇ YERE BİRDEN GİTTİ:** `PurchaseItem` · `PURCHASE_IN`
+damgası · o partiden yemiş **ÇIKIŞ** damgaları (kâr motoru maliyeti
+oradan okur). Doğrulama 3/3.
+
+### ⛔ ③ VE `canli:kar-tazele` BU 21 SATIŞI GÖRMÜYORDU
+
+Yazımdan sonra `canli:kar-tazele` koşuldu ve **beş** satış buldu —
+**hiçbiri bu 21'den değildi.** Bıçak satışları hâlâ NET-2 −5.296,15
+gösteriyordu, maliyet ₺799'a düşmüş olmasına rağmen.
+
+⭐ **SEBEP KAPSAM:** o betik _"adet düzenlemesinden etkilenen satışlar"_
+için yazılmış — damga ile defterin AYRIŞTIĞI satırları arıyor. Girdi
+değiştiğinde ayrışma OLMAZ: defter de damga da tutarlıdır, yalnız ikisi
+de ESKİ girdiyle hesaplanmıştır.
+_(Anayasa: "düzeltme yolu, TÜM OKUYUCULARA ulaştığı ölçülmeden 'var'
+sayılmaz" — okuyucu vardı, kapsamı dardı.)_
+
+⭐ **ÇARE — `canli:net-tazele`:** ekranın çağrısının aynısını kullanır
+(`karYenidenYaz`, `satislar/[id]/hesap-actions.ts`ten). İkinci bir hesap
+yazılsaydı aynı satış iki yoldan iki türlü hesaplanırdı.
+
+    tazelenen 21/21 · doğrulama 21/21 · ikinci koşum 0/21 (kalıcı)
+
+    kargo 19 satış   NET-2  −2.368,58
+    bıçak  2 satış   NET-2 +11.404,16   (−5.296,15 → +405,93, her biri)
+    ⭐ TOPLAM ETKİ            +9.035,58
+
+### ⛔ VE İKİ KUSUR ÇIKTI — İKİSİ DE KOŞARKEN YAKALANDI
+
+**① `--iz` konum argümanlarını EZİYORDU.** 21 satış istendi, 19'u koştu ve
+iki bıçak satışı **sessizce düştü**. `hedefKodlar = ...` yerine birleşim
+yazıldı ve ekranda `iz 19 · komut satırından 2 · BİRLEŞİK 21` diye
+yazıyor.
+
+**② ÇİFT KOŞUM — VE SEBEBİ AÇIKLANDI.** `KARGO_ELLE_YAZILDI` izi **28**
+kayıt gösterdi (19 benzersiz, 9'u iki kez), hepsi 08:04:16–08:04:30
+arasında. Sebep: **Halil kendi PowerShell'inde koşarken ben de koştum.**
+⭐ Zarar YOK ve bu tesadüf değil TASARIM: `cargoAmount` MUTLAK alan
+(üzerine yazar), ikinci koşum kargosu olanı zaten atlıyor. **19/19 değer
+ayrıca doğrulandı** — hiçbiri iki katına çıkmamış.
+⚠ Tek gerçek kayıp: anlık görüntü dosyasının adı sabit olduğu için ikinci
+koşum birincininkini EZDİ (9 satırlık görüntü kaldı). `net-tazele`de
+dosya adına damga kondu; kargo betiğinde **açık kalem**.
+
+---
+
 ## ✅ K138 — PANO YAZIMI "BEKLİYOR" DERKEN KOŞMUŞTU · BEKÇİ 03.09.2026 · [KOD KOŞTU]
 
 ⛔ **BEŞ GÜN SESSİZ KALDI VE BUGÜN YANLIŞ BİLGİ ÜRETTİ.**
