@@ -706,6 +706,45 @@ baktırma sebebi.
 "sayılsın" demek bedeli bilinmeyen bir işi emretmek olurdu.** Rakam
 konunca karar kolay: ₺226K'lık bir ayrım için 90 varyant sayılır.
 
+### ✅ ⑧ MUTABAKAT — SORU KAPANDI · [HALİL BEYANI 03.09.2026]
+
+> **Halil:** _"Bu konuda mutabakata vardığımızı, sayım yapılan tarih
+> itibarıyla bir problemin olmadığını yaz sisteme."_
+
+⭐ **KAYIT:** **27.08.2026 sayımı ve 29.08'de yazılan 181 `COUNT_CORRECTION`
+ile stok mutabakatı SAĞLANMIŞTIR.** O tarih itibarıyla defter ile fiziki
+raf arasında **problem YOKTUR.**
+
+**KANIT — ÖLÇÜLDÜ 03.09.2026, tek satırda:**
+
+    sayım listesindeki rafta malı olan 11 varyantın
+    ⭐ 11'inde BUGÜNKÜ raf adedi = SAYILAN adet     (ayrışan 0)
+
+Defter rafa uyuyor. Dolayısıyla **sağlam adet tavanı 89/89'unda SIFIR** ve
+açık kalan karar **₺0**. 114 TY iadesi yazılacaksa `soundQuantity = 0` ile
+yazılır; stok defterine hiçbir şey eklenmez ve **mutabakat olduğu gibi
+ayakta kalır.**
+
+### ⛔ VE ÜÇÜNCÜ HATAM BURADAYDI — EN İNCESİ
+
+_"Sayım fazlası"_ diye gösterdiğim rakamı şöyle hesaplamıştım:
+
+    fazla = sayılanAdet − defter(27.08 gün sonuna kadar)
+
+Ama düzeltmeler **29.08 tarihli** — yani bu toplamın **DIŞINDA** kalıyorlar.
+Gösterdiğim "fazla" boş kapasite değil, **K83'te 181 hareketle deftere
+ÇOKTAN YAZILMIŞ düzeltmenin kendisiydi.** Aynı rakamı iki kez saydım.
+
+⚠ **VE ÜÇÜNÜN DE KÖKÜ AYNI:** elimdeki mutabakatı OKUMADAN üstüne yeni bir
+soru kurdum. K83 panoda duruyordu ve _"fiziki varlık esastır · sayım SON
+SÖZ"_ diye yazıyordu.
+_(Anayasa: "fiziksel sayım son sözdür" · "kaydetme kararı tüketicisi
+doğduğunda verilir" — burada tüketici zaten doğmuş ve KARAR VERİLMİŞTİ.)_
+
+⛔ **BU KALEM YENİDEN AÇILMAZ.** Sağlam adet sorusu için yeni bir sayım,
+yeni bir liste ya da yeni bir karar İSTENMEZ. Açılış şartı: 27.08 sonrası
+yapılacak YENİ bir fiziksel sayım.
+
 ### ⛔ ⑦ SAYIM FÖYÜ GERİ ÇEKİLDİ · 03.09.2026 — KULLANICI DURDURDU
 
 _Halil: "bu nedir. sana sayım sırasında zaten kesin sayım sonuçlarını

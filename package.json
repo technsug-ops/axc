@@ -300,6 +300,8 @@
     "canli:kargosuz-neden": "tsx scripts/canli-kargosuz-neden.ts",
     "canli:satis-saglik": "tsx scripts/canli-satis-saglik-taramasi.ts",
     "canli:zarar-fiyat-capraz": "tsx scripts/canli-zarar-fiyat-capraz.ts",
+    "canli:alim-maliyet-duzelt": "tsx scripts/canli-alim-maliyet-duzelt.ts",
+    "canli:kargo-eksik-yaz": "tsx scripts/canli-kargo-eksik-yaz.ts",
     "canli:kargo-degeri-dogrula": "tsx scripts/canli-kargo-degeri-dogrula.ts",
     "canli:ters-kalem": "tsx scripts/canli-ters-kalem-taramasi.ts",
     "canli:varyant-gecmisi": "tsx scripts/canli-varyant-gecmisi.ts",
