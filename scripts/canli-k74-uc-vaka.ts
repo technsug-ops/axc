@@ -315,15 +315,37 @@ async function main() {
     const tedarikciler = await prisma.supplier.findMany({
       select: { id: true, name: true },
     });
-    const aday = tedarikciler.filter((t) =>
-      t.name.toLocaleLowerCase("tr").includes(
-        kanalAdi.split(" ")[0].toLocaleLowerCase("tr"),
-      ),
+    /**
+     * ⛔ İLK YAZIMDA BU ÖLÇÜT YANLIŞ CEVAP VERDİ VE DÜZELTMESİ BURADA.
+     *
+     * Eskisi kanal adının İLK KELİMESİNİ arıyordu:
+     *   `"Hepsi Burada".toLocaleLowerCase("tr")` içinde `"hepsiburada"`
+     *   GEÇMİYOR → 0 sonuç → rapor _"Hepsiburada adlı Supplier YOK"_ dedi.
+     * Kayıt VARDI (`HB — Hepsi Burada`) ve o cevaba dayanarak yeni bir
+     * tedarikçi açılsaydı **MÜKERRER KİMLİK** doğardı — şemanın kendi
+     * uyarısının yasakladığı şey ("aynı varlığın iki kimliği olur ve bir
+     * gün ayrışırlar").
+     *
+     * ⚠ VE KİMLİK YOLU YOK: `Channel`in `supplierId`si bulunmuyor, yani
+     * eşleştirme mecburen ADLA yapılıyor. O hâlde ad NORMALLEŞTİRİLİR
+     * (boşluk/büyük-küçük) ve bulunamazsa TAM LİSTE basılır — okuyan
+     * kendi gözüyle görsün. _(Anayasa: "kimlik varken dizeyle aranmaz" —
+     * kimlik YOKKEN de dize körü körüne kullanılmaz.)_
+     */
+    const sadelestir = (x: string) =>
+      x.toLocaleLowerCase("tr").replace(/[\s._-]/g, "");
+    const hedef = sadelestir(kanalAdi);
+    const aday = tedarikciler.filter(
+      (t) =>
+        sadelestir(t.name).includes(hedef) || hedef.includes(sadelestir(t.name)),
     );
     if (aday.length === 0) {
       console.log(
-        `     ⛔ "${kanalAdi}" adlı Supplier YOK (${tedarikciler.length} kayıt tarandı).`,
+        `     ⛔ "${kanalAdi}" ile eşleşen Supplier YOK (${tedarikciler.length} kayıt).`,
       );
+      /** ⛔ ÇIKMAZA SOKMA: ne VAR olduğu yazılır (İlke #5). */
+      console.log("     MEVCUT TEDARİKÇİLER — gözle bakılsın:");
+      for (const t of tedarikciler) console.log(`        ${t.name}`);
       console.log(
         "     → TAZMİN YAZILAMAZ: karşı tarafı gösterecek kayıt yok. Önce",
       );

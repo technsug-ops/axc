@@ -1254,10 +1254,48 @@ Tek bir pencere yazmak, 20+ günü olan 7 ürünü gereksiz aceleye sokardı ve
     kademe 2   3.475 TL   %11,30   →  ₺192,41   1,03×      bugünden kötü
     kademe 3   3.292 TL   %9,10    →  ₺135,76   1,47×   ⛔ %32 KÖTÜ
 
-⛔ **KARAR KAYDINDA YANLIŞ RAKAM VARDI VE DÜZELTİLDİ.** Önce
-`Fiyatı Güncelle = 3292` yazılmıştı — o **EN DERİN İNDİRİM** kademesi ve
-bugünkünden **%32 daha kötü**. Girilseydi teklif "kabul edildi" sanılır,
-gerçekte adet başına ₺63 kaybedilirdi. Doğru rakam **3.658**.
+### ✅ ÇELİŞKİ ÇÖZÜLDÜ · 03.09.2026 — HESAP DEĞİL, ETİKET YANLIŞTI
+
+_Halil: "iki hesabı yan yana koy; hangisi yanlıştı, neden?"_
+
+⭐ **HİÇBİR HESAP YANLIŞ DEĞİLDİ.** Motor (`simulasyonKur`) 02.09'da ve
+03.09'da **birebir aynı** rakamları verdi. Üç kademe, kalem kalem:
+
+| kademe | fiyat | kom % | FIFO maliyet | komisyon | stopaj | ödeme gid. | hizmet | ödenecek KDV | **NET-2** |
+|---|---|---|---|---|---|---|---|---|---|
+| **bugün** | 3.850,00 | 18,00 | 2.697,75 | 831,60 | 32,08 | 30,80 | 12,60 | 46,21 | **198,96** |
+| **1** | 3.658,00 | 14,10 | 2.697,75 | 618,93 | 30,48 | 29,26 | 12,60 | 49,91 | **219,06** ⭐ |
+| 2 | 3.475,00 | 11,30 | 2.697,75 | 471,21 | 28,96 | 27,80 | 12,60 | 44,27 | 192,41 |
+| 3 | 3.292,00 | 9,10 | 2.697,75 | 359,49 | 27,43 | 26,34 | 12,60 | 32,64 | **135,76** ⛔ |
+
+**MEKANİZMA TEK CÜMLE:** fiyattan vazgeçilen para, komisyondan kazanılan
+paradan büyük olduğu anda kademe kötüleşir — ve bu yalnız 1. kademede
+lehimize.
+
+    kademe 1   fiyat −192,00   komisyon +212,67   →  NET-2 +20,10  ✅
+    kademe 2   fiyat −375,00   komisyon +360,39   →  NET-2  −6,55
+    kademe 3   fiyat −558,00   komisyon +472,11   →  NET-2 −63,20  ⛔
+
+⛔ **HATA NEREDEYDİ — GİT'TEN OKUNDU, HATIRLAMAYLA DEĞİL.** Commit
+`e0704cc` (02.09) şöyle yazıyordu:
+
+    "bugün NET-2/adet ₺198,96 → teklifte ₺219,06, çarpan 0,9×.
+     Toplam kazanç ~₺40 (2 adet × ₺20,10)."
+    "HB panelinden `Fiyatı Güncelle = 3292` girilir."
+
+**₺219,06 · 0,9× · ₺20,10 — ÜÇÜ DE 1. KADEMENİN.** Paragraftaki tek yanlış
+şey FİYATTI: 3. kademeninki yazılmıştı.
+
+⭐ **KÖK SEBEP: ÖZET KADEME ETİKETİNİ DÜŞÜRDÜ.** Üç kademe tek satıra
+indirildi ("en iyi NET-2") ve rakam **hangi kademeye ait olduğu
+söylenmeden** taşındı. Etiket düşünce fiyat herhangi bir satırdan
+alınabilir hâle geldi ve hiçbir şey itiraz etmedi — en derin indirim
+sezgiyle "en iyi teklif" sanıldı. Panonun kendi satırı bu tuzağı zaten
+adlandırıyor: _"KOMİSYON EN ÇOK DÜŞEN KADEME EN İYİSİ DEĞİL."_
+_(Anayasa: "bir sayı etiketiyle taşınır".)_
+
+⛔ **GİRİLECEK RAKAM: `3658`.** `3292` girilseydi teklif "kabul edildi"
+sanılır, adet başına **₺63,20** kaybedilirdi.
 
 ⚠ **KOMİSYON EN ÇOK DÜŞEN KADEME EN İYİSİ DEĞİL.** Kademe 3'te komisyon
 %18→%9,1 (yarı yarıya) ama fiyat 3.850→3.292 düşüyor; fiyat kaybı komisyon
@@ -2450,11 +2488,31 @@ DOĞRU DEĞİL** — ölçüldü, yok. Şema bir alanı açarken taşıdığın�
 varsaydığı veriyi taşımıyor. _(Anayasa: "şemadaki alan da bir iddiadır —
 yazıcısı yoksa vaat boştur".)_
 
-⏭ **④ İÇİN SIRA — VE HİÇBİRİ YAZIM DEĞİL, KARAR:**
-① Hepsiburada `Supplier` olarak tanımlansın mı (arbitrajda ondan alım da
-   yapılıyor, yani tanım zaten gerekebilir) ·
-② tazmin neye bağlanacak: önce iade mi yazılacak, yoksa bildirim mi ·
-③ ₺1.216,87 ile dosyadaki ₺575,40 farkı ne (hurda geliri ayrı mı).
+### ⛔ VE "SUPPLIER YOK" BULGUM YANLIŞTI — DÜZELTMESİ BURADA
+
+_Halil onayı geldi: "Hepsiburada Supplier kaydı açılır (tek kayıt,
+migration yok)."_ ⛔ **AÇILMADI — ÇÜNKÜ ZATEN VARDI.**
+
+    HB — "Hepsi Burada"   (id cmsnwd7f4000004kvqs4eys3r)
+
+Ölçütüm kanal adının ilk kelimesini arıyordu:
+`"Hepsi Burada".toLocaleLowerCase("tr")` içinde `"hepsiburada"` **GEÇMİYOR**
+(araya boşluk giriyor) → 0 sonuç → rapor _"Supplier YOK"_ dedi. Onay o
+yanlış rapora dayanıyordu ve uygulansaydı **MÜKERRER KİMLİK** doğardı —
+şemanın kendi uyarısının yasakladığı şey: _"aynı varlığın iki kimliği olur
+ve bir gün ayrışırlar (Soundcore vakasının aynısı)."_
+
+⚠ **VE KİMLİK YOLU YOK:** `Channel`in `supplierId`si bulunmuyor, eşleştirme
+mecburen ADLA yapılıyor. Ölçüt normalleştirmeye çevrildi (boşluk/nokta/
+tire/büyük-küçük) **ve bulunamazsa TAM LİSTE basılıyor** — okuyan gözüyle
+görsün, dizeye körü körüne güvenilmesin (İlke #5).
+⭐ Aynı alımın (`ALM-HB-260216-03`) tedarikçisi de zaten "Hepsi Burada".
+
+⏭ **④ İÇİN KALAN — TEK ENGEL:**
+① ✅ karşı taraf HAZIR (`supplierId` = Hepsi Burada) ·
+② ⛔ **tazmin bağlanacak kayıt YOK** — ne `Return` ne `ReturnNotice`.
+   Sıra: önce iade/bildirim, SONRA tazmin ·
+③ ⏭ ₺1.216,87 ile dosyadaki ₺575,40 farkı ne (hurda geliri ayrı mı).
 
 ⛔ **HİÇBİRİ YAZILMADI.**
 
@@ -2506,9 +2564,27 @@ kuruşuna `dosya ÷ 1,20` çıktı; taban kanıtı olarak oran p05–p95 boyunca
       (a) İPTALLİ   33   ← kargo zaten beklenmez, kusur DEĞİL
       ⭐ açık satis  19   ← 15 Trendyol · 4 Hepsiburada
 
-Bunlar dosyada kargo satırı TAŞIMIYOR; yazacak değer yok. ⛔ Sistemin
-bilmediği bir değeri toplu yazmak yasak — `null` bir eksiklik değil
-**BEYANDIR**. Tam liste: `veri/ozel/kargosuz-satislar.csv`.
+Bunlar dosyada kargo satırı TAŞIMIYOR; **toplu** yazacak değer yok. ⛔
+Sistemin bilmediği bir değeri toplu yazmak yasak — `null` bir eksiklik
+değil **BEYANDIR**.
+
+### ⭐ HALİL KARARI 03.09.2026 — ELLE GİRİLECEK
+
+İlk karar _"19 satır null kalır, onay sayfasında beyan edilir"_ idi;
+Halil aynı gün değiştirdi: **"19 kargoyu listele, elle gireyim."**
+Kaynak toplu yazımda yoktu ama **operatörde var** — ve anayasa toplu
+yazımı yasaklıyor, TEK TEK girişi değil (_"tek satır işaretleme açık
+kaldı çünkü orada kullanıcı tarihi kendisi giriyor"_).
+
+    ⭐ LİSTE: raporlar/kargosuz-19-elle-girilecek.csv
+    sütunlar: tarih · siparişNo · kanal · kargoKodu · ciro · sku · ürün
+              · **selliora** (doğrudan düzenleme adresi)
+    15 Trendyol · 4 Hepsiburada · en eski 25.08.2024 · en yeni 30.06.2026
+
+⚠ **GİRİLEN DEĞER KDV HARİÇ OLMALI** — `cargoAmount` şemada öyle
+saklanıyor. Faturada KDV dahil rakam varsa **1,20'ye bölünür** (K75'in
+taban ölçümünün aynısı).
+⚠ `11265267349` bu listede: 03.09'da onarılan satış.
 ⚠ Ayrıca **28 sipariş "çelişen"** kovasında (aynı siparişe dosyada farklı
 kargo değerleri) — ayrı kalem, bugün açılmadı.
 
