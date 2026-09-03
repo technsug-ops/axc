@@ -233,6 +233,79 @@ silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
 
 ---
 
+## 🚨 K147 — DÖRT ŞÜPHELİ ALIM FATURAYLA SINANDI · 03.09.2026 · [ÜÇÜ KAPANDI · BİRİ AÇILDI]
+
+K145'in bulduğu dört "kardeş parti sapması" Halil'in faturalarıyla teker
+teker sınandı. **Dördünden yalnız biri gerçek fiyat hatasıydı** — ve
+beşincisi, hiç beklenmeyen bir kusur çıktı.
+
+| # | alım | ölçüm | FATURA NE DEDİ | sonuç |
+|---|---|---|---|---|
+| ① | `ALM-HB-260216-03` | 14,21× | x2 · ₺1.598 → birim **₺799** | ✅ **DÜZELTİLDİ** (K146) |
+| ② | `ALM-HB-260427-07` | 2,00× | **₺1.500 DOĞRU** — Halil alış hesabını düzeltmiş | ✅ **KAPANDI, hata yok** |
+| ③ | `ALM-BI-260814-01/02` | 1,84× | ⛔ **SAHTE POZİTİF** — `-01` İPTALLİ | ✅ **KAPANDI, ölçüt düzeltildi** |
+| ④ | `ALM-AMZ-260101-07` | 3,11× | ⛔ fiyat değil **ÜRÜN KARIŞMASI** | 🚨 **AÇIK — daha büyük** |
+
+### ⛔ ③ SAHTE POZİTİF — TARAMAM İPTALLİ ALIMI ELEMİYORDU
+
+    ALM-BI-260814-01   ₺1.111,00   ⛔ İPTAL
+    ALM-BI-260814-02   ₺2.048,00   ✓ teslim alındı
+
+Ortada fiyat farkı YOK; iptal edilmiş bir kayıt var. Halil ekranda gördü:
+_"böyle bir alım bulamadım, test olabilir mi."_
+_(Anayasa: "kayıp abartısı, kayıp küçültmesi kadar yanlıştır — bir kayıp
+rakamı yazarken sorulur: bu sayının içinde KAYBETMEYEN kayıt var mı?")_
+
+⭐ **ÇARE GEÇİCİ BETİK DEĞİL, KALICI ÖLÇÜT:** ilk tarama tek seferlik bir
+betikteydi ve kusuru onunla birlikte kayboldu.
+`npm run canli:kardes-parti-sapmasi` yazıldı —
+`status notIn [CANCELLED, DRAFT]`, gruplama tedarikçiyi de içeriyor,
+dağılım HER KOŞUMDA basılıyor ve **eşiğin hâlâ gedikte olduğu ölçülüyor**.
+
+### 🚨 ④ `ALM-AMZ-260101-07` — FİYAT HATASI DEĞİL, ÜRÜN KARIŞMASI
+
+Halil Amazon faturasını gönderdi: sipariş `406-5483511-3513154` ·
+LEGO Çiçekli Pikap 31172 · **5 adet × ₺1.399 = ₺6.995** (Genel Toplamla
+birebir). Ve haklı olarak sordu: _"benim listemde doğru, sen nasıl yanlış
+çektin kaynaktan?"_
+
+⭐ **ÇEKMEDİM — KAYNAKTA GERÇEKTEN ₺450,35 VAR.** `Alımlar.xlsx` üç satırda
+o fiyatı taşıyor (539 · 542 · 546) ve o satırlar **BAŞKA BİR ÜRÜN**:
+
+    Ürün Adı : LEGO Marvel Iron Man Hulkbuster Thanos'a Karşı 76263
+    Fiyatı   : 450,35    Adet: 5    Toplam: 2.251,75
+    Barkod   : 5702017419794 / 5702017835990
+
+Çiçekli Pikap dosyada **11 satırda geçiyor ve hepsi 1399**.
+01.01.2026'da Amazon'dan **dört ayrı ürün** alınmış:
+
+    Hulkbuster 76263        450,35   3 satır
+    Çiçekli Pikap 31172   1.399,00   2 satır
+    Porsche 911 GT3 RS    1.160,95   2 satır
+    Cookplus Pamuk Şeker  2.073,99   1 satır
+
+⛔ **AMA SİSTEMDE `-03` · `-05` · `-07` ÜÇÜ DE `axcali2110` (Çiçekli
+Pikap).** Yani içe aktarma **Hulkbuster satırını Çiçekli Pikap varyantına
+bağlamış.**
+
+⛔ **VE BU YÜZDEN FİYAT DÜZELTİLMEDİ.** ₺1.399 yazsaydım ortaya
+_"1.399'a alınmış bir Çiçekli Pikap"_ çıkardı; oysa o siparişte Hulkbuster
+alınmış. Yanlış kaydı **doğru görünen** bir kayda çevirmek olurdu.
+_(Anayasa: "imkânsız görünen değer önce doğrulanır — düzeltilmez"; burada
+doğrulama fiyatı değil ÜRÜNÜ çürüttü.)_
+
+### ⏭ ÖLÇÜLECEK — CANLI AÇILINCA
+
+    ① Hulkbuster 76263 sistemde kayıtlı mı, hangi SKU'da
+    ② eşleştirme neye göre yapılmış (barkod mu, ad mı)
+    ③ ⚠ BU KARIŞMA KAÇ ALIMDA DAHA VAR — asıl soru bu
+
+⚠ Ölçüm **canlı veritabanı cevap vermediği için** yapılamadı (havuz zaman
+aşımı, `limit=1`). Betikler hazır; erişim açılınca koşulacak.
+⛔ "Ölçülemedi" ile "temiz" AYNI ŞEY DEĞİLDİR ve öyle yazıyor.
+
+---
+
 ## ✅ K146 — 19 KARGO + BIÇAK MALİYETİ YAZILDI · NET TAZELENDİ · 03.09.2026 · [KOD KOŞTU]
 
 ### ⭐ ① 19 SATIŞIN KARGOSU — HALİL DOLDURDU, YAZILDI
