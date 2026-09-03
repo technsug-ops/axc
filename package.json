@@ -66,6 +66,7 @@
     "baglanti:olc": "tsx scripts/baglanti-olc.ts",
     "canli:yedek": "tsx scripts/canli-yedek.ts",
     "canli:ham-yedek": "tsx scripts/canli-ham-yedek.ts",
+    "canli:urun-gecmisi": "tsx scripts/canli-urun-gecmisi.ts",
     "canli:yetki": "tsx scripts/canli-yetki-seed.ts",
     "canli:pazarlama-ornek": "tsx scripts/canli-pazarlama-ornek.ts",
     "maliyet:geri-doldur": "tsx scripts/maliyet-donmeyen-geri-doldur.ts",
