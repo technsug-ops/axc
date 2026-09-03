@@ -233,6 +233,79 @@ silinmez, ölçüt gevşetilmez, VERİ düzeltilir.)_
 
 ---
 
+## ✅ K150 — BARKOD KARIŞMASININ KÂR ETKİSİ DÜZELTİLDİ · 03.09.2026 · [KOD KOŞTU]
+
+> **Halil:** _"ekranda düzelmesi önemli değil, zararsız hale getirmen
+> yeterli; stok, ciro ve KDV olarak zararsız hale gelmesi yeterli."_
+> · _"gerçeğin peşinde koşmaya devam et."_
+
+Araç: `npm run canli:cikis-maliyeti-duzelt` — iki partinin kimliğine kilitli.
+
+### ⭐ ÖLÇÜLDÜ: HALİL'İN SAYDIĞI ÜÇ EKSENDE ZARAR ZATEN YOKTU
+
+    STOK  axcali2110 sayım 3 dedi, defter 3 — 27.08 sayımı mühürlemiş
+    CİRO  satışlar gerçek, fiyatları hiç değişmedi
+    KDV   iki alım da GERÇEKTEN yapıldı (₺2.251,75 · ₺8.598 ödendi)
+
+⛔ **BOZUK OLAN TEK ŞEY KÂR:** yanlış partiden yiyen 7 satış ucuz maliyet
+taşıyordu.
+
+### ⭐ ÜÇ ADAY ÖLÇÜLDÜ, EN DARI SEÇİLDİ
+
+| yol | karar |
+|---|---|
+| `PurchaseItem.unitCostAmount` | ⛔ **KDV tabanını bozar** — o para gerçekten ödendi |
+| `PURCHASE_IN` damgası | ⛔ **gereksiz** — iki parti de KAPALI, kimse okumuyor |
+| ⭐ **ÇIKIŞ damgaları** | ✓ kâr motoru maliyeti **buradan** okuyor |
+
+    dokunulan çıkış 7 · doğrulama 7/7 ✓ · stok miktarı bozulmadı ✓
+    Ocak alım toplamı ₺1.141.085,86 — DEĞİŞMEDİ ✓
+
+⚠ **VE BİR TUTARSIZLIK BİLEREK BIRAKILDI:** parti ₺450,35 derken çıkışlar
+₺1.399 diyor. Alternatifi KDV tabanını bozmaktı. Gerekçe hem alımın notuna
+hem `CIKIS_MALIYETI_DUZELTILDI` izine yazıldı.
+
+### ⛔ VE TAHMİNİM YANLIŞ TABANDAYDI — DÜZELTMESİ BURADA
+
+Halil'e _"kâr ₺11.143,25 azalacak"_ dedim. **Ölçülen düşüş ₺9.286,04.**
+
+    ham maliyet artışı  5×948,65 + 2×3.200,00 = 11.143,25   ← NET-1 tabanı
+    ölçülen NET-2 düşüşü                        9.286,04    ← GEÇERLİ
+    fark                                        1.857,21
+
+⭐ **SEBEP:** maliyet **KDV DAHİL**; artınca indirilecek KDV de artıyor, o
+yüzden NET-2 **maliyet ÷ 1,20** kadar düşüyor (948,65/1,2 = 790,54 ·
+3.200/1,2 = 2.666,67 — ikisi de satır satır tuttu).
+_(Anayasa: "para rakamı tabanıyla birlikte yazılır" — ₺11.143,25 NET-1'in
+etkisiydi, NET-2'nin değil. K75'te aynı hata yapılmıştı ve orada da
+düzeltilmişti.)_
+
+⛔ **VE İKİNCİ TAHMİNİM DE YANLIŞTI:** _"5 satış zarara düşecek"_ dedim;
+hiçbiri düşmedi (+112 ile +224 arasına indiler). Aynı kök: ham maliyeti
+NET-2'ye doğrudan uyguladım.
+
+    10865503820   913,93 → 123,38      10867393016  3.089,84 → 423,17
+    10865580290 1.014,98 → 224,44      10876683465  2.720,80 →  54,13
+    10867340812   902,61 → 112,07
+    10867425096   902,61 → 112,07
+    4343296468  1.014,63 → 224,08
+
+✓ NET tazelendi 7/7 · doğrulama 7/7 · `canli:net-tazele` ile.
+
+### ⏭ AÇIK KALAN
+
+**Korbell'in 4 alımı hâlâ deftere girmedi** — ₺6.906,24 · 8 adet ·
+06–07.02.2026. ⚠ Bu stoğa mal ekler; yazımdan önce 27.08 sayımının
+Korbell'i görüp görmediği ÖLÇÜLECEK. Sayım "rafta yok" dediyse geçmişe mal
+eklemek mutabakatı bozar.
+
+⭐ **VE KAYNAK DOSYA DÜZELDİ:** Halil `Alımlar.xlsx`taki 20 hücreyi
+düzeltti; ad↔barkod çelişkisi **7 → 1**'e indi ve kalan tek çelişki
+(Stanley IceFlow) GERÇEK — Rose Quartz ve Lila iki ayrı renk. Yani bir
+sonraki içe aktarma aynı hatayı tekrarlamayacak.
+
+---
+
 ## 🚨 K149 — MUTASYON KALINTISI ÜRETİME SIZDI · 03.09.2026 · [KAPI KURULDU]
 
 ⛔ **CANLIYA BOZUK KOD GİTTİ VE TUR YEŞİL YANDI.**
