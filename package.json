@@ -316,7 +316,9 @@
     "canli:dosya-maliyet-2": "tsx scripts/canli-dosya-maliyet-2.ts",
     "canli:dosya-maliyet-3": "tsx scripts/canli-dosya-maliyet-3.ts",
     "canli:iade-yaz-v2": "tsx scripts/canli-iade-yaz-v2.ts",
-    "canli:kargo-v2-yaz": "tsx scripts/canli-kargo-v2-yaz.ts"
+    "canli:kargo-v2-yaz": "tsx scripts/canli-kargo-v2-yaz.ts",
+    "canli:komisyon-v2-duzelt": "tsx scripts/canli-komisyon-v2-duzelt.ts",
+    "canli:elden-satis-yaz": "tsx scripts/canli-elden-satis-yaz.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

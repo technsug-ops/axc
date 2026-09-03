@@ -407,7 +407,34 @@ defter KDV hariç (bilinen), dosya KDV dahil. Uyuşmazlık DEĞİL.
     TY 425 · HB 125 · AMZN 52 · firma kolonu yok → cargoCarrierId null (beyanlı)
     kâr tazeleme motorla · geri alma ölçütü: dosya değeri ÷1,20 kuruş eşleşmesi
 
+### ⭐ ④ HALİL'İN ÜÇ CEVABI UYGULANDI + KOMİSYON DÜZELTMESİ · 03.09.2026
+
+**KOMİSYON:** 655/655 yazıldı, hata 0 — HB Ağu–Ara 2025'in KDV'siz
+kalmış komisyonları V2 DAHİL değerine çekildi (+₺53.845 komisyon).
+304 desen-dışı satır `raporlar/komisyon-v2-halile.csv`te bekliyor.
+
+**HALİL CEVAP ① "Numara geçerli":** 8 kanal-çelişkili satırın PAZAR YERİ
+etiketi numaradan türetildi (mini dosya + TEK motor): 8 satış girdi,
+maliyet 7/7 (₺15.009) · kargo 8/8. Karaca (cevap ③ `8683650186700` —
+varyant ZATEN tanımlıydı: `axcali2182`) aynı turda girdi.
+
+**HALİL CEVAP ② "Elden satışta KDV işlemez":** DEPO 9 satış
+`canli-elden-satis-yaz` ile yazıldı (₺31.349 ciro): `code=null` (elden
+satışın sipariş numarası yoktur — kapı notu), `vatRate=0` snapshot,
+komisyon 0, stopaj yok (kanal kural kümesi boş, ölçüldü), maliyet J
+kolonundan çiftle (net stok 0 ✓). Aktarmanın DEPO kapısı YERİNDE duruyor
+— kapının iki gerekçesi bu betikte çözüldü, genel yol hâlâ kapalı.
+
+**İADE ARTIKLARI:** `4634137503` yazıldı (NET-2 −₺171,13 · stok 0) —
+meğer sayım SONRASI değilmiş: V1 hücresi `31.12.20.25` YAZIM HATALI ve
+metin kıyası onu yanlış kovaya atmıştı; gerçek geliş 31.12.2025, beyanla
+düzeltildi. ⭐ Ardından 199 iadenin occurredAt aralığı ölçüldü:
+2025-08-15 → 2026-07-28, aralık dışı 0 — bozuk tarih sızmamış.
+
+    resmî dönem artık: kargolu satış 5.888 · iade kaydı 218
+
 ### ⏭ SIRADA (V2 baz mandası — kalanlar)
+
 
 - **TAZMİN 13 — HALİL'İN İKİ CEVABINI BEKLİYOR:** ① tahsil edilen tutar
   hangi kolon ([10] liste mi, KALAN mı)? ② tahsilat KDV'li mi?
