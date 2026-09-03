@@ -12,6 +12,7 @@ import {
 } from "@/lib/donem";
 
 import type { Prisma } from "@/generated/prisma/client";
+import { MARJ_PARAM } from "@/lib/ice-aktarma-serhi";
 import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 
@@ -127,6 +128,12 @@ export function satisKosulu(
   supheliIdler?: string[],
   /** `paket=…` için hazırlanmış (paketlenmiş) satış kimlikleri. */
   paketliIdler?: string[],
+  /**
+   * ⭐ `marj=…` için sahibinden (`ice-aktarma-serhi.marjSebepSatisIdleri`)
+   * çözülmüş satış kimlikleri — İlke #16: şerhteki SAYI ile bu listenin
+   * kümesi AYNI gövdeden gelir (Halil bulgusu 04.09.2026).
+   */
+  marjIdler?: string[],
 ): { kosul: Prisma.SaleWhereInput; pencere: PencereCozumu } {
   const pencere = pencereCoz(p, an);
 
@@ -339,6 +346,17 @@ export function satisKosulu(
 
   if (veri === "supheli") {
     veKosullari.push({ id: { in: supheliIdler ?? [] } });
+  }
+
+  /**
+   * ⭐ MARJ ŞERHİ SÜZGECİ — küme DIŞARIDAN gelir (`marjIdler`), koşul
+   * burada YENİDEN KURULMAZ: sınıflandırma bellek-içi (varyantın ilk
+   * alımı ↔ satış tarihi) ve tek sahibi `ice-aktarma-serhi`. Param dolu
+   * ama küme çözülmemişse boş liste: yanlış sayfada sessizce "hepsi"
+   * gösterilmez. _(AND ile — spread süzgeç ezer, anayasa.)_
+   */
+  if (temiz(p[MARJ_PARAM] ?? "") !== "") {
+    veKosullari.push({ id: { in: marjIdler ?? [] } });
   }
 
   /**

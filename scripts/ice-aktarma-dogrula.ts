@@ -470,12 +470,45 @@ kontrol(
  */
 kontrol(
   "bağlı marj yalnız BAĞLI cirodan hesaplanıyor",
-  /baglıMarj: ciroBagli > 0 \? \(net \/ ciroBagli\)/.test(marjGovde),
+  /** ⚠ ÇAPA GÜNCELLENDİ 04.09.2026: sınıflandırıcı `marjSiniflandir`a
+   *  çıkarıldı (İlke #16 — sayı=liste tek gövde); formül sarmalayıcıda
+   *  `s.` önekiyle. Davranış AYNI, ölçüt eskimişti. */
+  /baglıMarj: s\.ciroBagli > 0 \? \(s\.net \/ s\.ciroBagli\)/.test(marjGovde),
 );
 kontrol(
   "ekran marjı TÜM cirodan hesaplanıyor",
-  /ekranMarji: ciroHepsi > 0 \? \(net \/ ciroHepsi\)/.test(marjGovde),
+  /ekranMarji: s\.ciroHepsi > 0 \? \(s\.net \/ s\.ciroHepsi\)/.test(marjGovde),
 );
+
+/** ═══ İLKE #16 — MARJ ŞERHİ RAKAMI KAYNAĞA GÖTÜRÜR (Halil 04.09.2026) ═══
+ *  Sayı = liste: adres, kimlik kümesi ve param adı TEK sahibinden
+ *  (`ice-aktarma-serhi`). Üç halka AYRI ölçülür — zincir, halkaların
+ *  varlığıyla değil bağlantısıyla sınanır. */
+{
+  const bilesen = oku("src/components/marj-serhi.tsx");
+  kontrol(
+    "marj şerhi satırları adresi SAHİBİNDEN alıyor (marjSebepAdresi çağrısı)",
+    /marjSebepAdresi\(sebep, parametreler\)/.test(bilesen) &&
+      (bilesen.match(/adres\("(bekleyen|alimyok|donemdisi)"\)/g) ?? []).length === 3,
+  );
+  kontrol(
+    "marj şerhi ELLE adres KURMUYOR (literal /satislar? yasak)",
+    !bilesen.includes("/satislar?"),
+  );
+  const sayfa = oku("src/app/satislar/page.tsx");
+  kontrol(
+    "satışlar sayfası marj kümesini SAHİBİNDEN çözüyor ve koşula geçiriyor",
+    /await marjSebepSatisIdleri\(/.test(sayfa) &&
+      /satisKosulu\(p, an, supheliIdler, paketliIdler, marjIdler\)/.test(sayfa),
+  );
+  const suzgec = oku("src/lib/liste-suzgeci.ts");
+  const marjBlok = blok(suzgec, "MARJ ŞERHİ SÜZGECİ", 900);
+  kontrol(
+    "liste koşulu marj kümesini AND ile ve SAHİP param sabitiyle uyguluyor",
+    /temiz\(p\[MARJ_PARAM\] \?\? ""\) !== ""/.test(marjBlok) &&
+      /veKosullari\.push\(\{ id: \{ in: marjIdler \?\? \[\] \} \}\)/.test(marjBlok),
+  );
+}
 
 /** ⚠ YANLIŞ YANMA: bekleyen yoksa şerh HİÇ çizilmemeli. */
 /**

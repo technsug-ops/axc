@@ -2087,7 +2087,13 @@ export default async function AnaSayfa({
           Şerh maliyet bağı kurulunca KENDİLİĞİNDEN söner — ölçüt
           `profitStatus`, `importBatch` değil.
         */}
-        <MarjSerhi />
+        <MarjSerhi
+          parametreler={{
+            pencere: parametreler.pencere,
+            baslangic: parametreler.baslangic,
+            bitis: parametreler.bitis,
+          }}
+        />
 
         {/* ═══════════════ KARŞILAŞTIRMA SEÇİCİ (2a) ═══════════════
           KAPALI GELİR: her panele zorla ikinci bir rakam basmak ekranı

@@ -198,10 +198,105 @@ export function marjBasilabilirMi(s: Pick<MarjSerhi, "kapsanmayanPay">): boolean
  * ama şerh %2,61 diyor" gibi bir çelişki doğardı.
  * _(Anayasa: "sonda parametresi ekranın parametresi değildir".)_
  */
+/**
+ * ⭐ İLKE #16 SÖZLEŞMESİ — SAYI = LİSTE (Halil bulgusu 04.09.2026).
+ *
+ * Panel şerhindeki "N satış: ALIM KAYDI YOK" düz metindi; rakam vardı,
+ * gidilecek yer yoktu. Sebep kümeleri artık TEK sınıflandırıcıdan çıkar:
+ * şerhin SAYISI da, tıklayınca açılan LİSTENİN kimlik kümesi de
+ * `marjSiniflandir`dan okunur. İki ayrı gövde olsaydı koşul değişince
+ * sayı ile liste sessizce ayrışırdı.
+ */
+export const MARJ_SEBEPLERI = ["bekleyen", "alimyok", "donemdisi"] as const;
+export type MarjSebebi = (typeof MARJ_SEBEPLERI)[number];
+
+/** /satislar süzgeç parametresinin adı — adres, sayfa ve koşul AYNI sabiti
+ *  okur. ⛔ "marj" ADI KULLANILAMADI: o param /satislar'da zaten dolu
+ *  (ciro/sermaye ölçü seçici) — çakışsaydı ölçü seçen kullanıcının listesi
+ *  sessizce boşalırdı (az kalsın oluyordu, 04.09.2026). */
+export const MARJ_PARAM = "marjsebep";
+
+/**
+ * Şerh satırının götürdüğü adres — İlke #16 ⚠: "adres, süzgeç
+ * sözleşmesinin sahibi dosyadan üretilir". Pencere parametreleri aynen
+ * taşınır ki liste, sayının sayıldığı pencereyle açılsın.
+ */
+export function marjSebepAdresi(
+  sebep: MarjSebebi,
+  parametreler?: { pencere?: string; baslangic?: string; bitis?: string },
+): string {
+  const p = new URLSearchParams();
+  p.set(MARJ_PARAM, sebep);
+  if (parametreler?.pencere) p.set("pencere", parametreler.pencere);
+  if (parametreler?.baslangic) p.set("baslangic", parametreler.baslangic);
+  if (parametreler?.bitis) p.set("bitis", parametreler.bitis);
+  return `/satislar?${p.toString()}`;
+}
+
+/** `pencereCoz` aralığından (gte/lt) şerh penceresine (bas/son-lte) çevirim —
+ *  sayfa ve şerh AYNI çevirimi kullanır, off-by-one iki yerde iki türlü olmaz. */
+export function marjPencereden(
+  aralik: { gte: Date; lt: Date } | undefined,
+): { bas: Date; son: Date } | undefined {
+  if (!aralik) return undefined;
+  return { bas: aralik.gte, son: new Date(aralik.lt.getTime() - 1) };
+}
+
+type MarjSiniflari = {
+  bekleyenler: Set<string>;
+  alimsizlar: Set<string>;
+  donemDisilar: Set<string>;
+  kapsanmayanlar: Set<string>;
+  tumSatislar: Set<string>;
+  ciroHepsi: number;
+  ciroBagli: number;
+  net: number;
+};
+
+/** Sebep → küme seçimi. Adres hangi kümeyi gösteriyorsa sayı da odur. */
+function sebepKumesi(s: MarjSiniflari, sebep: MarjSebebi): Set<string> {
+  return sebep === "bekleyen"
+    ? s.bekleyenler
+    : sebep === "alimyok"
+      ? s.alimsizlar
+      : s.donemDisilar;
+}
+
+/**
+ * Süzülmüş listenin kimlik kümesi — /satislar `marj=` parametresi bunu
+ * `satisKosulu`ya verir. ⚠ Pencere, şerhi çizen ekranın penceresiyle AYNI
+ * verilmek zorundadır; adres bunu parametre taşıyarak garanti eder.
+ */
+export async function marjSebepSatisIdleri(
+  db: Pick<PrismaClient, "saleItem" | "purchaseItem">,
+  sebep: MarjSebebi,
+  pencere?: { bas: Date; son: Date },
+): Promise<string[]> {
+  return [...sebepKumesi(await marjSiniflandir(db, pencere), sebep)];
+}
+
 export async function marjSerhi(
   db: Pick<PrismaClient, "saleItem" | "purchaseItem">,
   pencere?: { bas: Date; son: Date },
 ): Promise<MarjSerhi> {
+  const s = await marjSiniflandir(db, pencere);
+  return {
+    alimYok: s.alimsizlar.size,
+    donemDisi: s.donemDisilar.size,
+    kapsanmayanPay:
+      s.ciroHepsi > 0 ? (s.ciroHepsi - s.ciroBagli) / s.ciroHepsi : 0,
+    kapsanmayanSatis: s.kapsanmayanlar.size,
+    toplamSatis: s.tumSatislar.size,
+    bekleyen: s.bekleyenler.size,
+    baglıMarj: s.ciroBagli > 0 ? (s.net / s.ciroBagli) * 100 : null,
+    ekranMarji: s.ciroHepsi > 0 ? (s.net / s.ciroHepsi) * 100 : null,
+  };
+}
+
+async function marjSiniflandir(
+  db: Pick<PrismaClient, "saleItem" | "purchaseItem">,
+  pencere?: { bas: Date; son: Date },
+): Promise<MarjSiniflari> {
   /**
    * ═══ KAPSAM İDDİASI VARYANT BAZLIDIR — GENEL DEĞİL ═══════════════════
    *
@@ -333,14 +428,14 @@ export async function marjSerhi(
   for (const v of netler.values()) net += v;
 
   return {
-    alimYok: alimsizlar.size,
-    donemDisi: donemDisilar.size,
-    kapsanmayanPay: ciroHepsi > 0 ? (ciroHepsi - ciroBagli) / ciroHepsi : 0,
-    kapsanmayanSatis: kapsanmayanlar.size,
-    toplamSatis: tumSatislar.size,
-    bekleyen: bekleyenler.size,
-    baglıMarj: ciroBagli > 0 ? (net / ciroBagli) * 100 : null,
-    ekranMarji: ciroHepsi > 0 ? (net / ciroHepsi) * 100 : null,
+    bekleyenler,
+    alimsizlar,
+    donemDisilar,
+    kapsanmayanlar,
+    tumSatislar,
+    ciroHepsi,
+    ciroBagli,
+    net,
   };
 }
 

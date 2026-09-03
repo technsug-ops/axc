@@ -43,7 +43,13 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import { gunMetni } from "@/lib/donem";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
-import { satisKosulu } from "@/lib/liste-suzgeci";
+import { pencereCoz, satisKosulu } from "@/lib/liste-suzgeci";
+import {
+  MARJ_SEBEPLERI,
+  marjPencereden,
+  marjSebepSatisIdleri,
+  type MarjSebebi,
+} from "@/lib/ice-aktarma-serhi";
 import { prisma } from "@/lib/prisma";
 
 import { satisKalemToplamlari } from "@/lib/tutar";
@@ -87,6 +93,8 @@ export default async function SatislarSayfasi({
     iptal?: string;
     /** "ciro" | "sermaye" — marj göstergesinin ölçüsü. */
     marj?: string;
+    /** Marj şerhinden gelen sebep süzgeci (İlke #16) — bkz. MARJ_PARAM. */
+    marjsebep?: string;
     /** Uyarı merkezinden: maliyet/kâr olağan aralığın dışında. */
     veri?: string;
     /** Sayfa numarası (27.08.2026) — `SAYFA_PARAMETRESI` ile aynı ad. */
@@ -153,8 +161,25 @@ export default async function SatislarSayfasi({
       ? await hazirlananSiparisKimlikleri()
       : undefined;
 
+  /**
+   * ⭐ MARJ ŞERHİ SÜZGECİ (İlke #16 — Halil 04.09.2026): sebep kümesi
+   * sayıyı üreten SAHİP gövdeden çözülür; koşul kopyalanmaz. Pencere,
+   * koşulun penceresiyle AYNI `an` üzerinden kurulur.
+   */
+  const an = new Date();
+  const marjSebep = (MARJ_SEBEPLERI as readonly string[]).includes(p.marjsebep ?? "")
+    ? (p.marjsebep as MarjSebebi)
+    : undefined;
+  const marjIdler = marjSebep
+    ? await marjSebepSatisIdleri(
+        prisma,
+        marjSebep,
+        marjPencereden(pencereCoz(p, an).aralik),
+      )
+    : undefined;
+
   // EKRAN VE EXCEL AYNI KOŞULU KULLANIR (bkz. lib/liste-suzgeci.ts).
-  const { kosul, pencere } = satisKosulu(p, new Date(), supheliIdler, paketliIdler);
+  const { kosul, pencere } = satisKosulu(p, an, supheliIdler, paketliIdler, marjIdler);
 
   // Süzgeç seçenekleri VERİDEN gelir: olmayan bir seçeneğe tıklanıp boş
   // liste görülmesin.
@@ -433,6 +458,7 @@ export default async function SatislarSayfasi({
     paket: p.paket,
     iptal: p.iptal,
     marj: p.marj,
+    marjsebep: p.marjsebep,
     pencere: p.pencere,
     baslangic: p.baslangic,
     bitis: p.bitis,
@@ -568,7 +594,13 @@ export default async function SatislarSayfasi({
         ⚠ `karGorunur` şartına BAĞLANMADI: kâr sütunu kapalıyken de ciro
         toplamı görünüyor ve o toplam da eksik kârla okunuyor.
       */}
-      <MarjSerhi />
+      <MarjSerhi
+        parametreler={{
+          pencere: p.pencere,
+          baslangic: p.baslangic,
+          bitis: p.bitis,
+        }}
+      />
 
       {/* Tercih hatırlama — cihaz bazlı, adres kazanır (bkz. marj-tercihi). */}
       <Suspense fallback={null}>
@@ -1018,6 +1050,7 @@ export default async function SatislarSayfasi({
               paket: p.paket,
               iptal: p.iptal,
               marj: p.marj,
+              marjsebep: p.marjsebep,
               veri: p.veri,
             }}
           />

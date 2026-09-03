@@ -325,6 +325,58 @@ sonraki içe aktarma aynı hatayı tekrarlamayacak.
 
 ---
 
+## ✅ K157 — MARJ ŞERHİ RAKAMI KAYNAĞA GÖTÜRÜYOR (İLKE #16) · 04.09.2026 · [KOD KOŞTU]
+
+> **Halil (panel ekran görüntüsüyle):** _"Burada hata ekranı hataya
+> gitmeli."_ — "1 satış: ALIM KAYDI YOK" düz metindi; rakam vardı,
+> gidilecek yer yoktu. İlke #16'nın birebir vakası.
+
+### ⭐ TASARIM — SAYI = LİSTE, TEK SAHİPTEN
+
+Sınıflandırma bellek-içi (varyantın ilk alımı ↔ satış tarihi), basit
+where'e çevrilemez → çözüm KİMLİK KÜMESİ sözleşmesi (süzgeçteki
+`supheliIdler` deseninin aynısı):
+
+- `ice-aktarma-serhi` (SAHİP): `marjSiniflandir` çıkarıldı — şerhin
+  SAYISI da listenin KÜMESİ de aynı gövdeden. + `MARJ_SEBEPLERI` ·
+  `MARJ_PARAM` · `marjSebepAdresi` (İlke #16 ⚠: adres sahibinden) ·
+  `marjSebepSatisIdleri` · `marjPencereden` (tek çevirim, off-by-one
+  iki yerde iki türlü olmaz).
+- `/satislar`: `marjsebep=` paramı → küme sahibinden çözülür →
+  `satisKosulu(..., marjIdler)` AND ile. Excel/sayfalama parametre
+  taşımasına eklendi.
+- `MarjSerhi`: üç sebep satırı da LİNK (İlke #2: noktalı altçizgi);
+  "bağlı marj" satırı link DEĞİL (aksaklık değil, bilgi). Şerh artık
+  ÇAĞIRAN SAYFANIN PENCERESİNİ sayıyor (29.08 dersinin bu kutuya da
+  uygulanışı — iki sayfada da penceresiz çağrılıyordu).
+
+⛔ **VE BİR ÇAKIŞMA ISIRMADAN YAKALANDI:** param adı `marj` OLAMAZDI —
+o ad /satislar'da ciro/sermaye ölçü seçici olarak DOLU; çakışsaydı ölçü
+seçen kullanıcının listesi sessizce boşalırdı. Ad: `marjsebep`, tek
+sabitten (`MARJ_PARAM`) okunuyor.
+
+### BEKÇİ — 252 → 256 · 3 MUTASYON KIRMIZI
+
+İki eski çapa güncellendi (formül sarmalayıcıya taşındı, `s.` öneki —
+davranış aynı, ölçüt eskimişti; bekçi susturulmadı). Dört yeni ölçüt:
+bileşen adresi sahibinden alıyor · elle `/satislar?` YASAK · sayfa
+kümeyi sahibinden çözüp koşula geçiriyor · koşul AND + sahip sabiti.
+Mutasyonlar: adresi literale çeviren · kümeyi koşula geçirmeyen ·
+AND push'unu kaldıran — üçü de KIRMIZI, bit-bit geri.
+
+### HALİL TEST LİSTESİ (canlı, gerçek cihaz)
+
+1. Panele gir, "Bugün" süzgeci — sarı kutuda "1 satış: ALIM KAYDI YOK"
+   satırı artık NOKTALI ALTI ÇİZİLİ. Tıkla.
+2. /satislar açılmalı, listede TAM 1 satış olmalı (bugünün alımsız
+   satışı) ve sayfa toplamları o 1 satışı göstermeli.
+3. Panelde pencereyi değiştir (Son 30 gün) — kutudaki sayı değişirse
+   tıklayınca liste de AYNI sayıda satır göstermeli (sayı = liste).
+mobil doğrulama kullanıcıda · i18n: ✓ (yeni metin yok) · kullanıcı
+kolaylığı: ✓ (#2 #5 #15 #16)
+
+---
+
 ## ✅ K156 — TAZMİN 13 YAZILDI + KURAL REVİZYONU: API > LİSTE > ELLE · 04.09.2026 · [KOD KOŞTU]
 
 ### ⭐ KURAL REVİZYONU (Halil): "Esasında API daha üstün olmalı"
