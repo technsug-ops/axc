@@ -73,6 +73,23 @@ export type IadeGirdisi = {
   returnType: ReturnType;
   kalemler: IadeKalemGirdisi[];
 
+  /**
+   * ⭐ TAZMİNAT TAHSİLATI — Halil kararı 04.09.2026.
+   *
+   * İade edilen mal "satıldığı gibi gelmediğinde" kanala tazminat talebi
+   * açılıyor ve para tahsil ediliyor. Halil'in muhasebesi: _"tazmin yatan
+   * fiyat satış fiyatına girilir; komisyon/kargo/diğer 0; alışla tazmin
+   * arasındaki fark kâr; **faturasını kestiğim için KDV'li**."_
+   *
+   * · `tutar` KDV DAHİL tahsilattır; NET-1'e + yazılır.
+   * · Fatura kesildiği için ÖDENECEK KDV artar: `kdvAyir(tutar, kdvOrani)`
+   *   NET-2'den düşülür — satış KDV'sinin aynadaki hâli.
+   * · `kdvOrani` kalemin (ürünün) satıştaki KDV oranıdır; tazminat o malın
+   *   bedeli yerine geçer, genel %20 varsayılmaz.
+   * Boşsa hiçbir şey değişmez — eski davranış birebir.
+   */
+  tazminatTahsilati?: { tutar: number; kdvOrani: number } | null;
+
   /** Satışta kesilen ödeme gideri (sipariş geneli, KDV DAHİL). */
   odemeGideri: number;
   /** Sipariş toplam tutarı — ödeme giderini kaleme paylaştırmak için. */
@@ -348,6 +365,18 @@ export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
   if (girdi.ceza !== null && girdi.ceza > 0) {
     genelSatirlar.push({ code: "CEZA", tutar: -girdi.ceza });
   }
+  /** ⭐ TAZMİNAT TAHSİLATI — faturalı gelir; ödenecek KDV'yi ARTIRIR. */
+  let tazminatKdv = 0;
+  if (girdi.tazminatTahsilati && girdi.tazminatTahsilati.tutar > 0) {
+    genelSatirlar.push({
+      code: "TAZMINAT_TAHSILATI",
+      tutar: girdi.tazminatTahsilati.tutar,
+    });
+    tazminatKdv = kdvAyir(
+      girdi.tazminatTahsilati.tutar,
+      girdi.tazminatTahsilati.kdvOrani,
+    );
+  }
 
   const net1Etkisi =
     kalemSatirlari.flat().reduce((t, s) => t + s.tutar, 0) +
@@ -357,7 +386,8 @@ export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
     -satisKdvIadesi +
     komisyonKdvIptali +
     odemeGideriKdvIptali -
-    kargoKdvIndirimi;
+    kargoKdvIndirimi +
+    tazminatKdv;
 
   return {
     durum,
@@ -433,6 +463,10 @@ export type IadeKaydiGirdisi = {
    * (K108) aynen işler.
    */
   stokYazilmaz?: { gerekce: string };
+  /** ⭐ Tazminat tahsilati (KDV DAHIL) — bkz. `IadeGirdisi.tazminatTahsilati`.
+   *  Oran, İLK kalemin satış KDV oranından çözülür (tazmin vakaları tek
+   *  kalemli; çok kalemlide ilk kalem — beyanla yeterli). */
+  tazminatTahsilati?: number | null;
   /**
    * ⭐ SAYIM KAPISI ISRARI — İADE BAŞINA (kalem başına DEĞİL).
    * Kapıyı tetikleyen şey TARİH ve iadenin tek tarihi var.
@@ -816,6 +850,13 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
       iadeKargosu: girdi.iadeKargosu,
       yenidenGonderimKargosu: girdi.yenidenGonderimKargosu,
       ceza: girdi.ceza,
+      tazminatTahsilati:
+        girdi.tazminatTahsilati != null && girdi.tazminatTahsilati > 0
+          ? {
+              tutar: girdi.tazminatTahsilati,
+              kdvOrani: hesapKalemleri[0]?.kdvOrani ?? 20,
+            }
+          : null,
     });
 
     // --- iade kaydı ---

@@ -319,7 +319,8 @@
     "canli:kargo-v2-yaz": "tsx scripts/canli-kargo-v2-yaz.ts",
     "canli:komisyon-v2-duzelt": "tsx scripts/canli-komisyon-v2-duzelt.ts",
     "canli:elden-satis-yaz": "tsx scripts/canli-elden-satis-yaz.ts",
-    "canli:satis-listeye-hizala": "tsx scripts/canli-satis-listeye-hizala.ts"
+    "canli:satis-listeye-hizala": "tsx scripts/canli-satis-listeye-hizala.ts",
+    "canli:tazmin-yaz": "tsx scripts/canli-tazmin-yaz.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

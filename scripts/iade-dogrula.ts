@@ -860,6 +860,50 @@ async function cezaTesti() {
     await bekle("HB 6000,01 TL -> öneri YOK", hb.id, 6000.01, null);
     await bekle("HB 20000 TL -> öneri YOK", hb.id, 20000, null);
 
+    /** ═══ TAZMİNAT TAHSİLATI (04.09.2026 — Halil: faturalı, KDV'li) ═══ */
+    {
+      const tazTemel = {
+        returnType: "NORMAL" as const,
+        odemeGideri: 0,
+        siparisToplami: 1000,
+        iadeKargosu: null,
+        yenidenGonderimKargosu: null,
+        ceza: null,
+        kalemler: [{
+          satilanAdet: 1, iadeAdedi: 1, saglamAdet: 0,
+          satisTutari: 1000, maliyet: 600, kdvOrani: 20,
+          komisyon: 0, degisimMaliyeti: null,
+        }],
+      };
+      const tazsiz = iadeEtkisiHesapla(tazTemel);
+      const tazli = iadeEtkisiHesapla({
+        ...tazTemel,
+        tazminatTahsilati: { tutar: 1200, kdvOrani: 20 },
+      });
+      kontrol(
+        "tazminat: TAZMINAT_TAHSILATI satırı doğar (+tutar)",
+        tazli.genelSatirlar.some(
+          (x) => x.code === "TAZMINAT_TAHSILATI" && Math.abs(x.tutar - 1200) < 0.005,
+        ),
+      );
+      kontrol(
+        "tazminatsız girdide satır DOĞMAZ (eski davranış birebir)",
+        !tazsiz.genelSatirlar.some((x) => x.code === "TAZMINAT_TAHSILATI"),
+      );
+      kontrol(
+        "tazminat NET-1'e TAM girer",
+        Math.abs(tazli.net1Etkisi - tazsiz.net1Etkisi - 1200) < 0.005,
+      );
+      kontrol(
+        "tazminat KDV'si ÖDENECEK KDV'yi ARTIRIR (fatura kesildi: 1200@%20 → 200)",
+        Math.abs(tazli.odenecekKdvDegisimi - tazsiz.odenecekKdvDegisimi - 200) < 0.005,
+      );
+      kontrol(
+        "tazminat NET-2 etkisi = tutar − KDV (1000)",
+        Math.abs(tazli.net2Etkisi - tazsiz.net2Etkisi - 1000) < 0.005,
+      );
+    }
+
     /** ═══ TARİHSEL İADE KİPİ (03.09.2026) — V2 baz iadeleri için ═══
      *  Saf kontrol DEĞER testiyle; stok bloğu kapıları KULLANIM YERİNE
      *  bağlı kaynak ölçütüyle (ada değil, satırın kendisine). */

@@ -325,6 +325,46 @@ sonraki içe aktarma aynı hatayı tekrarlamayacak.
 
 ---
 
+## ✅ K156 — TAZMİN 13 YAZILDI + KURAL REVİZYONU: API > LİSTE > ELLE · 04.09.2026 · [KOD KOŞTU]
+
+### ⭐ KURAL REVİZYONU (Halil): "Esasında API daha üstün olmalı"
+
+K155'in "liste her şeyin üstünde" hâli AYNI GÜN revize edildi — satış
+değerlerinde sıra: **kanal API'si > liste > elle giriş.** Uygulaması:
+dün listeye çekilen 17 fiyattan **API kaynaklı 5'i** API değerine geri
+döndürüldü (motorla, izli); Halil _"sen düzelt"_ deyince listenin o 5
+hücresi de openpyxl ile düzeltilip **`Satislar_V2 (3).xlsx`** olarak
+kaydedildi (orijinal dokunulmadı; her hücrede eski değer assert'lendi).
+⭐ (3) ile köprü: **tutar farkı 0** · tek kalan iptalli `4120311526`
+(beyanlı). OneBlade testi Halil teyidiyle kesinleşti (iptal edilmişti).
+
+### ⭐ TAZMİN — MOTOR UZANTISI + 13 YENİDEN YAZIM
+
+Motora `tazminatTahsilati` girdisi eklendi (Halil: _"tazmin faturalı →
+KDV'li; komisyon/kargo/diğer 0; kâr = tazmin − alış"_):
+`TAZMINAT_TAHSILATI` satırı NET-1'e +, faturası kesildiği için
+**ödenecek KDV artar** (kalemin KDV oranıyla). Bekçi 102→107 (5 değer
+ölçütü) · **2 mutasyon kırmızı kanıtlı** (satırı kaldıran · KDV terimini
+kaldıran) · boş girdide eski davranış birebir.
+
+    yazılan 13/13 · hata 0 · STOK 0 ✓ · tahsilat ₺60.462,25
+    dünkü 13 sağlam-iade SİLİNDİ (stok yazmadıkları ÖLÇÜLDÜKTEN sonra;
+    kimlikleri izde) → hasarlı + tazminatlı yeniden yazıldı
+    Compensation SETTLED 13/13 (TY 3 · HB 10) — talepsiz-hasar rozeti sussun
+    iade tarafı NET-2 etkisi +₺225,86; kombine okuma Halil formülü:
+    kâr ≈ tazmin − alış − tazmin KDV'si (maliyet satırları hasarlıda net-0)
+
+### ⭐ AYRICA BU TURDA (Halil "sen düzelt" + köprü artıkları)
+
+- `10559161422` kalem 0→1 (motor STOK_YETMIYOR → maliyet çifti fallback)
+- `4747680294` mükerrer kalem sıfırlandı · `11265267349` ₺0-kalem
+  sıfırlandı (hareketsiz — işaretli maliyeti zaten 0'dı)
+
+**V2 BAZ MANDASI KAPANDI:** satış ✓ iade ✓ tazmin ✓ kargo ✓ komisyon ✓
+elden ✓ — defter, Halil'in baz dosyalarının kendisi.
+
+---
+
 ## 📌 K155 — "LİSTE, SATIŞLARIN FİZİKİ SAYIMIDIR" · DEFTER LİSTEYE HİZALANDI · 04.09.2026 · [KOD KOŞTU]
 
 > **Halil:** _"Nasıl stoklarda fiziki sayım okeyse, şu anda verdiğim
