@@ -47,6 +47,11 @@ export const BICIMLER = {
       month: "2-digit",
       year: "numeric",
     },
+    /** 15:41 — sipariş ANI; saat dilimi global ayardan (İstanbul). */
+    saat: {
+      hour: "2-digit",
+      minute: "2-digit",
+    },
     /** Ağustos 2026 — ay filtreleri ve dönem başlıkları için. */
     ayYil: {
       month: "long",

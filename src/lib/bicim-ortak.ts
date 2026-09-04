@@ -62,6 +62,15 @@ export function bicimOlustur(format: Formatter) {
       return format.dateTime(tarih, "kisa");
     },
 
+    /**
+     * 15:41 — sipariş ANI (İstanbul, K163). Gün hassasiyetli kayıtta
+     * (elle/Excel — saat bilinmiyor) ÇAĞRILMAZ; ayrımı `gunHassasiyetliMi`
+     * yapar. Bilinmeyen saate 00:00 basmak, yokluğu değer gibi gösterirdi.
+     */
+    saat(tarih: Date): string {
+      return format.dateTime(tarih, "saat");
+    },
+
     /** Ağustos 2026 — ay filtresi ve dönem başlığı. */
     ayYil(tarih: Date): string {
       return format.dateTime(tarih, "ayYil");

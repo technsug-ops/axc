@@ -160,6 +160,18 @@ export function gunDegeri({ yil, ay, gun }: TakvimGunu): Date {
 }
 
 /**
+ * GÜN HASSASİYETLİ Mİ — `soldAt` sözleşmesi (K163): elle ve Excel kayıtları
+ * UTC gece yarısına damgalı (saat BİLİNMİYOR), API çekimi gerçek anı yazar.
+ * UTC 00:00:00.000 = "saat bilinmiyor" kabulüdür; ekran bu kayıtta saat
+ * basmaz. ⚠ İstanbul 03:00:00.000'ın MİLİSANİYESİNDE verilmiş gerçek bir
+ * sipariş de bu değere düşer ve saati gizlenir — olasılık ihmal edildi,
+ * bilinçli (bir güne ~1/86.400.000).
+ */
+export function gunHassasiyetliMi(tarih: Date): boolean {
+  return tarih.getTime() % 86_400_000 === 0;
+}
+
+/**
  * UTC gece yarısı bir tarihe gün ekler/çıkarır.
  * UTC'de yaz saati uygulaması olmadığı için düz milisaniye toplamı güvenlidir.
  */

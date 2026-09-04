@@ -6,7 +6,6 @@ import { canliYapilandirma } from "./canli-ortak";
 import {
   UCLAR,
   baslikKur,
-  isGunuUtc,
   kimlikOku,
   siparisAni,
   tumSayfalar,
@@ -276,7 +275,16 @@ async function main() {
       adaylar.set(no, {
         siparisNo: no,
         kaynak: "enumerasyon",
-        soldAt: isGunuUtc(duzeltilmis),
+        /**
+         * GERÇEK AN (K163, Halil: "saat damgasını vurabilir miyiz").
+         * Eski hâl `isGunuUtc` ile güne yuvarlıyordu — gerekçesi elle
+         * girilen kayıtlarla tutarlılıktı; saat bilgisi kaynakta VARKEN
+         * atmak bilgi kaybıydı. Gün sınıflandırması zaten pencere
+         * sorgularında İstanbul'a göre yapılıyor; buraya anın kendisi
+         * yazılır. Elle/Excel kayıtları gün hassasiyetinde kalır ve ekran
+         * ayrımı `gunHassasiyetliMi` ile yapar.
+         */
+        soldAt: new Date(duzeltilmis),
         iptalTarihi: iptalli
           ? iptalAniCoz(p.packageHistories as { createdDate: number; status: string }[])
           : null,

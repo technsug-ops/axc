@@ -13,6 +13,40 @@
 
 ---
 
+## ✅ K163 — SİPARİŞ SAATİ DAMGASI · 04.09.2026 · [KOD KOŞTU]
+
+> **Halil:** _"siparişlerin sipariş edildiği tarihe saat damgasını
+> vurabilir miyiz"_ — ve ardından: _"stok ve alımda da olabilir"._
+
+**KURAL: kaynakta VARSA atılmaz, YOKSA uydurulmaz.**
+- **TY API çekimi** artık `soldAt`e GERÇEK ANI yazar (eski kod `isGunuUtc`
+  ile güne yuvarlıyordu — kaynakta duran bilgiyi atıyordu). Şema değişmedi
+  (alan zaten DateTime). Gün sınıflandırması pencere sorgularında zaten
+  İstanbul'a göre; UTC gün-parçası kovalaması üretimde YOK (ölçüldü —
+  `haftaAnahtari` bile İstanbul takvim günü üzerinden).
+- **Elle/Excel satışlar** günde kalır: saat bilinmiyor, 00:00 basmak
+  yokluğu değer gibi gösterirdi (İlke #11'in saat hâli). Ayrım saf gövdede:
+  `gunHassasiyetliMi` (`donem.ts`) — UTC gece yarısı = "saat bilinmiyor".
+- **Ekran:** satış listesi tablo + kart görünümü saati yalnız BİLİNİYORSA
+  basar (`04.09.2026 · 15:41`). Biçim i18n'den: `bicim.saat` (İstanbul).
+- **STOK ve ALIM cevabı:** alım/mal kabul tarihleri KULLANICI BEYANI
+  (teslim tarihi elle girilir) — saat kaynağı yok, uydurulmaz; işlem ANI
+  zaten her kayıtta `createdAt`ta duruyor. Onay kuyruğu stok düşerken
+  `occurredAt = soldAt` yazacağı için API satışının saati stoğa
+  KENDİLİĞİNDEN taşınacak.
+
+**Bekçi:** `ice-aktarma:dogrula` +7 ölçüt (gerçek an · geri dönüş yasağı ·
+saf gövde DEĞER testi · iki görünüm × İlke #11 kapısı). Eski "güne yuvarla"
+ölçütü ÖZÜ korunarak güncellendi (düzeltilmiş andan türetme kaldı; pencere
+260→900 ölçülerek büyütüldü). İki mutasyon kırmızı görüldü, bit-bit geri
+alındı.
+
+⏭ AÇIK: ① geçmiş 440 API satışının saatleri TY'den geriye dönük
+doldurulabilir (orderDate elde) — onaylı ayrı yazım; ② satış DETAY ekranına
+saat gösterimi onay kuyruğu paketiyle.
+
+---
+
 ## 🔶 K162 — CANLI SİPARİŞ AKIŞI: ÇEKİM 30 DK'YA İNDİ + ONAY KUYRUĞU ÖNERİSİ · 04.09.2026 · [KISMEN KOŞTU]
 
 > **Halil (04.09 sabahı, canlı LEGO siparişi üstünden):** çekilen sipariş

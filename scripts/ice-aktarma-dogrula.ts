@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 
+import { gunHassasiyetliMi } from "../src/lib/donem";
+
 import { birimFiyatCoz, iptalAniCoz } from "./canli-ty-ice-aktar";
 import { iceAktarmaTarihi } from "../src/lib/ice-aktarma-tarih-kapisi";
 
@@ -202,11 +204,17 @@ kontrol(
  * ⚠ `soldAt` DÜZELTİLMİŞ ANDAN TÜRETİLİYOR — ham `orderDate`ten değil.
  * Süzgeç düzeltilmiş, `soldAt` ham kalsaydı sipariş doğru pencereye
  * girer ama YANLIŞ GÜNE yazılırdı; iki kontrol ayrı ayrı gerekiyor.
+ *
+ * ⭐ ÖLÇÜT GÜNCELLENDİ (K163, 04.09.2026): eski desen `isGunuUtc(duzeltilmis)`
+ * idi — güne yuvarlamayı SABİTLİYORDU. Halil saat damgası isteyince yazım
+ * gerçek ana döndü; ölçütün ÖZÜ (düzeltilmiş andan türetme) aynı kaldı,
+ * yalnız biçimi değişti. Pencere 260→900: K163 açıklaması gövdeyi büyüttü
+ * (anayasa: "pencere ölçülür — gövde büyüyünce dar pencere kör kalır").
  */
-const soldAtBloku = blok(kaynak, "adaylar.set(no, {", 260);
+const soldAtBloku = blok(kaynak, "adaylar.set(no, {", 900);
 kontrol(
-  "soldAt DÜZELTİLMİŞ andan türetiliyor",
-  /soldAt:\s*isGunuUtc\(duzeltilmis\)/.test(soldAtBloku),
+  "soldAt DÜZELTİLMİŞ andan türetiliyor (gerçek an, K163)",
+  soldAtBloku.includes("soldAt: new Date(duzeltilmis)"),
 );
 
 /**
@@ -1685,6 +1693,50 @@ kontrol(
   kontrol(
     "  ...ölçüt ORTAK gövdeden (kilitDurumu().canli)",
     cekimKaynak.includes("return kilitDurumu().canli;"),
+  );
+}
+
+/**
+ * ═══ K163 — SİPARİŞ SAATİ: KAYNAKTA VARSA ATILMAZ, YOKSA UYDURULMAZ ═════
+ * Halil 04.09.2026: "sipariş edildiği tarihe saat damgasını vurabilir
+ * miyiz". TY anı veriyor; eski kod güne yuvarlıyordu (bilgi kaybı). Elle
+ * ve Excel kayıtlarında saat YOK — 00:00 basmak yokluğu değer gibi
+ * gösterirdi (İlke #11'in saat hâli): ekran ayrımı `gunHassasiyetliMi`.
+ */
+{
+  console.log("K163 sipariş saati — gerçek an yazılır, bilinmeyen saat gösterilmez");
+  const cekimK163 = yorumsuz(
+    readFileSync("scripts/canli-ty-ice-aktar.ts", "utf8"),
+  );
+  kontrol(
+    "çekim soldAt'e GERÇEK ANI yazıyor",
+    cekimK163.includes("soldAt: new Date(duzeltilmis)"),
+  );
+  kontrol(
+    "  ...güne yuvarlamaya GERİ DÖNMEDİ",
+    !cekimK163.includes("soldAt: isGunuUtc"),
+  );
+  /** Saf gövde DEĞERLE sınanır (desen değil): gece yarısı=gün, +1dk=an. */
+  kontrol(
+    "gunHassasiyetliMi: UTC gece yarısı = gün hassasiyetli",
+    gunHassasiyetliMi(new Date("2026-09-04T00:00:00.000Z")) === true,
+  );
+  kontrol(
+    "  ...bir dakika sonrası = saatli kayıt",
+    gunHassasiyetliMi(new Date("2026-09-04T00:01:00.000Z")) === false,
+  );
+  const listeK163 = yorumsuz(
+    readFileSync("src/app/satislar/page.tsx", "utf8"),
+  );
+  const saatAdet = listeK163.split("bicim.saat(satis.soldAt)").length - 1;
+  const ayrimAdet = listeK163.split("gunHassasiyetliMi(satis.soldAt)").length - 1;
+  kontrol(
+    "liste İKİ görünümde de saati basıyor (tablo + kart, İlke #10)",
+    saatAdet === 2,
+  );
+  kontrol(
+    "  ...ve İKİSİNDE de yalnız saat BİLİNİYORSA (İlke #11 kapısı)",
+    ayrimAdet === 2,
   );
 }
 

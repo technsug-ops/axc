@@ -1,6 +1,6 @@
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { getTranslations } from "next-intl/server";
-import { gunDegeri, isTakvimGunu } from "@/lib/donem";
+import { gunDegeri, gunHassasiyetliMi, isTakvimGunu } from "@/lib/donem";
 import { supheliVeriBulgusu } from "@/lib/uyari/faz2-veri";
 import { DogrulaButonu } from "./dogrula-butonu";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
@@ -809,7 +809,12 @@ export default async function SatislarSayfasi({
                       <IkiSatir
                         ust={
                           <Baglanti href={`/satislar/${satis.id}`}>
-                            {bicim.tarih(satis.soldAt)}
+                            {/* Saat yalnız BİLİNİYORSA (K163) — elle/Excel
+                                kayıtları güne damgalı, 00:00 basmak yokluğu
+                                değer gibi gösterirdi (İlke #11'in saat hâli). */}
+                            {gunHassasiyetliMi(satis.soldAt)
+                              ? bicim.tarih(satis.soldAt)
+                              : `${bicim.tarih(satis.soldAt)} · ${bicim.saat(satis.soldAt)}`}
                           </Baglanti>
                         }
                         alt={
@@ -958,7 +963,11 @@ export default async function SatislarSayfasi({
                     ) : null}
                   </span>
                 }
-                altBaslik={bicim.tarih(satis.soldAt)}
+                altBaslik={
+                  gunHassasiyetliMi(satis.soldAt)
+                    ? bicim.tarih(satis.soldAt)
+                    : `${bicim.tarih(satis.soldAt)} · ${bicim.saat(satis.soldAt)}`
+                }
                 alanlar={[
                   {
                     etiket: ortak("siparisNo"),
