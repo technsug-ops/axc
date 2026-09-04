@@ -1,0 +1,35 @@
+# ============================================================================
+#  K166 — TY ÇEKİM TETİKLEYİCİSİ (birincil zamanlayıcı)
+# ----------------------------------------------------------------------------
+#  Neden GitHub Actions: dış hesap istemez, HER koşumun logu Actions
+#  sekmesinde durur (Vercel Cron'un 18-19.08 sessiz kaçışı bu yüzden
+#  birincil sayılmıyor — anayasa). Bilinen sınır: schedule "elinden
+#  geldiğince"dir, yoğun saatlerde dakikalar sarkabilir — kaçış zaten
+#  panel rozeti + AuditLog iziyle görünür; Vercel günlük yedeği ve
+#  makinedeki görevler ayrıca duruyor (çift tetik zararsız, kanıtlı).
+#
+#  SIR: depo Secrets → CRON_SECRET (Vercel'dekiyle AYNI değer).
+#  Sır tanımsızsa istek boş Bearer taşır ve uç 404 döner — güvenli.
+# ============================================================================
+name: TY cekim (10 dk)
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  tetikle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ucu cagir
+        run: |
+          KOD=$(curl -s -o cevap.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://axc-seven.vercel.app/api/cron/ty-cekim")
+          echo "HTTP $KOD"
+          cat cevap.json || true
+          # 404 = sir eslesmiyor (kurulum eksik) — is KIRMIZI biter ki
+          # sessiz kacis olmasin; 200 disi her sey de kirmizi.
+          test "$KOD" = "200"
