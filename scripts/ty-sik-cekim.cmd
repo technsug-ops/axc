@@ -1,9 +1,12 @@
 @echo off
-rem Selliora TY sik cekim - 30 dakikada bir, dar pencere (3 gun).
-rem Genis tarama gunluk gorevde kalir. Yoruma KOMUT yazilmaz (K158 dersi).
-rem Kurulum/kaldirma: BEKLEYENLER.md K162.
-cd /d C:\Users\yapra\Desktop\axcali
-echo ============================================== >> raporlar\ty-cekim.log
-echo BASLADI-SIK %date% %time% >> raporlar\ty-cekim.log
-call npm run canli:ty-ice-aktar -- --gun=3 --yaz >> raporlar\ty-cekim.log 2>&1
-echo BITTI-SIK %date% %time% cikis=%errorlevel% >> raporlar\ty-cekim.log
+rem Selliora TY cekim (SIK) - OPERASYON KLONUNDAN kosar (K162-3).
+rem Klon = GitHub'a push'lanmis (bekciden gecmis) kod; gelistirme
+rem agacindaki tur/mutasyon pencereleri cekimi ETKILEMEZ.
+rem Yoruma KOMUT yazilmaz (K158). Kurulum/kaldirma: BEKLEYENLER.md K162.
+cd /d C:\Users\yapra\Desktop\axcali-operasyon
+echo ============================================== >> C:\Users\yapra\Desktop\axcali\raporlar\ty-cekim.log
+echo BASLADI-SIK %date% %time% >> C:\Users\yapra\Desktop\axcali\raporlar\ty-cekim.log
+git pull --ff-only --quiet >> C:\Users\yapra\Desktop\axcali\raporlar\ty-cekim.log 2>&1
+copy /Y C:\Users\yapra\Desktop\axcali\.env.canli .env.canli > nul
+call npm run canli:ty-ice-aktar -- --gun=3 --yaz >> C:\Users\yapra\Desktop\axcali\raporlar\ty-cekim.log 2>&1
+echo BITTI-SIK %date% %time% cikis=%errorlevel% >> C:\Users\yapra\Desktop\axcali\raporlar\ty-cekim.log

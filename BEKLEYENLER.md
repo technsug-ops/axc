@@ -63,6 +63,20 @@ kilitsiz normal · bit-bit geri alma. Görevler yeniden AÇIK.
 açık kalma düzenine bağlı — gece kapalıysa 1 saatlik eşik her sabah
 yalancı kırmızı yakar. Halil'in düzeni öğrenilince türetilecek.
 
+─── ③ OPERASYON KLONU (04.09.2026, Halil: "daha efektif bir yolu yok mu").
+② kapısının bedeli ölçüldü: 11568452783 siparişi tur penceresine denk
+geldi ve 12+ dk bekledi. Yapısal çözüm: çekim görevleri artık
+`Desktop/axcali-operasyon` KLONUNDAN koşuyor — GitHub'a push'lanmış
+(bekçiden geçmiş) kod; geliştirme ağacındaki tur/mutasyon pencereleri
+çekimi ETKİLEMEZ, bekleme penceresi KALKTI. Her koşum: git pull --ff-only
+(düşerse bayat-ama-doğrulanmış kodla devam) + .env.canli ana kopyadan
+tazelenir (tek kaynak). Ana ağaçtaki ② kapısı elle koşumlar için savunma
+derinliği olarak DURUYOR.
+⚠ KLON BAKIMI: package-lock/şema değiştiren push'tan sonra klonda
+`npm ci` gerekir (postinstall prisma generate'i koşuyor) — unutulursa
+çekim logu kırmızı yazar (sessiz düşmez). Duman: görev klondan koştu,
+cikis=0; bekleyen sipariş klondan yazıldı (7854→7855 ✓).
+
 ⏭ ONAY KUYRUĞU PAKETİ — Halil'in onayına sunuldu, cevap bekliyor:
 ① "Onay bekleyen sipariş" kutusu (ölçüt: importKaynak dolu + stok bağı yok
    + iptal yok + CANLI AKIŞ — tarihsel 425 ayrımı için TY paket geçmişinden
