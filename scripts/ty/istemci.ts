@@ -30,6 +30,17 @@ export type Kimlik = { saticiId: string; key: string; secret: string };
 
 /** `.env.canli`den okur. Eksikse `null` — çağıran açıklayıcı mesaj basar. */
 export function kimlikOku(): Kimlik | null {
+  /**
+   * K166: Vercel'de `.env.canli` DOSYASI YOK — süreç ortamı ÖNCE denenir
+   * (uygulama env'leri oradan gelir). Üçü de ortamda doluysa dosyaya hiç
+   * bakılmaz; yerelde ortam boş olduğundan dosya yolu aynen çalışır.
+   */
+  const ortamdan = {
+    saticiId: process.env.TRENDYOL_SATICI_ID?.trim() ?? "",
+    key: process.env.TRENDYOL_API_KEY?.trim() ?? "",
+    secret: process.env.TRENDYOL_API_SECRET?.trim() ?? "",
+  };
+  if (ortamdan.saticiId && ortamdan.key && ortamdan.secret) return ortamdan;
   let ham: string;
   try {
     ham = readFileSync(".env.canli", "utf8");

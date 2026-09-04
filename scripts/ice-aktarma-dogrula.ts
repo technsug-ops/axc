@@ -1693,8 +1693,10 @@ kontrol(
   const kapiBloku =
     kapiBasi >= 0 ? cekimKaynak.slice(kapiBasi, kapiBasi + 400) : "";
   kontrol(
+    /** Biçim K166'da tazelendi: dönüş artık tipli özet — öz aynı. */
     "  ...sonucuyla birlikte: ATLANDI yazıp dönüyor",
-    kapiBloku.includes("ATLANDI") && kapiBloku.includes("return;"),
+    kapiBloku.includes("ATLANDI") &&
+      kapiBloku.includes('{ atlandi: "BEKCI_TURU" }'),
   );
   kontrol(
     "  ...ölçüt ORTAK gövdeden (kilitDurumu().canli)",
@@ -1902,6 +1904,36 @@ kontrol(
   kontrol(
     "Cancelled kalem YAZILMIYOR (iptal anı uydurulmaz)",
     hbK.includes('String(ham.status) === "Cancelled"'),
+  );
+}
+
+/**
+ * ═══ K166 — SUNUCU UCU: TEK GÖVDE + SIR KAPISI ═══════════════════════════
+ * Çekim makineden bağımsız koşar; uç AYNI çekirdeği çağırır ve sır
+ * tutmayan istek 404 alır (rota varlığı sızmaz — anayasa).
+ */
+{
+  console.log("K166 sunucu ucu — tek gövde, sır kapısı 404");
+  const rota = yorumsuz(
+    readFileSync("src/app/api/cron/ty-cekim/route.ts", "utf8"),
+  );
+  kontrol(
+    "rota ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)",
+    rota.includes("await tyCekimKos({ yaz: true, gun: 3, dbAdresi })"),
+  );
+  const kapiBasi = rota.indexOf("if (sir === \"\" || gelen !== ");
+  kontrol("sır kapısı VAR ve boş-sır da kapatıyor", kapiBasi >= 0);
+  const kapiB = kapiBasi >= 0 ? rota.slice(kapiBasi, kapiBasi + 220) : "";
+  kontrol(
+    "  ...reddedilen istek 404 alır (varlık sızmaz)",
+    kapiB.includes("{ status: 404 }"),
+  );
+  const betik = yorumsuz(
+    readFileSync("scripts/canli-ty-ice-aktar.ts", "utf8"),
+  );
+  kontrol(
+    "betik modu da AYNI çekirdeği çağırıyor",
+    betik.includes("tyCekimKos({ yaz: YAZ, gun: GUN })"),
   );
 }
 

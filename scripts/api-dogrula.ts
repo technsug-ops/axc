@@ -100,7 +100,13 @@ const KENDI = join("scripts", "api-dogrula.ts");
  * olmaktan çıkıp **"API'ye ULAŞAN dosya"** oldu: doğrudan taban adresi
  * yazan YA DA istemci modülünü içeri alan.
  */
-const ISTEMCI_IZLERI = ["ty/istemci", "hb/istemci"];
+/** K166: sunucu ucu istemciyi DOLAYLI alır (çekirdek importuyla) — iz
+ *  çekirdeğin adına da bağlanır ki rota kapsam dışı kalmasın. */
+const ISTEMCI_IZLERI = ["ty/istemci", "hb/istemci", 'canli-ty-ice-aktar"'];
+/* ⚠ Üçüncü iz KAPANIŞ TIRNAKLI: import ifadesini yakalar
+   (from ".../canli-ty-ice-aktar"), yorumda geçen adı yakalamaz —
+   "kullanıma bağlanır, ada değil". İlk hâli tırnaksızdı ve
+   canli-birim-fiyat-onar.ts'yi YORUMDAKİ addan kapsama aldı. */
 
 const tumDosyalar = [...dosyalar("scripts"), ...dosyalar("src")];
 const apiDosyalari = tumDosyalar

@@ -42,10 +42,19 @@ export function kimlikOku(): Kimlik | null {
   }
   const al = (ad: string) =>
     ham.match(new RegExp("^" + ad + "=(.*)$", "m"))?.[1]?.trim() ?? "";
-  const merchantId = al("HEPSIBURADA_MERCHANT_ID");
-  const key = al("HEPSIBURADA_API_KEY");
-  const ortam = al("HEPSIBURADA_ORTAM") || "TEST";
-  const developer = al("HEPSIBURADA_DEVELOPER");
+  const ortam = (al("HEPSIBURADA_ORTAM") || "TEST").toUpperCase();
+  /**
+   * ⭐ İKİ ORTAM YAN YANA (04.09.2026): HB canlı erişimi SIT testleri
+   * onaylanmadan açılmıyor; SIT'e dönüş gerekince canlı değerlerin
+   * üstüne yazılıyordu (bir kez yaşandı — SIT anahtarları ezildi).
+   * TEST ortamı `_SIT_` önekli satırlardan okur; yoksa düz satırlara
+   * düşer (geriye uyum). CANLI her zaman düz satırlardan okur.
+   */
+  const onek = ortam === "TEST" ? "HEPSIBURADA_SIT_" : "HEPSIBURADA_";
+  const merchantId = al(onek + "MERCHANT_ID") || al("HEPSIBURADA_MERCHANT_ID");
+  const key = al(onek + "API_KEY") || al("HEPSIBURADA_API_KEY");
+  const developer =
+    al(onek + "DEVELOPER") || al("HEPSIBURADA_DEVELOPER");
   if (merchantId === "" || key === "" || developer === "") return null;
   return { merchantId, key, ortam, developer };
 }

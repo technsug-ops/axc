@@ -144,26 +144,60 @@ function bekciTuruKosuyorMu(): boolean {
   return kilitDurumu().canli;
 }
 
-async function main() {
+/**
+ * ═══ K166 — ÇEKİRDEK PARAMETRİK: TEK GÖVDE, İKİ OKUYUCU ═════════════════
+ * Betik (bu dosya, argv ile) ve sunucu ucu (`/api/cron/ty-cekim`) AYNI
+ * gövdeyi çağırır. İkinci bir kopya yazılsaydı TY mutabakat vakasındaki
+ * "yerel kopya 44 siparişi yanlış SAPAN ilan etti" sınıfı geri gelirdi.
+ * Dönüş özeti sunucu ucunun JSON cevabıdır; console.log'lar betikte
+ * ekrana, Vercel'de function loguna akar.
+ */
+export type TyCekimOzeti = {
+  kip: "ONIZLEME" | "YAZIM";
+  aday: number;
+  cakisanAtlandi: number;
+  yazilamazBarkod: number;
+  belirsiz: number;
+  yazilan: number;
+  hata: number;
+  dilimHata: number;
+  saleOnce: number;
+  saleSonra: number | null;
+};
+
+export async function tyCekimKos(ayar: {
+  yaz: boolean;
+  gun: number;
+  /** K166: sunucu ucundan DATABASE_URL; betikte boş → dosyadan. */
+  dbAdresi?: string;
+}): Promise<TyCekimOzeti | { atlandi: "BEKCI_TURU" | "KIMLIK" | "VERITABANI" | "HESAP" }> {
+  const YAZ = ayar.yaz;
+  const GUN = Math.min(ayar.gun || 60, 90);
   if (bekciTuruKosuyorMu()) {
     console.log("");
     console.log("⏭ BEKÇİ TURU KOŞUYOR (.bekci-kilidi) — bu çekim ATLANDI; sonraki koşum yakalar.");
     console.log("");
-    return;
+    return { atlandi: "BEKCI_TURU" };
   }
   const k = kimlikOku();
   if (!k) {
     console.log("\n⛔ ANAHTAR OKUNAMADI (.env.canli)\n");
     process.exitCode = 1;
-    return;
+    return { atlandi: "KIMLIK" };
   }
-  const c = canliYapilandirma();
-  if (!c.tamam) {
-    console.log("\n⛔ CANLI ADRES OKUNAMADI\n");
-    process.exitCode = 1;
-    return;
+  let dbAdresi = ayar.dbAdresi ?? null;
+  if (dbAdresi === null) {
+    const c = canliYapilandirma();
+    if (!c.tamam) {
+      console.log("");
+      console.log("⛔ CANLI ADRES OKUNAMADI");
+      console.log("");
+      process.exitCode = 1;
+      return { atlandi: "VERITABANI" };
+    }
+    dbAdresi = c.veri.ham;
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(c.veri.ham) });
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(dbAdresi) });
   const baslik = baslikKur(k);
   const son = Date.now();
   const bas = son - GUN * GUN_MS;
@@ -190,7 +224,7 @@ async function main() {
     console.log(`\n⛔ \`externalId = ${k.saticiId}\` olan kanal hesabı YOK.\n`);
     await prisma.$disconnect();
     process.exitCode = 1;
-    return;
+    return { atlandi: "HESAP" };
   }
   console.log(`  kanal hesabı  : ${hesap.channel.name} — ${hesap.name}`);
   console.log(`  dönem         : ${new Date(bas).toISOString().slice(0, 10)} → ${new Date(son).toISOString().slice(0, 10)}`);
@@ -410,7 +444,18 @@ async function main() {
     console.log(`  ÖNİZLEME — hiçbir şey yazılmadı. Yazmak için: -- --yaz`);
     console.log("=".repeat(78) + "\n");
     await prisma.$disconnect();
-    return;
+    return {
+      kip: "ONIZLEME",
+      aday: adaylar.size + cakisanlar.length,
+      cakisanAtlandi: cakisanlar.length,
+      yazilamazBarkod: yazilamaz.length,
+      belirsiz: belirsiz.length,
+      yazilan: 0,
+      hata: 0,
+      dilimHata,
+      saleOnce: onceToplam,
+      saleSonra: null,
+    };
   }
 
   // ═══ YAZIM ══════════════════════════════════════════════════════════════
@@ -520,6 +565,18 @@ async function main() {
   console.log("=".repeat(78) + "\n");
 
   await prisma.$disconnect();
+  return {
+    kip: "YAZIM",
+    aday: adaylar.size + cakisanlar.length,
+    cakisanAtlandi: cakisanlar.length,
+    yazilamazBarkod: yazilamaz.length,
+    belirsiz: belirsiz.length,
+    yazilan,
+    hata,
+    dilimHata,
+    saleOnce: onceToplam,
+    saleSonra: sonraToplam,
+  };
 }
 
 /**
@@ -541,7 +598,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  main().catch((e) => {
+  tyCekimKos({ yaz: YAZ, gun: GUN }).catch((e) => {
     console.error(e);
     process.exit(1);
   });

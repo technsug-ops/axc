@@ -13,6 +13,46 @@
 
 ---
 
+## 🔶 K166 — TY ÇEKİMİ MAKİNEDEN BAĞIMSIZ · 04.09.2026 · [YAZILDI — Halil kurulumu bekliyor]
+
+> **Halil:** _"bilgisayarım kapalıyken Trendyol'dan siparişleri çekmedi —
+> bu problemli bir durum değil mi?"_ → _"BAŞLA"_.
+
+**MİMARİ:** çekirdek parametrikleşti (`tyCekimKos` — tek gövde: betik argv
+ile, sunucu ucu `/api/cron/ty-cekim` env ile çağırır; dönüş tipli özet).
+TY kimlik okuması önce SÜREÇ ORTAMINA bakar (Vercel), yoksa `.env.canli`
+(yerel). Çekirdek `dbAdresi` parametresi alır (Vercel DATABASE_URL).
+Rota: GET · `maxDuration 60` · dar pencere (3 gün — geniş süpürme
+makinedeki günlük görevde). Yerel build KANITLI (`ƒ /api/cron/ty-cekim`).
+
+**KAPI:** `Authorization: Bearer CRON_SECRET`; sır tutmayan/boş-sır **404**
+(varlık sızmaz). Sır üretildi, `.env.canli`de (ekrana basılmadı).
+Mutasyon: kapıyı kaldıran senaryo 2 ölçütte KIRMIZI, bit-bit geri.
+
+**TETİKLEYİCİ:** birincil = DIŞ loglu zamanlayıcı (Halil kuracak,
+5-10 dk). Vercel Cron yalnız YEDEK (günlük 07:00 TR, vercel.json) —
+anayasa: 18-19.08 vakası, birincil sayılmaz; Vercel cron isteği
+CRON_SECRET'ı Bearer olarak kendisi ekler, kapıyla uyumlu.
+Makinedeki iki görev yedek katman olarak DURUYOR (çift tetik zararsız —
+çakışmada-atla defalarca canlıda kanıtlı).
+
+**Bekçi:** ice-aktarma +4 (tek gövde · sır kapısı · 404 · betik çağrısı);
+api-dogrula izi çekirdek IMPORT'una bağlandı (tırnaklı — yorumdaki ad
+yakalanmaz; ilk hâli bir onarım betiğini yorumdan kapsamıştı).
+K162-② kapı ölçütü tipli dönüşe tazelendi (öz aynı).
+
+⏭ HALİL KURULUMU (push+deploy sonrası):
+① Vercel → Project → Settings → Environment Variables: `.env.canli`den
+   4 değeri kopyala: `CRON_SECRET` · `TRENDYOL_API_KEY` ·
+   `TRENDYOL_API_SECRET` · `TRENDYOL_SATICI_ID` (Production) → Redeploy.
+② cron-job.org (ücretsiz, loglu) hesap → yeni cron: URL
+   `https://axc-seven.vercel.app/api/cron/ty-cekim` · her 10 dk ·
+   Header: `Authorization: Bearer <CRON_SECRET değeri>`.
+③ Ben: uçtan uca doğrulama (yanlış sır 404 · doğru sır özet JSON ·
+   AuditLog izi + panel rozeti).
+
+---
+
 ## 🔶 K165 — HB SİPARİŞ İÇE AKTARMA YAZILDI · 04.09.2026 · [KOŞTU — SIT]
 
 > **Halil:** _"başla"_ (HB çekimi, TY disiplininin kopyası).
