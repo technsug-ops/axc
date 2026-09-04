@@ -13,6 +13,20 @@
 
 ---
 
+## 🔶 K167 — N11 BAŞLADI · 04.09.2026 · [YAZILDI — anahtar bekleniyor]
+
+> **Halil:** _"Ayrıca N11 API'sini aldım."_ Üçüncü kanal.
+
+Uç mimarisi doğrulandı (resmî developer.n11.com): TY'nin yakın kopyası —
+`GET api.n11.com/rest/delivery/v1/shipmentPackages` · header appkey/appsecret
+· GMT+3 ms pencereler · lines[]. İstemci (`scripts/n11/istemci.ts`, GET-only
+imza, env→dosya kimlik sırası) + sağlık betiği (`canli:n11-saglik`, beş-sonuç
+ayrımı) yazıldı; `api:dogrula` izlerine `api.n11.com` + `n11/istemci` girdi.
+⏭ Halil `.env.canli`ye `N11_APP_KEY` / `N11_APP_SECRET` girecek → sağlık →
+zarf/alan ölçümü → çekim (TY disiplini; muhtemelen hızlı — yapı klon).
+
+---
+
 ## 🔶 K166 — TY ÇEKİMİ MAKİNEDEN BAĞIMSIZ · 04.09.2026 · [YAZILDI — Halil kurulumu bekliyor]
 
 > **Halil:** _"bilgisayarım kapalıyken Trendyol'dan siparişleri çekmedi —

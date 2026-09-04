@@ -77,7 +77,7 @@ function dosyalar(kok: string, uzanti = ".ts"): string[] {
  * "Kapsam genişlemesi, bağımlı listelerin de genişlemesidir" — akışa yeni
  * kanal girdi, bekçinin listesi de genişledi.
  */
-const API_IZLERI = ["apigw.trendyol.com", "hepsiburada.com"];
+const API_IZLERI = ["apigw.trendyol.com", "hepsiburada.com", "api.n11.com"];
 
 /**
  * ⚠ BEKÇİ KENDİNİ TARAMAZ — ve bu bir kaçamak değil, ölçüt düzeltmesi.
@@ -102,7 +102,7 @@ const KENDI = join("scripts", "api-dogrula.ts");
  */
 /** K166: sunucu ucu istemciyi DOLAYLI alır (çekirdek importuyla) — iz
  *  çekirdeğin adına da bağlanır ki rota kapsam dışı kalmasın. */
-const ISTEMCI_IZLERI = ["ty/istemci", "hb/istemci", 'canli-ty-ice-aktar"'];
+const ISTEMCI_IZLERI = ["ty/istemci", "hb/istemci", "n11/istemci", 'canli-ty-ice-aktar"'];
 /* ⚠ Üçüncü iz KAPANIŞ TIRNAKLI: import ifadesini yakalar
    (from ".../canli-ty-ice-aktar"), yorumda geçen adı yakalamaz —
    "kullanıma bağlanır, ada değil". İlk hâli tırnaksızdı ve
