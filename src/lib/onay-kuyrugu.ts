@@ -45,7 +45,6 @@ export function onayAdresi(): string {
 export const ONAY_ADAY_KOSULU = {
   importKaynak: { not: null },
   shippedAt: null,
-  iptalTarihi: null,
   NOT: { items: { some: { stockMovements: { some: { type: "SALE_OUT" as const } } } } },
 } as const;
 
@@ -55,7 +54,10 @@ export async function onayBekleyenler(
   db: Pick<PrismaClient, "sale">,
 ): Promise<OnayBekleyen[]> {
   const adaylar = await db.sale.findMany({
-    where: ONAY_ADAY_KOSULU,
+    /** `iptalTarihi: null` ÇAĞRI YERİNDE YAZILI — sabite saklanmıyor:
+     *  `iptal:bekci` sabitin içini GÖREMİYOR; süzgeç bekçinin görebileceği
+     *  yerde durur (okut/actions ile aynı karar, 27.08.2026). */
+    where: { ...ONAY_ADAY_KOSULU, iptalTarihi: null },
     select: { id: true, soldAt: true },
     orderBy: { soldAt: "asc" },
   });

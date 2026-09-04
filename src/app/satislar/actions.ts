@@ -9,9 +9,10 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { onayaUygunMu } from "@/lib/onay-kuyrugu";
+import { izYaz } from "@/lib/iz";
 import { satisKarTazele } from "@/lib/kar-yeniden";
-import { sonSayimTarihleri } from "@/lib/sayim-damgasi";
-import { sayimKorumasi } from "@/lib/sayim-korumasi";
+import { sayimGecersizlestir, sonSayimTarihleri } from "@/lib/sayim-damgasi";
+import { israrGecerliMi, sayimKorumasi } from "@/lib/sayim-korumasi";
 import { donemKapisi } from "@/lib/donem-kapisi";
 import {
   acikPartiler,
@@ -550,15 +551,29 @@ export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu>
         tx,
         satis.items.map((k) => k.variantId),
       );
+      const duraksayanlar: string[] = [];
       for (const k of satis.items) {
         const karar = sayimKorumasi({
           sonSayimIsTarihi: sonSayimlar.get(k.variantId) ?? null,
           hareketIsTarihi: satis.soldAt,
           adet: -k.quantity,
         });
-        if (karar.sonuc === "DURAKSA") {
-          return { tamam: false, kod: "SAYIM_DURAKSADI", ayrinti: k.variant.sku };
+        if (karar.sonuc === "DURAKSA") duraksayanlar.push(k.variantId);
+      }
+      if (duraksayanlar.length > 0) {
+        /** Sunucu ekrana güvenmez: ısrar ölçütü BURADA da koşar
+         *  (`israrGecerliMi` — satış akışıyla AYNI gövde). Onay ekranında
+         *  bugün ısrar arayüzü YOK; boş ısrar geçersizdir ve kayıt
+         *  reddedilir — duraksayan sipariş elle satış akışının ısrar
+         *  yoluyla girilir. Arayüz açıldığı gün ısrar parametresi buraya
+         *  bağlanır ve alttaki geçersizleştirme + iz o gün de hazırdır. */
+        const israr = israrGecerliMi({ onaylandi: false, sebep: null, aciklama: "" });
+        if (!israr.gecerli) {
+          return { tamam: false, kod: "SAYIM_DURAKSADI" };
         }
+        /** K57: geçen her istisnada sayım GEÇERSİZLEŞİR ve iz bırakır —
+         *  sessizce ezilmez (satış akışıyla aynı üçlü). */
+        await sayimGecersizlestir(tx, duraksayanlar, new Date());
       }
 
       /** Dönem kapısı — kapalıysa DonemKorumasiHatasi fırlatır. */
@@ -608,8 +623,10 @@ export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu>
         }
       }
 
-      await tx.auditLog.create({
-        data: {
+      /** İz TEK GÖVDEDEN (`izYaz`) — çıplak `auditLog.create` yasak
+       *  (`iz:dogrula`); kullanıcı kimliği de tek yerden bağlanır. */
+      await izYaz(
+        {
           action: "SIPARIS_ONAYI",
           targetType: "Sale",
           targetId: satis.id,
@@ -627,7 +644,8 @@ export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu>
             })),
           }),
         },
-      });
+        tx,
+      );
 
       return { tamam: true, kalem: planlar.length, adet: adetToplam, karTazelendi: false };
     });
