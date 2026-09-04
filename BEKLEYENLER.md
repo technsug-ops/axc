@@ -54,6 +54,23 @@ dalı mutasyonu kırmızı) + `onay-kuyrugu` İSTİSNALAR'a gerekçesiyle girdi.
 `suzgec:dogrula` referans-eşitlikli AND ölçütüne geçti. `panel:dogrula`
 7-görev dünyasına güncellendi. Eski marj imza ölçütü öz korunarak tazelendi.
 
+─── ② İZ DÜZELTMESİ — `Sale.onaylandiAt` (04.09.2026, Halil migration
+onayıyla). ①'in kargo-küme dalı SALE_OUT bağına bakıyordu ve **YANLIŞTI**:
+o izi ÜÇ mekanizma dolduruyor (elle satış · K55 tarihsel bağ · onay) —
+canlıda 7533 tarihsel kayıt kümeye sızdı, panel **7540** gösterdi (Halil
+buldu). _"Bu alanı dolduran mekanizma, aradığım olay mı?" sorusu ilk
+turda sorulmadı; mutasyon testleri izi doğruladı ama İZİN SEÇİMİNİ
+sınayamazdı — iki okumayla uyumlu iz, hiçbirini kanıtlamaz._
+ÇÖZÜM: onayın ÖZ İZİ — `Sale.onaylandiAt DateTime?` (tek yazıcı:
+`siparisiOnayla`, SALE_OUT'la aynı işlemde). Migration canlıda koştu
+(harf bekçisi `sale`→`Sale` düzeltmesini yakaladı), damga güncel.
+Kuyruk + kargo kümesi + saf gövde + uygunluk yeni ize döndü; SALE_OUT
+kontrolü ikinci savunma olarak KALDI (çift düşüm emniyeti — ayrı soru).
+ÖLÇÜLDÜ: kargo kümesi **7540 → 7** · kuyruk **3** (panelle birebir).
+Mutasyonlar: onay dalını silen · SALE_OUT'a GERİ dönen · öz-iz yazımını
+silen — üçü de kırmızı, bit-bit geri alındı. AuditLog geçiş doldurması:
+0 iz (henüz onay yapılmamıştı — boş, doğal).
+
 ⏭ AÇIK: ① satış DETAY ekranına saat + onay durumu gösterimi; ② rozet
 eşiği (K162-② notu); ③ parti ELLE seçimi (v1 FIFO otomatik — K110 spesifik
 belirleme onay diyaloğuna sonra bağlanır).

@@ -1785,6 +1785,7 @@ kontrol(
     shippedAt: null,
     iptalTarihi: null,
     soldAt: new Date("2026-09-04T09:41:00.000Z"),
+    onaylandiAt: null,
     saleOutSayisi: 0,
   };
   kontrol("uygun aday GEÇER", onayaUygunMu(temel).uygun === true);
@@ -1797,6 +1798,15 @@ kontrol(
   kontrol(
     "bağı kurulmuş satış İKİNCİ KEZ onaylanamaz (çift düşüm kapısı)",
     bagli.uygun === false && bagli.sebep === "ZATEN_ONAYLI",
+  );
+  const izli = onayaUygunMu({ ...temel, onaylandiAt: new Date("2026-09-04T10:00:00Z") });
+  kontrol(
+    "onay İZİ taşıyan satış ikinci kez onaylanamaz (öz iz, K164-②)",
+    izli.uygun === false && izli.sebep === "ZATEN_ONAYLI",
+  );
+  kontrol(
+    "onay eylemi ÖZ İZİ yazıyor (onaylandiAt — kargo kümesi buna bakar)",
+    eylemK.includes("data: { onaylandiAt: new Date() }"),
   );
 
   const paketK = yorumsuz(readFileSync("src/app/paketle/actions.ts", "utf8"));

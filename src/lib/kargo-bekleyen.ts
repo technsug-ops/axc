@@ -68,7 +68,15 @@ export const KARGO_BEKLEYEN: Prisma.SaleWhereInput = {
     {
       OR: [
         { importKaynak: null },
-        { items: { some: { stockMovements: { some: { type: "SALE_OUT" as const } } } } },
+        /**
+         * ⭐ İZ DEĞİŞTİ (K164-②, aynı gün): ilk sürüm SALE_OUT bağına
+         * bakıyordu ve YANLIŞTI — o izi ÜÇ mekanizma dolduruyor (elle
+         * satış · K55 tarihsel bağ · onay); canlıda 7533 tarihsel kayıt
+         * kümeye sızdı, panel 7540 gösterdi. `onaylandiAt`i yalnız onay
+         * eylemi yazar — tek yazıcılı iz sızamaz. _("Bu alanı dolduran
+         * mekanizma, aradığım olay mı?" sorusu bu kez soruldu.)_
+         */
+        { onaylandiAt: { not: null } },
       ],
     },
   ],
@@ -82,11 +90,11 @@ export const KARGO_BEKLEYEN: Prisma.SaleWhereInput = {
 export function kargoBekliyorMu(satis: {
   shippedAt: Date | null;
   importKaynak: string | null;
-  /** K164: SALE_OUT bağı — onaylanmış içe aktarılan satış kümeye girer. */
-  stokBagiVar: boolean;
+  /** K164-②: onayın ÖZ izi — SALE_OUT bağı değil (üç yazıcılı iz sızar). */
+  onaylandiAt: Date | null;
 }): boolean {
   return (
     satis.shippedAt === null &&
-    (satis.importKaynak === null || satis.stokBagiVar)
+    (satis.importKaynak === null || satis.onaylandiAt !== null)
   );
 }

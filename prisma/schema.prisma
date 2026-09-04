@@ -1329,6 +1329,11 @@ model Sale {
   /// satır, enumerasyonun kaçırdığı ve BAŞKA bir kaynaktan bilindiği
   /// için tek tek çekilmiş satırdır — güven derecesi aynı değildir.
   importKaynak String?
+  /// K164 onay izi — YALNIZ `siparisiOnayla` yazar. Kargo kümesi ve onay
+  /// kuyruğu BU ize bakar; SALE_OUT bağı iz OLAMAZDI (üç mekanizma
+  /// dolduruyor: elle satış, K55 tarihsel bağ, onay — 04.09.2026'da 7533
+  /// tarihsel kayıt kargo kümesine bu yüzden sızdı).
+  onaylandiAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

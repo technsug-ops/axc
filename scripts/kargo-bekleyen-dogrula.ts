@@ -90,10 +90,20 @@ kontrol(
   gövdeMetni.includes('"importKaynak":null'),
   "`KARGO_BEKLEYEN` içe aktarılmışı elemiyor — kural gövdede yok",
 );
+/**
+ * ⭐ İZ DEĞİŞTİ (K164-②): SALE_OUT bağı ölçütü YANLIŞTI — o izi üç mekanizma
+ * dolduruyor ve canlıda 7533 tarihsel kayıt kümeye sızdı (panel 7540).
+ * Yeni iz `onaylandiAt`: tek yazıcılı. Ölçüt İKİ yönlü: yeni iz VAR,
+ * eski sızdıran iz YOK.
+ */
 kontrol(
-  "① gövde SALE_OUT bağı dalını taşıyor (onaylanan içeri girer, K164)",
-  gövdeMetni.includes('"SALE_OUT"'),
-  "bağ dalı yok — onaylanan sipariş kargo kümesine giremez",
+  "① gövde ONAY İZİ dalını taşıyor (onaylanan içeri girer, K164-②)",
+  gövdeMetni.includes('"onaylandiAt"'),
+  "onay dalı yok — onaylanan sipariş kargo kümesine giremez",
+);
+kontrol(
+  "① gövde SALE_OUT bağına DÖNMEDİ (üç yazıcılı iz — 7533 kayıt sızdırır)",
+  !gövdeMetni.includes('"SALE_OUT"'),
 );
 kontrol(
   "① gövde shippedAt koşulunu taşıyor",
@@ -101,22 +111,26 @@ kontrol(
 );
 kontrol(
   "① elle girilmiş + kargolanmamış → BEKLİYOR",
-  kargoBekliyorMu({ shippedAt: null, importKaynak: null, stokBagiVar: false }),
+  kargoBekliyorMu({ shippedAt: null, importKaynak: null, onaylandiAt: null }),
 );
 kontrol(
-  "① içe aktarılmış + BAĞSIZ → BEKLEMİYOR (bilinmiyor, çıkmadı değil)",
-  !kargoBekliyorMu({ shippedAt: null, importKaynak: "satis-excel", stokBagiVar: false }),
+  "① içe aktarılmış + ONAYSIZ → BEKLEMİYOR (bilinmiyor, çıkmadı değil)",
+  !kargoBekliyorMu({ shippedAt: null, importKaynak: "satis-excel", onaylandiAt: null }),
 );
 kontrol(
-  "① içe aktarılmış + ONAYLI (bağ var) → BEKLİYOR (K164)",
-  kargoBekliyorMu({ shippedAt: null, importKaynak: "enumerasyon", stokBagiVar: true }),
+  "① içe aktarılmış + ONAY İZLİ → BEKLİYOR (K164-②)",
+  kargoBekliyorMu({
+    shippedAt: null,
+    importKaynak: "enumerasyon",
+    onaylandiAt: new Date("2026-09-04T10:00:00Z"),
+  }),
 );
 kontrol(
-  "① kargolanmış → BEKLEMİYOR — bağ olsa bile",
+  "① kargolanmış → BEKLEMİYOR — onaylı olsa bile",
   !kargoBekliyorMu({
     shippedAt: new Date("2026-08-20T00:00:00Z"),
     importKaynak: null,
-    stokBagiVar: true,
+    onaylandiAt: new Date("2026-08-19T10:00:00Z"),
   }),
 );
 

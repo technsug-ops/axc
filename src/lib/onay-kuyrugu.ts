@@ -45,6 +45,9 @@ export function onayAdresi(): string {
 export const ONAY_ADAY_KOSULU = {
   importKaynak: { not: null },
   shippedAt: null,
+  /** Onayın ÖZ İZİ (K164-②): kolonu yalnız `siparisiOnayla` doldurur. */
+  onaylandiAt: null,
+  /** İkinci savunma — bağı BAŞKA yoldan kurulmuş satış da kuyruğa girmez. */
   NOT: { items: { some: { stockMovements: { some: { type: "SALE_OUT" as const } } } } },
 } as const;
 
@@ -80,6 +83,8 @@ export function onayaUygunMu(satis: {
   shippedAt: Date | null;
   iptalTarihi: Date | null;
   soldAt: Date;
+  /** Onayın öz izi — `siparisiOnayla` yazar (K164-②). */
+  onaylandiAt: Date | null;
   saleOutSayisi: number;
 }):
   | { uygun: true }
@@ -87,6 +92,9 @@ export function onayaUygunMu(satis: {
   if (satis.importKaynak === null) return { uygun: false, sebep: "ICE_AKTARMA_DEGIL" };
   if (satis.shippedAt !== null) return { uygun: false, sebep: "KARGOLANMIS" };
   if (satis.iptalTarihi !== null) return { uygun: false, sebep: "IPTALLI" };
+  /** İki ayrı soru, iki ayrı kontrol: ① onay İZİ var mı (öz iz) ·
+   *  ② stok bağı BAŞKA yoldan kurulmuş mu (çift düşüm emniyeti). */
+  if (satis.onaylandiAt !== null) return { uygun: false, sebep: "ZATEN_ONAYLI" };
   if (satis.saleOutSayisi > 0) return { uygun: false, sebep: "ZATEN_ONAYLI" };
   if (gunHassasiyetliMi(satis.soldAt)) return { uygun: false, sebep: "TARIHSEL" };
   return { uygun: true };

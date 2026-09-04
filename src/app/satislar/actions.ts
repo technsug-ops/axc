@@ -515,6 +515,7 @@ export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu>
           shippedAt: true,
           iptalTarihi: true,
           importKaynak: true,
+          onaylandiAt: true,
           items: {
             select: {
               id: true,
@@ -537,6 +538,7 @@ export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu>
         shippedAt: satis.shippedAt,
         iptalTarihi: satis.iptalTarihi,
         soldAt: satis.soldAt,
+        onaylandiAt: satis.onaylandiAt,
         saleOutSayisi: satis.items.reduce(
           (toplam, k) => toplam + k.stockMovements.length,
           0,
@@ -622,6 +624,14 @@ export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu>
           adetToplam += pay.adet;
         }
       }
+
+      /** ONAYIN ÖZ İZİ (K164-②): kargo kümesi ve kuyruk BU kolona bakar;
+       *  tek yazıcısı bu satır. SALE_OUT'larla AYNI işlemde — yarım onay
+       *  kalamaz. */
+      await tx.sale.update({
+        where: { id: satis.id },
+        data: { onaylandiAt: new Date() },
+      });
 
       /** İz TEK GÖVDEDEN (`izYaz`) — çıplak `auditLog.create` yasak
        *  (`iz:dogrula`); kullanıcı kimliği de tek yerden bağlanır. */
