@@ -13,6 +13,53 @@
 
 ---
 
+## 🔶 K162 — CANLI SİPARİŞ AKIŞI: ÇEKİM 30 DK'YA İNDİ + ONAY KUYRUĞU ÖNERİSİ · 04.09.2026 · [KISMEN KOŞTU]
+
+> **Halil (04.09 sabahı, canlı LEGO siparişi üstünden):** çekilen sipariş
+> kargolanacaklarda yok, stok düşmemiş, paketleme "KARGOYA VERİLMİŞ" diyor.
+> Önerisi: _"düzenlenecek sipariş sekmesine düşer, maliyet seçilince
+> onaylanır ve kargolanacak sekmesine dahil olur — pazaryerlerindeki gibi."_
+
+**ÖLÇÜLEN KÖKLER:**
+- `KARGO_BEKLEYEN` = `shippedAt: null` **ve `importKaynak: null`** — K49
+  gerekçesi TARİHSEL içe aktarma içindi; canlı API siparişi de aynı dışlamaya
+  takılıyor _(ilke, kapsamı dışına uygulanınca hatayı korur)_.
+- Paketleme mesajı YANLIŞ TEŞHİS: satışta `shippedAt=NULL` ölçüldü; sipariş
+  "kargoya verilmiş" değil "kapsam dışı". _(Metin, sahip olmadığı anlamı
+  iddia etmez.)_
+- Panel "ALIM KAYDI YOK" satırı LEGO'ya ait DEĞİL (LEGO varyantı
+  `OYU-LG-598P-01`: 23 alım kaydı, ledger stok 6) — başka satışın.
+- enumerasyon kaynaklı 440 satışın **425'i shippedAt boş** → kuyruk ölçütü
+  bunları ayırmadan kurulamaz (K49: kapatılamayan madde üretir).
+- Sabah koşumu yeni siparişi getirmedi çünkü sipariş sonradan düştü; rutin
+  GÜNLÜKTÜ.
+
+**KOŞAN KISIM (bugün):**
+- Yeni sipariş elle dar pencereli yazımla alındı (7853→7854 ✓ sayım tuttu).
+- **`Selliora TY Sik Cekim`** görevi kuruldu: 30 dk'da bir, dar pencere
+  (`scripts/ty-sik-cekim.cmd`, ASCII+CRLF). ⚠ Kaçış bozulması bu turda ÜÇ
+  araçta yaşandı — python unicode kaçışı, printf'in BEL'e çevirdiği dizi,
+  ve JSON katmanının çift ters bölüyü teke indirmesi; dosya chr(92) ile
+  kuruldu ve baytları `cat -A` ile doğrulandı. Duman testi: cikis=0,
+  "yazılan 0" (çakışmada atla — idempotentlik canlıda bir kez daha görüldü).
+  Günlük 08:00 geniş tarama (60 gün) yedek olarak KALDI.
+- Kurulum/kaldırma: PowerShell Register-ScheduledTask / Unregister-ScheduledTask,
+  görev adı "Selliora TY Sik Cekim" (komut yoruma değil buraya yazılır).
+
+⏭ ONAY KUYRUĞU PAKETİ — Halil'in onayına sunuldu, cevap bekliyor:
+① "Onay bekleyen sipariş" kutusu (ölçüt: importKaynak dolu + stok bağı yok
+   + iptal yok + CANLI AKIŞ — tarihsel 425 ayrımı için TY paket geçmişinden
+   gerçek Shipped anı okunabilir mi ÖLÇÜLECEK; okunuyorsa geriye dönük
+   `shippedAt` doldurma ayrı onaylı yazım olur);
+② Onay ekranı: FIFO maliyet önerisi → onayla → StockMovement yazılır →
+   NET hesaplanır;
+③ `KARGO_BEKLEYEN` evrimi: bağ kurulmuş içe aktarılan satış kümeye GİRER
+   (ölçüt alan doluluğu değil OLAYIN İZİ: çıkış hareketi);
+④ Paketleme yanlış teşhisi düzelir ("içe aktarıldı, onay bekliyor" ayrı
+   mesaj); ⑤ rozet eşiği 26 saat → yeni periyottan türetilir.
+
+---
+
 ## 🔶 K160 — HB SİPARİŞ ÇEKİM İSKELETİ (ÖNİZLEME-YALNIZ) · 04.09.2026 · [KOŞTU]
 
 > **Halil:** _"onay veriyorum"_ (HB sipariş çekim iskeleti, TY kopyası).
