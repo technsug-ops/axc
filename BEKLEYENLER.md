@@ -13,6 +13,46 @@
 
 ---
 
+## 🔶 K165 — HB SİPARİŞ İÇE AKTARMA YAZILDI · 04.09.2026 · [KOŞTU — SIT]
+
+> **Halil:** _"başla"_ (HB çekimi, TY disiplininin kopyası).
+
+**ÖLÇÜLMÜŞ EŞLEME (2 test siparişi — 1 ve 2 adetli):**
+- `unitPrice` KESİN BİRİM (2 adetlide totalPrice 200 / unitPrice 100 —
+  ayırt edici kanıt; TY'nin "price bölme" faciası burada DOĞMADAN kapandı).
+- Damgalar zone'suz İSTANBUL yereli (kanıt: 13:12Z'de oluşturulan sipariş
+  "16:12" damgalı) → `hbAni` +03:00 ile UTC'ye çevirir; soldAt GERÇEK AN
+  (K163) → onay kuyruğu saat süzgecinden kendiliğinden geçer.
+- `commissionRate` ayrı ORAN alanı; 0 = kanal belgesi AYNEN, null =
+  ChannelSku'dan doldur (bugünkü 11569147554 RULE_MISSING dersi yapısal).
+- Kalem düzeyi dönüş → orderNumber gruplaması; Cancelled kalem YAZILMAZ
+  (iptal anı uydurulmaz); packageNumber Open'da boş → shipmentCode BOŞ.
+- Test siparişi oluşturma: `oms-stub-external-sit` POST (doküman arşiv+ayna
+  kopyasından söküldü; salt-rakam OrderNumber şart). Scratchpad aracı —
+  repoya GİRMEDİ (istemci GET-only kalır).
+
+**DİSİPLİN:** --yaz kilidi · çakışmada atla · StockMovement ÜRETMEZ (K164
+kuyruğu düşürür) · importKaynak "hb-enumerasyon" (YENİ değer, doğum beyanı
+burada) · AuditLog `HB_SIPARIS_ICE_AKTARMA` · bekçi-kilidi kapısı (K162-②)
+· `api:dogrula` YAZICI beyannamesi (bekçisi: ice-aktarma:dogrula).
+**Hesap ayrımı:** SIT merchantId → "Hepsiburada — Test (SIT)" hesabı
+(yalnız TEST ortamında otomatik; CANLIDA OLUŞTURMAZ, kırmızı durur — canlı
+kimlik elle bağlanır. AXCALI externalId 7000222505 karışamaz).
+
+**Bekçi:** +11 ölçüt (değer testleri: hbAni/hbKomisyonOrani; desenler
+kullanım-bloklu). 3 mutasyon 3 doğru ölçütte kırmızı: adete bölen ·
+UTC sayan · stok yazan. Önizleme SIT'te koştu: 2 sipariş dürüstçe
+"kod kataloğumuzda yok" kovasında (HB'nin test ürünleri defterde yok).
+
+⏭ AÇIK — HALİL KARARI BEKLİYOR: SIT uçtan-uca provası (çekim→kuyruk→onay)
+için deftere TEST ÜRÜNÜ + küçük test alımı girmek gerekir (sonra
+iptal/pasifle temizlenir) — YA DA prova canlıya geçişte gerçek katalogla
+kendiliğinden olur. Defter temizliği kararı Halil'in (K155 hassasiyeti).
+⏭ CANLI GEÇİŞ GÜNÜ: HEPSIBURADA_ORTAM=CANLI + canlı anahtarlar + AXCALI
+HB hesabının externalId kontrolü + 5-dk rutine HB koşumu eklenmesi.
+
+---
+
 ## ✅ K164 — ONAY KUYRUĞU KURULDU · 04.09.2026 · [KOD KOŞTU]
 
 > **Halil:** _"onay kuyruğunu yap"_ — akış: sipariş düşer → FIFO maliyeti

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { gunHassasiyetliMi } from "../src/lib/donem";
 import { onayaUygunMu } from "../src/lib/onay-kuyrugu";
+import { hbAni, hbKomisyonOrani } from "./canli-hb-ice-aktar";
 
 import { birimFiyatCoz, iptalAniCoz } from "./canli-ty-ice-aktar";
 import { iceAktarmaTarihi } from "../src/lib/ice-aktarma-tarih-kapisi";
@@ -1856,6 +1857,51 @@ kontrol(
   kontrol(
     "  ...ve kümeyi AND ile bağlıyor (spread süzgeç ezer)",
     onaySuzB.includes("veKosullari.push({ id: { in: onayIdler ?? [] } })"),
+  );
+}
+
+/**
+ * ═══ K165 — HB İÇE AKTARMA: ÖLÇÜLMÜŞ EŞLEME SABİTLENİR ═══════════════════
+ * İki test siparişiyle ölçüldü (04.09.2026): unitPrice BİRİM (2 adetlide
+ * totalPrice 200 / unitPrice 100), damgalar zone'suz İSTANBUL yereli,
+ * commissionRate ayrı ORAN alanı. Ölçütler kuralı sabitler; TY'nin
+ * "price bölme" faciası HB'de doğamaz.
+ */
+{
+  console.log("K165 HB eşlemesi — birim fiyat, İstanbul saati, oran kaynağı");
+  const hbK = yorumsuz(readFileSync("scripts/canli-hb-ice-aktar.ts", "utf8"));
+  /** Saf gövdeler DEĞERLE sınanır. */
+  const an = hbAni("2026-09-04T16:12:09.935");
+  kontrol(
+    "hbAni: İstanbul yerelini UTC ana çevirir (16:12 TR = 13:12Z)",
+    an !== null && an.toISOString() === "2026-09-04T13:12:09.935Z",
+  );
+  kontrol("hbAni: bozuk damga null döner (uydurma tarih yok)", hbAni("bozuk") === null);
+  kontrol("hbKomisyonOrani: 0 KANAL BELGESİDİR, aynen geçer", hbKomisyonOrani(0) === 0);
+  kontrol("hbKomisyonOrani: null BİLİNMİYOR kalır (ChannelSku dalına)", hbKomisyonOrani(null) === null);
+  /** Yazım blokları — kullanım yerine bağlı desenler. */
+  const fiyatBasi = hbK.indexOf("birimFiyat: kurus(birim)");
+  kontrol("unitPrice BİRİM olarak geçer — bölme/çarpma YOK", fiyatBasi >= 0);
+  const fiyatB = fiyatBasi >= 0 ? hbK.slice(Math.max(0, fiyatBasi - 300), fiyatBasi + 100) : "";
+  kontrol(
+    "  ...ve adetle işlem GÖRMÜYOR (çift sayım/yarım ciro kapısı)",
+    !fiyatB.includes("birim / ") && !fiyatB.includes("birim * ") && !fiyatB.includes("/ adet") && !fiyatB.includes("* adet"),
+  );
+  kontrol(
+    "soldAt GERÇEK ANDAN (hbAni) — kuyruk saat süzgecinden geçer",
+    hbK.includes("const an = hbAni(String(ham.orderDate))") && hbK.includes("soldAt: aday.soldAt"),
+  );
+  kontrol(
+    "oran boşsa ChannelSku'dan doldurulur (RULE_MISSING dersi)",
+    hbK.includes("komisyon = Number(cs.commissionRate.toString())"),
+  );
+  kontrol(
+    "StockMovement ÜRETMİYOR — stok/kâr bağı onay kuyruğundan (K164)",
+    !hbK.includes("stockMovement.create"),
+  );
+  kontrol(
+    "Cancelled kalem YAZILMIYOR (iptal anı uydurulmaz)",
+    hbK.includes('String(ham.status) === "Cancelled"'),
   );
 }
 

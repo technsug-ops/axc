@@ -249,6 +249,14 @@ const YAZMASI_BEYANLI: { dosya: string; gerekce: string; bekcisi: string }[] = [
       "her kayıt importBatch+importKaynak taşır, AuditLog bırakır.",
     bekcisi: "ice-aktarma:dogrula",
   },
+  {
+    dosya: "canli-hb-ice-aktar.ts",
+    gerekce:
+      "K165 HB içe aktarma — Sale/SaleItem yazar (TY disiplininin kopyası): " +
+      "--yaz kilidi, importBatch+importKaynak, AuditLog, çakışmada atla; " +
+      "StockMovement ÜRETMEZ (K164 onay kuyruğu düşürür).",
+    bekcisi: "ice-aktarma:dogrula",
+  },
 ];
 
 for (const yol of apiDosyalari) {
