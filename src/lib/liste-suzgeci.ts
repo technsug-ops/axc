@@ -134,6 +134,13 @@ export function satisKosulu(
    * kümesi AYNI gövdeden gelir (Halil bulgusu 04.09.2026).
    */
   marjIdler?: string[],
+  /**
+   * ⭐ `onay=1` için sahibinden (`onay-kuyrugu.onayBekleyenIdleri`) çözülmüş
+   * satış kimlikleri — İlke #16: panel kutusundaki SAYI ile bu listenin
+   * kümesi AYNI gövdeden gelir (K164). SQL'e sığmaz: "saatli soldAt"
+   * koşulu JS'te çözülüyor, kimlik kümesi olarak geliyor.
+   */
+  onayIdler?: string[],
 ): { kosul: Prisma.SaleWhereInput; pencere: PencereCozumu } {
   const pencere = pencereCoz(p, an);
 
@@ -163,6 +170,7 @@ export function satisKosulu(
    * ═══════════════════════════════════════════════════════════════════════
    */
   const veKosullari: Prisma.SaleWhereInput[] = [];
+  if (kargo === "bekleyen") veKosullari.push(KARGO_BEKLEYEN);
 
   const kosul: Prisma.SaleWhereInput = {
     // Süzgeç kapalıysa alan HİÇ yazılmaz; `undefined` koşulu Prisma'da
@@ -329,7 +337,9 @@ export function satisKosulu(
      * Panelin kutusu ve bu liste AYNI koşuldan beslenmeli, yoksa kutudaki
      * rakama tıklayınca başka bir liste açılır.
      */
-    ...(kargo === "bekleyen" ? KARGO_BEKLEYEN : {}),
+    /* K164: spread yerine AND-dizisine push — KARGO_BEKLEYEN artık kendi
+       `AND`ini taşıyor; buradaki literalde başka bir spread `AND` yazarsa
+       sessizce ezilirdi. `veKosullari` 382'de dizi-bilinçli birleşiyor. */
     /**
      * ŞÜPHELİ VERİ — küme DIŞARIDAN gelir (`supheliIdler`).
      *
@@ -357,6 +367,10 @@ export function satisKosulu(
    */
   if (temiz(p[MARJ_PARAM] ?? "") !== "") {
     veKosullari.push({ id: { in: marjIdler ?? [] } });
+  }
+  /** K164 onay kuyruğu — küme dışarıdan, AND ile (spread süzgeç ezer). */
+  if (temiz(p.onay) === "1") {
+    veKosullari.push({ id: { in: onayIdler ?? [] } });
   }
 
   /**

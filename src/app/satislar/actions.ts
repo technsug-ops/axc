@@ -8,6 +8,18 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { onayaUygunMu } from "@/lib/onay-kuyrugu";
+import { satisKarTazele } from "@/lib/kar-yeniden";
+import { sonSayimTarihleri } from "@/lib/sayim-damgasi";
+import { sayimKorumasi } from "@/lib/sayim-korumasi";
+import { donemKapisi } from "@/lib/donem-kapisi";
+import {
+  acikPartiler,
+  fifoDagit,
+  gunSonu,
+  type FifoPayi,
+  type Parti,
+} from "@/lib/stok";
 import { gunDegeri, gunMetninden, isTakvimGunu } from "@/lib/donem";
 import { DonemKorumasiHatasi } from "@/lib/donem-kapisi";
 import {
@@ -450,4 +462,189 @@ export async function topluKargoyaVerildi(
   /** Panel kutusu bu sayıdan besleniyor. */
   revalidatePath("/");
   return { isaretlenen: sonuc.count };
+}
+
+/**
+ * ============================================================================
+ *  K164 — SİPARİŞ ONAYI: API'DEN GELEN SATIŞ STOĞA VE KÂRA BAĞLANIR
+ * ----------------------------------------------------------------------------
+ *  Halil akışı: sipariş düşer, maliyet (FIFO) onaylanır, stok düşer,
+ *  NET hesaplanır, kargolanacaklara girer (KARGO_BEKLEYEN bağa bakar).
+ *
+ *  SUNUCU EKRANA GÜVENMEZ: uygunluk onayaUygunMu SAF gövdesinden —
+ *  liste süzgeciyle AYNI ölçüt (iki yerde iki ölçüt olmaz).
+ *  Stok yazımı satisKaydet ile AYNI parçalardan: acikPartiler +
+ *  gunSonu sınırı + fifoDagit; ikinci bir FIFO yazılmadı.
+ *  Sayım ve dönem kapıları satış akışındakiyle aynı gövdelerden koşar.
+ *  Hata KODLA döner (K57-3) — ekran sabit eşlemeyle metne çevirir.
+ *  occurredAt = soldAt: K163 saati stok defterine de taşır.
+ *  Kâr tazeleme İŞLEM DIŞINDA: satisKarTazele yazılmış SALE_OUT satırını
+ *  okur. Düşerse stok bağı DURUR ve karTazelendi false döner — satış
+ *  "kârı hesaplanamadı" şerhinde görünür kalır, sessiz kaybolmaz.
+ * ============================================================================
+ */
+export type SiparisOnaySonucu =
+  | { tamam: true; kalem: number; adet: number; karTazelendi: boolean }
+  | {
+      tamam: false;
+      kod:
+        | "BULUNAMADI"
+        | "ICE_AKTARMA_DEGIL"
+        | "KARGOLANMIS"
+        | "IPTALLI"
+        | "ZATEN_ONAYLI"
+        | "TARIHSEL"
+        | "SAYIM_DURAKSADI"
+        | "DONEM_KAPALI"
+        | "STOK_YETERSIZ"
+        | "YAZILAMADI";
+      ayrinti?: string;
+    };
+
+export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu> {
+  await yetkiIste("satis.yaz");
+  try {
+    const sonuc = await prisma.$transaction(async (tx): Promise<SiparisOnaySonucu> => {
+      const satis = await tx.sale.findUnique({
+        where: { id: saleId },
+        select: {
+          id: true,
+          code: true,
+          soldAt: true,
+          shippedAt: true,
+          iptalTarihi: true,
+          importKaynak: true,
+          items: {
+            select: {
+              id: true,
+              variantId: true,
+              quantity: true,
+              variant: { select: { sku: true } },
+              stockMovements: {
+                where: { type: "SALE_OUT" },
+                select: { id: true },
+                take: 1,
+              },
+            },
+          },
+        },
+      });
+      if (!satis) return { tamam: false, kod: "BULUNAMADI" };
+
+      const uygunluk = onayaUygunMu({
+        importKaynak: satis.importKaynak,
+        shippedAt: satis.shippedAt,
+        iptalTarihi: satis.iptalTarihi,
+        soldAt: satis.soldAt,
+        saleOutSayisi: satis.items.reduce(
+          (toplam, k) => toplam + k.stockMovements.length,
+          0,
+        ),
+      });
+      if (!uygunluk.uygun) return { tamam: false, kod: uygunluk.sebep };
+
+      /** Sayım kapısı — satış akışıyla AYNI gövde. Onayda ısrar yolu YOK:
+       *  canlı akışta soldAt bugündür ve duraksama tetiklenmez; tetiklenirse
+       *  bu bir sinyaldir ve elle satış akışının ısrar yolu kullanılır. */
+      const sonSayimlar = await sonSayimTarihleri(
+        tx,
+        satis.items.map((k) => k.variantId),
+      );
+      for (const k of satis.items) {
+        const karar = sayimKorumasi({
+          sonSayimIsTarihi: sonSayimlar.get(k.variantId) ?? null,
+          hareketIsTarihi: satis.soldAt,
+          adet: -k.quantity,
+        });
+        if (karar.sonuc === "DURAKSA") {
+          return { tamam: false, kod: "SAYIM_DURAKSADI", ayrinti: k.variant.sku };
+        }
+      }
+
+      /** Dönem kapısı — kapalıysa DonemKorumasiHatasi fırlatır. */
+      await donemKapisi(tx, satis.soldAt, undefined);
+
+      /** FIFO — parti durumu kalemler arasında taşınır (aynı parti iki kez
+       *  tüketilmesin); sınır gunSonu(soldAt) (29.08 arızasının dersi). */
+      const partiDurumu = new Map<string, Parti[]>();
+      const planlar: {
+        kalemId: string;
+        variantId: string;
+        dagitim: FifoPayi[];
+      }[] = [];
+      for (const k of satis.items) {
+        const partiler =
+          partiDurumu.get(k.variantId) ??
+          (await acikPartiler(tx, k.variantId, gunSonu(satis.soldAt)));
+        const dagitim = fifoDagit(partiler, k.quantity);
+        if (!dagitim.yeterliMi) {
+          return {
+            tamam: false,
+            kod: "STOK_YETERSIZ",
+            ayrinti: k.variant.sku + ": " + dagitim.mevcut + "/" + k.quantity,
+          };
+        }
+        partiDurumu.set(k.variantId, dagitim.kalanPartiler);
+        planlar.push({ kalemId: k.id, variantId: k.variantId, dagitim: dagitim.dagitim });
+      }
+
+      let adetToplam = 0;
+      for (const plan of planlar) {
+        for (const pay of plan.dagitim) {
+          await tx.stockMovement.create({
+            data: {
+              variantId: plan.variantId,
+              type: "SALE_OUT",
+              quantityDelta: -pay.adet,
+              occurredAt: satis.soldAt,
+              saleItemId: plan.kalemId,
+              sourceMovementId: pay.parti.hareketId,
+              locationId: pay.parti.locationId,
+              unitCostAmount: pay.parti.birimMaliyet,
+              unitCostCurrency: pay.parti.birimMaliyetParaBirimi,
+            },
+          });
+          adetToplam += pay.adet;
+        }
+      }
+
+      await tx.auditLog.create({
+        data: {
+          action: "SIPARIS_ONAYI",
+          targetType: "Sale",
+          targetId: satis.id,
+          detail: JSON.stringify({
+            code: satis.code,
+            kalem: planlar.length,
+            adet: adetToplam,
+            dagitim: planlar.map((p) => ({
+              kalemId: p.kalemId,
+              partiler: p.dagitim.map((d) => ({
+                parti: d.parti.hareketId,
+                adet: d.adet,
+                birimMaliyet: String(d.parti.birimMaliyet),
+              })),
+            })),
+          }),
+        },
+      });
+
+      return { tamam: true, kalem: planlar.length, adet: adetToplam, karTazelendi: false };
+    });
+
+    if (!sonuc.tamam) return sonuc;
+
+    const karTazelendi = await satisKarTazele(saleId);
+    revalidatePath("/satislar");
+    revalidatePath("/satislar/" + saleId);
+    revalidatePath("/");
+    return { ...sonuc, karTazelendi };
+  } catch (e) {
+    if (e instanceof DonemKorumasiHatasi) {
+      return { tamam: false, kod: "DONEM_KAPALI" };
+    }
+    /** K57-3: TAM log (kısaltma yalnız gösterimde), kullanıcıya kod. */
+    console.error("SIPARIS_ONAYI HATASI:", e);
+    return { tamam: false, kod: "YAZILAMADI" };
+  }
 }

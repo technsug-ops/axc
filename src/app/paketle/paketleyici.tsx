@@ -265,11 +265,15 @@ export function Paketleyici({
           <p className={`text-sm ${DURUM_YAZISI.notr}`} role="status">
             {bulunamadi.durum === "HIC_YOK"
               ? t("bulunamadiHicYok")
-              : bulunamadi.durum === "KARGOYA_VERILMIS"
-                ? t("bulunamadiKargoyaVerilmis", {
+              : bulunamadi.durum === "ONAY_BEKLIYOR"
+                ? t("bulunamadiOnayBekliyor", {
                     siparis: bulunamadi.siparisKodu ?? "—",
                   })
-                : t("bulunamadiIptal", { siparis: bulunamadi.siparisKodu ?? "—" })}
+                : bulunamadi.durum === "KARGOYA_VERILMIS"
+                  ? t("bulunamadiKargoyaVerilmis", {
+                      siparis: bulunamadi.siparisKodu ?? "—",
+                    })
+                  : t("bulunamadiIptal", { siparis: bulunamadi.siparisKodu ?? "—" })}
           </p>
         ) : null}
       </div>

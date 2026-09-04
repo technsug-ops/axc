@@ -15,6 +15,7 @@ import { prisma } from "@/lib/prisma";
 
 import type { GorevAnahtari } from "./bugun-ne-yapmaliyim";
 import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
+import { onayBekleyenIdleri } from "@/lib/onay-kuyrugu";
 
 /**
  * ============================================================================
@@ -292,6 +293,7 @@ export async function gorevSayilariniTopla(): Promise<
   Record<GorevAnahtari, number>
 > {
   const [
+    onayBekleyen,
     kargoBekleyen,
     iadeBildirimi,
     malKabulBekleyen,
@@ -299,6 +301,9 @@ export async function gorevSayilariniTopla(): Promise<
     oransizKanalSku,
     tarifeKapsam,
   ] = await Promise.all([
+    /** K164 — `/satislar?onay=1` ile AYNI gövde (sayı = liste). */
+    onayBekleyenIdleri(prisma).then((idler) => idler.length),
+
     // `/satislar?kargo=bekleyen` ile aynı koşul.
     prisma.sale.count({ where: { ...KARGO_BEKLEYEN, iptalTarihi: null } }),
 
@@ -345,6 +350,7 @@ export async function gorevSayilariniTopla(): Promise<
   ]);
 
   return {
+    onayBekleyen,
     kargoBekleyen,
     iadeBildirimi,
     malKabulBekleyen,

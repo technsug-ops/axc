@@ -22,6 +22,7 @@
 
 import { alimAramaKosulu } from "../src/lib/alim-arama";
 import { gunMetni } from "../src/lib/donem";
+import { KARGO_BEKLEYEN } from "../src/lib/kargo-bekleyen";
 import { PurchaseStatus } from "../src/generated/prisma/enums";
 import {
   ALIM_BEKLEYEN_KODU,
@@ -369,10 +370,17 @@ console.log("\n3) SATIŞ KOŞULU");
       JSON.stringify({ not: null }),
     satisKosulu({ kargo: "verildi" }, AN).kosul.shippedAt,
   );
+  /**
+   * ⭐ ÖLÇÜT GÜNCELLENDİ (K164): koşul artık `kosul.shippedAt`e değil
+   * AND dizisine giriyor (spread, arama OR'unu ezerdi — anayasa). Ölçüt
+   * REFERANSLA bağlanır: dizide GÖVDENİN KENDİSİ var mı — kopya değil.
+   */
   kontrol(
-    "kargo bekleyen: shippedAt BOŞ aranır",
-    satisKosulu({ kargo: "bekleyen" }, AN).kosul.shippedAt === null,
-    satisKosulu({ kargo: "bekleyen" }, AN).kosul.shippedAt,
+    "kargo bekleyen: KARGO_BEKLEYEN gövdesi AND dizisinde",
+    (() => {
+      const k = satisKosulu({ kargo: "bekleyen" }, AN).kosul;
+      return Array.isArray(k.AND) && k.AND.includes(KARGO_BEKLEYEN);
+    })(),
   );
   kontrol(
     "tanınmayan kargo değeri süzgeç kurmaz",
@@ -419,7 +427,11 @@ console.log("\n3) SATIŞ KOŞULU");
     "kargo bekleyen + dönem: dönem SATIŞ tarihine uygulanır (elle seçim)",
     (() => {
       const k = satisKosulu({ kargo: "bekleyen", pencere: "BU_AY" }, AN).kosul;
-      return k.shippedAt === null && k.soldAt !== undefined;
+      return (
+        Array.isArray(k.AND) &&
+        k.AND.includes(KARGO_BEKLEYEN) &&
+        k.soldAt !== undefined
+      );
     })(),
   );
   // HEPSİ BİR ARADA: hiçbiri diğerini düşürmemeli.

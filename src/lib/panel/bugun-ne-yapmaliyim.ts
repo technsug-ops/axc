@@ -21,7 +21,16 @@
  * ============================================================================
  */
 
+import { onayAdresi } from "@/lib/onay-kuyrugu";
+
 export const GOREV_ANAHTARLARI = [
+  /**
+   * K164 — API'den düşen, stok/kâr bağı ONAY bekleyen sipariş. Kuyruğun
+   * sahibi `onay-kuyrugu.ts`; buradaki satır yalnız sayı + adres.
+   * ⚠ Tarihsel içe aktarmalar kümede DEĞİL (saatli-soldAt ayrımı) — yoksa
+   * ~425 kapatılamayan madde kutuyu öldürürdü (K49).
+   */
+  "onayBekleyen",
   /** `shippedAt` boş satışlar — bugün kargoya verilecekler. */
   "kargoBekleyen",
   /** Mal yolda ya da karar bekleyen iade bildirimleri. */
@@ -60,6 +69,7 @@ export const GOREV_GRUPLARI = ["SEVKIYAT", "TEDARIK"] as const;
 export type GorevGrubu = (typeof GOREV_GRUPLARI)[number];
 
 export const GOREV_GRUBU: Record<GorevAnahtari, GorevGrubu> = {
+  onayBekleyen: "SEVKIYAT",
   kargoBekleyen: "SEVKIYAT",
   iadeBildirimi: "SEVKIYAT",
   malKabulBekleyen: "TEDARIK",
@@ -81,6 +91,8 @@ export const GOREV_GRUBU: Record<GorevAnahtari, GorevGrubu> = {
  * bildirimler de listeleniyor, sayı ile liste ayrışıyordu.
  */
 export const GOREV_ADRESLERI: Record<GorevAnahtari, string> = {
+  /** İlke #16: adres SAHİBİNDEN — süzgeç sözleşmesi `onay-kuyrugu.ts`te. */
+  onayBekleyen: onayAdresi(),
   kargoBekleyen: "/satislar?kargo=bekleyen",
   iadeBildirimi: "/iadeler?bekleyen=1",
   malKabulBekleyen: "/alimlar?durum=BEKLEYEN",

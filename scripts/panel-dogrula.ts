@@ -1792,6 +1792,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
 
   // ------------------------------- GÖREV KUTUSU -------------------------------
   const gorevler = gorevleriKur({
+    onayBekleyen: 2,
     kargoBekleyen: 3,
     iadeBildirimi: 0,
     malKabulBekleyen: 2,
@@ -1800,8 +1801,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     tarifePenceresi: 0,
   });
   kontrol(
-    "altı görev de üretiliyor",
-    gorevler.length === 6,
+    "yedi görev de üretiliyor (K164: +onayBekleyen)",
+    gorevler.length === 7,
     gorevler.length,
   );
   /** AÇIK SIFIR: sıfır olan satır GİZLENMEZ, temiz işaretlenir. */
@@ -1821,7 +1822,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     gorevler.every((g) => g.adres.startsWith("/")),
   );
 
-  yakin("bekleyen toplamı", bekleyenToplam(gorevler), 6);
+  /** K164: 3+0+2+0+1+0 + onay 2 = 8. */
+  yakin("bekleyen toplamı", bekleyenToplam(gorevler), 8);
 
   // ── İKİ KART: her görev BİR gruba ait, hiçbiri boşta kalmıyor ──────────
   const sevkiyat = grubunGorevleri(gorevler, "SEVKIYAT");
@@ -1840,7 +1842,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
   kontrol(
     "kargo ve iade SEVKİYAT kartında",
-    sevkiyat.map((g) => g.anahtar).join(",") === "kargoBekleyen,iadeBildirimi",
+    sevkiyat.map((g) => g.anahtar).join(",") ===
+      "onayBekleyen,kargoBekleyen,iadeBildirimi",
     sevkiyat.map((g) => g.anahtar),
   );
   kontrol(
@@ -1855,7 +1858,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     tedarik.map((g) => g.anahtar),
   );
   /** Kart rozeti kendi kartının bekleyenini sayar — ötekininkini değil. */
-  yakin("SEVKİYAT kartının rozeti", bekleyenToplam(sevkiyat), 3);
+  /** K164: kargo 3 + iade 0 + onay 2 = 5. */
+  yakin("SEVKİYAT kartının rozeti", bekleyenToplam(sevkiyat), 5);
   yakin("TEDARİK kartının rozeti", bekleyenToplam(tedarik), 3);
 
   /**
@@ -1882,6 +1886,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     "hepsi sıfırsa hepsiTemiz TRUE",
     hepsiTemizMi(
       gorevleriKur({
+        onayBekleyen: 0,
         kargoBekleyen: 0,
         iadeBildirimi: 0,
         malKabulBekleyen: 0,
@@ -1982,6 +1987,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      */
     const aceleGorev = gorevleriKur(
       {
+        onayBekleyen: 0,
         kargoBekleyen: 0,
         iadeBildirimi: 0,
         malKabulBekleyen: 0,
@@ -2000,6 +2006,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     /** Ayrımın öteki yakası: acele değilse 0 gerçekten temizdir. */
     const sakinGorev = gorevleriKur(
       {
+        onayBekleyen: 0,
         kargoBekleyen: 0,
         iadeBildirimi: 0,
         malKabulBekleyen: 0,

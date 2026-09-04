@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { gunHassasiyetliMi } from "../src/lib/donem";
+import { onayaUygunMu } from "../src/lib/onay-kuyrugu";
 
 import { birimFiyatCoz, iptalAniCoz } from "./canli-ty-ice-aktar";
 import { iceAktarmaTarihi } from "../src/lib/ice-aktarma-tarih-kapisi";
@@ -507,7 +508,11 @@ kontrol(
   kontrol(
     "satışlar sayfası marj kümesini SAHİBİNDEN çözüyor ve koşula geçiriyor",
     /await marjSebepSatisIdleri\(/.test(sayfa) &&
-      /satisKosulu\(p, an, supheliIdler, paketliIdler, marjIdler\)/.test(sayfa),
+      /* K164: imzaya onayIdleri eklendi — ölçütün özü (marj kümesi koşula
+         geçiyor) aynı, biçim güncellendi. */
+      /satisKosulu\(p, an, supheliIdler, paketliIdler, marjIdler, onayIdleri\)/.test(
+        sayfa,
+      ),
   );
   const suzgec = oku("src/lib/liste-suzgeci.ts");
   const marjBlok = blok(suzgec, "MARJ ŞERHİ SÜZGECİ", 900);
@@ -1737,6 +1742,87 @@ kontrol(
   kontrol(
     "  ...ve İKİSİNDE de yalnız saat BİLİNİYORSA (İlke #11 kapısı)",
     ayrimAdet === 2,
+  );
+}
+
+/**
+ * ═══ K164 — ONAY KUYRUĞU: API SATIŞI STOĞA/KÂRA ONAYLA BAĞLANIR ══════════
+ * Halil akışı: sipariş düşer → FIFO maliyeti onaylanır → stok düşer →
+ * kargolanacaklara girer. Ölçütler ters bölüsüz (kaçış bozulması dersi),
+ * desenler SAYILDI (hepsi 1) ve kullanım bloğuna bağlı.
+ */
+{
+  console.log("K164 onay kuyruğu — eylem kapısı, saat taşınımı, sayı=liste");
+  const eylemK = yorumsuz(
+    readFileSync("src/app/satislar/actions.ts", "utf8"),
+  );
+  const kapiBasi = eylemK.indexOf("const uygunluk = onayaUygunMu(");
+  kontrol("onay eylemi SAF ön-kontrolü çağırıyor", kapiBasi >= 0);
+  const kapiB = kapiBasi >= 0 ? eylemK.slice(kapiBasi, kapiBasi + 500) : "";
+  kontrol(
+    "  ...ve sonucuna BAĞLI: uygun değilse dönüyor",
+    kapiB.includes("if (!uygunluk.uygun) return"),
+  );
+  const cikisBasi = eylemK.indexOf("tx.stockMovement.create");
+  kontrol("onay SALE_OUT yazıyor", cikisBasi >= 0);
+  const cikisB = cikisBasi >= 0 ? eylemK.slice(cikisBasi, cikisBasi + 600) : "";
+  kontrol(
+    "  ...saat stok defterine TAŞINIYOR (occurredAt = soldAt, K163 sözü)",
+    cikisB.includes("occurredAt: satis.soldAt"),
+  );
+  kontrol(
+    "  ...parti izi kuruluyor (sourceMovementId)",
+    cikisB.includes("sourceMovementId: pay.parti.hareketId"),
+  );
+  kontrol(
+    "onay sonrası kâr tazeleniyor",
+    eylemK.includes("await satisKarTazele(saleId)"),
+  );
+
+  /** Saf gövde DEĞERLE sınanır — desen değil. */
+  const temel = {
+    importKaynak: "enumerasyon",
+    shippedAt: null,
+    iptalTarihi: null,
+    soldAt: new Date("2026-09-04T09:41:00.000Z"),
+    saleOutSayisi: 0,
+  };
+  kontrol("uygun aday GEÇER", onayaUygunMu(temel).uygun === true);
+  const gunlu = onayaUygunMu({ ...temel, soldAt: new Date("2026-09-04T00:00:00.000Z") });
+  kontrol(
+    "TARİHSEL (güne damgalı) kuyruğa GİREMEZ — 425 kayıt kutuyu boğmasın (K49)",
+    gunlu.uygun === false && gunlu.sebep === "TARIHSEL",
+  );
+  const bagli = onayaUygunMu({ ...temel, saleOutSayisi: 1 });
+  kontrol(
+    "bağı kurulmuş satış İKİNCİ KEZ onaylanamaz (çift düşüm kapısı)",
+    bagli.uygun === false && bagli.sebep === "ZATEN_ONAYLI",
+  );
+
+  const paketK = yorumsuz(readFileSync("src/app/paketle/actions.ts", "utf8"));
+  const ayrimBasi = paketK.indexOf("if (disarida.shippedAt === null)");
+  kontrol("paketleme: onay-bekleyen ayrımı KOŞULA bağlı", ayrimBasi >= 0);
+  const ayrimB = ayrimBasi >= 0 ? paketK.slice(ayrimBasi, ayrimBasi + 300) : "";
+  kontrol(
+    '  ...ve sonucu ONAY_BEKLIYOR (yanlış "kargoya verilmiş" teşhisi düzeldi)',
+    ayrimB.includes('durum: "ONAY_BEKLIYOR"'),
+  );
+
+  /** Sayı = liste: panel sayısı ve liste kümesi AYNI gövdeden (İlke #16). */
+  const gorevK = yorumsuz(
+    readFileSync("src/lib/panel/gorev-verisi.ts", "utf8"),
+  );
+  kontrol(
+    "panel sayısı kuyruk SAHİBİNDEN (onayBekleyenIdleri)",
+    gorevK.includes("onayBekleyenIdleri(prisma)"),
+  );
+  const listeK = yorumsuz(readFileSync("src/lib/liste-suzgeci.ts", "utf8"));
+  const onaySuzBasi = listeK.indexOf('if (temiz(p.onay) === "1")');
+  kontrol("liste süzgeci onay parametresini okuyor", onaySuzBasi >= 0);
+  const onaySuzB = onaySuzBasi >= 0 ? listeK.slice(onaySuzBasi, onaySuzBasi + 200) : "";
+  kontrol(
+    "  ...ve kümeyi AND ile bağlıyor (spread süzgeç ezer)",
+    onaySuzB.includes("veKosullari.push({ id: { in: onayIdler ?? [] } })"),
   );
 }
 

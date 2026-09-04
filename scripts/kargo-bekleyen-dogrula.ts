@@ -39,6 +39,10 @@ const ISTISNALAR = new Map<string, string>([
     "PANEL SORGUSU: `{ shippedAt: null }` bir OR dalıdır ve amacı kargo bekleyeni bulmak DEĞİL — dönem dışı kalanları da çekip `kargoHali` üç kovaya ayırabilsin diye kümeyi GENİŞLETİYOR. Daraltmak, BİLİNMİYOR kovasını hiç göremezdi.",
   ],
   [
+    "src/lib/onay-kuyrugu.ts",
+    "ONAY KUYRUĞU (K164): `shippedAt: null` burada kargo kümesi DEĞİL, onay adayı tanımı — kargolanmış sipariş onaya giremez. KARGO_BEKLEYEN kullanılamaz: kuyruk tam tersini (bağı OLMAYANI) arıyor.",
+  ],
+  [
     "src/app/satislar/actions.ts",
     "TOPLU İŞARETLEME: burada `shippedAt: null` bir küme tanımı değil, YAZMA KAPISI — 'zaten işaretliyi yeniden yazma' koşulu. Ayrıca `importKaynak: null` zaten yanında duruyor ve `toplu-kargo:dogrula` onu ayrıca ölçüyor.",
   ],
@@ -74,10 +78,22 @@ console.log("\nKARGO BEKLEYEN BEKÇİSİ (K60)\n");
 //  ① SAF GÖVDE — değer testi
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * ⭐ ÖLÇÜT GÜNCELLENDİ (K164, 04.09.2026): eski ölçüt düz `importKaynak:
+ * null` arıyordu — BÜTÜN içe aktarılanların dışlanmasını sabitliyordu.
+ * Kural bilinçli değişti: onaylanan (SALE_OUT bağı kurulan) içe aktarılan
+ * satış kümeye GİRER. Ölçüt iki dalı BİRDEN arar; biri silinirse kırmızı.
+ */
+const gövdeMetni = JSON.stringify(KARGO_BEKLEYEN);
 kontrol(
-  "① gövde importKaynak elemesi taşıyor",
-  "importKaynak" in KARGO_BEKLEYEN && KARGO_BEKLEYEN.importKaynak === null,
+  "① gövde importKaynak dalını taşıyor (içe aktarılmış, bağsızsa dışarıda)",
+  gövdeMetni.includes('"importKaynak":null'),
   "`KARGO_BEKLEYEN` içe aktarılmışı elemiyor — kural gövdede yok",
+);
+kontrol(
+  "① gövde SALE_OUT bağı dalını taşıyor (onaylanan içeri girer, K164)",
+  gövdeMetni.includes('"SALE_OUT"'),
+  "bağ dalı yok — onaylanan sipariş kargo kümesine giremez",
 );
 kontrol(
   "① gövde shippedAt koşulunu taşıyor",
@@ -85,15 +101,23 @@ kontrol(
 );
 kontrol(
   "① elle girilmiş + kargolanmamış → BEKLİYOR",
-  kargoBekliyorMu({ shippedAt: null, importKaynak: null }),
+  kargoBekliyorMu({ shippedAt: null, importKaynak: null, stokBagiVar: false }),
 );
 kontrol(
-  "① içe aktarılmış + tarihsiz → BEKLEMİYOR (bilinmiyor, çıkmadı değil)",
-  !kargoBekliyorMu({ shippedAt: null, importKaynak: "satis-excel" }),
+  "① içe aktarılmış + BAĞSIZ → BEKLEMİYOR (bilinmiyor, çıkmadı değil)",
+  !kargoBekliyorMu({ shippedAt: null, importKaynak: "satis-excel", stokBagiVar: false }),
 );
 kontrol(
-  "① kargolanmış → BEKLEMİYOR",
-  !kargoBekliyorMu({ shippedAt: new Date("2026-08-20T00:00:00Z"), importKaynak: null }),
+  "① içe aktarılmış + ONAYLI (bağ var) → BEKLİYOR (K164)",
+  kargoBekliyorMu({ shippedAt: null, importKaynak: "enumerasyon", stokBagiVar: true }),
+);
+kontrol(
+  "① kargolanmış → BEKLEMİYOR — bağ olsa bile",
+  !kargoBekliyorMu({
+    shippedAt: new Date("2026-08-20T00:00:00Z"),
+    importKaynak: null,
+    stokBagiVar: true,
+  }),
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -140,7 +164,7 @@ for (const [ad, yol] of OKUYUCULAR) {
   );
   kontrol(
     "③ " + ad + " gövdeyi KULLANIYOR (import yetmez)",
-    /\.\.\.KARGO_BEKLEYEN|\?\s*KARGO_BEKLEYEN\s*:/.test(kod),
+    /\.\.\.KARGO_BEKLEYEN|\?\s*KARGO_BEKLEYEN\s*:|veKosullari\.push\(KARGO_BEKLEYEN\)/.test(kod),
     yol + " içeri alıyor ama yaymıyor — ölü import",
   );
 }

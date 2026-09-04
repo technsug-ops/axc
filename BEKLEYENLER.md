@@ -13,6 +13,53 @@
 
 ---
 
+## ✅ K164 — ONAY KUYRUĞU KURULDU · 04.09.2026 · [KOD KOŞTU]
+
+> **Halil:** _"onay kuyruğunu yap"_ — akış: sipariş düşer → FIFO maliyeti
+> onaylanır → stok düşer → NET hesaplanır → kargolanacaklara girer.
+
+**KURULAN:**
+- `src/lib/onay-kuyrugu.ts` — kuyruğun TEK sahibi (İlke #16: panel sayısı,
+  liste süzgeci, eylem ön-kontrolü aynı gövdeden). Canlı-akış ayrımı
+  VERİDEN: yalnız SAATLİ `soldAt` kuyruğa girer (K163 sonrası çekimler);
+  tarihsel ~425 kayıt gürültü yapmaz (K49/K60). Ölçüldü: canlıda kuyruk
+  tam **2 gerçek sipariş** (11566296780 · 11568452783), sıfır tarihsel.
+- **Onay eylemi** (`siparisiOnayla`): saf ön-kontrol (`onayaUygunMu`) →
+  sayım + dönem kapıları (satış akışıyla AYNI gövdeler) → FIFO
+  (`acikPartiler` + `gunSonu` sınırı + `fifoDagit` — ikinci FIFO yazılmadı)
+  → SALE_OUT (occurredAt=soldAt: **saat stok defterine taşınır**, K163) →
+  AuditLog `SIPARIS_ONAYI` (parti/maliyet dağılımıyla) → kâr tazeleme
+  (işlem dışı; düşerse `karTazelendi:false` GÖRÜNÜR döner).
+- **Ekran:** satış satırında "Onayla" (yalnız kuyruktaki satırda, İlke #1) +
+  Türkçe onay diyaloğu (İlke #6 — ledger yazımı) + kodlu hata eşlemesi.
+  Panel SEVKİYAT kartına "Onay bekleyen sipariş (API)" satırı (sayı=liste,
+  adres sahibinden `/satislar?onay=1`).
+- **`KARGO_BEKLEYEN` evrimi:** bağı kurulan içe aktarılan satış kümeye
+  GİRER (ölçüt alan doluluğu değil OLAYIN İZİ: SALE_OUT). Biçim `AND`
+  taşıyıcı — paketle/okut sorgularındaki kardeş `OR` (kod araması) spread
+  ile ezilirdi; liste-suzgeci push biçimine geçti (`:382` dizi-bilinçli).
+- **Paketleme yanlış teşhisi düzeldi:** `shippedAt` boş + kümede değilse
+  artık "KARGOYA VERİLMİŞ" değil **"ONAY BEKLİYOR — panelden onaylayın"**.
+- İki canlı siparişin saati TY orderDate'inden yazıldı (tek seferlik,
+  kimlik kilitli, `SIPARIS_SAAT_DUZELTME` izli; ikinci koşum DOKUNMADI).
+  ⚠ LEGO'nun anı 02:12 İSTANBUL (23:12Z) — betiğin ilk gün-kıyası UTC'ye
+  bakıp meşru yazımı durdurdu, İstanbul-günü kıyasına çevrildi (saat
+  dilimi tuzağı, bu kez fazla ihtiyat yönünde).
+
+**BEKÇİLER:** `ice-aktarma:dogrula` +14 ölçüt (K164 bloğu: eylem kapısı ·
+saat taşınımı · parti izi · kâr tazeleme · saf gövde DEĞER testleri ·
+paketle ayrımı · sayı=liste) — 4 mutasyon 4 doğru ölçütte kırmızı, bit-bit
+geri alındı. `kargo-bekleyen:dogrula` iki-dallı ölçüte güncellendi (+bağ
+dalı mutasyonu kırmızı) + `onay-kuyrugu` İSTİSNALAR'a gerekçesiyle girdi.
+`suzgec:dogrula` referans-eşitlikli AND ölçütüne geçti. `panel:dogrula`
+7-görev dünyasına güncellendi. Eski marj imza ölçütü öz korunarak tazelendi.
+
+⏭ AÇIK: ① satış DETAY ekranına saat + onay durumu gösterimi; ② rozet
+eşiği (K162-② notu); ③ parti ELLE seçimi (v1 FIFO otomatik — K110 spesifik
+belirleme onay diyaloğuna sonra bağlanır).
+
+---
+
 ## ✅ K163 — SİPARİŞ SAATİ DAMGASI · 04.09.2026 · [KOD KOŞTU]
 
 > **Halil:** _"siparişlerin sipariş edildiği tarihe saat damgasını
@@ -113,7 +160,7 @@ derinliği olarak DURUYOR.
 çekim logu kırmızı yazar (sessiz düşmez). Duman: görev klondan koştu,
 cikis=0; bekleyen sipariş klondan yazıldı (7854→7855 ✓).
 
-⏭ ONAY KUYRUĞU PAKETİ — Halil'in onayına sunuldu, cevap bekliyor:
+✔ ONAY KUYRUĞU PAKETİ — Halil onayladı (_"onay kuyruğunu yap"_) → **K164'te KURULDU.** Plan şuydu:
 ① "Onay bekleyen sipariş" kutusu (ölçüt: importKaynak dolu + stok bağı yok
    + iptal yok + CANLI AKIŞ — tarihsel 425 ayrımı için TY paket geçmişinden
    gerçek Shipped anı okunabilir mi ÖLÇÜLECEK; okunuyorsa geriye dönük

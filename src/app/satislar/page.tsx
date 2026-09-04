@@ -1,6 +1,7 @@
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { getTranslations } from "next-intl/server";
 import { gunDegeri, gunHassasiyetliMi, isTakvimGunu } from "@/lib/donem";
+import { onayBekleyenIdleri } from "@/lib/onay-kuyrugu";
 import { supheliVeriBulgusu } from "@/lib/uyari/faz2-veri";
 import { DogrulaButonu } from "./dogrula-butonu";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
@@ -22,6 +23,7 @@ import { IkiSatir } from "@/components/iki-satir";
 import { hazirlananSiparisKimlikleri } from "@/lib/panel/gorev-verisi";
 import { kartAdresi } from "@/lib/kart-adresi";
 import { KargoDurumu } from "./kargo-durumu";
+import { SiparisOnayi } from "./siparis-onayi";
 import { TopluKargo } from "./toplu-kargo";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
@@ -179,7 +181,11 @@ export default async function SatislarSayfasi({
     : undefined;
 
   // EKRAN VE EXCEL AYNI KOŞULU KULLANIR (bkz. lib/liste-suzgeci.ts).
-  const { kosul, pencere } = satisKosulu(p, an, supheliIdler, paketliIdler, marjIdler);
+  /** K164: sayı=liste — küme TEK sahibinden (`onay-kuyrugu`). */
+  const onayIdleri = await onayBekleyenIdleri(prisma);
+  const onayKumesi = new Set(onayIdleri);
+
+  const { kosul, pencere } = satisKosulu(p, an, supheliIdler, paketliIdler, marjIdler, onayIdleri);
 
   // Süzgeç seçenekleri VERİDEN gelir: olmayan bir seçeneğe tıklanıp boş
   // liste görülmesin.
@@ -514,6 +520,11 @@ export default async function SatislarSayfasi({
         {/* KARGO İŞARETİ AYRI SÜTUN DEĞİL, EYLEM: bu bir toggle ve tablo
             sütun bütçesi 7 (bkz. yerlesim:dogrula). Durum da burada
             görünüyor — işaretliyse tarih, değilse düğme. */}
+        {/* K164: API'den gelen satış önce ONAYLANIR (stok+kâr bağı) —
+            düğme yalnız kuyruktaki satırda (İlke #1: eylem satırda görünür). */}
+        {onayKumesi.has(satis.id) ? (
+          <SiparisOnayi saleId={satis.id} kod={satis.code ?? "—"} />
+        ) : null}
         <KargoDurumu
           saleId={satis.id}
           shippedAt={satis.shippedAt ? gunMetni(satis.shippedAt) : null}

@@ -43,16 +43,36 @@
  * kaynakta arar ve beyan edilmemiş her kullanımı kırmızı yakar — liste
  * tutmakla değil, DESEN YASAĞIYLA.
  */
-export const KARGO_BEKLEYEN = {
+import type { Prisma } from "@/generated/prisma/client";
+
+export const KARGO_BEKLEYEN: Prisma.SaleWhereInput = {
   /** Paket henüz çıkmadı (şemadaki tanım). */
   shippedAt: null,
   /**
-   * ⛔ İÇE AKTARILMIŞ SİPARİŞ KARGO BEKLEMEZ — sistem onun ne zaman
-   * çıktığını bilmiyor, "çıkmadı" DEMİYOR. Bilinmezliği iş sanmak, hiçbir
-   * eylemle kapanmayan bir görev üretir (K49).
+   * ⛔ İÇE AKTARILMIŞ SİPARİŞ KENDİLİĞİNDEN KARGO BEKLEMEZ — sistem onun ne
+   * zaman çıktığını bilmiyor, "çıkmadı" DEMİYOR. Bilinmezliği iş sanmak,
+   * hiçbir eylemle kapanmayan bir görev üretir (K49).
+   *
+   * ⭐ KAPSAM DARALDI, KURAL KALKMADI (K164, 04.09.2026): eski hâl BÜTÜN
+   * içe aktarılanları dışlıyordu (`importKaynak: null`). O ilkenin kapsamı
+   * TARİHSEL kayıttı; canlı API siparişi ONAYLANINCA (stok bağı kurulunca)
+   * gerçek bir iş olur ve kümeye GİRER. Ölçüt alan doluluğu değil OLAYIN
+   * İZİ: SALE_OUT hareketi (K60-② dersi).
+   *
+   * ⚠ `AND` TAŞIYICI, `OR` DEĞİL — spread çakışması ölçüldü: paketle/okut
+   * sorgularında kardeş `OR` (kod araması) var; üstteki `OR` onu ezerdi
+   * (anayasa: "koşul AND ile eklenir, spread ile değil"). `liste-suzgeci`
+   * kendi `AND`ini dizi-bilinçli birleştiriyor (`:382`), çakışmaz.
    */
-  importKaynak: null,
-} as const;
+  AND: [
+    {
+      OR: [
+        { importKaynak: null },
+        { items: { some: { stockMovements: { some: { type: "SALE_OUT" as const } } } } },
+      ],
+    },
+  ],
+};
 
 /**
  * Aynı sorunun SAF hâli — elimizde kayıt varken, sorgu kurmadan.
@@ -62,6 +82,11 @@ export const KARGO_BEKLEYEN = {
 export function kargoBekliyorMu(satis: {
   shippedAt: Date | null;
   importKaynak: string | null;
+  /** K164: SALE_OUT bağı — onaylanmış içe aktarılan satış kümeye girer. */
+  stokBagiVar: boolean;
 }): boolean {
-  return satis.shippedAt === null && satis.importKaynak === null;
+  return (
+    satis.shippedAt === null &&
+    (satis.importKaynak === null || satis.stokBagiVar)
+  );
 }

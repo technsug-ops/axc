@@ -52,6 +52,8 @@ export type PaketAramasi =
   | { durum: "BULUNDU"; siparis: PaketSiparisi }
   /** Kod bir satışı gösteriyor ama o satış paketlenecek listede değil. */
   | { durum: "KARGOYA_VERILMIS"; siparisKodu: string | null }
+  /** İçe aktarılmış, stok bağı KURULMAMIŞ satış — önce panelden ONAY (K164). */
+  | { durum: "ONAY_BEKLIYOR"; siparisKodu: string | null }
   | { durum: "IPTAL"; siparisKodu: string | null }
   /** Kod hiçbir satışta yok — büyük ihtimalle numara hiç girilmemiş. */
   | { durum: "HIC_YOK" };
@@ -119,6 +121,17 @@ export async function paketlemeIcinAra(kod: string): Promise<PaketAramasi> {
      */
     if (disarida.iptalTarihi) {
       return { durum: "IPTAL", siparisKodu: disarida.code };
+    }
+    /**
+     * ⭐ K164 — YANLIŞ TEŞHİS DÜZELTMESİ (Halil bulgusu 04.09.2026).
+     * Eski kod kümede olmayan her açık satışa "KARGOYA VERİLMİŞ" diyordu;
+     * oysa `shippedAt` BOŞSA kümeden düşmesinin tek sebebi içe aktarılıp
+     * henüz ONAYLANMAMIŞ olmasıdır. Ölçüldü: LEGO vakasında `shippedAt=NULL`
+     * iken ekran "kargoya verilmiş" dedi ve kullanıcıyı yanlış işe yolladı
+     * _(metin, sahip olmadığı anlamı iddia etmez)_.
+     */
+    if (disarida.shippedAt === null) {
+      return { durum: "ONAY_BEKLIYOR", siparisKodu: disarida.code };
     }
     return { durum: "KARGOYA_VERILMIS", siparisKodu: disarida.code };
   }
