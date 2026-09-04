@@ -1809,6 +1809,29 @@ kontrol(
     eylemK.includes("data: { onaylandiAt: new Date() }"),
   );
 
+  /** K164-③ (Halil düzeltmesi): maliyet GÖRÜLMEDEN onay verilmez. */
+  const onizBasi = eylemK.indexOf("export async function onayOnizleme(");
+  kontrol("önizleme eylemi VAR (salt okuma maliyet planı)", onizBasi >= 0);
+  const onizB = onizBasi >= 0 ? eylemK.slice(onizBasi, onizBasi + 3500) : "";
+  kontrol(
+    "  ...FIFO'yu HESAPLIYOR ama YAZMIYOR",
+    onizB.includes("fifoDagit(") && !onizB.includes("stockMovement.create"),
+  );
+  const dyalog = yorumsuz(
+    readFileSync("src/app/satislar/siparis-onayi.tsx", "utf8"),
+  );
+  const cagriBasi = dyalog.indexOf("await onayOnizleme(saleId)");
+  kontrol("diyalog planı SUNUCUDAN çekiyor", cagriBasi >= 0);
+  kontrol(
+    "  ...toplam maliyeti BASIYOR (karar rakamla verilir)",
+    dyalog.includes('t("onayMaliyetToplam")'),
+  );
+  const dugmeBasi = dyalog.indexOf("disabled={bekliyor || onizleme === null || !onizleme.tamam}");
+  kontrol(
+    "  ...rakam gelmeden ONAY DÜĞMESİ PASİF (mekanik kapı)",
+    dugmeBasi >= 0,
+  );
+
   const paketK = yorumsuz(readFileSync("src/app/paketle/actions.ts", "utf8"));
   const ayrimBasi = paketK.indexOf("if (disarida.shippedAt === null)");
   kontrol("paketleme: onay-bekleyen ayrımı KOŞULA bağlı", ayrimBasi >= 0);

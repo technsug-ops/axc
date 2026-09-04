@@ -71,6 +71,18 @@ Mutasyonlar: onay dalını silen · SALE_OUT'a GERİ dönen · öz-iz yazımın�
 silen — üçü de kırmızı, bit-bit geri alındı. AuditLog geçiş doldurması:
 0 iz (henüz onay yapılmamıştı — boş, doğal).
 
+─── ③ MALİYET GÖRÜLMEDEN ONAY VERİLMEZ (04.09.2026, Halil düzeltmesi:
+_"maliyet onaylayarak gitmemiz gerekiyordu"_). İlk diyalog genel cümleyle
+onaylatıyordu — kararın KENDİSİ (hangi parti · adet · birim maliyet ·
+toplam) ekranda değildi. Eklendi: `onayOnizleme` SALT-OKUMA eylemi aynı
+FIFO gövdeleriyle planı hesaplar (yazmaz), diyalog açılır açılmaz basar;
+**rakam gelmeden Onayla düğmesi pasif** (mekanik kapı). Önizleme taahhüt
+değil: yazım anı kendi işleminde yeniden hesaplar. Bekçi +6 ölçüt; iki
+mutasyon (önizlemeyi sunucudan çekmeyen · önizlemeye YAZMA ekleyen) kırmızı
+görüldü. ⚠ Önceki push turu, sözlük düzenlememin ortasına denk gelip
+i18n'de yarış-kırmızısı verdi — kilit turlar-arası korur, TUR SIRASINDA
+düzenlemeyi değil; ders: push arka plandayken sözlük/kaynak düzenlenmez.
+
 ⏭ AÇIK: ① satış DETAY ekranına saat + onay durumu gösterimi; ② rozet
 eşiği (K162-② notu); ③ parti ELLE seçimi (v1 FIFO otomatik — K110 spesifik
 belirleme onay diyaloğuna sonra bağlanır).

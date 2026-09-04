@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { PackageCheck } from "lucide-react";
@@ -16,22 +16,30 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useBicim } from "@/lib/bicim-istemci";
 import { DURUM_YAZISI } from "@/lib/renkler";
 
-import { siparisiOnayla, type SiparisOnaySonucu } from "./actions";
+import {
+  onayOnizleme,
+  siparisiOnayla,
+  type OnayOnizlemesi,
+  type SiparisOnaySonucu,
+} from "./actions";
 
 /**
  * ============================================================================
- *  SİPARİŞ ONAYI — API'DEN GELEN SATIŞI STOĞA VE KÂRA BAĞLAR (K164)
+ *  SİPARİŞ ONAYI — MALİYET GÖRÜLMEDEN ONAY VERİLMEZ (K164-③)
  * ----------------------------------------------------------------------------
- *  ⚠ ONAY DİYALOĞU VAR (İlke #6): bu bir LEDGER yazımıdır — stok düşer,
- *  maliyet damgalanır; geri alması iptal akışı ister. `KargoDurumu`nun
- *  diyalogsuz olması onun tek tıkla geri alınabilir OLMASINDANDIR; burada
- *  o gerekçe geçerli değil.
+ *  ⚠ Halil düzeltmesi 04.09.2026: ilk sürüm genel bir cümleyle onaylatıyordu
+ *  — _"maliyet onaylayarak gitmemiz gerekiyordu."_ Diyalog artık açılır
+ *  açılmaz FIFO planını SUNUCUDAN çeker (salt okuma) ve kararın kendisini
+ *  basar: hangi parti, kaç adet, hangi birim maliyet, toplam ne düşecek.
+ *  Onay düğmesi rakam GELMEDEN etkinleşmez.
  *
- *  ⚠ HATA KODLA GELİR, SABİT EŞLEMEYLE METNE ÇEVRİLİR (K57-③): ham hata
- *  ekrana basılmaz. Sonuç GÖRÜNÜR (İlke #5): başarıda kaç kalem/adet
- *  işlendiği ve kârın hesaplanıp hesaplanmadığı yazar.
+ *  ⚠ ONAY DİYALOĞU VAR (İlke #6): bu bir LEDGER yazımıdır — stok düşer,
+ *  maliyet damgalanır; geri alması iptal akışı ister.
+ *
+ *  ⚠ HATA KODLA GELİR, SABİT EŞLEMEYLE METNE ÇEVRİLİR (K57-③).
  * ============================================================================
  */
 
@@ -53,10 +61,20 @@ const HATA_ANAHTARI: Record<
 
 export function SiparisOnayi({ saleId, kod }: { saleId: string; kod: string }) {
   const t = useTranslations("Satis");
+  const bicim = useBicim();
   const router = useRouter();
   const [acik, setAcik] = useState(false);
   const [bekliyor, basla] = useTransition();
+  const [onizleme, setOnizleme] = useState<OnayOnizlemesi | null>(null);
   const [sonuc, setSonuc] = useState<SiparisOnaySonucu | null>(null);
+
+  /** Diyalog açılınca maliyet planı SUNUCUDAN gelir — karar rakamla verilir. */
+  useEffect(() => {
+    if (!acik || onizleme !== null) return;
+    basla(async () => {
+      setOnizleme(await onayOnizleme(saleId));
+    });
+  }, [acik, onizleme, saleId]);
 
   const onayla = () => {
     basla(async () => {
@@ -66,12 +84,17 @@ export function SiparisOnayi({ saleId, kod }: { saleId: string; kod: string }) {
     });
   };
 
+  const para = (kurus: number) => bicim.para(kurus, "TRY");
+
   return (
     <AlertDialog
       open={acik}
       onOpenChange={(a) => {
         setAcik(a);
-        if (!a) setSonuc(null);
+        if (!a) {
+          setSonuc(null);
+          setOnizleme(null);
+        }
       }}
     >
       <AlertDialogTrigger asChild>
@@ -93,6 +116,50 @@ export function SiparisOnayi({ saleId, kod }: { saleId: string; kod: string }) {
             {sonuc === null ? t("onayMetin") : null}
           </AlertDialogDescription>
         </AlertDialogHeader>
+
+        {/* ── MALİYET PLANI — kararın kendisi ────────────────────────────── */}
+        {sonuc !== null ? null : onizleme === null ? (
+          <p className="text-sm" role="status">
+            {t("onayOnizlemeYukleniyor")}
+          </p>
+        ) : onizleme.tamam ? (
+          <div className="space-y-2 text-sm">
+            {onizleme.kalemler.map((kalem) => (
+              <div key={kalem.sku} className="space-y-0.5">
+                <div className="font-medium tabular-nums">
+                  {kalem.sku} · {t("onayKalemAdet", { adet: kalem.adet })}
+                </div>
+                {kalem.partiler.map((p, i) => (
+                  <div key={i} className="text-muted-foreground pl-3 tabular-nums">
+                    {p.birimMaliyet === null
+                      ? t("onayPartiMaliyetsiz", {
+                          tarih: bicim.tarih(new Date(p.tarih)),
+                          adet: p.adet,
+                        })
+                      : t("onayPartiSatiri", {
+                          tarih: bicim.tarih(new Date(p.tarih)),
+                          adet: p.adet,
+                          maliyet: para(p.birimMaliyet),
+                        })}
+                  </div>
+                ))}
+              </div>
+            ))}
+            <div className="border-border border-t pt-2 font-semibold tabular-nums">
+              {t("onayMaliyetToplam")}:{" "}
+              {onizleme.toplamMaliyet === null
+                ? t("onayMaliyetBilinmiyor")
+                : para(onizleme.toplamMaliyet)}
+            </div>
+          </div>
+        ) : (
+          <p className={`text-sm ${DURUM_YAZISI.olumsuz}`} role="alert">
+            {t(HATA_ANAHTARI[onizleme.kod])}
+            {onizleme.ayrinti ? ` (${onizleme.ayrinti})` : ""}
+          </p>
+        )}
+
+        {/* ── SONUÇ ──────────────────────────────────────────────────────── */}
         {sonuc === null ? null : sonuc.tamam ? (
           <p className={`text-sm ${DURUM_YAZISI.olumlu}`} role="status">
             {sonuc.karTazelendi
@@ -105,6 +172,7 @@ export function SiparisOnayi({ saleId, kod }: { saleId: string; kod: string }) {
             {sonuc.ayrinti ? ` (${sonuc.ayrinti})` : ""}
           </p>
         )}
+
         <AlertDialogFooter>
           {sonuc?.tamam ? (
             <AlertDialogCancel>{t("onayKapat")}</AlertDialogCancel>
@@ -113,7 +181,16 @@ export function SiparisOnayi({ saleId, kod }: { saleId: string; kod: string }) {
               <AlertDialogCancel disabled={bekliyor}>
                 {t("onayVazgec")}
               </AlertDialogCancel>
-              <Button type="button" disabled={bekliyor} onClick={onayla}>
+              {/**
+               * ⛔ RAKAM GELMEDEN ONAY YOK: plan yüklenmemiş ya da hatalıysa
+               * düğme pasif — "maliyet görülmeden onay verilmez" kuralının
+               * mekanik hâli.
+               */}
+              <Button
+                type="button"
+                disabled={bekliyor || onizleme === null || !onizleme.tamam}
+                onClick={onayla}
+              >
                 {bekliyor ? t("onayIsleniyor") : t("onayla")}
               </Button>
             </>

@@ -676,3 +676,126 @@ export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu>
     return { tamam: false, kod: "YAZILAMADI" };
   }
 }
+
+/**
+ * ============================================================================
+ *  K164-③ — ONAY ÖNİZLEMESİ: MALİYET GÖRÜLMEDEN ONAY VERİLMEZ
+ * ----------------------------------------------------------------------------
+ *  Halil düzeltmesi 04.09.2026: _"maliyet onaylayarak gitmemiz gerekiyordu"_
+ *  — diyalog genel bir cümleyle onaylatıyordu; kararın KENDİSİ (hangi
+ *  parti, hangi maliyet) ekranda değildi. Bu eylem SALT OKUMA: aynı FIFO
+ *  gövdeleriyle planı HESAPLAR, HİÇBİR ŞEY YAZMAZ; diyalog rakamı basar,
+ *  onay o rakamın üstüne verilir.
+ *
+ *  ⚠ Önizleme ile yazım arasında başka bir satış partiyi tüketebilir —
+ *  yazım anı zaten kendi işlemi içinde YENİDEN hesaplıyor; önizleme bir
+ *  taahhüt değil, kararın verisidir (yetersizse yazım STOK_YETERSIZ der).
+ * ============================================================================
+ */
+export type OnayOnizlemesi =
+  | {
+      tamam: true;
+      kalemler: {
+        sku: string;
+        adet: number;
+        partiler: {
+          /** Parti giriş anı (ISO) — ekran biçimlendirir. */
+          tarih: string;
+          adet: number;
+          /** Kuruş; null = partide maliyet kaydı yok. */
+          birimMaliyet: number | null;
+        }[];
+        /** Kuruş; null = en az bir parti maliyetsiz. */
+        kalemMaliyet: number | null;
+      }[];
+      toplamMaliyet: number | null;
+    }
+  | {
+      tamam: false;
+      kod: Exclude<SiparisOnaySonucu, { tamam: true }>["kod"];
+      ayrinti?: string;
+    };
+
+export async function onayOnizleme(saleId: string): Promise<OnayOnizlemesi> {
+  await yetkiIste("satis.yaz");
+  const satis = await prisma.sale.findUnique({
+    where: { id: saleId },
+    select: {
+      soldAt: true,
+      shippedAt: true,
+      iptalTarihi: true,
+      importKaynak: true,
+      onaylandiAt: true,
+      items: {
+        select: {
+          id: true,
+          variantId: true,
+          quantity: true,
+          variant: { select: { sku: true } },
+          stockMovements: {
+            where: { type: "SALE_OUT" },
+            select: { id: true },
+            take: 1,
+          },
+        },
+      },
+    },
+  });
+  if (!satis) return { tamam: false, kod: "BULUNAMADI" };
+  const uygunluk = onayaUygunMu({
+    importKaynak: satis.importKaynak,
+    shippedAt: satis.shippedAt,
+    iptalTarihi: satis.iptalTarihi,
+    soldAt: satis.soldAt,
+    onaylandiAt: satis.onaylandiAt,
+    saleOutSayisi: satis.items.reduce(
+      (toplam, k) => toplam + k.stockMovements.length,
+      0,
+    ),
+  });
+  if (!uygunluk.uygun) return { tamam: false, kod: uygunluk.sebep };
+
+  /** Yazımla AYNI parçalar, AYNI sınır — ama hiçbir yazma yok. */
+  const partiDurumu = new Map<string, Parti[]>();
+  const kalemler: Extract<OnayOnizlemesi, { tamam: true }>["kalemler"] = [];
+  let toplamMaliyet: number | null = 0;
+  for (const k of satis.items) {
+    const partiler =
+      partiDurumu.get(k.variantId) ??
+      (await acikPartiler(prisma, k.variantId, gunSonu(satis.soldAt)));
+    const dagitim = fifoDagit(partiler, k.quantity);
+    if (!dagitim.yeterliMi) {
+      return {
+        tamam: false,
+        kod: "STOK_YETERSIZ",
+        ayrinti: k.variant.sku + ": " + dagitim.mevcut + "/" + k.quantity,
+      };
+    }
+    partiDurumu.set(k.variantId, dagitim.kalanPartiler);
+    let kalemMaliyet: number | null = 0;
+    const paylar = dagitim.dagitim.map((pay) => {
+      const bm =
+        pay.parti.birimMaliyet === null
+          ? null
+          : Math.round(Number(pay.parti.birimMaliyet) * 100) / 100;
+      if (bm === null) kalemMaliyet = null;
+      else if (kalemMaliyet !== null)
+        kalemMaliyet = Math.round((kalemMaliyet + bm * pay.adet) * 100) / 100;
+      return {
+        tarih: pay.parti.occurredAt.toISOString(),
+        adet: pay.adet,
+        birimMaliyet: bm,
+      };
+    });
+    if (kalemMaliyet === null) toplamMaliyet = null;
+    else if (toplamMaliyet !== null)
+      toplamMaliyet = Math.round((toplamMaliyet + kalemMaliyet) * 100) / 100;
+    kalemler.push({
+      sku: k.variant.sku,
+      adet: k.quantity,
+      partiler: paylar,
+      kalemMaliyet,
+    });
+  }
+  return { tamam: true, kalemler, toplamMaliyet };
+}
