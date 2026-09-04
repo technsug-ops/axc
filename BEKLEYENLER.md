@@ -41,9 +41,11 @@ saf gövde DEĞER testi · iki görünüm × İlke #11 kapısı). Eski "güne yu
 260→900 ölçülerek büyütüldü). İki mutasyon kırmızı görüldü, bit-bit geri
 alındı.
 
-⏭ AÇIK: ① geçmiş 440 API satışının saatleri TY'den geriye dönük
-doldurulabilir (orderDate elde) — onaylı ayrı yazım; ② satış DETAY ekranına
-saat gösterimi onay kuyruğu paketiyle.
+✖ KAPANDI — GERİYE DÖNÜK DOLDURMA YAPILMAYACAK (Halil kararı 04.09.2026):
+_"Saatleri geçmişe devam ettirmene gerek yok, mevcuttan ileriye gitmesi
+yeterli."_ Geçmiş 440 API satışı gün hassasiyetinde KALIR; bu kalem
+YENİDEN AÇILMAZ (kapatma kararı da panoya yazılır kuralı).
+⏭ AÇIK: satış DETAY ekranına saat gösterimi — onay kuyruğu paketiyle.
 
 ---
 
