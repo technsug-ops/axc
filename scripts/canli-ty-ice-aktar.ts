@@ -1,6 +1,7 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
+import { kilitDurumu } from "./bekci-kilit";
 import { canliYapilandirma } from "./canli-ortak";
 import {
   UCLAR,
@@ -128,7 +129,29 @@ export function iptalAniCoz(
   return new Date(enSon);
 }
 
+/**
+ * ═══ BEKÇİ TURU KOŞARKEN CANLI YAZIM KOŞMAZ (K162-②) ═════════════════════
+ * Mutasyon harness'leri kaynak dosyaları anlık bozup geri yazar ve bu
+ * betiğin import zinciri o hedef listesiyle KESİŞİYOR (ölçüldü 04.09.2026:
+ * `varyant-arama-kurali.ts` bir harness'in hedefi). Tur sırasında koşan bir
+ * çekim MUTANT arama kuralıyla siparişi yanlış varyanta bağlayabilirdi —
+ * 5 dk'lık rutin bu pencereyi her turda 2-3 kez açıyor.
+ *
+ * Kapı: `.bekci-kilidi` varken bu koşum ATLANIR ve sebebi yazılır (sessiz
+ * değil); çıkış 0 — zamanlayıcı hata saymaz, sonraki koşum yakalar.
+ * Bekçisi: `ice-aktarma:dogrula` (kaldıran ve körelten mutasyon sınandı).
+ */
+function bekciTuruKosuyorMu(): boolean {
+  return kilitDurumu().canli;
+}
+
 async function main() {
+  if (bekciTuruKosuyorMu()) {
+    console.log("");
+    console.log("⏭ BEKÇİ TURU KOŞUYOR (.bekci-kilidi) — bu çekim ATLANDI; sonraki koşum yakalar.");
+    console.log("");
+    return;
+  }
   const k = kimlikOku();
   if (!k) {
     console.log("\n⛔ ANAHTAR OKUNAMADI (.env.canli)\n");

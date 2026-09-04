@@ -58,13 +58,9 @@
  * ============================================================================
  */
 
-import {
-  existsSync,
-  readFileSync,
-  statSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
+
+import { KILIT, kilitDurumu } from "./bekci-kilit";
 import { spawnSync } from "node:child_process";
 
 /**
@@ -86,24 +82,13 @@ import { spawnSync } from "node:child_process";
  *  SESSİZ DEĞİL, ekrana yazılır (boş ≠ temiz).
  * ============================================================================
  */
-const KILIT = ".bekci-kilidi";
-const KILIT_BAYAT_MS = 90 * 60_000;
-
-function pidYasiyor(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (e) {
-    /** EPERM = süreç VAR ama dokunma iznimiz yok → yaşıyor sayılır. */
-    return (e as NodeJS.ErrnoException).code === "EPERM";
-  }
-}
-
+/** Ölçüt ORTAK gövdede (`bekci-kilit.ts`) — çekim kapısı da aynısını okur. */
 function kilidiAl(): void {
-  if (existsSync(KILIT)) {
-    const pid = parseInt(readFileSync(KILIT, "utf8").trim(), 10);
-    const yasMs = Date.now() - statSync(KILIT).mtimeMs;
-    if (Number.isFinite(pid) && pidYasiyor(pid) && yasMs < KILIT_BAYAT_MS) {
+  const durum = kilitDurumu();
+  if (durum.pid !== null || durum.yasMs !== null) {
+    const pid = durum.pid ?? NaN;
+    const yasMs = durum.yasMs ?? 0;
+    if (durum.canli) {
       console.log("");
       console.log("⛔ BAŞKA BİR BEKÇİ TURU KOŞUYOR (pid " + pid + ") — İKİNCİ TUR AÇILMAZ.");
       console.log("   İki eşzamanlı tur, mutasyon harness'leri aynı dosyaları bozup geri");

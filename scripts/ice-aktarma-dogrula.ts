@@ -1658,5 +1658,35 @@ kontrol(
   );
 }
 
+/**
+ * ═══ K162-② — BEKÇİ TURU KOŞARKEN CANLI YAZIM KOŞMAZ ════════════════════
+ * Harness'ler kaynak dosyaları anlık bozup geri yazıyor ve çekimin import
+ * zinciri hedef listeyle kesişiyor (`varyant-arama-kurali.ts`). 5 dk'lık
+ * rutin pencereyi her turda açar: kapı yoksa MUTANT kuralla sipariş yanlış
+ * varyanta bağlanabilir. Ölçüt ORTAK gövdeye bağlı (`bekci-kilit.ts`) —
+ * iki yerde iki farklı bayatlık kuralı olmasın.
+ * ⚠ Desenler bilerek ters bölüsüz: bu ölçütler üç kez kaçış bozulmasıyla
+ * yazıldı (04.09.2026) — `includes` + VARLIK kapılı `indexOf`.
+ */
+{
+  console.log("K162-② canlı yazım kapısı — bekçi turu koşarken çekim koşmaz");
+  const cekimKaynak = yorumsuz(
+    readFileSync("scripts/canli-ty-ice-aktar.ts", "utf8"),
+  );
+  const kapiBasi = cekimKaynak.indexOf("if (bekciTuruKosuyorMu())");
+  /** ⚠ indexOf -1 tuzağı: VARLIK ayrıca kapılanır. */
+  kontrol("kapı çağrısı çekimde duruyor", kapiBasi >= 0);
+  const kapiBloku =
+    kapiBasi >= 0 ? cekimKaynak.slice(kapiBasi, kapiBasi + 400) : "";
+  kontrol(
+    "  ...sonucuyla birlikte: ATLANDI yazıp dönüyor",
+    kapiBloku.includes("ATLANDI") && kapiBloku.includes("return;"),
+  );
+  kontrol(
+    "  ...ölçüt ORTAK gövdeden (kilitDurumu().canli)",
+    cekimKaynak.includes("return kilitDurumu().canli;"),
+  );
+}
+
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
 process.exit(hata === 0 ? 0 : 1);

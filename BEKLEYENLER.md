@@ -46,6 +46,23 @@
 - Kurulum/kaldırma: PowerShell Register-ScheduledTask / Unregister-ScheduledTask,
   görev adı "Selliora TY Sik Cekim" (komut yoruma değil buraya yazılır).
 
+─── ② ÇEKİM 5 DAKİKAYA İNDİ + CANLI-YAZIM KAPISI (04.09.2026, Halil:
+"zamanı kısaltmamız lazım" + "kontrolü yap"). Webhook yeteneği bugün YOK
+(TY/HB webhook'u internete açık imzalı alıcı uç ister — Faz 4 kalemi);
+aralık 30 dk → **5 dk** yapıldı (koşum 7 sn, idempotent).
+⚠ SIKLIK BİR RİSKİ ÖNE ÇIKARDI VE KAPANDI: harness hedef listesi ile
+çekimin import zinciri KESİŞİYOR (`varyant-arama-kurali.ts`) — tur
+sırasında koşan çekim mutant kuralla siparişi yanlış varyanta
+bağlayabilirdi. Kapı: kilit CANLIYKEN çekim ATLANIR (çıkış 0, sebep
+yazılır). Ölçüt ORTAK gövdede `scripts/bekci-kilit.ts` (bekçi + çekim
+aynı bayatlık kuralını okur — iki yerde iki ölçüt olmaz).
+Kanıtlar: iki yönlü mutasyon (kapıyı öldüren 257/259 · körelten 258/259,
+ikisi de KENDİ ölçütünde kırmızı) · uçtan uca canlı-kilit koşumu ATLANDI/
+kilitsiz normal · bit-bit geri alma. Görevler yeniden AÇIK.
+⚠ Rozet eşiği (26 saat) BEKLİYOR: 5 dk periyoda göre eşik, makinenin
+açık kalma düzenine bağlı — gece kapalıysa 1 saatlik eşik her sabah
+yalancı kırmızı yakar. Halil'in düzeni öğrenilince türetilecek.
+
 ⏭ ONAY KUYRUĞU PAKETİ — Halil'in onayına sunuldu, cevap bekliyor:
 ① "Onay bekleyen sipariş" kutusu (ölçüt: importKaynak dolu + stok bağı yok
    + iptal yok + CANLI AKIŞ — tarihsel 425 ayrımı için TY paket geçmişinden
