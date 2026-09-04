@@ -101,7 +101,7 @@ import {
 import { MarjSerhi } from "@/components/marj-serhi";
 import { marjBasilabilirMi, marjSerhi } from "@/lib/ice-aktarma-serhi";
 import { prisma } from "@/lib/prisma";
-import { DURUM_SERIDI, karDurumu } from "@/lib/renkler";
+import { DURUM_SERIDI, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
 import { VitrinKutusu } from "./vitrin-kutusu";
@@ -113,6 +113,7 @@ import {
 } from "@/lib/panel/gorev-verisi";
 import { vitrinKutusunuTopla } from "@/lib/panel/vitrin-verisi";
 import { tarifeUyarisiVarMi } from "@/lib/panel/tarife-penceresi";
+import { sonTyCekimi, tyCekimDurumu } from "@/lib/panel/ty-cekim-yasi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import {
   analizAdresi as urunAnaliziAdresi,
@@ -768,6 +769,10 @@ export default async function AnaSayfa({
    *  SON_3_AY) gösteriyor. Aynı kelimeyi iki kavram için kullanmak, bugün
    *  anayasaya yazılan dersin değişken düzeyindeki hâli olurdu. */
   const muhasebeDonemi = await donemOzeti(new Date());
+
+  /** ⭐ TY ÇEKİM ROZETİ (04.09.2026) — zamanlayıcı kaçarsa EKRAN söyler;
+   *  saf gövde + iz okuması ayrı (bkz. lib/panel/ty-cekim-yasi.ts). */
+  const tyCekim = tyCekimDurumu(await sonTyCekimi(prisma), new Date());
 
   const bloklar = panelHesapla(
     donem,
@@ -2014,6 +2019,24 @@ export default async function AnaSayfa({
               bu: bicim.ayYil(
                 new Date(Date.UTC(muhasebeDonemi.buDonem.yil, muhasebeDonemi.buDonem.ay - 1, 1)),
               ),
+            })}
+      </p>
+      {/*
+        ⭐ TY ÇEKİM ROZETİ — dönem satırı gibi TEK SATIR bağlam; ama rutin
+        KAÇMIŞSA kırmızı: "kaçışın kendisi görünür kılınır" (Vercel Cron
+        dersi). YOK ile TAZE ayrı söylenir — yokluk tazelik sanılmasın.
+      */}
+      <p
+        className={
+          tyCekim.durum === "TAZE"
+            ? "text-muted-foreground text-xs"
+            : `text-xs font-medium ${DURUM_YAZISI.olumsuz}`
+        }
+      >
+        {tyCekim.durum === "YOK"
+          ? t("tyCekimYok")
+          : t(tyCekim.durum === "TAZE" ? "tyCekimTaze" : "tyCekimEski", {
+              saat: Math.round(tyCekim.saat),
             })}
       </p>
       {/* ⚠ SÜZGEÇLİ ADRESİ HATIRLAR — hiçbir şey ÇİZMEZ (K104-②).

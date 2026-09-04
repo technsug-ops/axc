@@ -325,6 +325,55 @@ sonraki içe aktarma aynı hatayı tekrarlamayacak.
 
 ---
 
+## ✅ K158 — TY GÜNLÜK ÇEKİM RUTİNİ + PANEL ROZETİ · 04.09.2026 · [KOD KOŞTU]
+
+> **Halil:** _"TY'de devam edelim."_ Durum ölçülmüştü: son çekim 9 gün
+> önceydi; Eylül'ün 47 satışının 47'si elle girilmişti, API'den 0.
+
+### ⭐ KURULAN — İKİ PARÇA
+
+**① Windows Görev Zamanlayıcı (bu makinede):** her gün 08:00,
+`scripts/ty-gunluk-cekim.cmd` → `canli:ty-ice-aktar --yaz`.
+· Anahtarlar makinede kalır (A3 sınırı bozulmaz) · çakışan sipariş ASLA
+ezilmez (taze koşum kanıtı: 521 pencere siparişinin 520'si zatenVar —
+elle girişler API ile birebir tutuyor) · log kırpılmaz:
+`raporlar/ty-cekim.log` · duman testi: çıkış 0, gerçek çekim yaptı.
+Kurulum: `schtasks /Create /TN "Selliora TY Cekim" /TR "...cmd" /SC DAILY /ST 08:00`
+Kaldırma: `schtasks /Delete /TN "Selliora TY Cekim" /F`
+
+**② Panel rozeti "son TY çekimi":** zamanlayıcı kaçarsa EKRAN söyler
+(Vercel Cron dersi: kaçışın kendisi görünür kılınır). Saf gövde
+`lib/panel/ty-cekim-yasi.ts`: eşik **26 saat** (rutin günlük 24 + 2 pay
+— rutinden türetilmiş, uydurma değil) · `YOK` ayrı dal (yokluk tazelik
+sanılmasın) · ESKİ/YOK kırmızı (renk JETONDAN — ham `text-red-600`
+tasarım bekçisine takıldı, `DURUM_YAZISI.olumsuz`a çevrildi).
+Bekçi 654→659 (eşik İKİ YAKASI + YOK + sabit + kaynak bağı) · **2
+mutasyon kırmızı** (YOK dalı · eşik karşılaştırması).
+
+### ⛔ İKİ DERS — İKİSİ DE BU KURULUMDA YENDİ
+
+1. **Ölçüt bloğu özetin İÇİNE kondu ve mutasyonlar YEŞİL geçti** — blok
+   `if (basarisiz === 0)` dalındaydı: kontroller koşuyor, sonucu çıkışı
+   etkilemiyordu (anayasa: "ölçüt bloğu özet ve çıkış kodundan ÖNCE
+   koşar" — birebir tekrar). Blok öne taşındı, mutasyonlar ancak o zaman
+   kırmızı yandı.
+2. **`.cmd` yorumundaki KOMUT ÇALIŞTI:** ilk sürüm UTF-8/Türkçe
+   karakterliydi, batch parse bozuldu, `rem` satırları komut gibi koştu
+   ve yorumda örnek diye duran `schtasks /Delete` GÖREVİ SİLDİ. Kural:
+   `.cmd` saf ASCII + CRLF yazılır ve YORUMA KOMUT YAZILMAZ (komutlar
+   panoya). Ayrıca `schtasks` Git Bash'ten çağrılmaz (yol çevirisi
+   bozuyor) — PowerShell'den.
+
+### HALİL TEST LİSTESİ
+1. Yarın 08:00 sonrası panel: "Trendyol çekimi: N saat önce" gri satır.
+2. `raporlar/ty-cekim.log` sonunda bugünün BASLADI/BITTI çifti.
+3. Makineyi bir sabah kapalı bırak → rozet KIRMIZI "rutin kaçtı" yazmalı.
+mobil doğrulama kullanıcıda · i18n ✓ (3 yeni anahtar tr+en)
+
+⏭ HB API: anahtar YOK — başvuru Halil'de (soruldu, cevap bekleniyor).
+
+---
+
 ## ✅ K157 — MARJ ŞERHİ RAKAMI KAYNAĞA GÖTÜRÜYOR (İLKE #16) · 04.09.2026 · [KOD KOŞTU]
 
 > **Halil (panel ekran görüntüsüyle):** _"Burada hata ekranı hataya

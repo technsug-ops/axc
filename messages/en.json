@@ -2078,7 +2078,10 @@
     "operasyonSiparis": "",
     "siparisAdedi": "",
     "siparisToplamAlim": "",
-    "siparisKabulBekliyor": ""
+    "siparisKabulBekliyor": "",
+    "tyCekimTaze": "",
+    "tyCekimEski": "",
+    "tyCekimYok": ""
   },
   "Envanter": {
     "baslik": "",

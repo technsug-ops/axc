@@ -2078,7 +2078,10 @@
     "operasyonSiparis": "Satın alınan",
     "siparisAdedi": "Satın alınan",
     "siparisToplamAlim": "{tutar} sipariş tutarı",
-    "siparisKabulBekliyor": "{sayi} tanesi henüz gelmedi"
+    "siparisKabulBekliyor": "{sayi} tanesi henüz gelmedi",
+    "tyCekimTaze": "Trendyol çekimi: {saat} saat önce",
+    "tyCekimEski": "⚠ Trendyol çekimi {saat} SAAT ÖNCE — günlük rutin kaçtı, zamanlayıcıyı kontrol edin",
+    "tyCekimYok": "⚠ Trendyol çekimi: hiç iz yok"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

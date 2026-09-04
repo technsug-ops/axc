@@ -18,6 +18,7 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { TY_CEKIM_ESIK_SAAT, tyCekimDurumu } from "../src/lib/panel/ty-cekim-yasi";
 import {
   duzenGecerliMi,
   duzeniCoz,
@@ -5470,9 +5471,29 @@ console.log("\nZAMAN TABLOSU SIRASI — EN YENİ ÜSTTE (K125)");
 }
 
 // ===========================================================================
+/** ═══ TY ÇEKİM ROZETİ (04.09.2026) — saf gövde DEĞER testleri ═══
+ *  Eşiğin İKİ YAKASI ayrı sınanır; YOK dalı ayrı — yokluk tazelik
+ *  sanılmasın (boş ≠ temiz). Kaynak: lib/panel/ty-cekim-yasi. */
+{
+const an = new Date("2026-09-04T12:00:00Z");
+const st = (saatOnce: number) => new Date(an.getTime() - saatOnce * 3_600_000);
+kontrol("TY rozeti: iz yoksa YOK (0 saat değil)",
+  tyCekimDurumu(null, an).durum === "YOK");
+kontrol("TY rozeti: 25 saat TAZE (eşik 26'nın altı)",
+  tyCekimDurumu(st(25), an).durum === "TAZE");
+kontrol("TY rozeti: 27 saat ESKİ (eşik aşıldı — rutin kaçtı)",
+  tyCekimDurumu(st(27), an).durum === "ESKI");
+kontrol("TY rozeti: eşik sabiti rutinden türetilmiş (26 = 24+2 pay)",
+  TY_CEKIM_ESIK_SAAT === 26);
+const panelKaynagi = readFileSync("src/app/page.tsx", "utf8");
+kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
+  /tyCekimDurumu\(await sonTyCekimi\(prisma\), new Date\(\)\)/.test(panelKaynagi));
+}
+
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) {
-  console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
+
+console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
 } else {
   console.log(`${basarisiz} KONTROL BAŞARISIZ (${calisan} kontrolden)`);
   process.exitCode = 1;
