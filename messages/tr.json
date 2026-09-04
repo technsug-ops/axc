@@ -1,4 +1,33 @@
 {
+  "KanalGonderim": {
+      "dugme": "TY'ye Gönder",
+      "baslik": "Trendyol'a stok/fiyat gönder",
+      "aciklama": "Aşağıdaki rakamlar gönderilmeden önce sana gösterilir; onaylamadan hiçbir şey Trendyol'a gitmez.",
+      "yukleniyor": "Bilgiler yükleniyor…",
+      "barkod": "Kanal barkodu",
+      "selioraStok": "Selliora stoğu",
+      "kanalAdet": "TY'nin bildirdiği",
+      "kanalAdetOlculmedi": "ölçülmedi",
+      "stokGonder": "Stoğu gönder ({adet} adet olarak güncellenecek)",
+      "fiyatEtiketi": "Yeni fiyat (boş bırak = fiyata dokunma)",
+      "fiyatIpucu": "örn. 2.899,90",
+      "gonderilecekYokUyari": "Ne stok ne fiyat seçili — gönderilecek bir şey yok.",
+      "gonderOnayla": "Gönder",
+      "gonderiliyor": "Gönderiliyor…",
+      "vazgec": "Vazgeç",
+      "kapat": "Kapat",
+      "gonderilmedi": "gönderilmedi",
+      "basari": "Trendyol kabul etti — stok: {stok} · fiyat: {fiyat} · kuyruk durumu: {durum}. Sonuç birkaç dakika içinde TY panelinde görünür.",
+      "hataKanalSkuYok": "Bu ürünün Trendyol kanal kodu (Kanal SKU) tanımlı değil — önce Kanal SKU ekranından eşleştir.",
+      "hataHesapYok": "Aktif Trendyol satış hesabı bulunamadı.",
+      "hataVaryantYok": "Ürün bulunamadı.",
+      "hataGonderilecekYok": "Ne stok ne fiyat seçili — gönderilecek bir şey yok.",
+      "hataFiyatGecersiz": "Fiyat okunamadı — örn. 2.899,90 biçiminde yaz.",
+      "hataAnahtarYok": "Trendyol API anahtarları okunamadı.",
+      "hataTekrar15dk": "Trendyol aynı isteği 15 dakika içinde ikinci kez kabul etmiyor — birazdan tekrar dene (bu bir arıza değil, kanal kuralı).",
+      "hataKanalReddetti": "Trendyol isteği reddetti.",
+      "hataUlasilamadi": "Trendyol'a ulaşılamadı — ağ sorunu olabilir, tekrar dene."
+  },
   "Uygulama": {
     "slogan": "Çok kanallı e-ticaret operasyon yönetimi"
   },

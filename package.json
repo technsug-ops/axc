@@ -323,6 +323,7 @@
     "canli:tazmin-yaz": "tsx scripts/canli-tazmin-yaz.ts",
     "canli:hb-saglik": "tsx scripts/canli-hb-saglik.ts",
     "canli:hb-ice-aktar": "tsx scripts/canli-hb-ice-aktar.ts",
+    "kanal-yazma:dogrula": "tsx scripts/kanal-yazma-dogrula.ts",
     "canli:n11-saglik": "tsx scripts/canli-n11-saglik.ts"
   },
   "dependencies": {

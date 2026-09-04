@@ -13,6 +13,44 @@
 
 ---
 
+## 🔶 K169 — KANALA İLK YAZMA: TY'YE STOK/FİYAT GÖNDERİMİ · 05.09.2026 · [YAZILDI — deploy+yetki senkronu bekliyor]
+
+> **Halil:** _"stok girdiğimi Trendyol'a push edebilir miyim, fiyat
+> indirimini push edebilir miyim?"_ → _"başla şekerim"_. 01.09'un "stok
+> senkronu kapsam dışı" şartını SAHİBİ çevirdi (eski gerekçe
+> `schema.prisma`da duruyor).
+
+**KURULAN:**
+- `scripts/ty/yazici.ts` — kanala yazan İLK dosya. Uç resmî dokümandan:
+  POST `/integration/inventory/sellers/{id}/products/price-and-inventory`
+  (barcode zorunlu; quantity/salePrice/listPrice opsiyonel — yalnız birini
+  göndermek serbest). Uç ve fiil SABİT — ikinci uca yazmak dosyada
+  imkânsız. Batch sonucu OKUMA istemcisindeki `topluIslem` GET'iyle.
+- `api:dogrula` → **KANALA_YAZMASI_BEYANLI** mekanizması (beyan =
+  taahhüt: gerekçe + bekçi `kanal-yazma:dogrula` 10 ölçüt).
+- Yeni izin **`kanal.yaz`** (izinler + seed SONRADAN_DOGAN; Operasyona
+  BİLEREK verilmedi — paraya dokunur). ⚠ Deploy sonrası `npm run
+  canli:yetki` ZORUNLU.
+- Eylemler (`kart/[variantId]/actions.ts`): önizleme SALT-OKUMA (barkod ·
+  Selliora stok · TY'nin bildirdiği adet KIYASI) + gönderim (stok SUNUCUDA
+  yeniden çözülür — istemciden sayı alınmaz; fiyat kullanıcıdan, boş =
+  dokunma; kabul DE red DE `KANAL_GONDERIMI` izi; TY'nin 15-dk tekrar
+  reddi AYRI kodla ekrana).
+- Ekran: ürün sayfası varyant satırı, iki görünümde (İlke #10) — **kartta
+  DEĞİL**: "kart okuma yüzeyi" kuralı + bekçisi; düğme yalnız `kanal.yaz`
+  görene çizilir.
+
+**KANITLAR:** kanal-yazma 10/10 · 3 mutasyon 3 doğru ölçütte kırmızı
+(ikinci POST · sunucu-stok çözümünü kaldıran · rakamsız gönderim) ·
+bit-bit geri · build ✓.
+
+⏭ SIRADA: push+deploy → `canli:yetki` → Halil canlıda tek ürünle dener
+(önerilen: düşük stoklu ucuz bir ürün; TY panelinden değişimi teyit eder).
+⏭ AÇIK: toplu gönderim (çok ürün) ayrı karar; HB/N11 gönderimi kanal
+onayları sonrası aynı desenle.
+
+---
+
 ## 🔶 K167 — N11 BAŞLADI · 04.09.2026 · [YAZILDI — anahtar bekleniyor]
 
 > **Halil:** _"Ayrıca N11 API'sini aldım."_ Üçüncü kanal.

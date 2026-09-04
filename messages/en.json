@@ -1,4 +1,33 @@
 {
+  "KanalGonderim": {
+      "dugme": "",
+      "baslik": "",
+      "aciklama": "",
+      "yukleniyor": "",
+      "barkod": "",
+      "selioraStok": "",
+      "kanalAdet": "",
+      "kanalAdetOlculmedi": "",
+      "stokGonder": "",
+      "fiyatEtiketi": "",
+      "fiyatIpucu": "",
+      "gonderilecekYokUyari": "",
+      "gonderOnayla": "",
+      "gonderiliyor": "",
+      "vazgec": "",
+      "kapat": "",
+      "gonderilmedi": "",
+      "basari": "",
+      "hataKanalSkuYok": "",
+      "hataHesapYok": "",
+      "hataVaryantYok": "",
+      "hataGonderilecekYok": "",
+      "hataFiyatGecersiz": "",
+      "hataAnahtarYok": "",
+      "hataTekrar15dk": "",
+      "hataKanalReddetti": "",
+      "hataUlasilamadi": ""
+  },
   "Uygulama": {
     "slogan": ""
   },

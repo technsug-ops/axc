@@ -161,9 +161,39 @@ function prismayaUlasiyorMu(govde: string): boolean {
     /new PrismaClient\(/.test(govde);
 }
 
+/**
+ * ═══ K169 — KANALA YAZMA BEYANI: İLK YAZAN DOSYA ═════════════════════════
+ * "Yalnız GET" kuralı 05.09.2026'ya kadar mutlaklıktı; Halil stok/fiyat
+ * gönderimini isteyince kapı AÇILDI — ama liste hâlâ desen değil BEYANDIR:
+ * dosya + gerekçe + kendi bekçisi. Beyanlı dosyada bile başıboş fiil yok:
+ * tek POST'a ve sabit uca daraltma `kanal-yazma:dogrula`da ölçülür.
+ */
+const KANALA_YAZMASI_BEYANLI = new Map<string, { gerekce: string; bekcisi: string }>([
+  [
+    "scripts/ty/yazici.ts",
+    {
+      gerekce:
+        "K169: TY stok/fiyat gönderimi (Halil kararı 05.09.2026 — 01.09 'kapsam dışı' şartını sahibi çevirdi). Tek uç, tek fiil; önizlemesiz/izsiz gönderim yok.",
+      bekcisi: "kanal-yazma:dogrula",
+    },
+  ],
+]);
+
 for (const yol of apiDosyalari) {
   const y = yorumsuzla(readFileSync(yol, "utf8"));
   const bulunanlar = YASAK.filter((x) => y.includes(x.desen)).map((x) => x.ad);
+  const kanalBeyani = KANALA_YAZMASI_BEYANLI.get(yol.split("\\").join("/"));
+  if (kanalBeyani) {
+    const komutlar = JSON.parse(readFileSync("package.json", "utf8")) as {
+      scripts: Record<string, string>;
+    };
+    kontrol(
+      `  ${yol} — KANALA YAZICI beyanlı, bekçisi kayıtlı (${kanalBeyani.bekcisi})`,
+      Boolean(komutlar.scripts[kanalBeyani.bekcisi]),
+      kanalBeyani.bekcisi,
+    );
+    continue;
+  }
   kontrol(`  ${yol} — yalnız GET`, bulunanlar.length === 0, bulunanlar);
 
   /**

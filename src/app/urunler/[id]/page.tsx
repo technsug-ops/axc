@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { sayfaIzni } from "@/lib/yetki";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { PackagePlus, Pencil } from "lucide-react";
@@ -7,6 +7,7 @@ import { PackagePlus, Pencil } from "lucide-react";
 import { Baglanti, GeriBaglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
+import { TyGonderim } from "../../kart/[variantId]/ty-gonderim";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,6 +61,8 @@ export default async function UrunDetaySayfasi({
 
   // Stok hesabı tek yerde: src/lib/stok.ts (ledger toplamı).
   const stokHaritasi = await varyantStoklari(urun.variants.map((v) => v.id));
+  /** K169: kanala gönderim düğmesi yalnız yetkili göze çizilir. */
+  const kanalYazGorunur = await izinVarMi("kanal.yaz");
 
   /** Alım kısayolu bunu taşır; sıralama zaten isDefault'u başa alıyor. */
   const varsayilanVaryant =
@@ -231,9 +234,16 @@ export default async function UrunDetaySayfasi({
                         varyantı ayrı satar, ayrı kâr eder. Bağlantı bu yüzden
                         ürün başlığında değil, varyant satırında. */}
                     <TableCell className="text-right">
-                      <Baglanti href={`/kart/${varyant.id}`}>
-                        {tUrun("karlilikKarti")}
-                      </Baglanti>
+                      <span className="inline-flex items-center gap-2">
+                        {/* K169: kanala gönderim EYLEM yüzeyinde — kart
+                            okuma yüzeyi kuralı gereği kartta DEĞİL burada. */}
+                        {kanalYazGorunur ? (
+                          <TyGonderim variantId={varyant.id} />
+                        ) : null}
+                        <Baglanti href={`/kart/${varyant.id}`}>
+                          {tUrun("karlilikKarti")}
+                        </Baglanti>
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -306,6 +316,11 @@ export default async function UrunDetaySayfasi({
                     ),
                   },
                 ]}
+                eylemler={
+                  kanalYazGorunur ? (
+                    <TyGonderim variantId={varyant.id} />
+                  ) : undefined
+                }
               />
             ))}
           </div>

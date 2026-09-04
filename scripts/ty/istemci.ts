@@ -183,6 +183,10 @@ export async function tumSayfalar(
  * "yanlışlıkla çağırma" ihtimali doğardı; yazılmadıkları için çağrılamazlar.
  */
 export const UCLAR = {
+  /** K169: toplu işlem SONUÇ sorgusu — batch kabulünden sonra durum OKUMA
+   *  ucudur (yazma `ty/yazici.ts`te; buradaki yalnız GET). */
+  topluIslem: (saticiId: string, batchRequestId: string) =>
+    `/integration/product/sellers/${saticiId}/products/batch-requests/${batchRequestId}`,
   /** Sipariş listesi — pencere en fazla 90 gün (A3-①b'de ölçüldü). */
   siparisler: (saticiId: string, bas: number, son: number, sayfa: number, boyut = 200) =>
     `/integration/order/sellers/${saticiId}/orders?startDate=${bas}&endDate=${son}&page=${sayfa}&size=${boyut}`,
