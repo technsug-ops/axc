@@ -325,6 +325,33 @@ sonraki içe aktarma aynı hatayı tekrarlamayacak.
 
 ---
 
+## 🔶 K159 — TY YAZMA ERTELENDİ (KARAR) + HB TEST API BAŞLADI · 04.09.2026
+
+**TY→KANAL YAZMA — HALİL KARARI: "yazma sonra olsun".** Teknik imkân ve
+risk tablosu sunuldu (stok · fiyat · kargo bildirimi · listing); Faz 4
+kalemi öne ÇEKİLMEDİ. ⏭ Açılış şartı: Halil "başla" dediğinde — önerilen
+ilk uç STOK (oversell'i keser). O güne kadar istemci SALT OKUMA kalır
+(`api-dogrula` bekçisi bunu zaten tarıyor).
+
+**HB TEST API:** Halil anahtarları `.env.canli`ye ekledi
+(HEPSIBURADA_MERCHANT_ID / _API_KEY / _ORTAM=TEST — değerler hiçbir
+çıktıya girmedi, girmez). `canli:hb-saglik` yazıldı — TY sağlık
+disiplininin aynısı (GET-only · anahtar yalnız bellekte · BEŞ sonuç
+ayrımı: AÇIK / AÇIK-BOŞ / YETKİSİZ / YOL_YOK / ULAŞILAMADI).
+
+İlk ölçüm (SIT ortamı):
+
+    OMS siparişler   YETKİSİZ (401)      ← host+yol VAR, kimlik reddedildi
+    OMS paketler     YETKİSİZ (401)
+    Listing listesi  YETKİSİZ (401)
+
+⏭ HALİL'DE: portaldaki test bilgilerinin ALAN ADLARI (değerler asla) —
+muhtemel sebep: ayrı "kullanıcı adı" alanı ya da SIT'in kendi anahtarı.
+Cevap gelince eşleştirilip yeniden ölçülecek; sonrası TY iskeletinin
+aynısı (sipariş çekimi).
+
+---
+
 ## ✅ K158 — TY GÜNLÜK ÇEKİM RUTİNİ + PANEL ROZETİ · 04.09.2026 · [KOD KOŞTU]
 
 > **Halil:** _"TY'de devam edelim."_ Durum ölçülmüştü: son çekim 9 gün
