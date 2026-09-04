@@ -32,6 +32,11 @@ const ACIK_YOLLAR = [
   // Vercel Cron'un çağırdığı uç: kendi CRON_SECRET koruması var ve
   // tarayıcı oturumu taşıyamaz. Korumasız DEĞİL, farklı korumalı.
   "/api/yedek/otomatik",
+  // K166 — dış zamanlayıcının çağırdığı TY çekim ucu: aynı sınıf, kendi
+  // CRON_SECRET kapısı var (yanlış/boş sır 404, `ice-aktarma:dogrula`
+  // kapıyı mutasyonla sınıyor). İlk canlı test bu satır OLMADAN yapıldı
+  // ve oturum kapısı 401 verdi — rota kendi kapısına hiç ulaşamamıştı.
+  "/api/cron/ty-cekim",
 
   // ── PWA: TARAYICI BUNLARI ÇEREZSİZ İSTER ──────────────────────────────
   //
