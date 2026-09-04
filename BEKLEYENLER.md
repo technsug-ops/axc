@@ -13,6 +13,68 @@
 
 ---
 
+## 🔶 K160 — HB SİPARİŞ ÇEKİM İSKELETİ (ÖNİZLEME-YALNIZ) · 04.09.2026 · [KOŞTU]
+
+> **Halil:** _"onay veriyorum"_ (HB sipariş çekim iskeleti, TY kopyası).
+
+**KURULAN — üç dosya:**
+- `scripts/hb/istemci.ts` — ORTAK gövde (kimlik · Basic auth · User-Agent=
+  developer · `-sit` ortam anahtarı · `apiGet` fiilsiz imza · offset
+  sayfalaması). _TY dersi "tek gövde, iki okuyucu" doğuştan uygulandı._
+- `scripts/canli-hb-saglik.ts` istemciye bağlandı (kendi `fetch`i kalktı —
+  içinde artık hiçbir HTTP fiili geçmiyor, `api:dogrula` ölçütü).
+- `scripts/canli-hb-ice-aktar.ts` — **YAZIM YOLU TANIMSIZ, BİLEREK.**
+  TY'de alan adları ölçülerek bağlanmıştı (`commission` 564/564, tahmin
+  `commissionRate` 0/564); HB SIT'inde sipariş verisi YOK → eşleme
+  ölçülemez → yazım açılmaz. Betiğin işi: çekim + İLK kaydın alan ADLARINI
+  raporlamak (değer basılmaz) + sayfalama kanıtı.
+
+**ÖLÇÜLENLER (SIT, 04.09.2026):**
+
+    sipariş zarfı   totalCount VAR (0 ✓) · paket zarfı: beyan YOK
+    listing         30 kayıt · 3 tur (limit 10) · beyan totalCount=30 ✓
+    ⚠ menzil dışı offset **404 dönüyor** (boş dizi DEĞİL) — 404 bu uçta
+      iki anlamlı; sonlanma bu yüzden totalCount'a bağlandı, 404'e değil
+      _(iki okumayla uyumlu işarete hüküm bağlanmaz)_
+
+**BEKÇİ KAPSAMI GENİŞLEDİ:** `api:dogrula` yalnız TY izlerini tanıyordu —
+sağlık betiğinin _"bu bekçi beni tarıyor"_ iddiası BOŞTU. İzler listeye
+döndü (`apigw.trendyol.com` + `hepsiburada.com` · `ty/istemci` +
+`hb/istemci`); üç HB dosyası üç ölçütte taranıyor. Mutasyonla kanıtlandı:
+`hb/istemci.ts`e `method: "POST"` → **çıkış 1** (2 kontrol kırmızı);
+bit-bit geri alındı, temiz koşum 0.
+
+⏭ AÇILIŞ ŞARTI (yazım yolu): SIT'te test siparişi doğduğunda (HB "Sipariş
+Entegrasyonu" test adımları) alan adları ①/② çıktısıyla ölçülür; yazım
+TY disipliniyle (önce sayım · çakışmada atla · importBatch · AuditLog ·
+ikinci koşum 0) AYRI pakette açılır.
+
+---
+
+## ✅ K161 — İKİ EŞZAMANLI BEKÇİ TURU BİRBİRİNİ KİRLETTİ → TEK TUR KİLİDİ · 04.09.2026 · [KOD KOŞTU]
+
+> **VAKA:** K159 push'unun pre-push turu ile elle başlatılan tur AYNI ANDA
+> koştu. Harness'ler aynı dosyaları bozup geri yazar; iki tur yarışınca
+> biri ötekinin MUTANTINI "asıl" diye kopyalayıp geri yazdı:
+> `"kodVar": "Satışta"` sözlükte KALDI, hook turu kırmızı yandı, **push
+> düştü** (`PUSH=1` — görev sarmalayıcısı 0 gösteriyordu, push adımı 1'di:
+> "aracın çıktısı okunur, kodu değil" bir kez daha).
+> Artığı bulan şey tesadüftü: bir SONRAKİ turun yalancı kırmızısı.
+
+**MEKANİZMA (`scripts/bekci.ts`):** `.bekci-kilidi` — ikinci tur AÇILMAZ,
+sebebini yazar, çıkış 1. Bayat kilit (ölü PID ya da >90 dk) DEVRALINIR ve
+devralma ekrana yazılır (boş ≠ temiz). Kilit yalnız SAHİBİYSE silinir.
+
+**KAPI İKİ YÖNDEN SINANDI:**
+- canlı PID'li kilit → tur REDDETTİ (çıkış 1 · 0 bekçi koştu · başkasının
+  kilidi silinmedi) — `| tail` ilk ölçümde kodu yutmuştu, borusuz ölçüldü;
+- ölü PID'li kilit → tur DEVRALDI ve koştu (bu kalemin kapanış turunda).
+
+**TEMİZLİK:** mutant `git diff` ile arandı; TEK artık `kodVar` çıktı,
+onarıldı, çalışma ağacı HEAD'e bit-bit döndü (meşru 4 dosya hariç).
+
+---
+
 ## ✅ K133 — DETAYA GİRİNCE LİSTEYE DÖNÜLEMİYOR · **KOD KOŞTU 02.09.2026**
 
 > Kullanıcı: _"Bu ekrandan ürünün üzerine tıklayınca geri ekrana gelemiyorum.
@@ -345,10 +407,20 @@ ayrımı: AÇIK / AÇIK-BOŞ / YETKİSİZ / YOL_YOK / ULAŞILAMADI).
     OMS paketler     YETKİSİZ (401)
     Listing listesi  YETKİSİZ (401)
 
-⏭ HALİL'DE: portaldaki test bilgilerinin ALAN ADLARI (değerler asla) —
-muhtemel sebep: ayrı "kullanıcı adı" alanı ya da SIT'in kendi anahtarı.
-Cevap gelince eşleştirilip yeniden ölçülecek; sonrası TY iskeletinin
-aynısı (sipariş çekimi).
+─── ② 401 ÇÖZÜLDÜ (04.09.2026) — HB e-postası geldi: **User-Agent =
+DEVELOPER USERNAME** (`axcali_dev`), merchantId DEĞİL. Basic auth kurgusu
+zaten doğruydu (Username=MerchantId, Password=SecretKey); tek yanlış
+başlıktı. `.env.canli`ye `HEPSIBURADA_DEVELOPER` eklendi, betik ona
+bağlandı (boşsa KIRMIZI — sessiz düşme yok). Yeniden ölçüm:
+
+    OMS siparişler   AÇIK/BOŞ (200, kayıt yok — test ortamı boş)
+    OMS paketler     AÇIK/BOŞ (200)
+    Listing listesi  AÇIK     (200, ~30 kayıt)
+
+⚠ SIT sipariş tarafı BOŞ: HB'nin test adımları dokümanı test siparişi
+üretmeyi tarif ediyor (Sipariş Entegrasyonu dokümanı). Çekim iskeleti
+boş ortamda da yazılabilir; doğrulaması test siparişi doğunca yapılır.
+✓ SIRADAKİ KAPANDI: Halil onay verdi (04.09.2026) → iskelet K160'ta.
 
 ---
 

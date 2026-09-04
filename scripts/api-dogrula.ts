@@ -70,7 +70,14 @@ function dosyalar(kok: string, uzanti = ".ts"): string[] {
  * modül sessizce kapsam dışı kalırdı. Ölçüt: pazaryeri tabanına `fetch`
  * atan her dosya.
  */
-const API_IZI = "apigw.trendyol.com";
+/**
+ * ⚠ İZ LİSTESİ, KANAL BAŞINA GENİŞLER (04.09.2026): HB istemcisi yazıldı
+ * ve bu bekçi onu TANIMIYORDU — `canli-hb-saglik.ts`in başlığı "api-dogrula
+ * bu dosyayı da tarar" diyordu ve iddia BOŞTU (kapsam yalnız TY iziydi).
+ * "Kapsam genişlemesi, bağımlı listelerin de genişlemesidir" — akışa yeni
+ * kanal girdi, bekçinin listesi de genişledi.
+ */
+const API_IZLERI = ["apigw.trendyol.com", "hepsiburada.com"];
 
 /**
  * ⚠ BEKÇİ KENDİNİ TARAMAZ — ve bu bir kaçamak değil, ölçüt düzeltmesi.
@@ -93,7 +100,7 @@ const KENDI = join("scripts", "api-dogrula.ts");
  * olmaktan çıkıp **"API'ye ULAŞAN dosya"** oldu: doğrudan taban adresi
  * yazan YA DA istemci modülünü içeri alan.
  */
-const ISTEMCI_IZI = "ty/istemci";
+const ISTEMCI_IZLERI = ["ty/istemci", "hb/istemci"];
 
 const tumDosyalar = [...dosyalar("scripts"), ...dosyalar("src")];
 const apiDosyalari = tumDosyalar
@@ -101,7 +108,10 @@ const apiDosyalari = tumDosyalar
   .filter((y) => {
     try {
       const icerik = readFileSync(y, "utf8");
-      return icerik.includes(API_IZI) || icerik.includes(ISTEMCI_IZI);
+      return (
+        API_IZLERI.some((iz) => icerik.includes(iz)) ||
+        ISTEMCI_IZLERI.some((iz) => icerik.includes(iz))
+      );
     } catch {
       return false;
     }

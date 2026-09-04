@@ -58,8 +58,76 @@
  * ============================================================================
  */
 
-import { readFileSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { spawnSync } from "node:child_process";
+
+/**
+ * ============================================================================
+ *  TEK TUR KİLİDİ — İKİ EŞZAMANLI TUR BİRBİRİNİ KİRLETİR (04.09.2026)
+ * ----------------------------------------------------------------------------
+ *  VAKA: pre-push hook'unun turu ile elle başlatılan tur AYNI ANDA koştu.
+ *  Mutasyon harness'leri aynı dosyaları bozup geri yazıyor; iki tur
+ *  yarışınca biri ötekinin MUTANTINI "asıl" diye kopyaladı ve geri yazdı:
+ *  `"kodVar": "Satışta"` mutantı sözlükte KALDI, hook turu kırmızı yandı,
+ *  push düştü — ve artığı bulan şey tesadüftü (bir sonraki turun kırmızısı).
+ *
+ *  Turlar TEK TEK seri (`for` + `spawnSync`) ama TURLARIN KENDİSİ seri
+ *  değildi. Disiplinle çözülmez ("aynı anda iki tur açmam" bir niyettir);
+ *  mekanizma: ikinci tur AÇILMAZ, kırmızı çıkar ve sebebini söyler.
+ *
+ *  BAYAT KİLİT: kill edilen bir tur kilidini bırakır. PID artık yaşamıyorsa
+ *  ya da kilit 90 dakikadan eskiyse (tur ~15 dk) devralınır — ve devralma
+ *  SESSİZ DEĞİL, ekrana yazılır (boş ≠ temiz).
+ * ============================================================================
+ */
+const KILIT = ".bekci-kilidi";
+const KILIT_BAYAT_MS = 90 * 60_000;
+
+function pidYasiyor(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    /** EPERM = süreç VAR ama dokunma iznimiz yok → yaşıyor sayılır. */
+    return (e as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+function kilidiAl(): void {
+  if (existsSync(KILIT)) {
+    const pid = parseInt(readFileSync(KILIT, "utf8").trim(), 10);
+    const yasMs = Date.now() - statSync(KILIT).mtimeMs;
+    if (Number.isFinite(pid) && pidYasiyor(pid) && yasMs < KILIT_BAYAT_MS) {
+      console.log("");
+      console.log("⛔ BAŞKA BİR BEKÇİ TURU KOŞUYOR (pid " + pid + ") — İKİNCİ TUR AÇILMAZ.");
+      console.log("   İki eşzamanlı tur, mutasyon harness'leri aynı dosyaları bozup geri");
+      console.log("   yazdığı için birbirini KİRLETİR (04.09.2026: 'Satışta' mutantı");
+      console.log("   sözlükte kaldı, push düştü). Koşan turun bitmesini bekleyin.");
+      console.log("");
+      process.exit(1);
+    }
+    console.log("");
+    console.log("⚠ BAYAT KİLİT DEVRALINDI (pid " + pid + " ölü ya da kilit " +
+      Math.round(yasMs / 60_000) + " dk eski) — önceki tur kill edilmiş olabilir;");
+    console.log("  yarım kalan mutasyon artığı için `git status` kontrol edilmeli.");
+  }
+  writeFileSync(KILIT, String(process.pid), "utf8");
+}
+
+/** Kilit yalnız BİZİMSE kaldırılır — halefin kilidini silmemek için. */
+process.on("exit", () => {
+  try {
+    if (readFileSync(KILIT, "utf8").trim() === String(process.pid)) unlinkSync(KILIT);
+  } catch (e) {
+    console.log("⚠ kilit kaldırılamadı: " + (e as Error).message);
+  }
+});
 
 type Sonuc = {
   ad: string;
@@ -99,6 +167,7 @@ function ozetle(cikti: string): string {
   return (bilinen ?? satirlar[satirlar.length - 1] ?? "(çıktı yok)").slice(0, 64);
 }
 
+kilidiAl();
 const liste = bekciler();
 console.log("");
 console.log("BEKÇİ TURU — " + liste.length + " doğrulama");

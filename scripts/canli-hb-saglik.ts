@@ -1,131 +1,87 @@
 /** BETIK SINIFI: SUREKLI. ⛔ HICBIR SEY YAZMAZ — GET disinda yontem YOK (A3 siniri). */
-import { readFileSync } from "node:fs";
+import {
+  UCLAR,
+  apiGet,
+  baslikKur,
+  kayitDizisi,
+  kimlikOku,
+} from "./hb/istemci";
 
 /**
  * ============================================================================
- *  HEPSİBURADA API SAĞLIK ÖLÇÜMÜ — TEST ORTAMI (SALT OKUMA)
+ *  HEPSİBURADA API SAĞLIK ÖLÇÜMÜ — SALT OKUMA
  * ----------------------------------------------------------------------------
  *  Halil 04.09.2026: "Hepsiburada test API'si var" → anahtarlar
- *  `.env.canli`ye eklendi (HEPSIBURADA_MERCHANT_ID / _API_KEY / _ORTAM).
+ *  `.env.canli`ye eklendi (HEPSIBURADA_MERCHANT_ID / _API_KEY / _ORTAM /
+ *  _DEVELOPER). Kimlik kurgusu ve uçlar ORTAK istemciden gelir
+ *  (`scripts/hb/istemci.ts`) — tek gövde, iki okuyucu.
  *
- *  ⚠ YALNIZ OKUR. TY istemcisiyle AYNI kural: yazma ucu fonksiyon olarak
- *  bile tanımlanmaz; `api-dogrula` bekçisi bu dosyayı da tarar (dizinden,
- *  elle listeden değil).
- *
- *  ⚠ ANAHTAR SADECE BELLEĞE OKUNUR — basılmaz, loglanmaz.
+ *  ⚠ İLK ÖLÇÜM ÜÇ UÇTA DA 401 VERDİ; sebep User-Agent'a merchantId
+ *  konmasıydı. HB'nin e-postası DEVELOPER USERNAME şart koştu; düzeltince
+ *  üçü de 200 döndü. Ayrıntı istemci başlığında.
  *
  *  ⚠ BEŞ SONUÇ AYRI SAYILIR (boş ≠ temiz · yol hatası ≠ yetki hatası):
- *    AÇIK        — 200, veri geldi
- *    AÇIK/BOŞ    — 200, kayıt yok (uç çalışıyor; test ortamı boş olabilir)
- *    YETKİSİZ    — 401/403 (anahtar/kapsam)
- *    YOL_YOK     — 404 (uç yolu yanlış — dokümana bakılır, anahtar suçlanmaz)
- *    ULAŞILAMADI — ağ/zaman aşımı; hüküm verilmez
- *
- *  ⚠ ORTAM `.env.canli`den: TEST → `-sit` alan adları. Canlı onay gelince
- *  HEPSIBURADA_ORTAM=CANLI yapılır, kod değişmez.
+ *    AÇIK · AÇIK/BOŞ · YETKİSİZ (401/403) · YOL_YOK (404) · ULAŞILAMADI
+ *  Ve altıncısı: ZARF_TANINMADI — 200 döndü ama gövdede dizi bulunamadı;
+ *  bu "boş" DEĞİLDİR, alan adlarıyla raporlanır.
  *
  *  KOŞUM: npm run canli:hb-saglik
  * ============================================================================
  */
 
-/** ⚠ ANAHTAR SADECE BELLEĞE — hiçbir çıktı yoluna girmez. */
-function anahtarlar(): { merchantId: string; key: string; ortam: string } | null {
-  let ham: string;
-  try {
-    ham = readFileSync(".env.canli", "utf8");
-  } catch {
-    return null;
-  }
-  const al = (ad: string) =>
-    ham.match(new RegExp("^" + ad + "=(.*)$", "m"))?.[1]?.trim() ?? "";
-  const merchantId = al("HEPSIBURADA_MERCHANT_ID");
-  const key = al("HEPSIBURADA_API_KEY");
-  const ortam = al("HEPSIBURADA_ORTAM") || "TEST";
-  if (merchantId === "" || key === "") return null;
-  return { merchantId, key, ortam };
-}
-
-type Sonuc = "ACIK" | "ACIK_BOS" | "YETKISIZ" | "YOL_YOK" | "ULASILAMADI" | "BASKA";
-
 async function olc(
   ad: string,
-  url: string,
-  basliklar: Record<string, string>,
-): Promise<Sonuc> {
-  try {
-    const y = await fetch(url, {
-      method: "GET",
-      headers: basliklar,
-      signal: AbortSignal.timeout(20_000),
-    });
-    const govde = await y.text();
-    if (y.status === 401 || y.status === 403) {
-      console.log(`  YETKİSİZ     ${ad}  (HTTP ${y.status})`);
-      return "YETKISIZ";
-    }
-    if (y.status === 404) {
-      console.log(`  YOL_YOK      ${ad}  (HTTP 404 — uç yolu dokümanla karşılaştırılmalı)`);
-      return "YOL_YOK";
-    }
-    if (!y.ok) {
-      /** Gövde GÖSTERİMDE kırpılır (500), hükümde kullanılmaz. */
-      console.log(`  BAŞKA        ${ad}  (HTTP ${y.status}) ${govde.slice(0, 500).replace(/\s+/g, " ")}`);
-      return "BASKA";
-    }
-    let adet: number | null = null;
-    try {
-      const j = JSON.parse(govde);
-      adet = Array.isArray(j)
-        ? j.length
-        : Array.isArray(j?.items)
-          ? j.items.length
-          : Array.isArray(j?.content)
-            ? j.content.length
-            : j?.totalCount ?? j?.totalElements ?? null;
-    } catch {
-      /* JSON değilse adet bilinmez — AÇIK sayılır, gövde tipi yazılır. */
-    }
-    if (adet === 0) {
-      console.log(`  AÇIK/BOŞ     ${ad}  (200, kayıt yok — test ortamı boş olabilir)`);
-      return "ACIK_BOS";
-    }
-    console.log(`  AÇIK         ${ad}  (200${adet === null ? "" : `, ~${adet} kayıt/sayaç`})`);
-    return "ACIK";
-  } catch {
-    console.log(`  ULAŞILAMADI  ${ad}  (ağ/zaman aşımı — hüküm yok)`);
-    return "ULASILAMADI";
+  adres: string,
+  baslik: Record<string, string>,
+): Promise<void> {
+  const s = await apiGet(adres, baslik);
+  if (s.tur === "YETKISIZ") {
+    console.log(`  YETKİSİZ     ${ad}  (HTTP ${s.durum})`);
+    return;
   }
+  if (s.tur === "BULUNAMADI") {
+    console.log(`  YOL_YOK      ${ad}  (HTTP 404 — uç yolu dokümanla karşılaştırılmalı)`);
+    return;
+  }
+  if (s.tur === "ISTEK_HATALI") {
+    console.log(`  İSTEK_HATALI ${ad}  (HTTP 400) ${s.mesaj}`);
+    return;
+  }
+  if (s.tur === "ULASILAMADI") {
+    console.log(`  ULAŞILAMADI  ${ad}  (${s.sebep} — hüküm yok)`);
+    return;
+  }
+  const z = kayitDizisi(s.govde);
+  if (z.tur === "ZARF_TANINMADI") {
+    console.log(`  ZARF?        ${ad}  (200 ama dizi yok — alanlar: ${z.alanlar.join(", ") || "(boş gövde)"})`);
+    return;
+  }
+  if (z.kayitlar.length === 0) {
+    console.log(`  AÇIK/BOŞ     ${ad}  (200, kayıt yok — test ortamı boş olabilir)`);
+    return;
+  }
+  console.log(`  AÇIK         ${ad}  (200, sayfada ${z.kayitlar.length} kayıt)`);
 }
 
 async function main() {
-  const a = anahtarlar();
+  const k = kimlikOku();
   console.log("=".repeat(78));
   console.log("  HEPSİBURADA API SAĞLIK — SALT OKUMA");
   console.log("=".repeat(78));
-  if (!a) {
-    console.log("\n⛔ HEPSIBURADA_MERCHANT_ID / _API_KEY .env.canli'de yok.\n");
+  if (!k) {
+    console.log("\n⛔ HEPSIBURADA_MERCHANT_ID / _API_KEY / _DEVELOPER .env.canli'de eksik.\n");
     process.exitCode = 1;
     return;
   }
-  const sit = a.ortam.toUpperCase() === "TEST" ? "-sit" : "";
-  console.log(`  ortam: ${a.ortam}  ·  merchantId uzunluğu: ${a.merchantId.length} karakter`);
-  const yetki =
-    "Basic " + Buffer.from(a.merchantId + ":" + a.key).toString("base64");
-  /** HB, User-Agent ister; kimlik olarak merchantId yeterli. */
-  const basliklar = {
-    Authorization: yetki,
-    "User-Agent": a.merchantId,
-    Accept: "application/json",
-  };
+  console.log(`  ortam: ${k.ortam}  ·  merchantId uzunluğu: ${k.merchantId.length} karakter`);
+  const baslik = baslikKur(k);
 
   console.log("\n① SİPARİŞ/OMS UÇLARI");
-  const oms = `https://oms-external${sit}.hepsiburada.com`;
-  await olc("OMS siparişler", `${oms}/orders/merchantid/${a.merchantId}?offset=0&limit=1`, basliklar);
-  await olc("OMS paketler", `${oms}/packages/merchantid/${a.merchantId}?offset=0&limit=1`, basliklar);
+  await olc("OMS siparişler", UCLAR.siparisler(k, 0, 1), baslik);
+  await olc("OMS paketler", UCLAR.paketler(k, 0, 1), baslik);
 
   console.log("\n② LİSTİNG UÇLARI");
-  const listing = `https://listing-external${sit}.hepsiburada.com`;
-  await olc("Listing listesi", `${listing}/listings/merchantid/${a.merchantId}?offset=0&limit=1`, basliklar);
+  await olc("Listing listesi", UCLAR.listingler(k, 0, 1), baslik);
 
   console.log("\n" + "=".repeat(78));
   console.log("  ⛔ Bu betik hiçbir şey YAZMAZ; sonuçlar yalnız erişimi ölçer.");
