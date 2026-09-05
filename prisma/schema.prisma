@@ -1079,6 +1079,14 @@ model PurchaseItem {
   unitCostAmount   Decimal  @db.Decimal(18, 4)
   unitCostCurrency Currency
 
+  /// PROMOSYON BEYANI (K171, 05.09.2026) — bu kalem BEDAVA geldi, maliyeti
+  /// GERÇEKTEN sıfırdır. `unitCostAmount = 0` fonksiyonel olarak zaten çalışır
+  /// (kâr motoru CALCULATED üretir, "maliyet yok" değil); bu işaret o sıfırın
+  /// ANLAMINI taşır: "ölçtüm, bedava" ≠ "unuttum". İşaretsiz bir kalemde 0
+  /// maliyet YASAK (İlke #11 — sessiz sıfır tuzağı); promosyon işaretliyse 0
+  /// ZORUNLU. Ayrım türetilemez (0 hata da olabilir), o yüzden yapısal alan.
+  promosyon Boolean @default(false)
+
   stockMovements StockMovement[]
 
   @@index([purchaseId])

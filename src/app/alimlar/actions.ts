@@ -30,19 +30,44 @@ type Ceviri = (
  * Modül seviyesinde kurulamaz: getTranslations() istek kapsamlıdır.
  */
 function alimSemasiKur(t: Ceviri) {
-  const kalemSemasi = z.object({
-    variantId: z.string().min(1, t("urunSecilmeli")),
-    quantity: z
-      .number({ message: t("adetSayiOlmali") })
-      .int(t("adetTamSayi"))
-      .min(1, t("adetEnAzBir")),
-    unitCostAmount: z
-      .number({ message: t("fiyatSayiOlmali") })
-      .min(0, t("fiyatNegatifOlamaz")),
-    unitCostCurrency: z.enum(["TRY", "EUR"], {
-      message: t("paraBirimiGecersiz"),
-    }),
-  });
+  const kalemSemasi = z
+    .object({
+      variantId: z.string().min(1, t("urunSecilmeli")),
+      quantity: z
+        .number({ message: t("adetSayiOlmali") })
+        .int(t("adetTamSayi"))
+        .min(1, t("adetEnAzBir")),
+      unitCostAmount: z
+        .number({ message: t("fiyatSayiOlmali") })
+        .min(0, t("fiyatNegatifOlamaz")),
+      unitCostCurrency: z.enum(["TRY", "EUR"], {
+        message: t("paraBirimiGecersiz"),
+      }),
+      /** K171: promosyon (bedava) beyanı. Yoksa false. */
+      promosyon: z.boolean().optional().default(false),
+    })
+    /**
+     * K171 — SIFIR MALİYET İKİ YÖNLÜ KAPILANIR (İlke #11 sessiz sıfır):
+     * · promosyon İŞARETLİ → maliyet 0 ZORUNLU (bedava ise fiyat olamaz)
+     * · promosyon İŞARETSİZ → maliyet > 0 ZORUNLU (0 bir BEYANDIR, unutkanlık
+     *   değil — işaretsiz 0 "promosyon mu hata mı" belirsizliği üretirdi).
+     */
+    .superRefine((k, ctx) => {
+      if (k.promosyon && k.unitCostAmount !== 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t("promosyonMaliyetSifir"),
+          path: ["unitCostAmount"],
+        });
+      }
+      if (!k.promosyon && k.unitCostAmount === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t("maliyetSifirPromosyonIsaretle"),
+          path: ["unitCostAmount"],
+        });
+      }
+    });
 
   return z.object({
     // ALIM NUMARASI ŞEMADA YOK: sistem üretir, formdan gelmez.
@@ -170,6 +195,7 @@ export async function alimOlustur(
               quantity: k.quantity,
               unitCostAmount: k.unitCostAmount,
               unitCostCurrency: k.unitCostCurrency,
+              promosyon: k.promosyon,
             })),
           },
         },
@@ -360,6 +386,7 @@ export async function alimGuncelle(
               quantity: yeni.quantity,
               unitCostAmount: String(yeni.unitCostAmount),
               unitCostCurrency: yeni.unitCostCurrency,
+              promosyon: yeni.promosyon,
             },
           });
           continue;
@@ -375,6 +402,7 @@ export async function alimGuncelle(
             quantity: yeni.quantity,
             unitCostAmount: String(yeni.unitCostAmount),
             unitCostCurrency: yeni.unitCostCurrency,
+            promosyon: yeni.promosyon,
           },
         });
 

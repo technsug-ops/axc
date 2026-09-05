@@ -100,7 +100,56 @@ export function semaKolonlari(): Map<string, Set<string>> {
   return sonuc;
 }
 
-export type BekciBulgusu = { katman: "A" | "B"; mesaj: string };
+export type BekciBulgusu = { katman: "A" | "B" | "H"; mesaj: string };
+
+/**
+ * ============================================================================
+ *  KATMAN H — MIGRATION TABLO ADI ŞEMAYLA HARF HARF EŞLEŞİR (K171)
+ * ----------------------------------------------------------------------------
+ *  Halil 05.09.2026: _"sale→Sale, purchaseitem→PurchaseItem İKİ vaka oldu —
+ *  üçüncüsü bekçisiz geçmesin."_ Prisma bazen migration SQL'inde tablo adını
+ *  KÜÇÜK harf üretiyor (`purchaseitem`) oysa model `PurchaseItem`. MySQL/
+ *  MariaDB tablo adları platforma göre harf-duyarsız olabildiği için canlıda
+ *  sessizce koşar — ama şema ile migration ARASINDA harf tutarsızlığı bırakır
+ *  ve K164/K171'de iki kez elle düzeltildi. Katman A bunu dolaylı yakalıyordu
+ *  ("tablo migration'da YOK") ama mesajı YANILTICI; bu katman NET söyler.
+ *
+ *  ⚠ ÖLÇÜT: migration'daki her `ALTER/CREATE TABLE \`x\`` adı, bir model
+ *  adıyla (ya da @@map) HARF HARF eşleşmeli. Harf-duyarsız eşleşip
+ *  harf-duyarlı eşleşmeyen = HATA.
+ * ============================================================================
+ */
+export function katmanH(): BekciBulgusu[] {
+  const sema = readFileSync(SEMA_YOLU, "utf8");
+  const modeller = new Set<string>();
+  for (const m of sema.matchAll(/^model\s+(\w+)\s*\{([\s\S]*?)^\}/gm)) {
+    const mp = /@@map\("([^"]+)"\)/.exec(m[2]);
+    modeller.add(mp ? mp[1] : m[1]);
+  }
+  const kucuk = new Map<string, string>();
+  for (const ad of modeller) kucuk.set(ad.toLowerCase(), ad);
+
+  const bulgular: BekciBulgusu[] = [];
+  for (const klasor of migrationKlasorleri()) {
+    const sqlYolu = join(MIGRATION_KOK, klasor, "migration.sql");
+    if (!existsSync(sqlYolu)) continue;
+    const sql = readFileSync(sqlYolu, "utf8");
+    for (const t of sql.matchAll(/(?:ALTER|CREATE)\s+TABLE\s+`([^`]+)`/gi)) {
+      const ad = t[1];
+      if (modeller.has(ad)) continue; // harf harf eşleşti
+      const dogru = kucuk.get(ad.toLowerCase());
+      if (dogru) {
+        bulgular.push({
+          katman: "H",
+          mesaj: `${klasor}: tablo adı harf uyumsuz — \`${ad}\` yazılmış, şema \`${dogru}\` diyor`,
+        });
+      }
+      // Modelle HİÇ eşleşmeyen (case-insensitive de) ad: enum/başka DDL
+      // olabilir; katman A zaten "tablo migration'da YOK" tarafını tutuyor.
+    }
+  }
+  return bulgular;
+}
 
 /** Katman A — şemada var, migration dosyalarında yok. */
 export function katmanA(): BekciBulgusu[] {
@@ -163,6 +212,15 @@ async function main() {
     for (const b of a) console.log(`  ✗  ${b.mesaj}`);
   }
 
+  // KATMAN H — tablo adı harf uyumu (K171).
+  const h = katmanH();
+  console.log("\nH) MIGRATION TABLO ADI ↔ ŞEMA (harf harf)");
+  if (h.length === 0) {
+    console.log("  ✓  tüm migration tablo adları şemayla HARF HARF eşleşiyor");
+  } else {
+    for (const b of h) console.log(`  ✗  ${b.mesaj}`);
+  }
+
   const klasorler = migrationKlasorleri();
   const damga = damgayiOku();
   const { bulgular: b, damgaYok } = katmanB(klasorler, damga);
@@ -184,7 +242,7 @@ async function main() {
     for (const x of b) console.log(`  ✗  ${x.mesaj}`);
   }
 
-  const bulgular = [...a, ...b];
+  const bulgular = [...a, ...h, ...b];
   if (bulgular.length > 0) {
     console.log("\n────────────────────────────────────────────────────────");
     console.log("  BUILD DURDURULDU — kod, canlı şemasının ÖNÜNDE.");
@@ -192,6 +250,10 @@ async function main() {
     if (a.length > 0) {
       console.log("  Şemayı değiştirdiniz ama migration yazmadınız:");
       console.log("      npx prisma migrate dev --name <ad>");
+    }
+    if (h.length > 0) {
+      console.log("  Migration'da tablo adı şemayla harf harf tutmuyor —");
+      console.log("  migration.sql'de tablo adını şemadaki modelle EŞİTLE (K171).");
     }
     if (b.length > 0) {
       console.log("  Migration hazır ama canlıda koşmadı. İKİ YOLDAN BİRİ:");

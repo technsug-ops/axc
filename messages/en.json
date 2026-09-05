@@ -639,7 +639,11 @@
     "eksenKabul": "",
     "bosEksenAciklamasi": "",
     "bosEksenGecis": "",
-    "bosKabulsuzUyarisi": ""
+    "bosKabulsuzUyarisi": "",
+    "promosyonKutusu": "",
+    "promosyonMaliyetSifir": "",
+    "maliyetSifirPromosyonIsaretle": "",
+    "promosyonEtiketi": ""
   },
   "MalKabul": {
     "saglamSayiOlmali": "",

@@ -639,7 +639,11 @@
     "eksenKabul": "Mal kabul tarihi",
     "bosEksenAciklamasi": "Bu liste {aktif} eksenine göre süzüyor. Aynı dönemde {oteki} eksenine göre {sayi} kayıt var.",
     "bosEksenGecis": "{oteki} eksenine geç",
-    "bosKabulsuzUyarisi": "Mal kabulü yapılmamış {sayi} alım bu eksende hiçbir dönemde görünmez — kabul tarihleri henüz yok."
+    "bosKabulsuzUyarisi": "Mal kabulü yapılmamış {sayi} alım bu eksende hiçbir dönemde görünmez — kabul tarihleri henüz yok.",
+    "promosyonKutusu": "Promosyon (bedava geldi — maliyet 0)",
+    "promosyonMaliyetSifir": "Promosyon işaretliyken maliyet 0 olmalı.",
+    "maliyetSifirPromosyonIsaretle": "Maliyet 0 girildi — bedava/promosyon ise \"Promosyon\" kutusunu işaretleyin, değilse gerçek maliyeti yazın.",
+    "promosyonEtiketi": "Promosyon (₺0)"
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",

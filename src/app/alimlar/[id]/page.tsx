@@ -350,7 +350,13 @@ export default async function AlimDetaySayfasi({
                       )}
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
-                      {bicim.para(kalem.unitCostAmount, kalem.unitCostCurrency)}
+                      {kalem.promosyon ? (
+                        <span className="text-muted-foreground">
+                          {t("promosyonEtiketi")}
+                        </span>
+                      ) : (
+                        bicim.para(kalem.unitCostAmount, kalem.unitCostCurrency)
+                      )}
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       {bicim.para(
@@ -424,10 +430,12 @@ export default async function AlimDetaySayfasi({
                   },
                   {
                     etiket: ortak("sutunBirimFiyat"),
-                    deger: bicim.para(
-                      kalem.unitCostAmount,
-                      kalem.unitCostCurrency,
-                    ),
+                    deger: kalem.promosyon
+                      ? t("promosyonEtiketi")
+                      : bicim.para(
+                          kalem.unitCostAmount,
+                          kalem.unitCostCurrency,
+                        ),
                   },
                   {
                     etiket: t("sutunSatirToplami"),

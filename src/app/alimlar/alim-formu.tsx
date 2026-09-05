@@ -49,6 +49,8 @@ type Kalem = {
   quantity: number;
   unitCostAmount: string;
   unitCostCurrency: "TRY" | "EUR";
+  /** K171: promosyon (bedava) — işaretliyse maliyet 0. */
+  promosyon: boolean;
   /** Bu kalemden KABUL EDİLMİŞ adet. Düzenlemede adet bunun altına inemez. */
   gelen?: number;
 };
@@ -145,6 +147,7 @@ export function AlimFormu({
         quantity: 1,
         unitCostAmount: "",
         unitCostCurrency: "TRY",
+        promosyon: false,
       },
     ];
   });
@@ -209,6 +212,7 @@ export function AlimFormu({
           quantity: adet,
           unitCostAmount: "",
           unitCostCurrency: varsayilanParaBirimi,
+          promosyon: false,
         },
       ];
     });
@@ -273,9 +277,14 @@ export function AlimFormu({
       return {
         variantId: k.variantId,
         quantity: k.quantity,
-        unitCostAmount:
-          k.unitCostAmount.trim() !== "" && Number.isFinite(sayi) ? sayi : null,
+        /** K171: promosyonda maliyet KESİN 0 (girişten bağımsız — beyan sıfırı). */
+        unitCostAmount: k.promosyon
+          ? 0
+          : k.unitCostAmount.trim() !== "" && Number.isFinite(sayi)
+            ? sayi
+            : null,
         unitCostCurrency: k.unitCostCurrency,
+        promosyon: k.promosyon,
       };
     }),
   };
@@ -600,13 +609,35 @@ export function AlimFormu({
                     </Label>
                     <Input
                       id={`fiyat-${sira}`}
-                      value={kalem.unitCostAmount}
+                      value={kalem.promosyon ? "0" : kalem.unitCostAmount}
                       inputMode="decimal"
                       placeholder={ortak("fiyatIpucu")}
+                      disabled={kalem.promosyon}
                       onChange={(e) =>
                         kalemGuncelle(sira, { unitCostAmount: e.target.value })
                       }
                     />
+                    {/* K171: PROMOSYON BEYANI — işaretlenince maliyet 0'a
+                        kilitlenir; "bedava geldi" bilerek söylenir (İlke #11:
+                        sessiz sıfır değil, açık beyan). */}
+                    <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-9">
+                      <input
+                        type="checkbox"
+                        className="size-4"
+                        checked={kalem.promosyon}
+                        onChange={(e) =>
+                          kalemGuncelle(sira, {
+                            promosyon: e.target.checked,
+                            // İşaretlenince yazılı fiyat temizlenir; kaldırılınca
+                            // kullanıcı yeniden girer (boş = zorunlu uyarı).
+                            unitCostAmount: e.target.checked
+                              ? ""
+                              : kalem.unitCostAmount,
+                          })
+                        }
+                      />
+                      {t("promosyonKutusu")}
+                    </label>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor={`para-${sira}`}>
