@@ -108,7 +108,7 @@ koşum zararsız (ölçüldü). Bekçi: `ice-aktarma:dogrula` **315/315**
 bozuk tarihte an uydurulur) — iptal ölçütleri koşul+sonuç birlikte arar
 (`{false&&}` körlüğü kapatıldı).
 
-─── ③ MAKİNEDEN BAĞIMSIZ RUTİN · 05.09.2026 · [YAZILDI — Vercel env bekliyor]
+─── ③ MAKİNEDEN BAĞIMSIZ RUTİN · 05.09.2026 · [KOŞTU — uçtan uca canlı]
 
 > **Halil:** _"Yapalım."_ K166 deseninin birebir kopyası.
 
@@ -121,9 +121,12 @@ koşar) + Vercel cron günlük yedek (04:10) + proxy ACIK_YOLLAR + yetki
 istisnası. Bekçi: K167-③ bloğu (rota çekirdeği çağırıyor · sır kapısı 404 ·
 betik aynı gövde) — **3 mutasyon 3 kırmızı** (kapı kaldıran · 404→401 ·
 çekirdek bağını koparan).
-⏭ HALİL: Vercel → Settings → Environment Variables → `N11_APP_KEY` ve
-`N11_APP_SECRET` (.env.canli'deki değerlerle) → redeploy. Eklenene kadar
-uç `{"atlandi":"KIMLIK"}` döner — sessiz kaçış yok, cevapta görünür.
+✅ UÇTAN UCA KANITLI (05.09.2026): yanlış sır **404** · doğru sır ama
+env'siz `{"atlandi":"KIMLIK"}` (görünür kaçış) · Halil Vercel'e
+N11_APP_KEY/N11_APP_SECRET ekleyip redeploy etti → uç GERÇEK çekim koştu:
+`{"kip":"YAZIM","apiPaket":4,"iptalPaket":1,"cakisanAtlandi":3,
+"yazilan":0,"saleOnce":7871,"saleSonra":7871}`. N11 artık bilgisayardan
+bağımsız 10 dakikada bir çekiliyor (TY ile aynı workflow).
 ⏭ AÇIK: ② çok-adet kanıtı gelince kova açılır; ③ N11 hakediş/kesinti
 uçları (komisyon faturası) ileride.
 
