@@ -18,6 +18,7 @@ import {
   acikPartiler,
   fifoDagit,
   gunSonu,
+  partileriOncele,
   type FifoPayi,
   type Parti,
 } from "@/lib/stok";
@@ -498,11 +499,23 @@ export type SiparisOnaySonucu =
         | "SAYIM_DURAKSADI"
         | "DONEM_KAPALI"
         | "STOK_YETERSIZ"
+        | "SECIM_GECERSIZ"
         | "YAZILAMADI";
       ayrinti?: string;
     };
 
-export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu> {
+/**
+ * Parti seçimi: kalemId → seçilen partinin StockMovement kimliği (K110
+ * spesifik belirleme). Boş/eksik = o kalemde FIFO. Seçilen parti araya
+ * giren başka satışla tükenmişse onay SESSİZCE FIFO'ya DÜŞMEZ —
+ * `SECIM_GECERSIZ` döner (İlke #5: sessiz başarısızlık yasak).
+ */
+export type PartiSecimleri = Record<string, string>;
+
+export async function siparisiOnayla(
+  saleId: string,
+  secimler: PartiSecimleri = {},
+): Promise<SiparisOnaySonucu> {
   await yetkiIste("satis.yaz");
   try {
     const sonuc = await prisma.$transaction(async (tx): Promise<SiparisOnaySonucu> => {
@@ -582,18 +595,45 @@ export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu>
       await donemKapisi(tx, satis.soldAt, undefined);
 
       /** FIFO — parti durumu kalemler arasında taşınır (aynı parti iki kez
-       *  tüketilmesin); sınır gunSonu(soldAt) (29.08 arızasının dersi). */
+       *  tüketilmesin); sınır gunSonu(soldAt) (29.08 arızasının dersi).
+       *  K110: operatör parti seçtiyse `partileriOncele` onu listenin başına
+       *  alır ve AYNI `fifoDagit` çalışır — ikinci dağıtıcı yazılmaz. */
       const partiDurumu = new Map<string, Parti[]>();
       const planlar: {
         kalemId: string;
         variantId: string;
         dagitim: FifoPayi[];
+        secimUygulandi: boolean;
       }[] = [];
       for (const k of satis.items) {
-        const partiler =
+        const hamPartiler =
           partiDurumu.get(k.variantId) ??
           (await acikPartiler(tx, k.variantId, gunSonu(satis.soldAt)));
-        const dagitim = fifoDagit(partiler, k.quantity);
+        const secim = secimler[k.id] ?? null;
+        const oncelik = partileriOncele(hamPartiler, secim);
+        /** Seçim VARDI ama uygulanamadı (parti tükenmiş/bulunamadı) →
+         *  sessizce FIFO'ya düşme; operatör başka partiden düştüğünü sanır. */
+        if (secim !== null && secim !== "" && !oncelik.secimUygulandi) {
+          return {
+            tamam: false,
+            kod: "SECIM_GECERSIZ",
+            ayrinti: k.variant.sku,
+          };
+        }
+        /** Tek parti gönderimi: seçilen parti siparişin adedini tek başına
+         *  karşılamalı — kısmi bölme karmaşası açılmaz. */
+        if (
+          oncelik.secimUygulandi &&
+          oncelik.secilenKalan !== null &&
+          oncelik.secilenKalan < k.quantity
+        ) {
+          return {
+            tamam: false,
+            kod: "SECIM_GECERSIZ",
+            ayrinti: k.variant.sku + ": seçilen partide " + oncelik.secilenKalan + "/" + k.quantity,
+          };
+        }
+        const dagitim = fifoDagit(oncelik.partiler, k.quantity);
         if (!dagitim.yeterliMi) {
           return {
             tamam: false,
@@ -602,7 +642,12 @@ export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu>
           };
         }
         partiDurumu.set(k.variantId, dagitim.kalanPartiler);
-        planlar.push({ kalemId: k.id, variantId: k.variantId, dagitim: dagitim.dagitim });
+        planlar.push({
+          kalemId: k.id,
+          variantId: k.variantId,
+          dagitim: dagitim.dagitim,
+          secimUygulandi: oncelik.secimUygulandi,
+        });
       }
 
       let adetToplam = 0;
@@ -644,8 +689,12 @@ export async function siparisiOnayla(saleId: string): Promise<SiparisOnaySonucu>
             code: satis.code,
             kalem: planlar.length,
             adet: adetToplam,
+            /** K110: hangi kalemde parti FIFO'dan mı, operatör seçiminden mi
+             *  düştü — üç ay sonra "bu neden bu partiden" sorusunun cevabı. */
+            secim: planlar.some((p) => p.secimUygulandi) ? "OPERATOR" : "FIFO",
             dagitim: planlar.map((p) => ({
               kalemId: p.kalemId,
+              secim: p.secimUygulandi ? "OPERATOR" : "FIFO",
               partiler: p.dagitim.map((d) => ({
                 parti: d.parti.hareketId,
                 adet: d.adet,
@@ -696,9 +745,16 @@ export type OnayOnizlemesi =
   | {
       tamam: true;
       kalemler: {
+        /** Kalem kimliği — seçim eşlemesinin anahtarı. */
+        kalemId: string;
+        variantId: string;
         sku: string;
         adet: number;
-        partiler: {
+        /**
+         * FIFO'nun BU sipariş için ÖNERDİĞİ dağıtım (seçim yokken yazılacak
+         * olan). Diyalog "düşülecek maliyet" rakamını bundan basar.
+         */
+        onerilenDagitim: {
           /** Parti giriş anı (ISO) — ekran biçimlendirir. */
           tarih: string;
           adet: number;
@@ -707,8 +763,30 @@ export type OnayOnizlemesi =
         }[];
         /** Kuruş; null = en az bir parti maliyetsiz. */
         kalemMaliyet: number | null;
+        /**
+         * Operatörün seçebileceği BÜTÜN açık partiler (sınır içi), en eski
+         * önce. `secilebilir=false` = kalan adet siparişi karşılamıyor
+         * (tek parti gönderiminde). K110 spesifik belirleme: her biri
+         * TIKLANABİLİR bir alternatif.
+         */
+        secenekler: {
+          hareketId: string;
+          tarih: string;
+          kalanAdet: number;
+          birimMaliyet: number | null;
+          /** FIFO'nun ilk seçeceği parti (varsayılan işaret). */
+          onerilen: boolean;
+          /** Kalan adet siparişin adedini tek başına karşılıyor mu. */
+          secilebilir: boolean;
+        }[];
       }[];
       toplamMaliyet: number | null;
+      /**
+       * Her kalemde tam BİR açık parti var → seçilecek bir şey yok. Diyalog
+       * bunu "tek parti — onay bilgi amaçlı" diye gösterebilir; çekim/süpürme
+       * bu siparişi otomatik onaylar (aynı kapılardan geçerek).
+       */
+      tekParti: boolean;
     }
   | {
       tamam: false;
@@ -759,10 +837,27 @@ export async function onayOnizleme(saleId: string): Promise<OnayOnizlemesi> {
   const partiDurumu = new Map<string, Parti[]>();
   const kalemler: Extract<OnayOnizlemesi, { tamam: true }>["kalemler"] = [];
   let toplamMaliyet: number | null = 0;
+  let tekParti = true;
+  const kurusa = (d: string | null): number | null =>
+    d === null ? null : Math.round(Number(d) * 100) / 100;
   for (const k of satis.items) {
     const partiler =
       partiDurumu.get(k.variantId) ??
       (await acikPartiler(prisma, k.variantId, gunSonu(satis.soldAt)));
+    /** Seçeneklerin TAMAMI listelenir (yalnız FIFO'nun tükettiği değil):
+     *  operatör herhangi bir açık partiyi seçebilir (K110). Kalan adet
+     *  siparişi tek başına karşılamıyorsa seçilemez (gri) — kısmi bölme
+     *  karmaşası açılmaz. */
+    const secenekler = partiler.map((p, i) => ({
+      hareketId: p.hareketId,
+      tarih: p.occurredAt.toISOString(),
+      kalanAdet: p.kalanAdet,
+      birimMaliyet: kurusa(p.birimMaliyet),
+      onerilen: i === 0,
+      secilebilir: p.kalanAdet >= k.quantity,
+    }));
+    if (partiler.length !== 1) tekParti = false;
+
     const dagitim = fifoDagit(partiler, k.quantity);
     if (!dagitim.yeterliMi) {
       return {
@@ -774,10 +869,7 @@ export async function onayOnizleme(saleId: string): Promise<OnayOnizlemesi> {
     partiDurumu.set(k.variantId, dagitim.kalanPartiler);
     let kalemMaliyet: number | null = 0;
     const paylar = dagitim.dagitim.map((pay) => {
-      const bm =
-        pay.parti.birimMaliyet === null
-          ? null
-          : Math.round(Number(pay.parti.birimMaliyet) * 100) / 100;
+      const bm = kurusa(pay.parti.birimMaliyet);
       if (bm === null) kalemMaliyet = null;
       else if (kalemMaliyet !== null)
         kalemMaliyet = Math.round((kalemMaliyet + bm * pay.adet) * 100) / 100;
@@ -791,11 +883,14 @@ export async function onayOnizleme(saleId: string): Promise<OnayOnizlemesi> {
     else if (toplamMaliyet !== null)
       toplamMaliyet = Math.round((toplamMaliyet + kalemMaliyet) * 100) / 100;
     kalemler.push({
+      kalemId: k.id,
+      variantId: k.variantId,
       sku: k.variant.sku,
       adet: k.quantity,
-      partiler: paylar,
+      onerilenDagitim: paylar,
       kalemMaliyet,
+      secenekler,
     });
   }
-  return { tamam: true, kalemler, toplamMaliyet };
+  return { tamam: true, kalemler, toplamMaliyet, tekParti };
 }
