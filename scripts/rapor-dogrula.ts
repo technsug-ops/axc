@@ -384,7 +384,16 @@ console.log("\n5) KURALLAR");
   ).paraBirimleri[0]!;
 
   kontrol("Ağustos: satış YOK, iade var", agustos.satisAdedi === 0 && agustos.iadeAdedi === 1);
-  yakin("Ağustos brüt NET-2 (yalnız iade etkisi)", agustos.brutNet2, -600);
+  /**
+   * K170 (05.09.2026): bu pencerede YALNIZ iade var (satış Temmuz'da), telafi
+   * edecek satış yok. İade net2 (−600) > net1 (−695,11) — KDV geri döndü.
+   * Kırpma net2'yi net1'e indirir (devreden 95,11); o KDV avantajı henüz bu
+   * ayın satışlarıyla mahsuplaşmadı. _(Eskiden −600 bekleniyordu; kırpma öncesi
+   * net2 net1'i aşabiliyordu — Halil kararı bunu yasakladı: iade NET-2'yi
+   * NET-1'in üstüne çıkaramaz.)_
+   */
+  yakin("Ağustos brüt NET-2 (iade net1'e kırpılı)", agustos.brutNet2, -695.11);
+  yakin("Ağustos devreden KDV (iade KDV'si)", agustos.devreden, 95.11);
 
   // --- 5b) PARA BİRİMLERİ AYRI — ÇEVRİM YOK -------------------------------
   const pencere = pencereOlustur("BU_AY", new Date("2026-08-31T09:00:00Z"));
