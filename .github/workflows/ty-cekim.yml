@@ -11,7 +11,7 @@
 #  SIR: depo Secrets → CRON_SECRET (Vercel'dekiyle AYNI değer).
 #  Sır tanımsızsa istek boş Bearer taşır ve uç 404 döner — güvenli.
 # ============================================================================
-name: TY cekim (10 dk)
+name: Kanal cekimleri (10 dk)
 
 on:
   schedule:
@@ -32,4 +32,12 @@ jobs:
           cat cevap.json || true
           # 404 = sir eslesmiyor (kurulum eksik) — is KIRMIZI biter ki
           # sessiz kacis olmasin; 200 disi her sey de kirmizi.
+          test "$KOD" = "200"
+      # K167-③: N11 ucu — TY adımı kırmızı olsa da koşar (iki kanal bağımsız).
+      - name: N11 ucunu cagir
+        if: always()
+        run: |
+          KOD=$(curl -s -o cevap-n11.json -w "%{http_code}"             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"             "https://axc-seven.vercel.app/api/cron/n11-cekim")
+          echo "HTTP $KOD"
+          cat cevap-n11.json || true
           test "$KOD" = "200"

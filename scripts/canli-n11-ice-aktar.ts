@@ -122,31 +122,65 @@ type HamPaket = {
   lines?: Record<string, unknown>[];
 };
 
-async function main() {
+/**
+ * K167-③ — TEK GÖVDE, İKİ OKUYUCU (K166 deseninin kopyası): betik argv ile,
+ * sunucu ucu (`/api/cron/n11-cekim`) env ile çağırır. Dönüş özeti sunucu
+ * ucunun JSON cevabıdır; console.log'lar betikte ekrana, Vercel'de function
+ * loguna akar.
+ */
+export type N11CekimOzeti = {
+  kip: "ONIZLEME" | "YAZIM";
+  apiPaket: number;
+  iptalPaket: number;
+  tamamiIptal: number;
+  saatCozulemeyen: number;
+  cokAdetOlculemedi: number;
+  cakisanAtlandi: number;
+  belirsiz: number;
+  yazilamazKod: number;
+  yazilan: number;
+  hata: number;
+  saleOnce: number;
+  saleSonra: number | null;
+};
+
+export async function n11CekimKos(ayar: {
+  yaz: boolean;
+  /** K166: sunucu ucundan DATABASE_URL; betikte boş → dosyadan. */
+  dbAdresi?: string;
+}): Promise<
+  | N11CekimOzeti
+  | { atlandi: "BEKCI_TURU" | "KIMLIK" | "VERITABANI" | "CEKIM" | "HESAP" }
+> {
+  const YAZIM = ayar.yaz;
   if (bekciTuruKosuyorMu()) {
     console.log("");
     console.log("⏭ BEKÇİ TURU KOŞUYOR (.bekci-kilidi) — bu çekim ATLANDI; sonraki koşum yakalar.");
     console.log("");
-    return;
+    return { atlandi: "BEKCI_TURU" };
   }
   const k = kimlikOku();
   if (!k) {
-    console.log("\n⛔ N11 ANAHTARLARI EKSİK (.env.canli)\n");
+    console.log("\n⛔ N11 ANAHTARLARI EKSİK (env ya da .env.canli)\n");
     process.exitCode = 1;
-    return;
+    return { atlandi: "KIMLIK" };
   }
-  const c = canliYapilandirma();
-  if (!c.tamam) {
-    console.log("\n⛔ CANLI ADRES OKUNAMADI\n");
-    process.exitCode = 1;
-    return;
+  let dbAdresi = ayar.dbAdresi ?? null;
+  if (dbAdresi === null) {
+    const c = canliYapilandirma();
+    if (!c.tamam) {
+      console.log("\n⛔ CANLI ADRES OKUNAMADI\n");
+      process.exitCode = 1;
+      return { atlandi: "VERITABANI" };
+    }
+    dbAdresi = c.veri.ham;
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(c.veri.ham) });
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(dbAdresi) });
   const okumaAni = new Date();
   const partiKimligi = `n11-${okumaAni.toISOString().slice(0, 19).replace(/[-:T]/g, "")}`;
 
   console.log("\n" + "=".repeat(78));
-  console.log(`K167-② N11 İÇE AKTARMA — ${YAZ ? "⚠ YAZIM MODU" : "ÖNİZLEME (yazmaz)"}`);
+  console.log(`K167-② N11 İÇE AKTARMA — ${YAZIM ? "⚠ YAZIM MODU" : "ÖNİZLEME (yazmaz)"}`);
   console.log("=".repeat(78));
   console.log(`  parti kimliği : ${partiKimligi}`);
 
@@ -162,7 +196,7 @@ async function main() {
     );
     await prisma.$disconnect();
     process.exitCode = 1;
-    return;
+    return { atlandi: "CEKIM" };
   }
   const paketler = cekim.kayitlar as HamPaket[];
 
@@ -174,7 +208,7 @@ async function main() {
     console.log(`\n⛔ sellerId TEKİL DEĞİL (${sellerIdler.join(",") || "boş"}) — hüküm yok.\n`);
     await prisma.$disconnect();
     process.exitCode = 1;
-    return;
+    return { atlandi: "HESAP" };
   }
   const hesap = await prisma.channelAccount.findFirst({
     where: { externalId: sellerIdler[0] },
@@ -186,7 +220,7 @@ async function main() {
     console.log(`   (Hesap OLUŞTURULMAZ; bağ bilinçli kurulur — K165 kuralı.)\n`);
     await prisma.$disconnect();
     process.exitCode = 1;
-    return;
+    return { atlandi: "HESAP" };
   }
   console.log(`  kanal hesabı  : ${hesap.name} (sellerId ${sellerIdler[0]})`);
 
@@ -339,12 +373,24 @@ async function main() {
 
   console.log(`\n③ YAZILACAK: ${yazilabilir.length} sipariş  ·  beklenen Sale TOPLAM ${onceToplam + yazilabilir.length}`);
 
-  if (!YAZ) {
+  const ozetTabani = {
+    apiPaket: paketler.length,
+    iptalPaket,
+    tamamiIptal: tumIptal.length,
+    saatCozulemeyen: saatsiz.length,
+    cokAdetOlculemedi: cokAdet.length,
+    cakisanAtlandi: cakisanlar.length,
+    belirsiz: belirsiz.length,
+    yazilamazKod: yazilamaz.length,
+    saleOnce: onceToplam,
+  };
+
+  if (!YAZIM) {
     console.log(`\n${"=".repeat(78)}`);
     console.log(`  ÖNİZLEME — hiçbir şey yazılmadı. Yazmak için: -- --yaz`);
     console.log("=".repeat(78) + "\n");
     await prisma.$disconnect();
-    return;
+    return { kip: "ONIZLEME", ...ozetTabani, yazilan: 0, hata: 0, saleSonra: null };
   }
 
   // ═══ YAZIM ══════════════════════════════════════════════════════════════
@@ -448,6 +494,7 @@ async function main() {
   console.log(`  GERİ ALMA ÖLÇÜTÜ: importBatch = ${partiKimligi} (liste değil, yeniden hesaplanabilir)`);
   console.log("=".repeat(78) + "\n");
   await prisma.$disconnect();
+  return { kip: "YAZIM", ...ozetTabani, yazilan, hata, saleSonra: sonraToplam };
 }
 
 /** İçeri alındığında KOŞMAZ — TY importer'daki kusur düzeltmesinin aynısı. */
@@ -457,7 +504,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  main().catch((e) => {
+  n11CekimKos({ yaz: YAZ }).catch((e) => {
     console.error(e);
     process.exit(1);
   });

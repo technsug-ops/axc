@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/ty-cekim",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/n11-cekim",
+      "schedule": "10 4 * * *"
     }
   ]
 }

@@ -13,7 +13,7 @@
 
 ---
 
-## 🔶 K169 — KANALA İLK YAZMA: TY'YE STOK/FİYAT GÖNDERİMİ · 05.09.2026 · [YAZILDI — deploy+yetki senkronu bekliyor]
+## ✅ K169 — KANALA İLK YAZMA: TY'YE STOK/FİYAT GÖNDERİMİ · 05.09.2026 · [HALİL TESTİ GEÇTİ]
 
 > **Halil:** _"stok girdiğimi Trendyol'a push edebilir miyim, fiyat
 > indirimini push edebilir miyim?"_ → _"başla şekerim"_. 01.09'un "stok
@@ -44,8 +44,10 @@
 (ikinci POST · sunucu-stok çözümünü kaldıran · rakamsız gönderim) ·
 bit-bit geri · build ✓.
 
-⏭ SIRADA: push+deploy → `canli:yetki` → Halil canlıda tek ürünle dener
-(önerilen: düşük stoklu ucuz bir ürün; TY panelinden değişimi teyit eder).
+✅ HALİL TESTİ GEÇTİ (05.09.2026): deploy + `canli:yetki` 28/28 sonrası
+Halil gerçek cihaz + canlı adreste denedi — _"Gönderdim çalışıyor."_
+(İlk turda düğmeyi listede aradı; düğme ürün DETAYINDA, varyant satırında —
+tarif netleştirildi, buldu, gönderdi.)
 ⏭ AÇIK: toplu gönderim (çok ürün) ayrı karar; HB/N11 gönderimi kanal
 onayları sonrası aynı desenle.
 
@@ -106,9 +108,24 @@ koşum zararsız (ölçüldü). Bekçi: `ice-aktarma:dogrula` **315/315**
 bozuk tarihte an uydurulur) — iptal ölçütleri koşul+sonuç birlikte arar
 (`{false&&}` körlüğü kapatıldı).
 
-⏭ AÇIK: ① 5-dk rutine N11 koşumu (K166 deseni: `n11CekimKos` çekirdeği +
-rota — ayrı paket); ② çok-adet kanıtı gelince kova açılır; ③ N11 hakediş/
-kesinti uçları (komisyon faturası) ileride.
+─── ③ MAKİNEDEN BAĞIMSIZ RUTİN · 05.09.2026 · [YAZILDI — Vercel env bekliyor]
+
+> **Halil:** _"Yapalım."_ K166 deseninin birebir kopyası.
+
+Çekirdek ayrıştı (`n11CekimKos` — tek gövde: betik argv, rota env; tipli
+özet + atlandi: BEKCI_TURU/KIMLIK/VERITABANI/CEKIM/HESAP). Rota
+`/api/cron/n11-cekim` (GET · Bearer CRON_SECRET · yanlış/boş sır **404** ·
+maxDuration 60 · build kanıtı `ƒ /api/cron/n11-cekim`). Tetik: GitHub
+Actions AYNI workflow'a ikinci adım (`if: always()` — TY kırmızı olsa da
+koşar) + Vercel cron günlük yedek (04:10) + proxy ACIK_YOLLAR + yetki
+istisnası. Bekçi: K167-③ bloğu (rota çekirdeği çağırıyor · sır kapısı 404 ·
+betik aynı gövde) — **3 mutasyon 3 kırmızı** (kapı kaldıran · 404→401 ·
+çekirdek bağını koparan).
+⏭ HALİL: Vercel → Settings → Environment Variables → `N11_APP_KEY` ve
+`N11_APP_SECRET` (.env.canli'deki değerlerle) → redeploy. Eklenene kadar
+uç `{"atlandi":"KIMLIK"}` döner — sessiz kaçış yok, cevapta görünür.
+⏭ AÇIK: ② çok-adet kanıtı gelince kova açılır; ③ N11 hakediş/kesinti
+uçları (komisyon faturası) ileride.
 
 ---
 
@@ -222,7 +239,10 @@ barcode". "Eşleşen" bu yüzden üretilemiyor; `approve-prematch` /
 `reject-prematch` uçları bulundu (var: 500, 404 değil) ama PRE_MATCHED
 ürün olmadan koşamaz. Bu ikisi ticket'ta HB'ye not edilir.
 
-⏭ **HALİL — TICKET (canlıya geçişin kapısı):** Canlı Merchant Panel →
+✅ **TICKET AÇILDI (Halil, 05.09.2026)** — HB canlı onayı bekleniyor
+(doküman: entegratör yetkilendirme ~2 saat sürebilir; onay gelince
+`HEPSIBURADA_ORTAM=CANLI` tek satır).
+⏭ ~~HALİL — TICKET (canlıya geçişin kapısı):~~ Canlı Merchant Panel →
 Yardım Merkezi → Talepler → "API Entegrasyon Teknik Destek" → tür
 **"API Entegratör yetkilendirme işlemleri"** → mesaja: trackingid
 `c22d1260-1543-42cd-af1c-84980ac340b6`, entegrasyon modeli **API**

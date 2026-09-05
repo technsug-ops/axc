@@ -37,6 +37,8 @@ const ACIK_YOLLAR = [
   // kapıyı mutasyonla sınıyor). İlk canlı test bu satır OLMADAN yapıldı
   // ve oturum kapısı 401 verdi — rota kendi kapısına hiç ulaşamamıştı.
   "/api/cron/ty-cekim",
+  // K167-③ — N11 çekim ucu: K166'nın birebir kopyası, aynı sır kapısı.
+  "/api/cron/n11-cekim",
 
   // ── PWA: TARAYICI BUNLARI ÇEREZSİZ İSTER ──────────────────────────────
   //

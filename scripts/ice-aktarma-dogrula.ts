@@ -2001,5 +2001,35 @@ kontrol(
   );
 }
 
+/**
+ * ═══ K167-③ — N11 SUNUCU UCU: TEK GÖVDE + SIR KAPISI ═════════════════════
+ * K166 ölçütlerinin birebir kopyası: rota AYNI çekirdeği çağırır, sır
+ * tutmayan istek 404 alır (rota varlığı sızmaz), betik modu aynı gövde.
+ */
+{
+  console.log("K167-③ N11 sunucu ucu — tek gövde, sır kapısı 404");
+  const rota = yorumsuz(
+    readFileSync("src/app/api/cron/n11-cekim/route.ts", "utf8"),
+  );
+  kontrol(
+    "rota ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)",
+    rota.includes("await n11CekimKos({ yaz: true, dbAdresi })"),
+  );
+  const kapiBasi = rota.indexOf("if (sir === \"\" || gelen !== ");
+  kontrol("sır kapısı VAR ve boş-sır da kapatıyor", kapiBasi >= 0);
+  const kapiB = kapiBasi >= 0 ? rota.slice(kapiBasi, kapiBasi + 220) : "";
+  kontrol(
+    "  ...reddedilen istek 404 alır (varlık sızmaz)",
+    kapiB.includes("{ status: 404 }"),
+  );
+  const betik = yorumsuz(
+    readFileSync("scripts/canli-n11-ice-aktar.ts", "utf8"),
+  );
+  kontrol(
+    "betik modu da AYNI çekirdeği çağırıyor",
+    betik.includes("n11CekimKos({ yaz: YAZ })"),
+  );
+}
+
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
 process.exit(hata === 0 ? 0 : 1);
