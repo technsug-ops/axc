@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { gunHassasiyetliMi } from "../src/lib/donem";
 import { onayaUygunMu } from "../src/lib/onay-kuyrugu";
 import { hbAni, hbKomisyonOrani } from "./canli-hb-ice-aktar";
+import { n11Ani, n11BirimFiyat, n11KomisyonOrani } from "./canli-n11-ice-aktar";
 
 import { birimFiyatCoz, iptalAniCoz } from "./canli-ty-ice-aktar";
 import { iceAktarmaTarihi } from "../src/lib/ice-aktarma-tarih-kapisi";
@@ -1934,6 +1935,69 @@ kontrol(
   kontrol(
     "betik modu da AYNI çekirdeği çağırıyor",
     betik.includes("tyCekimKos({ yaz: YAZ, gun: GUN })"),
+  );
+}
+
+/**
+ * ═══ K167-② — N11 İÇE AKTARMA: ÖLÇÜLMÜŞ EŞLEME SABİTLENİR ════════════════
+ * 4 canlı paketle ölçüldü (05.09.2026): ciro tabanı sellerInvoiceAmount
+ * (indirim N11 fonlu, satıcı tam fiyat faturalıyor), damgalar epoch (mutlak
+ * an — saat dilimi tuzağı doğamaz), commissionRate satır düzeyinde oran.
+ * ⛔ 4/4 kayıt TEK ADET: birim/toplam AYIRT EDİLEMEDİ — adet>1 satır
+ * yazılmaz, ayrı kovada durur. Ölçüt kuralı sabitler: bölme geri gelirse
+ * (TY faciası) ya da kova kalkarsa kırmızı.
+ */
+{
+  console.log("K167-② N11 eşlemesi — birim tabanı, epoch anı, çok-adet kovası");
+  const nK = yorumsuz(readFileSync("scripts/canli-n11-ice-aktar.ts", "utf8"));
+  /** Saf gövdeler DEĞERLE sınanır. */
+  kontrol(
+    "n11Ani: epoch ms mutlak ana çevrilir",
+    n11Ani(1788501000000)?.toISOString() === "2026-09-04T05:50:00.000Z",
+  );
+  kontrol("n11Ani: bozuk/boş değer null döner (tarih uydurulmaz)", n11Ani("bozuk") === null && n11Ani(0) === null);
+  kontrol("n11BirimFiyat: TEK adette tutar AYNEN birimdir", n11BirimFiyat(1, 1989) === 1989);
+  kontrol(
+    "n11BirimFiyat: adet>1 NULL — birim/toplam ölçülemedi, BÖLME YASAK",
+    n11BirimFiyat(2, 1989) === null && n11BirimFiyat(3, 300) === null,
+  );
+  kontrol("n11BirimFiyat: sayı olmayan tutar null (uydurma yok)", n11BirimFiyat(1, "x") === null);
+  kontrol("n11KomisyonOrani: 0 KANAL BELGESİDİR, aynen geçer", n11KomisyonOrani(0) === 0);
+  kontrol("n11KomisyonOrani: null BİLİNMİYOR kalır (ChannelSku dalına)", n11KomisyonOrani(null) === null);
+  /** Yazım blokları — kullanım yerine bağlı desenler. */
+  kontrol(
+    "satır fiyatı n11BirimFiyat'tan geçer (tek kapı)",
+    nK.includes("birimFiyat: n11BirimFiyat(adet, ham.sellerInvoiceAmount)"),
+  );
+  /** Koşul SONUCUYLA birlikte aranır — `{false && …}` deseni ayakta
+   *  bırakır, o yüzden çıplak `includes` yetmez (anayasa: yöntem #2). */
+  kontrol(
+    "çok-adet kovası AYIKLIYOR (süzgeç + silme birlikte)",
+    /const cokAdet = \[\.\.\.adaylar\.values\(\)\]\.filter\(\(a\) =>\s*a\.satirlar\.some\(\(s\) => s\.birimFiyat === null\),?\s*\);\s*for \(const a of cokAdet\) adaylar\.delete\(a\.siparisNo\);/.test(nK),
+  );
+  kontrol(
+    "iptal paket YAZILMIYOR (koşul + sayaç + continue birlikte)",
+    /if \(String\(p\.shipmentPackageStatus\) === "Cancelled"\) \{\s*iptalPaket\+\+;\s*continue;/.test(nK),
+  );
+  kontrol(
+    "iptal satır YAZILMIYOR (koşul + sayaç + continue birlikte)",
+    /if \(String\(ham\.orderItemLineItemStatusName\) === "Cancelled"\) \{\s*aday\.iptalliSatir\+\+;\s*continue;/.test(nK),
+  );
+  kontrol(
+    "soldAt GERÇEK ANDAN — kuyruk saat süzgecinden geçer",
+    nK.includes("soldAt: aday.soldAt as Date"),
+  );
+  kontrol(
+    "oran boşsa ChannelSku'dan doldurulur (RULE_MISSING dersi)",
+    nK.includes("komisyon = Number(cs.commissionRate.toString())"),
+  );
+  kontrol(
+    "StockMovement ÜRETMİYOR — stok/kâr bağı onay kuyruğundan (K164)",
+    !nK.includes("stockMovement.create"),
+  );
+  kontrol(
+    "hesap OLUŞTURMUYOR — canlı kimlik elle bağlanır (K165 kuralı)",
+    !nK.includes("channelAccount.create"),
   );
 }
 

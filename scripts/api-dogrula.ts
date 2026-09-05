@@ -293,6 +293,15 @@ const YAZMASI_BEYANLI: { dosya: string; gerekce: string; bekcisi: string }[] = [
       "StockMovement ÜRETMEZ (K164 onay kuyruğu düşürür).",
     bekcisi: "ice-aktarma:dogrula",
   },
+  {
+    dosya: "canli-n11-ice-aktar.ts",
+    gerekce:
+      "K167-② N11 içe aktarma — Sale/SaleItem yazar (TY/HB disiplininin kopyası): " +
+      "--yaz kilidi, importBatch+importKaynak, AuditLog, çakışmada atla; " +
+      "StockMovement ÜRETMEZ (K164 onay kuyruğu düşürür); adet>1 satır " +
+      "birim/toplam kanıtı gelene dek YAZILMAZ.",
+    bekcisi: "ice-aktarma:dogrula",
+  },
 ];
 
 for (const yol of apiDosyalari) {

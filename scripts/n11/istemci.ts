@@ -94,3 +94,44 @@ export const UCLAR = {
   paketler: (sayfa: number, boyut: number) =>
     `/rest/delivery/v1/shipmentPackages?page=${sayfa}&size=${boyut}`,
 };
+
+export type CekimSonucu =
+  | { tur: "TAMAM"; kayitlar: unknown[]; sayfaSayisi: number }
+  | { tur: "HATA"; sonuc: OkumaSonucu }
+  | { tur: "ZARF_TANINMADI"; anahtarlar: string[] };
+
+/**
+ * Bütün paket sayfalarını toplar. Bitiş ölçütü ZARFIN BEYANI (`totalPages`;
+ * ölçüldü 05.09.2026: üst alanlar pageCount/totalPages/page/size/content) —
+ * 404'e ya da boş sayfaya bel bağlanmaz (HB dersi: sınır ötesi davranış
+ * uçtan uca ayrı ölçülmeden bitiş işareti sayılmaz). Zarf tanınmazsa hüküm
+ * yok: hangi anahtarların geldiği aynen raporlanır.
+ */
+export async function tumPaketler(
+  baslik: Record<string, string>,
+  boyut = 100,
+): Promise<CekimSonucu> {
+  const kayitlar: unknown[] = [];
+  let sayfaSayisi = 1;
+  /** Emniyet tavanı: zarf bozulup totalPages şişerse sonsuz döngü olmaz. */
+  const TAVAN = 200;
+  for (let sayfa = 0; sayfa < Math.min(sayfaSayisi, TAVAN); sayfa++) {
+    const sonuc = await apiGet(UCLAR.paketler(sayfa, boyut), baslik);
+    if (sonuc.tur !== "VERI") return { tur: "HATA", sonuc };
+    const govde = sonuc.govde as {
+      totalPages?: unknown;
+      pageCount?: unknown;
+      content?: unknown;
+    };
+    const beyan = Number(govde.totalPages ?? govde.pageCount);
+    if (!Number.isFinite(beyan) || !Array.isArray(govde.content)) {
+      return {
+        tur: "ZARF_TANINMADI",
+        anahtarlar: Object.keys(govde as Record<string, unknown>),
+      };
+    }
+    sayfaSayisi = beyan;
+    kayitlar.push(...govde.content);
+  }
+  return { tur: "TAMAM", kayitlar, sayfaSayisi };
+}

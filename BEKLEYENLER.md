@@ -51,7 +51,7 @@ onayları sonrası aynı desenle.
 
 ---
 
-## 🔶 K167 — N11 BAŞLADI · 04.09.2026 · [YAZILDI — anahtar bekleniyor]
+## 🔶 K167 — N11 BAŞLADI · 04.09.2026 · [② KOŞTU — canlı]
 
 > **Halil:** _"Ayrıca N11 API'sini aldım."_ Üçüncü kanal.
 
@@ -62,6 +62,53 @@ imza, env→dosya kimlik sırası) + sağlık betiği (`canli:n11-saglik`, beş-
 ayrımı) yazıldı; `api:dogrula` izlerine `api.n11.com` + `n11/istemci` girdi.
 ⏭ Halil `.env.canli`ye `N11_APP_KEY` / `N11_APP_SECRET` girecek → sağlık →
 zarf/alan ölçümü → çekim (TY disiplini; muhtemelen hızlı — yapı klon).
+
+─── ② İÇE AKTARMA KURULDU VE KOŞTU · 05.09.2026 · [KOŞTU — canlı]
+
+> **Halil:** anahtarları girdi → _"Onay veriyorum"_ (içe aktarma paketi).
+
+**ÖLÇÜLMÜŞ EŞLEME (4 canlı paket):**
+- Ciro tabanı **`sellerInvoiceAmount`** (satıcının faturaladığı): 4/4
+  kayıtta indirim N11 FONLU (sellerDiscount=0, mallDiscount>0), satıcı tam
+  fiyat faturalıyor — alıcının ödediği `dueAmount` ciro DEĞİL.
+  ⭐ ÇAPRAZ TEYİT: Halil'in elle girdiği 3 sipariş kuruşuna aynı rakamları
+  taşıyor (3499/1989/4999 · komisyon 18/16/13) — taban defterle doğrulandı.
+- ⛔ **4/4 kayıt TEK ADET — birim/toplam AYIRT EDİLEMEDİ.** `n11BirimFiyat`
+  adet>1'de null döner, sipariş "ÇOK ADET ÖLÇÜLEMEDİ" kovasında kırmızı
+  durur, YAZILMAZ. Açılış şartı: ilk çok adetli kayıt + ayırt edici kanıt
+  (hakediş satırı — TY'de 29.08 böyle çözüldü). Bölme/çarpma yazılmadı.
+- Sipariş anı `packageHistories` "Created" damgasından (epoch ms — MUTLAK
+  an, saat dilimi tuzağı doğamaz); çok paketli siparişte en erken Created.
+  soldAt GERÇEK AN (K163) → onay kuyruğu süzgecinden kendiliğinden geçer.
+- `commissionRate` satır düzeyi ORAN; dolu (0 dahil) aynen, null →
+  ChannelSku (RULE_MISSING dersi). `taxDeductionRate=1` iş sabitiyle
+  tutarlı, yazılmıyor (motor kendi kuralından). `sellerCampaignCommissionRate`
+  4/4'te 0 — anlamı ölçülemedi, YAZILMIYOR; açılış şartı: ilk >0 kayıt.
+- İptal: paket VE satır düzeyinde `Cancelled` yazılmaz (ölçüldü: iptal
+  pakette totalAmount=0). `cargoTrackingNumber` var ama `shipmentCode`
+  YAZILMIYOR (K165 kararının kopyası — K60-② doluluk ≠ olay izi).
+
+**DİSİPLİN:** TY/HB kopyası — --yaz kilidi · çakışmada atla · StockMovement
+ÜRETMEZ (K164 kuyruğu düşürür) · importKaynak "n11-enumerasyon" (doğum
+beyanı burada) · AuditLog `N11_SIPARIS_ICE_AKTARMA` · bekçi-kilidi kapısı ·
+`api:dogrula` YAZICI beyannamesi · sayfalama zarf beyanından (`totalPages`,
+404'e bel bağlanmaz) · sellerId tekil değilse hüküm yok.
+
+**HESAP BAĞI (izli):** çekim kırmızı durdu, sellerId **4534966** basıldı →
+AXCALI (N11 satış hesabı) `externalId`ine bağlandı — AuditLog
+`KANAL_HESAP_KIMLIK_BAGI` (Halil onayı 05.09.2026). Dolu externalId ezilmez.
+
+**KOŞUM (05.09.2026):** 4 paket → 1 iptal atıldı, 3 sipariş → **3'ü de
+ÇAKIŞTI** (Halil elle girmişti) → yazılan 0, kopya 0, sayım tuttu. İkinci
+koşum zararsız (ölçüldü). Bekçi: `ice-aktarma:dogrula` **315/315**
+(K167-② bloğu özet satırının ÖNÜNDE) · **4 mutasyon 4 kırmızı**
+(bölme geri gelir · çok-adet kovası kalkar · iptal koşulu `{false&&}` ·
+bozuk tarihte an uydurulur) — iptal ölçütleri koşul+sonuç birlikte arar
+(`{false&&}` körlüğü kapatıldı).
+
+⏭ AÇIK: ① 5-dk rutine N11 koşumu (K166 deseni: `n11CekimKos` çekirdeği +
+rota — ayrı paket); ② çok-adet kanıtı gelince kova açılır; ③ N11 hakediş/
+kesinti uçları (komisyon faturası) ileride.
 
 ---
 
