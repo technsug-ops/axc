@@ -1760,16 +1760,25 @@ kontrol(
   const eylemK = yorumsuz(
     readFileSync("src/app/satislar/actions.ts", "utf8"),
   );
-  const kapiBasi = eylemK.indexOf("const uygunluk = onayaUygunMu(");
-  kontrol("onay eylemi SAF ön-kontrolü çağırıyor", kapiBasi >= 0);
-  const kapiB = kapiBasi >= 0 ? eylemK.slice(kapiBasi, kapiBasi + 500) : "";
+  /** ⚠ ÖLÇÜT ÇEKİRDEĞE TAŞINDI (K168, 05.09.2026): SALE_OUT yazımı,
+   *  occurredAt, sourceMovementId ve onaylandiAt artık `onay-cekirdegi.ts`te
+   *  (elle + otomatik onay AYNI gövde). Davranış AYNI, dosya değişti —
+   *  ölçüt kaynağa değil DAVRANIŞA bağlı kalsın diye çekirdeğe yönlendirildi.
+   *  _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez — ölçüt
+   *  eskiyebilir; güncellenirken NİYE eskidiği yazılır".)_ */
+  const cekirdekK = yorumsuz(
+    readFileSync("src/lib/onay-cekirdegi.ts", "utf8"),
+  );
+  const kapiBasi = cekirdekK.indexOf("const uygunluk = onayaUygunMu(");
+  kontrol("onay çekirdeği SAF ön-kontrolü çağırıyor", kapiBasi >= 0);
+  const kapiB = kapiBasi >= 0 ? cekirdekK.slice(kapiBasi, kapiBasi + 500) : "";
   kontrol(
     "  ...ve sonucuna BAĞLI: uygun değilse dönüyor",
     kapiB.includes("if (!uygunluk.uygun) return"),
   );
-  const cikisBasi = eylemK.indexOf("tx.stockMovement.create");
+  const cikisBasi = cekirdekK.indexOf("tx.stockMovement.create");
   kontrol("onay SALE_OUT yazıyor", cikisBasi >= 0);
-  const cikisB = cikisBasi >= 0 ? eylemK.slice(cikisBasi, cikisBasi + 600) : "";
+  const cikisB = cikisBasi >= 0 ? cekirdekK.slice(cikisBasi, cikisBasi + 600) : "";
   kontrol(
     "  ...saat stok defterine TAŞINIYOR (occurredAt = soldAt, K163 sözü)",
     cikisB.includes("occurredAt: satis.soldAt"),
@@ -1779,7 +1788,7 @@ kontrol(
     cikisB.includes("sourceMovementId: pay.parti.hareketId"),
   );
   kontrol(
-    "onay sonrası kâr tazeleniyor",
+    "onay sonrası kâr tazeleniyor (elle kabuk)",
     eylemK.includes("await satisKarTazele(saleId)"),
   );
 
@@ -1809,8 +1818,8 @@ kontrol(
     izli.uygun === false && izli.sebep === "ZATEN_ONAYLI",
   );
   kontrol(
-    "onay eylemi ÖZ İZİ yazıyor (onaylandiAt — kargo kümesi buna bakar)",
-    eylemK.includes("data: { onaylandiAt: new Date() }"),
+    "onay çekirdeği ÖZ İZİ yazıyor (onaylandiAt — kargo kümesi buna bakar)",
+    cekirdekK.includes("data: { onaylandiAt: new Date() }"),
   );
 
   /** K164-③ (Halil düzeltmesi): maliyet GÖRÜLMEDEN onay verilmez. */
@@ -2028,6 +2037,67 @@ kontrol(
   kontrol(
     "betik modu da AYNI çekirdeği çağırıyor",
     betik.includes("n11CekimKos({ yaz: YAZ })"),
+  );
+}
+
+/**
+ * ═══ K168 — OTOMATİK ONAY: TEK PARTİLİ SİPARİŞTE ONAYA GEREK YOK ═════════
+ * Elle onay ve otomatik onay AYNI çekirdekten (onayCekirdegi) — iki yerde
+ * iki ölçüt olmaz. Otomatik onay yalnız İZ DAMGASINI değiştirir; sayım/dönem
+ * kapısını GEVŞETMEZ. Ölçütler davranışa bağlı (desen değil): çekirdek
+ * gövdesi çağrılmıyor (server-only importlar) ama kaynak KULLANIM BLOĞU
+ * daraltılmış aranıyor.
+ */
+{
+  console.log("K168 otomatik onay — tek çekirdek, gevşetmeyen kapılar");
+  const cekirdek = yorumsuz(readFileSync("src/lib/onay-cekirdegi.ts", "utf8"));
+  const kuyruk = yorumsuz(readFileSync("src/lib/onay-kuyrugu.ts", "utf8"));
+  const actions = yorumsuz(readFileSync("src/app/satislar/actions.ts", "utf8"));
+  const n11 = yorumsuz(readFileSync("scripts/canli-n11-ice-aktar.ts", "utf8"));
+  const ty = yorumsuz(readFileSync("scripts/canli-ty-ice-aktar.ts", "utf8"));
+
+  /** Elle onay çekirdeği ÇAĞIRIYOR (ikinci gövde yazılmadı). */
+  kontrol(
+    "siparisiOnayla çekirdeği çağırıyor (otomatik: false)",
+    /onayCekirdegi\(tx, \{ saleId, secimler, otomatik: false \}\)/.test(actions),
+  );
+  /** Otomatik onay AYNI çekirdeği çağırıyor (otomatik: true). */
+  kontrol(
+    "otomatikOnaylaKuyruk çekirdeği çağırıyor (otomatik: true)",
+    /onayCekirdegi\(tx, \{ saleId: b\.id, secimler: \{\}, otomatik: true \}\)/.test(kuyruk),
+  );
+  /** tekPartiMi: tam BİR sınır-içi parti — çok parti otomatik onaylanmaz. */
+  kontrol(
+    "tekPartiMi çok partili siparişi ELER (parti !== 1 → false)",
+    /if \(partiler\.length !== 1\) return false;/.test(kuyruk),
+  );
+  /** Sayım/dönem kapısı çekirdekte DURUYOR (otomatik onay gevşetmez). */
+  kontrol(
+    "çekirdek sayım kapısını taşıyor (SAYIM_DURAKSADI)",
+    /karar\.sonuc === "DURAKSA"/.test(cekirdek) && cekirdek.includes('kod: "SAYIM_DURAKSADI"'),
+  );
+  kontrol(
+    "çekirdek dönem kapısını taşıyor (donemKapisi çağrısı)",
+    /await donemKapisi\(tx, satis\.soldAt, undefined\)/.test(cekirdek),
+  );
+  /** İz tetik damgası — elle/otomatik ayrımı (üç ay sonra "kim onayladı"). */
+  kontrol(
+    "iz tetik damgası taşıyor (OTOMATIK_TEK_PARTI / ELLE)",
+    cekirdek.includes('tetik: girdi.otomatik ? "OTOMATIK_TEK_PARTI" : "ELLE"'),
+  );
+  /** Çekimler otomatik onayı çağırıyor (İlke #10 — iki kanal aynı). */
+  kontrol(
+    "N11 çekimi otomatik onayı çağırıyor",
+    /const oto = await otomatikOnaylaKuyruk\(prisma\)/.test(n11),
+  );
+  kontrol(
+    "TY çekimi otomatik onayı çağırıyor",
+    /const oto = await otomatikOnaylaKuyruk\(prisma\)/.test(ty),
+  );
+  /** Kâr tazeleme otomatik onayda da AYNI istemciyle (betik prisma'sı). */
+  kontrol(
+    "otomatik onay kâr tazelemeyi çağırıyor (aynı istemci)",
+    /await satisKarTazele\(b\.id, prismaTam\)/.test(kuyruk),
   );
 }
 

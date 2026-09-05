@@ -6,6 +6,7 @@ import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
 import { kilitDurumu } from "./bekci-kilit";
 import { canliYapilandirma } from "./canli-ortak";
 import { baslikKur, kimlikOku, tumPaketler } from "./n11/istemci";
+import { otomatikOnaylaKuyruk } from "../src/lib/onay-kuyrugu";
 
 /**
  * ============================================================================
@@ -142,6 +143,8 @@ export type N11CekimOzeti = {
   hata: number;
   saleOnce: number;
   saleSonra: number | null;
+  /** K168: bu koşumda otomatik onaylanan tek-partili sipariş sayısı. */
+  otoOnaylanan: number;
 };
 
 export async function n11CekimKos(ayar: {
@@ -390,7 +393,7 @@ export async function n11CekimKos(ayar: {
     console.log(`  ÖNİZLEME — hiçbir şey yazılmadı. Yazmak için: -- --yaz`);
     console.log("=".repeat(78) + "\n");
     await prisma.$disconnect();
-    return { kip: "ONIZLEME", ...ozetTabani, yazilan: 0, hata: 0, saleSonra: null };
+    return { kip: "ONIZLEME", ...ozetTabani, yazilan: 0, hata: 0, saleSonra: null, otoOnaylanan: 0 };
   }
 
   // ═══ YAZIM ══════════════════════════════════════════════════════════════
@@ -490,11 +493,19 @@ export async function n11CekimKos(ayar: {
   });
   console.log(`   ✓ AuditLog yazıldı — N11_SIPARIS_ICE_AKTARMA`);
 
+  /** K168 — TEK PARTİLİ SİPARİŞLERİ OTOMATİK ONAYLA. Yeni yazılanlar VE
+   *  kuyrukta bekleyenler; her biri onay çekirdeğinin AYNI kapılarından
+   *  geçer (sayım/dönem duraksatırsa kuyrukta kalır). Betiğin kendi
+   *  prisma'sıyla (kâr tazeleme dahil). */
+  const oto = await otomatikOnaylaKuyruk(prisma);
+  console.log(`\n⑥ OTOMATİK ONAY (tek parti)`);
+  console.log(`   aday ${oto.aday} · onaylanan ${oto.onaylanan} · çok parti (elle) ${oto.cokParti} · atlanan ${oto.atlanan}`);
+
   console.log(`\n${"=".repeat(78)}`);
   console.log(`  GERİ ALMA ÖLÇÜTÜ: importBatch = ${partiKimligi} (liste değil, yeniden hesaplanabilir)`);
   console.log("=".repeat(78) + "\n");
   await prisma.$disconnect();
-  return { kip: "YAZIM", ...ozetTabani, yazilan, hata, saleSonra: sonraToplam };
+  return { kip: "YAZIM", ...ozetTabani, yazilan, hata, saleSonra: sonraToplam, otoOnaylanan: oto.onaylanan };
 }
 
 /** İçeri alındığında KOŞMAZ — TY importer'daki kusur düzeltmesinin aynısı. */

@@ -1,6 +1,7 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
+import { otomatikOnaylaKuyruk } from "../src/lib/onay-kuyrugu";
 import { kilitDurumu } from "./bekci-kilit";
 import { canliYapilandirma } from "./canli-ortak";
 import {
@@ -163,6 +164,8 @@ export type TyCekimOzeti = {
   dilimHata: number;
   saleOnce: number;
   saleSonra: number | null;
+  /** K168: bu koşumda otomatik onaylanan tek-partili sipariş sayısı. */
+  otoOnaylanan: number;
 };
 
 export async function tyCekimKos(ayar: {
@@ -455,6 +458,7 @@ export async function tyCekimKos(ayar: {
       dilimHata,
       saleOnce: onceToplam,
       saleSonra: null,
+      otoOnaylanan: 0,
     };
   }
 
@@ -558,6 +562,12 @@ export async function tyCekimKos(ayar: {
   });
   console.log(`   ✓ AuditLog yazıldı — TY_SIPARIS_ICE_AKTARMA`);
 
+  /** K168 — TEK PARTİLİ SİPARİŞLERİ OTOMATİK ONAYLA (N11 ile aynı gövde,
+   *  İlke #10). Onay çekirdeğinin AYNI kapıları; betiğin prisma'sıyla. */
+  const oto = await otomatikOnaylaKuyruk(prisma);
+  console.log(`\n⑦ OTOMATİK ONAY (tek parti)`);
+  console.log(`   aday ${oto.aday} · onaylanan ${oto.onaylanan} · çok parti (elle) ${oto.cokParti} · atlanan ${oto.atlanan}`);
+
   console.log(`\n${"=".repeat(78)}`);
   console.log(`  GERİ ALMA: importBatch = ${partiKimligi}`);
   console.log(`  ⚠ Geri alma SİLME değil İŞARETLEMEdir (iptalTarihi).`);
@@ -576,6 +586,7 @@ export async function tyCekimKos(ayar: {
     dilimHata,
     saleOnce: onceToplam,
     saleSonra: sonraToplam,
+    otoOnaylanan: oto.onaylanan,
   };
 }
 

@@ -1,6 +1,10 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 
 import { gunHassasiyetliMi } from "@/lib/donem";
+import { onayCekirdegi } from "@/lib/onay-cekirdegi";
+import { satisKarTazele } from "@/lib/kar-yeniden";
+import { acikPartiler, gunSonu } from "@/lib/stok";
+import type { IslemIstemcisi } from "@/lib/prisma";
 
 /**
  * ============================================================================
@@ -98,4 +102,97 @@ export function onayaUygunMu(satis: {
   if (satis.saleOutSayisi > 0) return { uygun: false, sebep: "ZATEN_ONAYLI" };
   if (gunHassasiyetliMi(satis.soldAt)) return { uygun: false, sebep: "TARIHSEL" };
   return { uygun: true };
+}
+
+/**
+ * ============================================================================
+ *  OTOMATİK ONAY — TEK PARTİLİ SİPARİŞTE ONAYA GEREK YOK (K168)
+ * ----------------------------------------------------------------------------
+ *  Halil 05.09.2026: _"tek parti mal varsa onaya gerek olmasın."_ Seçilecek
+ *  bir şey yoksa (her kalemde sınır-içi TAM BİR açık parti) sipariş çekim
+ *  anında kendiliğinden onaylanır: stok düşer, NET hesaplanır, kargolanacak
+ *  kümesine girer.
+ *
+ *  ⚠ AYNI KAPILARDAN GEÇER: `onayCekirdegi` (uygunluk · sayım · dönem ·
+ *  FIFO · SALE_OUT · iz) — sayım/dönem duraksatırsa otomatik onaylanmaz,
+ *  kuyrukta kalır ve elle onaya düşer. Sessiz yazım yok.
+ *
+ *  ⚠ ÇEKİM BETİĞİNİN PRISMA'SIYLA ÇALIŞIR (parametre) — global `prisma`
+ *  betikte canlıyı göstermeyebilir; kâr tazeleme de AYNI istemciyle.
+ *
+ *  ⚠ SAYFA AÇILIŞINDA (GET) ÇAĞRILMAZ — yalnız çekim (yazım işi) tetikler.
+ *  GET'te sessiz yazım bu deponun kaçındığı şeydir (PWA/önbellek kararının
+ *  kardeşi). Çekim 10 dakikada bir koştuğu için eski kuyruk da en geç o
+ *  kadar bekler.
+ * ============================================================================
+ */
+
+/** Bir siparişin her kaleminde sınır-içi TAM BİR açık parti var mı — yani
+ *  seçilecek bir şey yok mu. Boş kalemli/partisiz sipariş `false` (otomatik
+ *  onaylanmaz; stok yetersizliği elle görülür). */
+async function tekPartiMi(
+  db: IslemIstemcisi,
+  satis: { soldAt: Date; items: { variantId: string }[] },
+): Promise<boolean> {
+  if (satis.items.length === 0) return false;
+  const sinir = gunSonu(satis.soldAt);
+  for (const k of satis.items) {
+    const partiler = await acikPartiler(db, k.variantId, sinir);
+    if (partiler.length !== 1) return false;
+  }
+  return true;
+}
+
+export type OtomatikOnayOzeti = {
+  aday: number;
+  onaylanan: number;
+  cokParti: number;
+  atlanan: number;
+};
+
+/**
+ * Kuyruktaki TEK PARTİLİ siparişleri otomatik onaylar. Çekim yazımdan sonra
+ * çağırır (kendi prisma'sıyla). Her sipariş AYRI işlemde: biri sayım/dönem
+ * kapısına takılırsa öteki etkilenmez.
+ *
+ * ⚠ `prismaTam` — kâr tazeleme `$transaction` gerektirdiği için tam istemci
+ * (tx değil). `onayBekleyenler` de aynı istemciyi kullanır.
+ */
+export async function otomatikOnaylaKuyruk(
+  prismaTam: PrismaClient,
+): Promise<OtomatikOnayOzeti> {
+  const bekleyenler = await onayBekleyenler(prismaTam);
+  let onaylanan = 0;
+  let cokParti = 0;
+  let atlanan = 0;
+  for (const b of bekleyenler) {
+    const satis = await prismaTam.sale.findUnique({
+      where: { id: b.id },
+      select: { soldAt: true, items: { select: { variantId: true } } },
+    });
+    if (!satis) {
+      atlanan++;
+      continue;
+    }
+    if (!(await tekPartiMi(prismaTam, satis))) {
+      cokParti++;
+      continue;
+    }
+    try {
+      const sonuc = await prismaTam.$transaction((tx) =>
+        onayCekirdegi(tx, { saleId: b.id, secimler: {}, otomatik: true }),
+      );
+      if (sonuc.tamam) {
+        await satisKarTazele(b.id, prismaTam);
+        onaylanan++;
+      } else {
+        /** Sayım/dönem/stok kapısına takıldı → elle onaya kalır. */
+        atlanan++;
+      }
+    } catch {
+      /** Dönem kapalı vb. — kayıt kuyrukta kalır, elle onaylanır. */
+      atlanan++;
+    }
+  }
+  return { aday: bekleyenler.length, onaylanan, cokParti, atlanan };
 }

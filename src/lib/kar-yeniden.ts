@@ -13,6 +13,15 @@ import { prisma } from "@/lib/prisma";
 import type { Currency } from "@/generated/prisma/enums";
 
 /**
+ * ⚠ PRISMA PARAMETRE OLARAK ALINABİLİR (K164 oto-onay). Varsayılan global
+ * `prisma` (uygulama içi çağrılar dokunulmadan çalışır); çekim BETİĞİ kendi
+ * adaptör istemcisini geçer — global `prisma` `process.env.DATABASE_URL`e
+ * bakar ve betikte canlıyı göstermeyebilir. `$transaction`a ihtiyaç var,
+ * bu yüzden tam istemci tipi (tx değil).
+ */
+type KarIstemcisi = typeof prisma;
+
+/**
  * ============================================================================
  *  KÂR YENİDEN HESAPLAMA
  * ----------------------------------------------------------------------------
@@ -56,8 +65,9 @@ export type YenidenHesaplaSonucu = {
 /** Kâr girdisini veritabanından toplar; hesaplar ama YAZMAZ. */
 export async function karOnizle(
   girdi: YenidenHesaplaGirdisi,
+  db: KarIstemcisi = prisma,
 ): Promise<YenidenHesaplaSonucu | null> {
-  const satis = await prisma.sale.findUnique({
+  const satis = await db.sale.findUnique({
     where: { id: girdi.saleId },
     include: {
       channelAccount: { select: { channelId: true } },
@@ -85,7 +95,7 @@ export async function karOnizle(
   });
   if (!satis) return null;
 
-  const kurallar = await prisma.channelFee.findMany({
+  const kurallar = await db.channelFee.findMany({
     where: {
       channelId: satis.channelAccount.channelId,
       isActive: true,
@@ -119,7 +129,7 @@ export async function karOnizle(
     // Elle girilen tutar KDV DAHİL; motor KDV hariç bekliyor.
     kargoTarifesi = kdvHaricKargo(girdi.cargoAmountManual);
   } else if (girdi.cargoCarrierId && girdi.cargoDesi != null) {
-    const tarife = await prisma.cargoTariff.findFirst({
+    const tarife = await db.cargoTariff.findFirst({
       where: {
         channelId: satis.channelAccount.channelId,
         carrierId: girdi.cargoCarrierId,
@@ -212,13 +222,14 @@ function netYaz(durum: KarDurumu, deger: number): string | null {
 
 export async function karYenidenYaz(
   girdi: YenidenHesaplaGirdisi,
+  db: KarIstemcisi = prisma,
 ): Promise<boolean> {
-  const onizleme = await karOnizle(girdi);
+  const onizleme = await karOnizle(girdi, db);
   if (!onizleme) return false;
 
   const { yeni, paraBirimi } = onizleme;
 
-  await prisma.$transaction(async (tx) => {
+  await db.$transaction(async (tx) => {
     const satis = await tx.sale.findUnique({
       where: { id: girdi.saleId },
       include: { items: { orderBy: { id: "asc" }, select: { id: true } } },
@@ -309,8 +320,11 @@ export async function karYenidenYaz(
  * ⚠ KOMİSYON ORANI TAŞINMAZ: kalemdeki snapshot oran korunur — oran
  * değişikliği ayrı bir düzeltmedir ve kendi ekranından yapılır.
  */
-export async function satisKarTazele(saleId: string): Promise<boolean> {
-  const satis = await prisma.sale.findUnique({
+export async function satisKarTazele(
+  saleId: string,
+  db: KarIstemcisi = prisma,
+): Promise<boolean> {
+  const satis = await db.sale.findUnique({
     where: { id: saleId },
     select: {
       cargoCarrierId: true,
@@ -321,7 +335,8 @@ export async function satisKarTazele(saleId: string): Promise<boolean> {
   });
   if (!satis) return false;
 
-  return karYenidenYaz({
+  return karYenidenYaz(
+    {
     saleId,
     kalemler: satis.items.map((k) => ({
       saleItemId: k.id,
@@ -336,5 +351,7 @@ export async function satisKarTazele(saleId: string): Promise<boolean> {
     cargoAmountManual: kdvDahilKargo(
       satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
     ),
-  });
+    },
+    db,
+  );
 }
