@@ -536,6 +536,25 @@ Değilse ilke burada geçerli değildir; ilkeyi genişletmek onu güçlendirmez,
 çevrildiğiyle birlikte dosyada bırakılır. Silmek, aynı gerekçenin altı ay
 sonra yeniden keşfedilip yeniden uygulanmasına yol açar.
 
+⭐ **VAKA — DÜZELTME PARTİSİ YASAĞININ KAPSAMI (K171b, 05.09.2026).** Depoda
+_"düzeltme partisi YOK — mevcut kalem düzeltilir"_ kuralı var (K91/K99: bir
+kaydın maliyetini düzeltmek için YANINA sahte bir parti eklemek yasak).
+Üç promosyon satışı (Arzum Tostçu ×2 + Huawei Freebuds, Halil teyidi 03.09
+"bedava geldi") NO_COST'ta duruyordu ve _"kalemi düzelt"_ önerildi. Ölçüm
+çürüttü: bu satışların **alımı HİÇ YOKTU** (satis-excel, SALE_OUT=0). Düzeltme
+partisi yasağı bu satışlara uygulansaydı, gerçekten olmuş bir olayın (bedava
+mal geldi, satıldı) İLK kaydını engellerdi — koruduğu şey doğruluk değil,
+boşluğun kendisi olurdu.
+> **KURAL:** düzeltme partisi yasağı, kayıt **VARKEN** yanına eklemeyi
+> yasaklar; **hiç kaydı olmayan** gerçek bir olayın **ilk** kaydı yasak
+> kapsamında değildir. Ayırt edici soru: bu parti var olan bir maliyeti
+> **örtüyor mu**, yoksa hiç kaydı olmayan gerçek bir olayı **ilk kez mi**
+> yazıyor? İlki yasak, ikincisi zorunlu.
+_(Uygulama: 3 promosyon alımı ₺0 + parti occurredAt=soldAt, nota "gerçek
+geliş bilinmiyor, satış gününe damgalandı" — uydurma tarih kesinlik taklidi
+yapmaz; ledger/FIFO tuttu, NET-2 kargo dahil +₺6.799,54, başka rakam
+oynamadı.)_
+
 ### KAYNAK TARAYAN KONTROL, DESENİ DOSYADA DEĞİL KULLANIM BLOĞUNDA ARAR (KESİN KURAL)
 
 _Ders 19–20.08.2026, **beş tekrardan sonra** — ve 25.08'de iki kez daha._ Bir ekran davranışını kaynak
