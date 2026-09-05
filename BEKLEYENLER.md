@@ -143,6 +143,46 @@ kendiliğinden olur. Defter temizliği kararı Halil'in (K155 hassasiyeti).
 ⏭ CANLI GEÇİŞ GÜNÜ: HEPSIBURADA_ORTAM=CANLI + canlı anahtarlar + AXCALI
 HB hesabının externalId kontrolü + 5-dk rutine HB koşumu eklenmesi.
 
+─── ② SIT ZORUNLU TEST ZİNCİRLERİ KOŞULDU · 05.09.2026 · [KOŞTU — kanıtlı]
+
+**LİSTELEME ✓ (04.09):** envanter XML yükleme `a4b48bc3-8291-4ed3-921c-8166e332fd78`
+"Done" · fiyat/stok değişimi doğrulandı (110/9) · deactivate→salable=false ·
+activate→true.
+
+**SİPARİŞ ✓ (05.09):** oluştur (0527495047 · 0527557173) → listele →
+paketle 201 (`5000125574`) → paket listele → **boz** 200 → **böl** (2 adetli
+kalemden 1 adetlik `5000125575`; defter teyidi: siparişte kalan adet 1) →
+**fatura linki** `PUT /packages/…/packagenumber/{no}/invoice` 204 (uç,
+linkin ContentType'ını KENDİSİ doğruluyor — pdf/html şart) → **iptal**
+`POST /lineitems/…/id/{lineItemId}/cancelbymerchant?reason=` 200 (sipariş
+listeden düştü) · kargo takip alanları paket kaydında (trackingInfoCode/Url).
+⭐ **Oto-paketleme ayarı GEREKMEDİ** — paketleme metodunu biz çağırıyoruz;
+Halil'den bekleyen "açtım" kalemi KAPANDI (daha güçlü kanıt: metod bizim).
+
+**KATALOG ✓ (05.09):** kategori listesi · kategori attribute · import →
+**trackingId `c22d1260-1543-42cd-af1c-84980ac340b6`** (verilen 3 test
+barkodu, tüm zorunlu alanlar; ilk koşum `3b09e4ce-a2eb-470c-86fc-a83ae24cfa3d`)
+· status sorgulama ✓. Fastlisting DTO da söküldü (merchant/merchantSku/
+barcode|hbSku/productName → trackingId `bd694116…`).
+
+⚠ **ÖLÇÜLEN İKİ SIT KUSURU (bizim entegrasyonun değil, ortamın):**
+① Görsel indirici hiçbir hosta erişemiyor — HB'nin KENDİ CDN'inden ölçülmüş
+552×552 görsel dahil 5 ayrı host "boyut(250x250) ya da erişim problemi"
+aldı; ürünler "Ürün Bilgileri Eksik"te kalıyor (SSS zaten "SIT'te ürün
+ilerlemez, normaldir" diyor). ② Dokümanın verdiği 3 test barkodu SIT'in
+HB-ürün deposunda YOK — fastlisting ölçtü: "HB product not found by
+barcode". "Eşleşen" bu yüzden üretilemiyor; `approve-prematch` /
+`reject-prematch` uçları bulundu (var: 500, 404 değil) ama PRE_MATCHED
+ürün olmadan koşamaz. Bu ikisi ticket'ta HB'ye not edilir.
+
+⏭ **HALİL — TICKET (canlıya geçişin kapısı):** Canlı Merchant Panel →
+Yardım Merkezi → Talepler → "API Entegrasyon Teknik Destek" → tür
+**"API Entegratör yetkilendirme işlemleri"** → mesaja: trackingid
+`c22d1260-1543-42cd-af1c-84980ac340b6`, entegrasyon modeli **API**
+(webhook kullanılmıyor), listeleme+sipariş zincirlerinin koşulduğu.
+Kanıt logları scratchpad: hb-katalog-kanit.log · hb-siparis-kanit.log ·
+hb-listeleme-kanit.log.
+
 ---
 
 ## ✅ K164 — ONAY KUYRUĞU KURULDU · 04.09.2026 · [KOD KOŞTU]
