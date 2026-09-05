@@ -325,9 +325,53 @@ görüldü. ⚠ Önceki push turu, sözlük düzenlememin ortasına denk gelip
 i18n'de yarış-kırmızısı verdi — kilit turlar-arası korur, TUR SIRASINDA
 düzenlemeyi değil; ders: push arka plandayken sözlük/kaynak düzenlenmez.
 
+─── K168 — PARTİ SEÇİMİ + TEK PARTİ OTOMATİK ONAY · 05.09.2026 · [KOŞTU — canlı kanıtlı]
+
+> **Halil (ekran görüntülü):** _"FIFO'dan ilk gireni seçiyor ama farklı
+> zamanlarda alınmış ürünler var; herhangi birini seçebilmeliyim. Tek
+> parti mal varsa onaya gerek olmasın."_
+
+**① PARTİ SEÇİMİ (K110 onay diyaloğuna bağlandı).** Onay diyaloğu artık her
+kalemde SINIR-İÇİ bütün açık partileri gösterir (tarih · kalan · birim
+maliyet); FIFO'nun ilki **önerilen** işaretli, operatör başka partiyi
+seçebilir — "düşülecek maliyet" seçime göre anında güncellenir. Yeni
+dağıtıcı YAZILMADI: `partileriOncele` (zaten depoda, K110'dan) seçileni
+listenin başına alır, AYNI `fifoDagit` çalışır. Seçilen parti araya giren
+satışla tükenmişse SESSİZCE FIFO'ya düşmez → `SECIM_GECERSIZ` (İlke #5).
+İz `secim: OPERATOR|FIFO` damgası taşır. Kalan adet siparişi karşılamayan
+parti seçilemez (gri). ⭐ **Canlı ölçüm:** `axcali1793` için 4 parti
+(₺6.499×2 · ₺6.424 · ₺6.378,03); FIFO ₺6.499 öneriyor, en ucuz seçilince
+dağıtım gerçekten ₺6.378,03'ten düşüyor.
+
+**② TEK PARTİ OTOMATİK ONAY.** Her kalemde TAM BİR sınır-içi parti varsa
+seçilecek bir şey yoktur → sipariş çekim anında kendiliğinden onaylanır
+(stok düşer, NET hesaplanır, kargolanacaklara girer). Çok partili sipariş
+otomatik onaylanmaz, operatöre (elle onay) bırakılır. ⭐ **Canlı ölçüm:**
+N11 çekiminde `aday 1 · onaylanan 0 · çok parti 1` — çok partili
+`axcali1793` DOKUNULMADI (onaylandiAt null, SALE_OUT 0).
+
+**MİMARİ — TEK ÇEKİRDEK (İlke #16).** Onay mantığı `src/lib/onay-cekirdegi.ts`e
+ayrıştı; elle onay (`siparisiOnayla`, otomatik:false) ve otomatik onay
+(`otomatikOnaylaKuyruk`, otomatik:true) AYNI kapılardan geçer (uygunluk ·
+sayım · dönem · FIFO/seçim · SALE_OUT · iz). Otomatik onay yalnız İZ
+DAMGASINI (`tetik: OTOMATIK_TEK_PARTI|ELLE`) değiştirir — sayım/dönem
+kapısını GEVŞETMEZ (duraksarsa kuyrukta kalır). Çekim (N11+TY, İlke #10)
+yazımdan sonra çağırır; **sayfa açılışında (GET) çağrılmaz** — sessiz
+GET-yazımı bu deponun kaçındığı şey. Kâr motoru (`karYenidenYaz` ·
+`satisKarTazele`) opsiyonel `db` parametreli oldu (global prisma betikte
+canlıyı göstermeyebilir) — ⭐ **betik prisma'sıyla idempotent çalıştığı
+ölçüldü** (11570620205 iki kez tazelendi, ikinci koşum bit-bit sabit).
+
+**KANITLAR:** `ice-aktarma:dogrula` 328/328 · **K168 için 5 mutasyon 5
+kırmızı** (tekParti kapısı kalkar · oto damgası ELLE olur · elle onay oto:true
+geçer · N11 çağrısı kalkar · dönem kapısı gevşer) · eskiyen 4 ölçüt çekirdeğe
+yönlendirildi (davranış aynı, dosya değişti — niye eskidiği yazıldı) · kâr
+bekçisi yeşil · build ✓ (`ƒ` rotalar) · bit-bit geri.
+
 ⏭ AÇIK: ① satış DETAY ekranına saat + onay durumu gösterimi; ② rozet
-eşiği (K162-② notu); ③ parti ELLE seçimi (v1 FIFO otomatik — K110 spesifik
-belirleme onay diyaloğuna sonra bağlanır).
+eşiği (K162-② notu); ③ tek-partili otomatik onayın uçtan-uca canlı kanıtı
+ilk tek-partili API siparişi geldiğinde görülecek (bugün kuyruk çok-partili;
+mantık mutasyon + çekirdek elle-onay kanıtıyla sınandı).
 
 ---
 
