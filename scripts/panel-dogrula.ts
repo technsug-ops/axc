@@ -5559,6 +5559,30 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   const dn2 = donemNet2(200, 150);
   yakin("K170: donemNet2 net2<net1 dokunmaz", dn2.net2, 150);
   yakin("K170: donemNet2 devreden 0", dn2.devreden, 0);
+
+  /**
+   * K170b (kullanıcı 05.09.2026): ÇOK KANAL + BİR KANALDA DEVREDEN →
+   * GENEL NET-2 = Σ KANAL NET-2 (sayı = liste). Eski firma-bazlı kırpma
+   * bunları ayırıyordu (kanal toplamı ≠ genel). Bu ölçüt onu sabitler.
+   */
+  {
+    const cSatis = satis({ kanalKodu: "TRENDYOL", kanalAdi: "Trendyol", net1: 382.34, net2: 310.36 });
+    const cIade: PanelIadesi = {
+      kanalKodu: "TRENDYOL", kanalAdi: "Trendyol", hesapId: "hesap-axcali",
+      hesapAdi: "AXCALI", tarih: kutu, paraBirimi: "TRY",
+      net1: -549.6, net2: 357.62, durum: "CALCULATED", iadeTutari: 5949,
+    };
+    // İkinci kanal: devreden YOK, net2 < net1 (TY'nin devredenini "telafi eder")
+    const hbSatis = satis({ kanalKodu: "HEPSIBURADA", kanalAdi: "Hepsiburada", net1: 1000, net2: 800 });
+    const cBlok = panelHesapla(buAyK, [cSatis, hbSatis], [cIade])[0];
+    const kanalNet2 = cBlok.kanallar.reduce((t, k) => t + k.net2, 0);
+    const kanalDevreden = cBlok.kanallar.reduce((t, k) => t + k.devreden, 0);
+    yakin("K170b: genel NET-2 = Σ kanal NET-2 (sayı=liste)", cBlok.toplamNet2, kanalNet2, 0.01);
+    yakin("K170b: genel devreden = Σ kanal devreden", cBlok.toplamDevreden, kanalDevreden, 0.01);
+    // TY kırpıldı (net2=net1=-167.26), HB dokunulmadı (800) → Σ = 632.74
+    yakin("K170b: TY kırpılı + HB ham toplam", cBlok.toplamNet2, 632.74, 0.02);
+    yakin("K170b: devreden yalnız TY'den (835.24)", cBlok.toplamDevreden, 835.24, 0.02);
+  }
 }
 
 console.log("\n" + "=".repeat(70));

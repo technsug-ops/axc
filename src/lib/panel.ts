@@ -498,14 +498,23 @@ export function panelHesapla(
         kanal.hesaplar.sort((a, b) => b.gelir - a.gelir);
       }
       /**
-       * K170 — NET-2 KIRPMA HER KÜMEDE AYRI. Genel toplam kanalların HAM
-       * net2'sinden KENDİ net1'ine kırpılır (kırpılmış kanalların toplamı
-       * DEĞİL — bir kanal devreden verirken öteki telafi etmesin). Kanal ve
-       * hesap da kendi net1'lerine kırpılır. Tek gövde: `donemNet2`.
+       * K170 — NET-2 KIRPMA KANAL/HESAP BAZINDA; GENEL = KIRPILMIŞ KANAL
+       * TOPLAMI (İlke #9 "sayı = liste").
+       *
+       * ⛔ ESKİ HÂL (K170, aynı gün) GENEL'İ FİRMA BAZINDA (Σnet1'e) KIRPIYORDU
+       * ve kanalları AYRI kırpıyordu — gerekçe "bir kanal devreden verirken
+       * öteki telafi etmesin" idi. Ama bu, bir kanalda devreden olan dönemde
+       * **kanal NET-2 toplamı ile genel NET-2'yi AYIRIYORDU** (kullanıcı
+       * 05.09.2026: Trendyol 1.473 + Hepsiburada 3.029 = 4.503, ama genel
+       * 5.045 — fark tam TY'nin 542 devredeni; firma bazında HB KDV'si TY iade
+       * KDV'sini karşıladığı için genel devreden 0 çıkıyordu). Panelin temel
+       * sözü **üstteki kanal kartlarının toplamı = alttaki genel** (İlke #9);
+       * bu ayrışma o sözü bozuyordu. Eski gerekçe SİLİNMEZ (anayasa) ama
+       * kapsamı yanlıştı: devreden KANAL bazında yaşar (iade o kanalın
+       * satışına bağlı), firma toplamı da kanalların devredenlerinin toplamı.
+       *
+       * Kanal ve hesap kendi net1'lerine kırpılır; GENEL yalnız TOPLAR.
        */
-      const toplamNet1 = liste.reduce((t, k) => t + k.net1, 0);
-      const hamNet2Toplam = liste.reduce((t, k) => t + k.net2, 0);
-      const genel = donemNet2(toplamNet1, hamNet2Toplam);
       for (const kanal of liste) {
         const kn = donemNet2(kanal.net1, kanal.net2);
         kanal.net2 = kn.net2;
@@ -521,9 +530,10 @@ export function panelHesapla(
         kanallar: liste,
         toplamAdet: liste.reduce((t, k) => t + k.adet, 0),
         toplamGelir: liste.reduce((t, k) => t + k.gelir, 0),
-        toplamNet1,
-        toplamNet2: genel.net2,
-        toplamDevreden: genel.devreden,
+        toplamNet1: liste.reduce((t, k) => t + k.net1, 0),
+        // GENEL = KIRPILMIŞ KANAL TOPLAMI (sayı = liste).
+        toplamNet2: liste.reduce((t, k) => t + k.net2, 0),
+        toplamDevreden: liste.reduce((t, k) => t + k.devreden, 0),
         hesaplanamayanAdet: liste.reduce((t, k) => t + k.hesaplanamayanAdet, 0),
         toplamIadeAdedi: liste.reduce((t, k) => t + k.iadeAdedi, 0),
         hesaplanamayanIadeAdedi: liste.reduce(
