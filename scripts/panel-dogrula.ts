@@ -44,6 +44,7 @@ import {
   karEksikKanalAdresi,
 } from "../src/lib/liste-suzgeci";
 import { kdvHaric } from "../src/lib/kar";
+import { donemNet2 } from "../src/lib/net-devreden";
 import { tabloNoktalari } from "../src/lib/tablo-sirasi";
 import {
   PANEL_KANAL_TAVANI,
@@ -170,7 +171,18 @@ const gun = (yil: number, ay: number, g: number) => gunDegeri({ yil, ay, gun: g 
 /** Sabit "şu an": 12 Ağustos 2026, İstanbul'da öğle. Testler takvimden bağımsız. */
 const AN = new Date("2026-08-12T09:00:00Z");
 
+/**
+ * ⚠ NET-1 ≥ NET-2 GERÇEKÇİ VERİ (K170). Gerçekte net1 net2'den büyüktür
+ * (aradaki fark ödenecek KDV ≥ 0). Test verisi de öyle olmalı: yalnız net2
+ * override edildiğinde net1 ondan büyük TÜRETİLİR. Aksi hâlde net2 > net1
+ * olan İMKÂNSIZ bir kayıt oluşur ve K170 kırpması onu (doğru olarak) yakalar
+ * — bu, kırpmayı sınamayan testleri gereksiz yere kırardı.
+ */
+function net1Turet(net2: number): number {
+  return Math.round((net2 + Math.abs(net2) * 0.2 + 40) * 100) / 100;
+}
 function satis(ek: Partial<PanelSatisi> = {}): PanelSatisi {
+  const net2 = ek.net2 ?? 200;
   return {
     kanalKodu: "TRENDYOL",
     kanalAdi: "Trendyol",
@@ -179,12 +191,10 @@ function satis(ek: Partial<PanelSatisi> = {}): PanelSatisi {
     tarih: gun(2026, 8, 5),
     paraBirimi: "TRY",
     gelir: 1000,
-    // NET-1 > NET-2 olmalı: aradaki fark ödenecek KDV'dir. Testlerde de
-    // gerçek hayattaki sıra korunuyor ki ikisi karışırsa gözle görülsün.
     /** Satışın içindeki KDV — %20 dahil tutardan çıkarılmış hâli. */
     kdv: 0,
-    net1: 260,
-    net2: 200,
+    net1: ek.net1 ?? net1Turet(net2),
+    net2,
     durum: "CALCULATED",
     ...ek,
   };
@@ -420,12 +430,14 @@ console.log("\n2c) İADE ETKİSİ — PANEL NET-2 = RAPOR Σ NET-2");
 
   // --- Rapor motoru: AYNI veri, kendi tipleriyle ---
   const rapor = raporHesapla(buAy, {
+    // K170: net1 GERÇEK verilir (kırpma net1'e bakar); 0 verilseydi kırpma
+    // net2'yi 0'a indirir ve iki motor ayrışırdı — panel gerçek net1 kullanıyor.
     satislar: satislar.map((s, i) => ({
       id: `s${i}`,
       kod: null,
       tarih: s.tarih,
       gelir: s.gelir,
-      net1: 0,
+      net1: s.net1,
       net2: s.net2,
       paraBirimi: s.paraBirimi,
       durum: s.durum,
@@ -435,7 +447,7 @@ console.log("\n2c) İADE ETKİSİ — PANEL NET-2 = RAPOR Σ NET-2");
       satisId: "s0",
       kod: null,
       tarih: x.tarih,
-      net1: 0,
+      net1: x.net1,
       net2: x.net2,
       paraBirimi: x.paraBirimi,
       durum: x.durum,
@@ -472,10 +484,19 @@ console.log("\n2c) İADE ETKİSİ — PANEL NET-2 = RAPOR Σ NET-2");
   const gecmisSatis = panelHesapla(
     buAy,
     [satis({ tarih: gun(2026, 7, 20), gelir: 1000, net2: 200 })],
-    [iade({ tarih: gun(2026, 8, 3), net2: -150 })],
+    [iade({ tarih: gun(2026, 8, 3), net1: -300, net2: -150 })],
   )[0];
   kontrol("geçen ayın satışı bu aya girmedi", gecmisSatis.toplamAdet === 0);
-  yakin("ama iadesi bu aya yazıldı", gecmisSatis.toplamNet2, -150);
+  /**
+   * K170: bu ayda YALNIZ iade var (satış geçen ayda), telafi edecek satış
+   * yok. İade net2 (−150) > net1 (−300) — KDV geri döndü. Bu pencerede
+   * kırpma net2'yi net1'e indirir (devreden 150), çünkü o KDV avantajı
+   * henüz bu ayın satışlarıyla mahsuplaşmadı. Ay dolunca (satışlar gelince)
+   * devreden 0'a iner. _(Eskiden −150 bekleniyordu; kırpma öncesi net2 net1'i
+   * aşabiliyordu — kullanıcı kararı 05.09.2026 bunu yasakladı.)_
+   */
+  yakin("ama iadesi bu aya yazıldı (NET-1'e kırpılı)", gecmisSatis.toplamNet2, -300);
+  yakin("  ...ve devreden KDV ayrı durur", gecmisSatis.toplamDevreden, 150);
   kontrol(
     "  ...satışsız kanal bloğu yine de açıldı",
     gecmisSatis.kanallar.length === 1,
@@ -5495,6 +5516,49 @@ kontrol("TY rozeti: eşik sabiti rutinden türetilmiş (26 = 24+2 pay)",
 const panelKaynagi = readFileSync("src/app/page.tsx", "utf8");
 kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   /tyCekimDurumu\(await sonTyCekimi\(prisma\), new Date\(\)\)/.test(panelKaynagi));
+}
+
+/**
+ * ═══ K170 — DEVREDEN KDV: NET-2 ≤ NET-1 HER KÜMEDE (DEĞİŞMEZ) ════════════
+ * Halil kararı 05.09.2026 (şart 3): iade ödenecek KDV'yi negatife çektiğinde
+ * (devreden KDV) NET-2 kâra karışmaz, NET-1'e kırpılır, taşan kısım devreden.
+ * Değer testi: `donemNet2` gövdesi + panelHesapla çıktısında değişmez.
+ */
+{
+  const kutu = gun(2026, 8, 5);
+  const buAyK = pencereOlustur("BU_AY", kutu);
+  /** Büyük iade: net2 etkisi POZİTİF (KDV geri döndü) — net1'i aşıyor. */
+  const kSatis = satis({ gelir: 5949, net1: 382.34, net2: 310.36 });
+  const kIade: PanelIadesi = {
+    kanalKodu: "TRENDYOL", kanalAdi: "Trendyol", hesapId: "hesap-axcali",
+    hesapAdi: "AXCALI", tarih: kutu, paraBirimi: "TRY",
+    net1: -549.6, net2: 357.62, durum: "CALCULATED", iadeTutari: 5949,
+  };
+  const kBlok = panelHesapla(buAyK, [kSatis], [kIade])[0];
+  // ham net2 = 310.36 + 357.62 = 667.98; net1 = 382.34 − 549.6 = −167.26
+  kontrol(
+    "K170: NET-2 NET-1'e KIRPILDI (devreden kâra karışmaz)",
+    kBlok.toplamNet2 <= kBlok.toplamNet1 + 0.005,
+    { net1: kBlok.toplamNet1, net2: kBlok.toplamNet2 },
+  );
+  yakin("K170: kırpılmış NET-2 = NET-1", kBlok.toplamNet2, -167.26, 0.02);
+  yakin("K170: devreden KDV = ham fazlalık", kBlok.toplamDevreden, 835.24, 0.02);
+  kontrol(
+    "K170: kanal da kırpıldı (NET-2 ≤ NET-1)",
+    kBlok.kanallar[0].net2 <= kBlok.kanallar[0].net1 + 0.005,
+  );
+  yakin("K170: kanal devreden", kBlok.kanallar[0].devreden, 835.24, 0.02);
+  // Devreden YOKKEN dokunmaz: normal satış, net2 < net1
+  const nBlok = panelHesapla(buAyK, [satis({ net1: 260, net2: 200 })], [])[0];
+  yakin("K170: devreden yokken NET-2 değişmez", nBlok.toplamNet2, 200);
+  yakin("K170: devreden yokken 0", nBlok.toplamDevreden, 0);
+  // Saf gövde değer testi — desen değil
+  const dn = donemNet2(-167.26, 667.98);
+  yakin("K170: donemNet2 net2 kırpar", dn.net2, -167.26, 0.005);
+  yakin("K170: donemNet2 devreden verir", dn.devreden, 835.24, 0.005);
+  const dn2 = donemNet2(200, 150);
+  yakin("K170: donemNet2 net2<net1 dokunmaz", dn2.net2, 150);
+  yakin("K170: donemNet2 devreden 0", dn2.devreden, 0);
 }
 
 console.log("\n" + "=".repeat(70));

@@ -13,6 +13,54 @@
 
 ---
 
+## ✅ K170 — DEVREDEN KDV: İADE NET-2'Yİ ŞİŞİRMEZ · 05.09.2026 · [KOŞTU — canlı kanıtlı]
+
+> **Halil (ekran görüntülü):** _"bir iade girdim, iadeden doğan zararı ARTI
+> ilave etmiş; seçili dönemdeki hesap bambaşka."_ Panel NET-1 −160 (zararda)
+> · NET-2 +670 (kârda) — İMKÂNSIZ (NET-2 ≤ NET-1 olmalı).
+
+**KÖK NEDEN.** `iade.ts`: `net2Etkisi = net1Etkisi − ödenecekKdvDeğişimi`.
+İade satış KDV'sini geri getirir → ödenecekKdvDeğişimi büyük NEGATİF → net2
+net1'in ÜSTÜNE çıkar. Bugünkü iade: net1 −549,60 (doğru) · **net2 +357,62
+(ters)**. Panele +357 eklenince NET-2 şişti. Dünkü küçük iadelerde gizliydi
+(satış küçük, KDV geri dönüşü net1 kaybını aşamıyordu); büyük tutarlı iadede
+(₺5.949) yüzeye çıktı.
+
+**ŞART 0 ÖLÇÜLDÜ.** MUHASEBE AYI toplamında 28 dönemin **28'inde** ödenecek
+KDV POZİTİF, devreden 0 — sorun ayın kendisinde değil, ayın PARÇASI olan dar
+pencerede (tek satış+iade izole, telafi edecek satış yok). Kırpma bu yüzden
+GÖSTERİLEN KÜMEDE (kanal·hesap·dönem), snapshot'ta değil.
+
+**⭐ MUHASEBE DAYANAĞI (Halil, 05.09.2026):** _"her ayın 15-20'sinde geçen
+ayki satışların iadeleri için GİDER PUSULASI düzenliyorum; o ayın satış
+KDV'sinden iadeler düşülerek hesaplanıyor."_ Kırpma bir yaklaşıklık değil,
+kullanıcının FİİLEN işlettiği sürecin karşılığı: iade KDV avantajı o dönemin
+satış KDV'siyle mahsuplaşır, yetmezse devreder.
+
+**KURULAN — Seçenek 1, beş şart:** tek gövde `src/lib/net-devreden.ts` →
+`donemNet2(net1, hamNet2)`: `net2 = min(hamNet2, net1)` · `devreden =
+max(0, hamNet2 − net1)`. Panel (kanal·hesap·genel) ve rapor (brutNet2) bu
+gövdeden geçer (şart 1). Ekran: "Devreden KDV: ₺X (gelecek döneme mahsup)"
+— panel Seçili dönem + kanal kutusu + rapor kartı, **yalnız X>0 iken**
+(şart 2·İlke #49). Snapshot (Sale/Return.net2Amount) DOKUNULMAZ — geçmiş
+yeniden yazılmaz, gösterimde kırpılır (şart 4).
+
+**KANITLAR:** ⭐ **canlı gövde ölçümü** — kullanıcının senaryosunda artık
+NET-2 = −167,26 (= NET-1, kırpıldı) · devreden 835,24 (eski +670 yerine).
+panel:dogrula 10 K170 ölçütü · **4 mutasyon 4 kırmızı** (kırpma kaldıran ·
+devreden sıfırlayan · genel kırpmayı atlayan · kanal kırpmayı atlayan) ·
+bit-bit geri · kâr bekçisi yeşil · build ✓. ⚠ Eski panel/rapor testleri
+GERÇEKÇİ OLMAYAN veri kullanıyordu (net2 > net1); `satis()` helper'ı net1'i
+net2'den TÜRETECEK şekilde düzeltildi + tek-iade beklentisi kırpmaya
+güncellendi (niye yazıldı).
+
+⏭ AÇIK: ① `iade.ts` net2Etkisi işareti kaynakta DA düzeltilebilir mi
+(şimdilik snapshot dokunulmuyor, kırpma gösterimde — ikisi tutarlı);
+② rapor grafiği/aylık tablo devreden göstergesi (şimdilik Seçili dönem +
+kanal + rapor kartı).
+
+---
+
 ## ✅ K169 — KANALA İLK YAZMA: TY'YE STOK/FİYAT GÖNDERİMİ · 05.09.2026 · [HALİL TESTİ GEÇTİ]
 
 > **Halil:** _"stok girdiğimi Trendyol'a push edebilir miyim, fiyat

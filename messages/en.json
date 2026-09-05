@@ -1418,7 +1418,9 @@
     "degisimYok": "",
     "kiyaslanamaz": "",
     "iadeKiyasNotu": "",
-    "giderKiyasNotu": ""
+    "giderKiyasNotu": "",
+    "devredenBaslik": "",
+    "devredenNot": ""
   },
   "KarSorunu": {
     "baslik": "",
@@ -2138,7 +2140,9 @@
     "siparisKabulBekliyor": "",
     "tyCekimTaze": "",
     "tyCekimEski": "",
-    "tyCekimYok": ""
+    "tyCekimYok": "",
+    "devredenKdv": "",
+    "devredenKdvKisa": ""
   },
   "Envanter": {
     "baslik": "",

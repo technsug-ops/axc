@@ -486,6 +486,10 @@ export default async function RaporSayfasi({
             undefined,
             degisimRozeti(b.brutNet2, k?.brutNet2 ?? null, para),
           )}
+          {/* K170: devreden KDV — yalnız > 0 iken (İlke #49). */}
+          {b.devreden > 0
+            ? kart(t("devredenBaslik"), para(b.devreden), t("devredenNot"))
+            : null}
           {/* GİDERDE ARTIŞ KÖTÜDÜR — yön rengi tersine çevriliyor.
               AYRICA "DİKKATLİ OKU" İŞARETİ: aylık sabit giderler (kira,
               abonelik) ayın belirli bir gününe düşer. Eşit gün kıyası

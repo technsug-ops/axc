@@ -1,5 +1,6 @@
 import { pencerede, type Pencere } from "@/lib/donem";
 import { kdvAyir, type KarDurumu } from "@/lib/kar";
+import { donemNet2 } from "@/lib/net-devreden";
 
 import type { Currency } from "@/generated/prisma/enums";
 
@@ -168,7 +169,10 @@ export type ParaBirimiRaporu = {
 
   // --- BRÜT (iade etkileri dahil) ---
   brutNet1: number;
+  /** K170: KIRPILMIŞ — brutNet1'i aşamaz (devreden KDV kâra karışmaz). */
   brutNet2: number;
+  /** K170: dönemde ödenecek KDV negatife düşen kısım (gelecek döneme). */
+  devreden: number;
 
   // --- GİDER ---
   giderAdedi: number;
@@ -239,6 +243,7 @@ function bosRapor(paraBirimi: Currency): ParaBirimiRaporu {
     hesaplanamayanIadeler: [],
     brutNet1: 0,
     brutNet2: 0,
+    devreden: 0,
     giderAdedi: 0,
     giderKdvDahil: 0,
     giderIndirilebilirKdv: 0,
@@ -416,7 +421,13 @@ export function raporHesapla(
   // -------------------------------- TOPLAMA --------------------------------
   for (const [paraBirimi, b] of bloklar) {
     b.brutNet1 = b.satisNet1 + b.iadeNet1;
-    b.brutNet2 = b.satisNet2 + b.iadeNet2;
+    /** K170: devreden KDV kâra karışmaz — brutNet2 brutNet1'e kırpılır,
+     *  taşan kısım devreden olarak ayrı durur (panel ile AYNI gövde). */
+    {
+      const kn = donemNet2(b.brutNet1, b.satisNet2 + b.iadeNet2);
+      b.brutNet2 = kn.net2;
+      b.devreden = kn.devreden;
+    }
     /**
      * NET ETKİ = KAYIP − KAZANÇ. Ayrıştırma yalnız GÖRÜNÜRLÜK içindir;
      * GERÇEK NET'e giren rakam değişmez.

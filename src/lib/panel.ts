@@ -1,6 +1,7 @@
 import { ayKaydir, pencerede, type Pencere } from "@/lib/donem";
 
 import type { KarDurumu } from "@/lib/kar";
+import { donemNet2 } from "@/lib/net-devreden";
 import type { Currency } from "@/generated/prisma/enums";
 import {
   kanallariSirala,
@@ -173,7 +174,10 @@ export type HesapSatiri = {
   iadeTutari: number;
   iadeAdedi: number;
   net1: number;
+  /** K170: KIRPILMIŞ NET-2 — net1'i aşamaz (devreden KDV kâra karışmaz). */
   net2: number;
+  /** K170: bu hesapta ödenecek KDV negatife düşen kısım (gelecek döneme). */
+  devreden: number;
 };
 
 export type KanalBlogu = {
@@ -188,9 +192,11 @@ export type KanalBlogu = {
   net1: number;
   /**
    * Kârı HESAPLANABİLMİŞ satışların NET-2'si + iade etkileri.
-   * Rapor ekranındaki "Σ NET-2" ile aynı tanım.
+   * K170: KIRPILMIŞ — net1'i aşamaz (devreden KDV kâra karışmaz).
    */
   net2: number;
+  /** K170: bu kanalda ödenecek KDV negatife düşen kısım (gelecek döneme). */
+  devreden: number;
   hesaplanamayanAdet: number;
   iadeAdedi: number;
   hesaplanamayanIadeAdedi: number;
@@ -215,7 +221,10 @@ export type ParaBirimiPaneli = {
   toplamGelir: number;
   /** NET-1 — stopaj düşülmüş, ödenecek KDV DÜŞÜLMEMİŞ kâr. */
   toplamNet1: number;
+  /** K170: KIRPILMIŞ genel NET-2 — toplamNet1'i aşamaz. */
   toplamNet2: number;
+  /** K170: dönem genelinde devreden KDV (gelecek döneme mahsup). `0` ise yok. */
+  toplamDevreden: number;
   hesaplanamayanAdet: number;
   toplamIadeAdedi: number;
   hesaplanamayanIadeAdedi: number;
@@ -347,6 +356,7 @@ export function panelHesapla(
         gelir: 0,
         net1: 0,
         net2: 0,
+        devreden: 0,
         hesaplanamayanAdet: 0,
         iadeAdedi: 0,
         hesaplanamayanIadeAdedi: 0,
@@ -383,6 +393,7 @@ export function panelHesapla(
         iadeAdedi: 0,
         net1: 0,
         net2: 0,
+        devreden: 0,
       };
       kanal.hesaplar.push(hesap);
     }
@@ -486,13 +497,33 @@ export function panelHesapla(
       for (const kanal of liste) {
         kanal.hesaplar.sort((a, b) => b.gelir - a.gelir);
       }
+      /**
+       * K170 — NET-2 KIRPMA HER KÜMEDE AYRI. Genel toplam kanalların HAM
+       * net2'sinden KENDİ net1'ine kırpılır (kırpılmış kanalların toplamı
+       * DEĞİL — bir kanal devreden verirken öteki telafi etmesin). Kanal ve
+       * hesap da kendi net1'lerine kırpılır. Tek gövde: `donemNet2`.
+       */
+      const toplamNet1 = liste.reduce((t, k) => t + k.net1, 0);
+      const hamNet2Toplam = liste.reduce((t, k) => t + k.net2, 0);
+      const genel = donemNet2(toplamNet1, hamNet2Toplam);
+      for (const kanal of liste) {
+        const kn = donemNet2(kanal.net1, kanal.net2);
+        kanal.net2 = kn.net2;
+        kanal.devreden = kn.devreden;
+        for (const hesap of kanal.hesaplar) {
+          const hn = donemNet2(hesap.net1, hesap.net2);
+          hesap.net2 = hn.net2;
+          hesap.devreden = hn.devreden;
+        }
+      }
       return {
         paraBirimi,
         kanallar: liste,
         toplamAdet: liste.reduce((t, k) => t + k.adet, 0),
         toplamGelir: liste.reduce((t, k) => t + k.gelir, 0),
-        toplamNet1: liste.reduce((t, k) => t + k.net1, 0),
-        toplamNet2: liste.reduce((t, k) => t + k.net2, 0),
+        toplamNet1,
+        toplamNet2: genel.net2,
+        toplamDevreden: genel.devreden,
         hesaplanamayanAdet: liste.reduce((t, k) => t + k.hesaplanamayanAdet, 0),
         toplamIadeAdedi: liste.reduce((t, k) => t + k.iadeAdedi, 0),
         hesaplanamayanIadeAdedi: liste.reduce(

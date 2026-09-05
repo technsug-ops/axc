@@ -1843,6 +1843,14 @@ export default async function AnaSayfa({
                     {t("kanalIade", { sayi: kanal.iadeAdedi })}
                   </div>
                 ) : null}
+                {/* K170: bu kanalda devreden KDV — yalnız > 0 iken. */}
+                {kanal.devreden > 0 ? (
+                  <div className="text-muted-foreground text-xs">
+                    {t("devredenKdvKisa", {
+                      tutar: bicim.para(kanal.devreden, blok.paraBirimi),
+                    })}
+                  </div>
+                ) : null}
                 {/* ⛔ AKSAKLIK SAYISI KAYNAĞINA GÖTÜRÜR (İlke #16). Düz metinken
                     "hangi satışlar?" sorusunun cevabı yoktu; adres süzgeç
                     sözleşmesinin sahibi dosyadan geliyor ki sayı ile liste
@@ -2601,6 +2609,18 @@ export default async function AnaSayfa({
                             <span className="text-muted-foreground block">
                               {t("net2Aciklama")}
                             </span>
+                            {/* K170: devreden KDV — yalnız > 0 iken (İlke #49:
+                                sıfır satır gizlenir, boş bir şey söylemesin). */}
+                            {blok.toplamDevreden > 0 ? (
+                              <span className="text-muted-foreground block">
+                                {t("devredenKdv", {
+                                  tutar: bicim.para(
+                                    blok.toplamDevreden,
+                                    blok.paraBirimi,
+                                  ),
+                                })}
+                              </span>
+                            ) : null}
                           </>
                         }
                       />

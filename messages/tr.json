@@ -1418,7 +1418,9 @@
     "degisimYok": "değişim yok",
     "kiyaslanamaz": "kıyas döneminde kayıt yok — karşılaştırılamaz",
     "iadeKiyasNotu": "geçmiş dönem iadeleri de buraya yazılır; karşılaştırma yapılmaz",
-    "giderKiyasNotu": "aylık sabit giderler belirli güne düşer, eşit gün kıyası bunu tam yakalamayabilir"
+    "giderKiyasNotu": "aylık sabit giderler belirli güne düşer, eşit gün kıyası bunu tam yakalamayabilir",
+    "devredenBaslik": "Devreden KDV",
+    "devredenNot": "iade nedeniyle ödenecek KDV negatife düştü — gelecek döneme mahsup, kâra karışmaz"
   },
   "KarSorunu": {
     "baslik": "Nasıl düzeltilir?",
@@ -2138,7 +2140,9 @@
     "siparisKabulBekliyor": "{sayi} tanesi henüz gelmedi",
     "tyCekimTaze": "Trendyol çekimi: {saat} saat önce",
     "tyCekimEski": "⚠ Trendyol çekimi {saat} SAAT ÖNCE — günlük rutin kaçtı, zamanlayıcıyı kontrol edin",
-    "tyCekimYok": "⚠ Trendyol çekimi: hiç iz yok"
+    "tyCekimYok": "⚠ Trendyol çekimi: hiç iz yok",
+    "devredenKdv": "Devreden KDV: {tutar} (gelecek döneme mahsup)",
+    "devredenKdvKisa": "devreden KDV {tutar}"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
