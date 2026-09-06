@@ -13,6 +13,64 @@
 
 ---
 
+## 🔶 K172 — İADE KDV ETKİSİ AYRI GÖSTERİLİR · 06.09.2026 · [KOD KOŞTU — Halil testi bekliyor]
+
+> **Halil (iade muhasebe spec'i):** _"iade KDV'si ayrı gösterilmeli."_
+
+**KURULAN:** türetme gövdesi `src/lib/iade-kdv.ts` → `iadeKdvEtkisi(net1,
+net2) = net1 − net2` (motor formülünün tersi; iki MEVCUT snapshot alanının
+farkı — **sütun AÇILMADI**, anayasa: türetilebilen için şema en pahalı
+çözüm; şemaya yalnız gerekçe yorumu girdi). Satış detayı iade bloğunda her
+iadede **"İade KDV etkisi: ₺X"** satırı; net1/net2'den biri boşsa satır
+çizilmez (uydurma sıfır yok). Negatif = satış KDV'si geri geldi, ödenecek
+KDV azaldı (olağan iade). Ölü `KOMISYON_KDV_IADE` etiketi kaldırıldı
+(0 kayıt, ölçüldü); `DEGISIM_MALIYET` kaldı (1 kayıt).
+
+**KANITLAR:** bekçi `iade-kdv:dogrula` (değer testi + gösterim çağrısı +
+"şema açılmadı") · 3 mutasyon iki yönlü kırmızı · build ✓ · push+deploy ✓
+(06.09 09:28) · `canli:yetki` 28/28 (06.09). Beklenen ekran rakamları
+**gerçek gövde çağrılarak canlı snapshot'lardan ölçüldü** (06.09).
+
+**HALİL TEST LİSTESİ (canlı adres, gerçek cihaz):**
+① Satışlar → sipariş **11538106902** (05.09 iadesi — K170 vakası) → detay →
+   iade bloğunda NET satırlarının altında: **İade KDV etkisi: −₺907,22**.
+② Sipariş **4866824058** (04.09 normal iade) → aynı yerde: **−₺254,51**.
+③ Rakam birebir tutmalı — tutmayan tek rakam testi düşürür.
+
+---
+
+## 🔶 K171 — PROMOSYON ALIMI: BEDAVA KALEM ₺0 BEYANIYLA · 05.09.2026 · [KOD KOŞTU — Halil testi bekliyor]
+
+> **Halil teyidi (03.09):** Arzum Tostçu ×2 + Huawei Freebuds _"bedava
+> geldi"_ — promosyon malı gerçek, defterde alımı HİÇ yoktu (NO_COST).
+
+**KURULAN:** alım formunda kalem başına **"Promosyon (bedava geldi —
+maliyet 0)"** kutusu (İlke #11: sessiz sıfır değil AÇIK BEYAN —
+işaretlenince maliyet alanı 0'a kilitlenir ve pasifleşir; elle 0 girilirse
+form "Promosyon kutusunu işaretleyin" der). Alım detayında **"Promosyon
+(₺0)"** etiketi. FIFO/stok/kâr otomatik izler. + deploy-bekci katman H
+(tablo adı harf uyumu). **KANIT:** 5+1 mutasyon kırmızı · migration
+canlıda koştu · build ✓.
+
+─── ② **K171b VERİ DÜZELTMESİ KOŞTU** (05.09, Halil onayı): 3 satış
+NO_COST→CALCULATED — promosyon alımı ₺0 + parti `occurredAt=soldAt` (nota
+"gerçek geliş bilinmiyor" — uydurma tarih kesinlik taklidi yapmaz).
+Ledger/FIFO tuttu, NET-2 kargo dahil **+₺6.799,54**, başka rakam oynamadı.
+(Kapsam dersi anayasada: düzeltme partisi yasağı İLK kaydı kapsamaz.)
+Canlıda bugün **4 promosyon kalemi** ölçüldü: `PROMO-K171B-…-1/2/3`
+(Arzum ×2 + Huawei) + `PROMO-KARCHER-…` (05.09 23:41, Karcher RM 503).
+
+**HALİL TEST LİSTESİ (canlı adres):**
+① Alımlar → yeni alım → kalem satırında "Promosyon (bedava geldi —
+   maliyet 0)" kutusu; işaretle → maliyet alanı 0 yazar ve kilitlenir
+   (KAYDETMEDEN çık — form davranışı yeterli).
+② Alımlar → `PROMO-K171B-…` kayıtlarından birini aç → kalemde
+   **"Promosyon (₺0)"** etiketi.
+③ Arzum Tostçu / Huawei Freebuds satış detayında NET artık hesaplı
+   (NO_COST/hesaplanamadı rozeti YOK).
+
+---
+
 ## ✅ K170 — DEVREDEN KDV: İADE NET-2'Yİ ŞİŞİRMEZ · 05.09.2026 · [KOŞTU — canlı kanıtlı]
 
 > **Halil (ekran görüntülü):** _"bir iade girdim, iadeden doğan zararı ARTI
@@ -180,7 +238,7 @@ uçları (komisyon faturası) ileride.
 
 ---
 
-## 🔶 K166 — TY ÇEKİMİ MAKİNEDEN BAĞIMSIZ · 04.09.2026 · [YAZILDI — Halil kurulumu bekliyor]
+## ✅ K166 — TY ÇEKİMİ MAKİNEDEN BAĞIMSIZ · 04.09.2026 · [KOŞTU — uçtan uca canlı 06.09]
 
 > **Halil:** _"bilgisayarım kapalıyken Trendyol'dan siparişleri çekmedi —
 > bu problemli bir durum değil mi?"_ → _"BAŞLA"_.
@@ -208,15 +266,27 @@ api-dogrula izi çekirdek IMPORT'una bağlandı (tırnaklı — yorumdaki ad
 yakalanmaz; ilk hâli bir onarım betiğini yorumdan kapsamıştı).
 K162-② kapı ölçütü tipli dönüşe tazelendi (öz aynı).
 
-⏭ HALİL KURULUMU (push+deploy sonrası):
-① Vercel → Project → Settings → Environment Variables: `.env.canli`den
-   4 değeri kopyala: `CRON_SECRET` · `TRENDYOL_API_KEY` ·
-   `TRENDYOL_API_SECRET` · `TRENDYOL_SATICI_ID` (Production) → Redeploy.
-② cron-job.org (ücretsiz, loglu) hesap → yeni cron: URL
-   `https://axc-seven.vercel.app/api/cron/ty-cekim` · her 10 dk ·
-   Header: `Authorization: Bearer <CRON_SECRET değeri>`.
-③ Ben: uçtan uca doğrulama (yanlış sır 404 · doğru sır özet JSON ·
-   AuditLog izi + panel rozeti).
+─── ② TETİKLEYİCİ DEĞİŞTİ + UÇTAN UCA KANIT · 06.09.2026 · [KOŞTU]
+
+**Eski plan (cron-job.org) AŞILDI, sessizce değil:** tetikleyici GitHub
+Actions oldu (`.github/workflows/ty-cekim.yml`, commit `3cee41f` — dış
+hesap istemez, her koşumun logu Actions sekmesinde; K167-③ N11 adımı da
+aynı workflow'a bindi). Env değerleri Vercel'e girildi (kanıt aşağıda —
+`atlandi:KIMLIK` gelmiyor).
+
+**UÇTAN UCA KANIT (06.09, ben):** yanlış sır → **404** (varlık sızmaz) ·
+doğru sır → **200** + tipli özet: `{aday:32, cakisanAtlandi:32, yazilan:0,
+hata:0, saleOnce:7883, saleSonra:7883}` — yerel görev zaten çekmişti,
+çift tetik zararsızlığı canlıda bir kez daha görüldü.
+
+**ÖLÇÜLEN ETKİN SIKLIK (06.09, AuditLog 24 saat):** Actions cron `*/10`
+tanımlı ama fiilen **~saatte 1** koşuyor (ücretsiz katman kısması; ayırt
+edici kanıt: makinede N11 görevi YOK, gece 00–06 dahil saatte ~1
+`N11_SIPARIS_ICE_AKTARMA` izi — o izler yalnız Actions→Vercel yolundan
+gelebilir). Katmanlar birlikte: yerel 5-dk görev (makine açıkken) +
+Actions ~1/saat + Vercel günlük yedek. **Makine kapalıyken çekim aralığı
+~1 saate düşer** — 10 dk şart mı, Halil kararı; istenirse cron-job.org
+o gün eklenir (uç ve sır hazır, kapı kanıtlı).
 
 ---
 
