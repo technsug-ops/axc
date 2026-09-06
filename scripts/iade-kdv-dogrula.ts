@@ -118,12 +118,39 @@ kontrol(
   "K170c: ham değer kutuya DOĞRUDAN gitmiyor",
   !/const sonNet2 = orijinalNet2/.test(blogu),
 );
-/** Sebep ekranda yazar (İlke #5) ve yalnız alacak varken (İlke #49). */
+/**
+ * ── K173-②e — BAĞLAMSIZ TEK NET-2 SATIRI YASAK (İlke #10) ────────────────
+ *
+ * Kutu tek bir NET-2 rakamı basıyordu ve o rakam iki şeyi tek sayıya
+ * sıkıştırıyordu: cebe giren para ile ödenecek KDV'den düşülen alacak.
+ * Artık NAKİT SONUÇ ve KDV MAHSUBU ayrı satır. Bu ölçüt, mahsup satırını
+ * kaldıran ya da nakit etiketini düşüren bir değişikliği kırmızı yakar.
+ */
+const kutuBas = blogu.indexOf('t("iadeSonrasiNet")');
+const kutuSon = blogu.indexOf('t("kdvVarsayimNotu")');
+kontrol("K173-②e: sonuç kutusu bulundu (çapa)", kutuBas >= 0 && kutuSon > kutuBas);
+const kutu = kutuBas >= 0 && kutuSon > kutuBas ? blogu.slice(kutuBas, kutuSon) : "";
+
+/** Nakit sonuç ETİKETLİ basılır — çıplak "NET-2" başlığı yeterli değil. */
 kontrol(
-  "K170c: KDV alacağı satırı KOŞULLU çizilir",
-  /sonKirpma !== null && sonKirpma\.devreden > 0[\s\S]{0,220}satisKdvAlacagi[\s\S]{0,120}sonKirpma\.devreden/.test(
-    blogu,
+  "K173-②e: NET-2 'nakit sonuç' etiketiyle çizilir",
+  /t\("nakitSonuc"\)/.test(kutu) && /sonNet2 === null \? "—" : para\(sonNet2\)/.test(kutu),
+);
+/** KDV mahsubu AYRI satır — koşullu (İlke #49) ve nakit olmadığı yazılı. */
+kontrol(
+  "K173-②e: KDV mahsubu AYRI satır, koşullu, notuyla",
+  /sonKirpma !== null && sonKirpma\.devreden > 0[\s\S]{0,400}t\("kdvMahsubu"\)[\s\S]{0,400}sonKirpma\.devreden[\s\S]{0,300}t\("kdvMahsubuNotu"\)/.test(
+    kutu,
   ),
+);
+/** ⛔ YEŞİL YALNIZ NAKİT POZİTİFSE — mahsup yeşile boyanmaz. */
+kontrol(
+  "K173-②e: yeşil yalnız nakit > 0 iken",
+  /sonNet2 > 0[\s\S]{0,80}DURUM_YAZISI\.olumlu/.test(kutu),
+);
+kontrol(
+  "K173-②e: KDV mahsubu YEŞİL DEĞİL (nakit değil)",
+  !/kdvMahsubu[\s\S]{0,400}DURUM_YAZISI\.olumlu/.test(kutu),
 );
 
 // ── K52 — ŞEMA AÇILMADI (türetilebilen için sütun yok) ─────────────────────

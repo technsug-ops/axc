@@ -336,8 +336,26 @@ export async function IadeBlogu({
           </div>
         ))}
 
-        {/* İade sonrası net. */}
-        <div className="space-y-2 rounded-lg border p-4">
+        {/* ═══ İADE SONRASI NET — NAKİT ile KDV MAHSUBU AYRI SATIR (K173-②d)
+            ────────────────────────────────────────────────────────────────
+            ⛔ NİYE AYRIŞTI: kutu tek bir NET-2 rakamı basıyordu ve o rakam
+            iki farklı şeyi tek sayıya sıkıştırıyordu — cebe giren para ile
+            ödenecek KDV'den düşülen alacak. Halil ekran görüntüsüyle sordu:
+            NET-1 −167,26 (zarar) yanında NET-2 +667,98 (kâr) İMKÂNSIZDI.
+            Şimdi ikisi ayrı okunuyor: NAKİT SONUÇ tek başına anlamlı, KDV
+            MAHSUBU nakit OLMADIĞINI söyleyerek duruyor.
+
+            ⚠ MAHSUP RAKAMI KUTUNUN KENDİ RAKAMLARIYLA TUTAR: nakit + mahsup
+            = kırpılmamış NET-2 (−167,26 + 835,24 = 667,98). Buraya iadenin
+            KENDİ KDV etkisi (−907,22) yazılamazdı: o, iade SATIRININ etkisi
+            (K172, yukarıda her iadede yazılı) ve siparişin kendi KDV borcunu
+            (382,34 − 310,36 = 71,98) içermediği için kutunun rakamlarıyla
+            kapanmaz. _(Anayasa: "ekrandaki rakam, ekrandaki rakamlardan
+            türetilebilmeli" · "bir sayı etiketiyle taşınır".)_
+
+            ⚠ YEŞİL YALNIZ NAKİT POZİTİFSE — mahsup yeşile boyanmaz; o para
+            cebe girmiyor, yalnız bir borcu azaltıyor. */}
+        <div className="space-y-3 rounded-lg border p-4">
           <div className="text-sm font-medium">{t("iadeSonrasiNet")}</div>
           <div className="flex flex-wrap gap-6">
             <div>
@@ -353,25 +371,40 @@ export async function IadeBlogu({
               </div>
             </div>
             <div>
-              <div className="text-muted-foreground text-xs">NET-2</div>
+              <div className="text-muted-foreground text-xs">
+                {t("nakitSonuc")}
+              </div>
               <div
                 className={
-                  (sonNet2 ?? 0) < 0
-                    ? "text-destructive text-2xl font-semibold"
-                    : "text-2xl font-semibold"
+                  sonNet2 === null
+                    ? "text-muted-foreground text-2xl font-semibold"
+                    : sonNet2 < 0
+                      ? "text-destructive text-2xl font-semibold"
+                      : sonNet2 > 0
+                        ? `text-2xl font-semibold ${DURUM_YAZISI.olumlu}`
+                        : "text-2xl font-semibold"
                 }
               >
                 {sonNet2 === null ? "—" : para(sonNet2)}
               </div>
             </div>
           </div>
-          {/* K170c: NET-2 niye NET-1'e eşit kaldı — SEBEP EKRANDA YAZAR
-              (İlke #5: sessiz kırpma, sessiz başarısızlığın kardeşi).
-              Yalnız alacak varken çizilir (İlke #49). */}
+          {/* KDV mahsubu AYRI SATIR — yalnız alacak varken (İlke #49) ve
+              NAKİT OLMADIĞI yanında yazılı (İlke #5). */}
           {sonKirpma !== null && sonKirpma.devreden > 0 ? (
-            <p className="text-muted-foreground text-xs">
-              {t("satisKdvAlacagi", { tutar: para(sonKirpma.devreden) })}
-            </p>
+            <div className="rounded-md border border-dashed p-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <span className="text-muted-foreground text-sm">
+                  {t("kdvMahsubu")}
+                </span>
+                <span className="text-muted-foreground font-medium">
+                  +{para(sonKirpma.devreden)}
+                </span>
+              </div>
+              <p className="text-muted-foreground mt-1 text-xs">
+                {t("kdvMahsubuNotu")}
+              </p>
+            </div>
           ) : null}
         </div>
 

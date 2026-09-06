@@ -1252,7 +1252,9 @@
     "donemSebepDIGER": "Diğer (açıklama zorunlu)",
     "donemSebepMUHASEBECI_ONAYLADI": "Muhasebeci onayladı — beyan düzeltmesi yapılacak",
     "iadeKdvEtkisi": "İade KDV etkisi",
-    "satisKdvAlacagi": "Bu satışın {tutar} KDV alacağı NET-2'ye kâr olarak eklenmez — dönemin diğer satışlarının KDV'sinden mahsup edilir, bu satıştan nakit girmez."
+    "nakitSonuc": "NET-2 · nakit sonuç",
+    "kdvMahsubu": "KDV mahsubu",
+    "kdvMahsubuNotu": "Ödenecek KDV'den düşer — bu satıştan nakit girmez. Nakit sonuç + KDV mahsubu, kırpılmamış NET-2'yi verir."
   },
   "Gider": {
     "baslik": "Giderler",

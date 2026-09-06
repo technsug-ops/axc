@@ -13,6 +13,147 @@
 
 ---
 
+## 📊 K173-② — TY ÇAPRAZI: SİPARİŞ 11538106902 · 06.09.2026 · [ÖLÇÜLDÜ · yazım yok]
+
+> **TY finans SON HÂL (Halil, 3 ekran):** komisyon NET 0 (kesilip iade
+> edilmiş) · iade −5.949 · kargo −141,42 (%2,4) · platform hizmet −13,19 ·
+> iade kargo 0 · **Net Sipariş −154,61**.
+
+### ②a — −₺907,22 SATIR SATIR TÜRETİLDİ · **TUTUYOR**
+
+    − satış KDV iadesi    (5.949,00 @%20)   −991,50
+    + komisyon KDV iptali (  505,67 @%20)   + 84,28
+    + ödeme gideri KDV    (    0,00     )      0,00   ← TY'de ödeme gideri yok
+    − kargo KDV indirimi  (    0,00     )      0,00   ← iade kargosu yok
+    ─────────────────────────────────────────────────
+    TÜRETİLEN −907,22   ·   KAYITLI −907,22   ·   FARK 0,00
+
+Girdilerin ikisi de **TY'nin kendi rakamı** (5.949 ciro · 505,67 komisyon =
+%8,5). Motorun sözleşmesi tutarlı: `kar.ts` _"tutarlar KDV DAHİLDİR"_ diyor;
+HB'de komisyona KDV **eklenir**, TY'de eklenmez çünkü **zaten içindedir** —
+bu yüzden 505,67'nin içinden 84,28 çıkarılıyor.
+⚠ Motorun kendi yorumu bu bloğu **`S6 VARSAYIMI — muhasebeci teyidi
+bekliyor`** diye işaretliyor; tek açık nokta bu ve TY'nin kendi belgesi onu
+söylemiyor.
+
+**222 İADE TARAMASI: 222/222 TUTUYOR · SAPAN 0.**
+⛔ **İLK TURDA "13 SAPAN" ÇIKTI VE HATA BENDEYDİ.** Türetmeme motorun
+formülündeki `+ tazminatKdv` terimini yazmamıştım; 13 kaydın 13'ünde de
+`TAZMINAT_TAHSILATI` satırı vardı, 209 tutanın hiçbirinde yoktu. Terim
+eklenince sapma **0**'a düştü. _(Anayasa: "boş sonuç ile temiz sonucu ayırt
+edemeyen denetim" — burada denetimi eksik yazan bendim; deseni SAYMAK
+teşhisi tek adımda verdi.)_
+
+### ②b — ₺12,65 BULUNDU: **KARGO TAHMİNİ**, stopaj değil
+
+    bizim iade sonrası NET-1   −167,26
+    TY Net Sipariş             −154,61   (= −141,42 kargo − 13,19 hizmet)
+    FARK                        −12,65
+
+    kapanış kalemleri (giden ↔ dönen):
+      maliyet   4.844,16 ↔ 4.844,16   AÇIK 0,00
+      komisyon    505,67 ↔   505,67   AÇIK 0,00
+      stopaj       49,58 ↔    49,58   AÇIK 0,00   ← TAM DÖNÜYOR
+      kargo       154,07  (bizim)  ↔  141,42  (TY)   → **FARK 12,65**
+
+**Stopaj tam dönüyor** (sorulmuştu). Fark tamamen kargoda: bizim `KARGO`
+kesintimiz **tarife tahmini** (desi × tarife + %20), TY'nin fiilen kestiği
+**141,42**. KDV hariç tabanda 128,39 ↔ 117,85 — aradaki 10,54'ün %20'lisi
+tam 12,65.
+⛔ **KAYNAK ÖNCELİĞİ GEREĞİ TY KAZANIR** (kanalın kendi belgesi > bizim
+çıkarımımız). Yani bu siparişte NET-1'imiz **12,65 fazla karamsar**.
+⏭ Bu tek sipariş bir DÜZELTME emri değil: aynı sapma kaç siparişte var,
+yönü sabit mi — **ekstre mutabakatında ölçülecek** (K-5 kargo cephesi).
+
+### ②c — TÜR ÇELİŞKİSİ: KANAL İÇİ ÇELİŞKİ **YOK**, ETİKET ELLE YAZILMIŞ
+
+| soru | ölçülen |
+|---|---|
+| kayıtta claims kodu var mı | **YOK** — `note` tamamen boş |
+| kayıt nereden geldi | **ELLE** — satışın `importKaynak` = null |
+| ne zaman yazıldı | 05.09.2026 10:21:48 · `createdAt = updatedAt` (hiç düzenlenmemiş) |
+| TY claims ucu bağlı mı | **HAYIR** — `scripts/ty/istemci.ts`'te uç VAR, iade kaydına HİÇ bağlanmamış |
+
+⭐ **SONUÇ: "kanal içi çelişki" sorusu bugün DOĞMUYOR.** TY'nin iki ucu
+çelişmiyor; **claims ucuna hiç sorulmadı.** Etiketi bir insan yazdı, kaynak
+izi bırakmadan. Dolayısıyla "hangisi kazanır" kuralı bugün karara
+bağlanamaz — bağlanacak bir çelişki yok.
+⛔ **AMA 114'LÜK YAZIMDAN ÖNCE KARARA BAĞLANMALI VE ŞARTI BUDUR:** claims
+içe aktarması `returnType`ı yazan İLK kod olduğunda, elle yazılmış etiketle
+çakışma **o gün doğar**. Kural o gün yazılır; bugün yazılırsa olmayan bir
+çelişki için uydurulmuş olur.
+
+**TÜR–PARA BAĞI (kaynaktan):** `UNDELIVERED` = _"gelir ve kesintiler geri
+gelir, mal stoğa döner, **gidiş kargosu yanar, ek kargo yok**"_ ·
+`NORMAL` = _"aynısı **+ dönüş kargosu satıcı gideri**"_. Motor `iadeKargosu`nu
+**türden TÜRETMİYOR** — elle girilen alan. Yani etiket parayı kendiliğinden
+değiştirmiyor; operatöre _"dönüş kargosu gir"_ demek için var.
+**Bu kayıtta finansal etki SIFIR** (iade kargosu boş, TY de "iade kargo 0"
+diyor). Tür düzeltmesi bu yüzden **saf metadata**: para 0, yalnız etiket.
+⏭ Düzeltme **onay bekliyor** (metadata istisnası: miktar/para değil · iz
+bırakan betik · kaydın kimliğine kilitli). Canlıda tür dağılımı:
+**NORMAL 219 · UNDELIVERED 2 · DISPUTED 1** — yani UNDELIVERED zaten
+istisna, ikisinden biri bu.
+
+### ②c-3 — "TY SONRADAN KESERSE" BEKLEYEN SINIF
+
+    TRENDYOL    · NORMAL   kargo 0:  7  · kargo>0: 125
+    HEPSIBURADA · NORMAL   kargo 0:  3  · kargo>0:  80
+    AMAZON      · NORMAL   kargo 0:  0  · kargo>0:   4
+    TRENDYOL    · DISPUTED kargo 0:  0  · kargo>0:   1
+
+**10 kayıt** (TY 7 + HB 3) NORMAL olduğu hâlde dönüş kargosu taşımıyor.
+Kural gereği NORMAL'de dönüş kargosu satıcıdadır → bunlar ya gerçekten
+kesilmedi ya **henüz** kesilmedi. **Ekstre mutabakatına not düşüldü**;
+kendi başına bir hata değil, izlenecek bir sınıf.
+
+---
+
+## 📊 K173-③ — NET-2 TÜKETİCİ SINIFLAMASI · 06.09.2026 · [ÖLÇÜLDÜ · yasak YAZILMADI]
+
+**AYIRT EDİCİ SORU:** bu kümede `net2 > net1` olabilir mi? Olamıyorsa kırpma
+gövdesine bağlamak gereksiz; olabiliyorsa bağ **ya da gerekçeli muafiyet**
+şart. Ölçüldü (canlı, 06.09):
+
+    tek SATIŞ kaydında net2 > net1     7845 satışın  107'sinde   (%1,4)
+    tek KALEM kaydında                 8007 kalemin   42'sinde
+    DÖNEM toplamında (satış-yalnız)      28 dönemin    0'ında
+    DÖNEM toplamında (satış + iade)      28 dönemin    0'ında
+    ÜRÜN toplamında (varyant)          1628 varyantın  5'inde   ⛔ GERÇEKLEŞİYOR
+
+| # | dosya | okuma türü | karar |
+|---|---|---|---|
+| 1 | `lib/panel.ts` | dönem + kanal·hesap + kanal·ay | **BAĞLI** ✓ |
+| 2 | `lib/rapor.ts` | dönem (brüt) | **BAĞLI** ✓ |
+| 3 | `components/iade-blogu.tsx` | tek sipariş (satış+iade) | **BAĞLI** ✓ (K170c) |
+| 4 | `lib/donem-raporu.ts` | **dönem** (muhasebeciye giden sayfa) | ⏳ **BAĞLANMALI** — bugün 28/28 temiz ama küme yapısal olarak aşabilir; ekran net1 ve net2'yi YAN YANA basıyor |
+| 5 | `lib/panel-listeler.ts` | **ürün** (SaleItem toplamı) | ⏳ **KARAR MİMARDA** — 5 varyantta fiilen aşıyor |
+| 6 | `lib/rapor/urun-analizi.ts` | **ürün** (SaleItem toplamı) | ⏳ **KARAR MİMARDA** — aynı küme |
+| 7 | `lib/satis-toplami.ts` | liste toplamı — **yalnız net2** toplar | **HAM KALIR** — kıyaslanacak net1 yok; kırpmanın referansı olmaz |
+| 8 | `lib/iade-liste.ts` | **iade-yalnız** toplam (`toplamEtki2`) | **HAM KALIR** — kırpma net1'e indirir ve **KDV sütununu tamamen sıfırlar**; iadelerin KDV etkisi ayrı bir sorudur |
+| 9 | `app/page.tsx` | panel çıktısını **çizer** | **HAM KALIR** — kaynağı (1) zaten kırpılmış |
+| 10 | `app/rapor/page.tsx` | rapor çıktısını **çizer** | **HAM KALIR** — kaynağı (2) zaten kırpılmış |
+| 11 | `app/rapor/urunler/page.tsx` | `Math.max(0, net2)` — Pareto payı | **HAM KALIR** — kırpma değil, negatifi paydan çıkarma |
+| 12 | `app/okut/sayim-yazim-actions.ts` | — | **YANLIŞ ALARM** — net2 yalnız bir YORUMDA geçiyor, tüketici değil |
+
+⛔ **ÜRÜN KÜMESİ (5·6) NEDEN MİMARA BIRAKILDI — VE KIRPMA BURADA ŞÜPHELİ.**
+Kırpmanın gerekçesi **KDV DÖNEMİDİR**: ödenecek KDV dönem başına hesaplanır,
+negatife düşen kısım nakde dönmez. Bir ÜRÜN ise KDV dönemi değildir; zararına
+satılan bir ürünün ürettiği KDV alacağı, aynı dönemin öteki ürünlerinin
+KDV'sinden **gerçekten** düşer. Yani orada kırpmak, gerçek bir etkiyi
+gizleyebilir. _(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa hatayı
+korur".)_ Karar: **ürün satırında ya kırpma YOK ve net2>net1 açıklanır, ya
+da kırpma VAR ve fazlalık ürün satırında da "KDV mahsubu" diye yazar.**
+Bu bir tercih değil, mimar kararıdır.
+
+⏭ **YASAK BUNDAN SONRA YAZILIR.** Desen yasağı (`donemNet2` dışında net2
+kırpma) ancak muaf liste **gerekçeleriyle** kesinleştikten sonra
+kurulmalı — bugün yazılsaydı 7·8·9·10·11'i haksız yere kırmızı yakar ve
+susturulmak zorunda kalırdı. _(Anayasa: "bir sınırın yönü ölçülmeden
+çevrilmez".)_
+
+---
+
 ## 🚨 K173 — `git add -A` KOŞAN MUTASYON TURUNU COMMIT'E ALDI · 06.09.2026 · [CANLIYA SIZDI · İLERİ DÜZELTİLDİ]
 
 _K149'un **ÜÇÜNCÜ tekrarı.** İkincisi 03.09.2026'da yaşandı ve `pre-push`
@@ -93,6 +234,42 @@ koşarken çalışma ağacı geçici olarak yalan söyler ve o an atılan her to
 commit'i reddedebilir (K161'in kilidi zaten var; mekanizma bedava). Kapı
 push'ta var, commit'te yok — koruma bir adım erkene alınabilir.
 _(Anayasa: "güvenlik mekanizmaya bağlanır, disipline değil".)_
+
+📌 **KAYNAĞI BELİRLENEMEYEN PUSH — KARAR (Halil, 06.09.2026):** tek vaka
+olarak kaydedilir, bugün kovalanmaz. **Tekrarında inceleme açılır.**
+
+---
+
+## 📕 KILAVUZA GİREN İKİ MADDE · 06.09.2026
+
+### "PUSH EDİLDİ Mİ" ÖLÇÜMÜ KARAR ANINDA TAZELENİR
+
+Bir commit'in uzağa gidip gitmediği **ANLIK** bir olgudur; ölçüm ile karar
+arasında geçen her dakika onu bayatlatır. 06.09'da _"bozuk commit uzağa
+gitmedi"_ ölçümü **yazıldığı an doğruydu** (`origin/main` 65b4a8d) ve karar
+verildiğinde **yanlıştı** (58d3178 gitmişti). Üstüne kurulan "kapı tuttu"
+cümlesi de yanlış oldu.
+
+> **KURAL:** geri alma / `--force` / ileri-düzeltme kararı verilmeden **HEMEN
+> ÖNCE** `git ls-remote` ile tazelenir. Daha önce ölçülmüş olmak yeterli
+> değildir; `origin/main` yerel bir **önbellektir**, gerçeğin kendisi değil.
+
+_(Anayasa: "donmuş kaynak, akan kaynakla karşılaştırılırken iki damga
+yazılır" kuralının GIT tarafı.)_
+
+### ETİKETSİZ RAKAM TAŞINAMAZ
+
+Bir sayı özete/rapora/mesaja taşınırken **hangi satıra ait olduğu** yanında
+gider. Casio vakası bu kuralın en pahalı örneği: **₺219,06 · 0,9× · +₺20,10
+üçü de DOĞRUYDU** ve üçü de **1. kademenindi**; etiket düşünce yanlarına
+**3. kademenin FİYATI** (3.292) yazıldı ve adet başına **₺63,20**
+kaybettirecek bir talimat üretildi.
+
+> **ÖLÇÜT:** bir rakamın yanında **kademe / kanal / dönem / kaynak** yoksa o
+> rakam **taşınmaz**. Özet, satırı tek satıra indirirken etiketi de indirir —
+> ve etiketsiz kalan sayı en makul görünen satırdan alınır.
+
+_("Bir sayı etiketiyle taşınır" kuralı zaten vardı; vakası şimdi eklendi.)_
 
 ---
 
@@ -506,8 +683,18 @@ edici kanıt: makinede N11 görevi YOK, gece 00–06 dahil saatte ~1
 `N11_SIPARIS_ICE_AKTARMA` izi — o izler yalnız Actions→Vercel yolundan
 gelebilir). Katmanlar birlikte: yerel 5-dk görev (makine açıkken) +
 Actions ~1/saat + Vercel günlük yedek. **Makine kapalıyken çekim aralığı
-~1 saate düşer** — 10 dk şart mı, Halil kararı; istenirse cron-job.org
-o gün eklenir (uç ve sır hazır, kapı kanıtlı).
+~1 saate düşer.**
+
+─── ③ **KAPANDI — SAATLİK ÇEKİM YETERLİ** (Halil kararı 06.09.2026)
+
+**cron-job.org EKLENMEZ.** Gerekçe: A3'e (dış bağımlılık cephesi) dokunur
+ve **K121 kararıyla tutarlıdır** — yönetilemeyen bir dış bağımlılık daha
+açmak, kazandığı 50 dakikadan pahalıdır. Bugünkü üç katman (yerel 5-dk
+görev · Actions ~1/saat · Vercel günlük yedek) yeterli sayıldı.
+
+⏭ **AÇILIŞ ŞARTI:** gecikme **fiilen iş kaçırırsa** Halil bildirir. Şartsız
+bekleyen bir kalem değil — kapalı, gerekçeli, yeniden açılabilir.
+_(Anayasa: "kapatma kararı da panoya yazılır — gerekçesiyle".)_
 
 ---
 
@@ -3108,7 +3295,34 @@ görünüyorlar — o kadar. Özellikle:
 
 ---
 
-## 🟢 K132 — HB AVANTAJLI TEKLİFLER (K-HB-TEKLIF) · 02.09.2026 · [KOD KOŞTU]
+## ✅ K132 — HB AVANTAJLI TEKLİFLER (K-HB-TEKLIF) · 02–06.09.2026 · [KAPANDI — teklif girildi]
+
+─── ⭐ **KAPANIŞ: CASIO TEKLİFİ GİRİLDİ** (Halil, 05.09.2026)
+
+HB paneli → **Fiyatı Güncelle = 3658** · kademe 1 · komisyon **%14,10**.
+Beklenen etki: adet başına NET-2 **₺198,96 → ₺219,07** (**+%10,1**).
+
+⭐ **RAKAM BAĞIMSIZ DOĞRULANDI (06.09.2026).** Motor ikinci kez
+çağrılmadı — dört kademe **kanalın kendi kesinti kurallarından ELLE**
+hesaplandı (komisyon ×1,20 · stopaj KDV-hariç %1 · ödeme gideri %0,8 ·
+hizmet 12,60 · FIFO 2.697,75) ve **dördü de panonun tablosuyla kuruşuna
+tuttu**. _(Anayasa: bağımsızlık KAYNAĞIN ayrılığıyla ölçülür — aynı motoru
+tekrar koşturmak aynı kaynağı iki kez sormaktır.)_
+
+    kademe 1  3.658 · %14,10 → 219,07   ⭐ +%10,1   ← GİRİLEN
+    kademe 2  3.475 · %11,30 → 192,41      −%3,3
+    kademe 3  3.292 ·  %9,10 → 135,75   ⛔ −%31,8
+
+⏭ **TEYİT — VADELİ (Halil kararı 06.09.2026):** sonraki kanal taramasında
+Casio DW-9052 / HB için `ChannelSku.commissionRate` **%14,1**'e düşmüş
+olmalı. **7 gün içinde düşmezse kutuda uyarı:** _"teklif işleme girmemiş
+olabilir, HB panelinden kontrol et."_
+⛔ **SÜRESİZ BEKLEYEN TEYİT, TEYİT DEĞİLDİR** — bu yüzden vade yazıldı.
+Vade başlangıcı giriş günü (05.09) → **son gün 12.09.2026.**
+
+---
+
+## 🟢 K132 (özgün kayıt) — HB AVANTAJLI TEKLİFLER · 02.09.2026 · [KOD KOŞTU]
 
 _Kullanıcı HB tarife ekranına `Avantajlı_Teklifler-02-09-2026-10_00.xlsx`
 yükledi, ekran reddetti. **Ekran haklıydı, mesajı yanlıştı.**_
@@ -3223,7 +3437,7 @@ Tek bir pencere yazmak, 20+ günü olan 7 ürünü gereksiz aceleye sokardı ve
 |---|---|---|
 | Teklif NET-2'si ≤ 0 (zarar) | **16** | 🔴 **RET** |
 | Gri bölge — çarpan 1,9–2,3 ve/veya stok 1–3 | **6** | 🔴 **RET** |
-| Casio DW-9052 — tek aday | **1** | ⏳ **Halil kararı bekliyor** |
+| Casio DW-9052 — tek aday | **1** | ✅ **KABUL — 3658 girildi (05.09.2026)** |
 | Maliyeti yok (raf 0) | 1 | değerlendirilemedi |
 
 **Casio — ÜÇ KADEMESİ AYRI AYRI ÖLÇÜLDÜ (bugün 3.850 / %18 → ₺198,96):**

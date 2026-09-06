@@ -1252,7 +1252,9 @@
     "donemSebepDIGER": "",
     "donemSebepMUHASEBECI_ONAYLADI": "",
     "iadeKdvEtkisi": "",
-    "satisKdvAlacagi": ""
+    "nakitSonuc": "",
+    "kdvMahsubu": "",
+    "kdvMahsubuNotu": ""
   },
   "Gider": {
     "baslik": "",
