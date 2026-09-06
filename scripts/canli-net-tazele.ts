@@ -190,9 +190,13 @@ async function main() {
   console.log("\n① ÖNİZLEME — eski ↔ yeni");
   let degisen = 0;
   let toplamFark = 0;
+  let toplamFark1 = 0;
   for (const r of sonuclar) {
     const fark =
       r.eskiNet2 === null || r.yeniNet2 === null ? null : r.yeniNet2 - r.eskiNet2;
+    const fark1 =
+      r.eskiNet1 === null || r.yeniNet1 === null ? null : r.yeniNet1 - r.eskiNet1;
+    if (fark1 !== null && Math.abs(fark1) >= 0.005) toplamFark1 += fark1;
     const oynadi = fark !== null && Math.abs(fark) >= 0.005;
     if (oynadi) {
       degisen += 1;
@@ -203,10 +207,27 @@ async function main() {
         `  ${fark === null ? "" : (fark >= 0 ? "+" : "") + para(fark).padStart(10)}` +
         `  ${oynadi ? "⭐" : "  "} ${r.eskiDurum === r.yeniDurum ? r.yeniDurum : `${r.eskiDurum}→${r.yeniDurum}`}`,
     );
+    /**
+     * ⛔ NET-1 DE BASILIR — İKİSİ AYRI İDDİADIR (eklendi 07.09.2026).
+     * Maliyet düzeltmesinde NET-1 maliyet artışının TAMAMI kadar düşer,
+     * NET-2 daha AZ düşer: maliyet KDV DAHİLDİR, artan maliyet indirilecek
+     * KDV'yi de büyütür ve ödenecek KDV azalır. Yalnız NET-2 basılırsa
+     * okuyan aradaki farkı göremez ve kafadan da çıkaramaz.
+     * _(Anayasa: "bir sayı etiketiyle taşınır".)_
+     */
+    console.log(
+      `   ${" ".repeat(13)} NET-1 ${para(r.eskiNet1).padStart(11)} → ${para(r.yeniNet1).padStart(11)}` +
+        `  ${fark1 === null ? "" : (fark1 >= 0 ? "+" : "") + para(fark1).padStart(10)}`,
+    );
   }
   console.log(
     `\n   ⭐ NET-2 DEĞİŞEN: ${degisen}/${sonuclar.length}` +
       `  ·  toplam etki ${(toplamFark >= 0 ? "+" : "") + para(toplamFark)}`,
+  );
+  console.log(
+    `   ⭐ NET-1 toplam etki ${(toplamFark1 >= 0 ? "+" : "") + para(toplamFark1)}` +
+      `  ·  ARADAKİ FARK ${para(Math.abs(toplamFark - toplamFark1))}` +
+      "  = indirilecek KDV değişimi",
   );
   /** ⚠ "Okunamadı" ile "değişmedi" AYRI SAYILIR. */
   console.log(

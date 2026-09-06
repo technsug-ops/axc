@@ -318,12 +318,49 @@ async function main() {
    * kendi içinde ayrışır (alım ekranı doğru, kâr eski). Yazım küçük
    * (1 + 1 + ~2 satır), zaman aşımı riski yok; yine de açıkça 60 sn.
    */
+  /**
+   * ÖZET ALANININ YENİ DEĞERİ — bu kalem düzeltildikten SONRAKİ kalem
+   * toplamı. Öteki kalemler dokunulmadan kalır, yalnız bu kalemin katkısı
+   * yeni birimle yeniden sayılır. Karışık para biriminde `null` (yazılmaz).
+   */
+  const paraBirimleri = new Set(alim.items.map((i) => i.unitCostCurrency));
+  const yeniGoodsAmount =
+    paraBirimleri.size > 1
+      ? null
+      : kurus(
+          alim.items.reduce(
+            (t, i) =>
+              t +
+              (i.id === kalem.id ? yeniBirim : Number(i.unitCostAmount.toString())) *
+                i.quantity,
+            0,
+          ),
+        );
+
   await prisma.$transaction(
     async (tx) => {
       await tx.purchaseItem.update({
         where: { id: kalem.id },
         data: { unitCostAmount: yeniBirim.toFixed(4) },
       });
+      /**
+       * ⛔ DÖRDÜNCÜ YER — ÖZET ALANI (eklendi 07.09.2026).
+       * `Purchase.goodsAmount` kalem toplamının özetidir; kalem değişip özet
+       * kalınca kayıt KENDİ İÇİNDE çelişir. Ölçüldü: 03.09'daki düzeltme tam
+       * bunu bıraktı (`ALM-HB-260216-03` özet 15.283 ↔ kalem 1.598 = eski
+       * birim × 2) ve 07.09'daki üç düzeltme aynı boşluktan üç sapan daha
+       * üretecekti — yani kusur tek vaka değil, bu ARACIN DESENİYDİ.
+       * ⚠ Yalnız TEK PARA BİRİMLİ alımda yazılır: şema "karışık para
+       * biriminde doldurulmaz" diyor, doldurmak alanın sözünü bozardı.
+       * _(Anayasa: "düzeltme yolu TÜM okuyuculara ulaştığı ölçülmeden 'var'
+       * sayılmaz" — burada okuyucu değil, aynı kaydın öteki alanı.)_
+       */
+      if (yeniGoodsAmount !== null) {
+        await tx.purchase.update({
+          where: { id: alim.id },
+          data: { goodsAmount: yeniGoodsAmount.toFixed(4) },
+        });
+      }
       await tx.stockMovement.update({
         where: { id: partiHareketi.id },
         data: { unitCostAmount: yeniBirim.toFixed(4) },
