@@ -109,7 +109,7 @@ kendi başına bir hata değil, izlenecek bir sınıf.
 
 ---
 
-## 📊 K173-③ — NET-2 TÜKETİCİ SINIFLAMASI · 06.09.2026 · [KARAR VERİLDİ · yazım sırada]
+## 📊 K173-③ — NET-2 TÜKETİCİ SINIFLAMASI · 06.09.2026 · [KOD KOŞTU — Halil testi bekliyor]
 
 **AYIRT EDİCİ SORU:** bu kümede `net2 > net1` olabilir mi? Olamıyorsa kırpma
 gövdesine bağlamak gereksiz; olabiliyorsa bağ **ya da gerekçeli muafiyet**
@@ -212,6 +212,60 @@ bu satırda görünüyor — ve bu, K173-②d'de satış kutusunda verilen karar
 ③ desen yasağı bekçisi — **iki yönlü mutasyonla**: işareti SİLEN (yanlış
    susma) · işareti HER satıra basan (yanlış yanma) · muaf beyanını silen ·
    **gerekçesiz muafiyet** (bedava muafiyet olmaz)
+
+─── ③ **KOD KOŞTU** (06.09.2026) — `367e44e`
+
+**① AGREGASYON BAĞLANDI.** `donem-raporu.ts` artık `donemNet2`'den geçiyor;
+`devredenKdv` ayrı alan olarak dönüyor ve dönem ekranı onu **şarta bağlı**
+yazıyor. Kırpma olduğunda net1 ile net2 ekranda **eşit** görünür — açıklama
+satırı olmasaydı muhasebeci eşitliği hata sanardı.
+
+**② ÜRÜN SATIRI KIRPILMIYOR, ŞERH TAŞIYOR.** Yeni saf gövde
+`kdvMahsubu(satir)` (`panel-listeler.ts`): `net2 − net1`, kuruşa yuvarlı,
+negatifse 0. Şerh **üç ekranda**: panel (üç ürün listesi) · `/rapor/urunler`
+(masaüstü tablo **ve** mobil kart) · ürün kartı (birim NET kutusunun notu).
+Metin `Ortak` sözlüğünden — aynı kavram üç ekranda, ikinci sözlüğe kopya yok.
+
+**③ BEKÇİ `net2-kirpma:dogrula`** — 25 ölçüt · 4 bölüm · bölüm sayacı özetten
+ÖNCE koşar. **Muaf liste elle tutulmuyor:** ölçüt tersten kurulu —
+`urunlereTopla` **çağıran her dosya** `NET2 KIRPMA MUAFIYETI:` + en az 20
+karakter gerekçe yazmak zorunda. Yarın eklenen dördüncü çağrı da yakalanır.
+
+**10 MUTASYON · 10 KIRMIZI**, iki yön de sınandı (şerhi silen · şerhi
+koşulsuz basan · beyanı silen · gerekçesiz muafiyet · agregasyon bağını
+koparan · negatifi döndüren · kuruş kapısını kaldıran · mobil şerhi silen ·
+kart şerhini silen · devreden satırını silen).
+
+⛔ **İKİ ÖLÇÜT KUSURU MUTASYONLA ÇIKTI — ikisi de yalancı yeşildi:**
+· `blok()` çapası `"  return {"` idi ve dosyada ÖNCE `donemSiniri`'nde
+  geçiyordu; üç ölçüt yanlış metni ölçüyordu ve biri **yanlış sebeple**
+  yeşil yanıyordu. Çapa tekil bir ÇAĞRIYA bağlandı.
+· kuruş kapısı `yakin()` toleransıyla (0,005) sınanıyordu ve ölçtüğü etki
+  (0,000001) **toleransın içinde** kalıyordu — mutasyon ⑦ kaçtı. Ölçüt
+  yanlış değildi, **örnek veri kördü**; kesin eşitliğe çevrildi.
+
+### HALİL TEST LİSTESİ (canlı adres, gerçek cihaz)
+
+Rakamlar **ekranın kendi gövdesinden** ölçüldü (`urunlereTopla` +
+`kdvMahsubu`, canlı 06.09.2026). Ürün kartı dönem SÜZMÜYOR — bu yüzden test
+hedefi orası; rakam süzgeçten bağımsız birebir tutmalı.
+
+| # | Ekran | Beklenen |
+|---|---|---|
+| ① | Ürün kartı → **`axcali1713`** (Braun Bnt400) | **Birim NET ₺148,34** · altında **"KDV mahsubu içerir (₺101,57)"** |
+| ② | Ürün kartı → **`axcali1797`** (Steampickup) | Birim NET **−₺696,76** · **"KDV mahsubu içerir (₺373,44)"** |
+| ③ | Ürün kartı → **`axcali1951`** (LEGO 80117) | Birim NET **−₺232,16** · **"(₺159,22)"** |
+| ④ | Ürün kartı → **`axcali2213`** (Karaca Sakura) | Birim NET **−₺77,18** · **"(₺7,23)"** |
+| ⑤ | Ürün kartı → **`axcali2334`** (Portable 360) | Birim NET **−₺16,51** · **"(₺1,56)"** |
+| ⑥ | `/rapor/urunler` → süzgeç **Özel: 01.04.2026–31.07.2026** | `axcali1713` satırında NET-2 hücresinin ALTINDA aynı şerh; telefonda da görünür (İlke #8) |
+| ⑦ | Panel → ürün listeleri | Şerh çıkan bir liste varsa ALTINDA açıklama: _"…o tutar nakit değildir…"_ |
+
+⛔ **BİR YOL BUGÜN TETİKLENEMİYOR VE "GEÇTİ" SAYILMIYOR:** dönem ekranındaki
+**devreden KDV** satırı. Ölçüldü — **28 dönemin 28'inde devreden 0**, yani
+satır bugün hiçbir dönemde çizilmiyor. Kodu bekçiyle ve mutasyonla sınandı
+(⑩), ama **gerçek cihazda görülmedi** ve raporda öyle yazıyor.
+_(Anayasa: "tetiklenemeyen bir yolu geçmiş saymak, testi değil raporu
+düzeltmektir".)_
 
 ---
 
