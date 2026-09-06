@@ -189,15 +189,71 @@ yazıldı. Örnek veri iki okumayı **işaret düzeyinde** ayırıyor: kırpılm
 aynı sonucu verir ve mutasyon kaçardı.
 **Sonuç:** `aylik-marj:dogrula` 19/19 (6 bölüm) · mutasyon turu **9/9**.
 
-**HALİL TEST LİSTESİ (canlı adres, gerçek cihaz):**
-① Panel → aylık rakamlar tablosunu aç ("Son 12 ay" → **Para** sekmesi →
-   *Aylık rakamlar*) → **Eylül 2026** satırı: NET-2'nin altında
-   **"devreden KDV ₺…"** satırı görünmeli (05.09'daki büyük iade nedeniyle).
-   Devreden olmayan aylarda o satır **hiç çizilmemeli**.
-② Satışlar → **11538106902** → iade bloğunda artık ÜÇ rakam yan yana:
-   **NET-1 etkisi −₺549,60** · **NET-2 etkisi +₺357,62** ·
-   **İade KDV etkisi −₺907,22**. (İlk ikisi aynı satırda, KDV altında.)
-③ Kontrol: −549,60 − (−907,22) = +357,62 — üçü birbirini tutmalı.
+─── ③ **HALİL TESTİ DÜŞTÜ — İKİ BULGU, BİRİ BENİM HATAM** · 06.09.2026
+· [ÖLÇÜLDÜ · düzeltildi]
+
+> **Halil (ekran görüntülü):** _"① Eylül rakamlarında ve diğerlerinde
+> devreden KDV yok. ② Bu siparişte rakamlar tutmuyor; ayrıca iade edilmiş
+> bir üründe NET-1'de de NET-2'de de kâr edemezsin, mantık dışı değil mi?"_
+
+**BULGU ① — EKRAN DOĞRUYDU, TEST BEKLENTİM YANLIŞTI (benim hatam).**
+_"Eylül satırında devreden görünmeli"_ diye yazdım ve **bunu hiç
+ölçmemiştim.** Ölçüm (06.09, canlı, kanal·ay):
+
+    TRENDYOL     56 satış · 2 iade · net1 17.669,67 · net2 15.396,82 → devreden 0
+    HEPSIBURADA  25 satış · 1 iade · net1 13.003,51 · net2 10.842,09 → devreden 0
+    N11           3 satış · 0 iade · net1    383,01 · net2    304,61 → devreden 0
+
+Ayın satışları iade KDV'sini fazlasıyla karşılıyor; **devreden 0 DOĞRU
+davranıştır** ve satırın çizilmemesi kuralın ta kendisi (İlke #49). K170'in
+kendi notu bunu zaten söylüyordu (_"28 dönemin 28'inde ödenecek KDV
+pozitif"_) — beklentiyi yazarken kendi ölçümümü okumadım.
+⛔ **DERS:** Halil test listesindeki her rakam, **yazılmadan önce ölçülür.**
+Ölçülmemiş bir beklenti, doğru çalışan bir ekranı "bozuk" diye raporlatır ve
+kullanıcının zamanını yakar. _(Anayasa: "ekrandaki rakamlar teslim
+raporundakiyle BİREBİR tutmalı" — tutmayan taraf kod değil, RAPORDU.)_
+
+**BULGU ② — GERÇEK HATA, VE YAYGIN: KUTU KIRPILMIYORDU.**
+Satış detayındaki **"İade sonrası net"** kutusu şunu basıyordu:
+
+    NET-1  −₺167,26  (kırmızı, zarar)      NET-2  +₺667,98  (kâr)
+
+NET-2 = NET-1 − ödenecek KDV olduğuna göre **İMKÂNSIZ.** Halil'in cümlesi
+kuralın kendisi: iade edilmiş bir satış ikisinde birden kâr gösteremez.
+**Ölçüldü: iadeli 222 satışın 207'sinde (%93,2) aynı desen vardı.**
+K170 paneli, raporu ve aylık seriyi kırpıyordu; **kutu atlanmıştı** —
+kural bir yerde uygulanıp ötekinde bırakılmıştı _(anayasa: "kararın kapsamı,
+uygulandığı yerle sınırlı sayılmaz" — bu, o dersin ikinci kez tekrarı)_.
+
+**DÜZELTME:** kutu artık aynı gövdeden geçiyor (`donemNet2(sonNet1,
+hamSonNet2)`) → **NET-1 −167,26 · NET-2 −167,26**, ve altında sebep yazıyor
+(İlke #5, yalnız alacak varken): _"Bu satışın ₺835,24 KDV alacağı NET-2'ye
+kâr olarak eklenmez — dönemin diğer satışlarının KDV'sinden mahsup edilir,
+bu satıştan nakit girmez."_
+
+⭐ **VE İKİ BULGU ÇELİŞMİYOR — FARKLI PENCERELER.** Kutu _"BU SATIŞ ne
+getirdi"_, panel _"BU AY ne getirdi"_ sorusuna bakar. Satışta alacak 835,24
+görünür; Eylül'ün kanal toplamında 0'dır çünkü ayın öteki satışları onu
+soğurmuştur. İkisi de doğru _(anayasa: aynı veri, farklı soruya farklı
+pencereden bakar)_. Bu yüzden satır **"gelecek döneme mahsup" DEMİYOR** —
+mahsup çoğu zaman aynı dönemde olur; söylediği şey _"bu satıştan nakit
+girmez"_.
+
+**KANITLAR:** `iade-kdv:dogrula` **15/15** (4 yeni K170c ölçütü) ·
+**5 mutasyon 5 kırmızı** (kırpmayı kaldıran · `donemNet2` çağrısını atlayan ·
+alacak satırını silen · koşulsuz çizen · kırpmayı ters yöne çeviren) ·
+tsc ✓ · i18n 0 eksik (1 yeni anahtar, tr+en) · kalıntı taraması temiz.
+
+**HALİL TEST LİSTESİ — ÖLÇÜLMÜŞ RAKAMLARLA (deploy sonrası):**
+① Satışlar → **11538106902** → iade bloğu, ÜST satır: **NET-1 etkisi
+   −₺549,60** · **NET-2 etkisi +₺357,62** · altında **İade KDV etkisi
+   −₺907,22**. Sağlama: −549,60 − (−907,22) = +357,62.
+② **AYNI SAYFANIN EN ALTI — asıl düzeltme burada:** "İade sonrası net"
+   kutusunda artık **NET-1 −₺167,26 · NET-2 −₺167,26** (ikisi EŞİT) ve
+   altında ₺835,24'lük KDV alacağı açıklaması. **Eski hâl +₺667,98 idi.**
+③ Panel → *Son 12 ay* → Para → *Aylık rakamlar*: **Eylül'de devreden
+   satırı OLMAMASI DOĞRUDUR** (ölçüldü, üç kanalda da 0). Bu madde artık
+   bir hata arayışı değil, kuralın teyidi.
 
 ---
 

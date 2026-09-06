@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bicimlendirici } from "@/lib/bicim";
 import { iadeTuruEtiketleri } from "@/lib/etiketler";
 import { iadeKdvEtkisi } from "@/lib/iade-kdv";
+import { donemNet2 } from "@/lib/net-devreden";
 
 import type { Currency, ReturnType } from "@/generated/prisma/enums";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
@@ -132,7 +133,36 @@ export async function IadeBlogu({
   const toplamEtki2 = iadeler.reduce((t2, i) => t2 + (i.net2 ?? 0), 0);
 
   const sonNet1 = orijinalNet1 === null ? null : orijinalNet1 + toplamEtki1;
-  const sonNet2 = orijinalNet2 === null ? null : orijinalNet2 + toplamEtki2;
+  const hamSonNet2 = orijinalNet2 === null ? null : orijinalNet2 + toplamEtki2;
+
+  /**
+   * ⛔ K170c (Halil, 06.09.2026) — SATIŞ KUTUSU DA KIRPILIR.
+   *
+   * Halil ekran görüntüsüyle sordu: _"iade edilmiş bir üründe NET-1'de de
+   * NET-2'de de kâr edemezsin, mantık dışı değil mi?"_ Kutu şunu basıyordu:
+   *     NET-1 −167,26 (kırmızı, zarar)   ·   NET-2 +667,98 (kâr)
+   * NET-2 = NET-1 − ödenecek KDV olduğuna göre bu İMKÂNSIZ; +667,98 demek
+   * "bu satış 667,98 kazandırdı" demektir, oysa aradaki 835,24 NAKİT DEĞİL,
+   * dönemin öteki satışlarının KDV'sinden düşülen bir ALACAKTIR.
+   *
+   * ⚠ ÖLÇÜLDÜ 06.09.2026 (canlı): iadeli 222 satışın **207'sinde** bu kutu
+   * NET-2 > NET-1 gösteriyordu. K170 panelde/raporda/aylık seride kırpıyordu;
+   * kutu atlanmıştı — kural bir yerde uygulanıp ötekinde bırakılmıştı
+   * (anayasa: "kararın kapsamı, uygulandığı yerle sınırlı sayılmaz").
+   *
+   * ⭐ VE PENCERE FARKI ÇELİŞKİ DEĞİL: Eylül 2026'nın KANAL toplamında
+   * devreden 0 (ölçüldü: TY net1 17.669,67 · net2 15.396,82) — ayın öteki
+   * satışları bu alacağı zaten soğurmuş. Kutu "BU SATIŞ ne getirdi" sorusuna,
+   * panel "BU AY ne getirdi" sorusuna bakar; ikisi farklı pencere, iki doğru
+   * cevap (anayasa: aynı veri, farklı soruya farklı pencereden bakar).
+   * Bu yüzden satır "gelecek döneme mahsup" DEMEZ — mahsup çoğu zaman AYNI
+   * dönemde olur; söylediği şey "bu satıştan nakit girmez".
+   */
+  const sonKirpma =
+    sonNet1 === null || hamSonNet2 === null
+      ? null
+      : donemNet2(sonNet1, hamSonNet2);
+  const sonNet2 = sonKirpma === null ? null : sonKirpma.net2;
 
   return (
     <Card>
@@ -335,6 +365,14 @@ export async function IadeBlogu({
               </div>
             </div>
           </div>
+          {/* K170c: NET-2 niye NET-1'e eşit kaldı — SEBEP EKRANDA YAZAR
+              (İlke #5: sessiz kırpma, sessiz başarısızlığın kardeşi).
+              Yalnız alacak varken çizilir (İlke #49). */}
+          {sonKirpma !== null && sonKirpma.devreden > 0 ? (
+            <p className="text-muted-foreground text-xs">
+              {t("satisKdvAlacagi", { tutar: para(sonKirpma.devreden) })}
+            </p>
+          ) : null}
         </div>
 
         <p className="text-muted-foreground text-xs">{t("kdvVarsayimNotu")}</p>

@@ -89,6 +89,43 @@ kontrol(
   /net2Etkisi:\s*net1Etkisi\s*-\s*odenecekKdvDegisimi\s*,/.test(iadeMotoru),
 );
 
+/**
+ * ── K170c — "İADE SONRASI NET" KUTUSU DA KIRPILIR ────────────────────────
+ *
+ * Halil 06.09.2026 (ekran görüntülü): kutu NET-1 −167,26 (zarar) yanında
+ * NET-2 +667,98 (kâr) basıyordu — NET-2 = NET-1 − ödenecek KDV olduğuna göre
+ * İMKÂNSIZ. Ölçüldü: iadeli 222 satışın **207'sinde** aynı desen vardı.
+ * K170 paneli/raporu/aylık seriyi kırpıyordu, KUTU atlanmıştı.
+ *
+ * ⚠ ÖLÇÜT DEĞER + ÇİZİM: kırpma gövdesi (`donemNet2`) zaten değerle sınanıyor
+ * (panel:dogrula); burada sınanan, KUTUNUN o gövdeyi ÇAĞIRIP kırpılmış değeri
+ * BASTIĞI — ham `hamSonNet2`yi değil.
+ */
+const kirpmaBas = blogu.indexOf("const hamSonNet2");
+const kirpmaSon = blogu.indexOf("return (");
+kontrol(
+  "K170c: kırpma bloğu bulundu (çapa)",
+  kirpmaBas >= 0 && kirpmaSon > kirpmaBas,
+);
+const kirpmaBlok =
+  kirpmaBas >= 0 && kirpmaSon > kirpmaBas ? blogu.slice(kirpmaBas, kirpmaSon) : "";
+kontrol(
+  "K170c: sonNet2 donemNet2(sonNet1, hamSonNet2)'den geçer",
+  /donemNet2\(\s*sonNet1,\s*hamSonNet2,?\s*\)/.test(kirpmaBlok) &&
+    /const sonNet2 = sonKirpma === null \? null : sonKirpma\.net2;/.test(kirpmaBlok),
+);
+kontrol(
+  "K170c: ham değer kutuya DOĞRUDAN gitmiyor",
+  !/const sonNet2 = orijinalNet2/.test(blogu),
+);
+/** Sebep ekranda yazar (İlke #5) ve yalnız alacak varken (İlke #49). */
+kontrol(
+  "K170c: KDV alacağı satırı KOŞULLU çizilir",
+  /sonKirpma !== null && sonKirpma\.devreden > 0[\s\S]{0,220}satisKdvAlacagi[\s\S]{0,120}sonKirpma\.devreden/.test(
+    blogu,
+  ),
+);
+
 // ── K52 — ŞEMA AÇILMADI (türetilebilen için sütun yok) ─────────────────────
 const sema = readFileSync("prisma/schema.prisma", "utf8");
 kontrol(

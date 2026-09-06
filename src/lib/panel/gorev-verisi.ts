@@ -101,7 +101,7 @@ export async function donemAlimi(pencere: {
    * tipi bu tuzağı önlemek için `bitisHaric` taşıyor.
    */
   const alimlar = await prisma.purchase.findMany({
-    where: kabulKosulu(pencere),
+    where: { purchasedAt: { gte: pencere.baslangic, lt: pencere.bitisHaric } },
     select: {
       status: true,
       receivedAt: true,
