@@ -197,19 +197,51 @@ export async function IadeBlogu({
                   </span>
                 ) : null}
               </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">
-                  {t("net2Etkisi")}:{" "}
-                </span>
-                <span
-                  className={
-                    (iade.net2 ?? 0) < 0
-                      ? "text-destructive font-medium"
-                      : `font-medium ${DURUM_YAZISI.olumlu}`
-                  }
-                >
-                  {iade.net2 === null ? "—" : para(iade.net2)}
-                </span>
+              {/* ⛔ K170-①: NET-1 ETKİSİ DE YAZILIR — TEK BAŞINA NET-2 YALAN
+                  SÖYLÜYORDU. Ölçüldü 06.09.2026 (canlı, 222 iade): 216'sında
+                  net2 > net1, çünkü iade satış KDV'sini geri getirir. Büyük
+                  bir iadede net2 POZİTİFE geçiyor (11538106902: net1 −549,60
+                  · net2 +357,62) ve blok yalnız net2'yi YEŞİL basıyordu —
+                  okuyan "bu iade para kazandırdı" diye anlıyordu. Halil'in
+                  05.09'da panelde bildirdiği yanılgının kayıt ekranındaki
+                  hâli.
+                  ⭐ VE ÇARE KAYNAĞI KIRPMAK DEĞİL: snapshot kırpılsaydı
+                  K172'nin türettiği KDV satırı 216 iadenin 216'sında SIFIRA
+                  düşerdi (₺92.972,02 bilgi silinirdi) — NET-2 ≤ NET-1
+                  değişmezi DÖNEM kümesinin kuralıdır, tek kaydın değil
+                  (anayasa: ilke kendi kapsamının dışına uygulanırsa hatayı
+                  korur). Eksik olan kırpma değil, BAĞLAMDI.
+                  İade formu önizlemesi ikisini zaten yan yana gösteriyordu;
+                  kaydedilmiş hâlin farklı görünmesi İlke #10 ayrışmasıydı. */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                <div>
+                  <span className="text-muted-foreground">
+                    {t("net1Etkisi")}:{" "}
+                  </span>
+                  <span
+                    className={
+                      (iade.net1 ?? 0) < 0
+                        ? "text-destructive font-medium"
+                        : `font-medium ${DURUM_YAZISI.olumlu}`
+                    }
+                  >
+                    {iade.net1 === null ? "—" : para(iade.net1)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">
+                    {t("net2Etkisi")}:{" "}
+                  </span>
+                  <span
+                    className={
+                      (iade.net2 ?? 0) < 0
+                        ? "text-destructive font-medium"
+                        : `font-medium ${DURUM_YAZISI.olumlu}`
+                    }
+                  >
+                    {iade.net2 === null ? "—" : para(iade.net2)}
+                  </span>
+                </div>
               </div>
               {/* K172: İADE KDV'Sİ AYRI (spec). Türetilir: net1 − net2 (motor
                   formülünün tersi). Negatif = satış KDV'si geri geldi,

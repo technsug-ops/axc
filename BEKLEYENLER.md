@@ -71,7 +71,7 @@ Canlıda bugün **4 promosyon kalemi** ölçüldü: `PROMO-K171B-…-1/2/3`
 
 ---
 
-## ✅ K170 — DEVREDEN KDV: İADE NET-2'Yİ ŞİŞİRMEZ · 05.09.2026 · [KOŞTU — canlı kanıtlı]
+## ✅ K170 — DEVREDEN KDV: İADE NET-2'Yİ ŞİŞİRMEZ · 05–06.09.2026 · [KOŞTU — ① ve ② kapandı]
 
 > **Halil (ekran görüntülü):** _"bir iade girdim, iadeden doğan zararı ARTI
 > ilave etmiş; seçili dönemdeki hesap bambaşka."_ Panel NET-1 −160 (zararda)
@@ -112,10 +112,73 @@ GERÇEKÇİ OLMAYAN veri kullanıyordu (net2 > net1); `satis()` helper'ı net1'i
 net2'den TÜRETECEK şekilde düzeltildi + tek-iade beklentisi kırpmaya
 güncellendi (niye yazıldı).
 
-⏭ AÇIK: ① `iade.ts` net2Etkisi işareti kaynakta DA düzeltilebilir mi
-(şimdilik snapshot dokunulmuyor, kırpma gösterimde — ikisi tutarlı);
-② rapor grafiği/aylık tablo devreden göstergesi (şimdilik Seçili dönem +
-kanal + rapor kartı).
+─── ① **KAYNAKTA KIRPILMAZ — KALEM KAPANDI, YENİDEN AÇILMAZ** · 06.09.2026
+· [ÖLÇÜLDÜ · karar]
+
+Soru şuydu: `iade.ts` net2Etkisi kaynakta da kırpılsın mı? **Ölçüm HAYIR
+dedi ve gerekçesi kalıcıdır.** Canlıda 222 iade tarandı:
+
+    net2 > net1 (KDV baskın)  216   %97,3
+    normal (net2 ≤ net1)        6
+    incelenemeyen               0
+
+**AYIRT EDİCİ SONUÇ:** snapshot kırpılsaydı `net2 = net1` olurdu ve K172'nin
+türettiği KDV satırı (`net1 − net2`) **216 iadenin 216'sında SIFIRA**
+düşerdi — **₺92.972,02**'lik ölçülmüş bilgi silinirdi. Yani "düzeltme",
+düzelttiğini sandığı şeyi yok ederdi.
+⚠ Ve `net2 > net1` tek başına ANORMAL DEĞİL: iade satış KDV'sini geri
+getirir, o yüzden iadenin net-2 maliyeti net-1'den küçüktür (ör. net1
+−186,70 · net2 −93,07 — ikisi de zarar). **NET-2 ≤ NET-1 değişmezi DÖNEM
+kümesinin kuralıdır, tek kaydın değil** — ödenecek KDV dönem başına
+hesaplanır (Halil'in gider pusulası süreci de aylık). _(Anayasa: ilke kendi
+kapsamının dışına uygulanırsa hatayı korur.)_
+
+⭐ **AMA ÖLÇÜM GERÇEK BİR KUSUR BULDU — BAŞKA YERDE.** İade bloğu kalem
+başına YALNIZ NET-2 etkisini basıyordu ve pozitifse **YEŞİL**: sipariş
+11538106902 ekranda `+357,62` yeşil duruyordu — okuyan _"bu iade
+kazandırdı"_ diye anlıyor. Halil'in 05.09'da PANELDE bildirdiği yanılgının
+kayıt ekranındaki hâli. Üstelik iade FORMU önizlemesi ikisini zaten yan
+yana gösteriyordu (İlke #10 ayrışması). **Eksik olan kırpma değil,
+BAĞLAMDI.** Blok artık üçlüyü birlikte veriyor:
+
+    NET-1 etkisi −549,60  −  iade KDV etkisi −907,22  =  NET-2 etkisi +357,62
+
+**Bekçi:** `iade-kdv:dogrula` 11/11 — üç gösterim ölçütü + _"kaynak
+kırpılmıyor"_ ölçütü (kapanış kararının KOŞAN karşılığı: biri `Math.min`
+ile clamp eklerse kırmızı yanar). **4 mutasyon 4 kırmızı** (NET-1 satırını
+silen · NET-1 yerine net2 basan · NET-2'yi kovan · kaynağa clamp ekleyen).
+
+─── ② **AYLIK SERİ DE KIRPILIR (GRAFİK + TABLO)** · 06.09.2026 · [KOD KOŞTU]
+
+`aylikSeri` artık NET-2'yi **kanal·ay bazında** `donemNet2`'den geçiriyor
+(panel/rapor ile TEK gövde) ve `AyNoktasi.devreden` taşıyor. Aylık tabloda
+NET-2 hücresinin altında **"devreden KDV ₺X"** — yalnız >0 iken (İlke #49,
+kanal kutusuyla aynı desen). Grafik çizgisi zaten `nokta.net2` okuduğu için
+kırpmayı kendiliğinden aldı. NET-1 **HAM kalır** (kırpma yalnız net2'ye).
+
+⛔ **KIRPMA AY TOPLAMINDA DEĞİL, KANAL·AY BAZINDA** — K170b dersinin aylık
+eksene taşınması: ayın karışık toplamına uygulansaydı bir kanalın KDV'si
+öteki kanalın devredenini gizlerdi. Bekçi verisi bunu BİLEREK ayırt ediyor
+(iki kanal): kanal bazlı `632,74 / devreden 835,24` ↔ ay toplamı
+`832,74 / 635,24`. Tek kanallı örnekle sınansaydı iki okuma aynı sonucu
+verir, mutasyon kaçardı.
+
+**KANITLAR:** `panel:dogrula` **687 ölçüt** (11'i yeni; "aylık NET-2 = panel
+NET-2" sayı=liste bağı dahil) · **6 mutasyon 6 kırmızı** (kırpmayı kaldıran ·
+ay toplamında kırpan · devredeni sıfırlayan · NET-1'i de kırpan · ekran
+satırını silen · ekranı koşulsuz çizen) · tsc ✓ · i18n 0 eksik (yeni anahtar
+yok — mevcut `net1Etkisi`/`devredenKdvKisa` kullanıldı) · bit-bit geri
+alındı, kalıntı taraması temiz (K149).
+
+**HALİL TEST LİSTESİ (canlı adres, gerçek cihaz):**
+① Panel → aylık rakamlar tablosunu aç ("Son 12 ay" → **Para** sekmesi →
+   *Aylık rakamlar*) → **Eylül 2026** satırı: NET-2'nin altında
+   **"devreden KDV ₺…"** satırı görünmeli (05.09'daki büyük iade nedeniyle).
+   Devreden olmayan aylarda o satır **hiç çizilmemeli**.
+② Satışlar → **11538106902** → iade bloğunda artık ÜÇ rakam yan yana:
+   **NET-1 etkisi −₺549,60** · **NET-2 etkisi +₺357,62** ·
+   **İade KDV etkisi −₺907,22**. (İlk ikisi aynı satırda, KDV altında.)
+③ Kontrol: −549,60 − (−907,22) = +357,62 — üçü birbirini tutmalı.
 
 ---
 

@@ -41,6 +41,54 @@ kontrol(
   /iadeKdvEtkisi\(iade\.net1, iade\.net2\)/.test(blogu),
 );
 
+/**
+ * ── K170-① — NET-2 YANINDA NET-1 ETKİSİ DE ÇİZİLİR ───────────────────────
+ *
+ * Tek başına NET-2 etkisi YANILTIYOR: iade satış KDV'sini geri getirdiği için
+ * net2 > net1 oluyor (canlıda 222 iadenin 216'sında) ve büyük iadede net2
+ * POZİTİFE geçip YEŞİL basılıyordu — "bu iade kazandırdı" diye okunuyordu.
+ * Çare kaynağı kırpmak DEĞİL (kırpma K172'nin KDV satırını 216 kayıtta
+ * sıfırlardı); eksik olan BAĞLAM. Üçlü birlikte okunur:
+ *     NET-1 etkisi − iade KDV etkisi = NET-2 etkisi
+ *
+ * ⚠ Ölçüt DEĞERE değil ÇİZİME bağlı (ekran çizimi saf gövdeye taşınamaz);
+ * bu yüzden desen kullanım bloğuna daraltılır ve İKİ YÖNDEN sınanır.
+ */
+const netBlokBas = blogu.indexOf('t("net1Etkisi")');
+const netBlokSon = blogu.indexOf("iadeKdvEtkisi(iade.net1, iade.net2)");
+kontrol(
+  "K170-①: NET-1 ve NET-2 etkisi AYNI blokta, KDV satırından önce",
+  netBlokBas >= 0 && netBlokSon > netBlokBas,
+);
+const netBlok =
+  netBlokBas >= 0 && netBlokSon > netBlokBas
+    ? blogu.slice(netBlokBas, netBlokSon)
+    : "";
+kontrol(
+  "K170-①: NET-1 etkisi DEĞERİYLE çizilir (iade.net1)",
+  /t\("net1Etkisi"\)[\s\S]{0,400}iade\.net1 === null \? "—" : para\(iade\.net1\)/.test(
+    netBlok,
+  ),
+);
+kontrol(
+  "K170-①: NET-2 etkisi de AYNI blokta duruyor (biri ötekini kovmadı)",
+  /t\("net2Etkisi"\)[\s\S]{0,400}iade\.net2 === null \? "—" : para\(iade\.net2\)/.test(
+    netBlok,
+  ),
+);
+
+/**
+ * ⛔ KAYNAK KIRPILMADI — K170-① kapanış kararının KOŞAN karşılığı.
+ * `iade.ts` net2Etkisi'yi net1Etkisi'ne kırpmaya kalkan bir değişiklik
+ * (Math.min / clamp) bu ölçütü kırmızı yakar. Ölçüldü 06.09.2026: kırpma
+ * 216 iadede KDV satırını sıfırlar, ₺92.972,02 bilgi silinir.
+ */
+const iadeMotoru = readFileSync("src/lib/iade.ts", "utf8");
+kontrol(
+  "K170-①: net2Etkisi KAYNAKTA kırpılmıyor (ham fark yazılır)",
+  /net2Etkisi:\s*net1Etkisi\s*-\s*odenecekKdvDegisimi\s*,/.test(iadeMotoru),
+);
+
 // ── K52 — ŞEMA AÇILMADI (türetilebilen için sütun yok) ─────────────────────
 const sema = readFileSync("prisma/schema.prisma", "utf8");
 kontrol(

@@ -563,8 +563,13 @@ export type AyNoktasi = {
   gelir: number;
   /** Kanal bloklarıyla AYNI tanım: satış NET-1'i + iade etkileri. */
   net1: number;
-  /** Kanal bloklarıyla AYNI tanım: satış NET-2'si + iade etkileri. */
+  /** Kanal bloklarıyla AYNI tanım: satış NET-2'si + iade etkileri.
+   *  K170-②: KIRPILMIŞ — kanal·ay bazında net1'i aşamaz (aşan kısım
+   *  `devreden`e düşer; kanal kartlarıyla aynı gövde `donemNet2`). */
   net2: number;
+  /** K170-②: bu ayda ödenecek KDV negatife düşen kısım (kanal·ay
+   *  kırpmalarının toplamı). `0` ise yok — ekran yalnız >0 iken çizer. */
+  devreden: number;
   hesaplanamayanAdet: number;
   iadeAdedi: number;
   hesaplanamayanIadeAdedi: number;
@@ -663,6 +668,7 @@ export function aylikSeri(
       gelir: 0,
       net1: 0,
       net2: 0,
+      devreden: 0,
       hesaplanamayanAdet: 0,
       iadeAdedi: 0,
       hesaplanamayanIadeAdedi: 0,
@@ -678,24 +684,52 @@ export function aylikSeri(
   const noktaBul = (tarih: Date) =>
     dizin.get(`${tarih.getUTCFullYear()}-${tarih.getUTCMonth() + 1}`);
 
+  /**
+   * K170-② — NET-2 KIRPMA KANAL·AY BAZINDA (K170b dersi: devreden KANAL
+   * bazında yaşar; kırpma ayın karışık toplamına uygulansaydı bir kanalın
+   * KDV'si öteki kanalın devredenini gizlerdi — panel genelinde tam bu hata
+   * yaşandı, 05.09.2026'da düzeltildi). Ham net1/net2 burada kanal kanal
+   * birikir; döngülerin sonunda her kanal KENDİ net1'ine kırpılır ve ay
+   * satırı kırpılmış kanalların toplamı olur (İlke #9 "sayı = liste":
+   * grafik/tablo NET-2'si, kanal kartlarındaki tanımın aylık izdüşümü).
+   */
+  const kanalNetleri = new Map<
+    string,
+    { nokta: AyNoktasi; net1: number; net2: number }
+  >();
+  const kanalNeti = (tarih: Date, kanal: string, nokta: AyNoktasi) => {
+    const anahtar = `${tarih.getUTCFullYear()}-${tarih.getUTCMonth() + 1}|${kanal}`;
+    let kayit = kanalNetleri.get(anahtar);
+    if (!kayit) {
+      kayit = { nokta, net1: 0, net2: 0 };
+      kanalNetleri.set(anahtar, kayit);
+    }
+    return kayit;
+  };
+
   for (const satis of satislar) {
     if (satis.paraBirimi !== paraBirimi) continue;
     if (kanalKodu !== null && satis.kanalKodu !== kanalKodu) continue;
 
     const nokta = noktaBul(satis.tarih);
     if (!nokta) continue;
+    const kanalNet = kanalNeti(satis.tarih, satis.kanalKodu, nokta);
 
     nokta.adet++;
     nokta.gelir += satis.gelir;
     /**
      * ⚠ PAY VE PAYDA AYNI DALDA ARTIYOR — ve bu bilinçli. İki ayrı `if`
      * yazılsaydı biri değişip öteki kalabilirdi; marj o an sessizce kayar.
+     * (net2 kanal sepetine birikir; ay satırına kırpılmış hâli yazılır.)
      */
     if (hesaplandi(satis.durum, satis.net2)) {
-      nokta.net2 += satis.net2;
+      kanalNet.net2 += satis.net2;
       nokta.hesaplananGelir += satis.gelir;
     } else nokta.hesaplanamayanAdet++;
-    if (hesaplandi(satis.durum, satis.net1)) nokta.net1 += satis.net1;
+    if (hesaplandi(satis.durum, satis.net1)) {
+      nokta.net1 += satis.net1;
+      kanalNet.net1 += satis.net1;
+    }
   }
 
   // İade, KENDİ ayına düşer — satışın ayına değil. Temmuz satışının
@@ -706,15 +740,30 @@ export function aylikSeri(
 
     const nokta = noktaBul(iade.tarih);
     if (!nokta) continue;
+    const kanalNet = kanalNeti(iade.tarih, iade.kanalKodu, nokta);
 
     nokta.iadeAdedi++;
     nokta.iadeTutari += iade.iadeTutari;
     /** Satış tarafıyla AYNI kalıp: pay ve payda tek dalda. */
     if (hesaplandi(iade.durum, iade.net2)) {
-      nokta.net2 += iade.net2;
+      kanalNet.net2 += iade.net2;
       nokta.hesaplananIadeTutari += iade.iadeTutari;
     } else nokta.hesaplanamayanIadeAdedi++;
-    if (hesaplandi(iade.durum, iade.net1)) nokta.net1 += iade.net1;
+    if (hesaplandi(iade.durum, iade.net1)) {
+      nokta.net1 += iade.net1;
+      kanalNet.net1 += iade.net1;
+    }
+  }
+
+  /**
+   * K170-② KIRPMA: her kanal·ay sepeti kendi net1'ine kırpılır (tek gövde
+   * `donemNet2` — panel/rapor ile aynı), ay satırı toplar. `net1` HAM kalır
+   * (kırpma yalnız net2'ye işler; net1 ödenecek KDV düşülmemiş bakıştır).
+   */
+  for (const { nokta, net1, net2 } of kanalNetleri.values()) {
+    const kirpilmis = donemNet2(net1, net2);
+    nokta.net2 += kirpilmis.net2;
+    nokta.devreden += kirpilmis.devreden;
   }
 
   return noktalar;

@@ -3425,6 +3425,15 @@ export default async function AnaSayfa({
                       {karGorunur ? (
                         <TableCell className="text-right whitespace-nowrap">
                           {bicim.para(nokta.net2, seciliPara)}
+                          {/* K170-②: bu ayda devreden KDV — yalnız > 0 iken
+                              (kanal kutusuyla AYNI desen, İlke #10). */}
+                          {nokta.devreden > 0 ? (
+                            <span className="text-muted-foreground block text-xs">
+                              {t("devredenKdvKisa", {
+                                tutar: bicim.para(nokta.devreden, seciliPara),
+                              })}
+                            </span>
+                          ) : null}
                           {nokta.iadeAdedi > 0 ? (
                             <span className="text-muted-foreground block text-xs">
                               {t("kanalIade", { sayi: nokta.iadeAdedi })}

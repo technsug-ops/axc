@@ -5585,6 +5585,95 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   }
 }
 
+/**
+ * ═══ K170-② — AYLIK SERİ DE KIRPILIR (GRAFİK + TABLO) ════════════════════
+ * Kullanıcı onayı 06.09.2026. Aylık seri, kanal kartlarıyla AYNI değişmezi
+ * taşımak zorunda: NET-2 ≤ NET-1, taşan kısım `devreden`.
+ *
+ * ⛔ VE KIRPMA KANAL·AY BAZINDA — AYIN KARIŞIK TOPLAMINDA DEĞİL. Bu ayrımı
+ * ölçen veri BİLEREK iki kanallı: TY devreden verirken HB onu "telafi eder".
+ *   kanal bazlı  → net2 632,74 · devreden 835,24   ← DOĞRU (panel ile aynı)
+ *   ay toplamı   → net2 832,74 · devreden 635,24   ← K170b'de düzeltilen hata
+ * Tek kanallı örnekle sınansaydı iki okuma AYNI sonucu verir, mutasyon kaçardı
+ * (anayasa: "örnek veri ayrımın iki yakasını göstermeli").
+ */
+{
+  const aKutu = gun(2026, 8, 5);
+  const aBuAy = pencereOlustur("BU_AY", aKutu);
+  const aTySatis = satis({
+    kanalKodu: "TRENDYOL", kanalAdi: "Trendyol",
+    gelir: 5949, net1: 382.34, net2: 310.36, tarih: aKutu,
+  });
+  const aHbSatis = satis({
+    kanalKodu: "HEPSIBURADA", kanalAdi: "Hepsiburada",
+    gelir: 4000, net1: 1000, net2: 800, tarih: aKutu,
+  });
+  const aTyIade: PanelIadesi = {
+    kanalKodu: "TRENDYOL", kanalAdi: "Trendyol", hesapId: "hesap-axcali",
+    hesapAdi: "AXCALI", tarih: aKutu, paraBirimi: "TRY",
+    net1: -549.6, net2: 357.62, durum: "CALCULATED", iadeTutari: 5949,
+  };
+
+  const aSeri = aylikSeri(
+    [aTySatis, aHbSatis], { yil: 2026, ay: 8 }, 1, null, "TRY", [aTyIade],
+  );
+  const aAy = aSeri[0];
+
+  kontrol(
+    "K170-②: aylık NET-2 ≤ NET-1 (değişmez)",
+    aAy.net2 <= aAy.net1 + 0.005,
+    { net1: aAy.net1, net2: aAy.net2 },
+  );
+  yakin("K170-②: aylık NET-2 kanal bazlı kırpılı", aAy.net2, 632.74, 0.02);
+  yakin("K170-②: aylık devreden = TY'nin fazlalığı", aAy.devreden, 835.24, 0.02);
+  kontrol(
+    "K170-②: ay TOPLAMINDA kırpılmadı (832,74 DEĞİL)",
+    Math.abs(aAy.net2 - 832.74) > 1,
+    aAy.net2,
+  );
+
+  /** ⭐ SAYI = LİSTE: grafik/tablo NET-2'si, panel kanal kartlarının toplamı. */
+  const aPanel = panelHesapla(aBuAy, [aTySatis, aHbSatis], [aTyIade])[0];
+  yakin("K170-②: aylık NET-2 = panel NET-2", aAy.net2, aPanel.toplamNet2, 0.01);
+  yakin("K170-②: aylık devreden = panel devreden", aAy.devreden, aPanel.toplamDevreden, 0.01);
+
+  /** YANLIŞ YANMA YÖNÜ: devreden yokken ne net2 oynar ne devreden doğar. */
+  const aTemiz = aylikSeri(
+    [satis({ net1: 260, net2: 200, tarih: aKutu })],
+    { yil: 2026, ay: 8 }, 1, null, "TRY", [],
+  )[0];
+  yakin("K170-②: devreden yokken aylık NET-2 ham", aTemiz.net2, 200);
+  yakin("K170-②: devreden yokken aylık devreden 0", aTemiz.devreden, 0);
+
+  /** NET-1 KIRPILMAZ — kırpma yalnız net2'ye işler (ham bakış korunur). */
+  yakin("K170-②: aylık NET-1 HAM kalır", aAy.net1, 832.74, 0.02);
+
+  /**
+   * Ekran: aylık tabloda devreden satırı, yalnız > 0 iken (İlke #49).
+   *
+   * ⛔ KAPSAM DARALTILIR — `devredenKdvKisa` dosyada İKİ yerde geçiyor (kanal
+   * kutusu + bu tablo); dosyanın tamamında aransaydı aylık satırı silen
+   * mutasyonu kanal kutusu ayakta tutardı. Pencere SABİT UZUNLUK DEĞİL, iki
+   * çapa ARASI: gövde büyüyünce sessizce körelmez.
+   * ⛔ VE `indexOf` "yok" hâlinde −1 döner ve karşılaştırmayı sessizce geçer;
+   * varlık AYRICA kapılanır (anayasa: nötr görünen varsayılan).
+   */
+  const panelEkrani = readFileSync("src/app/page.tsx", "utf8");
+  const aSon = panelEkrani.indexOf("nokta.iadeAdedi > 0");
+  const aBas = panelEkrani.lastIndexOf("bicim.para(nokta.net2, seciliPara)", aSon);
+  kontrol("K170-②: aylık NET-2 hücresi bulundu (çapa)", aBas >= 0 && aSon > aBas, {
+    aBas,
+    aSon,
+  });
+  const aylikNet2Blok = aBas >= 0 && aSon > aBas ? panelEkrani.slice(aBas, aSon) : "";
+  kontrol(
+    "K170-②: aylık tablo devreden satırı KOŞULLU çizer",
+    /nokta\.devreden > 0[\s\S]{0,300}devredenKdvKisa[\s\S]{0,160}nokta\.devreden/.test(
+      aylikNet2Blok,
+    ),
+  );
+}
+
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) {
 
