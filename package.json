@@ -88,6 +88,7 @@
     "gerial:dogrula": "tsx scripts/geri-alma-dogrula.ts",
     "adet:dogrula": "tsx scripts/adet-dogrula.ts",
     "net2-kirpma:dogrula": "tsx scripts/net2-kirpma-dogrula.ts",
+    "canli:adet-geliri": "tsx scripts/canli-adet-geliri.ts",
     "canli:alim-kalem": "tsx scripts/canli-alim-kalem-raporu.ts",
     "canli:goods-hizala": "tsx scripts/canli-goods-amount-hizala.ts",
     "goods-amount:dogrula": "tsx scripts/goods-amount-dogrula.ts",
