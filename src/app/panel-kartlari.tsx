@@ -5,7 +5,7 @@ import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
-import { DURUM_ZEMINI } from "@/lib/renkler";
+import { DURUM_YAZISI, DURUM_ZEMINI } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -38,6 +38,16 @@ export type PanelListeSatiri = {
   deger: string;
   /** Sağdaki ikincil satır (adet, sermaye…). */
   altDeger?: string | null;
+  /**
+   * RAKAMIN ŞERHİ — rakamı BAĞLAMSIZ bırakmayan tek satır (K173-③).
+   *
+   * ⛔ Ürün satırında NET-2, NET-1'in üstüne çıkabilir (iadenin KDV avantajı;
+   * ürün bir KDV dönemi olmadığı için KIRPILMIYOR). O fazlalık NAKİT DEĞİL,
+   * ödenecek KDV'den düşen alacaktır — ve şerh olmadan rakam "bu kadar
+   * kazandırdı" diye okunur. Şerh, rakamın kendisine bitişik durur; ürün
+   * adının yanına konsaydı kimliğin niteliği sanılırdı.
+   */
+  degerSerhi?: string | null;
   /** Adın yanındaki rozet — yaşlanma bandı burada gelir. */
   rozet?: React.ReactNode;
 };
@@ -165,6 +175,13 @@ export function PanelListesi({
                   {s.altDeger ? (
                     <div className="text-muted-foreground text-xs whitespace-nowrap">
                       {s.altDeger}
+                    </div>
+                  ) : null}
+                  {s.degerSerhi ? (
+                    <div
+                      className={`text-[11px] whitespace-normal ${DURUM_YAZISI.bilgi}`}
+                    >
+                      {s.degerSerhi}
                     </div>
                   ) : null}
                 </div>

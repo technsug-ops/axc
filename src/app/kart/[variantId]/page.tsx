@@ -10,6 +10,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { partiToplami, siradakiPartiSirasi } from "@/lib/kart-partileri";
 import { iadeGerekceEtiketleri, stokHareketEtiketleri } from "@/lib/etiketler";
 import { sermayeVerimiMetni } from "@/lib/marj-gosterge";
+import { kdvMahsubu } from "@/lib/panel-listeler";
 import { DURUM_KUTUSU, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 import { YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
 import { kartVerisiniTopla } from "@/lib/urun-karti-verisi";
@@ -546,6 +547,22 @@ export default async function KartSayfasi({
                     ozet.birimNet2 === null
                       ? ""
                       : DURUM_YAZISI[karDurumu(ozet.birimNet2)]
+                  }
+                  /*
+                    ⛔ ÇIPLAK RAKAM YASAK (K173-③). Bu üründe NET-2, NET-1'in
+                    üstüne çıkmışsa fazlalık NAKİT DEĞİL — iade ödenecek
+                    KDV'yi düşürmüştür. Kutu yeşil yanarken bunu söylemezse
+                    kart, girmeyen bir parayı kazanç gibi gösterir.
+                    ⚠ ŞERH TOPLAM tutarı yazar, kutu ise BİRİM rakamı: ikisi
+                    farklı ölçüdür ve etiketleri bunu söyler (anayasa: "bir
+                    sayı etiketiyle taşınır").
+                  */
+                  not={
+                    ozet.satir !== null && kdvMahsubu(ozet.satir) > 0
+                      ? ortak("kdvMahsubuSerhi", {
+                          tutar: bicim.para(kdvMahsubu(ozet.satir), para),
+                        })
+                      : undefined
                   }
                 />
                 <Kutu

@@ -209,6 +209,40 @@ export function birimSatisFiyati(satir: UrunSatiri): number | null {
 }
 
 /**
+ * ============================================================================
+ *  KDV MAHSUBU — ÜRÜN SATIRINDA NET-2'NİN NET-1'İ AŞAN KISMI (K173-③)
+ * ----------------------------------------------------------------------------
+ *  Halil kararı 06.09.2026: **ürün kümesinde `net2 > net1` KIRPILMAZ.**
+ *  Fazlalık bir hata değil BİLGİDİR — iadenin KDV avantajı.
+ *
+ *  ⛔ NİYE KIRPILMIYOR: kırpmanın gerekçesi KDV DÖNEMİDİR (`net-devreden.ts`).
+ *  Ödenecek KDV dönem başına hesaplanır ve negatife düşen kısım o ay nakde
+ *  dönmez. Bir ÜRÜN ise KDV dönemi DEĞİLDİR: zararına satılan bir ürünün
+ *  ürettiği KDV alacağı, aynı dönemin öteki ürünlerinin KDV'sinden GERÇEKTEN
+ *  düşer. Ürün satırında kırpmak, gerçekleşen bir etkiyi gizlerdi.
+ *  _(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa hatayı korur".)_
+ *
+ *  ⛔ ŞART — ÇIPLAK RAKAM YASAK. Kırpmadığımız için NET-2 ekranda NET-1'in
+ *  üstünde görünebilir ve o satır BAĞLAMSIZ DURAMAZ: fazlalık NAKİT DEĞİL,
+ *  ödenecek KDV'den düşen alacaktır. Ölçüldü (`npm run canli:k173-urun-asimi`,
+ *  canlı 06.09.2026): 1628 varyantın 5'i aşıyor. Dördü ZARARDA — orada mahsup
+ *  zararı küçültüyor, yanlış okunma riski düşük. Beşincisi `axcali1713`
+ *  KÂRDA ve NET-2 üstte (788,50 → 890,06); bağlamsız bir rakam orada
+ *  "890 kazandırdı" diye okunur, oysa 101,57'si nakit girmez.
+ *
+ *  ⚠ KURUŞA YUVARLANIR — bu bir tolerans DEĞİL, birim seçimidir. Decimal→float
+ *  kuyruğu (0,0000001 gibi) olmayan bir mahsubu VAR gösterir ve işaret her
+ *  satıra basılırdı; o an işaret bilgi değil gürültü olurdu.
+ * ============================================================================
+ */
+export function kdvMahsubu(satir: UrunSatiri): number {
+  // NET2 KIRPMA MUAFIYETI: ürün bir KDV DÖNEMİ değildir; kırpmanın
+  // gerekçesi dönemdir ve burada uygulanırsa gerçekleşen mahsubu gizler.
+  const fark = Math.round((satir.net2 - satir.net1) * 100) / 100;
+  return fark > 0 ? fark : 0;
+}
+
+/**
  * Marja göre sıralama. Marjı hesaplanamayan ürün listeye GİRMEZ — sıfır
  * sayılıp "en düşük marjlı" gibi görünmesi, olmayan bir bulguyu gerçek gibi
  * göstermek olurdu (toplam kâr listesindeki kuralın aynısı).

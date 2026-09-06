@@ -84,6 +84,8 @@
   },
   "Ortak": {
     "kapat": "",
+    "kdvMahsubuSerhi": "",
+    "kdvMahsubuNotu": "",
     "menuyuAcKapat": "",
     "vazgec": "",
     "detay": "",
@@ -3852,6 +3854,8 @@
     "net1": "",
     "net2": "",
     "net2Notu": "",
+    "devredenKdv": "",
+    "devredenKdvNotu": "",
     "envanterMalBedeli": "",
     "envanterNotu": "",
     "envanterKdvSerhi": "",

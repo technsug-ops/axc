@@ -68,6 +68,7 @@ import {
   donemOrtalamaMarji,
   enCokSatilan,
   karSiralamasi,
+  kdvMahsubu,
   karsizUrunSayisi,
   marjDurumu,
   marjSiralamasi,
@@ -262,6 +263,8 @@ export default async function AnaSayfa({
   // Karşılaştırma metinleri rapor sözlüğünde; aynı kavramı ikinci bir
   // sözlüğe kopyalamak, birini değiştirip diğerini unutmanın davetiyesidir.
   const tRapor = await getTranslations("Rapor");
+  /** KDV mahsubu şerhi ÜÇ ekranda geçiyor — tek sözlükten okunur. */
+  const tOrtak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
 
   const an = new Date();
@@ -851,6 +854,8 @@ export default async function AnaSayfa({
   );
 
   const urunSatirlari = urunlereTopla(donemKalemleri);
+  // NET2 KIRPMA MUAFIYETI: ürün listeleri — KDV dönemi değil; aşan satır
+  // "KDV mahsubu içerir" şerhini taşır (kanal/dönem toplamları KIRPILIR).
   /** Ürün kimliği kalemden gelir; toplama girmediği için ayrı haritada. */
   const urunKimligi = new Map(
     donemKalemleri.map((k) => [k.variantId, { urunId: k.urunId, sku: k.sku }]),
@@ -868,6 +873,37 @@ export default async function AnaSayfa({
     deger,
     altDeger,
   });
+
+  /**
+   * ⛔ KDV MAHSUBU ŞERHİ — ÇIPLAK RAKAM YASAK (K173-③, Halil 06.09.2026).
+   *
+   * Ürün satırında NET-2, NET-1'in üstüne çıkabilir ve BİLEREK kırpılmıyor
+   * (ürün bir KDV dönemi değildir; bkz. `panel-listeler.ts` → kdvMahsubu).
+   * Kırpmadığımız için rakam kendi başına yanıltır: fazlalık NAKİT DEĞİL.
+   * Bu yüzden aşan her satır şerhini YANINDA taşır — şerh, kırpmama
+   * kararının bedelidir.
+   *
+   * ⚠ NET-2'DEN TÜREYEN HER DEĞER ŞERHİ HAK EDER: marj da `net2 / ciro`
+   * olduğu için aynı fazlalıkla şişer. Yalnız tutar listelerine koymak,
+   * marj listesini bağlamsız bırakırdı.
+   */
+  const mahsupSerhi = (satir: (typeof urunSatirlari)[number]) => {
+    const tutar = kdvMahsubu(satir);
+    return tutar > 0
+      ? tOrtak("kdvMahsubuSerhi", { tutar: bicim.para(tutar, seciliPara) })
+      : null;
+  };
+
+  /**
+   * ŞERHİN AÇIKLAMASI — LİSTE BAZINDA, "hepsinde var mı" DİYE DEĞİL.
+   *
+   * ⚠ Ölçüt listenin KENDİ satırlarıdır: bir liste yalnız ilk N ürünü
+   * gösteriyor ve aşan ürün o N'e girmemiş olabilir. `urunSatirlari`
+   * üzerinden bakılsaydı, şerhi hiç olmayan bir listenin altına şerhi
+   * açıklayan bir not düşerdi — okuyan "hangi satır?" diye arardı.
+   */
+  const mahsupNotu = (liste: { degerSerhi?: string | null }[]) =>
+    liste.some((x) => x.degerSerhi) ? tOrtak("kdvMahsubuNotu") : null;
 
   const enCokSatilanlar = enCokSatilan(urunSatirlari, LISTE_SATIRI).map((s) =>
     listeSatiri(
@@ -1073,6 +1109,7 @@ export default async function AnaSayfa({
         bicim.para(s.net2, seciliPara),
         t("adetDegeri", { sayi: s.adet }),
       ),
+      degerSerhi: mahsupSerhi(s),
       rozet: marjRozeti(marj),
     };
   });
@@ -1088,16 +1125,19 @@ export default async function AnaSayfa({
     LISTE_SATIRI,
   ).map((s) => {
     const birim = birimKar(s);
-    return listeSatiri(
-      s,
-      bicim.yuzde(marjYuzdesi(s) ?? 0),
-      birim === null
-        ? t("adetDegeri", { sayi: s.adet })
-        : t("marjAlt", {
-            sayi: s.adet,
-            birim: bicim.para(birim, seciliPara),
-          }),
-    );
+    return {
+      ...listeSatiri(
+        s,
+        bicim.yuzde(marjYuzdesi(s) ?? 0),
+        birim === null
+          ? t("adetDegeri", { sayi: s.adet })
+          : t("marjAlt", {
+              sayi: s.adet,
+              birim: bicim.para(birim, seciliPara),
+            }),
+      ),
+      degerSerhi: mahsupSerhi(s),
+    };
   });
 
   const enAzKarBirakanlar = karSiralamasi(
@@ -1106,13 +1146,16 @@ export default async function AnaSayfa({
     LISTE_SATIRI,
   ).map((s) => {
     const marj = marjYuzdesi(s);
-    return listeSatiri(
-      s,
-      bicim.para(s.net2, seciliPara),
-      marj === null
-        ? t("adetDegeri", { sayi: s.adet })
-        : t("karAlt", { sayi: s.adet, marj: bicim.yuzde(marj) }),
-    );
+    return {
+      ...listeSatiri(
+        s,
+        bicim.para(s.net2, seciliPara),
+        marj === null
+          ? t("adetDegeri", { sayi: s.adet })
+          : t("karAlt", { sayi: s.adet, marj: bicim.yuzde(marj) }),
+      ),
+      degerSerhi: mahsupSerhi(s),
+    };
   });
 
   const karsizUrun = karsizUrunSayisi(urunSatirlari);
@@ -2952,7 +2995,14 @@ export default async function AnaSayfa({
                         satirlar={enYuksekMarjlilar}
                         bosMesaj={t("listeBos")}
                         skuEtiketi={t("sku")}
-                        altNot={t("marjUyari")}
+                        altNot={
+                          <>
+                            {t("marjUyari")}
+                            {mahsupNotu(enYuksekMarjlilar) ? (
+                              <> {mahsupNotu(enYuksekMarjlilar)}</>
+                            ) : null}
+                          </>
+                        }
                       />
                       <PanelListesi
                         baslik={t("enAzKar")}
@@ -2978,6 +3028,9 @@ export default async function AnaSayfa({
                               : null}
                             {karsizUrun > 0 ? (
                               <> {t("karsizUrun", { sayi: karsizUrun })}</>
+                            ) : null}
+                            {mahsupNotu(enAzKarBirakanlar) ? (
+                              <> {mahsupNotu(enAzKarBirakanlar)}</>
                             ) : null}
                           </>
                         }
@@ -3245,6 +3298,9 @@ export default async function AnaSayfa({
                         {t("kalemKariNotu")}
                         {karsizUrun > 0 ? (
                           <> {t("karsizUrun", { sayi: karsizUrun })}</>
+                        ) : null}
+                        {mahsupNotu(enCokKarEdenler) ? (
+                          <> {mahsupNotu(enCokKarEdenler)}</>
                         ) : null}
                       </>
                     }

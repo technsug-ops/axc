@@ -189,6 +189,8 @@ export async function satisEkseniVerisi(
    * demek olurdu ve sıralama o sütuna göre yapılırsa yanlış cevap verirdi.
    */
   return urunlereTopla(kalemler).map((s) => ({
+    // NET2 KIRPMA MUAFIYETI: ürün toplamı — KDV dönemi değil; ekran
+    // fazlalığı "KDV mahsubu içerir" şerhiyle yazar, kırpmaz.
     ...s,
     urunId: kimlik.get(s.variantId)?.urunId ?? null,
     marka: kimlik.get(s.variantId)?.marka ?? null,

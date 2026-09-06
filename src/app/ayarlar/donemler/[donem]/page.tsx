@@ -175,6 +175,20 @@ export default async function DonemRaporuSayfasi({
           vurgu={DURUM_YAZISI[karDurumu(r.net2)]}
           not={t("net2Notu")}
         />
+        {/*
+          ⛔ DEVREDEN KDV — YALNIZ VARSA ÇİZİLİR, VE VARSA ÇİZİLMEK ZORUNDA.
+          Devreden > 0 demek NET-2'nin NET-1'e KIRPILDIĞI demektir; o an iki
+          satır ekranda EŞİT görünür. Açıklama olmasaydı muhasebeci eşitliği
+          bir hata sanardı. Sıfırken gizlenmesi bilgi saklamak değil: kırpma
+          olmamış, net2 < net1 zaten kendi kendini anlatıyor.
+        */}
+        {r.devredenKdv > 0 ? (
+          <Satir
+            etiket={t("devredenKdv")}
+            deger={p(r.devredenKdv)}
+            not={t("devredenKdvNotu")}
+          />
+        ) : null}
       </section>
 
       <section className="rounded-lg border p-4">

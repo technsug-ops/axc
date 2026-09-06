@@ -30,7 +30,8 @@ import {
   type Pencere,
   type PencereTuru,
 } from "@/lib/donem";
-import { marjYuzdesi } from "@/lib/panel-listeler";
+import { kdvMahsubu, marjYuzdesi } from "@/lib/panel-listeler";
+import { DURUM_YAZISI } from "@/lib/renkler";
 import {
   ANALIZ_EKSENLERI,
   analizAdresi,
@@ -516,6 +517,27 @@ export default async function UrunAnaliziSayfasi({
                                     {s.kalemSayisi === s.hesaplanamayanKalem
                                       ? t("bilinmiyor")
                                       : bicim.para(s.net2, paraBirimi)}
+                                    {/*
+                                      ⛔ ÇIPLAK RAKAM YASAK (K173-③). Ürün
+                                      satırında NET-2, NET-1'in üstüne
+                                      çıkabilir ve BİLEREK kırpılmıyor —
+                                      fazlalık NAKİT DEĞİL, ödenecek KDV'den
+                                      düşen alacaktır. Şerh rakamın hemen
+                                      ALTINDA: ayrı sütun olsaydı dar ekranda
+                                      rakamdan kopardı.
+                                    */}
+                                    {kdvMahsubu(s) > 0 ? (
+                                      <div
+                                        className={`text-[11px] font-normal whitespace-normal ${DURUM_YAZISI.bilgi}`}
+                                      >
+                                        {tOrtak("kdvMahsubuSerhi", {
+                                          tutar: bicim.para(
+                                            kdvMahsubu(s),
+                                            paraBirimi,
+                                          ),
+                                        })}
+                                      </div>
+                                    ) : null}
                                   </TableCell>
                                   <TableCell className="text-right tabular-nums">
                                     {marj === null
@@ -595,10 +617,27 @@ export default async function UrunAnaliziSayfasi({
                                 ? [
                                     {
                                       etiket: t("sutunNet2"),
+                                      /*
+                                        ⛔ MOBİLDE DE ŞERH — İlke #8 ve #10:
+                                        aynı bilgi her cihazda aynı şeyi
+                                        söyler. Şerh burada değere BİTİŞİK
+                                        yazılır; ayrı satır olsaydı hangi
+                                        rakama ait olduğu kopardı.
+                                      */
                                       deger:
                                         s.kalemSayisi === s.hesaplanamayanKalem
                                           ? t("bilinmiyor")
-                                          : bicim.para(s.net2, paraBirimi),
+                                          : kdvMahsubu(s) > 0
+                                            ? `${bicim.para(s.net2, paraBirimi)} · ${tOrtak(
+                                                "kdvMahsubuSerhi",
+                                                {
+                                                  tutar: bicim.para(
+                                                    kdvMahsubu(s),
+                                                    paraBirimi,
+                                                  ),
+                                                },
+                                              )}`
+                                            : bicim.para(s.net2, paraBirimi),
                                     },
                                     {
                                       etiket: t("sutunMarj"),

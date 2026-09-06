@@ -236,6 +236,8 @@ export function kartOzeti(girdi: KartGirdisi): KartOzeti {
 
   // Panel motoru: tek varyant verildiği için tek satır döner.
   const satirlar = urunlereTopla(kalemler);
+  // NET2 KIRPMA MUAFIYETI: tek varyantın toplamı — KDV dönemi değil;
+  // kart fazlalığı birim NET kutusunun şerhinde yazar, kırpmaz.
   const satir = satirlar[0] ?? null;
 
   const hiz = satisSuresi(satislar);

@@ -3,6 +3,7 @@ import { ayKaydir } from "@/lib/donem";
 import { envanterVerisi } from "@/lib/envanter-veri";
 import { DONEM_ISTISNA_EYLEMI } from "@/lib/donem-kapisi";
 import { donemAnahtari, type DonemAnahtari } from "@/lib/donem-korumasi";
+import { donemNet2 } from "@/lib/net-devreden";
 
 /**
  * ============================================================================
@@ -56,6 +57,14 @@ export type DonemRaporu = {
   hesaplanamayanSatis: number;
   /** ⚠ ŞERH: uyarıya rağmen bu döneme yazılan hareket sayısı. */
   uyariyaRagmen: number;
+  /**
+   * ⚠ NET-2 KIRPILMIŞ — `donemNet2` gövdesinden geçer (K173-③).
+   * Dönem bir KDV DÖNEMİDİR: ödenecek KDV negatife düşerse o fazlalık
+   * bu ay cebe girmez, sonraki döneme devreder. Kırpılmasaydı rapor
+   * NET-2'yi NET-1'in üstünde gösterir ve muhasebeciye imkânsız bir
+   * rakam giderdi (net2 ≤ net1 değişmezdir).
+   */
+  devredenKdv: number;
   /** Para birimi karışıksa rapor tek rakam veremez — ekran bunu söyler. */
   paraKarisikMi: boolean;
 };
@@ -194,6 +203,15 @@ export async function donemRaporu(
     }
   }
 
+  /**
+   * ⛔ AGREGASYON TARAFI KIRPMA GÖVDESİNE BAĞLIDIR (K173-③ kararı).
+   * Ölçüm 06.09.2026: bugün 28 dönemin 28'inde devreden 0 — yani bu
+   * satır bugün hiçbir rakamı değiştirmiyor. Bağ yine de kuruluyor:
+   * küme YAPISAL olarak aşabilir ve ekran net1 ile net2'yi YAN YANA
+   * basıyor. "Bugün olmuyor" bir koruma değildir.
+   */
+  const kirpilmis = donemNet2(net1, net2);
+
   return {
     yil,
     ay,
@@ -201,7 +219,8 @@ export async function donemRaporu(
     satisSayisi: satislar.length,
     ciro,
     net1,
-    net2,
+    net2: kirpilmis.net2,
+    devredenKdv: kirpilmis.devreden,
     kesintiler,
     kesintiToplami: kesintiler.reduce((t, k) => t + k.tutar, 0),
     iadeSayisi: iadeler.length,
