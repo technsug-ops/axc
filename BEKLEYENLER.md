@@ -13,6 +13,74 @@
 
 ---
 
+## 💤 K174 — PROMOSYON ALIMLARININ KAYNAĞI BİLİNMİYOR · 06.09.2026 · [UYUR — açılış şartlı]
+
+**KARAR (Halil, 06.09.2026): kaynak BOŞ bırakılır, uydurulmaz.** Boş alan
+bir eksiklik değil **BEYANDIR**: _"sistem bunu bilmiyor."_ Uydurma bir
+tedarikçi o beyanı susturur ve üstüne rapor kurulur.
+
+### ÖLÇÜLDÜ — ŞEMA İŞİ GEREKMİYOR (asıl soru buydu)
+
+    Purchase.supplierId       String?  -> Supplier        (onDelete: SetNull)
+    Purchase.channelAccountId String?  -> ChannelAccount
+
+İkisi de VAR ve nullable; kaynak yazmak düz bir `UPDATE`. **Migration
+açılmadı çünkü GEREK YOK** — kalem "orantısız şema işi" diye değil,
+**cevap olmadığı için** uyuyor. İki gerekçe farklıdır ve doğrusu budur.
+
+### DÖRT KAYIT (üç değil) — ölçüt `PurchaseItem.promosyon`, dize DEĞİL alan
+
+| kod | ürün | satıldığı kanal |
+|---|---|---|
+| `PROMO-K171B-…-1` | Arzum Ar2001 Tostçu | Trendyol / AXCALI |
+| `PROMO-K171B-…-2` | Arzum Ar2001 Tostçu | Trendyol / AXCALI |
+| `PROMO-K171B-…-3` | Huawei Freebuds SE 3 | Hepsiburada / AXCALI |
+| `PROMO-KARCHER-…` | Karcher RM 503 | Hepsiburada / AXCALI |
+
+Dördünde de `supplierId` NULL · `channelAccountId` NULL. `supplierName`
+yer tutucu bir metin taşıyor: **"Promosyon"**.
+
+### ⛔ NOTLARDAKİ NUMARALAR KAYNAĞI SÖYLEMİYOR — SATIŞ KODLARI
+
+Deftere soruldu: `10470598902` · `10471782870` · `4199793212` ·
+`4702076555` — dördü de **`Sale.code`**, dördünde de karşılık gelen
+**ALIM YOK**.
+
+⚠ **BİÇİMDEN HÜKÜM ÇIKARILMADI, SEBEBİ ŞU:** numaralar 11 hane "1…" (TY) ve
+10 hane "4…" (HB) kalıbına uyuyor ve satış kanallarıyla da örtüşüyor — yani
+_"demek ki TY/HB kampanyası"_ demek çok kolaydı. Ama bu gözlem **rakip
+okumayı ELEMİYOR:** TY'de satılan bir mal distribütörden gelmiş olabilir.
+**Satıldığı yer, geldiği yer değildir.**
+_(Anayasa: "iki okumayla da uyumlu bir gözlem, hiçbirini kanıtlamaz".)_
+
+### ⏭ AÇILIŞ ŞARTI — ikisinden biri
+
+**①** Halil kaynağı **hatırlar** ya da belge çıkar (kampanya e-postası,
+fatura, distribütör irsaliyesi) → dört kayda `supplierId` (+ varsa
+`channelAccountId`) **izli** yazılır.
+⭐ **VE AYNI GÜN `supplierName` YER TUTUCUSU DA DEĞİŞİR** (Halil şartı
+06.09): `"Promosyon"` gerçek tedarikçiyle değiştirilir, yoksa aynı alım iki
+ayrı "tedarikçi" adıyla anılır. **Ölçüldü:** bugün tedarikçi bazlı bir
+gruplama raporu YOK (`groupBy supplier` hiçbir yerde geçmiyor), ama yer
+tutucu görünmez değil — `lib/tedarikci-adi.ts`
+(`supplier?.name ?? supplierName`) onu **dışa aktarmada ve ürün kartında**
+tedarikçi adı olarak basıyor. Yani ihtiyaç bugün rapor değil **tutarlılık**;
+gruplama doğduğu gün de hazır olur.
+
+**②** **BEŞİNCİ promosyon alımı girilir** → o an form kaynağı SORAR ve soru
+bir daha geçmişe kalmaz.
+⚠ **FORMUN KAYNAK SORMASI K174'ÜN AÇILIŞ GÜNÜNÜN İŞİDİR, BUGÜNÜN DEĞİL**
+(Halil, 06.09). Bugün form promosyon kutusunu soruyor, kaynağı sormuyor ve
+**bu bilinçli**: cevabı olmayan bir soruyu forma eklemek, dört kaydı
+düzeltmeden yeni kayıtlara zorunlu alan açardı.
+
+⚠ **BU KALEM İŞ ÜRETMİYOR.** Uyarı kutusuna KONMAZ, panel rozeti almaz:
+bugün kapatılabilir bir madde değil, bir KAYITTIR. Görev sanılırsa
+kapatılamayan bir satır olarak kutunun tamamına olan güveni eritir.
+_(Anayasa: "kapanamayacak kayıp, görev değil kayıttır".)_
+
+---
+
 ## 📊 K173-② — TY ÇAPRAZI: SİPARİŞ 11538106902 · 06.09.2026 · [ÖLÇÜLDÜ · yazım yok]
 
 > **TY finans SON HÂL (Halil, 3 ekran):** komisyon NET 0 (kesilip iade
@@ -109,7 +177,7 @@ kendi başına bir hata değil, izlenecek bir sınıf.
 
 ---
 
-## 📊 K173-③ — NET-2 TÜKETİCİ SINIFLAMASI · 06.09.2026 · [KOD KOŞTU — Halil testi bekliyor]
+## 📊 K173-③ — NET-2 TÜKETİCİ SINIFLAMASI · 06.09.2026 · [ÖLÇÜLDÜ — EKRANDA TEYİT YOK]
 
 **AYIRT EDİCİ SORU:** bu kümede `net2 > net1` olabilir mi? Olamıyorsa kırpma
 gövdesine bağlamak gereksiz; olabiliyorsa bağ **ya da gerekçeli muafiyet**
@@ -243,6 +311,14 @@ kart şerhini silen · devreden satırını silen).
 · kuruş kapısı `yakin()` toleransıyla (0,005) sınanıyordu ve ölçtüğü etki
   (0,000001) **toleransın içinde** kalıyordu — mutasyon ⑦ kaçtı. Ölçüt
   yanlış değildi, **örnek veri kördü**; kesin eşitliğe çevrildi.
+
+### ⏳ DURUM: ÖLÇÜLDÜ, EKRANDA TEYİT YOK
+
+Kod canlıda (`57d0f18`), bekçi turu **110/110** ve rakamlar gövdeden
+ölçüldü — ama **hiçbir ekran gerçek cihazda görülmedi.** Bu satır o boşluğu
+kapatmaz, ADINI koyar: _"sınanmamış ekran, ekran değildir."_ Beklenen asgari
+teyit: **Braun `axcali1713` → birim NET ₺148,34 + şerh ₺101,57** ve
+**negatifli bir SKU'da da şerhin çıktığı** (dördünden herhangi biri).
 
 ### HALİL TEST LİSTESİ (canlı adres, gerçek cihaz)
 
