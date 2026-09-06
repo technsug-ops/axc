@@ -100,9 +100,18 @@ NET-2 ile **birebir aynı**.
 **DEFTERİN SON HÂLİ: 7851 satış, hepsi CALCULATED — maliyeti bilinmeyen satış
 kalmadı.**
 
-⏭ **AÇIK KALAN:** 01.08.2025 ÖNCESİ ayrışma (2030 hareket, ~₺113k). Bilinçli
-bırakıldı: geçmiş dönem, karar değiştirmiyor. Yeniden açılması için sebep
-gerekir.
+⛔ **KAPANDI — KULLANICI KARARI 07.09.2026:** _"01.08 öncesinin kâr durumu
+bizim için mühim değil, tamamen dikkat dışı olacak. Sadece gerekli durumlarda
+alım satım istatistikleri geleceğe yön versin ve fikir olsun yeter."_
+
+01.08.2025 öncesi ayrışma (2030 hareket, ~₺113k) **düzeltilmeyecek** ve bu bir
+erteleme değil, KARARDIR. O dönemin kâr rakamı kullanılmıyor; alım/satım
+adet ve fiyatları zaten yerinde duruyor ve ürün analizi/fiyat denemesi onları
+okuyabiliyor — istatistik tarafı için ayrıca iş açılmadı (kullanıcı istemedi).
+
+⚠ **BU KALEM YENİDEN AÇILMAZ.** Tam turlu `canli:maliyet-hizala` (pencere
+vermeden) hâlâ bu 2030 hareketi "ayrışan" diye sayar; o rakam bir iş DEĞİL,
+kapsam dışıdır. Bunu bilmeden gören biri bir gün harcar.
 
 ---
 
