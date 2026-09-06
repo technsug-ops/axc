@@ -88,6 +88,7 @@
     "gerial:dogrula": "tsx scripts/geri-alma-dogrula.ts",
     "adet:dogrula": "tsx scripts/adet-dogrula.ts",
     "net2-kirpma:dogrula": "tsx scripts/net2-kirpma-dogrula.ts",
+    "canli:alim-kalem": "tsx scripts/canli-alim-kalem-raporu.ts",
     "canli:k173-urun-asimi": "tsx scripts/canli-k173-urun-asimi.ts",
     "canli:net-tazele": "tsx scripts/canli-net-tazele.ts",
     "canli:kar-tazele": "tsx scripts/canli-kar-tazele.ts",
