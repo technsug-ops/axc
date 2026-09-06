@@ -112,7 +112,6 @@ export async function IadeBlogu({
 
   const BILINEN = [
     "KOMISYON_IADE",
-    "KOMISYON_KDV_IADE",
     "ODEME_GIDERI_IADE",
     "STOPAJ_IADE",
     "KAYIP_GELIR",
@@ -121,6 +120,9 @@ export async function IadeBlogu({
     "IADE_KARGO",
     "YENIDEN_GONDERIM_KARGO",
     "CEZA",
+    // ⚠ DEGISIM_MALIYET KALIR: motor artık üretmiyor ama CANLIDA 1 GEÇMİŞ
+    // KAYIT taşıyor (ölçüldü 06.09.2026) — kaldırılsaydı o kayıt ham kod
+    // görünürdü. KOMISYON_KDV_IADE ise 0 kayıt (hiç üretilmemiş) → kaldırıldı.
     "DEGISIM_MALIYET",
   ];
   const ad = (kod: string) => (BILINEN.includes(kod) ? tKesinti(kod) : kod);

@@ -153,8 +153,9 @@ export type PanelIadesi = {
   /**
    * CİRODAN DÜŞEN TUTAR (pozitif sayı olarak).
    *
-   * Kaynağı `ReturnLine.KAYIP_GELIR` satırlarının mutlak toplamıdır —
+   * Kaynağı `ReturnFee.KAYIP_GELIR` satırlarının mutlak toplamıdır —
    * `/iadeler` ekranı da aynı yerden okur, iki ekran aynı rakamı üretir.
+   * (Model adı `ReturnFee`; eski yorum yanlışlıkla `ReturnLine` diyordu.)
    *
    * DEĞİŞİM BU SAYIYA GİRMEZ ve bunun için ayrı bir kural yazmak gerekmedi:
    * değişimde `KAYIP_GELIR` satırı hiç oluşmuyor (kural 13.08.2026 — ciro
