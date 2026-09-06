@@ -4154,3 +4154,53 @@ Canlıda bugün **4 promosyon kalemi** ölçüldü: `PROMO-K171B-…-1/2/3`
 ③ Arzum Tostçu / Huawei Freebuds satış detayında NET artık hesaplı
    (NO_COST/hesaplanamadı rozeti YOK).
 
+
+---
+
+## ✅ K172 — İADE KDV ETKİSİ AYRI GÖSTERİLİR — **KAPANDI 06.09.2026**
+
+> ⚠ **SATIRLAR BİREBİR TAŞINDI, ÖZETLENMEDİ.**
+
+**KAPANIŞ — Halil, 06.09.2026:** test listesinin İKİ maddesi de teyitli —
+① sipariş `11538106902` → _"düzelmiş"_ · ② sipariş `4866824058` → _"var"_.
+
+⚠ **PANO "Halil testi bekliyor" DİYORDU VE BU BAYATTI.** Teyit çoktan
+alınmıştı; panoya yazılmadığı için kalem açık göründü ve kapanışı ancak
+kullanıcı söyleyince oldu. Anayasa panonun **niyeti** durum sanmasını
+yasaklıyor; burada ters yönü yaşandı — **gerçekleşen bir sonuç panoya hiç
+geçmedi.** İkisi de aynı kusurun iki yüzü: pano ile gerçek ayrışırsa pano
+kurgu üretir.
+
+> **DERS:** teyit **alındığı anda** panoya yazılır. "Sonra işlerim", bir
+> kalemi gereksiz yere açık tutar ve aynı testi ikinci kez istetir.
+
+### Panodan inen kayıt — birebir
+
+_Yalnız başlık düzeyi indirildi (`##` → `###`); metnin tek satırı elden
+geçmedi — başlıktaki "Halil testi bekliyor" ibaresi de o günkü hâliyle
+duruyor._
+
+### 🔶 K172 — İADE KDV ETKİSİ AYRI GÖSTERİLİR · 06.09.2026 · [KOD KOŞTU — Halil testi bekliyor]
+
+> **Halil (iade muhasebe spec'i):** _"iade KDV'si ayrı gösterilmeli."_
+
+**KURULAN:** türetme gövdesi `src/lib/iade-kdv.ts` → `iadeKdvEtkisi(net1,
+net2) = net1 − net2` (motor formülünün tersi; iki MEVCUT snapshot alanının
+farkı — **sütun AÇILMADI**, anayasa: türetilebilen için şema en pahalı
+çözüm; şemaya yalnız gerekçe yorumu girdi). Satış detayı iade bloğunda her
+iadede **"İade KDV etkisi: ₺X"** satırı; net1/net2'den biri boşsa satır
+çizilmez (uydurma sıfır yok). Negatif = satış KDV'si geri geldi, ödenecek
+KDV azaldı (olağan iade). Ölü `KOMISYON_KDV_IADE` etiketi kaldırıldı
+(0 kayıt, ölçüldü); `DEGISIM_MALIYET` kaldı (1 kayıt).
+
+**KANITLAR:** bekçi `iade-kdv:dogrula` (değer testi + gösterim çağrısı +
+"şema açılmadı") · 3 mutasyon iki yönlü kırmızı · build ✓ · push+deploy ✓
+(06.09 09:28) · `canli:yetki` 28/28 (06.09). Beklenen ekran rakamları
+**gerçek gövde çağrılarak canlı snapshot'lardan ölçüldü** (06.09).
+
+**HALİL TEST LİSTESİ (canlı adres, gerçek cihaz):**
+① Satışlar → sipariş **11538106902** (05.09 iadesi — K170 vakası) → detay →
+   iade bloğunda NET satırlarının altında: **İade KDV etkisi: −₺907,22**.
+② Sipariş **4866824058** (04.09 normal iade) → aynı yerde: **−₺254,51**.
+③ Rakam birebir tutmalı — tutmayan tek rakam testi düşürür.
+

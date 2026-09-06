@@ -109,7 +109,7 @@ kendi başına bir hata değil, izlenecek bir sınıf.
 
 ---
 
-## 📊 K173-③ — NET-2 TÜKETİCİ SINIFLAMASI · 06.09.2026 · [ÖLÇÜLDÜ · yasak YAZILMADI]
+## 📊 K173-③ — NET-2 TÜKETİCİ SINIFLAMASI · 06.09.2026 · [KARAR VERİLDİ · yazım sırada]
 
 **AYIRT EDİCİ SORU:** bu kümede `net2 > net1` olabilir mi? Olamıyorsa kırpma
 gövdesine bağlamak gereksiz; olabiliyorsa bağ **ya da gerekçeli muafiyet**
@@ -151,6 +151,67 @@ kırpma) ancak muaf liste **gerekçeleriyle** kesinleştikten sonra
 kurulmalı — bugün yazılsaydı 7·8·9·10·11'i haksız yere kırmızı yakar ve
 susturulmak zorunda kalırdı. _(Anayasa: "bir sınırın yönü ölçülmeden
 çevrilmez".)_
+
+─── ② **KARAR (Halil, 06.09.2026) — ÜRÜN DÜZEYİNDE KIRPMA YOK**
+
+Yukarıdaki iki şıktan **birincisi** seçildi ve şartı bağlandı:
+
+> **Ürün kümesinde `net2 > net1` KIRPILMAZ.** Fazlalık bir hata değil
+> **BİLGİDİR** — iadenin KDV avantajı. Silmek, gerçekleşen bir etkiyi
+> gizlerdi.
+>
+> **ŞART — ÇIPLAK YEŞİL YASAK.** O satırlarda bağlam **zorunludur**:
+> **"KDV mahsubu içerir"** işareti. Rakam bağlamsız duramaz.
+
+**DESEN YASAĞI BUNA GÖRE KURULUR — kapsam ikiye ayrılır:**
+
+| küme | kural |
+|---|---|
+| **agregasyon** (dönem · kanal · ay) | `donemNet2` gövdesine **BAĞLI** |
+| **detay** (ürün · satır) | **MUAF** — ama gerekçe BEYAN edilir; **gerekçesiz muafiyet KIRMIZI** |
+
+**MUAF (gerekçeli):** `lib/panel-listeler.ts` · `lib/rapor/urun-analizi.ts`
+— ikisi de ürün toplamı okur ve **ürün bir KDV DÖNEMİ DEĞİLDİR.** Kırpmanın
+gerekçesi dönemdir; kapsamı dışına taşınırsa koruduğu şey doğruluk değil
+hatanın kendisi olur.
+
+**BAĞLANACAK:** `lib/donem-raporu.ts` — dönem okuması, yani agregasyon
+tarafı (üstteki tablonun ④'ü).
+
+⚠ **ÜÇÜNCÜ BİR DETAY TÜKETİCİSİ ÖLÇÜLDÜ — 12'LİK TABLODA YOKTU.**
+`urunlereTopla` **üç** yerden çağrılıyor: `app/page.tsx` ·
+`lib/rapor/urun-analizi-verisi.ts` · **`lib/urun-karti.ts`**. Sonuncusu ilk
+taramada görünmemişti. Kategori kararı onu kendiliğinden kapsıyor (detay →
+gerekçeli muaf), ama **listeye ADIYLA girmesi şart**: eksik liste, yasak
+yazıldığı gün o dosyayı sessizce muaf bırakır ve kimse fark etmez.
+_(Anayasa: "kapsam genişlemesi, bağımlı listelerin de genişlemesidir".)_
+
+### ÖRNEK KAYDA GİRDİ — 5 varyant, EKRANIN KENDİ GÖVDESİNDEN ölçüldü
+
+`npm run canli:k173-urun-asimi` (salt okuma) · gövde
+`panel-listeler.ts → urunlereTopla()` · canlı 06.09.2026 · 7998 kalem →
+**1628 varyant · AŞAN 5** — ilk ölçümle **birebir aynı**.
+
+    SKU           ÜRÜN                             NET-1      NET-2      FARK
+    axcali1797    Steampickup 3-In-1 Buharlı…   -2463,71   -2090,27   +373,44
+    axcali1951    80117 LEGO® Chinese Festiv…   -1087,87    -928,65   +159,22
+    axcali1713    Braun Bnt400 Ateş Ölçer         788,50     890,06   +101,57  ⛔
+    axcali2213    Karaca Sakura Powersteel 316    -84,42     -77,18     +7,23
+    axcali2334    Portable 360 Bluetooth Hop.     -34,58     -33,02     +1,56
+
+⛔ **BEŞİN DÖRDÜ ZARARDA — ORADA MAHSUP ZARARI KÜÇÜLTÜYOR.** Tehlikeli olan
+tek satır **`axcali1713`**: kârda, ve NET-2 NET-1'in ÜSTÜNDE. Bağlamsız bir
+yeşil orada _"bu ürün 890 kazandırdı"_ diye okunur; oysa **101,57'si nakit
+değil**, ödenecek KDV'den düşen alacaktır. Şartın niçin konduğu tam olarak
+bu satırda görünüyor — ve bu, K173-②d'de satış kutusunda verilen kararın
+(nakit sonuç ile KDV mahsubu AYRI satır) ürün tarafındaki kardeşidir.
+
+⏭ **SIRADAKİ İŞ — AYRI PAKET, KOD:**
+① `donem-raporu.ts` → `donemNet2`'ye bağlanır
+② ürün satırlarına **"KDV mahsubu içerir"** işareti + çıplak yeşil yasağı
+③ desen yasağı bekçisi — **iki yönlü mutasyonla**: işareti SİLEN (yanlış
+   susma) · işareti HER satıra basan (yanlış yanma) · muaf beyanını silen ·
+   **gerekçesiz muafiyet** (bedava muafiyet olmaz)
 
 ---
 
@@ -270,32 +331,6 @@ kaybettirecek bir talimat üretildi.
 > ve etiketsiz kalan sayı en makul görünen satırdan alınır.
 
 _("Bir sayı etiketiyle taşınır" kuralı zaten vardı; vakası şimdi eklendi.)_
-
----
-
-## 🔶 K172 — İADE KDV ETKİSİ AYRI GÖSTERİLİR · 06.09.2026 · [KOD KOŞTU — Halil testi bekliyor]
-
-> **Halil (iade muhasebe spec'i):** _"iade KDV'si ayrı gösterilmeli."_
-
-**KURULAN:** türetme gövdesi `src/lib/iade-kdv.ts` → `iadeKdvEtkisi(net1,
-net2) = net1 − net2` (motor formülünün tersi; iki MEVCUT snapshot alanının
-farkı — **sütun AÇILMADI**, anayasa: türetilebilen için şema en pahalı
-çözüm; şemaya yalnız gerekçe yorumu girdi). Satış detayı iade bloğunda her
-iadede **"İade KDV etkisi: ₺X"** satırı; net1/net2'den biri boşsa satır
-çizilmez (uydurma sıfır yok). Negatif = satış KDV'si geri geldi, ödenecek
-KDV azaldı (olağan iade). Ölü `KOMISYON_KDV_IADE` etiketi kaldırıldı
-(0 kayıt, ölçüldü); `DEGISIM_MALIYET` kaldı (1 kayıt).
-
-**KANITLAR:** bekçi `iade-kdv:dogrula` (değer testi + gösterim çağrısı +
-"şema açılmadı") · 3 mutasyon iki yönlü kırmızı · build ✓ · push+deploy ✓
-(06.09 09:28) · `canli:yetki` 28/28 (06.09). Beklenen ekran rakamları
-**gerçek gövde çağrılarak canlı snapshot'lardan ölçüldü** (06.09).
-
-**HALİL TEST LİSTESİ (canlı adres, gerçek cihaz):**
-① Satışlar → sipariş **11538106902** (05.09 iadesi — K170 vakası) → detay →
-   iade bloğunda NET satırlarının altında: **İade KDV etkisi: −₺907,22**.
-② Sipariş **4866824058** (04.09 normal iade) → aynı yerde: **−₺254,51**.
-③ Rakam birebir tutmalı — tutmayan tek rakam testi düşürür.
 
 ---
 
