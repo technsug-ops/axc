@@ -170,6 +170,25 @@ satırını silen · ekranı koşulsuz çizen) · tsc ✓ · i18n 0 eksik (yeni 
 yok — mevcut `net1Etkisi`/`devredenKdvKisa` kullanıldı) · bit-bit geri
 alındı, kalıntı taraması temiz (K149).
 
+⚠ **VE PUSH BİR KEZ KIRMIZI DÖNDÜ — KOD DEĞİL, VEKİL ESKİMİŞTİ.**
+`aylik-marj-mutasyon:kontrol` iki mutasyonda _"desen 0 kez geçiyor"_ dedi:
+çapaları `nokta.net2` idi, refaktörde `kanalNet.net2` oldu. **Harness doğru
+davrandı** — bulunamayan deseni YEŞİL saymadı, `UYGULANAMADI` diye kırmızı
+yaktı (anayasa: "desen bulunamayan bir mutasyon yeşil değil UYGULANAMADI'dır";
+bu koruma olmasaydı iki mutasyon sessizce ölür ve kimse görmezdi). Çapalar
+tazelendi, ölçütün ANLAMI değişmedi.
+
+⭐ **VE TAZELERKEN BEKÇİDE BİR BOŞLUK BULUNDU — YENİ ÖLÇÜT DOĞDU.** Aylık
+tablo NET-2'yi KIRPILMIŞ basıyor; `aylikMarj` ham net2 kullansaydı kullanıcı
+**ekrandaki NET-2'yi ekrandaki net ciroya böldüğünde BAŞKA bir sayı**
+bulurdu — üstelik `aylikMarj`ın kendi belgesi bunu yasaklıyordu ("ekrandaki
+rakam, ekrandaki rakamlardan türetilebilmeli"). Bekçi bunu hiç ölçmüyordu.
+`aylik-marj:dogrula` **6. bölüm** eklendi (BÖLÜM_SAYISI 5→6) ve 9. mutasyon
+yazıldı. Örnek veri iki okumayı **işaret düzeyinde** ayırıyor: kırpılmış
+**%−100** ↔ ham **%+325**; devredeni olmayan bir ayla sınansaydı iki okuma
+aynı sonucu verir ve mutasyon kaçardı.
+**Sonuç:** `aylik-marj:dogrula` 19/19 (6 bölüm) · mutasyon turu **9/9**.
+
 **HALİL TEST LİSTESİ (canlı adres, gerçek cihaz):**
 ① Panel → aylık rakamlar tablosunu aç ("Son 12 ay" → **Para** sekmesi →
    *Aylık rakamlar*) → **Eylül 2026** satırı: NET-2'nin altında
