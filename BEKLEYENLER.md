@@ -13,6 +13,89 @@
 
 ---
 
+## 🚨 K173 — `git add -A` KOŞAN MUTASYON TURUNU COMMIT'E ALDI · 06.09.2026 · [CANLIYA SIZDI · İLERİ DÜZELTİLDİ]
+
+_K149'un **ÜÇÜNCÜ tekrarı.** İkincisi 03.09.2026'da yaşandı ve `pre-push`
+kancasının kendi başlığında yazılı: "bir mutasyon turu `src/lib/panel.ts`i
+değiştirdi, `git add -A` bozuk hâli commit'e süpürdü, harness dosyayı
+SONRADAN geri yazdı ve push bekçi turunu TEMİZ çalışma ağacına karşı koştu.
+Tur yeşil yandı, BOZUK COMMIT canlıya gitti." **Bugün aynı desen, aynı
+mekanizmayla, üçüncü kez.**_
+
+⛔ **ÜÇ KEZ TEKRARLAYAN BİR DESEN ARTIK "DİKKAT" İLE ÇÖZÜLMEZ.** Anayasanın
+kendi ölçütü: bir başarısızlık tekrarladıysa, bizim tarafımız ölçüldüyse ve
+teşhis aracı yoksa — mekanizma değişir. Burada ilk iki şart sağlanıyor;
+üçüncüsü de kısmen (bu kez push'un kaynağı ölçülemedi). **Açık madde:
+`pre-commit` kapısı** (aşağıda).
+
+**NE OLDU.** Bir push'u arka plana attım; o push **20 dakikalık bekçi turunu**
+koşuyor ve tur içindeki mutasyon harness'leri kaynak dosyaları **canlı olarak
+bozup geri yazıyor.** Tur koşarken aynı ağaçta çalışmaya devam ettim ve
+`git add -A` yaptım — havada duran bir mutasyonu commit'e aldım:
+
+    58d3178  src/lib/panel/gorev-verisi.ts
+      -  where: kabulKosulu(pencere),                        ← DOĞRU (ortak gövde)
+      +  where: { purchasedAt: { gte: …, lt: … } },           ← MUTASYON
+
+Commit'in adı _"K170c iade sonrası net kutusu"_ idi ve içinde alakasız bir
+dosya vardı — **etiket içindekini anlatmıyordu.**
+
+**KAPI BİR PUSH'U DURDURDU.** `pre-push`, turu koşturmadan ÖNCE _"çalışma
+ağacı giden commit'ten ayrışmış"_ diyerek reddetti:
+> _"Tur çalışma ağacını okur, giden commit'i DEĞİL. Ayrışma varsa yeşil
+> sonuç gidenin değil, elindekinin güvencesidir."_
+
+⛔ **AMA COMMIT YİNE DE UZAĞA GİTTİ — VE ÖNCEKİ CÜMLEM YANLIŞTI.**
+İlk raporumda _"bozuk commit uzağa GİTMEDİ"_ yazdım; **o ölçüm YAZILDIĞI AN
+doğruydu** (`origin/main` 65b4a8d'deydi) ama sonra aşıldı. `ls-remote` ile
+ölçüldü: `origin/main` = **58d3178** ve içeriğinde kalıntı DURUYOR.
+_(Anayasa: "aşılan rakam sessizce aşılmaz" — eski cümle silinmiyor, niye
+düştüğüyle birlikte duruyor.)_
+
+⚠ **PUSH'UN KAYNAĞI BELİRLENEMEDİ — VE UYDURULMUYOR.** Ölçülenler:
+`origin/main` reflog'unda bu commit **`fetch` ile öğrenilmiş**, benim
+`update by push` kaydım YOK; operasyon klonu (`axcali-operasyon`) yalnız
+`pull --ff-only` yapıyor ve 14:22'de bu commit'i **çekmiş** (yani o saatte
+uzakta zaten vardı); bu çalışma kopyasından atılan üç push'un üçü de
+izlerinde. Yani commit bu kopyadan gitmedi ve nereden gittiği elimdeki
+izlerle **ölçülemiyor**. Ölçülemeyen şey tahmin edilmiyor.
+
+**⛔ VE KALINTI ZARARSIZ DEĞİLDİ — CANLIDA YANLIŞ RAKAM ÜRETİYORDU:**
+
+    dogru   where: kabulKosulu(pencere)     → receivedAt (MAL KABUL günü)
+    kalinti where: { purchasedAt: {…} }     → purchasedAt (SİPARİŞ günü)
+
+Panelin "dönem alımı" rakamı, malın RAFA GİRDİĞİ gün yerine SİPARİŞ
+verildiği güne göre sayıyordu. Üstelik bu tam olarak `kabul-sayimi.ts`'in
+kendi belgesinde yasaklanan desen: _"çıplak `purchasedAt` yazmak YASAK"_ —
+ve bekçisi VAR. **Bekçi kırmızı yanmadı çünkü turu TEMİZ çalışma ağacına
+karşı koştu** (harness dosyayı commit'ten sonra geri yazmıştı); yani ölçüm
+doğruydu, **yanlış şeyi ölçtü.**
+
+**DÜZELTME İLERİ YÖNDE — GEÇMİŞ YENİDEN YAZILMADI.** `--force` ile 58d3178'i
+silmek, operasyon klonunun `pull --ff-only`sini kırardı ve TY/N11 çekim
+rutini sessizce eskimiş kodda kalırdı. Bunun yerine üstüne düzelten bir
+commit yazıldı _(anayasa: "kesik iz silinmez, üstüne onu açıklayan ikinci
+bir iz yazılır ve geçerli olan o olur")_.
+
+**⛔ ASIL DERS — SEBEP `git add -A` DEĞİL, EŞZAMANLILIK.** Depoda zaten K161
+_"iki eşzamanlı bekçi turu birbirini kirletti → tek tur kilidi"_ var; ama o
+kilit **iki turu** birbirinden korur, **turu ile COMMIT'i** korumaz. Tur
+koşarken çalışma ağacı geçici olarak yalan söyler ve o an atılan her toplu
+`add` kumar olur.
+
+> **KURAL:** bekçi turu koşarken git'e YAZILMAZ. Push'u arka plana atmak,
+> ağacı o süre boyunca **tur'a devretmek** demektir; tur bitmeden commit
+> atılmaz. Ve her hâlükârda `git add -A` yerine **dosyaları adıyla** eklemek
+> kalıntıyı yapısal olarak eler.
+
+⏭ AÇIK — DEĞERLENDİRİLECEK: `pre-commit` kancası, tur kilidi tutulurken
+commit'i reddedebilir (K161'in kilidi zaten var; mekanizma bedava). Kapı
+push'ta var, commit'te yok — koruma bir adım erkene alınabilir.
+_(Anayasa: "güvenlik mekanizmaya bağlanır, disipline değil".)_
+
+---
+
 ## 🔶 K172 — İADE KDV ETKİSİ AYRI GÖSTERİLİR · 06.09.2026 · [KOD KOŞTU — Halil testi bekliyor]
 
 > **Halil (iade muhasebe spec'i):** _"iade KDV'si ayrı gösterilmeli."_
