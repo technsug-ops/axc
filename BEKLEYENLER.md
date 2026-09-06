@@ -13,6 +13,41 @@
 
 ---
 
+## 🚨 K176 — 783 AYRIŞAN MALİYET DAMGASI · 07.09.2026 · [ÖLÇÜLDÜ — yazım YOK]
+
+`npm run canli:maliyet-hizala` (rapor kipi, salt okuma):
+
+    taranan tüketim hareketi   8127
+    AYRIŞAN damga               783   (%9,6)
+    kârı etkilenecek satış      771
+
+Parti maliyeti ile o partiden yemiş **çıkış damgası** ayrışmış. Kâr motoru
+maliyeti ÇIKIŞ damgasından okur — yani bu satışların NET'i partinin bugünkü
+maliyetiyle değil, damganın taşıdığı eski değerle hesaplanmış durumda.
+
+⚠ **SINIF BİLİNEN, ÖLÇEĞİ BİLİNMİYORDU.** Aynı kök bugün iki kez daha çıktı:
+`canli-alim-maliyet-duzelt` → `goodsAmount`a yazmıyordu (kapatıldı, K175 ③) ·
+`canli-cikis-maliyeti-duzelt` → çıkışlara yazıp **alım kalemini** bırakmıştı
+(LEGO artığı, K175 ⑧). Üçü de tek cümle: **düzeltme bazı okuyuculara ulaşıyor,
+bazılarına ulaşmıyor.** Bugüne kadar panoda ölçeği YAZILI DEĞİLDİ.
+
+⛔ **`--uygula` KOŞULMADI VE ÖLÇÜLMEDEN KOŞULMAZ.** 771 satışlık bir yazım,
+K91'de ölen onarımın büyüklüğünde. Önce sorulacaklar:
+1. 783'ün kaçı **gerçek artık** (düzeltme ulaşmamış), kaçı **meşru** fark?
+2. Yön ne — damga partiden YÜKSEK mi DÜŞÜK mü, ve NET hangi yöne oynar?
+3. Etkilenen satışların kaçı kapanmış **muhasebe dönemine** düşüyor?
+   (Kapalı dönemin NET'i beyan edilmiş olabilir — dönem kapısı devreye girer.)
+4. Yazım tamamı-ya-hiçbiri mi, satır satır tekrar-koşulabilir mi?
+
+⭐ **YENİ BEKÇİ YAZILMADI — BİLİNÇLİ.** Bu sınıfın ölçen aracı ZATEN var
+(`canli:maliyet-hizala`, rapor kipi). İkinci bir ölçüt eklemek aynı soruya iki
+cevap üretirdi. _(Anayasa: "iki yerde iki ölçüt olmaz".)_ Eksik olan ölçüt
+değil, bu rakamın **panoda görünmemesiydi**; o giderildi.
+
+⏭ **SIRADAKİ ADIM ÖLÇÜM, YAZIM DEĞİL:** yukarıdaki dört soru cevaplanacak.
+
+---
+
 ## ✅ K175 — K-ALM-260216 MALİYET DÜZELTMESİ · 06–07.09.2026 · [KOŞTU — 3 alım, 5 satış]
 
 > **Halil teyidi 07.09:** üç siparişte de **fiilen ödenen ₺1.598** — kupon YOK,
