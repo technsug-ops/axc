@@ -1250,7 +1250,8 @@
     "donemSebepGEC_GIRILEN_KAYIT": "Gerçekten olmuş bir kayıt, deftere geç giriliyor",
     "donemSebepDONEM_YANLIS_KAPATILDI": "Dönem sehven kapatılmıştı",
     "donemSebepDIGER": "Diğer (açıklama zorunlu)",
-    "donemSebepMUHASEBECI_ONAYLADI": "Muhasebeci onayladı — beyan düzeltmesi yapılacak"
+    "donemSebepMUHASEBECI_ONAYLADI": "Muhasebeci onayladı — beyan düzeltmesi yapılacak",
+    "iadeKdvEtkisi": "İade KDV etkisi"
   },
   "Gider": {
     "baslik": "Giderler",

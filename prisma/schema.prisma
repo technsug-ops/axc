@@ -1526,6 +1526,11 @@ model Return {
   /// İade SONRASI net — orijinal snapshot'a dokunmadan hesaplanır.
   net1Amount     Decimal?      @db.Decimal(18, 4)
   net2Amount     Decimal?      @db.Decimal(18, 4)
+  /// ⚠ İADE KDV ETKİSİ AYRI ALAN OLARAK TUTULMAZ (K172, 06.09.2026):
+  /// motor `net2Etkisi = net1Etkisi − odenecekKdvDegisimi` yazıyor, yani
+  /// `iadeKdvEtkisi = net1Amount − net2Amount` — iki mevcut alanın FARKI.
+  /// Gösterimde türetilir (`src/lib/iade-kdv.ts`); şema açmak gereksizdi.
+  /// _(Anayasa: "şema en pahalı çözümdür — türetilebilen için sütun açılmaz".)_
   profitCurrency Currency?
   profitStatus   ProfitStatus?
   calculatedAt   DateTime?

@@ -326,7 +326,8 @@
     "kanal-yazma:dogrula": "tsx scripts/kanal-yazma-dogrula.ts",
     "canli:n11-saglik": "tsx scripts/canli-n11-saglik.ts",
     "canli:n11-ice-aktar": "tsx scripts/canli-n11-ice-aktar.ts",
-    "alim-promosyon:dogrula": "tsx scripts/alim-promosyon-dogrula.ts"
+    "alim-promosyon:dogrula": "tsx scripts/alim-promosyon-dogrula.ts",
+    "iade-kdv:dogrula": "tsx scripts/iade-kdv-dogrula.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",

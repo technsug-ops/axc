@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bicimlendirici } from "@/lib/bicim";
 import { iadeTuruEtiketleri } from "@/lib/etiketler";
+import { iadeKdvEtkisi } from "@/lib/iade-kdv";
 
 import type { Currency, ReturnType } from "@/generated/prisma/enums";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
@@ -210,6 +211,17 @@ export async function IadeBlogu({
                   {iade.net2 === null ? "—" : para(iade.net2)}
                 </span>
               </div>
+              {/* K172: İADE KDV'Sİ AYRI (spec). Türetilir: net1 − net2 (motor
+                  formülünün tersi). Negatif = satış KDV'si geri geldi,
+                  ödenecek KDV azaldı (olağan iade). */}
+              {(() => {
+                const kdv = iadeKdvEtkisi(iade.net1, iade.net2);
+                return kdv === null ? null : (
+                  <div className="text-muted-foreground text-xs">
+                    {t("iadeKdvEtkisi")}: {para(kdv)}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* ⭐ KAYIT NOTU — sebep. Yoksa satır hiç çizilmez: boş bir
