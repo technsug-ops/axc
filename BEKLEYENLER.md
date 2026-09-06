@@ -124,6 +124,16 @@ tabloma öyle taşıdım. **Araç düzeltildi** — artık `BİRİM 1.139,00 ×2
 2.278,00` yazıyor. _(Anayasa: "bir sayı etiketiyle taşınır" — kuralı kendi
 raporumda çiğnedim.)_
 
+⭐ **KURAL ANAYASAYA İKİNCİ VAKA OLARAK İŞLENDİ** (07.09, Halil talimatı):
+etiket yalnız cümlede değil **araç çıktısında da** taşınır; bir sütun başlığı
+"fiyat" diyorsa birim mi toplam mı olduğunu SÖYLEMİYOR demektir. Bu aynı
+zamanda "birim mi toplam mı" dersinin **üçüncü yüzü**: birincisi dış veride
+(TY `price`), ikincisi komut satırında (`--toplam=`/`--birim=`), üçüncüsü
+**kendi çıktımızda** — ilk ikisi düşünülmüştü, üçüncüsü düşünülmemişti.
+
+⛔ **DESEN BEKÇİYE BAĞLANDI:** `npm run canli:adet-geliri` (bkz. ⑥) —
+"dikkat et" bir mekanizma değildir.
+
 ### ⑥ SINIF TARAMASI GENİŞLETİLDİ — çok adetli satışlar
 
 **Ölçek küçük:** defterde çok adetli satış **yalnız 10**. Bağımsız kaynak

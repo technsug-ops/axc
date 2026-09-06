@@ -2800,6 +2800,40 @@ kalem / 5 sipariş**. Üç sayı da doğruydu; taşınan cümle yanlıştı.
 > "5 sipariş" ile "8 kalem" aynı olgunun iki ölçüsüdür; hangisi
 > yazılıyorsa o yazılır.
 
+⭐ **İKİNCİ VAKA — VE BU KEZ ETİKET BİR ARAÇ ÇIKTISINDA DÜŞTÜ (07.09.2026).**
+`canli:alim-maliyet-duzelt` etkilenen satışları listelerken sütunu yalnız
+**`fiyat 1.139,00`** diye yazıyordu; o alan `unitPriceAmount`, yani **BİRİM**
+fiyat. 2 adetlik bir satırda etiketsiz "fiyat" iki okumaya birden açık ve
+raporu yazan (ben) onu **satır toplamı** sanıp öyle taşıdım.
+
+Sonuç: Halil'e _"defterde toplam 1.139 görünüyor, gelir YARIM"_ diye bir alarm
+gitti ve kullanıcı haklı olarak _"bu vatandaş 1.139'u ikiye bölüp zararına
+satıyorum sanıyor"_ dedi. **Defter baştan sona DOĞRUYDU:**
+
+    unitPriceAmount 1.139,00 × adet 2 = CIRO 2.278,00   (TY ekranıyla birebir)
+    KOMISYON 410,04 = 2.278 × %18                       (TAM tutar üstünden)
+    NET-1 183,79 — kârda
+
+Ayırt edici kanıt kanalın **kendi ödeme kaydı** oldu: hakediş **iki satır**,
+Σ `1.867,96 = 2.278 − 410,04`, satır başına `1.139 − %18`. İki satır = iki adet.
+
+> **KURAL GENİŞLİYOR: ETİKET YALNIZ CÜMLEDE DEĞİL, ARAÇ ÇIKTISINDA DA
+> TAŞINIR.** Bir sütun başlığı "fiyat" diyorsa, birim mi toplam mı olduğunu
+> SÖYLEMİYOR demektir — ve o belirsizlik raporu yazanın kafasında
+> çözülür, çoğu zaman yanlış tarafa. Çare sütunu açık yazmaktır:
+> `BİRİM 1.139,00 ×2 = 2.278,00`. Üçü birden yazılınca hiçbir okuma açık
+> kalmaz.
+
+⚠ **VE BU, "BİRİM Mİ TOPLAM MI" DERSİNİN ÜÇÜNCÜ YÜZÜ:** birincisi dış veride
+(TY `price`), ikincisi komut satırında (`--toplam=` / `--birim=` — o araç
+bilerek SORUYOR ve tahmin etmiyor), üçüncüsü **kendi çıktımızda**. İlk ikisi
+düşünülmüştü, üçüncüsü düşünülmemişti.
+
+⛔ **VE DESEN İKİ KEZ ALARM ÜRETTİ, BU YÜZDEN BEKÇİYE BAĞLANDI:**
+`npm run canli:adet-geliri` — çok adetli her satışın cirosunu kanalın
+hakedişiyle çaprazlar (`ciro ÷ Σ SIPARIS`). Defterin kendi içinde tutarlı
+olması ölçüt değildir: `birim × adet` her hâlükârda kendi kendini doğrular.
+
 ### TOPLAM RAKAM YORUM KALDIRIR, SATIR KALDIRMAZ (KESİN KURAL)
 
 _Ders 24.08.2026, kargo faturası vakası._ Bir toplamdan yapılan çıkarım kaç
