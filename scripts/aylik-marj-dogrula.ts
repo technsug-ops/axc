@@ -14,7 +14,7 @@ import { aylikMarj, aylikSeri } from "../src/lib/panel";
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let kalan = 0;
@@ -216,6 +216,78 @@ console.log("\n5) uçtan uca — toplama gövdesiyle birlikte");
   }
 }
 kosanBolumler.push("uçtan uca");
+
+// --- 6) MARJ KIRPILMIŞ NET-2'DEN HESAPLANIR (K170-②) --------------------
+console.log("\n6) devreden KDV — marj ekrandaki NET-2 ile tutar");
+{
+  /**
+   * ⛔ NİYE: aylık tablo NET-2'yi KIRPILMIŞ basıyor (devreden kâra karışmaz).
+   * Marj RAW net2 kullansaydı, kullanıcı ekrandaki NET-2'yi ekrandaki net
+   * ciroya böldüğünde BAŞKA bir sayı bulurdu — `aylikMarj` gövdesinin kendi
+   * kuralı bunu yasaklıyor ("ekrandaki rakam, ekrandaki rakamlardan
+   * türetilebilmeli"). İki rakam aynı ekranda çelişemez (İlke #10).
+   *
+   * ⚠ ÖRNEK VERİ AYRIMI KESKİN — İKİ OKUMA İŞARET BİLE DEĞİŞTİRİYOR:
+   *     kırpılmış: −200 / 200 = %−100   ← doğru (ay ZARARDA)
+   *     ham      : +650 / 200 = %+325   ← kırpma atlanırsa (ay KÂRDA görünür)
+   * Devredeni olmayan bir ayla sınansaydı iki okuma AYNI sonucu verir ve
+   * mutasyon kaçardı.
+   */
+  const AY6 = { yil: 2026, ay: 8 };
+  const gun6 = new Date(Date.UTC(2026, 7, 15));
+  const ortak6 = {
+    kanalKodu: "TY",
+    kanalAdi: "Trendyol",
+    hesapId: "hesap-axcali",
+    hesapAdi: "AXCALI",
+    tarih: gun6,
+    paraBirimi: "TRY" as const,
+    kdv: 0,
+    kargoTarihi: null,
+    importKaynak: null,
+    shipmentCode: null,
+  };
+
+  const seri6 = aylikSeri(
+    [{ ...ortak6, gelir: 1000, net1: 300, net2: 250, durum: "CALCULATED" as const }],
+    AY6,
+    1,
+    null,
+    "TRY",
+    [
+      {
+        kanalKodu: "TY",
+        kanalAdi: "Trendyol",
+        hesapId: "hesap-axcali",
+        hesapAdi: "AXCALI",
+        tarih: gun6,
+        paraBirimi: "TRY" as const,
+        // Büyük iade: KDV geri dönüşü kaybı aşıyor → net2 POZİTİF.
+        net1: -500,
+        net2: 400,
+        durum: "CALCULATED" as const,
+        iadeTutari: 800,
+      },
+    ],
+  );
+  const n6 = seri6[0];
+  if (n6 === undefined) {
+    kalan += 1;
+    console.log("  HATA  devreden bölümü — seri boş döndü");
+  } else {
+    // ham net1 = 300 − 500 = −200 · ham net2 = 250 + 400 = 650
+    yakin("NET-1 HAM kalır (kırpma yalnız net2'ye)", n6.net1, -200);
+    yakin("NET-2 kırpıldı (net1'i aşamaz)", n6.net2, -200);
+    yakin("devreden = ham fazlalık", n6.devreden, 850);
+    /** ⭐ ASIL BAĞ: marj, EKRANDAKİ (kırpılmış) NET-2'den türer. */
+    yakin("marj kırpılmış NET-2'den (%−100)", aylikMarj(n6), -100);
+    /** Ekrandaki iki rakamın bölümü = ekrandaki marj (sayı = liste). */
+    const ekrandanTuretilen =
+      (n6.net2 / (n6.hesaplananGelir - n6.hesaplananIadeTutari)) * 100;
+    yakin("ekrandan elle türetilen marj AYNI", ekrandanTuretilen, aylikMarj(n6));
+  }
+}
+kosanBolumler.push("devreden");
 
 console.log("\n" + "=".repeat(60));
 if (kosanBolumler.length !== BOLUM_SAYISI) {

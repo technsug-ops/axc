@@ -74,21 +74,47 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "payda hep 0 kalir ve marj HIC hesaplanmaz; sekme bos gorunur (sessiz kayip)",
   },
+  /**
+   * ⚠ ÇAPA TAZELENDİ 06.09.2026 (K170-②) — ÖLÇÜT DEĞİŞMEDİ, VEKİL DEĞİŞTİ.
+   * Pay artık doğrudan `nokta.net2`ye değil KANAL SEPETİNE (`kanalNet.net2`)
+   * yazılıyor: NET-2 kanal·ay bazında kırpılıyor ve ay satırı kırpılmışları
+   * topluyor. Mutasyonun BOZDUĞU ŞEY aynı — payı ve paydayı ayrı dallara
+   * bölmek. Harness bunu "desen 0 kez" diye bildirdi ve YEŞİL SAYMADI;
+   * kırmızı yanması refaktörün bekçiyi körelttiğini zamanında gösterdi.
+   * _(Anayasa: "dize davranışın vekilidir — refaktör vekili eskitir";
+   * eskiyen ölçüt SUSTURULMAZ, güncellenir ve NİYE eskidiği yazılır.)_
+   */
   {
     ad: "PAY VE PAYDA AYRI DALLARA BÖLÜNDÜ",
     yon: "FAZLADAN",
-    bul: "    if (hesaplandi(satis.durum, satis.net2)) {\n      nokta.net2 += satis.net2;\n      nokta.hesaplananGelir += satis.gelir;\n    } else nokta.hesaplanamayanAdet++;",
-    koy: "    if (hesaplandi(satis.durum, satis.net2)) nokta.net2 += satis.net2;\n    else nokta.hesaplanamayanAdet++;\n    nokta.hesaplananGelir += satis.gelir;",
+    bul: "    if (hesaplandi(satis.durum, satis.net2)) {\n      kanalNet.net2 += satis.net2;\n      nokta.hesaplananGelir += satis.gelir;\n    } else nokta.hesaplanamayanAdet++;",
+    koy: "    if (hesaplandi(satis.durum, satis.net2)) kanalNet.net2 += satis.net2;\n    else nokta.hesaplanamayanAdet++;\n    nokta.hesaplananGelir += satis.gelir;",
     bozdugu:
       "kari hesaplanamayan satis paydayi buyutur, payi buyutmez — marj SESSIZCE duser (K117'nin onlemek icin yazildigi hatanin ta kendisi)",
   },
   {
     ad: "İADE PAYDASI HESAPLANAMAYANLARI DA SAYIYOR",
     yon: "FAZLADAN",
-    bul: "    if (hesaplandi(iade.durum, iade.net2)) {\n      nokta.net2 += iade.net2;\n      nokta.hesaplananIadeTutari += iade.iadeTutari;\n    } else nokta.hesaplanamayanIadeAdedi++;",
-    koy: "    if (hesaplandi(iade.durum, iade.net2)) nokta.net2 += iade.net2;\n    else nokta.hesaplanamayanIadeAdedi++;\n    nokta.hesaplananIadeTutari += iade.iadeTutari;",
+    bul: "    if (hesaplandi(iade.durum, iade.net2)) {\n      kanalNet.net2 += iade.net2;\n      nokta.hesaplananIadeTutari += iade.iadeTutari;\n    } else nokta.hesaplanamayanIadeAdedi++;",
+    koy: "    if (hesaplandi(iade.durum, iade.net2)) kanalNet.net2 += iade.net2;\n    else nokta.hesaplanamayanIadeAdedi++;\n    nokta.hesaplananIadeTutari += iade.iadeTutari;",
     bozdugu:
       "paydadan payinda karsiligi olmayan bir dusus yapilir; marj bu sefer YUKARI kayar",
+  },
+  /**
+   * ⭐ YENİ (K170-②) — MARJ KIRPILMIŞ NET-2'DEN HESAPLANIR.
+   * Aylık tablo NET-2'yi KIRPILMIŞ basıyor; marj sekmesi RAW net2 kullansaydı
+   * kullanıcı ekrandaki NET-2'yi ekrandaki net ciroya böldüğünde BAŞKA bir
+   * sayı bulurdu (`aylikMarj` gövdesinin kendi kuralı: "ekrandaki rakam,
+   * ekrandaki rakamlardan türetilebilmeli"). Kırpmayı marj yolundan kaçıran
+   * bir değişiklik bu mutasyonla yakalanır.
+   */
+  {
+    ad: "MARJ KIRPILMAMIŞ NET-2 GÖRÜYOR (ekranla ayrışır)",
+    yon: "FAZLADAN",
+    bul: "    nokta.net2 += kirpilmis.net2;",
+    koy: "    nokta.net2 += net2;",
+    bozdugu:
+      "devredeni olan ayda marj, ekrandaki NET-2 ile net cironun bolumunden BUYUK cikar; iki rakam ayni ekranda celisir",
   },
 ];
 
