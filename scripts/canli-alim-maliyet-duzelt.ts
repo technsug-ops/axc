@@ -247,6 +247,18 @@ async function main() {
   });
   console.log(`\n③ BU PARTİDEN YEMİŞ ÇIKIŞLAR (${cikislar.length})`);
   const etkilenenSatis = new Map<string, string>();
+  /**
+   * ⛔ ETİKET AÇIK YAZILIR — "fiyat" İKİ OKUMAYA AÇIKTI (düzeltme 07.09.2026).
+   * Bu sütun `unitPriceAmount`, yani BİRİM fiyat. Başlığı yalnız "fiyat"
+   * olduğu için 2 adetlik bir satırda satır TOPLAMI sanıldı ve rapora öyle
+   * taşındı: `11419703466` için "defterde 1.139 görünüyor, gelir YARIM" diye
+   * bir alarm doğdu. Ölçüm çürüttü — defter 1.139 × 2 = 2.278 tutuyordu ve
+   * TY'nin kendi hakedişi de (2 satır, Σ 1.867,96 = 2.278 − komisyon) bunu
+   * doğruladı. Yani kusur veride değil, BU SATIRIN ETİKETİNDEYDİ.
+   * ⭐ Artık üçü birden yazılıyor: BİRİM × adet = satır toplamı.
+   * _(Anayasa: "bir sayı etiketiyle taşınır" · "birim mi toplam mı sorusu
+   * her iki taraf için AYRI sorulur".)_
+   */
   for (const c of cikislar) {
     const s = c.saleItem?.sale;
     if (s !== undefined && s !== null) etkilenenSatis.set(s.id, s.code ?? "");
@@ -254,7 +266,15 @@ async function main() {
       `   ${c.occurredAt.toISOString().slice(0, 10)} ${String(c.quantityDelta).padStart(3)} ad` +
         ` · damga ${para(Number((c.unitCostAmount ?? 0).toString())).padStart(10)}` +
         ` · ${(s?.code ?? "—").padEnd(13)}` +
-        ` fiyat ${c.saleItem === null ? "—" : para(Number(c.saleItem.unitPriceAmount.toString())).padStart(9)}` +
+        ` BİRİM ${c.saleItem === null ? "—" : para(Number(c.saleItem.unitPriceAmount.toString())).padStart(9)}` +
+        ` ×${c.saleItem === null ? "?" : c.saleItem.quantity}` +
+        ` = ${
+          c.saleItem === null
+            ? "—"
+            : para(
+                Number(c.saleItem.unitPriceAmount.toString()) * c.saleItem.quantity,
+              ).padStart(10)
+        }` +
         ` · NET-2 ${s?.net2Amount == null ? "—" : para(Number(s.net2Amount.toString())).padStart(10)}`,
     );
   }

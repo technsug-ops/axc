@@ -102,6 +102,58 @@ partiler — zaman ekseni DEĞİL, çünkü _"zaman içindeki fiyat farkı şüp
 aykırı olan DÜŞÜK ve o kaydın **sipariş no'su YOK**. Faturayla doğrulanacak.
 (Öteki kuyruk satırı `axcali2002` `2,00×` **zaten doğrulanmıştı** — ₺1.500 gerçek.)
 
+### ⑤ "GELİR YARIM" ALARMI — ÇÜRÜDÜ, KUSUR BENİM ETİKETİMDEYDİ
+
+Halil TY ekranını gönderdi: `11419703466` · birim ₺1.139 × 2 = **₺2.278** ve
+_"defterde toplam 1.139 görünüyor, gelir yarım"_. **Ölçüm çürüttü:**
+
+    unitPriceAmount 1.139,00 × adet 2  =  CIRO 2.278,00      ← TY ile birebir
+    KOMISYON 410,04 = 2.278 × %18                            ← TAM tutar üstünden
+    STOPAJ    18,98 = (2.278 ÷ 1,2) × %1
+    NET-1 = 2.278 − 1.598 − 410,04 − 18,98 − 13,19 − 54 = 183,79 ✓
+
+⭐ **AYIRT EDİCİ KANIT KANALIN KENDİ ÖDEME KAYDINDA:** bu siparişin hakedişi
+**İKİ SATIR** ve toplamı **₺1.867,96** = `2.278 − 410,04`; satır başına
+`933,98 = 1.139 − %18`. İki satır = iki adet. Bu gözlem yalnız TEK okumayla
+uyumlu. _(Anayasadaki `11373352181` vakasının birebir aynısı.)_
+
+⛔ **ALARMI ÜRETEN ŞEY BENİM RAPORUMDU.** `canli:alim-maliyet-duzelt` çıktısında
+sütun yalnız **`fiyat 1.139,00`** diye geçiyordu; o `unitPriceAmount`, yani
+BİRİM fiyat. 2 adetlik satırda etiketsiz "fiyat" iki okumaya açık ve ben onu
+tabloma öyle taşıdım. **Araç düzeltildi** — artık `BİRİM 1.139,00 ×2 =
+2.278,00` yazıyor. _(Anayasa: "bir sayı etiketiyle taşınır" — kuralı kendi
+raporumda çiğnedim.)_
+
+### ⑥ SINIF TARAMASI GENİŞLETİLDİ — çok adetli satışlar
+
+**Ölçek küçük:** defterde çok adetli satış **yalnız 10**. Bağımsız kaynak
+kanalın hakedişi (ciro ÷ Σ SIPARIS oranı; hakediş komisyon düşülmüş olduğu
+için 1'in biraz üstü beklenir):
+
+    temiz (0,80–1,25)  6   ·   YARIM? 0   ·   KATLI? 0   ·   hakediş YOK 4
+
+**Yarım/katlı gelir YOK.** ⚠ Hakedişi olmayan 4 satış "temiz" SAYILMADI,
+*incelenemeyen* diye ayrı yazıldı.
+
+### ⑦ ÖTEKİ DÖRT SATIŞ — çapraz KURULAMADI, sebebi ölçüldü
+
+Maliyeti düzeltilen öteki dört satış (`11023201569` · `11023053211` ·
+`11027642274` · `11028050913`) tek adetli ve **dördünde de komisyon TAM ciro
+üzerinden** (%20 × ciro = kayıtlı komisyon, kuruşuna). Ama ekstre çaprazı
+kurulamadı: **hakediş satırı 0.**
+
+⭐ **SEBEP ÖLÇÜLDÜ, AÇIK BIRAKILMADI:** ekstre kapsamı **2026-05 → 2026-08**
+(kalem dağılımı: 05→11 · 06→647 · 07→612 · 08→69). Dört satış **Mart 2026** —
+pencerenin tamamen dışında. Yani "ekstrede yok" bir kusur değil, **görüş
+alanının sınırı**. _(Anayasa: "tutanak, kusur ile sınırı ayırt ettirir".)_
+⚠ Bu dördü için bağımsız teyit BUGÜN mümkün değil; maliyet düzeltmesi
+Halil'in fatura teyidine dayanıyor ve gelir tarafı **doğrulanmamış** olarak
+kalıyor — kayıtta öyle yazıyor.
+
+⏭ **BİRLEŞİK YAZIM PAKETİNE GEREK KALMADI:** gelir tarafında düzeltilecek bir
+şey çıkmadı, maliyet + NET zaten yazılmıştı. Açık kalan tek şey aşağıdaki
+faturalar.
+
 ### ⏭ AÇIK — HALİL'DEN BEKLENİYOR
 
 **Üç Mayıs faturası:** `4762659958` · `4493666766` · `4082444351`
