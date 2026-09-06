@@ -3288,9 +3288,13 @@ olabilir, HB panelinden kontrol et."_
 ⛔ **SÜRESİZ BEKLEYEN TEYİT, TEYİT DEĞİLDİR** — bu yüzden vade yazıldı.
 Vade başlangıcı giriş günü (05.09) → **son gün 12.09.2026.**
 
----
+### 🟢 ÖZGÜN KAYIT — HB AVANTAJLI TEKLİFLER · 02.09.2026 · [KOD KOŞTU]
 
-## 🟢 K132 (özgün kayıt) — HB AVANTAJLI TEKLİFLER · 02.09.2026 · [KOD KOŞTU]
+_06.09.2026'da BİRLEŞTİRİLDİ._ Bu kayıt ayrı bir `## K132` başlığı olarak
+duruyordu; `pano:dogrula` kimliği iki satırda buldu ve push'u durdurdu.
+Kimlik TEKİLDİR — aynı kalemin ikinci fazı yeni satır açmaz, mevcut
+satırın devamı olur. **Metnin tek satırı elden geçmedi**; yalnız başlık
+düzeyi `##` → `###` indi ve aradaki `---` ayıracı kalktı.
 
 _Kullanıcı HB tarife ekranına `Avantajlı_Teklifler-02-09-2026-10_00.xlsx`
 yükledi, ekran reddetti. **Ekran haklıydı, mesajı yanlıştı.**_
