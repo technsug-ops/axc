@@ -4097,3 +4097,60 @@ yürütmeye aitti ve açılış şartıyla birlikte yazıldı.
 
 ⭐ **BETİK TEKRAR-KOŞULABİLİR:** aynı damgayı taşıyan iz varsa yenisi
 yazılmaz. İkinci koşumda 6 satır atlandı, yalnız yeni olan yazıldı.
+
+---
+
+## ✅ K171 — PROMOSYON ALIMI: BEDAVA KALEM ₺0 BEYANIYLA — **KAPANDI 06.09.2026**
+
+> ⚠ **SATIRLAR BİREBİR TAŞINDI, ÖZETLENMEDİ** — 20.08 ve 01.09'da alınan
+> taşıma kararı burada da geçerli.
+
+**KAPANIŞ — Halil el testi, 06.09.2026 (gerçek cihaz + canlı adres):**
+① alım formundaki promosyon kutusu maliyeti **0'a kilitliyor** ✓ ·
+② `PROMO-K171B-…` alım detayında **"Promosyon (₺0)"** etiketi var ✓ →
+kullanıcı kararı: _"K171 tamamen kapandı."_
+
+⚠ **③ BU TURDA EKRANDA AYRICA TEYİT EDİLMEDİ** (Arzum/Huawei satış
+detayında NET hesaplı, NO_COST rozeti yok). Kanıtı 05.09'un veri
+düzeltmesinden geliyor: 3 satış NO_COST→CALCULATED, ledger/FIFO tuttu,
+NET-2 kargo dahil +₺6.799,54 ve başka rakam oynamadı — Halil onaylı.
+Kapanış kullanıcının kararıdır; neyin **ekranda**, neyin **ölçümle**
+doğrulandığı burada ayrı yazılıdır ki altı ay sonra bakan biri ikisini
+karıştırmasın. _(Anayasa: bir sayı etiketiyle taşınır — "teyit edildi" ile
+"ölçüldü" farklı fiillerdir.)_
+
+### Panodan inen kayıt — birebir
+
+_Yalnız başlık düzeyi indirildi (## → ###) ki bu bölümün altına otursun;
+metnin tek satırı elden geçmedi._
+
+### 🔶 K171 — PROMOSYON ALIMI: BEDAVA KALEM ₺0 BEYANIYLA · 05.09.2026 · [KOD KOŞTU — Halil testi bekliyor]
+
+> **Halil teyidi (03.09):** Arzum Tostçu ×2 + Huawei Freebuds _"bedava
+> geldi"_ — promosyon malı gerçek, defterde alımı HİÇ yoktu (NO_COST).
+
+**KURULAN:** alım formunda kalem başına **"Promosyon (bedava geldi —
+maliyet 0)"** kutusu (İlke #11: sessiz sıfır değil AÇIK BEYAN —
+işaretlenince maliyet alanı 0'a kilitlenir ve pasifleşir; elle 0 girilirse
+form "Promosyon kutusunu işaretleyin" der). Alım detayında **"Promosyon
+(₺0)"** etiketi. FIFO/stok/kâr otomatik izler. + deploy-bekci katman H
+(tablo adı harf uyumu). **KANIT:** 5+1 mutasyon kırmızı · migration
+canlıda koştu · build ✓.
+
+─── ② **K171b VERİ DÜZELTMESİ KOŞTU** (05.09, Halil onayı): 3 satış
+NO_COST→CALCULATED — promosyon alımı ₺0 + parti `occurredAt=soldAt` (nota
+"gerçek geliş bilinmiyor" — uydurma tarih kesinlik taklidi yapmaz).
+Ledger/FIFO tuttu, NET-2 kargo dahil **+₺6.799,54**, başka rakam oynamadı.
+(Kapsam dersi anayasada: düzeltme partisi yasağı İLK kaydı kapsamaz.)
+Canlıda bugün **4 promosyon kalemi** ölçüldü: `PROMO-K171B-…-1/2/3`
+(Arzum ×2 + Huawei) + `PROMO-KARCHER-…` (05.09 23:41, Karcher RM 503).
+
+**HALİL TEST LİSTESİ (canlı adres):**
+① Alımlar → yeni alım → kalem satırında "Promosyon (bedava geldi —
+   maliyet 0)" kutusu; işaretle → maliyet alanı 0 yazar ve kilitlenir
+   (KAYDETMEDEN çık — form davranışı yeterli).
+② Alımlar → `PROMO-K171B-…` kayıtlarından birini aç → kalemde
+   **"Promosyon (₺0)"** etiketi.
+③ Arzum Tostçu / Huawei Freebuds satış detayında NET artık hesaplı
+   (NO_COST/hesaplanamadı rozeti YOK).
+

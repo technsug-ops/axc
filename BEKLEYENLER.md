@@ -299,38 +299,6 @@ KDV azaldı (olağan iade). Ölü `KOMISYON_KDV_IADE` etiketi kaldırıldı
 
 ---
 
-## 🔶 K171 — PROMOSYON ALIMI: BEDAVA KALEM ₺0 BEYANIYLA · 05.09.2026 · [KOD KOŞTU — Halil testi bekliyor]
-
-> **Halil teyidi (03.09):** Arzum Tostçu ×2 + Huawei Freebuds _"bedava
-> geldi"_ — promosyon malı gerçek, defterde alımı HİÇ yoktu (NO_COST).
-
-**KURULAN:** alım formunda kalem başına **"Promosyon (bedava geldi —
-maliyet 0)"** kutusu (İlke #11: sessiz sıfır değil AÇIK BEYAN —
-işaretlenince maliyet alanı 0'a kilitlenir ve pasifleşir; elle 0 girilirse
-form "Promosyon kutusunu işaretleyin" der). Alım detayında **"Promosyon
-(₺0)"** etiketi. FIFO/stok/kâr otomatik izler. + deploy-bekci katman H
-(tablo adı harf uyumu). **KANIT:** 5+1 mutasyon kırmızı · migration
-canlıda koştu · build ✓.
-
-─── ② **K171b VERİ DÜZELTMESİ KOŞTU** (05.09, Halil onayı): 3 satış
-NO_COST→CALCULATED — promosyon alımı ₺0 + parti `occurredAt=soldAt` (nota
-"gerçek geliş bilinmiyor" — uydurma tarih kesinlik taklidi yapmaz).
-Ledger/FIFO tuttu, NET-2 kargo dahil **+₺6.799,54**, başka rakam oynamadı.
-(Kapsam dersi anayasada: düzeltme partisi yasağı İLK kaydı kapsamaz.)
-Canlıda bugün **4 promosyon kalemi** ölçüldü: `PROMO-K171B-…-1/2/3`
-(Arzum ×2 + Huawei) + `PROMO-KARCHER-…` (05.09 23:41, Karcher RM 503).
-
-**HALİL TEST LİSTESİ (canlı adres):**
-① Alımlar → yeni alım → kalem satırında "Promosyon (bedava geldi —
-   maliyet 0)" kutusu; işaretle → maliyet alanı 0 yazar ve kilitlenir
-   (KAYDETMEDEN çık — form davranışı yeterli).
-② Alımlar → `PROMO-K171B-…` kayıtlarından birini aç → kalemde
-   **"Promosyon (₺0)"** etiketi.
-③ Arzum Tostçu / Huawei Freebuds satış detayında NET artık hesaplı
-   (NO_COST/hesaplanamadı rozeti YOK).
-
----
-
 ## ✅ K170 — DEVREDEN KDV: İADE NET-2'Yİ ŞİŞİRMEZ · 05–06.09.2026 · [KOŞTU — ① ve ② kapandı]
 
 > **Halil (ekran görüntülü):** _"bir iade girdim, iadeden doğan zararı ARTI
