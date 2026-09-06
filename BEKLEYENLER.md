@@ -13,7 +13,7 @@
 
 ---
 
-## 🚨 K176 — 783 AYRIŞAN MALİYET DAMGASI · 07.09.2026 · [ÖLÇÜLDÜ — yazım YOK]
+## ✅ K176 — AYRIŞAN MALİYET DAMGALARI · 07.09.2026 · [KOŞTU — 01.08.2025→bugün]
 
 `npm run canli:maliyet-hizala` (rapor kipi, salt okuma):
 
@@ -44,7 +44,65 @@ K91'de ölen onarımın büyüklüğünde. Önce sorulacaklar:
 cevap üretirdi. _(Anayasa: "iki yerde iki ölçüt olmaz".)_ Eksik olan ölçüt
 değil, bu rakamın **panoda görünmemesiydi**; o giderildi.
 
-⏭ **SIRADAKİ ADIM ÖLÇÜM, YAZIM DEĞİL:** yukarıdaki dört soru cevaplanacak.
+⏭ ~~SIRADAKİ ADIM ÖLÇÜM, YAZIM DEĞİL~~ — **ölçüldü ve KOŞTU (07.09).**
+
+─── ② **HALİL KARARI: 01.08.2025'TEN BUGÜNE DÜZELT**
+
+Ölçüm önce yön ve büyüklüğü verdi (`npm run canli:damga-olcum`):
+
+    ayrışan 781 · etkilenen satış 770
+    damga DÜŞÜK → maliyet ARTAR   +249.335   (kâr düşer)
+    damga YÜKSEK → maliyet AZALIR  −61.991   (kâr artar)
+    NET MALİYET ETKİSİ            +187.344
+    ⭐ bunun ~%90'ı 2024–2025 ilk yarısında
+
+Kullanıcı kesimi **01.08.2025** seçti — uydurma değil, kendi **resmî ölçüm
+sınırı** (K153). Araca tarih penceresi eklendi (`--baslangic=`); pencere
+ölçütü **satış günü** (`soldAt`), hareketin `occurredAt`i değil.
+
+**KOŞTU** (`canli:maliyet-hizala -- --baslangic=2025-08-01 --uygula`):
+
+    554 damga hizalandı · 545 satışın kârı tazelendi · iz MALIYET_HIZALAMA
+    pencerede ayrışan damga: 0        (tekrar koşumla doğrulandı)
+    01.08.2025 ÖNCESİ 2030 hareket — DOKUNULMADI
+    Σ NET-2   2.351.682,26 → 2.277.716,34      −₺73.965,92   (marj %10,53 → %10,20)
+
+⚠ **BU RAKAM KURUŞUNA ATFEDİLEBİLİR DEĞİL — İKİ SEBEP, İKİSİ DE KAYDA GEÇİYOR:**
+① `TY_SIPARIS_ICE_AKTARMA` **5 dakikada bir** koşuyor; yazım sürerken defter
+akmaya devam etti. _(Anayasa: "donmuş kaynak, akan kaynakla karşılaştırılırken
+iki damga yazılır".)_
+② Araç satır bazında **eski değeri saklamıyor** (iz yalnız `hizalananDamga` ve
+`tazelenenSatis` sayılarını tutuyor) — ve uygulayan kişi çıktının satır satır
+önce/sonra satırlarını `grep` ile eleyerek atfetmeyi büsbütün imkânsız kıldı.
+_(Anayasa: "toplu yazımda önceki değer SATIR BAZINDA saklanır" · "hata mesajını
+kısaltan her işlem teşhisi kısaltır" — ikincisi burada BAŞARI raporunda oldu.)_
+⛔ **AÇIK:** `canli-maliyet-hizala` izine satır bazında önce/sonra eklenmeli.
+
+─── ③ **YAN ETKİ: BİR SATIŞ NO_COST'A DÜŞTÜ — VE KAPATILDI**
+
+`11518018178` (18.08.2026 · TY/AXCALI · LEGO Disney 43217 · ciro ₺4.185)
+`CALCULATED → NO_COST` oldu. Sebep: çıkışın bağlı olduğu parti bir
+**ADJUSTMENT** (19.08) ve `unitCostAmount = NULL`, alım kalemine de bağlı
+değil. Hizalama damgayı partiye eşitleyince maliyet "bilinmiyor" oldu.
+
+⭐ **DEĞER UYDURULMADI:** Halil beyanı **₺3.599** _("alış bu ve Excel'de
+vardı")_. Defter destekliyor — `ALM-NON-260813-01/-02` · 13.08.2026 · ×2 @
+3.599,00, satıştan beş gün önce.
+
+**YAZILDI** (`canli:11518-maliyet -- --uygula`) → parti VE çıkış damgası
+birlikte. ⚠ Yalnız damga yazılsaydı bir sonraki hizalama onu partiye (NULL)
+eşitleyip **silerdi**; arıza aynı yoldan geri gelirdi.
+Sonuç: `NO_COST → CALCULATED` · NET-1 **234,47** · NET-2 **189,58** ·
+hizalama tekrar koşuldu, **ayrışan 0**.
+⭐ **BAĞIMSIZ TEYİT:** 189,58, 20.08'de aynı ürün için yazılan iptal izindeki
+NET-2 ile **birebir aynı**.
+
+**DEFTERİN SON HÂLİ: 7851 satış, hepsi CALCULATED — maliyeti bilinmeyen satış
+kalmadı.**
+
+⏭ **AÇIK KALAN:** 01.08.2025 ÖNCESİ ayrışma (2030 hareket, ~₺113k). Bilinçli
+bırakıldı: geçmiş dönem, karar değiştirmiyor. Yeniden açılması için sebep
+gerekir.
 
 ---
 

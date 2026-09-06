@@ -47,6 +47,26 @@ import { canliYapilandirma } from "./canli-ortak";
 
 const UYGULA = process.argv.includes("--uygula");
 
+/**
+ * ⭐ TARİH PENCERESİ — Halil kararı 07.09.2026: **01.08.2025'ten bugüne**.
+ *
+ * ⛔ NİYE TAMAMI DEĞİL: ayrışmanın ~%90'ı 2024–2025 ilk yarısında ve o dönem
+ * geçmiştir; 600+ eski satışı yeniden yazmak karar değiştirmeyen bir rakam
+ * için risk alırdı. 01.08.2025 kullanıcının kendi RESMÎ ÖLÇÜM SINIRI (K153) —
+ * uydurma bir kesim değil, zaten kullanılan sınır.
+ *
+ * ⚠ ÖLÇÜT SATIŞ GÜNÜ (`soldAt`), hareketin `occurredAt`i değil: iş tarihi
+ * satışın kendi günüdür ve dönem hesapları ondan okunur.
+ * ⚠ Satışa BAĞLI OLMAYAN tüketim penceresi olmadığı için DIŞARIDA kalır ve
+ * AYRI SAYILIR — "temiz" sayılmaz.
+ */
+const bas = process.argv.find((x) => x.startsWith("--baslangic="));
+const BASLANGIC = bas === undefined ? null : new Date(bas.split("=")[1] + "T00:00:00.000Z");
+if (bas !== undefined && Number.isNaN(BASLANGIC!.getTime())) {
+  console.log("⛔ --baslangic okunamadı (YYYY-AA-GG bekleniyor)");
+  process.exit(1);
+}
+
 function para(d: unknown): string {
   if (d === null || d === undefined) return "—";
   return Number(d.toString()).toLocaleString("tr-TR", {
@@ -79,7 +99,12 @@ async function main() {
 
   /** Partiye bağlı BÜTÜN tüketimler — tip listesi değil, BAĞ. */
   const tuketimler = await prisma.stockMovement.findMany({
-    where: { sourceMovementId: { not: null } },
+    where: {
+      sourceMovementId: { not: null },
+      ...(BASLANGIC === null
+        ? {}
+        : { saleItem: { sale: { soldAt: { gte: BASLANGIC } } } }),
+    },
     select: {
       id: true,
       type: true,
@@ -106,6 +131,20 @@ async function main() {
     return Number(parti) !== Number(bizim);
   });
 
+  if (BASLANGIC !== null) {
+    /** Pencerenin DIŞINDA kalan ayrışma da sayılır — görünmeyen küme hakkında
+     *  kimse soru soramaz. */
+    const disarida = await prisma.stockMovement.count({
+      where: {
+        sourceMovementId: { not: null },
+        NOT: { saleItem: { sale: { soldAt: { gte: BASLANGIC } } } },
+      },
+    });
+    console.log(
+      "PENCERE: " + BASLANGIC.toISOString().slice(0, 10) + " → bugün" +
+        "   (dışarıda kalan tüketim " + disarida + " — bu turda DOKUNULMUYOR)",
+    );
+  }
   console.log("Taranan tüketim hareketi: " + tuketimler.length);
   console.log("Ayrışan damga          : " + ayrisik.length);
   console.log("");
