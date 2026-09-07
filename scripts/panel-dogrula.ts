@@ -5745,6 +5745,64 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     "ekran: eski \"%100'ü aşabilir\" şerhi KALDIRILDI",
     !not.includes("%100'ü aşabilir"),
   );
+
+  /**
+   * ⛔ BELGE İLE KOD AYRIŞAMAZ — VE BUGÜN TAM BU AYRIŞTI.
+   * Atıf `sale.soldAt`e çevrildi ama `PanelIadesi.tarih` ve `RaporIade.tarih`
+   * belgeleri _"iadenin KENDİ tarihi"_ demeye devam ediyordu. Ölü koddan
+   * kötüdür: bir sonraki okuyucuya YANLIŞ kuralı öğretir ve üstüne akıl
+   * yürütülür. _(Anayasa: "şemadaki alan da bir iddiadır" — belge tarafı.)_
+   */
+  const panelTip = readFileSync("src/lib/panel.ts", "utf8");
+  const raporTip = readFileSync("src/lib/rapor.ts", "utf8");
+  /**
+   * ⚠ TİP BLOĞUNA DARALTILIR — `tarih: Date;` dosyada BİRDEN ÇOK tipte
+   * geçiyor (`PanelSatisi` de taşıyor). `indexOf` ilkini bulur ve ölçüt
+   * yanlış bloğa bakardı. _(Anayasa: "önce deseni say".)_
+   */
+  const tarihBelgesi = (m: string, tipAdi: string) => {
+    const bas = m.indexOf(`type ${tipAdi} = {`);
+    if (bas < 0) return "";
+    const son2 = m.indexOf("\n};", bas);
+    return son2 < 0 ? "" : m.slice(bas, son2);
+  };
+  kontrol(
+    "panel tipi: `tarih` belgesi SATIŞIN gününü söylüyor",
+    /\*\*SATIŞIN\*\* günü/.test(tarihBelgesi(panelTip, "PanelIadesi")),
+  );
+  kontrol(
+    "  ...ve eski \"iadenin KENDİ tarihi\" hükmü kalmadı",
+    !/\/\*\* İadenin KENDİ tarihi \(occurredAt\) — satışın tarihi değil\. \*\//.test(panelTip),
+  );
+  kontrol(
+    "rapor tipi: `tarih` belgesi SATIŞIN gününü söylüyor",
+    /\*\*SATIŞIN\*\* günü/.test(tarihBelgesi(raporTip, "RaporIade")),
+  );
+
+  /**
+   * ⛔ ÖLÜ SEÇİM ALANI KALMAZ (kullanıcı kuralı 07.09.2026: "ölü kod
+   * bırakmadan"). Atıf çevrilince `occurredAt` iki sorguda da okunmaz oldu;
+   * duran bir alan masum değildir — gören biri onu kullanılıyor sanır.
+   */
+  /**
+   * ⚠ PENCERE SABİT SAYI DEĞİL, ÖLÇÜLEN SINIR: `+1400` komşu sorguya
+   * taşıyordu ve oradaki meşru `occurredAt: true` (stok hareketi) ölçütü
+   * haksız yere kırmızı yakıyordu. Sınır bir SONRAKİ `prisma.` çağrısı.
+   */
+  const iadeSorgusu = (m: string) => {
+    const i = m.indexOf("prisma.return.findMany({");
+    if (i < 0) return "";
+    const sonraki = m.indexOf("prisma.", i + 20);
+    return m.slice(i, sonraki < 0 ? m.length : sonraki);
+  };
+  kontrol(
+    "panel iade sorgusunda ÖLÜ `occurredAt` seçimi YOK",
+    !/occurredAt: true/.test(iadeSorgusu(panel3)),
+  );
+  kontrol(
+    "rapor iade sorgusunda ÖLÜ `occurredAt` seçimi YOK",
+    !/occurredAt: true/.test(iadeSorgusu(rapor3)),
+  );
 }
 
 console.log("\n" + "=".repeat(70));

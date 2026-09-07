@@ -245,7 +245,7 @@ export default async function RaporSayfasi({
           id: true,
           saleId: true,
           code: true,
-          occurredAt: true,
+          /** ⛔ `occurredAt` SEÇİLMİYOR — atıf satışın gününden (K185-③). */
           sale: { select: { soldAt: true } },
           net1Amount: true,
           net2Amount: true,

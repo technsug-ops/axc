@@ -55,7 +55,11 @@ export type RaporIade = {
   /** İadenin bağlı olduğu satış — ekranda oraya gidilir. */
   satisId: string;
   kod: string | null;
-  /** occurredAt — iade kendi tarihine yazılır. */
+  /**
+   * ⛔ ATIF TARİHİ — **SATIŞIN** günü (`sale.soldAt`), K185-③ (07.09.2026).
+   * ESKİ BELGE ÇÜRÜDÜ: _"occurredAt — iade kendi tarihine yazılır"_ diyordu.
+   * Panelle AYNI kural; muhasebe dönem raporu ise bilerek ayrışır (KDV).
+   */
   tarih: Date;
   /** İADE ETKİSİ (satışın yeni neti değil). İşaret anlamlıdır. */
   net1: number | null;

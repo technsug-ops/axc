@@ -133,6 +133,74 @@ senaryo **kırmızı yandı**. Doğru bir ilkeyi ait olmadığı yere taşımak,
 koruduğu şeyi bozar. _(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa
 hatayı korur".)_
 
+### ④ İKİ TARİH İLKESİ — YENİ RAPOR EKRANI AÇAN HERKESİ BAĞLAR
+
+    YÖNETİM ekranları (panel · rapor · oran tabloları)  →  SATIŞIN ayı
+    MUHASEBE / KDV (dönem raporu · beyan)              →  OLAYIN ayı
+
+⭐ **AYIRT EDİCİ SORU:** bu ekran hangi soruyu soruyor —
+_"o ay ne kazandım"_ mı, yoksa _"o dönemde ne beyan ederim"_ mi?
+Birincisi olayı **sebebine** (satışa) yazar; ikincisi **gerçekleştiği ana**.
+
+⛔ **YENİ BİR TARİH ALANI OKUYAN HER EKRAN BU SORUYU CEVAPLAR VE GEREKÇESİNİ
+KODA YAZAR.** Cevaplamayan ekran, iki atıftan hangisine düştüğünü bilmeden
+yayımlanmış olur — ve iki ekran sessizce ayrışır. 07.09'da tam bu yaşandı:
+panel iadeyi olay gününe yazıyordu, kimse yanlış olduğunu söylemiyordu, ve
+iade oranı tablosu bu yüzden "anlamsız" görünüyordu.
+
+⚠ **İKİ ATIF BİR TUTARSIZLIK DEĞİLDİR** — iki farklı sorunun iki doğru cevabı.
+Ama hangi ekranın hangi soruyu sorduğu **kodda yazılı** olmak zorunda, yoksa
+biri ötekine "düzeltilir". _(Anayasa: "aynı veri, farklı soruya farklı
+pencereden bakar".)_ Ve fark **ekranda da** söylenir (İlke #10).
+
+### ⑤ ÖLÜ KOD TEMİZLİĞİ — DEĞİŞİKLİĞİN ARTIKLARI
+
+> **Halil:** _"Yapılan bütün gelişmeler, hesaplamalar ve değişimler mevcut
+> sistemde ölü kod bırakmadan uygulanmalı."_
+
+Denetim dört kalıntı buldu ve **ikisi ölü koddan kötüydü** — artık yanlış şey
+söylüyorlardı:
+
+| Nerede | Sorun | Yapıldı |
+|---|---|---|
+| `panel.ts` · `PanelIadesi.tarih` | belge _"iadenin KENDİ tarihi"_ diyordu | yeni kural + gerekçe |
+| `rapor.ts` · `RaporIade.tarih` | aynı | yeni kural + gerekçe |
+| `page.tsx` iade sorgusu | `occurredAt` seçiliyor, okunmuyor | kaldırıldı |
+| `rapor/page.tsx` iade sorgusu | aynı | kaldırıldı |
+
+⛔ **BELGE KODDAN KÖTÜ ESKİR:** ölü bir alan yalnız yer kaplar; **eskimiş bir
+belge bir sonraki okuyucuya YANLIŞ KURALI ÖĞRETİR** ve üstüne akıl yürütülür.
+Bu yüzden ikisi de bekçiye bağlandı: belge ile atıf ayrışırsa kırmızı yanar.
+
+    panel:dogrula   703/703
+    MUTASYON          6/6   (4 gerçek + kontrol + tip-adı körlüğü)
+
+⭐ **MUTASYON ⑥ ÖLÇÜTÜN KENDİ KÖRLÜĞÜNÜ SINADI:** tip yeniden adlandırılınca
+ölçüt sessizce kör kalmıyor, **kırmızı yanıyor** (`indexOf` → `-1` tuzağı).
+
+⚠ **VE "KULLANILMIYOR" İLE "BİLEREK BEKLETİLİYOR" AYRI TUTULDU:** HB sağlık
+sondasının kullandığı `UCLAR.siparisler` ve TY'nin kapanacak `urunlerV1` ucu
+SİLİNMEDİ — ilki canlı bir tüketiciye sahip, ikincisi 15.09.2026 kapanışında
+ne kaybettiğimizi ölçmek için duruyor. Silinseydi ölçüm imkânsız olurdu.
+
+### ⑥ AÇIK KALANLAR — TETİKLENEMEZ YOL VE HALİL TESTİ
+
+⏭ **TETİKLENEMEZ YOL — KAPALI DÖNEM + GEÇ İADE.** Bugün ölçülemiyor:
+`MuhasebeDonemi` tablosunda hiç kayıt yok, dolayısıyla kapalı dönem de yok.
+Ölçüm `0` verdi ama bu bir **hüküm değil**. **Açılış şartı: ilk dönem
+kapanışı** — o gün yeniden ölçülür ve kapalı döneme düşen geç iadenin ekranda
+nasıl göründüğü sınanır. _(Anayasa: "tetiklenemeyen yol 'geçti' sayılmaz".)_
+
+⏭ **HALİL EKRAN TESTİ BEKLENİYOR (deploy sonrası) — K185 BU MADDE KAPANMADAN
+KAPANMAZ:**
+· **iade oranı tablosu** → 71 iadenin ay değiştirdiği görünmeli · eski
+  _"%100'ü aşabilir"_ şerhi KALKMIŞ olmalı · sıra **Trendyol → Hepsiburada**
+· **`?grafik=karsilastirma`** → artık çizilmeli (bugün 500 veriyordu)
+
+⛔ **NİYE ŞART:** bugün karşılaştırma sekmesi tam bu adım atlandığı için
+canlıda patladı — tur 42/42 yeşilken ekran hiç çizilmiyordu.
+_(Anayasa: "sınanmamış ekran, ekran değildir".)_
+
 ---
 
 ## ✅ K181 — TRENDYOL ÜRÜN v2 GEÇİŞİ · 07.09.2026 · [KOŞTU — canlı, salt okuma]

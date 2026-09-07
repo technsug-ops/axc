@@ -423,7 +423,13 @@ export default async function AnaSayfa({
     prisma.return.findMany({
       where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } } },
       select: {
-        occurredAt: true,
+        /**
+         * ⛔ `occurredAt` SEÇİLMİYOR — atıf satışın gününe geçince kimse
+         * okumaz oldu. Duran bir alan masum değildir: onu gören biri
+         * _"demek ki iadenin kendi tarihi de kullanılıyor"_ diye okur ve
+         * üstüne akıl yürütür. İhtiyaç doğduğu gün geri eklenir.
+         * _(Kullanıcı kuralı 07.09.2026: "ölü kod bırakmadan".)_
+         */
         net1Amount: true,
         net2Amount: true,
         profitCurrency: true,

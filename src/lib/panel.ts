@@ -143,7 +143,22 @@ export type PanelIadesi = {
   hesapId: string;
   /** Yalnız ekran etiketi; gruplama `hesapId` ile. */
   hesapAdi: string;
-  /** İadenin KENDİ tarihi (occurredAt) — satışın tarihi değil. */
+  /**
+   * ⛔ ATIF TARİHİ — **SATIŞIN** günü (`sale.soldAt`), iadenin kendi günü
+   * DEĞİL (K185-③, 07.09.2026).
+   *
+   * ESKİ BELGE SİLİNMEDİ, ÇÜRÜDÜ: burada _"İadenin KENDİ tarihi
+   * (occurredAt) — satışın tarihi değil"_ yazıyordu ve kod da öyle
+   * çalışıyordu. Halil kuralı bunu çevirdi: iade, siparişin ayının
+   * sorunudur — kanal da öyle davranıyor (sipariş vadedeyken iade
+   * başlarsa ödemesi donduruluyor, onaylanınca o siparişten kesiliyor).
+   *
+   * ⚠ İADENİN KENDİ GÜNÜ KAYBOLMADI: `/iadeler` listesi onu gösteriyor,
+   * çünkü orada sorulan şey _"bu iade ne zaman oldu"_dur. Burada sorulan
+   * ise _"hangi ayın cirosunu düşürür"_.
+   * ⚠ MUHASEBE DÖNEMİ RAPORU AYRIŞIR ve bilerek — KDV düzeltmesi iadenin
+   * gerçekleştiği dönemde beyan edilir (`lib/donem-raporu.ts`).
+   */
   tarih: Date;
   paraBirimi: Currency;
   /** İadenin NET-1 etkisi — negatif gelir (satışla aynı bayrağa bağlı). */
