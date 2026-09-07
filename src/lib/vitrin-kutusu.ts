@@ -1,4 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 
 /**
  * ============================================================================
@@ -167,9 +168,72 @@ export function olculmemisKosulu(g: {
 /** Adres seçeneği — sayılan satırlar + sayıya girmeyen İKİ küme. */
 export type VitrinAdresi = VitrinSatiri | "KAYIT_YOK" | "OLCULMEMIS";
 
-export function vitrinAdresi(satir?: VitrinAdresi): string {
+/**
+ * ⛔ ADRES HESABI DA TAŞIR — VE BU İKİ KANALLI KUTUYLA ZORUNLU OLDU.
+ *
+ * 07.09.2026'ya kadar kutu TEK hesap çiziyordu ve adres yalnız satırı
+ * taşıyordu; `/stok` hesabı kendi başına "damgası en çok olan" diye
+ * seçiyordu. İki kanal ölçülür ölçülmez o kısayol bozuldu: HB satırına
+ * tıklayan TY listesini görürdü ve kutuda 4 yazarken listede başka bir
+ * sayı çıkardı. **Panelin en temel sözü "sayı = liste"dir.**
+ *
+ * ⚠ PARAMETRE ADI `vhesap` — `kanal` ZATEN ALINMIŞ ve başka bir şey demek
+ * (`?kanal=N11` = "o kanalda kodu yok"). Aynı adı ikinci bir anlamla
+ * kullanmak iki süzgeci sessizce birbirine karıştırırdı.
+ */
+export const VITRIN_HESAP_PARAM = "vhesap";
+
+export function vitrinAdresi(satir?: VitrinAdresi, hesapId?: string): string {
   const p = new URLSearchParams({ vitrin: satir ?? "hepsi" });
+  /** ⚠ Hesap verilmezse eklenmez — parametre "" değeriyle durmaz. */
+  if (hesapId !== undefined && hesapId !== "") p.set(VITRIN_HESAP_PARAM, hesapId);
   return `/stok?${p.toString()}`;
+}
+
+/**
+ * ÖLÇÜLMÜŞ KANAL HESAPLARI — kutunun ve `/stok`un ORTAK kaynağı.
+ *
+ * ⛔ NİYE BURADA: bu `groupBy` 07.09.2026'da ÜÇ ayrı yerde vardı (panel
+ * kutusu · `/stok` · ölçüm betikleri) ve üçü "damgası en çok olan TEK
+ * hesabı" seçiyordu. O gün HB'ye 1098 damga yazıldı, TY'de 1051 vardı ve
+ * kutu **sessizce TY'den HB'ye geçti** — ekrandan ₺241.900,84'lük
+ * "henüz karşılaştırılmadı" satırı yok oldu. Kimse bir şey bozmadı;
+ * ölçüt "tek hesap" olduğu için ikinci kanal doğduğu anda birinciyi
+ * düşürdü. _(Anayasa: "kapsam genişlemesi, bağımlı listelerin de
+ * genişlemesidir".)_
+ *
+ * ⭐ ÖLÇÜT AYNI KALDI, TEKİLLİK KALKTI: ölçüm damgası olan HER hesap döner.
+ * Yarın üçüncü kanal ölçülmeye başlarsa kod değişmeden görünür.
+ */
+export type OlculenHesap = {
+  id: string;
+  /** Rozet — kanalın kendi adı. */
+  kanalAdi: string;
+  /** Hesap adı; aynı kanalda birden çok hesap olabilir. */
+  hesapAdi: string;
+};
+
+export async function olculenHesaplar(): Promise<OlculenHesap[]> {
+  const damgali = await prisma.channelSku.groupBy({
+    by: ["channelAccountId"],
+    where: { kanalOlcumAt: { not: null } },
+    _count: { _all: true },
+    orderBy: { _count: { channelAccountId: "desc" } },
+  });
+  if (damgali.length === 0) return [];
+  const hesaplar = await prisma.channelAccount.findMany({
+    where: { id: { in: damgali.map((d) => d.channelAccountId) } },
+    select: { id: true, name: true, channel: { select: { name: true } } },
+  });
+  /** ⚠ Sıra `damgali`den korunur — `findMany` kendi sırasını verir. */
+  const ad = new Map(hesaplar.map((h) => [h.id, h]));
+  const sonuc: OlculenHesap[] = [];
+  for (const d of damgali) {
+    const h = ad.get(d.channelAccountId);
+    if (h === undefined) continue;
+    sonuc.push({ id: h.id, kanalAdi: h.channel.name, hesapAdi: h.name });
+  }
+  return sonuc;
 }
 
 /** Adresten satır çözümü — tanınmayan değer "hepsi"ye düşer. */

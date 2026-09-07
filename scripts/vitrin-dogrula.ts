@@ -26,7 +26,7 @@ import { listelemeDurumu, kanalAdedi, satisaEngel, engelGrubu } from "../src/lib
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 8;
+const BOLUM_SAYISI = 9;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let kalan = 0;
@@ -366,9 +366,25 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
    * ⚠ İKİ YÖN AYRI: dolu satır bağlantı OLMALI, sıfır satır OLMAMALI.
    */
   const kutu = yorumsuz2(readFileSync("src/app/vitrin-kutusu.tsx", "utf8"));
-  const mapBas = kutu.indexOf("veri.satirlar.map(");
+  /**
+   * ⚠ 07.09.2026: kutu çok kanallı olunca satırlar `veri.` yerine kutu
+   * değişkeninden (`k.`) geliyor — ölçüt ESKİDİ, davranış değil.
+   * _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez";
+   * susturulmaz, güncellenir ve NİYE eskidiği yazılır.)_
+   */
+  const mapBas = kutu.indexOf("k.satirlar.map(");
   dogru("kutu satırları ÇİZİYOR", mapBas >= 0);
-  const mapBlok = mapBas >= 0 ? kutu.slice(mapBas, mapBas + 2600) : "";
+  /**
+   * ⛔ PENCERE SABİT SAYI DEĞİL, ÖLÇÜLEN SINIR. Önce `mapBas + 2600` idi ve
+   * ölçüldü: blok 1581 karakterde bitiyor, 2600 ise ARDINDAKİ "ölçülmemiş"
+   * bağlantısını da içine alıyordu — yani `<Link` ölçütü satır döngüsü
+   * bağlantısız kalsa bile oradan bulunup YEŞİL kalırdı. Sınır artık bir
+   * sonraki bloğun çapasına bağlı: gövde büyüse de pencere kaymaz.
+   * _(Anayasa: "kapsamı daraltılır — ve pencere ÖLÇÜLÜR".)_
+   */
+  const mapSon = kutu.indexOf("k.olculmemisAdet > 0", mapBas);
+  dogru("satır bloğunun sonu bulundu", mapBas >= 0 && mapSon > mapBas);
+  const mapBlok = mapBas >= 0 && mapSon > mapBas ? kutu.slice(mapBas, mapSon) : "";
   /**
    * ⚠ ÖLÇÜT `return` SATIRINA BAĞLANDI — VE BU BİR MUTASYON KAÇTIĞI İÇİN.
    * Önce çıplak `s.adet === 0 ?` aranıyordu; aynı desen blokta İKİ yerde
@@ -380,8 +396,11 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
   dogru("gövde metni de sıfıra bağlı", /\{s\.adet === 0 \? \(/.test(mapBlok));
   dogru("dolu satır BAĞLANTI", mapBlok.includes("<Link"));
   dogru("sıfır satır bağlantı DEĞİL", mapBlok.includes("<div"));
-  dogru("kutu ölçülmemiş satırını çiziyor", kutu.includes("veri.olculmemisAdet"));
-  dogru("ölçülmemiş adresi gövdeden", kutu.includes('vitrinAdresi("OLCULMEMIS")'));
+  dogru("kutu ölçülmemiş satırını çiziyor", kutu.includes("k.olculmemisAdet"));
+  dogru(
+    "ölçülmemiş adresi gövdeden VE hesabı taşıyor",
+    kutu.includes('vitrinAdresi("OLCULMEMIS", k.hesapId)'),
+  );
   /**
    * ⛔ KUTU KOMPAKT KALMALI — VE BU BİR KULLANICI ŞARTI (01.09.2026):
    * _"burası çok büyük, en fazla yarısı kadar aşağıya uzasın, yan taraftaki
@@ -442,6 +461,152 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
   );
 }
 kosanBolumler.push("zincir②");
+
+console.log("\n9) çok kanallı kutu — hesap tekil değil, iz kendi kanalından");
+{
+  const yorumsuz3 = (m: string) =>
+    m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+  const veri3 = yorumsuz3(readFileSync("src/lib/panel/vitrin-verisi.ts", "utf8"));
+  const kutu3 = yorumsuz3(readFileSync("src/app/vitrin-kutusu.tsx", "utf8"));
+  const stok3 = yorumsuz3(readFileSync("src/app/stok/page.tsx", "utf8"));
+  const sozlesme = yorumsuz3(readFileSync("src/lib/vitrin-kutusu.ts", "utf8"));
+
+  /**
+   * ⛔ KUTU ÇOK KANALLI — VE BU BİR ARIZADAN SONRA (07.09.2026).
+   * Hesap şöyle seçiliyordu: _"ölçüm damgası en çok olan TEK hesap"_. Bir kanal
+   * varken doğruydu; HB ölçülmeye başlayınca (1098 damga) TY (1051) sessizce
+   * DÜŞTÜ ve ekrandan ₺241.900,84'lük "henüz karşılaştırılmadı" satırı yok oldu.
+   * _(Anayasa: "kapsam genişlemesi, bağımlı listelerin de genişlemesidir".)_
+   */
+  dogru("veri gövdesi LİSTE döndürüyor", veri3.includes("Promise<VitrinKutusu[]>"));
+  dogru("hesaplar ORTAK gövdeden", veri3.includes("await olculenHesaplar()"));
+  dogru("kutu her hesap için kuruluyor", /for \(const h of hesaplar\)/.test(veri3));
+  dogru("kutu bileşeni LİSTE alıyor", kutu3.includes("veri }: { veri: Veri[] }"));
+  dogru(
+    "kutu her hesabı ÇİZİYOR",
+    veri3.includes("kutular.push({") && kutu3.includes("veri.map("),
+  );
+
+  /**
+   * ⛔ DESEN YASAĞI — DOSYA LİSTESİ DEĞİL. "Ölçüm damgası olan hesaplar"
+   * sorgusu 07.09'da ÜÇ yerde ayrı ayrı duruyordu (kutu · `/stok` · betikler)
+   * ve üçü de aynı anda yanlış hesabı seçmeye başladı. Çare kopyaları düzeltmek
+   * değil, KİMSENİN kendi sorgusunu kurmaması: küme sözleşme dosyasından gelir.
+   * Böyle kurulunca yarın açılan okuyucu da yakalanır ve kimsenin listeye bir
+   * şey eklemesi gerekmez.
+   * _(Anayasa: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır".)_
+   */
+  const kaynakDosyalari = (kok: string): string[] => {
+    const cikti: string[] = [];
+    for (const g of readdirSync(kok, { withFileTypes: true })) {
+      const yol2 = `${kok}/${g.name}`;
+      if (g.isDirectory()) cikti.push(...kaynakDosyalari(yol2));
+      else if (/\.tsx?$/.test(g.name)) cikti.push(yol2);
+    }
+    return cikti;
+  };
+  const SOZLESME_DOSYASI = "src/lib/vitrin-kutusu.ts";
+  const ihlal: string[] = [];
+  for (const d of kaynakDosyalari("src")) {
+    if (d === SOZLESME_DOSYASI) continue;
+    const m = yorumsuz3(readFileSync(d, "utf8"));
+    /** ⚠ İKİ İŞARET BİRLİKTE: tek başına `groupBy` ya da tek başına damga masum. */
+    if (m.includes('by: ["channelAccountId"]') && m.includes("kanalOlcumAt")) ihlal.push(d);
+  }
+  dogru(
+    `hesap sorgusu YALNIZ sözleşme dosyasında (ihlal: ${ihlal.join(", ") || "yok"})`,
+    ihlal.length === 0,
+  );
+  dogru(
+    "sözleşme dosyası sorguyu GERÇEKTEN kuruyor",
+    sozlesme.includes('by: ["channelAccountId"]'),
+  );
+  /** ⛔ TEKİLLİK GERİ GELEMEZ: `take: 1` bütün kanalları yeniden bire indirirdi. */
+  dogru(
+    "hesap seçimi TEKİL değil (take: 1 yok)",
+    !/kanalOlcumAt[\s\S]{0,200}take: 1/.test(sozlesme),
+  );
+
+  /**
+   * ⛔ ADRES HESABI TAŞIR — YOKSA "SAYI = LİSTE" BOZULUR. İki kanal ölçülürken
+   * hesapsız bir adres belirsizdir: HB satırına tıklayan TY listesini görürdü.
+   */
+  dogru(
+    "adres gövdesi hesap alıyor",
+    /vitrinAdresi\(satir\?: VitrinAdresi, hesapId\?: string\)/.test(sozlesme),
+  );
+  dogru(
+    "adres hesabı PARAMETREYE yazıyor",
+    sozlesme.includes("p.set(VITRIN_HESAP_PARAM, hesapId)"),
+  );
+  dogru("dolu satır bağlantısı hesabı taşıyor", kutu3.includes("vitrinAdresi(s.satir, k.hesapId)"));
+  dogru(
+    "kayıt-yok bağlantısı hesabı taşıyor",
+    kutu3.includes('vitrinAdresi("KAYIT_YOK", k.hesapId)'),
+  );
+  /** ⚠ `/stok` anahtarı SABİTTEN okur — dizeyi ikinci kez yazmak yeniden adlandırmayı kırardı. */
+  dogru("/stok hesabı adresten OKUYOR", stok3.includes("sp[VITRIN_HESAP_PARAM]"));
+  dogru("/stok hesabı KULLANIYOR", /h\.id === vitrinHesabi/.test(stok3));
+  dogru("/stok hesapları ORTAK gövdeden", stok3.includes("await olculenHesaplar()"));
+
+  /**
+   * ⛔ KANAL ROZETİ — İKİ KUTU YAN YANAYKEN HANGİSİNİN HANGİ KANAL OLDUĞU
+   * BAKIŞTA OKUNMALI. Gri bir ad metni iki kutu varken ayırt etmiyordu.
+   */
+  const basBas = kutu3.indexOf("<CardTitle");
+  const basSon = kutu3.indexOf("</CardTitle>", basBas);
+  dogru("başlık bloğu bulundu", basBas >= 0 && basSon > basBas);
+  const baslikBlok = basBas >= 0 && basSon > basBas ? kutu3.slice(basBas, basSon) : "";
+  dogru("kanal ROZETİ başlıkta çiziliyor", /<Badge[\s\S]{0,200}\{k\.kanalAdi\}/.test(baslikBlok));
+
+  /**
+   * ⛔ İZ KENDİ KANALINDAN OKUNUR — 07.09.2026 ARIZASININ ÇEKİRDEĞİ.
+   * Koşum izi yalnız `action` ile aranıyordu ve o ad TEKTİ: kutu HB'yi çizip
+   * **TY'nin** koşum durumunu gösteriyordu. İki yazıcı da artık kendi kanalını
+   * yazıyor ve her kutu kendi kanalınınkini okuyor.
+   */
+  dogru(
+    "kutu izi KANALINA göre süzüyor",
+    veri3.includes('contains: `"kosumKanali":"${h.kanalAdi}"`'),
+  );
+  dogru("iz süzgeci action ile BİRLİKTE", /action: KOSUM_IZI,[\s\S]{0,200}kosumKanali/.test(veri3));
+  const tyYazici = yorumsuz3(readFileSync("src/lib/kanal-listeleme-yaz.ts", "utf8"));
+  const hbYazici = yorumsuz3(readFileSync("src/lib/kanal-listeleme-hb-yaz.ts", "utf8"));
+  dogru("TY izi kanalını YAZIYOR", /detail: JSON\.stringify\(\{[\s\S]{0,120}kosumKanali/.test(tyYazici));
+  dogru("HB izi kanalını YAZIYOR", /detail: JSON\.stringify\(\{[\s\S]{0,120}kosumKanali/.test(hbYazici));
+  /** ⛔ HB izi TY ile AYNI ŞEKLİ taşır — yoksa okuyan taraf onu hiç göremez. */
+  dogru("HB izi başarı bayrağı taşıyor", /basarili: sonuc\.hata === 0/.test(hbYazici));
+
+  /**
+   * ⛔ "İZ YOK" İLE "İZ VAR VE TEMİZ" AYNI DEĞİLDİR. TY izi hiç yazılmamıştı ve
+   * ekranda hiçbir şey görünmüyordu — bu "her şey yolunda" diye okundu.
+   * _(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+   * değildir".)_
+   */
+  dogru("veri gövdesi iz yokluğunu ÖLÇÜYOR", veri3.includes("kosumIziYok: sonIz === null"));
+  dogru("kutu iz yokluğunu SÖYLÜYOR", /k\.kosumIziYok[\s\S]{0,120}t\("izYok"\)/.test(kutu3));
+  dogru("iz yokluğu SORUN sayılıyor", /sorunVar =[\s\S]{0,120}k\.kosumIziYok/.test(kutu3));
+
+  /**
+   * ⛔ SIRA: BAYATLIK "İZ YOK"UN ÖNÜNDE. Üçü de sorun ama keskinlikleri
+   * farklı: bayatlık ÖLÇÜLMÜŞ bir olgudur ve doğrudan bir iş söyler ("gece
+   * koşumu kaçıyor"); "iz yok" yalnız bizim kayıt tutmamız hakkındadır.
+   * İlk yazımda ters duruyordu ve TY kutusunda **159 saatlik bayatlığı
+   * örtüyordu** — okuyan kaçan koşumu göremezdi.
+   *
+   * ⚠ VARLIK AYRI KAPILANIR: `indexOf` bulamayınca `-1` döner ve `-1 < n`
+   * DOĞRUDUR — yani mesajı tamamen SİLEN bir mutasyon sıra ölçütünü
+   * geçerdi. _(Anayasa: "sessiz varsayılan üreten ifadeler ayrıca
+   * kapılanır".)_
+   */
+  const iBayat = kutu3.indexOf('t("bayat"');
+  const iIzYok = kutu3.indexOf('t("izYok")');
+  dogru("bayat mesajı VAR", iBayat >= 0);
+  dogru("iz yok mesajı VAR", iIzYok >= 0);
+  dogru("bayatlık 'iz yok'tan ÖNCE", iBayat >= 0 && iIzYok >= 0 && iBayat < iIzYok);
+}
+kosanBolumler.push("çok kanal");
 
 console.log("\n" + "=".repeat(60));
 if (kosanBolumler.length !== BOLUM_SAYISI) {

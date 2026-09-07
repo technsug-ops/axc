@@ -45,6 +45,8 @@ const KOSUM_IZI = "HB_LISTELEME_YAZIM";
  */
 export async function hbListelemeDurumunuYaz(
   guncellemeler: HbGuncelleme[],
+  /** Koşumun ait olduğu KANAL adı — kutu izleri buna göre ayırır. */
+  kosumKanali: string,
   an: Date = new Date(),
 ): Promise<HbYazimSonucu> {
   const sonuc: HbYazimSonucu = { yazilan: 0, hata: 0 };
@@ -70,12 +72,24 @@ export async function hbListelemeDurumunuYaz(
     }
   }
 
-  /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
+  /**
+   * ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90).
+   *
+   * ⛔ VE TY KARDEŞİYLE AYNI SÖZLEŞME (07.09.2026): `kosumKanali` ·
+   * `basarili` · `mesaj`. Eskiden yalnız sayaçlar yazılıyordu ve panel
+   * kutusu bu izi HİÇ OKUYAMIYORDU — HB'yi çizip TY'nin koşum durumunu
+   * gösteriyordu. Aynı soruyu soran iki iz aynı şekli taşır, yoksa okuyan
+   * taraf birini görmez.
+   */
   await izYaz({
     action: KOSUM_IZI,
     targetType: "ChannelSku",
     targetId: null,
     detail: JSON.stringify({
+      kosumKanali,
+      /** ⛔ TEK BİR SATIR DÜŞSE BİLE koşum BAŞARILI sayılmaz. */
+      basarili: sonuc.hata === 0,
+      mesaj: `yazılan ${sonuc.yazilan} · hata ${sonuc.hata} · istenen ${guncellemeler.length}`,
       istenen: guncellemeler.length,
       yazilan: sonuc.yazilan,
       hata: sonuc.hata,

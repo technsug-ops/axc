@@ -1993,6 +1993,47 @@ biçimleri · rol kapsamı · bekçi ölçütleri.)
 _"Gerekçe listesi" vakasının donanım hâli — orada enum listesi eskimişti,
 burada semboloji listesi._
 
+### SEÇİCİ ÖLÇÜT, EVREN GENİŞLEDİĞİNDE NE YAPACAĞIYLA TASARLANIR (KESİN KURAL)
+
+_Kullanıcı kararı 07.09.2026._ **"En çok" · "en yeni" · "ilk" · "tek olan"**
+gibi seçici ölçütler, evrende TEK örnek varken **her zaman doğru cevabı
+verir** — ve tam bu yüzden hiç sorgulanmazlar. İkinci örnek doğduğu anda
+ölçüt bir seçim yapmaya başlar; o seçim **hiçbir yerde tasarlanmamıştır** ve
+kaybedeni **sessizce düşürür.**
+
+**VAKA — ₺241.900'LÜK KUTU (07.09.2026).** Panel kutusu hesabı şöyle
+seçiyordu: _"ölçüm damgası en çok olan hesap"_. Bir kanal varken kusursuz
+çalıştı. HB ölçülmeye başlayınca:
+
+    1098 Hepsiburada · AXCALI   ← kutu buna geçti
+    1051 Trendyol    · AXCALI   ← ekrandan KALKTI
+
+Trendyol'un **₺241.900,84**'lük "henüz karşılaştırılmadı" satırı ekrandan yok
+oldu. Hata mesajı yok, bekçi kırmızısı yok, kimse bir şey bozmadı —
+**ölçüt tekildi** ve ikinci kanal birinciyi düşürdü. Üstelik aynı sorgunun
+ÜÇ kopyası vardı (kutu · `/stok` · betikler) ve üçü aynı anda kaydı.
+
+> **KURAL:** varsayılan **"hepsi, ayrı ayrı"**dır. **"Tek seç" GEREKÇELİ bir
+> İSTİSNADIR** ve gerekçesi koda yazılır. Böyle bir ölçüt yazılırken sorulacak
+> soru "bugün doğru cevabı veriyor mu" değil, **"yarın ikinci örnek doğduğunda
+> ne yapacak — ve kaybedeni kim görecek?"**dir.
+
+**ÜÇ SORU — seçici bir ölçüt yazılmadan önce:**
+1. Bu ölçüt bugün kaç örnek arasından seçiyor? **Bir ise henüz sınanmamıştır.**
+2. İkinci örnek doğduğunda **ne olur** — biri düşer mi, ikisi de görünür mü?
+3. Düşen taraf **ekranda görünür mü**, yoksa sessizce mi gider?
+
+⚠ **VE "TEK SEÇ" İSTİSNASI DA GÖRÜNÜR OLUR:** meşru olduğu yerde bile
+(ör. "son ölçüm damgası") ekran **neyi seçtiğini** yazar. Hangi örneğin
+seçildiği görünmüyorsa, kaybedenin varlığı da görünmez.
+
+⚠ **KOPYASI OLAN SEÇİCİ ÖLÇÜT İKİ KAT TEHLİKELİDİR:** aynı seçim birden çok
+yerde ayrı ayrı yazılıysa hepsi aynı anda kayar ve hiçbiri ötekini
+yakalayamaz. Ölçüt tek gövdeye taşınır ve **çıplak hâli desen yasağıyla
+kapatılır** — dosya listesiyle değil.
+_(Bkz. "düzeltmenin çaresi dosya listesi değil, desen yasağıdır" ve "kapsam
+genişlemesi, bağımlı listelerin de genişlemesidir".)_
+
 ### KAPANAMAYACAK KAYIP, GÖREV DEĞİL KAYITTIR (KESİN KURAL)
 
 _Mimar kararı 25.08.2026, K49._ Bir eksiklik gerçek olabilir, ölçülmüş

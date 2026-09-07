@@ -251,6 +251,106 @@ sayılmaz — testi değil raporu düzeltmek olur".)_
 ⏭ **ŞART:** ilk gerçek HB siparişi düştüğünde kuru koşum TEKRAR + Halil'e ilk
 içe aktarma onayı.
 
+### ─── ③ KUYRUK — KUTU HB'Yİ SAYMIYORDU, TY'NİN YERİNE KOYMUŞTU
+
+⛔ **SORULAN İKİ ŞIKTAN HİÇBİRİ ÇIKMADI — ÜÇÜNCÜSÜ ÇIKTI.** Kutu HB satırlarını
+"de" saymıyordu; hesabı **tek** seçiyordu ve ölçütü _"ölçüm damgası en çok olan
+hesap"_ idi. 07.09'da HB'ye 1098 damga yazılınca TY (1051) **sessizce düştü**:
+
+        damgalı satır   1098 Hepsiburada · AXCALI   ← kutu buna geçti
+                        1051 Trendyol    · AXCALI   ← ekrandan kalktı
+
+    EKRANDAN DÜŞEN (TY)                 YERİNE GELEN (HB)
+      engelli      9  ₺ 23.400,23         engelli     16  ₺ 47.333,40
+      kaydı yok   17  ₺ 83.279,64         kaydı yok   13  ₺ 61.344,21
+      ölçülmemiş  25  ₺241.900,84         ölçülmemiş   0  ₺      0,00
+
+⚠ **KİMSE BİR ŞEY BOZMADI — ÖLÇÜT TEKİLDİ** ve ikinci kanal doğduğu anda
+birinciyi düşürdü. _(Anayasa: "kapsam genişlemesi, bağımlı listelerin de
+genişlemesidir".)_ Arıza benim yazımımla doğdu ve aynı turda kapatıldı.
+
+**66'NIN ₺ KARŞILIĞI — VE 66 İLE KUTUNUN 16'SI FARKLI KÜME:**
+
+    66 = PASIF + KANALIN kendi stoğu > 0
+      ├─ DEFTERDE de stoklu   4  → ₺22.389,00  = kutunun PASIF satırı (birebir)
+      └─ defterde stok YOK   62  → rafta yok; kutunun sözleşmesine girmez
+
+⭐ Kutunun ölçütü **bizim defterimizdeki** stoktur ("rafta var, vitrinde yok").
+
+**⚠ 62 SATIR — "HB DEPOSUNDA MALIM VAR MI" SORUSUNUN HAM HÂLİ.** Bu 62 üründe
+HB kendi tarafında **stok görüyor**, bizim defterimiz **sıfır** diyor. İki
+okuması var ve ikisi de mümkün:
+
+    (a) HB deposunda/kanalında GERÇEKTEN mal var, defterimiz bilmiyor
+        → görünmeyen sermaye; satılırsa stok eksiye düşer
+    (b) HB'nin stok rakamı BAYAT (biz tükettik, kanal güncellenmedi)
+        → zararsız, ama kanal yanlış vaat ediyor
+
+⛔ **ÖLÇÜM İKİSİNİ AYIRT ETMİYOR — HÜKÜM VERİLMEDİ.** Ayırt edici kanıt
+kanalın kendi deposundan gelir (HB stok raporu / depo dökümü), bizim
+defterimizden değil. _(Anayasa: "iki okumayla da uyumlu bir gözlem hiçbirini
+kanıtlamaz".)_
+
+⏭ **HALİL SORDUĞUNDA HAZIR OLAN CEVAP:** liste 62 üründür ve `PASIF +
+kanalAdet>0 + defter stoğu 0` ölçütünden **yeniden üretilir** (saklanan liste
+yok). Sorulacak tek soru: bu 62'nin HB tarafındaki adedi gerçek mi, bayat mı.
+⏭ **İŞ AÇILIŞ ŞARTI:** bu 62'den biri gerçekten satılıp eşleşmezlik
+ürettiğinde — ya da Halil kanalın stok dökümünü eline aldığında.
+
+**YAPILAN İŞ — KUTU İKİ KANALLI:**
+
+    · ölçülmüş HER hesap kendi kutusunu alır, KANAL ROZETİYLE
+    · kutular ₺'ye göre sıralı (satır sıralamasıyla aynı ölçüt)
+    · hesap seçimi TEK GÖVDEDE (`olculenHesaplar`) — üç kopya kaldırıldı
+    · adres hesabı taşır (`?vhesap=`) ve `/stok` onu okur — yoksa HB satırına
+      tıklayan TY listesini görürdü ("sayı = liste" bozulurdu)
+    · koşum izi KENDİ KANALINDAN okunur (`kosumKanali`); eskiden kutu HB'yi
+      çizip **TY'nin** koşum durumunu gösteriyordu
+    · "iz YOK" ile "iz var ve temiz" AYRI söylenir
+    · sıra ölçüldü: koşum düştü > damga bayat > iz yok. İlk yazımda "iz yok"
+      öndeydi ve TY'nin **159 saatlik** bayatlığını ÖRTÜYORDU
+
+    vitrin:dogrula   109/109  (9 bölüm, sayaçlı)
+    MUTASYON          20/20   17 + 3 sıra turu; ikisi de iki YÖNLÜ
+
+⭐ **EN DEĞERLİ İKİ MUTASYON:** ⑰ hiçbir listeye eklenmemiş YENİ bir dosya kendi
+hesap sorgusunu kurunca kırmızı yandı (desen yasağı, dosya listesi değil) · ⑭
+satır bloğundan bağlantıyı kaldıran senaryo — eski 2600 karakterlik sabit
+pencere onu ARDINDAKİ bloktan buluyor ve YEŞİL kalıyordu; pencere ölçülen
+sınıra bağlandı.
+
+⚠ **BUGÜN İKİ KUTU DA "KOŞUM İZİ YOK" DİYECEK** ve bu DOĞRU: izler yeni alanı
+(`kosumKanali`) bugün kazandı, mevcut kayıtlar onu taşımıyor. Her kanal kendi
+yazıcısı bir kez daha koştuğunda kendiliğinden temizlenir — geriye dönük iz
+YAZILMADI _(ledger disiplini izlere de işler)_.
+
+**KAPSAM SAYISI (② — iş AÇILMADI, yalnız sayı):**
+
+    kanaldan gelen listing         2190   (beyan 2190 · kesilmedi)
+    defterde VAR                   1087
+    defterde YOK                   1103
+      ├─ isSalable + stok>0            9   ← ARANAN SAYI
+      ├─ isSalable ama stok≤0          0
+      └─ stok okunamadı                0
+
+⚠ **1091 DEĞİL, 1103 — VE ⑤'TEKİ 1102 DE AŞILDI.** Üç rakam da aynı şeyi
+ölçüyor, aralarındaki fark okuma ANIDIR: ⑤'te 2189 listing vardı, bu ölçümde
+2190 (kanal akmaya devam ediyor); ve payda *eşleşen* 1087'dir, defterdeki 1098
+değil. Geçerli olan **1103 · 07.09.2026 15:xx okuması**.
+_(Anayasa: "donmuş kaynak akan kaynakla kıyaslanırken iki damga yazılır" +
+"aşılan rakam sessizce aşılmaz".)_
+
+⭐ **HÜKÜM: kapsam boşluğu ekran gerektirmiyor.** 1103 satırın yalnız **9'u**
+satılabilir ve stoklu; geri kalanı kanalda ölü. Gelecek sipariş eşleşmezliği
+riski bu dokuza sınırlı.
+
+### ─── ④ SIT KİMLİKLERİ — KAYIP, ACELE YOK
+
+⛔ `HEPSIBURADA_SIT_*` satırlarının kimlikleri elimizde YOK. Canlı çalıştığı
+için acil değil; ama SIT olmadan **yazma uçları hiçbir yerde denenemez**.
+⏭ Halil kayıtlıysa `.env.canli`ye ekler; değilse HB'den yeniden istenir.
+⚠ Kimlikler sohbete YAPIŞTIRILMAZ — doğrudan `.env.canli`ye yazılır.
+
 ---
 
 ## 🔶 K180-② — KALDIRMA, GİRİŞİN GERÇEKLİĞİNİ ÖLÇMÜYOR · 07.09.2026 · [KUSUR · AÇIK]

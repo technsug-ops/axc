@@ -24,6 +24,15 @@ import { baslikKur, kimlikOku, tumKayitlar, UCLAR } from "./hb/istemci";
  * ============================================================================
  */
 
+/**
+ * ⛔ KOŞUMUN KANALI — İZE YAZILIR, TAHMİN EDİLMEZ.
+ * Bu betik Hepsiburada listing ucunu çağırır; taradığı kanal yapısal olarak
+ * bellidir. Panel kutusu koşum durumunu bu ada göre AYIRIR.
+ * _(Ad bir VERİDİR: hesap `apiHesapKimligi` ile çözülür, bu yalnız izin
+ * etiketi — eşleştirme dizeyle YAPILMAZ.)_
+ */
+const KOSUM_KANALI = "Hepsiburada";
+
 const UYGULA = process.argv.includes("--uygula");
 
 /** Durum önceliği — TY yazıcısıyla AYNI sıra; iki yerde iki sıra olmaz. */
@@ -243,6 +252,12 @@ async function main() {
       durum: v.durum as never,
       adet: v.adet,
     })),
+    /**
+     * ⛔ KOŞUMUN KANALI — İZE YAZILIR. Panel kutusu koşum durumunu buna göre
+     * ayırır; yazılmasaydı HB kutusu TY'nin koşum hatasını gösterirdi
+     * (07.09.2026'da tam bu oldu).
+     */
+    KOSUM_KANALI,
   );
   console.log(`\n⑤ YAZIM — ${y2.yazilan} satır güncellendi · hata ${y2.hata}`);
   /** ⛔ HATA SESSİZ GEÇMEZ: çıkış kodu da düşer. */

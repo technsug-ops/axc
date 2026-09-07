@@ -93,9 +93,23 @@ function kimlikleri(u: Record<string, unknown>): string[] {
  */
 export const KOSUM_IZI = "KANAL_KARSILASTIRMA";
 
+/**
+ * ⛔ İZ HANGİ KANALIN KOŞUMU OLDUĞUNU SÖYLER — VE BU BİR ARIZADAN SONRA
+ * EKLENDİ (07.09.2026). Panel kutusu koşum durumunu `action` adına göre
+ * okuyordu ve o ad TEKTİ: kutu Hepsiburada'yı çizerken **Trendyol'un**
+ * koşum izini gösteriyordu. İki kanal ölçülür ölçülmez rozet ile altındaki
+ * "son koşum" cümlesi farklı şeylerden bahsetmeye başladı.
+ *
+ * ⭐ ÖLÇÜT ADA DEĞİL VERİYE BAĞLANDI: iz kendi kanalını `kosumKanali` ile
+ * yazar, kutu kendi kanalınınkini okur. Yarın üçüncü bir yazıcı doğarsa
+ * kutuya elle bir eşleme listesi eklemek gerekmez.
+ * _(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)_
+ */
 export async function kosumIziniYaz(g: {
   basarili: boolean;
   mesaj: string;
+  /** Koşumun ait olduğu KANAL adı — kutu izleri buna göre ayırır. */
+  kosumKanali: string;
 }): Promise<void> {
   /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
   await izYaz({
@@ -103,7 +117,11 @@ export async function kosumIziniYaz(g: {
     targetType: "ChannelSku",
     targetId: null,
     /** ⛔ MESAJ TAM TAŞINIR — kırpmak teşhisi kırpar. */
-    detail: JSON.stringify({ basarili: g.basarili, mesaj: g.mesaj }),
+    detail: JSON.stringify({
+      kosumKanali: g.kosumKanali,
+      basarili: g.basarili,
+      mesaj: g.mesaj,
+    }),
   });
 }
 

@@ -28,7 +28,9 @@ import { SayfalamaCubugu } from "@/components/sayfalama";
 import { DURUM_ZEMINI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
 import {
+  VITRIN_HESAP_PARAM,
   kanalKaydiYokKosulu,
+  olculenHesaplar,
   olculmemisKosulu,
   vitrinKosulu,
   vitrinSatiriCoz,
@@ -99,12 +101,23 @@ export default async function StokSayfasi({
      * durumların TAMAMINA düşer, boş listeye değil.
      */
     vitrin?: string;
+    /**
+     * K121 — vitrin kutusunun HESABI (kanal hesabı kimliği).
+     *
+     * ⛔ NİYE VAR (07.09.2026): kutu çok kanallı oldu. Hesapsız bir adres
+     * `/stok`ta belirsizdir — HB satırına tıklayan TY listesini görürdü ve
+     * kutuda 4 yazarken listede başka bir sayı çıkardı.
+     * ⚠ ADI SABİTTEN OKUNUR (`VITRIN_HESAP_PARAM`), elle yazılmaz.
+     */
+    [VITRIN_HESAP_PARAM]?: string;
   }>;
 }) {
   await sayfaIzni("stok.gor");
 
-  const { q, sayfa, yas, maliyet, kanal, sirala, yon, stok, vitrin } =
-    await searchParams;
+  const sp = await searchParams;
+  const { q, sayfa, yas, maliyet, kanal, sirala, yon, stok, vitrin } = sp;
+  /** ⚠ ANAHTAR SABİTTEN — dizeyi ikinci kez yazmak, yeniden adlandırmayı sessizce kırardı. */
+  const vitrinHesabi = sp[VITRIN_HESAP_PARAM];
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
   const t = await getTranslations("Stok");
@@ -267,18 +280,29 @@ export default async function StokSayfasi({
   const vitrinSecimi = vitrinSatiriCoz(vitrin);
   let vitrinListe: string[] | null = null;
   if (vitrin !== undefined) {
-    const olculmus = await prisma.channelSku.groupBy({
-      by: ["channelAccountId"],
-      where: { kanalOlcumAt: { not: null } },
-      _count: { _all: true },
-      orderBy: { _count: { channelAccountId: "desc" } },
-      take: 1,
-    });
-    const hesapId = olculmus[0]?.channelAccountId;
-    if (hesapId === undefined) {
+    /**
+     * ⛔ HESAP KÜMESİ ORTAK GÖVDEDEN — kutu ile aynı yerden. Eskiden burada
+     * kutununkinin KOPYASI bir `groupBy` duruyordu ("damgası en çok olan tek
+     * hesap") ve iki kanal ölçülür ölçülmez ikisi de aynı anda YANLIŞ hesabı
+     * seçmeye başladı. İki yerde iki ölçüt olmaz.
+     */
+    const hesaplar = await olculenHesaplar();
+    if (hesaplar.length === 0) {
       /** Hiç ölçüm yoksa küme BOŞTUR — "süzgeç yokmuş gibi hepsi" değil. */
       vitrinListe = [];
     } else {
+      /**
+       * ⚠ ADRESTE HESAP VARSA O HESAP, YOKSA HEPSİ (BİRLEŞİM).
+       *
+       * Kutunun ürettiği her bağ hesabı TAŞIR — yani birleşim dalı yalnız
+       * elle yazılmış / eski yer imi adreslerde çalışır. Orada boş küme
+       * döndürmek "sessiz başarısızlık" olurdu (İlke #5): kullanıcı tıklar,
+       * hiçbir şey çıkmaz ve sebebi görünmez. Birleşim ÜST kümedir —
+       * aradığını mutlaka içerir. _(Kutudan gelen hiçbir sayı bu dala
+       * düşmediği için "sayı = liste" sözü de bozulmaz.)_
+       */
+      const secili = hesaplar.filter((h) => h.id === vitrinHesabi);
+      const kapsam = secili.length === 1 ? secili : hesaplar;
       const grup = await prisma.stockMovement.groupBy({
         by: ["variantId"],
         _sum: { quantityDelta: true },
@@ -292,21 +316,25 @@ export default async function StokSayfasi({
        * `OLCULMEMIS` kümeleri `vitrinKosulu`ya verilseydi hiçbir şey bulamaz
        * ve liste sessizce boşalırdı: kutuda 19 yazarken listede 0.
        */
-      const kosul =
-        vitrinSecimi === "KAYIT_YOK"
-          ? kanalKaydiYokKosulu({ kanalHesabiId: hesapId, variantIdleri: stoklular })
-          : vitrinSecimi === "OLCULMEMIS"
-            ? olculmemisKosulu({ kanalHesabiId: hesapId, variantIdleri: stoklular })
-            : vitrinKosulu({
-                kanalHesabiId: hesapId,
-                variantIdleri: stoklular,
-                satir: vitrinSecimi,
-              });
-      const bulunan = await prisma.productVariant.findMany({
-        where: kosul,
-        select: { id: true },
-      });
-      vitrinListe = bulunan.map((v) => v.id);
+      const bulunan = new Set<string>();
+      for (const h of kapsam) {
+        const kosul =
+          vitrinSecimi === "KAYIT_YOK"
+            ? kanalKaydiYokKosulu({ kanalHesabiId: h.id, variantIdleri: stoklular })
+            : vitrinSecimi === "OLCULMEMIS"
+              ? olculmemisKosulu({ kanalHesabiId: h.id, variantIdleri: stoklular })
+              : vitrinKosulu({
+                  kanalHesabiId: h.id,
+                  variantIdleri: stoklular,
+                  satir: vitrinSecimi,
+                });
+        const vs = await prisma.productVariant.findMany({
+          where: kosul,
+          select: { id: true },
+        });
+        for (const v of vs) bulunan.add(v.id);
+      }
+      vitrinListe = [...bulunan];
     }
   }
 

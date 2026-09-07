@@ -24,6 +24,15 @@ import { v2KayitlariniNormallestir } from "./ty/urun-v2";
  * ============================================================================
  */
 
+/**
+ * ⛔ KOŞUMUN KANALI — İZE YAZILIR, TAHMİN EDİLMEZ.
+ * Bu betik Trendyol API istemcisini çağırır; taradığı kanal yapısal olarak
+ * bellidir. Panel kutusu koşum durumunu bu ada göre AYIRIR — iki kanal
+ * ölçüldüğünde HB kutusunun altında TY'nin hatası yazmasın diye.
+ * _(Ad bir VERİDİR: hesap kimlikle çözülür, bu yalnız izin etiketi.)_
+ */
+const KOSUM_KANALI = "Trendyol";
+
 const YAZ = process.argv.includes("--yaz");
 const DOSYADAN = process.argv.includes("--dosya");
 const KLASOR = "veri/ozel";
@@ -125,7 +134,7 @@ async function main() {
      */
     if (YAZ) {
       const { kosumIziniYaz } = await import("../src/lib/kanal-listeleme-yaz");
-      await kosumIziniYaz({ basarili: false, mesaj: t.hata });
+      await kosumIziniYaz({ basarili: false, mesaj: t.hata, kosumKanali: KOSUM_KANALI });
     }
     process.exitCode = 1;
     return;
@@ -167,6 +176,7 @@ async function main() {
     await kosumIziniYaz({
       basarili: false,
       mesaj: `Satıcı kimliği ${t.saticiId} ile eşleşen kanal hesabı yok.`,
+      kosumKanali: KOSUM_KANALI,
     });
     process.exitCode = 1;
     return;
@@ -192,6 +202,7 @@ async function main() {
   await kosumIziniYaz({
     basarili: true,
     mesaj: `${s.hesap} · yazılan ${s.yazilan} · YOK ${s.yokIsaretlenen} · barkodsuz ${s.barkodsuzAtlanan}`,
+    kosumKanali: KOSUM_KANALI,
   });
 }
 
@@ -211,7 +222,7 @@ main().catch(async (e: unknown) => {
   if (YAZ) {
     try {
       const { kosumIziniYaz } = await import("../src/lib/kanal-listeleme-yaz");
-      await kosumIziniYaz({ basarili: false, mesaj });
+      await kosumIziniYaz({ basarili: false, mesaj, kosumKanali: KOSUM_KANALI });
     } catch {
       /** ⚠ İz de yazılamadıysa en azından ekranda duruyor — sessiz kalmıyor. */
       console.log("   ⛔ Koşum izi de YAZILAMADI.");
