@@ -353,6 +353,73 @@ için acil değil; ama SIT olmadan **yazma uçları hiçbir yerde denenemez**.
 
 ---
 
+## 🔶 K-HB-PAZARLAMA — SATICI İNDİRİMİ · 07.09.2026 · [ÖLÇÜLDÜ · YAZIM BEKLİYOR]
+
+> **Halil:** _"Axcali'nin sayfasını takip et butonuna tıklayan kişiye yapılan
+> indirim kuponu… 15 TL'lik takip kuponu, her müşteri 1 sefer kullanabilir,
+> liste fiyatından düşer. Bunun gibi başka marketing operasyonları da var."_
+
+### ① YAPI KARARI (onaylı) — ŞEMA DEĞİŞİKLİĞİ YOK
+
+    ciro           = unitPrice + hbDiscount        (liste = komisyon tabanı)
+    kesinti satırı = SaleFee { code PAZARLAMA_INDIRIMI · name kanaldan · amount }
+
+⛔ **KUPON CİROYA YAZILMAZ.** HB komisyonu **liste** üstünden kesiyor; ciroyu
+düşürmek motorun `oran × ciro` komisyonunu da düşürür ve NET'i İKİ yerden
+bozar. `SaleFee` serbest kodlu (`code`·`name`·`amount`) → merdivenin ilk
+basamağı tutuyor, migration'a inilmedi.
+
+⛔ **KAMPANYA BAŞINA KOD AÇILMAZ** — tek kod + **etiket**. Kampanya başına enum
+değeri, her yeni pazarlama operasyonunda elle büyüyen bir liste doğurur ve o
+liste eskir. _(KARGO_BEKLEYEN dersi: çare dosya/liste değil DESEN.)_ Ad kanalın
+kendi alanından gelir; kanal ad vermezse deterministik dolgu — **elle ad YOK.**
+
+⚠ **İKİ ARİTMETİK DÜZELTİLDİ (koda yorum olarak girecekti):**
+· `406,20 = 3.385 × %12` **iki okumaya birden uyuyor**; API `commissionRate 10`
+  ve `commission 338,50` diyor, `338,50 × 1,20 = 406,20`. Mekanizma **%10 + %20
+  KDV**; `%12` bugün aynı sayıyı verir ama oran ya da KDV değişince sessizce
+  bozulur. _(Anayasa: "iki okumayla da uyumlu gözlem hiçbirini kanıtlamaz".)_
+· `3.147 = 3.385 − 238 − 15` **toplamıyor**: `3.385 − 238 = 3.147`, kupon
+  fiyata GİRMEMİŞ. Ölçüm de öyle diyor (`unitPrice 3.147`).
+
+### ② MEKANİZMA KAPISI — HAKEDİŞTEN ÖLÇÜLDÜ, CEVAP **(b)**
+
+`4777369510` henüz `Packaged`, hakedişi DÜŞMEMİŞ. Bu yüzden kapı o siparişte
+değil, **kuponu olan VE hakedişi düşmüş 18 sipariş** üstünde ölçüldü:
+
+    SIPARIS_TUTARI + KAMPANYA = liste   → tutan 11 · tutmayan 7 (7'si iade/0)
+    kupon tutarına EŞİT hakediş satırı  → 0   (on sekizinin HİÇBİRİNDE)
+
+⛔ **(a) ÇIKMADI — KUPON HAKEDİŞTEN KESİLMİYOR.** HB bize **liste** üstünden
+ödüyor ve kuponun karşılığı hiçbir satırda yok. Kural gereği **(b)**: yazım
+BEKLER, kupon "sayılıyor, yeri çözülmedi" olarak görünür kalır.
+
+⭐ **TÜRETME BİR HİPOTEZ VERDİ (kanıt DEĞİL):** `1.528,00 + 871,01 = 2.399,01`
+· `3.385,00 + 15,00 = 3.400,00` — ikisi de **üstü çizili eski fiyat** gibi.
+Yani `merchantDiscount` bir GİDER değil, **vitrin indirimi gösterimi** olabilir;
+cebimizden çıkmadığı için hakedişte görünmüyor. Aynı 871,01 beş ayrı siparişte
+tekrarlıyor ve o siparişlerde müşteri **listenin tamamını** ödemiş — bir kupon
+böyle davranmaz.
+⏭ **KESİNLEŞME ŞARTI:** takip kuponu FİİLEN kullanılmış bir sipariş hakedişe
+düştüğünde `SIPARIS_TUTARI + KAMPANYA` listenin 15 TL altına iner mi.
+
+### ③ ÖLÇÜM
+
+    kupon taşıyan sipariş    30 / 164   (canlı 16 + hakedişli 148)
+    toplam kupon             ₺9.041,07
+    tarih aralığı            2026-06-05 … 2026-09-07
+    CSV                      veri/ozel/k-hb-pazarlama-2026-09-07.csv (164 satır)
+
+⚠ CSV `.gitignore`da — depoya girmez.
+
+### ④ YAZIM — AÇILMADI
+
+⛔ **②(b) çıktığı için `SaleFee` yazımı AÇILMADI.** İçe aktarma kuponu ciroya
+karıştırmıyor, sayıyor ve ekranda beyan ediyor (`SATICI İNDİRİMİ OLAN KALEM`).
+Bekçide iki yönlü mutasyonla korunuyor (gelire karıştıran senaryo KIRMIZI).
+
+---
+
 ## 🔶 K180-② — KALDIRMA, GİRİŞİN GERÇEKLİĞİNİ ÖLÇMÜYOR · 07.09.2026 · [KUSUR · AÇIK]
 
 > **Halil:** _"sayım da yoktu, eski siparişlerden, mükerrer girmişim siparişi;
