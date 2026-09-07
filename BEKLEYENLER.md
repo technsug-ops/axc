@@ -13,6 +13,66 @@
 
 ---
 
+## ✅ K178 — ÜÇ AÇIK KALEM KAPANDI: pre-commit · sipariş saati · onay durumu · 07.09.2026
+
+> **Halil:** _"bunları kapatalım, açık task istemiyorum."_
+
+### ① K173 — `pre-commit` KAPISI KURULDU (üç kez tekrarlayan desenin çaresi)
+
+Bekçi turu koşarken mutasyon harness'leri kaynağı **canlı olarak bozup geri
+yazıyor**; o sırada atılan `git add -A` havada duran bir mutasyonu commit'e
+alıyor ve harness dosyayı sonradan geri yazdığı için tur TEMİZ ağaca karşı
+koşup **yeşil** yanıyor. Aynı desen **üç kez** yaşandı (K149 · 03.09 ·
+K173/06.09) ve sonuncusu canlıya bozuk kod gönderdi.
+
+Kapı **push'ta vardı, commit'te yoktu** — bir adım erkene alındı:
+`.githooks/pre-commit` → `scripts/kilit-kapisi.ts`.
+⚠ **ÖLÇÜT YAZILMADI, ÇAĞRILDI:** "tur koşuyor mu" sorusunun tek gövdesi
+`bekci-kilit.ts`; bu kapı onun **üçüncü okuyucusu**. Kabukta ikinci bir kilit
+ölçütü yazılsaydı biri canlı sayarken öteki bayat sayardı.
+
+**KAPI SINANDI — beyanla değil denemeyle:**
+
+    kilit YOK    → çıkış 0, commit serbest
+    kilit CANLI  → çıkış 1, gerçek `git commit` REDDEDİLDİ
+    kilit kalktı → çıkış 0
+
+⚠ İlk deneme yanlış çıktı verdi: Git Bash'in `$$` değeri Windows PID'i değil,
+`process.kill` onu ölü saydı. Gerçek bir Windows PID'iyle tekrarlandı.
+⚠ **DÜRÜSTLÜK:** `git commit --no-verify` bu kapıyı atlar; koruma "mekanik
+olarak imkânsız" değil, **kazayla imkânsız**.
+
+### ② K163 + K164 — SATIŞ DETAYINDA SİPARİŞ SAATİ VE ONAY DURUMU
+
+**Saat:** liste ekranı saati basıyordu, detay basmıyordu — aynı satış iki
+ekranda farklı görünüyordu (İlke #10). ⚠ Ve ternary listede **İKİ yerde**
+kopyalanmıştı; detaya üçüncü kopya eklemek yerine ortak gövdeye alındı:
+`bicim.tarihSaat`. Saat **yalnız biliniyorsa** basılır — elle/Excel kayıtları
+güne damgalıdır ve "00:00" basmak yokluğu değer gibi gösterirdi (İlke #11).
+
+⛔ **ONAY DURUMUNDA ÖLÇÜTÜ ELDE KURDUM VE ÖLÇÜM ÇÜRÜTTÜ.** İlk yazımda
+`importKaynak != null && onaylandiAt == null` → "onay bekliyor" dedim; canlı
+ölçüm bunun **7608 satışa** o cümleyi bastıracağını gösterdi. Kuyruğun gerçek
+ölçütü çok daha dar (kargolanmamış · stok bağı yok · saatli). Ekran ile
+kuyruk ayrışsaydı panelin en temel sözü çiğnenirdi: **sayı = liste**.
+
+⭐ Etiket artık kuyruğun **kendi gövdesinden** (`onayaUygunMu`) besleniyor ve
+eşleme saf gövdeye çıkarıldı (`onayDurumuAnahtari`) — değerle sınanabilsin
+diye. Gerçek dağılım (canlı 07.09, 7897 satış):
+
+    ZATEN_ONAYLI  7551  → "Stoktan düşülmüş — onay akışı dışında"
+                          (28'i onay izli → "Onaylandı · tarih")
+    ICE_AKTARMA_DEGIL 261 · KARGOLANMIS 52 · IPTALLI 33
+    ⭐ ONAY BEKLİYOR: 0   ← kuyruk bugün BOŞ
+
+**KANIT:** `ice-aktarma:dogrula` 338/338 (9 yeni ölçüt) · **6 mutasyon 6
+kırmızı** (detay saati · saf gövde çağrısı · ZATEN_ONAYLI ayrımı · hepsini
+bekliyor sayma · ortak gövdedeki saat kapısı · listeye kopya geri gelmesi).
+⚠ İki eskiyen ölçüt tazelendi (liste kopyalarını sayıyorlardı) — gevşetilmedi,
+**yer değiştirdi**: kapı artık TEK yerde aranıyor.
+
+---
+
 ## ✅ K177 — PANEL "BUGÜN"Ü UTC'DEN KURULUYORDU · 07.09.2026 · [KOD KOŞTU]
 
 > **Halil:** _"gece 1'de siparişi çekmiş ama panele yansımamış."_ Satış

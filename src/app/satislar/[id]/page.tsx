@@ -39,6 +39,7 @@ import { gunMetni } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
 import { KargoDurumu } from "../kargo-durumu";
 import { kalemDusumleri, kalemGeriDonusleri, type Dusum } from "@/lib/satis";
+import { onayaUygunMu, onayDurumuAnahtari } from "@/lib/onay-kuyrugu";
 import { kalanTalepEdilebilirAdet } from "@/lib/tazminat";
 
 import type { Currency } from "@/generated/prisma/enums";
@@ -287,9 +288,58 @@ export default async function SatisDetaySayfasi({
     kargoGirilmedi: satis.cargoAmount === null,
   };
 
+  /**
+   * ⛔ ETİKET KUYRUĞUN KENDİ GÖVDESİNDEN — İKİNCİ ÖLÇÜT YAZILMAZ (K164).
+   *
+   * İlk yazımda ölçütü elde kurmuştum (`importKaynak != null && onaylandiAt
+   * == null` → "onay bekliyor") ve ÖLÇÜM ÇÜRÜTTÜ: bu **7608 satışa** "onay
+   * bekliyor" dedirtiyordu. Kuyruğun gerçek ölçütü çok daha dar (kargolanmış
+   * DEĞİL · stok bağı YOK · saatli). Yani detay ekranı, tıklanınca açılan
+   * kuyrukla ayrışacaktı — panelin en temel sözü "sayı = liste"dir.
+   *
+   * ⭐ `onayaUygunMu` zaten SEBEP döndürüyor; etiket doğrudan ona bağlandı.
+   * Her sebebin kendi cümlesi var: "onay akışı dışında" ile "onay bekliyor"
+   * farklı şeylerdir ve ikisini tek etikete sıkıştırmak yanlış iş üretirdi.
+   */
+  const onayDurumu = onayaUygunMu({
+    importKaynak: satis.importKaynak,
+    shippedAt: satis.shippedAt,
+    iptalTarihi: satis.iptalTarihi,
+    soldAt: satis.soldAt,
+    onaylandiAt: satis.onaylandiAt,
+    saleOutSayisi: [...dusumler.values()].reduce((t, d) => t + d.length, 0),
+  });
+  /** Eşleme SAF GÖVDEDE (`onayDurumuAnahtari`) — ekran yalnız çeviriyor. */
+  const onayAnahtari = onayDurumuAnahtari(onayDurumu, satis.onaylandiAt);
+  const onayMetni =
+    onayAnahtari === "onayDurumuOnaylandi"
+      ? t("onayDurumuOnaylandi", {
+          tarih: bicim.tarihSaat(satis.onaylandiAt as Date),
+        })
+      : t(onayAnahtari as "onayDurumuBekliyor");
+
   // `deger` ReactNode: kargo satırı bir düğme taşıyor (metin değil).
   const bilgiler: { etiket: string; deger: React.ReactNode }[] = [
-    { etiket: t("satisTarihi"), deger: bicim.tarih(satis.soldAt) },
+    /**
+     * SİPARİŞ ANI — SAAT YALNIZ BİLİNİYORSA (K163).
+     * Liste ekranı bunu zaten basıyordu; detay basmıyordu ve aynı satış iki
+     * ekranda farklı görünüyordu. Gövde ORTAK (`bicim.tarihSaat`) — üç ayrı
+     * kopya, üç ayrı eskime demekti. _(İlke #10.)_
+     */
+    { etiket: t("satisTarihi"), deger: bicim.tarihSaat(satis.soldAt) },
+    /**
+     * ONAY DURUMU (K164) — üç ayrı hâl, üçü farklı şey söyler.
+     *
+     * ⛔ SESSİZ SIFIR YASAĞI: "onaylandı mı" sorusunun cevabı boş bırakılırsa
+     * okuyan onaylandığını varsayar. Elle girilen satışta onay KAVRAMI yok;
+     * onu "onay bekliyor" saymak olmayan bir iş üretirdi.
+     * Ölçüt `kargo-bekleyen.ts` ile AYNI: `importKaynak === null` (elle) ya da
+     * `onaylandiAt !== null` (onaylı) → gerçek satış.
+     */
+    {
+      etiket: t("onayDurumu"),
+      deger: onayMetni,
+    },
     {
       etiket: ortak("kanalHesabi"),
       deger: `${satis.channelAccount.channel.name} — ${satis.channelAccount.name}`,

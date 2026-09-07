@@ -823,9 +823,7 @@ export default async function SatislarSayfasi({
                             {/* Saat yalnız BİLİNİYORSA (K163) — elle/Excel
                                 kayıtları güne damgalı, 00:00 basmak yokluğu
                                 değer gibi gösterirdi (İlke #11'in saat hâli). */}
-                            {gunHassasiyetliMi(satis.soldAt)
-                              ? bicim.tarih(satis.soldAt)
-                              : `${bicim.tarih(satis.soldAt)} · ${bicim.saat(satis.soldAt)}`}
+                            {bicim.tarihSaat(satis.soldAt)}
                           </Baglanti>
                         }
                         alt={
@@ -975,9 +973,7 @@ export default async function SatislarSayfasi({
                   </span>
                 }
                 altBaslik={
-                  gunHassasiyetliMi(satis.soldAt)
-                    ? bicim.tarih(satis.soldAt)
-                    : `${bicim.tarih(satis.soldAt)} · ${bicim.saat(satis.soldAt)}`
+                  bicim.tarihSaat(satis.soldAt)
                 }
                 alanlar={[
                   {

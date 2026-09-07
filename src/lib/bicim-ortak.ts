@@ -1,5 +1,7 @@
 import type { useFormatter } from "next-intl";
 
+import { gunHassasiyetliMi } from "@/lib/donem";
+
 import {
   IS_SAAT_DILIMI,
   kisaParaSecenekleri,
@@ -69,6 +71,24 @@ export function bicimOlustur(format: Formatter) {
      */
     saat(tarih: Date): string {
       return format.dateTime(tarih, "saat");
+    },
+
+    /**
+     * TARİH — ve saat YALNIZ BİLİNİYORSA (K163).
+     *
+     * ⛔ NİYE ORTAK GÖVDE: aynı ternary satış listesinde İKİ yerde birden
+     * yazılıydı ve satış detayına üçüncü kopyası eklenecekti. Üç kopya, üç
+     * ayrı eskime demek — biri değişip ötekiler kalınca aynı satış iki
+     * ekranda farklı görünür. _(İlke #10: aynı işlem her ekranda aynı görünür.)_
+     *
+     * ⚠ SAAT UYDURULMAZ: elle ve Excel kayıtları güne damgalıdır (UTC 00:00,
+     * K163 sözleşmesi) ve saatleri BİLİNMEZ. Oraya "00:00" basmak, yokluğu
+     * değer gibi gösterirdi — İlke #11'in saat hâli.
+     */
+    tarihSaat(tarih: Date): string {
+      return gunHassasiyetliMi(tarih)
+        ? format.dateTime(tarih, "kisa")
+        : `${format.dateTime(tarih, "kisa")} · ${format.dateTime(tarih, "saat")}`;
     },
 
     /** Ağustos 2026 — ay filtresi ve dönem başlığı. */

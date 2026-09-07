@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { gunHassasiyetliMi } from "../src/lib/donem";
-import { onayaUygunMu } from "../src/lib/onay-kuyrugu";
+import { onayaUygunMu, onayDurumuAnahtari } from "../src/lib/onay-kuyrugu";
 import { hbAni, hbKomisyonOrani } from "./canli-hb-ice-aktar";
 import { n11Ani, n11BirimFiyat, n11KomisyonOrani } from "./canli-n11-ice-aktar";
 
@@ -1737,15 +1737,32 @@ kontrol(
   const listeK163 = yorumsuz(
     readFileSync("src/app/satislar/page.tsx", "utf8"),
   );
-  const saatAdet = listeK163.split("bicim.saat(satis.soldAt)").length - 1;
-  const ayrimAdet = listeK163.split("gunHassasiyetliMi(satis.soldAt)").length - 1;
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ, KOD DEĞİL — TAZELENDİ 07.09.2026.
+   * Ternary listede İKİ yerde kopyalanmıştı ve satış DETAYINA üçüncü kopyası
+   * eklenecekti. Üç kopya = üç ayrı eskime; biri değişip ötekiler kalınca
+   * aynı satış iki ekranda farklı görünürdü. Davranış ortak gövdeye taşındı
+   * (`bicim.tarihSaat`) — ölçüt de oraya bağlandı.
+   * ⭐ ÖLÇÜT GEVŞEMEDİ, YER DEĞİŞTİRDİ: "iki görünüm de basıyor mu" hâlâ
+   * sayılıyor; "yalnız saat biliniyorsa" kapısı ise artık TEK yerde ve
+   * `gunHassasiyetliMi` orada aranıyor.
+   * _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez" — eskiyen
+   * ölçüt güncellenir, susturulmaz.)_
+   */
+  const ortakAdet = listeK163.split("bicim.tarihSaat(satis.soldAt)").length - 1;
   kontrol(
-    "liste İKİ görünümde de saati basıyor (tablo + kart, İlke #10)",
-    saatAdet === 2,
+    "liste İKİ görünümde de ORTAK gövdeyi çağırıyor (tablo + kart, İlke #10)",
+    ortakAdet === 2,
   );
   kontrol(
-    "  ...ve İKİSİNDE de yalnız saat BİLİNİYORSA (İlke #11 kapısı)",
-    ayrimAdet === 2,
+    "  ...ve listede ARTIK elle kurulmuş kopya YOK",
+    !listeK163.includes("gunHassasiyetliMi(satis.soldAt)"),
+  );
+  const bicimK = yorumsuz(readFileSync("src/lib/bicim-ortak.ts", "utf8"));
+  const govde = bicimK.slice(bicimK.indexOf("tarihSaat(tarih: Date)"));
+  kontrol(
+    "  ...kapı ORTAK gövdede: saat yalnız BİLİNİYORSA (İlke #11)",
+    /gunHassasiyetliMi\(tarih\)/.test(govde.slice(0, 400)),
   );
 }
 
@@ -2098,6 +2115,62 @@ kontrol(
   kontrol(
     "otomatik onay kâr tazelemeyi çağırıyor (aynı istemci)",
     /await satisKarTazele\(b\.id, prismaTam\)/.test(kuyruk),
+  );
+}
+
+/**
+ * ONAY DURUMU ETİKETİ — SAF GÖVDE, DEĞER TESTİ (K164, 07.09.2026)
+ * ----------------------------------------------------------------------
+ * ⛔ NİYE: satış detayına onay durumu eklenirken ölçüt ELDE kurulmuştu
+ * (`importKaynak != null && onaylandiAt == null` → "onay bekliyor") ve ölçüm
+ * çürüttü: **7608 satışa** "onay bekliyor" dedirtiyordu. Kuyruğun gerçek
+ * ölçütü çok daha dar (kargolanmamış · stok bağı yok · saatli). Ekran ile
+ * kuyruk ayrışsaydı panelin en temel sözü çiğnenirdi: **sayı = liste**.
+ *
+ * ⭐ Eşleme artık `onayDurumuAnahtari` SAF GÖVDESİNDE ve burada DEĞERLE
+ * sınanıyor — desen taranmıyor.
+ */
+console.log("\nONAY DURUMU ETİKETİ");
+{
+  const temelD = {
+    importKaynak: "ty" as string | null,
+    shippedAt: null as Date | null,
+    iptalTarihi: null as Date | null,
+    soldAt: new Date("2026-09-06T22:19:00.000Z"),
+    onaylandiAt: null as Date | null,
+    saleOutSayisi: 0,
+  };
+  const a = (y: Partial<typeof temelD>, onay: Date | null = null) =>
+    onayDurumuAnahtari(onayaUygunMu({ ...temelD, ...y }), onay);
+
+  kontrol("kuyruktaki satış → onay bekliyor", a({}) === "onayDurumuBekliyor");
+  kontrol("elle girilen → onay gerekmez", a({ importKaynak: null }) === "onayDurumuElle");
+  kontrol("kargolanmış → akış dışında", a({ shippedAt: new Date() }) === "onayDurumuKargolandi");
+  kontrol("iptalli → iptal edildi", a({ iptalTarihi: new Date() }) === "onayDurumuIptalli");
+  kontrol(
+    "gün damgalı (tarihsel) → akış kurulmadan önce",
+    a({ soldAt: new Date("2026-08-18T00:00:00.000Z") }) === "onayDurumuTarihsel",
+  );
+  /** ⚠ ZATEN_ONAYLI İKİ YOLDAN GELİR ve ikisi AYNI CÜMLE DEĞİLDİR. */
+  const izAn = new Date("2026-09-07T01:56:00Z");
+  kontrol(
+    "onay İZİ varsa → Onaylandı (tarihli)",
+    a({ onaylandiAt: izAn }, izAn) === "onayDurumuOnaylandi",
+  );
+  kontrol(
+    "izi YOK ama stok bağı VAR → stoktan düşülmüş",
+    a({ saleOutSayisi: 2 }) === "onayDurumuStokDusuldu",
+  );
+
+  /** Tanımlamak çizmek değildir — ekran gövdeyi ÇAĞIRIYOR mu. */
+  const detay = readFileSync("src/app/satislar/[id]/page.tsx", "utf8");
+  kontrol(
+    "detay ekranı saf gövdeyi ÇAĞIRIYOR",
+    detay.includes("onayDurumuAnahtari(onayDurumu, satis.onaylandiAt)"),
+  );
+  kontrol(
+    "detay ekranı sipariş SAATİNİ ortak gövdeden basıyor",
+    detay.includes("deger: bicim.tarihSaat(satis.soldAt)"),
   );
 }
 

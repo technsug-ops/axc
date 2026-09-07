@@ -105,6 +105,32 @@ export function onayaUygunMu(satis: {
 }
 
 /**
+ * ONAY DURUMUNUN SÖZLÜK ANAHTARI — ekranın basacağı cümle (K164, 07.09.2026).
+ *
+ * ⛔ SAF GÖVDE: eşleme ekranda JSX içinde dursaydı değerle sınanamaz, ancak
+ * desen taranarak ölçülebilirdi — ve bu deponun en sık yalancı yeşili odur.
+ * _(Anayasa: "saf hesap katmanı, desen tarayan bekçiye muhtaç olmaz".)_
+ *
+ * ⚠ HER SEBEBİN KENDİ CÜMLESİ VAR. "Onay akışı dışında" ile "onay bekliyor"
+ * farklı şeylerdir; tek etikete sıkıştırmak olmayan bir iş üretirdi. Ölçüldü
+ * (canlı 07.09): ZATEN_ONAYLI 7551 · ICE_AKTARMA_DEGIL 261 · KARGOLANMIS 52 ·
+ * IPTALLI 33 · ONAY BEKLIYOR **0**. Elde kurulmuş bir ölçüt bunların
+ * **7608'ine** "onay bekliyor" dedirtiyordu — kuyrukla ayrışırdı.
+ */
+export function onayDurumuAnahtari(
+  durum: ReturnType<typeof onayaUygunMu>,
+  onaylandiAt: Date | null,
+): string {
+  if (durum.uygun) return "onayDurumuBekliyor";
+  if (durum.sebep === "ICE_AKTARMA_DEGIL") return "onayDurumuElle";
+  if (durum.sebep === "KARGOLANMIS") return "onayDurumuKargolandi";
+  if (durum.sebep === "IPTALLI") return "onayDurumuIptalli";
+  if (durum.sebep === "TARIHSEL") return "onayDurumuTarihsel";
+  /** ZATEN_ONAYLI iki ayrı yoldan gelir: onay İZİ ya da stok bağı. */
+  return onaylandiAt !== null ? "onayDurumuOnaylandi" : "onayDurumuStokDusuldu";
+}
+
+/**
  * ============================================================================
  *  OTOMATİK ONAY — TEK PARTİLİ SİPARİŞTE ONAYA GEREK YOK (K168)
  * ----------------------------------------------------------------------------

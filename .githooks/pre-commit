@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# ============================================================================
+#  COMMIT KAPISI — BEKÇİ TURU KOŞARKEN COMMIT ATILMAZ
+# ----------------------------------------------------------------------------
+#  NİYE VAR: aynı desen ÜÇ KEZ yaşandı (K149 · 03.09.2026 · K173/06.09.2026).
+#  Bekçi turu koşarken mutasyon harness'leri kaynak dosyaları CANLI olarak
+#  bozup geri yazıyor. O sırada atılan `git add -A`, havada duran bir
+#  mutasyonu commit'e alıyor; harness dosyayı SONRADAN geri yazdığı için tur
+#  TEMİZ ağaca karşı koşuyor ve yeşil yanıyor. Bozuk commit canlıya gidiyor.
+#
+#  06.09'daki son vakada `panel/gorev-verisi.ts`e sızan kalıntı, panelin
+#  "dönem alımı" rakamını MAL KABUL yerine SİPARİŞ gününden saydırdı ve
+#  hiçbir tur görmedi.
+#
+#  ⭐ KAPI PUSH'TA ZATEN VARDI (`pre-push` ayrışmayı yakalıyor) AMA O NOKTADA
+#  COMMIT ÇOKTAN ATILMIŞ OLUYOR. Koruma bir adım erkene alındı.
+#
+#  ⚠ ÖLÇÜT BURADA YAZILMAZ: "tur koşuyor mu" sorusunun tek gövdesi
+#  `scripts/bekci-kilit.ts`. Bu kapı onu ÇAĞIRIR — kabukta ikinci bir kilit
+#  ölçütü yazsaydık biri canlı sayarken öteki bayat sayardı.
+#
+#  ⚠ DÜRÜSTLÜK NOTU: `git commit --no-verify` bu kapıyı atlar ve git'ten
+#  kaldırılamaz. Koruma "mekanik olarak imkânsız" değil, KAZAYLA imkânsız.
+#
+#  Kurulum `package.json` → `prepare` ile (core.hooksPath .githooks).
+# ============================================================================
+
+npx tsx scripts/kilit-kapisi.ts || exit 1
