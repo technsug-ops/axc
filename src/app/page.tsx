@@ -394,12 +394,34 @@ export default async function AnaSayfa({
         },
       },
     }),
-    // İADELER AYRI SORGU, KENDİ TARİHİYLE SÜZÜLÜR: penceredeki bir iade
-    // pencere DIŞINDAKİ bir satışa bağlı olabilir (geçen yılın malı bu ay
-    // iade edilir). Kanalını satış listesinden aramak yerine ilişkiden
-    // okuyoruz — aksi hâlde o iade sessizce düşerdi.
+    /* İADELER AYRI SORGU — VE PENCERE **SATIŞIN** TARİHİNDEN (K185-③).
+     *
+     * ⛔ ESKİ HÂL: `where: { occurredAt: … }` — iadenin KENDİ tarihi. GEREKÇE
+     * SİLİNMEDİ, ÇÜRÜDÜ: eski yorum _"penceredeki bir iade pencere DIŞINDAKİ
+     * bir satışa bağlı olabilir"_ diyordu ve kanalı ilişkiden okuyarak bunu
+     * çözüyordu. Doğruydu ama YANLIŞ SORUYU çözüyordu: iade hangi kanala
+     * ait değil, **hangi AYA ait** sorusu.
+     *
+     * ⭐ HALİL KURALI (07.09.2026): _"iadeyi bugünkü cirodan kesmeye gerek
+     * yok, siparişin olduğu günün sorunu hepsi — sistem zaten oradan kesiyor.
+     * Sipariş vadede, iade başlatılınca ödemesi donduruluyor, onaylanınca
+     * direkt o siparişten kesiliyor."_ Kanal da öyle davranıyor.
+     *
+     * ⛔ VE PENCERE ATIFLA BİRLİKTE DEĞİŞMEK ZORUNDA. Yalnız atıf çevrilseydi
+     * Eylül'de dönen Ağustos malı Eylül penceresiyle ÇEKİLİR ama Ağustos
+     * kovasına yazılırdı → ekranda hiçbir aya düşmez, **sessizce kaybolurdu.**
+     * _(Anayasa: "kontrol tasarımı, veri kapsamı doğrulanmadan fark üretmez".)_
+     *
+     * 📏 ÖLÇÜLDÜ (223 iade): 71'i (%31,8) ay değiştiriyor · satış→iade
+     * ortanca 8,5 gün · p90 18,5 · max 57,5. `Return.saleId` NULLABLE DEĞİL,
+     * yani atıfsız iade doğamaz — yedek dala gerek yok (ölçüm: bağsız 0).
+     *
+     * ⚠ MUHASEBE DÖNEMİ RAPORU BU KURALA UYMAZ, BİLEREK: `donem-raporu.ts`
+     * iadeyi OLAY tarihinde tutar, çünkü KDV düzeltmesi iadenin gerçekleştiği
+     * dönemde yapılır. İki atıf gerekçeli ayrışır ve fark EKRANDA yazar.
+     */
     prisma.return.findMany({
-      where: { occurredAt: { gte: veriBaslangic, lt: veriBitisHaric } },
+      where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } } },
       select: {
         occurredAt: true,
         net1Amount: true,
@@ -416,6 +438,8 @@ export default async function AnaSayfa({
         fees: { select: { code: true, amount: true } },
         sale: {
           select: {
+            /** ⛔ ATIF TARİHİ — iade satışın ayına yazılır (K185-③). */
+            soldAt: true,
             channelAccount: {
               select: {
                 id: true,
@@ -639,7 +663,13 @@ export default async function AnaSayfa({
     kanalAdi: iade.sale.channelAccount.channel.name,
     hesapId: iade.sale.channelAccount.id,
     hesapAdi: iade.sale.channelAccount.name,
-    tarih: iade.occurredAt,
+    /**
+     * ⛔ ATIF SATIŞIN GÜNÜNE — iadenin kendi gününe DEĞİL (K185-③).
+     * İadenin kendi tarihi kaybolmuyor: `/iadeler` listesi onu gösteriyor,
+     * çünkü orada sorulan şey "bu iade ne zaman oldu"dur. Burada sorulan
+     * ise "bu iade hangi ayın cirosunu düşürür" — ve cevabı satışın ayıdır.
+     */
+    tarih: iade.sale.soldAt,
     // Rapor ekranıyla aynı kural: iadenin para birimi kâr snapshot'ından.
     paraBirimi: iade.profitCurrency ?? "TRY",
     net1: iade.net1Amount === null ? null : Number(iade.net1Amount.toString()),

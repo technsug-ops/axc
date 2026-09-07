@@ -5674,6 +5674,79 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   );
 }
 
+/* ═══ K185-③ — İADE ATFI: SATIŞIN AYI (07.09.2026) ══════════════════════
+ *
+ * ⛔ Halil kuralı: _"iadeyi bugünkü cirodan kesmeye gerek yok, siparişin
+ * olduğu günün sorunu hepsi."_ Kanal da öyle davranıyor — sipariş vadedeyken
+ * iade başlarsa ödemesi donduruluyor, onaylanınca o siparişten kesiliyor.
+ * 📏 223 iadenin 71'i (%31,8) ay değiştirdi.
+ */
+{
+  const yorumsuz3 = (m: string) =>
+    m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  const panel3 = yorumsuz3(readFileSync("src/app/page.tsx", "utf8"));
+  const rapor3 = yorumsuz3(readFileSync("src/app/rapor/page.tsx", "utf8"));
+  const donem3 = yorumsuz3(readFileSync("src/lib/donem-raporu.ts", "utf8"));
+
+  kontrol(
+    "panel: iade ATFI satışın gününden",
+    panel3.includes("tarih: iade.sale.soldAt"),
+  );
+  /**
+   * ⛔ PENCERE ATIFLA BİRLİKTE — YOKSA İADE SESSİZCE KAYBOLUR. Eylül'de
+   * dönen Ağustos malı Eylül penceresiyle çekilir, Ağustos kovasına yazılır
+   * ve görüntülenen hiçbir aya düşmez.
+   */
+  kontrol(
+    "panel: iade PENCERESİ de satışın gününden",
+    panel3.includes("where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } } }"),
+  );
+  kontrol(
+    "panel: iade sorgusunda ÇIPLAK occurredAt penceresi YOK",
+    !/return\.findMany\(\{[\s\S]{0,200}where: \{ occurredAt:/.test(panel3),
+  );
+  kontrol("rapor: iade ATFI satışın gününden", rapor3.includes("tarih: iade.sale.soldAt"));
+  kontrol(
+    "rapor: iade PENCERESİ de satışın gününden",
+    rapor3.includes('where: { sale: ikiAralik("soldAt") }'),
+  );
+  kontrol(
+    "rapor: eski `ikiAralik(\"occurredAt\")` iade penceresi YOK",
+    !/return\.findMany\(\{[\s\S]{0,120}ikiAralik\("occurredAt"\)/.test(rapor3),
+  );
+
+  /**
+   * ⛔ VE KURAL MUHASEBE SAYFASINA YAYILAMAZ — "İLKE KENDİ KAPSAMININ DIŞINA
+   * UYGULANIRSA HATAYI KORUR" kuralının tersi: burada doğru ilkeyi yanlış
+   * yere taşımak KDV dönemini bozardı. Dönem raporu iadeyi OLAY tarihinde
+   * sayar ve öyle KALMALI.
+   */
+  kontrol(
+    "muhasebe dönem raporu iadeyi OLAY tarihinde sayıyor (bilerek ayrı)",
+    donem3.includes("where: { return: { occurredAt: { gte: bas, lt: bit } } }"),
+  );
+  kontrol(
+    "  ...ve satışın gününe ÇEVRİLMEMİŞ",
+    !/returnItem\.findMany\(\{[\s\S]{0,160}sale: \{ soldAt:/.test(donem3),
+  );
+
+  /** ⛔ FARK EKRANDA SÖYLENİR (İlke #10) — iki atıf sessizce ayrışmaz. */
+  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Panel?: Record<string, string>;
+  };
+  const not = sozluk.Panel?.iadeOraniNotu ?? "";
+  kontrol("ekran: iadenin SATIŞIN ayına yazıldığını söylüyor", not.includes("SATIŞIN ayına"));
+  kontrol(
+    "ekran: muhasebe dönemi ayrışmasını da söylüyor",
+    not.includes("Muhasebe dönemi raporu"),
+  );
+  /** ⛔ ESKİ ŞERH KALKMALI: artık doğru değil, kalırsa ekran yalan söyler. */
+  kontrol(
+    "ekran: eski \"%100'ü aşabilir\" şerhi KALDIRILDI",
+    !not.includes("%100'ü aşabilir"),
+  );
+}
+
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) {
 

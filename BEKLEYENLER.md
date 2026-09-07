@@ -58,7 +58,7 @@ alfabetik sıralanıyordu ve K182'nin iade/ısı tabloları öyle diziliyordu
 Sıralama iki basamaklı: önce sabit sıra, sonra ad.
 _(Anayasa: "kararın kapsamı, uygulandığı yerle sınırlı sayılmaz".)_
 
-### ─── ③ İADE ATFI — AÇIK, ÖLÇÜLDÜ, KOD YAZILMADI
+### ─── ③ İADE ATFI — SATIŞIN AYINA GEÇTİ · [KOD KOŞTU]
 
 > **Halil:** _"İadeyi bugün gerçekleşen cirodan kesmesine gerek yok, siparişin
 > olduğu günün sorunu hepsi; kârını da oradan kesmeli — sistem zaten oradan
@@ -77,10 +77,61 @@ bunun itirafı. Aynı kohorta çekilirse şerh gereksizleşir.
       AYNI ayda           152   ·  FARKLI ayda  71  (%31,8 ← ay değiştirir)
       satış→iade gün: ortanca 8,5 · p75 12,5 · p90 18,5 · max 57,5
 
-⏭ **YAZIM AÇILMADI — KAPSAM ÖNCE ÖLÇÜLECEK:** iade tarihini okuyan HER yer
-bulunmalı (panel serisi · kanal dağılımı · nakit takvimi · rapor · dışa
-aktarma). Bir yerde düzeltip bırakmak, K60'ın altı okuyuculu vakasının
-tekrarı olur.
+**KAPSAM ÖLÇÜLDÜ VE DAR ÇIKTI — 4 satır:**
+
+| Ne | Nerede | Önce | Sonra |
+|---|---|---|---|
+| Atıf | `page.tsx` · `rapor/page.tsx` | `iade.occurredAt` | `iade.sale.soldAt` |
+| Pencere | `page.tsx` · `rapor/page.tsx` | `where: { occurredAt: … }` | `where: { sale: { soldAt: … } }` |
+
+⛔ **PENCERE ATIFLA BİRLİKTE DEĞİŞTİ — VE ASIL TUZAK BURADAYDI.** Yalnız atıf
+çevrilseydi Eylül'de dönen Ağustos malı Eylül penceresiyle ÇEKİLİR ama Ağustos
+kovasına yazılırdı: görüntülenen hiçbir aya düşmez, **sessizce kaybolurdu.**
+Mutasyon ② tam bunu sınıyor.
+
+⭐ **TÜKETİCİLER DEĞİŞMEDİ:** `panel.ts:471 · 741 · 743` zaten `iade.tarih`i
+okuyor — atıf tek yerden geldiği için üçü kendiliğinden doğruya döndü. K60'ın
+altı okuyuculu vakası burada tekrarlamadı.
+⚠ `/iadeler` listesindeki tarih sütunu **değişmedi**: orada sorulan şey "bu
+iade ne zaman oldu", atıf değil.
+
+### ② MUHASEBE TARAFI AYRIŞIYOR — ÖLÇÜLDÜ, BİLEREK BÖYLE
+
+    donem-raporu.ts:95    satışlar → soldAt
+    donem-raporu.ts:114   iadeler  → return.occurredAt     ← OLAY tarihi, KALDI
+
+⛔ **KDV DÜZELTMESİ İADENİN GERÇEKLEŞTİĞİ DÖNEMDE BEYAN EDİLİR.** Satışın ayına
+yazmak, kapanmış bir KDV dönemini geriye dönük değiştirmek olurdu. İki atıf bir
+tutarsızlık değil, **iki farklı sorunun iki doğru cevabı** — ve hangi ekranın
+hangi soruyu sorduğu koda yazıldı, yoksa biri ötekine "düzeltilir".
+⚠ **VE FARK EKRANDA SÖYLENİYOR** (İlke #10): iade oranı notu artık hem atıf
+kuralını hem muhasebe ayrışmasını yazıyor; eski _"oran %100'ü aşabilir"_ şerhi
+KALDIRILDI — o cümle artık doğru değil ve kalsaydı ekran yalan söylerdi.
+
+⭐ **PANO CÜMLESİ (Halil):** _"aylık NET geç iadeyle geriye dönük değişir —
+atıf kuralı, kusur değil."_ Bu ekranda da yazıyor.
+
+### ③ KAPALI DÖNEM VE K108 KİLİDİ — ÖLÇÜLDÜ
+
+    kapalı döneme düşen satışın GEÇ iadesi:  0   ← ARANAN SAYI
+
+⚠ **AMA SIFIRIN SEBEBİ ÖNEMLİ:** `MuhasebeDonemi` tablosunda **hiç kayıt yok**
+(toplam 0), dolayısıyla kapalı dönem de yok. Bu _"geç iade yok"_ değil,
+**"soru henüz doğmamış"** demek. İlk dönem kapatıldığında yeniden ölçülür.
+_(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+değildir".)_
+
+⭐ **K108 KİLİDİ GÖRÜNTÜLEMEYİ ETKİLEMİYOR:** `donemKorumasi` bir **yazma
+kapısı** — çağıranları mal kabul, stok düzeltme ve iade eylemleri; `DURAKSA`
+döndürüp kullanıcıya soruyor. Panel ve rapor onu hiç okumuyor.
+
+    panel:dogrula   698/698
+    MUTASYON          8/8   iki yönlü
+
+⭐ **EN DEĞERLİ MUTASYON ⑤:** kuralı muhasebe dönem raporuna da uygulayan
+senaryo **kırmızı yandı**. Doğru bir ilkeyi ait olmadığı yere taşımak, orada
+koruduğu şeyi bozar. _(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa
+hatayı korur".)_
 
 ---
 

@@ -2162,7 +2162,7 @@
     "devredenKdv": "Devreden KDV: {tutar} (gelecek döneme mahsup)",
     "devredenKdvKisa": "devreden KDV {tutar}",
     "grafikSekmeIade": "İade oranı",
-    "iadeOraniNotu": "İade oranı KANAL KANAL ve toplam. ⚠ Oranlar TOPLANMAZ: toplam satırı, ayların ve kanalların payını ve paydasını toplayıp yeniden bölüyor — yani ağırlık hacimden geliyor, 9 satışlık kanal 3.687 satışlık kanal kadar konuşmuyor. Hiç satışı olmayan ay \"·\" gösterir: oran SIFIR değil, hesaplanamaz. ⚠ Oran %100'ü aşabilir ve bu kusur değildir — iade, satışından sonraki bir ayda kaydedilir; geçen ayın malı bu ay dönerse o ayın oranı yüzü geçer.",
+    "iadeOraniNotu": "İade oranı KANAL KANAL ve toplam. ⚠ Oranlar TOPLANMAZ: toplam satırı, ayların ve kanalların payını ve paydasını toplayıp yeniden bölüyor — yani ağırlık hacimden geliyor, 9 satışlık kanal 3.687 satışlık kanal kadar konuşmuyor. Hiç satışı olmayan ay \"·\" gösterir: oran SIFIR değil, hesaplanamaz. ⚠ İade, SATIŞIN ayına yazılır — iade edildiği aya değil. Kanal da öyle yapıyor: sipariş vadedeyken iade başlarsa ödemesi donduruluyor ve onaylanınca o siparişten kesiliyor. Bu yüzden geçmiş bir ayın NET rakamı, o aya ait geç bir iadeyle geriye dönük değişebilir — bu atıf kuralıdır, kusur değil. ⚠ Muhasebe dönemi raporu bundan AYRIŞIR ve bilerek: orada iade, gerçekleştiği dönemde sayılır, çünkü KDV düzeltmesi o dönemde beyan edilir.",
     "iadeOraniAdet": "Adet bazlı — kaç üründen kaçı geri döndü",
     "iadeOraniTutar": "Tutar bazlı — cironun ne kadarı geri döndü",
     "grafikSekmeKarsilastirma": "Karşılaştırma",

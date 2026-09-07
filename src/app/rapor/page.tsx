@@ -227,13 +227,26 @@ export default async function RaporSayfasi({
           },
         },
       }),
+      /**
+       * ⛔ İADE PENCERESİ **SATIŞIN** TARİHİNDEN (K185-③) — panelle AYNI kural.
+       * Eskiden `ikiAralik("occurredAt")` idi, yani iadenin kendi günü.
+       * Atıf satışın gününe çevrildiği için pencere de çevrilmek ZORUNDA:
+       * yoksa iade çekilir ama görüntülenen aylardan hiçbirine düşmez ve
+       * sessizce kaybolur. `ikiAralik` üst düzey alan için kurulduğundan
+       * ilişkinin altına sarılıyor — `{ sale: { OR: [...] } }`.
+       *
+       * ⚠ MUHASEBE DÖNEMİ RAPORU (`lib/donem-raporu.ts`) BU KURALA UYMAZ ve
+       * uymayacak: KDV düzeltmesi iadenin GERÇEKLEŞTİĞİ dönemde yapılır.
+       * İki atıf gerekçeli ayrışır; fark ekranda yazılı.
+       */
       prisma.return.findMany({
-        where: ikiAralik("occurredAt"),
+        where: { sale: ikiAralik("soldAt") },
         select: {
           id: true,
           saleId: true,
           code: true,
           occurredAt: true,
+          sale: { select: { soldAt: true } },
           net1Amount: true,
           net2Amount: true,
           profitCurrency: true,
@@ -304,7 +317,8 @@ export default async function RaporSayfasi({
     id: iade.id,
     satisId: iade.saleId,
     kod: iade.code,
-    tarih: iade.occurredAt,
+    /** ⛔ ATIF SATIŞIN GÜNÜNE (K185-③) — iadenin kendi günü `/iadeler`de. */
+    tarih: iade.sale.soldAt,
     net1: sayi(iade.net1Amount),
     net2: sayi(iade.net2Amount),
     paraBirimi: iade.profitCurrency ?? "TRY",

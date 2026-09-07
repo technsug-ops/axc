@@ -110,6 +110,21 @@ export async function donemRaporu(
      * CEZA; "iade tutarı" dendiğinde muhasebecinin sorduğu şey geri dönen
      * CİRODUR. Onu uydurmak yerine satılan kalemin fiyatından okuyoruz.
      */
+    /**
+     * ⛔ İADE **OLAY** TARİHİNDE KALIR — PANELDEN BİLEREK AYRIŞIR (K185-③).
+     *
+     * 07.09.2026'da panel ve rapor iadeyi SATIŞIN ayına atfetmeye geçti
+     * (Halil kuralı: kanal ödemeyi o siparişten kesiyor). **Bu sayfa
+     * geçmedi ve geçmeyecek:** KDV düzeltmesi iadenin GERÇEKLEŞTİĞİ
+     * dönemde beyan edilir; satışın ayına yazmak, kapanmış bir KDV
+     * dönemini geriye dönük değiştirmek olurdu.
+     *
+     * ⚠ İKİ ATIF BİR TUTARSIZLIK DEĞİL, İKİ FARKLI SORUNUN İKİ DOĞRU
+     * CEVABIDIR — ve hangi ekranın hangi soruyu sorduğu KODDA YAZILI olmak
+     * zorunda, yoksa biri ötekine "düzeltilir".
+     * _(Anayasa: "aynı veri, farklı soruya farklı pencereden bakar".)_
+     * ⚠ VE FARK EKRANDA DA SÖYLENİR (İlke #10) — panel notunda yazıyor.
+     */
     prisma.returnItem.findMany({
       where: { return: { occurredAt: { gte: bas, lt: bit } } },
       select: {

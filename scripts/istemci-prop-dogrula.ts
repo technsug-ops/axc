@@ -6,6 +6,12 @@ import { readFileSync, readdirSync } from "node:fs";
  * ----------------------------------------------------------------------------
  *      npm run istemci-prop:dogrula
  *
+ *  ⚠ KARDEŞİ VAR, AYNISI DEĞİL: `istemci-siniri:dogrula` sınırın ÖTEKİ
+ *  yönünü ölçüyor — istemcinin SUNUCUYA uzanması (sunucu modülü importu ·
+ *  `next/headers` · istemcide `metadata`). Bu bekçi ters yönü ölçer:
+ *  **sunucunun istemciye ne GEÇİRDİĞİNİ.** Aynı sınır, farklı soru; bu
+ *  yüzden iki gövde — "aynı soruya iki cevap" yasağı buraya işlemez.
+ *
  *  ⛔ NİYE DOĞDU — CANLI ARIZA. Panelin karşılaştırma sekmesi 500 verdi
  *  ("Bu ekran çizilemedi"). Sebep: `karsilastirma-grafigi.tsx` `"use client"`
  *  ve sunucu ona seri başına İKİ FONKSİYON geçiyordu (`bicimle`,
