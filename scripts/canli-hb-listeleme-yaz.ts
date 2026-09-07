@@ -73,10 +73,20 @@ async function main() {
       id: true,
       name: true,
       externalId: true,
+      apiHesapKimligi: true,
       _count: { select: { channelSkus: true } },
     },
   });
-  const kimlikleEslesen = hesaplar.find((h) => h.externalId === k.merchantId);
+  /**
+   * ⛔ HESAP `apiHesapKimligi`DEN BULUNUR, `externalId`DEN DEĞİL (K184).
+   * `externalId` HB'de raporlardaki satıcı numarasını (`7000222505`)
+   * taşıyor ve dört içe aktarma onu okuyor; API'nin Mağaza ID'si AYRI bir
+   * kimlik ve ayrı alanda duruyor. İkisini tek alana sıkıştırmak, birini
+   * ötekinin üstüne yazmak demekti.
+   */
+  const kimlikleEslesen = hesaplar.find(
+    (h) => h.apiHesapKimligi === k.merchantId,
+  );
   const kanalSkusuOlan = hesaplar.filter((h) => h._count.channelSkus > 0);
 
   console.log("\n① HESAP");
@@ -84,6 +94,9 @@ async function main() {
   console.log(
     `   API kimliğiyle (Mağaza ID) eşleşen: ${kimlikleEslesen ? kimlikleEslesen.name : "⛔ YOK"}`,
   );
+  if (kimlikleEslesen === undefined) {
+    console.log("   ⚠ Hesap çözülemedi — aşağıdaki sayım KANAL GENELİDİR.");
+  }
 
   /* ═══ ② LİSTİNGLER ════════════════════════════════════════════════ */
   const cekim = await tumKayitlar((o, l) => UCLAR.listingler(k, o, l), baslikKur(k), 100);
@@ -136,8 +149,18 @@ async function main() {
   console.log(`   benzersiz anahtar: ${kanal.size}`);
 
   /* ═══ ④ DEFTERLE EŞLEŞME ══════════════════════════════════════════ */
+  /**
+   * ⚠ KAPSAM HESABA BAĞLI — kanal adına DEĞİL. Beş HB hesabı var; kanal
+   * geneline bakmak, yarın ikinci hesap SKU kazandığında iki hesabın
+   * kayıtlarını tek listede karıştırırdı.
+   * ⛔ Hesap çözülemediyse kapsam BOŞ kalır ve aşağıdaki rapor bunu söyler —
+   * sessizce "defterde kayıt yok" demez.
+   */
   const satirlar = await prisma.channelSku.findMany({
-    where: { channelAccount: { channel: { name: "Hepsiburada" } } },
+    where:
+      kimlikleEslesen === undefined
+        ? { channelAccount: { channel: { name: "Hepsiburada" } } }
+        : { channelAccountId: kimlikleEslesen.id },
     select: {
       id: true,
       channelSku: true,

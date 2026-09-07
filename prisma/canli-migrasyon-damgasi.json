@@ -48,6 +48,7 @@
     "20260901090000_kanal_listeleme_durumu",
     "20260904120353_siparis_onayi_izi",
     "20260905142850_purchaseitem_promosyon",
-    "20260907084108_satis_kalemi_kaldirma"
+    "20260907084108_satis_kalemi_kaldirma",
+    "20260907134238_kanal_api_hesap_kimligi"
   ]
 }

@@ -128,7 +128,39 @@ sayılmaz, listede de yok. Değişmedi, K181 kapsamında değil.
 
 ---
 
-## 🔶 K184 — HEPSİBURADA CANLI + LİSTİNG → K121 BORUSU · 07.09.2026 · [KURU KOŞTU · yazım kapısı KAPALI]
+## ✅ K184 — HEPSİBURADA CANLI + LİSTİNG → K121 BORUSU · 07.09.2026 · [KOŞTU — canlıda yazıldı]
+
+### ⓪ KAPANIŞ — MİGRATION KOŞTU, BAĞ KURULDU, DEFTER YAZILDI
+
+⭐ **Halil onayı 07.09:** ikinci kimlik alanı açıldı.
+
+    migration  20260907134238_kanal_api_hesap_kimligi
+               ChannelAccount.apiHesapKimligi VARCHAR(191) NULL + @@index
+               CANLI ✓  ·  YEREL ✓  ·  damga güncellendi (48 migration)
+
+⚠ **PRISMA YİNE KÜÇÜK HARF YAZDI** (`channelaccount`) — düzeltildi
+(`ChannelAccount`), Linux'ta düşerdi. `migration:kontrol` yeşil.
+⭐ **VE MIGRATION ADININ DIŞINA ÇIKMADI:** tek sütun + tek dizin, yabancı
+ifade yok.
+
+    bağ        AXCALI.apiHesapKimligi ← Mağaza ID (36 karakter)
+               externalId 7000222505 DOKUNULMADI ✓
+
+⛔ **HEDEF ADLA DEĞİL ÖLÇÜMLE SEÇİLDİ:** "kanal SKU kaydı olan tek hesap".
+Aday sayısı 1 değilse betik DURUYOR — "en olası olanı seç" diye bir kural yok.
+
+    yazım      1098 satır güncellendi · hata 0
+    defter     800 STOKSUZ · 215 ACIK · 72 PASIF · 11 YOK
+               1098 satırın hepsinde ölçüm damgası
+
+⭐ **66 ÜRÜN: PASIF AMA KANALDA STOĞU VAR** — HB tarafındaki "rafta var,
+vitrinde yok". Panelin arayacağı sayı bu.
+
+⚠ **DEFTER SAYILARI KANAL SAYILARINDAN FARKLI VE BU DOĞRU:** kanalda 2189
+listing var, defter 1098'ini tanıyor. Fark bir kusur değil, KAPSAM — ve
+aşağıda ⑤'te yazılı.
+
+### ─── ② ÖLÇÜM VE KARARLAR (aynı kalemin devamı, yeni satır DEĞİL)
 
 > HB canlı ortamı açıldı; `axcali_dev` entegratörüne servis anahtarı Halil
 > tarafından verildi (portal adımı güvenlik gereği bizde değil).

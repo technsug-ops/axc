@@ -279,6 +279,20 @@ function prismaYazmalari(govde: string): string[] {
  */
 const YAZMASI_BEYANLI: { dosya: string; gerekce: string; bekcisi: string }[] = [
   {
+    dosya: "canli-hb-hesap-bagla.ts",
+    gerekce:
+      "K184 — TEK SEFERLİK BAĞ: `ChannelAccount.apiHesapKimligi` alanını doldurur. " +
+      "HB canlı API'si `externalId`dekinden BAŞKA cins bir kimlik (Mağaza ID) " +
+      "istiyor ve `externalId` EZİLEMEZ (dört içe aktarma onu okuyor). " +
+      "⛔ Kapsam bir alan, bir hesap: hedef ADLA değil ÖLÇÜMLE seçiliyor " +
+      "(kanal SKU kaydı olan tek hesap) ve aday sayısı 1 değilse DURUYOR; " +
+      "dolu bir alanı sessizce ezmiyor; `--uygula` kilidi ve AuditLog izi var. " +
+      "⚠ Kimliğin KENDİSİ ize yazılmaz, yalnız uzunluğu — kimlik bir sırdır. " +
+      "⚠ Yazım gövdesi `src/lib`e taşınmadı: tek seferlik bir bağ için " +
+      "kalıcı bir yazıcı gövdesi açmak, o gövdeyi yarın genel araç yapardı.",
+    bekcisi: "hb-listeleme:dogrula",
+  },
+  {
     dosya: "canli-ty-ice-aktar.ts",
     gerekce:
       "A3-③ onaylı içe aktarma — Sale/SaleItem yazar. Yazım `--yaz` bayrağına kilitli, " +

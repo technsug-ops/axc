@@ -729,6 +729,27 @@ model ChannelAccount {
   name       String // "TR Ana Mağaza"
   externalId String? // pazaryerindeki satıcı/mağaza kimliği
 
+  /// ── API KİMLİĞİ — `externalId`DEN AYRI, VE AYRI OLMASI ZORUNLU (K184) ──
+  ///
+  /// ⛔ NİYE İKİNCİ ALAN: Hepsiburada 07.09.2026'da canlı API'yi açtığında
+  /// **başka cins bir kimlik** verdi. Defterde HB için `7000222505` yazılı
+  /// (raporlarda/hakedişte kullanılan satıcı numarası); yeni API ise 36
+  /// karakterlik bir "Mağaza ID" istiyor. İkisi aynı şeyin iki yazımı DEĞİL,
+  /// iki AYRI kimlik.
+  ///
+  /// ⚠ `externalId` ÜZERİNE YAZILAMAZDI — okuyucular ölçüldü (07.09.2026):
+  /// `canli-ty-ice-aktar` · `canli-hb-ice-aktar` · `canli-n11-ice-aktar` ·
+  /// `lib/kanal-listeleme-yaz` ve ayarlar ekranı. Ezilseydi HB içe aktarması
+  /// ve rapor eşleşmesi SESSİZCE bozulurdu.
+  ///
+  /// ⚠ ADI NİYE `magazaGuid` DEĞİL: "GUID" bir BİÇİMDİR ve biçim değişebilir.
+  /// Alan adı içeriğin NE OLDUĞUNU söyler, nasıl yazıldığını değil.
+  /// _(Anayasa: "kolon başlığı bir iddiadır".)_
+  ///
+  /// Boş = o kanalın API'si ayrı bir kimlik istemiyor (TY ve N11 bugün böyle);
+  /// `externalId` yeterli. Boşluk bir eksiklik değil, BEYANDIR.
+  apiHesapKimligi String?
+
   /// Hesabın çalıştığı para birimi (TR mağazası TRY, DE mağazası EUR).
   defaultCurrency Currency
 
@@ -739,6 +760,7 @@ model ChannelAccount {
   /// Boşsa o hesabın satışları için beklenen tarih ÜRETİLMEZ — tahmin
   /// edilmiş bir tarih göstermektense boş bırakılır.
   /**
+   * /**
    * /**
    * /**
    * /**
@@ -794,6 +816,8 @@ model ChannelAccount {
 
   @@unique([channelId, code])
   @@index([channelId])
+  /// Yazıcılar hesabı BU alandan buluyor — dizin şart.
+  @@index([apiHesapKimligi])
 }
 
 /// Bir varyantın belirli bir kanal hesabındaki karşılığı.
@@ -1356,7 +1380,7 @@ model Sale {
   /// kuyruğu BU ize bakar; SALE_OUT bağı iz OLAMAZDI (üç mekanizma
   /// dolduruyor: elle satış, K55 tarihsel bağ, onay — 04.09.2026'da 7533
   /// tarihsel kayıt kargo kümesine bu yüzden sızdı).
-  onaylandiAt DateTime?
+  onaylandiAt  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1440,8 +1464,8 @@ model SaleItem {
   /// değil KALEMDEN hesaplanıyor.
   ///
   /// Dolu = bu kalem hiç satılmamış sayılır (iptal gibi "hiç doğmamış").
-  kaldirildiAt    DateTime?
-  kaldirmaSebebi  SatisKalemKaldirmaSebebi?
+  kaldirildiAt   DateTime?
+  kaldirmaSebebi SatisKalemKaldirmaSebebi?
 
   stockMovements StockMovement[]
   fees           SaleFee[]
