@@ -4069,6 +4069,7 @@
     "netEtkisi": "Bu kalemin NET-2'si ({tutar}) kümeden çıkacak; satışın NET'i kalan kalemlerden yeniden hesaplanacak.",
     "netHesaplanamadi": "Bu kalemin NET-2'si hesaplanamamış — kârı bilinmiyor (\"?\").",
     "kalanKalem": "Kaldırdıktan sonra satışta {sayi} kalem kalır.",
+    "kagitGirisUyarisi": "⚠ KALDIRDIKTAN SONRA STOĞA BAKIN. Kaldırma, bu satırın malını stoğa GERİ VERİR — satır gerçekten sevk edilmiş bir mal içinse doğrusu budur. Ama mükerrer bir içe aktarma satırında çıkışın arkasındaki giriş de kâğıt kayıt olabilir; o zaman dönecek mal YOKTUR ve stok fazla görünür. Sistem bu ayrımı henüz ÖLÇMÜYOR (K180 kusur kaydı), o yüzden kontrol sizde.",
     "geriAl": "Kaldırmayı geri al",
     "rozet": "kaldırıldı: {sebep}",
     "iz_SATIS_KALEMI_KALDIRMA": "Kalem kaldırıldı",

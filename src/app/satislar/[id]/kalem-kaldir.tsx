@@ -230,6 +230,19 @@ export function KalemKaldir({
           <div className="text-muted-foreground text-xs">
             {t("kalanKalem", { sayi: onizleme.etki.kalanKalemSayisi })}
           </div>
+
+          {/* ⛔ GEÇİCİ FREN (K180 kusur kaydı, 07.09.2026)
+              Kaldırma, çıkışın arkasındaki GİRİŞİN gerçek olup olmadığını
+              ölçmüyor ve koşulsuz stok yazıyor. `10559161422` vakasında
+              mükerrer satırın girişi de hizalama betiğinin kâğıt kaydıydı;
+              kaldırma stoğa hayalet +1 attı ve ayrı bir düzeltme gerekti.
+              Ölçüm (kâğıt-giriş ölçütü) gelene kadar kullanıcı UYARILIR —
+              sessizce yanlış stok yazmaktansa, kontrolü söylemek. */}
+          <p
+            className={`rounded-md p-2 text-xs ${DURUM_KUTUSU.uyari} ${DURUM_YAZISI.uyari}`}
+          >
+            {t("kagitGirisUyarisi")}
+          </p>
         </div>
       ) : null}
 

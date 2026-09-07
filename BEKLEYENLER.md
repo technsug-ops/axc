@@ -128,6 +128,76 @@ sayılmaz, listede de yok. Değişmedi, K181 kapsamında değil.
 
 ---
 
+## 🔶 K180-② — KALDIRMA, GİRİŞİN GERÇEKLİĞİNİ ÖLÇMÜYOR · 07.09.2026 · [KUSUR · AÇIK]
+
+> **Halil:** _"sayım da yoktu, eski siparişlerden, mükerrer girmişim siparişi;
+> şimdi onu düzeltti ama stoğa attı — stok 0 olması lazımken 1 görünüyor."_
+
+### ① CİRO/NET TARAFI DOĞRU ÇALIŞTI — KUSUR STOKTA
+
+`10559161422` kaldırması ölçüldü ve **15 şartın 15'i tuttu**: ciro
+2.078,00 → 1.039,00 · kalem 2 → 1 (öteki DURUYOR, sebep rozetiyle) · NET
+damgası kaldırmadan SONRA tazelendi (11:38:06.491) · başka satış tazelenmedi ·
+başka hareket yazılmadı. ⭐ Bu kısım kapanmıştır.
+
+⛔ **AMA STOK YANLIŞ YAZILDI.** Kaldırma, satırın `SALE_OUT`'unu aynalayıp malı
+stoğa geri veriyor — bu **gerçekten sevk edilmiş** bir satır için doğru. Mükerrer
+satırda çıkışın arkasındaki giriş de kâğıttı; dönecek mal yoktu.
+
+    2025-10-02  PURCHASE_IN      +1  "listeye-hizala-2"    ← KÂĞIT giriş
+    2025-10-02  SALE_OUT         -1  10559161422           ← mükerrer satır
+    2026-08-29  SALE_CANCEL_IN   +1  "mukerrer kalem"      ← ilk nötrleme
+    2026-09-01  COUNT_CORRECTION -1                        ← SAYIM 0 dedi
+    2026-09-07  SALE_CANCEL_IN   +1  ← K180 kaldırması     ⛔ HAYALET +1
+    2026-09-07  ADJUSTMENT       -1  ← düzeltme            ✓ ledger 0 · FIFO 0
+
+⚠ **VE `axcali3134`ün GERÇEK ALIMI HİÇ YOK:** bütün girişleri hizalama
+betiklerinin yazdığı, her biri kendi satışını dengeleyen kâğıt çiftler.
+
+### ② DÜZELTME YAZILDI — ve türü DEĞİŞTİRİLDİ
+
+Halil `COUNT_CORRECTION` demişti; aynı mesajda **"sayım da yoktu"** diyor. O
+türle yazmak defterde OLMAMIŞ bir sayımı iddia etmek olur ve hareket bir
+`StokSayimSatiri`na da bağlanamazdı. `ADJUSTMENT` (manuel düzeltme) yazıldı,
+**gerekçe metni birebir korundu**, sebep kapalı kümeden `"Diğer"` + zorunlu
+açıklama. _(Anayasa: "mimar talimatları da bu süzgeçten geçer".)_
+Sonuç: **ledger 0 · FIFO 0**, ciro/NET'e dokunulmadı.
+
+### ③ GEÇİCİ FREN — ÖNİZLEMEDE UYARI
+
+Ölçüt gelene kadar kaldırma önizlemesi kullanıcıya **stoğu kontrol etmesini**
+söylüyor (`kagitGirisUyarisi`, sözlükten). Sessizce yanlış stok yazmaktansa
+kontrolü söylemek. ⛔ Bu bir çözüm DEĞİL, frendir.
+
+### ④ ÖLÇÜM KOŞTU — VE İKİ ADAY ÖLÇÜTÜ BİRDEN ELEDİ
+
+📏 `canli:kagit-giris-olcum` (07.09, salt okuma) — kaldırılabilir 7781 kalem,
+7786 çıkış, **hepsi parti bağlı** (bağsız 0):
+
+    DOSYA_MALIYET    4348  %55,8   ← 4348'ünün de PurchaseItem'i YOK
+    GERCEK_ALIM      3371  %43,3
+    NOTSUZ_ALIM        35   · SAYIM 21 · DIGER 4 · IPTAL_AYNASI 3
+    IADE                3   · HIZALAMA_BETIGI 1
+
+⛔ **"Girişi betik yazmışsa kâğıttır" ÖLÇÜTÜ ÖLDÜ:** defterin **%55,8'ini**
+kâğıt sayardı ve kaldırma yarıdan fazla üründe stok döndürmeyi reddederdi.
+_(Anayasa: "bir sınırın yönü ölçülmeden çevrilmez" — FIFO `soldAt` sınırının
+defterin %48,72'sini kilitlemesiyle aynı sınıf.)_
+
+⛔ **"ÇIKIŞ İLE PARTİSİ AYNI NOTU TAŞIYOR" HİPOTEZİ DE ÖLDÜ:** yalnız **5**
+eşleşme, ve **3407 çıkış NOTSUZ** — ölçüt kümenin yarısında kör.
+
+⭐ **ÖĞRENİLEN:** kâğıtlık girişin KÖKENİNDE değil, satırın **MÜKERRER**
+olmasında. Sonraki aday eksen: _"kaldırılan satır, kendisini dengelemek için
+açılmış bir partiyi ÖKSÜZ bırakıyor mu"_ — partinin tek tüketicisi bu çıkış mı,
+ve parti bu satırla aynı koşumda mı doğdu.
+
+⏭ **AÇILIŞ ŞARTI YOK — BU KALEM AÇIK VE SIRADA.** Ölçüt kurulunca ayna yazma
+koşula bağlanır, ekran gerekçesini söyler ve mutasyon yazılır: **kâğıt-girişli
+kurguda ayna yazan → KIRMIZI**.
+
+---
+
 ## ✅ K180 — KALEM KALDIRMA AÇILDI (K78 KAPANDI) · 07.09.2026 · [KOD KOŞTU · migration CANLIDA]
 
 > **Halil:** _"kalem silme yeteneğini aç — müşteri satışlarında birini iptal
