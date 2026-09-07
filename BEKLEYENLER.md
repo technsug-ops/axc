@@ -248,15 +248,52 @@ Migration `20260907084108_satis_kalemi_kaldirma` **canlıda ve yerelde koştu**;
 9. **İadesi olan** bir kalemde "Kaldır" dene: _"bu kalemin iadesi var…"_
    engeli çıkıyor mu?
 
+### ⑥b HALİL TESTİ — GEÇTİ · 07.09.2026 · [DEFTERDEN DOĞRULANDI]
+
+Halil: _"bu tamam."_ ⛔ **Ve bu cümle olduğu gibi kabul edilmedi, ölçüldü** —
+kaldırma gerçekten uygulandıysa defterde izi olmalı. `canli:kaldirma-izi`:
+
+    10:28:27  SATIS_KALEMI_KALDIRMA       11571791924 · LEGO Azkaban · HATALI_GIRIS · 1
+    10:28:32  SATIS_KALEMI_KALDIRMA_GERI  (5 sn sonra geri alınmış)
+
+    gidiş-dönüş  SALE_OUT-1→parti · SALE_CANCEL_IN+1 · ADJUSTMENT-1→parti
+                 net hareket -1 (beklenen -1) ✓
+    şu an kaldırılmış duran kalem: 0
+
+⭐ **DEFTER BAŞLANGICA DÖNDÜ.** Ayna kaynak bağı taşımıyor (K96), geri alma
+partiyi kapatıyor, kalem geçerli hâline döndü — tasarlanan şeklin birebir
+kendisi ve **gerçek veriyle**. _(Anayasa: "testi başlangıca dönüş üzerine
+kur" — gidiş-dönüş sonrası rakam başlangıca eşit olmalı.)_
+
+⚠ **BURADAN GÖREMEDİĞİM TEK ŞEY:** iz canlı DEFTERDE, ama tarayıcının canlı
+adres mi yoksa canlı veritabanına bakan yerel sunucu mu olduğu izden
+çıkmıyor. Halil testinin (a) maddesi canlı adres şartı koyuyor; kayıt bunu
+söyleyemediği için burada **yazılı** kalıyor, "geçti" diye sayılmıyor.
+
 ### ⑦ AÇIK KALAN — `10559161422` HENÜZ DÜZELTİLMEDİ
 
 Yetenek bunun için açıldı ama **kayıt HENÜZ dokunulmadı**: satış
 `10559161422` (02.10.2025) `axcali3134` satırını **iki kez** taşıyor
 (₺1.039 hayalet ciro · 1 adet hayalet stok çıkışı) ve tarih resmî ölçüm
 penceresinin (01.08.2025+) **içinde**.
-⏭ **SIRADAKİ ADIM:** Halil test listesini geçtikten sonra o kalem **ekrandan**
-kaldırılır — betikle değil, yeni yolun kendisiyle. _(K95'te "betik işi" diye
-yazılmıştı; artık ekran işi.)_
+⏭ **SIRADAKİ ADIM:** o kalem **ekrandan** kaldırılır — betikle değil, yeni
+yolun kendisiyle. _(K95'te "betik işi" diye yazılmıştı; artık ekran işi.)_
+
+📏 **ÖNİZLEME ÖLÇÜLDÜ (07.09, `canli-10559161422-onizle.ts`, salt okuma):**
+
+    satış 10559161422 · 02.10.2025 · iptalsiz · NET-1 250,2033 · NET-2 205,6166
+      kalem A  axcali3134  1 × 1.039,00   net hareket -1
+      kalem B  axcali3134  1 × 1.039,00   net hareket -1     ← biri fazla
+      ciro 2.078,00
+
+    ⭐ İKİ SATIR BİREBİR AYNI — hangisinin kaldırıldığı FARK ETMEZ:
+      ikisi de "kaldırılabilir" · stoğa dönecek 1 adet · ayna birim maliyet 699
+      ikisinin de kalem NET-2'si 136,1417 · kaldırınca kalan kalem 1
+
+⚠ **VE NET-2 TAM 136,14 DÜŞMEYECEK:** sipariş başına kesintiler (TY sabit
+gider vb.) satış seviyesinde duruyor ve kalem sayısıyla yarıya inmiyor —
+iki kalemin NET-2 toplamı 272,28 iken satışın NET-2'si 205,62. Motor kalan
+kalem üstünden yeniden hesaplayacak; ekrandaki yeni rakam "yanlış" değil.
 
 ---
 

@@ -16,6 +16,8 @@
     "kalem-gecerli:dogrula": "tsx scripts/kalem-gecerli-dogrula.ts",
     "kalem-kaldirma:dogrula": "tsx scripts/kalem-kaldirma-dogrula.ts",
     "ty-urun-v2:dogrula": "tsx scripts/ty-urun-v2-dogrula.ts",
+    "canli:kaldirma-izi": "tsx scripts/canli-kaldirma-izi.ts",
+    "canli:10559161422-onizle": "tsx scripts/canli-10559161422-onizle.ts",
     "canli:ty-urun-v2-sonda": "tsx scripts/canli-ty-urun-v2-sonda.ts",
     "kar:dogrula": "tsx scripts/kar-dogrula.ts",
     "iade:dogrula": "tsx scripts/iade-dogrula.ts",
