@@ -107,7 +107,23 @@ export async function apiGet(
     }
     if (cevap.status === 404) return { tur: "BULUNAMADI" };
     if (!cevap.ok) {
-      const metin = (await cevap.text()).slice(0, 200).replace(/\s+/g, " ");
+      /**
+       * ⛔ MESAJ TAM TAŞINIR — `slice(0, 200)` BURADAN DA KALDIRILDI (K183).
+       *
+       * ⚠ KARARIN KAPSAMI, UYGULANDIĞI YERLE SINIRLI DEĞİL. Aynı kusur
+       * 07.09.2026'da TY istemcisinde bulundu ve orada düzeltildi; KARDEŞ
+       * DOSYA ATLANDI. TY'de kırpma tam sebebin üstüne denk gelmişti —
+       * ekrana `"key":"approved.products.filter.s` düştü, `INVALID_SIZE ·
+       * "Boyut 100 değerini aşamaz"` kısmı gitti ve teşhis bir tur kaybettirdi.
+       *
+       * HB CANLIYA AÇILIRKEN bu en pahalı yerdir: yeni ortamda ilk hatalar
+       * kimlik/yetki hataları olur ve sebebi mesajın SONUNDA yazar.
+       * _(Anayasa: "hata mesajını kısaltan her işlem teşhisi kısaltır" ve
+       * "kararın kapsamı, uygulandığı yerle sınırlı sayılmaz".)_
+       *
+       * ⚠ Satır sonları boşluğa çevrilir (ilk satırı ALMAK değil).
+       */
+      const metin = (await cevap.text()).replace(/\s+/g, " ").trim();
       return cevap.status === 400
         ? { tur: "ISTEK_HATALI", durum: 400, mesaj: metin }
         : { tur: "ULASILAMADI", sebep: `HTTP ${cevap.status}` };

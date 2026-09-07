@@ -75,7 +75,14 @@ export async function apiGet(
     }
     if (cevap.status === 404) return { tur: "BULUNAMADI" };
     if (!cevap.ok) {
-      const metin = (await cevap.text()).slice(0, 200).replace(/\s+/g, " ");
+      /**
+       * ⛔ MESAJ TAM TAŞINIR — kırpma KALDIRILDI (K183, 07.09.2026).
+       * Aynı kusur TY istemcisinde bulunmuş, orada düzeltilip KARDEŞ
+       * DOSYALAR atlanmıştı; tarama üçünü de buldu.
+       * _(Anayasa: "hata mesajını kısaltan her işlem teşhisi kısaltır" ve
+       * "kararın kapsamı, uygulandığı yerle sınırlı sayılmaz".)_
+       */
+      const metin = (await cevap.text()).replace(/\s+/g, " ").trim();
       return cevap.status === 400
         ? { tur: "ISTEK_HATALI", durum: 400, mesaj: metin }
         : { tur: "ULASILAMADI", sebep: `HTTP ${cevap.status}` };

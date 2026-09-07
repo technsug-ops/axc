@@ -73,12 +73,17 @@ export async function stokFiyatGonder(
       return {
         tur: "ISTEK_HATALI",
         durum: cevap.status,
-        mesaj: govde.slice(0, 300).replace(/\s+/g, " "),
+        /** ⛔ KIRPMA YOK (K183) — yazma ucunun hatası en pahalı teşhis. */
+        mesaj: govde.replace(/\s+/g, " ").trim(),
       };
     }
     const j = JSON.parse(govde) as { batchRequestId?: string };
     if (!j.batchRequestId) {
-      return { tur: "ISTEK_HATALI", durum: cevap.status, mesaj: "batchRequestId dönmedi: " + govde.slice(0, 200) };
+      return {
+        tur: "ISTEK_HATALI",
+        durum: cevap.status,
+        mesaj: "batchRequestId dönmedi: " + govde.replace(/\s+/g, " ").trim(),
+      };
     }
     return { tur: "KABUL", batchRequestId: j.batchRequestId };
   } catch (e) {
