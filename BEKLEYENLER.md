@@ -13,6 +13,91 @@
 
 ---
 
+## ✅ K179 — KALAN ALTI AÇIK KALEM KAPANDI · 07.09.2026 · [KARAR + ÖLÇÜM]
+
+> **Halil:** _"bunları kapatalım, açık task istemiyorum."_
+> ⛔ Hiçbiri "yapıldı" diye kapanmadı: her biri ya ÖLÇÜLDÜ ya da GEREKÇELİ
+> karara bağlandı. Panoyu yalanlamak, açık kalem bırakmaktan kötüdür.
+
+### ① K141 + K75 — AYNI ŞEY: KARGOSUZ SATIŞLAR · [ÖLÇÜLDÜ, KAPANDI]
+
+İki kalem aynı kümeyi iki ayrı yerden anlatıyordu: K75 _"19 kargoyu listele,
+elle gireyim"_, K141 _"19 satış kargosuz ve ekranda ayırt edilemiyor"_.
+
+📏 **ÖLÇÜLDÜ (canlı 07.09, 01.08.2025→bugün):**
+
+    açık satış 5945 · kargosuz 28
+      ⭐ Elden Satış  9  ← kargo ZATEN OLMAZ, kusur değil
+      pazaryeri     19  (TY 17 · HB 2)
+
+⛔ **BU BİR BİRİKMİŞ LİSTE DEĞİL, YENİLENEN BİR HÂL.** 28.08'de de 19'du,
+bugün de 19 — ama **başka satışlar**. Yeni sipariş kargosu girilene kadar
+kargosuz duruyor; "şu 19'u gir, kapansın" diye kapanmıyor.
+_(Anayasa: "kapanamayacak kayıp, görev değil kayıttır" — kapatılamayan madde
+kutunun tamamına olan güveni eritir.)_
+
+⭐ **VE EKRAN ZATEN SÖYLÜYOR:** satış detayında `kargoGirilmedi` bayrağı
+`kar-blogu.tsx`te uyarı olarak çiziliyor — "kâr kargo düşülmeden hesaplandı"
+diye. K141'in açık ucu (_"ayırt edilemiyor"_) detay seviyesinde KARŞILANMIŞ.
+⚠ Liste seviyesinde sayaç YOK ve **bilerek açılmıyor**: sürekli yenilenen bir
+hâl için sayaç, her gün yanan ve okunmaz hâle gelen bir rozet üretirdi.
+
+⏭ **AÇILIŞ ŞARTI:** kargosuz satış sayısı operasyonu fiilen rahatsız ederse
+(ör. ay sonu kapanışta gözden kaçarsa) liste süzgeci açılır — ve o gün ölçüt
+**Elden Satış'ı DIŞLAMAK zorundadır**, yoksa sayı ilk günden %32 şişer.
+
+### ② K167 ③ — N11 HAKEDİŞ/KESİNTİ · [UYUR — belgeye bağlı]
+
+N11 komisyon/kesinti kuralları **N11'in kendi hakediş ekstresi olmadan**
+yazılamaz. _(Anayasa: kaynak önceliği — kanalın kendi belgesi > dış
+hesaplayıcı; ve "kapsayan pencere yoksa hüküm verilmez".)_
+⏭ **AÇILIŞ ŞARTI:** ilk N11 komisyon faturası/hakediş dosyası eline geçtiğinde.
+📏 Bugün N11'de **9 satış** var; kural yokluğu bu 9'un NET'ini etkiliyor ve
+bu ekranda `REFERANS` rozetiyle zaten görünür.
+
+### ③ K69 ③ — KRONOLOJİ DÜZELTMESİ · [UYUR — tanımı yetersiz]
+
+⛔ **DÜRÜST KAYIT: BU KALEMİ BUGÜN ÖLÇEMEDİM.** Panoda yalnız
+_"ayrı iş, 309 kalem / 423 hareket"_ yazıyor; hangi kronoloji, hangi yön,
+hangi ölçütle sapıyor — kayıtlı değil. Ölçütü olmayan bir kalemi "kapandı"
+yazmak da "yapıldı" demek kadar yanlış olurdu.
+⏭ **AÇILIŞ ŞARTI:** bir kronoloji sapması **fiilen bir rakamı bozarsa**
+(FIFO sırası, dönem toplamı ya da kâr) — o gün ölçütüyle birlikte yeniden
+tanımlanır. K79 (geçmiş satış geleceğin partisini yiyor) bu ailenin ölçülmüş
+ve **kapatılmış** hâli; kalan 309 kalem için öyle bir kanıt bugün yok.
+
+### ④ K64 · K65 · K66 — AMAZON / ELDEN SATIŞ ARTIKLARI · [ÖLÇÜLDÜ + UYUR]
+
+📏 **İÇE AKTARMALAR YAPILMIŞ (canlı 07.09):**
+
+    Amazon/AMZN            63 satış
+    Elden Satış             9 satış
+    Amazon S.ahmet/SEDA/EKREM   0 satış (boş, aktif)
+
+Yani K64 ② ve K65 ② **fiilen kapanmış**; pano onları `[BEKLİYOR]` diye
+taşıyordu. _(K138'in aynısı: pano niyeti durum sanıyor.)_
+
+⏭ **KALANLAR DIŞ BELGEYE BAĞLI — uyur:** Amazon `ChannelFee` kuralları
+(Amazon'un kendi hakediş raporu gerekiyor) · 54 ASIN eşleştirmesi ·
+`AMZN` hesabının pasife alınması. **Açılış şartı:** Amazon hakediş raporu.
+⚠ Üç boş Amazon hesabı (S.ahmet · SEDA · EKREM) aktif duruyor; satışı yok,
+zarar vermiyor — temizlik işi, iş değil.
+
+### ⑤ K78 — SİPARİŞ SATIRI KALDIRILAMIYOR · [UYUR — tasarım kararı]
+
+Sistemde kalem silme yolu YOK ve iki kötü seçenek ölçülmüştü (tamamını iptal
+→ gerçek adet de gider · betikle sil → `StockMovement.saleItemId` SetNull,
+hareket sahipsiz kalır). **Halil kararı 28.08.2026: çözüm tasarımı AYRI TUR.**
+Bugün de öyle kalıyor — karar değişmedi, sadece panoda "açık iş" gibi
+duruyordu.
+
+⭐ **BUGÜNKÜ YOL YAZILI OLSUN:** mükerrer satır çıkarsa **satışı iptal et,
+doğru hâliyle yeniden gir** (K18'de bu yol açıldı: iptalli çakışma artık ayrı
+hüküm veriyor ve ekran iptalli satışa bağlantı veriyor).
+⏭ **AÇILIŞ ŞARTI:** mükerrer satır **ikinci kez** gerçek bir işi engellerse.
+
+---
+
 ## ✅ K178 — ÜÇ AÇIK KALEM KAPANDI: pre-commit · sipariş saati · onay durumu · 07.09.2026
 
 > **Halil:** _"bunları kapatalım, açık task istemiyorum."_
