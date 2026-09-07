@@ -122,12 +122,27 @@ export type PencereTuru = (typeof PENCERE_TURLERI)[number];
 
 export type Pencere = {
   tur: PencereTuru;
-  /** DAHİL — UTC gece yarısı. */
+  /**
+   * DAHİL — İŞ GÜNÜNÜN BAŞLADIĞI AN (İstanbul gece yarısı).
+   * ⚠ UTC gece yarısı DEĞİL (düzeltme 07.09.2026): `soldAt` API çekimlerinde
+   * gerçek anı taşır ve UTC sınırı, İstanbul 00:00–03:00 arasındaki her
+   * siparişi bir ÖNCEKİ güne yazıyordu.
+   */
   baslangic: Date;
   /** HARİÇ — pencere [baslangic, bitisHaric) yarı açık aralıktır. */
   bitisHaric: Date;
-  /** Ekranda yazılan son gün (DAHİL) = bitisHaric − 1 gün. */
+  /**
+   * Ekranda yazılan son gün (DAHİL) — **UTC gece yarısı çapası.**
+   * ⚠ Bu bir SINIR DEĞİL, ETİKETTİR: `gunMetni`/`bicim.tarih` bunu okur.
+   * Sınır olarak kullanılırsa 3 saatlik kayma geri gelir.
+   */
   sonGun: Date;
+  /**
+   * Ekranda yazılan İLK gün (DAHİL) — UTC gece yarısı çapası, `sonGun`un eşi.
+   * `baslangic` artık İstanbul anı olduğu için `gunMetni(baslangic)` bir
+   * önceki günü verirdi; etiket okuyanlar bunu kullanır.
+   */
+  ilkGun: Date;
 };
 
 /** Takvim günü — ay 1-12 (JavaScript'in 0-11'i DEĞİL). */
@@ -154,9 +169,78 @@ export function isTakvimGunu(an: Date): TakvimGunu {
   return { yil: al("year"), ay: al("month"), gun: al("day") };
 }
 
-/** Takvim gününü, iş tarihlerinin saklandığı biçime çevirir: UTC gece yarısı. */
+/** Takvim gününü, iş tarihlerinin SAKLANDIĞI biçime çevirir: UTC gece yarısı. */
 export function gunDegeri({ yil, ay, gun }: TakvimGunu): Date {
   return new Date(Date.UTC(yil, ay - 1, gun));
+}
+
+/**
+ * ============================================================================
+ *  İŞ GÜNÜNÜN BAŞLADIĞI AN — SAKLAMA BİÇİMİ DEĞİL, SINIR (düzeltme 07.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ VAKA: Halil gece **01:19**'da düşen bir TY siparişini satış listesinde
+ *  07.09 olarak gördü, ama panel "Trendyol: bu dönemde satış yok" dedi.
+ *  Ölçüldü — `BUGUN` penceresi İstanbul **03:00 → 03:00** arasını kapsıyordu:
+ *  sınırlar `gunDegeri` ile, yani **UTC gece yarısından** kuruluyordu.
+ *
+ *  ⚠ İKİ AYRI İŞ TEK GÖVDEYE BİNMİŞTİ:
+ *    · SAKLAMA — tarih-only kayıt (Excel/elle) UTC 00:00'a damgalanır (K163
+ *      sözleşmesi; `gunHassasiyetliMi` bunu okur). Bu DOĞRU, değişmedi.
+ *    · SINIR — pencerenin başladığı AN. Bu İstanbul gece yarısı olmalı, çünkü
+ *      `soldAt` API çekimlerinde GERÇEK ANI taşır.
+ *  İkisi aynı gövdeden beslenince İstanbul 00:00–03:00 arasında düşen her API
+ *  siparişi bir ÖNCEKİ güne yazıldı.
+ *
+ *  📏 ÖLÇÜLDÜ (canlı, 07.09.2026): 7852 satışın **7824'ü** gün-hassasiyetli
+ *  (UTC 00:00 damgalı) ve ETKİLENMİYOR — D günü 00:00 UTC, İstanbul D gününün
+ *  İÇİNDEDİR (03:00). Yanlış kovaya düşen **2** kayıt vardı, ikisi de API
+ *  çekimi. ⚠ Çekim 5 dakikada bir koştuğu için bu sayı her gece büyürdü ve
+ *  ayın 1'inde bir önceki AYA taşardı.
+ *
+ *  ⚠ OFSET SABİT YAZILMADI. Türkiye 2016'dan beri kalıcı UTC+3; ama sabiti
+ *  gömmek, kural değişirse sessizce yanlış olurdu. Ofset `IS_SAAT_DILIMI`
+ *  üzerinden ÖLÇÜLÜR — çalışma ortamının saat dilimi hiçbir yerde okunmaz.
+ * ============================================================================
+ */
+function isSaatDilimiOfsetiMs(an: Date): number {
+  const parcalar = new Intl.DateTimeFormat("en-CA", {
+    timeZone: IS_SAAT_DILIMI,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(an);
+  const al = (tur: Intl.DateTimeFormatPartTypes) =>
+    Number(parcalar.find((x) => x.type === tur)?.value ?? "0");
+  const yerel = Date.UTC(
+    al("year"),
+    al("month") - 1,
+    al("day"),
+    al("hour") % 24,
+    al("minute"),
+    al("second"),
+  );
+  return yerel - Math.floor(an.getTime() / 1000) * 1000;
+}
+
+/** UTC gece yarısı çapasını takvim gününe çevirir (etiket → sınır köprüsü). */
+function takvimGununden(utcCapa: Date): TakvimGunu {
+  return {
+    yil: utcCapa.getUTCFullYear(),
+    ay: utcCapa.getUTCMonth() + 1,
+    gun: utcCapa.getUTCDate(),
+  };
+}
+
+/** İş gününün BAŞLADIĞI an (İstanbul gece yarısı), mutlak zaman olarak. */
+export function gunBasiAni(g: TakvimGunu): Date {
+  const utcGeceYarisi = Date.UTC(g.yil, g.ay - 1, g.gun);
+  return new Date(
+    utcGeceYarisi - isSaatDilimiOfsetiMs(new Date(utcGeceYarisi)),
+  );
 }
 
 /**
@@ -301,19 +385,30 @@ export function pencereOlustur(
     }
 
     // Bitiş günü DAHİLDİR; yarı açık aralık için bir gün ileri taşınır.
-    return { tur, baslangic, bitisHaric: gunEkle(sonGun, 1), sonGun };
+    /** ⚠ Sınır İstanbul anı, etiket UTC çapası — ikisi AYRI (bkz. Pencere). */
+    const basAn = gunBasiAni(takvimGununden(baslangic));
+    const bitAn = gunEkle(gunBasiAni(takvimGununden(sonGun)), 1);
+    return { tur, baslangic: basAn, bitisHaric: bitAn, sonGun, ilkGun: baslangic };
   }
 
   const bugun = isTakvimGunu(an);
+  /** ETİKET çapası (UTC gece yarısı) — ekranda yazılan gün. */
   const sonGun = gunDegeri(bugun);
+  /** SINIR çapası (İstanbul gece yarısı) — karşılaştırmalar bunu kullanır. */
+  const sonGunAn = gunBasiAni(bugun);
 
   // --- GÜN ÖLÇÜSÜ: bugünden geriye kayan pencere, BUGÜN DAHİL ---
   // "Son 15 gün" = bugün + geriye 14 gün. Bugünü saymasaydık 15 gün seçen
   // kullanıcı 16 günlük veri görürdü.
   if (tur === "BUGUN" || tur === "SON_15_GUN" || tur === "SON_30_GUN") {
     const geriGun = tur === "BUGUN" ? 0 : tur === "SON_15_GUN" ? 14 : 29;
-    const baslangic = gunEkle(sonGun, -geriGun);
-    return { tur, baslangic, bitisHaric: gunEkle(sonGun, 1), sonGun };
+    return {
+      tur,
+      baslangic: gunEkle(sonGunAn, -geriGun),
+      bitisHaric: gunEkle(sonGunAn, 1),
+      sonGun,
+      ilkGun: gunEkle(sonGun, -geriGun),
+    };
   }
 
   /**
@@ -324,16 +419,32 @@ export function pencereOlustur(
    */
   if (tur === "DUN") {
     const dun = gunEkle(sonGun, -1);
-    return { tur, baslangic: dun, bitisHaric: sonGun, sonGun: dun };
+    return {
+      tur,
+      baslangic: gunEkle(sonGunAn, -1),
+      bitisHaric: sonGunAn,
+      sonGun: dun,
+      ilkGun: dun,
+    };
   }
 
   // --- HAFTA: PAZARTESİ başlar (Türkiye'de hafta böyle konuşulur) ---
   if (tur === "BU_HAFTA") {
     // getUTCDay: 0 pazar … 6 cumartesi. Pazartesiye kaç gün geri gidilecek:
     // pazartesi 0, salı 1, … pazar 6.
+    /**
+     * ⚠ HAFTA GÜNÜ ETİKET ÇAPASINDAN OKUNUR. `sonGunAn` İstanbul gece yarısı,
+     * yani UTC'de bir önceki günün 21:00'i; `getUTCDay()` orada BİR GÜN GERİ
+     * verir ve hafta pazar'dan başlardı.
+     */
     const pazartesiyeUzaklik = (sonGun.getUTCDay() + 6) % 7;
-    const baslangic = gunEkle(sonGun, -pazartesiyeUzaklik);
-    return { tur, baslangic, bitisHaric: gunEkle(sonGun, 1), sonGun };
+    return {
+      tur,
+      baslangic: gunEkle(sonGunAn, -pazartesiyeUzaklik),
+      bitisHaric: gunEkle(sonGunAn, 1),
+      sonGun,
+      ilkGun: gunEkle(sonGun, -pazartesiyeUzaklik),
+    };
   }
 
   // --- AY ÖLÇÜSÜ: BU AY DAHİL son N takvim ayı; başlangıç ay başına yaslanır ---
@@ -341,9 +452,15 @@ export function pencereOlustur(
     tur === "BU_AY" ? 0 : tur === "SON_3_AY" ? 2 : tur === "SON_6_AY" ? 5 : 11;
   const bas = ayKaydir(bugun.yil, bugun.ay, -geriAy);
 
-  const baslangic = gunDegeri({ yil: bas.yil, ay: bas.ay, gun: 1 });
+  const ayIlkGun = { yil: bas.yil, ay: bas.ay, gun: 1 };
 
-  return { tur, baslangic, bitisHaric: gunEkle(sonGun, 1), sonGun };
+  return {
+    tur,
+    baslangic: gunBasiAni(ayIlkGun),
+    bitisHaric: gunEkle(sonGunAn, 1),
+    sonGun,
+    ilkGun: gunDegeri(ayIlkGun),
+  };
 }
 
 /** Kayıt bu pencerenin içinde mi? */

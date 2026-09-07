@@ -883,7 +883,7 @@ export default async function RaporSayfasi({
       {/* Aralık bozuksa panel AÇIK kalır: kullanıcı tarihi düzeltebilsin. */}
       <PencereSecici
         secili={tur}
-        baslangic={parametreler.baslangic ?? gunMetni(pencere.baslangic)}
+        baslangic={parametreler.baslangic ?? gunMetni(pencere.ilkGun)}
         bitis={parametreler.bitis ?? gunMetni(pencere.sonGun)}
       />
 

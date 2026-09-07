@@ -1,4 +1,4 @@
-import { gunDegeri, isTakvimGunu, type Pencere } from "@/lib/donem";
+import { gunBasiAni, gunDegeri, isTakvimGunu, type Pencere } from "@/lib/donem";
 
 /**
  * ============================================================================
@@ -77,13 +77,23 @@ export function ayGeriKaydir(tarih: Date, ay: number): Date {
  */
 export function kiyasPenceresi(pencere: Pencere, tur: KiyasTuru): Pencere {
   const ay = KIYAS_TURLERI[tur];
-  const baslangic = ayGeriKaydir(pencere.baslangic, ay);
+  /**
+   * ⚠ ETİKET ÇAPALARI KAYDIRILIR, SINIRLAR ONLARDAN TÜRETİLİR
+   * (düzeltme 07.09.2026). `baslangic` artık İstanbul gece yarısı ANI; onu
+   * doğrudan kaydırmak 3 saatlik kaymayı kıyas dönemine de taşırdı.
+   * Kaydırma UTC çapaları (`ilkGun`/`sonGun`) üzerinden yapılır, sınırlar
+   * `gunBasiAni` ile yeniden kurulur — tek kaynak, iki türev.
+   */
+  const ilkGun = ayGeriKaydir(pencere.ilkGun, ay);
   const sonGun = ayGeriKaydir(pencere.sonGun, ay);
   return {
     tur: pencere.tur,
-    baslangic,
+    baslangic: gunBasiAni(isTakvimGunu(ilkGun)),
     sonGun,
-    bitisHaric: new Date(sonGun.getTime() + 24 * 60 * 60 * 1000),
+    ilkGun,
+    bitisHaric: new Date(
+      gunBasiAni(isTakvimGunu(sonGun)).getTime() + 24 * 60 * 60 * 1000,
+    ),
   };
 }
 

@@ -20,6 +20,7 @@
  * ============================================================================
  */
 
+import { PENCERE_TURLERI, pencereOlustur } from "../src/lib/donem";
 import { alimAramaKosulu } from "../src/lib/alim-arama";
 import { gunMetni } from "../src/lib/donem";
 import { KARGO_BEKLEYEN } from "../src/lib/kargo-bekleyen";
@@ -55,6 +56,19 @@ let calisan = 0;
  * koşmamasını yakalamak için var; artırmayı unutmak "yarım kaldı" der ve
  * doğru davranır — eksik bırakmak yeşil yanardı.
  */
+/**
+ * ⚠ ÖLÇÜT ESKİDİ, KOD DEĞİL — TAZELENDİ 07.09.2026.
+ * `Pencere.baslangic` ve `bitisHaric` artık İSTANBUL gece yarısı ANI (UTC'de
+ * bir önceki günün 21:00'i). Bu ölçütler onları `gunMetni` ile, yani UTC
+ * günü olarak okuyordu ve bir gün geri görüyordu — iddia doğruydu, ölçüm
+ * yanlış eksendeydi. Sınırlar artık İstanbul gününe göre okunuyor; ETİKET
+ * alanları (`ilkGun`/`sonGun`) `gunMetni` ile kalmaya devam ediyor.
+ * _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez" — eskiyen
+ * ölçüt güncellenir, SUSTURULMAZ, ve niye eskidiği yazılır.)_
+ */
+const istGun = (d: Date): string =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(d);
+
 const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 
@@ -146,8 +160,8 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
   );
   kontrol(
     "DÜN 12 Ağustos'ta başlar (AN = 13 Ağustos)",
-    dun.pencere !== null && gunMetni(dun.pencere.baslangic) === "2026-08-12",
-    dun.pencere && gunMetni(dun.pencere.baslangic),
+    dun.pencere !== null && istGun(dun.pencere.baslangic) === "2026-08-12",
+    dun.pencere && istGun(dun.pencere.baslangic),
   );
   kontrol(
     "DÜN 12 Ağustos'ta BİTER — bugünü İÇERMEZ",
@@ -156,8 +170,8 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
   );
   kontrol(
     "DÜN tek gündür (bitişHariç = bugün)",
-    dun.pencere !== null && gunMetni(dun.pencere.bitisHaric) === "2026-08-13",
-    dun.pencere && gunMetni(dun.pencere.bitisHaric),
+    dun.pencere !== null && istGun(dun.pencere.bitisHaric) === "2026-08-13",
+    dun.pencere && istGun(dun.pencere.bitisHaric),
   );
   const bugunP = pencereCoz({ pencere: "BUGUN" }, AN);
   kontrol(
@@ -166,8 +180,8 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
       bugunP.pencere !== null &&
       dun.pencere.bitisHaric.getTime() === bugunP.pencere.baslangic.getTime(),
     {
-      dunBitis: dun.pencere && gunMetni(dun.pencere.bitisHaric),
-      bugunBas: bugunP.pencere && gunMetni(bugunP.pencere.baslangic),
+      dunBitis: dun.pencere && istGun(dun.pencere.bitisHaric),
+      bugunBas: bugunP.pencere && istGun(bugunP.pencere.baslangic),
     },
   );
 
@@ -209,8 +223,8 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
   kontrol("BU_AY tanınır", buAy.tur === "BU_AY" && buAy.aralik !== undefined);
   kontrol(
     "BU_AY 1 Ağustos'ta başlar",
-    buAy.pencere !== null && gunMetni(buAy.pencere.baslangic) === "2026-08-01",
-    buAy.pencere && gunMetni(buAy.pencere.baslangic),
+    buAy.pencere !== null && istGun(buAy.pencere.baslangic) === "2026-08-01",
+    buAy.pencere && istGun(buAy.pencere.baslangic),
   );
   /**
    * "BU AY" AYIN BAŞINDAN BUGÜNE DEMEK, takvim ayının tamamı değil.
@@ -224,8 +238,8 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
    */
   kontrol(
     "aralık YARI AÇIK: bitişHariç yarın (14 Ağustos)",
-    buAy.aralik !== undefined && gunMetni(buAy.aralik.lt) === "2026-08-14",
-    buAy.aralik && gunMetni(buAy.aralik.lt),
+    buAy.aralik !== undefined && istGun(buAy.aralik.lt) === "2026-08-14",
+    buAy.aralik && istGun(buAy.aralik.lt),
   );
   kontrol(
     "ekranda yazılan son gün BUGÜN (13 Ağustos)",
@@ -240,10 +254,10 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
   kontrol(
     "özel aralık uçları dahil çözülür",
     ozel.pencere !== null &&
-      gunMetni(ozel.pencere.baslangic) === "2026-07-01" &&
+      istGun(ozel.pencere.baslangic) === "2026-07-01" &&
       gunMetni(ozel.pencere.sonGun) === "2026-07-15",
     ozel.pencere && [
-      gunMetni(ozel.pencere.baslangic),
+      istGun(ozel.pencere.baslangic),
       gunMetni(ozel.pencere.sonGun),
     ],
   );
@@ -268,6 +282,38 @@ console.log("\n2) DÖNEM ÇÖZÜMÜ");
     "özel seçili ama tarih eksik -> süzgeç kapalı",
     pencereCoz({ pencere: "OZEL" }, AN).tur === "",
   );
+
+/**
+ * ⛔ TARİH TEK BAŞINA YETMEZ — SAAT DE ÖLÇÜLÜR (07.09.2026, mutasyonla bulundu).
+ * Sınır okumaları `gunMetni` (UTC) yerine `istGun` (İstanbul) yapılınca ölçüt
+ * ESKİ HATALI DAVRANIŞLA DA UYUMLU hâle geldi: UTC gece yarısı = İstanbul
+ * 03:00, yani AYNI GÜN. Sınırı UTC'ye geri döndüren mutasyon YEŞİL geçti.
+ * Ayırt edici olan tarih değil SAAT: iş günü İstanbul 00:00'da başlar.
+ * _(Anayasa: "iki okumayla da uyumlu bir gözlem hiçbirini kanıtlamaz".)_
+ */
+{
+  const istSaat = (d: Date): string =>
+    new Intl.DateTimeFormat("tr-TR", {
+      timeZone: "Europe/Istanbul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(d);
+  const an = new Date("2026-08-13T09:00:00.000Z");
+  const turler = PENCERE_TURLERI.filter((t) => t !== "OZEL");
+  kontrol(
+    `TABAN DOLU — sınanan pencere türü (${turler.length})`,
+    turler.length >= 8,
+  );
+  for (const t of turler) {
+    const p = pencereOlustur(t, an);
+    kontrol(
+      `${t}: sınırlar İstanbul 00:00'da (UTC gece yarısı DEĞİL)`,
+      istSaat(p.baslangic) === "00:00" && istSaat(p.bitisHaric) === "00:00",
+    );
+  }
+}
+
   kosanBolumler.push("dönem");
 }
 

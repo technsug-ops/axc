@@ -1280,7 +1280,7 @@ export default async function IadelerSayfasi({
         zaman={{
           secili: tur,
           aralikMetni,
-          baslangic: p.baslangic ?? gunMetni(pencere.baslangic),
+          baslangic: p.baslangic ?? gunMetni(pencere.ilkGun),
           bitis: p.bitis ?? gunMetni(pencere.sonGun),
         }}
       />
@@ -1569,7 +1569,7 @@ export default async function IadelerSayfasi({
         zaman={{
           secili: tur,
           aralikMetni,
-          baslangic: p.baslangic ?? gunMetni(pencere.baslangic),
+          baslangic: p.baslangic ?? gunMetni(pencere.ilkGun),
           bitis: p.bitis ?? gunMetni(pencere.sonGun),
         }}
       />

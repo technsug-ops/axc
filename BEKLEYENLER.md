@@ -13,6 +13,53 @@
 
 ---
 
+## ✅ K177 — PANEL "BUGÜN"Ü UTC'DEN KURULUYORDU · 07.09.2026 · [KOD KOŞTU]
+
+> **Halil:** _"gece 1'de siparişi çekmiş ama panele yansımamış."_ Satış
+> listesi `07.09.2026 · 01:19` diyordu, panel ise **"Trendyol: bu dönemde
+> satış yok"**. İki ekran birbirini yalanlıyordu.
+
+**KÖK NEDEN — İKİ AYRI İŞ TEK GÖVDEYE BİNMİŞ.** `gunDegeri` hem tarih
+SAKLAMA biçimini (Excel/elle kayıt UTC 00:00'a damgalanır — K163 sözleşmesi)
+hem pencere SINIRINI üretiyordu. Sınır UTC'den kurulunca "bugün" fiilen
+**İstanbul 03:00 → 03:00** oldu:
+
+    BUGUN penceresi : 07.09 03:00 → 08.09 03:00   (İstanbul)
+    olması gereken  : 07.09 00:00 → 08.09 00:00
+
+Yani **İstanbul 00:00–03:00 arasında düşen her API siparişi bir ÖNCEKİ güne**
+yazılıyordu — dokuz pencere türünün dokuzunda birden.
+
+📏 **ÖLÇÜLDÜ (canlı):** 7852 satışın **7824'ü** gün-hassasiyetli (UTC 00:00
+damgalı) ve **etkilenmiyor** — D günü 00:00 UTC, İstanbul D gününün İÇİNDE
+(03:00). Yanlış kovaya düşen **2** kayıt vardı, ikisi de API çekimi.
+⚠ Ama çekim **5 dakikada bir** koşuyor: bu sayı her gece büyürdü ve ayın
+1'inde bir önceki AYA taşardı. Bugün küçük, yarın kanayan bir yer.
+
+**ÇARE — İKİSİ AYRILDI:** `gunDegeri` saklama için AYNEN kaldı; sınırlar için
+`gunBasiAni` (İstanbul gece yarısı ANI) eklendi. `Pencere`'ye **`ilkGun`**
+eklendi: sınır ile ETİKET artık ayrı alanlar ve tipte gerekçesi yazılı
+(`bicim.tarih`/`gunMetni` etiketi okur, karşılaştırmalar sınırı).
+⚠ **OFSET GÖMÜLMEDİ** — Türkiye 2016'dan beri UTC+3 ama sabit bir "3", kural
+değişirse sessizce yanlış olurdu; ofset `IS_SAAT_DILIMI`'nden ÖLÇÜLÜYOR.
+
+**KANIT:** dokuz pencere türünün dokuzu da İstanbul 00:00 → 00:00 · gece
+01:19 siparişi BUGÜNE düşüyor · tarih-only kayıtlar bozulmadı · hafta
+pazartesi · ay sınırı · OZEL aralık · kıyas penceresi aynı hizada.
+`donem:dogrula` **6. bölüm** (59 ölçüt) · **5 mutasyon 5 kırmızı**.
+
+⛔ **VE ÖLÇÜT TAZELERKEN KENDİ KÖRLÜĞÜMÜ ÜRETTİM — MUTASYON YAKALADI.**
+`rapor:dogrula` ve `suzgec:dogrula` sınırları `gunMetni` (UTC) ile okuyordu ve
+haklı olarak kırmızı yandı. Onları `istGun` (İstanbul **günü**) yapınca yeşile
+döndüler — **ama eski hatalı davranışla da uyumlu** hâle geldiler: UTC gece
+yarısı = İstanbul 03:00, yani AYNI GÜN. Sınırı UTC'ye geri döndüren mutasyon
+**yeşil geçti.** Ayırt edici olan tarih değil **SAAT**; iki bekçiye de "sınır
+İstanbul 00:00'da" ölçütü eklendi ve mutasyon ① ikisinde de kırmızı yandı.
+_(Anayasa: "iki okumayla da uyumlu bir gözlem hiçbirini kanıtlamaz" —
+bu kez gözlemi ben körleştirmiştim.)_
+
+---
+
 ## ✅ K176 — AYRIŞAN MALİYET DAMGALARI · 07.09.2026 · [KOŞTU — 01.08.2025→bugün]
 
 `npm run canli:maliyet-hizala` (rapor kipi, salt okuma):

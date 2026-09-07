@@ -8,6 +8,8 @@ import {
   donemKorumasi,
 } from "../src/lib/donem-korumasi";
 import { betikDonemKarari, donemIstisnaIzi } from "../src/lib/donem-kapisi";
+import { PENCERE_TURLERI, gunMetni, pencereOlustur } from "../src/lib/donem";
+import { kiyasPenceresi } from "../src/lib/karsilastirma";
 import { israrGecerliMi } from "../src/lib/sayim-korumasi";
 
 /**
@@ -23,7 +25,7 @@ import { israrGecerliMi } from "../src/lib/sayim-korumasi";
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let kalan = 0;
@@ -293,6 +295,122 @@ console.log("§5 EKRAN — kapatma kuralları ve rapor kapsamı");
   );
   kosanBolumler.push("ekran");
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+/**
+ * 6) PENCERE SINIRI İSTANBUL GECE YARISINDAN BAŞLAR (düzeltme 07.09.2026)
+ * ----------------------------------------------------------------------
+ * ⛔ VAKA: gece 01:19'da düşen TY siparişi satış listesinde 07.09 görünüyor,
+ * panelde "bu dönemde satış yok" deniyordu. Pencere UTC gece yarısından
+ * kuruluyordu → İstanbul 00:00–03:00 arası her API siparişi bir ÖNCEKİ güne
+ * yazılıyordu. Çekim 5 dakikada bir koştuğu için her gece üreyen bir hataydı.
+ *
+ * ⚠ ÖLÇÜT SAF GÖVDEYİ ÇAĞIRIR, KAYNAK TARAMAZ — desen yanlış yerde
+ * bulunamaz çünkü desen aranmıyor. _(Anayasa: "saf hesap katmanı, desen
+ * tarayan bekçiye muhtaç olmaz".)_
+ */
+console.log("");
+console.log("6) PENCERE SINIRI — İstanbul gece yarısı");
+{
+  const istSaat = (d: Date) =>
+    new Intl.DateTimeFormat("tr-TR", {
+      timeZone: "Europe/Istanbul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(d);
+  const istGun = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(d);
+
+  /** Referans an: 07.09.2026 07:53 İstanbul. */
+  const an = new Date("2026-09-07T04:53:00.000Z");
+
+  /** ⭐ TABAN DOLU — tür listesi boşalırsa döngü hiçbir şey ölçmez. */
+  const turler = PENCERE_TURLERI.filter((t) => t !== "OZEL");
+  kontrol(
+    `TABAN DOLU — sınanan pencere türü (${turler.length})`,
+    turler.length >= 8,
+  );
+
+  for (const t of turler) {
+    const p = pencereOlustur(t, an);
+    kontrol(
+      `${t}: sınırların İKİSİ de İstanbul 00:00`,
+      istSaat(p.baslangic) === "00:00" && istSaat(p.bitisHaric) === "00:00",
+    );
+  }
+
+  const bugun = pencereOlustur("BUGUN", an);
+  const icinde = (d: Date) =>
+    d.getTime() >= bugun.baslangic.getTime() &&
+    d.getTime() < bugun.bitisHaric.getTime();
+
+  /** ⛔ ASIL VAKA: gece 01:19 İstanbul = bir önceki günün 22:19 UTC'si. */
+  kontrol(
+    "gece 01:19'daki sipariş BUGÜNE düşer (asıl vaka)",
+    icinde(new Date("2026-09-06T22:19:00.000Z")),
+  );
+  /** Tarih-only kayıt (UTC 00:00 damgalı) bozulmadı — 7824 kaydın hâli. */
+  kontrol(
+    "tarih-only kayıt (UTC 00:00) hâlâ kendi gününde",
+    icinde(new Date("2026-09-07T00:00:00.000Z")),
+  );
+  /** Sınırın ÖTEKİ yakası: dünün son anı içeri sızmamalı. */
+  kontrol(
+    "dün 23:59 İstanbul BUGÜNE SIZMAZ",
+    !icinde(new Date("2026-09-06T20:59:00.000Z")),
+  );
+  kontrol(
+    "yarın 00:00 İstanbul BUGÜNE SIZMAZ",
+    !icinde(new Date("2026-09-07T21:00:00.000Z")),
+  );
+
+  /** Etiket çapaları ayrı: `gunMetni` bunları okur, sınırları DEĞİL. */
+  kontrol(
+    "etiket çapaları İstanbul gününü yazar",
+    gunMetni(bugun.ilkGun) === "2026-09-07" &&
+      gunMetni(bugun.sonGun) === "2026-09-07",
+  );
+
+  /** Hafta PAZARTESİ başlar — sınır çapasından okunsaydı bir gün kayardı. */
+  const hafta = pencereOlustur("BU_HAFTA", an);
+  kontrol(
+    "hafta PAZARTESİ başlar (07.09.2026 pazartesi)",
+    istGun(hafta.baslangic) === "2026-09-07",
+  );
+
+  /** Ay sınırı: ayın 1'i 00:30 İstanbul, o AYIN içinde olmalı. */
+  const ay = pencereOlustur("BU_AY", an);
+  kontrol(
+    "ayın 1'i 00:30 İstanbul BU AYA düşer",
+    new Date("2026-08-31T21:30:00.000Z").getTime() >= ay.baslangic.getTime(),
+  );
+  kontrol(
+    "önceki ayın son anı BU AYA sızmaz",
+    new Date("2026-08-31T20:59:00.000Z").getTime() < ay.baslangic.getTime(),
+  );
+
+  /** Kıyas penceresi de aynı hizada olmalı — iki yerde iki ölçüt olmaz. */
+  const kiyas = kiyasPenceresi(bugun, "onceki");
+  kontrol(
+    "kıyas penceresi de İstanbul 00:00 hizasında",
+    istSaat(kiyas.baslangic) === "00:00" &&
+      istSaat(kiyas.bitisHaric) === "00:00",
+  );
+
+  /** OZEL aralık da aynı gövdeden geçer. */
+  const ozel = pencereOlustur("OZEL", an, {
+    baslangic: "2026-09-07",
+    bitis: "2026-09-07",
+  });
+  kontrol(
+    "OZEL aralık İstanbul 00:00'dan başlar ve geceyi kapsar",
+    istSaat(ozel.baslangic) === "00:00" &&
+      new Date("2026-09-06T22:19:00.000Z").getTime() >=
+        ozel.baslangic.getTime(),
+  );
+}
+kosanBolumler.push("pencere sınırı");
 
 // ═══════════════════════════════════════════════════════════════════════
 console.log("");

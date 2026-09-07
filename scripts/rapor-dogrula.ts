@@ -21,6 +21,7 @@
  * ============================================================================
  */
 
+import { PENCERE_TURLERI } from "../src/lib/donem";
 import {
   ayKaydir,
   gunMetni,
@@ -85,8 +86,21 @@ function gun(metin: string): Date {
   return tarih;
 }
 
+/**
+ * ⚠ ÖLÇÜT ESKİDİ, KOD DEĞİL — TAZELENDİ 07.09.2026.
+ * `Pencere.baslangic` ve `bitisHaric` artık İSTANBUL gece yarısı ANI (UTC'de
+ * bir önceki günün 21:00'i). Bu ölçütler onları `gunMetni` ile, yani UTC
+ * günü olarak okuyordu ve bir gün geri görüyordu — iddia doğruydu, ölçüm
+ * yanlış eksendeydi. Sınırlar artık İstanbul gününe göre okunuyor; ETİKET
+ * alanları (`ilkGun`/`sonGun`) `gunMetni` ile kalmaya devam ediyor.
+ * _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez" — eskiyen
+ * ölçüt güncellenir, SUSTURULMAZ, ve niye eskidiği yazılır.)_
+ */
+const istGun = (d: Date): string =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(d);
+
 function aralik(p: Pencere): string {
-  return `${gunMetni(p.baslangic)} → ${gunMetni(p.sonGun)}`;
+  return `${istGun(p.baslangic)} → ${gunMetni(p.sonGun)}`;
 }
 
 // ===========================================================================
@@ -97,6 +111,38 @@ console.log("\n1) PENCERE — dönem sınırları");
   const an = new Date("2026-08-10T09:00:00Z");
 
   const buAy = pencereOlustur("BU_AY", an);
+
+/**
+ * ⛔ TARİH TEK BAŞINA YETMEZ — SAAT DE ÖLÇÜLÜR (07.09.2026, mutasyonla bulundu).
+ * Sınır okumaları `gunMetni` (UTC) yerine `istGun` (İstanbul) yapılınca ölçüt
+ * ESKİ HATALI DAVRANIŞLA DA UYUMLU hâle geldi: UTC gece yarısı = İstanbul
+ * 03:00, yani AYNI GÜN. Sınırı UTC'ye geri döndüren mutasyon YEŞİL geçti.
+ * Ayırt edici olan tarih değil SAAT: iş günü İstanbul 00:00'da başlar.
+ * _(Anayasa: "iki okumayla da uyumlu bir gözlem hiçbirini kanıtlamaz".)_
+ */
+{
+  const istSaat = (d: Date): string =>
+    new Intl.DateTimeFormat("tr-TR", {
+      timeZone: "Europe/Istanbul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(d);
+  const an = new Date("2026-08-13T09:00:00.000Z");
+  const turler = PENCERE_TURLERI.filter((t) => t !== "OZEL");
+  kontrol(
+    `TABAN DOLU — sınanan pencere türü (${turler.length})`,
+    turler.length >= 8,
+  );
+  for (const t of turler) {
+    const p = pencereOlustur(t, an);
+    kontrol(
+      `${t}: sınırlar İstanbul 00:00'da (UTC gece yarısı DEĞİL)`,
+      istSaat(p.baslangic) === "00:00" && istSaat(p.bitisHaric) === "00:00",
+    );
+  }
+}
+
   kontrol(`bu ay          ${aralik(buAy)}`, aralik(buAy) === "2026-08-01 → 2026-08-10");
 
   // KULLANICI KARARI 10.08.2026: "son 3 ay" = BU AY DAHİL son 3 takvim ayı.
@@ -176,7 +222,7 @@ console.log("\n1) PENCERE — dönem sınırları");
   kontrol(`özel aralık    ${aralik(ozel)}`, aralik(ozel) === "2026-02-01 → 2026-02-28");
   kontrol(
     "özel aralıkta bitiş günü DAHİL (bitisHaric = 1 Mart)",
-    gunMetni(ozel.bitisHaric) === "2026-03-01",
+    istGun(ozel.bitisHaric) === "2026-03-01",
   );
 
   // BOZUK GİRDİ SESSİZ GEÇMEZ.
@@ -211,7 +257,7 @@ console.log("\n2) SAAT DİLİMİ — iş günü Europe/Istanbul'dan okunur");
   const p = pencereOlustur("BU_AY", gecTemmuz);
   kontrol(
     `o anda "bu ay" = ${aralik(p)}  (Temmuz DEĞİL)`,
-    gunMetni(p.baslangic) === "2026-08-01",
+    istGun(p.baslangic) === "2026-08-01",
   );
 
   // Ters yön: ay sonunda da aynı kural.
@@ -219,7 +265,7 @@ console.log("\n2) SAAT DİLİMİ — iş günü Europe/Istanbul'dan okunur");
   const p2 = pencereOlustur("BU_AY", ayDonumu);
   kontrol(
     `31.08 21:30 UTC → "bu ay" = ${aralik(p2)}  (Eylül)`,
-    gunMetni(p2.baslangic) === "2026-09-01",
+    istGun(p2.baslangic) === "2026-09-01",
   );
 
   // Gündüz saatlerinde iki dilim aynı günü gösterir — kayma YOK.
