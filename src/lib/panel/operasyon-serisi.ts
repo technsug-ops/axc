@@ -221,20 +221,33 @@ export function operasyonSerisi(girdi: OperasyonGirdisi): OperasyonNoktasi[] {
   const noktalar: OperasyonNoktasi[] = [];
   const dizin = new Map<string, OperasyonNoktasi>();
 
-  let imlec = kova(girdi.pencere.baslangic, girdi.kirilim).baslangic;
-  while (imlec.getTime() < girdi.pencere.bitisHaric.getTime()) {
+  /**
+   * ⛔ EKSEN ETİKET UZAYINDA KALIR — SINIR ANLARIYLA KARIŞTIRILMAZ
+   * (düzeltme 07.09.2026).
+   *
+   * `pencere.baslangic`/`bitisHaric` artık İSTANBUL gece yarısı ANLARI
+   * (UTC'de bir önceki günün 21:00'i); `imlec`/`sonraki` ise UTC gece yarısı
+   * ÇAPALARI. İkisi aynı karşılaştırmaya girince kova sınırları 3 saat
+   * kayıyor ve son kovanın `sonGun`u pencereninkiyle tutmuyordu.
+   *
+   * ⭐ Grafik ekseni bir GÜN LİSTESİDİR, an değil: kırpma da `ilkGun`/`sonGun`
+   * etiket çapalarından yapılır. Kayıtların hangi kovaya düştüğü ise
+   * `kova()` içinde `isTakvimGunu` ile İSTANBUL gününden okunur — o taraf
+   * zaten doğruydu ve değişmedi.
+   */
+  const eksenBas = girdi.pencere.ilkGun;
+  const eksenBitHaric = gunEkle(girdi.pencere.sonGun, 1);
+
+  let imlec = kova(eksenBas, girdi.kirilim).baslangic;
+  while (imlec.getTime() < eksenBitHaric.getTime()) {
     const sonraki = sonrakiKova(imlec, girdi.kirilim);
     const { anahtar } = kova(imlec, girdi.kirilim);
 
     /** Pencereye kırpma — nokta pencerenin dışına taşmaz. */
     const bas =
-      imlec.getTime() < girdi.pencere.baslangic.getTime()
-        ? girdi.pencere.baslangic
-        : imlec;
+      imlec.getTime() < eksenBas.getTime() ? eksenBas : imlec;
     const bitHaric =
-      sonraki.getTime() > girdi.pencere.bitisHaric.getTime()
-        ? girdi.pencere.bitisHaric
-        : sonraki;
+      sonraki.getTime() > eksenBitHaric.getTime() ? eksenBitHaric : sonraki;
 
     const nokta: OperasyonNoktasi = {
       anahtar,

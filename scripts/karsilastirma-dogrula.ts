@@ -1,6 +1,15 @@
 import { readFileSync } from "node:fs";
 
 import { gunDegeri, gunMetni, pencereOlustur } from "../src/lib/donem";
+
+/**
+ * ⚠ ÖLÇÜT ESKİDİ, KOD DEĞİL — TAZELENDİ 07.09.2026.
+ * `Pencere.baslangic` artık İSTANBUL gece yarısı ANI; `gunMetni` onu UTC
+ * günü olarak okuyunca bir gün geri görüyordu. Bu ölçütler kıyas dönemin
+ * hangi GÜNLERİ kapsadığını sınıyor — yani ETİKET sorusu; okuma `ilkGun`
+ * çapasına bağlandı. Sınırın İstanbul 00:00'da olduğu ayrıca
+ * `donem:dogrula` 6. bölümde ölçülüyor (iki yerde iki ölçüt olmaz).
+ */
 import {
   KIYAS_ANAHTARLARI,
   ayGeriKaydir,
@@ -51,15 +60,15 @@ console.log("=".repeat(70));
   const buAy = pencereOlustur("BU_AY", AN);
   kontrol(
     "seçili pencere 1–15 Ağustos 2026",
-    gunMetni(buAy.baslangic) === "2026-08-01" && gunMetni(buAy.sonGun) === "2026-08-15",
-    [gunMetni(buAy.baslangic), gunMetni(buAy.sonGun)],
+    gunMetni(buAy.ilkGun) === "2026-08-01" && gunMetni(buAy.sonGun) === "2026-08-15",
+    [gunMetni(buAy.ilkGun), gunMetni(buAy.sonGun)],
   );
 
   const onceki = kiyasPenceresi(buAy, "onceki");
   kontrol(
     "önceki dönem = 1–15 TEMMUZ (17–31 Haziran DEĞİL)",
-    gunMetni(onceki.baslangic) === "2026-07-01" && gunMetni(onceki.sonGun) === "2026-07-15",
-    [gunMetni(onceki.baslangic), gunMetni(onceki.sonGun)],
+    gunMetni(onceki.ilkGun) === "2026-07-01" && gunMetni(onceki.sonGun) === "2026-07-15",
+    [gunMetni(onceki.ilkGun), gunMetni(onceki.sonGun)],
   );
   kontrol(
     "  ...gün sayısı aynı (kısmi dönem tuzağı kapanıyor)",
@@ -70,19 +79,19 @@ console.log("=".repeat(70));
   const ucAy = kiyasPenceresi(buAy, "ucAy");
   kontrol(
     "3 ay öncesi = 1–15 MAYIS 2026",
-    gunMetni(ucAy.baslangic) === "2026-05-01" && gunMetni(ucAy.sonGun) === "2026-05-15",
-    [gunMetni(ucAy.baslangic), gunMetni(ucAy.sonGun)],
+    gunMetni(ucAy.ilkGun) === "2026-05-01" && gunMetni(ucAy.sonGun) === "2026-05-15",
+    [gunMetni(ucAy.ilkGun), gunMetni(ucAy.sonGun)],
   );
 
   const gecenYil = kiyasPenceresi(buAy, "gecenYil");
   kontrol(
     "geçen yıl aynı dönem = 1–15 AĞUSTOS 2025",
-    gunMetni(gecenYil.baslangic) === "2025-08-01" && gunMetni(gecenYil.sonGun) === "2025-08-15",
-    [gunMetni(gecenYil.baslangic), gunMetni(gecenYil.sonGun)],
+    gunMetni(gecenYil.ilkGun) === "2025-08-01" && gunMetni(gecenYil.sonGun) === "2025-08-15",
+    [gunMetni(gecenYil.ilkGun), gunMetni(gecenYil.sonGun)],
   );
   kontrol(
     "  ...yıl gerçekten değişti (ay aynı kaldı)",
-    gecenYil.baslangic.getUTCFullYear() === 2025 && gecenYil.baslangic.getUTCMonth() === 7,
+    gecenYil.ilkGun.getUTCFullYear() === 2025 && gecenYil.ilkGun.getUTCMonth() === 7,
   );
 }
 

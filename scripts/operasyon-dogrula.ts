@@ -297,7 +297,7 @@ console.log("\n7) KIRILIM — uzun pencerede gün gün çizilmez");
   });
   kontrol(
     "ilk hafta kovası pencerenin başına KIRPILDI",
-    haftalar[0]!.baslangic.getTime() === buAy.baslangic.getTime(),
+    haftalar[0]!.baslangic.getTime() === buAy.ilkGun.getTime(),
     haftalar[0]!.baslangic.toISOString().slice(0, 10),
   );
   kontrol(
@@ -649,6 +649,9 @@ console.log("\nDÖRDÜNCÜ SERİ — SATIN ALINAN (K126)");
       baslangic: g("2026-08-01"),
       bitisHaric: g("2026-08-04"),
       sonGun: g("2026-08-03"),
+      /** ⚠ EKSEN ETİKET ÇAPASINDAN OKUNUR (07.09.2026) — `as never` tip
+       *  kontrolünü atladığı için eksik alan `tsc`ye görünmüyordu. */
+      ilkGun: g("2026-08-01"),
       tur: "OZEL",
     } as never,
     kirilim: "GUN",

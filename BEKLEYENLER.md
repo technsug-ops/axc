@@ -58,6 +58,31 @@ yarısı = İstanbul 03:00, yani AYNI GÜN. Sınırı UTC'ye geri döndüren mut
 _(Anayasa: "iki okumayla da uyumlu bir gözlem hiçbirini kanıtlamaz" —
 bu kez gözlemi ben körleştirmiştim.)_
 
+─── ② **TAM TUR İKİ BEKÇİ DAHA BULDU — VE BİRİ GERÇEK DAVRANIŞTI**
+
+Ben yalnız bir alt küme koşmuştum; push kapısı tam turu koşturunca
+`karsilastirma:dogrula` (5) ve `operasyon:dogrula` (1) kırmızı yandı.
+_(Anayasa: "push öncesi BÜTÜN bekçiler koşulur, seçilmişler değil" —
+alt küme koşmak tam bu yüzden yetmiyor.)_
+
+· **`karsilastirma`** — ölçüt eskimesi: kıyas dönemin hangi GÜNLERİ kapsadığı
+  soruluyordu ama okuma `baslangic` (sınır anı) üzerindendi. `ilkGun` etiket
+  çapasına bağlandı (8 okuma).
+· **`operasyon`** — ⛔ **ÖLÇÜT DEĞİL, GERÇEK TUTARSIZLIK.** `operasyonSerisi`
+  ekseni UTC çapalarıyla (`imlec`/`sonraki`) kuruyor ama kırpmayı SINIR
+  anlarıyla yapıyordu; ikisi karışınca son kovanın `sonGun`u pencereninkiyle
+  tutmadı. **Grafik ekseni bir GÜN LİSTESİDİR, an değil** — kırpma da
+  `ilkGun`/`sonGun` etiket çapalarına alındı. Kayıtların hangi kovaya düştüğü
+  zaten `isTakvimGunu` ile İstanbul gününden okunuyordu, o taraf değişmedi.
+
+⚠ **VE `as never` TİP KONTROLÜNÜ ATLATMIŞTI:** bekçinin elle kurduğu
+`Pencere` nesnesi `as never` ile yazılmıştı, bu yüzden yeni `ilkGun` alanı
+eksik kaldığı hâlde `tsc` sessiz kaldı ve seri **0 nokta** üretti. Cast,
+tipin koruyacağı şeyi tam da eklenen alanda kör etti.
+
+**MUTASYON — 7 senaryo, 7 kırmızı:** ①–⑤ (sınır/etiket/hafta/bitiş/kıyas) +
+⑥ ekseni sınır anına döndüren + ⑦ eksen bitişini sınır anına döndüren.
+
 ---
 
 ## ✅ K176 — AYRIŞAN MALİYET DAMGALARI · 07.09.2026 · [KOŞTU — 01.08.2025→bugün]
