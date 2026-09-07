@@ -5805,6 +5805,70 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   );
 }
 
+/* ═══ K186 — KARŞILAŞTIRMA RAKAMLARI + İADE ORANI GRAFİĞİ (07.09.2026) ═══
+ *
+ * ⛔ Halil: _"iki parametre seçtiğimde rakamlar kapanıyor; birden fazla
+ * parametre seçildiğinde de gösterilsin"_ — ve adet tarafında da aynısı.
+ * Eski gerekçe _"iki çizginin rakamları üst üste biner"_ idi; çakışmadan
+ * KAÇINMAK yerine ÇAKIŞMA ÇÖZÜLDÜ.
+ */
+{
+  const yorumsuz4 = (m: string) =>
+    m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  const grafik4 = yorumsuz4(readFileSync("src/components/karsilastirma-grafigi.tsx", "utf8"));
+  const panel4 = yorumsuz4(readFileSync("src/app/page.tsx", "utf8"));
+
+  /** ⛔ RAKAM KAPISI GERİ GELEMEZ: tek seri şartı rakamları söndürüyordu. */
+  kontrol(
+    "rakamlar TEK SERİ şartına bağlı DEĞİL",
+    !/seciliSeriler\.length === 1/.test(grafik4),
+  );
+  kontrol(
+    "rakamlar her seçili seri için çiziliyor",
+    /sutun\.map\(\(n\) =>/.test(grafik4) && grafik4.includes("bicimleKisa(n.d)"),
+  );
+  /**
+   * ⛔ ÇAKIŞMA ÇÖZÜMÜ ÖLÇÜLÜ: etiketler Y'ye göre sıralanır ve aralarında en
+   * az `ETIKET_ARALIGI` bırakılır. Kaldırılırsa rakamlar üst üste biner ve
+   * kullanıcının şikâyeti başka biçimde geri döner.
+   */
+  kontrol("çakışma aralığı SABİTTEN", /const ETIKET_ARALIGI = \d+;/.test(grafik4));
+  kontrol(
+    "  ...ve etiketler sıralanıp İTİLİYOR",
+    /\.sort\(\(a, b\) => a\.y - b\.y\)/.test(grafik4) &&
+      /onceki \+ ETIKET_ARALIGI/.test(grafik4),
+  );
+  /** ⚠ Rakam sahipliği RENKTEN de okunur — tek başına konum yetmez. */
+  kontrol(
+    "rakam serinin KENDİ rengiyle yazılıyor",
+    /fill=\{RENKLER\[seriler\.indexOf\(n\.s\) % RENKLER\.length\]\}/.test(grafik4),
+  );
+
+  /**
+   * ⛔ İADE ORANI GRAFİĞİ TABLONUN GÖVDESİNDEN BESLENİR. İkinci bir bölme
+   * yazılsaydı tablo ile grafik sessizce ayrışırdı ve hangisinin doğru olduğu
+   * ancak yan yana konunca görülürdü. _(Anayasa: "sayı = liste".)_
+   */
+  kontrol("iade grafiği tablonun `oran()` gövdesini kullanıyor", panel4.includes("oran({ pay: n.iadeAdedi, payda: n.adet })"));
+  kontrol(
+    "iade grafiğinde ÇIPLAK bölme YOK",
+    !/iadeAdedi\s*\/\s*[a-zA-Z.]*adet/.test(panel4),
+  );
+  /**
+   * ⛔ TOPLAM SERİSİ ORANLARI ORTALAMAZ — pay ve payda toplanır, sonra
+   * bölünür. Ortalasaydı 9 satışlık kanal 3.687 satışlık kanal kadar
+   * konuşurdu. Tablonun toplam satırıyla AYNI kural.
+   */
+  kontrol(
+    "toplam serisi PAY/PAYDA toplayıp bölüyor",
+    /pay: topla\.pay \+ \(k\.seri\[ay\]\?\.iadeAdedi \?\? 0\)/.test(panel4) &&
+      /payda: topla\.payda \+ \(k\.seri\[ay\]\?\.adet \?\? 0\)/.test(panel4),
+  );
+  kontrol("iade sekmesi grafiği ÇİZİYOR", panel4.includes("seriler={iadeOraniSerileri}"));
+  /** ⚠ Seri anahtarı ADDAN değil KİMLİKTEN — ad değişince grafik bozulmasın. */
+  kontrol("seri anahtarı kanal KODUNDAN", panel4.includes("anahtar: `kanal-${k.kod}`"));
+}
+
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) {
 

@@ -2171,7 +2171,10 @@
     "karsilastirmaSecimBos": "",
     "iadeTutariSerisi": "",
     "iadeAdediSerisi": "",
-    "birimAdet": ""
+    "birimAdet": "",
+    "birimYuzde": "",
+    "iadeOraniGrafik": "",
+    "iadeOraniGrafikNotu": ""
   },
   "Envanter": {
     "baslik": "",

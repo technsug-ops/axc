@@ -13,6 +13,67 @@
 
 ---
 
+## ✅ K186 — GRAFİK RAKAMLARI + İADE ORANI ÇİZGİSİ · 07.09.2026 · [KOD KOŞTU]
+
+> **Halil:** _"karşılaştırmada iki parametre seçtiğimde rakamlar kapanıyor;
+> birden fazla parametre seçildiğinde de gösterilsin"_ · _"adet kısmında da
+> aynı problem var"_ · _"bu sayfa çizgi grafikle desteklensin"_ (iade oranı).
+
+### ① RAKAMLAR HER SERİDE — ÇAKIŞMADAN KAÇMA, ÇAKIŞMAYI ÇÖZ
+
+⛔ **ESKİ GEREKÇE ÇÜRÜDÜ.** Rakamlar `seciliSeriler.length === 1` şartına
+bağlıydı ve gerekçesi _"iki çizginin rakamları aynı dikey şeride biner"_ idi.
+Doğruydu ama yanlış çareydi: **kaçınmak yerine çözülür.** `cizgi-grafik.tsx`
+ciro/NET-2 çiftinde bunu zaten yapıyordu.
+
+    ay sütunundaki etiketler Y'ye göre SIRALANIR
+    aralarında en az ETIKET_ARALIGI (14 px) kalacak şekilde İTİLİR
+    sıra bozulmaz — üstteki çizginin rakamı üstte kalır
+    renk serinin KENDİ rengi → sahiplik konumdan DEĞİL renkten de okunur
+
+### ② İADE ORANI ÇİZGİ GRAFİĞİ — TABLONUN GÖVDESİNDEN
+
+⛔ **İKİNCİ BİR BÖLME YAZILMADI:** grafik tablonun `oran()` gövdesini
+çağırıyor. Ayrı yazılsaydı tablo ile grafik sessizce ayrışır, hangisinin doğru
+olduğu ancak yan yana konunca görülürdü. _(Anayasa: "sayı = liste".)_
+⛔ **TOPLAM SERİSİ ORANLARI ORTALAMIYOR** — pay ve payda toplanıp yeniden
+bölünüyor; tablonun toplam satırıyla aynı sayı. Ortalasaydı 9 satışlık kanal
+3.687 satışlık kanal kadar konuşurdu.
+⚠ `null` ay (o kanalda hiç satış yok) çizgiyi **keser**, sıfıra çekmez.
+⭐ **İKİNCİ GRAFİK GÖVDESİ YAZILMADI:** karşılaştırma bileşeni yeniden
+kullanıldı — seri seçimi, karışık birim kapısı ve `null` kesmesi bedavaya
+geldi. Bileşene tek ekleme: `YUZDE` birim türü.
+
+    panel:dogrula   713/713
+    MUTASYON          8/8   iki yönlü
+
+⭐ **EN DEĞERLİ İKİ MUTASYON:** ⑤ grafiğin KENDİ bölmesini kurması ve ⑥ toplam
+serisinin oranları ortalaması — ikisi de kırmızı yandı. İkisi de "makul
+görünen ama sessizce ayrışan" sınıfından.
+
+### ③ İLK CANLI SİPARİŞİN ONAY SINAVI GEÇTİ (Halil onayladı, 07.09)
+
+K165-④'te _"stok/NET bağı bu turda SINANMADI"_ diye açık bırakılan iki madde
+onay kuyruğundan geçince kapandı:
+
+    profitStatus   CALCULATED ✓
+    NET-1 / NET-2  317,7117 / 260,0583 TRY
+    SaleFee (6)    MALIYET 2.499,00 · KOMISYON 406,20 · STOPAJ 28,21
+                   ODEME_GIDERI 27,08 · HIZMET_BEDELI 12,60 · KARGO 94,20
+    STOK           SALE_OUT −1 @ 2.499 · kaynak VAR
+                   → parti PURCHASE_IN 10.04.2026 @ 2.499  ✓ FIFO
+    varyant stoğu  2
+
+⭐ **ARİTMETİK KURUŞUNA KAPANDI:**
+`3.385,00 − 2.499,00 − 406,20 − 28,21 − 27,08 − 12,60 − 94,20 = 317,7117`
+⭐ **KOMİSYON 406,20 — HB PANELİYLE BİREBİR.** `%10 + %20 KDV` mekanizması
+doğrulandı; `%12` kısayolu aynı sayıyı verirdi ama oran ya da KDV değişince
+sessizce bozulurdu (bu yüzden koda yazılmadı).
+⭐ **KUPON 15,00 KESİNTİLERDE YOK** — yeri çözülene kadar ne ciroya ne gidere
+karışıyor. Doğru davranış.
+
+---
+
 ## 🚨 K185 — KARŞILAŞTIRMA SEKMESİ CANLIDA 500 VERDİ · 07.09.2026 · [KOD KOŞTU]
 
 > **Halil:** _"karşılaştırma çalışmıyor"_ — `?grafik=karsilastirma` →

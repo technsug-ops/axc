@@ -22,7 +22,7 @@ import {
 import { KatlanirBolum } from "@/components/katlanir-bolum";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { IsiHaritasi, type IsiSatiri } from "@/components/isi-haritasi";
-import { OranTablosu, type OranSatiri } from "@/components/oran-tablosu";
+import { OranTablosu, oran, type OranSatiri } from "@/components/oran-tablosu";
 import {
   KarsilastirmaGrafigi,
   type KarsilastirmaSerisi,
@@ -1603,6 +1603,8 @@ export default async function AnaSayfa({
    * ⛔ KANAL SÜZGECİ UYGULANMAZ — tablonun işi kanalları KARŞILAŞTIRMAK.
    */
   const iadeSerileri = kanalSecenekleri.map(([kod, ad]) => ({
+    /** ⚠ KOD DA TAŞINIYOR: grafik serisinin anahtarı ADDAN değil KİMLİKTEN. */
+    kod,
     ad,
     seri: aylikSeri(
       satislar,
@@ -1621,6 +1623,46 @@ export default async function AnaSayfa({
     ad: k.ad,
     hucreler: k.seri.map((n) => ({ pay: n.iadeTutari, payda: n.gelir })),
   }));
+
+  /**
+   * ═══ İADE ORANI ÇİZGİ GRAFİĞİ (kullanıcı isteği 07.09.2026) ═══════════
+   * _"Bu sayfa çizgi grafikle desteklensin."_
+   *
+   * ⛔ ORAN TABLONUN GÖVDESİNDEN — `oran()` aynı dosyadan geliyor. İkinci bir
+   * bölme yazsaydım tablo ile grafik sessizce ayrışırdı ve hangisinin doğru
+   * olduğu ancak yan yana konunca görülürdü.
+   * ⛔ TOPLAM SERİSİ DE AYNI KURAL: oranlar toplanmaz — PAY ve PAYDA toplanır,
+   * sonra bölünür. Tablonun toplam satırıyla birebir aynı sayı.
+   * ⚠ `null` ay (o kanalda hiç satış yok) çizgiyi KESER, sıfıra çekmez.
+   */
+  const iadeOraniSerileri: KarsilastirmaSerisi[] = [
+    ...iadeSerileri.map((k) => ({
+      anahtar: `kanal-${k.kod}`,
+      ad: k.ad,
+      birim: t("birimYuzde"),
+      birimTuru: "YUZDE" as const,
+      paraBirimi: null,
+      degerler: k.seri.map((n) => oran({ pay: n.iadeAdedi, payda: n.adet })),
+    })),
+    {
+      anahtar: "toplam",
+      ad: t("toplam"),
+      birim: t("birimYuzde"),
+      birimTuru: "YUZDE" as const,
+      paraBirimi: null,
+      degerler: seri.map((_, ay) =>
+        oran(
+          iadeSerileri.reduce(
+            (topla, k) => ({
+              pay: topla.pay + (k.seri[ay]?.iadeAdedi ?? 0),
+              payda: topla.payda + (k.seri[ay]?.adet ?? 0),
+            }),
+            { pay: 0, payda: 0 },
+          ),
+        ),
+      ),
+    },
+  ];
 
   /**
    * ═══ KARŞILAŞTIRMA SERİLERİ (K182, 07.09.2026) ════════════════════════
@@ -3782,6 +3824,27 @@ export default async function AnaSayfa({
                 <p className="text-muted-foreground text-sm">
                   {t("iadeOraniNotu")}
                 </p>
+
+                {/* ═══ ÇİZGİ GRAFİK (kullanıcı isteği 07.09.2026) ═══
+                    ⛔ TABLONUN GÖVDESİNDEN BESLENİYOR (`oran()`): ikinci bir
+                    bölme yazılsaydı grafik ile tablo sessizce ayrışırdı.
+                    ⚠ Aynı bileşen karşılaştırma sekmesinde de kullanılıyor —
+                    seri seçimi, karışık birim kapısı ve `null` kesmesi
+                    bedavaya geliyor; ikinci bir grafik gövdesi yazılmadı. */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">{t("iadeOraniGrafik")}</h3>
+                  <p className="text-muted-foreground text-sm">
+                    {t("iadeOraniGrafikNotu")}
+                  </p>
+                  <KarsilastirmaGrafigi
+                    etiketler={noktalar.map((n) => n.etiket)}
+                    seriler={iadeOraniSerileri}
+                    baslangicSecim={["toplam"]}
+                    bosMesaj={t("grafikBos")}
+                    karisikBirimMesaji={t("karsilastirmaKarisikBirim")}
+                    secimBosMesaji={t("karsilastirmaSecimBos")}
+                  />
+                </div>
 
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium">{t("iadeOraniAdet")}</h3>

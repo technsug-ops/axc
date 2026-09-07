@@ -2171,7 +2171,10 @@
     "karsilastirmaSecimBos": "Hiç seri seçili değil — üstteki düğmelerden seçin.",
     "iadeTutariSerisi": "İade tutarı",
     "iadeAdediSerisi": "İade adedi",
-    "birimAdet": "adet"
+    "birimAdet": "adet",
+    "birimYuzde": "%",
+    "iadeOraniGrafik": "İade oranı — kanal kanal, aylık seyir",
+    "iadeOraniGrafikNotu": "Adet bazlı iade oranının aylık seyri. İstediğin kanalı seçip gizleyebilirsin; Toplam satırı, oranları ortalamaz — payları ve paydaları toplayıp yeniden böler. O ay o kanalda hiç satış yoksa çizgi KESİLİR: oran sıfır değil, hesaplanamaz."
   },
   "Envanter": {
     "baslik": "Envanter değeri",

@@ -64,7 +64,7 @@ export type KarsilastirmaSerisi = {
    * önceden biçimlenemezler. Seri yalnız birimini söyler; biçimi istemci
    * kendi `useBicim()` kancasından çözer (anayasa: biçim dil altyapısından).
    */
-  birimTuru: "PARA" | "SAYI";
+  birimTuru: "PARA" | "SAYI" | "YUZDE";
   /** `PARA` ise para birimi (TRY/EUR) — veriden gelir, dilden değil. */
   paraBirimi: string | null;
 };
@@ -82,6 +82,13 @@ export type KarsilastirmaSerisi = {
  * taranır, `text-${x}` çalışmaz). Palet karanlık temada da okunur tonlardan.
  */
 const RENKLER = ["#2563eb", "#ea580c", "#16a34a", "#9333ea", "#dc2626", "#0891b2"];
+
+/**
+ * Aynı ay sütunundaki iki rakam arasındaki EN AZ dikey boşluk (px).
+ * ⚠ Yazı boyu 11 — 14 px, harflerin birbirine değmediği ilk değer.
+ * Çakışmadan kaçınmak yerine çakışmayı ÇÖZMEK için var.
+ */
+const ETIKET_ARALIGI = 14;
 
 export function KarsilastirmaGrafigi({
   etiketler,
@@ -193,14 +200,16 @@ export function KarsilastirmaGrafigi({
    * engellendiği için ilk serinin birimi hepsini temsil eder.
    */
   const olcut = seciliSeriler[0];
-  const bicimle = (deger: number) =>
-    olcut.birimTuru === "PARA" && olcut.paraBirimi !== null
-      ? bicim.para(deger, olcut.paraBirimi)
-      : bicim.sayi(deger);
-  const bicimleKisa = (deger: number) =>
-    olcut.birimTuru === "PARA" && olcut.paraBirimi !== null
-      ? bicim.paraKisa(deger, olcut.paraBirimi)
-      : bicim.sayi(deger);
+  const bicimci = (kisa: boolean) => (deger: number) => {
+    if (olcut.birimTuru === "PARA" && olcut.paraBirimi !== null) {
+      return kisa ? bicim.paraKisa(deger, olcut.paraBirimi) : bicim.para(deger, olcut.paraBirimi);
+    }
+    /** ⚠ ORAN EKSENDE DE `%` İLE YAZAR — çıplak sayı "adet mi oran mı" sorusunu açar. */
+    if (olcut.birimTuru === "YUZDE") return bicim.yuzde(deger);
+    return bicim.sayi(deger);
+  };
+  const bicimle = bicimci(false);
+  const bicimleKisa = bicimci(true);
 
   return (
     <div className="space-y-3">
@@ -283,28 +292,52 @@ export function KarsilastirmaGrafigi({
             );
           })}
 
-          {/* --- TEK SERİ SEÇİLİYSE RAKAMLAR --- */}
-          {/* ⚠ RAKAM YALNIZ TEK SERİDE: iki çizginin rakamları aynı dikey
-              şeride binerdi ve hangisinin hangi çizgiye ait olduğu yalnız
-              renkten anlaşılırdı. Tam rakamlar alttaki tabloda duruyor. */}
-          {seciliSeriler.length === 1
-            ? seciliSeriler[0].degerler.map((d, i) =>
-                d === null || i % etiketAtla !== 0 ? null : (
-                  <text
-                    key={i}
-                    x={x(i)}
-                    y={yKonum(d) - 10}
-                    textAnchor="middle"
-                    className="text-foreground"
-                    fill="currentColor"
-                    fontSize={11}
-                    fontWeight={600}
-                  >
-                    {bicimleKisa(d)}
-                  </text>
-                ),
+          {/* --- RAKAMLAR — HER SEÇİLİ SERİ İÇİN --- */}
+          {/* ⛔ ESKİ HÂL: rakamlar YALNIZ tek seri seçiliyken çiziliyordu ve
+              gerekçesi şuydu — _"iki çizginin rakamları aynı dikey şeride
+              biner"_. Kullanıcı 07.09.2026'da düzeltti: _"birden fazla
+              parametre seçtiğimde rakamlar kapanıyor; onlarda da
+              gösterilsin."_ Ve haklıydı: çakışmadan KAÇINMAK yerine ÇAKIŞMA
+              ÇÖZÜLÜR — `cizgi-grafik.tsx` ciro/NET-2 çiftinde bunu zaten
+              yapıyordu, aynı yöntem buraya taşındı.
+
+              ⭐ ÇÖZÜM: ay sütunundaki etiketler Y'ye göre sıralanır ve
+              aralarında en az `ETIKET_ARALIGI` kalacak şekilde AŞAĞI itilir.
+              Sıra bozulmaz — üstteki çizginin rakamı üstte kalır. Renk de
+              serinin kendi rengi, yani sahiplik yalnız konumdan değil
+              RENKTEN de okunuyor (rozetlerdeki renkle aynı). */}
+          {etiketler.map((_, i) => {
+            if (i % etiketAtla !== 0) return null;
+            /** ⚠ `null` ay ETİKET DE ALMAZ — ölçülmemiş ay sıfır gibi durmasın. */
+            const sutun = seciliSeriler
+              .map((s) => ({ s, d: s.degerler[i] }))
+              .filter(
+                (n): n is { s: KarsilastirmaSerisi; d: number } =>
+                  n.d !== null && n.d !== undefined,
               )
-            : null}
+              .map((n) => ({ ...n, y: yKonum(n.d) }))
+              .sort((a, b) => a.y - b.y);
+            let onceki = Number.NEGATIVE_INFINITY;
+            return sutun.map((n) => {
+              const istenen = n.y - 10;
+              const yer =
+                istenen < onceki + ETIKET_ARALIGI ? onceki + ETIKET_ARALIGI : istenen;
+              onceki = yer;
+              return (
+                <text
+                  key={`${n.s.anahtar}-${i}`}
+                  x={x(i)}
+                  y={yer}
+                  textAnchor="middle"
+                  fill={RENKLER[seriler.indexOf(n.s) % RENKLER.length]}
+                  fontSize={11}
+                  fontWeight={600}
+                >
+                  {bicimleKisa(n.d)}
+                </text>
+              );
+            });
+          })}
 
           {/* --- ay etiketleri --- */}
           <g className="text-muted-foreground" fontSize={12}>
