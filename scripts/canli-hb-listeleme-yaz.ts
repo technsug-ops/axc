@@ -1,6 +1,7 @@
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { baslikKur, kimlikOku, tumKayitlar, UCLAR } from "./hb/istemci";
+import { hbHesabiCoz, hbHesapHatasi } from "../src/lib/kanal-hesabi-hb";
 
 /**
  * ============================================================================
@@ -93,9 +94,16 @@ async function main() {
    * kimlik ve ayrı alanda duruyor. İkisini tek alana sıkıştırmak, birini
    * ötekinin üstüne yazmak demekti.
    */
-  const kimlikleEslesen = hesaplar.find(
-    (h) => h.apiHesapKimligi === k.merchantId,
-  );
+  /**
+   * ⛔ ÇÖZÜM ORTAK GÖVDEDEN (07.09.2026) — burada elle yazılıydı ve sipariş
+   * içe aktarmasında AYNI SORUNUN başka bir cevabı vardı (`externalId`).
+   * İkisi ayrışınca biri sessizce hiç çalışmadı. Tek gövde, tek cevap.
+   */
+  const cozum = await hbHesabiCoz(prisma, k.merchantId);
+  const kimlikleEslesen =
+    cozum.tur === "BULUNDU"
+      ? hesaplar.find((h) => h.id === cozum.id)
+      : undefined;
   const kanalSkusuOlan = hesaplar.filter((h) => h._count.channelSkus > 0);
 
   console.log("\n① HESAP");
@@ -104,6 +112,8 @@ async function main() {
     `   API kimliğiyle (Mağaza ID) eşleşen: ${kimlikleEslesen ? kimlikleEslesen.name : "⛔ YOK"}`,
   );
   if (kimlikleEslesen === undefined) {
+    /** ⛔ SEBEP YAZILIR — "hesap yok" ile "hesap var, bağlanmamış" ayrı iş. */
+    if (cozum.tur === "YOK") console.log("   " + hbHesapHatasi(cozum));
     console.log("   ⚠ Hesap çözülemedi — aşağıdaki sayım KANAL GENELİDİR.");
   }
 

@@ -2,6 +2,7 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
+import { hbHesabiCoz, hbHesapHatasi, HB_KANAL_ADI } from "../src/lib/kanal-hesabi-hb";
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
 import { kilitDurumu } from "./bekci-kilit";
 import { canliYapilandirma } from "./canli-ortak";
@@ -54,7 +55,16 @@ import {
  *                                ayrı karar. `shipmentCode` BOŞ bırakılır.
  *
  *  ═══ HESAP — SIT/CANLI AYRIMI ═══════════════════════════════════════════
- *  Hesap `externalId = HEPSIBURADA_MERCHANT_ID` ile bulunur. TEST ortamında
+ *  ⛔ HESAP `apiHesapKimligi` İLE BULUNUR — `externalId` İLE DEĞİL (07.09.2026).
+ *  ESKİ GEREKÇE SİLİNMEDİ, ÇÜRÜDÜ: burada `externalId = HEPSIBURADA_MERCHANT_ID`
+ *  yazıyordu ve TEST ortamında doğruydu. CANLI'da `externalId` raporlardaki
+ *  `7000222505`i taşıyor, API'nin Mağaza ID'si ise 36 karakterlik AYRI bir
+ *  kimlik — eşleşme HİÇ kurulamadı ve betik "HESAP YOK" deyip ilk adımda
+ *  durdu. Ölçüldü 07.09: içe aktarma **bir kez bile koşmamış**, Halil
+ *  siparişleri elle giriyordu. Çözüm ORTAK GÖVDEDE (`lib/kanal-hesabi-hb`),
+ *  listeleme yazıcısıyla aynı yerde — iki çözümleyici bir daha doğmasın.
+ *
+ *  (eski cümle) Hesap `externalId` ile bulunurdu. TEST ortamında
  *  yoksa "Hepsiburada — Test (SIT)" hesabı OLUŞTURULUR (izli): test
  *  siparişleri canlı AXCALI hesabına (externalId 7000222505) KARIŞMAZ.
  *  CANLI ortamda hesap yoksa OLUŞTURULMAZ — kırmızı durur: canlı hesabın
@@ -113,15 +123,15 @@ async function hesabiBul(
   prisma: PrismaClient,
   k: Kimlik,
 ): Promise<{ id: string; ad: string; olusturuldu: boolean } | null> {
-  const mevcut = await prisma.channelAccount.findFirst({
-    where: { externalId: k.merchantId },
-    select: { id: true, name: true },
-  });
-  if (mevcut) return { id: mevcut.id, ad: mevcut.name, olusturuldu: false };
+  /** ⛔ ORTAK ÇÖZÜMLEYİCİ — listeleme yazıcısıyla AYNI gövde, aynı alan. */
+  const c = await hbHesabiCoz(prisma, k.merchantId);
+  if (c.tur === "BULUNDU") return { id: c.id, ad: c.ad, olusturuldu: false };
+  /** ⛔ SESSİZ DÖNMEZ: niçin çözülemediği çağırana yazdırılır. */
+  console.log("   " + hbHesapHatasi(c));
   if (k.ortam.toUpperCase() !== "TEST") return null;
   if (!YAZ) return { id: "(önizleme)", ad: "Hepsiburada — Test (SIT)", olusturuldu: true };
   const kanal = await prisma.channel.findFirst({
-    where: { name: "Hepsiburada" },
+    where: { name: HB_KANAL_ADI },
     select: { id: true },
   });
   if (!kanal) return null;
@@ -131,7 +141,14 @@ async function hesabiBul(
       code: "HB-SIT-TEST",
       defaultCurrency: "TRY",
       channelId: kanal.id,
-      externalId: k.merchantId,
+      /**
+       * ⛔ `apiHesapKimligi`E YAZILIR, `externalId`E DEĞİL — ÇÖZÜMLEYİCİ
+       * ORAYA BAKIYOR. `externalId` raporlardaki satıcı numarasıdır ve SIT
+       * test hesabının böyle bir numarası YOKTUR; oraya Mağaza ID yazmak
+       * sahip olmadığımız bir kimliği beyan etmek olurdu.
+       * _(Anayasa: "kolon başlığı bir iddiadır — vekil alan gösterilmez".)_
+       */
+      apiHesapKimligi: k.merchantId,
       satisIcin: true,
     },
     select: { id: true, name: true },

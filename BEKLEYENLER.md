@@ -2004,6 +2004,77 @@ Yardım Merkezi → Talepler → "API Entegrasyon Teknik Destek" → tür
 Kanıt logları scratchpad: hb-katalog-kanit.log · hb-siparis-kanit.log ·
 hb-listeleme-kanit.log.
 
+### ─── ② CANLIDA HİÇ KOŞMAMIŞ — İKİ TIKANMA · 07.09.2026
+
+> **Halil:** _"Hepsiburada'daki siparişleri elimle girdim, 4132853379 ve
+> 4423830471 bunlar API'den gelmedi."_
+
+⛔ **VE HAKLIYDI.** Ben `/orders` ucunun `totalCount 0`'ını _"işlem bekleyen
+sipariş yok"_ diye okumuştum; o cümle ölçüm değil YORUMDU. Panelde 4
+gönderime hazır + 12 kargoda duruyordu.
+
+**① HESAP ÇÖZÜMÜ — İKİ GÖVDE, İKİ FARKLI ALAN (kapatıldı)**
+
+    listeleme yazıcısı  → apiHesapKimligi   ✓ çalışıyordu
+    sipariş içe aktarma → externalId        ⛔ HİÇ eşleşmedi
+
+CANLI'da `externalId` = `7000222505` (rapor numarası), API'nin Mağaza ID'si
+36 karakterlik AYRI kimlik. Betik "HESAP YOK" deyip **ilk adımda duruyordu** —
+yani içe aktarma canlıda **bir kez bile koşmamış.** Aynı soruya iki cevap
+veren iki gövde, birinin bozukluğunu ötekinin sağlığıyla gizledi.
+⭐ Çözüm ORTAK GÖVDEDE: `src/lib/kanal-hesabi-hb.ts`, iki çağıran da oradan.
+Önizleme artık `kanal hesabı : AXCALI` diyor ve uçtan uca koşuyor.
+
+**② UÇ ÖLÇÜMÜ — 16 SİPARİŞ NEREDE (salt okuma)**
+
+    /packages?offset&limit          4 kayıt · status Open    = "Gönderime hazır 4" ✓
+    /packages/{id}/shipped         12 kayıt · totalCount 12  = "Kargoda 12"        ✓
+    /packages/{id}/delivered                 totalCount 69   = geçmiş teslimler
+    /orders  (12 durum denendi)     0                        ← betiğin baktığı yer
+
+⛔ **`?status=` PARAMETRESİ YOK SAYILIYOR** — 12 farklı değer için `/packages`
+hep AYNI 4 kaydı döndürdü. Durum filtresi query değil **YOL**. Buna güvenen
+bir kod sessizce hep aynı kümeyi çeker ve "durum süzdüm" sanırdı.
+
+⛔ **VE İKİ UÇ AYNI ŞEKLİ DÖNMÜYOR:** `Open` paketi TAM kayıt (kalemler,
+tutarlar, komisyon); `shipped`/`delivered` **ince ve PascalCase**
+(`Id · Barcode · PackageNumber · OrderNumber · DeliveredDate`) — **tutar
+YOK.** Yani sipariş `Open`dan çıktıktan sonra tutarları o uçtan alınamaz.
+⏭ Çekim tasarımının ilk kısıtı budur (③'te çözülecek).
+
+**③ GELİR ALANI — KANALIN KENDİ ÖDEME KAYDIYLA SEÇİLDİ**
+
+API tek kalemde İKİ taban veriyor ve ikisi de "makul" görünüyor:
+
+    merchantTotalPrice  6.399,00   liste (defterimizde duran)
+    unitHBDiscount      1.400,63
+    totalPrice          4.998,37   müşterinin ödediği (6399 − 1400,63)
+    commission            831,87   = 6399 × %13   (4998,37 × %13 = 649,79)
+
+⭐ **AYIRT EDİCİ KANIT HAKEDİŞTEN GELDİ (129 sipariş):**
+
+    hakediş SIPARIS_TUTARI ↔ defterdeki ciro:  eşit 40 · KÜÇÜK 88 · BÜYÜK 0
+    komisyon ↔ SIPARIS_TUTARI × oran:          tutan 0 · komisyon DAHA BÜYÜK 127
+
+**HÜKÜM (tek okuma ayakta kaldı):** HB **ödemeyi müşterinin ödediği taban
+üstünden** yapar, **komisyonu LİSTE fiyatı üstünden** keser.
+⛔ İçe aktarmanın gelir alanı **`totalPrice`** (merchantTotalPrice DEĞİL).
+⛔ Komisyon **`commission` alanından AYNEN** yazılır, orandan HESAPLANMAZ —
+hesaplansaydı bu siparişte komisyon **₺182,08 eksik** çıkar ve NET
+olduğundan yüksek görünürdü. _(TY `price` dersinin HB'deki karşılığı: iki
+okumayla da uyumlu gözlem hiçbirini kanıtlamaz; kanalın kendi ödeme kaydı
+ayırt etti.)_
+
+⚠ **YAN BULGU — DEFTERDEKİ HB CİROSU YÜKSEK.** İndirimli 88 satışta ciro
+liste fiyatıyla duruyor (ör. `4437842657` ciro 2.990,00 · HB kaydı 2.632,86).
+⏭ **AYRI KALEM, HALİL KARARI** — kendiliğinden düzeltilmez.
+
+⏭ **③ ÇEKİM YOLU (sıradaki):** `Open` + `shipped` uçlarından; ATLA küresel
+kalır (`Sale.code` global `@unique`) ama çakışma SINIFLANDIRILIR — aynı
+kanal = yeniden içe aktarma, **çapraz kanal = numara uzayı çakışması** ve
+yüksek sesle raporlanır. Sınav üç elle girişle: `4132853379` · `4423830471`
+· `4318708967`.
+
 ---
 
 ## ✅ K164 — ONAY KUYRUĞU KURULDU · 04.09.2026 · [KOD KOŞTU]
