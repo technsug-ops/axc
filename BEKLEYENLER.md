@@ -982,183 +982,6 @@ kapsam dışıdır. Bunu bilmeden gören biri bir gün harcar.
 
 ---
 
-## ✅ K175 — K-ALM-260216 MALİYET DÜZELTMESİ · 06–07.09.2026 · [KOŞTU — 3 alım, 5 satış]
-
-> **Halil teyidi 07.09:** üç siparişte de **fiilen ödenen ₺1.598** — kupon YOK,
-> defter eksikmiş. (HB "Siparişlerim" ekranından bakıldı.)
-
-### ① EŞLEŞTİRME — beş Sip.Ref.No'nun beşi de defterde
-
-| Sip.Ref.No | kayıt | tarih | fatura | defter (önce) | fark |
-|---|---|---|---|---|---|
-| 4791823457 | `ALM-HB-260216-03` | 16.02 | 1.598,00 | 1.598,00 | 0,00 ✓ |
-| 4256569478 | `ALM-HB-260216-01` | 16.02 | 1.598,00 | 1.075,24 | +522,76 |
-| 4025334987 | `ALM-HB-260216-04` | 16.02 | 1.598,00 | 1.124,94 | +473,06 |
-| 4205447254 | `ALM-HB-260216-05` | 16.02 | 1.598,00 | 1.224,94 | +373,06 |
-| 4308842479 | `ALM-HB-260516-15` | 16.05 | 1.298,00 | 1.298,00 | 0,00 ✓ |
-| | | **toplam** | **7.690,00** | **6.321,12** | **+1.368,88** |
-
-⛔ **ÇAPRAZIN İLK HÂLİ ("fark −₺48,50") GEÇERSİZDİ** ve sebebi kayda geçiyor:
-defter tarafı **₺7.641,50** sanılmıştı; o sayı bir toplam değil,
-`ALM-HB-260216-03`ün **03.09'da silinmiş BİRİM maliyetiydi** (ve `7641,50 × 2
-= 15.283` hâlâ o kaydın bayat `goodsAmount`ında duruyordu). Kapsam düzeltilince
-fark yön değiştirdi: fatura defterden **BÜYÜK**.
-_(Anayasa: "dış dosya ile defter kıyaslanmadan önce, sistemin o kaydı nasıl
-tuttuğu KENDİ İZİNDEN doğrulanır" — iz okununca yanlış öncül tek adımda çıktı.)_
-
-⚠ **EKRANDAKİ İLK BEŞ NUMARA DEFTERDE HİÇ YOKTU** (0/5, ne sipariş no ne satış
-kodu). Onlar Sip.Ref değildi; Halil doğru numaraları verince eşleşme **5/5**
-oldu. Biçim de ayrışıyordu: defterdeki HB sipariş no'ları 10 hane ve **4** ile
-başlıyor.
-
-### ② YAZIM — üç yer + özet alanı, sonra NET
-
-`npm run canli:alim-maliyet-duzelt -- <KOD> --toplam=1598 --uygula` ×3 →
-`canli:goods-hizala --uygula` → `canli:net-tazele -- <5 kod> --uygula`.
-
-| satış | NET-1 | NET-2 |
-|---|---|---|
-| `11023053211` | 714,76 → 478,23 | 593,17 → 396,06 |
-| `11023201569` | 726,63 → 490,10 | 603,04 → 405,93 |
-| `11027642274` | 676,63 → 490,10 | 561,38 → 405,93 |
-| `11028050913` | 676,63 → 490,10 | 561,38 → 405,93 |
-| `11419703466` | 706,55 → 183,79 | 585,63 → 149,99 |
-| **TOPLAM** | **−1.368,88** | **−1.140,73** |
-
-Aradaki **₺228,15** kayıp değil: maliyet KDV dahil, artan maliyet indirilecek
-KDV'yi büyüttü. ⭐ **Üç bağımsız yol aynı sayıya çıktı** (fatura−defter farkı ·
-maliyet artışı toplamı · motorun NET-1 düşüşü = 1.368,88).
-
-**DEĞİŞMEZLİK TURU:** Σnet2 `2.352.822,99 → 2.351.682,26` (beklenen birebir) ·
-satış 7850 → 7850 · ciro değişmedi · 7850/7850 CALCULATED. **Başka satış
-oynamadı.**
-
-⛔ **`canli:kar-tazele` KULLANILMADI** — o betik başka vakalara kilitli
-(Soundcore · Blanco · belirli sipariş kodları); `--uygula` denseydi **alakasız
-6 satış** yeniden yazılacaktı. Doğrusu `canli:net-tazele`.
-
-### ③ ÖZET ALANI — kusur tek vaka değil, ARACIN DESENİYDİ
-
-`canli:alim-maliyet-duzelt` üç yere yazıyordu (kalem · parti · çıkış damgaları),
-**dördüncüyü — `Purchase.goodsAmount` — atlıyordu.** Ölçüldü: yazımdan önce
-2 sapan vardı, üç düzeltme **3 yeni sapan üretti** → 5. Araç düzeltildi (özet
-artık aynı işlemde yazılıyor, karışık para biriminde yazılmıyor), sapanlar
-hizalandı (**5/5 defterden doğrulandı**, tekrar koşum **2024/2024 temiz**).
-`ALM-HB-251224-01`in ₺1,00'ı da teşhis edildi: tek kalem `axcali2480 ×1 @
-874,00`, özet 875,00 — kalem esas.
-
-**Yeni bekçi `goods-amount:dogrula`** (11 ölçüt): `purchaseItem`a birim maliyet
-YAZAN her dosya `goodsAmount`a da dokunmak zorunda — ya da gerekçeli muafiyet.
-Liste elle tutulmuyor. **6 mutasyon 6 kırmızı.**
-⚠ İki ölçüt kusuru mutasyonla çıktı: ① `goodsAmount` dizesi dosyada aranıyordu,
-`if (false)` ile dal öldürülünce yeşil kaldı → çağrı bloğuna + ölü dal yasağına
-bağlandı; ② snapshot ölçütü `void 0 &&` önekiyle kaçtı → satır başına bağlandı.
-⚠ Bekçi ayrıca **elle bulamadığım bir dosyayı** yakaladı (`mal-kabul/actions.ts`)
-ve o **yanlış pozitif** çıktı: iki desen aynı dosyada ama AYRI ifadelerde —
-ölçüt çağrı bloğuna daraltıldı (pencere değil, parantez eşleyerek).
-
-### ④ SINIF TARAMASI — "başka tuhaf birim var mı"
-
-`npm run canli:kardes-parti-sapmasi` (mevcut araç; ölçüt **aynı gün** kardeş
-partiler — zaman ekseni DEĞİL, çünkü _"zaman içindeki fiyat farkı şüphe
-üretmez"_). 535 grup · p99 `1,257×` · eşik `1,50×` hâlâ gedikte.
-
-⭐ **`axcali1805` listeden DÜŞTÜ** — dört kardeş de ₺799,00 olunca yayılma
-`1,000×`. Bugünkü düzeltmenin bağımsız kanıtı.
-
-⏳ **TEK YENİ ADAY — hüküm YOK:** `axcali2110` (LEGO Creator) · 01.01 · Amazon ·
-**3,11×** → `ALM-AMZ-260101-03/05` ₺1.399,00 ↔ `ALM-AMZ-260101-07` **₺450,35**;
-aykırı olan DÜŞÜK ve o kaydın **sipariş no'su YOK**. Faturayla doğrulanacak.
-(Öteki kuyruk satırı `axcali2002` `2,00×` **zaten doğrulanmıştı** — ₺1.500 gerçek.)
-
-### ⑤ "GELİR YARIM" ALARMI — ÇÜRÜDÜ, KUSUR BENİM ETİKETİMDEYDİ
-
-Halil TY ekranını gönderdi: `11419703466` · birim ₺1.139 × 2 = **₺2.278** ve
-_"defterde toplam 1.139 görünüyor, gelir yarım"_. **Ölçüm çürüttü:**
-
-    unitPriceAmount 1.139,00 × adet 2  =  CIRO 2.278,00      ← TY ile birebir
-    KOMISYON 410,04 = 2.278 × %18                            ← TAM tutar üstünden
-    STOPAJ    18,98 = (2.278 ÷ 1,2) × %1
-    NET-1 = 2.278 − 1.598 − 410,04 − 18,98 − 13,19 − 54 = 183,79 ✓
-
-⭐ **AYIRT EDİCİ KANIT KANALIN KENDİ ÖDEME KAYDINDA:** bu siparişin hakedişi
-**İKİ SATIR** ve toplamı **₺1.867,96** = `2.278 − 410,04`; satır başına
-`933,98 = 1.139 − %18`. İki satır = iki adet. Bu gözlem yalnız TEK okumayla
-uyumlu. _(Anayasadaki `11373352181` vakasının birebir aynısı.)_
-
-⛔ **ALARMI ÜRETEN ŞEY BENİM RAPORUMDU.** `canli:alim-maliyet-duzelt` çıktısında
-sütun yalnız **`fiyat 1.139,00`** diye geçiyordu; o `unitPriceAmount`, yani
-BİRİM fiyat. 2 adetlik satırda etiketsiz "fiyat" iki okumaya açık ve ben onu
-tabloma öyle taşıdım. **Araç düzeltildi** — artık `BİRİM 1.139,00 ×2 =
-2.278,00` yazıyor. _(Anayasa: "bir sayı etiketiyle taşınır" — kuralı kendi
-raporumda çiğnedim.)_
-
-⭐ **KURAL ANAYASAYA İKİNCİ VAKA OLARAK İŞLENDİ** (07.09, Halil talimatı):
-etiket yalnız cümlede değil **araç çıktısında da** taşınır; bir sütun başlığı
-"fiyat" diyorsa birim mi toplam mı olduğunu SÖYLEMİYOR demektir. Bu aynı
-zamanda "birim mi toplam mı" dersinin **üçüncü yüzü**: birincisi dış veride
-(TY `price`), ikincisi komut satırında (`--toplam=`/`--birim=`), üçüncüsü
-**kendi çıktımızda** — ilk ikisi düşünülmüştü, üçüncüsü düşünülmemişti.
-
-⛔ **DESEN BEKÇİYE BAĞLANDI:** `npm run canli:adet-geliri` (bkz. ⑥) —
-"dikkat et" bir mekanizma değildir.
-
-### ⑥ SINIF TARAMASI GENİŞLETİLDİ — çok adetli satışlar
-
-**Ölçek küçük:** defterde çok adetli satış **yalnız 10**. Bağımsız kaynak
-kanalın hakedişi (ciro ÷ Σ SIPARIS oranı; hakediş komisyon düşülmüş olduğu
-için 1'in biraz üstü beklenir):
-
-    temiz (0,80–1,25)  6   ·   YARIM? 0   ·   KATLI? 0   ·   hakediş YOK 4
-
-**Yarım/katlı gelir YOK.** ⚠ Hakedişi olmayan 4 satış "temiz" SAYILMADI,
-*incelenemeyen* diye ayrı yazıldı.
-
-### ⑦ ÖTEKİ DÖRT SATIŞ — çapraz KURULAMADI, sebebi ölçüldü
-
-Maliyeti düzeltilen öteki dört satış (`11023201569` · `11023053211` ·
-`11027642274` · `11028050913`) tek adetli ve **dördünde de komisyon TAM ciro
-üzerinden** (%20 × ciro = kayıtlı komisyon, kuruşuna). Ama ekstre çaprazı
-kurulamadı: **hakediş satırı 0.**
-
-⭐ **SEBEP ÖLÇÜLDÜ, AÇIK BIRAKILMADI:** ekstre kapsamı **2026-05 → 2026-08**
-(kalem dağılımı: 05→11 · 06→647 · 07→612 · 08→69). Dört satış **Mart 2026** —
-pencerenin tamamen dışında. Yani "ekstrede yok" bir kusur değil, **görüş
-alanının sınırı**. _(Anayasa: "tutanak, kusur ile sınırı ayırt ettirir".)_
-⚠ Bu dördü için bağımsız teyit BUGÜN mümkün değil; maliyet düzeltmesi
-Halil'in fatura teyidine dayanıyor ve gelir tarafı **doğrulanmamış** olarak
-kalıyor — kayıtta öyle yazıyor.
-
-⏭ **BİRLEŞİK YAZIM PAKETİNE GEREK KALMADI:** gelir tarafında düzeltilecek bir
-şey çıkmadı, maliyet + NET zaten yazılmıştı. Açık kalan tek şey aşağıdaki
-faturalar.
-
-### ⏭ AÇIK — HALİL'DEN BEKLENİYOR
-
-⛔ **İKİ FATURA İSTEĞİ DE GERİ ÇEKİLDİ (07.09) — İKİSİ DE GEREKSİZDİ.**
-Halil sordu: _"faturayı ne yapacaksın, sana alım ve satım listesini verdi ya."_
-Haklıydı ve ölçüm doğruladı:
-
-· **Üç Mayıs faturası:** dört mayıs alımı da kuruşu kuruşuna **₺1.298,00**
-  (yayılma `1,000×`) ve içlerinden birinin faturası (`4308842479`) zaten elde,
-  tutuyor. Aynı rakamı taşıyan üç kardeşi ayrıca faturalatmak, verinin ZATEN
-  verdiği cevabı kullanıcıya tekrar sordurmaktı.
-· **`axcali2110` Amazon faturası:** değer zaten 03.09'da belirlenmişti
-  (`CIKIS_MALIYETI_DUZELTILDI` izi, 450,35 → 1.399). Halil yine de gönderdi ve
-  **birim ₺1.399,00 doğrulandı** (₺1.999 liste − ₺500 iskonto; defter fiilen
-  ödeneni tutuyor).
-
-> **DERS:** belge istemeden önce sorulur — **bu soruyu defterin kendi izi zaten
-> cevaplıyor mu?** Kullanıcıya iş açmak da bir maliyettir ve ölçülmeden
-> yapılmaz. _(Anayasa: "cevap zaten yazılıydı ve sorulmadı" — 03.09'daki alım
-> dosyası vakasının birebir tekrarı.)_
-
-⚠ **AÇIK KALAN TEK GÖZLEM (iş DEĞİL):** Amazon faturası **1 adet** için
-kesilmiş (`QTY 1`), defterdeki `ALM-AMZ-260101-07` ise **5 adet**. Birim fiyat
-doğrulandı; adet sorusu ayrı ve Halil'de şüphe yoksa açılmayacak.
-
----
-
 ## 💤 K174 — PROMOSYON ALIMLARININ KAYNAĞI BİLİNMİYOR · 06.09.2026 · [UYUR — açılış şartlı]
 
 **KARAR (Halil, 06.09.2026): kaynak BOŞ bırakılır, uydurulmaz.** Boş alan
@@ -2198,6 +2021,46 @@ anlamına gelir — ekranda yüksek sesle yazar ve **parti kimliğiyle ize** ge�
 
 ⛔ **`?status=` PARAMETRESİ BEKÇİYE BAĞLANDI** — uç onu yok sayıyor; kullanan
 kod "durum süzdüm" sanır ve hep aynı kümeyi çeker. Ayrım yalnız YOLDA.
+
+### ─── ④ İLK CANLI OTOMATİK İÇE AKTARMA · 07.09.2026 · [KOŞTU]
+
+> **Halil onayı:** _"yazılsın"_ — tek sipariş `4777369510`.
+
+    ANLIK GÖRÜNTÜ → KURU KOŞUM → YAZIM → BİT BİT KIYAS
+
+    saleToplam        7905 → 7906   ✓ kurunun öngördüğü +1
+    hbSaleToplam      3312 → 3313   ✓
+    stockMovement    14850 → 14850  ✓ oynamadı (K164 — tasarım)
+    saleFee          34872 → 34872  ✓ oynamadı
+    NET-1 / NET-2 toplamı           ✓ İKİSİ DE kuruşuna aynı
+    durum  CALCULATED 7875→7875 · RULE_MISSING 2→2 · null 28→29 (yalnız yeni kayıt)
+
+    KALEM  axcali1714 · adet 1 · birim 3.385,00 · KDV 20 · komisyon oranı 10
+           kupon sınavı ✓ 3.385,00 (liste) — 3.370 DEĞİL, 3.400 DEĞİL
+           komisyon: 3.385,00 × %10 = 338,50 → ×1,20 = 406,20  (panelle birebir)
+    iz     hb-20260907164510 · yazılan 1 · hata 0 · çapraz çakışma 0
+    geri alma ölçütü: `importBatch` — liste değil, YENİDEN HESAPLANABİLİR
+
+⭐ **CANLI EKRAN BAĞIMSIZ TEYİT ETTİ (Halil, 16:39):** toplam satış
+`8.016 → 8.017` · ciro `22.369.227,13 → 22.372.612,13` = **tam +3.385,00** ·
+NET-2 toplamı **hiç oynamadı** ve kutu _"1 satışın kârı hesaplanamadı — toplama
+girmedi"_ diyor. Satır onay kuyruğunda `Onayla` düğmesiyle duruyor.
+
+⛔ **SINIR — STOK/NET BAĞI BU TURDA SINANMADI.** İçe aktarma `StockMovement`
+YAZMAZ; bağı K164 onay kuyruğu kurar. `profitStatus null` · `SaleFee 0` beklenen
+hâldir, kusur değil. **Sınav, Halil `4777369510`'u onayladığında koşar** —
+FIFO'dan doğru parti + NET `CALCULATED` orada sınanır.
+_(Anayasa: "tetiklenemeyen yol geçmiş sayılmaz" — bu iki madde AÇIK yazılıyor.)_
+
+⭐ **TETİKLENEMEZ YOL KAPANDI:** HB sipariş içe aktarması 04.09'dan beri
+"canlıda hiç koşmadı" hâlindeydi ve Halil siparişleri elle giriyordu. Artık
+uçtan uca koştu, gerçek bir siparişi gerçek rakamlarla yazdı.
+
+⏭ **KUPON KAPISI — TARİHLİ BEKLEYİŞ: ~11.10.2026.** `4777369510` hakedişe
+düştüğünde `SIPARIS_TUTARI + KAMPANYA` listenin (3.385,00) **15 TL altına
+iniyor mu** bakılacak. İnerse takip kuponu gerçek bir gider ve `SaleFee`
+yazımı açılır; inmezse kupon vitrin gösterimidir ve kalem kapanır.
+_(HB ödeme vadesi ölçüldü: teslimden ~34 gün.)_
 
 ⚠ **SATICI İNDİRİMİ — GELİRE GİRMEDİ, SAYILDI (16 kalemin 12'sinde var).**
 Ölçüm (`4777369510`): komisyon `338,50 ÷ (3.147,00 + 237,996) = %10,0000`
