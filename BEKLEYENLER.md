@@ -13,6 +13,67 @@
 
 ---
 
+## 🔶 K-HB-KAPSAM — TUTAR KAYNAĞI ÖLÇÜLDÜ · 07.09.2026 · [MİMAR KARARI BEKLİYOR]
+
+> **Mimar şartı:** _"Delivered/ClaimCreated siparişin SİPARİŞ-ANI tutarı hangi
+> kaynaktan güvenilir alınıyor? Listeleme fiyatı KABUL DEĞİL."_
+> Üç sonuçlu ölçüt: **SAĞLAM** · **AYIRT EDİLEMEDİ** · **DURUR**.
+
+### ① HAKEDİŞ ÇAPRAZI — 131/135
+
+    TUTAN 131 · tutmayan 4 · detayı okunamayan 0
+    (SIPARIS_TUTARI + KAMPANYA = detay ucunun listesi)
+
+⚠ **İLK KOŞUM YANLIŞ KÜMEDEYDİ VE BU YAZILIYOR:** önce son teslim/kargo
+siparişleri alındı; 61'in **60'ının ödemesi düşmemişti** ve tek örnek de zaten
+bilinen bir anomaliydi. Tek örnekle hüküm kurulmaz — ne olumlu ne olumsuz.
+Örneklem hakedişi DÜŞMÜŞ siparişlere çevrildi.
+_(Anayasa: "cevapsız kapsam sorusunun üstüne ölçüm kurulmaz".)_
+
+⭐ **TUTMAYAN 4'ÜN SEBEBİ ÖLÇÜLDÜ — VE DETAY UCU SUÇLU DEĞİL:**
+
+    4282663277  açık 177,66  ↔  HB indirimi 177,66   TAM EŞİT
+    4702310503  açık 284,05  ↔  HB indirimi 284,05   TAM EŞİT
+    4006304001  açık 284,05  ↔  HB indirimi 284,05   TAM EŞİT
+    4636037047  açık 284,05  ↔  HB indirimi 284,05   TAM EŞİT
+    hakediş kodları: yalnız SIPARIS_TUTARI + STOPAJ
+    (KOMISYON · KARGO · KAMPANYA — ÜÇÜ DE YOK)
+
+⛔ **AYIRT EDİCİ:** detay ucu bugünkü liste fiyatını yansıtsaydı açıklar
+**rastgele** olurdu. Her biri tam olarak `hbDiscount` kadar — o rakamı yalnız
+siparişin **o günkü kaydı** bilir. Yani kusur hakediş tarafında: dört hakediş
+**eksik yazılmış**. _(Bu dördü K-HB-PAZARLAMA'da zaten "açık kalan küçük soru,
+Σ ₺1.028,83" diye kayıtlıydı — aynı dört sipariş.)_
+
+### ② BUGÜNKÜ LİSTE ÇAPRAZI — AYRIM ÜRETTİ
+
+    bugünkü listeleme fiyatından FARKLI  64 / 135
+    aynı                                 71
+
+⭐ **VE HEDEF SİPARİŞİN BİRİNDE FARK ₺900:**
+
+    4707418677  detay LİSTE 3.099,00  ·  bugünkü listeleme 3.999,00
+    4873413946  detay LİSTE 5.979,00  ·  bugünkü listeleme 5.979,00 (aynı)
+
+⛔ Listeleme fiyatı kullanılsaydı `4707418677` deftere **₺900 fazla** girerdi.
+Mimarın şartı tam bunu engelledi.
+
+### HÜKÜM — ÖLÇÜT HARFİYEN "DURUR", ATIF İSE BAŞKA YERİ GÖSTERİYOR
+
+Ölçüt `tutmayan === 0` istiyor; 4 var → **DURUR**, mimara rapor.
+⏭ **KARAR MİMARINDIR:** dört başarısızlık *"tutar kaynağı şüpheli"* mi demek,
+yoksa *"hakediş eksik yazılmış"* mı? Ölçüm ikincisini gösteriyor (açık = HB
+indirimi, kuruşuna) ama **ölçütü gevşetmek ölçümü yapanın işi değildir.**
+_(Anayasa: "eşiği soruyu soran koyamaz".)_
+
+⏭ Mimar atfı kabul ederse ① değerlendirilebilir 131 vakada **131/131** tutar →
+hüküm **SAĞLAM** olur ve yazım açılır. Aksi hâlde yazım kapalı kalır.
+
+⛔ **BUGÜN HİÇBİR ŞEY YAZILMADI.** Enumerasyon genişletilmedi, iki sipariş
+(`4873413946` · `4707418677`, ₺9.078) yazılmadı.
+
+---
+
 ## ✅ K181 — TRENDYOL ÜRÜN v2 GEÇİŞİ · 07.09.2026 · [KOŞTU — canlı, salt okuma]
 
 > **Trendyol duyurusu 07.09.2026:** barkod bazlı ürün servisleri içerik
