@@ -1797,6 +1797,32 @@ satışına girilen %1, ağustos tabanıyla (%2,7) kıyaslanıp **doğru bir ora
 DEĞİLDİR — iki farklı soruya iki doğru cevaptır. Ama **hangi ekranın hangi
 soruyu sorduğu kodda yazılı olmalıdır**, yoksa biri ötekine "düzeltilir".
 
+### İKİ TARİH İLKESİ — BİR OLAY SEBEBİNE Mİ, ANINA MI YAZILIR (KESİN KURAL)
+
+_Kullanıcı kararı 07.09.2026, K185-③._ Bir olayın (iade, tazmin, düzeltme)
+iki tarihi vardır: **gerçekleştiği an** ve **sebebi olan kaydın günü**. Hangisine
+yazılacağı ekranın sorduğu soruya bağlıdır ve **seçilmeden ekran yayımlanmaz.**
+
+    YÖNETİM ekranları (panel · rapor · oran tabloları)  →  SEBEBİN günü
+    MUHASEBE / KDV (dönem raporu · beyan)              →  OLAYIN günü
+
+**AYIRT EDİCİ SORU:** bu ekran _"o ay ne kazandım"_ mı soruyor, yoksa
+_"o dönemde ne beyan ederim"_ mi? Birincisi olayı sebebine yazar (iade,
+satışın ayının sorunudur — pazaryeri de ödemeyi o siparişten keser);
+ikincisi gerçekleştiği ana, çünkü KDV düzeltmesi o dönemde beyan edilir.
+
+> **YENİ BİR TARİH ALANI OKUYAN HER EKRAN BU SORUYU CEVAPLAR VE GEREKÇESİNİ
+> KODA YAZAR.** Cevaplamayan ekran, iki atıftan hangisine düştüğünü bilmeden
+> yayımlanmış olur.
+
+**Vaka:** panel iadeyi OLAY gününe yazıyordu ve kimse yanlış olduğunu
+söylemiyordu; iade oranı tablosu bu yüzden anlamsız görünüyordu (pay iade
+ayından, payda satış ayından). 223 iadenin **71'i** yanlış aya düşüyordu.
+⚠ **VE PENCERE ATIFLA BİRLİKTE DEĞİŞİR:** yalnız atıf çevrilirse olay, çekim
+penceresine girer ama başka bir aya yazılır — **hiçbir ekranda görünmez.**
+⚠ Belge de taşınır: tip yorumları eski atfı anlatmaya devam ederse bir sonraki
+okuyucuya yanlış kuralı öğretir. _(Bkz. "şemadaki alan da bir iddiadır".)_
+
 ### MERDİVEN BASAMAKLARI ÖLÇÜMLE ELENİR, TERCİHLE DEĞİL (KESİN KURAL)
 
 _Mimar kararı 20.08.2026._ "Şema değişikliği en pahalı çözümdür" kuralının

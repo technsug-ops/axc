@@ -142,6 +142,11 @@ hatayı korur".)_
 _"o ay ne kazandım"_ mı, yoksa _"o dönemde ne beyan ederim"_ mi?
 Birincisi olayı **sebebine** (satışa) yazar; ikincisi **gerçekleştiği ana**.
 
+⭐ **KILAVUZA GİRDİ (Halil onayı 07.09):** `CLAUDE.md` → _"İKİ TARİH İLKESİ —
+bir olay sebebine mi, anına mı yazılır"_. Sebebi: pano kapanan işlerle
+küçülüyor, bu kayıt K185 kapanınca **arşive gidecek** ve altı ay sonra yeni bir
+rapor ekranı açan kişi onu görmeyecekti. Kılavuz her oturumun başında okunuyor.
+
 ⛔ **YENİ BİR TARİH ALANI OKUYAN HER EKRAN BU SORUYU CEVAPLAR VE GEREKÇESİNİ
 KODA YAZAR.** Cevaplamayan ekran, iki atıftan hangisine düştüğünü bilmeden
 yayımlanmış olur — ve iki ekran sessizce ayrışır. 07.09'da tam bu yaşandı:
@@ -315,6 +320,27 @@ o güne kadar tek emniyet.
 ⚠ **`product/cargo-providers` YOLU HÂLÂ TAHMİN.** Sağlık sondasında `556`
 dönüyor ve kendi kodumuz yolu "TAHMİN" diye işaretliyor — TY'nin kusuru
 sayılmaz, listede de yok. Değişmedi, K181 kapsamında değil.
+
+### ⏭ TARİHLİ TEMİZLİK — `urunlerV1` · **16.09.2026'DAN SONRA SİL**
+
+⛔ Eski v1 ürün ucu (`ty/istemci.ts` → `UCLAR.urunlerV1`) canlı akışta HİÇ
+kullanılmıyor; tek tüketicisi geçiş sırasında yazılan **kıyas sondası**
+(`canli-ty-urun-v2-sonda.ts` — v1 1642 / v2 1644 / **yalnız v1'de 0** ölçümünü
+yapan araç).
+
+⚠ **BUGÜN SİLİNMEDİ, GEREKÇESİYLE:** TY bu ucu **15.09.2026'da kapatıyor**.
+O güne kadar bir hafta var ve kanal bu arada bir şey değiştirirse kıyası
+**yeniden koşabilmek** istiyoruz. Silinseydi ölçüm imkânsız olurdu.
+_(Halil onayı 07.09: "15.09'dan sonra silinsin".)_
+
+⏭ **ŞART:** 16.09.2026'da `UCLAR.urunlerV1` + kıyas sondasının v1 dalı silinir;
+ölçüm sonucu bu kayıtta zaten duruyor, kaybolan bir şey olmaz.
+
+⚠ **AYRIM KAYDA GEÇİYOR — "KULLANILMIYOR" ≠ "ÖLÜ":** aynı denetimde HB'nin
+`UCLAR.siparisler` ucu da içe aktarmadan düştü ama **silinmedi**: sağlık
+sondası (`canli-hb-saglik`) onu hâlâ çağırıyor ve silinseydi üç ölçüm ikiye
+düşerdi. Bir şeyin çağrılmıyor olması ölü olduğunu göstermez; **tüketicisi
+var mı** diye bakılır.
 
 ---
 
