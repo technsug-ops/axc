@@ -1,7 +1,8 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
-import { kimlikOku, baslikKur, tumSayfalar } from "./ty/istemci";
+import { kimlikOku, baslikKur, tumSayfalar, UCLAR } from "./ty/istemci";
+import { v2KayitlariniNormallestir } from "./ty/urun-v2";
 
 /**
  * ============================================================================
@@ -53,29 +54,51 @@ async function taramaAl(): Promise<
 
   const kimlik = kimlikOku();
   if (kimlik === null) return { tamam: false, hata: "TY kimliği okunamadı (.env.canli)." };
-  const s = await tumSayfalar(
-    (sayfa) =>
-      `/integration/product/sellers/${kimlik.saticiId}/products?page=${sayfa}&size=200`,
-    baslikKur(kimlik),
-    60,
-  );
-  if (s.tur === "HATA") {
-    /** ⛔ HATA TAM TAŞINIR — kırpmak teşhisi kırpar. */
-    return { tamam: false, hata: "Tarama düştü: " + JSON.stringify(s.sonuc) };
+
+  /**
+   * ⛔ v2 — İKİ UÇ (K181, 07.09.2026). Eski `/products` 15.09'da kapanıyor.
+   *
+   * ⚠ VE İKİSİ DE OKUNMADAN YAZIM YAPILMAZ: yalnız onaylı uç okunsaydı,
+   * onay bekleyen 24 ürün listede HİÇ görünmez ve deftere `YOK` diye
+   * damgalanırdı — "listelenmemiş" kovası gerçekte listede olan ürünlerle
+   * şişerdi. Bir ucun düşmesi, ötekinin verisini de GEÇERSİZ kılar.
+   */
+  const baslik = baslikKur(kimlik);
+  const cekilen: Record<string, unknown>[][] = [];
+  let sayfaToplam = 0;
+  for (const [ad, yolKur] of [
+    ["onaylı", (sayfa: number) => UCLAR.onayliUrunler(kimlik.saticiId, sayfa)],
+    ["onaysız", (sayfa: number) => UCLAR.onaysizUrunler(kimlik.saticiId, sayfa)],
+  ] as const) {
+    const s2 = await tumSayfalar(yolKur, baslik, 60);
+    if (s2.tur === "HATA") {
+      /** ⛔ HATA TAM TAŞINIR — kırpmak teşhisi kırpar. */
+      return { tamam: false, hata: `Tarama düştü (${ad}): ` + JSON.stringify(s2.sonuc) };
+    }
+    if (s2.kesildiMi) {
+      /**
+       * ⛔ TAVANA ÇARPAN LİSTE TAM DEĞİLDİR — ve eksik listeyle yazmak,
+       * gerçekte listede OLAN ürünleri `YOK` diye damgalardı.
+       */
+      return {
+        tamam: false,
+        hata: `Sayfa tavanına çarpıldı (${ad}) — liste EKSİK, yazım yapılmaz.`,
+      };
+    }
+    cekilen.push(s2.kayitlar as Record<string, unknown>[]);
+    sayfaToplam += s2.sayfa;
   }
-  if (s.kesildiMi) {
-    /**
-     * ⛔ TAVANA ÇARPAN LİSTE TAM DEĞİLDİR — ve eksik listeyle yazmak,
-     * gerçekte listede OLAN ürünleri `YOK` diye damgalardı.
-     */
-    return { tamam: false, hata: "Sayfa tavanına çarpıldı — liste EKSİK, yazım yapılmaz." };
-  }
+
   return {
     tamam: true,
     saticiId: kimlik.saticiId,
-    urunler: s.kayitlar as Record<string, unknown>[],
+    /**
+     * ⚠ NORMALLEŞTİRİLMİŞ SATIRLAR — v2'de bir içerik birden çok barkod
+     * taşıyor, satır sayısı v1'dekinden fazla olacak ve bu kusur değil.
+     */
+    urunler: v2KayitlariniNormallestir({ onayli: cekilen[0], onaysiz: cekilen[1] }),
     alindi: new Date(),
-    kaynak: `API · ${s.sayfa} sayfa`,
+    kaynak: `API v2 · ${sayfaToplam} sayfa`,
   };
 }
 

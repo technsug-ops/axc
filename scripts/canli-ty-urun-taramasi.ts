@@ -1,7 +1,9 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
-import { kimlikOku, baslikKur, tumSayfalar } from "./ty/istemci";
+import { kimlikOku, baslikKur, tumSayfalar, UCLAR } from "./ty/istemci";
+import { v2KayitlariniNormallestir, type NormalUrun } from "./ty/urun-v2";
+import { listelemeDurumu } from "../src/lib/kanal-listeleme";
 
 /**
  * ============================================================================
@@ -18,20 +20,28 @@ import { kimlikOku, baslikKur, tumSayfalar } from "./ty/istemci";
  *  "Mal kabul ettim — satışa açtım mı?" (K112). Bu betik Trendyol'daki
  *  BÜTÜN ürünleri tarar ve beş sınıfa ayırır.
  *
- *  ── ⚠ SINIF TANIMLARI BURADA YAZILI ─────────────────────────────────
- *  Alan adları VARSAYILMADI, uçtan ölçüldü (01.09.2026, `size=3` sondası):
- *  `approved · archived · onSale · rejected · blacklisted · locked ·
- *  quantity · barcode · stockCode · productMainId`.
+ *  ── ⛔ v2 GEÇİŞİ (K181, 07.09.2026) ──────────────────────────────────
+ *  Eski `/products` ucu 15.09.2026'da KAPANIYOR. Tarama artık İKİ uçtan
+ *  okuyor (`/products/approved` + `/products/unapproved`) ve iki ucun farklı
+ *  şekli `ty/urun-v2.ts` normalleştiricisinde tek biçime indirgeniyor.
  *
- *    A) SATIŞA AÇIK      onaylı · arşivsiz · onSale · quantity > 0
- *    B) STOKSUZ          onaylı · arşivsiz · quantity = 0  → satılamaz
- *    C) ONAY BEKLİYOR    !approved ya da rejected
- *    D) PASİF            archived · locked · blacklisted
+ *  ── ⭐ SINIFLANDIRICI ARTIK BU DOSYADA DEĞİL ─────────────────────────
+ *  Sınıflama `src/lib/kanal-listeleme.ts` → `listelemeDurumu` gövdesinden
+ *  geliyor; paneldeki "rafta var, vitrinde yok" kutusu da AYNI gövdeyi
+ *  okuyor. Önceden burada İKİNCİ bir sınıflandırıcı vardı ve **ayrışmıştı**:
+ *
+ *    ⛔ ÖLÇÜLDÜ 07.09.2026 — buradaki `A` dalı `onSale`e HİÇ BAKMIYORDU,
+ *       oysa hem başlığı hem rapor satırı baktığını yazıyordu. Onaylı,
+ *       stoklu ama vitrine çıkarılmamış ürün "SATIŞA AÇIK" sayılıyordu.
+ *       Tek gövdeye bağlanınca bu kendiliğinden kapandı.
+ *    _(Anayasa: "iki yerde iki ölçüt olmaz" — aynı soruya iki cevap.)_
+ *
+ *    ACIK           satılabilir
+ *    STOKSUZ        adet 0 YA DA vitrine çıkarılmamış (`onSale` false)
+ *    ONAY_BEKLIYOR  onaysız uçtan geldi ya da reddedildi
+ *    PASIF          archived · locked · blacklisted
+ *    BILINMIYOR     adet okunamadı — hüküm YOK, sayıya ayrı girer
  *    E) BİZDE VAR, TY'DE YOK   barkodu TY listesinde bulunmayan varyantımız
- *
- *  ⚠ SINIFLAR ÖNCELİK SIRALIDIR: bir ürün birden çok bayrağı taşıyabilir
- *  (arşivli VE stoksuz gibi). Sıra D → C → B → A; en KISITLAYICI durum
- *  kazanır, yoksa aynı ürün iki sınıfta sayılır ve toplam şişer.
  *
  *  ── ⚠ EŞLEŞTİRME KİMLİKLE, DİZEYLE DEĞİL ────────────────────────────
  *  Barkod üzerinden. _(Anayasa: "kimlik varken dizeyle aranmaz" ve "benzer
@@ -43,18 +53,37 @@ import { kimlikOku, baslikKur, tumSayfalar } from "./ty/istemci";
 
 const CIKTI = "veri/ozel";
 
-type Urun = Record<string, unknown>;
+/**
+ * DURUMLAR — İYİDEN KÖTÜYE. Sıra bir SUNUM tercihi değil, ÖLÇÜT:
+ * bir barkod birden çok kayıtta geçtiğinde (aynı içeriğin iki varyantı)
+ * **en satılabilir** hâli kazanır — o barkoddan mal satılabiliyor demektir.
+ *
+ * ⚠ `BILINMIYOR` EN SONDA ve bu bilerek: ölçülememiş bir kayıt, ölçülmüş bir
+ * hükmü (PASIF gibi) EZEMEZ. _(Anayasa: "boş sonuç ile temiz sonuç ayrılır".)_
+ */
+const IYIDEN_KOTUYE = [
+  "ACIK",
+  "STOKSUZ",
+  "ONAY_BEKLIYOR",
+  "PASIF",
+  "BILINMIYOR",
+] as const;
 
-function b(u: Urun, ad: string): boolean {
-  return u[ad] === true;
-}
-function s(u: Urun, ad: string): string {
-  const v = u[ad];
-  return v === null || v === undefined ? "" : String(v);
-}
-function n(u: Urun, ad: string): number {
-  const v = u[ad];
-  return typeof v === "number" ? v : Number.NaN;
+/** Ekranda ne anlama geldiği — rapor satırının etiketi. */
+const DURUM_ACIKLAMA: Record<string, string> = {
+  ACIK: "satılabilir",
+  STOKSUZ: "adet 0 YA DA vitrinde değil",
+  ONAY_BEKLIYOR: "onaysız ya da reddedilmiş",
+  PASIF: "arşivli · kilitli · kara listede",
+  BILINMIYOR: "adet okunamadı — hüküm YOK",
+};
+
+/**
+ * ⚠ ÜÇ DEĞERLİ BAYRAK: alan gelmediyse BOŞ yazılır, `false` DEĞİL.
+ * "Uç bunu göndermedi" ile "değeri hayır" aynı hücrede görünmemeli.
+ */
+function bayrak(v: unknown): string {
+  return v === undefined ? "" : String(v === true);
 }
 
 /** ⚠ CSV kaçışı: alan içinde `;` ya da tırnak varsa sarılır. */
@@ -84,27 +113,55 @@ async function main() {
   console.log("  an      " + new Date().toISOString());
   console.log("=".repeat(72));
 
-  /* ═══ ① TARAMA ══════════════════════════════════════════════════ */
-  console.log("\n   taranıyor...");
-  const sonuc = await tumSayfalar(
-    (sayfa) =>
-      `/integration/product/sellers/${kimlik.saticiId}/products?page=${sayfa}&size=200`,
-    baslikKur(kimlik),
-    60,
-  );
+  /* ═══ ① TARAMA — v2, İKİ UÇ ═════════════════════════════════════ */
+  console.log("\n   taranıyor (v2: onaylı + onaysız)...");
+  const baslik = baslikKur(kimlik);
 
-  if (sonuc.tur === "HATA") {
-    /** ⛔ HATA TAM TAŞINIR — kırpmak teşhisi kırpar. */
-    console.log("\n   ⛔ TARAMA DÜŞTÜ — ilk sayfa okunamadı.");
-    console.log("   " + JSON.stringify(sonuc.sonuc));
-    process.exitCode = 1;
-    await prisma.$disconnect();
-    return;
+  /**
+   * ⚠ SAYFA GEZİNMESİ YETERLİ — ÖLÇÜLDÜ, VARSAYILMADI (07.09.2026).
+   * v2 belgesi 10.000 kaydı aşan sorgularda `nextPageToken` istiyor ve
+   * `page`/`size` o sınırın üstünde SESSİZCE kesilir. Ölçüm: onaylı **1576**,
+   * onaysız **24** — ikisi de sınırın çok altında.
+   * ⏭ AÇILIŞ ŞARTI: katalog 10.000'e yaklaşırsa `nextPageToken` gezinmesi
+   * yazılır. `kesildiMi` bayrağı o güne kadar tek emniyet.
+   */
+  const uclar = [
+    ["onaylı", (sayfa: number) => UCLAR.onayliUrunler(kimlik.saticiId, sayfa)],
+    ["onaysız", (sayfa: number) => UCLAR.onaysizUrunler(kimlik.saticiId, sayfa)],
+  ] as const;
+
+  const cekilen: Record<string, unknown>[][] = [];
+  let sayfaToplam = 0;
+  let kesildi = false;
+  for (const [ad, yolKur] of uclar) {
+    const s2 = await tumSayfalar(yolKur, baslik, 60);
+    if (s2.tur === "HATA") {
+      /** ⛔ HATA TAM TAŞINIR — kırpmak teşhisi kırpar. */
+      console.log(`\n   ⛔ TARAMA DÜŞTÜ — ${ad} ucunun ilk sayfası okunamadı.`);
+      console.log("   " + JSON.stringify(s2.sonuc));
+      process.exitCode = 1;
+      await prisma.$disconnect();
+      return;
+    }
+    console.log(`   ${ad.padEnd(8)} ${s2.sayfa} sayfa · ${s2.kayitlar.length} kayıt`);
+    cekilen.push(s2.kayitlar as Record<string, unknown>[]);
+    sayfaToplam += s2.sayfa;
+    kesildi = kesildi || s2.kesildiMi;
   }
 
-  const urunler = sonuc.kayitlar as Urun[];
-  console.log(`   ${sonuc.sayfa} sayfa · ${urunler.length} ürün`);
-  if (sonuc.kesildiMi) {
+  /**
+   * ⛔ SATIR SAYISI v1'DEKİNDEN FARKLI OLACAK VE BU KUSUR DEĞİL: onaylı uçta
+   * bir İÇERİK birden çok barkod taşıyor, normalleştirme varyant başına satır
+   * üretiyor. Eşleştirme zaten barkodla yapılıyor.
+   */
+  const urunler = v2KayitlariniNormallestir({
+    onayli: cekilen[0],
+    onaysiz: cekilen[1],
+  });
+  console.log(
+    `   ${sayfaToplam} sayfa · ${cekilen[0].length + cekilen[1].length} ürün → ${urunler.length} satır (varyant başına)`,
+  );
+  if (kesildi) {
     /**
      * ⛔ TAVANA ÇARPTIYSA LİSTE TAM DEĞİLDİR ve öyle YAZAR.
      * _(Anayasa: "bir kaynağın listesi kendi tamlığını kanıtlayamaz" —
@@ -113,32 +170,32 @@ async function main() {
     console.log("   ⚠ SAYFA TAVANINA ÇARPILDI — bu liste bir ALT SINIRDIR.");
   }
 
-  /* ═══ ② SINIFLAMA ═══════════════════════════════════════════════ */
-  const sinif = new Map<string, Urun[]>([
-    ["A", []],
-    ["B", []],
-    ["C", []],
-    ["D", []],
-  ]);
+  /* ═══ ② SINIFLAMA — ORTAK GÖVDEDEN ══════════════════════════════ */
+  /**
+   * ⛔ BURADA KURAL YAZILMAZ. Öncelik sırası (PASIF → ONAY_BEKLIYOR →
+   * STOKSUZ → ACIK) `listelemeDurumu`nun içinde ve panel de onu okuyor.
+   */
+  const sinif = new Map<string, NormalUrun[]>(
+    IYIDEN_KOTUYE.map((d) => [d, [] as NormalUrun[]]),
+  );
   for (const u of urunler) {
-    /** ⚠ ÖNCELİK SIRALI — en kısıtlayıcı durum kazanır. */
-    if (b(u, "archived") || b(u, "locked") || b(u, "blacklisted")) {
-      sinif.get("D")!.push(u);
-    } else if (!b(u, "approved") || b(u, "rejected")) {
-      sinif.get("C")!.push(u);
-    } else if (n(u, "quantity") <= 0) {
-      sinif.get("B")!.push(u);
+    const d = listelemeDurumu(u) as string;
+    const liste = sinif.get(d);
+    if (liste === undefined) {
+      /** ⚠ TANINMAYAN DURUM SESSİZCE DÜŞMEZ — gövde yeni bir değer
+       *  döndürdüyse bunu BİLMEK isteriz. */
+      sinif.set(d, [u]);
     } else {
-      sinif.get("A")!.push(u);
+      liste.push(u);
     }
   }
 
   /* ═══ ③ E SINIFI — BİZDE VAR, TY'DE YOK ════════════════════════ */
   const tyBarkodlari = new Set<string>();
   for (const u of urunler) {
-    for (const alan of ["barcode", "stockCode", "productMainId"]) {
-      const v = s(u, alan).trim();
-      if (v !== "") tyBarkodlari.add(v);
+    for (const v of [u.barcode, u.stockCode, u.productMainId]) {
+      const t = v.trim();
+      if (t !== "") tyBarkodlari.add(t);
     }
   }
 
@@ -169,18 +226,15 @@ async function main() {
   }
 
   /* ═══ ④ RAPOR ═══════════════════════════════════════════════════ */
-  const A = sinif.get("A")!.length;
-  const B = sinif.get("B")!.length;
-  const C = sinif.get("C")!.length;
-  const D = sinif.get("D")!.length;
-
-  console.log("\n   TRENDYOL TARAFI\n");
-  console.log(`   A) SATIŞA AÇIK    (onaylı·arşivsiz·onSale·stok>0)   ${A}`);
-  console.log(`   B) STOKSUZ        (onaylı ama quantity = 0)         ${B}`);
-  console.log(`   C) ONAY BEKLİYOR  (!approved ya da rejected)        ${C}`);
-  console.log(`   D) PASİF          (archived·locked·blacklisted)     ${D}`);
+  console.log("\n   TRENDYOL TARAFI  (ölçüt: lib/kanal-listeleme → listelemeDurumu)\n");
+  let sayilan = 0;
+  for (const [d, liste] of sinif) {
+    sayilan += liste.length;
+    const aciklama = DURUM_ACIKLAMA[d] ?? "⚠ TANINMAYAN DURUM";
+    console.log(`   ${d.padEnd(15)} ${`(${aciklama})`.padEnd(36)} ${liste.length}`);
+  }
   console.log(`   ${"".padEnd(52)} ${"-".repeat(5)}`);
-  console.log(`   TOPLAM${"".padEnd(46)} ${A + B + C + D}  (taranan ${urunler.length})`);
+  console.log(`   TOPLAM${"".padEnd(46)} ${sayilan}  (taranan ${urunler.length})`);
 
   console.log("\n   BİZİM TARAFIMIZ (aktif varyant " + varyantlar.length + ")\n");
   console.log(`   TY'de BULUNAN                                      ${tydeVar}`);
@@ -205,28 +259,57 @@ async function main() {
     stokGrup.filter((g) => (g._sum.quantityDelta ?? 0) > 0).map((g) => g.variantId),
   );
 
-  /** TY barkodu → sınıfı. */
+  /**
+   * TY barkodu → durumu.
+   *
+   * ⚠ ÖNCELİK ARTIK HARF SIRASINA DEĞİL, `IYIDEN_KOTUYE` DİZİSİNE BAĞLI.
+   * Eskiden `ad < mevcut` ile A<B<C<D karşılaştırılıyordu — durum adları
+   * dizeye dönünce o karşılaştırma SESSİZCE anlamsız olurdu ("ACIK" < "PASIF"
+   * tesadüfen doğru, ama "STOKSUZ" < "ONAY_BEKLIYOR" YANLIŞ).
+   */
+  const sira = (d: string) => {
+    const i = (IYIDEN_KOTUYE as readonly string[]).indexOf(d);
+    /** ⛔ Bulunamayan durum EN KÖTÜ sayılır — `-1` "en iyi" gibi davranırdı. */
+    return i < 0 ? IYIDEN_KOTUYE.length : i;
+  };
   const barkodSinifi = new Map<string, string>();
   for (const [ad, liste] of sinif) {
     for (const u of liste) {
-      for (const alan of ["barcode", "stockCode", "productMainId"]) {
-        const v = s(u, alan).trim();
-        /** ⚠ ÖNCELİK: bir barkod birden çok kayıtta geçerse EN İYİ sınıf kalır. */
-        const mevcut = barkodSinifi.get(v);
-        if (v !== "" && (mevcut === undefined || ad < mevcut)) barkodSinifi.set(v, ad);
+      for (const v of [u.barcode, u.stockCode, u.productMainId]) {
+        const t = v.trim();
+        if (t === "") continue;
+        const mevcut = barkodSinifi.get(t);
+        if (mevcut === undefined || sira(ad) < sira(mevcut)) barkodSinifi.set(t, ad);
       }
     }
   }
 
-  const stokluDurum = new Map<string, number>([["A", 0], ["B", 0], ["C", 0], ["D", 0], ["E", 0], ["BARKODSUZ", 0]]);
+  /**
+   * ⛔ KOVA ANAHTARLARI ELLE YAZILMAZ, ÖLÇÜTTEN GELİR.
+   *
+   * İlk v2 yazımında burada hâlâ `A`/`B`/`C`/`D` duruyordu ve `barkodSinifi`
+   * çoktan `ACIK`/`STOKSUZ`/… döndürüyordu: sayaçlar yeni anahtarlara
+   * yazılıyor, rapor eski anahtarları okuyordu → ekranda **her satır 0**.
+   * `tsc` bunu göremezdi (ikisi de `string`), sayılar da "makul" görünürdü.
+   * _(Anayasa: "bir ekranın ne gösterdiği ölçülmeden iddia edilmez".)_
+   */
+  const YOK = "YOK";
+  const BARKODSUZ = "BARKODSUZ";
+  const stokluDurum = new Map<string, number>([
+    ...IYIDEN_KOTUYE.map((d) => [d, 0] as [string, number]),
+    [YOK, 0],
+    [BARKODSUZ, 0],
+  ]);
   const acikOlmayan: string[] = [];
   for (const v of varyantlar) {
     if (!stoklu.has(v.id)) continue;
     const bk = (v.barcode ?? "").trim();
-    if (bk === "") { stokluDurum.set("BARKODSUZ", stokluDurum.get("BARKODSUZ")! + 1); continue; }
-    const sn = barkodSinifi.get(bk) ?? "E";
+    if (bk === "") { stokluDurum.set(BARKODSUZ, stokluDurum.get(BARKODSUZ)! + 1); continue; }
+    /** Barkod TY listesinde hiç yoksa: "YOK" — `listelemeDurumu`nun da
+     *  tanıdığı değer (bkz. `satisaEngel`), uydurma bir harf değil. */
+    const sn = barkodSinifi.get(bk) ?? YOK;
     stokluDurum.set(sn, (stokluDurum.get(sn) ?? 0) + 1);
-    if (sn !== "A" && acikOlmayan.length < 15) {
+    if (sn !== "ACIK" && acikOlmayan.length < 15) {
       acikOlmayan.push(`     ${sn}  ${v.sku.padEnd(18)} ${(v.product.name + " " + (v.name ?? "")).trim().slice(0, 44)}`);
     }
   }
@@ -236,12 +319,15 @@ async function main() {
   console.log("   ⭐ ASIL SORU — ELİMİZDE MAL VARKEN SATIŞA AÇIK MI");
   console.log("");
   console.log(`   stoklu varyant                                     ${stokluToplam}`);
-  console.log(`     A) TY'de SATIŞA AÇIK                             ${stokluDurum.get("A")}`);
-  console.log(`     B) TY'de STOKSUZ görünüyor  ⛔ SATILAMIYOR        ${stokluDurum.get("B")}`);
-  console.log(`     C) onay bekliyor            ⛔ SATILAMIYOR        ${stokluDurum.get("C")}`);
-  console.log(`     D) pasif                    ⛔ SATILAMIYOR        ${stokluDurum.get("D")}`);
-  console.log(`     E) TY'de hiç yok            ⛔ SATILAMIYOR        ${stokluDurum.get("E")}`);
-  console.log(`     barkodsuz (hüküm verilemez)                      ${stokluDurum.get("BARKODSUZ")}`);
+  const satir = (etiket: string, anahtar: string) =>
+    console.log(`     ${etiket.padEnd(48)} ${stokluDurum.get(anahtar) ?? 0}`);
+  satir("TY'de SATIŞA AÇIK", "ACIK");
+  satir("TY'de stoksuz/vitrinsiz     ⛔ SATILAMIYOR", "STOKSUZ");
+  satir("onay bekliyor               ⛔ SATILAMIYOR", "ONAY_BEKLIYOR");
+  satir("pasif                       ⛔ SATILAMIYOR", "PASIF");
+  satir("TY'de hiç yok               ⛔ SATILAMIYOR", YOK);
+  satir("adet okunamadı (hüküm verilemez)", "BILINMIYOR");
+  satir("barkodsuz (hüküm verilemez)", BARKODSUZ);
   if (acikOlmayan.length > 0) {
     console.log("");
     console.log("   MAL VAR AMA SATIŞA AÇIK DEĞİL (ilk 15):");
@@ -261,8 +347,13 @@ async function main() {
         _UYARI: "CANLI VERI — depoya girmez. Salt okuma taramasi.",
         alindi: new Date().toISOString(),
         saticiId: kimlik.saticiId,
-        sayfa: sonuc.sayfa,
-        kesildiMi: sonuc.kesildiMi,
+        /** ⚠ SÜRÜM DAMGASI: bu dosya v2 şeklinde — v1 dosyalarıyla aynı
+         *  klasörde duruyor ve ikisi AYNI ŞEY DEĞİL. */
+        surum: "v2",
+        uclar: ["products/approved", "products/unapproved"],
+        sayfa: sayfaToplam,
+        kesildiMi: kesildi,
+        hamAdet: cekilen[0].length + cekilen[1].length,
         adet: urunler.length,
         urunler,
       },
@@ -275,9 +366,10 @@ async function main() {
   const csvYol = `${CIKTI}/ty-urun-taramasi-${gun}.csv`;
   const satirlar: string[] = [
     [
-      "sinif",
+      "durum",
       "barkod",
       "stockCode",
+      "productMainId",
       "baslik",
       "onaylı",
       "arşivli",
@@ -289,6 +381,8 @@ async function main() {
       "satisFiyati",
       "kategori",
       "urunUrl",
+      /** ⭐ v1'DE HİÇ OLMAYAN SÜTUN — ürün NİÇİN reddedilmiş. */
+      "redSebebi",
     ].join(";"),
   ];
   for (const [ad, liste] of sinif) {
@@ -296,19 +390,31 @@ async function main() {
       satirlar.push(
         [
           ad,
-          s(u, "barcode"),
-          s(u, "stockCode"),
-          s(u, "title"),
-          String(b(u, "approved")),
-          String(b(u, "archived")),
-          String(b(u, "onSale")),
-          String(b(u, "rejected")),
-          String(b(u, "locked")),
-          String(b(u, "blacklisted")),
-          s(u, "quantity"),
-          s(u, "salePrice"),
-          s(u, "categoryName"),
-          s(u, "productUrl"),
+          u.barcode,
+          u.stockCode,
+          u.productMainId,
+          u.baslik,
+          /**
+           * ⚠ BAYRAK ÜÇ DEĞERLİ YAZILIR: `true` · `false` · BOŞ.
+           * Onaysız uç `archived`/`onSale` GÖNDERMİYOR; `false` yazmak
+           * "ölçtüm, arşivli değil" demek olurdu — oysa bakmadık.
+           */
+          /**
+           * ⛔ `approved` HER ZAMAN BİLİNİR — ham kayıttan değil, UCUN
+           * KİMLİĞİNDEN geliyor (onaylı uçtan geldiyse true). Boş yazmak,
+           * bildiğimiz bir şeyi "ölçmedik" diye göstermek olurdu.
+           */
+          bayrak(u.approved),
+          bayrak(u.archived),
+          bayrak(u.onSale),
+          bayrak(u.rejected),
+          bayrak(u.locked),
+          bayrak(u.blacklisted),
+          u.quantity === undefined ? "" : String(u.quantity),
+          u.satisFiyati,
+          u.kategori,
+          u.urunUrl,
+          u.redSebepleri.join(" | "),
         ]
           .map(csvAlan)
           .join(";"),

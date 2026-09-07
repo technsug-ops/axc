@@ -21,6 +21,7 @@
  *  KOŞUM: npm run canli:ty-saglik
  * ============================================================================
  */
+import { UCLAR } from "./ty/istemci";
 import { readFileSync } from "node:fs";
 
 const TABAN = "https://apigw.trendyol.com";
@@ -217,7 +218,9 @@ async function main() {
     ],
     [
       "ÜRÜN süzgeci",
-      `/integration/product/sellers/${a.saticiId}/products?page=0&size=5`,
+      /** ⛔ v2 (K181): eski `/products` 15.09.2026'da kapanıyor. Sonda da
+       *  yeni uca bakar — yoksa 15.09'da "TY kapandı" diye YANLIŞ rapor verir. */
+      UCLAR.onayliUrunler(a.saticiId, 0, 5),
     ],
     ["KARGO firmaları (yol TAHMİN)", `/integration/product/cargo-providers`],
   ];

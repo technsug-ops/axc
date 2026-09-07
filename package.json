@@ -15,6 +15,8 @@
     "tsc:dogrula": "tsc --noEmit",
     "kalem-gecerli:dogrula": "tsx scripts/kalem-gecerli-dogrula.ts",
     "kalem-kaldirma:dogrula": "tsx scripts/kalem-kaldirma-dogrula.ts",
+    "ty-urun-v2:dogrula": "tsx scripts/ty-urun-v2-dogrula.ts",
+    "canli:ty-urun-v2-sonda": "tsx scripts/canli-ty-urun-v2-sonda.ts",
     "kar:dogrula": "tsx scripts/kar-dogrula.ts",
     "iade:dogrula": "tsx scripts/iade-dogrula.ts",
     "rapor:dogrula": "tsx scripts/rapor-dogrula.ts",

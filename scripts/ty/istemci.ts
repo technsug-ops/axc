@@ -109,7 +109,19 @@ export async function apiGet(
     }
     if (cevap.status === 404) return { tur: "BULUNAMADI" };
     if (!cevap.ok) {
-      const metin = (await cevap.text()).slice(0, 200).replace(/\s+/g, " ");
+      /**
+       * ⛔ MESAJ TAM TAŞINIR — `slice(0, 200)` BURADAN KALDIRILDI (K181).
+       *
+       * ⚠ VAKA 07.09.2026: v2 geçişinde uç 400 döndü ve kırpma tam da
+       * sebebin üstüne denk geldi — ekrana `"errors":[{"key":"approved.
+       * products.filter.s` düştü, gerisi gitti. Hata VARDI, NİYE'si yoktu.
+       * _(Anayasa: "hata mesajını kısaltan her işlem teşhisi kısaltır" —
+       * kısaltma yalnız GÖSTERİMDE yapılır, kayıtta ASLA.)_
+       *
+       * ⚠ Satır sonları boşluğa çevrilir (ilk satırı ALMAK değil): Prisma
+       * gibi bazı kaynaklar mesaja BOŞ SATIRLA başlıyor.
+       */
+      const metin = (await cevap.text()).replace(/\s+/g, " ").trim();
       return cevap.status === 400
         ? { tur: "ISTEK_HATALI", durum: 400, mesaj: metin }
         : { tur: "ULASILAMADI", sebep: `HTTP ${cevap.status}` };
@@ -183,6 +195,43 @@ export async function tumSayfalar(
  * "yanlışlıkla çağırma" ihtimali doğardı; yazılmadıkları için çağrılamazlar.
  */
 export const UCLAR = {
+  /**
+   * ══════════════════════════════════════════════════════════════════════
+   *  ÜRÜN LİSTESİ — v1 KAPANIYOR 15.09.2026, v2 İKİYE BÖLÜNDÜ (K181)
+   * ----------------------------------------------------------------------
+   *  Trendyol duyurusu 07.09.2026: barkod bazlı yapıdan içerik (content)
+   *  bazlı yapıya geçiş. Eski `/products` ucu **15.09.2026'da tamamen
+   *  kapanıyor**; o güne kadar günde 6×15 dk kademeli kesinti veriyor.
+   *
+   *  ⛔ ÜÇ BETİK BU YOLU AYRI AYRI YAZIYORDU (ölçüldü 07.09): tarama ·
+   *  kanal listeleme · sağlık sondası. Geçiş üç yerde ayrı yapılsaydı biri
+   *  unutulur ve 15.09'da sessizce düşerdi. Yol artık TEK YERDE.
+   *  _(Anayasa: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır".)_
+   *
+   *  ⚠ v2 TEK LİSTE DEĞİL — ONAYLI ve ONAYSIZ AYRI UÇLAR ve şekilleri de
+   *  birbirinden farklı. Ham kayıtlar doğrudan sınıflandırıcıya VERİLMEZ;
+   *  önce `ty/urun-v2.ts` normalleştiricisinden geçer.
+   * ══════════════════════════════════════════════════════════════════════
+   */
+  /** ⛔ ESKİ — 15.09.2026'da kapanıyor. Yalnız kıyas/geçiş ölçümü için. */
+  urunlerV1: (saticiId: string, sayfa: number, boyut = 200) =>
+    `/integration/product/sellers/${saticiId}/products?page=${sayfa}&size=${boyut}`,
+  /**
+   * ⛔ v2 SAYFA BOYU TAVANI **100** — v1'de 200'DÜ. ÖLÇÜLDÜ, BELGEDEN DEĞİL:
+   * uç 400 ile cevap verdi → `INVALID_SIZE` · _"Boyut 100 değerini aşamaz.
+   * Alınan: 200"_ (07.09.2026). Geçişte 200 bırakılsaydı tarama ilk sayfada
+   * düşerdi ve sebebi de görünmezdi (mesaj kırpılıyordu, bkz. `apiGet`).
+   *
+   * ⚠ TAVAN İSTEKTE KISILIR, ÇAĞIRANA GÜVENİLMEZ: `Math.min` olmasaydı
+   * yarın 200 geçen bir çağrı aynı hatayı yeniden üretirdi.
+   */
+  urunSayfaBoyuTavani: 100,
+  /** v2 — ONAYLI ürünler. Adet `stock.quantity`, barkod `variants[]` içinde. */
+  onayliUrunler: (saticiId: string, sayfa: number, boyut = 100) =>
+    `/integration/product/sellers/${saticiId}/products/approved?page=${sayfa}&size=${Math.min(boyut, 100)}`,
+  /** v2 — ONAYSIZ ürünler. `status: rejected|pendingApproval`, varyant dizisi YOK. */
+  onaysizUrunler: (saticiId: string, sayfa: number, boyut = 100) =>
+    `/integration/product/sellers/${saticiId}/products/unapproved?page=${sayfa}&size=${Math.min(boyut, 100)}`,
   /** K169: toplu işlem SONUÇ sorgusu — batch kabulünden sonra durum OKUMA
    *  ucudur (yazma `ty/yazici.ts`te; buradaki yalnız GET). */
   topluIslem: (saticiId: string, batchRequestId: string) =>

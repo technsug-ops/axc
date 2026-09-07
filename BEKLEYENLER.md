@@ -13,6 +13,121 @@
 
 ---
 
+## ✅ K181 — TRENDYOL ÜRÜN v2 GEÇİŞİ · 07.09.2026 · [KOŞTU — canlı, salt okuma]
+
+> **Trendyol duyurusu 07.09.2026:** barkod bazlı ürün servisleri içerik
+> (content) bazlı v2'ye geçiyor. Eski uçlar **15.09.2026'da tamamen
+> kapanıyor**; o güne kadar günde **6×15 dk kademeli kesinti** veriyor.
+
+### ① ÖNCE KAPSAM ÖLÇÜLDÜ — CANLI UYGULAMA ETKİLENMİYOR
+
+📏 **ÖLÇÜLDÜ (kendi kaynağımızdan, 07.09):** `src/` altında **tek bir TY
+çağrısı yok**; bütün trafik `scripts/` içinde.
+
+    order/orders · order/claims · finance/settlements   → listede YOK
+    inventory/price-and-inventory (K169 stok/fiyat)     → V1-V2 ORTAK
+    product/batch-requests/{id}                         → adres AYNI
+    product/products?page=   ⛔ TEK ETKİLENEN UÇ        → 15.09'da kapanıyor
+
+Yani **günlük akışta hiçbir şey durmuyor**: sipariş çekme, hakediş, iade ve
+stok/fiyat yazımı v2'den etkilenmiyor. Etkilenen tek uç ürün listesiydi ve
+onu **üç betik ayrı ayrı** çağırıyordu (tarama · kanal listeleme · sağlık
+sondası); hiçbiri zamanlanmış işte değil.
+
+⚠ **VE TY'NİN İDDİASI DOĞRULANDI, KÖRÜ KÖRÜNE KABUL EDİLMEDİ:** _"eski
+servisleri kullanmaya devam ediyorsunuz"_ — ölçüm bunu doğruluyor, o bir uç
+yeter. ⛔ Ama biz yalnız KENDİ kodumuzu ölçebiliyoruz; hesaba başka bir
+araçtan istek gidiyorsa buradan görünmez.
+
+### ② ÜÇ YOL TEK YERE, SONRA v2'YE
+
+Yol artık `ty/istemci.ts` → `UCLAR`ta. Geçiş üç yerde ayrı yapılsaydı biri
+unutulur ve 15.09'da sessizce düşerdi. Bekçi **çıplak v1 yolunu istemci
+dışında yasaklıyor** ve yolun sahibinde DURDUĞUNU da ayrıca ölçüyor.
+_(Anayasa: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır".)_
+
+### ③ ALAN ADLARI UÇTAN ÖLÇÜLDÜ — BELGEDEN DEĞİL
+
+`npm run canli:ty-urun-v2-sonda` (yeni, salt okuma). v2 tek liste değil ve
+iki ucun şekli **birbirinden de farklı**:
+
+    /products/approved    ürün 12 alan · variants[] İÇ DİZİ
+                          adet variants[].stock.quantity · barkod varyantta
+                          ⛔ `approved` ve `rejected` ALANI YOK
+    /products/unapproved  DÜZ yapı, varyant dizisi YOK
+                          status: rejected|pendingApproval · quantity ÜRÜNDE
+                          ⭐ rejectReasonDetails[] — v1'de HİÇ YOKTU
+
+Şekil farkı tek bir saf gövdede toplandı: `scripts/ty/urun-v2.ts`.
+**Sınıflandırıcı yazılmadı** — panelin okuduğu `listelemeDurumu` gövdesi
+aynen kullanılıyor; ikinci bir ölçüt "iki yerde iki cevap" olurdu.
+
+### ④ GEÇİŞ SIRASINDA ÜÇ GERÇEK BULGU
+
+⛔ **a) TARAMANIN KENDİ SINIFLANDIRICISI AYRIŞMIŞTI.** `A) SATIŞA AÇIK` dalı
+`onSale`e **hiç bakmıyordu**, oysa hem başlığı hem rapor satırı baktığını
+yazıyordu — onaylı, stoklu ama **vitrine çıkarılmamış** ürün "satışa açık"
+sayılıyordu. Tek gövdeye bağlanınca kapandı ve bekçide kendi ölçütü var.
+
+⛔ **b) `apiGet` HATA MESAJINI KIRPIYORDU** (`slice(0, 200)`) ve kırpma tam
+sebebin üstüne denk geldi: ekrana `"key":"approved.products.filter.s` düştü,
+gerisi gitti. Kırpma kaldırılınca gerçek sebep göründü —
+**`INVALID_SIZE` · "Boyut 100 değerini aşamaz. Alınan: 200"**. v2'de sayfa
+boyu tavanı **100**, v1'de 200'dü; bu belgede yazmıyor, **uç söyledi**.
+Tavan artık `Math.min` ile istekte kısılıyor, çağırana güvenilmiyor.
+_(Anayasa: "hata mesajını kısaltan her işlem teşhisi kısaltır".)_
+
+⛔ **c) "42 KAYIT KAYBOLUYOR" ALARMI YANLIŞTI — BİRİM HATASIYDI.** İlk okumada
+v1'in ÜRÜN sayısını (1642) v2'nin ÜRÜN sayısıyla (1600) kıyasladım. Ama v1
+zaten **barkod bazlıydı**; v2 onaylı uçta bir içerik birden çok barkod
+taşıyor. Doğru kıyas **barkod kümesi** üzerinden kuruldu (`--kiyas`, aynı an):
+
+    v1 barkod        1642
+    v2 barkod        1644
+    YALNIZ v1'de        0   ← geçişte kaybedilen: HİÇBİR ŞEY
+    YALNIZ v2'de        2   ← v1'in göstermediği
+
+_(Anayasa: "kıyasın iki tarafı aynı kümeden gelmeli — biçim değil kimlik
+süzer".)_ ⏳ Bu kıyas **ömürlü**: v1 15.09'da ölünce kip "kıyas kurulamaz"
+der, sessizce "fark yok" DEMEZ.
+
+### ⑤ ÖLÇÜM VE MUTASYON
+
+    ty-urun-v2:dogrula   34/34   (4 bölüm, sayaçlı)
+    MUTASYON             11/11   hepsi KIRMIZI, iki yönde
+    canlı koşum          tarama + kanal listeleme, uçtan uca v2'de
+
+Zincirin **bağı** ayrıca ölçüldü: `approved` alanını yazmayı unutan bir
+normalleştirici, kusursuz bir sınıflandırıcıya her ürünü "ONAY_BEKLIYOR"
+diye verirdi ve iki birim testi de yeşil kalırdı.
+
+📏 **CANLI SONUÇ (07.09, v2):** 1576 onaylı + 24 onaysız → **1644 satır**
+(varyant başına). ACIK 212 · STOKSUZ 1183 · PASIF 225 · ONAY_BEKLIYOR 24 ·
+BILINMIYOR **0**. Kanal listeleme kuru koşumu **birebir aynı** dağılımı verdi.
+
+### ⑥ AÇIK KALANLAR
+
+⏭ **`hasViolation` ÖLÇÜLDÜ AMA KULLANILMIYOR.** v2 varyantlarında yeni bir
+bayrak var ve v1'de yoktu. Adı "satılamaz" demeyi çağrıştırıyor ama anlamını
+bilmiyoruz; sınıflandırmaya katsaydık, ölçmediğimiz bir şeye dayanarak ürün
+"pasif" ilan edilirdi. **Açılış şartı:** `hasViolation: true` olan bir ürün
+canlıda gerçekten satılamaz görülürse ya da TY bunu belgelerse.
+
+⏭ **`nextPageToken` GEZİNMESİ YAZILMADI.** v2 belgesi 10.000 kaydı aşan
+sorgularda istiyor; ölçüm: onaylı **1576**, onaysız **24** — sınırın çok
+altında. **Açılış şartı:** katalog 10.000'e yaklaşırsa. `kesildiMi` bayrağı
+o güne kadar tek emniyet.
+
+⚠ **BROWNOUT GÖRÜLMEDİ AMA ELENMEDİ.** Duyuru günde 6×15 dk kesinti diyor
+(günün ~%6'sı); iki sağlık sondası da 200 gördü. Tek atışın kaçırma ihtimali
+~%94 — "görmedim" ile "yok" ayrı şeyler. Geçiş yapıldığı için artık önemsiz.
+
+⚠ **`product/cargo-providers` YOLU HÂLÂ TAHMİN.** Sağlık sondasında `556`
+dönüyor ve kendi kodumuz yolu "TAHMİN" diye işaretliyor — TY'nin kusuru
+sayılmaz, listede de yok. Değişmedi, K181 kapsamında değil.
+
+---
+
 ## ✅ K180 — KALEM KALDIRMA AÇILDI (K78 KAPANDI) · 07.09.2026 · [KOD KOŞTU · migration CANLIDA]
 
 > **Halil:** _"kalem silme yeteneğini aç — müşteri satışlarında birini iptal
