@@ -2160,7 +2160,18 @@
     "tyCekimEski": "",
     "tyCekimYok": "",
     "devredenKdv": "",
-    "devredenKdvKisa": ""
+    "devredenKdvKisa": "",
+    "grafikSekmeIade": "",
+    "iadeOraniNotu": "",
+    "iadeOraniAdet": "",
+    "iadeOraniTutar": "",
+    "grafikSekmeKarsilastirma": "",
+    "karsilastirmaNotu": "",
+    "karsilastirmaKarisikBirim": "",
+    "karsilastirmaSecimBos": "",
+    "iadeTutariSerisi": "",
+    "iadeAdediSerisi": "",
+    "birimAdet": ""
   },
   "Envanter": {
     "baslik": "",

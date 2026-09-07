@@ -2160,7 +2160,18 @@
     "tyCekimEski": "⚠ Trendyol çekimi {saat} SAAT ÖNCE — günlük rutin kaçtı, zamanlayıcıyı kontrol edin",
     "tyCekimYok": "⚠ Trendyol çekimi: hiç iz yok",
     "devredenKdv": "Devreden KDV: {tutar} (gelecek döneme mahsup)",
-    "devredenKdvKisa": "devreden KDV {tutar}"
+    "devredenKdvKisa": "devreden KDV {tutar}",
+    "grafikSekmeIade": "İade oranı",
+    "iadeOraniNotu": "İade oranı KANAL KANAL ve toplam. ⚠ Oranlar TOPLANMAZ: toplam satırı, ayların ve kanalların payını ve paydasını toplayıp yeniden bölüyor — yani ağırlık hacimden geliyor, 9 satışlık kanal 3.687 satışlık kanal kadar konuşmuyor. Hiç satışı olmayan ay \"·\" gösterir: oran SIFIR değil, hesaplanamaz. ⚠ Oran %100'ü aşabilir ve bu kusur değildir — iade, satışından sonraki bir ayda kaydedilir; geçen ayın malı bu ay dönerse o ayın oranı yüzü geçer.",
+    "iadeOraniAdet": "Adet bazlı — kaç üründen kaçı geri döndü",
+    "iadeOraniTutar": "Tutar bazlı — cironun ne kadarı geri döndü",
+    "grafikSekmeKarsilastirma": "Karşılaştırma",
+    "karsilastirmaNotu": "İstediğin seriyi seçip gizleyebilirsin. ⛔ Farklı BİRİMDEKİ seriler birlikte çizilmez: ciro (₺1,7 Mn) ile satış adedi (511) aynı eksende olsaydı adet çizgisi tabanda düz görünür ve \"adet değişmiyor\" derdi — oysa 321'den 511'e çıkmış. Karışık seçimde grafik ne olduğunu yazar.",
+    "karsilastirmaKarisikBirim": "Seçtiğin seriler farklı birimlerde (₺ ile adet). Aynı eksene konsalardı küçük olan tabanda düz bir çizgiye dönerdi ve grafik yanlış konuşurdu. Aynı birimden seriler seçin — ya da fazlalığı düğmesine basıp kapatın.",
+    "karsilastirmaSecimBos": "Hiç seri seçili değil — üstteki düğmelerden seçin.",
+    "iadeTutariSerisi": "İade tutarı",
+    "iadeAdediSerisi": "İade adedi",
+    "birimAdet": "adet"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

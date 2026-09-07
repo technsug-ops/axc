@@ -22,6 +22,11 @@ import {
 import { KatlanirBolum } from "@/components/katlanir-bolum";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { IsiHaritasi, type IsiSatiri } from "@/components/isi-haritasi";
+import { OranTablosu, type OranSatiri } from "@/components/oran-tablosu";
+import {
+  KarsilastirmaGrafigi,
+  type KarsilastirmaSerisi,
+} from "@/components/karsilastirma-grafigi";
 import { TekSeriliGrafik, type TekNokta } from "@/components/tek-serili-grafik";
 import { envanterSerisi } from "@/lib/panel/envanter-serisi";
 import { SuzgecCubugu } from "@/components/suzgec-cubugu";
@@ -58,6 +63,7 @@ import {
 import {
   aylikMarj,
   aylikSeri,
+  type AyNoktasi,
   panelHesapla,
   type PanelIadesi,
   type PanelKargosu,
@@ -1531,10 +1537,94 @@ export default async function AnaSayfa({
     .map((nokta, i) => ({ nokta, etiket: noktalar[i]?.tamEtiket ?? "" }))
     .reverse();
 
+  /**
+   * ═══ İADE ORANI SATIRLARI — KANAL × AY (K182, 07.09.2026) ═════════════
+   *
+   * ⛔ HÜCRE ORAN DEĞİL, ORANIN İKİ TARAFI. Oranı burada hesaplayıp tabloya
+   * vermek toplam satırını imkânsız kılardı: oranlar toplanmaz, PAY ve PAYDA
+   * toplanır. Tablo bölmeyi kendi yapıyor.
+   *
+   * ⚠ EK SORGU YOK — `aylikSeri` bellekteki listeyi süzüyor; `isiSatirlari`
+   * ile aynı desen.
+   *
+   * ⛔ KANAL SÜZGECİ UYGULANMAZ — tablonun işi kanalları KARŞILAŞTIRMAK.
+   */
+  const iadeSerileri = kanalSecenekleri.map(([kod, ad]) => ({
+    ad,
+    seri: aylikSeri(
+      satislar,
+      { yil: bugun.yil, ay: bugun.ay },
+      GRAFIK_AY_SAYISI,
+      kod,
+      seciliPara,
+      iadeler,
+    ),
+  }));
+  const iadeAdetSatirlari: OranSatiri[] = iadeSerileri.map((k) => ({
+    ad: k.ad,
+    hucreler: k.seri.map((n) => ({ pay: n.iadeAdedi, payda: n.adet })),
+  }));
+  const iadeTutarSatirlari: OranSatiri[] = iadeSerileri.map((k) => ({
+    ad: k.ad,
+    hucreler: k.seri.map((n) => ({ pay: n.iadeTutari, payda: n.gelir })),
+  }));
+
+  /**
+   * ═══ KARŞILAŞTIRMA SERİLERİ (K182, 07.09.2026) ════════════════════════
+   *
+   * ⛔ `birim` ALANI SÜS DEĞİL, KAPIDIR: grafik aynı birimden olmayan
+   * serileri BİRLİKTE ÇİZMEZ. Ciro (₺1,7 Mn) ile satış adedi (511) aynı
+   * eksende olsaydı adet çizgisi tabanda düz görünür ve "adet değişmiyor"
+   * derdi — oysa 321'den 511'e çıkmış.
+   *
+   * ⚠ EK SORGU YOK: hepsi zaten hesaplanmış `seri`den okunuyor.
+   */
+  const karsilastirmaSerileri: KarsilastirmaSerisi[] = [
+    { anahtar: "ciro", ad: t("ciro"), birim: seciliPara, al: (n: AyNoktasi) => n.gelir },
+    { anahtar: "net1", ad: t("net1"), birim: seciliPara, al: (n: AyNoktasi) => n.net1 },
+    { anahtar: "net2", ad: t("net2"), birim: seciliPara, al: (n: AyNoktasi) => n.net2 },
+    {
+      anahtar: "iadeTutar",
+      ad: t("iadeTutariSerisi"),
+      birim: seciliPara,
+      al: (n: AyNoktasi) => n.iadeTutari,
+    },
+    {
+      anahtar: "adet",
+      ad: t("satisAdedi"),
+      birim: t("birimAdet"),
+      al: (n: AyNoktasi) => n.adet,
+    },
+    {
+      anahtar: "iadeAdet",
+      ad: t("iadeAdediSerisi"),
+      birim: t("birimAdet"),
+      al: (n: AyNoktasi) => n.iadeAdedi,
+    },
+  ].map((k) => ({
+    anahtar: k.anahtar,
+    ad: k.ad,
+    birim: k.birim,
+    degerler: seri.map((n) => k.al(n)),
+    bicimle: (d: number) =>
+      k.birim === seciliPara ? bicim.para(d, seciliPara) : bicim.sayi(d),
+    bicimleKisa: (d: number) =>
+      k.birim === seciliPara ? bicim.paraKisa(d, seciliPara) : bicim.sayi(d),
+  }));
+
   /* ═══════════════ AYLIK GRAFİK SEKMELERİ (K117, 31.08.2026) ═══════════
      Kullanıcı isteği: envanter gelişimi · satış adedi ısı haritası ·
      ortalama kâr marjı — ve sekme değişince ALTTAKİ TABLO da değişsin. */
-  const GRAFIK_SEKMELERI = ["para", "envanter", "adet", "marj"] as const;
+  const GRAFIK_SEKMELERI = [
+    "para",
+    "envanter",
+    "adet",
+    "marj",
+    /** K182 (kullanıcı isteği 07.09.2026): iade oranları — kanal kanal. */
+    "iade",
+    /** K182: seri seçmeli karşılaştırma. */
+    "karsilastirma",
+  ] as const;
   const grafikSekmesi = GRAFIK_SEKMELERI.includes(
     parametreler.grafik as (typeof GRAFIK_SEKMELERI)[number],
   )
@@ -3619,6 +3709,72 @@ export default async function AnaSayfa({
                   bicimle={(deger) => bicim.sayi(deger)}
                   bosMesaj={t("grafikBos")}
                   satirToplamiEtiketi={t("toplam")}
+                  sutunToplamiEtiketi={t("toplam")}
+                />
+              </div>
+            ),
+          },
+          {
+            anahtar: "iade",
+            etiket: t("grafikSekmeIade"),
+            adres: grafikAdresi("iade"),
+            icerik: (
+              <div className="min-w-0 space-y-6">
+                <p className="text-muted-foreground text-sm">
+                  {t("iadeOraniNotu")}
+                </p>
+
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">{t("iadeOraniAdet")}</h3>
+                  <OranTablosu
+                    sutunlar={noktalar.map((n) => n.etiket)}
+                    satirlar={iadeAdetSatirlari}
+                    bicimleOran={(d) => bicim.yuzde(d)}
+                    /* ⭐ ORAN KAYNAĞINI YANINDA TAŞIR: "kaçta kaç". */
+                    bicimleAyrinti={(h) =>
+                      `${bicim.sayi(h.pay)}/${bicim.sayi(h.payda)}`
+                    }
+                    toplamEtiketi={t("toplam")}
+                    bosMesaj={t("grafikBos")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">{t("iadeOraniTutar")}</h3>
+                  <OranTablosu
+                    sutunlar={noktalar.map((n) => n.etiket)}
+                    satirlar={iadeTutarSatirlari}
+                    bicimleOran={(d) => bicim.yuzde(d)}
+                    bicimleAyrinti={(h) =>
+                      `${bicim.paraKisa(h.pay, seciliPara)}/${bicim.paraKisa(
+                        h.payda,
+                        seciliPara,
+                      )}`
+                    }
+                    toplamEtiketi={t("toplam")}
+                    bosMesaj={t("grafikBos")}
+                  />
+                </div>
+              </div>
+            ),
+          },
+          {
+            anahtar: "karsilastirma",
+            etiket: t("grafikSekmeKarsilastirma"),
+            adres: grafikAdresi("karsilastirma"),
+            icerik: (
+              <div className="min-w-0 space-y-4">
+                <p className="text-muted-foreground text-sm">
+                  {t("karsilastirmaNotu")}
+                </p>
+                <KarsilastirmaGrafigi
+                  etiketler={noktalar.map((n) => n.etiket)}
+                  seriler={karsilastirmaSerileri}
+                  /* Açılış: kullanıcının verdiği örnek — Ciro ve NET-2. */
+                  baslangicSecim={["ciro", "net2"]}
+                  bosMesaj={t("grafikBos")}
+                  karisikBirimMesaji={t("karsilastirmaKarisikBirim")}
+                  secimBosMesaji={t("karsilastirmaSecimBos")}
                 />
               </div>
             ),

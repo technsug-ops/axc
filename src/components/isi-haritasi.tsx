@@ -40,6 +40,7 @@ export function IsiHaritasi({
   bicimle,
   bosMesaj,
   satirToplamiEtiketi,
+  sutunToplamiEtiketi,
 }: {
   /** Sütun başlıkları — aylar. */
   sutunlar: string[];
@@ -49,6 +50,16 @@ export function IsiHaritasi({
   bosMesaj: string;
   /** İlke #15 — satır toplamı sütununun başlığı. */
   satirToplamiEtiketi: string;
+  /**
+   * İlke #15'in ÖTEKİ EKSENİ — sütun toplamı SATIRININ başlığı.
+   * Kullanıcı isteği 07.09.2026: _"satış adedi toplam da bulunsun, en alt
+   * satır olsun."_ Satır toplamı sütunu "bu kanal 12 ayda ne yaptı" der;
+   * alttaki satır **"bu ay bütün kanallar ne yaptı"** der — ikisi ayrı soru.
+   *
+   * ⚠ İSTEĞE BAĞLI: her ısı haritasında anlamlı olmayabilir (oran gösteren
+   * bir haritada sütun toplamı anlamsızdır). Verilmezse satır ÇİZİLMEZ.
+   */
+  sutunToplamiEtiketi?: string;
 }) {
   const tumDegerler = satirlar
     .flatMap((s) => s.hucreler)
@@ -140,6 +151,51 @@ export function IsiHaritasi({
             );
           })}
         </tbody>
+        {/* ══════════════ SÜTUN TOPLAMI — EN ALT SATIR (İlke #15) ══════════
+            ⚠ `tfoot` BİLEREK: toplam bir VERİ SATIRI değil, satırların
+            hükmüdür; ekran okuyucu da onu gövdeden ayırarak okur.
+
+            ⛔ TOPLAM BOYANMAZ. Isı rengi hücreleri BİRBİRİYLE kıyaslamak
+            için; toplam onlardan büyük olduğu için en koyu renge boyanır ve
+            ızgaranın ölçeğini yalancı biçimde ezerdi.
+
+            ⚠ `null` HÜCRE TOPLAMA `0` OLARAK GİRER ve bu bir seçimdir:
+            "o kanal o ay sistemde yoktu" demek "o ay hiç satmadı" demek
+            değil — ama toplam ÖLÇÜLENİN toplamıdır ve ölçülmeyen sıfır
+            katkı yapar. Satır toplamı sütunu da aynı kuralla çalışıyor;
+            iki toplam AYNI ölçütü kullanmak zorunda, yoksa sağ alt köşe
+            iki farklı yoldan iki farklı sayı verirdi. */}
+        {sutunToplamiEtiketi === undefined ? null : (
+          <tfoot>
+            <tr className="border-t-2">
+              <th className="bg-background sticky left-0 px-3 py-2 text-left font-medium whitespace-nowrap">
+                {sutunToplamiEtiketi}
+              </th>
+              {sutunlar.map((s, i) => (
+                <td
+                  key={s}
+                  className="px-2 py-2 text-center font-medium tabular-nums"
+                >
+                  {bicimle(
+                    satirlar.reduce<number>(
+                      (t, satir) => t + (satir.hucreler[i] ?? 0),
+                      0,
+                    ),
+                  )}
+                </td>
+              ))}
+              <td className="px-3 py-2 text-right font-semibold tabular-nums">
+                {bicimle(
+                  satirlar.reduce<number>(
+                    (t, satir) =>
+                      t + satir.hucreler.reduce<number>((a, h) => a + (h ?? 0), 0),
+                    0,
+                  ),
+                )}
+              </td>
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   );

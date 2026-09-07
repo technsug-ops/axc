@@ -222,27 +222,69 @@ export function CizgiGrafik({
             iki ayrı ritim olsaydı bazı aylarda rakam olur ay adı olmaz,
             okuyan hangi aya ait olduğunu bilemezdi.
 
-            ⚠ YALNIZ ANA SERİ ETİKETLENİYOR. İki seriyi birden yazmak aynı
-            dikey şeride iki rakam koyardı; hangisinin hangi çizgiye ait
-            olduğu ancak renkten anlaşılırdı ve renk tek başına bilgi
-            taşımaz (erişilebilirlik). Ciro rakamı tabloda duruyor. */}
+            ⛔ ESKİ KARAR VE NİYE ÇEVRİLDİĞİ (07.09.2026) — ESKİ GEREKÇE
+            SİLİNMİYOR. Burada şu yazılıydı ve doğruydu:
+
+              _"YALNIZ ANA SERİ ETİKETLENİYOR. İki seriyi birden yazmak aynı
+              dikey şeride iki rakam koyardı; hangisinin hangi çizgiye ait
+              olduğu ancak renkten anlaşılırdı ve renk tek başına bilgi
+              taşımaz. Ciro rakamı tabloda duruyor."_
+
+            Kullanıcı isteği: _"ciro grafiğinde rakamlar bulunsun."_ Gerekçe
+            geçersiz değil — ÇÖZÜLDÜ: iki etiket artık aynı şeritte DEĞİL.
+            Ciro noktasının ÜSTÜNE, NET-2 noktasının ALTINA yazılıyor; ikisi
+            birbirine yaklaşırsa fark kadar İTİLİYOR. Yani "hangi rakam hangi
+            çizginin" sorusu renge değil KONUMA bağlı — etiket her zaman kendi
+            noktasının bitişiğinde. */}
         {bicimleKisa ? (
-          <g className="text-foreground" fontSize={11} fontWeight={600}>
-            {noktalar.map((n, i) =>
-              i % etiketAtla === 0 ? (
-                <text
-                  key={n.tamEtiket}
-                  x={x(i)}
-                  /* ⚠ 10px YUKARI: nokta işaretinin (r=3.5) üstünde durur;
-                     üstüne binerse iki öğe de okunmaz olur. */
-                  y={yKonum(anaSeri(n)) - 10}
-                  textAnchor="middle"
-                  fill="currentColor"
-                >
-                  {bicimleKisa(anaSeri(n))}
-                </text>
-              ) : null,
-            )}
+          <g fontSize={11} fontWeight={600}>
+            {noktalar.map((n, i) => {
+              if (i % etiketAtla !== 0) return null;
+              /**
+               * ⚠ ÇAKIŞMA ÖNLEME ÖLÇÜLEBİLİR, TAHMİNİ DEĞİL: iki nokta
+               * arasındaki DİKEY MESAFE hesaplanıyor ve en az `ARALIK` piksel
+               * kalacak şekilde etiketler zıt yönlere itiliyor. Sabit bir
+               * kaydırma yazsaydım çizgiler yaklaştığında yine binerlerdi.
+               */
+              const ARALIK = 24;
+              const yCiro = yKonum(n.gelir);
+              const yNet = yKonum(n.net2);
+              const bosluk = Math.abs(yNet - yCiro);
+              const itme = bosluk >= ARALIK ? 0 : (ARALIK - bosluk) / 2;
+              return (
+                <g key={n.tamEtiket}>
+                  {/* ⛔ İKİ SERİ VARKEN ANA SERİ ALTA, CİRO ÜSTE. Ciro her
+                      zaman NET-2'den büyük olduğu için üstteki çizgidir;
+                      etiketi de üstte olunca göz onu doğru çizgiye bağlar. */}
+                  {net2Goster ? (
+                    <text
+                      x={x(i)}
+                      y={yCiro - 10 - itme}
+                      textAnchor="middle"
+                      className="text-muted-foreground"
+                      fill="currentColor"
+                    >
+                      {bicimleKisa(n.gelir)}
+                    </text>
+                  ) : null}
+                  <text
+                    x={x(i)}
+                    /* ⚠ 10px BOŞLUK: nokta işaretinin (r=3.5) üstünde/altında
+                       durur; üstüne binerse iki öğe de okunmaz olur. */
+                    y={
+                      net2Goster
+                        ? yNet + 18 + itme
+                        : yKonum(anaSeri(n)) - 10
+                    }
+                    textAnchor="middle"
+                    className="text-foreground"
+                    fill="currentColor"
+                  >
+                    {bicimleKisa(anaSeri(n))}
+                  </text>
+                </g>
+              );
+            })}
           </g>
         ) : null}
 
