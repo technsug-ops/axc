@@ -183,6 +183,18 @@ export const UCLAR = {
     `${taban("oms", k.ortam)}/packages/merchantid/${k.merchantId}/shipped?offset=${offset}&limit=${limit}`,
 
   /**
+   * ⛔ TESLİM EDİLENLER — VE BU UÇ OLMADAN İKİ SİPARİŞ DEFTERE HİÇ GİRMEDİ.
+   *
+   * Ölçüldü 07.09.2026: enumerasyon yalnız `açık + kargoda` uçlarından
+   * yapılıyordu; `4873413946` (Delivered, ₺5.979) ve `4707418677`
+   * (ClaimCreated, ₺3.099) hiçbir koşumda görünmedi ve **defterde yoktu**.
+   * Kanaldan çekilen küme, kanalın kendisinden dar olduğu sürece kaçak
+   * SESSİZDİR — bu yüzden yanına "kaçak radarı" da kondu.
+   */
+  paketlerTeslim: (k: Kimlik, offset: number, limit: number) =>
+    `${taban("oms", k.ortam)}/packages/merchantid/${k.merchantId}/delivered?offset=${offset}&limit=${limit}`,
+
+  /**
    * ⛔ TEK SİPARİŞİN TAM KAYDI — VE BU UÇ OLMASA ÇEKİM `Open` İLE SINIRLI
    * KALIRDI.
    *

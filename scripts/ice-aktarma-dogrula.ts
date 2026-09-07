@@ -2024,13 +2024,29 @@ kontrol(
    * Kanala daraltılsaydı aday elemede geçer, `INSERT` kısıta çarpardı
    * (TY'nin 26.08.2026 tuzağı).
    */
-  const cakBasi = hbK.indexOf("const mevcutSatislar = await prisma.sale.findMany");
-  kontrol("çakışma araması var", cakBasi >= 0);
-  const cakB = cakBasi >= 0 ? hbK.slice(cakBasi, cakBasi + 420) : "";
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ VE GÜNCELLENDİ (08.09.2026): çakışma bloğu yeniden
+   * yapılandırıldı — sınıflama artık enumerasyonda bulunan `bilinen`den,
+   * yazımdan hemen önceki KÜRESEL kapı ise `sonKontrol`den geliyor. Eski
+   * ölçüt `mevcutSatislar` adını arıyordu ve kırmızı yandı. Susturulmadı;
+   * NİYE eskidiği yazıldı. _(Anayasa: "bekçinin kırmızısı her zaman 'kod
+   * yanlış' demez" — eskiyen ölçüt güncellenir.)_
+   *
+   * ⛔ VE İKİ KAPI AYRI ÖLÇÜLÜR: biri RAPOR (kaç çakışma, hangi cins), öteki
+   * GÜVENLİK (enumerasyondan sonra doğan kayıt). İkisi aynı şey değil.
+   */
+  const cakBasi = hbK.indexOf("const sonKontrol = await prisma.sale.findMany");
+  kontrol("yazım öncesi KÜRESEL kapı var", cakBasi >= 0);
+  const cakB = cakBasi >= 0 ? hbK.slice(cakBasi, cakBasi + 320) : "";
   kontrol(
     "  ...ve KÜRESEL (kanala daraltılmamış)",
     cakB.includes("where: { code: { in: [...adaylar.keys()] } }") &&
-      !cakB.includes("channelAccountId: hesap.id"),
+      !cakB.includes("channelAccountId"),
+  );
+  /** ⛔ RAPOR TARAFI: sınıflama enumerasyonun `bilinen` kümesinden. */
+  kontrol(
+    "çakışma sınıflaması `bilinen` kümesinden",
+    hbK.includes("const capraz = bilinen.filter((s) => s.channelAccountId !== hesap.id)"),
   );
   kontrol(
     "çakışma SINIFLANDIRILIYOR (aynı kanal ↔ çapraz)",
@@ -2042,9 +2058,70 @@ kontrol(
       hbK.includes("cakismaCaprazKodlar: capraz.map"),
   );
   kontrol(
-    "çakışan ATLANIR — ezme YOK",
-    hbK.includes("for (const n of cakisanlar) adaylar.delete(n);"),
+    "yarış eden kayıt ATLANIR — ezme YOK",
+    hbK.includes("for (const n of yarisEdenler) adaylar.delete(n);"),
   );
+
+  /* ═══ K-HB-KAPSAM — ENUMERASYON · KAÇAK RADARI · ONAY SÜZGECİ (08.09) ═══
+   *
+   * ⛔ Enumerasyon `açık + kargoda` ile sınırlıyken İKİ sipariş hiç görünmedi
+   * ve defterde YOKTU (`4873413946` ₺5.979 · `4707418677` ₺3.099). Kanaldan
+   * çekilen küme kanalın kendisinden dar olduğu sürece kaçak SESSİZDİR.
+   */
+  kontrol("enumerasyon TESLİM EDİLENLERİ de topluyor", hbK.includes("UCLAR.paketlerTeslim(k, o, l)"));
+  kontrol("teslim ucu YOL ile ayrılıyor (/delivered)", hbIstemci.includes("/delivered?offset="));
+  /** ⛔ ÜÇ UÇ DA OKUNAMAZSA SESSİZ GEÇMEZ — eksik küme BEYAN edilir. */
+  kontrol(
+    "okunamayan uç BEYAN ediliyor (üç uç için de)",
+    (hbK.match(/EKSİK küme görüyor/g) ?? []).length >= 2,
+  );
+
+  /**
+   * ⛔ KAÇAK RADARI: kanalda var / defterde yok sayısı HER KOŞUMDA basılır ve
+   * İZE geçer. Sıfır olduğunda da yazar — "baktım, temiz" ile "bu satır artık
+   * yok" ekranda ayırt edilmeli.
+   */
+  kontrol("kaçak radarı HESAPLANIYOR", /const kacaklar = \[\.\.\.siparisNolari\]\.filter/.test(hbK));
+  kontrol("kaçak radarı EKRANA basılıyor", hbK.includes("KAÇAK RADARI"));
+  kontrol(
+    "kaçak radarı İZE geçiyor (sayı ve kodlar)",
+    hbK.includes("kacakSayisi: kacaklar.length") && hbK.includes("kacakKodlar: kacaklar"),
+  );
+  /**
+   * ⛔ DETAY YALNIZ KAÇAKLAR İÇİN — defterde olanın detayına ihtiyaç yok.
+   * `delivered` eklenince numara sayısı ~85'e çıktı; hepsinin detayını çekmek
+   * her ay büyüyen bir gidiş-dönüş yüküydü.
+   */
+  kontrol("detay YALNIZ kaçaklar için çekiliyor", /for \(const no of kacaklar\)/.test(hbK));
+  kontrol(
+    "  ...tüm numaralar için DEĞİL",
+    !/for \(const no of siparisNolari\)\s*\{\s*const d = await apiGet/.test(hbK),
+  );
+
+  /**
+   * ⛔ ONAY SÜZGECİ KAPSAMI DARALTIR, GENİŞLETMEZ. Mimar İKİ siparişi
+   * onayladı, kuru koşum ÜÇ yazılabilir gösterdi; onaylanan kapsamın dışına
+   * çıkmak "zaten doğru olurdu" gerekçesiyle bile karar genişletmesidir.
+   */
+  kontrol("onay süzgeci VAR (--sadece=)", hbK.includes('a.startsWith("--sadece=")'));
+  kontrol(
+    "süzgeç DARALTIYOR (filter), eklemiyor",
+    /yazilacak = yazilabilir\.filter\(\(x\) => SADECE\.includes/.test(hbK),
+  );
+  kontrol("süzgeç YOKSA davranış değişmez", /if \(SADECE\.length > 0\) \{/.test(hbK));
+  kontrol("yazım döngüsü SÜZÜLMÜŞ kümeden", hbK.includes("for (const { aday } of yazilacak)"));
+  kontrol("beklenen sayım da SÜZÜLMÜŞ kümeden", hbK.includes("onceToplam + yazilacak.length"));
+  /** ⚠ Süzgeçte olup yazılamayan numara SESSİZ GEÇMEZ. */
+  kontrol("süzgeçte olup bulunamayan BEYAN ediliyor", hbK.includes("SÜZGEÇTE OLUP YAZILAMAYAN"));
+  kontrol("onay kapsamı İZE geçiyor", hbK.includes("onaySuzgeci: SADECE.length > 0 ? SADECE : null"));
+
+  /**
+   * ⛔ YAZIM ANINDAKİ KANAL DURUMU DONDURULUR — akan bilgi, kaydedilmezse
+   * kaybolur. `4707418677` yazıldığında `ClaimCreated` idi; yarın `Returned`
+   * olur ve hangi hâlde deftere girdiği bir daha okunamaz.
+   */
+  kontrol("kanal durumu NOT olarak yazılıyor", hbK.includes("HB yazım anında kanal durumu:"));
+  kontrol("durum kalemlerden TOPLANIYOR (tek kalemin sonuncusu değil)", hbK.includes("aday.kanalDurumu.split"));
 }
 
 /**

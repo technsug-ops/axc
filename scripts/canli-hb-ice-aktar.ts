@@ -78,6 +78,28 @@ import {
 
 const YAZ = process.argv.includes("--yaz");
 
+/**
+ * ⛔ YAZIM ONAYIN KAPSAMIYLA BİREBİR EŞLEŞEBİLMELİ — `--sadece=no,no`
+ *
+ * NİYE DOĞDU (07.09.2026): mimar İKİ siparişin yazımını onayladı
+ * (`4873413946` · `4707418677`), ama kuru koşum arada gelen ÜÇÜNCÜ bir
+ * siparişi de yazılabilir gösterdi. Onaylanan kapsamın dışına çıkmak, "zaten
+ * doğru olurdu" gerekçesiyle bile YAZIM DEĞİL KARAR genişletmesidir.
+ *
+ * ⚠ SÜZGEÇ YOKKEN DAVRANIŞ DEĞİŞMEZ: verilmezse yazılabilir olanların hepsi
+ * yazılır (bugünkü hâl). Süzgeç bir KISITTIR, yeni bir yol değil.
+ * ⚠ Ve süzgeçte olup yazılamayan numara SESSİZ GEÇMEZ — ekranda yazar.
+ */
+const SADECE: string[] = (() => {
+  const ham2 = process.argv.find((a) => a.startsWith("--sadece="));
+  if (ham2 === undefined) return [];
+  return ham2
+    .slice("--sadece=".length)
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
+})();
+
 const kurus = (n: number) => Math.round(n * 100) / 100;
 
 /**
@@ -114,6 +136,15 @@ type Aday = {
   soldAt: Date;
   kalemler: Kalem[];
   iptalliKalem: number;
+  /**
+   * ⛔ YAZIM ANINDAKİ KANAL DURUMU — SONRADAN ÖĞRENİLEMEZ.
+   * `4707418677` yazıldığında `ClaimCreated` idi (talep açık). Bu bilgi
+   * kanalda AKAR: yarın `Delivered` ya da `Returned` olur ve o siparişin
+   * hangi hâlde deftere girdiği bir daha okunamaz. Not yazım ANINI dondurur.
+   * ⚠ Notun kendisi ÇEVRİLMEZ ve sözlüğe girmez — deftere yazılan veridir
+   *   (anayasa: kayıtlar yazıldıkları dilde kalıcıdır).
+   */
+  kanalDurumu: string;
 };
 
 function bekciTuruKosuyorMu(): boolean {
@@ -251,12 +282,67 @@ async function main() {
   }
 
   /**
+   * ⛔ TESLİM EDİLENLER DE TOPLANIR — VE BU BİR KAÇAK ÖLÇÜMÜNDEN SONRA.
+   *
+   * 07.09.2026 ölçümü: enumerasyon `açık + kargoda` ile sınırlıyken iki
+   * sipariş hiç görünmedi ve defterde YOKTU — `4873413946` (Delivered,
+   * ₺5.979) ve `4707418677` (ClaimCreated, ₺3.099). Toplam ₺9.078.
+   * Kanaldan çekilen küme kanalın kendisinden dar olduğu sürece kaçak
+   * SESSİZDİR: hata vermez, sayı vermez, kimse aramaz.
+   */
+  const teslim = await tumKayitlar((o, l) => UCLAR.paketlerTeslim(k, o, l), baslik, 100);
+  let teslimSayisi = 0;
+  if (teslim.tur === "TAMAM") {
+    for (const p of teslim.kayitlar as Record<string, unknown>[]) {
+      for (const alan of ["OrderNumber", "orderNumber"]) {
+        const v = p[alan];
+        if (typeof v === "string" && v !== "") {
+          if (!siparisNolari.has(v)) teslimSayisi++;
+          siparisNolari.add(v);
+        }
+      }
+    }
+  } else {
+    console.log("\n   ⚠ TESLİM EDİLEN PAKETLER OKUNAMADI — bu koşum EKSİK küme görüyor.");
+  }
+
+  console.log(
+    `\n   PAKET UÇLARI → açık ${acikSayisi} · kargoda +${gonderilenSayisi}` +
+      ` · teslim +${teslimSayisi} · toplam ${siparisNolari.size} sipariş`,
+  );
+
+  /* ═══ KAÇAK RADARI — KANALDA VAR, DEFTERDE YOK ════════════════════════
+   *
+   * ⛔ NİYE: kaçak sipariş SESSİZDİR. `4873413946` ve `4707418677` aylarca
+   * defterde yoktu ve hiçbir ekran bunu söylemiyordu. Bu sayı her koşumda
+   * basılır ve ize geçer; sıfır olduğunda da yazar (İlke: "sıfır satır
+   * gizlenmez — `0` yazar ve temiz olduğunu söyler").
+   *
+   * ⭐ VE DETAY YALNIZ BİLİNMEYENLER İÇİN ÇEKİLİR. Defterde zaten olan
+   * siparişin detayına ihtiyaç YOK — nasılsa atlanacak. Enumerasyon
+   * `delivered`ı da alınca numara sayısı ~85'e çıktı; hepsinin detayını
+   * çekmek 85 gidiş-dönüş demekti ve her ay büyüyecekti.
+   */
+  const bilinen = await prisma.sale.findMany({
+    where: { code: { in: [...siparisNolari] } },
+    select: {
+      code: true,
+      channelAccountId: true,
+      channelAccount: { select: { name: true, channel: { select: { name: true } } } },
+    },
+  });
+  const bilinenKodlar = new Set(bilinen.map((s) => s.code!));
+  const kacaklar = [...siparisNolari].filter((n) => !bilinenKodlar.has(n));
+  console.log(`   ⚠ KAÇAK RADARI — kanalda var, DEFTERDE YOK: ${kacaklar.length}`);
+  for (const n of kacaklar) console.log(`        ${n}`);
+
+  /**
    * ⛔ DETAY TEK TEK — her biri bağımsız. Bir siparişin detayı düşerse
    * ötekiler devam eder; düşen SAYILIR ve ekranda yazar (sessiz eksilme yok).
    */
   const detayKalemleri: Record<string, unknown>[] = [];
   let detayDusen = 0;
-  for (const no of siparisNolari) {
+  for (const no of kacaklar) {
     const d = await apiGet(UCLAR.siparisDetay(k, no), baslik);
     if (d.tur !== "VERI") {
       detayDusen++;
@@ -266,9 +352,7 @@ async function main() {
     for (const x of (g.items ?? []) as Record<string, unknown>[]) detayKalemleri.push(x);
   }
   const cekim = { kayitlar: detayKalemleri };
-  console.log(
-    `\n   PAKET UÇLARI → açık ${acikSayisi} · kargoda +${gonderilenSayisi} · toplam ${siparisNolari.size} sipariş`,
-  );
+  console.log(`   detay çekilen (yalnız kaçaklar): ${kacaklar.length - detayDusen}`);
   if (detayDusen > 0) {
     console.log(`   ⚠ DETAYI OKUNAMAYAN SİPARİŞ: ${detayDusen}  ← YAZILMAZ`);
   }
@@ -286,7 +370,13 @@ async function main() {
     }
     const aday =
       adaylar.get(no) ??
-      ({ siparisNo: no, soldAt: an, kalemler: [], iptalliKalem: 0 } as Aday);
+      ({ siparisNo: no, soldAt: an, kalemler: [], iptalliKalem: 0, kanalDurumu: "" } as Aday);
+    /** ⚠ Kalem düzeyi durum; sipariş tek kalemliyse odur, çoklu ise sonuncusu
+     *  değil BİRLEŞİK yazılır — biri iptal biri açık olabilir. */
+    const durumMetni = String(ham.status ?? "");
+    if (durumMetni !== "" && !aday.kanalDurumu.split(", ").includes(durumMetni)) {
+      aday.kanalDurumu = aday.kanalDurumu === "" ? durumMetni : `${aday.kanalDurumu}, ${durumMetni}`;
+    }
     if (String(ham.status) === "Cancelled") {
       aday.iptalliKalem++;
     } else {
@@ -380,22 +470,32 @@ async function main() {
    *     Bu yüzden ayrı sayılır, ekranda YÜKSEK SESLE yazar ve parti
    *     kimliğiyle ize geçer. _(Kullanıcı kararı 07.09.2026.)_
    */
-  const mevcutSatislar = await prisma.sale.findMany({
-    where: { code: { in: [...adaylar.keys()] } },
-    select: {
-      code: true,
-      channelAccountId: true,
-      channelAccount: { select: { name: true, channel: { select: { name: true } } } },
-    },
-  });
-  const mevcutKodlar = new Set(mevcutSatislar.map((s) => s.code!));
-  const cakisanlar = [...adaylar.keys()].filter((n) => mevcutKodlar.has(n));
-  for (const n of cakisanlar) adaylar.delete(n);
+  /**
+   * ⛔ SINIFLAMA `bilinen`DEN — DETAY ARTIK YALNIZ KAÇAKLAR İÇİN ÇEKİLİYOR.
+   * Enumerasyondaki numaraların defterde olanları zaten yukarıda bulundu;
+   * çakışma sayısı ve cinsi oradan okunur.
+   */
+  const capraz = bilinen.filter((s) => s.channelAccountId !== hesap.id);
+  const ayniKanal = bilinen.length - capraz.length;
 
-  const capraz = mevcutSatislar.filter(
-    (s) => mevcutKodlar.has(s.code!) && s.channelAccountId !== hesap.id,
-  );
-  const ayniKanal = cakisanlar.length - capraz.length;
+  /**
+   * ⛔ VE YAZIMDAN HEMEN ÖNCE İKİNCİ BİR KÜRESEL KONTROL — KALDIRILMADI.
+   * Enumerasyon ile yazım arasında bir kayıt doğabilir (elle giriş, başka
+   * koşum). `Sale.code` global `@unique`; bu kapı olmadan `INSERT` kısıta
+   * çarpardı. İlk kontrol RAPOR içindir, bu kontrol GÜVENLİK içindir —
+   * ikisi aynı şey değil.
+   */
+  const sonKontrol = await prisma.sale.findMany({
+    where: { code: { in: [...adaylar.keys()] } },
+    select: { code: true },
+  });
+  const mevcutKodlar = new Set(sonKontrol.map((s) => s.code!));
+  const yarisEdenler = [...adaylar.keys()].filter((n) => mevcutKodlar.has(n));
+  for (const n of yarisEdenler) adaylar.delete(n);
+  if (yarisEdenler.length > 0) {
+    console.log(`   ⚠ ENUMERASYONDAN SONRA DOĞAN KAYIT → ATLANDI: ${yarisEdenler.length}`);
+  }
+  const cakisanlar = [...bilinen.map((s) => s.code!), ...yarisEdenler];
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
   console.log(`     ├─ aynı kanal (yeniden içe aktarma, beklenen)  ${ayniKanal}`);
   console.log(`     └─ ÇAPRAZ KANAL (numara uzayı çakışması)       ${capraz.length}`);
@@ -480,7 +580,27 @@ async function main() {
   console.log(`   ⛔ YAZILAMAZ (kod kataloğumuzda yok)              ${yazilamaz.length}`);
   for (const a of yazilamaz) console.log(`        ${a.siparisNo} · ${a.kalemler.map((x) => x.merchantSku + "/" + x.hbSku).join(", ")}`);
 
-  console.log(`\n③ YAZILACAK: ${yazilabilir.length} sipariş  ·  beklenen Sale TOPLAM ${onceToplam + yazilabilir.length}`);
+  /**
+   * ⛔ ONAY SÜZGECİ — kapsam daraltma, genişletme DEĞİL.
+   * Süzgeçte olup adaylar arasında bulunmayan numara AYRICA yazılır:
+   * "onayladım ama yazılmadı" ile "onayladım ve yazıldı" ayırt edilmeli.
+   */
+  let yazilacak = yazilabilir;
+  if (SADECE.length > 0) {
+    const adaylarKume = new Set(yazilabilir.map((x) => x.aday.siparisNo));
+    yazilacak = yazilabilir.filter((x) => SADECE.includes(x.aday.siparisNo));
+    const bulunamayan = SADECE.filter((n) => !adaylarKume.has(n));
+    console.log(`\n   ⛔ ONAY SÜZGECİ: yalnız ${SADECE.length} sipariş yazılacak`);
+    console.log(`      süzgeçte ${SADECE.length} · adaylarda bulunan ${yazilacak.length}`);
+    if (bulunamayan.length > 0) {
+      console.log(`      ⚠ SÜZGEÇTE OLUP YAZILAMAYAN: ${bulunamayan.join(", ")}`);
+      console.log(`        (defterde zaten var · kodu tanınmadı · ya da detayı okunamadı)`);
+    }
+    const suzulen = yazilabilir.length - yazilacak.length;
+    if (suzulen > 0) console.log(`      süzgeç DIŞINDA bırakılan: ${suzulen}`);
+  }
+
+  console.log(`\n③ YAZILACAK: ${yazilacak.length} sipariş  ·  beklenen Sale TOPLAM ${onceToplam + yazilacak.length}`);
 
   if (!YAZ) {
     console.log(`\n${"=".repeat(78)}`);
@@ -495,7 +615,7 @@ async function main() {
   let yazilan = 0;
   let hata = 0;
   let oranChannelSkudan = 0;
-  for (const { aday } of yazilabilir) {
+  for (const { aday } of yazilacak) {
     try {
       const kalemVerisi = [] as {
         variantId: string;
@@ -538,6 +658,12 @@ async function main() {
           soldAt: aday.soldAt,
           importBatch: partiKimligi,
           importKaynak: "hb-enumerasyon",
+          /**
+           * ⛔ YAZIM ANINDAKİ KANAL DURUMU — akan bir bilgi, dondurulmazsa
+           * kaybolur. `ClaimCreated` bir siparişin yazıldığı an açık bir talep
+           * olduğunu söyler; yarın durum değişince bu bir daha okunamaz.
+           */
+          note: `HB yazım anında kanal durumu: ${aday.kanalDurumu || "bilinmiyor"}`,
           items: { create: kalemVerisi },
         },
       });
@@ -550,7 +676,7 @@ async function main() {
 
   // ═══ SONRA SAYIM ════════════════════════════════════════════════════════
   const sonraToplam = await prisma.sale.count();
-  const beklenen = onceToplam + yazilabilir.length;
+  const beklenen = onceToplam + yazilacak.length;
   console.log(`\n⑤ SONRA SAYIM`);
   console.log(`   yazılan ${yazilan} · hata ${hata} · oran ChannelSku'dan ${oranChannelSkudan}`);
   console.log(`   Sale TOPLAM ${onceToplam} → ${sonraToplam}`);
@@ -580,11 +706,22 @@ async function main() {
         cakismaAyniKanal: ayniKanal,
         cakismaCaprazKanal: capraz.length,
         cakismaCaprazKodlar: capraz.map((s) => s.code),
+        /**
+         * ⛔ KAÇAK RADARI İZE GEÇER — ekran çıktısı koşumla kaybolur, bu sayı
+         * üç ay sonra "burada niye bir sipariş eksik" sorusunun cevabıdır.
+         */
+        kacakSayisi: kacaklar.length,
+        kacakKodlar: kacaklar,
+        enumerasyonAcik: acikSayisi,
+        enumerasyonKargoda: gonderilenSayisi,
+        enumerasyonTeslim: teslimSayisi,
         tamamiIptal: tumIptal.length,
         saatCozulemeyen,
         saticiIndirimliKalem,
         belirsiz: belirsiz.length,
         yazilamazKod: yazilamaz.length,
+        /** ⛔ ONAY SÜZGECİ İZE GEÇER — hangi kapsamda yazıldığı kaybolmasın. */
+        onaySuzgeci: SADECE.length > 0 ? SADECE : null,
         yazilan,
         hata,
         oranChannelSkudan,
