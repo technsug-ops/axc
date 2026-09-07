@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import type { PrismaClient } from "@/generated/prisma/client";
 
 /**
@@ -62,7 +63,15 @@ export async function iceAktarmaStokAyrismasi(
        * ciro 105.184 → 106.618 sıçratan hatanın aynısı.)_
        */
       ...(varyantSuzgeci
-        ? { AND: [{ items: { some: { variant: varyantSuzgeci } } }] }
+        ? {
+            AND: [
+              {
+                items: {
+                  some: { ...KALEM_GECERLI, variant: varyantSuzgeci },
+                },
+              },
+            ],
+          }
         : {}),
       /**
        * ⚠ İPTALLİ SATIŞ SAYILMAZ — VE BU BİR KARAR DEĞİŞİKLİĞİDİR.
@@ -79,7 +88,13 @@ export async function iceAktarmaStokAyrismasi(
        * okunmaz olur ve yanındaki gerçek uyarıların güvenini götürür.)_
        */
       iptalTarihi: null,
-      items: { none: { stockMovements: { some: {} } } },
+      /**
+       * ⛔ KALDIRILMIŞ KALEM BU KOVAYI BOZAR (K78). Ölçüt "hiçbir kalemin
+       * hareketi yok" — kaldırılmış kalemin hareketi VARDIR (çıkış + aynası),
+       * yani süzgeçsiz hâlde o satış "bağ bekliyor" kovasından SESSİZCE
+       * düşerdi; gerçekte bekleyen kalem hâlâ bekliyor olurdu.
+       */
+      items: { none: { ...KALEM_GECERLI, stockMovements: { some: {} } } },
     },
   });
 }
@@ -337,6 +352,8 @@ async function marjSiniflandir(
 
   const kalemler = await db.saleItem.findMany({
     where: {
+      /** ⛔ KALDIRILMIŞ KALEM KOVAYA GİRMEZ (K78) — bağ da alım belgesi de istemez. */
+      ...KALEM_GECERLI,
       sale: {
         iptalTarihi: null,
         ...(pencere ? { soldAt: { gte: pencere.bas, lte: pencere.son } } : {}),

@@ -1,5 +1,6 @@
 "use server";
 
+import { kalemGecerliMi } from "@/lib/kalem-gecerli";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
@@ -66,6 +67,7 @@ export async function veriDogrula(
       quantity: true,
       unitPriceAmount: true,
       net2Amount: true,
+      kaldirildiAt: true,
       sale: { select: { iptalTarihi: true } },
       stockMovements: {
         select: {
@@ -76,7 +78,15 @@ export async function veriDogrula(
       },
     },
   });
-  if (!kalem || kalem.sale.iptalTarihi !== null) {
+  /**
+   * ⛔ KALDIRILMIŞ KALEM SUSTURULAMAZ (K78) — hiç satılmamış bir satır için
+   * "baktım, doğru" demek anlamsızdır; uyarı beslemesinde de yok.
+   *
+   * ⚠ BURADA PRISMA SÜZGECİ KULLANILAMAZ: `findUnique` yalnız TEKİL alan
+   * kabul eder. Ölçüt bu yüzden saf gövdeden okunuyor — `KALEM_GECERLI` ile
+   * `kalemGecerliMi` AYNI soruyu soruyor, iki ölçüt değil.
+   */
+  if (!kalem || kalem.sale.iptalTarihi !== null || !kalemGecerliMi(kalem)) {
     return { hata: t("dogrulaKalemYok") };
   }
 

@@ -4,6 +4,7 @@ import { envanterVerisi } from "@/lib/envanter-veri";
 import { DONEM_ISTISNA_EYLEMI } from "@/lib/donem-kapisi";
 import { donemAnahtari, type DonemAnahtari } from "@/lib/donem-korumasi";
 import { donemNet2 } from "@/lib/net-devreden";
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 
 /**
  * ============================================================================
@@ -98,7 +99,8 @@ export async function donemRaporu(
         net1Amount: true,
         net2Amount: true,
         profitCurrency: true,
-        items: { select: { unitPriceAmount: true, quantity: true } },
+        /** ⛔ KALDIRILMIŞ KALEM CİROYA GİRMEZ (K78) — hiç satılmamış sayılır. */
+        items: { where: { ...KALEM_GECERLI }, select: { unitPriceAmount: true, quantity: true } },
         fees: { select: { code: true, amount: true } },
       },
     }),

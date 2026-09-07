@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { donemOzeti } from "@/lib/muhasebe-donemi";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
@@ -361,6 +362,8 @@ export default async function AnaSayfa({
           },
         },
         items: {
+          /** ⛔ KALDIRILMIŞ KALEM CİROYA/NET'E GİRMEZ (K78). */
+          where: { ...KALEM_GECERLI },
           select: {
             quantity: true,
             unitPriceAmount: true,
@@ -479,6 +482,8 @@ export default async function AnaSayfa({
          * ve ekranda "makul" görünen bir eksiklik.
          */
         items: {
+          /** ⛔ KALDIRILMIŞ KALEM CİROYA GİRMEZ (K78). */
+          where: { ...KALEM_GECERLI },
           select: {
             unitPriceCurrency: true,
             unitPriceAmount: true,
@@ -502,6 +507,16 @@ export default async function AnaSayfa({
       where: {
         code: "MALIYET",
         sale: { soldAt: { gte: donem.baslangic, lt: donem.bitisHaric } },
+        /**
+         * ⛔ KALDIRILMIŞ KALEMİN MALİYETİ DE PAYDAYA GİRMEZ (K78). Ciro
+         * yukarıda düşerken maliyet burada kalsaydı marj SAHTE OLARAK DÜŞER —
+         * ve düşük marj, ekranda "makul" görünen türden bir yalandır.
+         *
+         * ⚠ `OR` ŞART: sipariş başına kesintilerin `saleItemId`si NULL'dur ve
+         * `saleItem: { is: … }` NULL satırı SESSİZCE ELER. (Anayasa: "`NOT`
+         * süzgeci null satırı da atar" — aynı tuzağın `is` tarafı.)
+         */
+        OR: [{ saleItemId: null }, { saleItem: { is: { ...KALEM_GECERLI } } }],
       },
       select: {
         amount: true,

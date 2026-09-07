@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import {
   komisyonKdvOrani as kesintiKomisyonKdvOrani,
   siparisKesintiKurallari,
@@ -72,6 +73,16 @@ export async function karOnizle(
     include: {
       channelAccount: { select: { channelId: true } },
       items: {
+        /**
+         * KALDIRILMIŞ KALEM KÂRA GİRMEZ (K78).
+         *
+         * ⚠ VE AŞAĞIDAKİ YAZMA DÖNGÜSÜYLE SIRA SIRA EŞLEŞİR: `karYenidenYaz`
+         * `satis.items.entries()` ile dönüp `yeni.kalemler[i]`i yazıyor. İki
+         * sorgu farklı süzerse i'inci kalem BAŞKASININ NET'ini alır — sessiz
+         * ve ekranda makul görünen bir para hatası. Bu yüzden iki yerde de
+         * AYNI süzgeç ve AYNI sıra (`KALEM_GECERLI` + `orderBy: id asc`).
+         */
+        where: { ...KALEM_GECERLI },
         orderBy: { id: "asc" },
         include: {
           /**
@@ -232,7 +243,14 @@ export async function karYenidenYaz(
   await db.$transaction(async (tx) => {
     const satis = await tx.sale.findUnique({
       where: { id: girdi.saleId },
-      include: { items: { orderBy: { id: "asc" }, select: { id: true } } },
+      /** ⛔ `karOnizle` İLE AYNI KÜME + AYNI SIRA — indeks eşleşmesi buna bağlı. */
+      include: {
+        items: {
+          where: { ...KALEM_GECERLI },
+          orderBy: { id: "asc" },
+          select: { id: true },
+        },
+      },
     });
     if (!satis) return;
 
@@ -330,7 +348,11 @@ export async function satisKarTazele(
       cargoCarrierId: true,
       cargoDesi: true,
       cargoAmount: true,
-      items: { select: { id: true, commissionRate: true } },
+      /** Kaldırılmış kalemin komisyon düzeltmesi de olmaz. */
+      items: {
+        where: { ...KALEM_GECERLI },
+        select: { id: true, commissionRate: true },
+      },
     },
   });
   if (!satis) return false;

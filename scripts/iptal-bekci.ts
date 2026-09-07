@@ -28,6 +28,26 @@ import { readFileSync, readdirSync } from "node:fs";
  * Gerekçe zorunlu: "istisna" demek yetmez, NİÇİN olduğu yazılır.
  */
 const ISTISNALAR = new Map<string, string>([
+  /**
+   * ═════════════════════════════════════════════════════════════════════
+   *  KALDIRMA KAPISININ KALEM SAYACI (K180, 07.09.2026)
+   * ---------------------------------------------------------------------
+   *  Bu sorgu ciro/NET ÜRETMİYOR: TEK bir satışta kaç GEÇERLİ kalem kaldığını
+   *  sayıyor ve tek işi "son kalem kaldırılamaz" kapısını beslemek. Satışın
+   *  iptalli olup olmaması bu soruyu değiştirmez — üstelik iptalli satışta
+   *  kaldırma ZATEN AYRI BİR KAPIYLA (`SATIS_IPTAL`) durduruluyor, yani
+   *  süzgeç eklemek ikinci bir ölçüt doğurur ve ikisi ayrışabilirdi.
+   *
+   *  ⛔ VE SÜZGECİN KENDİSİ ÖLÇÜLÜYOR, BEYANLA GEÇİLMİYOR:
+   *  `kalem-kaldirma:dogrula` bu sayacın `KALEM_GECERLI` ile kurulduğunu ve
+   *  `SATIS_IPTAL` kapısının yerinde durduğunu ayrı ayrı sınıyor; ikisini de
+   *  kaldıran mutasyonlar kırmızı yandı.
+   * ═════════════════════════════════════════════════════════════════════
+   */
+  [
+    "src/lib/kalem-kaldirma-veri.ts:saleItem.count",
+    "KALDIRMA KAPISI: ciro/NET değil, TEK satıştaki geçerli kalem sayısını sayar (\"son kalem kaldırılamaz\"). İptalli satışta kaldırma ayrı kapıyla (SATIS_IPTAL) zaten duruyor; ikinci bir ölçüt ayrışma üretirdi.",
+  ],
   [
     "src/lib/yedek.ts:sale.findMany",
     "YEDEK: veritabanının TAMAMINI dışa aktarır. Süzgeç uygulasaydı yedek eksik olurdu ve geri yüklendiğinde iptal edilmiş satışlar KAYBOLURDU — iptal kaydı silinmiyor, korunuyor.",

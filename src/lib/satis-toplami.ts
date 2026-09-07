@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { toplamlariBirlestir, type ParaToplami } from "@/lib/tutar";
@@ -61,7 +62,8 @@ async function ciroParaBirimine(
   kosul: Prisma.SaleWhereInput,
 ): Promise<ParaToplami[]> {
   const kalemler = await prisma.saleItem.findMany({
-    where: { sale: kosul },
+    /** ⛔ KALDIRILMIŞ KALEM CİROYA GİRMEZ (K78). */
+    where: { sale: kosul, ...KALEM_GECERLI },
     select: { quantity: true, unitPriceAmount: true, unitPriceCurrency: true },
   });
   const harita = new Map<string, number>();
@@ -111,8 +113,8 @@ export async function satisToplamlari(
     prisma.sale.count({ where: haric }),
     ciroParaBirimine(giren),
     ciroParaBirimine(haric),
-    prisma.saleItem.aggregate({ where: { sale: giren }, _sum: { quantity: true } }),
-    prisma.saleItem.aggregate({ where: { sale: haric }, _sum: { quantity: true } }),
+    prisma.saleItem.aggregate({ where: { sale: giren, ...KALEM_GECERLI }, _sum: { quantity: true } }),
+    prisma.saleItem.aggregate({ where: { sale: haric, ...KALEM_GECERLI }, _sum: { quantity: true } }),
     /**
      * NET-2 — para birimi başına. `profitCurrency` null olabilir; o kayıtlar
      * zaten `CALCULATED` değildir ve aşağıdaki `eksikSayi`ya düşer.

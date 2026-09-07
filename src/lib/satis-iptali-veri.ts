@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { acikCikislar } from "@/lib/kalem-maliyeti";
 import { prisma } from "@/lib/prisma";
 import { satisKalemToplamlari } from "@/lib/tutar";
@@ -60,6 +61,13 @@ async function planKur(
       net2Amount: true,
       profitCurrency: true,
       items: {
+        /**
+         * ⛔ KALDIRILMIŞ KALEM İPTAL PLANINA GİRMEZ (K78). Stok tarafında
+         * zaten nötr — kaldırma anında çıkışının aynası yazıldı, `acikCikislar`
+         * onu açık görmez. Süzgecin işi PARA tarafında: iptal önizlemesinde
+         * geri alınacak ciro/NET, hiç satılmamış bir satırı içermemeli.
+         */
+        where: { ...KALEM_GECERLI },
         select: {
           quantity: true,
           unitPriceAmount: true,

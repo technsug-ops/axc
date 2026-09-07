@@ -13,6 +13,8 @@
     "fifo:dogrula": "tsx scripts/fifo-dogrula.ts",
     "tarife:dogrula": "tsx scripts/tarife-dogrula.ts",
     "tsc:dogrula": "tsc --noEmit",
+    "kalem-gecerli:dogrula": "tsx scripts/kalem-gecerli-dogrula.ts",
+    "kalem-kaldirma:dogrula": "tsx scripts/kalem-kaldirma-dogrula.ts",
     "kar:dogrula": "tsx scripts/kar-dogrula.ts",
     "iade:dogrula": "tsx scripts/iade-dogrula.ts",
     "rapor:dogrula": "tsx scripts/rapor-dogrula.ts",

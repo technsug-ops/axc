@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { getTranslations } from "next-intl/server";
 import { gunDegeri, gunHassasiyetliMi, isTakvimGunu } from "@/lib/donem";
@@ -241,6 +242,13 @@ export default async function SatislarSayfasi({
     take: sayfalama.boyut,
     include: {
       items: {
+        /**
+         * ⛔ KALDIRILMIŞ KALEM LİSTEDE GÖRÜNMEZ (K78). Listedeki ürün adı ve
+         * fiyat sütunu bu kalemlerden çiziliyor; kaldırılmış satır burada
+         * dursaydı satır "2 kalem" der, toplamlar 1 kalem sayardı — sayı ile
+         * liste ayrışırdı. Kaldırılmış kalemin YERİ satış detayıdır.
+         */
+        where: { ...KALEM_GECERLI },
         include: {
           variant: {
             include: { product: { select: { name: true } } },

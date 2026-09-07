@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { karYenidenYaz } from "@/lib/kar-yeniden";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
@@ -56,7 +57,19 @@ async function planKur(
       cargoCarrierId: true,
       cargoDesi: true,
       cargoAmount: true,
-      items: { select: { id: true, variantId: true, quantity: true, commissionRate: true } },
+      /**
+       * ⛔⛔ SÜZGEÇ BURADA ŞART — SAYI DOĞRULAMASI BUNA BAĞLI (K78).
+       *
+       * Bu liste `satisAdetleri` olarak plana giriyor ve aynaların adedi
+       * ONUNLA doğrulanıyor. İptal artık KALDIRILMIŞ kalemi aynalamıyor
+       * (`satis-iptali-veri.ts`); bu liste süzgeçsiz kalsaydı beklenen adet
+       * fazla çıkar ve geri alma "ayna sayısı tutmuyor" diye kendini
+       * DURDURURDU — iki taraf aynı kümeden okumak zorunda.
+       */
+      items: {
+        where: { ...KALEM_GECERLI },
+        select: { id: true, variantId: true, quantity: true, commissionRate: true },
+      },
     },
   });
   if (satis === null) return null;
@@ -235,7 +248,11 @@ export async function geriAlmaUygula(girdi: {
       cargoCarrierId: true,
       cargoDesi: true,
       cargoAmount: true,
-      items: { select: { id: true, commissionRate: true } },
+      /** ⛔ Yukarıdaki plan sorgusuyla AYNI küme — kâr da aynı kalemlerden. */
+      items: {
+        where: { ...KALEM_GECERLI },
+        select: { id: true, commissionRate: true },
+      },
     },
   });
   if (satis === null) return { tamam: false, engel: "SATIS_YOK" };

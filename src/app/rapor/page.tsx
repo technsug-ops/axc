@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import Link from "next/link";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { NakitOzeti } from "@/app/nakit-ozeti";
@@ -216,6 +217,8 @@ export default async function RaporSayfasi({
           profitCurrency: true,
           profitStatus: true,
           items: {
+            /** ⛔ KALDIRILMIŞ KALEM RAPOR CİROSUNA GİRMEZ (K78). */
+            where: { ...KALEM_GECERLI },
             select: {
               quantity: true,
               unitPriceAmount: true,

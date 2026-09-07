@@ -1,5 +1,6 @@
 "use server";
 
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
@@ -71,7 +72,16 @@ export async function satisHesabiDegistir(
         cargoCarrierId: true,
         cargoDesi: true,
         cargoAmount: true,
-        items: { select: { id: true, commissionRate: true } },
+        /**
+         * ⛔ KALDIRILMIŞ KALEM KÂR GİRDİSİ OLMAZ (K78). Motor zaten
+         * süzüyor (`karOnizle`) ve bu liste yalnız oran DÜZELTMESİ taşıyor;
+         * yine de aynı kümeden okunuyor — iki liste ayrışırsa yarın biri
+         * indeksle eşleştirmeye kalkar ve sessizce yanlış kalemi yazar.
+         */
+        items: {
+          where: { ...KALEM_GECERLI },
+          select: { id: true, commissionRate: true },
+        },
       },
     }),
     prisma.channelAccount.findUnique({

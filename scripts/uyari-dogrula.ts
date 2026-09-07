@@ -1256,14 +1256,37 @@ console.log("=".repeat(70));
    * ⭐ ÖLÇÜT `AND`E BAĞLI, VARLIĞA DEĞİL. Spread'e dönen bir mutasyon
    * sessizce çalışmayan bir süzgeç üretir ve sayı hep defter geneli kalır.
    */
+  /**
+   * ⚠ İKİ ÖLÇÜT 07.09.2026'DA TAZELENDİ — KOD DEĞİL, BEKLENTİ ESKİDİ (K180).
+   *
+   * Kalem kaldırma açılınca iki süzgece de `...KALEM_GECERLI` girdi ve
+   * `AND` bloğu çok satıra yayıldı. Davranış BOZULMADI, SIKILAŞTI:
+   * kaldırılmış kalemin hareketi VARDIR (çıkış + aynası) ve süzgeçsiz hâlde
+   * o satış "bağ bekliyor" kovasından sessizce düşerdi.
+   *
+   * ⛔ VE GEVŞETME DEĞİL: `AND`/`none` şartlarının ikisi de yerinde duruyor,
+   * araya YALNIZ yeni süzgeç girebiliyor — üstelik o süzgecin varlığı
+   * aşağıda AYRI bir ölçütle sınanıyor. İkisini birden kaldıran mutasyonlar
+   * kırmızı yandı. _(Anayasa: "yapılmayacak şey bekçiyi susturmak; eskiyen
+   * ölçüt güncellenir ve NİYE eskidiği yazılır".)_
+   */
   kontrol(
     "  ...süzgeç `AND` ile ekleniyor (spread DEĞİL)",
-    /AND:\s*\[\{\s*items:\s*\{\s*some:\s*\{\s*variant:\s*varyantSuzgeci/.test(serhKaynak),
+    /AND:\s*\[\s*\{\s*items:\s*\{\s*some:\s*\{[^}]*variant:\s*varyantSuzgeci/.test(
+      serhKaynak,
+    ),
   );
   kontrol(
     "  ...ve `items: { none: … }` koşulu DURUYOR (ezilmemiş)",
-    /items:\s*\{\s*none:\s*\{\s*stockMovements:\s*\{\s*some:\s*\{\}\s*\}\s*\}\s*\}/
-      .test(serhKaynak),
+    /items:\s*\{\s*none:\s*\{[^}]*stockMovements:\s*\{\s*some:\s*\{\}\s*\}/.test(
+      serhKaynak,
+    ),
+  );
+  /** ⭐ TAZELEMENİN BEDELİ ÖDENİYOR: yeni süzgecin kendisi de ölçülüyor. */
+  kontrol(
+    "  ...ve kaldırılmış kalem İKİ süzgeçte de dışarıda (K180)",
+    /some:\s*\{\s*\.\.\.KALEM_GECERLI/.test(serhKaynak) &&
+      /none:\s*\{\s*\.\.\.KALEM_GECERLI/.test(serhKaynak),
   );
   kontrol(
     "stok ekranı şerhe KENDİ süzgecini geçiriyor",

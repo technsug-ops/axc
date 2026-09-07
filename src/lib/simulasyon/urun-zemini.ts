@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import {
   simulasyonZeminleri,
   type SimulasyonZemini,
@@ -171,7 +172,7 @@ export async function urunZemini(
    * gerçekte alınmamış bir parayı ortalamaya katmak olurdu.
    */
   const kalemler = await prisma.saleItem.findMany({
-    where: { variantId: varyant.id, sale: { iptalTarihi: null } },
+    where: { variantId: varyant.id, sale: { iptalTarihi: null }, ...KALEM_GECERLI },
     select: { quantity: true, unitPriceAmount: true },
   });
 
@@ -189,7 +190,7 @@ export async function urunZemini(
    * yalanlarlardı.
    */
   const sonSatis = await prisma.saleItem.findFirst({
-    where: { variantId: varyant.id, sale: { iptalTarihi: null } },
+    where: { variantId: varyant.id, sale: { iptalTarihi: null }, ...KALEM_GECERLI },
     orderBy: { sale: { soldAt: "desc" } },
     select: { unitPriceAmount: true, sale: { select: { soldAt: true } } },
   });

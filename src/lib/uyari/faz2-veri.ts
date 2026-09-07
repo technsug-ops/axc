@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { kalemMaliyeti } from "@/lib/kalem-maliyeti";
 import { prisma } from "@/lib/prisma";
 
@@ -68,6 +69,11 @@ export async function supheliVeriBulgusu(bugun: Date): Promise<{
 
   const adaylar = await prisma.saleItem.findMany({
     where: {
+      /**
+       * ⛔ KALDIRILMIŞ KALEM ŞÜPHELİ OLAMAZ (K78) — hiç satılmamış bir satır
+       * için "verimi düşük" demek, olmayan bir olay hakkında hüküm kurmaktır.
+       */
+      ...KALEM_GECERLI,
       sale: {
         iptalTarihi: null,
         soldAt: {

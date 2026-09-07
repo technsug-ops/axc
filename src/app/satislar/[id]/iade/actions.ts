@@ -1,5 +1,6 @@
 "use server";
 
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { yetkiIste } from "@/lib/yetki";
 import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
@@ -87,6 +88,8 @@ export async function iadeOnizle(
     where: { id: girdi.saleId },
     include: {
       items: {
+        /** ⛔ `lib/iade.ts` İLE AYNI KÜME — önizleme kayıtla aynı şeyi göstermeli. */
+        where: { ...KALEM_GECERLI },
         include: {
           fees: true,
           variant: { include: { product: { select: { name: true } } } },
@@ -210,6 +213,13 @@ export async function iadeOlustur(
   const urunAdlari = new Map(
     (
       await prisma.saleItem.findMany({
+        /**
+         * KALEM_SUZGECI MUAF: bu sorgu para değil AD okuyor — hata
+         * mesajındaki ürün adı için. Kimlikler kullanıcının SEÇTİĞİ
+         * kalemler ve seçim listesi yukarıdaki süzgeçli sorgudan geliyor;
+         * buraya süzgeç koymak hata mesajını ADSIZ bırakabilirdi
+         * ("… için sağlam+hasarlı tutmuyor" — hangi ürün belirsiz).
+         */
         where: { id: { in: secili.map((k) => k.saleItemId) } },
         include: { variant: { include: { product: { select: { name: true } } } } },
       })
@@ -347,7 +357,11 @@ export async function cezaOnerisiGetir(
     where: { id: saleId },
     include: {
       channelAccount: { select: { channelId: true } },
-      items: { select: { unitPriceAmount: true, quantity: true } },
+      /** ⛔ Ceza kademesinin tabanı SİPARİŞ TUTARI — kaldırılmış satır girmez. */
+      items: {
+        where: { ...KALEM_GECERLI },
+        select: { unitPriceAmount: true, quantity: true },
+      },
     },
   });
   if (!satis) return null;

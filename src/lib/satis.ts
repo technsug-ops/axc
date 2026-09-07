@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { izYaz } from "@/lib/iz";
 import {
   komisyonKdvOrani as kesintiKomisyonKdvOrani,
@@ -602,7 +603,14 @@ async function karHesabiniYaz(
 
   // --- kalem seviyesi snapshot + kesinti satırları ---
   const kalemKayitlari = await tx.saleItem.findMany({
-    where: { saleId },
+    /**
+     * ⚠ SÜZGEÇ BUGÜN ETKİSİZ AMA YAZILI (K78): kalemler bu transaction'ın
+     * içinde AZ ÖNCE yaratıldı, hiçbiri kaldırılmış olamaz. Yine de duruyor
+     * çünkü aşağıdaki döngü `planlar` ile İNDEKS EŞLEŞTİRİYOR; ileride bu
+     * gövde yeniden hesap yoluna bağlanırsa süzgeçsiz hâli sessizce yanlış
+     * kalemin NET'ini yazardı.
+     */
+    where: { saleId, ...KALEM_GECERLI },
     orderBy: { id: "asc" },
     select: { id: true, variantId: true, quantity: true },
   });

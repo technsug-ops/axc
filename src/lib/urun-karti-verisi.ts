@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { acikPartilerToplu } from "@/lib/stok";
 import { partiBagiTanisi, type BagTanisi } from "@/lib/parti-bagi-tanisi";
 import { kalemDusumleri } from "@/lib/satis";
@@ -163,7 +164,8 @@ export async function kartVerisiniTopla(
        * gerçekleşmemiş satış "bu ürün satıyor" izlenimi verir, marj ve hız
        * rakamlarını şişirir ve mağazada yanlış karar verdirir.
        */
-      where: { variantId, sale: { iptalTarihi: null } },
+      /** ⛔ KALDIRILMIŞ KALEM DE KARTA GİRMEZ (K78) — hiç satılmamış sayılır. */
+      where: { variantId, sale: { iptalTarihi: null }, ...KALEM_GECERLI },
       select: {
         id: true,
         quantity: true,

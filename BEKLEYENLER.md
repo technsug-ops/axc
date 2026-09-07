@@ -13,6 +13,138 @@
 
 ---
 
+## ✅ K180 — KALEM KALDIRMA AÇILDI (K78 KAPANDI) · 07.09.2026 · [KOD KOŞTU · migration CANLIDA]
+
+> **Halil:** _"kalem silme yeteneğini aç — müşteri satışlarında birini iptal
+> etmek isteyebilir; 3 örnek 3 ürün alır, bir tanesini beğenmez geri gönderir,
+> diğerlerini tutar."_
+
+⛔ **CÜMLENİN İKİ KARŞILIĞI VAR VE YALNIZ BİRİ BU İŞTİR.** Tarif edilen vaka
+(müşteri geri gönderdi) bir **İADEDİR** ve **zaten çalışıyor** — ölçüldü
+07.09: `11399165160` satılan 2 · iade 1, ayrıca 3 kalemli satışta tek kalemin
+iadesi **5 vakada** var. Açılan yetenek onun kardeşi: o satır **HİÇ
+SATILMAMIŞSA** (mükerrer içe aktarma satırı, hatalı giriş) kaldırılır.
+
+⚠ **AYRIM YAPISAL OLARAK KORUNUYOR:** `SatisKalemKaldirmaSebebi` enumunda
+müşteri iadesi seçeneği **YOK** (`MUKERRER_SATIR` · `HATALI_GIRIS`) ve bekçi
+hem enumu hem ekran listesini bu yönden ölçüyor. Sebep kutusunda "müşteri iade
+etti" olsaydı operatör en yakın kelimeyi seçer, gerçek bir satış deftere hiç
+olmamış gibi geçer ve ciro · KDV matrahı · hakediş beklentisi **sessizce**
+eksilirdi.
+
+### ① MEKANİK — İPTALİN KALEM ÖLÇEĞİ
+
+`SALE_OUT` **silinmez**; karşısına ters işaretli `SALE_CANCEL_IN` yazılır,
+maliyeti çıkışın **aynası**. Kalemi gerçekten silmek `StockMovement.saleItemId`i
+`SetNull` yapardı: _"stok düşük kalır, DÜŞÜREN KAYBOLUR"._
+
+⛔ **AYNA `sourceMovementId` TAŞIMAZ** — K96 ölçümü (30.08): pozitif hareket
+`acikPartiler` tarafından **yeni parti** sayılır; kaynak bağı da taşırsa eski
+partinin tüketimini geri alır ve aynı adet FIFO'ya **iki kez** girer
+(ledger 1, FIFO 2). ⭐ **AMA `saleItemId` TAŞIR** — iptalden ayrıldığı tek
+nokta: kaldırma tek kalemi hedefler, ayna kaleme bağlı olmazsa `acikCikislar`
+o çıkışı hâlâ açık görür ve geri alma yolu aynayı bulamaz.
+
+**GERİ ALMA VAR** ve ölçütü **yeniden hesaplanabilir**: "şu hareketleri
+yazmıştım" listesi hiçbir yerde saklanmıyor; ayna bugün `saleItemId` +
+`SALE_CANCEL_IN` ile yeniden bulunuyor ve **hâlâ açık olması** şart. Kapandıysa
+(mal bu arada satıldıysa) geri alma **durur ve sebebini yazar** — sessiz
+duvar değil. _(Anayasa: 5595 satırlık `AuditLog.detail` yazıldığı anda
+kırpılmıştı; geri alma yolu doğduğu anda bozuktu.)_
+
+**DÖRT KAPI, HER BİRİ AYRI ÖLÇÜLDÜ:** `ZATEN_KALDIRILDI` · `SATIS_IPTAL` ·
+`IADE_VAR` · `SON_KALEM`. Sonuncusu şunun içindir: son geçerli kalem
+kaldırılsaydı geriye **cirosuz ama açık** bir satış kalırdı — kargo bekleyen
+kovasında durur, hakediş eşleştirmesine girer, listede sıfır liralık bir satır
+olarak yaşardı. Doğru yol **iptal** ve ekran bunu yazıyor.
+
+### ② ASIL İŞ KALDIRMA DEĞİL, **19 OKUYUCUYU BAĞLAMAKTI**
+
+📏 **ÖLÇÜLDÜ (07.09):** satış kaleminden para/adet hesaplayan **19 dosya, 34
+sorgu**. Yarısı bağlanmamış bir kaldırma, **sessizce yanlış rakam** demektir.
+
+⛔ **VE İLK BEKÇİ YANLIŞ ŞEYİ ÖLÇÜYORDU — MUTASYON YAKALADI.** Ölçüt _"bu
+DOSYADA `KALEM_GECERLI` geçiyor mu"_ diye soruyordu. `page.tsx`te üç,
+`kar-yeniden.ts`te üç ayrı sorgu var; **birinin** süzgecini silen mutasyon
+**yeşil geçti** — kelime öteki sorgularda duruyordu. Ölçüt sorguya bağlandı:
+her satış kalemi sorgusu **parantez dengesiyle** çıkarılıyor (sabit pencere
+DEĞİL) ve süzgeç o bloğun içinde aranıyor.
+
+⭐ **VE MUAFİYET DE BLOĞA YAZILIR, DOSYAYA DEĞİL.** Satış detayı kaldırılmış
+kalemi **görmek zorunda** (üstü çizili + sebep rozeti + geri alma düğmesi) ve
+beyanı artık kendi sorgusunun içinde. Gizleseydik kaldırma **izsiz** olurdu:
+satır ekrandan kaybolur, "burada ne vardı" sorusunun cevabı kalmazdı.
+_(Anayasa: "sıfır satır gizlenmez" — yok SAYILMAK ile ekrandan SİLİNMEK aynı
+şey değildir.)_ Ekran onu **gösterir ama saymaz**: para ve adet sayan her yer
+`gecerliKalemler` kümesinden okuyor.
+
+⚠ **VE KÂR TAZELENMEDEN İŞ BİTMİYOR:** kalem süzülse bile satışın NET damgası
+eski kalem kümesiyle hesaplanmış kalırdı — **ciro düşer, NET düşmez, marj
+sessizce şişerdi**. Kaldırma da geri alma da `satisKarTazele` çağırıyor ve
+bekçi bunu **sayıyla** ölçüyor (2 çağrı).
+
+### ③ ÖLÇÜM VE MUTASYON
+
+    kalem-kaldirma:dogrula   42/42   (6 bölüm, sayaçlı — yarım koşum GEÇERSİZ)
+    kalem-gecerli:dogrula    41/41   (34 sorgu tek tek)
+    MUTASYON                 25/25   hepsi KIRMIZI, iki yönde
+
+Yanlış susma **ve** yanlış yanma ayrı sınandı (ör. `SON_KALEM` kapısını KALDIRAN
+ve HEP YAKAN mutasyonlar). En değerlisi sonuncusu: **hiçbir listeye eklenmemiş
+yeni bir okuyucu** dosyaya eklendi ve bekçi kırmızı yandı — desen yasağı
+gerçekten desen yasağı.
+
+### ④ İZİN — YENİ İZİN AÇILMADI (KARAR)
+
+Ölçüt `satis.iptal`. Kaldırma iptalin kalem ölçeğidir: aynı yıkıcılık sınıfı,
+aynı geri alma yükümlülüğü. Ayrı izin açmak _"yetki iki bacaklıdır"_ borcunu
+doğururdu (`izinler.ts` **+** `seed-yetki.ts` → `SONRADAN_DOGAN`); ikincisi
+unutulursa ekran canlıda **sessizce kaybolur** (13.08'de `/iadeler`de yaşandı).
+⚠ `satis.yaz` yetmez: satış girebilmek, girilmiş bir satırı deftere hiç olmamış
+saymaya yetki vermez.
+
+### ⑤ ŞEMA — MERDİVEN ÖLÇÜLEREK İNİLDİ
+
+① mevcut alan taşımıyor · ② serbest metin yetmez, bu alan **SORGULANACAK**
+(ciro/NET/KDV/hakediş kaldırılanı dışlamalı — 34 sorgu) · ③ türetilemez: ciro
+hareketten değil **kalemden** hesaplanıyor → ④ sütun.
+`SaleItem.kaldirildiAt` + `kaldirmaSebebi` + `@@index([kaldirildiAt])`.
+Migration `20260907084108_satis_kalemi_kaldirma` **canlıda ve yerelde koştu**;
+şema commit'i ondan sonra push edildi.
+
+### ⑥ HALİL TEST LİSTESİ (canlı adres, gerçek satış — tıklama düzeyinde)
+
+1. **Çok kalemli** bir satışın detayını aç. Her kalem kartında **"Kalemi
+   kaldır"** düğmesi görünüyor mu?
+2. **Tek kalemli** bir satış aç: düğme **PASİF** ve üstüne gelince
+   _"son geçerli kalem kaldırılamaz… doğru yol satışı İPTAL etmek"_ yazıyor mu?
+3. Çok kalemli satışta **Kaldır → sebep seç → Önizle**: kaç adet stoğa döneceği,
+   **birim maliyet** (çıkışın aynası), **ciro düşüşü** ve **kalan kalem sayısı**
+   yazıyor mu? Onay düğmesi önizleme çizilmeden **pasif** mi?
+4. **Onayla.** Satır **üstü çizili** kaldı mı, yanında **sebep rozeti** var mı,
+   yerinde **"Kaldırmayı geri al"** düğmesi çıktı mı?
+5. Aynı sayfada üstteki **adet** ve **kalem sayısı** düştü mü? **Kâr bloğunda**
+   o kalem artık YOK mu, NET-2 kalan kalemlere göre yeniden mi hesaplandı?
+6. `/stok`ta o varyantın adedi **kaldırılan kadar arttı** mı?
+7. Panelde/raporda **ciro** o kalem kadar düştü mü (dönem seçimi satışın
+   gününü kapsasın)?
+8. **Geri al**'a bas: satır normale döndü mü, adet/ciro/NET eski hâline geldi
+   mi, stok tekrar düştü mü?
+9. **İadesi olan** bir kalemde "Kaldır" dene: _"bu kalemin iadesi var…"_
+   engeli çıkıyor mu?
+
+### ⑦ AÇIK KALAN — `10559161422` HENÜZ DÜZELTİLMEDİ
+
+Yetenek bunun için açıldı ama **kayıt HENÜZ dokunulmadı**: satış
+`10559161422` (02.10.2025) `axcali3134` satırını **iki kez** taşıyor
+(₺1.039 hayalet ciro · 1 adet hayalet stok çıkışı) ve tarih resmî ölçüm
+penceresinin (01.08.2025+) **içinde**.
+⏭ **SIRADAKİ ADIM:** Halil test listesini geçtikten sonra o kalem **ekrandan**
+kaldırılır — betikle değil, yeni yolun kendisiyle. _(K95'te "betik işi" diye
+yazılmıştı; artık ekran işi.)_
+
+---
+
 ## ✅ K179 — KALAN ALTI AÇIK KALEM KAPANDI · 07.09.2026 · [KARAR + ÖLÇÜM]
 
 > **Halil:** _"bunları kapatalım, açık task istemiyorum."_
@@ -83,7 +215,11 @@ taşıyordu. _(K138'in aynısı: pano niyeti durum sanıyor.)_
 ⚠ Üç boş Amazon hesabı (S.ahmet · SEDA · EKREM) aktif duruyor; satışı yok,
 zarar vermiyor — temizlik işi, iş değil.
 
-### ⑤ K78 — SİPARİŞ SATIRI KALDIRILAMIYOR · [UYUR — tasarım kararı]
+### ⑤ K78 — SİPARİŞ SATIRI KALDIRILAMIYOR · [⚠ AŞILDI — bkz. K180]
+
+> ⛔ **BU KALEM AYNI GÜN AÇILDI VE KAPANDI.** Aşağıdaki "uyur" kaydı sabahki
+> hâldir ve **silinmiyor**: karar çevrildiğinde önceki gerekçe, NİYE
+> çevrildiğiyle birlikte dosyada bırakılır. Geçerli olan **K180**.
 
 Sistemde kalem silme yolu YOK ve iki kötü seçenek ölçülmüştü (tamamını iptal
 → gerçek adet de gider · betikle sil → `StockMovement.saleItemId` SetNull,
@@ -5692,7 +5828,7 @@ satır saklanmadı; eksik olan buydu.)
 
 ---
 
-## 🆕 K78 — SİPARİŞ SATIRI KALDIRILAMIYOR · 28.08.2026 · [YAPISAL EKSİK]
+## ✅ K78 — SİPARİŞ SATIRI KALDIRILAMIYOR · 28.08.2026 · [KAPANDI 07.09.2026 → K180]
 
 `10559161422`de dosya aynı satırı **iki kez** taşıyor ve içe aktarma
 sadakatle iki kalem yazmış. Halil: _"sadece 1 tanesi yanlış, diğeri doğru."_

@@ -298,9 +298,28 @@ const sayacKaynak = oku("src/lib/ice-aktarma-serhi.ts");
  * Yalnız `importBatch`e bakan bir sayaç o gün de 425 derdi ve şerh
  * SÖNMEZDİ — sönmeyen şerh okunmaz olur.
  */
+/**
+ * ⚠ ÖLÇÜT 07.09.2026'DA TAZELENDİ — KOD DEĞİL, BEKLENTİ ESKİMİŞTİ (K180).
+ *
+ * Kalem kaldırma açılınca (`K78`) sayaca bir süzgeç daha girdi:
+ * `none: { ...KALEM_GECERLI, stockMovements: … }`. Davranış BOZULMADI,
+ * SIKILAŞTI — kaldırılmış kalemin hareketi VARDIR (çıkış + aynası) ve
+ * süzgeçsiz hâlde o satış "bağ bekliyor" kovasından sessizce düşerdi.
+ * Ölçüt `KALEM_GECERLI`yi araya alacak biçimde genişletildi; kaldırılan
+ * şey `stockMovements` şartı DEĞİL — o hâlâ zorunlu.
+ * _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez"; ölçüt
+ * güncellenirken NİYE eskidiği yazılır.)_
+ */
 kontrol(
   "sayaç stok HAREKETİNİN yokluğuna bakıyor",
-  /items:\s*\{\s*none:\s*\{\s*stockMovements:\s*\{\s*some:\s*\{\}\s*\}/.test(sayacKaynak),
+  /items:\s*\{\s*none:\s*\{[^}]*stockMovements:\s*\{\s*some:\s*\{\}\s*\}/.test(
+    sayacKaynak,
+  ),
+);
+/** ⭐ VE KALDIRILMIŞ KALEM O KOVAYA KARIŞMIYOR — ayrı ölçüt, ayrı soru. */
+kontrol(
+  "sayaç kaldırılmış kalemi kovaya SOKMUYOR (K180)",
+  /none:\s*\{\s*\.\.\.KALEM_GECERLI/.test(sayacKaynak),
 );
 kontrol(
   "sayaç yalnız içe aktarma satırlarını sayıyor",

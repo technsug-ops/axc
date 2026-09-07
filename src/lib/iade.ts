@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { sonSayimTarihleri, sayimGecersizlestir } from "./sayim-damgasi";
 import { izYaz } from "@/lib/iz";
 import {
@@ -610,6 +611,13 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
       include: {
         channelAccount: { select: { channelId: true } },
         items: {
+          /**
+           * ⛔ KALDIRILMIŞ KALEME İADE İŞLENEMEZ (K78) — o satır hiç
+           * satılmadı, geri gelecek bir mal da yok. Süzgeç iki şeyi birden
+           * yapar: `kalemHaritasi`ne girmediği için "kalem bulunamadı" hatası
+           * verir, VE ödeme giderinin paydası olan `siparisToplami`yı şişirmez.
+           */
+          where: { ...KALEM_GECERLI },
           include: {
             fees: true,
             returnItems: { select: { quantity: true } },

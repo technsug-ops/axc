@@ -1,5 +1,6 @@
 "use server";
 
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { yetkiIste } from "@/lib/yetki";
 import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
@@ -591,6 +592,11 @@ export async function onayOnizleme(saleId: string): Promise<OnayOnizlemesi> {
       importKaynak: true,
       onaylandiAt: true,
       items: {
+        /**
+         * ⛔ KALDIRILMIŞ KALEMİN STOĞU DÜŞÜLMEZ (K78) — o satır hiç
+         * satılmadı; malı rafta duruyor.
+         */
+        where: { ...KALEM_GECERLI },
         select: {
           id: true,
           variantId: true,

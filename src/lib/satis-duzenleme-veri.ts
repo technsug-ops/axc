@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { acikCikislar } from "@/lib/kalem-maliyeti";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { adetPlani } from "@/lib/satis-adet";
@@ -81,6 +82,12 @@ async function planKur(
       cargoDesi: true,
       cargoAmount: true,
       items: {
+        /**
+         * ⛔ KALDIRILMIŞ KALEM DÜZENLENEMEZ (K78) — formda görünmez, adedi
+         * değiştirilemez. Aşağıdaki `kalemler` / `kalemDetaylari` sorguları
+         * bu listeyle İNDEKS EŞLEŞTİĞİ için üçü de AYNI süzgeci taşır.
+         */
+        where: { ...KALEM_GECERLI },
         orderBy: { id: "asc" },
         select: {
           id: true,
@@ -227,14 +234,16 @@ export async function duzenlemeUygula(girdi: {
   });
 
   const kalemler = await prisma.saleItem.findMany({
-    where: { saleId: girdi.saleId },
+    /** ⛔ Form sorgusuyla AYNI küme — bkz. yukarıdaki indeks eşleşmesi notu. */
+    where: { saleId: girdi.saleId, ...KALEM_GECERLI },
     orderBy: { id: "asc" },
     select: { id: true, commissionRate: true },
   });
 
   /** Adet planı için kalem ayrıntısı — mevcut çıkışlar ve varyant. */
   const kalemDetaylari = await prisma.saleItem.findMany({
-    where: { saleId: girdi.saleId },
+    /** ⛔ Form sorgusuyla AYNI küme — bkz. yukarıdaki indeks eşleşmesi notu. */
+    where: { saleId: girdi.saleId, ...KALEM_GECERLI },
     orderBy: { id: "asc" },
     select: {
       id: true,

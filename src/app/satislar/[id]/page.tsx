@@ -1,3 +1,5 @@
+import { kalemGecerliMi } from "@/lib/kalem-gecerli";
+import { KalemKaldir, KalemKaldirmaGeriAl } from "./kalem-kaldir";
 import Link from "next/link";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { PartiMaliyetDuzelt } from "./parti-maliyet-duzelt";
@@ -93,6 +95,23 @@ export default async function SatisDetaySayfasi({
     where: { id },
     include: {
       items: {
+        /**
+         * ══════════════════════════════════════════════════════════════
+         *  KALEM_SUZGECI MUAF: kaldırılmış kalemi GÖRMESİ GEREKEN tek ekran
+         *  budur ve süzülseydi kaldırma İZSİZ olurdu — satır ekrandan
+         *  kaybolur, kimse neyin niye gittiğini göremez ve geri alacak
+         *  düğme de kalmazdı.
+         * --------------------------------------------------------------
+         *  ⛔ ŞARTLARI (muafiyet bedava değildir):
+         *  · kaldırılmış kalem ÜSTÜ ÇİZİLİ çizilir, sebebi yanında yazar;
+         *  · TOPLAMLARA GİRMEZ — para ve adet sayan her yer aşağıdaki
+         *    `gecerliKalemler` kümesinden okur; ekran onu GÖSTERİR, SAYMAZ;
+         *  · geri alma yolu aynı satırda durur.
+         *
+         *  ⚠ Bu, "sıfır satır gizlenmez" kuralının kaldırma tarafı: bir
+         *  satırın yok SAYILMASI ile ekrandan SİLİNMESİ aynı şey değildir.
+         * ══════════════════════════════════════════════════════════════
+         */
         include: {
           variant: {
             include: {
@@ -141,6 +160,22 @@ export default async function SatisDetaySayfasi({
 
   if (!satis) notFound();
 
+  /**
+   * ══════════════════════════════════════════════════════════════════════
+   *  GÖSTERİLEN KÜME ≠ SAYILAN KÜME (K78)
+   * ----------------------------------------------------------------------
+   *  `satis.items` KALDIRILMIŞ kalemi de taşır — bilerek (bkz. yukarıdaki
+   *  `KALEM_SUZGECI MUAF` beyanı): kaldırma izsiz olmasın, satır üstü çizili
+   *  görünsün ve geri alınabilsin.
+   *
+   *  ⛔ AMA PARA VE ADET SAYAN HER YER `gecerliKalemler`DEN OKUR. İkisi
+   *  karışırsa ekran "sayı = liste" sözünü bozar: üstü çizili satır ciroya,
+   *  adete ve kâr bloğuna girer. Ölçüt ORTAK GÖVDEDEN (`kalemGecerliMi`) —
+   *  burada elle `kaldirildiAt === null` yazılsaydı ikinci bir ölçüt doğardı.
+   * ══════════════════════════════════════════════════════════════════════
+   */
+  const gecerliKalemler = satis.items.filter(kalemGecerliMi);
+
   // Mevcut hesap SATIŞ süzgecine takılıyorsa (rolü ALIŞ'a çevrilmişse)
   // yine de seçenekte durur; yoksa diyalog boş açılır ve kullanıcı
   // hangi hesapta olduğunu göremez.
@@ -158,6 +193,7 @@ export default async function SatisDetaySayfasi({
   const izler = await satisIzleri(satis.id);
   const ortak = await getTranslations("Ortak");
   const tIade = await getTranslations("Iade");
+  const tKaldirma = await getTranslations("KalemKaldirma");
 
   // Hangi kalem hangi partilerden düştü — ledger'dan (src/lib/satis.ts).
   const dusumler = await kalemDusumleri(satis.items.map((k) => k.id));
@@ -166,7 +202,7 @@ export default async function SatisDetaySayfasi({
    * listesi FIFO izlenebilirliği içindir, dönüşün kaynak partisi yoktur.
    */
   const geriDonusler = await kalemGeriDonusleri(satis.items.map((k) => k.id));
-  const toplamlar = satisKalemToplamlari(satis.items);
+  const toplamlar = satisKalemToplamlari(gecerliKalemler);
 
   // Yeniden hesaplama diyaloğu için kargo firmaları.
   const kargoFirmalari = (
@@ -182,7 +218,7 @@ export default async function SatisDetaySayfasi({
 
   // Daha önce iade edilen adetler kalem bazında düşülür; hepsi iade
   // edilmişse "İade Al" pasifleşir ve NEDENİ yazar (#1, #5).
-  const iadeKalanVar = satis.items.some((k) => {
+  const iadeKalanVar = gecerliKalemler.some((k) => {
     const iadeEdilen = k.returnItems.reduce((t2, r) => t2 + r.quantity, 0);
     return k.quantity - iadeEdilen > 0;
   });
@@ -262,7 +298,7 @@ export default async function SatisDetaySayfasi({
     paraBirimi: satis.profitCurrency ?? "TRY",
     net1: sayi(satis.net1Amount),
     net2: sayi(satis.net2Amount),
-    kalemler: satis.items.map((kalem) => ({
+    kalemler: gecerliKalemler.map((kalem) => ({
       id: kalem.id,
       baslik: kalem.variant.name
         ? `${kalem.variant.product.name} — ${kalem.variant.name}`
@@ -281,7 +317,7 @@ export default async function SatisDetaySayfasi({
       tutar: Number(f.amount.toString()),
     })),
     // Kategorisiz üründe motor varsayılan %20 kullanır; kullanıcı görsün.
-    varsayilanKdvKullanildi: satis.items.some(
+    varsayilanKdvKullanildi: gecerliKalemler.some(
       (k) => sayi(k.vatRate) === 20 && k.variant.product.categoryId === null,
     ),
     // Kargo hiç girilmemişse kâr kargo düşülmeden hesaplanmıştır.
@@ -346,7 +382,9 @@ export default async function SatisDetaySayfasi({
     },
     {
       etiket: ortak("adet"),
-      deger: String(satis.items.reduce((toplam, k) => toplam + k.quantity, 0)),
+      deger: String(
+        gecerliKalemler.reduce((toplam, k) => toplam + k.quantity, 0),
+      ),
     },
     {
       etiket: t("kargoFirmasi"),
@@ -436,7 +474,7 @@ export default async function SatisDetaySayfasi({
               <span>{bicim.tarih(satis.soldAt)}</span>
               <span>·</span>
               <span>
-                {ortak("kalemlerBasligi", { sayi: satis.items.length })}
+                {ortak("kalemlerBasligi", { sayi: gecerliKalemler.length })}
               </span>
             </div>
           </div>
@@ -471,7 +509,7 @@ export default async function SatisDetaySayfasi({
             />
             <YenidenHesapla
               saleId={satis.id}
-              kalemler={satis.items.map((k) => {
+              kalemler={gecerliKalemler.map((k) => {
                 // Diyalog MEVCUT komisyonla açılmalı; boş açılırsa kullanıcı
                 // farkında olmadan komisyonu sıfırlar (09.08.2026'da oldu).
                 //
@@ -598,6 +636,14 @@ export default async function SatisDetaySayfasi({
       </Card>
 
       {satis.items.map((kalem) => {
+        /**
+         * ⛔ KALDIRILMIŞ KALEM GİZLENMEZ, ÜSTÜ ÇİZİLİR (K78). Gizlemek
+         * kaldırmayı İZSİZ yapardı: satır ekrandan kaybolur, "burada ne
+         * vardı" sorusunun cevabı kalmaz ve geri alacak düğme de gitmiş
+         * olurdu. _(Anayasa: "sıfır satır gizlenmez" — sayılmamak ile
+         * ekrandan silinmek AYNI ŞEY DEĞİLDİR.)_
+         */
+        const kaldirildi = !kalemGecerliMi(kalem);
         const kalemDusumleriListesi = dusumler.get(kalem.id) ?? [];
         const kalemDonusleri = geriDonusler.get(kalem.id) ?? [];
         /**
@@ -613,17 +659,31 @@ export default async function SatisDetaySayfasi({
         const donenAdet = kalemDonusleri.reduce((t2, d) => t2 + d.quantityDelta, 0);
 
         return (
-          <Card key={kalem.id}>
+          <Card key={kalem.id} className={kaldirildi ? "opacity-70" : undefined}>
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <Baglanti href={`/urunler/${kalem.variant.product.id}`}>
-                  {kalem.variant.product.name}
-                  {kalem.variant.name ? ` — ${kalem.variant.name}` : ""}
-                </Baglanti>
-                <Badge variant="outline">
+                <span className={kaldirildi ? "line-through" : undefined}>
+                  <Baglanti href={`/urunler/${kalem.variant.product.id}`}>
+                    {kalem.variant.product.name}
+                    {kalem.variant.name ? ` — ${kalem.variant.name}` : ""}
+                  </Baglanti>
+                </span>
+                <Badge
+                  variant="outline"
+                  className={kaldirildi ? "line-through" : undefined}
+                >
                   {kalem.quantity} ×{" "}
                   {bicim.para(kalem.unitPriceAmount, kalem.unitPriceCurrency)}
                 </Badge>
+                {/* ⛔ SEBEP ROZETLE YAZAR — "kaldırıldı" tek başına üç ay
+                    sonra "niye" sorusunu cevaplamaz. */}
+                {kaldirildi && kalem.kaldirmaSebebi ? (
+                  <Badge variant="destructive">
+                    {tKaldirma("rozet", {
+                      sebep: tKaldirma(`sebep_${kalem.kaldirmaSebebi}`),
+                    })}
+                  </Badge>
+                ) : null}
               </CardTitle>
               <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                 <KopyalanabilirKod
@@ -650,6 +710,20 @@ export default async function SatisDetaySayfasi({
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* ── SATIR EYLEMİ (İlke #1): kaldır / geri al, KALEMİN kartında ── */}
+              {iptalEdebilir && satis.iptalTarihi === null ? (
+                <div>
+                  {kaldirildi ? (
+                    <KalemKaldirmaGeriAl saleItemId={kalem.id} />
+                  ) : (
+                    <KalemKaldir
+                      saleItemId={kalem.id}
+                      sonKalem={gecerliKalemler.length <= 1}
+                    />
+                  )}
+                </div>
+              ) : null}
+
               <div className="text-sm font-medium">{t("dusulenPartiler")}</div>
 
               {/* -------------------- MASAÜSTÜ: TABLO -------------------- */}
@@ -876,7 +950,7 @@ export default async function SatisDetaySayfasi({
         // (bkz. lib/satis-duzenleme-veri.ts → kdvDahilKargo).
         kargoTutar={kdvDahilKargo(sayi(satis.cargoAmount))}
         kargoFirmaId={satis.cargoCarrierId}
-        kalemler={satis.items.map((k) => ({
+        kalemler={gecerliKalemler.map((k) => ({
           id: k.id,
           urunAdi: k.variant.product.name,
           adet: k.quantity,

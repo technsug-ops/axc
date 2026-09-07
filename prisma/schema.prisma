@@ -215,6 +215,21 @@ enum StockMovementType {
 /// ilgilendirir. "Stok yok" sayısı artıyorsa stok yönetiminde sorun var
 /// demektir; bunu "müşteri vazgeçti" ile aynı kefeye koymak sinyali
 /// öldürürdü.
+/// KALEM KALDIRMA SEBEBİ — ⛔ MÜŞTERİ İADESİ BURAYA GİRMEZ.
+///
+/// İade ile kaldırma FARKLI OLAYLARDIR ve karıştırılırsa defter yalan söyler:
+/// iadede mal GERÇEKTEN satıldı ve geri döndü (para girdi, KDV matrahına
+/// girdi, komisyon kesildi, sonra düzeltildi); kaldırmada o satır HİÇ
+/// SATILMADI — içe aktarma aynı satırı iki kez yazdı ya da giriş hatalıydı.
+/// İadeyi buradan geçirmek, olmamış bir alışverişi deftere yazıp sonra geri
+/// almak olurdu: ciro şişer, KDV matrahı şişer, hakediş beklentisi doğar.
+/// ⭐ Kısmi iade zaten çalışıyor (ölçüldü 07.09.2026: `11399165160` satılan 2 ·
+/// iade 1, ve 3 kalemli satışta tek kalemin iadesi 5 vakada var).
+enum SatisKalemKaldirmaSebebi {
+  MUKERRER_SATIR // içe aktarma aynı satırı iki kez yazdı (K78 vakası)
+  HATALI_GIRIS // elle girişte yanlış kalem eklendi
+}
+
 enum SatisIptalSebebi {
   MUSTERI_FIYAT // müşteri: fiyattan dolayı vazgeçti
   MUSTERI_VAZGECTI // müşteri: sebepsiz vazgeçti
@@ -1406,12 +1421,36 @@ model SaleItem {
   /// Bu kalemin FIFO düşümleri. Kalem 5 adetse ve iki partiden düştüyse
   /// burada iki hareket olur (3 + 2). Kaydedilen adetlerin toplamı her
   /// zaman `quantity` kadardır.
+  /// ── KALEM KALDIRMA (K78) ──────────────────────────────────────────────
+  ///
+  /// ⛔ SATIR SİLİNMEZ — İPTALİN KALEM ÖLÇEĞİ. `SALE_OUT` hareketi DURUR ve
+  /// karşısına ters işaretli `SALE_CANCEL_IN` yazılır; maliyeti çıkışın
+  /// AYNASIDIR. Kalemi gerçekten silmek `StockMovement.saleItemId`i SetNull
+  /// yapar ve hareket sahipsiz kalırdı: "stok düşük kalır, DÜŞÜREN KAYBOLUR".
+  ///
+  /// ⛔ VE AYNA `sourceMovementId` TAŞIMAZ — ölçüldü 30.08.2026 (K96): pozitif
+  /// hareket `acikPartiler` tarafından YENİ PARTİ sayılır; kaynak bağı da
+  /// taşırsa eski partinin tüketimini geri alır ve aynı adet FIFO'ya İKİ KEZ
+  /// girer (ledger 1, FIFO 2). Satış iptali de bu yüzden boş bırakıyor.
+  ///
+  /// ⚠ NİYE SÜTUN — merdiven ölçülerek inildi (07.09.2026):
+  /// ① mevcut alan taşımıyor · ② serbest metin yetmez, bu alan SORGULANACAK
+  /// (ciro/NET/KDV/hakediş kaldırılan kalemi DIŞLAMALI — 20 dosya, 25 yer) ·
+  /// ③ türetilemez: maliyetsiz kalemin hiç hareketi yok ve ciro hareketten
+  /// değil KALEMDEN hesaplanıyor.
+  ///
+  /// Dolu = bu kalem hiç satılmamış sayılır (iptal gibi "hiç doğmamış").
+  kaldirildiAt    DateTime?
+  kaldirmaSebebi  SatisKalemKaldirmaSebebi?
+
   stockMovements StockMovement[]
   fees           SaleFee[]
   returnItems    ReturnItem[]
 
   @@index([saleId])
   @@index([variantId])
+  /// Her ciro/NET sorgusu bu alanı süzecek — dizin şart.
+  @@index([kaldirildiAt])
 }
 
 // ============================================================================

@@ -1,3 +1,4 @@
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import type { Currency } from "@/generated/prisma/enums";
 import type { Pencere } from "@/lib/donem";
 import { kdvOraniniCoz } from "@/lib/kdv";
@@ -116,6 +117,8 @@ export async function satisEkseniVerisi(
       soldAt: true,
       profitCurrency: true,
       items: {
+        /** ⛔ KALDIRILMIŞ KALEM ÜRÜN ANALİZİNE GİRMEZ (K78). */
+        where: { ...KALEM_GECERLI },
         select: {
           variantId: true,
           quantity: true,
