@@ -13,6 +13,77 @@
 
 ---
 
+## 🚨 K185 — KARŞILAŞTIRMA SEKMESİ CANLIDA 500 VERDİ · 07.09.2026 · [KOD KOŞTU]
+
+> **Halil:** _"karşılaştırma çalışmıyor"_ — `?grafik=karsilastirma` →
+> _"Bu ekran çizilemedi"_ (hata kodu 3940646026).
+
+⛔ **SEBEP: SUNUCUDAN İSTEMCİYE FONKSİYON GEÇİRİLİYORDU.** K182'de yazdığım
+grafik `"use client"` ve panel ona seri başına İKİ FONKSİYON veriyordu
+(`bicimle` · `bicimleKisa`). Next.js bunları serileştiremez; ekran patlar.
+
+⚠ **VE TUR YEŞİLDİ.** 42 bekçinin hiçbiri görmedi — hepsi kaynağı ölçüyor,
+ekranın ÇİZİLDİĞİNİ ölçen yok. _(Anayasa: "sınanmamış ekran, ekran değildir" —
+bu kural K182 teslim edilirken çiğnendi: ekran hiç görülmeden yayımlandı.)_
+
+⭐ **ÇARE ÖN-BİÇİMLEME DEĞİL, BİRİM TANIMI:** eksen işaretleri SEÇİME bağlı
+olarak istemcide hesaplanıyor, dolayısıyla sunucuda önceden biçimlenemezler.
+Seri artık yalnız `birimTuru` (`PARA`/`SAYI`) + `paraBirimi` taşıyor; biçimi
+istemci kendi `useBicim()` kancasından çözüyor (anayasa: biçim dil
+altyapısından gelir).
+
+⛔ **VE SINIF DESENE BAĞLANDI:** `npm run istemci-prop:dogrula` — `"use client"`
+taşıyan HER dosyanın dışa aktarılan prop tipinde fonksiyon alanı aranır.
+Dosya listesi tutmaz; yarın eklenen bileşen de yakalanır. İstisna beyanla
+geçer (`// SUNUCUDAN GECMEZ: <gerekçe>`), beyansız olan kırmızıdır.
+
+    istemci-prop:dogrula   7/7   (2 bölüm, sayaçlı) · 129 "use client" dosyası
+    MUTASYON               7/7   — ⑦ hiçbir listeye eklenmemiş YENİ bileşen de
+                                   kırmızı yandı; ⑤ beyanlı istisna yeşil kaldı
+
+⚠ **VE BEKÇİ KENDİ KUSURUNU MUTASYONLA BULDU:** beyan bir YORUMDUR ama ölçüt
+yorumları maskelenmiş metinde arıyordu — beyanlı istisna da kırmızı yanıyordu.
+Mutasyon ⑤ yakaladı; beyan artık HAM metinden okunuyor (maskeleme konumları
+koruduğu için aynı ofsetten bakılabiliyor).
+
+### ─── ② KANAL SIRASI — VAR OLAN KARAR YENİ EKRANDA UYGULANMAMIŞ
+
+> **Halil:** _"en çok Trendyol'da satış yaptığımdan, ben aksini söyleyene kadar
+> ilk Trendyol, ikinci Hepsiburada olsun."_
+
+⭐ **KARAR ZATEN VARDI** (`lib/kanal-sirasi.ts` → `TRENDYOL · HEPSIBURADA · N11
+· AMAZON · DEPO`) ama `page.tsx` onu ÇAĞIRMIYORDU: `kanalSecenekleri`
+alfabetik sıralanıyordu ve K182'nin iade/ısı tabloları öyle diziliyordu
+(Amazon · Elden Satış · Hepsiburada · N11 · Trendyol — Halil ekranda gördü).
+Sıralama iki basamaklı: önce sabit sıra, sonra ad.
+_(Anayasa: "kararın kapsamı, uygulandığı yerle sınırlı sayılmaz".)_
+
+### ─── ③ İADE ATFI — AÇIK, ÖLÇÜLDÜ, KOD YAZILMADI
+
+> **Halil:** _"İadeyi bugün gerçekleşen cirodan kesmesine gerek yok, siparişin
+> olduğu günün sorunu hepsi; kârını da oradan kesmeli — sistem zaten oradan
+> kesiyor. Sipariş vadede, iade başlatılınca ödemesi donduruluyor, iade
+> onaylanınca direkt o siparişten kesiliyor."_
+
+Bugünkü davranış kodda yazılı: `panel.ts:146` → _"İadenin KENDİ tarihi
+(occurredAt) — satışın tarihi değil."_ Yani iade **iade ayına** yazılıyor.
+
+⭐ **BU, "İADE ORANI ANLAMSIZ" ŞİKÂYETİNİN DE KÖKÜ:** pay iade ayından, payda
+satış ayından geliyor — tablo başlığındaki _"oran %100'ü aşabilir"_ şerhi tam
+bunun itirafı. Aynı kohorta çekilirse şerh gereksizleşir.
+
+    ÖLÇÜM (223 iade, salt okuma)
+      satışa bağlı        223   ·  bağsız 0
+      AYNI ayda           152   ·  FARKLI ayda  71  (%31,8 ← ay değiştirir)
+      satış→iade gün: ortanca 8,5 · p75 12,5 · p90 18,5 · max 57,5
+
+⏭ **YAZIM AÇILMADI — KAPSAM ÖNCE ÖLÇÜLECEK:** iade tarihini okuyan HER yer
+bulunmalı (panel serisi · kanal dağılımı · nakit takvimi · rapor · dışa
+aktarma). Bir yerde düzeltip bırakmak, K60'ın altı okuyuculu vakasının
+tekrarı olur.
+
+---
+
 ## ✅ K181 — TRENDYOL ÜRÜN v2 GEÇİŞİ · 07.09.2026 · [KOŞTU — canlı, salt okuma]
 
 > **Trendyol duyurusu 07.09.2026:** barkod bazlı ürün servisleri içerik

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "lint:dogrula": "npm run lint",
+    "istemci-prop:dogrula": "tsx scripts/istemci-prop-dogrula.ts",
     "i18n:kontrol": "node scripts/i18n-kontrol.mjs",
     "postinstall": "prisma generate && node scripts/copy-zxing-wasm.mjs",
     "fifo:dogrula": "tsx scripts/fifo-dogrula.ts",

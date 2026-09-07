@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { useBicim } from "@/lib/bicim-istemci";
+
 import { Button } from "@/components/ui/button";
 import {
   eksen,
@@ -48,9 +50,23 @@ export type KarsilastirmaSerisi = {
   birim: string;
   /** Ay başına değer; `null` = o ay için hüküm YOK. */
   degerler: (number | null)[];
-  /** Bu birimin ekran biçimi — dil altyapısından gelir. */
-  bicimle: (deger: number) => string;
-  bicimleKisa: (deger: number) => string;
+  /**
+   * ⛔ BİÇİMLEYİCİ FONKSİYON OLARAK GEÇMEZ — VE BU CANLI BİR ARIZAYDI
+   * (07.09.2026). Seriler `bicimle`/`bicimleKisa` fonksiyonlarını taşıyordu;
+   * bu bileşen `"use client"` ve sunucudan istemciye **fonksiyon
+   * serileştirilemez** → sekme 500 verdi ("Bu ekran çizilemedi").
+   *
+   * ⚠ VE BEKÇİ TURU YEŞİLDİ: ölçütler kaynağı tarıyor, ekranın ÇİZİLDİĞİNİ
+   * ölçmüyor. _(Anayasa: "sınanmamış ekran, ekran değildir".)_
+   *
+   * ⭐ ÇARE SUNUCUDA ÖN-BİÇİMLEME DEĞİL, BİRİM TANIMI: eksen işaretleri
+   * SEÇİME bağlı olarak İSTEMCİDE hesaplanıyor, dolayısıyla sunucuda
+   * önceden biçimlenemezler. Seri yalnız birimini söyler; biçimi istemci
+   * kendi `useBicim()` kancasından çözer (anayasa: biçim dil altyapısından).
+   */
+  birimTuru: "PARA" | "SAYI";
+  /** `PARA` ise para birimi (TRY/EUR) — veriden gelir, dilden değil. */
+  paraBirimi: string | null;
 };
 
 /**
@@ -85,6 +101,8 @@ export function KarsilastirmaGrafigi({
   secimBosMesaji: string;
 }) {
   const [secili, setSecili] = useState<string[]>(baslangicSecim);
+  /** ⛔ BİÇİM İSTEMCİDE ÇÖZÜLÜR — sunucudan fonksiyon geçirilemez (bkz. tip). */
+  const bicim = useBicim();
 
   const cevir = (anahtar: string) =>
     setSecili((o) =>
@@ -170,8 +188,19 @@ export function KarsilastirmaGrafigi({
   const yKonum = (deger: number) => yKonumu(deger, y);
   const x = (i: number) => xKonumu(i, etiketler.length);
   const etiketAtla = etiketAtlamasi(etiketler.length);
-  const bicimle = seciliSeriler[0].bicimle;
-  const bicimleKisa = seciliSeriler[0].bicimleKisa;
+  /**
+   * ⚠ BİÇİM SEÇİLİ SERİNİN BİRİMİNDEN — ve karışık birim zaten yukarıda
+   * engellendiği için ilk serinin birimi hepsini temsil eder.
+   */
+  const olcut = seciliSeriler[0];
+  const bicimle = (deger: number) =>
+    olcut.birimTuru === "PARA" && olcut.paraBirimi !== null
+      ? bicim.para(deger, olcut.paraBirimi)
+      : bicim.sayi(deger);
+  const bicimleKisa = (deger: number) =>
+    olcut.birimTuru === "PARA" && olcut.paraBirimi !== null
+      ? bicim.paraKisa(deger, olcut.paraBirimi)
+      : bicim.sayi(deger);
 
   return (
     <div className="space-y-3">

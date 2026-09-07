@@ -152,6 +152,7 @@ import {
   PANEL_KANAL_TAVANI,
   gizlenenKanalSayisi,
   kanalSiraKipi,
+  kanalSirasi,
   panelKanallari,
   panelYuvalari,
   tumKanallarAdresi,
@@ -727,9 +728,25 @@ export default async function AnaSayfa({
   // --- SÜZGEÇ SEÇENEKLERİ ----------------------------------------------------
   // Seçenekler SÜZÜLMEMİŞ veriden gelir: bir kanal seçilince diğer kanallar
   // listeden düşmemeli, yoksa geri dönmek imkânsızlaşır.
+  /**
+   * ⛔ SIRA ALFABETİK DEĞİL, KULLANICININ SAYDIĞI SIRA — VE BU KARAR ZATEN
+   * VARDI (`lib/kanal-sirasi.ts`: TRENDYOL · HEPSIBURADA · N11 · AMAZON ·
+   * DEPO). Burası onu ÇAĞIRMIYORDU ve K182'nin iade/ısı tabloları alfabetik
+   * diziliyordu: Amazon · Elden Satış · Hepsiburada · N11 · Trendyol.
+   * Kullanıcı 07.09.2026'da bunu ekranda gördü ve düzeltti:
+   * _"en çok Trendyol'da satış yaptığımdan, ben aksini söyleyene kadar
+   * ilk Trendyol, ikinci Hepsiburada olsun."_
+   *
+   * ⚠ SIRALAMA İKİ BASAMAKLI: önce sabit sıra, sonra ad — sayılmayan
+   * kanallar aynı basamağa düşer ve aralarındaki düzen koşumdan koşuma
+   * değişmesin. _(Anayasa: "kararın kapsamı, uygulandığı yerle sınırlı
+   * sayılmaz" — var olan bir karar yeni ekranda uygulanmamıştı.)_
+   */
   const kanalSecenekleri = [
     ...new Map(satislar.map((s) => [s.kanalKodu, s.kanalAdi])).entries(),
-  ].sort((a, b) => a[1].localeCompare(b[1], "tr"));
+  ].sort(
+    (a, b) => kanalSirasi(a[0]) - kanalSirasi(b[0]) || a[1].localeCompare(b[1], "tr"),
+  );
 
   const paraSecenekleri = [...new Set(satislar.map((s) => s.paraBirimi))];
 
@@ -1606,10 +1623,16 @@ export default async function AnaSayfa({
     ad: k.ad,
     birim: k.birim,
     degerler: seri.map((n) => k.al(n)),
-    bicimle: (d: number) =>
-      k.birim === seciliPara ? bicim.para(d, seciliPara) : bicim.sayi(d),
-    bicimleKisa: (d: number) =>
-      k.birim === seciliPara ? bicim.paraKisa(d, seciliPara) : bicim.sayi(d),
+    /**
+     * ⛔ FONKSİYON GEÇİLMEZ — 07.09.2026'da tam bu yüzden sekme 500 verdi
+     * ("Bu ekran çizilemedi"). Grafik `"use client"` bir bileşen ve
+     * sunucudan istemciye **fonksiyon serileştirilemez**. Seri yalnız
+     * BİRİMİNİ söyler; biçimi istemci kendi `useBicim()` kancasından çözer.
+     * ⚠ Ön-biçimleme de çözmezdi: eksen işaretleri SEÇİME bağlı olarak
+     * istemcide hesaplanıyor, sunucuda değerleri henüz bilinmiyor.
+     */
+    birimTuru: (k.birim === seciliPara ? "PARA" : "SAYI") as "PARA" | "SAYI",
+    paraBirimi: k.birim === seciliPara ? seciliPara : null,
   }));
 
   /* ═══════════════ AYLIK GRAFİK SEKMELERİ (K117, 31.08.2026) ═══════════
