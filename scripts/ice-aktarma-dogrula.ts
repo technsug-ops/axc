@@ -1951,6 +1951,100 @@ kontrol(
     "Cancelled kalem YAZILMIYOR (iptal anı uydurulmaz)",
     hbK.includes('String(ham.status) === "Cancelled"'),
   );
+
+  /* ═══ K165-③ — ÇEKİM YOLU, GELİR TABANI, ÇAKIŞMA SINIFI (07.09.2026) ═══
+   *
+   * ⛔ NİYE: içe aktarma canlıda HİÇ koşmamıştı. `/orders` ucundan çekiyordu
+   * ve o uç canlıda **her durum denemesinde 0** döndü; panelde ise 4
+   * gönderime hazır + 12 kargoda duruyordu. Halil siparişleri ELLE giriyordu.
+   */
+  kontrol(
+    "çekim AÇIK paket ucundan numara topluyor",
+    hbK.includes("UCLAR.paketler(k, o, l)"),
+  );
+  kontrol(
+    "çekim KARGODAKİ paketleri de topluyor (Open dışı kaçmasın)",
+    hbK.includes("UCLAR.paketlerGonderilen(k, o, l)"),
+  );
+  kontrol(
+    "detay TEK TEK sipariş ucundan çekiliyor (tutar yalnız orada)",
+    hbK.includes("UCLAR.siparisDetay(k, no)"),
+  );
+  /**
+   * ⛔ `/orders` LİSTE UCU GERİ GELEMEZ — canlıda 0 döndürüyor ve dönüşü
+   * sessizdir: hata vermez, "sipariş yok" gibi okunur.
+   */
+  kontrol(
+    "eski `/orders` liste ucu ARTIK KULLANILMIYOR",
+    !hbK.includes("UCLAR.siparisler("),
+  );
+  /**
+   * ⛔ DURUM FİLTRESİ YOL, PARAMETRE DEĞİL. Ölçüldü: `?status=X` 12 farklı
+   * değer için de AYNI 4 kaydı döndürdü — parametre YOK SAYILIYOR. Buna
+   * güvenen kod "durum süzdüm" sanır ve hep aynı kümeyi çeker.
+   */
+  const hbIstemci = yorumsuz(readFileSync("scripts/hb/istemci.ts", "utf8"));
+  kontrol(
+    "durum PARAMETRESİ kullanılmıyor (uç onu yok sayıyor)",
+    !hbIstemci.includes("status=") && !hbK.includes("status="),
+  );
+  kontrol(
+    "kargodaki paket ucu YOL ile ayrılıyor (/shipped)",
+    hbIstemci.includes("/shipped?offset="),
+  );
+
+  /**
+   * ⛔ GELİR TABANI — ÖLÇÜLDÜ, SEÇİLMEDİ. HB müşteriye indirim yapıp farkı
+   * KENDİ komisyonundan karşılıyor ve hakedişte `KAMPANYA` ile geri ödüyor.
+   * Kanalın kendi aritmetiği tabanı birebir verdi (`4777369510`):
+   * komisyon 338,50 ÷ (3.147,00 + 237,996) = %10,0000 — kayıtlı oranla TAM.
+   */
+  const gelirBasi = hbK.indexOf("const birim = odenen +");
+  kontrol("gelir = ödenen + HB indirimi", gelirBasi >= 0);
+  const gelirB = gelirBasi >= 0 ? hbK.slice(Math.max(0, gelirBasi - 600), gelirBasi + 200) : "";
+  kontrol("  ...HB indirimi hbDiscount alanından", gelirB.includes("hbDiscount"));
+  /**
+   * ⛔ SATICI İNDİRİMİ GELİRE KARIŞMAZ — nereye gittiği ÇÖZÜLMEDİ. O
+   * siparişte 15,00 TL satıcı indirimi var ama müşteri 3.147,00 ödemiş ve
+   * komisyon tabanına da girmiyor. Formüle eklenseydi hiç almadığımız parayı
+   * gelir sayardık; çıkarılsaydı almadığımızı iddia ederdik.
+   */
+  kontrol(
+    "  ...satıcı indirimi gelir formülüne GİRMİYOR",
+    !gelirB.includes("saticiIndirimi +") && !gelirB.includes("+ saticiIndirimi"),
+  );
+  kontrol(
+    "satıcı indirimli kalem SAYILIYOR ve ekranda BEYAN ediliyor",
+    hbK.includes("saticiIndirimliKalem++") &&
+      hbK.includes("SATICI İNDİRİMİ OLAN KALEM"),
+  );
+
+  /**
+   * ⛔ ÇAKIŞMA ARAMASI KÜRESEL KALIR — `Sale.code` global `@unique`.
+   * Kanala daraltılsaydı aday elemede geçer, `INSERT` kısıta çarpardı
+   * (TY'nin 26.08.2026 tuzağı).
+   */
+  const cakBasi = hbK.indexOf("const mevcutSatislar = await prisma.sale.findMany");
+  kontrol("çakışma araması var", cakBasi >= 0);
+  const cakB = cakBasi >= 0 ? hbK.slice(cakBasi, cakBasi + 420) : "";
+  kontrol(
+    "  ...ve KÜRESEL (kanala daraltılmamış)",
+    cakB.includes("where: { code: { in: [...adaylar.keys()] } }") &&
+      !cakB.includes("channelAccountId: hesap.id"),
+  );
+  kontrol(
+    "çakışma SINIFLANDIRILIYOR (aynı kanal ↔ çapraz)",
+    hbK.includes("s.channelAccountId !== hesap.id"),
+  );
+  kontrol(
+    "çapraz çakışma parti kimliğiyle İZE geçiyor (kalıcı)",
+    hbK.includes("cakismaCaprazKanal: capraz.length") &&
+      hbK.includes("cakismaCaprazKodlar: capraz.map"),
+  );
+  kontrol(
+    "çakışan ATLANIR — ezme YOK",
+    hbK.includes("for (const n of cakisanlar) adaylar.delete(n);"),
+  );
 }
 
 /**

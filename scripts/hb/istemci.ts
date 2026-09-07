@@ -170,6 +170,31 @@ export const UCLAR = {
     `${taban("oms", k.ortam)}/packages/merchantid/${k.merchantId}?offset=${offset}&limit=${limit}`,
   listingler: (k: Kimlik, offset: number, limit: number) =>
     `${taban("listing", k.ortam)}/listings/merchantid/${k.merchantId}?offset=${offset}&limit=${limit}`,
+
+  /**
+   * ⛔ KARGODAKİ PAKETLER — DURUM FİLTRESİ **YOL**, PARAMETRE DEĞİL.
+   *
+   * Ölçüldü 07.09.2026: `/packages?...&status=X` **12 farklı değer için de
+   * AYNI 4 kaydı** döndürdü — parametre sessizce YOK SAYILIYOR. Buna
+   * güvenen bir kod "durum süzdüm" sanır ve hep aynı kümeyi çeker.
+   * Ayrım yalnız yolda: `/shipped` · `/delivered`.
+   */
+  paketlerGonderilen: (k: Kimlik, offset: number, limit: number) =>
+    `${taban("oms", k.ortam)}/packages/merchantid/${k.merchantId}/shipped?offset=${offset}&limit=${limit}`,
+
+  /**
+   * ⛔ TEK SİPARİŞİN TAM KAYDI — VE BU UÇ OLMASA ÇEKİM `Open` İLE SINIRLI
+   * KALIRDI.
+   *
+   * Ölçüldü 07.09.2026: `/packages` (Open) TAM kayıt döndürüyor ama
+   * `/shipped` ve `/delivered` **ince ve PascalCase** — yalnız kimlikler,
+   * **tutar YOK**. Yani sipariş `Open`dan çıktığı anda tutarları o uçtan
+   * alınamıyor ve iki koşum arasında durum değiştiren her sipariş sessizce
+   * kaçardı. Bu uç tam kaydı HER durumda veriyor (`Packaged` dahil), o
+   * yüzden numaralar paket uçlarından toplanıp detay BURADAN çekilir.
+   */
+  siparisDetay: (k: Kimlik, siparisNo: string) =>
+    `${taban("oms", k.ortam)}/orders/merchantid/${k.merchantId}/ordernumber/${siparisNo}`,
 };
 
 /**

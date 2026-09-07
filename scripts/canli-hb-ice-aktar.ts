@@ -8,6 +8,7 @@ import { kilitDurumu } from "./bekci-kilit";
 import { canliYapilandirma } from "./canli-ortak";
 import {
   UCLAR,
+  apiGet,
   baslikKur,
   kimlikOku,
   tumKayitlar,
@@ -198,17 +199,84 @@ async function main() {
   const onceToplam = await prisma.sale.count();
   console.log(`\n① ÖNCE SAYIM — Sale TOPLAM ${onceToplam}`);
 
-  // ═══ ÇEKİM (kalem düzeyi) ═══════════════════════════════════════════════
-  const cekim = await tumKayitlar((o, l) => UCLAR.siparisler(k, o, l), baslik, 100);
-  if (cekim.tur !== "TAMAM") {
-    console.log(`\n⛔ SİPARİŞLER OKUNAMADI (${cekim.tur === "HATA" ? cekim.sonuc.tur : "zarf tanınmadı"}) — hüküm yok.\n`);
+  /* ═══ ÇEKİM — İKİ ADIM: NUMARALARI TOPLA, DETAYI TEK TEK ÇEK ══════════
+   *
+   * ⛔ ESKİ HÂL: `/orders` ucundan kalem düzeyi çekiliyordu. GEREKÇE SİLİNMEDİ,
+   * ÇÜRÜDÜ: o uç SIT'te doluydu, CANLIDA **her durum denemesinde 0** döndü.
+   * Ölçüldü 07.09.2026 — panelde 4 gönderime hazır + 12 kargoda dururken:
+   *
+   *     /orders (12 durum denendi)   0
+   *     /packages                    4  (Open · TAM kayıt)
+   *     /packages/{id}/shipped      12  (ince · TUTAR YOK)
+   *     /packages/{id}/delivered    69  (ince · TUTAR YOK)
+   *
+   * Sipariş numaraları PAKET uçlarında, tutarlar ise yalnız `Open` kaydında
+   * ve `orders/.../ordernumber/{no}` DETAYINDA. Detay ucu her durumda tam
+   * kayıt veriyor (`Packaged` dahil), o yüzden numara TOPLANIR, detay TEK TEK
+   * çekilir. `/packages`ın kendi kalemleriyle yetinilseydi `Open`dan çıkmış
+   * her sipariş sessizce KAÇARDI.
+   */
+  const siparisNolari = new Set<string>();
+  const acik = await tumKayitlar((o, l) => UCLAR.paketler(k, o, l), baslik, 100);
+  if (acik.tur !== "TAMAM") {
+    console.log(`\n⛔ AÇIK PAKETLER OKUNAMADI (${acik.tur === "HATA" ? acik.sonuc.tur : "zarf tanınmadı"}) — hüküm yok.\n`);
     await prisma.$disconnect();
     process.exitCode = 1;
     return;
   }
+  for (const p of acik.kayitlar as Record<string, unknown>[]) {
+    for (const x of (p.items ?? []) as Record<string, unknown>[]) {
+      const no = String(x.orderNumber ?? "");
+      if (no !== "") siparisNolari.add(no);
+    }
+  }
+  const acikSayisi = siparisNolari.size;
+
+  const gonderilen = await tumKayitlar((o, l) => UCLAR.paketlerGonderilen(k, o, l), baslik, 100);
+  let gonderilenSayisi = 0;
+  if (gonderilen.tur === "TAMAM") {
+    for (const p of gonderilen.kayitlar as Record<string, unknown>[]) {
+      /** ⚠ İNCE ŞEKİL **PascalCase** — `orderNumber` değil `OrderNumber`. */
+      for (const alan of ["OrderNumber", "orderNumber"]) {
+        const v = p[alan];
+        if (typeof v === "string" && v !== "") {
+          if (!siparisNolari.has(v)) gonderilenSayisi++;
+          siparisNolari.add(v);
+        }
+      }
+    }
+  } else {
+    /** ⛔ SESSİZ GEÇMEZ: kargodakiler okunamadıysa küme EKSİKTİR ve yazar. */
+    console.log("\n   ⚠ KARGODAKİ PAKETLER OKUNAMADI — bu koşum EKSİK küme görüyor.");
+  }
+
+  /**
+   * ⛔ DETAY TEK TEK — her biri bağımsız. Bir siparişin detayı düşerse
+   * ötekiler devam eder; düşen SAYILIR ve ekranda yazar (sessiz eksilme yok).
+   */
+  const detayKalemleri: Record<string, unknown>[] = [];
+  let detayDusen = 0;
+  for (const no of siparisNolari) {
+    const d = await apiGet(UCLAR.siparisDetay(k, no), baslik);
+    if (d.tur !== "VERI") {
+      detayDusen++;
+      continue;
+    }
+    const g = d.govde as Record<string, unknown>;
+    for (const x of (g.items ?? []) as Record<string, unknown>[]) detayKalemleri.push(x);
+  }
+  const cekim = { kayitlar: detayKalemleri };
+  console.log(
+    `\n   PAKET UÇLARI → açık ${acikSayisi} · kargoda +${gonderilenSayisi} · toplam ${siparisNolari.size} sipariş`,
+  );
+  if (detayDusen > 0) {
+    console.log(`   ⚠ DETAYI OKUNAMAYAN SİPARİŞ: ${detayDusen}  ← YAZILMAZ`);
+  }
 
   const adaylar = new Map<string, Aday>();
   let saatCozulemeyen = 0;
+  /** ⚠ Satıcı indirimi olan kalem — gelir formülüne GİRMİYOR, sayılıyor. */
+  let saticiIndirimliKalem = 0;
   for (const ham of cekim.kayitlar as Record<string, unknown>[]) {
     const no = String(ham.orderNumber);
     const an = hbAni(String(ham.orderDate));
@@ -222,7 +290,46 @@ async function main() {
     if (String(ham.status) === "Cancelled") {
       aday.iptalliKalem++;
     } else {
-      const birim = Number((ham.unitPrice as { amount?: unknown })?.amount);
+      /**
+       * ⛔ GELİR = ÖDENEN + HB'NİN KARŞILADIĞI İNDİRİM — ÖLÇÜLDÜ, SEÇİLMEDİ.
+       *
+       * HB müşteriye indirim yapıp farkı KENDİ komisyonundan karşılıyor ve
+       * hakedişte `KAMPANYA` satırı olarak bize geri ödüyor. Panel (07.09):
+       * liste 6.399,00 · HB indirimi 1.400,63 · satış 4.998,37 · komisyon
+       * 998,24 (KDV dahil) → indirim komisyondan BÜYÜK, HB aradaki 402,39'u
+       * BİZE ödüyor. Kasa: 4.998,37 + 402,39 = 6.399,00 − 998,24.
+       *
+       * ⭐ 135 sipariş üstünde doğrulandı: `ciro = SIPARIS_TUTARI + KAMPANYA`
+       * 86 siparişte kuruşuna tuttu, 43'ü zaten indirimsizdi.
+       *
+       * ⛔ YALIN `unitPrice` KULLANILAMAZ — HB'nin karşıladığı indirim
+       * ciromuzdan düşerdi ve NET olduğundan düşük görünürdü.
+       *
+       * ⭐ VE TABAN KANALIN KENDİ ARİTMETİĞİYLE DOĞRULANDI (07.09.2026),
+       * "makul göründüğü için" seçilmedi — `4777369510`:
+       *
+       *     unitPrice 3.147,00 + hbDiscount 237,996 = 3.385,00
+       *     komisyon 338,50 ÷ 3.385,00 = %10,0000   ← kayıtlı oranla TAM
+       *     merchantDiscount(15) da eklenirse %9,9559 ✗ TUTMUYOR
+       *
+       * ⚠ `merchantDiscount` NEREYE GİDİYOR — ÇÖZÜLMEDİ, UYDURULMUYOR.
+       * O siparişte satıcı indirimi 15,00 TL görünüyor ama müşteri
+       * 3.147,00 ödemiş (3.385 − 238), yani 15 ne `unitPrice`tan düşülmüş
+       * ne de komisyon tabanına girmiş. Hakediş kod listesinde de karşılığı
+       * YOK. Bu yüzden formüle KATILMIYOR ve `merchantDiscount > 0` olan
+       * kalemler AYRI SAYILIP ekranda beyan ediliyor.
+       * _(Anayasa: "sistem, kendi defterinde takip etmediği şey hakkında
+       * iddia kurmaz" — bilinmeyen sıfır sayılmaz, GÖRÜNÜR kılınır.)_
+       */
+      const odenen = Number((ham.unitPrice as { amount?: unknown })?.amount);
+      const hbIndirimi = Number(
+        (ham.hbDiscount as { unitPrice?: { amount?: unknown } })?.unitPrice?.amount ?? 0,
+      );
+      const birim = odenen + (Number.isFinite(hbIndirimi) ? hbIndirimi : 0);
+      const saticiIndirimi = Number(
+        (ham.merchantDiscount as { unitPrice?: { amount?: unknown } })?.unitPrice?.amount ?? 0,
+      );
+      if (Number.isFinite(saticiIndirimi) && saticiIndirimi > 0) saticiIndirimliKalem++;
       const adet = Number(ham.quantity ?? 0);
       if (Number.isFinite(birim) && adet > 0) {
         aday.kalemler.push({
@@ -243,24 +350,63 @@ async function main() {
   console.log(`   API kalem                                        ${cekim.kayitlar.length}`);
   console.log(`   sipariş (gruplandı)                              ${adaylar.size}`);
   if (saatCozulemeyen > 0) console.log(`   ⚠ SAATİ ÇÖZÜLEMEYEN KALEM                        ${saatCozulemeyen}  ← YAZILMAZ`);
+  if (saticiIndirimliKalem > 0) {
+    /**
+     * ⛔ ÇÖZÜLMEMİŞ ALAN SESSİZ GEÇMEZ. Satıcı indirimi ne `unitPrice`ta ne
+     * komisyon tabanında; hakediş kodlarında da karşılığı yok. Nereye
+     * gittiği ÇÖZÜLENE KADAR ekranda durur ki kimse "hesaba katılmış"
+     * sanmasın.
+     */
+    console.log(`   ⚠ SATICI İNDİRİMİ OLAN KALEM                     ${saticiIndirimliKalem}  ← ciroya GİRMEDİ (yeri çözülmedi)`);
+  }
 
   /** Bütün kalemleri iptalli olan sipariş yazılmaz — ayrı sayılır. */
   const tumIptal = [...adaylar.values()].filter((a) => a.kalemler.length === 0);
   for (const a of tumIptal) adaylar.delete(a.siparisNo);
   if (tumIptal.length > 0) console.log(`   tamamı iptal kalemli → YAZILMAZ                  ${tumIptal.length}`);
 
-  // ═══ ÇAKIŞMA — KÜRESEL (TY dersi: `Sale.code` global unique) ═══════════
-  const mevcutKodlar = new Set(
-    (
-      await prisma.sale.findMany({
-        where: { code: { in: [...adaylar.keys()] } },
-        select: { code: true },
-      })
-    ).map((s) => s.code!),
-  );
+  /* ═══ ÇAKIŞMA — KÜRESEL ATLA + SINIF ══════════════════════════════════
+   *
+   * ⛔ ARAMA KÜRESEL KALIR: `Sale.code` şemada **global `@unique`**
+   * (`schema.prisma`). Anahtarı "kanal + sipariş no"ya daraltmak aday
+   * elemede geçirir ama `INSERT`i benzersizlik kısıtına çarptırırdı —
+   * TY'nin 26.08.2026'da düştüğü tuzağın aynısı ("kuru koşumun sayısı bu
+   * yüzden İYİMSER olabilirdi").
+   *
+   * ⭐ AMA ÇAKIŞMA TEK CİNS DEĞİL VE İKİSİ AYRI İŞ İSTER:
+   *   · AYNI KANAL   → bu sipariş zaten bizde; yeniden içe aktarma, BEKLENEN.
+   *   · ÇAPRAZ KANAL → aynı numara BAŞKA bir kanalın satışında; o zaman bu
+   *     HB siparişi o kodla deftere **HİÇ YAZILAMAZ** ve sessizce kaybolur.
+   *     Bu yüzden ayrı sayılır, ekranda YÜKSEK SESLE yazar ve parti
+   *     kimliğiyle ize geçer. _(Kullanıcı kararı 07.09.2026.)_
+   */
+  const mevcutSatislar = await prisma.sale.findMany({
+    where: { code: { in: [...adaylar.keys()] } },
+    select: {
+      code: true,
+      channelAccountId: true,
+      channelAccount: { select: { name: true, channel: { select: { name: true } } } },
+    },
+  });
+  const mevcutKodlar = new Set(mevcutSatislar.map((s) => s.code!));
   const cakisanlar = [...adaylar.keys()].filter((n) => mevcutKodlar.has(n));
   for (const n of cakisanlar) adaylar.delete(n);
+
+  const capraz = mevcutSatislar.filter(
+    (s) => mevcutKodlar.has(s.code!) && s.channelAccountId !== hesap.id,
+  );
+  const ayniKanal = cakisanlar.length - capraz.length;
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
+  console.log(`     ├─ aynı kanal (yeniden içe aktarma, beklenen)  ${ayniKanal}`);
+  console.log(`     └─ ÇAPRAZ KANAL (numara uzayı çakışması)       ${capraz.length}`);
+  if (capraz.length > 0) {
+    console.log("   ⛔ ÇAPRAZ ÇAKIŞMA — BU HB SİPARİŞLERİ DEFTERE HİÇ YAZILAMAZ:");
+    for (const s of capraz) {
+      console.log(
+        `      ${s.code}  →  ${s.channelAccount.channel.name}/${s.channelAccount.name}`,
+      );
+    }
+  }
 
   // ═══ VARYANT KAPISI — ortak kod kuralı, iki kod adayı ═══════════════════
   const tumKodlar = [
@@ -426,8 +572,17 @@ async function main() {
         apiKalem: cekim.kayitlar.length,
         siparis: adaylar.size + cakisanlar.length + tumIptal.length,
         cakisanAtlandi: cakisanlar.length,
+        /**
+         * ⛔ ÇAPRAZ ÇAKIŞMA İZE GEÇER — parti kimliğiyle KALICI satır.
+         * Ekran çıktısı koşumla birlikte kaybolur; bu sayı üç ay sonra
+         * "burada niye bir sipariş eksik" sorusunun cevabıdır.
+         */
+        cakismaAyniKanal: ayniKanal,
+        cakismaCaprazKanal: capraz.length,
+        cakismaCaprazKodlar: capraz.map((s) => s.code),
         tamamiIptal: tumIptal.length,
         saatCozulemeyen,
+        saticiIndirimliKalem,
         belirsiz: belirsiz.length,
         yazilamazKod: yazilamaz.length,
         yazilan,

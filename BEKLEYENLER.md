@@ -2056,24 +2056,87 @@ API tek kalemde İKİ taban veriyor ve ikisi de "makul" görünüyor:
     hakediş SIPARIS_TUTARI ↔ defterdeki ciro:  eşit 40 · KÜÇÜK 88 · BÜYÜK 0
     komisyon ↔ SIPARIS_TUTARI × oran:          tutan 0 · komisyon DAHA BÜYÜK 127
 
-**HÜKÜM (tek okuma ayakta kaldı):** HB **ödemeyi müşterinin ödediği taban
-üstünden** yapar, **komisyonu LİSTE fiyatı üstünden** keser.
-⛔ İçe aktarmanın gelir alanı **`totalPrice`** (merchantTotalPrice DEĞİL).
-⛔ Komisyon **`commission` alanından AYNEN** yazılır, orandan HESAPLANMAZ —
-hesaplansaydı bu siparişte komisyon **₺182,08 eksik** çıkar ve NET
-olduğundan yüksek görünürdü. _(TY `price` dersinin HB'deki karşılığı: iki
-okumayla da uyumlu gözlem hiçbirini kanıtlamaz; kanalın kendi ödeme kaydı
-ayırt etti.)_
+⛔ **BURADA VERDİĞİM HÜKÜM YANLIŞTI — VE ESKİ GEREKÇE SİLİNMİYOR.**
 
-⚠ **YAN BULGU — DEFTERDEKİ HB CİROSU YÜKSEK.** İndirimli 88 satışta ciro
-liste fiyatıyla duruyor (ör. `4437842657` ciro 2.990,00 · HB kaydı 2.632,86).
-⏭ **AYRI KALEM, HALİL KARARI** — kendiliğinden düzeltilmez.
+> _(çürütülen hüküm, 07.09.2026)_ "HB ödemeyi müşterinin ödediği taban
+> üstünden yapar; defterdeki ciro YÜKSEK. Gelir alanı `totalPrice`,
+> komisyon `commission`dan aynen. Yan bulgu: indirimli 88 satışta ciro
+> liste fiyatıyla duruyor — ayrı düzeltme kalemi."
 
-⏭ **③ ÇEKİM YOLU (sıradaki):** `Open` + `shipped` uçlarından; ATLA küresel
-kalır (`Sale.code` global `@unique`) ama çakışma SINIFLANDIRILIR — aynı
-kanal = yeniden içe aktarma, **çapraz kanal = numara uzayı çakışması** ve
-yüksek sesle raporlanır. Sınav üç elle girişle: `4132853379` · `4423830471`
-· `4318708967`.
+**NİYE ÇÜRÜDÜ:** kıyası `SIPARIS_TUTARI` **TEK BAŞINA** üstüne kurdum. Oysa
+AYNI ölçümün kod dağılımında `KAMPANYA` **POZİTİF ₺49.695,18** ile duruyordu
+ve onu hesaba katmadım. Eksik olan gözlem değil, **gözlemin bir parçasıydı.**
+
+⭐ **HALİL BEYANI + HB PANELİ MEKANİZMAYI VERDİ (07.09.2026):**
+
+    Listeleme fiyatı    6.399,00   ← bizim satışa çıkardığımız tutar
+    Hepsiburada indirimi 1.400,63  ← HB'nin müşteriye yaptığı indirim
+    Satış fiyatı        4.998,37   = 6.399,00 − 1.400,63
+    Hepsiburada komisyonu 998,24   = 831,87 × 1,20 (API KDV HARİÇ, panel DAHİL)
+
+HB indirimi (1.400,63) kendi komisyonundan (998,24) **BÜYÜK** → aradaki
+**402,39**'u BİZE ödüyor. Kasa: `4.998,37 + 402,39 = 5.400,76 = 6.399,00 −
+998,24` — kuruşuna. Hakedişte bu, `KAMPANYA` satırı olarak görünüyor.
+
+⭐ **ÖLÇÜM (135 sipariş, salt okuma):**
+
+    ciro = SIPARIS_TUTARI               43   (indirimsiz)
+    ciro = SIPARIS_TUTARI + KAMPANYA    86   ← mekanizma birebir tuttu
+    hiçbiri tutmadı                      6   Σ kalan ₺1.028,83
+
+**GEÇERLİ HÜKÜM:** gelir tabanı **listeleme fiyatıdır** ve **defterdeki ciro
+DOĞRUDUR.** Komisyon da doğru: motor `oran × ciro` hesaplıyor
+(`%13 × 6.399 = 831,87`) ve HB kuralı gereği üstüne %20 KDV ekliyor
+(`998,24`) — panelle birebir.
+⛔ İçe aktarmanın gelir alanı **`totalPrice + totalHBDiscount`**
+(= `merchantTotalPrice − totalMerchantDiscount`). Yalın `totalPrice`
+kullanılsaydı HB'nin karşıladığı indirim ciromuzdan **düşerdi**;
+yalın `merchantTotalPrice` ise BİZİM yaptığımız indirimi de gelir sayardı.
+⏭ `totalMerchantDiscount > 0` vakası henüz görülmedi — ③'te ölçülür.
+
+⚠ **AÇIK KALAN KÜÇÜK SORU (iş açılmadı):** 6 siparişte formül tutmadı,
+Σ **₺1.028,83**. Dördünde `KAMPANYA` satırı HİÇ yok (`4282663277` ·
+`4702310503` · `4006304001` · `4636037047`), ikisinde kuruş artığı
+(−0,02 · −0,99). Kampanya satırı başka bir hakediş dönemine düşmüş olabilir
+— **hüküm verilmedi**, ölçüldü ve yazıldı.
+
+⭐ **K-HB-İNDİRİM KAPANDI — DÜZELTİLECEK BİR ŞEY YOK.** Kalem bir düzeltme
+işi olarak açılmıştı; ölçüm onu ELEDİ. _(Anayasa: "imkânsız görünen değer
+önce doğrulanır — düzeltilmez"; burada doğrulama HATA demedi, kaydın DOĞRU
+olduğunu söyledi.)_
+
+### ─── ③ ÇEKİM YOLU KURULDU — 16/16 SİPARİŞ GÖRÜNÜYOR · 07.09.2026
+
+    PAKET UÇLARI → açık 4 · kargoda +12 · toplam 16 sipariş   ← panelle BİREBİR
+    ÇAKIŞTI → ATLANDI (ezme YOK)   15
+      ├─ aynı kanal (beklenen)     15   ← Halil'in elle girdikleri
+      └─ ÇAPRAZ KANAL               0
+    YAZILABİLİR                     1   → 4777369510 · Packaged · birim gelir 3.385,00
+
+⭐ **ÇAKIŞMA SINAVI GEÇTİ:** `4132853379` · `4423830471` · `4318708967` üçü de
+kanalda VAR, defterde VAR → ATLANDI. Ezme yok.
+⚠ **`4318938967` diye bir kayıt YOK — YANLIŞ OKUYAN BENDİM** (ekran
+görüntüsünden). Defterdeki doğru numara `4318708967` ve Halil'in verdiği
+numaraydı. _(Anayasa: "kimlik varken dizeyle aranmaz" — ben ekrandan okudum.)_
+
+**ATLA KÜRESEL KALDI, SINIF EKLENDİ.** Anahtarı "kanal + sipariş no"ya
+daraltmak istenmişti; şema onu kaldırmıyor — `Sale.code` **global `@unique`**
+ve daraltılsaydı aday elemede geçer, `INSERT` kısıta çarpardı (TY'nin
+26.08.2026 tuzağı). Bunun yerine çakışma İKİ CİNSE ayrıldı: *aynı kanal*
+beklenen, *çapraz kanal* ise o HB siparişinin deftere **hiç yazılamayacağı**
+anlamına gelir — ekranda yüksek sesle yazar ve **parti kimliğiyle ize** geçer.
+
+    ice-aktarma:dogrula   354/354
+    MUTASYON               13/13   iki yönlü (⑤ "yanlış yanma" dahil)
+
+⛔ **`?status=` PARAMETRESİ BEKÇİYE BAĞLANDI** — uç onu yok sayıyor; kullanan
+kod "durum süzdüm" sanır ve hep aynı kümeyi çeker. Ayrım yalnız YOLDA.
+
+⚠ **SATICI İNDİRİMİ — GELİRE GİRMEDİ, SAYILDI (16 kalemin 12'sinde var).**
+Ölçüm (`4777369510`): komisyon `338,50 ÷ (3.147,00 + 237,996) = %10,0000`
+kayıtlı oranla TAM; satıcı indirimi (15,00) eklenirse %9,9559 ✗. Yani indirim
+ne `unitPrice`ta ne komisyon tabanında, hakediş kodlarında da karşılığı yok.
+⏭ **K-HB-PAZARLAMA olarak ayrı açılıyor** (aşağıda).
 
 ---
 
