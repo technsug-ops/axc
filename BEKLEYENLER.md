@@ -268,12 +268,27 @@ faturalar.
 
 ### ⏭ AÇIK — HALİL'DEN BEKLENİYOR
 
-**Üç Mayıs faturası:** `4762659958` · `4493666766` · `4082444351`
-(`ALM-HB-260516-12/13/14`, her biri ₺1.298,00 · 2 adet). Bu üç kayıt defterde
-duruyor ama **beş faturalık kümenin dışında** — yani 5 fatura defterdeki 8
-alımın 5'ini kapsıyor. Faturalar gelince aynı çapraz koşulacak.
+⛔ **İKİ FATURA İSTEĞİ DE GERİ ÇEKİLDİ (07.09) — İKİSİ DE GEREKSİZDİ.**
+Halil sordu: _"faturayı ne yapacaksın, sana alım ve satım listesini verdi ya."_
+Haklıydı ve ölçüm doğruladı:
 
-⚠ Ayrıca `axcali2110` adayı için Amazon faturası.
+· **Üç Mayıs faturası:** dört mayıs alımı da kuruşu kuruşuna **₺1.298,00**
+  (yayılma `1,000×`) ve içlerinden birinin faturası (`4308842479`) zaten elde,
+  tutuyor. Aynı rakamı taşıyan üç kardeşi ayrıca faturalatmak, verinin ZATEN
+  verdiği cevabı kullanıcıya tekrar sordurmaktı.
+· **`axcali2110` Amazon faturası:** değer zaten 03.09'da belirlenmişti
+  (`CIKIS_MALIYETI_DUZELTILDI` izi, 450,35 → 1.399). Halil yine de gönderdi ve
+  **birim ₺1.399,00 doğrulandı** (₺1.999 liste − ₺500 iskonto; defter fiilen
+  ödeneni tutuyor).
+
+> **DERS:** belge istemeden önce sorulur — **bu soruyu defterin kendi izi zaten
+> cevaplıyor mu?** Kullanıcıya iş açmak da bir maliyettir ve ölçülmeden
+> yapılmaz. _(Anayasa: "cevap zaten yazılıydı ve sorulmadı" — 03.09'daki alım
+> dosyası vakasının birebir tekrarı.)_
+
+⚠ **AÇIK KALAN TEK GÖZLEM (iş DEĞİL):** Amazon faturası **1 adet** için
+kesilmiş (`QTY 1`), defterdeki `ALM-AMZ-260101-07` ise **5 adet**. Birim fiyat
+doğrulandı; adet sorusu ayrı ve Halil'de şüphe yoksa açılmayacak.
 
 ---
 
@@ -441,7 +456,7 @@ kendi başına bir hata değil, izlenecek bir sınıf.
 
 ---
 
-## 📊 K173-③ — NET-2 TÜKETİCİ SINIFLAMASI · 06.09.2026 · [ÖLÇÜLDÜ — EKRANDA TEYİT YOK]
+## ✅ K173-③ — NET-2 TÜKETİCİ SINIFLAMASI · 06–07.09.2026 · [HALİL TESTİ GEÇTİ]
 
 **AYIRT EDİCİ SORU:** bu kümede `net2 > net1` olabilir mi? Olamıyorsa kırpma
 gövdesine bağlamak gereksiz; olabiliyorsa bağ **ya da gerekçeli muafiyet**
@@ -576,7 +591,14 @@ kart şerhini silen · devreden satırını silen).
   (0,000001) **toleransın içinde** kalıyordu — mutasyon ⑦ kaçtı. Ölçüt
   yanlış değildi, **örnek veri kördü**; kesin eşitliğe çevrildi.
 
-### ⏳ DURUM: ÖLÇÜLDÜ, EKRANDA TEYİT YOK
+### ✅ HALİL TESTİ GEÇTİ — 07.09.2026
+
+Halil gerçek cihazda baktı: **`axcali1713` · `axcali1797` · `axcali2213` —
+"rakamlar tutuyor".** Kârda olan tek satır (`axcali1713`, birim NET ₺148,34 +
+şerh ₺101,57) ve negatifli satırlar ekranda doğrulandı. _"Sınanmamış ekran,
+ekran değildir"_ boşluğu **kapandı.**
+
+### (önceki durum kaydı) ÖLÇÜLDÜ, EKRANDA TEYİT YOK
 
 Kod canlıda (`57d0f18`), bekçi turu **110/110** ve rakamlar gövdeden
 ölçüldü — ama **hiçbir ekran gerçek cihazda görülmedi.** Bu satır o boşluğu
@@ -1126,7 +1148,13 @@ kullanım-bloklu). 3 mutasyon 3 doğru ölçütte kırmızı: adete bölen ·
 UTC sayan · stok yazan. Önizleme SIT'te koştu: 2 sipariş dürüstçe
 "kod kataloğumuzda yok" kovasında (HB'nin test ürünleri defterde yok).
 
-⏭ AÇIK — HALİL KARARI BEKLİYOR: SIT uçtan-uca provası (çekim→kuyruk→onay)
+⛔ **KARAR (Halil, 07.09.2026): (b) — DEFTERE TEST KAYDI GİRİLMEYECEK.**
+Prova canlıya geçiş gününde **gerçek katalogla** kendiliğinden olacak.
+Gerekçe: K155 hassasiyeti — "liste satışların fiziki sayımıdır"; deftere test
+ürünü + test alımı sokup sonra temizlemek, temizlenmiş sayılsa bile iz bırakır
+ve sayımın dayanağını bulandırır. **Bu kalem yeniden açılmaz.**
+
+~~⏭ AÇIK — HALİL KARARI BEKLİYOR: SIT uçtan-uca provası (çekim→kuyruk→onay)~~
 için deftere TEST ÜRÜNÜ + küçük test alımı girmek gerekir (sonra
 iptal/pasifle temizlenir) — YA DA prova canlıya geçişte gerçek katalogla
 kendiliğinden olur. Defter temizliği kararı Halil'in (K155 hassasiyeti).
@@ -2311,7 +2339,13 @@ Cevapta md5 / iz kaydı / betik adı geçmiyorsa rakam ham tahmindir.
 **"Son içe aktarma" ekranı:** hangi dosya · kaç satır girdi · kaç satır
 hangi sebeple girmedi · o satırların listesi. İz bugün `AuditLog`'un içine
 gömülü; ne Halil görüyor ne ben bakmayı hatırlıyorum.
-⛔ **Onay alınmadan açılmaz.**
+~~⛔ Onay alınmadan açılmaz.~~
+
+⭐ **ONAY GELDİ (Halil, 07.09.2026): _"Ekran yap"_ — YAPILACAK.**
+Niye gerekli, bugünkü kanıtıyla: `₺1.364.610,92` tutarında alım barkod
+eşleşmediği için KDV indirim tabanına HİÇ girmemiş ve bunu **hiçbir ekran
+söylemiyor**. İz `AuditLog`ın içinde duruyor ama kimse bakmıyor —
+görünmeyen bir iz, olmayan bir izdir.
 
 ---
 
@@ -6161,10 +6195,20 @@ orada mal alınmış, sadece geç kaydedilmiş; parti eklemek çift sayım olurd
 `Olması gereken Stok` sütunu **BOŞ**. Boş sütun _"sayılmadı"_ demektir ve
 betik onu bilerek atlar — uydurmamak için.
 
-### ⏭ AÇIK İŞ — HALİL'DE
+### ✅ KAPANDI — 07.09.2026 (Halil: _"bu ürünün stoku şu an 0 zaten"_)
 
-Halil'in **henüz girmediği 3 satış** var (`axcali2997`). Girildiğinde stok
-**0** olacak ve bu doğru davranıştır. API otomatik çekmiyorsa elle girilecek.
+~~Halil'in henüz girmediği 3 satış var (`axcali2997`). Girildiğinde stok **0**
+olacak.~~ **Ölçüldü ve amaç gerçekleşmiş.**
+
+⚠ **VE SKU ARTIK YOK:** `axcali2997` diye bir varyant defterde bulunmuyor —
+mükerrer kayıt birleştirmesinde kod değişmiş. "2997" taşıyan kayıt
+**`OYUNEN88141740`** (Bebek Bezi Çöp Kovası): **stok 0** · 59 hareket ·
+37 satış kalemi.
+
+⛔ **DÜRÜSTLÜK NOTU:** o üç satışın TEK TEK girildiğini kanıtlayamıyorum —
+stok 0'a başka bir yoldan da (sayım düzeltmesi) inmiş olabilir. Kanıtlanan
+şey kalemin BEKLENEN SONUCU: stok 0. Kalem bu gerekçeyle kapanıyor, "üç satış
+girildi" diye değil. _(Anayasa: "bir sayı etiketiyle taşınır".)_
 
 ---
 
