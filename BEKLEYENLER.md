@@ -128,6 +128,99 @@ sayılmaz, listede de yok. Değişmedi, K181 kapsamında değil.
 
 ---
 
+## 🔶 K184 — HEPSİBURADA CANLI + LİSTİNG → K121 BORUSU · 07.09.2026 · [KURU KOŞTU · yazım kapısı KAPALI]
+
+> HB canlı ortamı açıldı; `axcali_dev` entegratörüne servis anahtarı Halil
+> tarafından verildi (portal adımı güvenlik gereği bizde değil).
+
+### ① CANLI ERİŞİM AÇIK — ÖLÇÜLDÜ
+
+    OMS paketler      200 · 1 kayıt
+    Listing listesi   200 · totalCount 2189
+    OMS siparişler    200 · totalCount 0   ← ÖLÇÜLMÜŞ sıfır, arıza DEĞİL
+
+⚠ **BOŞ İLE BOZUK AYRILDI.** Sipariş ucu *işlem bekleyen* siparişleri veriyor
+ve şu an bekleyen yok. Sağlık sondası eskiden _"test ortamı boş olabilir"_
+diyordu; canlıda o cümle **yanlış konuşuyordu** — artık `totalCount`u basıyor.
+
+### ② ANAHTAR SEÇİMİ — ÖLÇÜLDÜ, SEÇİLMEDİ
+
+    merchantSku       benzersiz 2121/2189  ⛔ TEKİL DEĞİL (68 çakışma)
+    hepsiburadaSku    benzersiz 2189/2189  ✓  eşleşen 1087 (defterin %99'u)
+    uniqueIdentifier  hiç dolu değil (0)
+
+⭐ **`hepsiburadaSku` ONAYLANDI.** ⛔ Ve TY vakası tekrarlanmadı: orada üç alan
+tek kümeye KATLANMIŞTI, hangisinin eşleştiği görünmüyordu. Burada alanlar ayrı
+ölçüldü, çakışma ayrı sayıldı. Gerekçe koda yorum olarak yazıldı.
+
+### ③ ENUM EŞLEMESİ — ONAYLI, ALT-İZLE
+
+    1652  STOKSUZ · stok-sifir
+     222  ACIK · satilabilir
+     219  PASIF · satilamaz-kilitsiz    ⚠ EN ÖNEMLİ KARAR
+      96  PASIF · kilitli
+    isSuspended / isFrozen : canlıda HİÇ görülmedi (0)
+
+⛔ **219 KAYDA "STOKSUZ" DEMEK YALAN OLURDU** — raf DOLU, kilit YOK, HB
+"satılamaz" diyor (sebep genelde `ByMerchant`, 504 kayıt). `PASIF` seçildi
+çünkü yapılacak iş odur; ama **kilitli olanla aynı şey değil**, o yüzden
+`kaynak` alt-izi ayrıca dönüyor.
+⛔ **ONAY DURUMU UYDURULMAZ:** listing ucu onay bilgisi vermiyor → gövde
+hiçbir girdide `ONAY_BEKLIYOR` DÖNDÜREMEZ (bekçide ölçütü var).
+
+### ④ YAZIM KAPISI KAPALI — VE SEBEBİ KİMLİK CİNSİ
+
+⛔ `ChannelAccount.externalId` HB'de **`7000222505`** (raporlardaki numara);
+yeni API'nin Mağaza ID'si **36 karakterlik GUID**. Eşleşme kurulamıyor.
+
+⚠ **"HESAP EKSİK" DEĞİL, KİMLİK CİNSİ FARKLI** — ve alan EZİLMEYECEK (mimar
+kararı). 📏 Okuyucular ölçüldü: `canli-ty-ice-aktar` · `canli-hb-ice-aktar` ·
+`canli-n11-ice-aktar` · `lib/kanal-listeleme-yaz` + ayarlar ekranı. Ezilseydi
+TY/N11 tarafı değil ama HB içe aktarması ve raporla eşleşme bozulurdu.
+
+⏭ **ÖNERİ (yazım ONAY BEKLİYOR):** `ChannelAccount`a nullable ikinci kimlik
+alanı — ad önerisi **`apiHesapKimligi`** (`magazaGuid` değil: "GUID" bir
+BİÇİMDİR ve biçim değişebilir; alan adı içeriğin ne olduğunu söylemeli, nasıl
+yazıldığını değil). Migration tek sütun + `@@index`. Alan açılınca yazıcının
+kapısı kendiliğinden çalışır — kod hazır ve kapıyı ölçüyor.
+
+### ⑤ KURU KOŞUM — DAĞILIM RAPORU
+
+    HB kanal SKU kaydı   1098      kanalda bulunan  1087
+    kanalda YOK            11      değişecek satır  1098 (ilk koşum: hepsi)
+    ⚠ kanalda VAR, defterde YOK  1102  ← kanalın yarısını defter tanımıyor
+
+⚠ Son satır ayrı bir iştir ve açılış şartı yazılana kadar iş açılmaz; burada
+yalnız **görünür** kılındı.
+
+### ⑥ ÖLÇÜM
+
+    hb-listeleme:dogrula   34/34   (5 bölüm, sayaçlı)
+    MUTASYON               12/12   hepsi KIRMIZI
+    kanala yazma           YOK — istemcide POST/PUT metodu tanımlı bile değil
+    yazılan alan           yalnız 3: listelemeDurumu · kanalAdet · kanalOlcumAt
+
+En değerli mutasyon ①: 219 kaydı `STOKSUZ`a düşüren senaryo kırmızı yandı.
+
+### ⑦ SEBEP KODLARI — İKİNCİ KAYNAK
+
+HB `deactivationReasons` / `lockReasons` 14 ayrı kod veriyor (`ByMerchant` 504 ·
+`DuplicateProduct` 53 · `ProvidedCounterfeitProduct` 17 · `SalesRestriction` 10
+· `TrademarkViolation` 2 …). ⏭ Kutuya **sebep sütunu** açıldığı gün bu kodlar
+TY'nin `rejectReasonDetails`iyle **birlikte** kaynak olur — ikisi ayrı ayrı
+değil, tek sütunun iki kanaldaki karşılığı olarak.
+
+### ⑧ HB SİPARİŞ İÇE AKTARMA — TETİKLENEMEYEN YOL
+
+`canli:hb-ice-aktar` kuru koşuldu ve bir ÖN ŞART yakaladı: canlı hesap bağı
+olmadan çalışmıyor ve hesabı **kendiliğinden oluşturmuyor** (doğru davranış).
+⛔ **VE 0 SİPARİŞLE "GEÇTİ" SAYILMAZ.** _(Anayasa: "tetiklenemeyen yol geçmiş
+sayılmaz — testi değil raporu düzeltmek olur".)_
+⏭ **ŞART:** ilk gerçek HB siparişi düştüğünde kuru koşum TEKRAR + Halil'e ilk
+içe aktarma onayı.
+
+---
+
 ## 🔶 K180-② — KALDIRMA, GİRİŞİN GERÇEKLİĞİNİ ÖLÇMÜYOR · 07.09.2026 · [KUSUR · AÇIK]
 
 > **Halil:** _"sayım da yoktu, eski siparişlerden, mükerrer girmişim siparişi;

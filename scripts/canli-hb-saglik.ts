@@ -57,7 +57,29 @@ async function olc(
     return;
   }
   if (z.kayitlar.length === 0) {
-    console.log(`  AÇIK/BOŞ     ${ad}  (200, kayıt yok — test ortamı boş olabilir)`);
+    /**
+     * ⛔ METİN SAHİP OLMADIĞI ANLAMI İDDİA ETMEZ (07.09.2026 düzeltmesi).
+     * Burada eskiden _"test ortamı boş olabilir"_ yazıyordu. HB CANLIYA
+     * açılınca o cümle YANLIŞ KONUŞMAYA başladı: canlıdayız ve boşluk
+     * ölçülmüş bir sıfır. Cümle, sayının taşımadığı bir şüpheyi iddia
+     * ediyordu.
+     *
+     * ⭐ VE ÖLÇÜLEN SIFIR ARTIK KANITIYLA BASILIYOR: `totalCount` varsa
+     * yazılır. "Baktım, sıfır" ile "bakamadım" bir daha karışmasın.
+     * _(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim,
+     * denetim değildir".)_
+     */
+    const g = s.govde as Record<string, unknown> | null;
+    const toplam =
+      g !== null && typeof g === "object" && typeof g.totalCount === "number"
+        ? g.totalCount
+        : null;
+    console.log(
+      `  AÇIK/BOŞ     ${ad}  (200, kayıt yok` +
+        (toplam === null
+          ? " — uç toplam sayı vermedi, kapsam bilinmiyor)"
+          : ` — uç \`totalCount: ${toplam}\` diyor, ÖLÇÜLMÜŞ sıfır)`),
+    );
     return;
   }
   console.log(`  AÇIK         ${ad}  (200, sayfada ${z.kayitlar.length} kayıt)`);
