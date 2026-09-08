@@ -33,7 +33,47 @@ export type Kimlik = {
 };
 
 /** `.env.canli`den okur. Eksikse `null` — çağıran açıklayıcı mesaj basar. */
+/**
+ * ⛔ SÜREÇ ORTAMI ÖNCE, DOSYA SONRA — K166 DESENİ (düzeltildi 08.09.2026).
+ *
+ * Eski hâl YALNIZ `.env.canli` dosyasını okuyordu ve **Vercel'de o dosya
+ * YOK.** Sonuç yalancı yeşildi: `/api/cron/hb-cekim` `{atlandi:"KIMLIK"}`
+ * döndürüyor, HTTP **200** veriyor ve GitHub Actions adımı **geçiyordu** —
+ * yani "HB çekimi kuruldu" denip hiç koşmayan bir uç teslim edilmişti.
+ * Kusur benimdi ve ölçümle değil, kaynağı okuyunca çıktı.
+ * _(Anayasa: "bekçinin yeşili, ölçtüğü doğrulanmadan güvence değildir".)_
+ *
+ * TY (`scripts/ty/istemci.ts`) ve N11 aynı deseni zaten taşıyordu; HB tek
+ * ayrık kanaldı (İlke #10 — aynı iş her yerde aynı çalışır).
+ */
+function kimlikAdlari(ortam: string): { onek: string; adlar: [string, string, string] } {
+  /**
+   * ⭐ İKİ ORTAM YAN YANA (04.09.2026): HB canlı erişimi SIT testleri
+   * onaylanmadan açılmıyor; SIT'e dönüş gerekince canlı değerlerin
+   * üstüne yazılıyordu (bir kez yaşandı — SIT anahtarları ezildi).
+   * TEST ortamı `_SIT_` önekli satırlardan okur; yoksa düz satırlara
+   * düşer (geriye uyum). CANLI her zaman düz satırlardan okur.
+   */
+  const onek = ortam === "TEST" ? "HEPSIBURADA_SIT_" : "HEPSIBURADA_";
+  return { onek, adlar: [onek + "MERCHANT_ID", onek + "API_KEY", onek + "DEVELOPER"] };
+}
+
 export function kimlikOku(): Kimlik | null {
+  /** ① SÜREÇ ORTAMI. Vercel'de kimlik buradan gelir; yerelde boştur ve
+   *  dosya yoluna düşülür — iki ortam da tek gövdeden çalışır. */
+  const ortamAdi = (process.env.HEPSIBURADA_ORTAM?.trim() || "").toUpperCase();
+  if (ortamAdi !== "") {
+    const { onek } = kimlikAdlari(ortamAdi);
+    const oe = (ad: string) =>
+      process.env[onek + ad]?.trim() || process.env["HEPSIBURADA_" + ad]?.trim() || "";
+    const merchantId = oe("MERCHANT_ID");
+    const key = oe("API_KEY");
+    const developer = oe("DEVELOPER");
+    if (merchantId !== "" && key !== "" && developer !== "") {
+      return { merchantId, key, ortam: ortamAdi, developer };
+    }
+  }
+  /** ② DOSYA. Yerel koşum ve operasyon klonu buradan okur. */
   let ham: string;
   try {
     ham = readFileSync(".env.canli", "utf8");
@@ -43,20 +83,38 @@ export function kimlikOku(): Kimlik | null {
   const al = (ad: string) =>
     ham.match(new RegExp("^" + ad + "=(.*)$", "m"))?.[1]?.trim() ?? "";
   const ortam = (al("HEPSIBURADA_ORTAM") || "TEST").toUpperCase();
-  /**
-   * ⭐ İKİ ORTAM YAN YANA (04.09.2026): HB canlı erişimi SIT testleri
-   * onaylanmadan açılmıyor; SIT'e dönüş gerekince canlı değerlerin
-   * üstüne yazılıyordu (bir kez yaşandı — SIT anahtarları ezildi).
-   * TEST ortamı `_SIT_` önekli satırlardan okur; yoksa düz satırlara
-   * düşer (geriye uyum). CANLI her zaman düz satırlardan okur.
-   */
-  const onek = ortam === "TEST" ? "HEPSIBURADA_SIT_" : "HEPSIBURADA_";
+  const { onek } = kimlikAdlari(ortam);
   const merchantId = al(onek + "MERCHANT_ID") || al("HEPSIBURADA_MERCHANT_ID");
   const key = al(onek + "API_KEY") || al("HEPSIBURADA_API_KEY");
   const developer =
     al(onek + "DEVELOPER") || al("HEPSIBURADA_DEVELOPER");
   if (merchantId === "" || key === "" || developer === "") return null;
   return { merchantId, key, ortam, developer };
+}
+
+/**
+ * Kimlik çözülemediğinde EKSİK OLANIN ADINI söyler — değerini ASLA.
+ *
+ * ⛔ NİYE GEREKLİ: sessiz başarısızlık yasağı (İlke #5) teşhis ekranımız
+ * için de geçerli. "Kimlik yok" cümlesi hangi değişkenin eksik olduğunu
+ * söylemezse, uç 404/503 döner ve kimse NEYİ ekleyeceğini bilemez.
+ *
+ * ⛔ VE DEĞER SIZDIRILMAZ: yalnız AD listelenir. Satıcı kimliği bile
+ * çıktıya girmez (K165 boyunca korunan sınır).
+ */
+export function kimlikEksikleri(): string[] {
+  const ortamAdi = (process.env.HEPSIBURADA_ORTAM?.trim() || "").toUpperCase();
+  if (ortamAdi === "") return ["HEPSIBURADA_ORTAM"];
+  const { onek, adlar } = kimlikAdlari(ortamAdi);
+  const eksik: string[] = [];
+  for (const tam of adlar) {
+    const kisa = tam.slice(onek.length);
+    const dolu =
+      (process.env[tam]?.trim() ?? "") !== "" ||
+      (process.env["HEPSIBURADA_" + kisa]?.trim() ?? "") !== "";
+    if (!dolu) eksik.push(tam);
+  }
+  return eksik;
 }
 
 export function baslikKur(k: Kimlik): Record<string, string> {

@@ -635,6 +635,25 @@ export async function hbCekimKos(ayar: {
 
   console.log(`\n③ YAZILACAK: ${yazilacak.length} sipariş  ·  beklenen Sale TOPLAM ${onceToplam + yazilacak.length}`);
 
+  /**
+   * ⛔ SAYI = LİSTE (İlke #16). Önizlemenin TEK işi "yazmadan önce gör"dü ve
+   * NE yazacağını söylemiyordu: 08.09.2026'da rutin tetiği kurulurken
+   * `YAZILACAK: 2` yazıyordu ve hangi iki sipariş olduğu hiçbir yerde
+   * yoktu. Gözetimsiz koşacak bir yazıcı, yazacağını ÖNCE söylemek
+   * zorunda — yoksa önizleme bir sayı üretir, karar üretmez.
+   *
+   * ⚠ Tutar yazılmaz: ciro tabanı kalem düzeyinde çözülüyor ve burada
+   * ETİKETSİZ bir para basmak "birim mi toplam mı" tuzağını davet ederdi
+   * (anayasa: bir sayı etiketiyle taşınır). Kimlik + an + kanal durumu,
+   * yazımı tanımaya yeter.
+   */
+  for (const y of yazilacak) {
+    console.log(
+      `      · ${y.aday.siparisNo} · ${y.aday.soldAt.toISOString().slice(0, 16)}` +
+        ` · ${y.aday.kalemler.length} kalem · kanal durumu: ${y.aday.kanalDurumu || "bilinmiyor"}`,
+    );
+  }
+
   if (!YAZ) {
     console.log(`\n${"=".repeat(78)}`);
     console.log(`  ÖNİZLEME — hiçbir şey yazılmadı. Yazmak için: -- --yaz`);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { hbCekimKos } from "../../../../../scripts/canli-hb-ice-aktar";
+import { kimlikEksikleri } from "../../../../../scripts/hb/istemci";
 
 /**
  * ============================================================================
@@ -61,5 +62,34 @@ export async function GET(istek: NextRequest) {
    * global `@unique`, ve her koşum `importBatch` ile geri alınabilir.
    */
   const ozet = await hbCekimKos({ yaz: true, dbAdresi });
+  /**
+   * ⛔ ATLANAN KOŞUM 200 DÖNMEZ — BU BENİM KUSURUMDU (08.09.2026).
+   *
+   * İlk hâl `NextResponse.json(ozet)` ile her durumda **200** veriyordu.
+   * `scripts/hb/istemci.ts` o sırada YALNIZ `.env.canli` dosyasını okuyordu
+   * ve Vercel'de o dosya YOK: uç `{atlandi:"KIMLIK"}` + HTTP 200 döndürüyor,
+   * GitHub Actions adımı `test "$KOD" = "200"` ile **GEÇİYORDU.** Yani
+   * "HB çekimi kuruldu" denmişti ve uç hiç koşmuyordu — yalancı yeşilin
+   * en pahalı biçimi: yeşil bir boru, sıfır sipariş.
+   *
+   * ⚠ `BEKCI_TURU` İSTİSNA VE BİLEREK: o bir HATA değil, bilinçli
+   * duraksama (`.bekci-kilidi` varken canlıya yazılmaz) ve Vercel'de zaten
+   * hiç oluşamaz. Onu kırmızı yakmak, doğru davranışı arıza saymak olurdu.
+   *
+   * ⛔ EKSİĞİN ADI SÖYLENİR, DEĞERİ ASLA. `kimlikEksikleri()` yalnız
+   * değişken ADLARINI döndürür; satıcı kimliği bile gövdeye girmez.
+   */
+  if ("atlandi" in ozet) {
+    if (ozet.atlandi === "BEKCI_TURU") {
+      return NextResponse.json({ atlandi: ozet.atlandi }, { status: 200 });
+    }
+    return NextResponse.json(
+      {
+        hata: ozet.atlandi,
+        ...(ozet.atlandi === "KIMLIK" ? { eksikDegiskenler: kimlikEksikleri() } : {}),
+      },
+      { status: 503 },
+    );
+  }
   return NextResponse.json(ozet);
 }

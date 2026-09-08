@@ -20,6 +20,23 @@
 #
 #  SIR: depo Secrets → CRON_SECRET (Vercel'dekiyle AYNI değer).
 #  Sır tanımsızsa istek boş Bearer taşır ve uç 404 döner — güvenli.
+#
+#  ⚠ ROL DEGISTI 08.09.2026 — BU AKIS ARTIK BIRINCIL DEGIL, YEDEK.
+#  Birincil tetik Halil'in makinesindeki Gorev Zamanlayici
+#  (`Selliora Kanal Sik Cekim`, 5 dk, `scripts/kanal-sik-cekim.cmd`) —
+#  klondan kosar, uc kanali sirayla ceker. Bu akis 10 dk'da bir ayni uclari
+#  vurur; cift tetik zararsiz ve kanitli (cakisan siparis ATLANIR, ezme yok).
+#
+#  ⭐ VE ONERIMI GERI ALIYORUM: once "kaldirilsin" demistim. Olcum fikri
+#  cevirdi — 05.09-08.09 arasi klon otomatik onayi HIC yapamazken kuyrugu
+#  bosaltan sey bu akisti (son 24 saatte 7 N11 izi, N11'in yerel gorevi YOK).
+#  Yani Vercel yolunu FIILEN kosturan tek sey buydu; yedegi silmek, o
+#  yolun bir daha hic sinanmamasi olurdu.
+#
+#  ⭐ VE ARTIK BIR SORUYU DA CEVAPLIYOR: HB ucu kimliksizken 503 donuyor ve
+#  eksik degisken ADINI gövdeye yaziyor (`cat cevap-hb.json` basiyor).
+#  Yani "HB anahtarlari Vercel env'inde var mi" sorusunu bir sonraki kosum
+#  kendisi cevaplar — cikarimla degil, logla.
 # ============================================================================
 name: Kanal cekimleri (10 dk)
 

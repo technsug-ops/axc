@@ -566,7 +566,7 @@ export async function tyCekimKos(ayar: {
    *  İlke #10). Onay çekirdeğinin AYNI kapıları; betiğin prisma'sıyla. */
   const oto = await otomatikOnaylaKuyruk(prisma);
   console.log(`\n⑦ OTOMATİK ONAY (tek parti)`);
-  console.log(`   aday ${oto.aday} · onaylanan ${oto.onaylanan} · çok parti (elle) ${oto.cokParti} · atlanan ${oto.atlanan}`);
+  console.log(`   aday ${oto.aday} · onaylanan ${oto.onaylanan} · çok parti (elle) ${oto.cokParti} · atlanan ${oto.atlanan} · KANAL KAPALI (elle) ${oto.kanalKapali}`);
 
   console.log(`\n${"=".repeat(78)}`);
   console.log(`  GERİ ALMA: importBatch = ${partiKimligi}`);

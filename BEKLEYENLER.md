@@ -13,6 +13,178 @@
 
 ---
 
+## ✅ K187 — OTOMATİK ÇEKİM ZİNCİRİ ONARILDI + ÜÇ KANALA GENİŞLEDİ · 08.09.2026 · [KOŞTU — canlı]
+
+> **Halil'in tespiti:** _"TY sık çekimi 05.09'dan beri kırmızı, 779 koşum
+> `cikis=1`; klonda `prisma generate` yapılmıyor."_ **Teşhis birebir doğru
+> çıktı** — ve benim ilk çerçevem yanlıştı: _"çekim kırmızı"_ demiştim,
+> kullanıcı düzeltti (_"bunların hepsi otomatik çekim, bilgisayarımda
+> yerelden Windows görevlendiricisiyle çalıştı"_). **Çekim çalışıyordu.**
+
+### ① NE KIRILMIŞTI — ÖLÇÜLDÜ, ÇIKARIM DEĞİL
+
+    klon HEAD = origin/main (geride 0)      → git pull CALISIYOR
+    prisma/schema.prisma      07.09 16:12   → sema GUNCEL, onaylandiAt VAR
+    src/generated/prisma/     04.09 12:03   → istemci BAYAT, onaylandiAt YOK
+
+Klon şemayı çekiyor, **üretilmiş Prisma istemcisini tazelemiyordu.** Koşum
+`Unknown argument 'onaylandiAt'` ile **⑦. adımda** (`otomatikOnaylaKuyruk`)
+çöküyordu. Çekim ve `AuditLog` yazımı ⑥'da bittiği için **sipariş deftere
+giriyordu** — bu yüzden arıza 3 gün görünmedi.
+
+    05.09 12:22 → 08.09 07:22   690 kosum cikis=1   (04.09'da 85 yesildi)
+    son 24 saatte TY ice aktarma izi: 282  (~her 5 dk, kesintisiz)
+    ayni donemde ice aktarilan satis: 26 → onayli 24 · onaysiz 2
+
+⭐ **BEDELİ VERİ KAYBI DEĞİL, GÖRÜNMEZ EL EMEĞİ.** 24 onayın dağılımı izin
+`tetik` alanından okundu: **22 ELLE** (Halil, ekrandan · son 07.09 18:59) +
+**3 OTOMATIK_TEK_PARTI** (`userId` NULL · son 07.09 17:46). Otomatik olan
+üçü klondan gelemezdi — `otomatikOnaylaKuyruk`'u **N11 çekimi de çağırıyor**
+ve N11'in yerel görevi yok; son 24 saatteki **7 N11 izi** Vercel ucundan
+geliyor, orada istemci build'de üretildiği için alan mevcut. Yani kuyruğu
+ara sıra Vercel boşaltıyordu, gerisini Halil elle kapatıyordu.
+
+### ② ÖLÇÜT OLAYA DEĞİL HÂLE BAĞLANDI — `scripts/klon-tazele.cmd`
+
+İlk akla gelen ölçüt _"HEAD kımıldadı mı"_ idi ve **bugünkü bozuk hâli HİÇ
+GÖREMEZDİ**: klon zaten `origin/main`'deydi. Konulan ölçüt yeniden
+hesaplanabilir olan: **üretilmiş istemci şemadan ESKİ mi.** Kendini
+iyileştirir, tazelemeden sonra kendiliğinden susar.
+_(Anayasa: "geri alma yolu saklanan listeye değil yeniden hesaplanabilir
+ölçüte dayanır" — burada aynı ölçüt ONARIM kapısında.)_
+
+Çapa `models/Sale.ts`, `client.ts` DEĞİL: kırılan alan orada yaşıyor.
+**Üç yönde sınandı** (istemci taze → atlandı · şemadan eski → generate
+koştu · çapa dosyası hiç yok → generate koştu) ve her seferinde geri alındı,
+klon `git status` 0 satır. ⚠ Ve harness'in kendisi **üç kez** kusurluydu
+(`eval` tırnak bozması · bash `\"` kaçışı · `printf` `\U` yutması) — üçü de
+"kapı bozuk" diye rapor edilecekti.
+
+**KANIT — 07:32 koşumu `cikis=0`, 05.09'dan beri ilk yeşil.** 07:37'de yeni
+`.cmd` üretimde koştu ve `PRISMA-TAZELEME: istemci guncel - atlandi` yazdı.
+
+### ③ TETİK ÜÇ KANALA GENİŞLEDİ — mimar isteği 08.09
+
+> _"Trendyol hangi sistematik ile cronjob çalıştırıyorsa Hepsiburada ve
+> N11'de aynısını yapsın."_
+
+**TEK GÖREV, TEK HAZIRLIK, SIRAYLA ÜÇ KANAL** — `scripts/kanal-sik-cekim.cmd`.
+Üç ayrı görev kurulsaydı aynı klona 5 dakikada **üç `git pull`** düşerdi ve
+`index.lock` çakışması sessiz başarısızlık üretirdi. Sıra **TY → HB → N11**
+(mimar 07.09: _"devamlı ilk gönderim trendyol, ikinci hepsiburada"_).
+
+    sure olculdu 08.09:  TY 6-26 sn · HB 9 sn · N11 4 sn
+    ilk canli kosum:     07:47:01 → 07:47:24  ·  TOPLAM 23 sn  ·  ucu de cikis=0
+
+Görev: `Selliora Kanal Sik Cekim` (5 dk · `IgnoreNew` · `StartBoundary`
+korundu, faz kaymadı). Eski `Selliora TY Sik Cekim` **kaldırıldı** ve
+`ty-sik-cekim.cmd` **silindi** — ölü kod bırakılmaz. Günlük TY görevi
+(geniş pencere) yerinde, o da aynı hazırlık gövdesini çağırıyor.
+
+⚠ **HER KANALIN LOGU AYRI** (`ty-` · `hb-` · `n11-cekim.log`): kanal bazında
+_"kaç koşum kırmızı"_ sorusu ancak öyle sorulabiliyor. Hazırlığın sonucu
+**üç loga da** yazılır — yoksa _"HB neden çekmiyor"_ diye bakan kişi klon
+hatasını hiç görmezdi.
+
+⚠ **AÇIK KALAN — GÖREV PİLDE KOŞMUYOR.** Görev tanımı
+`DisallowStartIfOnBatteries: true` + `StopIfGoingOnBatteries: true` taşıyor
+(eski görevden birebir devralındı, DEĞİŞTİRİLMEDİ). Makine pile geçerse
+çekim **sessizce durur** ve logda hiçbir satır olmaz — yani "kayıt yok"
+hüküm sayılamaz. Değiştirmek mimar kararı.
+
+### ④ HB İLK RUTİN YAZIMI — 2 sipariş
+
+    Sale TOPLAM 7913 → 7915   ✓ SAYIM TUTTU
+    4864776792 · 08.09 01:10 · Packaged   (mimarin (d) disinda biraktigi)
+    4825253981 · 08.09 02:00 · Packaged
+    geri alma olcutu: importBatch = hb-20260908054711
+
+`4864776792` mimar tarafından **elle yazımdan** çıkarılmıştı ve gerekçesi
+tersini söylüyordu: _"taze sipariş (08.09 Packaged), K165 rutininin işi,
+Halil teyit zinciri yok. **Bir sonraki normal çekimde otomatik aksın.**"_
+Rutinin onu alması talimatın kendisi.
+
+⭐ **ÖNİZLEME ARTIK NE YAZACAĞINI SÖYLÜYOR.** `YAZILACAK: 2` yazıyordu ve
+hangi iki sipariş olduğu hiçbir yerde yoktu — gözetimsiz koşacak bir yazıcı
+yazacağını ÖNCE söylemek zorunda (İlke #16: sayı = liste). Tutar bilerek
+basılmıyor: etiketsiz para _"birim mi toplam mı"_ tuzağını davet ederdi.
+
+### ⑤ ⛔ MİMAR KARARI KODA GİRMEMİŞTİ — VE BU TURDA ÇİĞNENDİ
+
+Mimar 08.09: _"HB OTOMATİK ONAY: şimdilik EKLENMEYECEK."_ Ölçüldü:
+`otomatikOnaylaKuyruk` **kanal ayırmıyordu**. Kararı ayakta tutan tek şey,
+kuyruktaki iki HB siparişinin **çok partili** olmasıydı
+(`aday 2 · onaylanan 0 · çok parti (elle) 2`).
+
+⛔ **VE 07:47 KOŞUMUNDA ÇİĞNENDİ — KUSUR BENDE.** HB'yi N11'den ÖNCE
+sıraladım; N11 adımı da `otomatikOnaylaKuyruk` çağırıyor ve klonda kapı
+henüz yoktu. İki yeni HB siparişi yazımdan **saniyeler sonra** otomatik
+onaylandı (`onaylandiAt 07:47:21` · `07:47:23`).
+
+**SONUÇ ÖLÇÜLDÜ VE TEMİZ ÇIKTI** — mimarın açılış şartında görmek istediği
+kanıtın kendisi:
+
+    4825253981  ciro 6.699,00 · FIFO 5.069,00 partiye BAGLI
+                komisyon %13x1,20 1.045,04 · stopaj 55,83 · odeme 53,59
+                hizmet 12,60 · NET-1 462,94 · NET-2 376,48
+    4864776792  ciro 4.055,00 · FIFO 2.783,00 partiye BAGLI
+                komisyon %18x1,20   875,88 · stopaj 33,79 · odeme 32,44
+                hizmet 12,60 · NET-1 317,29 · NET-2 258,78
+
+Dört HB kesinti kuralının dördü de anayasadaki tarifeyle kuruşuna tutuyor.
+**Ters kayıt ÖNERİLMİYOR:** doğru bir defter kaydını bir süreç adımı için
+bozmak, kuralı kapsamı dışına uygulamak olur _(anayasa: "ilke, kendi
+kapsamının dışına uygulanırsa hatayı korur")_. ⏭ **Karar mimarda.**
+
+**KAPI ARTIK MEKANİZMADA:** `OTOMATIK_ONAY_KAPALI_KANALLAR` (`onay-kuyrugu.ts`),
+kanalın KENDİ adıyla — hesap etiketiyle değil (K13b vakası). Kapı parti
+kapısından ÖNCE. Sayaç `kanalKapali` iki çekimin de çıktısında GÖRÜNÜR
+(sıfır satır gizlenmez). **Beş mutasyonla sınandı:** kapıyı silen · `continue`u
+silen · sayacı gizleyen · sırayı bozan → **dördü KIRMIZI**; listeyi boşaltan
+(= mimarın kapıyı açması) → **YEŞİL**, çünkü o bir insan kararıdır ve bekçinin
+işi kararı denetlemek değil kararsızlığı yakalamak.
+
+⏭ **AÇILIŞ ŞARTI (mimar, sayıya bağlı — tarihe değil):** _"HB otomatik onayı,
+ilk N (≥10) HB siparişinin ELLE onayında FIFO/NET sınavı temiz geçtikten
+SONRA açılır."_ Kapıyı açmak listeden bir satır silmektir.
+
+### ⑥ ⛔ HB UCU YALANCI YEŞİLDİ — KUSUR BENDE, ÖLÇÜMLE DEĞİL KAYNAKLA ÇIKTI
+
+`scripts/hb/istemci.ts` → `kimlikOku()` **yalnız `.env.canli` dosyasını**
+okuyordu ve **Vercel'de o dosya YOK.** Zincir şöyle işliyordu:
+
+    uc  → {atlandi:"KIMLIK"}  + HTTP 200
+    akis → test "$KOD" = "200" → GECTI
+    sonuc → "HB cekimi kuruldu" · sifir siparis, sifir uyari
+
+TY ve N11 istemcileri K166'dan beri **süreç ortamını ÖNCE** deniyordu; HB
+tek ayrık kanaldı (İlke #10 çiğnenmişti). **İkisi de düzeltildi:**
+
+· `kimlikOku()` artık ortam → dosya sırasıyla okuyor (iki ortam ayrımı
+  `_SIT_` öneki dahil korundu);
+· yeni `kimlikEksikleri()` **eksik değişkenin ADINI** döndürüyor, değerini
+  ASLA — satıcı kimliği bile gövdeye girmiyor;
+· uç artık `{atlandi}` durumunda **503** dönüyor ve eksik adları yazıyor.
+  `BEKCI_TURU` bilerek **200 kaldı**: o bir hata değil, bilinçli duraksama
+  (doğru davranışı arıza saymak, bekçiyi işlevsizleştirirdi).
+
+**BEKÇİ KAYNAK TARAMIYOR, GÖVDEYİ ÇAĞIRIYOR.** `kimlikOku` saf (`node:fs` +
+`process.env`) olduğu için değer testi yazıldı; kullanılan kimlikler
+UYDURMA (`SAHTE-MID` vb.) ve gerçek hiçbir değer bekçiye girmiyor.
+**Üç mutasyon:** `process.env` dalını komple silen (= eski hâl) · eksik
+listesine DEĞER sızdıran · ucu 200'e döndüren → **üçü de KIRMIZI.**
+
+⏭ **AÇIK VE ÖLÇÜLMEDİ:** HB anahtarlarının Vercel env'inde olup olmadığı.
+Artık cevabı uç kendisi verecek — bir sonraki Actions koşumu ya `200` +
+sipariş sayısı ya `503` + eksik değişken ADI döndürecek. _(K119'un A3
+satırı da bu ölçümle düzeltildi: silinmedi, SÜPERSEDE işaretlendi.)_
+
+⚠ **GÖREV ŞU AN DEVRE DIŞI** (`schtasks /change /disable`, 07:48): klon
+`8d80195`'te ve kanal kapısı henüz push edilmedi. **Push bitince yeniden
+etkinleştirilecek** — bu satır o zaman düşer.
+
+---
+
 ## 🔶 K-HB-KAPSAM — TUTAR KAYNAĞI ÖLÇÜLDÜ · 07.09.2026 · [MİMAR KARARI BEKLİYOR]
 
 > **Mimar şartı:** _"Delivered/ClaimCreated siparişin SİPARİŞ-ANI tutarı hangi
@@ -5354,7 +5526,23 @@ davranışa bağlandı — silmeden sonra **yeniden okunuyor**.
 
 1. 21 eski Blob yedeğinin **geri okunurluğu** doğrulanacak (bugün `403`).
 2. **CRON SUNUCUYA TAŞINMASI — AÇILIŞ ŞARTI: İKİNCİ FİRMA KAYDI.** Bugün
-   TY istemcisi bilerek `scripts/`te ve anahtar Vercel’e ÇIKMIYOR (A3 sınırı).
+   ~~TY istemcisi bilerek `scripts/`te ve anahtar Vercel’e ÇIKMIYOR (A3 sınırı).~~
+   ⛔ **SÜPERSEDE — K166 (04.09.2026), ölçüldü 08.09.2026.** Satır silinmiyor,
+   tarihçe kalıyor: K166 çekimi makineden bağımsız yaptı ve `scripts/ty/istemci.ts`
+   artık **süreç ortamını ÖNCE** okuyor (_"Vercel'de `.env.canli` DOSYASI YOK"_);
+   N11 istemcisi de aynı desende. **Ölçülmüş kanıt** — son 24 saatte **7 adet
+   `N11_SIPARIS_ICE_AKTARMA` izi** var ve N11'in yerel görevi YOK; o izler
+   Vercel ucundan geliyor, yani **N11 anahtarı bulutta ve çalışıyor.**
+   ⚠ **VE KENDİ ÇIKARIMIMI GERİ ALIYORUM:** daha önce _"anahtarlar Vercel
+   env'inde MEVCUT"_ demiştim ve dayanağım koşum çıktısındaki `pencere.gun: 3`
+   idi — oysa o, `.cmd` dosyasının `--gun=3` argümanıydı. O bir ÖLÇÜM değil
+   çıkarımdı; yukarıdaki N11 izi ölçümün kendisidir.
+   ⚠ **HB HÂLÂ AYRIK DEĞİL AMA YENİ:** `scripts/hb/istemci.ts` 08.09'a kadar
+   YALNIZ dosyadan okuyordu ve uç bu yüzden `{atlandi:"KIMLIK"}` + HTTP **200**
+   veriyordu (K187-⑥). Desen TY'ye çevrildi; **anahtarların Vercel env'inde
+   olup olmadığı AYRI bir sorudur ve ölçülmedi** — uç artık kimliksizken
+   **503** dönüp eksik değişkenin ADINI söylüyor, yani bir sonraki Actions
+   koşumu cevabı kendisi verecek.
    Şart: anahtarlar **firma bazında sunucuya taşınırken**, gizli-anahtar
    yönetimiyle **birlikte**. Tek firmada bu iş sıfır değer taşır ve karşılığında
    uygulamayı pazaryerine ulaşabilir hâle getirir.

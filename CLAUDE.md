@@ -339,6 +339,19 @@ zorlaştıracak şekilde yazılmıyor.
   olduğu hâlde ekran 500 döner ve hata koda aitmiş gibi görünür.
   _09.08.2026'da üç kez yaşandı; teşhis her seferinde dev sunucusu
   günlüğünden çıktı — tahmin etmeden önce kendi günlüğüne bak._
+  ⛔ **VE AYNI KURALIN KÖR NOKTASI: KAYNAĞI ÇEKEN HER AĞAÇ İSTEMCİYİ DE
+  TAZELEMEK ZORUNDA.** _Vaka 08.09.2026._ Operasyon klonu (`axcali-operasyon`)
+  her koşumda `git pull` yapıyor ama `prisma generate` **hiç** çalışmıyordu:
+  şema 07.09 16:12, üretilmiş istemci **04.09 12:03** — ve otomatik çekim
+  `Unknown argument 'onaylandiAt'` ile **690 koşum** kırmızı yandı (05.09
+  12:22 → 08.09 07:22). ⚠ Arıza üç gün görünmedi çünkü çöküş **son adımdaydı**:
+  sipariş deftere giriyordu, yalnız otomatik onay düşüyordu.
+  ⭐ **ÖLÇÜT OLAYA DEĞİL HÂLE BAĞLANIR.** _"Pull bir şey getirdi mi"_ bu vakayı
+  **göremezdi** — klon zaten `origin/main`'deydi. Doğru ölçüt yeniden
+  hesaplanabilir olandır: **üretilmiş istemci şemadan ESKİ mi.** Kendini
+  iyileştirir ve tazelendikten sonra susar. _(Bkz. `scripts/klon-tazele.cmd`;
+  "geri alma yolu saklanan listeye değil yeniden hesaplanabilir ölçüte
+  dayanır" kuralının ONARIM tarafı.)_
 - Kullanıcı vibe-coder: teknik jargonu az, Türkçe açıkla
 - **HİÇBİR DOĞRULAMA BORU SONUNA GÜVENMEZ.** `npm run x:dogrula | tail -2`
   yazıldığında çıkış kodu **`tail`den** gelir ve kırmızı test sessizce

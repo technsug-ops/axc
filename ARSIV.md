@@ -18,6 +18,94 @@
 
 ---
 
+## ✅ K-HB-ELLE-KIYAS — ELLE GİRİLEN HB SİPARİŞLERİ ↔ API · 07–08.09.2026 · [KAPANDI]
+
+> **KAPANIŞ CÜMLESİ (mimar):** _"Elle 62 siparişte **sistematik sapma YOK**;
+> 56 birebir, tekil farklar net **₺35,56**, hakem hakedişte."_
+
+**KAYNAK:** `veri/ozel/k-hb-elle-kiyas-2026-09-07.csv` (66 satır = 1 başlık +
+**65 kayıt**). Dosya `veri/ozel/` altında ve `.gitignore`da — gerçek sipariş
+verisi depoya girmez; arşiv dosyayı **adlandırır**, taşımaz.
+
+### SAYIM MUTABAKATI — mimar kararlardan ÖNCE istedi, üçü de kapandı
+
+    65 = 56 (a birebir) + 1 (b) + 6 (c) + 2 (d)        ← CSV'den yeniden sayildi
+    kaynak: 62 ELLE + 1 OTOMATIK + 2 YOK (defterde olmayan)
+    62 ELLE + 1 OTOMATIK = 63 defter kaydi · kiyaslanamayan sipariş 0
+
+⛔ **ÜÇ SAYIM TUTARSIZLIĞI BENİM RAPORUMDAYDI** ve kullanıcı üçünü de yakaladı:
+① `65 = 55+0+7+2` yazmıştım (64 eder) — otomatik siparişi (a) sayımından
+düşürmüştüm; ② _"62 vs 63"_ — biri ELLE sayısı, öteki defter kaydı, ikisi
+farklı soru; ③ `35,54 ↔ 35,56` — aşağıda.
+
+### ⭐ ₺35,54 ↔ ₺35,56 ÇÖZÜLDÜ — İKİSİ DE DOĞRU, FARKLI KÜME
+
+Ve önce **taban tuzağına** düşülüyordu: CSV'de `defterKomisyon_TL` **KDV
+DAHİL**, `apiKomisyonKDVharic_TL` **KDV HARİÇ**. Ham kıyas 63 satırda
+"₺8.815,64 fark" üretiyor — o fark değil, **KDV'nin kendisi** (oran tam
+`1,200000`). _(Anayasa: "para rakamı tabanıyla birlikte yazılır".)_
+
+Aynı tabanda (defter ↔ api × 1,20):
+
+    kurusuna TUTAN                                57 / 63 satir
+    uc ORAN uyusmazligi (c)                       net  35,5640 TL
+      4252875794  %7 != %4    181,19 - 103,54  =  +77,6540
+      4686454655  %7 != %4    181,19 - 103,54  =  +77,6540
+      4394362957  %12 != %13 1436,98 - 1556,72 = -119,7440
+    + uc kurus tozu (-0,0060 +0,0080 -0,0160)         -0,0140
+    ------------------------------------------------------------
+    kurus tozu DAHIL                              net  35,5500 TL
+
+**₺35,56 = yalnız oran uyuşmazlıkları · ₺35,55 = kuruş tozu dahil.** Mimarın
+cümlesindeki rakam birincisidir. ⚠ Önceki notumdaki `35,5440` **yanlıştı**,
+düzeltilen değer `35,5640`; eski rakamı elinde tutan biri için kaynaksız bir
+sayı doğmasın diye ikisi de yazılıyor.
+
+### (c) — TARİHLİ BEKLETME · HAKEM HAKEDİŞ
+
+Altı kayıt (⚠ önceki notumda **7** yazıyordu; CSV **6** diyor ve geçerli olan
+CSV). Üçü oran, üçü tarih uyuşmazlığı — hiçbiri düzeltilmedi, çünkü hakem
+kanalın **kendi ödeme kaydıdır**, bizim iki okumamız değil.
+
+    siparis        defter      api         cins    beklenen hakedis
+    4252875794     09.08       09.08       oran    ~12.09.2026
+    4686454655     09.08       09.08       oran    ~12.09.2026
+    4394362957     13.08       13.08       oran    ~16.09.2026
+    4833471574     17.08       15.08       tarih   ~18.09.2026
+    4820193459     17.08       16.08       tarih   ~19.09.2026
+    4866824058     25.08       21.08       tarih   ~24.09.2026
+
+⚠ **TARİHLER BEKLENTİDİR, SÖZ DEĞİL.** Taban ölçülmüş HB gecikmesi:
+**~34 gün** (24 iş günü, **teslimden** sonra başlar — bkz. H3). Sipariş
+gününe eklendi; teslim geciktiyse hakediş de gecikir. Bu satır **kapanamayan
+madde değil**: hakediş düştüğünde tek sorguyla kapanır.
+
+### (b) — TEK KAYIT, KAPANDI
+
+`4701917734` · defter ciro **9.252,00** ↔ liste **9.252,13** (₺0,13).
+Komisyon aynı tabanda **₺0,016** sapıyor. Sistematik değil, yuvarlama.
+
+### (d) — İKİ SİPARİŞ YAZILDI
+
+`4873413946` · `4707418677` — kanalda VAR, defterde YOKTU. Halil teyidi
+07.09: _"ikisi de benim, tutarlar doğru."_ Yazım K165 protokolüyle
+(anlık görüntü ↔ bit-bit kıyas) yapıldı. ⚠ `4707418677` yazıldığı anda
+`ClaimCreated` idi ve bu bilgi kanalda AKAR — `note` alanına yazım anı
+donduruldu, sonradan öğrenilemezdi.
+
+### ⏭ KAPANIŞTA AÇIK KALAN — VE AÇIK OLDUĞU YAZILIYOR
+
+· (c)'nin 6 kaydı hakediş bekliyor (yukarıdaki tarihler).
+· **Kaçak radarı bir SAYI değil, ZAMAN DAMGALI GÖZLEMDİR:** _"07.09 22:28
+  koşumunda kanalda olup defterde olmayan **3** sipariş gördü"_ —
+  `4864776792` · `4873413946` · `4707418677`. Bu bir stok değil akıştır;
+  ertesi gün başka bir sayı çıkar ve çıkması normaldir. Nitekim 08.09
+  07:47 koşumu **2** gördü ve ikisini de yazdı (K187-④).
+· Satıcı indirimi (`SATICI İNDİRİMİ OLAN KALEM`) ciroya hâlâ GİRMİYOR —
+  yeri çözülmedi; ayrı kalem: **K-HB-PAZARLAMA**.
+
+---
+
 ## ✅ K186 — GRAFİK RAKAMLARI + İADE ORANI ÇİZGİSİ · 07.09.2026 · [KOD KOŞTU]
 
 > **Halil:** _"karşılaştırmada iki parametre seçtiğimde rakamlar kapanıyor;

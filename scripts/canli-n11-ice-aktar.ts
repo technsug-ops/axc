@@ -499,7 +499,7 @@ export async function n11CekimKos(ayar: {
    *  prisma'sıyla (kâr tazeleme dahil). */
   const oto = await otomatikOnaylaKuyruk(prisma);
   console.log(`\n⑥ OTOMATİK ONAY (tek parti)`);
-  console.log(`   aday ${oto.aday} · onaylanan ${oto.onaylanan} · çok parti (elle) ${oto.cokParti} · atlanan ${oto.atlanan}`);
+  console.log(`   aday ${oto.aday} · onaylanan ${oto.onaylanan} · çok parti (elle) ${oto.cokParti} · atlanan ${oto.atlanan} · KANAL KAPALI (elle) ${oto.kanalKapali}`);
 
   console.log(`\n${"=".repeat(78)}`);
   console.log(`  GERİ ALMA ÖLÇÜTÜ: importBatch = ${partiKimligi} (liste değil, yeniden hesaplanabilir)`);

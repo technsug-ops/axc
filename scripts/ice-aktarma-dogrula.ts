@@ -7,6 +7,7 @@ import { n11Ani, n11BirimFiyat, n11KomisyonOrani } from "./canli-n11-ice-aktar";
 
 import { birimFiyatCoz, iptalAniCoz } from "./canli-ty-ice-aktar";
 import { iceAktarmaTarihi } from "../src/lib/ice-aktarma-tarih-kapisi";
+import { kimlikEksikleri, kimlikOku } from "./hb/istemci";
 
 /**
  * ============================================================================
@@ -2193,6 +2194,80 @@ kontrol(
    */
   kontrol("akışta HB ucu ÇAĞRILIYOR", akis.includes("/api/cron/hb-cekim"));
   kontrol("akışta TY ve N11 de duruyor", akis.includes("/api/cron/ty-cekim") && akis.includes("/api/cron/n11-cekim"));
+
+  /* ── KİMLİK: SÜREÇ ORTAMI ÖNCE — DEĞER TESTİ (08.09.2026) ─────────────
+   * ⛔ NİYE: `scripts/hb/istemci.ts` YALNIZ `.env.canli` dosyasını
+   * okuyordu ve **Vercel'de o dosya YOK.** Uç `{atlandi:"KIMLIK"}` + HTTP
+   * **200** döndürüyor, Actions adımı `test "$KOD" = "200"` ile GEÇİYORDU:
+   * yeşil bir boru, sıfır sipariş. TY ve N11 deseni zaten taşıyordu.
+   *
+   * ⭐ KAYNAK TARANMIYOR, GÖVDE ÇAĞRILIYOR. `kimlikOku` saf (yalnız
+   * `node:fs` + `process.env`) ve içe aktarılabilir; desen aramak burada
+   * son çare olurdu. _(Anayasa: "saf hesap katmanı, desen tarayan bekçiye
+   * muhtaç olmaz".)_ Kullanılan değerler UYDURMA — hiçbir gerçek kimlik
+   * bu bekçiye girmez. */
+  {
+    const yedek = {
+      ortam: process.env.HEPSIBURADA_ORTAM,
+      mid: process.env.HEPSIBURADA_MERCHANT_ID,
+      key: process.env.HEPSIBURADA_API_KEY,
+      dev: process.env.HEPSIBURADA_DEVELOPER,
+    };
+    try {
+      process.env.HEPSIBURADA_ORTAM = "CANLI";
+      process.env.HEPSIBURADA_MERCHANT_ID = "SAHTE-MID";
+      process.env.HEPSIBURADA_API_KEY = "SAHTE-KEY";
+      process.env.HEPSIBURADA_DEVELOPER = "SAHTE-DEV";
+      const k = kimlikOku();
+      /** Ortamdaki UYDURMA değer dönüyorsa, dosya değil ORTAM okundu. */
+      kontrol(
+        "HB kimliği SÜREÇ ORTAMINDAN okunuyor (dosyadan değil)",
+        k !== null && k.merchantId === "SAHTE-MID" && k.key === "SAHTE-KEY",
+      );
+      kontrol("  ...ortam adı da ortamdan geliyor", k !== null && k.ortam === "CANLI");
+      kontrol("  ...ortam tamken eksik BİLDİRİLMİYOR", kimlikEksikleri().length === 0);
+
+      /** Eksik olanın ADI söylenir — hangi değişkenin konacağı bilinsin. */
+      delete process.env.HEPSIBURADA_API_KEY;
+      const eksik = kimlikEksikleri();
+      kontrol("eksik anahtarın ADI bildiriliyor", eksik.includes("HEPSIBURADA_API_KEY"));
+      kontrol("  ...dolu olanlar eksik SAYILMIYOR", !eksik.includes("HEPSIBURADA_MERCHANT_ID"));
+      /** ⛔ DEĞER ASLA SIZMAZ: dönen listede yalnız AD olur. */
+      kontrol(
+        "  ...listede DEĞER yok, yalnız AD",
+        eksik.every((a) => !a.includes("SAHTE")),
+      );
+      /** Ortam hiç tanımsızsa da SUSMAZ — ilk konacak değişkeni söyler. */
+      delete process.env.HEPSIBURADA_ORTAM;
+      kontrol(
+        "ortam değişkeni yokken de eksik BİLDİRİLİYOR",
+        kimlikEksikleri().includes("HEPSIBURADA_ORTAM"),
+      );
+    } finally {
+      const geri = (ad: string, d: string | undefined) => {
+        if (d === undefined) delete process.env[ad];
+        else process.env[ad] = d;
+      };
+      geri("HEPSIBURADA_ORTAM", yedek.ortam);
+      geri("HEPSIBURADA_MERCHANT_ID", yedek.mid);
+      geri("HEPSIBURADA_API_KEY", yedek.key);
+      geri("HEPSIBURADA_DEVELOPER", yedek.dev);
+    }
+  }
+
+  /* ── ATLANAN KOŞUM 200 DÖNMEZ ─────────────────────────────────────────
+   * Yalancı yeşilin en pahalı biçimi buydu: uç "atladım" diyor, HTTP 200
+   * veriyor, akış GEÇİYOR. `BEKCI_TURU` bilerek istisna — o hata değil,
+   * bilinçli duraksama. */
+  const atlamaBasi = hbRota.indexOf('if ("atlandi" in ozet)');
+  kontrol("HB ucu ATLAMA dalını AYIRIYOR", atlamaBasi >= 0);
+  const atlamaB = atlamaBasi >= 0 ? hbRota.slice(atlamaBasi, atlamaBasi + 700) : "";
+  kontrol("  ...kimliksiz/DB'siz koşum 503 döner (200 DEĞİL)", atlamaB.includes("status: 503"));
+  kontrol("  ...eksik değişken ADLARI gövdeye giriyor", atlamaB.includes("kimlikEksikleri()"));
+  kontrol(
+    "  ...BEKCI_TURU istisna ve 200 kalıyor (doğru davranış arıza sayılmaz)",
+    /BEKCI_TURU[\s\S]{0,160}status: 200/.test(atlamaB),
+  );
   /**
    * ⛔ ÜÇ KANAL BAĞIMSIZ: birinin düşmesi ötekini engellemez. `if: always()`
    * olmasaydı TY ucu kırmızı olduğunda HB hiç çağrılmaz ve iki kanal birden
@@ -2360,6 +2435,43 @@ kontrol(
   kontrol(
     "otomatik onay kâr tazelemeyi çağırıyor (aynı istemci)",
     /await satisKarTazele\(b\.id, prismaTam\)/.test(kuyruk),
+  );
+
+  /* ── KANAL KAPISI (mimar kararı 08.09.2026) ───────────────────────────
+   * ⛔ NİYE: karar _"HB otomatik onayı EKLENMEYECEK"_ verilmişti ve koda
+   * HİÇ GİRMEMİŞTİ. Onu ayakta tutan tek şey kuyruktaki iki HB siparişinin
+   * çok partili olmasıydı (ölçüldü 08.09 07:32: `çok parti (elle) 2`).
+   *
+   * ⭐ ÖLÇÜT LİSTENİN İÇERİĞİNİ DEĞİL MEKANİZMASINI SABİTLER. Listeyi
+   * BOŞALTAN senaryo YEŞİL kalır — kapıyı açmak bir İNSAN KARARIDIR ve
+   * mimar açacağı günü sayı şartına bağladı. Kapının KENDİSİNİ silen
+   * senaryo KIRMIZIDIR. _(Anayasa: sınıf beyanı dersi — kararı denetlemek
+   * bekçinin işi değil, KARARSIZLIĞI yakalamak.)_ */
+  kontrol(
+    "kapalı kanal kapısı BÜTÜN hâlde (koşul + sayaç + continue)",
+    /if \(OTOMATIK_ONAY_KAPALI_KANALLAR\.includes\(satis\.channelAccount\.channel\.name\)\) \{\s*kanalKapali\+\+;\s*continue;\s*\}/.test(
+      kuyruk,
+    ),
+  );
+  /** ⚠ SIRA: kanal kapısı parti kapısından ÖNCE. `indexOf` "yok" hâlinde
+   *  `-1` döner ve `-1 < n` DOĞRUDUR — varlık AYRICA kapılanır, yoksa
+   *  ölçüt tam da ölçtüğü şey silindiğinde yeşil yanar. */
+  {
+    const iKanal = kuyruk.indexOf("OTOMATIK_ONAY_KAPALI_KANALLAR.includes(");
+    const iParti = kuyruk.indexOf("await tekPartiMi(prismaTam, satis)");
+    kontrol("kanal kapısı kaynakta VAR", iKanal >= 0);
+    kontrol("parti kapısı kaynakta VAR", iParti >= 0);
+    kontrol("kanal kapısı parti kapısından ÖNCE", iKanal >= 0 && iParti >= 0 && iKanal < iParti);
+  }
+  /** Sayaç GÖRÜNÜR olmalı — sıfır satır gizlenmez; görünmeyen bir kapı
+   *  hakkında kimse soru soramaz. İki kanal da aynı satırı basar (İlke #10). */
+  kontrol(
+    "N11 çıktısı kanalKapali sayacını BASIYOR",
+    /KANAL KAPALI \(elle\) \$\{oto\.kanalKapali\}/.test(n11),
+  );
+  kontrol(
+    "TY çıktısı kanalKapali sayacını BASIYOR",
+    /KANAL KAPALI \(elle\) \$\{oto\.kanalKapali\}/.test(ty),
   );
 }
 

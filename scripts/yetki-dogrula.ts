@@ -282,6 +282,10 @@ const API_ISTISNALARI = new Map<string, string>([
     "K167-③: K166'nın birebir kopyası — dış zamanlayıcı çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), ice-aktarma:dogrula kapıyı sınıyor",
   ],
   [
+    "src/app/api/cron/hb-cekim/route.ts",
+    "K-HB-CRON: K166'nın birebir kopyası — dış zamanlayıcı çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), ice-aktarma:dogrula kapıyı sınıyor. ⚠ BEYANI 08.09.2026'da EKSİK YAZILMIŞTI ve bekçi haklı olarak kırmızı yandı: rota 07.09'da açılmış, istisna listesine hiç girmemişti. Muafiyet bedava olmaz — gerekçesi burada.",
+  ],
+  [
     "src/app/api/olcum/route.ts",
     "curl ile çağrılır (yerel makineden canlı veritabanına TCP reddi var: ECONNREFUSED); tarayıcı oturumu taşıyamaz. Kendi CRON_SECRET koruması var ve sır tanımsızsa uç KAPALI döner. SALT OKUMA: `api:dogrula` bu dosyada prisma yazma çağrısını KIRMIZI yakar.",
   ],

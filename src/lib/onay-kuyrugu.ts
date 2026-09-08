@@ -169,11 +169,36 @@ async function tekPartiMi(
   return true;
 }
 
+/**
+ * ⛔ OTOMATİK ONAYA KAPALI KANALLAR — MİMAR KARARI 08.09.2026.
+ *
+ * _"HB OTOMATİK ONAY: şimdilik EKLENMEYECEK."_ Karar verilmişti ama **koda
+ * hiç girmemişti**: `otomatikOnaylaKuyruk` kanal ayırmıyor ve kuyruktaki
+ * her tek partili siparişi onaylıyordu. Kararı ayakta tutan tek şey, o
+ * sırada kuyrukta duran iki HB siparişinin ÇOK PARTİLİ olmasıydı —
+ * ölçüldü 08.09 07:32 koşumu: `aday 2 · onaylanan 0 · çok parti (elle) 2`.
+ * Yarın gelen TEK PARTİLİ bir HB siparişi kararı sessizce çiğnerdi.
+ * _(Anayasa: "koruma disipline değil MEKANİZMAYA bağlanır".)_
+ *
+ * ⭐ AÇILIŞ ŞARTI SAYIYA BAĞLI, TARİHE DEĞİL (mimar): _"HB otomatik onayı,
+ * ilk N (≥10) HB siparişinin ELLE onayında FIFO/NET sınavı temiz geçtikten
+ * SONRA açılır."_ İlerlemeyi `npm run canli:hb-onay-sinavi` ölçer; kapıyı
+ * açmak bu listeden bir satır silmektir ve **insan kararıdır** — bekçi bu
+ * silmeyi kırmızı yakmaz, yalnız listenin KENDİSİNİN kaybolmasını yakar.
+ *
+ * ⚠ KANALIN KENDİ ADI KULLANILIR, HESAP ETİKETİ DEĞİL. `ChannelAccount.name`
+ * `"Hepsiburada — HesapAdı"` üretir ve eşleşme tutmaz (K13b vakası: tam bu
+ * yüzden 29 ürün sessizce elendi). Ölçüt `Channel.name`.
+ */
+export const OTOMATIK_ONAY_KAPALI_KANALLAR: readonly string[] = ["Hepsiburada"];
+
 export type OtomatikOnayOzeti = {
   aday: number;
   onaylanan: number;
   cokParti: number;
   atlanan: number;
+  /** Kanalı otomatik onaya kapalı olduğu için elle bırakılan sipariş. */
+  kanalKapali: number;
 };
 
 /**
@@ -191,13 +216,24 @@ export async function otomatikOnaylaKuyruk(
   let onaylanan = 0;
   let cokParti = 0;
   let atlanan = 0;
+  let kanalKapali = 0;
   for (const b of bekleyenler) {
     const satis = await prismaTam.sale.findUnique({
       where: { id: b.id },
-      select: { soldAt: true, items: { select: { variantId: true } } },
+      select: {
+        soldAt: true,
+        items: { select: { variantId: true } },
+        channelAccount: { select: { channel: { select: { name: true } } } },
+      },
     });
     if (!satis) {
       atlanan++;
+      continue;
+    }
+    /** Kanal kapısı parti kapısından ÖNCE: kapalı kanalda parti yapısının
+     *  hiç önemi yok, ve `acikPartiler` sorgusu boşuna koşmasın. */
+    if (OTOMATIK_ONAY_KAPALI_KANALLAR.includes(satis.channelAccount.channel.name)) {
+      kanalKapali++;
       continue;
     }
     if (!(await tekPartiMi(prismaTam, satis))) {
@@ -220,5 +256,5 @@ export async function otomatikOnaylaKuyruk(
       atlanan++;
     }
   }
-  return { aday: bekleyenler.length, onaylanan, cokParti, atlanan };
+  return { aday: bekleyenler.length, onaylanan, cokParti, atlanan, kanalKapali };
 }
