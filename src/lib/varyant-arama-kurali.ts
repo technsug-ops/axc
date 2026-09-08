@@ -140,6 +140,24 @@ export const SATIS_ROLLERI = KOD_ROLLERI.filter(
  * ⚠ Kanal SKU dalında `isActive` şartı ARTIK YOK (K121b) — gerekçesi ve
  * ölçümü yukarıdaki karar bloğunda. Pasifi eleme kararı çağıranın.
  */
+/**
+ * ⭐ KANAL KODU DALI — TEK YER (K121c, 08.09.2026).
+ *
+ * ⛔ NİYE AYRI GÖVDE: bu dal ortak gövde DIŞINDA üç yerde daha elle
+ * yazılmıştı (`/stok` · `/urunler` · iade araması) ve **üçü de farklı
+ * davranıyordu** — ikisi pasifi getiriyor, biri eliyordu. Bunu bir bekçi
+ * bulmadı, çünkü ölçüt yoktu; K121b'de desen yasağı yazılınca ilk koşumda
+ * ortaya çıktı.
+ *
+ * ⚠ ŞEKİLLERİ FARKLI OLDUĞU İÇİN GÖVDE DALI DÖNDÜRÜR, SORGU DEĞİL: `/stok`
+ * varyant, `/urunler` ürün, iade araması iade sorguluyor. Her biri bu dalı
+ * kendi şekliyle SARMALAR; yazdığı şey artık dalın kendisi değil.
+ * _(Anayasa: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır".)_
+ */
+export function kanalKoduDali(e: string) {
+  return { channelSkus: { some: { channelSku: { contains: e } } } };
+}
+
 export function aramaKosulu(sorgu: string) {
   /**
    * ⚠ EŞDEĞERLER SERBEST METİNDE DE GEÇERLİ — VE BURASI DAHA SİNSİ.
@@ -151,7 +169,7 @@ export function aramaKosulu(sorgu: string) {
     { sku: { contains: e } },
     { companySku: { contains: e } },
     { barcode: { contains: e } },
-    { channelSkus: { some: { channelSku: { contains: e } } } },
+    kanalKoduDali(e),
     { product: { name: { contains: e } } },
   ]);
 }

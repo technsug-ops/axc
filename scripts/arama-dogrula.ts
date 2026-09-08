@@ -970,77 +970,120 @@ console.log("");
   /* -- OTEKI CAGIRANLAR: HALA ELIYOR MU (ters yon) ------------------- */
   /**
    * ⚠ LİSTE TUTULMUYOR — çağıranlar TARANARAK bulunuyor. Elle yazılmış bir
-   * liste, yarın eklenen altıncı çağıranı sessizce dışarıda bırakırdı.
+   * liste, yarın eklenen çağıranı sessizce dışarıda bırakırdı.
    * _(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)_
    *
-   * ⚠ KAPSAM `src/` İLE SINIRLI VE BU BİLEREK: `scripts/` altındaki içe
-   * aktarmalar (`kodKosuluToplu` — TY · HB · N11 · alış · satış) varyant
-   * düzeyinde SÜZMEMELİ. Bir sipariş satırı pasife alınmış bir listing'e
-   * atıfta bulunabilir; süzen bir içe aktarma o satırı DÜŞÜRÜR ve kayıp
-   * sessiz olur. Sınır burada YAZILI, yoksa yarın "scripts neden dışarıda"
-   * diye sorulur ve cevabı olmaz.
+   * ⛔ VE İSTİSNA DA LİSTE DEĞİL, DOSYA İÇİ BEYANDIR (K121c düzeltmesi).
+   * Önce yol listesi tutuluyordu (`stok` · `urunler` · `iade/arama`) ve bu
+   * tam da yasakladığımız desendi: dördüncü ekran listeye yazılmazsa
+   * sessizce geçerdi. Artık ölçüt şunu soruyor — **ya süz, ya NİYE
+   * süzmediğini dosyada YAZ.** Beyan metni: `PASİF DAHİL:` + gerekçe.
+   *
+   * ⚠ TAKMA AD KÖRLÜĞÜ DE KAPATILDI: `/stok` gövdeyi
+   * `aramaKosulu as ortakAramaKosulu` diye alıyor ve büyük/küçük harfe
+   * duyarlı bir arama onu HİÇ GÖRMÜYORDU — ölçüt yeşil kalırdı. Arama
+   * küçük harfe indirgenerek yapılıyor.
+   * _(Anayasa: "dize, davranışın vekilidir — ve refaktör vekili eskitir".)_
    */
-  const ISTISNA = "sayim-actions";
+  const BEYAN_METNI = "PASİF DAHİL:";
+  const GOVDE_ADLARI = ["aramaKosulu", "kodKosulu", "kodKosuluToplu"];
   const kaynaklar = readdirSync("src", { recursive: true, encoding: "utf8" })
     .filter((p) => typeof p === "string" && (p.endsWith(".ts") || p.endsWith(".tsx")))
     .filter((p) => !p.includes("varyant-arama-kurali"));
+
+  /**
+   * ⛔ YEREL AD İTHAL SATIRINDAN OKUNUR — TAKMA AD KAÇAMAZ.
+   *
+   * Önce metinde doğrudan `aramaKosulu(` aranıyordu. `/stok` gövdeyi
+   * `aramaKosulu as ortakAramaKosulu` diye alıyor ve o arama onu HİÇ
+   * görmüyordu; ölçüt yeşil kalıyordu. Küçük harfe indirgemek de çare
+   * olmadı — bu kez `iadeAramaKosulu(` gibi BAŞKA adların sonu eşleşti ve
+   * altı dosya yanlışlıkla "beyansız" çıktı.
+   * Doğru ölçüt: dosyanın kendi ithal satırındaki YEREL adı bul, onu ara.
+   * _(Anayasa: "dize, davranışın vekilidir" ve "ÖNCE DESENİ SAY".)_
+   */
+  function yerelAdlar(metin: string): string[] {
+    const i = metin.indexOf("varyant-arama-kurali");
+    if (i < 0) return [];
+    const acilis = metin.lastIndexOf("{", i);
+    const kapanis = metin.lastIndexOf("}", i);
+    if (acilis < 0 || kapanis < acilis) return [];
+    return metin
+      .slice(acilis + 1, kapanis)
+      .split(",")
+      .map((parca) => {
+        const t = parca.trim().replace(/^type\s+/, "");
+        const ayrik = t.split(/\s+as\s+/);
+        const kaynak = ayrik[0].trim();
+        const yerel = (ayrik[1] ?? ayrik[0]).trim();
+        return GOVDE_ADLARI.includes(kaynak) ? yerel : "";
+      })
+      .filter((a) => a.length > 0);
+  }
+
   const cagiranlar: string[] = [];
-  const suzmeyenler: string[] = [];
+  const beyansiz: string[] = [];
   for (const p of kaynaklar) {
     const metin = readFileSync("src/" + p, "utf8");
-    for (const ad of ["kodKosulu(", "aramaKosulu(", "kodKosuluToplu("]) {
-      let k = metin.indexOf(ad);
+    if (!metin.includes("varyant-arama-kurali")) continue;
+    for (const ad of yerelAdlar(metin)) {
+      let k = metin.indexOf(ad + "(");
       while (k >= 0) {
-        cagiranlar.push(p);
-        const pencere = metin.slice(Math.max(0, k - 160), k + 40);
-        if (!pencere.includes("isActive: true") && !p.includes(ISTISNA)) {
-          suzmeyenler.push(p);
+        /** Sözcük sınırı: `iadeAramaKosulu(` gibi UZUN adların sonu sayılmaz. */
+        const onceki = k === 0 ? " " : metin[k - 1];
+        if (!/[A-Za-z0-9_$]/.test(onceki)) {
+          cagiranlar.push(p);
+          const pencere = metin.slice(Math.max(0, k - 200), k + 40);
+          if (!pencere.includes("isActive: true") && !metin.includes(BEYAN_METNI)) {
+            beyansiz.push(p);
+          }
         }
-        k = metin.indexOf(ad, k + 1);
+        k = metin.indexOf(ad + "(", k + 1);
       }
     }
   }
-  /** ⚠ TABAN DOLULUĞU AYRICA KANITLANIR: boş taban her koşulu geçirir. */
+  /** ⚠ TARAMANIN KENDİSİ DE ÖLÇÜLÜR: taban boşalsaydı iki ölçüt de sessizce
+   *  yeşil yanardı. */
+  kontrol("kaynak taraması dosya buldu", kaynaklar.length > 100);
   kontrol(
     "ortak gövde çağıranları tarandı (taban DOLU)",
-    new Set(cagiranlar).size >= 5,
+    new Set(cagiranlar).size >= 6,
   );
   console.log("        çağıran: " + [...new Set(cagiranlar)].join(" · "));
+  /** ⛔ TAKMA ADLA ÇAĞIRAN DA GÖRÜLÜYOR MU — körlüğün kendisi ölçülür. */
   kontrol(
-    "sayım DIŞINDAKİ her çağıran varyant düzeyinde pasifi eliyor",
-    suzmeyenler.length === 0,
+    "takma adla çağıran ekran da taranıyor (/stok)",
+    [...new Set(cagiranlar)].some((p) => p.includes("stok")),
   );
-  if (suzmeyenler.length > 0) {
-    console.log("        SÜZMEYEN: " + [...new Set(suzmeyenler)].join(" · "));
+  kontrol(
+    "her çağıran ya pasifi eliyor ya NİYE elemediğini dosyada BEYAN ediyor",
+    beyansiz.length === 0,
+  );
+  if (beyansiz.length > 0) {
+    console.log("        BEYANSIZ: " + [...new Set(beyansiz)].join(" · "));
   }
 
   /* -- CIPLAK KANAL-SKU DALI: BEYANSIZ YAZILAMAZ --------------------- */
   /**
-   * ⛔ AYRIŞMA HÂLÂ AÇIK VE BU ÖLÇÜT ONU GÖRÜNÜR TUTUYOR. Kanal kodu dalı
-   * ortak gövde DIŞINDA iki yerde daha elle yazılı (`/stok`, `/urunler`) ve
-   * ikisinde de hiç `isActive` yok — kullanıcının 08.09'da bildirdiği
-   * ayrışma tam buydu. Ortak gövdeyi düzeltmek onları KAPSAMIYOR.
+   * ⛔ İSTİSNA YOK — VE BU K121c'NİN TESLİMİ (08.09.2026).
    *
-   * ⚠ İKİSİ İSTİSNA OLARAK BEYAN EDİLDİ, ONAYLANDIĞI İÇİN DEĞİL — MİMAR
-   * KARARI BEKLEDİĞİ İÇİN (K121c). Beyan, üçüncü bir çıplak dalın sessizce
-   * doğmasını engelliyor; mevcut ikisini meşrulaştırmıyor.
+   * Bu ölçüt K121b'de ÜÇ beyanlı istisnayla doğdu (`/stok` · `/urunler` ·
+   * iade araması); üçü de kanal kodu dalını ELLE yazıyordu ve **üçü de
+   * farklı davranıyordu** — ikisi pasifi getiriyor, biri eliyordu.
+   * ⚠ Üçüncüsünü (`lib/iade/arama.ts`) BU ÖLÇÜT BULDU, ben ölçmemiştim:
+   * K121b'de ilk koşumda kırmızı yandı. Mimar kararıyla üçü de ortak
+   * gövdeye bağlandı ve istisnalar KALDIRILDI.
+   *
+   * ⚠ BEYANLI İSTİSNA BİR ARA DURAKTIR, VARIŞ NOKTASI DEĞİL: liste boş
+   * kaldığı sürece yasak gerçekten çıplak dal bırakmıyor demektir. Yarın
+   * bir istisna geri eklenirse, o gün GEREKÇESİYLE yazılır.
+   *
+   * ⛔ VE BOŞ LİSTE BİR TUZAK OLABİLİRDİ: `BEYANLI.some(...)` boş listede
+   * `false` döner, yani hiçbir dosyayı muaf tutmaz — istenen davranış
+   * budur. Ama tarama TABANI boşalsaydı yasak herkesi geçirirdi; taban
+   * ayrıca ölçülüyor (aşağıda).
    */
-  /**
-   * ⚠ ÜÇÜNCÜSÜNÜ BU ÖLÇÜT BULDU — BEN ÖLÇMEMİŞTİM. İlk turda kırmızı yandı:
-   * `lib/iade/arama.ts` de kendi kanal-SKU dalını yazıyor ve o **hâlâ
-   * `isActive: true` ile pasifi eliyor.** Yani bugün üç çıplak dal var ve
-   * ÜÇÜ DE FARKLI davranıyor: /stok ve /urunler pasifi getiriyor, iade
-   * araması getirmiyor, ortak gövde artık çağırana bırakıyor.
-   * _(Anayasa: "aynı işlem her ekranda aynı görünür ve aynı çalışır" —
-   * bugün çalışmıyor ve bunu ölçüt söyledi.)_
-   */
-  /** ⚠ Yol ayırıcısı YAZILMIYOR: Windows ve POSIX farklı ayırıcı
-   *  döndürüyor ve ters bölülü bir desen bu depoda İKİ KEZ bozuldu. */
-  const BEYANLI: ((p: string) => boolean)[] = [
-    (p) => p.includes("stok"),
-    (p) => p.includes("urunler"),
-    (p) => p.includes("iade") && p.includes("arama"),
-  ];
+  const BEYANLI: ((p: string) => boolean)[] = [];
   const ciplak: string[] = [];
   for (const p of kaynaklar) {
     if (!readFileSync("src/" + p, "utf8").includes("channelSkus: { some: { channelSku:")) continue;
@@ -1048,7 +1091,9 @@ console.log("");
     ciplak.push(p);
   }
   kontrol(
-    "ortak gövde dışında BEYANSIZ kanal-SKU dalı yok (beyanlı 3: /stok · /urunler · iade araması — K121c bekliyor)",
+    "ortak gövde dışında çıplak kanal-SKU dalı YOK (beyanlı istisna: " +
+      BEYANLI.length +
+      ")",
     ciplak.length === 0,
   );
   if (ciplak.length > 0) console.log("        BEYANSIZ: " + ciplak.join(" · "));

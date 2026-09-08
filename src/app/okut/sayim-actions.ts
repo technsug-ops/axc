@@ -166,8 +166,8 @@ export async function sayimaOkut(
   /**
    * Kod → varyant: ortak arama kuralı (barkod · Firma SKU · SKU · Kanal SKU).
    *
-   * ⛔ `isActive: true` BURADA BİLEREK YOK — VE BU BİR BEYANDIR, UNUTMA
-   * DEĞİL (K121b, 08.09.2026). Fiziksel sayım rafta NE VARSA onu kaydeder;
+   * ⛔ PASİF DAHİL: `isActive: true` BURADA BİLEREK YOK — VE BU BİR
+   * BEYANDIR, UNUTMA DEĞİL (K121b, 08.09.2026). Fiziksel sayım rafta NE VARSA onu kaydeder;
    * pasife alınmış bir mal da raftadır ve okutulunca ÇÖZÜLMELİDİR. Süzgeç
    * eklenseydi `axcali2601` sayımda "bulunamadı" derdi ve sayan kişi malı
    * elinde tutarken sistemin onu tanımadığını görürdü.

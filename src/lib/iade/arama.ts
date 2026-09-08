@@ -1,4 +1,4 @@
-import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
+import { kanalKoduDali, kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 
 /**
  * ============================================================================
@@ -55,20 +55,29 @@ export const IADE_ARAMA_ALANLARI = [
 ] as const;
 
 /**
- * Kanal SKU ayrı duruyor çünkü şekli farklı: iki `some` iç içe geçiyor ve
- * `isActive` şartı var — pasife alınmış bir eşleşme o ürünü artık
- * getirmemeli (`aramaKosulu` ile aynı gerekçe).
+ * Kanal SKU ayrı duruyor çünkü ŞEKLİ farklı: iade sorgusunda iki `some` iç
+ * içe geçiyor. Dalın KENDİSİ artık ortak gövdeden geliyor (K121c).
+ *
+ * ═══ ⛔ `isActive` KALKTI — MİMAR HÜKMÜ 08.09.2026 ═══════════════════
+ *
+ * Burada `isActive: true` vardı ve gerekçesi şuydu: _"pasife alınmış bir
+ * eşleşme o ürünü artık getirmemeli (`aramaKosulu` ile aynı gerekçe)"_.
+ * ⚠ Yani KENDİ gerekçesi yoktu — devralınmıştı, ve devraldığı gerekçe
+ * K121b'de düştü.
+ *
+ * ⭐ VE İADE İÇİN ZATEN YANLIŞTI: iade araması **geçmiş bir olayın KAYDINI**
+ * arar, canlı bir ilanı değil. Süzgeç şunu yapıyordu — geçen ay aldığın
+ * iadeyi, bugün o pazaryeri ilanını kapattığın için kanal koduyla bir daha
+ * bulamazsın. Kayıt yerinde durur, arama görmez; kayıp SESSİZDİR.
+ *
+ * ⚠ BUGÜNKÜ ETKİSİ SIFIR VE BU ÖLÇÜLDÜ (`npm run canli:k121c-kuru`):
+ * 224 iade kaydının hiçbiri değişmiyor — tek pasif listing `axcali2601`'e
+ * ait ve o varyantın satış kalemi de iade kalemi de 0. Yani değişiklik
+ * ilkece gerçek, defterde karşılığı yok. Bunu "etkisiz" diye yazmıyoruz:
+ * bugün 0, yarın kapatılan ilk ilanda 1.
  */
 function kanalSkuKosulu(e: string): Record<string, unknown> {
-  return {
-    items: {
-      some: {
-        variant: {
-          channelSkus: { some: { channelSku: { contains: e }, isActive: true } },
-        },
-      },
-    },
-  };
+  return { items: { some: { variant: kanalKoduDali(e) } } };
 }
 
 /** Noktalı yolu iç içe nesneye çevirir; `some` özel anahtar olarak geçer. */

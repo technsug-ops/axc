@@ -51,7 +51,16 @@ import {
 } from "@/lib/yaslanma";
 import { sayfaCoz } from "@/lib/sayfalama";
 import { satisKodundanVaryantIdleri } from "@/lib/satis-kodundan-varyant";
-import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
+/**
+ * ⚠ TAKMA AD ZORUNLU: bu dosyada `aramaKosulu` ADINDA YEREL bir değişken
+ * var (ekranın süzgeç nesnesi). Aynı adı ithal etmek onu gölgeler ve
+ * `tsc` "kendi ilklendirmesinde kullanılıyor" diye kırmızı yanar —
+ * yakalandı, çünkü derleyici sustuysa sorgu KENDİ KENDİNİ çağırırdı.
+ */
+import {
+  aramaKosulu as ortakAramaKosulu,
+  kodEsdegerleri,
+} from "@/lib/varyant-arama-kurali";
 import {
   idleriSirala,
   sayfaDilimi,
@@ -373,32 +382,33 @@ export default async function StokSayfasi({
   const aramaKosulu = arama
     ? {
         /**
-         * ⚠ EŞDEĞER KODLAR AÇILIR (K100, 30.08.2026) — UPC-A ↔ EAN-13.
-         * Okuyucu 12 haneli bir barkodu 13 hane olarak döndürüyor ve
-         * `contains` uzun sorguyu kısa alanda BULAMIYOR. Kural
-         * `lib/varyant-arama-kurali.ts`te tek yerde; buradaki rol kümesi
-         * ve `isActive` şartları DEĞİŞMEDİ, yalnız kod eşdeğeri eklendi.
+         * ⛔ PASİF DAHİL: bu ekran varyant düzeyinde `isActive` SÜZMÜYOR ve
+         * bu bilinçli — `/stok` bir STOK ekranıdır, pasife alınmış bir mal
+         * da rafta durabilir ve stoğu görünmelidir. Süzseydik elde malı olan
+         * bir varyant listeden düşer, kimse de düştüğünü göremezdi.
+         * _(Kullanıcı kuralı 29.08.2026: "esas unsur fiziki varlıktır".)_
+         *
+         * ⭐ BEŞ DAL ARTIK ORTAK GÖVDEDEN (K121c, 08.09.2026).
+         *
+         * Burada `sku · firmaSKU · barkod · ürün adı · kanal kodu` dalları
+         * ELLE yazılıydı — ortak gövdenin birebir kopyasıydı ve kopya olduğu
+         * için sessizce ayrışabiliyordu. Ölçüldü (66 kod · 5 kod türü):
+         * inline dal ile ortak gövde **FARK 0** — davranış değişmiyor,
+         * yalnız kopya kalkıyor.
+         *
+         * ⚠ ESKİ GEREKÇE SİLİNMİYOR (14.08.2026 kullanıcı bulgusu):
+         * pazaryerinden kopyalanan eşleşme kodu (ör. EN10051201144) buraya
+         * yapıştırıldığında "0 varyant" çıkıyordu; ürün duruyordu, arama o
+         * alana BAKMIYORDU. Depoda çalışan kişi elindeki HANGİ kâğıtla
+         * gelirse gelsin ürünü bulabilmeli. O gereklilik ortak gövdede
+         * yaşamaya devam ediyor.
+         *
+         * ⚠ EŞDEĞER KODLAR (K100, 30.08.2026 — UPC-A ↔ EAN-13) DA ORTAK
+         * GÖVDEDE: `aramaKosulu` `kodEsdegerleri`yi KENDİSİ açıyor, bu yüzden
+         * burada ikinci bir döngü YOK. Dıştan tekrar açmak aynı kodu iki kez
+         * sorardı.
          */
-        OR: kodEsdegerleri(arama).flatMap((e) => [
-          { sku: { contains: e } },
-          { companySku: { contains: e } },
-          { barcode: { contains: e } },
-          { product: { name: { contains: e } } },
-          /**
-           * KANAL KODLARI DA ARANIR — 14.08.2026 kullanıcı bulgusu.
-           *
-           * Kullanıcı pazaryerinden kopyaladığı eşleşme kodunu
-           * (ör. EN10051201144) buraya yapıştırdı ve "0 varyant" gördü.
-           * Ürün duruyordu; arama o alana BAKMIYORDU. `/urunler` 12.08'de
-           * aynı gerekçeyle düzeltilmişti, `/stok` unutulmuş — iki ekran
-           * aynı kodla aynı sonucu vermeliydi (İlke #10).
-           *
-           * Depoda çalışan kişi elindeki HANGİ kâğıtla gelirse gelsin
-           * ürünü bulabilmeli: sistem SKU'su, firma etiketi, üretici
-           * barkodu ya da pazaryeri kodu.
-           */
-          { channelSkus: { some: { channelSku: { contains: e } } } },
-        ]),
+        OR: ortakAramaKosulu(arama),
       }
     : undefined;
 

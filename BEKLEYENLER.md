@@ -128,6 +128,99 @@ iade aramasının davranışı değişeceği için önce kuru koşum).
 `axcali2601` satırı gelmeli (önce "bulunamadı" diyordu). ② `/stok`'ta
 `43217` ara → sonuç değişmemeli. ③ `/urunler`'de aynı kod → değişmemeli.
 
+### ✅ K121c — ÜÇ ÇIPLAK DAL ORTAK GÖVDEYE BAĞLANDI · 08.09.2026 · [KOD KOŞTU]
+
+_K121b'nin devamı. Ayrı satır açılmadı: kimlik K121'in kendisine ait._
+
+⛔ **K121b'nin BEKÇİSİ BU İŞİ AÇTI.** Desen yasağı ilk koşumunda, benim
+ölçmediğim bir dal buldu: `lib/iade/arama.ts:67`. O gün tablo şuydu —
+kanal kodu dalı ortak gövde DIŞINDA **üç yerde** elle yazılıydı ve **üçü de
+farklı davranıyordu**:
+
+    /stok:400          pasifi GETIRIYOR   (isActive yok)
+    /urunler:85        pasifi GETIRIYOR   (isActive yok)
+    lib/iade/arama:67  pasifi ELIYOR      (isActive: true)
+
+_(Anayasa: "aynı işlem her ekranda aynı görünür ve aynı çalışır" — bugün
+çalışmıyordu ve bunu bir insan değil, ölçüt söyledi.)_
+
+### KURU KOŞUM (`npm run canli:k121c-kuru`)
+
+    taban: iade kaydi 224 · pasif listing 1
+    ① IADE ARAMASI  43217 → axcali2601   ONCE 0 · SONRA 0
+       → ETKILENEN IADE KAYDI: 0
+       (axcali2601: satis kalemi 0 · iade kalemi 0)
+    ② /stok    78 kod · FARK 0 ✓
+    ③ /urunler 78 kod · FARK 0 ✓ · marka dalini tetikleyen kod 12 ✓
+
+⭐ **DEĞİŞİKLİK İLKECE GERÇEK, DEFTERDE KARŞILIĞI SIFIR** — ve bu "etkisiz"
+diye yazılmıyor: bugün 0, kapatılan ilk ilanda 1.
+
+### MİMAR HÜKMÜ — İADE PASİFİ GETİRİR
+
+İade araması **geçmiş bir olayın KAYDINI** arar, canlı bir ilanı değil.
+Süzgeç şunu yapıyordu: _geçen ay aldığın iadeyi, bugün o pazaryeri ilanını
+kapattığın için kanal koduyla bir daha bulamazsın._ Kayıt yerinde durur,
+arama görmez; kayıp **sessizdir**.
+⚠ Ve süzgecin **kendi gerekçesi yoktu**: kodda _"(`aramaKosulu` ile aynı
+gerekçe)"_ yazıyordu — devralınmıştı, ve devraldığı gerekçe K121b'de düştü.
+
+### YAZILANLAR
+
+**①** `kanalKoduDali(e)` — kanal kodu dalı TEK YERE çıktı. Üç ekran onu
+kendi şekliyle SARMALIYOR (`/stok` varyant · `/urunler` ürün · iade
+araması iade); yazdıkları şey artık dalın kendisi değil.
+
+**②** `/stok` → `OR: ortakAramaKosulu(arama)` (beş dal birden ortak
+gövdeden). `/urunler` → varyant dalları sarmalanarak; **`name` ve `brand`
+ÜRÜN düzeyinde KALDI** — ikisi ürünün alanı, varyantın değil ve sarmalanmış
+bir ad araması varyantı olmayan bir ürünü sessizce düşürürdü (bugün öyle
+ürün yok — 1837'de 0 — ama bunu bugünün ölçümüne bağlamak yarını garanti
+etmez).
+
+**③** ⛔ **DÖRDÜNCÜ ESKİYEN ÖLÇÜT ÇEVRİLDİ** (`rma:dogrula`): _"kanal SKU da
+aranıyor (yalnız AKTİF eşleşme)"_ → _"(pasif eşleşme DE gelir)"_, gerekçesi
+ve eski hâli yazılı. Susturulmadı.
+
+**④** ⭐ **İSTİSNA MEKANİZMASI LİSTEDEN BEYANA ÇEVRİLDİ — VE BU BİR
+DÜZELTMEDİR.** K121b'de yasak yol listesiyle geliyordu (`stok` · `urunler` ·
+`iade/arama`) ve bu **tam da yasakladığımız desendi**: dördüncü ekran
+listeye yazılmazsa sessizce geçerdi. Artık ölçüt şunu soruyor — **ya süz, ya
+NİYE süzmediğini DOSYANDA yaz** (`PASİF DAHİL:` + gerekçe). Üç ekran duruşunu
+kendi dosyasında beyan etti: sayım (fiziki varlık esas) · `/stok` (stok
+ekranı, pasif mal da rafta) · `/urunler` (yönetim ekranı, pasif ürün rozetle
+durur).
+
+### ⚠ ÖLÇÜTÜN KENDİSİ İKİ KEZ KÖR ÇIKTI — İKİSİ DE MUTASYONLA BULUNDU
+
+**① TAKMA AD KAÇIYORDU.** `/stok` gövdeyi `aramaKosulu as ortakAramaKosulu`
+diye alıyor; `aramaKosulu(` arayan ölçüt onu **hiç görmüyordu** ve yeşil
+kalıyordu. Küçük harfe indirgemek çare olmadı — bu kez `iadeAramaKosulu(`
+gibi BAŞKA adların sonu eşleşti ve altı dosya yanlışlıkla "beyansız" çıktı.
+**Doğru ölçüt: yerel adı dosyanın kendi İTHAL SATIRINDAN oku.** Körlüğün
+kendisi de ölçülüyor artık (_"takma adla çağıran ekran da taranıyor"_).
+
+**② SÖZCÜK SINIRI YOKTU.** Ağı genişletmek yanlış şeyleri de içeri aldı;
+sınır konuldu. _(Anayasa: "ÖNCE DESENİ SAY".)_
+
+### BEKÇİ · MUTASYON 11/11 KIRMIZI
+
+    ①②③ uc ekrana ciplak dal geri gelir          KIRMIZI ×3
+    ④   ortak govdeye isActive geri gelir         KIRMIZI
+    ⑤⑥  /stok ve /urunler beyani silinir          KIRMIZI ×2
+    ⑦   suzen cagiran (yerlestir) suzmeyi birakir KIRMIZI  (ters yon)
+    ⑧   cagiran taramasi bosaltilir               KIRMIZI  (bos taban)
+    ⑨   ithal-adi cozumu bozulur                  KIRMIZI  (takma ad korlugu)
+    ⑩   iade dalina isActive geri gelir           KIRMIZI
+    ⑪   iade kanal dali tamamen silinir           KIRMIZI
+
+`arama:dogrula` 123/123 · `rma:dogrula` 541/541 · `ice-aktarma:dogrula`
+419/419 · `suzgec` · `stok-siralama` · `panel` yeşil · `tsc` temiz.
+
+**Halil test listesi:** ① `/stok`'ta bir kanal kodu ara → eskisi gibi
+gelmeli. ② `/urunler`'de aynı kod → değişmemeli. ③ `/iadeler`'de bir kanal
+kodu ara → iade kaydı gelmeli (pasif ilan da artık bulunur).
+
 ---
 
 ## ✅ K189 — ÇEKİM SESSİZCE 69 DAKİKA DURDU · 08.09.2026 · [KOD KOŞTU]

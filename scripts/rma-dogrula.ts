@@ -1217,11 +1217,27 @@ console.log("\n6) BİLDİRİM LİSTESİ — BULUNABİLİRLİK");
       JSON.stringify(beklenen),
     );
   }
-  /** Kanal SKU listede değil (şekli farklı) — AYRI ölçülüyor ki düşmesin. */
+  /**
+   * Kanal SKU listede değil (şekli farklı) — AYRI ölçülüyor ki düşmesin.
+   *
+   * ⛔ ÖLÇÜT ÇEVRİLDİ, SUSTURULMADI (K121c, 08.09.2026). Burada
+   * `"isActive":true` ARANIYORDU ve o gün doğruydu. **Mimar hükmüyle
+   * kalktı:** iade araması geçmiş bir olayın KAYDINI arar, canlı bir ilanı
+   * değil — kapatılan bir ilan yüzünden geçen ayki iade kanal koduyla
+   * bulunamaz hâle geliyordu ve kayıp SESSİZDİ.
+   * ⚠ Süzgecin kendi gerekçesi de yoktu: `aramaKosulu` ile aynı gerekçe
+   * diye devralınmıştı ve o gerekçe K121b'de düştü.
+   * Etkisi ölçüldü (`npm run canli:k121c-kuru`): 224 iade kaydının hiçbiri
+   * değişmiyor — bugün 0, yarın kapatılan ilk ilanda 1.
+   * _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez".)_
+   *
+   * ⭐ VE DAL ARTIK ORTAK GÖVDEDEN GELİYOR (`kanalKoduDali`): burada elle
+   * yazılmış çıplak bir `channelSkus` dalı KALMADI.
+   */
   kontrol(
-    "  işlenmiş: kanal SKU da aranıyor (yalnız AKTİF eşleşme)",
+    "  işlenmiş: kanal SKU da aranıyor (pasif eşleşme DE gelir)",
     iMetin.includes('"channelSku":{"contains":"zqxwv"}') &&
-      iMetin.includes('"isActive":true'),
+      !iMetin.includes('"isActive":true'),
   );
   kontrol(
     "  işlenmiş: dal sayısı listeyle tutuyor (alanlar + kanal SKU)",
