@@ -13,6 +13,83 @@
 
 ---
 
+## ✅ K188 — STOK ARAMASI SİPARİŞ NUMARASINI DA EŞLEŞTİRİYOR · 08.09.2026 · [KOD KOŞTU]
+
+> **Kullanıcı isteği:** _"Stoktaki arama butonu sipariş numarasını da
+> eşleştirebilsin — 4864776792 · 4825253981."_
+
+### ① ÖLÇÜM — ŞİKÂYET DOĞRU, VE SEBEBİ BİLGİ EKSİKLİĞİ DEĞİL
+
+    "4864776792"   ESKI   0 varyant  →  YENI   1   axcali2850 · Ottawa Tencere Seti
+    "4825253981"   ESKI   0 varyant  →  YENI   1   KUC-PH-1200W-01 · Philips Blender
+
+Bilgi sistemde VARDI: ikisi de tek satışa ve tek varyanta çözülüyor,
+varyantlar aktif. Ekran susmuyor, **yanlış cevap** veriyordu — "böyle bir
+şey yok" diyordu. _(K100'ün aynısı: baştaki sıfır vakasında da bilgi vardı,
+arama sormuyordu.)_
+
+### ② İKİ ADIM ZORUNLU — VARYANT KOŞULUNA YAZILAMAZ
+
+Sipariş numarası bir **SATIŞ kimliği** (`Sale.code`); `ProductVariantWhereInput`
+içine konamaz. K41①'de aynı sınır gönderi numarası için ölçülmüştü. Çözüm:
+`satis-kodundan-varyant.ts` — kimliği önce varyant kimliklerine çevirir,
+sonra `id: { in: … }` olarak OR'a girer.
+
+⭐ **TAM EŞLEŞME, KISMİ DEĞİL.** `satisKodKosulu` iki alanı da `@unique`
+olduğu için tam eşleştirir. Kısmi eşleşme ilgisiz bir siparişin ürününü stok
+listesine sokardı ve kullanıcı onu aradığı ürün sanardı. Ölçüldü: `"48252"`
+→ 0 (ve öyle kalması DOĞRU).
+⚠ **NORMAL ARAMA HİÇ DEĞİŞMEDİ:** `"Anker"` 85 → 85. Küme boşken satış dalı
+**hiç eklenmiyor** — koşul sessizce genişleyemez.
+
+### ③ İKİ EKRAN BİRDEN — VE BU BİLEREK
+
+Kullanıcı `/stok` dedi; `/urunler` de aynı gövdeye bağlandı. Gerekçe kodun
+içinde zaten yazılıydı: kanal SKU'su 12.08'de `/urunler`de düzeltilip
+`/stok`ta unutulmuştu ve kullanıcı iki gün sonra bulmuştu. Yalnız `/stok`a
+eklemek aynı hatayı **ayna simetrisiyle** tekrarlardı (İlke #10).
+
+### ④ ⛔ YAN BULGU — ROL BEYAN EDİLMEMİŞTİ, İKİ YERDE SESSİZ KUSUR
+
+`code` (sipariş numarası) **zaten aranıyordu** (`satisKodKosulu` · `/satislar`
+süzgeci · `/okut`) ama `KOD_ROLLERI`'nde yoktu. Liste kendi _"TEK KAYIT YERİ"_
+sözünü tutmuyordu ve bunun iki ölçülebilir bedeli vardı:
+
+· `SATIS_ROLLERI.length === 1` ölçütü **yanlış bir şeyi sabitliyordu** —
+  beyanı eklemeye kalkanın karşısına kırmızı yanarak çıkardı;
+· `/okut` sipariş numarasıyla okutulan siparişi **buluyor** ama _"hangi alan
+  eşleşti"_ sorusuna **`null`** dönüyordu; ekran bulduğu kodu adlandıramıyor,
+  depocu hangi kâğıdın tuttuğunu göremiyordu. O satırın kendi yorumu bunu
+  zaten söylüyordu ve dal onu tutmuyordu.
+
+Rol beyan edilince `alanAdi` **derlenmedi** — exhaustive `Record` sözünü
+tuttu ve eksik etiketi kendisi gösterdi (`alanCode`, iki sözlüğe de eklendi).
+
+### ⑤ BEKÇİ — 7 MUTASYON, HEPSİ KIRMIZI
+
+Saf parçalar (`satisAramasiHazirla` · `varyantIdleriniTopla`) **değerle**
+sınanıyor, kaynak taranmıyor. ⚠ Bekçi CJS'e derleniyor ve üst düzey `await`
+desteklenmiyor — `async` gövdeyi doğrudan çağıran ölçüt sonucunu ancak
+ÖZETTEN SONRA okuyabilirdi; saf parçalar bu yüzden ayrıldı.
+
+    OR dali silindi · govde cagrilmadi · bos kumede dal eklendi
+    tekillestirme kaldirildi · bos-sorgu kapisi kaldirildi
+    rol listeden silindi · satisKodKosulu KISMI eslesmeye cevrildi
+
+⛔ **VE HARNESS'İM ARADA BİR DOSYAYI BOZDU — YAZILIYOR.** Yedek adları
+`basename` ile üretiliyordu; `stok/page.tsx` ile `urunler/page.tsx` aynı ada
+düştü, yedek birbirini ezdi ve `/stok`a `/urunler`in içeriği geri yazıldı
+(789 → 422 satır). Fark ölçümle görüldü, HEAD'den kurtarıldı ve dört düzenleme
+desen sayımıyla yeniden uygulandı (33 ekleme · 2 silme, `git diff` ile
+doğrulandı). _(Anayasa: "geri alma da bir yazımdır — aynı şart ona da işler";
+yedek adı yolun TAMAMINDAN türetilmeli.)_
+
+⏭ **AÇIK VE ÖLÇÜLMEDİ:** `/stok`un kanal SKU dalında `isActive` şartı YOK,
+ortak `aramaKosulu` gövdesinde VAR. Bu iş sırasında görüldü, **dokunulmadı** —
+ayrı bir soru ve ayrı ölçüm ister (pasif listing'in kodu ürün getirmeli mi).
+
+---
+
 ## ✅ K187 — OTOMATİK ÇEKİM ZİNCİRİ ONARILDI + ÜÇ KANALA GENİŞLEDİ · 08.09.2026 · [KOŞTU — canlı]
 
 > **Halil'in tespiti:** _"TY sık çekimi 05.09'dan beri kırmızı, 779 koşum

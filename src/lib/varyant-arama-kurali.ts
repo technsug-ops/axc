@@ -21,13 +21,30 @@
  * ============================================================================
  */
 
-/** Aranan kod rolleri — testler bunları dolaşır. TEK KAYIT YERİ. */
+/**
+ * Aranan kod rolleri — testler bunları dolaşır. TEK KAYIT YERİ.
+ *
+ * ⛔ ALTINCI ROL SONRADAN EKLENMEDİ — BEYANI EKSİKTİ (08.09.2026).
+ * `code` (sipariş numarası) **zaten aranıyordu**: `satisKodKosulu` onu
+ * `shipmentCode` ile birlikte döndürüyor, `/satislar` süzgeci ve `/okut`
+ * onu buluyor. Listede olmadığı için iki yerde sessiz kusur doğmuştu —
+ * `SATIS_ROLLERI` "tek rol var" diye ölçülüyordu ve `/okut` sipariş
+ * numarasıyla okutulduğunda "hangi alan eşleşti" sorusuna **`null`**
+ * dönüyordu, yani ekran bulduğu kodu adlandıramıyordu.
+ * _(Anayasa: "şemadaki alan da bir iddiadır" — burada tersi: davranış
+ * vardı, kaydı yoktu; liste kendi TEK KAYIT YERİ olma sözünü tutmuyordu.)_
+ *
+ * ⚠ AD ALAN ADIDIR, ETİKET DEĞİL. Bütün roller şemadaki alan adını taşır
+ * (`kapsananRoller` JSON anahtarıyla eşleştiriyor); `Sale`'de alanın adı
+ * `code`. Kullanıcıya görünen ad sözlükten gelir (`alanCode`).
+ */
 export const KOD_ROLLERI = [
   "sku",
   "companySku",
   "barcode",
   "channelSku",
   "shipmentCode",
+  "code",
 ] as const;
 
 export type KodRolu = (typeof KOD_ROLLERI)[number];
@@ -61,6 +78,8 @@ export const ROL_KAPSAMI: Record<KodRolu, RolKapsami> = {
   barcode: "VARYANT",
   channelSku: "VARYANT",
   shipmentCode: "SATIS",
+  /** Sipariş numarası — gönderi numarasıyla aynı kapsam, aynı gerekçe. */
+  code: "SATIS",
 };
 
 export const VARYANT_ROLLERI = KOD_ROLLERI.filter(

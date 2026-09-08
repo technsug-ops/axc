@@ -26,6 +26,7 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { sayfaCoz } from "@/lib/sayfalama";
+import { satisKodundanVaryantIdleri } from "@/lib/satis-kodundan-varyant";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { urunStoklari } from "@/lib/stok";
 
@@ -50,6 +51,18 @@ export default async function UrunlerSayfasi({
   const t = await getTranslations("Urunler");
   const ortak = await getTranslations("Ortak");
   const tBaslik = await getTranslations("Basliklar");
+
+  /**
+   * ⛔ SİPARİŞ / GÖNDERİ NUMARASI DA ARANIR (08.09.2026) — `/stok` ile AYNI
+   * GÖVDEDEN. Kullanıcı isteği `/stok` içindi; buraya da uygulandı çünkü bu
+   * iki ekranın ayrışması bu depoda ZATEN yaşandı: kanal SKU'su 12.08'de
+   * `/urunler`de düzeltilip `/stok`ta unutulmuştu ve kullanıcı buldu.
+   * Yalnız `/stok`a eklemek aynı hatayı ayna simetrisiyle tekrarlardı.
+   * _(İlke #10: aynı kod her ekranda aynı sonucu verir.)_
+   */
+  const satisVaryantIdleri = arama
+    ? await satisKodundanVaryantIdleri(prisma, arama)
+    : [];
 
   const suzgec = arama
     ? {
@@ -76,13 +89,24 @@ export default async function UrunlerSayfasi({
       }
     : undefined;
 
+  /**
+   * ⚠ SATIŞ KİMLİĞİ `kodEsdegerleri` DÖNGÜSÜNE GİRMEZ: eşdeğer açılımı
+   * barkodun iki yazılışı içindir (UPC-A ↔ EAN-13); sipariş numarasının
+   * ikinci bir yazılışı yoktur. Küme boşsa dal HİÇ eklenmez — arama sonucu
+   * sessizce genişleyemez.
+   */
+  const suzgecArama =
+    suzgec && satisVaryantIdleri.length > 0
+      ? { OR: [...suzgec.OR, { variants: { some: { id: { in: satisVaryantIdleri } } } }] }
+      : suzgec;
+
   // ÖNCE SAY, SONRA SAYFAYI ÇEK. Sayım olmadan "kaç sayfa var"
   // bilinemez; kullanıcı kararı gereği toplam sayı da ekranda yazıyor.
-  const toplam = await prisma.product.count({ where: suzgec });
+  const toplam = await prisma.product.count({ where: suzgecArama });
   const sayfalama = sayfaCoz(sayfa, toplam);
 
   const urunler = await prisma.product.findMany({
-    where: suzgec,
+    where: suzgecArama,
     skip: sayfalama.atla,
     take: sayfalama.boyut,
     include: {

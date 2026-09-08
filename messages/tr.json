@@ -3541,6 +3541,7 @@
     "paketlemeGeriAl": "Geri al",
     "paketlemeOlmadi": "İşaretlenemedi; sipariş bulunamadı.",
     "alanShipmentCode": "gönderi numarası",
+    "alanCode": "sipariş numarası",
     "siparisBulundu": "Sipariş bulundu",
     "siparisBulunduAlan": "{alan} ile eşleşti. Aşağıdan paketlendi olarak işaretleyebilirsiniz.",
     "yonlendirmeliPaketle": "Yönlendirmeli paketle",

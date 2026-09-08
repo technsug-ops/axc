@@ -3,6 +3,10 @@ import { join } from "node:path";
 import { kartAdresi } from "../src/lib/kart-adresi";
 import { kodDizisi } from "../src/lib/varyant-ozet";
 import {
+  satisAramasiHazirla,
+  varyantIdleriniTopla,
+} from "../src/lib/satis-kodundan-varyant";
+import {
   KOD_ROLLERI,
   ROL_KAPSAMI,
   SATIS_ROLLERI,
@@ -447,9 +451,21 @@ console.log("");
         (VARYANT_ROLLERI as readonly string[]).includes(r),
       ),
   );
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ VE GÜNCELLENDİ (08.09.2026) — SUSTURULMADI.
+   * Eski hâli `SATIS_ROLLERI.length === 1 && [0] === "shipmentCode"` idi ve
+   * **yanlış bir şeyi sabitliyordu**: sipariş numarası (`code`) o gün de
+   * aranıyordu (hemen aşağıdaki ölçüt bunu ölçüyor) ama listede beyan
+   * edilmemişti. Yani ölçüt, kuralı değil listenin O ANKİ hâlini
+   * sabitliyordu — ve beyanı eklemeye kalkanın karşısına kırmızı yanarak
+   * çıkardı. _(Anayasa: "bekçi ölçütü kuralı sabitler, davranışı değil".)_
+   */
   kontrol(
-    "  ...gönderi numarası SATIS kapsamında",
-    SATIS_ROLLERI.length === 1 && SATIS_ROLLERI[0] === "shipmentCode",
+    "  ...iki SATIŞ kimliği de SATIS kapsamında (gönderi + sipariş no)",
+    SATIS_ROLLERI.length === 2 &&
+      ["shipmentCode", "code"].every((r) =>
+        (SATIS_ROLLERI as readonly string[]).includes(r),
+      ),
   );
 
   /**
@@ -474,6 +490,97 @@ console.log("");
     "  ...ve sipariş numarasını da arıyor",
     JSON.stringify(satisKodKosulu("X")).includes('"code"'),
   );
+
+  /* ═══ SATIŞ KİMLİĞİNDEN VARYANT — DEĞER TESTİ (08.09.2026) ═══════════
+   * Kullanıcı isteği: _"Stoktaki arama butonu sipariş numarasını da
+   * eşleştirebilsin."_ ÖLÇÜLDÜ: `4864776792` eski koşulda **0 varyant**
+   * döndürüyordu; bilgi sistemde vardı, arama sormuyordu.
+   *
+   * ⭐ KAYNAK TARANMIYOR, GÖVDE ÇAĞRILIYOR: `satisKodundanVaryantIdleri`
+   * db'yi PARAMETRE alıyor, bu yüzden sahte bir istemciyle değeri
+   * sınanabiliyor. _(Anayasa: "saf hesap katmanı, desen tarayan bekçiye
+   * muhtaç olmaz" — desen taraması son çare.)_ */
+  {
+    /** ⭐ SAF PARÇALAR DEĞERLE SINANIR — kaynak taranmaz. */
+    kontrol(
+      "satış kimliği kalemlerden varyant kimliği çıkarıyor",
+      JSON.stringify(varyantIdleriniTopla([{ items: [{ variantId: "v1" }] }])) ===
+        JSON.stringify(["v1"]),
+    );
+    /** Aynı varyant iki kalemde geçerse TEK kimlik döner — sorgu şişmez. */
+    kontrol(
+      "  ...tekrarlayan varyant TEKİLLEŞİYOR",
+      varyantIdleriniTopla([
+        { items: [{ variantId: "v1" }, { variantId: "v1" }, { variantId: "v2" }] },
+      ]).length === 2,
+    );
+    /** ⛔ AYRIMIN ÖTEKİ YAKASI: eşleşme yoksa BOŞ döner — koşul genişlemez. */
+    kontrol("eşleşme yoksa BOŞ döner (arama sessizce genişlemez)", varyantIdleriniTopla([]).length === 0);
+
+    /** Boş/boşluk sorgu VERİTABANINA HİÇ GİTMEZ — kapı `null` döndürür. */
+    kontrol("boş sorgu veritabanına GİTMEZ (kapı null)", satisAramasiHazirla("   ") === null);
+    kontrol("  ...dolu sorgu KIRPILARAK geçer", satisAramasiHazirla("  4864776792 ") === "4864776792");
+
+    /** ⛔ VE KAPILAR GERÇEKTEN BAĞLI: async gövde ikisini de ÇAĞIRIYOR. */
+    const govde = yorumsuz(readFileSync("src/lib/satis-kodundan-varyant.ts", "utf8"));
+    kontrol(
+      "async gövde boş-sorgu kapısını KULLANIYOR",
+      /const temiz = satisAramasiHazirla\(sorgu\);[\s\S]{0,80}if \(temiz === null\) return \[\];/.test(govde),
+    );
+    kontrol(
+      "  ...ve tekilleştirmeyi KULLANIYOR",
+      govde.includes("return varyantIdleriniTopla(satislar);"),
+    );
+
+    /**
+     * ⛔ TAM EŞLEŞME — KISMİ DEĞİL. Kısmi eşleşme ilgisiz bir siparişin
+     * ürününü stok listesine sokardı ve kullanıcı onu aradığı ürün sanardı.
+     */
+    kontrol(
+      "satış kimliği TAM eşleşiyor (kısmi eşleşme yok)",
+      !JSON.stringify(satisKodKosulu("X")).includes("contains"),
+    );
+  }
+
+  /* ═══ İKİ EKRAN DA AYNI GÖVDEYİ ÇAĞIRIYOR (İlke #10) ═════════════════
+   * ⛔ NİYE İKİSİ BİRDEN: bu ikilinin ayrışması bu depoda ZATEN yaşandı —
+   * kanal SKU'su 12.08'de `/urunler`de düzeltildi, `/stok` unutuldu ve
+   * kullanıcı buldu. Ölçüt dosya listesi değil, iki ekranın da gövdeye
+   * BAĞLI olduğu; üçüncü bir ekran açılırsa o da aynı gövdeyi çağırmalı. */
+  {
+    const stokKaynak = yorumsuz(
+      readFileSync("src/app/stok/page.tsx", "utf8"),
+    );
+    const urunlerKaynak = yorumsuz(
+      readFileSync("src/app/urunler/page.tsx", "utf8"),
+    );
+    for (const [ad, kaynak, dal] of [
+      ["/stok", stokKaynak, "{ id: { in: satisVaryantIdleri } }"],
+      [
+        "/urunler",
+        urunlerKaynak,
+        "{ variants: { some: { id: { in: satisVaryantIdleri } } } }",
+      ],
+    ] as const) {
+      kontrol(
+        `${ad} satış kimliği gövdesini ÇAĞIRIYOR`,
+        kaynak.includes("await satisKodundanVaryantIdleri(prisma, arama)"),
+      );
+      /** ⚠ ÇAĞRI YETMEZ — sonucu SÜZGECE giriyor mu. Zincirin orta halkası
+       *  en kolay unutulandır: gövde çağrılır, dönen değer kullanılmaz. */
+      kontrol(`  ...${ad} sonucu süzgece BAĞLIYOR`, kaynak.includes(dal));
+      /** ⚠ VE BOŞ KÜMEDE DAL EKLENMİYOR — koşul sessizce genişlemesin. */
+      kontrol(
+        `  ...${ad} boş kümede dalı EKLEMİYOR`,
+        kaynak.includes("satisVaryantIdleri.length > 0"),
+      );
+    }
+    /** ⛔ SAYI = LİSTE: sayım ile listeleme AYNI süzgeci okumalı. */
+    kontrol(
+      "/urunler sayımı ve listesi AYNI süzgeci okuyor",
+      (urunlerKaynak.match(/where: suzgecArama/g) ?? []).length === 2,
+    );
+  }
 
   // ── ŞEMA: BENZERSİZ ──────────────────────────────────────────────────
   const sema = semaMetni();

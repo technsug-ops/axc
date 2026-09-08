@@ -129,6 +129,14 @@ export function Okuyucu() {
     channelSku: t("alanChannelSku"),
     /** K41① — satış kimliği; ürün rolü değil ama aynı sözlükten okunur. */
     shipmentCode: t("alanShipmentCode"),
+    /**
+     * ⛔ SİPARİŞ NUMARASI — ETİKETİ BUGÜNE KADAR HİÇ ÇİZİLMEMİŞTİ.
+     * `okut/actions.ts` sipariş numarasıyla okutulan satışı BULUYOR ama
+     * "hangi alan eşleşti" sorusuna `null` dönüyordu; ekran bulduğu kodu
+     * adlandıramıyor, kullanıcı hangi kâğıdın tuttuğunu göremiyordu.
+     * Rol beyan edilince bu `Record` derlenmedi ve eksik kendini gösterdi.
+     */
+    code: t("alanCode"),
   };
 
   const siparisVar = (sonuc?.siparisler.length ?? 0) > 0;

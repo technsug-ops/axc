@@ -50,6 +50,7 @@ import {
   YAS_BANTLARI,
 } from "@/lib/yaslanma";
 import { sayfaCoz } from "@/lib/sayfalama";
+import { satisKodundanVaryantIdleri } from "@/lib/satis-kodundan-varyant";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import {
   idleriSirala,
@@ -352,6 +353,23 @@ export default async function StokSayfasi({
       null,
     );
 
+  /**
+   * ⛔ SİPARİŞ / GÖNDERİ NUMARASI DA ARANIR (kullanıcı isteği 08.09.2026).
+   *
+   * _"Stoktaki arama butonu sipariş numarasını da eşleştirebilsin."_
+   * ÖLÇÜLDÜ: `4864776792` bugünkü koşulda **0 varyant** döndürüyordu; oysa
+   * numara tek satışa ve tek varyanta çözülüyor (`axcali2850`). Bilgi
+   * sistemde vardı, arama sormuyordu.
+   *
+   * ⚠ İKİ ADIM ZORUNLU: sipariş numarası bir SATIŞ kimliği, varyant
+   * koşuluna yazılamaz (K41① sınırı). Önce kimlik varyantlara çevrilir,
+   * sonra `id: { in: … }` olarak OR'a girer — gövde `satis-kodundan-varyant`
+   * içinde TEK yerde, `/urunler` de aynı gövdeyi çağırıyor (İlke #10).
+   */
+  const satisVaryantIdleri = arama
+    ? await satisKodundanVaryantIdleri(prisma, arama)
+    : [];
+
   const aramaKosulu = arama
     ? {
         /**
@@ -385,6 +403,19 @@ export default async function StokSayfasi({
     : undefined;
 
   /**
+   * ⚠ SATIŞ KİMLİĞİ OR'A AYRI EKLENİR, `kodEsdegerleri` DÖNGÜSÜNE DEĞİL:
+   * eşdeğer açılımı barkodun iki yazılışı içindir (UPC-A ↔ EAN-13); sipariş
+   * numarasının ikinci bir yazılışı YOKTUR ve döngüye konsaydı aynı kimlik
+   * küme başına tekrar sorulurdu.
+   *
+   * ⚠ BOŞ KÜMEDE DAL HİÇ EKLENMEZ — arama sonucu sessizce genişleyemez.
+   */
+  const suzgecArama =
+    aramaKosulu && satisVaryantIdleri.length > 0
+      ? { OR: [...aramaKosulu.OR, { id: { in: satisVaryantIdleri } }] }
+      : aramaKosulu;
+
+  /**
    * İki süzgeç BİRLİKTE yaşar: arama + yaş.
    *
    * Yaş bandı boş küme döndürürse `id: { in: [] }` yazılır ve liste boş
@@ -394,8 +425,8 @@ export default async function StokSayfasi({
    */
   const suzgec =
     varyantSuzgeci === null
-      ? aramaKosulu
-      : { ...(aramaKosulu ?? {}), id: { in: varyantSuzgeci } };
+      ? suzgecArama
+      : { ...(suzgecArama ?? {}), id: { in: varyantSuzgeci } };
 
   // ÖNCE SAY, SONRA SAYFAYI ÇEK (bkz. lib/sayfalama.ts).
   const toplam = await prisma.productVariant.count({ where: suzgec });

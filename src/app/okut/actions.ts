@@ -439,12 +439,23 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
    * Kullanıcı "gönderi numarasından bulundu" görmezse, kodun neden
    * eşleştiğini bilemez ve yanlış kutuyu paketleyebilir.
    */
+  /**
+   * ⛔ SİPARİŞ NUMARASI DALI EKSİKTİ (08.09.2026). Satış `satisKodKosulu`
+   * ile İKİ alandan biriyle bulunuyor, ama burada yalnız `shipmentCode`
+   * soruluyordu: sipariş numarasıyla okutan kullanıcı siparişi görüyor,
+   * ekran hangi kodun tuttuğunu **söyleyemiyordu** (`null`). Sessiz bir
+   * kusur değil, YANLIŞ CEVAP: iki koddan hangisinin eşleştiğini bilmeyen
+   * depocu yanlış kutuyu paketleyebilir — bu satırın kendi yorumu zaten
+   * bunu söylüyordu ve dal onu tutmuyordu.
+   */
   const alan: KodRolu | null = varyant
     ? bulunanAlan(temiz, varyant)
     : satisKaydi
       ? satisKaydi.shipmentCode === temiz
         ? "shipmentCode"
-        : null
+        : satisKaydi.code === temiz
+          ? "code"
+          : null
       : null;
   const izId = await iziYaz(kova, {
     kod: temiz,
