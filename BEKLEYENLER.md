@@ -179,9 +179,29 @@ Artık cevabı uç kendisi verecek — bir sonraki Actions koşumu ya `200` +
 sipariş sayısı ya `503` + eksik değişken ADI döndürecek. _(K119'un A3
 satırı da bu ölçümle düzeltildi: silinmedi, SÜPERSEDE işaretlendi.)_
 
-⚠ **GÖREV ŞU AN DEVRE DIŞI** (`schtasks /change /disable`, 07:48): klon
-`8d80195`'te ve kanal kapısı henüz push edilmedi. **Push bitince yeniden
-etkinleştirilecek** — bu satır o zaman düşer.
+### ⑦ KAPANIŞ DOĞRULAMASI — CANLIDA GÖRÜLDÜ (08.09 08:24)
+
+Görev 07:48'de bilerek **durdurulmuştu** (klon `8d80195`'te, kapı henüz
+push edilmemişti — tetik açık kalsaydı kararın ihlalini otomatikleştirirdi).
+Push (`dbdb9be`, bekçi **116/116 yeşil**) sonrası açıldı ve koşum ölçüldü:
+
+    klon dbdb9be · uc kanal cikis=0 · toplam 19 sn
+    TY  ⑦ aday 2 · onaylanan 0 · cok parti (elle) 0 · KANAL KAPALI (elle) 2
+    N11 ⑥ aday 2 · onaylanan 0 · cok parti (elle) 0 · KANAL KAPALI (elle) 2
+    HB    67 siparis enumere · 67'si defterde · YAZILACAK 0
+
+⭐ **SAYAÇ `çok parti 2` → `KANAL KAPALI 2` GEÇTİ.** Ölçülebilir kanıt tam
+buydu: iki HB siparişini artık parti yapılarının TESADÜFÜ değil, mimarın
+KARARI tutuyor. Kapı canlıda ve mekanizma olarak çalışıyor.
+
+⚠ **HB KAPSAMI 17 → 67 ÇIKTI VE SEBEBİ YAZILIYOR:** 07:47 koşumunda klon
+`8d80195`'teydi ve `teslim` ucu (K-HB-KAPSAM'da eklenmişti) henüz onda
+yoktu; enumerasyon yalnız açık+kargoda görüyordu. Aynı push o ucu da
+taşıdı. **Rakam büyüdüğü için değil, kapsam genişlediği için değişti.**
+
+⏭ **MİMAR KARARI BEKLEYEN TEK ŞEY:** ⑤'teki iki otomatik onay
+(`4864776792` · `4825253981`) yerinde bırakılsın mı, ters kayıtla geri mi
+alınsın. Ölçüm ters kayıt gerektirmiyor; karar yine de mimarın.
 
 ---
 
