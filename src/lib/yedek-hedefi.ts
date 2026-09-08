@@ -1,4 +1,4 @@
-import { del, head, list, put } from "@vercel/blob";
+import { del, get, head, list, put } from "@vercel/blob";
 import {
   mkdirSync,
   readFileSync,
@@ -97,18 +97,34 @@ export function blobHedefi(jeton?: string): YedekHedefi {
       const kayitlar = await this.listele(ad);
       const kayit = kayitlar.find((k) => k.ad === ad);
       if (kayit === undefined) return null;
-      const cevap = await fetch(kayit.adres);
-      if (!cevap.ok) {
+      /**
+       * ⛔ DÜZ `fetch` KULLANILMAZ — VE BU BİR ÖLÇÜM SONUCUDUR (08.09.2026).
+       *
+       * Bu dosyalar `access: "private"` yazılıyor; özel bir blob'un URL'sine
+       * jetonsuz `fetch` atmak **TASARIM GEREĞİ** `403` verir. Yani eski
+       * gövde, depo tertemiz olsaydı BİLE okuyamazdı ve hatası "depo askıda"
+       * gibi görünürdü — iki apayrı arıza ekranda aynı satırı yazıyordu.
+       * Doğru yol `api/yedek/indir`in kullandığı yoldur: `get(access:"private")`.
+       *
+       * ⚠ ETKİSİ HENÜZ KANITLANMADI: 08.09'da ölçüldü, iki yol da `403`
+       * verdi çünkü depo HÂLÂ askıda. Düzeltme kendi başına doğru; askı
+       * kalkmadan "çözüldü" denemez. _(Anayasa: "tetiklenemeyen yol
+       * 'geçti' sayılmaz".)_
+       */
+      const sonuc = await get(ad, { access: "private", token });
+      /** `get` bulunamayınca `null` döner — gerçekten yok demektir. */
+      if (!sonuc) return null;
+      if (sonuc.statusCode !== 200) {
         /**
          * ⛔ SESSİZ `null` DÖNÜLMEZ. 31.08.2026'da tam bu ayrım kritikti:
          * dosya VARDI, okuma 403 veriyordu. `null` dönseydi araç "yedek
          * yok" der ve asıl arıza (askı) görünmezdi.
          */
         throw new Error(
-          `Blob okunamadı (${cevap.status}) — ${ad}. Depo askıda olabilir.`,
+          `Blob okunamadı (${sonuc.statusCode}) — ${ad}. Depo askıda olabilir.`,
         );
       }
-      return cevap.text();
+      return new Response(sonuc.stream).text();
     },
     async sil(adlar) {
       if (adlar.length === 0) return 0;
@@ -133,6 +149,59 @@ export async function blobUstverisi(
   } catch {
     return null;
   }
+}
+
+/* ═══════════════════════ HEDEF SEÇİMİ ══════════════════════════════ */
+
+/**
+ * ⛔ HEDEF SEÇİMİ **BEYANLIDIR** — SESSİZ YEDEK HEDEFİ YOKTUR (K119b, 08.09.2026).
+ *
+ * "Blob düştüyse yerele yaz" ilk bakışta doğru görünüyor ve YANLIŞ olurdu:
+ * gece yedeği ile "Şimdi yedek al" düğmesi **Vercel'de** koşuyor
+ * (`vercel.json` → `crons`, bölge `fra1`) ve orada kalıcı disk YOK — yazılan
+ * dosya işlev bitince kaybolur. Sessiz bir yerel yedek, ekranda "yedek
+ * alındı" yazan ama bir saat sonra var olmayan bir dosya üretirdi:
+ * **tam olarak kaçınmaya çalıştığımız yalancı yeşil.**
+ *
+ * Bu yüzden yerel hedef ancak AÇIKÇA istendiğinde seçilir
+ * (`YEDEK_HEDEFI=DOSYA` + `YEDEK_KOK=...`) — operatörün kendi makinesinde,
+ * betikle. Vercel'de bu değişkenler yok, dolayısıyla üretim yolu asla
+ * kendiliğinden yerele düşmez.
+ *
+ * ⚠ VE "HEDEF YOK" BİR HATADIR, SESSİZLİK DEĞİL: çağıran `DEPO_YOK` alır ve
+ * ekranda görünür. _(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen
+ * denetim, denetim değildir".)_
+ */
+export type HedefSecimi =
+  | { tamam: true; hedef: YedekHedefi }
+  | { tamam: false; kod: "DEPO_YOK"; mesaj: string };
+
+export function varsayilanYedekHedefi(
+  env: Record<string, string | undefined> = process.env,
+): HedefSecimi {
+  if (env.YEDEK_HEDEFI === "DOSYA") {
+    const kok = env.YEDEK_KOK;
+    if (!kok) {
+      return {
+        tamam: false,
+        kod: "DEPO_YOK",
+        mesaj:
+          "YEDEK_HEDEFI=DOSYA seçilmiş ama YEDEK_KOK tanımlı değil — hedef klasör belirtilmeden yerel yedek yazılmaz.",
+      };
+    }
+    return { tamam: true, hedef: dosyaHedefi(kok) };
+  }
+
+  if (env.BLOB_READ_WRITE_TOKEN) {
+    return { tamam: true, hedef: blobHedefi(env.BLOB_READ_WRITE_TOKEN) };
+  }
+
+  return {
+    tamam: false,
+    kod: "DEPO_YOK",
+    mesaj:
+      "Yedek hedefi yok: Vercel Blob deposu bağlı değil ve YEDEK_HEDEFI=DOSYA seçilmemiş.",
+  };
 }
 
 /* ═══════════════════════ YEREL DOSYA ═══════════════════════════════ */

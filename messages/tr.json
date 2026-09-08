@@ -1732,6 +1732,7 @@
     "yedekAliniyor": "Yedek alınıyor…",
     "yedekAlindi": "Yedek alındı — {gun} · {satir} satır · {kb} KB. Listede görünüyor.",
     "yedekAlinamadi": "Yedek alınamadı. Ayrıntı sunucu günlüğünde; tekrar deneyin ya da bildirin.",
+    "yedekOkunamadi": "Yedek dosyası yazıldı ama GERİ OKUNAMADI — depo askıda olabilir. Doğrulanamayan yedek, yedek sayılmaz: elinizde kullanılabilir bir yedek YOK.",
     "depoYok": "Yedek deposu bağlı değil (Vercel → Storage → Blob). Bağlanmadan yedek yazılamaz.",
     "kapsamGunluk": "günlük (kargo tarifeleri hariç)",
     "kapsamTam": "tam",

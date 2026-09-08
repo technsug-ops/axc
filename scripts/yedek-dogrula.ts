@@ -17,7 +17,7 @@
  */
 
 import "dotenv/config";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 import {
   farkRaporu,
@@ -357,6 +357,202 @@ async function main() {
         );
         console.log("        NOT: tarifeleri geri getirmek için:  npx prisma db seed");
       }
+    }
+  }
+
+  /* === 5) HEDEF VE GERI OKUMA — YALANCI YESIL YASAGI (K119b) ======== */
+  /**
+   * ⛔ NİYE VAR (08.09.2026): 31.08'de Blob askıya alındı; YAZMA ve LİSTELEME
+   * çalışmaya devam etti, kırılan OKUMAYDI ve o gün kullanılabilir yedek
+   * sayısı SIFIRDI. Yazma sonucuna bakan hiçbir kontrol bunu göremezdi.
+   *
+   * ⭐ ÖLÇÜTLER GÖVDEYİ ÇAĞIRIR, KAYNAK TARAMAZ — `yedegiHedefeYaz` bilerek
+   * veritabanından bağımsız yazıldı ki sahte hedeflerle sınanabilsin.
+   * _(Anayasa: "saf hesap katmanı, desen tarayan bekçiye muhtaç olmaz".)_
+   *
+   * ⚠ VE BU BLOKTA BİLEREK HİÇ DÜZENLİ İFADE YOK: ölçütler betikle yazıldı ve
+   * bu depoda ters bölülü desenler üretilirken İKİ KEZ bozuldu (görünmez
+   * karakter · yutulan kaçış). Metin araması `includes` ile yapılıyor —
+   * bozulamayacak biçim. _(Anayasa: "kod üreten araç, kaçış dizilerini bozuk
+   * yazabilir".)_
+   */
+  console.log("");
+  console.log("5) HEDEF VE GERİ OKUMA — yazmak yetmez, geri okunur");
+  {
+    const { yedegiHedefeYaz } = await import("../src/lib/yedek-yaz");
+    const { varsayilanYedekHedefi } = await import("../src/lib/yedek-hedefi");
+    type Hedef = Parameters<typeof yedegiHedefeYaz>[0];
+
+    /** Sahte hedef: `oku` davranışı dışarıdan verilir. */
+    const sahte = (oku: () => Promise<string | null>): Hedef => ({
+      tur: "DOSYA",
+      aciklama: "sahte hedef (bekçi)",
+      async yaz(_ad, icerik) {
+        return { adres: "sahte://" + icerik.length };
+      },
+      async listele() {
+        return [];
+      },
+      oku,
+      async sil() {
+        return 0;
+      },
+    });
+
+    const ICERIK = '{"surum":1,"veri":"bekci"}';
+
+    /** ① SAĞLAM HEDEF → başarı. (Yanlış YANMA yönü: doğruyu reddetmesin.) */
+    const iyi = await yedegiHedefeYaz(sahte(async () => ICERIK), "a.json", ICERIK);
+    kontrol("sağlam hedef başarı döner", iyi.tamam === true, iyi);
+    kontrol(
+      "başarıda doğrulama süresi ölçülür",
+      iyi.tamam === true && typeof iyi.dogrulamaMs === "number",
+    );
+
+    /** ② GERİ OKUMA BOŞ → OKUNAMADI. Yazma başarılıydı; başarı SAYILMAZ. */
+    const bos = await yedegiHedefeYaz(sahte(async () => null), "a.json", ICERIK);
+    kontrol(
+      "geri okuma boşsa OKUNAMADI (yazma başarılı olsa bile)",
+      bos.tamam === false && bos.kod === "OKUNAMADI",
+      bos,
+    );
+
+    /**
+     * ③ GERİ OKUNAN FARKLI → OKUNAMADI.
+     * ⚠ ÖRNEK VERİ AYRIMI GÖSTERİR: bozuk metin yazılanla **AYNI UZUNLUKTA**
+     * seçildi. Uzunluk karşılaştıran bir gövde bu satırı GEÇERDİ; sha256
+     * geçmez. _(Anayasa: "örnek veri ayrımın iki yakasını göstermeli".)_
+     */
+    const bozuk = ICERIK.replace("bekci", "BEKCI");
+    kontrol("bozuk örnek yazılanla aynı uzunlukta", bozuk.length === ICERIK.length);
+    const fark = await yedegiHedefeYaz(sahte(async () => bozuk), "a.json", ICERIK);
+    kontrol(
+      "geri okunan farklıysa OKUNAMADI",
+      fark.tamam === false && fark.kod === "OKUNAMADI",
+      fark,
+    );
+
+    /** ④ OKUMA FIRLATIRSA YUTULMAZ — 403 "yedek yok"a çevrilemez. */
+    let firladi = false;
+    try {
+      await yedegiHedefeYaz(
+        sahte(async () => {
+          throw new Error("403 Forbidden");
+        }),
+        "a.json",
+        ICERIK,
+      );
+    } catch {
+      firladi = true;
+    }
+    kontrol("okuma hatası yutulmaz (fırlatılır)", firladi);
+
+    /* -- HEDEF SECIMI: SESSIZ YEREL YEDEK OLAMAZ ---------------------- */
+    /**
+     * ⛔ EN KRİTİK ÖLÇÜT: üretimde (Vercel) kalıcı disk YOK. Blob düşünce
+     * kendiliğinden yerele düşen bir seçici, "yedek alındı" yazıp bir saat
+     * sonra var olmayan bir dosya üretirdi.
+     */
+    const bosSecim = varsayilanYedekHedefi({});
+    kontrol(
+      "hedef yoksa DEPO_YOK (sessiz hedef yok)",
+      bosSecim.tamam === false && bosSecim.kod === "DEPO_YOK",
+      bosSecim,
+    );
+    const blobSecim = varsayilanYedekHedefi({ BLOB_READ_WRITE_TOKEN: "x" });
+    kontrol(
+      "jeton varsa BLOB seçilir",
+      blobSecim.tamam === true && blobSecim.hedef.tur === "BLOB",
+    );
+    const dosyaSecim = varsayilanYedekHedefi({
+      YEDEK_HEDEFI: "DOSYA",
+      YEDEK_KOK: "veri/yedek-yerel",
+    });
+    kontrol(
+      "beyan edilirse DOSYA seçilir",
+      dosyaSecim.tamam === true && dosyaSecim.hedef.tur === "DOSYA",
+    );
+    const koksuz = varsayilanYedekHedefi({
+      YEDEK_HEDEFI: "DOSYA",
+      BLOB_READ_WRITE_TOKEN: "x",
+    });
+    kontrol(
+      "DOSYA beyanı köksüzse DEPO_YOK — sessizce BLOB'a düşmez",
+      koksuz.tamam === false && koksuz.kod === "DEPO_YOK",
+      koksuz,
+    );
+    /**
+     * ⚠ TERS YÖN: beyan YOKKEN hiçbir koşulda DOSYA seçilmemeli. Bu ölçüt
+     * olmasaydı, seçiciyi "jeton yoksa yerele düş" yapan mutasyon yeşil
+     * geçerdi — ve arıza tam orada doğardı.
+     */
+    const beyansiz = varsayilanYedekHedefi({ YEDEK_KOK: "veri/yedek-yerel" });
+    kontrol(
+      "beyansız YEDEK_KOK tek başına DOSYA seçtirmez",
+      beyansiz.tamam === false && beyansiz.kod === "DEPO_YOK",
+      beyansiz,
+    );
+
+    /* -- DESEN YASAGI: YEDEK GOVDELERI KUTUPHANEYE KILITLENEMEZ ------ */
+    /**
+     * ⛔ DOSYA LİSTESİ DEĞİL DESEN — VE BU BİR DÜZELTMEDİR.
+     *
+     * Ölçüt önce YALNIZ `yedek-yaz.ts`ye bakıyordu: yani bir dosyalık liste.
+     * Yarın açılan `yedek-arsiv.ts` deposu doğrudan çağırsa hiçbir şey
+     * söylemezdi — K119a'nın soyutlamayı kurup gövdeyi bağlamayı unutması
+     * tam bu sınıftan bir hataydı. Şimdi `src/lib/yedek*.ts`in TAMAMI
+     * taranıyor ve tek muafiyet ADIYLA beyan ediliyor.
+     * _(Anayasa: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır"
+     * ve "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)_
+     *
+     * ⚠ MUAFİYET GEREKÇELİDİR: `yedek-hedefi.ts` soyutlamanın KENDİSİDİR —
+     * kütüphaneyi çağıran tek yer orası olmalı, yasak zaten onu korumak için
+     * var.
+     */
+    const MUAF = "yedek-hedefi.ts";
+    const yedekGovdeleri = readdirSync("src/lib")
+      .filter((a) => a.startsWith("yedek") && a.endsWith(".ts"));
+    kontrol(
+      "taranan yedek gövdesi bulundu (taban DOLU)",
+      yedekGovdeleri.length >= 4,
+      yedekGovdeleri,
+    );
+    const kilitli = yedekGovdeleri.filter(
+      (a) =>
+        a !== MUAF &&
+        readFileSync("src/lib/" + a, "utf8").includes('from "@vercel/blob"'),
+    );
+    kontrol(
+      "hiçbir yedek gövdesi @vercel/blob'a doğrudan bağlı değil (muaf: " +
+        MUAF +
+        ")",
+      kilitli.length === 0,
+      kilitli,
+    );
+    kontrol(
+      "yazma çekirdeği hedef soyutlamasını kullanır",
+      readFileSync("src/lib/yedek-yaz.ts", "utf8").includes(
+        'from "@/lib/yedek-hedefi"',
+      ),
+    );
+
+    /* -- ROTA: BASARISIZLIK BASARI DURUMU DONEMEZ --------------------- */
+    /**
+     * ⚠ KAPSAM KULLANIM BLOĞUNA DARALTILDI: başarı kodu rotanın başka
+     * yerlerinde geçebilir; ölçüt yalnız `!sonuc.tamam` dalının İÇİNE bakar.
+     */
+    const rota = readFileSync("src/app/api/yedek/otomatik/route.ts", "utf8");
+    const dalBasi = rota.indexOf("if (!sonuc.tamam)");
+    kontrol("rotada başarısızlık dalı var", dalBasi >= 0);
+    if (dalBasi >= 0) {
+      const kapanis = rota.indexOf("  }", dalBasi);
+      const dal = rota.slice(dalBasi, kapanis > 0 ? kapanis : dalBasi + 900);
+      kontrol("başarısızlık dalı HTTP durumu yazar", dal.includes("status:"));
+      kontrol("başarısızlık dalı BAŞARI durumu döndürmez", !dal.includes("200"));
+      kontrol(
+        "DEPO_YOK 503, gerçek arıza 500 olarak ayrılır",
+        dal.includes("503") && dal.includes("500"),
+      );
     }
   }
 

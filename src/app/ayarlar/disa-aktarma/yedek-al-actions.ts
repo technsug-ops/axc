@@ -43,9 +43,22 @@ export async function simdiYedekAl(): Promise<ElleYedekSonucu> {
      * ne yapacağını bilir. Ham hata metni ekrana basılmaz — çeviriden geçen
      * anlaşılır bir cümle döner, ayrıntı sunucu günlüğünde durur.
      */
+    /**
+     * ⛔ ÜÇ KOD, ÜÇ CÜMLE — "OKUNAMADI" GENEL HATAYA GÖMÜLMEZ (K119b).
+     *
+     * "Yedek alınamadı" demek, dosyanın yazıldığı ama geri okunamadığı
+     * durumda YANLIŞ bilgi verir: kullanıcı "tekrar dene" der, her denemede
+     * dosya yeniden yazılır ve hiçbiri okunamaz. Doğru cümle depoyu işaret
+     * etmeli. _(Anayasa: "metin, sahip olmadığı anlamı iddia etmez".)_
+     */
     return {
       tamam: false,
-      hata: sonuc.kod === "DEPO_YOK" ? t("depoYok") : t("yedekAlinamadi"),
+      hata:
+        sonuc.kod === "DEPO_YOK"
+          ? t("depoYok")
+          : sonuc.kod === "OKUNAMADI"
+            ? t("yedekOkunamadi")
+            : t("yedekAlinamadi"),
     };
   }
 

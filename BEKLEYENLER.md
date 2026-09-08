@@ -5913,13 +5913,16 @@ riskini düzeltme kılığında taşır.
 
 ---
 
-## 🟠 K119 — YEDEK BORU HATTI · **DARALDI** (yazım güvenliği sağlandı)
+## 🟠 K119 — YEDEK BORU HATTI · **DARALDI** (çekirdek bağlandı, askı sürüyor)
 
-_K119a teslim edildi 31.08.2026. Kalan: gece otomasyonu Vercel askısına bağlı._
+_K119a 31.08.2026 · K119b 08.09.2026 teslim edildi. Kalan: Blob askısı —
+bizim tarafımızdan çözülemez, gece otomasyonu üretimde yedek üretmiyor._
 
 > ⛔ **KALAN KURAL:** gece otomasyonu ÇALIŞMIYOR. Migration ve toplu yazım
-> öncesi **`npm run canli:yedek-dosya`** koşulur ve doğrulaması GEÇMELİDİR.
-> Salt okuma ölçümler serbest.
+> öncesi **`npm run canli:yedek-cekirdek`** koşulur ve YEŞİL olmalıdır.
+> ⚠ Komut 08.09'da değişti: eski `canli:yedek-dosya` yalnız HEDEFİ sınıyordu,
+> yenisi kullanıcının bastığı düğmeyle aynı ÇEKİRDEĞİ koşuyor ve yazdığını
+> GERİ OKUYOR. Salt okuma ölçümler serbest.
 
 ### ✅ K119a — YAPILANLAR
 
@@ -5955,6 +5958,113 @@ Hedef ölüyse tur KIRMIZI ve deploy durur. Mutasyon **3/3 kırmızı**
 ⚠ **SİLME MUTASYONU İLK TURDA KAÇTI:** sonda `sil()`in döndürdüğü SAYIYA
 bakıyordu; silmeyi hiç yapmayıp `1` döndüren kurgu yeşil geçti. Ölçüt
 davranışa bağlandı — silmeden sonra **yeniden okunuyor**.
+
+### ✅ K119b — ÇEKİRDEK SOYUTLAMAYA BAĞLANDI + YALANCI YEŞİL KAPATILDI · 08.09.2026 · [KOD KOŞTU]
+
+⛔ **K119a SOYUTLAMAYI KURDU, ÇEKİRDEĞİ ONA BAĞLAMADI — VE HİÇBİR ŞEY
+SÖYLEMEDİ.** `yedek-hedefi.ts` yazıldı, iki uygulaması sınandı, `deploy:bekci`
+sondası eklendi. Ama **kullanıcının bastığı düğme ile gece cron'unun koştuğu
+gövde** (`lib/yedek-yaz.ts`) `put()`u DOĞRUDAN çağırmaya devam ediyordu.
+Soyutlamayı yalnız betikler kullanıyordu; depo askıya alınınca üretim yolunun
+başka hiçbir çıkışı yoktu.
+_(Anayasa: "düzeltme yolu, TÜM okuyuculara ulaştığı ölçülmeden 'var' sayılmaz"
+— K119a'da bu ölçüm hiç yapılmamıştı.)_
+
+**① ASKI ÖLÇÜLDÜ — ÇÖZÜLMEMİŞ (08.09.2026, `scripts/k119-blob-olcum.ts`)**
+
+    ① LISTELE       ✓  21 dosya   (ustveri okunuyor — 31.08'deki gibi)
+    en yeni         yedek/selliora-2026-08-31.json · 29,35 MB · 8 GUNLUK
+    ② duz fetch     403 ⛔   (yedek-hedefi.oku bunu yapiyordu)
+    ③ get(private)  403 ⛔   (api/yedek/indir'in kullandigi DOGRU yol)
+
+⚠ **BLOB'DA BUGÜN SIFIR KULLANILABİLİR YEDEK VAR** — dosyalar duruyor, hiçbiri
+okunamıyor. Listeleme çalıştığı için pano "yedek var" diyebilirdi.
+
+**② `oku()` ZATEN BOZUKTU — VE BU AYRI BİR ARIZA.** Gövde düz `fetch(url)`
+yapıyordu; dosyalar `access:"private"` yazılıyor ve özel bir blob'un URL'sine
+jetonsuz `fetch` atmak **tasarım gereği** `403` verir. Yani depo tertemiz
+olsaydı BİLE `blobHedefi.oku` okuyamazdı ve hatası "askı" gibi görünürdü.
+`get(access:"private")`e çevrildi.
+⚠ **ETKİSİ KANITLANMADI:** iki yol da bugün `403` veriyor (depo askıda), ikisi
+ayırt edilemiyor. Düzeltme kendi başına doğru; askı kalkmadan "çözüldü"
+denemez. _(Anayasa: "tetiklenemeyen yol 'geçti' sayılmaz".)_
+
+**③ ÇEKİRDEK BAĞLANDI** — `yedek-yaz.ts`te `@vercel/blob` importu ve `put()`
+YOK; hedef `YedekHedefi` üstünden geliyor ve sınama için enjekte edilebiliyor.
+
+**④ ⭐ YAZMAK YETMEZ: BAŞARI ANCAK GERİ OKUMADAN SONRA İLAN EDİLİYOR.**
+`yedegiHedefeYaz()` = **yaz → geri oku → sha256 karşılaştır**. Uzunluk değil
+ÖZET: aynı boyutta bozuk bir dosya uzunluk testini geçerdi.
+⛔ **`OKUNAMADI` AYRI BİR KOD** — "yazılamadı" ile aynı kefeye konmuyor;
+31.08'de yazma çalışıyordu, kırılan okumaydı. Rota `500`, ekran kendi cümlesini
+yazıyor (`yedekOkunamadi`): "tekrar deneyin" demek, her denemede yazılıp hiç
+okunamayan bir dosya üretirdi.
+⛔ **VE ATLAMAK YAPISAL OLARAK İMKÂNSIZ:** `adres` ile `dogrulamaMs` yalnız o
+gövdeden çıkıyor — çağrıyı silen mutasyon DERLEMEYİ düşürür. Koruma disipline
+değil mekanizmaya bağlı.
+
+**⑤ ⛔ SESSİZ YEREL YEDEK YOK — VE BU MİMAR TALİMATININ DÜZELTİLMİŞ HÂLİ.**
+Talimat "çözülmediyse hedef yerel/başka" diyordu. Üretimde bunun karşılığı
+YOK: düğme ve cron **Vercel'de** koşuyor (`vercel.json` → `crons`, `fra1`) ve
+orada kalıcı disk yok. Sessizce yerele düşen bir seçici "yedek alındı" yazıp
+bir saat sonra var olmayan bir dosya üretirdi — **tam da kapatmaya çalıştığımız
+yalancı yeşil.** Bu yüzden hedef **BEYANLA** seçiliyor
+(`YEDEK_HEDEFI=DOSYA` + `YEDEK_KOK`); beyan yoksa hiçbir koşulda DOSYA
+seçilmiyor, `DEPO_YOK` görünür hata olarak dönüyor.
+_(Anayasa: "mimar talimatları da bu süzgeçten geçer — karşılığı yoksa eksiği
+bildirip niyeti karşılayan yolu öner".)_
+
+**⑥ UÇTAN UCA KANIT — `npm run canli:yedek-cekirdek` (canlı veriyle)**
+
+    secilen hedef  DOSYA · Yerel klasor (veri/yedek-yerel)
+    ✓ yazildi ve GERI OKUNDU — ozetler birebir
+      gun 2026-09-08 · satir 86.000 · boyut 41,26 MB
+      geri okuma 184 ms · toplam 6.823 ms
+
+⭐ **31.08'den beri ilk DOĞRULANMIŞ yedek.** Ve bu betik bilerek ayrı:
+`canli-yedek-dosya.ts` HEDEFİN çalıştığını kanıtlıyordu, **çekirdeğin**
+değil — kendi `yedekUret` çağrısını yapıyor, `gunlukYedekYaz`a hiç uğramıyor.
+K119a'nın boşluğu tam oradaydı.
+
+**⑦ BEKÇİ — `yedek:dogrula` 33 → 51 ölçüt · MUTASYON 10/10 KIRMIZI**
+
+Ölçütler kaynak taramıyor, **gövdeyi çağırıyor**: `yedegiHedefeYaz` bilerek
+veritabanından bağımsız yazıldı ki sahte hedeflerle sınanabilsin.
+_(Anayasa: "saf hesap katmanı, desen tarayan bekçiye muhtaç olmaz".)_
+
+    ① geri okuma kaldirildi              KIRMIZI
+    ② bos okuma BASARI sayilir           KIRMIZI   (yanlis susma)
+    ③ ozet karsilastirmasi hep dogru     KIRMIZI
+    ④ saglam hedef de OKUNAMADI doner    KIRMIZI   (yanlis yanma)
+    ⑤ jeton yoksa SESSIZCE yerele dus    KIRMIZI
+    ⑥ DOSYA beyani yok sayilir           KIRMIZI
+    ⑦ cekirdek yine @vercel/blob'a bagli KIRMIZI
+    ⑧ rota basarisizlikta BASARI doner   KIRMIZI
+    ⑨ BASKA bir yedek govdesi baglanir   KIRMIZI   (desen yasagi, liste degil)
+    ⑩ taranan taban bosaltilir           KIRMIZI   (bos-taban tuzagi)
+
+⚠ **② İLK TURDA "KIRMIZI" GÖRÜNDÜ AMA ISIRMAMIŞTI:** kuralı `if(false)` yapan
+kurgu bekçiyi ÇÖKERTİYORDU (`null` özete gidiyor) — çıkış kodu `1`, ama hüküm
+ölçütten değil çökmeden geliyordu. Mutasyon çökmeyen hâle çevrildi (boş okuma
+→ başarı döner) ve ölçütün ısırdığı GÖRÜLDÜ.
+_(Anayasa: "aracın çıktısı okunur — rengi ya da kodu değil".)_
+
+⚠ **VE DESEN YASAĞI İLK YAZILDIĞINDA TEK DOSYALIK LİSTEYDİ** (`yedek-yaz.ts`).
+Yarın açılacak bir `yedek-arsiv.ts` yakalanmazdı — K119a'nın hatasının aynısı.
+`src/lib/yedek*.ts`in tamamına genişletildi, tek muafiyet ADIYLA beyanlı
+(`yedek-hedefi.ts` soyutlamanın kendisi) ve **taban doluluğu ayrıca ölçülüyor.**
+
+**⑧ İKİ YANLIŞ İDDİA KENDİ BELGEMİZDE BULUNDU VE DÜZELTİLDİ:**
+· `yedek.ts` _"hariç tutulan yedek birkaç yüz kilobayt kalır"_ diyordu —
+  ölçüldü: **41,26 MB** (31.08'de 29,49 MB; sekiz günde %40 büyüme, sebebi
+  K187'nin 5 dakikalık üç kanal çekimi).
+· `canli-yedek-dosya.ts` başlığı _"TAM YEDEK"_ diyordu ama `yedekUret(an,
+  true)` yani **tarifesiz** yedek alıyor. Geri yükleme kararı bu başlığa
+  bakarak verilirdi. _(Anayasa: "kolon başlığı bir iddiadır".)_
+
+⛔ **KALAN — DEĞİŞMEDİ:** Blob askısı bizim tarafımızdan çözülemez. Gece
+otomasyonu üretimde HÂLÂ yedek üretmiyor; migration ve toplu yazım öncesi
+**`npm run canli:yedek-cekirdek`** koşulur ve yeşil olmalıdır.
 
 ### ⏳ ASKI KALKINCA (sırası belli)
 

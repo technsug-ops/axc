@@ -106,17 +106,16 @@ export async function GET(istek: Request) {
     return Response.json({ durum: "YETKISIZ" }, { status: 401 });
   }
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return Response.json(
-      {
-        durum: "DEPO_YOK",
-        mesaj:
-          "Vercel Blob deposu bağlı değil. Vercel → Storage → Blob oluşturup projeye bağlayın.",
-      },
-      { status: 503 },
-    );
-  }
-
+  /**
+   * ⛔ HEDEF KAPISI BURADA TEKRAR EDİLMEZ (K119b, 08.09.2026).
+   *
+   * Burada `BLOB_READ_WRITE_TOKEN` DOĞRUDAN sorgulanıyordu — yani rota
+   * hedefin Blob olduğunu VARSAYIYORDU. Beyanlı bir yerel hedef seçilse
+   * (`YEDEK_HEDEFI=DOSYA`) bu kapı onu jetonsuz diye reddederdi: hedef
+   * soyutlaması var ama rota onu göremez. Karar tek gövdede
+   * (`varsayilanYedekHedefi`) ve cevabı `DEPO_YOK` koduyla buraya geliyor.
+   * _(Anayasa: "iki yerde iki ölçüt olmaz".)_
+   */
   /**
    * İŞ ARTIK ORTAK FONKSİYONDA (`lib/yedek-yaz.ts`). Ekrandaki "Şimdi yedek
    * al" düğmesi de AYNI fonksiyonu çağırıyor — cron ile elle alınan yedek
@@ -125,6 +124,20 @@ export async function GET(istek: Request) {
   const sonuc = await gunlukYedekYaz();
 
   if (!sonuc.tamam) {
+    /**
+     * ⛔ BAŞARISIZLIK, BAŞARI DURUMU DÖNEMEZ — VE `OKUNAMADI` KENDİ
+     * ADIYLA GEÇER.
+     *
+     * ⚠ BU YORUMDA BİLEREK HTTP KODU YAZMIYOR: bekçi ölçütü tam bu dalın
+     * İÇİNDE başarı kodunu arıyor ve yorumda geçen bir sayı onu yanlış
+     * yere baktırırdı. _(Anayasa: ölçüt yorumsuz kodda arar.)_
+     *
+     * `DEPO_YOK` bir YAPILANDIRMA eksiğidir (503: hizmet kurulmamış),
+     * `OKUNAMADI` ve `HATA` ise gerçek bir arızadır (500). Üçünü tek
+     * duruma indirmek, "yedek hiç kurulmamış" ile "yedek alınıyor ama geri
+     * okunamıyor"u aynı satıra yazardı; ikincisi 31.08 vakasının ta
+     * kendisidir ve ayrı görünmesi gerekir.
+     */
     return Response.json(
       { durum: sonuc.kod, mesaj: sonuc.mesaj },
       { status: sonuc.kod === "DEPO_YOK" ? 503 : 500 },
@@ -161,6 +174,10 @@ export async function GET(istek: Request) {
         userAgent: istek.headers.get("user-agent")?.slice(0, 200) ?? null,
         gun: sonuc.gun,
         satir: sonuc.satir,
+        /** Hangi hedefe yazıldığı İZDE durur — sonradan sorulabilsin. */
+        hedefTuru: sonuc.hedefTuru,
+        /** Geri okuma maliyeti: 60 sn tavanına ne kadar yaklaşıyoruz. */
+        dogrulamaMs: sonuc.dogrulamaMs,
       }),
     });
   } catch {
@@ -175,5 +192,7 @@ export async function GET(istek: Request) {
     boyutBayt: sonuc.boyutBayt,
     silinenEskiYedek: sonuc.silinenEskiYedek,
     saklananGun: SAKLAMA_GUNU,
+    hedefTuru: sonuc.hedefTuru,
+    dogrulamaMs: sonuc.dogrulamaMs,
   });
 }

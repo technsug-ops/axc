@@ -31,8 +31,12 @@ export async function yedekUret(
    *
    * Tarife tablosu 44.841 satır ve dosyanın %99'unu o kaplıyor; oysa
    * `npx prisma db seed` ile aynen yeniden üretilebilen REFERANS verisi.
-   * Hariç tutulan yedek birkaç yüz kilobayt kalır — her gün alınabilecek
-   * kadar hafif. Tam yedek yine de varsayılandır: eksik veren bir yedeğin
+   * ⚠ "BİRKAÇ YÜZ KİLOBAYT" ARTIK DOĞRU DEĞİL — ÖLÇÜLDÜ (08.09.2026):
+   * tarifesiz yedek **41,26 MB** (86.000 satır). 31.08'de 29,49 MB'tı;
+   * sekiz günde %40 büyüdü çünkü K187 üç kanalı 5 dakikada bir çekmeye
+   * başladı. Rakam kaynağıyla yazılıyor ki bir dahaki okuyan "hafif"
+   * kelimesine bakıp boyut varsaymasın.
+   * _(Anayasa: "beyan ettiğim sınır sistemin gerçekten taşıdığı sınır mı".)_ Tam yedek yine de varsayılandır: eksik veren bir yedeğin
    * varsayılan olması yanlış olurdu.
    */
   tarifesiz = false,

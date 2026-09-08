@@ -1,6 +1,7 @@
-import { del, list, put } from "@vercel/blob";
+import { createHash } from "node:crypto";
 
 import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
+import { varsayilanYedekHedefi, type YedekHedefi } from "@/lib/yedek-hedefi";
 import { yedegiMetneCevir, yedekUret } from "@/lib/yedek";
 
 /**
@@ -39,55 +40,144 @@ export type YedekYazmaSonucu =
       satir: number;
       boyutBayt: number;
       silinenEskiYedek: number;
+      /** Hangi hedefe yazıldı — ekranda ve izde beyan edilir. */
+      hedefTuru: YedekHedefi["tur"];
+      /** Geri okuma doğrulaması kaç ms sürdü — maliyet ÖLÇÜLÜR, varsayılmaz. */
+      dogrulamaMs: number;
     }
-  | { tamam: false; kod: "DEPO_YOK" | "HATA"; mesaj: string };
+  | {
+      tamam: false;
+      /**
+       * ⛔ `OKUNAMADI` AYRI BİR KODDUR — "yazılamadı" ile aynı kefeye konmaz.
+       * 31.08.2026'da yazma ÇALIŞIYORDU, kırılan OKUMAYDI; tek kod olsaydı
+       * teşhis "yedek alınamadı"da kalır ve askı görünmezdi.
+       */
+      kod: "DEPO_YOK" | "OKUNAMADI" | "HATA";
+      mesaj: string;
+    };
 
 /**
- * Günlük yedeği üretir ve depoya yazar. Aynı gün ikinci kez çalışırsa
- * ÜZERİNE yazar — gün başına tek dosya.
+ * ============================================================================
+ *  YAZ → GERİ OKU → ÖZET KARŞILAŞTIR — TEK GÖVDE, VERİTABANI GEREKTİRMEZ
+ * ----------------------------------------------------------------------------
+ *  ⭐ NİYE AYRI GÖVDE (K119b, 08.09.2026): bu kural bir BEKÇİ ile korunmak
+ *  zorunda ve anayasa şunu söylüyor — _"saf hesap katmanı, desen tarayan
+ *  bekçiye muhtaç olmaz"_. `gunlukYedekYaz` veritabanını okuduğu için
+ *  değerle sınanamıyordu; buradaki gövde içeriği PARAMETRE olarak alıyor,
+ *  dolayısıyla bekçi sahte bir hedefle **çağırarak** sınayabiliyor.
+ *
+ *  ⛔ VE BAŞARIYI ATLAMAK YAPISAL OLARAK İMKÂNSIZ: `adres` ve `dogrulamaMs`
+ *  yalnız buradan çıkıyor. Çağrıyı silen bir mutasyon derlemeyi düşürür —
+ *  koruma disipline değil MEKANİZMAYA bağlı.
+ * ============================================================================
  */
-export async function gunlukYedekYaz(
-  an: Date = new Date(),
-): Promise<YedekYazmaSonucu> {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+export type HedefeYazimSonucu =
+  | { tamam: true; adres: string; dogrulamaMs: number }
+  | { tamam: false; kod: "OKUNAMADI"; mesaj: string };
+
+export async function yedegiHedefeYaz(
+  hedef: YedekHedefi,
+  ad: string,
+  icerik: string,
+): Promise<HedefeYazimSonucu> {
+  const { adres } = await hedef.yaz(ad, icerik);
+
+  const dogrulamaBasi = Date.now();
+  const okunan = await hedef.oku(ad);
+  const dogrulamaMs = Date.now() - dogrulamaBasi;
+
+  if (okunan === null) {
     return {
       tamam: false,
-      kod: "DEPO_YOK",
-      mesaj:
-        "Vercel Blob deposu bağlı değil. Vercel → Storage → Blob oluşturup projeye bağlayın.",
+      kod: "OKUNAMADI",
+      mesaj: `Yedek ${hedef.aciklama} hedefine yazıldı ama geri okunamadı: dosya bulunamadı (${ad}).`,
     };
   }
 
+  /**
+   * ⚠ ÖZET KARŞILAŞTIRILIR, UZUNLUK DEĞİL. Aynı boyutta bozuk bir dosya
+   * uzunluk testini geçerdi; `sha256` geçmez.
+   */
+  const ozet = (m: string) =>
+    createHash("sha256").update(m, "utf8").digest("hex");
+  if (ozet(okunan) !== ozet(icerik)) {
+    return {
+      tamam: false,
+      kod: "OKUNAMADI",
+      mesaj: `Yedek ${hedef.aciklama} hedefine yazıldı ama geri okunan içerik yazılanla AYNI DEĞİL (${ad}).`,
+    };
+  }
+
+  return { tamam: true, adres, dogrulamaMs };
+}
+
+/**
+ * Günlük yedeği üretir, hedefe yazar ve **GERİ OKUYARAK DOĞRULAR**. Aynı gün
+ * ikinci kez çalışırsa ÜZERİNE yazar — gün başına tek dosya.
+ *
+ * ═══ ⛔ HEDEF ARTIK GÖMÜLÜ DEĞİL (K119b, 08.09.2026) ═══════════════════
+ *
+ * Burada `put()` DOĞRUDAN çağrılıyordu. K119a soyutlamayı (`YedekHedefi`)
+ * kurmuştu ama bu gövde ona hiç bağlanmadı: soyutlamayı yalnız betikler
+ * kullanıyordu, **kullanıcının bastığı düğme ve gece cron'u hâlâ tek
+ * kütüphaneye kilitliydi.** Depo askıya alınınca ikisi de düştü ve başka
+ * hiçbir yol yoktu — K119a'nın çözdüğünü sandığı arıza yerinde duruyordu.
+ * _(Anayasa: "düzeltme yolu, TÜM okuyuculara ulaştığı ölçülmeden 'var'
+ * sayılmaz" — ölçülmemişti.)_
+ *
+ * ═══ ⛔ YAZMAK YETMEZ: GERİ OKUNDUĞU DOĞRULANIR ═══════════════════════
+ *
+ * 31.08.2026'da yazma da listeleme de "çalışıyor" görünüyordu; kırılan
+ * OKUMAYDI ve o gün kullanılabilir yedek sayısı **sıfırdı**. Yazma sonucuna
+ * bakan bir kontrol bunu göremezdi. Bu yüzden başarı ancak şu üçünden sonra
+ * ilan edilir: **yaz → geri oku → özetleri karşılaştır.**
+ * _(Kullanıcı kuralı: "okunamayan yedek, yedek değildir".)_
+ *
+ * ⚠ MALİYETİ VARSAYILMIYOR, ÖLÇÜLÜYOR: geri okuma dosyayı ikinci kez taşır
+ * ve `dogrulamaMs` olarak sonuca yazılır. Gece işi 60 sn tavanına dayanırsa
+ * bu sayı bunu SÖYLER — tahmin etmek yerine ölçmek için orada.
+ *
+ * @param hedef Sınama için enjekte edilebilir; verilmezse ortamdan seçilir.
+ */
+export async function gunlukYedekYaz(
+  an: Date = new Date(),
+  hedef?: YedekHedefi,
+): Promise<YedekYazmaSonucu> {
+  let secilen: YedekHedefi;
+  if (hedef) {
+    secilen = hedef;
+  } else {
+    const secim = varsayilanYedekHedefi();
+    if (!secim.tamam) return { tamam: false, kod: secim.kod, mesaj: secim.mesaj };
+    secilen = secim.hedef;
+  }
+
   const gun = gunMetni(gunDegeri(isTakvimGunu(an)));
+  const ad = `${YEDEK_KLASORU}/selliora-${gun}.json`;
 
   try {
     const yedek = await yedekUret(an, true);
     const icerik = yedegiMetneCevir(yedek);
 
-    const { url } = await put(`${YEDEK_KLASORU}/selliora-${gun}.json`, icerik, {
-      /**
-       * ÖZEL (private) — KAMUYA AÇIK DEĞİL. Bu dosyada satış, maliyet ve kâr
-       * rakamları AÇIK METİN duruyor; adresin tahmin edilemez olması
-       * gizlilik sayılmaz.
-       */
-      access: "private",
-      contentType: "application/json; charset=utf-8",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-    });
+    const yazim = await yedegiHedefeYaz(secilen, ad, icerik);
+    if (!yazim.tamam) return yazim;
+    const { adres, dogrulamaMs } = yazim;
 
+    /* ═══ SAKLAMA SÜRESİ — eski yedekleri temizle ═════════════════════ */
     const esik = new Date(an.getTime() - SAKLAMA_GUNU * 24 * 60 * 60 * 1000);
-    const { blobs } = await list({ prefix: `${YEDEK_KLASORU}/` });
-    const eskiler = blobs.filter((b) => new Date(b.uploadedAt) < esik);
-    if (eskiler.length > 0) await del(eskiler.map((b) => b.url));
+    const kayitlar = await secilen.listele(`${YEDEK_KLASORU}/`);
+    const eskiler = kayitlar.filter((k) => k.yazildi < esik);
+    const silinen = eskiler.length > 0 ? await secilen.sil(eskiler.map((k) => k.ad)) : 0;
 
     return {
       tamam: true,
       gun,
-      url,
+      url: adres,
       satir: Object.values(yedek.satirSayilari).reduce((t, n) => t + n, 0),
       boyutBayt: Buffer.byteLength(icerik, "utf8"),
-      silinenEskiYedek: eskiler.length,
+      silinenEskiYedek: silinen,
+      hedefTuru: secilen.tur,
+      dogrulamaMs,
     };
   } catch (e) {
     // SESSİZ BAŞARISIZLIK YASAK: hata metni çağırana döner, günlüğe düşer.

@@ -4,7 +4,7 @@ import { dosyaHedefi } from "../src/lib/yedek-hedefi";
 
 /**
  * ============================================================================
- *  TAM YEDEK → YEREL DOSYA HEDEFİ + GERİ OKUNABİLİRLİK DOĞRULAMASI
+ *  TARİFESİZ YEDEK → YEREL DOSYA HEDEFİ + GERİ OKUNABİLİRLİK DOĞRULAMASI
  * ----------------------------------------------------------------------------
  *      npx tsx scripts/canli-yedek-dosya.ts
  *
