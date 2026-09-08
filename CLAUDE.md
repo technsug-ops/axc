@@ -1194,6 +1194,38 @@ _(Bu, "bekçi ölçütü elle tutulan liste değil tersten kurulur" kuralının
 SINIFLANDIRMA tarafı: orada ekranlar sayılıyordu, burada niyet tahmin
 ediliyordu.)_
 
+### DOSYA ADI DA BİR SINIF BEYANIDIR (KESİN KURAL)
+
+_Kullanıcı kararı 08.09.2026, push kaybı._ Üstteki kural sınıfın **koda**
+beyan edilmesini istiyor. Eksik yarısı bugün ortaya çıktı: **dosya adının
+kendisi de bir sınıf beyanıdır** ve yanlış ad, hiçbir yorum yazılmadan
+yanlış sınıf ilan eder.
+
+**Vaka:** 26.08 vakasının kök sebebini bir kez ölçen bir betiğe
+`k121-2608-dogrula.ts` adı verildi. `bekci-yetim:dogrula` push'u durdurdu:
+`-dogrula.ts` eki dosyayı **bekçi** sınıfına sokuyor, dosya bekçi turuna
+girmediği için **yetim** görünüyordu. Oysa o dosya hiçbir şeyi KORUMUYOR —
+bir regresyonda kırmızı yanmıyor, geçmiş bir olguyu ÖLÇÜYOR.
+
+> ⛔ **ÇARE MUAFİYET BEYAN ETMEK DEĞİL, ADI DÜZELTMEKTİR.** Muafiyet yazmak
+> yanlış sınıfı kayda geçirip **meşrulaştırır**; altı ay sonra bakan biri
+> "demek bu bir bekçi ama muaf tutulmuş" diye okur. Ad düzeltilince beyan
+> gereksizleşir.
+>
+>     ...-dogrula.ts   → KORUR    · tura girer · regresyonda kırmızı yanar
+>     ...-olcum.ts     → ÖLÇER    · bir kez koşar · hüküm üretir, koruma değil
+>     ...-kosum.ts     → KURU KOŞUM · yazımdan önce etkiyi gösterir
+
+**KONTROL SORUSU:** bu dosya bir REGRESYONDA kırmızı yanar mı? Yanmıyorsa
+adında `dogrula` geçemez.
+
+⚠ **VE AD DEĞİŞİNCE ATIFLAR DA TAŞINIR** — `package.json` betiği, pano
+satırı, dosyanın kendi başlığı. Biri geride kalırsa ikinci bir ayrışma
+doğar. _("Kararın izi de taşınır" kuralının dosya adı tarafı.)_
+
+_(Kardeşi: "kolon başlığı bir iddiadır" ve "şemadaki alan da bir iddiadır" —
+üçü de aynı ölçüt: bir AD, tutmadığı bir şey söyleyemez.)_
+
 ### İMKÂNSIZ GÖRÜNEN DEĞER ÖNCE DOĞRULANIR — DÜZELTİLMEZ (KESİN KURAL)
 
 _Ders 19.08.2026, OneBlade vakası._ Bir uyarının görevi **baktırmaktır**,
@@ -2349,6 +2381,46 @@ yok, dolayısıyla `method: "GET"` de yok. Doğru cevap susturmak değil
 demek, olmayan bir `fetch` için tören istemekti.
 
 ---
+
+### REFAKTÖR, ÇAPALI HARNESS'İ DE TAŞIR (KESİN KURAL)
+
+_Kullanıcı kararı 08.09.2026, ikinci push kaybı._ Üstteki kural refaktörün
+bekçinin aradığı **dizeyi** silebileceğini söylüyor. Bugün aynı kökün daha
+sinsi hâli çıktı: refaktör, bir **mutasyon harness'inin ÇAPASINI** siler.
+
+**Vaka:** `/stok` ekranı arama koşulunu elle yazıyordu ve
+`stok-siralama-mutasyon:kontrol` içinde ona çapalı bir mutasyon vardı —
+_"/stok araması çıplak koşula geri döndü (desen yasağı)"_, çapası
+`{ barcode: { contains: e } }` satırı. K121c o inline bloğu kaldırıp ekranı
+ortak gövdeye bağladı. Çapa yok oldu.
+
+⭐ **VE HARNESS DOĞRU DAVRANDI: "geçti" DEMEDİ, "ÖLÇÜLEMEDİ" DEDİ.**
+
+    ⛔ /stok araması çıplak koşula geri döndü (desen yasağı)
+         desen src/app/stok/page.tsx içinde 0 kez geçiyor (1 olmalı)
+
+Yeşil sayılsaydı o ekranın desen yasağı **korumasız kalır ve bunu kimse
+göremezdi** — koruma kör, bekçi yeşil.
+
+> **KURAL:** bir bloğu kaldıran/taşıyan her refaktör, o bloğa çapalı
+> mutasyon harness'lerini de taşımak zorundadır. **Değişen her dosya için
+> çapalı-harness taraması refaktörün PARÇASIDIR**, sonraki turun işi değil:
+>
+>     grep -rl "<değişen dosya>" scripts/*mutasyon*.ts
+>
+> Mutasyon **SİLİNMEZ** — niyeti korunur, şekli yeni koda taşınır. Silmek,
+> refaktörün yan etkisi olarak bir korumayı sessizce kaldırmaktır.
+
+⚠ **VE TARAMA BİR DOSYAYLA BİTMEZ.** Aynı gün ikinci bir harness de çıktı
+(`urun-analizi-mutasyon` → `/urunler/page.tsx`); o yeşil kaldı ama
+_bakılmadan_ bilinemezdi. Tek dosyaya bakıp geçmek, tarama yapmamakla aynı
+şey.
+
+⛔ **HARNESS'İN "ÖLÇÜLEMEDİ" DEMESİ ŞART.** Çapası tutmayan bir mutasyonu
+"yeşil" sayan bir harness, refaktörün her seferinde korumaları sessizce
+söktüğü bir depo üretir. _(Anayasa: "mutasyon harness'inin kendisi de
+kusurlu olabilir — harness çıkış koduna bakar ve mutasyonun UYGULANDIĞINI
+doğrular".)_
 
 ### SINANMAYAN DAL, SINANMAMIŞ KODDUR (KESİN KURAL)
 
