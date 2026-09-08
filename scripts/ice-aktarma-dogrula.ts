@@ -2413,6 +2413,55 @@ kontrol(
     "çekirdek sayım kapısını taşıyor (SAYIM_DURAKSADI)",
     /karar\.sonuc === "DURAKSA"/.test(cekirdek) && cekirdek.includes('kod: "SAYIM_DURAKSADI"'),
   );
+
+  /* ── SAYIM ISRARI: KAPIYA KAPI EKLENDİ (K188-⑤, 08.09.2026) ───────────
+   * ⛔ NİYE: anayasa _"uyarı sorar, kullanıcı ısrar ederse istisna İZ
+   * BIRAKARAK geçer"_ diyor ve mekanizma depoda vardı (`mal-kabul` ·
+   * `/stok` düzeltme) — onay yolunda YOKTU. Aynı ilkenin üç yerinden
+   * ikisinde. Satış `4707418677` bu yüzden kuyrukta kapatılamaz kaldı.
+   *
+   * ⚠ BU BİR KAPI GEVŞETMESİDİR, O YÜZDEN İKİ YÖN AYRI ÖLÇÜLÜR:
+   *   ① ısrarsız çağrı kapıyı YİNE durdurmalı (yanlış yanma yok)
+   *   ② ısrar geçtiğinde İZ ZORUNLU (sessiz kapı açma yasağı) */
+  {
+    const israrBasi = cekirdek.indexOf("if (duraksayanlar.length > 0) {");
+    kontrol("sayım ısrar bloğu VAR", israrBasi >= 0);
+    const blok = israrBasi >= 0 ? cekirdek.slice(israrBasi, israrBasi + 1800) : "";
+
+    /** ① Israr VERİLMEZSE eski davranış: boş nesneye düşer ve durdurur. */
+    kontrol(
+      "ısrarsız çağrı kapıyı YİNE durduruyor (girdi.israr ?? boş)",
+      /girdi\.israr \?\? \{ onaylandi: false, sebep: null, aciklama: "" \}/.test(blok),
+    );
+    kontrol(
+      "  ...geçersiz ısrarda SAYIM_DURAKSADI dönüyor",
+      /if \(!israr\.gecerli\) \{[\s\S]{0,120}kod: "SAYIM_DURAKSADI"/.test(blok),
+    );
+
+    /** ② Israr GEÇTİĞİNDE iki yazım da ZORUNLU — biri eksikse istisna sessiz. */
+    kontrol(
+      "ısrar geçince sayım GEÇERSİZLEŞTİRİLİYOR (ekranda görünsün)",
+      /await sayimGecersizlestir\(/.test(blok),
+    );
+    kontrol(
+      "ısrar geçince İZ yazılıyor (SAYIM_KORUMASI_ISTISNASI)",
+      blok.includes('action: "SAYIM_KORUMASI_ISTISNASI"'),
+    );
+    /** ⚠ İZ AYNI İŞLEMDE: `tx` geçmezse yazım geri alınıp iz kalabilir. */
+    kontrol(
+      "  ...iz AYNI İŞLEMDE (tx geçiliyor)",
+      /action: "SAYIM_KORUMASI_ISTISNASI"[\s\S]{0,900}\n\s*tx,\n\s*\);/.test(blok),
+    );
+    /** ⚠ İZ "KİM/NE ZAMAN/HANGİ DAMGA/GEREKÇE" TAŞIR — boş bir iz, iz değil. */
+    for (const alan of ["sebep", "sayimTarihi", "hareketIsTarihi", "yon"]) {
+      kontrol(`  ...iz ${alan} alanını taşıyor`, blok.includes(`${alan}:`));
+    }
+    /** ⛔ OTOMATİK ONAY ISRAR GEÇİRMEZ — istisna İNSAN kararıdır. */
+    kontrol(
+      "otomatik onay ısrar GEÇİRMİYOR (kuyruk sessizce açılmaz)",
+      !/otomatik: true[\s\S]{0,120}israr:/.test(kuyruk),
+    );
+  }
   kontrol(
     "çekirdek dönem kapısını taşıyor (donemKapisi çağrısı)",
     /await donemKapisi\(tx, satis\.soldAt, undefined\)/.test(cekirdek),

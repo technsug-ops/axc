@@ -2,7 +2,11 @@ import { izYaz } from "@/lib/iz";
 import { onayaUygunMu } from "@/lib/onay-kuyrugu";
 import type { IslemIstemcisi } from "@/lib/prisma";
 import { sayimGecersizlestir, sonSayimTarihleri } from "@/lib/sayim-damgasi";
-import { israrGecerliMi, sayimKorumasi } from "@/lib/sayim-korumasi";
+import {
+  israrGecerliMi,
+  sayimKorumasi,
+  type SayimIsrari,
+} from "@/lib/sayim-korumasi";
 import { donemKapisi } from "@/lib/donem-kapisi";
 import {
   acikPartiler,
@@ -64,7 +68,17 @@ export type PartiSecimleri = Record<string, string>;
  */
 export async function onayCekirdegi(
   tx: IslemIstemcisi,
-  girdi: { saleId: string; secimler: PartiSecimleri; otomatik: boolean },
+  girdi: {
+    saleId: string;
+    secimler: PartiSecimleri;
+    otomatik: boolean;
+    /**
+     * ⛔ SAYIM KORUMASI ISRARI — VERİLMEZSE KAPI ESKİSİ GİBİ DURDURUR.
+     * Otomatik onay bunu ASLA geçirmez: istisna bir İNSAN kararıdır ve her
+     * kullanımı `SAYIM_KORUMASI_ISTISNASI` iziyle kayda geçer.
+     */
+    israr?: SayimIsrari;
+  },
 ): Promise<OnayCekirdekSonucu> {
   const satis = await tx.sale.findUnique({
     where: { id: girdi.saleId },
@@ -106,30 +120,103 @@ export async function onayCekirdegi(
   });
   if (!uygunluk.uygun) return { tamam: false, kod: uygunluk.sebep };
 
-  /** Sayım kapısı — satış akışıyla AYNI gövde. Onayda ısrar arayüzü YOK:
-   *  canlı akışta soldAt bugündür ve duraksama tetiklenmez; tetiklenirse
-   *  bu bir sinyaldir ve kayıt REDDEDİLİR (otomatik onay da). */
+  /**
+   * ════════════════════════════════════════════════════════════════════════
+   *  SAYIM KAPISI — ISRAR YOLU AÇILDI (K188-⑤, 08.09.2026)
+   * ------------------------------------------------------------------------
+   *  ⛔ ESKİ GEREKÇE SİLİNMEDİ, ÇÜRÜDÜ. Burada şu yazılıydı:
+   *
+   *    _"Onayda ısrar arayüzü YOK: canlı akışta soldAt bugündür ve duraksama
+   *     tetiklenmez; tetiklenirse bu bir sinyaldir ve kayıt REDDEDİLİR."_
+   *
+   *  Öncül ölçümle çürüdü (08.09.2026, satış `4707418677`): geçmiş bir
+   *  siparişin API'den GEÇ yazılması gerçek ve tekrarlanan bir akış — soldAt
+   *  bugün DEĞİL. Kayıt reddedilince satış onay kuyruğunda **kapatılamaz**
+   *  bir madde olarak kaldı (K49: kapatılamayan madde kutunun tamamına olan
+   *  güveni eritir ve kullanıcıyı yıkıcı işleme iter).
+   *
+   *  ⭐ VE ASIL KUSUR SİMETRİSİZLİKTİ: anayasa _"uyarı sorar, kullanıcı ısrar
+   *  ederse istisna İZ BIRAKARAK geçer"_ diyor ve mekanizma depoda ZATEN
+   *  vardı — `mal-kabul` ve `/stok` düzeltme ekranları kullanıyordu. Aynı
+   *  ilkenin üç yerinden ikisinde vardı, onay yolunda yoktu. Kural yazılıydı,
+   *  bu yolda **teslim edilemiyordu.**
+   *  _(Anayasa: "kural doğru mu değil, kural teslim edilebilir mi".)_
+   *
+   *  ⛔ KAPI GEVŞEMEDİ, KAPIYA KAPI EKLENDİ: ısrar VERİLMEZSE davranış
+   *  BİREBİR eskisi (`SAYIM_DURAKSADI`). Otomatik onay ısrar geçirmez, yani
+   *  kuyruk sessizce açılmaz — istisna her zaman bir İNSAN kararıdır.
+   * ════════════════════════════════════════════════════════════════════════
+   */
   const sonSayimlar = await sonSayimTarihleri(
     tx,
     satis.items.map((k) => k.variantId),
   );
-  const duraksayanlar: string[] = [];
+  /** ⚠ KARAR SAKLANIR, YALNIZ KİMLİK DEĞİL: iz "hangi sayım damgası, hangi
+   *  hareket tarihi, hangi yön" yazmak zorunda ve bunlar kararın içinde. */
+  const duraksayanlar: {
+    variantId: string;
+    adet: number;
+    karar: Extract<ReturnType<typeof sayimKorumasi>, { sonuc: "DURAKSA" }>;
+  }[] = [];
   for (const k of satis.items) {
     const karar = sayimKorumasi({
       sonSayimIsTarihi: sonSayimlar.get(k.variantId) ?? null,
       hareketIsTarihi: satis.soldAt,
       adet: -k.quantity,
     });
-    if (karar.sonuc === "DURAKSA") duraksayanlar.push(k.variantId);
+    if (karar.sonuc === "DURAKSA") {
+      duraksayanlar.push({ variantId: k.variantId, adet: -k.quantity, karar });
+    }
   }
   if (duraksayanlar.length > 0) {
-    /** Boş ısrar geçersizdir (satış akışıyla AYNI gövde) — duraksayan
-     *  sipariş elle satış akışının ısrar yoluyla girilir. */
-    const israr = israrGecerliMi({ onaylandi: false, sebep: null, aciklama: "" });
+    /** Israr YOKSA boş sayılır ve kapı eskisi gibi DURDURUR. */
+    const israr = israrGecerliMi(
+      girdi.israr ?? { onaylandi: false, sebep: null, aciklama: "" },
+    );
     if (!israr.gecerli) {
       return { tamam: false, kod: "SAYIM_DURAKSADI" };
     }
-    await sayimGecersizlestir(tx, duraksayanlar, new Date());
+    const an = new Date();
+    /**
+     * İKİ AYRI ŞEY, İKİSİ DE ŞART (emsal: `/stok` düzeltme ekranı):
+     *  · `sayimGecersizAt` → "bu varyantın sayımı ARTIK GEÇERLİ DEĞİL"
+     *  · `AuditLog`        → "kim, ne zaman, hangi damgayı, niye aştı"
+     * Yalnız damga yazılsaydı istisnayı kimin geçtiği kaybolurdu; yalnız iz
+     * yazılsaydı geçersizleşen sayım hiçbir ekranda görünmez ve kimse
+     * yeniden saymazdı.
+     */
+    await sayimGecersizlestir(
+      tx,
+      duraksayanlar.map((d) => d.variantId),
+      an,
+    );
+    /**
+     * ⛔ İZ ZORUNLU VE AYNI İŞLEMDE — SESSİZ KAPI AÇMA YASAĞI.
+     * Bu satır silinirse bir insan sayım korumasını aşar ve hiçbir yerde
+     * yazmaz. Bekçi tam bunu ölçüyor (izsiz geçen ısrar KIRMIZI).
+     */
+    await izYaz(
+      {
+        action: "SAYIM_KORUMASI_ISTISNASI",
+        targetType: "Sale",
+        targetId: satis.id,
+        detail: JSON.stringify({
+          yol: "onay çekirdeği — sipariş onayı",
+          satisKodu: satis.code,
+          sebep: girdi.israr?.sebep ?? null,
+          aciklama: girdi.israr?.aciklama.trim() || null,
+          kalemler: duraksayanlar.map((d) => ({
+            variantId: d.variantId,
+            adet: d.adet,
+            yon: d.karar.yon,
+            sayimTarihi: d.karar.sayimTarihi.toISOString(),
+            hareketIsTarihi: d.karar.hareketIsTarihi.toISOString(),
+          })),
+          sonuc: "SAYIM GECERSIZLESTI — bu varyant(lar) yeniden sayilmali.",
+        }),
+      },
+      tx,
+    );
   }
 
   /** Dönem kapısı — kapalıysa DonemKorumasiHatasi fırlatır (çağıran yakalar). */

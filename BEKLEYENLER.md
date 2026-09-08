@@ -13,81 +13,101 @@
 
 ---
 
-## 🔶 K188-④ — LAMBORGHINI ZİNCİRİ: 2/4 YAZILDI, SAYIM KAPISI DURDURDU · 08.09.2026 · [YAZILDI · KAPIDA DURDU]
+## ✅ K188-④ — LAMBORGHINI ZİNCİRİ TAMAMLANDI (4/4) · 08.09.2026 · [KOŞTU — canlı]
 
-> **Mimar+Halil onayı 08.09, dört adımlı sıra.** İlk ikisi yazıldı ve tuttu;
-> üçüncü adım deponun **kendi ölçülmüş kuralı** tarafından reddedildi.
+> **Mimar+Halil onayı 08.09, dört adım.** Üçüncü adım deponun kendi kuralına
+> takıldı; kapı **gevşetilmedi**, eksik olan ısrar yolu eklendi (K188-⑤) ve
+> zincir ondan sonra tamamlandı.
 
-### ① YAZILDI — EKSİK ALIM (belgeli)
+### SONUÇ — ÜÇ DEFTER DE 1
 
-    ALM-K188-4707418677 · 11.07.2025 (teslim 13.07) · 1 adet · 1.599,92 TRY
-    fatura HD22025000334550 · Sip.Ref 4041064539
-    odeme: Ziraat *3253, 2 taksit → 1.582,01 kart + 17,91 Hepsipay
-    kart takibine baglandi (installmentCount 2)
-    stok 1 → 2  ✓
+    2025-07-13 PURCHASE_IN       +1 · 1.599,92   ← faturali alim, karta bagli
+    2026-08-11 SALE_OUT          −1 · 1.599,92   ← satis onayi (FIFO bu partiden)
+    2026-08-17 RETURN_IN         +1              ← iade NORMAL
+    2026-08-29 COUNT_CORRECTION  +1 · 1.582,00
+    2026-08-29 ADJUSTMENT        −1 · 1.582,00   ← sayim vekili notrlendi
+    ─────────────────────────────────────────────
+    LEDGER 1  ·  FIFO 1  ·  FIZIKSEL 1     ✓
 
-⚠ **MALİYET SAPMASI 17,92** (17,91 Hepsipay + kart kuruşu 0,01) — defterdeki
-eski rakam `1.582,00` yalnız kartın kendisiydi, o da bir kuruş eksikti.
+    satis  2026-08-11 · CALCULATED · NET-1 766,48 · NET-2 634,43
+    iade   2026-08-17 · NORMAL · atif 2026-08 = satisin ayi (K185-③) ✓
 
-### ② YAZILDI — SAYIM VEKİLİ NÖTRLENDİ
+⭐ **NET-1 766,48 — ölçüm turundaki projeksiyonla KURUŞUNA aynı.** Projeksiyon
+maliyeti 1.599,92 varsayarak kurulmuştu; motor aynı rakamı üretti.
+
+### ① MALİYET — sapma 17,92
+
+    kart 1.582,01 + Hepsipay 17,91 = 1.599,92     (fatura HD22025000334550)
+    defterdeki eski rakam           1.582,00      ← yalniz kart, o da 1 kurus eksik
+
+Alım `ALM-K188-4707418677` · 11.07.2025 (teslim 13.07) · Sip.Ref 4041064539 ·
+Ziraat *3253, 2 taksit → kart borç takibine girdi.
+
+### ② ÇİFT SAYIM ÖNLENDİ — VE ÇARE TERS KAYIT
 
 29.08 `COUNT_CORRECTION` bir stok hatası değil, **eksik tarihçenin vekiliydi**
-(kendi notu: _"Defter 0, sayılan 1. MALIYET BILINMIYOR"_). Gerçek tarihçe
-yazılınca bırakılsaydı aynı mal iki kez sayılırdı.
+(kendi notu: _"Defter 0, sayılan 1"_). Gerçek tarihçe yazılınca bırakılsaydı
+aynı mal iki kez sayılırdı. Kayıt **silinmedi**, ters işaretli `ADJUSTMENT`
+ile nötrlendi ve **partiye bağlandı** (`sourceMovementId`) — bağlanmasaydı
+ledger 1 derken FIFO 2 kalırdı ve hiçbiri hata vermezdi.
 
-    COUNT_CORRECTION +1  ·  ADJUSTMENT −1   → LEDGER 1 · FIFO 1  ✓
+### ③ SAYIM KAPISI — İKİ KEZ TETİKLENDİ, İKİSİ DE İZLİ GEÇTİ
 
-⚠ **DÜZELTME PARTİYE BAĞLANDI (`sourceMovementId`)** — bağlanmasaydı ledger 1
-derken FIFO 2 kalırdı ve hiçbiri hata vermezdi. _(Anayasa: "stoğun kendisi de
-iki defterdir".)_ Kayıt SİLİNMEDİ, ters işaretli düzeltmeyle nötrlendi.
+Satış `SALE_OUT` (11.08) ve iade `RETURN_IN` (17.08) — ikisi de 29.08 sayım
+damgasından ÖNCEYE düşüyor. Israr gerekçesi ikisinde de aynı gerçeğe dayandı:
+**zincirin net sayım etkisi 0 ve 29.08 sayımıyla tutarlı (rafta 1).**
 
-### ③ ⛔ DURDU — VE İKİ BAĞIMSIZ MEKANİZMA AYNI ŞEYİ SÖYLÜYOR
+    SAYIM_KORUMASI_ISTISNASI izi: 2   (onay + iade)
+    sayimGecersizAt damgalandi        → varyant yeniden sayilmali
 
-Onay çekirdeği `{"tamam":false,"kod":"SAYIM_DURAKSADI"}` döndü ve işlem geri
-sarıldı. Satış **11.08**, varyantın sayım damgası **29.08** — yani yazılacak
-`SALE_OUT −1` sayım damgasından ÖNCEYE düşen bir **düşüren** kayıt.
+### ④ BAŞKA VARYANTA DOKUNULMADI — ÖLÇÜLDÜ
 
-    betikSayimKarari(adet −1) → {"islem":"ATLA","yon":"DUSUREN"}
-    betikSayimKarari(adet +1) → {"islem":"YAZ_VE_DAMGALA","yon":"ARTIRAN"}
+Bugün yazılan 30 stok hareketi atfedildi:
 
-Bu kural 29.08'de **ölçülerek** karara bağlanmış (148 sayılmış varyant, 66
-geriye dönük hareket) ve gerekçesi fiziksel: _"düşüren geç kayıt sayılmış malı
-YOK EDER."_ Onay çekirdeğinin kendi yorumu da aynı: _"tetiklenirse bu bir
-sinyaldir ve kayıt REDDEDİLİR (otomatik onay da)."_
+    K188 zinciri            5   (axcali2399 ×4 + axcali2383 iptali ×1)
+    otomatik cekim/onay    25   (5 dakikalik cron)
 
-⚠ **KAPI GEVŞETİLMEDİ.** Zincir bir bütün olarak sayımla ÇELİŞMİYOR (alım
-13.07.2025 → satış 11.08 → iade 17.08 = 29.08'de rafta 1 ✓) ama kapı hareketi
-TEK BAŞINA değerlendiriyor ve göremiyor.
+⚠ **Genel sayaçlarla değil, hareket bazında atıfla ölçüldü** — canlı bir
+sistemde toplamlar cron yüzünden sürekli oynuyor ve temiz kanıt vermiyor.
 
-### ④ ⏭ TESLİM EDİLEBİLİRLİK BOŞLUĞU — MİMAR KARARI GEREKİYOR
+### ⑤ ⏭ TARİHLİ TETİKLEYİCİ (mimar) — SÜRESİZ AÇIK NOT DEĞİL
 
-Anayasa _"uyarı sorar, kullanıcı ısrar ederse istisna İZ BIRAKARAK geçer"_
-diyor ve mekanizma **var**: `israrGecerliMi` + `sayimGecersizlestir`. İki ekran
-onu kullanıyor (`mal-kabul` · `stok/duzeltme-actions`). **Onay yolunda YOK.**
-Yani kural yazılı, o yolda teslim edilemiyor.
+Kanal talebi **hâlâ `ClaimCreated`** (08.09 itibarıyla) ve defter iadeyi
+tamamlanmış yazdı; mal 29.08 sayımında rafta görüldüğü için bu **bilinçli
+bir ayrışma** ve `Return.note`a damgalandı.
 
-| yol | ölçüm |
-|---|---|
-| **(A)** Onay çekirdeğine ısrar yolu ekle | Mekanizma zaten depoda, iki ekranda kullanımda. Kapı gevşetme — bekçi + iki yönlü mutasyon şart. **Önerim bu.** |
-| (B) Satışı onaysız bırak | Kuyrukta kapatılamaz madde kalır — K49 ihlali |
-| (C) Varyantı yeniden say | Damga BUGÜNE kayar, kapı daha da kapanır — işe yaramaz |
-| (D) `sayimGecersizAt` damgala | Kapı o alanı OKUMUYOR (`sonSayimTarihleri` yalnız `COUNT_CORRECTION` bakıyor) — etkisiz |
+> **HB talebi `4707418677` kapandığında sonuç defterle karşılaştırılır —
+> RED çıkarsa iade kaydı geri alınır, mal rafta + satış geçerli olur.**
 
-### ⑤ ŞU ANKİ DURUM — GERİLEME YOK, İYİLEŞME VAR
+Tetikleyici bir TARİHE değil, **kanalın talebi kapatmasına** bağlı.
 
-    2025-07-13 PURCHASE_IN       +1 · 1.599,92   ← faturali, karta bagli
-    2026-08-29 COUNT_CORRECTION  +1 · 1.582,00
-    2026-08-29 ADJUSTMENT        −1 · 1.582,00
-    LEDGER 1 = FIFO 1 = FIZIKSEL 1  ✓
+---
 
-Raftaki adet artık **vekil bir sayım satırıyla değil, belgeli bir alımla**
-karşılanıyor. Satış hâlâ onaysız (önce de öyleydi) ve iade hâlâ yazılmadı.
-⏭ Adım 3 ve 4, (A) kararından sonra.
+## ✅ K188-⑤ — ONAY YOLUNA SAYIM ISRARI EKLENDİ · 08.09.2026 · [KOD KOŞTU]
 
-⚠ **TARİHLİ TETİKLEYİCİ (mimar):** HB talebi `4707418677` kapandığında sonuç
-defterle karşılaştırılır — **RED çıkarsa** iade kaydı geri alınır, mal rafta +
-satış geçerli olur. Kanal bugün hâlâ `ClaimCreated`.
-_(Süresiz açık not değil: kanalın talebi kapatması bu satırı tetikler.)_
+> **Tespit (mimar):** _"`israrGecerliMi` + `sayimGecersizlestir` mal-kabul ve
+> stok-düzeltme ekranlarında VAR, onay yolunda YOK — aynı ilkenin üç yerinden
+> ikisinde. Simetri tamamlanır."_
+
+⛔ **ESKİ GEREKÇE ÇÜRÜDÜ VE SİLİNMEDİ.** Çekirdekte şu yazılıydı: _"canlı
+akışta soldAt bugündür ve duraksama tetiklenmez; tetiklenirse bu bir sinyaldir
+ve kayıt REDDEDİLİR."_ Öncül ölçümle çürüdü — geçmiş bir siparişin API'den
+GEÇ yazılması gerçek ve tekrarlanan bir akış. Kayıt reddedilince satış onay
+kuyruğunda **kapatılamaz** bir madde olarak kaldı (K49).
+
+⭐ **KAPI GEVŞEMEDİ, KAPIYA KAPI EKLENDİ.** Israr verilmezse davranış
+**birebir** eskisi (`SAYIM_DURAKSADI`). Otomatik onay ısrar geçirmez — istisna
+her zaman bir İNSAN kararıdır. Geçen her ısrar İKİ şey birden yazar:
+`sayimGecersizAt` damgası (ekranda görünsün, yeniden sayılsın) **ve**
+`SAYIM_KORUMASI_ISTISNASI` izi (kim · ne zaman · hangi damga · gerekçe),
+**aynı işlemde** — yazım geri alınıp iz kalmasın.
+
+**BEKÇİ — 11 ÖLÇÜT, İKİ YÖNLÜ MUTASYON:**
+
+    ① israrsiz cagri da geciyor      → ✗ "ısrarsız çağrı kapıyı YİNE durduruyor"
+    ② israr geciyor ama iz yok       → ✗ "İZ yazılıyor" + 4 alan olcutu
+
+İkisi de kırmızı yandı ve **tam doğru ölçütle** yakalandı.
 
 ---
 
