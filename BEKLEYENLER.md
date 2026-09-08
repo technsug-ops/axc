@@ -13,6 +13,79 @@
 
 ---
 
+## 🔶 K188-② — MÜKERRER HB KAYDI İPTAL EDİLDİ, ZİNCİR YARIDA · 08.09.2026 · [YAZILDI · KOŞUL A İLE DURDU]
+
+> **Mimar onayı 08.09:** _"HBCV00009ULMCL iptal… KOŞUL A: iptal+onay zinciri
+> sonrası bu ürünün NET stok etkisi SIFIR olmalı. Sıfır değilse DUR, Halil'e
+> 'rafta bu üründen kaç adet' sor."_
+
+### ① YAZILDI — ANA HEDEF TUTTU
+
+    IKI KAYDIN IPTALSIZ CIROSU  11.958,00 → 5.979,00   ✓ cift sayim gitti
+    iptalli satis                      44 → 45
+    axcali2383 ledger stok              0 → 1          ⚠ KOSUL A: sifir DEGIL
+    axcali2383 hareket                 10 → 11
+
+İptal `önizle → imza → uygula` protokolüyle yazıldı (`geriDonenAdet: 1`).
+Sebep kapalı kümede _"mükerrer"_ değeri olmadığı için `MAGAZA_DIGER` seçildi
+ve **notta gerçek yazıldı**: sipariş iptal edilmedi, müşteri malı aldı; bu
+yalnız defterdeki ikinci kaydın düşürülmesi. ⚠ Sebep etiketi yalnız satış
+listesi ve detay ekranında GÖRÜNÜM olarak kullanılıyor, hiçbir rapora
+beslenmiyor — ölçüldü.
+
+### ② ⛔ ZİNCİR TAMAMLANAMADI — VE SEBEBİ TASARIM, ARIZA DEĞİL
+
+Kuru koşumda _"iptal → parti açılır → 4873413946 onaylanır"_ demiştim.
+**Yanlıştı.** İptal partiyi açmıyor; ledger disiplini gereği eski çıkışı
+YERİNDE bırakıp **bugün tarihli yeni bir giriş** yazıyor:
+
+    is:2026-08-10  SALE_OUT       −1 · satis HBCV00009ULMCL   ← yerinde kaldi
+    is:2026-09-08  SALE_CANCEL_IN +1 · birim 4.220,85         ← BUGUN tarihli
+
+FIFO'nun `gunSonu(soldAt)` sınırı (K79) 10.08 satışı için 08.09 tarihli
+partiyi göremiyor → `4873413946` hâlâ onaylanamıyor. Sınır DOĞRU çalışıyor;
+onu gevşetmek defterin yarısını kilitleyen eski hatayı geri getirirdi.
+
+### ③ ⏭ HALİL'E SORU — KOŞUL A'NIN GEREĞİ
+
+**"Braun MQ5245WH (axcali2383) bu üründen rafta kaç adet var?"**
+
+· **0 ise:** defter yanlış (+1 fazla) ve zincir tamamlanmalı. O zaman
+  `4873413946`'ün maliyet bağı ayrı bir kararla kurulur — FIFO tarih sınırı
+  bu vakada geçilemiyor.
+· **1 ise:** defter doğru. 10.08'deki `PURCHASE_IN` **kâğıt beyandı**
+  (`dosya-maliyet-20260828 · "dosya beyanı"`) ve gerçek bir adedi temsil
+  ediyormuş; `4873413946` maliyetsiz kalır, ayrı karar ister.
+
+⚠ **K180-② riski GERÇEKLEŞTİ:** çıkışın arkasındaki giriş kâğıttı ve iptal
+o kâğıdı serbest bıraktı. Stok aynası elle doğrulanmadan zincir kapanmaz.
+
+### ④ 4707418677 (LAMBORGHINI) — YAZIM DURDU (mimar kararı)
+
+· `COUNT_CORRECTION` üstündeki **1.582,00 KULLANILMIYOR** — aynı hareketin
+  notu _"MALIYET BILINMIYOR (NO_COST)"_ diyor; alan ile not çelişiyor ve
+  nereden geldiği doğrulanmadan maliyet sayılmaz.
+· Ölçüldü: satış onay kapısını geçemiyor (FIFO 0) → **hiçbir kâr durumuna
+  ulaşamıyor**; NO_COST da değil, K174 de değil — `profitStatus: null`.
+· ⏭ **Mimar talimatı — HENÜZ YAZILMADI:** _"satışı 'maliyet bekliyor'
+  sınıfına al ki onay kuyruğunu tıkamasın."_ Bugün sistemde böyle bir sınıf
+  YOK; yeni bir durum eklemek şema/kod işi ve merdiven ölçülmeden inilmez
+  (mevcut alan → serbest metin → türetilebilir → sütun). Ölçüm sırada.
+· ⏭ **Halil'den:** eksik alımın **tarihi + maliyeti**. Gelince promosyon ya
+  da normal alım olarak yazılır ve satış CALCULATED olur.
+
+### ⑤ ÖLÇÜM YÖNTEMİ HAKKINDA DÜRÜSTLÜK NOTU
+
+Bit-bit kıyasta `saleToplam` · `net1/net2` · `saleFee` · `stockMovement`
+genel toplamları da değişti — **bunlar bu yazıma ait DEĞİL**: sistem canlı ve
+5 dakikada bir çekim/onay koşuyor, kıyas penceresinde yeni sipariş düştü.
+Canlı bir sistemde genel sayaçlar temiz kanıt vermiyor; atfedilebilir olan
+yalnız varyant bazlı ve kayıt bazlı ölçümlerdir. _(Anayasa: "donmuş kaynak,
+akan kaynakla karşılaştırılırken iki damga yazılır" — burada akan taraf kendi
+defterimiz.)_
+
+---
+
 ## ✅ K188-③ — "3 SİPARİŞ BEKLİYOR" ROZETİ LİSTEYLE AYRIŞIYORDU · 08.09.2026 · [KOD KOŞTU]
 
 > **Kullanıcı bulgusu:** _"Burada 3 sipariş bekliyor diyor, tıklayınca 13
