@@ -13,6 +13,81 @@
 
 ---
 
+## ✅ K190 — ÇAPA BEKÇİSİ: REAKTİF TARAMA KALICI ÖLÇÜTE ÇEVRİLDİ · 08.09.2026 · [KOD KOŞTU]
+
+> **Mimar kararı 08.09:** _"19 mutasyon harness'inin `bul` deseni hedef
+> dosyasında TAM BİR KEZ geçmeli. Sıfır = çapa kopmuş, çok = belirsiz çapa —
+> ikisi de 'ölçülemedi' (geçti DEĞİL)."_
+
+⛔ **NİYE:** bugün bir refaktör bir mutasyon harness'inin ÇAPASINI sildi ve
+bu ancak **~15 dakikalık tam tur sonunda**, push reddedilerek görüldü.
+Harness doğru davranmıştı (_"geçti"_ değil _"ÖLÇÜLEMEDİ"_ dedi); eksik olan
+**hızdı**. Bu bekçi aynı ölçütü **saniyeler içinde** koşar — mutasyonları
+UYGULAMAZ, yalnız çapaların yerinde olduğunu sınar.
+
+    harness            19
+    incelenen capa    222
+    temiz             222
+    sapan               0
+    incelenemeyen       0
+    capasiz             1   (yeni dosya yaratan mutasyon — capasi YOK)
+
+### ⚠ ÖNCE ORTAK GÖVDE — 17. KOPYAYI YAZMAMAK İÇİN
+
+`desenNormalle` (satır sonu normalleştirme) **16 harness'te ayrı ayrı**
+yazılıydı. Ölçüldü: 15'i birebir aynı, biri (`toplu-kargo`) `replaceAll`
+kullanıyor — **davranış aynı, yazılış farklı; ortada hata YOK.** Ama çapa
+bekçisi harness'lerle AYNI ölçüyle saymak zorunda ve onu 17. kopya olarak
+yazmak tam da bu bekçinin önlemek istediği şeyi üretirdi.
+→ `scripts/mutasyon-deseni.ts` açıldı (`desenNormalle` + `desenAdedi`), 16
+harness ona bağlandı, yerel kopya kalmadı.
+_(Anayasa: "kopyası olan seçici ölçüt iki kat tehlikelidir".)_
+
+### ⚠ AİLE TEK BİÇİMLİ DEĞİLDİ — VARSAYMAK YERİNE ÖLÇÜLDÜ
+
+Bekçi yazılırken üç şekil ortaya çıktı ve **üçü de ölçümle** bulundu; hiçbiri
+varsayılmadı:
+
+| Bulgu | Ölçüm | Sonuç |
+|---|---|---|
+| **İki sözlük** | 18 harness `bul`/`koy`, `urun-analizi` `eski`/`yeni` | yalnız `bul` aransaydı o harness'in **18 çapası sessizce incelenmemiş** kalırdı |
+| **Hedef öğede yok** | 5 harness (`aylik-marj` · `baglanti-tanisi` · `kart-partileri` · `lot-kipi` · `parti-bagi-tanisi`) hedefi modül düzeyindeki `GOVDE`den okuyor | `dosya` alanı hiç yok, geri düşüm gerekti |
+| **`String.fromCharCode(10)`** | `panel-mutasyon`da 2 çapa satır sonunu kod noktasıyla kuruyor | bu deponun **kaçış-yutulması dersinden doğan deyimi**; çözücü bilmezse o çapalar incelenemez kalır |
+
+⭐ **KAYNAK METİN TARANMIYOR, AST OKUNUYOR.** `bul` değerleri kaçış dizisi,
+tırnak karışımı ve dize BİRLEŞTİRME içeriyor; metin taramak bunları yanlış
+okur. TypeScript'in kendi ayrıştırıcısı dizenin **pişmiş** değerini veriyor,
+`dosya` alanındaki sabit adları da aynı dosyadaki bildirimlerinden çözülüyor.
+⛔ **Harness'ler İÇE AKTARILAMAZ** — modül yüklenince turu KOŞARLAR (üst
+düzey çağrı, `main()` sarmalı yok). Değer okuma yolu bu yüzden AST.
+
+### MUTASYON 7/7 KIRMIZI — VE İKİ TEŞHİS AYRI ÇIKIYOR
+
+    ① capa hedeften SILINIR      KIRMIZI   tani: KOPMUS
+    ② capa hedefte CIFTLENIR     KIRMIZI   tani: BELIRSIZ
+    ③ /stok capasi kopar         KIRMIZI   (bugunku GERCEK vaka)
+    ④ ikinci sozluk taninmaz     KIRMIZI   (incelenemeyen 18)
+    ⑤ GOVDE geri dusumu kalkar   KIRMIZI
+    ⑥ fromCharCode cozumu kalkar KIRMIZI
+    ⑦ taban kapisi bosalir       KIRMIZI   (yalanci yesil tuzagi)
+
+⚠ **①② İLK TURDA "UYGULANAMADI" DÖNDÜ** — mutasyonu yanlış hedef dosyaya
+yazmıştım. Harness bunu **sonuç saymadı**; düzeltilip ısırdığı GÖRÜLDÜ.
+⚠ **VE BEKÇİNİN KENDİ TABANI AYRICA KANITLANIYOR:** harness < 15 ya da çapa
+< 100 ise sonuç GEÇERSİZ. Boş taban her koşulu geçirir ve o hâl sessizce
+yeşil yanardı.
+
+### ⚠ YAZARKEN KENDİ TUZAĞIMA DÜŞTÜM
+
+Ortak gövdeyi çıkarırken kullandığım glob (`scripts/*mutasyon*.ts`) **yeni
+yazdığım `mutasyon-deseni.ts`'i de yakaladı** ve gövdesini kendi içinden
+söktü; `tsc` yakaladı. _(Anayasa: "ÖNCE DESENİ SAY" — glob de bir desendir.)_
+
+Tur 116 → **117**. `bekci-yetim` yeşil (yetim 0).
+**Halil testi gerekmiyor** — bu bekçi ekran çizmiyor, geliştirme kapısı.
+
+---
+
 ## ✅ K121b — PASİFİ ELEME KARARI ÇAĞIRANA GEÇTİ · 08.09.2026 · [KOD KOŞTU]
 
 > **Kullanıcı bulgusu (08.09):** _"/stok kanal-SKU dalı isActive'siz, ortak

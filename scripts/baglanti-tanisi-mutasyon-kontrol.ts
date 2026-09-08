@@ -1,4 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
+
+import { desenNormalle } from "./mutasyon-deseni";
 import { spawnSync } from "node:child_process";
 
 /**
@@ -114,9 +116,6 @@ function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
   return { kod: r.status ?? 1, ciktiVar: cikti.includes(BEKCI_BASLIGI) };
 }
 
-function desenNormalle(kaynak: string, desen: string): string {
-  return kaynak.includes("\r\n") ? desen.split("\n").join("\r\n") : desen;
-}
 
 console.log("");
 console.log("BAĞLANTI TANISI — MUTASYON TURU");

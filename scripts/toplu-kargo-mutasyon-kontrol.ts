@@ -1,4 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
+
+import { desenNormalle } from "./mutasyon-deseni";
 import { spawnSync } from "node:child_process";
 
 /**
@@ -137,23 +139,6 @@ let yakalanan = 0;
 const kacan: string[] = [];
 const bozuk: string[] = [];
 
-/**
- * ⛔ SATIR SONU KAPISI — DESENİ YAMAMAK DEĞİL, EŞLEŞMEYİ NORMALLEŞTİRMEK.
- *
- * Vaka (27.08.2026): `src/app/satislar/actions.ts` **CRLF**, ötekiler LF.
- * Çok satırlı desenler `\n` arıyordu ve o dosyada **0 kez** eşleşti. Harness
- * üçüncü kapısı sayesinde bunu "yakalandı" diye RAPORLAMADI — `desen 0 kez
- * geçiyor` deyip HARNESS HATASI saydı. O kapı olmasaydı üç mutasyon sessizce
- * yeşil görünürdü.
- *
- * ⚠ ÇARE TEK TEK YAMA DEĞİL: desen, dosyanın KENDİ satır sonuna çevrilir.
- * Yoksa yarın eklenen dördüncü desen aynı tuzağa düşer.
- * _(Anayasa: "metni okuyan kontrol, metnin geliş biçiminden bağımsız okur —
- * düzeltme okuma kapısını kurmaktır".)_
- */
-function desenNormalle(kaynak: string, desen: string): string {
-  return kaynak.includes("\r\n") ? desen.replaceAll("\n", "\r\n") : desen;
-}
 
 for (const m of MUTASYONLAR) {
   const asil = readFileSync(m.dosya, "utf8");

@@ -1,4 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
+
+import { desenNormalle } from "./mutasyon-deseni";
 import { spawnSync } from "node:child_process";
 
 /**
@@ -186,10 +188,6 @@ function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
   return { kod: r.status ?? 1, ciktiVar: cikti.includes(BEKCI_BASLIGI) };
 }
 
-/** Satır sonlarını hedef dosyanın biçimine uydurur (depoda CRLF de var). */
-function desenNormalle(kaynak: string, desen: string): string {
-  return kaynak.includes("\r\n") ? desen.split("\n").join("\r\n") : desen;
-}
 
 console.log("");
 console.log("DÖNEM KORUMASI — K108 MUTASYON TURU");

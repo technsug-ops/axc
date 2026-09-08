@@ -118,6 +118,7 @@
     "kargo-bekleyen:dogrula": "tsx scripts/kargo-bekleyen-dogrula.ts",
     "sayfalama-toplami:dogrula": "tsx scripts/sayfalama-toplami-dogrula.ts",
     "kontrol-karakteri:dogrula": "tsx scripts/kontrol-karakteri-dogrula.ts",
+    "mutasyon-capa:dogrula": "tsx scripts/mutasyon-capa-dogrula.ts",
     "sayim-ekran:dogrula": "tsx scripts/sayim-ekran-dogrula.ts",
     "belge:dogrula": "tsx scripts/belge-dogrula.ts",
     "belge:uret": "tsx scripts/belge-uret.ts",
