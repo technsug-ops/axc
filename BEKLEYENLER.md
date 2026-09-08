@@ -202,76 +202,73 @@ her zaman bir İNSAN kararıdır. Geçen her ısrar İKİ şey birden yazar:
 
 ---
 
-## 🔶 K188-② — MÜKERRER HB KAYDI İPTAL EDİLDİ, ZİNCİR YARIDA · 08.09.2026 · [YAZILDI · KOŞUL A İLE DURDU]
+## ✅ K188-② — MÜKERRER HB KAYDI TEMİZLENDİ (2/2) · 08.09.2026 · [KOŞTU — canlı]
 
-> **Mimar onayı 08.09:** _"HBCV00009ULMCL iptal… KOŞUL A: iptal+onay zinciri
-> sonrası bu ürünün NET stok etkisi SIFIR olmalı. Sıfır değilse DUR, Halil'e
-> 'rafta bu üründen kaç adet' sor."_
+> **Vaka:** aynı HB siparişi defterde İKİ kez duruyordu. Elle giriş (satış
+> Excel'i) sipariş numarası yerine **başka bir ürünün kanal SKU'sunu**
+> (`HBCV00009ULMCL`) kod olarak kullanmış; çakışma kontrolü `Sale.code`
+> üstünden baktığı için iki kod çakışmamış. Ciro **₺5.979 çift sayılıyordu.**
 
-### ① YAZILDI — ANA HEDEF TUTTU
+### SONUÇ — TARİHÇE TEK HİKÂYE OKUYOR
 
-    IKI KAYDIN IPTALSIZ CIROSU  11.958,00 → 5.979,00   ✓ cift sayim gitti
-    iptalli satis                      44 → 45
-    axcali2383 ledger stok              0 → 1          ⚠ KOSUL A: sifir DEGIL
-    axcali2383 hareket                 10 → 11
+    2026-08-10 PURCHASE_IN     +1 · 4.220,85
+    2026-08-10 SALE_OUT        −1 · HBCV00009ULMCL (IPTALLI)
+    2026-08-10 SALE_CANCEL_IN  +1 · 4.220,85        ← tarihi duzeltildi
+    2026-08-10 SALE_OUT        −1 · 4873413946      ← gercek siparis
+    ─────────────────────────────────────────────────
+    LEDGER 0  ·  FIFO 0  ·  FIZIKSEL 0        ✓
+    iptalsiz ciro 5.979,00 (tek kez) · mukerrer ₺5.979 gitti
+    satis CALCULATED · NET-1 715,17 · NET-2 587,67 · FIFO maliyeti 4.220,85
 
-İptal `önizle → imza → uygula` protokolüyle yazıldı (`geriDonenAdet: 1`).
-Sebep kapalı kümede _"mükerrer"_ değeri olmadığı için `MAGAZA_DIGER` seçildi
-ve **notta gerçek yazıldı**: sipariş iptal edilmedi, müşteri malı aldı; bu
-yalnız defterdeki ikinci kaydın düşürülmesi. ⚠ Sebep etiketi yalnız satış
-listesi ve detay ekranında GÖRÜNÜM olarak kullanılıyor, hiçbir rapora
-beslenmiyor — ölçüldü.
+### ① İPTAL — ve mekanizma K180 DEĞİLDİ
 
-### ② ⛔ ZİNCİR TAMAMLANAMADI — VE SEBEBİ TASARIM, ARIZA DEĞİL
+Mimar _"K180 kaldırma"_ demişti; **uygulanamadı ve sessizce uygulanmadı**:
+K180'in `SON_KALEM` kapısı var, `HBCV00009ULMCL` tek kalemli. Niyeti karşılayan
+yol deponun zaten sahip olduğu **satış iptali** oldu (önizle → imza → uygula),
+ve anayasanın kendi cümlesi bunu söylüyor: _"İptal aynı sonucu verir — kayıt
+ciroya/NET'e/hakedişe girmez, stok DOĞRU döner, geri alınabilir ve iz bırakır."_
+Sebep kapalı kümede "mükerrer" değeri yok; `MAGAZA_DIGER` seçildi ve **notta
+gerçek yazıldı**: sipariş iptal edilmedi, müşteri malı aldı.
 
-Kuru koşumda _"iptal → parti açılır → 4873413946 onaylanır"_ demiştim.
-**Yanlıştı.** İptal partiyi açmıyor; ledger disiplini gereği eski çıkışı
-YERİNDE bırakıp **bugün tarihli yeni bir giriş** yazıyor:
+### ② TARİH DÜZELTMESİ — DAR İSTİSNA, ÜÇ ŞARTLA
 
-    is:2026-08-10  SALE_OUT       −1 · satis HBCV00009ULMCL   ← yerinde kaldi
-    is:2026-09-08  SALE_CANCEL_IN +1 · birim 4.220,85         ← BUGUN tarihli
+İptal partiyi AÇMADI: ledger disiplini gereği eski çıkışı yerinde bırakıp
+**bugün tarihli** bir giriş yazdı. FIFO'nun `gunSonu(soldAt)` sınırı (K79) 10.08
+satışı için 08.09 tarihli partiyi göremiyordu.
 
-FIFO'nun `gunSonu(soldAt)` sınırı (K79) 10.08 satışı için 08.09 tarihli
-partiyi göremiyor → `4873413946` hâlâ onaylanamıyor. Sınır DOĞRU çalışıyor;
-onu gevşetmek defterin yarısını kilitleyen eski hatayı geri getirirdi.
+⛔ **KOŞUL A DEVREYE GİRDİ VE DURDUM:** zincirin net stok etkisi 0 olmalıydı,
++1 çıktı. Halil'e soruldu — **raf BOŞ**. Yani bugünkü tarih _"bugün rafa bir
+adet geldi"_ diyordu ve bu iddia yanlıştı.
 
-### ③ ⏭ HALİL'E SORU — KOŞUL A'NIN GEREĞİ
+Metadata istisnasının üç şartı da sağlandı:
 
-**"Braun MQ5245WH (axcali2383) bu üründen rafta kaç adet var?"**
+    ① degisen alan MIKTAR/PARA degil — yalniz occurredAt
+    ② alternatifler OLCULUP ELENDI:
+         ekran yolu YOK · iptali geri alma YOK (cift sayimi geri getirir)
+         ADJUSTMENT -1 → satis SONSUZA KADAR maliyetsiz + kuyrukta (K49)
+         FIFO sinirini gevsetme → K79: defterin %48,72'sini kilitler
+    ③ iz eski VE yeni degerle yazildi (K188_IPTAL_TARIHI_DUZELTILDI)
 
-· **0 ise:** defter yanlış (+1 fazla) ve zincir tamamlanmalı. O zaman
-  `4873413946`'ün maliyet bağı ayrı bir kararla kurulur — FIFO tarih sınırı
-  bu vakada geçilemiyor.
-· **1 ise:** defter doğru. 10.08'deki `PURCHASE_IN` **kâğıt beyandı**
-  (`dosya-maliyet-20260828 · "dosya beyanı"`) ve gerçek bir adedi temsil
-  ediyormuş; `4873413946` maliyetsiz kalır, ayrı karar ister.
+⭐ **YENİ TARİH UYDURULMADI:** hareketin **tersini aldığı çıkışın tam anı**
+(`cmtcugsb`, 2026-08-10T00:00:00Z). Betik o **tek hareketin kimliğine kilitli**
+ve kimlik/tip/adet/SKU dördünü birden doğrulamadan yazmıyor — genel araç
+değil, çünkü genel araç istisnayı kurala çevirir.
 
-⚠ **K180-② riski GERÇEKLEŞTİ:** çıkışın arkasındaki giriş kâğıttı ve iptal
-o kâğıdı serbest bıraktı. Stok aynası elle doğrulanmadan zincir kapanmaz.
+### ③ ONAY — ısrar GEREKMEDİ ve yazılmadı
 
-### ④ 4707418677 (LAMBORGHINI) — YAZIM DURDU (mimar kararı)
+Braun'un sayım damgası **hiç yok** (bu varyant hiç sayılmamış), yani kapı
+zaten `SERBEST`. Lamborghini'de açtığım ısrar yolu burada **kullanılmadı** —
+gerekmeyen bir istisna yazmak, istisnayı ucuzlatırdı. Ölçüldü: `SAYIM_KORUMASI_ISTISNASI` izi **0**.
 
-· `COUNT_CORRECTION` üstündeki **1.582,00 KULLANILMIYOR** — aynı hareketin
-  notu _"MALIYET BILINMIYOR (NO_COST)"_ diyor; alan ile not çelişiyor ve
-  nereden geldiği doğrulanmadan maliyet sayılmaz.
-· Ölçüldü: satış onay kapısını geçemiyor (FIFO 0) → **hiçbir kâr durumuna
-  ulaşamıyor**; NO_COST da değil, K174 de değil — `profitStatus: null`.
-· ⏭ **Mimar talimatı — HENÜZ YAZILMADI:** _"satışı 'maliyet bekliyor'
-  sınıfına al ki onay kuyruğunu tıkamasın."_ Bugün sistemde böyle bir sınıf
-  YOK; yeni bir durum eklemek şema/kod işi ve merdiven ölçülmeden inilmez
-  (mevcut alan → serbest metin → türetilebilir → sütun). Ölçüm sırada.
-· ⏭ **Halil'den:** eksik alımın **tarihi + maliyeti**. Gelince promosyon ya
-  da normal alım olarak yazılır ve satış CALCULATED olur.
+### ④ DEĞİŞMEZLİK TURU
 
-### ⑤ ÖLÇÜM YÖNTEMİ HAKKINDA DÜRÜSTLÜK NOTU
+    LEDGER 0 = FIFO 0 = FIZIKSEL 0            ✓
+    FIFO maliyeti 4.220,85                    ✓ mimarin bekledigi rakam
+    iptalsiz ciro 5.979,00 — tek kez          ✓
+    son 30 dk'da dokunulan varyant: axcali2383 (1 hareket) — baska YOK ✓
 
-Bit-bit kıyasta `saleToplam` · `net1/net2` · `saleFee` · `stockMovement`
-genel toplamları da değişti — **bunlar bu yazıma ait DEĞİL**: sistem canlı ve
-5 dakikada bir çekim/onay koşuyor, kıyas penceresinde yeni sipariş düştü.
-Canlı bir sistemde genel sayaçlar temiz kanıt vermiyor; atfedilebilir olan
-yalnız varyant bazlı ve kayıt bazlı ölçümlerdir. _(Anayasa: "donmuş kaynak,
-akan kaynakla karşılaştırılırken iki damga yazılır" — burada akan taraf kendi
-defterimiz.)_
+⚠ **BRAUN'DA İADE YOK** — Lamborghini'den farkı bu: mal satıldı ve gitti,
+o yüzden beklenen son durum **0**, 1 değil.
 
 ---
 
