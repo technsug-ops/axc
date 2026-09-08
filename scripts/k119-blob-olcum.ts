@@ -1,4 +1,4 @@
-import { get, list } from "@vercel/blob";
+import { get } from "@vercel/blob";
 
 import { canliYapilandirma } from "./canli-ortak";
 
@@ -44,37 +44,36 @@ async function main() {
     return;
   }
 
-  let blobs: { pathname: string; url: string; size: number; uploadedAt: Date }[] = [];
+  /**
+   * ⛔ `list()` KULLANILMIYOR (K192, 08.09.2026) — VE BU BETİĞİN KENDİSİ DE
+   * SUÇLUYDU. Askının sebebi ölçüldü: advanced operations **2000/2000**.
+   * Her koşumda bir `list()` atan bir TEŞHİS aracı, teşhis ettiği arızayı
+   * besler. Kayıtlar artık manifestten (`get`) okunuyor.
+   */
+  let kayitlar: { ad: string; boyut: number; yazildi: Date }[] = [];
   try {
-    const r = await list({ prefix: "yedek/", token: jeton });
-    blobs = r.blobs as never;
-    console.log(`① LISTELE  ✓  ${blobs.length} dosya`);
+    const { blobHedefi } = await import("../src/lib/yedek-hedefi");
+    kayitlar = await blobHedefi(jeton).listele("yedek/");
+    console.log(`① MANIFEST  ✓  ${kayitlar.length} kayit`);
   } catch (e) {
-    console.log(`① LISTELE  ⛔ ${String((e as Error).message).replace(/\s+/g, " ")}`);
+    console.log(`① MANIFEST  ⛔ ${String((e as Error).message).replace(/\s+/g, " ")}`);
     process.exitCode = 1;
     return;
   }
-  if (blobs.length === 0) {
-    console.log("   (yedek klasoru BOS — ②/③ olculemez, bu da bir bulgudur)");
+  if (kayitlar.length === 0) {
+    console.log("   (manifest BOS — henuz hic yedek yazilmamis ya da manifest yok)");
     return;
   }
 
-  const yeni = [...blobs].sort(
-    (a, b) => +new Date(b.uploadedAt) - +new Date(a.uploadedAt),
+  const yeni = [...kayitlar].sort(
+    (a, b) => b.yazildi.getTime() - a.yazildi.getTime(),
   )[0];
   console.log(
-    `   en yeni: ${yeni.pathname} · ${(yeni.size / 1024 / 1024).toFixed(2)} MB · ${new Date(yeni.uploadedAt).toISOString()}`,
+    `   en yeni: ${yeni.ad} · ${(yeni.boyut / 1024 / 1024).toFixed(2)} MB · ${yeni.yazildi.toISOString()}`,
   );
 
   try {
-    const c = await fetch(yeni.url);
-    console.log(`② DUZ FETCH (yedek-hedefi.oku bunu yapiyor) → HTTP ${c.status} ${c.ok ? "✓" : "⛔"}`);
-  } catch (e) {
-    console.log(`② DUZ FETCH  ⛔ ${String((e as Error).message).replace(/\s+/g, " ")}`);
-  }
-
-  try {
-    const s = await get(yeni.pathname, { access: "private", token: jeton });
+    const s = await get(yeni.ad, { access: "private", token: jeton });
     if (!s) {
       console.log("③ get(private)  ⛔ null dondu (bulunamadi)");
     } else {

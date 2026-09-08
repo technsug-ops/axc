@@ -193,11 +193,17 @@ async function main() {
     );
   } else {
     try {
-      const { list } = await import("@vercel/blob");
-      const { blobs } = await list({
-        prefix: "yedek/",
-        token: yapi.blobJetonu,
-      });
+      /**
+       * ⛔ `list()` KALDIRILDI (K192): kotayı yakan çağrı sınıfı buydu.
+       * Hedef soyutlaması manifesti `get()` ile okuyor.
+       */
+      const { blobHedefi } = await import("../src/lib/yedek-hedefi");
+      const kayitlar = await blobHedefi(yapi.blobJetonu).listele("yedek/");
+      const blobs = kayitlar.map((k) => ({
+        pathname: k.ad,
+        size: k.boyut,
+        uploadedAt: k.yazildi,
+      }));
 
       if (blobs.length === 0) {
         basarisiz(

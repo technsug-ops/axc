@@ -50,45 +50,49 @@ export async function OtomatikYedekDurumu() {
     boyut: number;
     kapsam: "GUNLUK" | "TAM";
   }[] = [];
+  /**
+   * ⛔ İKİ `list()` VARDI VE İKİSİ AYNI SORGUYDU (K192, 08.09.2026).
+   * Bu ekranın her açılışı **iki advanced operation** harcıyordu; kotayı
+   * (2000/2000) yakan sınıf tam buydu. Tek okuma yapılıp iki soru da
+   * ondan cevaplanıyor.
+   */
+  let tumKayitlar: { ad: string; boyut: number; yazildi: Date }[] = [];
   try {
-    const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: "yedek/" });
+    const { varsayilanYedekHedefi } = await import("@/lib/yedek-hedefi");
+    const secim = varsayilanYedekHedefi();
+    tumKayitlar = secim.tamam ? await secim.hedef.listele("yedek/") : [];
 
-    yedekler = blobs
-      .sort(
-        (a, b) =>
-          new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
-      )
+    yedekler = [...tumKayitlar]
+      .sort((a, b) => b.yazildi.getTime() - a.yazildi.getTime())
       .slice(0, 10)
-      .map((b) => {
-        const ad = b.pathname.replace(/^yedek\//, "");
+      .map((k) => {
+        const ad = k.ad.replace(/^yedek\//, "");
         return {
           // Yedekler ÖZEL: blob adresi doğrudan okunamaz. İndirme kendi
           // ucumuzdan geçer, depo jetonu tarayıcıya hiç gitmez.
           url: `/api/yedek/indir?ad=${encodeURIComponent(ad)}`,
           ad,
-          tarih: new Date(b.uploadedAt),
-          boyut: b.size,
+          tarih: k.yazildi,
+          boyut: k.boyut,
           kapsam: yedekKapsami(ad),
         };
       });
   } catch {
     yedekler = [];
+    tumKayitlar = [];
   }
 
   /**
-   * BOŞLUK TARAMASI — son 14 gün. Liste 10 kayıtla sınırlı olduğu için
-   * tarama AYRI listeden yapılır; "son 10 yedek" ile "son 14 gün" farklı
-   * sorulardır ve birini ötekinin yerine kullanmak eksik gün gizlerdi.
+   * BOŞLUK TARAMASI — son 14 gün.
+   *
+   * ⚠ AYRIM KORUNUYOR: tarama TAM listeden yapılıyor, 10'luk dilimden
+   * DEĞİL — "son 10 yedek" ile "son 14 gün" farklı sorulardır ve birini
+   * ötekinin yerine kullanmak eksik günleri gizlerdi. Değişen tek şey,
+   * aynı veriyi İKİNCİ KEZ çekmemek (K192).
    */
-  let tumTarihler: { tarih: Date }[] = [];
-  try {
-    const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: "yedek/" });
-    tumTarihler = blobs.map((b) => ({ tarih: new Date(b.uploadedAt) }));
-  } catch {
-    tumTarihler = [];
-  }
+  const tumTarihler: { tarih: Date }[] = tumKayitlar.map((k) => ({
+    tarih: k.yazildi,
+  }));
   const bugun = gunDegeri(isTakvimGunu(new Date()));
 
   /**

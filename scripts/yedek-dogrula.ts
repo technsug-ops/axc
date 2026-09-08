@@ -556,6 +556,96 @@ async function main() {
     }
   }
 
+
+  /* -- KOTA YASAGI: @vercel/blob list() CAGRILAMAZ (K192) ----------- */
+  /**
+   * ⛔ NİYE (08.09.2026): Blob deposunun askıya alınmasının SEBEBİ ölçüldü —
+   * **advanced operations 2000/2000 DOLU.** Storage 217 MB/1 GB, simple ops
+   * 10/10k, transfer 2,38 MB/10 GB; hepsi bol. Depoyu dolduran VERİ değil,
+   * ÇAĞRI SAYISIYDI ve o çağrı `list()` idi.
+   *
+   * ⚠ EN PAHALISI ÇANDI: `uyari/topla.ts` HER PANEL ÇİZİMİNDE bir `list()`
+   * atıyordu. `otomatik-durum.tsx` her açılışta İKİ (aynı sorguyu iki kez).
+   * `yedek-hedefi.oku()` her okumada bir, `sil()` her silmede bir. Hatta
+   * teşhis betiğinin kendisi de koşum başına bir tane harcıyordu —
+   * **teşhis aracı, teşhis ettiği arızayı besliyordu.**
+   *
+   * ⭐ ÇARE ÖLÇÜLDÜ, VARSAYILMADI: `@vercel/blob` tip bildirimine bakıldı —
+   * `del(urlOrPathname)` ve `get(urlOrPathname)` PATHNAME kabul ediyor,
+   * yani okuma ve silme için `list()` hiç gerekmiyormuş. Geriye yalnız
+   * "hangi yedekler var" sorusu kaldı ve o bir MANIFEST dosyasından
+   * (`yedek/index.json`, `get` ile) cevaplanıyor.
+   *
+   * ⚠ YASAK DOSYA LİSTESİ DEĞİL DESENDİR: `src/` ve `scripts/` altındaki
+   * HER dosya taranıyor. Yarın açılan bir ekran `list` içeri alırsa kotayı
+   * yeniden doldurur ve bunu kimse fark etmez — depo askıya alınana kadar.
+   * _(Anayasa: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır".)_
+   */
+  {
+    const koklar = ["src", "scripts"];
+    const dosyalar: string[] = [];
+    for (const kok of koklar) {
+      for (const p of readdirSync(kok, { recursive: true, encoding: "utf8" })) {
+        if (typeof p !== "string") continue;
+        if (!p.endsWith(".ts") && !p.endsWith(".tsx")) continue;
+        dosyalar.push(kok + "/" + p);
+      }
+    }
+    /** ⚠ TABAN DOLULUĞU: boş tarama her yasağı sessizce geçirir. */
+    kontrol("kota taraması dosya buldu", dosyalar.length > 200, dosyalar.length);
+
+    const blobKullanan: string[] = [];
+    const listCagiran: string[] = [];
+    for (const d of dosyalar) {
+      const metin = readFileSync(d, "utf8");
+      if (!metin.includes("@vercel/blob")) continue;
+      blobKullanan.push(d);
+      /**
+       * ⚠ ARANAN AD PARÇALI KURULUYOR — VE BU BİR MUTASYON BULGUSUDUR.
+       * Ölçüt ilk yazıldığında dizeyi düz yazıyordu ve **kendi kaynağında**
+       * geçtiği için bu bekçiyi suçlu ilan etti. Çare dosya istisnası yazmak
+       * DEĞİL (o, yasağı listeye çevirirdi); aranan adı parçalayıp kaynakta
+       * hiç geçmemesini sağlamak.
+       * _(Anayasa: "ÖNCE DESENİ SAY" — ve ölçütün kendisi de bir dosyadır.)_
+       *
+       * İki biçim de yakalanır: statik `import { … } from "@vercel/blob"` ve
+       * dinamik `const { … } = await import("@vercel/blob")`. İkincisi
+       * kotayı yakan gövdelerin TAMAMINDA kullanılan biçimdi.
+       */
+      const AD = "l" + "ist";
+      const bicimler = ["{ " + AD + " }", ", " + AD + " }", "{ " + AD + ","];
+      if (bicimler.some((b) => metin.includes(b))) {
+        listCagiran.push(d);
+      }
+    }
+    kontrol(
+      "@vercel/blob kullanan dosya bulundu (taban DOLU)",
+      blobKullanan.length >= 5,
+      blobKullanan.length,
+    );
+    kontrol(
+      "hiçbir dosya @vercel/blob'dan list() almıyor (kota kök sebebi)",
+      listCagiran.length === 0,
+    );
+    if (listCagiran.length > 0) {
+      console.log("        list() ALAN: " + listCagiran.join(" · "));
+      console.log("        ⛔ Bu cagri advanced operation harcar ve kotayi doldurur.");
+      console.log("           Okuma/silme icin get()/del() PATHNAME kabul eder;");
+      console.log("           'hangi yedekler var' sorusu MANIFEST'ten cevaplanir.");
+    }
+
+    /** ⭐ VE MANİFEST GERÇEKTEN KULLANILIYOR MU — yasak tek başına yetmez. */
+    const hedef = readFileSync("src/lib/yedek-hedefi.ts", "utf8");
+    kontrol(
+      "blob hedefi kayıtları MANİFEST'ten okuyor",
+      hedef.includes("yedek/index.json"),
+    );
+    kontrol(
+      "blob hedefi silmede pathname kullanıyor (list yok)",
+      hedef.includes("await del(adlar, { token })"),
+    );
+  }
+
   await prisma.$disconnect();
 
   console.log("\n" + "=".repeat(70));

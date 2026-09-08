@@ -39,18 +39,21 @@ export default async function GeriYuklemeSayfasi() {
 
   let depodakiler: { ad: string; boyutKb: number }[] = [];
   if (depoBagli) {
+    /**
+     * ⛔ `list()` KALDIRILDI (K192, 08.09.2026): her açılış bir advanced
+     * operation harcıyordu ve kota (2000/2000) tam bu sınıftan doldu.
+     * Kayıtlar hedef soyutlamasından geliyor.
+     */
     try {
-      const { list } = await import("@vercel/blob");
-      const { blobs } = await list({ prefix: "yedek/" });
-      depodakiler = blobs
-        .sort(
-          (a, b) =>
-            new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
-        )
+      const { varsayilanYedekHedefi } = await import("@/lib/yedek-hedefi");
+      const secim = varsayilanYedekHedefi();
+      const kayitlar = secim.tamam ? await secim.hedef.listele("yedek/") : [];
+      depodakiler = [...kayitlar]
+        .sort((a, b) => b.yazildi.getTime() - a.yazildi.getTime())
         .slice(0, 30)
-        .map((b) => ({
-          ad: b.pathname.replace(/^yedek\//, ""),
-          boyutKb: Math.max(1, Math.round(b.size / 1024)),
+        .map((k) => ({
+          ad: k.ad.replace(/^yedek\//, ""),
+          boyutKb: Math.max(1, Math.round(k.boyut / 1024)),
         }));
     } catch {
       depodakiler = [];

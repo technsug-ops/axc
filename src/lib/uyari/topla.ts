@@ -57,13 +57,28 @@ import type { Uyari } from "./turler";
  * yutulup "sorun yok" sayılmaz: doğrulanamayan yedek, yedek değildir.
  */
 async function sonYedekZamani(): Promise<Date | null> {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) return null;
+  /**
+   * ⛔ `list()` KALDIRILDI — VE BU ÇAĞRI KOTAYI YAKAN YERDİ (K192, 08.09.2026).
+   *
+   * Bu gövde HER PANEL ÇİZİMİNDE bir `list()` atıyordu ve `list` bir
+   * **advanced operation**. Ölçüldü: depo askıya alınmasının sebebi
+   * advanced ops **2000/2000 DOLU** — storage 217 MB/1 GB, simple ops
+   * 10/10k, transfer 2,38 MB/10 GB, hepsi bol. Yani depoyu dolduran veri
+   * değil, ÇAĞRI SAYISIYDI; ve en sık çağıran burasıydı.
+   *
+   * ⭐ Artık hedef soyutlamasından geçiyor: Blob hedefi manifesti `get()`
+   * ile okuyor (simple), dosya hedefi diski okuyor (bedava).
+   * _(Anayasa: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır" —
+   * ve bu çağrı doğrudan kütüphaneye bağlıydı.)_
+   */
   try {
-    const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: "yedek/" });
-    if (blobs.length === 0) return null;
-    return blobs
-      .map((b) => new Date(b.uploadedAt))
+    const { varsayilanYedekHedefi } = await import("@/lib/yedek-hedefi");
+    const secim = varsayilanYedekHedefi();
+    if (!secim.tamam) return null;
+    const kayitlar = await secim.hedef.listele("yedek/");
+    if (kayitlar.length === 0) return null;
+    return kayitlar
+      .map((k) => k.yazildi)
       .reduce((enYeni, t) => (t > enYeni ? t : enYeni));
   } catch {
     return null;

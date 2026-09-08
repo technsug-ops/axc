@@ -1,4 +1,4 @@
-import { del, get, head, list, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 import {
   mkdirSync,
   readFileSync,
@@ -64,8 +64,52 @@ export type YedekHedefi = {
 
 /* ═══════════════════════ VERCEL BLOB ═══════════════════════════════ */
 
+/**
+ * ⛔ MANIFEST DOSYASI — `list()` YERİNE (K192, 08.09.2026).
+ *
+ * Depo askısının SEBEBİ ölçüldü: **advanced operations 2000/2000 DOLU**.
+ * Storage 217 MB/1 GB, simple ops 10/10k, transfer 2,38 MB/10 GB — hepsi
+ * bol. Kotayı yakan tek şey `list()` çağrılarıydı ve en pahalısı çandı:
+ * `uyari/topla.ts` HER PANEL ÇİZİMİNDE bir `list()` atıyordu.
+ *
+ * ⚠ VERİ KAYBI RİSKİ YOK: storage temiz, geri sayım yok — kapanan şey
+ * ERİŞİM. Yuvarlanan pencere düşünce depo kendiliğinden açılır ve
+ * `list()` kalktığı için bir daha dolmaz.
+ */
+const MANIFEST = "yedek/index.json";
+
 export function blobHedefi(jeton?: string): YedekHedefi {
   const token = jeton ?? process.env.BLOB_READ_WRITE_TOKEN;
+
+  /** Manifesti okur; yoksa BOŞ döner (henüz hiç yedek yazılmamış olabilir). */
+  async function manifestOku(): Promise<YedekKaydi[]> {
+    const sonuc = await get(MANIFEST, { access: "private", token });
+    if (!sonuc) return [];
+    if (sonuc.statusCode !== 200) {
+      throw new Error(
+        `Manifest okunamadı (${sonuc.statusCode}) — depo askıda olabilir.`,
+      );
+    }
+    const metin = await new Response(sonuc.stream).text();
+    const ham = JSON.parse(metin) as {
+      ad: string;
+      boyut: number;
+      yazildi: string;
+      adres: string;
+    }[];
+    return ham.map((k) => ({ ...k, yazildi: new Date(k.yazildi) }));
+  }
+
+  async function manifestYaz(kayitlar: YedekKaydi[]): Promise<void> {
+    await put(MANIFEST, JSON.stringify(kayitlar), {
+      access: "private",
+      contentType: "application/json; charset=utf-8",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      token,
+    });
+  }
+
   return {
     tur: "BLOB",
     aciklama: "Vercel Blob (özel)",
@@ -82,37 +126,42 @@ export function blobHedefi(jeton?: string): YedekHedefi {
         allowOverwrite: true,
         token,
       });
+      /**
+       * ⚠ MANIFEST YAZIMDAN SONRA GÜNCELLENİR — ve dosyanın KENDİSİ hâlâ
+       * tek doğru kanıttır. Manifest yalnız bir DİZİNDİR; kaybolursa
+       * yeniden kurulabilir, çünkü ad deseni belirlenimci
+       * (`yedek/selliora-<gün>.json`). Bu yüzden manifest bir tek nokta
+       * arıza değil, bir hızlandırıcıdır.
+       */
+      const kayitlar = (await manifestOku()).filter((k) => k.ad !== ad);
+      kayitlar.push({
+        ad,
+        boyut: Buffer.byteLength(icerik, "utf8"),
+        yazildi: new Date(),
+        adres: url,
+      });
+      await manifestYaz(kayitlar);
       return { adres: url };
     },
+    /**
+     * ⛔ `list()` ÇAĞRILMAZ — kotayı yakan çağrı buydu. Kayıtlar manifestten
+     * okunuyor ve `get()` bir SIMPLE işlem.
+     */
     async listele(onek) {
-      const { blobs } = await list({ prefix: onek, token });
-      return blobs.map((b) => ({
-        ad: b.pathname,
-        boyut: b.size,
-        yazildi: new Date(b.uploadedAt),
-        adres: b.url,
-      }));
+      return (await manifestOku()).filter((k) => k.ad.startsWith(onek));
     },
     async oku(ad) {
-      const kayitlar = await this.listele(ad);
-      const kayit = kayitlar.find((k) => k.ad === ad);
-      if (kayit === undefined) return null;
       /**
        * ⛔ DÜZ `fetch` KULLANILMAZ — VE BU BİR ÖLÇÜM SONUCUDUR (08.09.2026).
-       *
        * Bu dosyalar `access: "private"` yazılıyor; özel bir blob'un URL'sine
-       * jetonsuz `fetch` atmak **TASARIM GEREĞİ** `403` verir. Yani eski
-       * gövde, depo tertemiz olsaydı BİLE okuyamazdı ve hatası "depo askıda"
-       * gibi görünürdü — iki apayrı arıza ekranda aynı satırı yazıyordu.
-       * Doğru yol `api/yedek/indir`in kullandığı yoldur: `get(access:"private")`.
+       * jetonsuz `fetch` atmak TASARIM GEREĞİ `403` verir.
        *
-       * ⚠ ETKİSİ HENÜZ KANITLANMADI: 08.09'da ölçüldü, iki yol da `403`
-       * verdi çünkü depo HÂLÂ askıda. Düzeltme kendi başına doğru; askı
-       * kalkmadan "çözüldü" denemez. _(Anayasa: "tetiklenemeyen yol
-       * 'geçti' sayılmaz".)_
+       * ⛔ VE ARTIK ÖNCE `listele()` DE ÇAĞRILMIYOR (K192): `get()` zaten
+       * pathname kabul ediyor ve bulunamayınca `null` dönüyor. Eski gövde
+       * her okuma için bir `list()` harcıyordu — okuma başına bir advanced
+       * operation.
        */
       const sonuc = await get(ad, { access: "private", token });
-      /** `get` bulunamayınca `null` döner — gerçekten yok demektir. */
       if (!sonuc) return null;
       if (sonuc.statusCode !== 200) {
         /**
@@ -126,30 +175,39 @@ export function blobHedefi(jeton?: string): YedekHedefi {
       }
       return new Response(sonuc.stream).text();
     },
+    /**
+     * ⛔ `del()` PATHNAME KABUL EDİYOR — ölçüldü (`@vercel/blob` tip
+     * bildirimi: `urlOrPathname`). Eski gövde silinecek adresleri bulmak
+     * için `list()` atıyordu; gerek yokmuş.
+     */
     async sil(adlar) {
       if (adlar.length === 0) return 0;
-      const kayitlar = await this.listele("");
-      const adresler = kayitlar
-        .filter((k) => adlar.includes(k.ad))
-        .map((k) => k.adres);
-      if (adresler.length > 0) await del(adresler, { token });
-      return adresler.length;
+      await del(adlar, { token });
+      /**
+       * ⚠ DÖNEN SAYI MANİFESTTEN ÖLÇÜLÜR, `adlar.length`ten DEĞİL: istenen
+       * ile SİLİNEN aynı şey değildir ve "kaç sildim" sorusuna istediğim
+       * sayıyı geri vermek ölçüm değil YANKI olurdu.
+       */
+      const kayitlar = await manifestOku();
+      const kalan = kayitlar.filter((k) => !adlar.includes(k.ad));
+      const silinen = kayitlar.length - kalan.length;
+      await manifestYaz(kalan);
+      return silinen;
     },
   };
 }
 
-/** Blob üstverisi okunabiliyor mu — teşhis için, içerik indirmez. */
-export async function blobUstverisi(
-  ad: string,
-  jeton?: string,
-): Promise<number | null> {
-  try {
-    const h = await head(ad, { token: jeton ?? process.env.BLOB_READ_WRITE_TOKEN });
-    return h.size;
-  } catch {
-    return null;
-  }
-}
+/**
+ * ⛔ `blobUstverisi` KALDIRILDI (K192, 08.09.2026) — ÇAĞIRANI YOKTU.
+ *
+ * K119a'da teşhis için yazılmıştı ve **hiçbir yerden çağrılmıyordu**
+ * (ölçüldü: `src/` ve `scripts/` altında 0 kullanım). `head()` de depo
+ * işlemi harcar; kotayı yakan sınıftan bir çağrıyı çağıransız tutmanın
+ * hiçbir faydası yok, tek etkisi birinin onu "demek üstveri takip
+ * ediliyor" diye okuması olurdu.
+ * _(Anayasa: "yazıcısı olmayan alan iki şeyden biri olur — bağlanır ya da
+ * KALDIRILIR; üçüncü seçenek kararın ertelenmesidir".)_
+ */
 
 /* ═══════════════════════ HEDEF SEÇİMİ ══════════════════════════════ */
 

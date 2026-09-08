@@ -13,6 +13,91 @@
 
 ---
 
+## ✅ K192 — BLOB ASKISININ KÖK SEBEBİ: `list()` KOTAYI YAKMIŞ · 08.09.2026 · [KOD KOŞTU]
+
+> **Mimar ölçümü (Vercel ekranı):** Advanced Operations **2000/2000 — DOLU**.
+> Storage 217 MB/1 GB · Simple 10/10k · Transfer 2,38 MB/10 GB — hepsi bol.
+> **Veri silinme riski YOK** (storage temiz, geri sayım yok); kapanan şey
+> ERİŞİM. Yuvarlanan pencere düşünce depo kendiliğinden açılır.
+
+⛔ **DEPOYU DOLDURAN VERİ DEĞİL, ÇAĞRI SAYISIYDI.** Tek suçlu `list()` — ve
+sekiz gündür "askı" diye baktığımız şey aslında **kendi kodumuzun ürettiği
+bir kota tükenmesiydi.**
+
+### KİM ÇAĞIRIYORDU — VE NE SIKLIKTA
+
+    uyari/topla.ts          HER PANEL CIZIMINDE  1  ← en pahalisi
+    otomatik-durum.tsx      her acilista         2  ← AYNI sorgu iki kez
+    geri-yukleme/page.tsx   her acilista         1
+    yedek-hedefi.oku()      her OKUMADA          1
+    yedek-hedefi.sil()      her SILMEDE          1
+    canli-test.ts           kosum basina         1
+    k119-blob-olcum.ts      kosum basina         1  ← TESHIS ARACI
+
+⚠ **TEŞHİS ARACININ KENDİSİ DE SUÇLUYDU:** askıyı ölçmek için yazdığım betik
+her koşumda bir `list()` harcıyordu — teşhis ettiği arızayı besliyordu.
+
+### ⭐ ÇARE ÖLÇÜLDÜ, VARSAYILMADI
+
+`@vercel/blob` **tip bildirimine bakıldı**:
+
+    del(urlOrPathname: string[] | string, ...)   ← PATHNAME kabul ediyor
+    get(urlOrPathname: string, ...)              ← PATHNAME kabul ediyor
+
+Yani okuma ve silme için `list()` **hiç gerekmiyormuş**. `oku()` her okumada
+önce `listele()` çağırıyordu; `sil()` silinecek adresleri bulmak için
+listeliyordu. İkisi de gereksizdi.
+
+Geriye tek soru kaldı — _"hangi yedekler var"_ — ve o bir **MANİFEST**
+dosyasından (`yedek/index.json`, `get` ile) cevaplanıyor. Manifest yazımdan
+sonra güncelleniyor.
+⚠ **MANİFEST TEK NOKTA ARIZA DEĞİL:** dosyanın kendisi hâlâ tek doğru
+kanıttır ve ad deseni belirlenimci (`yedek/selliora-<gün>.json`), yani
+manifest kaybolsa yeniden kurulabilir. Bir hızlandırıcıdır, bir defter
+değil.
+
+### YAZILAN
+
+**①** `blobHedefi` `list()`siz: `oku` → doğrudan `get(pathname)`, `sil` →
+doğrudan `del(pathname)`, `listele` → manifest.
+**②** Çan, iki ekran ve iki betik **hedef soyutlamasından** geçiyor — hiçbiri
+`@vercel/blob`u doğrudan çağırmıyor. `otomatik-durum` iki sorguyu **teke**
+indirdi (aynı veriyi iki kez çekiyordu); ⚠ ama "son 10 yedek" ile "son 14
+gün" AYRIMI korundu — tarama yine TAM listeden yapılıyor, 10'luk dilimden
+değil.
+**③** `blobUstverisi` **KALDIRILDI** — ölçüldü, `src/` ve `scripts/` altında
+**0 çağıran**. `head()` de depo işlemi harcar; kotayı yakan sınıftan bir
+çağrıyı çağıransız tutmanın tek etkisi, birinin onu "demek üstveri takip
+ediliyor" diye okuması olurdu.
+
+### BEKÇİ — DESEN YASAĞI · MUTASYON 4/4 KIRMIZI
+
+`src/` ve `scripts/` altındaki **her dosya** taranıyor: hiçbiri
+`@vercel/blob`dan `list` alamaz. Statik ve dinamik içe aktarma biçimlerinin
+ikisi de yakalanıyor.
+
+    ① bir dosya yine list aliyor           KIRMIZI
+    ② kota taramasi bosaltilir             KIRMIZI  (bos taban)
+    ③ manifest kaldirilir                  KIRMIZI
+    ④ sil() pathname yolundan cikar        KIRMIZI
+
+⚠ **ÖLÇÜT İLK KOŞUMDA KENDİNİ SUÇLADI:** aradığı dize kendi kaynağında
+geçiyordu. Çare **dosya istisnası yazmak değildi** — o, yasağı yeniden bir
+listeye çevirirdi; aranan ad parçalı kuruldu (`"l" + "ist"`) ve kaynakta hiç
+geçmez oldu.
+
+### 📋 HEDEF — ÜRETİMDE HÂLÂ ÇALIŞAN YOL YOK, VE SEBEBİ DEĞİŞTİ
+
+`canli:yedek-cekirdek` yeşil (09.09 · 86.486 satır · 41,60 MB · geri okuma
+242 ms) ve operatörün yolu bu.
+⛔ **Vercel'de kalıcı disk YOK**, dolayısıyla üretimdeki gece işi için
+`YEDEK_HEDEFI=DOSYA` bir çözüm DEĞİL — K119b'de bunun neden yalancı yeşil
+olduğu yazılı. Üretim yolu Blob açılınca çalışacak.
+⭐ **VE AÇILMASI İÇİN VERCEL'E GEREK YOK:** yuvarlanan pencere düşünce depo
+kendi açılır; `list()` kalktığı için **bir daha dolmaz.**
+
+---
+
 ## ✅ K191 — ÖLÜM SEBEBİ İŞARETİ: "YARIM KALDI" YETMEZ, "NEREDE" GEREK · 08.09.2026 · [KOŞTU]
 
 > **Mimar kararı 08.09:** _"cmd her adımdan önce 'son adım' işaretini
