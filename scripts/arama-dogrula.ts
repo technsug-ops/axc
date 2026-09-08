@@ -146,15 +146,6 @@ kontrol(
   !JSON.stringify(kodKosulu("ABC")).includes('"product"'),
 );
 
-/**
- * PASİF EŞLEŞME ÜRÜN GETİRMEZ. Kapatılmış bir listing'in kodu hâlâ ürün
- * getirseydi, artık satılmayan bir eşleşme satışa girerdi.
- */
-kontrol(
-  "kanal kodu araması yalnız AKTİF eşleşmeye bakıyor",
-  JSON.stringify(aramaKosulu("ABC")).includes('"isActive":true') &&
-    JSON.stringify(kodKosulu("ABC")).includes('"isActive":true'),
-);
 
 console.log("");
 console.log("=".repeat(70));
@@ -921,6 +912,146 @@ console.log("");
   /** ⚠ TARAMANIN KENDİSİ DE ÖLÇÜLÜR: hiç dosya bulunamazsa "temiz" değil,
    *  BOZUK demektir (anayasa: boş sonuç ile temiz sonuç ayrı şeylerdir). */
   kontrol("tarama gerçekten dosya buldu", taranan.length > 100);
+}
+
+
+/* === K121b — PASIFI ELEME KARARI CAGIRANIN, ORTAK GOVDENIN DEGIL ===== */
+/**
+ * ⛔ NİYE (08.09.2026): ortak gövde kanal kodu dalına `isActive: true`
+ * koyuyordu, yani çağıranı adına karar veriyordu — ve o karar K121 ilkesiyle
+ * çelişiyordu: **pasif mal da raftadır, okutulunca görünmelidir.**
+ * Ölçüldü: süzgecin elediği tek kod `43217` (→ axcali2601) ve **çakışma 0**.
+ *
+ * ⚠ BU BLOK ÜÇ AYRI ŞEY SORAR — ÜÇÜ DE GEREKLİ:
+ *   ① ortak gövde artık hüküm vermiyor mu
+ *   ② sayım yolu pasifi ÇÖZÜYOR mu (beyanlı istisna)
+ *   ③ ÖTEKİ çağıranlar hâlâ eliyor mu  ← bu olmadan ① tehlikeli olurdu
+ * Yalnız ① yazılsaydı, süzgeci kaldırmak bütün ekranları sessizce pasife
+ * açardı ve hiçbir şey söylemezdi.
+ */
+{
+  const govde = JSON.stringify([
+    aramaKosulu("ABC"),
+    kodKosulu("ABC"),
+    kodKosuluToplu(["ABC"]),
+  ]);
+  /**
+   * ⚠ ESKİ ÖLÇÜT BUNUN TAM TERSİNİ SABİTLİYORDU ("kanal kodu araması yalnız
+   * AKTİF eşleşmeye bakıyor"). Kod yanlış değildi — KARAR değişti ve ölçüt
+   * onunla birlikte çevrildi. _(Anayasa: "bekçinin kırmızısı her zaman 'kod
+   * yanlış' demez"; ve eski gerekçe silinmiyor, karar bloğunda duruyor.)_
+   */
+  kontrol(
+    "ortak gövde listing düzeyinde pasifi ELEMİYOR (karar çağıranın)",
+    !govde.includes('"isActive":true'),
+  );
+  kontrol(
+    "ortak gövde kanal kodu dalını yine de üretiyor",
+    govde.includes("channelSkus"),
+  );
+
+  /* -- SAYIM YOLU: PASIFI COZER (BEYANLI ISTISNA) -------------------- */
+  const sayimKaynagi = readFileSync("src/app/okut/sayim-actions.ts", "utf8");
+  const sayimCagri = sayimKaynagi.indexOf("kodKosulu(temiz)");
+  kontrol("sayım yolu ortak gövdeyi çağırıyor", sayimCagri >= 0);
+  if (sayimCagri >= 0) {
+    /** Çağrıdan geriye dar bir pencere: `where` bloğu bu aralıkta. */
+    const pencere = sayimKaynagi.slice(Math.max(0, sayimCagri - 120), sayimCagri + 60);
+    kontrol(
+      "sayım yolu varyant düzeyinde isActive SÜZMÜYOR (pasif mal da rafta)",
+      !pencere.includes("isActive: true"),
+    );
+    kontrol(
+      "sayım yolundaki bu yokluk BEYAN edilmiş (unutma değil)",
+      sayimKaynagi.includes("BİLEREK YOK"),
+    );
+  }
+
+  /* -- OTEKI CAGIRANLAR: HALA ELIYOR MU (ters yon) ------------------- */
+  /**
+   * ⚠ LİSTE TUTULMUYOR — çağıranlar TARANARAK bulunuyor. Elle yazılmış bir
+   * liste, yarın eklenen altıncı çağıranı sessizce dışarıda bırakırdı.
+   * _(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)_
+   *
+   * ⚠ KAPSAM `src/` İLE SINIRLI VE BU BİLEREK: `scripts/` altındaki içe
+   * aktarmalar (`kodKosuluToplu` — TY · HB · N11 · alış · satış) varyant
+   * düzeyinde SÜZMEMELİ. Bir sipariş satırı pasife alınmış bir listing'e
+   * atıfta bulunabilir; süzen bir içe aktarma o satırı DÜŞÜRÜR ve kayıp
+   * sessiz olur. Sınır burada YAZILI, yoksa yarın "scripts neden dışarıda"
+   * diye sorulur ve cevabı olmaz.
+   */
+  const ISTISNA = "sayim-actions";
+  const kaynaklar = readdirSync("src", { recursive: true, encoding: "utf8" })
+    .filter((p) => typeof p === "string" && (p.endsWith(".ts") || p.endsWith(".tsx")))
+    .filter((p) => !p.includes("varyant-arama-kurali"));
+  const cagiranlar: string[] = [];
+  const suzmeyenler: string[] = [];
+  for (const p of kaynaklar) {
+    const metin = readFileSync("src/" + p, "utf8");
+    for (const ad of ["kodKosulu(", "aramaKosulu(", "kodKosuluToplu("]) {
+      let k = metin.indexOf(ad);
+      while (k >= 0) {
+        cagiranlar.push(p);
+        const pencere = metin.slice(Math.max(0, k - 160), k + 40);
+        if (!pencere.includes("isActive: true") && !p.includes(ISTISNA)) {
+          suzmeyenler.push(p);
+        }
+        k = metin.indexOf(ad, k + 1);
+      }
+    }
+  }
+  /** ⚠ TABAN DOLULUĞU AYRICA KANITLANIR: boş taban her koşulu geçirir. */
+  kontrol(
+    "ortak gövde çağıranları tarandı (taban DOLU)",
+    new Set(cagiranlar).size >= 5,
+  );
+  console.log("        çağıran: " + [...new Set(cagiranlar)].join(" · "));
+  kontrol(
+    "sayım DIŞINDAKİ her çağıran varyant düzeyinde pasifi eliyor",
+    suzmeyenler.length === 0,
+  );
+  if (suzmeyenler.length > 0) {
+    console.log("        SÜZMEYEN: " + [...new Set(suzmeyenler)].join(" · "));
+  }
+
+  /* -- CIPLAK KANAL-SKU DALI: BEYANSIZ YAZILAMAZ --------------------- */
+  /**
+   * ⛔ AYRIŞMA HÂLÂ AÇIK VE BU ÖLÇÜT ONU GÖRÜNÜR TUTUYOR. Kanal kodu dalı
+   * ortak gövde DIŞINDA iki yerde daha elle yazılı (`/stok`, `/urunler`) ve
+   * ikisinde de hiç `isActive` yok — kullanıcının 08.09'da bildirdiği
+   * ayrışma tam buydu. Ortak gövdeyi düzeltmek onları KAPSAMIYOR.
+   *
+   * ⚠ İKİSİ İSTİSNA OLARAK BEYAN EDİLDİ, ONAYLANDIĞI İÇİN DEĞİL — MİMAR
+   * KARARI BEKLEDİĞİ İÇİN (K121c). Beyan, üçüncü bir çıplak dalın sessizce
+   * doğmasını engelliyor; mevcut ikisini meşrulaştırmıyor.
+   */
+  /**
+   * ⚠ ÜÇÜNCÜSÜNÜ BU ÖLÇÜT BULDU — BEN ÖLÇMEMİŞTİM. İlk turda kırmızı yandı:
+   * `lib/iade/arama.ts` de kendi kanal-SKU dalını yazıyor ve o **hâlâ
+   * `isActive: true` ile pasifi eliyor.** Yani bugün üç çıplak dal var ve
+   * ÜÇÜ DE FARKLI davranıyor: /stok ve /urunler pasifi getiriyor, iade
+   * araması getirmiyor, ortak gövde artık çağırana bırakıyor.
+   * _(Anayasa: "aynı işlem her ekranda aynı görünür ve aynı çalışır" —
+   * bugün çalışmıyor ve bunu ölçüt söyledi.)_
+   */
+  /** ⚠ Yol ayırıcısı YAZILMIYOR: Windows ve POSIX farklı ayırıcı
+   *  döndürüyor ve ters bölülü bir desen bu depoda İKİ KEZ bozuldu. */
+  const BEYANLI: ((p: string) => boolean)[] = [
+    (p) => p.includes("stok"),
+    (p) => p.includes("urunler"),
+    (p) => p.includes("iade") && p.includes("arama"),
+  ];
+  const ciplak: string[] = [];
+  for (const p of kaynaklar) {
+    if (!readFileSync("src/" + p, "utf8").includes("channelSkus: { some: { channelSku:")) continue;
+    if (BEYANLI.some((uyar) => uyar(p))) continue;
+    ciplak.push(p);
+  }
+  kontrol(
+    "ortak gövde dışında BEYANSIZ kanal-SKU dalı yok (beyanlı 3: /stok · /urunler · iade araması — K121c bekliyor)",
+    ciplak.length === 0,
+  );
+  if (ciplak.length > 0) console.log("        BEYANSIZ: " + ciplak.join(" · "));
 }
 
 console.log("=".repeat(70));

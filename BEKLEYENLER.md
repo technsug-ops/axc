@@ -13,6 +13,123 @@
 
 ---
 
+## ✅ K121b — PASİFİ ELEME KARARI ÇAĞIRANA GEÇTİ · 08.09.2026 · [KOD KOŞTU]
+
+> **Kullanıcı bulgusu (08.09):** _"/stok kanal-SKU dalı isActive'siz, ortak
+> gövde isActive'li — aynı SKU iki yoldan farklı sonuç verebilir."_ Ve hüküm
+> önerisi: _"pasif mal da rafta, okutunca görünmeli."_
+
+⛔ **ORTAK GÖVDE, ÇAĞIRANI ADINA HÜKÜM VERİYORDU.** Üç gövde de
+(`aramaKosulu` · `kodKosulu` · `kodKosuluToplu`) kanal kodu dalına
+`isActive: true` koyuyordu. Bu K121 ilkesiyle çelişiyordu: fiziksel sayım
+rafta NE VARSA onu kaydeder ve pasife alınmış mal da raftadır.
+
+### ⚠ İLK TALİMAT ÖLÇÜMLE DÜZELTİLDİ
+
+Mimarın ilk komutu _"sayım yoluna varyant düzeyi `isActive: true` ekle"_ idi.
+Ölçüm bunun **niyetin tersi** olduğunu gösterdi: sayım yolunda varyant
+süzgeci ZATEN yok ve eklemek `axcali2601`'i tamamen kapatırdı. Kodu eleyen
+şey varyant süzgeci değil, **ortak gövdedeki LİSTİNG süzgeciydi**.
+Talimat düzeltildi ve gerekçesini ölçümden aldı.
+_(Anayasa: "mimar talimatları da bu süzgeçten geçer".)_
+
+### ÖLÇÜM (canlı — `npm run canli:isactive-olcum`)
+
+    varyant 1848 · PASIF 1        (axcali2601)
+    listing 2230 · PASIF 1        (43217 -> axcali2601)
+    pasif kod aktif bir yoldan zaten cozuluyor : 0
+    YALNIZ pasif listingden cozulur            : 1   <- suzgecin eledigi
+    CAKISMA (kod baska varyanta da gidiyor)    : 0
+
+⭐ **ÇAKIŞMA SIFIR OLDUĞU İÇİN GÜVENLİ.** Ölçülmeseydi bilinemezdi: aynı
+kodun iki varyanta gitmesi `findFirst`i belirsizleştirir ve sessizce YANLIŞ
+ÜRÜNE yazardı.
+
+### KURU KOŞUM (`npm run canli:k121-kuru`)
+
+    ① SAYIM YOLU — kod "43217"
+       ONCE : BULUNAMADI ⛔
+       SONRA: axcali2601 (PASIF — ama rafta)     <- K121'in kendisi
+    ② VARYANT SUZGECI KOYAN 5 CAGIRAN
+       ONCE 0 sonuc · SONRA 0 sonuc              <- DEGISIKLIK YOK
+    ③ BUTUN KATALOG (2230 listing)
+       farkli cevap veren kod: 1  (43217: 0 → 1)
+    ④ CAKISMA (kod → birden cok varyant): 0
+
+### YAZILANLAR
+
+**①** Üç ortak gövdeden listing süzgeci KALKTI. Ortak gövde artık kod çözer,
+hüküm vermez — pasifi eleme kararı çağıranın ve bekçinin denetlediği bir
+karar.
+
+**②** Sayım yolunun duruşu **KODA BEYAN EDİLDİ**: _"`isActive: true` burada
+BİLEREK yok"_ + gerekçe. Beyansız bir yokluk, altı ay sonra "unutulmuş" diye
+düzeltilirdi.
+
+**③** ⛔ **ÜÇ ESKİYEN ÖLÇÜT SUSTURULMADI, ÇEVRİLDİ** — `arama:dogrula`da bir,
+`ice-aktarma:dogrula`da iki tanesi tam tersini sabitliyordu. Kod yanlış
+değildi; KARAR değişti. Her birinde niye çevrildiği yazılı ve eski gerekçe
+karar bloğunda duruyor. _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış'
+demez" — ve yapılmayacak şey ölçütü silmektir.)_
+
+**④** **DESEN YASAĞI BEKÇİSİ:** ortak gövde dışında çıplak `channelSkus: {
+some: { channelSku:` dalı yazılamaz. Çağıran listesi de **elle tutulmuyor** —
+`src/` taranarak bulunuyor (bugün 6) ve taban doluluğu ayrıca ölçülüyor.
+⚠ Kapsam `src/` ile sınırlı ve bu BİLEREK: `scripts/` altındaki içe
+aktarmalar varyant düzeyinde SÜZMEMELİ — bir sipariş satırı pasife alınmış
+listing'e atıfta bulunabilir ve süzen bir içe aktarma onu sessizce düşürür.
+
+### ⚠ İKİ ŞEY TALİMATTAN FARKLI YAZILDI — İKİSİ DE ÖLÇÜMLE
+
+**① 26.08 ATFI GEREKÇEYE GİRMEDİ.** Talimat _"26.08'de bu süzgeç 11
+sipariş/₺27.807 düşürmüştü — kök sebep"_ diyordu. Ölçüldü
+(`npm run canli:2608-dogrula`):
+
+    194645027819 · listing AKTIF · varyant axcali2755 AKTIF
+    varyant alanlarinda (barkod/firmaSKU/SKU) bulunan: 0
+    → isActive suzgeci o satiri HIC ELEMIYORDU
+
+O kaybın sebebi **alan eksikliğiydi** (`channelSku` hiç aranmıyordu) ve kod
+yorumumuz da bunu yazıyor. İzlerde bu süzgecin fiilen bir satır düşürdüğüne
+dair kayıt YOK. İçe aktarma faydası **ileriye dönük** olarak yazıldı — ama
+hayalî değil: `kodKosuluToplu` beş canlı içe aktarmada kullanılıyor
+(TY · HB · N11 · alış · satış).
+⚠ **Yanlış emsale dayanan bir bekçi gerekçesi, emsal çürüdüğü gün kararı da
+yeniden açtırır.** _(Anayasa: "denetim için 'ne oldu' doğru referanstır".)_
+
+**② BEKÇİ İLK KOŞUMDA ÖLÇMEDİĞİM DÖRDÜNCÜ BİR DAL BULDU.** Kanal-SKU dalı
+bugün ortak gövde dışında ÜÇ yerde ayrı yazılı ve **üçü de farklı
+davranıyor**:
+
+    /stok:400          pasifi GETIRIYOR    (isActive yok)
+    /urunler:85        pasifi GETIRIYOR    (isActive yok)
+    lib/iade/arama:67  pasifi ELIYOR       (isActive: true)
+    ortak govde        karari CAGIRANA birakiyor
+
+Üçü de bekçide **beyanlı istisna** olarak duruyor — beyan onları
+MEŞRULAŞTIRMIYOR, dördüncüsünün sessizce doğmasını engelliyor.
+→ **K121c açıldı** (mimar kararı 08.09: üçü de ortak gövdeye bağlanacak;
+iade aramasının davranışı değişeceği için önce kuru koşum).
+
+### BEKÇİ · MUTASYON 8/8 KIRMIZI
+
+    ① kodKosulu suzgeci GERI gelir              KIRMIZI
+    ② kodKosuluToplu suzgeci GERI gelir         KIRMIZI
+    ③ aramaKosulu suzgeci GERI gelir            KIRMIZI
+    ④ sayim yoluna varyant suzgeci EKLENIR      KIRMIZI
+    ⑤ sayim yolundaki BEYAN silinir             KIRMIZI
+    ⑥ oteki cagiran suzmeyi birakir             KIRMIZI   (ters yon)
+    ⑦ cagiran taramasi bosaltilir               KIRMIZI   (bos taban)
+    ⑧ BEYANSIZ yeni ciplak kanal-SKU dali       KIRMIZI
+
+`arama:dogrula` 121/121 · `ice-aktarma:dogrula` 419/419 · `tsc` temiz.
+
+**Halil test listesi:** ① `/okut` → sayım oturumu aç → `43217` okut →
+`axcali2601` satırı gelmeli (önce "bulunamadı" diyordu). ② `/stok`'ta
+`43217` ara → sonuç değişmemeli. ③ `/urunler`'de aynı kod → değişmemeli.
+
+---
+
 ## ✅ K189 — ÇEKİM SESSİZCE 69 DAKİKA DURDU · 08.09.2026 · [KOD KOŞTU]
 
 > **Kullanıcı bulgusu:** _"Bunlar neden düşmedi, bir arıza mı var yoksa

@@ -650,7 +650,24 @@ for (const [ad, fn] of [
     /VARYANT_KOD_ALANLARI\.map/.test(g),
   );
   kontrol(`${ad} KANAL SKU'yu da kapsıyor`, /channelSkus:\s*\{\s*some:/.test(g));
-  kontrol(`${ad} pasif kanal kodunu ELİYOR`, /isActive: true/.test(g));
+  /**
+   * ⛔ ÖLÇÜT ÇEVRİLDİ, SUSTURULMADI (K121b, 08.09.2026).
+   *
+   * Burada `pasif kanal kodunu ELİYOR` yazıyordu ve DOĞRUYDU — o gün ortak
+   * gövde pasifi eliyordu. **Karar değişti:** pasifi eleme hükmü çağırana
+   * geçti (gerekçe ve ölçüm: `varyant-arama-kurali.ts` K121b bloğu). Ölçüt
+   * eskidi, kod bozulmadı.
+   * _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez" — ve
+   * yapılmayacak şey ölçütü SİLMEKTİR; çevrilir, niye çevrildiği yazılır.)_
+   *
+   * ⚠ İÇE AKTARMA İÇİN BU YÖN KRİTİK: bir sipariş satırı kapanmış bir
+   * listing'e atıfta bulunabilir. Süzen bir toplu çözüm o satırı DÜŞÜRÜR ve
+   * kayıp sessiz olur ("ürün bulunamadı" diye geçer).
+   */
+  kontrol(
+    `${ad} pasif kanal kodunu ELEMİYOR (karar çağıranın)`,
+    !/isActive: true/.test(g),
+  );
 }
 
 /**

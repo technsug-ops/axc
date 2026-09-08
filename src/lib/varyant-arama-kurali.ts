@@ -90,11 +90,55 @@ export const SATIS_ROLLERI = KOD_ROLLERI.filter(
 );
 
 /**
+ * ============================================================================
+ *  ⛔ LİSTİNG DÜZEYİ `isActive` ORTAK GÖVDEDEN KALDIRILDI (K121b, 08.09.2026)
+ * ----------------------------------------------------------------------------
+ *  Üç gövde de (`aramaKosulu` · `kodKosulu` · `kodKosuluToplu`) kanal kodu
+ *  dalına `isActive: true` koyuyordu. Yani ORTAK GÖVDE, çağıranı adına bir
+ *  karar veriyordu — ve o karar K121 ilkesiyle çelişiyordu:
+ *  **pasif mal da raftadır; okutulunca görünmelidir.**
+ *
+ *  ── ÖLÇÜLDÜ (canlı, 08.09.2026 — `npm run canli:isactive-olcum`) ────────
+ *
+ *      varyant 1848 · PASIF 1        (axcali2601)
+ *      listing 2230 · PASIF 1        (43217 -> axcali2601)
+ *      pasif kod aktif bir yoldan zaten cozuluyor : 0
+ *      YALNIZ pasif listingden cozulur            : 1   <- suzgecin eledigi
+ *      CAKISMA (kod baska varyanta da gidiyor)    : 0
+ *
+ *  ⭐ ÇAKIŞMA SIFIR OLDUĞU İÇİN GÜVENLİ: süzgeci kaldırmak hiçbir yerde
+ *  `findFirst`i belirsiz hâle getirmiyor. Ölçülmeseydi bu bilinemezdi —
+ *  aynı kodun iki varyanta gitmesi sessizce YANLIŞ ÜRÜNE yazardı.
+ *
+ *  ── BUGÜN NE DEĞİŞİYOR ─────────────────────────────────────────────────
+ *  · VARYANT düzeyi `isActive: true` koyan 5 çağıran için HİÇBİR ŞEY: tek
+ *    pasif listing zaten pasif bir varyantın altında, onlar yine eliyor.
+ *  · SAYIM yolu (`okut/sayim-actions.ts`) — `43217` okutulunca artık
+ *    çözülüyor. K121'in kendisi budur.
+ *  · TOPLU içe aktarma — kapanmış bir listing'e atıfta bulunan satır artık
+ *    doğru varyanta oturur.
+ *
+ *  ⚠ İÇE AKTARMA FAYDASI İLERİYE DÖNÜKTÜR, GEÇMİŞE ATFEDİLMEZ. 26.08.2026'da
+ *  düşen 11 sipariş (₺27.807) BU SÜZGEÇTEN DEĞİLDİ: ölçüldü (08.09,
+ *  `npm run canli:2608-dogrula`) — `194645027819` listing'i **AKTİF** ve
+ *  varyantı da aktif; süzgeç o satırı hiç elemiyordu. O kaybın sebebi ALAN
+ *  EKSİKLİĞİYDİ (`channelSku` hiç aranmıyordu). İzlerde bu süzgecin fiilen
+ *  bir satır düşürdüğüne dair kayıt YOK ve bu böyle YAZILIYOR.
+ *  _(Anayasa: "denetim için 'ne oldu' doğru referanstır, 'ne olacaktı' değil"
+ *  ve "yokluk iddiası da iddiadır".)_
+ *
+ *  ⛔ KARAR ÇAĞIRANA GEÇTİ: pasifi eleyip elememek artık her çağıranın
+ *  VARYANT düzeyinde verdiği ve bekçinin denetlediği bir karar. Ortak gövde
+ *  kod çözer, hüküm vermez.
+ * ============================================================================
+ */
+
+/**
  * SERBEST METİN ARAMASI — insan yazar, KISMİ eşleşme.
  *
  * Ürün adı da aranır: kullanıcı kodu bilmiyorsa adıyla bulur.
- * Kanal SKU'da `isActive` şartı var — pasife alınmış bir eşleşme artık o
- * ürünü göstermemeli, yoksa kapatılan listing hâlâ ürün getirir.
+ * ⚠ Kanal SKU dalında `isActive` şartı ARTIK YOK (K121b) — gerekçesi ve
+ * ölçümü yukarıdaki karar bloğunda. Pasifi eleme kararı çağıranın.
  */
 export function aramaKosulu(sorgu: string) {
   /**
@@ -107,7 +151,7 @@ export function aramaKosulu(sorgu: string) {
     { sku: { contains: e } },
     { companySku: { contains: e } },
     { barcode: { contains: e } },
-    { channelSkus: { some: { channelSku: { contains: e }, isActive: true } } },
+    { channelSkus: { some: { channelSku: { contains: e } } } },
     { product: { name: { contains: e } } },
   ]);
 }
@@ -188,7 +232,7 @@ export function kodKosulu(kod: string) {
   const kodlar = kodEsdegerleri(kod);
   return [
     ...VARYANT_KOD_ALANLARI.map((alan) => ({ [alan]: { in: kodlar } })),
-    { channelSkus: { some: { channelSku: { in: kodlar }, isActive: true } } },
+    { channelSkus: { some: { channelSku: { in: kodlar } } } },
   ];
 }
 
@@ -219,7 +263,7 @@ export function kodKosuluToplu(kodlar: string[]) {
   const genis = [...new Set(kodlar.flatMap(kodEsdegerleri))];
   return [
     ...VARYANT_KOD_ALANLARI.map((alan) => ({ [alan]: { in: genis } })),
-    { channelSkus: { some: { channelSku: { in: genis }, isActive: true } } },
+    { channelSkus: { some: { channelSku: { in: genis } } } },
   ];
 }
 
