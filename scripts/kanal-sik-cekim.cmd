@@ -36,6 +36,33 @@ rem
 rem  !! SURE SINIRI GOREVDE: ExecutionTimeLimit PT4M. Olculdu - en uzun
 rem  kosum 176 sn; 240 sn onun 1,36 kati ve 5 dk araligin 60 sn altinda.
 rem  Boylece asili bir ornek bir sonrakini ENGELLEYEMEZ.
+rem
+rem ============================================================
+rem  OLUM SEBEBI ISARETI - "YARIM KALDI" YETMEZ, "NEREDE" GEREK (K191)
+rem ------------------------------------------------------------
+rem  VAKA 08.09.2026 aksam: bes kosum ust uste basladi ve BITMEDI
+rem  (20:42 - 21:02 yerel). Yarim kosum isareti her seferinde dustu ve
+rem  isini yapti - ama yalnizca "yarim kaldi" diyebildi. NEREDE oldugu
+rem  hicbir yerde yazmiyordu ve teshis tam orada tavana dayandi.
+rem
+rem  ! SAG KALAN YANLILIGI: sure olcumu yalniz TAMAMLANAN kosumlari
+rem  gorur (n=129, ortanca 15 sn, tavan 240 sn - uzak). Olen kosumlarin
+rem  bitis damgasi hic yazilmadigi icin o olcume YAPISI GEREGI
+rem  giremiyorlar. Yani "kosumlar tavana uzak" dogru ama olenler
+rem  hakkinda hicbir sey soylemiyor.
+rem
+rem  CARE: her adimdan ONCE .son-adim dosyasi guncellenir. Kosum
+rem  BITTI-SIK basmadan olurse, bir sonraki kosum o dosyayi okur ve
+rem  UC LOGA DA "OLDUGU ADIM" diye dokuor. Cikis kodu da yakalanir
+rem  (TYKOD/HBKOD/N11KOD) - errorlevel bir sonraki echo ile
+rem  tazelendigi icin degiskene alinmadan iki yerde kullanilamaz.
+rem
+rem  !! SEBEP HALA BILINMIYOR VE UYDURULMAZ. Bekci turu / veritabani
+rem  baglanti siniri birer HIPOTEZDIR, kanit degil. Ilk gercek olumde
+rem  son-adim isareti yeri gosterecek; hukum O ZAMAN kurulur.
+rem  (Anayasa: "sistem, kendi defterinde takip etmedigi sey hakkinda
+rem  iddia kurmaz" ve "yanlis emsale dayanan gerekce karari yeniden
+rem  actirir".)
 rem ============================================================
 setlocal
 set KOK=C:\Users\yapra\Desktop\axcali
@@ -44,6 +71,7 @@ set HBLOG=%KOK%\raporlar\hb-cekim.log
 set N11LOG=%KOK%\raporlar\n11-cekim.log
 set HAZLOG=%KOK%\raporlar\klon-tazele.log
 set ISARET=%KOK%\raporlar\.kosum-suruyor
+set ADIM=%KOK%\raporlar\.son-adim
 
 rem DEGISKEN KULLANILMAZ - blok icinde %VAR% AYRISTIRMA aninda okunur ve
 rem HENUZ ATANMAMIS olur (gecikmeli genisletme tuzagi). Ilk yazimda tam bu
@@ -56,9 +84,16 @@ if exist "%ISARET%" (
   type "%ISARET%" >> %HBLOG%
   echo !! ONCEKI KOSUM YARIM KALDI - baslangici asagida: >> %N11LOG%
   type "%ISARET%" >> %N11LOG%
+  echo !! OLDUGU ADIM: >> %TYLOG%
+  type "%ADIM%" >> %TYLOG% 2>nul
+  echo !! OLDUGU ADIM: >> %HBLOG%
+  type "%ADIM%" >> %HBLOG% 2>nul
+  echo !! OLDUGU ADIM: >> %N11LOG%
+  type "%ADIM%" >> %N11LOG% 2>nul
 )
 echo %date% %time%> "%ISARET%"
 
+echo ADIM=HAZIRLIK %date% %time%> "%ADIM%"
 echo ============================================== >> %HAZLOG%
 echo HAZIRLIK %date% %time% >> %HAZLOG%
 call %KOK%\scripts\klon-tazele.cmd "%HAZLOG%"
@@ -67,18 +102,27 @@ echo HAZIRLIK-BITTI cikis=%HAZ% >> %HAZLOG%
 
 echo ============================================== >> %TYLOG%
 echo BASLADI-SIK %date% %time% hazirlik=%HAZ% >> %TYLOG%
+echo ADIM=CEKIM-TY %date% %time%> "%ADIM%"
 call npm run canli:ty-ice-aktar -- --gun=3 --yaz >> %TYLOG% 2>&1
-echo BITTI-SIK %date% %time% cikis=%errorlevel% >> %TYLOG%
+set TYKOD=%errorlevel%
+echo BITTI-SIK %date% %time% cikis=%TYKOD% >> %TYLOG%
+echo ADIM=TY-BITTI cikis=%TYKOD% %date% %time%> "%ADIM%"
 
 echo ============================================== >> %HBLOG%
 echo BASLADI-SIK %date% %time% hazirlik=%HAZ% >> %HBLOG%
+echo ADIM=CEKIM-HB %date% %time%> "%ADIM%"
 call npm run canli:hb-ice-aktar -- --yaz >> %HBLOG% 2>&1
-echo BITTI-SIK %date% %time% cikis=%errorlevel% >> %HBLOG%
+set HBKOD=%errorlevel%
+echo BITTI-SIK %date% %time% cikis=%HBKOD% >> %HBLOG%
+echo ADIM=HB-BITTI cikis=%HBKOD% %date% %time%> "%ADIM%"
 
 echo ============================================== >> %N11LOG%
 echo BASLADI-SIK %date% %time% hazirlik=%HAZ% >> %N11LOG%
+echo ADIM=CEKIM-N11 %date% %time%> "%ADIM%"
 call npm run canli:n11-ice-aktar -- --yaz >> %N11LOG% 2>&1
-echo BITTI-SIK %date% %time% cikis=%errorlevel% >> %N11LOG%
+set N11KOD=%errorlevel%
+echo BITTI-SIK %date% %time% cikis=%N11KOD% >> %N11LOG%
+echo ADIM=BITTI %date% %time%> "%ADIM%"
 
 del "%ISARET%" 2>nul
 endlocal

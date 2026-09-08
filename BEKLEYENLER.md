@@ -13,6 +13,103 @@
 
 ---
 
+## ✅ K191 — ÖLÜM SEBEBİ İŞARETİ: "YARIM KALDI" YETMEZ, "NEREDE" GEREK · 08.09.2026 · [KOŞTU]
+
+> **Mimar kararı 08.09:** _"cmd her adımdan önce 'son adım' işaretini
+> güncellesin. BITTI-SIK basılmadan sonlanırsa, son işaret ölen koşumun
+> NEREDE öldüğünü söyler + çıkış kodu."_
+
+### VAKA — AYNI GÜN AKŞAM, BEŞ KOŞUM ÖLDÜ
+
+    20:42:00 · 20:47:00 · 20:52:01 · 20:57:01 · 21:02:00  (yerel)
+    hepsi BASLADI, hicbiri BITMEDI · 22:07 TR'de kendiliginden duzeldi
+
+K187'nin yarım-koşum işareti **her seferinde düştü ve işini yaptı** — ama
+yalnızca _"yarım kaldı"_ diyebildi. NEREDE öldüğü hiçbir yerde yazmıyordu.
+
+⭐ **VE K189'UN EŞİĞİ BUNU GÖRDÜ:** HB'nin boşluğu 30 dk > 20 dk eşik →
+rozet `ESKİ` yanardı. Sabah konulan eşik, aynı gün akşam gerçek bir
+kesintiyi yakaladı.
+
+### ⚠ SAĞ KALAN YANLILIĞI — ÖLÇÜM SORUYU CEVAPLAYAMADI
+
+`PT4M` tavanı hipotezini ölçtüm (tamamlanan koşum süreleri):
+
+    n=129 · min 13 sn · ortanca 15 · p90 28 · p95 34 · tavan 240 sn
+    tavani asan 2 · tavanin %75'ini gecen 0
+
+⛔ **AMA BU ÖLÇÜM YALNIZ SAĞ KALANLARI GÖRÜYOR.** Ölen koşumların bitiş
+damgası hiç yazılmadı, dolayısıyla süre hesabına **yapısı gereği**
+giremiyorlar. "Koşumlar tavana uzak" doğru ve ölenler hakkında **hiçbir şey
+söylemiyor.** Bu bir cevap değil, cevabın olmadığı yer.
+_(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+değildir".)_
+
+### YAZILAN
+
+Her adımdan ÖNCE `raporlar/.son-adim` güncelleniyor:
+
+    ADIM=HAZIRLIK → CEKIM-TY → TY-BITTI cikis=N → CEKIM-HB → HB-BITTI
+    → CEKIM-N11 → BITTI
+
+Koşum `BITTI-SIK` basmadan ölürse, **bir sonraki koşum** o dosyayı okur ve
+ÜÇ LOGA DA `!! OLDUGU ADIM:` diye döker.
+⚠ Çıkış kodları değişkene alındı (`TYKOD`/`HBKOD`/`N11KOD`): `%errorlevel%`
+bir sonraki `echo` ile tazelendiği için aynı kod iki yerde kullanılamıyordu.
+
+**SINANDI — ve iki yön ayrı:**
+
+    ✓ temiz kosum   → ADIM=BITTI · yarim isaret silindi · "OLDUGU ADIM" BASILMADI
+    ✓ olen kosum    → sonraki kosum uc loga da "OLDUGU ADIM: ADIM=CEKIM-HB" yazdi
+
+Ölüm senaryosu **yalıtılmış kopyada** koşuldu: üretim günlüğüne sahte bir
+olay yazmak, altı ay sonra gerçek bir vaka sanılırdı.
+
+### ⛔ SEBEP HÂLÂ BİLİNMİYOR — VE YAZILMIYOR
+
+Bekçi turu ve `max_user_connections` birer **HİPOTEZDİR**, kanıt değil.
+İlk gerçek ölümde son-adım işareti yeri gösterecek; hüküm O ZAMAN kurulur.
+_(Anayasa: "yanlış emsale dayanan gerekçe, emsal çürüdüğü gün kararı da
+yeniden açtırır".)_
+
+### 📋 PT4M — TESPİT KANITLANDI, ÖNLEME KANITLANMADI
+
+    tespit tarafi  (isaret + esik)  → BU AKSAM KANITLANDI
+    onleme tarafi  (PT4M tavani)    → KANITLANAMADI
+
+Önleme tarafı ölen-koşum verisi olmadan sınanamaz (sağ-kalan yanlılığı) ve
+**ilk gerçek tavan aşımında** sınanacak. O güne kadar "asılı bir örnek bir
+sonrakini engelleyemez" cümlesi bir TASARIM İDDİASIDIR, ölçülmüş bir olgu
+değil.
+
+### 📋 EŞİK ALTI KESİNTİ GÖRÜNMEZ — BİLİNÇLİ, KAYDA GEÇTİ
+
+Aynı akşam TY'nin boşlukları **11 ve 19 dakikaydı** ve 20 dakikalık eşiğin
+altında kaldığı için rozet **hiç yanmadı**; yalnız HB'nin 30 dakikası
+göründü. Bu bir kusur değil, **sinyal/gürültü dengesi**: eşik gövdenin
+gediğine konuldu (`4 × periyot`), `1 × periyot` her gecikmede yanardı ve
+uyarı okunmaz olurdu. Kayda geçiyor ki altı ay sonra "19 dakika niye
+görünmedi" diye sorulduğunda cevap olsun.
+
+### ⛔ AÇIK BULGU — ÇEKİM GELİŞTİRME AĞACINDAN KOŞUYOR (MİMAR KARARI BEKLİYOR)
+
+Ölçüldü (08.09.2026, `Get-ScheduledTask`):
+
+    Gorev calistiriyor : C:\Users\yapra\Desktop\axcali\scripts\kanal-sik-cekim.cmd
+    Dosyadaki KOK      : C:\Users\yapra\Desktop\axcali          <- GELISTIRME AGACI
+    Klon               : C:\Users\yapra\Desktop\axcali-operasyon  (VAR, kullanilmiyor)
+
+Betiğin **kendi başlığı** şunu diyor: _"OPERASYON KLONUNDAN koşar… geliştirme
+ağacındaki tur/mutasyon pencereleri çekimi ETKİLEMEZ."_ Görev bunun tersini
+yapıyor — çekim, bekçi turlarının kaynak dosyaları geçici olarak
+MUTASYONLADIĞI ağaçtan koşuyor.
+⚠ Bu, bu akşamki ölümlerin sebebi olarak **YAZILMIYOR** (hipotez yasağı);
+ama tasarım kararıyla fiiliyat arasında ölçülmüş bir ayrışmadır ve kendi
+başına bir kalemdir. Karar: görev klonun cmd'sine mi çevrilsin, yoksa
+`KOK` klona mı bağlansın?
+
+---
+
 ## ✅ K190 — ÇAPA BEKÇİSİ: REAKTİF TARAMA KALICI ÖLÇÜTE ÇEVRİLDİ · 08.09.2026 · [KOD KOŞTU]
 
 > **Mimar kararı 08.09:** _"19 mutasyon harness'inin `bul` deseni hedef
