@@ -94,14 +94,32 @@ const MUTASYONLAR: Mutasyon[] = [
       "gerçek bir EAN-13'ten hane atılır ve BAŞKA bir ürünün koduna dönüşebilir",
   },
   {
+    /**
+     * ⛔ ÇAPA K121c'DE TAŞINDI (08.09.2026) — VE HARNESS BUNU DOĞRU YAPTI.
+     *
+     * Bu mutasyon `/stok`un ELLE yazdığı `{ barcode: { contains: e } }`
+     * satırına çapalıydı. K121c o inline bloğu kaldırıp ekranı ortak gövdeye
+     * bağladı; çapa yok oldu ve harness **"ölçülemedi"** dedi — "geçti"
+     * demedi. Yeşil sayılsaydı, /stok'un desen yasağı sessizce korumasız
+     * kalırdı.
+     * _(Anayasa: "iyi bir refaktör bekçiyi kör etmemeli" ve "mutasyon
+     * harness'i mutasyonun UYGULANDIĞINI doğrular".)_
+     *
+     * ⭐ NİYET AYNI, ŞEKİL YENİ: ekran ortak gövdeyi bırakıp kendi çıplak
+     * kanal-SKU dalını yazarsa bekçi kırmızı yanmalı.
+     */
     ad: "/stok araması çıplak koşula geri döndü (desen yasağı)",
     yon: "KALDIRAN",
     bekci: ARAMA,
     dosya: STOK_SAYFASI,
-    bul: "          { barcode: { contains: e } },",
-    koy: "          { barcode: { contains: arama } },",
+    bul: "        OR: ortakAramaKosulu(arama),",
+    koy:
+      "        OR: [\n" +
+      "          { barcode: { contains: arama } },\n" +
+      "          { channelSkus: { some: { channelSku: { contains: arama } } } },\n" +
+      "        ],",
     bozdugu:
-      "yedinci ekran kuralı atlar ve düzeltme sessizce o ekrana ulaşmaz",
+      "ekran ortak kuralı atlar, kanal-SKU dalı yine kopyalanır ve düzeltmeler o ekrana sessizce ulaşmaz",
   },
 
   // ═══ K101 — SIRALAMA VE SIFIR SÜZGECİ ══════════════════════════════════
