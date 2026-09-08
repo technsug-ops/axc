@@ -5,6 +5,13 @@ import { canliYapilandirma } from "./canli-ortak";
  * 26.08.2026 vakasının KÖK SEBEBİ hangisiydi — eksik ALAN mı, isActive
  * SÜZGECİ mi? Salt okuma. BETIK SINIFI: SUREKLI.
  *
+ * ⚠ ADI ÖNCE `...-dogrula.ts` İDİ VE BU YANLIŞ BİR İDDİAYDI (08.09.2026).
+ * `bekci-yetim:dogrula` push'u durdurdu ve haklıydı: bu dosya hiçbir şeyi
+ * KORUMUYOR — geçmiş bir vakayı ÖLÇÜYOR, bir regresyonda kırmızı yanmıyor.
+ * "dogrula" eki onu bekçi sınıfına sokuyordu ve tura girmediği için yetim
+ * görünüyordu. Çare muafiyet beyan etmek değil, ADI DÜZELTMEKTİ.
+ * _(Anayasa: "kolon başlığı bir iddiadır" — dosya adı da öyle.)_
+ *
  * ⚠ Ayırt edici soru: `194645027819` kodunu taşıyan listing AKTİF mi?
  * Aktifse süzgeç o satırı hiç elemiyordu ve kayıp başka bir sebeptendi.
  */

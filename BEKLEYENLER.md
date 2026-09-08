@@ -83,7 +83,7 @@ listing'e atıfta bulunabilir ve süzen bir içe aktarma onu sessizce düşürü
 
 **① 26.08 ATFI GEREKÇEYE GİRMEDİ.** Talimat _"26.08'de bu süzgeç 11
 sipariş/₺27.807 düşürmüştü — kök sebep"_ diyordu. Ölçüldü
-(`npm run canli:2608-dogrula`):
+(`npm run canli:2608-olcum`):
 
     194645027819 · listing AKTIF · varyant axcali2755 AKTIF
     varyant alanlarinda (barkod/firmaSKU/SKU) bulunan: 0
