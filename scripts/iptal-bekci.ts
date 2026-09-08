@@ -54,6 +54,32 @@ const ISTISNALAR = new Map<string, string>([
   ],
   /**
    * ═════════════════════════════════════════════════════════════════════
+   *  SATIŞ KİMLİĞİNDEN VARYANT — ARAMA ÇÖZÜCÜSÜ (K188, 08.09.2026)
+   * ---------------------------------------------------------------------
+   *  Bu sorgu ciro/NET/hakediş ÜRETMİYOR. Tek işi bir arama kutusuna
+   *  yazılan SATIŞ KİMLİĞİNİ (sipariş ya da gönderi numarası) varyant
+   *  kimliklerine çevirmek; dönen değer yalnız `/stok` ve `/urunler`
+   *  süzgecine `id: { in: … }` olarak giriyor. Hiçbir tutar okumuyor.
+   *
+   *  ⛔ SÜZGEÇ EKLEMEK YANLIŞ CEVAP ÜRETİRDİ: _"bu siparişte hangi ürün
+   *  gitti"_ sorusunun cevabı sipariş iptal edilse de AYNIDIR. `iptalTarihi:
+   *  null` konsaydı iptalli bir siparişin numarası sessizce HİÇBİR ŞEY
+   *  bulamaz, kullanıcı numarayı yanlış yazdığını sanırdı — ekran susmaz,
+   *  YANLIŞ CEVAP verirdi. (K100'ün aynısı: bilgi sistemde var, arama
+   *  sormuyor.)
+   *
+   *  ⛔ VE GÖVDE BEYANLA GEÇİLMİYOR, ÖLÇÜLÜYOR: `arama:dogrula` saf
+   *  parçalarını DEĞERLE sınıyor (tekilleştirme · boş-sorgu kapısı · tam
+   *  eşleşme) ve iki ekranın da bu gövdeye bağlı olduğunu ayrı ayrı
+   *  ölçüyor; yedi mutasyonun yedisi de kırmızı yandı.
+   * ═════════════════════════════════════════════════════════════════════
+   */
+  [
+    "src/lib/satis-kodundan-varyant.ts:sale.findMany",
+    "ARAMA ÇÖZÜCÜSÜ: ciro/NET üretmez, satış kimliğini varyant kimliğine çevirir ve sonuç yalnız /stok · /urunler süzgecine girer. \"Bu siparişte hangi ürün gitti\" sorusunun cevabı iptalde de aynıdır; süzgeç konsaydı iptalli siparişin numarası sessizce hiçbir şey bulmaz ve ekran YANLIŞ CEVAP verirdi.",
+  ],
+  /**
+   * ═════════════════════════════════════════════════════════════════════
    *  SATIŞ/ALIM TOPLAM GÖVDELERİ (27.08.2026) — SÜZGEÇ VAR AMA BEKÇİ
    *  ONU BURADAN GÖREMİYOR, VE BU SEFER BEYAN DOĞRU CEVAP.
    * ---------------------------------------------------------------------
