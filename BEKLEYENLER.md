@@ -163,8 +163,29 @@ Yani klon güncel ve güncel KALIYOR; taşımanın önünde teknik engel yok.
 kalır, sürekliliği kopar) ve cmd'ye acil bir düzeltme artık 15 dakikalık
 bekçi turu ister.
 
-**Karar mimarın:** taşıma bu dar gerekçeyle yapılsın mı? Talimat, çürüyen
-önerme üstüne verilmişti; yeni ölçümle yeniden tartılması gerekiyor.
+### ✅ KARAR — CMD PUSH KAPISINA ALINMADI (mimar, 08.09.2026)
+
+**HAYIR.** Gerekçe: bu bir **orkestrasyon betiği**, deploy EDİLMİYOR ve canlı
+çekim sürekliliği için **anında düzeltilebilir** olmalı. Push kapısı 15
+dakikalık bekçi turu dayatır ve 5 dakikalık çekim ritmiyle çelişir —
+arızanın ortasında 15 dakika beklemek, kapının önlediği riskten büyük bir
+risktir. Çekim KODU zaten klondan koşuyor ve push korumalı; atlayan tek şey
+cmd.
+
+⭐ **KORUMA PUSH DEĞİL GÖZLEM** — ve üçü de 08.09'da kuruldu:
+
+    1) ESIK        cekim yasi 4 x periyot (20 dk)          K189
+    2) YARIM KOSUM kosum bitmediyse SONRAKI kosum soyler    K187
+    3) OLUM ADIMI  .son-adim: NEREDE oldugu + cikis kodu    K191
+
+Bu betikteki bir hata sessiz kalamaz; üçü birden görünür kılar.
+
+⚠ **BU BİR MUAFİYET DEĞİL, BEYANDIR.** Kapının yokluğu unutulmuş değil,
+**tartılmış** bir karardır ve bedeli (gözleme bağımlılık) hem burada hem
+betiğin kendi başlığında yazılıdır. **Gözlem üçlüsünden biri kaldırılırsa bu
+karar YENİDEN tartılır.**
+_(Anayasa: "kapatma kararı da panoya yazılır — gerekçesiyle" ve "beyan
+edilmemiş her kullanım hata sayılır".)_
 
 ---
 

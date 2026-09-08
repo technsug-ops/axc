@@ -38,6 +38,44 @@ rem  kosum 176 sn; 240 sn onun 1,36 kati ve 5 dk araligin 60 sn altinda.
 rem  Boylece asili bir ornek bir sonrakini ENGELLEYEMEZ.
 rem
 rem ============================================================
+rem  BU DOSYA PUSH KAPISININ DISINDA - BILINCLI (mimar karari 08.09.2026)
+rem ------------------------------------------------------------
+rem  OLCULDU 08.09: gorev bu dosyayi GELISTIRME agacindan okuyor, yani
+rem  buraya yazilan bir duzeltme bekci turundan GECMEDEN uretime girer.
+rem  Ayni gece kanitlandi: olum-adimi isareti yazildigi anda 22:02'deki
+rem  zamanlanmis kosum onu kullandi.
+rem
+rem  ! CEKIM KODU BU KAPIYI ATLAMIYOR. klon-tazele.cmd klona "cd /d"
+rem  yapiyor ve setlocal tasimadigi icin dizin kosumun geri kalaninda
+rem  gecerli kaliyor: uc "npm run canli:*" cagrisi da KLONDAN kosar ve
+rem  klon yalniz push'lanmis (bekciden gecmis) kodu ceker. Atlayan tek
+rem  sey bu orkestrasyon betigi.
+rem
+rem  ! ONCE YANLIS RAPORLANDI: Get-ScheduledTask ciktisindaki cmd
+rem  yolu "cekimin kostugu agac" diye okundu. Ikisi ayri sey; fark
+rem  olculunce duzeltildi (BEKLEYENLER K191 duzeltmesi). Kayit silinmedi.
+rem
+rem  KARAR - KAPI KONULMADI: bu bir orkestrasyon betigi, deploy
+rem  EDILMIYOR ve canli cekim surekliligi icin ANINDA duzeltilebilir
+rem  olmali. Push kapisi 15 dakikalik bekci turu dayatir ve 5 dakikalik
+rem  cekim ritmiyle celisir - arizanin ortasinda 15 dakika beklemek,
+rem  kapinin onledigi riskten buyuk bir risktir.
+rem
+rem  KORUMA PUSH DEGIL GOZLEM - UC YOL, UCU DE 08.09'da kuruldu:
+rem    1) ESIK        cekim yasi 4 x periyot (20 dk) - K189
+rem    2) YARIM KOSUM isaret dosyasi: kosum bitmediyse sonraki soyler
+rem    3) OLUM ADIMI  .son-adim: NEREDE oldugu ve cikis kodu
+rem  Bu betikteki bir hata sessiz kalamaz; ucu birden gorunur kilar.
+rem
+rem  !! BU BIR MUAFIYET DEGIL, BEYANDIR. Kapinin yoklugu unutulmus
+rem  degil, TARTILMIS bir karardir - ve bedeli (gozleme bagimlilik)
+rem  burada yazilidir. Gozlem uclusunden biri kaldirilirsa bu karar
+rem  YENIDEN tartilir.
+rem  (Anayasa: "beyan edilmemis her kullanim hata sayilir" ve
+rem  "kapatma karari da panoya yazilir - gerekcesiyle".)
+rem ============================================================
+rem
+rem ============================================================
 rem  OLUM SEBEBI ISARETI - "YARIM KALDI" YETMEZ, "NEREDE" GEREK (K191)
 rem ------------------------------------------------------------
 rem  VAKA 08.09.2026 aksam: bes kosum ust uste basladi ve BITMEDI
