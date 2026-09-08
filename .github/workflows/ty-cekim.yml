@@ -8,6 +8,16 @@
 #  panel rozeti + AuditLog iziyle görünür; Vercel günlük yedeği ve
 #  makinedeki görevler ayrıca duruyor (çift tetik zararsız, kanıtlı).
 #
+#  KAPSAM: bu tek is UC KANALI da cagirir — TY · N11 · HB. Dosya adi
+#  tarihsel olarak `ty-cekim.yml`; yeniden adlandirilmadi cunku is gecmisi
+#  ve zamanlayici kaydi ona bagli. Icerik adindan genis oldugunda ADI degil
+#  ICERIGI yaziyoruz — okuyan yanilmasin diye burada duruyor.
+#
+#  HB NEDEN SONRADAN EKLENDI (08.09.2026): olculdu — HB ice aktarmasi
+#  canlida 2 kez kosmustu (ikisi de elle), TY ayni gun 817 kez. Sebep:
+#  HB icin tetikleyici HIC kurulmamisti; Halil siparisleri elle giriyordu
+#  ve iki siparis (9.078 TL) aylarca defterde yoktu.
+#
 #  SIR: depo Secrets → CRON_SECRET (Vercel'dekiyle AYNI değer).
 #  Sır tanımsızsa istek boş Bearer taşır ve uç 404 döner — güvenli.
 # ============================================================================
@@ -37,7 +47,22 @@ jobs:
       - name: N11 ucunu cagir
         if: always()
         run: |
-          KOD=$(curl -s -o cevap-n11.json -w "%{http_code}"             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"             "https://axc-seven.vercel.app/api/cron/n11-cekim")
+          KOD=$(curl -s -o cevap-n11.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://axc-seven.vercel.app/api/cron/n11-cekim")
           echo "HTTP $KOD"
           cat cevap-n11.json || true
+          test "$KOD" = "200"
+
+      # K-HB-CRON (08.09.2026): HB ucu — oteki ikisi kirmizi olsa da kosar.
+      # Uc kanal BAGIMSIZ: birinin dusmesi otekini engellemez, yoksa bir
+      # kanalin arizasi hepsini sessizce durdururdu.
+      - name: HB ucunu cagir
+        if: always()
+        run: |
+          KOD=$(curl -s -o cevap-hb.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://axc-seven.vercel.app/api/cron/hb-cekim")
+          echo "HTTP $KOD"
+          cat cevap-hb.json || true
           test "$KOD" = "200"

@@ -2154,6 +2154,61 @@ kontrol(
   );
 }
 
+/* ═══ K-HB-CRON — HB ÇEKİMİ TY/N11 İLE AYNI SİSTEMDE (08.09.2026) ════════
+ *
+ * ⛔ NİYE: ölçüldü — HB içe aktarması canlıda **2 kez** koşmuştu (ikisi de
+ * elle), TY aynı gün **817 kez**. Sebep hiçbir yerde yazmıyordu: HB için
+ * tetikleyici HİÇ kurulmamıştı. Halil siparişleri elle giriyordu ve iki
+ * sipariş (₺9.078) aylarca defterde yoktu.
+ */
+{
+  console.log("K-HB-CRON — HB ucu, sır kapısı, tek çekirdek, tetikleyici");
+  const hbRota = yorumsuz(readFileSync("src/app/api/cron/hb-cekim/route.ts", "utf8"));
+  const hbBetik = yorumsuz(readFileSync("scripts/canli-hb-ice-aktar.ts", "utf8"));
+  const akis = readFileSync(".github/workflows/ty-cekim.yml", "utf8");
+
+  kontrol("HB ucu ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)", hbRota.includes("await hbCekimKos({"));
+  kontrol("çekirdek DIŞA AKTARILMIŞ", hbBetik.includes("export async function hbCekimKos("));
+  kontrol("betik kipi de AYNI çekirdeği çağırıyor", hbBetik.includes("await hbCekimKos({ yaz: YAZ, sadece: SADECE })"));
+
+  /** ⛔ SIR KAPISI — reddedilen istek 404 alır; rotanın VARLIĞI bile sızmaz. */
+  const kapiBasi = hbRota.indexOf('if (sir === "" || gelen !== ');
+  kontrol("HB ucunda sır kapısı VAR ve boş-sır da kapatıyor", kapiBasi >= 0);
+  const kapiB = kapiBasi >= 0 ? hbRota.slice(kapiBasi, kapiBasi + 220) : "";
+  kontrol("  ...reddedilen istek 404 alır (varlık sızmaz)", kapiB.includes("{ status: 404 }"));
+
+  /** ⛔ RUTİN ÇEKİM YAZAR — önizleme koşarsa boşluk hiç kapanmaz. */
+  kontrol("HB ucu YAZIM kipinde çağırıyor", /hbCekimKos\(\{ yaz: true/.test(hbRota));
+  /**
+   * ⛔ ONAY SÜZGECİ RUTİNE KONMAZ. Süzgeç mimarın onayladığı DAR kapsamı
+   * yazmak içindi; rutinin işi tersi — kanalda olup defterde olmayan HER
+   * siparişi getirmek. Süzgeci buraya koymak rutini amacının tersine çevirir.
+   */
+  kontrol("HB ucu onay süzgeci GEÇİRMİYOR", !/hbCekimKos\([\s\S]{0,120}sadece:/.test(hbRota));
+
+  /**
+   * ⛔ TETİKLEYİCİ GITHUB ACTIONS — VERCEL CRON DEĞİL. Anayasa dersi
+   * (18-19.08.2026): Vercel Cron iki gün sessizce hiç tetiklenmedi ve
+   * Hobby'de logu olmadığı için sebebi ÖĞRENİLEMEDİ.
+   */
+  kontrol("akışta HB ucu ÇAĞRILIYOR", akis.includes("/api/cron/hb-cekim"));
+  kontrol("akışta TY ve N11 de duruyor", akis.includes("/api/cron/ty-cekim") && akis.includes("/api/cron/n11-cekim"));
+  /**
+   * ⛔ ÜÇ KANAL BAĞIMSIZ: birinin düşmesi ötekini engellemez. `if: always()`
+   * olmasaydı TY ucu kırmızı olduğunda HB hiç çağrılmaz ve iki kanal birden
+   * sessizce dururdu.
+   */
+  const hbAdimBasi = akis.indexOf("HB ucunu cagir");
+  kontrol("HB adımı bulundu", hbAdimBasi >= 0);
+  const hbAdim = hbAdimBasi >= 0 ? akis.slice(hbAdimBasi, hbAdimBasi + 420) : "";
+  kontrol("  ...ve ÖTEKİLER DÜŞSE DE koşuyor (if: always())", hbAdim.includes("if: always()"));
+  /** ⛔ 200 DIŞI HER ŞEY KIRMIZI — sessiz kaçış olmasın. */
+  kontrol("  ...ve 200 dışı KIRMIZI biter", hbAdim.includes('test "$KOD" = "200"'));
+  /** ⚠ Vercel cron'a HB EKLENMEZ — birincil tetikleyici o değil. */
+  const vercelYapi = readFileSync("vercel.json", "utf8");
+  kontrol("HB Vercel cron'a EKLENMEDİ (birincil GitHub Actions)", !vercelYapi.includes("hb-cekim"));
+}
+
 /**
  * ═══ K167-② — N11 İÇE AKTARMA: ÖLÇÜLMÜŞ EŞLEME SABİTLENİR ════════════════
  * 4 canlı paketle ölçüldü (05.09.2026): ciro tabanı sellerInvoiceAmount

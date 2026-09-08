@@ -188,26 +188,60 @@ async function hesabiBul(
   return { id: yeni.id, ad: yeni.name, olusturuldu: true };
 }
 
-async function main() {
+export type HbCekimOzeti = {
+  partiKimligi: string;
+  siparis: number;
+  kacak: number;
+  yazilan: number;
+  hata: number;
+  cakisanAtlandi: number;
+  caprazCakisma: number;
+};
+
+/**
+ * ⛔ ÇEKİRDEK — TEK GÖVDE, İKİ OKUYUCU (K166 deseninin HB karşılığı).
+ *
+ * Betik de sunucu ucu da BURAYI çağırır. İkinci bir çekim gövdesi yazılsaydı
+ * biri düzeltilip öteki unutulduğunda iki kanal iki farklı kural uygular ve
+ * fark ancak rakamlar ayrıştığında görülürdü.
+ *
+ * ⚠ `dbAdresi` SUNUCU UCUNDAN GELİR; betikte boş → `.env.canli`den okunur.
+ * Sunucuda dosya yoktur, bu yüzden adres parametreyle taşınır.
+ */
+export async function hbCekimKos(ayar: {
+  yaz: boolean;
+  /** Onay kapsamı — boş dizi = süzgeç yok. */
+  sadece?: string[];
+  dbAdresi?: string;
+}): Promise<
+  HbCekimOzeti | { atlandi: "BEKCI_TURU" | "KIMLIK" | "VERITABANI" | "HESAP" }
+> {
+  const YAZ = ayar.yaz;
+  const SADECE = ayar.sadece ?? [];
   if (bekciTuruKosuyorMu()) {
     console.log("");
     console.log("⏭ BEKÇİ TURU KOŞUYOR (.bekci-kilidi) — bu çekim ATLANDI; sonraki koşum yakalar.");
     console.log("");
-    return;
+    return { atlandi: "BEKCI_TURU" };
   }
   const k = kimlikOku();
   if (!k) {
     console.log("\n⛔ HB ANAHTARLARI EKSİK (.env.canli)\n");
-    process.exitCode = 1;
-    return;
+    return { atlandi: "KIMLIK" };
   }
-  const c = canliYapilandirma();
-  if (!c.tamam) {
+  /** ⚠ Sunucuda `.env.canli` YOKTUR — adres parametreyle gelir. */
+  const adres =
+    ayar.dbAdresi && ayar.dbAdresi !== ""
+      ? ayar.dbAdresi
+      : (() => {
+          const c = canliYapilandirma();
+          return c.tamam ? c.veri.ham : "";
+        })();
+  if (adres === "") {
     console.log("\n⛔ CANLI ADRES OKUNAMADI\n");
-    process.exitCode = 1;
-    return;
+    return { atlandi: "VERITABANI" };
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(c.veri.ham) });
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(adres) });
   const baslik = baslikKur(k);
   const okumaAni = new Date();
   const partiKimligi = `hb-${okumaAni.toISOString().slice(0, 19).replace(/[-:T]/g, "")}`;
@@ -221,8 +255,7 @@ async function main() {
   if (!hesap) {
     console.log("\n⛔ HESAP YOK ve bu ortamda OLUŞTURULMAZ — canlı hesap kimliği elle bağlanır.\n");
     await prisma.$disconnect();
-    process.exitCode = 1;
-    return;
+    return { atlandi: "HESAP" };
   }
   console.log(`  kanal hesabı  : ${hesap.ad}${hesap.olusturuldu ? "  (YENİ — bu koşumda oluşturuluyor)" : ""}`);
 
@@ -252,8 +285,8 @@ async function main() {
   if (acik.tur !== "TAMAM") {
     console.log(`\n⛔ AÇIK PAKETLER OKUNAMADI (${acik.tur === "HATA" ? acik.sonuc.tur : "zarf tanınmadı"}) — hüküm yok.\n`);
     await prisma.$disconnect();
-    process.exitCode = 1;
-    return;
+    /** ⛔ AÇIK UÇ OKUNAMAZSA ÇEKİM YAPILMAZ — eksik kümeyle yazım yapılmaz. */
+    return { atlandi: "VERITABANI" };
   }
   for (const p of acik.kayitlar as Record<string, unknown>[]) {
     for (const x of (p.items ?? []) as Record<string, unknown>[]) {
@@ -607,7 +640,15 @@ async function main() {
     console.log(`  ÖNİZLEME — hiçbir şey yazılmadı. Yazmak için: -- --yaz`);
     console.log("=".repeat(78) + "\n");
     await prisma.$disconnect();
-    return;
+    return {
+      partiKimligi,
+      siparis: siparisNolari.size,
+      kacak: kacaklar.length,
+      yazilan: 0,
+      hata: 0,
+      cakisanAtlandi: cakisanlar.length,
+      caprazCakisma: capraz.length,
+    };
   }
 
   // ═══ YAZIM ══════════════════════════════════════════════════════════════
@@ -737,6 +778,29 @@ async function main() {
   console.log(`  GERİ ALMA ÖLÇÜTÜ: importBatch = ${partiKimligi} (liste değil, yeniden hesaplanabilir)`);
   console.log("=".repeat(78) + "\n");
   await prisma.$disconnect();
+  return {
+    partiKimligi,
+    siparis: siparisNolari.size,
+    kacak: kacaklar.length,
+    yazilan,
+    hata,
+    cakisanAtlandi: cakisanlar.length,
+    caprazCakisma: capraz.length,
+  };
+}
+
+/**
+ * ⛔ BETİK KİPİ — ÇEKİRDEĞİ ÇAĞIRIR, İKİNCİ BİR GÖVDE KURMAZ.
+ * Argümanlar burada okunur; çekirdek argv bilmez (sunucuda argv yok).
+ */
+async function main() {
+  const ozet = await hbCekimKos({ yaz: YAZ, sadece: SADECE });
+  if ("atlandi" in ozet) {
+    /** ⚠ Bekçi turu bir HATA DEĞİL — kırmızı dönmez, atlandı der. */
+    if (ozet.atlandi !== "BEKCI_TURU") process.exitCode = 1;
+    return;
+  }
+  if (ozet.hata > 0) process.exitCode = 1;
 }
 
 /** İçeri alındığında KOŞMAZ — TY importer'daki kusur düzeltmesinin aynısı. */
