@@ -3,6 +3,7 @@ import { ayKaydir, pencerede, type Pencere } from "@/lib/donem";
 import type { KarDurumu } from "@/lib/kar";
 import { donemNet2 } from "@/lib/net-devreden";
 import type { Currency } from "@/generated/prisma/enums";
+import { kargoBekliyorMu } from "@/lib/kargo-bekleyen";
 import {
   kanallariSirala,
   VARSAYILAN_KANAL_SIRASI,
@@ -122,10 +123,25 @@ export type PanelKargosu = {
    */
   importKaynak: string | null;
   /**
-   * KARGO NUMARASI (`Sale.shipmentCode`). TY içe aktarması bunu YAZIYOR,
-   * `shippedAt` yazmıyor — numara varsa paket fiilen çıkmıştır.
+   * ONAY DAMGASI (`Sale.onaylandiAt`) — K188-③, 08.09.2026.
+   *
+   * ⛔ BURADA ÖNCE `shipmentCode` VARDI VE GEREKÇESİ ÖLÇÜMLE ÇÜRÜDÜ.
+   * Eski yorum şöyle diyordu: _"TY içe aktarması bunu YAZIYOR, `shippedAt`
+   * yazmıyor — numara varsa paket fiilen çıkmıştır."_ Ölçüldü (08.09.2026):
+   *
+   *     ice aktarilan satis 7651 · gonderi numarasi DOLU 476
+   *                                bunlarin shippedAt'i DOLU  45
+   *                                → numara var, kargo tarihi YOK: 431
+   *
+   * Numaranın varlığı paketin çıktığını GÖSTERMİYOR — canlı TY çekimi her
+   * yeni siparişe numara yazıyor, sipariş daha depodayken. _(Anayasa:
+   * "alanın dolu olması, olayın gerçekleştiğini göstermez" — K60-②'nin
+   * kendisi; kural yazılıydı ve bu satır onu çiğniyordu.)_
+   *
+   * Ayırt edici veri onay damgası: onaylanmış bir içe aktarma siparişi
+   * gerçek bir kargo işidir (K164), onaylanmamış tarihsel kayıt değildir.
    */
-  shipmentCode: string | null;
+  onaylandiAt: Date | null;
   /**
    * SİPARİŞİN CİROSU — "o gün ne kadar mal elimden çıktı".
    * ⚠ Kargo ÜCRETİ değil: soru "kaç liralık mal sevk ettim", "kargoya ne
@@ -293,34 +309,74 @@ function hesaplandi(durum: KarDurumu | null, net: number | null): net is number 
  *
  *  ═══ ÜÇ HÂL — hepsi ELİMİZDEKİ VERİDEN, yeni alan YOK ═══
  *
- *    GOREV      elle girilmiş + kargolanmamış  → gerçek iş, bugünkü davranış
- *    CIKMIS     kargo tarihi VAR — ya da içe aktarılmış ve KARGO NUMARASI var
- *    BILINMIYOR içe aktarılmış, numarası da yok → görev DEĞİL, KAYIT
+ *    GOREV      kargo bekliyor (`kargoBekliyorMu`) → gerçek iş
+ *    CIKMIS     kargo tarihi VAR — olayın kendi izi
+ *    BILINMIYOR içe aktarılmış, HENÜZ ONAYLANMAMIŞ → görev DEĞİL, KAYIT
+ *
+ *  ⛔ TANIM DEĞİŞTİ 08.09.2026 (K188-③) — ESKİ HÂLİ BURADA DURUYOR:
+ *      GOREV      elle girilmiş + kargolanmamış
+ *      CIKMIS     kargo tarihi VAR — YA DA içe aktarılmış ve KARGO NUMARASI var
+ *      BILINMIYOR içe aktarılmış, numarası da yok
+ *  İki yeri birden bozuktu: (1) K164'ten sonra onaylanmış API siparişi
+ *  gerçek bir iştir ama BILINMIYOR'a düşüyordu; (2) "numarası var → çıkmış"
+ *  ölçümle çürüdü (476 numaralı siparişin 45'i kargolanmış). Eski gerekçe
+ *  siliniyor değil, NİYE çevrildiğiyle birlikte burada kalıyor.
  *
  *  ⛔ `shippedAt` GERİ DOLDURULMAZ. Ölçüldü: satış dosyasının 31 kolonunda
  *  kargo/teslim tarihi YOK; TY API'si de `shipmentCode` veriyor, tarih
  *  vermiyor. Bir tarih uydurmak ledger'a sahte bir olay yazmak olurdu.
  *  _(Anayasa: "kolon başlığı bir iddiadır — vekil alan gösterilmez".)_
  *
- *  ⚠ VE ÜÇÜNCÜ HÂL KAYBOLMAZ: ayrı sayılır (`kargoBilinmiyorAdet`) ve ekranda
- *  YAZAR. Sessizce elenseydi, gerçekten bekleyen bir içe aktarma siparişi
- *  hiçbir yerde görünmezdi.
+ *  ⛔ ÜÇÜNCÜ HÂL AYRI SAYILIR AMA **EKRANA ULAŞMIYOR** — İDDİA DÜZELTİLDİ.
+ *  Bu satırda _"ve ekranda YAZAR"_ yazıyordu; ölçüldü (08.09.2026):
+ *  `kargoBilinmiyorAdet` **hiçbir bileşende kullanılmıyor** — yalnız
+ *  hesaplanıp `panel.ts` içinde kalıyor. Yani kovanın kendisi kayboluyordu
+ *  ve bunu yazan yorum tersini söylüyordu.
+ *  _(Anayasa: "muafiyetin uygulanması ve BEYANI ayrı sınanır — doğru
+ *  davranışın GÖRÜNMEZLİĞİ de yalancı yeşildir".)_
+ *
+ *  ⏭ Ekrana bağlanması AYRI bir karar ve panoda açık duruyor: bugünkü küme
+ *  **4619 kayıt** (tarihsel defter) ve bu bir GÖREV değil KAYIT — uyarı
+ *  kutusuna konursa kapatılamayan madde üretir (K49). Yeri ve biçimi
+ *  mimarın kararı; buraya sessizce bir rozet konmadı.
  * ============================================================================
  */
 export type KargoHali = "GOREV" | "CIKMIS" | "BILINMIYOR";
 
 export function kargoHali(
-  k: Pick<PanelKargosu, "kargoTarihi" | "importKaynak" | "shipmentCode">,
+  k: Pick<PanelKargosu, "kargoTarihi" | "importKaynak" | "onaylandiAt">,
 ): KargoHali {
   if (k.kargoTarihi !== null) return "CIKMIS";
-  /** Elle girilmiş: null'ın tek anlamı var — henüz kargolanmadı. */
-  if (k.importKaynak === null) return "GOREV";
   /**
-   * ⚠ BOŞ DİZE DE YOK SAYILIR. `shipmentCode: ""` bir kargo numarası
-   * değildir; `!== null` demek onu "çıkmış" sayar ve gerçek bir bilinmezliği
-   * gizlerdi.
+   * ⛔ ÖLÇÜT LİSTEYLE AYNI GÖVDEDEN — İKİ AYRI CEVAP YAZILMAZ (K188-③).
+   *
+   * Kullanıcı bulgusu 08.09.2026: rozet _"3 sipariş bekliyor"_ diyordu,
+   * tıklayınca liste **13** açılıyordu. Ölçüldü ve rozet ekrandakiyle
+   * birebir çıktı — yani rakam doğru hesaplanıyor, YANLIŞ SORUYU
+   * cevaplıyordu. Fark iki ayrı kusurdan geliyordu:
+   *
+   *   BILINMIYOR 4 → onaylanmış API siparişleri. K164 kararı
+   *     (_"onaylanınca kargo bekleyen kümesine GİRER"_) `KARGO_BEKLEYEN`
+   *     gövdesine uygulanmış, buraya UYGULANMAMIŞTI.
+   *   CIKMIS     7 → `shipmentCode` dolu diye "çıkmış" sayılanlar; ölçüm
+   *     bu dalı çürüttü (476 numaralı siparişin yalnız 45'i kargolanmış).
+   *
+   * Çare dalları tek tek yamamak değil: _"bu sipariş kargo bekliyor mu"_
+   * sorusunun **tek** sahibi `kargoBekliyorMu` ve panel de artık onu
+   * çağırıyor. İki gövde olduğu sürece ayrışma yeniden doğardı.
+   * _(Anayasa: "iki yerde iki ölçüt olmaz — aynı soruya iki cevap yasak".)_
+   *
+   * ⚠ ÜÇÜNCÜ HÂL KALKMADI, TANIMI DÜZELDİ: BİLİNMİYOR artık
+   * _"içe aktarılmış ve HENÜZ ONAYLANMAMIŞ"_ demek — tarihsel defterin
+   * kendisi. Kargo numarasının varlığına değil, onayın YOKLUĞUNA bakıyor.
    */
-  return (k.shipmentCode ?? "").trim() !== "" ? "CIKMIS" : "BILINMIYOR";
+  return kargoBekliyorMu({
+    shippedAt: k.kargoTarihi,
+    importKaynak: k.importKaynak,
+    onaylandiAt: k.onaylandiAt,
+  })
+    ? "GOREV"
+    : "BILINMIYOR";
 }
 
 /**

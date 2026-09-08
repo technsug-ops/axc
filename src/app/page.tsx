@@ -507,7 +507,9 @@ export default async function AnaSayfa({
          * veri bu ikisi. Bkz. `panel.ts` → `kargoHali`.
          */
         importKaynak: true,
-        shipmentCode: true,
+        /** K188-③ — hâl artık ONAY damgasından; kargo numarası hâli
+         *  belirlemiyor (476 numaralı siparişin yalnız 45'i kargolanmış). */
+        onaylandiAt: true,
         profitCurrency: true,
         channelAccount: {
           select: { channel: { select: { code: true, name: true } } },
@@ -602,7 +604,7 @@ export default async function AnaSayfa({
       kargoTarihi: k.shippedAt,
       /** K60 — hüküm `panel.ts`teki `kargoHali`de; burası yalnız taşıyor. */
       importKaynak: k.importKaynak,
-      shipmentCode: k.shipmentCode,
+      onaylandiAt: k.onaylandiAt,
       /**
        * ⚠ SEVK EDİLEN SİPARİŞİN CİROSU — kargo ÜCRETİ DEĞİL.
        * Soru "o gün kaç liralık mal elimden çıktı"; "kargoya ne kadar

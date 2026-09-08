@@ -13,6 +13,84 @@
 
 ---
 
+## ✅ K188-③ — "3 SİPARİŞ BEKLİYOR" ROZETİ LİSTEYLE AYRIŞIYORDU · 08.09.2026 · [KOD KOŞTU]
+
+> **Kullanıcı bulgusu:** _"Burada 3 sipariş bekliyor diyor, tıklayınca 13
+> sipariş çıkıyor — doğrusu da 13 zaten."_
+
+### ① ÖLÇÜM — ROZET EKRANDAKİYLE BİREBİR, YANİ RAKAM DEĞİL SORU YANLIŞTI
+
+    LISTE (KARGO_BEKLEYEN + iptalsiz)  14      ← ekrandaki 13 + o an gelen 1
+    ROZET (kargoHali)                   3      ← ekranla BIREBIR
+       GOREV 3  ·  CIKMIS 7  ·  BILINMIYOR 4   → 3+7+4 = 14
+
+Rozet doğru hesaplanıyordu; **yanlış soruyu** cevaplıyordu. Fark iki ayrı
+kusurdan geliyordu ve ikisi de ayrı derslerin ihlaliydi:
+
+**(a) BILINMIYOR 4 — KARARIN KAPSAMI EKSİK UYGULANMIŞ.** Dördü de onaylanmış
+API siparişi. K164 kararı (_"onaylanınca kargo bekleyen kümesine GİRER"_)
+`KARGO_BEKLEYEN` gövdesine uygulanmış, `kargoHali`'ye **uygulanmamıştı.**
+
+**(b) CIKMIS 7 — ALANIN DOLULUĞU OLAY SAYILMIŞ.** `shipmentCode` dolu diye
+"çıkmış" sayılıyorlardı. Ölçüm çürüttü:
+
+    ice aktarilan satis 7651 · gonderi numarasi DOLU 476
+                               bunlarin shippedAt'i DOLU  45
+                               → numara var, kargo tarihi YOK: 431
+
+Canlı TY çekimi **her yeni siparişe** numara yazıyor, sipariş daha depodayken.
+Bu, K60-②'nin ta kendisi (_"alanın dolu olması, olayın gerçekleştiğini
+göstermez"_) — kural anayasada yazılıydı ve bu satır onu çiğniyordu.
+
+### ② ÇARE DALLARI YAMAMAK DEĞİL, TEK GÖVDE
+
+`kargoBekliyorMu` saf yüklemi **zaten vardı** (`kargo-bekleyen.ts`) ve
+`KARGO_BEKLEYEN` ile aynı anlamı taşıyordu; `kargoHali` onu kullanmıyordu.
+Artık kullanıyor — _"bu sipariş kargo bekliyor mu"_ sorusunun tek sahibi var.
+_(Anayasa: "aynı soruya iki cevap yasak".)_
+
+    LISTE 17  ·  ROZET 17      → SAYI = LISTE ✓  (canlı, gövde çağrılarak)
+    diger kovalar: CIKMIS 319 · BILINMIYOR 4619
+
+⚠ **ÜÇÜNCÜ HÂL KALKMADI, TANIMI DÜZELDİ:** BİLİNMİYOR artık _"içe aktarılmış
+ve HENÜZ ONAYLANMAMIŞ"_ — tarihsel defterin kendisi. Kargo numarasının
+varlığına değil, onayın YOKLUĞUNA bakıyor.
+
+⚠ **`PanelKargosu.shipmentCode` KALDIRILDI** — yerine `onaylandiAt`. Alan
+panelde yalnız `kargoHali` tarafından okunuyordu ve tipin yorumu ölçümle
+çürüyen iddiayı taşıyordu (_"numara varsa paket fiilen çıkmıştır"_). Eski
+gerekçe silinmedi, **niye çevrildiğiyle birlikte** yerinde duruyor.
+
+### ③ ⛔ İKİNCİ BULGU — "EKRANDA YAZAR" İDDİASI YANLIŞTI
+
+`kargoHali`'nin belgesi şunu söylüyordu: _"üçüncü hâl kaybolmaz: ayrı sayılır
+(`kargoBilinmiyorAdet`) ve **ekranda YAZAR**."_ Ölçüldü: o alan **hiçbir
+bileşende kullanılmıyor** — hesaplanıp `panel.ts` içinde kalıyor. Yani
+kaybolmasın diye açılan kova **kayboluyordu** ve yorum tersini söylüyordu.
+_(Anayasa: "doğru davranışın GÖRÜNMEZLİĞİ de yalancı yeşildir".)_
+
+İddia düzeltildi. ⏭ **EKRANA BAĞLANMASI AYRI KARAR VE AÇIK:** küme bugün
+**4619 kayıt** (tarihsel defter) ve bu bir GÖREV değil KAYIT — uyarı kutusuna
+konursa kapatılamayan madde üretir (K49). Yeri ve biçimi mimarın kararı;
+sessizce bir rozet konmadı.
+
+### ④ BEKÇİ — ESKİYEN ÖLÇÜTLER GÜNCELLENDİ, SUSTURULMADI
+
+Üç ölçüt kırmızı yandı ve **haklıydılar**: adları eski kuralı taşıyordu
+(_"görev YALNIZ elle girilen"_ · _"içe aktarılmış + numara var = CIKMIS"_ ·
+_"kargo numarası olan hiçbir kovaya girmiyor"_). Üçü de kodun O GÜNKÜ
+davranışını sabitliyordu, kuralı değil — yani düzeltmeye kalkanın karşısına
+kırmızı yanarak çıktılar. _(Anayasa: "bekçi ölçütü kuralı sabitler,
+davranışı değil".)_
+
+**YENİ ÖLÇÜTLER:** rozet ile listenin AYNI cevabı verdiği **dört
+kombinasyonda birden** sınanıyor; üç kaydın üçünün de bir kovaya düştüğü
+ayrıca ölçülüyor (eskiden "numaralı" kayıt hiçbir kovaya girmiyor, yani
+sessizce düşüyordu). **İki mutasyon, ikisi de kırmızı:** onay damgasını yok
+sayan (eski kusurun geri gelmesi) · her şeyi GOREV sayan (yanlış yanma).
+
+---
+
 ## ✅ K188 — STOK ARAMASI SİPARİŞ NUMARASINI DA EŞLEŞTİRİYOR · 08.09.2026 · [KOD KOŞTU]
 
 > **Kullanıcı isteği:** _"Stoktaki arama butonu sipariş numarasını da

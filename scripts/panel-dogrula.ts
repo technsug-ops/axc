@@ -55,6 +55,7 @@ import {
 } from "../src/lib/kanal-sirasi";
 import { karOrani, kutuOranlari } from "../src/lib/panel/kar-orani";
 import { serileriKur } from "../src/lib/panel/operasyon-serisi";
+import { kargoBekliyorMu } from "../src/lib/kargo-bekleyen";
 import {
   envanterAra,
   envanterHesapla,
@@ -213,7 +214,7 @@ function kargo(ek: Partial<PanelKargosu> = {}): PanelKargosu {
      * içe aktarma testleri farkı AÇIKÇA yazsın.
      */
     importKaynak: null,
-    shipmentCode: null,
+    onaylandiAt: null,
     /** Sevk edilen siparişin cirosu — kargo ÜCRETİ değil. */
     gelir: 1000,
     ...ek,
@@ -982,22 +983,40 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
   const ucHal = [
     /** ① elle girilmiş, kargolanmamış → GERÇEK İŞ */
     kargo({ kargoTarihi: null }),
-    /** ② içe aktarılmış + kargo numarası VAR → paket çıkmış, iş değil */
-    kargo({ kargoTarihi: null, importKaynak: "ty-api", shipmentCode: "7260035885654078" }),
-    /** ③ içe aktarılmış + numara YOK → sistem BİLMİYOR, iş değil ama SAYILIR */
-    kargo({ kargoTarihi: null, importKaynak: "satis-excel", shipmentCode: null }),
+    /** ② içe aktarılmış + ONAYLI → K164: gerçek kargo işi, GOREV sayılır */
+    kargo({ kargoTarihi: null, importKaynak: "ty-api", onaylandiAt: gun(2026, 9, 7) }),
+    /** ③ içe aktarılmış + ONAYSIZ → sistem BİLMİYOR, iş değil ama SAYILIR */
+    kargo({ kargoTarihi: null, importKaynak: "satis-excel", onaylandiAt: null }),
   ];
   const k60 = panelHesapla(bugun, [satis({ tarih: gun(2026, 8, 12) })], [], ucHal)[0];
 
-  kontrol("K60 — görev YALNIZ elle girilen: 1", k60.kargoBekleyenAdet === 1, k60.kargoBekleyenAdet);
+  /**
+   * ⚠ BEKLENTİLER ESKİDİ VE GÜNCELLENDİ (K188-③) — SUSTURULMADI.
+   * Eski hâl `görev YALNIZ elle girilen: 1` diyordu; ADI kuralın kendisini
+   * taşıyordu ve o kural K164'te değişmişti: ONAYLANMIŞ bir içe aktarma
+   * siparişi de gerçek bir kargo işidir. Örnek küme ② artık onaylı olduğu
+   * için görev sayısı 2. Beklenti değişti çünkü KURAL değişti — ölçüt
+   * gevşetilmedi, kovaların TOPLAMI hâlâ tam olarak sınanıyor.
+   */
+  kontrol(
+    "K188 — görev = elle + ONAYLI içe aktarma: 2",
+    k60.kargoBekleyenAdet === 2,
+    k60.kargoBekleyenAdet,
+  );
   kontrol(
     "K60 — bilinmiyor kovası SAYILIYOR: 1 (sessizce elenmiyor)",
     k60.kargoBilinmiyorAdet === 1,
     k60.kargoBilinmiyorAdet,
   );
+  /**
+   * ⛔ ÜÇ KAYIT DA BİR KOVAYA DÜŞER — HİÇBİRİ SESSİZCE KAYBOLMAZ.
+   * Eski hâlde toplam 2 bekleniyordu çünkü "numarası olan" kayıt HİÇBİR
+   * kovaya girmiyordu — yani sessizce düşüyordu ve ölçüt bunu KURAL diye
+   * sabitliyordu. Artık üçü de sayılıyor (2 görev + 1 bilinmiyor).
+   */
   kontrol(
-    "K60 — kargo numarası olan hiçbir kovaya girmiyor (1+1, üçü değil)",
-    k60.kargoBekleyenAdet + k60.kargoBilinmiyorAdet === 2,
+    "K188 — üç kaydın ÜÇÜ de bir kovada (2+1, hiçbiri düşmüyor)",
+    k60.kargoBekleyenAdet + k60.kargoBilinmiyorAdet === 3,
     k60.kargoBekleyenAdet + k60.kargoBilinmiyorAdet,
   );
   kontrol(
@@ -1006,34 +1025,80 @@ console.log("\n5) CİRO SUNUMU — brüt · iade düşümü · net");
     k60.kargoyaVerilenAdet,
   );
 
-  /** Saf ölçüt — üç hâl tek tek. */
+  /**
+   * Saf ölçüt — üç hâl tek tek.
+   *
+   * ⚠ ÖLÇÜTLER ESKİDİ VE GÜNCELLENDİ (K188-③, 08.09.2026) — SUSTURULMADI.
+   * Eski hâlde iki ölçüt KARGO NUMARASINI hâl belirleyici sayıyordu
+   * (_"içe aktarılmış + numara var = CIKMIS"_ ve boş-dize kardeşi). O ölçüt
+   * bir KURALI değil, kodun o günkü DAVRANIŞINI sabitliyordu — ve davranış
+   * ölçümle çürüdü: içe aktarılan 476 numaralı siparişin yalnız **45**'i
+   * kargolanmıştı. Yani ölçüt, düzeltmeye kalkanın karşısına kırmızı
+   * yanarak çıkardı. _(Anayasa: "bekçi ölçütü kuralı sabitler, davranışı
+   * değil".)_
+   *
+   * ⭐ YENİ ÖLÇÜT LİSTEYLE AYNI GÖVDEDEN: hâl artık `kargoBekliyorMu`'dan
+   * türüyor, yani rozet ile `/satislar` listesi TEK ölçüte bakıyor.
+   */
   kontrol(
     "K60 — kargoHali: kargo tarihi varsa CIKMIS",
-    kargoHali({ kargoTarihi: gun(2026, 8, 5), importKaynak: "satis-excel", shipmentCode: null }) ===
+    kargoHali({ kargoTarihi: gun(2026, 8, 5), importKaynak: "satis-excel", onaylandiAt: null }) ===
       "CIKMIS",
   );
   kontrol(
     "K60 — kargoHali: elle girilmiş + tarihsiz = GOREV",
-    kargoHali({ kargoTarihi: null, importKaynak: null, shipmentCode: null }) === "GOREV",
+    kargoHali({ kargoTarihi: null, importKaynak: null, onaylandiAt: null }) === "GOREV",
+  );
+  /** ⛔ K164: ONAYLANMIŞ içe aktarma gerçek bir kargo işidir. */
+  kontrol(
+    "K188 — kargoHali: içe aktarılmış + ONAYLI = GOREV",
+    kargoHali({ kargoTarihi: null, importKaynak: "ty-api", onaylandiAt: gun(2026, 9, 7) }) ===
+      "GOREV",
   );
   kontrol(
-    "K60 — kargoHali: içe aktarılmış + numara var = CIKMIS",
-    kargoHali({ kargoTarihi: null, importKaynak: "ty-api", shipmentCode: "726003" }) === "CIKMIS",
-  );
-  kontrol(
-    "K60 — kargoHali: içe aktarılmış + numara yok = BILINMIYOR",
-    kargoHali({ kargoTarihi: null, importKaynak: "satis-excel", shipmentCode: null }) ===
+    "K60 — kargoHali: içe aktarılmış + ONAYSIZ = BILINMIYOR",
+    kargoHali({ kargoTarihi: null, importKaynak: "satis-excel", onaylandiAt: null }) ===
       "BILINMIYOR",
   );
+  /**
+   * ⛔ AYRIMIN ÖTEKİ YAKASI — VE ESKİ KUSURUN TA KENDİSİ: kargo numarası
+   * artık hâli DEĞİŞTİRMİYOR. Bu ölçüt eski davranışın geri gelmesini
+   * yakalar; `kargoHali` yeniden numaraya bakmaya başlarsa kırmızı yanar.
+   */
   kontrol(
-    "K60 — kargoHali: BOŞ DİZE numara sayılmaz (BILINMIYOR)",
-    kargoHali({ kargoTarihi: null, importKaynak: "satis-excel", shipmentCode: "   " }) ===
-      "BILINMIYOR",
+    "K188 — kargo numarası hâli DEĞİŞTİRMİYOR (onaysız içe aktarma BILINMIYOR kalır)",
+    kargoHali({
+      kargoTarihi: null,
+      importKaynak: "ty-api",
+      onaylandiAt: null,
+    }) === "BILINMIYOR",
   );
   kontrol(
-    "K60 — elle girilmiş satışta kargo numarası GÖREVİ DÜŞÜRMEZ",
-    kargoHali({ kargoTarihi: null, importKaynak: null, shipmentCode: "726003" }) === "GOREV",
+    "K60 — elle girilmiş satış onaysız da GOREV (onay kuyruğu elleyi kapsamaz)",
+    kargoHali({ kargoTarihi: null, importKaynak: null, onaylandiAt: null }) === "GOREV",
   );
+  /**
+   * ⛔ ROZET İLE LİSTE AYNI GÖVDEDEN — İKİ CEVAP YASAK.
+   * Kullanıcı bulgusu 08.09.2026: rozet 3, liste 13. Ölçüt artık iki
+   * gövdenin AYNI cevabı verdiğini dört kombinasyonda birden sınıyor.
+   */
+  for (const [ad, girdi] of [
+    ["elle · onaysız", { shippedAt: null, importKaynak: null, onaylandiAt: null }],
+    ["içe aktarma · onaysız", { shippedAt: null, importKaynak: "ty-api", onaylandiAt: null }],
+    ["içe aktarma · ONAYLI", { shippedAt: null, importKaynak: "ty-api", onaylandiAt: gun(2026, 9, 7) }],
+    ["kargolanmış", { shippedAt: gun(2026, 9, 1), importKaynak: null, onaylandiAt: null }],
+  ] as const) {
+    const halGorev =
+      kargoHali({
+        kargoTarihi: girdi.shippedAt,
+        importKaynak: girdi.importKaynak,
+        onaylandiAt: girdi.onaylandiAt,
+      }) === "GOREV";
+    kontrol(
+      `K188 — rozet ve liste AYNI cevabı veriyor (${ad})`,
+      halGorev === kargoBekliyorMu(girdi),
+    );
+  }
   /**
    * ════════════════════════════════════════════════════════════════════
    *  KÂR ORANLARI — İKİ PAYDA, İKİ AYRI SORU
