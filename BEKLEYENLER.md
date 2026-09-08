@@ -108,6 +108,64 @@ ama tasarım kararıyla fiiliyat arasında ölçülmüş bir ayrışmadır ve ke
 başına bir kalemdir. Karar: görev klonun cmd'sine mi çevrilsin, yoksa
 `KOK` klona mı bağlansın?
 
+### ⛔ YUKARIDAKİ BULGU YANLIŞTI — ÖLÇÜMLE ÇÜRÜTÜLDÜ (08.09.2026, aynı gece)
+
+⚠ **KAYIT SİLİNMİYOR, ÜSTÜNE YAZILIYOR** — geçerli olan bu bölümdür.
+_(Anayasa: "kesik iz silinmez; bozuk kayıt yerinde bırakılır ve üstüne onu
+açıklayan ikinci bir iz yazılır".)_
+
+**İDDİA:** _"Çekim geliştirme ağacından koşuyor; betiğin kendi başlığı
+tersini söylüyor."_
+**ÖLÇÜM:** `npm run` çağrılarının koştuğu dizin, hazırlıktan hemen sonra
+yazdırıldı (yalıtılmış kopya, yalnız günlükler ayrı):
+
+    CALISMA-DIZINI = C:\Users\yapra\Desktop\axcali-operasyon    ← KLON
+
+**SEBEP:** `klon-tazele.cmd` içinde `cd /d ...axcali-operasyon` var ve o
+betikte **`setlocal` YOK**; dolayısıyla dizin değişikliği çağıran koşumun
+geri kalanında GEÇERLİ KALIYOR. Üç kanal da klondan koşuyor.
+
+    Gorevin cagirdigi cmd DOSYASI      → gelistirme agaci
+    KOK (gunluk yollari, klon-tazele)  → gelistirme agaci
+    CEKIM KODUNUN KENDISI              → KLON  ✓
+
+⭐ **KORUMA GERÇEKTEN VAR — "var sanılıyor" DEĞİL.** Bekçi turlarının kaynak
+mutasyonladığı ağaçtan çekim koşmuyor; birleşik hipotezin o yarısı düşüyor.
+Geriye `max_user_connections` tarafı kalıyor ve o da hâlâ HİPOTEZ.
+
+⚠ **HATA BENDEYDİ VE ÇEREZ DEĞİLDİ:** `Get-ScheduledTask` çıktısını
+(cmd dosyasının yolu) "çekimin koştuğu ağaç" diye okudum. İkisi ayrı şey ve
+aradaki farkı ölçmeden rapor ettim — mimar bu yanlış önerme üstüne karar
+verdi. _(Anayasa: "kendi sistemimizin davranışı da doğrulanır — bir betiğin
+ne yaptığını söylemeden önce o betiğe BAKILIR".)_
+
+### 📋 GERİYE KALAN DAR AYRIŞMA — KARAR BEKLİYOR
+
+Gerçek ve ölçülmüş, ama iddia edilenden çok daha dar:
+**cmd dosyasının KENDİSİ geliştirme ağacından okunuyor**, yani orkestrasyon
+betiğine yapılan bir düzenleme **push'tan ÖNCE üretime giriyor.** Bu gece
+kanıtlandı: K191 düzenlemesi yazıldığı anda 22:02'deki zamanlanmış koşum onu
+kullandı — bekçi turundan geçmeden.
+
+Çekim KODU bu kapıyı atlamıyor (klon yalnız push'lanmış kodu çeker); atlayan
+tek şey orkestrasyon betiği.
+
+**Klon durumu ölçüldü (08.09.2026 22:2x):**
+
+    HEAD = origin/main = 7bdad10 · geride/onde 0/0 · calisma agaci TEMIZ
+    node_modules VAR · uretilmis istemci 08.09 07:36 > sema 07.09 16:12
+    .env.canli her kosumda kopyalaniyor
+    mekanizma: her cekimde klon-tazele (git pull --ff-only + prisma
+    bayatlik kapisi + .env kopyasi) — ELLE degil, OTOMATIK
+
+Yani klon güncel ve güncel KALIYOR; taşımanın önünde teknik engel yok.
+⚠ Bedeli: günlükler klonun `raporlar/`ına taşınır (geçmiş dev ağacında
+kalır, sürekliliği kopar) ve cmd'ye acil bir düzeltme artık 15 dakikalık
+bekçi turu ister.
+
+**Karar mimarın:** taşıma bu dar gerekçeyle yapılsın mı? Talimat, çürüyen
+önerme üstüne verilmişti; yeni ölçümle yeniden tartılması gerekiyor.
+
 ---
 
 ## ✅ K190 — ÇAPA BEKÇİSİ: REAKTİF TARAMA KALICI ÖLÇÜTE ÇEVRİLDİ · 08.09.2026 · [KOD KOŞTU]
