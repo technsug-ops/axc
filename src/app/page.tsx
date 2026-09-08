@@ -121,7 +121,7 @@ import {
 } from "@/lib/panel/gorev-verisi";
 import { vitrinKutusunuTopla } from "@/lib/panel/vitrin-verisi";
 import { tarifeUyarisiVarMi } from "@/lib/panel/tarife-penceresi";
-import { sonTyCekimi, tyCekimDurumu } from "@/lib/panel/ty-cekim-yasi";
+import { enKotuCekim, sonCekimler } from "@/lib/panel/ty-cekim-yasi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import {
   analizAdresi as urunAnaliziAdresi,
@@ -851,7 +851,10 @@ export default async function AnaSayfa({
 
   /** ⭐ TY ÇEKİM ROZETİ (04.09.2026) — zamanlayıcı kaçarsa EKRAN söyler;
    *  saf gövde + iz okuması ayrı (bkz. lib/panel/ty-cekim-yasi.ts). */
-  const tyCekim = tyCekimDurumu(await sonTyCekimi(prisma), new Date());
+  /** ⭐ ÜÇ KANAL DA ÖLÇÜLÜR, EN KÖTÜSÜ ÇİZİLİR (K189): tek görev üç kanalı
+   *  koşuyor; yalnız TY'ye bakan rozet, HB ucu tek başına düşse susardı. */
+  const cekimler = await sonCekimler(prisma, new Date());
+  const tyCekim = enKotuCekim(cekimler);
 
   const bloklar = panelHesapla(
     donem,
@@ -2287,16 +2290,19 @@ export default async function AnaSayfa({
       */}
       <p
         className={
-          tyCekim.durum === "TAZE"
+          tyCekim === null || tyCekim.durum.durum === "TAZE"
             ? "text-muted-foreground text-xs"
             : `text-xs font-medium ${DURUM_YAZISI.olumsuz}`
         }
       >
-        {tyCekim.durum === "YOK"
-          ? t("tyCekimYok")
-          : t(tyCekim.durum === "TAZE" ? "tyCekimTaze" : "tyCekimEski", {
-              saat: Math.round(tyCekim.saat),
-            })}
+        {tyCekim === null
+          ? null
+          : tyCekim.durum.durum === "YOK"
+            ? t("cekimYok", { kanal: tyCekim.kod })
+            : t(tyCekim.durum.durum === "TAZE" ? "cekimTaze" : "cekimEski", {
+                kanal: tyCekim.kod,
+                dk: Math.round(tyCekim.durum.dk),
+              })}
       </p>
       {/* ⚠ SÜZGEÇLİ ADRESİ HATIRLAR — hiçbir şey ÇİZMEZ (K104-②).
           Bir kayda girip dönen kullanıcı süzgecini geri bulsun diye.

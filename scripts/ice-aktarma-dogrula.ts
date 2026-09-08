@@ -2195,6 +2195,53 @@ kontrol(
   kontrol("akışta HB ucu ÇAĞRILIYOR", akis.includes("/api/cron/hb-cekim"));
   kontrol("akışta TY ve N11 de duruyor", akis.includes("/api/cron/ty-cekim") && akis.includes("/api/cron/n11-cekim"));
 
+  /* ── YARIM KOŞUM GÖRÜNÜR OLMALI (K189, 08.09.2026) ───────────────────
+   * ⛔ VAKA: bu pencerede Ctrl+C'ye basıldı, cmd _"Toplu işi sonlandır
+   * (E/H)?"_ diye sorup CEVAP BEKLEDİ ve batch orada asılı kaldı. Görev
+   * `IgnoreNew` taşıdığı için sonraki HER koşum sessizce reddedildi
+   * (`-2147020576`) ve çekim **69 DAKİKA** durdu — hiçbir yerde yazmadı,
+   * arızayı kullanıcı gözüyle yakaladı.
+   *
+   * Reddetme Görev Zamanlayıcı'da olur, betik onu göremez. AMA yarım kalan
+   * koşumu BİR SONRAKİ koşum görebilir: işaret dosyası başlangıçta yazılır,
+   * temiz bitişte silinir. _(Anayasa: "kaçışın kendisi görünür kılınır".)_ */
+  {
+    const cekimCmd = readFileSync("scripts/kanal-sik-cekim.cmd", "utf8");
+    kontrol("çekim başlangıçta İŞARET yazıyor", /echo %date% %time%> "%ISARET%"/.test(cekimCmd));
+    kontrol("  ...temiz bitişte İŞARETİ siliyor", /del "%ISARET%"/.test(cekimCmd));
+    kontrol("  ...işaret duruyorsa UYARI yazıyor", cekimCmd.includes("ONCEKI KOSUM YARIM KALDI"));
+    /**
+     * ⛔ ÜÇ LOGA DA YAZAR: yalnız TY loguna yazsaydı _"HB neden çekmiyor"_
+     * diye bakan kişi kesintiyi hiç görmezdi (aynı gerekçe hazırlık
+     * satırında da geçerli).
+     */
+    const uyariSayisi = (cekimCmd.match(/ONCEKI KOSUM YARIM KALDI/g) ?? []).length;
+    kontrol(`  ...ÜÇ loga da yazıyor (${uyariSayisi})`, uyariSayisi === 3);
+    /**
+     * ⛔ UYARI BAŞLANGIÇ ANINI TAŞIR — VE BU BİR VAKADIR.
+     * İlk yazımda `for /f … do set ONCEKI=%%A` + `%ONCEKI%` kullanılmıştı;
+     * batch blok içinde `%VAR%` AYRIŞTIRMA anında okur ve değişken henüz
+     * ATANMAMIŞTIR. Uyarı düştü ama tarihi **BOŞ** çıktı: "yarım kaldı"
+     * diyor, NE ZAMANDAN BERİ demiyordu.
+     * _(Anayasa: "hata mesajını kısaltan her işlem teşhisi kısaltır".)_
+     * Çare `type` ile dosyayı doğrudan dökmek; gecikmeli genişletme yok.
+     */
+    kontrol(
+      "  ...başlangıç anı DOSYADAN dökülüyor (gecikmeli genişletme tuzağı yok)",
+      /type "%ISARET%"/.test(cekimCmd) && !/set ONCEKI=/.test(cekimCmd),
+    );
+    /**
+     * ⚠ BEYAN EDİLEN SINIR — BEKÇİNİN GÖREMEDİĞİ: `ExecutionTimeLimit PT4M`
+     * ve `Hidden` Görev Zamanlayıcı ayarıdır, depoda yaşamaz ve buradan
+     * ölçülemez. `.cmd` başlığı ikisini de gerekçesiyle yazıyor; bu ölçüt
+     * yalnız beyanın YERİNDE DURDUĞUNU sınar.
+     */
+    kontrol(
+      "süre sınırı ve gizli pencere kararı BAŞLIKTA beyan edilmiş",
+      cekimCmd.includes("ExecutionTimeLimit PT4M"),
+    );
+  }
+
   /* ── KİMLİK: SÜREÇ ORTAMI ÖNCE — DEĞER TESTİ (08.09.2026) ─────────────
    * ⛔ NİYE: `scripts/hb/istemci.ts` YALNIZ `.env.canli` dosyasını
    * okuyordu ve **Vercel'de o dosya YOK.** Uç `{atlandi:"KIMLIK"}` + HTTP

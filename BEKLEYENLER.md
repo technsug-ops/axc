@@ -13,6 +13,97 @@
 
 ---
 
+## ✅ K189 — ÇEKİM SESSİZCE 69 DAKİKA DURDU · 08.09.2026 · [KOD KOŞTU]
+
+> **Kullanıcı bulgusu:** _"Bunlar neden düşmedi, bir arıza mı var yoksa
+> yazıyor olmandan mı kaynaklı?"_ (12:02'de gelen iki TY siparişi)
+
+### ① TEŞHİS — arıza, ve benim yazımım değil
+
+    BASLADI-SIK 08.09.2026 11:07:02  hazirlik=0
+    ^CBatchvorgang abbrechen (J/N)?          ← CEVAP BEKLIYOR
+
+Konsol penceresinde **Ctrl+C**'ye basılmış; cmd _"Toplu işi sonlandır
+(E/H)?"_ diye sordu ve batch orada asılı kaldı. Görev `IgnoreNew` taşıdığı
+için 11:12'den itibaren gelen **her koşum reddedildi** (`-2147020576`).
+**69 dakika** hiçbir kanal çekilmedi; o pencerede 6 sipariş bekledi.
+Asılı süreç (PID 9312) sonlandırıldı, iki sipariş 12:16'da düştü.
+
+⛔ **VE KİMSE SÖYLEMEDİ — arızayı kullanıcı GÖZÜYLE yakaladı.** İki ayrı
+kusur birlikte çalıştı ve ikisi de bu sabahki kendi işimden doğdu.
+
+### ② KUSUR 1 — EŞİK RUTİNE BAĞLI DEĞİLDİ
+
+`TY_CEKIM_ESIK_SAAT = 26` ve gerekçesi kendi yorumunda yazılıydı: _"rutin
+GÜNLÜKTÜR (24 saat) + 2 saat pay."_ **K187 rutini 5 dakikaya çekti, eşik
+güncellenmedi.** 69 dakika = 1,15 saat → rozet kesinti boyunca **YEŞİL**.
+_(Anayasa: "kapsam genişlemesi, bağımlı listelerin de genişlemesidir".)_
+
+**ÇARE SAYIYI DÜZELTMEK DEĞİL, EŞİĞİ RUTİNE BAĞLAMAK:**
+
+    CEKIM_PERIYODU_DK = 5                    ← TEK KAYIT YERI
+    CEKIM_ESIK_DK     = 4 * CEKIM_PERIYODU_DK = 20 dk
+
+Çarpan **ölçülerek** seçildi (128 aralık): gövde `5,0–6 dk`da kapanıyor,
+sonra `38`e sıçrıyor — eşik o gediğe kondu. `1 × periyot` gövdenin İÇİNDE
+yanardı, `10 ×` bugünkü kesintiyi kaçırırdı.
+
+⭐ **ÜÇ KANAL DA ÖLÇÜLÜYOR.** Rozet yalnız TY'ye bakıyordu; K187 aynı göreve
+HB ve N11'i de eklemişti. Artık üçünün **EN KÖTÜSÜ** çiziliyor — "en yeni"ye
+bakan bir rozet iki kanal ölse bile yeşil kalırdı. Sıra `YOK > ESKİ > TAZE`.
+
+**BEKÇİ:** eski ölçüt `TY_CEKIM_ESIK_SAAT === 26` idi ve **sayıyı**
+sabitliyordu; yenisi **türetmeyi** sabitliyor (`CEKIM_ESIK_DK === 4 ×
+CEKIM_PERIYODU_DK`) — periyot bir daha değişirse eşik onunla yürür.
+10 ölçüt, aralarında _"08.09'daki 69 dk'lık kesinti ARTIK yakalanıyor"_.
+
+### ③ KUSUR 2 — SESSİZ REDDETME (kök sebep)
+
+Ölçüldü:
+
+    ExecutionTimeLimit : PT72H    ← asili kosum UC GUN engelleyebilirdi
+    Hidden             : False    ← gorunur pencere = Ctrl+C daveti
+    MultipleInstances  : IgnoreNew
+
+⭐ **MİMARIN (a)/(b) İKİLİSİNDEN FARKLI, ÜÇÜNCÜ YOL — VE İKİSİNİ BİRDEN
+KAPATIYOR.** (a) "Ctrl+C yutulsun" batch'te güvenilir değil; (b) `Parallel`
+veri yarışı, `Queue` gecikme biriktirir. Doğru cevap **tetiği kaldırmak +
+kapsamayı sınırlamak**:
+
+| ne | eski | yeni | gerekçe |
+|---|---|---|---|
+| `Hidden` | False | **True** | pencere yoksa Ctrl+C vektörü de yok |
+| `ExecutionTimeLimit` | PT72H | **PT4M** | asılı örnek bir sonrakini engelleyemez |
+| `MultipleInstances` | IgnoreNew | IgnoreNew | süre sınırıyla artık GÜVENLİ |
+
+**PT4M ölçülerek seçildi** (999 koşum): `ortanca 10 sn · p95 28 · max 176 sn`.
+Aralık 300 sn → gedik `176…300`. 240 sn, gözlenen en uzun koşumun **1,36
+katı** ve aralığın 60 sn altında.
+
+### ④ GÖRÜNÜRLÜK — yarım koşum işareti
+
+Reddetme Görev Zamanlayıcı'da olur, betik onu göremez. **Ama yarım kalan
+koşumu BİR SONRAKİ koşum görebilir:** işaret dosyası başlangıçta yazılır,
+temiz bitişte silinir; duruyorsa **üç loga da** uyarı düşer.
+
+    !! ONCEKI KOSUM YARIM KALDI - baslangici asagida:
+    08.09.2026 11:07:02,23
+
+⛔ **VE İLK YAZIMIM BOZUKTU — YAZILIYOR.** `for /f … do set ONCEKI` +
+`%ONCEKI%` kullanmıştım; batch blok içinde `%VAR%`ı AYRIŞTIRMA anında okur ve
+değişken henüz atanmamıştır. Uyarı düştü ama **tarihi BOŞ** çıktı: "yarım
+kaldı" diyor, ne zamandan beri demiyordu. _(Anayasa: "hata mesajını kısaltan
+her işlem teşhisi kısaltır".)_ Çare `type` ile dosyayı doğrudan dökmek.
+
+**BEKÇİ + ÜÇ MUTASYON:** uyarıyı silen · işaret silmeyi kaldıran · gecikmeli
+genişletme tuzağını geri getiren → **üçü de KIRMIZI**, doğru ölçütle.
+
+⚠ **BEYAN EDİLEN SINIR:** `ExecutionTimeLimit` ve `Hidden` Görev Zamanlayıcı
+ayarıdır, depoda yaşamaz ve bekçi ölçemez. `.cmd` başlığı ikisini de
+gerekçesiyle yazıyor; bekçi yalnız **beyanın yerinde durduğunu** sınıyor.
+
+---
+
 ## ✅ K188-④ — LAMBORGHINI ZİNCİRİ TAMAMLANDI (4/4) · 08.09.2026 · [KOŞTU — canlı]
 
 > **Mimar+Halil onayı 08.09, dört adım.** Üçüncü adım deponun kendi kuralına

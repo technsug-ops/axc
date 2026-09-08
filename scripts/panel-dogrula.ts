@@ -18,7 +18,13 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { TY_CEKIM_ESIK_SAAT, tyCekimDurumu } from "../src/lib/panel/ty-cekim-yasi";
+import {
+  CEKIM_ESIK_DK,
+  CEKIM_KANALLARI,
+  CEKIM_PERIYODU_DK,
+  cekimDurumu,
+  enKotuCekim,
+} from "../src/lib/panel/ty-cekim-yasi";
 import {
   duzenGecerliMi,
   duzeniCoz,
@@ -5568,19 +5574,49 @@ console.log("\nZAMAN TABLOSU SIRASI — EN YENİ ÜSTTE (K125)");
  *  Eşiğin İKİ YAKASI ayrı sınanır; YOK dalı ayrı — yokluk tazelik
  *  sanılmasın (boş ≠ temiz). Kaynak: lib/panel/ty-cekim-yasi. */
 {
-const an = new Date("2026-09-04T12:00:00Z");
-const st = (saatOnce: number) => new Date(an.getTime() - saatOnce * 3_600_000);
-kontrol("TY rozeti: iz yoksa YOK (0 saat değil)",
-  tyCekimDurumu(null, an).durum === "YOK");
-kontrol("TY rozeti: 25 saat TAZE (eşik 26'nın altı)",
-  tyCekimDurumu(st(25), an).durum === "TAZE");
-kontrol("TY rozeti: 27 saat ESKİ (eşik aşıldı — rutin kaçtı)",
-  tyCekimDurumu(st(27), an).durum === "ESKI");
-kontrol("TY rozeti: eşik sabiti rutinden türetilmiş (26 = 24+2 pay)",
-  TY_CEKIM_ESIK_SAAT === 26);
+/**
+ * ⚠ ÖLÇÜTLER ESKİDİ VE GÜNCELLENDİ (K189, 08.09.2026) — SUSTURULMADI.
+ * Eski hâl `TY_CEKIM_ESIK_SAAT === 26` idi ve gerekçesi "rutin GÜNLÜK".
+ * K187 rutini 5 DAKİKAYA çekti; eşik güncellenmeyince 69 dakikalık tam
+ * kesinti boyunca rozet YEŞİL kaldı ve arızayı kullanıcı gözüyle yakaladı.
+ * ⭐ Ölçüt artık SAYIYI değil TÜRETMEYİ sabitliyor: periyot bir daha
+ * değişirse eşik onunla yürür ve aynı hata tekrar edemez.
+ */
+const an = new Date("2026-09-08T12:00:00Z");
+const dkOnce = (dk: number) => new Date(an.getTime() - dk * 60_000);
+kontrol("çekim rozeti: iz yoksa YOK (0 dk değil)",
+  cekimDurumu(null, an).durum === "YOK");
+kontrol("çekim rozeti: eşiğin ALTI TAZE",
+  cekimDurumu(dkOnce(CEKIM_ESIK_DK - 1), an).durum === "TAZE");
+kontrol("çekim rozeti: eşiğin ÜSTÜ ESKİ (rutin kaçtı)",
+  cekimDurumu(dkOnce(CEKIM_ESIK_DK + 1), an).durum === "ESKI");
+kontrol("eşik RUTİNDEN TÜRETİLİYOR (4 × periyot), sabit sayı DEĞİL",
+  CEKIM_ESIK_DK === 4 * CEKIM_PERIYODU_DK);
+/** ⛔ 69 DAKİKALIK KESİNTİ VAKASI: eski eşik bunu kaçırıyordu. */
+kontrol("  ...08.09'daki 69 dk'lık kesinti ARTIK yakalanıyor",
+  cekimDurumu(dkOnce(69), an).durum === "ESKI");
+/** ⛔ ÜÇ KANAL: yalnız TY'ye bakan rozet HB tek başına düşse susardı. */
+kontrol("üç kanal da ölçülüyor (TY · HB · N11)",
+  CEKIM_KANALLARI.length === 3 &&
+    ["TY", "HB", "N11"].every((k) =>
+      CEKIM_KANALLARI.some((c) => c.kod === k)));
+kontrol("  ...her kanalın kendi izi var",
+  new Set(CEKIM_KANALLARI.map((c) => c.iz)).size === 3);
+/** ⛔ EN KÖTÜSÜ ÇİZİLİR — "en yeni" olsaydı iki kanal ölse bile yeşil kalırdı. */
+{
+  const taze = { kod: "TY" as const, durum: cekimDurumu(dkOnce(1), an) };
+  const eski = { kod: "HB" as const, durum: cekimDurumu(dkOnce(90), an) };
+  const yok = { kod: "N11" as const, durum: cekimDurumu(null, an) };
+  kontrol("en KÖTÜ kanal seçiliyor (taze + eski → eski)",
+    enKotuCekim([taze, eski])?.kod === "HB");
+  kontrol("  ...YOK, ESKİ'den de ağır", enKotuCekim([eski, yok])?.kod === "N11");
+  kontrol("  ...hepsi tazeyse en YAŞLI olan",
+    enKotuCekim([taze, { kod: "HB", durum: cekimDurumu(dkOnce(3), an) }])?.kod === "HB");
+}
 const panelKaynagi = readFileSync("src/app/page.tsx", "utf8");
 kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
-  /tyCekimDurumu\(await sonTyCekimi\(prisma\), new Date\(\)\)/.test(panelKaynagi));
+  /const cekimler = await sonCekimler\(prisma, new Date\(\)\);/.test(panelKaynagi) &&
+    /enKotuCekim\(cekimler\)/.test(panelKaynagi));
 }
 
 /**
