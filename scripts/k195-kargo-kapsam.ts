@@ -22,6 +22,23 @@ async function main() {
   const toplam = await prisma.sale.count();
   const kargoluDefter = await prisma.sale.count({ where: { NOT: { shippedAt: null } } });
   console.log(`\n① DEFTER: satış ${toplam} · shippedAt DOLU ${kargoluDefter} · BOŞ ${toplam - kargoluDefter}`);
+  /**
+   * TESLİM TARAFI (eklendi 09.09.2026, K195-2) — sütunlar açıldı ve
+   * yazıcıları bağlandı; DOLDUKLARI ayrıca ölçülür. "Yazıcı var" ile
+   * "yazıyor" farklı iddialardır.
+   */
+  const teslimli = await prisma.sale.count({ where: { NOT: { deliveredAt: null } } });
+  const takipli = await prisma.sale.count({
+    where: { NOT: { kargoTakipBaglantisi: null } },
+  });
+  const firmali = await prisma.sale.count({
+    where: { NOT: { kanalKargoFirmasi: null } },
+  });
+  console.log(
+    "   TESLİM TARAFI: deliveredAt " + teslimli +
+      " · takip bağlantısı " + takipli +
+      " · kanal kargo firması " + firmali,
+  );
 
   const k = kimlikOku();
   if (!k) { console.log("⛔ HB kimlikleri yok"); await prisma.$disconnect(); return; }

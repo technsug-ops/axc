@@ -3973,6 +3973,40 @@ _(Bu, "şemadaki alan da bir iddiadır" ve "kolon başlığı bir iddiadır"
 derslerinin DOSYA tarafı: orada bir alanın adı yanlış okunuyordu, burada bir
 dosyanın adı iki kavram taşıyor.)_
 
+
+### BİR ALANIN VARLIĞI TEK KAYITTAN OKUNMAZ — JSON BOŞ ALANI HİÇ GÖNDERMEZ (KESİN KURAL)
+
+_Bulgu 09.09.2026, K195-②._ Bir dış kaynağın hangi alanları verdiğini
+öğrenmek için **ilk kaydın anahtarlarına** bakmak (`Object.keys(liste[0])`)
+yaygın ve kolaydır. Ama JSON üreten API'ler boş bir alanı çoğu zaman
+**hiç göndermez** — yani anahtar listesi kayıttan kayda DEĞİŞİR.
+
+**Vaka:** Trendyol paket ucu sabah `cargoTrackingLink` alanını listeledi,
+öğleden sonra **listelemedi**. Aynı uç, aynı hesap, iki farklı ilk kayıt.
+Ölçüm buna dayanıp _"TY bu alanı veriyor ✓"_ dedi ve o "✓" bir **sütun açma
+kararının** gerekçesine girdi. Doluluk ölçülünce gerçek çıktı:
+
+    cargoProviderName    50/50   ← her pakette
+    cargoTrackingNumber  50/50
+    cargoTrackingLink    30/50   ← yalnız KARGOYA VERİLMİŞ pakette
+    sellerDeliveryMethod  0/50   ← anahtar VAR, değer HİÇ YOK
+
+⚠ **SON SATIR EN ÖĞRETİCİSİ:** alan listede duruyor ve **hiçbir kayıtta
+dolu değil.** Anahtarın varlığı, verinin varlığı DEĞİLDİR.
+
+> **KURAL:** bir dış kaynağın alan kümesi **bütün kayıtların BİRLEŞİMİNDEN**
+> çıkarılır, ve her alanın yanına **DOLULUĞU** (dolu/toplam) yazılır.
+> Tek kayda bakan bir ölçüm, "alan var mı" sorusunu değil "bu kayıtta var
+> mı" sorusunu cevaplar — ve ikisi aynı sanılır.
+
+⚠ **VE SÜTUN KARARI DOLULUĞA BAKAR:** `30/50` bir sütunu haksız çıkarmaz
+(kargolanmamış pakette takip bağlantısı OLMAMASI doğrudur), ama **iddiayı
+değiştirir**: "kanal bunu veriyor" yerine "kanal bunu kargolanmış pakette
+veriyor" yazılır. Panoya konan koşulsuz bir `✓`, tutmadığı bir söz olur.
+
+_(Kardeşi: "alanın dolu olması olayın gerçekleştiğini göstermez" — orada
+DOLULUK yanlış okunuyordu, burada VARLIK.)_
+
 ### İKİ KAPI AYNI ŞEYİ KORUYORSA, MUTASYON KAPI BAŞINA İZOLE EDİLİR (KESİN KURAL)
 
 _Ders 02.09.2026, K133 gezinme paketi._ Bir değeri iki kapı birden

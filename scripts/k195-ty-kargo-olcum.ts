@@ -40,6 +40,24 @@ async function main() {
       }
     }
   }
+  /**
+   * ⛔ ALAN ADI LİSTESİ, İLK PAKETTEN OKUNUYORDU — VE BU YANILTTI.
+   * (Bulgu 09.09.2026, K195-2.) TY bir alanı BOŞSA hiç göndermiyor:
+   * `cargoTrackingLink` sabah ölçümünde listede vardı, öğleden sonrakinde
+   * YOKTU. Tek pakete bakan bir ölçüm "alan var" der ve o iddia üstüne
+   * sütun açılır. Doğrusu: anahtarların BİRLEŞİMİ + her alanın DOLULUĞU.
+   */
+  const tumAlanlar = new Set<string>();
+  for (const p of liste) for (const a of Object.keys(p as object)) tumAlanlar.add(a);
+  console.log("\nALAN DOLULUĞU (dolu/toplam · birleşim kümesinden):");
+  for (const a of [...tumAlanlar].sort()) {
+    if (!/cargo|track|provider|deliver/i.test(a)) continue;
+    const dolu = liste.filter((p) => {
+      const v = (p as Record<string, unknown>)[a];
+      return v !== null && v !== undefined && v !== "";
+    });
+    console.log("   " + a.padEnd(24) + String(dolu.length).padStart(3) + "/" + liste.length);
+  }
   console.log("\nPAKET DURUMLARI:");
   for (const [d, n] of [...durumlar].sort((a, b) => b[1] - a[1])) console.log("   " + d.padEnd(20) + n);
   console.log("\npackageHistories OLAN paket: " + gecmisiOlan + "/" + liste.length);

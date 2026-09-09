@@ -298,8 +298,31 @@ boş bir vaattir (K52). Bu yüzden açmadan önce üç kanal da ölçüldü:
 | sütun | TY | N11 | HB |
 |---|---|---|---|
 | `deliveredAt` | ✓ `Delivered` (epoch → AN) | ✓ aynı şekil | ✓ `DeliveredDate` (dilimsiz → GÜN) |
-| `kargoTakipBaglantisi` | ✓ `cargoTrackingLink` | ✓ | ⛔ **YOK — ölçüldü** |
-| `kanalKargoFirmasi` | ✓ `cargoProviderName` | ✓ | ⛔ **YOK — ölçüldü** |
+| `kargoTakipBaglantisi` | ⚠ `cargoTrackingLink` **30/50** | ⚠ kısmi | ⛔ **YOK — ölçüldü** |
+| `kanalKargoFirmasi` | ✓ `cargoProviderName` **50/50** | ✓ | ⛔ **YOK — ölçüldü** |
+
+⛔ **VE İLK "✓" YANLIŞTI — DÜZELTMESİ BURADA DURUYOR.** `cargoTrackingLink`
+için önce koşulsuz "✓" yazmıştım; ölçüm **tek paketin** anahtar listesine
+dayanıyordu. Gerçek doluluk **30/50** — yalnız kargoya verilmiş paketlerde
+var. Sütun yine doğru (boş kalması doğru), ama iddia fazlaydı.
+
+### ✅ CANLIDA DOĞRULANDI — YAZICI GERÇEKTEN YAZIYOR
+
+Klon istemciyi tazeledikten (13:43:57) sonraki **İLK** turda yazıldı:
+
+    TY  13:44:19  teslim damgasi  6 · takip/firma 46
+    HB            teslim damgasi 50 · (kanal takip/firma VERMIYOR)
+    N11           teslim damgasi  3 · takip/firma  4
+
+    defter: deliveredAt 59 = 6 + 50 + 3   ✓ birebir
+            takip baglantisi 31 · kanal kargo firmasi 51
+
+⚠ **VE SONRAKİ TURLARIN `0` YAZMASI DOĞRU DAVRANIŞTIR** — ama ben önce
+"yazıcı çalışmıyor" diye okudum. Son üç tura bakmıştım ve üçü de ilk
+doldurmadan SONRAYDI. `0` burada _"hiçbir şey çalışmıyor"_ değil
+**_"yapılacak yeni bir şey yok"_** demek.
+_(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+değildir" — bu kez denetimi yapan bendim ve ayırt etmedim.)_
 
 ⚠ **HB'NİN BOŞLUĞU EKSİKLİK DEĞİL, ÖLÇÜLMÜŞ SINIR** (`canli:kargo-alan-olcum`):
 teslim ucu `Id · Barcode · PackageNumber · OrderNumber · OrderNumbers ·
