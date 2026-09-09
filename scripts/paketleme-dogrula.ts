@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import {
   PAKETLEME_ADIMLARI,
   kalemBul,
+  kalemTamTeyitliMi,
   rafKarari,
   paketlenebilirMi,
   rafiEksikOlanlar,
@@ -54,7 +55,7 @@ function kalem(ek: Partial<PaketKalemi> & { saleItemId: string }): PaketKalemi {
     barcode: `BAR-${ek.saleItemId}`,
     adet: 1,
     rafKodu: "A-01",
-    teyitli: false,
+    teyitliAdet: 0,
     ...ek,
   };
 }
@@ -149,8 +150,8 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
     paketlenebilirMi(siparis([kalem({ saleItemId: "a" })])) === false,
   );
   kontrol(
-    "bir kalem teyitli → basılabilir",
-    paketlenebilirMi(siparis([kalem({ saleItemId: "a", teyitli: true })])) === true,
+    "bir kalem TAM teyitli → basılabilir",
+    paketlenebilirMi(siparis([kalem({ saleItemId: "a", teyitliAdet: 1 })])) === true,
   );
   /**
    * ⚠ BUGÜN TEK KALEM YETER — ölçülmüş karar, tercih değil: canlıda çok
@@ -161,8 +162,47 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   kontrol(
     "çok kalemlide bir teyit BUGÜN yeter (ölçülmüş karar)",
     paketlenebilirMi(
-      siparis([kalem({ saleItemId: "a", teyitli: true }), kalem({ saleItemId: "b" })]),
+      siparis([
+        kalem({ saleItemId: "a", teyitliAdet: 1 }),
+        kalem({ saleItemId: "b" }),
+      ]),
     ) === true,
+  );
+
+  /**
+   * ═══ K203 (10.09.2026) — AYNI ÜRÜNDEN BİRDEN FAZLA ADET ══════════════
+   * ⛔ HALİL'İN FOTOĞRAFLA BULDUĞU KUSUR: `adet: 2` olan bir kalemde TEK
+   * okutma "eşleşti — paketleyebilirsiniz" diyordu. Bu, "çok kalemli
+   * sipariş" (yukarıdaki ölçülmüş karar) İLE KARIŞTIRILMAZ — o KALEM
+   * SAYISI sorusu, bu TEK KALEMİN İÇİNDEKİ ADET sorusu.
+   */
+  console.log("\n3b) AYNI ÜRÜNDEN BİRDEN FAZLA ADET (K203)");
+  kontrol(
+    "kalemTamTeyitliMi: adet=2, 1 okutuldu → HAYIR",
+    kalemTamTeyitliMi(kalem({ saleItemId: "a", adet: 2, teyitliAdet: 1 })) === false,
+  );
+  kontrol(
+    "kalemTamTeyitliMi: adet=2, 2 okutuldu → EVET",
+    kalemTamTeyitliMi(kalem({ saleItemId: "a", adet: 2, teyitliAdet: 2 })) === true,
+  );
+  kontrol(
+    "⭐ ASIL VAKA: adet=2, TEK okutma → PAKETLENEMEZ",
+    paketlenebilirMi(
+      siparis([kalem({ saleItemId: "a", adet: 2, teyitliAdet: 1 })]),
+    ) === false,
+    "Halil'in fotoğrafı: TEFAL MB470B, adet 2, tek okutma sonrası 'eşleşti' diyordu",
+  );
+  kontrol(
+    "adet=2, İKİ okutma → paketlenebilir",
+    paketlenebilirMi(
+      siparis([kalem({ saleItemId: "a", adet: 2, teyitliAdet: 2 })]),
+    ) === true,
+  );
+  /** ⚠ ÜÇÜNCÜ OKUTMA (fazladan) TAVANI AŞMAZ — fiziksel olarak 2 taneden fazlası yok. */
+  kontrol(
+    "adet=2, teyitliAdet asla adedi AŞMAZ (tavan bekçi tarafında değil, veri tarafında test edilir)",
+    kalemTamTeyitliMi(kalem({ saleItemId: "a", adet: 2, teyitliAdet: 2 })) === true &&
+      !kalemTamTeyitliMi(kalem({ saleItemId: "a", adet: 2, teyitliAdet: 1 })),
   );
 }
 
@@ -176,8 +216,9 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   /** ⚠ RAF EKSİKLİĞİ PAKETLEMEYİ ENGELLEMEZ — bilgi, kapı değil. */
   kontrol(
     "rafsız kalem paketlemeyi ENGELLEMEZ",
-    paketlenebilirMi(siparis([kalem({ saleItemId: "b", rafKodu: null, teyitli: true })])) ===
-      true,
+    paketlenebilirMi(
+      siparis([kalem({ saleItemId: "b", rafKodu: null, teyitliAdet: 1 })]),
+    ) === true,
   );
 }
 
@@ -195,9 +236,41 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
     .replace(/^\s*\/\/.*$/gm, "");
 
-  for (const cagri of ["kalemBul(", "paketlenebilirMi(", "siradakiAdim(", "rafiEksikOlanlar("]) {
+  for (const cagri of [
+    "kalemBul(",
+    "paketlenebilirMi(",
+    "siradakiAdim(",
+    "rafiEksikOlanlar(",
+    "kalemTamTeyitliMi(",
+  ]) {
     kontrol(`  ${cagri} çağrılıyor`, yorumsuz.includes(cagri));
   }
+
+  /**
+   * ═══ K203 — TEYİT SAYACI ARTIYOR VE `adet`TE TAVANLANIYOR ═══════════
+   * ⛔ SAF GÖVDEDE ADET TAVANI YOK (`kalemTamTeyitliMi` yalnız KARŞILAŞTIRIR,
+   * yazmaz) — tavanlama İSTEMCİDE, `urunTeyitEt` içinde olmak ZORUNDA. Bu
+   * yüzden burada bir DEĞER testi değil, KULLANIM BLOĞUNA daraltılmış bir
+   * desen kontrolü var: `Math.min(` ile `.adet)` aynı artırma ifadesinde.
+   */
+  const teyitFonksiyonuBasi = yorumsuz.indexOf("const urunTeyitEt");
+  const teyitFonksiyonuSonu = yorumsuz.indexOf(
+    "const paketlendi = ()",
+    teyitFonksiyonuBasi,
+  );
+  const teyitFonksiyonuBlogu =
+    teyitFonksiyonuBasi < 0 || teyitFonksiyonuSonu < 0
+      ? ""
+      : yorumsuz.slice(teyitFonksiyonuBasi, teyitFonksiyonuSonu);
+  kontrol("teyit fonksiyonu (urunTeyitEt) bulundu", teyitFonksiyonuBlogu.length > 0);
+  kontrol(
+    "  ...sayaç Math.min ile TAVANLANIYOR (adete)",
+    /Math\.min\([^)]*\.adet\)/.test(teyitFonksiyonuBlogu),
+  );
+  kontrol(
+    "  ...zaten-tam durumu AYRICA işaretleniyor (fazladan okutma sessiz kalmaz)",
+    teyitFonksiyonuBlogu.includes("zatenTamdi"),
+  );
 
   /**
    * ⚠ KAMERA HER YERDE (İlke #7). Ölçüt SAYIM DEĞİL DESEN YASAĞI: çıplak
@@ -264,6 +337,55 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
     sesCagrisi !== null && !/^(true|false)$/.test(sesCagrisi[1].trim()),
     sesCagrisi?.[1],
   );
+
+  /**
+   * ═══ K203 — ÜÇ MESAJ ÜÇÜNÜN DE EKRANDA ÇİZİLDİĞİ ═══════════════════════
+   * ⛔ Tek "eşleşti" cümlesi HER durumda basılırsa (adet fark etmeksizin)
+   * kusurun kendisi geri gelir. Üç sözlük anahtarının üçü de kullanım
+   * bloğunda geçmeli — ve bloğun İÇİNDE, dosyanın herhangi bir yerinde değil.
+   */
+  /**
+   * ⚠ ÇAPA "adim === "ESLESTI"" DEĞİL — bu dize dosyada İKİ kez geçiyor
+   * (rozet rengi + mesaj bloğu). Rozet dalı BİRİNCİ eşleşme; mesaj bloğu
+   * kendine özgü bir dize taşıyor (`&& sonTeyitDetay`) ve çapa ona bağlandı.
+   */
+  const eslestiBlokBasi = yorumsuz.indexOf('adim === "ESLESTI" && sonTeyitDetay');
+  const eslestiBlok =
+    eslestiBlokBasi < 0 ? "" : yorumsuz.slice(eslestiBlokBasi, eslestiBlokBasi + 700);
+  kontrol("ESLESTI bloğu bulundu", eslestiBlok.length > 0);
+  for (const anahtar of ["eslesti", "eslestiDevamEdiyor", "eslestiZatenTam"]) {
+    kontrol(`  ...${anahtar} bu blokta çiziliyor`, eslestiBlok.includes(`t("${anahtar}")`) || eslestiBlok.includes(`t("${anahtar}",`));
+  }
+  /** ⚠ ÜÇ SÖZLÜK ANAHTARI DA DOLU — boş kalan bir cümle sessiz bir boşluk üretir. */
+  const paketSozlukK203 = (
+    JSON.parse(readFileSync("messages/tr.json", "utf8")) as { Paketle: Record<string, string> }
+  ).Paketle;
+  for (const anahtar of ["eslesti", "eslestiDevamEdiyor", "eslestiZatenTam"]) {
+    kontrol(
+      `  ${anahtar} sözlükte dolu`,
+      typeof paketSozlukK203[anahtar] === "string" && paketSozlukK203[anahtar].length > 10,
+    );
+  }
+  kontrol(
+    "eslestiDevamEdiyor KAÇ TANE KALDIĞINI söylüyor ({kalan})",
+    (paketSozlukK203.eslestiDevamEdiyor ?? "").includes("{kalan}"),
+  );
+
+  /** ⚠ SATIR GÖSTERİMİ: kısmi teyit tam teyitle AYNI RENK olamaz (bitti yanılgısı). */
+  /** ⚠ PENCERE ÖLÇÜLDÜ: fonksiyonun tamamı (rakam kutusuna kadar) ~1700 karakter. */
+  const kalemSatiriBasi = yorumsuz.indexOf("function KalemSatiri");
+  const kalemSatiriBlogu =
+    kalemSatiriBasi < 0 ? "" : yorumsuz.slice(kalemSatiriBasi, kalemSatiriBasi + 2200);
+  kontrol(
+    "KalemSatiri tam/kısmi teyidi AYRI renklerle çiziyor",
+    /DURUM_KUTUSU\.olumlu/.test(kalemSatiriBlogu) &&
+      /DURUM_KUTUSU\.bilgi/.test(kalemSatiriBlogu) &&
+      kalemSatiriBlogu.includes("kalemTamTeyitliMi("),
+  );
+  kontrol(
+    "adet kutusu okutulan/toplam ORANI gösteriyor (teyitliAdet)",
+    kalemSatiriBlogu.includes("kalem.teyitliAdet") && kalemSatiriBlogu.includes("kalem.adet"),
+  );
 }
 
 // --- 6) SUNUCU EYLEMİ — SÜZGEÇ ÇAĞRI YERİNDE -------------------------------
@@ -297,7 +419,7 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   /** ⚠ RAF OKUNMADAN bu ekranın varlık sebebi kalmaz. */
   kontrol("raf (location) seçiliyor", /location:\s*\{\s*select/.test(yorumsuz));
   /** ⚠ TEYİT SUNUCUDAN GELMEZ — okutularak kurulur. */
-  kontrol("kalemler teyitsiz doğar", /teyitli:\s*false/.test(yorumsuz));
+  kontrol("kalemler teyitsiz doğar (sayaç sıfır)", /teyitliAdet:\s*0/.test(yorumsuz));
   /**
    * ⚠ İKİNCİ YAZMA YOLU AÇILMADI: paketlendi izi tek yerde.
    *
@@ -456,7 +578,7 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
     barcode: "111",
     adet: 1,
     rafKodu: "RAF-SLN1-1",
-    teyitli: false,
+    teyitliAdet: 0,
     ...ek,
   });
 
@@ -532,7 +654,7 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
     "teyitli kalem de rafta GÖRÜNÜYOR",
     (() => {
       const t = kalemler.map((k) =>
-        k.saleItemId === "s1" ? { ...k, teyitli: true } : k,
+        k.saleItemId === "s1" ? { ...k, teyitliAdet: k.adet } : k,
       );
       const r = rafKarari(t, "RAF-SLN1-1");
       return r.tur === "RAFTA_VAR" && r.kalemler.length === 2;
@@ -549,9 +671,11 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
 
   /**
    * ⛔ ÖLÇÜT DALIN KENDİSİNE BAĞLI — dosya geneline değil.
-   * Raf dalı, kalemi teyitli yapan satıra ULAŞMADAN dönmeli. Dosya
-   * genelinde `teyitli: true` aransaydı ürün dalındaki meşru kullanım
-   * mutasyonu ayakta tutardı.
+   * Raf dalı, kalemin `teyitliAdet` sayacına ULAŞMADAN dönmeli. Dosya
+   * genelinde `teyitliAdet` aransaydı ürün dalındaki (urunTeyitEt) meşru
+   * kullanım mutasyonu ayakta tutardı — K203 ile alan adı değişti, ölçüt de
+   * onunla birlikte güncellendi (isim değişince aynı davranış aynı pencerede
+   * yeniden aranır).
    */
   const dalBas = pY.indexOf('const raf = rafKarari(');
   const dalSon = pY.indexOf("setRafNotu(null);", dalBas);
@@ -560,8 +684,8 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   /** ⚠ PENCERE ÖLÇÜLDÜ: dal ~500 karakter; büyürse bu ölçü güncellenir. */
   kontrol("  ...ve dal makul uzunlukta (kapsam kaymadı)", rafDali.length < 1200);
   kontrol(
-    "① raf okuması kalemi TEYİTLİ YAPMIYOR",
-    rafDali.length > 0 && !/teyitli: true/.test(rafDali),
+    "① raf okuması kalemin teyitliAdet SAYACINA DOKUNMUYOR",
+    rafDali.length > 0 && !/teyitliAdet/.test(rafDali),
   );
   kontrol(
     "  ...ve ürün teyidi durumuna DOKUNMUYOR",

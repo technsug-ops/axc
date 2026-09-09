@@ -171,7 +171,7 @@ export async function paketlemeIcinAra(kod: string): Promise<PaketAramasi> {
         /* Akışın ASIL çıktısı. `null` ise ekran "raf girilmemiş" der. */
         rafKodu: k.variant.location?.code ?? null,
         /* Teyit istemcide okutularak kurulur; sunucudan teyitli gelmez. */
-        teyitli: false,
+        teyitliAdet: 0,
       })),
       hazirlaniyor: hazirlaniyorMu(izler),
       /**

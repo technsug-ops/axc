@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import {
   kalemBul,
+  kalemTamTeyitliMi,
   rafKarari,
   paketlenebilirMi,
   rafiEksikOlanlar,
@@ -110,6 +111,17 @@ export function Paketleyici({
   const [sonOkumaEslestiMi, setSonOkuma] = useState<boolean | null>(null);
   const [okunmayanKod, setOkunmayanKod] = useState<string | null>(null);
   /**
+   * K203 — SON EŞLEŞMENİN ADET DETAYI. `sonOkumaEslestiMi` yalnız "eşleşti
+   * mi" sorusuna cevap verir; bu ayrıca "kaçıncı adet" sorusuna cevap verir,
+   * çünkü aynı ESLESTI adımı üç FARKLI cümle gerektirebilir: devam ediyor ·
+   * tamamlandı · zaten tamdı (fazladan okutma).
+   */
+  const [sonTeyitDetay, setSonTeyitDetay] = useState<{
+    teyitliAdet: number;
+    adet: number;
+    zatenTamdi: boolean;
+  } | null>(null);
+  /**
    * RAF DOĞRULAMASI (K50 ⑤) — AYRI DURUM, `sonOkumaEslestiMi`DEN BAĞIMSIZ.
    *
    * ⛔ Aynı duruma yazılsaydı raf okumak bir ÜRÜN TEYİDİ gibi görünürdü ve
@@ -139,6 +151,7 @@ export function Paketleyici({
       setSiparis(cevap.durum === "BULUNDU" ? cevap.siparis : null);
       setBulunamadi(cevap.durum === "BULUNDU" ? null : cevap);
       setSonOkuma(null);
+      setSonTeyitDetay(null);
       setOkunmayanKod(null);
       setUrunKodu("");
       if (cevap.durum === "BULUNDU") urunOdagi.current?.focus();
@@ -188,12 +201,30 @@ export function Paketleyici({
     tonCal(bulunan !== null);
 
     if (bulunan) {
+      /**
+       * K203 — HER OKUTMA SAYACI 1 ARTIRIR, `adet`TE TAVANLANIR. Zaten tam
+       * teyitli bir kalem tekrar okutulursa (fazladan/yanlışlıkla) sayaç
+       * artmaz — o durum `zatenTamdi` ile AYRICA işaretlenir ki ekran
+       * "bir şey oldu ama neydi" boşluğunda kalmasın.
+       */
+      const eskiTeyitliAdet = bulunan.kalem.teyitliAdet;
+      const zatenTamdi = eskiTeyitliAdet >= bulunan.kalem.adet;
+      const yeniTeyitliAdet = Math.min(eskiTeyitliAdet + 1, bulunan.kalem.adet);
+      setSonTeyitDetay({
+        teyitliAdet: yeniTeyitliAdet,
+        adet: bulunan.kalem.adet,
+        zatenTamdi,
+      });
       setSiparis({
         ...siparis,
         kalemler: siparis.kalemler.map((k) =>
-          k.saleItemId === bulunan.kalem.saleItemId ? { ...k, teyitli: true } : k,
+          k.saleItemId === bulunan.kalem.saleItemId
+            ? { ...k, teyitliAdet: yeniTeyitliAdet }
+            : k,
         ),
       });
+    } else {
+      setSonTeyitDetay(null);
     }
     setUrunKodu("");
     urunOdagi.current?.focus();
@@ -224,6 +255,7 @@ export function Paketleyici({
     setKargoKodu("");
     setUrunKodu("");
     setSonOkuma(null);
+    setSonTeyitDetay(null);
     setOkunmayanKod(null);
     setBulunamadi(null);
     kargoOdagi.current?.focus();
@@ -363,9 +395,27 @@ export function Paketleyici({
               </div>
             ) : null}
 
-            {adim === "ESLESTI" ? (
+            {/*
+              ═══ K203 — AYNI "EŞLEŞTİ" ADIMI ÜÇ FARKLI CÜMLE TAŞIR ═══════
+              ⛔ NİYE: `adet: 2` olan bir kalemde tek okutma "eşleştirilebilir
+              — paketleyebilirsiniz" derse, ikinci fiziksel birim hiç
+              doğrulanmadan paketlenir (Halil'in fotoğrafla bulduğu kusur,
+              10.09.2026). Renk hâlâ OLUMLU (doğru ürün, iyi haber) ama
+              metin DEVAM EDİYOR mu TAMAMLANDI mı ayrı söylüyor.
+            */}
+            {adim === "ESLESTI" && sonTeyitDetay ? (
               <div className={`rounded-md p-3 ${DURUM_KUTUSU.olumlu}`} role="status">
-                <p className="text-sm font-medium">{t("eslesti")}</p>
+                <p className="text-sm font-medium">
+                  {sonTeyitDetay.zatenTamdi
+                    ? t("eslestiZatenTam", { adet: sonTeyitDetay.adet })
+                    : sonTeyitDetay.teyitliAdet < sonTeyitDetay.adet
+                      ? t("eslestiDevamEdiyor", {
+                          teyitli: sonTeyitDetay.teyitliAdet,
+                          adet: sonTeyitDetay.adet,
+                          kalan: sonTeyitDetay.adet - sonTeyitDetay.teyitliAdet,
+                        })
+                      : t("eslesti")}
+                </p>
               </div>
             ) : null}
 
@@ -428,9 +478,26 @@ export function Paketleyici({
 function KalemSatiri({ kalem }: { kalem: PaketKalemi }) {
   const t = useTranslations("Paketle");
 
+  /**
+   * K203 — ÜÇ GÖRSEL DURUM, KARIŞTIRILMAZ:
+   *   tam teyitli (adet==adet)     → OLUMLU (yeşil) — "bitti"
+   *   kısmi teyitli (0<sayı<adet)  → BİLGİ — "devam ediyor", henüz bitmedi
+   *   hiç okutulmadı               → NÖTR (varsayılan çerçeve)
+   * Kısmi durumu OLUMLU ile aynı renge boyamak "bitti" yanılgısı üretirdi —
+   * tam bunun için okuma bilgisi bir boolean'a sığmıyordu.
+   */
+  const tamTeyitli = kalemTamTeyitliMi(kalem);
+  const kismiTeyitli = !tamTeyitli && kalem.teyitliAdet > 0;
+
   return (
     <li
-      className={`rounded-md border p-3 ${kalem.teyitli ? DURUM_KUTUSU.olumlu : ""}`}
+      className={`rounded-md border p-3 ${
+        tamTeyitli
+          ? DURUM_KUTUSU.olumlu
+          : kismiTeyitli
+            ? DURUM_KUTUSU.bilgi
+            : ""
+      }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 space-y-1">
@@ -459,7 +526,16 @@ function KalemSatiri({ kalem }: { kalem: PaketKalemi }) {
         <div className="flex shrink-0 items-center gap-2">
           <div className="bg-muted/40 rounded-md px-2.5 py-1.5 text-center">
             <p className="text-muted-foreground text-xs">{t("adet")}</p>
-            <p className="text-base font-semibold tabular-nums">{kalem.adet}</p>
+            {/*
+              K203 — OKUTULAN/TOPLAM HER ZAMAN GÖSTERİLİR (adet 1 olsa
+              bile), çünkü İlke #10 aynı işlemin her yerde aynı görünmesini
+              ister: adete göre koşullu bir gösterim, "1 adetlik kalemlerde
+              sayaç neden yok" sorusunu üretirdi. `0/1` → `1/1` geçişi de
+              tek okutmanın gerçekten SAYILDIĞINI gösterir.
+            */}
+            <p className="text-base font-semibold tabular-nums">
+              {kalem.teyitliAdet}/{kalem.adet}
+            </p>
           </div>
           <div className="bg-muted/40 rounded-md px-2.5 py-1.5 text-center">
             <p className="text-muted-foreground flex items-center gap-1 text-xs">

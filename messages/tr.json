@@ -3665,6 +3665,8 @@
     "urunKoduEtiketi": "Raftan aldığınız ürünün kodu",
     "urunKoduIpucu": "barkod, Firma SKU ya da SKU",
     "eslesti": "Eşleşti — doğru ürün. Paketleyebilirsiniz.",
+    "eslestiDevamEdiyor": "Eşleşti — {teyitli}/{adet} okutuldu. Bu üründen {kalan} tane daha okutun.",
+    "eslestiZatenTam": "Bu ürün için gereken {adet} adedin hepsi zaten okutulmuştu — fazladan okutmaya gerek yok.",
     "eslesmedi": "Okutulan kod ({kod}) bu siparişte yok. Başka bir ürün okutabilirsiniz; hiçbir şey engellenmedi.",
     "siparisNo": "Sipariş no",
     "gonderiNo": "Gönderi no",

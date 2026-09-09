@@ -48,8 +48,16 @@ export type PaketKalemi = {
   adet: number;
   /** Raf kodu — akışın ASIL çıktısı. `null` ise raf girilmemiş. */
   rafKodu: string | null;
-  /** Bu kalem okutularak teyit edildi mi? */
-  teyitli: boolean;
+  /**
+   * ⛔ BOOLEAN DEĞİL SAYAÇ (K203, 10.09.2026 — Halil'in fotoğrafla bulduğu
+   * kusur). Aynı üründen `adet: 2` olan bir kalemde TEK okutma "eşleşti,
+   * paketleyebilirsiniz" diyordu — ikinci fiziksel birim hiç doğrulanmadan.
+   * `teyitli: boolean` bunu YAPISAL olarak gösteremezdi: alan "en az bir kez
+   * okutuldu mu" sorusuna cevap veriyordu, "kaç kez okutuldu" sorusuna değil.
+   * Şimdi her başarılı okutma bu sayacı 1 artırır (üst sınır `adet`); "tam
+   * teyitli" `kalemTamTeyitliMi` ile ayrıca sorulur.
+   */
+  teyitliAdet: number;
 };
 
 export type PaketSiparisi = {
@@ -116,21 +124,36 @@ export function siradakiAdim(girdi: {
 }
 
 /**
+ * BİR KALEM TAM TEYİTLİ Mİ — okutulan adet, siparişteki adede ulaştı mı?
+ *
+ * ⛔ K203 (10.09.2026): tek okutmayla "eşleşti" saymak, `adet: 2` olan bir
+ * kalemde ikinci fiziksel birim hiç okutulmadan paketletirdi. Bu fonksiyon
+ * eşiği TEK YERDE tutar — çağıran taraflar kendi `>= adet` karşılaştırmasını
+ * yazmaz, ayrışma riski doğmaz.
+ */
+export function kalemTamTeyitliMi(k: PaketKalemi): boolean {
+  return k.teyitliAdet >= k.adet;
+}
+
+/**
  * PAKETLENDİ İŞARETİ ATILABİLİR Mİ?
  *
- * ⚠ TEYİT ŞART. Kargo kodunu okutup ürünü okutmadan "paketlendi" demek,
- * akışın tek işini atlamak olurdu: doğru ürünün alındığını KİMSE
- * doğrulamamış olur.
+ * ⚠ TAM TEYİT ŞART — ADET DAHİL. Kargo kodunu okutup ürünü okutmadan
+ * "paketlendi" demek, akışın tek işini atlamak olurdu: doğru ürünün ve
+ * DOĞRU ADEDİN alındığını KİMSE doğrulamamış olur.
  *
  * ⚠ AMA TEK KALEM YETER, HEPSİ DEĞİL — bugün. Çok kalemli siparişte her
  * kalemi ayrı okutmak doğru olurdu; ölçüldü (25.08.2026): canlıda
  * 131 satışın hepsi TEK kalemli, çok kalemli sipariş YOK. Çok kalemli
  * ilk sipariş girdiğinde kural "hepsi teyitli" olarak sıkılaştırılır —
  * bugün sıkılaştırmak, olmayan bir durum için ekran karmaşıklığı üretmek.
+ * ⚠ BU KARAR "AYNI ÜRÜNDEN BİRDEN FAZLA ADET" (K203) İLE KARIŞTIRILMAZ:
+ * ikisi ayrı sorular — biri KALEM sayısı, öteki tek kalemin İÇİNDEKİ adet.
+ * K203 ikincisini kapatıyor; birincisi hâlâ 25.08'deki ölçülmüş karar.
  */
 export function paketlenebilirMi(siparis: PaketSiparisi | null): boolean {
   if (siparis === null) return false;
-  return siparis.kalemler.some((k) => k.teyitli);
+  return siparis.kalemler.some((k) => kalemTamTeyitliMi(k));
 }
 
 /**
