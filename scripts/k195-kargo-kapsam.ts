@@ -78,6 +78,65 @@ async function main() {
       shippedAt: { lt: MEKANIZMA },
     },
   });
+  /**
+   * ⛔ TARİFE TABANI (K200 kapı ölçümü): N11 kargo maliyeti "6 firma
+   * ORTALAMASI" ile hesaplanacak. Önce sorulur: o tablo elimizde VAR MI,
+   * hangi firmalar ve hangi desi aralığı? Yoksa hesap kurulmaz —
+   * uydurulmuş bir tarife, uydurulmuş bir maliyet demektir.
+   */
+  const tarifeler = await prisma.cargoTariff.findMany({
+    select: { carrierId: true, desi: true, channelId: true },
+  });
+  const firmalar = new Map<string, { min: number; max: number; n: number }>();
+  for (const t of tarifeler) {
+    const v = firmalar.get(t.carrierId) ?? { min: t.desi, max: t.desi, n: 0 };
+    v.min = Math.min(v.min, t.desi);
+    v.max = Math.max(v.max, t.desi);
+    v.n += 1;
+    firmalar.set(t.carrierId, v);
+  }
+  const adlar = await prisma.cargoCarrier.findMany({ select: { id: true, name: true } });
+  const adEsle = new Map(adlar.map((a) => [a.id, a.name]));
+  console.log("");
+  console.log("④ TARİFE TABANI (N11 maliyet hesabının ön şartı)");
+  console.log("   firma sayısı " + firmalar.size + " · toplam satır " + tarifeler.length);
+  for (const [id, v] of firmalar) {
+    console.log(
+      "   " + (adEsle.get(id) ?? id).padEnd(24) + " desi " +
+        String(v.min).padStart(2) + "-" + String(v.max).padStart(2) +
+        " · satır " + v.n,
+    );
+  }
+  /**
+   * ⛔ HALİL'İN VERDİĞİ VERİ NOKTASIYLA ÇAPRAZ: "Aras desi 1 → 85,38 (KDV
+   * hariç) → 102,46 (KDV dahil)". Tutuyorsa elimizdeki tablo ONUN baktığı
+   * tarifedir; tutmuyorsa üstüne hesap KURULMAZ.
+   * _(Anayasa: "dış kaynağın kendi etiketiyle karşılaştır — iç tutarlılık
+   * kaymayı gizler".)_
+   */
+  const kanalKayitlari = await prisma.channel.findMany({ select: { id: true, name: true } });
+  const kanalAdi = new Map(kanalKayitlari.map((k) => [k.id, k.name]));
+  const arasId = adlar.find((a) => /aras/i.test(a.name))?.id ?? null;
+  if (arasId !== null) {
+    const d1 = await prisma.cargoTariff.findMany({
+      where: { carrierId: arasId, desi: 1 },
+      select: { amount: true, channelId: true, effectiveFrom: true },
+      orderBy: { effectiveFrom: "desc" },
+    });
+    console.log("   ÇAPRAZ — Aras desi 1 (Halil: 85,38 → KDV dahil 102,46):");
+    for (const t of d1.slice(0, 4)) {
+      const h = Number(t.amount);
+      console.log(
+        "      ₺" + h.toFixed(2) + " · KDV dahil ₺" + (h * 1.2).toFixed(2) +
+          " · kanal " + (kanalAdi.get(t.channelId) ?? t.channelId) +
+          " · geçerli " + t.effectiveFrom.toISOString().slice(0, 10) +
+          (Math.abs(h - 85.38) < 0.01 ? "   ✓ HALİL'İN RAKAMI" : ""),
+      );
+    }
+  }
+  const kanallar = new Set(tarifeler.map((t) => t.channelId));
+  console.log("   kanal sayısı " + kanallar.size + " (tarife kanal bazında tutuluyor)");
+  console.log("");
   console.log(
     "   KUTU KAPISI: ham 'yolda' " + yoldaHam +
       "  =  gerçekten yolda " + yoldaGercek +

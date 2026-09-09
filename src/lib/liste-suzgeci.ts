@@ -14,6 +14,7 @@ import {
 import type { Prisma } from "@/generated/prisma/client";
 import { MARJ_PARAM } from "@/lib/ice-aktarma-serhi";
 import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
+import { teslimKovasiKosulu } from "@/lib/teslim-durumu";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 
 /**
@@ -115,10 +116,28 @@ export const KAR_SUZGECLERI = ["eksik", "tam", "zarar"] as const;
 /** İade süzgecinin tanıdığı değerler. */
 export const IADE_SUZGECLERI = ["var", "yok"] as const;
 /**
- * Kargo süzgeci — panelin "kargoya verilen / bekleyen" kutusu buraya bağlanır.
- * `Sale.shippedAt` dolu mu boş mu; başka bir kaynağı yok.
+ * Kargo süzgeci — panelin kutuları buraya bağlanır.
+ *
+ * ⭐ "SAYI = LİSTE" BURADAN GELİR: kutu bir sayı basıyorsa, tıklanınca açılan
+ * liste AYNI gövdeden süzülür. Kutu kendi koşulunu kursaydı, koşul değiştiği
+ * gün sayı ile liste sessizce ayrışırdı.
+ *
+ * ⛔ TESLİM KOVALARI ÜÇ, İKİ DEĞİL (K199, 09.09.2026) — ve üçüncüsü
+ * ölçülmüş bir zorunluluk:
+ *
+ *     ham "yolda" 337  =  gerçekten yolda 24  +  BİLİNMİYOR 313
+ *
+ * `deliveredAt` 09.09.2026'da doğdu; ondan önce kargolanan sipariş teslim
+ * edilmiş de olabilir, yolda da — sistem BİLMİYOR. İkisini birleştiren bir
+ * "yolda" süzgeci listeyi %93 şişirirdi.
  */
-export const KARGO_SUZGECLERI = ["verildi", "bekleyen"] as const;
+export const KARGO_SUZGECLERI = [
+  "verildi",
+  "bekleyen",
+  "yolda",
+  "teslim",
+  "bilinmiyor",
+] as const;
 
 /** Satış listesi koşulu — ekran ve Excel aynı koşulu kullanır. */
 export function satisKosulu(
@@ -171,6 +190,15 @@ export function satisKosulu(
    */
   const veKosullari: Prisma.SaleWhereInput[] = [];
   if (kargo === "bekleyen") veKosullari.push(KARGO_BEKLEYEN);
+  /**
+   * ⛔ ÇIPLAK KOŞUL YAZILMAZ — küme `teslim-durumu.ts` gövdesinden gelir.
+   * Elle `{ shippedAt: { not: null }, deliveredAt: null }` yazmak 313
+   * "bilinmiyor" siparişi listeye sokardı. _(Anayasa: "düzeltmenin çaresi
+   * dosya listesi değil, desen yasağıdır".)_
+   */
+  if (kargo === "yolda") veKosullari.push(teslimKovasiKosulu("YOLDA"));
+  if (kargo === "teslim") veKosullari.push(teslimKovasiKosulu("TESLIM_EDILDI"));
+  if (kargo === "bilinmiyor") veKosullari.push(teslimKovasiKosulu("BILINMIYOR"));
 
   const kosul: Prisma.SaleWhereInput = {
     // Süzgeç kapalıysa alan HİÇ yazılmaz; `undefined` koşulu Prisma'da
