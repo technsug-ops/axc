@@ -13,28 +13,6 @@
 
 ---
 
-## 🔴 K202 — BEKÇİ TURU VERGİSİ · 09.09.2026 · [AÇIK — ÖLÇÜM BEKLİYOR]
-
-> **Halil açtı 09.09:** tur **15,8 → 39,6 dakika** (2,5×).
-
-⛔ **BÜYÜYEN BORÇ VE ERTELENİRSE KORUMANIN TAMAMI ÇÖKER.** Anayasa bunu
-kendisi uyarıyor: _"bir dahaki sefere hepsini koşarım" bir çözüm değil bir
-niyettir._ Tur "koşmaya üşenilecek" eşiği geçerse atlanır — ve atlandığı an
-117 bekçinin hiçbiri koşmaz.
-
-⚠ **SEBEP ÖLÇÜLMEDİ, TAHMİN EDİLMEYECEK.** Üç aday var ve çaresi sebebe
-göre değişir:
-
-    bekçi SAYISI mi arttı   → bugün çok eklendi (2 bekçi + 20 mutasyon)
-    her bekçi mi yavaşladı  → ortak bir gövde mi ağırlaştı
-    eşzamanlı ÇEKİM mi      → 5 dakikalık tur turla çakışıyor olabilir
-
-⛔ **ÖLÇÜM ŞARTI:** kanca çıktısı yönlendirmeye düşmüyor (108 bayt) — önce
-bekçi başına süre GÖRÜNÜR kılınmalı, sonra hüküm. Çareler: paralelleştir ·
-ağır bekçiyi bul · çekimle çakışmayı ayır.
-
----
-
 ## 🔶 K201 — N11 KARGO MALİYETİ: TAHMİN AYRI SÜTUNDA · 09.09.2026 · [KOD KOŞTU]
 
 > **Mimar kararı 09.09 — YOL 3, Yol 1 DEĞİL:** `cargoAmount` "kanalın

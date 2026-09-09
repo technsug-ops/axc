@@ -18,6 +18,110 @@
 
 ---
 
+## ✅ K202 — BEKÇİ TURU VERGİSİ: KÖK SEBEP + İKİ DÜZELTME · 09.09.2026 · [KAPANDI]
+
+> **Halil açtı 09.09:** tur **15,8 → 39,6 dakika** (2,5×). Aynı gece
+> bilgisayar kapanması bir mutasyon turunu **yarıda kesti** ve
+> `kanal-kargo-damgasi.ts` **8695 baytın tamamı sıfır** hâlde bulundu —
+> `finally` bloğuna ulaşamayan bir harness, mutantı diskte donmuş
+> bıraktı. HEAD'den geri yüklendi, 15/15 mutasyon kırmızı yandığı
+> görülerek doğrulandı.
+
+### ÖLÇÜM — dört aday, ikisi doğrulandı, ikisi kapandı
+
+**Tur 1 (DB kapalı, ölçülmeden koşuldu):** 25,0 dk, 120/124 yeşil, 4
+kırmızı — hepsi **AYNI kök sebep**: `ECONNREFUSED 127.0.0.1:3306`,
+bilgisayar kapanmasından sonra yerel MySQL bir daha başlatılmamış.
+
+    yedek:dogrula   493,8s → 6,8s   (47 tablo × ~10,5s havuz zaman aşımı)
+    fifo:dogrula     32,0s → 2,7s
+    iade:dogrula     21,9s → 2,4s
+    toplu:dogrula    21,7s → 2,1s
+    ────────────────────────────
+    569,4s (%38 of 1499s) SADECE bağlantı beklemesi, gerçek iş değil
+
+**Tur 2 (DB açık, temiz):** 18 dk 38 sn, 124/124 yeşil. DB kapalılığı
+**tek** sebep değildi — taban hâlâ 15,8 dk'nın üstünde:
+
+    23 mutasyon bekçisi   = 640,0s (%57,8) ← EN GÜÇLÜ AÇIKLAMA
+    diğer 101 bekçi       = 467,1s (lint 153s + derleme 85s + tsc 22s + 98×~2s)
+
+**Dört hipotez, nihai:**
+| hipotez | sonuç |
+|---|---|
+| ① bekçi sayısı arttı | **DOĞRULANDI** — mutasyon kategorisi turun çoğunluğu ve her oturumda büyüyor |
+| ② tek bekçi ağır | `yedek:dogrula`'da GERÇEK bir tasarım açığı (erişim kontrolü yok) — düzeltildi (SORUN A) |
+| ③ eşzamanlı çekim | **KAPANDI** — çekim yalnız Vercel Cron'da, yerel turla çakışamaz |
+| ④ ortak ön-yükleme | desteklenmedi — 98 bekçi ~2,1s/komut, normal süreç başlatma maliyeti |
+
+### SORUN A — `yedek:dogrula` sağlık sondası
+
+`src/lib/db-saglik.ts` — ham `net.connect` ile TEK hızlı TCP denemesi
+(Prisma havuzuna dokunmadan). DB kapalıysa GERÇEK TUR (47 tablo) hiç
+başlamıyor, **görünür** uyarı basıyor:
+
+    TÜM KONTROLLER GEÇTİ (45) — ⚠ GERÇEK TUR ATLANDI (DB erişilemedi, bkz. yukarı)
+
+⚠ **GÖRÜNÜRLÜK `bekci.ts`'in TEK SATIRLIK özetine kadar** izlendi:
+`ozetle()` `.find()` ile "KONTROL"/"GEÇTİ" geçen İLK satırı seçiyor —
+atlama uyarısı KAPANIŞ satırının kendisine eklendi, aradaki hiçbir satır
+"KONTROL"/"GEÇTİ" içermediği doğrulanarak (tek eşleşme olduğu ölçüldü).
+
+**Doğrulandı — iki yönde de:**
+- DB açık: 56/56 kontrol, atlama YOK (regresyon yok) — `TÜM KONTROLLER GEÇTİ (56)`
+- DB kapalı (simüle, gerçek DB'ye dokunmadan `DATABASE_URL` override): 45/45,
+  **3,4 saniye** (494 → 3,4s), atlama görünür
+
+Değer testi `db-saglik:dogrula` (7/7) — gerçek soket açıp kapatarak
+AÇIK↔KAPALI ayrımını ölçer, kaynak taraması değil.
+
+### SORUN B — 23 mutasyon bekçisi paralel (push kapısında KALDI)
+
+⛔ **PARALELLEŞTİRMEDEN ÖNCE ÇAKIŞMA TARANDI** — iki harness AYNI hedef
+dosyayı mutasyona uğratıp `finally`de geri yazıyorsa paralel koşum YARIŞ
+DURUMU üretir (bugün onarılan sıfır-bayt bozulmasının kesinti YERİNE
+eşzamanlılıkla üretilen türü). `scripts/mutasyon-hedefleri.ts`
+`readFileSync`/`writeFileSync` çağrılarını kaynaktan takip ederek GERÇEK
+hedefleri çıkardı:
+
+    messages/tr.json           ← kare-tanisi · mal-kabul · toplu-kargo
+    src/app/page.tsx           ← mal-kabul · panel · urun-analizi
+    src/app/satislar/page.tsx  ← liste-hafizasi · toplu-kargo
+    src/lib/panel.ts           ← aylik-marj · panel
+
+`mal-kabul` ve `panel` köprü — 7 harness TEK bağlı küme
+(`SIRALI_MUTASYON_GRUP`), kalan 15 tam paralel (eş zamanlı sınır 4 =
+ölçülen CPU sayısı). Beyan `mutasyon-cakisma:dogrula` ile her koşumda
+gerçek taramayla karşılaştırılıyor — mutasyonla sınandı: beyandan bir
+isim silindiğinde KIRMIZI yandığı görüldü.
+
+⛔ **ÇIKARILMADI — SADECE HIZLANDI.** Seyrek CI'ye taşıma REDDEDİLDİ:
+mutasyon bekçileri push anında çapa-kopmasını yakalıyor (aynı gün
+stok-siralama + urun-analizi vakaları) — seyrek koşarsa "push edildi,
+koruması kör" penceresi açardı.
+
+**Sonuç ölçüldü:** 126/126 yeşil (2 yeni bekçi dahil), **0 KIRMIZI**,
+**18 dk 38 sn → 14 dk 15 sn** (duvar saati, **%23,5 daha hızlı**).
+Çakışan 4 dosyada (panel.ts · tr.json · page.tsx · satislar/page.tsx)
+null bayt / bütünlük kontrolü temiz, ağaçta mutant artığı yok.
+
+⚠ **İKİ SAYI AYRI TUTULDU:** paralel koşumda "bekçi süreleri toplamı"
+(1536s) duvar saatinden (855s) BÜYÜKTÜR — aynı anda geçen saniyeler
+birden çok kez sayılıyor. Kapanış satırı bunu açıkça yazıyor.
+
+**Yan bulgu — ilk deneme çöktü, düzeltildi:** `bekci.ts`'e top-level
+`await` yazıldı ve `Top-level await is currently not supported with the
+"cjs" output format` ile çöktü (bu depo `tsx`i CJS'e derliyor — diğer
+betiklerin `main().catch(...)` deseni kullanmasının sebebi buymuş).
+`main()` sarmalayıcısına çevrildi, ikinci koşum temiz geçti.
+
+_(Bu, "eşik ölçüldüğü popülasyonun dışına uygulanamaz" ve "bir sınırın
+yönü ölçülmeden çevrilmez" derslerinin PARALELLEŞTİRME tarafı: paralel
+koşum "bağımsız" olduğu VARSAYILARAK değil, dosya hedefleri TARANARAK
+güvenli hâle getirildi.)_
+
+---
+
 ## ✅ K-HB-ELLE-KIYAS — ELLE GİRİLEN HB SİPARİŞLERİ ↔ API · 07–08.09.2026 · [KAPANDI]
 
 > **KAPANIŞ CÜMLESİ (mimar):** _"Elle 62 siparişte **sistematik sapma YOK**;

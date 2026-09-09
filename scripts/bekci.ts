@@ -61,7 +61,30 @@
 import { readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 
 import { KILIT, kilitDurumu, sonTurPenceresiniYaz } from "./bekci-kilit";
-import { spawnSync } from "node:child_process";
+import { mutasyonAdiMi, SIRALI_MUTASYON_GRUP } from "./mutasyon-hedefleri";
+import { spawn, spawnSync } from "node:child_process";
+
+/**
+ * ============================================================================
+ *  MUTASYON BEKÇİLERİ PARALEL (K202 SORUN B, 09.09.2026 ölçümü)
+ * ----------------------------------------------------------------------------
+ *  ⛔ NİYE VAR: 23 mutasyon bekçisi turun %57,8'i (640s/1107s). Bağımsız
+ *  süreçler — durum paylaşmıyorlar — SERİ koşmak için hiçbir sebep yok.
+ *
+ *  ⚠ AMA "BAĞIMSIZ" ÖLÇÜLDÜ, VARSAYILMADI: iki harness AYNI hedef dosyayı
+ *  mutasyona uğratıp `finally`de geri yazıyorsa paralel koşum YARIŞ
+ *  DURUMU üretir. `scripts/mutasyon-hedefleri.ts` kaynağı tarayıp GERÇEK
+ *  çakışmaları bulmuş (4 dosya, 7 harness, `mal-kabul` ve `panel` köprü) —
+ *  bu 7'si `SIRALI_MUTASYON_GRUP`te birbirine göre SIRALI kalıyor, kalan
+ *  ~15'i tam paralel.
+ *
+ *  ⛔ ÇIKARILMADI — sadece HIZLANDI. Push kapısındaki yeri anayasa gereği
+ *  aynı: mutasyon bekçileri push anında çapa-kopmasını yakalıyor (bugün
+ *  stok-siralama + urun-analizi vakaları); seyrek CI'ye taşınsaydı "push
+ *  edildi, koruması kör" penceresi açardı.
+ * ============================================================================
+ */
+const ES_ZAMANLI_SINIR = 4; // ölçülen CPU sayısı (09.09.2026, geliştirme makinesi)
 
 /**
  * ============================================================================
@@ -164,59 +187,152 @@ function ozetle(cikti: string): string {
   return (bilinen ?? satirlar[satirlar.length - 1] ?? "(çıktı yok)").slice(0, 64);
 }
 
-kilidiAl();
-const liste = bekciler();
-console.log("");
-console.log("BEKÇİ TURU — " + liste.length + " doğrulama");
-console.log("=".repeat(70));
-
-const sonuclar: Sonuc[] = [];
-for (const ad of liste) {
+/**
+ * Bir bekçiyi SENKRON koşturur (mevcut davranış — sıralı bölümler için).
+ * ⚠ `shell: true` ŞART (Windows). `shell: false` ile `npm.cmd` PATH'ten
+ * çözülemedi ve HER bekçi "(çıktı yok)" diye kırmızı yandı — yani betik,
+ * yeşil bir depoyu kırmızı gösterdi. Yalancı kırmızı, yalancı yeşil kadar
+ * zararlıdır: ikisi de bekçiye olan güveni bitirir.
+ */
+function senkronKostur(ad: string): Sonuc {
   const basladi = Date.now();
   process.stdout.write(`  ${ad.padEnd(24)} ... `);
-  /**
-   * ⚠ `shell: true` ŞART (Windows). `shell: false` ile `npm.cmd` PATH'ten
-   * çözülemedi ve HER bekçi "(çıktı yok)" diye kırmızı yandı — yani betik,
-   * yeşil bir depoyu kırmızı gösterdi. Yalancı kırmızı, yalancı yeşil kadar
-   * zararlıdır: ikisi de bekçiye olan güveni bitirir.
-   */
-  const r = spawnSync(`npm run ${ad}`, {
-    encoding: "utf8",
-    shell: true,
-  });
+  const r = spawnSync(`npm run ${ad}`, { encoding: "utf8", shell: true });
   const saniye = (Date.now() - basladi) / 1000;
   const kod = r.status ?? 1;
   const cikti = (r.stdout ?? "") + (r.stderr ?? "");
   const ozet = ozetle(cikti);
-  sonuclar.push({ ad, kod, saniye, ozet });
-  console.log(
-    `${kod === 0 ? "OK  " : "KIRMIZI"} ${saniye.toFixed(1)}s  ${ozet}`,
-  );
+  console.log(`${kod === 0 ? "OK  " : "KIRMIZI"} ${saniye.toFixed(1)}s  ${ozet}`);
+  return { ad, kod, saniye, ozet };
 }
 
-const kirmizilar = sonuclar.filter((s) => s.kod !== 0);
-const toplamSaniye = sonuclar.reduce((t, s) => t + s.saniye, 0);
+/**
+ * Bir bekçiyi ASENKRON koşturur (paralel havuz için) — çıktı biriktirilir,
+ * süreç bitince TEK satırda basılır (birden çok sürecin çıktısı satır
+ * satır karışmasın).
+ */
+function asenkronKostur(ad: string): Promise<Sonuc> {
+  const basladi = Date.now();
+  return new Promise((resolve) => {
+    const p = spawn(`npm run ${ad}`, { shell: true });
+    let cikti = "";
+    p.stdout.on("data", (d: Buffer) => (cikti += d.toString()));
+    p.stderr.on("data", (d: Buffer) => (cikti += d.toString()));
+    p.on("close", (kodHam) => {
+      const saniye = (Date.now() - basladi) / 1000;
+      const kod = kodHam ?? 1;
+      const ozet = ozetle(cikti);
+      console.log(
+        `  ${ad.padEnd(24)} ... ${kod === 0 ? "OK  " : "KIRMIZI"} ${saniye.toFixed(1)}s  ${ozet}  [paralel]`,
+      );
+      resolve({ ad, kod, saniye, ozet });
+    });
+  });
+}
 
-console.log("");
-console.log("=".repeat(70));
-console.log(
-  `${sonuclar.length - kirmizilar.length}/${sonuclar.length} yeşil · ${toplamSaniye.toFixed(0)} saniye`,
-);
-
-if (kirmizilar.length > 0) {
-  console.log("");
-  console.log("KIRMIZI YANANLAR:");
-  for (const k of kirmizilar) {
-    console.log(`  ${k.ad.padEnd(24)} ${k.ozet}`);
-    console.log(`     ayrıntı: npm run ${k.ad}`);
+/** Eş zamanlılık sınırlı paralel koşum — sınırsız fork kaynağı tüketmesin. */
+async function paralelKostur(adlar: string[], sinir: number): Promise<Sonuc[]> {
+  const sonuclar: Sonuc[] = new Array(adlar.length);
+  let sonrakiIndeks = 0;
+  async function isci() {
+    while (sonrakiIndeks < adlar.length) {
+      const buIndeks = sonrakiIndeks++;
+      sonuclar[buIndeks] = await asenkronKostur(adlar[buIndeks]!);
+    }
   }
-  /**
-   * ⚠ ÇIKIŞ KODU ŞART. Bu betik bir push zincirine bağlanacak; çıkış kodu
-   * üretmezse "bekçi var, koşuluyor ama sonucu kimse okumuyor" hâli doğar
-   * — düzeltmeye çalıştığı hatanın üçüncü sürümü.
-   */
-  process.exitCode = 1;
-} else {
-  console.log("HEPSİ YEŞİL.");
+  await Promise.all(
+    Array.from({ length: Math.min(sinir, adlar.length) }, () => isci()),
+  );
+  return sonuclar;
 }
-console.log("");
+
+async function turuKostur(): Promise<Sonuc[]> {
+  kilidiAl();
+  const liste = bekciler();
+
+  const mutasyonAdlari = liste.filter(mutasyonAdiMi);
+  const digerAdlari = liste.filter((ad) => !mutasyonAdiMi(ad));
+  const beyanKumesi = new Set(SIRALI_MUTASYON_GRUP);
+  const sirali = mutasyonAdlari.filter((ad) => beyanKumesi.has(ad));
+  const bagimsiz = mutasyonAdlari.filter((ad) => !beyanKumesi.has(ad));
+
+  console.log("");
+  console.log(
+    `BEKÇİ TURU — ${liste.length} doğrulama (${digerAdlari.length} sıralı + ` +
+      `${sirali.length} sıralı-mutasyon + ${bagimsiz.length} paralel-mutasyon)`,
+  );
+  console.log("=".repeat(70));
+
+  const sonuclar: Sonuc[] = [];
+  for (const ad of digerAdlari) sonuclar.push(senkronKostur(ad));
+
+  console.log("");
+  console.log(
+    `-- MUTASYON BEKÇİLERİ: ${sirali.length} çakışan (sıralı) + ${bagimsiz.length} bağımsız (paralel, eş zamanlı sınır ${ES_ZAMANLI_SINIR}) --`,
+  );
+  /**
+   * ⭐ İKİ GRUP BİRBİRİNDEN BAĞIMSIZ (dosya çakışması ölçülmüş, bkz.
+   * `mutasyon-hedefleri.ts`), o yüzden AYNI ANDA başlarlar: sıralı grup
+   * kendi İÇİNDE sırayla, bağımsız grup TAM paralel.
+   */
+  const [siraliSonuclar, paralelSonuclar] = await Promise.all([
+    (async () => {
+      const r: Sonuc[] = [];
+      for (const ad of sirali) r.push(senkronKostur(ad));
+      return r;
+    })(),
+    paralelKostur(bagimsiz, ES_ZAMANLI_SINIR),
+  ]);
+  sonuclar.push(...siraliSonuclar, ...paralelSonuclar);
+  return sonuclar;
+}
+
+/**
+ * ⚠ TOP-LEVEL AWAIT YOK — bu depo `tsx`i CJS çıktısına derliyor ve CJS
+ * top-level await'i desteklemiyor (`Top-level await is currently not
+ * supported with the "cjs" output format`, ölçüldü 09.09.2026). Diğer
+ * betiklerin `main().catch(...)` deseni kullanmasının sebebi bu — burada
+ * da AYNI desen.
+ */
+async function main() {
+  const sonuclar = await turuKostur();
+
+  const kirmizilar = sonuclar.filter((s) => s.kod !== 0);
+  /**
+   * ⚠ İKİ SAYI AYRI: paralel koşumda süre TOPLAMI duvar saatini AŞAR (aynı
+   * anda geçen saniyeler birden çok kez sayılır). "toplam bekçi süresi"
+   * (CPU/süreç maliyeti) ile GERÇEK duvar saati farklı şeylerdir — biri
+   * etiketsiz yazılırsa "1107 saniye sürdü" yanlış okunur.
+   * _(Anayasa: "bir sayı etiketiyle taşınır".)_
+   */
+  const toplamSaniye = sonuclar.reduce((t, s) => t + s.saniye, 0);
+
+  console.log("");
+  console.log("=".repeat(70));
+  console.log(
+    `${sonuclar.length - kirmizilar.length}/${sonuclar.length} yeşil · ${toplamSaniye.toFixed(0)} saniye (bekçi süreleri toplamı — paralel koşumda duvar saatinden BÜYÜKTÜR)`,
+  );
+
+  if (kirmizilar.length > 0) {
+    console.log("");
+    console.log("KIRMIZI YANANLAR:");
+    for (const k of kirmizilar) {
+      console.log(`  ${k.ad.padEnd(24)} ${k.ozet}`);
+      console.log(`     ayrıntı: npm run ${k.ad}`);
+    }
+    /**
+     * ⚠ ÇIKIŞ KODU ŞART. Bu betik bir push zincirine bağlanacak; çıkış kodu
+     * üretmezse "bekçi var, koşuluyor ama sonucu kimse okumuyor" hâli doğar
+     * — düzeltmeye çalıştığı hatanın üçüncü sürümü.
+     */
+    process.exitCode = 1;
+  } else {
+    console.log("HEPSİ YEŞİL.");
+  }
+  console.log("");
+}
+
+main().catch((e) => {
+  console.error("BEKLENMEYEN HATA:", e);
+  process.exitCode = 1;
+});

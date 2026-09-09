@@ -27,6 +27,7 @@ import {
 } from "../src/lib/geri-yukle";
 import { geriYukle, mevcutSatirSayilari } from "../src/lib/geri-yukle-calistir";
 import { prisma } from "../src/lib/prisma";
+import { dbAdresiAyikla, dbSaglikliMi } from "../src/lib/db-saglik";
 
 /**
  * ⚠ ŞEMA SATIR SONUNDAN BAĞIMSIZ OKUNUR (24.08.2026).
@@ -55,6 +56,14 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
+/**
+ * ⚠ GÖRÜNÜR ATLAMA (K202 SORUN A). GERÇEK TUR sağlık sondasında ELENDİYSE
+ * bu bayrak true olur ve TÜM KONTROLLER GEÇTİ satırının KENDİSİNE eklenir —
+ * yalnız bu fonksiyonun kendi konsoluna değil, `bekci.ts`'in tek satırlık
+ * özetine de ulaşması ŞART: `ozetle()` en sonda "KONTROL"/"GEÇTİ" geçen
+ * satırı seçiyor, yani atlama bu satırın DIŞINDA kalırsa görünmez olur.
+ */
+let gercekTurAtlandi = false;
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   calisan++;
@@ -250,6 +259,22 @@ async function main() {
     const yerelMi = /@(localhost|127\.0\.0\.1|::1)[:/]/.test(adres);
     if (!yerelMi) {
       console.log("  ATLANDI — DATABASE_URL yerel değil. Bu bölüm veritabanına YAZAR.");
+    } else if (!(await dbSaglikliMi(adres))) {
+      /**
+       * ⛔ SAĞLIK SONDASI (K202 SORUN A) — 47 tabloyu tek tek 10s Prisma
+       * havuz zaman aşımına çarptırıp 8+ dakika kaybetmek yerine TEK hızlı
+       * TCP denemesi. DB kapalıysa bu dal ~2 saniyede biter, öncesi 493,8
+       * saniye sürüyordu (09.09.2026 ölçümü).
+       */
+      const parcalar = dbAdresiAyikla(adres);
+      const hedefMetni = parcalar ? `${parcalar.host}:${parcalar.port}` : adres;
+      gercekTurAtlandi = true;
+      console.log(
+        `  ⚠ GERÇEK TUR ATLANDI — veritabanına erişilemedi (${hedefMetni}, 2000ms'de yanıt yok).`,
+      );
+      console.log(
+        "     Yedek al→boz→geri yükle turu KOŞULMADI. Yerel MySQL'i başlatıp yeniden koşun.",
+      );
     } else {
       const oncekiSayimlar = await mevcutSatirSayilari();
       const yedek = await yedekUret(new Date(), true);
@@ -649,9 +674,18 @@ async function main() {
   await prisma.$disconnect();
 
   console.log("\n" + "=".repeat(70));
-  if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
+  /**
+   * ⚠ ATLAMA UYARISI BU SATIRA EKLENİR — sessizce değil. `bekci.ts`'in
+   * `ozetle()` fonksiyonu tek satırlık özeti "KONTROL"/"GEÇTİ" geçen SON
+   * satırdan çıkarır; atlama bu satırın dışına yazılırsa `npm run bekci`
+   * çıktısında hiç görünmez ve "GERÇEK TUR koştu" sanılır.
+   */
+  const atlamaEki = gercekTurAtlandi
+    ? " — ⚠ GERÇEK TUR ATLANDI (DB erişilemedi, bkz. yukarı)"
+    : "";
+  if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})${atlamaEki}`);
   else {
-    console.log(`${basarisiz} KONTROL BAŞARISIZ (${calisan} kontrolden)`);
+    console.log(`${basarisiz} KONTROL BAŞARISIZ (${calisan} kontrolden)${atlamaEki}`);
     process.exitCode = 1;
   }
   console.log("");
