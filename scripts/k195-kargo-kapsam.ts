@@ -238,6 +238,64 @@ async function main() {
       console.log("   ⛔ ② BASAMAĞI DA BOŞ — efektif tarife defterden türetilemiyor.");
     }
   }
+  /**
+   * ⛔ DESİ ÖĞRENME TABANI (K201 kapı ölçümü). N11 desi VERMİYOR; mimar
+   * kararı: "ürün TY/HB'de tartılmışsa o desi, yoksa ORTALAMA desi — ölç,
+   * varsayma." Bu blok o ortalamayı ve öğrenmenin KAPSAMINI ölçer.
+   */
+  const tartilanlar = await prisma.sale.findMany({
+    where: { iptalTarihi: null, NOT: { kanalKargoDesi: null } },
+    select: { kanalKargoDesi: true, items: { select: { variantId: true } } },
+  });
+  const desiler = tartilanlar
+    .map((s) => Number(s.kanalKargoDesi))
+    .filter((d) => Number.isFinite(d) && d > 0)
+    .sort((a, b) => a - b);
+  console.log("");
+  console.log("⑥ DESİ ÖĞRENME TABANI (N11 tahmininin girdisi)");
+  if (desiler.length === 0) {
+    console.log("   ⛔ TARTILAN SATIŞ YOK — ortalama HESAPLANAMAZ (sıfır değil, YOK).");
+  } else {
+    const orta = desiler[Math.floor(desiler.length / 2)];
+    const ort = desiler.reduce((t, x) => t + x, 0) / desiler.length;
+    console.log(
+      "   tartılan satış " + desiler.length +
+        " · min " + desiler[0] +
+        " · ortanca " + orta +
+        " · ORTALAMA " + ort.toFixed(2) +
+        " · max " + desiler[desiler.length - 1],
+    );
+    /**
+     * ⚠ ORTALAMA mı ORTANCA mı — SEÇİM SONUCU DEĞİŞTİRİR ve bu ölçülür.
+     * Kuyruklu bir dağılımda ortalama yukarı kaçar; ekrana basılacak rakam
+     * veriyi değil BENİM SEÇİMİMİ söylerdi. İkisi de basılıyor.
+     */
+    console.log(
+      "   ⚠ ortalama/ortanca oranı " + (ort / orta).toFixed(3) +
+        (Math.abs(ort / orta - 1) > 0.15
+          ? "  ← DAĞILIM KUYRUKLU, seçim sonucu değiştirir"
+          : "  ← ikisi yakın, seçim kritik değil"),
+    );
+    /** Varyant başına öğrenme: N11 ürünlerinin kaçı TY/HB'de tartılmış? */
+    const tartilanVaryant = new Set<string>();
+    for (const s of tartilanlar) for (const k of s.items) tartilanVaryant.add(k.variantId);
+    if (n11Idler.length > 0) {
+      const n11Kalemler = await prisma.saleItem.findMany({
+        where: { sale: { channelAccountId: { in: n11Idler }, iptalTarihi: null } },
+        select: { variantId: true, saleId: true },
+      });
+      const n11Satis = new Map<string, boolean>();
+      for (const k of n11Kalemler) {
+        const onceki = n11Satis.get(k.saleId) ?? false;
+        n11Satis.set(k.saleId, onceki || tartilanVaryant.has(k.variantId));
+      }
+      const eslesen = [...n11Satis.values()].filter(Boolean).length;
+      console.log(
+        "   N11 satışının ÜRÜNÜ tartılmış olan: " + eslesen + "/" + n11Satis.size +
+          "  → gerisi ORTALAMAYA düşer",
+      );
+    }
+  }
   const kanallar = new Set(tarifeler.map((t) => t.channelId));
   console.log("   kanal sayısı " + kanallar.size + " (tarife kanal bazında tutuluyor)");
   console.log("");

@@ -1468,6 +1468,45 @@ model Sale {
    */
   kanalKargoDesi Decimal? @db.Decimal(9, 3)
 
+  /**
+   * TAHMİNİ KARGO — KANALIN KESTİĞİ DEĞİL, BİZİM HESABIMIZ (K201, 09.09.2026).
+   *
+   * ⛔ `cargoAmount` İLE AYNI ŞEY DEĞİL VE ONUN ÜSTÜNE ASLA YAZILMAZ:
+   *     cargoAmount    GERÇEKLEŞEN — kanalın/taşıyıcının FİİLEN kestiği
+   *     tahminiKargo   TAHMİN — tarife × desi ile hesapladığımız
+   * _Mimar kararı 09.09.2026:_ "cargoAmount = kanalın gerçekleşen kesintisi;
+   * N11 tahminini oraya yazmak alanın anlamını KİRLETİR ve bekçiyi deler."
+   * `cargoDesi` ↔ `kanalKargoDesi` ayrımının birebir kardeşi.
+   *
+   * ⭐ KAYNAK SIRASI — NET HESABINDA: `cargoAmount` DOLUYSA o kullanılır,
+   * BOŞSA bu. Yani N11 satışı hakediş gelmeden tahminle NET verir; hakediş
+   * gelince gerçekleşen DEVRALIR. ⚠ Ve geçiş GÖRÜNÜR: tahmin SİLİNMEZ, iki
+   * sütun yan yana durur. Üstüne yazılsaydı "ne kadar yanılmışız" sorusu
+   * bir daha sorulamazdı.
+   * ⛔ Sıra TEK GÖVDEDE (`src/lib/kargo-kaynagi.ts`); iki okuyucu iki farklı
+   * sıra kursaydı biri tahmini, öteki gerçekleşeni tercih ederdi.
+   *
+   * ⚠ TABAN KDV HARİÇ — `cargoAmount` ile aynı. Motor KDV dahil beklediği
+   * için `kdvDahilKargo` ile çevrilir; iki sütun aynı kapıdan geçer.
+   *
+   * ═══ FORMÜL ÖLÇÜLDÜ, BEYAN DEĞİL (09.09.2026) ════════════════════════
+   *     tahminiKargo = firmaTarifesi(desi) × 1,0235
+   *     (1,0235 = Posta Hizmet Bedeli %2,35 · 1,20 × 1,0235 = 1,2282)
+   * n11 satıcı panelindeki 10 gerçek kesintiden 5'i (desi 1·2·3·9·11) bu
+   * zinciri KURUŞUNA doğruladı. Firma: kanalın `cargoProviderName`i; yoksa
+   * altı firmanın ortalaması (ölçüldü: sabit ortalama NET'i %7,5 karamsar
+   * gösteriyordu — gönderilerin onunun da firması Aras).
+   *
+   * ⚠ DOĞUM TARİHİ 09.09.2026 ve YALNIZ İLERİYE dolar. Eski satışlarda
+   * kalıcı BOŞ kalacak — ve boşluk "kargo yok" demek DEĞİLDİR; o satışların
+   * kargosu zaten `cargoAmount`ta duruyor.
+   *
+   * ⚠ BUGÜN YALNIZ N11 YAZAR (tek tarifesi olan kanal o değil — TY/HB'de
+   * zaten gerçekleşen geliyor). Alan kanal-agnostiktir; başka bir kanal
+   * tahmine muhtaç olursa aynı sütunu kullanır.
+   */
+  tahminiKargo Decimal? @db.Decimal(18, 4)
+
   // --- SATIŞ SEVİYESİ KÂR ---
   /// Σ kalem NET − sipariş başına kesintiler (hizmet bedeli, sabit gider,
   /// kargo). Bu kesintiler kalemlere bölünmez.

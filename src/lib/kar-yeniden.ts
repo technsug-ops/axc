@@ -4,6 +4,7 @@ import {
   siparisKesintiKurallari,
 } from "@/lib/siparis-kesintileri";
 import { kalemMaliyeti } from "@/lib/kalem-maliyeti";
+import { kargoSecimi } from "@/lib/kargo-kaynagi";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { karHesapla, type KarGirdisi, type KarSonucu,
   type KarDurumu,
@@ -348,6 +349,7 @@ export async function satisKarTazele(
       cargoCarrierId: true,
       cargoDesi: true,
       cargoAmount: true,
+      tahminiKargo: true,
       /** Kaldırılmış kalemin komisyon düzeltmesi de olmaz. */
       items: {
         where: { ...KALEM_GECERLI },
@@ -369,9 +371,22 @@ export async function satisKarTazele(
     cargoCarrierId: satis.cargoCarrierId,
     cargoDesi:
       satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
-    /** DB KDV hariç saklar; motor KDV dahil bekler (`lib/kargo-kdv.ts`). */
+    /**
+     * DB KDV hariç saklar; motor KDV dahil bekler (`lib/kargo-kdv.ts`).
+     *
+     * ⭐ KAYNAK SIRASI TEK GÖVDEDEN (K201): gerçekleşen kesinti varsa O,
+     * yoksa tahmin. Sıra burada YAZILMAZ, `kargoSecimi` ÇAĞRILIR — iki
+     * okuyucu iki farklı sıra kursaydı biri tahmini öteki gerçekleşeni
+     * tercih ederdi ve ikisi de "doğru" görünürdü.
+     * ⚠ İki sütun da KDV HARİÇ, dolayısıyla AYNI kapıdan çevriliyor.
+     */
     cargoAmountManual: kdvDahilKargo(
-      satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
+      kargoSecimi({
+        cargoAmount:
+          satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
+        tahminiKargo:
+          satis.tahminiKargo === null ? null : Number(satis.tahminiKargo.toString()),
+      }).tutar,
     ),
     },
     db,
