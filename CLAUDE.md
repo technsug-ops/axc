@@ -2642,6 +2642,34 @@ biri yalnız `<Input>` arıyordu (düz `<input>` kaçtı), öteki deseni dosyan�
 tamamında arıyordu (aynı desen "temizle" satırında da geçiyor ve mutasyonu
 ayakta tutuyordu).
 
+⭐ **VE KURAL BEKÇİNİN KENDİSİNE DE İŞLER — ÜÇ VAKA, TEK GÜN (09.09.2026).**
+_Mimar kararı:_ **bekçi de elle liste tutmaz — koruduğu kümeyi DESENDEN
+türetir.** Elle tutulan liste yeni üyeyi (kanal · içe aktarma · yazıcı)
+**sessizce korumasız** bırakır: bekçi yeşil yanar, korunması gereken şey
+kapsam dışındadır ve bunu kimse göremez — çünkü ekranda bir eksiklik değil,
+bir **onay** görünür.
+
+| bekçi | elle liste neydi | desene çevrildi |
+|---|---|---|
+| K121 dalları | süzgeci çağıran üç dosya sayılıyordu | çıplak koşul YASAK; küme ortak gövdeden gelir |
+| `kanal-yazma:dogrula` | yazıcılar adıyla listeliydi | `KANALA_YAZMASI_BEYANLI` beyanından türetiliyor |
+| `kargo-damgasi:dogrula` | TY ve HB elle yazılıydı | `shippedAt`/`deliveredAt` **atayan** her içe aktarma taranıyor |
+
+⚠ **ÜÇÜNCÜSÜ ARIZAYI CANLI YAKALADI:** N11 içe aktarması eklendiğinde elle
+liste onu görmüyordu — N11 uydurma bir kargo tarihi yazsaydı bekçi **yeşil
+kalırdı.** Liste desene çevrilince üçüncü kanal kendiliğinden kapsama girdi.
+
+⛔ **VE DESENE ÇEVİRMEK YETMEZ, TABAN DOLULUĞU AYRICA ÖLÇÜLÜR.** Tarama
+sıfır dosya bulursa döngü hiç dönmez ve bekçi **"tüm kontroller geçti"** der:
+boş küme her koşulu sağlar (`every` kapısının tarama tarafı). Bu yüzden her
+türetilmiş kümenin yanında `küme.length >= N` beyanı durur ve o beyan da
+mutasyonla sınanır.
+
+⚠ **ÖLÇÜT "GEÇİYOR"A DEĞİL "KULLANILIYOR"A BAĞLANIR:** `deliveredAt:` diye
+aramak, `select`teki `deliveredAt: true` ve `where`deki `deliveredAt: null`
+satırlarını da sayar — ikisi de o alanı YAZMAZ. Hiçbir şey yazmayan bir
+dosya "yazan" sayılırsa taban ölçütü kendi kendini kandırır.
+
 ---
 
 ### EŞİK, DAĞILIMIN GEDİĞİNE KONUR — GÖVDESİNE DEĞİL (KESİN KURAL)

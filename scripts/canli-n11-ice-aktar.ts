@@ -3,7 +3,11 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
-import { gecmistenKargoDamgasi } from "../src/lib/kanal-kargo-damgasi";
+import {
+  gecmistenKargoDamgasi,
+  teslimGuncellemesi,
+  teslimYazimiVarMi,
+} from "../src/lib/kanal-kargo-damgasi";
 import { kilitDurumu } from "./bekci-kilit";
 import { canliYapilandirma } from "./canli-ortak";
 import { baslikKur, kimlikOku, tumPaketler } from "./n11/istemci";
@@ -115,6 +119,15 @@ type Aday = {
    * `null` = kanal henüz "kargolandı" demedi.
    */
   kargoAni: Date | null;
+  /**
+   * KANALIN BİLDİRDİĞİ TESLİM ANI (K195-2) — geçmişteki `Delivered` damgası.
+   * ⚠ Şekil TY ile aynı (ölçüldü 09.09.2026), ortak gövde kullanılıyor.
+   */
+  teslimAni: Date | null;
+  /** Kanalın kendi takip bağlantısı (`cargoTrackingLink`). */
+  takipBaglantisi: string | null;
+  /** Kanalın FİİLEN kullandığı firma — `cargoCarrierId` ile aynı şey DEĞİL. */
+  kargoFirmasi: string | null;
   satirlar: Satir[];
   iptalliSatir: number;
 };
@@ -127,6 +140,8 @@ type HamPaket = {
   orderNumber?: unknown;
   sellerId?: unknown;
   shipmentPackageStatus?: unknown;
+  cargoTrackingLink?: unknown;
+  cargoProviderName?: unknown;
   packageHistories?: { createdDate?: unknown; status?: unknown }[];
   lines?: Record<string, unknown>[];
 };
@@ -245,15 +260,26 @@ export async function n11CekimKos(ayar: {
       iptalPaket++;
       continue;
     }
-    const aday =
-      adaylar.get(no) ??
-      ({
+    /**
+     * ⛔ `as Aday` KALDIRILDI (K195-2) — VE BU BİR ÖLÇÜM SONUCU DEĞİL, BİR
+     * TUZAĞIN KAPATILMASI. Cast, eksik alanı TypeScript'ten SAKLIYOR:
+     * `teslimAni` eklendiğinde burası `undefined` kalırdı, karşılaştırma
+     * (`an > undefined`) sessizce `false` döner ve alan HİÇ DOLMAZDI —
+     * hata yok, uyarı yok, yalnız boş bir sütun. Cast olmadan derleyici
+     * yarın eklenen alanı da burada gösterir.
+     * _(Anayasa: "koruma disipline değil mekanizmaya bağlanır".)_
+     */
+    const aday: Aday =
+      adaylar.get(no) ?? {
         siparisNo: no,
         soldAt: null,
         kargoAni: null,
+        teslimAni: null,
+        takipBaglantisi: null,
+        kargoFirmasi: null,
         satirlar: [],
         iptalliSatir: 0,
-      } as Aday);
+      };
     /**
      * ⛔ KANALIN SÖYLEDİĞİNİ ATMIYORUZ ARTIK (K195). Bu bilgi her koşumda
      * geliyordu ve okunmadan çöpe gidiyordu.
@@ -263,6 +289,27 @@ export async function n11CekimKos(ayar: {
     const damga = gecmistenKargoDamgasi(p.packageHistories, "Shipped");
     if (damga.tur !== "YOK" && (aday.kargoAni === null || damga.an > aday.kargoAni)) {
       aday.kargoAni = damga.an;
+      /** ⭐ TAKİP BİLGİSİ DAMGAYI KAZANAN PAKETTEN — `shippedAt` ile
+       *  `kargoTakipBaglantisi` AYNI paketi anlatsın diye (TY ile aynı). */
+      aday.takipBaglantisi =
+        typeof p.cargoTrackingLink === "string" && p.cargoTrackingLink !== ""
+          ? p.cargoTrackingLink
+          : null;
+      aday.kargoFirmasi =
+        typeof p.cargoProviderName === "string" && p.cargoProviderName !== ""
+          ? p.cargoProviderName
+          : null;
+    }
+    /**
+     * TESLİM DAMGASI (K195-2) — EN GEÇ olan kazanır.
+     * ⚠ SINIR BEYAN EDİLİYOR: bölünmüş siparişte paketlerden biri teslim,
+     * öteki yolda olabilir; bu kural o siparişi "teslim" sayar. Ölçüldü
+     * (09.09.2026): 7953 satışın 1'i bölünmüş (%0,01). Oran anlamlı hâle
+     * gelirse kural "bütün paketleri teslim" diye daraltılır.
+     */
+    const teslim = gecmistenKargoDamgasi(p.packageHistories, "Delivered");
+    if (teslim.tur !== "YOK" && (aday.teslimAni === null || teslim.an > aday.teslimAni)) {
+      aday.teslimAni = teslim.an;
     }
     /** Sipariş anı: paket geçmişindeki İLK `Created` damgası (epoch, mutlak).
      *  Çok paketli siparişte EN ERKEN Created esas alınır. */
@@ -343,9 +390,47 @@ export async function n11CekimKos(ayar: {
     damgaYazilan += guncel.count;
   }
 
+  /**
+   * ═══ TESLİM TARAFI (K195-2) — İKİ FARKLI EZME KURALI, İKİSİ DE GEREKÇELİ ═══
+   *   `deliveredAt`  bir OLAYIN anı → yalnız BOŞ olana yazılır, dolu damga
+   *                  (elle girilmiş olabilir) ASLA değişmez
+   *   takip/firma    kanalın O ANKİ beyanı → en son söylediği geçerli;
+   *                  elle girildiği bir yol YOK. Ama `null` yazılmaz —
+   *                  kanalın susması "yok" demek değildir.
+   * ⚠ Önce okunur, yalnız DEĞİŞEN satır yazılır (gereksiz gidiş-dönüş yok).
+   */
+  const mevcutTeslim = await prisma.sale.findMany({
+    where: { code: { in: cakisanlar }, channelAccountId: hesap.id },
+    select: {
+      id: true,
+      code: true,
+      deliveredAt: true,
+      kargoTakipBaglantisi: true,
+      kanalKargoFirmasi: true,
+    },
+  });
+  let teslimYazilan = 0;
+  let takipYazilan = 0;
+  for (const s of mevcutTeslim) {
+    const a = adaylar.get(s.code ?? "");
+    if (!a) continue;
+    /** ⭐ KARAR ORTAK SAF GÖVDEDE — iki içe aktarmada iki kopya olmasın. */
+    const veri = teslimGuncellemesi(s, {
+      teslimAni: a.teslimAni,
+      takipBaglantisi: a.takipBaglantisi,
+      kargoFirmasi: a.kargoFirmasi,
+    });
+    if (!teslimYazimiVarMi(veri)) continue;
+    await prisma.sale.update({ where: { id: s.id }, data: veri });
+    if (veri.deliveredAt) teslimYazilan++;
+    if (veri.kargoTakipBaglantisi || veri.kanalKargoFirmasi) takipYazilan++;
+  }
+
   for (const n of cakisanlar) adaylar.delete(n);
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
   console.log(`   KARGO DAMGASI YAZILDI (yalnız BOŞ olanlara)      ${damgaYazilan}`);
+  console.log(`   TESLİM DAMGASI YAZILDI (yalnız BOŞ olanlara)     ${teslimYazilan}`);
+  console.log(`   TAKİP/FİRMA TAZELENDİ (kanalın son beyanı)        ${takipYazilan}`);
 
   // ═══ VARYANT KAPISI — ortak kod kuralı, iki kod adayı ═══════════════════
   const tumKodlar = [
@@ -490,6 +575,10 @@ export async function n11CekimKos(ayar: {
            * "kargolandı" demedi ve alan BOŞ kalır (K60 yasağı).
            */
           shippedAt: aday.kargoAni,
+          /** ⚠ Teslim tarafında da uydurma YOK: `null` = kanal demedi. */
+          deliveredAt: aday.teslimAni,
+          kargoTakipBaglantisi: aday.takipBaglantisi,
+          kanalKargoFirmasi: aday.kargoFirmasi,
           importBatch: partiKimligi,
           importKaynak: "n11-enumerasyon",
           items: { create: kalemVerisi },

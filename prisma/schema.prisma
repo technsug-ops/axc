@@ -1344,6 +1344,16 @@ model Sale {
    * ters kayıt gerekmez — kâr hesabına da girmez.
    * İŞ TARİHİ (UTC gece yarısı, Europe/Istanbul günü): saat taşımaz, çünkü
    * "hangi gün kargoya verildi" sorusunun cevabı gündür.
+   * ⚠ VE BU CÜMLE 09.09.2026'DA ÇEVRİLDİ (K195) — ESKİ GEREKÇE ÜSTTE
+   * DURUYOR, SİLİNMEDİ. Elle işaretlenen damga için hâlâ doğru; ama alan
+   * artık KANALIN bildirdiği damgayı da taşıyor ve TY/N11 mutlak an
+   * (epoch ms) veriyor. Kanalın verdiği saati gün sınırına yuvarlamak,
+   * elimizdeki kesinliği ATMAK olurdu.
+   * ⭐ İKİ HASSASİYET AYNI ALANDA YAŞAR VE AYIRT EDİLEBİLİR:
+   *     elle / HB  → gün sınırı (saat İDDİA EDİLMİYOR)
+   *     TY / N11    → gerçek an
+   * Okuyan `gunHassasiyetliMi(tarih)` ile sorar — K163'te `soldAt` için
+   * alınmış kararın aynısı; ikinci bir mekanizma açılmadı.
    * TEK PAKET VARSAYIMI: bir satış = bir sevkiyat. Kısmi sevkiyat (bir
    * siparişin iki koliyle gitmesi) gerekirse bu alan kalkar, yerine
    * Shipment tablosu gelir; çağıran taraflar o gün değişir. Bugün ~30
@@ -1351,6 +1361,71 @@ model Sale {
    * (kullanıcı kararı 14.08.2026).
    */
   shippedAt DateTime?
+
+  /**
+   * TESLİM EDİLDİ — KANALIN bildirdiği teslim anı (K195-2, 09.09.2026).
+   * `shippedAt`in kardeşi: aynı kalıp, aynı kurallar, aynı hassasiyet ayrımı.
+   *
+   * ⛔ NİYE SÜTUN — MERDİVEN İNDİRİLDİ (anayasa: "şema değişikliği en pahalı
+   * çözümdür", ve her basamak DENENDİ, "olmaz" denmedi):
+   *   ① mevcut alan taşıyor mu → HAYIR. `shippedAt` kargo anı; teslim anını
+   *      tutan hiçbir alan yok. `updatedAt` vekil YAPILAMAZ (kolon başlığı
+   *      bir iddiadır: o "en son dokunulan an"dır, "teslim edildiği an" değil).
+   *   ② serbest metin (AuditLog) yeter mi → HAYIR. Bu veriyle SORGU
+   *      kurulacak: "kaç paket yolda" = shippedAt DOLU + deliveredAt BOŞ.
+   *      Ayırt edici soru geriye bakmak değil, gruplamak.
+   *   ③ türetilebilir mi → HAYIR. Kanal söylemezse teslim anı bilinmiyor;
+   *      "kargodan N gün sonra" bir TAHMİN olurdu.
+   *   ④ sütun. ✓  (Yeni tabloya gerek yok: bir satış = bir sevkiyat
+   *      varsayımı `shippedAt` ile aynı; kısmi sevkiyat gerekirse İKİSİ
+   *      BİRLİKTE kalkar ve yerine Shipment tablosu gelir.)
+   *
+   * BOŞ = kanal henüz "teslim edildi" demedi. ⛔ UYDURULMAZ: bilinmeyen için
+   * `null` bir eksiklik değil BEYANDIR — K60'ta `shippedAt`e "bugünün
+   * tarihi" basan toplu bir düğme 5601 siparişe sistemin BİLMEDİĞİ bir değer
+   * yazdı ve geri alınmak zorunda kalındı.
+   *
+   * LEDGER DEĞİL, DURUM: kâr hesabına girmez, yanlışsa temizlenebilir.
+   *
+   * ⚠ İKİ TARİH İLKESİ (K185-③): bu alan OLAYIN anını taşır. Onu okuyan her
+   * ekran "sebebin günü mü, olayın günü mü" sorusunu KENDİ cevaplar ve
+   * gerekçesini koduna yazar — alan cevabı vermez.
+   */
+  deliveredAt DateTime?
+
+  /**
+   * KANALIN KENDİ KARGO TAKİP BAĞLANTISI (TY/N11 `cargoTrackingLink`).
+   *
+   * ⭐ "Paketim nerede" sorusunun cevabı BURADAN geliyor — 10+ kargo
+   * firmasıyla ayrı ayrı sözleşme/API (Halil'in (b) seçeneği) bu yüzden
+   * ERTELENDİ, gereksiz olduğu için değil: bugün gerekmiyor.
+   *
+   * ⚠ DIŞ ADRESTİR — ekranda gösterilirken doğrulanır. Kanaldan gelen bir
+   * dizeyi doğrudan tıklanabilir yapmak, kanalın yazdığı her şeye güvenmektir.
+   */
+  kargoTakipBaglantisi String? @db.VarChar(500)
+
+  /**
+   * KANALIN FİİLEN KULLANDIĞI KARGO FİRMASI (TY/N11 `cargoProviderName`).
+   *
+   * ⛔ `cargoCarrierId` İLE AYNI ŞEY DEĞİL — VE AYNI ALANA YAZILMAZ:
+   *     cargoCarrierId    BİZİM satışta seçtiğimiz firma → tarife, desi,
+   *                       maliyet ve kâr ONDAN hesaplanıyor
+   *     kanalKargoFirmasi KANALIN fiilen gönderdiği firma
+   * İkisi ayrıştığında fark tam da tarife/maliyet hatasının çıktığı yerdir.
+   * Tek alana yazmak o farkı GÖRÜNMEZ yapardı — ve görünmeyen bir fark
+   * hakkında kimse soru soramaz.
+   *
+   * ⚠ METİN, KİMLİK DEĞİL: kanalın yazdığı ad bizim `CargoCarrier`
+   * kaydımızla birebir tutmayabilir. Eşleştirme BİLEREK yapılmıyor —
+   * ad kanalın yazdığı gibi saklanır (dize eşleştirme sessizce yanlış
+   * firmaya bağlardı).
+   *
+   * ⚠ DİZİN AÇILMADI — BİLİNÇLİ: bugün bu alan üstünde sorgu yok. Dizin,
+   * onu okuyan ilk sorgu ölçüldüğünde açılır ("ölçülmemiş maliyet" değil,
+   * ölçülmemiş fayda da bedava değildir).
+   */
+  kanalKargoFirmasi String?
 
   // --- SATIŞ SEVİYESİ KÂR ---
   /// Σ kalem NET − sipariş başına kesintiler (hizmet bedeli, sabit gider,

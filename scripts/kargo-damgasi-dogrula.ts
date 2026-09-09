@@ -4,6 +4,8 @@ import {
   hbKargoDamgasi,
   gecmistenKargoDamgasi,
   damgaGunHassasiyetli,
+  teslimGuncellemesi,
+  teslimYazimiVarMi,
 } from "../src/lib/kanal-kargo-damgasi";
 
 /**
@@ -129,6 +131,121 @@ kontrol(
     hbKargoDamgasi("2026-13-45T00:00:00").tur === "YOK",
 );
 
+/* ═══ ②b TESLİM KARARI — SAF GÖVDE, DEĞER TESTİ (K195-2) ═══════════════ */
+/**
+ * ⭐ DESEN ARANMIYOR, GÖVDE ÇAĞRILIYOR. Karar TY ve N11'de aynı ve iki
+ * dosyaya kopyalansaydı kaynak tarayan bir ölçüt iki farklı yazılışı tek
+ * desenle kovalayamazdı. _(Anayasa: "saf hesap katmanı, desen tarayan
+ * bekçiye muhtaç olmaz".)_
+ */
+console.log("\n  ── TESLİM KARARI (ezme yasağı + tazeleme)");
+const BOS = { deliveredAt: null, kargoTakipBaglantisi: null, kanalKargoFirmasi: null };
+const T1 = new Date(Date.UTC(2026, 8, 5));
+const T2 = new Date(Date.UTC(2026, 8, 7));
+
+kontrol(
+  "BOŞ deliveredAt DOLAR",
+  teslimGuncellemesi(BOS, {
+    teslimAni: T1,
+    takipBaglantisi: null,
+    kargoFirmasi: null,
+  }).deliveredAt?.getTime() === T1.getTime(),
+);
+/**
+ * ⛔ EN KRİTİK ÖLÇÜT — K60'IN TESLİM TARAFI. Dolu bir damga elle girilmiş
+ * olabilir; kanalın daha yeni bir tarih söylemesi onu EZMEZ.
+ * ⚠ ÖRNEK AYRIMI GÖSTERİYOR: kanalın damgası mevcuttan DAHA YENİ (T2 > T1).
+ * Aynı tarih verilseydi "ezmedi" sonucu tesadüf olurdu — ezen bir gövde de
+ * aynı değeri yazardı ve test yeşil kalırdı.
+ */
+kontrol(
+  "DOLU deliveredAt EZİLMEZ (kanal daha yeni tarih söylese bile)",
+  teslimGuncellemesi(
+    { ...BOS, deliveredAt: T1 },
+    { teslimAni: T2, takipBaglantisi: null, kargoFirmasi: null },
+  ).deliveredAt === undefined,
+);
+kontrol(
+  "kanal teslim demediyse yazılmaz",
+  teslimGuncellemesi(BOS, {
+    teslimAni: null,
+    takipBaglantisi: null,
+    kargoFirmasi: null,
+  }).deliveredAt === undefined,
+);
+kontrol(
+  "takip bağlantısı BOŞTAN dolar",
+  teslimGuncellemesi(BOS, {
+    teslimAni: null,
+    takipBaglantisi: "https://ty/1",
+    kargoFirmasi: null,
+  }).kargoTakipBaglantisi === "https://ty/1",
+);
+/** ⚠ TAKİP/FİRMA TAZELENİR — `deliveredAt`ten FARKLI kural, bilerek. */
+kontrol(
+  "takip bağlantısı DEĞİŞTİYSE tazelenir (kanalın son beyanı)",
+  teslimGuncellemesi(
+    { ...BOS, kargoTakipBaglantisi: "https://ty/1" },
+    { teslimAni: null, takipBaglantisi: "https://ty/2", kargoFirmasi: null },
+  ).kargoTakipBaglantisi === "https://ty/2",
+);
+kontrol(
+  "AYNI takip bağlantısı yeniden YAZILMAZ (boş gidiş-dönüş yok)",
+  teslimGuncellemesi(
+    { ...BOS, kargoTakipBaglantisi: "https://ty/1" },
+    { teslimAni: null, takipBaglantisi: "https://ty/1", kargoFirmasi: null },
+  ).kargoTakipBaglantisi === undefined,
+);
+/**
+ * ⛔ SUSMAK "YOK" DEMEK DEĞİLDİR: kanal bu turda bağlantı vermediyse
+ * elimizdeki bilgi SİLİNMEZ. Bunu ölçen ayrı bir test şart — üstteki
+ * "değiştiyse tazele" ölçütü `null` dalını hiç çalıştırmıyor.
+ */
+kontrol(
+  "kanal SUSTUYSA dolu takip bağlantısı SİLİNMEZ",
+  teslimGuncellemesi(
+    { ...BOS, kargoTakipBaglantisi: "https://ty/1", kanalKargoFirmasi: "Aras" },
+    { teslimAni: null, takipBaglantisi: null, kargoFirmasi: null },
+  ).kargoTakipBaglantisi === undefined,
+);
+kontrol(
+  "kargo firması DEĞİŞTİYSE tazelenir, AYNIYSA yazılmaz",
+  teslimGuncellemesi({ ...BOS, kanalKargoFirmasi: "Aras" }, {
+    teslimAni: null,
+    takipBaglantisi: null,
+    kargoFirmasi: "Yurtiçi",
+  }).kanalKargoFirmasi === "Yurtiçi" &&
+    teslimGuncellemesi({ ...BOS, kanalKargoFirmasi: "Aras" }, {
+      teslimAni: null,
+      takipBaglantisi: null,
+      kargoFirmasi: "Aras",
+    }).kanalKargoFirmasi === undefined,
+);
+kontrol(
+  "yazacak bir şey yoksa BOŞ döner (çağıran sorgu açmaz)",
+  !teslimYazimiVarMi(
+    teslimGuncellemesi(BOS, {
+      teslimAni: null,
+      takipBaglantisi: null,
+      kargoFirmasi: null,
+    }),
+  ),
+);
+kontrol(
+  "Delivered damgası geçmişten çözülür (en geç olan)",
+  (() => {
+    const d = gecmistenKargoDamgasi(
+      [
+        { createdDate: AN, status: "Delivered" },
+        { createdDate: AN + 7200_000, status: "Delivered" },
+        { createdDate: AN + 9000_000, status: "Shipped" },
+      ],
+      "Delivered",
+    );
+    return d.tur === "AN" && d.an.getTime() === AN + 7200_000;
+  })(),
+);
+
 /* ═══ ③ İÇE AKTARMALAR UYDURMA TARİH YAZAMAZ ═════════════════════════ */
 /**
  * ⛔ K60 VAKASI: `shippedAt`e "bugünün tarihi" basan toplu bir düğme 5601
@@ -152,48 +269,85 @@ console.log("\n  ── İÇE AKTARMALAR (uydurma tarih yasağı)");
  */
 const ICE_AKTARMALAR = readdirSync("scripts")
   .filter((a) => a.startsWith("canli-") && a.endsWith("-ice-aktar.ts"))
-  .map((a) => "scripts/" + a)
-  .filter((y) => readFileSync(y, "utf8").includes("shippedAt:"));
+  .map((a) => "scripts/" + a);
+const KAYNAKLAR = new Map(ICE_AKTARMALAR.map((y) => [y, readFileSync(y, "utf8")]));
+
 /**
- * ⚠ TABAN DOLULUĞU: boş liste her ölçütü sessizce geçirir. Üç kanal
- * (TY · HB · N11) `shippedAt` yazıyor; azalırsa bir bağ kopmuş demektir.
+ * ⭐ İKİ ALAN, TEK DÖNGÜ (K195-2). Kargo ve teslim damgası AYNI yasağa tabi;
+ * ikisini iki ayrı blokla yazmak, yarın birine eklenen bir kuralı ötekinde
+ * unutmanın en kısa yoluydu.
  */
-kontrol(
-  "shippedAt yazan içe aktarma bulundu (taban DOLU)",
-  ICE_AKTARMALAR.length >= 3,
-  ICE_AKTARMALAR,
-);
-for (const yol of ICE_AKTARMALAR) {
-  const metin = readFileSync(yol, "utf8");
-  const satirlar = metin
+/**
+ * ⛔ "GEÇİYOR" DEĞİL "ATANIYOR" — ÖLÇÜT KULLANIMA BAĞLANIR.
+ *
+ * `deliveredAt: true` bir SELECT satırıdır, `deliveredAt: null` bir WHERE
+ * koşuludur; ikisi de alanı YAZMAZ. Sadece "dosyada geçiyor mu" diye
+ * bakılsaydı taban doluluğu ölçütü, hiçbir şey yazmayan bir dosyayı da
+ * "yazan" sayardı ve mutasyon kaçardı.
+ * _(Anayasa: "ölçüt kullanıma bağlanır — ada ya da dizeye değil".)_
+ */
+function atamaSatirlari(metin: string, alan: string): string[] {
+  const hariç = new RegExp(alan + ":" + "\\s*(true|null)" + "\\b");
+  return metin
     .split("\n")
-    .filter((l) => l.includes("shippedAt:") && !l.trim().startsWith("*"));
-  kontrol(
-    yol.split("/").pop() + " — shippedAt ataması VAR",
-    satirlar.length > 0,
-    satirlar.length,
-  );
-  const uydurma = satirlar.filter(
-    (l) => l.includes("new Date()") || l.includes("Date.now()"),
-  );
-  kontrol(
-    yol.split("/").pop() + " — shippedAt'e UYDURMA tarih yazılmıyor",
-    uydurma.length === 0,
-    uydurma,
+    .filter((l) => l.includes(alan + ":") && !l.trim().startsWith("*"))
+    .filter((l) => !hariç.test(l));
+}
+
+for (const alan of ["shippedAt", "deliveredAt"] as const) {
+  const yazanlar = ICE_AKTARMALAR.filter(
+    (y) => atamaSatirlari(KAYNAKLAR.get(y)!, alan).length > 0,
   );
   /**
-   * ⛔ VE YAZIM YALNIZ BOŞ ALANA: `updateMany` koşulunda `shippedAt: null`
-   * olmazsa dolu bir damga ezilir — "ezme YOK" ilkesi sözde kalırdı.
+   * ⚠ TABAN DOLULUĞU: boş liste her ölçütü sessizce geçirir. Üç kanal
+   * (TY · HB · N11) bu alanları yazıyor; azalırsa bir bağ kopmuş demektir.
    */
-  if (metin.includes("data: { shippedAt: damga }")) {
-    const i = metin.indexOf("data: { shippedAt: damga }");
-    const pencere = metin.slice(Math.max(0, i - 260), i);
-    kontrol(
-      yol.split("/").pop() + " — damga yalnız shippedAt NULL olana yazılıyor",
-      pencere.includes("shippedAt: null"),
+  kontrol(alan + " yazan içe aktarma bulundu (taban DOLU)", yazanlar.length >= 3, yazanlar);
+  for (const yol of yazanlar) {
+    const metin = KAYNAKLAR.get(yol)!;
+    const ad = yol.split("/").pop();
+    const satirlar = atamaSatirlari(metin, alan);
+    kontrol(ad + " — " + alan + " ataması VAR", satirlar.length > 0, satirlar.length);
+    const uydurma = satirlar.filter(
+      (l) => l.includes("new Date()") || l.includes("Date.now()"),
     );
+    kontrol(ad + " — " + alan + "'e UYDURMA tarih yazılmıyor", uydurma.length === 0, uydurma);
+    /**
+     * ⛔ VE YAZIM YALNIZ BOŞ ALANA: `updateMany` koşulunda `<alan>: null`
+     * olmazsa dolu bir damga ezilir — "ezme YOK" ilkesi sözde kalırdı.
+     */
+    const yazim = "data: { " + alan + ": damga }";
+    if (metin.includes(yazim)) {
+      const i = metin.indexOf(yazim);
+      const pencere = metin.slice(Math.max(0, i - 260), i);
+      kontrol(
+        ad + " — " + alan + " yalnız NULL olana yazılıyor",
+        pencere.includes(alan + ": null"),
+      );
+    }
   }
 }
+
+/**
+ * ⛔ ORTAK GÖVDE ÇAĞRILMAYA DEVAM EDİYOR MU — DESEN YASAĞI (K195-2).
+ *
+ * Teslim kararı `teslimGuncellemesi` içinde ve DEĞER testleriyle korunuyor.
+ * Ama biri o çağrıyı söküp mantığı yeniden satır içine yazarsa değer
+ * testleri hâlâ YEŞİL yanar — gövde doğru çalışmaya devam eder, yalnız
+ * onu kimse çağırmaz. _(Anayasa: "tur 98/98 yeşildi ve panelde kutu YOKTU":
+ * bütün ölçütler saf gövdeyi sınıyordu ve gövdeleri kimse çağırmıyordu.)_
+ *
+ * ⚠ LİSTE ELLE TUTULMUYOR: çağıranlar taranarak bulunuyor. Dördüncü kanal
+ * eklenirse taban kendiliğinden büyür; kimsenin listeye eklemesi gerekmez.
+ */
+const govdeyiCagiranlar = ICE_AKTARMALAR.filter((y) =>
+  KAYNAKLAR.get(y)!.includes("teslimGuncellemesi("),
+);
+kontrol(
+  "teslim kararı ORTAK GÖVDEDEN okunuyor (satır içine kopyalanmamış)",
+  govdeyiCagiranlar.length >= 2,
+  govdeyiCagiranlar,
+);
 
 console.log(
   "\n" +

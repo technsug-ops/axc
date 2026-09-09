@@ -103,7 +103,7 @@ GÖRÜLMELİ** — bu doğrulama yapılmadan K193 kapanmaz.
 
 ---
 
-## 🔶 K195 — KARGO TAKİBİ: KANALIN SÖYLEDİĞİNİ ATMAYI BIRAKTIK · 09.09.2026 · [KOD KOŞTU — 2. FAZ ONAY BEKLİYOR]
+## 🔶 K195 — KARGO TAKİBİ: KANALIN SÖYLEDİĞİNİ ATMAYI BIRAKTIK · 09.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 > **Halil kararı 09.09:** kargo takibi **pazaryerinden** (a); kargo firması
 > API'leri (b) ERTELENDİ. Saat dilimi sorusuna cevap: **(c) — TY'yi esas al,
@@ -238,7 +238,10 @@ commit, o push'a **biner ve bekçiden geçmemiş olur.**
 Bu, "cmd push kapısı dışında" kararının farklı bir yüzü: orada kapı bilerek
 yoktu, burada kapı VAR ama zamanlama onu atlatabiliyordu.
 
-### 📋 2. FAZ — ŞEMA DEĞİŞİKLİĞİ ONAYI BEKLİYOR
+### 📋 2. FAZ — ŞEMA DEĞİŞİKLİĞİ ONAYI BEKLİYORDU · ONAY GELDİ 09.09 → bkz. ② 
+
+_Aşağıdaki gerekçe SİLİNMEDİ: merdivenin niye indirildiği, kararın kendisi
+kadar kayda değer. Onay ve koşum ② bölümünde._
 
 `Sale.deliveredAt` **YOK** ve merdiven indirildi: mevcut alan yok, serbest
 metin yetmez (panel "kaç paket yolda" diye SORGULAYACAK), türetilemez.
@@ -256,6 +259,118 @@ da tarife/maliyet hatalarının çıktığı yer.
 ⭐ **VE `cargoTrackingLink` (b) SEÇENEĞİNİ MUHTEMELEN GEREKSİZ KILIYOR:**
 "paketim nerede" sorusunun cevabı TY'den zaten geliyor; 10+ kargo firmasıyla
 ayrı ayrı sözleşme/API gerekmeyebilir.
+
+### ─── ② TESLİM TARAFI YAZILDI · 09.09.2026 · [KOD KOŞTU — MIGRATION CANLIDA]
+
+> **Halil AÇIK ONAYI 09.09:** _"deliveredAt — EVET, ekle."_ Ön şart:
+> `canli:yedek-cekirdek` YEŞİL görülmeden migration YOK + `.bak` yedeği.
+
+⚠ **YENİ SATIR AÇILMADI — BU K195'İN DEVAMIDIR.** Bir kalemin ikinci fazı
+kendine satır açarsa pano taranamaz hâle gelir _("kimlik tekildir";
+K51/K53 vakaları)_. Kod yorumlarında bir ara `K196` yazılmıştı, **19 atıf
+`K195-2`'ye çevrildi** — ikinci bir kimlik doğmadan.
+
+**ÖN ŞARTLAR ÖNCE, GÖRÜLEREK:**
+
+    yedek  DOSYA hedefi · 87.113 satir · 42,02 MB
+           yazildi ve GERI OKUNDU — ozetler birebir (225 ms)
+    .bak   schema.prisma.bak-20260909-124621  (depo DISINA tasindi)
+
+⛔ **VE `.bak` DEPOYA GİRMEK ÜZEREYDİ:** `.gitignore` `*.bak-*` desenini
+tanımıyor. Şema yedeği bir anlık görüntüdür, sürüm geçmişi değil — depoya
+girseydi ilerideki her okuyucu için ikinci bir "geçerli şema" doğardı.
+
+**MIGRATION — `20260909125825_satis_teslim_damgasi`, canlıda KOŞTU:**
+
+    ALTER TABLE `Sale` ADD deliveredAt · kanalKargoFirmasi · kargoTakipBaglantisi
+    saglik kontrolu: 47 tablo · 534 kolon canlida DOGRULANDI
+
+⛔ **HARF TUZAĞI ÖLÇÜLDÜ VE YAKALANDI:** `prisma migrate diff` tabloyu
+**`sale`** diye üretti (yerel MySQL Windows'ta harfe DUYARSIZ). Canlı Linux
+harfe DUYARLI ve orada tablo `Sale` — küçük harfle gitseydi migration
+canlıda _"table doesn't exist"_ ile düşerdi. `migration:kontrol` 49/49 temiz.
+
+### ⛔ ÜÇ SÜTUNUN DA YAZICISI ÖLÇÜLDÜ — "ALAN BİR İDDİADIR"
+
+Sütun açmak, o bilginin tutulduğunu İDDİA etmektir; yazıcısı olmayan alan
+boş bir vaattir (K52). Bu yüzden açmadan önce üç kanal da ölçüldü:
+
+| sütun | TY | N11 | HB |
+|---|---|---|---|
+| `deliveredAt` | ✓ `Delivered` (epoch → AN) | ✓ aynı şekil | ✓ `DeliveredDate` (dilimsiz → GÜN) |
+| `kargoTakipBaglantisi` | ✓ `cargoTrackingLink` | ✓ | ⛔ **YOK — ölçüldü** |
+| `kanalKargoFirmasi` | ✓ `cargoProviderName` | ✓ | ⛔ **YOK — ölçüldü** |
+
+⚠ **HB'NİN BOŞLUĞU EKSİKLİK DEĞİL, ÖLÇÜLMÜŞ SINIR** (`canli:kargo-alan-olcum`):
+teslim ucu `Id · Barcode · PackageNumber · OrderNumber · OrderNumbers ·
+MerchantId · DeliveredDate · EtgbNo` veriyor, takip/firma yok. Vekil bir alan
+(bizim seçtiğimiz `cargoCarrier`) YAZILMADI — o başka bir şeydir.
+
+### ⭐ İKİ FARKLI EZME KURALI — VE İKİSİ DE GEREKÇELİ
+
+    deliveredAt   bir OLAYIN ani → yalniz BOS olana yazilir, dolu damga
+                  (elle girilmis olabilir) ASLA degismez
+    takip/firma   kanalin O ANKI beyani → en son soyledigi gecerli
+                  ⚠ ama `null` ASLA yazilmaz: susmak "yok" demek degildir
+
+Karar iki içe aktarmada da gerekiyordu ve **saf bir gövdeye** taşındı
+(`teslimGuncellemesi`). Kopyalansaydı kaynak tarayan bir ölçüt iki farklı
+yazılışı (`where … null` ve `if (… === null)`) tek desenle kovalayamazdı.
+Şimdi bekçi desen aramıyor — **gövdeyi çağırıp DEĞER sınıyor.**
+
+### 📏 BÖLÜNMÜŞ SİPARİŞ ÖLÇÜLDÜ — SINIR UYDURULMADI
+
+"Sipariş teslim edildi" ne demek? İki okuma da makuldü: _en az bir paket_ mi,
+_bütün paketler_ mi. Kural yazılmadan önce ölçüldü (`canli:paket-bolunmesi`):
+
+    satis 7953 · paket 1 → 7952 (%99,99) · paket 2 → 1 (%0,01)
+
+Basit kural (en geç `Delivered` kazanır) seçildi ve **sınırı koda yazıldı**;
+oran anlamlı hâle gelirse "bütün paketleri teslim" diye daraltılır. Şemadaki
+TEK PAKET VARSAYIMI ile aynı taban. _(Anayasa: "bir sınırın yönü ölçülmeden
+çevrilmez".)_
+
+### ⛔ `as Aday` CAST'İ BİR TUZAK ÇIKARDI — KALDIRILDI
+
+N11 aday nesnesi `as Aday` ile kuruluyordu. Cast, eksik alanı derleyiciden
+**saklıyor**: `teslimAni` eklendiğinde orası `undefined` kalırdı,
+`an > undefined` sessizce `false` döner ve **sütun hiç dolmazdı** — hata yok,
+uyarı yok, yalnız boş bir kolon. Cast kaldırıldı; yarın eklenen alanı artık
+derleyici gösteriyor.
+
+### BEKÇİ 38/38 · MUTASYON 11/11 KIRMIZI · ÇAPA 233/233
+
+⭐ **VE MUTASYONLAR ARTIK KALICI:** K195'in dokuz mutasyonu ELLE koşulmuştu
+ve hiçbir yere yazılmamıştı — koşulduğu turda vardı, ertesi gün yoktu.
+`kargo-damgasi-mutasyon-kontrol.ts` yazıldı (üç hedef dosya: saf gövde + TY +
+HB); çapa bekçisi onu kendiliğinden kapsamına aldı (19 → 20 harness).
+
+    + DOLU teslim damgasi EZILIYOR              KIRMIZI ← K60'in teslim tarafi
+    + kanal SUSUNCA takip baglantisi SILINIYOR  KIRMIZI
+    + ayni takip her turda yeniden yaziliyor    KIRMIZI
+    - kargo firmasi hic tazelenmiyor            KIRMIZI
+    - gecmisten ILK damga aliniyor              KIRMIZI
+    + durum suzgeci kalkti                      KIRMIZI
+    + HB naif new Date() kullaniyor             KIRMIZI ← dilim tuzagi
+    + TY teslim alanina uydurma tarih yaziyor   KIRMIZI ← K60 yasagi
+    - TY teslim alanini hic yazmiyor            KIRMIZI ← taban dolulugu
+    + HB dolu teslim damgasini eziyor           KIRMIZI
+    - teslim karari satir icine kopyalandi      KIRMIZI ← govde cagrilmiyor
+
+⚠ **SONUNCUSU EN SİNSİSİNİ ÖLÇÜYOR:** ortak gövde ayakta kalır, değer
+testleri YEŞİL yanar — ama onu kimse çağırmaz. _(Anayasa: "tur 98/98 yeşildi
+ve panelde kutu YOKTU".)_
+
+### ⚠ BU YETENEK İLERİYE DÖNÜKTÜR — GEÇMİŞ DOLDURULMUYOR
+
+Kanal uçları yalnız yakın pencereyi veriyor. `deliveredAt` bugün boş doğar ve
+her çekimde yeni teslimlerle dolar. **"Teslim takibi kapandı" DEĞİL** —
+kapanan şey bundan SONRASI.
+
+⛔ **HENÜZ EKRAN YOK:** üç sütun da yazılıyor ama hiçbir ekran okumuyor.
+Anayasa gereği bu bir teslim sayılmaz _("altyapı tek başına teslim
+değildir")_ — "kaç paket yolda" kutusu ayrı bir kalemdir ve mimar onayı
+bekler.
 
 ---
 

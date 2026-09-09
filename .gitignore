@@ -69,3 +69,9 @@ veri/yedek-yerel/
 veri/yedek-yerel/sonda/
 veri/gunluk/
 .bekci-kilidi
+
+# Sema/veri anlik goruntuleri — migration oncesi alinan yedekler.
+# Bunlar SURUM GECMISI DEGIL: depoya girerse ilerideki her okuyucu icin
+# ikinci bir "gecerli sema" dogar. (K195-2, 09.09.2026)
+*.bak-*
+*.prisma.bak

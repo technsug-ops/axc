@@ -340,6 +340,24 @@ export async function hbCekimKos(ayar: {
    */
   const teslim = await tumKayitlar((o, l) => UCLAR.paketlerTeslim(k, o, l), baslik, 100);
   let teslimSayisi = 0;
+  /**
+   * ⛔ TESLİM TARİHİ DE ARTIK ATILMIYOR (K195-2, 09.09.2026).
+   *
+   * ÖLÇÜLDÜ (`npm run canli:kargo-alan-olcum`, 09.09.2026) — bu uç şunları
+   * veriyor: `Id · Barcode · PackageNumber · OrderNumber · OrderNumbers ·
+   * MerchantId · DeliveredDate · EtgbNo`. Yani teslim TARİHİ var; eski hâl
+   * yalnız sipariş NUMARASINI topluyor, tarihi çöpe atıyordu.
+   *
+   * ⛔ VE ÖLÇÜM BİR YOKLUĞU DA GÖSTERDİ: HB bu uçta **takip bağlantısı ve
+   * kargo firması VERMİYOR** (TY ve N11 veriyor). Bu yüzden HB satışlarında
+   * `kargoTakipBaglantisi` ve `kanalKargoFirmasi` BOŞ kalır — eksiklik
+   * değil, ölçülmüş bir sınır. Vekil bir alan gösterilmiyor.
+   * _(Anayasa: "kolon başlığı bir iddiadır — vekil alan gösterilmez".)_
+   *
+   * ⚠ TARİH DİLİMSİZ, `ShippedDate` ile aynı tuzak: `hbKargoDamgasi` gün
+   * olarak keser, `new Date()` ÇAĞRILMAZ.
+   */
+  const teslimDamgalari = new Map<string, Date>();
   if (teslim.tur === "TAMAM") {
     for (const p of teslim.kayitlar as Record<string, unknown>[]) {
       for (const alan of ["OrderNumber", "orderNumber"]) {
@@ -347,6 +365,8 @@ export async function hbCekimKos(ayar: {
         if (typeof v === "string" && v !== "") {
           if (!siparisNolari.has(v)) teslimSayisi++;
           siparisNolari.add(v);
+          const d = hbKargoDamgasi(p.DeliveredDate ?? p.deliveredDate);
+          if (d.tur !== "YOK" && !teslimDamgalari.has(v)) teslimDamgalari.set(v, d.an);
         }
       }
     }
@@ -562,8 +582,29 @@ export async function hbCekimKos(ayar: {
     damgaYazilan += guncel.count;
   }
 
+  /**
+   * ═══ TESLİM DAMGASI (K195-2) — AYNI KALIP, AYNI EZME YASAĞI ═══
+   *
+   * ⚠ HB'DE TAKİP BAĞLANTISI VE FİRMA YAZILMAZ — ÖLÇÜLDÜ, kanal bu iki
+   * bilgiyi vermiyor. Boş kalıyorlar ve boş kalmaları doğru; vekil bir
+   * değer (ör. bizim seçtiğimiz `cargoCarrier`) yazmak, kanalın
+   * söylemediği bir şey hakkında iddia kurmak olurdu.
+   *
+   * ⚠ DAMGA GÜN HASSASİYETİNDE: HB'nin tarihi dilimsiz geldiği için saat
+   * İDDİA EDİLMİYOR. Okuyan `gunHassasiyetliMi` ile bunu sorabilir.
+   */
+  let teslimYazilan = 0;
+  for (const [no, damga] of teslimDamgalari) {
+    const guncel = await prisma.sale.updateMany({
+      where: { code: no, channelAccountId: hesap.id, deliveredAt: null },
+      data: { deliveredAt: damga },
+    });
+    teslimYazilan += guncel.count;
+  }
+
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
   console.log(`   KARGO DAMGASI YAZILDI (yalnız BOŞ olanlara)      ${damgaYazilan}`);
+  console.log(`   TESLİM DAMGASI YAZILDI (yalnız BOŞ olanlara)     ${teslimYazilan}`);
   console.log(`     ├─ aynı kanal (yeniden içe aktarma, beklenen)  ${ayniKanal}`);
   console.log(`     └─ ÇAPRAZ KANAL (numara uzayı çakışması)       ${capraz.length}`);
   if (capraz.length > 0) {
@@ -758,6 +799,8 @@ export async function hbCekimKos(ayar: {
            * `null` ise kanal "kargolandı" demedi — UYDURULMAZ.
            */
           shippedAt: kargoDamgalari.get(aday.siparisNo) ?? null,
+          /** ⚠ Kanal "teslim edildi" demediyse BOŞ kalır — uydurulmaz. */
+          deliveredAt: teslimDamgalari.get(aday.siparisNo) ?? null,
           importBatch: partiKimligi,
           importKaynak: "hb-enumerasyon",
           /**

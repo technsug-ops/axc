@@ -104,6 +104,77 @@ export function damgaGunHassasiyetli(d: KargoDamgasi): boolean {
   return d.tur === "GUN";
 }
 
+/**
+ * ============================================================================
+ *  TESLİM TARAFINDA NE YAZILACAK — SAF KARAR (K195-2, 09.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ NİYE SAF GÖVDE: bu karar TY ve N11 içe aktarmalarında AYNI ŞEKİLDE
+ *  gerekiyordu. İki dosyaya ayrı ayrı yazılsaydı ikisi ayrı ayrı bozulabilir
+ *  ve hiçbir bekçi bunu göremezdi — üstelik kaynak tarayan bir ölçüt iki
+ *  farklı yazılışı ("updateMany where null" ve "if (... === null)") tek
+ *  desenle kovalayamazdı. Gövde saf olunca bekçi ÇAĞIRIR ve DEĞER sınar.
+ *  _(Anayasa: "saf hesap katmanı, desen tarayan bekçiye muhtaç olmaz" ve
+ *  "kopyası olan seçici ölçüt iki kat tehlikelidir".)_
+ *
+ *  ═══ ÜÇ ALAN, İKİ FARKLI KURAL — VE AYRIM GEREKÇELİ ═══════════════════
+ *
+ *    deliveredAt   BİR OLAYIN ANI. Bir kez olur, sonra değişmez. Yalnız BOŞ
+ *                  olana yazılır; dolu bir damga (elle girilmiş olabilir)
+ *                  ASLA değişmez. `shippedAt` ile aynı kural.
+ *
+ *    takip / firma KANALIN O ANKİ BEYANI. Kargo firması değişebilir, takip
+ *                  bağlantısı yenilenebilir; kanalın EN SON söylediği
+ *                  geçerlidir. Bu alanların elle girildiği bir yol YOK,
+ *                  dolayısıyla ezilecek bir insan kararı da yok.
+ *
+ *  ⚠ AMA `null` HİÇBİR ZAMAN YAZILMAZ: kanal bu turda susmuşsa önceki bilgi
+ *  silinmez. Susmak "yok" demek değildir — ve bir bilgiyi silmek, boş bir
+ *  alanı doldurmaktan bambaşka bir iştir.
+ * ============================================================================
+ */
+export type TeslimMevcut = {
+  deliveredAt: Date | null;
+  kargoTakipBaglantisi: string | null;
+  kanalKargoFirmasi: string | null;
+};
+export type TeslimKanal = {
+  teslimAni: Date | null;
+  takipBaglantisi: string | null;
+  kargoFirmasi: string | null;
+};
+export type TeslimYazimi = {
+  deliveredAt?: Date;
+  kargoTakipBaglantisi?: string;
+  kanalKargoFirmasi?: string;
+};
+
+export function teslimGuncellemesi(
+  mevcut: TeslimMevcut,
+  kanal: TeslimKanal,
+): TeslimYazimi {
+  const veri: TeslimYazimi = {};
+  /** ⛔ DOLU DAMGA EZİLMEZ — koşul `mevcut.deliveredAt === null`. */
+  if (kanal.teslimAni !== null && mevcut.deliveredAt === null) {
+    veri.deliveredAt = kanal.teslimAni;
+  }
+  /**
+   * ⚠ "FARKLIYSA" ŞARTI SADECE HIZ İÇİN DEĞİL: aynı değeri her turda geri
+   * yazmak 5 dakikada bir onlarca gereksiz gidiş-dönüş üretirdi.
+   */
+  if (kanal.takipBaglantisi !== null && kanal.takipBaglantisi !== mevcut.kargoTakipBaglantisi) {
+    veri.kargoTakipBaglantisi = kanal.takipBaglantisi;
+  }
+  if (kanal.kargoFirmasi !== null && kanal.kargoFirmasi !== mevcut.kanalKargoFirmasi) {
+    veri.kanalKargoFirmasi = kanal.kargoFirmasi;
+  }
+  return veri;
+}
+
+/** Yazılacak bir şey var mı — çağıranlar gereksiz sorgu açmasın diye. */
+export function teslimYazimiVarMi(v: TeslimYazimi): boolean {
+  return Object.keys(v).length > 0;
+}
+
 /** Depodan okunan bir tarih gün hassasiyetli mi (tür bilgisi yokken). */
 export function tarihGunHassasiyetli(tarih: Date): boolean {
   return gunHassasiyetliMi(tarih);

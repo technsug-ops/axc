@@ -14,6 +14,8 @@ import {
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
 import {
   gecmistenKargoDamgasi,
+  teslimGuncellemesi,
+  teslimYazimiVarMi,
   type PaketGecmisi,
 } from "../src/lib/kanal-kargo-damgasi";
 
@@ -110,7 +112,20 @@ type Aday = {
    * ⚠ Kanal EPOCH MS veriyor, yani saat dilimi belirsizliği YOK.
    */
   kargoAni: Date | null;
+  /**
+   * KANALIN BİLDİRDİĞİ TESLİM ANI (K195-2, 09.09.2026) — `packageHistories`
+   * içindeki `Delivered` damgası. `null` = kanal henüz teslim edildi demedi.
+   * ⚠ Kanal EPOCH MS veriyor → saat dilimi belirsizliği YOK.
+   */
+  teslimAni: Date | null;
   kargoNo: string | null;
+  /** Kanalın kendi takip bağlantısı (`cargoTrackingLink`). */
+  takipBaglantisi: string | null;
+  /**
+   * Kanalın FİİLEN kullandığı kargo firması (`cargoProviderName`).
+   * ⛔ `cargoCarrierId` ile aynı şey DEĞİL — o bizim seçtiğimiz firma.
+   */
+  kargoFirmasi: string | null;
   paketSayisi: number;
   tutar: number;
   durum: string;
@@ -318,6 +333,31 @@ export async function tyCekimKos(ayar: {
       "Shipped",
     );
     const kargoAni = kargoDamgasi.tur === "YOK" ? null : kargoDamgasi.an;
+    /**
+     * TESLİM ANI — aynı geçmişten, `Delivered` durumu (K195-2).
+     *
+     * ⚠ SINIR BEYAN EDİLİYOR — VE ÖLÇÜLDÜ: bölünmüş bir siparişte
+     * paketlerden biri teslim, öteki yolda olabilir; bu kural o siparişi
+     * "teslim edildi" sayar. Ölçüm (09.09.2026): 7953 satışın **1'i**
+     * bölünmüş (%0,01) — şemadaki TEK PAKET VARSAYIMI ile aynı taban.
+     * ⛔ AÇILIŞ ŞARTI: bölünmüş sipariş oranı anlamlı hâle gelirse kural
+     * "bütün paketleri teslim" diye daraltılır. Bugün ölçüm bunu
+     * gerektirmiyor. _(Anayasa: "bir sınırın yönü ölçülmeden çevrilmez".)_
+     */
+    const teslimDamgasi = gecmistenKargoDamgasi(
+      p.packageHistories as PaketGecmisi[] | undefined,
+      "Delivered",
+    );
+    const teslimAni = teslimDamgasi.tur === "YOK" ? null : teslimDamgasi.an;
+    /** ⚠ BOŞ DİZE `null` SAYILIR: "" bir bağlantı değil, bilgisizliktir. */
+    const takipBaglantisi =
+      typeof p.cargoTrackingLink === "string" && p.cargoTrackingLink !== ""
+        ? p.cargoTrackingLink
+        : null;
+    const kargoFirmasi =
+      typeof p.cargoProviderName === "string" && p.cargoProviderName !== ""
+        ? p.cargoProviderName
+        : null;
 
     const mevcut = adaylar.get(no);
     if (mevcut) {
@@ -325,6 +365,19 @@ export async function tyCekimKos(ayar: {
        *  daha geç kargolanmış olabilir ve sipariş o an yola çıkmıştır. */
       if (kargoAni && (!mevcut.kargoAni || kargoAni > mevcut.kargoAni)) {
         mevcut.kargoAni = kargoAni;
+        /**
+         * ⭐ TAKİP BİLGİSİ DAMGAYI KAZANAN PAKETTEN GELİR. Bölünmüş
+         * siparişte iki ayrı takip bağlantısı vardır ve sütun BİRİNİ
+         * tutar; "herhangi biri" yerine `shippedAt`i kazanan paketinki
+         * seçiliyor ki iki alan AYNI paketi anlatsın. Rastgele seçilseydi
+         * bağlantı ile kargo anı farklı paketlere ait olabilirdi.
+         */
+        mevcut.takipBaglantisi = takipBaglantisi;
+        mevcut.kargoFirmasi = kargoFirmasi;
+      }
+      /** ⚠ EN GEÇ TESLİM kazanır — sipariş son paketiyle tamamlanır. */
+      if (teslimAni && (!mevcut.teslimAni || teslimAni > mevcut.teslimAni)) {
+        mevcut.teslimAni = teslimAni;
       }
       mevcut.paketSayisi++;
       mevcut.tutar = kurus(mevcut.tutar + tutar);
@@ -352,7 +405,10 @@ export async function tyCekimKos(ayar: {
           ? iptalAniCoz(p.packageHistories as { createdDate: number; status: string }[])
           : null,
         kargoAni,
+        teslimAni,
         kargoNo: p.cargoTrackingNumber ? String(p.cargoTrackingNumber) : null,
+        takipBaglantisi,
+        kargoFirmasi,
         paketSayisi: 1,
         tutar,
         durum: String(p.status),
@@ -413,9 +469,59 @@ export async function tyCekimKos(ayar: {
     damgaYazilan += guncel.count;
   }
 
+  /**
+   * ═══ TESLİM TARAFI (K195-2) — AYNI KALIP, AMA İKİ FARKLI EZME KURALI ═══
+   *
+   * ⛔ AYRIM GEREKÇELİ, KOLAYINA GELEN DEĞİL:
+   *
+   *   `deliveredAt`  BİR OLAYIN ANI — bir kez olur, sonra değişmez. Yalnız
+   *                  BOŞ olana yazılır; dolu bir damga (elle girilmiş
+   *                  olabilir) ASLA değişmez. `shippedAt` ile aynı kural.
+   *
+   *   takip/firma    KANALIN O ANKİ BEYANI — kargo firması değişebilir,
+   *                  bağlantı yenilenebilir. Kanalın EN SON söylediği
+   *                  geçerlidir; bu alanların elle girildiği bir yol YOK,
+   *                  dolayısıyla ezilecek bir insan kararı da yok.
+   *                  ⚠ Ama `null` ASLA yazılmaz: kanal bu turda söylemediyse
+   *                  önceki bilgi silinmez — susmak "yok" demek değildir.
+   *
+   * ⚠ ÖNCE OKUNUYOR, SONRA YAZILIYOR — VE YALNIZ DEĞİŞEN SATIR. Körlemesine
+   * her turda yazmak, 5 dakikada bir onlarca gereksiz gidiş-dönüş demekti;
+   * tek `findMany` + yalnız farklı olana `update`. _(Anayasa: "yavaşlık
+   * ölçekleme biçimiyle açıklanır" — bu döngü sipariş sayısıyla doğrusal.)_
+   */
+  const mevcutTeslim = await prisma.sale.findMany({
+    where: { code: { in: cakisanlar }, channelAccountId: hesap.id },
+    select: {
+      id: true,
+      code: true,
+      deliveredAt: true,
+      kargoTakipBaglantisi: true,
+      kanalKargoFirmasi: true,
+    },
+  });
+  let teslimYazilan = 0;
+  let takipYazilan = 0;
+  for (const s of mevcutTeslim) {
+    const a = adaylar.get(s.code ?? "");
+    if (!a) continue;
+    /** ⭐ KARAR ORTAK SAF GÖVDEDE — iki içe aktarmada iki kopya olmasın. */
+    const veri = teslimGuncellemesi(s, {
+      teslimAni: a.teslimAni,
+      takipBaglantisi: a.takipBaglantisi,
+      kargoFirmasi: a.kargoFirmasi,
+    });
+    if (!teslimYazimiVarMi(veri)) continue;
+    await prisma.sale.update({ where: { id: s.id }, data: veri });
+    if (veri.deliveredAt) teslimYazilan++;
+    if (veri.kargoTakipBaglantisi || veri.kanalKargoFirmasi) takipYazilan++;
+  }
+
   for (const n of cakisanlar) adaylar.delete(n);
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
   console.log(`   KARGO DAMGASI YAZILDI (yalnız BOŞ olanlara)      ${damgaYazilan}`);
+  console.log(`   TESLİM DAMGASI YAZILDI (yalnız BOŞ olanlara)     ${teslimYazilan}`);
+  console.log(`   TAKİP/FİRMA TAZELENDİ (kanalın son beyanı)        ${takipYazilan}`);
 
   // ═══ VARYANT KAPISI ═════════════════════════════════════════════════════
   /**
@@ -537,6 +643,11 @@ export async function tyCekimKos(ayar: {
            * kargo günü basmıştı.
            */
           shippedAt: a.kargoAni,
+          /** ⚠ Aynı ilke teslim tarafında da: `null` ise kanal "teslim
+           *  edildi" DEMEDİ ve alan boş kalır — tarih uydurulmaz. */
+          deliveredAt: a.teslimAni,
+          kargoTakipBaglantisi: a.takipBaglantisi,
+          kanalKargoFirmasi: a.kargoFirmasi,
           shipmentCode: a.kargoNo,
           paketSayisi: a.paketSayisi,
           iptalTarihi: a.iptalTarihi,
