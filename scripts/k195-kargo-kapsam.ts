@@ -34,6 +34,25 @@ async function main() {
   const firmali = await prisma.sale.count({
     where: { NOT: { kanalKargoFirmasi: null } },
   });
+  /**
+   * ⛔ "DEFTER DEĞİŞMEZ" İDDİASI VERİDE DE ÖLÇÜLÜR (K197-4). Bekçi KAYNAĞI
+   * ölçüyor (içe aktarma `cargoAmount`a dokunmuyor); bu satırlar VERİYİ
+   * ölçüyor. İkisi ayrı sorudur ve ikisi de sorulur.
+   */
+  const kanalDesili = await prisma.sale.count({
+    where: { NOT: { kanalKargoDesi: null } },
+  });
+  const kargoTutarli = await prisma.sale.count({
+    where: { iptalTarihi: null, NOT: { cargoAmount: null } },
+  });
+  const bizimDesili = await prisma.sale.count({
+    where: { iptalTarihi: null, NOT: { cargoDesi: null } },
+  });
+  console.log(
+    "   DESİ: kanalın TARTTIĞI " + kanalDesili +
+      " · bizim TAHMİNİMİZ " + bizimDesili +
+      " · kargo TUTARI dolu " + kargoTutarli,
+  );
   console.log(
     "   TESLİM TARAFI: deliveredAt " + teslimli +
       " · takip bağlantısı " + takipli +
