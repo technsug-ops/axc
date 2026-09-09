@@ -129,3 +129,102 @@ export function n11OrtalamaTarife(desi: number): number | null {
  * bir maliyet üretirdi. _(Anayasa: "kapsayan pencere yoksa hüküm verilmez".)_
  */
 export const N11_TARIFE_TAVANI = 45;
+
+/**
+ * ============================================================================
+ *  POSTA HİZMET BEDELİ — %2,35 · KANALIN KENDİ KESİNTİSİYLE DOĞRULANDI
+ * ----------------------------------------------------------------------------
+ *  Sayfa iki şey söylüyor:
+ *    "Fiyatlara %20 KDV ve Posta Hizmet Bedeli dahil değildir."
+ *    "Posta Hizmet Bedeli %2,35 olarak belirlenmiştir."
+ *
+ *  ⭐ VE BU BİR BEYAN OLARAK KALMADI — KANALIN KENDİ KESİNTİ KAYDIYLA
+ *  ÖLÇÜLDÜ (n11 satıcı paneli, 10 sipariş, 09.09.2026):
+ *
+ *      desi  kesilen    tarife(Aras)   oran
+ *         9   195,37        159,07    1,2282
+ *         2   113,17         92,14    1,2282
+ *        11   220,18        179,27    1,2282
+ *         3   126,28        102,81    1,2283
+ *         1   111,16         90,50    1,2283
+ *
+ *      1,20 × 1,0235 = 1,2282   ← KDV × posta hizmet bedeli
+ *
+ *  ⭐ BU ÖLÇÜM AYNI ANDA AKTARIMI DA DOĞRULADI: beş farklı desi basamağında
+ *  tarife satırı kanalın kestiği tutarla KURUŞUNA tuttu. Bekçi "yapısal
+ *  olarak bozulmamış" diyordu; bu, "kaynağın kendisiyle doğrulandı"dır.
+ *  _(Anayasa: "bağımsızlık kaynağın ayrılığıyla ölçülür".)_
+ *
+ *  ⚠ VE TARİFENİN SÜRÜMÜ VAR — ÖLÇÜLDÜ: aynı listedeki İKİ TEMMUZ satırı
+ *  (03 ve 09 Tem) 3 desi için 119,12 kesilmiş, oran 1,1586. Bu, ESKİ bir
+ *  tarifedir; 25 Temmuz'daki satır zaten yeni orana geçmiş. Yani tarife
+ *  09–25 Temmuz arasında değişti.
+ *  ⛔ BU TABLO **BUGÜNKÜ** TARİFEDİR ve geçmişe uygulanmaz — temmuz öncesi
+ *  bir siparişin maliyetini bununla hesaplamak, o günkü gerçeği bugünün
+ *  gözlüğüyle yazmak olurdu.
+ *  _(Anayasa: "aynı veri, farklı soruya farklı pencereden bakar".)_
+ * ============================================================================
+ */
+export const N11_POSTA_HIZMET_BEDELI = 0.0235;
+
+/** Kanalın kesinti adı → tablodaki sütun. Tanınmayan ad `null` döner. */
+export function n11FirmaSutunu(kanalAdi: string | null): number | null {
+  if (kanalAdi === null) return null;
+  const a = kanalAdi.toLocaleLowerCase("tr");
+  if (a.includes("aras")) return 0;
+  if (a.includes("sürat") || a.includes("surat")) return 1;
+  if (a.includes("ptt")) return 2;
+  if (a.includes("yurtiçi") || a.includes("yurtici")) return 3;
+  if (a.includes("kolay")) return 4;
+  if (a.includes("dhl")) return 5;
+  return null;
+}
+
+export type N11MaliyetSonucu =
+  | {
+      tamam: true;
+      /** KDV HARİÇ — `Sale.cargoAmount` ile aynı taban. */
+      tutar: number;
+      /** Tarife satırı (posta bedeli EKLENMEDEN) — teşhis için. */
+      tarife: number;
+      /** Hangi firma kullanıldı; `null` = altı firmanın ORTALAMASI. */
+      firma: N11Firmasi | null;
+    }
+  | { tamam: false; kod: "DESI_YOK" | "TAVAN_DISI" };
+
+/**
+ * N11 KARGO MALİYETİ — TAHMİNİ.
+ *
+ * ⛔ BU BİR TAHMİNDİR, KANALIN KESTİĞİ TUTAR DEĞİL. Gerçek kesinti
+ * hakedişte gelir; bu gövde onu BEKLERKEN kullanılacak rakamı üretir ve
+ * çağıran taraf ekranda "tahmini" diye söyler.
+ *
+ * ⭐ FİRMA BASAMAĞI: kanal firmayı söylüyorsa (n11 `cargoProviderName`)
+ * O firmanın tarifesi kullanılır; söylemiyorsa altı firmanın ORTALAMASI.
+ * Ölçüldü (09.09.2026, n=10): N11 gönderilerimizin ONUNUN DA firması Aras
+ * ve sabit ortalama NET'i sistematik olarak **%7,5 karamsar** gösteriyordu.
+ * Ortalama bilmediğimiz durumun cevabıdır, bildiğimiz durumun değil.
+ */
+export function n11KargoMaliyeti(g: {
+  desi: number | null;
+  kanalFirmasi: string | null;
+}): N11MaliyetSonucu {
+  if (g.desi === null || !Number.isFinite(g.desi) || g.desi <= 0) {
+    return { tamam: false, kod: "DESI_YOK" };
+  }
+  /** ⚠ Tarife TAM desi adımında; kesirli desi YUKARI yuvarlanır. */
+  const adim = Math.ceil(g.desi - 0.0001);
+  const satir = N11_TARIFESI[adim];
+  if (satir === undefined) return { tamam: false, kod: "TAVAN_DISI" };
+
+  const sutun = n11FirmaSutunu(g.kanalFirmasi);
+  const tarife = sutun === null ? n11OrtalamaTarife(adim)! : satir[sutun];
+  /** ⛔ POSTA HİZMET BEDELİ EKLENİR — kanalın kesintisiyle doğrulandı. */
+  const tutar = Math.round(tarife * (1 + N11_POSTA_HIZMET_BEDELI) * 100) / 100;
+  return {
+    tamam: true,
+    tutar,
+    tarife,
+    firma: sutun === null ? null : N11_FIRMALARI[sutun],
+  };
+}

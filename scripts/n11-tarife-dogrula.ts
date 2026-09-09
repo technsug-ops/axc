@@ -1,4 +1,5 @@
 import {
+  n11KargoMaliyeti,
   N11_FIRMALARI,
   N11_TARIFESI,
   N11_TARIFE_TAVANI,
@@ -121,6 +122,70 @@ kontrol(
 kontrol("tavanın ÜSTÜ null döner (uydurma yok)", n11OrtalamaTarife(46) === null);
 kontrol("tavanın KENDİSİ hesaplanır", n11OrtalamaTarife(45) !== null);
 kontrol("sıfır ve negatif desi null döner", n11OrtalamaTarife(0) === null && n11OrtalamaTarife(-1) === null);
+
+/* ═══ ⑤ KANALIN KENDİ KESİNTİSİ — UÇTAN UCA DEĞER TESTİ ═══════════════ */
+/**
+ * ⭐ EN GÜÇLÜ ÖLÇÜT BU: n11 satıcı panelindeki GERÇEK kesintiler (Halil,
+ * 09.09.2026). Tarife + posta hizmet bedeli + KDV zinciri, kanalın fiilen
+ * kestiği KURUŞU üretmek zorunda. Üretmiyorsa ya aktarım yanlış ya formül —
+ * ve ikisi de sessizce NET'e girerdi.
+ *
+ * ⚠ TABAN AÇIK YAZILIR: gövde KDV HARİÇ döndürür (`cargoAmount` tabanı),
+ * panel KDV DAHİL gösteriyor; karşılaştırma ×1,2 ile yapılıyor.
+ */
+console.log("\n  ── KANALIN KENDİ KESİNTİSİ (uçtan uca)");
+const PANEL: [number, number][] = [
+  [1, 111.16],
+  [2, 113.17],
+  [3, 126.28],
+  [9, 195.37],
+  [11, 220.18],
+];
+for (const [desi, kesilen] of PANEL) {
+  const s = n11KargoMaliyeti({ desi, kanalFirmasi: "Aras Kargo" });
+  const kdvDahil = s.tamam ? Math.round(s.tutar * 1.2 * 100) / 100 : null;
+  kontrol(
+    "desi " + desi + " · Aras → kanalın kestiği ₺" + kesilen.toFixed(2),
+    kdvDahil === kesilen,
+    { hesaplanan: kdvDahil, kesilen },
+  );
+}
+/**
+ * ⛔ FİRMA BASAMAĞI SINANIR: kanal firmayı söylemediğinde ORTALAMAYA
+ * düşülür ve sonuç FARKLI olur. İkisi aynı çıksaydı basamak hiçbir şey
+ * yapmıyor demekti — ve bunu hiçbir değer testi söylemezdi.
+ */
+kontrol(
+  "firma BİLİNMİYORSA ortalamaya düşer (ve sonuç FARKLI)",
+  (() => {
+    const a = n11KargoMaliyeti({ desi: 1, kanalFirmasi: "Aras Kargo" });
+    const b = n11KargoMaliyeti({ desi: 1, kanalFirmasi: null });
+    return (
+      a.tamam && b.tamam && a.firma === "Aras Kargo" && b.firma === null && a.tutar !== b.tutar
+    );
+  })(),
+);
+kontrol(
+  "TANINMAYAN firma adı da ortalamaya düşer (uydurma sütun YOK)",
+  (() => {
+    const s = n11KargoMaliyeti({ desi: 1, kanalFirmasi: "Sendeo" });
+    return s.tamam && s.firma === null;
+  })(),
+);
+kontrol(
+  "desi yoksa / tavan dışıysa HÜKÜM VERİLMEZ",
+  n11KargoMaliyeti({ desi: null, kanalFirmasi: "Aras Kargo" }).tamam === false &&
+    n11KargoMaliyeti({ desi: 60, kanalFirmasi: "Aras Kargo" }).tamam === false,
+);
+/** ⚠ Kesirli desi YUKARI yuvarlanır — tarife tam basamakta. */
+kontrol(
+  "kesirli desi YUKARI yuvarlanır (2,3 → 3. basamak)",
+  (() => {
+    const a = n11KargoMaliyeti({ desi: 2.3, kanalFirmasi: "Aras Kargo" });
+    const b = n11KargoMaliyeti({ desi: 3, kanalFirmasi: "Aras Kargo" });
+    return a.tamam && b.tamam && a.tutar === b.tutar;
+  })(),
+);
 
 console.log(
   "\n" +
