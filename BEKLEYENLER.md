@@ -103,6 +103,34 @@ GÖRÜLMELİ** — bu doğrulama yapılmadan K193 kapanmaz.
 
 ---
 
+### ✅ K193 KAPANDI — GÖREV KLONDAN TEMİZ ÇIKIYOR (09.09.2026)
+
+Push sonrası klon `b1c345b`e çekildi ve görev yeniden tetiklendi:
+
+    State Ready · Son sonuc 0 · BITTI 07:25:33 cikis=0
+    yedek DOGRU klasorde (41,80 MB) · klon klasoru BOS ✓
+    sonraki kosum 10.09 03:30
+
+İki kusur da kapandı: süreç artık ÇIKIYOR (asılı kalmıyor) ve yedek tek
+klasöre düşüyor.
+
+### 📋 AYNI TURDA İKİ BAYAT KAYIT DÜZELTİLDİ
+
+**① `CLAUDE.md` faz göstergesi** aylarca _"Faz 3 (şimdi)"_ diyordu; oysa
+Faz 3, Faz 3,5 ve Faz 4'ün üçte ikisi bitmişti (ölçüldü: `/hakedis`
+`/kartlar` `/tazminat` `/giris` var; API okuma üç kanalda canlı, yazma
+TY'de; barkod ve RBAC tamam). ⚠ Yanlış bir gösterge üstündeki KURALI da
+işlevsizleştirir: buraya bakan biri Faz 4 işini "sırayı atlıyorsun" diye
+reddedebilirdi. Kural yazıldı: **bir faz kapandığında satır AYNI teslimde
+güncellenir.**
+
+**② `schema.prisma`** hâlâ _"Stok senkronu KAPSAM DIŞI — kullanıcı şartı
+01.09.2026"_ diyordu; oysa sahibi **05.09'da çevirdi** ve K169 ile TY'ye
+yazma açıldı (Halil testi geçti). Eski cümle silinmedi, **çevrildiği
+yazıldı** — bayat bir kural olmayan bir yasağı canlı tutar.
+
+---
+
 ## ✅ K192 — BLOB ASKISININ KÖK SEBEBİ: `list()` KOTAYI YAKMIŞ · 08.09.2026 · [KOD KOŞTU]
 
 > **Mimar ölçümü (Vercel ekranı):** Advanced Operations **2000/2000 — DOLU**.

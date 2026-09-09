@@ -845,8 +845,19 @@ model ChannelSku {
   isActive Boolean @default(true)
 
   /// KANALDAKİ LİSTELEME DURUMU — pazaryerinden OKUNARAK yazılır (K121).
-  /// ⛔ BU ALAN KANALA YAZILMAZ, KANALDAN OKUNUR. Stok senkronu (kanala adet
-  /// yazma) KAPSAM DIŞI — kullanıcı şartı 01.09.2026.
+  /// ⛔ BU ALAN KANALA YAZILMAZ, KANALDAN OKUNUR. Bu kısıt ALANIN KENDİSİ
+  /// içindir ve YÜRÜRLÜKTEDİR: listeleme durumu kanalın cevabıdır, bizim
+  /// yazdığımız bir değer değil.
+  ///
+  /// ⚠ ESKİ GEREKÇE — ÇEVRİLDİ, SİLİNMEDİ: burada "Stok senkronu (kanala
+  /// adet yazma) KAPSAM DIŞI — kullanıcı şartı 01.09.2026" yazıyordu.
+  /// SAHİBİ 05.09.2026'da bu şartı ÇEVİRDİ ("stok girdiğimi TY'ye push
+  /// edebilir miyim") ve K169 ile kanala yazma açıldı; Halil testi geçti.
+  /// Bugün TY'ye stok/fiyat YAZILIYOR (`scripts/ty/yazici.ts`).
+  /// ⛔ Eski cümle olduğu gibi bırakılsaydı, şemayı okuyan biri stok
+  /// yazmanın hâlâ yasak olduğunu sanırdı — bayat bir kural, olmayan bir
+  /// yasağı canlı tutar. _(Anayasa: "eski gerekçe SİLİNMEZ ama çevrildiği
+  /// de yazılır" ve "kararın izi de taşınır".)_
   listelemeDurumu KanalListelemeDurumu @default(BILINMIYOR)
 
   /// Kanalın bildirdiği adet. `null` = ölçülmedi (0 DEĞİL — "sıfır adet"

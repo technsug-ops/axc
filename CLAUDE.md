@@ -222,10 +222,26 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
 - Faz 0 ✓: şema (tamamlandı)
 - Faz 1 ✓: ürün/varyant CRUD → alım girişi → stok görünümü → kart tanımları
 - Faz 2 ✓: satış + kâr motoru + iade + gider
-- Faz 3 (şimdi): hakediş + kart borcu takibi + tazminat
-- **Faz 3,5 — TEK KULLANICILI GİRİŞ (canlıya geçişin ön maddesi)**
-- Faz 4: pazaryeri API'leri + barkod + çoklu kullanıcı + yetki (RBAC)
+- Faz 3 ✓: hakediş + kart borcu takibi + tazminat
+  _(ölçüldü 09.09.2026: `/hakedis` · `/kartlar` · `/tazminat` üçü de canlıda)_
+- Faz 3,5 ✓: TEK KULLANICILI GİRİŞ — `/giris` (canlıya geçişin ön maddesiydi)
+- **Faz 4 (ŞİMDİ): pazaryeri API'leri + barkod + çoklu kullanıcı + yetki (RBAC)**
+  · pazaryeri API — OKUMA üç kanalda canlı (TY·HB·N11, 5 dakikada bir) ✓
+  · pazaryeri API — YAZMA yalnız TY'de (K169, Halil testi geçti); HB ve N11
+    resmî uç dokümanını bekliyor ⏳ _(kullanıcı kararı 09.09: stok TEK
+    düğmeyle üç kanala, fiyat kanal başına AYRI düğmeyle)_
+  · barkod ✓ (`/okut` · `/paketle` · `/yerlestir` + kamera)
+  · yetki (RBAC) ✓ (`lib/yetki`, rol+izin, `canli:yetki` bekçisi)
 Bir faza ait olmayan özelliği o fazda EKLEME.
+
+⚠ **FAZ GÖSTERGESİ BİR VERİDİR VE BAYATLAYABİLİR — 09.09.2026'da bayattı.**
+Bu satır aylarca _"Faz 3 (şimdi)"_ diyordu; oysa Faz 3, 3,5 ve Faz 4'ün üçte
+ikisi çoktan bitmişti. Buraya bakan biri (ya da yeni bir oturum) Faz 4 işini
+_"sırayı atlıyorsun"_ diye reddedebilirdi — yani yanlış bir gösterge,
+üstündeki KURALI da işlevsizleştirir.
+> **KURAL: bir faz kapandığında bu satır AYNI teslimde güncellenir.**
+> Kapanışı ölçen şey ekranların varlığıdır, niyet değil.
+_(Anayasa: "pano, işin durumunu değil niyetini kaydederse kurgu üretir".)_
 
 ## Güvenlik katmanları (KESİN AYRIM)
 
