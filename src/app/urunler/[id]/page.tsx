@@ -8,6 +8,7 @@ import { Baglanti, GeriBaglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { TyGonderim } from "../../kart/[variantId]/ty-gonderim";
+import { N11Gonderim } from "../../kart/[variantId]/n11-gonderim";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -237,8 +238,16 @@ export default async function UrunDetaySayfasi({
                       <span className="inline-flex items-center gap-2">
                         {/* K169: kanala gönderim EYLEM yüzeyinde — kart
                             okuma yüzeyi kuralı gereği kartta DEĞİL burada. */}
+                        {/* ⚠ KANAL BAŞINA AYRI DÜĞME — Halil kararı
+                            09.09.2026. Fiyat kanalın kararıdır (komisyon ve
+                            rekabet farklı); tek düğmeyle üç kanala fiyat
+                            göndermek o kararı siler. Stoğun tek düğmeden
+                            dağıtılması AYRI bir iş ve ayrı tasarlanacak. */}
                         {kanalYazGorunur ? (
-                          <TyGonderim variantId={varyant.id} />
+                          <>
+                            <TyGonderim variantId={varyant.id} />
+                            <N11Gonderim variantId={varyant.id} />
+                          </>
                         ) : null}
                         <Baglanti href={`/kart/${varyant.id}`}>
                           {tUrun("karlilikKarti")}
@@ -318,7 +327,10 @@ export default async function UrunDetaySayfasi({
                 ]}
                 eylemler={
                   kanalYazGorunur ? (
-                    <TyGonderim variantId={varyant.id} />
+                    <span className="inline-flex items-center gap-2">
+                      <TyGonderim variantId={varyant.id} />
+                      <N11Gonderim variantId={varyant.id} />
+                    </span>
                   ) : undefined
                 }
               />

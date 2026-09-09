@@ -177,6 +177,14 @@ const KANALA_YAZMASI_BEYANLI = new Map<string, { gerekce: string; bekcisi: strin
       bekcisi: "kanal-yazma:dogrula",
     },
   ],
+  [
+    "scripts/n11/yazici.ts",
+    {
+      gerekce:
+        "K194: N11 stok/fiyat gönderimi (Halil kararı 09.09.2026 — stok TEK düğmeyle üç kanala, fiyat kanal başına AYRI düğmeyle). Uç resmî dokümandan: POST /ms/product/tasks/price-stock-update. Tek uç, tek fiil, tek kalem; önizlemesiz/izsiz gönderim yok. Doküman kuralları (listPrice>salePrice · ikisi birlikte · 2 küsurat) İSTEK GİTMEDEN sınanıyor.",
+      bekcisi: "kanal-yazma:dogrula",
+    },
+  ],
 ]);
 
 for (const yol of apiDosyalari) {

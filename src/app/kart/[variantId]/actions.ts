@@ -12,6 +12,8 @@ import {
   gonderimSonucu,
   stokFiyatGonder,
 } from "../../../../scripts/ty/yazici";
+import { kimlikOku as n11KimlikOku } from "../../../../scripts/n11/istemci";
+import { stokFiyatGonder as n11StokFiyatIste } from "../../../../scripts/n11/yazici";
 
 /**
  * ============================================================================
@@ -201,5 +203,218 @@ export async function tyStokFiyatGonder(
     gonderilenFiyat: niyet.fiyat,
     batchRequestId: sonuc.batchRequestId,
     batchDurumu,
+  };
+}
+
+/**
+ * ============================================================================
+ *  K194 — N11'E STOK/FİYAT GÖNDERİMİ (ürün kartından, tek varyant)
+ * ----------------------------------------------------------------------------
+ *  Halil kararı 09.09.2026: stok TEK düğmeyle üç kanala, fiyat kanal başına
+ *  AYRI düğmeyle. TY'nin üç kuralı burada AYNEN geçerli (önizleme · sunucu
+ *  ekrana güvenmez · izsiz gönderim yok) ve dördüncüsü ekleniyor:
+ *
+ *  ⛔ ④ KANALIN KURALI İSTEK GİTMEDEN SINANIR. N11 dokümanı üç şart koyuyor
+ *  — `listPrice` ve `salePrice` BİRLİKTE · `listPrice > salePrice` · küsurat
+ *  en fazla 2 hane — ve ihlalde isteği FAIL yapıyor. Bunları kanala
+ *  sordurmak, önlenebilir bir gürültüyü canlıya taşımak olurdu. Ölçüt
+ *  `kalemGecerliMi` içinde SAF gövdede ve bekçi onu ÇAĞIRARAK ölçüyor.
+ *
+ *  ⚠ TY'DEN FARK — FİYAT İKİ SAYIDIR: TY'ye `salePrice` ve `listPrice` AYNI
+ *  değer gidiyor; N11 bunu reddediyor (liste, satıştan YÜKSEK olmalı). Bu
+ *  yüzden N11 formu iki rakam sorar; tek "fiyat" alanı KULLANILAMAZ.
+ * ============================================================================
+ */
+
+export type N11GonderimOnizlemesi =
+  | {
+      tamam: true;
+      stockCode: string;
+      selioraStok: number;
+      kanalAdet: number | null;
+      listelemeDurumu: string;
+    }
+  | { tamam: false; kod: "KANAL_SKU_YOK" | "HESAP_YOK" | "VARYANT_YOK" };
+
+type N11Baglam =
+  | { tamam: false; kod: "HESAP_YOK" | "VARYANT_YOK" | "KANAL_SKU_YOK" }
+  | {
+      tamam: true;
+      kanalSku: {
+        channelSku: string;
+        kanalAdet: number | null;
+        listelemeDurumu: string;
+      };
+    };
+
+async function n11Baglami(variantId: string): Promise<N11Baglam> {
+  const hesap = await prisma.channelAccount.findFirst({
+    where: { channel: { name: "N11" }, satisIcin: true, isActive: true },
+    select: { id: true },
+  });
+  if (!hesap) return { tamam: false, kod: "HESAP_YOK" };
+  const varyant = await prisma.productVariant.findUnique({
+    where: { id: variantId },
+    select: { id: true },
+  });
+  if (!varyant) return { tamam: false, kod: "VARYANT_YOK" };
+  const kanalSku = await prisma.channelSku.findFirst({
+    where: { variantId, channelAccountId: hesap.id, isActive: true },
+    select: { channelSku: true, kanalAdet: true, listelemeDurumu: true },
+  });
+  if (!kanalSku) return { tamam: false, kod: "KANAL_SKU_YOK" };
+  return { tamam: true, kanalSku };
+}
+
+export async function n11GonderimOnizle(
+  variantId: string,
+): Promise<N11GonderimOnizlemesi> {
+  await yetkiIste("kanal.yaz");
+  const b = await n11Baglami(variantId);
+  if (!b.tamam) return { tamam: false, kod: b.kod };
+  return {
+    tamam: true,
+    stockCode: b.kanalSku.channelSku,
+    selioraStok: await varyantStogu(variantId),
+    kanalAdet: b.kanalSku.kanalAdet,
+    listelemeDurumu: b.kanalSku.listelemeDurumu,
+  };
+}
+
+export type N11GonderimSonucu =
+  | {
+      tamam: true;
+      stockCode: string;
+      gonderilenStok: number | null;
+      gonderilenListe: number | null;
+      gonderilenSatis: number | null;
+      taskId: number;
+      /** N11 kuyruğu asenkron — kabul anındaki durum (IN_QUEUE olabilir). */
+      taskDurumu: string;
+      sebepler: string[];
+    }
+  | {
+      tamam: false;
+      kod:
+        | "KANAL_SKU_YOK"
+        | "HESAP_YOK"
+        | "VARYANT_YOK"
+        | "GONDERILECEK_YOK"
+        | "KURAL_IHLALI"
+        | "ANAHTAR_YOK"
+        | "KANAL_REDDETTI"
+        | "ULASILAMADI";
+      ayrinti?: string;
+    };
+
+export async function n11StokFiyatGonder(
+  variantId: string,
+  /**
+   * ⚠ İSTEMCİDEN YALNIZ NİYET GELİR. Stok sunucuda yeniden çözülür; fiyat
+   * kullanıcının kararıdır ve iki rakam olarak gelir (N11 şartı).
+   */
+  niyet: {
+    stokGonder: boolean;
+    listeFiyati: number | null;
+    satisFiyati: number | null;
+  },
+): Promise<N11GonderimSonucu> {
+  await yetkiIste("kanal.yaz");
+  const b = await n11Baglami(variantId);
+  if (!b.tamam) return { tamam: false, kod: b.kod };
+
+  const fiyatVar = niyet.listeFiyati !== null || niyet.satisFiyati !== null;
+  if (!niyet.stokGonder && !fiyatVar) {
+    return { tamam: false, kod: "GONDERILECEK_YOK" };
+  }
+
+  const k = n11KimlikOku();
+  if (!k) return { tamam: false, kod: "ANAHTAR_YOK" };
+
+  /** Stok SUNUCUDA yeniden çözülür — istemciden sayı alınmaz. */
+  const stok = niyet.stokGonder ? await varyantStogu(variantId) : null;
+  const kalem = {
+    stockCode: b.kanalSku.channelSku,
+    ...(stok === null ? {} : { quantity: stok }),
+    ...(niyet.listeFiyati === null ? {} : { listPrice: niyet.listeFiyati }),
+    ...(niyet.satisFiyati === null ? {} : { salePrice: niyet.satisFiyati }),
+  };
+
+  const sonuc = await n11StokFiyatIste(k, kalem);
+
+  /**
+   * ⛔ KURAL İHLALİ AĞA ÇIKMADAN DÖNER — ve iz YAZILMAZ, çünkü kanala
+   * hiçbir şey gitmedi. "Gönderdim sanıyordum" sorusu burada doğmaz;
+   * kullanıcı ekranda NEDEN gitmediğini görür.
+   */
+  if (sonuc.tur === "KURAL_IHLALI") {
+    return { tamam: false, kod: "KURAL_IHLALI", ayrinti: sonuc.mesaj };
+  }
+  if (sonuc.tur === "YETKISIZ") {
+    return {
+      tamam: false,
+      kod: "KANAL_REDDETTI",
+      ayrinti: "HTTP " + sonuc.durum,
+    };
+  }
+  if (sonuc.tur === "ULASILAMADI") {
+    return { tamam: false, kod: "ULASILAMADI", ayrinti: sonuc.sebep };
+  }
+  if (sonuc.tur === "ISTEK_HATALI" || sonuc.tur === "REDDEDILDI") {
+    const mesaj =
+      sonuc.tur === "REDDEDILDI"
+        ? sonuc.sebepler.join(" · ") || "(sebep bildirilmedi)"
+        : sonuc.mesaj;
+    /** ⚠ RED DE İZ BIRAKIR — kanala gitti ve reddedildi; bu bir olaydır. */
+    await izYaz({
+      action: "KANAL_GONDERIMI",
+      targetType: "ProductVariant",
+      targetId: variantId,
+      detail: JSON.stringify({
+        kanal: "N11",
+        stockCode: kalem.stockCode,
+        istek: kalem,
+        sonuc: "RED",
+        durum: sonuc.tur,
+        mesaj,
+      }),
+    });
+    return {
+      tamam: false,
+      kod: "KANAL_REDDETTI",
+      ayrinti: mesaj.slice(0, 160),
+    };
+  }
+
+  await izYaz({
+    action: "KANAL_GONDERIMI",
+    targetType: "ProductVariant",
+    targetId: variantId,
+    detail: JSON.stringify({
+      kanal: "N11",
+      stockCode: kalem.stockCode,
+      istek: kalem,
+      sonuc: "KABUL",
+      taskId: sonuc.taskId,
+      taskDurumu: sonuc.durum,
+      sebepler: sonuc.sebepler,
+      /**
+       * ⚠ SONUÇ SORGUSU HENÜZ YOK — TaskDetails ucunun yolu dokümanda
+       * verilmedi. IN_QUEUE "kuyruğa alındı" demektir, "işlendi" DEMEZ;
+       * iz bunu açıkça taşıyor ki sonradan "başarılı" diye okunmasın.
+       */
+      not: "taskId kaydedildi; TaskDetails ucu gelince sonuc sorgulanacak",
+    }),
+  });
+  revalidatePath("/kart/" + variantId);
+  return {
+    tamam: true,
+    stockCode: kalem.stockCode,
+    gonderilenStok: stok,
+    gonderilenListe: niyet.listeFiyati,
+    gonderilenSatis: niyet.satisFiyati,
+    taskId: sonuc.taskId,
+    taskDurumu: sonuc.durum,
+    sebepler: sonuc.sebepler,
   };
 }
