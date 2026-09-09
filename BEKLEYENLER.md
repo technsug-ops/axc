@@ -369,8 +369,24 @@ kapanan şey bundan SONRASI.
 
 ⛔ **HENÜZ EKRAN YOK:** üç sütun da yazılıyor ama hiçbir ekran okumuyor.
 Anayasa gereği bu bir teslim sayılmaz _("altyapı tek başına teslim
-değildir")_ — "kaç paket yolda" kutusu ayrı bir kalemdir ve mimar onayı
-bekler.
+değildir")_.
+
+### 📋 "KAÇ PAKET YOLDA / TESLİM EDİLDİ" KUTUSU — AYRI KALEM, ONAY BEKLİYOR
+
+_Mimar beyanı 09.09.2026:_ **onay HENÜZ VERİLMEDİ.** Altyapı bugünlük
+yeterli; kutunun kendisi yarının işi ve **tasarımı ayrı bir karardır**:
+
+    · kutu deseni ne olacak (panel kutusu mu, /satislar süzgeci mi)
+    · nereye konacak
+    · hangi SAYI yazacak — ve o sayı neye tıklayınca neyi açacak
+
+⚠ **VE SORULMADAN YAZILMAZ:** İlke #16 gereği bir aksaklık sayısı ekranda
+duruyorsa **tıklanınca kaynağını açmak zorunda** ("sayı = liste"). Kutuyu
+tasarlamadan yazmak, adresi olmayan bir rakam üretirdi.
+
+⚠ **KAPSAM SINIRI ŞİMDİDEN BELLİ VE KUTUYA YAZILACAK:** `deliveredAt` bugün
+boş doğuyor ve yalnız **bundan sonraki** teslimlerle doluyor. "Teslim
+edilmedi" ile "sistem bilmiyor" aynı görünürse kutu yanlış okunur.
 
 ---
 

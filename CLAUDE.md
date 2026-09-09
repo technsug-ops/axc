@@ -3903,6 +3903,46 @@ _(Bu, "commit başlığı bir etikettir" disiplininin migration hâli: paketin
 adı, içindekinin tamamını anlatmalı.)_
 
 
+### ÜRETİLEN MIGRATION'IN TABLO ADI, ÜRETİLDİĞİ MAKİNEYİ ANLATIR (KESİN KURAL)
+
+_Mimar kararı 09.09.2026 — vakası 10.08.2026'da CANLIYI DURDURMUŞTU._
+
+`prisma migrate diff` / `migrate dev` tablo adını **yerel veritabanından**
+okur. Windows'ta MySQL harfe **DUYARSIZ** çalışır ve araç adı küçük harfle
+yazar; canlı Linux sunucusunda MySQL harfe **DUYARLIDIR** ve orada tablo
+`Sale`'dir. Yani üretilen dosya **üretildiği makinede kusursuz koşar ve
+hedefte düşer** — arıza yerelde görünmez, GÖRÜNEMEZ.
+
+    uretilen (Windows)   ALTER TABLE `sale` ADD COLUMN ...
+    canli (Linux)        Error 1146: Table 'd047df6e.sale' doesn't exist
+
+⛔ **VAKA — CANLIYA GEÇİŞ GÜNÜ (10.08.2026, `bea935d`).** Migration'lar
+**hiçbir gerçek sunucuda çalışmıyordu** ve bu ancak canlıya geçilirken
+görüldü. 7 dosyada **10 tablo** yanlış harfliydi: `Purchase` · `PurchaseItem`
+· `StockMovement` · `Sale` · `SaleItem` · `Channel` · `ChannelAccount` ·
+`ChannelSku` · `Product` · `ProductVariant`.
+
+> **KURAL:** üretilen her migration, tablo adları **şemadaki model adıyla
+> HARF HARF** karşılaştırılmadan commit edilmez. Bekçisi
+> `npm run migration:kontrol`; `canli:migrate`in **1. ADIMI** olarak
+> kendiliğinden koşar ve kırmızıysa canlıya hiç gidilmez.
+
+⚠ **ÖLÇÜT TABLO KONUMUNA BAĞLANIR, TERS TIRNAĞA DEĞİL.** Kolon ve indeks
+adları da ters tırnaklıdır ve **camelCase olmaları DOĞRUDUR**
+(`channelAccountId` · `purchaseItemId`). Her ters tırnaklı adı tablo sayan
+bir tarama doğru kolonları hatalı ilan eder — 09.09.2026'da tam bu denendi
+ve **16 yalancı bulgu** üretti (biri ölçümü yazanın kendi yorum satırıydı).
+Ölçüt `ALTER TABLE` · `REFERENCES` · `JOIN` gibi **konumlara** bağlanınca
+sayı `0`'a düştü. _(Anayasa: "ölçüt kullanıma bağlanır — ada ya da dizeye
+değil".)_
+
+⚠ **VE DESEN KAPANMADI, TEKRARLADI:** 09.09.2026'da (K195-②) `prisma migrate
+diff` yine `sale` üretti. Bekçi vardı, dosya elle düzeltildi ve canlı koşum
+temiz geçti — yani **koruma çalıştı, ama araç hâlâ yanlış üretiyor.**
+"Bir kez düzeltildi" bu deseni kapatmaz; her üretimde yeniden bakılır.
+_(Anayasa: "desen, örneği kalmadığında değil DOĞURAMADIĞINDA kapanır".)_
+
+
 ### YAZMADAN ÖNCE HEDEFE BAK — "BU MODÜL VAR MI"NIN DOSYA HÂLİ (KESİN KURAL)
 
 _Ders 31.08.2026._ Yeni bir gövde yazarken sorulan soru "bu isim uygun mu"
