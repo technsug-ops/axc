@@ -13,7 +13,7 @@ import {
 } from "./ty/istemci";
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
 import {
-  tyKargoDamgasi,
+  gecmistenKargoDamgasi,
   type PaketGecmisi,
 } from "../src/lib/kanal-kargo-damgasi";
 
@@ -313,7 +313,7 @@ export async function tyCekimKos(ayar: {
      * geliyordu ve okunmadan çöpe gidiyordu; `shippedAt` ise 7600 satışta
      * BOŞTU ve görev kutusu bu yüzden şişiyordu (K60).
      */
-    const kargoDamgasi = tyKargoDamgasi(
+    const kargoDamgasi = gecmistenKargoDamgasi(
       p.packageHistories as PaketGecmisi[] | undefined,
       "Shipped",
     );

@@ -1,8 +1,8 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 import {
   hbKargoDamgasi,
-  tyKargoDamgasi,
+  gecmistenKargoDamgasi,
   damgaGunHassasiyetli,
 } from "../src/lib/kanal-kargo-damgasi";
 
@@ -40,18 +40,18 @@ function kontrol(ad: string, kosul: boolean, ipucu?: unknown) {
 console.log("\nKARGO DAMGASI BEKÇİSİ (K195)\n");
 
 /* ═══ ① TY — EPOCH MS, BELİRSİZLİK YOK ═══════════════════════════════ */
-console.log("  ── TY (epoch ms)");
+console.log("  ── PAKET GEÇMİŞİ — TY ve N11 (epoch ms)");
 const AN = 1788858128720; // 2026-09-08T09:02:08.720Z
 kontrol(
   "Shipped damgası bulunur ve AN türünde",
   (() => {
-    const d = tyKargoDamgasi([{ createdDate: AN, status: "Shipped" }], "Shipped");
+    const d = gecmistenKargoDamgasi([{ createdDate: AN, status: "Shipped" }], "Shipped");
     return d.tur === "AN" && d.an.getTime() === AN;
   })(),
 );
 kontrol(
   "istenmeyen durum sayılmaz (Delivered arayınca Shipped dönmez)",
-  tyKargoDamgasi([{ createdDate: AN, status: "Shipped" }], "Delivered").tur === "YOK",
+  gecmistenKargoDamgasi([{ createdDate: AN, status: "Shipped" }], "Delivered").tur === "YOK",
 );
 /**
  * ⚠ EN GEÇ DAMGA KAZANIR — ve örnek AYRIMI GÖSTERİYOR: iki `Shipped`
@@ -61,7 +61,7 @@ kontrol(
 kontrol(
   "iki Shipped varsa EN GEÇ olanı alınır",
   (() => {
-    const d = tyKargoDamgasi(
+    const d = gecmistenKargoDamgasi(
       [
         { createdDate: AN, status: "Shipped" },
         { createdDate: AN + 3600_000, status: "Shipped" },
@@ -71,10 +71,10 @@ kontrol(
     return d.tur === "AN" && d.an.getTime() === AN + 3600_000;
   })(),
 );
-kontrol("geçmiş yoksa YOK", tyKargoDamgasi(undefined, "Shipped").tur === "YOK");
+kontrol("geçmiş yoksa YOK", gecmistenKargoDamgasi(undefined, "Shipped").tur === "YOK");
 kontrol(
   "bozuk createdDate sayılmaz (0 · metin · eksik)",
-  tyKargoDamgasi(
+  gecmistenKargoDamgasi(
     [
       { createdDate: 0, status: "Shipped" },
       { createdDate: "dun", status: "Shipped" },
@@ -140,11 +140,29 @@ kontrol(
  * ölçütü kırmızı yakmaz.
  */
 console.log("\n  ── İÇE AKTARMALAR (uydurma tarih yasağı)");
-const ICE_AKTARMALAR = [
-  "scripts/canli-ty-ice-aktar.ts",
-  "scripts/canli-hb-ice-aktar.ts",
-];
-kontrol("taranan içe aktarma bulundu (taban DOLU)", ICE_AKTARMALAR.length === 2);
+/**
+ * ⛔ LİSTE ELLE TUTULMUYOR — TARANARAK BULUNUYOR (K195 düzeltmesi).
+ *
+ * İlk yazımda TY ve HB elle yazılmıştı. Üçüncü kanal (N11) eklenince
+ * ortaya çıktı ki elle liste **yeni içe aktarmayı hiç görmez** — N11
+ * uydurma tarih yazsaydı bekçi yeşil kalırdı. Ölçüt artık şu: `shippedAt`
+ * YAZAN her içe aktarma taranır.
+ * _(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur" —
+ * ve bugün aynı ders `kanal-yazma:dogrula`da da alındı.)_
+ */
+const ICE_AKTARMALAR = readdirSync("scripts")
+  .filter((a) => a.startsWith("canli-") && a.endsWith("-ice-aktar.ts"))
+  .map((a) => "scripts/" + a)
+  .filter((y) => readFileSync(y, "utf8").includes("shippedAt:"));
+/**
+ * ⚠ TABAN DOLULUĞU: boş liste her ölçütü sessizce geçirir. Üç kanal
+ * (TY · HB · N11) `shippedAt` yazıyor; azalırsa bir bağ kopmuş demektir.
+ */
+kontrol(
+  "shippedAt yazan içe aktarma bulundu (taban DOLU)",
+  ICE_AKTARMALAR.length >= 3,
+  ICE_AKTARMALAR,
+);
 for (const yol of ICE_AKTARMALAR) {
   const metin = readFileSync(yol, "utf8");
   const satirlar = metin

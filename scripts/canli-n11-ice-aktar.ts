@@ -3,6 +3,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
+import { gecmistenKargoDamgasi } from "../src/lib/kanal-kargo-damgasi";
 import { kilitDurumu } from "./bekci-kilit";
 import { canliYapilandirma } from "./canli-ortak";
 import { baslikKur, kimlikOku, tumPaketler } from "./n11/istemci";
@@ -107,6 +108,13 @@ type Satir = {
 type Aday = {
   siparisNo: string;
   soldAt: Date | null;
+  /**
+   * KANALIN BİLDİRDİĞİ KARGO ANI (K195, 09.09.2026) — geçmişteki `Shipped`
+   * damgası. ⚠ N11'in geçmiş şekli ÖLÇÜLDÜ ve TY ile birebir aynı
+   * (`createdDate` epoch ms + `status`), bu yüzden ortak gövde kullanılıyor.
+   * `null` = kanal henüz "kargolandı" demedi.
+   */
+  kargoAni: Date | null;
   satirlar: Satir[];
   iptalliSatir: number;
 };
@@ -238,7 +246,24 @@ export async function n11CekimKos(ayar: {
       continue;
     }
     const aday =
-      adaylar.get(no) ?? ({ siparisNo: no, soldAt: null, satirlar: [], iptalliSatir: 0 } as Aday);
+      adaylar.get(no) ??
+      ({
+        siparisNo: no,
+        soldAt: null,
+        kargoAni: null,
+        satirlar: [],
+        iptalliSatir: 0,
+      } as Aday);
+    /**
+     * ⛔ KANALIN SÖYLEDİĞİNİ ATMIYORUZ ARTIK (K195). Bu bilgi her koşumda
+     * geliyordu ve okunmadan çöpe gidiyordu.
+     * ⚠ EN GEÇ damga kazanır: bölünmüş sipariş iki paketse ikincisi daha
+     * geç kargolanmış olabilir ve sipariş o an yola çıkmıştır.
+     */
+    const damga = gecmistenKargoDamgasi(p.packageHistories, "Shipped");
+    if (damga.tur !== "YOK" && (aday.kargoAni === null || damga.an > aday.kargoAni)) {
+      aday.kargoAni = damga.an;
+    }
     /** Sipariş anı: paket geçmişindeki İLK `Created` damgası (epoch, mutlak).
      *  Çok paketli siparişte EN ERKEN Created esas alınır. */
     for (const g of p.packageHistories ?? []) {
@@ -301,8 +326,26 @@ export async function n11CekimKos(ayar: {
     ).map((s) => s.code!),
   );
   const cakisanlar = [...adaylar.keys()].filter((n) => mevcutKodlar.has(n));
+
+  /**
+   * ═══ KARGO DAMGASI — BOŞ ALANI DOLDURUR, HİÇBİR ŞEYİ EZMEZ (K195) ═══
+   * ⛔ Yalnız `shippedAt` NULL olanlara yazılır; dolu bir damga (elle
+   * girilmiş olabilir) ASLA değişmez. Satır satır ve tekrar-koşulabilir.
+   */
+  let damgaYazilan = 0;
+  for (const no of cakisanlar) {
+    const damga = adaylar.get(no)?.kargoAni ?? null;
+    if (damga === null) continue;
+    const guncel = await prisma.sale.updateMany({
+      where: { code: no, channelAccountId: hesap.id, shippedAt: null },
+      data: { shippedAt: damga },
+    });
+    damgaYazilan += guncel.count;
+  }
+
   for (const n of cakisanlar) adaylar.delete(n);
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
+  console.log(`   KARGO DAMGASI YAZILDI (yalnız BOŞ olanlara)      ${damgaYazilan}`);
 
   // ═══ VARYANT KAPISI — ortak kod kuralı, iki kod adayı ═══════════════════
   const tumKodlar = [
@@ -442,6 +485,11 @@ export async function n11CekimKos(ayar: {
           channelAccountId: hesap.id,
           /** GERÇEK AN (K163) — kuyruk saat süzgecinden geçer. */
           soldAt: aday.soldAt as Date,
+          /**
+           * ⚠ KANALIN BİLDİRDİĞİ AN — UYDURULMUYOR. `null` ise kanal
+           * "kargolandı" demedi ve alan BOŞ kalır (K60 yasağı).
+           */
+          shippedAt: aday.kargoAni,
           importBatch: partiKimligi,
           importKaynak: "n11-enumerasyon",
           items: { create: kalemVerisi },

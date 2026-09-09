@@ -195,6 +195,49 @@ gösteriyor: biri "kolay yol" diye `new Date()`e dönerse bekçi durdurur.
 sonucumuz dizenin günü" diye kuruldu — makine UTC'ye taşınsa da aynı şeyi
 ölçer.
 
+### ✅ K195b — ÜÇÜNCÜ KANAL (N11) DA DAMGA BIRAKIYOR · 09.09.2026 · [KOD KOŞTU]
+
+**ÖLÇÜLDÜ — N11'İN ŞEKLİ TY İLE BİREBİR AYNI** (`canli:n11-kargo-olcum`):
+
+    packageHistories 5/5 pakette · ic alanlar: createdDate · status
+    durumlar: Created 5 · Picking 5 · Shipped 4 · Delivered 3 · Cancelled 1
+    createdDate = EPOCH MS  → dilim belirsizligi YOK
+    ayrica: cargoTrackingNumber · cargoTrackingLink · cargoProviderName
+
+⭐ Aynı olduğu için **ikinci bir çözücü yazılmadı** — ortak gövde olduğu
+gibi kullanıldı. Ama gövdenin ADI düzeltildi:
+
+    tyKargoDamgasi  →  gecmistenKargoDamgasi
+
+⚠ **AD BİR İDDİADIR:** kanal adı taşıyan bir gövdeyi ikinci kanalın
+çağırması, okuyana "burada TY'ye özel bir şey var" dedirtirdi.
+
+### ⛔ BEKÇİNİN LİSTESİ DE ELLE TUTULUYORDU — DÜZELTİLDİ
+
+`kargo-damgasi:dogrula` ilk yazımda TY ve HB'yi **elle** listeliyordu.
+Üçüncü kanal eklenince görüldü ki elle liste **yeni içe aktarmayı hiç
+görmez** — N11 uydurma tarih yazsaydı bekçi yeşil kalırdı.
+→ Ölçüt artık `shippedAt` YAZAN her içe aktarmayı **tarayarak** buluyor ve
+taban doluluğu ayrıca ölçülüyor (≥3 kanal).
+_(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur" — ve
+bugün aynı ders `kanal-yazma:dogrula`da da alınmıştı. İki bekçi, aynı gün,
+aynı kök.)_
+
+### BEKÇİ 19/19 · MUTASYON 9/9 KIRMIZI (3 yeni)
+
+    ⑦ N11 uydurma tarih yazar                KIRMIZI
+    ⑧ N11 DOLU damgayi ezer                  KIRMIZI
+    ⑨ tarama tabani bosaltilir               KIRMIZI
+
+### ⚠ COMMIT SIRASINDA BİR KAPI TUZAĞI FARK EDİLDİ
+
+Bir önceki push'un bekçi turu koşarken commit atmak üzereydim. `git push`
+kancası turu **push'tan ÖNCE** koşuyor; tur sırasında atılan yeni bir
+commit, o push'a **biner ve bekçiden geçmemiş olur.**
+> **KURAL: push turu koşarken commit atılmaz.** Tur bitene kadar beklenir.
+Bu, "cmd push kapısı dışında" kararının farklı bir yüzü: orada kapı bilerek
+yoktu, burada kapı VAR ama zamanlama onu atlatabiliyordu.
+
 ### 📋 2. FAZ — ŞEMA DEĞİŞİKLİĞİ ONAYI BEKLİYOR
 
 `Sale.deliveredAt` **YOK** ve merdiven indirildi: mevcut alan yok, serbest

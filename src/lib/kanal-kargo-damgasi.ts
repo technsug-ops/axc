@@ -52,13 +52,19 @@ export type KargoDamgasi =
 export type PaketGecmisi = { createdDate?: unknown; status?: unknown };
 
 /**
- * TY — `packageHistories` içinden istenen durumun ANI.
+ * PAKET GEÇMİŞİNDEN İSTENEN DURUMUN ANI — TY **ve** N11.
+ *
+ * ⚠ ADI ÖNCE `tyKargoDamgasi` İDİ VE BU YANLIŞ BİR İDDİAYDI (09.09.2026):
+ * N11'in geçmiş şekli ÖLÇÜLDÜ ve TY ile **birebir aynı** çıktı —
+ * `{ createdDate: epoch ms, status }`, durumlar `Shipped`/`Delivered`.
+ * Kanal adı taşıyan bir gövdeyi ikinci kanalın çağırması, okuyana "burada
+ * TY'ye özel bir şey var" dedirtirdi. _(Anayasa: "ad bir iddiadır".)_
  *
  * ⚠ EN SONUNCUSU ALINIR: bir paket iptal edilip yeniden kargolanabilir ve
  * geçmişte aynı durum İKİ KEZ geçebilir. İlkini almak "ilk denemede
  * kargolandı" der; doğrusu son geçerli olandır.
  */
-export function tyKargoDamgasi(
+export function gecmistenKargoDamgasi(
   gecmis: PaketGecmisi[] | null | undefined,
   durum: "Shipped" | "Delivered",
 ): KargoDamgasi {
