@@ -311,6 +311,12 @@ export async function hbCekimKos(ayar: {
    * KULLAN — ve gün `Date` kurulmadan dizeden kesilir.
    */
   const kargoDamgalari = new Map<string, Date>();
+  /**
+   * KANALIN BİLDİRDİĞİ GERÇEKLEŞEN DESİ (K197-4) — `/shipped` ucundaki `Deci`.
+   * ⛔ Bu bir ÖLÇÜMDÜR: `cargoAmount`a, NET'e ve kâr hesabına DOKUNMAZ.
+   * Defterdeki `cargoDesi` bizim tahminimizdir ve o da değişmez.
+   */
+  const kanalDesileri = new Map<string, number>();
   if (gonderilen.tur === "TAMAM") {
     for (const p of gonderilen.kayitlar as Record<string, unknown>[]) {
       /** ⚠ İNCE ŞEKİL **PascalCase** — `orderNumber` değil `OrderNumber`. */
@@ -321,6 +327,12 @@ export async function hbCekimKos(ayar: {
           siparisNolari.add(v);
           const d = hbKargoDamgasi(p.ShippedDate ?? p.shippedDate);
           if (d.tur !== "YOK" && !kargoDamgalari.has(v)) kargoDamgalari.set(v, d.an);
+          /** ⚠ Sayı OLMAYAN değer atılır — kanal boş gönderirse uydurulmaz. */
+          const ham = p.Deci ?? p.deci;
+          const desi = typeof ham === "number" ? ham : Number(ham);
+          if (Number.isFinite(desi) && desi > 0 && !kanalDesileri.has(v)) {
+            kanalDesileri.set(v, desi);
+          }
         }
       }
     }
@@ -602,9 +614,26 @@ export async function hbCekimKos(ayar: {
     teslimYazilan += guncel.count;
   }
 
+  /**
+   * ═══ KANAL DESİSİ (K197-4) — ÖLÇÜM ALANI, DEFTERE DOKUNMAZ ═══
+   * ⛔ `cargoAmount` ve `cargoDesi` BU DÖNGÜDE HİÇ GEÇMEZ. Kargo maliyeti
+   * olduğu gibi kalır; burada biriken şey kanalın tarttığı desidir.
+   * ⚠ Yalnız BOŞ olana yazılır: desi fiziksel bir olayın ölçüsüdür, bir kez
+   * olur ve değişmez (`deliveredAt` sınıfı, `kanalKargoFirmasi` sınıfı değil).
+   */
+  let desiYazilan = 0;
+  for (const [no, desi] of kanalDesileri) {
+    const guncel = await prisma.sale.updateMany({
+      where: { code: no, channelAccountId: hesap.id, kanalKargoDesi: null },
+      data: { kanalKargoDesi: desi },
+    });
+    desiYazilan += guncel.count;
+  }
+
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
   console.log(`   KARGO DAMGASI YAZILDI (yalnız BOŞ olanlara)      ${damgaYazilan}`);
   console.log(`   TESLİM DAMGASI YAZILDI (yalnız BOŞ olanlara)     ${teslimYazilan}`);
+  console.log(`   KANAL DESİSİ YAZILDI (ölçüm — deftere dokunmaz)  ${desiYazilan}`);
   console.log(`     ├─ aynı kanal (yeniden içe aktarma, beklenen)  ${ayniKanal}`);
   console.log(`     └─ ÇAPRAZ KANAL (numara uzayı çakışması)       ${capraz.length}`);
   if (capraz.length > 0) {
@@ -801,6 +830,8 @@ export async function hbCekimKos(ayar: {
           shippedAt: kargoDamgalari.get(aday.siparisNo) ?? null,
           /** ⚠ Kanal "teslim edildi" demediyse BOŞ kalır — uydurulmaz. */
           deliveredAt: teslimDamgalari.get(aday.siparisNo) ?? null,
+          /** ⛔ ÖLÇÜM ALANI — kargo tutarını ETKİLEMEZ (K197-4). */
+          kanalKargoDesi: kanalDesileri.get(aday.siparisNo) ?? null,
           importBatch: partiKimligi,
           importKaynak: "hb-enumerasyon",
           /**

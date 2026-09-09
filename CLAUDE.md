@@ -1242,6 +1242,57 @@ doğar. _("Kararın izi de taşınır" kuralının dosya adı tarafı.)_
 _(Kardeşi: "kolon başlığı bir iddiadır" ve "şemadaki alan da bir iddiadır" —
 üçü de aynı ölçüt: bir AD, tutmadığı bir şey söyleyemez.)_
 
+### GEÇMİŞİ DÜZELTMEK İLE MEKANİZMAYI KURMAK AYRI KARARLARDIR (KESİN KURAL)
+
+_Kullanıcı kararı 09.09.2026:_ **"Geçmişte gösterilecek ufak tefek gelir veya
+kâr farklılıkları problem değil. Asıl sistemin doğru kurulması önemli."**
+
+Bir ölçüm geçmişte sapma gösterdiğinde İKİ ayrı iş doğar ve ikisi sürekli
+karıştırılır: **geçmişi düzeltmek** ve **bundan sonra doğru olmasını
+sağlamak.** İkincisi neredeyse her zaman daha değerli, birincisi neredeyse
+her zaman daha pahalı ve daha risklidir — üstelik geçmişi düzeltmek, doğru
+kayıtları bozma riskini de beraberinde getirir.
+
+**Vaka — kargo desisi (K197).** Ölçüm, HB'de **142/144** satışta defterdeki
+kargo ile kanalın FİİLEN kestiği tutarın ayrıştığını gösterdi; satır bazında
+fark **₺114'e** kadar çıkıyordu. İlk akla gelen "geçmişi düzeltelim" oldu.
+
+Ölçüm iki şeyi birden söyledi ve ikisi de "hayır" dedi:
+
+    KAYNAK YOK    TY sipariş ucu 2025-08 · 2025-11 · 2026-03 -> 0 kayıt
+                  (defterde o aylarda 385 · 551 · 494 satış VARDI)
+                  HB /shipped'de tarih parametresi HİÇ YOK
+                  hakediş dosyaları 2026-07-14'te başlıyor
+    DEĞER DÜŞÜK   toplam etki ₺-374 — hatalar birbirini götürüyor
+
+> **KARAR ÖLÇÜTÜ:** bu düzeltme **bugün verilecek bir kararı** değiştiriyor
+> mu? Değiştirmiyorsa geçmiş "kabaca doğru" yeterlidir ve enerji
+> MEKANİZMAYA gider. Değiştiriyorsa düzeltme gerekir — ama o zaman da
+> kaynağının var olduğu ÖNCE ölçülür.
+
+⚠ **"GEÇMİŞE DOKUNMUYORUZ" KARARI, SAPMANIN YOK SAYILMASI DEĞİLDİR.** Üç şey
+zorunlu kalır: ① ölçüm **kalıcı bir betik** olarak durur ve tekrar
+koşulabilir · ② rakam **kaynağıyla** yazılır · ③ kalem panoda **rafta,
+gerekçesiyle** kalır. Aksi hâlde altı ay sonra aynı sapma yeniden keşfedilir
+ve yeniden tartışılır.
+
+⚠ **VE TOPLAM, KARARI TEK BAŞINA VEREMEZ.** Aynı vakada toplam ₺-374'tü ama
+satır bazında ±₺114 vardı: hatalar birbirini götürdüğü için TOPLAM masum
+görünüyordu. "Toplam küçük, önemsiz" cümlesi ürün bazlı kârlılıkta yanlış
+olurdu. _(Anayasa: "toplam rakam yorum kaldırır, satır kaldırmaz".)_
+
+⭐ **BU DESEN BU DEPODA DÖRDÜNCÜ KEZ — ARTIK BİR AİLE:**
+
+| kalem | geçmiş | mekanizma |
+|---|---|---|
+| `shippedAt` (K195) | 7602 eski satış BOŞ bırakıldı | kanal damgası bundan sonra yazılıyor |
+| `deliveredAt` (K195-②) | geriye doldurulmadı | üç kanal da ileriye yazıyor |
+| promosyon alımları (K171b) | uydurma tarih YOK, satış gününe damgalandı | ileride gerçek geliş yazılır |
+| `kanalKargoDesi` (K198) | eski satışlarda kalıcı BOŞ | her çekimde gerçek desi birikiyor |
+
+Dördünde de aynı cümle: **mekanizma bugünden doğru kurulur, geçmiş olduğu
+gibi bırakılır — ve bırakıldığı YAZILIR.**
+
 ### İMKÂNSIZ GÖRÜNEN DEĞER ÖNCE DOĞRULANIR — DÜZELTİLMEZ (KESİN KURAL)
 
 _Ders 19.08.2026, OneBlade vakası._ Bir uyarının görevi **baktırmaktır**,

@@ -136,16 +136,19 @@ export type TeslimMevcut = {
   deliveredAt: Date | null;
   kargoTakipBaglantisi: string | null;
   kanalKargoFirmasi: string | null;
+  kanalKargoDesi: unknown;
 };
 export type TeslimKanal = {
   teslimAni: Date | null;
   takipBaglantisi: string | null;
   kargoFirmasi: string | null;
+  kanalDesi: number | null;
 };
 export type TeslimYazimi = {
   deliveredAt?: Date;
   kargoTakipBaglantisi?: string;
   kanalKargoFirmasi?: string;
+  kanalKargoDesi?: number;
 };
 
 export function teslimGuncellemesi(
@@ -166,6 +169,17 @@ export function teslimGuncellemesi(
   }
   if (kanal.kargoFirmasi !== null && kanal.kargoFirmasi !== mevcut.kanalKargoFirmasi) {
     veri.kanalKargoFirmasi = kanal.kargoFirmasi;
+  }
+  /**
+   * ⛔ DESİ, `deliveredAt` SINIFINDA — takip/firma sınıfında DEĞİL (K197-4).
+   * Taşıyıcının paketi TARTTIĞI fiziksel bir olayın ölçüsüdür: bir kez olur,
+   * sonra değişmez. Bu yüzden yalnız BOŞ olana yazılır; tazelenmez.
+   * ⚠ `mevcut.kanalKargoDesi` tipi `unknown` — Prisma `Decimal` döndürüyor
+   * ve bu gövde SAF kalmalı (Decimal'i içeri almaz). Yalnız "dolu mu"
+   * sorusu soruluyor, değeri okunmuyor.
+   */
+  if (kanal.kanalDesi !== null && mevcut.kanalKargoDesi === null) {
+    veri.kanalKargoDesi = kanal.kanalDesi;
   }
   return veri;
 }

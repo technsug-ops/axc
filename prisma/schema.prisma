@@ -1427,6 +1427,47 @@ model Sale {
    */
   kanalKargoFirmasi String?
 
+  /**
+   * KANALIN BİLDİRDİĞİ GERÇEKLEŞEN DESİ (K197-4, 09.09.2026).
+   * TY/N11 `cargoDeci` · HB `Deci` — taşıyıcının FİİLEN ölçtüğü desi.
+   *
+   * ⛔ `cargoDesi` İLE AYNI ŞEY DEĞİL VE ONUN ÜSTÜNE YAZILMAZ:
+   *     cargoDesi        BİZİM TAHMİNİMİZ — Σ(ürün.desi × adet), kargo
+   *                      tutarının GİRDİSİ, satış anında biliniyor
+   *     kanalKargoDesi   GERÇEKLEŞEN — paket tartıldıktan SONRA belli olur
+   * Aynı alana yazmak farkı görünmez yapardı; oysa aranan şey tam o fark.
+   * _(`cargoCarrierId` ↔ `kanalKargoFirmasi` ayrımının birebir aynısı.)_
+   *
+   * ⛔ DEFTERE DOKUNMAZ: bu sütun `cargoAmount`ı, NET'i, hakedişi ve kâr
+   *   hesabını HİÇBİR ŞEKİLDE etkilemez. Kargo maliyeti bugün olduğu gibi
+   *   kalır — burada biriken şey bir ÖLÇÜMDÜR, bir kesinti değil.
+   *   _Kullanıcı kararı 09.09.2026: "geçmişte gösterilecek ufak tefek gelir
+   *   veya kâr farklılıkları problem değil; asıl sistemin doğru kurulması
+   *   önemli."_ Bu yüzden geçmiş tutarlar YENİDEN YAZILMADI.
+   *
+   * ⚠ TÜKETİCİSİ HENÜZ YOK — VE BU BİLEREK (K52'nin bilinen tuzağı).
+   *   Normalde tüketicisi doğmayan alan açılmaz. İstisnanın gerekçesi:
+   *   **VERİ GEÇİCİ.** Kanal bu değeri yalnız dar bir pencerede veriyor
+   *   (TY birkaç ay, HB yalnız ŞU AN kargoda olan paketler — ölçüldü
+   *   09.09.2026: 2025-08 · 2025-11 · 2026-03 pencerelerinin üçünde de
+   *   API `0` kayıt döndürdü, oysa defterde o aylarda 385 · 551 · 494
+   *   satış VAR). Bugün toplanmazsa yarın HİÇ toplanamaz.
+   *   ⛔ AÇILIŞ ŞARTI (tüketici): örneklem varyant başına anlamlı hâle
+   *   geldiğinde ürün desi kataloğu bundan düzeltilir.
+   *
+   * ⚠ DOĞUM TARİHİ 09.09.2026 — VE BOŞLUK "FARK YOK" DEMEK DEĞİLDİR.
+   *   Bu sütun yalnız İLERİYE dolar; eski satışlarda kalıcı olarak BOŞ
+   *   kalacak. Onu okuyan her ekran/analiz bunu yazmak zorundadır, yoksa
+   *   boşluk "tahmin tuttu" diye okunur.
+   *   _(Anayasa: "yeni izin doğum tarihi beyan edilir".)_
+   *
+   * ⚠ YALNIZ BOŞ OLANA YAZILIR: desi, taşıyıcının paketi TARTTIĞI fiziksel
+   *   bir olayın ölçüsüdür — bir kez olur, sonra değişmez. `deliveredAt`
+   *   ile aynı sınıf; `kanalKargoFirmasi` ile DEĞİL (o kanalın o anki
+   *   beyanıdır ve tazelenir).
+   */
+  kanalKargoDesi Decimal? @db.Decimal(9, 3)
+
   // --- SATIŞ SEVİYESİ KÂR ---
   /// Σ kalem NET − sipariş başına kesintiler (hizmet bedeli, sabit gider,
   /// kargo). Bu kesintiler kalemlere bölünmez.

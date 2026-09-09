@@ -407,6 +407,7 @@ export async function n11CekimKos(ayar: {
       deliveredAt: true,
       kargoTakipBaglantisi: true,
       kanalKargoFirmasi: true,
+      kanalKargoDesi: true,
     },
   });
   let teslimYazilan = 0;
@@ -419,6 +420,15 @@ export async function n11CekimKos(ayar: {
       teslimAni: a.teslimAni,
       takipBaglantisi: a.takipBaglantisi,
       kargoFirmasi: a.kargoFirmasi,
+      /**
+       * ⛔ N11 DESİ VERMİYOR — ÖLÇÜLDÜ, VARSAYILMADI (09.09.2026).
+       * 5 paketin birleşim kümesinde 34 alan var ve hiçbiri desi/deci/
+       * weight/kg değil. `null` geçmek bir eksiklik değil, kanalın
+       * söylemediği şey hakkında iddia kurmamaktır.
+       * ⚠ ÖRNEKLEM DAR (n=5): kanal alanı yalnız DOLUYKEN gönderiyorsa
+       * daha geniş bir örneklemde çıkabilir. Çıktığı gün buraya bağlanır.
+       */
+      kanalDesi: null,
     });
     if (!teslimYazimiVarMi(veri)) continue;
     await prisma.sale.update({ where: { id: s.id }, data: veri });

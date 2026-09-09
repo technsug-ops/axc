@@ -139,7 +139,12 @@ kontrol(
  * bekçiye muhtaç olmaz".)_
  */
 console.log("\n  ── TESLİM KARARI (ezme yasağı + tazeleme)");
-const BOS = { deliveredAt: null, kargoTakipBaglantisi: null, kanalKargoFirmasi: null };
+const BOS = {
+  deliveredAt: null,
+  kargoTakipBaglantisi: null,
+  kanalKargoFirmasi: null,
+  kanalKargoDesi: null,
+};
 const T1 = new Date(Date.UTC(2026, 8, 5));
 const T2 = new Date(Date.UTC(2026, 8, 7));
 
@@ -149,6 +154,7 @@ kontrol(
     teslimAni: T1,
     takipBaglantisi: null,
     kargoFirmasi: null,
+    kanalDesi: null,
   }).deliveredAt?.getTime() === T1.getTime(),
 );
 /**
@@ -162,7 +168,7 @@ kontrol(
   "DOLU deliveredAt EZİLMEZ (kanal daha yeni tarih söylese bile)",
   teslimGuncellemesi(
     { ...BOS, deliveredAt: T1 },
-    { teslimAni: T2, takipBaglantisi: null, kargoFirmasi: null },
+    { teslimAni: T2, takipBaglantisi: null, kargoFirmasi: null, kanalDesi: null },
   ).deliveredAt === undefined,
 );
 kontrol(
@@ -171,6 +177,7 @@ kontrol(
     teslimAni: null,
     takipBaglantisi: null,
     kargoFirmasi: null,
+    kanalDesi: null,
   }).deliveredAt === undefined,
 );
 kontrol(
@@ -179,6 +186,7 @@ kontrol(
     teslimAni: null,
     takipBaglantisi: "https://ty/1",
     kargoFirmasi: null,
+    kanalDesi: null,
   }).kargoTakipBaglantisi === "https://ty/1",
 );
 /** ⚠ TAKİP/FİRMA TAZELENİR — `deliveredAt`ten FARKLI kural, bilerek. */
@@ -186,14 +194,14 @@ kontrol(
   "takip bağlantısı DEĞİŞTİYSE tazelenir (kanalın son beyanı)",
   teslimGuncellemesi(
     { ...BOS, kargoTakipBaglantisi: "https://ty/1" },
-    { teslimAni: null, takipBaglantisi: "https://ty/2", kargoFirmasi: null },
+    { teslimAni: null, takipBaglantisi: "https://ty/2", kargoFirmasi: null, kanalDesi: null },
   ).kargoTakipBaglantisi === "https://ty/2",
 );
 kontrol(
   "AYNI takip bağlantısı yeniden YAZILMAZ (boş gidiş-dönüş yok)",
   teslimGuncellemesi(
     { ...BOS, kargoTakipBaglantisi: "https://ty/1" },
-    { teslimAni: null, takipBaglantisi: "https://ty/1", kargoFirmasi: null },
+    { teslimAni: null, takipBaglantisi: "https://ty/1", kargoFirmasi: null, kanalDesi: null },
   ).kargoTakipBaglantisi === undefined,
 );
 /**
@@ -205,7 +213,7 @@ kontrol(
   "kanal SUSTUYSA dolu takip bağlantısı SİLİNMEZ",
   teslimGuncellemesi(
     { ...BOS, kargoTakipBaglantisi: "https://ty/1", kanalKargoFirmasi: "Aras" },
-    { teslimAni: null, takipBaglantisi: null, kargoFirmasi: null },
+    { teslimAni: null, takipBaglantisi: null, kargoFirmasi: null, kanalDesi: null },
   ).kargoTakipBaglantisi === undefined,
 );
 kontrol(
@@ -214,11 +222,13 @@ kontrol(
     teslimAni: null,
     takipBaglantisi: null,
     kargoFirmasi: "Yurtiçi",
+    kanalDesi: null,
   }).kanalKargoFirmasi === "Yurtiçi" &&
     teslimGuncellemesi({ ...BOS, kanalKargoFirmasi: "Aras" }, {
       teslimAni: null,
       takipBaglantisi: null,
       kargoFirmasi: "Aras",
+      kanalDesi: null,
     }).kanalKargoFirmasi === undefined,
 );
 kontrol(
@@ -228,8 +238,44 @@ kontrol(
       teslimAni: null,
       takipBaglantisi: null,
       kargoFirmasi: null,
+      kanalDesi: null,
     }),
   ),
+);
+/**
+ * ⛔ DESİ, `deliveredAt` SINIFINDA (K197-4) — ve bu ayrım AYRI sınanır, çünkü
+ * takip/firma TAZELENİYOR, desi TAZELENMİYOR. İki kural aynı gövdede yaşıyor;
+ * biri ötekinin yerine geçerse kimse fark etmez.
+ */
+kontrol(
+  "BOŞ kanal desisi DOLAR",
+  teslimGuncellemesi(BOS, {
+    teslimAni: null,
+    takipBaglantisi: null,
+    kargoFirmasi: null,
+    kanalDesi: 5,
+  }).kanalKargoDesi === 5,
+);
+/**
+ * ⚠ ÖRNEK AYRIMI GÖSTERİYOR: kanalın desisi mevcuttan FARKLI (7 ≠ 5). Aynı
+ * değer verilseydi "ezmedi" sonucu tesadüf olurdu — ezen bir gövde de aynı
+ * sayıyı yazardı ve test yeşil kalırdı.
+ */
+kontrol(
+  "DOLU kanal desisi EZİLMEZ (kanal farklı desi söylese bile)",
+  teslimGuncellemesi(
+    { ...BOS, kanalKargoDesi: 5 },
+    { teslimAni: null, takipBaglantisi: null, kargoFirmasi: null, kanalDesi: 7 },
+  ).kanalKargoDesi === undefined,
+);
+kontrol(
+  "kanal desi vermediyse yazılmaz (N11 vakası)",
+  teslimGuncellemesi(BOS, {
+    teslimAni: null,
+    takipBaglantisi: null,
+    kargoFirmasi: null,
+    kanalDesi: null,
+  }).kanalKargoDesi === undefined,
 );
 kontrol(
   "Delivered damgası geçmişten çözülür (en geç olan)",
@@ -294,15 +340,28 @@ function atamaSatirlari(metin: string, alan: string): string[] {
     .filter((l) => !hariç.test(l));
 }
 
-for (const alan of ["shippedAt", "deliveredAt"] as const) {
+/**
+ * ⚠ TABAN ALAN BAŞINA — VE GEREKÇESİYLE. Üç alanın hepsini üç kanal
+ * yazmıyor: `kanalKargoDesi`yi N11 YAZAMIYOR çünkü kanal desi VERMİYOR
+ * (ölçüldü 09.09.2026: 5 paketin birleşim kümesinde 34 alan, hiçbiri
+ * desi/deci/weight değil). Tabanı 3 yazsaydım bekçi HER KOŞUMDA haksız
+ * yere kırmızı yanar, sonra "gevşetelim" denir ve ölçüt ölürdü.
+ */
+const ALANLAR = [
+  { alan: "shippedAt", taban: 3, gerekce: "TY · HB · N11" },
+  { alan: "deliveredAt", taban: 3, gerekce: "TY · HB · N11" },
+  { alan: "kanalKargoDesi", taban: 2, gerekce: "TY · HB — N11 desi VERMİYOR (ölçüldü)" },
+] as const;
+
+for (const { alan, taban, gerekce } of ALANLAR) {
   const yazanlar = ICE_AKTARMALAR.filter(
     (y) => atamaSatirlari(KAYNAKLAR.get(y)!, alan).length > 0,
   );
-  /**
-   * ⚠ TABAN DOLULUĞU: boş liste her ölçütü sessizce geçirir. Üç kanal
-   * (TY · HB · N11) bu alanları yazıyor; azalırsa bir bağ kopmuş demektir.
-   */
-  kontrol(alan + " yazan içe aktarma bulundu (taban DOLU)", yazanlar.length >= 3, yazanlar);
+  kontrol(
+    alan + " yazan içe aktarma bulundu (taban DOLU · " + gerekce + ")",
+    yazanlar.length >= taban,
+    yazanlar,
+  );
   for (const yol of yazanlar) {
     const metin = KAYNAKLAR.get(yol)!;
     const ad = yol.split("/").pop();
@@ -316,13 +375,57 @@ for (const alan of ["shippedAt", "deliveredAt"] as const) {
      * ⛔ VE YAZIM YALNIZ BOŞ ALANA: `updateMany` koşulunda `<alan>: null`
      * olmazsa dolu bir damga ezilir — "ezme YOK" ilkesi sözde kalırdı.
      */
-    const yazim = "data: { " + alan + ": damga }";
-    if (metin.includes(yazim)) {
-      const i = metin.indexOf(yazim);
+    /**
+     * ⛔ ÖLÇÜT DEĞİŞKEN ADINA BAĞLANMAZ. Eski hâli `data: { <alan>: damga }`
+     * diye ARIYORDU; biri değişkeni `desi` diye adlandırdığı an desen
+     * tutmaz, kontrol SESSİZCE koşmaz ve "yalnız NULL'a yaz" kuralı
+     * korumasız kalırdı. Artık `data: { <alan>:` ile başlayan HER yazım
+     * yakalanıyor. _(Anayasa: "dize, davranışın vekilidir".)_
+     */
+    const yazimBasi = "data: { " + alan + ":";
+    if (metin.includes(yazimBasi)) {
+      const i = metin.indexOf(yazimBasi);
       const pencere = metin.slice(Math.max(0, i - 260), i);
       kontrol(
         ad + " — " + alan + " yalnız NULL olana yazılıyor",
         pencere.includes(alan + ": null"),
+      );
+    }
+  }
+}
+
+/**
+ * ⛔ İÇE AKTARMA KARGO MALİYETİNE DOKUNMAZ — DEĞİŞMEZLİK (K197-4).
+ *
+ * Halil kararı 09.09.2026: `kanalKargoDesi` bir ÖLÇÜM alanıdır; defterdeki
+ * kargo tutarı ve NET **değişmez**. Bu bir İDDİADIR ve iddia, onu çiğneyen
+ * bir mutasyon kırmızı yanmadıkça korunmuş sayılmaz.
+ * _(Anayasa: "'dokunmuyor' iddiası da bir davranıştır".)_
+ *
+ * ⚠ ÖLÇÜT YORUMSUZ KODDA ARAR: bu dosyanın kendi yorumlarında `cargoAmount`
+ * geçiyor ve o bir ihlal DEĞİL.
+ */
+{
+  const YASAK = ["cargoAmount", "cargoDesi"] as const;
+  kontrol(
+    "içe aktarma taranıyor (taban DOLU)",
+    ICE_AKTARMALAR.length >= 3,
+    ICE_AKTARMALAR.length,
+  );
+  for (const yol of ICE_AKTARMALAR) {
+    const ad = yol.split("/").pop();
+    for (const alan of YASAK) {
+      const satirlar = KAYNAKLAR.get(yol)!
+        .split("\n")
+        .filter((l) => {
+          const t = l.trim();
+          return !t.startsWith("*") && !t.startsWith("//") && !t.startsWith("/*");
+        })
+        .filter((l) => new RegExp("\\b" + alan + "\\s*:").test(l));
+      kontrol(
+        ad + " — " + alan + "'a DOKUNMUYOR (defter değişmez)",
+        satirlar.length === 0,
+        satirlar,
       );
     }
   }

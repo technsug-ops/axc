@@ -126,6 +126,12 @@ type Aday = {
    * ⛔ `cargoCarrierId` ile aynı şey DEĞİL — o bizim seçtiğimiz firma.
    */
   kargoFirmasi: string | null;
+  /**
+   * KANALIN BİLDİRDİĞİ GERÇEKLEŞEN DESİ (K197-4) — `cargoDeci`.
+   * ⛔ `cargoDesi` (bizim tahminimiz) ile KARIŞTIRILMAZ; ayrı sütuna gider
+   * ve defterdeki kargo tutarına HİÇ dokunmaz.
+   */
+  kanalDesi: number | null;
   paketSayisi: number;
   tutar: number;
   durum: string;
@@ -358,6 +364,14 @@ export async function tyCekimKos(ayar: {
       typeof p.cargoProviderName === "string" && p.cargoProviderName !== ""
         ? p.cargoProviderName
         : null;
+    /**
+     * ⚠ DOLULUK ÖLÇÜLDÜ (09.09.2026): `cargoDeci` 50 paketin 30'unda dolu —
+     * yalnız KARGOYA VERİLMİŞ pakette. Boşluğu eksiklik değil, sınırdır.
+     */
+    const kanalDesi =
+      typeof p.cargoDeci === "number" && Number.isFinite(p.cargoDeci) && p.cargoDeci > 0
+        ? p.cargoDeci
+        : null;
 
     const mevcut = adaylar.get(no);
     if (mevcut) {
@@ -374,6 +388,7 @@ export async function tyCekimKos(ayar: {
          */
         mevcut.takipBaglantisi = takipBaglantisi;
         mevcut.kargoFirmasi = kargoFirmasi;
+        mevcut.kanalDesi = kanalDesi;
       }
       /** ⚠ EN GEÇ TESLİM kazanır — sipariş son paketiyle tamamlanır. */
       if (teslimAni && (!mevcut.teslimAni || teslimAni > mevcut.teslimAni)) {
@@ -409,6 +424,7 @@ export async function tyCekimKos(ayar: {
         kargoNo: p.cargoTrackingNumber ? String(p.cargoTrackingNumber) : null,
         takipBaglantisi,
         kargoFirmasi,
+        kanalDesi,
         paketSayisi: 1,
         tutar,
         durum: String(p.status),
@@ -498,6 +514,7 @@ export async function tyCekimKos(ayar: {
       deliveredAt: true,
       kargoTakipBaglantisi: true,
       kanalKargoFirmasi: true,
+      kanalKargoDesi: true,
     },
   });
   let teslimYazilan = 0;
@@ -510,6 +527,7 @@ export async function tyCekimKos(ayar: {
       teslimAni: a.teslimAni,
       takipBaglantisi: a.takipBaglantisi,
       kargoFirmasi: a.kargoFirmasi,
+      kanalDesi: a.kanalDesi,
     });
     if (!teslimYazimiVarMi(veri)) continue;
     await prisma.sale.update({ where: { id: s.id }, data: veri });
@@ -648,6 +666,8 @@ export async function tyCekimKos(ayar: {
           deliveredAt: a.teslimAni,
           kargoTakipBaglantisi: a.takipBaglantisi,
           kanalKargoFirmasi: a.kargoFirmasi,
+          /** ⛔ ÖLÇÜM ALANI — kargo tutarını ETKİLEMEZ (K197-4). */
+          kanalKargoDesi: a.kanalDesi,
           shipmentCode: a.kargoNo,
           paketSayisi: a.paketSayisi,
           iptalTarihi: a.iptalTarihi,

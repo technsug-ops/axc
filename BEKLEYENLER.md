@@ -13,6 +13,104 @@
 
 ---
 
+## 🔶 K197 — TAHMİN EDİLEN DESİ ile GERÇEKLEŞEN DESİ · 09.09.2026 · [KOD KOŞTU]
+
+> **Halil kararı 09.09:** _"Geçmişte gösterilecek ufak tefek gelir veya kâr
+> farklılıkları problem değil. Asıl sistemin doğru kurulması önemli."_
+> → geçmiş yeniden-yazımı **RAFA**, mekanizma ileriye kurulur.
+
+⭐ **BAŞLANGIÇ TEK BİR VAKAYDI VE YÖNÜ YANLIŞTI.** Halil bir siparişte fark
+gördü (TY `5 desi` · defter `7 desi`, `11585155315`). Ölçüm yönü ÇÜRÜTTÜ:
+
+    TY  n 37 · tutan 19 · biz FAZLA  5 · biz EKSİK 13   aralık  −3 … +2
+    HB  n 12 · tutan  2 · biz FAZLA  4 · biz EKSİK  6   aralık −11 … +2
+
+Yani genel eğilim TERSİ — daha çok EKSİK tahmin ediyoruz. Tek vakaya
+bakılsaydı "desiyi düşürelim" gibi tam ters bir iş çıkardı.
+
+⚠ **KANAL KIRILIMI ŞART OLDU:** ikisi havuzlanınca ortanca `0` çıkıyor ve
+HB'nin ağır kuyruğu (−11) tamamen kayboluyordu. TY `cargoDeci` ile HB `Deci`
+aynı adı taşıyor ama aynı ŞEYİ ölçtükleri ÖLÇÜLMEDİ.
+
+### ⛔ "GEÇMİŞİ DÜZELTELİM" TEKNİK OLARAK İMKÂNSIZ — ÖLÇÜLDÜ
+
+    TY sipariş ucu   2025-08 → 0 · 2025-11 → 0 · 2026-03 → 0
+                     2026-07 → 90 · 2026-09 → 87
+    HB /shipped      tarih parametresi HİÇ YOK
+    hakediş          2026-07-14'te başlıyor
+
+"0" iki şey olabilirdi (o hafta satış yoktu / uç bakmıyor). **Defter ayırdı:**
+o aylarda 385 · 551 · 494 satış vardı → uç bakmıyor.
+
+⭐ **VE DÜZELTİLECEK BİR ŞEY DE YOKTU:** defterdeki kargo TUTARI zaten dolu
+(2025-08'den beri her ayda ~%99). 28.08'de Halil'in kendi dosyasından
+yazılmış. Eksik olan DESİ — ve desi bir GİRDİ, tutar elimizdeyken gerekmiyor.
+
+### 📏 TABAN ÖLÇÜLDÜ — VE TOPLAMIN YÖNÜNÜ TERSİNE ÇEVİRDİ
+
+Hakedişteki `KARGO` kalemi **KDV DAHİL** (iki bağımsız kanıt: `rawType`
+"Kargo Bedeli"; ve 146 tutarın 130'u tarife ×1,20'ye oturuyor, KDV hariç
+tutara oturan **0**). `Sale.cargoAmount` ise KDV hariç:
+
+    ham          15.066,17 vs 17.630,20  → defter %17 DÜŞÜK
+    düzeltilmiş  18.079,40 vs 17.630,20  → defter %2,5 YÜKSEK
+
+Taban çözülmeden yön yazılsaydı **ters bir alarm** gidecekti.
+
+### ⚠ VE ASIL BULGUYU TOPLAM GİZLİYOR
+
+Kuru koşum (`canli:hakedis-kargo-kosum`, 144 satış · 142 değişecek):
+toplam etki ₺−374 ama satır bazında **±₺114**. Hatalar birbirini götürüyor.
+"Toplam küçük, önemsiz" okuması ürün bazlı kârlılıkta YANLIŞ olurdu.
+
+### ─── ④ `kanalKargoDesi` — MEKANİZMA KURULDU · [KOD KOŞTU — MIGRATION CANLIDA]
+
+    Sale.kanalKargoDesi  Decimal?(9,3)   kanalın TARTTIĞI desi
+
+⛔ **DEFTERE DOKUNMAZ.** `cargoAmount`, `cargoDesi`, NET ve kâr hesabı
+DEĞİŞMEDİ. Bu bir ölçüm alanı; kesinti değil. Geçmiş tutarlar yeniden
+YAZILMADI.
+
+⛔ **TÜKETİCİSİ HENÜZ YOK — VE BU BİLEREK (K52 tuzağı).** Gerekçe ölçüldü:
+**veri geçici.** Bugün toplanmazsa yarın hiç toplanamaz. Açılış şartı
+(tüketici): örneklem varyant başına anlamlı olunca ürün desi kataloğu
+bundan düzeltilir.
+
+⚠ **DOĞUM TARİHİ 09.09.2026** — sütun yalnız İLERİYE dolar; eski satışlarda
+kalıcı BOŞ kalacak ve **boşluk "fark yok" demek değildir.**
+
+⚠ **N11 DESİ VERMİYOR — ÖLÇÜLDÜ, VARSAYILMADI:** 5 paketin birleşim
+kümesinde 34 alan var, hiçbiri desi/deci/weight değil. Bekçinin tabanı bu
+yüzden 3 değil **2** ve gerekçesi yazılı — 3 yazılsaydı her koşumda haksız
+kırmızı yanar, sonra "gevşetelim" denir ve ölçüt ölürdü.
+
+### BEKÇİ 58/58 · MUTASYON 15/15 KIRMIZI (4 yeni) · ÇAPA 237
+
+    + DOLU kanal desisi eziliyor              KIRMIZI
+    + İÇE AKTARMA KARGO TUTARINA DOKUNUYOR    KIRMIZI ← Halil'in şartı
+    + HB dolu kanal desisini eziyor           KIRMIZI
+    - TY kanal desisini hiç yazmiyor          KIRMIZI ← taban
+
+⭐ İkincisi kritik: _"defter değişmez"_ bir İDDİADIR ve ancak **dokunan bir
+mutasyon kırmızı yandığında** korunmuş olur.
+
+⚠ **ÖLÇÜT DEĞİŞKEN ADINDAN KURTARILDI:** null koruması `data: { <alan>:
+damga }` diye arıyordu; biri değişkeni `desi` diye adlandırsa desen tutmaz
+ve kontrol SESSİZCE koşmazdı. Artık `data: { <alan>:` ile başlayan her yazım
+yakalanıyor.
+
+### 📋 RAFA KALDIRILANLAR (gerekçesiyle — silinmedi)
+
+· **142 satırlık geçmiş yeniden-yazımı** — Halil kararı: geçmiş kabaca doğru
+  yeter. Gerekirse ileride HB-tanım ölçümüyle açılır, öncelik değil.
+· **16 oturmayan kesinti** (₺268,91 · ₺180,14 · ₺131,59 · ₺104,53 …) —
+  bilinmeyen küme. HB tanım farkıyla UYUMLU ama onu KANITLAMIYOR; rakip
+  okumaları elemiyor. Ölçümü ③ zamanında.
+· **TY kargosu satır bazında çaprazlanamıyor** — hakedişe `KARGO_FATURA`
+  diye TOPLU düşüyor (20 satır, ₺−65.333,64, hiçbiri satışa bağlı değil).
+
+---
+
 ## ✅ K193 — 21 GÜNLÜK PENCERE: YEDEK ALMA İŞİ MAKİNEYE GEÇTİ · 09.09.2026 · [KOŞTU]
 
 > **Kullanıcı bilgisi (09.09):** Blob kotası **30 Eylül'de** açılıyor.

@@ -135,6 +135,48 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu: "dolu bir teslim damgasi her cekimde kanalin gunuyle ezilir",
   },
   {
+    ad: "DOLU KANAL DESİSİ EZİLİYOR",
+    yon: "FAZLADAN",
+    dosya: GOVDE,
+    bul: "  if (kanal.kanalDesi !== null && mevcut.kanalKargoDesi === null) {",
+    koy: "  if (kanal.kanalDesi !== null) {",
+    bozdugu:
+      "tasiyicinin TARTTIGI desi her cekimde yeniden yazilir; olculmus bir olay degistirilebilir olur",
+  },
+  {
+    /**
+     * ⛔ HALİL'İN AÇIK ŞARTI: "defter kargo/NET'e DOKUNMAZ, bekçi bunu
+     * doğrular." Bir "dokunmuyor" iddiası, DOKUNAN bir mutasyon kırmızı
+     * yanmadıkça korunmuş sayılmaz.
+     */
+    ad: "İÇE AKTARMA KARGO TUTARINA DOKUNUYOR",
+    yon: "FAZLADAN",
+    dosya: TY,
+    bul: "          kanalKargoDesi: a.kanalDesi,",
+    koy:
+      "          kanalKargoDesi: a.kanalDesi,\n" +
+      "          cargoAmount: 0,",
+    bozdugu:
+      "ice aktarma defterdeki kargo maliyetini yazmaya baslar; NET sessizce degisir",
+  },
+  {
+    ad: "HB DOLU KANAL DESİSİNİ EZİYOR",
+    yon: "FAZLADAN",
+    dosya: HB,
+    bul: "      where: { code: no, channelAccountId: hesap.id, kanalKargoDesi: null },",
+    koy: "      where: { code: no, channelAccountId: hesap.id },",
+    bozdugu: "dolu bir kanal desisi her cekimde yeniden yazilir",
+  },
+  {
+    ad: "TY KANAL DESİSİNİ HİÇ YAZMIYOR (taban düşer)",
+    yon: "KALDIRAN",
+    dosya: TY,
+    bul: "          kanalKargoDesi: a.kanalDesi,",
+    koy: "",
+    bozdugu:
+      "bir kanal desi yazmayi birakir ve taban olculmezse tur sessizce yesil kalir",
+  },
+  {
     ad: "TESLİM KARARI SATIR İÇİNE KOPYALANDI",
     yon: "KALDIRAN",
     dosya: TY,

@@ -37,6 +37,21 @@ async function main() {
   console.log("N11 — " + liste.length + " paket");
   if (liste.length === 0) return;
 
+  /**
+   * ⛔ ALAN KÜMESİ BÜTÜN KAYITLARIN BİRLEŞİMİNDEN — tek kayıttan değil.
+   * (K195-2 dersi: TY `cargoTrackingLink`i boşsa HİÇ göndermiyor ve tek
+   * pakete bakan ölçüm "alan yok" diyor.) Ayrıca DESİ ayrı aranıyor:
+   * "deci" tek başına `cargo|ship|deliver` süzgecine TAKILMIYOR.
+   */
+  const birlesim = new Set<string>();
+  for (const p of liste) for (const a of Object.keys(p)) birlesim.add(a);
+  console.log("");
+  console.log("DESİ/AĞIRLIK ARAMASI (birleşim kümesinde):");
+  const desiAdaylari = [...birlesim].filter((a) => /desi|deci|weight|agirlik|kg/i.test(a));
+  console.log(
+    "  " + (desiAdaylari.length > 0 ? desiAdaylari.join(" · ") : "HİÇBİRİ — N11 desi VERMİYOR"),
+  );
+  console.log("  (birleşim kümesi " + birlesim.size + " alan · " + liste.length + " paket)");
   const alanlar = Object.keys(liste[0]);
   console.log("");
   console.log("KARGO/DURUM/TARİH alanları:");
