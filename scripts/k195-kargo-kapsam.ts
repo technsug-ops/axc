@@ -134,6 +134,70 @@ async function main() {
       );
     }
   }
+  /**
+   * ⛔ KAYNAK SIRASI — N11 TARİFESİ YOKKEN İKİNCİ BASAMAK SORULUR.
+   * Halil: "N11 tarifeleriyle ilgili resmî bir veri alamadım." Anayasa:
+   *   ① kanalın kendi belgesi  ② KENDİ DEFTERİMİZ  ③ dış hesaplayıcı
+   * ①  yok. ③'e (TY/HB ortalaması) atlamadan ÖNCE ② ölçülür: N11
+   * satışlarımızın FİİLEN ödenmiş kargosu defterde var mı?
+   */
+  const n11Hesaplar = await prisma.channelAccount.findMany({
+    where: { channel: { name: { contains: "11" } } },
+    select: { id: true, channel: { select: { name: true } } },
+  });
+  const n11Idler = n11Hesaplar.map((h) => h.id);
+  console.log("");
+  console.log("⑤ N11 KENDİ DEFTERİMİZDE NE BİLİYOR (kaynak sırası ② )");
+  console.log("   N11 hesabı " + n11Idler.length);
+  if (n11Idler.length > 0) {
+    const n11Toplam = await prisma.sale.count({
+      where: { channelAccountId: { in: n11Idler }, iptalTarihi: null },
+    });
+    const n11Kargolu = await prisma.sale.count({
+      where: {
+        channelAccountId: { in: n11Idler },
+        iptalTarihi: null,
+        NOT: { cargoAmount: null },
+      },
+    });
+    const n11Desili = await prisma.sale.count({
+      where: {
+        channelAccountId: { in: n11Idler },
+        iptalTarihi: null,
+        NOT: { cargoDesi: null },
+      },
+    });
+    console.log(
+      "   satış " + n11Toplam +
+        " · kargo TUTARI dolu " + n11Kargolu +
+        " · desi dolu " + n11Desili,
+    );
+    /** Hem tutarı hem desisi olan satır: efektif tarife BURADAN türer. */
+    const ikisi = await prisma.sale.findMany({
+      where: {
+        channelAccountId: { in: n11Idler },
+        iptalTarihi: null,
+        NOT: { cargoAmount: null, cargoDesi: null },
+      },
+      select: { cargoDesi: true, cargoAmount: true },
+      take: 200,
+    });
+    const cift = ikisi.filter((s) => s.cargoDesi !== null && s.cargoAmount !== null);
+    console.log("   hem TUTAR hem DESİ olan satır: " + cift.length);
+    if (cift.length > 0) {
+      for (const s of cift.slice(0, 8)) {
+        const d = Number(s.cargoDesi);
+        const a = Number(s.cargoAmount);
+        console.log(
+          "      desi " + d.toFixed(0).padStart(3) +
+            " → ₺" + a.toFixed(2).padStart(9) +
+            "  (birim ₺" + (d > 0 ? (a / d).toFixed(2) : "—") + ")",
+        );
+      }
+    } else {
+      console.log("   ⛔ ② BASAMAĞI DA BOŞ — efektif tarife defterden türetilemiyor.");
+    }
+  }
   const kanallar = new Set(tarifeler.map((t) => t.channelId));
   console.log("   kanal sayısı " + kanallar.size + " (tarife kanal bazında tutuluyor)");
   console.log("");
