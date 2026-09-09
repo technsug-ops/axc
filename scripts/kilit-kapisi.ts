@@ -1,4 +1,4 @@
-import { kilitDurumu } from "./bekci-kilit";
+import { indeksDurumu, kilitDurumu } from "./bekci-kilit";
 
 /**
  * ============================================================================
@@ -31,10 +31,72 @@ import { kilitDurumu } from "./bekci-kilit";
  *  imkânsız**. Kasıtlı atlama bir KARARDIR.
  * ============================================================================
  */
+/**
+ * ═══ İKİNCİ KAPI — ZEHİRLENMİŞ İNDEKS (K198, 09.09.2026) ═══════════════
+ *
+ * ⛔ İLK KAPI EKSİKTİ VE BU ÖLÇÜLDÜ: tur koşarken commit durduruluyordu ama
+ * `git add` durdurulmuyordu. 09.09'da tur sırasında çalışan bir `git add -A`
+ * indekse CANLI bir mutasyon aldı:
+ *
+ *     -    if (enSon === null || ms > enSon) enSon = ms;
+ *     +    if (enSon === null) enSon = ms;
+ *
+ * Kapı o anki commit'i reddetti — ama **indeks zehirli kaldı**. Tur bitince
+ * atılacak sıradan bir commit onu sessizce içine alırdı ve kapı o an açık
+ * olduğu için hiçbir şey söylemezdi. Koruma engellediği ANI koruyordu.
+ *
+ * ⭐ ÖLÇÜT: indeks, son turun PENCERESİ içinde mi yazıldı. Olaya değil HÂLE
+ * bağlı ve kendini iyileştirir — indeks yeniden hazırlandığı an damga
+ * pencerenin dışına çıkar ve kapı susar.
+ *
+ * ⚠ YANLIŞ POZİTİF YÖNÜ BEYAN EDİLİR: tur sırasında `git`in kendisi indekse
+ * dokunursa (bir harness git çağırırsa) sonraki commit HAKSIZ yere durur.
+ * Bu bilinçli bir tercih — kapının hata yönü GÜVENLİ tarafa bakıyor: fazla
+ * durdurmak, bozuk bir commit'i geçirmekten ucuzdur. Ve çare tek satır:
+ * indeksi yeniden hazırlamak.
+ */
+function indeksKapisi(): never {
+  const ind = indeksDurumu();
+  if (!ind.olculdu) {
+    /** ⚠ "ölçemedim" ile "temiz" ayrı söylenir; sessiz yeşil verilmez. */
+    console.log("");
+    console.log("  ⚠ İNDEKS DAMGASI ÖLÇÜLEMEDİ — " + ind.sebep);
+    console.log("     Commit geçiyor, ama bu kapı bu koşumda BAKMADI.");
+    console.log("");
+    process.exit(0);
+  }
+  if (!ind.supheli) process.exit(0);
+
+  const p = ind.pencere!;
+  const bicim = (ms: number) => new Date(ms).toLocaleTimeString("tr-TR");
+  console.log("");
+  console.log("=".repeat(74));
+  console.log("  ⛔ COMMIT DURDURULDU — İNDEKS TURUN İÇİNDE HAZIRLANMIŞ");
+  console.log("=".repeat(74));
+  console.log("     son tur   " + bicim(p.basladi) + " → " + bicim(p.bitti));
+  console.log("     indeks    " + bicim(ind.indeksMs) + "   ← BU ARALIĞIN İÇİNDE");
+  console.log("");
+  console.log("  Tur koşarken yapılan `git add`, mutasyon harness'inin o an");
+  console.log("  BOZDUĞU bir dosyayı indekse almış olabilir. Harness dosyayı");
+  console.log("  sonradan geri yazdığı için `git status` TEMİZ görünür — ama");
+  console.log("  indekste bozuk hâli durur ve commit onu içine alır.");
+  console.log("");
+  console.log("  ⏭ NE YAPILIR — indeksi tazeleyin:");
+  console.log("       git reset");
+  console.log("       git add -A -- . ':!*.env*'");
+  console.log("     Yeniden eklendiği an bu kapı kendiliğinden açılır.");
+  console.log("");
+  console.log("  ⚠ ÖNCE BAKIN: `git diff --cached --ignore-all-space` çıktısında");
+  console.log("     beklemediğiniz bir satır varsa o bir mutasyon artığıdır.");
+  console.log("=".repeat(74));
+  console.log("");
+  process.exit(1);
+}
+
 const durum = kilitDurumu();
 
 if (!durum.canli) {
-  process.exit(0);
+  indeksKapisi();
 }
 
 const dakika = Math.round((durum.yasMs ?? 0) / 60_000);

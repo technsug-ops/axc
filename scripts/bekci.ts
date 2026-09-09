@@ -58,9 +58,9 @@
  * ============================================================================
  */
 
-import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 
-import { KILIT, kilitDurumu } from "./bekci-kilit";
+import { KILIT, kilitDurumu, sonTurPenceresiniYaz } from "./bekci-kilit";
 import { spawnSync } from "node:child_process";
 
 /**
@@ -108,7 +108,19 @@ function kilidiAl(): void {
 /** Kilit yalnız BİZİMSE kaldırılır — halefin kilidini silmemek için. */
 process.on("exit", () => {
   try {
-    if (readFileSync(KILIT, "utf8").trim() === String(process.pid)) unlinkSync(KILIT);
+    if (readFileSync(KILIT, "utf8").trim() === String(process.pid)) {
+      /**
+       * ⭐ TURUN PENCERESİ KAYDA GEÇER (K198). Commit kapısı bunu okuyup
+       * "indeks bu turun İÇİNDE mi hazırlandı" diye soracak: tur koşarken
+       * yapılan bir `git add` zehirlenmiş indeksi geride bırakıyordu ve
+       * kapı yalnız o ANKİ commit'i durduruyordu.
+       * ⚠ SIRA ÖNEMLİ: başlangıç damgası kilidin KENDİ mtime'ı — kilit
+       * silindikten sonra okunamaz, o yüzden ÖNCE okunuyor.
+       */
+      const basladi = statSync(KILIT).mtimeMs;
+      unlinkSync(KILIT);
+      sonTurPenceresiniYaz(basladi);
+    }
   } catch (e) {
     console.log("⚠ kilit kaldırılamadı: " + (e as Error).message);
   }

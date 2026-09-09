@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 
 /**
  * ============================================================================
@@ -16,6 +16,97 @@ import { existsSync, readFileSync, statSync } from "node:fs";
  */
 export const KILIT = ".bekci-kilidi";
 export const KILIT_BAYAT_MS = 90 * 60_000;
+
+/**
+ * ============================================================================
+ *  TURUN PENCERESİ — "İNDEKS TURUN İÇİNDE Mİ HAZIRLANDI" (K198, 09.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ NİYE: commit kapısı turu koşarken commit'i durduruyor — AMA `git add`i
+ *  durdurmuyor. 09.09'da bu yaşandı: tur koşarken `git add -A` çalıştı ve
+ *  indekse CANLI bir mutasyon girdi:
+ *
+ *      -    if (enSon === null || ms > enSon) enSon = ms;
+ *      +    if (enSon === null) enSon = ms;
+ *
+ *  Kapı o anki commit'i reddetti, ama **zehirlenmiş indeks hayatta kaldı**.
+ *  Tur bittikten sonra atılacak sıradan bir commit onu sessizce içine alırdı
+ *  ve kapı o an açık olduğu için hiçbir şey söylemezdi. Koruma engellediği
+ *  ANI koruyordu, sonrasını değil.
+ *
+ *  ⭐ ÖLÇÜT OLAYA DEĞİL HÂLE BAĞLANIR: "commit denendi mi" değil, **indeks
+ *  ne zaman yazıldı**. Yeniden hesaplanabilir bir ölçüttür (`.git/index`
+ *  damgası) ve kendini iyileştirir: indeks yeniden hazırlandığı an damga
+ *  pencerenin dışına çıkar ve kapı susar.
+ *  _(Anayasa: "geri alma yolu saklanan listeye değil yeniden hesaplanabilir
+ *  ölçüte dayanır" — ve "ölçüt olaya değil hâle bağlanır".)_
+ * ============================================================================
+ */
+export const SON_TUR = ".bekci-son-tur";
+
+export type TurPenceresi = { basladi: number; bitti: number };
+
+/** Tur biterken çağrılır — kilit SİLİNMEDEN ÖNCE mtime'ı okunmalıdır. */
+export function sonTurPenceresiniYaz(basladiMs: number): void {
+  writeFileSync(
+    SON_TUR,
+    JSON.stringify({ basladi: basladiMs, bitti: Date.now() }),
+    "utf8",
+  );
+}
+
+export function sonTurPenceresi(): TurPenceresi | null {
+  try {
+    if (!existsSync(SON_TUR)) return null;
+    const o = JSON.parse(readFileSync(SON_TUR, "utf8")) as TurPenceresi;
+    return Number.isFinite(o.basladi) && Number.isFinite(o.bitti) ? o : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * `.git/index` yolu.
+ * ⚠ WORKTREE'DE `.git` BİR DOSYADIR ve gitdir'i gösterir; klasör varsayan
+ * bir okuma orada sessizce "ölçemedim"e düşerdi.
+ */
+export function indeksYolu(): string | null {
+  try {
+    if (!existsSync(".git")) return null;
+    if (statSync(".git").isDirectory()) return ".git/index";
+    const e = /gitdir:\s*(.+)/.exec(readFileSync(".git", "utf8"));
+    return e ? e[1].trim() + "/index" : null;
+  } catch {
+    return null;
+  }
+}
+
+export type IndeksDurumu =
+  | { olculdu: false; sebep: string }
+  | { olculdu: true; supheli: boolean; indeksMs: number; pencere: TurPenceresi | null };
+
+/**
+ * ⚠ "ÖLÇEMEDİM" İLE "TEMİZ" AYRI DÖNER. Kapı ölçemediğini SÖYLER; sessizce
+ * yeşil vermez. _(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen
+ * denetim, denetim değildir".)_
+ */
+export function indeksDurumu(): IndeksDurumu {
+  const yol = indeksYolu();
+  if (yol === null) return { olculdu: false, sebep: "`.git` çözülemedi" };
+  if (!existsSync(yol)) {
+    return { olculdu: false, sebep: "`.git/index` yok — hiç `git add` yapılmamış" };
+  }
+  const indeksMs = statSync(yol).mtimeMs;
+  const pencere = sonTurPenceresi();
+  if (pencere === null) {
+    return { olculdu: true, supheli: false, indeksMs, pencere: null };
+  }
+  return {
+    olculdu: true,
+    supheli: indeksMs >= pencere.basladi && indeksMs <= pencere.bitti,
+    indeksMs,
+    pencere,
+  };
+}
 
 export function pidYasiyor(pid: number): boolean {
   try {
