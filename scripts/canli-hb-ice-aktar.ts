@@ -3,6 +3,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { hbHesabiCoz, hbHesapHatasi, HB_KANAL_ADI } from "../src/lib/kanal-hesabi-hb";
+import { hbKargoDamgasi } from "../src/lib/kanal-kargo-damgasi";
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
 import { kilitDurumu } from "./bekci-kilit";
 import { canliYapilandirma } from "./canli-ortak";
@@ -298,6 +299,18 @@ export async function hbCekimKos(ayar: {
 
   const gonderilen = await tumKayitlar((o, l) => UCLAR.paketlerGonderilen(k, o, l), baslik, 100);
   let gonderilenSayisi = 0;
+  /**
+   * ⛔ KANALIN SÖYLEDİĞİNİ ARTIK ATMIYORUZ (K195, 09.09.2026).
+   * Bu uç `ShippedDate` de veriyor; eski hâl yalnız sipariş NUMARASINI
+   * topluyor, tarihi çöpe atıyordu. `shippedAt` ise defterde 7600 satışta
+   * BOŞTU ve görev kutusu bu yüzden şişiyordu (K60).
+   *
+   * ⚠ TARİHTE SAAT DİLİMİ YOK ("2026-09-04T13:58:48") ve bu ÖLÇÜLMÜŞ bir
+   * tehlike: `new Date()` onu bu makinede (Europe/Berlin) 1 saat, Vercel'de
+   * (UTC) 3 saat ERKEN okur. Kullanıcı kararı 09.09: SAATTEN VAZGEÇ, GÜNÜ
+   * KULLAN — ve gün `Date` kurulmadan dizeden kesilir.
+   */
+  const kargoDamgalari = new Map<string, Date>();
   if (gonderilen.tur === "TAMAM") {
     for (const p of gonderilen.kayitlar as Record<string, unknown>[]) {
       /** ⚠ İNCE ŞEKİL **PascalCase** — `orderNumber` değil `OrderNumber`. */
@@ -306,6 +319,8 @@ export async function hbCekimKos(ayar: {
         if (typeof v === "string" && v !== "") {
           if (!siparisNolari.has(v)) gonderilenSayisi++;
           siparisNolari.add(v);
+          const d = hbKargoDamgasi(p.ShippedDate ?? p.shippedDate);
+          if (d.tur !== "YOK" && !kargoDamgalari.has(v)) kargoDamgalari.set(v, d.an);
         }
       }
     }
@@ -529,7 +544,26 @@ export async function hbCekimKos(ayar: {
     console.log(`   ⚠ ENUMERASYONDAN SONRA DOĞAN KAYIT → ATLANDI: ${yarisEdenler.length}`);
   }
   const cakisanlar = [...bilinen.map((s) => s.code!), ...yarisEdenler];
+
+  /**
+   * ═══ KARGO DAMGASI — BOŞ ALANI DOLDURUR, HİÇBİR ŞEYİ EZMEZ (K195) ═══
+   *
+   * ⛔ "EZME YOK" İLKESİ ÇİĞNENMİYOR: yalnız `shippedAt` NULL olan satışlara
+   * yazılıyor. Dolu bir damga ASLA değiştirilmiyor — boş bir alanı
+   * doldurmak ezme değildir; ezme, var olan bir bilgiyi yok etmektir.
+   * ⚠ Satır satır ve tekrar-koşulabilir: ikinci koşum dolu olanı atlar.
+   */
+  let damgaYazilan = 0;
+  for (const [no, damga] of kargoDamgalari) {
+    const guncel = await prisma.sale.updateMany({
+      where: { code: no, channelAccountId: hesap.id, shippedAt: null },
+      data: { shippedAt: damga },
+    });
+    damgaYazilan += guncel.count;
+  }
+
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
+  console.log(`   KARGO DAMGASI YAZILDI (yalnız BOŞ olanlara)      ${damgaYazilan}`);
   console.log(`     ├─ aynı kanal (yeniden içe aktarma, beklenen)  ${ayniKanal}`);
   console.log(`     └─ ÇAPRAZ KANAL (numara uzayı çakışması)       ${capraz.length}`);
   if (capraz.length > 0) {
@@ -716,6 +750,14 @@ export async function hbCekimKos(ayar: {
           channelAccountId: hesap.id,
           /** GERÇEK AN (K163) — kuyruk saat süzgecinden geçer. */
           soldAt: aday.soldAt,
+          /**
+           * ⚠ KANALIN BİLDİRDİĞİ KARGO GÜNÜ (K195) — SAAT DEĞİL GÜN.
+           * HB dilimsiz bir dize veriyor; saat okunsaydı koştuğu makineye
+           * göre kayardı. Damga gün sınırında ve `gunHassasiyetliMi` ile
+           * "bu saat gerçek değil" diye ayırt edilebiliyor.
+           * `null` ise kanal "kargolandı" demedi — UYDURULMAZ.
+           */
+          shippedAt: kargoDamgalari.get(aday.siparisNo) ?? null,
           importBatch: partiKimligi,
           importKaynak: "hb-enumerasyon",
           /**

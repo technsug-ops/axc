@@ -103,6 +103,119 @@ GÖRÜLMELİ** — bu doğrulama yapılmadan K193 kapanmaz.
 
 ---
 
+## 🔶 K195 — KARGO TAKİBİ: KANALIN SÖYLEDİĞİNİ ATMAYI BIRAKTIK · 09.09.2026 · [KOD KOŞTU — 2. FAZ ONAY BEKLİYOR]
+
+> **Halil kararı 09.09:** kargo takibi **pazaryerinden** (a); kargo firması
+> API'leri (b) ERTELENDİ. Saat dilimi sorusuna cevap: **(c) — TY'yi esas al,
+> HB'nin saatini yalnız GÜN olarak kullan.**
+
+⭐ **ANA BULGU: KANALLAR DURUMU ZATEN SÖYLÜYORDU, BİZ ATIYORDUK.**
+İş yeni API çağrısı eklemek değildi — gelen veriyi atmayı bırakmak.
+**Sıfır yeni istek, sıfır yeni bağımlılık.**
+
+    TY : packageHistories her pakette VAR → okunuyordu, DEFTERE YAZILMIYORDU
+    HB : /shipped ve /delivered CAGRILIYOR ama yalniz siparis NUMARASI
+         toplaniyor; ShippedDate/DeliveredDate ATILIYORDU
+
+### ⛔ ÖLÇÜLEN TEHLİKE — HB'NİN TARİHİNDE SAAT DİLİMİ YOK
+
+    HB dizesi               "2026-09-04T13:58:48"   ← dilim isareti YOK
+    gercek an (Istanbul)    2026-09-04T10:58:48Z
+    new Date() bu makinede  2026-09-04T11:58:48Z    ← 1 saat ERKEN
+    new Date() Vercel'de    2026-09-04T13:58:48Z    ← 3 saat ERKEN
+
+⚠ **VE BU TEORİK DEĞİL:** geliştirme makinesi `Europe/Berlin` (+2), çekim
+görevi **orada** koşuyor; üretim Vercel `UTC`; iş `Europe/Istanbul` (+3).
+Yani `new Date(dize)` **koştuğu yere göre farklı bir an** üretir ve hiçbir
+hata vermez. _(Anayasa: "çalışma ortamının saat dilimi ASLA kullanılmaz";
+"iç tutarlılık kaymayı gizler" — bütün kayıtlar aynı miktarda kayar,
+hiçbir iç kontrol kırmızı yanmaz.)_
+
+⭐ **KULLANICI DÜZELTMESİ:** önce _"aynı saat dilimini kullanıyorlar, problem
+yok"_ denmişti; ardından _"ben Almanya'dayım, buradaki dilim HB ve
+Trendyol'daki ile aynı değil"_ diye netleşti. Kanalların birbiriyle uyumu
+sorunu çözmüyor — sorun **bizim ayrıştırıcımızın** hangi dilimi kullandığı.
+
+**(c)'NİN DOĞRU UYGULAMASI DİZEDEN KESMEKTİR:** gün, `Date` KURULMADAN
+dizenin ilk 10 hanesinden alınır. Önce `new Date()` yapıp sonra gününü
+okumak, kaymış bir andan gün okumak olurdu — `00:30` gibi bir damgada
+**GÜN de kayardı** (Berlin'de bir önceki güne düşer).
+
+### YAZILAN
+
+**①** `src/lib/kanal-kargo-damgasi.ts` — SAF gövde, iki biçimi tek sonuca
+çevirir:
+
+    TY  createdDate (epoch ms)  → { tur: "AN",  an }   saat GUVENILIR
+    HB  "2026-09-04T13:58:48"   → { tur: "GUN", an }   saat IDDIA EDILMEZ
+
+⭐ **KESİNLİK KAYBOLMUYOR, İŞARETLENİYOR.** Gün hassasiyetli damga tam gün
+sınırına düşüyor ve depoda ZATEN VAR OLAN `gunHassasiyetliMi` ile ayırt
+ediliyor — ikinci bir gövde yazılmadı. Bu, K163'te `soldAt` için alınmış
+kararın aynısı ("elle kayıtlar gün hassasiyetinde kalır, ekran ayrımı
+`gunHassasiyetliMi` ile yapar").
+
+**②** TY ve HB içe aktarmaları `shippedAt`i **kanalın söylediğiyle**
+dolduruyor — hem yeni satışta hem mevcut satışta.
+
+⛔ **"EZME YOK" İLKESİ ÇİĞNENMEDİ:** yalnız `shippedAt` **NULL** olanlara
+yazılıyor (`updateMany` koşulunda `shippedAt: null`). Dolu bir damga —
+elle girilmiş olabilir — asla değişmiyor. **Boş bir alanı doldurmak ezme
+değildir; ezme, var olan bir bilgiyi yok etmektir.**
+
+⚠ **AYRI BİR BETİK YAZILMADI VE GEREKÇESİ ÖLÇÜLDÜ:** veri zaten elimizde;
+ayrı bir betik aynı paketleri **ikinci kez** çekerdi — her 5 dakikada
+gereksiz bir tur API isteği.
+
+### ÖLÇÜLEN KAPSAM (09.09.2026)
+
+    defter : satis 7953 · shippedAt DOLU 353 · BOS 7600
+    TY     : son 7 gunde Shipped 91 · Delivered 63 paket
+             111 paketin 111'i defterde · shippedAt BOS 20
+    HB     : kargoda 14 · teslim 50 · hepsi defterde (kacak YOK)
+             teslim edilen 50'nin 29'unda shippedAt BOS
+
+⚠ **BU YETENEK İLERİYE DÖNÜKTÜR:** kanal uçları yalnız yakın pencereyi
+veriyor; 7600 boş kaydı **geriye doldurmuyor**. Her çekimde yeni
+kargolananlar dolacak. Bunu "K60 kapandı" diye yazmıyoruz — kapanan şey
+bundan SONRASI.
+
+### BEKÇİ 16/16 · MUTASYON 6/6 KIRMIZI
+
+    ① HB naif new Date() kullanir (dilim tuzagi)      KIRMIZI ← en kritik
+    ② TY ILK damgayi alir (en gec yerine)             KIRMIZI
+    ③ TY durum suzgeci kalkar                         KIRMIZI
+    ④ HB damgasi AN diye isaretlenir                  KIRMIZI
+    ⑤ TY icin uydurma tarih yazilir                   KIRMIZI ← K60 yasagi
+    ⑥ HB damgasi DOLU olani da ezer                   KIRMIZI
+
+⭐ ①'in kırmızı yanması, saat dilimi tuzağının artık **korumalı** olduğunu
+gösteriyor: biri "kolay yol" diye `new Date()`e dönerse bekçi durdurur.
+⚠ Ölçüt ORTAMA BAĞLI YAZILMADI: "naif sonuç farklı" değil, "bizim
+sonucumuz dizenin günü" diye kuruldu — makine UTC'ye taşınsa da aynı şeyi
+ölçer.
+
+### 📋 2. FAZ — ŞEMA DEĞİŞİKLİĞİ ONAYI BEKLİYOR
+
+`Sale.deliveredAt` **YOK** ve merdiven indirildi: mevcut alan yok, serbest
+metin yetmez (panel "kaç paket yolda" diye SORGULAYACAK), türetilemez.
+Yani sütun gerekiyor — ve migration onayı bekliyor:
+
+    Sale.deliveredAt          DateTime?  teslim ani (kanal bildiriyor)
+    Sale.kargoTakipBaglantisi String?    TY cargoTrackingLink
+    Sale.kanalKargoFirmasi    String?    TY cargoProviderName
+
+⚠ **SON SATIR AYRI BİR ALAN OLMALI:** `cargoCarrierId` **bizim satışta
+seçtiğimiz** firma; `cargoProviderName` **kanalın fiilen kullandığı**.
+Aynı alana yazmak, ikisi ayrıştığında farkı görünmez yapar — ve o fark tam
+da tarife/maliyet hatalarının çıktığı yer.
+
+⭐ **VE `cargoTrackingLink` (b) SEÇENEĞİNİ MUHTEMELEN GEREKSİZ KILIYOR:**
+"paketim nerede" sorusunun cevabı TY'den zaten geliyor; 10+ kargo firmasıyla
+ayrı ayrı sözleşme/API gerekmeyebilir.
+
+---
+
 ## 🔶 K194 — N11'E STOK/FİYAT GÖNDERİMİ (İKİNCİ KANAL) · 09.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 > **Halil kararı 09.09:** stok TEK düğmeyle üç kanala, fiyat kanal başına

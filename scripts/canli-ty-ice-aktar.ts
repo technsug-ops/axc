@@ -12,6 +12,10 @@ import {
   tumSayfalar,
 } from "./ty/istemci";
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
+import {
+  tyKargoDamgasi,
+  type PaketGecmisi,
+} from "../src/lib/kanal-kargo-damgasi";
 
 /**
  * ============================================================================
@@ -100,6 +104,12 @@ type Aday = {
   kaynak: Kaynak;
   soldAt: Date;
   iptalTarihi: Date | null;
+  /**
+   * KANALIN BİLDİRDİĞİ KARGO ANI (K195, 09.09.2026) — `packageHistories`
+   * içindeki `Shipped` damgası. `null` = kanal henüz kargolandı demedi.
+   * ⚠ Kanal EPOCH MS veriyor, yani saat dilimi belirsizliği YOK.
+   */
+  kargoAni: Date | null;
   kargoNo: string | null;
   paketSayisi: number;
   tutar: number;
@@ -298,8 +308,24 @@ export async function tyCekimKos(ayar: {
     });
     const tutar = kurus(Number(p.grossAmount ?? 0) - Number(p.totalDiscount ?? 0));
     const iptalli = String(p.status) === "Cancelled";
+    /**
+     * ⛔ KANALIN SÖYLEDİĞİNİ ATMIYORUZ ARTIK (K195). Bu bilgi her koşumda
+     * geliyordu ve okunmadan çöpe gidiyordu; `shippedAt` ise 7600 satışta
+     * BOŞTU ve görev kutusu bu yüzden şişiyordu (K60).
+     */
+    const kargoDamgasi = tyKargoDamgasi(
+      p.packageHistories as PaketGecmisi[] | undefined,
+      "Shipped",
+    );
+    const kargoAni = kargoDamgasi.tur === "YOK" ? null : kargoDamgasi.an;
+
     const mevcut = adaylar.get(no);
     if (mevcut) {
+      /** ⚠ EN GEÇ damga kazanır: bölünmüş sipariş iki paketse ikincisi
+       *  daha geç kargolanmış olabilir ve sipariş o an yola çıkmıştır. */
+      if (kargoAni && (!mevcut.kargoAni || kargoAni > mevcut.kargoAni)) {
+        mevcut.kargoAni = kargoAni;
+      }
       mevcut.paketSayisi++;
       mevcut.tutar = kurus(mevcut.tutar + tutar);
       mevcut.kalemler.push(...kalemler);
@@ -325,6 +351,7 @@ export async function tyCekimKos(ayar: {
         iptalTarihi: iptalli
           ? iptalAniCoz(p.packageHistories as { createdDate: number; status: string }[])
           : null,
+        kargoAni,
         kargoNo: p.cargoTrackingNumber ? String(p.cargoTrackingNumber) : null,
         paketSayisi: 1,
         tutar,
@@ -357,8 +384,38 @@ export async function tyCekimKos(ayar: {
     ).map((s) => s.code!),
   );
   const cakisanlar = [...adaylar.keys()].filter((n) => mevcutKodlar.has(n));
+
+  /**
+   * ═══ KARGO DAMGASI — BOŞ ALANI DOLDURUR, HİÇBİR ŞEYİ EZMEZ (K195) ═══
+   *
+   * ⛔ "EZME YOK" İLKESİ ÇİĞNENMİYOR: yalnız `shippedAt` NULL olan satışlara
+   * yazılıyor. Dolu bir damga — elle girilmiş ya da daha önce kanaldan
+   * gelmiş olabilir — ASLA değiştirilmiyor. Boş bir alanı doldurmak ezme
+   * değildir; ezme, var olan bir bilgiyi yok etmektir.
+   *
+   * ⚠ NİYE BURADA VE AYRI BİR BETİKTE DEĞİL: veri zaten elimizde. Ayrı bir
+   * betik aynı paketleri İKİNCİ KEZ çekerdi — her 5 dakikada gereksiz bir
+   * tur API isteği. _(Anayasa: "kaydetme kararı tüketicisi doğduğunda
+   * verilir" — tüketici K60'ın görev kutusu ve o bugün ŞİŞİK.)_
+   *
+   * ⚠ TOPLU DEĞİL SATIR SATIR: her satır bağımsız, ikinci koşum zararsız
+   * (dolu olanı atlar). _(Anayasa: "toplu yazım üç şartla koşar" —
+   * satır satır tekrar-koşulabilir kalıbı.)_
+   */
+  let damgaYazilan = 0;
+  for (const no of cakisanlar) {
+    const damga = adaylar.get(no)?.kargoAni ?? null;
+    if (damga === null) continue;
+    const guncel = await prisma.sale.updateMany({
+      where: { code: no, channelAccountId: hesap.id, shippedAt: null },
+      data: { shippedAt: damga },
+    });
+    damgaYazilan += guncel.count;
+  }
+
   for (const n of cakisanlar) adaylar.delete(n);
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
+  console.log(`   KARGO DAMGASI YAZILDI (yalnız BOŞ olanlara)      ${damgaYazilan}`);
 
   // ═══ VARYANT KAPISI ═════════════════════════════════════════════════════
   /**
@@ -473,6 +530,13 @@ export async function tyCekimKos(ayar: {
           code: a.siparisNo,
           channelAccountId: hesap.id,
           soldAt: a.soldAt,
+          /**
+           * ⚠ KANALIN BİLDİRDİĞİ AN — UYDURULMUYOR. `null` ise kanal
+           * "kargolandı" demedi ve alan BOŞ kalır; K60'ta bugünün tarihini
+           * yazan toplu düğme tam bu yüzden 5601 siparişe uydurma bir
+           * kargo günü basmıştı.
+           */
+          shippedAt: a.kargoAni,
           shipmentCode: a.kargoNo,
           paketSayisi: a.paketSayisi,
           iptalTarihi: a.iptalTarihi,
