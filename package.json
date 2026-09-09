@@ -298,6 +298,7 @@
     "canli:paket-bolunmesi": "tsx scripts/k195-paket-bolunmesi-olcum.ts",
     "canli:desi-olcum": "tsx scripts/k197-desi-olcum.ts",
     "canli:kargo-kaynak": "tsx scripts/k197-kargo-kaynak-olcum.ts",
+    "canli:hakedis-kargo-kosum": "tsx scripts/canli-hakedis-kargo-kosum.ts",
     "canli:manifest-kur": "tsx scripts/canli-manifest-kur.ts",
     "canli:k121-kuru": "tsx scripts/k121-kuru-kosum.ts",
     "canli:k121c-kuru": "tsx scripts/k121c-kuru-kosum.ts",
