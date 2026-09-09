@@ -13,6 +13,96 @@
 
 ---
 
+## 🔴 K202 — BEKÇİ TURU VERGİSİ · 09.09.2026 · [AÇIK — ÖLÇÜM BEKLİYOR]
+
+> **Halil açtı 09.09:** tur **15,8 → 39,6 dakika** (2,5×).
+
+⛔ **BÜYÜYEN BORÇ VE ERTELENİRSE KORUMANIN TAMAMI ÇÖKER.** Anayasa bunu
+kendisi uyarıyor: _"bir dahaki sefere hepsini koşarım" bir çözüm değil bir
+niyettir._ Tur "koşmaya üşenilecek" eşiği geçerse atlanır — ve atlandığı an
+117 bekçinin hiçbiri koşmaz.
+
+⚠ **SEBEP ÖLÇÜLMEDİ, TAHMİN EDİLMEYECEK.** Üç aday var ve çaresi sebebe
+göre değişir:
+
+    bekçi SAYISI mi arttı   → bugün çok eklendi (2 bekçi + 20 mutasyon)
+    her bekçi mi yavaşladı  → ortak bir gövde mi ağırlaştı
+    eşzamanlı ÇEKİM mi      → 5 dakikalık tur turla çakışıyor olabilir
+
+⛔ **ÖLÇÜM ŞARTI:** kanca çıktısı yönlendirmeye düşmüyor (108 bayt) — önce
+bekçi başına süre GÖRÜNÜR kılınmalı, sonra hüküm. Çareler: paralelleştir ·
+ağır bekçiyi bul · çekimle çakışmayı ayır.
+
+---
+
+## 🔶 K201 — N11 KARGO MALİYETİ: TAHMİN AYRI SÜTUNDA · 09.09.2026 · [KOD KOŞTU]
+
+> **Mimar kararı 09.09 — YOL 3, Yol 1 DEĞİL:** `cargoAmount` "kanalın
+> GERÇEKLEŞEN kesintisi"dir; N11 tahminini oraya yazmak alanın anlamını
+> KİRLETİR ve bekçiyi deler. `kanalKargoDesi` kararının birebir kardeşi.
+
+**MIGRATION CANLIDA:** `Sale.tahminiKargo Decimal?(18,4)`
+(ön şart: yedek 87.552 satır yazıldı+geri okundu · şema `.bak`)
+
+### KAYNAK SIRALARI — İKİSİ DE TEK GÖVDEDE
+
+    TUTAR  cargoAmount (GERÇEKLEŞEN) → tahminiKargo (TAHMİNİ) → YOK
+    DESİ   kanalKargoDesi (tartım) → cargoDesi (ürüne-özel) → küresel
+
+⛔ **ÜZERİNE YAZMA YOK:** hakediş gelince gerçekleşen DEVRALIR, tahmin
+YERİNDE kalır. Silinseydi _"ne kadar yanılmışız"_ bir daha sorulamazdı — ve
+o soru, tahmini iyileştirmenin tek yolu.
+
+### ⭐ ARA BASAMAĞI ÖLÇÜM YAKALADI
+
+İlk sıra "tartım → küresel ortalama" idi. Ölçüm:
+
+    N11 ürünlerinin TY/HB'de tartılmış olanı   0/10   ← öğrenme HİÇ çalışmıyor
+    N11 satışlarında ürüne-özel tahmin DOLU   10/10   ← elimizde ve kullanılmıyordu
+
+Küresel sayı **EN SONA** kondu: "ürün hakkında hiçbir şey bilinmiyor" bir
+SON ÇAREDİR, ilk tercih değil.
+
+### 📏 KÜRESEL SAYI: ORTANCA (3), ORTALAMA (4,04) DEĞİL
+
+    n=57 · min 1 · ortanca 3 · ORTALAMA 4,04 · max 19 · oran 1,345
+
+Dağılım kuyruklu ve **seçim sonucu değiştiriyor** — bu yüzden sessiz
+seçilmedi, kullanıcıya soruldu. Tek 19 desilik gönderi tipik tahmini
+şişirmesin. _(Anayasa: "eşiği soruyu soran koyamaz".)_
+
+### ⛔ İKİ BEKÇİ KÖRLÜĞÜ — MUTASYON YAKALADI, İKİSİ DE AYNI KÖKTEN
+
+Kök: **okuma ile yazmayı ayırt edememek.**
+
+**①** _"N11 defterdeki kargo tutarına dokunuyor"_ KAÇTI. Ölçüt yalnız nesne
+alanını arıyordu; nokta-eşittir biçimindeki atamayı görmüyordu. Yani
+Halil'in şartı **bir sözdizimi biçimi kadar** korunuyordu.
+⚠ Ve ilk düzeltme de yetmedi: muafiyet SATIR düzeyindeydi, mutasyon satırı
+hem tip anotasyonu hem atama içeriyordu ve **muafiyet gerçek bulguyu iptal
+ediyordu.**
+
+**②** _"TY kanal desisini hiç yazmıyor"_ KAÇTI. Çok satırlı bir OKUMA (alan
+adı satırda tek başına, değeri sonraki satırda) N11'i "yazan" saydı ve taban
+düşmedi.
+
+⭐ **İKİSİNİN DE ÇARESİ AYNI:** ölçüt **yazma çağrısına** bağlandı —
+Prisma'nın `create`/`update`/`updateMany` bloklarının İÇİ taranıyor. Okuma,
+saf gövdeye geçirme ve `select` artık sayılmıyor.
+⚠ Taban KÜME düzeyinde: alım içe aktarması satış yazmaz ve bu "bakamadım"
+değil **"bakılacak şey yok"**tur.
+
+### BEKÇİ 17/17 + 57/57 · MUTASYON 7/7 + 15/15 KIRMIZI
+
+### 📋 KALAN
+
+· NET'te tahmini kargonun EKRANDA "tahmini" diye görünmesi (gövde hazır:
+  `kargoTahminiMi`) — ekran tarafı yazılmadı
+· Şartlı kargo (300 TL altı sabit ücret) · Yurtiçi SMS · başarısız teslimat
+  kalemleri tabloya girmedi; beyan edildi
+
+---
+
 ## 🔶 K197 — TAHMİN EDİLEN DESİ ile GERÇEKLEŞEN DESİ · 09.09.2026 · [KOD KOŞTU]
 
 > **Halil kararı 09.09:** _"Geçmişte gösterilecek ufak tefek gelir veya kâr
