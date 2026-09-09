@@ -53,6 +53,36 @@ async function main() {
       " · bizim TAHMİNİMİZ " + bizimDesili +
       " · kargo TUTARI dolu " + kargoTutarli,
   );
+  /**
+   * ⛔ TESLİM KUTUSUNUN KAPI ÖLÇÜMÜ (Halil şartı 09.09.2026).
+   * "YOLDA" kutusu `shippedAt dolu + deliveredAt boş` diye sayılırsa,
+   * mekanizmadan ÖNCE kargolanmış ve çoktan TESLİM EDİLMİŞ siparişler de
+   * "yolda" görünür — kutu geçmiş boşluğuyla ŞİŞER. Ayrım tarih eşiği:
+   * `deliveredAt` 09.09.2026'da doğdu.
+   */
+  const MEKANIZMA = new Date(Date.UTC(2026, 8, 9));
+  const yoldaHam = await prisma.sale.count({
+    where: { iptalTarihi: null, NOT: { shippedAt: null }, deliveredAt: null },
+  });
+  const yoldaGercek = await prisma.sale.count({
+    where: {
+      iptalTarihi: null,
+      deliveredAt: null,
+      shippedAt: { gte: MEKANIZMA },
+    },
+  });
+  const bilinmiyor = await prisma.sale.count({
+    where: {
+      iptalTarihi: null,
+      deliveredAt: null,
+      shippedAt: { lt: MEKANIZMA },
+    },
+  });
+  console.log(
+    "   KUTU KAPISI: ham 'yolda' " + yoldaHam +
+      "  =  gerçekten yolda " + yoldaGercek +
+      "  +  teslim durumu BİLİNMİYOR " + bilinmiyor,
+  );
   console.log(
     "   TESLİM TARAFI: deliveredAt " + teslimli +
       " · takip bağlantısı " + takipli +

@@ -119,6 +119,8 @@
     "sayfalama-toplami:dogrula": "tsx scripts/sayfalama-toplami-dogrula.ts",
     "kontrol-karakteri:dogrula": "tsx scripts/kontrol-karakteri-dogrula.ts",
     "kargo-damgasi:dogrula": "tsx scripts/kargo-damgasi-dogrula.ts",
+    "teslim-durumu:dogrula": "tsx scripts/teslim-durumu-dogrula.ts",
+    "teslim-durumu-mutasyon:kontrol": "tsx scripts/teslim-durumu-mutasyon-kontrol.ts",
     "kargo-damgasi-mutasyon:kontrol": "tsx scripts/kargo-damgasi-mutasyon-kontrol.ts",
     "mutasyon-capa:dogrula": "tsx scripts/mutasyon-capa-dogrula.ts",
     "sayim-ekran:dogrula": "tsx scripts/sayim-ekran-dogrula.ts",
