@@ -258,6 +258,69 @@ async function main() {
       for (const x of sapanlar) console.log(x);
     }
 
+
+    /* ═══ ⑥ TABAN — KDV DAHİL Mİ HARİÇ Mİ (ÖLÇÜLÜR, VARSAYILMAZ) ═══════ */
+    /**
+     * ⛔ ⑤'teki 142 sapmanın ne anlama geldiği TABANA bağlı ve taban
+     * çözülmeden toplamın YÖNÜ bile ters çevrilebiliyor (ham: defter %17
+     * düşük · ×1,20: defter %2,5 yüksek). _(Anayasa: "para rakamı tabanıyla
+     * birlikte yazılır".)_
+     *
+     * ⭐ EN UCUZ KANIT KAYNAĞIN KENDİ ETİKETİNDE: `rawType` dosyanın yazdığı
+     * ham metni taşıyor. Orada "KDV" geçiyorsa soru zaten cevaplanmıştır.
+     * _(Anayasa: "dış kaynağın kendi etiketiyle karşılaştır".)_
+     */
+    console.log("");
+    console.log("⑥ TABAN ÖLÇÜMÜ — hakediş KARGO kalemi KDV dahil mi?");
+    const hamTipler = await prisma.settlementItem.groupBy({
+      by: ["rawType"],
+      where: { code: { in: ["KARGO", "KARGO_FATURA", "KARGO_IADE"] } },
+      _count: { _all: true },
+    });
+    console.log("   kaynağın kendi etiketi (rawType):");
+    for (const h of hamTipler) {
+      console.log("      " + String(h.rawType ?? "(boş)").padEnd(46) + h._count._all);
+    }
+
+    /**
+     * İKİNCİ KANIT — TARİFEYE OTURUYOR MU. HB kargosu desi tarifesinden
+     * geliyor. Kesinti tutarı tarifedeki tutara BİREBİR oturuyorsa KDV
+     * HARİÇ, ×1,20'sine oturuyorsa DAHİL demektir. Hiçbirine oturmuyorsa
+     * hüküm VERİLMEZ — üçüncü bir şey vardır.
+     */
+    const hbTarife = await prisma.cargoTariff.findMany({
+      select: { amount: true, desi: true, carrierId: true },
+    });
+    const haricKume = new Set(hbTarife.map((t) => Number(t.amount).toFixed(2)));
+    const dahilKume = new Set(hbTarife.map((t) => (Number(t.amount) * 1.2).toFixed(2)));
+    const tutarlar = await prisma.settlementItem.groupBy({
+      by: ["amount"],
+      where: { code: "KARGO" },
+      _count: { _all: true },
+    });
+    let haric = 0;
+    let dahil = 0;
+    let hicbiri = 0;
+    const oturmayan: string[] = [];
+    for (const t of tutarlar) {
+      const v = Math.abs(Number(t.amount)).toFixed(2);
+      if (haricKume.has(v)) haric += t._count._all;
+      else if (dahilKume.has(v)) dahil += t._count._all;
+      else {
+        hicbiri += t._count._all;
+        if (oturmayan.length < 8) oturmayan.push("₺" + v + " ×" + t._count._all);
+      }
+    }
+    console.log("   tarifeye oturan (KDV HARİÇ tutar)   " + haric);
+    console.log("   tarife ×1,20'ye oturan (KDV DAHİL)  " + dahil);
+    console.log("   hiçbirine oturmayan                 " + hicbiri);
+    if (oturmayan.length > 0) {
+      console.log("   oturmayan örnekler: " + oturmayan.join(" · "));
+    }
+    console.log("   ⚠ 'hiçbirine oturmayan' baskınsa HÜKÜM VERİLMEZ — HB kendi");
+    console.log("      tarifesini uyguluyor olabilir (bizim tarife tablomuz onun");
+    console.log("      DEĞİL). O hâlde doğru kaynak zaten kesintinin kendisidir.");
+
   } finally {
     /** ⛔ K189: `$disconnect` yoksa görev "Running"de asılı kalır. */
     await prisma.$disconnect();
