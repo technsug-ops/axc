@@ -193,7 +193,11 @@ console.log(
     ` (${gecen}/${gecen + hata})`,
 );
 console.log(
-  "⚠ Bu tur 'yapısal olarak bozulmamış' der — 'ekran görüntüsünden DOĞRU" +
-    " aktarıldı' DEMEZ. İkisi ayrı iddiadır.\n",
+  "\n⭐ AKTARIM KAYNAĞIN KENDİSİYLE DOĞRULANDI — beş desi basamağında" +
+    " (1·2·3·9·11) kanalın FİİLEN kestiği kuruş üretildi." +
+    "\n⚠ Kalan 40 basamak YAPISAL sınandı (artan sıra · nokta çaprazı);" +
+    " onlar için 'bozulmamış' denir, 'doğrulandı' DENMEZ." +
+    "\n⚠ Tarifenin SÜRÜMÜ var: temmuz kesintileri farklı oran veriyor —" +
+    " bu tablo BUGÜNKÜ tarifedir, geçmişe uygulanmaz.\n",
 );
 process.exit(hata === 0 ? 0 : 1);
