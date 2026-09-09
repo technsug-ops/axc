@@ -3,6 +3,8 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
+import { desiSecimi } from "../src/lib/kargo-kaynagi";
+import { n11KargoMaliyeti } from "../src/lib/n11-kargo-tarifesi";
 import {
   gecmistenKargoDamgasi,
   teslimGuncellemesi,
@@ -408,10 +410,14 @@ export async function n11CekimKos(ayar: {
       kargoTakipBaglantisi: true,
       kanalKargoFirmasi: true,
       kanalKargoDesi: true,
+      /** ⚠ SALT OKUMA — desi sırasının girdisi. Bu iki alana YAZILMIYOR. */
+      cargoDesi: true,
+      tahminiKargo: true,
     },
   });
   let teslimYazilan = 0;
   let takipYazilan = 0;
+  let tahminYazilan = 0;
   for (const s of mevcutTeslim) {
     const a = adaylar.get(s.code ?? "");
     if (!a) continue;
@@ -430,7 +436,36 @@ export async function n11CekimKos(ayar: {
        */
       kanalDesi: null,
     });
-    if (!teslimYazimiVarMi(veri)) continue;
+    /**
+     * ═══ TAHMİNİ KARGO (K201) — `cargoAmount`a DOKUNMAZ ═══
+     *
+     * ⛔ N11'in kargo kesintisi hakedişe SATIR BAZINDA düşmüyor; o gelene
+     * kadar NET kargoyu HİÇ görmeyecekti — yani olduğundan YÜKSEK.
+     * Bu tahmin o boşluğu dolduruyor ve gerçekleşen geldiğinde `cargoAmount`
+     * DEVRALIYOR (sıra `kargoSecimi` gövdesinde).
+     *
+     * ⚠ YALNIZ BOŞ OLANA: tahmin bir kez hesaplanır. Her turda yeniden
+     * yazmak, hakediş geldikten sonra bile tahmini tazelemek olurdu —
+     * oysa o noktada tahmin bir GEÇMİŞ kaydıdır, "ne kadar yanılmışız"ın
+     * kanıtı. _(Anayasa: "toplu yazımda önceki değer saklanır".)_
+     */
+    if (s.tahminiKargo === null) {
+      const d = desiSecimi({
+        kanalKargoDesi:
+          s.kanalKargoDesi === null ? null : Number(s.kanalKargoDesi.toString()),
+        cargoDesi: s.cargoDesi === null ? null : Number(s.cargoDesi.toString()),
+      });
+      const hesap = n11KargoMaliyeti({
+        desi: d.desi,
+        /** Kanalın FİİLEN kullandığı firma; yoksa altı firma ortalaması. */
+        kanalFirmasi: a.kargoFirmasi ?? s.kanalKargoFirmasi,
+      });
+      if (hesap.tamam) {
+        (veri as { tahminiKargo?: number }).tahminiKargo = hesap.tutar;
+        tahminYazilan++;
+      }
+    }
+    if (!teslimYazimiVarMi(veri) && !("tahminiKargo" in veri)) continue;
     await prisma.sale.update({ where: { id: s.id }, data: veri });
     if (veri.deliveredAt) teslimYazilan++;
     if (veri.kargoTakipBaglantisi || veri.kanalKargoFirmasi) takipYazilan++;
@@ -441,6 +476,7 @@ export async function n11CekimKos(ayar: {
   console.log(`   KARGO DAMGASI YAZILDI (yalnız BOŞ olanlara)      ${damgaYazilan}`);
   console.log(`   TESLİM DAMGASI YAZILDI (yalnız BOŞ olanlara)     ${teslimYazilan}`);
   console.log(`   TAKİP/FİRMA TAZELENDİ (kanalın son beyanı)        ${takipYazilan}`);
+  console.log(`   TAHMİNİ KARGO YAZILDI (cargoAmount'a DOKUNMAZ)    ${tahminYazilan}`);
 
   // ═══ VARYANT KAPISI — ortak kod kuralı, iki kod adayı ═══════════════════
   const tumKodlar = [

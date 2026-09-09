@@ -332,10 +332,37 @@ const KAYNAKLAR = new Map(ICE_AKTARMALAR.map((y) => [y, readFileSync(y, "utf8")]
  * "yazan" sayardı ve mutasyon kaçardı.
  * _(Anayasa: "ölçüt kullanıma bağlanır — ada ya da dizeye değil".)_
  */
+function yazmaBloklari(metin: string): string[] {
+  const bloklar: string[] = [];
+  for (const cagri of ["prisma.sale.create(", "prisma.sale.update(", "prisma.sale.updateMany("]) {
+    let i = metin.indexOf(cagri);
+    while (i !== -1) {
+      const bitis = metin.indexOf("});", i);
+      bloklar.push(metin.slice(i, bitis === -1 ? i + 2000 : bitis));
+      i = metin.indexOf(cagri, i + 1);
+    }
+  }
+  return bloklar;
+}
+
+/**
+ * ⛔ ÖLÇÜT YAZMA ÇAĞRISINA BAĞLI — SATIRA DEĞİL (düzeltildi 09.09.2026).
+ *
+ * Satır bazlı hâli İKİ kez yanıldı, ikisi de aynı kökten (okuma ile yazmayı
+ * ayırt edememek):
+ *   ① `cargoDesi: true` (SELECT) yazma sanıldı
+ *   ② çok satırlı bir OKUMA — `kanalKargoDesi:` satırda tek başına kalıp
+ *      değeri sonraki satıra taşıyor — N11'i "yazan" saydı ve
+ *      "TY desiyi hiç yazmıyor" mutasyonu bekçiden KAÇTI
+ *
+ * ⭐ Doğru kapsam Prisma'nın YAZMA çağrılarının içi. Okuma, saf gövdeye
+ * geçirme ve select artık sayılmıyor.
+ * _(Anayasa: "deseni kullanım bloğuna daraltarak ara".)_
+ */
 function atamaSatirlari(metin: string, alan: string): string[] {
-  const hariç = new RegExp(alan + ":" + "\\s*(true|null)" + "\\b");
-  return metin
-    .split("\n")
+  const hariç = new RegExp(alan + ":\\s*(true|null)\\b");
+  return yazmaBloklari(metin)
+    .flatMap((b) => b.split("\n"))
     .filter((l) => l.includes(alan + ":") && !l.trim().startsWith("*"))
     .filter((l) => !hariç.test(l));
 }
@@ -412,20 +439,48 @@ for (const { alan, taban, gerekce } of ALANLAR) {
     ICE_AKTARMALAR.length >= 3,
     ICE_AKTARMALAR.length,
   );
+  /**
+   * ⛔ ÖLÇÜT YAZMA ÇAĞRISINA BAĞLANIR — SATIRA DEĞİL (düzeltildi 09.09.2026).
+   *
+   * İlk hâl dosyanın HER YERİNDE `cargoAmount:` arıyordu ve iki yalancı
+   * pozitif üretti: `cargoDesi: true` (bir SELECT) ve
+   * `cargoDesi: s.cargoDesi ...` (alanı OKUYUP saf gövdeye geçiren satır).
+   * İkisi de okuma. Ölçüt gevşetilmedi, YERİ düzeltildi: yalnız Prisma'nın
+   * YAZMA çağrılarının içi taranıyor.
+   * _(Anayasa: "deseni kullanım bloğuna daraltarak ara".)_
+   *
+   * ⚠ Ve blok ÖLÇÜLÜR: yazma çağrısı bulunamazsa bu bir "temiz" değil
+   * "bakamadım"dır ve öyle yazar.
+   */
+  /**
+   * ⚠ TABAN KÜME DÜZEYİNDE ÖLÇÜLÜR, DOSYA DÜZEYİNDE DEĞİL.
+   * `canli-alis-ice-aktar` bir ALIM içe aktarmasıdır ve `prisma.sale`
+   * yazmaz — bu "bakamadım" değil, "bakılacak bir şey yok"tur. Dosya
+   * başına şart koşulsaydı bekçi her koşumda haksız kırmızı yanar, sonra
+   * "gevşetelim" denir ve ölçüt ölürdü.
+   * ⛔ Ama küme boşalırsa bağ kopmuştur: satış yazan en az 3 içe aktarma
+   * (TY · HB · N11) olmalı.
+   */
+  const satisYazanlar = ICE_AKTARMALAR.filter(
+    (y) => yazmaBloklari(KAYNAKLAR.get(y)!).length > 0,
+  );
+  kontrol(
+    "satış YAZAN içe aktarma bulundu (taban DOLU — TY · HB · N11)",
+    satisYazanlar.length >= 3,
+    satisYazanlar,
+  );
   for (const yol of ICE_AKTARMALAR) {
     const ad = yol.split("/").pop();
+    const bloklar = yazmaBloklari(KAYNAKLAR.get(yol)!);
+    if (bloklar.length === 0) continue;
     for (const alan of YASAK) {
-      const satirlar = KAYNAKLAR.get(yol)!
-        .split("\n")
-        .filter((l) => {
-          const t = l.trim();
-          return !t.startsWith("*") && !t.startsWith("//") && !t.startsWith("/*");
-        })
-        .filter((l) => new RegExp("\\b" + alan + "\\s*:").test(l));
+      const gecen = bloklar.filter((b) =>
+        new RegExp("\\b" + alan + "\\s*[:=][^=]").test(b),
+      );
       kontrol(
         ad + " — " + alan + "'a DOKUNMUYOR (defter değişmez)",
-        satirlar.length === 0,
-        satirlar,
+        gecen.length === 0,
+        gecen.map((b) => b.slice(0, 120)),
       );
     }
   }

@@ -57,6 +57,59 @@ export function kargoSecimi(satis: {
 }
 
 /**
+ * ============================================================================
+ *  DESİ HANGİ KAYNAKTAN — ÜÇ BASAMAK, HER BİRİ ÖNCEKİNDEN ZAYIF (K201)
+ * ----------------------------------------------------------------------------
+ *  _Mimar kararı 09.09.2026, ve ARA BASAMAK ÖLÇÜMLE EKLENDİ:_
+ *
+ *      TARTIM     kanalKargoDesi — taşıyıcının FİİLEN tarttığı
+ *      TAHMIN     cargoDesi      — bizim ürüne-özel tahminimiz (Σ ürün desi)
+ *      KURESEL    ortanca        — "ürün hakkında hiçbir şey bilinmiyor"
+ *
+ *  ⛔ ARA BASAMAĞI ÖLÇÜM YAKALADI: ilk sıra "tartım → küresel ortalama"
+ *  idi. Ölçüm (09.09.2026) gösterdi ki N11 satışlarının ürünlerinden
+ *  **0/10**'u TY/HB'de tartılmış — yani öğrenme basamağı hiç devreye
+ *  girmiyor ve her tahmin doğrudan KÜRESEL bir sayıya düşüyordu. Oysa aynı
+ *  satışların **10/10**'unda ürüne-özel `cargoDesi` DOLU.
+ *  ⭐ Küresel sayı EN SONA konur: "ürün hakkında hiçbir şey bilmiyorum"
+ *  bir SON ÇAREDİR, ilk tercih değil.
+ * ============================================================================
+ */
+
+/**
+ * KÜRESEL SON ÇARE — ORTANCA, ORTALAMA DEĞİL.
+ *
+ * 📏 ÖLÇÜM (09.09.2026, n=57 tartılmış satış):
+ *     min 1 · ortanca 3 · ORTALAMA 4,04 · max 19 · oran 1,345
+ *
+ * ⛔ DAĞILIM KUYRUKLU VE SEÇİM SONUCU DEĞİŞTİRİYOR — bu yüzden seçim
+ * SESSİZCE yapılmadı, kullanıcıya soruldu ve ORTANCA seçildi: tek bir
+ * 19 desilik gönderi tipik tahmini şişirmesin.
+ * _(Anayasa: "türetilmiş bir rakam, seçimden bağımsız mı diye sorulmadan
+ * ekrana çıkmaz" — ve "eşiği soruyu soran koyamaz".)_
+ *
+ * ⚠ ÖRNEKLEM BÜYÜYÜNCE YENİDEN ÖLÇÜLÜR. Bugün n=57 ve taban `kanalKargoDesi`
+ * ile birlikte büyüyor. Ölçen: `npm run canli:kargo-kapsam` → ⑥.
+ */
+export const KURESEL_DESI_ORTANCASI = 3;
+
+export type DesiKaynagi = "TARTIM" | "TAHMIN" | "KURESEL";
+
+export function desiSecimi(satis: {
+  kanalKargoDesi: number | null;
+  cargoDesi: number | null;
+}): { desi: number; kaynak: DesiKaynagi } {
+  /** ⚠ `> 0` ölçütü: sıfır desi bir ölçüm değil, bozuk bir kayıttır. */
+  if (satis.kanalKargoDesi !== null && satis.kanalKargoDesi > 0) {
+    return { desi: satis.kanalKargoDesi, kaynak: "TARTIM" };
+  }
+  if (satis.cargoDesi !== null && satis.cargoDesi > 0) {
+    return { desi: satis.cargoDesi, kaynak: "TAHMIN" };
+  }
+  return { desi: KURESEL_DESI_ORTANCASI, kaynak: "KURESEL" };
+}
+
+/**
  * Ekranda gösterilecek mi — ⛔ "tahmini" ETİKETİ ZORUNLU.
  * Tahmini bir rakamı etiketsiz göstermek, sistemin bilmediği bir şeyi
  * biliyormuş gibi sunmaktır. _(Anayasa: "bir sayı etiketiyle taşınır".)_
