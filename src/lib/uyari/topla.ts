@@ -56,33 +56,73 @@ import type { Uyari } from "./turler";
  * OKUNAMAZSA `null` DÖNER — ve null "yedek yok" uyarısı yakar. Hata
  * yutulup "sorun yok" sayılmaz: doğrulanamayan yedek, yedek değildir.
  */
-async function sonYedekZamani(): Promise<Date | null> {
+type YedekKaynagi = "HEDEF" | "IZ" | "YOK";
+
+/**
+ * SON DOĞRULANMIŞ YEDEĞİN ZAMANI — VE HANGİ KAYNAKTAN BİLİNDİĞİ.
+ *
+ * ⭐ SIRA ÖNEMLİ VE GEREKÇESİ ESKİ KURALDAN GELİYOR: **dosyanın kendisi tek
+ * doğru kanıttır**, bu yüzden ÖNCE hedefe bakılır. Hedef okunamıyorsa
+ * `AuditLog` damgasına düşülür — ama o damga KANIT DEĞİL, yalnız bir
+ * BEYANDIR ve ekranda öyle söylenir.
+ *
+ * ⚠ ESKİ GEREKÇE SİLİNMİYOR: "damga veritabanında dursaydı, veritabanının
+ * kendisi gittiğinde yedeğin varlığını da kaybederdik." Doğru — ve bu
+ * yüzden damga BİRİNCİL kaynak yapılmadı, yalnız hedef susunca konuşan
+ * ikincil kaynak oldu.
+ *
+ * ⛔ NİYE ŞİMDİ (K193, 09.09.2026): Blob kotası **30 Eylül'e kadar** kapalı
+ * ve o güne dek yedek operatörün makinesinde alınıyor. Üretimdeki çan o
+ * diski göremez; damga olmasaydı **21 gün boyunca her gün** "yedek yok"
+ * diye kırmızı yanardı — oysa yedek gerçekten alınıyor. Sönmeyen uyarı
+ * okunmaz olur ve rozetin tamamına olan güveni götürür (K49).
+ */
+async function sonYedekZamani(): Promise<{
+  an: Date | null;
+  kaynak: YedekKaynagi;
+}> {
   /**
    * ⛔ `list()` KALDIRILDI — VE BU ÇAĞRI KOTAYI YAKAN YERDİ (K192, 08.09.2026).
-   *
    * Bu gövde HER PANEL ÇİZİMİNDE bir `list()` atıyordu ve `list` bir
-   * **advanced operation**. Ölçüldü: depo askıya alınmasının sebebi
-   * advanced ops **2000/2000 DOLU** — storage 217 MB/1 GB, simple ops
-   * 10/10k, transfer 2,38 MB/10 GB, hepsi bol. Yani depoyu dolduran veri
-   * değil, ÇAĞRI SAYISIYDI; ve en sık çağıran burasıydı.
-   *
-   * ⭐ Artık hedef soyutlamasından geçiyor: Blob hedefi manifesti `get()`
-   * ile okuyor (simple), dosya hedefi diski okuyor (bedava).
-   * _(Anayasa: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır" —
-   * ve bu çağrı doğrudan kütüphaneye bağlıydı.)_
+   * **advanced operation**; deponun askıya alınma sebebi tam buydu
+   * (2000/2000). Artık hedef soyutlamasından geçiyor.
    */
   try {
     const { varsayilanYedekHedefi } = await import("@/lib/yedek-hedefi");
     const secim = varsayilanYedekHedefi();
-    if (!secim.tamam) return null;
-    const kayitlar = await secim.hedef.listele("yedek/");
-    if (kayitlar.length === 0) return null;
-    return kayitlar
-      .map((k) => k.yazildi)
-      .reduce((enYeni, t) => (t > enYeni ? t : enYeni));
+    if (secim.tamam) {
+      const kayitlar = await secim.hedef.listele("yedek/");
+      if (kayitlar.length > 0) {
+        return {
+          an: kayitlar
+            .map((k) => k.yazildi)
+            .reduce((enYeni, t) => (t > enYeni ? t : enYeni)),
+          kaynak: "HEDEF",
+        };
+      }
+    }
   } catch {
-    return null;
+    /** Hedef okunamadı — sessiz geçilmiyor, aşağıdaki ize düşülüyor. */
   }
+
+  /**
+   * İKİNCİL KAYNAK — `YEDEK_ALINDI` izi. Bu iz yalnız GERİ OKUMA TUTTUKTAN
+   * sonra yazılıyor (bkz. `yedek-yaz.ts`), yani "yazıldı ama okunamadı"
+   * hâlini temsil etmiyor.
+   */
+  try {
+    const { YEDEK_IZI } = await import("@/lib/yedek-yaz");
+    const iz = await prisma.auditLog.findFirst({
+      where: { action: YEDEK_IZI },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    });
+    if (iz) return { an: iz.createdAt, kaynak: "IZ" };
+  } catch {
+    /** İz de okunamadı. */
+  }
+
+  return { an: null, kaynak: "YOK" };
 }
 
 /**
@@ -201,9 +241,25 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
    * takvime indirilir ki "bugün alındı" saat farkından "1 gün" görünmesin.
    */
   const yedek = yedekOlcumu(
-    sonYedek === null ? null : gunDegeri(isTakvimGunu(sonYedek)),
+    sonYedek.an === null ? null : gunDegeri(isTakvimGunu(sonYedek.an)),
     bugun,
   );
+
+  /**
+   * ⭐ ÜÇÜNCÜ HÂL: yedek TAZE ama depodan DOĞRULANAMIYOR.
+   *
+   * ⚠ KIRMIZI ÖNCELİKLİDİR: iz eski ya da hiç yoksa `yedekEski`/`yedekYok`
+   * yerinde kalır — amber onları EZMEZ. Amber yalnız "yaş sorunu yok, ama
+   * kanıt hedeften değil izden geliyor" hâlinde yanar.
+   */
+  const yedekIzden = {
+    sayi:
+      sonYedek.kaynak === "IZ" &&
+      yedek.yedekEski.sayi === 0 &&
+      yedek.yedekYok.sayi === 0
+        ? 1
+        : 0,
+  };
 
   /**
    * İADE SAYAÇLARI — ekranla AYNI gövdeden (bkz. uyari/iade-sayaci.ts).
@@ -217,6 +273,7 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
     nakitAcigi: nakitAcigiOlcumu(takvim.netPozisyon),
     yedekEski: yedek.yedekEski,
     yedekYok: yedek.yedekYok,
+    yedekIzden,
     maliyetsizStok: { sayi: maliyetsizVaryantlar(partiler).length },
     karHesaplanamayan: { sayi: gorevSayilari.karHesaplanamayan },
     cevapsizTalep: { sayi: cevapsizTalep },

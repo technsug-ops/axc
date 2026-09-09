@@ -60,6 +60,20 @@ export const UYARI_ANAHTARLARI = [
   "yedekEski",
   /** Hiç yedek yok YA DA yedek durumu okunamadı — ikisi de "elde yedek yok". */
   "yedekYok",
+  /**
+   * ⛔ DEPO OKUNAMIYOR AMA İZ TAZE (K193, 09.09.2026).
+   *
+   * Blob kotası 30 Eylül'e kadar kapalı; yedek operatörün makinesinde
+   * alınıyor ve üretimdeki çan o diski GÖREMİYOR. Bu üç hafta boyunca
+   * `yedekYok` her gün kırmızı yanardı — oysa yedek GERÇEKTEN alınıyor.
+   * ⚠ Sönmeyen bir uyarı okunmaz olur ve rozetin TAMAMINA olan güveni
+   * götürür (K49). Ama uyarıyı susturmak da yalan olurdu: depodan
+   * doğrulanamıyor, bu bir eksikliktir.
+   * ⭐ Üçüncü yol: AMBER — "yedek var (ize göre), ama depodan doğrulanamadı".
+   * _(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+   * değildir" — burada üçüncü bir hâl var ve adıyla söyleniyor.)_
+   */
+  "yedekIzden",
 
   // ── FAZ 2 ────────────────────────────────────────────────────────────
   /**
@@ -153,6 +167,7 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
   cevapsizTalep: "/talepler?durum=ACIK",
   yedekEski: "/ayarlar/disa-aktarma",
   yedekYok: "/ayarlar/disa-aktarma",
+  yedekIzden: "/ayarlar/disa-aktarma",
   /** Süzgeç eşiği `veri-supheli.ts`ten okunur — listede kopyalanmaz. */
   veriSupheli: "/satislar?veri=supheli",
   iadeSayaciDoluyor: "/iadeler?sekme=bildirimler&durum=acik",
@@ -196,6 +211,8 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   cevapsizTalep: "kirmizi",
   yedekEski: "kirmizi",
   yedekYok: "kirmizi",
+  /** ⚠ KIRMIZI DEĞİL: doğrulanmış bir yedek VAR, eksik olan depodan teyit. */
+  yedekIzden: "amber",
   veriSupheli: "amber",
   iadeSayaciDoluyor: "kirmizi",
   kanalKodsuzStok: "notr",
@@ -223,6 +240,7 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
    */
   yedekEski: "veri.aktar",
   yedekYok: "veri.aktar",
+  yedekIzden: "veri.aktar",
   /** İkisi de NET/oran taşıyor — depocuya kâr bilgisi sızmaz. */
   veriSupheli: "satis.kar.gor",
   iadeSayaciDoluyor: "iade.gor",

@@ -23,7 +23,19 @@ import { canliYapilandirma } from "./canli-ortak";
  * ============================================================================
  */
 
-const KOK = "veri/yedek-yerel";
+/**
+ * ⛔ YOL DIŞARIDAN VERİLEBİLİR OLMALI — VE BU ÖLÇÜLMÜŞ BİR ARIZADIR
+ * (09.09.2026). Burada GÖRECELİ bir yol sabitti (`veri/yedek-yerel`) ve
+ * betik klondan koşuyor: Görev Zamanlayıcı'ya bağlanınca yedekler
+ * `axcali-operasyon/veri/yedek-yerel` içine düştü — elle koşumların
+ * yazdığı klasörden BAŞKA bir yere. İki klasör, iki ayrı 30 günlük
+ * saklama, ve "yedeğim nerede" sorusuna iki cevap.
+ *
+ * ⚠ Çözüm mutlak yolu koda GÖMMEK değil: çağıran (cmd) kendi `KOK`unu
+ * biliyor ve `YEDEK_KOK` ile veriyor. Elle koşumda değişken yok, göreceli
+ * varsayılan geliştirme ağacında aynı klasöre çözülüyor.
+ */
+const KOK = process.env.YEDEK_KOK ?? "veri/yedek-yerel";
 
 async function main() {
   const y = canliYapilandirma();
@@ -36,6 +48,7 @@ async function main() {
 
   /** Hedef BEYAN edilir — seçici sessizce yerele düşmez, açıkça istenir. */
   process.env.YEDEK_HEDEFI = "DOSYA";
+  /** ⚠ Dışarıdan verilmişse EZİLMEZ — yukarıdaki `KOK` zaten onu okudu. */
   process.env.YEDEK_KOK = KOK;
 
   const { gunlukYedekYaz } = await import("../src/lib/yedek-yaz");
@@ -86,4 +99,30 @@ async function main() {
   console.log("    toplam        " + sure + " ms");
 }
 
-main();
+/**
+ * ⛔ BAĞLANTI KAPATILIR — VE BU BİR CANLI ARIZADAN SONRA EKLENDİ (09.09.2026).
+ *
+ * İlk yazımda `prisma.$disconnect()` YOKTU ve betik elle koşturulunca sorun
+ * görünmüyordu. Görev Zamanlayıcı'ya bağlanınca ortaya çıktı: yedek bitti,
+ * günlüğe yazıldı, **süreç ölmedi** — görev "Running"da asılı kaldı ve
+ * `BITTI` satırı hiç yazılmadı.
+ *
+ * ⚠ BU TAM K189'UN SINIFI: asılı bir örnek, görevin `IgnoreNew` ayarı
+ * yüzünden SONRAKİ koşumu sessizce reddettirir. Çekimde bunun bedeli 69
+ * dakikaydı; günlük yedekte bedeli BİR GÜN yedeksizlik olurdu.
+ * _(Kardeş betik `canli-yedek-dosya.ts` bunu zaten yapıyordu — kopya
+ * yazarken eksik kalan parça buydu.)_
+ *
+ * ⚠ `finally` ŞART: hata hâlinde de kapanmalı, yoksa arıza gününde süreç
+ * asılı kalır ve teşhis üstüne ikinci bir arıza binerdi.
+ */
+async function kos() {
+  try {
+    await main();
+  } finally {
+    const { prisma } = await import("../src/lib/prisma");
+    await prisma.$disconnect();
+  }
+}
+
+void kos();

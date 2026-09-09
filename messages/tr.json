@@ -2968,6 +2968,8 @@
     "eylem_yedekEski": "Yedeği indir ve gece işinin neden durduğuna bak",
     "baslik_yedekYok": "Elde doğrulanmış yedek YOK",
     "eylem_yedekYok": "Hemen yedek al — depo boş ya da okunamıyor",
+    "baslik_yedekIzden": "Yedek var ama depodan doğrulanamıyor",
+    "eylem_yedekIzden": "Depo erişimi kapalı; iz kaydına göre yedek alınmış. Depo açılınca teyit edilir.",
     "baslik_veriSupheli": "{sayi} satış kaleminde veri şüpheli",
     "eylem_veriSupheli": "Maliyet ya da kâr olağan aralığın dışında — kaydı kontrol et",
     "baslik_kanalKodsuzStok": "{sayi} üründe stok var, kanal kodu yok",

@@ -289,6 +289,7 @@
     "canli:yedek-dosya": "tsx scripts/canli-yedek-dosya.ts",
     "canli:yedek-cekirdek": "tsx scripts/canli-yedek-cekirdek.ts",
     "canli:blob-olcum": "tsx scripts/k119-blob-olcum.ts",
+    "canli:manifest-kur": "tsx scripts/canli-manifest-kur.ts",
     "canli:k121-kuru": "tsx scripts/k121-kuru-kosum.ts",
     "canli:k121c-kuru": "tsx scripts/k121c-kuru-kosum.ts",
     "canli:isactive-olcum": "tsx scripts/k121-isactive-olcum.ts",

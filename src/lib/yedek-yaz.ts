@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
 import { varsayilanYedekHedefi, type YedekHedefi } from "@/lib/yedek-hedefi";
+import { izYaz } from "@/lib/iz";
 import { yedegiMetneCevir, yedekUret } from "@/lib/yedek";
 
 /**
@@ -27,6 +28,23 @@ import { yedegiMetneCevir, yedekUret } from "@/lib/yedek";
  *  ve ekranda da beyan edilir — sessiz varsayım yok.
  * ============================================================================
  */
+
+/**
+ * ⛔ DOĞRULANMIŞ YEDEĞİN İZİ — TEK KAYIT YERİ (K193, 09.09.2026).
+ *
+ * ⚠ NİYE DOĞDU: Blob kotası 30 Eylül'e kadar kapalı ve o güne dek yedek
+ * operatörün makinesinde, `npm run canli:yedek-cekirdek` ile alınıyor.
+ * Ölçüldü (09.09): yerel klasörde ÜÇ doğrulanmış yedek duruyordu
+ * (31.08 · 08.09 · 09.09) ve **sistemde hiçbirinin izi yoktu** — "yedek
+ * alındı mı" sorusunun cevabı hiçbir yerde yazmıyordu.
+ *
+ * ⚠ İZ KANIT DEĞİL, YEDEKTİR. `uyari/topla.ts` haklı olarak şunu diyor:
+ * damga veritabanında dursaydı, veritabanının kendisi gittiğinde yedeğin
+ * varlığını da kaybederdik. Bu yüzden **dosyanın kendisi tek doğru
+ * kanıttır**; iz yalnız depo OKUNAMADIĞINDA başvurulan ikinci kaynaktır ve
+ * ekranda öyle beyan edilir.
+ */
+export const YEDEK_IZI = "YEDEK_ALINDI";
 
 /** Kaç günlük yedek saklanır. */
 export const SAKLAMA_GUNU = 30;
@@ -169,12 +187,44 @@ export async function gunlukYedekYaz(
     const eskiler = kayitlar.filter((k) => k.yazildi < esik);
     const silinen = eskiler.length > 0 ? await secilen.sil(eskiler.map((k) => k.ad)) : 0;
 
+    const satir = Object.values(yedek.satirSayilari).reduce((t, n) => t + n, 0);
+    const boyutBayt = Buffer.byteLength(icerik, "utf8");
+
+    /**
+     * ⛔ İZ BAŞARIDAN SONRA — YANİ GERİ OKUMA TUTTUKTAN SONRA. Yazma
+     * sonrasına konsaydı "yedek alındı" diyen bir iz, geri okunamayan bir
+     * dosya için de yazılırdı ve 31.08 vakasının aynısını üretirdi.
+     *
+     * ⚠ HATA YUTULUR AMA SESSİZ DEĞİL: iz tutulamadıysa yedek YİNE DE
+     * alınmıştır ve başarı geri alınmaz; günlüğe düşer.
+     */
+    try {
+      await izYaz({
+        action: YEDEK_IZI,
+        targetType: "Yedek",
+        targetId: gun,
+        /** ⛔ Oturuma BAKILMAZ: bu yol betikten ve cron'dan koşuyor. */
+        userId: null,
+        detail: JSON.stringify({
+          gun,
+          hedefTuru: secilen.tur,
+          adres,
+          satir,
+          boyutBayt,
+          dogrulamaMs,
+          not: "geri okuma tuttu — dogrulanmis yedek",
+        }),
+      });
+    } catch (e) {
+      console.error("[yedek-yaz] iz yazilamadi (yedek YINE DE alindi):", e);
+    }
+
     return {
       tamam: true,
       gun,
       url: adres,
-      satir: Object.values(yedek.satirSayilari).reduce((t, n) => t + n, 0),
-      boyutBayt: Buffer.byteLength(icerik, "utf8"),
+      satir,
+      boyutBayt,
       silinenEskiYedek: silinen,
       hedefTuru: secilen.tur,
       dogrulamaMs,

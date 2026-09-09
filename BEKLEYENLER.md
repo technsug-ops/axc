@@ -13,6 +13,96 @@
 
 ---
 
+## ✅ K193 — 21 GÜNLÜK PENCERE: YEDEK ALMA İŞİ MAKİNEYE GEÇTİ · 09.09.2026 · [KOŞTU]
+
+> **Kullanıcı bilgisi (09.09):** Blob kotası **30 Eylül'de** açılıyor.
+> Yani üretimdeki gece yedeği **21 gün** çalışmayacak.
+
+⛔ **ASIL TEHLİKE 21 GÜN YEDEKSİZLİK DEĞİL, YEDEK ALMANIN HATIRLAMAYA
+BAĞLI KALMASIYDI.** Anayasadaki vaka birebir buydu: 17.08.2026'da son yedek
+13.08'di ve **dört gün kimse fark etmedi.**
+
+### ÖLÇÜM (09.09, yazımdan önce)
+
+    son BASARILI gece yedegi : 31.08 04:00  → 9 gundur uretimde yedek YOK
+    can (uretimde)           : yedekYok = 1 → 30 Eylul'e kadar HER GUN kirmizi
+    yerel yedekler           : 31.08 · 08.09 · 09.09 dosyalar VAR
+                               ama AuditLog'da HICBIR izi yok
+
+### YAZILAN — ÜÇ PARÇA
+
+**① GÜNLÜK YEDEK GÖREVE BAĞLANDI** (`scripts/gunluk-yedek.cmd`,
+`Selliora Gunluk Yedek`, her gün 03:30). Çekirdek AYNI: kullanıcının
+ekrandan bastığı düğmeyle aynı `gunlukYedekYaz` gövdesi, yazdığını GERİ
+OKUYARAK. Ayrı bir yedek yolu açılsaydı ikisi sessizce ayrışırdı.
+
+⚠ **ÇEKİM GÖREVİNDEN İKİ BİLİNÇLİ FARK:**
+· `StartWhenAvailable = True` — kaçan koşum TELAFİ edilir. Günlük bir yedek
+  kaçarsa ertesi güne kadar yedeksiz kalınır; çekimde bir sonraki tur 5
+  dakika sonra.
+· `DisallowStartIfOnBatteries = False` — 41 MB'lik yerel bir yazım için
+  yedeksiz gün geçirmek mantıksız.
+· Süre sınırı `PT10M` (çekimin `PT4M`'i 5 dakikalık ritim içindi).
+
+**② DOĞRULANMIŞ YEDEK İZ BIRAKIYOR** — `AuditLog` → `YEDEK_ALINDI`
+(gün · hedef · satır · boyut · doğrulama süresi). İz **geri okuma tuttuktan
+SONRA** yazılıyor; yazma sonrasına konsaydı okunamayan bir dosya için de
+"yedek alındı" derdi ve 31.08 vakasını üretirdi.
+
+**③ ÇAN İZE DÜŞÜYOR — AMA BEYANLA.** Sıra: önce HEDEF (dosyanın kendisi tek
+kanıt), okunamıyorsa `AuditLog` damgası. Yeni uyarı türü **`yedekIzden`,
+AMBER**: _"yedek var (ize göre), depodan doğrulanamadı"_.
+⚠ **KIRMIZI ÖNCELİKLİ:** iz eski ya da yoksa `yedekEski`/`yedekYok` yerinde
+kalır — amber onları EZMEZ.
+⚠ **ESKİ GEREKÇE SİLİNMEDİ:** _"damga veritabanında dursaydı, veritabanı
+gittiğinde yedeğin varlığını da kaybederdik"_ — doğru, ve bu yüzden damga
+BİRİNCİL yapılmadı, yalnız hedef susunca konuşan ikincil kaynak oldu.
+
+**+ 30 EYLÜL İÇİN:** `canli:manifest-kur` — depo açıldığı gün bir kez koşar,
+belirlenimci adları (`selliora-<gün>.json`) `get()` ile yoklayıp manifesti
+mevcut dosyalardan kurar. `list()` KULLANMAZ.
+⚠ Kapsam sınırı beyanlı: `guvenlik-*` yedekleri belirlenimci ad taşımadığı
+için yoklanamaz ve manifeste girmez.
+Kuru koşum bugün doğru davrandı: depo 403 → **kurulum YAPILMADI**.
+
+### ⛔ GÖREVİ SINARKEN İKİ GERÇEK KUSUR ÇIKTI — İKİSİ DE BENİM
+
+Görevi kurup **elle tetikledim** ve sonucu izledim; ikisi de ancak orada
+göründü.
+
+**① GÖREV "RUNNING"DA ASILI KALDI — VE BU TAM K189'UN SINIFI.**
+`canli-yedek-cekirdek.ts` Prisma bağlantısını kapatmıyordu; yedek bitiyor,
+günlüğe yazılıyor, **süreç ölmüyordu**. `BITTI` satırı hiç yazılmadı.
+⚠ Bedeli ölçülü: görev `IgnoreNew` taşısaydı asılı örnek SONRAKİ günün
+koşumunu sessizce reddettirirdi — çekimde bunun bedeli 69 dakikaydı, günlük
+yedekte **bir gün yedeksizlik** olurdu. Kardeş betik
+(`canli-yedek-dosya.ts`) `$disconnect`i zaten yapıyordu; kopya yazarken
+eksik kalan parça buydu. `finally` içine alındı.
+
+**② YEDEKLER YANLIŞ KLASÖRE DÜŞTÜ.** `YEDEK_KOK` GÖRECELİ bir yoldu
+(`veri/yedek-yerel`) ve betik KLONDAN koşuyor — yedekler
+`axcali-operasyon/veri/yedek-yerel` içine düştü, elle koşumların yazdığı
+klasörden BAŞKA bir yere. İki klasör, iki ayrı 30 günlük saklama, ve
+"yedeğim nerede" sorusuna iki cevap.
+⭐ Çare mutlak yolu koda GÖMMEK değil: çağıran (cmd) kendi `KOK`unu biliyor
+ve `YEDEK_KOK` ile veriyor; elle koşumda değişken yok, göreceli varsayılan
+geliştirme ağacında aynı klasöre çözülüyor. Klondaki yanlış yerdeki dosya
+temizlendi.
+
+⚠ **İKİSİ DE "YAZDIM, ÇALIŞIYORDUR" DENSEYDİ GÖRÜNMEZDİ.** Betik elle
+koşturulunca ikisi de sorunsuz görünüyordu; ortaya çıkaran tek şey görevi
+GERÇEKTEN kurup tetiklemek oldu.
+_(Anayasa: "sınanmamış ekran, ekran değildir" — görev hâli.)_
+
+### 📋 KALAN — GÖREV KLONDAN KOŞUYOR, DÜZELTMELER PUSH'LA ULAŞIR
+
+Görev kodu klondan koşuyor (K191 düzeltmesinde ölçüldü), dolayısıyla
+yukarıdaki iki düzeltme ancak **push + klonun bir sonraki `git pull`u**
+ile geçerli olur. Push sonrası görev yeniden tetiklenip **çıktığı
+GÖRÜLMELİ** — bu doğrulama yapılmadan K193 kapanmaz.
+
+---
+
 ## ✅ K192 — BLOB ASKISININ KÖK SEBEBİ: `list()` KOTAYI YAKMIŞ · 08.09.2026 · [KOD KOŞTU]
 
 > **Mimar ölçümü (Vercel ekranı):** Advanced Operations **2000/2000 — DOLU**.
