@@ -194,6 +194,46 @@ async function main() {
             "  (birim ₺" + (d > 0 ? (a / d).toFixed(2) : "—") + ")",
         );
       }
+      /**
+       * ⛔ ÇAPRAZ — KANALIN YAYIMLADIĞI TARİFE, BİZİM FİİLEN ÖDEDİĞİMİZLE
+       * TUTUYOR MU? Tarife kanalın kendi belgesi (1. basamak), ödeme bizim
+       * defterimiz (2. basamak). İkisi ÇELİŞİYORSA üstteki kazanır ama
+       * alttakinin niye düştüğü YAZILIR — sessizce geçilmez.
+       * _(Anayasa: "kaynak önceliği" + "bağımsızlık kaynağın ayrılığıyla".)_
+       */
+      const { n11OrtalamaTarife } = await import("../src/lib/n11-kargo-tarifesi");
+      console.log("   ÇAPRAZ — 6 firma ORTALAMASI ↔ fiilen ödediğimiz:");
+      let sapmaToplam = 0;
+      let sapmaAdet = 0;
+      for (const s of cift) {
+        const d = Math.ceil(Number(s.cargoDesi) - 0.0001);
+        const ort = n11OrtalamaTarife(d);
+        const odenen = Number(s.cargoAmount);
+        if (ort === null) {
+          console.log("      desi " + d + " → tarife TAVAN DIŞI, hüküm yok");
+          continue;
+        }
+        const oran = ort / odenen;
+        sapmaToplam += oran;
+        sapmaAdet += 1;
+        console.log(
+          "      desi " + String(d).padStart(2) +
+            " · ödenen ₺" + odenen.toFixed(2).padStart(8) +
+            " · tarife ort ₺" + ort.toFixed(2).padStart(8) +
+            " · oran " + oran.toFixed(3),
+        );
+      }
+      if (sapmaAdet > 0) {
+        const ortOran = sapmaToplam / sapmaAdet;
+        console.log(
+          "      ORTALAMA ORAN " + ortOran.toFixed(3) +
+            (ortOran > 1.02
+              ? "  ← tarife ödediğimizden YÜKSEK · NET karamsar çıkar"
+              : ortOran < 0.98
+                ? "  ← tarife ödediğimizden DÜŞÜK · NET iyimser çıkar"
+                : "  ← tutuyor"),
+        );
+      }
     } else {
       console.log("   ⛔ ② BASAMAĞI DA BOŞ — efektif tarife defterden türetilemiyor.");
     }
