@@ -13,6 +13,60 @@
 
 ---
 
+## 🔶 K203 — AYNI ÜRÜNDEN BİRDEN FAZLA ADET: TEK OKUTMA YETMİYORDU · 10.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+> **Halil fotoğrafla buldu:** `/paketle`de TEFAL MB470B, tek kalem, **adet
+> 2**. Raftan bir tanesini okutunca ekran _"Eşleşti — doğru ürün.
+> Paketleyebilirsiniz."_ dedi — ikinci fiziksel birim hiç doğrulanmadan.
+
+⛔ **KÖK SEBEP:** `PaketKalemi.teyitli` bir **boolean**'dı — "en az bir kez
+okutuldu mu" sorusuna cevap veriyordu, **"kaç kez okutuldu"** sorusuna değil.
+`adet: 2` olan bir kalemde tek okutma tüm satırı teyitli işaretliyor ve
+`paketlenebilirMi` "Paketlendi" düğmesini açıyordu.
+
+⚠ **25.08'DEKİ "ÇOK KALEMLİ SİPARİŞ" KARARIYLA KARIŞTIRILMAZ.** O karar
+(bir kalem teyitli bugün yeterli) **KALEM SAYISI**yla ilgili — sipariş içinde
+kaç FARKLI ürün olduğu. K203 farklı bir soru: **TEK kalemin İÇİNDEKİ adet**.
+İkisi bağımsız, biri ötekini kapatmıyor.
+
+### DÜZELTME
+
+`teyitli: boolean` → `teyitliAdet: number`. Her başarılı okutma sayacı 1
+artırır, `adet`te **tavanlanır** (`Math.min`). `kalemTamTeyitliMi(k)` eşiği
+**tek yerde** tutuyor — çağıranlar kendi `>= adet` karşılaştırmasını
+yazmıyor, ayrışma riski kapandı.
+
+**Ekran üç mesaj gösteriyor (sessiz kalan yok):**
+
+    devam ediyor   "Eşleşti — 1/2 okutuldu. Bu üründen 1 tane daha okutun."
+    tamamlandı     "Eşleşti — doğru ürün. Paketleyebilirsiniz."
+    zaten tam      "Bu ürün için gereken 2 adedin hepsi zaten okutulmuştu —
+                    fazladan okutmaya gerek yok."
+
+Kalem satırındaki **Adet kutusu artık `okutulan/toplam`** gösteriyor
+(`1/2`, `2/2`) — adet 1 olsa bile aynı biçimde (İlke #10: aynı işlem her
+yerde aynı görünür). Kısmi teyit **tam teyitle aynı yeşile boyanmıyor**
+(`DURUM_KUTUSU.bilgi`) — aksi hâlde "bitti" yanılgısı üretirdi.
+
+### DOĞRULAMA
+
+`paketleme:dogrula` **102/102** (23'ü yeni). Asıl vaka **mutasyonla
+sınandı**: `kalemTamTeyitliMi` eski davranışa (`teyitliAdet > 0`)
+döndürüldüğünde iki test **kırmızı yandığı görülerek** doğrulandı, sonra
+geri yüklendi. `tsc` + `lint` + `i18n:kontrol` + gerçek `next build` (98s)
+temiz. Push'un kendi pre-push turu **126/126 yeşil**.
+
+### ⏳ HALİL TESTİ BEKLİYOR — KAPANMADI
+
+**Test listesi:** ① `/paketle`de gerçek **2+ adetlik** bir siparişte kargo
+kodunu okut ② raftan bir tanesini okut → ekranda **"1/2 okutuldu, 1 tane
+daha okutun"** yazmalı, **"Paketlendi" düğmesi hâlâ kilitli** kalmalı
+③ ikinci taneyi okut → **"Eşleşti — paketleyebilirsiniz"**a dönmeli, Adet
+kutusu **"2/2"** göstermeli, düğme **şimdi açılmalı** ④ (varsa) üçüncü kez
+aynı barkodu okut → **"zaten tam okutulmuştu"** demeli, sayaç 2'de kalmalı.
+
+---
+
 ## 🔶 K201 — N11 KARGO MALİYETİ: TAHMİN AYRI SÜTUNDA · 09.09.2026 · [KOD KOŞTU]
 
 > **Mimar kararı 09.09 — YOL 3, Yol 1 DEĞİL:** `cargoAmount` "kanalın
