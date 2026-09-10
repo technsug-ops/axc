@@ -13,15 +13,46 @@
 
 ---
 
-## 💤 K206 — `/api/yedek/otomatik`: BLOB DEPOSU ASKIYA ALINMIŞ · 10.09.2026 · [UYUR — ölçüm bekliyor]
+## 🔶 K206 — `/api/yedek/otomatik`: BLOB DEPOSU ASKIYA ALINMIŞ · 10.09.2026 · [ARA ÖNLEM KOŞTU — ASIL SEBEP AÇIK]
 
-K205 sırasında (aşağıda, ARSIV.md) rastlantısal bulundu, KENDİSİYLE
-İLGİSİZ: canlıda `curl` ile test edilince `"Error: Vercel Blob: This
-store has been suspended."` döndü. K192'nin (Blob kotası, 08.09.2026)
-bir tekrarı olabilir — **henüz ölçülmedi, sebep uydurulmadı.**
+K205 sırasında (ARSIV.md) rastlantısal bulundu, KENDİSİYLE İLGİSİZ:
+canlıda `curl` ile test edilince `"Error: Vercel Blob: This store has
+been suspended."` döndü. `list()` yasağı hâlâ temiz (`yedek:dogrula`
+ölçtü) — bugünkü kod bunu tetiklemiyor; K192'nin (08.09.2026) eski bir
+kalıntısı ya da yeni bir sebep olabilir, **henüz ölçülmedi, sebep
+uydurulmadı.**
 
-📋 **AÇILIŞ ŞARTI:** Vercel Blob panelinden askı sebebi görülüp (kota mı,
-elle mi) karar verilecek zaman.
+⛔ **KULLANICI BULDU: HEM OTOMATİK HEM ELLE YEDEK ÇALIŞMIYORDU.** İkisi de
+aynı `gunlukYedekYaz()`'ı çağırıp aynı Blob deposuna yazıyor
+(`yedek-al-actions.ts`'in kendi yorumu: "kopya mantık yok") — depo
+askıdayken ikisi de aynı anda düştü.
+
+### ARA ÖNLEM — "HEM YEREL HEM BLOB" (kullanıcı kararı 10.09.2026)
+
+⛔ **VERCEL'DE (ÜRETİMDE) KALICI DİSK YOK** — bu yüzden "yerel" seçeneği
+Vercel'deki otomatik/elle düğmeye uygulanamaz, yalnız **bilgisayardan
+koşan** bir yol anlamına gelir. Mevcut `canli-yedek-dosya.ts` (K119b,
+31.08.2026'daki İLK Blob askısından kalma) tam bunu yapıyor: canlıdan
+SALT OKUR, yerel diske yazar, geri okuyup **doğrular** (boyut · JSON ·
+kayıt sayıları · rastgele 5 kayıt alan alan).
+
+**Yeni görev: `Selliora Yerel Yedek`** (`scripts/yerel-yedek-al.cmd`,
+`kanal-sik-cekim.cmd` ile aynı desen — klondan koşar). Günde bir (03:00,
+orijinal Vercel yedeğiyle aynı sıklık). İlk koşum elle doğrulandı:
+
+    47.107.394 B · StockMovement 14961=14961 · Sale 7976=7976 ·
+    Purchase 2075=2075 · ProductVariant 1851=1851 · 5/5 alan birebir
+
+Dosyalar `C:\Users\yapra\Desktop\axcali-operasyon\veri\yedek-yerel\`
+altında (klonun kendi kopyası — dev ağacındaki `veri/yedek-yerel/`den
+AYRI).
+
+⚠ **BU BİR NİHAİ ÇÖZÜM DEĞİL, TEK NOKTA GÜVENCESİ.** Yerel disk de
+tek nokta arızası taşır (bilgisayar bozulursa). Blob düzelince bu görev
+**kaldırılmaz** — iki hedef birden (yerel + uzak) tutmak daha güvenli.
+
+📋 **AÇILIŞ ŞARTI (asıl sebep hâlâ açık):** Vercel Blob panelinden askı
+sebebi görülüp (kota mı, elle mi, ödeme mi) karar verilecek.
 
 ---
 
