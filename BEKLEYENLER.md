@@ -13,6 +13,18 @@
 
 ---
 
+## 💤 K206 — `/api/yedek/otomatik`: BLOB DEPOSU ASKIYA ALINMIŞ · 10.09.2026 · [UYUR — ölçüm bekliyor]
+
+K205 sırasında (aşağıda, ARSIV.md) rastlantısal bulundu, KENDİSİYLE
+İLGİSİZ: canlıda `curl` ile test edilince `"Error: Vercel Blob: This
+store has been suspended."` döndü. K192'nin (Blob kotası, 08.09.2026)
+bir tekrarı olabilir — **henüz ölçülmedi, sebep uydurulmadı.**
+
+📋 **AÇILIŞ ŞARTI:** Vercel Blob panelinden askı sebebi görülüp (kota mı,
+elle mi) karar verilecek zaman.
+
+---
+
 ## 🔶 K203 — AYNI ÜRÜNDEN BİRDEN FAZLA ADET: TEK OKUTMA YETMİYORDU · 10.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 > **Halil fotoğrafla buldu:** `/paketle`de TEFAL MB470B, tek kalem, **adet

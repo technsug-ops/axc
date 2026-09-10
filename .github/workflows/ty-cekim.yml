@@ -1,5 +1,5 @@
 # ============================================================================
-#  K166 — TY ÇEKİM TETİKLEYİCİSİ (birincil zamanlayıcı)
+#  K166 — TY ÇEKİM TETİKLEYİCİSİ (YEDEK zamanlayıcı — bkz. 10.09.2026 notu)
 # ----------------------------------------------------------------------------
 #  Neden GitHub Actions: dış hesap istemez, HER koşumun logu Actions
 #  sekmesinde durur (Vercel Cron'un 18-19.08 sessiz kaçışı bu yüzden
@@ -22,10 +22,27 @@
 #  Sır tanımsızsa istek boş Bearer taşır ve uç 404 döner — güvenli.
 #
 #  ⚠ ROL DEGISTI 08.09.2026 — BU AKIS ARTIK BIRINCIL DEGIL, YEDEK.
-#  Birincil tetik Halil'in makinesindeki Gorev Zamanlayici
-#  (`Selliora Kanal Sik Cekim`, 5 dk, `scripts/kanal-sik-cekim.cmd`) —
-#  klondan kosar, uc kanali sirayla ceker. Bu akis 10 dk'da bir ayni uclari
-#  vurur; cift tetik zararsiz ve kanitli (cakisan siparis ATLANIR, ezme yok).
+#  (eski cumle, o gunku dogru bilgiydi — asagida ikinci kez cevrildi)
+#  O gun birincil tetik Halil'in makinesindeki Gorev Zamanlayici olmustu
+#  (`Selliora Kanal Sik Cekim`, 5 dk, `scripts/kanal-sik-cekim.cmd`).
+#
+#  ⚠ ROL YENIDEN DEGISTI 10.09.2026 — BIRINCIL ARTIK cron-job.org.
+#  Kullanici sordu: "cekim neden bilgisayarima bagimli". Kok sebep
+#  OLCULDU (bu akisin GERCEK kosum gecmisi API'den cekildi): schedule
+#  "10 dk" DEGIL, gercekte SAATLER arayla tetikleniyordu (2-6 saat
+#  bosluklar) — GitHub'in belgelenmis bir platform siniri, kisa
+#  araliklarda "elinden geldiginde" davraniyor. Ayrica HB adimi
+#  08.09'dan beri HER kosumda 401 aliyordu (proxy.ts'teki ACIK_YOLLAR
+#  listesine hb-cekim hic eklenmemisti — K166'nin AYNI dersi, ikinci
+#  kez tekrarlanmisti; bkz. `cron-yollari:dogrula`, 10.09.2026).
+#
+#  Birincil simdi cron-job.org (ucuncu taraf, dakika hassasiyetinde,
+#  bilgisayardan VE GitHub'in kendi zamanlama sinirindan BAGIMSIZ) —
+#  Vercel uclarini dogrudan cagirir, ne bu akisi ne yerel makineyi
+#  gerektirir. Bu akis (10 dk, "elinden geldiginde") VE yerel gorev
+#  (artik 1 saat, `kanal-sik-cekim.cmd`in kendi basligina bakin) ikisi
+#  de YEDEK olarak kaldi — cift/uclu tetik zararsiz ve kanitli
+#  (cakisan siparis ATLANIR, ezme yok).
 #
 #  ⭐ VE ONERIMI GERI ALIYORUM: once "kaldirilsin" demistim. Olcum fikri
 #  cevirdi — 05.09-08.09 arasi klon otomatik onayi HIC yapamazken kuyrugu

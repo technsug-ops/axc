@@ -18,6 +18,78 @@
 
 ---
 
+## ✅ K205 — ÇEKİM BİRİNCİLİ cron-job.org'A TAŞINDI, HB'NİN GERÇEK ENGELİ BULUNDU · 10.09.2026 · [KAPANDI — canlı]
+
+> **Kullanıcı sordu:** _"Sistemin pazaryerlerinden bilgi yenilemesini benim
+> bilgisayarimdan bagimsiz hale nasil getirebiliriz."_
+
+⛔ **KÖK SEBEP VERCEL KİMLİK BİLGİLERİ DEĞİLDİ — İLK TEŞHİS YANLIŞTI.**
+GitHub Actions'ın gerçek çalışma geçmişi API'den çekildi: HB adımı
+08.09.2026'dan beri **her koşumda** 401 `{"durum":"YETKISIZ"}` alıyordu.
+Bu yanıt `hb-cekim/route.ts`'in kendi kodunda YOK (o 404/503 döner) —
+`src/proxy.ts`'teki genel giriş duvarı isteği kendi `CRON_SECRET`
+kapısına ulaşmadan reddediyordu. `ACIK_YOLLAR` listesine `hb-cekim`
+(08.09'da eklenirken) ve `/api/olcum` (hiç) yazılmamıştı.
+
+⭐ **AYNI HATA İKİNCİ KEZ — K166'NIN KENDİ DERSİ TEKRARLANMIŞTI.** TY için
+05.09'da BİREBİR aynı şey yaşanmış, elle düzeltilmiş ama bir bekçiye
+çevrilmemişti. `cron-yollari:dogrula` yazıldı: `CRON_SECRET` kullanan
+HER `route.ts` taranır (klasör adına değil davranışa bağlı — `/api/olcum`
+"cron" klasöründe değil ama aynı deseni taşıyor), her biri `ACIK_YOLLAR`'da
+mı diye doğrulanır. Mutasyonla sınandı: bir satır silindiğinde kırmızı
+yandığı görüldü.
+
+**AYRI BİR ÖLÇÜM DAHA:** GitHub Actions'ın "10 dakikalık" zamanlaması
+GERÇEKTE 2-6 saat arayla tetikleniyordu — GitHub'ın kısa aralıklı
+`schedule:` tetikleyicileri için belgelenmiş bir platform sınırı,
+düzeltilemez.
+
+### DÜZELTME — İKİ KATMAN
+
+1. **Kod:** `src/proxy.ts`'e iki satır (`/api/cron/hb-cekim`,
+   `/api/olcum`) + `cron-yollari:dogrula` bekçisi. Push edildi, canlıda
+   doğrulandı (`curl` ile bizzat çağrıldı — HB 200, gerçek çekim koştu:
+   59 sipariş, 0 hata).
+2. **Mimari:** birincil tetik **cron-job.org**'a taşındı (üçüncü taraf,
+   dakika hassasiyetinde, hem bilgisayardan hem GitHub'ın kendi
+   zamanlama sınırından BAĞIMSIZ) — Vercel uçlarını (`ty-cekim` ·
+   `hb-cekim` · `n11-cekim`) doğrudan çağırıyor. Kullanıcı kurdu, üçü de
+   canlıda **200 OK** görüldü.
+
+### ROL DEĞİŞİKLİĞİ — KULLANICI KARARI: "2) YEDEK, SEYREK"
+
+    cron-job.org (5 dk)              → BİRİNCİL (yeni)
+    GitHub Actions (10 dk, "elinden gelince" — gerçekte 2-6 saat) → YEDEK
+    Görev Zamanlayıcı (5 dk → 1 SAAT) → YEDEK, seyrekleştirildi
+
+Windows Görev Zamanlayıcı'daki `Selliora Kanal Sik Cekim` görevi
+**kaldırılmadı**, aralığı `PowerShell Set-ScheduledTask` ile 5 dakikadan
+**1 saate** çekildi (`scripts/kanal-sik-cekim.cmd`'e dokunulmadı — aralığı
+görev tanımı tutuyor, betik değil). Üç kaynağın aynı anda çalışması
+zararsız — çakışan sipariş atlanır, ezme yok.
+
+⚠ **ESKİ GEREKÇELER SİLİNMEDİ, ÇEVRİLDİĞİ YAZILDI:** hem
+`.github/workflows/ty-cekim.yml`'in "birincil" iddiası hem
+`kanal-sik-cekim.cmd`'in kendi rol notu güncellendi — biri "10.09'da
+ikinci kez rol değişti" diyor, öteki "5 dk → 1 saat, bilgisayar zaten
+açıkken bedava yedeklilik ama artık kritik değil" diyor.
+
+### AYRI, KAPANMAMIŞ: `/api/yedek/otomatik` (günlük yedek) → **bkz. BEKLEYENLER.md K206**
+
+Bu düzeltmeyle **ilgisiz** bir ayrı arıza bulundu: canlıda test edilince
+`"Error: Vercel Blob: This store has been suspended."` döndü. K192'nin
+(Blob kotası) bir tekrarı olabilir — **ölçülmedi**, açık kalem olarak
+panoya taşındı, burada kapatılmadı.
+
+### DOĞRULAMA
+
+`ice-aktarma:dogrula` 419/419, `cron-yollari:dogrula` 8/8 (mutasyonla
+sınandı), `gecici:dogrula` 11/11. Push'un pre-push turu 127/127 yeşil.
+Canlıda üç uç da `curl` ve cron-job.org'un kendi geçmişiyle **200 OK**
+doğrulandı — bu, betikle değil gerçek üretimde ölçülmüş bir kapanış.
+
+---
+
 ## ✅ K202 — BEKÇİ TURU VERGİSİ: KÖK SEBEP + İKİ DÜZELTME · 09.09.2026 · [KAPANDI]
 
 > **Halil açtı 09.09:** tur **15,8 → 39,6 dakika** (2,5×). Aynı gece

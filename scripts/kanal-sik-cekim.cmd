@@ -4,6 +4,28 @@ rem Klon = GitHub'a push'lanmis (bekciden gecmis) kod; gelistirme
 rem agacindaki tur/mutasyon pencereleri cekimi ETKILEMEZ.
 rem Yoruma KOMUT yazilmaz (K158). Kurulum/kaldirma: BEKLEYENLER.md K162.
 rem
+rem ============================================================
+rem  ROL DEGISTI 10.09.2026 - ARTIK BIRINCIL DEGIL, YEDEK
+rem ------------------------------------------------------------
+rem  Kullanici sordu: "cekim neden bilgisayarima bagimli". Birincil
+rem  simdi cron-job.org (ucuncu taraf, dakika hassasiyetinde, hem
+rem  bu bilgisayardan hem GitHub Actions'in kendi zamanlama sinirindan
+rem  BAGIMSIZ) - Vercel uclarini dogrudan cagirir.
+rem
+rem  BU GOREV KALDIRILMADI, SEYREKLESTIRILDI: 5 dk -> 1 SAAT (kullanici
+rem  karari, secenek "2"). Bilgisayar zaten acikken bedava bir yedeklilik
+rem  sagliyor ama artik kritik degil; cakisan siparis ATLANIR (ezme yok),
+rem  uc kaynagin (cron-job.org + GitHub Actions + bu gorev) ayni anda
+rem  calismasi zararsiz.
+rem
+rem  Windows Gorev Zamanlayici'da degistirildi (schtasks/Set-ScheduledTask
+rem  ile, bu dosyaya DOKUNMADAN - araliği gorev tanimi tutuyor, bu betik
+rem  degil). Asagidaki "5 dakikalik araliga siginiyor" olcumleri ARTIK
+rem  GECERLI DEGIL (o gunku dogru bilgiydi, silinmedi): sure siniri hala
+rem  gecerli cunku tek kosumun suresi degismedi, sadece kosumlar arasi
+rem  bosluk 5 dk'dan 1 saate cikti.
+rem ============================================================
+rem
 rem NIYE UC KANAL TEK GOREVDE - mimar istegi 08.09.2026: "Trendyol hangi
 rem sistematik ile cronjob calistiriyorsa Hepsiburada ve N11'de ayni olsun."
 rem Uc AYRI gorev kurulsaydi ayni klona 5 dakikada UC "git pull" duserdi ve
