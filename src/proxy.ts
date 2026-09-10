@@ -39,6 +39,22 @@ const ACIK_YOLLAR = [
   "/api/cron/ty-cekim",
   // K167-③ — N11 çekim ucu: K166'nın birebir kopyası, aynı sır kapısı.
   "/api/cron/n11-cekim",
+  // K-HB-CRON — HB çekim ucu: aynı sınıf, aynı sır kapısı.
+  // ⛔ BU SATIR 08.09.2026'DA HB UCU EKLENİRKEN UNUTULMUŞTU — K166'nın
+  // kendi yaşadığı hatanın AYNISI, ikinci kez. 10.09.2026'da ölçüldü:
+  // GitHub Actions'ın HB adımı 8 Eylül'den beri HER koşumda 401
+  // `{"durum":"YETKISIZ"}` alıyordu — rota kendi CRON_SECRET kapısına
+  // HİÇ ulaşamıyordu, oturum duvarında düşüyordu. K166'nın dersi
+  // ("ilk canlı test bu satır olmadan yapıldı ve oturum kapısı 401
+  // verdi") o zaman bir bekçiye ÇEVRİLMEMİŞTİ — bu yüzden aynı hata
+  // ikinci kanalda sessizce tekrarlandı. Şimdi `cron-yollari:dogrula`
+  // her cron rotasını TARAYIP bu listede olduğunu doğruluyor.
+  "/api/cron/hb-cekim",
+  // A3/K50-a — canlı ölçüm ucu: yerel makineden canlı DB'ye TCP seviyesinde
+  // erişilemediği için Vercel'in kendi havuzundan koşuyor; aynı sınıf, aynı
+  // sır kapısı. ⛔ BU SATIR DA EKSİKTİ (10.09.2026'da HB ile birlikte
+  // ölçüldü) — dış çağrı yapan biri aynı sessiz 401'e çarpardı.
+  "/api/olcum",
 
   // ── PWA: TARAYICI BUNLARI ÇEREZSİZ İSTER ──────────────────────────────
   //

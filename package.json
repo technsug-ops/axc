@@ -265,6 +265,7 @@
     "paketleme:dogrula": "tsx scripts/paketleme-dogrula.ts",
     "prepare": "git config core.hooksPath .githooks || true",
     "gecici:dogrula": "tsx scripts/gecici-dogrula.ts",
+    "cron-yollari:dogrula": "tsx scripts/cron-yollari-dogrula.ts",
     "canli:ty-mutabakat": "tsx scripts/canli-ty-mutabakat.ts",
     "canli:ty-kuru-kosum": "tsx scripts/canli-ty-kuru-kosum.ts",
     "canli:ty-ice-aktar": "tsx scripts/canli-ty-ice-aktar.ts",
