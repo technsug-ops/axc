@@ -646,10 +646,31 @@ export async function hbCekimKos(ayar: {
    * Aynı kayıtta `items[].cargoCompanyModel.name` de var — dünkü "HB
    * vermiyor" ölçümü yanlış uca (`/shipped`/`/delivered`) bakıyordu.
    *
-   * ⚠ ÖLÇÜLDÜ 10.09.2026 (canlı): HB'de `shipmentCode` boş 3274/3329;
-   * KARGOYA VERİLMİŞ ama kodu hâlâ boş 26/73 — küçük ve kontrollü bir
-   * açık. `KOD_GERI_DOLDURMA_TAVANI` her koşumdaki ekstra isteği sınırlar;
-   * tavan aşılırsa kalan sonraki koşumda yakalanır (satır satır, sıralı).
+   * ⛔ İLK SÜRÜM `shippedAt: { not: null }` ŞARTINI KOYDU — YANLIŞ ÇIKTI,
+   * HALİL TESTİ YAKALADI (10.09.2026). Barkod HB'de "Shipped" değil
+   * **"Packaged"** durumunda hazır oluyor (canlı ölçüldü, sipariş
+   * 4529951386: `status: "Packaged"`, `barcode` DOLU, ama bizim
+   * `shippedAt`imiz `/shipped` ucundan geldiği için hâlâ `null`).
+   * Yani şart barkodun VAR OLDUĞU anı değil, ONDAN SONRAKİ bir anı
+   * arıyordu — tam da o yüzden "az önce satılan" sipariş hiç denenmiyordu.
+   *
+   * ⭐ DÜZELTİLMİŞ ŞART ÖLÇÜLEREK KURULDU (yaş dağılımı, canlı, 10.09.2026):
+   *
+   *     son 1-14 gün, shipmentCode boş     1     ← tam bu vaka
+   *     son 30 gün                          4
+   *     son 90 gün                        137
+   *     TÜM ZAMANLAR (K195-3'ün ÖNCEKİ ölçümü) 3274
+   *
+   * Yani 3274'ün ezici çoğunluğu ÇOK ESKİ — K195'in mekanizması dünden
+   * önce yoktu, o siparişler zaten fiilen teslim edilmiş ve bir daha
+   * denenmesinin hiçbir faydası yok (harcanan istek, boşa). Doğru koşul
+   * "kargoya verildi" DEĞİL, **"kargoya verilmiş OLARAK İŞARETLENMİŞ (her
+   * yaştan) YA DA yakın zamanda satılmış (durumundan bağımsız)"**:
+   * ikisinin birleşimi hem dünkü 26'lık backlog'u hem bugünkü "Packaged"
+   * vakasını kapsıyor, eski/durgun kayıtları bir daha denemiyor.
+   *
+   * ⚠ TAVAN KORUNDU: `KOD_GERI_DOLDURMA_TAVANI` her koşumdaki ekstra
+   * isteği sınırlar; tavan aşılırsa kalan sonraki koşumda yakalanır.
    *
    * ⛔ BÖLÜNMÜŞ PAKET UYDURULMAZ: bir siparişin kalemleri FARKLI barcode
    * ya da FARKLI firma taşıyorsa (birden fazla fiziksel paket), o alan
@@ -661,9 +682,15 @@ export async function hbCekimKos(ayar: {
    * sorguda ikisini birden yazmak öbürünü haksız yere EZERDİ.
    */
   const KOD_GERI_DOLDURMA_TAVANI = 100;
+  const KOD_GERI_DOLDURMA_PENCERESI_GUN = 30;
+  const otuzGunOnce = new Date(okumaAni.getTime() - KOD_GERI_DOLDURMA_PENCERESI_GUN * 86_400_000);
   const kodBosSiparisler = await prisma.sale.findMany({
-    where: { channelAccountId: hesap.id, shipmentCode: null, shippedAt: { not: null } },
-    orderBy: { soldAt: "asc" },
+    where: {
+      channelAccountId: hesap.id,
+      shipmentCode: null,
+      OR: [{ shippedAt: { not: null } }, { soldAt: { gte: otuzGunOnce } }],
+    },
+    orderBy: { soldAt: "desc" },
     take: KOD_GERI_DOLDURMA_TAVANI,
     select: { code: true },
   });
