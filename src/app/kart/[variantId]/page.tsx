@@ -16,6 +16,8 @@ import { YAS_BANDI_RENGI } from "@/lib/durum-renkleri";
 import { kartVerisiniTopla } from "@/lib/urun-karti-verisi";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
+import { KanalDesiGuncelle } from "./kanal-desi-guncelle";
+
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
   return { title: tBaslik("urunKarti") };
@@ -237,6 +239,22 @@ export default async function KartSayfasi({
               ? t("desiYok")
               : t("desiSatiri", { desi: bicim.sayi(veri.desi) })}
           </span>
+          {/*
+            K197-⑤ — KANAL DESİSİ KARŞILAŞTIRMASI. Yalnız veri VARSA
+            gösterilir; yoksa satır hiç çıkmaz (İlke #12 — her üründe
+            "kanal verisi yok" yazmak gürültü üretirdi).
+          */}
+          {veri.kanalDesi !== null ? (
+            <>
+              <span aria-hidden>·</span>
+              <KanalDesiGuncelle
+                variantId={variantId}
+                bizimDesi={veri.desi}
+                kanalOrtalama={veri.kanalDesi.ortalama}
+                ornekSayisi={veri.kanalDesi.ornekSayisi}
+              />
+            </>
+          ) : null}
           <span aria-hidden>·</span>
           {/* Tek sessiz bağlantı: eylemler ürün sayfasında. */}
           <Baglanti href={`/urunler/${veri.urunId}`}>

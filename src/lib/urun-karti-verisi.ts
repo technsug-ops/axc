@@ -61,6 +61,18 @@ export type KartVerisi = {
    */
   kategoriAdi: string | null;
   desi: number | null;
+  /**
+   * K197-⑤ — KANALIN TARTTIĞI GERÇEK DESİ (10.09.2026, kullanıcı sordu:
+   * "API'den desileri çekemiyoruz"). Veri zaten K197'den beri toplanıyordu
+   * ama HİÇBİR ekranda gösterilmiyordu — tüketicisi bu.
+   *
+   * ⚠ YALNIZ TEK KALEMLİ satışlardan, ADEDE BÖLÜNEREK: `kanalKargoDesi`
+   * paketin tamamı, ürünün kendisi değil (bkz. kalemler sorgusundaki not).
+   *
+   * `null` = hiç örnek yok (kanal hiç vermiyor ya da bu ürün hiç
+   * kargolanmamış) — "0" DEĞİL, bilinmiyor.
+   */
+  kanalDesi: { ortalama: number; ornekSayisi: number } | null;
   kdvKaynagi: "URUN" | "KATEGORI" | "VARSAYILAN";
   eldekiAdet: number;
   /** En eski açık partinin yaşı; parti yoksa null. */
@@ -118,6 +130,39 @@ export type KartVerisi = {
   /** Satışların para birimi — karışıksa null ve ekran bunu söyler. */
   paraBirimi: Currency | null;
 };
+
+/**
+ * K197-⑤ — KANAL DESİSİ ORTALAMASI (SAF GÖVDE, DB'SİZ SINANABİLİR).
+ *
+ * ⚠ İKİ SÜZGEÇ BİRDEN: `kalemSayisi !== 1` (paket TEK bu üründen değilse
+ * `kanalKargoDesi` paketin TAMAMI, bu ürünün kendisi değil — atlanır) ve
+ * `quantity <= 0` (veri bütünlüğü bozulsa bile bölme güvenli kalır).
+ * Kalanlar ADEDE bölünür (tek kalemde adet > 1 olabilir — K203'ün aynı
+ * dersi: paket başına desi, birim başına değil).
+ *
+ * `null` dönüşü = "hiç örnek yok", `0` DEĞİL — bilinmeyen ile sıfır
+ * karışmaz (İlke: sessiz varsayım yok).
+ */
+export function kanalDesiOrtalamasi(
+  kalemler: {
+    quantity: number;
+    kanalKargoDesi: number | string | { toString(): string } | null;
+    kalemSayisi: number;
+  }[],
+): { ortalama: number; ornekSayisi: number } | null {
+  const ornekler: number[] = [];
+  for (const k of kalemler) {
+    if (k.kanalKargoDesi === null) continue;
+    if (k.kalemSayisi !== 1) continue;
+    if (k.quantity <= 0) continue;
+    ornekler.push(Number(k.kanalKargoDesi) / k.quantity);
+  }
+  if (ornekler.length === 0) return null;
+  return {
+    ortalama: ornekler.reduce((t, x) => t + x, 0) / ornekler.length,
+    ornekSayisi: ornekler.length,
+  };
+}
 
 /**
  * Varyantın kâr kartı verisi. `null` = böyle bir varyant YOK (ekran
@@ -181,6 +226,15 @@ export async function kartVerisiniTopla(
             channelAccount: {
               select: { channel: { select: { name: true } } },
             },
+            /**
+             * K197-⑤ — KANALDAN ÇEKİLEN GERÇEK DESİ. `_count.items` şart:
+             * `kanalKargoDesi` PAKET bazlı (kanalın tarttığı bütün paket),
+             * ürün bazlı DEĞİL. Birden çok kalemli bir siparişte bu değer
+             * o üründen kaç desi geldiğini söylemez — bu yüzden yalnız
+             * TEK KALEMLİ satışlar kullanılır (aşağıda süzülür).
+             */
+            kanalKargoDesi: true,
+            _count: { select: { items: true } },
           },
         },
       },
@@ -426,6 +480,14 @@ export async function kartVerisiniTopla(
     sebepSayaci.set(sebep, (sebepSayaci.get(sebep) ?? 0) + 1);
   }
 
+  const kanalDesi = kanalDesiOrtalamasi(
+    kalemler.map((k) => ({
+      quantity: k.quantity,
+      kanalKargoDesi: k.sale.kanalKargoDesi,
+      kalemSayisi: k.sale._count.items,
+    })),
+  );
+
   return {
     varyant: varyantiOzetle(varyant),
     urunId: varyant.product.id,
@@ -433,6 +495,7 @@ export async function kartVerisiniTopla(
     kategoriAdi: varyant.product.category?.name ?? null,
     desi:
       varyant.product.desi === null ? null : Number(varyant.product.desi),
+    kanalDesi,
     /**
      * ⚠ SIRA ANAYASADAN: ürün istisnası > kategori oranı > varsayılan %20.
      * Kartta gösterilen ORAN başka yerden (varyantKdvOrani) geliyor; burada

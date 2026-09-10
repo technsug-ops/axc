@@ -56,6 +56,62 @@ sebebi görülüp (kota mı, elle mi, ödeme mi) karar verilecek.
 
 ---
 
+## 🔶 K197-⑤ — KANAL DESİSİ ARTIK ÜRÜN KARTINDA · 10.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+⛔ **YENİ SATIR AÇILMADI — BU K197'NİN DEVAMIDIR.**
+
+> **Kullanıcı sordu:** _"API'den desileri çekemiyoruz"_ (Trendyol ve
+> Hepsiburada'da da).
+
+⛔ **KANAL VERİSİ ZATEN GELİYORDU — TÜKETİCİSİ HİÇ YOKTU.** Ölçüldü:
+`kanalKargoDesi` canlıda TY %85, HB %80 dolu (09.09'dan bu yana). Ama
+`src/app` altında bu alana **sıfır** referans vardı — K197'nin kendi
+"açılış şartı" notu ("örneklem anlamlı olunca") artık dolmuştu: **182
+farklı varyantın** en az bir örneği, **73 varyantın 3+ örneği** var.
+
+### YAPILAN
+
+`/kart/[variantId]` sayfasına kanal ortalaması eklendi. Saf gövde
+(`kanalDesiOrtalamasi`, `src/lib/urun-karti-verisi.ts`) DB'siz sınanabilir
+— `kartVerisiniTopla` onu çağırır, kopyalamaz.
+
+⛔ **İKİ SÜZGEÇ, İKİSİ DE GEREKÇELİ:**
+1. **Yalnız TEK KALEMLİ satışlar** — `kanalKargoDesi` PAKETİN TAMAMI,
+   bu ürünün kendisi değil. Çok kalemli bir siparişte bu değeri kullanmak
+   yanlış bir "ürün desisi" üretirdi.
+2. **ADEDE bölünür** — K203'ün aynı dersi: tek kalemde adet > 1 olabilir,
+   paket desisi birim desisi değildir.
+
+Ürün kartında kanal ortalaması farklıysa **"bu değere güncelle"** çıkar;
+tek tıkla `Product.desi` yazılır, iz bırakır (`URUN_DESI_KANALDAN_GUNCELLENDI`).
+Aynıysa düğme hiç çıkmaz (gereksiz eylem gösterilmez). 3'ten az örneklemde
+"az örneklem" notu düşer ama düğme yine de çalışır (uyarı sorar, ısrar
+engellemez).
+
+⚠ **SUNUCU EKRANA GÜVENMEZ:** istemciden yalnız `variantId` gider,
+ortalama SUNUCUDA yeniden hesaplanır — ekranda geçen sürede yeni bir
+satış girmişse bayat rakam donmaz.
+
+### DOĞRULAMA
+
+`kart:dogrula` **119/119** (8'i yeni). Asıl mantık mutasyonla sınandı:
+çok-kalemli filtre kaldırıldığında ilgili test **kırmızı yandığı
+görülerek** doğrulandı, sonra geri yüklendi. `tsc` + `i18n:kontrol` +
+`lint:dogrula` + gerçek `next build` (73s) temiz.
+
+### ⏳ HALİL TESTİ BEKLİYOR
+
+**Örnek hazır — fark var, düğme çıkacak:** `/kart/131d781b-b908-4a8f-bd3d-1737f4597045`
+(SKU `axcali1773`, Karaca Misto 6 Parça Standlı Servis Seti).
+
+**Test listesi:** ① bu kart sayfasını aç ② üst künye satırında **"desi 3"**
+yanında **"kanal ölçümü 2,40 desi (5 örnek)"** ve **"bu değere güncelle"**
+bağlantısı görünmeli ③ tıkla → **"güncellendi: 2,4"** yazmalı, düğme
+kaybolmalı (artık aynı) ④ sayfayı yenile → "desi 2,4" yazmalı, kanal
+ölçümü hâlâ görünmeli ama düğme artık çıkmamalı (değerler eşit).
+
+---
+
 ## 🔶 K203 — AYNI ÜRÜNDEN BİRDEN FAZLA ADET: TEK OKUTMA YETMİYORDU · 10.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 > **Halil fotoğrafla buldu:** `/paketle`de TEFAL MB470B, tek kalem, **adet

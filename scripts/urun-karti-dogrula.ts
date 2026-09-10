@@ -9,6 +9,7 @@ import type { KalemGirdisi } from "../src/lib/panel-listeler";
 import { tedarikciAdi, tedarikciAnahtari } from "../src/lib/tedarikci-adi";
 import { aramaKarari } from "../src/lib/kart-arama-karari";
 import { aramaKosulu } from "../src/lib/varyant-arama-kurali";
+import { kanalDesiOrtalamasi } from "../src/lib/urun-karti-verisi";
 import { readFileSync } from "node:fs";
 
 /**
@@ -870,6 +871,95 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
   kontrol(
     "  ...değer VARKEN not basılmıyor",
     /ozet\.ortalamaMaliyet !== null\s*\?\s*undefined/.test(kutu),
+  );
+}
+
+/**
+ * ============================================================================
+ *  K197-⑤ — KANAL DESİSİ ORTALAMASI (DEĞER TESTİ, DB'SİZ)
+ * ----------------------------------------------------------------------------
+ *  ⛔ NİYE VAR: kullanıcı sordu "API'den desileri çekemiyoruz". Veri
+ *  aslında geliyordu (kanalKargoDesi), gösteren ekran YOKTU. Bu fonksiyon
+ *  kartta gösterilen ortalamayı üretiyor — üç davranış GERÇEK değerlerle
+ *  sınanır, kaynak taranmaz (SAF HESAP KATMANI, desen aranmaz).
+ * ============================================================================
+ */
+{
+  kontrol(
+    "hiç örnek yoksa null döner (0 DEĞİL — bilinmeyen ile sıfır karışmaz)",
+    kanalDesiOrtalamasi([]) === null,
+  );
+
+  /** ⚠ ÖRNEK VERİ AYRIMI GÖSTERİR: tek kalemli VE çok kalemli aynı listede,
+   *  yalnız tek kalemli olan sayılmalı. */
+  const cokKalemliAtlanir = kanalDesiOrtalamasi([
+    { quantity: 1, kanalKargoDesi: 10, kalemSayisi: 2 }, // paket 2 üründen — ATLANMALI
+    { quantity: 1, kanalKargoDesi: 4, kalemSayisi: 1 },
+  ]);
+  kontrol(
+    "çok kalemli paket ATLANIR (kanalKargoDesi paketin tamamı, bu ürün değil)",
+    cokKalemliAtlanir !== null &&
+      cokKalemliAtlanir.ornekSayisi === 1 &&
+      cokKalemliAtlanir.ortalama === 4,
+    cokKalemliAtlanir,
+  );
+
+  /** ⭐ ASIL VAKA: adet > 1 olan tek kalemde ADEDE bölünür (K203'ün aynı dersi). */
+  const adedeBolunur = kanalDesiOrtalamasi([
+    { quantity: 2, kanalKargoDesi: 10, kalemSayisi: 1 }, // paket 10 desi, 2 adet → birim 5
+  ]);
+  kontrol(
+    "adet > 1 olan tek kalemde ADEDE bölünür (paket desisi ≠ birim desisi)",
+    adedeBolunur !== null && adedeBolunur.ortalama === 5,
+    adedeBolunur,
+  );
+
+  /** ⚠ `quantity <= 0` savunması — bölme asla patlamaz/sonsuz üretmez. */
+  const sifirAdetAtlanir = kanalDesiOrtalamasi([
+    { quantity: 0, kanalKargoDesi: 10, kalemSayisi: 1 },
+    { quantity: 1, kanalKargoDesi: 6, kalemSayisi: 1 },
+  ]);
+  kontrol(
+    "adet <= 0 olan kalem ATLANIR",
+    sifirAdetAtlanir !== null &&
+      sifirAdetAtlanir.ornekSayisi === 1 &&
+      sifirAdetAtlanir.ortalama === 6,
+    sifirAdetAtlanir,
+  );
+
+  const ortalamaDogru = kanalDesiOrtalamasi([
+    { quantity: 1, kanalKargoDesi: 2, kalemSayisi: 1 },
+    { quantity: 1, kanalKargoDesi: 4, kalemSayisi: 1 },
+    { quantity: 1, kanalKargoDesi: 6, kalemSayisi: 1 },
+  ]);
+  kontrol(
+    "ortalama doğru hesaplanır (2+4+6)/3 = 4",
+    ortalamaDogru !== null &&
+      ortalamaDogru.ortalama === 4 &&
+      ortalamaDogru.ornekSayisi === 3,
+    ortalamaDogru,
+  );
+
+  /** ⚠ EKRAN gövdeyi ÇAĞIRIYOR MU — kural burada, ekranda kopyalanmadı. */
+  const kartVerisiKaynagi = readFileSync("src/lib/urun-karti-verisi.ts", "utf8");
+  kontrol(
+    "kartVerisiniTopla saf gövdeyi ÇAĞIRIYOR (kopyalanmadı)",
+    /const kanalDesi = kanalDesiOrtalamasi\(/.test(kartVerisiKaynagi),
+  );
+
+  /** ⚠ EKRAN VERİ YOKKEN SATIRI HİÇ ÇİZMİYOR (İlke #12 — her üründe
+   *  "kanal verisi yok" yazmak gürültü üretirdi). */
+  const kartEkraniKaynagi = readFileSync(
+    "src/app/kart/[variantId]/page.tsx",
+    "utf8",
+  );
+  kontrol(
+    "kanalDesi null iken blok HİÇ render edilmiyor (veri.kanalDesi !== null şartı var)",
+    /veri\.kanalDesi !== null/.test(kartEkraniKaynagi),
+  );
+  kontrol(
+    "  ...ve KanalDesiGuncelle bileşeni çağrılıyor",
+    /<KanalDesiGuncelle/.test(kartEkraniKaynagi),
   );
 }
 
