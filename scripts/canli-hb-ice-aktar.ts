@@ -597,10 +597,14 @@ export async function hbCekimKos(ayar: {
   /**
    * ═══ TESLİM DAMGASI (K195-2) — AYNI KALIP, AYNI EZME YASAĞI ═══
    *
-   * ⚠ HB'DE TAKİP BAĞLANTISI VE FİRMA YAZILMAZ — ÖLÇÜLDÜ, kanal bu iki
-   * bilgiyi vermiyor. Boş kalıyorlar ve boş kalmaları doğru; vekil bir
-   * değer (ör. bizim seçtiğimiz `cargoCarrier`) yazmak, kanalın
-   * söylemediği bir şey hakkında iddia kurmak olurdu.
+   * ⚠ ESKİ GEREKÇE (silinmedi, ÇEVRİLDİ 10.09.2026): burada _"HB takip
+   * bağlantısı ve firma vermiyor, ÖLÇÜLDÜ"_ yazıyordu. Ölçüm DOĞRUYDU ama
+   * yanlış uca bakıyordu — `/shipped` ve `/delivered` (bu döngünün okuduğu
+   * uçlar) GERÇEKTEN bu iki alanı vermiyor. Kullanıcı sordu ("Kargo takip
+   * no neden çekmiyor, sistemde var hâlbuki") ve TAM KAYIT ucu
+   * (`siparisDetay`, aşağıda K195-3) hem `barcode` hem
+   * `cargoCompanyModel.name` TAŞIDIĞI ölçüldü. Bu döngü hâlâ DOĞRU —
+   * thin uçlardan geleni yazıyor; geri kalanı K195-3 dolduruyor.
    *
    * ⚠ DAMGA GÜN HASSASİYETİNDE: HB'nin tarihi dilimsiz geldiği için saat
    * İDDİA EDİLMİYOR. Okuyan `gunHassasiyetliMi` ile bunu sorabilir.
@@ -630,12 +634,101 @@ export async function hbCekimKos(ayar: {
     desiYazilan += guncel.count;
   }
 
+  /**
+   * ═══ TAKİP KODU VE KARGO FİRMASI GERİ DOLDURMA (K195-3, 10.09.2026) ═══
+   *
+   * ⛔ NİYE VAR: kullanıcı canlı ekranda bir siparişin "Kargo takip no"
+   * alanının boş olduğunu gördü ve sordu — HB'nin kendi panelinde
+   * "TESLİMAT NUMARASI" açıkça yazılıyordu. Ölçüldü: TAM KAYIT ucu
+   * (`siparisDetay`, "kaçak" yeni sipariş oluştururken zaten çağrılıyordu)
+   * `items[].barcode` taşıyor ve bu değer ekrandaki "Teslimat Numarası"
+   * ile BİREBİR AYNI (canlı sipariş 4136602020: barcode 62755152995927).
+   * Aynı kayıtta `items[].cargoCompanyModel.name` de var — dünkü "HB
+   * vermiyor" ölçümü yanlış uca (`/shipped`/`/delivered`) bakıyordu.
+   *
+   * ⚠ ÖLÇÜLDÜ 10.09.2026 (canlı): HB'de `shipmentCode` boş 3274/3329;
+   * KARGOYA VERİLMİŞ ama kodu hâlâ boş 26/73 — küçük ve kontrollü bir
+   * açık. `KOD_GERI_DOLDURMA_TAVANI` her koşumdaki ekstra isteği sınırlar;
+   * tavan aşılırsa kalan sonraki koşumda yakalanır (satır satır, sıralı).
+   *
+   * ⛔ BÖLÜNMÜŞ PAKET UYDURULMAZ: bir siparişin kalemleri FARKLI barcode
+   * ya da FARKLI firma taşıyorsa (birden fazla fiziksel paket), o alan
+   * ATLANIR ve SAYILIR — tek bir değer varmış gibi TAHMİN EDİLMEZ.
+   * _(Anayasa: "toplu işlem sistemin bilmediği bir değeri yazamaz".)_
+   *
+   * ⚠ İKİ ALAN İKİ AYRI YAZMA: `kanalKargoFirmasi` zaten dolu bir
+   * siparişte `shipmentCode` boş kalmış olabilir (ya da tersi); tek
+   * sorguda ikisini birden yazmak öbürünü haksız yere EZERDİ.
+   */
+  const KOD_GERI_DOLDURMA_TAVANI = 100;
+  const kodBosSiparisler = await prisma.sale.findMany({
+    where: { channelAccountId: hesap.id, shipmentCode: null, shippedAt: { not: null } },
+    orderBy: { soldAt: "asc" },
+    take: KOD_GERI_DOLDURMA_TAVANI,
+    select: { code: true },
+  });
+
+  const kodDamgalari = new Map<string, string>();
+  const firmaDamgalari = new Map<string, string>();
+  let kodBirdenFazlaPaket = 0;
+  let kodDetayDusen = 0;
+  for (const satir of kodBosSiparisler) {
+    const no = satir.code;
+    if (no === null) continue;
+    const d = await apiGet(UCLAR.siparisDetay(k, no), baslik);
+    if (d.tur !== "VERI") {
+      kodDetayDusen++;
+      continue;
+    }
+    const g = d.govde as Record<string, unknown>;
+    const items = (g.items ?? []) as Record<string, unknown>[];
+    const barkodlar = new Set(
+      items.map((x) => String(x.barcode ?? "")).filter((b) => b !== ""),
+    );
+    const firmalar = new Set(
+      items
+        .map((x) => {
+          const model = x.cargoCompanyModel as Record<string, unknown> | null | undefined;
+          return String(model?.name ?? x.cargoCompany ?? "");
+        })
+        .filter((f) => f !== ""),
+    );
+    if (barkodlar.size > 1 || firmalar.size > 1) {
+      kodBirdenFazlaPaket++;
+      continue;
+    }
+    if (barkodlar.size === 1) kodDamgalari.set(no, [...barkodlar][0]!);
+    if (firmalar.size === 1) firmaDamgalari.set(no, [...firmalar][0]!);
+  }
+
+  let kodYazilan = 0;
+  for (const [no, kod] of kodDamgalari) {
+    const guncel = await prisma.sale.updateMany({
+      where: { code: no, channelAccountId: hesap.id, shipmentCode: null },
+      data: { shipmentCode: kod },
+    });
+    kodYazilan += guncel.count;
+  }
+  let firmaYazilan = 0;
+  for (const [no, firma] of firmaDamgalari) {
+    const guncel = await prisma.sale.updateMany({
+      where: { code: no, channelAccountId: hesap.id, kanalKargoFirmasi: null },
+      data: { kanalKargoFirmasi: firma },
+    });
+    firmaYazilan += guncel.count;
+  }
+
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
   console.log(`   KARGO DAMGASI YAZILDI (yalnız BOŞ olanlara)      ${damgaYazilan}`);
   console.log(`   TESLİM DAMGASI YAZILDI (yalnız BOŞ olanlara)     ${teslimYazilan}`);
   console.log(`   KANAL DESİSİ YAZILDI (ölçüm — deftere dokunmaz)  ${desiYazilan}`);
   console.log(`     ├─ aynı kanal (yeniden içe aktarma, beklenen)  ${ayniKanal}`);
   console.log(`     └─ ÇAPRAZ KANAL (numara uzayı çakışması)       ${capraz.length}`);
+  console.log(`   TAKİP KODU GERİ DOLDURULDU (K195-3)              ${kodYazilan}`);
+  console.log(`   KARGO FİRMASI GERİ DOLDURULDU (K195-3)           ${firmaYazilan}`);
+  console.log(`     ├─ aday (bu tur, tavan ${KOD_GERI_DOLDURMA_TAVANI})            ${kodBosSiparisler.length}`);
+  console.log(`     ├─ BİRDEN FAZLA PAKET — uydurulmadı, atlandı    ${kodBirdenFazlaPaket}`);
+  console.log(`     └─ DETAYI OKUNAMAYAN                            ${kodDetayDusen}`);
   if (capraz.length > 0) {
     console.log("   ⛔ ÇAPRAZ ÇAKIŞMA — BU HB SİPARİŞLERİ DEFTERE HİÇ YAZILAMAZ:");
     for (const s of capraz) {

@@ -631,6 +631,74 @@ tasarlamadan yazmak, adresi olmayan bir rakam üretirdi.
 boş doğuyor ve yalnız **bundan sonraki** teslimlerle doluyor. "Teslim
 edilmedi" ile "sistem bilmiyor" aynı görünürse kutu yanlış okunur.
 
+### ─── ③ TAKİP KODU VE KARGO FİRMASI: "HB VERMİYOR" YANLIŞ UCA BAKIYORMUŞ · 10.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+⛔ **YENİ SATIR AÇILMADI — BU K195'İN DEVAMIDIR** (aynı kural, K195-2'de
+uygulandığı gibi).
+
+> **Kullanıcı sordu (10.09.2026):** _"hepsiburada siparişlerinde kargo takip
+> numarasını çekmiyor niye acaba, sistemde var hâlbuki — ismi teslimat
+> numarası olarak geçtiği için mi?"_ Ekran görüntüsü: sipariş 4136602020,
+> Selliora'da "Kargo takip no" boş, HB'nin kendi panelinde **"TESLİMAT
+> NUMARASI 62755152995927"** açıkça yazılı.
+
+⛔ **YUKARIDAKİ "HB TAKİP/FİRMA VERMİYOR" TESPİTİ (K195-2) DOĞRU ÖLÇÜLMÜŞTÜ
+AMA YANLIŞ UCA BAKIYORDU.** `/shipped` ve `/delivered` (K195'in okuduğu
+uçlar) **gerçekten** bu iki alanı vermiyor — ölçüm o kapsamda doğruydu.
+Ama TAM KAYIT ucu (`siparisDetay` — "kaçak" yeni sipariş oluştururken zaten
+çağrılıyordu) `items[].barcode` ve `items[].cargoCompanyModel.name`
+TAŞIYOR. Canlı HB API'sinden doğrudan çekildi (10.09.2026):
+
+    "barcode": "62755152995927"          ← ekrandaki "TESLİMAT NUMARASI" BİREBİR
+    "cargoCompanyModel": { "name": "hepsiJET" }
+
+⚠ **VE VERİTABANI SORGUSU DA CANLIDAN YAPILDI** (`.env.canli` →
+`CANLI_DATABASE_URL`, `canli-migrate.ts` ile AYNI güvenlik deseni: yerelMi
+kontrolü, parola ekrana yazılmaz, çocuk sürece yalnız ortam değişkeniyle
+geçer). Ölçüldü:
+
+    HB toplam                          3329
+    shipmentCode BOŞ                   3274  (%98,3)
+    kargoya verilmiş AMA kodu BOŞ        26  (73 gönderilmişin %36'sı)
+    kanalKargoFirmasi DOLU                0  (%0)
+
+### DÜZELTME
+
+`canli-hb-ice-aktar.ts`'e üçüncü bir geri doldurma adımı eklendi:
+`shipmentCode` boş VE `shippedAt` dolu siparişler için `siparisDetay`
+çağrılır, `barcode`→`shipmentCode` ve `cargoCompanyModel.name`→
+`kanalKargoFirmasi` yazılır.
+
+⛔ **BÖLÜNMÜŞ PAKET UYDURULMAZ:** bir siparişin kalemleri FARKLI barcode ya
+da FARKLI firma taşıyorsa (birden fazla fiziksel paket), o alan **atlanır
+ve sayılır** — tek bir değer varmış gibi tahmin edilmez.
+
+⛔ **YÜK TAVANLANDI:** `KOD_GERI_DOLDURMA_TAVANI = 100` — her koşumda en
+fazla 100 ekstra `siparisDetay` isteği. Bugünkü backlog (26) bir turda
+biter; sonrası günlük birkaç düzine yeni siparişle sınırlı kalır (K195
+dün canlıya çıktı, bir günde yalnız 73 sipariş "gönderildi" damgası aldı).
+
+⚠ **EZME YOK — İKİ ALAN İKİ AYRI YAZMA:** `shipmentCode` ve
+`kanalKargoFirmasi` ayrı `updateMany` çağrılarıyla, her biri kendi NULL'ına
+yazılır — biri dolu öteki boşken tek sorgu doluyu haksız ezerdi.
+
+### DOĞRULAMA
+
+`tsc` temiz. `kargo-damgasi:dogrula` 57/57, `kanal-yazma:dogrula` 37/37,
+`kargo-damgasi-mutasyon:kontrol` 15/15 kırmızı yandığı görülerek — hiçbiri
+bu eklemeyle bozulmadı.
+
+### ⏳ HALİL TESTİ BEKLİYOR — KAPANMADI
+
+**Test listesi:** ① canlı otomatik çekim bir tur koştuktan sonra (5 dk
+içinde) sipariş 4136602020'nin Selliora'daki `/satislar/[id]` sayfasını aç
+② **"Kargo takip no"** alanı **"62755152995927"** göstermeli (zaten
+elle girilmişti — bunun yerine `shipmentCode` hâlâ boş olan BAŞKA bir HB
+siparişi seçip aynı turu izlemek daha kesin kanıt olur) ③ o siparişte
+kargo firması bir yerde **"hepsiJET"** (ya da ilgili firma) olarak
+görünmeli ④ günlük çıktısında (`TAKİP KODU GERİ DOLDURULDU (K195-3)`)
+sıfırdan büyük bir sayı basılmalı.
+
 ---
 
 ## 🔶 K194 — N11'E STOK/FİYAT GÖNDERİMİ (İKİNCİ KANAL) · 09.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
