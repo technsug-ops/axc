@@ -101,46 +101,77 @@ etmemek için.
   Kısmi-iptal-guard mutasyonu en riskli olanıydı: kaldırılırsa hâlâ
   parçası kargoda olan bir sipariş otomatik iptal edilebilirdi.
 
-### ⛔ HEPSIBURADA — HÂLÂ AÇIK, MİMARİ BOŞLUK ÖLÇÜLDÜ (yazılmadı)
-TY ve N11'in aksine HB'de bugün **hiçbir bilinen uç tam iptal edilmiş bir
-paketi göstermiyor.** Ölçüldü (11.09.2026, `scripts/hb/istemci.ts`):
-bilinen üç uç yalnız `Open` (`/packages`), `Shipped` (`/packages/shipped`)
-ve `Delivered` (`/packages/delivered`) döndürüyor — `Cancelled` bunların
-hiçbirinde YOK ve ayrı bir "iptal edilenler" ucu istemcide TANIMLI DEĞİL.
-Elimizdeki tek geniş kayıt ucu (`siparisDetay`) TEK bir sipariş numarası
-İSTER — proaktif tarama için kullanılamaz, çünkü hangi siparişin iptal
-olduğunu ÖNCE bir listeleme ucundan bilmemiz gerekir.
+### ─── ③ HB GENİŞLETMESİ · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+Kullanıcı ilk turda "hiçbir bilinen HB ucu iptali göstermiyor" tespitine
+itiraz etti: _"Entegra ve Melontik gibi firmalar hepsi burada dan iptal
+bilgilerini alıyor, o halde bizim de almamız lazım, tekrar dener misin"_
+— haklıydı; ilk tur yalnız TOPLU uçlara (`/packages`, `/shipped`,
+`/delivered`) bakmıştı, TEK sipariş ucunu (`siparisDetay`) hiç sınamamıştı.
 
-Mevcut kodun kendi yorumu da bunu doğruluyor (`canli-hb-ice-aktar.ts:53`):
-_"Cancelled kalem YAZILMAZ (iptal ANI kaynağı yok — uydurulmaz)"_ — bu
-YENİ siparişler için zaten böyleydi; K213 için de aynı boşluk geçerli.
+**Yeniden ölçüldü, gerçek bir kanıt bulundu.** Bizim elle iptal ettiğimiz
+gerçek bir HB siparişinin (`4428007117`, sebep MUSTERI_VAZGECTI) detayı
+çekilince:
 
-**AÇILIŞ ŞARTI — ikisinden biri:**
-1. `developers.hepsiburada.com` **403** döndürüyor (otomatik okuyucuya);
-   Halil merchant panelinden (`Hesabım → Entegrasyon`) iptal/cancelled
-   paketleri listeleyen bir uç olup olmadığına bakmalı, VEYA
-2. Yoksa alternatif tasarım ölçülür: hâlâ "Open" sayılan her aktif
-   siparişi `siparisDetay` ile TEK TEK yoklamak (rate limit + maliyet
-   ÖLÇÜLMEDEN yazılmaz — bu apayrı bir tasarım, bugünkü toplu-çekim
-   deseninden farklı).
+    "status": "CancelledByCustomer"
+    "lastStatusUpdateDate": "2026-09-06T15:24:12.971"
 
-### HALİL TESTİ — kapanma şartı (TY + N11)
+İkinci bir MUSTERI_VAZGECTI siparişinde (`4348472605`) de AYNI durum +
+gerçek damga görüldü — **2/2 doğrulandı.** ⚠ AMA MAGAZA_DIGER sebepli bir
+elle iptal (`4120311526`) HB'de `"ClaimCreated"` çıktı — yani her elle
+iptalimiz kanalın kendi "Cancelled*" durumuna karşılık gelmiyor; otomatik
+tetik yalnız kanalın GERÇEKTEN öyle dediği siparişlere basıyor.
+
+**AMA HB'DE TOPLU "İPTAL EDİLENLER" LİSTESİ HÂLÂ YOK** — `/orders` ucu
+her parametre kombinasyonunda `totalCount: 0` döndürdü (5 farklı deneme:
+geniş/dar tarih aralığı, ISO/epoch biçim, status parametresi, sipariş
+numarası filtresi). `siparisDetay` TEK sipariş numarası İSTER; bu yüzden
+TY/N11'deki "kanal ne söylüyorsa tara" yerine **"hâlâ açık saydığımız her
+siparişi tek tek yokla"** tasarımı kuruldu — K195-3'ün (`kodBosSiparisler`)
+AYNI deseni (pencere + tavan), FARKLI bir soru için.
+
+**Maliyet ölçüldü, uydurulmadı:** HB'de `shippedAt` BOŞ olan satışların
+%99,9'u (3239/3243) 30 günden ESKİ — K195 mekanizması kurulmadan önceki
+geri dolum boşluğu, gerçekten açık sipariş DEĞİL. Son 30 günde yalnız 4
+tane var. Pencere 30 gün + tavan 200 seçildi: her koşumda en fazla birkaç
+`siparisDetay` çağrısı, büyüyen bir maliyet değil.
+
+**YAPILAN:**
+- `scripts/canli-hb-ice-aktar.ts` → yeni sorgu (`shippedAt: null AND
+  iptalTarihi: null AND soldAt >= 30 gün önce`, tavan 200) + her aday için
+  `siparisDetay`; dönen kalemlerden biri `status.startsWith("Cancelled")`
+  ise (tek literale kilitlenmeden) `hbKargoDamgasi(lastStatusUpdateDate)`
+  ile GÜN hassasiyetinde iptal anı çözülüyor (K195'in HB saat dilimi
+  dersiyle AYNI çözüm — saat atılıyor, yalnız gün kalıyor). Sonra AYNI
+  motor: `otomatikIptalAdayiMi` → `iptalOnizle` → (--yaz altında)
+  `iptalUygula`.
+- Test: `scripts/ice-aktarma-dogrula.ts`'e kaynak-tarama bağlanma testi —
+  **8 mutasyonla** sınandı (TY'nin 6'sı + HB'ye özgü iki tanesi: 30 günlük
+  pencerenin kaldırılması VE önek eşleşmesinin tek literale daraltılması),
+  hepsi kırmızı yandı, dosya bit-bit geri yüklendi. Pencere mutasyonu en
+  riskliydi: kaldırılırsa her koşum 3243 eski siparişi boşuna yoklardı.
+
+### HALİL TESTİ — kapanma şartı (TY + N11 + HB)
 Bu bir OTOMATİK, finansal etkili değişiklik — canlı zamanlanmış cron'lara
 giriyor. Sentetik deneme yerine gerçek bir vakayla doğrulanmalı:
-1. Trendyol'da (veya N11'de) az riskli bir siparişi (ör. düşük tutarlı)
+1. Trendyol'da (veya N11/HB'de) az riskli bir siparişi (ör. düşük tutarlı)
    müşteri adına "Vazgeçtim" ile iptal ettir (ya da bir sonraki gerçek
    müşteri iptalini bekle).
 2. O siparişin sistemde zaten **aktif satış** olarak durduğunu doğrula
    (`/satislar` içinde sipariş kodunu ara).
-3. Bir sonraki zamanlanmış çekim (TY 5 dakikada bir · N11 kendi cron'u)
-   geçtikten sonra aynı satışı aç: **İptal Edildi** rozeti görünmeli,
-   iptal notu _"...otomatik tespit edildi (K213...)"_ okunmalı.
+3. Bir sonraki zamanlanmış çekim (TY 5 dakikada bir · N11/HB kendi
+   cron'u) geçtikten sonra aynı satışı aç: **İptal Edildi** rozeti
+   görünmeli, iptal notu _"...otomatik tespit edildi (K213...)"_ okunmalı.
 4. `/rapor` panelindeki GERÇEK NET / ciro rakamının o satış tutarı kadar
    **düştüğünü**, `/stok` üzerinden ilgili varyantın adedinin iptal
    edilen miktar kadar **arttığını** doğrula.
 5. N11'e özgü: parçası hâlâ kargoda/teslimde olan BÖLÜNMÜŞ bir sipariş
    varsa, o sipariş otomatik iptal EDİLMEMELİ (kısmi iptal guard'ı) —
    fırsat çıkarsa bu senaryo da bir kez elle doğrulanmalı.
+6. HB'ye özgü: HB'de bir sipariş kargolanmadan iptal olduğunda, sonraki
+   HB çekimi (yoklama, açık siparişler taranarak) onu **otomatik tespit**
+   etmeli. HB'nin ana çekimi az koştuğu için (bkz. K-HB-CRON) bu madde
+   diğerlerinden daha uzun sürebilir; ilk gerçek vaka çıktığında ayrıca
+   doğrulanmalı — beklerken bekletilecek bir kalem değil.
 6. Ekrandaki rakamlar teslim raporundaki beklenenle birebir tutmalı
    (Halil testi madde c) — yaklaşık değil.
 

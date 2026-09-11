@@ -2349,6 +2349,86 @@ kontrol(
 }
 
 /**
+ * ═══ K213 — HB: SİPARİŞ SONRADAN İPTAL OLMUŞ (11.09.2026) ═══════════════
+ *
+ * ⚠ TY/N11'İN AKSİNE HB'DE TOPLU BİR "İPTAL EDİLENLER" UCU YOK — ÖLÇÜLDÜ.
+ * `siparisDetay` (tek sipariş) gerçek kaynak: canlıda elle iptal edilmiş
+ * iki gerçek HB siparişinde `status: "CancelledByCustomer"` + gerçek
+ * `lastStatusUpdateDate` GÖRÜLDÜ. Diskoveri farklı çalışır: bilinen
+ * sipariş numarası GEREKİR, bu yüzden "hâlâ AÇIK saydığımız her siparişi
+ * tek tek yokla" tasarımı (K195-3'ün aynı deseni — pencere + tavan —
+ * farklı bir soru için tekrarlanıyor).
+ */
+{
+  console.log("K213 HB — sipariş sonradan iptal — açık sipariş yoklaması");
+  const hK = yorumsuz(readFileSync("scripts/canli-hb-ice-aktar.ts", "utf8"));
+
+  kontrol(
+    "betik otomatikIptalAdayiMi'yi İTHAL EDİYOR",
+    /import \{ otomatikIptalAdayiMi \} from "\.\.\/src\/lib\/satis-iptali";/.test(hK),
+  );
+  kontrol(
+    "betik iptalOnizle/iptalUygula'yı İTHAL EDİYOR (elle iptalle AYNI motor)",
+    /import \{ iptalOnizle, iptalUygula \} from "\.\.\/src\/lib\/satis-iptali-veri";/.test(hK),
+  );
+
+  const otoIptalBaslangic = hK.indexOf("const HB_IPTAL_PENCERESI_GUN");
+  const otoIptalBlok = hK.slice(
+    otoIptalBaslangic,
+    hK.indexOf("// ═══ VARYANT KAPISI", otoIptalBaslangic),
+  );
+  kontrol("K213-HB blok bulundu", otoIptalBaslangic >= 0 && otoIptalBlok.length > 0);
+  kontrol(
+    "  ...aday kümesi yalnız HÂLÂ AÇIK olanlar (shippedAt null + iptalTarihi null)",
+    /shippedAt: null,\s*iptalTarihi: null,\s*soldAt: \{ gte: hbIptalPencereBaslangici \},/.test(
+      otoIptalBlok,
+    ),
+  );
+  kontrol(
+    "  ...kanal durumu ÖNEK ile aranıyor (startsWith 'Cancelled') — tek literale kilitlenmiyor",
+    /String\(it\.status \?\? ""\)\.startsWith\("Cancelled"\)/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...iptal anı GÜN HASSASİYETİNDE çözülüyor (hbKargoDamgasi, K195 ile AYNI risk)",
+    /hbKargoDamgasi\(iptalliKalem\.lastStatusUpdateDate\)/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...her aday için otomatikIptalAdayiMi ÇAĞRILIYOR",
+    /if \(!otomatikIptalAdayiMi\(\{ durum: "Cancelled", iptalTarihi: iptalAni \}, s\.iptalTarihi\)\)/.test(
+      otoIptalBlok,
+    ),
+  );
+  kontrol(
+    "  ...önce ÖNİZLEME (iptalOnizle) kurulur — yazmadan ÖNCE",
+    otoIptalBlok.indexOf("await iptalOnizle(") < otoIptalBlok.indexOf("await iptalUygula("),
+  );
+  kontrol(
+    "  ...gerçek yazım --yaz OLMADAN ÇALIŞMAZ (kapı: if (!YAZ) continue)",
+    /if \(!YAZ\) continue;[\s\S]{0,40}const sonuc = await iptalUygula\(/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...sebep TAHMİN EDİLMİYOR — kapalı kümenin MUSTERI_VAZGECTI'si",
+    /sebep: "MUSTERI_VAZGECTI"/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...not OTOMATİK TESPİT olduğunu söylüyor (İlke #5, sessiz değil)",
+    /otomatik tespit edildi/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...kullanıcı YOK — insan uydurulmuyor (kullaniciId: null)",
+    /kullaniciId: null,/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...ayna hareketin ANI kanalın kendi iptal anı (iptalAni) — ŞİMDİ değil",
+    /an: iptalAni,/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...detay çekilemeyen sipariş SAYILIYOR, sessizce atlanmıyor",
+    /otoIptalDetayDusen\+\+;/.test(otoIptalBlok),
+  );
+}
+
+/**
  * ═══ K167-② — N11 İÇE AKTARMA: ÖLÇÜLMÜŞ EŞLEME SABİTLENİR ════════════════
  * 4 canlı paketle ölçüldü (05.09.2026): ciro tabanı sellerInvoiceAmount
  * (indirim N11 fonlu, satıcı tam fiyat faturalıyor), damgalar epoch (mutlak

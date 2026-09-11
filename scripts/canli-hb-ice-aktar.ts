@@ -15,6 +15,8 @@ import {
   tumKayitlar,
   type Kimlik,
 } from "./hb/istemci";
+import { otomatikIptalAdayiMi } from "../src/lib/satis-iptali";
+import { iptalOnizle, iptalUygula } from "../src/lib/satis-iptali-veri";
 
 /**
  * ============================================================================
@@ -763,6 +765,123 @@ export async function hbCekimKos(ayar: {
         `      ${s.code}  →  ${s.channelAccount.channel.name}/${s.channelAccount.name}`,
       );
     }
+  }
+
+  /**
+   * ═══ K213 — HB: SİPARİŞ SONRADAN İPTAL OLMUŞ (11.09.2026) ═══════════════
+   *
+   * ⚠ TY/N11'İN AKSİNE HB'DE TOPLU "İPTAL EDİLENLER" UCU YOK — ÖLÇÜLDÜ
+   * (11.09.2026): bilinen üç paket ucu (`/packages`, `/shipped`, `/delivered`)
+   * hiçbiri paketlenmeden ÖNCE vazgeçilmiş bir siparişi göstermiyor — o
+   * siparişin hiç PAKETİ yok ki bir uçtan listelensin. Gerçek kaynak
+   * `siparisDetay` (TEK sipariş): canlıda elle iptal edilmiş iki gerçek HB
+   * siparişinde ölçüldü (4428007117 · 4348472605, ikisi de MUSTERI_VAZGECTI)
+   * — `status: "CancelledByCustomer"` ve gerçek `lastStatusUpdateDate`
+   * dönüyor.
+   *
+   * ⚠ VE DİSKOVERİ FARKLI ÇALIŞIYOR — bilinen sipariş numarası GEREKİR.
+   * TY/N11'deki "kanal ne söylüyorsa tara" yerine burada "hâlâ AÇIK
+   * saydığımız her siparişi tek tek yokla" tasarımı var. K195-3'ün
+   * (`kodBosSiparisler`, yukarıda) AYNI deseni — pencere + tavan — burada
+   * TEKRARLANIYOR ama FARKLI bir soru için (o kod eksikliğini dolduruyor,
+   * bu iptal arıyor); bu yüzden AYRI sorgu, AYRI döngü.
+   *
+   * ⚠ PENCERE ÖLÇÜLDÜ (11.09.2026): `shippedAt` BOŞ olan HB satışlarının
+   * ezici çoğunluğu (3239/3243) 30 günden ESKİ — K195 mekanizması
+   * kurulmadan önceki geri dolum boşluğu, GERÇEKTEN açık sipariş değil.
+   * Son 30 günde yalnız 4 tane var (0-3 gün: 2 · 7-30 gün: 2). Pencere 30
+   * gün + tavan 200: hem gerçekten açık siparişleri kapsıyor hem eski
+   * backlog'u boşuna yoklamıyor.
+   *
+   * ⚠ DURUM SÖZLÜĞÜ TAM ÖLÇÜLMEDİ — TEK literal ("CancelledByCustomer")
+   * canlıda GÖRÜLDÜ. HB'nin PascalCase deseni "Cancelled<Kim>" gibi
+   * göründüğünden ÖNEK eşleşmesi kullanılıyor (`startsWith("Cancelled")`),
+   * tek bir literal'e kilitlenmiyor. ⚠ AMA HER ELLE İPTAL KANALDA
+   * "Cancelled*" GÖSTERMEZ: aynı ölçümde MAGAZA_DIGER sebepli bir elle
+   * iptal (4120311526) HB'de "ClaimCreated" çıktı — otomatik tetik yalnız
+   * kanalın GERÇEKTEN "Cancelled*" dediği siparişlere basar, bizim iç
+   * sebebimize değil.
+   *
+   * ⚠ ANI GÜN HASSASİYETİNDE — `lastStatusUpdateDate` HB'nin dilim
+   * işaretsiz dizesi (`hbKargoDamgasi` ile AYNI tehlike, K195'te ölçülmüştü:
+   * ortam saat dilimine göre kayar). Kullanıcı kararı (c) ile AYNI çözüm:
+   * yalnız GÜN kullanılır, saat atılır.
+   */
+  const HB_IPTAL_PENCERESI_GUN = 30;
+  const HB_IPTAL_TAVANI = 200;
+  const hbIptalPencereBaslangici = new Date(
+    okumaAni.getTime() - HB_IPTAL_PENCERESI_GUN * 86_400_000,
+  );
+  const hbIptalAdaylari = await prisma.sale.findMany({
+    where: {
+      channelAccountId: hesap.id,
+      shippedAt: null,
+      iptalTarihi: null,
+      soldAt: { gte: hbIptalPencereBaslangici },
+    },
+    orderBy: { soldAt: "desc" },
+    take: HB_IPTAL_TAVANI,
+    select: { id: true, code: true, iptalTarihi: true },
+  });
+  const OTO_IPTAL_NOTU_HB =
+    "Hepsiburada'da iptal edildi — otomatik tespit edildi (K213, canli-hb-ice-aktar).";
+  let otoIptalTespit = 0;
+  let otoIptalEngellendi = 0;
+  let otoIptalYazilan = 0;
+  let otoIptalDetayDusen = 0;
+  for (const s of hbIptalAdaylari) {
+    if (s.code === null) continue;
+    const d = await apiGet(UCLAR.siparisDetay(k, s.code), baslik);
+    if (d.tur !== "VERI") {
+      otoIptalDetayDusen++;
+      continue;
+    }
+    const g = d.govde as Record<string, unknown>;
+    const items = (g.items ?? []) as Record<string, unknown>[];
+    const iptalliKalem = items.find((it) => String(it.status ?? "").startsWith("Cancelled"));
+    if (!iptalliKalem) continue;
+    const damga = hbKargoDamgasi(iptalliKalem.lastStatusUpdateDate);
+    const iptalAni = damga.tur === "YOK" ? null : damga.an;
+    if (!otomatikIptalAdayiMi({ durum: "Cancelled", iptalTarihi: iptalAni }, s.iptalTarihi)) {
+      continue;
+    }
+    if (iptalAni === null) continue; // TS narrowing içindir — karar otomatikIptalAdayiMi'de
+    otoIptalTespit++;
+    const onizleme = await iptalOnizle(s.id, "MUSTERI_VAZGECTI", OTO_IPTAL_NOTU_HB);
+    if (onizleme === null) {
+      otoIptalEngellendi++;
+      console.log(`   ⚠ OTOMATİK İPTAL ENGELLENDİ  ${s.code}  SATIS_YOK`);
+      continue;
+    }
+    if (!onizleme.plan.olur) {
+      otoIptalEngellendi++;
+      console.log(`   ⚠ OTOMATİK İPTAL ENGELLENDİ  ${s.code}  ${onizleme.plan.engel}`);
+      continue;
+    }
+    if (!YAZ) continue;
+    const sonuc = await iptalUygula({
+      saleId: s.id,
+      sebep: "MUSTERI_VAZGECTI",
+      not: OTO_IPTAL_NOTU_HB,
+      onaylananImza: onizleme.imza,
+      kullaniciId: null,
+      an: iptalAni,
+    });
+    if (sonuc.tamam) otoIptalYazilan++;
+    else {
+      otoIptalEngellendi++;
+      console.log(`   ⚠ OTOMATİK İPTAL YAZILAMADI  ${s.code}  ${sonuc.engel}`);
+    }
+  }
+  console.log(`   AÇIK SİPARİŞ YOKLAMASI (son ${HB_IPTAL_PENCERESI_GUN} gün, tavan ${HB_IPTAL_TAVANI})  ${hbIptalAdaylari.length}`);
+  if (otoIptalDetayDusen > 0) {
+    console.log(`     └─ DETAYI OKUNAMAYAN                            ${otoIptalDetayDusen}`);
+  }
+  if (otoIptalTespit > 0) {
+    console.log(`   ↺ SONRADAN İPTAL OLMUŞ (mevcut satış)            ${otoIptalTespit}`);
+    console.log(
+      `      ${YAZ ? "yazılan" : "yazılacak"} ${YAZ ? otoIptalYazilan : otoIptalTespit - otoIptalEngellendi} · engellenen ${otoIptalEngellendi}`,
+    );
   }
 
   // ═══ VARYANT KAPISI — ortak kod kuralı, iki kod adayı ═══════════════════
