@@ -51,7 +51,7 @@ import {
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 11;
+const BOLUM_SAYISI = 12;
 const kosanBolumler: string[] = [];
 
 let gecen = 0;
@@ -837,6 +837,67 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
   );
 
   kosanBolumler.push("k212-arama-etiket-ceyrek");
+}
+
+/**
+ * ═══ FİLTRE PANELİ — SIRALA/YÖN/SATIR ANINDA UYGULANIR (11.09.2026) ═══════
+ * Kullanıcı: "filtrelerin frontend'i daha efektif olabilir" → netleşince
+ * (AskUserQuestion): kompakt + az tıkla + net gruplama. Sırala/Yön/Satır
+ * artık `OtomatikGonderSecim`den geçiyor (değişince formu gönderir);
+ * Marka/Kategori/EnAzAdet/EnAzCiro hâlâ "Uygula" bekliyor (serbest metin/
+ * uzun liste, her tuşta göndermek gereksiz sayfa geçişi üretirdi).
+ */
+{
+  const suzgecKaynagi = readFileSync(
+    "src/app/rapor/urunler/analiz-suzgeci.tsx",
+    "utf8",
+  );
+  dogru(
+    "OtomatikGonderSecim İTHAL EDİLİYOR",
+    suzgecKaynagi.includes(
+      'import { OtomatikGonderSecim } from "./otomatik-gonder-secim";',
+    ),
+  );
+  for (const [alan, ad] of [
+    ["analiz-sirala", "Sırala"],
+    ["analiz-yon", "Yön"],
+    ["analiz-satir", "Satır Sayısı"],
+  ] as const) {
+    const baslangic = suzgecKaynagi.indexOf(`id="${alan}"`);
+    dogru(`${ad} alanı bulundu`, baslangic >= 0);
+    const oncekiSatir = suzgecKaynagi.lastIndexOf("\n", baslangic);
+    const ikiSatirOnce = suzgecKaynagi.lastIndexOf("\n", oncekiSatir - 1);
+    dogru(
+      `  ...${ad} OtomatikGonderSecim İÇİNDE (çıplak <select> değil)`,
+      suzgecKaynagi.slice(ikiSatirOnce, baslangic).includes("<OtomatikGonderSecim"),
+    );
+  }
+  /** ⚠ TEK ID — eski "Satır Sayısı" bloğu taşınmadan KOPYALANSAYDI iki
+   *  `id="analiz-satir"` doğardı ve ikisi de aynı label'a bağlanırdı. */
+  const satirIdSayisi = (
+    suzgecKaynagi.match(/id="analiz-satir"/g) ?? []
+  ).length;
+  dogru("analiz-satir TEK YERDE tanımlı (eski blok silindi)", satirIdSayisi === 1);
+  dogru(
+    "EnAzAdet/EnAzCiro hâlâ düz <Input> — 'Uygula' bekliyor (serbest metin)",
+    suzgecKaynagi.includes('id="analiz-min-adet"') &&
+      /id="analiz-min-adet"[\s\S]{0,20}name="minAdet"[\s\S]{0,200}type="number"/.test(
+        suzgecKaynagi,
+      ),
+  );
+
+  const secimKaynagi = readFileSync(
+    "src/app/rapor/urunler/otomatik-gonder-secim.tsx",
+    "utf8",
+  );
+  dogru(
+    "OtomatikGonderSecim GERÇEKTEN formu gönderiyor (onChange → requestSubmit)",
+    /onChange=\{\(e\) => e\.currentTarget\.form\?\.requestSubmit\(\)\}/.test(
+      secimKaynagi,
+    ),
+  );
+
+  kosanBolumler.push("filtre-paneli-anlik-uygula");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

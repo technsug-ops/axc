@@ -21,6 +21,7 @@ import {
 } from "@/lib/rapor/urun-analizi";
 import { YAS_KOVALARI } from "@/lib/yaslanma";
 import { AnalizAramaKutusu } from "./analiz-arama-kutusu";
+import { OtomatikGonderSecim } from "./otomatik-gonder-secim";
 
 /**
  * ============================================================================
@@ -215,8 +216,13 @@ export async function AnalizSuzgeci({
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {/* ── SIRALAMA ── */}
+      {/* ── GÖRÜNÜM (Sırala/Yön/Satır — DEĞİŞİNCE ANINDA uygulanır) +
+          EŞİKLER (En az adet/ciro — serbest metin, "Uygula" bekler).
+          ⚠ TEK IZGARADA: kullanıcı isteği 11.09.2026 ("daha az tıkla, daha
+          kompakt, net gruplama") — beşi de "listede ne var, nasıl sıralı"
+          sorusuna cevap verdiği için aynı satırda. */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {/* ── SIRALAMA — anında uygulanır ── */}
         <div className="space-y-1.5">
           <label
             htmlFor="analiz-sirala"
@@ -224,7 +230,7 @@ export async function AnalizSuzgeci({
           >
             {t("sirala")}
           </label>
-          <select
+          <OtomatikGonderSecim
             id="analiz-sirala"
             name="sirala"
             defaultValue={sira}
@@ -235,10 +241,10 @@ export async function AnalizSuzgeci({
                 {siraEtiketi[a]}
               </option>
             ))}
-          </select>
+          </OtomatikGonderSecim>
         </div>
 
-        {/* ── YÖN ── */}
+        {/* ── YÖN — anında uygulanır ── */}
         <div className="space-y-1.5">
           <label
             htmlFor="analiz-yon"
@@ -246,7 +252,7 @@ export async function AnalizSuzgeci({
           >
             {t("yon")}
           </label>
-          <select
+          <OtomatikGonderSecim
             id="analiz-yon"
             name="yon"
             defaultValue={yon}
@@ -254,10 +260,33 @@ export async function AnalizSuzgeci({
           >
             <option value="azalan">{t("yonAzalan")}</option>
             <option value="artan">{t("yonArtan")}</option>
-          </select>
+          </OtomatikGonderSecim>
         </div>
 
-        {/* ── EN AZ ADET ──
+        {/* ── SATIR SAYISI — anında uygulanır ──
+            Kullanıcı: "50 ürüne kadar listelensin, istekle 100'e çıkabilsin." */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="analiz-satir"
+            className="text-muted-foreground text-xs font-medium"
+          >
+            {t("satirSayisi")}
+          </label>
+          <OtomatikGonderSecim
+            id="analiz-satir"
+            name="satir"
+            defaultValue={String(satir)}
+            className="border-input bg-background h-11 w-full rounded-md border px-3 text-sm"
+          >
+            {SATIR_SAYILARI.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </OtomatikGonderSecim>
+        </div>
+
+        {/* ── EN AZ ADET — "Uygula"yı bekler (serbest metin)
             ⚠ Yer tutucu "örn. 2" — girilmiş DEĞER sanılmasın (İlke #11). */}
         <div className="space-y-1.5">
           <label
@@ -279,7 +308,7 @@ export async function AnalizSuzgeci({
           />
         </div>
 
-        {/* ── EN AZ CİRO ── */}
+        {/* ── EN AZ CİRO — "Uygula"yı bekler ── */}
         <div className="space-y-1.5">
           <label
             htmlFor="analiz-min-ciro"
@@ -311,7 +340,7 @@ export async function AnalizSuzgeci({
           ve form göndermeye gerek yok — kova KÜMEYİ belirler, ötekiler
           küme İÇİNDE daraltır. */}
       {eksen === "stok" ? (
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 border-t pt-3">
           <span className="text-muted-foreground text-xs font-medium">
             {tStok("yasKovaBaslik")}
           </span>
@@ -355,7 +384,7 @@ export async function AnalizSuzgeci({
           minCiro gibi geçici bir daraltma değil, EKSEN gibi bir GÖRÜNÜM
           seçimi (bkz. `temizAdres` zaten pencere/kanal/parayı KORUYOR). */}
       {eksen !== "stok" && eksen !== "mevsim" ? (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 border-t pt-3 md:grid-cols-2">
           {/* ── DÖNEM ── */}
           <div className="space-y-1.5 md:col-span-2">
             <span className="text-muted-foreground text-xs font-medium">
@@ -534,7 +563,7 @@ export async function AnalizSuzgeci({
           ⛔ Dönem/Kanal/Para'nın TERSİNE her eksende çizilir: etiketler
           ÜRÜNE ait, hangi eksene bakıldığından bağımsız (stok ekseninde de
           "favori mi" sorusu anlamlı). */}
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4 border-t pt-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-muted-foreground text-xs font-medium">
             {t("etiketBaslik")}
@@ -593,7 +622,7 @@ export async function AnalizSuzgeci({
       {/* ── MARKA VE KATEGORİ — katlanır, çünkü uzun.
           `<details>` VARSAYILAN KAPALI: açık gelseydi 100+ marka ekranı
           yutar ve asıl liste ekranın altına düşerdi (İlke #13). */}
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 border-t pt-3 md:grid-cols-2">
         <OnayIzgarasi
           ad="marka"
           baslik={t("marka")}
@@ -610,30 +639,10 @@ export async function AnalizSuzgeci({
         />
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
-        {/* ── SATIR SAYISI ──
-            Kullanıcı: "50 ürüne kadar listelensin, istekle 100'e çıkabilsin." */}
-        <div className="space-y-1.5">
-          <label
-            htmlFor="analiz-satir"
-            className="text-muted-foreground text-xs font-medium"
-          >
-            {t("satirSayisi")}
-          </label>
-          <select
-            id="analiz-satir"
-            name="satir"
-            defaultValue={String(satir)}
-            className="border-input bg-background h-11 rounded-md border px-3 text-sm"
-          >
-            {SATIR_SAYILARI.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </div>
-
+      {/* ── UYGULA / TEMİZLE — yalnız EŞİKLER (en az adet/ciro) ve
+          MARKA/KATEGORİ için gerekli; Sırala/Yön/Satır/Dönem/Kanal/Para/
+          Etiketler zaten tek tıkla uygulanmıştı. */}
+      <div className="flex flex-wrap items-center gap-3 border-t pt-3">
         <Button type="submit" className="h-11">
           {t("uygula")}
         </Button>

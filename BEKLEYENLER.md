@@ -317,12 +317,40 @@ bir ADLAR listesiydi, ekranlar değil.)_
   mutasyonla sınandı (kırmızı yandığı görüldü, dosya silindi) — aynı hata
   bir sonraki farklı isimli arama kutusunda TEKRARLANMASIN diye.
 
+### ─── ③ DÜZELTME: FİLTRE PANELİ YENİDEN DÜZENLENDİ · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+Kullanıcı: _"filtrelerin frontend'i daha efektif olabilir."_ Belirsizdi;
+AskUserQuestion ile netleştirildi — kullanıcı üçünü BİRDEN seçti: **daha
+kompakt**, **daha az tıkla sonuca ulaşılsın**, **görsel hiyerarşi/gruplama
+netleşsin**.
+
+**YAPILAN:**
+- **Az tıkla** — Sırala/Yön/Satır Sayısı artık DEĞİŞİNCE ANINDA uygulanıyor
+  (yeni `otomatik-gonder-secim.tsx`, `onChange` → `form.requestSubmit()`).
+  Önceden Dönem/Kanal/Para/Etiket çipleri tek tıktı ama bu üçü hâlâ
+  "Uygula" bekliyordu — tutarsızlık giderildi. En Az Adet/Ciro BİLEREK
+  dokunulmadı: serbest metin, her tuşta göndermek sayfa geçişi demek.
+- **Kompakt** — "Satır Sayısı" eskiden ekranın EN ALTINDA, ayrı bir
+  satırdaydı; şimdi Sırala/Yön'ün yanında, TEK bir 5 sütunlu ızgarada
+  (Sırala · Yön · Satır · En Az Adet · En Az Ciro). Bir satır tasarruf.
+- **Gruplama** — büyük bölümler (Görünüm+Eşikler / Raf Yaşı / Dönem-Kanal-
+  Para / Etiketler / Marka-Kategori / Uygula-Temizle) artık ince bir üst
+  çizgiyle (`border-t`) ayrılıyor; göz hangi filtrenin hangi grupla
+  ilişkili olduğunu daha kolay ayırt ediyor.
+- Test: `scripts/urun-analizi-dogrula.ts`'e yeni bölüm (12.) — Sırala/Yön/
+  Satır'ın `OtomatikGonderSecim` İÇİNDE olduğu, `analiz-satir` kimliğinin
+  TEK yerde tanımlı kaldığı (eski blok gerçekten silindi, kopyalanmadı),
+  En Az Adet/Ciro'nun hâlâ düz `<Input>` olduğu, `onChange`'in gerçekten
+  `requestSubmit` çağırdığı — **4 mutasyonla** sınandı, hepsi kırmızı
+  yandı, dosyalar bit-bit geri yüklendi.
+
 ### HALİL TESTİ — kapanma şartı (canlı migration koştuktan sonra)
 1. `/rapor/urunler` → **Ara** kutusuna bir barkod/SKU yaz → doğru ürün(ler)
    listelenmeli. Ürün adının bir parçasını yaz → o da bulunmalı.
    **Ve** kamera ikonuna bas → telefon/tablette kamera açılmalı, bir
    barkod okutunca arama KENDİLİĞİNDEN çalışmalı (Ara'ya basmaya gerek
-   yok).
+   yok). **Sırala**/**Yön**/**Satır sayısı** kutularından birini
+   değiştir → sayfa KENDİLİĞİNDEN yenilenmeli, "Uygula"ya basmaya gerek
+   kalmamalı.
 2. Bir üründe **yıldız** ikonuna bas → favori işaretlenmeli (renk değişir),
    tekrar basınca kalkmalı. **Bayrak** ikonu için aynısı (incelenecek).
 3. **Yaz**/**Kış** düğmesine bas → seçili görünmeli; tekrar basınca
