@@ -293,3 +293,40 @@ export async function tazminatDurumDegistir(
   tazele();
   return { basari: t("durumDegisti", { durum: tDurum(yeni) }) };
 }
+
+/**
+ * ============================================================================
+ *  NOT GÜNCELLEME (K208)
+ * ----------------------------------------------------------------------------
+ *  _Kullanıcı 11.09.2026: talebi kabul ettirdi, faturasını kesti, ödeme
+ *  gelene kadar fatura numarasını takip edebileceği bir yer istedi._
+ *
+ *  `note` alanı ŞEMADA zaten vardı (talep açılırken yazılıyordu) ama hiçbir
+ *  ekran onu SONRADAN değiştirmiyordu — açılış anındaki notla donuyordu.
+ *  Durum değişimi gibi bu da SERBEST METİN, ledger tutarı DEĞİL; ters kayıt
+ *  gerektirmez, üzerine yazılır.
+ * ============================================================================
+ */
+export async function tazminatNotGuncelle(
+  _oncekiDurum: TazminatDurumu,
+  formData: FormData,
+): Promise<TazminatDurumu> {
+  await yetkiIste("tazminat.yaz");
+
+  const t = await getTranslations("Tazminat");
+
+  const id = String(formData.get("id") ?? "");
+  const not = String(formData.get("note") ?? "").trim();
+  if (!id) return { hatalar: [t("kimlikBulunamadi")] };
+
+  const kayit = await prisma.compensation.findUnique({ where: { id } });
+  if (!kayit) return { hatalar: [t("bulunamadi")] };
+
+  await prisma.compensation.update({
+    where: { id },
+    data: { note: not || null },
+  });
+
+  tazele();
+  return { basari: t("notKaydedildi") };
+}

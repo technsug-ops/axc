@@ -1946,6 +1946,8 @@
     "kimlikBulunamadi": "Talep kimliği bulunamadı.",
     "bulunamadi": "Talep bulunamadı.",
     "durumDegisti": "Durum \"{durum}\" olarak güncellendi.",
+    "notEkle": "Not ekle",
+    "notKaydedildi": "Not kaydedildi.",
     "sutunTedarikci": "Tedarikçi",
     "sutunUrun": "Ürün",
     "sutunAlim": "Alım",

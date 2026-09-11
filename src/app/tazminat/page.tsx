@@ -26,6 +26,7 @@ import {
 } from "@/lib/tazminat";
 
 import { DurumSecici } from "./durum-secici";
+import { NotAlani } from "./not-alani";
 import { TalepFormu, type HasarKalemi } from "./talep-formu";
 
 export const dynamic = "force-dynamic";
@@ -364,7 +365,10 @@ export default async function TazminatSayfasi() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <DurumSecici kayitId={k.id} mevcut={k.status} />
+                          <div className="flex flex-col gap-2">
+                            <DurumSecici kayitId={k.id} mevcut={k.status} />
+                            <NotAlani kayitId={k.id} not={k.note} />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -412,7 +416,12 @@ export default async function TazminatSayfasi() {
                         ),
                       },
                     ]}
-                    eylemler={<DurumSecici kayitId={k.id} mevcut={k.status} />}
+                    eylemler={
+                      <div className="flex flex-col gap-2">
+                        <DurumSecici kayitId={k.id} mevcut={k.status} />
+                        <NotAlani kayitId={k.id} not={k.note} />
+                      </div>
+                    }
                   />
                 ))}
               </div>
