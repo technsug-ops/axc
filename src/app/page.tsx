@@ -2258,7 +2258,7 @@ export default async function AnaSayfa({
   }
 
   return (
-    <div className="min-w-0 space-y-6">
+    <div className="min-w-0 space-y-4">
       {/*
         ⚠ TEK SATIR, KUTU DEĞİL. Dönem durumu bir GÖREV değil bir BAĞLAM:
         "nerede duruyoruz" bilgisi. Kutu yapılsaydı panelde iş varmış gibi

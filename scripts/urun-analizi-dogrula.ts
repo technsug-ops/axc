@@ -51,7 +51,7 @@ import {
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 12;
+const BOLUM_SAYISI = 13;
 const kosanBolumler: string[] = [];
 
 let gecen = 0;
@@ -898,6 +898,24 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
   );
 
   kosanBolumler.push("filtre-paneli-anlik-uygula");
+}
+
+/**
+ * ═══ KANAL ÇİPLERİ — YALNIZ GERÇEK SATIŞI OLAN KANALLAR (11.09.2026) ═════
+ * Kullanıcı: "buradaki kanalların istediğimizi görünür yapalım." Ölçüldü
+ * (canlı): `isActive` tek başına 12 kanal veriyordu, 7'sinde HİÇ satış yok
+ * (A101, Bim, MediaMarkt, Pazarama, PTTAvm, Teknosa, Vatan) — seçilince boş
+ * liste açan bir çip İlke #2'yi çiğniyordu.
+ */
+{
+  const sayfa = readFileSync("src/app/rapor/urunler/page.tsx", "utf8");
+  dogru(
+    "kanal seçenekleri yalnız GERÇEK satışı olan kanalları soruyor",
+    sayfa.includes(
+      "where: { isActive: true, accounts: { some: { sales: { some: {} } } } },",
+    ),
+  );
+  kosanBolumler.push("kanal-secenekleri-gercek-satis");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

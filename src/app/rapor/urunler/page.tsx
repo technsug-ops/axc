@@ -208,9 +208,19 @@ export default async function UrunAnaliziSayfasi({
      * zaten yalnız SEÇİLİ kanalı taşıyor. Oradan seçenek türetilseydi diğer
      * kanallar listeden DÜŞER, geri dönmek imkânsızlaşırdı (aynı tuzak,
      * marka/kategori yorumundaki gerekçenin aynısı — kaynak farklı).
+     *
+     * ⚠ YALNIZ GERÇEKTEN SATIŞI OLAN KANALLAR (kullanıcı isteği 11.09.2026):
+     * `isActive` tek başına yetmez — iş sabitindeki 12 kanalın (Amazon, Bim,
+     * MediaMarkt…) hepsi `isActive: true` ve hiçbiri gerçek satış hesabı
+     * olmadan da çipte görünüyordu. Seçilince BOŞ liste açan bir çip İlke
+     * #2'yi çiğner ("tıklanabilir görünüp hiçbir şey yapmayan bir kontrol,
+     * kullanıcıya 'sistem bozuk' dedirtir"). Ölçüt: bu kanalın EN AZ bir
+     * hesabında EN AZ bir satış var mı — dönem/kanal süzgecinden BAĞIMSIZ
+     * (tüm zamanlar), yoksa "Son 3 ay"da satışı olmayan gerçek bir kanal da
+     * çipten sessizce düşerdi.
      */
     prisma.channel.findMany({
-      where: { isActive: true },
+      where: { isActive: true, accounts: { some: { sales: { some: {} } } } },
       select: { code: true, name: true },
       orderBy: { name: "asc" },
     }),
