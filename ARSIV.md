@@ -18,6 +18,87 @@
 
 ---
 
+## ✅ K-HB-KAPSAM — TUTAR KAYNAĞI ÖLÇÜLDÜ, MİMAR KABUL ETTİ, YAZIM ZATEN GERÇEKLEŞMİŞ · 07.09.2026 → 11.09.2026 · [KAPANDI]
+
+> **Mimar şartı:** _"Delivered/ClaimCreated siparişin SİPARİŞ-ANI tutarı hangi
+> kaynaktan güvenilir alınıyor? Listeleme fiyatı KABUL DEĞİL."_
+> Üç sonuçlu ölçüt: **SAĞLAM** · **AYIRT EDİLEMEDİ** · **DURUR**.
+
+### ① HAKEDİŞ ÇAPRAZI — 131/135
+
+    TUTAN 131 · tutmayan 4 · detayı okunamayan 0
+    (SIPARIS_TUTARI + KAMPANYA = detay ucunun listesi)
+
+⚠ **İLK KOŞUM YANLIŞ KÜMEDEYDİ VE BU YAZILIYOR:** önce son teslim/kargo
+siparişleri alındı; 61'in **60'ının ödemesi düşmemişti** ve tek örnek de zaten
+bilinen bir anomaliydi. Tek örnekle hüküm kurulmaz — ne olumlu ne olumsuz.
+Örneklem hakedişi DÜŞMÜŞ siparişlere çevrildi.
+_(Anayasa: "cevapsız kapsam sorusunun üstüne ölçüm kurulmaz".)_
+
+⭐ **TUTMAYAN 4'ÜN SEBEBİ ÖLÇÜLDÜ — VE DETAY UCU SUÇLU DEĞİL:**
+
+    4282663277  açık 177,66  ↔  HB indirimi 177,66   TAM EŞİT
+    4702310503  açık 284,05  ↔  HB indirimi 284,05   TAM EŞİT
+    4006304001  açık 284,05  ↔  HB indirimi 284,05   TAM EŞİT
+    4636037047  açık 284,05  ↔  HB indirimi 284,05   TAM EŞİT
+    hakediş kodları: yalnız SIPARIS_TUTARI + STOPAJ
+    (KOMISYON · KARGO · KAMPANYA — ÜÇÜ DE YOK)
+
+⛔ **AYIRT EDİCİ:** detay ucu bugünkü liste fiyatını yansıtsaydı açıklar
+**rastgele** olurdu. Her biri tam olarak `hbDiscount` kadar — o rakamı yalnız
+siparişin **o günkü kaydı** bilir. Yani kusur hakediş tarafında: dört hakediş
+**eksik yazılmış**. _(Bu dördü K-HB-PAZARLAMA'da zaten "açık kalan küçük soru,
+Σ ₺1.028,83" diye kayıtlıydı — aynı dört sipariş.)_
+
+### ② BUGÜNKÜ LİSTE ÇAPRAZI — AYRIM ÜRETTİ
+
+    bugünkü listeleme fiyatından FARKLI  64 / 135
+    aynı                                 71
+
+⭐ **VE HEDEF SİPARİŞİN BİRİNDE FARK ₺900:**
+
+    4707418677  detay LİSTE 3.099,00  ·  bugünkü listeleme 3.999,00
+    4873413946  detay LİSTE 5.979,00  ·  bugünkü listeleme 5.979,00 (aynı)
+
+⛔ Listeleme fiyatı kullanılsaydı `4707418677` deftere **₺900 fazla** girerdi.
+Mimarın şartı tam bunu engelledi.
+
+### HÜKÜM (07.09.2026) — ÖLÇÜT HARFİYEN "DURUR", ATIF İSE BAŞKA YERİ GÖSTERİYOR
+
+Ölçüt `tutmayan === 0` istiyor; 4 var → **DURUR**, mimara rapor.
+⏭ **KARAR MİMARINDIR:** dört başarısızlık *"tutar kaynağı şüpheli"* mi demek,
+yoksa *"hakediş eksik yazılmış"* mı? Ölçüm ikincisini gösteriyor (açık = HB
+indirimi, kuruşuna) ama **ölçütü gevşetmek ölçümü yapanın işi değildir.**
+_(Anayasa: "eşiği soruyu soran koyamaz".)_
+
+⛔ **07.09.2026'DA HİÇBİR ŞEY YAZILMADI.** Enumerasyon genişletilmedi, iki
+sipariş (`4873413946` · `4707418677`, ₺9.078) yazılmadı; `--sadece=` onay
+süzgeci bu iki siparişe kilitli olarak koda yazıldı (K165 script'i) ama
+tetiklenmedi.
+
+### ⭐ KAPANIŞ (11.09.2026) — MİMAR KABUL ETTİ, KONTROL EDİLDİ: YAZIM ZATEN OLMUŞ
+
+Mimara (kullanıcıya) AskUserQuestion ile soruldu: _"4 siparişteki tutmazlığın
+sebebi (HB'nin hakediş kaydı indirimi eksik yazmış) kabul edilsin ve kalan
+131/131 'sağlam' sayılıp o 2 kayıp sipariş (₺9.078) siparişin kendi
+fiyatıyla deftere işlensin mi?"_ — **"Evet, açıklamayı kabul et, yaz"**
+seçildi.
+
+Onaylanan `--sadece=4873413946,4707418677` yazımı ÇALIŞTIRILMAK üzere önce
+önizleme (`--yaz` olmadan) koşuldu — ve KAÇAK RADARI **0** döndü: her iki
+sipariş de defterde **zaten VARDI**, tutarlar (`₺5.979` · `₺3.099`,
+toplam ₺9.078) beklenenle **kuruşuna** tutuyordu. 07.09'dan bu yana geçen
+dört günde (K184②③④, K195, K197, K201 iyileştirmeleri) normal periyodik HB
+çekimi bu iki siparişi zaten doğru fiyatla yakalamış — özel bir yazım
+gerekmedi, mimarın onayı fiilen zaten gerçekleşmiş bir durumu doğruladı.
+
+> **KURAL:** bir yazım onaylandığında, yazımdan ÖNCE mevcut durum kontrol
+> edilir — aradan geçen sürede normal operasyon aynı sonucu zaten üretmiş
+> olabilir. Kontrol etmeden "yazdım" demek, gereksiz bir ikinci yazım (ya da
+> daha kötüsü, sessizce farklı bir tutarla ikinci kayıt) riski taşırdı.
+
+---
+
 ## ✅ K205 — ÇEKİM BİRİNCİLİ cron-job.org'A TAŞINDI, HB'NİN GERÇEK ENGELİ BULUNDU · 10.09.2026 · [KAPANDI — canlı]
 
 > **Kullanıcı sordu:** _"Sistemin pazaryerlerinden bilgi yenilemesini benim
