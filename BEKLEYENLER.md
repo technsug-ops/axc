@@ -59,6 +59,28 @@ dogrula` 116/116, `tsc`/`lint`/`i18n`/`yerlesim` temiz.
 
 Geçerse: kapat, ARSIV.md'e taşı. Geçmezse: ekran görüntüsüyle bildir.
 
+### ─── ② K211 — UZUN ÜRÜN ADI SATIR TAŞMASI (kullanıcı canlıda buldu, 11.09.2026)
+
+K210'u test ederken ekran görüntüsüyle bildirildi: uzun ürün adları
+(ör. "Philips 7000 Serisi Buharlı Ütü — 2800W, SteamGlide Plus Taban...")
+hücre dışına taşıp ALTTAKİ satırın kimlik kodlarının (barkod/kanal SKU)
+üstüne biniyordu. **K210'un DEĞİL, önceden var olan bir bug** — bu satır
+hiç dokunulmamış koddaydı, K210'un getirdiği süzgeçlerle ilgisi yok, kullanıcı
+sadece o ekranı açıkken fark etti.
+
+**Kök sebep:** `ui/table.tsx`'teki `TableCell` varsayılanı
+`whitespace-nowrap` (para/tarife bölünmesin diye, bilinçli) — ürün adı
+hücresi bunu geri almıyordu, uzun başlık satır yüksekliğini büyütmeden
+kutunun dışına taşıyordu.
+
+**Düzeltme:** ürün adı hücresine `whitespace-normal` + `line-clamp-2`
+(`kanal-sku/page.tsx`'teki AYNI desen — ad uzun ve kullanıcı okumak
+istiyor ama satır sınırsız uzamasın).
+
+Halil testine ek madde: **8.** yukarıdaki test listesinde, ürün adı çok
+uzun bir kalem varsa (ör. Philips ütü) o satırın metni ALTTAKİ satıra
+binmemeli, en fazla 2 satırda kalıp "…" ile kesilmelidir.
+
 ---
 
 ## 🔶 K206 — `/api/yedek/otomatik`: BLOB DEPOSU ASKIYA ALINMIŞ · 10.09.2026 · [ARA ÖNLEM KOŞTU — ASIL SEBEP AÇIK]

@@ -486,15 +486,30 @@ export default async function UrunAnaliziSayfasi({
                       const marj = marjYuzdesi(s);
                       return (
                         <TableRow key={s.variantId}>
-                          <TableCell className="max-w-md">
+                          <TableCell className="max-w-md whitespace-normal align-top">
                             <div className="min-w-0 space-y-0.5">
-                              {/* Tıklanabilir tıklanabilir GÖRÜNÜR (İlke #2) */}
+                              {/**
+                               * ⛔ K211 — UZUN ÜRÜN ADI ALT SATIRLARA TAŞIYORDU
+                               * (kullanıcı canlıda buldu, 11.09.2026). `TableCell`
+                               * varsayılanı `whitespace-nowrap`tır (para/tarih
+                               * bölünmesin diye — bkz. `ui/table.tsx`); bu hücre
+                               * onu YUKARIDA `whitespace-normal` ile AÇIKÇA
+                               * geri alıyor, yoksa uzun bir başlık satır
+                               * yüksekliğini büyütmeden hücre dışına taşıp
+                               * ALTTAKİ satırın üstüne biniyordu.
+                               * `line-clamp-2` — ad UZUN ve kullanıcı OKUMAK
+                               * istiyor ama satır sınırsız uzamasın
+                               * (`kanal-sku/page.tsx` ile AYNI desen).
+                               * Tıklanabilir tıklanabilir GÖRÜNÜR (İlke #2).
+                               */}
                               {s.urunId === null ? (
-                                <span className="font-medium">{s.urunAdi}</span>
+                                <span className="line-clamp-2 font-medium">
+                                  {s.urunAdi}
+                                </span>
                               ) : (
                                 <Link
                                   href={`/urunler/${s.urunId}`}
-                                  className="font-medium underline underline-offset-2 hover:no-underline"
+                                  className="line-clamp-2 font-medium underline underline-offset-2 hover:no-underline"
                                 >
                                   {s.urunAdi}
                                 </Link>
