@@ -112,6 +112,7 @@ import { prisma } from "@/lib/prisma";
 import { DURUM_SERIDI, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
+import { OzetKutusu } from "./ozet-kutusu";
 import { VitrinKutusu } from "./vitrin-kutusu";
 import {
   donemAlimi,
@@ -2452,6 +2453,10 @@ export default async function AnaSayfa({
             ⚠ TAM GENİŞLİK, AMA İÇERİK SINIRLI: kutunun satırları etiket-sol
             rakam-sağ yazıyor; tam genişlikte bu İlke #12'nin adıyla
             yasakladığı kalıp olurdu. Sınır bileşenin İÇİNDE duruyor. */}
+        {/* GÜNLÜK ÖZET TEASER (K-OZET) — kendi iznini kendi sınar, izinsizse
+            null döner ve hiçbir boşluk bırakmaz. */}
+        <OzetKutusu />
+
         <VitrinKutusu veri={vitrin} />
 
         {/* ⚠ 2/5 — 3/5 düzeni KORUNDU: ızgaraya dokunulmadı.

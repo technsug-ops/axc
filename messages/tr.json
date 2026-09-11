@@ -114,7 +114,8 @@
     "rafTasi": "Toplu raf taşıma",
     "donemler": "Muhasebe dönemleri",
     "malKabul": "Mal kabul",
-    "maliyetYontemi": "Maliyet yöntemi"
+    "maliyetYontemi": "Maliyet yöntemi",
+    "gunlukOzet": "Günlük Özet"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -813,7 +814,23 @@
     "yerlestir": "Yerleştir",
     "donemler": "Muhasebe dönemleri",
     "malKabul": "Mal kabul",
-    "maliyetYontemi": "Maliyet yöntemi"
+    "maliyetYontemi": "Maliyet yöntemi",
+    "gunlukOzet": "Günlük Özet"
+  },
+  "GunlukOzet": {
+    "baslik": "Günlük Özet",
+    "aciklama": "Uyarılar, görevler ve nakit/tazminat/kart borcu sinyallerini birleştiren, günde bir kez üretilen Türkçe anlatı. Her rakam sistemin kendi doğrulanmış verisinden gelir.",
+    "henuzYok": "Bugün için özet henüz üretilmedi.",
+    "bayat": "bayat",
+    "tamOzetiGor": "Tam özeti gör →",
+    "durumYayinda": "Bugünün özeti hazır.",
+    "durumReddedildi": "Otomatik anlatı bugün doğrulanamadı — güvenlik nedeniyle gösterilmiyor. Aşağıda, aynı verilerden üretilen sade bir liste var.",
+    "durumHata": "Otomatik anlatı bugün üretilemedi. Aşağıda, aynı verilerden üretilen sade bir liste var.",
+    "hicUretimYok": "Bu gün için henüz hiç üretim koşmadı.",
+    "tazelikTaze": "Güncel",
+    "tazelikEski": "Bayat — son üretimden {saat} saat geçti",
+    "tazelikYok": "Hiç üretim yok",
+    "kaynagaGit": "kaynağa git"
   },
   "Kamera": {
     "desteklenmiyor": "Bu tarayıcı kamera erişimini desteklemiyor. Kodu elle yazabilirsiniz.",

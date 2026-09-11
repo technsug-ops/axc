@@ -162,6 +162,29 @@ export function taksitlereBol(tutar: number, taksitSayisi: number): number[] {
 
 // ---------------------------------------------------------------------------
 
+/**
+ * ============================================================================
+ *  PARA BİRİMİ BAŞINA AÇIK TOPLAM — GÜNLÜK ÖZET İÇİN (K-OZET)
+ * ----------------------------------------------------------------------------
+ *  `kart-borcu/page.tsx`'teki `paraOzeti` haritasının kendisi limit/adet gibi
+ *  ekran-özel alanlar da taşıdığı için burada TEKRARLANMIYOR; bu yalnız
+ *  günlük özetin ihtiyaç duyduğu dar toplamı üretir — her kartın ZATEN
+ *  hesaplanmış (`kartBorcuHesapla` + `birlesikToplamlar`) açık toplamını
+ *  para birimine göre gruplar. Yeni bir borç kuralı YAZMAZ.
+ * ============================================================================
+ */
+export function kartlarinAcikToplami(
+  kartlar: { paraBirimi: string; acikToplam: number }[],
+): { paraBirimi: string; tutar: number }[] {
+  const harita = new Map<string, number>();
+  for (const k of kartlar) {
+    harita.set(k.paraBirimi, (harita.get(k.paraBirimi) ?? 0) + k.acikToplam);
+  }
+  return [...harita.entries()]
+    .map(([paraBirimi, tutar]) => ({ paraBirimi, tutar }))
+    .sort((a, b) => a.paraBirimi.localeCompare(b.paraBirimi));
+}
+
 export function kartBorcuHesapla(
   alimlar: BorcAlimi[],
   kart: KartAyari,

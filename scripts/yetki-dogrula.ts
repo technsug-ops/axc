@@ -289,6 +289,10 @@ const API_ISTISNALARI = new Map<string, string>([
     "src/app/api/olcum/route.ts",
     "curl ile çağrılır (yerel makineden canlı veritabanına TCP reddi var: ECONNREFUSED); tarayıcı oturumu taşıyamaz. Kendi CRON_SECRET koruması var ve sır tanımsızsa uç KAPALI döner. SALT OKUMA: `api:dogrula` bu dosyada prisma yazma çağrısını KIRMIZI yakar.",
   ],
+  [
+    "src/app/api/cron/ozet-uret/route.ts",
+    "K-OZET: TY/N11/HB cron uçlarıyla AYNI sınıf — dış zamanlayıcı (cron-job.org/GitHub Actions) çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz.",
+  ],
 ]);
 {
   const korumasiz: string[] = [];

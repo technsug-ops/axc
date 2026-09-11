@@ -105,6 +105,8 @@ export const YEDEK_TABLOLARI = [
   // --- muhasebe dönemi (K108): `kapatanId` ile `User`a bakar, o yüzden
   //     kullanıcılardan SONRA; başka hiçbir tabloya bağlı değil. ---
   "MuhasebeDonemi",
+  // --- günlük özet (K-OZET): hiçbir yabancı anahtarı yok, sırası serbest ---
+  "AiOzet",
   // --- stok defteri: yukarıdakilerin hepsine bakabilir, KENDİNE de ---
   "StockMovement",
   // --- hakediş ve tazminat ---

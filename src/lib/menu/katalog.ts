@@ -44,6 +44,7 @@ export const MENU_ADRESLERI: Record<string, string> = {
   hakedis: "/hakedis",
   tazminat: "/tazminat",
   nakitTakvimi: "/nakit-takvimi",
+  gunlukOzet: "/ozet",
   rapor: "/rapor",
   /** K129 — panelin dört analiz ekseninin tam, süzülebilir listesi. */
   urunAnalizi: "/rapor/urunler",
@@ -137,6 +138,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "hakedis", varsayilanGrup: "grupPara" },
   { anahtar: "tazminat", varsayilanGrup: "grupPara" },
   { anahtar: "nakitTakvimi", varsayilanGrup: "grupPara" },
+  { anahtar: "gunlukOzet", varsayilanGrup: "grupPara" },
   { anahtar: "rapor", varsayilanGrup: "grupPara" },
   { anahtar: "urunAnalizi", varsayilanGrup: "grupPara" },
 

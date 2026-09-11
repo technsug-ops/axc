@@ -1,4 +1,5 @@
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
+import { desiFarkliMi } from "@/lib/desi-karsilastirma";
 import { acikPartilerToplu } from "@/lib/stok";
 import { partiBagiTanisi, type BagTanisi } from "@/lib/parti-bagi-tanisi";
 import { kalemDusumleri } from "@/lib/satis";
@@ -162,6 +163,63 @@ export function kanalDesiOrtalamasi(
     ortalama: ornekler.reduce((t, x) => t + x, 0) / ornekler.length,
     ornekSayisi: ornekler.length,
   };
+}
+
+/**
+ * ============================================================================
+ *  DESİ DÜZELTMESİ BEKLEYEN VARYANT SAYISI — GÜNLÜK ÖZET İÇİN (K-OZET)
+ * ----------------------------------------------------------------------------
+ *  Bugün yalnız ürün kartında TEK varyant için görünen karşılaştırma
+ *  (`kanalDesiOrtalamasi` + `desiFarkliMi`), burada TÜM varyantlar için
+ *  aynı gövdeyle tekrarlanır — yeni bir kural YAZILMAZ. Kart sayfasıyla
+ *  aynı süzgeçler: iptal edilmiş satış ve kaldırılmış kalem girmez.
+ *
+ *  ⚠ PAHALI, BLOKLAMAYAN ÇAĞRI — Uyarı Merkezi'ndeki `maliyetsizStok` ile
+ *  aynı sınıf: bütün `kanalKargoDesi` dolu satış kalemlerini okur. Günlük
+ *  özet zaten günde bir kez (cron) üretildiği için sayfa çizimini bekletmez.
+ */
+export async function desiFarkliVaryantSayisi(): Promise<number> {
+  const kalemler = await prisma.saleItem.findMany({
+    where: {
+      sale: { iptalTarihi: null, kanalKargoDesi: { not: null } },
+      ...KALEM_GECERLI,
+    },
+    select: {
+      variantId: true,
+      quantity: true,
+      sale: { select: { kanalKargoDesi: true, _count: { select: { items: true } } } },
+      variant: { select: { product: { select: { desi: true } } } },
+    },
+  });
+
+  const gruplar = new Map<string, (typeof kalemler)[number][]>();
+  for (const k of kalemler) {
+    const liste = gruplar.get(k.variantId);
+    if (liste) liste.push(k);
+    else gruplar.set(k.variantId, [k]);
+  }
+
+  let sayac = 0;
+  for (const grup of gruplar.values()) {
+    const kanalDesi = kanalDesiOrtalamasi(
+      grup.map((k) => ({
+        quantity: k.quantity,
+        kanalKargoDesi: k.sale.kanalKargoDesi,
+        kalemSayisi: k.sale._count.items,
+      })),
+    );
+    if (kanalDesi === null) continue;
+    const bizimDesi = grup[0].variant.product.desi;
+    if (
+      desiFarkliMi(
+        bizimDesi === null ? null : Number(bizimDesi),
+        kanalDesi.ortalama,
+      )
+    ) {
+      sayac++;
+    }
+  }
+  return sayac;
 }
 
 /**

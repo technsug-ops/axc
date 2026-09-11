@@ -114,7 +114,8 @@
     "rafTasi": "",
     "donemler": "",
     "malKabul": "",
-    "maliyetYontemi": ""
+    "maliyetYontemi": "",
+    "gunlukOzet": ""
   },
   "Ortak": {
     "kapat": "",
@@ -813,7 +814,23 @@
     "yerlestir": "",
     "donemler": "",
     "malKabul": "",
-    "maliyetYontemi": ""
+    "maliyetYontemi": "",
+    "gunlukOzet": ""
+  },
+  "GunlukOzet": {
+    "baslik": "",
+    "aciklama": "",
+    "henuzYok": "",
+    "bayat": "",
+    "tamOzetiGor": "",
+    "durumYayinda": "",
+    "durumReddedildi": "",
+    "durumHata": "",
+    "hicUretimYok": "",
+    "tazelikTaze": "",
+    "tazelikEski": "",
+    "tazelikYok": "",
+    "kaynagaGit": ""
   },
   "Kamera": {
     "desteklenmiyor": "",

@@ -50,6 +50,11 @@ const ACIK_YOLLAR = [
   // ikinci kanalda sessizce tekrarlandı. Şimdi `cron-yollari:dogrula`
   // her cron rotasını TARAYIP bu listede olduğunu doğruluyor.
   "/api/cron/hb-cekim",
+  // K-OZET — günlük özet üretim ucu: aynı sınıf, aynı CRON_SECRET kapısı.
+  // K166/K-HB-CRON'un ikisinin de öğrettiği ders bu satırla baştan
+  // uygulandı: yeni bir cron rotası, ACIK_YOLLAR'a EKLENMEDEN canlıya
+  // gitmez — `cron-yollari:dogrula` bunu her cron rotasını TARAYARAK sınar.
+  "/api/cron/ozet-uret",
   // A3/K50-a — canlı ölçüm ucu: yerel makineden canlı DB'ye TCP seviyesinde
   // erişilemediği için Vercel'in kendi havuzundan koşuyor; aynı sınıf, aynı
   // sır kapısı. ⛔ BU SATIR DA EKSİKTİ (10.09.2026'da HB ile birlikte

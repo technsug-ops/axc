@@ -103,6 +103,16 @@ export const IZINLER = [
   { anahtar: "tazminat.yaz", grup: "para" },
   { anahtar: "kar.duzelt", grup: "para" },
   { anahtar: "kanalsku.yaz", grup: "para" },
+  /**
+   * K-OZET (11.09.2026) — GÜNLÜK ÖZET: nakit/kâr/tazminat/kart borcu
+   * sinyallerini tek anlatıda birleştiren sayfa. Bu izin TEK BAŞINA
+   * kapıdır — sayfa-bazlı model bunu böyle ister (bkz. dosya başlığı:
+   * "satis.kar.gor BİLİNÇLİ TEK İSTİSNADIR... başka hiçbir ekranda
+   * alan-izni açılmaz"). `/ozet` de her diğer sayfa gibi TEK izinle
+   * kapılıdır (`/tazminat` → `tazminat.yaz`, `/kart-borcu` → `kart.gor`
+   * örnekleriyle aynı desen) — ikinci bir bileşen-izni kontrolü YOK.
+   */
+  { anahtar: "ozet.gor", grup: "para" },
 
   // --- AYAR VE VERİ ---
   { anahtar: "ayar.yaz", grup: "ayar" },

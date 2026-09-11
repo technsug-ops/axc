@@ -122,6 +122,9 @@ export async function yedekUret(
     // Muhasebe dönemi (K108) — kapanış kararları; kaybolursa hangi
     // dönemin kapalı olduğu ve beyan sınırı yeniden üretilemez.
     MuhasebeDonemi: await istemci.muhasebeDonemi.findMany(),
+    // Günlük özet (K-OZET) — LLM anlatısı + girdi/doğrulama izi; kaybolursa
+    // hangi rakamların hangi gün gösterildiğinin kanıtı da kaybolur.
+    AiOzet: await istemci.aiOzet.findMany(),
     StockMovement: await istemci.stockMovement.findMany(),
     Settlement: await istemci.settlement.findMany(),
     SettlementItem: await istemci.settlementItem.findMany(),

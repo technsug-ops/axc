@@ -3266,3 +3266,57 @@ model MuhasebeDonemi {
   @@unique([yil, ay])
   @@index([durum])
 }
+
+/**
+ * ============================================================================
+ *  GÜNLÜK ÖZET — LLM ANLATISININ ÖNBELLEĞİ (K-OZET)
+ * ----------------------------------------------------------------------------
+ *  "Şema değişikliği en pahalı çözümdür" merdiveni izlendi: bu içerik
+ *  `AuditLog.detail`e sığmaz — bir OLAYIN izi değil, sayfanın OKUYACAĞI
+ *  GÜNCEL içeriktir (`Talep`e daha yakın bir yapı: geriye bakış değil,
+ *  ileri servis edilen veri). Üretimi (LLM çağrısı) pahalı olduğu için
+ *  önbelleklenmesi gerekiyor — SORGU ihtiyacı var, tablo bu yüzden haklı.
+ *
+ *  ⚠ `companyId` YOK — BİLİNÇLİ. Bu tablonun üzerine kurulduğu iki sistem
+ *  (Uyarı Merkezi, Görev Kutusu) tamamen firma-bağımsız GLOBAL sayaçlar;
+ *  40 modelin yalnız 3'ünde `companyId` var (bkz. `lib/yetki/izinler.ts`
+ *  başlığı). Yeni bir alanı çoğunluk deseninin dışında firma-kapsamlı
+ *  açmak, "tek firma varsayımını derinleştirmemek" ilkesini YANLIŞ yönde
+ *  uygulardı — kopyalandığı sistemlerle aynı şekilde kalır.
+ *
+ *  ⚠ `@@unique` YOK — KASITLI. Yeniden deneme (aynı gün ikinci cron tetiği)
+ *  çakışmaz; "en yeni kazanır" (`findFirst(orderBy: createdAt desc)`),
+ *  tazminat tahsilat izi / paketleme iziyle AYNI desen.
+ * ============================================================================
+ */
+enum AiOzetDurumu {
+  /** Doğrulamadan geçti — anlatiMetni dolu, ekranda gösterilir. */
+  YAYINDA
+  /** LLM ürettiği metin doğrulamadan geçemedi (çözülemeyen anahtar/serbest sayı) — deterministik yedeğe düşülür. */
+  REDDEDILDI
+  /** API çağrısı başarısız oldu (anahtar yok, ağ hatası vb.) — deterministik yedeğe düşülür. */
+  HATA
+}
+
+model AiOzet {
+  id String @id @default(cuid())
+
+  /// İş takvimi günü — `gunDegeri(isTakvimGunu(...))`. UTC gece yarısı.
+  isGunu DateTime @db.Date
+
+  /// `OzetVeriPaketi` — anti-halüsinasyon denetim izi (rakam kaynağına götürür).
+  girdiJson String @db.Text
+  /// Yalnız `durum` YAYINDA ise dolu.
+  anlatiMetni String? @db.Text
+  durum       AiOzetDurumu
+  /// Hangi anahtarlar/sayılar doğrulamadan geçti/geçmedi — teşhis için.
+  dogrulamaJson String @db.Text
+
+  modelAdi         String
+  girdiTokenSayisi Int?
+  ciktiTokenSayisi Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([isGunu, createdAt])
+}

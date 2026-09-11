@@ -91,6 +91,8 @@ export async function yetkiSeed(prisma: PrismaClient) {
      */
     "satis.duzenle",
     "satis.iptal",
+    // 11.09.2026 — K-OZET: günlük özet sayfası izne bağlandı.
+    "ozet.gor",
     /**
      * ⚠ `destek.yonet` BİLEREK BURADA DEĞİL (karar 16.08.2026).
      *

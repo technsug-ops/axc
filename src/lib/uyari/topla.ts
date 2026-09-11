@@ -144,7 +144,20 @@ function gecikmeKosulu(bugun: Date) {
   return { paidAt: null, dueDate: { not: null, lt: bugun } };
 }
 
-export async function uyarilariTopla(): Promise<Uyari[]> {
+/**
+ * ⚠ `tamGorunum` — YALNIZ SİSTEM BAĞLAMLI ÇAĞIRANLAR İÇİNDİR (K-OZET).
+ *
+ * Varsayılan (`false`) davranış DEĞİŞMEDİ: oturumdaki kullanıcının izinlerine
+ * göre süzülür (çan bunu çağırıyor). Günlük özet bir CRON işi — oturumu YOK,
+ * dolayısıyla `izinVarMi` her zaman `false` döner ve süzgeç HER İZİNLİ
+ * uyarıyı sessizce eler. Özetin kendisi zaten TEK bir sayfa izniyle
+ * (`ozet.gor`) kapılı — anayasadaki sayfa-bazlı izin modeliyle aynı: sayfa
+ * içeri girdiğinde ikinci bir alan-süzgeci açılmaz (`/tazminat`in kendi
+ * içinde ikinci bir izin sınamıyor olması gibi).
+ */
+export async function uyarilariTopla(
+  tamGorunum: boolean = false,
+): Promise<Uyari[]> {
   const bugun = gunDegeri(isTakvimGunu(new Date()));
 
   const [
@@ -289,6 +302,9 @@ export async function uyarilariTopla(): Promise<Uyari[]> {
           : Number(gecikenHakedis._sum.amount.toString()),
     },
   });
+
+  /** Sistem bağlamı (cron) — oturum yok, süzgeç uygulanmaz (yukarıdaki not). */
+  if (tamGorunum) return uyarilar;
 
   /**
    * İZİN SÜZGECİ BURADA, sayım öncesinde. Rozet 3 gösterip listede 1 uyarı

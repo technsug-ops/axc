@@ -36,6 +36,7 @@ import {
   PackagePlus,
   ScanSearch,
   ShieldCheck,
+  Sparkles,
   ShoppingCart,
   Store,
   Truck,
@@ -116,6 +117,7 @@ const MENU_IKONLARI: Record<string, typeof Package> = {
   hakedis: Banknote,
   tazminat: PackageX,
   nakitTakvimi: CalendarClock,
+  gunlukOzet: Sparkles,
   rapor: BarChart3,
   urunAnalizi: ListFilter,
 

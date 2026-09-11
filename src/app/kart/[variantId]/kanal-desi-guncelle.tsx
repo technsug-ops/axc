@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
 
 import { useBicim } from "@/lib/bicim-istemci";
+import { desiFarkliMi } from "@/lib/desi-karsilastirma";
 
 import { kanalDesiyleGuncelle } from "./desi-actions";
 
@@ -44,9 +45,7 @@ export function KanalDesiGuncelle({
     { tamam: true; yeniDesi: number } | { tamam: false } | null
   >(null);
 
-  /** Kuruşa değil ama makul hassasiyete — kart zaten öyle gösteriyor. */
-  const farkliMi =
-    bizimDesi === null || Math.round(bizimDesi * 100) !== Math.round(kanalOrtalama * 100);
+  const farkliMi = desiFarkliMi(bizimDesi, kanalOrtalama);
 
   const guncelle = () => {
     setSonuc(null);

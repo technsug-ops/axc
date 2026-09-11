@@ -103,6 +103,8 @@ export const MENU_BOLUM: Record<string, string | null> = {
   malKabul: null,
   /** ⚠ `null` — el kitabında maliyet yöntemi bölümü henüz YOK. */
   maliyetYontemi: null,
+  /** ⚠ `null` — el kitabında günlük özet bölümü henüz YOK (K-OZET, yeni ekran). */
+  gunlukOzet: null,
   urunler: "urun",
   urunKarti: "kart",
   simulasyon: "deneme",

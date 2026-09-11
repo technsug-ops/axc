@@ -1,0 +1,39 @@
+# ============================================================================
+#  K-OZET — GÜNLÜK ÖZET ÜRETİM CRONU — YEDEK TETİKLEYİCİ
+# ----------------------------------------------------------------------------
+#  BİRİNCİL TETİK cron-job.org (ty-cekim.yml'nin kendi 10.09.2026 gerekçesiyle
+#  aynı ölçüt: dış zamanlayıcı, dakika hassasiyetinde, ne bu akışa ne yerel
+#  makineye bağımlı). Bu iş YALNIZ YEDEK — cron-job.org tetiklemezse gün
+#  içinde bir kez burası dener.
+#
+#  ⚠ AYRI DOSYA, ty-cekim.yml'YE EKLENMEDİ — o işin kadansı 10 dakika ve
+#  içeriği farklı (kanal siparişi çekimi); günlük özet farklı bir iş, farklı
+#  bir kadans. Aynı dosyaya konsaydı "içerik adından geniş" istisnası buraya
+#  UYMAZDI (o istisna aynı işin genişlemesi içindi, burada tamamen ayrı iş).
+#
+#  ⚠ İDEMPOTENT: `ozetUretKos` bugünün satırı zaten YAYINDA ise hiçbir şey
+#  yapmaz — cron-job.org zaten üretmişse bu iş boş döner, gerçek API parası
+#  ikinci kez harcanmaz.
+#
+#  SIR: depo Secrets → CRON_SECRET (TY/N11/HB ile AYNI değer, Vercel'dekiyle de aynı).
+# ============================================================================
+name: Günlük özet üretimi (yedek)
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  uret:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ucu cagir
+        run: |
+          KOD=$(curl -s -o cevap.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://axc-seven.vercel.app/api/cron/ozet-uret")
+          echo "HTTP $KOD"
+          cat cevap.json || true
+          test "$KOD" = "200"
