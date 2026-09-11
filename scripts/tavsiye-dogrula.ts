@@ -5,7 +5,7 @@ import {
   type TavsiyeBicim,
 } from "../src/lib/tavsiye/veri-toplama";
 import { tavsiyeYedekAnlatiOlustur } from "../src/lib/tavsiye/yedek-anlati";
-import { ikiKatmanliAnahtarOku } from "../src/lib/llm/saglayicilar/ortak-anahtar";
+import { anahtariGizle, ikiKatmanliAnahtarOku } from "../src/lib/llm/saglayicilar/ortak-anahtar";
 import { aktifSaglayici } from "../src/lib/llm/saglayicilar";
 import type { KartOzeti } from "../src/lib/urun-karti";
 import type { KartVerisi } from "../src/lib/urun-karti-verisi";
@@ -258,7 +258,37 @@ kontrol(
     "Bu ürün için yeterli veri yok.",
 );
 
-/* ═══ ④ Geriye uyumlu sağlayıcı seçimi ortam değişkeni ══════════════════ */
+/* ═══ ④ SIR GÜVENLİĞİ — canlı bulgu 11.09.2026 ═══════════════════════════
+ * Vercel'de bir değişkenin değerine yanlışlıkla iki satır yapıştırıldı
+ * (anahtar + `OZET_LLM_SAGLAYICI=gemini`), SDK "invalid header value" ile
+ * çöktü ve HAM anahtar hata mesajının İÇİNDE canlı AuditLog'a yazıldı.
+ * İki ayrı savunma: (a) çok satırlı değerden yalnız İLK SATIR okunur,
+ * (b) hata mesajından anahtar HER İHTİMALE KARŞI ayrıca temizlenir. */
+console.log("\n  ── sır güvenliği (çok satırlı yapıştırma + hata mesajı sızıntısı)");
+kontrol(
+  "ikiKatmanliAnahtarOku — süreç ortamında ÇOK SATIRLI değerin yalnız İLK satırı okunur",
+  (() => {
+    const eski = process.env.TAVSIYE_DOGRULA_COK_SATIRLI;
+    process.env.TAVSIYE_DOGRULA_COK_SATIRLI = "gercek-anahtar-123\nOZET_LLM_SAGLAYICI=gemini";
+    const sonuc = ikiKatmanliAnahtarOku("TAVSIYE_DOGRULA_COK_SATIRLI");
+    if (eski === undefined) delete process.env.TAVSIYE_DOGRULA_COK_SATIRLI;
+    else process.env.TAVSIYE_DOGRULA_COK_SATIRLI = eski;
+    return sonuc === "gercek-anahtar-123";
+  })(),
+);
+kontrol(
+  "anahtariGizle — hata metnindeki anahtar [ANAHTAR GİZLENDİ] ile değişir",
+  anahtariGizle(
+    'Headers.append: "Bearer cokgizlibiranahtar123456" is an invalid header value.',
+    "cokgizlibiranahtar123456",
+  ) === 'Headers.append: "Bearer [ANAHTAR GİZLENDİ]" is an invalid header value.',
+);
+kontrol(
+  "anahtariGizle — anahtar mesajda YOKSA metin değişmeden döner",
+  anahtariGizle("başka bir hata", "cokgizlibiranahtar123456") === "başka bir hata",
+);
+
+/* ═══ ⑤ Geriye uyumlu sağlayıcı seçimi ortam değişkeni ══════════════════ */
 console.log("\n  ── aktifSaglayici geriye-uyum (LLM_SAGLAYICI ↔ OZET_LLM_SAGLAYICI)");
 kontrol(
   "tanımsız bir değişken null döner (dosyada da yoksa)",

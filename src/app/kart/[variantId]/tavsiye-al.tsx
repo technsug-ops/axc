@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
@@ -35,13 +34,9 @@ export function TavsiyeAl({ variantId }: { variantId: string }) {
     });
   };
 
+  /** ⚠ BAŞLIK BURADA TEKRAR YAZILMAZ — `page.tsx`teki `<Bolum baslik={t("tavsiyeBaslik")}>` zaten çiziyor; ikisi birden iki kez "Yapay zekâ tavsiyesi" basıyordu (canlı bulgu 11.09.2026). */
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Sparkles className="size-4 shrink-0" aria-hidden />
-        <span className="text-sm font-medium">{t("tavsiyeBaslik")}</span>
-      </div>
-
       {sonuc === null ? (
         <Button
           type="button"

@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 
-import { ikiKatmanliAnahtarOku } from "./ortak-anahtar";
+import { anahtariGizle, ikiKatmanliAnahtarOku } from "./ortak-anahtar";
 import type { LlmCevap, LlmSaglayici } from "./tipler";
 
 /**
@@ -38,7 +38,11 @@ async function metinUret(
       ciktiTokenSayisi: yanit.usage?.completion_tokens ?? 0,
     };
   } catch (e) {
-    return { tamam: false, sebep: "API_HATASI", detay: [(e as Error).message] };
+    return {
+      tamam: false,
+      sebep: "API_HATASI",
+      detay: [anahtariGizle((e as Error).message, anahtar)],
+    };
   }
 }
 
