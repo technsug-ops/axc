@@ -52,9 +52,13 @@ export function UrunEtiketleri({
 
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
+      {/* ⛔ HAM TAILWIND RENGİ YOK (panel:dogrula, uygulama-geneli yasak,
+          15.08.2026) — `amber-500`/`orange-500` gibi paletin dışından bir
+          ton yerine `variant` anahtarı kullanılıyor; Yaz/Kış düğmeleriyle
+          (aşağıda) AYNI desen: `default` = işaretli, `outline` = değil. */}
       <Button
         type="button"
-        variant="ghost"
+        variant={isFavorite ? "default" : "outline"}
         size="icon"
         disabled={bekliyor}
         aria-pressed={isFavorite}
@@ -64,10 +68,7 @@ export function UrunEtiketleri({
         title={isFavorite ? t("favoriKaldir") : t("favoriIsaretle")}
         /* ⚠ İlke #8 — 44px mobilde, 32px masaüstünde. `KargoDurumu`
            (`satislar/kargo-durumu.tsx`) ile AYNI desen. */
-        className={
-          "size-11 md:size-8 " +
-          (isFavorite ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground")
-        }
+        className="size-11 md:size-8"
         onClick={() => calistir(() => urunFavoriGuncelle(urunId, !isFavorite))}
       >
         <Star className={isFavorite ? "fill-current" : ""} />
@@ -75,7 +76,7 @@ export function UrunEtiketleri({
 
       <Button
         type="button"
-        variant="ghost"
+        variant={needsReview ? "default" : "outline"}
         size="icon"
         disabled={bekliyor}
         aria-pressed={needsReview}
@@ -83,10 +84,7 @@ export function UrunEtiketleri({
           needsReview ? t("incelenecekKaldir") : t("incelenecekIsaretle")
         }
         title={needsReview ? t("incelenecekKaldir") : t("incelenecekIsaretle")}
-        className={
-          "size-11 md:size-8 " +
-          (needsReview ? "text-orange-500 hover:text-orange-600" : "text-muted-foreground")
-        }
+        className="size-11 md:size-8"
         onClick={() =>
           calistir(() => urunIncelenecekGuncelle(urunId, !needsReview))
         }
