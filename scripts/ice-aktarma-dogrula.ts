@@ -2644,5 +2644,88 @@ console.log("\nONAY DURUMU ETİKETİ");
   );
 }
 
+/**
+ * ═══ K213 — ÇAKIŞAN SİPARİŞ SONRADAN İPTAL OLURSA OTOMATİK TESPİT ════════
+ *
+ * ⚠ KARAR SAF GÖVDEDE (`otomatikIptalAdayiMi`, `iptal-dogrula.ts`de değer
+ * testleriyle sınanıyor) — burada yalnız betiğin o gövdeyi GERÇEKTEN
+ * ÇAĞIRDIĞI ve YAZMA MOTORUNA (`iptalOnizle`/`iptalUygula`) bağlandığı
+ * doğrulanıyor. "Kural yazıldı mı değil, kapıya takıldı mı" dersinin
+ * aynısı — `karsiTarafGecerliMi`nin 23.08.2026'da hiçbir yerden
+ * çağrılmadığı vakayla.
+ */
+{
+  console.log("K213 çakışan sipariş sonradan iptal — otomatik tespit");
+  const ty = yorumsuz(readFileSync("scripts/canli-ty-ice-aktar.ts", "utf8"));
+
+  kontrol(
+    "betik otomatikIptalAdayiMi'yi İTHAL EDİYOR",
+    /import \{ otomatikIptalAdayiMi \} from "\.\.\/src\/lib\/satis-iptali"/.test(
+      ty,
+    ),
+  );
+  kontrol(
+    "betik iptalOnizle/iptalUygula'yı İTHAL EDİYOR (elle iptalle AYNI motor)",
+    /import \{ iptalOnizle, iptalUygula \} from "\.\.\/src\/lib\/satis-iptali-veri"/.test(
+      ty,
+    ),
+  );
+
+  /** ⚠ KAPI: karar gövdesi GERÇEKTEN çağrılıyor mu — desen var/yok değil,
+   *  ÇAĞRI şeklinde arandı ("indexOf sırası" tuzağına düşmemek için).
+   *  Blok `OTO_IPTAL_NOTU` TANIMINDAN başlar (loop'un içi DEĞİL) — yoksa
+   *  not metninin kendisi ("otomatik tespit edildi") sınır dışında kalır. */
+  const otoIptalBaslangic = ty.indexOf("const OTO_IPTAL_NOTU");
+  const otoIptalBlok = ty.slice(
+    otoIptalBaslangic,
+    ty.indexOf("for (const n of cakisanlar)", otoIptalBaslangic),
+  );
+  kontrol(
+    "her aday için otomatikIptalAdayiMi ÇAĞRILIYOR",
+    /if \(!otomatikIptalAdayiMi\(a, s\.iptalTarihi\)\) continue;/.test(
+      otoIptalBlok,
+    ),
+  );
+  kontrol(
+    "  ...önce ÖNİZLEME (iptalOnizle) kurulur — yazmadan ÖNCE",
+    otoIptalBlok.indexOf("await iptalOnizle(") <
+      otoIptalBlok.indexOf("await iptalUygula("),
+  );
+  kontrol(
+    "  ...gerçek yazım --yaz OLMADAN ÇALIŞMAZ (kapı: if (!YAZ) continue)",
+    /if \(!YAZ\) continue;[\s\S]{0,40}const sonuc = await iptalUygula\(/.test(
+      otoIptalBlok,
+    ),
+  );
+  kontrol(
+    "  ...sebep TAHMİN EDİLMİYOR — kapalı kümenin MUSTERI_VAZGECTI'si",
+    /sebep: "MUSTERI_VAZGECTI"/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...not OTOMATİK TESPİT olduğunu söylüyor (İlke #5, sessiz değil)",
+    /otomatik tespit edildi/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...kullanıcı YOK — insan uydurulmuyor (kullaniciId: null)",
+    /kullaniciId: null,/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...ayna hareketin ANI kanalın kendi iptal anı (a.iptalTarihi) — ŞİMDİ değil",
+    /an: a\.iptalTarihi,/.test(otoIptalBlok),
+  );
+
+  /** ⚠ MOTOR AYRIMI: elle iptal ile OTOMATİK iptal AYNI iki fonksiyonu
+   *  çağırıyor mu — iki ayrı motor olsaydı biri sessizce ayrışırdı. */
+  const elleIptal = readFileSync(
+    "src/app/satislar/[id]/iptal-actions.ts",
+    "utf8",
+  );
+  kontrol(
+    "elle iptal ekranı da AYNI iptalOnizle/iptalUygula'yı çağırıyor",
+    /iptalOnizle\(saleId, sebep, not\)/.test(elleIptal) &&
+      /await iptalUygula\(\{/.test(elleIptal),
+  );
+}
+
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
 process.exit(hata === 0 ? 0 : 1);

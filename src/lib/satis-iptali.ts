@@ -241,6 +241,34 @@ export function iptalImzasi(plan: IptalPlani): string {
 }
 
 /**
+ * ============================================================================
+ *  OTOMATİK İPTAL TESPİTİ — ÇAKIŞAN (ZATEN İTHAL EDİLMİŞ) SİPARİŞ İÇİN
+ * ----------------------------------------------------------------------------
+ *  K213 (11.09.2026). Kullanıcı bulgusu: müşteri kargoya vermeden vazgeçtiğinde
+ *  Trendyol pull'u — sipariş DAHA ÖNCE aktif satış olarak yazılmışsa — bu
+ *  değişikliği hiç görmüyordu; "çakışmada atla" kuralı (26.08.2026, Halil)
+ *  yalnız YENİ sipariş yazımını kapsıyordu, mevcut satışı yeniden sormuyordu.
+ *
+ *  Bu SAF fonksiyon, bir çakışan adayın otomatik iptale GİRMESİ gerekip
+ *  gerekmediğine karar verir. Gerçek yazma (`iptalOnizle`/`iptalUygula`,
+ *  `satis-iptali-veri.ts`) elle iptal ekranıyla BİREBİR AYNI motoru kullanır
+ *  — burası yalnız "bu aday bir DENEME hak ediyor mu" sorusuna cevap verir.
+ * ============================================================================
+ */
+export function otomatikIptalAdayiMi(
+  aday: { durum: string; iptalTarihi: Date | null },
+  mevcutSatisIptalTarihi: Date | null,
+): boolean {
+  if (aday.durum !== "Cancelled") return false;
+  /** ⚠ İPTAL ANI ÇÖZÜLEMEDİYSE ADAY DEĞİL — `occurredAt` uydurulmaz. */
+  if (aday.iptalTarihi === null) return false;
+  /** ⚠ ZATEN İPTALLİYSE İKİNCİ KEZ YAZILMAZ — çift `SALE_CANCEL_IN` stoğu
+   *  iki kez şişirirdi. */
+  if (mevcutSatisIptalTarihi !== null) return false;
+  return true;
+}
+
+/**
  * İptal edilen satış ciro/NET/hakediş kümesine GİRER Mİ — tek cevap.
  *
  * ⚠ Bu fonksiyon, süzgecin tek kaynağı olduğu için ayrıca vardır: her ekran

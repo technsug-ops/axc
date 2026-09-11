@@ -13,6 +13,80 @@
 
 ---
 
+## 🔶 K213 — TRENDYOL: SONRADAN İPTAL OLAN SİPARİŞ OTOMATİK TESPİT · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+
+### TALEP (kullanıcı, ekran görüntüsü + metin, 11.09.2026)
+_"Sipariş kargoya verilmeden önce müşteri tarafından Vazgeçtim / Daha Ucuz
+Buldum / Kargoya Teslimi Geç görünüyor gibi sebeplerle iptal edilebilir,
+bu durumda sipariş yok hükmündedir, bu iptaller pazaryerinden çekilerek,
+cirodan ve kârdan düşülüp iptal edilen miktar kadar stoğa eklenmeli."_
+
+### TEŞHİS
+Elle iptal (satış detayından "İptal Et") zaten doğru çalışıyordu — cironun/
+kârın/hakedişin dışına çıkarıyor ("hiç doğmamış sayılır") ve stoğu
+`SALE_CANCEL_IN` ile aynen geri veriyor (17.08.2026'da kurulmuş, olgun bir
+motor). Eksik olan **OTOMATİK tarafıydı**: periyodik TY çekimi
+(`canli-ty-ice-aktar.ts`) 26.08.2026'dan beri şu kuralı taşıyor —
+_"çakışan (zaten içe aktarılmış) sipariş varsa ATLA, üzerine yazma."_
+Yani sipariş önce AKTİF import edilip sistemde satış olarak durduktan
+SONRA pazaryerinde iptal edilirse, sonraki çekimler onu görmezden geliyor
+ve kimse elle iptal etmediği sürece o satış cirodan/kârdan düşmüyor —
+tam kullanıcının bildirdiği sızıntı.
+
+### KARAR (AskUserQuestion, kullanıcı: "Evet, otomatik yap")
+Otomatik tespit yazıldı. Karar sırasında **yalnız Trendyol** kapsandı —
+talepteki ekran görüntüsü TY siparişiydi ve HB/N11 için kullanıcı
+"mümkünse" demişti; kapsam bilinçli olarak dar tutuldu (aşağıya bkz.).
+
+### YAPILAN
+- `src/lib/satis-iptali.ts` → saf fonksiyon `otomatikIptalAdayiMi(aday,
+  mevcutSatisIptalTarihi)`: TY'nin `Cancelled` dediği VE iptal anı
+  çözülebilen VE bizim tarafta henüz iptalli olmayan siparişleri "aday"
+  sayar. Tahmin yok — TY'nin kendi beyanı (`durum === "Cancelled"`) ve
+  kendi zaman damgası (`iptalTarihi`) dışında hiçbir şeye bakmıyor.
+- `src/lib/satis-iptali-veri.ts` → `iptalUygula`nın `kullaniciId` tipi
+  `string | null`e gevşetildi. `izYaz`in kendi kuralıyla AYNI: `null`
+  "oturuma bakma, bilerek kimse yok" demek (K90) — otomatik tetikte
+  uydurma bir kullanıcı yazılmıyor.
+- `scripts/canli-ty-ice-aktar.ts` → mevcut (çakışan) siparişler taranırken
+  her aday için ÖNCE `iptalOnizle` (aynı önizle→uygula motoru, elle iptal
+  ekranıyla BİREBİR), engel yoksa `--yaz` altında `iptalUygula`. Not alanı
+  _"...otomatik tespit edildi (K213, canli-ty-ice-aktar)"_ — sessiz değil,
+  hangi satışın neden otomatik iptal olduğu kayıtta okunur.
+- Test: `scripts/iptal-dogrula.ts`'e 5 değer testi (saf fonksiyonun dört
+  dalı + Shipped durumunun aday sayılmadığı), `scripts/ice-aktarma-
+  dogrula.ts`'e kaynak-tarama bağlanma testi (import · çağrı sırası ·
+  `--yaz` kapısı · sebep sabitliği · not metni · `kullaniciId: null` ·
+  aynı motorun elle ekranla ortak olduğu) — **6 mutasyonla** sınandı,
+  hepsi kırmızı yandı, dosya bit-bit geri yüklendi.
+
+### ⛔ KAPSAM DIŞI — BİLEREK: HEPSIBURADA VE N11
+Yalnız Trendyol yazıldı. Kullanıcının talebi HB/N11 için "mümkünse"
+diyordu; bu turda yalnız TY'nin gerçek bir ekran görüntüsüyle bildirilen
+sızıntı kapatıldı. HB/N11'in kendi "Cancelled" karşılığı (durum adları,
+iptal anı alanı) henüz ölçülmedi — açılış şartı: birinin çekim betiğine
+(`canli-hb-ice-aktar.ts` / `canli-n11-ice-aktar.ts`) bakılıp aynı desenin
+uygulanabilirliği ölçülmesi.
+
+### HALİL TESTİ — kapanma şartı
+Bu bir OTOMATİK, finansal etkili değişiklik — canlı zamanlanmış bir
+cron'a giriyor. Sentetik deneme yerine gerçek bir vakayla doğrulanmalı:
+1. Trendyol'da az riskli bir siparişi (ör. düşük tutarlı) müşteri adına
+   "Vazgeçtim" ile iptal ettir (ya da bir sonraki gerçek müşteri
+   iptalini bekle).
+2. O siparişin sistemde zaten **aktif satış** olarak durduğunu doğrula
+   (`/satislar` içinde sipariş kodunu ara).
+3. Bir sonraki zamanlanmış TY çekimi (`ty-gunluk-cekim.cmd`, 5 dakikada
+   bir) geçtikten sonra aynı satışı aç: **İptal Edildi** rozeti görünmeli,
+   iptal notu _"...otomatik tespit edildi (K213...)"_ okunmalı.
+4. `/rapor` panelindeki GERÇEK NET / ciro rakamının o satış tutarı kadar
+   **düştüğünü**, `/stok` üzerinden ilgili varyantın adedinin iptal
+   edilen miktar kadar **arttığını** doğrula.
+5. Ekrandaki rakamlar teslim raporundaki beklenenle birebir tutmalı
+   (Halil testi madde c) — yaklaşık değil.
+
+---
+
 ## 🔶 K212 — ÜRÜN ANALİZİ: ARAMA · FAVORİ/İNCELENECEK · MEVSİM SEKMESİ · 11.09.2026 · [YAZILDI — CANLI MIGRATION + HALİL TESTİ BEKLİYOR]
 
 Kullanıcı: _"barkod EA ve diğer SKU'larla ürün arama butonu koy. Favori

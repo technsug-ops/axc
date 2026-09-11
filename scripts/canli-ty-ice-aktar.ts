@@ -18,6 +18,8 @@ import {
   teslimYazimiVarMi,
   type PaketGecmisi,
 } from "../src/lib/kanal-kargo-damgasi";
+import { iptalOnizle, iptalUygula } from "../src/lib/satis-iptali-veri";
+import { otomatikIptalAdayiMi } from "../src/lib/satis-iptali";
 
 /**
  * ============================================================================
@@ -515,6 +517,7 @@ export async function tyCekimKos(ayar: {
       kargoTakipBaglantisi: true,
       kanalKargoFirmasi: true,
       kanalKargoDesi: true,
+      iptalTarihi: true,
     },
   });
   let teslimYazilan = 0;
@@ -533,6 +536,84 @@ export async function tyCekimKos(ayar: {
     await prisma.sale.update({ where: { id: s.id }, data: veri });
     if (veri.deliveredAt) teslimYazilan++;
     if (veri.kargoTakipBaglantisi || veri.kanalKargoFirmasi) takipYazilan++;
+  }
+
+  /**
+   * ═══ ÇAKIŞAN SİPARİŞ SONRADAN İPTAL OLMUŞSA — OTOMATİK TESPİT (K213) ═══
+   *
+   * ⛔ NİYE VAR: bu betik YENİ bir sipariş zaten iptalli geldiyse onu
+   * `iptalTarihi` DOLU yazıyordu (Halil 26.08.2026, yukarıdaki③); ama
+   * ÇAKIŞAN (daha önce AKTİF yazılmış) bir sipariş SONRADAN Trendyol'da
+   * iptal olursa "çakışmada atla" kuralı bunu da kapsıyordu — sipariş
+   * sonsuza kadar ciro/kârda aktif kalıyordu, stok geri gelmiyordu.
+   * Kullanıcı bulgusu 11.09.2026: müşteri kargoya vermeden vazgeçebiliyor.
+   *
+   * ⚠ AYNI MOTOR — elle iptal ekranıyla (`satis-iptali-veri.ts`) BİREBİR
+   * aynı `iptalOnizle`/`iptalUygula` çağrılıyor. İki ayrı iptal mantığı
+   * olsaydı biri diğerinden sessizce ayrışırdı.
+   *
+   * ⚠ SEBEP TAHMİN EDİLMEZ, BEYAN EDİLİR: Trendyol API'si iptal NEDENİNİ
+   * (vazgeçtim / fiyat / geç kargo) bu uçta vermiyor — yalnız "Cancelled"
+   * durumunu ve `packageHistories`ten çözülen iptal ANINI. Sebep kapalı
+   * kümenin "sebepsiz vazgeçti" seçeneğiyle (`MUSTERI_VAZGECTI`)
+   * İŞARETLENİR, nota bunun OTOMATİK TESPİT olduğu yazılır — uydurma bir
+   * "fiyat" ya da "geç kargo" sebebi KODA GEÇMEZ.
+   *
+   * ⚠ MOTOR ZATEN KORUYOR: iadesi olan satış `iptalPlani` içinde
+   * REDDEDİLİR (bkz. `lib/satis-iptali.ts`) — burada AYRICA bir kontrol
+   * yazılmadı, tek ölçüt tek gövdede kalsın diye.
+   *
+   * ⚠ ÖNİZLEMEDE DE ÇAĞRILIR — `iptalOnizle` okuma-yalnız; `--yaz` OLMADAN
+   * da kaç kaydın engelleneceği (ör. iade var) görünür kılınır.
+   */
+  const OTO_IPTAL_NOTU =
+    "Trendyol'da iptal edildi — otomatik tespit edildi (K213, canli-ty-ice-aktar).";
+  let otoIptalTespit = 0;
+  let otoIptalEngellendi = 0;
+  let otoIptalYazilan = 0;
+  for (const s of mevcutTeslim) {
+    const a = adaylar.get(s.code ?? "");
+    if (!a) continue;
+    if (!otomatikIptalAdayiMi(a, s.iptalTarihi)) continue;
+    /** ⚠ SAF DAR TİP İÇİN — karar `otomatikIptalAdayiMi`de; bu yalnız
+     *  TypeScript'e `a.iptalTarihi`nin artık `Date` olduğunu anlatır. */
+    if (a.iptalTarihi === null) continue;
+
+    otoIptalTespit++;
+    const onizleme = await iptalOnizle(s.id, "MUSTERI_VAZGECTI", OTO_IPTAL_NOTU);
+    if (onizleme === null) {
+      otoIptalEngellendi++;
+      console.log(`   ⚠ OTOMATİK İPTAL ENGELLENDİ  ${s.code}  SATIS_YOK`);
+      continue;
+    }
+    if (!onizleme.plan.olur) {
+      otoIptalEngellendi++;
+      console.log(
+        `   ⚠ OTOMATİK İPTAL ENGELLENDİ  ${s.code}  ${onizleme.plan.engel}`,
+      );
+      continue;
+    }
+    if (!YAZ) continue;
+
+    const sonuc = await iptalUygula({
+      saleId: s.id,
+      sebep: "MUSTERI_VAZGECTI",
+      not: OTO_IPTAL_NOTU,
+      onaylananImza: onizleme.imza,
+      kullaniciId: null,
+      an: a.iptalTarihi,
+    });
+    if (sonuc.tamam) otoIptalYazilan++;
+    else {
+      otoIptalEngellendi++;
+      console.log(`   ⚠ OTOMATİK İPTAL YAZILAMADI  ${s.code}  ${sonuc.engel}`);
+    }
+  }
+  if (otoIptalTespit > 0) {
+    console.log(`   ↺ SONRADAN İPTAL OLMUŞ (mevcut satış)            ${otoIptalTespit}`);
+    console.log(
+      `      ${YAZ ? "yazılan" : "yazılacak"} ${YAZ ? otoIptalYazilan : otoIptalTespit - otoIptalEngellendi} · engellenen ${otoIptalEngellendi}`,
+    );
   }
 
   for (const n of cakisanlar) adaylar.delete(n);

@@ -177,7 +177,13 @@ export async function iptalUygula(girdi: {
   not: string | null;
   /** Ekranın onayladığı plan imzası — EK 1. */
   onaylananImza: string;
-  kullaniciId: string;
+  /**
+   * ⚠ `null` OLABİLİR — K213 (11.09.2026): pazaryeri pull'u kendiliğinden
+   * iptal tespit ettiğinde (`canli-ty-ice-aktar.ts`) bunu yapan bir insan
+   * yok. `izYaz`in kendi kuralıyla AYNI: `null` "oturuma bakma, kimse yok"
+   * demektir (K90) — uydurma bir kullanıcı yazılmaz.
+   */
+  kullaniciId: string | null;
   an: Date;
 }): Promise<IptalYazmaSonucu> {
   const kurulum = await planKur(girdi.saleId, girdi.sebep, girdi.not);

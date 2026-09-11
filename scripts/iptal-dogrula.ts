@@ -2,6 +2,7 @@ import {
   ACIKLAMA_ZORUNLU,
   iptalPlani,
   iptalliSayilirMi,
+  otomatikIptalAdayiMi,
   type CikisHareketi,
   type IptalGirdisi,
 } from "../src/lib/satis-iptali";
@@ -332,6 +333,37 @@ console.log("\nSATIŞ İPTALİ — DOĞRULAMA\n");
   kontrol(
     "her iki dalda da satış kimliği taşınıyor",
     "satisId" in aktif && "satisId" in iptalli,
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  K213 — OTOMATİK İPTAL TESPİTİ (çakışan/zaten ithal edilmiş sipariş)
+// ═══════════════════════════════════════════════════════════════════════════
+{
+  const an = new Date("2026-09-11T10:00:00.000Z");
+
+  kontrol(
+    "oto-iptal: Cancelled + çözülmüş an + mevcut satış aktif → ADAY",
+    otomatikIptalAdayiMi({ durum: "Cancelled", iptalTarihi: an }, null),
+  );
+  kontrol(
+    "oto-iptal: durum Cancelled DEĞİLSE aday değil",
+    !otomatikIptalAdayiMi({ durum: "Picking", iptalTarihi: null }, null),
+  );
+  kontrol(
+    "oto-iptal: Cancelled ama iptal ANI çözülemediyse aday DEĞİL (uydurulmaz)",
+    !otomatikIptalAdayiMi({ durum: "Cancelled", iptalTarihi: null }, null),
+  );
+  kontrol(
+    "oto-iptal: mevcut satış ZATEN iptalliyse aday DEĞİL (çift yazım yok)",
+    !otomatikIptalAdayiMi(
+      { durum: "Cancelled", iptalTarihi: an },
+      new Date("2026-09-10T00:00:00.000Z"),
+    ),
+  );
+  kontrol(
+    "oto-iptal: Shipped durumu aday değil (kargoya verilmiş sipariş iptal taraması dışında)",
+    !otomatikIptalAdayiMi({ durum: "Shipped", iptalTarihi: null }, null),
   );
 }
 
