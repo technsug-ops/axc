@@ -2349,48 +2349,62 @@ kontrol(
 }
 
 /**
- * ═══ K213 — HB: SİPARİŞ SONRADAN İPTAL OLMUŞ (11.09.2026) ═══════════════
+ * ═══ K213 — HB: SİPARİŞ SONRADAN İPTAL OLMUŞ (11.09.2026, TOPLU UÇ) ═════
  *
- * ⚠ TY/N11'İN AKSİNE HB'DE TOPLU BİR "İPTAL EDİLENLER" UCU YOK — ÖLÇÜLDÜ.
- * `siparisDetay` (tek sipariş) gerçek kaynak: canlıda elle iptal edilmiş
- * iki gerçek HB siparişinde `status: "CancelledByCustomer"` + gerçek
- * `lastStatusUpdateDate` GÖRÜLDÜ. Diskoveri farklı çalışır: bilinen
- * sipariş numarası GEREKİR, bu yüzden "hâlâ AÇIK saydığımız her siparişi
- * tek tek yokla" tasarımı (K195-3'ün aynı deseni — pencere + tavan —
- * farklı bir soru için tekrarlanıyor).
+ * ⚠ İLK SÜRÜM "HB'DE TOPLU İPTAL UCU YOK" DİYORDU — YANLIŞTI. Kullanıcının
+ * HB desteğinden aldığı bir doküman bağlantısı gerçek bir uç ortaya
+ * çıkardı: `GET /orders/merchantid/{id}/cancelled` — canlıda gerçek veri
+ * döndürdüğü ölçüldü (`cancelDate` · `cancelledBy` · `cancelReasonCode` ·
+ * `lineItemId`, KALEM düzeyi). Önceki "her açık siparişi tek tek yokla"
+ * tasarımı TAMAMEN kaldırıldı; artık TY/N11 ile AYNI desen (kanal ne
+ * söylüyorsa tek seferde tara).
  */
 {
-  console.log("K213 HB — sipariş sonradan iptal — açık sipariş yoklaması");
+  console.log("K213 HB — sipariş sonradan iptal — toplu iptal listesi");
   const hK = yorumsuz(readFileSync("scripts/canli-hb-ice-aktar.ts", "utf8"));
 
   kontrol(
-    "betik otomatikIptalAdayiMi'yi İTHAL EDİYOR",
-    /import \{ otomatikIptalAdayiMi \} from "\.\.\/src\/lib\/satis-iptali";/.test(hK),
+    "betik hbIptalSebebiCoz + otomatikIptalAdayiMi'yi İTHAL EDİYOR",
+    /import \{ hbIptalSebebiCoz, otomatikIptalAdayiMi \} from "\.\.\/src\/lib\/satis-iptali";/.test(
+      hK,
+    ),
   );
   kontrol(
     "betik iptalOnizle/iptalUygula'yı İTHAL EDİYOR (elle iptalle AYNI motor)",
     /import \{ iptalOnizle, iptalUygula \} from "\.\.\/src\/lib\/satis-iptali-veri";/.test(hK),
   );
+  kontrol(
+    "betik kalemGecerliMi'yi İTHAL EDİYOR (kısmi iptal guard'ı için)",
+    /import \{ kalemGecerliMi \} from "\.\.\/src\/lib\/kalem-gecerli";/.test(hK),
+  );
+  kontrol(
+    "hb/istemci.ts YENİ UCU tanımlıyor (iptalEdilenSiparisler)",
+    /iptalEdilenSiparisler: \(k: Kimlik, offset: number, limit: number\) =>/.test(
+      yorumsuz(readFileSync("scripts/hb/istemci.ts", "utf8")),
+    ),
+  );
 
-  const otoIptalBaslangic = hK.indexOf("const HB_IPTAL_PENCERESI_GUN");
+  const otoIptalBaslangic = hK.indexOf("const iptalCekimi = await tumKayitlar(");
   const otoIptalBlok = hK.slice(
     otoIptalBaslangic,
     hK.indexOf("// ═══ VARYANT KAPISI", otoIptalBaslangic),
   );
   kontrol("K213-HB blok bulundu", otoIptalBaslangic >= 0 && otoIptalBlok.length > 0);
   kontrol(
-    "  ...aday kümesi yalnız HÂLÂ AÇIK olanlar (shippedAt null + iptalTarihi null)",
-    /shippedAt: null,\s*iptalTarihi: null,\s*soldAt: \{ gte: hbIptalPencereBaslangici \},/.test(
-      otoIptalBlok,
-    ),
+    "  ...toplu uç ÇAĞRILIYOR (UCLAR.iptalEdilenSiparisler)",
+    /UCLAR\.iptalEdilenSiparisler\(k, offset, limit\)/.test(otoIptalBlok),
   );
   kontrol(
-    "  ...kanal durumu ÖNEK ile aranıyor (startsWith 'Cancelled') — tek literale kilitlenmiyor",
-    /String\(it\.status \?\? ""\)\.startsWith\("Cancelled"\)/.test(otoIptalBlok),
+    "  ...KISMİ İPTAL HARİÇ — satır sayısı geçerli kalem sayısından AZSA atlanır",
+    /if \(grup\.satirSayisi < gecerliKalemSayisi\) continue;/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...geçerli kalem sayısı kalemGecerliMi'den (kaldırılmış kalem SAYILMAZ)",
+    /s\.items\.filter\(kalemGecerliMi\)\.length/.test(otoIptalBlok),
   );
   kontrol(
     "  ...iptal anı GÜN HASSASİYETİNDE çözülüyor (hbKargoDamgasi, K195 ile AYNI risk)",
-    /hbKargoDamgasi\(iptalliKalem\.lastStatusUpdateDate\)/.test(otoIptalBlok),
+    /hbKargoDamgasi\(grup\.enSonCancelDateHam\)/.test(otoIptalBlok),
   );
   kontrol(
     "  ...her aday için otomatikIptalAdayiMi ÇAĞRILIYOR",
@@ -2407,8 +2421,10 @@ kontrol(
     /if \(!YAZ\) continue;[\s\S]{0,40}const sonuc = await iptalUygula\(/.test(otoIptalBlok),
   );
   kontrol(
-    "  ...sebep TAHMİN EDİLMİYOR — kapalı kümenin MUSTERI_VAZGECTI'si",
-    /sebep: "MUSTERI_VAZGECTI"/.test(otoIptalBlok),
+    "  ...sebep UYDURULMUYOR — hbIptalSebebiCoz kanalın kendi beyanından çözüyor",
+    /const sebep = hbIptalSebebiCoz\(grup\.cancelledBy, grup\.cancelReasonCode\);/.test(
+      otoIptalBlok,
+    ) && /sebep,$/m.test(otoIptalBlok),
   );
   kontrol(
     "  ...not OTOMATİK TESPİT olduğunu söylüyor (İlke #5, sessiz değil)",
@@ -2423,8 +2439,9 @@ kontrol(
     /an: iptalAni,/.test(otoIptalBlok),
   );
   kontrol(
-    "  ...detay çekilemeyen sipariş SAYILIYOR, sessizce atlanmıyor",
-    /otoIptalDetayDusen\+\+;/.test(otoIptalBlok),
+    "  ...toplu uç okunamazsa BU TUR ATLANIR, sessizce yutulmaz",
+    /if \(iptalCekimi\.tur !== "TAMAM"\) \{/.test(otoIptalBlok) &&
+      /İPTAL LİSTESİ OKUNAMADI/.test(otoIptalBlok),
   );
 }
 

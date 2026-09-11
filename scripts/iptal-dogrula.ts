@@ -1,5 +1,6 @@
 import {
   ACIKLAMA_ZORUNLU,
+  hbIptalSebebiCoz,
   iptalPlani,
   iptalliSayilirMi,
   otomatikIptalAdayiMi,
@@ -364,6 +365,36 @@ console.log("\nSATIŞ İPTALİ — DOĞRULAMA\n");
   kontrol(
     "oto-iptal: Shipped durumu aday değil (kargoya verilmiş sipariş iptal taraması dışında)",
     !otomatikIptalAdayiMi({ durum: "Shipped", iptalTarihi: null }, null),
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  K213 — HB İPTAL SEBEBİ ÇÖZÜMÜ (kanalın kendi beyanından, tahmin değil)
+// ═══════════════════════════════════════════════════════════════════════════
+{
+  kontrol(
+    "hb-sebep: müşteri + 'daha ucuz buldum' → MUSTERI_FIYAT",
+    hbIptalSebebiCoz("Customer", "FoundCheapper") === "MUSTERI_FIYAT",
+  );
+  kontrol(
+    "hb-sebep: müşteri + 'yanlış ürün seçtim' → MUSTERI_VAZGECTI",
+    hbIptalSebebiCoz("Customer", "ISelectedWrongProduct") === "MUSTERI_VAZGECTI",
+  );
+  kontrol(
+    "hb-sebep: müşteri + 'teslim tarihi uygun değil' → MUSTERI_VAZGECTI",
+    hbIptalSebebiCoz("Customer", "DeliveryDateNotSuitable") === "MUSTERI_VAZGECTI",
+  );
+  kontrol(
+    "hb-sebep: müşteri + BİLİNMEYEN kod → en temkinli seçenek (MUSTERI_VAZGECTI), uydurma DEĞİL",
+    hbIptalSebebiCoz("Customer", "HicGorulmemisBirKod") === "MUSTERI_VAZGECTI",
+  );
+  kontrol(
+    "hb-sebep: MÜŞTERİ DIŞI iptal → MAGAZA_DIGER (müşterinin fikri değişti izlenimi VERİLMEZ)",
+    hbIptalSebebiCoz("Merchant", "FoundCheapper") === "MAGAZA_DIGER",
+  );
+  kontrol(
+    "hb-sebep: boş cancelledBy → MAGAZA_DIGER (müşteri OLDUĞU varsayılmaz)",
+    hbIptalSebebiCoz("", "FoundCheapper") === "MAGAZA_DIGER",
   );
 }
 

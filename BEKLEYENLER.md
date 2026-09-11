@@ -174,34 +174,61 @@ elle iptal (`4120311526`) HB'de `"ClaimCreated"` çıktı — yani her elle
 iptalimiz kanalın kendi "Cancelled*" durumuna karşılık gelmiyor; otomatik
 tetik yalnız kanalın GERÇEKTEN öyle dediği siparişlere basıyor.
 
-**AMA HB'DE TOPLU "İPTAL EDİLENLER" LİSTESİ HÂLÂ YOK** — `/orders` ucu
-her parametre kombinasyonunda `totalCount: 0` döndürdü (5 farklı deneme:
-geniş/dar tarih aralığı, ISO/epoch biçim, status parametresi, sipariş
-numarası filtresi). `siparisDetay` TEK sipariş numarası İSTER; bu yüzden
-TY/N11'deki "kanal ne söylüyorsa tara" yerine **"hâlâ açık saydığımız her
-siparişi tek tek yokla"** tasarımı kuruldu — K195-3'ün (`kodBosSiparisler`)
-AYNI deseni (pencere + tavan), FARKLI bir soru için.
+**İLK SÜRÜMDE TOPLU "İPTAL EDİLENLER" LİSTESİ BULUNAMAMIŞTI** — `/orders`
+ucu her parametre kombinasyonunda `totalCount: 0` döndürmüştü (5 farklı
+deneme). Bu yüzden ilk sürüm TY/N11'deki "kanal ne söylüyorsa tara" yerine
+**"hâlâ açık saydığımız her siparişi tek tek yokla"** tasarımıyla kuruldu
+(pencere 30 gün + tavan 200 + her aday için `siparisDetay`) ve bu hâliyle
+CANLIYA gitti.
 
-**Maliyet ölçüldü, uydurulmadı:** HB'de `shippedAt` BOŞ olan satışların
-%99,9'u (3239/3243) 30 günden ESKİ — K195 mekanizması kurulmadan önceki
-geri dolum boşluğu, gerçekten açık sipariş DEĞİL. Son 30 günde yalnız 4
-tane var. Pencere 30 gün + tavan 200 seçildi: her koşumda en fazla birkaç
-`siparisDetay` çağrısı, büyüyen bir maliyet değil.
+### ─── ③-b GERÇEK UÇ BULUNDU, MEKANİZMA SADELEŞTİRİLDİ · 11.09.2026
 
-**YAPILAN:**
-- `scripts/canli-hb-ice-aktar.ts` → yeni sorgu (`shippedAt: null AND
-  iptalTarihi: null AND soldAt >= 30 gün önce`, tavan 200) + her aday için
-  `siparisDetay`; dönen kalemlerden biri `status.startsWith("Cancelled")`
-  ise (tek literale kilitlenmeden) `hbKargoDamgasi(lastStatusUpdateDate)`
-  ile GÜN hassasiyetinde iptal anı çözülüyor (K195'in HB saat dilimi
-  dersiyle AYNI çözüm — saat atılıyor, yalnız gün kalıyor). Sonra AYNI
-  motor: `otomatikIptalAdayiMi` → `iptalOnizle` → (--yaz altında)
-  `iptalUygula`.
-- Test: `scripts/ice-aktarma-dogrula.ts`'e kaynak-tarama bağlanma testi —
-  **8 mutasyonla** sınandı (TY'nin 6'sı + HB'ye özgü iki tanesi: 30 günlük
-  pencerenin kaldırılması VE önek eşleşmesinin tek literale daraltılması),
-  hepsi kırmızı yandı, dosya bit-bit geri yüklendi. Pencere mutasyonu en
-  riskliydi: kaldırılırsa her koşum 3243 eski siparişi boşuna yoklardı.
+⭐ **KULLANICI HB DESTEĞİNE TASK AÇMIŞTI ("kargo takip entegrasyonu") VE
+YANIT GERÇEK UCU AÇIK ETTİ.** HB'nin cevap e-postasındaki doküman
+bağlantısı (`op=Get__orders_merchantid_merchantId_cancelled`) bir uç
+adını taşıyordu; portal otomatik okuyucuya kapalıydı ama uç CANLIYA
+doğrudan denendi ve **gerçek, toplu veri döndü**:
+
+    GET /orders/merchantid/{id}/cancelled
+    { "totalCount": 7, "items": [
+      { "orderNumber": "4348472605", "cancelDate": "2026-09-06T09:52:15.004",
+        "cancelledBy": "Customer", "cancelReasonCode": "ISelectedWrongProduct",
+        "lineItemId": "...", "quantity": 1, "sku": "..." }, ... ] }
+
+Bu, daha önce elle doğrulanmış siparişle (`4348472605`) BİREBİR eşleşti.
+İlk sürümün "toplu uç yok" sonucu YANLIŞTI — aranmamıştı, YOK sanılmıştı.
+
+**MEKANİZMA BAŞTAN YAZILDI — TY/N11 İLE AYNI DESENE DÖNÜLDÜ:**
+- "Her açık siparişi tek tek yokla" (pencere + tavan + `siparisDetay`)
+  TAMAMEN kaldırıldı; artık toplu uç TEK seferde taranıyor
+  (`UCLAR.iptalEdilenSiparisler`, `hb/istemci.ts`).
+- ⛔ **SATIR = KALEM, SİPARİŞ DEĞİL.** Bir sipariş birden çok kalemliyse ve
+  listede yalnız BİR KISMI görünüyorsa, sipariş HÂLÂ AÇIKTIR — otomatik
+  iptal EDİLMEZ (N11'in "kısmi iptal hariç" guard'ının aynısı, burada
+  satır-sayısı ↔ geçerli-kalem-sayısı karşılaştırmasıyla).
+- ⭐ **SEBEP ARTIK UYDURULMUYOR.** Yeni saf gövde `hbIptalSebebiCoz`
+  (`src/lib/satis-iptali.ts`) kanalın kendi `cancelledBy`/`cancelReasonCode`
+  beyanını kapalı kümemize çevirir (`FoundCheapper`→MUSTERI_FIYAT,
+  `Customer` dışı→MAGAZA_DIGER, diğerleri→MUSTERI_VAZGECTI) — TY'nin
+  aksine artık HER ZAMAN MUSTERI_VAZGECTI yazılmıyor.
+- İptal anı hâlâ GÜN hassasiyetinde (`hbKargoDamgasi(cancelDate)`,
+  K195'in HB saat dilimi çözümüyle AYNI).
+- Test: `scripts/ice-aktarma-dogrula.ts`'e kaynak-tarama bağlanma testi
+  yeniden yazıldı, `scripts/iptal-dogrula.ts`'e `hbIptalSebebiCoz` için
+  6 değer testi eklendi — toplam **9 mutasyonla** sınandı (kısmi-iptal
+  guard'ı en riskliydi: kaldırılırsa hâlâ parçası açık bir sipariş
+  otomatik iptal edilebilirdi), hepsi kırmızı yandı, dosyalar bit-bit
+  geri yüklendi.
+
+⭐ **VE ESKİ MEKANİZMA CANLIDA GERÇEKTEN ÇALIŞTI — REBUILD ÖNCESİ KANIT.**
+Rebuild başlamadan hemen önce, eski (per-order-yoklama) sürüm gerçek bir
+siparişi (`4702303732`) doğru şekilde otomatik iptal etmiş bulundu:
+`iptalNotu: "...otomatik tespit edildi (K213...)"`, `iptalEdenId: null`
+(insan değil, sistem), `iptalTarihi` gün hassasiyetinde doğru. Bu K213'ün
+TEMEL mantığının (saf gövdeler, `iptalOnizle`→`iptalUygula` motoru)
+production'da zaten kanıtlandığını gösteriyor — rebuild yalnız KEŞİF
+yöntemini (toplu uç vs. tek tek yoklama) değiştirdi, karar mantığına
+dokunmadı.
 
 ### HALİL TESTİ — kapanma şartı (TY + N11 + HB)
 Bu bir OTOMATİK, finansal etkili değişiklik — canlı zamanlanmış cron'lara
@@ -220,12 +247,11 @@ giriyor. Sentetik deneme yerine gerçek bir vakayla doğrulanmalı:
 5. N11'e özgü: parçası hâlâ kargoda/teslimde olan BÖLÜNMÜŞ bir sipariş
    varsa, o sipariş otomatik iptal EDİLMEMELİ (kısmi iptal guard'ı) —
    fırsat çıkarsa bu senaryo da bir kez elle doğrulanmalı.
-6. HB'ye özgü: HB'de bir sipariş kargolanmadan iptal olduğunda, sonraki
-   HB çekimi (yoklama, açık siparişler taranarak) onu **otomatik tespit**
-   etmeli. HB'nin ana çekimi az koştuğu için (bkz. K-HB-CRON) bu madde
-   diğerlerinden daha uzun sürebilir; ilk gerçek vaka çıktığında ayrıca
-   doğrulanmalı — beklerken bekletilecek bir kalem değil.
-6. Ekrandaki rakamlar teslim raporundaki beklenenle birebir tutmalı
+6. HB'ye özgü: **zaten bir kez gerçek vakada doğrulandı** (sipariş
+   `4702303732`, yukarıya bkz.) — rebuild sonrası bir dahaki gerçek HB
+   iptalinde tekrar teyit edilmeli, artık toplu listeden (`/cancelled`)
+   geliyor olması dışında davranış aynı kalmalı.
+7. Ekrandaki rakamlar teslim raporundaki beklenenle birebir tutmalı
    (Halil testi madde c) — yaklaşık değil.
 
 ---

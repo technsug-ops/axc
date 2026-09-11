@@ -269,6 +269,29 @@ export function otomatikIptalAdayiMi(
 }
 
 /**
+ * HB'NİN İPTAL SEBEBİNİ BİZİM KAPALI KÜMEMİZE ÇEVİRİR (K213, 11.09.2026).
+ *
+ * ⚠ NİYE TAHMİN DEĞİL — kanal `cancelledBy` ("Customer"/başka) ve
+ * `cancelReasonCode` (`"FoundCheapper"`, `"ISelectedWrongProduct"`,
+ * `"DeliveryDateNotSuitable"`…) veriyor; bunlar HB'NİN KENDİ beyanı,
+ * uydurma değil. Yalnız KAPALI KÜMEYE eşleniyor — canlıda görülmemiş bir
+ * kod gelirse en temkinli seçeneğe (müşteri vazgeçti / mağaza diğer) düşer,
+ * asla `undefined` ya da uydurma bir sebep dönmez.
+ *
+ * ⚠ MÜŞTERİ DIŞI İPTAL AYRI KOLA GİRER: `cancelledBy !== "Customer"` ise
+ * (mağaza ya da HB'nin kendisi iptal etmiş olabilir) `MAGAZA_DIGER` döner
+ * — müşterinin fikrini değiştirdiği izlenimi vermemek için.
+ */
+export function hbIptalSebebiCoz(
+  cancelledBy: string,
+  cancelReasonCode: string,
+): SatisIptalSebebi {
+  if (cancelledBy !== "Customer") return "MAGAZA_DIGER";
+  if (cancelReasonCode === "FoundCheapper") return "MUSTERI_FIYAT";
+  return "MUSTERI_VAZGECTI";
+}
+
+/**
  * İptal edilen satış ciro/NET/hakediş kümesine GİRER Mİ — tek cevap.
  *
  * ⚠ Bu fonksiyon, süzgecin tek kaynağı olduğu için ayrıca vardır: her ekran

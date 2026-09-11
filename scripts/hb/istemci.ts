@@ -265,6 +265,25 @@ export const UCLAR = {
    */
   siparisDetay: (k: Kimlik, siparisNo: string) =>
     `${taban("oms", k.ortam)}/orders/merchantid/${k.merchantId}/ordernumber/${siparisNo}`,
+
+  /**
+   * ⛔ TOPLU İPTAL LİSTESİ — VAR OLDUĞU K213'TE KEŞFEDİLDİ (11.09.2026).
+   *
+   * İlk ölçümde (11.09.2026, önceki oturum) bu uç aranmamıştı ve "HB'de
+   * toplu iptal ucu yok" sonucuna varılmıştı — o yüzden K213'ün HB tarafı
+   * pahalı bir "her açık siparişi tek tek yokla" tasarımıyla kuruldu.
+   * Kullanıcı, HB desteğine açtığı bir destek talebinin yanıtındaki resmî
+   * doküman bağlantısını (`op=Get__orders_merchantid_merchantId_cancelled`)
+   * ilettikten sonra uç doğrudan CANLIYA denendi ve GERÇEK veri döndü:
+   * `cancelDate` (dilimsiz İstanbul yereli — `hbKargoDamgasi` ile AYNI
+   * risk) · `cancelledBy` ("Customer" ölçüldü) · `cancelReasonCode`
+   * (`FoundCheapper` · `ISelectedWrongProduct` · `DeliveryDateNotSuitable`
+   * ölçüldü) · `lineItemId` (KALEM düzeyi — bir sipariş birden çok satırı
+   * varsa birden çok kayıt döner, TÜMÜ cancelled olmadıkça sipariş
+   * TAMAMEN iptal sayılmaz).
+   */
+  iptalEdilenSiparisler: (k: Kimlik, offset: number, limit: number) =>
+    `${taban("oms", k.ortam)}/orders/merchantid/${k.merchantId}/cancelled?offset=${offset}&limit=${limit}`,
 };
 
 /**
