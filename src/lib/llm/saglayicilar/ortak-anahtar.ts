@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 /**
  * İKİ KATMANLI SIR OKUMA — `scripts/hb/istemci.ts`teki `kimlikOku()`
  * DESENİYLE BİREBİR AYNI: önce SÜREÇ ORTAMI (Vercel), yoksa `.env.canli`
- * (yerel). Üç sağlayıcının üçü de AYNI mekanizmayı kullanıyor — tek gövde,
- * kopya yok.
+ * (yerel). Bütün sağlayıcılar VE sağlayıcı seçimi AYNI mekanizmayı
+ * kullanıyor — tek gövde, kopya yok.
  */
 export function ikiKatmanliAnahtarOku(envAdi: string): string | null {
   const surec = process.env[envAdi]?.trim();

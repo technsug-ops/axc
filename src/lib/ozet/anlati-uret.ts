@@ -1,5 +1,5 @@
-import { ozetMetniDogrula } from "./dogrulama";
-import { aktifSaglayici } from "./saglayicilar";
+import { llmMetniDogrula } from "@/lib/llm/dogrulama";
+import { aktifSaglayici } from "@/lib/llm/saglayicilar";
 import type { OzetVeriPaketi } from "./veri-toplama";
 
 /**
@@ -10,13 +10,14 @@ import type { OzetVeriPaketi } from "./veri-toplama";
  *  yazılmayan sayı kullanılamaz" kuralı gereği model rakam ÜRETMEZ, yalnız
  *  `veri-toplama.ts`'in ürettiği DOĞRULANMIŞ sayıları `{{anahtar}}` yer
  *  tutucusuyla işaret eder. Gerçek metne dönüşüm ve GÜVENLİK KAPISI
- *  `dogrulama.ts`'te — bu dosya yalnız SEÇİLİ sağlayıcıyı çağırır, hüküm
- *  vermez.
+ *  `@/lib/llm/dogrulama`da — bu dosya yalnız SEÇİLİ sağlayıcıyı çağırır,
+ *  hüküm vermez.
  *
  *  ⚠ SAĞLAYICI SEÇİLEBİLİR (mimar kararı 11.09.2026) — bkz.
- *  `saglayicilar/index.ts`. Bu dosya hangi sağlayıcının aktif olduğunu
- *  BİLMEZ, yalnız `LlmSaglayici` arayüzünü çağırır; ekleme/çıkarma bu
- *  dosyaya hiç dokunmaz.
+ *  `@/lib/llm/saglayicilar` (K-TAVSIYE ile PAYLAŞILAN katman, 11.09.2026
+ *  taşındı). Bu dosya hangi sağlayıcının aktif olduğunu BİLMEZ, yalnız
+ *  `LlmSaglayici` arayüzünü çağırır; ekleme/çıkarma bu dosyaya hiç
+ *  dokunmaz.
  * ============================================================================
  */
 
@@ -111,7 +112,7 @@ export async function anlatiUret(paket: OzetVeriPaketi): Promise<AnlatiSonucu> {
     };
   }
 
-  const dogrulama = ozetMetniDogrula(cevap.ham, paket.sayilar);
+  const dogrulama = llmMetniDogrula(cevap.ham, paket.sayilar);
   if (!dogrulama.tamam) {
     return {
       tamam: false,

@@ -3266,7 +3266,14 @@
     "partiToplami": "Toplam {adet} adet · {tutar}",
     "partiToplamEksik": "{adet} parti tutara girmedi (maliyeti bilinmiyor ya da başka para birimi)",
     "partiBagiKaymis": "Bu üründe GEÇMİŞ bir çıkış, kendisinden sonra alınmış bir partiye bağlanmış — o satışların maliyeti etkilenmiş olabilir. Yukarıdaki açık partiler etkilenmez.",
-    "partiBagiSupheli": "Bu üründe geçmiş parti bağları çözülemedi; eski satışların maliyeti doğrulanamıyor. Yukarıdaki açık partiler etkilenmez."
+    "partiBagiSupheli": "Bu üründe geçmiş parti bağları çözülemedi; eski satışların maliyeti doğrulanamıyor. Yukarıdaki açık partiler etkilenmez.",
+    "tavsiyeBaslik": "Yapay zekâ tavsiyesi",
+    "tavsiyeAl": "Tavsiye al",
+    "tavsiyeIsteniyor": "Tavsiye isteniyor…",
+    "tavsiyeYetersizVeri": "Bu ürün için güvenilir bir tavsiye verecek kadar satış geçmişi yok.",
+    "tavsiyeUyari": "Bu bir yapay zekâ önerisidir, otomatik bir karar değildir — nihai karar size aittir.",
+    "tavsiyeYedekOnsozu": "Yapay zekâ değerlendirmesi üretilemedi; aynı verilerden kaynaklı rakamlar aşağıda.",
+    "tavsiyeHata": "Tavsiye şu an üretilemedi. Lütfen tekrar deneyin."
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

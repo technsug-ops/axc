@@ -1,17 +1,21 @@
 /**
  * ============================================================================
- *  LLM SAĞLAYICI ARAYÜZÜ — GÜNLÜK ÖZET (K-OZET)
+ *  LLM SAĞLAYICI ARAYÜZÜ — PAYLAŞILAN KATMAN
  * ----------------------------------------------------------------------------
  *  ⚠ MİMAR KARARI 11.09.2026: "Taban olarak ChatGPT ve Gemini altyapısı
  *  olmalı, istediğimi kullanabilmeliyim." Bu yüzden tek bir sağlayıcıya
  *  (yalnız Anthropic) kilitlenmek yerine üç sağlayıcı da aynı arayüzün
  *  arkasında duruyor ve hangisinin kullanılacağı BİR ORTAM DEĞİŞKENİYLE
- *  seçiliyor (`OZET_LLM_SAGLAYICI`).
+ *  seçiliyor (`LLM_SAGLAYICI`, bkz. `index.ts`).
  *
- *  ⚠ GÜVENLİK KATMANI (dogrulama.ts) SAĞLAYICIDAN TAMAMEN BAĞIMSIZ — yalnız
- *  düz metin çıktısını görür, hangi API'den geldiğini bilmez/bilmesi de
- *  gerekmez. Sağlayıcı değişse bile "kaynağı yazılmayan sayı kullanılamaz"
- *  garantisi AYNI kalır.
+ *  ⚠ GÜVENLİK KATMANI (`llm/dogrulama.ts`) SAĞLAYICIDAN TAMAMEN BAĞIMSIZ —
+ *  yalnız düz metin çıktısını görür, hangi API'den geldiğini bilmez/bilmesi
+ *  de gerekmez. Sağlayıcı değişse bile "kaynağı yazılmayan sayı
+ *  kullanılamaz" garantisi AYNI kalır.
+ *
+ *  ⚠ İKİ ÖZELLİK PAYLAŞIYOR — K-OZET (günlük özet) ve K-TAVSIYE (ürün
+ *  tavsiyesi). Bu katman ikisine de özel DEĞİL; yeni bir LLM özelliği
+ *  doğduğunda üçüncü sağlayıcı listesi AÇILMAZ, bu dosya çağrılır.
  * ============================================================================
  */
 export type LlmCevap =

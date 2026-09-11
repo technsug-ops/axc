@@ -18,7 +18,8 @@ import { desenNormalle } from "./mutasyon-deseni";
 
 const BEKCI = "scripts/gunluk-ozet-dogrula.ts";
 const BEKCI_BASLIGI = "GÜNLÜK ÖZET BEKÇİSİ";
-const GOVDE = "src/lib/ozet/dogrulama.ts";
+/** ⚠ 11.09.2026 K-TAVSIYE taşıması: eski `src/lib/ozet/dogrulama.ts` → `src/lib/llm/dogrulama.ts`. Gövde birebir aynı, yalnız konum/ad değişti. */
+const GOVDE = "src/lib/llm/dogrulama.ts";
 
 type Mutasyon = {
   ad: string;

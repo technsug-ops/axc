@@ -1,3 +1,4 @@
+import type { DogrulanabilirSayi } from "@/lib/llm/dogrulama";
 import { bicimlendirici } from "@/lib/bicim";
 import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
 import { uyarilariTopla } from "@/lib/uyari/topla";
@@ -32,7 +33,8 @@ import { desiFarkliVaryantSayisi } from "@/lib/urun-karti-verisi";
  * ============================================================================
  */
 
-export type OzetSayisi = { anahtar: string; goruntu: string; ham: number };
+/** ⚠ K-TAVSIYE taşımasıyla artık `@/lib/llm/dogrulama`de tanımlı — burada yalnız eski ad korunuyor (re-export), ozet/ klasöründeki başka hiçbir satır değişmedi. */
+export type OzetSayisi = DogrulanabilirSayi;
 /**
  * `onem` — Uyarı Merkezi'nin kendi `UyariSeviyesi` sözlüğüyle AYNI üç
  * değer (kirmizi|amber|notr). LLM'e önceliklendirme sırasını VEREN alan

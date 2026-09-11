@@ -1,4 +1,4 @@
-import { ozetMetniDogrula } from "../src/lib/ozet/dogrulama";
+import { llmMetniDogrula as ozetMetniDogrula } from "../src/lib/llm/dogrulama";
 import { ozetPaketiKur, type OzetSayisi } from "../src/lib/ozet/veri-toplama";
 import { kartlarinAcikToplami } from "../src/lib/kart-borcu";
 import { desiFarkliMi } from "../src/lib/desi-karsilastirma";

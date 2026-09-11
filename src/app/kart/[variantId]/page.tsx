@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Boxes, Calculator, Layers, Lock, PackageSearch, TriangleAlert } from "lucide-react";
+import { Boxes, Calculator, Layers, Lock, PackageSearch, Sparkles, TriangleAlert } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -17,6 +17,8 @@ import { kartVerisiniTopla } from "@/lib/urun-karti-verisi";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
 import { KanalDesiGuncelle } from "./kanal-desi-guncelle";
+import { TavsiyeAl } from "./tavsiye-al";
+import { yeterliVeriVarMi } from "@/lib/tavsiye/veri-toplama";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -659,6 +661,22 @@ export default async function KartSayfasi({
           {t("karIzinYok")}
         </div>
       )}
+
+      {/* ═══════════════════ ÜRÜN TAVSİYESİ (K-TAVSIYE) ═══════════════════
+          ⚠ KÂRLILIK BÖLÜMÜNÜN KARDEŞİ — YENİ İZİN AÇILMADI, `karGorunur`
+          burada da (`satis.kar.gor`) kapı olarak kullanılıyor. Rakam sunucudan
+          hiç yola çıkmaz (İlke: kâr bloğu gizlenmiş kutu değildir). */}
+      {karGorunur ? (
+        <Bolum baslik={t("tavsiyeBaslik")} ikon={Sparkles}>
+          {yeterliVeriVarMi(ozet).yeterli ? (
+            <TavsiyeAl variantId={variantId} />
+          ) : (
+            <p className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
+              {t("tavsiyeYetersizVeri")}
+            </p>
+          )}
+        </Bolum>
+      ) : null}
 
       {/* ═══════════════════ RİSK — izne bağlı olanlar ayrı ═══════════════════ */}
       <Bolum baslik={t("riskBaslik")} ikon={TriangleAlert}>

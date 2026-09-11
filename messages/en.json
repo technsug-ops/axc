@@ -3266,7 +3266,14 @@
     "partiToplamEksik": "",
     "partiBagiKaymis": "",
     "partiBagiSupheli": "",
-    "acikPartiYokMaliyet": ""
+    "acikPartiYokMaliyet": "",
+    "tavsiyeBaslik": "",
+    "tavsiyeAl": "",
+    "tavsiyeIsteniyor": "",
+    "tavsiyeYetersizVeri": "",
+    "tavsiyeUyari": "",
+    "tavsiyeYedekOnsozu": "",
+    "tavsiyeHata": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",

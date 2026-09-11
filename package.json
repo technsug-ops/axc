@@ -127,6 +127,7 @@
     "kargo-kaynagi-mutasyon:kontrol": "tsx scripts/kargo-kaynagi-mutasyon-kontrol.ts",
     "gunluk-ozet:dogrula": "tsx scripts/gunluk-ozet-dogrula.ts",
     "gunluk-ozet-mutasyon:kontrol": "tsx scripts/gunluk-ozet-mutasyon-kontrol.ts",
+    "tavsiye:dogrula": "tsx scripts/tavsiye-dogrula.ts",
     "teslim-durumu-mutasyon:kontrol": "tsx scripts/teslim-durumu-mutasyon-kontrol.ts",
     "kargo-damgasi-mutasyon:kontrol": "tsx scripts/kargo-damgasi-mutasyon-kontrol.ts",
     "mutasyon-capa:dogrula": "tsx scripts/mutasyon-capa-dogrula.ts",
