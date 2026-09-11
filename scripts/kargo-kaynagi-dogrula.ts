@@ -208,6 +208,47 @@ for (const yol of ICE) {
  */
 kontrol("tahmini kargo yazan içe aktarma VAR (bugün 1 — N11)", tahminYazan === 1, tahminYazan);
 
+/**
+ * ⛔ SATIŞ DETAYI EKRANI GERÇEKTEN ÖNCELİK SIRASINI OKUYOR MU (11.09.2026).
+ *
+ * Bulgu: `kanalKargoDesi` (TARTIM, kanalın DOĞRULADIĞI gerçek desi) canlıda
+ * doğru yakalanıyordu ama satış detay ekranı (`satislar/[id]/page.tsx`)
+ * hep ham `cargoDesi`yi (TAHMIN, satış anındaki bizim hesabımız) basıyordu
+ * — kanal gerçek desiyi DOĞRULADIKTAN SONRA bile ekran hiç güncellenmiyordu.
+ * `desiSecimi` doğru sırayı zaten uyguluyordu (değer testleriyle kanıtlı);
+ * eksik olan EKRANIN onu ÇAĞIRMASIYDI. _(Anayasa: "zincir, halkalarının
+ * varlığıyla değil bağlantısıyla sınanır" — saf gövde doğru, tüketici yoktu.)_
+ */
+{
+  const sayfa = readFileSync("src/app/satislar/[id]/page.tsx", "utf8");
+  kontrol(
+    "satış detayı desiSecimi'yi İTHAL EDİYOR",
+    /import \{ desiSecimi \} from "@\/lib\/kargo-kaynagi";/.test(sayfa),
+  );
+  /** ⚠ ANAHTAR ADI TEK BAŞINA YETMEZ — KAYNAK ALANI DA aranır. Yalnız
+   *  `kanalKargoDesi:` anahtarını arayan bir ölçüt, değeri `null`e ya da
+   *  başka bir alana sabitleyen bir mutasyonu KAÇIRIR (anahtar dosyada
+   *  kalır, kaynağı değişir). */
+  const desiSecimiBlok = sayfa.slice(
+    sayfa.indexOf("const desiGosterim = desiSecimi({"),
+    sayfa.indexOf("});", sayfa.indexOf("const desiGosterim = desiSecimi({")),
+  );
+  kontrol("desiSecimi çağrısı bulundu", desiSecimiBlok.length > 0);
+  kontrol(
+    "  ...ham cargoDesi yerine kanalKargoDesi+cargoDesi İKİSİNİ birden geçiriyor",
+    /kanalKargoDesi:[\s\S]{0,80}satis\.kanalKargoDesi/.test(desiSecimiBlok) &&
+      /cargoDesi: satis\.cargoDesi/.test(desiSecimiBlok),
+  );
+  kontrol(
+    "  ...KÜRESEL (üçüncü, bilinmeyen) basamak EKRANDA gösterilmiyor",
+    /desiGosterim\.kaynak === "KURESEL"/.test(sayfa),
+  );
+  kontrol(
+    "  ...TAHMIN kaynağı 'tahmini' etiketiyle taşınıyor (bir sayı etiketiyle taşınır)",
+    /desiGosterim\.kaynak === "TAHMIN"[\s\S]{0,60}desiTahmini/.test(sayfa),
+  );
+}
+
 console.log(
   "\n" +
     (hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ") +

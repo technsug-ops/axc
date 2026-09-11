@@ -23,6 +23,7 @@ import { IptalFormu } from "./iptal-formu";
 import { GeriAlFormu } from "./geri-al-formu";
 import { satisIzleri } from "@/lib/satis-duzenleme-veri";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
+import { desiSecimi } from "@/lib/kargo-kaynagi";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -354,6 +355,23 @@ export default async function SatisDetaySayfasi({
         })
       : t(onayAnahtari as "onayDurumuBekliyor");
 
+  /**
+   * ⛔ GÖSTERİLEN DESİ — TARTIM (kanalKargoDesi) varsa O, yoksa TAHMİN
+   * (cargoDesi). Bulgu (11.09.2026, kullanıcı ekran görüntüsü): `kanalKargoDesi`
+   * doğru yakalanıyordu (61) ama bu ekran hep `cargoDesi`yi (40, satış
+   * anındaki tahmin) gösteriyordu — kanal gerçek desiyi doğruladıktan
+   * SONRA bile ekran hiç güncellenmiyordu.
+   * ⚠ AYNI GÖVDE (`desiSecimi`, kargo maliyet hesabıyla PAYLAŞILIYOR — "iki
+   * yerde iki ölçüt olmaz") ama KÜRESEL (üçüncü) basamağı burada RENDER
+   * EDİLMİYOR: o basamak maliyet hesabı için "bilmiyorum" durumunda bile
+   * bir sayı üretmek ZORUNDADIR; bu ekran bilinmeyeni GÖSTERMEZ (İlke #11).
+   */
+  const desiGosterim = desiSecimi({
+    kanalKargoDesi:
+      satis.kanalKargoDesi === null ? null : Number(satis.kanalKargoDesi.toString()),
+    cargoDesi: satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
+  });
+
   // `deger` ReactNode: kargo satırı bir düğme taşıyor (metin değil).
   const bilgiler: { etiket: string; deger: React.ReactNode }[] = [
     /**
@@ -389,7 +407,11 @@ export default async function SatisDetaySayfasi({
     {
       etiket: t("kargoFirmasi"),
       deger: satis.cargoCarrier
-        ? `${satis.cargoCarrier.name}${satis.cargoDesi ? ` — ${Number(satis.cargoDesi.toString())} desi` : ""}`
+        ? `${satis.cargoCarrier.name}${
+            desiGosterim.kaynak === "KURESEL"
+              ? ""
+              : ` — ${desiGosterim.desi} desi${desiGosterim.kaynak === "TAHMIN" ? ` (${t("desiTahmini")})` : ""}`
+          }`
         : t("kargoSecilmedi"),
     },
     {

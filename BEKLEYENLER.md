@@ -13,7 +13,60 @@
 
 ---
 
-## 🔶 K213 — SONRADAN İPTAL OLAN SİPARİŞ OTOMATİK TESPİT (TY + N11) · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+## 🔶 K214 — SATIŞ DETAYI: KANALIN DOĞRULADIĞI DESİ EKRANA YANSIMIYORDU · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+
+### TALEP (kullanıcı, iki ekran görüntüsü, 11.09.2026)
+Bizim ekranımız bir Trendyol siparişinde "Aras Kargo — 40 desi" gösteriyordu;
+Trendyol'un kendi panelinde aynı sipariş "Desi: 61" diyordu. Kullanıcı:
+_"başlangıçta tahmini desi yazılması normal fakat pazar yerine kargo
+tarafından gönderilen desi doğrulaması sonucunda ekrana girdiğimiz desinin
+otomatik pazar yerinden çekilmesi gerekiyor... bu konuyu daha önce çalıştık
+ama sonuç vermedi."_
+
+### TEŞHİS — VERİ DOĞRUYDU, EKRAN YANLIŞ ALANI OKUYORDU
+Canlı DB'de o satış sorgulandı:
+
+    cargoDesi        40   ← BİZİM TAHMİNİMİZ (satış anında, Σ ürün desi)
+    kanalKargoDesi   61   ← KANALIN DOĞRULADIĞI GERÇEK DESİ — zaten DOĞRU yakalanmıştı
+
+K197-4 (09.09.2026) `kanalKargoDesi`yi TY/N11 içe aktarmasında ZATEN doğru
+topluyordu. `src/lib/kargo-kaynagi.ts`'teki `desiSecimi()` de ZATEN doğru
+öncelik sırasını (TARTIM → TAHMIN → küresel) uyguluyordu — değer testleriyle
+kanıtlı. **Eksik olan, satış detayı ekranının (`satislar/[id]/page.tsx`)
+bu sırayı hiç ÇAĞIRMAMASIYDI** — ham `cargoDesi`yi doğrudan basıyordu.
+_(Anayasa: "zincir, halkalarının varlığıyla değil bağlantısıyla sınanır" —
+saf gövde doğruydu, tüketici hiç yoktu; K52'nin dokümante ettiği "tüketicisi
+henüz yok" boşluğu tam burada yaşıyordu.)_
+
+### YAPILAN
+- `src/app/satislar/[id]/page.tsx` → kargo firması/desi satırı artık
+  `desiSecimi({ kanalKargoDesi, cargoDesi })` çağırıyor; TARTIM varsa O
+  gösteriliyor, yoksa TAHMIN (etiketli: _"— 61 desi"_ ya da _"— 40 desi
+  (tahmini)"_). `desiSecimi`in üçüncü (KÜRESEL) basamağı BİLEREK
+  render edilmiyor — o basamak kargo MALİYETİ hesabı için var, ekran
+  bilinmeyen bir şeyi GÖSTERMEZ (İlke #11).
+- `cargoDesi` sütununa DOKUNULMADI — şemanın "kanalKargoDesi cargoDesi'nin
+  üstüne asla yazılmaz" kuralı (09.09.2026) korundu; bu yalnız bir
+  GÖSTERİM düzeltmesi, iki sütun ayrı ayrı yaşamaya devam ediyor.
+- Test: `scripts/kargo-kaynagi-dogrula.ts`'e kaynak-tarama bağlanma testi
+  (desiSecimi çağrısı · doğru iki alanı geçiriyor · KÜRESEL basamak
+  gösterilmiyor · tahmini etiketi VAR) — **4 mutasyonla** sınandı, hepsi
+  kırmızı yandı; ilk yazımda bir kontrol ("kanalKargoDesi geçiriliyor mu")
+  yalnız anahtar ADINI arıyordu ve değeri `null`e sabitleyen bir mutasyonu
+  KAÇIRDI — kaynak alana (`satis.kanalKargoDesi`) daraltılınca yakalandı.
+
+### HALİL TESTİ — kapanma şartı
+1. `/satislar/{id}` → `kanalKargoDesi` DOLU olan (kargoya verilip kanal
+   desiyi doğrulamış) bir siparişi aç. "Kargo firması" satırında kanalın
+   GERÇEK desisi görünmeli — "(tahmini)" etiketi OLMAMALI.
+2. Henüz kargoya verilmemiş / kanal desi doğrulamamış bir sipariş aç:
+   bizim tahminimiz görünmeli, yanında **"(tahmini)"** yazmalı.
+3. Ekrandaki rakam, kanalın kendi panelindeki (Trendyol/N11/HB) desiyle
+   BİREBİR tutmalı (Halil testi madde c) — yaklaşık değil.
+
+---
+
+## 🔶 K213 — SONRADAN İPTAL OLAN SİPARİŞ OTOMATİK TESPİT (TY + N11 + HB) · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
 
 ### TALEP (kullanıcı, ekran görüntüsü + metin, 11.09.2026)
 _"Sipariş kargoya verilmeden önce müşteri tarafından Vazgeçtim / Daha Ucuz
@@ -236,9 +289,40 @@ migration olmadan deploy edilirse `Product` sorguları 500 verir (K
 - `urun-analizi:dogrula` 147/147 (11 bölüm, K212 için 31 yeni ölçüt).
   `tsc`/`lint`/`i18n`/`yerlesim`/`sunucu-eylemi`/`api`/`yetki` temiz.
 
+### ─── ② DÜZELTME: ARAMA KAMERASIZ KALMIŞTI · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+Kullanıcı ekran görüntüsüyle bildirdi: _"barkod sadece yazılmasın, aynı
+zamanda diğer taraflarda olduğu gibi kamera ile okutulabilsin."_ Haklıydı —
+anayasanın İlke #7'si ("kod girilebilen her alan kamera destekler") ve
+`kamera:dogrula`nın "hiçbir liste araması ÇIPLAK `<Input>` kullanmıyor"
+desen-yasağı zaten VARDI, ama K212'nin arama kutusu bunu ÇİĞNEDİ ve bekçi
+YEŞİL kaldı.
+
+**Kök sebep — desen tek bir isme kilitliydi.** `kamera-dogrula.ts`'in
+kontrolü yalnız `name="q"`/`name="bq"` arıyordu (öteki liste ekranlarının
+tarihsel adlandırması); K212 yeni bir alan adı seçti — `name="arama"` —
+ve desen onu hiç görmedi. _("Bekçi ölçütü elle tutulan liste değil,
+tersten kurulur" kuralının kendisi de elle tutulu bir listeymiş — burada
+bir ADLAR listesiydi, ekranlar değil.)_
+
+**YAPILAN:**
+- `src/app/rapor/urunler/analiz-arama-kutusu.tsx` (yeni, istemci bileşeni)
+  → `BarkodGirisi` (kamera + USB okuyucu) doğrudan kullanılıyor, ortak
+  `KodAramaKutusu` DEĞİL: o bileşen `suzgecAdresi` ile düz
+  `Record<string,string>` kuruyor, bu sayfanın süzgeçleri ise TEKRARLI
+  parametre taşıyor (`marka=LEGO&marka=Karaca`). Sayfanın KENDİ saf URL
+  kurucusu (`analizAdresi`, `urun-analizi.ts`) doğrudan çağrıldı — ikinci
+  bir URL kurma ölçütü YAZILMADI.
+- `scripts/kamera-dogrula.ts` → desen-yasağı `name="arama"`yı da kapsayacak
+  şekilde genişletildi ve YENİ bir "geçici, kasıtlı çıplak kutu" dosyasıyla
+  mutasyonla sınandı (kırmızı yandığı görüldü, dosya silindi) — aynı hata
+  bir sonraki farklı isimli arama kutusunda TEKRARLANMASIN diye.
+
 ### HALİL TESTİ — kapanma şartı (canlı migration koştuktan sonra)
 1. `/rapor/urunler` → **Ara** kutusuna bir barkod/SKU yaz → doğru ürün(ler)
    listelenmeli. Ürün adının bir parçasını yaz → o da bulunmalı.
+   **Ve** kamera ikonuna bas → telefon/tablette kamera açılmalı, bir
+   barkod okutunca arama KENDİLİĞİNDEN çalışmalı (Ara'ya basmaya gerek
+   yok).
 2. Bir üründe **yıldız** ikonuna bas → favori işaretlenmeli (renk değişir),
    tekrar basınca kalkmalı. **Bayrak** ikonu için aynısı (incelenecek).
 3. **Yaz**/**Kış** düğmesine bas → seçili görünmeli; tekrar basınca

@@ -71,9 +71,18 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
   };
 
   /**
-   * ARAMA KUTUSU İMZASI: `name="q"` ya da `name="bq"` taşıyan bir `<Input>`.
-   * Bu, liste ekranlarının arama kutusunun deseni; ortak bileşene geçenlerde
-   * artık hiç kalmamalı.
+   * ARAMA KUTUSU İMZASI: `name="q"`, `name="bq"` ya da `name="arama"` taşıyan
+   * bir `<Input>`. Bu, liste ekranlarının arama kutusunun deseni; ortak
+   * bileşene geçenlerde artık hiç kalmamalı.
+   *
+   * ⚠ "arama" 11.09.2026'DA EKLENDİ — VE ASIL DERS BUYDU. Ürün analizi
+   * (K212) `name="arama"` kullandı ve desen `q`/`bq`'ye kilitliydi; kutu
+   * kamerasız kaldı, kontrol yeşil yandı (kullanıcı kendi gözüyle buldu).
+   * Elle tutulan bir liste, listede olmayan her yeni adı sessizce kaçırır —
+   * bu genişleme deseni BÜYÜTÜYOR ama YİNE ELLE TUTULU: bir sonraki farklı
+   * isim (ör. `ara`, `sorgu`) yine kaçabilir. Kalıcı çare adlandırma
+   * disiplinidir: yeni bir liste araması `q`/`bq`/`arama` DIŞINDA bir isim
+   * seçmemeli, ya da ortak bileşenin ÜZERİNDEN geçmeli.
    */
   const kacaklar: string[] = [];
   for (const yol of dosyalar("src")) {
@@ -87,7 +96,7 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
      * eden mutasyon kontrolü rahatça geçti. Çıplak kutu çıplaktır, hangi
      * etiketle yazıldığı fark etmez.
      */
-    if (/<[Ii]nput[^>]*\sname="b?q"/.test(yorumsuzMetin)) kacaklar.push(yol);
+    if (/<[Ii]nput[^>]*\sname="(b?q|arama)"/.test(yorumsuzMetin)) kacaklar.push(yol);
   }
   kontrol(
     "hiçbir liste araması ÇIPLAK <Input> kullanmıyor",

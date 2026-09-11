@@ -20,6 +20,7 @@ import {
   type Yon,
 } from "@/lib/rapor/urun-analizi";
 import { YAS_KOVALARI } from "@/lib/yaslanma";
+import { AnalizAramaKutusu } from "./analiz-arama-kutusu";
 
 /**
  * ============================================================================
@@ -198,7 +199,8 @@ export async function AnalizSuzgeci({
       ) : null}
 
       {/* ── ARAMA — barkod/EAN, SKU, Firma SKU, kanal kodları, ürün adı
-          (K212, kullanıcı isteği 11.09.2026). */}
+          (K212, kullanıcı isteği 11.09.2026). Kamera + USB okuyucu (İlke #7,
+          bulgu 11.09.2026) — bkz. `analiz-arama-kutusu.tsx` başlığı. */}
       <div className="space-y-1.5">
         <label
           htmlFor="analiz-arama"
@@ -206,13 +208,10 @@ export async function AnalizSuzgeci({
         >
           {t("aramaBaslik")}
         </label>
-        <Input
-          id="analiz-arama"
-          name="arama"
-          type="search"
-          defaultValue={suzgec.arama ?? ""}
-          placeholder={t("aramaYer")}
-          className="h-11"
+        <AnalizAramaKutusu
+          taban={taban}
+          baslangic={suzgec.arama ?? ""}
+          ipucu={t("aramaYer")}
         />
       </div>
 
