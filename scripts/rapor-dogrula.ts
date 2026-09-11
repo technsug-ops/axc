@@ -4,7 +4,7 @@
  * ----------------------------------------------------------------------------
  *  Çalıştırma:  npm run rapor:dogrula
  *
- *  Veritabanına GİTMEZ — hepsi saf hesap. Beş bölüm:
+ *  Veritabanına GİTMEZ — hepsi saf hesap. Altı bölüm:
  *
  *  1) PENCERE — "bu ay / son 3 ay / son 6 ay / özel aralık" sınırları,
  *     yıl sınırı geçişi, bozuk tarih reddi.
@@ -15,6 +15,8 @@
  *     motor birebir tutmalı.
  *  5) KURALLAR — iade kendi ayına yazılır · para birimleri ayrı raporlanır
  *     (çevrim yok) · hesaplanamayan kâr sıfır sayılmaz · gider KDV'si.
+ *  6) TAZMİNAT GELİRİ (K209) — tedarikçiden tahsil edilen tazminat GERÇEK
+ *     NET'e EKLENİR (gideri TERSİ), pencere dışı kalan sayılmaz.
  *
  *  Bölüm ortasında patlarsa "TÜM KONTROLLER GEÇTİ" YAZMAZ — 09.08.2026'da
  *  yarım koşan bir doğrulama başarı raporladı, bu bayrak onun dersidir.
@@ -38,6 +40,7 @@ import {
   type RaporGirdisi,
   type RaporIade,
   type RaporSatis,
+  type RaporTazminat,
 } from "../src/lib/rapor";
 
 let basarisiz = 0;
@@ -48,7 +51,7 @@ let calisan = 0;
  * GEÇERSİZ sayılır. 09.08.2026'da yarım koşan bir doğrulama "TÜM KONTROLLER
  * GEÇTİ" yazmıştı; bu liste onun dersidir.
  */
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 
 const TOLERANS = 0.005;
@@ -552,6 +555,67 @@ console.log("\n5) KURALLAR");
   kontrol("kayıtsız dönem 'boş' işaretlenir", bosSonuc.bos === true);
   kontrol("kayıtsız dönemde blok üretilmez", bosSonuc.paraBirimleri.length === 0);
   kosanBolumler.push("kurallar");
+}
+
+// ===========================================================================
+console.log("\n6) TAZMİNAT GELİRİ (K209) — GERÇEK NET'e EKLENİR");
+// ===========================================================================
+{
+  const an = new Date("2026-08-31T09:00:00Z");
+  const pencere = pencereOlustur("BU_AY", an);
+
+  const giderler: RaporGider[] = [
+    { id: "G1", tarih: gun("2026-08-01"), tutar: 12000, kdvOrani: 20, paraBirimi: "TRY", kategoriId: "kira", kategoriAd: "Kira", sabitMi: true },
+  ];
+
+  /**
+   * ⚠ TARİH — TAHSİLATIN GÜNÜ, HASARIN GÜNÜ DEĞİL (İKİ TARİH İLKESİ).
+   * P1 ağustos içinde tahsil edildi → sayılır. P2 temmuzda tahsil edildi
+   * (hasar ağustosta oluşmuş olsa bile önemsiz — bu girdi zaten yalnız
+   * tahsilat tarihini taşır) → AĞUSTOS PENCERESİ DIŞINDA, sayılmaz.
+   */
+  const tazminatlar: RaporTazminat[] = [
+    { id: "T1", tarih: gun("2026-08-10"), tutar: 3000, paraBirimi: "TRY", karsiTaraf: "Hepsiburada", urunAdi: "Karcher SC4" },
+    { id: "T2", tarih: gun("2026-07-25"), tutar: 5000, paraBirimi: "TRY", karsiTaraf: "Trendyol Tedarik", urunAdi: "Örnek Ürün" },
+    // Ayrı para birimi — TRY toplamına KARIŞMAZ.
+    { id: "T3", tarih: gun("2026-08-15"), tutar: 100, paraBirimi: "EUR", karsiTaraf: "Amazon", urunAdi: "Örnek EUR Ürün" },
+  ];
+
+  const girdi: RaporGirdisi = { satislar: [], iadeler: [], giderler, tazminatlar };
+  const sonuc = raporHesapla(pencere, girdi);
+  const tl = sonuc.paraBirimleri.find((b) => b.paraBirimi === "TRY")!;
+  const eur = sonuc.paraBirimleri.find((b) => b.paraBirimi === "EUR")!;
+
+  kontrol("pencere dışı tahsilat SAYILMAZ (T2 temmuzda)", tl.tazminatAdedi === 1);
+  yakin("pencere içi tahsilat toplanır (T1)", tl.tazminatGeliri, 3000);
+  kontrol(
+    "kalem listesi kaynak veriyi taşır (İlke #16)",
+    tl.tazminatKalemleri.length === 1 &&
+      tl.tazminatKalemleri[0]?.id === "T1" &&
+      tl.tazminatKalemleri[0]?.karsiTaraf === "Hepsiburada",
+  );
+
+  /**
+   * GİDERİN TERSİ: gider GERÇEK NET'ten DÜŞER, tazminat GERÇEK NET'e
+   * EKLENİR. 12000 TL gider KDV hariç 10000 düşürüyor (bkz. bölüm 4);
+   * 3000 TL tazminat üstüne EKLENİYOR.
+   */
+  yakin("GERÇEK NET = −gider + tazminat", tl.gercekNet, -10000 + 3000);
+
+  kontrol("EUR bloğu TRY'den AYRI (para birimleri toplanmaz)", eur.tazminatAdedi === 1);
+  yakin("EUR tazminat geliri", eur.tazminatGeliri, 100);
+  kontrol("EUR bloğunda gider YOK (yalnız tazminat)", eur.giderNetDusen === 0);
+  yakin("EUR GERÇEK NET = yalnız tazminat", eur.gercekNet, 100);
+
+  /** `tazminatlar` HİÇ VERİLMEZSE (undefined) — sessizce 0, çökmez. */
+  const girdiSiz: RaporGirdisi = { satislar: [], iadeler: [], giderler };
+  const bSiz = raporHesapla(pencere, girdiSiz).paraBirimleri[0]!;
+  kontrol(
+    "tazminatlar hiç verilmezse (undefined) tazminatGeliri 0 kalır, çökmez",
+    bSiz.tazminatAdedi === 0 && bSiz.tazminatGeliri === 0,
+  );
+
+  kosanBolumler.push("tazminat geliri");
 }
 
 // ===========================================================================

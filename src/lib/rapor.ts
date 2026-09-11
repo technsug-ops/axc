@@ -110,12 +110,33 @@ export type RaporDuzeltmesi = {
   iadeKaynakliMi: boolean;
 };
 
+/**
+ * TAHSİL EDİLMİŞ TAZMİNAT — TEDARİKÇİDEN GELEN PARA (K209).
+ *
+ * ⚠ `tarih` SATIŞ/GİDER GİBİ "OLAYIN GÜNÜ" — TAHSİLATIN kendi günü, hasarın
+ * ilk kaydedildiği gün değil (anayasa: "iki tarih ilkesi", muhasebe
+ * ekranları OLAYIN gününü kullanır). Bu yüzden `Compensation.occurredAt`
+ * DEĞİL, tahsilat izinin (`AuditLog`) tarihi taşınır.
+ */
+export type RaporTazminat = {
+  id: string;
+  /** Tahsilat izinin tarihi — hasarın kendi günü değil. */
+  tarih: Date;
+  tutar: number;
+  paraBirimi: Currency;
+  /** Ekranda "kimden" göstermek için — adsız satır yazılmaz (İlke #14). */
+  karsiTaraf: string | null;
+  urunAdi: string | null;
+};
+
 export type RaporGirdisi = {
   satislar: RaporSatis[];
   iadeler: RaporIade[];
   giderler: RaporGider[];
   /** Fire ve sayim farki hareketleri — stok defterinden gelir. */
   duzeltmeler?: RaporDuzeltmesi[];
+  /** Tedarikçiden tahsil edilmiş tazminatlar — GERÇEK NET'e eklenir. */
+  tazminatlar?: RaporTazminat[];
 };
 
 export type GiderKategoriOzeti = {
@@ -211,6 +232,12 @@ export type ParaBirimiRaporu = {
   degiskenGiderNetDusen: number;
   kategoriler: GiderKategoriOzeti[];
 
+  // --- TAZMİNAT GELİRİ (tedarikçiden tahsil edilen, K209) ---
+  tazminatAdedi: number;
+  tazminatGeliri: number;
+  /** Eskiden yeniye — `hesaplanamayanSatislar` ile AYNI sıralama kuralı. */
+  tazminatKalemleri: RaporTazminat[];
+
   // --- SONUÇ ---
   gercekNet: number;
 
@@ -265,6 +292,9 @@ function bosRapor(paraBirimi: Currency): ParaBirimiRaporu {
     sabitGiderNetDusen: 0,
     degiskenGiderNetDusen: 0,
     kategoriler: [],
+    tazminatAdedi: 0,
+    tazminatGeliri: 0,
+    tazminatKalemleri: [],
     gercekNet: 0,
     satisBasinaOrtGider: null,
     satisBasinaOrtBrutKar: null,
@@ -422,6 +452,19 @@ export function raporHesapla(
     ozet.netDusen += netDusen;
   }
 
+  // ------------------------------- TAZMİNAT ---------------------------------
+  // Tedarikçiden tahsil edilmiş — GİDERİN TERSİ, GERÇEK NET'e EKLENİR.
+  // Gider tablosuna YAZILMAZ (K209 kararı: tazminat kendi kalemi, gider
+  // kategorisi değil — kategoriler.map() ile karışmasın diye ayrı sayaç).
+  for (const tz of girdi.tazminatlar ?? []) {
+    if (!pencerede(pencere, tz.tarih)) continue;
+
+    const b = blok(tz.paraBirimi);
+    b.tazminatAdedi++;
+    b.tazminatGeliri += tz.tutar;
+    b.tazminatKalemleri.push(tz);
+  }
+
   // -------------------------------- TOPLAMA --------------------------------
   for (const [paraBirimi, b] of bloklar) {
     b.brutNet1 = b.satisNet1 + b.iadeNet1;
@@ -438,7 +481,8 @@ export function raporHesapla(
      */
     b.duzeltmeZarari =
       b.fireZarari + b.sayimZarari - b.fireKazanci - b.sayimKazanci;
-    b.gercekNet = b.brutNet2 - b.giderNetDusen - b.duzeltmeZarari;
+    b.gercekNet =
+      b.brutNet2 - b.giderNetDusen - b.duzeltmeZarari + b.tazminatGeliri;
 
     b.hesaplanamayanDurumlar = [...durumSayaci.get(paraBirimi)!]
       .map(([durum, adet]) => ({ durum, adet }))
@@ -449,6 +493,9 @@ export function raporHesapla(
       a.tarih.getTime() - x.tarih.getTime();
     b.hesaplanamayanSatislar.sort(tariheGore);
     b.hesaplanamayanIadeler.sort(tariheGore);
+    b.tazminatKalemleri.sort(
+      (a, x) => a.tarih.getTime() - x.tarih.getTime(),
+    );
 
     b.kategoriler = [...kategoriler.get(paraBirimi)!.values()].sort(
       (a, x) => x.netDusen - a.netDusen || a.kategoriAd.localeCompare(x.kategoriAd),

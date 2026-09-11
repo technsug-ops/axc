@@ -7,10 +7,13 @@ import { z } from "zod";
 
 import type { CompensationStatus, Currency } from "@/generated/prisma/enums";
 import { gunMetninden } from "@/lib/donem";
+import { izYaz } from "@/lib/iz";
 import { prisma } from "@/lib/prisma";
 import {
   kalanTalepEdilebilirAdet,
   karsiTarafGecerliMi,
+  TAZMINAT_TAHSIL_EDILDI_EYLEMI,
+  TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI,
 } from "@/lib/tazminat";
 
 export type TazminatDurumu = {
@@ -61,6 +64,8 @@ function tutaraCevir(ham: FormDataEntryValue | null): number {
 function tazele() {
   revalidatePath("/tazminat");
   revalidatePath("/ayarlar/tedarikciler");
+  // Tahsilat GERÇEK NET'i değiştirebilir (K209).
+  revalidatePath("/rapor");
 }
 
 /** İki kaynağın ortak şekli — çağıran taraf farkı bilmez. */
@@ -289,6 +294,32 @@ export async function tazminatDurumDegistir(
     where: { id },
     data: { status: yeni as CompensationStatus },
   });
+
+  /**
+   * ⭐ TAHSİLAT İZİ (K209) — YALNIZ SETTLED SINIRINI GEÇERKEN.
+   * "Kapandı" → "Kabul edildi" → "Kapandı" gibi ileri-geri gidişlerde her
+   * seferinde YENİ iz yazılır (silme yok); en yenisi geçerli olan olur.
+   * Aynı duruma tekrar basmak (SETTLED → SETTLED gelmez, Select zaten
+   * değişimi gerektirir) burada zaten oluşmaz.
+   */
+  if (kayit.status !== "SETTLED" && yeni === "SETTLED") {
+    await izYaz({
+      action: TAZMINAT_TAHSIL_EDILDI_EYLEMI,
+      targetType: "Compensation",
+      targetId: id,
+      detail: JSON.stringify({
+        tutar: kayit.amount.toString(),
+        paraBirimi: kayit.currency,
+      }),
+    });
+  } else if (kayit.status === "SETTLED" && yeni !== "SETTLED") {
+    await izYaz({
+      action: TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI,
+      targetType: "Compensation",
+      targetId: id,
+      detail: null,
+    });
+  }
 
   tazele();
   return { basari: t("durumDegisti", { durum: tDurum(yeni) }) };

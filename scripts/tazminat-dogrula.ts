@@ -38,12 +38,16 @@ import {
   karsiTarafAdi,
   karsiTarafGecerliMi,
   varsayilanTalepTutari,
+  tazminatTahsilTarihi,
+  tazminatTahsilTarihleri,
+  TAZMINAT_TAHSIL_EDILDI_EYLEMI,
+  TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI,
   type TazminatKaydi,
 } from "../src/lib/tazminat";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 4;
+const BOLUM_SAYISI = 5;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -306,6 +310,157 @@ console.log("\n4) KARŞI TARAF — ÜÇ TÜRDEN BİRİ, AMA EN AZ BİRİ");
   );
 
   kosanBolumler.push("karsi-taraf");
+}
+
+console.log("\n5) TAHSİLAT İZİ — PAKETLEME İZİYLE AYNI DESEN (K209)");
+{
+  const T = TAZMINAT_TAHSIL_EDILDI_EYLEMI;
+  const G = TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI;
+  const an = (dk: number) => new Date(2026, 8, 11, 10, dk);
+
+  kontrol("iz yoksa tahsil edilmemiş", tazminatTahsilTarihi([]) === null);
+
+  kontrol(
+    "tahsil izi varsa TARİHİNİ döner",
+    tazminatTahsilTarihi([{ action: T, createdAt: an(1), targetId: "a" }])
+      ?.getTime() === an(1).getTime(),
+  );
+
+  kontrol(
+    "geri alınmışsa tahsil edilmemiş (null)",
+    tazminatTahsilTarihi([
+      { action: T, createdAt: an(1), targetId: "a" },
+      { action: G, createdAt: an(2), targetId: "a" },
+    ]) === null,
+  );
+
+  kontrol(
+    "geri alınıp TEKRAR tahsil edilmişse en yeni tarih döner",
+    tazminatTahsilTarihi([
+      { action: T, createdAt: an(1), targetId: "a" },
+      { action: G, createdAt: an(2), targetId: "a" },
+      { action: T, createdAt: an(3), targetId: "a" },
+    ])?.getTime() === an(3).getTime(),
+  );
+
+  kontrol(
+    "sıralama zaman damgasından, dizi sırasından DEĞİL",
+    tazminatTahsilTarihi([
+      { action: G, createdAt: an(5), targetId: "a" },
+      { action: T, createdAt: an(1), targetId: "a" },
+    ]) === null,
+  );
+
+  /**
+   * ⚠ EŞİT ZAMAN DAMGASINDA GERİ ALMA KAZANIR — paketleme izi ile aynı
+   * risk gerekçesi: yanlışlıkla "tahsil edildi" saymak GERÇEK NET'i şişirir.
+   */
+  kontrol(
+    "eşit zaman damgasında GERİ ALMA kazanır (güvenli yön)",
+    tazminatTahsilTarihi([
+      { action: T, createdAt: an(1), targetId: "a" },
+      { action: G, createdAt: an(1), targetId: "a" },
+    ]) === null,
+  );
+
+  kontrol(
+    "yabancı eylem izi karıştırmıyor (daha yeni olsa bile)",
+    tazminatTahsilTarihi([
+      { action: T, createdAt: an(1), targetId: "a" },
+      { action: "DURUM_DEGISTIRILDI", createdAt: an(9), targetId: "a" },
+    ])?.getTime() === an(1).getTime(),
+  );
+
+  /** Satış başına gruplama (paketlemedeki `hazirlananSiparisler` deseni). */
+  const harita = tazminatTahsilTarihleri([
+    { action: T, createdAt: an(1), targetId: "a" },
+    { action: T, createdAt: an(1), targetId: "b" },
+    { action: G, createdAt: an(2), targetId: "b" },
+    { action: T, createdAt: an(1), targetId: null },
+  ]);
+  kontrol(
+    "gruplama talep başına doğru çözüyor",
+    harita.has("a") && !harita.has("b") && harita.size === 1,
+    [...harita.keys()],
+  );
+
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  KURAL YAZILDI MI DEĞİL — İZ GERÇEKTEN YAZILIYOR MU
+   * --------------------------------------------------------------------
+   *  23.08.2026'daki `karsiTarafGecerliMi` dersinin aynısı: saf fonksiyon
+   *  doğru olabilir ama hiçbir yerden çağrılmıyor olabilir. `updatedAt`e
+   *  güvenmek yerine (K208 not düzenlemesiyle KİRLENİR) SETTLED sınırını
+   *  geçerken gerçekten `izYaz` çağrıldığı kaynaktan doğrulanır.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const eylem = readFileSync("src/app/tazminat/actions.ts", "utf8");
+  const durumBloku = eylem.slice(
+    eylem.indexOf("export async function tazminatDurumDegistir"),
+  );
+
+  /**
+   * ⚠ "DESEN VAR MI" YETMEZ — `if (false && <beklenen koşul>)` gibi bir
+   * mutasyon deseni AYAKTA BIRAKIR ve eski gevşek kontrol (yalnız `indexOf`
+   * sırası) bunu YEŞİL geçirirdi — bizzat denenip görüldü. Koşul metni TAM
+   * EŞLEŞTİRİLİR: en yakın `if (…) {`in içeriği bire bir beklenenle
+   * karşılaştırılır, "içeriyor mu" değil "AYNI MI" sorulur.
+   */
+  function ifKosuluOncesinde(metin: string, isaret: string): string | null {
+    const isaretYeri = metin.indexOf(isaret);
+    if (isaretYeri === -1) return null;
+    const sonIfYeri = metin.slice(0, isaretYeri).lastIndexOf("if (");
+    if (sonIfYeri === -1) return null;
+    const kosulEslesme = /^if\s*\(([^)]*)\)\s*\{/.exec(metin.slice(sonIfYeri));
+    return kosulEslesme?.[1]?.replace(/\s+/g, " ").trim() ?? null;
+  }
+
+  const tahsilKosul = ifKosuluOncesinde(
+    durumBloku,
+    "TAZMINAT_TAHSIL_EDILDI_EYLEMI",
+  );
+  kontrol(
+    "SETTLED'e YENİ giren geçişte tahsilat izi yazılıyor",
+    tahsilKosul === 'kayit.status !== "SETTLED" && yeni === "SETTLED"',
+    tahsilKosul,
+  );
+
+  const geriAlKosul = ifKosuluOncesinde(
+    durumBloku,
+    "TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI",
+  );
+  kontrol(
+    "  ...SETTLED'DEN ÇIKAN geçişte GERİ ALMA izi yazılıyor",
+    geriAlKosul === 'kayit.status === "SETTLED" && yeni !== "SETTLED"',
+    geriAlKosul,
+  );
+  kontrol(
+    "  ...iz `Compensation`a bağlı, `Sale`ye DEĞİL (karışmasın)",
+    /targetType: "Compensation"/.test(durumBloku),
+  );
+
+  /**
+   * ⚠ `/rapor` SAYFASI GERÇEKTEN OKUYOR MU — kural yazılıp da hiç
+   * çağrılmayan `hazirlaniyorMu` dersinin aynısı. Kaynak `/rapor/page.tsx`
+   * hem izi sorguluyor hem `girdi.tazminatlar`a bağlıyor mu.
+   */
+  const raporSayfa = readFileSync("src/app/rapor/page.tsx", "utf8");
+  kontrol(
+    "/rapor tahsilat izini SORGULUYOR (TÜM geçmiş, tarih süzgeçsiz)",
+    /TAZMINAT_TAHSILAT_EYLEMLERI/.test(raporSayfa) &&
+      /tazminatTahsilTarihleri\(/.test(raporSayfa),
+  );
+  kontrol(
+    "  ...ve sonucu `girdi.tazminatlar`a BAĞLIYOR (kopmuyor)",
+    /tazminatlar\s*[,}]/.test(
+      raporSayfa.slice(
+        raporSayfa.indexOf("const girdi = {"),
+        raporSayfa.indexOf("const girdi = {") + 200,
+      ),
+    ),
+  );
+
+  kosanBolumler.push("tahsilat-izi");
 }
 
 // ===========================================================================

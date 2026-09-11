@@ -44,7 +44,12 @@ import {
   type RaporIade,
   type RaporDuzeltmesi,
   type RaporSatis,
+  type RaporTazminat,
 } from "@/lib/rapor";
+import {
+  TAZMINAT_TAHSILAT_EYLEMLERI,
+  tazminatTahsilTarihleri,
+} from "@/lib/tazminat";
 
 import {
   KIYAS_ANAHTARLARI,
@@ -203,7 +208,13 @@ export default async function RaporSayfasi({
         }
       : { [alan]: aralik };
 
-  const [satisKayitlari, iadeKayitlari, duzeltmeKayitlari, giderKayitlari] =
+  const [
+    satisKayitlari,
+    iadeKayitlari,
+    duzeltmeKayitlari,
+    giderKayitlari,
+    tazminatIzleri,
+  ] =
     await Promise.all([
       prisma.sale.findMany({
         // Rapor ciro/NET taşır: iptal edilen satış hiç doğmamış sayılır.
@@ -282,6 +293,21 @@ export default async function RaporSayfasi({
           category: { select: { id: true, name: true, isFixed: true } },
         },
       }),
+      /**
+       * ⛔ TARİH SÜZGECİ YOK — `hazirlananSiparisKimlikleri()` İLE AYNI
+       * GEREKÇE (`lib/panel/gorev-verisi.ts`). "En yeni iz kazanır" kuralı
+       * TÜM geçmişe bakmak zorunda: dönem penceresine `ikiAralik` ile
+       * kısıtlasaydık, bu dönemden ÖNCE tahsil edilip SONRA geri alınmış
+       * bir kayıt yanlışlıkla hâlâ "tahsil edildi" sanılırdı. Küme bugün
+       * küçük; büyürse alt sorguya çevrilir.
+       */
+      prisma.auditLog.findMany({
+        where: {
+          action: { in: [...TAZMINAT_TAHSILAT_EYLEMLERI] },
+          targetType: "Compensation",
+        },
+        select: { action: true, createdAt: true, targetId: true },
+      }),
     ]);
 
   const sayi = (deger: { toString(): string } | null) =>
@@ -345,7 +371,48 @@ export default async function RaporSayfasi({
     iadeKaynakliMi: d.returnItemId !== null,
   }));
 
-  const girdi = { satislar, iadeler, giderler, duzeltmeler };
+  /**
+   * TAHSİL EDİLMİŞ TAZMİNATLAR — ikinci adım, ilk sorgunun sonucuna bağlı
+   * (K209). Önce HANGİ taleplerin şu an "tahsil edildi" durumunda olduğu
+   * ve NE ZAMAN tahsil edildiği çözülür (`tazminatIzleri`den); sonra
+   * yalnız o taleplerin tutar/karşı taraf/ürün bilgisi çekilir — tüm
+   * `Compensation` tablosu değil.
+   */
+  const tahsilTarihleri = tazminatTahsilTarihleri(tazminatIzleri);
+  const tahsilEdilenIdler = [...tahsilTarihleri.keys()];
+  const tahsilEdilenTalepler = tahsilEdilenIdler.length
+    ? await prisma.compensation.findMany({
+        where: { id: { in: tahsilEdilenIdler } },
+        select: {
+          id: true,
+          amount: true,
+          currency: true,
+          supplier: { select: { name: true } },
+          carrier: { select: { name: true } },
+          purchaseItem: {
+            select: { variant: { select: { product: { select: { name: true } } } } },
+          },
+          returnItem: {
+            select: { variant: { select: { product: { select: { name: true } } } } },
+          },
+        },
+      })
+    : [];
+
+  const tazminatlar: RaporTazminat[] = tahsilEdilenTalepler.map((k) => ({
+    id: k.id,
+    // Bulunamayan tarih olamaz — `tahsilTarihleri` kümesinden geldi.
+    tarih: tahsilTarihleri.get(k.id)!,
+    tutar: Number(k.amount.toString()),
+    paraBirimi: k.currency,
+    karsiTaraf: k.supplier?.name ?? k.carrier?.name ?? null,
+    urunAdi:
+      k.purchaseItem?.variant.product.name ??
+      k.returnItem?.variant.product.name ??
+      null,
+  }));
+
+  const girdi = { satislar, iadeler, giderler, duzeltmeler, tazminatlar };
   const sonuc = raporHesapla(pencere, girdi);
 
   /**
@@ -570,6 +637,8 @@ export default async function RaporSayfasi({
               : b.duzeltmeZarari < 0
                 ? ` + ${para(-b.duzeltmeZarari)}`
                 : ""}
+            {/* K209: sıfırken formülde görünmez — boş terim bilgi taşımaz. */}
+            {b.tazminatGeliri > 0 ? ` + ${para(b.tazminatGeliri)}` : ""}
           </div>
         </div>
 
@@ -718,6 +787,50 @@ export default async function RaporSayfasi({
             ].map((durum) => (
               <KarSorunuCozumu key={durum} durum={durum} />
             ))}
+          </div>
+        ) : null}
+
+        {/* ------------------------ TAZMİNAT GELİRİ (K209) ------------------------
+            Tedarikçiden tahsil edilmiş tazminat — GERÇEK NET'e eklenir.
+            Boş kutu bilgi taşımaz (İlke #13); yalnız tahsilat varsa çizilir. */}
+        {b.tazminatAdedi > 0 ? (
+          <div className="space-y-2 rounded-lg border p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-medium">
+                {t("tazminatGeliriBaslik")}
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/tazminat">{t("tazminatTalepleriGor")}</Link>
+              </Button>
+            </div>
+            <div className={`text-2xl font-semibold ${DURUM_YAZISI.olumlu}`}>
+              {para(b.tazminatGeliri)}
+            </div>
+            <p className="text-muted-foreground text-xs">
+              {t("tazminatGeliriNotu", { sayi: b.tazminatAdedi })}
+            </p>
+            {/* KAYNAK VERİ SATIR SATIR GÖRÜNÜR (İlke #16) — tıklanacak bir
+                detay sayfası yok (/tazminat kalem bazlı bağlantı vermiyor),
+                bu yüzden liste doğrudan burada açık duruyor. */}
+            <div className="divide-y">
+              {b.tazminatKalemleri.map((tz) => (
+                <div
+                  key={tz.id}
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 py-1.5 text-sm"
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    {tz.urunAdi ?? t("tazminatUrunBilinmiyor")}
+                    {tz.karsiTaraf ? ` · ${tz.karsiTaraf}` : ""}
+                  </span>
+                  <span className="text-muted-foreground shrink-0 text-xs whitespace-nowrap">
+                    {bicim.tarih(tz.tarih)}
+                  </span>
+                  <span className="shrink-0 font-medium whitespace-nowrap">
+                    {para(tz.tutar)}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         ) : null}
 

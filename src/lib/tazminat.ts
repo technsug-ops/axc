@@ -145,3 +145,100 @@ export function karsiTarafAdi(kayit: {
 }): string | null {
   return kayit.supplier?.name ?? kayit.carrier?.name ?? null;
 }
+
+/**
+ * ============================================================================
+ *  TAHSİLAT İZİ — TAZMİNAT NE ZAMAN GELİR HALİNE GELDİ (K209)
+ * ----------------------------------------------------------------------------
+ *  _Kullanıcı 11.09.2026: "tazminden gelen para hangi kalemde görünüyor,
+ *  en nihayetinde muhasebeleştirilmeli."_ Tazminat parası hiçbir rapora
+ *  girmiyordu — bu ikisi onu GERÇEK NET'e bağlar.
+ *
+ *  ⚠ ŞEMA DEĞİŞMEDİ — K34a/PAKETLEME İLE AYNI MERDİVEN BASAMAĞI. `status`
+ *  SETTLED'e her geçtiğinde `AuditLog`a iz yazılır; "ne zaman tahsil
+ *  edildi" sorusunun cevabı `Compensation.updatedAt`TEN OKUNMAZ — o alan
+ *  not düzenlemesiyle de (K208) ezilir ve tahsilat anını YALANCI gösterir
+ *  (anayasa: "GEÇMİŞİ DÜZELTMEK..." → `updatedAt` her dokunuşta kirlenir).
+ *  İz, PAKETLENDI/PAKETLEME_GERI_ALINDI ile BİREBİR aynı desen: en yeni iz
+ *  kazanır, silme yok, ters kayıt.
+ * ============================================================================
+ */
+export const TAZMINAT_TAHSIL_EDILDI_EYLEMI = "TAZMINAT_TAHSIL_EDILDI";
+export const TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI =
+  "TAZMINAT_TAHSILI_GERI_ALINDI";
+
+export const TAZMINAT_TAHSILAT_EYLEMLERI = [
+  TAZMINAT_TAHSIL_EDILDI_EYLEMI,
+  TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI,
+] as const;
+
+export type TazminatTahsilatIzi = {
+  action: string;
+  createdAt: Date;
+  targetId: string | null;
+};
+
+/**
+ * BİR TALEP TAHSİL EDİLMİŞ Mİ — EN YENİ İZ KAZANIR.
+ *
+ * Tahsil edildiyse İZİN TARİHİNİ döner (rapor bu tarihe göre döneme
+ * yazar); edilmediyse `null`.
+ *
+ * ⚠ EŞİT ZAMAN DAMGASINDA GERİ ALMA KAZANIR — paketleme izi ile AYNI risk
+ * gerekçesi: yanlışlıkla "tahsil edildi" saymak GERÇEK NET'i şişirir,
+ * yanlışlıkla "edilmedi" saymak en fazla bir kez fazladan bakılmasına
+ * yol açar. İkincisi daha güvenli yön.
+ */
+export function tazminatTahsilTarihi(
+  izler: TazminatTahsilatIzi[],
+): Date | null {
+  let enYeni: TazminatTahsilatIzi | null = null;
+  for (const iz of izler) {
+    if (
+      iz.action !== TAZMINAT_TAHSIL_EDILDI_EYLEMI &&
+      iz.action !== TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI
+    ) {
+      continue;
+    }
+    if (enYeni === null) {
+      enYeni = iz;
+      continue;
+    }
+    if (iz.createdAt.getTime() > enYeni.createdAt.getTime()) {
+      enYeni = iz;
+      continue;
+    }
+    if (
+      iz.createdAt.getTime() === enYeni.createdAt.getTime() &&
+      iz.action === TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI
+    ) {
+      enYeni = iz;
+    }
+  }
+  return enYeni?.action === TAZMINAT_TAHSIL_EDILDI_EYLEMI
+    ? enYeni.createdAt
+    : null;
+}
+
+/**
+ * TALEP BAŞINA TAHSİLAT HARİTASI — tek sorguda çekilen izler burada
+ * gruplanır (paketlemedeki `hazirlananSiparisler` ile aynı desen).
+ */
+export function tazminatTahsilTarihleri(
+  izler: TazminatTahsilatIzi[],
+): Map<string, Date> {
+  const gruplar = new Map<string, TazminatTahsilatIzi[]>();
+  for (const iz of izler) {
+    if (!iz.targetId) continue;
+    const liste = gruplar.get(iz.targetId);
+    if (liste) liste.push(iz);
+    else gruplar.set(iz.targetId, [iz]);
+  }
+
+  const sonuc = new Map<string, Date>();
+  for (const [id, liste] of gruplar) {
+    const tarih = tazminatTahsilTarihi(liste);
+    if (tarih) sonuc.set(id, tarih);
+  }
+  return sonuc;
+}
