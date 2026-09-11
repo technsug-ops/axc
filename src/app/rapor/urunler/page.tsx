@@ -38,11 +38,16 @@ import {
   analizAdresi,
   ANALIZ_YOLU,
   analizToplami,
+  aramaCoz,
+  bayrakCoz,
+  CEYREKLER,
+  ceyrekCoz,
   coklucoz,
   eksenCoz,
   kovaCoz,
   sayiCoz,
   satirSayisiCoz,
+  sezonCoz,
   sirala,
   siralamaCoz,
   suzgectenGecir,
@@ -52,12 +57,14 @@ import {
   type AnalizSuzgeci,
 } from "@/lib/rapor/urun-analizi";
 import {
+  mevsimselVerisi,
   satisEkseniVerisi,
   stokEkseniVerisi,
 } from "@/lib/rapor/urun-analizi-verisi";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
 import { AnalizSuzgeci as SuzgecCubugu } from "./analiz-suzgeci";
+import { UrunEtiketleri } from "./urun-etiketleri";
 
 import type { Currency } from "@/generated/prisma/enums";
 
@@ -106,6 +113,11 @@ export default async function UrunAnaliziSayfasi({
     minAdet?: string;
     minCiro?: string;
     kova?: string;
+    arama?: string;
+    favori?: string;
+    incelenecek?: string;
+    sezon?: string;
+    ceyrek?: string;
     sirala?: string;
     yon?: string;
     satir?: string;
@@ -141,7 +153,12 @@ export default async function UrunAnaliziSayfasi({
      *  hiçbir satır geçmez (satış satırlarının `yasGun`u null) ve bu
      *  tanımın sonucudur — sessiz bir hata değil. */
     kova: kovaCoz(p.kova),
+    arama: aramaCoz(p.arama),
+    favoriYalniz: bayrakCoz(p.favori),
+    incelenecekYalniz: bayrakCoz(p.incelenecek),
+    sezon: sezonCoz(p.sezon),
   };
+  const ceyrek = ceyrekCoz(p.ceyrek);
 
   const istenen = (p.pencere ?? "BU_AY") as PencereTuru;
   const tur: PencereTuru = PENCERE_TURLERI.includes(istenen)
@@ -179,7 +196,9 @@ export default async function UrunAnaliziSayfasi({
   const [hamSatirlar, kanallar] = await Promise.all([
     eksen === "stok"
       ? stokEkseniVerisi(bugun)
-      : satisEkseniVerisi(pencere, paraBirimi, kanalKodu),
+      : eksen === "mevsim"
+        ? mevsimselVerisi(ceyrek)
+        : satisEkseniVerisi(pencere, paraBirimi, kanalKodu),
     /**
      * KANAL SEÇENEKLERİ — `hamSatirlar`DAN TÜRETİLMEZ (K210).
      *
@@ -254,6 +273,7 @@ export default async function UrunAnaliziSayfasi({
     marj: t("eksenMarj"),
     hacim: t("eksenHacim"),
     stok: t("eksenStok"),
+    mevsim: t("eksenMevsim"),
   };
 
   /** Stok ekseninde satış sütunları çizilmez — o eksende sorulmuyorlar. */
@@ -302,6 +322,10 @@ export default async function UrunAnaliziSayfasi({
                 kategoriler: suzgec.kategoriler,
                 minAdet: suzgec.minAdet,
                 minCiro: suzgec.minCiro,
+                arama: suzgec.arama,
+                favori: suzgec.favoriYalniz,
+                incelenecek: suzgec.incelenecekYalniz,
+                sezon: suzgec.sezon,
                 /**
                  * ⛔ KOVA TAŞINMIYOR — VE BU BİR KARAR, ihmal değil.
                  * Raf yaşı yalnız stok ekseninde var; hacim sekmesine
@@ -309,6 +333,9 @@ export default async function UrunAnaliziSayfasi({
                  * için liste BOŞ açılırdı ve kullanıcı sebebini göremezdi.
                  * Bedeli: stoka dönünce kova sıfırlanır — boş liste
                  * göstermekten iyidir.
+                 *
+                 * ⛔ ÇEYREK DE TAŞINMIYOR — yalnız `mevsim` ekseninde
+                 * anlamlı; kova ile AYNI gerekçe.
                  */
                 satir: satirSayisi,
               })}
@@ -326,9 +353,54 @@ export default async function UrunAnaliziSayfasi({
         })}
       </div>
 
+      {/* ── ÇEYREK SEÇİCİ — YALNIZ MEVSİM EKSENİNDE (K212) ──
+          ⛔ KOVA/EKSEN SEKMELERİYLE AYNI DESEN: tek tık, form yok, anında
+          uygulanır — bir "hangi çeyrek" sorusu bir SÜZGEÇ değil, kovaya
+          benzer bir KÜME seçimi. */}
+      {eksen === "mevsim" ? (
+        <div className="flex flex-wrap gap-2">
+          {CEYREKLER.map((c) => {
+            const aktif = c === ceyrek;
+            return (
+              <Link
+                key={c}
+                href={analizAdresi({
+                  eksen,
+                  markalar: suzgec.markalar,
+                  kategoriler: suzgec.kategoriler,
+                  minAdet: suzgec.minAdet,
+                  minCiro: suzgec.minCiro,
+                  arama: suzgec.arama,
+                  favori: suzgec.favoriYalniz,
+                  incelenecek: suzgec.incelenecekYalniz,
+                  sezon: suzgec.sezon,
+                  ceyrek: c,
+                  sirala: sira,
+                  yon,
+                  satir: satirSayisi,
+                })}
+                aria-current={aktif ? "true" : undefined}
+                className={
+                  "inline-flex h-11 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
+                  (aktif
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background hover:bg-muted")
+                }
+              >
+                {t(`ceyrek${c}`)}
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
+
       {/* ── KÜMENİN NE OLDUĞU YAZAR — hangi soruya bakıldığı belirsiz kalmasın ── */}
       <p className="text-muted-foreground text-sm">
-        {stokKipi ? t("stokDonemUyarisi") : t("satisEkseniNotu")}
+        {stokKipi
+          ? t("stokDonemUyarisi")
+          : eksen === "mevsim"
+            ? t("mevsimNotu")
+            : t("satisEkseniNotu")}
       </p>
 
       <SuzgecCubugu
@@ -338,6 +410,7 @@ export default async function UrunAnaliziSayfasi({
         sira={sira}
         yon={yon}
         satir={satirSayisi}
+        ceyrek={ceyrek}
         markaSecenekleri={markaSecenekleri}
         kategoriSecenekleri={kategoriSecenekleri}
         kanalSecenekleri={kanallar}
@@ -345,7 +418,11 @@ export default async function UrunAnaliziSayfasi({
           suzgec.markalar.length > 0 ||
           suzgec.kategoriler.length > 0 ||
           suzgec.minAdet !== null ||
-          suzgec.minCiro !== null
+          suzgec.minCiro !== null ||
+          suzgec.arama !== null ||
+          suzgec.favoriYalniz ||
+          suzgec.incelenecekYalniz ||
+          suzgec.sezon !== null
         }
       />
 
@@ -515,6 +592,16 @@ export default async function UrunAnaliziSayfasi({
                                 </Link>
                               )}
                               <KimlikSatiri satir={s} />
+                              {/* ⚠ `urunId === null` OLAN SATIRA ETİKET KONMAZ
+                                  (K212) — etiketlenecek bir Product yok. */}
+                              {s.urunId !== null ? (
+                                <UrunEtiketleri
+                                  urunId={s.urunId}
+                                  isFavorite={s.isFavorite}
+                                  needsReview={s.needsReview}
+                                  season={s.season}
+                                />
+                              ) : null}
                             </div>
                           </TableCell>
 
@@ -695,6 +782,16 @@ export default async function UrunAnaliziSayfasi({
                                 ? []
                                 : [{ etiket: t("marka"), deger: s.marka }]),
                             ]
+                      }
+                      eylemler={
+                        s.urunId !== null ? (
+                          <UrunEtiketleri
+                            urunId={s.urunId}
+                            isFavorite={s.isFavorite}
+                            needsReview={s.needsReview}
+                            season={s.season}
+                          />
+                        ) : null
                       }
                     />
                   );

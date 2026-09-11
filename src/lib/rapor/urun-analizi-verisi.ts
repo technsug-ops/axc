@@ -7,7 +7,20 @@ import { prisma } from "@/lib/prisma";
 import { acikPartilerToplu } from "@/lib/stok";
 import { yaslanmaListesi, type YaslanmaGirdisi } from "@/lib/yaslanma";
 
-import type { AnalizSatiri } from "./urun-analizi";
+import { ceyrekBul, type AnalizSatiri, type Ceyrek } from "./urun-analizi";
+
+/** Etiket seçimi — favori/incelenecek/sezon İKİ eksende de AYNI biçimde. */
+const ETIKET_SECIMI = {
+  isFavorite: true,
+  needsReview: true,
+  season: true,
+} as const;
+
+type EtiketKaynagi = {
+  isFavorite: boolean;
+  needsReview: boolean;
+  season: "YAZ" | "KIS" | null;
+};
 
 /**
  * KİMLİK KODLARI — İKİ EKSENDE DE AYNI ŞEKİLDE (İlke #10).
@@ -137,6 +150,7 @@ export async function satisEkseniVerisi(
                   brand: true,
                   vatRateOverride: true,
                   category: { select: { name: true } },
+                  ...ETIKET_SECIMI,
                 },
               },
             },
@@ -154,6 +168,7 @@ export async function satisEkseniVerisi(
       marka: string | null;
       kategori: string | null;
       kodlar: ReturnType<typeof kimlikCoz>;
+      etiket: EtiketKaynagi;
     }
   >();
   const kalemler: KalemGirdisi[] = [];
@@ -172,6 +187,7 @@ export async function satisEkseniVerisi(
         marka: k.variant.product.brand,
         kategori: k.variant.product.category?.name ?? null,
         kodlar: kimlikCoz(k.variant),
+        etiket: k.variant.product,
       });
       kalemler.push({
         variantId: k.variantId,
@@ -191,18 +207,24 @@ export async function satisEkseniVerisi(
    * Bu eksende o sorular sorulmuyor; sıfır yazmak "rafta hiç mal yok"
    * demek olurdu ve sıralama o sütuna göre yapılırsa yanlış cevap verirdi.
    */
-  return urunlereTopla(kalemler).map((s) => ({
-    // NET2 KIRPMA MUAFIYETI: ürün toplamı — KDV dönemi değil; ekran
-    // fazlalığı "KDV mahsubu içerir" şerhiyle yazar, kırpmaz.
-    ...s,
-    urunId: kimlik.get(s.variantId)?.urunId ?? null,
-    marka: kimlik.get(s.variantId)?.marka ?? null,
-    kategori: kimlik.get(s.variantId)?.kategori ?? null,
-    yasGun: null,
-    bagliSermaye: null,
-    rafAdedi: null,
-    ...(kimlik.get(s.variantId)?.kodlar ?? kimlikCoz(null)),
-  }));
+  return urunlereTopla(kalemler).map((s) => {
+    const k = kimlik.get(s.variantId);
+    return {
+      // NET2 KIRPMA MUAFIYETI: ürün toplamı — KDV dönemi değil; ekran
+      // fazlalığı "KDV mahsubu içerir" şerhiyle yazar, kırpmaz.
+      ...s,
+      urunId: k?.urunId ?? null,
+      marka: k?.marka ?? null,
+      kategori: k?.kategori ?? null,
+      yasGun: null,
+      bagliSermaye: null,
+      rafAdedi: null,
+      ...(k?.kodlar ?? kimlikCoz(null)),
+      isFavorite: k?.etiket.isFavorite ?? false,
+      needsReview: k?.etiket.needsReview ?? false,
+      season: k?.etiket.season ?? null,
+    };
+  });
 }
 
 /**
@@ -225,6 +247,7 @@ export async function stokEkseniVerisi(bugun: Date): Promise<AnalizSatiri[]> {
           brand: true,
           vatRateOverride: true,
           category: { select: { name: true, vatRate: true } },
+          ...ETIKET_SECIMI,
         },
       },
     },
@@ -279,6 +302,127 @@ export async function stokEkseniVerisi(bugun: Date): Promise<AnalizSatiri[]> {
       bagliSermaye:
         y.sermayeParaBirimi === "TRY" ? y.sermayeKdvHaric : null,
       ...kimlikCoz(v ?? null),
+      isFavorite: v?.product.isFavorite ?? false,
+      needsReview: v?.product.needsReview ?? false,
+      season: v?.product.season ?? null,
+    };
+  });
+}
+
+/**
+ * ============================================================================
+ *  MEVSİM EKSENİ — TAKVİM ÇEYREĞİNE GÖRE, TÜM GEÇMİŞ (K212)
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı isteği 11.09.2026: _"1. çeyrekte çok satan, 2. çeyrekte çok
+ *  satan..."_ Kullanıcı kararı: TÜM geçmiş, takvim çeyreğine göre (yıldan
+ *  BAĞIMSIZ toplanır) — arbitraj işinde ürünler genelde 1-2 yıl yaşıyor,
+ *  çok yıllı ortalama en anlamlısı.
+ *
+ *  ⛔ DÖNEM/KANAL/PARA SÜZGECİ YOK — bilerek. "1. çeyrekte HANGİ ürünler
+ *  çok satmış" sorusu döneme/kanala göre değil TÜM geçmişe göre sorulur;
+ *  `stok` ekseninin dönem süzgecini yok saymasıyla AYNI gerekçe ailesi.
+ *  Para birimi TRY'YE SABİTLENDİ (satış eksenlerindeki varsayılanla aynı) —
+ *  bu ekseni de bir para seçiciyle karmaşıklaştırmamak için.
+ *
+ *  ⚠ OTOMATİK "MEVSİM ÖNERİSİ" YOK. Ölçüldü (11.09.2026, canlı): ürünlerin
+ *  %79'u yalnız 1-2 farklı ayda satılmış; en az 4 farklı ayda satılmış 163
+ *  üründe bile çeyreklik dağılım DÜZ/rastgele çıktı — net bir mevsimsel
+ *  sinyal yok. Kullanıcı kararı: yanlış öneri hiç önermemekten kötü,
+ *  şimdilik yalnız ELLE etiketleme var (bkz. BEKLEYENLER K212).
+ */
+export async function mevsimselVerisi(ceyrek: Ceyrek): Promise<AnalizSatiri[]> {
+  const satislar = await prisma.sale.findMany({
+    where: { iptalTarihi: null },
+    select: {
+      soldAt: true,
+      profitCurrency: true,
+      items: {
+        where: { ...KALEM_GECERLI },
+        select: {
+          variantId: true,
+          quantity: true,
+          unitPriceAmount: true,
+          unitPriceCurrency: true,
+          net1Amount: true,
+          net2Amount: true,
+          profitStatus: true,
+          variant: {
+            select: {
+              ...KIMLIK_SECIMI,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  brand: true,
+                  vatRateOverride: true,
+                  category: { select: { name: true } },
+                  ...ETIKET_SECIMI,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const kimlik = new Map<
+    string,
+    {
+      urunId: string;
+      marka: string | null;
+      kategori: string | null;
+      kodlar: ReturnType<typeof kimlikCoz>;
+      etiket: EtiketKaynagi;
+    }
+  >();
+  const kalemler: KalemGirdisi[] = [];
+
+  for (const satis of satislar) {
+    /** ⛔ AY, `soldAt`İN KENDİSİNDEN — UTC. Satış tarihi zaten İstanbul
+     *  gün sınırına göre yazılıyor (anayasa), burada ayrıca çevrilmez. */
+    if (ceyrekBul(satis.soldAt.getUTCMonth() + 1) !== ceyrek) continue;
+
+    const para: Currency =
+      satis.profitCurrency ?? satis.items[0]?.unitPriceCurrency ?? "TRY";
+    if (para !== "TRY") continue;
+
+    for (const k of satis.items) {
+      if (k.unitPriceCurrency !== para) continue;
+      kimlik.set(k.variantId, {
+        urunId: k.variant.product.id,
+        marka: k.variant.product.brand,
+        kategori: k.variant.product.category?.name ?? null,
+        kodlar: kimlikCoz(k.variant),
+        etiket: k.variant.product,
+      });
+      kalemler.push({
+        variantId: k.variantId,
+        urunAdi: k.variant.product.name,
+        sku: k.variant.sku,
+        adet: k.quantity,
+        ciro: Number(k.unitPriceAmount.toString()) * k.quantity,
+        net1: k.net1Amount === null ? null : Number(k.net1Amount.toString()),
+        net2: k.net2Amount === null ? null : Number(k.net2Amount.toString()),
+        durum: k.profitStatus,
+      });
+    }
+  }
+
+  return urunlereTopla(kalemler).map((s) => {
+    const k = kimlik.get(s.variantId);
+    return {
+      ...s,
+      urunId: k?.urunId ?? null,
+      marka: k?.marka ?? null,
+      kategori: k?.kategori ?? null,
+      yasGun: null,
+      bagliSermaye: null,
+      rafAdedi: null,
+      ...(k?.kodlar ?? kimlikCoz(null)),
+      isFavorite: k?.etiket.isFavorite ?? false,
+      needsReview: k?.etiket.needsReview ?? false,
+      season: k?.etiket.season ?? null,
     };
   });
 }

@@ -13,6 +13,90 @@
 
 ---
 
+## 🔶 K212 — ÜRÜN ANALİZİ: ARAMA · FAVORİ/İNCELENECEK · MEVSİM SEKMESİ · 11.09.2026 · [YAZILDI — CANLI MIGRATION + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı: _"barkod EA ve diğer SKU'larla ürün arama butonu koy. Favori
+ürünler ve incelenilecek ürünler şeklinde etiketleyebilelim. Mevsimsel
+bir sekme — 1./2./3./4. çeyrekte çok satan. Yaz/kış tag'ları da olabilir,
+best practise peşinde koş."_
+
+### KARARLAR (kullanıcı, 11.09.2026)
+1. Favori/İncelenecek etiketleri **ORTAK** — kullanıcı bazlı değil, tek
+   liste tüm ekibe görünür.
+2. Mevsimsel sekme **TÜM GEÇMİŞ**, takvim çeyreğine göre (yıldan bağımsız
+   toplanır) — arbitraj ürünleri genelde 1-2 yıl yaşıyor.
+3. Yaz/Kış: **YALNIZ ELLE** — otomatik öneri YAPILMADI.
+
+### ⛔ OTOMATİK MEVSİM ÖNERİSİ NEDEN YOK — ÖLÇÜLDÜ, KURULMADI
+Canlıda ölçüldü (11.09.2026): ürünlerin **%79'u** (1296/1639) yalnız 1-2
+farklı ayda satılmış. İlk bakışta çeyreklik dağılım bimodal (uçlarda
+yığılmış) görünüyordu — ama bu örneklem küçüklüğü, gerçek mevsimsellik
+değil: bir ürün tek kez Haziran'da satıldıysa "%100 yaz" çıkar, oysa bu
+kampanya rastlantısı olabilir. En az 4 farklı ayda satılmış (daha
+güvenilir) 163 ürüne bakıldığında dağılım **DÜZ/rastgele** çıktı — net
+mevsimsel sinyal yok. Kullanıcı kararı: yanlış öneri hiç önermemekten
+kötü; veri yeterince büyüdükçe yeniden değerlendirilecek (bu kalem
+**bilerek** kapatılmadı, açık bırakılıyor — bkz. "kapatılamayacak kayıp,
+görev değil kayıttır": burada TERSİ, ileride görev olabilecek bir kayıt).
+
+### YAPILAN
+- **Arama** — barkod/EAN, SKU, Firma SKU, kanal kodları, ürün adı;
+  TR-duyarsız (İ/i) VE ASCII-duyarsız (kod alanlarında "I"→"ı" tuzağı —
+  bkz. aşağıdaki hata) çift normalleştirme.
+- **Favori / İncelenecek** — satır içi tek-tık toggle (yıldız/bayrak
+  ikonu), ortak liste, `Product.isFavorite`/`needsReview`.
+- **Sezon (Yaz/Kış)** — elle atama, satır içi iki düğme, `Product.season`.
+- **Mevsim ekseni** — 5. sekme, 1./2./3./4. Çeyrek çipleri, TÜM geçmiş
+  satışlar TRY sabit (dönem/kanal/para süzgeci bu ekseni etkilemiyor).
+
+### ⚠ KENDİ TESTİMİN YAKALADIĞI HATA (kaynak taramayla değil, DEĞER testiyle)
+İlk yazımda arama `toLocaleLowerCase("tr")` kullanıyordu — TEK BAŞINA.
+Türkçe kuralında ASCII **"I"** (barkod/SKU kodlarında sık) **"ı"**
+(noktasız) olur; "HB-PHI-77" kodu tr-locale'de "hb-phı-77" olup düz "i"
+ile yazan kullanıcının aramasıyla eşleşmiyordu. Kendi yazdığım değer testi
+("arama: kanal kodunda geçen metin bulunur") bunu ANINDA yakaladı.
+Düzeltme: hem düz `toLowerCase()` hem `toLocaleLowerCase("tr")` denenir,
+biri eşleşirse yeter (`aramaEsleserMi`, `urun-analizi.ts`).
+
+### ⛔ ŞEMA DEĞİŞİKLİĞİ — CANLIDA HENÜZ KOŞMADI
+`Product.isFavorite` / `needsReview` / `season` (+ 2 indeks) — migration
+`20260911071208_k212_urun_etiketleri` yerel geliştirme veritabanında
+uygulandı ve doğrulandı (`migration:kontrol` ✓, `deploy:bekci` A/H ✓).
+**CANLIYA henüz koşmadı** — `npm run canli:migrate` onay bekliyor. Kod bu
+migration olmadan deploy edilirse `Product` sorguları 500 verir (K
+"deploy edilen kod, koşulmayan migration" vakasının aynısı).
+
+### Canlı veri doğrulaması (salt okuma, `scripts/tmp/`, silindi)
+- Q3 için en yüksek cirolu 3 ürün: iki bağımsız yoldan (kütüphanenin
+  mantığı + bağımsız sorgu) hesaplandı — **birebir aynı sonuç**.
+- `urun-analizi:dogrula` 147/147 (11 bölüm, K212 için 31 yeni ölçüt).
+  `tsc`/`lint`/`i18n`/`yerlesim`/`sunucu-eylemi`/`api`/`yetki` temiz.
+
+### HALİL TESTİ — kapanma şartı (canlı migration koştuktan sonra)
+1. `/rapor/urunler` → **Ara** kutusuna bir barkod/SKU yaz → doğru ürün(ler)
+   listelenmeli. Ürün adının bir parçasını yaz → o da bulunmalı.
+2. Bir üründe **yıldız** ikonuna bas → favori işaretlenmeli (renk değişir),
+   tekrar basınca kalkmalı. **Bayrak** ikonu için aynısı (incelenecek).
+3. **Yaz**/**Kış** düğmesine bas → seçili görünmeli; tekrar basınca
+   kalkmalı; ikisi birden AÇIK olamamalı (biri seçilince öteki kapanır mı
+   diye bakılmaz — ayrı sorular, ikisi birden açık kalabilir; bu bilinçli).
+4. Üstteki **"Yalnız favoriler"** çipine bas → yalnız favori işaretli
+   ürünler görünmeli. **"Yalnız incelenecek"** için aynısı. **Mevsim**
+   çiplerinde Yaz/Kış için aynısı.
+5. **"Mevsimsel"** sekmesine geç → 1./2./3./4. Çeyrek çipleri görünmeli;
+   birine bas → o çeyrekte (TÜM geçmiş yıllar) en çok satan ürünler
+   sıralı gelmeli. Dönem/Kanal/Para kutuları bu sekmede GÖRÜNMEMELİ.
+6. Favori/incelenecek/sezon işaretleri **başka bir sekmeye geçince de
+   KORUNMALI** (aynı ürün "Dağılım"da da "Mevsimsel"de de aynı etiketi
+   göstermeli — ortak, ürüne ait).
+7. Mobilde (dar ekran): tüm yeni düğmeler 44px dokunma alanında olmalı,
+   arama kutusu ve mevsim/çeyrek çipleri satır kırılmadan kullanılabilmeli.
+
+Geçerse: kapat, ARSIV.md'e taşı (K212'nin "otomatik öneri yapılmadı"
+kısmı ayrı, açık bir kalem olarak kalır — bkz. yukarıdaki gerekçe).
+
+---
+
 ## 🔶 K210 — ÜRÜN ANALİZİ: DÖNEM/KANAL/PARA FİLTRESİ EKLENDİ · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı: _"bu sayfa bizim için çok değerli, verilerinde hata olmamalı,

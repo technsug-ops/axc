@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { CalendarRange, RotateCcw } from "lucide-react";
+import { CalendarRange, Flag, RotateCcw, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
   SIRALAMA_ALANLARI,
   type AnalizEkseni,
   type AnalizSuzgeci,
+  type Ceyrek,
   type SatirSayisi,
   type SiralamaAlani,
   type Yon,
@@ -62,6 +63,7 @@ export async function AnalizSuzgeci({
   sira,
   yon,
   satir,
+  ceyrek,
   markaSecenekleri,
   kategoriSecenekleri,
   kanalSecenekleri,
@@ -73,6 +75,8 @@ export async function AnalizSuzgeci({
   sira: SiralamaAlani;
   yon: Yon;
   satir: SatirSayisi;
+  /** Yalnız `eksen === "mevsim"` iken anlamlı — bkz. hidden alan altta. */
+  ceyrek: Ceyrek;
   /** Süzülmemiş kümeden — ad ve o markadaki ürün sayısı. */
   markaSecenekleri: { ad: string; sayi: number }[];
   kategoriSecenekleri: { ad: string; sayi: number }[];
@@ -125,6 +129,10 @@ export async function AnalizSuzgeci({
     kategoriler: suzgec.kategoriler,
     minAdet: suzgec.minAdet,
     minCiro: suzgec.minCiro,
+    arama: suzgec.arama,
+    favori: suzgec.favoriYalniz,
+    incelenecek: suzgec.incelenecekYalniz,
+    sezon: suzgec.sezon,
     sirala: sira,
     yon,
     satir,
@@ -169,11 +177,44 @@ export async function AnalizSuzgeci({
       {tasinan.para ? (
         <input type="hidden" name="para" value={tasinan.para} />
       ) : null}
-      {/* ⚠ KOVA GİZLİ ALANLA TAŞINIYOR: çiple seçilip formdan uygulanınca
-          kaybolsaydı, kullanıcı "marka ekledim, yaş süzgecim düştü" derdi. */}
+      {/* ⚠ KOVA/ÇEYREK/FAVORİ/İNCELENECEK/SEZON GİZLİ ALANLA TAŞINIYOR:
+          çiple seçilip formdan uygulanınca kaybolsaydı, kullanıcı "marka
+          ekledim, yaş süzgecim düştü" derdi (K131'in AYNI kuralı, K212'de
+          genişledi). */}
       {suzgec.kova !== null ? (
         <input type="hidden" name="kova" value={suzgec.kova} />
       ) : null}
+      {eksen === "mevsim" ? (
+        <input type="hidden" name="ceyrek" value={ceyrek} />
+      ) : null}
+      {suzgec.favoriYalniz ? (
+        <input type="hidden" name="favori" value="1" />
+      ) : null}
+      {suzgec.incelenecekYalniz ? (
+        <input type="hidden" name="incelenecek" value="1" />
+      ) : null}
+      {suzgec.sezon !== null ? (
+        <input type="hidden" name="sezon" value={suzgec.sezon} />
+      ) : null}
+
+      {/* ── ARAMA — barkod/EAN, SKU, Firma SKU, kanal kodları, ürün adı
+          (K212, kullanıcı isteği 11.09.2026). */}
+      <div className="space-y-1.5">
+        <label
+          htmlFor="analiz-arama"
+          className="text-muted-foreground text-xs font-medium"
+        >
+          {t("aramaBaslik")}
+        </label>
+        <Input
+          id="analiz-arama"
+          name="arama"
+          type="search"
+          defaultValue={suzgec.arama ?? ""}
+          placeholder={t("aramaYer")}
+          className="h-11"
+        />
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {/* ── SIRALAMA ── */}
@@ -304,16 +345,17 @@ export async function AnalizSuzgeci({
         </div>
       ) : null}
 
-      {/* ── DÖNEM, KANAL, PARA BİRİMİ — YALNIZ SATIŞ EKSENLERİNDE (K210) ──
-          ⛔ STOK EKSENİNDE ÇİZİLMİYOR — RAF YAŞI KOVALARININ TERSİ KOŞULU.
-          `stokEkseniVerisi` bu üçünü hiç parametre almıyor (bkz. page.tsx
-          yorumu); tıklanabilir görünüp hiçbir şeyi değiştirmeyen bir kontrol
+      {/* ── DÖNEM, KANAL, PARA BİRİMİ — YALNIZ ÜÇ SATIŞ EKSENİNDE (K210) ──
+          ⛔ STOK VE MEVSİM EKSENİNDE ÇİZİLMİYOR — RAF YAŞI KOVALARININ TERSİ
+          KOŞULU. `stokEkseniVerisi` bu üçünü hiç parametre almıyor;
+          `mevsimselVerisi` de (K212) TÜM geçmişi TRY sabit okuyor, ikisi de
+          bilerek. Tıklanabilir görünüp hiçbir şeyi değiştirmeyen bir kontrol
           İlke #2 + #5'i çiğnerdi.
 
           ⚠ BU ÜÇÜ "SÜZGEÇ TEMİZLE"YE GİRMEZ — kova/marka/kategori/minAdet/
           minCiro gibi geçici bir daraltma değil, EKSEN gibi bir GÖRÜNÜM
           seçimi (bkz. `temizAdres` zaten pencere/kanal/parayı KORUYOR). */}
-      {eksen !== "stok" ? (
+      {eksen !== "stok" && eksen !== "mevsim" ? (
         <div className="grid gap-4 md:grid-cols-2">
           {/* ── DÖNEM ── */}
           <div className="space-y-1.5 md:col-span-2">
@@ -488,6 +530,66 @@ export async function AnalizSuzgeci({
           </div>
         </div>
       ) : null}
+
+      {/* ── FAVORİ / İNCELENECEK / SEZON — TÜM EKSENLERDE (K212) ──
+          ⛔ Dönem/Kanal/Para'nın TERSİNE her eksende çizilir: etiketler
+          ÜRÜNE ait, hangi eksene bakıldığından bağımsız (stok ekseninde de
+          "favori mi" sorusu anlamlı). */}
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-muted-foreground text-xs font-medium">
+            {t("etiketBaslik")}
+          </span>
+          <Link
+            href={analizAdresi({
+              ...taban,
+              favori: !suzgec.favoriYalniz ? true : undefined,
+            })}
+            aria-current={suzgec.favoriYalniz ? "true" : undefined}
+            className={chipSinifi(suzgec.favoriYalniz)}
+          >
+            <Star className="size-4" aria-hidden />
+            {t("favoriYalniz")}
+          </Link>
+          <Link
+            href={analizAdresi({
+              ...taban,
+              incelenecek: !suzgec.incelenecekYalniz ? true : undefined,
+            })}
+            aria-current={suzgec.incelenecekYalniz ? "true" : undefined}
+            className={chipSinifi(suzgec.incelenecekYalniz)}
+          >
+            <Flag className="size-4" aria-hidden />
+            {t("incelenecekYalniz")}
+          </Link>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-muted-foreground text-xs font-medium">
+            {t("sezonBaslik")}
+          </span>
+          <Link
+            href={analizAdresi({ ...taban, sezon: undefined })}
+            aria-current={suzgec.sezon === null ? "true" : undefined}
+            className={chipSinifi(suzgec.sezon === null)}
+          >
+            {t("sezonHepsi")}
+          </Link>
+          {(["YAZ", "KIS"] as const).map((sz) => (
+            <Link
+              key={sz}
+              href={analizAdresi({
+                ...taban,
+                sezon: suzgec.sezon === sz ? undefined : sz,
+              })}
+              aria-current={suzgec.sezon === sz ? "true" : undefined}
+              className={chipSinifi(suzgec.sezon === sz)}
+            >
+              {sz === "YAZ" ? t("sezonYaz") : t("sezonKis")}
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* ── MARKA VE KATEGORİ — katlanır, çünkü uzun.
           `<details>` VARSAYILAN KAPALI: açık gelseydi 100+ marka ekranı

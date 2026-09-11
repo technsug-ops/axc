@@ -329,6 +329,28 @@ model Product {
   /// ama desi değişmez (karar 09.08.2026).
   desi Decimal? @db.Decimal(9, 3)
 
+  /**
+   * ══════════════════════════════════════════════════════════════════════
+   * ETİKETLER — ORTAK, KULLANICI BAZLI DEĞİL (K212, kullanıcı kararı
+   * 11.09.2026). Bugün tek/az kullanıcılı; kim işaretlerse işaretlesin
+   * aynı favori/incelenecek/mevsim tüm ekibe görünür. Çok kullanıcılı
+   * faza geçilince "kişi bazlı" ihtiyacı doğarsa BU alanlar "ekip
+   * varsayılanı" olarak kalır, kişisel katman AYRI bir tabloda açılır —
+   * burada üzerine yazılmaz.
+   * ══════════════════════════════════════════════════════════════════════
+   */
+  isFavorite  Boolean @default(false)
+  needsReview Boolean @default(false)
+
+  /**
+   * ELLE ATANAN mevsim — sistemin ÖNERİSİYLE (çeyreklik satış dağılımından
+   * türetilen, `lib/rapor/mevsimsel.ts`) AYNI ŞEY DEĞİL ve üzerine
+   * YAZILMAZ: öneri her zaman canlı hesaplanır, bu alan yalnız kullanıcının
+   * bilerek geçersiz kıldığı/onayladığı değeri taşır. `null` = elle
+   * etiketlenmedi (öneri varsa ekranda yine de görünür, ayrı bir rozetle).
+   */
+  season ProductSeason?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -337,6 +359,15 @@ model Product {
   @@index([name])
   @@index([isActive])
   @@index([categoryId])
+  @@index([isFavorite])
+  @@index([needsReview])
+}
+
+/// Elle atanan mevsim etiketi — yalnız YAZ/KIŞ (kullanıcı kararı
+/// 11.09.2026: dört mevsim değil, iki uç istendi).
+enum ProductSeason {
+  YAZ
+  KIS
 }
 
 // ============================================================================

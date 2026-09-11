@@ -2,14 +2,21 @@ import { readFileSync } from "node:fs";
 
 import {
   analizAdresi,
+  ANALIZ_EKSENLERI,
+  aramaCoz,
+  bayrakCoz,
   BOS_SUZGEC,
   analizToplami,
+  CEYREKLER,
+  ceyrekBul,
+  ceyrekCoz,
   coklucoz,
   eksenCoz,
   kovaCoz,
   EKSEN_VARSAYILAN_SIRA,
   sayiCoz,
   satirSayisiCoz,
+  sezonCoz,
   sirala,
   siralamaCoz,
   suzgectenGecir,
@@ -44,7 +51,7 @@ import {
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 10;
+const BOLUM_SAYISI = 11;
 const kosanBolumler: string[] = [];
 
 let gecen = 0;
@@ -88,6 +95,9 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
     barkod: x.barkod ?? null,
     firmaSku: x.firmaSku ?? null,
     kanalKodlari: x.kanalKodlari ?? [],
+    isFavorite: x.isFavorite ?? false,
+    needsReview: x.needsReview ?? false,
+    season: x.season ?? null,
   };
 }
 
@@ -305,9 +315,16 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
   yakin("sıra: hacim ekseni varsayılanı adet", siralamaCoz(undefined, "hacim"), "adet");
   yakin("sıra: dagilim ekseni varsayılanı net2", siralamaCoz(undefined, "dagilim"), "net2");
   yakin("sıra: açık seçim varsayılanı EZER", siralamaCoz("ciro", "stok"), "ciro");
+  /**
+   * ⚠ `4` SABİT DEĞİL, `ANALIZ_EKSENLERI.length`TEN — K212'de eksen sayısı
+   * 4'ten 5'e çıktı ve sabit sayı eskimişti (anayasa: "bekçinin kırmızısı
+   * her zaman kod yanlış demez"; TypeScript'in kendisi zaten
+   * `Record<AnalizEkseni, ...>` ile eksiksizliği derleme anında zorluyor,
+   * bu ölçüt o garantiyi ÇALIŞMA ZAMANINDA da doğruluyor).
+   */
   dogru(
     "sıra: her eksenin varsayılanı TANIMLI (boş taban değil)",
-    Object.keys(EKSEN_VARSAYILAN_SIRA).length === 4,
+    Object.keys(EKSEN_VARSAYILAN_SIRA).length === ANALIZ_EKSENLERI.length,
   );
 
   yakin("yön: artan geçerli", yonCoz("artan"), "artan");
@@ -655,6 +672,171 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
   );
 
   kosanBolumler.push("kimlik");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 11) K212 — ARAMA, FAVORİ/İNCELENECEK/SEZON SÜZGECİ, ÇEYREK
+// ═══════════════════════════════════════════════════════════════════════════
+{
+  // --- coz fonksiyonları ---
+  yakin("aramaCoz: boşluk kırpılır", aramaCoz("  abc  "), "abc");
+  yakin("aramaCoz: boş → null", aramaCoz(""), null);
+  yakin("aramaCoz: undefined → null", aramaCoz(undefined), null);
+
+  yakin("bayrakCoz: '1' → true", bayrakCoz("1"), true);
+  yakin("bayrakCoz: 'true' METNİ SAYILMAZ (yalnız '1')", bayrakCoz("true"), false);
+  yakin("bayrakCoz: undefined → false", bayrakCoz(undefined), false);
+
+  yakin("sezonCoz: YAZ geçerli", sezonCoz("YAZ"), "YAZ");
+  yakin("sezonCoz: KIS geçerli", sezonCoz("KIS"), "KIS");
+  yakin("sezonCoz: bozuk → null", sezonCoz("ILKBAHAR"), null);
+
+  yakin("ceyrekCoz: '3' geçerli", ceyrekCoz("3"), 3);
+  yakin("ceyrekCoz: bozuk → 1 (varsayılan)", ceyrekCoz("9"), 1);
+  yakin("ceyrekCoz: undefined → 1", ceyrekCoz(undefined), 1);
+
+  /** ⛔ SINIR AYLAR — her çeyreğin İLK ve SON ayı ayrı sınanır. */
+  dogru(
+    "ceyrekBul: sınır aylar doğru çeyreğe düşüyor",
+    ceyrekBul(1) === 1 &&
+      ceyrekBul(3) === 1 &&
+      ceyrekBul(4) === 2 &&
+      ceyrekBul(6) === 2 &&
+      ceyrekBul(7) === 3 &&
+      ceyrekBul(9) === 3 &&
+      ceyrekBul(10) === 4 &&
+      ceyrekBul(12) === 4,
+  );
+  dogru("CEYREKLER: dört çeyrek tanımlı", CEYREKLER.length === 4);
+
+  // --- suzgectenGecir: arama ---
+  const aramaKumesi = [
+    satir({
+      variantId: "v1",
+      urunAdi: "Karcher SC4 Buharlı Temizleyici",
+      sku: "axcali100",
+      barkod: "8697001234567",
+      firmaSku: null,
+      kanalKodlari: [{ kanal: "Trendyol", kod: "TY-KARCHER-01" }],
+    }),
+    satir({
+      variantId: "v2",
+      urunAdi: "Philips Ütü",
+      sku: "axcali200",
+      barkod: "8690009999999",
+      firmaSku: "PHI-UTU-01",
+      kanalKodlari: [{ kanal: "Hepsiburada", kod: "HB-PHI-77" }],
+    }),
+  ];
+  yakin(
+    "arama: ürün adında geçen metin bulunur",
+    suzgectenGecir(aramaKumesi, { ...BOS_SUZGEC, arama: "karcher" }).map(
+      (s) => s.variantId,
+    ),
+    ["v1"],
+  );
+  yakin(
+    "arama: barkodda geçen metin bulunur",
+    suzgectenGecir(aramaKumesi, { ...BOS_SUZGEC, arama: "8690009999999" }).map(
+      (s) => s.variantId,
+    ),
+    ["v2"],
+  );
+  yakin(
+    "arama: kanal kodunda geçen metin bulunur",
+    suzgectenGecir(aramaKumesi, { ...BOS_SUZGEC, arama: "hb-phi" }).map(
+      (s) => s.variantId,
+    ),
+    ["v2"],
+  );
+  yakin(
+    "arama: firma SKU'da geçen metin bulunur",
+    suzgectenGecir(aramaKumesi, { ...BOS_SUZGEC, arama: "PHI-UTU" }).map(
+      (s) => s.variantId,
+    ),
+    ["v2"],
+  );
+  /** ⚠ TR KARAKTER DUYARSIZ — "İ" ile "i" eşleşmeli (`toLocaleLowerCase("tr")`). */
+  yakin(
+    "arama: TR büyük/küçük harf DUYARSIZ (İ/i)",
+    suzgectenGecir(aramaKumesi, { ...BOS_SUZGEC, arama: "ÜTÜ" }).map(
+      (s) => s.variantId,
+    ),
+    ["v2"],
+  );
+  yakin(
+    "arama: eşleşme yoksa boş liste",
+    suzgectenGecir(aramaKumesi, { ...BOS_SUZGEC, arama: "olmayan-kod-xyz" })
+      .length,
+    0,
+  );
+  yakin(
+    "arama: null iken hiçbir satır elenmez",
+    suzgectenGecir(aramaKumesi, { ...BOS_SUZGEC, arama: null }).length,
+    2,
+  );
+
+  // --- suzgectenGecir: favori / incelenecek / sezon ---
+  const etiketKumesi = [
+    satir({ variantId: "f1", isFavorite: true, needsReview: false, season: "YAZ" }),
+    satir({ variantId: "f2", isFavorite: false, needsReview: true, season: "KIS" }),
+    satir({ variantId: "f3", isFavorite: false, needsReview: false, season: null }),
+  ];
+  yakin(
+    "favoriYalniz: yalnız favori işaretli satır kalır",
+    suzgectenGecir(etiketKumesi, { ...BOS_SUZGEC, favoriYalniz: true }).map(
+      (s) => s.variantId,
+    ),
+    ["f1"],
+  );
+  yakin(
+    "incelenecekYalniz: yalnız incelenecek işaretli satır kalır",
+    suzgectenGecir(etiketKumesi, {
+      ...BOS_SUZGEC,
+      incelenecekYalniz: true,
+    }).map((s) => s.variantId),
+    ["f2"],
+  );
+  yakin(
+    "sezon: YAZ süzgeci yalnız YAZ etiketli satırı geçirir",
+    suzgectenGecir(etiketKumesi, { ...BOS_SUZGEC, sezon: "YAZ" }).map(
+      (s) => s.variantId,
+    ),
+    ["f1"],
+  );
+  yakin(
+    "sezon: null (kapalı) iken hiçbir satır elenmez",
+    suzgectenGecir(etiketKumesi, { ...BOS_SUZGEC, sezon: null }).length,
+    3,
+  );
+
+  // --- analizAdresi: yeni parametreler ---
+  dogru(
+    "adres: arama URL'ye yazılır",
+    analizAdresi({ arama: "karcher" }).includes("arama=karcher"),
+  );
+  dogru(
+    "adres: boş arama URL'ye YAZILMAZ",
+    !analizAdresi({ arama: "" }).includes("arama="),
+  );
+  dogru(
+    "adres: favori=true iken 'favori=1' yazılır",
+    analizAdresi({ favori: true }).includes("favori=1"),
+  );
+  dogru(
+    "adres: favori=false iken HİÇ YAZILMAZ",
+    !analizAdresi({ favori: false }).includes("favori="),
+  );
+  dogru(
+    "adres: sezon URL'ye yazılır",
+    analizAdresi({ sezon: "KIS" }).includes("sezon=KIS"),
+  );
+  dogru(
+    "adres: ceyrek URL'ye yazılır",
+    analizAdresi({ ceyrek: 3 }).includes("ceyrek=3"),
+  );
+
+  kosanBolumler.push("k212-arama-etiket-ceyrek");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

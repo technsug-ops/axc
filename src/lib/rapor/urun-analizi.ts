@@ -50,9 +50,44 @@ export function satirSayisiCoz(ham: string | undefined): SatirSayisi {
     : VARSAYILAN_SATIR;
 }
 
-/** Dört eksen — panelin dört sekmesinin tam karşılığı. */
-export const ANALIZ_EKSENLERI = ["dagilim", "marj", "hacim", "stok"] as const;
+/**
+ * BEŞ EKSEN — panelin dört sekmesi + "mevsim" (K212, kullanıcı isteği
+ * 11.09.2026: _"ürünlere mevsimsel bir sekme koymak istiyorum, 1. çeyrekte
+ * çok satan, 2. çeyrekte çok satan..."_
+ *
+ * ⚠ "mevsim" DİĞER DÖRDÜNDEN FARKLI BİR SORUYA CEVAP VERİR: ötekiler
+ * "seçili DÖNEMDE ne olmuş" sorar, mevsim "TÜM GEÇMİŞTE bu takvim
+ * çeyreğinde ne olmuş" sorar (yıldan bağımsız, kullanıcı kararı — ölçüldü:
+ * 4+ farklı ayda satılmış ürünlerde bile mevsimsel bir sinyal net değil,
+ * bu yüzden dönem penceresine sıkıştırmak yerine TÜM geçmiş kullanılıyor).
+ * Kendi pencere/kanal/para süzgecini YOK SAYAR — `stok` ekseninin dönem
+ * süzgecini yok saymasıyla AYNI gerekçe ailesi, bkz. `urun-analizi-verisi.ts`.
+ */
+export const ANALIZ_EKSENLERI = [
+  "dagilim",
+  "marj",
+  "hacim",
+  "stok",
+  "mevsim",
+] as const;
 export type AnalizEkseni = (typeof ANALIZ_EKSENLERI)[number];
+
+/** Takvim çeyreği — yıldan bağımsız (K212). */
+export const CEYREKLER = [1, 2, 3, 4] as const;
+export type Ceyrek = (typeof CEYREKLER)[number];
+
+export function ceyrekCoz(ham: string | undefined): Ceyrek {
+  const n = Number(ham);
+  return (CEYREKLER as readonly number[]).includes(n) ? (n as Ceyrek) : 1;
+}
+
+/** Bir ayın (1-12) hangi takvim çeyreğine düştüğü. */
+export function ceyrekBul(ay: number): Ceyrek {
+  if (ay <= 3) return 1;
+  if (ay <= 6) return 2;
+  if (ay <= 9) return 3;
+  return 4;
+}
 
 export function eksenCoz(ham: string | undefined): AnalizEkseni {
   return (ANALIZ_EKSENLERI as readonly string[]).includes(ham ?? "")
@@ -93,6 +128,7 @@ export const EKSEN_VARSAYILAN_SIRA: Record<AnalizEkseni, SiralamaAlani> = {
   marj: "marj",
   hacim: "adet",
   stok: "yas",
+  mevsim: "ciro",
 };
 
 export function siralamaCoz(
@@ -155,6 +191,16 @@ export type AnalizSatiri = UrunSatiri & {
   /** ⚠ `null` = SKU ile AYNI (ölçüldü: satırların %97,7'si). */
   firmaSku: string | null;
   kanalKodlari: { kanal: string; kod: string }[];
+  /**
+   * ── ETİKETLER (K212) — ÜRÜN seviyesinde, ORTAK (kullanıcı bazlı değil,
+   * karar 11.09.2026). `Product.isFavorite`/`needsReview`/`season`den
+   * BİREBİR okunur; burada TÜRETİLMEZ.
+   */
+  isFavorite: boolean;
+  needsReview: boolean;
+  /** Elle atanmış mevsim. Otomatik ÖNERİ YOK (ölçüldü 11.09.2026: veri
+   *  yetersiz — bkz. BEKLEYENLER K212). */
+  season: "YAZ" | "KIS" | null;
 };
 
 export type AnalizSuzgeci = {
@@ -172,6 +218,18 @@ export type AnalizSuzgeci = {
    * `null` = kova seçili değil.
    */
   kova: YasKovasi | null;
+  /**
+   * ARAMA (K212) — barkod/EAN, SKU, Firma SKU, kanal kodları ve ürün adı
+   * içinde geçen METİN. Büyük/küçük harf ve TR karakter DUYARSIZ.
+   * `null`/boş = arama kapalı.
+   */
+  arama: string | null;
+  /** Yalnız favori işaretli ürünler. */
+  favoriYalniz: boolean;
+  /** Yalnız incelenecek işaretli ürünler. */
+  incelenecekYalniz: boolean;
+  /** Elle atanmış mevsime göre daralt. `null` = süzgeç kapalı. */
+  sezon: "YAZ" | "KIS" | null;
 };
 
 export const BOS_SUZGEC: AnalizSuzgeci = {
@@ -180,6 +238,10 @@ export const BOS_SUZGEC: AnalizSuzgeci = {
   minAdet: null,
   minCiro: null,
   kova: null,
+  arama: null,
+  favoriYalniz: false,
+  incelenecekYalniz: false,
+  sezon: null,
 };
 
 /** Adres değeri → kova. Tanımadığını sessizce bir kovaya düşürmez. */
@@ -210,6 +272,44 @@ export function sayiCoz(ham: string | undefined): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/** Arama metni — kırpılır, boşsa `null` (İlke #11: boş alan dolu sanılmaz). */
+export function aramaCoz(ham: string | undefined): string | null {
+  const t = (ham ?? "").trim();
+  return t === "" ? null : t;
+}
+
+/** `?favori=1` gibi bir bayrak — yalnız `"1"` açık sayılır, başka her şey kapalı. */
+export function bayrakCoz(ham: string | undefined): boolean {
+  return ham === "1";
+}
+
+export function sezonCoz(ham: string | undefined): "YAZ" | "KIS" | null {
+  return ham === "YAZ" || ham === "KIS" ? ham : null;
+}
+
+/**
+ * ARAMA EŞLEŞMESİ — İKİ NORMALLEŞTİRME BİRDEN, TEK BAŞINA HİÇBİRİ YETMEZ.
+ *
+ * ⛔ SAF `toLowerCase()` YETMEZ: Türkçe kelimede "İ" → "i̇" (noktalı, İKİ
+ * karakter) olur, "i" ile eşleşmez.
+ * ⛔ AMA `toLocaleLowerCase("tr")` DE TEK BAŞINA YETMEZ — VE BU DEĞER
+ * TESTİYLE YAKALANDI (kaynak taramayla değil): Türkçe kuralında ASCII "I"
+ * (barkod/SKU/kanal kodlarında sık) "ı" (NOKTASIZ) olur, kullanıcının
+ * klavyeden yazdığı düz "i" ile ARTIK EŞLEŞMEZ. "HB-PHI-77" kodu tr-locale
+ * ile "hb-phı-77" olur; arama kutusuna "hb-phi" yazan biri BULAMAZ.
+ *
+ * Çözüm: metin HER İKİ kuralla da normalleştirilir, biri eşleşirse yeter.
+ * Kodlar (ASCII) düz kuralda, Türkçe kelimeler (ürün adı) tr-locale'de
+ * doğru eşleşir; ikisini birden denemek hangisinin hangi alanda geçerli
+ * olduğunu ayrıca bilmeyi gerektirmez.
+ */
+function aramaEsleserMi(aday: string, aranan: string): boolean {
+  return (
+    aday.toLowerCase().includes(aranan.toLowerCase()) ||
+    aday.toLocaleLowerCase("tr").includes(aranan.toLocaleLowerCase("tr"))
+  );
+}
+
 /**
  * SÜZGEÇ — küme daraltma. Sıralamadan ÖNCE koşar ve toplamların da
  * girdisidir; ikisi ayrı kümeye bakarsa toplam listeyi anlatmaz.
@@ -236,6 +336,25 @@ export function suzgectenGecir(
      */
     if (suzgec.kova !== null) {
       if (s.yasGun === null || kovaBul(s.yasGun) !== suzgec.kova) return false;
+    }
+    if (suzgec.favoriYalniz && !s.isFavorite) return false;
+    if (suzgec.incelenecekYalniz && !s.needsReview) return false;
+    if (suzgec.sezon !== null && s.season !== suzgec.sezon) return false;
+    if (suzgec.arama !== null) {
+      /**
+       * ⚠ HANGİ ALANLARDA ARANDIĞI — kullanıcı isteği 11.09.2026:
+       * "barkod EA ve diğer SKU'larla ürün arama". Ürün adı da dahil:
+       * bir arama kutusuna görünen metni yazıp bulamamak kullanıcıyı
+       * şaşırtırdı (İlke #9 — az tıkla, aradığını bulsun).
+       */
+      const adaylar = [
+        s.urunAdi,
+        s.sku,
+        s.firmaSku,
+        s.barkod,
+        ...s.kanalKodlari.map((k) => k.kod),
+      ].filter((x): x is string => x !== null);
+      if (!adaylar.some((a) => aramaEsleserMi(a, suzgec.arama!))) return false;
     }
     return true;
   });
@@ -386,6 +505,12 @@ export type AnalizParametreleri = {
   minAdet?: number | null;
   minCiro?: number | null;
   kova?: YasKovasi | null;
+  arama?: string | null;
+  favori?: boolean;
+  incelenecek?: boolean;
+  sezon?: "YAZ" | "KIS" | null;
+  /** Yalnız `eksen: "mevsim"` iken anlamlı. */
+  ceyrek?: Ceyrek;
   sirala?: SiralamaAlani;
   yon?: Yon;
   satir?: SatirSayisi;
@@ -408,6 +533,12 @@ export function analizAdresi(p: AnalizParametreleri): string {
   if (p.minCiro !== undefined && p.minCiro !== null)
     q.set("minCiro", String(p.minCiro));
   if (p.kova !== undefined && p.kova !== null) q.set("kova", p.kova);
+  if (p.arama !== undefined && p.arama !== null && p.arama !== "")
+    q.set("arama", p.arama);
+  if (p.favori) q.set("favori", "1");
+  if (p.incelenecek) q.set("incelenecek", "1");
+  if (p.sezon !== undefined && p.sezon !== null) q.set("sezon", p.sezon);
+  if (p.ceyrek !== undefined) q.set("ceyrek", String(p.ceyrek));
   if (p.sirala !== undefined) q.set("sirala", p.sirala);
   if (p.yon !== undefined) q.set("yon", p.yon);
   if (p.satir !== undefined) q.set("satir", String(p.satir));
