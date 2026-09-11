@@ -2386,8 +2386,8 @@ kontrol(
     /const cokAdet = \[\.\.\.adaylar\.values\(\)\]\.filter\(\(a\) =>\s*a\.satirlar\.some\(\(s\) => s\.birimFiyat === null\),?\s*\);\s*for \(const a of cokAdet\) adaylar\.delete\(a\.siparisNo\);/.test(nK),
   );
   kontrol(
-    "iptal paket YAZILMIYOR (koşul + sayaç + continue birlikte)",
-    /if \(String\(p\.shipmentPackageStatus\) === "Cancelled"\) \{\s*iptalPaket\+\+;\s*continue;/.test(nK),
+    "iptal paket adaylar'a YAZILMIYOR (koşul + sayaç + continue birlikte)",
+    /if \(String\(p\.shipmentPackageStatus\) === "Cancelled"\) \{\s*iptalPaket\+\+;[\s\S]{0,400}?continue;/.test(nK),
   );
   kontrol(
     "iptal satır YAZILMIYOR (koşul + sayaç + continue birlikte)",
@@ -2408,6 +2408,81 @@ kontrol(
   kontrol(
     "hesap OLUŞTURMUYOR — canlı kimlik elle bağlanır (K165 kuralı)",
     !nK.includes("channelAccount.create"),
+  );
+}
+
+/**
+ * ═══ K213 — N11: SİPARİŞ TÜMÜYLE SONRADAN İPTAL OLMUŞ (11.09.2026) ══════
+ *
+ * ⚠ N11'DE TY'DEN FARKLI KAYNAK: tam iptal olmuş paket `adaylar`e HİÇ
+ * girmiyor (erken `continue`) — bu yüzden K213'ün TY'deki `cakisanlar`
+ * mekanizması burada KULLANILAMAZ. Ayrı bir harita (`iptalliPaketler`)
+ * kurulup yalnız `adaylar`de KARŞILIĞI OLMAYAN (hiçbir parçası açık
+ * kalmamış) sipariş numaraları otomatik-iptal adayı sayılıyor. Ölçüt bu
+ * farkı doğruluyor: kısmi iptal (bir parça açık) YAZILMAZ.
+ */
+{
+  console.log("K213 N11 — sipariş tümüyle sonradan iptal — otomatik tespit");
+  const nK = yorumsuz(readFileSync("scripts/canli-n11-ice-aktar.ts", "utf8"));
+
+  kontrol(
+    "betik otomatikIptalAdayiMi'yi İTHAL EDİYOR",
+    /import \{ otomatikIptalAdayiMi \} from "\.\.\/src\/lib\/satis-iptali";/.test(nK),
+  );
+  kontrol(
+    "betik iptalOnizle/iptalUygula'yı İTHAL EDİYOR (elle iptalle AYNI motor)",
+    /import \{ iptalOnizle, iptalUygula \} from "\.\.\/src\/lib\/satis-iptali-veri";/.test(nK),
+  );
+  kontrol(
+    "iptal anı AYRI haritada tutuluyor (adaylar'a değil)",
+    /const iptalliPaketler = new Map<string, Date \| null>\(\);/.test(nK),
+  );
+  kontrol(
+    "iptal anı TY ile ORTAK gövdeden çözülüyor (gecmistenKargoDamgasi, 'Cancelled')",
+    /gecmistenKargoDamgasi\(p\.packageHistories, "Cancelled"\)/.test(nK),
+  );
+
+  const otoIptalBaslangic = nK.indexOf("const OTO_IPTAL_NOTU_N11");
+  const otoIptalBlok = nK.slice(
+    otoIptalBaslangic,
+    nK.indexOf("for (const n of cakisanlar) adaylar.delete(n);", otoIptalBaslangic),
+  );
+  kontrol("K213-N11 blok bulundu", otoIptalBaslangic >= 0 && otoIptalBlok.length > 0);
+  kontrol(
+    "  ...aday kümesi yalnız adaylar'DA OLMAYANLAR (kısmi iptal HARİÇ)",
+    /const tamIptalSiparisler = \[\.\.\.iptalliPaketler\.keys\(\)\]\.filter\(\(no\) => !adaylar\.has\(no\)\);/.test(
+      otoIptalBlok,
+    ),
+  );
+  kontrol(
+    "  ...her aday için otomatikIptalAdayiMi ÇAĞRILIYOR",
+    /if \(!otomatikIptalAdayiMi\(\{ durum: "Cancelled", iptalTarihi: iptalAni \}, s\.iptalTarihi\)\)/.test(
+      otoIptalBlok,
+    ),
+  );
+  kontrol(
+    "  ...önce ÖNİZLEME (iptalOnizle) kurulur — yazmadan ÖNCE",
+    otoIptalBlok.indexOf("await iptalOnizle(") < otoIptalBlok.indexOf("await iptalUygula("),
+  );
+  kontrol(
+    "  ...gerçek yazım --yaz OLMADAN ÇALIŞMAZ (kapı: if (!YAZIM) continue)",
+    /if \(!YAZIM\) continue;[\s\S]{0,40}const sonuc = await iptalUygula\(/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...sebep TAHMİN EDİLMİYOR — kapalı kümenin MUSTERI_VAZGECTI'si",
+    /sebep: "MUSTERI_VAZGECTI"/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...not OTOMATİK TESPİT olduğunu söylüyor (İlke #5, sessiz değil)",
+    /otomatik tespit edildi/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...kullanıcı YOK — insan uydurulmuyor (kullaniciId: null)",
+    /kullaniciId: null,/.test(otoIptalBlok),
+  );
+  kontrol(
+    "  ...ayna hareketin ANI kanalın kendi iptal anı (iptalAni) — ŞİMDİ değil",
+    /an: iptalAni,/.test(otoIptalBlok),
   );
 }
 

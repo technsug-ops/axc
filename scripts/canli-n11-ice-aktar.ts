@@ -14,6 +14,8 @@ import { kilitDurumu } from "./bekci-kilit";
 import { canliYapilandirma } from "./canli-ortak";
 import { baslikKur, kimlikOku, tumPaketler } from "./n11/istemci";
 import { otomatikOnaylaKuyruk } from "../src/lib/onay-kuyrugu";
+import { otomatikIptalAdayiMi } from "../src/lib/satis-iptali";
+import { iptalOnizle, iptalUygula } from "../src/lib/satis-iptali-veri";
 
 /**
  * ============================================================================
@@ -255,11 +257,28 @@ export async function n11CekimKos(ayar: {
   // ═══ GRUPLAMA — paket → sipariş ═════════════════════════════════════════
   const adaylar = new Map<string, Aday>();
   let iptalPaket = 0;
+  /**
+   * K213 — SONRADAN TAMAMEN İPTAL OLMUŞ SİPARİŞ (11.09.2026).
+   * ⚠ Tam iptal edilmiş paket `adaylar`e HİÇ girmiyor (aşağıdaki `continue`) —
+   * yani TY'nin aksine burada "aday listesine gir, iptalTarihi dolu yazılsın"
+   * yolu YOK. Onun yerine iptal anı AYRI bir haritada tutulur; döngü
+   * bitince yalnız `adaylar`de KARŞILIĞI OLMAYAN (yani parçası hâlâ açık
+   * OLMAYAN) siparişler otomatik-iptal adayı sayılır — bkz. aşağı, ④'ten
+   * sonra.
+   */
+  const iptalliPaketler = new Map<string, Date | null>();
   for (const p of paketler) {
     const no = String(p.orderNumber ?? "");
     if (no === "") continue;
     if (String(p.shipmentPackageStatus) === "Cancelled") {
       iptalPaket++;
+      const iptalDamga = gecmistenKargoDamgasi(p.packageHistories, "Cancelled");
+      const eski = iptalliPaketler.get(no);
+      if (iptalDamga.tur === "AN" && (eski === undefined || eski === null || iptalDamga.an > eski)) {
+        iptalliPaketler.set(no, iptalDamga.an);
+      } else if (!iptalliPaketler.has(no)) {
+        iptalliPaketler.set(no, null);
+      }
       continue;
     }
     /**
@@ -469,6 +488,69 @@ export async function n11CekimKos(ayar: {
     await prisma.sale.update({ where: { id: s.id }, data: veri });
     if (veri.deliveredAt) teslimYazilan++;
     if (veri.kargoTakipBaglantisi || veri.kanalKargoFirmasi) takipYazilan++;
+  }
+
+  /**
+   * ═══ K213 — SİPARİŞ TÜMÜYLE SONRADAN İPTAL OLMUŞ (11.09.2026) ═══════════
+   * ⚠ AYNI MOTOR — elle iptal ekranıyla (`satis-iptali-veri.ts`) BİREBİR ve
+   * TY'nin otomatik tespitiyle (`canli-ty-ice-aktar.ts`) AYNI karar gövdesi
+   * (`otomatikIptalAdayiMi`). Fark yalnız KAYNAK: N11'de tam iptal olmuş
+   * paket hiç `adaylar`e girmiyor (yukarıdaki erken `continue`), bu yüzden
+   * aday kümesi `adaylar`den değil `iptalliPaketler`den — ve yalnız
+   * `adaylar`de KARŞILIĞI OLMAYAN (yani hiçbir parçası açık kalmamış)
+   * sipariş numaraları — kurulur. Parçası hâlâ açık olan (kısmi iptal)
+   * sipariş buraya HİÇ girmez; o zaten `iptalliSatir` ile ayrı sayılıyor.
+   */
+  const OTO_IPTAL_NOTU_N11 =
+    "N11'de iptal edildi — otomatik tespit edildi (K213, canli-n11-ice-aktar).";
+  const tamIptalSiparisler = [...iptalliPaketler.keys()].filter((no) => !adaylar.has(no));
+  let otoIptalTespit = 0;
+  let otoIptalEngellendi = 0;
+  let otoIptalYazilan = 0;
+  if (tamIptalSiparisler.length > 0) {
+    const mevcutIptalSiparisler = await prisma.sale.findMany({
+      where: { code: { in: tamIptalSiparisler }, channelAccountId: hesap.id },
+      select: { id: true, code: true, iptalTarihi: true },
+    });
+    for (const s of mevcutIptalSiparisler) {
+      const iptalAni = iptalliPaketler.get(s.code ?? "") ?? null;
+      if (!otomatikIptalAdayiMi({ durum: "Cancelled", iptalTarihi: iptalAni }, s.iptalTarihi)) {
+        continue;
+      }
+      if (iptalAni === null) continue; // TS narrowing içindir — karar otomatikIptalAdayiMi'de
+      otoIptalTespit++;
+      const onizleme = await iptalOnizle(s.id, "MUSTERI_VAZGECTI", OTO_IPTAL_NOTU_N11);
+      if (onizleme === null) {
+        otoIptalEngellendi++;
+        console.log(`   ⚠ OTOMATİK İPTAL ENGELLENDİ  ${s.code}  SATIS_YOK`);
+        continue;
+      }
+      if (!onizleme.plan.olur) {
+        otoIptalEngellendi++;
+        console.log(`   ⚠ OTOMATİK İPTAL ENGELLENDİ  ${s.code}  ${onizleme.plan.engel}`);
+        continue;
+      }
+      if (!YAZIM) continue;
+      const sonuc = await iptalUygula({
+        saleId: s.id,
+        sebep: "MUSTERI_VAZGECTI",
+        not: OTO_IPTAL_NOTU_N11,
+        onaylananImza: onizleme.imza,
+        kullaniciId: null,
+        an: iptalAni,
+      });
+      if (sonuc.tamam) otoIptalYazilan++;
+      else {
+        otoIptalEngellendi++;
+        console.log(`   ⚠ OTOMATİK İPTAL YAZILAMADI  ${s.code}  ${sonuc.engel}`);
+      }
+    }
+  }
+  if (otoIptalTespit > 0) {
+    console.log(`   ↺ SONRADAN TAMAMEN İPTAL OLMUŞ (mevcut satış)    ${otoIptalTespit}`);
+    console.log(
+      `      ${YAZIM ? "yazılan" : "yazılacak"} ${YAZIM ? otoIptalYazilan : otoIptalTespit - otoIptalEngellendi} · engellenen ${otoIptalEngellendi}`,
+    );
   }
 
   for (const n of cakisanlar) adaylar.delete(n);

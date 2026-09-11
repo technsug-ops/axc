@@ -63,10 +63,15 @@ export type PaketGecmisi = { createdDate?: unknown; status?: unknown };
  * ⚠ EN SONUNCUSU ALINIR: bir paket iptal edilip yeniden kargolanabilir ve
  * geçmişte aynı durum İKİ KEZ geçebilir. İlkini almak "ilk denemede
  * kargolandı" der; doğrusu son geçerli olandır.
+ *
+ * ⚠ "Cancelled" K213 kapsam genişletmesiyle eklendi (11.09.2026, N11) — TY
+ * kendi `iptalAniCoz`ını kullanmaya devam ediyor (farklı dönüş biçimi,
+ * `Date | null`); burada AYNI "en sonuncusu kazanır" ilkesi tekrar
+ * yazılmadı, tek gövdeden okunuyor.
  */
 export function gecmistenKargoDamgasi(
   gecmis: PaketGecmisi[] | null | undefined,
-  durum: "Shipped" | "Delivered",
+  durum: "Shipped" | "Delivered" | "Cancelled",
 ): KargoDamgasi {
   if (!Array.isArray(gecmis)) return { tur: "YOK" };
   let enSon: number | null = null;

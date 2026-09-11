@@ -13,7 +13,7 @@
 
 ---
 
-## 🔶 K213 — TRENDYOL: SONRADAN İPTAL OLAN SİPARİŞ OTOMATİK TESPİT · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+## 🔶 K213 — SONRADAN İPTAL OLAN SİPARİŞ OTOMATİK TESPİT (TY + N11) · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
 
 ### TALEP (kullanıcı, ekran görüntüsü + metin, 11.09.2026)
 _"Sipariş kargoya verilmeden önce müşteri tarafından Vazgeçtim / Daha Ucuz
@@ -60,29 +60,88 @@ talepteki ekran görüntüsü TY siparişiydi ve HB/N11 için kullanıcı
   aynı motorun elle ekranla ortak olduğu) — **6 mutasyonla** sınandı,
   hepsi kırmızı yandı, dosya bit-bit geri yüklendi.
 
-### ⛔ KAPSAM DIŞI — BİLEREK: HEPSIBURADA VE N11
-Yalnız Trendyol yazıldı. Kullanıcının talebi HB/N11 için "mümkünse"
-diyordu; bu turda yalnız TY'nin gerçek bir ekran görüntüsüyle bildirilen
-sızıntı kapatıldı. HB/N11'in kendi "Cancelled" karşılığı (durum adları,
-iptal anı alanı) henüz ölçülmedi — açılış şartı: birinin çekim betiğine
-(`canli-hb-ice-aktar.ts` / `canli-n11-ice-aktar.ts`) bakılıp aynı desenin
-uygulanabilirliği ölçülmesi.
+### ─── ② N11 GENİŞLETMESİ · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+Kullanıcı: _"Bağlı tüm pazaryerlerinde değil mi... yani bağlı tüm
+pazaryerlerinde otomatik iptalleri kanallardan okuyup otomatik iptal
+edilecek"_ — kapsam TY ile sınırlı bırakılmasın diye düzeltti.
 
-### HALİL TESTİ — kapanma şartı
-Bu bir OTOMATİK, finansal etkili değişiklik — canlı zamanlanmış bir
-cron'a giriyor. Sentetik deneme yerine gerçek bir vakayla doğrulanmalı:
-1. Trendyol'da az riskli bir siparişi (ör. düşük tutarlı) müşteri adına
-   "Vazgeçtim" ile iptal ettir (ya da bir sonraki gerçek müşteri
-   iptalini bekle).
+**Ölçüldü, sonra yazıldı.** N11'in `packageHistories`i TY ile **birebir
+aynı** biçimde geliyor (zaten K195'te ölçülmüştü) ve canlıda gerçek bir
+iptal edilmiş paket üstünde doğrulandı — gerçek `"Cancelled"` geçmiş
+girdisi, gerçek epoch damgası:
+
+    ÖRNEK paket 232818314428: history=[{"status":"Created",...},
+      {"status":"Picking",...}, {"status":"Cancelled","createdDate":1787907749580}]
+
+**AMA N11'in mekanizması TY'den YAPISAL OLARAK FARKLI** ve bu yüzden K213'ün
+TY kodu doğrudan kopyalanamadı: N11'de tam iptal olmuş bir paket şimdiye
+kadar aday listesine (`adaylar`) HİÇ girmiyordu (erken `continue`, iptal
+anı çöpe gidiyordu). TY'de ise iptalli paket yine de aday listesine girip
+`iptalTarihi` dolu yazılıyordu — K213'ün asıl `cakisanlar` mekanizması
+buna dayanıyordu. N11'de bu yol yoktu, yeni bir yol açıldı: iptal anı ayrı
+bir haritada (`iptalliPaketler`) tutulup yalnız **hiçbir parçası artık
+açık olmayan** siparişler (aday listesinde karşılığı olmayanlar) otomatik
+iptal adayı sayılıyor — kısmi iptal (siparişin bir parçası hâlâ açık)
+kasıtlı olarak dışarıda bırakıldı, yanlışlıkla aktif bir siparişi iptal
+etmemek için.
+
+**YAPILAN:**
+- `src/lib/kanal-kargo-damgasi.ts` → `gecmistenKargoDamgasi`nin `durum`
+  tipi `"Shipped" | "Delivered"`den `| "Cancelled"`e genişletildi (TY'nin
+  kendi `iptalAniCoz`ı dokunulmadı — farklı dönüş biçimi; N11 ortak
+  gövdeyi kullanıyor, ikinci bir kopya yazılmadı).
+- `scripts/canli-n11-ice-aktar.ts` → `otomatikIptalAdayiMi`/`iptalOnizle`/
+  `iptalUygula` TY ile AYNI motor; yeni `iptalliPaketler` haritası +
+  "adaylar'da karşılığı yok" süzgeci; not _"...otomatik tespit edildi
+  (K213, canli-n11-ice-aktar)"_.
+- Test: `scripts/ice-aktarma-dogrula.ts`'e kaynak-tarama bağlanma testi
+  (TY'nin K213 bölümüyle aynı desende + N11'e özgü "kısmi iptal HARİÇ"
+  ölçütü) — **7 mutasyonla** sınandı (TY'nin 6'sı + N11'in kendine özgü
+  kısmi-iptal-guard'ı), hepsi kırmızı yandı, dosya bit-bit geri yüklendi.
+  Kısmi-iptal-guard mutasyonu en riskli olanıydı: kaldırılırsa hâlâ
+  parçası kargoda olan bir sipariş otomatik iptal edilebilirdi.
+
+### ⛔ HEPSIBURADA — HÂLÂ AÇIK, MİMARİ BOŞLUK ÖLÇÜLDÜ (yazılmadı)
+TY ve N11'in aksine HB'de bugün **hiçbir bilinen uç tam iptal edilmiş bir
+paketi göstermiyor.** Ölçüldü (11.09.2026, `scripts/hb/istemci.ts`):
+bilinen üç uç yalnız `Open` (`/packages`), `Shipped` (`/packages/shipped`)
+ve `Delivered` (`/packages/delivered`) döndürüyor — `Cancelled` bunların
+hiçbirinde YOK ve ayrı bir "iptal edilenler" ucu istemcide TANIMLI DEĞİL.
+Elimizdeki tek geniş kayıt ucu (`siparisDetay`) TEK bir sipariş numarası
+İSTER — proaktif tarama için kullanılamaz, çünkü hangi siparişin iptal
+olduğunu ÖNCE bir listeleme ucundan bilmemiz gerekir.
+
+Mevcut kodun kendi yorumu da bunu doğruluyor (`canli-hb-ice-aktar.ts:53`):
+_"Cancelled kalem YAZILMAZ (iptal ANI kaynağı yok — uydurulmaz)"_ — bu
+YENİ siparişler için zaten böyleydi; K213 için de aynı boşluk geçerli.
+
+**AÇILIŞ ŞARTI — ikisinden biri:**
+1. `developers.hepsiburada.com` **403** döndürüyor (otomatik okuyucuya);
+   Halil merchant panelinden (`Hesabım → Entegrasyon`) iptal/cancelled
+   paketleri listeleyen bir uç olup olmadığına bakmalı, VEYA
+2. Yoksa alternatif tasarım ölçülür: hâlâ "Open" sayılan her aktif
+   siparişi `siparisDetay` ile TEK TEK yoklamak (rate limit + maliyet
+   ÖLÇÜLMEDEN yazılmaz — bu apayrı bir tasarım, bugünkü toplu-çekim
+   deseninden farklı).
+
+### HALİL TESTİ — kapanma şartı (TY + N11)
+Bu bir OTOMATİK, finansal etkili değişiklik — canlı zamanlanmış cron'lara
+giriyor. Sentetik deneme yerine gerçek bir vakayla doğrulanmalı:
+1. Trendyol'da (veya N11'de) az riskli bir siparişi (ör. düşük tutarlı)
+   müşteri adına "Vazgeçtim" ile iptal ettir (ya da bir sonraki gerçek
+   müşteri iptalini bekle).
 2. O siparişin sistemde zaten **aktif satış** olarak durduğunu doğrula
    (`/satislar` içinde sipariş kodunu ara).
-3. Bir sonraki zamanlanmış TY çekimi (`ty-gunluk-cekim.cmd`, 5 dakikada
-   bir) geçtikten sonra aynı satışı aç: **İptal Edildi** rozeti görünmeli,
+3. Bir sonraki zamanlanmış çekim (TY 5 dakikada bir · N11 kendi cron'u)
+   geçtikten sonra aynı satışı aç: **İptal Edildi** rozeti görünmeli,
    iptal notu _"...otomatik tespit edildi (K213...)"_ okunmalı.
 4. `/rapor` panelindeki GERÇEK NET / ciro rakamının o satış tutarı kadar
    **düştüğünü**, `/stok` üzerinden ilgili varyantın adedinin iptal
    edilen miktar kadar **arttığını** doğrula.
-5. Ekrandaki rakamlar teslim raporundaki beklenenle birebir tutmalı
+5. N11'e özgü: parçası hâlâ kargoda/teslimde olan BÖLÜNMÜŞ bir sipariş
+   varsa, o sipariş otomatik iptal EDİLMEMELİ (kısmi iptal guard'ı) —
+   fırsat çıkarsa bu senaryo da bir kez elle doğrulanmalı.
+6. Ekrandaki rakamlar teslim raporundaki beklenenle birebir tutmalı
    (Halil testi madde c) — yaklaşık değil.
 
 ---
