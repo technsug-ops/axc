@@ -13,6 +13,54 @@
 
 ---
 
+## 🔶 K210 — ÜRÜN ANALİZİ: DÖNEM/KANAL/PARA FİLTRESİ EKLENDİ · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı: _"bu sayfa bizim için çok değerli, verilerinde hata olmamalı,
+bütün filtreler çalışmalı, BI olarak best practice hedeflenmeli."_
+
+**Ölçülen boşluk:** `/rapor/urunler` sayfasında `pencere`/`baslangic`/
+`bitis`/`kanal`/`para` parametreleri koddaydı ve sorguyu GERÇEKTEN
+etkiliyordu (ölçüldü — `satisEkseniVerisi(pencere, paraBirimi, kanalKodu)`)
+ama süzgeç çubuğunda bunları AYARLAYACAK hiçbir görünür kontrol yoktu —
+yalnız gizli alan olarak taşınıyorlardı. Sıralama (`SIRALAMA_ALANLARI`)
+zaten her görünen sütun için vardı (dropdown), o taraf gerçek bir boşluk
+değildi.
+
+**Yapılan:** `analiz-suzgeci.tsx`'e üç yeni bölüm eklendi (yalnız
+`eksen !== "stok"` — stok ekseni bu üçünü hiç parametre almıyor):
+- **Dönem** — Bu Ay/Son 3 Ay/Son 6 Ay tek-tık çip + "Özel aralık"
+  `<details>` içinde kendi küçük formu (JS'siz, `pencere=OZEL` çakışmasın
+  diye ayrı form).
+- **Kanal** — aktif kanallardan (`prisma.channel.findMany`) türetilen
+  çipler. `hamSatirlar`dan DEĞİL: kanal DB sorgusunda süzülüyor, süzülmüş
+  satırdan seçenek türetilseydi seçili olmayan kanallar listeden düşerdi.
+- **Para birimi** — TRY/EUR çip.
+
+**Canlı veri doğrulaması (salt okuma, `scripts/tmp/`, silindi):** bu ayın
+en yüksek cirolu 3 ürünü İKİ bağımsız yoldan hesaplandı (kütüphanenin
+kendi mantığı + bağımsız `groupBy`) — **birebir aynı sonuç.** `urun-analizi:
+dogrula` 116/116, `tsc`/`lint`/`i18n`/`yerlesim` temiz.
+
+### HALİL TESTİ — kapanma şartı
+1. Canlıda `/rapor/urunler` aç → "Dağılım" sekmesi.
+2. **Dönem** satırında "Son 3 Ay" çipine bas → liste ve toplamlar değişmeli,
+   URL'de `pencere=SON_3_AY` görünmeli.
+3. "Özel aralık" aç → iki tarih gir → Uygula → seçtiğin aralık uygulanmalı.
+4. **Kanal** satırında bir kanala bas (ör. Hepsiburada) → yalnız o kanalın
+   satışları görünmeli; "Tüm kanallar" ile geri dönülebilmeli.
+5. **Para birimi**nde EUR'a bas → yalnız EUR satışlar (varsa) görünmeli;
+   yoksa boş liste + "süzgeci gevşetin" notu görünmeli (sessiz boş liste
+   OLMAMALI).
+6. Marka/kategori/min adet/min ciro/raf yaşı kovası/sıralama/satır sayısı
+   filtrelerinin HİÇBİRİ bu değişiklikle bozulmamış olmalı — hepsini tek
+   tek dene.
+7. Mobilde (dar ekran) aynı adımlar — çipler ve `<details>` formu 44px
+   dokunma alanında olmalı.
+
+Geçerse: kapat, ARSIV.md'e taşı. Geçmezse: ekran görüntüsüyle bildir.
+
+---
+
 ## 🔶 K206 — `/api/yedek/otomatik`: BLOB DEPOSU ASKIYA ALINMIŞ · 10.09.2026 · [ARA ÖNLEM KOŞTU — ASIL SEBEP AÇIK]
 
 K205 sırasında (ARSIV.md) rastlantısal bulundu, KENDİSİYLE İLGİSİZ:

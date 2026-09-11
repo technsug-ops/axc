@@ -31,6 +31,7 @@ import {
   type PencereTuru,
 } from "@/lib/donem";
 import { kdvMahsubu, marjYuzdesi } from "@/lib/panel-listeler";
+import { prisma } from "@/lib/prisma";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import {
   ANALIZ_EKSENLERI,
@@ -175,10 +176,26 @@ export default async function UrunAnaliziSayfasi({
    */
   const bugun = new Date();
   bugun.setUTCHours(0, 0, 0, 0);
-  const hamSatirlar: AnalizSatiri[] =
+  const [hamSatirlar, kanallar] = await Promise.all([
     eksen === "stok"
-      ? await stokEkseniVerisi(bugun)
-      : await satisEkseniVerisi(pencere, paraBirimi, kanalKodu);
+      ? stokEkseniVerisi(bugun)
+      : satisEkseniVerisi(pencere, paraBirimi, kanalKodu),
+    /**
+     * KANAL SEÇENEKLERİ — `hamSatirlar`DAN TÜRETİLMEZ (K210).
+     *
+     * ⚠ Marka/kategoriden FARKLI: onlar `hamSatirlar` üstünde İSTEMCİ
+     * TARAFI süzülür (SÜZÜLMEMİŞ kümeden seçenek çıkarılabilir). Kanal ise
+     * `satisEkseniVerisi`nin KENDİ SORGUSUNDA süzülüyor — yani `hamSatirlar`
+     * zaten yalnız SEÇİLİ kanalı taşıyor. Oradan seçenek türetilseydi diğer
+     * kanallar listeden DÜŞER, geri dönmek imkânsızlaşırdı (aynı tuzak,
+     * marka/kategori yorumundaki gerekçenin aynısı — kaynak farklı).
+     */
+    prisma.channel.findMany({
+      where: { isActive: true },
+      select: { code: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   /**
    * SÜZGEÇ SEÇENEKLERİ SÜZÜLMEMİŞ KÜMEDEN — LEGO seçilince öteki markalar
@@ -323,6 +340,7 @@ export default async function UrunAnaliziSayfasi({
         satir={satirSayisi}
         markaSecenekleri={markaSecenekleri}
         kategoriSecenekleri={kategoriSecenekleri}
+        kanalSecenekleri={kanallar}
         suzgecVarMi={
           suzgec.markalar.length > 0 ||
           suzgec.kategoriler.length > 0 ||

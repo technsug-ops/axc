@@ -1,9 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { RotateCcw } from "lucide-react";
+import { CalendarRange, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RAPOR_PENCERELERI, type PencereTuru } from "@/lib/donem";
+import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
 import {
   analizAdresi,
   ANALIZ_YOLU,
@@ -61,6 +64,7 @@ export async function AnalizSuzgeci({
   satir,
   markaSecenekleri,
   kategoriSecenekleri,
+  kanalSecenekleri,
   suzgecVarMi,
 }: {
   eksen: AnalizEkseni;
@@ -72,12 +76,18 @@ export async function AnalizSuzgeci({
   /** Süzülmemiş kümeden — ad ve o markadaki ürün sayısı. */
   markaSecenekleri: { ad: string; sayi: number }[];
   kategoriSecenekleri: { ad: string; sayi: number }[];
+  /** ⚠ `hamSatirlar`DAN DEĞİL — bkz. çağıran (`page.tsx`) yorumu: kanal
+   *  DB sorgusunda süzülüyor, süzülmüş satırdan seçenek türetilseydi
+   *  seçili olmayan kanallar listeden düşerdi. */
+  kanalSecenekleri: { code: string; name: string }[];
   /** En az bir süzgeç etkinse "temizle" bağlantısı çizilir. */
   suzgecVarMi: boolean;
 }) {
   const t = await getTranslations("UrunAnalizi");
   /** Kova adları `Stok` ad alanında — ikinci bir kopya iki ekranı ayrıştırırdı. */
   const tStok = await getTranslations("Stok");
+  /** Dönem etiketleri `Pencere` ad alanında — `/rapor`la AYNI kaynak. */
+  const tPencere = await getTranslations("Pencere");
 
   /**
    * SIRALAMA ETİKETLERİ — exhaustive `Record`. Yeni bir alan eklendiğinde
@@ -96,6 +106,32 @@ export async function AnalizSuzgeci({
     rafAdedi: t("siraRafAdedi"),
     ad: t("siraAd"),
   };
+
+  /** Tek-tık uygulanan çip görünümü — kova/eksen sekmeleriyle AYNI stil. */
+  const chipSinifi = (aktif: boolean) =>
+    "inline-flex h-11 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
+    (aktif
+      ? "bg-primary text-primary-foreground border-primary"
+      : "bg-background hover:bg-muted");
+
+  /**
+   * DEĞİŞMEYEN TABAN — dönem/kanal/para çipleri bunun üstüne TEK alan
+   * değiştirir. `analizAdresi` çağrıları bu tabanı spread edip yalnız
+   * kendi alanını override eder (kova chip'iyle AYNI desen).
+   */
+  const taban = {
+    ...tasinan,
+    markalar: suzgec.markalar,
+    kategoriler: suzgec.kategoriler,
+    minAdet: suzgec.minAdet,
+    minCiro: suzgec.minCiro,
+    sirala: sira,
+    yon,
+    satir,
+  };
+
+  const guncelPencere = (tasinan.pencere ?? "BU_AY") as PencereTuru;
+  const guncelPara = tasinan.para === "EUR" ? "EUR" : "TRY";
 
   /** Süzgeci sıfırlayan adres — eksen ve dönem KORUNUR, süzgeçler düşer. */
   const temizAdres = (() => {
@@ -258,17 +294,197 @@ export async function AnalizSuzgeci({
                     satir,
                   })}
                   aria-current={aktif ? "true" : undefined}
-                  className={
-                    "inline-flex h-11 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
-                    (aktif
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background hover:bg-muted")
-                  }
+                  className={chipSinifi(aktif)}
                 >
                   {tStok(`yasKova${k.kod}`)}
                 </Link>
               );
             })}
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── DÖNEM, KANAL, PARA BİRİMİ — YALNIZ SATIŞ EKSENLERİNDE (K210) ──
+          ⛔ STOK EKSENİNDE ÇİZİLMİYOR — RAF YAŞI KOVALARININ TERSİ KOŞULU.
+          `stokEkseniVerisi` bu üçünü hiç parametre almıyor (bkz. page.tsx
+          yorumu); tıklanabilir görünüp hiçbir şeyi değiştirmeyen bir kontrol
+          İlke #2 + #5'i çiğnerdi.
+
+          ⚠ BU ÜÇÜ "SÜZGEÇ TEMİZLE"YE GİRMEZ — kova/marka/kategori/minAdet/
+          minCiro gibi geçici bir daraltma değil, EKSEN gibi bir GÖRÜNÜM
+          seçimi (bkz. `temizAdres` zaten pencere/kanal/parayı KORUYOR). */}
+      {eksen !== "stok" ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* ── DÖNEM ── */}
+          <div className="space-y-1.5 md:col-span-2">
+            <span className="text-muted-foreground text-xs font-medium">
+              {t("donemBaslik")}
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {RAPOR_PENCERELERI.filter((tur) => tur !== "OZEL").map(
+                (tur) => {
+                  const aktif = guncelPencere === tur;
+                  return (
+                    <Link
+                      key={tur}
+                      href={analizAdresi({
+                        ...taban,
+                        pencere: tur,
+                        baslangic: undefined,
+                        bitis: undefined,
+                      })}
+                      aria-current={aktif ? "true" : undefined}
+                      className={chipSinifi(aktif)}
+                    >
+                      {tPencere(PENCERE_ANAHTARI[tur])}
+                    </Link>
+                  );
+                },
+              )}
+              {/* ⚠ `<details>` — JAVASCRIPT'SİZ AÇILIR/KAPANIR (native HTML).
+                  Kendi KÜÇÜK formu var: ana "Uygula"ya karışırsa `pencere`
+                  alanı İKİ KEZ gönderilir (biri bu, biri üstteki taşıyıcı)
+                  ve hangisinin geçerli olacağı belirsizleşirdi. */}
+              <details className="bg-background rounded-md border">
+                <summary className="flex h-11 cursor-pointer list-none items-center gap-1.5 px-3 text-sm font-medium">
+                  <CalendarRange className="size-4" aria-hidden />
+                  {tPencere("ozel")}
+                  {guncelPencere === "OZEL" ? (
+                    <span className="text-muted-foreground text-xs font-normal">
+                      {tasinan.baslangic} – {tasinan.bitis}
+                    </span>
+                  ) : null}
+                </summary>
+                <form
+                  method="get"
+                  action={ANALIZ_YOLU}
+                  className="flex flex-wrap items-end gap-2 border-t p-2"
+                >
+                  <input type="hidden" name="eksen" value={eksen} />
+                  <input type="hidden" name="pencere" value="OZEL" />
+                  {tasinan.kanal ? (
+                    <input type="hidden" name="kanal" value={tasinan.kanal} />
+                  ) : null}
+                  {tasinan.para ? (
+                    <input type="hidden" name="para" value={tasinan.para} />
+                  ) : null}
+                  {suzgec.markalar.map((m) => (
+                    <input key={m} type="hidden" name="marka" value={m} />
+                  ))}
+                  {suzgec.kategoriler.map((k) => (
+                    <input key={k} type="hidden" name="kategori" value={k} />
+                  ))}
+                  {suzgec.minAdet !== null ? (
+                    <input
+                      type="hidden"
+                      name="minAdet"
+                      value={suzgec.minAdet}
+                    />
+                  ) : null}
+                  {suzgec.minCiro !== null ? (
+                    <input
+                      type="hidden"
+                      name="minCiro"
+                      value={suzgec.minCiro}
+                    />
+                  ) : null}
+                  <input type="hidden" name="sirala" value={sira} />
+                  <input type="hidden" name="yon" value={yon} />
+                  <input type="hidden" name="satir" value={satir} />
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="analiz-baslangic"
+                      className="text-muted-foreground text-xs"
+                    >
+                      {t("baslangic")}
+                    </Label>
+                    <Input
+                      id="analiz-baslangic"
+                      name="baslangic"
+                      type="date"
+                      defaultValue={tasinan.baslangic ?? ""}
+                      className="h-11 w-40"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="analiz-bitis"
+                      className="text-muted-foreground text-xs"
+                    >
+                      {t("bitis")}
+                    </Label>
+                    <Input
+                      id="analiz-bitis"
+                      name="bitis"
+                      type="date"
+                      defaultValue={tasinan.bitis ?? ""}
+                      className="h-11 w-40"
+                    />
+                  </div>
+                  <Button type="submit" size="sm" className="h-11">
+                    {t("uygula")}
+                  </Button>
+                </form>
+              </details>
+            </div>
+          </div>
+
+          {/* ── KANAL ── */}
+          <div className="space-y-1.5">
+            <span className="text-muted-foreground text-xs font-medium">
+              {t("kanalBaslik")}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={analizAdresi({ ...taban, kanal: undefined })}
+                aria-current={!tasinan.kanal ? "true" : undefined}
+                className={chipSinifi(!tasinan.kanal)}
+              >
+                {t("kanalHepsi")}
+              </Link>
+              {kanalSecenekleri.map((k) => {
+                const aktif = tasinan.kanal === k.code;
+                return (
+                  <Link
+                    key={k.code}
+                    href={analizAdresi({
+                      ...taban,
+                      kanal: aktif ? undefined : k.code,
+                    })}
+                    aria-current={aktif ? "true" : undefined}
+                    className={chipSinifi(aktif)}
+                  >
+                    {k.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── PARA BİRİMİ ──
+              ⚠ SEÇENEK İKİYLE SINIRLI — anayasa: Currency = TRY | EUR. */}
+          <div className="space-y-1.5">
+            <span className="text-muted-foreground text-xs font-medium">
+              {t("paraBaslik")}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {(["TRY", "EUR"] as const).map((pb) => {
+                const aktif = guncelPara === pb;
+                return (
+                  <Link
+                    key={pb}
+                    href={analizAdresi({
+                      ...taban,
+                      para: pb === "TRY" ? undefined : pb,
+                    })}
+                    aria-current={aktif ? "true" : undefined}
+                    className={chipSinifi(aktif)}
+                  >
+                    {pb}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
       ) : null}
