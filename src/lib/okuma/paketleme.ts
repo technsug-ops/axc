@@ -1,3 +1,8 @@
+import { izYaz } from "@/lib/iz";
+import { oturumdakiKullanici } from "@/lib/oturum";
+import { prisma } from "@/lib/prisma";
+import type { KodRolu } from "@/lib/varyant-arama-kurali";
+
 /**
  * ============================================================================
  *  PAKETLEME İZİ (K34a ek — İŞ 2)
@@ -94,4 +99,64 @@ export function hazirlananSiparisler(
     if (hazirlaniyorMu(liste)) sonuc.add(saleId);
   }
   return sonuc;
+}
+
+/**
+ * PAKETLEME İZİ YAZ — TEK GÖVDE, ÜÇ ÇAĞIRAN (K34a + K207).
+ *
+ * ⚠ Barkod okuma (`/okut`, `/paketle`) VE elle işaretleme (`/satislar`) AYNI
+ * gövdeden geçer — biri değişip öteki unutulmasın diye (anayasa: "iki
+ * yerde iki ölçüt olmaz"). `okuma` yalnız barkod bağlamında dolu; elle
+ * işaretlemede `null` — zaten `PAKETLEME_GERI_ALINDI` de hep `null` yazıyordu.
+ *
+ * ⛔ SİLME YOK — TERS KAYIT. Yanlış tuşa basıldığında önceki iz silinmez.
+ */
+export async function paketlemeIziYaz(
+  eylem: string,
+  saleId: string,
+  okuma: { kod: string; alan: KodRolu | null } | null,
+): Promise<void> {
+  try {
+    const kullanici = await oturumdakiKullanici();
+    await izYaz({
+      userId: kullanici?.id ?? null,
+      action: eylem,
+      targetType: "Sale",
+      targetId: saleId,
+      /**
+       * ⚠ YAPILANDIRILMIŞ, SERBEST METİN DEĞİL — K34a ④ ile aynı kural.
+       * "Hangi barkodla paketlendi" sorusu ileride metin ayrıştırmaya
+       * dönmesin diye şekil bugün sabitleniyor.
+       */
+      detail: okuma ? JSON.stringify(okuma) : null,
+    });
+  } catch (e) {
+    /* İz tutulamadıysa paket yine hazırlanır; operasyon ölçüm için durmaz. */
+    console.error("[okuma] paketleme izi yazılamadı:", e);
+  }
+}
+
+/**
+ * PAKETLENMİŞ SİPARİŞ KÜMESİ — VERİLEN KİMLİKLERLE SINIRLI (K207).
+ *
+ * ⚠ `hazirlananSiparisKimlikleri()`nin (gorev-verisi.ts) tersine TÜM
+ * `AuditLog` tablosunu TARAMAZ — yalnız verilen sale id'lerini sorgular.
+ * Bir liste sayfasının kendi SAYFASINDAKİ (ör. 50) satır için paketleme
+ * durumunu göstermesi gerektiğinde bu kullanılır; tam tabloyu taramak
+ * her sayfa yüklemesinde gereksiz büyürdü. Aynı ölçüt (`hazirlananSiparisler`)
+ * gövdesinden geçtiği için panel sayacıyla asla ayrışmaz.
+ */
+export async function paketliSaleIdKumesi(
+  saleIds: string[],
+): Promise<Set<string>> {
+  if (saleIds.length === 0) return new Set();
+  const izler = await prisma.auditLog.findMany({
+    where: {
+      action: { in: [...PAKETLEME_EYLEMLERI] },
+      targetType: "Sale",
+      targetId: { in: saleIds },
+    },
+    select: { action: true, createdAt: true, targetId: true },
+  });
+  return hazirlananSiparisler(izler);
 }

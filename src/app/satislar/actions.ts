@@ -25,6 +25,11 @@ import {
   SayimKorumasiHatasi,
   YetersizStokHatasi,
 } from "@/lib/satis";
+import {
+  PAKETLENDI_EYLEMI,
+  PAKETLEME_GERI_ALINDI_EYLEMI,
+  paketlemeIziYaz,
+} from "@/lib/okuma/paketleme";
 
 export type SatisDurumu = {
   hatalar?: string[];
@@ -385,6 +390,54 @@ export async function kargoDurumuGuncelle(
 
   revalidatePath("/satislar");
   revalidatePath(`/satislar/${saleId}`);
+  // Panel kutusu bu sayıdan besleniyor.
+  revalidatePath("/");
+  return {};
+}
+
+/**
+ * ============================================================================
+ *  PAKETLENDİ İŞARETİ — LİSTEDEN ELLE (K207)
+ * ----------------------------------------------------------------------------
+ *  _Kullanıcı vakası 11.09.2026: API'den ürün çekilemediği bir aralıkta
+ *  22 sipariş elle paketlendi ama sistem 21'ini biliyordu — eksik olan 1
+ *  tanesini bulmak için iki sekmeyi karşılaştırmak gerekti. Kullanıcı:
+ *  "toplam sipariş listesi açıldığında yan tarafta paketlendiğini gösteren
+ *  bir işaret olsa ve elle basılsa yeter"._
+ *
+ *  ⚠ AYNI İZ, AYNI GÖVDE — `/okut` ve `/paketle` barkod okuyarak bu izi
+ *  yazıyor (`paketlemeIziYaz`, artık `lib/okuma/paketleme.ts`te ortak).
+ *  Buradaki fark yalnız KAYNAK: barkod yok, `okuma` hep `null` — tıpkı
+ *  "geri al" eyleminin zaten hep yaptığı gibi. İKİ AYRI ÖLÇÜT DOĞMASIN diye
+ *  ekran ne kullanırsa kullansın panel sayacı (`gorev-verisi.ts`) ve `/okut`
+ *  AYNI izi okur; biri paketlerse öteki de görür.
+ *
+ *  ⚠ KAPI DEĞİL, İlke #1 GEREĞİ GÖRÜNÜR: bu bir toggle, satırın eylem
+ *  hücresinde durur (KargoDurumu'yla aynı desen — bkz. `kargo-durumu.tsx`).
+ * ============================================================================
+ */
+export async function paketlendiDurumuGuncelle(
+  saleId: string,
+  paketlendi: boolean,
+): Promise<{ hata?: string }> {
+  await yetkiIste("satis.yaz");
+  const t = await getTranslations("Satis");
+
+  const satis = await prisma.sale.findUnique({
+    where: { id: saleId },
+    select: { id: true },
+  });
+  if (!satis) return { hata: t("bulunamadi") };
+
+  await paketlemeIziYaz(
+    paketlendi ? PAKETLENDI_EYLEMI : PAKETLEME_GERI_ALINDI_EYLEMI,
+    saleId,
+    null,
+  );
+
+  revalidatePath("/satislar");
+  revalidatePath(`/satislar/${saleId}`);
+  revalidatePath("/okut");
   // Panel kutusu bu sayıdan besleniyor.
   revalidatePath("/");
   return {};

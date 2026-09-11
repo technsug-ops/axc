@@ -978,6 +978,8 @@
     "paketSuzgeci": "Paketleme",
     "paketSuzgeciHazirlanan": "Paketlendi",
     "paketSuzgeciBekleyen": "Paketlenmedi",
+    "paketliIsaretle": "Paketlendi olarak işaretle",
+    "paketliKaldir": "Paketlendi işaretini kaldır",
     "kargoyaVerildi": "Kargoya verildi",
     "onayla": "Onayla",
     "onayBaslik": "Sipariş {kod} onaylansın mı?",

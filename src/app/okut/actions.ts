@@ -10,6 +10,7 @@ import {
   PAKETLENDI_EYLEMI,
   PAKETLEME_GERI_ALINDI_EYLEMI,
   hazirlananSiparisler,
+  paketlemeIziYaz,
 } from "@/lib/okuma/paketleme";
 import {
   eslestirilebilirMi,
@@ -601,30 +602,4 @@ export async function paketlemeyiGeriAl(
   await paketlemeIziYaz(PAKETLEME_GERI_ALINDI_EYLEMI, saleId, null);
   revalidatePath("/okut");
   return { ok: true };
-}
-
-async function paketlemeIziYaz(
-  eylem: string,
-  saleId: string,
-  okuma: { kod: string; alan: KodRolu | null } | null,
-): Promise<void> {
-  try {
-    const kullanici = await oturumdakiKullanici();
-    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
-    await izYaz({
-      userId: kullanici?.id ?? null,
-      action: eylem,
-      targetType: "Sale",
-      targetId: saleId,
-      /**
-       * ⚠ YAPILANDIRILMIŞ, SERBEST METİN DEĞİL — K34a ④ ile aynı kural.
-       * "Hangi barkodla paketlendi" sorusu ileride metin ayrıştırmaya
-       * dönmesin diye şekil bugün sabitleniyor.
-       */
-      detail: okuma ? JSON.stringify(okuma) : null,
-    });
-  } catch (e) {
-    /* İz tutulamadıysa paket yine hazırlanır; operasyon ölçüm için durmaz. */
-    console.error("[okuma] paketleme izi yazılamadı:", e);
-  }
 }

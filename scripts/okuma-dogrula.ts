@@ -829,23 +829,45 @@ console.log("\n8) PAKETLEME İZİ (İŞ 2)");
   );
 
   const paketEylem = readFileSync("src/app/okut/actions.ts", "utf8");
+  /**
+   * ⚠ K207'DEN SONRA YAZIM GÖVDESİ `lib/okuma/paketleme.ts`TE — `/okut`
+   * VE `/satislar` (elle işaretleme) AYNI gövdeyi çağırıyor. Aşağıdaki üç
+   * ölçüt ARTIK ORAYA bakar; `okut/actions.ts` bugün de `targetType: "Sale"`
+   * içeriyor ama BAŞKA bir iz için (K90) — dosyanın TAMAMINDA arasaydık bu
+   * ölçüt kendi kendini yanlış yerden doğrulardı (anayasa: "kaynak tarayan
+   * kontrol, deseni dosyanın tamamında değil kullanım bloğunda arar").
+   */
+  const paketIzGovdesi = readFileSync("src/lib/okuma/paketleme.ts", "utf8");
   kontrol(
     "iz AuditLog'a yazılıyor, satışa bağlı",
-    /targetType: "Sale"/.test(paketEylem),
+    /targetType: "Sale"/.test(paketIzGovdesi),
   );
   /**
    * ⚠ SİLME YOK. Geri alma, ilk kaydı silmek yerine TERS kayıt yazar.
    * `deleteMany`/`delete` görünürse ledger ilkesi çiğnenmiş demektir.
+   * Çağrı yeri hâlâ `/okut`ta (barkod bağlamı); yazım gövdesi paylaşılıyor.
    */
   kontrol(
     "  ...geri alma SİLMİYOR, ters kayıt yazıyor",
     /paketlemeIziYaz\(PAKETLEME_GERI_ALINDI_EYLEMI/.test(paketEylem) &&
-      !/auditLog\.delete/.test(paketEylem),
+      !/auditLog\.delete/.test(paketIzGovdesi),
   );
   /** Detay yapılandırılmış — K34a ④ ile aynı kural. */
   kontrol(
     "  ...detail yapılandırılmış (serbest metin değil)",
-    /detail: okuma \? JSON\.stringify\(okuma\) : null/.test(paketEylem),
+    /detail: okuma \? JSON\.stringify\(okuma\) : null/.test(paketIzGovdesi),
+  );
+  /**
+   * ⭐ K207 — ELLE İŞARETLEME (`/satislar`) AYNI GÖVDEYİ ÇAĞIRIYOR MU?
+   * Ayrı bir ölçüt yazılmasaydı, biri yarın `/satislar`ı kendi
+   * `auditLog.create`'ine çevirebilir ve iki ayrı "hazırlanıyor" yorumu
+   * sessizce doğardı (anayasa: "iki yerde iki ölçüt olmaz").
+   */
+  const satislarEylem = readFileSync("src/app/satislar/actions.ts", "utf8");
+  kontrol(
+    "  ...elle işaretleme (/satislar) AYNI gövdeyi çağırıyor",
+    /paketlemeIziYaz\(\s*paketlendi \? PAKETLENDI_EYLEMI/.test(satislarEylem) &&
+      !/auditLog\.create/.test(satislarEylem),
   );
 
   /**

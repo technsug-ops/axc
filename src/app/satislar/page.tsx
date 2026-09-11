@@ -22,8 +22,10 @@ import {
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { IkiSatir } from "@/components/iki-satir";
 import { hazirlananSiparisKimlikleri } from "@/lib/panel/gorev-verisi";
+import { paketliSaleIdKumesi } from "@/lib/okuma/paketleme";
 import { kartAdresi } from "@/lib/kart-adresi";
 import { KargoDurumu } from "./kargo-durumu";
+import { PaketlendiDurumu } from "./paketlendi-durumu";
 import { SiparisOnayi } from "./siparis-onayi";
 import { TopluKargo } from "./toplu-kargo";
 import { ListeKarti } from "@/components/liste-karti";
@@ -267,6 +269,17 @@ export default async function SatislarSayfasi({
     },
     orderBy: { soldAt: "desc" },
   });
+
+  /**
+   * PAKETLENDİ İŞARETİ — YALNIZ BU SAYFADAKİ SATIRLAR İÇİN (K207).
+   *
+   * ⚠ `paketliIdler` (yukarıda) SÜZGEÇ için TÜM tabloyu tarar ve yalnız
+   * `paket=…` açıkken çözülür. Buradaki `paketliSet` her açılışta hesaplanır
+   * ama TABLONUN TAMAMINI değil, yalnız bu sayfanın (≤50) satırlarını sorgular
+   * — İlke #9'un "gerekeni listede göster" tarafı, gereksiz tam-tablo
+   * taraması olmadan.
+   */
+  const paketliSet = await paketliSaleIdKumesi(satislar.map((s) => s.id));
 
   /** Satırda "ne satıldı" özeti: tek kalemse ürün adı, çoksa "+N". */
   function urunOzeti(satis: (typeof satislar)[number]) {
@@ -537,6 +550,9 @@ export default async function SatislarSayfasi({
           saleId={satis.id}
           shippedAt={satis.shippedAt ? gunMetni(satis.shippedAt) : null}
         />
+        {/* PAKETLENDİ İŞARETİ — AYRI SÜTUN DEĞİL, EYLEM (K207): KargoDurumu
+            ile aynı desen, aynı sütun bütçesi gerekçesi. */}
+        <PaketlendiDurumu saleId={satis.id} paketliMi={paketliSet.has(satis.id)} />
         <SatirEylemi
           href={`/satislar/${satis.id}`}
           ikon={Eye}
