@@ -1076,107 +1076,26 @@ tasarlamadan yazmak, adresi olmayan bir rakam üretirdi.
 boş doğuyor ve yalnız **bundan sonraki** teslimlerle doluyor. "Teslim
 edilmedi" ile "sistem bilmiyor" aynı görünürse kutu yanlış okunur.
 
-## 🔶 K194 — N11'E STOK/FİYAT GÖNDERİMİ (İKİNCİ KANAL) · 09.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+## 🔶 K194-HB — HB'YE STOK/FİYAT GÖNDERİMİ (ÜÇÜNCÜ KANAL) · 09.09.2026 · [ARAŞTIRMA ONAYLANDI — SÜRÜYOR]
 
-> **Halil kararı 09.09:** stok TEK düğmeyle üç kanala, fiyat kanal başına
-> AYRI düğmeyle. **"Yazım okumadan KATEGORİK tehlikeli — her yazım
-> ÖNİZLE→ONAYLA protokolüyle, asla körlemesine toplu."**
+⛔ **N11 (K194) VE TY (K169) YAZMA TARAFI KAPANDI (Halil testi geçti,
+bkz. ARSIV.md) — YALNIZ HB AÇIK.**
 
-**UÇ — RESMÎ DOKÜMANDAN** (n11 Mağaza Destek Merkezi, 09.09.2026):
+📋 **BİLİNEN ENGEL:** `stock-uploads` ve `price-uploads` uçlarının tam
+yolu + gövdesi hâlâ net değildi. Genel listing güncelleme ucu `Price` +
+`AvailableStock` + `DispatchTime` + `CargoCompany1` alanlarının HEPSİNİ
+zorunlu tutuyor; onunla YALNIZ stok göndermek **bayat bir fiyatla gerçek
+fiyatı ezerdi** — bu yüzden yazılmadı. Ayrıca HB'de fiyat eşiği aşılırsa
+listing **KİLİTLENİYOR** (MinLock/MaxLock); yanıttaki `priceValidations`
+alanı ekranda gösterilmeli ve kilit-kaldırma çağrısı ayrıca haritalanmalı.
 
-    POST https://api.n11.com/ms/product/tasks/price-stock-update
-    kimlik: appKey/appSecret BASLIKTA (auth semasi YOK)
-    govde : { payload: { integrator, skus: [{ stockCode, listPrice,
-                                              salePrice, quantity }] } }
-    yanit : { id (taskId), type, status: IN_QUEUE | REJECT, reasons[] }
-
-⭐ Mevcut okuma istemcimizin `baslikKur`u dokümanla **birebir** — kimlik
-tarafında değişiklik gerekmedi.
-
-### ⛔ TY'DEN AYRILAN YER — FİYAT İKİ SAYIDIR
-
-TY'ye `salePrice` ve `listPrice` **aynı** değer gidiyor. N11 bunu
-**reddediyor**: liste fiyatı satış fiyatından YÜKSEK olmalı, eşit bile
-olamaz. Yani tek bir "fiyat" sayısı iki kanala gönderilemez.
-⭐ Halil'in "fiyat kanal başına ayrı düğme" kararı bu yüzden doğruymuş —
-ama form da N11 için **iki rakam** sormak zorunda.
-
-### KANALIN KURALI İSTEK GİTMEDEN SINANIYOR
-
-Doküman üç şart koyuyor ve ihlalde isteği `FAIL` yapıyor. Üçü de **ağa
-çıkmadan** sınanıyor (`kalemGecerliMi`, saf gövde):
-
-    ① listPrice ve salePrice BIRLIKTE     → FIYAT_TEK_BASINA
-    ② listPrice > salePrice (esitlik YOK) → LISTE_FIYATI_DUSUK
-    ③ kusurat en fazla 2 hane             → KURUSAT_HATALI
-
-⚠ **YUVARLAMIYORUZ:** üç haneli bir fiyat sessizce ikiye yuvarlansaydı
-kanala **bizim uydurduğumuz** bir rakam giderdi. Reddedip söylüyoruz.
-⚠ **KURAL İHLALİNDE İZ YAZILMIYOR** — kanala hiçbir şey gitmedi; "gönderdim
-sanıyordum" sorusu orada doğmaz.
-
-### ⛔ "KABUL EDİLDİ" ≠ "İŞLENDİ" — VE BU EKRANDA YAZIYOR
-
-N11 `IN_QUEUE` dönüyor; gerçek sonuç **TaskDetails** servisinden gelir ve
-**o ucun yolu dokümanda verilmedi.** Uydurulmuş bir yol yanlış yere sorar ve
-"sonuç okunamadı"yı "sorun yok" gibi gösterir.
-→ Ekran görev numarasını gösteriyor ve **kuyruk kaydı olduğunu açıkça
-söylüyor**; iz de `not: "TaskDetails ucu gelince sonuc sorgulanacak"`
-taşıyor ki sonradan "başarılı" diye okunmasın.
-📋 **AÇILIŞ ŞARTI:** TaskDetails ucunun tam yolu geldiğinde `gonderimSonucu`
-yazılır ve ekran gerçek sonucu gösterir.
-
-### ⛔ BEKÇİ ÇAKILIYDI — VE İKİNCİ KANAL BUNU ORTAYA ÇIKARDI
-
-`kanal-yazma:dogrula` K169'da **TY yollarına çakılı** yazılmıştı. N11
-eklenince görüldü ki çakılı bir bekçi **yeni yazıcıyı hiç görmez**: N11
-önizlemesiz olsaydı bekçi yeşil kalırdı.
-⭐ Liste artık `api-dogrula.ts`teki **beyandan türüyor**; üçüncü kanal (HB)
-eklendiğinde kimsenin bu dosyaya satır yazması gerekmeyecek. Ekran yolları
-da addan türetiliyor (`scripts/<kod>/yazici.ts` → `<kod>-gonderim.tsx` ·
-`<kod>GonderimOnizle`), sapan bir kanal **bulunamaz ve kırmızı yanar**.
-_(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)_
-
-### BEKÇİ 37/37 · MUTASYON 10/10 KIRMIZI
-
-    ①  onizlemesiz gonderim (dugme kapisi kalkar)      KIRMIZI
-    ②  onizleme YAZICIYI cagirir (N11)                 KIRMIZI
-    ⑩  ...ayni yon TY'de de                            KIRMIZI ← genelleme calisiyor
-    ③  KABUL izi silinir                               KIRMIZI
-    ④  RED izi silinir                                 KIRMIZI
-    ⑤  stok ISTEMCIDEN alinir                          KIRMIZI
-    ⑥  izin kapisi gonderimden kalkar                  KIRMIZI
-    ⑦  yaziciya IKINCI POST eklenir                    KIRMIZI
-    ⑧  liste>satis kurali GEVSER (>=)                  KIRMIZI
-    ⑨  beyan listesi bosaltilir (taban)                KIRMIZI
-
-⚠ **② İLK TURDA KAÇTI VE KUSUR MUTASYONDAYDI:** `void n11StokFiyatIste;`
-yazmıştım — çağrı değil, referans. Ölçüt haklı olarak eşleşmedi. Gerçek
-çağrıya çevrilince ısırdı. _(Anayasa: "mutasyon kaçıyorsa ÖNCE test verisi
-sorgulanır".)_
-⚠ **VE ÖLÇÜTÜN KENDİSİ İLK KOŞUMDA YANLIŞ KIRMIZI YANDI:**
-`!blok.includes("Iste(")` yazmıştım ve `yetkiIste(` de o alt dizeyle
-bitiyor — iki kanalda birden yanlış alarm. Aranan adlar tam yazıldı.
-_(Anayasa: "ÖNCE DESENİ SAY" — bugün ÜÇÜNCÜ kez aynı tuzak.)_
-
-### ⏳ HALİL TESTİ BEKLİYOR — KAPANMADI
-
-⛔ **Yazıcı canlı N11 API'sine HİÇ gönderim yapmadı.** Jetonun YAZMA
-yetkisi olup olmadığı da ölçülmedi — okuma çalışıyor, yazma ayrı bir
-yetki olabilir.
-**Test listesi:** ① `/urunler/<ürün>` → varyant satırında **N11'e Gönder**
-② diyalog açılınca kanal kodu + Selliora stoğu + N11'in bildirdiği adet
-görünmeli ③ liste 120 / satış 100 gir → gönder → görev numarası dönmeli
-④ liste 100 / satış 100 gir → **gönderilmemeli**, ekran sebebi yazmalı.
-
-📋 **HB YAZICISI BEKLİYOR:** `stock-uploads` ve `price-uploads` uçlarının
-tam yolu + gövdesi gelene kadar yazılmayacak. Genel listing güncelleme ucu
-`Price` + `AvailableStock` + `DispatchTime` + `CargoCompany1` alanlarının
-HEPSİNİ zorunlu tutuyor; onunla stok göndermek **bayat bir fiyatla gerçek
-fiyatı ezerdi**.
-⚠ Ve HB'de fiyat eşiği aşılırsa listing **KİLİTLENİYOR** (MinLock/MaxLock);
-o düğme yanıttaki `priceValidations` alanını ekranda göstermek ZORUNDA ve
-kilit-kaldırma çağrısı da haritalanacak.
+⭐ **KULLANICI ONAYLADI (11.09.2026, AskUserQuestion):** K213'ün HB
+iptal-listesi ucunun kullanıcının HB destek talebinden bulunması üzerine,
+aynı yöntemle (canlı API'yi doğrudan deneyerek) HB'nin GERÇEK stok/fiyat
+yazma ucunu aramak onaylandı. **Bu araştırma henüz TAMAMLANMADI** —
+bulunursa önce ölçüm sonucu raporlanacak, yazma kodu için AYRICA onay
+istenecek (K194/K213'teki "önizle→onayla, asla körlemesine toplu"
+disipliniyle aynı).
 
 ---
 

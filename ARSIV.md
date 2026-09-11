@@ -18,6 +18,102 @@
 
 ---
 
+## ✅ K194 — N11'E STOK/FİYAT GÖNDERİMİ (İKİNCİ KANAL) · 09.09.2026 → 11.09.2026 · [KAPANDI — Halil testi geçti]
+
+> **Halil kararı 09.09:** stok TEK düğmeyle üç kanala, fiyat kanal başına
+> AYRI düğmeyle. **"Yazım okumadan KATEGORİK tehlikeli — her yazım
+> ÖNİZLE→ONAYLA protokolüyle, asla körlemesine toplu."**
+
+**UÇ — RESMÎ DOKÜMANDAN** (n11 Mağaza Destek Merkezi, 09.09.2026):
+
+    POST https://api.n11.com/ms/product/tasks/price-stock-update
+    kimlik: appKey/appSecret BASLIKTA (auth semasi YOK)
+    govde : { payload: { integrator, skus: [{ stockCode, listPrice,
+                                              salePrice, quantity }] } }
+    yanit : { id (taskId), type, status: IN_QUEUE | REJECT, reasons[] }
+
+⭐ Mevcut okuma istemcimizin `baslikKur`u dokümanla **birebir** — kimlik
+tarafında değişiklik gerekmedi.
+
+### ⛔ TY'DEN AYRILAN YER — FİYAT İKİ SAYIDIR
+
+TY'ye `salePrice` ve `listPrice` **aynı** değer gidiyor. N11 bunu
+**reddediyor**: liste fiyatı satış fiyatından YÜKSEK olmalı, eşit bile
+olamaz. Yani tek bir "fiyat" sayısı iki kanala gönderilemez.
+⭐ Halil'in "fiyat kanal başına ayrı düğme" kararı bu yüzden doğruymuş —
+ama form da N11 için **iki rakam** sormak zorunda.
+
+### KANALIN KURALI İSTEK GİTMEDEN SINANIYOR
+
+Doküman üç şart koyuyor ve ihlalde isteği `FAIL` yapıyor. Üçü de **ağa
+çıkmadan** sınanıyor (`kalemGecerliMi`, saf gövde):
+
+    ① listPrice ve salePrice BIRLIKTE     → FIYAT_TEK_BASINA
+    ② listPrice > salePrice (esitlik YOK) → LISTE_FIYATI_DUSUK
+    ③ kusurat en fazla 2 hane             → KURUSAT_HATALI
+
+⚠ **YUVARLAMIYORUZ:** üç haneli bir fiyat sessizce ikiye yuvarlansaydı
+kanala **bizim uydurduğumuz** bir rakam giderdi. Reddedip söylüyoruz.
+⚠ **KURAL İHLALİNDE İZ YAZILMIYOR** — kanala hiçbir şey gitmedi; "gönderdim
+sanıyordum" sorusu orada doğmaz.
+
+### ⛔ "KABUL EDİLDİ" ≠ "İŞLENDİ" — VE BU EKRANDA YAZIYOR
+
+N11 `IN_QUEUE` dönüyor; gerçek sonuç **TaskDetails** servisinden gelir ve
+**o ucun yolu dokümanda verilmedi.** Uydurulmuş bir yol yanlış yere sorar ve
+"sonuç okunamadı"yı "sorun yok" gibi gösterir.
+→ Ekran görev numarasını gösteriyor ve **kuyruk kaydı olduğunu açıkça
+söylüyor**; iz de `not: "TaskDetails ucu gelince sonuc sorgulanacak"`
+taşıyor ki sonradan "başarılı" diye okunmasın.
+📋 **AÇILIŞ ŞARTI:** TaskDetails ucunun tam yolu geldiğinde `gonderimSonucu`
+yazılır ve ekran gerçek sonucu gösterir.
+
+### ⛔ BEKÇİ ÇAKILIYDI — VE İKİNCİ KANAL BUNU ORTAYA ÇIKARDI
+
+`kanal-yazma:dogrula` K169'da **TY yollarına çakılı** yazılmıştı. N11
+eklenince görüldü ki çakılı bir bekçi **yeni yazıcıyı hiç görmez**: N11
+önizlemesiz olsaydı bekçi yeşil kalırdı.
+⭐ Liste artık `api-dogrula.ts`teki **beyandan türüyor**; üçüncü kanal (HB)
+eklendiğinde kimsenin bu dosyaya satır yazması gerekmeyecek. Ekran yolları
+da addan türetiliyor (`scripts/<kod>/yazici.ts` → `<kod>-gonderim.tsx` ·
+`<kod>GonderimOnizle`), sapan bir kanal **bulunamaz ve kırmızı yanar**.
+_(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)_
+
+### BEKÇİ 37/37 · MUTASYON 10/10 KIRMIZI
+
+    ①  onizlemesiz gonderim (dugme kapisi kalkar)      KIRMIZI
+    ②  onizleme YAZICIYI cagirir (N11)                 KIRMIZI
+    ⑩  ...ayni yon TY'de de                            KIRMIZI ← genelleme calisiyor
+    ③  KABUL izi silinir                               KIRMIZI
+    ④  RED izi silinir                                 KIRMIZI
+    ⑤  stok ISTEMCIDEN alinir                          KIRMIZI
+    ⑥  izin kapisi gonderimden kalkar                  KIRMIZI
+    ⑦  yaziciya IKINCI POST eklenir                    KIRMIZI
+    ⑧  liste>satis kurali GEVSER (>=)                  KIRMIZI
+    ⑨  beyan listesi bosaltilir (taban)                KIRMIZI
+
+⚠ **② İLK TURDA KAÇTI VE KUSUR MUTASYONDAYDI:** `void n11StokFiyatIste;`
+yazmıştım — çağrı değil, referans. Ölçüt haklı olarak eşleşmedi. Gerçek
+çağrıya çevrilince ısırdı. _(Anayasa: "mutasyon kaçıyorsa ÖNCE test verisi
+sorgulanır".)_
+⚠ **VE ÖLÇÜTÜN KENDİSİ İLK KOŞUMDA YANLIŞ KIRMIZI YANDI:**
+`!blok.includes("Iste(")` yazmıştım ve `yetkiIste(` de o alt dizeyle
+bitiyor — iki kanalda birden yanlış alarm. Aranan adlar tam yazıldı.
+_(Anayasa: "ÖNCE DESENİ SAY" — bugün ÜÇÜNCÜ kez aynı tuzak.)_
+
+### ⭐ HALİL TESTİ (11.09.2026) — GEÇTİ
+
+Gerçek üründe (`/urunler/...`, LEGO City Acil Yardım Ambulansı 60451,
+varyant OYU-LG-LC-02) "N11'e Gönder" denendi. Kullanıcı onayı: _"K194'ü
+kapatabilirsin, geçti testten."_
+
+⚠ **HB YAZICISI BU KAPANIŞA DAHİL DEĞİL — AYRI, AÇIK KALDI.** `stock-uploads`
+ve `price-uploads` uçlarının tam yolu + gövdesi hâlâ net değildi; bu kalem
+BEKLEYENLER.md'de kendi başlığı altında AÇIK bırakıldı (bkz. "HB'ye
+stok/fiyat gönderimi").
+
+---
+
 ## ✅ K195③ — TAKİP KODU VE KARGO FİRMASI: "HB VERMİYOR" YANLIŞ UCA BAKIYORMUŞ · 10.09.2026 → 11.09.2026 · [KAPANDI — Halil testi geçti]
 
 ⚠ **K195'İN DEVAMIYDI — K195 ANA KALEMİ VE ②'Sİ AYRI, HÂLÂ AÇIK.** Bu yalnız
