@@ -18,6 +18,193 @@
 
 ---
 
+## ✅ K203 — AYNI ÜRÜNDEN BİRDEN FAZLA ADET: TEK OKUTMA YETMİYORDU · 10.09.2026 → 11.09.2026 · [KAPANDI — Halil testi geçti]
+
+> **Halil fotoğrafla buldu:** `/paketle`de TEFAL MB470B, tek kalem, **adet
+> 2**. Raftan bir tanesini okutunca ekran _"Eşleşti — doğru ürün.
+> Paketleyebilirsiniz."_ dedi — ikinci fiziksel birim hiç doğrulanmadan.
+
+⛔ **KÖK SEBEP:** `PaketKalemi.teyitli` bir **boolean**'dı — "en az bir kez
+okutuldu mu" sorusuna cevap veriyordu, **"kaç kez okutuldu"** sorusuna değil.
+`adet: 2` olan bir kalemde tek okutma tüm satırı teyitli işaretliyor ve
+`paketlenebilirMi` "Paketlendi" düğmesini açıyordu.
+
+⚠ **25.08'DEKİ "ÇOK KALEMLİ SİPARİŞ" KARARIYLA KARIŞTIRILMAZ.** O karar
+(bir kalem teyitli bugün yeterli) **KALEM SAYISI**yla ilgili — sipariş içinde
+kaç FARKLI ürün olduğu. K203 farklı bir soru: **TEK kalemin İÇİNDEKİ adet**.
+İkisi bağımsız, biri ötekini kapatmıyor.
+
+### DÜZELTME
+
+`teyitli: boolean` → `teyitliAdet: number`. Her başarılı okutma sayacı 1
+artırır, `adet`te **tavanlanır** (`Math.min`). `kalemTamTeyitliMi(k)` eşiği
+**tek yerde** tutuyor — çağıranlar kendi `>= adet` karşılaştırmasını
+yazmıyor, ayrışma riski kapandı.
+
+**Ekran üç mesaj gösteriyor (sessiz kalan yok):**
+
+    devam ediyor   "Eşleşti — 1/2 okutuldu. Bu üründen 1 tane daha okutun."
+    tamamlandı     "Eşleşti — doğru ürün. Paketleyebilirsiniz."
+    zaten tam      "Bu ürün için gereken 2 adedin hepsi zaten okutulmuştu —
+                    fazladan okutmaya gerek yok."
+
+Kalem satırındaki **Adet kutusu artık `okutulan/toplam`** gösteriyor
+(`1/2`, `2/2`) — adet 1 olsa bile aynı biçimde (İlke #10: aynı işlem her
+yerde aynı görünür). Kısmi teyit **tam teyitle aynı yeşile boyanmıyor**
+(`DURUM_KUTUSU.bilgi`) — aksi hâlde "bitti" yanılgısı üretirdi.
+
+### DOĞRULAMA
+
+`paketleme:dogrula` **102/102** (23'ü yeni). Asıl vaka **mutasyonla
+sınandı**: `kalemTamTeyitliMi` eski davranışa (`teyitliAdet > 0`)
+döndürüldüğünde iki test **kırmızı yandığı görülerek** doğrulandı, sonra
+geri yüklendi. `tsc` + `lint` + `i18n:kontrol` + gerçek `next build` (98s)
+temiz. Push'un kendi pre-push turu **126/126 yeşil**.
+
+### ⭐ HALİL TESTİ (11.09.2026) — GEÇTİ
+
+Gerçek 2+ adetlik bir siparişte `/paketle`de denendi: "1/2 okutuldu" ve
+"2/2" mesajları sırasıyla doğru çıktı, düğme yalnız ikinci okutmadan sonra
+açıldı. Kullanıcı onayı: _"bu tamam."_
+
+---
+
+## ✅ K197-⑤ — KANAL DESİSİ ARTIK ÜRÜN KARTINDA · 10.09.2026 → 11.09.2026 · [KAPANDI — Halil testi geçti]
+
+⛔ **YENİ SATIR AÇILMADI — BU K197'NİN DEVAMIYDI.**
+
+> **Kullanıcı sordu:** _"API'den desileri çekemiyoruz"_ (Trendyol ve
+> Hepsiburada'da da).
+
+⛔ **KANAL VERİSİ ZATEN GELİYORDU — TÜKETİCİSİ HİÇ YOKTU.** Ölçüldü:
+`kanalKargoDesi` canlıda TY %85, HB %80 dolu (09.09'dan bu yana). Ama
+`src/app` altında bu alana **sıfır** referans vardı — K197'nin kendi
+"açılış şartı" notu ("örneklem anlamlı olunca") artık dolmuştu: **182
+farklı varyantın** en az bir örneği, **73 varyantın 3+ örneği** var.
+
+### YAPILAN
+
+`/kart/[variantId]` sayfasına kanal ortalaması eklendi. Saf gövde
+(`kanalDesiOrtalamasi`, `src/lib/urun-karti-verisi.ts`) DB'siz sınanabilir
+— `kartVerisiniTopla` onu çağırır, kopyalamaz.
+
+⛔ **İKİ SÜZGEÇ, İKİSİ DE GEREKÇELİ:**
+1. **Yalnız TEK KALEMLİ satışlar** — `kanalKargoDesi` PAKETİN TAMAMI,
+   bu ürünün kendisi değil. Çok kalemli bir siparişte bu değeri kullanmak
+   yanlış bir "ürün desisi" üretirdi.
+2. **ADEDE bölünür** — K203'ün aynı dersi: tek kalemde adet > 1 olabilir,
+   paket desisi birim desisi değildir.
+
+Ürün kartında kanal ortalaması farklıysa **"bu değere güncelle"** çıkar;
+tek tıkla `Product.desi` yazılır, iz bırakır (`URUN_DESI_KANALDAN_GUNCELLENDI`).
+Aynıysa düğme hiç çıkmaz (gereksiz eylem gösterilmez). 3'ten az örneklemde
+"az örneklem" notu düşer ama düğme yine de çalışır (uyarı sorar, ısrar
+engellemez).
+
+⚠ **SUNUCU EKRANA GÜVENMEZ:** istemciden yalnız `variantId` gider,
+ortalama SUNUCUDA yeniden hesaplanır — ekranda geçen sürede yeni bir
+satış girmişse bayat rakam donmaz.
+
+### DOĞRULAMA
+
+`kart:dogrula` **119/119** (8'i yeni). Asıl mantık mutasyonla sınandı:
+çok-kalemli filtre kaldırıldığında ilgili test **kırmızı yandığı
+görülerek** doğrulandı, sonra geri yüklendi. `tsc` + `i18n:kontrol` +
+`lint:dogrula` + gerçek `next build` (73s) temiz.
+
+### ⭐ HALİL TESTİ (11.09.2026) — GEÇTİ
+
+**Örnek:** `/kart/131d781b-b908-4a8f-bd3d-1737f4597045` (SKU `axcali1773`,
+Karaca Misto 6 Parça Standlı Servis Seti). Kullanıcı doğruladı: kart
+sayfasında kanal ölçümü ve "bu değere güncelle" bağlantısı göründü, tıklayınca
+değer güncellendi. Kullanıcı onayı: _"bu tamam."_
+
+---
+
+## ✅ K180-② — KALDIRMA, GİRİŞİN GERÇEKLİĞİNİ ÖLÇMÜYOR · 07.09.2026 → 11.09.2026 · [KAPANDI — mimar kararı]
+
+> **Halil:** _"sayım da yoktu, eski siparişlerden, mükerrer girmişim siparişi;
+> şimdi onu düzeltti ama stoğa attı — stok 0 olması lazımken 1 görünüyor."_
+
+### ① CİRO/NET TARAFI DOĞRU ÇALIŞTI — KUSUR STOKTA
+
+`10559161422` kaldırması ölçüldü ve **15 şartın 15'i tuttu**: ciro
+2.078,00 → 1.039,00 · kalem 2 → 1 (öteki DURUYOR, sebep rozetiyle) · NET
+damgası kaldırmadan SONRA tazelendi (11:38:06.491) · başka satış tazelenmedi ·
+başka hareket yazılmadı. ⭐ Bu kısım kapanmıştır.
+
+⛔ **AMA STOK YANLIŞ YAZILDI.** Kaldırma, satırın `SALE_OUT`'unu aynalayıp malı
+stoğa geri veriyor — bu **gerçekten sevk edilmiş** bir satır için doğru. Mükerrer
+satırda çıkışın arkasındaki giriş de kâğıttı; dönecek mal yoktu.
+
+    2025-10-02  PURCHASE_IN      +1  "listeye-hizala-2"    ← KÂĞIT giriş
+    2025-10-02  SALE_OUT         -1  10559161422           ← mükerrer satır
+    2026-08-29  SALE_CANCEL_IN   +1  "mukerrer kalem"      ← ilk nötrleme
+    2026-09-01  COUNT_CORRECTION -1                        ← SAYIM 0 dedi
+    2026-09-07  SALE_CANCEL_IN   +1  ← K180 kaldırması     ⛔ HAYALET +1
+    2026-09-07  ADJUSTMENT       -1  ← düzeltme            ✓ ledger 0 · FIFO 0
+
+⚠ **VE `axcali3134`ün GERÇEK ALIMI HİÇ YOK:** bütün girişleri hizalama
+betiklerinin yazdığı, her biri kendi satışını dengeleyen kâğıt çiftler.
+
+### ② DÜZELTME YAZILDI — ve türü DEĞİŞTİRİLDİ
+
+Halil `COUNT_CORRECTION` demişti; aynı mesajda **"sayım da yoktu"** diyor. O
+türle yazmak defterde OLMAMIŞ bir sayımı iddia etmek olur ve hareket bir
+`StokSayimSatiri`na da bağlanamazdı. `ADJUSTMENT` (manuel düzeltme) yazıldı,
+**gerekçe metni birebir korundu**, sebep kapalı kümeden `"Diğer"` + zorunlu
+açıklama. _(Anayasa: "mimar talimatları da bu süzgeçten geçer".)_
+Sonuç: **ledger 0 · FIFO 0**, ciro/NET'e dokunulmadı.
+
+### ③ GEÇİCİ FREN — ÖNİZLEMEDE UYARI (KALICI OLDU)
+
+Genel ölçüt gelene kadar kaldırma önizlemesi kullanıcıya **stoğu kontrol
+etmesini** söylüyor (`kagitGirisUyarisi`, sözlükten). Sessizce yanlış stok
+yazmaktansa kontrolü söylemek — bu uyarı KAPANIŞTAN SONRA DA YERİNDE KALDI,
+zararsız bir güvenlik ağı.
+
+### ④ ÖLÇÜM KOŞTU — VE İKİ ADAY ÖLÇÜTÜ BİRDEN ELEDİ
+
+📏 `canli:kagit-giris-olcum` (07.09, salt okuma) — kaldırılabilir 7781 kalem,
+7786 çıkış, **hepsi parti bağlı** (bağsız 0):
+
+    DOSYA_MALIYET    4348  %55,8   ← 4348'ünün de PurchaseItem'i YOK
+    GERCEK_ALIM      3371  %43,3
+    NOTSUZ_ALIM        35   · SAYIM 21 · DIGER 4 · IPTAL_AYNASI 3
+    IADE                3   · HIZALAMA_BETIGI 1
+
+⛔ **"Girişi betik yazmışsa kâğıttır" ÖLÇÜTÜ ÖLDÜ:** defterin **%55,8'ini**
+kâğıt sayardı ve kaldırma yarıdan fazla üründe stok döndürmeyi reddederdi.
+_(Anayasa: "bir sınırın yönü ölçülmeden çevrilmez" — FIFO `soldAt` sınırının
+defterin %48,72'sini kilitlemesiyle aynı sınıf.)_
+
+⛔ **"ÇIKIŞ İLE PARTİSİ AYNI NOTU TAŞIYOR" HİPOTEZİ DE ÖLDÜ:** yalnız **5**
+eşleşme, ve **3407 çıkış NOTSUZ** — ölçüt kümenin yarısında kör.
+
+⭐ **ÖĞRENİLEN:** kâğıtlık girişin KÖKENİNDE değil, satırın **MÜKERRER**
+olmasında. Sonraki aday eksen: _"kaldırılan satır, kendisini dengelemek için
+açılmış bir partiyi ÖKSÜZ bırakıyor mu"_ — partinin tek tüketicisi bu çıkış mı,
+ve parti bu satırla aynı koşumda mı doğdu. **BU EKSEN HİÇ YAZILMADI —
+kapanış kararı aşağıda.**
+
+### ⭐ KAPANIŞ (11.09.2026) — MİMAR KARARI: PRATİKTE SORUN YOK
+
+Bulunan tek somut vaka (`10559161422`) elle düzeltilmişti (② adımı) ve
+ledger/FIFO **0**'da duruyor — bugün hiçbir bozuk kayıt yok. Genel bir
+otomatik-tespit mekanizması için **iki aday ölçüt ölçülüp ikisi de elendi**
+(④). Mimara üçüncü bir aday ölçütün (parti "öksüz" kalıyor mu) yazılıp
+yazılmayacağı soruldu; karar: **"stokta problem yok, kapat."**
+
+> **KURAL:** kalıcı geçici fren (③, `kagitGirisUyarisi`) YERİNDE KALIYOR —
+> gelecekte benzer bir vaka çıkarsa kullanıcı zaten uyarılıyor ve elle aynı
+> şekilde düzeltilebilir. Genel otomasyon **istenmedi**; bu bir teknik
+> yetersizlik değil, mimarın **risk toleransı kararıdır** — nadir görülen
+> bir kenar durumu için üçüncü bir ölçüt denemesi (ilk ikisi yanlış çıkmıştı)
+> bu aşamada değerli görülmedi.
+> _("Kapatma kararı da panoya yazılır" kuralı: "bakılmayacak" da bir sonuçtur.)_
+
+---
+
 ## ✅ K-HB-KAPSAM — TUTAR KAYNAĞI ÖLÇÜLDÜ, MİMAR KABUL ETTİ, YAZIM ZATEN GERÇEKLEŞMİŞ · 07.09.2026 → 11.09.2026 · [KAPANDI]
 
 > **Mimar şartı:** _"Delivered/ClaimCreated siparişin SİPARİŞ-ANI tutarı hangi
