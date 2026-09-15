@@ -20,6 +20,7 @@ import {
 } from "../src/lib/kanal-kargo-damgasi";
 import { iptalOnizle, iptalUygula } from "../src/lib/satis-iptali-veri";
 import { otomatikIptalAdayiMi } from "../src/lib/satis-iptali";
+import { kargoTartimGeldiTazele } from "../src/lib/kargo-tartim-tazele";
 
 /**
  * ============================================================================
@@ -199,6 +200,8 @@ export type TyCekimOzeti = {
   saleSonra: number | null;
   /** K168: bu koşumda otomatik onaylanan tek-partili sipariş sayısı. */
   otoOnaylanan: number;
+  /** Gerçek desi (tartım) bu turda geldi ve sipariş hâlâ tahmin aşamasındaydı — kargo tahmini + kâr tazelendi. */
+  tartimTazelenen: number;
 };
 
 export async function tyCekimKos(ayar: {
@@ -254,7 +257,7 @@ export async function tyCekimKos(ayar: {
 
   const hesap = await prisma.channelAccount.findFirst({
     where: { externalId: k.saticiId },
-    select: { id: true, name: true, channel: { select: { name: true } } },
+    select: { id: true, name: true, channelId: true, channel: { select: { name: true } } },
   });
   if (!hesap) {
     console.log(`\n⛔ \`externalId = ${k.saticiId}\` olan kanal hesabı YOK.\n`);
@@ -518,10 +521,14 @@ export async function tyCekimKos(ayar: {
       kanalKargoFirmasi: true,
       kanalKargoDesi: true,
       iptalTarihi: true,
+      /** ⚠ SALT OKUMA — aşağıdaki tartım-tazeleme kapısının girdisi. */
+      cargoAmount: true,
+      tahminiKargo: true,
     },
   });
   let teslimYazilan = 0;
   let takipYazilan = 0;
+  let tartimTazelenen = 0;
   for (const s of mevcutTeslim) {
     const a = adaylar.get(s.code ?? "");
     if (!a) continue;
@@ -532,10 +539,44 @@ export async function tyCekimKos(ayar: {
       kargoFirmasi: a.kargoFirmasi,
       kanalDesi: a.kanalDesi,
     });
-    if (!teslimYazimiVarMi(veri)) continue;
-    await prisma.sale.update({ where: { id: s.id }, data: veri });
-    if (veri.deliveredAt) teslimYazilan++;
-    if (veri.kargoTakipBaglantisi || veri.kanalKargoFirmasi) takipYazilan++;
+    if (teslimYazimiVarMi(veri)) {
+      await prisma.sale.update({ where: { id: s.id }, data: veri });
+      if (veri.deliveredAt) teslimYazilan++;
+      if (veri.kargoTakipBaglantisi || veri.kanalKargoFirmasi) takipYazilan++;
+    }
+    /**
+     * ═══ GERÇEK DESİ (TARTIM) YENİ GELDİYSE — HÂLÂ TAHMİN AŞAMASINDAYSA
+     * TAZELE (K197-4 sonrası, 15.09.2026) ═══
+     * ⛔ Yalnız `kanalKargoDesi` BU TURDA İLK KEZ yazıldıysa (`veri` içinde
+     * geçiyorsa) tetiklenir; `cargoAmount` (gerçekleşen) doluysa gövdenin
+     * kendisi zaten dokunmuyor (bkz. `kargo-tartim-tazele.ts` başlığı).
+     * ⛔ `YAZ` KAPISI ZORUNLU: teslim/takip senkronu "durum"dur ve önizlemede
+     * de yazılıyor (yukarıda, ledger'a dokunmaz) — ama bu, `tahminiKargo` VE
+     * NET'i değiştirir. "ÖNİZLEME — hiçbir şey yazılmadı" sözü verilen bir
+     * turda finansal bir alanı sessizce değiştirmek o sözü çiğnerdi.
+     */
+    if (YAZ && veri.kanalKargoDesi !== undefined) {
+      const sonuc = await kargoTartimGeldiTazele(
+        {
+          saleId: s.id,
+          channelId: hesap.channelId,
+          kanalAdi: hesap.channel.name,
+          kanalKargoFirmasi: veri.kanalKargoFirmasi ?? s.kanalKargoFirmasi,
+          kanalKargoDesi: veri.kanalKargoDesi,
+          cargoAmount: s.cargoAmount === null ? null : Number(s.cargoAmount.toString()),
+          tahminiKargo: s.tahminiKargo === null ? null : Number(s.tahminiKargo.toString()),
+        },
+        /**
+         * ⛔ BU BETİĞİN KENDİ CANLI İSTEMCİSİ AÇIKÇA GEÇİLİR — varsayılan
+         * global `prisma`, `process.env.DATABASE_URL`e bakar ve betikte
+         * canlıyı göstermeyebilir (bkz. `kar-yeniden.ts` başlığındaki aynı
+         * uyarı). Bu satır unutulsaydı fonksiyon sessizce YANLIŞ veritabanına
+         * (ya da hiçbirine) yazmaya çalışırdı.
+         */
+        prisma,
+      );
+      if (sonuc.yapildi) tartimTazelenen++;
+    }
   }
 
   /**
@@ -621,6 +662,7 @@ export async function tyCekimKos(ayar: {
   console.log(`   KARGO DAMGASI YAZILDI (yalnız BOŞ olanlara)      ${damgaYazilan}`);
   console.log(`   TESLİM DAMGASI YAZILDI (yalnız BOŞ olanlara)     ${teslimYazilan}`);
   console.log(`   TAKİP/FİRMA TAZELENDİ (kanalın son beyanı)        ${takipYazilan}`);
+  console.log(`   TARTIMLA KARGO TAHMİNİ TAZELENDİ (hâlâ tahmin aşamasındaysa) ${tartimTazelenen}`);
 
   // ═══ VARYANT KAPISI ═════════════════════════════════════════════════════
   /**
@@ -721,6 +763,7 @@ export async function tyCekimKos(ayar: {
       saleOnce: onceToplam,
       saleSonra: null,
       otoOnaylanan: 0,
+      tartimTazelenen: 0,
     };
   }
 
@@ -747,7 +790,13 @@ export async function tyCekimKos(ayar: {
           deliveredAt: a.teslimAni,
           kargoTakipBaglantisi: a.takipBaglantisi,
           kanalKargoFirmasi: a.kargoFirmasi,
-          /** ⛔ ÖLÇÜM ALANI — kargo tutarını ETKİLEMEZ (K197-4). */
+          /**
+           * ⛔ YAZILIŞ ANINDA ÖLÇÜM ALANI — yeni satırda `cargoAmount` ve
+           * `tahminiKargo` zaten boş, tazelenecek bir şey yok. Bu alan
+           * SONRADAN (var olan siparişte) boştan doluya geçerse, hâlâ tahmin
+           * aşamasındaysa `kargoTartimGeldiTazele` devreye girer — bkz.
+           * `mevcutTeslim` döngüsü ve şemadaki `kanalKargoDesi` yorumu.
+           */
           kanalKargoDesi: a.kanalDesi,
           shipmentCode: a.kargoNo,
           paketSayisi: a.paketSayisi,
@@ -863,6 +912,7 @@ export async function tyCekimKos(ayar: {
     saleOnce: onceToplam,
     saleSonra: sonraToplam,
     otoOnaylanan: oto.onaylanan,
+    tartimTazelenen,
   };
 }
 

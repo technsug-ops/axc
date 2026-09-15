@@ -163,8 +163,31 @@ kontrol("içe aktarma taranıyor (taban DOLU)", ICE.length >= 3, ICE.length);
  * ⚠ TİP ANOTASYONU ATAMA DEĞİLDİR: `cargoAmount?: number` bir yazma değil,
  * bir tip bildirimidir ve eleniyor. `: true` (select) ve `: null` (where)
  * de öyle — ikisi de okuma.
+ *
+ * ⚠ ÜÇÜNCÜ İSTİSNA — KENDİ ALANINI OKUYUP İLETEN SATIR (15.09.2026):
+ *     cargoAmount: s.cargoAmount === null ? null : Number(s.cargoAmount.toString()),
+ * Bu bir YAZMA DEĞİL — `kargoTartimGeldiTazele(...)` çağrısına, o satışın
+ * O ANKİ `cargoAmount` değerini (kısa devre kararı için) TAŞIYAN bir
+ * parametredir. Yapısal kanıt: ifadenin kaynağı `X.cargoAmount`'un
+ * KENDİSİ — bir yazma daima BAŞKA bir kaynaktan (yerel hesap, parametre,
+ * literal) gelir; alanı kendi üstüne okuyup geçirmek YALNIZCA ileten bir
+ * OKUMA olabilir. Ayrıca bu depoda Decimal alanlara YAZMA hep `String(...)`
+ * ile yapılır (`kar-yeniden.ts`, `kargo-tartim-tazele.ts`); `Number(...)`
+ * dönüşümü OKUMA idiomudur.
+ * ⛔ DAR VE YAPISAL: yalnız TAM BU KALIBI (kendi alanını `Number(...)`a
+ * çeviren ternary) eler — genel bir "Number geçiyorsa okuma say" kuralı
+ * OLMAZDI, çünkü öyle bir kural gerçek bir `cargoAmount: Number(x)` yazımını
+ * da görmezden gelirdi.
  */
 function atamaSatirlari(metin: string, alan: string): string[] {
+  const kendiniOkuyupIleten = new RegExp(
+    alan +
+      "\\s*:\\s*[\\w.]*\\." +
+      alan +
+      "\\s*===\\s*null\\s*\\?\\s*null\\s*:\\s*Number\\([\\w.]*\\." +
+      alan +
+      "\\.toString\\(\\)\\)",
+  );
   const haric = new RegExp(alan + "\\??:\\s*(true|null|number|Decimal)\\b");
   const nesneAlani = new RegExp("\\b" + alan + "\\s*:");
   /** ⚠ `=` ama `==`/`===` DEĞİL — karşılaştırma bir yazma değildir. */
@@ -187,7 +210,11 @@ function atamaSatirlari(metin: string, alan: string): string[] {
      * ⭐ ATAMA VARSA MUAFİYET GEÇMEZ: bir satırda yazma varsa, aynı satırda
      * bir tip bildirimi bulunması onu okuma yapmaz.
      */
-    .filter((l) => atama.test(l) || (nesneAlani.test(l) && !haric.test(l)));
+    .filter(
+      (l) =>
+        atama.test(l) ||
+        (nesneAlani.test(l) && !haric.test(l) && !kendiniOkuyupIleten.test(l)),
+    );
 }
 
 let tahminYazan = 0;

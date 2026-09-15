@@ -18,6 +18,7 @@ import {
 } from "./hb/istemci";
 import { hbIptalSebebiCoz, otomatikIptalAdayiMi } from "../src/lib/satis-iptali";
 import { iptalOnizle, iptalUygula } from "../src/lib/satis-iptali-veri";
+import { kargoTartimGeldiTazele } from "../src/lib/kargo-tartim-tazele";
 
 /**
  * ============================================================================
@@ -262,6 +263,16 @@ export async function hbCekimKos(ayar: {
     return { atlandi: "HESAP" };
   }
   console.log(`  kanal hesabı  : ${hesap.ad}${hesap.olusturuldu ? "  (YENİ — bu koşumda oluşturuluyor)" : ""}`);
+
+  /**
+   * ⚠ `hesabiBul` yalnız `{ id, ad, olusturuldu }` döner — `Channel.id`
+   * (CargoTariff sorgusunun aradığı kimlik) taşımaz. Ayrı bir sorguyla
+   * çekiliyor; `HB_KANAL_ADI`ya değil DOĞRUDAN bu hesabın kendi
+   * `channelId`sine bakılıyor (isim eşleşmesi yerine kimlik).
+   */
+  const hesapKanalId =
+    (await prisma.channelAccount.findUnique({ where: { id: hesap.id }, select: { channelId: true } }))
+      ?.channelId ?? null;
 
   // ═══ ÖNCE SAYIM ═════════════════════════════════════════════════════════
   const onceToplam = await prisma.sale.count();
@@ -622,12 +633,24 @@ export async function hbCekimKos(ayar: {
   }
 
   /**
-   * ═══ KANAL DESİSİ (K197-4) — ÖLÇÜM ALANI, DEFTERE DOKUNMAZ ═══
-   * ⛔ `cargoAmount` ve `cargoDesi` BU DÖNGÜDE HİÇ GEÇMEZ. Kargo maliyeti
-   * olduğu gibi kalır; burada biriken şey kanalın tarttığı desidir.
+   * ═══ KANAL DESİSİ (K197-4) — ÖLÇÜM ALANI, `cargoAmount`I ASLA EZMEZ ═══
    * ⚠ Yalnız BOŞ olana yazılır: desi fiziksel bir olayın ölçüsüdür, bir kez
    * olur ve değişmez (`deliveredAt` sınıfı, `kanalKargoFirmasi` sınıfı değil).
+   * ⭐ 15.09.2026'DAN İTİBAREN TÜKETİCİSİ VAR: bu turda BOŞTAN DOLUYA geçen
+   * kodlar aşağıda saklanıyor — K195-3 (kargo firması geri doldurma)
+   * bittikten SONRA, hâlâ `cargoAmount`ı boş olanların kargo tahmini bu
+   * gerçek desiyle tazelenecek (bkz. dosya sonundaki tazeleme bloğu).
    */
+  const desiOncedenBosKodlar = new Set(
+    (
+      await prisma.sale.findMany({
+        where: { code: { in: [...kanalDesileri.keys()] }, channelAccountId: hesap.id, kanalKargoDesi: null },
+        select: { code: true },
+      })
+    )
+      .map((s) => s.code)
+      .filter((c): c is string => c !== null),
+  );
   let desiYazilan = 0;
   for (const [no, desi] of kanalDesileri) {
     const guncel = await prisma.sale.updateMany({
@@ -748,6 +771,49 @@ export async function hbCekimKos(ayar: {
     firmaYazilan += guncel.count;
   }
 
+  /**
+   * ═══ GERÇEK DESİ (TARTIM) YENİ GELDİYSE — HÂLÂ TAHMİN AŞAMASINDAYSA
+   * TAZELE (K197-4 sonrası, 15.09.2026) ═══
+   * ⛔ NİYE BURADA (K195-3'TEN SONRA): HB'de desi ve kargo firması İKİ AYRI
+   * adımda yazılıyor (desi yukarıda, firma hemen üstte). Bu blok ikisi de
+   * bittikten SONRA en güncel hâli okuyor — firma bu turda YENİ geldiyse
+   * onu da görür, bir tur geriden gelmez.
+   * ⛔ `YAZ` KAPISI ZORUNLU — bkz. `canli-ty-ice-aktar.ts`teki aynı blok:
+   * bu, `tahminiKargo` VE NET'i değiştirir; önizlemede yazılmaz.
+   * ⛔ `cargoAmount` (gerçekleşen) doluysa gövdenin kendisi zaten
+   * dokunmuyor (bkz. `kargo-tartim-tazele.ts` başlığı, K197-4'ün
+   * "gerçekleşeni ezme" kuralı hâlâ geçerli).
+   */
+  let tartimTazelenen = 0;
+  if (YAZ && desiOncedenBosKodlar.size > 0 && hesapKanalId !== null) {
+    const tazelenecekler = await prisma.sale.findMany({
+      where: {
+        code: { in: [...desiOncedenBosKodlar] },
+        channelAccountId: hesap.id,
+        cargoAmount: null,
+        kanalKargoDesi: { not: null },
+      },
+      select: { id: true, kanalKargoDesi: true, kanalKargoFirmasi: true, tahminiKargo: true },
+    });
+    for (const s of tazelenecekler) {
+      if (s.kanalKargoDesi === null) continue;
+      const sonuc = await kargoTartimGeldiTazele(
+        {
+          saleId: s.id,
+          channelId: hesapKanalId,
+          kanalAdi: "Hepsiburada",
+          kanalKargoFirmasi: s.kanalKargoFirmasi,
+          kanalKargoDesi: Number(s.kanalKargoDesi.toString()),
+          cargoAmount: null,
+          tahminiKargo: s.tahminiKargo === null ? null : Number(s.tahminiKargo.toString()),
+        },
+        /** ⛔ BETİĞİN KENDİ CANLI İSTEMCİSİ — bkz. TY betiğindeki aynı not. */
+        prisma,
+      );
+      if (sonuc.yapildi) tartimTazelenen++;
+    }
+  }
+
   console.log(`   ÇAKIŞTI → ATLANDI (ezme YOK)                     ${cakisanlar.length}`);
   console.log(`   KARGO DAMGASI YAZILDI (yalnız BOŞ olanlara)      ${damgaYazilan}`);
   console.log(`   TESLİM DAMGASI YAZILDI (yalnız BOŞ olanlara)     ${teslimYazilan}`);
@@ -756,6 +822,7 @@ export async function hbCekimKos(ayar: {
   console.log(`     └─ ÇAPRAZ KANAL (numara uzayı çakışması)       ${capraz.length}`);
   console.log(`   TAKİP KODU GERİ DOLDURULDU (K195-3)              ${kodYazilan}`);
   console.log(`   KARGO FİRMASI GERİ DOLDURULDU (K195-3)           ${firmaYazilan}`);
+  console.log(`   TARTIMLA KARGO TAHMİNİ TAZELENDİ (hâlâ tahmin aşamasındaysa) ${tartimTazelenen}`);
   console.log(`     ├─ aday (bu tur, tavan ${KOD_GERI_DOLDURMA_TAVANI})            ${kodBosSiparisler.length}`);
   console.log(`     ├─ BİRDEN FAZLA PAKET — uydurulmadı, atlandı    ${kodBirdenFazlaPaket}`);
   console.log(`     └─ DETAYI OKUNAMAYAN                            ${kodDetayDusen}`);
@@ -1099,7 +1166,13 @@ export async function hbCekimKos(ayar: {
           shippedAt: kargoDamgalari.get(aday.siparisNo) ?? null,
           /** ⚠ Kanal "teslim edildi" demediyse BOŞ kalır — uydurulmaz. */
           deliveredAt: teslimDamgalari.get(aday.siparisNo) ?? null,
-          /** ⛔ ÖLÇÜM ALANI — kargo tutarını ETKİLEMEZ (K197-4). */
+          /**
+           * ⛔ YAZILIŞ ANINDA ÖLÇÜM ALANI — yeni satırda `cargoAmount` ve
+           * `tahminiKargo` zaten boş, tazelenecek bir şey yok. SONRADAN
+           * (var olan siparişte) boştan doluya geçerse ve hâlâ tahmin
+           * aşamasındaysa `kargoTartimGeldiTazele` devreye girer — bkz.
+           * kanal desisi döngüsü ve şemadaki `kanalKargoDesi` yorumu.
+           */
           kanalKargoDesi: kanalDesileri.get(aday.siparisNo) ?? null,
           importBatch: partiKimligi,
           importKaynak: "hb-enumerasyon",

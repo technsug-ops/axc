@@ -909,6 +909,48 @@ console.log("=".repeat(70));
   );
 }
 
+/**
+ * ============================================================================
+ *  TAHMİNİ KARGO `cargoAmount`A YAZILMAZ (K197-4/K201 düzeltmesi, 15.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI VAKA: `satisKarTazele` her çağrıldığında çözdüğü kargo tutarını
+ *  (kaynağı yalnızca `tahminiKargo` olsa bile) `cargoAmount`a yazıyordu —
+ *  19 sipariş bu yüzden canlıda düzeltilmek zorunda kaldı. `cargoAmount`
+ *  yalnızca kanalın GERÇEKLEŞEN kesintisi içindir; bir tahmini oraya
+ *  yazmak K197-4'ün "hiçbir şekilde etkilemez" sözünü bozar VE o satışa
+ *  bir daha gerçek tutar yazılamaz hâle getirir (kaynak sırası artık
+ *  "GERCEKLESEN" sanır).
+ *
+ *  ⚠ KAYNAK KULLANIMA BAĞLANIR, ADA DEĞİL: `cargoAmountTahminiMi` alan adı
+ *  yorumda da geçebilir; ölçüt onu GERÇEKTEN OKUYAN satıra bağlanıyor.
+ */
+{
+  console.log("TAHMİNİ KARGO cargoAmount'A YAZILMAZ");
+  const y = readFileSync("src/lib/kar-yeniden.ts", "utf8");
+  kontrol(
+    "cargoAmount yazımı cargoAmountTahminiMi bayrağına bağlı",
+    /const cargoAmountYazilacak = girdi\.cargoAmountTahminiMi \? null : kargoHaric;/.test(y),
+  );
+  kontrol(
+    "yazılan satır kargoHaric'i DEĞİL, bu türetilmiş değeri kullanıyor",
+    /cargoAmount: cargoAmountYazilacak === null \? null : String\(cargoAmountYazilacak\)/.test(y),
+  );
+  kontrol(
+    "satisKarTazele kaynağı TAHMINI ise bayrağı true geçiyor",
+    /cargoAmountTahminiMi: kargo\.kaynak === "TAHMINI",/.test(y),
+  );
+  /**
+   * ⚠ VE `karOnizle`NİN KENDİSİ DEĞİŞMEDİ — bayrak yalnız YAZMA anında
+   * devreye girer, NET hesabı hâlâ çözülen kargoHaric'i kullanır. Bu satır
+   * o ayrımın kazayla bozulmadığını (ör. NET hesabını da bayrağa bağlayan
+   * bir "kolaylaştırma") kanıtlar.
+   */
+  kontrol(
+    "NET hesabı (karHesapla çağrısı) bayraktan ETKİLENMİYOR — yalnız yazım",
+    !/karHesapla\(\{[\s\S]{0,400}cargoAmountTahminiMi/.test(y),
+  );
+}
+
 console.log(
   basarisiz === 0
     ? `TÜM KONTROLLER GEÇTİ (${calisan})`

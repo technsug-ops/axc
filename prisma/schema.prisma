@@ -1469,22 +1469,37 @@ model Sale {
    * Aynı alana yazmak farkı görünmez yapardı; oysa aranan şey tam o fark.
    * _(`cargoCarrierId` ↔ `kanalKargoFirmasi` ayrımının birebir aynısı.)_
    *
-   * ⛔ DEFTERE DOKUNMAZ: bu sütun `cargoAmount`ı, NET'i, hakedişi ve kâr
-   *   hesabını HİÇBİR ŞEKİLDE etkilemez. Kargo maliyeti bugün olduğu gibi
-   *   kalır — burada biriken şey bir ÖLÇÜMDÜR, bir kesinti değil.
-   *   _Kullanıcı kararı 09.09.2026: "geçmişte gösterilecek ufak tefek gelir
-   *   veya kâr farklılıkları problem değil; asıl sistemin doğru kurulması
-   *   önemli."_ Bu yüzden geçmiş tutarlar YENİDEN YAZILMADI.
+   * ⛔ ESKİ HÂL (K197-4, 09.09.2026 — ESKİ GEREKÇE SİLİNMEDİ, ÇEVRİLDİ):
+   *   burada "bu sütun cargoAmount'ı, NET'i, hakedişi ve kâr hesabını
+   *   HİÇBİR ŞEKİLDE etkilemez" yazıyordu. _Kullanıcı kararı 09.09.2026:
+   *   "geçmişte gösterilecek ufak tefek gelir veya kâr farklılıkları
+   *   problem değil; asıl sistemin doğru kurulması önemli."_
    *
-   * ⚠ TÜKETİCİSİ HENÜZ YOK — VE BU BİLEREK (K52'nin bilinen tuzağı).
+   * ⭐ ÇEVRİLEN KISIM (mimar kararı 15.09.2026, bkz. `kargo-tartim-tazele.ts`):
+   *   `cargoAmount` (GERÇEKLEŞEN) DOLU bir siparişe bu sütun HÂLÂ hiç
+   *   dokunmaz — o kısım aynen geçerli. Ama `cargoAmount` BOŞSA, sipariş
+   *   zaten TAHMİNLE NET veriyordu; bu durumda gerçek desi (TARTIM) yeni
+   *   geldiğinde `tahminiKargo` bu desiyle YENİDEN hesaplanır ve kâr
+   *   tazelenir (`kargoTartimGeldiTazele`). Niye: hâlâ tahmin aşamasındaki
+   *   bir siparişte ESKİ (ürün bazlı TAHMİN ya da KÜRESEL) bir desiyle
+   *   hesaplanmış kalmak, elimize geçen daha iyi bilgiyi (kaynak önceliği:
+   *   içerden gelen bilgi üsttedir) kullanmamak olurdu. Geçmişe dönük
+   *   toplu bir düzeltme YAPILMADI — yalnız BUNDAN SONRA, gerçek desi
+   *   geldiği an tetiklenen bir mekanizma kuruldu (ölçüldü 15.09.2026:
+   *   canlıda bu şartı sağlayan 20 sipariş vardı — 17 TY + 3 HB).
+   *
+   * ⚠ TÜKETİCİSİ VARDI AMA DAR — VE BU BİLEREK (K52'nin bilinen tuzağı).
    *   Normalde tüketicisi doğmayan alan açılmaz. İstisnanın gerekçesi:
    *   **VERİ GEÇİCİ.** Kanal bu değeri yalnız dar bir pencerede veriyor
    *   (TY birkaç ay, HB yalnız ŞU AN kargoda olan paketler — ölçüldü
    *   09.09.2026: 2025-08 · 2025-11 · 2026-03 pencerelerinin üçünde de
    *   API `0` kayıt döndürdü, oysa defterde o aylarda 385 · 551 · 494
    *   satış VAR). Bugün toplanmazsa yarın HİÇ toplanamaz.
-   *   ⛔ AÇILIŞ ŞARTI (tüketici): örneklem varyant başına anlamlı hâle
-   *   geldiğinde ürün desi kataloğu bundan düzeltilir.
+   *   ⛔ AÇILIŞ ŞARTI (ürün kataloğu tüketicisi) HÂLÂ AÇIK: örneklem
+   *   varyant başına anlamlı hâle geldiğinde ürün desi kataloğu (`cargoDesi`
+   *   kaynağı) bundan düzeltilir — bu, 15.09.2026'da açılan "hâlâ tahmin
+   *   aşamasındaki TEK siparişi tazele" tüketicisinden AYRI ve daha geniş
+   *   bir iştir, henüz yapılmadı.
    *
    * ⚠ DOĞUM TARİHİ 09.09.2026 — VE BOŞLUK "FARK YOK" DEMEK DEĞİLDİR.
    *   Bu sütun yalnız İLERİYE dolar; eski satışlarda kalıcı olarak BOŞ
@@ -1532,9 +1547,13 @@ model Sale {
    * kalıcı BOŞ kalacak — ve boşluk "kargo yok" demek DEĞİLDİR; o satışların
    * kargosu zaten `cargoAmount`ta duruyor.
    *
-   * ⚠ BUGÜN YALNIZ N11 YAZAR (tek tarifesi olan kanal o değil — TY/HB'de
-   * zaten gerçekleşen geliyor). Alan kanal-agnostiktir; başka bir kanal
-   * tahmine muhtaç olursa aynı sütunu kullanır.
+   * ⚠ BAŞLANGIÇTA YALNIZ N11 YAZIYORDU (tek tarifesi olan kanal oydu —
+   * TY/HB'de zaten gerçekleşen hızlı geliyor). Alan kanal-agnostiktir;
+   * 15.09.2026'dan itibaren TY/HB de DAR bir durumda yazıyor:
+   * `cargoAmount` hâlâ boşken gerçek desi (TARTIM) öğrenilirse
+   * (`kargoTartimGeldiTazele`, bkz. `kanalKargoDesi` yorumu). Bu, TY/HB'nin
+   * genel akışını değiştirmez — onlarda hâlâ çoğunlukla gerçekleşen hızlı
+   * geliyor; yalnız o hızın yetişmediği azınlık sipariş için devreye girer.
    */
   tahminiKargo Decimal? @db.Decimal(18, 4)
 

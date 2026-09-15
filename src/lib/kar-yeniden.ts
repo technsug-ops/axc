@@ -56,6 +56,28 @@ export type YenidenHesaplaGirdisi = {
    * (komisyondaki oran/tutar ikilisinin aynısı: panel gerçeği kazanır).
    */
   cargoAmountManual: number | null;
+  /**
+   * ⛔ `cargoAmountManual` TAHMİNİ BİR KAYNAKTAN GELİYORSA `true` (K197-4/
+   * K201 ihlali, 15.09.2026'da canlıda YAKALANDI). `cargoAmountManual` iki
+   * ayrı şeyi taşıyabiliyordu ve ikisi karıştırılıyordu:
+   *   (a) GERÇEK bir override — kullanıcının ekrana girdiği ya da bir
+   *       mutabakat betiğinin faturadan okuduğu tutar → `cargoAmount`a
+   *       SNAPSHOT'LANMASI DOĞRU (bu, alanın var oluş amacı).
+   *   (b) `satisKarTazele`nin ürettiği, `kargoSecimi()` üzerinden gelen ve
+   *       kaynağı yalnızca TAHMİNİ (`tahminiKargo`) olan bir değer → NET
+   *       hesabı için KULLANILIR ama `cargoAmount`a YAZILMAMALIDIR — yazılırsa
+   *       bir tahmin "kanalın gerçekleşen kesintisi" gibi görünür ve o
+   *       satışa bir daha hiç gerçek kargo tutarı yazılamaz hâle gelir
+   *       (K197-4'ün "tahmin cargoAmount'ı hiçbir şekilde etkilemez" sözü
+   *       tam burada bozulmuş olurdu).
+   * ⚠ CANLI VAKA: `kargoTartimGeldiTazele` → `satisKarTazele` çağrısı bu
+   * bayrak eklenmeden ÖNCE 19 siparişte `cargoAmount`ı tahminle doldurdu;
+   * `canli-kargo-tartim-tazele-uygula.ts` ile geri alındı.
+   * Varsayılan `false`/`undefined` — mevcut TÜM doğrudan `karYenidenYaz`
+   * çağıranlar (elle düzenleme, mutabakat betikleri) (a) sınıfındadır ve
+   * davranışları DEĞİŞMEDİ; yalnız `satisKarTazele` bunu `true` geçer.
+   */
+  cargoAmountTahminiMi?: boolean;
 };
 
 export type YenidenHesaplaSonucu = {
@@ -263,14 +285,20 @@ export async function karYenidenYaz(
     const kargoKalemi = yeni.siparisKesintileri.find((k) => k.code === "KARGO");
     const kargoHaric =
       kargoKalemi === undefined ? null : kargoKalemi.tutar / 1.2;
+    /**
+     * ⛔ TAHMİNİ KAYNAKLIYSA `cargoAmount`A YAZILMAZ — bkz. `cargoAmountTahminiMi`
+     * alanının yorumu. NET hesabı `kargoHaric`i zaten kullandı (yukarıda,
+     * `karHesapla` çağrısında); burada yalnız SNAPSHOT engelleniyor.
+     */
+    const cargoAmountYazilacak = girdi.cargoAmountTahminiMi ? null : kargoHaric;
 
     await tx.sale.update({
       where: { id: girdi.saleId },
       data: {
         cargoCarrierId: girdi.cargoCarrierId,
         cargoDesi: girdi.cargoDesi === null ? null : String(girdi.cargoDesi),
-        cargoAmount: kargoHaric === null ? null : String(kargoHaric),
-        cargoCurrency: kargoHaric === null ? null : "TRY",
+        cargoAmount: cargoAmountYazilacak === null ? null : String(cargoAmountYazilacak),
+        cargoCurrency: cargoAmountYazilacak === null ? null : "TRY",
         net1Amount: netYaz(yeni.durum, yeni.net1),
         net2Amount: netYaz(yeni.durum, yeni.net2),
         profitCurrency: paraBirimi,
@@ -359,6 +387,19 @@ export async function satisKarTazele(
   });
   if (!satis) return false;
 
+  /**
+   * ⭐ KAYNAK SIRASI TEK GÖVDEDEN (K201): gerçekleşen kesinti varsa O,
+   * yoksa tahmin. Sıra burada YAZILMAZ, `kargoSecimi` ÇAĞRILIR — iki
+   * okuyucu iki farklı sıra kursaydı biri tahmini öteki gerçekleşeni
+   * tercih ederdi ve ikisi de "doğru" görünürdü.
+   */
+  const kargo = kargoSecimi({
+    cargoAmount:
+      satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
+    tahminiKargo:
+      satis.tahminiKargo === null ? null : Number(satis.tahminiKargo.toString()),
+  });
+
   return karYenidenYaz(
     {
     saleId,
@@ -371,23 +412,15 @@ export async function satisKarTazele(
     cargoCarrierId: satis.cargoCarrierId,
     cargoDesi:
       satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
+    /** DB KDV hariç saklar; motor KDV dahil bekler (`lib/kargo-kdv.ts`). İki
+     *  sütun da KDV HARİÇ, dolayısıyla AYNI kapıdan çevriliyor. */
+    cargoAmountManual: kdvDahilKargo(kargo.tutar),
     /**
-     * DB KDV hariç saklar; motor KDV dahil bekler (`lib/kargo-kdv.ts`).
-     *
-     * ⭐ KAYNAK SIRASI TEK GÖVDEDEN (K201): gerçekleşen kesinti varsa O,
-     * yoksa tahmin. Sıra burada YAZILMAZ, `kargoSecimi` ÇAĞRILIR — iki
-     * okuyucu iki farklı sıra kursaydı biri tahmini öteki gerçekleşeni
-     * tercih ederdi ve ikisi de "doğru" görünürdü.
-     * ⚠ İki sütun da KDV HARİÇ, dolayısıyla AYNI kapıdan çevriliyor.
+     * ⛔ KAYNAK TAHMİNİYSE `cargoAmount`A YAZILMAZ (K197-4/K201, 15.09.2026
+     * düzeltmesi). Bu değer NET hesabı için kullanılır ama kanalın
+     * gerçekleşen kesintisi DEĞİLDİR — bkz. `cargoAmountTahminiMi` yorumu.
      */
-    cargoAmountManual: kdvDahilKargo(
-      kargoSecimi({
-        cargoAmount:
-          satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
-        tahminiKargo:
-          satis.tahminiKargo === null ? null : Number(satis.tahminiKargo.toString()),
-      }).tutar,
-    ),
+    cargoAmountTahminiMi: kargo.kaynak === "TAHMINI",
     },
     db,
   );
