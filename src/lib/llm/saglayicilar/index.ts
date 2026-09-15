@@ -45,10 +45,12 @@ const VARSAYILAN_SAGLAYICI: LlmSaglayici["ad"] = "openai";
  * yalnız süreç ortamına bakılsaydı, `.env.canli`ye yazan (yerel geliştirme)
  * hiçbir zaman etkisini göremezdi — anahtar seçimi ile sağlayıcı seçimi
  * FARKLI kurallarla okunursa biri diğerini sessizce geçersiz kılardı.
+ *
+ * ⚠ `dosyaYolu` YALNIZ TEST İZOLASYONU İÇİNDİR — bkz. `ikiKatmanliAnahtarOku`.
  */
-export function aktifSaglayici(): LlmSaglayici {
-  const secim = (ikiKatmanliAnahtarOku("LLM_SAGLAYICI") ??
-    ikiKatmanliAnahtarOku("OZET_LLM_SAGLAYICI") ??
+export function aktifSaglayici(dosyaYolu?: string): LlmSaglayici {
+  const secim = (ikiKatmanliAnahtarOku("LLM_SAGLAYICI", dosyaYolu) ??
+    ikiKatmanliAnahtarOku("OZET_LLM_SAGLAYICI", dosyaYolu) ??
     VARSAYILAN_SAGLAYICI) as LlmSaglayici["ad"];
   return SAGLAYICILAR[secim] ?? SAGLAYICILAR[VARSAYILAN_SAGLAYICI];
 }

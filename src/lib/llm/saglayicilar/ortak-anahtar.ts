@@ -14,8 +14,16 @@ import { readFileSync } from "node:fs";
  * "invalid header value" ile çöker. İLK SATIRI almak bu sınıftaki yapıştırma
  * hatasına karşı yapısal olarak dayanıklı kılar; ikinci satır sessizce
  * atılır (hata değil, kurtarma).
+ *
+ * ⚠ `dosyaYolu` YALNIZ TEST İZOLASYONU İÇİNDİR — varsayılanı `.env.canli`,
+ * hiçbir gerçek çağıran onu değiştirmez. Bekçi (`tavsiye-dogrula.ts`) "env
+ * tanımsızsa düşer" senaryosunu, bu makinedeki GERÇEK `.env.canli` dosyası
+ * o değişkeni tanımlasa bile kurabilmek için var-olmayan bir yol geçer.
+ * _(15.09.2026: `.env.canli`de `LLM_SAGLAYICI` tanımlı olduğu için bu
+ * senaryo `delete process.env.X` ile tek başına kurulamıyordu — bekçi
+ * "ölçtüğü şeyi" değil, ortamın o anki hâlini sınıyordu.)_
  */
-export function ikiKatmanliAnahtarOku(envAdi: string): string | null {
+export function ikiKatmanliAnahtarOku(envAdi: string, dosyaYolu = ".env.canli"): string | null {
   const ilkSatir = (deger: string): string => deger.split(/\r?\n/)[0]!.trim();
 
   const surec = process.env[envAdi]?.trim();
@@ -23,7 +31,7 @@ export function ikiKatmanliAnahtarOku(envAdi: string): string | null {
 
   let ham: string;
   try {
-    ham = readFileSync(".env.canli", "utf8");
+    ham = readFileSync(dosyaYolu, "utf8");
   } catch {
     return null;
   }

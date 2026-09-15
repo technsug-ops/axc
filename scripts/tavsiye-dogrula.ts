@@ -299,9 +299,18 @@ kontrol(
   const eskiOzet = process.env.OZET_LLM_SAGLAYICI;
   delete process.env.LLM_SAGLAYICI;
   process.env.OZET_LLM_SAGLAYICI = "anthropic";
+  /**
+   * ⚠ VAR OLMAYAN DOSYA YOLU GEÇİLİR (15.09.2026) — bu makinedeki gerçek
+   * `.env.canli` LLM_SAGLAYICI'yı TANIMLIYOR; `delete process.env.X` tek
+   * başına "tanımsız" senaryosunu kuramıyordu, çünkü fonksiyon süreçte
+   * bulamayınca dosyaya bakıyor ve dosya GERÇEK bir değer veriyordu. Ölçüt
+   * ortamın o anki hâlini değil, KURALIN kendisini sınamalı.
+   * _(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+   * değildir" — buradaki hâli: ortamın gerçek hâlini ayırt edemeyen test.)_
+   */
   kontrol(
     "LLM_SAGLAYICI TANIMSIZSA eski OZET_LLM_SAGLAYICI'ya düşer (K-TAVSIYE taşımasının tek yeni mantığı)",
-    aktifSaglayici().ad === "anthropic",
+    aktifSaglayici(".env.canli-tavsiye-dogrula-hicbir-zaman-var-olmayacak").ad === "anthropic",
   );
   process.env.LLM_SAGLAYICI = "gemini";
   kontrol(
