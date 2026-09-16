@@ -51,6 +51,7 @@ const HATA_ANAHTARI: Record<
   KANAL_SKU_YOK: "hataKanalSkuYok",
   HESAP_YOK: "hataHesapYok",
   VARYANT_YOK: "hataVaryantYok",
+  VARYANT_BARKODU_YOK: "hataVaryantBarkoduYok",
   GONDERILECEK_YOK: "hataGonderilecekYok",
   FIYAT_GECERSIZ: "hataFiyatGecersiz",
   ANAHTAR_YOK: "hataAnahtarYok",
@@ -66,6 +67,7 @@ const ONIZLEME_HATA: Record<
   KANAL_SKU_YOK: "hataKanalSkuYok",
   HESAP_YOK: "hataHesapYok",
   VARYANT_YOK: "hataVaryantYok",
+  VARYANT_BARKODU_YOK: "hataVaryantBarkoduYok",
 };
 
 export function TyGonderim({ variantId }: { variantId: string }) {

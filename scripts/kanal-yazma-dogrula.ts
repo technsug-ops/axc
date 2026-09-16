@@ -173,6 +173,45 @@ for (const yol of yazicilar) {
     gBlok.includes('yetkiIste("kanal.yaz")'),
   );
 
+  /**
+   * ⛔ K201-3 (16.09.2026) — TY'YE GİDEN `barcode`, `ChannelSku.channelSku`
+   * DEĞİL `ProductVariant.barcode`DAN OKUNUR. `channelSku` genel bir "kanal
+   * kodu" alanı ve boş bırakılırsa iç SKU'ya düşüyor
+   * (`kanal-sku/actions.ts`); TY'nin `price-and-inventory` ucu `barcode`ı
+   * GERÇEK EAN sanıyor — okuma tarafı (`kanal-listeleme-yaz.ts`) zaten
+   * `variant.barcode` ile eşleştiriyordu. Canlı kanıt: 09.09.2026 04:51,
+   * yanlış `channelSku` değeri TY'ye barkod diye gönderildi ve TY KABUL etti
+   * — o değer bizim hiçbir ürünümüzün barkodu değildi.
+   * _(Anayasa: "iki yerde iki ölçüt olmaz".)_
+   */
+  if (kod === "ty") {
+    /**
+     * ⚠ KENDİ BLOĞU DAR ÇIKARILIR — paylaşılan `gBlok`, sınır olarak "bir
+     * SONRAKİ export async function"u kullanıyor ve bu sınır `tyStokFiyatGonder`
+     * ile N11'in `n11GonderimOnizle`si ARASINDA kalan `N11Baglam` tipini de
+     * (kendi `channelSku` alanıyla) içine alıyor — "channelSku geçmiyor" testi
+     * o sızıntıyı yakalar, TY kodunu değil. Fonksiyonun KENDİ kapanışına
+     * (`\n}\n`) daraltılmış ayrı bir blok kullanılır.
+     * _(Anayasa: "pencere ölçülür — gövde büyüyünce sessizce kör kalır".)_
+     */
+    const tbBasi = eylem.indexOf("async function tyBaglami");
+    const tbSonu = tbBasi >= 0 ? eylem.indexOf("\n}\n", tbBasi) : -1;
+    const tbBlok = tbBasi >= 0 && tbSonu > tbBasi ? eylem.slice(tbBasi, tbSonu) : "";
+    kontrol(
+      "K201-3 tyBaglami VARYANTIN GERÇEK barkodunu çözüyor (channelSku'dan değil)",
+      tbBlok.includes("varyant.barcode") && !tbBlok.includes("kanalSku.channelSku"),
+    );
+
+    const gSarBasi = eylem.indexOf("export async function tyStokFiyatGonder");
+    const gSarSonu = gSarBasi >= 0 ? eylem.indexOf("\n}\n", gSarBasi) : -1;
+    const gSarBlok =
+      gSarBasi >= 0 && gSarSonu > gSarBasi ? eylem.slice(gSarBasi, gSarSonu) : "";
+    kontrol(
+      "K201-3 gönderilen kalem.barcode, çözülen GERÇEK barkoddan geliyor (channelSku değil)",
+      gSarBlok.includes("barcode: b.barkod") && !gSarBlok.includes("channelSku"),
+    );
+  }
+
   /* ② DİYALOG — RAKAM GELMEDEN GÖNDER PASİF */
   const dyalogYolu = "src/app/kart/[variantId]/" + kod + "-gonderim.tsx";
   let dyalog = "";

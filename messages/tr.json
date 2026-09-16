@@ -21,6 +21,7 @@
     "hataKanalSkuYok": "Bu ürünün Trendyol kanal kodu (Kanal SKU) tanımlı değil — önce Kanal SKU ekranından eşleştir.",
     "hataHesapYok": "Aktif Trendyol satış hesabı bulunamadı.",
     "hataVaryantYok": "Ürün bulunamadı.",
+    "hataVaryantBarkoduYok": "Bu ürünün barkodu (EAN) tanımlı değil — Trendyol'a barkodsuz gönderim yapılmaz, önce ürün kartından barkod gir.",
     "hataGonderilecekYok": "Ne stok ne fiyat seçili — gönderilecek bir şey yok.",
     "hataFiyatGecersiz": "Fiyat okunamadı — örn. 2.899,90 biçiminde yaz.",
     "hataAnahtarYok": "Trendyol API anahtarları okunamadı.",

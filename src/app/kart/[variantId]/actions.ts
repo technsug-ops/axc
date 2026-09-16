@@ -31,6 +31,21 @@ import { stokFiyatGonder as n11StokFiyatIste } from "../../../../scripts/n11/yaz
  *
  *  ⚠ Hata KODLA döner (K57-③); TY'nin "15 dk aynı istek" reddi de ayrı
  *  kodla taşınır — kullanıcı "bozuk" sanmasın.
+ *
+ *  ⛔ K201-3 DÜZELTMESİ (16.09.2026) — TY'YE GÖNDERİLEN `barcode`,
+ *  `ChannelSku.channelSku` DEĞİL `ProductVariant.barcode`DAN OKUNUR.
+ *  Kanal SKU (`channelSku`) genel bir "kanal kodu" alanıdır (CLAUDE.md:
+ *  "Kanal SKU — pazaryeri kodu") ve boş bırakılırsa sistem SKU'suna düşer
+ *  (`kanal-sku/actions.ts:100`); TY'nin `price-and-inventory` ucu ise
+ *  `barcode` alanını GERÇEK EAN sanıyor — okuma tarafı (`kanal-listeleme-yaz.ts`)
+ *  zaten `variant.barcode` ile eşleştiriyordu, yazma tarafı farklı bir alan
+ *  kullanıyordu ("iki yerde iki ölçüt olmaz").
+ *  ⚠ CANLI KANIT: 09.09.2026 04:51 — "Schafer Kitchenhouse Termos 2 L-Inox"
+ *  (sku=KAM-SC-SK-01, gerçek barkod=8699131930403) için gönderilen istek
+ *  `channelSku`den okunan `8699131308196`i taşıdı; TY bunu KABUL etti ve bu
+ *  değer bizim hiçbir ürünümüzün barkodu değil — stok, alakasız/bize ait
+ *  olmayan bir TY listelemesine gitmiş olabilir. 1090 aktif TY Kanal SKU'sunun
+ *  17'sinde `channelSku`, `variant.barcode`den farklıydı.
  * ============================================================================
  */
 
@@ -44,15 +59,19 @@ export type TyGonderimOnizlemesi =
     }
   | {
       tamam: false;
-      kod: "KANAL_SKU_YOK" | "HESAP_YOK" | "VARYANT_YOK";
+      kod: "KANAL_SKU_YOK" | "HESAP_YOK" | "VARYANT_YOK" | "VARYANT_BARKODU_YOK";
     };
 
 type TyBaglam =
-  | { tamam: false; kod: "HESAP_YOK" | "VARYANT_YOK" | "KANAL_SKU_YOK" }
+  | {
+      tamam: false;
+      kod: "HESAP_YOK" | "VARYANT_YOK" | "KANAL_SKU_YOK" | "VARYANT_BARKODU_YOK";
+    }
   | {
       tamam: true;
+      /** ⛔ TY'YE GİDECEK GERÇEK BARKOD — `variant.barcode`, `channelSku` DEĞİL. */
+      barkod: string;
       kanalSku: {
-        channelSku: string;
         kanalAdet: number | null;
         listelemeDurumu: string;
       };
@@ -66,15 +85,17 @@ async function tyBaglami(variantId: string): Promise<TyBaglam> {
   if (!hesap) return { tamam: false, kod: "HESAP_YOK" };
   const varyant = await prisma.productVariant.findUnique({
     where: { id: variantId },
-    select: { id: true },
+    select: { id: true, barcode: true },
   });
   if (!varyant) return { tamam: false, kod: "VARYANT_YOK" };
   const kanalSku = await prisma.channelSku.findFirst({
     where: { variantId, channelAccountId: hesap.id, isActive: true },
-    select: { channelSku: true, kanalAdet: true, listelemeDurumu: true },
+    select: { kanalAdet: true, listelemeDurumu: true },
   });
   if (!kanalSku) return { tamam: false, kod: "KANAL_SKU_YOK" };
-  return { tamam: true, kanalSku };
+  const barkod = (varyant.barcode ?? "").trim();
+  if (barkod === "") return { tamam: false, kod: "VARYANT_BARKODU_YOK" };
+  return { tamam: true, barkod, kanalSku };
 }
 
 export async function tyGonderimOnizle(
@@ -85,7 +106,7 @@ export async function tyGonderimOnizle(
   if (!b.tamam) return { tamam: false, kod: b.kod };
   return {
     tamam: true,
-    barkod: b.kanalSku.channelSku,
+    barkod: b.barkod,
     selioraStok: await varyantStogu(variantId),
     kanalAdet: b.kanalSku.kanalAdet,
     listelemeDurumu: b.kanalSku.listelemeDurumu,
@@ -108,6 +129,7 @@ export type TyGonderimSonucu =
         | "KANAL_SKU_YOK"
         | "HESAP_YOK"
         | "VARYANT_YOK"
+        | "VARYANT_BARKODU_YOK"
         | "GONDERILECEK_YOK"
         | "FIYAT_GECERSIZ"
         | "ANAHTAR_YOK"
@@ -136,7 +158,7 @@ export async function tyStokFiyatGonder(
   /** Stok SUNUCUDA yeniden çözülür — istemciden sayı alınmaz. */
   const stok = niyet.stokGonder ? await varyantStogu(variantId) : null;
   const kalem = {
-    barcode: b.kanalSku.channelSku,
+    barcode: b.barkod,
     ...(stok === null ? {} : { quantity: stok }),
     ...(niyet.fiyat === null
       ? {}
