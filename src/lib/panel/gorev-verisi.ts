@@ -1,5 +1,5 @@
 import { ACIK_BILDIRIM_DURUMLARI } from "@/lib/iade/bildirim";
-import { suzgecToplami } from "@/lib/liste-toplami";
+import { adetToplami, suzgecToplami } from "@/lib/liste-toplami";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { kalemToplamlari, type ParaToplami } from "@/lib/tutar";
 import {
@@ -77,7 +77,19 @@ export async function donemAlimi(pencere: {
   baslangic: Date;
   bitisHaric: Date;
 }): Promise<{
+  /** KAYIT sayısı — kaç mal kabul İŞLEMİ yapıldı ("Satın alınan"ın kardeşi). */
   adet: number;
+  /**
+   * ÜRÜN ADEDİ — o kayıtlardaki kalemlerin TOPLAM miktarı (K220, 16.09.2026).
+   *
+   * ⛔ `adet` İLE KARIŞTIRILMAZ: `adet` kaç KAYIT girildiğini sayar, bu ise
+   * o kayıtlarda kaç ÜRÜN geldiğini. Kullanıcı bulgusu 16.09.2026: panelde
+   * "Mal kabul: 7" yazıyordu, `/mal-kabul` günün girişleri ekranı aynı gün
+   * için "13 adet" gösteriyordu — ikisi de doğruydu (7 ayrı kayıt, 3 ürün
+   * çeşidinden toplam 13 adet) ama panel hangisini saydığını söylemiyordu.
+   * _(Anayasa: "kayıt sayısı ≠ adet" — `adetToplami` yorumu.)_
+   */
+  urunAdedi: number;
   toplam: ParaToplami[];
   gunluk: { tarih: Date; tutar: number; kdv: number }[];
   /**
@@ -139,6 +151,17 @@ export async function donemAlimi(pencere: {
   );
 
   /**
+   * ⚠ AYNI İPTAL YÜKLEMİ `sonuc` İLE — iptalli kayıt ne toplama ne buraya
+   * girer. Ayrı bir kural yazılsaydı üçü (adet/toplam/urunAdedi) bir gün
+   * ayrışabilirdi.
+   */
+  const urunSonuc = adetToplami(
+    alimlar,
+    (a) => a.items.reduce((t, k) => t + k.quantity, 0),
+    (a) => a.status === "CANCELLED",
+  );
+
+  /**
    * ⚠ GÜNLÜK DÖKÜM DE DÖNÜYOR — grafik için (21.08.2026).
    * Ayrı bir sorgu yazılmadı: aynı kayıtlar hem toplamı hem seriyi besliyor.
    * İki sorgu olsaydı ikisi farklı süzgeçle ayrışabilirdi.
@@ -171,6 +194,7 @@ export async function donemAlimi(pencere: {
 
   return {
     adet: alimlar.length,
+    urunAdedi: urunSonuc.toplam,
     toplam: sonuc.toplam,
     siparisGunluk: siparisler.map((sp) => ({
       tarih: sp.purchasedAt,

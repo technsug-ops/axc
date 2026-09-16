@@ -2194,6 +2194,7 @@
     "donemDurumu": "Açık dönem: {bu} · en son kapanan: {son}",
     "donemHicKapanmadi": "Açık dönem: {bu} · henüz hiçbir dönem kapatılmadı",
     "malKabulAdedi": "Mal kabul",
+    "malKabulUrunAdedi": "{adet} adet",
     "grafikSekmePara": "Ciro ve NET-2",
     "grafikSekmeEnvanter": "Envanter",
     "grafikSekmeAdet": "Satış adedi",

@@ -2675,30 +2675,41 @@ export default async function AnaSayfa({
                       kiyasAlim?.adet ?? null,
                       (n) => String(n),
                     )}
-                    /* ---------------- ALT NOT: DÖNEMİN ALIM TUTARI ----------
+                    /* ---------------- ALT NOT: ÜRÜN ADEDİ + DÖNEMİN ALIM TUTARI
                      İlke #15 — tek tek gösterilen yerde toplam da olur.
                      Kullanıcı KDV dengesi için aylık alım tutarını takip
                      ediyor ve alım listesinde bu toplam ZATEN var; panelde
                      yokken aynı rakam için ikinci ekrana gitmek gerekiyordu.
 
-                     ⚠ PARA — izne bağlı. Adet operasyoneldir, tutar değil;
-                     `satis.kar.gor` yoksa yalnız adet görünür.
+                     ⚠ ÜRÜN ADEDİ EKLENDİ (K220, 16.09.2026) — kullanıcı
+                     bulgusu: büyük rakam (`alim.adet`) kaç mal kabul KAYDI
+                     girildiğini sayıyor, `/mal-kabul` günün girişleri ekranı
+                     ise aynı gün için ÜRÜN ADEDİNİ gösteriyor; ikisi de
+                     doğru ama etiket ("Mal kabul") hangisi olduğunu
+                     söylemiyordu. Çare rakamı değiştirmek değil, öteki
+                     rakamı da GÖRÜNÜR kılmaktı.
+
+                     ⚠ ÜRÜN ADEDİ OPERASYONELDİR, PARA DEĞİL — büyük rakamla
+                     aynı izinsiz görünür. Yalnız TUTAR `satis.kar.gor`
+                     iznine bağlı kalır — eski davranış korundu.
 
                      ⚠ Bu bloğun para birimi süzgeci var; yalnız o para
                      biriminin toplamı yazılır, karışık toplam üretilmez. */
                     altNot={
-                      karGorunur ? (
-                        <span>
-                          {t("alimToplami", {
-                            tutar: bicim.para(
-                              alim.toplam.find(
-                                (x) => x.paraBirimi === blok.paraBirimi,
-                              )?.tutar ?? 0,
-                              blok.paraBirimi,
-                            ),
-                          })}
-                        </span>
-                      ) : null
+                      <span>
+                        {t("malKabulUrunAdedi", { adet: alim.urunAdedi })}
+                        {karGorunur
+                          ? " · " +
+                            t("alimToplami", {
+                              tutar: bicim.para(
+                                alim.toplam.find(
+                                  (x) => x.paraBirimi === blok.paraBirimi,
+                                )?.tutar ?? 0,
+                                blok.paraBirimi,
+                              ),
+                            })
+                          : ""}
+                      </span>
                     }
                   />
                   <IstatistikKutusu
