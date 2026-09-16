@@ -193,6 +193,7 @@
     "canli:kargo-tartim-tazele-uygula": "tsx scripts/canli-kargo-tartim-tazele-uygula.ts",
     "canli:kargo-amount-kirlenme-tarihce-onar": "tsx scripts/canli-kargo-amount-kirlenme-tarihce-onar.ts",
     "canli:kargo-amount-kirlenme-duzelt": "tsx scripts/canli-kargo-amount-kirlenme-duzelt.ts",
+    "canli:hb-kargo-tarifesi-yukle": "tsx scripts/canli-hb-kargo-tarifesi-yukle.ts",
     "canli:kargo-yaz": "tsx scripts/canli-kargo-yaz.ts",
     "canli:test-duzeltmeleri": "tsx scripts/canli-test-duzeltmeleri.ts",
     "canli:iade-kargo-kolonu": "tsx scripts/canli-iade-kargo-kolonu.ts",
