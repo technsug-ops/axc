@@ -416,11 +416,23 @@ export async function satisKarTazele(
      *  sütun da KDV HARİÇ, dolayısıyla AYNI kapıdan çevriliyor. */
     cargoAmountManual: kdvDahilKargo(kargo.tutar),
     /**
-     * ⛔ KAYNAK TAHMİNİYSE `cargoAmount`A YAZILMAZ (K197-4/K201, 15.09.2026
-     * düzeltmesi). Bu değer NET hesabı için kullanılır ama kanalın
-     * gerçekleşen kesintisi DEĞİLDİR — bkz. `cargoAmountTahminiMi` yorumu.
+     * ⛔ KAYNAK GERÇEKLEŞEN DEĞİLSE `cargoAmount`A YAZILMAZ (K197-4/K201,
+     * 15.09.2026 düzeltmesi — ve K201-2, 16.09.2026 düzeltmesi).
+     *
+     * ⚠ CANLI VAKA (16.09.2026, sipariş 11606375536): ölçüt `=== "TAHMINI"`
+     * yazıyordu ve `kargoSecimi()` ÜÇÜNCÜ bir sonuç da döndürebiliyor —
+     * "YOK" (ikisi de boş; sipariş İLK KEZ onaylanıyor, henüz ne gerçekleşen
+     * ne tahmin var). O durumda `=== "TAHMINI"` **false** dönüyordu, bayrak
+     * korumayı DEVRE DIŞI bırakıyordu — ve `karOnizle` boş `cargoAmountManual`
+     * karşısında `cargoDesi` (ÜRÜN BAZLI TAHMİN, kanalın TARTIM'ı DEĞİL) ile
+     * taz bir tarife hesabı yapıp bunu "gerçekleşen" diye yazıyordu. Sonuç:
+     * desi=5 tahmini (₺117,85) `cargoAmount`a girdi, kanalın gerçek desi=3
+     * tartımı (₺100,84) hiç görülmedi VE `kargoTartimGeldiTazele` bir daha
+     * asla düzeltemedi (o gövde `cargoAmount` DOLUYSA hiç dokunmuyor).
+     * Bu değer NET hesabı için kullanılır ama kanalın gerçekleşen kesintisi
+     * DEĞİLDİR — bkz. `cargoAmountTahminiMi` yorumu.
      */
-    cargoAmountTahminiMi: kargo.kaynak === "TAHMINI",
+    cargoAmountTahminiMi: kargo.kaynak !== "GERCEKLESEN",
     },
     db,
   );

@@ -19,6 +19,7 @@ import { readFileSync } from "node:fs";
 
 import { karHesapla, kdvAyir, kdvHaric, type KarGirdisi } from "../src/lib/kar";
 import { kalemMaliyeti } from "../src/lib/kalem-maliyeti";
+import { kargoSecimi } from "../src/lib/kargo-kaynagi";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -911,15 +912,24 @@ console.log("=".repeat(70));
 
 /**
  * ============================================================================
- *  TAHMİNİ KARGO `cargoAmount`A YAZILMAZ (K197-4/K201 düzeltmesi, 15.09.2026)
+ *  TAHMİNİ KARGO `cargoAmount`A YAZILMAZ (K197-4/K201, 15.09.2026 —
+ *  ve K201-2, 16.09.2026 — iki düzeltme)
  * ----------------------------------------------------------------------------
- *  ⛔ CANLI VAKA: `satisKarTazele` her çağrıldığında çözdüğü kargo tutarını
- *  (kaynağı yalnızca `tahminiKargo` olsa bile) `cargoAmount`a yazıyordu —
- *  19 sipariş bu yüzden canlıda düzeltilmek zorunda kaldı. `cargoAmount`
- *  yalnızca kanalın GERÇEKLEŞEN kesintisi içindir; bir tahmini oraya
- *  yazmak K197-4'ün "hiçbir şekilde etkilemez" sözünü bozar VE o satışa
- *  bir daha gerçek tutar yazılamaz hâle getirir (kaynak sırası artık
- *  "GERCEKLESEN" sanır).
+ *  ⛔ CANLI VAKA #1 (15.09.2026): `satisKarTazele` her çağrıldığında çözdüğü
+ *  kargo tutarını (kaynağı yalnızca `tahminiKargo` olsa bile) `cargoAmount`a
+ *  yazıyordu — 19 sipariş bu yüzden canlıda düzeltilmek zorunda kaldı.
+ *  Çare `cargoAmountTahminiMi: kargo.kaynak === "TAHMINI"` oldu.
+ *
+ *  ⛔ CANLI VAKA #2 (16.09.2026, sipariş 11606375536): O çare EKSİKTİ.
+ *  `kargoSecimi()` ÜÇ sonuç döndürür (GERCEKLESEN · TAHMINI · YOK) ve
+ *  "YOK" (sipariş İLK KEZ onaylanıyor, ne gerçekleşen ne tahmin hiç
+ *  yazılmamış) `=== "TAHMINI"` karşısında **false** dönüyordu — koruma
+ *  o durumda DEVREDIŞI kalıyordu. `karOnizle` boş `cargoAmountManual`
+ *  karşısında `cargoDesi` (ÜRÜN BAZLI TAHMİN) ile taze bir tarife hesabı
+ *  yapıp bunu doğrudan `cargoAmount`a yazdı; kanalın gerçek `kanalKargoDesi`
+ *  tartımı hiç görülmedi VE bir daha görülemezdi (`kargoTartimGeldiTazele`
+ *  yalnız `cargoAmount` BOŞKEN çalışır). Çare: `!== "GERCEKLESEN"` —
+ *  GERÇEKLEŞEN DIŞINDAKİ HER KAYNAK korumaya girer.
  *
  *  ⚠ KAYNAK KULLANIMA BAĞLANIR, ADA DEĞİL: `cargoAmountTahminiMi` alan adı
  *  yorumda da geçebilir; ölçüt onu GERÇEKTEN OKUYAN satıra bağlanıyor.
@@ -936,8 +946,18 @@ console.log("=".repeat(70));
     /cargoAmount: cargoAmountYazilacak === null \? null : String\(cargoAmountYazilacak\)/.test(y),
   );
   kontrol(
-    "satisKarTazele kaynağı TAHMINI ise bayrağı true geçiyor",
-    /cargoAmountTahminiMi: kargo\.kaynak === "TAHMINI",/.test(y),
+    "satisKarTazele: kaynak GERÇEKLEŞEN DEĞİLSE (TAHMİNİ ve YOK dahil) bayrak true",
+    /cargoAmountTahminiMi: kargo\.kaynak !== "GERCEKLESEN",/.test(y),
+  );
+  /**
+   * ⛔ YANLIŞ SUSMA YÖNÜ (16.09.2026 vakasının ta kendisi): eski dar ölçüt
+   * bir daha geri gelmesin. Yalnız pozitif regex yeterli değil — biri
+   * `!== "GERCEKLESEN"`i tekrar `=== "TAHMINI"`ya çevirse pozitif test
+   * kırmızı yanar ama BU satır o gerilemeyi AYRICA, açıkça adlandırır.
+   */
+  kontrol(
+    "eski dar ölçüt (yalnız TAHMINI, YOK'u kaçıran) BİR DAHA yok",
+    !/cargoAmountTahminiMi: kargo\.kaynak === "TAHMINI",/.test(y),
   );
   /**
    * ⚠ VE `karOnizle`NİN KENDİSİ DEĞİŞMEDİ — bayrak yalnız YAZMA anında
@@ -949,6 +969,34 @@ console.log("=".repeat(70));
     "NET hesabı (karHesapla çağrısı) bayraktan ETKİLENMİYOR — yalnız yazım",
     !/karHesapla\(\{[\s\S]{0,400}cargoAmountTahminiMi/.test(y),
   );
+  /**
+   * ⭐ DEĞER TESTİ (kaynak-tarama değil): `kargoSecimi()` SAF ve
+   * içeri aktarılabilir — üç kaynak durumunun `satisKarTazele`nin kendi
+   * ifadesiyle BİREBİR aynı ternary'den (`kaynak !== "GERCEKLESEN"`) geçince
+   * ne üreteceği burada GERÇEKTEN HESAPLANIYOR, kaynak metinde aranmıyor.
+   * Yalnızca GERÇEKLEŞEN'in korumayı KAPATTIĞI, ötekilerin AÇIK bıraktığı
+   * — bu satırlar olmadan kanıtlanamaz.
+   */
+  {
+    const durumlar: {
+      ad: string;
+      girdi: { cargoAmount: number | null; tahminiKargo: number | null };
+      beklenenTahminiMi: boolean;
+    }[] = [
+      { ad: "GERÇEKLEŞEN", girdi: { cargoAmount: 100, tahminiKargo: null }, beklenenTahminiMi: false },
+      { ad: "TAHMİNİ", girdi: { cargoAmount: null, tahminiKargo: 50 }, beklenenTahminiMi: true },
+      { ad: "YOK (ikisi de boş — K201-2 vakası)", girdi: { cargoAmount: null, tahminiKargo: null }, beklenenTahminiMi: true },
+    ];
+    for (const d of durumlar) {
+      const kargo = kargoSecimi(d.girdi);
+      const tahminiMi = kargo.kaynak !== "GERCEKLESEN";
+      kontrol(
+        `kargoSecimi(${d.ad}) → cargoAmountTahminiMi=${d.beklenenTahminiMi}`,
+        tahminiMi === d.beklenenTahminiMi,
+        kargo,
+      );
+    }
+  }
 }
 
 console.log(
