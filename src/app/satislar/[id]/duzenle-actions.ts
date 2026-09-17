@@ -179,6 +179,7 @@ export async function kargoTarifesiniOku(
   const satis = await prisma.sale.findUnique({
     where: { id: saleId },
     select: {
+      soldAt: true,
       cargoCarrierId: true,
       channelAccount: { select: { channelId: true } },
     },
@@ -189,12 +190,23 @@ export async function kargoTarifesiniOku(
   /** ⚠ Kargo firmaları desiyi YUKARI yuvarlar — 3,2 desi 4 desi ücretidir. */
   const tamDesi = Math.max(0, Math.ceil(desi));
 
+  /**
+   * ⛔ K201-4 (17.09.2026) — `orderBy` YOKTU: tarife partileri EKLENEBİLİR
+   * (eski effectiveFrom SİLİNMEZ) ve ikinci parti (HB, 2026-09-10) eklenene
+   * kadar bu sorgu tek satır bulup "doğru" görünüyordu. ÖLÇÜLDÜ: ikinci
+   * parti eklenince `findFirst` (orderBy'sız) STALE (08-01) tarifeyi
+   * 116/116 örnekte döndürdü — bu ekran satış tarihinden BAĞIMSIZ olarak
+   * hep ESKİ tutarı öneriyordu. `satis.soldAt` ile aynı desen: bkz.
+   * `kar-yeniden.ts`, `satis.ts`, `kalem-bilgisi.ts`.
+   */
   const tarife = await prisma.cargoTariff.findFirst({
     where: {
       channelId: satis.channelAccount.channelId,
       carrierId: satis.cargoCarrierId,
       desi: tamDesi,
+      effectiveFrom: { lte: satis.soldAt },
     },
+    orderBy: { effectiveFrom: "desc" },
     select: { amount: true },
   });
   if (tarife === null) return { tur: "TARIFE_YOK", desi: tamDesi };

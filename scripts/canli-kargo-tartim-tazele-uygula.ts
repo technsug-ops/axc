@@ -94,6 +94,7 @@ async function main() {
       channelId: s.channelAccount.channelId,
       kanalKargoFirmasi: s.kanalKargoFirmasi,
       desi,
+      soldAt: s.soldAt,
     });
     const eskiTahmin = s.tahminiKargo === null ? null : Number(s.tahminiKargo.toString());
     const eskiNet2 = s.net2Amount === null ? null : Number(s.net2Amount.toString());
@@ -124,6 +125,7 @@ async function main() {
           kanalKargoDesi: desi,
           cargoAmount: null,
           tahminiKargo: eskiTahmin,
+          soldAt: s.soldAt,
         },
         /** ⛔ BU BETİĞİN KENDİ CANLI İSTEMCİSİ — global `prisma` DEĞİL. */
         prisma,

@@ -1,4 +1,8 @@
-import { firmaEslemesi, kargoTartimGeldiTazele } from "../src/lib/kargo-tartim-tazele";
+import {
+  firmaEslemesi,
+  kanalTahminiHesapla,
+  kargoTartimGeldiTazele,
+} from "../src/lib/kargo-tartim-tazele";
 
 /**
  * ============================================================================
@@ -86,11 +90,91 @@ async function zatenGerceklesenTesti(): Promise<boolean> {
       kanalKargoDesi: 3,
       cargoAmount: 117.85,
       tahminiKargo: null,
+      soldAt: new Date("2026-09-05T00:00:00.000Z"),
     },
     zehirliDb(),
   );
   return !sonuc.yapildi && sonuc.neden === "ZATEN_GERCEKLESEN";
 }
+/* ═══ ③ TARİFE PARTİSİ SEÇİMİ — SATIŞIN GÜNÜNE GÖRE (K201-4, 17.09.2026) ═══ */
+/**
+ * ⛔ VAKA: `tarifeTablosundanTahmin`nin `cargoTariff.findFirst`i `orderBy`
+ * TAŞIMIYORDU. Tek tarife partisi varken sorun görünmüyordu; HB'nin ikinci
+ * partisi (2026-09-10) eklenince MySQL'in sırasız taraması ESKİ (08-01)
+ * satırı döndürmeye başladı — CANLIDA ÖLÇÜLDÜ: 30 desi değerinde 116/116
+ * `findFirst` (orderBy'sız) çağrısı STALE tarifeyi verdi.
+ *
+ * Sahte istemci bu gerçek davranışı taklit eder: `where.effectiveFrom.lte`
+ * VE `orderBy.effectiveFrom === "desc"` verilmezse satırları EKLEME
+ * sırasıyla (eski önce — canlıda ölçülen gerçek sıra) döner. Kod bu iki
+ * parametreyi düşürürse test bunu YAKALAR.
+ */
+console.log("\n  ── TARİFE PARTİSİ SEÇİMİ (soldAt'a göre, K201-4)");
+type TahminDb = Parameters<typeof kanalTahminiHesapla>[0];
+function sahteTarifeDb(satirlar: { effectiveFrom: Date; amount: string }[]): TahminDb {
+  return {
+    cargoCarrier: { findFirst: async () => ({ id: "carrier-1" }) },
+    cargoTariff: {
+      findFirst: async (args: {
+        where?: { effectiveFrom?: { lte?: Date } };
+        orderBy?: { effectiveFrom?: string };
+      }) => {
+        let s = satirlar;
+        const esik = args?.where?.effectiveFrom?.lte;
+        if (esik) s = s.filter((r) => r.effectiveFrom.getTime() <= esik.getTime());
+        if (args?.orderBy?.effectiveFrom === "desc") {
+          s = [...s].sort((a, b) => b.effectiveFrom.getTime() - a.effectiveFrom.getTime());
+        }
+        return s[0] ?? null;
+      },
+    },
+  } as unknown as TahminDb;
+}
+/** ⚠ EKLEME SIRASI BİLEREK ESKİ→YENİ — canlıda ölçülen gerçek MySQL sırası. */
+const ESKI_PARTI = { effectiveFrom: new Date("2026-08-01T00:00:00.000Z"), amount: "78.50" };
+const YENI_PARTI = { effectiveFrom: new Date("2026-09-10T00:00:00.000Z"), amount: "81.99" };
+async function tarifePartisiTestleri() {
+  const db = sahteTarifeDb([ESKI_PARTI, YENI_PARTI]);
+  const eskiDonem = await kanalTahminiHesapla(db, {
+    kanalAdi: "Hepsiburada",
+    channelId: "kanal-1",
+    kanalKargoFirmasi: "hepsiJET",
+    desi: 1,
+    soldAt: new Date("2026-08-15T00:00:00.000Z"),
+  });
+  kontrol(
+    "yeni tarifeden ÖNCE satılan sipariş ESKİ tutarı alır (78,50)",
+    eskiDonem.tamam && Math.abs(eskiDonem.tutar - 78.5) < 0.005,
+    eskiDonem,
+  );
+
+  const yeniDonem = await kanalTahminiHesapla(db, {
+    kanalAdi: "Hepsiburada",
+    channelId: "kanal-1",
+    kanalKargoFirmasi: "hepsiJET",
+    desi: 1,
+    soldAt: new Date("2026-09-15T00:00:00.000Z"),
+  });
+  kontrol(
+    "yeni tarifeden SONRA satılan sipariş YENİ tutarı alır (81,99)",
+    yeniDonem.tamam && Math.abs(yeniDonem.tutar - 81.99) < 0.005,
+    yeniDonem,
+  );
+
+  const partiGunu = await kanalTahminiHesapla(db, {
+    kanalAdi: "Hepsiburada",
+    channelId: "kanal-1",
+    kanalKargoFirmasi: "hepsiJET",
+    desi: 1,
+    soldAt: new Date("2026-09-10T00:00:00.000Z"),
+  });
+  kontrol(
+    "tarifenin GEÇERLİ OLDUĞU gün (effectiveFrom'un kendisi) dahildir (lte)",
+    partiGunu.tamam && Math.abs(partiGunu.tutar - 81.99) < 0.005,
+    partiGunu,
+  );
+}
+
 async function main() {
   try {
     const sonuc = await zatenGerceklesenTesti();
@@ -99,13 +183,16 @@ async function main() {
     kontrol("cargoAmount DOLUYSA hiçbir şey yapılmaz VE db'ye dokunulmaz", false, e);
   }
 
+  await tarifePartisiTestleri();
+
   console.log(
     "\n" + (hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ") + ` (${gecen}/${gecen + hata})`,
   );
   console.log(
-    "\n⚠ TARİFE SORGUSU (CargoTariff/CargoCarrier) VE `satisKarTazele` ZİNCİRİ" +
+    "\n⚠ FİRMA ADI ÇÖZÜMÜ (CargoCarrier eşleşmesi) VE `satisKarTazele` ZİNCİRİ" +
       " bu bekçide sınanmıyor — canlı veriyle, gerçek 17 TY + 3 HB siparişte" +
-      " sınandı (bkz. teslim raporu).\n",
+      " sınandı (bkz. teslim raporu). Tarife PARTİSİ SEÇİMİ (soldAt'a göre)" +
+      " artık yukarıda sahte istemciyle sınanıyor (K201-4).\n",
   );
   process.exit(hata === 0 ? 0 : 1);
 }

@@ -536,12 +536,15 @@ async function karHesabiniYaz(
     kargoTarifesi = kdvHaricKargo(girdi.cargoAmountManual);
   } else if (girdi.cargoCarrierId && girdi.cargoDesi != null) {
     const tamDesi = Math.max(0, Math.ceil(girdi.cargoDesi));
+    /** ⛔ K201-4 — `channelFee` ile AYNI desen: bkz. kar-yeniden.ts. */
     const tarife = await tx.cargoTariff.findFirst({
       where: {
         channelId: hesap.channelId,
         carrierId: girdi.cargoCarrierId,
         desi: tamDesi,
+        effectiveFrom: { lte: girdi.soldAt },
       },
+      orderBy: { effectiveFrom: "desc" },
       select: { amount: true },
     });
     if (tarife) kargoTarifesi = Number(tarife.amount.toString());

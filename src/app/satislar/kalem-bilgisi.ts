@@ -289,6 +289,13 @@ export type KargoSecenegi = {
 export async function kargoSecenekleriGetir(
   channelAccountId: string,
   desi: number,
+  /**
+   * ⚠ SATIŞ TARİHİ — `kalemBilgisiGetir`deki `satisTarihi` ile AYNI desen
+   * (K201-4, 17.09.2026). Tarife partileri EKLENEBİLİR (eski effectiveFrom
+   * SİLİNMEZ); birden fazla parti varken hangisinin geçerli olduğu SATIŞIN
+   * KENDİ GÜNÜNE göre çözülür, "en son yüklenene" göre değil.
+   */
+  satisTarihi?: Date,
 ): Promise<KargoSecenegi[]> {
   await yetkiIste("satis.yaz");
 
@@ -302,6 +309,7 @@ export async function kargoSecenekleriGetir(
 
   // Kargo firmaları desiyi YUKARI yuvarlar.
   const tamDesi = Math.max(0, Math.ceil(desi));
+  const tarih = satisTarihi ?? new Date();
 
   const [firmalar, tarifeler] = await Promise.all([
     prisma.cargoCarrier.findMany({
@@ -309,15 +317,30 @@ export async function kargoSecenekleriGetir(
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    /**
+     * ⛔ K201-4 — ÖNCEDEN `orderBy` YOKTU: iki (ya da daha fazla) parti aynı
+     * carrierId+desi için satır taşıdığında hangisinin "kazandığı" MySQL'in
+     * sırasız taramasına bırakılıyordu. ÖLÇÜLDÜ (17.09.2026): 30 desi
+     * değerinde 116/116 satırda bu yolun (Map, son-yazan-kazanır) SONUCU
+     * doğru çıktı ama bu GARANTİ DEĞİLDİ — sıralama artık açık: `effectiveFrom
+     * desc`, ve aşağıdaki döngü carrierId başına yalnız İLK (en güncel
+     * uygulanabilir) satırı alır.
+     */
     prisma.cargoTariff.findMany({
-      where: { channelId: hesap.channelId, desi: tamDesi },
+      where: { channelId: hesap.channelId, desi: tamDesi, effectiveFrom: { lte: tarih } },
+      orderBy: { effectiveFrom: "desc" },
       select: { carrierId: true, amount: true },
     }),
   ]);
 
-  const tarifeHaritasi = new Map(
-    tarifeler.map((t) => [t.carrierId, Number(t.amount.toString())]),
-  );
+  /** ⚠ carrierId başına İLK satır alınır — `orderBy: effectiveFrom desc`
+   *  sayesinde bu, o taşıyıcının o TARİHTE geçerli en güncel tarifesidir. */
+  const tarifeHaritasi = new Map<string, number>();
+  for (const t of tarifeler) {
+    if (!tarifeHaritasi.has(t.carrierId)) {
+      tarifeHaritasi.set(t.carrierId, Number(t.amount.toString()));
+    }
+  }
 
   const secenekler: KargoSecenegi[] = firmalar.map((f) => {
     const tarife = tarifeHaritasi.get(f.id) ?? null;

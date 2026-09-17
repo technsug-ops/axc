@@ -163,12 +163,29 @@ export async function karOnizle(
     // Elle girilen tutar KDV DAHİL; motor KDV hariç bekliyor.
     kargoTarifesi = kdvHaricKargo(girdi.cargoAmountManual);
   } else if (girdi.cargoCarrierId && girdi.cargoDesi != null) {
+    /**
+     * ⛔ K201-4 (17.09.2026) — `orderBy` YOKTU. Tarife partileri EKLENEBİLİR
+     * (eski effectiveFrom SİLİNMEZ, bkz. `canli-hb-kargo-tarifesi-yukle.ts`);
+     * 2026-09-10'da ikinci HB partisi eklenene kadar bu satırda TEK satır
+     * vardı ve `findFirst` "hangisi" sorusunu hiç sormadan doğru geliyordu.
+     * İkinci parti gelince MySQL'in sırasız taraması ESKİ (08-01) satırı
+     * döndürdü — ÖLÇÜLDÜ: 17.964 desi/taşıyıcı kombinasyonunun 116/116'sında
+     * (örneklenen) `findFirst` STALE tarifeyi verdi. Aynı dosyada iki satır
+     * yukarıda `channelFee` AYNI deseni zaten kullanıyordu
+     * (`validFrom: { lte: satis.soldAt }` + `orderBy: desc`) — kargo bunu
+     * miras almamıştı ("iki yerde iki ölçüt olmaz").
+     * ⚠ `satis.soldAt`, `now()` DEĞİL: bu TARİHÇE düzeltmesi/yeniden hesap —
+     * satışın KENDİ gününde geçerli olan tarife okunur, bugünün tarifesi
+     * değil (bkz. "iki tarih ilkesi" / additive tarih partileri).
+     */
     const tarife = await db.cargoTariff.findFirst({
       where: {
         channelId: satis.channelAccount.channelId,
         carrierId: girdi.cargoCarrierId,
         desi: Math.max(0, Math.ceil(girdi.cargoDesi)),
+        effectiveFrom: { lte: satis.soldAt },
       },
+      orderBy: { effectiveFrom: "desc" },
       select: { amount: true },
     });
     if (tarife) kargoTarifesi = Number(tarife.amount.toString());

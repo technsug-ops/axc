@@ -165,6 +165,7 @@ async function main() {
     select: {
       id: true,
       code: true,
+      soldAt: true,
       kanalKargoDesi: true,
       kanalKargoFirmasi: true,
       tahminiKargo: true,
@@ -184,6 +185,7 @@ async function main() {
         kanalKargoDesi: Number(s.kanalKargoDesi),
         cargoAmount: null,
         tahminiKargo: s.tahminiKargo === null ? null : Number(s.tahminiKargo.toString()),
+        soldAt: s.soldAt,
       },
       prisma,
     );

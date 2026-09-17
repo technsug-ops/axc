@@ -78,15 +78,30 @@ async function tarifeTablosundanTahmin(
   channelId: string,
   kanalKargoFirmasi: string | null,
   desi: number,
+  /** ⚠ K201-4 — hangi tarife partisi geçerli, satışın günüyle çözülür. */
+  soldAt: Date,
 ): Promise<TahminSonucu> {
   const carrierAdi = firmaEslemesi(kanalAdi, kanalKargoFirmasi);
   if (kanalKargoFirmasi === null) return { tamam: false, kod: "FIRMA_YOK" };
   if (carrierAdi === null) return { tamam: false, kod: "FIRMA_BILINMIYOR" };
   const carrier = await db.cargoCarrier.findFirst({ where: { name: carrierAdi }, select: { id: true } });
   if (!carrier) return { tamam: false, kod: "FIRMA_BILINMIYOR" };
-  /** ⚠ Tarife TAM desi adımında; kesirli desi YUKARI yuvarlanır (N11'le aynı kural). */
+  /**
+   * ⚠ Tarife TAM desi adımında; kesirli desi YUKARI yuvarlanır (N11'le aynı kural).
+   * ⛔ K201-4 (17.09.2026) — `orderBy` YOKTU; bkz. `kar-yeniden.ts`'teki aynı
+   * düzeltme. Burada da `soldAt` kullanılır, `now()` değil: gerçek desi
+   * genelde satıştan kısa süre sonra gelir ama tam tarife geçiş gününde
+   * (ör. 10 Eylül) hâlâ tahmin aşamasında kalmış ESKİ bir satışa yeni
+   * tarife sessizce uygulanmasın.
+   */
   const tarife = await db.cargoTariff.findFirst({
-    where: { channelId, carrierId: carrier.id, desi: Math.max(0, Math.ceil(desi - 0.0001)) },
+    where: {
+      channelId,
+      carrierId: carrier.id,
+      desi: Math.max(0, Math.ceil(desi - 0.0001)),
+      effectiveFrom: { lte: soldAt },
+    },
+    orderBy: { effectiveFrom: "desc" },
     select: { amount: true },
   });
   if (!tarife) return { tamam: false, kod: "TARIFE_YOK" };
@@ -101,11 +116,25 @@ async function tarifeTablosundanTahmin(
  */
 export async function kanalTahminiHesapla(
   db: Pick<typeof prisma, "cargoCarrier" | "cargoTariff">,
-  girdi: { kanalAdi: string; channelId: string; kanalKargoFirmasi: string | null; desi: number },
+  girdi: {
+    kanalAdi: string;
+    channelId: string;
+    kanalKargoFirmasi: string | null;
+    desi: number;
+    /** ⚠ K201-4 — tarife partisi seçimi bu tarihe göre çözülür. */
+    soldAt: Date;
+  },
 ): Promise<TahminSonucu> {
   if (girdi.desi <= 0 || !Number.isFinite(girdi.desi)) return { tamam: false, kod: "DESI_YOK" };
   if (girdi.kanalAdi === "Trendyol" || girdi.kanalAdi === "Hepsiburada") {
-    return tarifeTablosundanTahmin(db, girdi.kanalAdi, girdi.channelId, girdi.kanalKargoFirmasi, girdi.desi);
+    return tarifeTablosundanTahmin(
+      db,
+      girdi.kanalAdi,
+      girdi.channelId,
+      girdi.kanalKargoFirmasi,
+      girdi.desi,
+      girdi.soldAt,
+    );
   }
   if (girdi.kanalAdi === "N11") {
     /**
@@ -131,6 +160,13 @@ export type TazeleGirdisi = {
   kanalKargoDesi: number;
   cargoAmount: number | null;
   tahminiKargo: number | null;
+  /**
+   * ⚠ K201-4 (17.09.2026) — tarife partisi SATIŞIN GÜNÜNE göre seçilir,
+   * tartımın geldiği ANA göre değil: gerçek desi genelde satıştan kısa
+   * süre sonra gelir ama tarife geçiş gününde (ör. 10 Eylül) hâlâ tahmin
+   * aşamasında kalmış eski bir satışa yeni tarife sessizce uygulanmasın.
+   */
+  soldAt: Date;
 };
 
 export type TazeleSonucu =
@@ -155,6 +191,7 @@ export async function kargoTartimGeldiTazele(
     channelId: girdi.channelId,
     kanalKargoFirmasi: girdi.kanalKargoFirmasi,
     desi: girdi.kanalKargoDesi,
+    soldAt: girdi.soldAt,
   });
   if (!hesap.tamam) return { yapildi: false, neden: hesap.kod };
 

@@ -793,7 +793,7 @@ export async function hbCekimKos(ayar: {
         cargoAmount: null,
         kanalKargoDesi: { not: null },
       },
-      select: { id: true, kanalKargoDesi: true, kanalKargoFirmasi: true, tahminiKargo: true },
+      select: { id: true, soldAt: true, kanalKargoDesi: true, kanalKargoFirmasi: true, tahminiKargo: true },
     });
     for (const s of tazelenecekler) {
       if (s.kanalKargoDesi === null) continue;
@@ -806,6 +806,7 @@ export async function hbCekimKos(ayar: {
           kanalKargoDesi: Number(s.kanalKargoDesi.toString()),
           cargoAmount: null,
           tahminiKargo: s.tahminiKargo === null ? null : Number(s.tahminiKargo.toString()),
+          soldAt: s.soldAt,
         },
         /** ⛔ BETİĞİN KENDİ CANLI İSTEMCİSİ — bkz. TY betiğindeki aynı not. */
         prisma,

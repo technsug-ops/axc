@@ -377,7 +377,11 @@ export function SatisFormu({
     desiElle ?? (hesaplananDesi > 0 ? String(hesaplananDesi) : "");
   const desiSayi = Number(desiMetni.replace(",", ".")) || 0;
 
-  // Desi veya kanal hesabı değişince kargo fiyatları yeniden okunur.
+  /**
+   * Desi, kanal hesabı VEYA satış tarihi değişince kargo fiyatları yeniden
+   * okunur — tarih de bağımlılıkta: farklı bir güne geçmek farklı bir tarife
+   * partisine düşebilir (K201-4, 17.09.2026).
+   */
   useEffect(() => {
     let iptal = false;
 
@@ -389,7 +393,11 @@ export function SatisFormu({
         return;
       }
       try {
-        const liste = await kargoSecenekleriGetir(channelAccountId, desiSayi);
+        const liste = await kargoSecenekleriGetir(
+          channelAccountId,
+          desiSayi,
+          soldAt ? new Date(soldAt) : undefined,
+        );
         if (!iptal) setKargoSecenekleri(liste);
       } catch {
         if (!iptal) setKargoSecenekleri([]);
@@ -399,7 +407,7 @@ export function SatisFormu({
       iptal = true;
       clearTimeout(zamanlayici);
     };
-  }, [channelAccountId, desiSayi]);
+  }, [channelAccountId, desiSayi, soldAt]);
 
   /**
    * ⚠ ONAY BEKLEYEN ŞÜPHELİ ORAN — kayıt İLERLEMEZ.

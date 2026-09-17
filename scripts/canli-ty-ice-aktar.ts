@@ -516,6 +516,7 @@ export async function tyCekimKos(ayar: {
     select: {
       id: true,
       code: true,
+      soldAt: true,
       deliveredAt: true,
       kargoTakipBaglantisi: true,
       kanalKargoFirmasi: true,
@@ -565,6 +566,7 @@ export async function tyCekimKos(ayar: {
           kanalKargoDesi: veri.kanalKargoDesi,
           cargoAmount: s.cargoAmount === null ? null : Number(s.cargoAmount.toString()),
           tahminiKargo: s.tahminiKargo === null ? null : Number(s.tahminiKargo.toString()),
+          soldAt: s.soldAt,
         },
         /**
          * ⛔ BU BETİĞİN KENDİ CANLI İSTEMCİSİ AÇIKÇA GEÇİLİR — varsayılan
