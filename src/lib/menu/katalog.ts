@@ -71,6 +71,7 @@ export const MENU_ADRESLERI: Record<string, string> = {
   geriYukleme: "/ayarlar/geri-yukleme",
   gecmisEkstre: "/ayarlar/gecmis-ekstre",
   tarife: "/ayarlar/tarife",
+  hbKargoTarife: "/ayarlar/hb-kargo-tarife",
 };
 
 /**
@@ -161,6 +162,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "geriYukleme", varsayilanGrup: "grupVeri" },
   { anahtar: "gecmisEkstre", varsayilanGrup: "grupVeri" },
   { anahtar: "tarife", varsayilanGrup: "grupVeri" },
+  { anahtar: "hbKargoTarife", varsayilanGrup: "grupVeri" },
 
   // ── AYARLAR — sistemin kendisi ──────────────────────────────────────────
   { anahtar: "kullanicilar", varsayilanGrup: "grupAyarlar" },

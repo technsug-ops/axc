@@ -63,6 +63,7 @@ export const BOLUMLER = [
   { kimlik: "toplu", ad: "Toplu veri aktarımı" },
   { kimlik: "gecmisEkstre", ad: "Ayarlar — Geçmiş ekstreler" },
   { kimlik: "tarife", ad: "Ayarlar — Komisyon tarifesi" },
+  { kimlik: "hbKargoTarife", ad: "Ayarlar — Hepsiburada kargo tarifesi" },
   { kimlik: "yedek", ad: "Yedek" },
   { kimlik: "sorun", ad: "Bir şey ters giderse" },
   { kimlik: "sozluk", ad: "Sözlük" },
@@ -142,6 +143,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   talepler: "talep",
   gecmisEkstre: "gecmisEkstre",
   tarife: "tarife",
+  hbKargoTarife: "hbKargoTarife",
   /** Kitabın KENDİSİ — kendi kendini anlatan bölüm açmak tekrar olurdu. */
   elKitabi: null,
 };
@@ -1789,6 +1791,36 @@ ${sikHata([
     cozum: "Pencere 07:59'da bitip 08:00'de başlar. 18 ile 21 bitişik GÖRÜNÜR ama arada 72 saat vardır; saati okuyun.",
   },
 ])}
+</section>
+
+<section id="hbKargoTarife">
+${baslik("hbKargoTarife")}
+<p><strong>Ayarlar → Hepsiburada Kargo Tarifesi.</strong> Hepsiburada'nın
+desiye göre değişen resmi kargo ücret tablosunu (PDF) yükler. Satış
+formundaki kargo firması önerileri ve kâr hesabındaki kargo tutarı buradan
+okunur.</p>
+${neZaman(
+  "Hepsiburada satıcı panelinden yeni bir kargo tarifesi PDF'i indiğinde — komisyon tarifesi gibi haftalık DEĞİL, yalnız fiyat değişikliği olduğunda yayımlanır.",
+)}
+<div class="ek-not"><div class="etiket">Önce Önizle, sonra Kaydet</div>
+<p>PDF'i seçip <strong>Önizle</strong>'ye bastığınızda sistem dosyayı okur,
+taşıyıcı fiyatlarını mevcut tarifeyle karşılaştırır ve <strong>aynı kalan ·
+değişen · yeni</strong> sayısını gösterir. Rakamlar beklediğiniz gibiyse
+<strong>Tarifeyi Kaydet</strong>.</p></div>
+<div class="ek-not dikkat"><div class="etiket">Eski tarife SİLİNMEZ</div>
+<p>Yeni tarife <strong>eklenir</strong>, üstüne yazılmaz. Geçmişte yapılmış
+satışların kargo maliyeti kendi satış gününde geçerli olan tarifeden
+hesaplanmaya devam eder — yeni bir tarife yüklemek geçmiş satışların
+rakamlarını değiştirmez.</p></div>
+<div class="ek-not"><div class="etiket">Aynı tarihi ikinci kez yüklerseniz</div>
+<p>Sistem önce "bu tarih için zaten kayıt var" der. Yüklediğiniz dosyadaki
+değerler kayıtlıyla birebir aynıysa yazacak bir şey olmadığını söyler;
+farklıysa açıkça onay ister ve onaylarsanız o tarihin eski değerleri
+silinip yenisiyle değiştirilir.</p></div>
+<p>PDF beklenen düzende değilse (taşıyıcı sütunu bulunamadı, geçerlilik
+tarihi okunamadı, desi sırası bozuk) sistem <strong>hiçbir şey yazmadan</strong>
+size Türkçe bir hata gösterir — eksik ya da şüpheli bir rakam asla
+uydurulmaz.</p>
 </section>
 
 <section id="yedek">

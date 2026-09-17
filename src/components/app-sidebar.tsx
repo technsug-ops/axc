@@ -30,6 +30,7 @@ import {
   Undo2,
   Percent,
   Receipt,
+  Route,
   ScanBarcode,
   Inbox,
   PackageCheck,
@@ -146,6 +147,8 @@ const MENU_IKONLARI: Record<string, typeof Package> = {
   geriYukleme: DatabaseBackup,
   gecmisEkstre: FileSpreadsheet,
   tarife: Percent,
+  /** Kargo TARİFESİ — `tedarikciler`in Truck'ıyla çakışmasın diye ayrı ikon. */
+  hbKargoTarife: Route,
 };
 
 /** Anahtardan çizilebilir öğe kurar. Adres ve ikon TEK kaynaktan. */
