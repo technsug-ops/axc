@@ -529,12 +529,25 @@ async function karHesabiniYaz(
   // Panel gerçeği tarifeden sapabilir (anlaşmalı fiyat, ek bedel...).
   let kargoTarifesi: number | null = null;
   let kargoTarifesiBulunamadi = false;
+  /**
+   * ⛔ K202-2 (18.09.2026) — bu dal (taze tarife hesabı) çalıştıysa sonuç
+   * HER ZAMAN tahmindir, `cargoAmount`a (GERÇEKLEŞEN) YAZILMAZ; yalnız NET
+   * hesabı için kullanılır. `kar-yeniden.ts`teki `CargoTahminMi` deseniyle
+   * AYNI: `satisKaydet` `karYenidenYaz`i ÇAĞIRMAZ, kendi `karHesapla`
+   * çağrısını yapar — ama aynı ayrım burada da geçerli, o yüzden aynı
+   * korumayı kendi başına taşımak zorunda. Eskiden korumasızdı: elden
+   * satışta kargo firması+desi seçilip tutar BOŞ bırakılınca taze tarife
+   * hesabı doğrudan "gerçekleşen" diye yazılıyordu (K202-2'nin diğer beş
+   * çağıranında yakalanan TAM AYNI hata sınıfı).
+   */
+  let cargoTahminMi = false;
   // `!= null` bilerek: undefined de null gibi ele alınır. Aksi hâlde eksik
   // alan NaN üretip Decimal yazımını patlatıyordu (fifo:dogrula yakaladı).
   if (girdi.cargoAmountManual != null) {
     // Elle girilen tutar KDV DAHİL; motor KDV hariç bekliyor.
     kargoTarifesi = kdvHaricKargo(girdi.cargoAmountManual);
   } else if (girdi.cargoCarrierId && girdi.cargoDesi != null) {
+    cargoTahminMi = true;
     const tamDesi = Math.max(0, Math.ceil(girdi.cargoDesi));
     /** ⛔ K201-4 — `channelFee` ile AYNI desen: bkz. kar-yeniden.ts. */
     const tarife = await tx.cargoTariff.findFirst({
@@ -587,6 +600,14 @@ async function karHesabiniYaz(
 
   const paraBirimi = girdi.kalemler[0]?.unitPriceCurrency ?? "TRY";
 
+  /**
+   * ⛔ K202-2 — TAHMİNİ KAYNAKLIYSA `cargoAmount`A YAZILMAZ. NET hesabı
+   * (`karHesapla` çağrısı, yukarıda) `kargoTarifesi`yi zaten kullandı; burada
+   * yalnız SNAPSHOT engelleniyor — `kar-yeniden.ts`teki `cargoAmountYazilacak`
+   * ile BİREBİR aynı desen.
+   */
+  const cargoAmountYazilacak = cargoTahminMi ? null : kargoTarifesi;
+
   // --- satış seviyesi snapshot ---
   await tx.sale.update({
     where: { id: saleId },
@@ -594,8 +615,8 @@ async function karHesabiniYaz(
       cargoCarrierId: girdi.cargoCarrierId,
       cargoDesi: girdi.cargoDesi === null ? null : String(girdi.cargoDesi),
       paketSayisi: Math.max(1, Math.trunc(girdi.paketSayisi ?? 1)),
-      cargoAmount: kargoTarifesi === null ? null : String(kargoTarifesi),
-      cargoCurrency: kargoTarifesi === null ? null : "TRY",
+      cargoAmount: cargoAmountYazilacak === null ? null : String(cargoAmountYazilacak),
+      cargoCurrency: cargoAmountYazilacak === null ? null : "TRY",
       net1Amount: String(sonuc.net1),
       net2Amount: String(sonuc.net2),
       profitCurrency: paraBirimi,

@@ -1043,6 +1043,40 @@ console.log("=".repeat(70));
   }
 }
 
+/**
+ * ============================================================================
+ *  satisKaydet (ELDEN SATIŞ) — AYNI TAHMİN KORUMASI BURADA DA (K202-2)
+ * ----------------------------------------------------------------------------
+ *  ⛔ `satisKaydet` `karYenidenYaz`i ÇAĞIRMAZ — kendi `karHesapla` çağrısını
+ *  yapar ve `cargoAmount`ı KENDİSİ yazar. K202-2'nin beş çağıranı düzeltilip
+ *  bu altıncı yol (manuel/"elden satış" giriş formu) unutulsaydı, TAM AYNI
+ *  hata sınıfı burada YAŞAMAYA devam ederdi: kargo firması+desi seçilip
+ *  tutar BOŞ bırakılınca taze tarife hesabı "gerçekleşen" diye yazılırdı.
+ */
+{
+  console.log("satisKaydet — TAHMİNİ KARGO cargoAmount'A YAZILMAZ (K202-2)");
+  const y = readFileSync("src/lib/satis.ts", "utf8");
+  const basi = y.indexOf("// --- kargo: ELLE GİRİLEN TUTAR TARİFEYİ EZER ---");
+  const sonu = y.indexOf("// --- kalem maliyetleri FIFO dağıtımından ---", basi);
+  const blok = basi >= 0 && sonu > basi ? y.slice(basi, sonu) : "";
+  kontrol("kargo bloğu bulundu (taban DOLU)", blok.length > 100, blok.length);
+  kontrol(
+    "taze tarife dalı cargoTahminMi=true İŞARETLİYOR",
+    /\} else if \(girdi\.cargoCarrierId && girdi\.cargoDesi != null\) \{\s*\n\s*cargoTahminMi = true;/.test(
+      blok,
+    ),
+  );
+  const yaziBasi = y.indexOf("const cargoAmountYazilacak = cargoTahminMi ? null : kargoTarifesi;");
+  kontrol("yazım kapısı cargoTahminMi'ye bağlı", yaziBasi >= 0);
+  const yaziBlok = yaziBasi >= 0 ? y.slice(yaziBasi, yaziBasi + 600) : "";
+  kontrol(
+    "cargoAmount BU türetilmiş değeri kullanıyor (ham kargoTarifesi DEĞİL)",
+    /cargoAmount: cargoAmountYazilacak === null \? null : String\(cargoAmountYazilacak\)/.test(
+      yaziBlok,
+    ),
+  );
+}
+
 console.log(
   basarisiz === 0
     ? `TÜM KONTROLLER GEÇTİ (${calisan})`
