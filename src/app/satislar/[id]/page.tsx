@@ -560,11 +560,17 @@ export default async function SatisDetaySayfasi({
               })}
               kargoFirmalari={kargoFirmalari}
               cargoCarrierId={satis.cargoCarrierId}
-              cargoDesi={
-                satis.cargoDesi
-                  ? String(Number(satis.cargoDesi.toString()))
-                  : ""
-              }
+              /**
+               * ⛔ K202-2 (18.09.2026) — `satis.cargoDesi` (ÜRÜN TAHMİNİ) DEĞİL,
+               * `desiGosterim` (TARTIM öncelikli, aynı `desiSecimi` gövdesi
+               * yukarıdaki salt-okunur satırla PAYLAŞILIYOR). Canlı vaka
+               * (sipariş 4633427855): kanal gerçek desiyi (3) çoktan
+               * bildirmişken bu form hâlâ ürün tahminini (2) dolduruyordu;
+               * kullanıcı formu değiştirmeden onayladığında YANLIŞ desiyle
+               * yeniden hesaplandı. KÜRESEL basamak burada da GÖSTERİLMEZ
+               * (İlke #11 — bilinmeyen bir değer dolu görünmez).
+               */
+              cargoDesi={desiGosterim.kaynak === "KURESEL" ? "" : String(desiGosterim.desi)}
               cargoAmount={
                 satis.cargoAmount
                   ? String(

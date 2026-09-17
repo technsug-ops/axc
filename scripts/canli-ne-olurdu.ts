@@ -20,7 +20,7 @@ async function main() {
   if (!y.tamam) { console.log("yapılandırma yok"); process.exitCode = 1; return; }
   process.env.DATABASE_URL = betikAdresi(y.veri.ham);
   const { prisma } = await import("../src/lib/prisma");
-  const { karOnizle } = await import("../src/lib/kar-yeniden");
+  const { gercekCargoTutari, karOnizle } = await import("../src/lib/kar-yeniden");
 
   const satis = await prisma.sale.findFirst({
     where: { code: KOD },
@@ -43,7 +43,7 @@ async function main() {
     })),
     cargoCarrierId: satis.cargoCarrierId,
     cargoDesi: satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
-    cargoAmountManual: null,
+    cargoTutari: { tur: "YOK" as const },
   };
 
   // ── ① GİRDİ DOĞRULAMASI: motor, defterdeki damgayı üretiyor mu? ────────

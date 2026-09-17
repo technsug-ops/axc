@@ -73,7 +73,7 @@ async function main() {
   process.env.DATABASE_URL = betikAdresi(y.veri.ham);
   const { prisma } = await import("../src/lib/prisma");
   const { acikPartiler } = await import("../src/lib/stok");
-  const { karYenidenYaz } = await import("../src/lib/kar-yeniden");
+  const { gercekCargoTutari, karYenidenYaz } = await import("../src/lib/kar-yeniden");
 
   console.log("");
   console.log("DEFTER ONARIMI — vaka bazlı");
@@ -349,9 +349,9 @@ async function main() {
         cargoCarrierId: satis.cargoCarrierId,
         cargoDesi:
           satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
-        cargoAmountManual: kdvDahilKargo(
+        cargoTutari: gercekCargoTutari(kdvDahilKargo(
           satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
-        ),
+        )),
       });
       const yeni = await prisma.sale.findUnique({
         where: { id: satis.id },

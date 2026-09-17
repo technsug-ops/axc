@@ -48,7 +48,7 @@ async function main() {
   }
   process.env.DATABASE_URL = betikAdresi(y.veri.ham);
   const { prisma } = await import("../src/lib/prisma");
-  const { karOnizle } = await import("../src/lib/kar-yeniden");
+  const { gercekCargoTutari, karOnizle } = await import("../src/lib/kar-yeniden");
 
   console.log("");
   console.log("KAPSAM DOĞRULAMASI — NET-2 kuruşuna aynı mı?");
@@ -94,9 +94,9 @@ async function main() {
       })),
       cargoCarrierId: s.cargoCarrierId,
       cargoDesi: s.cargoDesi === null ? null : Number(s.cargoDesi.toString()),
-      cargoAmountManual: kdvDahilKargo(
+      cargoTutari: gercekCargoTutari(kdvDahilKargo(
         s.cargoAmount === null ? null : Number(s.cargoAmount.toString()),
-      ),
+      )),
     });
 
     if (s.paketSayisi > 1) cokPaket++;

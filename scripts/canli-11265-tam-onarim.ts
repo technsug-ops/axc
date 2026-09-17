@@ -558,7 +558,7 @@ async function main() {
   );
 
   /** ── E) KÂR TAZELE ────────────────────────────────────────────────── */
-  const { karYenidenYaz } = await import("../src/lib/kar-yeniden");
+  const { gercekCargoTutari, karYenidenYaz } = await import("../src/lib/kar-yeniden");
   const { kdvDahilKargo } = await import("../src/lib/kargo-kdv");
   for (const kod of etkilenen) {
     /**
@@ -588,9 +588,9 @@ async function main() {
         })),
         cargoCarrierId: s.cargoCarrierId,
         cargoDesi: s.cargoDesi === null ? null : Number(s.cargoDesi.toString()),
-        cargoAmountManual: kdvDahilKargo(
+        cargoTutari: gercekCargoTutari(kdvDahilKargo(
           s.cargoAmount === null ? null : Number(s.cargoAmount.toString()),
-        ),
+        )),
       });
       console.log(`   ${oldu ? "✓" : "⛔"} E: kâr tazelendi ${kod}`);
     } catch (e) {

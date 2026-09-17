@@ -5,7 +5,7 @@ import { yetkiIste } from "@/lib/yetki";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
-import { karYenidenYaz } from "@/lib/kar-yeniden";
+import { gercekCargoTutari, karYenidenYaz } from "@/lib/kar-yeniden";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
 
@@ -131,9 +131,12 @@ export async function satisHesabiDegistir(
     cargoCarrierId: satis.cargoCarrierId,
     cargoDesi:
       satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
-    /** DB KDV hariç saklar; motor KDV dahil bekler (`lib/kargo-kdv.ts`). */
-    cargoAmountManual: kdvDahilKargo(
-      satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
+    /** DB KDV hariç saklar; motor KDV dahil bekler (`lib/kargo-kdv.ts`).
+     *  Var olan `cargoAmount` zaten "gerçekleşen"di — GERÇEK olarak taşınır. */
+    cargoTutari: gercekCargoTutari(
+      kdvDahilKargo(
+        satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
+      ),
     ),
   });
 

@@ -3,7 +3,7 @@ import { acikCikislar } from "@/lib/kalem-maliyeti";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { adetPlani } from "@/lib/satis-adet";
 import { acikPartilerToplu, gunSonu } from "@/lib/stok";
-import { karYenidenYaz } from "@/lib/kar-yeniden";
+import { gercekCargoTutari, karYenidenYaz } from "@/lib/kar-yeniden";
 import { prisma } from "@/lib/prisma";
 import { izYaz } from "@/lib/iz";
 import {
@@ -438,7 +438,8 @@ export async function duzenlemeUygula(girdi: {
     })),
     cargoCarrierId: girdi.yeni.kargoFirmaId,
     cargoDesi: girdi.yeni.kargoDesi,
-    cargoAmountManual: girdi.yeni.kargoTutar,
+    /** Formda elle girildiyse GERÇEK; boşsa YOK (tarifeden tahmine düşer). */
+    cargoTutari: gercekCargoTutari(girdi.yeni.kargoTutar),
   });
 
   const sonra = await prisma.sale.findUnique({

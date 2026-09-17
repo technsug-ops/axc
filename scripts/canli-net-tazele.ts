@@ -68,7 +68,7 @@ async function main() {
   }
   process.env.DATABASE_URL = betikAdresi(y.veri.ham);
   const { prisma } = await import("../src/lib/prisma");
-  const { karYenidenYaz, karOnizle } = await import("../src/lib/kar-yeniden");
+  const { gercekCargoTutari, karYenidenYaz, karOnizle } = await import("../src/lib/kar-yeniden");
   const { kdvDahilKargo } = await import("../src/lib/kargo-kdv");
 
   console.log("=".repeat(92));
@@ -166,9 +166,9 @@ async function main() {
       cargoCarrierId: s.cargoCarrierId,
       cargoDesi: s.cargoDesi === null ? null : Number(s.cargoDesi.toString()),
       /** ⚠ Defter KDV HARİÇ saklar; motor DAHİL bekler. */
-      cargoAmountManual: kdvDahilKargo(
+      cargoTutari: gercekCargoTutari(kdvDahilKargo(
         s.cargoAmount === null ? null : Number(s.cargoAmount.toString()),
-      ),
+      )),
     };
     const on = await karOnizle(girdi);
     if (on === null) {
@@ -274,9 +274,9 @@ async function main() {
         })),
         cargoCarrierId: s.cargoCarrierId,
         cargoDesi: s.cargoDesi === null ? null : Number(s.cargoDesi.toString()),
-        cargoAmountManual: kdvDahilKargo(
+        cargoTutari: gercekCargoTutari(kdvDahilKargo(
           s.cargoAmount === null ? null : Number(s.cargoAmount.toString()),
-        ),
+        )),
       });
       if (ok) yazilan += 1;
       else hatalar.push(`${s.code} — karYenidenYaz false döndü`);

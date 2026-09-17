@@ -164,7 +164,7 @@ async function main() {
   }
   process.env.DATABASE_URL = betikAdresi(y.veri.ham);
   const { prisma } = await import("../src/lib/prisma");
-  const { karOnizle } = await import("../src/lib/kar-yeniden");
+  const { gercekCargoTutari, karOnizle } = await import("../src/lib/kar-yeniden");
 
   const rapor = await raporuOku(yol);
 
@@ -319,11 +319,11 @@ async function main() {
         cargoCarrierId: k.sale.cargoCarrierId,
         cargoDesi:
           k.sale.cargoDesi === null ? null : Number(k.sale.cargoDesi.toString()),
-        cargoAmountManual: kdvDahilKargo(
+        cargoTutari: gercekCargoTutari(kdvDahilKargo(
           k.sale.cargoAmount === null
             ? null
             : Number(k.sale.cargoAmount.toString()),
-        ),
+        )),
       });
 
       const eski = yeni?.onceki.net2 ?? null;

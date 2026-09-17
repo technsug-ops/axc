@@ -80,7 +80,7 @@ async function main() {
    */
   process.env.DATABASE_URL = betikAdresi(c.veri.ham);
   const { prisma: p } = await import("../src/lib/prisma");
-  const { karYenidenYaz } = await import("../src/lib/kar-yeniden");
+  const { gercekCargoTutari, karYenidenYaz } = await import("../src/lib/kar-yeniden");
   const { kdvDahilKargo } = await import("../src/lib/kargo-kdv");
 
   const s = (await readXlsxFile(paketiNormalle(readFileSync(SATIS_DOSYA)).bayt))
@@ -331,9 +331,9 @@ async function main() {
         cargoCarrierId: satis.cargoCarrierId,
         cargoDesi: satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
         /** DB KDV hariç saklar; motor KDV dahil bekler (`lib/kargo-kdv.ts`). */
-        cargoAmountManual: kdvDahilKargo(
+        cargoTutari: gercekCargoTutari(kdvDahilKargo(
           satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
-        ),
+        )),
       });
       if (ok) basarili++;
       else { basarisiz++; if (hatalar.length < 8) hatalar.push((satis.code ?? saleId) + " — önizleme null (maliyet yok?)"); }

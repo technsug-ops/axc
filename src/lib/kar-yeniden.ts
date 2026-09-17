@@ -4,7 +4,7 @@ import {
   siparisKesintiKurallari,
 } from "@/lib/siparis-kesintileri";
 import { kalemMaliyeti } from "@/lib/kalem-maliyeti";
-import { kargoSecimi } from "@/lib/kargo-kaynagi";
+import { desiSecimi, kargoSecimi } from "@/lib/kargo-kaynagi";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { karHesapla, type KarGirdisi, type KarSonucu,
   type KarDurumu,
@@ -41,6 +41,46 @@ type KarIstemcisi = typeof prisma;
  * ============================================================================
  */
 
+/**
+ * ============================================================================
+ *  KARGO TUTARININ KAYNAĞI — TİPİN KENDİSİ ZORUNLU KILAR (K202-2, 18.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ ESKİ TASARIM: `cargoAmountManual: number | null` + AYRI, OPSİYONEL bir
+ *  `cargoAmountTahminiMi?: boolean` bayrağı. Beş doğrudan çağırandan yalnız
+ *  BİRİ (`satisKarTazele`) bu bayrağı doğru geçiyordu; diğer dördü
+ *  (`hesap-actions.ts` · `satis-duzenleme-veri.ts` · `iptal-geri-alma-
+ *  veri.ts` · kullanıcının "Yeniden Hesapla" ekranı) HİÇ geçmiyordu —
+ *  TypeScript bunu YAKALAMADI çünkü alan opsiyoneldi, derlenirdi.
+ *
+ *  ⚠ CANLI VAKA (17.09.2026, sipariş 4633427855): kullanıcı "Yeniden
+ *  Hesapla" ekranında kargo tutarını BOŞ bıraktı (yalnız firma/desi girdi).
+ *  Sistem `cargoDesi=2` (ÜRÜN TAHMİNİ — kanalın gerçek tartımı
+ *  `kanalKargoDesi=3` DEĞİL) ile taze bir tarife hesapladı ve unutulan
+ *  bayrak yüzünden bunu "gerçekleşen" diye `cargoAmount`a yazdı.
+ *
+ *  ⭐ YENİ TASARIM: tek bir alan, ÜÇ DURUMLU BİRLEŞİK TİP. "Bu tutar nereden
+ *  geliyor" sorusunun cevabı olmadan tutar VERİLEMEZ — TypeScript her
+ *  çağıranı bu seçimi yapmaya ZORLAR, unutmak DERLEME HATASI olur.
+ */
+export type CargoTutariBilgisi =
+  | { tur: "YOK" }
+  /** İnsan açıkça yazdı ya da kanal/mutabakat bunu doğruladı — cargoAmount'a YAZILIR. */
+  | { tur: "GERCEK"; tutarKdvDahil: number }
+  /** Önceden hesaplanmış bir tahmin (ör. `kargoSecimi()` sonucu) — NET'te
+   *  KULLANILIR ama cargoAmount'a YAZILMAZ. */
+  | { tur: "TAHMIN"; tutarKdvDahil: number };
+
+/**
+ * Eski `cargoAmountManual: number | null` şeklini yeni birleşik tipe çevirir.
+ * ⚠ YALNIZ "GERÇEK" SINIFI İÇİN — bu betikler/ekranlar elle düzenleme ya da
+ * mutabakat kaynağından geliyordu (K202-2 öncesi tasarımın "(a) sınıfı").
+ * Yeni kod bu yardımcıyı ÇAĞIRMAZ; `cargoTutari`yi doğrudan, kendi
+ * kaynağına göre (GERÇEK/TAHMIN/YOK) kurar.
+ */
+export function gercekCargoTutari(tutarKdvDahil: number | null): CargoTutariBilgisi {
+  return tutarKdvDahil === null ? { tur: "YOK" } : { tur: "GERCEK", tutarKdvDahil };
+}
+
 export type YenidenHesaplaGirdisi = {
   saleId: string;
   /** Kalem kimliği -> düzeltilmiş komisyon. */
@@ -51,39 +91,38 @@ export type YenidenHesaplaGirdisi = {
   }[];
   cargoCarrierId: string | null;
   cargoDesi: number | null;
-  /**
-   * Elle girilen kargo tutarı — KDV DAHİL. Doluysa tarife kullanılmaz
-   * (komisyondaki oran/tutar ikilisinin aynısı: panel gerçeği kazanır).
-   */
-  cargoAmountManual: number | null;
-  /**
-   * ⛔ `cargoAmountManual` TAHMİNİ BİR KAYNAKTAN GELİYORSA `true` (K197-4/
-   * K201 ihlali, 15.09.2026'da canlıda YAKALANDI). `cargoAmountManual` iki
-   * ayrı şeyi taşıyabiliyordu ve ikisi karıştırılıyordu:
-   *   (a) GERÇEK bir override — kullanıcının ekrana girdiği ya da bir
-   *       mutabakat betiğinin faturadan okuduğu tutar → `cargoAmount`a
-   *       SNAPSHOT'LANMASI DOĞRU (bu, alanın var oluş amacı).
-   *   (b) `satisKarTazele`nin ürettiği, `kargoSecimi()` üzerinden gelen ve
-   *       kaynağı yalnızca TAHMİNİ (`tahminiKargo`) olan bir değer → NET
-   *       hesabı için KULLANILIR ama `cargoAmount`a YAZILMAMALIDIR — yazılırsa
-   *       bir tahmin "kanalın gerçekleşen kesintisi" gibi görünür ve o
-   *       satışa bir daha hiç gerçek kargo tutarı yazılamaz hâle gelir
-   *       (K197-4'ün "tahmin cargoAmount'ı hiçbir şekilde etkilemez" sözü
-   *       tam burada bozulmuş olurdu).
-   * ⚠ CANLI VAKA: `kargoTartimGeldiTazele` → `satisKarTazele` çağrısı bu
-   * bayrak eklenmeden ÖNCE 19 siparişte `cargoAmount`ı tahminle doldurdu;
-   * `canli-kargo-tartim-tazele-uygula.ts` ile geri alındı.
-   * Varsayılan `false`/`undefined` — mevcut TÜM doğrudan `karYenidenYaz`
-   * çağıranlar (elle düzenleme, mutabakat betikleri) (a) sınıfındadır ve
-   * davranışları DEĞİŞMEDİ; yalnız `satisKarTazele` bunu `true` geçer.
-   */
-  cargoAmountTahminiMi?: boolean;
+  /** `tur: "YOK"` ise VE `cargoCarrierId`+`cargoDesi` doluysa, taze bir
+   *  tarife hesabı yapılır — bu HER ZAMAN tahmindir (bkz. `cargoTahminMi`). */
+  cargoTutari: CargoTutariBilgisi;
 };
 
 export type YenidenHesaplaSonucu = {
   onceki: { net1: number | null; net2: number | null; durum: string | null };
   yeni: KarSonucu;
   paraBirimi: Currency;
+  /**
+   * ⛔ K202-2 (18.09.2026) — ARTIK ÇAĞIRANDAN GELMİYOR, BURADA ÇÖZÜLÜYOR.
+   * Eskiden `girdi.cargoAmountTahminiMi` diye ÇAĞIRANIN geçmesi gereken bir
+   * bayraktı ve yalnız `satisKarTazele` bunu doğru geçiyordu — `hesap-
+   * actions.ts`, `satis-duzenleme-veri.ts`, `iptal-geri-alma-veri.ts` ve
+   * `yeniden-hesapla-actions.ts` (kullanıcının "Yeniden Hesapla" ekranı)
+   * HİÇ geçmiyordu, yani varsayılan `undefined` → `false` davranıyor ve
+   * TARİFE TABANLI TAHMİN sessizce "gerçekleşen" diye `cargoAmount`a
+   * yazılıyordu.
+   * ⚠ CANLI VAKA (17.09.2026, sipariş 4633427855): kullanıcı "Yeniden
+   * Hesapla" ekranında kargo tutarını BOŞ bıraktı (yalnız firma/desi
+   * girdi); sistem `cargoDesi=2` (ÜRÜN TAHMİNİ, kanalın gerçek tartımı
+   * `kanalKargoDesi=3` DEĞİL) ile taze bir tarife hesapladı ve bunu
+   * "gerçekleşen" diye yazdı — hem YANLIŞ DESİ hem (o an düzeltilmemiş
+   * sıralama hatası yüzünden) ESKİ TARİFE aynı anda karıştı.
+   * ⭐ DÜZELTME: bayrak artık ÇAĞIRANDAN ALINMIYOR — `karOnizle`nin KENDİSİ,
+   * hangi DALIN çalıştığına bakarak hesaplıyor: `cargoAmountManual` doluysa
+   * (insan açıkça bir tutar yazdı) FALSE; taze tarife hesabı çalıştıysa
+   * (`cargoCarrierId`+`cargoDesi` ile) HER ZAMAN TRUE — hangi ekrandan
+   * geldiği ya da desi'nin hangi kaynaktan geldiği FARK ETMEZ. Bizim kendi
+   * tarife tablomuzdan türetilen hiçbir sayı asla "gerçekleşen" olamaz.
+   */
+  cargoTahminMi: boolean;
 };
 
 /** Kâr girdisini veritabanından toplar; hesaplar ama YAZMAZ. */
@@ -154,15 +193,24 @@ export async function karOnizle(
    */
   const siparisKesintileri = siparisKesintiKurallari(kurallar);
 
-  // --- kargo: elle tutar tarifeyi EZER ---
+  // --- kargo: gerçek/tahmin tutarı VARSA tarifeyi EZER ---
   let kargoTarifesi: number | null = null;
   let kargoTarifesiBulunamadi = false;
+  /**
+   * ⛔ K202-2 — `girdi.cargoTutari.tur === "TAHMIN"` İSE ya da bu fonksiyon
+   * KENDİSİ taze bir tarife hesabı yaptıysa (aşağıdaki `else if` dalı)
+   * sonuç HER ZAMAN tahmindir. Kim çağırdığı ya da desi'nin hangi
+   * kaynaktan geldiği fark etmez: bizim `CargoTariff` tablomuzdan türetilen
+   * bir sayı asla "kanalın gerçekleşen kesintisi" olamaz.
+   */
+  let cargoTahminMi = false;
 
-  // != null bilerek: undefined de null gibi ele alinir.
-  if (girdi.cargoAmountManual != null) {
-    // Elle girilen tutar KDV DAHİL; motor KDV hariç bekliyor.
-    kargoTarifesi = kdvHaricKargo(girdi.cargoAmountManual);
+  if (girdi.cargoTutari.tur !== "YOK") {
+    // KDV DAHİL gelir; motor KDV hariç bekliyor.
+    kargoTarifesi = kdvHaricKargo(girdi.cargoTutari.tutarKdvDahil);
+    cargoTahminMi = girdi.cargoTutari.tur === "TAHMIN";
   } else if (girdi.cargoCarrierId && girdi.cargoDesi != null) {
+    cargoTahminMi = true;
     /**
      * ⛔ K201-4 (17.09.2026) — `orderBy` YOKTU. Tarife partileri EKLENEBİLİR
      * (eski effectiveFrom SİLİNMEZ, bkz. `canli-hb-kargo-tarifesi-yukle.ts`);
@@ -241,6 +289,7 @@ export async function karOnizle(
     },
     yeni,
     paraBirimi: satis.profitCurrency ?? kalemler[0]?.satisParaBirimi ?? "TRY",
+    cargoTahminMi,
   };
 }
 
@@ -278,7 +327,7 @@ export async function karYenidenYaz(
   const onizleme = await karOnizle(girdi, db);
   if (!onizleme) return false;
 
-  const { yeni, paraBirimi } = onizleme;
+  const { yeni, paraBirimi, cargoTahminMi } = onizleme;
 
   await db.$transaction(async (tx) => {
     const satis = await tx.sale.findUnique({
@@ -303,11 +352,13 @@ export async function karYenidenYaz(
     const kargoHaric =
       kargoKalemi === undefined ? null : kargoKalemi.tutar / 1.2;
     /**
-     * ⛔ TAHMİNİ KAYNAKLIYSA `cargoAmount`A YAZILMAZ — bkz. `cargoAmountTahminiMi`
-     * alanının yorumu. NET hesabı `kargoHaric`i zaten kullandı (yukarıda,
-     * `karHesapla` çağrısında); burada yalnız SNAPSHOT engelleniyor.
+     * ⛔ TAHMİNİ KAYNAKLIYSA `cargoAmount`A YAZILMAZ — bkz. `cargoTahminMi`
+     * alanının yorumu (`YenidenHesaplaSonucu`). NET hesabı `kargoHaric`i
+     * zaten kullandı (yukarıda, `karHesapla` çağrısında); burada yalnız
+     * SNAPSHOT engelleniyor. `karOnizle`nin KENDİ hesapladığı bayrak
+     * kullanılır — çağırandan gelen bir bayrağa GÜVENİLMEZ (K202-2).
      */
-    const cargoAmountYazilacak = girdi.cargoAmountTahminiMi ? null : kargoHaric;
+    const cargoAmountYazilacak = cargoTahminMi ? null : kargoHaric;
 
     await tx.sale.update({
       where: { id: girdi.saleId },
@@ -393,6 +444,7 @@ export async function satisKarTazele(
     select: {
       cargoCarrierId: true,
       cargoDesi: true,
+      kanalKargoDesi: true,
       cargoAmount: true,
       tahminiKargo: true,
       /** Kaldırılmış kalemin komisyon düzeltmesi de olmaz. */
@@ -417,6 +469,21 @@ export async function satisKarTazele(
       satis.tahminiKargo === null ? null : Number(satis.tahminiKargo.toString()),
   });
 
+  /**
+   * ⛔ K202-2 (18.09.2026) — DESİ DE TEK GÖVDEDEN (`desiSecimi`). Kaynak
+   * "YOK" olduğunda (aşağıdaki `cargoTutari: { tur: "YOK" }`) `karOnizle`
+   * `cargoDesi`+`cargoCarrierId` ile TAZE bir tarife hesabı yapar; o hesap
+   * `satis.cargoDesi`yi (ÜRÜN TAHMİNİ) DEĞİL, TARTIM öncelikli `desiSecimi`
+   * sonucunu görmeli — yoksa kanal ZATEN gerçek desiyi bildirmişken sistem
+   * kendi ürün tahminiyle hesaplar (canlı vaka: sipariş 4633427855, tartım
+   * desi=3 dururken ürün tahmini desi=2 kullanıldı).
+   */
+  const desi = desiSecimi({
+    kanalKargoDesi:
+      satis.kanalKargoDesi === null ? null : Number(satis.kanalKargoDesi.toString()),
+    cargoDesi: satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
+  });
+
   return karYenidenYaz(
     {
     saleId,
@@ -427,29 +494,34 @@ export async function satisKarTazele(
       commissionAmount: null,
     })),
     cargoCarrierId: satis.cargoCarrierId,
-    cargoDesi:
-      satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
-    /** DB KDV hariç saklar; motor KDV dahil bekler (`lib/kargo-kdv.ts`). İki
-     *  sütun da KDV HARİÇ, dolayısıyla AYNI kapıdan çevriliyor. */
-    cargoAmountManual: kdvDahilKargo(kargo.tutar),
+    cargoDesi: desi.desi,
     /**
      * ⛔ KAYNAK GERÇEKLEŞEN DEĞİLSE `cargoAmount`A YAZILMAZ (K197-4/K201,
-     * 15.09.2026 düzeltmesi — ve K201-2, 16.09.2026 düzeltmesi).
+     * 15.09.2026 düzeltmesi — K201-2, 16.09.2026 — ve K202-2, 18.09.2026).
+     * Artık tip SEÇTİRİR: "YOK" ise `karOnizle` TAZE hesaplar (ve o hesap
+     * HER ZAMAN tahmindir, bkz. `cargoTahminMi`); "TAHMIN"/"GERCEK" ise
+     * `kargo.kaynak`tan BİREBİR taşınır, ayrı bir bayrağa GÜVENİLMEZ.
      *
-     * ⚠ CANLI VAKA (16.09.2026, sipariş 11606375536): ölçüt `=== "TAHMINI"`
-     * yazıyordu ve `kargoSecimi()` ÜÇÜNCÜ bir sonuç da döndürebiliyor —
-     * "YOK" (ikisi de boş; sipariş İLK KEZ onaylanıyor, henüz ne gerçekleşen
-     * ne tahmin var). O durumda `=== "TAHMINI"` **false** dönüyordu, bayrak
-     * korumayı DEVRE DIŞI bırakıyordu — ve `karOnizle` boş `cargoAmountManual`
-     * karşısında `cargoDesi` (ÜRÜN BAZLI TAHMİN, kanalın TARTIM'ı DEĞİL) ile
-     * taz bir tarife hesabı yapıp bunu "gerçekleşen" diye yazıyordu. Sonuç:
-     * desi=5 tahmini (₺117,85) `cargoAmount`a girdi, kanalın gerçek desi=3
-     * tartımı (₺100,84) hiç görülmedi VE `kargoTartimGeldiTazele` bir daha
-     * asla düzeltemedi (o gövde `cargoAmount` DOLUYSA hiç dokunmuyor).
-     * Bu değer NET hesabı için kullanılır ama kanalın gerçekleşen kesintisi
-     * DEĞİLDİR — bkz. `cargoAmountTahminiMi` yorumu.
+     * ⚠ CANLI VAKA (16.09.2026, sipariş 11606375536): eski ölçüt `===
+     * "TAHMINI"` yazıyordu ve `kargoSecimi()` ÜÇÜNCÜ bir sonuç da
+     * döndürebiliyor — "YOK" (ikisi de boş; sipariş İLK KEZ onaylanıyor,
+     * henüz ne gerçekleşen ne tahmin var). O durumda `=== "TAHMINI"`
+     * **false** dönüyordu, bayrak korumayı DEVRE DIŞI bırakıyordu — ve
+     * `karOnizle` boş tutar karşısında `cargoDesi` (ÜRÜN BAZLI TAHMİN,
+     * kanalın TARTIM'ı DEĞİL) ile taze bir tarife hesabı yapıp bunu
+     * "gerçekleşen" diye yazıyordu. Sonuç: desi=5 tahmini (₺117,85)
+     * `cargoAmount`a girdi, kanalın gerçek desi=3 tartımı (₺100,84) hiç
+     * görülmedi VE `kargoTartimGeldiTazele` bir daha asla düzeltemedi
+     * (o gövde `cargoAmount` DOLUYSA hiç dokunmuyor). Bu değer NET hesabı
+     * için kullanılır ama kanalın gerçekleşen kesintisi DEĞİLDİR.
      */
-    cargoAmountTahminiMi: kargo.kaynak !== "GERCEKLESEN",
+    cargoTutari:
+      kargo.kaynak === "YOK"
+        ? { tur: "YOK" }
+        : {
+            tur: kargo.kaynak === "GERCEKLESEN" ? "GERCEK" : "TAHMIN",
+            tutarKdvDahil: kdvDahilKargo(kargo.tutar)!,
+          },
     },
     db,
   );

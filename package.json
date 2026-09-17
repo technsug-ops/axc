@@ -196,6 +196,7 @@
     "canli:kargo-amount-kirlenme-duzelt": "tsx scripts/canli-kargo-amount-kirlenme-duzelt.ts",
     "canli:hb-kargo-tarifesi-yukle": "tsx scripts/canli-hb-kargo-tarifesi-yukle.ts",
     "canli:k201-2-onar": "tsx scripts/canli-k201-2-onar.ts",
+    "canli:k202-2-onar": "tsx scripts/canli-k202-2-onar.ts",
     "canli:kargo-yaz": "tsx scripts/canli-kargo-yaz.ts",
     "canli:test-duzeltmeleri": "tsx scripts/canli-test-duzeltmeleri.ts",
     "canli:iade-kargo-kolonu": "tsx scripts/canli-iade-kargo-kolonu.ts",

@@ -64,7 +64,7 @@ async function main() {
   }
   process.env.DATABASE_URL = betikAdresi(y.veri.ham);
   const { prisma } = await import("../src/lib/prisma");
-  const { karYenidenYaz } = await import("../src/lib/kar-yeniden");
+  const { gercekCargoTutari, karYenidenYaz } = await import("../src/lib/kar-yeniden");
 
   const ham = readFileSync(V2);
   const md5 = createHash("md5").update(ham).digest("hex");
@@ -191,7 +191,7 @@ async function main() {
       const ok = await karYenidenYaz({
         saleId: satis.id,
         kalemler: [{ saleItemId: satis.items[0].id, commissionRate: 0, commissionAmount: null }],
-        cargoCarrierId: null, cargoDesi: null, cargoAmountManual: null,
+        cargoCarrierId: null, cargoDesi: null, cargoTutari: { tur: "YOK" },
       });
       if (!ok) { hata += 1; continue; }
       yazilan += 1;

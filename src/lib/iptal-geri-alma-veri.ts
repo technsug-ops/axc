@@ -1,5 +1,5 @@
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
-import { karYenidenYaz } from "@/lib/kar-yeniden";
+import { gercekCargoTutari, karYenidenYaz } from "@/lib/kar-yeniden";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
 import { acikPartiler } from "@/lib/stok";
@@ -334,8 +334,11 @@ export async function geriAlmaUygula(girdi: {
     cargoDesi:
       satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
     // DB KDV hariç saklar; motor KDV dahil bekler (bkz. lib/kargo-kdv.ts).
-    cargoAmountManual: kdvDahilKargo(
-      satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
+    // Var olan cargoAmount zaten "gerçekleşen"di — GERÇEK olarak taşınır.
+    cargoTutari: gercekCargoTutari(
+      kdvDahilKargo(
+        satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
+      ),
     ),
   });
 

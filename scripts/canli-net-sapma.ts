@@ -31,7 +31,7 @@ async function main() {
   }
   process.env.DATABASE_URL = betikAdresi(c.veri.ham);
   const { prisma: p } = await import("../src/lib/prisma");
-  const { karOnizle } = await import("../src/lib/kar-yeniden");
+  const { gercekCargoTutari, karOnizle } = await import("../src/lib/kar-yeniden");
   const { kdvDahilKargo } = await import("../src/lib/kargo-kdv");
 
   console.log("\n" + "=".repeat(100));
@@ -77,9 +77,9 @@ async function main() {
       })),
       cargoCarrierId: s.cargoCarrierId,
       cargoDesi: s.cargoDesi === null ? null : Number(s.cargoDesi.toString()),
-      cargoAmountManual: kdvDahilKargo(
+      cargoTutari: gercekCargoTutari(kdvDahilKargo(
         s.cargoAmount === null ? null : Number(s.cargoAmount.toString()),
-      ),
+      )),
     });
     if (!o) continue;
     const kayitli = Number(s.net2Amount!.toString());

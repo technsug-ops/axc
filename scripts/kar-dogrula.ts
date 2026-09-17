@@ -912,89 +912,133 @@ console.log("=".repeat(70));
 
 /**
  * ============================================================================
- *  TAHMİNİ KARGO `cargoAmount`A YAZILMAZ (K197-4/K201, 15.09.2026 —
- *  ve K201-2, 16.09.2026 — iki düzeltme)
+ *  TAHMİNİ KARGO `cargoAmount`A YAZILMAZ (K197-4/K201 → K201-2 → K202-2)
  * ----------------------------------------------------------------------------
- *  ⛔ CANLI VAKA #1 (15.09.2026): `satisKarTazele` her çağrıldığında çözdüğü
- *  kargo tutarını (kaynağı yalnızca `tahminiKargo` olsa bile) `cargoAmount`a
- *  yazıyordu — 19 sipariş bu yüzden canlıda düzeltilmek zorunda kaldı.
- *  Çare `cargoAmountTahminiMi: kargo.kaynak === "TAHMINI"` oldu.
+ *  ⛔ VAKA #1 (15.09.2026): `satisKarTazele` çözdüğü kargo tutarını (kaynağı
+ *  yalnızca `tahminiKargo` olsa bile) `cargoAmount`a yazıyordu — 19 sipariş
+ *  düzeltilmek zorunda kaldı. Çare `cargoAmountTahminiMi: kargo.kaynak ===
+ *  "TAHMINI"` oldu.
  *
- *  ⛔ CANLI VAKA #2 (16.09.2026, sipariş 11606375536): O çare EKSİKTİ.
- *  `kargoSecimi()` ÜÇ sonuç döndürür (GERCEKLESEN · TAHMINI · YOK) ve
- *  "YOK" (sipariş İLK KEZ onaylanıyor, ne gerçekleşen ne tahmin hiç
- *  yazılmamış) `=== "TAHMINI"` karşısında **false** dönüyordu — koruma
- *  o durumda DEVREDIŞI kalıyordu. `karOnizle` boş `cargoAmountManual`
- *  karşısında `cargoDesi` (ÜRÜN BAZLI TAHMİN) ile taze bir tarife hesabı
- *  yapıp bunu doğrudan `cargoAmount`a yazdı; kanalın gerçek `kanalKargoDesi`
- *  tartımı hiç görülmedi VE bir daha görülemezdi (`kargoTartimGeldiTazele`
- *  yalnız `cargoAmount` BOŞKEN çalışır). Çare: `!== "GERCEKLESEN"` —
- *  GERÇEKLEŞEN DIŞINDAKİ HER KAYNAK korumaya girer.
+ *  ⛔ VAKA #2 (16.09.2026, sipariş 11606375536): O çare EKSİKTİ — `kargoSecimi()`
+ *  ÜÇÜNCÜ bir sonuç da döndürüyor ("YOK") ve `=== "TAHMINI"` o durumda
+ *  **false** dönüp korumayı KAPATIYORDU. Çare `!== "GERCEKLESEN"` oldu.
  *
- *  ⚠ KAYNAK KULLANIMA BAĞLANIR, ADA DEĞİL: `cargoAmountTahminiMi` alan adı
- *  yorumda da geçebilir; ölçüt onu GERÇEKTEN OKUYAN satıra bağlanıyor.
+ *  ⛔ VAKA #3 (18.09.2026, sipariş 4633427855) — BAYRAK TASARIMININ KENDİSİ
+ *  KUSURLUYDU: bayrak ÇAĞIRANDAN geliyordu ve BEŞ doğrudan `karYenidenYaz`
+ *  çağıranından yalnız BİRİ (`satisKarTazele`) onu doğru geçiriyordu; diğer
+ *  dördü (kullanıcının "Yeniden Hesapla" ekranı dahil) HİÇ geçmiyordu —
+ *  opsiyonel bir alan olduğu için TypeScript bunu yakalamadı. Kullanıcı
+ *  "Yeniden Hesapla"da kargo tutarını BOŞ bıraktı, sistem `cargoDesi`
+ *  (ÜRÜN TAHMİNİ, kanalın gerçek `kanalKargoDesi` tartımı DEĞİL) ile taze
+ *  bir tarife hesapladı ve unutulan bayrak yüzünden "gerçekleşen" diye yazdı.
+ *
+ *  ⭐ ÇARE (K202-2): bayrak ARTIK ÇAĞIRANDAN ALINMIYOR. `karOnizle` kendisi
+ *  `cargoTahminMi`yi HANGİ DALIN çalıştığına bakarak hesaplıyor ve döndürüyor;
+ *  `karYenidenYaz` `girdi`den DEĞİL `onizleme`den okuyor. Girdi tarafında da
+ *  `cargoAmountManual: number|null` + ayrı opsiyonel bayrak yerine TEK, ZORUNLU
+ *  bir birleşik tip var (`CargoTutariBilgisi`: YOK · GERÇEK · TAHMIN) — "bu
+ *  tutar nereden geliyor" sorusu cevaplanmadan tutar VERİLEMEZ, unutmak artık
+ *  DERLEME HATASIDIR.
  */
 {
   console.log("TAHMİNİ KARGO cargoAmount'A YAZILMAZ");
   const y = readFileSync("src/lib/kar-yeniden.ts", "utf8");
+
   kontrol(
-    "cargoAmount yazımı cargoAmountTahminiMi bayrağına bağlı",
-    /const cargoAmountYazilacak = girdi\.cargoAmountTahminiMi \? null : kargoHaric;/.test(y),
+    "cargoAmount yazımı, karOnizle'nin DÖNDÜRDÜĞÜ cargoTahminMi'ye bağlı",
+    /const cargoAmountYazilacak = cargoTahminMi \? null : kargoHaric;/.test(y),
   );
   kontrol(
-    "yazılan satır kargoHaric'i DEĞİL, bu türetilmiş değeri kullanıyor",
+    "karYenidenYaz, cargoTahminMi'yi ONIZLEME'den okuyor (girdi'den DEĞİL)",
+    /const \{ yeni, paraBirimi, cargoTahminMi \} = onizleme;/.test(y),
+  );
+  kontrol(
+    "yazılan satır bu türetilmiş değeri kullanıyor",
     /cargoAmount: cargoAmountYazilacak === null \? null : String\(cargoAmountYazilacak\)/.test(y),
   );
-  kontrol(
-    "satisKarTazele: kaynak GERÇEKLEŞEN DEĞİLSE (TAHMİNİ ve YOK dahil) bayrak true",
-    /cargoAmountTahminiMi: kargo\.kaynak !== "GERCEKLESEN",/.test(y),
-  );
+
   /**
-   * ⛔ YANLIŞ SUSMA YÖNÜ (16.09.2026 vakasının ta kendisi): eski dar ölçüt
-   * bir daha geri gelmesin. Yalnız pozitif regex yeterli değil — biri
-   * `!== "GERCEKLESEN"`i tekrar `=== "TAHMINI"`ya çevirse pozitif test
-   * kırmızı yanar ama BU satır o gerilemeyi AYRICA, açıkça adlandırır.
+   * ⛔ ESKİ TASARIMIN İZİ BİR DAHA YOK: çağırandan bir "tahmin mi" bayrağı
+   * okunmuyor. Regresyon: biri `cargoTahminMi`yi tekrar `girdi.`den okumaya
+   * çevirirse (VAKA #3'ün ta kendisi) bu satır kırmızı yanar.
+   */
+  /**
+   * ⚠ YORUMSUZ KODDA ARANIR — tarihçe yorumları (K202-2 gerekçesi) bilerek
+   * eski adı `` `girdi.cargoAmountTahminiMi` `` diye anıyor; "ölçüt yorumda
+   * geçen bir isme değil GERÇEK KULLANIMA bağlanır" kuralı burada da geçerli.
    */
   kontrol(
-    "eski dar ölçüt (yalnız TAHMINI, YOK'u kaçıran) BİR DAHA yok",
-    !/cargoAmountTahminiMi: kargo\.kaynak === "TAHMINI",/.test(y),
+    "'girdi.cargoAmountTahminiMi' KOD KULLANIMI BİR DAHA yok (bayrak artık türetiliyor)",
+    !/girdi\.cargoAmountTahminiMi/.test(y.replace(/\/\*[\s\S]*?\*\//g, " ")),
   );
-  /**
-   * ⚠ VE `karOnizle`NİN KENDİSİ DEĞİŞMEDİ — bayrak yalnız YAZMA anında
-   * devreye girer, NET hesabı hâlâ çözülen kargoHaric'i kullanır. Bu satır
-   * o ayrımın kazayla bozulmadığını (ör. NET hesabını da bayrağa bağlayan
-   * bir "kolaylaştırma") kanıtlar.
-   */
+
+  /* ═══ karOnizle: cargoTahminMi HANGİ DALDA true OLUYOR ═══════════════ */
+  const onizleBasi = y.indexOf("export async function karOnizle");
+  const onizleSonuHam = y.indexOf("export async function karYenidenYaz", onizleBasi + 10);
+  const onizleSonu = onizleSonuHam < 0 ? y.length : onizleSonuHam;
+  const onizleBlok = y.slice(onizleBasi, onizleSonu);
   kontrol(
-    "NET hesabı (karHesapla çağrısı) bayraktan ETKİLENMİYOR — yalnız yazım",
-    !/karHesapla\(\{[\s\S]{0,400}cargoAmountTahminiMi/.test(y),
+    "karOnizle bloğu bulundu (taban DOLU)",
+    onizleBasi >= 0 && onizleBlok.length > 200,
+    onizleBlok.length,
   );
+  kontrol(
+    "'GERÇEK' tutar geldiğinde cargoTahminMi FALSE kalır (varsayılan, hiç true olmaz)",
+    /let cargoTahminMi = false;/.test(onizleBlok),
+  );
+  kontrol(
+    "'TAHMIN' tutarı geldiğinde cargoTahminMi TRUE'ya çekilir",
+    /cargoTahminMi = girdi\.cargoTutari\.tur === "TAHMIN";/.test(onizleBlok),
+  );
+  kontrol(
+    "TAZE tarife hesabı (cargoCarrierId+cargoDesi ile) HER ZAMAN cargoTahminMi=true yazar",
+    /\} else if \(girdi\.cargoCarrierId && girdi\.cargoDesi != null\) \{\s*\n\s*cargoTahminMi = true;/.test(
+      onizleBlok,
+    ),
+  );
+
+  /* ═══ satisKarTazele: kargoSecimi() → cargoTutari EŞLEMESİ ═══════════ */
+  const tazeleBasi = y.indexOf("export async function satisKarTazele");
+  const tazeleBlok = tazeleBasi >= 0 ? y.slice(tazeleBasi) : "";
+  kontrol(
+    "satisKarTazele bloğu bulundu (taban DOLU)",
+    tazeleBlok.length > 200,
+    tazeleBlok.length,
+  );
+  kontrol(
+    "satisKarTazele: kaynak YOK ise cargoTutari da YOK (taze hesaba düşer)",
+    /kargo\.kaynak === "YOK"\s*\n\s*\? \{ tur: "YOK" \}/.test(tazeleBlok),
+  );
+  kontrol(
+    "satisKarTazele: kaynak GERÇEKLEŞEN/TAHMİNİ ayrımı tur'a BİREBİR taşınır",
+    /tur: kargo\.kaynak === "GERCEKLESEN" \? "GERCEK" : "TAHMIN",/.test(tazeleBlok),
+  );
+  kontrol(
+    "satisKarTazele: desi de TEK gövdeden (desiSecimi) — TARTIM önceliği kaymadan",
+    /const desi = desiSecimi\(\{/.test(tazeleBlok) &&
+      /cargoDesi: desi\.desi,/.test(tazeleBlok),
+  );
+
   /**
-   * ⭐ DEĞER TESTİ (kaynak-tarama değil): `kargoSecimi()` SAF ve
-   * içeri aktarılabilir — üç kaynak durumunun `satisKarTazele`nin kendi
-   * ifadesiyle BİREBİR aynı ternary'den (`kaynak !== "GERCEKLESEN"`) geçince
-   * ne üreteceği burada GERÇEKTEN HESAPLANIYOR, kaynak metinde aranmıyor.
-   * Yalnızca GERÇEKLEŞEN'in korumayı KAPATTIĞI, ötekilerin AÇIK bıraktığı
-   * — bu satırlar olmadan kanıtlanamaz.
+   * ⭐ DEĞER TESTİ (kaynak-tarama değil): `kargoSecimi()` SAF ve içeri
+   * aktarılabilir. Üç kaynak durumunun `satisKarTazele`nin KENDİ eşlemesiyle
+   * (yukarıdaki iki narrow regex'in tanımladığı kural) hangi `tur`e düşeceği
+   * burada GERÇEKTEN HESAPLANIYOR.
    */
   {
     const durumlar: {
       ad: string;
       girdi: { cargoAmount: number | null; tahminiKargo: number | null };
-      beklenenTahminiMi: boolean;
+      beklenenTur: "YOK" | "GERCEK" | "TAHMIN";
     }[] = [
-      { ad: "GERÇEKLEŞEN", girdi: { cargoAmount: 100, tahminiKargo: null }, beklenenTahminiMi: false },
-      { ad: "TAHMİNİ", girdi: { cargoAmount: null, tahminiKargo: 50 }, beklenenTahminiMi: true },
-      { ad: "YOK (ikisi de boş — K201-2 vakası)", girdi: { cargoAmount: null, tahminiKargo: null }, beklenenTahminiMi: true },
+      { ad: "GERÇEKLEŞEN", girdi: { cargoAmount: 100, tahminiKargo: null }, beklenenTur: "GERCEK" },
+      { ad: "TAHMİNİ", girdi: { cargoAmount: null, tahminiKargo: 50 }, beklenenTur: "TAHMIN" },
+      { ad: "YOK (ikisi de boş — K201-2 vakası)", girdi: { cargoAmount: null, tahminiKargo: null }, beklenenTur: "YOK" },
     ];
     for (const d of durumlar) {
       const kargo = kargoSecimi(d.girdi);
-      const tahminiMi = kargo.kaynak !== "GERCEKLESEN";
-      kontrol(
-        `kargoSecimi(${d.ad}) → cargoAmountTahminiMi=${d.beklenenTahminiMi}`,
-        tahminiMi === d.beklenenTahminiMi,
-        kargo,
-      );
+      const tur = kargo.kaynak === "YOK" ? "YOK" : kargo.kaynak === "GERCEKLESEN" ? "GERCEK" : "TAHMIN";
+      kontrol(`kargoSecimi(${d.ad}) → cargoTutari.tur=${d.beklenenTur}`, tur === d.beklenenTur, kargo);
     }
   }
 }

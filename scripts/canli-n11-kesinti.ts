@@ -303,7 +303,7 @@ async function main() {
      * ⚠ MOTOR UYGULAMANIN KENDİSİ — betik kendi hesabını YAZMIYOR. Ayrı bir
      * hesap yazsaydık ekranla betik aynı satışta farklı NET üretebilirdi.
      */
-    const { karYenidenYaz } = await import("../src/lib/kar-yeniden");
+    const { gercekCargoTutari, karYenidenYaz } = await import("../src/lib/kar-yeniden");
     const { kdvDahilKargo } = await import("../src/lib/kargo-kdv");
 
     console.log("");
@@ -343,9 +343,9 @@ async function main() {
         })),
         cargoCarrierId: tam.cargoCarrierId,
         cargoDesi: tam.cargoDesi === null ? null : Number(tam.cargoDesi.toString()),
-        cargoAmountManual: kdvDahilKargo(
+        cargoTutari: gercekCargoTutari(kdvDahilKargo(
           tam.cargoAmount === null ? null : Number(tam.cargoAmount.toString()),
-        ),
+        )),
       });
       const sonra = await prisma.sale.findUnique({
         where: { id: s.id },

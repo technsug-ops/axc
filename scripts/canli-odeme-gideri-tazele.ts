@@ -109,7 +109,7 @@ async function main() {
   console.log("");
 
   const { prisma } = await import("../src/lib/prisma");
-  const { karOnizle, karYenidenYaz } = await import("../src/lib/kar-yeniden");
+  const { gercekCargoTutari, karOnizle, karYenidenYaz } = await import("../src/lib/kar-yeniden");
 
   /**
    * ETKİ ALANI — DEFTERDEN GELİR, HATIRLAMADAN DEĞİL.
@@ -200,7 +200,7 @@ async function main() {
        * kayıtlı KARGO kesintisi elle girilmiş tutar gibi veriliyor: tarife hiç
        * sorgulanmıyor, geçmiş olduğu gibi kalıyor.
        */
-      cargoAmountManual: kargoDegeri(s.fees, s.cargoAmount),
+      cargoTutari: gercekCargoTutari(kargoDegeri(s.fees, s.cargoAmount)),
       /**
        * ⚠ PAKET SAYISI GİRDİDE YOK — `karOnizle` onu satıştan kendisi
        * okuyor (kar-yeniden.ts:173). Buradan geçirmek ikinci bir kaynak

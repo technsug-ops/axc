@@ -56,7 +56,7 @@ async function main() {
   }
   process.env.DATABASE_URL = betikAdresi(y.veri.ham);
   const { prisma } = await import("../src/lib/prisma");
-  const { karYenidenYaz } = await import("../src/lib/kar-yeniden");
+  const { gercekCargoTutari, karYenidenYaz } = await import("../src/lib/kar-yeniden");
   const { kdvDahilKargo } = await import("../src/lib/kargo-kdv");
 
   const ham = readFileSync(V2);
@@ -149,7 +149,7 @@ async function main() {
         })),
         cargoCarrierId: p.s.cargoCarrierId,
         cargoDesi: p.s.cargoDesi === null ? null : Number(p.s.cargoDesi.toString()),
-        cargoAmountManual: kdvDahilKargo(p.kdvHaric),
+        cargoTutari: gercekCargoTutari(kdvDahilKargo(p.kdvHaric)),
       });
       if (!ok) { hata += 1; hatalar.push(p.s.code + " — karYenidenYaz false"); continue; }
       yazilan += 1;
