@@ -18,6 +18,470 @@
 
 ---
 
+## ✅ K214 — SATIŞ DETAYI: KANALIN DOĞRULADIĞI DESİ EKRANA YANSIMIYORDU · 11.09.2026 → 19.09.2026 · [KAPANDI — Halil testi geçti]
+
+> **HALİL TESTİ SONUCU (19.09.2026):** Kullanıcı doğruladı — geçti.
+
+### TALEP (kullanıcı, iki ekran görüntüsü, 11.09.2026)
+Bizim ekranımız bir Trendyol siparişinde "Aras Kargo — 40 desi" gösteriyordu;
+Trendyol'un kendi panelinde aynı sipariş "Desi: 61" diyordu. Kullanıcı:
+_"başlangıçta tahmini desi yazılması normal fakat pazar yerine kargo
+tarafından gönderilen desi doğrulaması sonucunda ekrana girdiğimiz desinin
+otomatik pazar yerinden çekilmesi gerekiyor... bu konuyu daha önce çalıştık
+ama sonuç vermedi."_
+
+### TEŞHİS — VERİ DOĞRUYDU, EKRAN YANLIŞ ALANI OKUYORDU
+Canlı DB'de o satış sorgulandı:
+
+    cargoDesi        40   ← BİZİM TAHMİNİMİZ (satış anında, Σ ürün desi)
+    kanalKargoDesi   61   ← KANALIN DOĞRULADIĞI GERÇEK DESİ — zaten DOĞRU yakalanmıştı
+
+K197-4 (09.09.2026) `kanalKargoDesi`yi TY/N11 içe aktarmasında ZATEN doğru
+topluyordu. `src/lib/kargo-kaynagi.ts`'teki `desiSecimi()` de ZATEN doğru
+öncelik sırasını (TARTIM → TAHMIN → küresel) uyguluyordu — değer testleriyle
+kanıtlı. **Eksik olan, satış detayı ekranının (`satislar/[id]/page.tsx`)
+bu sırayı hiç ÇAĞIRMAMASIYDI** — ham `cargoDesi`yi doğrudan basıyordu.
+_(Anayasa: "zincir, halkalarının varlığıyla değil bağlantısıyla sınanır" —
+saf gövde doğruydu, tüketici hiç yoktu; K52'nin dokümante ettiği "tüketicisi
+henüz yok" boşluğu tam burada yaşıyordu.)_
+
+### YAPILAN
+- `src/app/satislar/[id]/page.tsx` → kargo firması/desi satırı artık
+  `desiSecimi({ kanalKargoDesi, cargoDesi })` çağırıyor; TARTIM varsa O
+  gösteriliyor, yoksa TAHMIN (etiketli: _"— 61 desi"_ ya da _"— 40 desi
+  (tahmini)"_). `desiSecimi`in üçüncü (KÜRESEL) basamağı BİLEREK
+  render edilmiyor — o basamak kargo MALİYETİ hesabı için var, ekran
+  bilinmeyen bir şeyi GÖSTERMEZ (İlke #11).
+- `cargoDesi` sütununa DOKUNULMADI — şemanın "kanalKargoDesi cargoDesi'nin
+  üstüne asla yazılmaz" kuralı (09.09.2026) korundu; bu yalnız bir
+  GÖSTERİM düzeltmesi, iki sütun ayrı ayrı yaşamaya devam ediyor.
+- Test: `scripts/kargo-kaynagi-dogrula.ts`'e kaynak-tarama bağlanma testi
+  (desiSecimi çağrısı · doğru iki alanı geçiriyor · KÜRESEL basamak
+  gösterilmiyor · tahmini etiketi VAR) — **4 mutasyonla** sınandı, hepsi
+  kırmızı yandı; ilk yazımda bir kontrol ("kanalKargoDesi geçiriliyor mu")
+  yalnız anahtar ADINI arıyordu ve değeri `null`e sabitleyen bir mutasyonu
+  KAÇIRDI — kaynak alana (`satis.kanalKargoDesi`) daraltılınca yakalandı.
+
+### HALİL TESTİ — kapanma şartı
+1. `/satislar/{id}` → `kanalKargoDesi` DOLU olan (kargoya verilip kanal
+   desiyi doğrulamış) bir siparişi aç. "Kargo firması" satırında kanalın
+   GERÇEK desisi görünmeli — "(tahmini)" etiketi OLMAMALI.
+2. Henüz kargoya verilmemiş / kanal desi doğrulamamış bir sipariş aç:
+   bizim tahminimiz görünmeli, yanında **"(tahmini)"** yazmalı.
+3. Ekrandaki rakam, kanalın kendi panelindeki (Trendyol/N11/HB) desiyle
+   BİREBİR tutmalı (Halil testi madde c) — yaklaşık değil.
+
+---
+
+## ✅ K213 — SONRADAN İPTAL OLAN SİPARİŞ OTOMATİK TESPİT (TY + N11 + HB) · 11.09.2026 → 19.09.2026 · [KAPANDI — Halil testi geçti]
+
+> **HALİL TESTİ SONUCU (19.09.2026):** Kullanıcı doğruladı — geçti.
+
+### TALEP (kullanıcı, ekran görüntüsü + metin, 11.09.2026)
+_"Sipariş kargoya verilmeden önce müşteri tarafından Vazgeçtim / Daha Ucuz
+Buldum / Kargoya Teslimi Geç görünüyor gibi sebeplerle iptal edilebilir,
+bu durumda sipariş yok hükmündedir, bu iptaller pazaryerinden çekilerek,
+cirodan ve kârdan düşülüp iptal edilen miktar kadar stoğa eklenmeli."_
+
+### TEŞHİS
+Elle iptal (satış detayından "İptal Et") zaten doğru çalışıyordu — cironun/
+kârın/hakedişin dışına çıkarıyor ("hiç doğmamış sayılır") ve stoğu
+`SALE_CANCEL_IN` ile aynen geri veriyor (17.08.2026'da kurulmuş, olgun bir
+motor). Eksik olan **OTOMATİK tarafıydı**: periyodik TY çekimi
+(`canli-ty-ice-aktar.ts`) 26.08.2026'dan beri şu kuralı taşıyor —
+_"çakışan (zaten içe aktarılmış) sipariş varsa ATLA, üzerine yazma."_
+Yani sipariş önce AKTİF import edilip sistemde satış olarak durduktan
+SONRA pazaryerinde iptal edilirse, sonraki çekimler onu görmezden geliyor
+ve kimse elle iptal etmediği sürece o satış cirodan/kârdan düşmüyor —
+tam kullanıcının bildirdiği sızıntı.
+
+### KARAR (AskUserQuestion, kullanıcı: "Evet, otomatik yap")
+Otomatik tespit yazıldı. Karar sırasında **yalnız Trendyol** kapsandı —
+talepteki ekran görüntüsü TY siparişiydi ve HB/N11 için kullanıcı
+"mümkünse" demişti; kapsam bilinçli olarak dar tutuldu (aşağıya bkz.).
+
+### YAPILAN
+- `src/lib/satis-iptali.ts` → saf fonksiyon `otomatikIptalAdayiMi(aday,
+  mevcutSatisIptalTarihi)`: TY'nin `Cancelled` dediği VE iptal anı
+  çözülebilen VE bizim tarafta henüz iptalli olmayan siparişleri "aday"
+  sayar. Tahmin yok — TY'nin kendi beyanı (`durum === "Cancelled"`) ve
+  kendi zaman damgası (`iptalTarihi`) dışında hiçbir şeye bakmıyor.
+- `src/lib/satis-iptali-veri.ts` → `iptalUygula`nın `kullaniciId` tipi
+  `string | null`e gevşetildi. `izYaz`in kendi kuralıyla AYNI: `null`
+  "oturuma bakma, bilerek kimse yok" demek (K90) — otomatik tetikte
+  uydurma bir kullanıcı yazılmıyor.
+- `scripts/canli-ty-ice-aktar.ts` → mevcut (çakışan) siparişler taranırken
+  her aday için ÖNCE `iptalOnizle` (aynı önizle→uygula motoru, elle iptal
+  ekranıyla BİREBİR), engel yoksa `--yaz` altında `iptalUygula`. Not alanı
+  _"...otomatik tespit edildi (K213, canli-ty-ice-aktar)"_ — sessiz değil,
+  hangi satışın neden otomatik iptal olduğu kayıtta okunur.
+- Test: `scripts/iptal-dogrula.ts`'e 5 değer testi (saf fonksiyonun dört
+  dalı + Shipped durumunun aday sayılmadığı), `scripts/ice-aktarma-
+  dogrula.ts`'e kaynak-tarama bağlanma testi (import · çağrı sırası ·
+  `--yaz` kapısı · sebep sabitliği · not metni · `kullaniciId: null` ·
+  aynı motorun elle ekranla ortak olduğu) — **6 mutasyonla** sınandı,
+  hepsi kırmızı yandı, dosya bit-bit geri yüklendi.
+
+### ─── ② N11 GENİŞLETMESİ · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+Kullanıcı: _"Bağlı tüm pazaryerlerinde değil mi... yani bağlı tüm
+pazaryerlerinde otomatik iptalleri kanallardan okuyup otomatik iptal
+edilecek"_ — kapsam TY ile sınırlı bırakılmasın diye düzeltti.
+
+**Ölçüldü, sonra yazıldı.** N11'in `packageHistories`i TY ile **birebir
+aynı** biçimde geliyor (zaten K195'te ölçülmüştü) ve canlıda gerçek bir
+iptal edilmiş paket üstünde doğrulandı — gerçek `"Cancelled"` geçmiş
+girdisi, gerçek epoch damgası:
+
+    ÖRNEK paket 232818314428: history=[{"status":"Created",...},
+      {"status":"Picking",...}, {"status":"Cancelled","createdDate":1787907749580}]
+
+**AMA N11'in mekanizması TY'den YAPISAL OLARAK FARKLI** ve bu yüzden K213'ün
+TY kodu doğrudan kopyalanamadı: N11'de tam iptal olmuş bir paket şimdiye
+kadar aday listesine (`adaylar`) HİÇ girmiyordu (erken `continue`, iptal
+anı çöpe gidiyordu). TY'de ise iptalli paket yine de aday listesine girip
+`iptalTarihi` dolu yazılıyordu — K213'ün asıl `cakisanlar` mekanizması
+buna dayanıyordu. N11'de bu yol yoktu, yeni bir yol açıldı: iptal anı ayrı
+bir haritada (`iptalliPaketler`) tutulup yalnız **hiçbir parçası artık
+açık olmayan** siparişler (aday listesinde karşılığı olmayanlar) otomatik
+iptal adayı sayılıyor — kısmi iptal (siparişin bir parçası hâlâ açık)
+kasıtlı olarak dışarıda bırakıldı, yanlışlıkla aktif bir siparişi iptal
+etmemek için.
+
+**YAPILAN:**
+- `src/lib/kanal-kargo-damgasi.ts` → `gecmistenKargoDamgasi`nin `durum`
+  tipi `"Shipped" | "Delivered"`den `| "Cancelled"`e genişletildi (TY'nin
+  kendi `iptalAniCoz`ı dokunulmadı — farklı dönüş biçimi; N11 ortak
+  gövdeyi kullanıyor, ikinci bir kopya yazılmadı).
+- `scripts/canli-n11-ice-aktar.ts` → `otomatikIptalAdayiMi`/`iptalOnizle`/
+  `iptalUygula` TY ile AYNI motor; yeni `iptalliPaketler` haritası +
+  "adaylar'da karşılığı yok" süzgeci; not _"...otomatik tespit edildi
+  (K213, canli-n11-ice-aktar)"_.
+- Test: `scripts/ice-aktarma-dogrula.ts`'e kaynak-tarama bağlanma testi
+  (TY'nin K213 bölümüyle aynı desende + N11'e özgü "kısmi iptal HARİÇ"
+  ölçütü) — **7 mutasyonla** sınandı (TY'nin 6'sı + N11'in kendine özgü
+  kısmi-iptal-guard'ı), hepsi kırmızı yandı, dosya bit-bit geri yüklendi.
+  Kısmi-iptal-guard mutasyonu en riskli olanıydı: kaldırılırsa hâlâ
+  parçası kargoda olan bir sipariş otomatik iptal edilebilirdi.
+
+### ─── ③ HB GENİŞLETMESİ · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+Kullanıcı ilk turda "hiçbir bilinen HB ucu iptali göstermiyor" tespitine
+itiraz etti: _"Entegra ve Melontik gibi firmalar hepsi burada dan iptal
+bilgilerini alıyor, o halde bizim de almamız lazım, tekrar dener misin"_
+— haklıydı; ilk tur yalnız TOPLU uçlara (`/packages`, `/shipped`,
+`/delivered`) bakmıştı, TEK sipariş ucunu (`siparisDetay`) hiç sınamamıştı.
+
+**Yeniden ölçüldü, gerçek bir kanıt bulundu.** Bizim elle iptal ettiğimiz
+gerçek bir HB siparişinin (`4428007117`, sebep MUSTERI_VAZGECTI) detayı
+çekilince:
+
+    "status": "CancelledByCustomer"
+    "lastStatusUpdateDate": "2026-09-06T15:24:12.971"
+
+İkinci bir MUSTERI_VAZGECTI siparişinde (`4348472605`) de AYNI durum +
+gerçek damga görüldü — **2/2 doğrulandı.** ⚠ AMA MAGAZA_DIGER sebepli bir
+elle iptal (`4120311526`) HB'de `"ClaimCreated"` çıktı — yani her elle
+iptalimiz kanalın kendi "Cancelled*" durumuna karşılık gelmiyor; otomatik
+tetik yalnız kanalın GERÇEKTEN öyle dediği siparişlere basıyor.
+
+**İLK SÜRÜMDE TOPLU "İPTAL EDİLENLER" LİSTESİ BULUNAMAMIŞTI** — `/orders`
+ucu her parametre kombinasyonunda `totalCount: 0` döndürmüştü (5 farklı
+deneme). Bu yüzden ilk sürüm TY/N11'deki "kanal ne söylüyorsa tara" yerine
+**"hâlâ açık saydığımız her siparişi tek tek yokla"** tasarımıyla kuruldu
+(pencere 30 gün + tavan 200 + her aday için `siparisDetay`) ve bu hâliyle
+CANLIYA gitti.
+
+### ─── ③-b GERÇEK UÇ BULUNDU, MEKANİZMA SADELEŞTİRİLDİ · 11.09.2026
+
+⭐ **KULLANICI HB DESTEĞİNE TASK AÇMIŞTI ("kargo takip entegrasyonu") VE
+YANIT GERÇEK UCU AÇIK ETTİ.** HB'nin cevap e-postasındaki doküman
+bağlantısı (`op=Get__orders_merchantid_merchantId_cancelled`) bir uç
+adını taşıyordu; portal otomatik okuyucuya kapalıydı ama uç CANLIYA
+doğrudan denendi ve **gerçek, toplu veri döndü**:
+
+    GET /orders/merchantid/{id}/cancelled
+    { "totalCount": 7, "items": [
+      { "orderNumber": "4348472605", "cancelDate": "2026-09-06T09:52:15.004",
+        "cancelledBy": "Customer", "cancelReasonCode": "ISelectedWrongProduct",
+        "lineItemId": "...", "quantity": 1, "sku": "..." }, ... ] }
+
+Bu, daha önce elle doğrulanmış siparişle (`4348472605`) BİREBİR eşleşti.
+İlk sürümün "toplu uç yok" sonucu YANLIŞTI — aranmamıştı, YOK sanılmıştı.
+
+**MEKANİZMA BAŞTAN YAZILDI — TY/N11 İLE AYNI DESENE DÖNÜLDÜ:**
+- "Her açık siparişi tek tek yokla" (pencere + tavan + `siparisDetay`)
+  TAMAMEN kaldırıldı; artık toplu uç TEK seferde taranıyor
+  (`UCLAR.iptalEdilenSiparisler`, `hb/istemci.ts`).
+- ⛔ **SATIR = KALEM, SİPARİŞ DEĞİL.** Bir sipariş birden çok kalemliyse ve
+  listede yalnız BİR KISMI görünüyorsa, sipariş HÂLÂ AÇIKTIR — otomatik
+  iptal EDİLMEZ (N11'in "kısmi iptal hariç" guard'ının aynısı, burada
+  satır-sayısı ↔ geçerli-kalem-sayısı karşılaştırmasıyla).
+- ⭐ **SEBEP ARTIK UYDURULMUYOR.** Yeni saf gövde `hbIptalSebebiCoz`
+  (`src/lib/satis-iptali.ts`) kanalın kendi `cancelledBy`/`cancelReasonCode`
+  beyanını kapalı kümemize çevirir (`FoundCheapper`→MUSTERI_FIYAT,
+  `Customer` dışı→MAGAZA_DIGER, diğerleri→MUSTERI_VAZGECTI) — TY'nin
+  aksine artık HER ZAMAN MUSTERI_VAZGECTI yazılmıyor.
+- İptal anı hâlâ GÜN hassasiyetinde (`hbKargoDamgasi(cancelDate)`,
+  K195'in HB saat dilimi çözümüyle AYNI).
+- Test: `scripts/ice-aktarma-dogrula.ts`'e kaynak-tarama bağlanma testi
+  yeniden yazıldı, `scripts/iptal-dogrula.ts`'e `hbIptalSebebiCoz` için
+  6 değer testi eklendi — toplam **9 mutasyonla** sınandı (kısmi-iptal
+  guard'ı en riskliydi: kaldırılırsa hâlâ parçası açık bir sipariş
+  otomatik iptal edilebilirdi), hepsi kırmızı yandı, dosyalar bit-bit
+  geri yüklendi.
+
+⭐ **VE ESKİ MEKANİZMA CANLIDA GERÇEKTEN ÇALIŞTI — REBUILD ÖNCESİ KANIT.**
+Rebuild başlamadan hemen önce, eski (per-order-yoklama) sürüm gerçek bir
+siparişi (`4702303732`) doğru şekilde otomatik iptal etmiş bulundu:
+`iptalNotu: "...otomatik tespit edildi (K213...)"`, `iptalEdenId: null`
+(insan değil, sistem), `iptalTarihi` gün hassasiyetinde doğru. Bu K213'ün
+TEMEL mantığının (saf gövdeler, `iptalOnizle`→`iptalUygula` motoru)
+production'da zaten kanıtlandığını gösteriyor — rebuild yalnız KEŞİF
+yöntemini (toplu uç vs. tek tek yoklama) değiştirdi, karar mantığına
+dokunmadı.
+
+### HALİL TESTİ — kapanma şartı (TY + N11 + HB)
+Bu bir OTOMATİK, finansal etkili değişiklik — canlı zamanlanmış cron'lara
+giriyor. Sentetik deneme yerine gerçek bir vakayla doğrulanmalı:
+1. Trendyol'da (veya N11/HB'de) az riskli bir siparişi (ör. düşük tutarlı)
+   müşteri adına "Vazgeçtim" ile iptal ettir (ya da bir sonraki gerçek
+   müşteri iptalini bekle).
+2. O siparişin sistemde zaten **aktif satış** olarak durduğunu doğrula
+   (`/satislar` içinde sipariş kodunu ara).
+3. Bir sonraki zamanlanmış çekim (TY 5 dakikada bir · N11/HB kendi
+   cron'u) geçtikten sonra aynı satışı aç: **İptal Edildi** rozeti
+   görünmeli, iptal notu _"...otomatik tespit edildi (K213...)"_ okunmalı.
+4. `/rapor` panelindeki GERÇEK NET / ciro rakamının o satış tutarı kadar
+   **düştüğünü**, `/stok` üzerinden ilgili varyantın adedinin iptal
+   edilen miktar kadar **arttığını** doğrula.
+5. N11'e özgü: parçası hâlâ kargoda/teslimde olan BÖLÜNMÜŞ bir sipariş
+   varsa, o sipariş otomatik iptal EDİLMEMELİ (kısmi iptal guard'ı) —
+   fırsat çıkarsa bu senaryo da bir kez elle doğrulanmalı.
+6. HB'ye özgü: **zaten bir kez gerçek vakada doğrulandı** (sipariş
+   `4702303732`, yukarıya bkz.) — rebuild sonrası bir dahaki gerçek HB
+   iptalinde tekrar teyit edilmeli, artık toplu listeden (`/cancelled`)
+   geliyor olması dışında davranış aynı kalmalı.
+7. Ekrandaki rakamlar teslim raporundaki beklenenle birebir tutmalı
+   (Halil testi madde c) — yaklaşık değil.
+
+---
+
+## ✅ K212 — ÜRÜN ANALİZİ: ARAMA · FAVORİ/İNCELENECEK · MEVSİM SEKMESİ · 11.09.2026 → 19.09.2026 · [KAPANDI — canlı migration koştu, Halil testi geçti]
+
+> **HALİL TESTİ SONUCU (19.09.2026):** Kullanıcı doğruladı — geçti ("otomatik mevsim önerisi" ayrı, açık kalem olarak BEKLEYENLER.md'de bırakıldı).
+
+Kullanıcı: _"barkod EA ve diğer SKU'larla ürün arama butonu koy. Favori
+ürünler ve incelenilecek ürünler şeklinde etiketleyebilelim. Mevsimsel
+bir sekme — 1./2./3./4. çeyrekte çok satan. Yaz/kış tag'ları da olabilir,
+best practise peşinde koş."_
+
+### KARARLAR (kullanıcı, 11.09.2026)
+1. Favori/İncelenecek etiketleri **ORTAK** — kullanıcı bazlı değil, tek
+   liste tüm ekibe görünür.
+2. Mevsimsel sekme **TÜM GEÇMİŞ**, takvim çeyreğine göre (yıldan bağımsız
+   toplanır) — arbitraj ürünleri genelde 1-2 yıl yaşıyor.
+3. Yaz/Kış: **YALNIZ ELLE** — otomatik öneri YAPILMADI.
+
+### ⛔ OTOMATİK MEVSİM ÖNERİSİ NEDEN YOK — ÖLÇÜLDÜ, KURULMADI
+Canlıda ölçüldü (11.09.2026): ürünlerin **%79'u** (1296/1639) yalnız 1-2
+farklı ayda satılmış. İlk bakışta çeyreklik dağılım bimodal (uçlarda
+yığılmış) görünüyordu — ama bu örneklem küçüklüğü, gerçek mevsimsellik
+değil: bir ürün tek kez Haziran'da satıldıysa "%100 yaz" çıkar, oysa bu
+kampanya rastlantısı olabilir. En az 4 farklı ayda satılmış (daha
+güvenilir) 163 ürüne bakıldığında dağılım **DÜZ/rastgele** çıktı — net
+mevsimsel sinyal yok. Kullanıcı kararı: yanlış öneri hiç önermemekten
+kötü; veri yeterince büyüdükçe yeniden değerlendirilecek (bu kalem
+**bilerek** kapatılmadı, açık bırakılıyor — bkz. "kapatılamayacak kayıp,
+görev değil kayıttır": burada TERSİ, ileride görev olabilecek bir kayıt).
+
+### YAPILAN
+- **Arama** — barkod/EAN, SKU, Firma SKU, kanal kodları, ürün adı;
+  TR-duyarsız (İ/i) VE ASCII-duyarsız (kod alanlarında "I"→"ı" tuzağı —
+  bkz. aşağıdaki hata) çift normalleştirme.
+- **Favori / İncelenecek** — satır içi tek-tık toggle (yıldız/bayrak
+  ikonu), ortak liste, `Product.isFavorite`/`needsReview`.
+- **Sezon (Yaz/Kış)** — elle atama, satır içi iki düğme, `Product.season`.
+- **Mevsim ekseni** — 5. sekme, 1./2./3./4. Çeyrek çipleri, TÜM geçmiş
+  satışlar TRY sabit (dönem/kanal/para süzgeci bu ekseni etkilemiyor).
+
+### ⚠ KENDİ TESTİMİN YAKALADIĞI HATA (kaynak taramayla değil, DEĞER testiyle)
+İlk yazımda arama `toLocaleLowerCase("tr")` kullanıyordu — TEK BAŞINA.
+Türkçe kuralında ASCII **"I"** (barkod/SKU kodlarında sık) **"ı"**
+(noktasız) olur; "HB-PHI-77" kodu tr-locale'de "hb-phı-77" olup düz "i"
+ile yazan kullanıcının aramasıyla eşleşmiyordu. Kendi yazdığım değer testi
+("arama: kanal kodunda geçen metin bulunur") bunu ANINDA yakaladı.
+Düzeltme: hem düz `toLowerCase()` hem `toLocaleLowerCase("tr")` denenir,
+biri eşleşirse yeter (`aramaEsleserMi`, `urun-analizi.ts`).
+
+### ⛔ ŞEMA DEĞİŞİKLİĞİ — CANLIDA HENÜZ KOŞMADI
+`Product.isFavorite` / `needsReview` / `season` (+ 2 indeks) — migration
+`20260911071208_k212_urun_etiketleri` yerel geliştirme veritabanında
+uygulandı ve doğrulandı (`migration:kontrol` ✓, `deploy:bekci` A/H ✓).
+**CANLIYA henüz koşmadı** — `npm run canli:migrate` onay bekliyor. Kod bu
+migration olmadan deploy edilirse `Product` sorguları 500 verir (K
+"deploy edilen kod, koşulmayan migration" vakasının aynısı).
+
+### Canlı veri doğrulaması (salt okuma, `scripts/tmp/`, silindi)
+- Q3 için en yüksek cirolu 3 ürün: iki bağımsız yoldan (kütüphanenin
+  mantığı + bağımsız sorgu) hesaplandı — **birebir aynı sonuç**.
+- `urun-analizi:dogrula` 147/147 (11 bölüm, K212 için 31 yeni ölçüt).
+  `tsc`/`lint`/`i18n`/`yerlesim`/`sunucu-eylemi`/`api`/`yetki` temiz.
+
+### ─── ② DÜZELTME: ARAMA KAMERASIZ KALMIŞTI · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+Kullanıcı ekran görüntüsüyle bildirdi: _"barkod sadece yazılmasın, aynı
+zamanda diğer taraflarda olduğu gibi kamera ile okutulabilsin."_ Haklıydı —
+anayasanın İlke #7'si ("kod girilebilen her alan kamera destekler") ve
+`kamera:dogrula`nın "hiçbir liste araması ÇIPLAK `<Input>` kullanmıyor"
+desen-yasağı zaten VARDI, ama K212'nin arama kutusu bunu ÇİĞNEDİ ve bekçi
+YEŞİL kaldı.
+
+**Kök sebep — desen tek bir isme kilitliydi.** `kamera-dogrula.ts`'in
+kontrolü yalnız `name="q"`/`name="bq"` arıyordu (öteki liste ekranlarının
+tarihsel adlandırması); K212 yeni bir alan adı seçti — `name="arama"` —
+ve desen onu hiç görmedi. _("Bekçi ölçütü elle tutulan liste değil,
+tersten kurulur" kuralının kendisi de elle tutulu bir listeymiş — burada
+bir ADLAR listesiydi, ekranlar değil.)_
+
+**YAPILAN:**
+- `src/app/rapor/urunler/analiz-arama-kutusu.tsx` (yeni, istemci bileşeni)
+  → `BarkodGirisi` (kamera + USB okuyucu) doğrudan kullanılıyor, ortak
+  `KodAramaKutusu` DEĞİL: o bileşen `suzgecAdresi` ile düz
+  `Record<string,string>` kuruyor, bu sayfanın süzgeçleri ise TEKRARLI
+  parametre taşıyor (`marka=LEGO&marka=Karaca`). Sayfanın KENDİ saf URL
+  kurucusu (`analizAdresi`, `urun-analizi.ts`) doğrudan çağrıldı — ikinci
+  bir URL kurma ölçütü YAZILMADI.
+- `scripts/kamera-dogrula.ts` → desen-yasağı `name="arama"`yı da kapsayacak
+  şekilde genişletildi ve YENİ bir "geçici, kasıtlı çıplak kutu" dosyasıyla
+  mutasyonla sınandı (kırmızı yandığı görüldü, dosya silindi) — aynı hata
+  bir sonraki farklı isimli arama kutusunda TEKRARLANMASIN diye.
+
+### ─── ③ DÜZELTME: FİLTRE PANELİ YENİDEN DÜZENLENDİ · 11.09.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+Kullanıcı: _"filtrelerin frontend'i daha efektif olabilir."_ Belirsizdi;
+AskUserQuestion ile netleştirildi — kullanıcı üçünü BİRDEN seçti: **daha
+kompakt**, **daha az tıkla sonuca ulaşılsın**, **görsel hiyerarşi/gruplama
+netleşsin**.
+
+**YAPILAN:**
+- **Az tıkla** — Sırala/Yön/Satır Sayısı artık DEĞİŞİNCE ANINDA uygulanıyor
+  (yeni `otomatik-gonder-secim.tsx`, `onChange` → `form.requestSubmit()`).
+  Önceden Dönem/Kanal/Para/Etiket çipleri tek tıktı ama bu üçü hâlâ
+  "Uygula" bekliyordu — tutarsızlık giderildi. En Az Adet/Ciro BİLEREK
+  dokunulmadı: serbest metin, her tuşta göndermek sayfa geçişi demek.
+- **Kompakt** — "Satır Sayısı" eskiden ekranın EN ALTINDA, ayrı bir
+  satırdaydı; şimdi Sırala/Yön'ün yanında, TEK bir 5 sütunlu ızgarada
+  (Sırala · Yön · Satır · En Az Adet · En Az Ciro). Bir satır tasarruf.
+- **Gruplama** — büyük bölümler (Görünüm+Eşikler / Raf Yaşı / Dönem-Kanal-
+  Para / Etiketler / Marka-Kategori / Uygula-Temizle) artık ince bir üst
+  çizgiyle (`border-t`) ayrılıyor; göz hangi filtrenin hangi grupla
+  ilişkili olduğunu daha kolay ayırt ediyor.
+- Test: `scripts/urun-analizi-dogrula.ts`'e yeni bölüm (12.) — Sırala/Yön/
+  Satır'ın `OtomatikGonderSecim` İÇİNDE olduğu, `analiz-satir` kimliğinin
+  TEK yerde tanımlı kaldığı (eski blok gerçekten silindi, kopyalanmadı),
+  En Az Adet/Ciro'nun hâlâ düz `<Input>` olduğu, `onChange`'in gerçekten
+  `requestSubmit` çağırdığı — **4 mutasyonla** sınandı, hepsi kırmızı
+  yandı, dosyalar bit-bit geri yüklendi.
+
+### HALİL TESTİ — kapanma şartı (canlı migration koştuktan sonra)
+1. `/rapor/urunler` → **Ara** kutusuna bir barkod/SKU yaz → doğru ürün(ler)
+   listelenmeli. Ürün adının bir parçasını yaz → o da bulunmalı.
+   **Ve** kamera ikonuna bas → telefon/tablette kamera açılmalı, bir
+   barkod okutunca arama KENDİLİĞİNDEN çalışmalı (Ara'ya basmaya gerek
+   yok). **Sırala**/**Yön**/**Satır sayısı** kutularından birini
+   değiştir → sayfa KENDİLİĞİNDEN yenilenmeli, "Uygula"ya basmaya gerek
+   kalmamalı.
+2. Bir üründe **yıldız** ikonuna bas → favori işaretlenmeli (renk değişir),
+   tekrar basınca kalkmalı. **Bayrak** ikonu için aynısı (incelenecek).
+3. **Yaz**/**Kış** düğmesine bas → seçili görünmeli; tekrar basınca
+   kalkmalı; ikisi birden AÇIK olamamalı (biri seçilince öteki kapanır mı
+   diye bakılmaz — ayrı sorular, ikisi birden açık kalabilir; bu bilinçli).
+4. Üstteki **"Yalnız favoriler"** çipine bas → yalnız favori işaretli
+   ürünler görünmeli. **"Yalnız incelenecek"** için aynısı. **Mevsim**
+   çiplerinde Yaz/Kış için aynısı.
+5. **"Mevsimsel"** sekmesine geç → 1./2./3./4. Çeyrek çipleri görünmeli;
+   birine bas → o çeyrekte (TÜM geçmiş yıllar) en çok satan ürünler
+   sıralı gelmeli. Dönem/Kanal/Para kutuları bu sekmede GÖRÜNMEMELİ.
+6. Favori/incelenecek/sezon işaretleri **başka bir sekmeye geçince de
+   KORUNMALI** (aynı ürün "Dağılım"da da "Mevsimsel"de de aynı etiketi
+   göstermeli — ortak, ürüne ait).
+7. Mobilde (dar ekran): tüm yeni düğmeler 44px dokunma alanında olmalı,
+   arama kutusu ve mevsim/çeyrek çipleri satır kırılmadan kullanılabilmeli.
+
+Geçerse: kapat, ARSIV.md'e taşı (K212'nin "otomatik öneri yapılmadı"
+kısmı ayrı, açık bir kalem olarak kalır — bkz. yukarıdaki gerekçe).
+
+---
+
+## ✅ K210 — ÜRÜN ANALİZİ: DÖNEM/KANAL/PARA FİLTRESİ EKLENDİ · 11.09.2026 → 19.09.2026 · [KAPANDI — Halil testi geçti]
+
+> **HALİL TESTİ SONUCU (19.09.2026):** Kullanıcı doğruladı — geçti (K211 satır taşması düzeltmesi dahil).
+
+Kullanıcı: _"bu sayfa bizim için çok değerli, verilerinde hata olmamalı,
+bütün filtreler çalışmalı, BI olarak best practice hedeflenmeli."_
+
+**Ölçülen boşluk:** `/rapor/urunler` sayfasında `pencere`/`baslangic`/
+`bitis`/`kanal`/`para` parametreleri koddaydı ve sorguyu GERÇEKTEN
+etkiliyordu (ölçüldü — `satisEkseniVerisi(pencere, paraBirimi, kanalKodu)`)
+ama süzgeç çubuğunda bunları AYARLAYACAK hiçbir görünür kontrol yoktu —
+yalnız gizli alan olarak taşınıyorlardı. Sıralama (`SIRALAMA_ALANLARI`)
+zaten her görünen sütun için vardı (dropdown), o taraf gerçek bir boşluk
+değildi.
+
+**Yapılan:** `analiz-suzgeci.tsx`'e üç yeni bölüm eklendi (yalnız
+`eksen !== "stok"` — stok ekseni bu üçünü hiç parametre almıyor):
+- **Dönem** — Bu Ay/Son 3 Ay/Son 6 Ay tek-tık çip + "Özel aralık"
+  `<details>` içinde kendi küçük formu (JS'siz, `pencere=OZEL` çakışmasın
+  diye ayrı form).
+- **Kanal** — aktif kanallardan (`prisma.channel.findMany`) türetilen
+  çipler. `hamSatirlar`dan DEĞİL: kanal DB sorgusunda süzülüyor, süzülmüş
+  satırdan seçenek türetilseydi seçili olmayan kanallar listeden düşerdi.
+- **Para birimi** — TRY/EUR çip.
+
+**Canlı veri doğrulaması (salt okuma, `scripts/tmp/`, silindi):** bu ayın
+en yüksek cirolu 3 ürünü İKİ bağımsız yoldan hesaplandı (kütüphanenin
+kendi mantığı + bağımsız `groupBy`) — **birebir aynı sonuç.** `urun-analizi:
+dogrula` 116/116, `tsc`/`lint`/`i18n`/`yerlesim` temiz.
+
+### HALİL TESTİ — kapanma şartı
+1. Canlıda `/rapor/urunler` aç → "Dağılım" sekmesi.
+2. **Dönem** satırında "Son 3 Ay" çipine bas → liste ve toplamlar değişmeli,
+   URL'de `pencere=SON_3_AY` görünmeli.
+3. "Özel aralık" aç → iki tarih gir → Uygula → seçtiğin aralık uygulanmalı.
+4. **Kanal** satırında bir kanala bas (ör. Hepsiburada) → yalnız o kanalın
+   satışları görünmeli; "Tüm kanallar" ile geri dönülebilmeli.
+5. **Para birimi**nde EUR'a bas → yalnız EUR satışlar (varsa) görünmeli;
+   yoksa boş liste + "süzgeci gevşetin" notu görünmeli (sessiz boş liste
+   OLMAMALI).
+6. Marka/kategori/min adet/min ciro/raf yaşı kovası/sıralama/satır sayısı
+   filtrelerinin HİÇBİRİ bu değişiklikle bozulmamış olmalı — hepsini tek
+   tek dene.
+7. Mobilde (dar ekran) aynı adımlar — çipler ve `<details>` formu 44px
+   dokunma alanında olmalı.
+
+Geçerse: kapat, ARSIV.md'e taşı. Geçmezse: ekran görüntüsüyle bildir.
+
+### ─── ② K211 — UZUN ÜRÜN ADI SATIR TAŞMASI (kullanıcı canlıda buldu, 11.09.2026)
+
+K210'u test ederken ekran görüntüsüyle bildirildi: uzun ürün adları
+(ör. "Philips 7000 Serisi Buharlı Ütü — 2800W, SteamGlide Plus Taban...")
+hücre dışına taşıp ALTTAKİ satırın kimlik kodlarının (barkod/kanal SKU)
+üstüne biniyordu. **K210'un DEĞİL, önceden var olan bir bug** — bu satır
+hiç dokunulmamış koddaydı, K210'un getirdiği süzgeçlerle ilgisi yok, kullanıcı
+sadece o ekranı açıkken fark etti.
+
+**Kök sebep:** `ui/table.tsx`'teki `TableCell` varsayılanı
+`whitespace-nowrap` (para/tarife bölünmesin diye, bilinçli) — ürün adı
+hücresi bunu geri almıyordu, uzun başlık satır yüksekliğini büyütmeden
+kutunun dışına taşıyordu.
+
+**Düzeltme:** ürün adı hücresine `whitespace-normal` + `line-clamp-2`
+(`kanal-sku/page.tsx`'teki AYNI desen — ad uzun ve kullanıcı okumak
+istiyor ama satır sınırsız uzamasın).
+
+Halil testine ek madde: **8.** yukarıdaki test listesinde, ürün adı çok
+uzun bir kalem varsa (ör. Philips ütü) o satırın metni ALTTAKİ satıra
+binmemeli, en fazla 2 satırda kalıp "…" ile kesilmelidir.
+
+---
+
 ## ✅ K194 — N11'E STOK/FİYAT GÖNDERİMİ (İKİNCİ KANAL) · 09.09.2026 → 11.09.2026 · [KAPANDI — Halil testi geçti]
 
 > **Halil kararı 09.09:** stok TEK düğmeyle üç kanala, fiyat kanal başına
