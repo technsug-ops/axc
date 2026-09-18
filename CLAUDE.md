@@ -227,9 +227,10 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
 - Faz 3,5 ✓: TEK KULLANICILI GİRİŞ — `/giris` (canlıya geçişin ön maddesiydi)
 - **Faz 4 (ŞİMDİ): pazaryeri API'leri + barkod + çoklu kullanıcı + yetki (RBAC)**
   · pazaryeri API — OKUMA üç kanalda canlı (TY·HB·N11, 5 dakikada bir) ✓
-  · pazaryeri API — YAZMA yalnız TY'de (K169, Halil testi geçti); HB ve N11
-    resmî uç dokümanını bekliyor ⏳ _(kullanıcı kararı 09.09: stok TEK
-    düğmeyle üç kanala, fiyat kanal başına AYRI düğmeyle)_
+  · pazaryeri API — YAZMA TY ✓ (K169) ve N11 ✓ (K194) canlıda, ikisi de
+    Halil testi geçti; **yalnız HB açık** (K194-HB, resmî yazma ucu
+    aranıyor) _(kullanıcı kararı 09.09: stok TEK düğmeyle üç kanala, fiyat
+    kanal başına AYRI düğmeyle)_
   · barkod ✓ (`/okut` · `/paketle` · `/yerlestir` + kamera)
   · yetki (RBAC) ✓ (`lib/yetki`, rol+izin, `canli:yetki` bekçisi)
 Bir faza ait olmayan özelliği o fazda EKLEME.
