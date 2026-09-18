@@ -307,11 +307,25 @@ kontrol(
   tumu.size,
 );
 {
-  const baslikli = readFileSync("BEKLEYENLER.md", "utf8")
-    .split(/\r?\n/)
-    .filter((l) => l.startsWith("## ") && satirKimligi(l) !== null).length;
+  /**
+   * ⚠ 19.09.2026 — YALNIZ BEKLEYENLER.md'YE BAKMAK ARTIK YANLIŞ TABAN.
+   * Eşik (40) 02.09.2026'da BEKLEYENLER.md'nin kendisi 71 başlıklıyken
+   * ölçülmüştü. Bugün kullanıcı onayıyla 77 kapanmış kalem ARSIV.md'ye
+   * taşındı (K10'un kendi kuralı: kapanan kalem panodan SİLİNİR) —
+   * BEKLEYENLER.md'de meşru biçimde yalnız 24 başlıklı kalan. Bu ARIZA
+   * DEĞİL, panonun doğru çalıştığının kanıtı; ama eşik hâlâ tek dosyaya
+   * bakarsa her arşivleme turunda yeniden kırmızı yanar. Taşınan içerik
+   * KAYBOLMAZ (ARSIV.md'ye geçer), o yüzden taban BEKLEYENLER.md+ARSIV.md
+   * TOPLAMINA bağlandı — arşivleme büyüdükçe bu taban da büyür, asla küçülmez.
+   * (Anayasa: "eşik, ölçüldüğü popülasyonun dışına uygulanamaz".)
+   */
+  const baslikli = DOSYALAR.flatMap((dosya) =>
+    readFileSync(dosya, "utf8")
+      .split(/\r?\n/)
+      .filter((l) => l.startsWith("## ") && satirKimligi(l) !== null),
+  ).length;
   kontrol(
-    "  ...ve bunların en az 40'ı BAŞLIK biçiminden geliyor",
+    "  ...ve bunların en az 40'ı BAŞLIK biçiminden geliyor (BEKLEYENLER.md+ARSIV.md)",
     baslikli >= 40,
     baslikli,
   );

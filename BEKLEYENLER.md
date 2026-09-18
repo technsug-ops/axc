@@ -448,26 +448,70 @@ tasarlamadan yazmak, adresi olmayan bir rakam üretirdi.
 boş doğuyor ve yalnız **bundan sonraki** teslimlerle doluyor. "Teslim
 edilmedi" ile "sistem bilmiyor" aynı görünürse kutu yanlış okunur.
 
-## 🔶 K194-HB — HB'YE STOK/FİYAT GÖNDERİMİ (ÜÇÜNCÜ KANAL) · 09.09.2026 · [ARAŞTIRMA ONAYLANDI — SÜRÜYOR]
+## 🔶 K194-HB — HB'YE STOK/FİYAT GÖNDERİMİ (ÜÇÜNCÜ KANAL) · 09.09.2026 · [UÇLAR RESMİ DOKÜMANDAN BULUNDU — SIT DOĞRULAMASI + YAZMA KODU BEKLİYOR]
 
 ⛔ **N11 (K194) VE TY (K169) YAZMA TARAFI KAPANDI (Halil testi geçti,
 bkz. ARSIV.md) — YALNIZ HB AÇIK.**
 
-📋 **BİLİNEN ENGEL:** `stock-uploads` ve `price-uploads` uçlarının tam
-yolu + gövdesi hâlâ net değildi. Genel listing güncelleme ucu `Price` +
-`AvailableStock` + `DispatchTime` + `CargoCompany1` alanlarının HEPSİNİ
-zorunlu tutuyor; onunla YALNIZ stok göndermek **bayat bir fiyatla gerçek
-fiyatı ezerdi** — bu yüzden yazılmadı. Ayrıca HB'de fiyat eşiği aşılırsa
-listing **KİLİTLENİYOR** (MinLock/MaxLock); yanıttaki `priceValidations`
-alanı ekranda gösterilmeli ve kilit-kaldırma çağrısı ayrıca haritalanmalı.
+✅ **19.09.2026 — RESMİ DOKÜMANDAN ÇÖZÜLDÜ: BİLİNEN ENGEL ASLINDA YANLIŞ
+UÇTU.** Eski not "genel listing güncelleme ucu Price+AvailableStock+
+DispatchTime+CargoCompany1'in HEPSİNİ zorunlu tutuyor" diyordu — bu doğru
+ama YANLIŞ UCA bakıyordu (muhtemelen "Listing Bilgilerini Güncelleme" ya
+da BETA'daki "Listing Tekil Fiyat/Stok Güncelleme" ucu). Resmî geliştirici
+portalı (`developers.hepsiburada.com`, kaynak sırası #1 — kanalın kendi
+belgesi) **STOK ve FİYAT için AYRI, TEK-ALANLI uçlar** tanımlıyor:
 
-⭐ **KULLANICI ONAYLADI (11.09.2026, AskUserQuestion):** K213'ün HB
-iptal-listesi ucunun kullanıcının HB destek talebinden bulunması üzerine,
-aynı yöntemle (canlı API'yi doğrudan deneyerek) HB'nin GERÇEK stok/fiyat
-yazma ucunu aramak onaylandı. **Bu araştırma henüz TAMAMLANMADI** —
-bulunursa önce ölçüm sonucu raporlanacak, yazma kodu için AYRICA onay
+    POST  https://listing-external{-sit}.hepsiburada.com/listings/merchantid/{merchantId}/price-uploads
+          gövde: listings[].{ HepsiburadaSku | MerchantSku, Price }
+    GET   .../price-uploads/id/{id}      ← yükleme durumu sorgulama
+
+    POST  https://listing-external{-sit}.hepsiburada.com/listings/merchantid/{merchantId}/stock-uploads
+          gövde: listings[].{ HepsiburadaSku | MerchantSku, AvailableStock }
+    GET   .../stock-uploads/id/{id}      ← yükleme durumu sorgulama
+
+Yani **stok tek başına gönderilebiliyor, bayat fiyatı ezme riski YOK** —
+K194-HB'yi başlattığımız günkü varsayım (tek uç, dört alan zorunlu) yanlış
+çıktı. Tek istekte azami 4000 SKU. Cevapta `x-correlation-id` başlığı 7 gün
+boyunca ayrıntı sorgulamaya yarıyor.
+
+⚠ **MinLock/MaxLock DOĞRULANDI, ESKİ NOTLA BİREBİR ÖRTÜŞÜYOR:** fiyat
+eşiğini aşan bir `price-uploads` isteği cevapta `priceValidations[]` dizisi
+döndürüyor — `elementNo · hepsiburadaSku · merchantSku · type (MinLock/
+MaxLock) · minPrice · maxPrice · description` ("Yüksek/Düşük fiyat
+sebebiyle kilitlendi"). Kilitlenen listing ya önerilen aralıkta yeni fiyatla
+tekrar `price-uploads`'a girilerek ya da HB'nin kendi panelinden açılıyor —
+bu alan ekranda gösterilmek ZORUNDA (kullanıcının kilitlenmiş bir ürünü
+görmemesi = sessiz kayıp).
+
+⛔ **HENÜZ DOĞRULANMADI — YAZMA KODU YAZILMADAN ÖNCE ŞART:**
+1. İstek gövdesi JSON mı XML mi — dokümanda XML örneği net
+   (`Content-Type: application/xml`), bir arama sonucunda JSON örneği de
+   çıktı ama bu İKİNCİ EL bir özetti (arama motorunun sayfa özeti), resmî
+   sayfanın kendisi WebFetch'e **403/401 ile kapalı** (Cloudflare/ReadMe
+   bot koruması) — TEK KAYNAKTAN DOĞRULANMADI, kullanılamaz.
+   _(Anayasa: "iki okumayla da uyumlu bir gözlem hiçbirini kanıtlamaz" —
+   burada gözlem ikinci elden, tek kaynaktan bile değil.)_
+2. `stock-uploads` gövdesinde `DispatchTime`/`CargoCompany1` GERÇEKTEN
+   opsiyonel mi (dokümandan öyle görünüyor) — SIT ortamında gerçek bir
+   çağrıyla ölçülmeden varsayılmaz.
+3. Kimlik zaten `scripts/hb/istemci.ts`te var (`kimlikOku`/`baslikKur`) ama
+   o gövde YALNIZ `apiGet` taşıyor (bilerek — "YAZMA UCU TANIMLI DEĞİL").
+   Yazma eklenecekse `api:dogrula`nın `hb/istemci` izini bildiği için o
+   bekçi GÜNCELLENECEK, susturulmayacak.
+
+**SONRAKİ ADIM:** SIT ortamında (gerçek kimlik zaten `.env.canli`de var)
+TEK bir test SKU'suyla küçük, geri alınabilir bir `stock-uploads` denemesi
+— gövde biçimi ve zorunlu alanlar SIT cevabından ÖLÇÜLÜR, dokümandan
+TAHMİN edilmez. Bu adım + gerçek yazma kodu için kullanıcıdan AYRICA onay
 istenecek (K194/K213'teki "önizle→onayla, asla körlemesine toplu"
-disipliniyle aynı).
+disipliniyle aynı — bu SIT denemesi bile "önizle" tarafında kalır, CANLIYA
+hiçbir şey yazmaz).
+
+_Kaynaklar (19.09.2026 araştırması):_
+[Hepsiburada Developer Portal](https://developers.hepsiburada.com/hepsiburada/docs/getting-started) ·
+[Listing Fiyat Güncelleme](https://developers.hepsiburada.com/hepsiburada/reference/listing-fiyat-g%C3%BCncelleme) ·
+[Listing Stok Güncelleme Sorgulama](https://developers.hepsiburada.com/hepsiburada/reference/listing-stok-g%C3%BCncelleme-sorgulama) ·
+[Listing Tekil Fiyat/Stok Güncelleme (BETA — kullanılmayacak)](https://developers.hepsiburada.com/hepsiburada/reference/listing-tekil-fiyatstok-g%C3%BCncelleme)
 
 ---
 

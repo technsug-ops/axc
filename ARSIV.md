@@ -5093,7 +5093,15 @@ _Dersler anayasaya geçti: "toplu yazım üç şartla koşar"._
 
 ---
 
-## ✅ K48 — BEKÇİ DERLEMEYİ SINAMIYOR · KAPANDI 03.09.2026 → 19.09.2026 · [KOD KOŞTU]
+## ✅ K215 — BEKÇİ DERLEMEYİ SINAMIYOR (İKİNCİ TUR — `tsc` HÂLÂ KÖR NOKTA TAŞIYOR) · KAPANDI 03.09.2026 → 19.09.2026 · [KOD KOŞTU]
+
+> ⚠ **YENİDEN NUMARALANDI (19.09.2026):** bu kalem 77 maddelik arşiv
+> temizliğinde yanlışlıkla eski `K48` koduyla taşınmıştı — o kod 25.08.2026'da
+> zaten FARKLI bir olaya (`tsc:dogrula`nın ilk eklenmesi) verilmişti ve
+> "boşluk yeniden kullanılmaz" kuralı gereği kod ikinci kez verilemez. İkisi
+> aynı konuya (derleme denetimi) değiniyor ama AYRI olaylar — biri `tsc:dogrula`yı
+> KURUYOR (25.08), bu ise onun körlüklerini ÖLÇÜP `sunucu-eylemi:dogrula`yı
+> EKLİYOR (03.09). `pano:dogrula`nın kendi K10 çakışma kontrolü yakaladı.
 
 > **BEDELİ ÖLÇÜLDÜ:** 30.08'de **üç push boyunca üç ekran canlıda yoktu**
 > (`/yerlestir`, `/paketle` raf okuması, toplu taşıma) ve **hiçbir bekçi
