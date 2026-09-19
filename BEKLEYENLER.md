@@ -448,52 +448,123 @@ tasarlamadan yazmak, adresi olmayan bir rakam üretirdi.
 boş doğuyor ve yalnız **bundan sonraki** teslimlerle doluyor. "Teslim
 edilmedi" ile "sistem bilmiyor" aynı görünürse kutu yanlış okunur.
 
-## 🔶 K194-HB — HB'YE STOK/FİYAT GÖNDERİMİ (ÜÇÜNCÜ KANAL) · 09.09.2026 · [UÇLAR RESMİ DOKÜMANDAN BULUNDU — SIT DOĞRULAMASI + YAZMA KODU BEKLİYOR]
+## 🔶 K194-HB — HB'YE STOK/FİYAT GÖNDERİMİ (ÜÇÜNCÜ KANAL) · 09.09.2026 · [UÇ + GÖVDE RESMİ DOKÜMANDAN OKUNDU — SIT DENEMESİ + YAZMA KODU BEKLİYOR]
 
 ⛔ **N11 (K194) VE TY (K169) YAZMA TARAFI KAPANDI (Halil testi geçti,
 bkz. ARSIV.md) — YALNIZ HB AÇIK.**
 
-✅ **19.09.2026 — RESMİ DOKÜMANDAN ÇÖZÜLDÜ: BİLİNEN ENGEL ASLINDA YANLIŞ
-UÇTU.** Eski not "genel listing güncelleme ucu Price+AvailableStock+
-DispatchTime+CargoCompany1'in HEPSİNİ zorunlu tutuyor" diyordu — bu doğru
-ama YANLIŞ UCA bakıyordu (muhtemelen "Listing Bilgilerini Güncelleme" ya
-da BETA'daki "Listing Tekil Fiyat/Stok Güncelleme" ucu). Resmî geliştirici
-portalı (`developers.hepsiburada.com`, kaynak sırası #1 — kanalın kendi
-belgesi) **STOK ve FİYAT için AYRI, TEK-ALANLI uçlar** tanımlıyor:
+✅ **19.09.2026 — BİRİNCİL KAYNAKTAN OKUNDU (kullanıcı resmî portaldan
+"Listeleme Entegrasyonu Önemli Bilgiler" sayfasını birebir yapıştırdı —
+WebFetch bu siteye 403/401 ile kapalı, bu yüzden ilk turda yalnız arama
+motoru ÖZETLERİNE dayanıyordum; o özetler artık bu birincil kaynakla
+DOĞRULANDI/DÜZELTİLDİ).**
+
+⚠ **DÜZELTME — ESKİ İYİMSER SONUÇ TAM DOĞRU DEĞİLDİ.** İlk turda "stok tek
+başına, bayat fiyatı ezme riski yok" dedim; bu ikinci elden (arama motoru
+özeti) bir gözlemdi. Birincil kaynak şunu söylüyor: _"Bilgilerden;
+ProductName, ShippingProfileName ve MaximumPurchasableQuantity haricindeki
+TÜM bilgilerin gönderilmesi ZORUNLUDUR."_ — yani `Price`, `AvailableStock`,
+`DispatchTime`, `CargoCompany1` gibi alanlar birlikte gönderiliyor gibi
+görünüyor; eski "hepsi zorunlu" engel notu tümüyle yanlış olmayabilir.
+**Kaynak kendi içinde de belirsiz**: aynı sayfa "price-uploads / stock-uploads
+body'de HepsiburadaSku ve MerchantSku tek başına ya da birlikte olabilir"
+diyerek bunları AYRI iki uç gibi adlandırıyor, ama örnek gövde ve "tümü
+zorunlu" cümlesi TEK BİRLEŞİK bir gövdeyi anlatıyor. **Bu çelişki düz metin
+okuyarak çözülmez — SIT'te gerçek bir `stock-uploads` çağrısı `Price`
+GÖNDERMEDEN denenip cevap ölçülecek** (aşağıdaki SONRAKİ ADIM).
+_(Anayasa: "iki okumayla da uyumlu bir gözlem hiçbirini kanıtlamaz".)_
+
+📋 **UÇLAR (adları doğrulandı, tam gövde SIT'te ölçülecek):**
 
     POST  https://listing-external{-sit}.hepsiburada.com/listings/merchantid/{merchantId}/price-uploads
-          gövde: listings[].{ HepsiburadaSku | MerchantSku, Price }
-    GET   .../price-uploads/id/{id}      ← yükleme durumu sorgulama
-
     POST  https://listing-external{-sit}.hepsiburada.com/listings/merchantid/{merchantId}/stock-uploads
-          gövde: listings[].{ HepsiburadaSku | MerchantSku, AvailableStock }
-    GET   .../stock-uploads/id/{id}      ← yükleme durumu sorgulama
+    GET   .../{price|stock}-uploads/id/{id}   ← "Listing Güncelleme İşlem Kontrolü"
 
-Yani **stok tek başına gönderilebiliyor, bayat fiyatı ezme riski YOK** —
-K194-HB'yi başlattığımız günkü varsayım (tek uç, dört alan zorunlu) yanlış
-çıktı. Tek istekte azami 4000 SKU. Cevapta `x-correlation-id` başlığı 7 gün
-boyunca ayrıntı sorgulamaya yarıyor.
+    Kimlik: HTTP Basic Auth (aynı Authorization başlığı, hâlâ scripts/hb/istemci.ts'teki gibi)
+    Content-Type: application/xml (XML) veya Accept: application/json (JSON) — ikisi de var
+    Tek istekte azami 4000 SKU · aynı anda azami 5 BEKLEYEN işlem (aşılırsa reddedilir, hata yok — önce eskisinin bitmesi beklenir)
+    x-correlation-id cevap başlığı — 7 gün boyunca destek panelinden sorgulanabilir
 
-⚠ **MinLock/MaxLock DOĞRULANDI, ESKİ NOTLA BİREBİR ÖRTÜŞÜYOR:** fiyat
-eşiğini aşan bir `price-uploads` isteği cevapta `priceValidations[]` dizisi
-döndürüyor — `elementNo · hepsiburadaSku · merchantSku · type (MinLock/
-MaxLock) · minPrice · maxPrice · description` ("Yüksek/Düşük fiyat
-sebebiyle kilitlendi"). Kilitlenen listing ya önerilen aralıkta yeni fiyatla
-tekrar `price-uploads`'a girilerek ya da HB'nin kendi panelinden açılıyor —
-bu alan ekranda gösterilmek ZORUNDA (kullanıcının kilitlenmiş bir ürünü
-görmemesi = sessiz kayıp).
+**ÖRNEK GÖVDE (XML, dokümandan birebir):**
+
+    <listings>
+      <listing>
+        <HepsiburadaSku>HBV00000TWKQJ</HepsiburadaSku>
+        <MerchantSku>HBV00000TWKQJ_TEST</MerchantSku>
+        <ProductName>Brita Intenza + Su Filtresi Kahve Makineleri Için</ProductName>
+        <Price>118,97</Price>
+        <AvailableStock>9</AvailableStock>
+        <DispatchTime>3</DispatchTime>
+        <MaximumPurchasableQuantity>0</MaximumPurchasableQuantity>
+        <ShippingProfileName>MigratedProfile_…</ShippingProfileName>
+      </listing>
+    </listings>
+
+⚠ **FİYAT VİRGÜLLE YAZILIR, NOKTAYLA DEĞİL** (`118,97`) — nokta gönderilirse
+`InvalidPrice` hatası. `MaximumPurchasableQuantity: 0` = sınırsız.
+
+**CEVAP (yükleme kabul edildiğinde):** `{ id, status: "Done"|"Failed",
+createdAt, total, errors, priceValidations[] }`.
+
+✅ **MinLock/MaxLock DOĞRULANDI — GERÇEK ÖRNEK CEVAPLA:**
+`priceValidations[]` → `elementNo · hepsiburadaSku · merchantSku ·
+type ("MinLock"|"MaxLock") · minPrice · maxPrice · description`.
+Kilit açma **ayrı bir uç**: **"Toplu Kilit Kaldırma"**
+([doküman](https://developers.hepsiburada.com/hepsiburada/reference/toplu-kilit-kaldırma))
+— önerilen aralıkta yeni fiyatla toplu kilit kaldırıp satışa açıyor. Bu alan
+ekranda gösterilmek ZORUNDA (kilitlenmiş bir ürünün sessizce satışta
+kalmaması = İlke #5).
+
+🆕 **YENİ BULGU — `OutOfPriceRange` — FİYAT SAĞLAMLIK MEKANİZMASI (bilinmiyordu):**
+HB, yayındaki fiyatların (en düşük+en yüksek hariç) ortalamasına göre azami
+sapma yüzdesi uyguluyor — aşan istek `OutOfPriceRange` hatasıyla reddediliyor:
+
+    0–50 TL     → azami %250     500–2000 TL  → azami %90
+    50–100 TL   → azami %150     2000 TL üzeri → azami %80
+    100–200 TL  → azami %120
+    200–500 TL  → azami %100
+
+Bu **MinLock/MaxLock'tan AYRI** bir kapı — kilit değil doğrudan RED.
+Fiyat gönderme ekranı bu bandı önceden hesaplayıp uyarmalı, göndermeden
+sonra hata almak yerine.
+
+🆕 **YENİ BULGU — KARGO FİRMASI EŞLEŞTİRME KURALI:** `HepsiJet` ·
+`Horoz Lojistik` · `Borusan Lojistik` **TEK BAŞINA CargoCompany1 OLAMAZ** —
+yanına `CargoCompany2`'ye "standart" bir firma (Yurtiçi Kargo · Aras Kargo ·
+PTT Kargo · MNG Kargo · Sürat Kargo · Ceva Lojistik · UPS · Mağaza Hesabı)
+eklenmezse `MissingStandardCargoCompany` hatası döner. **Alternatif:**
+`ShippingProfileName` (merchant panelde tanımlı teslimat profili adı) —
+CargoCompany alanları yerine TEK bu alan gönderilip gönderilemeyeceği
+SIT'te ayrıca ölçülmeli; doğruysa kargo eşleştirme kuralının tamamından
+kaçınıp işi ÇOK basitleştirir.
+
+🆕 **YENİ BULGULAR — komşu uçlar (bugün kapsam dışı, ileride lazım olabilir):**
+- **Listing Satışa Açma/Kapatma** — fiyat/stok=0 tetiğinden AYRI, doğrudan
+  aç/kapa ucu var; açmak için fiyat+stok önceden dolu olmalı.
+- **Listing Silme** — satışta olan listing silinemez.
+- **ShippingProfileName Listeleme** — merchant paneldeki teslimat
+  profillerini okur.
+- **Buybox Bilgilerini Listeleme** — rakip fiyat+sıra+kargo süresi döndürüyor
+  (azami 10 SKU). Eski ölçüm (21.08.2026, ARSIV.md) "HB fiyat vermiyor
+  yalnız sıra veriyor" diyordu — o TOPLU LİSTİNG DIŞA AKTARIMI için doğruydu,
+  bu AYRI, dedike bir API. _Buybox otomasyonu kullanıcı kararıyla kapalı
+  kalmaya devam ediyor (bkz. ARSIV.md), bu yalnız bir gözlem — K194-HB'nin
+  kapsamı değil._
+
+⛔ **HATA KODLARI (dokümandan, ekranda Türkçeye çevrilecek):** `ProductNotFound` ·
+`MismatchingSkusSpecified` · `DuplicateHepsiburadaSkuSpecified` ·
+`DuplicateMerchantSkuSpecified` · `MissingHeaders` · `InvalidPrice` ·
+`InvalidAvailableStock` · `InvalidDispatchTime` ·
+`DiscountedListingPriceIncrease` · `MerchantAlreadyListedAgainstProduct` ·
+`ListingDeletedRecently` · `ListingFrozen` · `MissingStandardCargoCompany` ·
+`OutOfPriceRange` · `restrictedProductBrand` · `InvalidMaximumPurchasableQuantity`.
 
 ⛔ **HENÜZ DOĞRULANMADI — YAZMA KODU YAZILMADAN ÖNCE ŞART:**
-1. İstek gövdesi JSON mı XML mi — dokümanda XML örneği net
-   (`Content-Type: application/xml`), bir arama sonucunda JSON örneği de
-   çıktı ama bu İKİNCİ EL bir özetti (arama motorunun sayfa özeti), resmî
-   sayfanın kendisi WebFetch'e **403/401 ile kapalı** (Cloudflare/ReadMe
-   bot koruması) — TEK KAYNAKTAN DOĞRULANMADI, kullanılamaz.
-   _(Anayasa: "iki okumayla da uyumlu bir gözlem hiçbirini kanıtlamaz" —
-   burada gözlem ikinci elden, tek kaynaktan bile değil.)_
-2. `stock-uploads` gövdesinde `DispatchTime`/`CargoCompany1` GERÇEKTEN
-   opsiyonel mi (dokümandan öyle görünüyor) — SIT ortamında gerçek bir
-   çağrıyla ölçülmeden varsayılmaz.
+1. **`stock-uploads`e `Price` GÖNDERMEDEN istek atılırsa ne olur** — kabul mü,
+   `MissingHeaders` mi? Bu, K194-HB'nin ÇEKİRDEK sorusu (bayat fiyatı ezme
+   riski var mı yok mu) ve yalnız SIT'te ölçülür.
+2. `ShippingProfileName` tek başına CargoCompany alanlarının yerini
+   tutuyor mu — tutuyorsa kargo eşleştirme kuralının hepsinden kaçınılır.
 3. Kimlik zaten `scripts/hb/istemci.ts`te var (`kimlikOku`/`baslikKur`) ama
    o gövde YALNIZ `apiGet` taşıyor (bilerek — "YAZMA UCU TANIMLI DEĞİL").
    Yazma eklenecekse `api:dogrula`nın `hb/istemci` izini bildiği için o
@@ -507,11 +578,15 @@ istenecek (K194/K213'teki "önizle→onayla, asla körlemesine toplu"
 disipliniyle aynı — bu SIT denemesi bile "önizle" tarafında kalır, CANLIYA
 hiçbir şey yazmaz).
 
-_Kaynaklar (19.09.2026 araştırması):_
-[Hepsiburada Developer Portal](https://developers.hepsiburada.com/hepsiburada/docs/getting-started) ·
-[Listing Fiyat Güncelleme](https://developers.hepsiburada.com/hepsiburada/reference/listing-fiyat-g%C3%BCncelleme) ·
-[Listing Stok Güncelleme Sorgulama](https://developers.hepsiburada.com/hepsiburada/reference/listing-stok-g%C3%BCncelleme-sorgulama) ·
+_Kaynaklar (19.09.2026, kullanıcı tarafından resmî portaldan yapıştırıldı):_
+"Listeleme Entegrasyonu Önemli Bilgiler" (developers.hepsiburada.com) ·
+[Toplu Kilit Kaldırma](https://developers.hepsiburada.com/hepsiburada/reference/toplu-kilit-kaldırma) ·
 [Listing Tekil Fiyat/Stok Güncelleme (BETA — kullanılmayacak)](https://developers.hepsiburada.com/hepsiburada/reference/listing-tekil-fiyatstok-g%C3%BCncelleme)
+— ⚠ **ayrıca elenen iki komşu uç, karıştırılmasın:** "Ürün Bilgisi Gönderme"
+(`mpop-sit.hepsiburada.com/product/api/products/import`, katalog/YENİ ürün
+girişi) ve "Ürün Güncelleme" (`hbSku`/ad/görsel/desi/barkod METADATA'sı,
+fiyat-stok YOK) — ikisi de kullanıcı tarafından denendi, ikisi de bu iş
+DEĞİL.
 
 ---
 
