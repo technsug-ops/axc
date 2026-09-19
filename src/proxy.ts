@@ -55,6 +55,11 @@ const ACIK_YOLLAR = [
   // uygulandı: yeni bir cron rotası, ACIK_YOLLAR'a EKLENMEDEN canlıya
   // gitmez — `cron-yollari:dogrula` bunu her cron rotasını TARAYARAK sınar.
   "/api/cron/ozet-uret",
+  // K220 — TY hakediş + gerçek kargo çekim ucu: aynı sınıf, aynı
+  // CRON_SECRET kapısı. K166/K-HB-CRON/K-OZET'in üçünün de öğrettiği ders
+  // (yeni cron rotası ACIK_YOLLAR'a eklenmeden 401'e düşer) bu satırla
+  // baştan uygulandı, üçüncü kez tekrarlanmadı.
+  "/api/cron/ty-hakedis-cekim",
   // A3/K50-a — canlı ölçüm ucu: yerel makineden canlı DB'ye TCP seviyesinde
   // erişilemediği için Vercel'in kendi havuzundan koşuyor; aynı sınıf, aynı
   // sır kapısı. ⛔ BU SATIR DA EKSİKTİ (10.09.2026'da HB ile birlikte

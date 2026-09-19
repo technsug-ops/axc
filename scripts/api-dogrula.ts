@@ -324,6 +324,24 @@ const YAZMASI_BEYANLI: { dosya: string; gerekce: string; bekcisi: string }[] = [
       "birim/toplam kanıtı gelene dek YAZILMAZ.",
     bekcisi: "ice-aktarma:dogrula",
   },
+  {
+    dosya: "canli-ty-hakedis-cekim.ts",
+    gerekce:
+      "K220 — TY hakediş API çekimi: Settlement/SettlementItem yazar. " +
+      "`--yaz` bayrağına kilitli (varsayılan kuru koşum); rowKey dedup " +
+      "Excel'le AYNI (id alanı Excel'in Kayıt No'suyla birebir), yeni satır " +
+      "ekler ya da yalnız boş `paidAt`ı tazeler — mevcut tutara dokunmaz.",
+    bekcisi: "ty-hakedis-yazici:dogrula",
+  },
+  {
+    dosya: "canli-ty-kargo-gercek-olcum.ts",
+    gerekce:
+      "K220-② — TY gerçek kargo maliyeti: `Sale.cargoAmount` yazar. `--yaz` " +
+      "bayrağına kilitli; yalnız `cargoAmount === null` olan satışlara yazar " +
+      "(\"gerçekleşen değerin üzerine asla yazılmaz\" kuralı hiç ihlal edilmez), " +
+      "yazımdan sonra `satisKarTazele` ile kârı tazeler.",
+    bekcisi: "ty-hakedis-yazici:dogrula",
+  },
 ];
 
 for (const yol of apiDosyalari) {

@@ -160,7 +160,7 @@ async function main() {
      * _(Anayasa: "hata mesajını kısaltan her işlem teşhisi kısaltır".)_
      */
     const s = await apiGet(
-      UCLAR.hakedis(k.saticiId, bas, son, 0, 500),
+      UCLAR.hakedis(k.saticiId, bas, son, 0, "Sale", 500),
       baslik,
       90_000,
     );

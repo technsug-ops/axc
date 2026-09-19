@@ -239,9 +239,42 @@ export const UCLAR = {
   /** Sipariş listesi — pencere en fazla 90 gün (A3-①b'de ölçüldü). */
   siparisler: (saticiId: string, bas: number, son: number, sayfa: number, boyut = 200) =>
     `/integration/order/sellers/${saticiId}/orders?startDate=${bas}&endDate=${son}&page=${sayfa}&size=${boyut}`,
-  /** Hakediş — pencere en fazla 15 GÜN (uç kendi mesajıyla söylüyor). */
-  hakedis: (saticiId: string, bas: number, son: number, sayfa: number, boyut = 500) =>
-    `/integration/finance/che/sellers/${saticiId}/settlements?startDate=${bas}&endDate=${son}&transactionType=Sale&page=${sayfa}&size=${boyut}`,
+  /**
+   * Hakediş — pencere en fazla 15 GÜN (uç kendi mesajıyla söylüyor).
+   * ⚠ `transactionType` PARAMETRESİZ ÇALIŞMAZ — uç `400` döner ve tam
+   * cevabı geçerli 24 değeri sayar (ölçüldü 19.09.2026, K220). Sipariş
+   * bazlı satırlar (Satış/İade/Kupon/…) burada; sipariş dışı kalemler
+   * (Stopaj/Kargo Fatura/Platform Hizmet) `otherFinancials`'ta.
+   */
+  hakedis: (saticiId: string, bas: number, son: number, sayfa: number, tur: string, boyut = 500) =>
+    `/integration/finance/che/sellers/${saticiId}/settlements?startDate=${bas}&endDate=${son}&transactionType=${tur}&page=${sayfa}&size=${boyut}`,
+  /**
+   * ⭐ K220 (19.09.2026) — Excel'in "E-ticaret Stopajı" · "Kargo Fatura" ·
+   * "Platform Hizmet Bedeli" satırları BU uçtan geliyor, `hakedis`ten DEĞİL:
+   * `settlements` yalnız SİPARİŞE bağlı satırları taşıyor (ölçüldü — 120
+   * günde `DeliveryFee` tipi orada HİÇ kayıt vermedi). Gerçek yol:
+   *
+   *   Stoppage           → "E-ticaret Stopajı"        (sipariş dışı)
+   *   DeductionInvoices  → "Kargo Fatura" · "Platform Hizmet Bedeli"
+   *                        (aynı tip, alt tip YOK denenirse İKİSİ birden
+   *                        gelir — `transactionSubType=PlatformServiceFee`
+   *                        yalnız birini süzer, biz ikisini de istiyoruz)
+   *   PaymentOrder       → ödeme emrinin TOPLAMI (Settlement.amount ile
+   *                        çapraz kontrol için — kalem olarak YAZILMAZ)
+   *   CommissionAgreementInvoice → dönemsel komisyon mutabakat faturası;
+   *                        `settlements`teki her satışın `commissionAmount`ı
+   *                        ile AYNI parayı ikinci kez sayar — YAZILMAZ.
+   */
+  otherFinancials: (saticiId: string, bas: number, son: number, sayfa: number, tur: string, boyut = 500) =>
+    `/integration/finance/che/sellers/${saticiId}/otherfinancials?startDate=${bas}&endDate=${son}&transactionType=${tur}&page=${sayfa}&size=${boyut}`,
+  /**
+   * Bir "Kargo Fatura" kaleminin SİPARİŞ BAZINDA dökümü — `id`/
+   * `commissionInvoiceSerialNumber` alanı buraya girdi olur.
+   * ⚠ Bugün yalnız ÖLÇÜM için kullanılıyor (K220-② kargo gerçek maliyeti,
+   * ayrı ve henüz yazmayan bir iş); hakediş kalemi yazımı bu ucu çağırmaz.
+   */
+  kargoFaturaKalemleri: (saticiId: string, faturaNo: string) =>
+    `/integration/finance/che/sellers/${saticiId}/cargo-invoice/${faturaNo}/items`,
   /** İade/talep listesi. */
   iadeler: (saticiId: string, sayfa: number, boyut = 200) =>
     `/integration/order/sellers/${saticiId}/claims?page=${sayfa}&size=${boyut}`,

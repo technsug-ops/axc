@@ -101,8 +101,16 @@ export function siparisNeti(
 //  TRENDYOL — GENİŞ FORMAT
 // ---------------------------------------------------------------------------
 
-/** TY "İşlem Tipi" → ortak kod. Normalize edilmiş metinle eşleşir. */
-const TY_TIPLER: Record<string, HakedisKodu> = {
+/**
+ * TY "İşlem Tipi" → ortak kod. Normalize edilmiş metinle eşleşir.
+ *
+ * ⚠ DIŞA AÇIK (19.09.2026): Excel okuyucusu VE canlı API okuyucusu
+ * (`scripts/ty/hakedis-api-oku.ts`) AYNI sözlüğü kullanır — TY'nin kendi
+ * settlements API'si "İşlem Tipi" metnini Excel'le BİREBİR aynı yazıyor
+ * (ölçüldü: "Satış", "İade", "Kupon", "Kupon İptal" ... hepsi tutuyor).
+ * İki ayrı sözlük yazılsaydı biri güncellenip öteki unutulurdu.
+ */
+export const TY_TIPLER: Record<string, HakedisKodu> = {
   "satış": "SIPARIS_TUTARI",
   "iade": "IADE_TUTARI",
   "kupon": "KUPON",

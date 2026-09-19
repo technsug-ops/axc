@@ -80,7 +80,7 @@ async function main() {
     },
     {
       ad: "hakedis",
-      yol: UCLAR.hakedis(k.saticiId, simdi - 15 * GUN, simdi, 0, 500),
+      yol: UCLAR.hakedis(k.saticiId, simdi - 15 * GUN, simdi, 0, "Sale", 500),
     },
     { ad: "iadeler", yol: UCLAR.iadeler(k.saticiId, 0, 50) },
   ];

@@ -1,0 +1,41 @@
+# ============================================================================
+#  K220 — TY HAKEDİŞ + GERÇEK KARGO ÇEKİMİ — YEDEK TETİKLEYİCİ
+# ----------------------------------------------------------------------------
+#  Ödeme dönemleri hafta/ay mertebesinde değiştiği için (ty-cekim.yml'deki
+#  10 dk'lık sipariş çekiminin AKSİNE) günlük bir tetik yeterli — ozet-uret.yml
+#  ile AYNI kadans/gerekçe.
+#
+#  ⚠ AYRI DOSYA, ty-cekim.yml'YE EKLENMEDİ — kadans farklı (günlük ≠ 10 dk)
+#  ve iş de ayrı (hakediş/kargo mutabakatı ≠ sipariş çekimi).
+#
+#  ⚠ İDEMPOTENT: rowKey dedup (hakediş) ve yalnız BOŞ cargoAmount'a yazma
+#  (kargo) sayesinde çift tetik zararsız — ölçüldü 19.09.2026 (aynı gün
+#  ikinci koşum 0 yeni / 0 tazelenen / 0 yazılan verdi).
+#
+#  BİRİNCİL TETİK bu iş için ŞİMDİLİK Vercel Cron + bu yedek — cron-job.org'a
+#  eklenmedi (dış hesaba erişim gerekiyor, kullanıcı isterse ekler). Ödeme
+#  verisi dakika hassasiyeti istemediği için bu, ty-cekim'deki gibi "birincil
+#  DEĞİL" riski taşımıyor.
+#
+#  SIR: depo Secrets → CRON_SECRET (diğer cron işleriyle AYNI değer).
+# ============================================================================
+name: TY hakediş + gerçek kargo (günlük, yedek)
+
+on:
+  schedule:
+    - cron: "30 4 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  cek:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ucu cagir
+        run: |
+          KOD=$(curl -s -o cevap.json -w "%{http_code}" --max-time 90 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://axc-seven.vercel.app/api/cron/ty-hakedis-cekim")
+          echo "HTTP $KOD"
+          cat cevap.json || true
+          test "$KOD" = "200"

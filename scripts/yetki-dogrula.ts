@@ -293,6 +293,10 @@ const API_ISTISNALARI = new Map<string, string>([
     "src/app/api/cron/ozet-uret/route.ts",
     "K-OZET: TY/N11/HB cron uçlarıyla AYNI sınıf — dış zamanlayıcı (cron-job.org/GitHub Actions) çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz.",
   ],
+  [
+    "src/app/api/cron/ty-hakedis-cekim/route.ts",
+    "K220: TY/N11/HB cron uçlarıyla AYNI sınıf — dış zamanlayıcı (Vercel Cron + GitHub Actions günlük yedek) çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz. ⚠ Bu satır İLK yazımda unutulmuyor: K166/K-HB-CRON'un 'yeni cron rotası ACIK_YOLLAR'a ve bu listeye eklenmeden 401'e düşer' dersi baştan uygulandı.",
+  ],
 ]);
 {
   const korumasiz: string[] = [];
