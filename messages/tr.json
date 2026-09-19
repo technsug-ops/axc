@@ -2115,7 +2115,12 @@
     "kalemSayisi": "{sayi} kalem",
     "tahminiHesaplanmistir": "Tahmini hesaplanmıştır",
     "odemeYapildi": "Ödeme yapıldı",
-    "odemeEmriNo": "Ödeme emri"
+    "odemeEmriNo": "Ödeme emri",
+    "kanalDagilimiBaslik": "Kanal dağılımı",
+    "kanalDagilimiNotu": "Bekleyen paranın kanal bazında dağılımı.",
+    "kanalDagilimiBosMesaj": "Bekleyen kalem yok.",
+    "bosFiltreBaslik": "Bu kanal için hakediş kalemi yok.",
+    "bosFiltreIpucu": "Süzgeci kaldırıp diğer kanalları görebilir ya da başka bir kanal seçebilirsiniz."
   },
   "Panel": {
     "baslik": "Panel",

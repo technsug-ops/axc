@@ -6,6 +6,9 @@ import { CircleCheck, TriangleAlert, Upload } from "lucide-react";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
+import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
+import { PastaGrafik } from "@/components/pasta-grafik";
+import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +25,12 @@ import { isTakvimGunu, gunDegeri } from "@/lib/donem";
 import { beklenenHakedis, odemeDurumu } from "@/lib/hakedis/eslestir";
 import { HAKEDIS_ESIKLERI } from "@/lib/hakedis/model";
 import { prisma } from "@/lib/prisma";
-import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import {
+  DURUM_KUTUSU,
+  DURUM_YAZISI,
+  KANAL_RENGI_VARSAYILAN,
+  KANAL_RENKLERI,
+} from "@/lib/renkler";
 
 export const dynamic = "force-dynamic";
 
@@ -37,51 +45,120 @@ export async function generateMetadata() {
   return { title: tBaslik("hakedis") };
 }
 
-export default async function HakedisSayfasi() {
+/**
+ * K220/K221 — HANGİ KANALIN HANGİ OTOMATİK İZ ADINI YAZDIĞI BURADA BİR KEZ
+ * BEYAN EDİLİR. Haritada OLMAYAN kanal (N11 ve otomasyonu olmayan her kanal)
+ * seçiliyken rozet "hiç çalışmadı" der — ki bu DOĞRUDUR: gerçekten otomatik
+ * çekim yok, dosya elle yükleniyor. Yeni bir kanalın API çekimi eklendiğinde
+ * eklenecek TEK satır burasıdır.
+ */
+const HAKEDIS_SENKRON_AKSIYONU: Record<string, string> = {
+  Trendyol: "TY_HAKEDIS_CEKIM_CALISTI",
+  Hepsiburada: "HB_HAKEDIS_CEKIM_CALISTI",
+};
+
+export default async function HakedisSayfasi({
+  searchParams,
+}: {
+  searchParams: Promise<{ kanal?: string }>;
+}) {
   await sayfaIzni("hakedis.gor");
 
   const t = await getTranslations("Hakedis");
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
 
-  const [partiler, kalemler, satislar, sonSenkronizasyon] = await Promise.all([
-    prisma.settlement.findMany({
-      include: {
-        channelAccount: { include: { channel: { select: { name: true } } } },
-        _count: { select: { items: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    }),
-    prisma.settlementItem.findMany({
-      include: {
-        channelAccount: { include: { channel: { select: { name: true } } } },
-        sale: { select: { id: true, code: true } },
-      },
-      orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
-    }),
-    // Karşılaştırma için: kâr snapshot'ı + maliyet kesintisi.
-    prisma.sale.findMany({
-      // İptal edilen satıştan hakediş beklenmez.
-      where: { iptalTarihi: null },
-      include: {
-        channelAccount: { include: { channel: { select: { name: true } } } },
-        fees: { where: { code: "MALIYET" }, select: { amount: true } },
-      },
-      orderBy: { soldAt: "desc" },
-    }),
-    /**
-     * K220 — "SON SENKRONİZASYON NE ZAMAN ÇALIŞTI" rozeti buradan okur.
-     * Bu iz DEĞİŞİKLİK olmasa bile her koşumda yazılır (bkz.
-     * `canli-ty-hakedis-cekim.ts` "kalp atışı") — yoksa sessiz bir
-     * "hiçbir şey değişmedi" günü, "hiç çalışmadı" ile karışırdı.
-     */
-    prisma.auditLog.findFirst({
-      where: { action: "TY_HAKEDIS_CEKIM_CALISTI" },
-      orderBy: { createdAt: "desc" },
-      select: { createdAt: true },
-    }),
-  ]);
+  /**
+   * ⚠ "sp" (searchParams), "p" DEĞİL: bu dosyada `p` zaten Settlement
+   * kaydını dolaşan iki `.map((p) => …)` çağrısında kullanılıyor — aynı
+   * adı burada da kullanmak o döngülerin İÇİNDE searchParams'ı sessizce
+   * gölgelerdi.
+   */
+  const sp = await searchParams;
+  const kanalSecili = (sp.kanal ?? "").trim() || undefined;
+
+  /** Kanal filtresi — YALNIZ bu iki sorguya (ve satış sorgusuna) uygulanır. */
+  const kanalKosulu = kanalSecili
+    ? { channelAccount: { channel: { name: kanalSecili } } }
+    : {};
+
+  const senkronAksiyonlari = kanalSecili
+    ? (HAKEDIS_SENKRON_AKSIYONU[kanalSecili] ? [HAKEDIS_SENKRON_AKSIYONU[kanalSecili]!] : [])
+    : Object.values(HAKEDIS_SENKRON_AKSIYONU);
+
+  const [partiler, kalemler, satislar, sonSenkronizasyon, kanalHesaplariVeri] =
+    await Promise.all([
+      prisma.settlement.findMany({
+        where: kanalKosulu,
+        include: {
+          channelAccount: { include: { channel: { select: { name: true } } } },
+          _count: { select: { items: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      }),
+      prisma.settlementItem.findMany({
+        where: kanalKosulu,
+        include: {
+          channelAccount: { include: { channel: { select: { name: true } } } },
+          sale: { select: { id: true, code: true } },
+        },
+        orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
+      }),
+      // Karşılaştırma için: kâr snapshot'ı + maliyet kesintisi.
+      prisma.sale.findMany({
+        where: {
+          // İptal edilen satıştan hakediş beklenmez.
+          iptalTarihi: null,
+          ...kanalKosulu,
+        },
+        include: {
+          channelAccount: { include: { channel: { select: { name: true } } } },
+          fees: { where: { code: "MALIYET" }, select: { amount: true } },
+        },
+        orderBy: { soldAt: "desc" },
+      }),
+      /**
+       * K220/K221 — "SON SENKRONİZASYON NE ZAMAN ÇALIŞTI" rozeti buradan
+       * okur. Bu iz DEĞİŞİKLİK olmasa bile her koşumda yazılır (bkz.
+       * `canli-ty-hakedis-cekim.ts`/`canli-hb-hakedis-cekim.ts` "kalp
+       * atışı") — yoksa sessiz bir "hiçbir şey değişmedi" günü, "hiç
+       * çalışmadı" ile karışırdı.
+       *
+       * ⚠ KANALA GÖRE AYRI: "Tümü" seçiliyken her iki kanalın en yenisi
+       * gösterilir; tek kanal seçiliyken YALNIZ o kanalın izi okunur —
+       * yoksa Hepsiburada'ya bakarken Trendyol'un senkron saati görünür,
+       * ki bu yanlış bir iddia olurdu.
+       */
+      prisma.auditLog.findFirst({
+        where: { action: { in: senkronAksiyonlari } },
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true },
+      }),
+      /**
+       * SÜZGEÇ SEÇENEKLERİ VERİDEN GELİR (İlke #16'nın adres tarafı):
+       * `kalemler`den TÜRETİLSEYDİ, bir kanal seçiliyken listede yalnız
+       * O kanal kalır ve seçici kendi kendini daraltırdı — kullanıcı bir
+       * daha "Tümü"ne dönemeden başka kanalları GÖREMEZDİ. Bu yüzden ayrı,
+       * süzgeçten BAĞIMSIZ bir sorgu.
+       */
+      prisma.settlementItem.findMany({
+        distinct: ["channelAccountId"],
+        select: { channelAccount: { select: { channel: { select: { name: true } } } } },
+      }),
+    ]);
+
+  const kanalSecenekleri = [
+    ...new Set(kanalHesaplariVeri.map((k) => k.channelAccount.channel.name)),
+  ].sort((a, b) => a.localeCompare(b, "tr"));
+
+  const suzgecler: SuzgecTanimi[] = [
+    {
+      ad: "kanal",
+      etiket: ortak("kanal"),
+      secenekler: kanalSecenekleri.map((ad) => ({ deger: ad, etiket: ad })),
+    },
+  ];
 
   // "Bugün" İŞ saat diliminden — vade karşılaştırması gün-güne yapılır.
   const bugun = gunDegeri(isTakvimGunu(new Date()));
@@ -116,6 +193,49 @@ export default async function HakedisSayfasi() {
       (bekleyenToplam.get(b.kayit.currency) ?? 0) + tutar,
     );
   }
+
+  /**
+   * ═══════════════════════════════════════════════════════════════════════
+   *  KANAL DAĞILIMI (görsel destek) — "Bekleyen Para"nın kanal kırılımı.
+   * -------------------------------------------------------------------------
+   *  ⚠ PASTA, EKRANDAKİ SÜZGECİ İZLER — kendi başına ayrı bir toplam
+   *  ÜRETMEZ. Kanal seçiliyken `bekleyenler` zaten o kanala daralmış olur;
+   *  pasta o hâlde TEK dilim gösterirdi ve bir dağılımdan söz edilemez —
+   *  bu yüzden yalnız BİRDEN FAZLA kanal varken çizilir (sayı=liste ilkesi,
+   *  bu kartın kendi ekranındaki karşılığı).
+   *
+   *  ⚠ TEK PARA BİRİMİ: hakediş bugün fiilen TRY'dir ama ileride EUR
+   *  gelirse iki para birimini tek pastada toplamak yanlış bir toplam
+   *  üretirdi. Baskın para birimi (varsa TRY) seçilir, ötekiler pastaya
+   *  girmez — "Bekleyen Para" kutusu zaten her para birimini AYRI satırda
+   *  gösteriyor, pasta onun tekrarı değil YALNIZ görsel destek.
+   */
+  const anaParaBirimi =
+    bekleyenToplam.size === 0
+      ? undefined
+      : bekleyenToplam.has("TRY")
+        ? "TRY"
+        : [...bekleyenToplam.keys()][0];
+
+  const kanalDagilimHaritasi = new Map<string, number>();
+  if (anaParaBirimi) {
+    for (const b of bekleyenler) {
+      if (b.kayit.currency !== anaParaBirimi) continue;
+      const ad = b.kayit.channelAccount.channel.name;
+      kanalDagilimHaritasi.set(
+        ad,
+        (kanalDagilimHaritasi.get(ad) ?? 0) + Number(b.kayit.amount.toString()),
+      );
+    }
+  }
+  const kanalDagilimDilimleri = [...kanalDagilimHaritasi.entries()]
+    .map(([ad, tutar]) => ({
+      etiket: ad,
+      tutar,
+      renk: KANAL_RENKLERI[ad] ?? KANAL_RENGI_VARSAYILAN,
+    }))
+    .sort((a, b) => b.tutar - a.tutar);
+  const kanalDagilimToplam = kanalDagilimDilimleri.reduce((t, d) => t + d.tutar, 0);
 
   /**
    * ═══════════════════════════════════════════════════════════════════════
@@ -303,6 +423,9 @@ export default async function HakedisSayfasi() {
 
   return (
     <div className="space-y-6">
+      {/* SÜZGEÇLİ LİSTE HAFIZASI (K104): kanal süzgeciyle buradan çıkan
+          "Rapor yükle" ekranı geri dönerken süzgeci kaybetmesin. */}
+      <ListeyiHatirla temel="/hakedis" etiket={t("baslik")} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
@@ -321,10 +444,19 @@ export default async function HakedisSayfasi() {
         </Button>
       </div>
 
+      <SuzgecCubugu temelAdres="/hakedis" mevcut={sp} suzgecler={suzgecler} />
+
       {kalemler.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
-          <p className="font-medium">{t("bosBaslik")}</p>
-          <p className="text-muted-foreground mt-1 text-sm">{t("bosIpucu")}</p>
+          {/* SÜZGEÇ YÜZÜNDEN BOŞSA ONU SÖYLE: "hiç veri yok" demek, başka
+              kanalda kalem varken kullanıcıya yanlış bir hüküm verirdi
+              (bkz. /satislar aynı desen). */}
+          <p className="font-medium">
+            {kanalSecili ? t("bosFiltreBaslik") : t("bosBaslik")}
+          </p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {kanalSecili ? t("bosFiltreIpucu") : t("bosIpucu")}
+          </p>
         </div>
       ) : (
         <>
@@ -454,6 +586,29 @@ export default async function HakedisSayfasi() {
               </p>
             </CardContent>
           </Card>
+
+          {/* --------------------- KANAL DAĞILIMI (görsel) --------------- */}
+          {/* YALNIZ BİRDEN FAZLA KANAL VARKEN ÇİZİLİR — bkz. yukarıdaki
+              hesap bloğunun başlığı: tek kanala süzülmüş bir "dağılım"
+              tek dilimli bir pastadır ve hiçbir şey anlatmaz. */}
+          {kanalDagilimDilimleri.length > 1 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("kanalDagilimiBaslik")}</CardTitle>
+                <p className="text-muted-foreground text-sm">
+                  {t("kanalDagilimiNotu")}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <PastaGrafik
+                  dilimler={kanalDagilimDilimleri}
+                  toplam={kanalDagilimToplam}
+                  bicimle={(n) => bicim.para(n, anaParaBirimi ?? "TRY")}
+                  bosMesaj={t("kanalDagilimiBosMesaj")}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
 
           {/* ---------------- BEKLENEN vs GERÇEKLEŞEN ------------------- */}
           {karsilastirma.length > 0 ? (

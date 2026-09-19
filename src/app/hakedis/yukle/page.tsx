@@ -3,7 +3,7 @@ import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
-import { GeriBaglanti } from "@/components/baglanti";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 
@@ -38,7 +38,7 @@ export default async function HakedisYukleSayfasi() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <GeriBaglanti href="/hakedis">{t("baslik")}</GeriBaglanti>
+        <ListeyeDon href="/hakedis">{t("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("yukleBaslik")}</h1>
       </div>
 

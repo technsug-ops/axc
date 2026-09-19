@@ -282,3 +282,30 @@ export const PASTA_RENKLERI: Record<string, string> = {
 
 /** Tanınmayan kesinti kodu için nötr ton — sessizce kaybolmasın. */
 export const PASTA_VARSAYILAN = "#94A3B8";
+
+/**
+ * KANAL RENKLERİ — hakediş "kanal dağılımı" pastası için KATEGORİ paleti.
+ *
+ * ⚠ DURUM PALETİ DEĞİL: kanal iyi/kötü değildir, yalnız BİRBİRİNDEN
+ * AYRILIR — PASTA_RENKLERİ'nin yukarıdaki gerekçesiyle aynı aile.
+ *
+ * ⚠ SIRA SABİT VE ELLE VERİLMİŞ — dataviz doğrulayıcısından geçmiş,
+ * renk körlüğü ayrımı ölçülmüş 8 basamaklı kategorik sıradan alındı
+ * (blue·orange·aqua·yellow·magenta·green·violet·red). YENİ BİR KANAL
+ * ADI ÜRETİLMİŞ RENK ALMAZ — anayasadaki "İş sabitleri" listesinin
+ * yer bulamayan kalanı (Vatan, Pazarama, PTTAvm) ve gelecekte eklenecek
+ * her kanal `KANAL_RENGI_VARSAYILAN`a düşer.
+ */
+export const KANAL_RENKLERI: Record<string, string> = {
+  Trendyol: "#2a78d6",
+  Hepsiburada: "#eb6834",
+  Amazon: "#1baf7a",
+  N11: "#eda100",
+  Bim: "#e87ba4",
+  A101: "#008300",
+  Teknosa: "#4a3aa7",
+  Mediamarkt: "#e34948",
+};
+
+/** Tanınmayan/sıraya girmeyen kanal için nötr ton — PASTA_VARSAYILAN ile aynı gerekçe. */
+export const KANAL_RENGI_VARSAYILAN = "#94A3B8";

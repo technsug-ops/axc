@@ -2115,7 +2115,12 @@
     "kalemSayisi": "",
     "tahminiHesaplanmistir": "",
     "odemeYapildi": "",
-    "odemeEmriNo": ""
+    "odemeEmriNo": "",
+    "kanalDagilimiBaslik": "",
+    "kanalDagilimiNotu": "",
+    "kanalDagilimiBosMesaj": "",
+    "bosFiltreBaslik": "",
+    "bosFiltreIpucu": ""
   },
   "Panel": {
     "baslik": "",
