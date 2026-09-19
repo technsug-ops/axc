@@ -12,7 +12,7 @@
  *  kaydında). Yani bu betik daha önce Excel'den yüklenmiş bir satırı
  *  YENİDEN yazmaz — dedup kendiliğinden çalışır.
  *
- *  İKİ AYRI İŞ YAPAR, İKİSİ DE AYNI TARAMADAN ÇIKAR:
+ *  ÜÇ AYRI İŞ YAPAR, ÜÇÜ DE AYNI TARAMADAN ÇIKAR:
  *   ① YENİ SATIR — rowKey DB'de yoksa: yeni bir "parti" (Settlement) altında
  *      yazılır. Kaynak: `/settlements` (sipariş bazlı: Satış/İade/Kupon/…)
  *      + `/otherfinancials` (sipariş dışı: Stopaj/Kargo Fatura/Platform
@@ -22,14 +22,26 @@
  *      artık `paymentOrderId` DOLU diyorsa: yalnız `paidAt` güncellenir.
  *      Bu, Trendyol kalemlerinin ekranda sonsuza kadar "ödenmemiş"
  *      görünmesinin GERÇEK çözümü (Excel'de bu bilgi hiç yok).
+ *   ③ ÖDEME EMRİ TAZELEME (K220-③, 19.09.2026) — `paymentOrderId` sütunu
+ *      bu satırdan SONRA eklendi; ondan önce yazılan (ve zaten ödenmiş)
+ *      binlerce satırda hâlâ boş. Rowkey VAR ve `paymentOrderId` hâlâ
+ *      boşsa, API'nin bildirdiği emir no'yla (varsa) tek seferlik doldurulur
+ *      — `paidAt`ten BAĞIMSIZ, ikisi de yalnız "boşsa doldur" kuralına uyar.
  *
  *  ⛔ TUTARSIZLIK SESSİZCE EZİLMEZ: DB'deki tutar ile API'nin tutarı
  *  1 kuruştan fazla ayrışıyorsa o satıra DOKUNULMAZ, yalnız RAPORLANIR.
  *
- *  ⚠ PENCERE: hakediş uçları azami 15 gün taşıyor; `TARAMA_GUN` gün geriye
- *  15'lik dilimlere bölünerek taranır. 45 gün seçildi çünkü ödeme dönemi
- *  azami 28 gün (ölçüldü) + emniyet payı — daha eski bir satırın ödenme
- *  durumu zaten bir önceki koşumda tazelenmiş olmalı.
+ *  ⚠ PENCERE: hakediş uçları azami 15 gün taşıyor; `taramaGun` gün geriye
+ *  15'lik dilimlere bölünerek taranır. GÜNLÜK KOŞUM (cron) 45 gün kullanır —
+ *  ödeme dönemi azami 28 gün (ölçüldü) + emniyet payı, daha eski bir satırın
+ *  ödenme durumu zaten ÖNCEKİ koşumlarda tazelenmiş OLMALIYDI.
+ *
+ *  ⛔ AMA İLK KOŞUMDA (ya da uzun süre koşulmadıysa) YETMEZ — ölçüldü
+ *  19.09.2026: 45 günlük ilk koşumdan sonra 2380 kalem hâlâ ödenmemiş
+ *  görünüyordu, çünkü tarama hiç ULAŞMADIĞI için (dueDate 2025-12-29 →
+ *  2026-02'ye kadar 1380 kalem) `paymentOrderId`e hiç BAKILMAMIŞTI —
+ *  "ödenmemiş" değil "hiç sorulmamış". Böyle bir GEÇMİŞ AÇIĞI varsa geniş
+ *  pencereli tek seferlik bir koşum gerekir: `--gun=300` gibi.
  * ============================================================================
  */
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
@@ -50,13 +62,38 @@ import {
 
 const GUN_MS = 86_400_000;
 const PENCERE_GUN = 15;
-const TARAMA_GUN = 45;
+const TARAMA_GUN_VARSAYILAN = 45;
 
 function para(x: number): string {
   return x.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function gun(x: number | Date): string {
   return new Date(x).toISOString().slice(0, 10);
+}
+function bekle(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * ⚠ 429 (Too Many Requests) — geniş pencereli (`--gun=310`) ilk koşumda
+ * ÖLÇÜLDÜ (19.09.2026): 252 ardışık çağrı TY'nin hız sınırına çarptı ve
+ * bir pencere sessizce EKSİK kaldı (hata RAPORLANDI ama veri gelmedi).
+ * Her çağrı arasına küçük bir bekleme + 429'a özel tekrar deneme eklendi.
+ */
+async function tumSayfalarSabirli(
+  yolKur: (sayfa: number) => string,
+  baslik: Record<string, string>,
+): Promise<Awaited<ReturnType<typeof tumSayfalar>>> {
+  for (let deneme = 0; deneme < 4; deneme++) {
+    const s = await tumSayfalar(yolKur, baslik);
+    const uc429 = s.tur === "HATA" && s.sonuc.tur === "ULASILAMADI" && s.sonuc.sebep === "HTTP 429";
+    if (!uc429) {
+      await bekle(400);
+      return s;
+    }
+    await bekle(2000 * (deneme + 1));
+  }
+  return tumSayfalar(yolKur, baslik);
 }
 
 export type TyHakedisCekimOzeti = {
@@ -81,8 +118,12 @@ export type TyHakedisCekimOzeti = {
 export async function tyHakedisCekimKos(ayar: {
   yaz: boolean;
   dbAdresi?: string;
+  /** Kaç gün geriye taranacak. Günlük koşum 45 yeterli; geçmiş açığı
+   *  kapatmak için tek seferlik geniş bir değer (ör. 300) verilir. */
+  taramaGun?: number;
 }): Promise<TyHakedisCekimOzeti | { atlandi: "KIMLIK" | "VERITABANI" | "HESAP" }> {
   const YAZ = ayar.yaz;
+  const TARAMA_GUN = ayar.taramaGun ?? TARAMA_GUN_VARSAYILAN;
   const kimlik = kimlikOku();
   if (!kimlik) {
     console.log("\n⛔ TY KİMLİĞİ OKUNAMADI (.env.canli / süreç ortamı).");
@@ -128,7 +169,7 @@ export async function tyHakedisCekimKos(ayar: {
     const bas = Math.max(son - PENCERE_GUN * GUN_MS, enEski);
 
     for (const tur of TY_API_SIPARIS_TIPLERI) {
-      const s = await tumSayfalar(
+      const s = await tumSayfalarSabirli(
         (sayfa) => UCLAR.hakedis(kimlik.saticiId, bas, son, sayfa, tur),
         baslik,
       );
@@ -139,7 +180,7 @@ export async function tyHakedisCekimKos(ayar: {
       tumKayitlar.push(...(s.kayitlar as TyFinansKaydi[]));
     }
     for (const tur of TY_API_SIPARIS_DISI_TIPLERI) {
-      const s = await tumSayfalar(
+      const s = await tumSayfalarSabirli(
         (sayfa) => UCLAR.otherFinancials(kimlik.saticiId, bas, son, sayfa, tur),
         baslik,
       );
@@ -180,6 +221,19 @@ export async function tyHakedisCekimKos(ayar: {
   if (haricSayisi > 0) {
     console.log(`⛔ ${haricSayisi} "Komisyon Faturası" kaydı HARİÇ tutuldu (mükerrer para — bkz. yorum).`);
   }
+
+  /**
+   * K220-③ (19.09.2026) — ÖDEME EMRİ HARİTASI. `HakedisSatiri` ortak
+   * modeli (Excel + API) `paymentOrderId` TAŞIMAZ — yalnız API'ye özel bir
+   * alan, paylaşılan modele SIZDIRILMADI. Yan haritayla eşleniyor:
+   * externalId (= API'nin `id`si, satır anahtarının parçası) → emir no.
+   */
+  const paymentOrderIdHaritasi = new Map<string, string | null>(
+    filtrelenmis.map((k) => [
+      String(k.id),
+      k.paymentOrderId !== null && k.paymentOrderId !== undefined ? String(k.paymentOrderId) : null,
+    ]),
+  );
 
   const tumSatirlar = tyApiSatirlariniOku(filtrelenmis);
   const digerSayisi = tumSatirlar.filter((s) => s.kod === "DIGER").length;
@@ -234,12 +288,18 @@ export async function tyHakedisCekimKos(ayar: {
   // ── ③ DB'DEKİ MEVCUT DURUMLA KARŞILAŞTIR ────────────────────────────────
   const anahtarlar = hepsi.map((h) => satirAnahtari(h.satir));
   const parcaBoyutu = 1000;
-  const mevcutlar: { id: string; rowKey: string; paidAt: Date | null; amount: unknown }[] = [];
+  const mevcutlar: {
+    id: string;
+    rowKey: string;
+    paidAt: Date | null;
+    amount: unknown;
+    paymentOrderId: string | null;
+  }[] = [];
   for (let i = 0; i < anahtarlar.length; i += parcaBoyutu) {
     mevcutlar.push(
       ...(await prisma.settlementItem.findMany({
         where: { channelAccountId: hesap.id, rowKey: { in: anahtarlar.slice(i, i + parcaBoyutu) } },
-        select: { id: true, rowKey: true, paidAt: true, amount: true },
+        select: { id: true, rowKey: true, paidAt: true, amount: true, paymentOrderId: true },
       })),
     );
   }
@@ -249,9 +309,10 @@ export async function tyHakedisCekimKos(ayar: {
   const tazelenecekler: {
     itemId: string;
     eskiPaidAt: Date | null;
-    yeniPaidAt: Date;
+    yeniPaidAt: Date | null;
     siparisNo: string | null;
     tutar: number;
+    yeniPaymentOrderId: string | null;
   }[] = [];
   const tutarsizlar: { rowKey: string; dbTutar: number; apiTutar: number; hamTip: string }[] = [];
 
@@ -267,13 +328,25 @@ export async function tyHakedisCekimKos(ayar: {
       tutarsizlar.push({ rowKey: anahtar, dbTutar, apiTutar: h.satir.tutar, hamTip: h.satir.hamTip });
       continue;
     }
-    if (var_.paidAt === null && h.satir.odemeTarihi !== null) {
+    /**
+     * ⚠ İKİ AYRI ALAN, İKİ AYRI TAZELEME — ama TEK UPDATE ÇAĞRISI.
+     * `paidAt` boştan dolar (K220-①); `paymentOrderId` de AYRICA boştan
+     * dolabilir — bu sütun 19.09.2026'da eklendiği için ondan önce yazılan
+     * 4946 ödenmiş satırın hepsinde hâlâ NULL. İkisi de "yalnız boşsa
+     * doldur, DOLUYSA dokunma" kuralına uyar — "gerçekleşen değerin
+     * üzerine asla yazılmaz" kuralının bu alandaki karşılığı.
+     */
+    const apiPaymentOrderId = paymentOrderIdHaritasi.get(h.satir.externalId) ?? null;
+    const paidAtDolduracak = var_.paidAt === null && h.satir.odemeTarihi !== null;
+    const paymentOrderIdDolduracak = var_.paymentOrderId === null && apiPaymentOrderId !== null;
+    if (paidAtDolduracak || paymentOrderIdDolduracak) {
       tazelenecekler.push({
         itemId: var_.id,
         eskiPaidAt: var_.paidAt,
-        yeniPaidAt: h.satir.odemeTarihi,
+        yeniPaidAt: paidAtDolduracak ? h.satir.odemeTarihi : null,
         siparisNo: h.satir.siparisNo,
         tutar: h.satir.tutar,
+        yeniPaymentOrderId: paymentOrderIdDolduracak ? apiPaymentOrderId : null,
       });
     }
   }
@@ -282,7 +355,7 @@ export async function tyHakedisCekimKos(ayar: {
   const yeniToplam = yeniler.reduce((t, y) => t + y.satir.tutar, 0);
   console.log("\n" + "-".repeat(100));
   console.log(`YENİ satır (DB'de hiç yok)         : ${yeniler.length}`);
-  console.log(`ÖDENME TAZELENECEK (paidAt boştan dolar) : ${tazelenecekler.length}`);
+  console.log(`TAZELENECEK (ödeme durumu ve/veya ödeme emri no boştan dolar) : ${tazelenecekler.length}`);
   console.log(`ZATEN AYNI (dokunulmaz)            : ${hepsi.length - yeniler.length - tazelenecekler.length - tutarsizlar.length}`);
   console.log(`⚠ TUTARSIZ (dokunulmaz, raporlanır) : ${tutarsizlar.length}`);
   if (tutarsizlar.length > 0) {
@@ -342,6 +415,7 @@ export async function tyHakedisCekimKos(ayar: {
           currency: satir.paraBirimi,
           dueDate: satir.vadeTarihi,
           paidAt: satir.odemeTarihi,
+          paymentOrderId: paymentOrderIdHaritasi.get(satir.externalId) ?? null,
           rawRow: satir.ham,
         })),
       });
@@ -362,7 +436,18 @@ export async function tyHakedisCekimKos(ayar: {
 
   for (const t of tazelenecekler) {
     await prisma.$transaction(async (tx) => {
-      await tx.settlementItem.update({ where: { id: t.itemId }, data: { paidAt: t.yeniPaidAt } });
+      /** ⚠ YALNIZ DOLU OLAN ALAN GÖNDERİLİR — `undefined` Prisma'da "bu
+       *  alana dokunma" demektir, `null` DEĞİL. Bu ayrım korunmazsa yalnız
+       *  paymentOrderId tazelenen bir satırın `paidAt`i (zaten null'du)
+       *  yeniden null'a "yazılır" — zararsız ama gereksiz bir alan daha
+       *  UPDATE'e girer ve iz mesajı yanıltıcı olur. */
+      await tx.settlementItem.update({
+        where: { id: t.itemId },
+        data: {
+          ...(t.yeniPaidAt !== null ? { paidAt: t.yeniPaidAt } : {}),
+          ...(t.yeniPaymentOrderId !== null ? { paymentOrderId: t.yeniPaymentOrderId } : {}),
+        },
+      });
       await izYaz(
         {
           action: "TY_HAKEDIS_ODENDI_TAZELE",
@@ -372,6 +457,7 @@ export async function tyHakedisCekimKos(ayar: {
           detail: JSON.stringify({
             eskiPaidAt: t.eskiPaidAt,
             yeniPaidAt: t.yeniPaidAt,
+            yeniPaymentOrderId: t.yeniPaymentOrderId,
             siparisNo: t.siparisNo,
             tutar: t.tutar,
           }),
@@ -381,8 +467,33 @@ export async function tyHakedisCekimKos(ayar: {
     });
   }
   if (tazelenecekler.length > 0) {
-    console.log(`✓ ${tazelenecekler.length} kalemin ödeme durumu tazelendi.`);
+    console.log(`✓ ${tazelenecekler.length} kalem tazelendi (ödeme durumu ve/veya ödeme emri no).`);
   }
+
+  /**
+   * ⭐ KALP ATIŞI — DEĞİŞİKLİK OLMASA BİLE YAZILIR (19.09.2026).
+   * Diğer izler yalnız bir şey DEĞİŞTİĞİNDE doğar; bir gün hiçbir yeni
+   * satır ve tazeleme yoksa (koşum yine de BAŞARILIYSA) hiçbir iz kalmaz
+   * ve "son çalıştı" sorusu cevapsız kalır. /hakedis ekranındaki "son
+   * senkronizasyon" rozeti BU izi okur.
+   */
+  /**
+   * ⚠ `prisma` AÇIKÇA VERİLİR — `izYaz`in varsayılanı paylaşılan
+   * `@/lib/prisma` tekilidir ve bu betik ONU HİÇ KULLANMIYOR (K166 deseni:
+   * `dbAdresi` ile KENDİ istemcisini kuruyor, `process.env.DATABASE_URL`a
+   * dokunmuyor). Varsayılana bırakılsaydı yerel `--gun=` koşumlarında iz
+   * YANLIŞ veritabanına (yerel `.env`) düşerdi.
+   */
+  await izYaz(
+    {
+      action: "TY_HAKEDIS_CEKIM_CALISTI",
+      targetType: "ChannelAccount",
+      targetId: hesap.id,
+      userId: null,
+      detail: JSON.stringify(ozet),
+    },
+    prisma,
+  );
 
   await prisma.$disconnect();
   return ozet;
@@ -399,7 +510,9 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  tyHakedisCekimKos({ yaz: process.argv.includes("--yaz") }).catch((e) => {
+  const gunArg = process.argv.find((a) => a.startsWith("--gun="));
+  const taramaGun = gunArg ? Number(gunArg.split("=")[1]) || TARAMA_GUN_VARSAYILAN : undefined;
+  tyHakedisCekimKos({ yaz: process.argv.includes("--yaz"), taramaGun }).catch((e) => {
     console.error("HATA:", e instanceof Error ? e.stack : e);
     process.exit(1);
   });

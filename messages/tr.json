@@ -2105,7 +2105,17 @@
     "durumGECIKTI": "gecikti",
     "durumEKSIK_ODEME": "eksik ödeme",
     "durumFAZLA_ODEME": "fazla ödeme",
-    "durumGELMEDI": "rapora düşmedi"
+    "durumGELMEDI": "rapora düşmedi",
+    "sonSenkronizasyon": "Son senkronizasyon: {zaman}",
+    "sonSenkronizasyonHicYok": "Otomatik çekim henüz hiç çalışmadı.",
+    "tyOdemeleriBaslik": "Trendyol ödemeleri",
+    "tyOdemeleriKapsamNotu": "Yalnız API'den otomatik çekilen Trendyol kalemleri — Hepsiburada ve N11 kalemleri aşağıdaki listelerde kalır.",
+    "gelecekOdemeler": "Gelecek ödemeler",
+    "gecmisOdemeler": "Geçmiş ödemeler",
+    "kalemSayisi": "{sayi} kalem",
+    "tahminiHesaplanmistir": "Tahmini hesaplanmıştır",
+    "odemeYapildi": "Ödeme yapıldı",
+    "odemeEmriNo": "Ödeme emri"
   },
   "Panel": {
     "baslik": "Panel",

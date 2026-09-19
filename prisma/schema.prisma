@@ -2394,6 +2394,14 @@ model SettlementItem {
   dueDate DateTime?
   paidAt  DateTime?
 
+  /// K220 (19.09.2026) — Trendyol'un ÖDEME EMRİ kimliği. `paidAt`/`dueDate`
+  /// SİPARİŞ başına ayrı hesaplanıyor (ölçüldü: aynı ödeme emrindeki
+  /// kalemler bile farklı milisaniyelik damga taşıyor) — bu yüzden "hangi
+  /// kalem hangi ödemeyle geldi" sorusu o alanlardan TÜRETİLEMEZ. Yalnız
+  /// TY API kaynaklı kalemlerde dolar (Excel'de bu bilgi yok); ekranın
+  /// Trendyol'un kendi paneli gibi ödeme bazında gruplanabilmesi içindir.
+  paymentOrderId String?
+
   /// Kaynağa dönmek gerekirse: ham satırın okunur özeti.
   rawRow String? @db.Text
 
@@ -2405,6 +2413,7 @@ model SettlementItem {
   @@index([saleId])
   @@index([orderNo])
   @@index([dueDate])
+  @@index([paymentOrderId])
 }
 
 // ----------------------------------------------------------------------------

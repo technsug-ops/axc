@@ -2105,7 +2105,17 @@
     "durumGECIKTI": "",
     "durumEKSIK_ODEME": "",
     "durumFAZLA_ODEME": "",
-    "durumGELMEDI": ""
+    "durumGELMEDI": "",
+    "sonSenkronizasyon": "",
+    "sonSenkronizasyonHicYok": "",
+    "tyOdemeleriBaslik": "",
+    "tyOdemeleriKapsamNotu": "",
+    "gelecekOdemeler": "",
+    "gecmisOdemeler": "",
+    "kalemSayisi": "",
+    "tahminiHesaplanmistir": "",
+    "odemeYapildi": "",
+    "odemeEmriNo": ""
   },
   "Panel": {
     "baslik": "",

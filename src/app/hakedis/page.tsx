@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
-import { TriangleAlert, Upload } from "lucide-react";
+import { CircleCheck, TriangleAlert, Upload } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -44,7 +44,7 @@ export default async function HakedisSayfasi() {
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
 
-  const [partiler, kalemler, satislar] = await Promise.all([
+  const [partiler, kalemler, satislar, sonSenkronizasyon] = await Promise.all([
     prisma.settlement.findMany({
       include: {
         channelAccount: { include: { channel: { select: { name: true } } } },
@@ -69,6 +69,17 @@ export default async function HakedisSayfasi() {
         fees: { where: { code: "MALIYET" }, select: { amount: true } },
       },
       orderBy: { soldAt: "desc" },
+    }),
+    /**
+     * K220 — "SON SENKRONİZASYON NE ZAMAN ÇALIŞTI" rozeti buradan okur.
+     * Bu iz DEĞİŞİKLİK olmasa bile her koşumda yazılır (bkz.
+     * `canli-ty-hakedis-cekim.ts` "kalp atışı") — yoksa sessiz bir
+     * "hiçbir şey değişmedi" günü, "hiç çalışmadı" ile karışırdı.
+     */
+    prisma.auditLog.findFirst({
+      where: { action: "TY_HAKEDIS_CEKIM_CALISTI" },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
     }),
   ]);
 
@@ -105,6 +116,67 @@ export default async function HakedisSayfasi() {
       (bekleyenToplam.get(b.kayit.currency) ?? 0) + tutar,
     );
   }
+
+  /**
+   * ═══════════════════════════════════════════════════════════════════════
+   *  K220 — TRENDYOL ÖDEME EMRİ GRUPLAMASI (Trendyol'un kendi paneliyle
+   *  aynı mantık: "Ödeme Yapıldı" / "Tahmini Hesaplanmıştır")
+   * -------------------------------------------------------------------------
+   *  ⛔ KAPSAM DAR VE BİLEREK: `paymentOrderId` yalnız TY API kaynaklı
+   *  kalemlerde dolar (Excel'den gelen hiçbir kalemde YOK — kaynağın kendisi
+   *  bu bilgiyi vermiyor). HB/N11 bu gruplamaya HİÇ girmez; onlar aşağıdaki
+   *  düz "Bekleyen kalem dökümü" listesinde kalmaya devam eder.
+   *
+   *  ⚠ GÜNE GÖRE GRUPLAMA ÖLÇÜLDÜ (19.09.2026): `paidAt`/`dueDate` SİPARİŞ
+   *  başına ayrı hesaplanıyor (aynı ödeme emrindeki kalemler bile farklı
+   *  milisaniyelik damga taşıyor) — bu yüzden ÖDENMİŞ kalemler gerçek
+   *  `paymentOrderId` ile, BEKLEYEN kalemler ise (henüz emir yok) yalnız
+   *  GÜN düzeyinde (`dueDate`in tarih kısmı) gruplanır. İkisi FARKLI
+   *  kesinlik taşır — rozetler bunu ayırt eder.
+   */
+  const tyKalemleri = kalemler.filter((k) => k.channelAccount.channel.name === "Trendyol");
+
+  type OdemeGrubu = { anahtar: string; tarih: Date; toplam: number; paraBirimi: string; sayi: number };
+
+  const gecmisOdemeGruplari = new Map<string, OdemeGrubu>();
+  for (const k of tyKalemleri) {
+    if (k.paidAt === null || k.paymentOrderId === null) continue;
+    const g = gecmisOdemeGruplari.get(k.paymentOrderId) ?? {
+      anahtar: k.paymentOrderId,
+      tarih: k.paidAt,
+      toplam: 0,
+      paraBirimi: k.currency,
+      sayi: 0,
+    };
+    g.toplam += Number(k.amount.toString());
+    g.sayi++;
+    if (k.paidAt > g.tarih) g.tarih = k.paidAt;
+    gecmisOdemeGruplari.set(k.paymentOrderId, g);
+  }
+  const gecmisOdemeler = [...gecmisOdemeGruplari.values()].sort(
+    (a, b) => b.tarih.getTime() - a.tarih.getTime(),
+  );
+
+  const gelecekOdemeGruplari = new Map<string, OdemeGrubu>();
+  for (const k of tyKalemleri) {
+    if (k.paidAt !== null || k.dueDate === null) continue;
+    const gunAnahtari = k.dueDate.toISOString().slice(0, 10);
+    const g = gelecekOdemeGruplari.get(gunAnahtari) ?? {
+      anahtar: gunAnahtari,
+      tarih: k.dueDate,
+      toplam: 0,
+      paraBirimi: k.currency,
+      sayi: 0,
+    };
+    g.toplam += Number(k.amount.toString());
+    g.sayi++;
+    gelecekOdemeGruplari.set(gunAnahtari, g);
+  }
+  const gelecekOdemeler = [...gelecekOdemeGruplari.values()].sort(
+    (a, b) => a.tarih.getTime() - b.tarih.getTime(),
+  );
+
+  const ODEME_LISTE_SINIRI = 12;
 
   /**
    * BEKLENEN vs GERÇEKLEŞEN — satış bazında.
@@ -235,6 +307,11 @@ export default async function HakedisSayfasi() {
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
           <p className="text-muted-foreground text-sm">{t("aciklamaMetni")}</p>
+          <p className="text-muted-foreground mt-1 text-xs">
+            {sonSenkronizasyon
+              ? t("sonSenkronizasyon", { zaman: bicim.tarihSaat(sonSenkronizasyon.createdAt) })
+              : t("sonSenkronizasyonHicYok")}
+          </p>
         </div>
         <Button asChild>
           <Link href="/hakedis/yukle">
@@ -251,6 +328,91 @@ export default async function HakedisSayfasi() {
         </div>
       ) : (
         <>
+          {/* ------------------- TRENDYOL ÖDEMELERİ (K220) --------------- */}
+          {gecmisOdemeler.length > 0 || gelecekOdemeler.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("tyOdemeleriBaslik")}</CardTitle>
+                <p className="text-muted-foreground text-sm">{t("tyOdemeleriKapsamNotu")}</p>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {gelecekOdemeler.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">{t("gelecekOdemeler")}</p>
+                    <div className="space-y-2">
+                      {gelecekOdemeler.slice(0, ODEME_LISTE_SINIRI).map((g) => (
+                        <div
+                          key={g.anahtar}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
+                        >
+                          <div>
+                            <div className="font-medium">{bicim.tarih(g.tarih)}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {t("kalemSayisi", { sayi: g.sayi })}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="whitespace-nowrap">
+                              {bicim.para(g.toplam, g.paraBirimi)}
+                            </span>
+                            <Badge variant="outline">{t("tahminiHesaplanmistir")}</Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {gelecekOdemeler.length > ODEME_LISTE_SINIRI ? (
+                      <p className="text-sm font-medium">
+                        {t("listeKesildi", {
+                          gosterilen: ODEME_LISTE_SINIRI,
+                          toplam: gelecekOdemeler.length,
+                        })}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {gecmisOdemeler.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">{t("gecmisOdemeler")}</p>
+                    <div className="space-y-2">
+                      {gecmisOdemeler.slice(0, ODEME_LISTE_SINIRI).map((g) => (
+                        <div
+                          key={g.anahtar}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
+                        >
+                          <div>
+                            <div className="font-medium">{bicim.tarih(g.tarih)}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {t("kalemSayisi", { sayi: g.sayi })} · {t("odemeEmriNo")}{" "}
+                              {g.anahtar}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="whitespace-nowrap">
+                              {bicim.para(g.toplam, g.paraBirimi)}
+                            </span>
+                            <Badge className={DURUM_KUTUSU.olumlu}>
+                              <CircleCheck className="size-3.5" />
+                              {t("odemeYapildi")}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {gecmisOdemeler.length > ODEME_LISTE_SINIRI ? (
+                      <p className="text-sm font-medium">
+                        {t("listeKesildi", {
+                          gosterilen: ODEME_LISTE_SINIRI,
+                          toplam: gecmisOdemeler.length,
+                        })}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
           {/* ----------------------- BEKLEYEN PARA ---------------------- */}
           <Card>
             <CardHeader>
