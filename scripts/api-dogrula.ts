@@ -331,7 +331,7 @@ const YAZMASI_BEYANLI: { dosya: string; gerekce: string; bekcisi: string }[] = [
       "`--yaz` bayrağına kilitli (varsayılan kuru koşum); rowKey dedup " +
       "Excel'le AYNI (id alanı Excel'in Kayıt No'suyla birebir), yeni satır " +
       "ekler ya da yalnız boş `paidAt`ı tazeler — mevcut tutara dokunmaz.",
-    bekcisi: "ty-hakedis-yazici:dogrula",
+    bekcisi: "hakedis-yazici:dogrula",
   },
   {
     dosya: "canli-ty-kargo-gercek-olcum.ts",
@@ -340,7 +340,17 @@ const YAZMASI_BEYANLI: { dosya: string; gerekce: string; bekcisi: string }[] = [
       "bayrağına kilitli; yalnız `cargoAmount === null` olan satışlara yazar " +
       "(\"gerçekleşen değerin üzerine asla yazılmaz\" kuralı hiç ihlal edilmez), " +
       "yazımdan sonra `satisKarTazele` ile kârı tazeler.",
-    bekcisi: "ty-hakedis-yazici:dogrula",
+    bekcisi: "hakedis-yazici:dogrula",
+  },
+  {
+    dosya: "canli-hb-hakedis-cekim.ts",
+    gerekce:
+      "K221 — HB hakediş API çekimi: Settlement/SettlementItem yazar. " +
+      "`--yaz` bayrağına kilitli; rowKey dedup Excel'le AYNI (externalId = " +
+      "isInvoice ? invoiceNumber : packageNumber, çapraz ölçüldü) — çok " +
+      "kalemli sipariş çakışmaları TOPLANARAK yazılır, mevcut tutara " +
+      "dokunulmaz, tutarsızlık raporlanır.",
+    bekcisi: "hakedis-yazici:dogrula",
   },
 ];
 

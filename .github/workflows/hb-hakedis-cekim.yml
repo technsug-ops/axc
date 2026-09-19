@@ -1,0 +1,28 @@
+# ============================================================================
+#  K221 — HB HAKEDİŞ ÇEKİMİ — YEDEK TETİKLEYİCİ
+# ----------------------------------------------------------------------------
+#  ty-hakedis-cekim.yml ile AYNI kadans/gerekçe: ödeme dönemleri günlük
+#  freshness gerektirmiyor.
+#
+#  SIR: depo Secrets → CRON_SECRET (diğer cron işleriyle AYNI değer).
+# ============================================================================
+name: HB hakediş (günlük, yedek)
+
+on:
+  schedule:
+    - cron: "45 4 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  cek:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ucu cagir
+        run: |
+          KOD=$(curl -s -o cevap.json -w "%{http_code}" --max-time 90 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://axc-seven.vercel.app/api/cron/hb-hakedis-cekim")
+          echo "HTTP $KOD"
+          cat cevap.json || true
+          test "$KOD" = "200"

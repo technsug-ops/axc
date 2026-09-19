@@ -126,12 +126,17 @@ export function baslikKur(k: Kimlik): Record<string, string> {
   };
 }
 
-/** HB servisleri AYRI alan adlarında yaşıyor — TY'deki tek TABAN burada iki. */
-export function taban(servis: "oms" | "listing", ortam: string): string {
+/**
+ * HB servisleri AYRI alan adlarında yaşıyor — TY'deki tek TABAN burada üç.
+ * K221 (19.09.2026) — `finance` alan adı resmî dokümandan (muhasebe-
+ * entegrasyonu → "Kayıt Bazlı Muhasebe Servisi") BİREBİR alındı, tahmin
+ * edilmedi: `mpfinance-external{-sit}.hepsiburada.com`.
+ */
+export function taban(servis: "oms" | "listing" | "finance", ortam: string): string {
   const sit = ortam.toUpperCase() === "TEST" ? "-sit" : "";
-  return servis === "oms"
-    ? `https://oms-external${sit}.hepsiburada.com`
-    : `https://listing-external${sit}.hepsiburada.com`;
+  if (servis === "oms") return `https://oms-external${sit}.hepsiburada.com`;
+  if (servis === "listing") return `https://listing-external${sit}.hepsiburada.com`;
+  return `https://mpfinance-external${sit}.hepsiburada.com`;
 }
 
 export type OkumaSonucu =
@@ -284,6 +289,69 @@ export const UCLAR = {
    */
   iptalEdilenSiparisler: (k: Kimlik, offset: number, limit: number) =>
     `${taban("oms", k.ortam)}/orders/merchantid/${k.merchantId}/cancelled?offset=${offset}&limit=${limit}`,
+
+  /**
+   * K221 (19.09.2026) — "Kayıt Bazlı Muhasebe Servisi", resmî HB Developer
+   * Portal sayfasından BİREBİR (kullanıcı yapıştırdı — WebFetch bu siteye
+   * 403 döndüğü için TEK kaynak bu). TY'nin `/settlements` +
+   * `/otherfinancials` ikilisinin HB karşılığı, TEK uçta:
+   *
+   *   `Status=Paid|WillBePaid` — TY'de BU AYRIM YOKTU (paymentOrderId'den
+   *   TÜRETMEK zorunda kalmıştık); HB kanalın KENDİSİ söylüyor.
+   *   `TransactionTypes` — virgülle ayrık, 90+ değerli kapalı küme (Komisyon,
+   *   Stopaj, Kargo, KDV, Kampanya İndirimi...) — TY_TIPLER benzeri bir
+   *   eşleme gerekecek, DENENMEDEN varsayılmadı.
+   *
+   * ⚠ TARİH PARAMETRELERİNİN BİÇİMİ (epoch ms mi, ISO mu) HENÜZ ÖLÇÜLMEDİ —
+   * dokümanda örnek değer yoktu. `ekstra` alanları BİLEREK string: biçim
+   * canlı denemeyle netleşene kadar çağıran taraf UYDURMAZ.
+   * ⚠ `Limit` azami 100 (dokümanın kendi beyanı).
+   */
+  hakedis: (
+    k: Kimlik,
+    offset: number,
+    limit: number,
+    ekstra?: {
+      transactionTypes?: string;
+      status?: "Paid" | "WillBePaid";
+      orderNumber?: string;
+      packageNumber?: string;
+      referenceDocument?: string;
+      sku?: string;
+      orderDateStart?: string;
+      orderDateEnd?: string;
+      dueDateStart?: string;
+      dueDateEnd?: string;
+      recordDateStart?: string;
+      recordDateEnd?: string;
+      paymentDateStart?: string;
+      paymentDateEnd?: string;
+    },
+  ) => {
+    const q = new URLSearchParams({ Offset: String(offset), Limit: String(Math.min(limit, 100)) });
+    if (ekstra) {
+      const esleme: Record<string, string | undefined> = {
+        TransactionTypes: ekstra.transactionTypes,
+        Status: ekstra.status,
+        OrderNumber: ekstra.orderNumber,
+        PackageNumber: ekstra.packageNumber,
+        ReferenceDocument: ekstra.referenceDocument,
+        Sku: ekstra.sku,
+        OrderDateStart: ekstra.orderDateStart,
+        OrderDateEnd: ekstra.orderDateEnd,
+        DueDateStart: ekstra.dueDateStart,
+        DueDateEnd: ekstra.dueDateEnd,
+        RecordDateStart: ekstra.recordDateStart,
+        RecordDateEnd: ekstra.recordDateEnd,
+        PaymentDateStart: ekstra.paymentDateStart,
+        PaymentDateEnd: ekstra.paymentDateEnd,
+      };
+      for (const [ad, deger] of Object.entries(esleme)) {
+        if (deger !== undefined) q.set(ad, deger);
+      }
+    }
+    return `${taban("finance", k.ortam)}/transactions/merchantid/${k.merchantId}?${q.toString()}`;
+  },
 };
 
 /**

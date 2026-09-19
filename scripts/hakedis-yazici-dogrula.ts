@@ -2,16 +2,20 @@ import { readFileSync } from "node:fs";
 
 /**
  * ============================================================================
- *  TY HAKEDİŞ/KARGO YAZICI BEKÇİSİ — K220 (19.09.2026)
+ *  HAKEDİŞ/KARGO YAZICI BEKÇİSİ — K220 + K221 (19.09.2026)
  * ----------------------------------------------------------------------------
- *  `api:dogrula` bu iki dosyayı YAZICI olarak beyan ediyor
- *  (`YAZMASI_BEYANLI`, bkz. `scripts/api-dogrula.ts`) — beyan tek başına
- *  yetmez, kendi bekçisi burada.
+ *  `api:dogrula` bu dosyaları YAZICI olarak beyan ediyor (`YAZMASI_BEYANLI`,
+ *  bkz. `scripts/api-dogrula.ts`) — beyan tek başına yetmez, kendi bekçisi
+ *  burada. Önce TY (K220) için yazıldı, HB (K221) eklenince dosya adı da
+ *  `ty-hakedis-yazici-dogrula.ts`'ten buraya taşındı — "dosya adı da bir
+ *  sınıf beyanıdır", tek kanal iddiası artık doğru değildi.
  *
- *  ÜÇ ÖLÇÜT, ÜÇÜ DE KULLANIMA BAĞLI (ADA DEĞİL):
+ *  ÖLÇÜTLER, HER BİRİ KULLANIMA BAĞLI (ADA DEĞİL):
  *   ① `--yaz` KAPISI yazma çağrılarından ÖNCE gelir — kapı silinirse ya da
  *      yazmadan SONRAYA taşınırsa varsayılan koşum (bayraksız) yazardı.
+ *      (TY + KARGO + HB, üçü de.)
  *   ② HER YAZAN DOSYADA en az bir `izYaz(` çağrısı var — sessiz yazım yok.
+ *      (TY + KARGO + HB, üçü de.)
  *   ③ KARGO betiğinde `cargoAmount === null` denetimi, yazma satırından
  *      ÖNCE gelir — "gerçekleşen değerin üzerine asla yazılmaz" kuralı.
  * ============================================================================
@@ -59,40 +63,30 @@ function cargoBosGuvenceliMi(metin: string): boolean {
   return kosul < yazim;
 }
 
-const HAKEDIS = "scripts/canli-ty-hakedis-cekim.ts";
-const KARGO = "scripts/canli-ty-kargo-gercek-olcum.ts";
+const TY_HAKEDIS = "scripts/canli-ty-hakedis-cekim.ts";
+const TY_KARGO = "scripts/canli-ty-kargo-gercek-olcum.ts";
+const HB_HAKEDIS = "scripts/canli-hb-hakedis-cekim.ts";
+const DOSYALAR = [TY_HAKEDIS, TY_KARGO, HB_HAKEDIS];
 
-console.log("\nTY HAKEDİŞ/KARGO YAZICI BEKÇİSİ — K220\n");
+console.log("\nHAKEDİŞ/KARGO YAZICI BEKÇİSİ — K220 + K221\n");
+
+const metinler = new Map(DOSYALAR.map((d) => [d, yorumsuz(readFileSync(d, "utf8"))]));
 
 console.log("① --yaz KAPISI, YAZMA ÇAĞRILARINDAN ÖNCE GELİYOR MU");
-const hakedisMetni = yorumsuz(readFileSync(HAKEDIS, "utf8"));
-const kargoMetni = yorumsuz(readFileSync(KARGO, "utf8"));
-kontrol(`  ${HAKEDIS}`, yazKapisiOncedeMi(hakedisMetni));
-kontrol(`  ${KARGO}`, yazKapisiOncedeMi(kargoMetni));
+for (const d of DOSYALAR) kontrol(`  ${d}`, yazKapisiOncedeMi(metinler.get(d)!));
 
 console.log("\n② HER YAZAN DOSYADA izYaz( ÇAĞRISI VAR MI");
-kontrol(`  ${HAKEDIS}`, izYazVarMi(hakedisMetni));
-kontrol(`  ${KARGO}`, izYazVarMi(kargoMetni));
+for (const d of DOSYALAR) kontrol(`  ${d}`, izYazVarMi(metinler.get(d)!));
 
 console.log("\n③ KARGO — cargoAmount BOŞ DENETİMİ, YAZIMDAN ÖNCE GELİYOR MU");
-kontrol(`  ${KARGO}`, cargoBosGuvenceliMi(kargoMetni));
+kontrol(`  ${TY_KARGO}`, cargoBosGuvenceliMi(metinler.get(TY_KARGO)!));
 
 console.log("\n④ MUTASYON — KENDİ KÖRLÜĞÜNÜ SINAR (yalnız bellekte, dosyaya dokunmaz)");
 
 // (a) --yaz kapısını SİL → ① kırmızı yanmalı.
-{
-  const mutasyonlu = hakedisMetni.replace(YAZ_KAPISI, "if (false) {");
-  kontrol(
-    "  ① kapı silinince KIRMIZI yanıyor (hakediş)",
-    !yazKapisiOncedeMi(mutasyonlu),
-  );
-}
-{
-  const mutasyonlu = kargoMetni.replace(YAZ_KAPISI, "if (false) {");
-  kontrol(
-    "  ① kapı silinince KIRMIZI yanıyor (kargo)",
-    !yazKapisiOncedeMi(mutasyonlu),
-  );
+for (const d of DOSYALAR) {
+  const mutasyonlu = metinler.get(d)!.replace(YAZ_KAPISI, "if (false) {");
+  kontrol(`  ① kapı silinince KIRMIZI yanıyor (${d})`, !yazKapisiOncedeMi(mutasyonlu));
 }
 
 // (b) izYaz çağrısını sil → ② kırmızı yanmalı.
@@ -100,18 +94,14 @@ console.log("\n④ MUTASYON — KENDİ KÖRLÜĞÜNÜ SINAR (yalnız bellekte, d
 // "sessizYaz(" kullanıldı ve "…sessizYaz(" kendi içinde "izYaz(" taşıdığı
 // için mutasyon YAKALANMADI (yalancı yeşil, bu betiğin kendi turunda
 // bulundu). Ayrık bir ad kullanılır.
-{
-  const mutasyonlu = hakedisMetni.replace(/izYaz\(/g, "noOpAudit(");
-  kontrol("  ② izYaz kaldırılınca KIRMIZI yanıyor (hakediş)", !izYazVarMi(mutasyonlu));
-}
-{
-  const mutasyonlu = kargoMetni.replace(/izYaz\(/g, "noOpAudit(");
-  kontrol("  ② izYaz kaldırılınca KIRMIZI yanıyor (kargo)", !izYazVarMi(mutasyonlu));
+for (const d of DOSYALAR) {
+  const mutasyonlu = metinler.get(d)!.replace(/izYaz\(/g, "noOpAudit(");
+  kontrol(`  ② izYaz kaldırılınca KIRMIZI yanıyor (${d})`, !izYazVarMi(mutasyonlu));
 }
 
 // (c) cargoAmount boş denetimini yazımdan SONRAYA taşı → ③ kırmızı yanmalı.
 {
-  const mutasyonlu = kargoMetni.replace(
+  const mutasyonlu = metinler.get(TY_KARGO)!.replace(
     "cargoAmount === null",
     "cargoAmountSAHTE === null",
   );
