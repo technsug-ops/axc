@@ -18,6 +18,93 @@
 
 ---
 
+## ✅ K216 — HB KARGO TARİFESİ PDF YÜKLEME + TARİFE-TABANLI TAHMİNİN "GERÇEKLEŞEN" DİYE YAZILMA HATASI · 17.09.2026 → 19.09.2026 · [KAPANDI — Halil testi geçti]
+
+> **HALİL TESTİ SONUCU (19.09.2026):** Kullanıcı doğruladı — geçti
+> (`/ayarlar/hb-kargo-tarife` ekranı + "Yeniden Hesapla" diyaloğundaki
+> düzeltilmiş desi ön-doldurma, ikisi de "BUNLAR OK").
+
+> ⚠ **KOD İÇİNDE "K202"/"K202-2" OLARAK GEÇİYOR — YANLIŞ KOD, DÜZELTİLMEDİ.**
+> Bu iş 17-18.09.2026'da yazılırken kod `pano:sonraki`ye sorulmadan "K202"
+> seçilmişti; o kod ARSIV.md'de zaten BAŞKA, ilgisiz bir kaleme aitti
+> (`K202 — BEKÇİ TURU VERGİSİ`, 09.09.2026). Kod yorumlarını (22 dosya)
+> geriye dönük değiştirmek düşük getirili/riskli bir taramaydı — commit
+> mesajları da zaten "K202" diyor, tarih tartışmasız. Panodaki GERÇEK,
+> çakışmasız kimlik **K216**; koddaki "K202" etiketleri tarihsel kalıntı
+> olarak okunmalı. _(Bu, K48/K215 vakasıyla AYNI kök: kod yazılırken
+> panonun kendi "sıradaki boş kod" kaynağına bakılmadı.)_
+
+### ① GERÇEK CANLI VAKA — SİPARİŞ `4633427855` (18.09.2026)
+
+Kullanıcı satış detayında "Yeniden Hesapla" ekranını açtı, kargo tutarını
+BOŞ bıraktı (yalnız firma/desi doğruladı). Sistem ürünün TAHMİNİ desisiyle
+(kanalın gerçek tartım desisi değil) taze bir tarife hesapladı ve —
+unutulmuş bir bayrak yüzünden — bunu **"gerçekleşen"** diye `cargoAmount`a
+yazdı. Yanlış desi + yanlış "bu gerçek mi tahmini mi" damgası aynı anda.
+
+### ② KÖK SEBEP — OPSİYONEL BAYRAK, ZORUNLU OLMALIYDI
+
+`karYenidenYaz`'ın beş doğrudan çağıranından **yalnız biri**
+(`satisKarTazele`) "bu tutar tahmin mi gerçek mi" bayrağını doğru
+geçiyordu; diğer dördü (`hesap-actions.ts` · `satis-duzenleme-veri.ts` ·
+`iptal-geri-alma-veri.ts` · kullanıcının "Yeniden Hesapla" ekranı) hiç
+geçmiyordu — bayrak **opsiyonel** olduğu için TypeScript bunu yakalamıyordu.
+
+**Yapısal düzeltme:** "bu tutar nereden geliyor" sorusu artık çağırandan
+gelen opsiyonel bir bayrak değil, TypeScript'in ZORUNLU kıldığı üç durumlu
+birleşik tip: `CargoTutariBilgisi = {tur:"YOK"} | {tur:"GERCEK";…} |
+{tur:"TAHMIN";…}`. Unutmak artık **derleme hatası**. `satisKarTazele`
+ayrıca desiyi de artık `desiSecimi()` (TARTIM→TAHMIN→KÜRESEL) üzerinden
+okuyor, ham `cargoDesi`yi değil. 21 dosya etkilendi (5 canlı yol + 16
+geçmiş onarım betiği, tip değişikliğini derlemek için).
+
+### ③ GEÇMİŞ ONARIMI — KANIT TABANLI, UYDURMA YOK
+
+`scripts/canli-k202-2-onar.ts` (iki aşamalı: kanıtlı satışların
+`cargoAmount`ı önce `null`lanır, sonra `kargoTartimGeldiTazele` ile
+tazelenir) — bir satış yalnız ① `cargoAmount` bizim `CargoTariff`
+tablomuzdaki BİR partiye kuruşuna eşitse VE ② (`kanalKargoDesi` farklıysa
+YA DA eşleşen parti `soldAt` için geçerli parti değilse) "kirli" sayıldı.
+Canlı tarama **17 satış** buldu (13 Hepsiburada + 4 Trendyol, 15-17 Eylül);
+onarıldı ve tazelendi, idempotent (ikinci koşum 0/0).
+
+### ④ HB KARGO TARİFESİ PDF YÜKLEME EKRANI — KALICI ÇÖZÜM
+
+Kullanıcı talebi (17.09.2026): _"Bu durumun kalıcı olarak çözülmesi
+gerekiyor. PDF ile bunun programın içerisinden çözümü olmalı"_ — HB'nin
+resmî kargo tarifesi (desi × 11 taşıyıcı) o güne kadar yalnız terminalden,
+elle çalıştırılan tek seferlik bir betikle yükleniyordu.
+
+`/ayarlar/hb-kargo-tarife` — iki adımlı (önizle→yaz) yükleme ekranı,
+`pdfjs-dist` (saf JS/WASM, harici ikili yok) ile **konum-tabanlı** sütun
+eşleme: her metin parçasının x/y koordinatı okunup en-yakın-x eşlemesiyle
+tabloya oturtuluyor — `pdftotext -table`'ın sıralı-indeks yaklaşımının
+sütun-kayması hata sınıfının TAMAMINDAN kaçınıyor. Gerçek üretim PDF'iyle
+sınandı: önceki elle-doğrulanmış çıkarımla **bayt bayt aynı** sonuç. Ham
+PDF Blob'a arşivleniyor. 24 değer-testli mutasyon-sınanmış kontrol
+(`kargo-tarife-pdf-dogrula.ts`).
+
+### ⑤ "YENİDEN HESAPLA" DİYALOĞU — DESİ ÖN-DOLDURMA DÜZELTİLDİ
+
+Aynı vakadan (①) çıkan ikinci düzeltme: form artık ham `satis.cargoDesi`
+(ürün tahmini) değil, salt-okunur üstteki satırla PAYLAŞILAN
+`desiSecimi()` sonucunu (`desiGosterim`) ön dolduruyor. Kanal gerçek
+desiyi bildirmişken form hâlâ ürün tahminini gösteriyordu; kullanıcı formu
+değiştirmeden onaylarsa YANLIŞ desiyle yeniden hesaplanıyordu. KÜRESEL
+basamak burada da GÖSTERİLMİYOR (İlke #11 — bilinmeyen bir değer dolu
+görünmez).
+
+**İlgili önkoşul (aynı gün, ayrı commit):** K201-4 — kargo tarifesi
+sorguları `effectiveFrom` sıralaması olmadan okunuyordu; PDF yükleme ve bu
+düzeltme, doğru tarife partisinin seçildiği bu düzeltmeye dayanıyor.
+
+⚠ **FOLLOW-UP, BUGÜN KAPSAM DIŞI:** K201-3 (16.09.2026, `574ee5e`,
+"Trendyol'a gönderilen barkod ChannelSku değil variant.barcode'dan
+okunsun") aynı kümeden ayrı bir düzeltme ve o da panoya hiç yazılmamış —
+bugünkü Halil onayı bunu kapsamıyor, ayrıca belgelenecek.
+
+---
+
 ## ✅ K192 — BLOB ASKISININ KÖK SEBEBİ: `list()` KOTAYI YAKMIŞ · 08.09.2026 → 19.09.2026 · [KOD KOŞTU]
 
 > **Mimar ölçümü (Vercel ekranı):** Advanced Operations **2000/2000 — DOLU**.
