@@ -19,6 +19,41 @@
 ---
 
 
+## ✅ K20 — GECİKMİŞ BORÇ SAYIMI · 24.08.2026 → 19.09.2026 · [YENİDEN ÖLÇÜLDÜ — FARK KAPANDI]
+
+> **19.09.2026 — YENİDEN ÖLÇÜLDÜ, GAP KAPANMIŞ.** Aynı araç
+> (`npm run canli:k20-sayim`, salt okuma) canlıya karşı tekrar koşuldu:
+>
+>     döküm beyanı (dondurulmuş)   147 adet · ₺464.657,00
+>     bugün defterde (TRENDYOL)    147 adet · ₺463.885,84
+>     FARK                         0 adet · ₺-771,16  (kuruş/yuvarlama)
+>
+> 24.08.2026'da ölçülen **76 sipariş / ₺231.417,27 eksik** artık YOK.
+> Aradaki üç haftada koşan toplu içe aktarmalar (K136a · K152 vb.) bu
+> boşluğu kapatmış görünüyor — hangi koşumun kapattığı AYRICA
+> ölçülmedi, yalnız "bugün kapalı" doğrulandı. Kalan ₺771 fark, kalan
+> yuvarlama/kuruş farkları mertebesinde ve iş açmıyor.
+> _(20–24.08 penceresi hâlâ hiçbir dökümle kapatılmadı — o zaten
+> "kıyas yok, yalnız sayım" olarak işaretliydi, bu değişmedi.)_
+
+📊 **ORİJİNAL ÖLÇÜM (24.08.2026, `npm run canli:k20-sayim`, salt okuma):**
+**Damga:** döküm DONMUŞ, defter AKIYOR — sistem okuma `24.08 21:06 UTC`.
+**TRENDYOL / AXCALI** · `01–20.08` satır 71 · brüt 71 · net 65 ·
+**₺233.239,73** · iptal 3 · `20–24.08` satır 28 · brüt 28 · **₺72.951,00**
+· iptal 0. **HEPSİBURADA / AXCALI** · `01–20.08` satır 21 · brüt 20 ·
+**₺76.503,00** · iptal 1 · `20–24.08` satır 2 · **₺38.268,00**.
+**N11 / AXCALI** · `01–20.08` satır 3 · **₺8.397,00** · `20–24.08`
+**sıfır**. ⚖ **DÖKÜM KIYASI (yalnız TY, yalnız 01–20.08):** döküm
+**147 adet / ₺464.657** · bizde **71 adet / ₺233.239,73** → **FARK
+−76 adet / −₺231.417,27.** Yani defterde **kayıtlı olan, olması
+gerekenin YARISI kadar** (%48). ⚠ **20–24.08 KIYASA GİRMEZ** — o
+pencere hiçbir dökümle kapatılmadı; 28 satış girilmiş ama karşılığı
+ölçülmedi. ⚠ **HB DÖKÜMÜ 15.08'E KADARDI** → o kanalda kıyas
+KURULAMAZ, rakamlar yalnız sayımdır. ✅ **ÇİFT KAYIT YOK:** 121 farklı
+(sipariş no + barkod) ikilisi, **tekrar eden 0**.
+
+---
+
 ## ✅ 19.09.2026 — "BİZDE" TABLOSUNDAN ARŞİVE TAŞINAN KALEMLER
 
 > `BEKLEYENLER.md` → `🔨 BİZDE` tablosunun bir kısmı çoktan kapanmıştı
