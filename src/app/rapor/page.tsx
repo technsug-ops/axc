@@ -2,6 +2,7 @@ import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import Link from "next/link";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { NakitOzeti } from "@/app/nakit-ozeti";
+import { HakedisOzeti } from "@/app/hakedis-ozeti";
 import {
   nakitTakvimiKur,
   type TakvimPenceresi,
@@ -10,6 +11,7 @@ import {
   takvimBugunu,
   takvimSatirlariniTopla,
 } from "@/lib/panel/takvim-verisi";
+import { beklenenHakedisOzetiGetir } from "@/lib/panel/hakedis-ozeti";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, Plus, TriangleAlert } from "lucide-react";
 
@@ -142,6 +144,20 @@ export default async function RaporSayfasi({
     bugun: takvimBugun,
     pencereGun: takvimPenceresi,
   });
+
+  /**
+   * ── BEKLENEN HAKEDİŞ ÖZETİ — RAPOR'A EKLENDİ (kullanıcı kararı 20.09.2026)
+   * Aynı gerekçe: ileriye bakan bir rapor sorusu, panelin "bugün ne
+   * yapmalıyım" sorusuna ait değil (bkz. `HakedisOzeti` başlığı).
+   *
+   * ⚠ İZİN AYRI: `hakedis.gor` ile korunuyor — `satis.kar.gor` ile AYNI ŞEY
+   * DEĞİL (bir rol hakediş görüp kâr göremeyen biri olabilir). Sorgu bile
+   * izin yoksa atılmaz (bkz. "yetki taşımada düşmüştü" dersi).
+   */
+  const hakedisGorunur = await izinVarMi("hakedis.gor");
+  const hakedisOzeti = hakedisGorunur
+    ? await beklenenHakedisOzetiGetir(takvimBugun)
+    : null;
 
   const an = new Date();
   let pencere: Pencere;
@@ -1017,10 +1033,18 @@ export default async function RaporSayfasi({
         bitis={parametreler.bitis ?? gunMetni(pencere.sonGun)}
       />
 
-      {/* NAKİT ÖZETİ — panelden taşındı; kendi 14/30 gün penceresiyle.
-          PARA bloğudur: `satis.kar.gor` yoksa hiç çizilmez. */}
-      {karGorunur ? (
-        <NakitOzeti takvim={takvim} pencereGun={takvimPenceresi} />
+      {/* NAKİT ÖZETİ + BEKLENEN HAKEDİŞ — ikisi de panelden taşındı/eklendi;
+          ikisi de ileriye bakan RAPOR sorusu, dönem süzgecinden bağımsız.
+          İzinleri AYRI: biri `satis.kar.gor`, öteki `hakedis.gor` — biri
+          yoksa öteki yine de çizilir. `NakitOzeti` kartının `h-full
+          flex-col` kabuğu tam bu yan yana yerleşim için tasarlanmıştı. */}
+      {karGorunur || hakedisOzeti ? (
+        <div className="grid items-stretch gap-4 lg:grid-cols-2">
+          {karGorunur ? (
+            <NakitOzeti takvim={takvim} pencereGun={takvimPenceresi} />
+          ) : null}
+          {hakedisOzeti ? <HakedisOzeti ozet={hakedisOzeti} /> : null}
+        </div>
       ) : null}
 
       {/* ══════════════════ KARŞILAŞTIRMA SEÇİCİ ══════════════════
