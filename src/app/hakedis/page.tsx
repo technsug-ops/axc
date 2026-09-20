@@ -7,6 +7,7 @@ import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
+import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import { isTakvimGunu, gunDegeri } from "@/lib/donem";
 import { beklenenHakedis, odemeDurumu } from "@/lib/hakedis/eslestir";
 import { HAKEDIS_ESIKLERI, sonrakiOdemeGunu } from "@/lib/hakedis/model";
 import { prisma } from "@/lib/prisma";
+import { suzgecAdresi } from "@/lib/suzgec";
 import { KanalDagilimiGrafigi } from "./kanal-dagilimi-grafigi";
 import {
   DURUM_KUTUSU,
@@ -60,7 +62,7 @@ const HAKEDIS_SENKRON_AKSIYONU: Record<string, string> = {
 export default async function HakedisSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ kanal?: string }>;
+  searchParams: Promise<{ kanal?: string; sekme?: string }>;
 }) {
   await sayfaIzni("hakedis.gor");
 
@@ -76,6 +78,24 @@ export default async function HakedisSayfasi({
    */
   const sp = await searchParams;
   const kanalSecili = (sp.kanal ?? "").trim() || undefined;
+
+  /**
+   * ═══════════════════════════════════════════════════════════════════════
+   *  SEKMELER (K222-⑥, kullanıcı kararı 20.09.2026) — "çok fazla detay,
+   *  hiç özet yok". Ekran ikiye bölündü:
+   *   ÖZET  → kanal ödemeleri + bekleyen para + kanal dağılımı (panel gibi,
+   *           tek bakışta okunur, döküm yok — İlke #13)
+   *   DETAY → karşılaştırma/eşleşme/kalem dökümleri (satır sayısı veriyle
+   *           büyüyen her şey burada yaşar)
+   *  Seçim URL'ye yazılır (`lib/suzgec.ts` ilkesi) ve KANAL SÜZGECİYLE
+   *  birlikte taşınır — sekme değiştirince filtre sıfırlanmaz.
+   * ═══════════════════════════════════════════════════════════════════════
+   */
+  const SEKME_OZET = "ozet";
+  const SEKME_DETAY = "detay";
+  const sekmeSecili = sp.sekme === SEKME_DETAY ? SEKME_DETAY : SEKME_OZET;
+  const sekmeAdresi = (anahtar: string) =>
+    suzgecAdresi("/hakedis", sp, { sekme: anahtar });
 
   /** Kanal filtresi — YALNIZ bu iki sorguya (ve satış sorgusuna) uygulanır. */
   const kanalKosulu = kanalSecili
@@ -513,7 +533,15 @@ export default async function HakedisSayfasi({
           </p>
         </div>
       ) : (
-        <>
+        <SekmeliBolum
+          secili={sekmeSecili}
+          sekmeler={[
+            {
+              anahtar: SEKME_OZET,
+              etiket: ortak("ozet"),
+              adres: sekmeAdresi(SEKME_OZET),
+              icerik: (
+                <div className="space-y-6">
           {/* ------------------- KANAL ÖDEMELERİ (K220/K222) -------------- */}
           {gecmisOdemeler.length > 0 || gelecekOdemeler.length > 0 ? (
             <Card>
@@ -677,7 +705,15 @@ export default async function HakedisSayfasi({
               </CardContent>
             </Card>
           ) : null}
-
+                </div>
+              ),
+            },
+            {
+              anahtar: SEKME_DETAY,
+              etiket: ortak("detay"),
+              adres: sekmeAdresi(SEKME_DETAY),
+              icerik: (
+                <div className="space-y-6">
           {/* ---------------- BEKLENEN vs GERÇEKLEŞEN ------------------- */}
           {karsilastirma.length > 0 ? (
             <Card>
@@ -1048,7 +1084,11 @@ export default async function HakedisSayfasi({
               </CardContent>
             </Card>
           ) : null}
-        </>
+                </div>
+              ),
+            },
+          ]}
+        />
       )}
     </div>
   );

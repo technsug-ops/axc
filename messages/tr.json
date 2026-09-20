@@ -167,6 +167,7 @@
     "kdvMahsubuNotu": "Bir satırda \"KDV mahsubu içerir\" yazıyorsa, o tutar nakit değildir: iade ödenecek KDV'yi düşürmüştür ve NET-2 bu yüzden NET-1'in üstünde görünür.",
     "menuyuAcKapat": "Menüyü aç/kapat",
     "vazgec": "Vazgeç",
+    "ozet": "Özet",
     "detay": "Detay",
     "duzenle": "Düzenle",
     "sil": "Sil",
