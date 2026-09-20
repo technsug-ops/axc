@@ -13,6 +13,79 @@
 
 ---
 
+## 🔶 K222/K223 — TRENDYOL HAKEDİŞ TURU · 20-21.09.2026 · [KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Bir günde üç ayrı kusur ölçüldü ve düzeltildi. **Üçü de canlıda; hiçbiri
+henüz gerçek kullanımda doğrulanmadı — paket bu yüzden AÇIK.**
+
+**① GELECEK ÖDEME BRÜT GÖSTERİLİYORDU (K222-⑨).** TY `/settlements` gelecek
+ödemede yalnız Satış/Kupon/İade veriyor; kargo · platform hizmet · stopaj
+ÖDEME ANINDA doğuyor. Ekran TY'nin kendi rakamından sürekli yüksekti.
+Artık kendi kesinti tahminimiz düşülüyor ve **brüt de kesinti de ekranda
+yazıyor** (para rakamı tabanıyla taşınır).
+
+    21.09 · TY · 46 kalem
+      ₺90.721,41   ← TY'nin kendi ekranı ₺90.739 diyordu (18 TL)
+      brüt ₺96.918,39 − tahmini kesinti ₺6.196,98
+    ortalama sapma 7.860 → 3.340
+
+⚠ **KALAN SAPMA KAPATILAMAZ VE ÖYLE YAZILDI:** TY kargo faturasını ödemelere
+DÜZENSİZ bindiriyor (24.09'da ₺8.703, 21.09'da ₺6.179). Rakam TAHMİNDİR.
+
+**② ÖDEME GÜNÜ VADEDEN YAZILIYORDU (K223).** `ty-api-oku.ts` vade ile ödeme
+gününü AYNI alandan (`paymentDate`) okuyordu ve dosyanın kendi yorumu
+_"`paymentDate` bu durumda gerçek ödeme günüdür"_ diyordu. **Çürütüldü:**
+
+    emir 76313675 · 112 kalem · ₺205.691,63
+      GERÇEK    2026-08-11 (TEK gün, PaymentOrder kaydı)
+      defterde  10·11·17·18·19·20·22·23·24·25 Ağu + 3 Eyl
+
+Bir ödeme emri = BİR gün. 91 emrin 91'i de yanlıştı. Gerçek gün
+`/otherfinancials?transactionType=PaymentOrder` kaydında; o kayıtlar KALEM
+OLARAK YAZILMAZ (emrin toplamını taşır), yalnız tarihi için okunur.
+**Gün bilinmiyorsa kalem ödenmiş yazılmaz** — vade uydurulmaz.
+
+**③ GEÇMİŞ ONARILDI (K223-②).** Kaynak %100 mevcut olduğu için geçmiş de
+düzeltildi: **4486 kalem · 91 emir.** Ölçüldü — geçmiş ödeme grupları
+**118/118 tek güne düşüyor** (önceden 27). Son 8 TY ödemesi artık
+17.09 · 14.09 · 10.09 · 07.09 …; defterde 20.09 · 16.09 · 13.09 · 09.09 yazıyordu.
+Geri alma: `npm run canli:ty-odeme-gunu-onar -- --geri` (yerel anlık
+görüntüden; iz TEŞHİS için, geri alma listeye BAĞLI DEĞİL).
+
+**BEKÇİ:** `ty-api-oku.ts` bugüne kadar **hiç sınanmamıştı** — yanlış iddianın
+ayakta kalma sebebi buydu. `hakedis:dogrula` 8. bölüm eklendi (146 ölçüt).
+Mutasyon: 13 senaryo, 13'ü de kırmızı.
+
+⭐ **İKİ KAPI AYRI İZOLE EDİLDİ:** "ödenmemiş kaleme gün yazılmasın" kuralını
+iki kapı koruyordu ve biri ötekini gizliyordu — okuyucu kapısını kaldıran
+mutasyon **YEŞİL KAÇTI**, çünkü harita zaten `"null"` anahtarını tutmuyor.
+Her kapı ÖTEKİNİ BYPASS EDEN örnekle sınandı; ikinci turda kırmızı yandı.
+
+⛔ **VE BİR HATAM PANOYA YAZILIYOR:** onarımın ilk koşumunda gün ölçütünü
+**UTC'de** kurmuşum, ekran **İstanbul** gününde gruplar. `2026-07-27T21:30Z`
+damgalı iki kalem UTC'de hedefle aynı gündü, İstanbul'da 28 Temmuz'du;
+"zaten doğru" sayılıp atlandılar ve 5 emir iki güne yayılmış kaldı. Ölçüt
+İstanbul'a çevrildi, 7 kalem ikinci koşumda düzeldi. Betik tekrar-koşulabilir
+tasarlandığı için bedelsiz oldu — **(b) şartının niye var olduğunun kanıtı.**
+
+### AÇIK — HALİL TESTİ
+
+- [ ] **21.09 ödemesi bugün düştü.** Bankadaki GERÇEK tutar ile ekrandaki
+      ₺90.721,41 karşılaştırılacak. _Bu tek ölçüm hem kesinti tahminini hem
+      ödeme gününü birden sınar._
+- [ ] `/hakedis` → Detay → geçmiş ödemeler: her ödeme TEK satır mı, tarihi
+      TY panelindekiyle aynı mı?
+- [ ] `/nakit-takvimi`: geçmiş ödemeler artık günlere dağılmıyor mu?
+
+### AÇIK — SONRAKİ KANAL
+
+⚠ `gelecekOdemeBrutMu` yalnız **Trendyol**'a `true` dönüyor; HB ölçüldü ve
+düşülmemesi doğru. **N11 hakedişi çekilmeye başladığı gün** o kanal brüt
+görünecek ve bugünkü hatanın aynısını yaşayacak. Açılış şartı budur.
+N11 ödeme günü YÖNÜ de ölçülmedi (kodda beyanlı: varsayılan İLERİ).
+
+---
+
 ## 💤 K212-② — ÜRÜN ANALİZİNDE OTOMATİK MEVSİM ÖNERİSİ · 11.09.2026 · [UYUR — açılış şartlı]
 
 K212'nin ana kısmı (arama, favori/incelenecek, mevsim sekmesi, filtre paneli)
