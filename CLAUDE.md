@@ -692,6 +692,22 @@ mutasyon çöküyor ve "yeşil" görünüyordu; öteki deseni hiç bulamıyordu 
 mutasyon **hiç uygulanmadan** yeşil raporlanıyordu.
 **Harness çıkış koduna bakar ve mutasyonun UYGULANDIĞINI doğrular.**
 
+⛔ **ÜÇÜNCÜ VAKA 21.09.2026 — VE BU KEZ YALANCI KIRMIZI.** Python harness'i
+komutu `subprocess.run(LISTE, shell=True)` ile koşturuyordu; Windows'ta
+`cmd.exe` komutu **çift tırnakla sarıyor** ve _"Befehl nicht gefunden"_ deyip
+`1` dönüyordu. Yani **her mutasyon "KIRMIZI" raporlanıyordu — hiçbiri
+ölçülmeden.** Beş sonuç geçersizdi ve hepsi "ısırdı" diye okunacaktı.
+
+> **YALANCI KIRMIZI, YALANCI YEŞİL KADAR TEHLİKELİDİR.** Yeşil koruma
+> olmadığını gizler; kırmızı **olmayan bir korumayı varmış gibi gösterir** ve
+> düzeltilmemiş bir kuralı "sınandı" diye kapattırır.
+
+⭐ **HER HARNESS İKİ YÖNDE SAĞLAMA İSTER, TESLİMDEN ÖNCE:**
+· **ZARARSIZ** bir mutasyon (yorum değişikliği) → **YEŞİL** vermeli;
+· **gerçek** bir bozma → **KIRMIZI** vermeli.
+Yalnız ikincisi denenirse, hiçbir şeyi koşmayan bir harness "mükemmel"
+görünür. _(Bu turda ilk sağlama yapılmamıştı; kaçırılan şey tam buydu.)_
+
 ---
 
 ### KONTROL TASARIMI, VERİ KAPSAMI DOĞRULANMADAN "FARK" ÜRETMEZ (KESİN KURAL)

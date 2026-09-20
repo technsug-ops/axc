@@ -45,6 +45,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { gunDegeri, isTakvimGunu } from "../src/lib/donem";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
+import { izYaz } from "../src/lib/iz";
 import { canliYapilandirma } from "./canli-ortak";
 import { baslikKur, kimlikOku, tumSayfalar, UCLAR } from "./ty/istemci";
 import { odemeEmriGunleriniCoz, type TyFinansKaydi } from "../src/lib/hakedis/ty-api-oku";
@@ -58,8 +59,13 @@ const ISLEM_TAVANI_MS = 120_000;
 /** `AuditLog.detail` TEXT (65.535 bayt); tavana yaklaşan iz YAZILMAZ. */
 const IZ_TAVANI = 60_000;
 
-const yaz = process.argv.includes("--yaz");
-const geri = process.argv.includes("--geri");
+/**
+ * ⚠ ADLAR BÜYÜK HARF — depo konvansiyonu (`canli-ty-hakedis-cekim.ts` ve
+ * kardeşleri). `hakedis-yazici:dogrula` `--yaz` kapısını `if (!YAZ) {`
+ * deseniyle arıyor; küçük harfli bir ad kapıyı GÖRÜNMEZ yapardı.
+ */
+const YAZ = process.argv.includes("--yaz");
+const GERI = process.argv.includes("--geri");
 
 /**
  * ⛔ GÜN KARŞILAŞTIRMASI İSTANBUL'DA YAPILIR — UTC'de DEĞİL.
@@ -92,12 +98,30 @@ async function main() {
 
   console.log("=".repeat(96));
   console.log(
-    `K223 — GEÇMİŞ TY ÖDEME GÜNÜ ONARIMI  (${geri ? "GERİ ALMA" : yaz ? "YAZAR" : "KURU KOŞUM, yazmaz"})`,
+    `K223 — GEÇMİŞ TY ÖDEME GÜNÜ ONARIMI  (${GERI ? "GERİ ALMA" : YAZ ? "YAZAR" : "KURU KOŞUM, yazmaz"})`,
   );
   console.log("=".repeat(96));
 
+  /**
+   * ⛔ `--geri` DE BİR YAZMA KİPİDİR — kapı ondan da ÖNCE gelir.
+   * Geri alma defteri değiştirir; bayraksız koşumda hiçbir yol yazmaz.
+   */
+  if (!YAZ) {
+    if (GERI) {
+      const n = existsSync(GORUNTU_DOSYASI)
+        ? (JSON.parse(readFileSync(GORUNTU_DOSYASI, "utf8")) as Goruntu).satirlar.length
+        : 0;
+      console.log(
+        `KURU KOŞUM — ${n} satır geri yazılacaktı. Yazmak için: --geri --yaz`,
+      );
+      await prisma.$disconnect();
+      return;
+    }
+    /** İleri yön: ölçüm aşağıda, kuru koşum raporu orada verilir. */
+  }
+
   // ── GERİ ALMA — yerel anlık görüntüden ────────────────────────────────
-  if (geri) {
+  if (GERI) {
     if (!existsSync(GORUNTU_DOSYASI)) {
       console.log(`⛔ Anlık görüntü YOK (${GORUNTU_DOSYASI}) — geri alınamaz.`);
       process.exitCode = 1;
@@ -222,7 +246,7 @@ async function main() {
     return;
   }
 
-  if (!yaz) {
+  if (!YAZ) {
     console.log(`\nKURU KOŞUM — hiçbir şey yazılmadı. Yazmak için: --yaz`);
     await prisma.$disconnect();
     return;
@@ -304,15 +328,22 @@ async function main() {
           where: { id: { in: g.satirlar.map((s) => s.id) } },
           data: { paidAt: g.hedef },
         });
-        await tx.auditLog.create({
-          data: {
+        /**
+         * ⚠ `izYaz` KULLANILIR, ham `auditLog.create` DEĞİL — depo
+         * konvansiyonu ve `hakedis-yazici:dogrula`nın ② ölçütü.
+         * İşlem istemcisi geçilir ki iz yazımla AYNI işlemde dursun:
+         * yazım geri alınırsa iz de geri alınır, yetim iz kalmaz.
+         */
+        await izYaz(
+          {
             userId: kullanici.id,
             action: "TY_ODEME_GUNU_DUZELTILDI",
             targetType: "SettlementItem",
             targetId: emir,
             detail: iz,
           },
-        });
+          tx,
+        );
       },
       { timeout: ISLEM_TAVANI_MS },
     );

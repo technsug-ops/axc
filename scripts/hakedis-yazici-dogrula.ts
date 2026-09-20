@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 
+import { YAZMASI_BEYANLI } from "./yazici-beyani";
+
 /**
  * ============================================================================
  *  HAKEDİŞ/KARGO YAZICI BEKÇİSİ — K220 + K221 (19.09.2026)
@@ -63,12 +65,38 @@ function cargoBosGuvenceliMi(metin: string): boolean {
   return kosul < yazim;
 }
 
-const TY_HAKEDIS = "scripts/canli-ty-hakedis-cekim.ts";
 const TY_KARGO = "scripts/canli-ty-kargo-gercek-olcum.ts";
-const HB_HAKEDIS = "scripts/canli-hb-hakedis-cekim.ts";
-const DOSYALAR = [TY_HAKEDIS, TY_KARGO, HB_HAKEDIS];
 
-console.log("\nHAKEDİŞ/KARGO YAZICI BEKÇİSİ — K220 + K221\n");
+/**
+ * ⛔ KÜME BEYANDAN TÜRETİLİR — ELLE TUTULMAZ (K223-③, 21.09.2026).
+ *
+ * Burada `const DOSYALAR = [üç dosya]` yazıyordu. 21.09'da dördüncü bir
+ * yazıcı doğdu (`canli-ty-odeme-gunu-onar.ts`) ve elle tutulan liste onu
+ * GÖRMEZDİ: bekçi yeşil yanar, korunması gereken betik kapsam dışında
+ * kalırdı — ve ekranda bir eksiklik değil bir ONAY görünürdü.
+ *
+ * Artık küme `YAZMASI_BEYANLI`dan süzülüyor: `bekcisi` alanına bu bekçiyi
+ * yazan her betik kendiliğinden kapsama girer.
+ * _(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur" ·
+ * "düzeltmenin çaresi dosya listesi değil, desen yasağıdır".)_
+ */
+const BU_BEKCI = "hakedis-yazici:dogrula";
+const DOSYALAR = YAZMASI_BEYANLI.filter((b) => b.bekcisi === BU_BEKCI).map(
+  (b) => `scripts/${b.dosya}`,
+);
+
+console.log("\nHAKEDİŞ/KARGO YAZICI BEKÇİSİ — K220 + K221 + K223\n");
+
+/**
+ * ⛔ TABAN DOLULUĞU AYRICA KANITLANIR. Türetilen küme boşalırsa aşağıdaki
+ * döngüler HİÇ dönmez ve bekçi "hepsi geçti" der — boş küme her koşulu
+ * sağlar. Beyan dosyası bozulsa ya da `bekcisi` adı değişse tam bu olurdu.
+ */
+kontrol(
+  `beyandan türetilen küme DOLU (${DOSYALAR.length} dosya)`,
+  DOSYALAR.length >= 4,
+);
+for (const d of DOSYALAR) console.log(`     · ${d}`);
 
 const metinler = new Map(DOSYALAR.map((d) => [d, yorumsuz(readFileSync(d, "utf8"))]));
 
