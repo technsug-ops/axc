@@ -22,7 +22,7 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import { isTakvimGunu, gunDegeri } from "@/lib/donem";
 import { beklenenHakedis, odemeDurumu } from "@/lib/hakedis/eslestir";
-import { HAKEDIS_ESIKLERI } from "@/lib/hakedis/model";
+import { HAKEDIS_ESIKLERI, sonrakiOdemeGunu } from "@/lib/hakedis/model";
 import { prisma } from "@/lib/prisma";
 import { KanalDagilimiGrafigi } from "./kanal-dagilimi-grafigi";
 import {
@@ -110,6 +110,19 @@ export default async function HakedisSayfasi({
         where: {
           // İptal edilen satıştan hakediş beklenmez.
           iptalTarihi: null,
+          /**
+           * ⛔ CANLI BULGU 20.09.2026: iade edilmiş satış bu karşılaştırmaya
+           * GİREMEZ. "Beklenen" alanı `Sale.net1Amount`den okunur ve bu
+           * rakam İADE ÖNCESİ kâr hesabıdır (iade, kârı geriye dönük
+           * DEĞİŞTİRMEZ — "kâr snapshot'ı geçmişin kaydıdır" ilkesi).
+           * Pazaryeri ise iade edilen siparişin parasını GERİ ALIR; hakediş
+           * raporunda satış + iade satırları toplanıp NET SIFIRA döner.
+           * Karşılaştırma "beklenen ₺1.335 / gerçekleşen ₺0" görüp "eksik
+           * ödeme" derdi — oysa ödeme zaten doğru netlenmiş, eksik olan
+           * hiçbir şey yok. Bu satışların hakediş takibi `/iadeler`
+           * ekranındadır; burada yalnız YANLIŞ ALARM üretirler.
+           */
+          returns: { none: {} },
           ...kanalKosulu,
         },
         include: {
@@ -239,58 +252,91 @@ export default async function HakedisSayfasi({
 
   /**
    * ═══════════════════════════════════════════════════════════════════════
-   *  K220 — TRENDYOL ÖDEME EMRİ GRUPLAMASI (Trendyol'un kendi paneliyle
-   *  aynı mantık: "Ödeme Yapıldı" / "Tahmini Hesaplanmıştır")
+   *  K220/K222 — KANAL ÖDEME GRUPLAMASI (pazaryerinin kendi paneliyle aynı
+   *  mantık: "Ödeme Yapıldı" / "Tahmini Hesaplanmıştır")
    * -------------------------------------------------------------------------
-   *  ⛔ KAPSAM DAR VE BİLEREK: `paymentOrderId` yalnız TY API kaynaklı
-   *  kalemlerde dolar (Excel'den gelen hiçbir kalemde YOK — kaynağın kendisi
-   *  bu bilgiyi vermiyor). HB/N11 bu gruplamaya HİÇ girmez; onlar aşağıdaki
-   *  düz "Bekleyen kalem dökümü" listesinde kalmaya devam eder.
+   *  ⛔ KAPSAM: yalnız API'DEN OTOMATİK ÇEKİLEN kanallar (bugün Trendyol +
+   *  Hepsiburada — `HAKEDIS_SENKRON_AKSIYONU` ile AYNI küme, iki yerde iki
+   *  farklı liste olmasın diye). N11 (ve Excel'den yüklenen her şey) bu
+   *  gruplamaya HİÇ girmez; onlar aşağıdaki düz "Bekleyen kalem dökümü"
+   *  listesinde kalmaya devam eder.
    *
-   *  ⚠ GÜNE GÖRE GRUPLAMA ÖLÇÜLDÜ (19.09.2026): `paidAt`/`dueDate` SİPARİŞ
-   *  başına ayrı hesaplanıyor (aynı ödeme emrindeki kalemler bile farklı
-   *  milisaniyelik damga taşıyor) — bu yüzden ÖDENMİŞ kalemler gerçek
-   *  `paymentOrderId` ile, BEKLEYEN kalemler ise (henüz emir yok) yalnız
-   *  GÜN düzeyinde (`dueDate`in tarih kısmı) gruplanır. İkisi FARKLI
-   *  kesinlik taşır — rozetler bunu ayırt eder.
+   *  ⚠ CANLI BULGU 20.09.2026 (kullanıcı): "Gelecek ödemeler" ham `dueDate`
+   *  GÜNÜNE göre gruplanıyordu ve ekran sanki HER GÜN bir ödeme varmış gibi
+   *  görünüyordu — "bu sıklıkta bir ödeme yok". Gerçek: pazaryeri yalnız
+   *  BELİRLİ haftanın günlerinde öder (bkz. `KANAL_ODEME_GUNLERI`). Her
+   *  siparişin kendi `dueDate` TAHMİNİ, o kanalın bir SONRAKİ gerçek ödeme
+   *  gününe SNAP'lenir (`sonrakiOdemeGunu`) — farklı günlere düşen tahminler,
+   *  aynı gerçek ödeme gününe denk geldiklerinde TEK satırda birleşir.
+   *
+   *  ⚠ GEÇMİŞ (ÖDENMİŞ) TARAFTA GRUPLAMA ANAHTARI KANALA GÖRE DEĞİŞİR:
+   *  Trendyol'un API'si gerçek bir `paymentOrderId` veriyor — o kullanılır.
+   *  Hepsiburada'nın API'si böyle bir kimlik VERMİYOR (bkz.
+   *  `canli-hb-hakedis-cekim.ts`); onun için tek güvenilir gruplama `paidAt`
+   *  GÜNÜDÜR — bu tahmin değil, GERÇEKLEŞMİŞ bir tarihtir, uydurma değildir.
+   *  İkisi FARKLI kesinlik taşır — rozetler (`odemeEmriNo` var/yok) bunu
+   *  ayırt eder.
    */
-  const tyKalemleri = kalemler.filter((k) => k.channelAccount.channel.name === "Trendyol");
+  const API_KANALLARI = new Set(Object.keys(HAKEDIS_SENKRON_AKSIYONU));
+  const apiKalemleri = kalemler.filter((k) =>
+    API_KANALLARI.has(k.channelAccount.channel.name),
+  );
 
-  type OdemeGrubu = { anahtar: string; tarih: Date; toplam: number; paraBirimi: string; sayi: number };
+  type OdemeGrubu = {
+    anahtar: string;
+    kanalAdi: string;
+    tarih: Date;
+    toplam: number;
+    paraBirimi: string;
+    sayi: number;
+    /** Yalnız GEÇMİŞ ödemelerde anlamlı: gerçek bir ödeme emri no'su var mı. */
+    odemeEmriNo: string | null;
+  };
 
   const gecmisOdemeGruplari = new Map<string, OdemeGrubu>();
-  for (const k of tyKalemleri) {
-    if (k.paidAt === null || k.paymentOrderId === null) continue;
-    const g = gecmisOdemeGruplari.get(k.paymentOrderId) ?? {
-      anahtar: k.paymentOrderId,
+  for (const k of apiKalemleri) {
+    if (k.paidAt === null) continue;
+    const kanalAdi = k.channelAccount.channel.name;
+    /** TY: gerçek ödeme emri. HB (ve emri olmayan her kanal): ödeme GÜNÜ. */
+    const anahtar = k.paymentOrderId
+      ? `EMIR:${k.paymentOrderId}`
+      : `${kanalAdi}|GUN:${k.paidAt.toISOString().slice(0, 10)}`;
+    const g = gecmisOdemeGruplari.get(anahtar) ?? {
+      anahtar,
+      kanalAdi,
       tarih: k.paidAt,
       toplam: 0,
       paraBirimi: k.currency,
       sayi: 0,
+      odemeEmriNo: k.paymentOrderId,
     };
     g.toplam += Number(k.amount.toString());
     g.sayi++;
     if (k.paidAt > g.tarih) g.tarih = k.paidAt;
-    gecmisOdemeGruplari.set(k.paymentOrderId, g);
+    gecmisOdemeGruplari.set(anahtar, g);
   }
   const gecmisOdemeler = [...gecmisOdemeGruplari.values()].sort(
     (a, b) => b.tarih.getTime() - a.tarih.getTime(),
   );
 
   const gelecekOdemeGruplari = new Map<string, OdemeGrubu>();
-  for (const k of tyKalemleri) {
+  for (const k of apiKalemleri) {
     if (k.paidAt !== null || k.dueDate === null) continue;
-    const gunAnahtari = k.dueDate.toISOString().slice(0, 10);
-    const g = gelecekOdemeGruplari.get(gunAnahtari) ?? {
-      anahtar: gunAnahtari,
-      tarih: k.dueDate,
+    const kanalAdi = k.channelAccount.channel.name;
+    const odemeGunu = sonrakiOdemeGunu(k.dueDate, kanalAdi);
+    const anahtar = `${kanalAdi}|${odemeGunu.toISOString().slice(0, 10)}`;
+    const g = gelecekOdemeGruplari.get(anahtar) ?? {
+      anahtar,
+      kanalAdi,
+      tarih: odemeGunu,
       toplam: 0,
       paraBirimi: k.currency,
       sayi: 0,
+      odemeEmriNo: null,
     };
     g.toplam += Number(k.amount.toString());
     g.sayi++;
-    gelecekOdemeGruplari.set(gunAnahtari, g);
+    gelecekOdemeGruplari.set(anahtar, g);
   }
   const gelecekOdemeler = [...gelecekOdemeGruplari.values()].sort(
     (a, b) => a.tarih.getTime() - b.tarih.getTime(),
@@ -460,12 +506,12 @@ export default async function HakedisSayfasi({
         </div>
       ) : (
         <>
-          {/* ------------------- TRENDYOL ÖDEMELERİ (K220) --------------- */}
+          {/* ------------------- KANAL ÖDEMELERİ (K220/K222) -------------- */}
           {gecmisOdemeler.length > 0 || gelecekOdemeler.length > 0 ? (
             <Card>
               <CardHeader>
-                <CardTitle>{t("tyOdemeleriBaslik")}</CardTitle>
-                <p className="text-muted-foreground text-sm">{t("tyOdemeleriKapsamNotu")}</p>
+                <CardTitle>{t("kanalOdemeleriBaslik")}</CardTitle>
+                <p className="text-muted-foreground text-sm">{t("kanalOdemeleriKapsamNotu")}</p>
               </CardHeader>
               <CardContent className="space-y-5">
                 {gelecekOdemeler.length > 0 ? (
@@ -478,7 +524,10 @@ export default async function HakedisSayfasi({
                           className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
                         >
                           <div>
-                            <div className="font-medium">{bicim.tarih(g.tarih)}</div>
+                            <div className="flex flex-wrap items-center gap-2 font-medium">
+                              {bicim.tarih(g.tarih)}
+                              <Badge variant="outline">{g.kanalAdi}</Badge>
+                            </div>
                             <div className="text-muted-foreground text-xs">
                               {t("kalemSayisi", { sayi: g.sayi })}
                             </div>
@@ -513,10 +562,21 @@ export default async function HakedisSayfasi({
                           className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
                         >
                           <div>
-                            <div className="font-medium">{bicim.tarih(g.tarih)}</div>
+                            <div className="flex flex-wrap items-center gap-2 font-medium">
+                              {bicim.tarih(g.tarih)}
+                              <Badge variant="outline">{g.kanalAdi}</Badge>
+                            </div>
                             <div className="text-muted-foreground text-xs">
-                              {t("kalemSayisi", { sayi: g.sayi })} · {t("odemeEmriNo")}{" "}
-                              {g.anahtar}
+                              {t("kalemSayisi", { sayi: g.sayi })}
+                              {/* ⚠ YALNIZ GERÇEK BİR EMİR NO'SU VARSA
+                                  YAZILIR — HB'de bu alan yok, ödeme günü
+                                  zaten tarihte görünüyor (bkz. yukarısı). */}
+                              {g.odemeEmriNo ? (
+                                <>
+                                  {" "}
+                                  · {t("odemeEmriNo")} {g.odemeEmriNo}
+                                </>
+                              ) : null}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">

@@ -133,3 +133,48 @@ export const HAKEDIS_ESIKLERI = {
    */
   tutarFarki: 1,
 } as const;
+
+/**
+ * ============================================================================
+ *  KANAL ÖDEME GÜNLERİ — KULLANICI BEYANI (20.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ NİYE GEREKLİ: `dueDate` SİPARİŞ BAŞINA ayrı tahmin edilir (bkz.
+ *  `beklenenVade`) ama pazaryeri parayı yalnız BELİRLİ haftanın günlerinde
+ *  öder. Ham `dueDate`e göre günlük gruplama yapılırsa ekran "her gün bir
+ *  ödeme var" der — ki bu YANLIŞTIR ve kullanıcı bunu canlıda gördü
+ *  ("bu sıklıkta bir ödeme yok").
+ *
+ *  Gerçek takvim:
+ *    Trendyol     → Salı + Perşembe
+ *    Hepsiburada  → Salı
+ *    N11          → Perşembe
+ *
+ *  `Date.getUTCDay()`: 0=Pazar 1=Pazartesi 2=Salı 3=Çarşamba 4=Perşembe
+ *  5=Cuma 6=Cumartesi. `dueDate`/`gunDegeri` İstanbul takvim gününü UTC gece
+ *  yarısına damgalıyor (bkz. `lib/donem.ts`), bu yüzden `getUTCDay()` doğrudan
+ *  doğru sonucu verir — ayrı bir saat dilimi çevrimi gerekmez.
+ *
+ *  Haritada OLMAYAN kanal için tarih OLDUĞU GİBİ kalır — uydurma bir gün
+ *  eklenmez (bkz. `sonrakiOdemeGunu`).
+ * ============================================================================
+ */
+export const KANAL_ODEME_GUNLERI: Record<string, number[]> = {
+  Trendyol: [2, 4],
+  Hepsiburada: [2],
+  N11: [4],
+};
+
+/**
+ * Bir vade tahmininden başlayarak, kanalın GERÇEKTEN ödediği ilk günü bulur.
+ * Vade zaten bir ödeme gününe denk geliyorsa aynı tarih döner.
+ */
+export function sonrakiOdemeGunu(vade: Date, kanalAdi: string): Date {
+  const gunler = KANAL_ODEME_GUNLERI[kanalAdi];
+  if (!gunler || gunler.length === 0) return vade;
+  for (let i = 0; i < 7; i++) {
+    const aday = new Date(vade.getTime() + i * 86_400_000);
+    if (gunler.includes(aday.getUTCDay())) return aday;
+  }
+  /** Pratikte hiç ulaşılmaz: 7 günlük pencerede en az bir eşleşme vardır. */
+  return vade;
+}
