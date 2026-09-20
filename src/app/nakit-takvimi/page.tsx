@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { AlertTriangle } from "lucide-react";
 
-import { GeriBaglanti } from "@/components/baglanti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bicimlendirici } from "@/lib/bicim";
 import { gunMetninden } from "@/lib/donem";
@@ -355,12 +354,20 @@ function Kutu({ etiket, deger }: { etiket: string; deger: string }) {
 }
 
 /**
- * Adı olanlar tek tek, adsızlar "N kalem" olarak.
+ * Adı olanlar tek tek, adsızlar "N kalem" olarak — İKİ HÂLDE DE AYNI KOMPAKT
+ * KUTUCUK IZGARASI (20.09.2026 birleştirmesi).
  *
- * ── GENİŞLİK SINIRI (İlke #12) ──────────────────────────────────────────
- * Satırlar `max-w-3xl` içinde durur. Sınırsız genişlikte "etiket solda,
- * tutar en sağda" yasak kalıptır: göz aradaki yüzlerce pikseli kat etmek
- * zorunda kalır ve iki satırı karşılaştırmak zorlaşır.
+ * ── ESKİ HÂL, İKİ AYRI DESEN TAŞIYORDU ───────────────────────────────────
+ * Tutarı BİLİNMEYEN liste (`tutarGizle`) zaten kompakt, yan yana akan
+ * kutucuklardı (15.08.2026 düzeltmesi). Tutarlı liste ise HÂLÂ eski
+ * "etiket solda, tutar en sağda" satırındaydı — `max-w-3xl` genişlikte bile
+ * göz aradaki yüzlerce pikseli kat ediyordu (İlke #12'nin tam yasakladığı
+ * kalıp). Kullanıcı canlıda gördü ("bu sence güzel bir arayüz mü") — 20-33
+ * satırlık bir "Gecikmiş" dökümünde bu boşluk katlanarak büyüyordu.
+ *
+ * Çare: TEK IZGARA. Kod ve tutar AYNI kutucukta yan yana; kutucuklar
+ * satır satır değil yan yana AKAR — 33 kutucuk 5-6 satıra sığar, tek tek
+ * dizilmiş 33 geniş satırdan kat kat az yer kaplar.
  */
 function Dokum({
   satirlar,
@@ -375,85 +382,41 @@ function Dokum({
 }) {
   const dokum = gunuDokumle(satirlar);
 
-  /**
-   * TUTARI BİLİNMEYEN LİSTE IZGARAYA DÖNER (15.08.2026 düzeltmesi).
-   *
-   * Ekran görüntüsünde 16 satır vardı ve her satırın en sağında yalnız bir
-   * "?" duruyordu; aradaki bütün genişlik boştu. Üstelik "?" hiçbir şey
-   * söylemiyordu — başlığın altındaki not zaten "tutarı bilinmiyor" diyor.
-   * Aynı şekilde 16 satırın 16'sında da aynı "tahmin" rozeti vardı: bütün
-   * satırlarda AYNI olan bir rozet bilgi taşımaz, gürültü olur.
-   *
-   * Doğrusu kompakt kutucuk ızgarası: kodlar yan yana akar, ekranın
-   * tamamı 16 kod için harcanmaz.
-   */
-  if (tutarGizle) {
-    /**
-     * ⚠ TAHMİN ROZETİ TAMAMEN KALDIRILDI (24.08.2026). Girişler artık
-     * YALNIZ kanal belgesinden geliyor; "tahmin" diye bir kaynak yok.
-     *
-     * ⚠ `{false ? (...)}` bırakılmadı — koşulu öldürüp deseni bırakmak,
-     * anayasadaki "yalancı yeşil"in ta kendisi: bekçi `tahminEtiketi`
-     * anahtarını dosyada bulur ve rozet çizilmediği hâlde yeşil yanar.
-     */
-    return (
-      <div className="space-y-2">
-        <ul className="flex flex-wrap gap-1.5">
-          {dokum.tekil.map((s, i) => (
-            /* `min-w-0`: <li> bir flex öğesi, varsayılan min-width'i `auto`
-               ve içeriğinden dar olmayı reddeder. İçerideki `max-w-full`
-               tek başına yetmez — uzun ürün adı telefonda kutuyu taşırır. */
-            <li key={`t-${i}`} className="min-w-0">
-              <Link
-                href={s.adres}
-                className="bg-muted/60 hover:bg-muted inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
-              >
-                <span className="truncate underline underline-offset-2">
-                  {s.baslik}
-                </span>
-              </Link>
-            </li>
-          ))}
-          {dokum.obekler.map((o, i) => (
-            <li key={`o-${i}`}>
-              <Link
-                href={o.adres}
-                className="bg-muted/60 hover:bg-muted inline-flex items-center rounded-md px-2 py-1 text-xs underline underline-offset-2 transition-colors"
-              >
-                {obekAdi(o.kaynak, o.adet)}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  }
-
   return (
-    <ul className="max-w-3xl space-y-1">
+    <ul className="flex flex-wrap gap-1.5">
       {dokum.tekil.map((s, i) => (
-        <li
-          key={`t-${i}`}
-          className="flex flex-wrap items-center justify-between gap-2 text-sm"
-        >
-          <span className="flex min-w-0 items-center gap-2">
-            <Link href={s.adres} className="truncate underline underline-offset-2">
+        /* `min-w-0`: <li> bir flex öğesi, varsayılan min-width'i `auto` ve
+           içeriğinden dar olmayı reddeder. İçerideki `max-w-full` tek başına
+           yetmez — uzun ürün adı telefonda kutuyu taşırır. */
+        <li key={`t-${i}`} className="min-w-0">
+          <Link
+            href={s.adres}
+            className="bg-muted/60 hover:bg-muted inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
+          >
+            <span className="truncate underline underline-offset-2">
               {s.baslik}
-            </Link>
-          </span>
-          <Tutar yon={s.yon} tutar={s.tutar} para={para} />
+            </span>
+            {/* TUTARI BİLİNMEYEN LİSTEDE SÜTUN HİÇ ÇİZİLMEZ — "?" hiçbir şey
+                söylemiyordu, başlığın altındaki not zaten aynısını söylüyordu. */}
+            {tutarGizle ? null : (
+              <Tutar yon={s.yon} tutar={s.tutar} para={para} />
+            )}
+          </Link>
         </li>
       ))}
-
       {dokum.obekler.map((o, i) => (
-        <li
-          key={`o-${i}`}
-          className="flex flex-wrap items-center justify-between gap-2 text-sm"
-        >
-          <Link href={o.adres} className="underline underline-offset-2">
-            {obekAdi(o.kaynak, o.adet)}
+        <li key={`o-${i}`}>
+          <Link
+            href={o.adres}
+            className="bg-muted/60 hover:bg-muted inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
+          >
+            <span className="underline underline-offset-2">
+              {obekAdi(o.kaynak, o.adet)}
+            </span>
+            {tutarGizle ? null : (
+              <Tutar yon={o.yon} tutar={o.tutar} para={para} />
+            )}
           </Link>
-          <Tutar yon={o.yon} tutar={o.tutar} para={para} />
         </li>
       ))}
     </ul>
