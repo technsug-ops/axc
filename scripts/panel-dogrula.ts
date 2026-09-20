@@ -2436,6 +2436,50 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
   kontrol("gerçek ad adsız SAYILMIYOR", adVarMi("11504122276"));
 
+  // ------------------- ADLI KALEM DE TAŞARSA TOPLANIR (20.09.2026 canlı bulgusu) -------------------
+  /**
+   * CANLIDA GÖRÜLEN: "Gecikmiş (33)" ve günlük listeler hiç toplanmadan
+   * dökülüyordu — her kalem gerçek bir sipariş koduna bağlı olduğu için
+   * "adlı" sayılıyordu ve `adVarMi` onları hiç elemiyordu. Ölçüt ismin
+   * VARLIĞINA bakıyordu, insana bir şey söyleyip söylemediğine değil.
+   */
+  const adliKalem = (tutar: number, i: number): TakvimSatiri => ({
+    yon: "GIRECEK",
+    kaynak: "HAKEDIS_RAPOR",
+    tarih: gun(20),
+    tutar,
+    paraBirimi: "TRY",
+    baslik: `siparis-${i}`,
+    adres: "/hakedis",
+  });
+  // Büyükten küçüğe: 8900,5000,4200,1600,900,72,50,35 | 21,13 (taşan)
+  const onAdliKalem = [50, 5000, 13, 8900, 21, 72, 1600, 35, 4200, 900].map(
+    (t, i) => adliKalem(t, i),
+  );
+  const tasanDokum = gunuDokumle(onAdliKalem);
+  kontrol(
+    "10 adlı kalemden en fazla 8'i tek tek kalıyor",
+    tasanDokum.tekil.length === 8,
+    tasanDokum.tekil.length,
+  );
+  kontrol(
+    "taşan 2 kalem TEK öbeğe toplanıyor (adsızlarla aynı mekanizma)",
+    tasanDokum.obekler.length === 1 && tasanDokum.obekler[0].adet === 2,
+  );
+  kontrol(
+    "tekil kalanlar MUTLAK TUTARA göre en büyükler (8.'si 35'ten küçük değil)",
+    tasanDokum.tekil.every((s) => Math.abs(s.tutar) >= 35),
+  );
+  yakin(
+    "taşan kalemlerin toplamı ÖBEKTE korunuyor, rakam kaybolmuyor (21+13)",
+    tasanDokum.obekler[0].tutar,
+    34,
+  );
+  kontrol(
+    "sayı = liste: 10 kalem 8 tekil + 1 öbek = 9 görünen satıra iniyor, kalem kaybolmuyor",
+    gunSatirSayisi(tasanDokum) === 9,
+  );
+
   // ------------------- EKRAN: SINIR VE BAĞIMSIZLIK YAZILI MI -------------------
   const takvimSayfasi = readFileSync("src/app/nakit-takvimi/page.tsx", "utf8");
   const nakitOzeti = readFileSync("src/app/nakit-ozeti.tsx", "utf8");

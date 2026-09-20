@@ -44,15 +44,42 @@ export function adVarMi(baslik: string): boolean {
   return !ADSIZ.has(baslik.trim());
 }
 
-export function gunuDokumle(satirlar: TakvimSatiri[]): GunDokumu {
-  const tekil: TakvimSatiri[] = [];
-  const harita = new Map<string, TakvimObegi>();
+/**
+ * Bir çağrıda (bir gün / "Gecikmiş" / "Vadesiz") en fazla kaç ADLI kalem
+ * TEK TEK gösterilir. Kalanı, büyüklüğüne bakılmaksızın adsızlarla AYNI
+ * "N kalem" kovasına düşer.
+ *
+ * ⛔ CANLI BULGU 20.09.2026: "adı var mı" ölçütü TEK BAŞINA yetmiyordu.
+ * Buradaki "ad" bir ürün adı değil, ÇIPLAK SİPARİŞ KODU (`k.sale?.code`,
+ * bkz. `takvim-verisi.ts`) — ve gerçek bir sipariş hiçbir zaman "adsız"
+ * olmaz. Sonuç: 33-90 kalemlik bir gün HİÇ toplanmadan, kod başına bir
+ * satır olarak ekrana dökülüyordu. "İsimsiz satır yazılmaz" kuralı,
+ * ismi TEKNİK OLARAK dolu ama İNSANA HİÇBİR ŞEY SÖYLEMEYEN satırları
+ * yakalayamıyordu.
+ */
+const TEKIL_TAVANI = 8;
 
+export function gunuDokumle(satirlar: TakvimSatiri[]): GunDokumu {
+  const adli: TakvimSatiri[] = [];
+  const adsiz: TakvimSatiri[] = [];
   for (const s of satirlar) {
-    if (adVarMi(s.baslik)) {
-      tekil.push(s);
-      continue;
-    }
+    (adVarMi(s.baslik) ? adli : adsiz).push(s);
+  }
+
+  /**
+   * ⚠ MUTLAK TUTARA GÖRE BÜYÜKTEN KÜÇÜĞE: tek tek kalacak `TEKIL_TAVANI`
+   * kadar kalem, cash-flow riskini gösteren, göze çarpması GEREKEN büyük
+   * tutarlardır. Onlarca ufak kalem (₺13-90) tek satırda toplanır — "S.ahmet
+   * İşbank −₺48.697" gibi bir kalem 40 küçük kalemin arasında kaybolmasın.
+   */
+  const buyuktenKucuge = [...adli].sort(
+    (a, b) => Math.abs(b.tutar) - Math.abs(a.tutar),
+  );
+  const tekil = buyuktenKucuge.slice(0, TEKIL_TAVANI);
+  const tasanlar = buyuktenKucuge.slice(TEKIL_TAVANI);
+
+  const harita = new Map<string, TakvimObegi>();
+  for (const s of [...adsiz, ...tasanlar]) {
     const anahtar = `${s.yon}|${s.kaynak}`;
     const mevcut = harita.get(anahtar);
     if (mevcut) {
