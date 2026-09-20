@@ -169,10 +169,45 @@ export const HAKEDIS_ESIKLERI = {
  *  OLDUĞU GİBİ kalır — uydurma bir gün eklenmez (bkz. `sonrakiOdemeGunu`).
  * ============================================================================
  */
-export const KANAL_ODEME_GUNLERI: Record<string, number[]> = {
-  Trendyol: [1, 4],
-  Hepsiburada: [2],
-  N11: [4],
+/**
+ * ⛔ YÖN DE KANALA GÖRE DEĞİŞİR — VE ÖLÇÜLEREK BULUNDU (20.09.2026).
+ *
+ * İlk yazımda vade HER kanalda İLERİ kaydırılıyordu ("vadeden sonraki ilk
+ * ödeme günü"). Trendyol'da rakamlar tutmadı: bizde 21.09 için ₺45.968,
+ * TY'nin kendi panelinde ₺90.739 — iki kat. Ölçüm (`paymentOrderId` dolu
+ * GEÇMİŞ ödeme emirleri, yani GERÇEK veri) kuralı tek başına söyledi:
+ *
+ *     TY ödeme günü   o ödemedeki kalemlerin vade aralığı
+ *     07.09 Pzt       07.09 → 09.09 Çar
+ *     10.09 Per       10.09 → 13.09 Paz
+ *     14.09 Pzt       14.09 → 16.09 Çar
+ *     17.09 Per       17.09 → 20.09 Paz
+ *
+ * Dördü de birebir: TY, vadesi o güne DÜŞEN kalemi o gün öder — yani ödeme
+ * günü vadeden SONRAKİ değil, vadeden ÖNCEKİ (ya da aynı) ödeme günüdür.
+ *
+ * ⚠ HEPSİBURADA'DA YÖN TERS VE BU DA ÖLÇÜLDÜ: HB'nin kendi paneli
+ * "22 Eylül Salı · 84.680,85" diyor ve İLERİ kaydırma bu rakamı KURUŞUNA
+ * tutturuyor. İki kanal iki farklı şey yapıyor; tek yön dayatmak birini
+ * mutlaka bozardı. _(Anayasa: "bir sınırın yönü ölçülmeden çevrilmez".)_
+ */
+export type OdemeTakvimi = {
+  /** `Date.getUTCDay()` değerleri. */
+  gunler: number[];
+  /**
+   * `GERI` → vadeden önceki (ya da aynı) ödeme günü — Trendyol, ölçüldü.
+   * `ILERI` → vadeden sonraki (ya da aynı) ödeme günü — Hepsiburada, ölçüldü.
+   */
+  yon: "ILERI" | "GERI";
+};
+
+export const KANAL_ODEME_GUNLERI: Record<string, OdemeTakvimi> = {
+  Trendyol: { gunler: [1, 4], yon: "GERI" },
+  Hepsiburada: { gunler: [2], yon: "ILERI" },
+  /** ⚠ N11 ÖLÇÜLMEDİ — kullanıcı beyanı yalnız GÜNÜ veriyor, yönü değil.
+   *  Varsayılan İLERİ; N11 hakedişi API'den çekilmeye başlayınca TY'deki
+   *  gibi geçmiş ödeme emirlerinden ölçülüp düzeltilir. */
+  N11: { gunler: [4], yon: "ILERI" },
 };
 
 /**
@@ -195,11 +230,13 @@ export const KANAL_ODEME_GUNLERI: Record<string, number[]> = {
  */
 export function sonrakiOdemeGunu(vade: Date, kanalAdi: string): Date {
   const istanbulGunu = gunDegeri(isTakvimGunu(vade));
-  const gunler = KANAL_ODEME_GUNLERI[kanalAdi];
-  if (!gunler || gunler.length === 0) return istanbulGunu;
+  const takvim = KANAL_ODEME_GUNLERI[kanalAdi];
+  if (!takvim || takvim.gunler.length === 0) return istanbulGunu;
+  /** Yön kanalın ÖLÇÜLMÜŞ davranışından gelir (bkz. `OdemeTakvimi`). */
+  const adim = takvim.yon === "GERI" ? -1 : 1;
   for (let i = 0; i < 7; i++) {
-    const aday = new Date(istanbulGunu.getTime() + i * 86_400_000);
-    if (gunler.includes(aday.getUTCDay())) return aday;
+    const aday = new Date(istanbulGunu.getTime() + adim * i * 86_400_000);
+    if (takvim.gunler.includes(aday.getUTCDay())) return aday;
   }
   /** Pratikte hiç ulaşılmaz: 7 günlük pencerede en az bir eşleşme vardır. */
   return istanbulGunu;

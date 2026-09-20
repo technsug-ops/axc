@@ -733,12 +733,41 @@ console.log("\nÖDEME GÜNÜ SNAP'LEME — İSTANBUL TAKVİMİ (K222-④, 20.09.
    * idi; kanalın kendi ekranına bakılınca gerçeğin "Pazartesi + Perşembe"
    * olduğu görüldü. Yanlış beyanla yazılmış bir eşiğin canlıya sessizce
    * gitmemesi için GERÇEK gün burada kilitleniyor.
+   *
+   * ⛔ VE YÖN DE ÖLÇÜLDÜ (aynı gün, GEÇMİŞ ödeme emirlerinden): TY, vadesi
+   * o güne DÜŞEN kalemi o gün öder — ödeme günü vadeden SONRAKİ değil,
+   * vadeden ÖNCEKİ (ya da aynı) Pazartesi/Perşembe'dir. Gerçek veri:
+   *   ödeme 17.09 Per → kalemlerin vadesi 17.09 Per … 20.09 Paz
+   *   ödeme 14.09 Pzt → kalemlerin vadesi 14.09 Pzt … 16.09 Çar
+   * Dört ödeme emrinin dördü de bu aralığa birebir oturdu.
    */
   const istanbulPazar = new Date("2026-09-19T21:00:00.000Z"); // İstanbul: 20 Eylül 00:00, Pazar
   kontrol(
-    "Trendyol Pazartesi+Perşembe öder (Pazar'dan sonraki ilk gün Pazartesi)",
+    "Trendyol GERİYE kaydırır: Pazar vadesi bir ÖNCEKİ Perşembe'ye (17 Eylül) düşer",
     sonrakiOdemeGunu(istanbulPazar, "Trendyol").toISOString().slice(0, 10) ===
+      "2026-09-17",
+  );
+  const istanbulCarsamba = new Date("2026-09-15T21:00:00.000Z"); // İstanbul: 16 Eylül, Çarşamba
+  kontrol(
+    "  ...Çarşamba vadesi bir ÖNCEKİ Pazartesi'ye (14 Eylül) düşer",
+    sonrakiOdemeGunu(istanbulCarsamba, "Trendyol").toISOString().slice(0, 10) ===
+      "2026-09-14",
+  );
+  const istanbulPazartesi = new Date("2026-09-20T21:00:00.000Z"); // İstanbul: 21 Eylül, Pazartesi
+  kontrol(
+    "  ...ödeme gününün KENDİSİ kaymaz (Pazartesi → Pazartesi)",
+    sonrakiOdemeGunu(istanbulPazartesi, "Trendyol").toISOString().slice(0, 10) ===
       "2026-09-21",
+  );
+  /**
+   * ⚠ İKİ KANAL İKİ YÖN — ve bu bilerek. HB'nin kendi paneli "22 Eylül
+   * Salı · 84.680,85" diyor ve İLERİ kaydırma bu rakamı kuruşuna
+   * tutturuyor. Yön kanala göre değişmeseydi biri mutlaka bozulurdu.
+   */
+  kontrol(
+    "Hepsiburada İLERİ kaydırmada KALIYOR (yön kanala göre)",
+    sonrakiOdemeGunu(istanbulCarsamba, "Hepsiburada").toISOString().slice(0, 10) ===
+      "2026-09-22",
   );
 }
 kosanBolumler.push("odeme-gunu");
