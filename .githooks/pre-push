@@ -63,7 +63,12 @@ if [ -n "$KIRLI" ]; then
   exit 1
 fi
 
-echo "── PUSH KAPISI: bekçi turu koşuyor (~2 dk) ─────────────────────────"
+# ⚠ SÜRE BİR VERİDİR VE BAYATLAR. "~2 dk" yazıyordu; ÖLÇÜLDÜ 21.09.2026:
+#   133 bekçi · duvar saati ~27 dk (bekçi sürelerinin toplamı 2845 sn, paralel
+#   koşum sayesinde duvar saati ondan küçük). Eski not 42 bekçilik dönemden
+#   kalmaydı ve yanlış bir süre, turu "takıldı" sanıp KESTİRİR — yani yanlış
+#   gösterge, üstündeki kapıyı da işlevsizleştirir.
+echo "── PUSH KAPISI: bekçi turu koşuyor (133 bekçi, ~25-30 dk) ──────────"
 
 if ! npm run bekci; then
   echo ""

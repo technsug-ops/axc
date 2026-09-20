@@ -23,7 +23,12 @@ import { eslemeOzeti, yenidenEsle } from "../src/lib/hakedis/yeniden-esle";
  */
 
 import { gunDegeri, isGunuEkle, isGunuFarki, haftaSonuMu } from "../src/lib/donem";
-import { HAKEDIS_ESIKLERI, sonrakiOdemeGunu } from "../src/lib/hakedis/model";
+import {
+  gelecekOdemeBrutMu,
+  gelecekOdemeleriGrupla,
+  HAKEDIS_ESIKLERI,
+  sonrakiOdemeGunu,
+} from "../src/lib/hakedis/model";
 import {
   beklenenHakedis,
   odemeDurumu,
@@ -769,6 +774,118 @@ console.log("\nÖDEME GÜNÜ SNAP'LEME — İSTANBUL TAKVİMİ (K222-④, 20.09.
     sonrakiOdemeGunu(istanbulCarsamba, "Hepsiburada").toISOString().slice(0, 10) ===
       "2026-09-22",
   );
+
+  /**
+   * ⛔ K222-⑨ (20.09.2026): gelecek ödemede kesinti YALNIZ Trendyol'a
+   * düşülür. HB kalemleri kesintileri ZATEN içeriyor ve toplamımız HB'nin
+   * kendi paneliyle kuruşuna tutuyor (84.680,85) — oraya ikinci kez kesinti
+   * düşmek, DOĞRU olan tek rakamı bozardı. Bilinmeyen kanalda da düşülmez:
+   * ölçülmemiş bir kanaldan para düşmek uydurma kesinti yazmaktır.
+   */
+  kontrol(
+    "gelecek ödemede kesinti YALNIZ Trendyol'a düşülür",
+    gelecekOdemeBrutMu("Trendyol"),
+  );
+  kontrol(
+    "  ...Hepsiburada'ya DÜŞÜLMEZ (zaten kesintili geliyor)",
+    !gelecekOdemeBrutMu("Hepsiburada"),
+  );
+  kontrol(
+    "  ...bilinmeyen kanala da DÜŞÜLMEZ (uydurma kesinti yok)",
+    !gelecekOdemeBrutMu("N11") && !gelecekOdemeBrutMu("Amazon"),
+  );
+
+  /**
+   * GELECEK ÖDEME GRUPLAMASI — para taşıyan kural, değerle sınanır.
+   *
+   * ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİR: aynı satışın İKİ kalemi var
+   * (Satış + Kupon). Kesinti kalem başına sayılsaydı 2× düşerdi; satış başına
+   * bir kez sayıldığı için 1× düşer. Tek kalemli bir örnek bu ayrımı
+   * gösteremezdi — iki okuma da aynı sonucu verirdi.
+   */
+  const kesintiHaritasi = new Map<string, number>([
+    ["satis-A", 100],
+    ["satis-B", 40],
+  ]);
+  /** 18.09.2026 Cuma — TY GERİYE kaydırır, 17 Eylül Perşembe'ye düşer. */
+  const vadeCuma = gun("2026-09-18");
+  const tyGruplar = gelecekOdemeleriGrupla(
+    [
+      { kanalAdi: "Trendyol", vade: vadeCuma, tutar: 1000, paraBirimi: "TRY", saleId: "satis-A" },
+      { kanalAdi: "Trendyol", vade: vadeCuma, tutar: -50, paraBirimi: "TRY", saleId: "satis-A" },
+      { kanalAdi: "Trendyol", vade: vadeCuma, tutar: 500, paraBirimi: "TRY", saleId: "satis-B" },
+    ],
+    kesintiHaritasi,
+  );
+  kontrol("gelecek ödemeler tek güne gruplanır", tyGruplar.length === 1, tyGruplar.length);
+  kontrol(
+    "  brüt ham toplamdır (1000 − 50 + 500 = 1450)",
+    tyGruplar[0]?.brut === 1450,
+    tyGruplar[0]?.brut,
+  );
+  kontrol(
+    "  KESİNTİ SATIŞ BAŞINA BİR KEZ: A(100) + B(40) = 140, 240 DEĞİL",
+    tyGruplar[0]?.kesinti === 140,
+    tyGruplar[0]?.kesinti,
+  );
+  kontrol(
+    "  gösterilen toplam = brüt − kesinti (1450 − 140 = 1310)",
+    tyGruplar[0]?.toplam === 1310,
+    tyGruplar[0]?.toplam,
+  );
+  kontrol("  kalem sayısı kalem başına artar (3)", tyGruplar[0]?.sayi === 3, tyGruplar[0]?.sayi);
+  kontrol(
+    "  grup tarihi kanalın ödeme gününe kaydırılmış (17 Eylül Perşembe)",
+    metin(tyGruplar[0]?.tarih ?? null) === "2026-09-17",
+    metin(tyGruplar[0]?.tarih ?? null),
+  );
+
+  /** Kesintisi OLMAYAN satış grubu düşürmez — "bulunamadı" 0 sayılır. */
+  const kesintisiz = gelecekOdemeleriGrupla(
+    [{ kanalAdi: "Trendyol", vade: vadeCuma, tutar: 300, paraBirimi: "TRY", saleId: "satis-YOK" }],
+    kesintiHaritasi,
+  );
+  kontrol(
+    "haritada olmayan satış için kesinti 0 (uydurulmaz)",
+    kesintisiz[0]?.kesinti === 0 && kesintisiz[0]?.toplam === 300,
+    kesintisiz[0],
+  );
+
+  /**
+   * ⛔ HEPSİBURADA AYNI ÇAĞRIDA KESİNTİ ALMAZ. Kanal ölçütü KALEM KALEM
+   * sorulmalı; grubun kanalına bakan bir yazım karışık çağrıda yanılırdı.
+   */
+  const hbGruplar = gelecekOdemeleriGrupla(
+    [{ kanalAdi: "Hepsiburada", vade: gun("2026-09-20"), tutar: 800, paraBirimi: "TRY", saleId: "satis-A" }],
+    kesintiHaritasi,
+  );
+  kontrol(
+    "Hepsiburada grubundan kesinti DÜŞÜLMEZ (brüt = toplam)",
+    hbGruplar[0]?.kesinti === 0 && hbGruplar[0]?.toplam === 800,
+    hbGruplar[0],
+  );
+  kontrol(
+    "  ...ve HB İLERİ kayar (Pazar vadesi → 22 Eylül Salı)",
+    metin(hbGruplar[0]?.tarih ?? null) === "2026-09-22",
+    metin(hbGruplar[0]?.tarih ?? null),
+  );
+
+  /** İki kanal aynı listede: ayrı gruplara düşer, biri ötekini kirletmez. */
+  const karisik = gelecekOdemeleriGrupla(
+    [
+      { kanalAdi: "Trendyol", vade: vadeCuma, tutar: 1000, paraBirimi: "TRY", saleId: "satis-A" },
+      { kanalAdi: "Hepsiburada", vade: vadeCuma, tutar: 1000, paraBirimi: "TRY", saleId: "satis-A" },
+    ],
+    kesintiHaritasi,
+  );
+  kontrol("karışık kanal listesi iki gruba ayrılır", karisik.length === 2, karisik.length);
+  kontrol(
+    "  aynı satış iki kanalda: TY düşer (900), HB düşmez (1000)",
+    karisik.find((g) => g.kanalAdi === "Trendyol")?.toplam === 900 &&
+      karisik.find((g) => g.kanalAdi === "Hepsiburada")?.toplam === 1000,
+    karisik.map((g) => `${g.kanalAdi}=${g.toplam}`),
+  );
+  kontrol("boş liste boş dizi döner (çökmez)", gelecekOdemeleriGrupla([], kesintiHaritasi).length === 0);
 }
 kosanBolumler.push("odeme-gunu");
 

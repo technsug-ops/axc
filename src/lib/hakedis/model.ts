@@ -211,6 +211,24 @@ export const KANAL_ODEME_GUNLERI: Record<string, OdemeTakvimi> = {
 };
 
 /**
+ * Gelecek ödemede kanalın ham toplamı BRÜT mü — yani kargo/platform/stopaj
+ * tahminen düşülmeli mi?
+ *
+ * ⛔ KANALA GÖRE VE ÖLÇÜLDÜ (K222-⑨, 20.09.2026):
+ *  · Trendyol `/settlements` gelecek ödemede yalnız Satış/Kupon/İade verir;
+ *    kesinti satırları ÖDEME ANINDA doğar → ham toplam BRÜTTÜR, düşülmeli.
+ *  · Hepsiburada kalemleri kesintileri ZATEN içerir — toplamımız HB'nin kendi
+ *    panelindeki rakamla kuruşuna tutuyor (84.680,85). Düşmek DOĞRU olanı
+ *    bozar.
+ *
+ * ⚠ Bilinmeyen kanal için FALSE: sistemin ölçmediği bir kanaldan para
+ * düşmek, uydurma bir kesinti yazmak olur.
+ */
+export function gelecekOdemeBrutMu(kanalAdi: string): boolean {
+  return kanalAdi === "Trendyol";
+}
+
+/**
  * Bir vade tahmininden başlayarak, kanalın GERÇEKTEN ödediği ilk günü bulur.
  * Vade zaten bir ödeme gününe denk geliyorsa aynı tarih döner.
  *
@@ -240,4 +258,98 @@ export function sonrakiOdemeGunu(vade: Date, kanalAdi: string): Date {
   }
   /** Pratikte hiç ulaşılmaz: 7 günlük pencerede en az bir eşleşme vardır. */
   return istanbulGunu;
+}
+
+/** Gruplamaya giren ham kalem — Prisma satırının sadeleştirilmiş hâli. */
+export type GelecekOdemeKalemi = {
+  kanalAdi: string;
+  /** Kalemin vade tahmini (ham zaman damgası; gün hesabı içeride yapılır). */
+  vade: Date;
+  tutar: number;
+  paraBirimi: string;
+  /** Kesinti eşleşmesi için; sipariş dışı toplu kalemlerde null olur. */
+  saleId: string | null;
+};
+
+export type GelecekOdemeGrubu = {
+  anahtar: string;
+  kanalAdi: string;
+  tarih: Date;
+  /** EKRANDA GÖSTERİLEN rakam: `brut − kesinti`. */
+  toplam: number;
+  /** Kesinti öncesi ham toplam — ekranda ayrıca yazar (para tabanıyla taşınır). */
+  brut: number;
+  /** Tahmini kesinti; `gelecekOdemeBrutMu` false diyen kanalda HER ZAMAN 0. */
+  kesinti: number;
+  paraBirimi: string;
+  sayi: number;
+};
+
+/**
+ * Ödenmemiş hakediş kalemlerini, kanalın gerçek ödeme gününe göre gruplar ve
+ * Trendyol grupları için tahmini kesintiyi düşer.
+ *
+ * ⚠ KESİNTİ SATIŞ BAŞINA BİR KEZ SAYILIR. Bir satışın aynı kovada birden çok
+ * kalemi olur (Satış + Kupon + İade); kalem başına saysaydık kesinti kat kat
+ * düşer ve ekrandaki rakam gerçeğin ALTINA inerdi. Bu yüzden her grup
+ * kesintisini saydığı satışları kendi içinde tutar.
+ *
+ * ⚠ KESİNTİ YALNIZ `gelecekOdemeBrutMu` DOĞRU DİYEN KANALDA DÜŞÜLÜR — kesintisi
+ * zaten içinde gelen bir kanaldan (HB) ikinci kez düşmek, doğru olan rakamı
+ * bozar. Kanal ölçütü kalem kalem sorulur; grubun kanalına bakmak yetmez.
+ */
+export function gelecekOdemeleriGrupla(
+  kalemler: GelecekOdemeKalemi[],
+  /** Satış kimliği → o satışın toplam tahmini kesintisi (pozitif tutar). */
+  satisKesintisi: Map<string, number>,
+): GelecekOdemeGrubu[] {
+  const gruplar = new Map<
+    string,
+    GelecekOdemeGrubu & { sayilanSatislar: Set<string> }
+  >();
+
+  for (const k of kalemler) {
+    const odemeGunu = sonrakiOdemeGunu(k.vade, k.kanalAdi);
+    const anahtar = `${k.kanalAdi}|${odemeGunu.toISOString().slice(0, 10)}`;
+    const g = gruplar.get(anahtar) ?? {
+      anahtar,
+      kanalAdi: k.kanalAdi,
+      tarih: odemeGunu,
+      toplam: 0,
+      brut: 0,
+      kesinti: 0,
+      paraBirimi: k.paraBirimi,
+      sayi: 0,
+      sayilanSatislar: new Set<string>(),
+    };
+
+    g.brut += k.tutar;
+    g.sayi++;
+
+    if (
+      gelecekOdemeBrutMu(k.kanalAdi) &&
+      k.saleId !== null &&
+      !g.sayilanSatislar.has(k.saleId)
+    ) {
+      g.sayilanSatislar.add(k.saleId);
+      g.kesinti += satisKesintisi.get(k.saleId) ?? 0;
+    }
+
+    g.toplam = g.brut - g.kesinti;
+    gruplar.set(anahtar, g);
+  }
+
+  /** `sayilanSatislar` yalnız İÇ bir sayaçtır — dışarı sızdırılmaz. */
+  return [...gruplar.values()]
+    .map((g) => ({
+      anahtar: g.anahtar,
+      kanalAdi: g.kanalAdi,
+      tarih: g.tarih,
+      toplam: g.toplam,
+      brut: g.brut,
+      kesinti: g.kesinti,
+      paraBirimi: g.paraBirimi,
+      sayi: g.sayi,
+    }))
+    .sort((a, b) => a.tarih.getTime() - b.tarih.getTime());
 }

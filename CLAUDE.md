@@ -386,6 +386,10 @@ zorlaştıracak şekilde yazılmıyor.
   Trendyol'un tam dilimli ileri tarifesi arşivden **inmiyor**, yani kaybolsa
   yeniden üretilemezdi.
   **Tur ~65 saniye sürüyor.** Kod doğruydu; eksik olan koşma alışkanlığıydı ve
+  _(⚠ BU SÜRE BAYATLADI — ÖLÇÜLDÜ 21.09.2026: 133 bekçi, duvar saati **~27 dk**,
+  bekçi sürelerinin toplamı 2845 sn. 65 sn rakamı 42 bekçilik dönemden kalma.
+  Süre bir VERİDİR: bayat bir süre turu "takıldı" sanıp kestirir ve kapıyı
+  işlevsiz yapar. Bekçi sayısı büyüdükçe bu satır yeniden ölçülür.)_
   _"bir dahaki sefere hepsini koşarım"_ bir çözüm değil bir niyettir.
   ⚠ Bekçi listesi `package.json`dan OKUNUR, elle tutulmaz — yoksa yarın
   eklenen bir bekçi listeye yazılmadığı için sessizce koşulmaz ve aynı hata

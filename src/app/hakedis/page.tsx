@@ -23,7 +23,11 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import { isTakvimGunu, gunDegeri } from "@/lib/donem";
 import { beklenenHakedis, odemeDurumu } from "@/lib/hakedis/eslestir";
-import { HAKEDIS_ESIKLERI, sonrakiOdemeGunu } from "@/lib/hakedis/model";
+import {
+  gelecekOdemeBrutMu,
+  gelecekOdemeleriGrupla,
+  HAKEDIS_ESIKLERI,
+} from "@/lib/hakedis/model";
 import { prisma } from "@/lib/prisma";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { KanalDagilimiGrafigi } from "./kanal-dagilimi-grafigi";
@@ -303,11 +307,79 @@ export default async function HakedisSayfasi({
     API_KANALLARI.has(k.channelAccount.channel.name),
   );
 
+  /**
+   * ═══════════════════════════════════════════════════════════════════════
+   *  TRENDYOL'UN GELECEK ÖDEMESİ BRÜTTÜR — KESİNTİ TAHMİNİ AYRI DÜŞÜLÜR
+   *  (K222-⑨, ölçüm 20.09.2026)
+   * -------------------------------------------------------------------------
+   *  ⛔ KANALA ÖZEL VE BU BİLEREK. İki kanalın verisi FARKLI şey taşıyor:
+   *   · Hepsiburada kalemleri kesintileri ZATEN içeriyor — toplamımız HB'nin
+   *     kendi panelindeki rakamla kuruşuna tutuyor (84.680,85 = 84.680,85).
+   *     Oraya kesinti düşmek DOĞRU olanı bozardı.
+   *   · Trendyol'un `/settlements` ucu gelecek ödemede yalnız Satış/Kupon/
+   *     İade satırı veriyor; kargo, platform hizmet bedeli ve stopaj satırları
+   *     ancak ÖDEME ANINDA doğuyor. Ham toplam bu yüzden BRÜTTÜR.
+   *
+   *  ÖLÇÜM (TY'nin kendi "Gelecek Tahmini Ödemelerim" dosyaları, 6 ödeme):
+   *      brüt gösterince ortalama hata  ₺7.860
+   *      kesinti düşünce ortalama hata  ₺3.340   (21.09'da ₺18)
+   *  Kesinti tahminimizin kendisi GERÇEKLEŞMİŞ ödemelerle doğrulandı: 21 ödeme
+   *  emrinde kargo/platform/stopaj kalemlerimiz TY'nin fiilen kestiğiyle
+   *  örtüşüyor (sipariş bazında kargo oranı tam 1,200 = KDV farkı).
+   *
+   *  ⚠ KALAN SAPMA KAPATILAMAZ VE ÖYLE YAZILIR: TY kargo faturasını ödemelere
+   *  DÜZENSİZ bindiriyor (24.09'da ₺8.703, 21.09'da ₺6.179) — hangi ödemeye
+   *  ne kadar bineceği önceden bilinemez. Bu yüzden rakam TAHMİNDİR ve ekran
+   *  brütü de kesintiyi de AÇIKÇA yazar (İlke: para rakamı tabanıyla taşınır).
+   *
+   *  ⛔ KOMİSYON VE MALİYET DÜŞÜLMEZ: `SIPARIS_TUTARI` zaten komisyon sonrası
+   *  (`sellerRevenue`), maliyet ise pazaryerine değil tedarikçiye ödenir.
+   * ═══════════════════════════════════════════════════════════════════════
+   */
+  const TY_KESINTI_KODLARI = ["KARGO", "SABIT_GIDER", "STOPAJ"];
+  const gelecekTySatisIdleri = [
+    ...new Set(
+      apiKalemleri
+        .filter(
+          (k) =>
+            k.paidAt === null &&
+            k.dueDate !== null &&
+            /** ⚠ KURAL SAF GÖVDEDE — bkz. `gelecekOdemeBrutMu`. */
+            gelecekOdemeBrutMu(k.channelAccount.channel.name) &&
+            k.saleId !== null,
+        )
+        .map((k) => k.saleId!),
+    ),
+  ];
+  const kesintiKayitlari =
+    gelecekTySatisIdleri.length === 0
+      ? []
+      : await prisma.saleFee.findMany({
+          where: {
+            saleId: { in: gelecekTySatisIdleri },
+            code: { in: TY_KESINTI_KODLARI },
+          },
+          select: { saleId: true, amount: true },
+        });
+  /** Satış başına toplam tahmini kesinti (mutlak değer — hepsi gider). */
+  const satisKesintisi = new Map<string, number>();
+  for (const f of kesintiKayitlari) {
+    satisKesintisi.set(
+      f.saleId,
+      (satisKesintisi.get(f.saleId) ?? 0) + Math.abs(Number(f.amount.toString())),
+    );
+  }
+
   type OdemeGrubu = {
     anahtar: string;
     kanalAdi: string;
     tarih: Date;
+    /** Ekranda GÖSTERİLEN rakam: gelecek TY ödemesinde brüt − kesinti. */
     toplam: number;
+    /** Kesinti öncesi ham toplam — ekranda ayrıca yazar. */
+    brut: number;
+    /** Tahmini kesinti (yalnız TY gelecek ödemesinde > 0). */
+    kesinti: number;
     paraBirimi: string;
     sayi: number;
     /** Yalnız GEÇMİŞ ödemelerde anlamlı: gerçek bir ödeme emri no'su var mı. */
@@ -335,11 +407,16 @@ export default async function HakedisSayfasi({
       kanalAdi,
       tarih: paidGunu,
       toplam: 0,
+      /** ⚠ GEÇMİŞ ÖDEMEDE KESİNTİ TAHMİNİ YOK: kesinti satırları artık
+       *  GERÇEK kalem olarak defterde ve zaten toplamın içinde. */
+      brut: 0,
+      kesinti: 0,
       paraBirimi: k.currency,
       sayi: 0,
       odemeEmriNo: k.paymentOrderId,
     };
     g.toplam += Number(k.amount.toString());
+    g.brut = g.toplam;
     g.sayi++;
     if (paidGunu > g.tarih) g.tarih = paidGunu;
     gecmisOdemeGruplari.set(anahtar, g);
@@ -348,28 +425,23 @@ export default async function HakedisSayfasi({
     (a, b) => b.tarih.getTime() - a.tarih.getTime(),
   );
 
-  const gelecekOdemeGruplari = new Map<string, OdemeGrubu>();
-  for (const k of apiKalemleri) {
-    if (k.paidAt !== null || k.dueDate === null) continue;
-    const kanalAdi = k.channelAccount.channel.name;
-    const odemeGunu = sonrakiOdemeGunu(k.dueDate, kanalAdi);
-    const anahtar = `${kanalAdi}|${odemeGunu.toISOString().slice(0, 10)}`;
-    const g = gelecekOdemeGruplari.get(anahtar) ?? {
-      anahtar,
-      kanalAdi,
-      tarih: odemeGunu,
-      toplam: 0,
-      paraBirimi: k.currency,
-      sayi: 0,
-      odemeEmriNo: null,
-    };
-    g.toplam += Number(k.amount.toString());
-    g.sayi++;
-    gelecekOdemeGruplari.set(anahtar, g);
-  }
-  const gelecekOdemeler = [...gelecekOdemeGruplari.values()].sort(
-    (a, b) => a.tarih.getTime() - b.tarih.getTime(),
-  );
+  /**
+   * ⚠ GRUPLAMA SAF GÖVDEDE — `gelecekOdemeleriGrupla`. Kesintinin satış başına
+   * BİR KEZ sayılması para taşıyan bir kuraldır ve ekran içinde sınanamazdı;
+   * gövdeye alınınca değer testiyle ve mutasyonla kilitlendi.
+   */
+  const gelecekOdemeler: OdemeGrubu[] = gelecekOdemeleriGrupla(
+    apiKalemleri
+      .filter((k) => k.paidAt === null && k.dueDate !== null)
+      .map((k) => ({
+        kanalAdi: k.channelAccount.channel.name,
+        vade: k.dueDate!,
+        tutar: Number(k.amount.toString()),
+        paraBirimi: k.currency,
+        saleId: k.saleId,
+      })),
+    satisKesintisi,
+  ).map((g) => ({ ...g, odemeEmriNo: null }));
 
   const ODEME_LISTE_SINIRI = 12;
 
@@ -645,6 +717,19 @@ export default async function HakedisSayfasi({
                             </div>
                             <div className="text-muted-foreground text-xs">
                               {t("kalemSayisi", { sayi: g.sayi })}
+                              {/* ⚠ RAKAMIN TABANI YAZILI DURUR: kesinti
+                                  düşülmüşse brütü ve kesintiyi de görsün —
+                                  "bu sayı nereden çıktı" sorusu ekranda
+                                  cevaplanır (para rakamı tabanıyla taşınır). */}
+                              {g.kesinti > 0 ? (
+                                <>
+                                  {" · "}
+                                  {t("kesintiSerhi", {
+                                    brut: bicim.para(g.brut, g.paraBirimi),
+                                    kesinti: bicim.para(g.kesinti, g.paraBirimi),
+                                  })}
+                                </>
+                              ) : null}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
