@@ -297,14 +297,22 @@ export default async function HakedisSayfasi({
   for (const k of apiKalemleri) {
     if (k.paidAt === null) continue;
     const kanalAdi = k.channelAccount.channel.name;
+    /**
+     * ⛔ İSTANBUL TAKVİM GÜNÜNE NORMALİZE EDİLİR (K222-④, 20.09.2026 canlı
+     * bulgusu) — `paidAt` da API'nin ham zaman damgasıdır ve UTC gün sınırı
+     * İstanbul'unkiyle uyuşmayabilir (`sonrakiOdemeGunu`daki AYNI hata
+     * sınıfı). Anahtar VE gösterilen tarih AYNI normalize değerden gelir,
+     * yoksa grup adı ile ekrandaki tarih birbirinden ayrışır.
+     */
+    const paidGunu = gunDegeri(isTakvimGunu(k.paidAt));
     /** TY: gerçek ödeme emri. HB (ve emri olmayan her kanal): ödeme GÜNÜ. */
     const anahtar = k.paymentOrderId
       ? `EMIR:${k.paymentOrderId}`
-      : `${kanalAdi}|GUN:${k.paidAt.toISOString().slice(0, 10)}`;
+      : `${kanalAdi}|GUN:${paidGunu.toISOString().slice(0, 10)}`;
     const g = gecmisOdemeGruplari.get(anahtar) ?? {
       anahtar,
       kanalAdi,
-      tarih: k.paidAt,
+      tarih: paidGunu,
       toplam: 0,
       paraBirimi: k.currency,
       sayi: 0,
@@ -312,7 +320,7 @@ export default async function HakedisSayfasi({
     };
     g.toplam += Number(k.amount.toString());
     g.sayi++;
-    if (k.paidAt > g.tarih) g.tarih = k.paidAt;
+    if (paidGunu > g.tarih) g.tarih = paidGunu;
     gecmisOdemeGruplari.set(anahtar, g);
   }
   const gecmisOdemeler = [...gecmisOdemeGruplari.values()].sort(

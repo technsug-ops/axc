@@ -23,7 +23,7 @@ import { eslemeOzeti, yenidenEsle } from "../src/lib/hakedis/yeniden-esle";
  */
 
 import { gunDegeri, isGunuEkle, isGunuFarki, haftaSonuMu } from "../src/lib/donem";
-import { HAKEDIS_ESIKLERI } from "../src/lib/hakedis/model";
+import { HAKEDIS_ESIKLERI, sonrakiOdemeGunu } from "../src/lib/hakedis/model";
 import {
   beklenenHakedis,
   odemeDurumu,
@@ -44,7 +44,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -694,6 +694,41 @@ console.log("\nYENİDEN EŞLEŞTİRME — BAĞSIZ KALEMLER");
     );
   }
 }
+
+// ===========================================================================
+console.log("\nÖDEME GÜNÜ SNAP'LEME — İSTANBUL TAKVİMİ (K222-④, 20.09.2026 canlı bulgusu)");
+{
+  /**
+   * ⛔ CANLI VAKA: Hepsiburada API'sinden gelen `dueDate`
+   * `2026-09-15T22:00:00.000Z` idi — UTC'de SALI, ama İSTANBUL'DA
+   * ÇARŞAMBA (16'sının 01:00'ı). Eski gövde `vade.getUTCDay()`ye bakıp
+   * bunu zaten "Salı" sanıyor ve HİÇ KAYDIRMIYORDU; ekran (İstanbul
+   * takviminde basan `bicim.tarih`) ise Çarşamba gösteriyordu — kanalın
+   * kendi paneli "22 Eylül Salı" derken bizimki "23 Eylül" diyordu.
+   */
+  const hamVadeGecKalmisUtc = new Date("2026-09-15T22:00:00.000Z");
+  const sonuc = sonrakiOdemeGunu(hamVadeGecKalmisUtc, "Hepsiburada");
+  kontrol(
+    "UTC'de Salı ama İstanbul'da Çarşamba olan vade, GERÇEK bir sonraki Salıya gidiyor (22 Eylül)",
+    sonuc.toISOString().slice(0, 10) === "2026-09-22",
+    sonuc.toISOString(),
+  );
+
+  /** Zaten tam İstanbul Salı gece yarısıysa aynı gün kalır — fazladan kaydırma yok. */
+  const tamIstanbulSalisi = new Date("2026-09-14T21:00:00.000Z"); // İstanbul: 15 Eylül 00:00, Salı
+  kontrol(
+    "zaten İstanbul Salısıysa AYNI gün kalıyor (gereksiz kaydırma yok)",
+    sonrakiOdemeGunu(tamIstanbulSalisi, "Hepsiburada").toISOString().slice(0, 10) ===
+      "2026-09-15",
+  );
+
+  kontrol(
+    "haritada olmayan kanal İSTANBUL gününe normalize edilip AYNEN döner (uydurma gün eklenmez)",
+    sonrakiOdemeGunu(hamVadeGecKalmisUtc, "Amazon").toISOString().slice(0, 10) ===
+      "2026-09-16",
+  );
+}
+kosanBolumler.push("odeme-gunu");
 
 // ===========================================================================
 console.log("");

@@ -1,4 +1,5 @@
 import type { Currency } from "@/generated/prisma/enums";
+import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 
 /**
  * ============================================================================
@@ -167,14 +168,29 @@ export const KANAL_ODEME_GUNLERI: Record<string, number[]> = {
 /**
  * Bir vade tahmininden başlayarak, kanalın GERÇEKTEN ödediği ilk günü bulur.
  * Vade zaten bir ödeme gününe denk geliyorsa aynı tarih döner.
+ *
+ * ⛔ CANLI BULGU 20.09.2026: `vade` API'den gelen HAM bir zaman damgasıdır
+ * (ör. `2026-09-15T22:00:00.000Z`) — İSTANBUL saatinde bu an ARTIK 16'sının
+ * 01:00'ıdır (Çarşamba), UTC'de ise hâlâ 15'idir (Salı). Önceki hâl haftanın
+ * gününü `vade.getUTCDay()` ile — yani UTC takviminde — hesaplıyordu, oysa
+ * GÖSTERİM (`bicim.tarih`) İstanbul takvim gününü basıyordu. Sonuç: ekran
+ * Hepsiburada'nın ödemesini SALI yerine ÇARŞAMBA gösteriyordu — bir gün
+ * kaymış, kanalın kendi panelinde 22 Eylül Salı dediği ödeme burada
+ * 23 Eylül olarak duruyordu.
+ *
+ * Çare: hesap ÖNCE İstanbul takvim gününe (UTC gece yarısı) normalize
+ * edilir (bkz. `gunDegeri(isTakvimGunu(...))`, anayasanın "iş saat dilimi
+ * Europe/Istanbul sabit" kuralı) — GÖSTERİM de AYNI değeri kullandığı için
+ * ikisi artık ayrışamaz.
  */
 export function sonrakiOdemeGunu(vade: Date, kanalAdi: string): Date {
+  const istanbulGunu = gunDegeri(isTakvimGunu(vade));
   const gunler = KANAL_ODEME_GUNLERI[kanalAdi];
-  if (!gunler || gunler.length === 0) return vade;
+  if (!gunler || gunler.length === 0) return istanbulGunu;
   for (let i = 0; i < 7; i++) {
-    const aday = new Date(vade.getTime() + i * 86_400_000);
+    const aday = new Date(istanbulGunu.getTime() + i * 86_400_000);
     if (gunler.includes(aday.getUTCDay())) return aday;
   }
   /** Pratikte hiç ulaşılmaz: 7 günlük pencerede en az bir eşleşme vardır. */
-  return vade;
+  return istanbulGunu;
 }
