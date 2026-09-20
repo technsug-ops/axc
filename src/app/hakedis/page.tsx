@@ -7,7 +7,6 @@ import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
-import { PastaGrafik } from "@/components/pasta-grafik";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +24,7 @@ import { isTakvimGunu, gunDegeri } from "@/lib/donem";
 import { beklenenHakedis, odemeDurumu } from "@/lib/hakedis/eslestir";
 import { HAKEDIS_ESIKLERI } from "@/lib/hakedis/model";
 import { prisma } from "@/lib/prisma";
+import { KanalDagilimiGrafigi } from "./kanal-dagilimi-grafigi";
 import {
   DURUM_KUTUSU,
   DURUM_YAZISI,
@@ -600,10 +600,10 @@ export default async function HakedisSayfasi({
                 </p>
               </CardHeader>
               <CardContent>
-                <PastaGrafik
+                <KanalDagilimiGrafigi
                   dilimler={kanalDagilimDilimleri}
                   toplam={kanalDagilimToplam}
-                  bicimle={(n) => bicim.para(n, anaParaBirimi ?? "TRY")}
+                  paraBirimi={anaParaBirimi ?? "TRY"}
                   bosMesaj={t("kanalDagilimiBosMesaj")}
                 />
               </CardContent>

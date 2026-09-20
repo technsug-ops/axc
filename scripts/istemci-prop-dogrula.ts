@@ -41,7 +41,7 @@ import { readFileSync, readdirSync } from "node:fs";
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 2;
+const BOLUM_SAYISI = 3;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let kalan = 0;
@@ -170,6 +170,47 @@ console.log("\n2) 07.09 vakası — karşılaştırma grafiği birim TANIMI taş
   dogru("panel seriye fonksiyon VERMİYOR", !/bicimleKisa:\s*\(d: number\)/.test(p));
 }
 kosanBolumler.push("vaka");
+
+/* ═══ ③ K222 VAKASI ═══════════════════════════════════════════════════ */
+console.log("\n3) 20.09 vakası — hakediş kanal dağılımı da aynı hatayı yaptı");
+/**
+ * ⛔ AYNI SINIF, YENİ ÖRNEK, YAKALANMADI. `/hakedis` (sunucu bileşeni)
+ * `PastaGrafik`e ("use client") doğrudan bir `bicimle={(n) => …}` kapanışı
+ * geçirdi ve ekran canlıda ÇÖKTÜ — §1'in KAÇIRDIĞI aynı hata sınıfı.
+ *
+ * ⚠ §1 BUNU NEDEN GÖRMEDİ VE HÂLÂ GÖRMÜYOR: `PastaGrafik`in prop tipi
+ * `export type`/`export interface` DEĞİL, fonksiyon imzasına GÖMÜLÜ
+ * (`function PastaGrafik({ … }: { bicimle: (n:number)=>string; … })`).
+ * Bu depoda grafik bileşenlerinin ÇOĞU (PastaGrafik · CizgiGrafik ·
+ * UcSeriliGrafik) tam bu kalıpla yazılı — yani §1'in kapsamı, kendi
+ * savunmak istediği riskin BÜYÜK KISMINI görmüyor. Bu GENİŞ boşluk henüz
+ * KAPATILMADI (§1'i "gömülü tip"leri de tarayacak şekilde genişletmek
+ * ayrı, daha büyük bir iştir — bugün yalnız VAKANIN KENDİSİ kilitlendi).
+ *
+ * Çare aynı desen: `PastaGrafik` sunucudan DEĞİL, ince bir istemci
+ * sarmalayıcıdan (`KanalDagilimiGrafigi`, kendi `useBicim`'iyle) çağrılır.
+ * `/hakedis` artık `<PastaGrafik` YAZAMAZ.
+ */
+{
+  const sayfa = readFileSync("src/app/hakedis/page.tsx", "utf8");
+  const sarmalayici = readFileSync(
+    "src/app/hakedis/kanal-dagilimi-grafigi.tsx",
+    "utf8",
+  );
+  dogru("/hakedis PastaGrafik'i DOĞRUDAN çağırmıyor", !/<PastaGrafik\b/.test(sayfa));
+  dogru("/hakedis sarmalayıcıyı kullanıyor", /<KanalDagilimiGrafigi\b/.test(sayfa));
+  dogru(
+    "sarmalayıcı biçimi İSTEMCİDE çözüyor (useBicim)",
+    sarmalayici.includes("const bicim = useBicim();"),
+  );
+  dogru(
+    "sarmalayıcının kendi prop tipinde fonksiyon YOK (yalnız veri geçer)",
+    !/(\w+)\??\s*:\s*\([^)]*\)\s*=>/.test(
+      yorumsuz(sarmalayici).replace(/const bicim = useBicim\(\);/, ""),
+    ),
+  );
+}
+kosanBolumler.push("K222 vakası");
 
 console.log("\n" + "=".repeat(60));
 if (kosanBolumler.length !== BOLUM_SAYISI) {
