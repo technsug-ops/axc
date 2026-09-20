@@ -26,9 +26,36 @@ import type { HakedisSatiri } from "./model";
  *
  *  ⭐ GERÇEK "ÖDENDİ" SİNYALİ: `paymentOrderId` DOLUYSA para gerçekten
  *  ödenmiş demektir (canlı ölçüm: son 15 günde 177/177 boş, 60-105 gün
- *  önce 165/165 · 123/123 dolu). `paymentDate` bu durumda gerçek ödeme
- *  günüdür; `paymentOrderId` boşken aynı alan yalnız TAHMİNDİR (Trendyol'un
- *  kendi panelinde "Tahmini Hesaplanmıştır" rozetiyle aynı ayrım).
+ *  önce 165/165 · 123/123 dolu).
+ *
+ *  ⛔ AMA "NE ZAMAN ÖDENDİ" SORUSUNU `paymentDate` CEVAPLAMIYOR — ÇÜRÜTÜLDÜ
+ *  21.09.2026 (K223). Buraya şöyle yazılmıştı ve YANLIŞTI:
+ *
+ *      "`paymentDate` bu durumda gerçek ödeme günüdür"
+ *
+ *  ⚠ ESKİ GEREKÇE SİLİNMİYOR (anayasa kuralı): iddia makul görünüyordu,
+ *  çünkü alan ödenmiş kayıtlarda DOLU geliyor ve adı da öyle diyor. Ama alanın
+ *  ADI, içeriğinin NE OLDUĞUNU söylemez. Ölçüm şunu gösterdi — `paymentDate`
+ *  ödendikten SONRA da kalemin KENDİ VADESİNİ taşıyor, ödeme gününü değil:
+ *
+ *      emir 76313675 · 112 kalem · ₺205.691,63
+ *        GERÇEK ödeme günü          2026-08-11   (TEK gün)
+ *        `paymentDate`ten yazılan   10·11·17·18·19·20·22·23·24·25 Ağu + 3 Eyl
+ *
+ *  Bir ödeme emri = BİR ödeme günü. Kalem başına vade yazılınca tek bir ödeme
+ *  nakit takviminde on bir güne dağıldı. Ölçüldü: 91 ödeme emrinin 91'i de
+ *  yanlıştı (4946 kalem), sapma −6 … +27 gün.
+ *
+ *  ⭐ GERÇEK ÖDEME GÜNÜ `PaymentOrder` KAYDINDADIR — emir başına tek satır,
+ *  `/otherfinancials?transactionType=PaymentOrder` ucundan gelir ve
+ *  `paymentDate` = `transactionDate` = o emrin ödendiği an. Bu kayıtlar
+ *  KALEM OLARAK YAZILMAZ (emrin TOPLAMINI taşırlar, parayı ikinci kez
+ *  sayarlardı) — yalnız TARİHİ için okunurlar.
+ *
+ *  ⛔ VE GÜN BİLİNMİYORSA KALEM ÖDENMİŞ YAZILMAZ. Vadeyi ödeme günü diye
+ *  yazmak, sistemin bilmediği bir şeyi uydurmasıdır; `null` bir eksiklik
+ *  değil BEYANDIR ("bu emrin günü henüz elimde yok"). Sonraki koşumda emir
+ *  tarama penceresine girince kendiliğinden dolar.
  * ============================================================================
  */
 
@@ -43,6 +70,11 @@ export type TyFinansKaydi = {
   orderNumber?: string | null;
   paymentOrderId?: number | null;
   paymentDate?: number | null;
+  /**
+   * `PaymentOrder` kayıtlarında ödemenin gerçekleştiği an (ölçüldü 21.09.2026:
+   * 36/36 kayıtta `paymentDate` ile AYNI değer). Sipariş satırlarında yok.
+   */
+  transactionDate?: number | null;
   currency?: string | null;
 };
 
@@ -76,7 +108,47 @@ function paraBirimiCoz(ham: string | null | undefined): Currency {
  * Tek bir API kaydını `HakedisSatiri`ye çevirir.
  * `satirNo` Excel'deki gibi anlamlı değil (API'de "satır" yok) — 0 sabit.
  */
-export function tyApiSatiriniOku(kayit: TyFinansKaydi): HakedisSatiri {
+/** Ödeme emri no → o emrin GERÇEK ödendiği an. */
+export type OdemeEmriGunleri = ReadonlyMap<string, Date>;
+
+/**
+ * `PaymentOrder` ham kayıtlarından emir no → gerçek ödeme günü haritası kurar.
+ *
+ * ⚠ TARİH ALANI İKİ ADLA GELİYOR ve ölçümde ikisi de AYNI değeri taşıyordu
+ * (36/36 kayıtta `paymentDate === transactionDate`). Yine de ikisi de okunur:
+ * birinin boş geldiği bir kayıt varsa öteki kurtarır — ve JSON boş alanı hiç
+ * göndermeyebilir (alan kümesi tek kayıttan okunmaz kuralı).
+ *
+ * ⛔ GEÇERSİZ TARİH SESSİZCE GEÇMEZ: `new Date(bozuk)` `Invalid Date` üretir
+ * ve veritabanına kadar gider. Kapı okuma anında kurulur.
+ */
+export function odemeEmriGunleriniCoz(
+  kayitlar: readonly TyFinansKaydi[],
+): Map<string, Date> {
+  const harita = new Map<string, Date>();
+  for (const k of kayitlar) {
+    const emirNo =
+      k.paymentOrderId !== null && k.paymentOrderId !== undefined
+        ? String(k.paymentOrderId)
+        : String(k.id ?? "");
+    if (emirNo === "" || emirNo === "null" || emirNo === "undefined") continue;
+    const ham = k.paymentDate ?? k.transactionDate;
+    if (ham === null || ham === undefined) continue;
+    const t = new Date(ham);
+    if (Number.isNaN(t.getTime())) continue;
+    harita.set(emirNo, t);
+  }
+  return harita;
+}
+
+export function tyApiSatiriniOku(
+  kayit: TyFinansKaydi,
+  /**
+   * Ödeme emri günleri. VERİLMEZSE hiçbir kalem ödenmiş yazılmaz — çünkü
+   * ödeme gününü bilmiyoruz ve vadeyi ödeme günü diye yazmak uydurmadır.
+   */
+  odemeGunleri?: OdemeEmriGunleri,
+): HakedisSatiri {
   const credit = kayit.credit ?? 0;
   const debt = kayit.debt ?? 0;
   const yon = credit > 0 ? 1 : -1;
@@ -85,9 +157,19 @@ export function tyApiSatiriniOku(kayit: TyFinansKaydi): HakedisSatiri {
     : credit - debt;
 
   const odendi = kayit.paymentOrderId !== null && kayit.paymentOrderId !== undefined;
-  const tarih = kayit.paymentDate !== null && kayit.paymentDate !== undefined
+  /** Vade — TY'nin kendi bildirdiği tahmin; ödendikten sonra da değişmiyor. */
+  const vade = kayit.paymentDate !== null && kayit.paymentDate !== undefined
     ? new Date(kayit.paymentDate)
     : null;
+  /**
+   * ⛔ ÖDEME GÜNÜ VADEDEN OKUNMAZ — emrin kendi kaydından gelir (K223).
+   * Emir bilinmiyorsa `null`: "ödendi ama gününü bilmiyorum" hâli, sonraki
+   * koşumda dolar. Vadeyi buraya yazmak tek ödemeyi günlere dağıtıyordu.
+   */
+  const odemeGunu =
+    odendi && odemeGunleri
+      ? odemeGunleri.get(String(kayit.paymentOrderId)) ?? null
+      : null;
 
   return {
     externalId: String(kayit.id),
@@ -97,15 +179,22 @@ export function tyApiSatiriniOku(kayit: TyFinansKaydi): HakedisSatiri {
     tutar,
     paraBirimi: paraBirimiCoz(kayit.currency),
     /** Vade: rapordaki gibi TY'nin kendi bildirdiği tarih — TAHMİN olsa da. */
-    vadeTarihi: tarih,
-    /** Ödeme: yalnız `paymentOrderId` DOLUYSA — gerçekten ödendi demektir. */
-    odemeTarihi: odendi ? tarih : null,
+    vadeTarihi: vade,
+    /** Ödeme: emrin GERÇEK günü; bilinmiyorsa null (vade YAZILMAZ). */
+    odemeTarihi: odemeGunu,
     urunKodu: kayit.barcode ?? null,
     satirNo: 0,
     ham: `${kayit.transactionType} · ${kayit.orderNumber ?? "-"} · ${tutar}`,
   };
 }
 
-export function tyApiSatirlariniOku(kayitlar: TyFinansKaydi[]): HakedisSatiri[] {
-  return kayitlar.map(tyApiSatiriniOku);
+export function tyApiSatirlariniOku(
+  kayitlar: TyFinansKaydi[],
+  odemeGunleri?: OdemeEmriGunleri,
+): HakedisSatiri[] {
+  /**
+   * ⚠ `map(tyApiSatiriniOku)` YAZILMAZ: `.map` ikinci parametreye İNDEKSİ
+   * geçirir ve o da `odemeGunleri` yerine düşerdi. Çağrı açık yazılır.
+   */
+  return kayitlar.map((k) => tyApiSatiriniOku(k, odemeGunleri));
 }

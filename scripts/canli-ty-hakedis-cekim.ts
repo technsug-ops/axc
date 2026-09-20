@@ -54,6 +54,7 @@ import { satirlariEslestir } from "../src/lib/hakedis/eslestir";
 import { satirAnahtari } from "../src/lib/hakedis/okuyucu";
 import { izYaz } from "../src/lib/iz";
 import {
+  odemeEmriGunleriniCoz,
   TY_API_SIPARIS_DISI_TIPLERI,
   TY_API_SIPARIS_TIPLERI,
   tyApiSatirlariniOku,
@@ -161,6 +162,8 @@ export async function tyHakedisCekimKos(ayar: {
   const simdi = Date.now();
   const enEski = simdi - TARAMA_GUN * GUN_MS;
   const tumKayitlar: TyFinansKaydi[] = [];
+  /** ⛔ AYRI KOVA — kalem olarak YAZILMAZ, yalnız ödeme GÜNÜ için okunur. */
+  const odemeEmriKayitlari: TyFinansKaydi[] = [];
   const hatalar: string[] = [];
 
   const pencereSayisi = Math.ceil(TARAMA_GUN / PENCERE_GUN);
@@ -189,6 +192,23 @@ export async function tyHakedisCekimKos(ayar: {
         continue;
       }
       tumKayitlar.push(...(s.kayitlar as TyFinansKaydi[]));
+    }
+
+    /**
+     * ⛔ ÖDEME EMİRLERİ AYRI KOVAYA — `tumKayitlar`a GİRMEZ (K223, 21.09.2026).
+     * `PaymentOrder` kaydı emrin TOPLAMINI taşır; kalem olarak yazılsaydı
+     * aynı para ikinci kez sayılırdı (`TY_API_SIPARIS_DISI_TIPLERI` bu yüzden
+     * onu içermiyor). Buraya YALNIZ TARİHİ için geliyor: bir emrin gerçek
+     * ödendiği gün başka hiçbir yerde yok.
+     */
+    const po = await tumSayfalarSabirli(
+      (sayfa) => UCLAR.otherFinancials(kimlik.saticiId, bas, son, sayfa, "PaymentOrder"),
+      baslik,
+    );
+    if (po.tur === "HATA") {
+      hatalar.push(`otherfinancials/PaymentOrder ${gun(bas)}→${gun(son)}: ${JSON.stringify(po.sonuc).slice(0, 150)}`);
+    } else {
+      odemeEmriKayitlari.push(...(po.kayitlar as TyFinansKaydi[]));
     }
   }
 
@@ -235,7 +255,40 @@ export async function tyHakedisCekimKos(ayar: {
     ]),
   );
 
-  const tumSatirlar = tyApiSatirlariniOku(filtrelenmis);
+  /**
+   * K223 (21.09.2026) — GERÇEK ÖDEME GÜNÜ HARİTASI: emir no → ödendiği an.
+   * Kaynak ayrı kovadaki `PaymentOrder` kayıtları; kalem olarak yazılmazlar.
+   *
+   * ⛔ BOŞ HARİTA "hiçbiri ödenmemiş" DEMEK DEĞİL — "günü bilmiyorum" demek.
+   * İkisi ayrı sayılır ve aşağıda AYRI raporlanır, yoksa boş bir sonuç temiz
+   * bir sonuç gibi görünür.
+   */
+  const odemeGunleri = odemeEmriGunleriniCoz(odemeEmriKayitlari);
+  console.log(
+    `Ödeme emri kaydı: ${odemeEmriKayitlari.length} ham · ${odemeGunleri.size} tekil emir (gerçek ödeme günü buradan)`,
+  );
+
+  const tumSatirlar = tyApiSatirlariniOku(filtrelenmis, odemeGunleri);
+
+  /**
+   * ⚠ KAPSAM BOŞLUĞU GÖRÜNÜR OLUR: ödenmiş görünen ama emrinin günü
+   * elimizde OLMAYAN kalemler. Bunlar bu koşumda ödenmiş yazılmaz ve
+   * sessizce kaybolmasınlar diye sayılır.
+   */
+  const gunuBilinmeyen = filtrelenmis.filter(
+    (k) =>
+      k.paymentOrderId !== null &&
+      k.paymentOrderId !== undefined &&
+      !odemeGunleri.has(String(k.paymentOrderId)),
+  );
+  if (gunuBilinmeyen.length > 0) {
+    const emirler = new Set(gunuBilinmeyen.map((k) => String(k.paymentOrderId)));
+    console.log(
+      `⚠ ${gunuBilinmeyen.length} kalem ÖDENMİŞ ama emrinin günü bu pencerede YOK` +
+        ` (${emirler.size} emir) — ödenmiş YAZILMAZ, sonraki koşumda dolar.`,
+    );
+    console.log(`   emirler: ${[...emirler].slice(0, 8).join(", ")}`);
+  }
   const digerSayisi = tumSatirlar.filter((s) => s.kod === "DIGER").length;
   if (digerSayisi > 0) {
     const gruplar = new Map<string, { sayi: number; toplam: number }>();

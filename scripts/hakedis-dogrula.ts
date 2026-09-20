@@ -36,6 +36,12 @@ import {
   siparisNetleri,
 } from "../src/lib/hakedis/eslestir";
 import {
+  odemeEmriGunleriniCoz,
+  TY_API_SIPARIS_DISI_TIPLERI,
+  tyApiSatiriniOku,
+  tyApiSatirlariniOku,
+} from "../src/lib/hakedis/ty-api-oku";
+import {
   basligiNormalle,
   hepsiburadaOku,
   sayiCoz,
@@ -49,7 +55,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 7;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -888,6 +894,222 @@ console.log("\nÖDEME GÜNÜ SNAP'LEME — İSTANBUL TAKVİMİ (K222-④, 20.09.
   kontrol("boş liste boş dizi döner (çökmez)", gelecekOdemeleriGrupla([], kesintiHaritasi).length === 0);
 }
 kosanBolumler.push("odeme-gunu");
+
+// ===========================================================================
+console.log("\n8) GERÇEK ÖDEME GÜNÜ — K223 (21.09.2026)");
+// ===========================================================================
+{
+  /**
+   * ⛔ VAKA — KANALIN KENDİ KAYDIYLA ÖLÇÜLDÜ (21.09.2026):
+   *
+   *     emir 76313675 · 112 kalem · ₺205.691,63
+   *       GERÇEK ödeme günü   2026-08-11   (PaymentOrder kaydı, TEK gün)
+   *       `paymentDate`ten    10·11·17·18·19·20·22·23·24·25 Ağu + 3 Eyl
+   *
+   * Bir ödeme emri = BİR ödeme günü. Kalem başına `paymentDate` yazılınca tek
+   * bir ödeme nakit takviminde on bir güne dağıldı. 91 emrin 91'i de yanlıştı.
+   */
+  const EMIR = 76313675;
+  const GERCEK_GUN = Date.UTC(2026, 7, 11);
+  const odemeGunleri = odemeEmriGunleriniCoz([
+    {
+      id: "58309195",
+      transactionType: "Ödeme",
+      paymentOrderId: EMIR,
+      paymentDate: GERCEK_GUN,
+      transactionDate: GERCEK_GUN,
+    },
+  ]);
+  kontrol("PaymentOrder kaydından emir → gün haritası kuruluyor", odemeGunleri.size === 1);
+  kontrol(
+    "  anahtar `paymentOrderId` (kaydın kendi `id`si DEĞİL)",
+    odemeGunleri.has(String(EMIR)) && !odemeGunleri.has("58309195"),
+    [...odemeGunleri.keys()],
+  );
+
+  /** `paymentDate` yoksa `transactionDate` kurtarır (alan hep gelmeyebilir). */
+  const yedekAlan = odemeEmriGunleriniCoz([
+    { id: "x", transactionType: "Ödeme", paymentOrderId: 99, transactionDate: GERCEK_GUN },
+  ]);
+  kontrol(
+    "`paymentDate` boşsa `transactionDate` okunur",
+    yedekAlan.get("99")?.getTime() === GERCEK_GUN,
+    yedekAlan.get("99"),
+  );
+
+  /**
+   * ⛔ GEÇERSİZ TARİH KAPIDAN GEÇMEZ. `new Date(bozuk)` `Invalid Date` üretir
+   * ve sessizce veritabanına kadar giderdi (anayasa: "kütüphanenin geçerlisi,
+   * iş kuralımızın geçerlisi değildir").
+   */
+  const bozuk = odemeEmriGunleriniCoz([
+    { id: "y", transactionType: "Ödeme", paymentOrderId: 7, paymentDate: NaN },
+    { id: "z", transactionType: "Ödeme", paymentDate: GERCEK_GUN },
+  ]);
+  kontrol("geçersiz tarih haritaya GİRMEZ", !bozuk.has("7"), [...bozuk.keys()]);
+  kontrol("emir no'suz kayıt kaydın `id`siyle girer", bozuk.get("z")?.getTime() === GERCEK_GUN);
+
+  /**
+   * ⭐ AYIRT EDİCİ TEST — HATANIN TA KENDİSİ.
+   * Aynı emrin İKİ kalemi, İKİ FARKLI `paymentDate` taşıyor. Eski kod ikisini
+   * kendi vadesine yazıyordu; doğrusu ikisinin de AYNI güne düşmesi.
+   * ⚠ Tek kalemli bir örnek bu ayrımı GÖSTEREMEZDİ — iki okuma da aynı sonucu
+   * verirdi ("örnek veri ayrımın iki yakasını göstermeli").
+   */
+  const kalemA: Parameters<typeof tyApiSatiriniOku>[0] = {
+    id: "16067173",
+    transactionType: "Sale",
+    orderNumber: "11111111111",
+    credit: 1000,
+    sellerRevenue: 820,
+    paymentOrderId: EMIR,
+    paymentDate: Date.UTC(2026, 7, 10),
+  };
+  const kalemB: Parameters<typeof tyApiSatiriniOku>[0] = {
+    ...kalemA,
+    id: "16067174",
+    paymentDate: Date.UTC(2026, 8, 3),
+  };
+  const a = tyApiSatiriniOku(kalemA, odemeGunleri);
+  const b = tyApiSatiriniOku(kalemB, odemeGunleri);
+
+  kontrol(
+    "aynı emrin İKİ kalemi AYNI ödeme gününe düşer (vadeye DEĞİL)",
+    a.odemeTarihi?.getTime() === GERCEK_GUN && b.odemeTarihi?.getTime() === GERCEK_GUN,
+    [metin(a.odemeTarihi), metin(b.odemeTarihi)],
+  );
+  kontrol(
+    "  ...ve ödeme günü kalemin KENDİ `paymentDate`i DEĞİL",
+    a.odemeTarihi?.getTime() !== kalemA.paymentDate &&
+      b.odemeTarihi?.getTime() !== kalemB.paymentDate,
+  );
+  kontrol(
+    "VADE ayrı alandır ve kalemin kendi `paymentDate`ini KORUR",
+    a.vadeTarihi?.getTime() === kalemA.paymentDate &&
+      b.vadeTarihi?.getTime() === kalemB.paymentDate,
+    [metin(a.vadeTarihi), metin(b.vadeTarihi)],
+  );
+
+  /**
+   * ⛔ GÜN BİLİNMİYORSA ÖDENMİŞ YAZILMAZ — vade ödeme günü diye YAZILMAZ.
+   * `null` bir eksiklik değil BEYANDIR: "ödendi ama gününü bilmiyorum".
+   */
+  const bilinmeyenEmir = tyApiSatiriniOku(
+    { ...kalemA, paymentOrderId: 999999 },
+    odemeGunleri,
+  );
+  kontrol(
+    "emri bilinmeyen ÖDENMİŞ kalem: ödeme günü null (vade UYDURULMAZ)",
+    bilinmeyenEmir.odemeTarihi === null,
+    metin(bilinmeyenEmir.odemeTarihi),
+  );
+  kontrol(
+    "  ...ama vadesi yerinde durur (bilgi kaybolmaz)",
+    bilinmeyenEmir.vadeTarihi?.getTime() === kalemA.paymentDate,
+  );
+
+  /** Harita HİÇ verilmezse de kimse ödenmiş sayılmaz. */
+  kontrol(
+    "harita verilmezse hiçbir kalem ödenmiş yazılmaz",
+    tyApiSatiriniOku(kalemA).odemeTarihi === null,
+  );
+
+  /** Ödenmemiş kalem: emir no yok → ödeme günü yok, vade var. */
+  const odenmemis = tyApiSatiriniOku(
+    { ...kalemA, paymentOrderId: null },
+    odemeGunleri,
+  );
+  kontrol(
+    "ödenmemiş kalem: ödeme günü null, vade dolu",
+    odenmemis.odemeTarihi === null && odenmemis.vadeTarihi?.getTime() === kalemA.paymentDate,
+  );
+
+  /**
+   * ═══════════════════════════════════════════════════════════════════════
+   *  İKİ KAPI, AYNI ŞEYİ KORUYOR — HER BİRİ AYRI SINANIR
+   * -----------------------------------------------------------------------
+   *  "Ödenmemiş kaleme ödeme günü yazılmasın" kuralını İKİ kapı birden
+   *  koruyor ve biri ötekini gizliyor:
+   *
+   *    ① OKUYUCU KAPISI   `odendi && odemeGunleri` — emir no yoksa hiç bakma
+   *    ② HARİTA KAPISI    `odemeEmriGunleriniCoz` "null"/"undefined"/""
+   *                       anahtarını haritaya HİÇ koymaz
+   *
+   *  ⛔ ÖLÇÜLDÜ 21.09.2026: ①'i kaldıran mutasyon YEŞİL geçti — çünkü ②
+   *  zaten `String(null)` = "null" anahtarını haritada bulundurmuyor ve
+   *  arama boş dönüyor. Yani ① kaldırılsa bugün davranış DEĞİŞMİYOR; ama
+   *  yarın ② gevşerse ① tek savunma olur ve o gün kimse haberdar olmaz.
+   *
+   *  ⭐ ÇARE: her kapı ÖTEKİNİ BYPASS EDEN bir örnekle sınanır.
+   * ═══════════════════════════════════════════════════════════════════════
+   */
+
+  /** ① OKUYUCU KAPISI — haritaya "null" anahtarı ELLE konur (②'yi atlar). */
+  const kirliHarita = new Map<string, Date>([
+    ["null", new Date(Date.UTC(2026, 0, 1))],
+    ["undefined", new Date(Date.UTC(2026, 0, 1))],
+  ]);
+  kontrol(
+    "① okuyucu kapısı: harita 'null' anahtarı TAŞISA BİLE ödenmemiş kalem ödenmiş yazılmaz",
+    tyApiSatiriniOku({ ...kalemA, paymentOrderId: null }, kirliHarita).odemeTarihi === null,
+    metin(tyApiSatiriniOku({ ...kalemA, paymentOrderId: null }, kirliHarita).odemeTarihi),
+  );
+  kontrol(
+    "  ...aynısı `paymentOrderId` HİÇ YOKKEN de geçerli",
+    tyApiSatiriniOku(
+      { id: "q", transactionType: "Sale", credit: 1, sellerRevenue: 1 },
+      kirliHarita,
+    ).odemeTarihi === null,
+  );
+
+  /** ② HARİTA KAPISI — sahte anahtarlar haritaya hiç girmemeli. */
+  const sahteAnahtarlar = odemeEmriGunleriniCoz([
+    { id: "", transactionType: "Ödeme", paymentOrderId: null, paymentDate: GERCEK_GUN },
+    { id: "gecerli", transactionType: "Ödeme", paymentDate: GERCEK_GUN },
+  ]);
+  kontrol(
+    "② harita kapısı: 'null'/'undefined'/'' anahtarı haritaya GİRMEZ",
+    !sahteAnahtarlar.has("null") &&
+      !sahteAnahtarlar.has("undefined") &&
+      !sahteAnahtarlar.has(""),
+    [...sahteAnahtarlar.keys()],
+  );
+  kontrol(
+    "  ...ama geçerli kayıt GİRER (taban doluluğu — boş harita her şeyi geçirir)",
+    sahteAnahtarlar.size === 1 && sahteAnahtarlar.has("gecerli"),
+    [...sahteAnahtarlar.keys()],
+  );
+
+  /**
+   * ⚠ `.map(tyApiSatiriniOku)` YAZILAMAZ — `.map` ikinci parametreye İNDEKSİ
+   * geçirir ve harita yerine sayı düşerdi. Çoğul sarmalayıcı haritayı
+   * gerçekten taşıyor mu, ölçülür.
+   */
+  const coklu = tyApiSatirlariniOku([kalemA, kalemB], odemeGunleri);
+  kontrol(
+    "çoğul okuyucu haritayı HER kaleme taşır (indeks tuzağı yok)",
+    coklu.length === 2 &&
+      coklu.every((s) => s.odemeTarihi?.getTime() === GERCEK_GUN),
+    coklu.map((s) => metin(s.odemeTarihi)),
+  );
+
+  /**
+   * ⛔ PaymentOrder KALEM OLARAK YAZILMAZ — emrin TOPLAMINI taşır, kalem
+   * sayılsaydı aynı para İKİNCİ KEZ sayılırdı. Tip listesinde olmadığı
+   * ölçülür; listeye eklenmesi sessiz bir mükerrer para hatası olurdu.
+   */
+  kontrol(
+    "`PaymentOrder` sipariş dışı YAZILAN tipler listesinde DEĞİL",
+    !(TY_API_SIPARIS_DISI_TIPLERI as readonly string[]).includes("PaymentOrder"),
+    TY_API_SIPARIS_DISI_TIPLERI,
+  );
+  kontrol(
+    "  ...ve o liste BOŞ DEĞİL (taban doluluğu)",
+    TY_API_SIPARIS_DISI_TIPLERI.length >= 2,
+    TY_API_SIPARIS_DISI_TIPLERI.length,
+  );
+}
+kosanBolumler.push("gercek-odeme-gunu");
 
 // ===========================================================================
 console.log("");
