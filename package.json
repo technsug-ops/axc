@@ -281,6 +281,7 @@
     "canli:ty-kuru-kosum": "tsx scripts/canli-ty-kuru-kosum.ts",
     "canli:ty-ice-aktar": "tsx scripts/canli-ty-ice-aktar.ts",
     "canli:ty-hakedis-cekim": "tsx scripts/canli-ty-hakedis-cekim.ts",
+    "canli:ty-odeme-gunu-onar": "tsx scripts/canli-ty-odeme-gunu-onar.ts",
     "canli:ty-kargo-gercek-olcum": "tsx scripts/canli-ty-kargo-gercek-olcum.ts",
     "canli:hb-hakedis-cekim": "tsx scripts/canli-hb-hakedis-cekim.ts",
     "hakedis-yazici:dogrula": "tsx scripts/hakedis-yazici-dogrula.ts",
