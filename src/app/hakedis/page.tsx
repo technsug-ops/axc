@@ -32,6 +32,7 @@ import {
   DURUM_YAZISI,
   KANAL_RENGI_VARSAYILAN,
   KANAL_RENKLERI,
+  type DurumRengi,
 } from "@/lib/renkler";
 
 export const dynamic = "force-dynamic";
@@ -542,6 +543,84 @@ export default async function HakedisSayfasi({
               adres: sekmeAdresi(SEKME_OZET),
               icerik: (
                 <div className="space-y-6">
+          {/* ═══════════ ÜST SIRA — HÜKÜM: RAKAM + PASTA (K222-⑧) ═══════════
+              Kullanıcı 20.09.2026: "Özet hiç özete benzemiyor. Yukarıda
+              total rakamları olmalı, pasta grafik yukarıda olmalı, diğerleri
+              biraz daha altta." Özet bir HÜKÜM yeridir (İlke #13): göz önce
+              rakamı görür, sonra dağılımı, sonra isterse dökümü. */}
+          <div className="grid items-stretch gap-4 lg:grid-cols-2">
+            <Card className="flex flex-col">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">{t("bekleyenPara")}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col gap-3">
+                <div className="grid flex-1 gap-2 sm:grid-cols-3">
+                  {/* ① BEKLEYEN TOPLAM — para birimi başına (genelde tek). */}
+                  <OzetKutusu
+                    etiket={t("toplamBekleyen")}
+                    deger={
+                      anaParaBirimi
+                        ? bicim.para(bekleyenToplam.get(anaParaBirimi) ?? 0, anaParaBirimi)
+                        : "—"
+                    }
+                    alt={t("kalemSayisi", { sayi: bekleyenler.length })}
+                  />
+                  {/* ② EN YAKIN ÖDEME — "ne zaman, ne kadar" sorusunun cevabı. */}
+                  <OzetKutusu
+                    etiket={t("enYakinOdeme")}
+                    deger={
+                      gelecekOdemeler.length > 0
+                        ? bicim.para(gelecekOdemeler[0].toplam, gelecekOdemeler[0].paraBirimi)
+                        : "—"
+                    }
+                    alt={
+                      gelecekOdemeler.length > 0
+                        ? `${bicim.tarih(gelecekOdemeler[0].tarih)} · ${gelecekOdemeler[0].kanalAdi}`
+                        : t("bekleyenParaNotu")
+                    }
+                  />
+                  {/* ③ GECİKMİŞ — SIFIR OLSA DA GÖRÜNÜR (İlke: sıfır satır
+                      gizlenmez; "0" burada "temiz" demektir, sessizlik değil). */}
+                  <OzetKutusu
+                    etiket={t("gecikmisKalem")}
+                    deger={String(geciken.length)}
+                    alt={
+                      geciken.length > 0
+                        ? t("gecikmeNotu", { gun: HAKEDIS_ESIKLERI.gecikmeIsGunu })
+                        : t("gecikmeYok")
+                    }
+                    durum={geciken.length > 0 ? "uyari" : undefined}
+                  />
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  {t("bekleyenParaNotu")}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* PASTA — ÜSTTE, rakamın yanında. Yalnız birden fazla kanal
+                varken çizilir: tek kanala süzülmüş bir "dağılım" tek dilimli
+                bir pastadır ve hiçbir şey anlatmaz. */}
+            {kanalDagilimDilimleri.length > 1 ? (
+              <Card className="flex flex-col">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">{t("kanalDagilimiBaslik")}</CardTitle>
+                  <p className="text-muted-foreground text-xs">
+                    {t("kanalDagilimiNotu")}
+                  </p>
+                </CardHeader>
+                <CardContent className="flex flex-1 items-center">
+                  <KanalDagilimiGrafigi
+                    dilimler={kanalDagilimDilimleri}
+                    toplam={kanalDagilimToplam}
+                    paraBirimi={anaParaBirimi ?? "TRY"}
+                    bosMesaj={t("kanalDagilimiBosMesaj")}
+                  />
+                </CardContent>
+              </Card>
+            ) : null}
+          </div>
+
           {/* ------------------- KANAL ÖDEMELERİ (K220/K222) -------------- */}
           {gecmisOdemeler.length > 0 || gelecekOdemeler.length > 0 ? (
             <Card>
@@ -641,70 +720,6 @@ export default async function HakedisSayfasi({
             </Card>
           ) : null}
 
-          {/* ----------------------- BEKLEYEN PARA ---------------------- */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("bekleyenPara")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-wrap gap-6">
-                {[...bekleyenToplam.entries()].map(([para, tutar]) => (
-                  <div key={para}>
-                    <div className="text-2xl font-semibold">
-                      {bicim.para(tutar, para)}
-                    </div>
-                    <div className="text-muted-foreground text-xs">
-                      {bekleyenler.length} {t("sutunKalem").toLowerCase()}
-                    </div>
-                  </div>
-                ))}
-                {bekleyenToplam.size === 0 ? (
-                  <p className="text-muted-foreground text-sm">
-                    {t("bekleyenParaNotu")}
-                  </p>
-                ) : null}
-              </div>
-
-              {geciken.length > 0 ? (
-                <div className={`rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
-                  <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
-                    <TriangleAlert className="size-4 shrink-0" />
-                    {geciken.length} {t("gecikti")}
-                  </p>
-                  <p className={`mt-1 text-sm ${DURUM_YAZISI.uyari}`}>
-                    {t("gecikmeNotu", { gun: HAKEDIS_ESIKLERI.gecikmeIsGunu })}
-                  </p>
-                </div>
-              ) : null}
-
-              <p className="text-muted-foreground text-xs">
-                {t("bekleyenParaNotu")}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* --------------------- KANAL DAĞILIMI (görsel) --------------- */}
-          {/* YALNIZ BİRDEN FAZLA KANAL VARKEN ÇİZİLİR — bkz. yukarıdaki
-              hesap bloğunun başlığı: tek kanala süzülmüş bir "dağılım"
-              tek dilimli bir pastadır ve hiçbir şey anlatmaz. */}
-          {kanalDagilimDilimleri.length > 1 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("kanalDagilimiBaslik")}</CardTitle>
-                <p className="text-muted-foreground text-sm">
-                  {t("kanalDagilimiNotu")}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <KanalDagilimiGrafigi
-                  dilimler={kanalDagilimDilimleri}
-                  toplam={kanalDagilimToplam}
-                  paraBirimi={anaParaBirimi ?? "TRY"}
-                  bosMesaj={t("kanalDagilimiBosMesaj")}
-                />
-              </CardContent>
-            </Card>
-          ) : null}
                 </div>
               ),
             },
@@ -1090,6 +1105,41 @@ export default async function HakedisSayfasi({
           ]}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * ÖZET RAKAM KUTUSU — `nakit-ozeti.tsx`in `Kutu`suyla AYNI anatomi: gri
+ * etiket üstte, iri rakam ortada, açıklama altta (İlke #10 — aynı bilgi iki
+ * ekranda iki farklı kutuda görünmesin).
+ *
+ * ⚠ RAKAM BOYUTU AKIŞKAN (`clamp`), sabit değil: `₺210.942,81` gibi uzun bir
+ * tutar dar ekranda kutunun dışına taşıyordu (15.08.2026 vakası).
+ */
+function OzetKutusu({
+  etiket,
+  deger,
+  alt,
+  durum,
+}: {
+  etiket: string;
+  deger: string;
+  alt: string;
+  /** Yalnız dikkat isteyen kutu renklenir; hepsi renkliyse hiçbiri vurgulu değildir. */
+  durum?: DurumRengi;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col justify-center gap-1 rounded-lg border p-3">
+      <div className="text-muted-foreground text-xs">{etiket}</div>
+      <div
+        className={`text-[clamp(1.125rem,2vw,1.75rem)] leading-tight font-semibold break-words tabular-nums ${
+          durum ? DURUM_YAZISI[durum] : ""
+        }`}
+      >
+        {deger}
+      </div>
+      <div className="text-muted-foreground text-xs">{alt}</div>
     </div>
   );
 }
