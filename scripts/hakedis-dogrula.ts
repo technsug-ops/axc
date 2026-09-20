@@ -727,6 +727,19 @@ console.log("\nÖDEME GÜNÜ SNAP'LEME — İSTANBUL TAKVİMİ (K222-④, 20.09.
     sonrakiOdemeGunu(hamVadeGecKalmisUtc, "Amazon").toISOString().slice(0, 10) ===
       "2026-09-16",
   );
+
+  /**
+   * ⛔ KULLANICI DÜZELTMESİ 20.09.2026: ilk beyan "Trendyol Salı+Perşembe"
+   * idi; kanalın kendi ekranına bakılınca gerçeğin "Pazartesi + Perşembe"
+   * olduğu görüldü. Yanlış beyanla yazılmış bir eşiğin canlıya sessizce
+   * gitmemesi için GERÇEK gün burada kilitleniyor.
+   */
+  const istanbulPazar = new Date("2026-09-19T21:00:00.000Z"); // İstanbul: 20 Eylül 00:00, Pazar
+  kontrol(
+    "Trendyol Pazartesi+Perşembe öder (Pazar'dan sonraki ilk gün Pazartesi)",
+    sonrakiOdemeGunu(istanbulPazar, "Trendyol").toISOString().slice(0, 10) ===
+      "2026-09-21",
+  );
 }
 kosanBolumler.push("odeme-gunu");
 

@@ -137,7 +137,9 @@ export const HAKEDIS_ESIKLERI = {
 
 /**
  * ============================================================================
- *  KANAL ÖDEME GÜNLERİ — KULLANICI BEYANI (20.09.2026)
+ *  KANAL ÖDEME GÜNLERİ — KULLANICI BEYANI (20.09.2026, Trendyol 20.09'da
+ *  DÜZELTİLDİ: ilk beyan "Salı + Perşembe"ydi, kullanıcı kanalın kendi
+ *  ekranına bakıp "Pazartesi - Perşembe" olarak düzeltti.)
  * ----------------------------------------------------------------------------
  *  ⛔ NİYE GEREKLİ: `dueDate` SİPARİŞ BAŞINA ayrı tahmin edilir (bkz.
  *  `beklenenVade`) ama pazaryeri parayı yalnız BELİRLİ haftanın günlerinde
@@ -145,22 +147,30 @@ export const HAKEDIS_ESIKLERI = {
  *  ödeme var" der — ki bu YANLIŞTIR ve kullanıcı bunu canlıda gördü
  *  ("bu sıklıkta bir ödeme yok").
  *
- *  Gerçek takvim:
- *    Trendyol     → Salı + Perşembe
+ *  Gerçek takvim (kanalın kendi ekranıyla doğrulandı):
+ *    Trendyol     → Pazartesi + Perşembe
  *    Hepsiburada  → Salı
  *    N11          → Perşembe
  *
  *  `Date.getUTCDay()`: 0=Pazar 1=Pazartesi 2=Salı 3=Çarşamba 4=Perşembe
- *  5=Cuma 6=Cumartesi. `dueDate`/`gunDegeri` İstanbul takvim gününü UTC gece
- *  yarısına damgalıyor (bkz. `lib/donem.ts`), bu yüzden `getUTCDay()` doğrudan
- *  doğru sonucu verir — ayrı bir saat dilimi çevrimi gerekmez.
+ *  5=Cuma 6=Cumartesi.
  *
- *  Haritada OLMAYAN kanal için tarih OLDUĞU GİBİ kalır — uydurma bir gün
- *  eklenmez (bkz. `sonrakiOdemeGunu`).
+ *  ⛔ ESKİ GEREKÇE YANLIŞTI, SİLİNMEDİ: burada ÖNCEDEN "`dueDate`/`gunDegeri`
+ *  İstanbul takvim gününü UTC gece yarısına damgalıyor, bu yüzden
+ *  `getUTCDay()` doğrudan doğru sonucu verir — ayrı bir saat dilimi çevrimi
+ *  gerekmez" yazıyordu. **YANLIŞTI.** API'den gelen `dueDate`/`paidAt` HAM
+ *  zaman damgasıdır (`gunDegeri` ile üretilmemiştir) ve UTC gün sınırı ile
+ *  İstanbul gün sınırı UYUŞMAYABİLİR — canlı vaka: Hepsiburada'nın kendi
+ *  paneli "22 Eylül Salı" derken ekran "23 Eylül" gösteriyordu, çünkü ham
+ *  değer UTC'de Salı, İstanbul'da Çarşamba'ydı. `sonrakiOdemeGunu` artık
+ *  ÖNCE İstanbul takvim gününe normalize ediyor (bkz. gövdesi).
+ *
+ *  Haritada OLMAYAN kanal için tarih İSTANBUL GÜNÜNE normalize edilip
+ *  OLDUĞU GİBİ kalır — uydurma bir gün eklenmez (bkz. `sonrakiOdemeGunu`).
  * ============================================================================
  */
 export const KANAL_ODEME_GUNLERI: Record<string, number[]> = {
-  Trendyol: [2, 4],
+  Trendyol: [1, 4],
   Hepsiburada: [2],
   N11: [4],
 };
