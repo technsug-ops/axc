@@ -65,6 +65,13 @@ export async function hbListelemeDurumunuYaz(
    * geriye uyum için; çağıranı olmayan bir vaat açılmıyor.
    */
   kontrolEdilen: readonly string[] = [],
+  /**
+   * İZ ADI ÇAĞIRANDAN (22.09.2026). Gövde kanal-bağımsız; adı HB'li kalsa da
+   * N11 tarayıcısı da bunu kullanıyor. İz adı sabit kalsaydı N11 koşumu
+   * "HB_LISTELEME_YAZIM" diye iz bırakırdı — yanlış etiketli bir kayıt.
+   * _(Anayasa: "bir ad, tutmadığı bir şey söyleyemez".)_
+   */
+  izAdi: string = KOSUM_IZI,
 ): Promise<HbYazimSonucu> {
   const sonuc: HbYazimSonucu = { yazilan: 0, hata: 0 };
 
@@ -115,7 +122,7 @@ export async function hbListelemeDurumunuYaz(
    * taraf birini görmez.
    */
   await izYaz({
-    action: KOSUM_IZI,
+    action: izAdi,
     targetType: "ChannelSku",
     targetId: null,
     detail: JSON.stringify({

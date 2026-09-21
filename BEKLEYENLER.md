@@ -145,9 +145,25 @@ ekranın `PASİF DAHİL:` **beyanı** kayboldu ve bu kez onlar suçlandı —
       NET-1 ₺663,91 · NET-2 ₺549,32). İkize bağlı kalsaydı maliyet
       bulunamaz, `NO_COST` düşerdi — yani arıza yalnız "kaydedemiyorum"
       değil, **kârın sessizce hesaplanamaması** idi.
-- [ ] **Halil testi ②** — `/urunler`de `HBCV00000R0H0K` aratın: **tek** kayıt
-      çıkmalı ve o kayıt stoklu olan olmalı. İkiz kayıt **"Varyantları pasif"**
-      rozetiyle görünmeli (kaybolmamalı — geçmişi duruyor).
+- [ ] **Halil testi ②** — `/urunler`de `HBCV00000R0H0K` aratın: **İKİ kayıt**
+      çıkar — biri stoklu (`KUC-BR-BHD50-01`, stok 3), öteki stok 0 ve
+      **"Varyantları pasif"** rozetli.
+      ⛔ **İLK YAZIMI ÇELİŞİKTİ** — _"tek kayıt çıkmalı"_ VE _"ikiz rozetle
+      görünmeli"_ aynı cümledeydi; rozetliyse zaten iki kayıt çıkar. Kullanıcı
+      ekran görüntüsüyle geldi: iki kayıt ve doğru stoklar VAR (o yarı geçti),
+      **rozet YOK.** Ölçüldü: kod `origin/main`'de (satır 142 seçiyor, 329
+      çiziyor), veri rozeti hak ediyor (`every(!isActive) === true`), Vercel
+      `f584ed0` Production/Ready — üçü doğru, ekranda yok. Kalan tek açıklama
+      tarayıcı önbelleği; **sert yenileme sonrası ekran görüntüsü bekleniyor.**
+      Gelmezse bekçilerin göremediği bir çizim kusuru var demektir — ve bu
+      deponun yazılı dersi: _bekçi kaynağı ölçer, kullanıcıya ULAŞTIĞINI
+      ölçmez._
+      ⚠ **PUSH ≠ DEPLOY (ders, 21.09).** Bugün üç kez "canlıda" dedim ve
+      üçünde push'un gittiğini ölçmüştüm, deploy'un indiğini değil. Push ile
+      ekran arasında Vercel var; o katman **yalnız Vercel panelinden ya da
+      giriş yapılmış ekrandan** doğrulanır. HTTP ile doğrulanamaz: olmayan
+      rota da `307` dönüyor (ara katman her isteği girişe yolluyor) — ölçüldü,
+      bir daha denenmesin.
 - [ ] **Halil testi ③** — `/okut`ta `887961643367` okutun: artık **tek** ürün
       açılmalı (Fisher-Price, stok 1).
 ─── ④ **MUSLUK KAPANDI** — üç kalem de bitti (21.09.2026)
@@ -453,7 +469,15 @@ farkı, biri sözdizimi bozan mutasyon) — "geçti" demedi. İkisi de onarıld�
       **2026-07-16** ve ~67 gün yazmalı, N11 kartında "tarife yok".
 - [ ] **Trendyol kargo tarifesi 2 aydır tazelenmiyor** — okuyucusu yok.
       TY'nin tarife dosyası eline geçerse okuyucu yazılır.
-- [ ] **API'de kargo tarifesi ucu var mı — ÖLÇÜLMEDİ.** Dokümanlara bakılacak.
+- [x] ~~**API'de kargo tarifesi ucu var mı — ÖLÇÜLMEDİ.**~~ **ÖLÇÜLDÜ 21.09.2026**
+      (kendi keşif belgelerimiz: `docs/a3-*-api-kesif.md`): **hiçbir kanal desi
+      tarifesini API'den yayımlamıyor.** HB `product/cargo-providers` → yalnız
+      taşıyıcı LİSTESİ; TY `Cargo Invoice Details` → **fiilen kesilen** kargo.
+      ⭐ İkincisi tarifeden ÜSTÜN bir kaynak (anayasa kaynak sırası: kanalın
+      kendi belgesi > bizim tahmin). TY tarifesinin iki aydır tazelenmemesi
+      sorunu şekil değiştiriyor: tarifeyi tazelemek yerine **gerçek kesintiyi
+      okumak** — ayrı kalem. ⚠ Sınır: satıcının tam uç kataloğu değil, bizim
+      keşif notlarımız ölçüldü.
 
 ---
 
@@ -965,7 +989,37 @@ gizlenir) · TY koşulsuz yazıma dönsün · TY damgası kalksın.
 - [ ] **İlk otomatik koşum 22.09 sabahı** — `AuditLog`dan doğrulanacak.
       Koşmazsa Vercel Cron yine kaçırmış demektir ve Action'ın tuttuğu
       görülür (ikisi birden kaçarsa sebep ORTAK, ayrıca ölçülür).
-- [ ] N11 listeleme senkronu hâlâ YOK — 51 kanal SKU'su hiç ölçülmemiş.
+─── ② **N11 SENKRONU YAZILDI · 22.09.2026 · [KOD KOŞTU — İLK OTOMATİK KOŞUM BEKLENİYOR]**
+
+Önce fark ölçüldü (21.09): **TY 1099/1096 (%99,7) · HB 1111/1110 (%99,9) ·
+N11 51/0 (%0)** — listelemelerimizin canlıda olup olmadığını hiç bilmediğimiz
+tek kanal. Uç 22.09'da ilk kez sondalandı (`GET /ms/product-query`, keşif
+belgesinde 🟡 idi): **113 listeleme**, tek satıcı `4534966` =
+`ChannelAccount.externalId` (kimlikle eşleşme hazırdı). Alan doluluğu 113/113;
+`saleStatus` ⇔ `quantity` birebir (58 Out_Of_Stock/0 · 55 On_Sale/>0);
+`status` **yalnız "Active"** — başka değer hiç görülmedi, bu yüzden "Active"
+dışı → `BILINMIYOR`, PASIF değil (ölçülmemiş şey hakkında hüküm yok).
+
+**KURU KOŞUM (canlı):** `kanalda bulunan 51/51` — defterdeki `channelSku` ile
+N11 `stockCode`u AYNI; **51 satırın 51'i değişecek** (bugün hepsi BILINMIYOR).
+⚠ **Ve 62 listeleme defterde HİÇ YOK** — N11'de satışta olup kanal SKU kaydı
+açılmamış ürünler; tarife bağsızlarının kökü de bu.
+
+Üçlü kalıp HB'nin aynası: `lib/kanal-listeleme-n11` (saf) ·
+`canli-n11-listeleme-yaz` (tarayıcı, yalnız GET, hesap kimlikle) · yazıcı
+ortak (`izAdi` parametresi: iz `N11_LISTELEME_YAZIM`, HB'nin izine yazmaz).
+Cron `listeleme-cekim` ucuna üçüncü satır olarak girdi. `n11-listeleme:dogrula`
+28 ölçüt (çeviri gövde çağrılarak) + `n11-listeleme-mutasyon` harness.
+
+⛔ **YAZIM ELLE KOŞULMADI, BİLEREK.** TY/HB için onaylı mekanizma cron; N11
+aynı uca girdi, ilk yazımı o yapacak. Sıfır eşleşmede tarayıcı yazımı kendisi
+durdurur (anahtar uyuşmazlığı sessizce "YOK" yazmasın).
+
+- [ ] **İlk otomatik koşum (N11)** — `AuditLog action=N11_LISTELEME_YAZIM`:
+      yazılan **51**, hata 0. `/kanal-listeleme`de N11 satırı görünmeli.
+- [ ] **62 listeleme defterde yok** — N11'de satışta ama `ChannelSku` kaydı
+      açılmamış. Açılış yolu: barkodla eşleştirme (110/113 dolu), **K231 yazma
+      kapısından geçerek** — çarpışan kod açılmaz, raporlanır.
       Yazıldığında bu uca bir satır eklenir.
 
 ⚠ **İKİ BETİK AYNI İŞİ FARKLI BAYRAKLA YAPIYOR** (`--uygula` ve `--yaz`) —
@@ -1061,9 +1115,8 @@ ekrana yazıldı — **doğru bir sayı, kapsamı görünmezse yanlış bir hük
 - [ ] Telefonda kartlar okunuyor mu, kod kopyalama çalışıyor mu
 
 ### AÇIK — SONRAKİ ADIMLAR
-1. ⛔ **SENKRON ZAMANLANMIŞ DEĞİL.** Bugün elle koşuldu; yarın yine bayatlar.
-   Ekran bunu söylüyor ama söylemek çözmek değil.
-2. **N11 listeleme senkronu YOK** — 51 kanal SKU'su hiç ölçülmemiş.
+1. ~~⛔ **SENKRON ZAMANLANMIŞ DEĞİL.**~~ → **ZAMANLANDI 21.09.2026 (K225):** `listeleme-cekim` cron + GitHub yedek iş; 22.09'dan itibaren N11 de aynı uçta. Bu satır 19.09'dan kalmaydı — bayat bir "açık" okuyanı olmayan bir işe yollardı.
+2. ~~**N11 listeleme senkronu YOK**~~ → **YAZILDI 22.09.2026** (K225-②): 51/51 eşleşti, cron'a girdi; ilk otomatik koşum bekleniyor. Yeni açık: 62 listeleme defterde yok.
 3. **K194-HB SIT 401'de bekliyor** — kullanıcı HB'den SIT erişimini
    yeniletecek. Ölçülenler orada duruyor (`shippingProfileName` 2202/2202
    dolu, kargo firması alanı yalnız 253'ünde — kargo eşleştirme kuralından

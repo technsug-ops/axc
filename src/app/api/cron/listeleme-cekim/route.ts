@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { hbListelemeCekimKos } from "../../../../../scripts/canli-hb-listeleme-yaz";
 import { tyListelemeCekimKosGuvenli } from "../../../../../scripts/canli-kanal-listeleme-yaz";
+import { n11ListelemeCekimKosGuvenli } from "../../../../../scripts/canli-n11-listeleme-yaz";
 
 /**
  * ============================================================================
@@ -16,7 +17,8 @@ import { tyListelemeCekimKosGuvenli } from "../../../../../scripts/canli-kanal-l
  *  Sipariş/hakediş çekimleri kanal başına AYRI uçlar (`ty-cekim` ·
  *  `hb-cekim` · `n11-cekim`) çünkü onlar farklı kadanslı, farklı işler.
  *  Listeleme durumu ise HER KANALA SORULAN TEK SORUDUR ve ekran üçünü
- *  BİRLİKTE gösteriyor. N11 senkronu yazıldığı gün buraya bir satır eklenir;
+ *  BİRLİKTE gösteriyor. N11 satırı 22.09.2026'da eklendi (K225-②): o güne
+ *  kadar N11 %0 ölçülmüştü, TY/HB %99,7-%99,9. Aynı uç, aynı kadans;
  *  yeni bir rota + vercel girdisi + Action üçlüsü açılmaz.
  *
  *  ⛔ BİR KANALIN DÜŞMESİ ÖTEKİNİ DURDURMAZ. Her kanal ayrı sarılır ve
@@ -89,14 +91,17 @@ export async function GET(istek: NextRequest) {
    * Action yeşil yanar ve yarısı koşmayan bir senkron "başarılı" sayılırdı —
    * tetikleyicinin gördüğü tek şey durum kodudur.
    */
-  const dusen = [ty, hb].filter((o) => "atlandi" in o).length;
+  const n11Basladi = Date.now();
+  const n11 = await n11ListelemeCekimKosGuvenli({ yaz: true, dbAdresi });
+  const n11Ms = Date.now() - n11Basladi;
+  const dusen = [ty, hb, n11].filter((o) => "atlandi" in o).length;
   /**
    * ⚠ SÜRELER CEVAPTA — tavanı bir daha TAHMİN etmemek için. İlk gerçek
    * tetikte 60 sn yetmedi ve elimizde hiçbir sayı yoktu; 504 zamanlama
    * bilgisi vermiyor. Bundan sonra her koşum kendi maliyetini söylüyor.
    */
   return NextResponse.json(
-    { ty, tyMs, hb, hbMs, toplamMs: tyMs + hbMs, dusen },
+    { ty, tyMs, hb, hbMs, n11, n11Ms, toplamMs: tyMs + hbMs + n11Ms, dusen },
     { status: dusen > 0 ? 500 : 200 },
   );
 }
