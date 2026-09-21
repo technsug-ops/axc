@@ -104,6 +104,7 @@
     "gerial:dogrula": "tsx scripts/geri-alma-dogrula.ts",
     "adet:dogrula": "tsx scripts/adet-dogrula.ts",
     "net2-kirpma:dogrula": "tsx scripts/net2-kirpma-dogrula.ts",
+    "canli:kod-carpismasi": "tsx scripts/canli-kod-carpismasi-olcum.ts",
     "canli:adet-geliri": "tsx scripts/canli-adet-geliri.ts",
     "canli:damga-olcum": "tsx scripts/canli-damga-ayrismasi-olcum.ts",
     "canli:alim-kalem": "tsx scripts/canli-alim-kalem-raporu.ts",
