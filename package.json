@@ -384,6 +384,7 @@
     "canli:hb-saglik": "tsx scripts/canli-hb-saglik.ts",
     "canli:hb-listing-olcum": "tsx scripts/canli-hb-listing-olcum.ts",
     "hb-listeleme:dogrula": "tsx scripts/hb-listeleme-dogrula.ts",
+    "kanal-listeleme:dogrula": "tsx scripts/kanal-listeleme-saglik-dogrula.ts",
     "canli:hb-listeleme": "tsx scripts/canli-hb-listeleme-yaz.ts",
     "canli:hb-ice-aktar": "tsx scripts/canli-hb-ice-aktar.ts",
     "kanal-yazma:dogrula": "tsx scripts/kanal-yazma-dogrula.ts",

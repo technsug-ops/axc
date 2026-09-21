@@ -51,6 +51,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
 
   urunKarti: "/kart",
   kanalSkulari: "/kanal-sku",
+  /** K224 — ürünlerin kanalda satışa AÇIK olup olmadığı (salt okuma). */
+  kanalListeleme: "/kanal-listeleme",
   kanalHesaplari: "/ayarlar/kanallar",
   envanterDegeri: "/envanter-degeri",
 
@@ -146,6 +148,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   // ── ÜRÜN VE KANAL ───────────────────────────────────────────────────────
   { anahtar: "urunKarti", varsayilanGrup: "grupUrunKanal" },
   { anahtar: "kanalSkulari", varsayilanGrup: "grupUrunKanal" },
+  { anahtar: "kanalListeleme", varsayilanGrup: "grupUrunKanal" },
   { anahtar: "kanalHesaplari", varsayilanGrup: "grupUrunKanal" },
   { anahtar: "envanterDegeri", varsayilanGrup: "grupUrunKanal" },
 

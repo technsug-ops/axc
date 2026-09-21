@@ -159,7 +159,8 @@
     "donemler": "",
     "malKabul": "",
     "maliyetYontemi": "",
-    "gunlukOzet": ""
+    "gunlukOzet": "",
+    "kanalListeleme": ""
   },
   "Ortak": {
     "kapat": "",
@@ -861,7 +862,8 @@
     "donemler": "",
     "malKabul": "",
     "maliyetYontemi": "",
-    "gunlukOzet": ""
+    "gunlukOzet": "",
+    "kanalListeleme": ""
   },
   "GunlukOzet": {
     "baslik": "",
@@ -4279,5 +4281,37 @@
     "engel_DURUM_DEGISTI": "",
     "engel_KALDIRILMAMIS": "",
     "engel_AYNA_KAPANDI": ""
+  },
+  "KanalListeleme": {
+    "baslik": "",
+    "aciklama": "",
+    "durumSuzgeci": "",
+    "suzgecKapaliDuran": "",
+    "suzgecAcik": "",
+    "suzgecStoksuz": "",
+    "suzgecPasif": "",
+    "suzgecOlculmemis": "",
+    "kutuKapaliDuran": "",
+    "kutuKapaliDuranAciklama": "",
+    "kutuAcik": "",
+    "kutuStoksuz": "",
+    "kutuPasif": "",
+    "kutuOlculmemis": "",
+    "kutuOlculmemisAciklama": "",
+    "ac": "",
+    "olcumHic": "",
+    "olcumBugun": "",
+    "olcumYas": "",
+    "tazelemeKomutu": "",
+    "listeBasligi": "",
+    "listeToplami": "",
+    "bosSonuc": "",
+    "kanalKodu": "",
+    "bizdekiStok": "",
+    "kanalAdedi": "",
+    "durum": "",
+    "olculmedi": "",
+    "rozetKapaliDuran": "",
+    "kutuKapaliDuranEksik": ""
   }
 }

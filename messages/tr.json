@@ -159,7 +159,8 @@
     "donemler": "Muhasebe dönemleri",
     "malKabul": "Mal kabul",
     "maliyetYontemi": "Maliyet yöntemi",
-    "gunlukOzet": "Günlük Özet"
+    "gunlukOzet": "Günlük Özet",
+    "kanalListeleme": "Kanal Listeleme Durumu"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -861,7 +862,8 @@
     "donemler": "Muhasebe dönemleri",
     "malKabul": "Mal kabul",
     "maliyetYontemi": "Maliyet yöntemi",
-    "gunlukOzet": "Günlük Özet"
+    "gunlukOzet": "Günlük Özet",
+    "kanalListeleme": "Kanal Listeleme"
   },
   "GunlukOzet": {
     "baslik": "Günlük Özet",
@@ -4279,5 +4281,37 @@
     "engel_DURUM_DEGISTI": "Durum değişti — bu kaleme araya iade, iptal ya da başka bir kaldırma girmiş olabilir. Önizlemeyi yenileyin.",
     "engel_KALDIRILMAMIS": "Bu kalem kaldırılmamış; geri alınacak bir şey yok.",
     "engel_AYNA_KAPANDI": "Kaldırmayla stoğa dönen mal bu arada satılmış ya da harcanmış. Geri almak stoğu eksiye düşürürdü; önce o çıkışın düzeltilmesi gerekir."
+  },
+  "KanalListeleme": {
+    "baslik": "Kanal Listeleme Durumu",
+    "aciklama": "Ürünlerinizin pazaryerlerinde satışa AÇIK olup olmadığı. En önemlisi ilk kutu: bizde stok var ama kanalda kapalı duran mallar satılamıyor. Durum kanaldan OKUNUR; bu ekran kanala hiçbir şey yazmaz.",
+    "durumSuzgeci": "Listeleme durumu",
+    "suzgecKapaliDuran": "Stok var, kanalda kapalı",
+    "suzgecAcik": "Satışa açık",
+    "suzgecStoksuz": "Stoksuz",
+    "suzgecPasif": "Pasif",
+    "suzgecOlculmemis": "Hiç ölçülmemiş",
+    "kutuKapaliDuran": "Stok var, kanalda kapalı",
+    "kutuKapaliDuranAciklama": "son satış fiyatı × stok",
+    "kutuAcik": "Satışa açık",
+    "kutuStoksuz": "Stoksuz",
+    "kutuPasif": "Pasif",
+    "kutuOlculmemis": "Ölçülmemiş",
+    "kutuOlculmemisAciklama": "hüküm yok — temiz DEĞİL",
+    "ac": "aç",
+    "olcumHic": "Bu küme kanalla hiç karşılaştırılmadı.",
+    "olcumBugun": "Kanalla son karşılaştırma: bugün.",
+    "olcumYas": "Kanalla son karşılaştırma {gun} gün önce — rakamlar o kadar eski.",
+    "tazelemeKomutu": "Tazeleme elle koşuyor; otomatik zamanlama henüz yok.",
+    "listeBasligi": "Listelemeler",
+    "listeToplami": "{sayi} kayıt gösteriliyor ({toplam} kaydın içinden)",
+    "bosSonuc": "Bu süzgeçle eşleşen kayıt yok.",
+    "kanalKodu": "Kanal kodu",
+    "bizdekiStok": "Bizdeki stok",
+    "kanalAdedi": "Kanaldaki adet",
+    "durum": "Durum",
+    "olculmedi": "ölçülmedi",
+    "rozetKapaliDuran": "satılamıyor",
+    "kutuKapaliDuranEksik": "son satış fiyatı × stok — {sayi} ürünün fiyatı bilinmiyor, bu toplamda YOK"
   }
 }

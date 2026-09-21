@@ -42,6 +42,7 @@ import {
   Store,
   Truck,
   Users,
+  PackageSearch,
   Tags,
   Warehouse,
   Wallet,
@@ -124,6 +125,7 @@ const MENU_IKONLARI: Record<string, typeof Package> = {
 
   urunKarti: ScanBarcode,
   kanalSkulari: Tags,
+  kanalListeleme: PackageSearch,
   kanalHesaplari: Store,
   envanterDegeri: Coins,
 

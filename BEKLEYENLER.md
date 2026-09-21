@@ -13,6 +13,84 @@
 
 ---
 
+## 🔶 K224 — KANAL LİSTELEME SAĞLIĞI EKRANI · 21.09.2026 · [KOŞTU — HALİL TESTİ BEKLİYOR]
+
+`/kanal-listeleme` — **salt okuma**, kanala hiçbir şey yazmaz.
+
+⛔ **NİYE DOĞDU:** K194-HB (HB'ye stok/fiyat gönderimi) açılacaktı; SIT ortamı
+**401** döndü ve çekirdek soru (`stock-uploads` fiyat göndermeden kabul ediyor
+mu) yalnız SIT'te ölçülebiliyor. Kullanıcı kararı: yazma beklesin, **okuma
+ekranı şimdi yapılsın** — zaten yazmanın GİRDİSİ, neyin güncellenebileceği
+bilinmeden gönderim yapılamaz.
+
+⭐ **EKRANIN TEK SORUSU PARA SORUSU** — ölçüldü 21.09.2026, canlı:
+
+    stok var, kanalda KAPALI     27 listing   ₺120.535,46
+      ↳ fiyatı bilinmeyen          7          (toplamda YOK, ekranda yazar)
+    satışa açık                 398
+    stoksuz                    1662
+    pasif                       123
+    ölçülmemiş                   52          (hüküm YOK — "temiz" değil)
+
+En büyüğü: `OYU-LG-598P-01` · 12 adet · Trendyol · durum **YOK** (hiç
+listelenmemiş) · ₺38.040. Sayı = liste sözleşmesi ölçüldü: 27 = 27 ✓.
+
+⚠ **AŞILAN RAKAM — SESSİZCE DEĞİŞTİRİLMEDİ.** İlk ölçüm **₺132.296,46** dedi
+(6 fiyatsız); geçerli olan **₺120.535,46** (7 fiyatsız). Fark **₺11.761**, ve
+sebebi bir kusurdu: "son satış fiyatı" sorgusu İPTAL EDİLMİŞ ve KALDIRILMIŞ
+kalemleri de sayıyordu. `iptal:bekci` ve `kalem-gecerli:dogrula` yakaladı —
+ikisi de push kapısında kırmızı yandı. Olmamış bir satışın fiyatı, fiyat
+değildir. _(`axcali1664` · ₺10.685 böyle düştü.)_
+
+⛔ **VE ASIL BULGU VERİNİN BAYATLIĞIYDI.** Listeleme durumu 07.09'dan beri
+deftere yazılıyordu, **hiçbir ekran göstermiyordu** ve senkronu ÇAĞIRAN da
+yoktu:
+
+    Hepsiburada   son ölçüm 07.09  (14 gün bayat)
+    Trendyol      son ölçüm 31.08  (21 gün bayat)
+    N11           HİÇ ölçülmemiş
+
+Kaydedilen ≠ görünen. İki senkron elle koşuldu (HB 106 satır, TY 1083 satır);
+veri artık taze. **Ölçümün YAŞI ekranda yazar** ve 2 günü geçerse sarı yanar —
+şemanın kendi şartıydı, tutulmuyordu.
+
+**BEKÇİ:** `kanal-listeleme:dogrula` — 27 ölçüt, hepsi DEĞER testi (kaynak
+taramaz, gövdeyi çağırır). 10 mutasyon, 10'u da kırmızı.
+
+⛔ **VE PUSH KAPISI DÖRT BEKÇİYLE DURDURDU — DÖRDÜ DE HAKLIYDI:**
+`iptal:bekci` + `kalem-gecerli:dogrula` (iptal/kaldırılmış kalem süzgeci
+yoktu — rakamı ₺11.761 şişiriyordu) · `panel:dogrula` (ham Tailwind rengi
+kullanmışım, palet jetonu var) · `el-kitabi:dogrula` (menüye ekran eklenip
+kitaba yazılmamıştı). El kitabı bölümü `null` ile geçiştirilmedi, YAZILDI.
+
+⭐ **BİR EŞDEĞER MUTASYON GERÇEK BİR EKSİĞİ GÖSTERDİ:** `if (fiyat !== null)
+topla` yerine `topla(stok × (fiyat ?? 0))` yazan mutasyon YEŞİL kalıyordu ve
+bu DOĞRUYDU (`stok × 0` eklemek ile eklememek aynı). Ama `?? 0` biçimi
+"ölçtüm, sıfır çıktı" gibi okunur. Fiyatı bilinmeyen satırlar AYRICA sayılıp
+ekrana yazıldı — **doğru bir sayı, kapsamı görünmezse yanlış bir hüküm
+üretir.** Mutasyon artık eşdeğer değil ve ısırıyor.
+
+### AÇIK — HALİL TESTİ
+- [ ] `/kanal-listeleme` gerçek cihazda AÇILIYOR mu (bekçi yeşili ekranın
+      çizildiğini kanıtlamaz)
+- [ ] İlk kutudaki **27 / ₺120.535,46** — "aç"a basınca gelen liste **27
+      satır** mı
+- [ ] `OYU-LG-598P-01` gerçekten Trendyol'da listelenmemiş mi (kanal panelinden)
+- [ ] Telefonda kartlar okunuyor mu, kod kopyalama çalışıyor mu
+
+### AÇIK — SONRAKİ ADIMLAR
+1. ⛔ **SENKRON ZAMANLANMIŞ DEĞİL.** Bugün elle koşuldu; yarın yine bayatlar.
+   Ekran bunu söylüyor ama söylemek çözmek değil.
+2. **N11 listeleme senkronu YOK** — 51 kanal SKU'su hiç ölçülmemiş.
+3. **K194-HB SIT 401'de bekliyor** — kullanıcı HB'den SIT erişimini
+   yeniletecek. Ölçülenler orada duruyor (`shippingProfileName` 2202/2202
+   dolu, kargo firması alanı yalnız 253'ünde — kargo eşleştirme kuralından
+   kaçılabilir).
+4. **Kanal fiyatı defterde YOK.** Tutar SON SATIŞ fiyatından türetiliyor ve
+   ekranda öyle yazıyor. Şema merdiveni inildi; sütun açmak gerekmedi.
+
+---
+
 ## 🔶 K222/K223 — TRENDYOL HAKEDİŞ TURU · 20-21.09.2026 · [KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Bir günde üç ayrı kusur ölçüldü ve düzeltildi. **Üçü de canlıda; hiçbiri

@@ -36,6 +36,7 @@ export const BOLUMLER = [
   { kimlik: "yerlestirme", ad: "Yerleştir — ürünü rafa koy" },
   { kimlik: "paketleme", ad: "Yönlendirmeli paketleme" },
   { kimlik: "kanalSku", ad: "Kanal SKU — ne işe yarar" },
+  { kimlik: "kanalListeleme", ad: "Kanal listeleme durumu — ürünüm satışta mı" },
   { kimlik: "komisyon", ad: "Komisyon oranı ve tarife" },
   { kimlik: "alim", ad: "Alım ve mal kabul" },
   { kimlik: "satis", ad: "Satış" },
@@ -118,6 +119,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   paketle: "paketleme",
   envanterDegeri: "envanter",
   kanalSkulari: "kanalSku",
+  kanalListeleme: "kanalListeleme",
   giderler: "gider",
   rapor: "rapor",
   urunAnalizi: "urunAnalizi",
@@ -850,6 +852,51 @@ ayın kârı her hafta oynardı.</p></div>
 komisyon oranı boş kaldığını</strong> <strong>Kanal SKU</strong> ekranındaki
 süzgeçlerden görürsün. Oranı boş bir eşleme satış kaydını engellemez ama o
 satışın <strong>kârı hesaplanamaz</strong> — panelde uyarı olarak çıkar.</p></div>
+</section>
+
+<section id="kanalListeleme">
+${baslik("kanalListeleme")}
+<p>Bir ürünün <strong>rafınızda durması</strong> ile <strong>pazaryerinde
+satışta olması</strong> ayrı şeylerdir. Bu ekran ikisini yan yana koyar ve tek
+bir soruyu cevaplar: <strong>hangi malım satılamıyor?</strong></p>
+
+<h3>İlk kutu en önemlisi</h3>
+<p><strong>"Stok var, kanalda kapalı"</strong> — elinizde mal var ama
+pazaryeri o ürünü satışa kapatmış. O mal rafta duruyor, para bağlı ve
+<strong>kimse satın alamıyor.</strong> Kutunun üstüne basınca tam o ürünlerin
+listesi açılır; kutudaki sayı ile listedeki satır sayısı aynıdır.</p>
+
+<div class="ek-not dikkat"><div class="etiket">Yanındaki para neyin parası</div>
+<p>Kutudaki tutar <strong>son sattığınız fiyat × elinizdeki adet</strong>tir —
+pazaryerinin bugünkü etiket fiyatı değil, çünkü sistem onu saklamıyor. Hiç
+satılmamış bir üründe fiyat yoktur; o satır <strong>sayılır ama tutara
+girmez</strong> ve kutu bunu kendisi yazar. Yani rakam bir <strong>alt
+sınırdır</strong>, gerçek kayıp daha büyük olabilir.</p></div>
+
+<h3>Öteki kutular</h3>
+<ul class="liste">
+<li><strong>Satışa açık</strong> — pazaryeri satıyor, sorun yok.</li>
+<li><strong>Stoksuz</strong> — pazaryeri "stok yok" diyor <em>ve</em> sizde de
+yok. Normal hâl.</li>
+<li><strong>Pasif</strong> — listing kapalı. Sebebi ürün kilidi olabilir
+(sahte ürün şüphesi, mükerrer kayıt, fiyat eşiği), ya da siz kendiniz
+kapatmış olabilirsiniz.</li>
+<li><strong>Ölçülmemiş</strong> — bu kayıtlar pazaryeriyle <em>hiç
+karşılaştırılmadı.</em> Bu <strong>"sorun yok" demek değildir</strong>;
+"bakmadık" demektir ve ikisi karıştırılmaz.</li>
+</ul>
+
+<div class="ek-not dikkat"><div class="etiket">Rakamların yaşına bakın</div>
+<p>Ekranın en üstünde <strong>son karşılaştırmanın ne zaman yapıldığı</strong>
+yazar. İki günü geçerse satır sarı yanar. Bayat bir rakam taze sanılırsa
+yanlış karar verdirir — bu yüzden yaş her zaman görünür.</p>
+<p>Tazeleme bugün <strong>elle</strong> koşuyor; otomatik zamanlama henüz
+yok.</p></div>
+
+<h3>Bu ekran pazaryerine bir şey yazar mı?</h3>
+<p><strong>Hayır.</strong> Sadece okur. Listeleme durumu pazaryerinin
+cevabıdır; sistem onu değiştirmez, yalnız size gösterir. Bir ürünü yeniden
+satışa açmak için pazaryerinin kendi panelini kullanırsınız.</p>
 </section>
 
 <section id="komisyon">
