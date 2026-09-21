@@ -57,7 +57,7 @@ export default async function TarifeAynasiSayfasi({
       pencereBaslangic: true,
       pencereBitis: true,
       channelAccount: {
-        select: { name: true, channel: { select: { name: true } } },
+        select: { name: true, channel: { select: { name: true, code: true } } },
       },
       kalemler: {
         select: {
@@ -123,7 +123,7 @@ export default async function TarifeAynasiSayfasi({
 
       <Ayna
         satirlar={satirlar}
-        kanalAdi={tarife.channelAccount?.channel.name ?? ""}
+        kanalKodu={tarife.channelAccount?.channel.code ?? ""}
       />
     </div>
   );

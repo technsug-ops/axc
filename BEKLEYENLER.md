@@ -55,18 +55,55 @@ için var olduğu yanılgının ta kendisi. Boş bırakılırsa hesaplanmıyor.
 ⚠ **ÜST UCU AÇIK DİLİMİN FİYATI SON SATIŞTAN** geliyor ve ekranda öyle
 etiketleniyor — `ChannelSku` fiyat tutmuyor (ölçüldü), uydurma baz yazılmadı.
 
+─── ② HALİL TESTİ RAKAMI ÖLÇÜLÜRKEN **SESSİZ BİR KUSUR** ÇIKTI
+
+Teste yazacağım beklenen rakamları ölçtüm ve Braun'da NET **hiçbir dilimde**
+hesaplanmıyordu. Tanı:
+
+    girdiEksikMi: true   ·   eksikSebebi: FIYAT
+
+Sebep: ayna NET'i `kanalFiyatlari: { [kanal ADI]: fiyat }` ile istiyordu; motor
+ise fiyatı `SIMULASYON_KANALLARI`nin **KODUYLA** arıyor (`elleFiyat(k.kod, …)`).
+
+    TRENDYOL    / Trendyol
+    HEPSIBURADA / Hepsiburada     ← kod ≠ ad, eşleşme HİÇ tutmadı
+    N11         / N11             ← kod = ad, orada TESADÜFEN çalışıyordu
+
+⛔ **KUSUR KENDİNİ EN AZ GÖRÜNÜR KILAN KANALDA SAKLIYORDU** — ve sessizdi:
+hata vermiyor, NET yalnızca boş çıkıyordu. _(Anayasa: "benzer ad aynı kimlik
+değildir" · "kimlik varken dizeyle aranmaz" — K13b dersinin bu depoda kaçıncı
+tekrarı olduğu ayrıca düşünülmeli.)_
+
+Düzeltildikten sonra ölçülen (Braun · HB · kargo ₺110 · maliyet ₺1.024):
+
+    1.801,01 ve üstü      %18     fiyat —          NET —   (ürün hiç satılmamış)
+    1.711,01 – 1.801,00   %8,8    1.801,00      359,83  ◆
+    1.621,01 – 1.711,00   %7,2    1.711,00      321,48
+    1.621,00 ve altı      %6      1.621,00      273,76
+
+⚠ **VE BU TUR BİR DİSİPLİN HATASI DA GÖSTERDİ:** düzeltmeyi **push turu
+koşarken** yaptım; tur kaynağı yarım hâlde okudu ve `tarife:dogrula` kırmızı
+yandı. Push durdu — ki doğrusu buydu, çünkü o commit kusurlu hâli taşıyordu.
+**Tur koşarken kaynağa dokunulmaz.**
+
 ### BEKÇİ + MUTASYON
 
-    tarife:dogrula   187 → 193 ölçüt
-    teklif-tanima-mutasyon:kontrol   23/23 → 26/26
+    tarife:dogrula   187 → 196 ölçüt
+    teklif-tanima-mutasyon:kontrol   23/23 → 28/28
 
 ⛔ **"TEK KAPI" SÖZÜ ARTIK ÖLÇÜLÜYOR:** durum ekranına yükleyici geri koyan
 mutasyon kırmızı yanıyor. Söz bir kez yarım uygulandı; ikinci kez olmasın diye
 beyan değil **bekçi** kondu.
 
+⛔ **VE KİMLİK/AD TUZAĞI DA ÖLÇÜLÜYOR:** kanalı yeniden ADLA arayan iki
+mutasyon (fiyat anahtarı ve sonuç eşleşmesi) kırmızı yanıyor. Bu kusur hata
+vermediği için yalnız mutasyonla yakalanabilirdi.
+
 ### AÇIK
-- [ ] **Halil testi** — `Tarife pencereleri` → bir satırda **"Tarife aynası"**;
-      HB tarifesinde Braun IRT-3030'u aç, kargo **110** yaz, dilimlerde NET gör.
+- [ ] **Halil testi** — rakamları yukarıda ölçülmüş hâliyle raporda.
+- [ ] **Braun hiç satılmamış** → üst dilimin fiyatı yok, NET de yok. Bu DOĞRU
+      davranış (uydurma baz yazılmıyor) ama satılmamış ürünlerde tepe dilim
+      hep boş kalacak. Kanal liste fiyatı tutulsaydı dolardı — ayrı kalem.
 - [ ] Ayna listesi sayfalanmıyor — HB'de 43 ürün bugün sorun değil; ürün sayısı
       büyürse sayfalama gerekir _(anayasa: "satır sayısı veriyle birlikte
       BÜYÜYEN şey")_.

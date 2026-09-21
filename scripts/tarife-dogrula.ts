@@ -1452,6 +1452,30 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
    * KARGO SORULUYOR - sifir varsayilsaydi her dilim oldugundan karli
    * gorunurdu; bu ekranin engellemek icin var oldugu yanilginin ta kendisi.
    */
+  /*
+   * KANAL KIMLIKLE - AD DEGIL. CANLI OLCUM 21.09.2026: ayna NET'i
+   * `kanalFiyatlari: { [ad]: fiyat }` ile istiyordu; motor ise fiyati
+   * `SIMULASYON_KANALLARI`nin KODUYLA ariyor (`elleFiyat(k.kod, ...)`).
+   * Hepsiburada'da kod "HEPSIBURADA", ad "Hepsiburada" -> eslesme HIC
+   * tutmadi ve NET sessizce bos cikti; hata da vermedi.
+   *
+   * KUSUR KENDINI EN AZ GORUNUR KILAN KANALDA SAKLIYORDU: N11'de kod da ad
+   * da "N11" oldugu icin orada TESADUFEN calisiyordu.
+   */
+  const eylem = yorumsuzOku("src/app/ayarlar/tarife/[id]/eylemler.ts");
+  kontrol(
+    "ayna kanal KODU kullaniyor (kanalKodu)",
+    /kanalFiyatlari: { \[girdi\.kanalKodu\]: fiyat }/.test(eylem),
+  );
+  kontrol(
+    "  ...ve sonuc da KODLA bulunuyor (k.kod)",
+    /k.kod === girdi.kanalKodu/.test(eylem),
+  );
+  kontrol(
+    "  ...ADLA eslestirme KALMADI",
+    !/k.ad === girdi.kanal/.test(eylem) && !/girdi.kanalAdi/.test(eylem),
+  );
+
   kontrol(
     "kargo bos birakilinca hesaplatilmiyor",
     /disabled={kargo.trim\(\) === ""/.test(ayna),

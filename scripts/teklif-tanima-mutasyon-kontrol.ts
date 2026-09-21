@@ -294,6 +294,24 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "kargo bos gecince NaN ya da 0 ile hesaplanir; her dilim oldugundan KARLI gorunur - ekranin engellemek icin var oldugu yanilgi",
   },
+  {
+    ad: "AYNA KANALI YENIDEN ADLA ARIYOR - sessiz NET kaybi",
+    yon: "KALDIRAN",
+    dosya: "src/app/ayarlar/tarife/[id]/eylemler.ts",
+    bul: "        kanalFiyatlari: { [girdi.kanalKodu]: fiyat },",
+    koy: "        kanalFiyatlari: { HepsiburadaAdi: fiyat },",
+    bozdugu:
+      "motor fiyati KODLA ariyor; ad gonderilince Hepsiburada'da eslesme tutmaz ve NET SESSIZCE bos cikar - hata da vermez. N11'de kod=ad oldugu icin orada tesadufen calisir, yani kusur en az gorunur kanalda saklanir",
+  },
+  {
+    ad: "AYNA SONUCU ADLA BULUYOR",
+    yon: "KALDIRAN",
+    dosya: "src/app/ayarlar/tarife/[id]/eylemler.ts",
+    bul: "    const kanal = sonuc.find((k) => k.kod === girdi.kanalKodu);",
+    koy: "    const kanal = sonuc.find((k) => k.ad === girdi.kanalKodu);",
+    bozdugu:
+      "ayni tuzagin ikinci yarisi: sonuc kanal ADIYLA aranirsa Hepsiburada bulunamaz ve NET bos doner",
+  },
 ];
 
 function bekciyiKostur(m: Mutasyon): { kod: number; ciktiVar: boolean } {

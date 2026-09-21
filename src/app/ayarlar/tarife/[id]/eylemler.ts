@@ -60,7 +60,17 @@ export type DilimNetSonucu =
 
 export async function dilimNetleri(girdi: {
   kod: string;
-  kanalAdi: string;
+  /**
+   * ⛔ KANAL **KODU**, ADI DEĞİL (ölçüldü 21.09.2026 — kendi kodumda aynı
+   * tuzak). Motor kanal fiyatını `SIMULASYON_KANALLARI`nin **kod**uyla arıyor
+   * (`elleFiyat(k.kod, ...)`). Ad gönderilirse Hepsiburada'da eşleşme HİÇ
+   * tutmuyor ve NET sessizce boş çıkıyor — hata da vermiyor.
+   *
+   * ⚠ N11'DE TESADÜFEN ÇALIŞIYORDU: orada kod da ad da `"N11"`. Yani kusur,
+   * kendini en az görünür kılan kanalda saklanıyordu.
+   * _(Anayasa: "benzer ad aynı kimlik değildir".)_
+   */
+  kanalKodu: string;
   kargoUcreti: number;
   dilimler: DilimGirdisi[];
 }): Promise<DilimNetSonucu> {
@@ -108,12 +118,13 @@ export async function dilimNetleri(girdi: {
         alisFiyati: maliyet,
         kdvOrani: zemin.kdvOrani,
         kargoUcreti: girdi.kargoUcreti,
-        kanalFiyatlari: { [girdi.kanalAdi]: fiyat },
+        kanalFiyatlari: { [girdi.kanalKodu]: fiyat },
       },
       bugun,
       zemin.zeminler,
     );
-    const kanal = sonuc.find((k) => k.ad === girdi.kanalAdi);
+    /** ⚠ Sonuç da KOD ile bulunur; ad eşleşmesi aynı tuzağın ikinci yarısı. */
+    const kanal = sonuc.find((k) => k.kod === girdi.kanalKodu);
 
     return {
       sira: d.sira,

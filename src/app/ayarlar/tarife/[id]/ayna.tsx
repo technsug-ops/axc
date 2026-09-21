@@ -44,10 +44,11 @@ export type AynaSatiri = {
 
 export function Ayna({
   satirlar,
-  kanalAdi,
+  kanalKodu,
 }: {
   satirlar: AynaSatiri[];
-  kanalAdi: string;
+  /** Kanal KODU — motor fiyatı kodla arıyor, adla değil. */
+  kanalKodu: string;
 }) {
   const t = useTranslations("TarifeAynasi");
   const bicim = useBicim();
@@ -65,7 +66,7 @@ export function Ayna({
       setSonuc(
         await dilimNetleri({
           kod: satir.kod,
-          kanalAdi,
+          kanalKodu,
           kargoUcreti: ucret,
           dilimler: satir.dilimler.map((d) => ({
             sira: d.sira,
