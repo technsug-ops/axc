@@ -38,6 +38,8 @@ export type VaryantGirdisi = {
   companySku: string;
   barcode: string;
   locationId: string;
+  /** Pasif varyant ARAMADA ÇIKMAZ — kayıt durur, bulunmaz. */
+  aktif: boolean;
   secenekler: { ad: string; deger: string }[];
 };
 
@@ -61,6 +63,7 @@ function bosVaryant(secenekliMi: boolean): VaryantGirdisi {
     sku: "",
     companySku: "",
     barcode: "",
+    aktif: true,
     locationId: "",
     secenekler: secenekliMi ? [{ ad: "", deger: "" }] : [],
   };
@@ -509,6 +512,36 @@ export function UrunFormu({
                     placeholder={t("barkodIpucu")}
                     kameraBasligi={t("barkodKamera")}
                   />
+                </div>
+                {/*
+                  ⛔ AKTİFLİK KUTUSU — 21.09.2026'da eklendi. `isActive` alanı
+                  aylardır vardı ve onu DEĞİŞTİREN hiçbir düğme yoktu; liste
+                  "pasif" rozetini çiziyor, o durumu kimse üretemiyordu. Üç
+                  ikiz kayıt betikle pasife alınmıştı ve geri alma yolu
+                  kullanıcının elinde değildi.
+                  _(Anayasa: "kapatılamayan madde kullanıcıyı yıkıcı işleme
+                  iter" — burada geri alma yolu HİÇ yoktu.)_
+                */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor={`aktif-${sira}`}
+                    className="flex min-h-11 items-center gap-2"
+                  >
+                    <input
+                      id={`aktif-${sira}`}
+                      type="checkbox"
+                      className="size-5"
+                      checked={varyant.aktif}
+                      onChange={(e) =>
+                        varyantGuncelle(sira, { aktif: e.target.checked })
+                      }
+                    />
+                    {t("aktifEtiketi")}
+                  </Label>
+                  {/* Sessiz değil: pasifin NE DEMEK olduğu yazılı (İlke #5). */}
+                  <p className="text-muted-foreground text-sm">
+                    {varyant.aktif ? t("aktifAciklama") : t("pasifAciklama")}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={`konum-${sira}`}>{t("rafKonumu")}</Label>

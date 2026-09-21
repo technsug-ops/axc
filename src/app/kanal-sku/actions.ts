@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { kodBaskaVaryantaAitMi } from "@/lib/varyant-kod-cozumu";
 
 /**
  * ============================================================================
@@ -125,6 +126,31 @@ export async function kanalSkuEkle(
         arama: cakisan.variant.sku,
         urun: cakisan.variant.product.name,
         kanalKodu: cakisan.channelSku,
+      },
+    };
+  }
+
+  /**
+   * ⛔ VE KOD BAŞKA BİR VARYANTIN KİMLİĞİ OLABİLİR (21.09.2026).
+   * Üstteki `cakisan` sorgusu yalnız ÖTEKİ KANAL KODLARINA bakıyor. Musluğun
+   * öteki yarısı buydu: `HBCV00000R0H0K` bu varyanta kanal kodu olarak
+   * bağlanabiliyordu, oysa aynı kod BAŞKA bir varyantın `sku`su olarak zaten
+   * duruyordu. İki kapı da "temiz" diyor, arama iki kayıt buluyordu.
+   *
+   * ⚠ HESAPTAN BAĞIMSIZ BAKILIR: üstteki sorgu `channelAccountId` ile
+   * sınırlı ve olması gereken de bu (aynı kod iki kanalda meşrudur). Ama
+   * KİMLİK alanı kanaldan bağımsızdır; bu kontrol hesaba göre daralmaz.
+   */
+  const kimlikSahibi = await kodBaskaVaryantaAitMi(kanalKodu, { variantId });
+  if (kimlikSahibi) {
+    return {
+      hatalar: [t("kodBaskaninKimligi", { kod: kanalKodu, urun: kimlikSahibi.ad })],
+      cakisma: {
+        tur: "kod",
+        hesapId: channelAccountId,
+        arama: kimlikSahibi.sku,
+        urun: kimlikSahibi.ad,
+        kanalKodu,
       },
     };
   }

@@ -8,6 +8,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { kodBaskaVaryantaAitMi } from "@/lib/varyant-kod-cozumu";
 import { benzerleriBul } from "@/lib/benzerlik";
 import { degisenKodlar, urunHareketliMi } from "@/lib/urun-hareket";
 
@@ -72,6 +73,17 @@ function urunSemasiKur(t: Ceviri) {
     companySku: z.string().trim().min(1, t("firmaSkuZorunlu")).max(191),
     barcode: z.string().trim().max(191).optional(),
     locationId: z.string().optional(),
+    /**
+     * ⛔ AKTİFLİK BURADAN YAZILIR — VE BU ALANIN YAZICISI YOKTU (21.09.2026).
+     * `ProductVariant.isActive` şemada vardı, `/urunler` "pasif" rozetini
+     * ÇİZİYORDU, ama o durumu üreten hiçbir düğme yoktu. Yani ekran, sistemin
+     * üretemediği bir durumu gösteriyordu.
+     * _(Anayasa: "şemadaki alan da bir iddiadır — yazıcısı yoksa vaat boştur".)_
+     *
+     * ⚠ VARSAYILAN `true`: yeni varyant aktif doğar. `false` varsayılsaydı
+     * yeni açılan her ürün aramada görünmez olurdu.
+     */
+    aktif: z.boolean().default(true),
     secenekler: z.array(secenekSemasi).default([]),
   });
 
@@ -229,6 +241,28 @@ async function benzersizlikHatalari(
     }
   }
 
+  /**
+   * ⛔ 3) VE DÖRDÜNCÜ ROL: BU KOD BAŞKASININ KANAL KODU MU (21.09.2026).
+   * Yukarıdaki sorgu kimlik alanlarını yalnız ÖTEKİ kimlik alanlarına karşı
+   * sınıyor. Kanal SKU'ya BAKMIYORDU — ve musluğun bir yarısı tam buydu:
+   * `HBCV00000R0H0K` bir varyantın `sku`su olarak açılabiliyordu, oysa aynı
+   * kod başka bir varyantın Hepsiburada kodu olarak zaten kayıtlıydı.
+   * Arama ikisini de görüyor, iki kayıt buluyor ve sessizce birini seçiyordu.
+   */
+  const tumKodlar = [...new Set([...skular, ...axcaliKodlari, ...barkodlar])];
+  for (const kod of tumKodlar) {
+    if (!kod) continue;
+    const sahip = await kodBaskaVaryantaAitMi(kod, { urunId: haricUrunId });
+    if (!sahip) continue;
+    hatalar.push(t("kodBaskaninKanalKodu", { deger: kod, urun: sahip.ad }));
+    cakismalar.push({
+      alan: "sku",
+      deger: kod,
+      urunId: sahip.urunId,
+      urunAdi: sahip.ad,
+    });
+  }
+
   return { hatalar: [...new Set(hatalar)], cakismalar };
 }
 
@@ -245,6 +279,7 @@ function varyantVerisi(v: UrunVerisi["varyantlar"][number], sira: number) {
     name: v.ad || null,
     isDefault: sira === 0,
     locationId: v.locationId || null,
+    isActive: v.aktif,
   };
 }
 

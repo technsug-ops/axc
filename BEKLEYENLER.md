@@ -146,19 +146,55 @@ ekranın `PASİF DAHİL:` **beyanı** kayboldu ve bu kez onlar suçlandı —
       rozetiyle görünmeli (kaybolmamalı — geçmişi duruyor).
 - [ ] **Halil testi ③** — `/okut`ta `887961643367` okutun: artık **tek** ürün
       açılmalı (Fisher-Price, stok 1).
-- [ ] **PASİFE ALMA DÜĞMESİ YOK — GERİ ALMA BUGÜN BETİKLE.** `isActive` alanı
-      var, `/urunler` rozeti ÇİZİYOR, ama o durumu üreten hiçbir düğme yok
-      (ölçüldü). Geri alma yolu: `npm run canli:carpisma-onar -- --geri`.
-      Ekrandan yapılabilmesi ayrı bir kalem — _kapatılamayan madde kullanıcıyı
-      yıkıcı işleme iter_ kuralının borcu.
-- [ ] **Fiyat denemesi çakışmada SUSUYOR ama SEBEBİNİ SÖYLEMİYOR.**
-      `urun-zemini` çok eşleşmede `null` dönüyor ve çağıran onu "ürün
-      bulunamadı" diye çiziyor. Yanlış ürünle zemin kurmaktan iyi, ama
-      İlke #5'e göre eksik.
-- [ ] **İKİZLER NASIL DOĞDU — ÖLÇÜLMEDİ.** Üçü de bir içe aktarmadan geliyor
-      (`dosya-maliyet-*` notlu hareketler). Hangi akışın pazaryeri kodunu
-      KİMLİK alanına yazdığı bulunmadan **dördüncüsü doğabilir**; bugünkü
-      bekçi çarpışmayı ekranda SÖYLER ama doğmasını engellemez.
+─── ④ **MUSLUK KAPANDI** — üç kalem de bitti (21.09.2026)
+
+⭐ **KÖK BULUNDU VE BEKLEDİĞİM YERDE DEĞİLDİ.** İkizlerin bir içe aktarmadan
+doğduğunu sanıyordum. Ölçüm başka şey söyledi: Philips ikizi **ÖNCE** doğmuş
+(03.09, `URUN_TANIM_TOPLU`), gerçek kayıt **SONRA** (17.09). Yani çarpışmayı
+üreten şey ürün tanımlama değil, **sonradan eklenen kanal eşleştirmesiydi.**
+
+**GERÇEK SEBEP TEK CÜMLE: YAZMA KAPISI, OKUMA KAPISINDAN DARDI.**
+
+| kapı | neye bakıyordu | neye BAKMIYORDU |
+|---|---|---|
+| ürün formu | kimlik alanları ↔ öteki kimlik alanları | **Kanal SKU'lara** |
+| kanal eşleştirme | kanal kodu ↔ öteki kanal kodları | **kimlik alanlarına** |
+| arama (`kodKosulu`) | **dört rolün hepsi** | — |
+
+İki kapı da "temiz" diyor, sonra arama iki kayıt buluyor ve sessizce birini
+seçiyordu. _(Anayasa: "yazımın kapısı ile okumanın kapısı AYNI ölçüde bakar;
+iki yerde iki farklı ölçüt olursa biri ötekinin yazdığını göremez.")_
+
+**Çare:** her iki kapı da ortak gövdeye bağlandı (`kodBaskaVaryantaAitMi`).
+⚠ Ve yazma kapısı arama kapısından **DAHA GENİŞ** bakıyor (`pasifDahil`):
+pasife alınmış bir ikizin kodunu ikinci kez kullanmak, temizlenen çarpışmayı
+geri getirirdi — kapı kendi temizlediğini yeniden üretemez.
+
+**② FİYAT DENEMESİ ARTIK SEBEBİ SÖYLÜYOR.** `urunZemini` çok eşleşmede `null`
+döndürüyordu ve çağıran onu _"ürün bulunamadı"_ diye çiziyordu — yani **yanlış
+sebebi** söylüyordu ve operatörü var olan ürünü yeniden tanımlamaya iterdi.
+Sonuç ayrıldı: `BULUNDU` · `YOK` · `COK`.
+
+**③ PASİFE ALMA KUTUSU EKLENDİ** — ürün formunda, varyant başına.
+⛔ `isActive` aylardır şemadaydı, `/urunler` "pasif" rozetini ÇİZİYORDU ve o
+durumu üreten **hiçbir düğme yoktu.** Zincirin beş halkası da ayrı ölçülüyor:
+sorar · okur · doğrular · yazar · **geri verir** (sonuncusu en sinsisi —
+okunmayan alan kaydette sessizce sıfırlanır ve hiçbir hata çıkmaz).
+
+**ÖLÇÜLDÜ:** `kod-cozumu:dogrula` **30 ölçüt** · mutasyon **15/15** ·
+`simulasyon-mutasyon` 8/8 · `simulasyon` 183 · `depo` 210 · `arama` 124
+
+⚠ **VE BU TURDA ÖLÇÜT BİR KEZ DAHA ESKİDİ — BU KEZ DAVRANIŞ İYİLEŞTİĞİ İÇİN.**
+Bir saat önce yazdığım _"çok eşleşmede zemin KURULMUYOR"_ ölçütü `null` dönüşünü
+sabitliyordu; ayrı sonuca çevirince kırmızı yandı. Ölçüt ve ona çapalı mutasyon
+birlikte taşındı. _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez".)_
+
+### AÇIK
+- [ ] **Toplu içe aktarmalar yazma kapısından GEÇMİYOR.** Kapı bugün ürün
+      formunda ve kanal eşleştirme ekranında; `lib/ice-aktarma/yaz.ts` ve
+      `lib/komisyon/yukle.ts` toplu yollarında ÖLÇÜLMEDİ. Toplu yolda
+      durdurmak doğru olmayabilir (tek satır yüzünden 400 satır düşerdi) —
+      doğru şekil muhtemelen **saymak ve raporlamak**. Ayrı kalem.
 
 ---
 

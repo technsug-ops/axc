@@ -108,12 +108,23 @@ export type UrunZemini = {
  * bu tuzağa düşülmüştü: `varyantAra` kuralı doğruydu ama Kanal SKU'yu hiç
  * sormuyordu. Ortak koşulu çağırmak, o kümenin bir daha ayrışmamasını sağlar.
  */
-export async function urunZemini(
-  kod: string,
-  an: Date,
-): Promise<UrunZemini | null> {
+/**
+ * ZEMİN SONUCU — "yok" ile "birden fazla" AYRI.
+ *
+ * ⛔ ÖNCE İKİSİ DE `null`DI ve çağıranlar ikisini birden "ürün bulunamadı"
+ * diye çiziyordu. Yanlış ürünle zemin kurmaktan iyiydi ama operatöre
+ * **yanlış sebebi** söylüyordu: var olan bir ürünü yokmuş gibi gösterip
+ * onu yeniden tanımlamaya iter — yani ikiz sayısını artıran bir mesaj.
+ * _(İlke #5: bir şey olmadıysa NEDEN olmadığı ekranda yazar.)_
+ */
+export type ZeminSonucu =
+  | { durum: "BULUNDU"; zemin: UrunZemini }
+  | { durum: "YOK" }
+  | { durum: "COK"; adet: number };
+
+export async function urunZemini(kod: string, an: Date): Promise<ZeminSonucu> {
   const temiz = kod.trim();
-  if (temiz === "") return null;
+  if (temiz === "") return { durum: "YOK" };
 
   /**
    * ⛔ SESSİZ SEÇİM YOK (21.09.2026). Bir kod iki aktif varyanta uyuyorsa
@@ -125,7 +136,9 @@ export async function urunZemini(
    * ekranda HENÜZ görünmüyor — açık kalem olarak panoda duruyor.
    */
   const cozum = await kodlaVaryantCoz(temiz);
-  if (cozum.durum !== "TEK") return null;
+  if (cozum.durum === "YOK") return { durum: "YOK" };
+  if (cozum.durum === "COK")
+    return { durum: "COK", adet: cozum.adaylar.length };
 
   const varyant = await prisma.productVariant.findUnique({
     where: { id: cozum.id },
@@ -144,7 +157,7 @@ export async function urunZemini(
       },
     },
   });
-  if (varyant === null) return null;
+  if (varyant === null) return { durum: "YOK" };
 
   /**
    * ── ORTALAMA ALIŞ — LEDGER'DAN ─────────────────────────────────────────
@@ -185,7 +198,11 @@ export async function urunZemini(
    * gerçekte alınmamış bir parayı ortalamaya katmak olurdu.
    */
   const kalemler = await prisma.saleItem.findMany({
-    where: { variantId: varyant.id, sale: { iptalTarihi: null }, ...KALEM_GECERLI },
+    where: {
+      variantId: varyant.id,
+      sale: { iptalTarihi: null },
+      ...KALEM_GECERLI,
+    },
     select: { quantity: true, unitPriceAmount: true },
   });
 
@@ -203,7 +220,11 @@ export async function urunZemini(
    * yalanlarlardı.
    */
   const sonSatis = await prisma.saleItem.findFirst({
-    where: { variantId: varyant.id, sale: { iptalTarihi: null }, ...KALEM_GECERLI },
+    where: {
+      variantId: varyant.id,
+      sale: { iptalTarihi: null },
+      ...KALEM_GECERLI,
+    },
     orderBy: { sale: { soldAt: "desc" } },
     select: { unitPriceAmount: true, sale: { select: { soldAt: true } } },
   });
@@ -224,30 +245,33 @@ export async function urunZemini(
   });
 
   return {
-    variantId: varyant.id,
-    ad: varyant.name
-      ? `${varyant.product.name} — ${varyant.name}`
-      : varyant.product.name,
-    sku: varyant.sku,
-    barkod: varyant.barcode,
-    firmaSku: varyant.companySku,
-    /** ⚠ SIFIR ADETTE null — sıfıra bölmek yerine "bilinmiyor" doğru cevap. */
-    ortalamaAlis: alimAdet > 0 ? alimTutar / alimAdet : null,
-    alimAdedi: alimAdet,
-    /** ⚠ Dizi `occurredAt asc` sıralı; sonuncusu EN YENİ giriştir. */
-    sonAlisFiyati:
-      girisler.length === 0
-        ? null
-        : Number(girisler[girisler.length - 1].unitCostAmount),
-    sonAlisTarihi:
-      girisler.length === 0 ? null : girisler[girisler.length - 1].occurredAt,
-    ortalamaSatis: satisAdet > 0 ? satisTutar / satisAdet : null,
-    satisAdedi: satisAdet,
-    sonSatisFiyati:
-      sonSatis === null ? null : Number(sonSatis.unitPriceAmount),
-    sonSatisTarihi: sonSatis?.sale.soldAt ?? null,
-    kdvOrani: kdv.oran ?? VARSAYILAN_KDV_ORANI,
-    eldekiAdet: stok._sum.quantityDelta ?? 0,
-    zeminler: await simulasyonZeminleri(varyant.id, an),
+    durum: "BULUNDU",
+    zemin: {
+      variantId: varyant.id,
+      ad: varyant.name
+        ? `${varyant.product.name} — ${varyant.name}`
+        : varyant.product.name,
+      sku: varyant.sku,
+      barkod: varyant.barcode,
+      firmaSku: varyant.companySku,
+      /** ⚠ SIFIR ADETTE null — sıfıra bölmek yerine "bilinmiyor" doğru cevap. */
+      ortalamaAlis: alimAdet > 0 ? alimTutar / alimAdet : null,
+      alimAdedi: alimAdet,
+      /** ⚠ Dizi `occurredAt asc` sıralı; sonuncusu EN YENİ giriştir. */
+      sonAlisFiyati:
+        girisler.length === 0
+          ? null
+          : Number(girisler[girisler.length - 1].unitCostAmount),
+      sonAlisTarihi:
+        girisler.length === 0 ? null : girisler[girisler.length - 1].occurredAt,
+      ortalamaSatis: satisAdet > 0 ? satisTutar / satisAdet : null,
+      satisAdedi: satisAdet,
+      sonSatisFiyati:
+        sonSatis === null ? null : Number(sonSatis.unitPriceAmount),
+      sonSatisTarihi: sonSatis?.sale.soldAt ?? null,
+      kdvOrani: kdv.oran ?? VARSAYILAN_KDV_ORANI,
+      eldekiAdet: stok._sum.quantityDelta ?? 0,
+      zeminler: await simulasyonZeminleri(varyant.id, an),
+    },
   };
 }

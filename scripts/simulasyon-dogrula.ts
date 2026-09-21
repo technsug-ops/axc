@@ -527,9 +527,21 @@ console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
    * bir fiyat denemesi KÂRLI görünüp zarar ettirirdi; susmak yanlış cevaptan
    * iyidir. Koşul ve sonuç aynı desende.
    */
+  /**
+   * ⚠ ÖLÇÜT AYNI GÜN BİR KEZ DAHA TAŞINDI — ve bu kez DAVRANIŞ İYİLEŞTİ.
+   * İlk hâl çok eşleşmede `null` dönüyordu; çağıran onu "ürün bulunamadı"
+   * diye çiziyordu, yani operatöre YANLIŞ SEBEBİ söylüyordu. Artık ayrı bir
+   * sonuç dönüyor ve ekran "N ürüne uyuyor" diyor.
+   */
   kontrol(
-    "  ...ve ÇOK EŞLEŞMEDE zemin KURULMUYOR",
-    /cozum\.durum !== "TEK"[\s\S]{0,40}?return null/.test(zemin),
+    "  ...ve ÇOK EŞLEŞME AYRI sonuç olarak dönüyor (null değil)",
+    /durum === "COK"[\s\S]{0,90}?return \{ durum: "COK", adet:/.test(zemin),
+  );
+  kontrol(
+    "  ...ve çağıran onu 'bulunamadı' diye ÇİZMİYOR",
+    /zemin\.durum === "COK"[\s\S]{0,160}?t\("cokEslesme"/.test(
+      readFileSync("src/app/simulasyon/actions.ts", "utf8"),
+    ),
   );
   /**
    * ⚠ ORTALAMA ALIŞ AÇIK PARTİDEN DEĞİL, LEDGER'DAN. Stoğu tükenmiş üründe

@@ -67,6 +67,8 @@ export default async function UrunDuzenleSayfasi({
       companySku: v.companySku,
       barcode: v.barcode ?? "",
       locationId: v.locationId ?? "",
+      /** ⚠ "GERİ VERİR" HALKASI: okunmayan alan, kaydet'te sessizce sıfırlanır. */
+      aktif: v.isActive,
       secenekler: v.options.map((o) => ({ ad: o.name, deger: o.value })),
     })),
   };

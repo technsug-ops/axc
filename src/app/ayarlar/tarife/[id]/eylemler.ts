@@ -82,8 +82,16 @@ export async function dilimNetleri(girdi: {
    * farklı kurarsa aynı ürün için farklı tarife penceresi seçilebilirdi.
    */
   const bugun = gunDegeri(isTakvimGunu(new Date()));
-  const zemin = await urunZemini(girdi.kod, bugun);
-  if (!zemin) return { durum: "URUN_YOK" };
+  const zeminSonucu = await urunZemini(girdi.kod, bugun);
+  /**
+   * ⚠ ÇOK EŞLEŞME DE "ÜRÜN YOK" DEĞİL — ama bu ekranda kod TARİFEDEN
+   * geliyor, kullanıcının yazdığı bir şey değil. Çakışma burada bir VERİ
+   * sorunudur; ekran ikisini de "hesaplanamadı" diye çizer ve ayrımı
+   * ürün kartı yapar. Sebep yine de kaybolmuyor: `/urunler` ve `/okut`
+   * çakışmayı adıyla söylüyor.
+   */
+  if (zeminSonucu.durum !== "BULUNDU") return { durum: "URUN_YOK" };
+  const zemin = zeminSonucu.zemin;
   if (zemin.sonAlisFiyati === null) {
     return { durum: "MALIYET_YOK", urunAdi: zemin.ad };
   }

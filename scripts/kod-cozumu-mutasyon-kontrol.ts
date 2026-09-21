@@ -29,6 +29,11 @@ const SATIS = "src/app/satislar/satis-formu.tsx";
 const OKUYUCU = "src/app/okut/okuyucu.tsx";
 const YERLESTIR = "src/app/yerlestir/actions.ts";
 const SAYIM = "src/app/okut/sayim-actions.ts";
+const URUN = "src/app/urunler/actions.ts";
+const KANALSKU = "src/app/kanal-sku/actions.ts";
+const FORM = "src/app/urunler/urun-formu.tsx";
+const DUZENLE = "src/app/urunler/[id]/duzenle/page.tsx";
+const LISTE = "src/app/urunler/page.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -110,6 +115,68 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "",
     bozdugu:
       "EN PAHALI HALI: sayim son sozdur, yanlis varyanta yazilan adet dogrudan deftere girer ve sayilmamis bir raf sayilmis gorunur",
+  },
+  /*
+   * MUSLUK MUTASYONLARI - uc ikizi doguran yolun KENDISI. Bunlar kirmizi
+   * yanmazsa dorduncu ikiz sessizce dogar; temizlik is tekrar eder.
+   */
+  {
+    ad: "URUN FORMU KANAL KODUNA YINE BAKMIYOR",
+    yon: "KALDIRAN",
+    dosya: URUN,
+    bul: "    const sahip = await kodBaskaVaryantaAitMi(kod, { urunId: haricUrunId });",
+    koy: "    const sahip = null;",
+    bozdugu:
+      "bir varyantin sku'su, baska bir urunun pazaryeri kodu olarak acilabilir - uc ikizin dogus yolunun YARISI",
+  },
+  {
+    ad: "KANAL ESLESTIRME KIMLIGE YINE BAKMIYOR",
+    yon: "KALDIRAN",
+    dosya: KANALSKU,
+    bul: "  const kimlikSahibi = await kodBaskaVaryantaAitMi(kanalKodu, { variantId });",
+    koy: "  const kimlikSahibi = null;",
+    bozdugu:
+      "bir kanal kodu, baska bir varyantin kimlik kodu olsa bile baglanabilir - muslugun OTEKI yarisi",
+  },
+  {
+    ad: "YAZMA KAPISI PASIFLERI ATLIYOR - temizlenen ikiz geri gelir",
+    yon: "KALDIRAN",
+    dosya: GOVDE,
+    bul: "  const cozum = await kodlaVaryantCoz(kod, { pasifDahil: true });",
+    koy: "  const cozum = await kodlaVaryantCoz(kod);",
+    bozdugu:
+      "pasife alinan ikizin kodu ikinci kez kullanilabilir; 21.09'da kapatilan carpisma yeniden acilir",
+  },
+  /*
+   * PASIFE ALMA ZINCIRI - bes halka. "GERI VERIR" en kolay unutulani:
+   * okunmayan alan kaydette sessizce sifirlanir ve hicbir hata cikmaz.
+   */
+  {
+    ad: "YAZMA HALKASI KOPTU - kutu ciziliyor ama veritabanina gitmiyor",
+    yon: "KALDIRAN",
+    dosya: URUN,
+    bul: "    isActive: v.aktif,",
+    koy: "",
+    bozdugu:
+      "kullanici kutuyu isaretler, kaydeder, hicbir sey olmaz - sessiz basarisizlik",
+  },
+  {
+    ad: "GERI VERIR HALKASI KOPTU - duzenleme formu aktifligi okumuyor",
+    yon: "KALDIRAN",
+    dosya: DUZENLE,
+    bul: "      aktif: v.isActive,",
+    koy: "",
+    bozdugu:
+      "EN SINSISI: pasif bir kayit acilip kaydedilince SESSIZCE aktiflesir; kimse fark etmez",
+  },
+  {
+    ad: "LISTE VARYANT AKTIFLIGINI GOSTERMIYOR",
+    yon: "KALDIRAN",
+    dosya: LISTE,
+    bul: "                              urun.variants.every((v) => !v.isActive) ? (",
+    koy: "                              false ? (",
+    bozdugu:
+      "pasife alma sessiz bir islem olur: kayit aramadan duser, ekranda hicbir sey degismez",
   },
   {
     ad: "OKUMA EKRANI CAKISMADA ESLESTIRME TEKLIF EDIYOR",

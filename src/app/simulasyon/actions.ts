@@ -44,8 +44,19 @@ export async function urunAra(kod: string): Promise<AramaSonucu> {
    * "Bulunamadı" ile "yanlış kod girdin" farklı şeyler değil; kullanıcı
    * hangi kodların denendiğini bilmeli.
    */
-  if (zemin === null) {
+  if (zemin.durum === "YOK") {
     return { tur: "BULUNAMADI", mesaj: t("bulunamadi", { kod: kod.trim() }) };
   }
-  return { tur: "BULUNDU", zemin };
+  /**
+   * ⛔ "YOK" İLE "BİRDEN FAZLA" AYRI SÖYLENİR. İkisi tek mesaja indirilseydi
+   * operatör var olan bir ürünü YOKMUŞ gibi görür ve yeniden tanımlamaya
+   * kalkardı — ikiz sayısını artıran bir mesaj. (İlke #5)
+   */
+  if (zemin.durum === "COK") {
+    return {
+      tur: "BULUNAMADI",
+      mesaj: t("cokEslesme", { kod: kod.trim(), adet: zemin.adet }),
+    };
+  }
+  return { tur: "BULUNDU", zemin: zemin.zemin };
 }

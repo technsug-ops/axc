@@ -47,7 +47,7 @@ const ADAY_SECIMI = {
   companySku: true,
   barcode: true,
   name: true,
-  product: { select: { name: true } },
+  product: { select: { id: true, name: true } },
 } as const;
 
 /**
@@ -58,6 +58,8 @@ export const ADAY_TAVANI = 5;
 
 export type KodAdayi = {
   id: string;
+  /** Sahibi olan ÜRÜN — düzenleme ekranı kendi ürününü hariç tutabilsin. */
+  urunId: string;
   sku: string;
   companySku: string;
   barcode: string | null;
@@ -101,6 +103,7 @@ export async function kodlaVaryantCoz(
 
   const adaylar: KodAdayi[] = satirlar.map((v) => ({
     id: v.id,
+    urunId: v.product.id,
     sku: v.sku,
     companySku: v.companySku,
     barcode: v.barcode,
@@ -110,4 +113,49 @@ export async function kodlaVaryantCoz(
   if (adaylar.length === 0) return { durum: "YOK" };
   if (adaylar.length === 1) return { durum: "TEK", id: adaylar[0]!.id, aday: adaylar[0]! };
   return { durum: "COK", adaylar, tavandaMi: adaylar.length === ADAY_TAVANI };
+}
+
+/**
+ * ============================================================================
+ *  YAZMA KAPISI — BU KOD BAŞKASININ MI (21.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ MUSLUĞUN KENDİSİ BURADAYDI. Üç ikiz kaydı temizledik ama DOĞDUKLARI yol
+ *  açık kalmıştı. Ölçüldü ve sebep tek cümle:
+ *
+ *      **YAZMA KAPISI, OKUMA KAPISINDAN DARDI.**
+ *
+ *  · Ürün formu bir varyantın `sku`/`firmaSku`/`barkod`unu yalnız ÖTEKİ
+ *    varyantların AYNI alanlarına karşı sınıyordu — Kanal SKU'lara DEĞİL.
+ *  · Kanal eşleştirme ekranı yeni kodu yalnız ÖTEKİ kanal kodlarına karşı
+ *    sınıyordu — varyantların kimlik alanlarına DEĞİL.
+ *
+ *  Arama (`kodKosulu`) ise **dört rolü birden** görüyor. Yani iki kapı da
+ *  "temiz" diyor, sonra arama iki kayıt buluyor ve sessizce birini seçiyordu.
+ *  _(Anayasa: "yazımın kapısı ile okumanın kapısı AYNI ölçüde bakar; iki
+ *  yerde iki farklı ölçüt olursa biri ötekinin yazdığını göremez.")_
+ *
+ *  ⚠ VE BU BİR ENGEL DEĞİL, BİR SORUDUR: kapı çakışmayı SÖYLER, kararı
+ *  operatöre bırakır. Sert yasak, meşru bir kaydı kilitleyebilirdi —
+ *  bu depoda `soldAt` sınırı defterin %48'ini kilitleyecekti.
+ * ============================================================================
+ */
+export async function kodBaskaVaryantaAitMi(
+  kod: string,
+  haric: { variantId?: string; urunId?: string } = {},
+): Promise<KodAdayi | null> {
+  /**
+   * ⚠ PASİF DAHİL — VE BU BİLEREK. Pasife alınmış bir ikizin kodunu ikinci
+   * kez kullanmak, temizlenen çarpışmayı geri getirir. Yazma kapısı arama
+   * kapısından DAHA GENİŞ bakar; tersi olsaydı kapı kendi temizlediği şeyi
+   * yeniden üretirdi.
+   */
+  const cozum = await kodlaVaryantCoz(kod, { pasifDahil: true });
+  if (cozum.durum === "YOK") return null;
+
+  const adaylar = cozum.durum === "TEK" ? [cozum.aday] : cozum.adaylar;
+  return (
+    adaylar.find(
+      (a) => a.id !== haric.variantId && a.urunId !== haric.urunId,
+    ) ?? null
+  );
 }

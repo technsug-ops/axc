@@ -274,6 +274,93 @@ console.log("\n3) ÇOK EŞLEŞME EKRANDA SÖYLENİYOR");
   kontrol("  ...ve çok-eşleşme dalı teklifin ÖNÜNDE", iCok >= 0 && iTeklif >= 0 && iCok < iTeklif);
 }
 
+/* ------------------------------------------------------------------- 4 -- */
+console.log("\n4) YAZMA KAPILARI — okuma kapısı kadar GENİŞ mi");
+{
+  /**
+   * ⛔ MUSLUK BURADAYDI. Üç ikiz temizlendi ama DOĞDUKLARI yol açıktı:
+   * ürün formu kimlik kodlarını yalnız ÖTEKİ kimlik kodlarına, kanal
+   * eşleştirme ekranı yeni kodu yalnız ÖTEKİ kanal kodlarına karşı
+   * sınıyordu. Arama ise DÖRT rolü birden görüyor — iki kapı "temiz"
+   * diyor, arama iki kayıt buluyordu.
+   * _(Anayasa: "yazımın kapısı ile okumanın kapısı AYNI ölçüde bakar".)_
+   */
+  const kapilar: [string, string][] = [
+    ["ürün formu", "src/app/urunler/actions.ts"],
+    ["kanal eşleştirme", "src/app/kanal-sku/actions.ts"],
+  ];
+  for (const [ad, ky] of kapilar) {
+    kontrol(
+      `${ad} ORTAK yazma kapısını çağırıyor`,
+      /await kodBaskaVaryantaAitMi\(/.test(yorumsuzOku(ky)),
+    );
+  }
+
+  /**
+   * ⛔ VE KAPI PASİF KAYITLARI DA GÖRMELİ. Pasife alınmış bir ikizin kodunu
+   * ikinci kez kullanmak, temizlenen çarpışmayı geri getirir. Yazma kapısı
+   * arama kapısından DAHA GENİŞ bakar; tersi olsaydı kapı kendi temizlediği
+   * şeyi yeniden üretirdi.
+   */
+  const gv = yorumsuzOku(GOVDE);
+  kontrol(
+    "yazma kapısı PASİF kayıtları da tarıyor",
+    /kodBaskaVaryantaAitMi[\s\S]{0,700}?kodlaVaryantCoz\(kod, \{ pasifDahil: true \}\)/.test(gv),
+  );
+  /**
+   * ⚠ VE KENDİNİ ÇAKIŞMA SAYMAZ: düzenleme sırasında bir kaydın kendi kodu
+   * "başkasının" sayılsaydı, var olan hiçbir ürün kaydedilemezdi.
+   */
+  kontrol(
+    "  ...ve kaydın KENDİSİ hariç tutuluyor",
+    /a\.id !== haric\.variantId && a\.urunId !== haric\.urunId/.test(gv),
+  );
+}
+
+/* ------------------------------------------------------------------- 5 -- */
+console.log("\n5) PASİFE ALMA — zincirin BEŞ halkası");
+{
+  /**
+   * ⛔ ALAN VARDI, YAZICISI YOKTU. `ProductVariant.isActive` aylardır şemada
+   * duruyor ve `/urunler` "pasif" rozetini ÇİZİYORDU — ama o durumu üreten
+   * hiçbir düğme yoktu. Üç ikiz betikle pasife alındı ve geri alma yolu
+   * kullanıcının elinde değildi.
+   * _(Anayasa: "şemadaki alan da bir iddiadır — yazıcısı yoksa vaat boştur";
+   * ve "kapatılamayan madde kullanıcıyı yıkıcı işleme iter".)_
+   *
+   * ⚠ BEŞ HALKA AYRI AYRI SORULUR. Bu deponun ölçülmüş dersi: form doğru
+   * çizilir, şema doğru yazar, ARADA bir satır eksiktir ve hiçbir hata
+   * çıkmaz. "GERİ VERİR" en kolay unutulanıdır — okunmayan alan, kaydet'te
+   * sessizce sıfırlanır.
+   */
+  const halkalar: [string, string, RegExp][] = [
+    ["① SORAR (form kutuyu çiziyor)", "src/app/urunler/urun-formu.tsx",
+      /type="checkbox"[\s\S]{0,220}?checked={varyant\.aktif}/],
+    ["② OKUR (kutu durumu güncelliyor)", "src/app/urunler/urun-formu.tsx",
+      /varyantGuncelle\(sira, \{ aktif: e\.target\.checked \}\)/],
+    ["③ DOĞRULAR (şemada alan var)", "src/app/urunler/actions.ts",
+      /aktif: z\.boolean\(\)\.default\(true\)/],
+    ["④ YAZAR (veritabanına gidiyor)", "src/app/urunler/actions.ts",
+      /isActive: v\.aktif/],
+    ["⑤ GERİ VERİR (düzenleme forma dolduruyor)",
+      "src/app/urunler/[id]/duzenle/page.tsx", /aktif: v\.isActive/],
+  ];
+  for (const [ad, y, desen] of halkalar) {
+    kontrol(ad, desen.test(yorumsuzOku(y)));
+  }
+
+  /**
+   * ⛔ VE LİSTE DURUMU GÖSTERİR. Rozet olmasaydı pasife alma sessiz bir
+   * işlem olurdu: kayıt aramadan düşer, ekranda hiçbir şey değişmez.
+   */
+  const liste = yorumsuzOku("src/app/urunler/page.tsx");
+  kontrol(
+    "liste VARYANT aktifliğini çekiyor ve rozeti çiziyor",
+    /isActive: true,[\s\S]{0,800}?channelSkus/.test(liste) &&
+      /every\(\(v\) => !v\.isActive\)[\s\S]{0,220}?tumVaryantlarPasif/.test(liste),
+  );
+}
+
 console.log("\n" + "=".repeat(70));
 if (kalan === 0) {
   console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

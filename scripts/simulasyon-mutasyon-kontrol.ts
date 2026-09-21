@@ -72,8 +72,9 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "COK ESLESMEDE ZEMIN YINE KURULUYOR",
     yon: "FAZLADAN",
     dosya: ZEMIN,
-    bul: '  if (cozum.durum !== "TEK") return null;',
-    koy: '  if (cozum.durum === "YOK") return null;',
+    /* TEK SATIRLIK CAPA — cok satirli dize kaynakta kacis bozar (olculdu). */
+    bul: '    return { durum: "COK", adet: cozum.adaylar.length };',
+    koy: '    return { durum: "YOK" };',
     bozdugu:
       "iki adaydan biri rastgele secilir; YANLIS urunun maliyetiyle fiyat denemesi kurulur ve deneme KARLI gorunup zarar ettirir",
   },
