@@ -22,11 +22,13 @@ on:
 jobs:
   cek:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    # ⚠ UC 300 sn'ye kadar kosabiliyor (ilk tetikte 60 sn YETMEDI);
+    #   adim ondan KISA olursa curl'u keser ve kosum yarim kalir.
+    timeout-minutes: 6
     steps:
       - name: Ucu cagir
         run: |
-          KOD=$(curl -s -o cevap.json -w "%{http_code}" --max-time 120 \
+          KOD=$(curl -s -o cevap.json -w "%{http_code}" --max-time 290 \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://axc-seven.vercel.app/api/cron/listeleme-cekim")
           echo "HTTP $KOD"

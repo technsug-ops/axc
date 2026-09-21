@@ -37,11 +37,26 @@ import { tyListelemeCekimKosGuvenli } from "../../../../../scripts/canli-kanal-l
 
 export const dynamic = "force-dynamic";
 /**
- * ⚠ 60 sn: TY tarafı iki ucu sayfa sayfa tarıyor (v2 onaylı + onaysız) ve
- * HB 2202 listingi 100'erli çekiyor. Ölçüldü 21.09.2026 — ikisi birlikte
- * ~40 sn. Varsayılana bel bağlanmadı.
+ * ⛔ 60 SANİYE YETMEDİ — VE "~40 sn" İDDİASI YANLIŞ ÖLÇÜLMÜŞTÜ.
+ *
+ * Burada şöyle yazıyordu: _"Ölçüldü 21.09.2026 — ikisi birlikte ~40 sn.
+ * Varsayılana bel bağlanmadı."_ O ölçüm **YEREL MAKİNEDE** yapılmıştı ve
+ * sunucuya aitmiş gibi yazılmıştı. İlk gerçek tetikte uç **504
+ * FUNCTION_INVOCATION_TIMEOUT** verdi.
+ * _(Anayasa: "bunu neyin üstünde ölçtün, ve o kaynağı sistemin kendi
+ * izinden mi doğruladın" — yerelde ölçüp sunucu için iddia kurmak,
+ * ölçmemekle aynı şeydir.)_
+ *
+ * ⚠ YEREL SÜRELER (gerçek, 21.09.2026): TY kuru koşum **8 sn**, HB **8 sn**.
+ * Sunucuda 60 sn'yi aşması sürenin AĞDAN geldiğini söylüyor: fra1'den
+ * Türkiye'deki pazaryeri uçlarına ve veritabanına her gidiş-dönüş yerelden
+ * pahalı, ve TY yazımı satır satır ~1100 satıra dokunuyor.
+ *
+ * ⭐ TAVAN YİNE TAHMİN DEĞİL: süre artık CEVAPTA dönüyor (`tyMs`/`hbMs`).
+ * İlk başarılı koşum gerçek rakamı verir ve bu sayı ona göre düzeltilir —
+ * bugün 300, çünkü ölçülen tek şey "60 yetmiyor".
  */
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function GET(istek: NextRequest) {
   const sir = process.env.CRON_SECRET?.trim() ?? "";
@@ -58,11 +73,16 @@ export async function GET(istek: NextRequest) {
    * ⛔ SIRALI KOŞUYOR, PARALEL DEĞİL: ikisi de `process.env.DATABASE_URL`
    * yazıyor ve aynı anda koşsalar biri ötekinin adresini ezerdi.
    */
+  const tyBasladi = Date.now();
   const ty = await tyListelemeCekimKosGuvenli({ yaz: true, dbAdresi });
+  const tyMs = Date.now() - tyBasladi;
+
+  const hbBasladi = Date.now();
   const hb = await hbListelemeCekimKos({ yaz: true, dbAdresi }).catch((e: unknown) => ({
     atlandi: "COKTU" as const,
     mesaj: (e instanceof Error ? (e.stack ?? e.message) : String(e)).replace(/\r?\n/g, " "),
   }));
+  const hbMs = Date.now() - hbBasladi;
 
   /**
    * ⚠ DÜŞEN KANAL SAYILIR VE DURUM KODUNA YANSIR. `200` dönseydi GitHub
@@ -70,5 +90,13 @@ export async function GET(istek: NextRequest) {
    * tetikleyicinin gördüğü tek şey durum kodudur.
    */
   const dusen = [ty, hb].filter((o) => "atlandi" in o).length;
-  return NextResponse.json({ ty, hb, dusen }, { status: dusen > 0 ? 500 : 200 });
+  /**
+   * ⚠ SÜRELER CEVAPTA — tavanı bir daha TAHMİN etmemek için. İlk gerçek
+   * tetikte 60 sn yetmedi ve elimizde hiçbir sayı yoktu; 504 zamanlama
+   * bilgisi vermiyor. Bundan sonra her koşum kendi maliyetini söylüyor.
+   */
+  return NextResponse.json(
+    { ty, tyMs, hb, hbMs, toplamMs: tyMs + hbMs, dusen },
+    { status: dusen > 0 ? 500 : 200 },
+  );
 }
