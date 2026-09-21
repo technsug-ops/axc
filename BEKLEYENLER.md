@@ -146,6 +146,17 @@ okumuyor. Seçilen sürümde açık **yok**, bağımlılığı **yok**.
 `cdn.sheetjs.com`a bağlanır. Adres düşerse **build KIRMIZI yanar** — sessiz
 değil, görünür bir arıza; yanlış rakam üretmez.
 
+─── ② PUSH KAPISI BİR ÇAKIŞMA YAKALADI (aynı teslim)
+
+`mutasyon-cakisma:dogrula` push'u durdurdu ve **haklıydı**: iki yeni harness de
+`src/lib/komisyon/yukle.ts`i mutasyona uğratıp `finally`de geri yazıyor.
+Paralel koşsalardı biri ötekinin **MUTANTINI** "asıl" sanıp geri yazardı —
+ve bozulma sessiz olurdu. İkisi `SIRALI_MUTASYON_GRUP`a beyan edildi
+(9 çakışan + 16 bağımsız). ⚠ Liste elle tutuluyor ama **her koşumda gerçek
+taramayla karşılaştırılıyor**; beyan edilmemiş bir çakışma kırmızı yanıyor.
+
+**Tur sonucu: 137/137 yeşil · push geçti.**
+
 ### AÇIK
 - [ ] **Halil testi** — canlı adreste, gerçek dosyalarla (liste raporda).
 - [ ] **N11'in KOMİSYON dökümü hangi biçimde iniyor — ÖLÇÜLMEDİ.** Elimizdeki
