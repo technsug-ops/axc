@@ -1017,9 +1017,24 @@ durdurur (anahtar uyuşmazlığı sessizce "YOK" yazmasın).
 
 - [ ] **İlk otomatik koşum (N11)** — `AuditLog action=N11_LISTELEME_YAZIM`:
       yazılan **51**, hata 0. `/kanal-listeleme`de N11 satırı görünmeli.
-- [ ] **62 listeleme defterde yok** — N11'de satışta ama `ChannelSku` kaydı
-      açılmamış. Açılış yolu: barkodla eşleştirme (110/113 dolu), **K231 yazma
-      kapısından geçerek** — çarpışan kod açılmaz, raporlanır.
+- [ ] **62 listeleme defterde yok — KİMLİĞİ ÖLÇÜLDÜ (22.09.2026), ONAY BEKLİYOR.**
+      Barkod + stockCode, dört rol, eşdeğerlerle:
+
+          TEK varyanta çözülüyor (bizde VAR, eşlenmemiş)   58
+          birden çok varyanta (çakışma)                     0
+          hiç çözülmüyor (katalogda YOK)                    4
+          62'nin N11'de şu an SATIŞTA olanı                22
+
+      Yani "N11'de bilmediğimiz ürünler" değil — **bizim ürünlerimiz N11'de
+      satışta, defter bilmiyor.** Somut risk: o 22'ye sipariş gelince içe
+      aktarma kodu tanımaz, satır düşer (tarife bağsızlarının kökü).
+      **Öneri:** 58 eşleştirmeyi betikle aç — `channelSku = stockCode`, her
+      biri K231 yazma kapısından; kuru koşum → onay → `--uygula`; geri alma
+      ölçütü yeniden hesaplanabilir (API'deki 58 kod ∩ N11 hesabı ∩ parti
+      damgası). Komisyon oranı ve `externalListingId` YAZILMAZ — ikisinin
+      kendi kaynağı var, ikinci kaynak sessiz çakışma üretirdi.
+      Katalogda olmayan 4'ü ayrı iş (Shark IZ380 · Hot Wheels · Arzum AR3081 ·
+      Shark PX250): ürün açmak gerekir, otomatik yapılmaz.
       Yazıldığında bu uca bir satır eklenir.
 
 ⚠ **İKİ BETİK AYNI İŞİ FARKLI BAYRAKLA YAPIYOR** (`--uygula` ve `--yaz`) —
