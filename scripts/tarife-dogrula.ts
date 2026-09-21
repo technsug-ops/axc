@@ -1524,6 +1524,58 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
 }
 
 console.log("");
+// ===========================================================================
+//  TARIFE ESLESME KAPSAMI — DORT ROL, BUTUN KANALLAR (21.09.2026)
+// ===========================================================================
+{
+  console.log("");
+  console.log("TARIFE ESLESME KAPSAMI - dort rol, butun kanallar");
+  const yaz = yorumsuzOku("src/lib/komisyon/tarife-yaz.ts");
+
+  /*
+   * OLCULDU 21.09.2026 (canli): N11 teklif dosyasinda bagsiz kalan 13 urunun
+   * kodlari HB kodlari (HBCV...), LEGO urun numaralari ve EAN'di - yani dosya
+   * "pazaryerinin kendi kodunu" TASIMIYOR. Dar kapsam, sistemde ZATEN VAR olan
+   * urunleri bagsiz birakiyordu: 17 bagsiz koddan 6'si genis olcutle bulundu.
+   */
+  kontrol(
+    "kimlik dizini UC rolu birden kapsiyor (barkod + sku + firmaSku)",
+    /barcode: true, sku: true, companySku: true/.test(yaz),
+  );
+  kontrol(
+    "  ...ve kanal kodlari HESABA GORE DARALTILMIYOR",
+    /channelSku\.findMany\({[\s\S]{0,160}?where: { isActive: true, variant: { isActive: true } }/.test(yaz),
+  );
+  /*
+   * ⛔ GENISLEYEN KAPSAM YENI BIR SESSIZ SECIM URETMEZ. Bir kod iki varyanta
+   * cozuluyorsa BAGLANMAZ: bagsiz bir kalem GORUNUR, yanlis baglanmis bir
+   * kalem GORUNMEZ.
+   */
+  /*
+   * ⛔ KOSUL VE SONUC AYNI DESENDE. Ilk yazimda ikisi AYRI araniyordu ve
+   * mutasyon KACTI: kosul `if (false)` yapildi, `cakisan.add(kod)` dosyada
+   * kaldi, olcut yesil yandi. Bu deponun en sik tekrarlayan korlugu.
+   */
+  kontrol(
+    "cakisan kod kumeden ATILIYOR (sessiz secim yok)",
+    /mevcut !== undefined && mevcut !== g\.variantId\) {[\s\S]{0,80}?cakisan\.add\(kod\)/.test(
+      yaz,
+    ) && /for \(const kod of cakisan\) harita\.delete\(kod\)/.test(yaz),
+  );
+  kontrol(
+    "  ...ve KANAL/KIMLIK dizinleri ARASINDAKI cakisma da eleniyor",
+    /kanalSahibi !== undefined && kanalSahibi !== variantId[\s\S]{0,120}?kimlikDizini\.delete\(kod\)/.test(yaz),
+  );
+  /*
+   * ESKI GEREKCE IPTAL EDILMEDI, KAPSANDI: hesap bazli kapsam 19.08.2026'da
+   * gercek bir sorunu cozmustu (3 bagsizin biri). Bu hesabin kodlari hala ONCE.
+   */
+  kontrol(
+    "bu hesabin kodlari listenin BASINDA (eski gerekce korundu)",
+    /filter\(\(k\) => k\.channelAccountId === channelAccountId\)[\s\S]{0,200}?filter\(\(k\) => k\.channelAccountId !== channelAccountId\)/.test(yaz),
+  );
+}
+
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
 else {

@@ -187,24 +187,113 @@ export async function tarifeDenetle(
   }
   void pencereDisi;
 
-  const varyantlar = await prisma.productVariant.findMany({
-    where: { barcode: { not: null } },
-    select: { id: true, barcode: true },
-  });
   /**
-   * O HESABIN KANAL SKU'LARI — birincil eşleşme anahtarı. Dosya
-   * pazaryerinin kendi kodunu taşıyor; katalog barkodumuz aynı olmak
-   * zorunda değil (ölçüldü 19.08.2026: 3 bağsızın biri bu yüzdendi).
+   * ============================================================================
+   *  EŞLEŞME KAPSAMI — DÖRT ROL, BÜTÜN KANALLAR (21.09.2026)
+   * ----------------------------------------------------------------------------
+   *  ⛔ ESKİ KAPSAM: `barcode` + YALNIZ BU HESABIN kanal kodları. Gerekçesi
+   *  koda yazılıydı — _"dosya pazaryerinin kendi kodunu taşıyor"_ — ve
+   *  ÖLÇÜM O GEREKÇEYİ ÇÜRÜTTÜ (canlı, 21.09.2026):
+   *
+   *      N11 teklif dosyasında bağsız kalan 13 ürünün kodları
+   *        HBCV00004U1QOR · HBCV00007ITCGF   -> HEPSİBURADA kodları
+   *        5702017424842                     -> EAN (LEGO)
+   *        40744 · 42221 · 43020             -> LEGO ürün numaraları
+   *
+   *  Yani dosya "pazaryerinin kendi kodunu" taşımıyor; satıcının o ürüne
+   *  hangi kodu girdiyse onu taşıyor. Dar kapsam, sistemde ZATEN VAR olan
+   *  ürünleri bağsız bırakıyordu — ölçüldü: 17 bağsız kodun **6'sı**
+   *  geniş ölçütle bulunuyor.
+   *  _(Anayasa: "kapsam genişlemesi, bağımlı listelerin de genişlemesidir"
+   *  — ve `varyantAra`nın Kanal SKU'yu hiç sormaması dersinin aynısı.)_
+   *
+   *  ⚠ VE ESKİ GEREKÇE SİLİNMİYOR: hesap bazlı kapsam 19.08.2026'da gerçek
+   *  bir sorunu çözmüştü (3 bağsızın biri). O çözüm geçerli; bu genişletme
+   *  onu KAPSIYOR, iptal etmiyor — bu hesabın kodları hâlâ birincil.
+   * ============================================================================
    */
-  const kanalKodlari = await prisma.channelSku.findMany({
-    where: { channelAccountId, isActive: true },
-    select: { channelSku: true, variantId: true },
+  const varyantlar = await prisma.productVariant.findMany({
+    where: { isActive: true },
+    select: { id: true, barcode: true, sku: true, companySku: true },
   });
+  const kanalKodlari = await prisma.channelSku.findMany({
+    where: { isActive: true, variant: { isActive: true } },
+    select: { channelSku: true, variantId: true, channelAccountId: true },
+  });
+
+  /**
+   * ⛔ ÇAKIŞAN KOD BAĞLANMAZ — YENİ BİR SESSİZ SEÇİM ÜRETİLMEZ.
+   * Kapsam genişledikçe bir kodun iki varyanta çözülme ihtimali artar.
+   * Eski hâlde tek hesaba bakıldığı için bu soru hiç doğmuyordu; şimdi
+   * doğuyor ve cevabı "son geleni al" OLAMAZ — bu deponun 21.09'da
+   * kapattığı arızanın ta kendisi (`findFirst` sessizce birini seçiyordu).
+   * Çakışan kod kümeden ATILIR ve kalem bağsız kalır: bağsız bir kalem
+   * görünür, yanlış bağlanmış bir kalem görünmez.
+   */
+  const cakisan = new Set<string>();
+  const tekil = (
+    girdiler: { kod: string | null; variantId: string }[],
+  ): Map<string, string> => {
+    const harita = new Map<string, string>();
+    for (const g of girdiler) {
+      const kod = (g.kod ?? "").trim();
+      if (kod === "") continue;
+      const mevcut = harita.get(kod);
+      if (mevcut !== undefined && mevcut !== g.variantId) {
+        cakisan.add(kod);
+        continue;
+      }
+      harita.set(kod, g.variantId);
+    }
+    for (const kod of cakisan) harita.delete(kod);
+    return harita;
+  };
+
+  /**
+   * ⚠ SIRA KORUNUYOR: bu hesabın kodları ÖNCE. `tarifePlaniKur` kanal
+   * dizinine barkod dizininden önce bakıyor; bu hesabın kodunu listenin
+   * başına koymak, aynı kodu taşıyan iki kayıttan doğru olanın kazanmasını
+   * sağlar (çakışma zaten yukarıda eleniyor, bu ikinci emniyet).
+   */
+  const kanalDizini = tekil([
+    ...kanalKodlari
+      .filter((k) => k.channelAccountId === channelAccountId)
+      .map((k) => ({ kod: k.channelSku, variantId: k.variantId })),
+    ...kanalKodlari
+      .filter((k) => k.channelAccountId !== channelAccountId)
+      .map((k) => ({ kod: k.channelSku, variantId: k.variantId })),
+  ]);
+
+  const kimlikDizini = tekil([
+    ...varyantlar.map((v) => ({ kod: v.barcode, variantId: v.id })),
+    ...varyantlar.map((v) => ({ kod: v.sku, variantId: v.id })),
+    ...varyantlar.map((v) => ({ kod: v.companySku, variantId: v.id })),
+  ]);
+
+  /**
+   * ⛔ İKİ DİZİN ARASINDAKİ ÇAKIŞMA DA SESSİZ ÇÖZÜLMEZ. Bir kod, A
+   * varyantının KANAL kodu ve B varyantının KİMLİK kodu olabilir —
+   * 21.09.2026'da canlıda tam bu vardı (`HBCV00000R0H0K`). `tarifePlaniKur`
+   * önce kanal dizinine bakıyor, yani çakışmayı kanal lehine SESSİZCE
+   * çözerdi. Bu, aynı gün kapatılan arızanın kılık değiştirmiş hâli olurdu.
+   *
+   * ⚠ BUGÜN BOŞ ÇIKIYOR (ölçüldü: 0 çakışma) ve bu bir tesadüf değil —
+   * K231 yazma kapısı bu kodların doğmasını engelliyor. Ama o kapı ELLE
+   * yollarda; toplu içe aktarma henüz geçmiyor (panoda açık kalem). Yani
+   * bu kontrol bugün boş, yarın dolabilir.
+   */
+  for (const [kod, variantId] of kimlikDizini) {
+    const kanalSahibi = kanalDizini.get(kod);
+    if (kanalSahibi !== undefined && kanalSahibi !== variantId) {
+      kanalDizini.delete(kod);
+      kimlikDizini.delete(kod);
+    }
+  }
 
   const plan = tarifePlaniKur(
     okuma,
-    varyantlar.map((v) => ({ id: v.id, barkod: v.barcode })),
-    kanalKodlari.map((k) => ({ kanalKodu: k.channelSku, variantId: k.variantId })),
+    [...kimlikDizini].map(([barkod, id]) => ({ id, barkod })),
+    [...kanalDizini].map(([kanalKodu, variantId]) => ({ kanalKodu, variantId })),
   );
 
   const mevcut = await prisma.komisyonTarifesi.findUnique({

@@ -544,11 +544,39 @@ _(Anayasa: "sıfır üç farklı şey olabilir" — burada "oran gelmiyor", kusu
 değil, o üründe teklif OLMAMASIYDI.)_
 
 ### AÇIK
-- [ ] **N11'de 46 teklif ürününün 13'ü kataloğa bağlanamadı** — o ürünlerin
-      N11 kodu bizde yok. Kapatma yolu panoda zaten duruyor: **N11 listeleme
-      senkronu** (51 kanal SKU'su hiç ölçülmemiş).
-- [ ] **Teslim 2: pazaryeri aynası ekranı** (kullanıcı kararı: ayna + **bizim
-      NET kârımız**). Panelin gösterdiği her dilimin yanında o fiyata satarsan
+─── ③ **BAĞSIZ ÜRÜNLERİN SEBEBİ ÖLÇÜLDÜ — VE PANODAKİ TEŞHİS YANLIŞTI**
+_(21.09.2026 · `npm run canli:tarife-bagi`)_
+
+Panoda şöyle yazıyordu: _"o ürünlerin N11 kodu bizde yok."_ **Ölçüm çürüttü.**
+Bağsız kodların bir kısmı sistemde **ZATEN VARDI** — başka kanalın kodu olarak:
+
+    HBCV00004U1QOR · HBCV00007ITCGF   -> HEPSİBURADA kodları
+    5702017424842                     -> EAN (LEGO)
+    40744 · 42221 · 43020             -> LEGO ürün numaraları
+
+Yani N11 dosyası "pazaryerinin kendi kodunu" taşımıyor; **satıcı o ürüne hangi
+kodu girdiyse onu** taşıyor. Yükleyici ise yalnız iki role bakıyordu: `barcode`
++ **o hesabın** kanal kodları. Kapsam dört role ve bütün kanallara genişletildi.
+
+**ÖLÇÜLDÜ:** 17 bağsız koddan **6'sı** bulunuyor · bunun **3'ü yürürlükteki
+N11 penceresinde** (bir sonraki yüklemede kendiliğinden düzelir).
+
+⚠ **GEÇMİŞ PENCERELERE DOKUNULMADI VE DOKUNULMAYACAK.** Ölçüm şunu gösterdi:
+`TYB03WJ27YHQ5LZU10` 09-08 penceresinde bağsız, 09-15'te bağlı — kanal SKU'su
+**09-10'da kurulmuş.** Yani eski pencere yükleme anının FOTOĞRAFI ve doğru.
+Bunu "kusur" diye okumak, doğru çalışan bir mekanizmayı bozmak olurdu.
+_(Anayasa: "geçmişi düzeltmek ile mekanizmayı kurmak ayrı kararlardır".)_
+
+⛔ **VE GENİŞLEYEN KAPSAM YENİ BİR SESSİZ SEÇİM ÜRETMİYOR:** bir kod iki
+varyanta çözülüyorsa **bağlanmaz** — bağsız kalem görünür, yanlış bağlanmış
+kalem görünmez. Bugün çakışma **0** ve bu tesadüf değil: K231'in yazma kapısı
+bu kodların doğmasını engelliyor.
+
+- [ ] **Kalan 11 kod gerçekten kataloğumuzda yok** — LEGO ürün numaraları
+      (`40744`, `42221`), N11'in 18 haneli iç kodları, `BRİ924` model kodu.
+      Kapatma yolu: **N11 listeleme senkronu** (aşağıda).
+- [x] ~~**Teslim 2: pazaryeri aynası ekranı**~~ — **K230'DA YAPILDI**
+      (`/ayarlar/tarife/[id]`). Kalem burada açık kalmıştı; kapatıldı 21.09. Panelin gösterdiği her dilimin yanında o fiyata satarsan
       NET-2 yazacak — pazaryerinin asla gösteremeyeceği rakam, çünkü maliyeti
       bilmiyor. Fiyat denemesi motoru yeniden yazılmayacak, çağrılacak.
 - [ ] **Trendyol teklif/indirimli dosyası ölçülmedi** — TY'nin kampanya
@@ -4048,7 +4076,7 @@ notu)._
 | # | İş | Ne gerekiyor |
 |---|---|---|
 | **H8** | **HB hizmet bedeli — soru değişti** | 🕓 **[BEKLİYOR] eylül ortası HB ekstresi.** Ölçüldü: hesabı kesilmiş 99 siparişin yalnız **14'ünde** ₺12,60 kesilmiş; motorumuz **%100'ünden** kesiyor. Koşul hiçbir dosyada görünmüyor. **Kural DEĞİŞTİRİLMEDİ** — sıfıra çekmek de en az mevcut hâli kadar dayanaksız. Kapanış: 13 HB satışımızın ekstresi düşünce satış satış kıyaslanır. |
-| **H10♻** | **RUTİN: her Salı/Cuma tarife dosyasını indir** | ♻ **SÜREKLİ — ERİŞİM AÇILDI 24.08.2026.** Tam dilimli ileri tarife arşivden **inmiyor**; o hafta indirilmezse bir daha elde edilemez. ✅ **SALI DOSYASI GELDİ VE YÜKLENDİ 25.08.2026** — ekrandan, terminalsiz. **Yüklü: 3 pencere, üçü de Trendyol.** ⚠ **BU HAFTAKİ DOSYA 7 GÜNLÜK** (Salı→Salı), öncekiler 4 günlüktü (Cuma→Salı) — dosyanın kendi kolonu da `Tarih aralığı (7 Gün)` diyor. Cuma dosyası yine de **beklenir**: gelmezse kapsam zaten var, gelirse yüklenir.<br><br>⛔ **VE ÖLÇÜM KALICI BİR DELİK BULDU — 72 SAAT.** Gerçek sınırlar (İstanbul, `canli:tarife-yukle` raporundan değil **veritabanından** okundu):<br>`14.08 08:00 → 18.08 07:59` 640 kalem<br>**⛔ 18 · 19 · 20 Ağustos — KAPSAYAN PENCERE YOK**<br>`21.08 08:00 → 25.08 07:59` 672 kalem<br>`25.08 08:00 → 01.09 07:59` 712 kalem<br>**18.08 Salı dosyası hiç indirilmemiş.** O üç günün satışlarında `Fiyat dene` dilim veremez ve komisyon denetimi hüküm kuramaz. Arşivden inmediği için **kapatılamaz** — rutinin niye rutin olduğunun somut kanıtı. ⚠ **HEPSİBURADA TARİFESİ HÂLÂ SIFIR** (HB Çarşamba yayımlıyor); bugün HB ve N11 `Fiyat dene`de _"dilim tarifesi yok — tek oranla hesaplandı"_ diyor, yani üç kanal **eşit zeminde kıyaslanmıyor**. _(Gerekçe ve ölçüm: ARSIV → K47.)_ |
+| **H10♻** | **RUTİN: her Salı/Cuma tarife dosyasını indir** | ♻ **SÜREKLİ — ERİŞİM AÇILDI 24.08.2026.** Tam dilimli ileri tarife arşivden **inmiyor**; o hafta indirilmezse bir daha elde edilemez. ✅ **SALI DOSYASI GELDİ VE YÜKLENDİ 25.08.2026** — ekrandan, terminalsiz. **Yüklü: 3 pencere, üçü de Trendyol.** ⚠ **BU HAFTAKİ DOSYA 7 GÜNLÜK** (Salı→Salı), öncekiler 4 günlüktü (Cuma→Salı) — dosyanın kendi kolonu da `Tarih aralığı (7 Gün)` diyor. Cuma dosyası yine de **beklenir**: gelmezse kapsam zaten var, gelirse yüklenir.<br><br>⛔ **VE ÖLÇÜM KALICI BİR DELİK BULDU — 72 SAAT.** Gerçek sınırlar (İstanbul, `canli:tarife-yukle` raporundan değil **veritabanından** okundu):<br>`14.08 08:00 → 18.08 07:59` 640 kalem<br>**⛔ 18 · 19 · 20 Ağustos — KAPSAYAN PENCERE YOK**<br>`21.08 08:00 → 25.08 07:59` 672 kalem<br>`25.08 08:00 → 01.09 07:59` 712 kalem<br>**18.08 Salı dosyası hiç indirilmemiş.** O üç günün satışlarında `Fiyat dene` dilim veremez ve komisyon denetimi hüküm kuramaz. Arşivden inmediği için **kapatılamaz** — rutinin niye rutin olduğunun somut kanıtı. ⛔ **BU SATIR 21.09.2026'DA ÇÜRÜDÜ — ESKİ HÂLİ AŞAĞIDA, GEREKÇESİYLE.** Ölçüldü (`npm run canli:tarife-bagi` ② bölümü): **N11 09-21→10-04 · 142 kalem** · **HB 09-16→09-22 · 152 kalem** · **TY 09-15→09-22 · 704 kalem** — **üçü de bugünü kapsıyor.** K226/K227 ile HB ve N11 teklif dosyaları tarife olarak yüklenebiliyor. ⚠ **VE BU BAYATLIK ZARARSIZ DEĞİLDİ:** satırı bugün okuyan biri fiyat denemesine güvenmemeye karar verebilirdi — yani pano yanlış bilgi veriyordu. _Aşılan hâli:_ ~~"HEPSİBURADA TARİFESİ HÂLÂ SIFIR; üç kanal eşit zeminde kıyaslanmıyor"~~ — doğruydu, 21.09'a kadar. ⏰ **VE YARIN İKİ DOSYA DÜŞÜYOR:** TY ve HB pencereleri **22.09'da bitiyor** (TY Salı, HB Çarşamba yayımlar). İnmezse o hafta bir daha elde edilemez — bu satırın altındaki 72 saatlik delik onun kalıcı kanıtı. |
 | **H18** | **Melontik ölçütü** | Çapraz teyit için **gerçek** Melontik çıktısı. _Sunumdaki rakamlar demoydu; doğrulanmamış ölçüte göre motor bozulmak üzereydi._ |
 | **H25** | **İade süreci — iki ölçüm kaldı** | ✅ **10 GÜNLÜK SAAT KAPANDI:** Aras takibi `(KG)` "yola çıktı 21.08 12:35" ile TY ekranının sayacı **25 saniye** farkla buluştu; rozet `BEYAN → OLCULDU`. 🔻 **Kalan ① KÜÇÜLDÜ 25.08.2026 — ÜÇ SORUNUN İKİSİ CEVAPLANDI `(K)`:** birim **2 İŞ GÜNÜ** (takvim günü değil) · çıpa **KARAR ANI** — _"analizden dönen ürün seçeneklerden biri seçildiğinde"_, kargo kodu DEĞİL. ⚠ İki aday çıpa arasındaki mesafe de ölçeğiyle geldi: seçimden sonra kayıt **~1 saat** "İhtilaflı"da bekleyip aksiyona geçiyor — yani fark **saat**, gün değil (gece yarısını geçerse 1 iş günü eder). ✅ **ÜÇÜNCÜ SORU DA CEVAPLANDI 25.08.2026 `(K)` — ve cevap şıkların hiçbiri değil:** _"iade otomatik olarak MÜŞTERİNİN AÇTIĞI SEÇENEKTEN kapanır; kusurlu üründen açılmışsa ve biz değişim deyip göndermediysek **kusurlu ürün gönderme cezasıyla** kapanır, müşteriye parası yatırılır."_ ⚠ **Sonucu bizim eylemimiz değil MÜŞTERİNİN SEBEBİ belirliyor** — "ceza kesilir" demek eksik olurdu. ⚠ **Beş sayacın EN PAHALISI:** 2 ve 3 dolunca mal yok/para gitti; beşinci dolunca **mal BİZDE kalır, para yine gider, üstüne ceza biner.** ⛔ **Cezanın KENDİSİ ölçülmedi** (hangi sebep hangi ceza, tutar ne) — sistem mekanizmayı yazar, rakamı YAZMAZ. ⚠ **ROZET `BEYAN`, `OLCULDU` DEĞİL:** tek kaynak var; §12.2'deki `10 gün` üç bağımsız kaynakla terfi etmişti. ⚠ **KOD TARAFINDA İKİ EKSİK ÖLÇÜLDÜ:** `SAYAC_KURALLARI`nda **birim alanı yok** (öteki dördü takvim günü, hesap `gunEkle`) ve `isGunuEkle` **resmî tatil saymıyor, yalnız hafta sonu**. Şema DEĞİŞMİYOR — çıpa `GECIS_ANI`, sütun `islemSonTarihi`, ikisi de mevcut. ⚠ **KAPSAM AÇIK:** beyan **analiz yolunu** anlatıyor, sayaç `ITIRAZ_KABUL`e gelen **üç yolda** işliyor (`ITIRAZ_ACILDI` · `ITIRAZ_INCELEMEDE` · `ANALIZ`). Gereken (hem (c) hem terfi için): "Reddedilen" sekmesindeki bir iadenin detayı (karar tarihi + kargo kodu + kalan süre aynı ekranda). ⏳ **Kalan ②:** N11 — tecrübe yok, süresiz bekler. |
 | **H15** | **N11 ritmi** | Komisyonlar hangi sıklıkla değişiyor? Cevapsızken envanter "ölçülemedi" diyor. |

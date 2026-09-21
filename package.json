@@ -107,6 +107,7 @@
     "adet:dogrula": "tsx scripts/adet-dogrula.ts",
     "net2-kirpma:dogrula": "tsx scripts/net2-kirpma-dogrula.ts",
     "canli:carpisma-onar": "tsx scripts/canli-kod-carpismasi-onar.ts",
+    "canli:tarife-bagi": "tsx scripts/canli-tarife-bagi-olcum.ts",
     "canli:kod-carpismasi": "tsx scripts/canli-kod-carpismasi-olcum.ts",
     "canli:adet-geliri": "tsx scripts/canli-adet-geliri.ts",
     "canli:damga-olcum": "tsx scripts/canli-damga-ayrismasi-olcum.ts",

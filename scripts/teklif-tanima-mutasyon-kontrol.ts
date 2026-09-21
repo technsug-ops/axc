@@ -27,6 +27,7 @@ const BEKCI = "scripts/tarife-dogrula.ts";
 const BEKCI_BASLIGI = "KOMİSYON TARİFESİ — DOĞRULAMA";
 
 const OKUYUCU = "src/lib/komisyon/tarife-okuyucu.ts";
+const TARIFE_YAZ = "src/lib/komisyon/tarife-yaz.ts";
 const YETENEK = "src/lib/komisyon/kanal-yetenegi.ts";
 
 type Mutasyon = {
@@ -296,6 +297,37 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "      {null}",
     bozdugu:
       "yuklu pencereler ve K49 kapsam bosluğu ekrandan TAMAMEN kaybolur; tsc yesil, bekci yesil, ekran bos - tasima yarim kalir",
+  },
+  /*
+   * ESLESME KAPSAMI (21.09.2026) - dar kapsam sistemde ZATEN VAR olan
+   * urunleri bagsiz birakiyordu. Uc yon: daraltma, sessiz secim, capraz.
+   */
+  {
+    ad: "KAPSAM YINE DARALDI - kimlik yalniz barkoda dustu",
+    yon: "KALDIRAN",
+    dosya: TARIFE_YAZ,
+    bul: "    select: { id: true, barcode: true, sku: true, companySku: true },",
+    koy: "    select: { id: true, barcode: true },",
+    bozdugu:
+      "sku/firmaSku ile taninan urunler bagsiz kalir; fiyat denemesi o urunlerde dilim veremez",
+  },
+  {
+    ad: "KANAL KODLARI YINE HESABA DARALDI",
+    yon: "KALDIRAN",
+    dosya: TARIFE_YAZ,
+    bul: "    where: { isActive: true, variant: { isActive: true } },",
+    koy: "    where: { channelAccountId, isActive: true },",
+    bozdugu:
+      "N11 dosyasindaki HB kodlari yine bagsiz kalir - olculdu: 3 urun, yurulukteki pencerede",
+  },
+  {
+    ad: "CAKISAN KOD YINE SESSIZCE SECILIYOR",
+    yon: "FAZLADAN",
+    dosya: TARIFE_YAZ,
+    bul: "      if (mevcut !== undefined && mevcut !== g.variantId) {",
+    koy: "      if (false) {",
+    bozdugu:
+      "bir kod iki varyanta cozulunce son gelen kazanir - 21.09'da kapatilan arizanin kilik degistirmis hali",
   },
   {
     ad: "AYNA BAGLANTISI DUSTU - rakam kaynagina goturmuyor",
