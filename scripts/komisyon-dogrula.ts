@@ -1,4 +1,6 @@
 import { readFileSync } from "node:fs";
+
+import { ORAN_OKUYUCUSU_OLAN } from "../src/lib/komisyon/okuyucu";
 /**
  * ============================================================================
  *  KOMİSYON İÇE AKTARMA DOĞRULAMA
@@ -53,7 +55,7 @@ import { KANAL_SIRASI } from "../src/lib/kanal-sirasi";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 7;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1230,6 +1232,74 @@ console.log("\nORAN UYARISI (satış formu)");
   kontrol("tanıma, genel cevaptan ÖNCE geliyor", iTeklif >= 0 && iGenel >= 0 && iTeklif < iGenel);
 
   kosanBolumler.push("kampanya dosyası tanıması");
+}
+
+// ---------------------------------------------------------------------------
+//  8) K226-3 — EKRAN HER PLATFORMU TANIYOR MU
+// ---------------------------------------------------------------------------
+{
+  console.log("\n8) EKRAN PLATFORM KAPSAMI");
+
+  /**
+   * ⛔ CANLI KUSUR 21.09.2026 — BU ÖLÇÜT ONDAN DOĞDU.
+   * N11 okuyucusu 18.08.2026'da eklendi; ekranın elle yazılmış iki yeri
+   * GÜNCELLENMEDİ ve **bir ay** öyle kaldı:
+   *   · `platformN11` sözlük etiketi hiç yazılmamıştı → önizlemede kanal adı
+   *     BOŞ basılıyordu (ölçüldü: next-intl patlamaz, sessizce boş yazar —
+   *     yani kusur GÖRÜNMEDEN yaşıyordu);
+   *   · "nereden indirilir" yazısı yalnız Trendyol ve Hepsiburada'yı
+   *     anlatıyordu — kullanıcı tam o soruyu sorduğunda cevapsız kalıyordu.
+   *
+   * ⚠ KÜME ELLE TUTULMUYOR: `ORAN_OKUYUCUSU_OLAN` imza tablosundan
+   * türetiliyor. Dördüncü bir pazaryeri eklendiği gün bu ölçüt
+   * kendiliğinden onu da sorar.
+   */
+  kontrol(
+    `taban dolu — oran okuyucusu olan platform >= 3 (${ORAN_OKUYUCUSU_OLAN.length})`,
+    ORAN_OKUYUCUSU_OLAN.length >= 3,
+  );
+
+  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Komisyon: Record<string, string>;
+  };
+  const K = sozluk.Komisyon;
+
+  for (const p of ORAN_OKUYUCUSU_OLAN) {
+    /** "TRENDYOL" -> "platformTrendyol" · "N11" -> "platformN11" */
+    const anahtar = "platform" + p[0] + p.slice(1).toLowerCase();
+    const etiket = K[anahtar];
+    kontrol(`${p}: sözlükte etiketi var (${anahtar})`, typeof etiket === "string" && etiket.trim() !== "");
+
+    /**
+     * ⚠ ETİKET YETMEZ, YOL DA GEREK: operatörün ilk sorusu "bu dosyayı
+     * nereden indireceğim". Cevabı olmayan bir kanal, ekranda desteklenmiş
+     * GÖRÜNÜR ama teslim edilemez.
+     */
+    kontrol(
+      `  ...ve "nereden indirilir" yazısı ${p} yolunu anlatıyor`,
+      typeof etiket === "string" &&
+        etiket.trim() !== "" &&
+        (K.nasilIndirilir ?? "").includes(etiket),
+    );
+  }
+
+  /**
+   * ⛔ EKRANDAKİ BİRLİK ELLE YAZILAMAZ. Çıplak bir birlik yazılırsa
+   * dördüncü platform eklendiğinde TypeScript susar ve aynı kusur yeniden
+   * doğar. Tip tek gövdeye bağlı olmalı.
+   */
+  const ekran = readFileSync("src/app/kanal-sku/komisyon-aktar/yukleyici.tsx", "utf8");
+  kontrol(
+    "ekranın platform tipi TEK GÖVDEDEN geliyor (çıplak birlik yok)",
+    /platform: KomisyonPlatformu;/.test(ekran) &&
+      !/platform: "TRENDYOL" \| "HEPSIBURADA"/.test(ekran),
+  );
+  kontrol(
+    "platform adı eşlemesi Record<KomisyonPlatformu> — eksik üye DERLENMEZ",
+    /platformAdlari: Record<KomisyonPlatformu, string>/.test(ekran),
+  );
+
+  kosanBolumler.push("ekran platform kapsamı");
 }
 
 // ===========================================================================

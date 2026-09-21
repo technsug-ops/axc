@@ -142,6 +142,36 @@ const MUTASYONLAR: Mutasyon[] = [
       "tanima ERISILEMEZ olur: genel cevap once donuyor ve kampanya dosyasi hic taninmiyor",
     bekci: KOMISYON_BEKCISI,
   },
+  {
+    ad: "N11 ETIKETI SOZLUKTEN SILINDI - canli kusurun kendisi",
+    yon: "KALDIRAN",
+    dosya: "messages/tr.json",
+    bul: "    \"platformN11\": \"N11\",\n",
+    koy: "",
+    bozdugu:
+      "onizlemede kanal adi BOS basilir; next-intl patlamaz, sessizce bos yazar - kusur GORUNMEDEN yasar (bir ay boyle kaldi)",
+    bekci: KOMISYON_BEKCISI,
+  },
+  {
+    ad: "NEREDEN INDIRILIR yazisindan N11 cikarildi",
+    yon: "KALDIRAN",
+    dosya: "messages/tr.json",
+    bul: " · N11 satıcı panelinde toplu ürün dökümü",
+    koy: " · BAŞKA satıcı panelinde toplu ürün dökümü",
+    bozdugu:
+      "ekranda N11 destekleniyor GORUNUR ama operatorun 'bunu nereden indirecegim' sorusu cevapsiz kalir - teslim edilemeyen bir soz",
+    bekci: KOMISYON_BEKCISI,
+  },
+  {
+    ad: "EKRAN TIPI CIPLAK BIRLIGE GERI DONDU",
+    yon: "KALDIRAN",
+    dosya: "src/app/kanal-sku/komisyon-aktar/yukleyici.tsx",
+    bul: "  platform: KomisyonPlatformu;",
+    koy: "  platform: \"TRENDYOL\" | \"HEPSIBURADA\";",
+    bozdugu:
+      "dorduncu platform eklendiginde TypeScript SUSAR ve ayni kusur yeniden dogar; liste elle bakim ister",
+    bekci: KOMISYON_BEKCISI,
+  },
 ];
 
 function bekciyiKostur(m: Mutasyon): { kod: number; ciktiVar: boolean } {

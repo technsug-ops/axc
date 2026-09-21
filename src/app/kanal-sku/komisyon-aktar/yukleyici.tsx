@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useBicim } from "@/lib/bicim-istemci";
+import type { KomisyonPlatformu } from "@/lib/komisyon/model";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 export type HesapSecenegi = { id: string; etiket: string };
@@ -44,7 +45,17 @@ type Hata =
   | { kod: "SATIR_YOK" };
 
 type Onizleme = {
-  platform: "TRENDYOL" | "HEPSIBURADA";
+  /**
+   * ⛔ ELLE YAZILAN BIRLIK DEĞİL — TEK GÖVDEYE BAĞLI (K226-3, 21.09.2026).
+   * Burada `"TRENDYOL" | "HEPSIBURADA"` yazılıydı ve N11 **18.08.2026'da**
+   * motora eklendiğinde bu satır güncellenmedi: sunucu N11 döndürüyor,
+   * ekran onu tanımıyordu ve önizlemede kanal adı BOŞ basılıyordu
+   * (`platformAdlari["N11"]` → `undefined`; ölçüldü — next-intl patlamıyor,
+   * sessizce boş yazıyor, yani kusur GÖRÜNMEDEN yaşıyordu).
+   * Tipe bağlandığı için dördüncü platform eklenirse aşağıdaki `Record`
+   * DERLENMEZ — liste bakım istemez.
+   */
+  platform: KomisyonPlatformu;
   sayfa: string;
   sayim: {
     okunan: number;
@@ -120,9 +131,10 @@ export function Yukleyici({
   /** Yüzde gösterimi dil altyapısından geçer (anayasa: elle biçim yasak). */
   const oran = (deger: number) => bicim.yuzde(deger, 2);
 
-  const platformAdlari: Record<Onizleme["platform"], string> = {
+  const platformAdlari: Record<KomisyonPlatformu, string> = {
     TRENDYOL: t("platformTrendyol"),
     HEPSIBURADA: t("platformHepsiburada"),
+    N11: t("platformN11"),
   };
 
   async function gonder(yazilsinMi: boolean) {
@@ -159,7 +171,7 @@ export function Yukleyici({
         return t("hataTaninmayanDosya", { sayfalar: h.sayfalar.join(", ") });
       case "PLATFORM_UYUSMAZ":
         return t("hataPlatformUyusmaz", {
-          dosya: platformAdlari[h.dosya as Onizleme["platform"]] ?? h.dosya,
+          dosya: platformAdlari[h.dosya as KomisyonPlatformu] ?? h.dosya,
           hesap: h.hesap,
         });
       case "SUTUN_EKSIK":

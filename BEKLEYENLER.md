@@ -157,6 +157,39 @@ taramayla karşılaştırılıyor**; beyan edilmemiş bir çakışma kırmızı 
 
 **Tur sonucu: 137/137 yeşil · push geçti.**
 
+─── ③ HALİL TESTİ EKRANI DOĞRULADI + BİR AYLIK SESSİZ KUSUR ÇIKTI
+
+**Ekran canlıda ve doğru davranıyor** (kullanıcı ekran görüntüsü, 21.09): HB
+kartında kampanya dosyası reddedildi, kırmızı kutu ne olduğunu ve nereye
+gidileceğini yazdı. ⚠ Deploy da geçmiş demektir — **cdn.sheetjs.com
+bağımlılığı ilk gerçek deploy'da sorun çıkarmadı.**
+
+⛔ **AMA AYNI EKRAN GÖRÜNTÜSÜNDE BİR AYLIK BİR KUSUR GÖRÜNDÜ.** N11 okuyucusu
+**18.08.2026**'da eklendi; ekranın ELLE YAZILMIŞ iki yeri güncellenmedi ve
+bir ay öyle kaldı:
+
+| eksik | sonucu |
+|---|---|
+| `platformN11` sözlük etiketi HİÇ yazılmamış | önizlemede kanal adı **BOŞ** basılıyordu |
+| "nereden indirilir" yazısı yalnız TY + HB | operatörün **tam o soruya** cevabı yoktu |
+
+⭐ **VE BİRİNCİSİ GÖRÜNMEDEN YAŞIYORDU — ÖLÇÜLDÜ.** Önce _"next-intl patlar,
+ekran kırılır"_ diye teşhis kurdum; ölçüm **çürüttü**: kütüphane hata
+atmıyor, eksik parametreyi **sessizce boş** basıyor (`" listesi · okunan
+sayfa: …"`). Yani kusur ne hata veriyor ne göze çarpıyordu.
+_(Anayasa: "imkânsız görünen değer önce doğrulanır" — burada imkânsız
+görünen ÇÖKÜŞTÜ ve olmadığı ölçüldü.)_
+
+**ÇARE METİN DEĞİL, BAĞ:** ekranın platform tipi artık `KomisyonPlatformu`
+tek gövdesine bağlı. Dördüncü pazaryeri eklendiğinde `Record` **DERLENMEZ** —
+liste bakım istemez. _(Anayasa: "tip listesi değil, BAĞ".)_
+
+**BEKÇİ — küme `IMZALAR`dan türetiliyor, elle liste yok:** her platform için
+① sözlükte etiketi var mı ② "nereden indirilir" o kanalın yolunu anlatıyor mu
+③ ekranda çıplak birlik yok. `komisyon:dogrula` 174 → **183**.
+**Mutasyon 10/10 → 13/13**: etiketi silen · yolu çıkaran · tipi çıplak
+birliğe döndüren; üçü de kırmızı yandı.
+
 ### AÇIK
 - [ ] **Halil testi** — canlı adreste, gerçek dosyalarla (liste raporda).
 - [ ] **N11'in KOMİSYON dökümü hangi biçimde iniyor — ÖLÇÜLMEDİ.** Elimizdeki
