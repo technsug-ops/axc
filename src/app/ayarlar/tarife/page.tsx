@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 
+import { sayfaIzni } from "@/lib/yetki";
+
 /**
  * ============================================================================
  *  ESKİ TARİFE EKRANI → TEK KAPIYA YÖNLENDİRİR (K230-③, 21.09.2026)
@@ -13,6 +15,18 @@ import { redirect } from "next/navigation";
  *  demek olurdu. Tarife aynası (`/ayarlar/tarife/[id]`) yerinde duruyor.
  * ============================================================================
  */
-export default function EskiTarifeEkrani() {
+export default async function EskiTarifeEkrani() {
+  /**
+   * ⛔ YÖNLENDİRME DE BİR SAYFADIR — KAPISIZ OLAMAZ.
+   * `yetki:dogrula` bunu yakaladı ve haklıydı. Muafiyet beyan etmek daha
+   * kolaydı ama YANLIŞ sınıfı kayda geçirip meşrulaştırırdı: altı ay sonra
+   * bakan biri "demek korumasız bir sayfa var ama muaf tutulmuş" diye okur.
+   *
+   * Ve kapı yalnız bir tören değil: kapısız hâlde yetkisiz bir ziyaretçi
+   * yönlendirilip HEDEFTE 404 alırdı — yani sıçrama, orada bir şey OLDUĞUNU
+   * söylerdi. Kapı burada olunca istek daha ilk adımda 404 alır; rotanın
+   * varlığı bile sızmaz.
+   */
+  await sayfaIzni("kanalsku.yaz");
   redirect("/ayarlar/komisyon");
 }

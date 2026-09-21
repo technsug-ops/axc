@@ -139,6 +139,14 @@ blok başka dosyaya taşındığında aynı tuzak açılır. Bekçi import satı
 **JSX'te çizildiğini** arıyor ve `<TarifeDurumu />`'yu `{null}` yapan mutasyon
 kırmızı yanıyor.
 
+⛔ **VE PUSH KAPISI BİR ŞEY YAKALADI — YÖNLENDİRME DE BİR SAYFADIR.**
+`yetki:dogrula` kırmızı yandı: yönlendirme gövdesinde `sayfaIzni` yoktu
+(72 korumalı · **1 KORUMASIZ**). Muafiyet beyan etmek daha kolaydı ama YANLIŞ
+sınıfı kayda geçirip **meşrulaştırırdı**. Kapı kondu — ve kapı yalnız bir
+tören değil: kapısız hâlde yetkisiz bir ziyaretçi yönlendirilip HEDEFTE 404
+alırdı, yani **sıçramanın kendisi orada bir şey OLDUĞUNU söylerdi**. Artık
+istek ilk adımda 404 alıyor. Ölçüm: **73 korumalı · 0 KORUMASIZ.**
+
 **ÖLÇÜLDÜ:** `tarife:dogrula` 198 ölçüt · `teklif-tanima-mutasyon` **29/29**
 (zararsız sağlama dâhil) · `el-kitabi` · `i18n` · `build` yeşil.
 
