@@ -48,6 +48,16 @@ import {
  * ============================================================================
  */
 
+/**
+ * Dosyayı YORUMSUZ okur. Bir kuralı ANLATAN yorum, o kuralı çiğnemiş
+ * sayılmaz — bu depoda aynı tuzak bugün bir kez daha çıktı.
+ */
+function yorumsuzOku(yol: string): string {
+  return readFileSync(yol, "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/.*$/gm, "");
+}
+
 let gecen = 0;
 let kalan = 0;
 
@@ -1396,6 +1406,56 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
     dilimleriKur([{ ust: 100, alt: null, oran: 5 }], null).length === 1);
   kontrol("  ...varsa tepe dilim eklenir",
     dilimleriKur([{ ust: 100, alt: null, oran: 5 }], 20).length === 2);
+}
+
+// ---------------------------------------------------------------------------
+//  K230 - TEK KAPI SOZU VE TARIFE AYNASI
+// ---------------------------------------------------------------------------
+{
+  console.log("\nK230 - TEK KAPI + AYNA");
+
+  /*
+   * TEK KAPI SOZU BIR KEZ YARIM UYGULANDI (K226): komisyon yukleme tek
+   * kapiya alindi ama /ayarlar/tarife'nin KENDI yukleyicisi yerinde birakildi
+   * ve menude iki yukleme yolu olustu. Kullanici sordu: "bu ikisi arasindaki
+   * fark nedir, neden iki tane var?" Yarim uygulanan soz, soz olmaktan cikar.
+   */
+  const durumEkrani = yorumsuzOku("src/app/ayarlar/tarife/page.tsx");
+  kontrol(
+    "tarife DURUM ekraninda yukleyici YOK (tek kapi sozu)",
+    !/<Yukleyici/.test(durumEkrani),
+  );
+  kontrol(
+    "  ...ve tek kapiya baglanti VAR",
+    durumEkrani.includes("/ayarlar/komisyon"),
+  );
+  /*
+   * RAKAM KAYNAGINA GOTURUR (Ilke #16): "152 kalem" duz metin olmamali.
+   */
+  kontrol(
+    "pencere satiri AYNAYA baglaniyor",
+    /ayarlar\/tarife\/\${x.id}/.test(durumEkrani),
+  );
+
+  const ayna = yorumsuzOku("src/app/ayarlar/tarife/[id]/ayna.tsx");
+  kontrol(
+    "ayna NET'i MEVCUT motordan aliyor (ikinci hesap yok)",
+    yorumsuzOku("src/app/ayarlar/tarife/[id]/eylemler.ts").includes(
+      "simulasyonKarsilastir",
+    ),
+  );
+  kontrol(
+    "  ...ve maliyet urunZemini'nden (kopya cikarilmadi)",
+    yorumsuzOku("src/app/ayarlar/tarife/[id]/eylemler.ts").includes("urunZemini"),
+  );
+  /*
+   * KARGO SORULUYOR - sifir varsayilsaydi her dilim oldugundan karli
+   * gorunurdu; bu ekranin engellemek icin var oldugu yanilginin ta kendisi.
+   */
+  kontrol(
+    "kargo bos birakilinca hesaplatilmiyor",
+    /disabled={kargo.trim\(\) === ""/.test(ayna),
+  );
 }
 
 console.log("");

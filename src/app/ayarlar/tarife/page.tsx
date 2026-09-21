@@ -1,4 +1,8 @@
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 import { TriangleAlert } from "lucide-react";
 
 import { DurumRozeti } from "@/components/durum-rozeti";
@@ -14,7 +18,6 @@ import { prisma } from "@/lib/prisma";
 import { DURUM_KUTUSU } from "@/lib/renkler";
 import { sayfaIzni } from "@/lib/yetki";
 
-import { Yukleyici } from "./yukleyici";
 
 /**
  * ============================================================================
@@ -59,6 +62,8 @@ export async function generateMetadata() {
 export default async function TarifeSayfasi() {
   await sayfaIzni("kanalsku.yaz");
   const t = await getTranslations("Tarife");
+  const tBaslik = await getTranslations("Basliklar");
+  const tAyna = await getTranslations("TarifeAynasi");
 
   const [hesaplar, tarifeler, tumPencereler, ilkKayit] = await Promise.all([
     prisma.channelAccount.findMany({
@@ -183,14 +188,23 @@ export default async function TarifeSayfasi() {
         <p className="text-muted-foreground text-sm">{t("aciklama")}</p>
       </div>
 
+      {/*
+        ⛔ YÜKLEYİCİ BURADAN KALDIRILDI (K230, 21.09.2026).
+        K226'da "tek kapı" sözü verilmişti ama bu ekranın kendi yükleyicisi
+        yerinde bırakıldı; sonuç, menüde İKİ yükleme yolu oldu ve kullanıcı
+        haklı olarak sordu: _"bu ikisi arasındaki fark nedir, neden iki tane
+        var?"_ Verilen söz, yarısı uygulanınca söz olmaktan çıkıyor.
+        Bu ekran artık YALNIZ DURUM gösteriyor; yükleme tek kapıdan.
+      */}
       <Card>
-        <CardContent className="pt-6">
-          <Yukleyici
-            hesaplar={hesaplar.map((h) => ({
-              id: h.id,
-              etiket: `${h.channel.name} — ${h.name}`,
-            }))}
-          />
+        <CardContent className="flex flex-wrap items-center gap-3 pt-6">
+          <p className="text-muted-foreground text-sm">{t("yuklemeNerede")}</p>
+          <Button variant="outline" size="sm" className="min-h-11" asChild>
+            <Link href="/ayarlar/komisyon">
+              <ExternalLink />
+              {tBaslik("komisyonKapisi")}
+            </Link>
+          </Button>
         </CardContent>
       </Card>
 
@@ -269,6 +283,18 @@ export default async function TarifeSayfasi() {
                         kalem: x._count.kalemler,
                       })}
                     </span>
+                    {/*
+                      ⚠ RAKAM KAYNAĞINA GÖTÜRÜR (İlke #16). "152 kalem" düz
+                      metin olsaydı okuyan "hangileri?" diye sormak zorunda
+                      kalır — ve çoğu zaman sormaz. Tıklanınca o tarifenin
+                      pazaryeri görünümü açılıyor.
+                    */}
+                    <Link
+                      href={`/ayarlar/tarife/${x.id}`}
+                      className="text-primary text-sm underline underline-offset-4"
+                    >
+                      {tAyna("aynayiAc")}
+                    </Link>
                     {/*
                       ⚠ RENK SİSTEMİNDEN, HAM TAILWIND'DEN DEĞİL. İlk yazımda
                       ham bir amber sınıfı kullanıldı ve `panel:dogrula`

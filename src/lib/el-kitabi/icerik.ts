@@ -1881,6 +1881,19 @@ tarife yazılmaz. Rakamlar beklediğiniz gibiyse <strong>Yükle</strong>.</p></d
 Ekran bunu yüklemeden önce söyler. İlk yükleme eksik geldiyse düzeltmenin
 yolu budur.</p></div>
 
+<div class="ek-not"><div class="etiket">Tarife aynası — her satırın yanında</div>
+<p>Yüklü pencerelerin her satırında <strong>"Tarife aynası"</strong> bağlantısı
+var. Tıklayınca o tarife <strong>pazaryeri panelinin dilinde</strong> açılır:
+ürün ürün fiyat aralıkları ve her aralığın komisyonu.</p>
+<p><strong>Ve panelin gösteremediği sütun:</strong> bir ürünü açıp kargo
+ücretini yazarsanız, her aralıkta <strong>NET-2 kârınız</strong> hesaplanır.
+Pazaryeri bunu asla gösteremez — sizin maliyetinizi bilmiyor.</p>
+<div class="ek-not dikkat"><div class="etiket">Düşük komisyon, yüksek kâr DEĞİLDİR</div>
+<p>Gerçek ölçüm: bir üründe komisyon <strong>%16'dan %3'e</strong> düşerken
+NET kâr <strong>800,78 TL'den 208,16 TL'ye</strong> indi — adet başına 592 TL
+kayıp. "Komisyonu düşürüyoruz" teklifi cazip görünür; karar veren rakam
+komisyon değil <strong>NET</strong>'tir.</p></div></div>
+
 <h3>Kapsam boşluğu — kaçırdığınız haftalar</h3>
 <p>Yüklü pencerelerin listesinin üstünde tek satırlık bir <strong>hüküm</strong>
 durur: kapsam kesintisiz mi, yoksa arada boşluk var mı. Boşluk varsa listenin

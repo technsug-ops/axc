@@ -13,6 +13,66 @@
 
 ---
 
+## 🔶 K230 — TEK KAPI SÖZÜ TAMAMLANDI + TARİFE AYNASI · 21.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+**KULLANICI SORUSU:** _"Bu ikisi arasındaki fark nedir, neden iki tane var?"_
+(menüde `Komisyon tarifesi` ve `Komisyon yükleme`).
+
+⛔ **SORU HAKLIYDI VE KUSUR BENDEYDİ.** K226'da _"tek kapı"_ sözü verildi ama
+`/ayarlar/tarife`'nin KENDİ yükleyicisi yerinde bırakıldı. Menüde iki yükleme
+yolu kaldı — yani karışıklığı bitirmesi gereken paket, karışıklığın yeni bir
+biçimini üretti. **Yarım uygulanan söz, söz olmaktan çıkar.**
+
+**A) DURUM EKRANI ARTIK YALNIZ DURUM.** `/ayarlar/tarife`'den yükleyici
+kaldırıldı, yerine tek kapıya bağlantı kondu; adı **"Tarife pencereleri"**
+oldu. Yükleme tek kapıdan, kapsam/boşluk kaydı kendi ekranında.
+
+**B) TARİFE AYNASI — `/ayarlar/tarife/[id]`.** _(Kullanıcı isteği: "aynı
+şekilde pazaryerini taklit eden arayüz"; kararı: **ayna + bizim NET'imiz**.)_
+Yüklü tarife pazaryeri panelinin dilinde açılıyor: ürün ürün fiyat aralıkları
+ve her aralığın komisyonu. Satır açılıp kargo yazılınca her aralıkta **NET-2**.
+
+⭐ **EKRANIN VARLIK SEBEBİ TEK ÖLÇÜMDE GÖRÜNDÜ** (Stanley French Press, N11,
+kargo ₺110 — gerçek veriyle):
+
+    fiyat 4.174,00   komisyon %16     NET-2  800,78   ← bugünkü
+    fiyat 3.026,14   komisyon %3,81   NET-2  333,38
+    fiyat 2.933,17   komisyon %3,31   NET-2  273,41
+    fiyat 2.840,20   komisyon %3      NET-2  208,16
+
+**Komisyon %16'dan %3'e düşerken NET adet başına ₺592 eriyor.** Pazaryeri
+paneli bunu gösteremez — senin maliyetini bilmiyor. _"Komisyonu düşürüyoruz"_
+teklifi cazip görünür; karar veren rakam komisyon değil NET'tir.
+
+⚠ **İKİNCİ BİR HESAP YAZILMADI.** NET, fiyat denemesinin MEVCUT motorundan
+(`simulasyonKarsilastir`), maliyet `urunZemini`den geliyor. Kopya yazılsaydı
+iki ekran aynı ürün için iki farklı rakam gösterebilirdi.
+
+⚠ **KARGO SORULUYOR, UYDURULMUYOR.** `urunZemini` kargo taşımıyor (ölçüldü).
+Sıfır varsayılsaydı her dilim olduğundan kârlı görünürdü — ekranın engellemek
+için var olduğu yanılgının ta kendisi. Boş bırakılırsa hesaplanmıyor.
+
+⚠ **ÜST UCU AÇIK DİLİMİN FİYATI SON SATIŞTAN** geliyor ve ekranda öyle
+etiketleniyor — `ChannelSku` fiyat tutmuyor (ölçüldü), uydurma baz yazılmadı.
+
+### BEKÇİ + MUTASYON
+
+    tarife:dogrula   187 → 193 ölçüt
+    teklif-tanima-mutasyon:kontrol   23/23 → 26/26
+
+⛔ **"TEK KAPI" SÖZÜ ARTIK ÖLÇÜLÜYOR:** durum ekranına yükleyici geri koyan
+mutasyon kırmızı yanıyor. Söz bir kez yarım uygulandı; ikinci kez olmasın diye
+beyan değil **bekçi** kondu.
+
+### AÇIK
+- [ ] **Halil testi** — `Tarife pencereleri` → bir satırda **"Tarife aynası"**;
+      HB tarifesinde Braun IRT-3030'u aç, kargo **110** yaz, dilimlerde NET gör.
+- [ ] Ayna listesi sayfalanmıyor — HB'de 43 ürün bugün sorun değil; ürün sayısı
+      büyürse sayfalama gerekir _(anayasa: "satır sayısı veriyle birlikte
+      BÜYÜYEN şey")_.
+
+---
+
 ## 🔶 K229 — KARGO TARİFESİ KANAL BAĞIMSIZ OLDU · 21.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI TESPİTİ:** _"Bu sadece HB'ye özel değil, diğer pazaryerleri de arada

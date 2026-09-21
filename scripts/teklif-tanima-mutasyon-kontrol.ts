@@ -267,6 +267,33 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "ayni haftanin tekliflerini 27 ayri pencere sayar; 44 satirin 41'i 'pencere disi' cikar ve secilen pencere panelinkiyle tutmaz",
   },
+  {
+    ad: "TEK KAPI SOZU YENIDEN YARIM - durum ekranina yukleyici geri geldi",
+    yon: "FAZLADAN",
+    dosya: "src/app/ayarlar/tarife/page.tsx",
+    bul: "          <p className=\"text-muted-foreground text-sm\">{t(\"yuklemeNerede\")}</p>",
+    koy: "          <Yukleyici hesaplar={[]} />",
+    bozdugu:
+      "menude yine IKI yukleme yolu olur; kullanici 'bu ikisinin farki ne' diye sormak zorunda kalir - K226'da yasanan sey",
+  },
+  {
+    ad: "AYNA BAGLANTISI DUSTU - rakam kaynagina goturmuyor",
+    yon: "KALDIRAN",
+    dosya: "src/app/ayarlar/tarife/page.tsx",
+    bul: "                      href={`/ayarlar/tarife/${x.id}`}",
+    koy: "                      href={`/ayarlar/tarife`}",
+    bozdugu:
+      "'152 kalem' duz metin olur; okuyan 'hangileri' diye sormak zorunda kalir ve cogu zaman sormaz (Ilke #16)",
+  },
+  {
+    ad: "KARGO BOSKEN DE HESAPLATIYOR",
+    yon: "FAZLADAN",
+    dosya: "src/app/ayarlar/tarife/[id]/ayna.tsx",
+    bul: "                        disabled={kargo.trim() === \"\" || bekliyor}",
+    koy: "                        disabled={bekliyor}",
+    bozdugu:
+      "kargo bos gecince NaN ya da 0 ile hesaplanir; her dilim oldugundan KARLI gorunur - ekranin engellemek icin var oldugu yanilgi",
+  },
 ];
 
 function bekciyiKostur(m: Mutasyon): { kod: number; ciktiVar: boolean } {
