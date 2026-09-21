@@ -146,4 +146,14 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "panel-mutasyon:kontrol",
   "toplu-kargo-mutasyon:kontrol",
   "urun-analizi-mutasyon:kontrol",
+  /**
+   * K226 — İKİSİ DE `src/lib/komisyon/yukle.ts`i mutasyona uğratıyor:
+   * `tablo-oku` okuma kapısının çağrıldığını, `teklif-tanima` kampanya
+   * tanımasının o dosyadaki bağını sınıyor. Paralel koşsalardı biri
+   * ötekinin MUTANTINI "asıl" sanıp geri yazardı — ve bozulma sessiz
+   * olurdu. Bekçi bunu push kapısında yakaladı; liste elle tutuluyor ama
+   * gerçek taramayla her koşumda karşılaştırılıyor.
+   */
+  "tablo-oku-mutasyon:kontrol",
+  "teklif-tanima-mutasyon:kontrol",
 ];
