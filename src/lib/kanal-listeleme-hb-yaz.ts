@@ -48,6 +48,23 @@ export async function hbListelemeDurumunuYaz(
   /** Koşumun ait olduğu KANAL adı — kutu izleri buna göre ayırır. */
   kosumKanali: string,
   an: Date = new Date(),
+  /**
+   * KONTROL EDİLEN satırların kimlikleri — DEĞİŞENLER DEĞİL.
+   *
+   * ⛔ CANLI VAKA 21.09.2026: HB bir turda **0 satır** değiştirdi (her şey
+   * zaten doğruydu) ve bu gövde yalnız `guncellemeler`e dokunduğu için
+   * HİÇBİR damga tazelenmedi. Sonuç: kanal **1 dakika önce** kontrol
+   * edilmişken `/kanal-listeleme` ekranı "son ölçüm **154 dakika** önce"
+   * diyordu ve bir süre sonra BAYAT diye sarı yanacaktı.
+   *
+   * ⭐ Damga "bu rakam ne zaman DOĞRUYDU" sorusunun cevabıdır; "en son ne
+   * zaman DEĞİŞTİ" sorusunun değil. İkisi karıştırılınca hiç değişmeyen bir
+   * kanal, her gün kontrol edilse bile ekranda bayat görünür.
+   *
+   * ⚠ BOŞ VERİLİRSE eski davranış sürer (yalnız değişenler damgalanır) —
+   * geriye uyum için; çağıranı olmayan bir vaat açılmıyor.
+   */
+  kontrolEdilen: readonly string[] = [],
 ): Promise<HbYazimSonucu> {
   const sonuc: HbYazimSonucu = { yazilan: 0, hata: 0 };
 
@@ -70,6 +87,22 @@ export async function hbListelemeDurumunuYaz(
        */
       sonuc.hata++;
     }
+  }
+
+  /**
+   * ⛔ TOPLU DAMGA — TEK SORGU (parçalara bölünmüş).
+   * Satır satır yazılsaydı 1110 gidiş-dönüş daha eklenirdi; TY tarafında
+   * tam o maliyet ölçüldü — sunucuda **120.871 ms** (yerelde görünmüyordu).
+   *
+   * ⚠ 500'lük dilim ölçülmüş bir tavan DEĞİL, yaygın güvenli bir sınır;
+   * gerekirse ölçülür. Tek `IN (...)` içine binlerce kimlik koymak sorgu
+   * boyutu sınırına çarpar.
+   */
+  for (let i = 0; i < kontrolEdilen.length; i += 500) {
+    await prisma.channelSku.updateMany({
+      where: { id: { in: [...kontrolEdilen].slice(i, i + 500) } },
+      data: { kanalOlcumAt: an },
+    });
   }
 
   /**

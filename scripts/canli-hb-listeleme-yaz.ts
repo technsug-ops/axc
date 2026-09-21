@@ -302,6 +302,15 @@ export async function hbListelemeCekimKos(ayar: {
      * (07.09.2026'da tam bu oldu).
      */
     KOSUM_KANALI,
+    new Date(),
+    /**
+     * ⛔ KONTROL EDİLEN HER SATIR DAMGALANIR — DEĞİŞEN DEĞİL (K225-④).
+     * Damga "bu rakam ne zaman DOĞRUYDU" der; yalnız değişenler
+     * damgalansaydı hiç değişmeyen bir kanal her gün kontrol edilse bile
+     * ekranda BAYAT görünürdü (21.09.2026'da tam bu yaşandı).
+     * ⚠ YAZIM GÖVDEDE: betik prismaya DOKUNMAZ (`api:dogrula` kuralı).
+     */
+    satirlar.map((s) => s.id),
   );
   console.log(`\n⑤ YAZIM — ${y2.yazilan} satır güncellendi · hata ${y2.hata}`);
   await prisma.$disconnect();

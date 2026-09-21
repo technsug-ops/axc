@@ -454,6 +454,33 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
    */
   const betik = yorumsuz2(readFileSync("scripts/canli-kanal-listeleme-yaz.ts", "utf8"));
   dogru("başarılı koşum iz YAZIYOR", /kosumIziniYaz\(\{\s*basarili: true/.test(betik));
+
+  /**
+   * ═══ TY YAZICI: DEĞİŞMEYEN SATIR YAZILMAZ, KONTROL EDİLEN DAMGALANIR ═══
+   *
+   * ⛔ ÖLÇÜLDÜ 21.09.2026, CANLI CRON KOŞUMUNDA: gövde her satırı KOŞULSUZ
+   * yazıyordu; 1096 satırlık tur sunucuda **120.871 ms** sürdü ve ilk gerçek
+   * tetik **504 FUNCTION_INVOCATION_TIMEOUT** aldı. Aynı turda HB kardeşi
+   * (yalnız değişeni yazan) **3.836 ms** sürdü.
+   *
+   * ⚠ VE FARK YERELDE GÖRÜNMÜYORDU: yerel kuru koşum 8 sn: yazım gövdesine
+   * HİÇ girmiyor. Maliyet ağdan, satır satır gidiş-dönüşten geliyordu —
+   * TEK satır güncellemesi ölçüldü: **130 ms**.
+   *
+   * ⚠ İKİ ÖLÇÜT AYRI: biri "değişmeyene dokunma", öteki "kontrol edileni
+   * damgala". Yalnız ilki olsaydı hiç değişmeyen kanal BAYAT görünürdü;
+   * yalnız ikincisi olsaydı 504 geri gelirdi.
+   */
+  const tyYazici = yorumsuz2(readFileSync("src/lib/kanal-listeleme-yaz.ts", "utf8"));
+  dogru(
+    "TY yazıcı DEĞİŞMEYEN satıra dokunmuyor",
+    /if \(s\.listelemeDurumu !== k\.durum \|\| s\.kanalAdet !== k\.adet\)/.test(tyYazici),
+  );
+  dogru(
+    "TY yazıcı KONTROL EDİLENİ toplu damgalıyor",
+    /for \(let i = 0; i < kontrolEdilen\.length/.test(tyYazici) &&
+      /data: \{ kanalOlcumAt: an \}/.test(tyYazici),
+  );
   /**
    * ⛔ ÖLÇÜT TAŞINDI, SUSTURULMADI (K225, 21.09.2026). Eskiden `main().catch(`
    * aranıyordu; betik cron ucundan da koşabilsin diye `main()` kaldırıldı

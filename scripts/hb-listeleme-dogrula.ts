@@ -251,6 +251,38 @@ console.log("\n5) YAZICI");
         yorumsuz,
       ),
   );
+
+  /**
+   * ═══ ÖLÇÜM DAMGASI KONTROL EDİLENE VURULUR, DEĞİŞENE DEĞİL (K225-④) ═══
+   *
+   * ⛔ CANLI VAKA 21.09.2026: HB turu **0 satır** değiştirdi (her şey zaten
+   * doğruydu) ve damga yalnız `guncellemeler`e vuruluyordu — hiçbir satır
+   * tazelenmedi. `/kanal-listeleme` ekranı, kanal **1 dakika önce** kontrol
+   * edilmişken "son ölçüm **154 dakika** önce" diyordu ve bir süre sonra
+   * BAYAT diye sarı yanacaktı.
+   *
+   * ⭐ Damga "bu rakam ne zaman DOĞRUYDU" sorusunun cevabıdır; "en son ne
+   * zaman DEĞİŞTİ" sorusunun değil.
+   *
+   * ⚠ ÜÇ ÖLÇÜT BİRDEN — biri eksikse kural yarım korunur:
+   *  ① gövde `kontrolEdilen` kümesini TOPLU damgalıyor
+   *  ② damga `kanalOlcumAt` alanına vuruluyor (başka alana değil)
+   *  ③ ÇAĞIRAN kümeyi GERÇEKTEN geçiriyor — gövdede kapı olup çağıran boş
+   *    dizi verirse kural hiç çalışmaz ve bunu ①/② göremez.
+   */
+  kontrol(
+    "① gövde kontrol edilen kümeyi TOPLU damgalıyor",
+    /for \(let i = 0; i < kontrolEdilen\.length/.test(yaziciYorumsuz) &&
+      /updateMany\(\{/.test(yaziciYorumsuz),
+  );
+  kontrol(
+    "② damga `kanalOlcumAt` alanına vuruluyor",
+    /data: \{ kanalOlcumAt: an \}/.test(yaziciYorumsuz),
+  );
+  kontrol(
+    "③ ÇAĞIRAN kontrol edilen satırların HEPSİNİ geçiriyor",
+    /satirlar\.map\(\(s\) => s\.id\)/.test(yorumsuz),
+  );
 }
 kosanBolumler.push("yazıcı");
 

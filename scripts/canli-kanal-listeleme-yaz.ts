@@ -200,12 +200,19 @@ export async function tyListelemeCekimKos(ayar: {
   }
 
   const { listelemeDurumunuYaz } = await import("../src/lib/kanal-listeleme-yaz");
+  /**
+   * ⚠ SÜRE ÖLÇÜLÜR, TAHMİN EDİLMEZ. Cron ucu 21.09.2026'da 504 aldı ve
+   * elimizde hiçbir sayı yoktu; yerelde "8 sn" görünen şey KURU koşumdu ve
+   * yazım gövdesine HİÇ girmiyordu. İki kip ayrı ölçülür.
+   */
+  const tYazim = Date.now();
   const s = await listelemeDurumunuYaz({
     saticiId: t.saticiId,
     urunler: t.urunler,
     alindi: t.alindi,
   });
 
+  console.log(`   [sure] yazim govdesi ${Date.now() - tYazim} ms`);
   console.log("\n   YAZIM SONUCU\n");
   if (s.hesap === null) {
     console.log("   ⛔ Bu satıcı kimliğine sahip kanal hesabı YOK — hiçbir şey yazılmadı.");
@@ -218,7 +225,15 @@ export async function tyListelemeCekimKos(ayar: {
     return { atlandi: "HESAP" };
   }
   console.log("   hesap                    " + s.hesap);
-  console.log("   kanalda bulunup yazılan  " + s.yazilan);
+  console.log("   kontrol edilen           " + s.yazilan);
+  /**
+   * ⛔ "KONTROL EDİLEN" İLE "DEĞİŞEN" AYRI YAZILIR (K225-④).
+   * Eskiden tek sayı vardı ve her koşumda 1083 diyordu — okuyan "1083 satır
+   * yazıldı" sanıyordu. Ölçüldü 21.09.2026: 1097 satırın **1082'si
+   * BİREBİR AYNIYDI**, yalnız 1'i farklıydı. Tek sayı, yapılan işi olduğundan
+   * bin kat büyük gösteriyordu.
+   */
+  console.log("   GERÇEKTEN değişen        " + s.degisen);
   console.log("   kanalda YOK diye yazılan " + s.yokIsaretlenen);
   console.log("   barkodsuz (atlandı)      " + s.barkodsuzAtlanan);
   console.log("   kanal kaydı YOK (yazacak yer yok) " + s.kanalKaydiYok);
@@ -300,7 +315,25 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  void tyListelemeCekimKosGuvenli({ yaz: YAZ }).then((o) => {
+  void tyListelemeCekimKosGuvenli({ yaz: YAZ }).then(async (o) => {
     if ("atlandi" in o) process.exitCode = 1;
+    /**
+     * ⛔ BAĞLANTI YALNIZ CLI'DA KAPATILIR — GÖVDEDE DEĞİL.
+     *
+     * ⚠ ÖLÇÜLDÜ 21.09.2026: `--yaz` koşumu **251 sn** sürüyordu ve bu
+     * SÜRENİN TAMAMI İŞ DEĞİLDİ — yazım gövdesi **1.134 ms**, tarama 8 sn.
+     * Kalan ~242 sn, iş bittikten sonra sürecin KAPANMAMASIydı: yazım
+     * yolunda Prisma bağlanıyor ve hiç kapatılmıyordu. (Kuru koşum 8 sn'de
+     * bitiyordu çünkü orada Prisma HİÇ yüklenmiyor.)
+     *
+     * ⛔ Bu, "251 saniye" rakamını OPTİMİZE etmeye kalkan biri için tuzaktı:
+     * kovalanacak iş yoktu, süre hayaletti.
+     *
+     * ⚠ GÖVDEYE KONULAMAZ: aynı gövdeyi cron ucu da çağırıyor ve orada
+     * `prisma` sunucunun PAYLAŞILAN istemcisidir; kapatmak sonraki istekleri
+     * bozardı. Kapatma yalnız BU sürece aittir.
+     */
+    const { prisma } = await import("../src/lib/prisma");
+    await prisma.$disconnect();
   });
 }

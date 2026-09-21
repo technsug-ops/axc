@@ -81,6 +81,46 @@ baksalardı, çağıran `yaz: true` sabitiyle çağırsa ölçüt bunu göremezd
 Dört mutasyonla sınandı (CLI hep yazsın · gövde kapısı kalksın · çöküşte iz
 yazılmasın · CLI korumasız gövdeyi çağırsın), dördü de kırmızı.
 
+⛔ **İLK GERÇEK TETİK 504 VERDİ — VE ÜÇ AYRI KUSUR ÇIKTI.**
+
+**① "~40 sn" İDDİASI YANLIŞ ÖLÇÜLMÜŞTÜ.** Koda _"ölçüldü, ikisi birlikte
+~40 sn"_ yazmıştım; o ölçüm **yerel makinede** yapılmış ve sunucuya aitmiş
+gibi yazılmıştı. Süre artık cevapta dönüyor (`tyMs`/`hbMs`) — 504 hiçbir
+zamanlama bilgisi vermiyor ve elimizde tek sayı yoktu.
+
+**② TY HER SATIRI KOŞULSUZ YAZIYORDU.** İlk başarılı koşum gerçeği söyledi:
+
+    TY  120.871 ms   yazılan 1083      ← her satır, koşulsuz
+    HB    3.836 ms   yazılan 0         ← yalnız değişen
+
+Ölçüldü: 1097 satırın **1082'si BİREBİR AYNI**, yalnız 1'i farklı. Tek satır
+güncellemesi **130 ms** → 1096 satır = 142 sn. Artık değişmeyen satıra
+dokunulmuyor; gövde **1.134 ms**'ye indi.
+
+**③ DAMGA "DEĞİŞTİM" DİYORDU, "KONTROL ETTİM" DEMİYORDU.** HB bir turda 0
+satır değiştirdi ve **hiçbir damga tazelenmedi**: kanal 1 dakika önce
+kontrol edilmişken ekran _"son ölçüm 154 dakika önce"_ diyordu ve bir süre
+sonra BAYAT diye sarı yanacaktı. **Az önce teslim ettiğim ekran yalan
+söyleyecekti.** Artık kontrol edilen HER satır tek toplu sorguyla
+damgalanıyor.
+
+⭐ **VE BİR HAYALET KOVALANMAKTAN DÖNÜLDÜ.** Yerel `--yaz` koşumu **251 sn**
+sürüyordu ve bunu "optimize edilecek iş" sanmak kolaydı. Ölçüldü: yazım
+gövdesi **1.134 ms**, tarama 8 sn — kalan ~242 sn **iş bittikten sonra
+sürecin kapanmamasıydı** (yazım yolunda Prisma bağlanıyor, hiç kapatılmıyor;
+kuru koşumda Prisma HİÇ yüklenmiyor, o yüzden 8 sn görünüyordu).
+`$disconnect` CLI sarmalayıcısına kondu — **gövdeye konamaz**, aynı gövdeyi
+cron ucu da çağırıyor ve orada `prisma` sunucunun PAYLAŞILAN istemcisi.
+**251 sn → 10 sn.**
+
+⚠ **VE YAZIM GÖVDEYE TAŞINDI, BETİKTE BIRAKILMADI:** toplu damgayı önce
+betiğe koymuştum; `api:dogrula` + `hb-listeleme:dogrula` ikisi birden
+kırmızı yandı (_"ölçüm betiği deftere yazmaz"_). Gövdeye taşındı.
+
+**BEKÇİ — 5 yeni ölçüt, 5 mutasyon (hepsi kırmızı):** toplu damga kalksın ·
+damga başka alana vurulsun · çağıran BOŞ küme geçirsin (gövdedeki kapı
+gizlenir) · TY koşulsuz yazıma dönsün · TY damgası kalksın.
+
 ### AÇIK
 - [ ] **İlk otomatik koşum 22.09 sabahı** — `AuditLog`dan doğrulanacak.
       Koşmazsa Vercel Cron yine kaçırmış demektir ve Action'ın tuttuğu

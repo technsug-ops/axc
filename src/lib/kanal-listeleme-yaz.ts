@@ -47,8 +47,16 @@ export type TaramaSonucu = {
 
 export type YazimSonucu = {
   hesap: string | null;
-  /** Kanalda bulunan ve deftere yazılan satır. */
+  /** Kanalda bulunan ve KONTROL EDİLEN satır (değişsin değişmesin). */
   yazilan: number;
+  /**
+   * Durumu ya da adedi GERÇEKTEN değişen satır — `yazilan`ın alt kümesi.
+   *
+   * ⛔ AYRI SAYILIR ÇÜNKÜ İKİSİ FARKLI ŞEY SÖYLER: "1096 kontrol ettim, 0'ı
+   * değişti" ile "1096'sını yazdım" aynı değildir. İkincisi 121 saniye
+   * sürüyordu ve cron ucunu 504'e düşürdü (ölçüldü 21.09.2026).
+   */
+  degisen: number;
   /** Kanalda HİÇ bulunmayan ChannelSku → `YOK`. */
   yokIsaretlenen: number;
   /** Barkodu olmayan varyantın ChannelSku'su — hüküm verilemez, atlandı. */
@@ -141,6 +149,7 @@ export async function listelemeDurumunuYaz(
     return {
       hesap: null,
       yazilan: 0,
+    degisen: 0,
       yokIsaretlenen: 0,
       barkodsuzAtlanan: 0,
       kanalKaydiYok: 0,
@@ -171,11 +180,22 @@ export async function listelemeDurumunuYaz(
     }
   }
 
+  /**
+   * ⚠ MEVCUT DURUM DA OKUNUR — DEĞİŞMEYEN SATIR YENİDEN YAZILMAZ (K225-④).
+   *
+   * ⛔ ÖLÇÜLDÜ 21.09.2026, CANLI CRON KOŞUMUNDA: bu gövde her satırı
+   * KOŞULSUZ yazıyordu ve 1096 satırlık tur sunucuda **120.871 ms** sürdü
+   * (HB kardeşi, yalnız değişeni yazdığı için, **3.836 ms**). İlk gerçek
+   * tetik bu yüzden **504** aldı. Fark yerelde görünmüyordu (8 sn) —
+   * maliyet ağdan, satır satır gidiş-dönüşten geliyor.
+   */
   const satirlar = await prisma.channelSku.findMany({
     where: { channelAccountId: hesap.id },
     select: {
       id: true,
       variantId: true,
+      listelemeDurumu: true,
+      kanalAdet: true,
       variant: { select: { barcode: true } },
     },
   });
@@ -183,6 +203,7 @@ export async function listelemeDurumunuYaz(
   const sonuc: YazimSonucu = {
     hesap: `${hesap.channel.name}/${hesap.name}`,
     yazilan: 0,
+    degisen: 0,
     yokIsaretlenen: 0,
     barkodsuzAtlanan: 0,
     kanalKaydiYok: 0,
@@ -192,6 +213,8 @@ export async function listelemeDurumunuYaz(
    *  Yarım kalırsa ikinci koşum kaldığı yerden devam eder ve zararsızdır.
    *  _(Kılavuz: yarım commit mümkün olan hiçbir betik canlıya koşmaz.)_ */
   const an = tarama.alindi;
+  /** Kontrol edilen (damgalanacak) satırlar — değişsin değişmesin. */
+  const kontrolEdilen: string[] = [];
   for (const s of satirlar) {
     const bk = (s.variant.barcode ?? "").trim();
     if (bk === "") {
@@ -199,24 +222,55 @@ export async function listelemeDurumunuYaz(
       sonuc.barkodsuzAtlanan += 1;
       continue;
     }
+    /**
+     * ⛔ KONTROL EDİLEN HER SATIR DAMGALANIR — DEĞİŞEN DEĞİL.
+     * Damga "bu rakam ne zaman DOĞRUYDU" sorusunun cevabıdır; yalnız
+     * değişenler damgalansaydı, hiçbir şeyi değişmeyen bir kanal her gün
+     * kontrol edilse bile ekranda BAYAT görünürdü. HB tarafında tam bu
+     * yaşandı (21.09.2026: 1 dk önce kontrol edildi, damga 154 dk eski).
+     */
+    kontrolEdilen.push(s.id);
+
     const k = kanal.get(bk);
     if (k === undefined) {
-      await prisma.channelSku.update({
-        where: { id: s.id },
-        data: { listelemeDurumu: "YOK", kanalAdet: null, kanalOlcumAt: an },
-      });
+      if (s.listelemeDurumu !== "YOK" || s.kanalAdet !== null) {
+        await prisma.channelSku.update({
+          where: { id: s.id },
+          data: { listelemeDurumu: "YOK", kanalAdet: null, kanalOlcumAt: an },
+        });
+      }
       sonuc.yokIsaretlenen += 1;
       continue;
     }
-    await prisma.channelSku.update({
-      where: { id: s.id },
-      data: {
-        listelemeDurumu: k.durum,
-        kanalAdet: k.adet,
-        kanalOlcumAt: an,
-      },
-    });
+    /** ⚠ DEĞİŞMEYEN SATIRA DOKUNULMAZ — damgası toplu sorguda tazelenecek. */
+    if (s.listelemeDurumu !== k.durum || s.kanalAdet !== k.adet) {
+      await prisma.channelSku.update({
+        where: { id: s.id },
+        data: {
+          listelemeDurumu: k.durum,
+          kanalAdet: k.adet,
+          kanalOlcumAt: an,
+        },
+      });
+      sonuc.degisen += 1;
+    }
     sonuc.yazilan += 1;
+  }
+
+  /**
+   * ⛔ TOPLU DAMGA — TEK SORGU. Kontrol edilen her satırın `kanalOlcumAt`i
+   * tazelenir; değişenler zaten yukarıda damgalandı, bu onları da kapsar
+   * (aynı değeri yazar, zararsız).
+   *
+   * ⚠ PARÇALARA BÖLÜNÜR: tek `IN (...)` içine binlerce kimlik koymak sorgu
+   * boyutu sınırına çarpar. 500'lük dilimler ölçülmüş bir tavan değil,
+   * yaygın güvenli bir sınırdır ve gerekirse ölçülür.
+   */
+  for (let i = 0; i < kontrolEdilen.length; i += 500) {
+    await prisma.channelSku.updateMany({
+      where: { id: { in: kontrolEdilen.slice(i, i + 500) } },
+      data: { kanalOlcumAt: an },
+    });
   }
 
   /**
