@@ -111,14 +111,42 @@ async function taramaAl(): Promise<
   };
 }
 
-async function main() {
-  const y = canliYapilandirma();
-  if (!y.tamam) {
-    console.log("Canlı yapılandırma okunamadı:", y.hata);
-    process.exitCode = 1;
-    return;
+/**
+ * ⛔ KOŞUM SONUCU — ÇAĞIRAN OKUR, EKRANA BAKMAZ (K225, 21.09.2026).
+ * Betik artık `/api/cron/listeleme-cekim` ucundan da koşuyor; orada
+ * `console.log` kimseye ulaşmaz. "Koşmadı" ile "koştu, değişiklik yok"
+ * AYRI döner — karıştırılırsa bayat veri temiz sanılır.
+ */
+export type TyListelemeOzeti =
+  | { atlandi: "VERITABANI" | "TARAMA" | "HESAP" }
+  | {
+      kanal: "Trendyol";
+      urun: number;
+      yazilan: number;
+      yokIsaretlenen: number;
+      barkodsuzAtlanan: number;
+      kanalKaydiYok: number;
+      /** ⚠ Kuru koşumda hepsi 0'dır — HATA DEĞİL, kip. */
+      yazdiMi: boolean;
+    };
+
+export async function tyListelemeCekimKos(ayar: {
+  yaz: boolean;
+  /** Sunucudan gelirken hazır adres; yerelde `.env.canli`den okunur. */
+  dbAdresi?: string;
+}): Promise<TyListelemeOzeti> {
+  const YAZ = ayar.yaz;
+
+  let dbAdresi = ayar.dbAdresi ?? null;
+  if (dbAdresi === null) {
+    const y = canliYapilandirma();
+    if (!y.tamam) {
+      console.log("Canlı yapılandırma okunamadı:", y.hata);
+      return { atlandi: "VERITABANI" };
+    }
+    dbAdresi = betikAdresi(y.veri.ham);
   }
-  process.env.DATABASE_URL = betikAdresi(y.veri.ham);
+  process.env.DATABASE_URL = dbAdresi;
 
   console.log("\nK121② — KANAL LİSTELEME DURUMU");
   console.log("  kip  " + (YAZ ? "⚠ YAZIM — defter DEĞİŞECEK" : "KURU — hiçbir şey yazılmaz"));
@@ -136,8 +164,8 @@ async function main() {
       const { kosumIziniYaz } = await import("../src/lib/kanal-listeleme-yaz");
       await kosumIziniYaz({ basarili: false, mesaj: t.hata, kosumKanali: KOSUM_KANALI });
     }
-    process.exitCode = 1;
-    return;
+    /** ⚠ "Tarama düştü" ile "ürün yok" AYRI — biri hüküm, öteki değil. */
+    return { atlandi: "TARAMA" };
   }
   console.log("\n   kaynak     " + t.kaynak);
   console.log("   satıcı     " + t.saticiId);
@@ -159,7 +187,16 @@ async function main() {
     console.log("\n   " + "-".repeat(66));
     console.log("   KURU KOŞUM — hiçbir şey yazılmadı.");
     console.log("   Yazmak için sonuna --yaz ekleyin.");
-    return;
+    /** ⚠ KURU KOŞUM DA BİR SONUÇTUR — ürün sayısı döner, `yazdiMi` false. */
+    return {
+      kanal: KOSUM_KANALI,
+      urun: t.urunler.length,
+      yazilan: 0,
+      yokIsaretlenen: 0,
+      barkodsuzAtlanan: 0,
+      kanalKaydiYok: 0,
+      yazdiMi: false,
+    };
   }
 
   const { listelemeDurumunuYaz } = await import("../src/lib/kanal-listeleme-yaz");
@@ -178,8 +215,7 @@ async function main() {
       mesaj: `Satıcı kimliği ${t.saticiId} ile eşleşen kanal hesabı yok.`,
       kosumKanali: KOSUM_KANALI,
     });
-    process.exitCode = 1;
-    return;
+    return { atlandi: "HESAP" };
   }
   console.log("   hesap                    " + s.hesap);
   console.log("   kanalda bulunup yazılan  " + s.yazilan);
@@ -204,29 +240,67 @@ async function main() {
     mesaj: `${s.hesap} · yazılan ${s.yazilan} · YOK ${s.yokIsaretlenen} · barkodsuz ${s.barkodsuzAtlanan}`,
     kosumKanali: KOSUM_KANALI,
   });
+
+  return {
+    kanal: KOSUM_KANALI,
+    urun: t.urunler.length,
+    yazilan: s.yazilan,
+    yokIsaretlenen: s.yokIsaretlenen,
+    barkodsuzAtlanan: s.barkodsuzAtlanan,
+    kanalKaydiYok: s.kanalKaydiYok,
+    yazdiMi: true,
+  };
 }
 
 /**
+ * ═══ İÇERİ ALINDIĞINDA KOŞMAZ ═══
+ *
+ * ⛔ `main().catch(...)` KALDIRILDI. Cron ucu bu dosyayı İÇERİ ALIYOR;
+ * import'un yan etkiyle koşması, sunucu her ısındığında sessiz bir tarama
+ * başlatırdı. Desen `canli-hb-hakedis-cekim.ts` ile AYNI.
+ *
  * ⛔ ÇÖKÜŞTE DE İZ YAZILIR — VE HATA MESAJI TAM TAŞINIR.
  * Yakalanmamış hata, yutulmuş hatanın kardeşidir: betik patlarsa panel
  * kutusu bunu asla öğrenemez ve bayat damgayı "gece koşumu kaçmış" diye
  * okur — yanlış teşhis. _(Anayasa: "hata mesajını kısaltan her işlem
  * teşhisi kısaltır" — kırpma yalnız GÖSTERİMDE, kayıtta asla.)_
+ *
+ * ⚠ VE İZ YAZIMI ARTIK GÖVDENİN İÇİNDE DEĞİL, ÇAĞIRANIN SORUMLULUĞUNDA:
+ * `tyListelemeCekimKosGuvenli` hem CLI'dan hem cron ucundan çağrılır, yani
+ * iz iki yolda da yazılır. İki yerde iki kalıp olmaz (İlke #10).
  */
-main().catch(async (e: unknown) => {
-  const mesaj = (e instanceof Error ? (e.stack ?? e.message) : String(e)).replace(
-    /\r?\n/g,
-    " ",
-  );
-  console.log("\n   ⛔ KOŞUM ÇÖKTÜ — " + mesaj);
-  if (YAZ) {
-    try {
-      const { kosumIziniYaz } = await import("../src/lib/kanal-listeleme-yaz");
-      await kosumIziniYaz({ basarili: false, mesaj, kosumKanali: KOSUM_KANALI });
-    } catch {
-      /** ⚠ İz de yazılamadıysa en azından ekranda duruyor — sessiz kalmıyor. */
-      console.log("   ⛔ Koşum izi de YAZILAMADI.");
+export async function tyListelemeCekimKosGuvenli(ayar: {
+  yaz: boolean;
+  dbAdresi?: string;
+}): Promise<TyListelemeOzeti | { atlandi: "COKTU"; mesaj: string }> {
+  try {
+    return await tyListelemeCekimKos(ayar);
+  } catch (e: unknown) {
+    const mesaj = (e instanceof Error ? (e.stack ?? e.message) : String(e)).replace(
+      /\r?\n/g,
+      " ",
+    );
+    console.log("\n   ⛔ KOŞUM ÇÖKTÜ — " + mesaj);
+    if (ayar.yaz) {
+      try {
+        const { kosumIziniYaz } = await import("../src/lib/kanal-listeleme-yaz");
+        await kosumIziniYaz({ basarili: false, mesaj, kosumKanali: KOSUM_KANALI });
+      } catch {
+        /** ⚠ İz de yazılamadıysa en azından ekranda duruyor — sessiz kalmıyor. */
+        console.log("   ⛔ Koşum izi de YAZILAMADI.");
+      }
     }
+    return { atlandi: "COKTU", mesaj };
   }
-  process.exitCode = 1;
-});
+}
+
+const dogrudanKosuluyor = (() => {
+  const giris = process.argv[1] ?? "";
+  return /canli-kanal-listeleme-yaz\.(ts|js)$/.test(giris.split("\\").join("/"));
+})();
+
+if (dogrudanKosuluyor) {
+  void tyListelemeCekimKosGuvenli({ yaz: YAZ }).then((o) => {
+    if ("atlandi" in o) process.exitCode = 1;
+  });
+}

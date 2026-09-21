@@ -369,6 +369,42 @@ for (const yol of apiDosyalari) {
   kontrol(`  ${yol} — anahtar DEĞERİ loglanmıyor`, sizan.length === 0, sizan);
 }
 
+console.log("\n4) HER CRON UCU SIR KAPISI TAŞIR");
+
+/**
+ * ⛔ BOŞLUK BULUNDU 21.09.2026 (K225): sır kapısı kontrolü YALNIZ
+ * "SALT OKUMA" beyanlı uçlara bakıyordu. Cron uçlarının hepsi YAZAR —
+ * yani beyanlı değiller — ve **hiçbiri denetlenmiyordu.** Korumasız bir
+ * cron ucu, internete açık bir "defteri değiştir" düğmesidir.
+ *
+ * ⚠ KÜME DİZİNDEN TÜRETİLİR, ELLE TUTULMAZ: `src/app/api/cron` altındaki
+ * her rota kendiliğinden kapsama girer. Elle liste, yarın eklenen altıncı
+ * ucu SESSİZCE korumasız bırakırdı.
+ * _(Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)_
+ */
+const cronUclari = dosyalar("src/app/api/cron").filter(
+  (y) => (y.split(new RegExp("[\\\\/]")).pop() ?? y) === "route.ts",
+);
+
+/**
+ * ⛔ TABAN DOLULUĞU AYRICA KANITLANIR. Küme boşalırsa aşağıdaki döngü hiç
+ * dönmez ve bekçi "hepsi geçti" der — boş küme her koşulu sağlar.
+ */
+kontrol(`cron ucu bulundu (${cronUclari.length})`, cronUclari.length >= 5, cronUclari);
+
+for (const yol of cronUclari) {
+  const y = yorumsuzla(readFileSync(yol, "utf8"));
+  /** ⚠ ADA DEĞİL KULLANIMA: `CRON_SECRET` kelimesi hata METNİNDE de geçer. */
+  kontrol(`  ${yol} — sır ORTAMDAN okunuyor`, y.includes("process.env.CRON_SECRET"));
+  kontrol(`    ...ve karşılaştırılıyor`, /Bearer \$\{sir\}/.test(y));
+  /**
+   * ⛔ REDDEDİLEN İSTEK **404** ALIR — 401/403 DEĞİL. "Yetkiniz yok" demek,
+   * orada bir şey OLDUĞUNU söyler; rotanın varlığı bile sızmamalı.
+   * _(Anayasa: "reddedilen istek 404 alır — rotanın varlığı bile sızmaz".)_
+   */
+  kontrol(`    ...ve reddedilen istek 404 alıyor`, /status:\s*404/.test(y));
+}
+
 console.log("");
 console.log("=".repeat(70));
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

@@ -34,7 +34,25 @@ import { hbHesabiCoz, hbHesapHatasi } from "../src/lib/kanal-hesabi-hb";
  */
 const KOSUM_KANALI = "Hepsiburada";
 
-const UYGULA = process.argv.includes("--uygula");
+/**
+ * ⛔ KOŞUM SONUCU — ÇAĞIRAN OKUR, EKRANA BAKMAZ (K225, 21.09.2026).
+ * Betik artık `/api/cron/listeleme-cekim` ucundan da koşuyor; orada
+ * `console.log` kimseye ulaşmaz. `atlandi` ile başarısız koşum, sayıları
+ * olan bir koşumdan AYRI: "koşmadı" ile "koştu, değişiklik yok" farklı
+ * şeylerdir ve karıştırılırsa bayat veri temiz sanılır.
+ */
+export type HbListelemeOzeti =
+  | { atlandi: "VERITABANI" | "KIMLIK" | "HESAP" }
+  | {
+      kanal: "Hepsiburada";
+      listing: number;
+      defterdeki: number;
+      degisecek: number;
+      yazilan: number;
+      hata: number;
+      /** ⚠ Kuru koşumda `yazilan` 0'dır — bu bir HATA DEĞİL, kip. */
+      yazdiMi: boolean;
+    };
 
 /** Durum önceliği — TY yazıcısıyla AYNI sıra; iki yerde iki sıra olmaz. */
 const SIRA: Record<string, number> = {
@@ -46,20 +64,28 @@ const SIRA: Record<string, number> = {
   BILINMIYOR: 5,
 };
 
-async function main() {
-  const y = canliYapilandirma();
-  if (!y.tamam) {
-    console.log("Canlı yapılandırma okunamadı:", y.hata);
-    process.exitCode = 1;
-    return;
+export async function hbListelemeCekimKos(ayar: {
+  yaz: boolean;
+  /** Sunucudan gelirken hazır adres; yerelde `.env.canli`den okunur. */
+  dbAdresi?: string;
+}): Promise<HbListelemeOzeti> {
+  const UYGULA = ayar.yaz;
+
+  let dbAdresi = ayar.dbAdresi ?? null;
+  if (dbAdresi === null) {
+    const y = canliYapilandirma();
+    if (!y.tamam) {
+      console.log("Canlı yapılandırma okunamadı:", y.hata);
+      return { atlandi: "VERITABANI" };
+    }
+    dbAdresi = betikAdresi(y.veri.ham);
   }
   const k = kimlikOku();
   if (k === null) {
-    console.log("⛔ HB kimliği okunamadı (.env.canli).");
-    process.exitCode = 1;
-    return;
+    console.log("⛔ HB kimliği okunamadı (.env.canli / süreç ortamı).");
+    return { atlandi: "KIMLIK" };
   }
-  process.env.DATABASE_URL = betikAdresi(y.veri.ham);
+  process.env.DATABASE_URL = dbAdresi;
   const { prisma } = await import("../src/lib/prisma");
   const { hbAdedi, hbAnahtari, hbListelemeDurumu } = await import(
     "../src/lib/kanal-listeleme-hb"
@@ -122,9 +148,9 @@ async function main() {
   if (cekim.tur !== "TAMAM") {
     /** ⛔ HATA TAM TAŞINIR — kırpmak teşhisi kırpar. */
     console.log("\n   ⛔ ÇEKİM DÜŞTÜ: " + JSON.stringify(cekim));
-    process.exitCode = 1;
     await prisma.$disconnect();
-    return;
+    /** ⚠ "Kanal okunamadı" ile "kanal boş" AYRI — biri hüküm, öteki değil. */
+    return { atlandi: "HESAP" };
   }
   const listingler = cekim.kayitlar as Record<string, unknown>[];
   console.log("\n② LİSTİNG  " + listingler.length);
@@ -228,7 +254,16 @@ async function main() {
     console.log("   KURU KOŞUM — hiçbir şey yazılmadı.");
     console.log("   Yazmak için sonuna --uygula ekleyin.");
     await prisma.$disconnect();
-    return;
+    /** ⚠ KURU KOŞUM DA BİR SONUÇTUR — sayılar döner, `yazdiMi` false. */
+    return {
+      kanal: KOSUM_KANALI,
+      listing: listingler.length,
+      defterdeki: satirlar.length,
+      degisecek,
+      yazilan: 0,
+      hata: 0,
+      yazdiMi: false,
+    };
   }
 
   /**
@@ -240,9 +275,8 @@ async function main() {
     console.log("\n⛔ YAZIM YAPILMADI — hesap API kimliğiyle (Mağaza ID) bağlı değil.");
     console.log("   `externalId` raporlardaki numarayı taşıyor ve EZİLMEYECEK.");
     console.log("   İkinci kimlik alanı açılınca bu kapı çalışır.");
-    process.exitCode = 1;
     await prisma.$disconnect();
-    return;
+    return { atlandi: "HESAP" };
   }
 
   /**
@@ -270,9 +304,38 @@ async function main() {
     KOSUM_KANALI,
   );
   console.log(`\n⑤ YAZIM — ${y2.yazilan} satır güncellendi · hata ${y2.hata}`);
-  /** ⛔ HATA SESSİZ GEÇMEZ: çıkış kodu da düşer. */
-  if (y2.hata > 0) process.exitCode = 1;
   await prisma.$disconnect();
+  return {
+    kanal: KOSUM_KANALI,
+    listing: listingler.length,
+    defterdeki: satirlar.length,
+    degisecek,
+    yazilan: y2.yazilan,
+    hata: y2.hata,
+    yazdiMi: true,
+  };
 }
 
-void main();
+/**
+ * ═══ İÇERİ ALINDIĞINDA KOŞMAZ ═══
+ *
+ * ⛔ `void main()` KALDIRILDI. Cron ucu bu dosyayı İÇERİ ALIYOR; import'un
+ * yan etkiyle koşması, sunucu her ısındığında sessiz bir çekim başlatırdı.
+ * Desen `canli-hb-hakedis-cekim.ts` ile AYNI — iki yerde iki kalıp olmaz.
+ */
+const dogrudanKosuluyor = (() => {
+  const giris = process.argv[1] ?? "";
+  return /canli-hb-listeleme-yaz\.(ts|js)$/.test(giris.split("\\").join("/"));
+})();
+
+if (dogrudanKosuluyor) {
+  hbListelemeCekimKos({ yaz: process.argv.includes("--uygula") })
+    .then((o) => {
+      /** ⛔ HATA SESSİZ GEÇMEZ: çıkış kodu da düşer. */
+      if ("atlandi" in o || o.hata > 0) process.exitCode = 1;
+    })
+    .catch((e) => {
+      console.error("HATA:", e instanceof Error ? e.stack : e);
+      process.exit(1);
+    });
+}

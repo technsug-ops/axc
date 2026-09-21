@@ -1,0 +1,36 @@
+# ============================================================================
+#  K225 — KANAL LİSTELEME DURUMU ÇEKİMİ — YEDEK TETİKLEYİCİ
+# ----------------------------------------------------------------------------
+#  NİYE YEDEK VAR: anayasa "yönetilemeyen bağımlılığa üçüncü şans verilmez"
+#  diyor — Vercel Cron 18 ve 19.08.2026'da HİÇ tetiklenmedi ve Hobby planında
+#  logu olmadığı için sebebi ÖĞRENİLEMEDİ. Vercel tanımı yerinde duruyor
+#  (bedava yedeklilik) ama BİRİNCİL sayılmıyor; iş idempotent olduğu için
+#  çift tetik zararsız (ölçüldü: ikinci koşum 0 satır değiştiriyor).
+#
+#  ⚠ SAAT: Vercel 04:50 UTC'de tetikliyor, bu 05:20'de. Aynı dakikaya
+#  konsaydı ikisi aynı anda koşar ve biri ötekinin yazdığını okurdu.
+#
+#  SIR: depo Secrets → CRON_SECRET (diğer cron işleriyle AYNI değer).
+# ============================================================================
+name: Kanal listeleme durumu (günlük, yedek)
+
+on:
+  schedule:
+    - cron: "20 5 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  cek:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ucu cagir
+        run: |
+          KOD=$(curl -s -o cevap.json -w "%{http_code}" --max-time 120 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://axc-seven.vercel.app/api/cron/listeleme-cekim")
+          echo "HTTP $KOD"
+          cat cevap.json || true
+          # ⛔ 500 = kanallardan biri DÜŞTÜ. Yeşil yanmaz; yarısı koşmayan
+          #    bir senkron "başarılı" sayılırsa bayat veri sessizce yaşar.
+          test "$KOD" = "200"

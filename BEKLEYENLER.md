@@ -13,6 +13,64 @@
 
 ---
 
+## 🔶 K225 — LİSTELEME SENKRONU ZAMANLANDI · 21.09.2026 · [KOŞTU — İLK OTOMATİK KOŞUM BEKLENİYOR]
+
+K224'ün açık bıraktığı madde kapandı: _"senkron zamanlanmış değil; bugün elle
+koşuldu, yarın yine bayatlar. Ekran bunu söylüyor ama söylemek çözmek
+değildir."_
+
+**İKİ BETİK ÇAĞRILABİLİR ÇEKİRDEĞE ÇEVRİLDİ.** İkisi de yalnız `main()`
+taşıyordu; `void main()` / `main().catch()` kaldırıldı ve yerine
+_"içeri alındığında koşmaz"_ kapısı geldi — cron ucu dosyayı **import**
+ediyor ve yan etkiyle koşsaydı sunucu her ısındığında sessiz bir tarama
+başlatırdı. Desen `canli-hb-hakedis-cekim.ts` ile AYNI (İlke #10).
+
+**TEK UÇ, İKİ KANAL — BİLİNÇLİ AYRIM.** Sipariş/hakediş çekimleri kanal
+başına ayrı uçlar çünkü farklı kadanslı farklı işler. Listeleme durumu ise
+**her kanala sorulan TEK soru** ve ekran üçünü birlikte gösteriyor. N11
+senkronu yazıldığı gün buraya **bir satır** eklenir; yeni rota + vercel
+girdisi + Action üçlüsü açılmaz.
+
+    POST yok — iki betik de yalnız GET; pazaryerine hiçbir şey yazılmıyor
+    vercel.json  04:50 UTC   (birincil)
+    GitHub Action 05:20 UTC  (yedek — Vercel Cron 18-19.08'de HİÇ tetiklenmedi
+                              ve Hobby planında logu olmadığı için sebebi
+                              ÖĞRENİLEMEDİ; anayasa "üçüncü şans verilmez")
+
+⛔ **BİR KANALIN DÜŞMESİ ÖTEKİNİ DURDURMAZ** ve düşen kanal **500** döndürür —
+`200` dönseydi Action yeşil yanar, yarısı koşmayan bir senkron "başarılı"
+sayılırdı. Tetikleyicinin gördüğü tek şey durum kodudur.
+
+⭐ **VE YOL ÜSTÜNDE GERÇEK BİR GÜVENLİK BOŞLUĞU BULUNDU.** `api:dogrula`nın
+sır kapısı kontrolü **yalnız "SALT OKUMA" beyanlı uçlara** bakıyordu. Cron
+uçlarının hepsi YAZAR — yani beyanlı değiller — ve **altısı da hiç
+denetlenmiyordu.** Korumasız bir cron ucu, internete açık bir "defteri
+değiştir" düğmesidir. Yeni bölüm dizinden türetiliyor (elle liste yok):
+her `src/app/api/cron/**/route.ts` için üç ölçüt — sır ORTAMDAN okunuyor ·
+karşılaştırılıyor · reddedilen istek **404** alıyor (401 değil; "yetkiniz
+yok" demek orada bir şey OLDUĞUNU söyler).
+
+**MUTASYON — 6 senaryo:** sır kapısı kalksın 🔴 · 404 yerine 401 🔴 · sır
+sabitten okunsun 🔴 · küme boşalsın 🔴 · taban doluluğu kapısı kalksın 🟢
+(EŞDEĞER — küme doluyken kapıyı kaldırmak davranışı değiştirmiyor; işi
+boşalmayı yakalamak ve o kırmızı) · zararsız yorum 🟢 (harness sağlaması).
+
+`api:dogrula` 187 → **237** ölçüt.
+
+### AÇIK
+- [ ] **İlk otomatik koşum 22.09 sabahı** — `AuditLog`dan doğrulanacak.
+      Koşmazsa Vercel Cron yine kaçırmış demektir ve Action'ın tuttuğu
+      görülür (ikisi birden kaçarsa sebep ORTAK, ayrıca ölçülür).
+- [ ] N11 listeleme senkronu hâlâ YOK — 51 kanal SKU'su hiç ölçülmemiş.
+      Yazıldığında bu uca bir satır eklenir.
+
+⚠ **İKİ BETİK AYNI İŞİ FARKLI BAYRAKLA YAPIYOR** (`--uygula` ve `--yaz`) —
+İlke #10'a aykırı. Bu turda DEĞİŞTİRİLMEDİ: bayrak adını çevirmek belgeleri
+ve kas hafızasını kırar, ve cron ucu ikisini de `yaz: true` ile çağırdığı
+için otomatik koşum bundan etkilenmiyor. Kalem açık.
+
+---
+
 ## 🔶 K224 — KANAL LİSTELEME SAĞLIĞI EKRANI · 21.09.2026 · [KOŞTU — HALİL TESTİ BEKLİYOR]
 
 `/kanal-listeleme` — **salt okuma**, kanala hiçbir şey yazmaz.
